@@ -1,0 +1,98 @@
+{
+  
+  "name": "realitka-ai-crm",
+  
+  "version": "0.1.0",
+  
+  "private": true,
+  
+  "scripts": {
+  
+    
+  "dev": "next dev",
+  
+    
+  "build": "next build",
+  
+    
+  "start": "next start",
+  
+    
+  "lint": "eslint"
+  
+  },
+  
+  "dependencies": {
+  
+    
+  "@supabase/ssr": "^0.9.0",
+  
+    
+  "@supabase/supabase-js": "^2.99.2",
+  
+    
+  "next": "16.2.1",
+  
+    
+  "openai": "^6.31.0",
+  
+    
+  "react": "19.2.3",
+  
+    
+  "react-dom": "19.2.3",
+  
+    
+  "resend": "^6.9.4",
+  
+    
+  "stripe": "^20.4.1",
+  
+    
+  "twilio": "^4.20.0"
+  
+  },
+  
+  "devDependencies": {
+  
+    
+  "@playwright/test": "^1.58.2",
+  
+    
+  "@tailwindcss/postcss": "^4",
+  
+    
+  "@testing-library/jest-dom": "^6.9.1",
+  
+    
+  "@testing-library/react": "^16.3.2",
+  
+    
+  "@testing-library/user-event": "^14.6.1",
+  
+    
+  "@types/node": "^20",
+  
+    
+  "@types/react": "^19",
+  
+    
+  "@types/react-dom": "^19",
+  
+    
+  "eslint": "^9",
+  
+    
+  "eslint-config-next": "16.1.6",
+  
+    
+  "playwright": "^1.58.2",
+  
+    
+  "tailwindcss": "^4.2.2",
+  
+    
+  "typescript": "^5"
+  
+  }
+}

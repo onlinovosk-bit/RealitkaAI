@@ -1,0 +1,68 @@
+﻿import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+
+export type CurrentProfile = {
+  id: string;
+  agency_id: string | null;
+  team_id: string | null;
+  auth_user_id: string | null;
+  full_name: string;
+  email: string | null;
+  role: string;
+  phone: string | null;
+  is_active: boolean;
+};
+
+export async function getCurrentUser() {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  return data.user ?? null;
+}
+
+export async function getCurrentProfile(): Promise<CurrentProfile | null> {
+  const supabase = await createClient();
+  const { data: userData } = await supabase.auth.getUser();
+
+  const user = userData.user;
+  if (!user) return null;
+
+  let { data: profile } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("auth_user_id", user.id)
+    .maybeSingle();
+
+  if (!profile && user.email) {
+    const fallback = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("email", user.email)
+      .maybeSingle();
+
+    profile = fallback.data ?? null;
+
+    if (profile && !profile.auth_user_id) {
+      await supabase
+        .from("profiles")
+        .update({ auth_user_id: user.id })
+        .eq("id", profile.id);
+
+      profile = {
+        ...profile,
+        auth_user_id: user.id,
+      };
+    }
+  }
+
+  return profile ?? null;
+}
+
+export async function requireUser() {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  return user;
+}

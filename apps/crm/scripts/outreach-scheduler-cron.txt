@@ -1,0 +1,8 @@
+# Outreach Automation Scheduler (CRON/Serverless)
+# Use: e.g. Vercel/Netlify scheduled functions, or system cron
+
+# Run every 15 minutes
+*/15 * * * * cd /path/to/project && npx tsx scripts/outreach-automation-2.0.ts
+
+# Or for serverless (Vercel):
+# api/scheduled-outreach.ts (handler that calls runOutreachSequence for all active leads)

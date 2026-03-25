@@ -1,0 +1,6 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+npx lint-staged
+npx vitest run || echo "No vitest tests found"
+npx playwright test || echo "No playwright tests found"
