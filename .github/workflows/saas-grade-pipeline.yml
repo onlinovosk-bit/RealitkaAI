@@ -177,7 +177,6 @@ jobs:
           if [ "${{ needs.deploy-prod.result }}" = "success" ]; then
             echo "msg=✅ Production deploy successful" >> $GITHUB_OUTPUT
           elif [ "${{ needs.deploy-prod.result }}" = "failure" ]; then
-            echo "msg=❌ Production deploy failed" >> $GITHUB_OUTPUT
           else
             echo "msg=ℹ️ No production deploy (PR only)" >> $GITHUB_OUTPUT
           fi
