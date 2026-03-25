@@ -1,1 +1,191 @@
+name: SaaS-grade CI/CD for Revolis.ai
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: 20
+
+jobs:
+  quality:
+    name: Quality gates (lint, tests, typecheck)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test -- --ci --runInBand
+
+  security:
+    name: Security & dependency health
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=high || true
+
+      - name: Check for outdated deps
+        run: npx npm-check-updates --errorLevel 2 || true
+
+  versioning:
+    name: Version & changelog
+    needs: [quality, security]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Bump version & generate changelog
+        run: npx standard-version
+
+      - name: Push tags & changelog
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git push --follow-tags origin HEAD:main
+
+  build:
+    name: Build app
+    needs: [quality]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: next-build
+          path: .next
+
+  preview-deploy:
+    name: Preview deploy (PR)
+    needs: [build]
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: next-build
+          path: .next
+
+      - name: Deploy preview to Vercel
+        run: npx vercel --confirm
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+  deploy-prod:
+    name: Production deploy
+    needs: [build, versioning, security]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: next-build
+          path: .next
+
+      - name: Deploy to Vercel (prod)
+        run: npx vercel --prod --confirm
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+  notify:
+    name: Notify
+    needs: [deploy-prod, preview-deploy]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Build status message
+        id: status
+        run: |
+          if [ "${{ needs.deploy-prod.result }}" = "success" ]; then
+            echo "msg=✅ Production deploy successful" >> $GITHUB_OUTPUT
+          elif [ "${{ needs.deploy-prod.result }}" = "failure" ]; then
+            echo "msg=❌ Production deploy failed" >> $GITHUB_OUTPUT
+          else
+            echo "msg=ℹ️ No production deploy (PR only)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Notify Slack (optional)
+        if: secrets.SLACK_WEBHOOK != ''
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data "{\"text\":\"${{ steps.status.outputs.msg }} – ${GITHUB_REPOSITORY}@${GITHUB_REF}\"}" \
+          ${{ secrets.SLACK_WEBHOOK }}
 
