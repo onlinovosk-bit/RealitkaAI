@@ -1,0 +1,6 @@
+{"timestamp":"2026-03-25T09:36:23.870Z","context":"getStripe","message":"Neznáma chyba","raw":"Chýba STRIPE_SECRET_KEY."}
+{"timestamp":"2026-03-25T09:42:05.803Z","context":"getSupabaseClient","message":"Neznáma chyba","raw":"Supabase client initialized (ai-scoring)"}
+{"timestamp":"2026-03-25T12:13:29.109Z","context":"getStripe","message":"Neznáma chyba","raw":"Stripe client initialized"}
+{"timestamp":"2026-03-25T12:13:29.154Z","context":"getStripe","message":"Neznáma chyba","raw":"Stripe client initialized"}
+{"timestamp":"2026-03-25T12:15:02.004Z","context":"getStripe","message":"Neznáma chyba","raw":"Stripe client initialized"}
+{"timestamp":"2026-03-25T12:15:02.039Z","context":"getStripe","message":"Neznáma chyba","raw":"Stripe client initialized"}
