@@ -22,8 +22,8 @@ import {
   type LeadPropertyMatchPerformanceSummary,
   type LeadPropertyMatchSummary,
 } from "@/lib/matching-store";
-import CalendarSyncPanel from '@/components/integrations/calendar-sync-panel';
-import GmailSyncPanel from '@/components/integrations/gmail-sync-panel';
+import CalendarSyncPanel from "@/components/integrations/calendar-sync-panel";
+import GmailSyncPanel from "@/components/integrations/gmail-sync-panel";
 
 type ForecastingSummary = {
   totalLeads: number;

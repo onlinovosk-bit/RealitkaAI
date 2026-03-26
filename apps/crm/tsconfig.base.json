@@ -4,7 +4,10 @@
     "paths": {
       "@crm/*": ["apps/crm/src/*"],
       "@api/*": ["apps/api/src/*"],
-      "@shared/*": ["packages/shared/src/*"]
+      "@shared/*": ["packages/shared/src/*"],
+      "@/*": ["src/*"],
+      "@/lib/*": ["src/lib/*"],
+      "@/components/*": ["src/components/*"]
     }
   }
 }

@@ -28,14 +28,5 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // Optionally, you can check session or perform logic here
-  // const { data: { session } } = await supabase.auth.getSession();
-
   return supabaseResponse;
-}
-import { type NextRequest } from "next/server";
-import { updateSession } from "./src/lib/supabase/proxy";
-
-export async function proxy(request: NextRequest) {
-  return await updateSession(request);
 }
