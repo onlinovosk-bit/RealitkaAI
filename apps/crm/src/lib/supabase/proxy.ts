@@ -9,25 +9,8 @@ function getKey() {
   );
 }
 
-const protectedPrefixes = [
-  "/dashboard",
-  "/leads",
-  "/pipeline",
-  "/matching",
-  "/recommendations",
-  "/tasks",
-  "/properties",
-  "/team",
-  "/activities",
-  "/settings",
-];
-
-const guestOnlyPrefixes = ["/login", "/register"];
-
 export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  });
+  let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -39,38 +22,20 @@ export async function updateSession(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-
-          supabaseResponse = NextResponse.next({
-            request,
-          });
-
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
+          supabaseResponse = NextResponse.next({ request });
         },
       },
     }
   );
 
-  const { data } = await supabase.auth.getClaims();
-  const user = data?.claims;
-
-  const pathname = request.nextUrl.pathname;
-  const isProtected = protectedPrefixes.some((prefix) => pathname.startsWith(prefix));
-  const isGuestOnly = guestOnlyPrefixes.some((prefix) => pathname.startsWith(prefix));
-
-  if (!user && isProtected) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    url.searchParams.set("next", pathname);
-    return NextResponse.redirect(url);
-  }
-
-  if (user && isGuestOnly) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
-  }
+  // Optionally, you can check session or perform logic here
+  // const { data: { session } } = await supabase.auth.getSession();
 
   return supabaseResponse;
+}
+import { type NextRequest } from "next/server";
+import { updateSession } from "./src/lib/supabase/proxy";
+
+export async function proxy(request: NextRequest) {
+  return await updateSession(request);
 }

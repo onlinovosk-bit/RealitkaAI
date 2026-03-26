@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@crm/*": ["apps/crm/src/*"],
+      "@api/*": ["apps/api/src/*"],
+      "@shared/*": ["packages/shared/src/*"]
+    }
+  }
+}
