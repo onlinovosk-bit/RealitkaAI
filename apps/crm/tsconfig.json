@@ -20,6 +20,13 @@
         "name": "next"
       }
     ]
+     ,
+     "baseUrl": "src",
+     "paths": {
+       "@/*": ["*"],
+       "@/lib/*": ["lib/*"],
+       "@/components/*": ["components/*"]
+     }
   },
   "include": [
     "next-env.d.ts",

@@ -18,16 +18,26 @@ const typeColors: Record<string, string> = {
 };
 
 export default function NotificationList({ userId }: NotificationListProps) {
+
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
-    setNotifications(listNotifications(userId));
+    let isMounted = true;
+    const loadNotifications = async () => {
+      const result = await Promise.resolve(listNotifications(userId));
+      if (isMounted) setNotifications(result);
+    };
+    loadNotifications();
     // Optionally, poll or subscribe for real-time updates
+    return () => {
+      isMounted = false;
+    };
   }, [userId]);
 
-  const handleRead = (id: string) => {
-    markNotificationRead(id);
-    setNotifications([...listNotifications(userId)]);
+  const handleRead = async (id: string) => {
+    await markNotificationRead(id);
+    const result = await Promise.resolve(listNotifications(userId));
+    setNotifications(result);
   };
 
   if (!notifications.length) {
