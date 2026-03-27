@@ -1,16 +1,9 @@
-// next.config.js
-const path = require('path');
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  outputFileTracingRoot: __dirname,
-  // turbopack: {
-  //   root: __dirname,
-  // },
-  webpack: (config) => {
-    config.resolve.alias['@'] = path.resolve(__dirname, 'src');
-    return config;
-  },
+  turbopack: {},
+
+  // vypneme custom webpack, ktorý robí konflikt s Next 16
+  webpack: undefined
 };
 
 module.exports = nextConfig;
