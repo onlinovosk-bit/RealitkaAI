@@ -5,7 +5,7 @@ import { requireFeature } from "@/lib/feature-gating";
 export async function POST() {
   try {
     await requireFeature("integrations");
-    const result = await syncEmailInbox();
+    const result = await syncEmailInbox("");
     return okResponse({ result });
   } catch (error) {
     return errorResponse(

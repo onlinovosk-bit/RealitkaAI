@@ -19,11 +19,11 @@ export async function sendOnboardingEmail(
   let subject = '';
   let html = '';
   if (type === 'welcome') {
-    ({ subject, html } = buildWelcomeEmail(name, link));
+    ({ subject, html } = buildWelcomeEmail({ email: to, name }));
   } else if (type === 'crm') {
-    ({ subject, html } = buildCrmSyncReminderEmail(name, link));
+    ({ subject, html } = buildCrmSyncReminderEmail({ email: to, name }));
   } else if (type === 'ai') {
-    ({ subject, html } = buildAiActivationEmail(name, link));
+    ({ subject, html } = buildAiActivationEmail({ email: to, name }));
   } else {
     throw new Error('Unknown onboarding email type');
   }

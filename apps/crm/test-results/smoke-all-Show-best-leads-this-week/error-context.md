@@ -20,11 +20,5 @@
         - link "Zaregistruj sa" [ref=e16] [cursor=pointer]:
           - /url: /register
   - button "Open Next.js Dev Tools" [ref=e22] [cursor=pointer]:
-    - generic [ref=e25]:
-      - text: Rendering
-      - generic [ref=e26]:
-        - generic [ref=e27]: .
-        - generic [ref=e28]: .
-        - generic [ref=e29]: .
-  - alert [ref=e30]
+    - img [ref=e23]
 ```

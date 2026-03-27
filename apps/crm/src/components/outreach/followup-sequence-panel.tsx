@@ -10,7 +10,7 @@ const fetchFollowups = async () => [
 ];
 
 export default function FollowupSequencePanel() {
-  const [followups, setFollowups] = useState([]);
+  const [followups, setFollowups] = useState<{ id: string; name: string; content: string }[]>([]);
 
   useEffect(() => {
     fetchFollowups().then(setFollowups);

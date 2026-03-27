@@ -37,7 +37,9 @@ export async function POST(request: Request) {
 
     // Odoslanie welcome emailu
     try {
-      await sendOnboardingEmail('welcome', profile.email, profile.fullName || profile.email, 'https://app.revolis.ai/onboarding');
+      if (typeof profile.email === 'string') {
+        await sendOnboardingEmail('welcome', profile.email, profile.fullName || profile.email, 'https://app.revolis.ai/onboarding');
+      }
     } catch (e) {
       // Log error, ale nespomaľuj registráciu
       console.error('Nepodarilo sa odoslať welcome email:', e);

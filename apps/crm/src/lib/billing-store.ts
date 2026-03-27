@@ -339,6 +339,8 @@ export function verifyStripeWebhook(payload: string | Buffer, signature: string)
   if (!secret) {
     throw new Error("Chýba STRIPE_WEBHOOK_SECRET.");
   }
-
+  if (!stripe) {
+    throw new Error("Stripe client nie je inicializovaný.");
+  }
   return stripe.webhooks.constructEvent(payload, signature, secret);
 }

@@ -1,3 +1,12 @@
+// Mock Supabase SSR client to prevent API key errors
+vi.mock('@supabase/ssr', () => ({
+  createBrowserClient: () => ({
+    from: () => ({
+      upsert: () => ({ select: () => ({ single: () => ({ data: {}, error: null }) }) }),
+      select: () => ({ eq: () => ({ maybeSingle: () => ({ data: {}, error: null }), single: () => ({ data: {}, error: null }) }) }),
+    }),
+  }),
+}));
 // Mock Next.js/server-only dependencies
 vi.mock('@/lib/auth', () => ({
   getCurrentProfile: async () => ({ id: 'mock-profile', email: 'test@example.com', full_name: 'Test User' }),
