@@ -25,11 +25,14 @@ function getActivityBadgeClasses(type: ActivityType) {
 }
 
 export default function LeadDetailPage() {
-  const params = useParams();
+  const params = useParams() as Record<string, string> | null;
   const router = useRouter();
   const searchParams = useSearchParams();
-  const id = params.id as string;
-  const isEdit = searchParams.get("edit") === "true";
+  const id = params?.id ?? "";
+  if (!id) {
+    return <div>Lead ID nebol nájdený.</div>;
+  }
+  const isEdit = searchParams && searchParams.get("edit") === "true";
 
   const [lead, setLead] = useState<Lead | null>(null);
   const [activities, setActivities] = useState<LeadActivity[]>([]);

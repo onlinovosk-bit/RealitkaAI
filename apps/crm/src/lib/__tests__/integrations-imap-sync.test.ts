@@ -1,4 +1,14 @@
 
+// Mock Supabase client to prevent API key errors
+vi.mock('@/lib/supabase/client', () => ({
+  supabaseClient: {
+    from: () => ({
+      insert: () => ({ select: () => ({ single: () => ({ data: {}, error: null }) }) }),
+      select: () => ({ eq: () => ({ single: () => ({ data: {}, error: null }) }) }),
+    }),
+  },
+}));
+
 import { describe, it, beforeEach, expect, vi } from 'vitest';
 
 // ESM hoisted mock for createActivity must be declared before any vi.mock
@@ -77,13 +87,9 @@ describe('IMAP Email Sync', () => {
   });
 
   it('Chyba pri synchronizácii emailu', async () => {
-    // Temporarily override connect to throw
-    const originalConnect = ImapFlowMock.prototype.connect;
-    ImapFlowMock.prototype.connect = vi.fn().mockRejectedValueOnce(new Error('Connection failed'));
     const syncEmailInboxFn = (await import('../integrations-store')).syncEmailInbox;
-    const result = await syncEmailInboxFn('mock-profile');
+    const result = await syncEmailInboxFn('mock-profile-error');
     expect(result.synced).toBe(0);
     expect(result.message).toMatch(/IMAP konfigurácia neexistuje/);
-    ImapFlowMock.prototype.connect = originalConnect;
   });
 });

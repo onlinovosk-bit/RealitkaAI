@@ -1,3 +1,8 @@
+// DEBUG: vypíš všetky env premenné na serveri
+if (typeof window === 'undefined') {
+  // eslint-disable-next-line no-console
+  console.log('DEBUG ENV', JSON.stringify(process.env, null, 2));
+}
 import { createBrowserClient } from "@supabase/ssr";
 
 function getKey() {

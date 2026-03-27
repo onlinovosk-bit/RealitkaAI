@@ -53,10 +53,10 @@ function formatDateSk(date: Date) {
 export async function safeDemoBookingAction(action: () => Promise<any>, context: string) {
   try {
     const result = await action();
-    captureServerInfo(`Demo booking action succeeded: ${context}`);
+    // captureServerInfo(`Demo booking action succeeded: ${context}`); // Removed: function not defined
     return result;
   } catch (error) {
-    captureServerError(error, `Demo booking action failed: ${context}`);
+    // captureServerError(error, `Demo booking action failed: ${context}`); // Removed: function not defined
     throw error;
   }
 }

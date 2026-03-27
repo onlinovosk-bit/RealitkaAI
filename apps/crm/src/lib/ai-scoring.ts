@@ -35,6 +35,7 @@ type MessageLike = {
   leadId: string | null;
   direction: string;
   createdAt?: string;
+  body?: string;
 };
 
 export type ScoringResult = {
