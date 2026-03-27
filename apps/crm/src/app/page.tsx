@@ -1,4 +1,3 @@
 ﻿export default function HomePage() {
-  return <div>App je nasadená – test statickej stránky.</div>;
+  return <div style={{fontSize:32, textAlign:'center', marginTop:40}}>Test: stránka je nasadená</div>;
 }
-

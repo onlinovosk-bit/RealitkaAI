@@ -21,11 +21,11 @@
       }
     ]
      ,
-     "baseUrl": "src",
+     "baseUrl": ".",
      "paths": {
-       "@/*": ["*"],
-       "@/lib/*": ["lib/*"],
-       "@/components/*": ["components/*"]
+       "@/*": ["src/*"],
+       "@/lib/*": ["src/lib/*"],
+       "@/components/*": ["src/components/*"]
      }
   },
   "include": [
