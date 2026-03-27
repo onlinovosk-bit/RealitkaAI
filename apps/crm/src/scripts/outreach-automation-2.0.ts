@@ -1,11 +1,11 @@
 // Outreach Automation 2.0 Script
 // Features: automatic sequences, scheduling, reply tracking, CRM integration
 
-import { getLead, addLeadActivity, type Lead } from "../../lib/leads-store";
-import { sendAiOutreachEmail } from "../../lib/outreach-store";
-import { getFollowupTemplates } from "../../lib/followup-templates";
-import { scheduleJob } from "../../lib/scheduler";
-import { getRepliesForLead } from "../../lib/email-tracking";
+import { getLead, addLeadActivity, type Lead } from "../lib/leads-store";
+import { sendAiOutreachEmail } from "../lib/outreach-store";
+import { getFollowupTemplates } from "../lib/followup-templates";
+import { scheduleJob } from "../lib/scheduler";
+import { getRepliesForLead } from "../lib/email-tracking";
 
 // 1. Automatic Outreach Sequence
 export async function runOutreachSequence(leadId: string) {
@@ -26,7 +26,7 @@ export async function runOutreachSequence(leadId: string) {
         // Check if lead replied
         const replies = await getRepliesForLead(leadId);
         if (replies.length === 0) {
-          await sendAiOutreachEmail(leadId, followup.templateId);
+          await sendAiOutreachEmail(leadId);
           await addLeadActivity(leadId, `Follow-up ${i + 1} sent`, "Email");
         }
       },
