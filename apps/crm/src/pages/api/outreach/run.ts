@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { runOutreachSequence } from "@crm/scripts/outreach-automation-2.0";
+import { runOutreachSequence } from "../../../scripts/outreach-automation-2.0";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
