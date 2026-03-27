@@ -7,7 +7,6 @@ import { getFollowupTemplates } from "@/lib/followup-templates";
 import { scheduleJob } from "@/lib/scheduler";
 import { getRepliesForLead } from "@/lib/email-tracking";
 
-
 // 1. Automatic Outreach Sequence
 export async function runOutreachSequence(leadId: string) {
   const lead = await getLead(leadId);
@@ -34,10 +33,3 @@ export async function runOutreachSequence(leadId: string) {
     });
   }
 }
-
-// 2. Scheduling (uses scheduleJob for all follow-ups)
-// 3. Tracking Replies (uses getRepliesForLead before each follow-up)
-// 4. CRM Integration (updates activities, lead status)
-
-// Usage example:
-// await runOutreachSequence("lead123");
