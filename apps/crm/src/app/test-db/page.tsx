@@ -369,7 +369,322 @@ export default function OnboardingPage() {
     );
   }
 
-  // ... Steps 2-9 would be implemented here in the same style ...
+  // Step 2: Nastav svoju realitku
+  function Step2() {
+    return (
+      <form onSubmit={e => { e.preventDefault(); handleNext(); }}>
+        <p className="text-xs font-medium text-gray-500 mb-2">— KROK 2 ZO 8 —</p>
+        <h1 className="text-3xl font-semibold text-gray-900 mb-2">Nastav svoju realitku 🏢</h1>
+        <p className="text-gray-600 mb-6">Tieto info použijeme na personalizáciu AI asistenta a všetkých komunikácií smerom ku klientom.</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <InputField label="Názov realitnej kancelárie *" value={form.agencyName} onChange={e => handleInput("agencyName", e.target.value)} placeholder="Napr. Reality Novák s.r.o." required />
+          <InputField label="Mesto / región *" value={form.agencyRegion} onChange={e => handleInput("agencyRegion", e.target.value)} placeholder="Napr. Bratislava" required />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Počet maklérov v tíme</label>
+            <select className="border border-gray-300 rounded px-3 py-2 w-full text-base text-gray-900" value={form.agentCount} onChange={e => handleInput("agentCount", e.target.value)}>
+              {agentCounts.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Mesačný počet leadov (odhadom)</label>
+            <select className="border border-gray-300 rounded px-3 py-2 w-full text-base text-gray-900" value={form.leadCount} onChange={e => handleInput("leadCount", e.target.value)}>
+              {leadCounts.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+            </select>
+          </div>
+        </div>
+        <div className="mb-4">
+          <div className="text-sm font-medium text-gray-500 mb-2">Čo momentálne používate (CRM / systém)?</div>
+          <div className="flex flex-wrap">
+            {crmOptions.map(opt => (
+              <Tag key={opt} label={opt} active={form.crm === opt} onClick={() => handleInput("crm", opt)} />
+            ))}
+          </div>
+        </div>
+        <div className="mb-4">
+          <div className="text-sm font-medium text-gray-500 mb-2">Hlavné bolesti (vyber čo vás trápi)</div>
+          <div className="flex flex-wrap">
+            {painOptions.map(opt => (
+              <Tag key={opt} label={opt} active={form.pains.includes(opt)} onClick={() => handleArrayInput("pains", opt)} />
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <InputField label="Telefón kancelárie" value={form.agencyPhone} onChange={e => handleInput("agencyPhone", e.target.value)} placeholder="+421 XXX XXX XXX" />
+          <InputField label="Web stránka" value={form.agencyWeb} onChange={e => handleInput("agencyWeb", e.target.value)} placeholder="https://vasarealitka.sk" />
+        </div>
+        <InfoBox>
+          🔒 Vaše dáta sú bezpečné. Používame ich výhradne na personalizáciu vášho AI asistenta a nikdy ich nepredávame tretím stranám.
+        </InfoBox>
+        <div className="flex gap-2">
+          <button type="button" className="border border-gray-300 text-gray-700 px-4 py-2 rounded" onClick={handleBack}>← Späť</button>
+          <button type="submit" className="bg-gray-900 text-white px-6 py-2 rounded text-base">Pokračovať →</button>
+        </div>
+      </form>
+    );
+  }
+
+  // Step 3: Tvoj profil makléra
+  function Step3() {
+    return (
+      <form onSubmit={e => { e.preventDefault(); handleNext(); }}>
+        <p className="text-xs font-medium text-gray-500 mb-2">— KROK 3 ZO 8 —</p>
+        <h1 className="text-3xl font-semibold text-gray-900 mb-2">Tvoj profil makléra 👤</h1>
+        <p className="text-gray-600 mb-6">Klienti ťa spoznajú cez tvoj AI asistent. Čím lepší profil, tým dôveryhodnejší prvý dojem.</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <InputField label="Telefón *" value={form.profilePhone} onChange={e => handleInput("profilePhone", e.target.value)} placeholder="+421 XXX XXX XXX" required />
+          <InputField label="LinkedIn profil" value={form.profileLinkedin} onChange={e => handleInput("profileLinkedin", e.target.value)} placeholder="linkedin.com/in/tvoje-meno" />
+        </div>
+        <TextareaField label="Krátke bio (zobrazí sa klientom)" value={form.profileBio} onChange={e => handleInput("profileBio", e.target.value)} placeholder="Napr: Pomáhám rodinám nájsť domov v Bratislave od roku 2015. Špecializujem sa na nové byty a rodinné domy..." className="mb-4" />
+        <div className="mb-4">
+          <div className="text-sm font-medium text-gray-500 mb-2">Špecializácia</div>
+          <div className="flex flex-wrap">
+            {specializationOptions.map(opt => (
+              <Tag key={opt} label={opt} active={form.specialization.includes(opt)} onClick={() => handleArrayInput("specialization", opt)} />
+            ))}
+          </div>
+        </div>
+        <div className="mb-4">
+          <div className="text-sm font-medium text-gray-500 mb-2">Jazyky komunikácie</div>
+          <div className="flex flex-wrap">
+            {languageOptions.map(opt => (
+              <Tag key={opt} label={opt} active={form.languages.includes(opt)} onClick={() => handleArrayInput("languages", opt)} />
+            ))}
+          </div>
+        </div>
+        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center mb-4">
+          <div className="text-3xl mb-2">📷</div>
+          <div className="mb-1">Nahraj svoju profilovú fotku</div>
+          <div className="text-xs text-gray-500 mb-2">PNG, JPG do 5MB — lepšia foto = viac dôvery od klientov</div>
+          <input type="file" accept="image/png,image/jpeg" onChange={e => {
+            const file = e.target.files?.[0];
+            if (file) {
+              setProfilePhotoUrl(URL.createObjectURL(file));
+              handleInput("profilePhoto", file);
+            }
+          }} />
+          {profilePhotoUrl && <img src={profilePhotoUrl} alt="Profilová fotka" className="mx-auto mt-2 rounded-full w-20 h-20 object-cover" />}
+        </div>
+        <div className="flex gap-2">
+          <button type="button" className="border border-gray-300 text-gray-700 px-4 py-2 rounded" onClick={handleBack}>← Späť</button>
+          <button type="submit" className="bg-gray-900 text-white px-6 py-2 rounded text-base">Pokračovať →</button>
+        </div>
+      </form>
+    );
+  }
+
+  // Step 4: Nakonfiguruj AI asistenta
+  function Step4() {
+    return (
+      <form onSubmit={e => { e.preventDefault(); handleNext(); }}>
+        <p className="text-xs font-medium text-gray-500 mb-2">— KROK 4 ZO 8 —</p>
+        <h1 className="text-3xl font-semibold text-gray-900 mb-2">Nakonfiguruj AI asistenta 🤖</h1>
+        <p className="text-gray-600 mb-6">Toto je srdce Revolisu. Tvoj AI obchodník bude pracovať za teba non-stop. Nastav mu osobnosť a správanie.</p>
+        <InputField label="Meno tvojho AI asistenta" value={form.aiName} onChange={e => handleInput("aiName", e.target.value)} required className="mb-4" />
+        <div className="mb-4">
+          <div className="text-sm font-medium text-gray-500 mb-2">Tón komunikácie AI</div>
+          <div className="flex gap-2">
+            {aiTones.map(tone => (
+              <button key={tone.id} type="button" className={`px-3 py-2 rounded ${form.aiTone === tone.id ? "border-2 border-gray-900 bg-gray-50" : "border border-gray-200"}`} onClick={() => handleInput("aiTone", tone.id)}>
+                <span className="mr-1">{tone.icon}</span>{tone.id}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Primárny jazyk</label>
+            <input className="border border-gray-300 rounded px-3 py-2 w-full text-base text-gray-900" value="sk Slovenčina" disabled />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Oneskorenie auto-odpovede</label>
+            <input className="border border-gray-300 rounded px-3 py-2 w-full text-base text-gray-900" value="5 minút (odporúčané)" disabled />
+          </div>
+        </div>
+        <div className="mb-4">
+          <Toggle label="Automatické odpovedanie" desc="AI odpovedá na každý dotaz automaticky bez tvojho zásahu." value={form.aiAutoReply} onChange={v => handleInput("aiAutoReply", v)} icon={<span>🤖</span>} />
+          <Toggle label="Pracovné hodiny" desc="AI odpovedá len počas pracovných hodín (napr. 8:00–18:00)." value={form.aiWorkHours} onChange={v => handleInput("aiWorkHours", v)} icon={<span>🕐</span>} />
+          <Toggle label="Smart lead scoring" desc="AI automaticky hodnotí pripravenosť leadov a upozorní na top prioritné." value={form.aiLeadScoring} onChange={v => handleInput("aiLeadScoring", v)} icon={<span>⭐</span>} />
+        </div>
+        <div className="bg-gray-50 border rounded-lg p-4 mb-4">
+          <div className="flex items-center gap-2 mb-2"><span className="text-2xl">🤖</span><span className="font-medium">Sofia</span><span className="ml-2 text-green-600 text-xs">● Online — odpovedá za 5 min</span></div>
+          <div className="bg-white border rounded-lg p-3 text-sm">Dobrý deň! Som Sofia, digitálny asistent našej realitnej kancelárie. Rád vám pomôžem nájsť nehnuteľnosť podľa vašich predstáv. Čo práve hľadáte?</div>
+        </div>
+        <InfoBox>
+          ⚡ Výsledok maklérov s Revolis AI: Priemerná odpoveď na lead za 2 min (vs. 4 hodiny manuálne). Konverzný pomer leadov +34%.
+        </InfoBox>
+        <div className="flex gap-2">
+          <button type="button" className="border border-gray-300 text-gray-700 px-4 py-2 rounded" onClick={handleBack}>← Späť</button>
+          <button type="submit" className="bg-gray-900 text-white px-6 py-2 rounded text-base">Generovať AI & pokračovať →</button>
+        </div>
+      </form>
+    );
+  }
+
+  // Step 5: Import kontaktov & leadov
+  function Step5() {
+    return (
+      <form onSubmit={e => { e.preventDefault(); handleNext(); }}>
+        <p className="text-xs font-medium text-gray-500 mb-2">— KROK 5 ZO 8 —</p>
+        <h1 className="text-3xl font-semibold text-gray-900 mb-2">Import kontaktov & leadov 📋</h1>
+        <p className="text-gray-600 mb-6">Presuň existujúce kontakty do Revolis. Môžeš to spraviť teraz alebo neskôr — systém bude fungovať aj bez importu.</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          {importOptions.map(opt => (
+            <OptionCard key={opt.id} id={opt.id} label={opt.label} icon={opt.icon} desc={opt.desc} active={form.importSource === opt.id} onClick={id => handleInput("importSource", id)} />
+          ))}
+        </div>
+        <InfoBox>
+          💡 Tip: Aj 20 starých kontaktov môže priniesť okamžité výsledky. Revolis AI automaticky osloví všetkých nevybavených leadov s personalizovanou správou.
+        </InfoBox>
+        <div className="flex gap-2">
+          <button type="button" className="border border-gray-300 text-gray-700 px-4 py-2 rounded" onClick={handleBack}>← Späť</button>
+          <button type="button" className="border border-gray-300 text-gray-700 px-4 py-2 rounded" onClick={handleNext}>Preskočiť na neskôr</button>
+          <button type="submit" className="bg-gray-900 text-white px-6 py-2 rounded text-base">Pokračovať →</button>
+        </div>
+      </form>
+    );
+  }
+
+  // Step 6: Predajný pipeline
+  function Step6() {
+    return (
+      <form onSubmit={e => { e.preventDefault(); handleNext(); }}>
+        <p className="text-xs font-medium text-gray-500 mb-2">— KROK 6 ZO 8 —</p>
+        <h1 className="text-3xl font-semibold text-gray-900 mb-2">Predajný pipeline 🏗️</h1>
+        <p className="text-gray-600 mb-6">Revolis má prednastavený pipeline pre reality. Môžeš ho prispôsobiť alebo použiť tak ako je.</p>
+        <div className="mb-4">
+          <div className="text-sm font-medium text-gray-500 mb-2">Fázy predaja</div>
+          <div className="bg-gray-50 border rounded p-3">
+            {pipelineStages.map((stage, i) => (
+              <div key={stage} className="flex justify-between py-1 border-b last:border-b-0 border-gray-100">
+                <span>● {stage}</span>
+                <span className="text-gray-400">0 leadov</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="mb-4">
+          <div className="text-sm font-medium text-gray-500 mb-2">Automatické akcie (zapni čo chceš)</div>
+          <Toggle label="Auto-uvítacia správa pre nový lead" value={form.pipelineToggles.welcome} onChange={v => handleInput("pipelineToggles", { ...form.pipelineToggles, welcome: v })} icon={<span>📩</span>} />
+          <Toggle label="Follow-up ak 3 dni bez odpovede" value={form.pipelineToggles.followup} onChange={v => handleInput("pipelineToggles", { ...form.pipelineToggles, followup: v })} icon={<span>📅</span>} />
+          <Toggle label="Pripomienka prehliadky 1 deň vopred" value={form.pipelineToggles.viewing} onChange={v => handleInput("pipelineToggles", { ...form.pipelineToggles, viewing: v })} icon={<span>🏠</span>} />
+          <Toggle label="Upozornenie keď lead dosiahne skóre 75+" value={form.pipelineToggles.score} onChange={v => handleInput("pipelineToggles", { ...form.pipelineToggles, score: v })} icon={<span>⭐</span>} />
+          <Toggle label="Gratulácia klientovi k narodeninám" value={form.pipelineToggles.birthday} onChange={v => handleInput("pipelineToggles", { ...form.pipelineToggles, birthday: v })} icon={<span>🎂</span>} />
+        </div>
+        <InfoBox>
+          ⚡ Makléri s automatickými follow-upmi uzatvoria o 27% viac obchodov. Revolis posiela správy v optimálnom čase automaticky.
+        </InfoBox>
+        <div className="flex gap-2">
+          <button type="button" className="border border-gray-300 text-gray-700 px-4 py-2 rounded" onClick={handleBack}>← Späť</button>
+          <button type="submit" className="bg-gray-900 text-white px-6 py-2 rounded text-base">Pokračovať →</button>
+        </div>
+      </form>
+    );
+  }
+
+  // Step 7: Prepoj nástroje
+  function Step7() {
+    return (
+      <form onSubmit={e => { e.preventDefault(); handleNext(); }}>
+        <p className="text-xs font-medium text-gray-500 mb-2">— KROK 7 ZO 8 —</p>
+        <h1 className="text-3xl font-semibold text-gray-900 mb-2">Prepoj nástroje 🔗</h1>
+        <p className="text-gray-600 mb-6">Spoj Revolis s nástrojmi, ktoré už používaš. Každé prepojenie ti ušetrí hodiny manuálnej práce.</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          {integrationOptions.map(opt => (
+            <div key={opt.id} className="border border-gray-200 rounded-lg p-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">{opt.icon}</span>
+                <div>
+                  <div className="font-medium text-gray-900">{opt.name}</div>
+                  <div className="text-xs text-gray-500">{opt.desc}</div>
+                </div>
+              </div>
+              <button type="button" className="border border-gray-300 rounded px-3 py-1 text-sm">Pripojiť</button>
+            </div>
+          ))}
+        </div>
+        <InfoBox>
+          ℹ️ Prepojenia môžeš kedykoľvek pridať aj v nastaveniach. Pre WhatsApp a portály potrebuješ API kľúč — náš tím ti pomôže s nastavením.
+        </InfoBox>
+        <div className="flex gap-2">
+          <button type="button" className="border border-gray-300 text-gray-700 px-4 py-2 rounded" onClick={handleBack}>← Späť</button>
+          <button type="button" className="text-gray-500 px-4 py-2 rounded" onClick={handleNext}>Preskočiť</button>
+          <button type="submit" className="bg-gray-900 text-white px-6 py-2 rounded text-base">Pokračovať →</button>
+        </div>
+      </form>
+    );
+  }
+
+  // Step 8: Definuj svoje ciele
+  function Step8() {
+    return (
+      <form onSubmit={e => { e.preventDefault(); handleNext(); }}>
+        <p className="text-xs font-medium text-gray-500 mb-2">— KROK 8 ZO 8 —</p>
+        <h1 className="text-3xl font-semibold text-gray-900 mb-2">Definuj svoje ciele 🎯</h1>
+        <p className="text-gray-600 mb-6">Revolis prispôsobí AI odporúčania a analytiku podľa tvojich cieľov. Kde chceš byť o 6 mesiacov?</p>
+        <div className="mb-4">
+          <div className="text-sm font-medium text-gray-500 mb-2">Primárny cieľ</div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {mainGoalOptions.map(opt => (
+              <OptionCard key={opt.id} id={opt.id} label={opt.label} icon={opt.icon} desc={opt.desc} active={form.mainGoal === opt.id} onClick={id => handleInput("mainGoal", id)} />
+            ))}
+          </div>
+        </div>
+        <div className="mb-4">
+          <div className="text-sm font-medium text-gray-500 mb-2">Cieľové KPI (nastav čísla)</div>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xl">🎯</span>
+            <span className="mr-2">Leadov mesačne</span>
+            <input type="range" min={1} max={100} value={form.kpiLeads} onChange={e => handleInput("kpiLeads", Number(e.target.value))} className="flex-1" />
+            <span className="ml-2 font-medium">{form.kpiLeads}</span>
+            <button type="button" className="border border-gray-300 rounded px-3 py-1 text-sm ml-2">Nastaviť</button>
+          </div>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xl">🕐</span>
+            <span className="mr-2">Dní do uzavretia</span>
+            <input type="range" min={1} max={180} value={form.kpiDays} onChange={e => handleInput("kpiDays", Number(e.target.value))} className="flex-1" />
+            <span className="ml-2 font-medium">{form.kpiDays} dní</span>
+          </div>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xl">📊</span>
+            <span className="mr-2">Konverzný pomer</span>
+            <input type="range" min={1} max={100} value={form.kpiConversion} onChange={e => handleInput("kpiConversion", Number(e.target.value))} className="flex-1" />
+            <span className="ml-2 font-medium">{form.kpiConversion}%</span>
+          </div>
+        </div>
+        <InfoBox>
+          🚀 Revolis bude merať tvoj pokrok voči týmto cieľom a každý týždeň ti pošle report s odporúčaniami čo zlepšiť.
+        </InfoBox>
+        <div className="flex gap-2">
+          <button type="button" className="border border-gray-300 text-gray-700 px-4 py-2 rounded" onClick={handleBack}>← Späť</button>
+          <button type="submit" className="bg-gray-900 text-white px-8 py-3 rounded-lg text-base">Spustiť Revolis.AI</button>
+        </div>
+      </form>
+    );
+  }
+
+  // Step 9: Completion
+  function Step9() {
+    return (
+      <div>
+        <h1 className="text-3xl font-semibold text-gray-900 mb-2">Revolis.AI je živý!</h1>
+        <p className="text-gray-600 mb-6">Tvoj AI asistent Sofia je aktívny a čaká na prvý lead.</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div className="border border-gray-200 rounded-lg p-4 text-center"><div className="text-xl font-bold">24/7</div><div className="text-xs text-gray-500">AI asistent aktívny</div></div>
+          <div className="border border-gray-200 rounded-lg p-4 text-center"><div className="text-xl font-bold">0</div><div className="text-xs text-gray-500">Kontaktov importovaných</div></div>
+          <div className="border border-gray-200 rounded-lg p-4 text-center"><div className="text-xl font-bold">0</div><div className="text-xs text-gray-500">Freqení aktívnych</div></div>
+          <div className="border border-gray-200 rounded-lg p-4 text-center"><div className="text-xl font-bold">7</div><div className="text-xs text-gray-500">Automatizácií zapnutých</div></div>
+          <div className="border border-gray-200 rounded-lg p-4 text-center"><div className="text-xl font-bold">&lt;2min</div><div className="text-xs text-gray-500">AI čas odpovede</div></div>
+          <div className="border border-gray-200 rounded-lg p-4 text-center"><div className="text-xl font-bold">+34%</div><div className="text-xs text-gray-500">Priemerný nárast konverzií</div></div>
+        </div>
+        <div className="grid grid-cols-1 gap-4 mb-6">
+          <div className="border border-gray-200 rounded-lg p-4 flex items-center justify-between"><div className="flex items-center gap-2"><span className="text-2xl">📊</span><div><div className="font-medium text-gray-900">Pozri si dashboard</div><div className="text-xs text-gray-500">Prehľad leadov, pipeline a štatistiky</div></div></div><button className="text-gray-900 font-medium">Otvoriť dashboard →</button></div>
+          <div className="border border-gray-200 rounded-lg p-4 flex items-center justify-between"><div className="flex items-center gap-2"><span className="text-2xl">🤖</span><div><div className="font-medium text-gray-900">Otestuj AI asistenta</div><div className="text-xs text-gray-500">Pošli testovaciu správu a pozri ako odpovedá</div></div></div><button className="text-gray-900 font-medium">Otestovať →</button></div>
+          <div className="border border-gray-200 rounded-lg p-4 flex items-center justify-between"><div className="flex items-center gap-2"><span className="text-2xl">➕</span><div><div className="font-medium text-gray-900">Pridaj prvý lead</div><div className="text-xs text-gray-500">Vyskúšaj manuálne alebo cez import z portálu</div></div></div><button className="text-gray-900 font-medium">Pridať lead →</button></div>
+        </div>
+        <button className="bg-gray-900 text-white px-8 py-3 rounded-lg text-base w-full">🚀 Prejsť do Revolis.AI Dashboard</button>
+      </div>
+    );
+  }
 
   // Render sidebar
   function Sidebar() {
@@ -403,10 +718,19 @@ export default function OnboardingPage() {
 
   // Render main content
   function MainContent() {
+    // Debug: show current step in console
+    console.log("step", step);
     return (
       <main className="flex-1 p-8 max-w-2xl">
         {step === 1 && <Step1 />}
-        {/* Step2, Step3, ... Step9 would be rendered here */}
+        {step === 2 && <Step2 />}
+        {step === 3 && <Step3 />}
+        {step === 4 && <Step4 />}
+        {step === 5 && <Step5 />}
+        {step === 6 && <Step6 />}
+        {step === 7 && <Step7 />}
+        {step === 8 && <Step8 />}
+        {step === 9 && <Step9 />}
       </main>
     );
   }
