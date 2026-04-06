@@ -1,5 +1,28 @@
+
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { supabaseClient } from "@/lib/supabase/client";
+import { v4 as uuidv4 } from "uuid";
+
+// Simple toast (replace with your toast lib if needed)
+function showToast(msg: string) {
+  if (typeof window !== "undefined") {
+    const el = document.createElement("div");
+    el.textContent = msg;
+    el.style.position = "fixed";
+    el.style.bottom = "32px";
+    el.style.left = "50%";
+    el.style.transform = "translateX(-50%)";
+    el.style.background = "#222";
+    el.style.color = "#fff";
+    el.style.padding = "12px 24px";
+    el.style.borderRadius = "8px";
+    el.style.zIndex = "9999";
+    el.style.fontSize = "15px";
+    document.body.appendChild(el);
+    setTimeout(() => { el.remove(); }, 3200);
+  }
+}
 
 function InfoBox({ children }: { children: React.ReactNode }) {
   return <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-700 mb-4">{children}</div>;
@@ -61,6 +84,7 @@ const sidebarSteps = [
   { id: 9, emoji: "✓", label: "Hotovo!", duration: "" },
 ];
 
+
 export default function TestDbClient() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -76,10 +100,81 @@ export default function TestDbClient() {
     connections: [] as string[], primaryGoal: "",
     kpiLeads: 30, kpiDays: 45, kpiConversion: 15,
   });
+  const [loading, setLoading] = useState(true);
+  const sessionIdRef = useRef<string | null>(null);
+
+  // --- Hydration on mount ---
+  useEffect(() => {
+    const hydrate = async () => {
+      let sessionId = localStorage.getItem("onboarding_session_id");
+      if (!sessionId) {
+        setLoading(false);
+        return;
+      }
+      sessionIdRef.current = sessionId;
+      // Fetch from Supabase
+      const { data, error } = await supabaseClient
+        .from("onboarding_sessions")
+        .select("step, form_data")
+        .eq("session_id", sessionId)
+        .single();
+      if (data) {
+        setStep(data.step || 1);
+        setFormData(data.form_data || {});
+      }
+      setLoading(false);
+    };
+    hydrate();
+  }, []);
+
+  // --- Save progress to Supabase ---
+  const saveProgress = async (nextStep: number, nextFormData: any) => {
+    let sessionId = sessionIdRef.current;
+    if (!sessionId) {
+      sessionId = uuidv4();
+      sessionIdRef.current = sessionId;
+      localStorage.setItem("onboarding_session_id", sessionId);
+    }
+    const { error } = await supabaseClient
+      .from("onboarding_sessions")
+      .upsert([
+        {
+          session_id: sessionId,
+          step: nextStep,
+          form_data: nextFormData,
+          updated_at: new Date().toISOString(),
+        },
+      ]);
+    if (error) {
+      showToast("Nepodarilo sa uložiť postup. Skúste znova neskôr.");
+    }
+  };
+
+  // --- Step navigation ---
   const update = (fields: object) => setFormData(prev => ({ ...prev, ...fields }));
-  const next = () => setStep(s => Math.min(s + 1, 9));
+  const next = async () => {
+    const nextStep = Math.min(step + 1, 9);
+    setStep(nextStep);
+    saveProgress(nextStep, formData);
+  };
   const back = () => setStep(s => Math.max(s - 1, 1));
   const progress = ((step - 1) / 8) * 100;
+
+  // --- On first step, ensure sessionId exists ---
+  useEffect(() => {
+    if (step === 1 && !sessionIdRef.current) {
+      let sessionId = localStorage.getItem("onboarding_session_id");
+      if (!sessionId) {
+        sessionId = uuidv4();
+        localStorage.setItem("onboarding_session_id", sessionId);
+      }
+      sessionIdRef.current = sessionId;
+    }
+  }, [step]);
+
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen text-gray-500">Načítavam...</div>;
+  }
 
   return (
     <div className="flex min-h-screen bg-white">
