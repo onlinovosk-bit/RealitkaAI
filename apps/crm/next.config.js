@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  turbopack: {},
+	outputFileTracingRoot: __dirname,
 };
 
 module.exports = nextConfig;

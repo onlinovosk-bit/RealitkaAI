@@ -1,5 +1,5 @@
-import TestDbClient from "./TestDbClient";
+import { redirect } from "next/navigation";
 
 export default function Page() {
-  return <TestDbClient />;
+  redirect("/onboarding");
 }

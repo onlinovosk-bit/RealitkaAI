@@ -79,5 +79,5 @@ export async function register(formData: FormData) {
     }
   }
 
-  redirect("/login?registered=1");
+  redirect("/onboarding/step-1-vitaj");
 }

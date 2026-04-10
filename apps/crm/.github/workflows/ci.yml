@@ -2,62 +2,7 @@ name: CI
 
 on:
   push:
-    branches:
-      - '**'
-  pull_request:
-    branches:
-      - '**'
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    # [ADR-006] Globálne prostredie pre testy
-    env:
-      NODE_ENV: test
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm' # Automatický caching dependencies
-          cache-dependency-path: ./apps/crm/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-        working-directory: ./apps/crm
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-
-      - name: Run unit and integration tests
-        run: npx vitest run
-        working-directory: ./apps/crm
-
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
-        working-directory: ./apps/crm
-
-      - name: Run Playwright tests
-        run: npx playwright test
-        working-directory: ./apps/crm
-
-      - name: Upload Playwright test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-results
-          path: ./apps/crm/test-results
-          retention-days: 30
-
-name: CI
-
-on:
-  push:
-    branches: ["main", "master", "develop"]
+    branches: ["main", "master", "develop", "**"] # Sleduje hlavné vetvy aj všetky ostatné
   pull_request:
     branches: ["main", "master", "develop"]
 
@@ -65,10 +10,13 @@ jobs:
   test_and_build:
     runs-on: ubuntu-latest
 
-    # [ADR-010] Správna definícia ENV kontextu pre GitHub Actions
+    # [ADR-010] Globálne prostredie pre testy a build
     env:
+      NODE_ENV: test
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+      TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
       CI: true
 
     steps:

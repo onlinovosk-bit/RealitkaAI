@@ -18,6 +18,8 @@ export type Lead = {
   assignedProfileId?: string | null;
   lastContact: string;
   note: string;
+  client_segment?: string | null;
+  buyer_readiness_score?: number | null;
 };
 
 export type Activity = {

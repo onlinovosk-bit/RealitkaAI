@@ -1,5 +1,24 @@
-﻿import { redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+
+// Client-side token helper (used by api.ts)
+const TOKEN_KEY = "access_token";
+export const auth = {
+  getToken(): string | null {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem(TOKEN_KEY);
+  },
+  setToken(token: string) {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(TOKEN_KEY, token);
+    document.cookie = `token=${token}; path=/`;
+  },
+  logout() {
+    if (typeof window === "undefined") return;
+    localStorage.removeItem(TOKEN_KEY);
+    document.cookie = "token=; Max-Age=0; path=/";
+  },
+};
 
 export type CurrentProfile = {
   id: string;
@@ -47,10 +66,7 @@ export async function getCurrentProfile(): Promise<CurrentProfile | null> {
         .update({ auth_user_id: user.id })
         .eq("id", profile.id);
 
-      profile = {
-        ...profile,
-        auth_user_id: user.id,
-      };
+      profile = { ...profile, auth_user_id: user.id };
     }
   }
 
@@ -59,10 +75,8 @@ export async function getCurrentProfile(): Promise<CurrentProfile | null> {
 
 export async function requireUser() {
   const user = await getCurrentUser();
-
   if (!user) {
     redirect("/login");
   }
-
   return user;
 }

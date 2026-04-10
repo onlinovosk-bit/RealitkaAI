@@ -3,6 +3,7 @@
 import Sidebar from "@/components/layout/sidebar";
 import Topbar from "@/components/layout/topbar";
 import { getCurrentProfile, requireUser } from "@/lib/auth";
+import { mapProfileRole } from "@/lib/navigation";
 
 import DashboardClientShell from "./DashboardClientShell";
 
@@ -11,7 +12,6 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  console.log('DASHBOARD LAYOUT RENDER', { time: new Date().toISOString() });
   const user = await requireUser();
   const profile = await getCurrentProfile();
 
@@ -20,11 +20,13 @@ export default async function DashboardLayout({
     user.email ||
     "Prihlásený používateľ";
 
-  const role = "owner";
+  const role = mapProfileRole(profile?.role);
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar role={role} />
+      <div className="hidden md:block">
+        <Sidebar role={role} />
+      </div>
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar userName={userName} role={role} />
         <DashboardClientShell userId={userName}>

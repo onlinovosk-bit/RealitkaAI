@@ -1,3 +1,52 @@
+// jednotný enum statusov (budúci štandard – EN)
+export const LeadStatusEnum = {
+  NEW: "new",
+  WARM: "warm",
+  HOT: "hot",
+  VIEWING: "viewing",
+  OFFER: "offer",
+} as const;
+
+// mapovanie DB (SK) → internal (EN)
+export const dbToInternalStatusMap: Record<string, string> = {
+  "Nový": LeadStatusEnum.NEW,
+  "Teplý": LeadStatusEnum.WARM,
+  "Horúci": LeadStatusEnum.HOT,
+  "Obhliadka": LeadStatusEnum.VIEWING,
+  "Ponuka": LeadStatusEnum.OFFER,
+};
+
+// mapovanie internal (EN) → UI label (SK)
+export const internalToUILabelMap: Record<string, string> = {
+  [LeadStatusEnum.NEW]: "Nový",
+  [LeadStatusEnum.WARM]: "Teplý",
+  [LeadStatusEnum.HOT]: "Horúci",
+  [LeadStatusEnum.VIEWING]: "Obhliadka",
+  [LeadStatusEnum.OFFER]: "Ponuka",
+};
+
+// reverse mapping (EN → DB SK)
+export const internalToDbStatusMap: Record<string, string> = {
+  [LeadStatusEnum.NEW]: "Nový",
+  [LeadStatusEnum.WARM]: "Teplý",
+  [LeadStatusEnum.HOT]: "Horúci",
+  [LeadStatusEnum.VIEWING]: "Obhliadka",
+  [LeadStatusEnum.OFFER]: "Ponuka",
+};
+
+// Helpery
+export function getInternalStatus(dbStatus: string) {
+  return dbToInternalStatusMap[dbStatus] || LeadStatusEnum.NEW;
+}
+
+export function getUILabel(internalStatus: string) {
+  return internalToUILabelMap[internalStatus] || "Nový";
+}
+
+export function getDbStatus(internalStatus: string) {
+  return internalToDbStatusMap[internalStatus] || "Nový";
+}
+
 import { supabaseClient } from "@/lib/supabase/client";
 import {
   leads as mockLeads,
@@ -135,6 +184,8 @@ type SupabaseLeadRow = {
   last_contact: string;
   note: string;
   created_at?: string;
+  client_segment?: string | null;
+  buyer_readiness_score?: number | null;
 };
 
 type SupabaseActivityRow = {
@@ -160,9 +211,11 @@ type SupabaseAiRecommendationRow = {
 
 function getSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const key =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (!url || !anonKey) {
+  if (!url || !key) {
     return null;
   }
 
@@ -172,7 +225,10 @@ function getSupabaseClient() {
 export function isSupabaseConfigured() {
   return Boolean(
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    (
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    )
   );
 }
 
@@ -197,6 +253,8 @@ function mapRowToLead(row: SupabaseLeadRow): Lead {
     assignedProfileId: row.assigned_profile_id ?? null,
     lastContact: row.last_contact || "Bez kontaktu",
     note: row.note || "",
+    client_segment: row.client_segment ?? null,
+    buyer_readiness_score: row.buyer_readiness_score ?? null,
   };
 }
 
@@ -681,7 +739,7 @@ export async function listLeads(filters?: LeadFilters): Promise<Lead[]> {
   const { data, error } = await query;
 
   if (error) {
-    console.error("Supabase listLeads error:", error.message);
+    console.error("Supabase listLeads error, using mock fallback:", error.message);
     return applyFilters(mockLeads, filters);
   }
 

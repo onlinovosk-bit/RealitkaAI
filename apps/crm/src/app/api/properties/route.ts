@@ -1,47 +1,34 @@
-﻿import { okResponse, errorResponse } from "@/lib/api-response";
-import { createProperty } from "@/lib/properties-store";
-import { createActivity } from "@/lib/activities-store";
-import { autoRecalculateForProperty } from "@/lib/matching-hooks";
+import { createClient } from "@/lib/supabase/server";
 
-export async function POST(request: Request) {
-  try {
-    const body = await request.json();
+export async function GET() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("properties").select("*");
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+  return Response.json(data);
+}
 
-    const property = await createProperty({
-      agencyId: body.agencyId ?? null,
-      title: body.title ?? "",
-      location: body.location ?? "",
-      price: Number(body.price ?? 0),
-      type: body.type ?? "Byt",
-      rooms: body.rooms ?? "2 izby",
-      features: Array.isArray(body.features) ? body.features : [],
-      status: body.status ?? "Aktívna",
-      description: body.description ?? "",
-      ownerName: body.ownerName ?? "",
-      ownerPhone: body.ownerPhone ?? "",
-    });
+export async function POST(req: Request) {
+  const supabase = await createClient();
+  const body = await req.json();
+  const { data, error } = await supabase.from("properties").insert([body]).select();
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+  return Response.json(data);
+}
 
-    try {
-      await createActivity({
-        leadId: null,
-        type: "Nehnuteľnosť",
-        title: "Vytvorená nehnuteľnosť",
-        text: `Bola vytvorená nová nehnuteľnosť: ${property.title}.`,
-        entityType: "property",
-        entityId: property.id,
-        actorName: "Systém",
-        source: "inventory",
-        severity: "info",
-      });
-    } catch {}
+export async function PUT(req: Request) {
+  const supabase = await createClient();
+  const { id, title, price } = await req.json();
+  if (!id) return Response.json({ error: "Missing id" }, { status: 400 });
+  const { error } = await supabase.from("properties").update({ title, price }).eq("id", id);
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+  return Response.json({ success: true });
+}
 
-    await autoRecalculateForProperty(property.id);
-
-    return okResponse({ property });
-  } catch (error) {
-    return errorResponse(
-      error instanceof Error ? error.message : "Nepodarilo sa vytvoriť nehnuteľnosť.",
-      400
-    );
-  }
+export async function DELETE(req: Request) {
+  const supabase = await createClient();
+  const { id } = await req.json();
+  if (!id) return Response.json({ error: "Missing id" }, { status: 400 });
+  const { error } = await supabase.from("properties").delete().eq("id", id);
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+  return Response.json({ success: true });
 }

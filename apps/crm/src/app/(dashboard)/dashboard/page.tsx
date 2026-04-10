@@ -5,25 +5,9 @@ import { useEffect, useState } from "react";
 import { getLeads, type Lead } from "@/lib/leads-store";
 import PriorityLeads from "@/components/dashboard/priority-leads";
 import ClickableAiInsights from "@/components/dashboard/clickable-ai-insights";
-import MatchingStatusOverview from "@/components/dashboard/matching-status-overview";
-import MatchingPerformanceBreakdown from "@/components/dashboard/matching-performance-breakdown";
-import AiRecommendationsMetrics from "@/components/dashboard/ai-recommendations-metrics";
-import ErrorLogDashboard from "@/components/dashboard/error-log-dashboard";
-import UsageAnalyticsWidget from "@/components/dashboard/UsageAnalyticsWidget";
-import FunnelAnalyticsWidget from "@/components/dashboard/FunnelAnalyticsWidget";
-import RetentionAnalyticsWidget from "@/components/dashboard/RetentionAnalyticsWidget";
-import FeatureAdoptionWidget from "@/components/dashboard/FeatureAdoptionWidget";
-import AlertingWidget from "@/components/dashboard/AlertingWidget";
-import AbTestingWidget from "@/components/dashboard/AbTestingWidget";
 import PropertiesSummaryWidget from "@/components/dashboard/properties-summary-widget";
-import {
-  getLeadPropertyMatchPerformanceSummary,
-  getLeadPropertyMatchSummary,
-  type LeadPropertyMatchPerformanceSummary,
-  type LeadPropertyMatchSummary,
-} from "@/lib/matching-store";
-import CalendarSyncPanel from "@/components/integrations/calendar-sync-panel";
-import GmailSyncPanel from "@/components/integrations/gmail-sync-panel";
+import QuickActionsBar from "@/components/dashboard/QuickActionsBar";
+import RecentActivityFeed from "@/components/dashboard/recent-activity-feed";
 
 type ForecastingSummary = {
   totalLeads: number;
@@ -46,28 +30,12 @@ const DEFAULT_FORECAST_TARGETS: ForecastingTargets = {
 
 function getTrend(value: number, target: number, suffix = "") {
   const diff = value - target;
-
-  if (diff > 0) {
-    return {
-      label: `+${diff.toFixed(suffix ? 0 : 2)}${suffix} nad cielom`,
-      className: "text-emerald-700",
-    };
-  }
-
-  if (diff < 0) {
-    return {
-      label: `${diff.toFixed(suffix ? 0 : 2)}${suffix} pod cielom`,
-      className: "text-rose-700",
-    };
-  }
-
-  return {
-    label: "Na cielovej hodnote",
-    className: "text-gray-600",
-  };
+  if (diff > 0) return { label: `+${diff.toFixed(suffix ? 0 : 2)}${suffix} nad cieľom`, className: "text-emerald-700" };
+  if (diff < 0) return { label: `${diff.toFixed(suffix ? 0 : 2)}${suffix} pod cieľom`, className: "text-rose-700" };
+  return { label: "Na cieľovej hodnote", className: "text-gray-600" };
 }
 
-function KpiCard({ title, value, subtitle }: { title: string; value: number; subtitle: string }) {
+function KpiCard({ title, value, subtitle }: { title: string; value: string | number; subtitle: string }) {
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
       <p className="text-sm text-gray-500">{title}</p>
@@ -79,132 +47,81 @@ function KpiCard({ title, value, subtitle }: { title: string; value: number; sub
 
 export default function DashboardPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [matchSummary, setMatchSummary] = useState<LeadPropertyMatchSummary>({
-    total: 0,
-    sent: 0,
-    viewed: 0,
-    interested: 0,
-    rejected: 0,
-    avgScore: 0,
-  });
-  const [matchPerformance, setMatchPerformance] = useState<LeadPropertyMatchPerformanceSummary>({
-    byAgent: [],
-    byTeam: [],
-  });
   const [forecastingSummary, setForecastingSummary] = useState<ForecastingSummary | null>(null);
-  const [forecastTargets, setForecastTargets] = useState<ForecastingTargets>(
-    DEFAULT_FORECAST_TARGETS
-  );
+  const [forecastTargets, setForecastTargets] = useState<ForecastingTargets>(DEFAULT_FORECAST_TARGETS);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function loadDashboard() {
       try {
-        const [leadsData, summaryData, performanceData] = await Promise.all([
-          getLeads(),
-          getLeadPropertyMatchSummary(),
-          getLeadPropertyMatchPerformanceSummary(),
-        ]);
+        const leadsData = await getLeads();
         setLeads(leadsData);
-        setMatchSummary(summaryData);
-        setMatchPerformance(performanceData);
-
         try {
           const response = await fetch("/api/forecasting/summary");
           if (response.ok) {
             const payload = await response.json();
-            if (payload?.summary) {
-              setForecastingSummary(payload.summary as ForecastingSummary);
-            }
+            if (payload?.summary) setForecastingSummary(payload.summary as ForecastingSummary);
             if (payload?.targets) {
               setForecastTargets({
-                expectedClosedDeals:
-                  Number(payload.targets.expectedClosedDeals) ||
-                  DEFAULT_FORECAST_TARGETS.expectedClosedDeals,
-                expectedPipelineValue:
-                  Number(payload.targets.expectedPipelineValue) ||
-                  DEFAULT_FORECAST_TARGETS.expectedPipelineValue,
-                avgProbabilityPercent:
-                  Number(payload.targets.avgProbabilityPercent) ||
-                  DEFAULT_FORECAST_TARGETS.avgProbabilityPercent,
+                expectedClosedDeals: Number(payload.targets.expectedClosedDeals) || DEFAULT_FORECAST_TARGETS.expectedClosedDeals,
+                expectedPipelineValue: Number(payload.targets.expectedPipelineValue) || DEFAULT_FORECAST_TARGETS.expectedPipelineValue,
+                avgProbabilityPercent: Number(payload.targets.avgProbabilityPercent) || DEFAULT_FORECAST_TARGETS.avgProbabilityPercent,
               });
             }
           }
-        } catch {
-        }
+        } catch { /* forecasting optional */ }
       } catch (error) {
         console.error("Failed to load dashboard:", error);
       } finally {
         setIsLoading(false);
       }
     }
-
     void loadDashboard();
   }, []);
 
   if (isLoading) {
     return (
       <main className="p-6">
-        <div className="text-center">Načítavam dashboard...</div>
+        <div className="text-center text-sm text-gray-400">Načítavam dashboard…</div>
       </main>
     );
   }
 
   const totalLeads = leads.length;
-  const hotLeads = leads.filter((l) => l.status === "Horúci").length;
-  const showings = leads.filter((l) => l.status === "Obhliadka").length;
-  const avgScore = leads.length > 0 ? Math.round(leads.reduce((sum, l) => sum + l.score, 0) / leads.length) : 0;
-  const dealsTrend = forecastingSummary
-    ? getTrend(forecastingSummary.expectedClosedDeals, forecastTargets.expectedClosedDeals)
-    : null;
-  const valueTrend = forecastingSummary
-    ? getTrend(
-        forecastingSummary.expectedPipelineValue,
-        forecastTargets.expectedPipelineValue,
-        " EUR"
-      )
-    : null;
-  const probabilityTrend = forecastingSummary
-    ? getTrend(
-        forecastingSummary.avgProbabilityPercent,
-        forecastTargets.avgProbabilityPercent,
-        " %"
-      )
-    : null;
+  const hotLeads = leads.filter(l => l.status === "Horúci").length;
+  const showings = leads.filter(l => l.status === "Obhliadka").length;
+  const offers = leads.filter(l => l.status === "Ponuka").length;
+  const conversionRate = totalLeads > 0 ? Math.round((offers / totalLeads) * 100) : 0;
+
+  const dealsTrend = forecastingSummary ? getTrend(forecastingSummary.expectedClosedDeals, forecastTargets.expectedClosedDeals) : null;
+  const valueTrend = forecastingSummary ? getTrend(forecastingSummary.expectedPipelineValue, forecastTargets.expectedPipelineValue, " EUR") : null;
+  const probabilityTrend = forecastingSummary ? getTrend(forecastingSummary.avgProbabilityPercent, forecastTargets.avgProbabilityPercent, " %") : null;
 
   return (
     <main className="p-6">
       <div className="mx-auto max-w-7xl">
-        <ErrorLogDashboard />
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="mt-1 text-gray-500">
-            Prehľad výkonnosti tímu a prioritných leadov.
-          </p>
+          <p className="mt-1 text-gray-500">Prehľad výkonnosti tímu a prioritných leadov.</p>
         </div>
 
         <section className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <KpiCard title="Všetky leady" value={totalLeads} subtitle="V databáze CRM" />
-          <KpiCard title="Horúce leady" value={hotLeads} subtitle="Priorita kontaktu" />
-          <KpiCard title="Naplánované obhliadky" value={showings} subtitle="Aktívne stretnutia" />
-          <KpiCard title="Priemerné AI skóre" value={avgScore} subtitle="Predikcia kúpy" />
+          <KpiCard title="Obhliadky" value={showings} subtitle="Naplánované stretnutia" />
+          <KpiCard title="Horúce leady" value={hotLeads} subtitle="Najvyššia priorita" />
+          <KpiCard title="Konverzný pomer" value={`${conversionRate}%`} subtitle="Ponuky / celkové" />
+        </section>
+
+        <QuickActionsBar />
+
+        <section className="mb-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <PriorityLeads leads={leads} />
+          <ClickableAiInsights leads={leads} />
         </section>
 
         <section className="mb-6">
-          <CalendarSyncPanel />
+          <RecentActivityFeed />
         </section>
-        <section className="mb-6">
-          <GmailSyncPanel />
-        </section>
-
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-6 gap-6">
-          <FunnelAnalyticsWidget />
-          <RetentionAnalyticsWidget />
-          <FeatureAdoptionWidget />
-          <UsageAnalyticsWidget />
-          <AlertingWidget />
-          <AbTestingWidget />
-        </div>
 
         <section className="mb-6">
           <Link
@@ -213,72 +130,39 @@ export default function DashboardPage() {
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Forecasting & Benchmarky
-                </h2>
-                <p className="mt-1 text-sm text-gray-500">
-                  Otvoriť predikciu pipeline, benchmark zdrojov leadov a výkonu agentov.
-                </p>
+                <h2 className="text-lg font-semibold text-gray-900">Forecasting & Benchmarky</h2>
+                <p className="mt-1 text-sm text-gray-500">Predikcia pipeline, benchmark zdrojov leadov a výkonu agentov.</p>
               </div>
-              <span className="text-sm font-medium text-gray-700">Otvoriť</span>
+              <span className="text-sm font-medium text-gray-700">Otvoriť →</span>
             </div>
-
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div className="rounded-xl bg-gray-50 px-4 py-3">
                 <p className="text-xs text-gray-500">Expected deals</p>
                 <p className="mt-1 text-base font-semibold text-gray-900">
-                  {forecastingSummary
-                    ? forecastingSummary.expectedClosedDeals.toFixed(2)
-                    : "-"}
+                  {forecastingSummary ? forecastingSummary.expectedClosedDeals.toFixed(2) : "—"}
                 </p>
-                {dealsTrend && (
-                  <p className={`mt-1 text-xs ${dealsTrend.className}`}>{dealsTrend.label}</p>
-                )}
+                {dealsTrend && <p className={`mt-1 text-xs ${dealsTrend.className}`}>{dealsTrend.label}</p>}
               </div>
               <div className="rounded-xl bg-gray-50 px-4 py-3">
                 <p className="text-xs text-gray-500">Expected value</p>
                 <p className="mt-1 text-base font-semibold text-gray-900">
-                  {forecastingSummary
-                    ? `${forecastingSummary.expectedPipelineValue.toLocaleString("sk-SK")} EUR`
-                    : "-"}
+                  {forecastingSummary ? `${forecastingSummary.expectedPipelineValue.toLocaleString("sk-SK")} EUR` : "—"}
                 </p>
-                {valueTrend && (
-                  <p className={`mt-1 text-xs ${valueTrend.className}`}>{valueTrend.label}</p>
-                )}
+                {valueTrend && <p className={`mt-1 text-xs ${valueTrend.className}`}>{valueTrend.label}</p>}
               </div>
               <div className="rounded-xl bg-gray-50 px-4 py-3">
                 <p className="text-xs text-gray-500">Avg probability</p>
                 <p className="mt-1 text-base font-semibold text-gray-900">
-                  {forecastingSummary
-                    ? `${forecastingSummary.avgProbabilityPercent} %`
-                    : "-"}
+                  {forecastingSummary ? `${forecastingSummary.avgProbabilityPercent} %` : "—"}
                 </p>
-                {probabilityTrend && (
-                  <p className={`mt-1 text-xs ${probabilityTrend.className}`}>
-                    {probabilityTrend.label}
-                  </p>
-                )}
+                {probabilityTrend && <p className={`mt-1 text-xs ${probabilityTrend.className}`}>{probabilityTrend.label}</p>}
               </div>
             </div>
           </Link>
         </section>
 
-        <section className="mb-6">
-          <MatchingStatusOverview summary={matchSummary} />
-        </section>
-
-        <section className="mb-6">
-          <MatchingPerformanceBreakdown summary={matchPerformance} />
-        </section>
-
-        <section className="mb-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
-          <AiRecommendationsMetrics />
+        <section>
           <PropertiesSummaryWidget />
-        </section>
-
-        <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-          <PriorityLeads leads={leads} />
-          <ClickableAiInsights leads={leads} />
         </section>
       </div>
     </main>

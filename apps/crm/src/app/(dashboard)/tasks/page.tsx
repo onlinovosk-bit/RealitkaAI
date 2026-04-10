@@ -49,24 +49,24 @@ export default async function TasksPage() {
       description="Denná operatíva, follow-up úlohy a vykonávanie odporúčaní v praxi."
     >
       <section className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Otvorené úlohy</p>
-          <h2 className="mt-2 text-3xl font-bold text-gray-900">{openTasks}</h2>
+        <div className="rounded-2xl border border-blue-100 bg-blue-50 p-5 shadow-sm">
+          <p className="text-sm text-blue-600">Otvorené úlohy</p>
+          <h2 className="mt-2 text-3xl font-bold text-blue-900">{openTasks}</h2>
         </div>
 
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Rozpracované</p>
-          <h2 className="mt-2 text-3xl font-bold text-gray-900">{inProgressTasks}</h2>
+        <div className="rounded-2xl border border-yellow-100 bg-yellow-50 p-5 shadow-sm">
+          <p className="text-sm text-yellow-600">Rozpracované</p>
+          <h2 className="mt-2 text-3xl font-bold text-yellow-900">{inProgressTasks}</h2>
         </div>
 
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Dokončené</p>
-          <h2 className="mt-2 text-3xl font-bold text-gray-900">{doneTasks}</h2>
+        <div className="rounded-2xl border border-green-100 bg-green-50 p-5 shadow-sm">
+          <p className="text-sm text-green-600">Dokončené</p>
+          <h2 className="mt-2 text-3xl font-bold text-green-900">{doneTasks}</h2>
         </div>
 
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">High priority</p>
-          <h2 className="mt-2 text-3xl font-bold text-gray-900">{highPriority}</h2>
+        <div className="rounded-2xl border border-red-100 bg-red-50 p-5 shadow-sm">
+          <p className="text-sm text-red-600">Vysoká priorita</p>
+          <h2 className="mt-2 text-3xl font-bold text-red-900">{highPriority}</h2>
         </div>
       </section>
 

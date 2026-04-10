@@ -10,7 +10,6 @@ export default function AuthButton() {
   const [loading, setLoading] = useState(true);
   const supabase = supabaseClient;
   const router = useRouter();
-  console.log('AuthButton render', { user, loading });
 
   useEffect(() => {
     const getUser = async () => {

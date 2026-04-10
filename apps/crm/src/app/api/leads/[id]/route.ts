@@ -2,6 +2,7 @@
 import { deleteLead, getLead, updateLead } from "@/lib/leads-store";
 import { createActivity } from "@/lib/activities-store";
 import { autoRecalculateForLead } from "@/lib/matching-hooks";
+import { rescoreLead } from "@/lib/rescore-lead";
 
 export async function PATCH(
   request: Request,
@@ -60,6 +61,7 @@ export async function PATCH(
     } catch {}
 
     await autoRecalculateForLead(id);
+    rescoreLead(id); // fire-and-forget: update score + Sofia insight
 
     return okResponse({ lead });
   } catch (error) {

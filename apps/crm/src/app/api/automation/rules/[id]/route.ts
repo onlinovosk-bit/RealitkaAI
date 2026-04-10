@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server";
 import { updateAssignmentRule, deleteAssignmentRule } from "@/lib/lead-automation-store";
 

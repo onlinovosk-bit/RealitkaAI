@@ -5,7 +5,9 @@ import {
   buildAiActivationEmail,
 } from '@/lib/revolisCsSystem';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY ?? "missing");
+}
 const FROM = process.env.OUTREACH_FROM_EMAIL || 'noreply@revolis.ai';
 
 type OnboardingType = 'welcome' | 'crm' | 'ai';
@@ -14,7 +16,7 @@ export async function sendOnboardingEmail(
   type: OnboardingType,
   to: string,
   name: string,
-  link: string
+  _link: string
 ) {
   let subject = '';
   let html = '';
@@ -28,7 +30,7 @@ export async function sendOnboardingEmail(
     throw new Error('Unknown onboarding email type');
   }
   try {
-    await resend.emails.send({ from: FROM, to, subject, html });
+    await getResend().emails.send({ from: FROM, to, subject, html });
     return { ok: true };
   } catch (error) {
     return { ok: false, error };
