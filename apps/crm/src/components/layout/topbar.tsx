@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import AuthButton from "@/components/auth/auth-button";
 import MobileNav from "@/components/layout/mobile-nav";
 import { type UserRole } from "@/lib/navigation";
@@ -13,19 +13,56 @@ export default function Topbar({
   const roleLabel = role === "owner" ? "Majiteľ" : "Maklér";
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-4 md:px-6">
+    <header
+      className="flex h-16 items-center justify-between px-4 md:px-6"
+      style={{
+        background: '#080D1A',
+        borderBottom: '1px solid #0F1F3D',
+        backdropFilter: 'blur(12px)',
+      }}
+    >
+      {/* Left */}
       <div className="flex items-center gap-3">
         <MobileNav role={role} />
         <div>
-          <h2 className="text-base font-semibold text-gray-900 md:text-lg">Revolis.AI</h2>
-          <p className="hidden text-sm text-gray-500 sm:block">{userName}</p>
+          <h2 className="text-base font-semibold md:text-lg" style={{ color: '#F0F9FF' }}>
+            Revolis.AI
+          </h2>
+          <p className="hidden text-xs sm:block" style={{ color: '#475569' }}>
+            {userName}
+          </p>
         </div>
       </div>
 
+      {/* Right */}
       <div className="flex items-center gap-3">
-        <span className="hidden rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700 sm:inline">
+        <span
+          className="hidden rounded-full px-3 py-1 text-xs font-semibold sm:inline"
+          style={{
+            background: 'rgba(34,211,238,0.10)',
+            border: '1px solid rgba(34,211,238,0.25)',
+            color: '#67E8F9',
+          }}
+        >
           {roleLabel}
         </span>
+
+        <div
+          className="hidden items-center gap-2 rounded-full px-3 py-1 sm:flex"
+          style={{
+            background: 'rgba(34,211,238,0.06)',
+            border: '1px solid rgba(34,211,238,0.15)',
+          }}
+        >
+          <span
+            className="h-1.5 w-1.5 rounded-full animate-pulse"
+            style={{ background: '#22D3EE', boxShadow: '0 0 6px rgba(34,211,238,0.9)' }}
+          />
+          <span className="text-xs" style={{ color: '#22D3EE' }}>
+            Sofia online
+          </span>
+        </div>
+
         <AuthButton />
       </div>
     </header>

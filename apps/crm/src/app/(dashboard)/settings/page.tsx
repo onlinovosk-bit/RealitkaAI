@@ -8,6 +8,8 @@ import TrialGraceCard from "@/components/settings/trial-grace-card";
 import { getSaasOpsSnapshot } from "@/lib/saas-ops";
 import { safeServerAction } from "@/lib/safe-action";
 import { requireRole } from "@/lib/permissions";
+import GoogleConnectButton from "@/components/integrations/GoogleConnectButton";
+import GoogleCalendarDemo from "@/components/integrations/GoogleCalendarDemo";
 
 export default async function SettingsPage() {
   await requireRole(["owner", "manager", "agent"]);
@@ -56,7 +58,6 @@ export default async function SettingsPage() {
           billingStatus={data.billing.subscription?.status || "no_subscription"}
           canUseFullApp={data.canUseFullApp}
         />
-
         <PlanSelectorCard plan={data.plan} />
       </section>
 
@@ -73,6 +74,13 @@ export default async function SettingsPage() {
       </section>
 
       <FeatureFlagsCard flags={data.flags} />
+
+      {/* Integrácie Google - demo */}
+      <div className="mt-10">
+        <h2 className="text-lg font-bold mb-2">Integrácia Google (demo)</h2>
+        <GoogleConnectButton />
+        <GoogleCalendarDemo />
+      </div>
     </ModuleShell>
   );
 }

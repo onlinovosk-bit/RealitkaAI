@@ -23,7 +23,7 @@ export default async function DashboardLayout({
   const role = mapProfileRole(profile?.role);
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen" style={{ background: '#050914' }}>
       <div className="hidden md:block">
         <Sidebar role={role} />
       </div>

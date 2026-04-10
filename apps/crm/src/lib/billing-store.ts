@@ -22,23 +22,27 @@ function getAppUrl() {
 export const BILLING_PLANS = [
   {
     key: "starter",
-    name: "Starter",
+    name: "Revolis.AI Starter",
     priceId: process.env.STRIPE_PRICE_STARTER || "",
-    priceLabel: "99 € / mesiac",
+    priceLabel: "29 € / mesiac",
+    originalPriceLabel: "58 € / mesiac",
     description: "Pre menšie tímy a pilotné nasadenie.",
   },
   {
     key: "pro",
-    name: "Pro",
+    name: "Revolis.AI Pro",
     priceId: process.env.STRIPE_PRICE_PRO || "",
-    priceLabel: "249 € / mesiac",
+    priceLabel: "49 € / mesiac",
+    originalPriceLabel: "98 € / mesiac",
     description: "Najlepší pomer výkonu a AI funkcií.",
+    recommended: true,
   },
   {
-    key: "scale",
-    name: "Scale",
-    priceId: process.env.STRIPE_PRICE_SCALE || "",
-    priceLabel: "Na mieru",
+    key: "enterprise",
+    name: "Revolis.AI Enterprise",
+    priceId: process.env.STRIPE_PRICE_ENTERPRISE || "",
+    priceLabel: "99 € / mesiac",
+    originalPriceLabel: "198 € / mesiac",
     description: "Pre väčšie realitky a viac tímov.",
   },
 ];
@@ -330,6 +334,12 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
   }
 
   return { ok: true };
+}
+
+export async function getCurrentPlanTier(): Promise<"free" | "pro"> {
+  const status = await getCurrentBillingStatus();
+  if (status.hasSubscription) return "pro";
+  return "free";
 }
 
 export function verifyStripeWebhook(payload: string | Buffer, signature: string) {

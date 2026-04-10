@@ -109,13 +109,59 @@ export default function LeadFilters({
     setTeamId("");
   }
 
+  const hotCount = leads.filter((l) => l.status === "Horúci" || l.score >= 85).length;
+  const isHotFilter = status === "Horúci" && minScore === "";
+
+  function activateHotFilter() {
+    setStatus("Horúci");
+    setQ("");
+    setLocation("");
+    setMinScore("");
+    setAssignedProfileId("");
+    setTeamId("");
+  }
+
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-      <div className="mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">Filtre leadov</h2>
-        <p className="text-sm text-gray-500">
-          Filtrovanie podľa stavu, lokality, tímu, agenta a AI skóre.
-        </p>
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">Filtre leadov</h2>
+          <p className="text-sm text-gray-500">
+            Filtrovanie podľa stavu, lokality, tímu, agenta a AI skóre.
+          </p>
+        </div>
+        {/* Hot Leads quick filter */}
+        <button
+          type="button"
+          onClick={isHotFilter ? clearFilters : activateHotFilter}
+          className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all duration-200 hover:scale-105 active:scale-95 flex-shrink-0"
+          style={
+            isHotFilter
+              ? {
+                  background: "linear-gradient(135deg, #0D2137 0%, #1B3A6B 100%)",
+                  color: "#67E8F9",
+                  border: "1px solid #22D3EE",
+                  boxShadow: "0 0 20px rgba(34,211,238,0.25)",
+                }
+              : {
+                  background: "rgba(34,211,238,0.08)",
+                  color: "#22D3EE",
+                  border: "1px solid rgba(34,211,238,0.25)",
+                }
+          }
+        >
+          🔥 Hot Leads
+          <span
+            className="rounded-full px-2 py-0.5 text-[11px] font-bold"
+            style={{
+              background: isHotFilter ? "rgba(34,211,238,0.25)" : "rgba(34,211,238,0.15)",
+              color: "#22D3EE",
+            }}
+          >
+            {hotCount}
+          </span>
+          {isHotFilter && <span className="text-[11px] opacity-70">✕ zrušiť</span>}
+        </button>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6">

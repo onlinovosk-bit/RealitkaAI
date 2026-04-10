@@ -178,7 +178,7 @@ export default function Hero() {
                 href="/register"
                 className="relative rounded-full bg-cyan-400 px-7 py-3.5 text-sm font-bold text-slate-950 shadow-[0_0_40px_rgba(34,211,238,0.6)] transition-all duration-200 hover:scale-105 hover:bg-cyan-300 hover:shadow-[0_0_60px_rgba(34,211,238,0.8)] active:scale-95"
               >
-                ✦ Začať za 30 sekúnd
+                ✦ Zabezpečiť miesto za €49/mes
               </Link>
               <Link
                 href="#pipeline"
@@ -192,12 +192,12 @@ export default function Hero() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.8 }}
-              className="flex flex-wrap gap-5 text-xs text-slate-500 pt-2"
+              className="flex flex-wrap gap-5 text-sm text-slate-200 pt-2 font-medium"
             >
-              <span>🟢 847 aktívnych maklérov</span>
-              <span>⭐ 4.9/5 hodnotenie</span>
-              <span>📈 +34% konverzia</span>
-              <span>🇸🇰 Made in Slovakia</span>
+              <span className="text-slate-100">🟢 <strong className="text-white">847</strong> aktívnych maklérov</span>
+              <span className="text-slate-100">⭐ <strong className="text-white">4.9/5</strong> hodnotenie</span>
+              <span className="text-slate-100">📈 <strong className="text-cyan-300">+34%</strong> konverzia</span>
+              <span className="text-slate-100">🇸🇰 Made in Slovakia</span>
             </motion.div>
 
             <LiveLeadCounter />

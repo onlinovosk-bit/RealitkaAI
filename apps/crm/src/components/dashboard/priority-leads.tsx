@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import type { Lead } from "@/lib/leads-store";
+import type { PlanTier } from "@/lib/ai-engine";
+import PaywallLock from "@/components/shared/PaywallLock";
 
 function getStatusClasses(status: Lead["status"]) {
   switch (status) {
@@ -24,15 +26,21 @@ function getScoreClasses(score: number) {
   return "bg-red-100 text-red-700";
 }
 
+const FREE_LIMIT = 3;
+
 interface PriorityLeadsProps {
   leads: Lead[];
+  plan?: PlanTier;
 }
 
-export default function PriorityLeads({ leads }: PriorityLeadsProps) {
-  const priorityLeads = leads
+export default function PriorityLeads({ leads, plan = "free" }: PriorityLeadsProps) {
+  const allPriorityLeads = leads
     .filter((lead) => lead.status === "Horúci" || lead.score >= 80)
     .sort((a, b) => b.score - a.score)
     .slice(0, 5);
+
+  const priorityLeads = plan === "pro" ? allPriorityLeads : allPriorityLeads.slice(0, FREE_LIMIT);
+  const lockedCount = plan === "pro" ? 0 : Math.max(0, allPriorityLeads.length - FREE_LIMIT);
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -54,18 +62,17 @@ export default function PriorityLeads({ leads }: PriorityLeadsProps) {
 
       <div className="space-y-3">
         {priorityLeads.map((lead) => (
-          <Link
+          <div
             key={lead.id}
-            href={`/leads/${lead.id}`}
-            className="block rounded-lg border border-gray-200 p-3 hover:bg-gray-50 transition-colors"
+            className="rounded-lg border border-gray-200 p-3 transition-colors hover:bg-gray-50"
           >
             <div className="flex items-center justify-between gap-3">
-              <div className="flex-1 min-w-0">
+              <Link href={`/leads/${lead.id}`} className="flex-1 min-w-0 hover:underline">
                 <div className="font-medium text-gray-900 truncate">{lead.name}</div>
                 <div className="text-sm text-gray-500 truncate">{lead.location}</div>
-              </div>
+              </Link>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-shrink-0">
                 <span className={`rounded-full px-2 py-1 text-xs font-semibold ${getStatusClasses(lead.status)}`}>
                   {lead.status}
                 </span>
@@ -74,13 +81,55 @@ export default function PriorityLeads({ leads }: PriorityLeadsProps) {
                 </span>
               </div>
             </div>
-          </Link>
+            {/* Quick action buttons */}
+            <div className="mt-2 flex gap-2">
+              {lead.phone ? (
+                <a
+                  href={`tel:${lead.phone}`}
+                  className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all hover:scale-105"
+                  style={{
+                    background: "rgba(34,211,238,0.10)",
+                    color: "#22D3EE",
+                    border: "1px solid rgba(34,211,238,0.25)",
+                  }}
+                >
+                  📞 Zavolať
+                </a>
+              ) : null}
+              <a
+                href={lead.phone ? `sms:${lead.phone}` : "#"}
+                className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all hover:scale-105"
+                style={{
+                  background: "rgba(99,102,241,0.10)",
+                  color: "#A5B4FC",
+                  border: "1px solid rgba(99,102,241,0.25)",
+                }}
+              >
+                💬 SMS
+              </a>
+              <Link
+                href={`/leads/${lead.id}`}
+                className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all hover:scale-105"
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  color: "#94A3B8",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                }}
+              >
+                → Detail
+              </Link>
+            </div>
+          </div>
         ))}
 
         {priorityLeads.length === 0 && (
           <p className="text-sm text-gray-500 text-center py-4">
             Žiadne prioritné leady zatiaľ.
           </p>
+        )}
+
+        {lockedCount > 0 && (
+          <PaywallLock lockedCount={lockedCount} feature="prioritných leadov" />
         )}
       </div>
     </div>

@@ -1,4 +1,37 @@
-﻿import { okResponse, errorResponse } from "@/lib/api-response";
+﻿import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+export async function GET() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+  // Fetch leads with required fields
+  const { data, error } = await supabase
+    .from("leads")
+    .select("id, name, phone, status, last_contact_at, created_at")
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  if (error) {
+    return NextResponse.json([], { status: 500 });
+  }
+
+  // Normalize statuses (SK → AI engine)
+  const normalized = (data || []).map((lead) => ({
+    ...lead,
+    status:
+      lead.status === "Nový"
+        ? "Nový"
+        : lead.status === "Obhliadka"
+        ? "Obhliadka"
+        : lead.status === "Ponuka"
+        ? "Ponuka"
+        : "Iné",
+  }));
+
+  return NextResponse.json(normalized);
+}
+import { okResponse, errorResponse } from "@/lib/api-response";
 import { autoErrorCapture } from "@/lib/auto-error-capture";
 import { createLead } from "@/lib/leads-store";
 import { createActivity } from "@/lib/activities-store";

@@ -92,7 +92,9 @@ export default async function BillingPage({
           key: item.key,
           name: item.name,
           priceLabel: item.priceLabel,
+          originalPriceLabel: item.originalPriceLabel,
           description: item.description,
+          recommended: item.recommended,
         }))}
       />
     </ModuleShell>

@@ -4,10 +4,13 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getLeads, type Lead } from "@/lib/leads-store";
 import PriorityLeads from "@/components/dashboard/priority-leads";
-import ClickableAiInsights from "@/components/dashboard/clickable-ai-insights";
+import AiInsightsPanel from "@/components/dashboard/AiInsightsPanel";
+import { getCurrentProfile } from "@/lib/auth";
+import type { PlanTier } from "@/lib/ai-engine";
 import PropertiesSummaryWidget from "@/components/dashboard/properties-summary-widget";
 import QuickActionsBar from "@/components/dashboard/QuickActionsBar";
 import RecentActivityFeed from "@/components/dashboard/recent-activity-feed";
+import DailyActionPanel from "@/components/dashboard/DailyActionPanel";
 
 type ForecastingSummary = {
   totalLeads: number;
@@ -46,7 +49,9 @@ function KpiCard({ title, value, subtitle }: { title: string; value: string | nu
 }
 
 export default function DashboardPage() {
+  const [userName, setUserName] = useState<string | undefined>(undefined);
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [plan, setPlan] = useState<PlanTier>("free");
   const [forecastingSummary, setForecastingSummary] = useState<ForecastingSummary | null>(null);
   const [forecastTargets, setForecastTargets] = useState<ForecastingTargets>(DEFAULT_FORECAST_TARGETS);
   const [isLoading, setIsLoading] = useState(true);
@@ -70,6 +75,18 @@ export default function DashboardPage() {
             }
           }
         } catch { /* forecasting optional */ }
+        // Personalizácia: načítaj meno užívateľa
+        try {
+          const profile = await getCurrentProfile?.();
+          setUserName(profile?.full_name || profile?.email || undefined);
+        } catch {}
+        try {
+          const planRes = await fetch("/api/billing/plan");
+          if (planRes.ok) {
+            const planData = await planRes.json();
+            if (planData?.result?.tier) setPlan(planData.result.tier as PlanTier);
+          }
+        } catch {}
       } catch (error) {
         console.error("Failed to load dashboard:", error);
       } finally {
@@ -114,9 +131,11 @@ export default function DashboardPage() {
 
         <QuickActionsBar />
 
+        <DailyActionPanel leads={leads} plan={plan} />
+
         <section className="mb-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
-          <PriorityLeads leads={leads} />
-          <ClickableAiInsights leads={leads} />
+          <PriorityLeads leads={leads} plan={plan} />
+          <AiInsightsPanel leads={leads} plan={plan} />
         </section>
 
         <section className="mb-6">
