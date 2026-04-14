@@ -1,6 +1,13 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { listProfiles } from "@/lib/team-store";
-import { listLeads, type Lead } from "@/lib/leads-store";
+
+type Lead = {
+  id: string;
+  location: string;
+  budget: string;
+  propertyType: string;
+  assignedProfileId?: string | null;
+  assignedAgent?: string | null;
+};
 
 export type AssignmentRule = {
   id: string;
@@ -113,6 +120,7 @@ export async function findMatchingRule(lead: Lead, rules: AssignmentRule[]): Pro
 export async function getLeastLoadedProfile(profileIds: string[]): Promise<string | null> {
   if (profileIds.length === 0) return null;
 
+  const { listLeads } = await import("@/lib/leads-store");
   const leads = await listLeads();
   const leadCountByProfile = new Map<string, number>();
 
@@ -365,6 +373,11 @@ export async function deleteAssignmentRule(id: string): Promise<void> {
 
 // Auto-assign logic
 export async function autoAssignLeads(): Promise<{ leadId: string; assignedTo: string }[]> {
+  const [{ listLeads }, { listProfiles }] = await Promise.all([
+    import("@/lib/leads-store"),
+    import("@/lib/team-store"),
+  ]);
+
   const [leads, profiles, rules] = await Promise.all([
     listLeads(),
     listProfiles(),
