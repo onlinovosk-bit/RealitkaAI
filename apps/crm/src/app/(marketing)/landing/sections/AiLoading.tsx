@@ -3,13 +3,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useInView } from 'react-intersection-observer';
 import Link from 'next/link';
+import { AI_ASSISTANT_NAME } from '@/lib/ai-brand';
+import { RadiantSpriteIcon } from '@/components/shared/radiant-sprite-icon';
 
 const messages = [
   'Zisťujeme, kde ti unikajú najhorúcejšie príležitosti…',
   'Počítame buyer readiness index pre každého klienta…',
   'Hľadáme nehnuteľnosti s najväčšou šancou na predaj…',
   'Pripravujeme tvoj personalizovaný dashboard…',
-  '✓ Sofia je pripravená.',
+  `${AI_ASSISTANT_NAME} je pripravená.`,
 ];
 
 export default function AiLoading() {
@@ -53,8 +55,8 @@ export default function AiLoading() {
 
           <div className="relative w-16 h-16 mx-auto mb-5">
             {!done && <div className="absolute inset-0 rounded-full bg-cyan-500/20 animate-ping" />}
-            <div className="relative w-16 h-16 rounded-full bg-cyan-600/20 border border-cyan-500/30 flex items-center justify-center text-3xl">
-              🤖
+            <div className="relative w-16 h-16 rounded-full bg-cyan-600/20 border border-cyan-500/30 flex items-center justify-center">
+              <RadiantSpriteIcon icon="revolis-ai" sizeClassName="h-10 w-10" />
             </div>
           </div>
 
@@ -65,7 +67,7 @@ export default function AiLoading() {
             Analyzujeme tvoj biznis…
           </h3>
           <p className="text-sm text-slate-400 text-center mb-6">
-            Simulujeme tvoju pipeline, leady a prácu maklérov.
+            Simulujeme tvoj stav klientov, leady a prácu maklérov.
           </p>
 
           {!done && (
@@ -107,7 +109,7 @@ export default function AiLoading() {
                   href="/register"
                   className="inline-flex items-center gap-2 rounded-full bg-cyan-400 px-7 py-3 text-sm font-bold text-slate-950 shadow-[0_0_40px_rgba(34,211,238,0.5)] transition-all hover:scale-105"
                 >
-                  ✦ Spustiť môj systém
+                  Spustiť môj systém
                 </Link>
               </motion.div>
             )}

@@ -1,4 +1,4 @@
-﻿import ModuleShell from "@/components/shared/module-shell";
+import ModuleShell from "@/components/shared/module-shell";
 import ErrorState from "@/components/shared/error-state";
 import PlanStatusCard from "@/components/settings/plan-status-card";
 import PlanSelectorCard from "@/components/settings/plan-selector-card";
@@ -10,6 +10,8 @@ import { safeServerAction } from "@/lib/safe-action";
 import { requireRole } from "@/lib/permissions";
 import GoogleConnectButton from "@/components/integrations/GoogleConnectButton";
 import GoogleCalendarDemo from "@/components/integrations/GoogleCalendarDemo";
+import UsageMetricsEnterpriseCard from "@/components/settings/usage-metrics-enterprise-card";
+import Link from "next/link";
 
 export default async function SettingsPage() {
   await requireRole(["owner", "manager", "agent"]);
@@ -22,8 +24,8 @@ export default async function SettingsPage() {
   if (!result.ok) {
     return (
       <ModuleShell
-        title="Admin settings + SaaS ops"
-        description="Správa plánu, feature flags, limitov a trial/grace logiky."
+        title="Nastavenia a SaaS prevádzka"
+        description="Správa plánu, funkčných prepínačov, limitov a logiky skúšobného obdobia/odkladnej lehoty."
       >
         <ErrorState
           title="Admin settings sa nepodarilo načítať"
@@ -49,8 +51,8 @@ export default async function SettingsPage() {
 
   return (
     <ModuleShell
-      title="Admin settings + SaaS ops"
-      description="Správa plánu, feature flags, limitov a trial/grace logiky."
+      title="Nastavenia a SaaS prevádzka"
+      description="Správa plánu, funkčných prepínačov, limitov a logiky skúšobného obdobia/odkladnej lehoty."
     >
       <section className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-2">
         <PlanStatusCard
@@ -71,6 +73,23 @@ export default async function SettingsPage() {
           limits={data.limits}
           usageHealth={data.usageHealth}
         />
+      </section>
+
+      <section className="mb-6">
+        <UsageMetricsEnterpriseCard />
+      </section>
+
+      <section className="mb-6">
+        <Link
+          href="/settings/nexus-ai-chat"
+          className="block rounded-2xl border border-indigo-200 bg-indigo-50 p-5 shadow-sm transition hover:border-indigo-300 hover:bg-indigo-100/60"
+        >
+          <h2 className="text-base font-semibold text-indigo-900">NEXUS AI Chat</h2>
+          <p className="mt-1 text-sm text-indigo-800">
+            Nastav štýl odpovedí, dĺžku výstupov a formát email návrhov.
+          </p>
+          <span className="mt-2 inline-block text-sm font-medium text-indigo-700">Otvoriť nastavenia →</span>
+        </Link>
       </section>
 
       <FeatureFlagsCard flags={data.flags} />

@@ -50,7 +50,7 @@ export default function AgentStats({ leads }: AgentStatsProps) {
       <div className="mb-4">
         <h2 className="text-lg font-semibold text-gray-900">Počítadlá podľa maklérov</h2>
         <p className="text-sm text-gray-500">
-          Výkonnosť, počet leadov a kvalita portfólia.
+          Výkonnosť, počet príležitostí a kvalita portfólia.
         </p>
       </div>
 
@@ -60,7 +60,7 @@ export default function AgentStats({ leads }: AgentStatsProps) {
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
                 <h3 className="font-medium text-gray-900">{agent.name}</h3>
-                <p className="text-sm text-gray-500">{agent.total} leadov celkom</p>
+                <p className="text-sm text-gray-500">{agent.total} príležitostí celkom</p>
               </div>
 
               <div className="flex flex-wrap gap-2">

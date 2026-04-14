@@ -34,7 +34,7 @@ export default function FeatureFlagsCard({
     integrations: "Integrations",
     teamManagement: "Team management",
     advancedReporting: "Advanced reporting",
-    billing: "Billing",
+    billing: "Predplatné",
   };
 
   return (

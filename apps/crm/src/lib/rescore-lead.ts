@@ -1,12 +1,13 @@
 /**
  * rescoreLead — fire-and-forget after status change or new activity.
  * 1. Runs heuristic scoring (always)
- * 2. If OPENAI_API_KEY present → asks GPT-4o-mini for a one-liner "Sofia insight"
- * 3. Writes score + sofia_insight back to leads table
+ * 2. If OPENAI_API_KEY present → asks GPT-4o-mini for a one-liner AI insight
+ * 3. Writes score + ai_insight (and legacy sofia_insight) back to leads table
  */
 
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { calculateLeadAiScore } from "@/lib/ai-scoring";
+import { AI_ASSISTANT_NAME } from "@/lib/ai-brand";
 
 type LeadRow = {
   id: string;
@@ -50,7 +51,7 @@ async function getOpenAiInsight(lead: LeadRow, score: number): Promise<string | 
           {
             role: "system",
             content:
-              "Si Sofia, AI asistentka pre slovenských realitných maklérov. " +
+              `Si ${AI_ASSISTANT_NAME}, AI asistentka pre slovenských realitných maklérov. ` +
               "Odpovedaj výhradne v slovenčine. Buď konkrétna a stručná (max 1 veta).",
           },
           {
@@ -109,13 +110,25 @@ export async function rescoreLead(leadId: string): Promise<void> {
       messages: [],
     });
 
-    const sofiaInsight = await getOpenAiInsight(row, score);
+    const aiInsight = await getOpenAiInsight(row, score);
 
-    // Try with sofia_insight first; fall back to score-only if column missing
-    if (sofiaInsight) {
-      const { error } = await admin.from("leads").update({ score, sofia_insight: sofiaInsight }).eq("id", leadId);
+    // Dual-write during migration window (no downtime).
+    // If legacy sofia_insight column does not exist, retry with ai_insight only.
+    if (aiInsight) {
+      const { error } = await admin
+        .from("leads")
+        .update({ score, ai_insight: aiInsight, sofia_insight: aiInsight })
+        .eq("id", leadId);
       if (error?.message?.includes("sofia_insight")) {
-        await admin.from("leads").update({ score }).eq("id", leadId);
+        const { error: aiOnlyError } = await admin
+          .from("leads")
+          .update({ score, ai_insight: aiInsight })
+          .eq("id", leadId);
+        if (aiOnlyError) {
+          await admin.from("leads").update({ score }).eq("id", leadId);
+        }
+      } else if (error) {
+        await admin.from("leads").update({ score, ai_insight: aiInsight }).eq("id", leadId);
       }
     } else {
       await admin.from("leads").update({ score }).eq("id", leadId);

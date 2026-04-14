@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { type Lead } from "@/lib/leads-store";
+import { RadiantSpriteIcon } from "@/components/shared/radiant-sprite-icon";
 
 type TeamOption = {
   id: string;
@@ -124,11 +125,14 @@ export default function LeadFilters({
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900">Filtre leadov</h2>
-          <p className="text-sm text-gray-500">
-            Filtrovanie podľa stavu, lokality, tímu, agenta a AI skóre.
-          </p>
+        <div className="flex items-start gap-3">
+          <RadiantSpriteIcon icon="leads" sizeClassName="h-12 w-12" className="mt-0.5" />
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Filtre príležitostí</h2>
+            <p className="text-sm text-gray-500">
+              Filtrovanie podľa stavu, lokality, tímu, agenta a AI skóre.
+            </p>
+          </div>
         </div>
         {/* Hot Leads quick filter */}
         <button
@@ -150,7 +154,7 @@ export default function LeadFilters({
                 }
           }
         >
-          🔥 Hot Leads
+          🔥 Horúce príležitosti
           <span
             className="rounded-full px-2 py-0.5 text-[11px] font-bold"
             style={{

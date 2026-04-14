@@ -1,22 +1,24 @@
 "use client";
 import { motion } from 'framer-motion';
+import { AI_ASSISTANT_NAME } from '@/lib/ai-brand';
+import { RadiantSpriteIcon, type RadiantIconKey } from '@/components/shared/radiant-sprite-icon';
 
 const steps = [
   {
     number: '01',
-    icon: '📥',
+    icon: 'import' as RadiantIconKey,
     title: 'Lead príde z portálu',
     desc: 'Nehnuteľnosti.sk, Reality.sk, TopReality.sk – všetko automaticky na jednom mieste. Nič sa nestratí.',
   },
   {
     number: '02',
-    icon: '🤖',
-    title: 'Sofia koná okamžite',
+    icon: 'revolis-ai' as RadiantIconKey,
+    title: `${AI_ASSISTANT_NAME} koná okamžite`,
     desc: 'Odpovedá do 2 minút, skóruje lead, navrhne obhliadku. Bez tvojho zásahu.',
   },
   {
     number: '03',
-    icon: '💰',
+    icon: 'billing' as RadiantIconKey,
     title: 'Ty uzatváraš deal',
     desc: 'Vidíš len prioritné leady. AI robí zvyšok. Viac dealov, menej stresu.',
   },
@@ -86,7 +88,7 @@ export default function HowItWorks() {
                   boxShadow: '0 0 30px rgba(34,211,238,0.08)',
                 }}
               >
-                {step.icon}
+                <RadiantSpriteIcon icon={step.icon} sizeClassName="h-12 w-12" />
               </div>
               <h3
                 className="text-xl font-bold mb-3"

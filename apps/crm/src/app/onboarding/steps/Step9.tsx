@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { AI_ASSISTANT_NAME } from "@/lib/ai-brand";
 
 const STATS = [
   { value: "24/7",  label: "AI asistent aktívny" },
@@ -19,7 +20,7 @@ export default function Step9({ slug: _ }: { slug: string }) {
       <div className="text-center mb-10">
         <div className="text-6xl mb-4">🎉</div>
         <h1 className="text-4xl font-extrabold mb-3 tracking-tight">Revolis.AI je živý!</h1>
-        <p className="text-gray-500 text-base">Tvoj AI asistent Sofia je aktívny a čaká na prvý lead.</p>
+        <p className="text-gray-500 text-base">Tvoj AI asistent {AI_ASSISTANT_NAME} je aktívny a čaká na prvý lead.</p>
       </div>
 
       <div className="grid grid-cols-3 gap-3 max-w-lg mx-auto mb-8">
@@ -33,7 +34,7 @@ export default function Step9({ slug: _ }: { slug: string }) {
 
       <div className="space-y-3 max-w-lg mx-auto mb-8">
         {[
-          { emoji: "📊", label: "Pozri si dashboard",   desc: "Prehľad leadov, pipeline a štatistiky",      href: "/dashboard" },
+          { emoji: "📊", label: "Pozri si dashboard",   desc: "Prehľad leadov, stavu klientov a štatistiky",      href: "/dashboard" },
           { emoji: "🤖", label: "Otestuj AI asistenta", desc: "Pošli testovaciu otázku a pozri ako odpovedá", href: "/dashboard" },
           { emoji: "➕", label: "Pridaj prvý lead",      desc: "Manuálne alebo cez import z portálu",         href: "/leads" },
         ].map(item => (

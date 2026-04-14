@@ -61,7 +61,7 @@ export default async function PropertyDetailPage({ params }: PageProps) {
 
           {property.features.length > 0 && (
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-2">Features</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-2">Vlastnosti</h2>
               <div className="flex flex-wrap gap-2">
                 {property.features.map((feature) => (
                   <span key={feature} className="rounded-full border border-gray-300 px-3 py-1 text-sm text-gray-700">

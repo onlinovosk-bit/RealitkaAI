@@ -60,7 +60,7 @@ export default async function MatchingPropertyDetailPage({
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">Odporučení klienti</h2>
-              <p className="mt-1 text-sm text-gray-500">Leady, pre ktoré táto nehnuteľnosť najlepšie sedí.</p>
+              <p className="mt-1 text-sm text-gray-500">Príležitosti, pre ktoré táto nehnuteľnosť najlepšie sedí.</p>
             </div>
             <div className="rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700">
               {matchedLeads.length} matchov

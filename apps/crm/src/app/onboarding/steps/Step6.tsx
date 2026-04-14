@@ -20,8 +20,8 @@ export default function Step6({ slug }: { slug: string }) {
   return (
     <div className="animate-in fade-in slide-in-from-right-4 duration-500">
       <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">— KROK 6 ZO 8 —</p>
-      <h1 className="text-3xl font-bold mb-2 text-gray-900">Predajný pipeline 🏗️</h1>
-      <p className="text-gray-500 mb-8">Revolis má prednastavený pipeline pre reality. Môžeš ho prispôsobiť alebo použiť tak ako je.</p>
+      <h1 className="text-3xl font-bold mb-2 text-gray-900">Predajný stav klientov 🏗️</h1>
+      <p className="text-gray-500 mb-8">Revolis má prednastavený stav klientov pre reality. Môžeš ho prispôsobiť alebo použiť tak ako je.</p>
 
       <div className="mb-2 text-sm font-semibold text-gray-700">Fázy predaja</div>
       <div className="border border-gray-100 rounded-xl overflow-hidden mb-6 max-w-lg">

@@ -1,4 +1,4 @@
-import ManageSubscriptionButton from "@/components/billing/manage-subscription-button";
+import { ManageSubscriptionButton } from "@/components/billing/manage-subscription-button";
 
 export default function PlanSelectorCard({
   plan,
@@ -10,7 +10,7 @@ export default function PlanSelectorCard({
       <h2 className="text-2xl font-bold text-gray-900">Správa plánu</h2>
       <p className="mt-3 text-sm text-gray-500">
         Aktuálne používaš plán <strong>{plan}</strong>. Zmenu tarifu, platobnej metódy
-        alebo fakturačných údajov spravíš cez billing portal.
+        alebo fakturačných údajov spravíš cez portál predplatného.
       </p>
 
       <div className="mt-6">

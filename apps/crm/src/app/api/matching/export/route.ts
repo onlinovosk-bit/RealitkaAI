@@ -1,7 +1,8 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { listPersistedMatches } from "@/lib/matching-store";
 import { listLeads } from "@/lib/leads-store";
 import { listProperties } from "@/lib/properties-store";
+import { maskName, shouldRedactPiiForExport } from "@/lib/pii-mask";
 
 function escapeCsv(value: string | number | null | undefined) {
   return `"${String(value ?? "").replace(/"/g, '""')}"`;
@@ -11,6 +12,7 @@ export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
     const statusFilter = url.searchParams.get("status")?.trim() || undefined;
+    const redactPii = shouldRedactPiiForExport(request);
 
     const [matches, leads, properties] = await Promise.all([
       listPersistedMatches(),
@@ -22,8 +24,9 @@ export async function GET(request: Request) {
       .map((match) => {
         const lead = leads.find((item) => item.id === match.leadId);
         const property = properties.find((item) => item.id === match.propertyId);
+        const rawName = lead?.name ?? match.leadId;
         return {
-          leadName: lead?.name ?? match.leadId,
+          leadName: redactPii ? maskName(String(rawName)) : rawName,
           propertyTitle: property?.title ?? match.propertyId,
           propertyLocation: property?.location ?? "-",
           propertyPrice: property?.price ?? 0,

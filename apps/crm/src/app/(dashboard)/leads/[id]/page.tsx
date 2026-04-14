@@ -10,6 +10,18 @@ import {
   type Lead,
   type LeadActivity,
 } from "@/lib/leads-store";
+import { buildGoogleCalendarTemplateUrl, openGoogleCalendarUrl } from "@/lib/google-calendar-url";
+import {
+  AI_ASSISTANT_CHAT_CTA,
+  AI_ASSISTANT_CHAT_LABEL,
+  AI_ASSISTANT_NAME,
+} from "@/lib/ai-brand";
+import {
+  buildNexusChatInstruction,
+  DEFAULT_NEXUS_CHAT_SETTINGS,
+  NEXUS_CHAT_SETTINGS_STORAGE_KEY,
+  type NexusChatSettings,
+} from "@/lib/nexus-chat-settings";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -62,7 +74,8 @@ function InlineField({
     if (draft !== value) onSave(draft);
   }
 
-  const sharedClass = "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500";
+  const sharedClass =
+    "w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-gray-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-slate-500";
 
   return (
     <div>
@@ -92,7 +105,7 @@ function InlineField({
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="w-full rounded-lg px-3 py-2 text-left text-sm text-gray-900 hover:bg-gray-50 border border-transparent hover:border-gray-200 transition-colors"
+          className="w-full rounded-lg border border-transparent px-3 py-2 text-left text-sm text-gray-900 transition-all hover:border-cyan-100 hover:bg-gradient-to-r hover:from-cyan-50/70 hover:to-indigo-50/70 dark:text-slate-100 dark:hover:border-slate-700 dark:hover:bg-slate-800"
         >
           {draft || <span className="text-gray-400">Klikni na úpravu…</span>}
         </button>
@@ -145,6 +158,7 @@ export default function LeadDetailPage() {
   const [sofiaQ, setSofiaQ] = useState("");
   const [sofiaAnswer, setSofiaAnswer] = useState("");
   const [sofiaAsking, setSofiaAsking] = useState(false);
+  const [chatSettings, setChatSettings] = useState<NexusChatSettings>(DEFAULT_NEXUS_CHAT_SETTINGS);
 
   // activity form
   const [actType, setActType] = useState("Telefonát");
@@ -166,9 +180,11 @@ export default function LeadDetailPage() {
           getActivitiesByLeadId(id),
         ]);
         if (!leadRes?.lead) { router.push("/leads"); return; }
-        const l = leadRes.lead as Lead & { sofia_insight?: string };
+        const l = leadRes.lead as Lead & { sofia_insight?: string; ai_insight?: string };
         setLead(l);
-        if (l.sofia_insight) setSofiaInsight(l.sofia_insight);
+        if (l.ai_insight || l.sofia_insight) {
+          setSofiaInsight(l.ai_insight ?? l.sofia_insight ?? null);
+        }
         setActivities(acts);
       } catch {
         router.push("/leads");
@@ -178,6 +194,17 @@ export default function LeadDetailPage() {
     }
     void load();
   }, [id, router]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(NEXUS_CHAT_SETTINGS_STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as Partial<NexusChatSettings>;
+      setChatSettings((prev) => ({ ...prev, ...parsed }));
+    } catch {
+      // ignore invalid local setting payload
+    }
+  }, []);
 
   // ── patch lead ──
   const patchLead = useCallback(async (fields: Partial<Lead>) => {
@@ -205,13 +232,14 @@ export default function LeadDetailPage() {
   // ── add activity ──
   async function addActivity(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!actNote.trim()) return;
+    if (!actNote.trim() || !lead) return;
+    const savedNote = actNote.trim();
     setIsAddingAct(true);
     try {
       const res = await fetch(`/api/leads/${id}/activities`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: actType, note: actNote }),
+        body: JSON.stringify({ type: actType, note: savedNote }),
       });
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error);
@@ -220,17 +248,48 @@ export default function LeadDetailPage() {
       const newAct: LeadActivity = {
         id: data.activity?.id ?? crypto.randomUUID(),
         type: actType as LeadActivity["type"],
-        text: actNote,
+        text: savedNote,
         date: "Práve teraz",
       };
       setActivities(prev => [newAct, ...prev]);
       setActNote("");
-      showToast("✓ Aktivita pridaná");
+
+      const cal = data.calendar as
+        | { status: "created"; eventId?: string }
+        | { status: "fallback"; url: string }
+        | { status: "skipped" }
+        | undefined;
+
+      if (cal?.status === "created") {
+        showToast("✓ Aktivita pridaná — pripomienka o 8:00 je uložená v Google Kalendári.");
+      } else if (cal?.status === "fallback" && cal.url) {
+        openGoogleCalendarUrl(cal.url);
+        showToast("✓ Aktivita pridaná — otvor Google Kalendár a potvrď udalosť.");
+      } else {
+        showToast("✓ Aktivita pridaná");
+      }
     } catch (e) {
       showToast(e instanceof Error ? e.message : "Chyba");
     } finally {
       setIsAddingAct(false);
     }
+  }
+
+  function openViewingCalendar() {
+    if (!lead) return;
+    const start = new Date();
+    start.setDate(start.getDate() + 1);
+    start.setHours(10, 0, 0, 0);
+    const end = new Date(start);
+    end.setHours(11, 0, 0, 0);
+    const url = buildGoogleCalendarTemplateUrl({
+      title: `${lead.name} – obhliadka`,
+      details: "Naplánované z Revolis.AI",
+      start,
+      end,
+    });
+    openGoogleCalendarUrl(url);
+    showToast("Otváram Google Kalendár…");
   }
 
   // ── sofia chat ──
@@ -240,16 +299,17 @@ export default function LeadDetailPage() {
     setSofiaAsking(true);
     setSofiaAnswer("");
     try {
-      const res = await fetch(`/api/leads/${id}/sofia`, {
+      const styledQuestion = `${sofiaQ}\n\nInštrukcia pre štýl odpovede: ${buildNexusChatInstruction(chatSettings)}`;
+      const res = await fetch(`/api/leads/${id}/assistant`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: sofiaQ }),
+        body: JSON.stringify({ question: styledQuestion }),
       });
       const data = await res.json();
       if (data.ok) setSofiaAnswer(data.answer);
-      else setSofiaAnswer("Sofia momentálne nie je dostupná.");
+      else setSofiaAnswer(`${AI_ASSISTANT_NAME} momentálne nie je dostupná.`);
     } catch {
-      setSofiaAnswer("Sofia momentálne nie je dostupná.");
+      setSofiaAnswer(`${AI_ASSISTANT_NAME} momentálne nie je dostupná.`);
     } finally {
       setSofiaAsking(false);
     }
@@ -261,7 +321,7 @@ export default function LeadDetailPage() {
       await fetch(`/api/leads/${id}`, { method: "DELETE" });
       router.push("/leads");
     } catch {
-      showToast("Nepodarilo sa zmazať lead.");
+      showToast("Nepodarilo sa zmazať príležitosť.");
     }
   }
 
@@ -288,7 +348,7 @@ export default function LeadDetailPage() {
       <div className="mx-auto max-w-6xl">
         {/* back */}
         <Link href="/leads" className="text-sm text-gray-400 hover:text-gray-700">
-          ← Späť na leady
+          ← Späť na príležitosti
         </Link>
 
         {/* ── HEADER ─────────────────────────────────────────────────────── */}
@@ -323,7 +383,7 @@ export default function LeadDetailPage() {
                 onClick={() => setConfirmDelete(true)}
                 className="rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
               >
-                Zmazať lead
+                Zmazať príležitosť
               </button>
             ) : (
               <div className="flex items-center gap-2 rounded-lg border border-red-300 bg-red-50 px-3 py-2">
@@ -347,7 +407,7 @@ export default function LeadDetailPage() {
 
             {/* Lead Info Card */}
             <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-              <h2 className="mb-4 text-base font-semibold text-gray-900">Informácie o leade</h2>
+              <h2 className="mb-4 text-base font-semibold text-gray-900">Informácie o príležitosti</h2>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <InlineField label="Meno" value={lead.name} onSave={v => patchLead({ name: v })} />
                 <InlineField label="Email" value={lead.email} type="email" onSave={v => patchLead({ email: v })} />
@@ -388,6 +448,9 @@ export default function LeadDetailPage() {
                   rows={2}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500 mb-3"
                 />
+                <p className="mb-3 text-xs text-gray-400">
+                  Tip: Dátum a čas obhliadky píš do poznámky (napr. 15.4.2026 14:00 je len ukážka). Pripomienka na 8:00 sa vytvorí na ten deň, ktorý v poznámke uvedieš — vždy iný podľa textu. Ak máš pripojený Google účet v nastaveniach, udalosť sa uloží priamo do kalendára.
+                </p>
                 <button
                   type="submit"
                   disabled={isAddingAct || !actNote.trim()}
@@ -442,7 +505,7 @@ export default function LeadDetailPage() {
                 {lead.phone && (
                   <a
                     href={`tel:${lead.phone}`}
-                    className="flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors w-full"
+                    className="flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition-all hover:border-cyan-200 hover:bg-gradient-to-r hover:from-cyan-50/70 hover:to-indigo-50/70 w-full"
                   >
                     📞 Zavolať
                   </a>
@@ -450,15 +513,15 @@ export default function LeadDetailPage() {
                 {lead.email && (
                   <a
                     href={`mailto:${lead.email}`}
-                    className="flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors w-full"
+                    className="flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition-all hover:border-cyan-200 hover:bg-gradient-to-r hover:from-cyan-50/70 hover:to-indigo-50/70 w-full"
                   >
                     ✉️ Poslať email
                   </a>
                 )}
                 <button
                   type="button"
-                  onClick={() => showToast("Kalendár — čoskoro")}
-                  className="flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors w-full"
+                  onClick={openViewingCalendar}
+                  className="flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition-all hover:border-cyan-200 hover:bg-gradient-to-r hover:from-cyan-50/70 hover:to-indigo-50/70 w-full"
                 >
                   📅 Naplánovať obhliadku
                 </button>
@@ -488,11 +551,14 @@ export default function LeadDetailPage() {
 
             {/* Sofia Insight */}
             <div className="rounded-2xl border border-violet-100 bg-violet-50 p-5 shadow-sm">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-violet-500">Sofia AI</p>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-violet-500">{AI_ASSISTANT_CHAT_LABEL}</p>
+              <Link href="/settings/nexus-ai-chat" className="mb-2 inline-block text-xs font-medium text-violet-700 hover:underline">
+                Nastaviť štýl odpovedí →
+              </Link>
               {sofiaInsight ? (
                 <p className="text-sm text-violet-900">{sofiaInsight}</p>
               ) : (
-                <p className="text-sm text-violet-400">Insight sa vygeneruje po prvej zmene leadu.</p>
+                <p className="text-sm text-violet-400">Insight sa vygeneruje po prvej zmene príležitosti.</p>
               )}
 
               {/* Chat */}
@@ -500,7 +566,7 @@ export default function LeadDetailPage() {
                 <input
                   value={sofiaQ}
                   onChange={e => setSofiaQ(e.target.value)}
-                  placeholder="Opýtaj sa Sofiu…"
+                  placeholder={`Opýtaj sa ${AI_ASSISTANT_NAME}…`}
                   className="w-full rounded-xl border border-violet-200 bg-white px-3 py-2 text-sm outline-none focus:border-violet-400 placeholder:text-violet-300"
                 />
                 <button
@@ -508,11 +574,11 @@ export default function LeadDetailPage() {
                   disabled={sofiaAsking || !sofiaQ.trim()}
                   className="w-full rounded-xl bg-violet-600 px-3 py-2 text-xs font-semibold text-white hover:bg-violet-700 disabled:opacity-40 transition-colors"
                 >
-                  {sofiaAsking ? "Myslím…" : "Opýtať Sofiu →"}
+                  {sofiaAsking ? "Myslím…" : `${AI_ASSISTANT_CHAT_CTA} →`}
                 </button>
               </form>
               {sofiaAnswer && (
-                <div className="mt-3 rounded-xl border border-violet-200 bg-white p-3 text-sm text-violet-900">
+                <div className="mt-3 rounded-xl border border-violet-300/40 bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900 p-3 text-sm text-white shadow-[0_0_24px_rgba(76,29,149,0.20)]">
                   {sofiaAnswer}
                 </div>
               )}

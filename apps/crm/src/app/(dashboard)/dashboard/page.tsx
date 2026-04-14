@@ -69,12 +69,19 @@ export default function DashboardPage() {
   const [forecastingSummary, setForecastingSummary] = useState<ForecastingSummary | null>(null);
   const [forecastTargets, setForecastTargets] = useState<ForecastingTargets>(DEFAULT_FORECAST_TARGETS);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadDashboard() {
       try {
-        const leadsData = await getLeads();
+        let leadsData: Lead[] = [];
+        try {
+          leadsData = await getLeads();
+        } catch (e) {
+          console.error("Failed to load leads:", e);
+        }
         setLeads(leadsData);
+
         try {
           const response = await fetch("/api/forecasting/summary");
           if (response.ok) {
@@ -89,7 +96,7 @@ export default function DashboardPage() {
             }
           }
         } catch { /* forecasting optional */ }
-        // Personalizácia: načítaj meno užívateľa
+
         try {
           const { data: { user } } = await supabaseClient.auth.getUser();
           if (user) {
@@ -100,16 +107,18 @@ export default function DashboardPage() {
               .single();
             setUserName(profile?.full_name || profile?.email || user.email || undefined);
           }
-        } catch {}
+        } catch { /* user name optional */ }
+
         try {
           const planRes = await fetch("/api/billing/plan");
           if (planRes.ok) {
             const planData = await planRes.json();
             if (planData?.result?.tier) setPlan(planData.result.tier as PlanTier);
           }
-        } catch {}
+        } catch { /* plan optional */ }
       } catch (error) {
         console.error("Failed to load dashboard:", error);
+        setLoadError("Nepodarilo sa načítať dáta pre prehľad. Skúste obnoviť stránku.");
       } finally {
         setIsLoading(false);
       }
@@ -121,6 +130,28 @@ export default function DashboardPage() {
     return (
       <main className="p-6">
         <div className="text-center text-sm text-gray-400">Načítavam prehľad…</div>
+      </main>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <main className="p-6">
+        <div className="mx-auto max-w-md text-center">
+          <h2 className="text-lg font-bold text-gray-100">Chyba pri načítaní</h2>
+          <p className="mt-2 text-sm text-gray-400">{loadError}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 rounded-xl px-5 py-2.5 text-sm font-semibold"
+            style={{
+              background: "rgba(34,211,238,0.08)",
+              border: "1px solid rgba(34,211,238,0.2)",
+              color: "#22d3ee",
+            }}
+          >
+            Obnoviť stránku
+          </button>
+        </div>
       </main>
     );
   }

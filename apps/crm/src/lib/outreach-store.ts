@@ -1,9 +1,18 @@
 import { Resend } from "resend";
 import { autoErrorCapture } from "./auto-error-capture";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import { listLeads } from "@/lib/leads-store";
+import { logAiActionAudit } from "@/lib/ai-action-audit";
 import { generateOutreachEmail } from "@/lib/ai-outreach";
 import { createActivity } from "@/lib/activities-store";
+import {
+  fetchLeadAgencyId,
+  getHoursSinceLastAiEmailToLead,
+  outreachLeadCooldownHours,
+  pickOutboundAbVariant,
+} from "@/lib/outbound-orchestrator";
+import { createServiceRoleClient } from "@/lib/supabase/admin";
+import { incrementUsageMetric, SYSTEM_USAGE_AGENCY_ID } from "@/lib/usage-metrics";
+import { listLeads } from "@/lib/leads-store";
 
 type OutreachConfig = {
   dailyLimit: number;
@@ -77,7 +86,7 @@ function isOutreachMessage(item: any) {
 }
 
 async function getTodayOutreachCount() {
-  const supabase = getSupabaseClient();
+  const supabase = createServiceRoleClient() ?? getSupabaseClient();
   const startIso = startOfDayIso();
 
   if (!supabase) {
@@ -97,7 +106,7 @@ async function getTodayOutreachCount() {
 }
 
 export async function listOutreachMessages() {
-  const supabase = getSupabaseClient();
+  const supabase = createServiceRoleClient() ?? getSupabaseClient();
 
   if (!supabase) {
     return [];
@@ -129,7 +138,7 @@ export async function listOutreachMessages() {
 
 export async function sendAiOutreachEmail(leadId: string) {
   const resend = getResendClient();
-  const supabase = getSupabaseClient();
+  const supabase = createServiceRoleClient() ?? getSupabaseClient();
   const from = process.env.OUTREACH_FROM_EMAIL;
   const config = getOutreachConfig();
 
@@ -170,7 +179,43 @@ export async function sendAiOutreachEmail(leadId: string) {
       throw new Error(`Denný limit outreach bol dosiahnutý (${config.dailyLimit}).`);
     }
 
-    const generated = await generateOutreachEmail(lead);
+    const agencyId =
+      (await fetchLeadAgencyId(lead.id)) ?? SYSTEM_USAGE_AGENCY_ID;
+
+    const cooldownH = outreachLeadCooldownHours();
+    const sinceH = await getHoursSinceLastAiEmailToLead(lead.id);
+    if (sinceH != null && sinceH < cooldownH) {
+      await logAiActionAudit({
+        agencyId,
+        leadId: lead.id,
+        actionKind: "frequency_blocked",
+        channel: "email",
+        meta: {
+          hoursSinceLast: sinceH,
+          cooldownHours: cooldownH,
+        },
+      });
+      throw new Error(
+        `Frekvenčný limit: posledný AI email pred ${sinceH.toFixed(1)} h. Min. odstup ${cooldownH} h.`
+      );
+    }
+
+    const variant = pickOutboundAbVariant();
+    const generated = await generateOutreachEmail(lead, { variant });
+
+    await logAiActionAudit({
+      agencyId,
+      leadId: lead.id,
+      actionKind: "ai_suggested",
+      channel: "email",
+      variant,
+      subjectPreview: generated.subject,
+      bodyText: generated.body,
+      meta: {
+        provider: generated.provider,
+        totalTokens: generated.totalTokens ?? null,
+      },
+    });
 
     const sendResult = await resend.emails.send({
       from,
@@ -182,6 +227,17 @@ export async function sendAiOutreachEmail(leadId: string) {
     if ((sendResult as any).error) {
       const resendMsg: string = (sendResult as any).error.message || "";
       const normalized = resendMsg.toLowerCase();
+
+      await logAiActionAudit({
+        agencyId,
+        leadId: lead.id,
+        actionKind: "send_failed",
+        channel: "email",
+        variant,
+        subjectPreview: generated.subject,
+        bodyText: generated.body,
+        meta: { provider: "resend", error: resendMsg },
+      });
 
       if (normalized.includes("api key") || normalized.includes("invalid")) {
         throw new Error(
@@ -245,7 +301,36 @@ export async function sendAiOutreachEmail(leadId: string) {
         subject: generated.subject,
         provider: generated.provider,
         conversationId,
+        variant,
+        stage: "sent",
       },
+    });
+
+    await logAiActionAudit({
+      agencyId,
+      leadId: lead.id,
+      actionKind: "sent",
+      channel: "email",
+      variant,
+      subjectPreview: generated.subject,
+      bodyText: generated.body,
+      meta: {
+        provider: generated.provider,
+        conversationId,
+        resendOk: true,
+      },
+    });
+
+    const tokenDelta = Math.max(1, Math.floor(generated.totalTokens ?? 1));
+    await incrementUsageMetric({
+      agencyId,
+      metric: "ai_openai_tokens",
+      delta: tokenDelta,
+    });
+    await incrementUsageMetric({
+      agencyId,
+      metric: "outreach_send",
+      delta: 1,
     });
 
     return {
@@ -256,6 +341,7 @@ export async function sendAiOutreachEmail(leadId: string) {
       body: generated.body,
       provider: generated.provider,
       conversationId,
+      variant,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Nepodarilo sa odoslať AI email.";
@@ -297,7 +383,7 @@ export async function getOutreachAudit(): Promise<OutreachAudit> {
   const uniqueLeadsToday = new Set(sentTodayRows.map((item) => item.leadId).filter(Boolean)).size;
   const lastSentAt = outreachRows[0]?.createdAt ?? null;
 
-  const supabase = getSupabaseClient();
+  const supabase = createServiceRoleClient() ?? getSupabaseClient();
   let lastErrorAt: string | null = null;
   let lastErrorMessage: string | null = null;
 

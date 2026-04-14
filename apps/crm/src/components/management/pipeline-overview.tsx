@@ -23,9 +23,9 @@ export default function PipelineOverview({
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
       <div className="mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">Pipeline overview</h2>
+        <h2 className="text-lg font-semibold text-gray-900">Prehľad stavu klientov</h2>
         <p className="text-sm text-gray-500">
-          Stav leadov naprieč celou obchodnou pipeline.
+          Stav príležitostí naprieč celým obchodným procesom.
         </p>
       </div>
 

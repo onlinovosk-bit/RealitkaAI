@@ -9,6 +9,12 @@ import AiLoading from './sections/AiLoading';
 import PreviewSection from './sections/PreviewSection';
 import Testimonials from './sections/Testimonials';
 import FinalCTA from './sections/FinalCTA';
+import RoiCalculatorHero from './sections/RoiCalculatorHero';
+import ResponseBenchmark from './sections/ResponseBenchmark';
+import MiniPlaybookDemo from './sections/MiniPlaybookDemo';
+import IntegrationsTrustStrip from './sections/IntegrationsTrustStrip';
+import ObjectionFaq from './sections/ObjectionFaq';
+import ProofNumbers from './sections/ProofNumbers';
 
 const syne = Syne({
   subsets: ['latin'],
@@ -23,7 +29,7 @@ const instrument = Instrument_Sans({
 export const metadata = {
   title: 'Revolis.AI – Uzatváraj viac obchodov. Bez chaosu.',
   description:
-    'AI Chief of Sales pre realitky. Prioritizuje leady, nájde nehnuteľnosti, navrhne ďalší krok. Prvých 30 dní zadarmo.',
+    'AI obchodný pomocník pre realitky. Prioritizuje príležitosti, nájde nehnuteľnosti a navrhne ďalší krok. 100 % garancia vrátenia poplatku prvých 30 dní.',
 };
 
 export default function LandingPage() {
@@ -35,8 +41,14 @@ export default function LandingPage() {
       {/* 1. Hero – prvý dojem, živý produkt */}
       <Hero />
 
+      {/* 1.1 ROI kalkulačka v hero */}
+      <RoiCalculatorHero />
+
       {/* 2. Problem – emócia, identifikácia problému */}
       <ProblemSection />
+
+      {/* 2.1 Response benchmark */}
+      <ResponseBenchmark />
 
       {/* 3. HowItWorks – 3 kroky, riešenie */}
       <HowItWorks />
@@ -46,6 +58,12 @@ export default function LandingPage() {
 
       {/* 5. Pipeline – AI power moment */}
       <Pipeline />
+
+      {/* 5.1 Mini playbook demo */}
+      <MiniPlaybookDemo />
+
+      {/* 5.2 Integrations trust strip */}
+      <IntegrationsTrustStrip />
 
       {/* 6. GoalsSlider – personalizácia, zapojenie */}
       <GoalsSlider />
@@ -58,6 +76,12 @@ export default function LandingPage() {
 
       {/* 9. Testimonials – sociálny dôkaz */}
       <Testimonials />
+
+      {/* 9.1 Proof numbers */}
+      <ProofNumbers />
+
+      {/* 9.2 FAQ námietky */}
+      <ObjectionFaq />
 
       {/* 10. FinalCTA – posledný úder */}
       <FinalCTA />

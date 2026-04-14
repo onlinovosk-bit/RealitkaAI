@@ -30,7 +30,7 @@ export default async function TeamAnalyticsPage() {
                   <tr>
                     <th className="px-5 py-3 font-medium">Tím</th>
                     <th className="px-5 py-3 font-medium">Členovia</th>
-                    <th className="px-5 py-3 font-medium">Leady</th>
+                    <th className="px-5 py-3 font-medium">Príležitosti</th>
                     <th className="px-5 py-3 font-medium">Horúci</th>
                     <th className="px-5 py-3 font-medium">Konverzia</th>
                     <th className="px-5 py-3 font-medium">Priem. Score</th>
@@ -95,7 +95,7 @@ export default async function TeamAnalyticsPage() {
                     <th className="px-5 py-3 font-medium">Meno</th>
                     <th className="px-5 py-3 font-medium">Email</th>
                     <th className="px-5 py-3 font-medium">Rola</th>
-                    <th className="px-5 py-3 font-medium">Leady</th>
+                    <th className="px-5 py-3 font-medium">Príležitosti</th>
                     <th className="px-5 py-3 font-medium">Horúci</th>
                     <th className="px-5 py-3 font-medium">Konverzia</th>
                     <th className="px-5 py-3 font-medium">Priem. Score</th>

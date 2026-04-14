@@ -16,7 +16,7 @@ export default async function IntegrationsPage() {
     return (
       <ModuleShell
         title="Integrations 1.0"
-        description="Calendar sync, email inbox sync a import portálových leadov."
+        description="Calendar sync, email inbox sync a import portálových príležitostí."
       >
         <LockedFeatureCard
           title="Integrations sú zamknuté"
@@ -29,7 +29,7 @@ export default async function IntegrationsPage() {
   return (
     <ModuleShell
       title="Integrations 1.0"
-      description="Calendar sync, email inbox sync a import portálových leadov."
+      description="Calendar sync, email inbox sync a import portálových príležitostí."
     >
       <FeatureGateBanner description="Integrations sú aktivované v tvojom pláne." title="Integrations sú aktívne" />
 

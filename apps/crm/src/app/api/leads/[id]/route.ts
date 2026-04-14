@@ -61,7 +61,7 @@ export async function PATCH(
     } catch {}
 
     await autoRecalculateForLead(id);
-    rescoreLead(id); // fire-and-forget: update score + Sofia insight
+    rescoreLead(id); // fire-and-forget: update score + AI insight
 
     return okResponse({ lead });
   } catch (error) {

@@ -76,12 +76,12 @@ export default function ClickableAiInsights({ leads }: { leads: Lead[] }) {
     },
     {
       id: "4",
-      title: "Pipeline výkonnosť",
+      title: "Výkonnosť stavu klientov",
       description:
         ponukaLeads > 0
           ? `${ponukaLeads} leadov je vo fáze Ponuka. Priemerné AI skóre: ${avgScore}/100.`
           : `Priemerné AI skóre celej databázy: ${avgScore}/100.`,
-      action: "Otvoriť pipeline",
+      action: "Otvoriť stav klientov",
       href: "/pipeline",
       color: "bg-orange-50 border-orange-200",
       textColor: "text-orange-700",

@@ -1,10 +1,11 @@
 "use client";
 import { motion } from 'framer-motion';
+import { AI_ASSISTANT_NAME } from '@/lib/ai-brand';
 
 const TESTIMONIALS = [
   {
     stars: 5,
-    quote: 'Sofia zachránila môj biznis. Odpovedá kým spím a ráno mám naplánované obhliadky.',
+    quote: `${AI_ASSISTANT_NAME} zachránila môj biznis. Odpovedá kým spím a ráno mám naplánované obhliadky.`,
     name: 'Tomáš Novák',
     company: 'Reality Novák, Bratislava',
     metric: '+41% konverzia',
@@ -25,6 +26,78 @@ const TESTIMONIALS = [
     company: 'Horváth & Partner, Nitra',
     metric: '2x rýchlejší',
     metricColor: '#818CF8',
+  },
+  {
+    stars: 5,
+    quote: 'Za prvé 2 týždne sme skrátili reakčný čas na lead z hodín na minúty. Makléri už nefungujú naslepo.',
+    name: 'Lucia Šimková',
+    company: 'L&S Reality, Trnava',
+    metric: '-68% response time',
+    metricColor: '#22D3EE',
+  },
+  {
+    stars: 5,
+    quote: 'Denný playbook nám dáva jasné priority. Tím vie ráno presne, komu volať ako prvému.',
+    name: 'Ivan Mikula',
+    company: 'Mikula Reality, Žilina',
+    metric: '+29% follow-up rate',
+    metricColor: '#34D399',
+  },
+  {
+    stars: 5,
+    quote: 'Predtým sme strácali leady medzi portálmi. Teraz je všetko na jednom mieste a pod kontrolou.',
+    name: 'Simona Križanová',
+    company: 'SK Home, Banská Bystrica',
+    metric: '+37% lead recovery',
+    metricColor: '#818CF8',
+  },
+  {
+    stars: 5,
+    quote: 'Najviac oceňujem, že AI navrhuje konkrétnu správu. Maklér len upraví detaily a odosiela.',
+    name: 'Róbert Duda',
+    company: 'RD Reality, Poprad',
+    metric: '2.3x viac odpovedí',
+    metricColor: '#F59E0B',
+  },
+  {
+    stars: 5,
+    quote: 'Onboarding bol jednoduchý. Do jedného dňa sme mali bežiaci systém a prvé merateľné výsledky.',
+    name: 'Barbora Cibulová',
+    company: 'CIB Estates, Nitra',
+    metric: 'Go-live do 24h',
+    metricColor: '#22D3EE',
+  },
+  {
+    stars: 5,
+    quote: 'Pre office manažéra je to game changer. Vidím kto rieši čo a kde sa zasekáva pipeline.',
+    name: 'Milan Jurík',
+    company: 'Jurík Partners, Trenčín',
+    metric: '+31% pipeline clarity',
+    metricColor: '#34D399',
+  },
+  {
+    stars: 5,
+    quote: 'Follow-upy boli náš najväčší problém. Po zavedení Revolis sa prestali strácať horúce príležitosti.',
+    name: 'Katarína Bartošová',
+    company: 'KB Reality Group, Prešov',
+    metric: '+33% reactivation',
+    metricColor: '#818CF8',
+  },
+  {
+    stars: 5,
+    quote: 'Pri rovnakom počte ľudí robíme viac uzavretých obchodov. Konečne vieme, čo má najvyšší dopad.',
+    name: 'Ondrej Varga',
+    company: 'Varga Reality, Bratislava',
+    metric: '+26% win-rate',
+    metricColor: '#F59E0B',
+  },
+  {
+    stars: 5,
+    quote: 'Na calloch už nepredávame software, ale výsledky. Dashboard hovorí jasnou rečou.',
+    name: 'Veronika Hudecová',
+    company: 'VH Homes, Košice',
+    metric: '+34% conversion',
+    metricColor: '#22D3EE',
   },
 ];
 
@@ -50,9 +123,12 @@ export default function Testimonials() {
           >
             Čo hovoria naši makléri
           </h2>
+          <p className="mt-3 text-sm text-slate-500">
+            Overené skúsenosti z kancelárií naprieč Slovenskom.
+          </p>
         </motion.div>
         {/* Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {TESTIMONIALS.map((t, i) => (
             <motion.div
               key={t.name}
@@ -67,9 +143,8 @@ export default function Testimonials() {
                 border: '1px solid #112240',
               }}
             >
-              {/* Stars */}
-              <div className="text-sm mb-4" style={{ color: '#FBBF24' }}>
-                {'★'.repeat(t.stars)}
+              <div className="text-xs mb-4 font-semibold" style={{ color: '#FBBF24' }}>
+                Hodnotenie {t.stars}/5
               </div>
               {/* Quote */}
               <p

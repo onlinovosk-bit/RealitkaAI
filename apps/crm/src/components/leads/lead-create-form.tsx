@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { sourceOptions } from "@/lib/leads-store";
+import { RadiantSpriteIcon } from "@/components/shared/radiant-sprite-icon";
 
 const initialState = {
   name: "",
@@ -62,10 +63,10 @@ export default function LeadCreateForm() {
 
       setForm(initialState);
       setIsOpen(false);
-      showToast("✓ Lead uložený");
+      showToast("✓ Príležitosť uložená");
       router.refresh();
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Nepodarilo sa uložiť lead.");
+      showToast(err instanceof Error ? err.message : "Nepodarilo sa uložiť príležitosť.");
     } finally {
       setIsSaving(false);
     }
@@ -81,16 +82,19 @@ export default function LeadCreateForm() {
 
       <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">Pridať lead</h2>
-            <p className="text-sm text-gray-500">Uložený do 10 sekúnd.</p>
+          <div className="flex items-start gap-3">
+            <RadiantSpriteIcon icon="import" sizeClassName="h-12 w-12" className="mt-0.5" />
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Pridať príležitosť</h2>
+              <p className="text-sm text-gray-500">Uložená do 10 sekúnd.</p>
+            </div>
           </div>
           <button
             type="button"
             onClick={() => setIsOpen(prev => !prev)}
             className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
           >
-            {isOpen ? "Zavrieť" : "+ Nový lead"}
+            {isOpen ? "Zavrieť" : "+ Nová príležitosť"}
           </button>
         </div>
 
@@ -162,7 +166,7 @@ export default function LeadCreateForm() {
                 disabled={isSaving}
                 className="rounded-lg bg-gray-900 px-5 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-60"
               >
-                {isSaving ? "Ukladám..." : "Pridať lead"}
+                {isSaving ? "Ukladám..." : "Pridať príležitosť"}
               </button>
               <button
                 type="button"

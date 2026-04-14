@@ -2,12 +2,13 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 import Link from 'next/link';
+import { RadiantSpriteIcon, type RadiantIconKey } from '@/components/shared/radiant-sprite-icon';
 
 const goals = [
-  { id: 'hot-leads', icon: '🔥', title: 'Chcem viac hot leadov', desc: 'Prioritizuj mi klientov, ktorí sú pripravení kúpiť.' },
-  { id: 'pipeline', icon: '📋', title: 'Chcem mať poriadok v pipeline', desc: 'Jeden pohľad na všetkých klientov a ich stav.' },
-  { id: 'predict', icon: '🔮', title: 'Chcem vedieť, kto kúpi v 90 dňoch', desc: 'AI predikcia pripravenosti pre každého klienta.' },
-  { id: 'team', icon: '👥', title: 'Makléri majú vedieť, čo robiť každý deň', desc: 'Automatické úlohy a priority pre celý tím.' },
+  { id: 'hot-leads', icon: 'leads' as RadiantIconKey, title: 'Chcem viac hot leadov', desc: 'Prioritizuj mi klientov, ktorí sú pripravení kúpiť.' },
+  { id: 'pipeline', icon: 'pipeline' as RadiantIconKey, title: 'Chcem mať poriadok v stave klientov', desc: 'Jeden pohľad na všetkých klientov a ich stav.' },
+  { id: 'predict', icon: 'revolis-ai' as RadiantIconKey, title: 'Chcem vedieť, kto kúpi v 90 dňoch', desc: 'AI predikcia pripravenosti pre každého klienta.' },
+  { id: 'team', icon: 'tasks' as RadiantIconKey, title: 'Makléri majú vedieť, čo robiť každý deň', desc: 'Automatické úlohy a priority pre celý tím.' },
 ];
 
 export default function GoalsSlider() {
@@ -58,14 +59,14 @@ export default function GoalsSlider() {
                   <motion.div layoutId="goal-bg" className="absolute inset-0 rounded-2xl bg-cyan-500/5" />
                 )}
                 <div className="relative z-10 flex items-center justify-between w-full">
-                  <span className="text-2xl">{goal.icon}</span>
+                  <RadiantSpriteIcon icon={goal.icon} sizeClassName="h-9 w-9" />
                   {isActive && (
                     <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       className="w-5 h-5 rounded-full bg-cyan-400 flex items-center justify-center"
                     >
-                      <span className="text-slate-950 text-xs font-bold">✓</span>
+                      <span className="text-slate-950 text-xs font-bold">OK</span>
                     </motion.div>
                   )}
                 </div>
@@ -79,7 +80,7 @@ export default function GoalsSlider() {
                   className={`relative z-10 inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold transition-colors
                     ${isActive ? 'bg-cyan-400 text-slate-950' : 'bg-slate-800 text-slate-300'}`}
                 >
-                  {isActive ? '✓ Vybraté' : 'Klikni pre nastavenie'}
+                  {isActive ? 'Vybraté' : 'Klikni pre nastavenie'}
                 </span>
               </motion.button>
             );
@@ -106,7 +107,7 @@ export default function GoalsSlider() {
                 href="/register"
                 className="inline-flex items-center gap-2 rounded-full bg-cyan-400 px-7 py-3 text-sm font-bold text-slate-950 shadow-[0_0_40px_rgba(34,211,238,0.5)] transition-all hover:scale-105 hover:bg-cyan-300"
               >
-                ✦ Spustiť Revolis.AI pre tento cieľ
+                Spustiť Revolis.AI pre tento cieľ
               </Link>
             </motion.div>
           )}

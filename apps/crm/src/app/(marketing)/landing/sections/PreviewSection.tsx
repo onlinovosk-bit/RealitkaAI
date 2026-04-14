@@ -1,6 +1,8 @@
 'use client';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { AI_ASSISTANT_NAME } from '@/lib/ai-brand';
+import { RadiantSpriteIcon, type RadiantIconKey } from '@/components/shared/radiant-sprite-icon';
 
 export default function PreviewSection() {
   return (
@@ -23,18 +25,19 @@ export default function PreviewSection() {
               Toto je tvoj nový systém.
             </h2>
             <p className="text-lg text-slate-300">
-              Jeden pohľad a vieš: kto je pripravený kúpiť, ktoré nehnuteľnosti mu sedí
-              a čo má tvoj tím spraviť dnes. Bez hádania, bez chaosu.
+              Jeden pohľad stačí, aby bolo jasné: kto je pripravený kúpiť, ktoré nehnuteľnosti
+              sú vhodné a čo má tím urobiť dnes. Bez hádania a bez chaosu.
             </p>
             <ul className="space-y-3 text-sm text-slate-400">
               {[
-                '📊 AI skóre pripravenosti pre každého klienta',
-                '🏠 Automatické párovanie klientov s nehnuteľnosťami',
-                '⚡ Denné priority pre každého makléra v tíme',
-                '📱 Notifikácie keď je klient pripravený na akciu',
+                { icon: 'dashboard' as RadiantIconKey, text: 'AI skóre pripravenosti pre každého klienta' },
+                { icon: 'properties' as RadiantIconKey, text: 'Automatické párovanie klientov s nehnuteľnosťami' },
+                { icon: 'playbook' as RadiantIconKey, text: 'Denné priority pre každého makléra v tíme' },
+                { icon: 'revolis-ai' as RadiantIconKey, text: 'Notifikácie keď je klient pripravený na akciu' },
               ].map((item) => (
-                <li key={item} className="flex items-start gap-2">
-                  <span>{item}</span>
+                <li key={item.text} className="flex items-start gap-2">
+                  <RadiantSpriteIcon icon={item.icon} sizeClassName="h-5 w-5" className="mt-0.5 rounded-md" />
+                  <span>{item.text}</span>
                 </li>
               ))}
             </ul>
@@ -42,9 +45,9 @@ export default function PreviewSection() {
               href="/register"
               className="inline-flex items-center gap-2 rounded-full bg-cyan-400 px-7 py-3.5 text-sm font-bold text-slate-950 shadow-[0_0_40px_rgba(34,211,238,0.6)] transition-all hover:scale-105 hover:bg-cyan-300 active:scale-95"
             >
-              ✦ Začať za 30 sekúnd
+              Spustiť onboarding za 30 sekúnd
             </Link>
-            <p className="text-xs text-slate-500">Nepotrebuješ kreditnú kartu. Prvých 30 dní zadarmo.</p>
+            <p className="text-xs text-slate-500">100 % garancia vrátenia poplatku prvých 30 dní.</p>
           </motion.div>
 
           {/* RIGHT */}
@@ -62,7 +65,7 @@ export default function PreviewSection() {
                   <span className="rounded-full bg-slate-800/90 px-2.5 py-1 font-medium text-cyan-200">
                     Revolis.AI • Dashboard
                   </span>
-                  <span className="text-slate-600">Buyer readiness · Hot leads · Pipeline</span>
+                  <span className="text-slate-600">Buyer readiness · Hot leads · Stav klientov</span>
                 </div>
 
                 <div className="grid gap-3 md:grid-cols-3">
@@ -104,13 +107,13 @@ export default function PreviewSection() {
                         >
                           12
                         </motion.span>
-                        <span className="text-[10px] text-green-400">▲ +3</span>
+                        <span className="text-[10px] text-green-400">+3</span>
                       </div>
                       <p className="text-[10px] text-slate-500 mt-0.5">3 telefonáty · 2 follow-upy</p>
                     </div>
 
                     <div className="rounded-2xl bg-slate-950/80 p-3">
-                      <p className="text-xs font-medium text-slate-400 mb-2">Pipeline</p>
+                      <p className="text-xs font-medium text-slate-400 mb-2">Stav klientov</p>
                       <div className="flex gap-1 text-[9px]">
                         {['Nové', 'Aktívne', 'Uzavreté'].map((s, i) => (
                           <span
@@ -133,7 +136,7 @@ export default function PreviewSection() {
                     className="w-2 h-2 rounded-full bg-cyan-400 flex-shrink-0"
                   />
                   <p className="text-xs text-slate-400">
-                    <span className="text-cyan-300 font-medium">Sofia navrhuje:</span>{' '}
+                    <span className="text-cyan-300 font-medium">{AI_ASSISTANT_NAME} navrhuje:</span>{' '}
                     Zavolajte Martinovi Kováčovi — jeho záujem o byt na Ružinove vzrástol o 47 %.
                   </p>
                 </div>

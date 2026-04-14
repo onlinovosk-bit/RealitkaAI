@@ -94,7 +94,7 @@ export function getNextBestAction(lead: Lead): string {
   if (lead.status === "Obhliadka") return "📅 Potvrď obhliadku a pošli detaily";
   if (lead.status === "Horúci")    return "🔥 Kontaktuj dnes – vysoká priorita";
   if (lead.status === "Nový")      return "⚡ Kontaktuj do 2 hodín – prvý kontakt rozhoduje";
-  if (days >= 5)                   return "📩 Pošli follow-up – klient začína chladnúť";
+  if (days >= 5)                   return "📩 Pošli správu na opätovný kontakt – klient začína chladnúť";
   if (days >= 2)                   return "💬 Pošli krátku správu so statusom";
   return "✅ Sleduj ďalší vývoj";
 }
@@ -162,7 +162,7 @@ export function generateDailyInsights(leads: Lead[]): AiInsight[] {
     insights.push({
       type: "warning",
       title: `Strácaš ${coldLeads.length} ${coldLeads.length === 1 ? "klienta" : "klientov"}`,
-      description: `${coldLeads.length} leadov nemá kontakt 5+ dní. Rýchla správa môže zachrániť obchod.`,
+      description: `${coldLeads.length} príležitostí nemá kontakt 5+ dní. Rýchla správa môže zachrániť obchod.`,
     });
   }
 
@@ -174,8 +174,8 @@ export function generateDailyInsights(leads: Lead[]): AiInsight[] {
   if (hotLeads.length > 0) {
     insights.push({
       type: "opportunity",
-      title: `${hotLeads.length} horúcich leadov čaká na akciu`,
-      description: "Tieto leady majú vysokú šancu kúpy. Zavolaj ešte dnes.",
+      title: `${hotLeads.length} horúcich príležitostí čaká na akciu`,
+      description: "Tieto príležitosti majú vysokú šancu kúpy. Zavolaj ešte dnes.",
       leadId: hotLeads[0]?.id,
     });
   }
@@ -187,7 +187,7 @@ export function generateDailyInsights(leads: Lead[]): AiInsight[] {
   if (newLeads.length > 0) {
     insights.push({
       type: "action",
-      title: `${newLeads.length} nových leadov bez prvého kontaktu`,
+      title: `${newLeads.length} nových príležitostí bez prvého kontaktu`,
       description: "Prvý kontakt do 2 hodín zvyšuje konverziu o 60%.",
     });
   }

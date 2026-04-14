@@ -36,7 +36,7 @@ export default async function TeamPage({
     return (
       <ModuleShell
         title="Používatelia a tímy"
-        description="Role-aware pohľady, priraďovanie leadov a filtrovanie podľa tímu."
+        description="Role-aware pohľady, priraďovanie príležitostí a filtrovanie podľa tímu."
       >
         <LockedFeatureCard
           title="Team management je zamknutý"
@@ -58,7 +58,7 @@ export default async function TeamPage({
     return (
       <ModuleShell
         title="Používatelia a tímy"
-        description="Role-aware pohľady, priraďovanie leadov a filtrovanie podľa tímu."
+        description="Role-aware pohľady, priraďovanie príležitostí a filtrovanie podľa tímu."
       >
         <ErrorState
           title="Modul tímov sa nepodarilo načítať"
@@ -117,7 +117,7 @@ export default async function TeamPage({
   return (
     <ModuleShell
       title="Používatelia a tímy"
-      description="Role-aware pohľady, priraďovanie leadov a filtrovanie podľa tímu."
+      description="Role-aware pohľady, priraďovanie príležitostí a filtrovanie podľa tímu."
     >
       <FeatureGateBanner description="Team management je aktivovaný v tvojom pláne." title="Team management je aktívny" />
 

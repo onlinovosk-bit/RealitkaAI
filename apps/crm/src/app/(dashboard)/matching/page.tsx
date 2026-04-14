@@ -27,7 +27,7 @@ export default async function MatchingPage() {
     return (
       <ModuleShell
         title="Matching"
-        description="Matching Engine 2.0 s automatickým prepočtom pri zmene leadu alebo nehnuteľnosti."
+        description="Matching Engine 2.0 s automatickým prepočtom pri zmene príležitosti alebo nehnuteľnosti."
       >
         <ErrorState
           title="Matching sa nepodarilo načítať"
@@ -90,7 +90,7 @@ export default async function MatchingPage() {
   return (
     <ModuleShell
       title="Matching"
-      description="Matching Engine 2.0 s automatickým prepočtom pri zmene leadu alebo nehnuteľnosti."
+      description="Matching Engine 2.0 s automatickým prepočtom pri zmene príležitosti alebo nehnuteľnosti."
     >
       <section className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -109,7 +109,7 @@ export default async function MatchingPage() {
         </div>
 
         <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Leady so zhodou</p>
+          <p className="text-sm text-gray-500">Príležitosti so zhodou</p>
           <h2 className="mt-2 text-3xl font-bold text-gray-900">{uniqueLeadCount}</h2>
         </div>
       </section>
@@ -121,7 +121,7 @@ export default async function MatchingPage() {
       {rows.length === 0 ? (
         <EmptyState
           title="Zatiaľ nie sú uložené žiadne matching zhody"
-          description="Systém ich začne vytvárať automaticky pri zmene leadov a nehnuteľností, alebo klikni na manuálny prepočet."
+          description="Systém ich začne vytvárať automaticky pri zmene príležitostí a nehnuteľností, alebo klikni na manuálny prepočet."
         />
       ) : (
         <>

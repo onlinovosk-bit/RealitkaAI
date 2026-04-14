@@ -3,6 +3,8 @@
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useRef, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { AI_ASSISTANT_STATUS_ACTIVE } from '@/lib/ai-brand';
+import { RadiantSpriteIcon } from '@/components/shared/radiant-sprite-icon';
 
 function Orb({ className }: { className: string }) {
   return (
@@ -32,7 +34,7 @@ function LiveLeadCounter() {
       className="inline-flex items-center gap-3 rounded-2xl border border-red-500/20 bg-red-500/5 px-5 py-3 mt-6"
     >
       <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-      <span className="text-xs text-slate-400">Leady stratené BEZ AI dnes:</span>
+      <span className="text-xs text-slate-400">Odhad stratených príležitostí bez AI dnes:</span>
       <motion.span
         key={count}
         initial={{ opacity: 0.5, y: -4 }}
@@ -63,7 +65,7 @@ function DashboardMock() {
         <span className="ml-2 text-[11px] text-slate-500">Revolis.AI Dashboard</span>
         <div className="ml-auto flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-          <span className="text-[11px] text-green-400">Sofia aktívna</span>
+          <span className="text-[11px] text-green-400">{AI_ASSISTANT_STATUS_ACTIVE}</span>
         </div>
       </div>
       <div className="grid grid-cols-4 gap-2 mb-3">
@@ -71,7 +73,7 @@ function DashboardMock() {
           { label: 'Leady dnes', value: '12', delta: '+3' },
           { label: 'AI odpovede', value: '9', delta: '2min' },
           { label: 'Obhliadky', value: '4', delta: 'zajtra' },
-          { label: 'AI skóre', value: '78', delta: '▲' },
+          { label: 'AI skóre', value: '78', delta: '+ trend' },
         ].map((kpi) => (
           <div key={kpi.label} className="rounded-xl bg-slate-800/60 p-2">
             <p className="text-[10px] text-slate-500 mb-0.5">{kpi.label}</p>
@@ -139,7 +141,7 @@ export default function Hero() {
               className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-4 py-1.5 text-sm text-cyan-300"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-              AI Chief of Sales pre realitku
+              AI obchodný pomocník pre realitku
             </motion.div>
 
             <motion.h1
@@ -164,8 +166,8 @@ export default function Hero() {
               transition={{ duration: 0.6, delay: 0.4 }}
               className="text-lg text-slate-300 max-w-lg"
             >
-              Revolis.AI ti každý deň vyberie najdôležitejších klientov, nájde im ideálne
-              nehnuteľnosti a navrhne ďalší krok. Skôr, než otvoríš CRM.
+              Revolis.AI každý deň vyberie najdôležitejšie príležitosti, nájde vhodné
+              nehnuteľnosti a odporučí ďalší krok ešte pred otvorením CRM.
             </motion.p>
 
             <motion.div
@@ -178,13 +180,13 @@ export default function Hero() {
                 href="/register"
                 className="relative rounded-full bg-cyan-400 px-7 py-3.5 text-sm font-bold text-slate-950 shadow-[0_0_40px_rgba(34,211,238,0.6)] transition-all duration-200 hover:scale-105 hover:bg-cyan-300 hover:shadow-[0_0_60px_rgba(34,211,238,0.8)] active:scale-95"
               >
-                ✦ Zabezpečiť miesto za €49/mes
+                Aktivovať Revolis.AI za €99/mes
               </Link>
               <Link
                 href="#pipeline"
                 className="rounded-full border border-slate-600/80 bg-slate-900/50 px-7 py-3.5 text-sm font-medium text-slate-100 backdrop-blur-lg transition-all duration-200 hover:border-cyan-300/70 hover:bg-slate-900/80 hover:text-cyan-100"
               >
-                ▶ Pozrieť živé demo
+                Pozrieť live demo
               </Link>
             </motion.div>
 
@@ -194,10 +196,10 @@ export default function Hero() {
               transition={{ delay: 0.8 }}
               className="flex flex-wrap gap-5 text-sm text-slate-200 pt-2 font-medium"
             >
-              <span className="text-slate-100">🟢 <strong className="text-white">847</strong> aktívnych maklérov</span>
-              <span className="text-slate-100">⭐ <strong className="text-white">4.9/5</strong> hodnotenie</span>
-              <span className="text-slate-100">📈 <strong className="text-cyan-300">+34%</strong> konverzia</span>
-              <span className="text-slate-100">🇸🇰 Made in Slovakia</span>
+              <span className="inline-flex items-center gap-1.5 text-slate-100"><span className="w-2 h-2 rounded-full bg-green-400" /> <strong className="text-white">847</strong> aktívnych maklérov</span>
+              <span className="inline-flex items-center gap-1.5 text-slate-100"><RadiantSpriteIcon icon="dashboard" sizeClassName="h-4 w-4" className="rounded-sm border-cyan-400/20 shadow-none" /> <strong className="text-white">4.9/5</strong> hodnotenie</span>
+              <span className="inline-flex items-center gap-1.5 text-slate-100"><RadiantSpriteIcon icon="pipeline" sizeClassName="h-4 w-4" className="rounded-sm border-cyan-400/20 shadow-none" /> <strong className="text-cyan-300">+34%</strong> konverzia</span>
+              <span className="text-slate-100">Made in Slovakia</span>
             </motion.div>
 
             <LiveLeadCounter />

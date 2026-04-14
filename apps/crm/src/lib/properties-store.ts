@@ -1,4 +1,7 @@
-﻿import { supabaseClient } from "@/lib/supabase/client";
+﻿import { readDemoModeFromCookie } from "@/lib/demo-mode-cookie";
+import { supabaseClient } from "@/lib/supabase/client";
+import { generateSyntheticProperties } from "@/lib/demo/synthetic-properties";
+import { GOLD_STANDARD_POPRAD_STUROVA_3I } from "@/lib/mock-data";
 
 export type Property = {
   id: string;
@@ -59,6 +62,7 @@ export const propertyTypeOptions = [
   "Komerčný priestor",
 ];
 
+/** Základný katalóg: ručné ukážky + zlatý listing + ~340 syntetických záznamov (zmiešané stavy). */
 const demoProperties: Property[] = [
   {
     id: "prop-demo-1",
@@ -83,7 +87,7 @@ const demoProperties: Property[] = [
     type: "Dom",
     rooms: "4 izby",
     features: ["záhrada", "parkovanie"],
-    status: "Aktívna",
+    status: "Predaná",
     description: "Rodinný dom v tichej lokalite so záhradou.",
     ownerName: "Marek Majiteľ",
     ownerPhone: "+421902222222",
@@ -102,7 +106,24 @@ const demoProperties: Property[] = [
     ownerName: "Petra Majiteľka",
     ownerPhone: "+421903333333",
   },
+  GOLD_STANDARD_POPRAD_STUROVA_3I,
+  ...generateSyntheticProperties(340),
 ];
+
+function getDemoShowcaseProperties(): Property[] {
+  return demoProperties.map((p) => {
+    const isGoldPoprad = p.id === "poprad-sturova-3i-gold";
+    const isLegacyHand = p.id?.startsWith("prop-demo-");
+    return {
+      ...p,
+      price:
+        isGoldPoprad ? p.price : isLegacyHand ? Math.round(p.price * 1.06) : p.price,
+      features: p.features.includes("demo: Revolis spotlight")
+        ? p.features
+        : [...p.features, "demo: Revolis spotlight"],
+    };
+  });
+}
 
 function getSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -186,10 +207,14 @@ export async function getPropertiesSummary(): Promise<PropertiesSummary> {
 }
 
 export async function listProperties(filters?: PropertyFilters): Promise<Property[]> {
+  if (await readDemoModeFromCookie()) {
+    return applyFilters(getDemoShowcaseProperties(), filters);
+  }
+
   const supabase = getSupabaseClient();
 
   if (!supabase) {
-    return applyFilters(demoProperties, filters);
+    return applyFilters(getDemoShowcaseProperties(), filters);
   }
 
   let query = supabase
@@ -265,7 +290,7 @@ export async function listProperties(filters?: PropertyFilters): Promise<Propert
     }
 
     console.error("listProperties error:", error?.message);
-    return applyFilters(demoProperties, filters);
+    return applyFilters(getDemoShowcaseProperties(), filters);
   }
 
   return data.map((item: any) => ({
@@ -287,10 +312,14 @@ export async function listProperties(filters?: PropertyFilters): Promise<Propert
 }
 
 export async function getProperty(id: string): Promise<Property | undefined> {
+  if (await readDemoModeFromCookie()) {
+    return getDemoShowcaseProperties().find((item) => item.id === id);
+  }
+
   const supabase = getSupabaseClient();
 
   if (!supabase) {
-    return demoProperties.find((item) => item.id === id);
+    return getDemoShowcaseProperties().find((item) => item.id === id);
   }
 
   const { data, error } = await supabase
@@ -300,7 +329,7 @@ export async function getProperty(id: string): Promise<Property | undefined> {
     .single();
 
   if (error || !data) {
-    return demoProperties.find((item) => item.id === id);
+    return getDemoShowcaseProperties().find((item) => item.id === id);
   }
 
   return {
@@ -396,7 +425,7 @@ export async function createProperty(input: PropertyInput) {
     throw new Error(error.message);
   }
 
-  return {
+  const result = {
     id: data.id,
     agencyId: data.agency_id ?? null,
     title: data.title,
@@ -412,6 +441,16 @@ export async function createProperty(input: PropertyInput) {
     createdAt: data.created_at,
     updatedAt: data.updated_at,
   };
+
+  // Fire-and-forget embedding indexing (neblokuje odpoveď)
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  fetch(`${appUrl}/api/embeddings/index`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ entityType: "property", entityId: result.id }),
+  }).catch((err) => console.warn("[embeddings] Property indexing zlyhalo:", err));
+
+  return result;
 }
 
 export async function updateProperty(id: string, input: Partial<PropertyInput>) {

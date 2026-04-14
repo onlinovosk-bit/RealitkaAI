@@ -18,17 +18,17 @@ export default async function LeadsPage() {
 
       return { leads, teams, profiles };
     },
-    "Nepodarilo sa načítať leady."
+    "Nepodarilo sa načítať príležitosti."
   );
 
   if (!result.ok) {
     return (
       <ModuleShell
-        title="Leady"
+        title="Príležitosti"
         description="Profesionálny prehľad klientov, priorít a AI odporúčaní."
       >
         <ErrorState
-          title="Leady sa nepodarilo načítať"
+          title="Príležitosti sa nepodarilo načítať"
           description={result.error}
         />
       </ModuleShell>
@@ -39,7 +39,7 @@ export default async function LeadsPage() {
 
   return (
     <ModuleShell
-      title="Leady"
+      title="Príležitosti"
       description="Profesionálny prehľad klientov, priorít a AI odporúčaní."
     >
       <LeadsModule

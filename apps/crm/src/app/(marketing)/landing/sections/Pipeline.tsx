@@ -1,25 +1,26 @@
 'use client';
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
+import { RadiantSpriteIcon, type RadiantIconKey } from '@/components/shared/radiant-sprite-icon';
 
 const steps = [
   {
-    icon: '🏠',
+    icon: 'properties' as RadiantIconKey,
     title: 'Leady prichádzajú',
     desc: 'Z webu, portálov, kampaní a odporúčaní. Nehnuteľnosti.sk, Reality.sk, TopReality.sk. Nič sa nestratí.',
   },
   {
-    icon: '🧠',
+    icon: 'revolis-ai' as RadiantIconKey,
     title: 'AI pochopí intent a správanie',
     desc: 'Revolis analyzuje históriu, aktivitu a kontext každého klienta. V reálnom čase.',
   },
   {
-    icon: '📊',
+    icon: 'dashboard' as RadiantIconKey,
     title: 'Zoradí klientov podľa pripravenosti',
     desc: 'Buyer readiness index ti ukáže presne, kto je pripravený kúpiť práve dnes.',
   },
   {
-    icon: '⚡',
+    icon: 'playbook' as RadiantIconKey,
     title: 'Navrhne ďalší krok a správu',
     desc: 'AI ti pripraví konkrétny call, správu alebo obhliadku. Ty len potvrdíš.',
   },
@@ -72,7 +73,7 @@ export default function Pipeline() {
             >
               {i < steps.length - 1 && (
                 <div className="hidden md:block absolute -right-3 top-1/2 -translate-y-1/2 text-slate-600 z-10 text-lg">
-                  →
+                  |
                 </div>
               )}
 
@@ -86,7 +87,9 @@ export default function Pipeline() {
                 Krok {i + 1}
               </div>
 
-              <div className="text-3xl">{step.icon}</div>
+              <div className="text-3xl">
+                <RadiantSpriteIcon icon={step.icon} sizeClassName="h-10 w-10" />
+              </div>
               <h3
                 className="text-base font-bold text-slate-50"
                 style={{ fontFamily: 'var(--font-syne)' }}

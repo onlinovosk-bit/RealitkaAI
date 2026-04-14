@@ -14,7 +14,7 @@ export default function LeadRowActions({ lead, onDelete }: LeadRowActionsProps) 
   const [isDeleting, setIsDeleting] = useState(false);
 
   async function handleDelete() {
-    if (!confirm("Naozaj chcete vymazať tento lead?")) return;
+    if (!confirm("Naozaj chcete vymazať túto príležitosť?")) return;
 
     setIsDeleting(true);
     try {
@@ -25,37 +25,40 @@ export default function LeadRowActions({ lead, onDelete }: LeadRowActionsProps) 
       const data = await response.json();
 
       if (!response.ok || !data.ok) {
-        throw new Error(data.error || "Nepodarilo sa vymazať lead.");
+        throw new Error(data.error || "Nepodarilo sa vymazať príležitosť.");
       }
 
       onDelete(lead.id);
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Nepodarilo sa vymazať lead.");
+      alert(error instanceof Error ? error.message : "Nepodarilo sa vymazať príležitosť.");
     } finally {
       setIsDeleting(false);
     }
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
       <button
+        type="button"
         onClick={() => router.push(`/leads/${lead.id}`)}
-        className="rounded-lg border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        className="rounded-lg border border-gray-300 px-2 py-1 text-xs sm:px-3 sm:text-sm font-medium text-gray-700 hover:bg-gray-50"
       >
         Detail
       </button>
 
       <button
+        type="button"
         onClick={() => router.push(`/leads/${lead.id}?edit=true`)}
-        className="rounded-lg border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        className="rounded-lg border border-gray-300 px-2 py-1 text-xs sm:px-3 sm:text-sm font-medium text-gray-700 hover:bg-gray-50"
       >
         Upraviť
       </button>
 
       <button
+        type="button"
         onClick={handleDelete}
         disabled={isDeleting}
-        className="rounded-lg border border-red-300 px-3 py-1 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-60"
+        className="rounded-lg border border-red-300 px-2 py-1 text-xs sm:px-3 sm:text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-60"
       >
         {isDeleting ? "Mažem..." : "Vymazať"}
       </button>

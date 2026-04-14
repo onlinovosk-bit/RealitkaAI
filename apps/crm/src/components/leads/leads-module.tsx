@@ -6,6 +6,7 @@ import LeadCreateForm from "@/components/leads/lead-create-form";
 import LeadsWorkspace from "@/components/leads/leads-workspace";
 import AiPanel from "@/components/leads/ai-panel";
 import EmptyState from "@/components/shared/empty-state";
+import SemanticSearchBar from "@/components/search/SemanticSearchBar";
 import type { Lead } from "@/lib/leads-store";
 import type { Recommendation } from "@/lib/mock-data";
 
@@ -52,6 +53,8 @@ export default function LeadsModule({
   return (
     <>
       <div className="mb-6 flex flex-col gap-4">
+        <SemanticSearchBar type="leads" className="w-full" />
+
         <LeadFilters
           leads={leads}
           teams={teams}
@@ -64,12 +67,12 @@ export default function LeadsModule({
 
       <section className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Zobrazené leady</p>
+          <p className="text-sm text-gray-500">Zobrazené príležitosti</p>
           <h2 className="mt-2 text-3xl font-bold text-gray-900">{filtered.length}</h2>
         </div>
 
         <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Horúce leady</p>
+          <p className="text-sm text-gray-500">Horúce príležitosti</p>
           <h2 className="mt-2 text-3xl font-bold text-gray-900">
             {filtered.filter((item) => item.status === "Horúci").length}
           </h2>
@@ -90,16 +93,15 @@ export default function LeadsModule({
 
       {filtered.length === 0 ? (
         <EmptyState
-          title="Zatiaľ nemáš žiadne leady"
-          description="Vytvor prvý lead cez formulár vyššie alebo uprav filtre."
+          title="Zatiaľ nemáš žiadne príležitosti"
+          description="Vytvor prvú príležitosť cez formulár vyššie alebo uprav filtre."
         />
       ) : (
-        <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-          <div className="xl:col-span-2">
+        <section className="flex flex-col gap-8">
+          <div className="min-w-0 w-full">
             <LeadsWorkspace leads={filtered} />
           </div>
-
-          <div>
+          <div className="w-full max-w-2xl">
             <AiPanel
               title="AI odporúčania pre tím"
               recommendations={pageRecommendations.slice(0, 5)}

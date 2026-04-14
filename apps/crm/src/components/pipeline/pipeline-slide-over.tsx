@@ -135,7 +135,7 @@ export default function PipelineSlideOver({
           <div>
             <h2 className="text-2xl font-bold text-gray-900">{lead.name}</h2>
             <p className="mt-1 text-sm text-gray-500">
-              Detail klienta priamo z pipeline
+              Detail klienta priamo z fáz príležitostí
             </p>
           </div>
 
@@ -151,7 +151,7 @@ export default function PipelineSlideOver({
         <div className="space-y-6 p-6">
           <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-              <p className="text-sm text-gray-500">Lead score</p>
+              <p className="text-sm text-gray-500">Skóre príležitosti</p>
               <p className="mt-2 text-2xl font-bold text-gray-900">{lead.score}/100</p>
             </div>
 
@@ -237,7 +237,7 @@ export default function PipelineSlideOver({
           </section>
 
           <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-            <h3 className="text-lg font-semibold text-gray-900">História presunov v pipeline</h3>
+            <h3 className="text-lg font-semibold text-gray-900">História presunov vo fázach príležitostí</h3>
 
             <div className="mt-4 space-y-3">
               {loadingMoves ? (
@@ -246,7 +246,7 @@ export default function PipelineSlideOver({
                 </div>
               ) : moves.length > 0 ? (
                 moves.map((item) => (
-                  <div key={item.id} className="rounded-xl border border-gray-200 p-4">
+                <div key={item.id} className="rounded-xl border border-gray-200 p-4">
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-sm font-medium text-gray-900">
                         {item.fromStatus} → {item.toStatus}
@@ -254,7 +254,7 @@ export default function PipelineSlideOver({
                       <p className="text-xs text-gray-500">{item.changedAt}</p>
                     </div>
                     <p className="mt-2 text-sm text-gray-600">
-                      Lead <span className="font-medium">{item.leadName}</span> bol presunutý do nového stavu.
+                      Príležitosť <span className="font-medium">{item.leadName}</span> bola presunutá do nového stavu.
                     </p>
                   </div>
                 ))

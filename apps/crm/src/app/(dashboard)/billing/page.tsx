@@ -1,8 +1,10 @@
 import ModuleShell from "@/components/shared/module-shell";
 import ErrorState from "@/components/shared/error-state";
 import PricingCards from "@/components/billing/pricing-cards";
+import RoiCalculator from "@/components/billing/RoiCalculator";
 import CurrentSubscriptionCard from "@/components/billing/current-subscription-card";
-import ManageSubscriptionButton from "@/components/billing/manage-subscription-button";
+import { ManageSubscriptionButton } from "@/components/billing/manage-subscription-button";
+import UsageMetricsEnterpriseCard from "@/components/settings/usage-metrics-enterprise-card";
 import { safeServerAction } from "@/lib/safe-action";
 import { BILLING_PLANS, getCurrentBillingStatus } from "@/lib/billing-store";
 import { requireRole } from "@/lib/permissions";
@@ -12,22 +14,22 @@ export default async function BillingPage({
 }: {
   searchParams: Promise<{ checkout?: string }>;
 }) {
-  await requireRole(["owner", "manager"]);
+  await requireRole(["owner", "manager", "agent"]);
   const params = await searchParams;
 
   const result = await safeServerAction(
     () => getCurrentBillingStatus(),
-    "Nepodarilo sa načítať billing stav."
+    "Nepodarilo sa načítať stav predplatného."
   );
 
   if (!result.ok) {
     return (
       <ModuleShell
-        title="Billing & Subscription"
-        description="Stripe billing pre platený SaaS model."
+        title="Predplatné"
+        description="Správa predplatného a platieb."
       >
         <ErrorState
-          title="Billing sa nepodarilo načítať"
+          title="Predplatné sa nepodarilo načítať"
           description={result.error}
         />
       </ModuleShell>
@@ -38,8 +40,8 @@ export default async function BillingPage({
 
   return (
     <ModuleShell
-      title="Billing & Subscription"
-      description="Stripe billing pre platený SaaS model."
+      title="Predplatné"
+      description="Správa predplatného a platieb."
     >
       {params.checkout === "success" && (
         <div className="mb-6 rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
@@ -76,15 +78,29 @@ export default async function BillingPage({
         </div>
 
         <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Billing portal</p>
+          <p className="text-sm text-gray-500">Portál predplatného</p>
           <div className="mt-3">
-            <ManageSubscriptionButton />
+            {billing.hasSubscription ? (
+              <ManageSubscriptionButton />
+            ) : (
+              <p className="text-sm" style={{ color: '#475569' }}>
+                Dostupné po aktivácii plánu
+              </p>
+            )}
           </div>
         </div>
       </section>
 
       <section className="mb-6">
         <CurrentSubscriptionCard billing={billing} />
+      </section>
+
+      <section className="mb-6">
+        <UsageMetricsEnterpriseCard />
+      </section>
+
+      <section className="mb-6">
+        <RoiCalculator />
       </section>
 
       <PricingCards
@@ -94,7 +110,9 @@ export default async function BillingPage({
           priceLabel: item.priceLabel,
           originalPriceLabel: item.originalPriceLabel,
           description: item.description,
+          billingNote: item.billingNote,
           recommended: item.recommended,
+          features: [...item.features],
         }))}
       />
     </ModuleShell>
