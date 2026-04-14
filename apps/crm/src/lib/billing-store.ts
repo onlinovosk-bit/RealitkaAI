@@ -32,7 +32,7 @@ export const BILLING_PLANS = [
     priceLabel: "49 € / mesiac",
     originalPriceLabel: "98 € / mesiac",
     description: "Pre samostatných maklérov a malé kancelárie. AI prioritizácia príležitostí, základné fázy predaja, email podpora. Väčšina kancelárií prejde na Pro do 60 dní.",
-    billingNote: "Fakturované mesačne. Zrušenie kedykoľvek. Do 3 maklérov.",
+    billingNote: "Fakturované mesačne. Zrušenie kedykoľvek. Do 3 maklérov. 100% garancia vrátenia do 30 dní.",
     recommended: false,
     features: [
       "Do 3 maklérov",
@@ -40,6 +40,7 @@ export const BILLING_PLANS = [
       "AI prioritizácia príležitostí",
       "Základné fázy predaja",
       "Email podpora",
+      "100% garancia vrátenia do 30 dní",
     ],
     limits: PLAN_LIMITS.starter,
     founderPrice: true,
@@ -76,7 +77,7 @@ export const BILLING_PLANS = [
     priceLabel: "299 € / mesiac",
     originalPriceLabel: "598 € / mesiac",
     description: "Pre väčšie kancelárie s viacerými tímami. Neobmedzený počet maklérov, pokročilá analytika tímu, vlastné AI modely a prioritná podpora. Kancelária s 5 maklérmi ušetrí 400€+ mesačne.",
-    billingNote: "Fakturované mesačne. Zrušenie kedykoľvek. Multi-tím podpora.",
+    billingNote: "Fakturované mesačne. Zrušenie kedykoľvek. Multi-tím podpora. 100% garancia vrátenia do 30 dní.",
     recommended: false,
     features: [
       "Všetko z Pro plánu",
@@ -88,6 +89,7 @@ export const BILLING_PLANS = [
       "Dedikovaný správca účtu",
       "SLA garancia 99.9%",
       "Enterprise Academy prístup",
+      "100% garancia vrátenia do 30 dní",
     ],
     limits: PLAN_LIMITS.enterprise,
     founderPrice: true,
