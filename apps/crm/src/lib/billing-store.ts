@@ -1,7 +1,8 @@
 import Stripe from "stripe";
 import { autoErrorCapture } from "./auto-error-capture";
-import { getCurrentProfile, getCurrentUser } from "@/lib/auth";
 import { createActivity } from "@/lib/activities-store";
+import { PLAN_KEYS, PLAN_LIMITS } from "@/lib/billing-types";
+import { AI_ASSISTANT_NAME } from "@/lib/ai-brand";
 
 import { logInfo } from "./logger";
 function getStripe() {
@@ -19,33 +20,80 @@ function getAppUrl() {
   return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 }
 
+async function loadAuthHelpers() {
+  return import("@/lib/auth");
+}
+
 export const BILLING_PLANS = [
   {
-    key: "starter",
-    name: "Revolis.AI Starter",
+    key: PLAN_KEYS.STARTER,
+    name: "Starter",
     priceId: process.env.STRIPE_PRICE_STARTER || "",
-    priceLabel: "29 € / mesiac",
-    originalPriceLabel: "58 € / mesiac",
-    description: "Pre menšie tímy a pilotné nasadenie.",
-  },
-  {
-    key: "pro",
-    name: "Revolis.AI Pro",
-    priceId: process.env.STRIPE_PRICE_PRO || "",
     priceLabel: "49 € / mesiac",
     originalPriceLabel: "98 € / mesiac",
-    description: "Najlepší pomer výkonu a AI funkcií.",
-    recommended: true,
+    description: "Pre samostatných maklérov a malé kancelárie. AI prioritizácia príležitostí, základné fázy predaja, email podpora. Väčšina kancelárií prejde na Pro do 60 dní.",
+    billingNote: "Fakturované mesačne. Zrušenie kedykoľvek. Do 3 maklérov.",
+    recommended: false,
+    features: [
+      "Do 3 maklérov",
+      "Do 100 príležitostí mesačne",
+      "AI prioritizácia príležitostí",
+      "Základné fázy predaja",
+      "Email podpora",
+    ],
+    limits: PLAN_LIMITS.starter,
+    founderPrice: true,
+    founderNote: "Zakladateľská cena – prvých 20 kancelárií",
   },
   {
-    key: "enterprise",
-    name: "Revolis.AI Enterprise",
-    priceId: process.env.STRIPE_PRICE_ENTERPRISE || "",
+    key: PLAN_KEYS.PRO,
+    name: "Pro",
+    priceId: process.env.STRIPE_PRICE_PRO || "",
     priceLabel: "99 € / mesiac",
     originalPriceLabel: "198 € / mesiac",
-    description: "Pre väčšie realitky a viac tímov.",
+    description: `Najpopulárnejší plán. ${AI_ASSISTANT_NAME} odpovedá 24/7, automatické opätovné kontakty, AI párovanie príležitostí s nehnuteľnosťami, integrácie s portálmi. Kancelárie s Pro uzatvárajú o 34% viac obchodov.`,
+    billingNote: "Fakturované mesačne. Zrušenie kedykoľvek. Neobmedzení makléri.",
+    recommended: true,
+    features: [
+      "Neobmedzení makléri",
+      "Neobmedzené príležitosti",
+      `${AI_ASSISTANT_NAME} asistentka 24/7`,
+      "AI párovanie príležitostí – nehnuteľnosti",
+      "Integrácie: Nehnuteľnosti.sk, Reality.sk",
+      "Automatické opätovné kontakty",
+      "Pokročilé AI hodnotenie",
+      "Prioritná podpora",
+      "100% garancia vrátenia",
+    ],
+    limits: PLAN_LIMITS.pro,
+    founderPrice: true,
+    founderNote: "Zakladateľská cena – prvých 20 kancelárií",
   },
-];
+  {
+    key: PLAN_KEYS.ENTERPRISE,
+    name: "Enterprise",
+    priceId: process.env.STRIPE_PRICE_ENTERPRISE || "",
+    priceLabel: "299 € / mesiac",
+    originalPriceLabel: "598 € / mesiac",
+    description: "Pre väčšie kancelárie s viacerými tímami. Neobmedzený počet maklérov, pokročilá analytika tímu, vlastné AI modely a prioritná podpora. Kancelária s 5 maklérmi ušetrí 400€+ mesačne.",
+    billingNote: "Fakturované mesačne. Zrušenie kedykoľvek. Multi-tím podpora.",
+    recommended: false,
+    features: [
+      "Všetko z Pro plánu",
+      "Neobmedzené tímy",
+      "Vlastné AI modely",
+      "Performance fee tracking",
+      "Pokročilá analytika tímu",
+      "Vlastné nastavenie systému",
+      "Dedikovaný správca účtu",
+      "SLA garancia 99.9%",
+      "Enterprise Academy prístup",
+    ],
+    limits: PLAN_LIMITS.enterprise,
+    founderPrice: true,
+    founderNote: "Zakladateľská cena – prvých 20 kancelárií",
+  },
+] as const;
 
 export async function createBillingCheckoutSession(planKey: string) {
   const stripe = getStripe();
@@ -53,6 +101,7 @@ export async function createBillingCheckoutSession(planKey: string) {
     // Stripe nie je nakonfigurovaný, vráť null alebo vyhoď špecifickú chybu podľa potreby
     return null;
   }
+  const { getCurrentUser, getCurrentProfile } = await loadAuthHelpers();
   const user = await getCurrentUser();
   const profile = await getCurrentProfile();
 
@@ -98,6 +147,7 @@ export async function createBillingCheckoutSession(planKey: string) {
 export async function findStripeCustomerByCurrentUserEmail() {
   const stripe = getStripe();
   if (!stripe) return null;
+  const { getCurrentUser } = await loadAuthHelpers();
   const user = await getCurrentUser();
 
   if (!user?.email) {
@@ -118,11 +168,23 @@ export async function findStripeCustomerByCurrentUserEmail() {
 
 export async function createCustomerPortalSession() {
   const stripe = getStripe();
-  if (!stripe) return null;
+  if (!stripe) {
+    return {
+      hasStripeConfigured: false,
+      hasCustomer: false,
+      url: null as string | null,
+    };
+  }
+
   const customer = await findStripeCustomerByCurrentUserEmail();
 
   if (!customer) {
-    throw new Error("Pre tohto používateľa nebol nájdený Stripe customer.");
+    // user nemá Stripe customer – NIE je to 500 error, ale stav
+    return {
+      hasStripeConfigured: true,
+      hasCustomer: false,
+      url: null as string | null,
+    };
   }
 
   const appUrl = getAppUrl();
@@ -133,7 +195,9 @@ export async function createCustomerPortalSession() {
   });
 
   return {
-    url: session.url,
+    hasStripeConfigured: true,
+    hasCustomer: true,
+    url: session.url ?? null,
   };
 }
 

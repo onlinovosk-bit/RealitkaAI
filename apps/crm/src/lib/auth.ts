@@ -1,6 +1,15 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
+function hasSupabaseEnv() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  return Boolean(url && key);
+}
+
 // Client-side token helper (used by api.ts)
 const TOKEN_KEY = "access_token";
 export const auth = {
@@ -33,12 +42,20 @@ export type CurrentProfile = {
 };
 
 export async function getCurrentUser() {
+  if (!hasSupabaseEnv()) {
+    return null;
+  }
+
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
   return data.user ?? null;
 }
 
 export async function getCurrentProfile(): Promise<CurrentProfile | null> {
+  if (!hasSupabaseEnv()) {
+    return null;
+  }
+
   const supabase = await createClient();
   const { data: userData } = await supabase.auth.getUser();
 

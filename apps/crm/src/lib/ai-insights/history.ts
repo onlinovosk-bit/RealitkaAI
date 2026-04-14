@@ -28,7 +28,7 @@ export async function getUserHistory(userId: string): Promise<AIActionHistory | 
 }
 
 export async function saveUserHistory(userId: string, history: AIActionHistory) {
-  let all = {};
+  let all: Record<string, AIActionHistory> = {};
   try {
     const data = await fs.readFile(HISTORY_PATH, 'utf-8');
     all = JSON.parse(data);

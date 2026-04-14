@@ -9,12 +9,18 @@ function getKey() {
   );
 }
 
+function getUrl() {
+  return process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+}
+
 export async function createClient() {
   const cookieStore = await cookies();
+  const supabaseUrl = getUrl() || "https://placeholder-project.supabase.co";
+  const supabaseKey = getKey() || "placeholder-anon-key";
 
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    getKey(),
+    supabaseUrl,
+    supabaseKey,
     {
       cookies: {
         getAll() {
