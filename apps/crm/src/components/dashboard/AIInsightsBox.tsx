@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useState as useLocalState } from "react";
-import type { DashboardInsightsResponse } from "@/app/api/dashboard/insights/route";
+import type { DashboardInsightsResponse } from "../../../types/dashboard";
 
 // Backend API helpers
 async function fetchHistory(userId: string) {
