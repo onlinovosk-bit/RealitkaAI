@@ -1,4 +1,4 @@
-import { supabaseClient } from "@/lib/supabase/client";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { listProfiles } from "@/lib/team-store";
 import { listLeads, type Lead } from "@/lib/leads-store";
 
@@ -27,7 +27,13 @@ function getSupabaseClient() {
     return null;
   }
 
-  return supabaseClient;
+  if (!globalRulesStore.__realitkaLeadAutomationSupabase) {
+    globalRulesStore.__realitkaLeadAutomationSupabase = createClient(url, anonKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+  }
+
+  return globalRulesStore.__realitkaLeadAutomationSupabase;
 }
 
 const demoRules: AssignmentRule[] = [
@@ -46,6 +52,7 @@ const demoRules: AssignmentRule[] = [
 
 const globalRulesStore = globalThis as typeof globalThis & {
   __realitkaDemoAssignmentRules?: AssignmentRule[];
+  __realitkaLeadAutomationSupabase?: SupabaseClient;
 };
 
 function getDemoRulesStore() {
