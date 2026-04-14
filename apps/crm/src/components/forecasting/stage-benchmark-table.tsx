@@ -12,9 +12,9 @@ export default function StageBenchmarkTable({
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
       <div className="border-b border-gray-200 px-5 py-4">
-        <h2 className="text-lg font-semibold text-gray-900">Benchmark pipeline stavov</h2>
+        <h2 className="text-lg font-semibold text-gray-900">Benchmark stavov klientov</h2>
         <p className="text-sm text-gray-500">
-          Ktore stavy pipeline nesu najvyssi ocakavany obchodny vysledok.
+          Ktoré stavy klientov nesú najvyšší očakávaný obchodný výsledok.
         </p>
       </div>
 
@@ -23,10 +23,10 @@ export default function StageBenchmarkTable({
           <thead className="bg-gray-50 text-left text-gray-500">
             <tr>
               <th className="px-5 py-3 font-medium">Stav</th>
-              <th className="px-5 py-3 font-medium">Pocet</th>
-              <th className="px-5 py-3 font-medium">Priemerny score</th>
+              <th className="px-5 py-3 font-medium">Počet</th>
+              <th className="px-5 py-3 font-medium">Priemerné skóre</th>
               <th className="px-5 py-3 font-medium">Avg probability</th>
-              <th className="px-5 py-3 font-medium">Expected value</th>
+              <th className="px-5 py-3 font-medium">Očakávaná hodnota</th>
             </tr>
           </thead>
 
@@ -46,7 +46,7 @@ export default function StageBenchmarkTable({
 
       {rows.length === 0 && (
         <div className="border-t border-gray-200 p-5 text-sm text-gray-500">
-          Zatial nie su dostupne benchmarky pipeline stavov.
+          Zatiaľ nie sú dostupné benchmarky stavov klientov.
         </div>
       )}
     </div>

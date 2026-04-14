@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 import { supabaseClient } from "@/lib/supabase/client";
+import { AI_ASSISTANT_NAME } from "@/lib/ai-brand";
 import { getNextSlug, getPrevSlug, getStepBySlug } from "./config";
 
 export type OnboardingData = {
@@ -24,7 +25,7 @@ export const DEFAULT_DATA: OnboardingData = {
   agencyName: "", city: "",
   phone: "", linkedin: "", bio: "",
   specializations: [],
-  aiName: "Sofia", aiTone: "💼 PROFESIONÁLNY",
+  aiName: AI_ASSISTANT_NAME, aiTone: "💼 PROFESIONÁLNY",
   autoReply: true, workHours: false, leadScoring: true,
   importSource: "",
   automation: { welcome: true, followUp: true, reminder: true, score: true, birthday: false },

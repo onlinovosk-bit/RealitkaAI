@@ -37,12 +37,12 @@ export default async function ManagementPage() {
 
   const cards = [
     {
-      title: "Všetky leady",
+      title: "Všetky príležitosti",
       value: data.kpis.totalLeads,
-      subtitle: "Celkový počet leadov v CRM",
+      subtitle: "Celkový počet príležitostí v CRM",
     },
     {
-      title: "Horúce leady",
+      title: "Horúce príležitosti",
       value: data.kpis.hotLeads,
       subtitle: "Najvyššia obchodná priorita",
     },
@@ -59,17 +59,17 @@ export default async function ManagementPage() {
     {
       title: "Obhliadky",
       value: data.kpis.showingLeads,
-      subtitle: "Leady v stave obhliadka",
+      subtitle: "Príležitosti v stave obhliadka",
     },
     {
       title: "Ponuky",
       value: data.kpis.offerLeads,
-      subtitle: "Leady vo finálnej fáze",
+      subtitle: "Príležitosti vo finálnej fáze",
     },
     {
       title: "Priemerné score",
       value: data.kpis.avgLeadScore,
-      subtitle: "Priemerná kvalita leadov",
+      subtitle: "Priemerná kvalita príležitostí",
     },
     {
       title: "Silné matching zhody",
@@ -81,7 +81,7 @@ export default async function ManagementPage() {
   return (
     <ModuleShell
       title="Management dashboard"
-      description="Riadiaci panel pre ownera a managera: výkon tímu, pipeline, úlohy, matching a AI."
+      description="Riadiaci panel pre ownera a managera: výkon tímu, stav klientov, úlohy, matching a AI."
     >
       <ManagementKpis cards={cards} />
 

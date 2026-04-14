@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { supabaseClient } from "@/lib/supabase/client";
 import { v4 as uuidv4 } from "uuid";
+import { AI_ASSISTANT_NAME } from "@/lib/ai-brand";
 
 // --- UI Kit Components ---
 
@@ -54,7 +55,7 @@ const sidebarSteps = [
   { id: 3, emoji: "👤", label: "Profil" },
   { id: 4, emoji: "🤖", label: "AI Asistent" },
   { id: 5, emoji: "📋", label: "Import" },
-  { id: 6, emoji: "🏗️", label: "Pipeline" },
+  { id: 6, emoji: "🏗️", label: "Stav klientov" },
   { id: 7, emoji: "🔗", label: "Prepojenia" },
   { id: 8, emoji: "🎯", label: "Ciele" },
 ];
@@ -85,7 +86,7 @@ export default function OnboardingClient() {
     phone: "", linkedin: "", bio: "",
     specializations: [] as string[],
     // Krok 4
-    aiName: "Sofia", aiTone: "💼 PROFESIONÁLNY",
+    aiName: AI_ASSISTANT_NAME, aiTone: "💼 PROFESIONÁLNY",
     autoReply: true, workHours: false, leadScoring: true,
     // Krok 5
     importSource: "",
@@ -486,8 +487,8 @@ export default function OnboardingClient() {
         {step === 6 && (
           <div className="animate-in fade-in slide-in-from-right-4 duration-500">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">— KROK 6 ZO 8 —</p>
-            <h1 className="text-3xl font-bold mb-2 text-gray-900">Predajný pipeline 🏗️</h1>
-            <p className="text-gray-500 mb-8">Revolis má prednastavený pipeline pre reality. Môžeš ho prispôsobiť alebo použiť tak ako je.</p>
+            <h1 className="text-3xl font-bold mb-2 text-gray-900">Predajný stav klientov 🏗️</h1>
+            <p className="text-gray-500 mb-8">Revolis má prednastavený stav klientov pre reality. Môžeš ho prispôsobiť alebo použiť tak ako je.</p>
 
             <div className="mb-2 text-sm font-semibold text-gray-700">Fázy predaja</div>
             <div className="border border-gray-100 rounded-xl overflow-hidden mb-6 max-w-lg">
@@ -662,7 +663,7 @@ export default function OnboardingClient() {
             <div className="text-center mb-10">
               <div className="text-6xl mb-4">🎉</div>
               <h1 className="text-4xl font-extrabold mb-3 tracking-tight">Revolis.AI je živý!</h1>
-              <p className="text-gray-500 text-base">Tvoj AI asistent Sofia je aktívny a čaká na prvý lead.</p>
+              <p className="text-gray-500 text-base">Tvoj AI asistent {AI_ASSISTANT_NAME} je aktívny a čaká na prvý lead.</p>
             </div>
 
             {/* Stats */}
@@ -685,7 +686,7 @@ export default function OnboardingClient() {
             {/* Action cards */}
             <div className="space-y-3 max-w-lg mx-auto mb-8">
               {[
-                { emoji: "📊", label: "Pozri si dashboard", desc: "Prehľad leadov, pipeline a štatistiky", action: "Otvoriť dashboard →" },
+                { emoji: "📊", label: "Pozri si dashboard", desc: "Prehľad leadov, stavu klientov a štatistiky", action: "Otvoriť dashboard →" },
                 { emoji: "🤖", label: "Otestuj AI asistenta", desc: "Pošli testovaciu otázku a pozri ako odpovedá", action: "Otestovať →" },
                 { emoji: "➕", label: "Pridaj prvý lead", desc: "Vyskúšaj manuálne alebo cez import z portálu", action: "Pridať lead →" },
               ].map(item => (

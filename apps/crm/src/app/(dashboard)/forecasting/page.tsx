@@ -22,7 +22,7 @@ export default async function ForecastingPage() {
     return (
       <ModuleShell
         title="Forecasting & Benchmarky"
-        description="Predikcia pipeline, benchmark zdrojov leadov, výkonu agentov a pipeline stavov."
+        description="Predikcia stavu klientov, benchmark zdrojov príležitostí, výkonu agentov a stavov príležitostí."
       >
         <LockedFeatureCard
           title="Forecasting je zamknutý"
@@ -41,7 +41,7 @@ export default async function ForecastingPage() {
     return (
       <ModuleShell
         title="Forecasting & Benchmarky"
-        description="Predikcia pipeline, benchmark zdrojov leadov, výkonu agentov a pipeline stavov."
+        description="Predikcia stavu klientov, benchmark zdrojov príležitostí, výkonu agentov a stavov príležitostí."
       >
         <ErrorState
           title="Forecasting sa nepodarilo načítať"
@@ -65,9 +65,9 @@ export default async function ForecastingPage() {
       subtitle: "Odhad počtu uzavretých obchodov",
     },
     {
-      title: "Expected pipeline value",
+      title: "Očakávaná hodnota stavu klientov",
       value: `${data.kpis.expectedPipelineValue.toLocaleString("sk-SK")} €`,
-      subtitle: "Vážený objem pipeline",
+      subtitle: "Vážený objem stavu klientov",
     },
     {
       title: "Avg probability",
@@ -79,7 +79,7 @@ export default async function ForecastingPage() {
   return (
     <ModuleShell
       title="Forecasting & Benchmarky"
-      description="Predikcia pipeline, benchmark zdrojov leadov, výkonu agentov a pipeline stavov."
+      description="Predikcia stavu klientov, benchmark zdrojov príležitostí, výkonu agentov a stavov príležitostí."
     >
       <FeatureGateBanner description="Forecasting je dostupný v tvojom aktuálnom pláne." title="Forecasting je aktívny" />
       <div className="mt-6">
@@ -90,7 +90,7 @@ export default async function ForecastingPage() {
         <div className="mt-6">
           <EmptyState
             title="Zatiaľ nie sú dostupné forecast dáta"
-            description="Najprv potrebuješ leady, scoring a pipeline dáta."
+            description="Najprv potrebuješ leady, scoring a dáta o stave klientov."
           />
         </div>
       ) : (

@@ -47,14 +47,17 @@ export function getDbStatus(internalStatus: string) {
   return internalToDbStatusMap[internalStatus] || "Nový";
 }
 
-import { supabaseClient } from "@/lib/supabase/client";
+import { readDemoModeFromCookie } from "@/lib/demo-mode-cookie";
 import {
+  getDemoShowcaseLeads,
+  getDemoShowcaseRecommendations,
   leads as mockLeads,
   recommendations as mockRecommendations,
   type Lead,
   type LeadStatus,
   type Recommendation,
 } from "@/lib/mock-data";
+import { supabaseClient } from "@/lib/supabase/client";
 
 export type { Lead, LeadStatus, Recommendation } from "@/lib/mock-data";
 
@@ -186,6 +189,8 @@ type SupabaseLeadRow = {
   created_at?: string;
   client_segment?: string | null;
   buyer_readiness_score?: number | null;
+  ai_insight?: string | null;
+  sofia_insight?: string | null;
 };
 
 type SupabaseActivityRow = {
@@ -255,6 +260,8 @@ function mapRowToLead(row: SupabaseLeadRow): Lead {
     note: row.note || "",
     client_segment: row.client_segment ?? null,
     buyer_readiness_score: row.buyer_readiness_score ?? null,
+    ai_insight: row.ai_insight ?? null,
+    sofia_insight: row.sofia_insight ?? null,
   };
 }
 
@@ -705,6 +712,10 @@ export function getAvailableLocations(items: Lead[]) {
 }
 
 export async function listLeads(filters?: LeadFilters): Promise<Lead[]> {
+  if (await readDemoModeFromCookie()) {
+    return applyFilters(getDemoShowcaseLeads(), filters);
+  }
+
   const supabase = getSupabaseClient();
 
   if (!supabase) {
@@ -747,6 +758,10 @@ export async function listLeads(filters?: LeadFilters): Promise<Lead[]> {
 }
 
 export async function getLead(id: string): Promise<Lead | undefined> {
+  if (await readDemoModeFromCookie()) {
+    return getDemoShowcaseLeads().find((lead) => lead.id === id);
+  }
+
   const supabase = getSupabaseClient();
 
   if (!supabase) {
@@ -841,6 +856,14 @@ export async function createLead(input: LeadInput & ActivityLogInput) {
     input.activityText || `Nový lead prijatý (${input.propertyType}, ${input.rooms}, rozpočet ${input.budget}).`,
     input.activityType || "Email"
   );
+
+  // Fire-and-forget embedding indexing (neblokuje odpoveď)
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  fetch(`${appUrl}/api/embeddings/index`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ entityType: "lead", entityId: payload.id }),
+  }).catch((err) => console.warn("[embeddings] Lead indexing zlyhalo:", err));
 
   return mapRowToLead(data as SupabaseLeadRow);
 }
@@ -1000,6 +1023,10 @@ export async function getLeads(): Promise<Lead[]> {
 }
 
 export async function getRecommendations() {
+  if (await readDemoModeFromCookie()) {
+    return getDemoShowcaseRecommendations();
+  }
+
   const supabase = getSupabaseClient();
 
   if (!supabase) {
@@ -1156,6 +1183,10 @@ export async function logMatchingActivity(
 }
 
 export async function getRecommendationsByLeadId(id: string) {
+  if (await readDemoModeFromCookie()) {
+    return getDemoShowcaseRecommendations().filter((item) => item.leadId === id);
+  }
+
   const supabase = getSupabaseClient();
 
   if (!supabase) {

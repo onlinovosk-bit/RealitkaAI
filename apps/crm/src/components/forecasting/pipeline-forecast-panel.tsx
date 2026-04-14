@@ -29,9 +29,9 @@ export default function PipelineForecastPanel({
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
       <div className="border-b border-gray-200 px-5 py-4">
-        <h2 className="text-lg font-semibold text-gray-900">Forecast pipeline</h2>
+        <h2 className="text-lg font-semibold text-gray-900">Forecast stavu klientov</h2>
         <p className="text-sm text-gray-500">
-          Najsilnejsie leady podla ocakavanej obchodnej hodnoty.
+          Najsilnejšie leady podľa očakávanej obchodnej hodnoty.
         </p>
       </div>
 
@@ -45,7 +45,7 @@ export default function PipelineForecastPanel({
               <th className="px-5 py-3 font-medium">AI score</th>
               <th className="px-5 py-3 font-medium">Pravdepodobnost</th>
               <th className="px-5 py-3 font-medium">Potencial</th>
-              <th className="px-5 py-3 font-medium">Weighted value</th>
+              <th className="px-5 py-3 font-medium">Vážená hodnota</th>
             </tr>
           </thead>
 
@@ -71,7 +71,7 @@ export default function PipelineForecastPanel({
 
       {rows.length === 0 && (
         <div className="border-t border-gray-200 p-5 text-sm text-gray-500">
-          Zatial nie su dostupne forecast data.
+          Zatiaľ nie sú dostupné forecast dáta.
         </div>
       )}
     </div>

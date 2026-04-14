@@ -1,4 +1,5 @@
 ﻿import type { Recommendation } from "@/lib/mock-data";
+import { RadiantSpriteIcon } from "@/components/shared/radiant-sprite-icon";
 
 function getPriorityClasses(priority: Recommendation["priority"]) {
   switch (priority) {
@@ -20,11 +21,14 @@ export default function AiPanel({
 }) {
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-      <div className="mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-        <p className="text-sm text-gray-500">
-          Systém navrhuje ďalšie kroky podľa skóre leadu a aktivity.
-        </p>
+      <div className="mb-4 flex items-start gap-3">
+        <RadiantSpriteIcon icon="revolis-ai" sizeClassName="h-12 w-12" className="mt-0.5" />
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+          <p className="text-sm text-gray-500">
+            Systém navrhuje ďalšie kroky podľa skóre príležitosti a aktivity.
+          </p>
+        </div>
       </div>
 
       <div className="space-y-3">

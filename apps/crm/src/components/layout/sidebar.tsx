@@ -6,6 +6,28 @@ import {
   NAV_GROUPS,
   type UserRole,
 } from "@/lib/navigation";
+import { AI_ASSISTANT_STATUS_ACTIVE } from "@/lib/ai-brand";
+import { RadiantSpriteIcon } from "@/components/shared/radiant-sprite-icon";
+
+function MenuIcon({ itemKey, fallback }: { itemKey: string; fallback: string }) {
+  const supportsRadiant =
+    itemKey === "dashboard" ||
+    itemKey === "playbook" ||
+    itemKey === "revolis-ai" ||
+    itemKey === "leads" ||
+    itemKey === "tasks" ||
+    itemKey === "pipeline" ||
+    itemKey === "properties" ||
+    itemKey === "import" ||
+    itemKey === "billing" ||
+    itemKey === "settings";
+
+  if (!supportsRadiant) {
+    return <span className="text-base">{fallback}</span>;
+  }
+
+  return <RadiantSpriteIcon icon={itemKey as Parameters<typeof RadiantSpriteIcon>[0]["icon"]} sizeClassName="h-10 w-10" />;
+}
 
 export default function Sidebar({ role }: { role: UserRole }) {
   const pathname = usePathname() ?? "";
@@ -15,7 +37,7 @@ export default function Sidebar({ role }: { role: UserRole }) {
 
   return (
     <aside
-      className="flex h-screen w-60 flex-col"
+      className="flex h-screen w-64 flex-col"
       style={{
         background: 'linear-gradient(180deg, #080D1A 0%, #050914 100%)',
         borderRight: '1px solid #0F1F3D',
@@ -52,13 +74,13 @@ export default function Sidebar({ role }: { role: UserRole }) {
             style={{ background: '#22D3EE', boxShadow: '0 0 6px rgba(34,211,238,0.8)' }}
           />
           <span className="text-[10px]" style={{ color: '#22D3EE' }}>
-            Sofia aktívna
+            {AI_ASSISTANT_STATUS_ACTIVE}
           </span>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-2 py-4">
+      <nav className="flex-1 overflow-y-auto px-3 py-5">
         {NAV_GROUPS.map((group) => {
           const groupItems = visibleItems.filter((item) =>
             group.keys.includes(item.key)
@@ -66,21 +88,21 @@ export default function Sidebar({ role }: { role: UserRole }) {
           if (groupItems.length === 0) return null;
 
           return (
-            <div key={group.title} className="mb-5">
+            <div key={group.title} className="mb-6">
               <p
                 className="px-4 mb-2 text-[9px] font-bold uppercase tracking-[0.2em]"
                 style={{ color: '#1D4ED8' }}
               >
                 {group.title}
               </p>
-              <ul className="space-y-0.5">
+              <ul className="space-y-1">
                 {groupItems.map((item) => {
                   const isActive = pathname === item.path;
                   return (
                     <li key={item.key}>
                       <Link
                         href={item.path}
-                        className="flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200"
+                        className="flex items-center gap-3.5 rounded-xl px-4 py-3 text-base font-medium transition-all duration-200"
                         style={
                           isActive
                             ? {
@@ -107,7 +129,7 @@ export default function Sidebar({ role }: { role: UserRole }) {
                           }
                         }}
                       >
-                        <span className="text-base">{item.emoji}</span>
+                        <MenuIcon itemKey={item.key} fallback={item.emoji} />
                         {item.label}
                       </Link>
                     </li>

@@ -151,7 +151,7 @@ export function calculateLeadAiScore(input: {
     reasons.push("teplý lead");
   } else if (status.includes("obhli")) {
     score += 20;
-    reasons.push("obhliadka v pipeline");
+    reasons.push("obhliadka v stave klientov");
   } else if (status.includes("ponuka")) {
     score += 22;
     reasons.push("lead vo fáze ponuky");

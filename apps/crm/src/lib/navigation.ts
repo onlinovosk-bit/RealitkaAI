@@ -17,8 +17,22 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     visibleFor: ["agent", "owner"],
   },
   {
+    key: "playbook",
+    label: "AI Plán krokov",
+    path: "/playbook",
+    emoji: "🎯",
+    visibleFor: ["agent", "owner"],
+  },
+  {
+    key: "revolis-ai",
+    label: "Revolis AI",
+    path: "/dashboard/revolis-ai",
+    emoji: "✨",
+    visibleFor: ["agent", "owner"],
+  },
+  {
     key: "leads",
-    label: "Záujemcovia",
+    label: "Príležitosti",
     path: "/leads",
     emoji: "🔥",
     visibleFor: ["agent", "owner"],
@@ -93,13 +107,29 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     emoji: "💳",
     visibleFor: ["owner"],
   },
+  {
+    key: "admin-health",
+    label: "SLA & Health",
+    path: "/admin/health",
+    emoji: "🩺",
+    visibleFor: ["owner"],
+  },
 ];
 
 // Skupiny pre sidebar (len vizuálne oddelenie)
 export const NAV_GROUPS = [
   {
     title: "Hlavná",
-    keys: ["dashboard", "leads", "tasks", "pipeline", "properties", "import"],
+    keys: [
+      "dashboard",
+      "playbook",
+      "revolis-ai",
+      "leads",
+      "tasks",
+      "pipeline",
+      "properties",
+      "import",
+    ],
   },
   {
     title: "Biznis",
@@ -107,7 +137,7 @@ export const NAV_GROUPS = [
   },
   {
     title: "Účet",
-    keys: ["settings", "billing"],
+    keys: ["settings", "billing", "admin-health"],
   },
 ];
 

@@ -1,7 +1,9 @@
 "use client";
 import AuthButton from "@/components/auth/auth-button";
+import { AppModeToggle } from "@/components/layout/app-mode-toggle";
 import MobileNav from "@/components/layout/mobile-nav";
 import { type UserRole } from "@/lib/navigation";
+import { AI_ASSISTANT_STATUS_ONLINE } from "@/lib/ai-brand";
 
 export default function Topbar({
   userName,
@@ -36,6 +38,8 @@ export default function Topbar({
 
       {/* Right */}
       <div className="flex items-center gap-3">
+        <AppModeToggle />
+
         <span
           className="hidden rounded-full px-3 py-1 text-xs font-semibold sm:inline"
           style={{
@@ -59,7 +63,7 @@ export default function Topbar({
             style={{ background: '#22D3EE', boxShadow: '0 0 6px rgba(34,211,238,0.9)' }}
           />
           <span className="text-xs" style={{ color: '#22D3EE' }}>
-            Sofia online
+            {AI_ASSISTANT_STATUS_ONLINE}
           </span>
         </div>
 

@@ -4,7 +4,7 @@ export const STEPS = [
   { index: 3, slug: "step-3-profil",      label: "Profil",      emoji: "👤" },
   { index: 4, slug: "step-4-ai-asistent", label: "AI Asistent", emoji: "🤖" },
   { index: 5, slug: "step-5-import",      label: "Import",      emoji: "📋" },
-  { index: 6, slug: "step-6-pipeline",    label: "Pipeline",    emoji: "🏗️" },
+  { index: 6, slug: "step-6-pipeline",    label: "Stav klientov",    emoji: "🏗️" },
   { index: 7, slug: "step-7-prepojenia",  label: "Prepojenia",  emoji: "🔗" },
   { index: 8, slug: "step-8-ciele",       label: "Ciele",       emoji: "🎯" },
   { index: 9, slug: "step-9-hotovo",      label: "Hotovo!",     emoji: "✅" },

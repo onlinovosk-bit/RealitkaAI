@@ -31,9 +31,9 @@ export default async function PipelinePage() {
   return (
     <main className="p-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Pipeline</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Fázy príležitostí</h1>
         <p className="mt-1 text-gray-500">
-          Špičkový kanban pohľad s AI odporúčaniami, slide-over detailom a históriou presunov.
+          Kartový prehľad s AI odporúčaniami, bočným detailom a históriou presunov.
         </p>
       </div>
 
@@ -61,7 +61,7 @@ export default async function PipelinePage() {
         <StatCard
           title="Ponuky"
           value={offerCount}
-          subtitle="Lead je vo finálnej fáze"
+          subtitle="Príležitosť je vo finálnej fáze"
         />
       </section>
 

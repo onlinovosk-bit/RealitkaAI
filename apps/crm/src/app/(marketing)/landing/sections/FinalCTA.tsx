@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import CountdownTimer from './CountdownTimer';
 import SpotsCounter from './SpotsCounter';
+import { AI_ASSISTANT_NAME } from '@/lib/ai-brand';
+import { RadiantSpriteIcon } from '@/components/shared/radiant-sprite-icon';
 
 export default function FinalCTA() {
   return (
@@ -29,7 +31,7 @@ export default function FinalCTA() {
             className="text-5xl md:text-6xl font-extrabold text-white leading-tight"
             style={{ fontFamily: 'var(--font-syne)' }}
           >
-            Váš AI Chief of Sales.
+            Váš AI obchodný pomocník.
             <br />
             <span className="bg-gradient-to-r from-cyan-300 to-indigo-400 bg-clip-text text-transparent">
               Za cenu obeda.
@@ -48,13 +50,13 @@ export default function FinalCTA() {
             {/* Price */}
             <div className="flex items-end gap-3 mb-1">
               <span className="text-4xl font-extrabold text-white" style={{ fontFamily: 'var(--font-syne)' }}>
-                €49
+                €99
               </span>
               <span className="text-slate-400 text-base mb-1">/mesiac</span>
-              <span className="ml-auto text-slate-500 line-through text-lg mb-1">€99</span>
+              <span className="ml-auto text-slate-500 line-through text-lg mb-1">€198</span>
             </div>
             <p className="text-xs text-cyan-400 font-semibold mb-5 uppercase tracking-wider">
-              ✦ Cena prvých 20 zákazníkov · Potom €99/mes
+              Zakladateľská cena · Prvých 20 kancelárií · Potom €198/mes
             </p>
 
             {/* Countdown */}
@@ -62,7 +64,7 @@ export default function FinalCTA() {
               className="rounded-xl px-4 py-3 mb-5 flex items-center gap-3"
               style={{ background: 'rgba(34,211,238,0.05)', border: '1px solid rgba(34,211,238,0.12)' }}
             >
-              <span className="text-lg">⏱</span>
+              <RadiantSpriteIcon icon="tasks" sizeClassName="h-5 w-5" className="rounded-md border-cyan-400/20 shadow-none" />
               <CountdownTimer />
             </div>
 
@@ -74,15 +76,15 @@ export default function FinalCTA() {
             {/* What's included */}
             <ul className="space-y-2.5 mb-6">
               {[
-                'AI prioritizácia leadov každý deň',
-                'Sofia — váš AI Chief of Sales 24/7',
-                'Pipeline & forecasting dashboard',
-                'Import leadov z portálov (Nehnutelnosti.sk, BKIS)',
+                'AI prioritizácia príležitostí každý deň',
+                `${AI_ASSISTANT_NAME} — váš AI obchodný pomocník 24/7`,
+                'Stav klientov a pracovná plocha predikcie',
+                'Import príležitostí z portálov (Nehnuteľnosti.sk, BKIS)',
                 'Tímový CRM pre až 5 agentov',
                 '30-dňová záruka vrátenia peňazí',
               ].map((item) => (
                 <li key={item} className="flex items-start gap-2.5 text-sm text-slate-300">
-                  <span className="mt-0.5 text-cyan-400 flex-shrink-0">✓</span>
+                  <span className="mt-0.5 text-cyan-400 flex-shrink-0">•</span>
                   {item}
                 </li>
               ))}
@@ -97,12 +99,12 @@ export default function FinalCTA() {
                 boxShadow: '0 0 40px rgba(34,211,238,0.4)',
               }}
             >
-              ✦ Zabezpečiť miesto za €49/mes
+              Zabezpečiť miesto za €99/mes
             </Link>
 
             {/* Trust line */}
             <p className="mt-4 text-center text-xs text-slate-600">
-              Bez kreditnej karty · Cancel kedykoľvek · GDPR · 🇸🇰 Made in Slovakia
+              Bez kreditnej karty · Zrušenie kedykoľvek · GDPR · Made in Slovakia
             </p>
           </div>
 
@@ -118,7 +120,7 @@ export default function FinalCTA() {
               borderColor: 'rgba(16,185,129,0.2)',
             }}
           >
-            <span className="text-2xl flex-shrink-0">🛡️</span>
+            <RadiantSpriteIcon icon="billing" sizeClassName="h-8 w-8" className="rounded-lg border-cyan-400/20 shadow-none" />
             <div className="text-left">
               <p className="text-sm font-semibold text-emerald-400">30-dňová záruka vrátenia peňazí</p>
               <p className="text-xs text-slate-500 mt-0.5">
@@ -132,7 +134,7 @@ export default function FinalCTA() {
             href="/login"
             className="text-sm text-slate-500 hover:text-slate-300 transition-colors"
           >
-            Už mám účet → Prihlásiť sa
+            Už máte účet | Prihlásiť sa
           </Link>
         </motion.div>
       </div>

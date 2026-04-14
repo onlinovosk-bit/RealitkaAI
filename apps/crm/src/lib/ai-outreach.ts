@@ -64,9 +64,25 @@ S pozdravom
 Realitka AI`;
 }
 
-export async function generateOutreachEmail(lead: LeadLike) {
+export type OutreachGenerateOptions = {
+  variant?: "A" | "B";
+};
+
+export type OutreachEmailResult = {
+  subject: string;
+  body: string;
+  provider: string;
+  variant?: "A" | "B";
+  totalTokens?: number;
+};
+
+export async function generateOutreachEmail(
+  lead: LeadLike,
+  options?: OutreachGenerateOptions
+): Promise<OutreachEmailResult> {
   const client = getOpenAIClient();
   const maxBodyChars = getNumberFromEnv(process.env.OUTREACH_MAX_BODY_CHARS, 900);
+  const variant = options?.variant ?? "A";
 
   if (!client) {
     const fallback = fallbackBody(lead);
@@ -74,11 +90,19 @@ export async function generateOutreachEmail(lead: LeadLike) {
       subject: fallbackSubject(lead),
       body: clampText(fallback, maxBodyChars),
       provider: "fallback",
+      variant,
+      totalTokens: 0,
     };
   }
 
+  const variantHint =
+    variant === "B"
+      ? "\nVariant B: výrazne kratší text, priamy tón, výzva na 10-minútový telefonát tento týždeň."
+      : "\nVariant A: štandardný odborný tón ako vyššie.";
+
   const prompt = `
 Napíš stručný profesionálny email v slovenčine pre realitného klienta.
+${variantHint}
 
 Klient:
 - meno: ${lead.name}
@@ -139,8 +163,13 @@ Vráť iba JSON:
       subject: fallbackSubject(lead),
       body: clampText(fallback, maxBodyChars),
       provider: isQuotaError ? "fallback:openai-quota" : "fallback:openai-error",
+      variant,
+      totalTokens: 0,
     };
   }
+
+  const usage = (response as unknown as { usage?: { total_tokens?: number } })?.usage;
+  const totalTokens = usage?.total_tokens;
 
   const outputText =
     response?.output_text ||
@@ -153,6 +182,8 @@ Vráť iba JSON:
       subject: parsed.subject || fallbackSubject(lead),
       body: clampText(body, maxBodyChars),
       provider: `openai:${model}`,
+      variant,
+      totalTokens,
     };
   } catch {
     const fallback = fallbackBody(lead);
@@ -160,6 +191,8 @@ Vráť iba JSON:
       subject: fallbackSubject(lead),
       body: clampText(fallback, maxBodyChars),
       provider: "fallback",
+      variant,
+      totalTokens,
     };
   }
 }

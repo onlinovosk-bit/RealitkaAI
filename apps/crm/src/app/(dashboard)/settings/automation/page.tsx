@@ -14,7 +14,7 @@ export default async function AutomationPage() {
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900">Automatizácia Priraďovania</h1>
           <p className="mt-1 text-gray-500">
-            Nakonfiguruj pravidlá na automatické priraďovanie nových leadov agentom.
+            Nakonfiguruj pravidlá na automatické priraďovanie nových príležitostí agentom.
           </p>
         </div>
 

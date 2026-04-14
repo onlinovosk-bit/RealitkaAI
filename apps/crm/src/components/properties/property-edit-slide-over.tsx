@@ -140,9 +140,9 @@ export default function PropertyEditSlideOver({
       >
         <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-gray-200 bg-white px-6 py-5">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Detail / edit nehnuteľnosti</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Detail / úprava nehnuteľnosti</h2>
             <p className="mt-1 text-sm text-gray-500">
-              Správa ponuky v slide-over paneli.
+              Správa ponuky v bočnom paneli.
             </p>
           </div>
 
@@ -232,7 +232,7 @@ export default function PropertyEditSlideOver({
             </div>
 
             <div className="md:col-span-2">
-              <label className="mb-1 block text-sm font-medium text-gray-700">Features</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Vlastnosti</label>
               <input
                 value={form.featuresText}
                 onChange={(e) => updateField("featuresText", e.target.value)}

@@ -22,6 +22,11 @@ function dot(type: string) {
   return "bg-gray-400";
 }
 
+function formatType(type: string) {
+  if (type === "Pipeline") return "Stav klientov";
+  return type;
+}
+
 function timeAgo(iso?: string): string {
   if (!iso) return "";
   const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
@@ -75,7 +80,7 @@ export default function RecentActivityFeed() {
               <div className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${dot(act.type)}`} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-semibold text-gray-700">{act.type}</span>
+                  <span className="text-xs font-semibold text-gray-700">{formatType(act.type)}</span>
                   {act.actor_name && act.actor_name !== "Systém" && (
                     <span className="text-xs text-gray-400">{act.actor_name}</span>
                   )}

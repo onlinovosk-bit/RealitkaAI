@@ -44,6 +44,11 @@ function getSourceBadge(source: string) {
   }
 }
 
+function formatSourceLabel(source: string) {
+  if (source === "pipeline") return "stav klientov";
+  return source;
+}
+
 export default function ActivityFeed({
   rows,
   canSeeEntityMeta = false,
@@ -66,7 +71,7 @@ export default function ActivityFeed({
                 </h3>
 
                 <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getSourceBadge(row.source)}`}>
-                  {row.source}
+                  {formatSourceLabel(row.source)}
                 </span>
 
                 <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getSeverityBadge(row.severity)}`}>

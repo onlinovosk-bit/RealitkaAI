@@ -1,4 +1,4 @@
-﻿import { supabaseClient } from "@/lib/supabase/client";
+import { supabaseClient } from "@/lib/supabase/client";
 
 export type ActivityItem = {
   id: string;
@@ -59,8 +59,7 @@ function repairTextEncoding(value: string) {
 }
 
 export async function listActivities(limit = 200): Promise<ActivityItem[]> {
-  const 
-  supabase = getSupabaseClient();
+  const supabase = getSupabaseClient();
 
   if (!supabase) {
     return [];

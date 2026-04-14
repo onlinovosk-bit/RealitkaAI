@@ -40,7 +40,7 @@ function exportToCsv(leads: Lead[]) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `leady_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = `prilezitosti_${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -55,7 +55,13 @@ function sortLeads(leads: Lead[], field: SortField, dir: SortDir): Lead[] {
   });
 }
 
-const COLS: { label: string; field: SortField | null; align?: string }[] = [
+const COLS: {
+  label: string;
+  field: SortField | null;
+  align?: string;
+  sticky?: "left";
+}[] = [
+  { label: "Akcie", field: null, align: "text-left", sticky: "left" },
   { label: "Klient", field: "name" },
   { label: "Lokalita", field: "location" },
   { label: "Rozpočet", field: "budget" },
@@ -63,7 +69,6 @@ const COLS: { label: string; field: SortField | null; align?: string }[] = [
   { label: "Score", field: "score" },
   { label: "Maklér", field: "assignedAgent" },
   { label: "Posledný kontakt", field: "lastContact" },
-  { label: "Akcia", field: null, align: "text-right" },
 ];
 
 interface LeadTableProps {
@@ -104,9 +109,9 @@ export default function LeadTable({ leads, onDelete }: LeadTableProps) {
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
       <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">Leady</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Príležitosti</h2>
           <p className="text-sm text-gray-500">
-            Prehľad realitných záujemcov ako v modernom CRM.
+            Prehľad príležitostí — akcie sú vždy vľavo; tabuľku môžeš posúvať doprava pre ďalšie údaje.
           </p>
         </div>
         <button
@@ -127,8 +132,12 @@ export default function LeadTable({ leads, onDelete }: LeadTableProps) {
                 <th
                   key={col.label}
                   onClick={() => handleSort(col.field)}
-                  className={`px-5 py-3 font-medium ${col.field ? "cursor-pointer select-none hover:text-gray-700" : ""} ${col.align ?? ""}`}
-                  style={{ minWidth: 120 }}
+                  className={`px-3 sm:px-5 py-3 font-medium ${col.field ? "cursor-pointer select-none hover:text-gray-700" : ""} ${col.align ?? ""} ${
+                    col.sticky === "left"
+                      ? "sticky left-0 z-30 bg-gray-50 border-r border-gray-200/90 shadow-[4px_0_12px_-4px_rgba(0,0,0,0.08)]"
+                      : ""
+                  }`}
+                  style={{ minWidth: col.sticky ? 200 : 120 }}
                 >
                   {col.label}
                   {col.field && (
@@ -145,36 +154,43 @@ export default function LeadTable({ leads, onDelete }: LeadTableProps) {
 
           <tbody className="divide-y divide-gray-100">
             {sorted.map((lead) => (
-              <tr key={lead.id} className="hover:bg-gray-50 touch-manipulation">
-                <td className="px-5 py-4 min-w-[140px]">
+              <tr key={lead.id} className="group touch-manipulation hover:bg-gray-50">
+                <td className="sticky left-0 z-20 border-r border-gray-100 bg-white px-3 py-3 sm:px-5 sm:py-4 shadow-[4px_0_12px_-4px_rgba(0,0,0,0.06)] group-hover:bg-gray-50">
+                  <LeadRowActions
+                    lead={lead}
+                    onDelete={(id) => {
+                      window.dispatchEvent(
+                        new CustomEvent("lead_action", { detail: { action: "delete_lead", id } })
+                      );
+                      onDelete(id);
+                    }}
+                  />
+                </td>
+                <td className="px-3 py-3 sm:px-5 sm:py-4 min-w-[140px]">
                   <div className="font-medium text-gray-900 text-base md:text-sm">{lead.name}</div>
                   <div className="text-xs text-gray-500 break-all">{lead.email}</div>
                 </td>
-                <td className="px-5 py-4 text-gray-700 min-w-[120px]">{lead.location}</td>
-                <td className="px-5 py-4 text-gray-700 min-w-[100px]">{lead.budget}</td>
-                <td className="px-5 py-4 min-w-[100px]">
+                <td className="px-3 py-3 sm:px-5 sm:py-4 text-gray-700 min-w-[120px]">{lead.location}</td>
+                <td className="px-3 py-3 sm:px-5 sm:py-4 text-gray-700 min-w-[100px]">{lead.budget}</td>
+                <td className="px-3 py-3 sm:px-5 sm:py-4 min-w-[100px]">
                   <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getStatusClasses(lead.status)}`}>
                     {lead.status}
                   </span>
                 </td>
-                <td className="px-5 py-4 min-w-[80px]">
+                <td className="px-3 py-3 sm:px-5 sm:py-4 min-w-[80px]">
                   <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getScoreClasses(lead.score)}`}>
                     {lead.score}/100
                   </span>
                 </td>
-                <td className="px-5 py-4 text-gray-700 min-w-[120px]">{lead.assignedAgent}</td>
-                <td className="px-5 py-4 text-gray-700 min-w-[120px]">{lead.lastContact}</td>
-                <td className="px-5 py-4 text-right min-w-[100px]">
-                  <LeadRowActions lead={lead} onDelete={(id) => {
-                    window.dispatchEvent(new CustomEvent('lead_action', { detail: { action: 'delete_lead', id } }));
-                    onDelete(id);
-                  }} />
-                </td>
+                <td className="px-3 py-3 sm:px-5 sm:py-4 text-gray-700 min-w-[120px]">{lead.assignedAgent}</td>
+                <td className="px-3 py-3 sm:px-5 sm:py-4 text-gray-700 min-w-[120px]">{lead.lastContact}</td>
               </tr>
             ))}
           </tbody>
         </table>
-        <div className="md:hidden text-xs text-gray-400 text-center py-2 select-none">Posúvajte tabuľku do strán pre viac údajov</div>
+        <p className="text-xs text-gray-500 px-5 py-2 border-t border-gray-100 bg-gray-50/80">
+          Ďalšie stĺpce: posuň tabuľku vpravo. Stĺpec <strong className="font-medium text-gray-700">Akcie</strong> ostáva vľavo prilepený.
+        </p>
       </div>
     </div>
   );

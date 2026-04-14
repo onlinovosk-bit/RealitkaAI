@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { Lead } from "@/lib/leads-store";
 import type { PlanTier } from "@/lib/ai-engine";
 import PaywallLock from "@/components/shared/PaywallLock";
+import { RadiantSpriteIcon } from "@/components/shared/radiant-sprite-icon";
 
 interface Action {
   id: string;
@@ -29,7 +30,7 @@ function buildActions(leads: Lead[]): Action[] {
   const hotLeads = leads
     .filter((l) => l.status === "Horúci" || l.score >= 85)
     .sort((a, b) => b.score - a.score)
-    .slice(0, 3);
+    .slice(0, 4);
 
   hotLeads.forEach((l) => {
     actions.push({
@@ -54,7 +55,7 @@ function buildActions(leads: Lead[]): Action[] {
       const db = daysSince(b.lastContact);
       return db - da;
     })
-    .slice(0, 2);
+    .slice(0, 3);
 
   waiting.forEach((l) => {
     const days = daysSince(l.lastContact);
@@ -72,7 +73,7 @@ function buildActions(leads: Lead[]): Action[] {
   });
 
   // Showings scheduled
-  const showings = leads.filter((l) => l.status === "Obhliadka").slice(0, 2);
+  const showings = leads.filter((l) => l.status === "Obhliadka").slice(0, 3);
   showings.forEach((l) => {
     if (!actions.find((a) => a.leadId === l.id)) {
       actions.push({
@@ -86,7 +87,26 @@ function buildActions(leads: Lead[]): Action[] {
     }
   });
 
-  return actions.slice(0, 6);
+  // Fill remaining slots up to 9 actions with medium-priority follow-ups.
+  if (actions.length < 9) {
+    const filler = leads
+      .filter((l) => !actions.find((a) => a.leadId === l.id))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 9 - actions.length);
+
+    filler.forEach((l) => {
+      actions.push({
+        id: `extra-${l.id}`,
+        leadId: l.id,
+        leadName: l.name,
+        text: "Krátky follow-up — potvrď ďalší krok",
+        type: "followup",
+        urgency: "medium",
+      });
+    });
+  }
+
+  return actions.slice(0, 9);
 }
 
 const TYPE_ICON: Record<Action["type"], string> = {
@@ -121,18 +141,13 @@ export default function DailyActionPanel({ leads, plan = "free" }: { leads: Lead
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <span
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-sm"
-            style={{ background: "rgba(34,211,238,0.15)", color: "#22D3EE" }}
-          >
-            ⚡
-          </span>
+        <div className="flex items-start gap-3">
+          <RadiantSpriteIcon icon="tasks" sizeClassName="h-12 w-12" className="mt-0.5" />
           <div>
             <h2 className="text-sm font-bold" style={{ color: "#F0F9FF" }}>
               Dnes urob
             </h2>
-            <p className="text-[11px]" style={{ color: "#475569" }}>
+            <p className="text-sm font-bold" style={{ color: "#64748B" }}>
               {actions.length} akcií na základe AI prioritizácie
             </p>
           </div>
@@ -162,7 +177,7 @@ export default function DailyActionPanel({ leads, plan = "free" }: { leads: Lead
               >
                 {action.leadName}
               </Link>
-              <p className="text-[11px] truncate" style={{ color: "#475569" }}>
+              <p className="truncate text-sm" style={{ color: "#64748B" }}>
                 {action.text}
               </p>
             </div>

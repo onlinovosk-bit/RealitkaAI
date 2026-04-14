@@ -54,10 +54,10 @@ export default function SalesPage() {
     : 0;
   const conversionRate = total > 0 ? Math.round((hotLeads / total) * 100) : 0;
 
-  // Top leady podľa skóre
+  // Top príležitosti podľa skóre
   const topLeads = [...leads].sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 5);
 
-  // Leady podľa zdroja
+  // Príležitosti podľa zdroja
   const bySrc = leads.reduce((acc, l) => {
     const src = l.source || "Iné";
     acc[src] = (acc[src] || 0) + 1;
@@ -71,26 +71,26 @@ export default function SalesPage() {
       <div className="mb-6 flex items-start justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Sales</h1>
-          <p className="text-gray-500 mt-1">Prehľad predajného výkonu a pipeline.</p>
+          <p className="text-gray-500 mt-1">Prehľad predajného výkonu a stavu klientov.</p>
         </div>
         <Link href="/leads"
           className="text-sm font-semibold bg-gray-900 text-white px-4 py-2 rounded-xl hover:bg-gray-700 transition">
-          ➕ Nový lead
+          ➕ Nová príležitosť
         </Link>
       </div>
 
       {/* KPI karty */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <StatCard label="Celkové leady" value={total} sub="V aktívnom pipeline" />
+        <StatCard label="Celkové príležitosti" value={total} sub="V aktívnom stave klientov" />
         <StatCard label="Horúce príležitosti" value={hotLeads} sub="Obhliadka + Ponuka + Horúci" color="orange" />
-        <StatCard label="Konverzný pomer" value={`${conversionRate}%`} sub="% leadov v pokročilej fáze" color="green" />
+        <StatCard label="Konverzný pomer" value={`${conversionRate}%`} sub="% príležitostí v pokročilej fáze" color="green" />
         <StatCard label="Priemerné AI skóre" value={avgScore} sub="Z 100 bodov" color="blue" />
       </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {/* Pipeline funnel */}
+        {/* Stav klientov funnel */}
         <div className="rounded-2xl border border-gray-200 bg-white p-5">
-          <h2 className="font-bold text-gray-900 mb-4">Pipeline — fázy predaja</h2>
+          <h2 className="font-bold text-gray-900 mb-4">Stav klientov — fázy predaja</h2>
           <div className="space-y-3">
             {STAGE_ORDER.map(stage => {
               const count = byStatus[stage] || 0;
@@ -99,7 +99,7 @@ export default function SalesPage() {
                 <div key={stage}>
                   <div className="flex justify-between text-sm mb-1">
                     <span className="font-medium text-gray-700">{stage}</span>
-                    <span className="text-gray-500">{count} leadov ({pct}%)</span>
+                    <span className="text-gray-500">{count} príležitostí ({pct}%)</span>
                   </div>
                   <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                     <div className={`h-full rounded-full transition-all ${STAGE_COLORS[stage]}`}
@@ -111,9 +111,9 @@ export default function SalesPage() {
           </div>
         </div>
 
-        {/* Zdroje leadov */}
+        {/* Zdroje príležitostí */}
         <div className="rounded-2xl border border-gray-200 bg-white p-5">
-          <h2 className="font-bold text-gray-900 mb-4">Zdroje leadov</h2>
+          <h2 className="font-bold text-gray-900 mb-4">Zdroje príležitostí</h2>
           {topSources.length === 0 ? (
             <p className="text-sm text-gray-400">Žiadne dáta</p>
           ) : (
@@ -137,14 +137,14 @@ export default function SalesPage() {
         </div>
       </div>
 
-      {/* Top 5 leadov */}
+      {/* Top 5 príležitostí */}
       <div className="rounded-2xl border border-gray-200 bg-white p-5 mb-8">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-bold text-gray-900">Top leady podľa AI skóre</h2>
+          <h2 className="font-bold text-gray-900">Top príležitosti podľa AI skóre</h2>
           <Link href="/leads" className="text-sm text-blue-600 hover:underline">Zobraziť všetky →</Link>
         </div>
         {topLeads.length === 0 ? (
-          <p className="text-sm text-gray-400">Žiadne leady. <Link href="/leads" className="text-blue-600 underline">Pridaj prvý lead.</Link></p>
+          <p className="text-sm text-gray-400">Žiadne príležitosti. <Link href="/leads" className="text-blue-600 underline">Pridaj prvú príležitosť.</Link></p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -200,11 +200,11 @@ export default function SalesPage() {
             <h3 className="font-bold text-gray-900 mb-1">AI Sales Insight</h3>
             <p className="text-sm text-gray-600">
               {hotLeads > 0
-                ? `Máš ${hotLeads} leadov v pokročilej fáze — odporúčam ich kontaktovať do 24h. Priemerný rozpočet je ${avgBudget.toLocaleString("sk")} €.`
-                : "Zatiaľ nemáš leady v pokročilej fáze. Začni pridaním leadov a AI automaticky vyhodnotí ich pripravenosť na kúpu."}
+                ? `Máš ${hotLeads} príležitostí v pokročilej fáze — odporúčam ich kontaktovať do 24h. Priemerný rozpočet je ${avgBudget.toLocaleString("sk")} €.`
+                : "Zatiaľ nemáš príležitosti v pokročilej fáze. Začni pridaním príležitostí a AI automaticky vyhodnotí ich pripravenosť na kúpu."}
             </p>
             <Link href="/leads" className="mt-2 inline-block text-sm font-semibold text-blue-700 hover:underline">
-              Zobraziť leady →
+              Zobraziť príležitosti →
             </Link>
           </div>
         </div>

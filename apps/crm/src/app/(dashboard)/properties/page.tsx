@@ -4,6 +4,7 @@ import ErrorState from "@/components/shared/error-state";
 import PropertiesFilters from "@/components/properties/properties-filters";
 import PropertyCreateForm from "@/components/properties/property-create-form";
 import PropertiesWorkspace from "@/components/properties/properties-workspace";
+import SemanticSearchBar from "@/components/search/SemanticSearchBar";
 import {
   getAvailablePropertyLocations,
   listProperties,
@@ -69,6 +70,8 @@ export default async function PropertiesPage({
       description="Kompletný modul na správu nehnuteľností a ponúk realitnej kancelárie."
     >
       <div className="mb-6 flex flex-col gap-4">
+        <SemanticSearchBar type="properties" className="w-full" />
+
         <PropertiesFilters
           defaultQ={params.q ?? ""}
           defaultStatus={params.status ?? ""}

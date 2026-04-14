@@ -51,15 +51,63 @@ export default function PipelineBoard({
   const [savingId, setSavingId] = useState<string | null>(null);
   const [selectedLead, setSelectedLead] = useState<PipelineLead | null>(null);
   const [isSlideOpen, setIsSlideOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [minScore, setMinScore] = useState(0);
+  const [sourceFilter, setSourceFilter] = useState("Všetky zdroje");
+  const [agentFilter, setAgentFilter] = useState("Všetci makléri");
+  const [contactFilter, setContactFilter] = useState("Kedykoľvek");
+
+  const sources = useMemo(
+    () => ["Všetky zdroje", ...Array.from(new Set(initialLeads.map((lead) => lead.source))).sort()],
+    [initialLeads]
+  );
+
+  const agents = useMemo(
+    () => ["Všetci makléri", ...Array.from(new Set(initialLeads.map((lead) => lead.assignedAgent))).sort()],
+    [initialLeads]
+  );
+
+  function matchesContactWindow(lastContact: string) {
+    if (contactFilter === "Kedykoľvek") return true;
+    const text = lastContact.toLowerCase();
+
+    if (contactFilter === "Dnes") return text.includes("dnes") || text.includes("práve");
+    if (contactFilter === "Včera") return text.includes("včera");
+    if (contactFilter === "Tento týždeň") {
+      return (
+        text.includes("dnes") ||
+        text.includes("včera") ||
+        text.includes("pred 2 dň") ||
+        text.includes("pred 3 dň") ||
+        text.includes("pred týžd")
+      );
+    }
+
+    return true;
+  }
 
   const grouped = useMemo(() => {
+    const normalizedQuery = query.toLowerCase().trim();
+    const filtered = leads.filter((lead) => {
+      const matchesQuery =
+        normalizedQuery.length === 0 ||
+        lead.name.toLowerCase().includes(normalizedQuery) ||
+        lead.location.toLowerCase().includes(normalizedQuery);
+      const matchesScore = lead.score >= minScore;
+      const matchesSource = sourceFilter === "Všetky zdroje" || lead.source === sourceFilter;
+      const matchesAgent = agentFilter === "Všetci makléri" || lead.assignedAgent === agentFilter;
+      const matchesContact = matchesContactWindow(lead.lastContact);
+
+      return matchesQuery && matchesScore && matchesSource && matchesAgent && matchesContact;
+    });
+
     return columns.map((column) => ({
       column,
-      leads: leads
+      leads: filtered
         .filter((lead) => lead.status === column)
         .sort((a, b) => b.score - a.score),
     }));
-  }, [leads]);
+  }, [leads, query, minScore, sourceFilter, agentFilter, contactFilter]);
 
   function openLead(lead: PipelineLead) {
     setSelectedLead(lead);
@@ -82,7 +130,7 @@ export default function PipelineBoard({
         ? {
             ...item,
             status: newStatus,
-            lastContact: "Presunuté v pipeline práve teraz",
+            lastContact: "Presunuté v stave klientov práve teraz",
           }
         : item
     );
@@ -98,19 +146,19 @@ export default function PipelineBoard({
         },
         body: JSON.stringify({
           status: newStatus,
-          lastContact: "Presunuté v pipeline práve teraz",
+          lastContact: "Presunuté v stave klientov práve teraz",
           activityType: newStatus === "Obhliadka" ? "Obhliadka" : "Telefonat",
           activityText:
             newStatus === "Obhliadka"
-              ? "Lead bol presunutý do fázy obhliadky."
-              : `Lead bol presunutý do fázy ${newStatus}.`,
+              ? "Príležitosť bola presunutá do fázy obhliadky."
+              : `Príležitosť bola presunutá do fázy ${newStatus}.`,
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok || !data.ok) {
-        throw new Error(data.error || "Nepodarilo sa presunúť lead.");
+        throw new Error(data.error || "Nepodarilo sa presunúť príležitosť.");
       }
 
       // Persist pipeline move to Supabase (fire-and-forget)
@@ -128,7 +176,7 @@ export default function PipelineBoard({
         setSelectedLead({
           ...lead,
           status: newStatus,
-          lastContact: "Presunuté v pipeline práve teraz",
+          lastContact: "Presunuté v stave klientov práve teraz",
         });
       }
 
@@ -137,7 +185,7 @@ export default function PipelineBoard({
       setLeads(oldLeads);
 
       alert(
-        error instanceof Error ? error.message : "Nepodarilo sa presunúť lead."
+        error instanceof Error ? error.message : "Nepodarilo sa presunúť príležitosť."
       );
     } finally {
       setSavingId(null);
@@ -148,6 +196,80 @@ export default function PipelineBoard({
   return (
     <div className="space-y-6">
       <AgentStats leads={leads} />
+
+      <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">Hľadať príležitosť</span>
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Meno alebo lokalita"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+              Min. AI skóre ({minScore})
+            </span>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={5}
+              value={minScore}
+              onChange={(e) => setMinScore(Number(e.target.value))}
+              className="mt-2 w-full accent-gray-800"
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">Zdroj</span>
+            <select
+              value={sourceFilter}
+              onChange={(e) => setSourceFilter(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+            >
+              {sources.map((source) => (
+                <option key={source} value={source}>
+                  {source}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">Maklér</span>
+            <select
+              value={agentFilter}
+              onChange={(e) => setAgentFilter(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+            >
+              {agents.map((agent) => (
+                <option key={agent} value={agent}>
+                  {agent}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">Dátum posledného kontaktu</span>
+            <select
+              value={contactFilter}
+              onChange={(e) => setContactFilter(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+            >
+              {["Kedykoľvek", "Dnes", "Včera", "Tento týždeň"].map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      </section>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
         {grouped.map(({ column, leads: columnLeads }) => (
@@ -166,7 +288,7 @@ export default function PipelineBoard({
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <h2 className="text-base font-semibold text-gray-900">{column}</h2>
-                <p className="text-sm text-gray-500">{columnLeads.length} leadov</p>
+                <p className="text-sm text-gray-500">{columnLeads.length} príležitostí</p>
               </div>
 
               <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getStatusClasses(column)}`}>
@@ -182,7 +304,9 @@ export default function PipelineBoard({
                   draggable
                   onDragStart={() => setDraggedLeadId(lead.id)}
                   onClick={() => openLead(lead)}
-                  className={`w-full cursor-grab rounded-xl border border-gray-200 bg-gray-50 p-4 text-left transition hover:border-gray-300 hover:bg-white ${
+                  className={`w-full cursor-grab rounded-xl border bg-gray-50 p-4 text-left transition hover:bg-white ${getColumnAccent(
+                    column
+                  )} ${
                     savingId === lead.id ? "opacity-60" : ""
                   }`}
                 >
@@ -235,7 +359,7 @@ export default function PipelineBoard({
 
               {columnLeads.length === 0 && (
                 <div className="rounded-xl border border-dashed border-gray-300 p-4 text-sm text-gray-500">
-                  Sem môžeš presunúť lead.
+                  Sem môžeš presunúť príležitosť.
                 </div>
               )}
             </div>

@@ -46,7 +46,7 @@ export default function PriorityLeads({ leads, plan = "free" }: PriorityLeadsPro
     <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
       <div className="flex items-center justify-between gap-3 mb-4">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">Prioritné leady</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Prioritné príležitosti</h2>
           <p className="text-sm text-gray-500">
             Klienti s vysokým skóre alebo horúcim stavom.
           </p>
@@ -64,12 +64,16 @@ export default function PriorityLeads({ leads, plan = "free" }: PriorityLeadsPro
         {priorityLeads.map((lead) => (
           <div
             key={lead.id}
-            className="rounded-lg border border-gray-200 p-3 transition-colors hover:bg-gray-50"
+            className="group rounded-xl border border-slate-300/90 bg-white p-3 shadow-sm transition-shadow hover:shadow-md"
           >
             <div className="flex items-center justify-between gap-3">
-              <Link href={`/leads/${lead.id}`} className="flex-1 min-w-0 hover:underline">
-                <div className="font-medium text-gray-900 truncate">{lead.name}</div>
-                <div className="text-sm text-gray-500 truncate">{lead.location}</div>
+              <Link href={`/leads/${lead.id}`} className="flex-1 min-w-0">
+                <div className="truncate bg-gradient-to-r from-slate-900 via-cyan-600 to-slate-900 bg-[length:220%_100%] bg-left bg-clip-text font-medium text-gray-900 transition-all duration-500 group-hover:bg-right group-hover:text-transparent">
+                  {lead.name}
+                </div>
+                <div className="truncate bg-gradient-to-r from-slate-500 via-indigo-500 to-slate-500 bg-[length:220%_100%] bg-left bg-clip-text text-sm text-gray-500 transition-all duration-500 group-hover:bg-right group-hover:text-transparent">
+                  {lead.location}
+                </div>
               </Link>
 
               <div className="flex items-center gap-2 flex-shrink-0">
@@ -124,12 +128,12 @@ export default function PriorityLeads({ leads, plan = "free" }: PriorityLeadsPro
 
         {priorityLeads.length === 0 && (
           <p className="text-sm text-gray-500 text-center py-4">
-            Žiadne prioritné leady zatiaľ.
+            Žiadne prioritné príležitosti zatiaľ.
           </p>
         )}
 
         {lockedCount > 0 && (
-          <PaywallLock lockedCount={lockedCount} feature="prioritných leadov" />
+          <PaywallLock lockedCount={lockedCount} feature="prioritných príležitostí" />
         )}
       </div>
     </div>
