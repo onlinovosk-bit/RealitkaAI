@@ -136,12 +136,12 @@ export default function PlaybookPage() {
                   color: "#FDE68A",
                 }}
               >
-                Zobrazené sú demo fallback položky (označené badgeom DEMO), kým nie sú dostupné živé BRI dáta.
+                Zobrazené sú demo položky (označené badgeom DEMO), kým nie sú dostupné živé dáta Indexu pripravenosti.
               </div>
             )}
             <PlaybookSectionHeader
               label="Dnešné akcie"
-              description="Zoradené podľa BRI a dopadu na revenue"
+              description="Zoradené podľa Indexu pripravenosti a dopadu na obrat"
             />
 
             <div className="flex flex-col gap-3">
@@ -237,9 +237,9 @@ export default function PlaybookPage() {
                 {AI_ASSISTANT_NAME} radí
               </p>
               <p className="text-xs leading-relaxed" style={{ color: "#64748B" }}>
-                Začni hovormi s najvyšším BRI. Každý deň zavolaný lead s BRI 80+ má{" "}
+                Začni hovory so záujemcom s najvyšším IPK. Záujemca s IPK 80+ volaný v deň signálu má{" "}
                 <span style={{ color: "#22D3EE" }}>3× vyššiu</span> šancu na uzavretie
-                ako lead kontaktovaný po 5+ dňoch.
+                ako záujemca kontaktovaný po 5+ dňoch.
               </p>
             </div>
           </aside>

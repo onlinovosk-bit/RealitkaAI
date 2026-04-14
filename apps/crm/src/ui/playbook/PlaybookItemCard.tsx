@@ -90,7 +90,7 @@ export function PlaybookItemCard(props: PlaybookItemProps) {
           >
             {buyerScore}
             <span className="font-normal text-[10px]" style={{ color: "#475569" }}>
-              /100 BRI
+              /100 IPK
             </span>
           </div>
         )}
