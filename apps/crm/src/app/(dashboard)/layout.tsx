@@ -1,7 +1,6 @@
-﻿
-
-import Sidebar from "@/components/layout/sidebar";
-import Topbar from "@/components/layout/topbar";
+﻿import Sidebar from "@/components/layout/sidebar";
+import SpaceBackground from "@/components/space/SpaceBackground";
+import SpaceHeader from "@/components/layout/SpaceHeader";
 import { getCurrentProfile, requireUser } from "@/lib/auth";
 import { mapProfileRole } from "@/lib/navigation";
 
@@ -23,12 +22,13 @@ export default async function DashboardLayout({
   const role = mapProfileRole(profile?.role);
 
   return (
-    <div className="flex min-h-screen" style={{ background: '#050914' }}>
+    <div className="flex min-h-screen bg-[#080c1c]">
+      <SpaceBackground />
       <div className="hidden md:block">
         <Sidebar role={role} />
       </div>
       <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar userName={userName} role={role} />
+        <SpaceHeader userName={userName} />
         <DashboardClientShell userId={userName}>
           {children}
         </DashboardClientShell>
