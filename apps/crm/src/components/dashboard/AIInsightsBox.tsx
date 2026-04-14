@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useState as useLocalState } from "react";
-import type { DashboardInsightsResponse } from "../../../../types/dashboard";
+import type { DashboardInsightsResponse } from "@/app/api/dashboard/insights/route";
 
 // Backend API helpers
 async function fetchHistory(userId: string) {
@@ -202,7 +202,6 @@ export default function AIInsightsBox({ userName }: { userName?: string }) {
                 onChange={e => setNote(n => ({ ...n, [action.idx]: e.target.value }))}
                 onBlur={e => {
                   const newHistory = { ...history, [action.idx]: { ...(history[action.idx] || {}), note: e.target.value } };
-                  setHistory(newHistory);
                   setHistoryState(newHistory);
                 }}
                 disabled={history[action.idx]?.status === 'done'}
