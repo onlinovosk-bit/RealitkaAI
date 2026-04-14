@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from "react";
 import { fetchJson } from "@/lib/request-helpers";
 
@@ -9,14 +8,42 @@ type Plan = {
   priceLabel: string;
   originalPriceLabel?: string;
   description: string;
+  billingNote?: string;
   recommended?: boolean;
+  features?: string[];
 };
 
 export default function PricingCards({ plans }: { plans: Plan[] }) {
   const [loadingKey, setLoadingKey] = useState<string | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+  function getCheckoutErrorMessage(error: unknown) {
+    const fallback = "Nepodarilo sa spustiť checkout.";
+    if (!(error instanceof Error)) return fallback;
+
+    const message = error.message || fallback;
+    if (
+      message.includes("Používateľ nemá email") ||
+      message.includes("Pouzivatel nema email")
+    ) {
+      return "V účte chýba e-mail. Odhláste sa a prihláste sa znova, potom skúste checkout opäť.";
+    }
+    if (message.includes("Chýba planKey") || message.includes("Chyba planKey")) {
+      return "Nepodarilo sa odoslať plán pre checkout. Obnovte stránku a skúste to znovu.";
+    }
+    if (message.includes("not available to be purchased") || message.includes("not active")) {
+      return "Tento plán momentálne nie je dostupný na nákup. Skúste to neskôr alebo kontaktujte podporu.";
+    }
+    return message;
+  }
 
   async function startCheckout(planKey: string) {
+    if (!planKey) {
+      setCheckoutError("Nepodarilo sa zvoliť plán pre checkout. Obnovte stránku a skúste to znovu.");
+      return;
+    }
     setLoadingKey(planKey);
+    setCheckoutError(null);
     try {
       const data = await fetchJson("/api/billing/checkout", {
         method: "POST",
@@ -26,67 +53,200 @@ export default function PricingCards({ plans }: { plans: Plan[] }) {
         window.location.href = data.result.url;
         return;
       }
-      throw new Error("Stripe checkout URL nebola vrátená.");
+      setCheckoutError("Stripe checkout URL nebola vrátená. Skontrolujte nastavenie Stripe v administrácii.");
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Nepodarilo sa spustiť checkout.");
+      setCheckoutError(getCheckoutErrorMessage(error));
     } finally {
       setLoadingKey(null);
     }
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-      {plans.map((plan) => {
-        const isPro = plan.key === "pro" || plan.recommended;
-        return (
-          <div
-            key={plan.key}
-            className={`relative rounded-3xl border p-8 shadow-sm ${
-              isPro
-                ? "border-gray-900 bg-gray-900 text-white"
-                : "border-gray-200 bg-white text-gray-900"
-            }`}
-          >
-            {isPro && (
-              <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-yellow-400 px-4 py-1 text-xs font-bold text-gray-900">
-                ⭐ ODPORÚČANÉ
-              </span>
-            )}
+    <div>
+      {/* Header */}
+      <div className="mb-8 text-center">
+        <h2 className="text-2xl font-bold" style={{ color: '#F0F9FF' }}>
+          Vyberte si plán
+        </h2>
+        <p className="mt-2 text-sm" style={{ color: '#64748B' }}>
+          Všetky plány zahŕňajú 100% garanciu vrátenia do 30 dní
+        </p>
+        <div
+          className="mt-4 inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-extrabold"
+          style={{
+            background: 'rgba(239,68,68,0.12)',
+            border: '1px solid rgba(239,68,68,0.25)',
+            color: '#FCA5A5',
+          }}
+        >
+          🔥 Špeciálna ponuka spustenia — 50% zľava pre prvých 20 realitiek
+        </div>
+      </div>
 
-            <h2 className="text-2xl font-bold">{plan.name}</h2>
-            <p className={`mt-3 text-sm ${isPro ? "text-gray-300" : "text-gray-500"}`}>
-              {plan.description}
-            </p>
+      {/* Cards */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        {plans.map((plan) => {
+          const isPro = plan.key === "pro" || plan.recommended;
+          const isEnterprise = plan.key === "enterprise";
+          const isLoading = loadingKey === plan.key;
 
-            <div className="mt-6">
-              {plan.originalPriceLabel && (
-                <p className={`text-sm line-through ${isPro ? "text-gray-500" : "text-gray-400"}`}>
-                  {plan.originalPriceLabel}
+          return (
+            <div
+              key={plan.key}
+              className="relative rounded-3xl p-8 flex flex-col transition-all duration-300"
+              style={
+                isPro
+                  ? {
+                      background: 'linear-gradient(135deg, #0D2137 0%, #1B3A6B 100%)',
+                      border: '2px solid #22D3EE',
+                      boxShadow: '0 0 40px rgba(34,211,238,0.15)',
+                    }
+                  : {
+                      background: '#0A1628',
+                      border: `1px solid ${isEnterprise ? '#1B4FD8' : '#112240'}`,
+                    }
+              }
+            >
+              {/* Odporúčané badge */}
+              {isPro && (
+                <div
+                  className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full px-5 py-1.5 text-xs font-bold whitespace-nowrap"
+                  style={{
+                    background: 'linear-gradient(135deg, #22D3EE, #818CF8)',
+                    color: '#050914',
+                  }}
+                >
+                  ⭐ NAJPOPULÁRNEJŠÍ
+                </div>
+              )}
+
+              {/* Názov */}
+              <h2 className="text-xl font-bold mb-2" style={{ color: '#F0F9FF' }}>
+                {plan.name}
+              </h2>
+
+              {/* Popis */}
+              <p className="text-sm leading-relaxed mb-4" style={{ color: '#64748B' }}>
+                {plan.description}
+              </p>
+
+              {/* Cena */}
+              <div className="mb-2">
+                {plan.originalPriceLabel && (
+                  <p className="text-sm line-through mb-1" style={{ color: '#334155' }}>
+                    {plan.originalPriceLabel}
+                  </p>
+                )}
+                <p
+                  className="text-4xl font-extrabold"
+                  style={{ color: isPro ? '#22D3EE' : '#F0F9FF' }}
+                >
+                  {plan.priceLabel}
+                </p>
+                {plan.originalPriceLabel && (
+                  <span
+                    className="mt-2 inline-block rounded-full px-3 py-0.5 text-xs font-bold"
+                    style={{
+                      background: 'rgba(34,211,238,0.12)',
+                      color: '#22D3EE',
+                      border: '1px solid rgba(34,211,238,0.20)',
+                    }}
+                  >
+                    −50% zľava
+                  </span>
+                )}
+              </div>
+
+              {/* Billing note */}
+              {plan.billingNote && (
+                <p className="text-xs mb-6" style={{ color: '#475569' }}>
+                  {plan.billingNote}
                 </p>
               )}
-              <p className="text-4xl font-bold">{plan.priceLabel}</p>
-              {plan.originalPriceLabel && (
-                <span className="mt-1 inline-block rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">
-                  -50 % zľava
-                </span>
+
+              {/* Features */}
+              {plan.features && plan.features.length > 0 && (
+                <ul className="mb-8 space-y-2.5 flex-1">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-start gap-2.5 text-sm">
+                      <span style={{ color: '#22D3EE', flexShrink: 0 }}>✓</span>
+                      <span style={{ color: '#94A3B8' }}>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {/* CTA Button */}
+              <button
+                type="button"
+                onClick={() => startCheckout(plan.key)}
+                disabled={isLoading}
+                className="w-full rounded-xl px-5 py-3.5 text-sm font-bold transition-all duration-200 disabled:opacity-60 hover:opacity-90 mt-auto"
+                style={
+                  isPro
+                    ? {
+                        background: 'linear-gradient(135deg, #22D3EE, #818CF8)',
+                        color: '#050914',
+                        boxShadow: '0 0 20px rgba(34,211,238,0.3)',
+                      }
+                    : {
+                        background: 'rgba(34,211,238,0.08)',
+                        border: '1px solid rgba(34,211,238,0.20)',
+                        color: '#22D3EE',
+                      }
+                }
+              >
+                {isLoading
+                  ? "Presmerovávam..."
+                  : isPro
+                  ? "✦ Vybrať Pro"
+                  : isEnterprise
+                  ? "Kontaktovať predaj"
+                  : "Vybrať Starter"}
+              </button>
+
+              {isPro && (
+                <p className="mt-4 text-center text-xs" style={{ color: '#475569' }}>
+                  💡 100% garancia vrátenia do 30 dní
+                </p>
               )}
             </div>
+          );
+        })}
+      </div>
 
-            <button
-              type="button"
-              onClick={() => startCheckout(plan.key)}
-              disabled={loadingKey === plan.key}
-              className={`mt-8 w-full rounded-xl px-5 py-3 text-sm font-semibold transition-all ${
-                isPro
-                  ? "bg-white text-gray-900 hover:bg-gray-100"
-                  : "bg-gray-900 text-white hover:bg-gray-800"
-              } disabled:opacity-60`}
-            >
-              {loadingKey === plan.key ? "Presmerovávam..." : "Vybrať plán"}
-            </button>
-          </div>
-        );
-      })}
+      {checkoutError && (
+        <div
+          className="mt-6 rounded-2xl p-4 text-center text-sm"
+          style={{
+            background: 'rgba(239,68,68,0.08)',
+            border: '1px solid rgba(239,68,68,0.20)',
+            color: '#FCA5A5',
+          }}
+        >
+          {checkoutError}
+        </div>
+      )}
+
+      {/* Trust signals */}
+      <div
+        className="mt-8 rounded-2xl p-5 text-center"
+        style={{
+          background: 'rgba(34,211,238,0.04)',
+          border: '1px solid rgba(34,211,238,0.10)',
+        }}
+      >
+        <div
+          className="flex flex-wrap items-center justify-center gap-6 text-xs"
+          style={{ color: '#475569' }}
+        >
+          <span>✓ Bez viazanosti</span>
+          <span>✓ Zrušenie kedykoľvek</span>
+          <span>✓ GDPR compliant</span>
+          <span>✓ Bezpečná platba cez Stripe</span>
+          <span>✓ 🇸🇰 Made in Slovakia</span>
+        </div>
+      </div>
     </div>
   );
 }

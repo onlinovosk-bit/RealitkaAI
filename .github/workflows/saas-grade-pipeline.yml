@@ -1,3 +1,7 @@
+# Node.js 20 deprecation on GitHub Actions runners (effective Sep 2026):
+# https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+# Using Node 22 LTS for forward-compatibility.
+
 name: RealitkaAI Monorepo CI/CD
 
 on:
@@ -6,15 +10,16 @@ on:
   pull_request:
 
 env:
-  NODE_VERSION: 20
+  NODE_VERSION: 22
   APP_DIR: apps/crm
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ${{ github.workspace }}/apps/crm
+        working-directory: apps/crm
 
     steps:
       - uses: actions/checkout@v4
@@ -22,18 +27,27 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: apps/crm/package-lock.json
 
       - name: Install dependencies
         run: npm ci
 
       - name: Build
         run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
 
       - name: Upload build artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: crm-next-build
-          path: ${{ github.workspace }}/apps/crm/.next
+          path: apps/crm/.next
+          if-no-files-found: warn
+          retention-days: 7
 
   deploy:
     runs-on: ubuntu-latest
@@ -41,7 +55,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     defaults:
       run:
-        working-directory: ${{ github.workspace }}/apps/crm
+        working-directory: apps/crm
 
     steps:
       - uses: actions/checkout@v4
@@ -54,7 +68,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: crm-next-build
-          path: ${{ github.workspace }}/apps/crm/.next
+          path: apps/crm/.next
 
       - name: Deploy to Vercel
         run: npx vercel --prod --confirm
