@@ -46,9 +46,14 @@ export async function getCurrentUser() {
     return null;
   }
 
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getUser();
-  return data.user ?? null;
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase.auth.getUser();
+    return data.user ?? null;
+  } catch {
+    // Invalid cookies/session payload should never crash routing.
+    return null;
+  }
 }
 
 export async function getCurrentProfile(): Promise<CurrentProfile | null> {
@@ -56,38 +61,43 @@ export async function getCurrentProfile(): Promise<CurrentProfile | null> {
     return null;
   }
 
-  const supabase = await createClient();
-  const { data: userData } = await supabase.auth.getUser();
+  try {
+    const supabase = await createClient();
+    const { data: userData } = await supabase.auth.getUser();
 
-  const user = userData.user;
-  if (!user) return null;
+    const user = userData.user;
+    if (!user) return null;
 
-  let { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("auth_user_id", user.id)
-    .maybeSingle();
-
-  if (!profile && user.email) {
-    const fallback = await supabase
+    let { data: profile } = await supabase
       .from("profiles")
       .select("*")
-      .eq("email", user.email)
+      .eq("auth_user_id", user.id)
       .maybeSingle();
 
-    profile = fallback.data ?? null;
-
-    if (profile && !profile.auth_user_id) {
-      await supabase
+    if (!profile && user.email) {
+      const fallback = await supabase
         .from("profiles")
-        .update({ auth_user_id: user.id })
-        .eq("id", profile.id);
+        .select("*")
+        .eq("email", user.email)
+        .maybeSingle();
 
-      profile = { ...profile, auth_user_id: user.id };
+      profile = fallback.data ?? null;
+
+      if (profile && !profile.auth_user_id) {
+        await supabase
+          .from("profiles")
+          .update({ auth_user_id: user.id })
+          .eq("id", profile.id);
+
+        profile = { ...profile, auth_user_id: user.id };
+      }
     }
-  }
 
-  return profile ?? null;
+    return profile ?? null;
+  } catch {
+    // Protect dashboard/login routing from transient auth backend errors.
+    return null;
+  }
 }
 
 export async function requireUser() {
