@@ -103,8 +103,8 @@ export default function DashboardPage() {
             const { data: profile } = await supabaseClient
               .from("profiles")
               .select("full_name, email")
-              .eq("user_id", user.id)
-              .single();
+              .eq("auth_user_id", user.id)
+              .maybeSingle();
             setUserName(profile?.full_name || profile?.email || user.email || undefined);
           }
         } catch { /* user name optional */ }
