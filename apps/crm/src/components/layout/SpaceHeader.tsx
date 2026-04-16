@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import AuthButton from "@/components/auth/auth-button";
 import { AppModeToggle } from "@/components/layout/app-mode-toggle";
 import { useAIActivityStore } from "@/store/aiActivityStore";
-import { useLiveTyping } from "@/hooks/useSpaceInteractions";
 
 function formatClock(date: Date) {
   const w = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"][date.getDay()];
@@ -22,11 +21,6 @@ export default function SpaceHeader({ userName }: { userName: string }) {
   const activities = useAIActivityStore((s) => s.activities);
   const [clock, setClock] = useState(() => formatClock(new Date()));
 
-  const statusBannerTexts = useMemo(
-    () => [sofiaStatusText, "NEXUS AI sleduje nové príležitosti"],
-    [sofiaStatusText],
-  );
-  const typed = useLiveTyping(statusBannerTexts, 32, 1200);
   const color =
     sofiaStatus === "active" ? "#10b981" : sofiaStatus === "thinking" ? "#f59e0b" : "#9ca3af";
 
@@ -60,7 +54,7 @@ export default function SpaceHeader({ userName }: { userName: string }) {
               className="h-2 w-2 rounded-full animate-[statusPulse_1.6s_ease-in-out_infinite]"
               style={{ background: color, color }}
             />
-            <p className="max-w-[300px] truncate text-xs text-slate-300">{typed || sofiaStatusText}</p>
+            <p className="max-w-[300px] truncate text-xs text-slate-300">{sofiaStatusText}</p>
             <div className="ml-1 flex items-end gap-1">
               <span className="h-1 w-1 bg-indigo-300 animate-[wave1_1s_ease-in-out_infinite]" />
               <span className="h-2 w-1 bg-indigo-300 animate-[wave2_1s_ease-in-out_infinite]" />
