@@ -62,7 +62,9 @@ export default function LoginPage() {
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">Email</label>
               <input
+                name="email"
                 type="email"
+                autoComplete="email"
                 required
                 value={email}
                 onChange={e => setEmail(e.target.value)}
@@ -74,7 +76,9 @@ export default function LoginPage() {
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">Heslo</label>
               <input
+                name="password"
                 type="password"
+                autoComplete="current-password"
                 required
                 value={password}
                 onChange={e => setPassword(e.target.value)}
@@ -95,6 +99,24 @@ export default function LoginPage() {
             Nemáš účet?{" "}
             <Link href="/register" className="font-medium text-gray-900 underline">
               Registrácia
+            </Link>
+          </p>
+          <p className="mt-4 text-xs text-gray-500">
+            Právne informácie:{" "}
+            <Link href="/privacy-policy" className="underline text-gray-700">
+              Privacy Policy
+            </Link>{" "}
+            ·{" "}
+            <Link href="/terms" className="underline text-gray-700">
+              VOP / Terms
+            </Link>{" "}
+            ·{" "}
+            <Link href="/security" className="underline text-gray-700">
+              Security & Compliance
+            </Link>
+            {" · "}
+            <Link href="/cookie-policy" className="underline text-gray-700">
+              Cookie Policy
             </Link>
           </p>
         </div>

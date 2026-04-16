@@ -20,7 +20,8 @@ setup('authenticate', async ({ page }: { page: Page }) => {
   }
 
   console.log('🚀 Navigujem na /login...');
-  await page.goto('/login', { waitUntil: 'networkidle' });
+  // `networkidle` je na dev serveri často nestabilné (HMR/SSE); `load` stačí na mount formulára.
+  await page.goto('/login', { waitUntil: 'load', timeout: 60_000 });
 
   // DEBUG: Ak to zlyhá, urobíme screenshot hneď pri štarte
   await page.screenshot({ path: 'tests/debug/login-start.png' });
@@ -35,7 +36,7 @@ setup('authenticate', async ({ page }: { page: Page }) => {
   const submitButton = page.locator('button[type="submit"]');
 
   console.log('⏳ Čakám na pripravenosť formulára...');
-  await emailInput.waitFor({ state: 'visible', timeout: 10000 });
+  await emailInput.waitFor({ state: 'visible', timeout: 30_000 });
   await emailInput.fill(email);
   await passwordInput.fill(password);
   await submitButton.click();
