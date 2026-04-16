@@ -1,0 +1,5 @@
+{
+  "name": "realitka-ai-monorepo",
+  "private": true,
+  "workspaces": ["apps/crm"]
+}

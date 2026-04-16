@@ -7,8 +7,8 @@ export default async function NexusAiChatSettingsPage() {
 
   return (
     <ModuleShell
-      title="NEXUS AI Chat"
-      description="Nastavenie štýlu odpovedí NEXUS AI pre detail príležitosti."
+      title="Umelá inteligencia NEXUS AI Chat"
+      description="Nastavenie štýlu odpovedí umelej inteligencie NEXUS AI pre detail príležitosti."
     >
       <NexusAiChatSettingsClient />
     </ModuleShell>

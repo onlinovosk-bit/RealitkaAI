@@ -17,7 +17,13 @@ function getStripe() {
 }
 
 function getAppUrl() {
-  return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const raw = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").trim();
+  try {
+    const parsed = new URL(raw);
+    return parsed.origin;
+  } catch {
+    return "https://app.revolis.ai";
+  }
 }
 
 async function loadAuthHelpers() {

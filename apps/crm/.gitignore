@@ -17,6 +17,9 @@
 /.next/
 /out/
 
+# local AI tuning / outcomes (realtime scoring)
+.data/
+
 # production
 /build
 
@@ -43,3 +46,4 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+.env*.local

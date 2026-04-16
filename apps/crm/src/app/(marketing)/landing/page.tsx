@@ -15,6 +15,7 @@ import MiniPlaybookDemo from './sections/MiniPlaybookDemo';
 import IntegrationsTrustStrip from './sections/IntegrationsTrustStrip';
 import ObjectionFaq from './sections/ObjectionFaq';
 import ProofNumbers from './sections/ProofNumbers';
+import BlogPromoTicker from '@/components/marketing/BlogPromoTicker';
 
 const syne = Syne({
   subsets: ['latin'],
@@ -85,6 +86,9 @@ export default function LandingPage() {
 
       {/* 10. FinalCTA – posledný úder */}
       <FinalCTA />
+
+      {/* Rotujúci blog pás (odkazy prečo Revolis.AI) */}
+      <BlogPromoTicker />
     </main>
   );
 }

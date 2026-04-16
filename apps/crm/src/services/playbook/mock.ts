@@ -89,6 +89,12 @@ export const mockBusyDay: PlaybookItemDto[] = [
     badges: ["TODAY"],
     ctaLabel: "Potvrdiť",
     priority: 81,
+    meta: {
+      viewingConfirmationContact: {
+        email: "lucia.demo@revolis.ai",
+        phone: "+421901112233",
+      },
+    },
   },
   {
     id: "viewing-today-2",

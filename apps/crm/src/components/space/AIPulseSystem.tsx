@@ -80,6 +80,8 @@ function PulseCard({
     onDismiss(activity.id);
   }, [activity.leadId, activity.id, router, onDismiss]);
 
+  const edgeColor = expanded ? `${style.color}60` : "rgba(255,255,255,0.08)";
+
   return (
     <motion.div
       key={activity.id}
@@ -89,12 +91,22 @@ function PulseCard({
       exit={{ opacity: 0, x: 100, scale: 0.9 }}
       transition={{ type: "spring", stiffness: 300, damping: 25 }}
       onClick={handleClick}
-      className="w-[340px] rounded-xl border p-3 pointer-events-auto cursor-pointer select-none"
+      className="w-[340px] rounded-xl p-3 pointer-events-auto cursor-pointer select-none"
       style={{
         background: "rgba(15,23,42,0.92)",
         backdropFilter: "blur(16px)",
-        borderColor: expanded ? style.color + "60" : "rgba(255,255,255,0.08)",
-        borderLeft: `3px solid ${style.color}`,
+        borderTopWidth: 1,
+        borderRightWidth: 1,
+        borderBottomWidth: 1,
+        borderLeftWidth: 3,
+        borderTopStyle: "solid",
+        borderRightStyle: "solid",
+        borderBottomStyle: "solid",
+        borderLeftStyle: "solid",
+        borderTopColor: edgeColor,
+        borderRightColor: edgeColor,
+        borderBottomColor: edgeColor,
+        borderLeftColor: style.color,
       }}
     >
       <div className="flex items-center justify-between gap-2">

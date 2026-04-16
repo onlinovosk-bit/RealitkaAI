@@ -144,13 +144,25 @@ export async function runSmokeTests(): Promise<{
 
   try {
     const env = getEnvironmentHealth();
+    const { pilotSummary } = env;
+    let detail = env.requiredOk
+      ? "Povinné env sú dostupné."
+      : "Chýbajú povinné env (Supabase URL).";
+    if (env.requiredOk) {
+      if (!pilotSummary.hasPublicAppUrl) {
+        detail += " Doplň NEXT_PUBLIC_APP_URL pre produkčné odkazy.";
+      } else if (!pilotSummary.canSendTransactionalEmail) {
+        detail +=
+          " Pre odosielanie emailov z API dopň RESEND_API_KEY + OUTREACH_FROM_EMAIL (na Verceli rovnako ako v .env.local).";
+      } else {
+        detail += " Pilot: URL + transakčné emaily vyzerajú OK.";
+      }
+    }
     checks.push({
       key: "system-env",
       label: "Diagnostika prostredia",
       ok: env.requiredOk,
-      message: env.requiredOk
-        ? "Povinné env premenné sú dostupné."
-        : "Chýbajú povinné env premenné pre plný režim.",
+      message: detail,
     });
   } catch (error) {
     checks.push({

@@ -106,6 +106,23 @@ export default function FinalCTA() {
             <p className="mt-4 text-center text-xs text-slate-600">
               Bez kreditnej karty · Zrušenie kedykoľvek · GDPR · Made in Slovakia
             </p>
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-3 text-[11px] text-slate-400">
+              <Link href="/privacy-policy" className="hover:text-cyan-300 transition-colors">
+                Privacy Policy
+              </Link>
+              <span>·</span>
+              <Link href="/terms" className="hover:text-cyan-300 transition-colors">
+                VOP / Terms
+              </Link>
+              <span>·</span>
+              <Link href="/security" className="hover:text-cyan-300 transition-colors">
+                Security & Compliance
+              </Link>
+              <span>·</span>
+              <Link href="/trust-center" className="hover:text-cyan-300 transition-colors">
+                Trust Center
+              </Link>
+            </div>
           </div>
 
           {/* Money-back guarantee */}

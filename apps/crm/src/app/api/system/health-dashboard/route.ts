@@ -1,5 +1,6 @@
 import { okResponse, errorResponse } from "@/lib/api-response";
 import { getCurrentUser } from "@/lib/auth";
+import { getEnvironmentHealth } from "@/lib/app-env";
 import { createClient } from "@/lib/supabase/server";
 import { runSmokeTests } from "@/lib/smoke-tests";
 
@@ -54,8 +55,11 @@ export async function GET() {
   const totalLeads = leadTotal.count ?? 0;
   const totalProps = propTotal.count ?? 0;
 
+  const environment = getEnvironmentHealth();
+
   return okResponse({
     generatedAt: new Date().toISOString(),
+    environment,
     embeddings: {
       leadsIndexed: withEmbLeads,
       leadsTotal: totalLeads,

@@ -22,6 +22,7 @@ import {
   NEXUS_CHAT_SETTINGS_STORAGE_KEY,
   type NexusChatSettings,
 } from "@/lib/nexus-chat-settings";
+import { useRealtimeLeadScore } from "@/hooks/useRealtimeLeadScore";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -170,6 +171,21 @@ export default function LeadDetailPage() {
 
   const { msg: toast, show: showToast } = useToast();
 
+  const [scorePulse, setScorePulse] = useState(false);
+
+  const onRealtimeScore = useCallback(
+    (u: { leadId: string; score: number }) => {
+      setLead((prev) =>
+        prev && prev.id === u.leadId ? { ...prev, score: u.score } : prev
+      );
+      setScorePulse(true);
+      window.setTimeout(() => setScorePulse(false), 800);
+    },
+    []
+  );
+
+  useRealtimeLeadScore(id || undefined, onRealtimeScore);
+
   // ── load ──
   useEffect(() => {
     if (!id) return;
@@ -307,9 +323,9 @@ export default function LeadDetailPage() {
       });
       const data = await res.json();
       if (data.ok) setSofiaAnswer(data.answer);
-      else setSofiaAnswer(`${AI_ASSISTANT_NAME} momentálne nie je dostupná.`);
+      else setSofiaAnswer(`${AI_ASSISTANT_NAME} momentálne nie je dostupný.`);
     } catch {
-      setSofiaAnswer(`${AI_ASSISTANT_NAME} momentálne nie je dostupná.`);
+      setSofiaAnswer(`${AI_ASSISTANT_NAME} momentálne nie je dostupný.`);
     } finally {
       setSofiaAsking(false);
     }
@@ -529,24 +545,73 @@ export default function LeadDetailPage() {
             </div>
 
             {/* AI Score */}
-            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div
+              className={`rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow duration-500 ${
+                scorePulse ? "ring-2 ring-cyan-400/80 shadow-[0_0_24px_rgba(34,211,238,0.35)]" : ""
+              }`}
+            >
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">AI Skóre</p>
               <div className="flex items-end gap-2">
-                <span className={`text-3xl font-bold ${
+                <span
+                  className={`text-3xl font-bold transition-all duration-500 ${
                   (lead.score ?? 0) >= 70 ? "text-emerald-600" :
                   (lead.score ?? 0) >= 40 ? "text-amber-600" : "text-gray-500"
-                }`}>{lead.score ?? "—"}</span>
+                } ${scorePulse ? "scale-105" : ""}`}
+                >
+                  {lead.score ?? "—"}
+                </span>
                 <span className="mb-1 text-sm text-gray-400">/ 100</span>
               </div>
               <div className="mt-2 h-1.5 w-full rounded-full bg-gray-100">
                 <div
-                  className={`h-1.5 rounded-full transition-all ${
+                  className={`h-1.5 rounded-full transition-[width] duration-700 ease-out ${
                     (lead.score ?? 0) >= 70 ? "bg-emerald-500" :
                     (lead.score ?? 0) >= 40 ? "bg-amber-400" : "bg-gray-300"
                   }`}
                   style={{ width: `${lead.score ?? 0}%` }}
                 />
               </div>
+              <button
+                type="button"
+                className="mt-3 w-full rounded-lg border border-cyan-200/80 bg-gradient-to-r from-cyan-50/90 to-indigo-50/80 px-3 py-2 text-xs font-semibold text-slate-800 transition hover:border-cyan-300 hover:from-cyan-50 hover:to-indigo-50"
+                onClick={async () => {
+                  try {
+                    const res = await fetch("/api/events", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        leadId: id,
+                        signals: {
+                          email_open: 1,
+                          link_click: 0.9,
+                          page_view: 0.5,
+                          reply: 0.3,
+                        },
+                      }),
+                    });
+                    const data = (await res.json()) as {
+                      ok?: boolean;
+                      lead?: Lead;
+                      score?: number;
+                      error?: string;
+                    };
+                    if (!res.ok || !data.ok) {
+                      showToast(data.error ?? "Signály sa neodoslali.");
+                      return;
+                    }
+                    if (data.lead) setLead(data.lead);
+                    else if (typeof data.score === "number") {
+                      setLead((prev) =>
+                        prev ? { ...prev, score: data.score as number } : prev
+                      );
+                    }
+                  } catch {
+                    showToast("Chyba siete pri odosielaní signálov.");
+                  }
+                }}
+              >
+                ⚡ Demo: live signály → nové skóre
+              </button>
             </div>
 
             {/* Sofia Insight */}
