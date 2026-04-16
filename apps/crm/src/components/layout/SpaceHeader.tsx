@@ -22,7 +22,11 @@ export default function SpaceHeader({ userName }: { userName: string }) {
   const activities = useAIActivityStore((s) => s.activities);
   const [clock, setClock] = useState(() => formatClock(new Date()));
 
-  const typed = useLiveTyping([sofiaStatusText, "Sofia sleduje nové príležitosti"], 32, 1200);
+  const statusBannerTexts = useMemo(
+    () => [sofiaStatusText, "NEXUS AI sleduje nové príležitosti"],
+    [sofiaStatusText],
+  );
+  const typed = useLiveTyping(statusBannerTexts, 32, 1200);
   const color =
     sofiaStatus === "active" ? "#10b981" : sofiaStatus === "thinking" ? "#f59e0b" : "#9ca3af";
 
@@ -78,8 +82,15 @@ export default function SpaceHeader({ userName }: { userName: string }) {
         </div>
       </div>
 
-      <div className="relative mt-2 h-px bg-gradient-to-r from-transparent via-indigo-500 to-transparent">
-        <div className="absolute left-0 h-px w-full bg-indigo-400/30 opacity-40 animate-[scanline_8s_linear_infinite]" />
+      <div className="relative mt-2 h-[2px] overflow-hidden rounded-full">
+        <div
+          className="absolute inset-0 animate-[shimmerFlow_10s_linear_infinite]"
+          style={{
+            backgroundImage:
+              "linear-gradient(90deg, transparent 0%, #6366f1 20%, #22d3ee 40%, #818cf8 60%, #6366f1 80%, transparent 100%)",
+            backgroundSize: "200% 100%",
+          }}
+        />
       </div>
     </header>
   );

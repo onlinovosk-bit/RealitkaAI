@@ -28,6 +28,8 @@ export function useLiveTyping(texts: string[], charDelay = 40, pauseMs = 2000): 
   const [textIndex, setTextIndex] = useState(0);
   const [output, setOutput] = useState("");
   const [deleting, setDeleting] = useState(false);
+  // Referenčne nestabilné pole `[a,b]` z parentu by inak spúšťalo efekt každý render → React #185.
+  const textsKey = texts.join("\u0001");
 
   useEffect(() => {
     if (!texts.length) return;
@@ -47,7 +49,7 @@ export function useLiveTyping(texts: string[], charDelay = 40, pauseMs = 2000): 
       }, 120);
     }
     return () => clearTimeout(timeout);
-  }, [texts, textIndex, output, deleting, charDelay, pauseMs]);
+  }, [textsKey, textIndex, output, deleting, charDelay, pauseMs]);
 
   return output;
 }
