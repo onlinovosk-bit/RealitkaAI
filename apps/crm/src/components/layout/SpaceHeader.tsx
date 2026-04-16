@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import AuthButton from "@/components/auth/auth-button";
 import { AppModeToggle } from "@/components/layout/app-mode-toggle";
 import { useAIActivityStore } from "@/store/aiActivityStore";
@@ -21,6 +21,8 @@ export default function SpaceHeader({ userName }: { userName: string }) {
   const activities = useAIActivityStore((s) => s.activities);
   /** SSR + prvý paint klienta musia byť identické — žiadny `new Date()` v initial state (React #418). */
   const [clock, setClock] = useState("");
+  /** Počítaj len na klientovi — `toDateString()` sa líši medzi UTC (Node) a lokálnou TZ (React #418). */
+  const [todayCount, setTodayCount] = useState(0);
 
   const color =
     sofiaStatus === "active" ? "#10b981" : sofiaStatus === "thinking" ? "#f59e0b" : "#9ca3af";
@@ -32,9 +34,11 @@ export default function SpaceHeader({ userName }: { userName: string }) {
     return () => clearInterval(i);
   }, []);
 
-  const todayCount = useMemo(() => {
+  useEffect(() => {
     const today = new Date().toDateString();
-    return activities.filter((a) => new Date(a.timestamp).toDateString() === today).length;
+    setTodayCount(
+      activities.filter((a) => new Date(a.timestamp).toDateString() === today).length,
+    );
   }, [activities]);
 
   return (

@@ -15,6 +15,8 @@
 
 **Súvisiace predchádzajúce riziká:** nekonzistentný dotaz na `profiles` (`user_id` vs `auth_user_id`) — opravené v samostatnom commite; nie je priamou príčinou #418, ale zvyšoval hluk v konzole (400).
 
+**Doplňujúca príčina („stále #418“):** V `SpaceHeader` bol **„leads dnes“** počítaný v `useMemo` počas renderu cez `new Date().toDateString()`. Na **Vercel (Node, často UTC)** a v **prehliadači (lokálna TZ)** mohol byť „dnes“ iný deň alebo iný počet → **iný text** v hlavičke oproti hydrate → #418 → #185. Oprava: **`todayCount` len v `useEffect`**, prvý paint vždy `0`.
+
 ## Fix (safe)
 
 - `SpaceHeader`: `clock` inicializované prázdny reťazec; `formatClock(new Date())` **iba v `useEffect`** po mounte.
