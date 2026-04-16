@@ -2,7 +2,8 @@ import { test as setup, expect, Page } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
 
-const authDir = path.join(__dirname, '../playwright/.auth');
+// Musí sedieť s `authFile` v playwright.config.ts (tests/playwright/.auth)
+const authDir = path.join(__dirname, 'playwright/.auth');
 const storageState = path.join(authDir, 'user.json');
 
 setup('authenticate', async ({ page }: { page: Page }) => {
