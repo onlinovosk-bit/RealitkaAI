@@ -11,6 +11,7 @@ export interface AIActivity {
   id: string;
   type: ActivityType;
   lead: string;
+  leadId?: string;
   detail: string;
   timestamp: Date;
   channel?: "whatsapp" | "email";
@@ -32,7 +33,7 @@ export const useAIActivityStore = create<AIActivityStore>((set) => ({
   activities: [],
   latestActivity: null,
   sofiaStatus: "idle",
-  sofiaStatusText: "Sofia je pripravená",
+  sofiaStatusText: "NEXUS AI je pripravená",
   addActivity: (a) =>
     set((state) => ({
       activities: [a, ...state.activities].slice(0, 50),
