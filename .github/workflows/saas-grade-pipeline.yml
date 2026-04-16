@@ -1,25 +1,43 @@
-# Node.js 20 deprecation on GitHub Actions runners (effective Sep 2026):
-# https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
-# Using Node 22 LTS for forward-compatibility.
-
+# Monorepo CI/CD lives only here — GitHub does not run workflows under apps/*/ .github/
+# Node 22 LTS (see GitHub runner deprecation timeline for Node 20)
 name: RealitkaAI Monorepo CI/CD
 
 on:
   push:
     branches: [main]
   pull_request:
+    branches: [main, master, develop]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 env:
   NODE_VERSION: 22
   APP_DIR: apps/crm
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  NEXT_TELEMETRY_DISABLED: 1
 
 jobs:
-  build:
+  ci:
+    name: Lint, test, build, E2E
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     defaults:
       run:
         working-directory: apps/crm
+
+    env:
+      NODE_ENV: test
+      CI: true
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+      TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+      TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
 
     steps:
       - uses: actions/checkout@v4
@@ -27,35 +45,75 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: npm
           cache-dependency-path: apps/crm/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --prefer-offline
 
-      - name: Build
+      # Fail-fast: cheap checks before Playwright
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests (Vitest)
+        run: npx vitest run
+
+      - name: Build (Next.js)
         run: npm run build
         env:
+          NODE_ENV: production
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
 
-      - name: Upload build artifact
+      # Only Chromium — matches playwright.config.ts projects (Desktop Chrome)
+      - name: Install Playwright (Chromium + OS deps)
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E (Playwright)
+        run: npx playwright test --reporter=github
+
+      - name: Upload Playwright report (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/crm/playwright-report
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload test-results (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: apps/crm/test-results
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload Next.js build artifact
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: crm-next-build
           path: apps/crm/.next
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 7
 
   deploy:
+    name: Deploy (Vercel production)
+    needs: ci
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
-    needs: build
-    if: github.ref == 'refs/heads/main'
+    timeout-minutes: 25
     defaults:
       run:
         working-directory: apps/crm
+
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
     steps:
       - uses: actions/checkout@v4
@@ -63,13 +121,22 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: apps/crm/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --prefer-offline
 
       - name: Deploy to Vercel
         run: npx vercel --prod --confirm
+
+      - name: Smoke — production URL reachable
         env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          SMOKE_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SMOKE_URL:-}" ]; then
+            echo "::error::NEXT_PUBLIC_APP_URL secret is empty; cannot verify deploy."
+            exit 1
+          fi
+          curl -fsSL --retry 4 --retry-delay 3 --retry-all-errors -o /dev/null "$SMOKE_URL"

@@ -51,7 +51,11 @@ describe('ICS Calendar Sync', () => {
     const result = await syncCalendarFromIcs('https://test/ics.ics', 'lead-1');
     expect(result.synced).toBe(1);
     expect(result.message).toMatch(/Synchronizovaných udalostí/);
-    expect(createActivitySpy).toHaveBeenCalledWith('lead-1', 'Kalendár', expect.stringContaining('Test Event'));
+    expect(createActivitySpy).toHaveBeenCalledWith({
+      profileId: 'lead-1',
+      type: 'Kalendár',
+      text: expect.stringContaining('Test Event'),
+    });
   });
 
   it('Neplatný ICS URL', async () => {
