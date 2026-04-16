@@ -1,4 +1,5 @@
 import "./globals.css";
+import CookieConsentBanner from "@/components/legal/cookie-consent-banner";
 
 export default function RootLayout({
   children,
@@ -6,8 +7,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body suppressHydrationWarning>
+        {children}
+        <CookieConsentBanner />
+      </body>
     </html>
   );
 }

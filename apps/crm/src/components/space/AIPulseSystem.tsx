@@ -41,10 +41,19 @@ const nextSteps: Record<ActivityType, string[]> = {
   ],
 };
 
-function relativeTime(date: Date) {
-  const s = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
-  if (s <= 1) return "práve teraz";
-  return `${s}s`;
+/** Žiadny `Date.now()` pri prvom renderi — len po mounte (hydration-safe). */
+function useRelativeTimeLabel(date: Date) {
+  const [label, setLabel] = useState("…");
+  useEffect(() => {
+    const tick = () => {
+      const s = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
+      setLabel(s <= 1 ? "práve teraz" : `${s}s`);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [date]);
+  return label;
 }
 
 function PulseCard({
@@ -56,6 +65,7 @@ function PulseCard({
 }) {
   const router = useRouter();
   const [expanded, setExpanded] = useState(false);
+  const relLabel = useRelativeTimeLabel(activity.timestamp);
   const style = typeStyle[activity.type];
   const steps = nextSteps[activity.type];
 
@@ -94,7 +104,7 @@ function PulseCard({
           </span>
           {activity.detail}
         </p>
-        <span className="text-[10px] text-slate-500">{relativeTime(activity.timestamp)}</span>
+        <span className="text-[10px] text-slate-500">{relLabel}</span>
       </div>
       <div className="mt-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">

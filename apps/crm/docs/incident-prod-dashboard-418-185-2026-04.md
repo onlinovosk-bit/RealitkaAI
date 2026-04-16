@@ -19,7 +19,10 @@
 
 - `SpaceHeader`: `clock` inicializované prázdny reťazec; `formatClock(new Date())` **iba v `useEffect`** po mounte.
 - `suppressHydrationWarning` na elemente s časom (obranný pás pre okrajové rozdiely).
-- Predchádzajúce úpravy: odstránenie live-typing v headeri, spevnenie `AIPulseSystem`, správny stĺpec `auth_user_id` pre profil.
+- **Root `layout`:** `suppressHydrationWarning` na `<html>` a `<body>` (rozšírenia prehliadača / atribúty môžu líšiť SSR vs klient).
+- **Dashboard stránka:** odstránené **`framer-motion`** (`motion.main` / `motion.section`) — často spôsobovalo nezhodu pri hydrate.
+- **`AIPulseSystem`:** čas „pred Xs“ cez **`useRelativeTimeLabel`** (žiadny `Date.now()` v prvom renderi `PulseCard`).
+- Predchádzajúce úpravy: odstránenie live-typing v headeri, spevnenie časovačov v `AIPulseSystem`, správny stĺpec `auth_user_id` pre profil.
 
 ## Preventívne opatrenia
 

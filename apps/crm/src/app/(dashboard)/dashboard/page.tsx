@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
 import { getLeads, type Lead } from "@/lib/leads-store";
 import PriorityLeads from "@/components/dashboard/priority-leads";
 import AiInsightsPanel from "@/components/dashboard/AiInsightsPanel";
@@ -167,12 +166,7 @@ export default function DashboardPage() {
   const probabilityTrend = forecastingSummary ? getTrend(forecastingSummary.avgProbabilityPercent, forecastTargets.avgProbabilityPercent, " %") : null;
 
   return (
-    <motion.main
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
-      className="p-6"
-    >
+    <main className="p-6">
       <div className="mx-auto max-w-7xl">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900">Prehľad biznisu</h1>
@@ -195,9 +189,9 @@ export default function DashboardPage() {
           <AiInsightsPanel leads={leads} plan={plan} />
         </section>
 
-        <motion.section className="mb-6" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+        <section className="mb-6">
           <RecentActivityFeed />
-        </motion.section>
+        </section>
 
         <section className="mb-6">
           <Link
@@ -242,6 +236,6 @@ export default function DashboardPage() {
         </section>
       </div>
       <AIPulseSystem />
-    </motion.main>
+    </main>
   );
 }
