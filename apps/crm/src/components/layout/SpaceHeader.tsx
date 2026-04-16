@@ -19,13 +19,16 @@ export default function SpaceHeader({ userName }: { userName: string }) {
   const sofiaStatus = useAIActivityStore((s) => s.sofiaStatus);
   const sofiaStatusText = useAIActivityStore((s) => s.sofiaStatusText);
   const activities = useAIActivityStore((s) => s.activities);
-  const [clock, setClock] = useState(() => formatClock(new Date()));
+  /** SSR + prvý paint klienta musia byť identické — žiadny `new Date()` v initial state (React #418). */
+  const [clock, setClock] = useState("");
 
   const color =
     sofiaStatus === "active" ? "#10b981" : sofiaStatus === "thinking" ? "#f59e0b" : "#9ca3af";
 
   useEffect(() => {
-    const i = setInterval(() => setClock(formatClock(new Date())), 1000);
+    const tick = () => setClock(formatClock(new Date()));
+    tick();
+    const i = setInterval(tick, 1000);
     return () => clearInterval(i);
   }, []);
 
@@ -61,7 +64,9 @@ export default function SpaceHeader({ userName }: { userName: string }) {
               <span className="h-3 w-1 bg-indigo-300 animate-[wave3_1s_ease-in-out_infinite]" />
             </div>
           </div>
-          <p className="font-mono text-xs tracking-widest text-indigo-300">{clock}</p>
+          <p className="font-mono text-xs tracking-widest text-indigo-300" suppressHydrationWarning>
+            {clock}
+          </p>
         </div>
 
         <div className="flex items-center gap-3">
