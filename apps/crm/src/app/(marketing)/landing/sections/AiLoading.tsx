@@ -61,7 +61,7 @@ export default function AiLoading() {
           </div>
 
           <p className="text-xs font-bold uppercase tracking-[0.25em] text-cyan-300 text-center mb-3">
-            Okamih AI
+            Nastavuje sa AI
           </p>
           <h3 className="text-xl font-bold text-slate-50 text-center mb-2" style={{ fontFamily: 'var(--font-syne)' }}>
             Analyzujeme tvoje podnikanie…

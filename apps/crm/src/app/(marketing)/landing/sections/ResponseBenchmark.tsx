@@ -22,7 +22,7 @@ export default function ResponseBenchmark() {
         <div className="rounded-3xl border border-slate-700/70 bg-slate-900/50 p-6 md:p-8">
           <p className="text-xs uppercase tracking-[0.25em] text-cyan-300">Porovnanie rýchlosti odpovede s trhom</p>
           <h3 className="mt-2 text-2xl font-extrabold text-slate-100" style={{ fontFamily: 'var(--font-syne)' }}>
-            Tvoja realitka vs. trh (simulácia)
+            Tvoja realitka versus trh (simulácia)
           </h3>
 
           <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">

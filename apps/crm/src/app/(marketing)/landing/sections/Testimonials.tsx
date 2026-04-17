@@ -93,7 +93,8 @@ const TESTIMONIALS = [
   },
   {
     stars: 5,
-    quote: 'Na rozhovoroch s klientmi už nepredávame „softvér“, ale výsledky. Prehľad v aplikácii hovorí jasnou rečou.',
+    quote:
+      'Jeden prehľadný systém mi ukáže, kde som v procese s každým klientom — uzatváranie obchodov je rýchlejšie a menej chaotické. Namiesto skákania medzi tabuľkami mám viac času venovať sa jednému zákazníkovi poriadne.',
     name: 'Veronika Hudecová',
     company: 'VH Homes, Košice',
     metric: '+34 % konverzie',

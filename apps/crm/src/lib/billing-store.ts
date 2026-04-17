@@ -1,7 +1,7 @@
 import Stripe from "stripe";
 import { autoErrorCapture } from "./auto-error-capture";
 import { createActivity } from "@/lib/activities-store";
-import { PLAN_KEYS, PLAN_LIMITS } from "@/lib/billing-types";
+import { PLAN_KEYS, PLAN_LIMITS, type PlanKey } from "@/lib/billing-types";
 import { AI_ASSISTANT_NAME } from "@/lib/ai-brand";
 
 import { logInfo } from "./logger";
@@ -408,10 +408,28 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
   return { ok: true };
 }
 
-export async function getCurrentPlanTier(): Promise<"free" | "pro"> {
+export type ResolvedBillingPlan = PlanKey | "free";
+
+export function resolvePlanKeyFromStripePriceId(
+  priceId: string | null | undefined
+): ResolvedBillingPlan {
+  if (!priceId) return "free";
+  if (priceId === process.env.STRIPE_PRICE_ENTERPRISE) return PLAN_KEYS.ENTERPRISE;
+  if (priceId === process.env.STRIPE_PRICE_PRO) return PLAN_KEYS.PRO;
+  if (priceId === process.env.STRIPE_PRICE_STARTER) return PLAN_KEYS.STARTER;
+  return PLAN_KEYS.PRO;
+}
+
+export async function getCurrentPlanKey(): Promise<ResolvedBillingPlan> {
   const status = await getCurrentBillingStatus();
-  if (status.hasSubscription) return "pro";
-  return "free";
+  const priceId = status.subscription?.items?.[0]?.priceId ?? null;
+  return resolvePlanKeyFromStripePriceId(priceId);
+}
+
+export async function getCurrentPlanTier(): Promise<"free" | "pro"> {
+  const key = await getCurrentPlanKey();
+  if (key === "free") return "free";
+  return "pro";
 }
 
 export function verifyStripeWebhook(payload: string | Buffer, signature: string) {

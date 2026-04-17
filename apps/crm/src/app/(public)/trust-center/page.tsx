@@ -33,6 +33,43 @@ export default function TrustCenterPage() {
           </ul>
         </section>
 
+        <section>
+          <h2 className="text-lg font-semibold text-white">Verejný právny balík (online)</h2>
+          <p className="mt-2 text-slate-300">
+            Základné texty MSA, DPA, SLA, odškodnenia, VOP doplnku, FAQ a checklist nájdete na samostatných stránkach — v
+            rovnakej štruktúre ako v Trust Center balíku na podpis.
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+            <Link href="/legal/msa" className="text-cyan-400 underline hover:text-cyan-300">
+              MSA
+            </Link>
+            <span className="text-slate-600" aria-hidden>
+              ·
+            </span>
+            <Link href="/legal/dpa" className="text-cyan-400 underline hover:text-cyan-300">
+              DPA
+            </Link>
+            <span className="text-slate-600" aria-hidden>
+              ·
+            </span>
+            <Link href="/legal/sla" className="text-cyan-400 underline hover:text-cyan-300">
+              SLA
+            </Link>
+            <span className="text-slate-600" aria-hidden>
+              ·
+            </span>
+            <Link href="/privacy-policy" className="text-cyan-400 underline hover:text-cyan-300">
+              Privacy
+            </Link>
+            <span className="text-slate-600" aria-hidden>
+              ·
+            </span>
+            <Link href="/legal/enterprise-faq" className="text-cyan-400 underline hover:text-cyan-300">
+              FAQ
+            </Link>
+          </div>
+        </section>
+
         <section className="rounded-xl border border-cyan-500/30 bg-cyan-500/5 p-4">
           <h3 className="font-semibold text-cyan-200">Self-service request</h3>
           <p className="mt-1 text-slate-300">

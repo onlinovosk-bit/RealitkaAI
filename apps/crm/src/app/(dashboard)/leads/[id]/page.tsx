@@ -25,6 +25,7 @@ import {
 import { useRealtimeLeadScore } from "@/hooks/useRealtimeLeadScore";
 import SalesBrainPanel from "@/components/leads/sales-brain-panel";
 import DealStrategyCard from "@/components/leads/deal-strategy-card";
+import EnterpriseAiProcessButton from "@/components/leads/enterprise-ai-process-button";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -590,6 +591,7 @@ export default function LeadDetailPage() {
               </Link>
             ) : null}
             {id ? <SalesBrainPanel leadId={id} /> : null}
+            {id ? <EnterpriseAiProcessButton leadId={id} /> : null}
             {id ? <DealStrategyCard leadId={id} /> : null}
 
             {/* AI Score */}

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getLeads, type Lead } from "@/lib/leads-store";
 import PriorityLeads from "@/components/dashboard/priority-leads";
 import AiInsightsPanel from "@/components/dashboard/AiInsightsPanel";
+import EnterpriseSalesIntelligencePanel from "@/components/dashboard/EnterpriseSalesIntelligencePanel";
 import { supabaseClient } from "@/lib/supabase/client";
 import type { PlanTier } from "@/lib/ai-engine";
 import PropertiesSummaryWidget from "@/components/dashboard/properties-summary-widget";
@@ -82,6 +83,7 @@ export default function DashboardPage() {
   const [forecastTargets, setForecastTargets] = useState<ForecastingTargets>(DEFAULT_FORECAST_TARGETS);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [enterpriseSalesIntelligence, setEnterpriseSalesIntelligence] = useState(false);
 
   const assistantLeadOptions = useMemo(
     () => leads.map((l) => ({ id: l.id, name: l.name })),
@@ -144,7 +146,10 @@ export default function DashboardPage() {
           const planRes = await fetch("/api/billing/plan");
           if (planRes.ok) {
             const planData = await planRes.json();
-            if (planData?.result?.tier) setPlan(planData.result.tier as PlanTier);
+            if (planData?.tier) setPlan(planData.tier as PlanTier);
+            if (planData?.enterpriseSalesIntelligence) {
+              setEnterpriseSalesIntelligence(true);
+            }
           }
         } catch { /* plan optional */ }
       } catch (error) {
@@ -279,6 +284,12 @@ export default function DashboardPage() {
         <section className="mb-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
           <PriorityLeads leads={leads} plan={plan} />
           <AiInsightsPanel leads={leads} plan={plan} />
+        </section>
+
+        <section className="mb-6">
+          <EnterpriseSalesIntelligencePanel
+            enabled={enterpriseSalesIntelligence}
+          />
         </section>
 
         <section className="mb-6">

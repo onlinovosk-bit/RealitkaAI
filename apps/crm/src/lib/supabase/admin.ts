@@ -1,18 +1,17 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 /**
- * Service role klient – len na serveri (cron, metriky, audit insert).
- * Nikdy neimportuj do "use client" komponentov.
+ * Server-only Supabase client with service role. Use only in Route Handlers / server actions.
+ * Required for cron + scraper upserts (RLS allows service_role full access).
  */
-export function createServiceRoleClient() {
+export function createSupabaseAdmin(): SupabaseClient | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-
-  if (!url || !key) {
-    return null;
-  }
-
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
   return createClient(url, key, {
-    auth: { persistSession: false, autoRefreshToken: false },
+    auth: { autoRefreshToken: false, persistSession: false },
   });
 }
+
+/** Alias used across server modules (service role = admin client). */
+export const createServiceRoleClient = createSupabaseAdmin;

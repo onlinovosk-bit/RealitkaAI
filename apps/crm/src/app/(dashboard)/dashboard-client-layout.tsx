@@ -3,7 +3,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import Sidebar from "@/components/layout/sidebar";
 import SpaceHeader from "@/components/layout/SpaceHeader";
-import BlogPromoTicker from "@/components/marketing/BlogPromoTicker";
 import SpaceBackground from "@/components/space/SpaceBackground";
 import type { UserRole } from "@/lib/navigation";
 import DashboardClientShell from "./DashboardClientShell";
@@ -54,9 +53,6 @@ export default function DashboardClientLayout({ userName, role, children }: Prop
           <SpaceHeader userName={userName} />
           <DashboardClientShell>{children}</DashboardClientShell>
         </div>
-      </div>
-      <div className="relative z-[2] shrink-0">
-        <BlogPromoTicker />
       </div>
     </div>
   );

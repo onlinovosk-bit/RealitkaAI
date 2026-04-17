@@ -27,4 +27,9 @@ test.describe('API endpoints', () => {
     const res = await request.get(`${BASE_URL}/api/leads/nonexistent-lead-id`);
     expect(res.status()).not.toBe(200);
   });
+
+  test('GET /api/outreach/prospects bez session vráti 401 alebo 403', async ({ request }) => {
+    const res = await request.get(`${BASE_URL}/api/outreach/prospects`);
+    expect([401, 403]).toContain(res.status());
+  });
 });
