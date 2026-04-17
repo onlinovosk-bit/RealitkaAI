@@ -12,6 +12,11 @@ export default function Step4({ slug }: { slug: string }) {
       <h1 className="text-3xl font-bold mb-2 text-gray-900">Nakonfiguruj AI asistenta 🤖</h1>
       <p className="text-gray-500 mb-8">Toto je srdce Revolisu. Tvoj AI obchodník bude pracovať za teba non-stop.</p>
 
+      <p className="text-sm text-gray-700 mb-6 rounded-xl border border-cyan-100 bg-cyan-50/40 px-4 py-3 leading-relaxed">
+        Podľa interných benchmarkov vie AI pokryť väčšinu opakovateľnej práce — odpovede na leady, lead scoring, párovanie nehnuteľností a follow-up
+        cadencu. Na tebe ostáva ľudský kontakt pri obhliadkach, vyjednávaní a dlhodobých vzťahoch.
+      </p>
+
       <div className="space-y-6 max-w-lg">
         <div>
           <label className="text-xs font-semibold text-gray-500 uppercase tracking-widest block mb-2">Meno tvojho AI asistenta</label>

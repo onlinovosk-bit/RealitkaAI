@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import GoalCards from "@/components/onboarding/GoalCards";
+import RoundtableOnboardingSection from "@/components/onboarding/RoundtableOnboardingSection";
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -43,6 +44,8 @@ export default function OnboardingPage() {
           <GoalCards onChange={handleGoalsChange} />
         </div>
 
+        <RoundtableOnboardingSection />
+
         {/* Záložné CTA v toku stránky (ak niekto nescrolluje k fixnému baru) */}
         <div className="flex flex-col items-stretch gap-3 border-t border-gray-200 pt-6 sm:flex-row sm:justify-end lg:hidden">
           <button
@@ -61,7 +64,7 @@ export default function OnboardingPage() {
         role="region"
         aria-label="Ďalší krok onboardingu"
       >
-        <div className="mx-auto flex w-full max-w-2xl items-center justify-between gap-3">
+        <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3">
           <p className="hidden text-sm text-slate-400 sm:block">Ďalší krok: úvodné údaje účtu</p>
           <button
             type="button"
