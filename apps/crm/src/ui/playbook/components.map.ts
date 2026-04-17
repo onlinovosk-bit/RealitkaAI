@@ -17,6 +17,8 @@ export interface PlaybookItemProps {
   reason: string;
   ctaLabel: string;
   onClick?: () => void;
+  /** Zobrazenie pri odosielaní (napr. Potvrdiť obhliadku) */
+  ctaLoading?: boolean;
 }
 
 export interface PlaybookFilterToggleProps {

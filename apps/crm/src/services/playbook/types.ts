@@ -32,6 +32,13 @@ export interface PlaybookItemDto {
   badges?: string[];
   ctaLabel: string;
   priority: number;        // 0–100, pre zoradenie
+  /** Demo / mock položky: záložný kontakt na odoslanie potvrdenia obhliadky */
+  meta?: {
+    viewingConfirmationContact?: {
+      email?: string;
+      phone?: string;
+    };
+  };
 }
 
 /** Hlavná odpoveď API */

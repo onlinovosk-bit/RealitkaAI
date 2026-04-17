@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { fetchJson } from "@/lib/request-helpers";
+import { fetchJsonWithRetry } from "@/lib/request-helpers";
 
 type Plan = {
   key: string;
@@ -45,10 +45,17 @@ export default function PricingCards({ plans }: { plans: Plan[] }) {
     setLoadingKey(planKey);
     setCheckoutError(null);
     try {
-      const data = await fetchJson("/api/billing/checkout", {
-        method: "POST",
-        body: JSON.stringify({ planKey }),
-      });
+      const data = await fetchJsonWithRetry(
+        "/api/billing/checkout",
+        {
+          method: "POST",
+          body: JSON.stringify({ planKey }),
+        },
+        {
+          retries: 2,
+          backoffMs: 500,
+        },
+      );
       if (data?.result?.url) {
         window.location.href = data.result.url;
         return;
@@ -201,7 +208,7 @@ export default function PricingCards({ plans }: { plans: Plan[] }) {
                   : isPro
                   ? "✦ Vybrať Pro"
                   : isEnterprise
-                  ? "Kontaktovať predaj"
+                  ? "Enterprise"
                   : "Vybrať Starter"}
               </button>
 
@@ -225,6 +232,9 @@ export default function PricingCards({ plans }: { plans: Plan[] }) {
           }}
         >
           {checkoutError}
+          <p className="mt-2 text-xs text-red-200/90">
+            Ak ide o dočasný výpadok, skúste znova o pár sekúnd. Checkout používa automatický retry.
+          </p>
         </div>
       )}
 

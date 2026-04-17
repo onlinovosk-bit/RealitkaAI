@@ -47,6 +47,7 @@ export function getDbStatus(internalStatus: string) {
   return internalToDbStatusMap[internalStatus] || "Nový";
 }
 
+import type { AiEngineSnapshot } from "@/lib/ai/ai-engine-types";
 import { readDemoModeFromCookie } from "@/lib/demo-mode-cookie";
 import {
   getDemoShowcaseLeads,
@@ -191,6 +192,7 @@ type SupabaseLeadRow = {
   buyer_readiness_score?: number | null;
   ai_insight?: string | null;
   sofia_insight?: string | null;
+  ai_engine?: AiEngineSnapshot | Record<string, unknown> | null;
 };
 
 type SupabaseActivityRow = {
@@ -237,6 +239,34 @@ export function isSupabaseConfigured() {
   );
 }
 
+function parseAiEngineColumn(raw: SupabaseLeadRow["ai_engine"]): AiEngineSnapshot | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  if (o.version !== "v2") return null;
+  const combinedScore = Number(o.combinedScore);
+  const legacyScore = Number(o.legacyScore);
+  const confidence = Number(o.confidence);
+  const timeToCloseDays = Number(o.timeToCloseDays);
+  const updatedAt = typeof o.updatedAt === "string" ? o.updatedAt : "";
+  if (
+    !Number.isFinite(combinedScore) ||
+    !Number.isFinite(legacyScore) ||
+    !Number.isFinite(confidence) ||
+    !Number.isFinite(timeToCloseDays) ||
+    !updatedAt
+  ) {
+    return null;
+  }
+  return {
+    version: "v2",
+    combinedScore,
+    legacyScore,
+    confidence,
+    timeToCloseDays,
+    updatedAt,
+  };
+}
+
 function mapRowToLead(row: SupabaseLeadRow): Lead {
   return {
     id: row.id,
@@ -262,6 +292,7 @@ function mapRowToLead(row: SupabaseLeadRow): Lead {
     buyer_readiness_score: row.buyer_readiness_score ?? null,
     ai_insight: row.ai_insight ?? null,
     sofia_insight: row.sofia_insight ?? null,
+    ai_engine: parseAiEngineColumn(row.ai_engine),
   };
 }
 
@@ -874,6 +905,7 @@ export async function updateLead(
     LeadInput & {
       lastContact: string;
       assignedProfileId: string | null;
+      ai_engine: AiEngineSnapshot | null;
     } & ActivityLogInput
   >
 ) {
@@ -909,6 +941,7 @@ export async function updateLead(
         : {}),
       ...(input.lastContact !== undefined ? { lastContact: input.lastContact } : {}),
       ...(input.note !== undefined ? { note: input.note } : {}),
+      ...(input.ai_engine !== undefined ? { ai_engine: input.ai_engine } : {}),
     };
 
     mockLeads[index] = updated;
@@ -952,6 +985,7 @@ export async function updateLead(
       : {}),
     ...(input.lastContact ? { last_contact: input.lastContact } : {}),
     ...(typeof input.note === "string" ? { note: input.note } : {}),
+    ...(input.ai_engine !== undefined ? { ai_engine: input.ai_engine } : {}),
   };
 
   const { data, error } = await supabase

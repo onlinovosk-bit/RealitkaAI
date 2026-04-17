@@ -24,7 +24,7 @@ export default function RoiCalculator() {
       }}
     >
       <h3 className="text-lg font-bold mb-1" style={{ color: "#F0F9FF" }}>
-        🧮 ROI Kalkulačka
+        🧮 Kalkulačka návratnosti
       </h3>
       <p className="text-sm mb-6" style={{ color: "#64748B" }}>
         Vypočítajte si návratnosť investície do Revolis.AI

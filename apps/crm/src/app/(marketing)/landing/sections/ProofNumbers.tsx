@@ -1,7 +1,7 @@
 const stats = [
-  { label: 'p95 response time', value: '< 2 min', note: 'AI prvá odpoveď na lead' },
-  { label: 'Follow-up coverage', value: '92%', note: 'Leady s aktívnym follow-upom' },
-  { label: 'Win-rate uplift', value: '+34%', note: 'Pri kanceláriách s plným onboardingom' },
+  { label: 'Odozva p95', value: '< 2 min', note: 'AI prvá odpoveď na nový dopyt' },
+  { label: 'Pokrytie následných kontaktov', value: '92%', note: 'Záujemcovia s aktívnym ďalším kontaktom' },
+  { label: 'Nárast úspešnosti obchodov', value: '+34%', note: 'Pri kanceláriách s dokončeným úvodným nastavením' },
 ];
 
 export default function ProofNumbers() {
@@ -9,7 +9,7 @@ export default function ProofNumbers() {
     <section className="bg-slate-950 py-14">
       <div className="mx-auto max-w-6xl px-6">
         <div className="rounded-3xl border border-emerald-400/20 bg-emerald-500/[0.05] p-6 md:p-8">
-          <p className="text-xs uppercase tracking-[0.25em] text-emerald-300">Proof block</p>
+          <p className="text-xs uppercase tracking-[0.25em] text-emerald-300">Dôkazové čísla</p>
           <h3 className="mt-2 text-2xl font-extrabold text-slate-100" style={{ fontFamily: 'var(--font-syne)' }}>
             Čísla, ktoré rozhodujú o nákupe
           </h3>

@@ -3,11 +3,26 @@ import { defineConfig, devices } from '@playwright/test';
 import dotenv from 'dotenv';
 import path from 'path';
 
-// [ADR-010] Načítanie environmentálnych premenných z rootu monorepa
+// [ADR-010] Načítanie ENV: root monorepa, potom apps/crm (override — TEST_USER_* je často len v CRM)
 dotenv.config({ path: path.resolve(__dirname, '../../.env.local') });
+dotenv.config({ path: path.resolve(__dirname, '.env.local'), override: true });
 
 // Definujeme cestu JEDENKRÁT na vrchu
 const authFile = path.resolve(__dirname, 'tests/playwright/.auth/user.json');
+
+const webServer =
+  process.env.PLAYWRIGHT_SKIP_WEBSERVER === '1'
+    ? undefined
+    : {
+        command: 'npm run dev',
+        url: 'http://localhost:3000',
+        reuseExistingServer: !process.env.CI,
+        timeout: 120000,
+        env: {
+          ...process.env,
+          E2E_BYPASS_AUTH: '1',
+        },
+      };
 
 export default defineConfig({
   testDir: './tests',
@@ -24,20 +39,30 @@ export default defineConfig({
   projects: [
     // 1. PROJEKT: SETUP (Tento súbor NEPOUŽÍVA storageState, on ho vytvára)
     { name: 'setup', testMatch: /.*\.setup\.ts/ },
+    // Verejné stránky bez login storage (landing, marketing)
+    {
+      name: 'chromium-public',
+      testMatch: /landing-roi-mobile\.spec\.ts/,
+      use: {
+        ...devices['Pixel 5'],
+      },
+    },
     // 2. PROJEKT: CHROMIUM (Tento súbor VYŽADUJE storageState)
     {
       name: 'chromium',
+      testIgnore: /call-analyzer\.spec\.ts|landing-roi-mobile\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
         storageState: authFile, // Playwright ho začne hľadať až TU
       },
       dependencies: ['setup'],
     },
+    // Call Analyzer: E2E_BYPASS_AUTH=1 (webServer alebo ručný dev — pozri docs)
+    {
+      name: 'chromium-call-analyzer',
+      testMatch: /call-analyzer\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'] },
+    },
   ],
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120000,
-  },
+  ...(webServer ? { webServer } : {}),
 });

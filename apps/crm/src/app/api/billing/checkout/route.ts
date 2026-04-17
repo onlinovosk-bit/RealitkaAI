@@ -41,6 +41,11 @@ export async function POST(request: Request) {
       );
     }
 
+    if (message.includes("Non-ASCII") || message.includes("Invalid URL")) {
+      console.error("Billing checkout URL error — check NEXT_PUBLIC_APP_URL:", process.env.NEXT_PUBLIC_APP_URL);
+      return errorResponse("Interná chyba konfigurácie URL. Kontaktujte podporu.", 500);
+    }
+
     console.error("Billing checkout error:", error);
     return errorResponse(message, 400);
   }

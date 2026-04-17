@@ -1,4 +1,5 @@
-﻿import { listLeads } from "@/lib/leads-store";
+import { BLOG_PROMO_ITEMS } from "@/lib/blog-articles";
+import { listLeads } from "@/lib/leads-store";
 import { listProperties } from "@/lib/properties-store";
 import { listTasks } from "@/lib/tasks-store";
 import { listPersistedMatches } from "@/lib/matching-store";
@@ -19,6 +20,16 @@ export async function runSmokeTests(): Promise<{
   checks: SmokeCheck[];
 }> {
   const checks: SmokeCheck[] = [];
+
+  checks.push({
+    key: "blog-promo-config",
+    label: "Blog promo (marketing riadok)",
+    ok: BLOG_PROMO_ITEMS.length >= 1,
+    message:
+      BLOG_PROMO_ITEMS.length >= 1
+        ? `Konfigurácia blogu: ${BLOG_PROMO_ITEMS.length} položiek (BlogPromoTicker).`
+        : "BLOG_PROMO_ITEMS je prázdne — informačný riadok s článkami sa nevykreslí.",
+  });
 
   try {
     const leads = await listLeads();
@@ -144,13 +155,25 @@ export async function runSmokeTests(): Promise<{
 
   try {
     const env = getEnvironmentHealth();
+    const { pilotSummary } = env;
+    let detail = env.requiredOk
+      ? "Povinné env sú dostupné."
+      : "Chýbajú povinné env (Supabase URL).";
+    if (env.requiredOk) {
+      if (!pilotSummary.hasPublicAppUrl) {
+        detail += " Doplň NEXT_PUBLIC_APP_URL pre produkčné odkazy.";
+      } else if (!pilotSummary.canSendTransactionalEmail) {
+        detail +=
+          " Pre odosielanie emailov z API dopň RESEND_API_KEY + OUTREACH_FROM_EMAIL (na Verceli rovnako ako v .env.local).";
+      } else {
+        detail += " Pilot: URL + transakčné emaily vyzerajú OK.";
+      }
+    }
     checks.push({
       key: "system-env",
       label: "Diagnostika prostredia",
       ok: env.requiredOk,
-      message: env.requiredOk
-        ? "Povinné env premenné sú dostupné."
-        : "Chýbajú povinné env premenné pre plný režim.",
+      message: detail,
     });
   } catch (error) {
     checks.push({

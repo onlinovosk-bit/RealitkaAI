@@ -8,12 +8,33 @@ export function ManageSubscriptionButton() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const requestPortalWithRetry = async (retries = 2) => {
+    let attempt = 0;
+    while (attempt <= retries) {
+      try {
+        const res = await fetch('/api/billing/portal', { method: 'POST' });
+        const text = await res.text();
+        const data = text ? JSON.parse(text) : {};
+        if (!res.ok && [408, 425, 429, 500, 502, 503, 504].includes(res.status) && attempt < retries) {
+          attempt += 1;
+          await new Promise((resolve) => setTimeout(resolve, 500 * Math.pow(2, attempt - 1)));
+          continue;
+        }
+        return data as { ok?: boolean; code?: string; error?: string; result?: { url?: string } };
+      } catch {
+        if (attempt >= retries) throw new Error('Portal request failed');
+        attempt += 1;
+        await new Promise((resolve) => setTimeout(resolve, 500 * Math.pow(2, attempt - 1)));
+      }
+    }
+    throw new Error('Portal request failed');
+  };
+
   const handleClick = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/billing/portal', { method: 'POST' });
-      const data = await res.json();
+      const data = await requestPortalWithRetry();
 
       if (!data.ok) {
         if (data.code === "NO_CUSTOMER") {
@@ -24,7 +45,7 @@ export function ManageSubscriptionButton() {
         return;
       }
 
-      const { url } = data.result;
+      const url = data.result?.url;
       if (url) {
         window.location.href = url;
       } else {
@@ -47,7 +68,9 @@ export function ManageSubscriptionButton() {
         {loading ? 'Otváram…' : 'Spravovať predplatné'}
       </button>
       {error && (
-        <p className="mt-2 text-sm text-red-600">{error}</p>
+        <p className="mt-2 text-sm text-red-600">
+          {error} <span className="block text-xs text-red-500">Použitý je automatický retry pre dočasné chyby siete.</span>
+        </p>
       )}
     </div>
   );

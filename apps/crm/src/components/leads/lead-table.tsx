@@ -123,8 +123,6 @@ export default function LeadTable({ leads, onDelete }: LeadTableProps) {
       </div>
 
       <div className="overflow-x-auto relative">
-        <div className="absolute left-0 top-0 h-full w-2 bg-gradient-to-r from-white/90 pointer-events-none z-10" />
-        <div className="absolute right-0 top-0 h-full w-2 bg-gradient-to-l from-white/90 pointer-events-none z-10" />
         <table className="min-w-full text-sm">
           <thead className="bg-gray-50 text-left text-gray-500 sticky top-0 z-20">
             <tr>
@@ -134,7 +132,7 @@ export default function LeadTable({ leads, onDelete }: LeadTableProps) {
                   onClick={() => handleSort(col.field)}
                   className={`px-3 sm:px-5 py-3 font-medium ${col.field ? "cursor-pointer select-none hover:text-gray-700" : ""} ${col.align ?? ""} ${
                     col.sticky === "left"
-                      ? "sticky left-0 z-30 bg-gray-50 border-r border-gray-200/90 shadow-[4px_0_12px_-4px_rgba(0,0,0,0.08)]"
+                      ? "sticky left-0 z-30 bg-gray-50 border-r border-gray-200"
                       : ""
                   }`}
                   style={{ minWidth: col.sticky ? 200 : 120 }}
@@ -155,7 +153,7 @@ export default function LeadTable({ leads, onDelete }: LeadTableProps) {
           <tbody className="divide-y divide-gray-100">
             {sorted.map((lead) => (
               <tr key={lead.id} className="group touch-manipulation hover:bg-gray-50">
-                <td className="sticky left-0 z-20 border-r border-gray-100 bg-white px-3 py-3 sm:px-5 sm:py-4 shadow-[4px_0_12px_-4px_rgba(0,0,0,0.06)] group-hover:bg-gray-50">
+                <td className="sticky left-0 z-20 border-r border-gray-100 bg-white px-3 py-3 sm:px-5 sm:py-4 group-hover:bg-gray-50">
                   <LeadRowActions
                     lead={lead}
                     onDelete={(id) => {

@@ -23,6 +23,7 @@ export function PlaybookItemCard(props: PlaybookItemProps) {
     reason,
     ctaLabel,
     onClick,
+    ctaLoading,
   } = props;
 
   const cfg = TYPE_CONFIG[type];
@@ -96,14 +97,18 @@ export function PlaybookItemCard(props: PlaybookItemProps) {
         )}
         <button
           type="button"
-          onClick={onClick}
-          className="rounded-full px-3 py-1.5 text-xs font-bold transition-all hover:opacity-90 active:scale-95"
+          disabled={ctaLoading}
+          onClick={(e) => {
+            e.stopPropagation();
+            onClick?.();
+          }}
+          className="rounded-full px-3 py-1.5 text-xs font-bold transition-all hover:opacity-90 active:scale-95 disabled:cursor-wait disabled:opacity-70"
           style={{
             background: "linear-gradient(135deg, #22D3EE, #818CF8)",
             color: "#050914",
           }}
         >
-          {ctaLabel}
+          {ctaLoading ? "…" : ctaLabel}
         </button>
       </div>
     </article>

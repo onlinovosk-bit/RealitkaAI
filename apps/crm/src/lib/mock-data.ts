@@ -1,3 +1,4 @@
+import type { AiEngineSnapshot } from "@/lib/ai/ai-engine-types";
 import type { AiActivityFeedItem } from "@/lib/app-mode-types";
 import type { Property } from "@/lib/properties-store";
 import { getMatchingLeadsForProperty } from "@/lib/matching";
@@ -26,6 +27,8 @@ export type Lead = {
   buyer_readiness_score?: number | null;
   ai_insight?: string | null;
   sofia_insight?: string | null;
+  /** AI Sales Brain v2 snapshot (Supabase `ai_engine` jsonb). */
+  ai_engine?: AiEngineSnapshot | null;
 };
 
 export type Activity = {

@@ -1,0 +1,11 @@
+{
+  "name": "realitka-ai-monorepo",
+  "private": true,
+  "workspaces": ["apps/crm"],
+  "scripts": {
+    "dev": "npm run dev -w realitka-ai-crm",
+    "build": "npm run build -w realitka-ai-crm",
+    "start": "npm run start -w realitka-ai-crm",
+    "lint": "npm run lint -w realitka-ai-crm"
+  }
+}

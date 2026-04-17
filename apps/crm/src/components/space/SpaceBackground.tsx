@@ -50,7 +50,7 @@ export default function SpaceBackground() {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
     geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-    const material = new THREE.PointsMaterial({ size: 1.35, vertexColors: true, transparent: true, opacity: 0.9 });
+    const material = new THREE.PointsMaterial({ size: 2.2, vertexColors: true, transparent: true, opacity: 1 });
     const stars = new THREE.Points(geometry, material);
     scene.add(stars);
 
@@ -97,16 +97,16 @@ export default function SpaceBackground() {
     <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
       <div ref={mountRef} className="absolute inset-0" />
       <div
-        className="absolute -left-32 -top-20 h-[600px] w-[600px] rounded-full"
-        style={{ background: "radial-gradient(circle, #4f46e5 0%, transparent 70%)", opacity: 0.06 }}
+        className="absolute -left-32 -top-20 h-[700px] w-[700px] rounded-full"
+        style={{ background: "radial-gradient(circle, #4f46e5 0%, transparent 70%)", opacity: 0.22 }}
       />
       <div
-        className="absolute -bottom-20 -right-20 h-[500px] w-[500px] rounded-full"
-        style={{ background: "radial-gradient(circle, #6366f1 0%, transparent 70%)", opacity: 0.05 }}
+        className="absolute -bottom-20 -right-20 h-[600px] w-[600px] rounded-full"
+        style={{ background: "radial-gradient(circle, #6366f1 0%, transparent 70%)", opacity: 0.18 }}
       />
       <div
-        className="absolute left-1/2 top-1/2 h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-full animate-[nebulaPulse_8s_ease-in-out_infinite]"
-        style={{ background: "radial-gradient(circle, #6366f1 0%, transparent 70%)", opacity: 0.04 }}
+        className="absolute left-1/2 top-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full animate-[nebulaPulse_8s_ease-in-out_infinite]"
+        style={{ background: "radial-gradient(circle, #818cf8 0%, transparent 70%)", opacity: 0.15 }}
       />
       <div
         className="absolute inset-0 animate-[spaceGrid_12s_linear_infinite]"
@@ -114,7 +114,7 @@ export default function SpaceBackground() {
           transform: "perspective(800px) rotateX(60deg)",
           transformOrigin: "center top",
           backgroundImage:
-            "linear-gradient(rgba(99,102,241,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.04) 1px, transparent 1px)",
+            "linear-gradient(rgba(99,102,241,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.12) 1px, transparent 1px)",
           backgroundSize: "60px 60px",
         }}
       />

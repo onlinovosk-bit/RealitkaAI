@@ -222,6 +222,7 @@ export async function sendAiOutreachEmail(leadId: string) {
       to: lead.email,
       subject: generated.subject,
       text: generated.body,
+      tags: [{ name: "lead_id", value: lead.id }],
     });
 
     if ((sendResult as any).error) {

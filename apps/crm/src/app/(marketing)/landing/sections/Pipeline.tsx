@@ -6,23 +6,23 @@ import { RadiantSpriteIcon, type RadiantIconKey } from '@/components/shared/radi
 const steps = [
   {
     icon: 'properties' as RadiantIconKey,
-    title: 'Leady prichádzajú',
-    desc: 'Z webu, portálov, kampaní a odporúčaní. Nehnuteľnosti.sk, Reality.sk, TopReality.sk. Nič sa nestratí.',
+    title: 'Záujemcovia prichádzajú',
+    desc: 'Z webu, portálov, kampaní a odporúčaní. Nehnuteľnosti.sk, Reality.sk, TopReality.sk, Bazos.sk. Nič sa nestratí.',
   },
   {
     icon: 'revolis-ai' as RadiantIconKey,
-    title: 'AI pochopí intent a správanie',
+    title: 'AI pochopí zámer a správanie',
     desc: 'Revolis analyzuje históriu, aktivitu a kontext každého klienta. V reálnom čase.',
   },
   {
     icon: 'dashboard' as RadiantIconKey,
     title: 'Zoradí klientov podľa pripravenosti',
-    desc: 'Buyer readiness index ti ukáže presne, kto je pripravený kúpiť práve dnes.',
+    desc: 'Index pripravenosti kúpy (BRI) ti ukáže presne, kto je pripravený kúpiť práve dnes.',
   },
   {
     icon: 'playbook' as RadiantIconKey,
     title: 'Navrhne ďalší krok a správu',
-    desc: 'AI ti pripraví konkrétny call, správu alebo obhliadku. Ty len potvrdíš.',
+    desc: 'AI ti pripraví konkrétny telefonát, správu alebo obhliadku. Ty len potvrdíš.',
   },
 ];
 

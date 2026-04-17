@@ -1,12 +1,13 @@
 /**
- * rescoreLead — fire-and-forget after status change or new activity.
- * 1. Runs heuristic scoring (always)
- * 2. If OPENAI_API_KEY present → asks GPT-4o-mini for a one-liner AI insight
- * 3. Writes score + ai_insight (and legacy sofia_insight) back to leads table
+ * rescoreLead — po zmene leadu / aktivity.
+ * 1) CRM heuristika + AI Sales Brain v2 (plný kontext)
+ * 2) Zápis score podľa LEAD_SCORE_SOURCE (crm | combined)
+ * 3) JSON ai_engine (ak existuje stĺpec)
+ * 4) Voliteľný OpenAI insight
  */
 
 import { createClient as createAdminClient } from "@supabase/supabase-js";
-import { calculateLeadAiScore } from "@/lib/ai-scoring";
+import { computeBrainRescorePayload } from "@/lib/ai/brain-rescore";
 import { AI_ASSISTANT_NAME } from "@/lib/ai-brand";
 
 type LeadRow = {
@@ -22,6 +23,7 @@ type LeadRow = {
   note: string;
   source: string;
   assigned_agent: string;
+  last_contact?: string | null;
 };
 
 function getAdmin() {
@@ -81,59 +83,69 @@ export async function rescoreLead(leadId: string): Promise<void> {
   try {
     const { data: row } = await admin
       .from("leads")
-      .select("id,name,status,budget,location,property_type,rooms,financing,timeline,note,source,assigned_agent")
+      .select(
+        "id,name,status,budget,location,property_type,rooms,financing,timeline,note,source,assigned_agent,last_contact"
+      )
       .eq("id", leadId)
       .single();
 
     if (!row) return;
 
-    const lead = {
-      id: row.id,
-      name: row.name ?? "",
-      status: row.status ?? "Nový",
-      budget: row.budget ?? "",
-      location: row.location ?? "",
-      propertyType: row.property_type ?? "",
-      rooms: row.rooms ?? "",
-      financing: row.financing ?? "",
-      timeline: row.timeline ?? "",
-      note: row.note ?? "",
-      source: row.source ?? "",
-      assignedAgent: row.assigned_agent ?? "",
+    const r = row as LeadRow;
+
+    const leadForBrain = {
+      id: r.id,
+      name: r.name ?? "",
+      status: r.status ?? "Nový",
+      budget: r.budget ?? "",
+      location: r.location ?? "",
+      propertyType: r.property_type ?? "",
+      rooms: r.rooms ?? "",
+      financing: r.financing ?? "",
+      timeline: r.timeline ?? "",
+      note: r.note ?? "",
+      source: r.source ?? "",
+      assignedAgent: r.assigned_agent ?? "",
+      lastContact: r.last_contact ?? undefined,
     };
 
-    const { score } = calculateLeadAiScore({
-      lead,
-      matches: [],
-      recommendations: [],
-      tasks: [],
-      messages: [],
-    });
+    const { legacy, aiEngine } = await computeBrainRescorePayload(leadForBrain);
 
-    const aiInsight = await getOpenAiInsight(row, score);
+    const scoreSource = (process.env.LEAD_SCORE_SOURCE ?? "crm").toLowerCase();
+    const scoreValue =
+      scoreSource === "combined" ? aiEngine.combinedScore : legacy.score;
 
-    // Dual-write during migration window (no downtime).
-    // If legacy sofia_insight column does not exist, retry with ai_insight only.
+    const aiInsight = await getOpenAiInsight(r, scoreValue);
+
+    let payload: Record<string, unknown> = {
+      score: scoreValue,
+      ai_engine: aiEngine,
+    };
     if (aiInsight) {
-      const { error } = await admin
-        .from("leads")
-        .update({ score, ai_insight: aiInsight, sofia_insight: aiInsight })
-        .eq("id", leadId);
-      if (error?.message?.includes("sofia_insight")) {
-        const { error: aiOnlyError } = await admin
-          .from("leads")
-          .update({ score, ai_insight: aiInsight })
-          .eq("id", leadId);
-        if (aiOnlyError) {
-          await admin.from("leads").update({ score }).eq("id", leadId);
-        }
-      } else if (error) {
-        await admin.from("leads").update({ score, ai_insight: aiInsight }).eq("id", leadId);
+      payload.ai_insight = aiInsight;
+      payload.sofia_insight = aiInsight;
+    }
+
+    let { error } = await admin.from("leads").update(payload).eq("id", leadId);
+
+    if (error?.message?.toLowerCase().includes("ai_engine")) {
+      const { ai_engine: _a, ...withoutEngine } = payload;
+      payload = withoutEngine;
+      ({ error } = await admin.from("leads").update(payload).eq("id", leadId));
+    }
+
+    if (error?.message?.includes("sofia_insight")) {
+      const { sofia_insight: _s, ...noSofia } = payload;
+      ({ error } = await admin.from("leads").update(noSofia).eq("id", leadId));
+      if (error && aiInsight) {
+        await admin.from("leads").update({ score: scoreValue, ai_insight: aiInsight }).eq("id", leadId);
       }
-    } else {
-      await admin.from("leads").update({ score }).eq("id", leadId);
+    } else if (error && aiInsight) {
+      await admin.from("leads").update({ score: scoreValue, ai_insight: aiInsight }).eq("id", leadId);
+    } else if (error) {
+      await admin.from("leads").update({ score: scoreValue }).eq("id", leadId);
     }
   } catch {
-    // fire-and-forget — never throw
+    /* fire-and-forget */
   }
 }

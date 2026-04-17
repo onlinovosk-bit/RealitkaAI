@@ -1,5 +1,31 @@
+import type { User } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+
+/** Iba pre Playwright / lokálne E2E — nikdy v produkcii (NODE_ENV=production). */
+function isE2eAuthBypass(): boolean {
+  return (
+    process.env.E2E_BYPASS_AUTH === "1" && process.env.NODE_ENV !== "production"
+  );
+}
+
+function e2eMockUser(): User {
+  return {
+    id: "e2e-bypass-user",
+    aud: "authenticated",
+    role: "authenticated",
+    email: "e2e-bypass@local.test",
+    email_confirmed_at: new Date().toISOString(),
+    phone: "",
+    confirmed_at: new Date().toISOString(),
+    last_sign_in_at: new Date().toISOString(),
+    app_metadata: {},
+    user_metadata: {},
+    identities: [],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  } as User;
+}
 
 function hasSupabaseEnv() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -41,7 +67,24 @@ export type CurrentProfile = {
   is_active: boolean;
 };
 
+function e2eMockProfile(): CurrentProfile {
+  return {
+    id: "e2e-profile-id",
+    agency_id: null,
+    team_id: null,
+    auth_user_id: "e2e-bypass-user",
+    full_name: "E2E Bypass",
+    email: "e2e-bypass@local.test",
+    role: "owner",
+    phone: null,
+    is_active: true,
+  };
+}
+
 export async function getCurrentUser() {
+  if (isE2eAuthBypass()) {
+    return e2eMockUser();
+  }
   if (!hasSupabaseEnv()) {
     return null;
   }
@@ -57,6 +100,9 @@ export async function getCurrentUser() {
 }
 
 export async function getCurrentProfile(): Promise<CurrentProfile | null> {
+  if (isE2eAuthBypass()) {
+    return e2eMockProfile();
+  }
   if (!hasSupabaseEnv()) {
     return null;
   }

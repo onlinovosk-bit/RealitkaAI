@@ -47,16 +47,22 @@ export default function FinalCTA() {
               boxShadow: '0 0 60px rgba(34,211,238,0.08)',
             }}
           >
-            {/* Price */}
-            <div className="flex items-end gap-3 mb-1">
+            {/* Price — Pro: per makléř; Enterprise balík voliteľne */}
+            <div className="flex flex-wrap items-end gap-x-3 gap-y-1 mb-1">
               <span className="text-4xl font-extrabold text-white" style={{ fontFamily: 'var(--font-syne)' }}>
                 €99
               </span>
-              <span className="text-slate-400 text-base mb-1">/mesiac</span>
+              <span className="text-slate-400 text-base mb-1">
+                /mesiac <span className="text-slate-300">za jedného makléra (Pro)</span>
+              </span>
               <span className="ml-auto text-slate-500 line-through text-lg mb-1">€198</span>
             </div>
-            <p className="text-xs text-cyan-400 font-semibold mb-5 uppercase tracking-wider">
-              Zakladateľská cena · Prvých 20 kancelárií · Potom €198/mes
+            <p className="text-xs text-cyan-400 font-semibold mb-2 uppercase tracking-wider">
+              Zakladateľská cena za makléra · Prvých 20 kancelárií · Potom €198/mes za makléra
+            </p>
+            <p className="text-xs text-slate-400 mb-5 border-l-2 border-indigo-400/50 pl-3">
+              <span className="font-semibold text-slate-300">Enterprise:</span> 299 €/mes za balík{' '}
+              <span className="text-amber-200/90">až 4 licencie</span> (štyria makléri v jednom balíku — vhodné pre kancelárie a tímy).
             </p>
 
             {/* Countdown */}
@@ -79,8 +85,8 @@ export default function FinalCTA() {
                 'AI prioritizácia príležitostí každý deň',
                 `${AI_ASSISTANT_NAME} — váš AI obchodný pomocník 24/7`,
                 'Stav klientov a pracovná plocha predikcie',
-                'Import príležitostí z portálov (Nehnuteľnosti.sk, BKIS)',
-                'Tímový CRM pre až 5 agentov',
+                'Import príležitostí z portálov (Nehnuteľnosti.sk, Bazos.sk, Topreality.sk, Reality.sk)',
+                'Pro: každý maklér má vlastnú licenciu — 99 €/mes (nie zdieľaný účet pre celý tím)',
                 '30-dňová záruka vrátenia peňazí',
               ].map((item) => (
                 <li key={item} className="flex items-start gap-2.5 text-sm text-slate-300">
@@ -99,13 +105,30 @@ export default function FinalCTA() {
                 boxShadow: '0 0 40px rgba(34,211,238,0.4)',
               }}
             >
-              Zabezpečiť miesto za €99/mes
+              Zabezpečiť Pro za 99 €/mes za makléra
             </Link>
 
             {/* Trust line */}
             <p className="mt-4 text-center text-xs text-slate-600">
               Bez kreditnej karty · Zrušenie kedykoľvek · GDPR · Made in Slovakia
             </p>
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-3 text-[11px] text-slate-400">
+              <Link href="/privacy-policy" className="hover:text-cyan-300 transition-colors">
+                Zásady ochrany osobných údajov
+              </Link>
+              <span>·</span>
+              <Link href="/terms" className="hover:text-cyan-300 transition-colors">
+                VOP / podmienky
+              </Link>
+              <span>·</span>
+              <Link href="/security" className="hover:text-cyan-300 transition-colors">
+                Bezpečnosť a súlad
+              </Link>
+              <span>·</span>
+              <Link href="/trust-center" className="hover:text-cyan-300 transition-colors">
+                Centrum dôvery
+              </Link>
+            </div>
           </div>
 
           {/* Money-back guarantee */}

@@ -7,20 +7,20 @@ const steps = [
   {
     number: '01',
     icon: 'import' as RadiantIconKey,
-    title: 'Lead príde z portálu',
-    desc: 'Nehnuteľnosti.sk, Reality.sk, TopReality.sk – všetko automaticky na jednom mieste. Nič sa nestratí.',
+    title: 'Príležitosť príde z portálu',
+    desc: 'Nehnuteľnosti.sk, Reality.sk, TopReality.sk, Bazos.sk — všetko automaticky na jednom mieste. Nič sa nestratí.',
   },
   {
     number: '02',
     icon: 'revolis-ai' as RadiantIconKey,
     title: `${AI_ASSISTANT_NAME} koná okamžite`,
-    desc: 'Odpovedá do 2 minút, skóruje lead, navrhne obhliadku. Bez tvojho zásahu.',
+    desc: 'Odpovedá do 2 minút, ohodnotí záujemcu, navrhne obhliadku. Bez tvojho zásahu.',
   },
   {
     number: '03',
     icon: 'billing' as RadiantIconKey,
-    title: 'Ty uzatváraš deal',
-    desc: 'Vidíš len prioritné leady. AI robí zvyšok. Viac dealov, menej stresu.',
+    title: 'Ty uzatváraš obchod',
+    desc: 'Vidíš len prioritných záujemcov. AI robí zvyšok. Viac uzavretých obchodov, menej stresu.',
   },
 ];
 
@@ -44,7 +44,7 @@ export default function HowItWorks() {
             className="text-4xl sm:text-5xl font-extrabold mb-4"
             style={{ fontFamily: 'var(--font-syne)', color: '#F0F9FF' }}
           >
-            Od leadu k dealu.
+            Od záujemcu k obchodu.
             <br />
             <span style={{ color: '#22D3EE' }}>3 kroky.</span>
           </h2>

@@ -69,6 +69,15 @@ function getRiskLevel(score: number): ScoringResult["riskLevel"] {
   return "normal";
 }
 
+function simpleSentiment(text: string): "positive" | "negative" | "neutral" {
+  const t = text.toLowerCase();
+  if (t.includes("ďakujem") || t.includes("super") || t.includes("výborné") || t.includes("spokojný")) {
+    return "positive";
+  }
+  if (t.includes("nespokojný") || t.includes("zlé") || t.includes("problém")) return "negative";
+  return "neutral";
+}
+
 function getNextBestAction(score: number, status: string, hasHighMatch: boolean) {
   const normalizedStatus = normalize(status);
 
@@ -182,28 +191,21 @@ export function calculateLeadAiScore(input: {
 
   if (highPriorityRecommendations >= 2) {
     score += 10;
-  // === Sentiment analýza poslednej správy (stub) ===
-  function simpleSentiment(text: string): 'positive' | 'negative' | 'neutral' {
-    // Veľmi jednoduchá heuristika, nahradiť AI/LLM API
-    const t = text.toLowerCase();
-    if (t.includes('ďakujem') || t.includes('super') || t.includes('výborné') || t.includes('spokojný')) return 'positive';
-    if (t.includes('nespokojný') || t.includes('zlé') || t.includes('problém')) return 'negative';
-    return 'neutral';
-  }
-  if (leadMessages.length > 0) {
-    const sentiment = simpleSentiment(leadMessages[0].body || '');
-    if (sentiment === 'positive') {
-      score += 3;
-      reasons.push('pozitívny sentiment v poslednej správe');
-    } else if (sentiment === 'negative') {
-      score -= 2;
-      reasons.push('negatívny sentiment v poslednej správe');
-    }
-  }
     reasons.push("viac high-priority odporúčaní");
   } else if (highPriorityRecommendations === 1) {
     score += 5;
     reasons.push("high-priority odporúčanie");
+  }
+
+  if (leadMessages.length > 0) {
+    const sentiment = simpleSentiment(leadMessages[0].body || "");
+    if (sentiment === "positive") {
+      score += 3;
+      reasons.push("pozitívny sentiment v poslednej správe");
+    } else if (sentiment === "negative") {
+      score -= 2;
+      reasons.push("negatívny sentiment v poslednej správe");
+    }
   }
 
   const openTasks = leadTasks.filter((item) => normalize(item.status) !== "done");

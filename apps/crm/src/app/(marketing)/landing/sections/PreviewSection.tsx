@@ -45,7 +45,7 @@ export default function PreviewSection() {
               href="/register"
               className="inline-flex items-center gap-2 rounded-full bg-cyan-400 px-7 py-3.5 text-sm font-bold text-slate-950 shadow-[0_0_40px_rgba(34,211,238,0.6)] transition-all hover:scale-105 hover:bg-cyan-300 active:scale-95"
             >
-              Spustiť onboarding za 30 sekúnd
+              Spustiť úvodné nastavenie do 30 sekúnd
             </Link>
             <p className="text-xs text-slate-500">100 % garancia vrátenia poplatku prvých 30 dní.</p>
           </motion.div>
@@ -63,9 +63,9 @@ export default function PreviewSection() {
               <div className="relative overflow-hidden rounded-3xl border border-slate-700/70 bg-slate-900/80 p-4 shadow-[0_0_60px_rgba(15,23,42,0.85)] backdrop-blur-2xl">
                 <div className="mb-3 flex items-center justify-between text-[11px] text-slate-400">
                   <span className="rounded-full bg-slate-800/90 px-2.5 py-1 font-medium text-cyan-200">
-                    Revolis.AI • Dashboard
+                    Revolis.AI · Prehľad
                   </span>
-                  <span className="text-slate-600">Buyer readiness · Hot leads · Stav klientov</span>
+                  <span className="text-slate-600">Pripravenosť kúpy · Horúci záujemcovia · Stav klientov</span>
                 </div>
 
                 <div className="grid gap-3 md:grid-cols-3">
@@ -98,7 +98,7 @@ export default function PreviewSection() {
                   {/* Right col */}
                   <div className="flex flex-col gap-2">
                     <div className="rounded-2xl bg-slate-950/80 p-3">
-                      <p className="text-xs font-medium text-slate-400">Hot leads dnes</p>
+                      <p className="text-xs font-medium text-slate-400">Horúci záujemcovia dnes</p>
                       <div className="flex items-baseline gap-1 mt-1">
                         <motion.span
                           className="text-2xl font-bold text-cyan-300"
@@ -109,7 +109,7 @@ export default function PreviewSection() {
                         </motion.span>
                         <span className="text-[10px] text-green-400">+3</span>
                       </div>
-                      <p className="text-[10px] text-slate-500 mt-0.5">3 telefonáty · 2 follow-upy</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">3 telefonáty · 2 následné správy</p>
                     </div>
 
                     <div className="rounded-2xl bg-slate-950/80 p-3">

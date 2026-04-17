@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabaseClient } from "@/lib/supabase/client";
+import BlogPromoTicker from "@/components/marketing/BlogPromoTicker";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -44,6 +45,7 @@ export default function LoginPage() {
   }
 
   return (
+    <>
     <main className="min-h-screen bg-gray-50 px-4 py-10">
       <div className="mx-auto grid w-full max-w-5xl gap-6 lg:grid-cols-2">
         <div className="rounded-3xl border border-gray-200 bg-white p-8 shadow-sm">
@@ -168,5 +170,7 @@ export default function LoginPage() {
         </section>
       </div>
     </main>
+    <BlogPromoTicker />
+    </>
   );
 }

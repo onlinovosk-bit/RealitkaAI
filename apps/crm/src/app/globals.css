@@ -179,8 +179,8 @@ body::after {
 body { background-color: var(--space-bg); }
 
 @keyframes nebulaPulse {
-  0%,100% { opacity: 0.04; transform: scale(1); }
-  50% { opacity: 0.09; transform: scale(1.08); }
+  0%,100% { opacity: 0.15; transform: scale(1); }
+  50% { opacity: 0.28; transform: scale(1.1); }
 }
 @keyframes scanline {
   0% { top: 0; opacity: 0.4; }
@@ -209,4 +209,18 @@ body { background-color: var(--space-bg); }
 @keyframes spaceGrid {
   0% { transform: perspective(800px) rotateX(60deg) translateY(0); }
   100% { transform: perspective(800px) rotateX(60deg) translateY(-60px); }
+}
+@keyframes shimmerFlow {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@keyframes ambientGlow {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+@keyframes ambientDrift {
+  0% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -20px) scale(1.05); }
+  66% { transform: translate(-20px, 15px) scale(0.95); }
+  100% { transform: translate(0, 0) scale(1); }
 }

@@ -39,18 +39,32 @@ export function useOnboarding(currentSlug: string) {
   const [formData, setFormData] = useState<OnboardingData>(DEFAULT_DATA);
   const [loaded, setLoaded] = useState(false);
   const sessionIdRef = useRef<string | null>(null);
+  const formDataRef = useRef<OnboardingData>(DEFAULT_DATA);
 
   useEffect(() => {
     const savedId = localStorage.getItem("onboarding_session_id");
     if (savedId) sessionIdRef.current = savedId;
     const raw = localStorage.getItem("onboarding_data");
     if (raw) {
-      try { setFormData(prev => ({ ...prev, ...JSON.parse(raw) })); } catch { }
+      try {
+        setFormData((prev) => {
+          const merged = { ...prev, ...JSON.parse(raw) };
+          formDataRef.current = merged;
+          return merged;
+        });
+      } catch {
+        /* ignore */
+      }
     }
     setLoaded(true);
   }, []);
 
-  const save = async (data: OnboardingData) => {
+  useEffect(() => {
+    formDataRef.current = formData;
+  }, [formData]);
+
+  /** Uloží lokálne hneď; Supabase na pozadí — navigácia nesmie čakať na sieť (inak „Pokračovať“ nefunguje). */
+  const save = (data: OnboardingData) => {
     let sessionId = sessionIdRef.current;
     if (!sessionId) {
       sessionId = uuidv4();
@@ -59,22 +73,30 @@ export function useOnboarding(currentSlug: string) {
     }
     localStorage.setItem("onboarding_data", JSON.stringify(data));
     localStorage.setItem("onboarding_step", currentSlug);
-    try {
-      const step = getStepBySlug(currentSlug);
-      await supabaseClient.from("onboarding_sessions").upsert({
+    const step = getStepBySlug(currentSlug);
+    void supabaseClient
+      .from("onboarding_sessions")
+      .upsert({
         session_id: sessionId,
         step: step?.index ?? 1,
         form_data: data,
         updated_at: new Date().toISOString(),
-      });
-    } catch { }
+      })
+      .then(
+        () => {},
+        () => {}
+      );
   };
 
   const update = (fields: Partial<OnboardingData>) =>
-    setFormData(prev => ({ ...prev, ...fields }));
+    setFormData((prev) => {
+      const next = { ...prev, ...fields };
+      formDataRef.current = next;
+      return next;
+    });
 
-  const next = async () => {
-    await save(formData);
+  const next = () => {
+    save(formDataRef.current);
     const nextSlug = getNextSlug(currentSlug);
     if (nextSlug) router.push(`/onboarding/${nextSlug}`);
   };
@@ -84,7 +106,7 @@ export function useOnboarding(currentSlug: string) {
     if (prevSlug) router.push(`/onboarding/${prevSlug}`);
   };
 
-  const skip = async () => {
+  const skip = () => {
     const nextSlug = getNextSlug(currentSlug);
     if (nextSlug) router.push(`/onboarding/${nextSlug}`);
   };

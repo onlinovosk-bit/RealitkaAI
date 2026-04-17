@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { register } from "./actions";
 
 export default async function RegisterPage({
@@ -76,6 +76,21 @@ export default async function RegisterPage({
           <Link href="/login" className="font-medium text-gray-900 underline">
             Prihlás sa
           </Link>
+        </p>
+        <p className="mt-4 text-xs text-gray-500">
+          Pokračovaním súhlasíte s{" "}
+          <Link href="/terms" className="underline text-gray-700">
+            VOP
+          </Link>{" "}
+          a beriete na vedomie{" "}
+          <Link href="/privacy-policy" className="underline text-gray-700">
+            Privacy Policy
+          </Link>
+          {" · "}
+          <Link href="/cookie-policy" className="underline text-gray-700">
+            Cookie Policy
+          </Link>
+          .
         </p>
       </div>
     </main>

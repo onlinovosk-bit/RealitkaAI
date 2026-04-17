@@ -34,7 +34,7 @@ function LiveLeadCounter() {
       className="inline-flex items-center gap-3 rounded-2xl border border-red-500/20 bg-red-500/5 px-5 py-3 mt-6"
     >
       <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-      <span className="text-xs text-slate-400">Odhad stratených príležitostí bez AI dnes:</span>
+        <span className="text-xs text-slate-400">Odhad ušlých príležitostí bez AI dnes:</span>
       <motion.span
         key={count}
         initial={{ opacity: 0.5, y: -4 }}
@@ -62,7 +62,7 @@ function DashboardMock() {
         <div className="w-3 h-3 rounded-full bg-red-500/60" />
         <div className="w-3 h-3 rounded-full bg-amber-500/60" />
         <div className="w-3 h-3 rounded-full bg-green-500/60" />
-        <span className="ml-2 text-[11px] text-slate-500">Revolis.AI Dashboard</span>
+        <span className="ml-2 text-[11px] text-slate-500">Revolis.AI — prehľad</span>
         <div className="ml-auto flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
           <span className="text-[11px] text-green-400">{AI_ASSISTANT_STATUS_ACTIVE}</span>
@@ -70,7 +70,7 @@ function DashboardMock() {
       </div>
       <div className="grid grid-cols-4 gap-2 mb-3">
         {[
-          { label: 'Leady dnes', value: '12', delta: '+3' },
+          { label: 'Záujemcovia dnes', value: '12', delta: '+3' },
           { label: 'AI odpovede', value: '9', delta: '2min' },
           { label: 'Obhliadky', value: '4', delta: 'zajtra' },
           { label: 'AI skóre', value: '78', delta: '+ trend' },
@@ -180,7 +180,7 @@ export default function Hero() {
                 href="/register"
                 className="relative rounded-full bg-cyan-400 px-7 py-3.5 text-sm font-bold text-slate-950 shadow-[0_0_40px_rgba(34,211,238,0.6)] transition-all duration-200 hover:scale-105 hover:bg-cyan-300 hover:shadow-[0_0_60px_rgba(34,211,238,0.8)] active:scale-95"
               >
-                Aktivovať Revolis.AI za €99/mes
+                Aktivovať Revolis.AI — 99 €/mes za makléra
               </Link>
               <Link
                 href="#pipeline"
