@@ -12,6 +12,11 @@ test('Dashboard loads without crash after login', async ({ page }) => {
   // Dashboard should render without white screen
   await expect(page.locator('main')).toBeVisible({ timeout: 10000 });
 
+  // INC: blog promo row must exist in dashboard chrome (DashboardClientLayout); it sits outside <main>.
+  const blogRow = page.locator('section[data-testid="blog-promo-ticker"]');
+  await expect(blogRow).toBeVisible({ timeout: 10000 });
+  await expect(blogRow.getByRole('link', { name: 'Všetky články' })).toBeVisible();
+
   // No uncaught JS errors
   const errors: string[] = [];
   page.on('pageerror', (err) => errors.push(err.message));

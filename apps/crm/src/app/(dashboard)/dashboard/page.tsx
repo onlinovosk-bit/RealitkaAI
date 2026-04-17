@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getLeads, type Lead } from "@/lib/leads-store";
 import PriorityLeads from "@/components/dashboard/priority-leads";
 import AiInsightsPanel from "@/components/dashboard/AiInsightsPanel";
@@ -14,12 +14,22 @@ import DailyActionPanel from "@/components/dashboard/DailyActionPanel";
 import { useMockAIActivity } from "@/hooks/useMockAIActivity";
 import { useCountUp, useGlowOnHover } from "@/hooks/useSpaceInteractions";
 import AIPulseSystem from "@/components/space/AIPulseSystem";
+import { AIAssistBanner } from "@/components/dashboard/AIAssistBanner";
+import { AssistantPanelDynamic } from "@/components/dashboard/AssistantPanel.dynamic";
 
 type ForecastingSummary = {
   totalLeads: number;
   expectedClosedDeals: number;
   expectedPipelineValue: number;
   avgProbabilityPercent: number;
+};
+
+type MonthlyMoneyForecastPayload = {
+  ok?: boolean;
+  monthLabel?: string;
+  totalExpectedEur?: number;
+  breakdown?: Array<{ segment: string; count: number; expectedEur: number }>;
+  trend?: { diffEur: number; percent: number; previousEur: number | null } | null;
 };
 
 type ForecastingTargets = {
@@ -66,9 +76,18 @@ export default function DashboardPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [plan, setPlan] = useState<PlanTier>("free");
   const [forecastingSummary, setForecastingSummary] = useState<ForecastingSummary | null>(null);
+  const [monthlyMoney, setMonthlyMoney] = useState<MonthlyMoneyForecastPayload | null>(null);
+  /** Prečo niekedy nevidno blok: fetch na /api/ai/monthly-forecast musí vrátiť 200 + ok:true (inak starý deploy alebo 500). */
+  const [monthlyMoneyStatus, setMonthlyMoneyStatus] = useState<"loading" | "ok" | "error">("loading");
   const [forecastTargets, setForecastTargets] = useState<ForecastingTargets>(DEFAULT_FORECAST_TARGETS);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+
+  const assistantLeadOptions = useMemo(
+    () => leads.map((l) => ({ id: l.id, name: l.name })),
+    [leads]
+  );
+  const assistantDefaultLeadId = useMemo(() => leads[0]?.id, [leads]);
 
   useEffect(() => {
     async function loadDashboard() {
@@ -95,6 +114,19 @@ export default function DashboardPage() {
             }
           }
         } catch { /* forecasting optional */ }
+
+        try {
+          const mf = await fetch("/api/ai/monthly-forecast");
+          const m = (await mf.json()) as MonthlyMoneyForecastPayload & { error?: string };
+          if (mf.ok && m?.ok && typeof m.totalExpectedEur === "number") {
+            setMonthlyMoney(m);
+            setMonthlyMoneyStatus("ok");
+          } else {
+            setMonthlyMoneyStatus("error");
+          }
+        } catch {
+          setMonthlyMoneyStatus("error");
+        }
 
         try {
           const { data: { user } } = await supabaseClient.auth.getUser();
@@ -173,11 +205,71 @@ export default function DashboardPage() {
           <p className="mt-1 text-gray-500">Prehľad výkonnosti tímu a prioritných príležitostí.</p>
         </div>
 
+        <section className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <AIAssistBanner />
+          <AssistantPanelDynamic
+            defaultLeadId={assistantDefaultLeadId}
+            leadOptions={assistantLeadOptions}
+          />
+        </section>
+
         <section className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <KpiCard title="Všetky príležitosti" value={totalLeads} subtitle="V databáze CRM" />
           <KpiCard title="Obhliadky" value={showings} subtitle="Naplánované stretnutia" />
           <KpiCard title="Horúce príležitosti" value={hotLeads} subtitle="Najvyššia priorita" />
           <KpiCard title="Konverzný pomer" value={`${conversionRate}%`} subtitle="Ponuky / celkové" />
+        </section>
+
+        <section className="mb-6 rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-950/40 via-slate-900/80 to-slate-950 p-5 text-white shadow-[0_0_32px_rgba(16,185,129,0.12)]">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-300/90">
+            AI Sales OS — mesačný odhad (€)
+          </p>
+          {monthlyMoneyStatus === "loading" && (
+            <p className="mt-3 text-sm text-emerald-100/80">Načítavam mesačný odhad…</p>
+          )}
+          {monthlyMoneyStatus === "error" && (
+            <div className="mt-3 text-sm text-amber-100/95">
+              <p>Mesačný odhad sa nepodarilo načítať.</p>
+              <p className="mt-2 text-xs text-emerald-200/70">
+                Skontroluj v novom paneli prehliadača adresu{" "}
+                <code className="rounded bg-black/30 px-1">/api/ai/monthly-forecast</code> — ak dostaneš{" "}
+                <strong>404</strong>, na produkcii ešte nie je nasadený kód s touto route. Po úspešnom deployi
+                sa tu zobrazí suma a rozpad.
+              </p>
+            </div>
+          )}
+          {monthlyMoneyStatus === "ok" && monthlyMoney && (
+            <>
+              <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
+                <div>
+                  <p className="text-sm text-emerald-100/80">{monthlyMoney.monthLabel ?? "Tento mesiac"}</p>
+                  <p className="mt-1 text-3xl font-bold tabular-nums">
+                    {(monthlyMoney.totalExpectedEur ?? 0).toLocaleString("sk-SK")} €
+                  </p>
+                  {monthlyMoney.trend && (
+                    <p className="mt-1 text-sm text-emerald-200/90">
+                      Trend vs. posledný výpočet: {monthlyMoney.trend.percent > 0 ? "+" : ""}
+                      {monthlyMoney.trend.percent}% ({monthlyMoney.trend.diffEur > 0 ? "+" : ""}
+                      {monthlyMoney.trend.diffEur.toLocaleString("sk-SK")} €)
+                    </p>
+                  )}
+                </div>
+                <div className="text-right text-xs text-emerald-100/70">
+                  <p>Hot / warm / cold (rozpad)</p>
+                  <ul className="mt-1 space-y-0.5">
+                    {(monthlyMoney.breakdown ?? []).map((b) => (
+                      <li key={b.segment}>
+                        {b.segment}: {b.count} → {b.expectedEur.toLocaleString("sk-SK")} €
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <p className="mt-3 text-[11px] text-emerald-200/60">
+                Model: hodnota z rozpočtu × pravdepodobnosť podľa skóre (viac v dokumentácii AI Sales OS).
+              </p>
+            </>
+          )}
         </section>
 
         <QuickActionsBar />

@@ -23,6 +23,8 @@ import {
   type NexusChatSettings,
 } from "@/lib/nexus-chat-settings";
 import { useRealtimeLeadScore } from "@/hooks/useRealtimeLeadScore";
+import SalesBrainPanel from "@/components/leads/sales-brain-panel";
+import DealStrategyCard from "@/components/leads/deal-strategy-card";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -541,8 +543,54 @@ export default function LeadDetailPage() {
                 >
                   📅 Naplánovať obhliadku
                 </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const res = await fetch("/api/ai/autopilot/run", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ leadId: id }),
+                      });
+                      const data = (await res.json()) as {
+                        ok?: boolean;
+                        results?: { ok: boolean; detail: string }[];
+                        error?: string;
+                      };
+                      if (!res.ok || !data.ok) {
+                        showToast(data.error ?? "Autopilot zlyhal.");
+                        return;
+                      }
+                      const okCount = data.results?.filter((r) => r.ok).length ?? 0;
+                      showToast(
+                        okCount
+                          ? `Autopilot: ${okCount} akcií spracovaných (pozri aktivity).`
+                          : "Autopilot: žiadna pravidlá nespustili akciu."
+                      );
+                    } catch {
+                      showToast("Chyba siete pri autopilot-e.");
+                    }
+                  }}
+                  className="flex items-center gap-2 rounded-lg border border-emerald-200/80 bg-emerald-50/90 px-4 py-2.5 text-sm font-medium text-emerald-900 transition-all hover:bg-emerald-100 w-full"
+                >
+                  🤖 Spustiť AI Autopilot
+                </button>
               </div>
             </div>
+
+            {id ? (
+              <Link
+                href={`/dashboard?lead=${encodeURIComponent(id)}`}
+                className="block rounded-2xl border border-indigo-500/25 bg-indigo-950/30 px-4 py-3 text-sm text-indigo-100 transition hover:bg-indigo-950/50"
+              >
+                <span className="font-semibold text-white">AI Asistent (Codai)</span>
+                <span className="mt-0.5 block text-xs text-indigo-200/80">
+                  Otvoriť dashboard s kontextom tejto príležitosti →
+                </span>
+              </Link>
+            ) : null}
+            {id ? <SalesBrainPanel leadId={id} /> : null}
+            {id ? <DealStrategyCard leadId={id} /> : null}
 
             {/* AI Score */}
             <div
@@ -550,7 +598,13 @@ export default function LeadDetailPage() {
                 scorePulse ? "ring-2 ring-cyan-400/80 shadow-[0_0_24px_rgba(34,211,238,0.35)]" : ""
               }`}
             >
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">AI Skóre</p>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">AI Skóre (CRM)</p>
+              {lead.ai_engine && (
+                <p className="mb-2 text-[10px] leading-snug text-slate-500">
+                  Uložený Brain (DB): {lead.ai_engine.combinedScore}/100 · conf. {lead.ai_engine.confidence}% · TTC
+                  ~{lead.ai_engine.timeToCloseDays} dní
+                </p>
+              )}
               <div className="flex items-end gap-2">
                 <span
                   className={`text-3xl font-bold transition-all duration-500 ${

@@ -58,13 +58,15 @@
 
 ## Poznámky pre obchod (vyplniť počas hovoru)
 
-| Téma | Poznámka |
-|------|----------|
-| Odhad leadov / mesiac | |
-| Počet používateľov v piloti | |
-| Najväčšia bolesť | |
-| Riziko (čo by pilot zabil) | |
-| Rozhodnutie (áno / ešte materiály / nie) | |
+
+| Téma                                     | Poznámka |
+| ---------------------------------------- | -------- |
+| Odhad leadov / mesiac                    |          |
+| Počet používateľov v piloti              |          |
+| Najväčšia bolesť                         |          |
+| Riziko (čo by pilot zabil)               |          |
+| Rozhodnutie (áno / ešte materiály / nie) |          |
+
 
 ---
 

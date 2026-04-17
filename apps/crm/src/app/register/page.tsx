@@ -1,6 +1,5 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { register } from "./actions";
-import BlogPromoTicker from "@/components/marketing/BlogPromoTicker";
 
 export default async function RegisterPage({
   searchParams,
@@ -10,7 +9,6 @@ export default async function RegisterPage({
   const params = await searchParams;
 
   return (
-    <>
     <main className="min-h-screen bg-gray-50 px-4 py-10">
       <div className="mx-auto max-w-md rounded-3xl border border-gray-200 bg-white p-8 shadow-sm">
         <div className="mb-6">
@@ -96,7 +94,5 @@ export default async function RegisterPage({
         </p>
       </div>
     </main>
-    <BlogPromoTicker />
-    </>
   );
 }

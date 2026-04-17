@@ -26,7 +26,7 @@ export default function ProblemSection() {
           viewport={{ once: true, margin: '-100px' }}
           className="text-lg text-slate-400 max-w-2xl mx-auto mb-16"
         >
-          Leady pribúdajú. Času je menej. Najdôležitejší klient ostane zakopaný v CRM
+          Nové dopyty pribúdajú. Času je menej. Najdôležitejší klient ostane zakopaný v CRM
           — a odíde ku konkurencii.
         </motion.p>
 
@@ -40,8 +40,8 @@ export default function ProblemSection() {
           }}
         >
           {[
-            { icon: 'tasks' as RadiantIconKey, stat: '4+ hodiny', desc: 'priemerná odpoveď na lead' },
-            { icon: 'pipeline' as RadiantIconKey, stat: '60 %', desc: 'leadov sa nikdy neozve späť' },
+            { icon: 'tasks' as RadiantIconKey, stat: '4+ hodiny', desc: 'priemerná odpoveď na nový dopyt' },
+            { icon: 'pipeline' as RadiantIconKey, stat: '60 %', desc: 'záujemcov sa nikdy neozve späť' },
             { icon: 'billing' as RadiantIconKey, stat: '€2 400', desc: 'stratených príjmov mesačne' },
           ].map((item) => (
             <motion.div

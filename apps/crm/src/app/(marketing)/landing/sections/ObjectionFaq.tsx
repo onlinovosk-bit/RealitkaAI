@@ -4,7 +4,7 @@ import { useState } from 'react';
 const faq = [
   {
     q: 'Čo ak nemáme čas na zavedenie nového systému?',
-    a: 'Začíname s minimálnou konfiguráciou. Prvé výsledky vidíš po zapnutí AI odpovedí a denného playbooku. Tím nemusí meniť celý proces naraz.',
+    a: 'Začíname s minimálnou konfiguráciou. Prvé výsledky vidíš po zapnutí AI odpovedí a denného plánu úloh. Tím nemusí meniť celý proces naraz.',
   },
   {
     q: 'Čo ak AI odpovie zle klientovi?',
@@ -12,7 +12,7 @@ const faq = [
   },
   {
     q: 'Ako rýchlo to vieme nasadiť?',
-    a: 'Štandardne do 1 dňa: registrácia, onboarding, import príležitostí, zapnutie automation a prvé KPI reporty.',
+    a: 'Štandardne do 1 dňa: registrácia, úvodné nastavenie, import príležitostí, zapnutie automatizácie a prvé výkonové reporty.',
   },
 ];
 
@@ -21,7 +21,7 @@ export default function ObjectionFaq() {
   return (
     <section className="bg-slate-950 py-16">
       <div className="mx-auto max-w-4xl px-6">
-        <p className="text-center text-xs uppercase tracking-[0.25em] text-cyan-300">FAQ: pricing & risk</p>
+        <p className="text-center text-xs uppercase tracking-[0.25em] text-cyan-300">FAQ: ceny a riziká</p>
         <h3 className="mt-2 text-center text-3xl font-extrabold text-slate-100" style={{ fontFamily: 'var(--font-syne)' }}>
           Najčastejšie obchodné námietky
         </h3>

@@ -31,6 +31,13 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     visibleFor: ["agent", "owner"],
   },
   {
+    key: "call-analyzer",
+    label: "AI Call Analyzer",
+    path: "/call-analyzer",
+    emoji: "🎧",
+    visibleFor: ["agent", "owner"],
+  },
+  {
     key: "leads",
     label: "Príležitosti",
     path: "/leads",
@@ -124,6 +131,7 @@ export const NAV_GROUPS = [
       "dashboard",
       "playbook",
       "revolis-ai",
+      "call-analyzer",
       "leads",
       "tasks",
       "pipeline",

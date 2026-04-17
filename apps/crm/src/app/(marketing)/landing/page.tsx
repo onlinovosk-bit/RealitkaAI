@@ -16,6 +16,11 @@ import IntegrationsTrustStrip from './sections/IntegrationsTrustStrip';
 import ObjectionFaq from './sections/ObjectionFaq';
 import ProofNumbers from './sections/ProofNumbers';
 import BlogPromoTicker from '@/components/marketing/BlogPromoTicker';
+import { CtaAbProvider } from '@/components/landing/CtaAbProvider';
+import { CTASection } from '@/components/landing/CTASection';
+import { FearReductionSection } from '@/components/landing/FearReductionSection';
+import { HeroSection } from '@/components/landing/HeroSection';
+import { ValueSection } from '@/components/landing/ValueSection';
 
 const syne = Syne({
   subsets: ['latin'],
@@ -47,6 +52,20 @@ export default function LandingPage() {
 
       {/* 2. Problem – emócia, identifikácia problému */}
       <ProblemSection />
+
+      {/* 2.0 AI Asistent Codai – superpower messaging (Hero + value + trust + CTA) */}
+      <CtaAbProvider>
+        <section
+          id="ai-asistent"
+          className="mx-auto max-w-6xl space-y-8 px-4 py-10 md:px-6"
+          aria-label="AI Asistent"
+        >
+          <HeroSection />
+          <ValueSection />
+          <FearReductionSection />
+          <CTASection />
+        </section>
+      </CtaAbProvider>
 
       {/* 2.1 Response benchmark */}
       <ResponseBenchmark />

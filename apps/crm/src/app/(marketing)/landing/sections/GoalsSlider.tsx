@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { RadiantSpriteIcon, type RadiantIconKey } from '@/components/shared/radiant-sprite-icon';
 
 const goals = [
-  { id: 'hot-leads', icon: 'leads' as RadiantIconKey, title: 'Chcem viac hot leadov', desc: 'Prioritizuj mi klientov, ktorí sú pripravení kúpiť.' },
+  { id: 'hot-leads', icon: 'leads' as RadiantIconKey, title: 'Chcem viac horúcich záujemcov', desc: 'Prioritizuj mi klientov, ktorí sú pripravení kúpiť.' },
   { id: 'pipeline', icon: 'pipeline' as RadiantIconKey, title: 'Chcem mať poriadok v stave klientov', desc: 'Jeden pohľad na všetkých klientov a ich stav.' },
   { id: 'predict', icon: 'revolis-ai' as RadiantIconKey, title: 'Chcem vedieť, kto kúpi v 90 dňoch', desc: 'AI predikcia pripravenosti pre každého klienta.' },
   { id: 'team', icon: 'tasks' as RadiantIconKey, title: 'Makléri majú vedieť, čo robiť každý deň', desc: 'Automatické úlohy a priority pre celý tím.' },
@@ -101,7 +101,7 @@ export default function GoalsSlider() {
                 Super. Zameriame Revolis.AI na:{' '}
                 <span className="text-cyan-300 font-semibold">&ldquo;{selectedGoal.title}&rdquo;</span>.
                 <br />
-                V ďalšom kroku ti ukážeme, ako bude vyzerať tvoj dashboard.
+                V ďalšom kroku ti ukážeme, ako bude vyzerať tvoj prehľad.
               </p>
               <Link
                 href="/register"

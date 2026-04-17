@@ -13,6 +13,8 @@ export default function BlogPromoTicker() {
 
   return (
     <section
+      data-testid="blog-promo-ticker"
+      data-revolis-chrome="blog-promo"
       className="relative border-t border-cyan-500/15 bg-slate-950/95 py-2.5"
       aria-label="Odkazy na blog"
     >

@@ -20,14 +20,14 @@ export default function ResponseBenchmark() {
     <section className="bg-slate-950 py-16">
       <div className="mx-auto max-w-6xl px-6">
         <div className="rounded-3xl border border-slate-700/70 bg-slate-900/50 p-6 md:p-8">
-          <p className="text-xs uppercase tracking-[0.25em] text-cyan-300">Response-time benchmark</p>
+          <p className="text-xs uppercase tracking-[0.25em] text-cyan-300">Porovnanie rýchlosti odpovede s trhom</p>
           <h3 className="mt-2 text-2xl font-extrabold text-slate-100" style={{ fontFamily: 'var(--font-syne)' }}>
             Tvoja realitka vs. trh (simulácia)
           </h3>
 
           <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
             <div className="lg:col-span-2">
-              <p className="mb-2 text-xs text-slate-400">Tvoj priemerný response time (min): {teamResponse}</p>
+              <p className="mb-2 text-xs text-slate-400">Tvoj priemerný čas do odpovede (min): {teamResponse}</p>
               <input type="range" min={2} max={240} value={teamResponse} onChange={(e) => setTeamResponse(Number(e.target.value))} className="w-full accent-cyan-400" />
 
               <div className="mt-5 space-y-2 text-sm">
@@ -47,7 +47,7 @@ export default function ResponseBenchmark() {
             </div>
 
             <div className="rounded-2xl border border-cyan-400/20 bg-cyan-500/[0.06] p-4">
-              <p className="text-xs text-slate-500">Benchmark výsledok</p>
+              <p className="text-xs text-slate-500">Výsledok oproti trhu</p>
               <p className={`mt-1 text-2xl font-bold ${score.color}`}>{score.label}</p>
               <p className="mt-2 text-xs text-slate-400">
                 Každé skrátenie reakčného času o 30 minút zvyčajne zvyšuje šancu na ďalší kontakt.

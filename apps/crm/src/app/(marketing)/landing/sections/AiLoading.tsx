@@ -8,9 +8,9 @@ import { RadiantSpriteIcon } from '@/components/shared/radiant-sprite-icon';
 
 const messages = [
   'Zisťujeme, kde ti unikajú najhorúcejšie príležitosti…',
-  'Počítame buyer readiness index pre každého klienta…',
+  'Počítame index pripravenosti kúpy (BRI) pre každého klienta…',
   'Hľadáme nehnuteľnosti s najväčšou šancou na predaj…',
-  'Pripravujeme tvoj personalizovaný dashboard…',
+  'Pripravujeme tvoj personalizovaný prehľad…',
   `${AI_ASSISTANT_NAME} je pripravená.`,
 ];
 
@@ -61,13 +61,13 @@ export default function AiLoading() {
           </div>
 
           <p className="text-xs font-bold uppercase tracking-[0.25em] text-cyan-300 text-center mb-3">
-            AI moment
+            Okamih AI
           </p>
           <h3 className="text-xl font-bold text-slate-50 text-center mb-2" style={{ fontFamily: 'var(--font-syne)' }}>
-            Analyzujeme tvoj biznis…
+            Analyzujeme tvoje podnikanie…
           </h3>
           <p className="text-sm text-slate-400 text-center mb-6">
-            Simulujeme tvoj stav klientov, leady a prácu maklérov.
+            Simulujeme tvoj stav klientov, nové dopyty a prácu maklérov.
           </p>
 
           {!done && (

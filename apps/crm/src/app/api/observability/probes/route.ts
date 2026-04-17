@@ -8,6 +8,44 @@ type ProbeResult = {
   latencyMs?: number;
 };
 
+async function probeSystemSmoke(base: string): Promise<ProbeResult> {
+  const url = `${base}/api/system/smoke`;
+  const started = Date.now();
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      cache: "no-store",
+      signal: AbortSignal.timeout(12000),
+    });
+    const latencyMs = Date.now() - started;
+    if (!response.ok) {
+      return {
+        target: url,
+        status: "degraded",
+        detail: `HTTP ${response.status}`,
+        httpStatus: response.status,
+        latencyMs,
+      };
+    }
+    const data = (await response.json()) as { ok?: boolean };
+    const packOk = data.ok === true;
+    return {
+      target: url,
+      status: packOk ? "ok" : ("degraded" as const),
+      detail: packOk ? "smoke ok" : "smoke reported ok: false (check blog-promo-config and other checks)",
+      httpStatus: response.status,
+      latencyMs,
+    };
+  } catch {
+    return {
+      target: url,
+      status: "degraded",
+      detail: "timeout or parse failure",
+      latencyMs: Date.now() - started,
+    };
+  }
+}
+
 async function probeUrl(url: string, acceptedStatuses: number[]) {
   const started = Date.now();
   try {
@@ -52,6 +90,7 @@ export async function GET() {
     probeUrl(`${base}/api/billing/portal`, [400, 401, 405, 200]),
     probeUrl(`${base}/dashboard`, [200, 302, 303, 307, 308]),
     probeUrl(`${base}/api/healthz`, [200]),
+    probeSystemSmoke(base),
   ]);
 
   const degraded = probes.filter((p) => p.status === "degraded");
