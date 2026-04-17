@@ -7,7 +7,7 @@ vi.mock("@/store/aiActivityStore", () => ({
   useAIActivityStore: (sel: (s: unknown) => unknown) =>
     sel({
       sofiaStatus: "idle",
-      sofiaStatusText: "NEXUS AI je pripravená",
+      sofiaStatusText: "AI Asistent je pripravený",
       activities: [],
     }),
 }));

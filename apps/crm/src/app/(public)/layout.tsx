@@ -1,10 +1,10 @@
-import BlogPromoTicker from "@/components/marketing/BlogPromoTicker";
+import BlogPromoTickerGate from "@/components/marketing/BlogPromoTickerGate";
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       {children}
-      <BlogPromoTicker />
+      <BlogPromoTickerGate />
     </>
   );
 }

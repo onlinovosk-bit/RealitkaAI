@@ -2,7 +2,7 @@
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { useEffect, useState } from 'react';
-import { AI_ASSISTANT_NAME } from '@/lib/ai-brand';
+import { LANDING_AI_ASSISTANT_NAME } from '@/app/(marketing)/landing/landing-ai-label';
 
 function useCountUp(target: number, duration = 1800, trigger = false) {
   const [val, setVal] = useState(0);
@@ -22,7 +22,7 @@ function useCountUp(target: number, duration = 1800, trigger = false) {
 
 const METRICS = [
   { prefix: '+', value: 34, suffix: '%', label: 'priemerný rast konverzií', color: '#22D3EE' },
-  { prefix: '', value: 2, suffix: ' min', label: `priemerná odpoveď ${AI_ASSISTANT_NAME}`, color: '#818CF8' },
+  { prefix: '', value: 2, suffix: ' min', label: `priemerná odpoveď ${LANDING_AI_ASSISTANT_NAME}`, color: '#818CF8' },
   { prefix: '', value: 847, suffix: '', label: 'aktívnych maklérov', color: '#34D399' },
   { prefix: '€', value: 2400, suffix: '', label: 'ušetrených mesačne', color: '#FBBF24' },
 ];

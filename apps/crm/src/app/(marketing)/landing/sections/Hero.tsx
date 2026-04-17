@@ -3,7 +3,7 @@
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useRef, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { AI_ASSISTANT_STATUS_ACTIVE } from '@/lib/ai-brand';
+import { LANDING_AI_ASSISTANT_NAME } from '@/app/(marketing)/landing/landing-ai-label';
 import { RadiantSpriteIcon } from '@/components/shared/radiant-sprite-icon';
 
 function Orb({ className }: { className: string }) {
@@ -65,13 +65,13 @@ function DashboardMock() {
         <span className="ml-2 text-[11px] text-slate-500">Revolis.AI — prehľad</span>
         <div className="ml-auto flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-          <span className="text-[11px] text-green-400">{AI_ASSISTANT_STATUS_ACTIVE}</span>
+          <span className="text-[11px] text-green-400">{LANDING_AI_ASSISTANT_NAME} aktívny</span>
         </div>
       </div>
       <div className="grid grid-cols-4 gap-2 mb-3">
         {[
           { label: 'Záujemcovia dnes', value: '12', delta: '+3' },
-          { label: 'AI odpovede', value: '9', delta: '2min' },
+          { label: 'AI odpovede', value: '9', delta: '2 min' },
           { label: 'Obhliadky', value: '4', delta: 'zajtra' },
           { label: 'AI skóre', value: '78', delta: '+ trend' },
         ].map((kpi) => (
@@ -186,7 +186,7 @@ export default function Hero() {
                 href="#pipeline"
                 className="rounded-full border border-slate-600/80 bg-slate-900/50 px-7 py-3.5 text-sm font-medium text-slate-100 backdrop-blur-lg transition-all duration-200 hover:border-cyan-300/70 hover:bg-slate-900/80 hover:text-cyan-100"
               >
-                Pozrieť live demo
+                Pozrieť demo naživo
               </Link>
             </motion.div>
 
@@ -199,7 +199,7 @@ export default function Hero() {
               <span className="inline-flex items-center gap-1.5 text-slate-100"><span className="w-2 h-2 rounded-full bg-green-400" /> <strong className="text-white">847</strong> aktívnych maklérov</span>
               <span className="inline-flex items-center gap-1.5 text-slate-100"><RadiantSpriteIcon icon="dashboard" sizeClassName="h-4 w-4" className="rounded-sm border-cyan-400/20 shadow-none" /> <strong className="text-white">4.9/5</strong> hodnotenie</span>
               <span className="inline-flex items-center gap-1.5 text-slate-100"><RadiantSpriteIcon icon="pipeline" sizeClassName="h-4 w-4" className="rounded-sm border-cyan-400/20 shadow-none" /> <strong className="text-cyan-300">+34%</strong> konverzia</span>
-              <span className="text-slate-100">Made in Slovakia</span>
+              <span className="text-slate-100">Vyrobené na Slovensku</span>
             </motion.div>
 
             <LiveLeadCounter />

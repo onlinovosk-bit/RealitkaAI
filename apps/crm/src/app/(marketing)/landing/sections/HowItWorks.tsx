@@ -1,6 +1,6 @@
 "use client";
 import { motion } from 'framer-motion';
-import { AI_ASSISTANT_NAME } from '@/lib/ai-brand';
+import { LANDING_AI_ASSISTANT_NAME } from '@/app/(marketing)/landing/landing-ai-label';
 import { RadiantSpriteIcon, type RadiantIconKey } from '@/components/shared/radiant-sprite-icon';
 
 const steps = [
@@ -13,7 +13,7 @@ const steps = [
   {
     number: '02',
     icon: 'revolis-ai' as RadiantIconKey,
-    title: `${AI_ASSISTANT_NAME} koná okamžite`,
+    title: `${LANDING_AI_ASSISTANT_NAME} koná okamžite`,
     desc: 'Odpovedá do 2 minút, ohodnotí záujemcu, navrhne obhliadku. Bez tvojho zásahu.',
   },
   {

@@ -141,7 +141,7 @@ function PulseCard({
           >
             <div className="mt-3 border-t border-white/10 pt-3">
               <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                NEXUS AI odporúča
+                AI Asistent odporúča
               </p>
               <ul className="space-y-1.5">
                 {steps.map((step, i) => (

@@ -9,6 +9,7 @@ import {
   type AssistantContext,
 } from "@/lib/ai/assistant-script";
 import { getSalesScript } from "@/lib/sales/sales-script";
+import { AI_ASSISTANT_NAME } from "@/lib/ai-brand";
 
 const SESSION_LEAD_KEY = "assistant_panel_lead_id_v1";
 
@@ -119,10 +120,7 @@ function AssistantPanelInner({ defaultLeadId, leadOptions = [] }: AssistantPanel
     <div className="rounded-2xl border border-indigo-500/25 bg-gradient-to-br from-indigo-950/50 via-slate-900/80 to-slate-950 p-5 text-white shadow-[0_0_24px_rgba(99,102,241,0.12)]">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-indigo-300/90">
-            AI Asistent
-          </p>
-          <h3 className="mt-1 text-lg font-bold text-white">Codai</h3>
+          <h3 className="text-lg font-bold text-white">{AI_ASSISTANT_NAME}</h3>
         </div>
         <div className="flex flex-wrap gap-1.5">
           {contexts.map((c) => (

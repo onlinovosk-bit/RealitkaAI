@@ -63,7 +63,7 @@ export function useMockAIActivity() {
       const type = randomFrom(TYPES);
       const leadObj = randomFrom(leadsRef.current);
 
-      setSofiaStatus("thinking", "NEXUS AI analyzuje nové signály");
+      setSofiaStatus("thinking", "AI Asistent analyzuje nové signály");
       addActivity({
         id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
         type,
@@ -81,7 +81,7 @@ export function useMockAIActivity() {
                   : "Naplánovaný ďalší follow-up",
         timestamp: new Date(),
       });
-      setSofiaStatus("active", "NEXUS AI monitoruje príležitosti");
+      setSofiaStatus("active", "AI Asistent monitoruje príležitosti");
 
       timeoutId = setTimeout(tick, randomDelayMs());
     };
@@ -91,7 +91,7 @@ export function useMockAIActivity() {
     return () => {
       cancelled = true;
       if (timeoutId) clearTimeout(timeoutId);
-      setSofiaStatus("idle", "NEXUS AI je pripravená");
+      setSofiaStatus("idle", "AI Asistent je pripravený");
     };
   }, [addActivity, setSofiaStatus]);
 }

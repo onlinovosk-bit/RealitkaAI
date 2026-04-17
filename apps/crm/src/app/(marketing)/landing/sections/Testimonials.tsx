@@ -1,11 +1,11 @@
 "use client";
 import { motion } from 'framer-motion';
-import { AI_ASSISTANT_NAME } from '@/lib/ai-brand';
+import { LANDING_AI_ASSISTANT_NAME } from '@/app/(marketing)/landing/landing-ai-label';
 
 const TESTIMONIALS = [
   {
     stars: 5,
-    quote: `${AI_ASSISTANT_NAME} zachránila môj biznis. Odpovedá kým spím a ráno mám naplánované obhliadky.`,
+    quote: `${LANDING_AI_ASSISTANT_NAME} zachránil môj biznis. Odpovedá kým spím a ráno mám naplánované obhliadky.`,
     name: 'Tomáš Novák',
     company: 'Reality Novák, Bratislava',
     metric: '+41% konverzia',
@@ -21,7 +21,7 @@ const TESTIMONIALS = [
   },
   {
     stars: 5,
-    quote: 'Myslel som, že AI v realitách je prázdne módne slovo. Mýlil som sa. Revolis je iný level.',
+    quote: 'Myslel som, že AI v realitách je prázdne módne slovo. Mýlil som sa. Revolis je úplne inde.',
     name: 'Peter Horváth',
     company: 'Horváth & Partner, Nitra',
     metric: '2x rýchlejší',

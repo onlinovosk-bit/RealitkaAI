@@ -27,7 +27,7 @@ Zastúpený: [___________]
 
 1.1. **„Platforma"** znamená SaaS riešenie Revolis.AI vrátane všetkých modulov, API rozhraní, analytických nástrojov, bezpečnostných vrstiev a AI komponentov poskytovaných Poskytovateľom.
 
-1.2. **„AI Asistent"** znamená umelú inteligenciu NEXUS AI, vrátane označenia Sofia v starších verziách dokumentácie, a/alebo iné AI agenty Poskytovateľa, ktoré automatizovane generujú odporúčania, návrhy komunikácie alebo iné výstupy pre obchodné procesy Zákazníka.
+1.2. **„AI Asistent"** znamená umelú inteligenciu označovanú ako AI Asistent, vrátane označenia Sofia alebo NEXUS AI v starších verziách dokumentácie, a/alebo iné AI agenty Poskytovateľa, ktoré automatizovane generujú odporúčania, návrhy komunikácie alebo iné výstupy pre obchodné procesy Zákazníka.
 
 1.3. **„Zákaznícke dáta"** znamenajú všetky dáta vložené alebo importované Zákazníkom do Platformy, vrátane kontaktov, leadov, obchodných príležitostí, údajov o nehnuteľnostiach, komunikácie, interných poznámok, príloh a súvisiacich metadát.
 

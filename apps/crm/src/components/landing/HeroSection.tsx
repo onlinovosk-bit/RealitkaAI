@@ -23,14 +23,14 @@ export function HeroSection() {
         }}
       />
       <div className="relative">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-cyan-300/90">
-          AI Asistent · Codai
+        <p className="mx-auto max-w-3xl text-sm font-semibold text-cyan-300/90">
+          AI Asistent pre makléra a majiteľa realitnej kancelárie
         </p>
         <h2 className="mt-3 text-3xl font-bold tracking-tight text-white md:text-4xl">
-          AI, ktorá z teba spraví lepšieho makléra
+          AI, ktorá z Teba spraví lepšieho makléra, lepšieho šéfa
         </h2>
         <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-400">
-          Revolis.AI robí nudnú prácu za teba, aby si ty uzatváral viac obchodov.
+          Revolis.AI Asistent robí nudnú prácu za Teba, aby si Ty uzatváral viac obchodov.
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <Link

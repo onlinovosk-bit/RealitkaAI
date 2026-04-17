@@ -6,7 +6,7 @@ Zdroj: interný dokument *Revolis_AI_Roundtable* (obrázky / Word). Porovnanie s
 
 | Téma z dokumentu | V projekte |
 |------------------|------------|
-| AI asistent / odpovede na lead | `POST /api/leads/[id]/assistant`, `AssistantPanel`, NEXUS / značka asistenta |
+| AI asistent / odpovede na lead | `POST /api/leads/[id]/assistant`, `AssistantPanel`, značka AI Asistent |
 | Lead scoring | AI skóre, Sales Brain, `ai_engine` |
 | Matching nehnuteľností | Matching modul, API |
 | Follow-up / outreach | Outreach, úlohy, playbook |

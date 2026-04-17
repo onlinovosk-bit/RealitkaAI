@@ -58,7 +58,7 @@ Do výpadku sa NEZAPOČÍTAVAJÚ:
 | API response (CRUD operácie) | < 500 ms | Server response time |
 | AI skórovanie (IPK) | < 3 s | End-to-end výpočet |
 | AI odporúčania (generatívne) | < 8 s | Vrátane inference externého modelu |
-| AI asistent (NEXUS AI) odpoveď | < 30 s | End-to-end čas odpovede asistenta |
+| AI Asistent — odpoveď | < 30 s | End-to-end čas odpovede asistenta |
 | Vyhľadávanie | < 1 s | Full-text + sémantické vyhľadávanie |
 | Export dát (CSV, do 10 000 záznamov) | < 30 s | Generovanie + download |
 

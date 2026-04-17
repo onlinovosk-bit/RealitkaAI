@@ -21,7 +21,7 @@ export default function ObjectionFaq() {
   return (
     <section className="bg-slate-950 py-16">
       <div className="mx-auto max-w-4xl px-6">
-        <p className="text-center text-xs uppercase tracking-[0.25em] text-cyan-300">FAQ: ceny a riziká</p>
+        <p className="text-center text-xs uppercase tracking-[0.25em] text-cyan-300">Často kladené otázky: ceny a riziká</p>
         <h3 className="mt-2 text-center text-3xl font-extrabold text-slate-100" style={{ fontFamily: 'var(--font-syne)' }}>
           Najčastejšie obchodné námietky
         </h3>

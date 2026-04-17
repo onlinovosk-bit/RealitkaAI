@@ -25,7 +25,7 @@ export function getLandingCtaCopy(variant: LandingCtaVariant) {
     finalCta: {
       title: "Začni uzatvárať viac obchodov ešte dnes",
       subtitle:
-        "Superpower pre makléra: jasné ďalšie kroky, menej chaosu, viac uzavretí.",
+        "Supervýkon pre makléra: jasné ďalšie kroky, menej chaosu, viac uzavretí.",
       button: "Spusti Revolis.AI",
     },
   };

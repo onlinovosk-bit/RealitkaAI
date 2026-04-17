@@ -6,6 +6,7 @@ import {
   NEXUS_CHAT_SETTINGS_STORAGE_KEY,
   type NexusChatSettings,
 } from "@/lib/nexus-chat-settings";
+import { AI_ASSISTANT_NAME } from "@/lib/ai-brand";
 
 export default function NexusAiChatSettingsClient() {
   const [settings, setSettings] = useState<NexusChatSettings>(DEFAULT_NEXUS_CHAT_SETTINGS);
@@ -41,7 +42,7 @@ export default function NexusAiChatSettingsClient() {
       <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
         <h2 className="text-base font-semibold text-gray-900">Štýl odpovedí</h2>
         <p className="mt-1 text-sm text-gray-500">
-          Nastavenia sa použijú v detaile príležitosti pri umelej inteligencii NEXUS AI.
+          Nastavenia sa použijú v detaile príležitosti pri {AI_ASSISTANT_NAME}.
         </p>
 
         <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -96,7 +97,7 @@ export default function NexusAiChatSettingsClient() {
       {/* Tykanie / Vykanie */}
       <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
         <h2 className="text-base font-semibold text-gray-900">Oslovenie</h2>
-        <p className="mt-1 text-sm text-gray-500">Akú formu oslovenia má umelá inteligencia NEXUS AI používať v odpovediach.</p>
+        <p className="mt-1 text-sm text-gray-500">Akú formu oslovenia má {AI_ASSISTANT_NAME} používať v odpovediach.</p>
         <div className="mt-4 flex gap-3">
           {(["vykanie", "tykanie"] as const).map((opt) => (
             <button
@@ -119,7 +120,7 @@ export default function NexusAiChatSettingsClient() {
       {/* Predvoľby výstupu */}
       <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
         <h2 className="text-base font-semibold text-gray-900">Predvoľba výstupu</h2>
-        <p className="mt-1 text-sm text-gray-500">Pre aký kanál má umelá inteligencia NEXUS AI primárne formátovať odpovede.</p>
+        <p className="mt-1 text-sm text-gray-500">Pre aký kanál má {AI_ASSISTANT_NAME} primárne formátovať odpovede.</p>
         <div className="mt-4 flex flex-wrap gap-3">
           {([
             { key: "email" as const, label: "✉ Email", desc: "Plný email s predmetom" },
@@ -157,7 +158,7 @@ export default function NexusAiChatSettingsClient() {
       <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
         <h2 className="text-base font-semibold text-gray-900">Firemný podpis</h2>
         <p className="mt-1 text-sm text-gray-500">
-          Umelá inteligencia NEXUS AI automaticky pridá podpis na koniec emailov a správ.
+          {AI_ASSISTANT_NAME} automaticky pridá podpis na koniec emailov a správ.
         </p>
         <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
           <label className="text-sm">

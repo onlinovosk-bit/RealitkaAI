@@ -33,7 +33,7 @@ export const useAIActivityStore = create<AIActivityStore>((set) => ({
   activities: [],
   latestActivity: null,
   sofiaStatus: "idle",
-  sofiaStatusText: "NEXUS AI je pripravená",
+  sofiaStatusText: "AI Asistent je pripravený",
   addActivity: (a) =>
     set((state) => ({
       activities: [a, ...state.activities].slice(0, 50),

@@ -53,7 +53,7 @@ export default function LandingPage() {
       {/* 2. Problem – emócia, identifikácia problému */}
       <ProblemSection />
 
-      {/* 2.0 AI Asistent Codai – superpower messaging (Hero + value + trust + CTA) */}
+      {/* 2.0 AI Asistent — messaging (Hero + value + trust + CTA) */}
       <CtaAbProvider>
         <section
           id="ai-asistent"

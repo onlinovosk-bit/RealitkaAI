@@ -14,7 +14,7 @@
 - **E2E:** Playwright `call-analyzer.spec.ts` (mock Whisper + voliteľný skutočný Whisper); projekt `chromium-call-analyzer`; `E2E_BYPASS_AUTH` pre dev E2E bez Supabase loginu.
 - **Dokumentácia:** `docs/ai-call-analyzer-deal-strategy.md`.
 
-### AI Asistent (Codai)
+### AI Asistent
 - **Landing:** sekcia `#ai-asistent` — Hero, Value, Fear, CTA; A/B test CTA (`CtaAbProvider`, `localStorage` kľúč `revolis_ai_landing_cta_ab_v1`).
 - **Dashboard:** `AIAssistBanner`, `AssistantPanel` (resp. lazy `AssistantPanelDynamic`) napojené na **`POST /api/leads/[id]/assistant`** s otázkami z `assistantQuestionForContext`; kontext leadu z `?lead=` / sessionStorage / predvolený lead.
 - **Lead detail:** odkaz na `/dashboard?lead=<id>`.

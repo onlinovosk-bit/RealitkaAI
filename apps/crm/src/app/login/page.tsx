@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabaseClient } from "@/lib/supabase/client";
 import BlogPromoTicker from "@/components/marketing/BlogPromoTicker";
+import { AI_ASSISTANT_NAME, AI_ASSISTANT_STATUS_ACTIVE } from "@/lib/ai-brand";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,9 +14,9 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const previewToasts = [
-    "NEXUS AI: Pripravený follow-up pre lead Petra N.",
-    "NEXUS AI: Lead Mária K. presunutý do fázy Obhliadka.",
-    "NEXUS AI: Odporúčanie: zavolať 3 horúcim príležitostiam.",
+    `${AI_ASSISTANT_NAME}: Pripravený follow-up pre lead Petra N.`,
+    `${AI_ASSISTANT_NAME}: Lead Mária K. presunutý do fázy Obhliadka.`,
+    `${AI_ASSISTANT_NAME}: Odporúčanie: zavolať 3 horúcim príležitostiam.`,
   ];
   const [toastIdx, setToastIdx] = useState(0);
   const secondaryToastIdx = (toastIdx + previewToasts.length - 1) % previewToasts.length;
@@ -134,7 +135,7 @@ export default function LoginPage() {
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-xs text-slate-200">NEXUS AI aktívna</span>
+                <span className="text-xs text-slate-200">{AI_ASSISTANT_STATUS_ACTIVE}</span>
               </div>
               <span className="text-xs text-indigo-200">MON 14 APR 2026 13:20:11</span>
             </div>

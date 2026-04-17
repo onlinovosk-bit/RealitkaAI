@@ -583,7 +583,7 @@ export default function LeadDetailPage() {
                 href={`/dashboard?lead=${encodeURIComponent(id)}`}
                 className="block rounded-2xl border border-indigo-500/25 bg-indigo-950/30 px-4 py-3 text-sm text-indigo-100 transition hover:bg-indigo-950/50"
               >
-                <span className="font-semibold text-white">AI Asistent (Codai)</span>
+                <span className="font-semibold text-white">{AI_ASSISTANT_NAME}</span>
                 <span className="mt-0.5 block text-xs text-indigo-200/80">
                   Otvoriť dashboard s kontextom tejto príležitosti →
                 </span>

@@ -1,8 +1,8 @@
-# AI Asistent (Codai) — rollout
+# AI Asistent — rollout
 
 ## Cieľ
 
-- **Landing** (`/landing`): blok „AI Asistent Codai“ — hero, value, dôvera, CTA.
+- **Landing** (`/landing`): blok AI Asistent — hero, value, dôvera, CTA.
 - **Dashboard** (`/dashboard`): panel **AssistantPanel** volá **`POST /api/leads/[id]/assistant`** s otázkou z `assistantQuestionForContext()` (`lib/ai/assistant-script.ts`). Odpoveď je **LLM** (gpt-4o-mini) s kontextom leadu z DB (`lib/assistant-chat.ts`).
 - **Kontext leadu:** `?lead=` alebo `?leadId=` v URL, **sessionStorage** `assistant_panel_lead_id_v1`, alebo predvolený prvý lead z dashboardu.
 
@@ -27,7 +27,7 @@ Bez `OPENAI_API_KEY` panel zobrazí záložný text (`generateAssistantMessage`)
 1. `/landing#ai-asistent` — dva varianty CTA (vyčistiť `localStorage` pre opätovný výber).
 2. `/dashboard` — panel s výberom leadu (ak existuje viac leadov).
 3. `/dashboard?lead=<uuid>` — kontext z URL.
-4. `/leads/[id]` — odkaz „AI Asistent (Codai)“ na dashboard s `?lead=`.
+4. `/leads/[id]` — odkaz „AI Asistent“ na dashboard s `?lead=`.
 
 ## Rollback
 

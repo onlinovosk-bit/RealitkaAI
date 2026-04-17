@@ -1,5 +1,5 @@
 const stats = [
-  { label: 'Odozva p95', value: '< 2 min', note: 'AI prvá odpoveď na nový dopyt' },
+  { label: 'Odozva (95. percentil)', value: '< 2 min', note: 'AI prvá odpoveď na nový dopyt' },
   { label: 'Pokrytie následných kontaktov', value: '92%', note: 'Záujemcovia s aktívnym ďalším kontaktom' },
   { label: 'Nárast úspešnosti obchodov', value: '+34%', note: 'Pri kanceláriách s dokončeným úvodným nastavením' },
 ];

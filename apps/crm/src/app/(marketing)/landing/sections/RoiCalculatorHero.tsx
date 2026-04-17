@@ -46,7 +46,7 @@ export default function RoiCalculatorHero() {
                 <input type="range" min={2} max={360} value={responseMinutes} onChange={(e) => setResponseMinutes(Number(e.target.value))} className="w-full accent-cyan-400" />
               </label>
               <label className="block">
-                <span className="mb-1 block text-xs text-slate-400">Konverzia leadov na obchod (%): {dealRate}</span>
+                <span className="mb-1 block text-xs text-slate-400">Konverzia dopytov na obchod (%): {dealRate}</span>
                 <input type="range" min={2} max={20} value={dealRate} onChange={(e) => setDealRate(Number(e.target.value))} className="w-full accent-cyan-400" />
               </label>
             </div>

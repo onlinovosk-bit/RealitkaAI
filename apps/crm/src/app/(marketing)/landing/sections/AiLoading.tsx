@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useInView } from 'react-intersection-observer';
 import Link from 'next/link';
-import { AI_ASSISTANT_NAME } from '@/lib/ai-brand';
+import { LANDING_AI_ASSISTANT_NAME } from '@/app/(marketing)/landing/landing-ai-label';
 import { RadiantSpriteIcon } from '@/components/shared/radiant-sprite-icon';
 
 const messages = [
@@ -11,7 +11,7 @@ const messages = [
   'Počítame index pripravenosti kúpy (BRI) pre každého klienta…',
   'Hľadáme nehnuteľnosti s najväčšou šancou na predaj…',
   'Pripravujeme tvoj personalizovaný prehľad…',
-  `${AI_ASSISTANT_NAME} je pripravená.`,
+  `${LANDING_AI_ASSISTANT_NAME} je pripravený.`,
 ];
 
 export default function AiLoading() {

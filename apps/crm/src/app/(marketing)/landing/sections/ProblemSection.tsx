@@ -1,6 +1,5 @@
 'use client';
 import { motion } from 'framer-motion';
-import { RadiantSpriteIcon, type RadiantIconKey } from '@/components/shared/radiant-sprite-icon';
 
 export default function ProblemSection() {
   return (
@@ -40,9 +39,9 @@ export default function ProblemSection() {
           }}
         >
           {[
-            { icon: 'tasks' as RadiantIconKey, stat: '4+ hodiny', desc: 'priemerná odpoveď na nový dopyt' },
-            { icon: 'pipeline' as RadiantIconKey, stat: '60 %', desc: 'záujemcov sa nikdy neozve späť' },
-            { icon: 'billing' as RadiantIconKey, stat: '€2 400', desc: 'stratených príjmov mesačne' },
+            { stat: '4+ hodiny', desc: 'priemerná odpoveď na nový dopyt' },
+            { stat: '60 %', desc: 'záujemcov sa nikdy neozve späť' },
+            { stat: '€2 400', desc: 'stratených príjmov mesačne' },
           ].map((item) => (
             <motion.div
               key={item.stat}
@@ -52,9 +51,6 @@ export default function ProblemSection() {
               }}
               className="rounded-2xl border border-red-500/20 bg-red-500/5 p-6 text-center"
             >
-              <div className="mb-3 flex justify-center">
-                <RadiantSpriteIcon icon={item.icon} sizeClassName="h-10 w-10" />
-              </div>
               <div
                 className="text-4xl font-extrabold text-red-400 mb-2"
                 style={{ fontFamily: 'var(--font-syne)' }}

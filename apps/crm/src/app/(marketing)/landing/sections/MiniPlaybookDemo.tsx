@@ -29,7 +29,7 @@ export default function MiniPlaybookDemo() {
             onClick={() => setExpanded((prev) => !prev)}
             className="mt-5 rounded-full border border-cyan-300/30 bg-cyan-500/10 px-4 py-2 text-sm font-semibold text-cyan-200"
           >
-            {expanded ? 'Skryť demo playbook' : 'Otvoriť demo playbook'}
+            {expanded ? 'Skryť ukážku plánu' : 'Otvoriť ukážku plánu úloh'}
           </button>
 
           {expanded && (
@@ -46,7 +46,7 @@ export default function MiniPlaybookDemo() {
 
               <div className="rounded-xl border border-cyan-300/25 bg-cyan-500/[0.08] p-3">
                 <p className="text-sm font-semibold text-cyan-200">+{lockedCount} ďalších príležitostí</p>
-                <p className="mt-1 text-xs text-slate-300">Odomkni plný AI plán úloh s programom Pro.</p>
+                <p className="mt-1 text-xs text-slate-300">Odomkni plný plán úloh s AI v programe Pro.</p>
                 <Link href="/billing" className="mt-3 inline-flex rounded-full bg-cyan-400 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-cyan-300">
                   Odomknúť Pro
                 </Link>

@@ -12,6 +12,7 @@ import GoogleConnectButton from "@/components/integrations/GoogleConnectButton";
 import GoogleCalendarDemo from "@/components/integrations/GoogleCalendarDemo";
 import UsageMetricsEnterpriseCard from "@/components/settings/usage-metrics-enterprise-card";
 import Link from "next/link";
+import { AI_ASSISTANT_CHAT_LABEL } from "@/lib/ai-brand";
 
 export default async function SettingsPage() {
   await requireRole(["owner", "manager", "agent"]);
@@ -84,7 +85,7 @@ export default async function SettingsPage() {
           href="/settings/nexus-ai-chat"
           className="block rounded-2xl border border-indigo-200 bg-indigo-50 p-5 shadow-sm transition hover:border-indigo-300 hover:bg-indigo-100/60"
         >
-          <h2 className="text-base font-semibold text-indigo-900">NEXUS AI Chat</h2>
+          <h2 className="text-base font-semibold text-indigo-900">{AI_ASSISTANT_CHAT_LABEL}</h2>
           <p className="mt-1 text-sm text-indigo-800">
             Nastav štýl odpovedí, dĺžku výstupov a formát email návrhov.
           </p>

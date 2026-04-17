@@ -1,11 +1,11 @@
 const items = [
   {
-    title: "AI Assist Mode",
+    title: "Režim AI asistenta",
     body: "AI ti pripraví presne čo povedať klientovi.",
   },
   {
     title: "Viac obchodov",
-    body: "Prioritizuje leady, ktoré majú najvyššiu šancu kúpiť.",
+    body: "Prioritizuje dopyty a záujemcov s najvyššou šancou na kúpu.",
   },
   {
     title: "Plná kontrola",

@@ -7,7 +7,7 @@ export default function ResponseBenchmark() {
   const score = useMemo(() => {
     const marketMedian = 95;
     const delta = marketMedian - teamResponse;
-    if (delta >= 40) return { label: 'TOP 10%', color: 'text-emerald-300' };
+    if (delta >= 40) return { label: 'Medzi najlepšími 10 %', color: 'text-emerald-300' };
     if (delta >= 15) return { label: 'Nad trhom', color: 'text-cyan-300' };
     if (delta >= -15) return { label: 'Priemer trhu', color: 'text-amber-300' };
     return { label: 'Pod trhom', color: 'text-red-300' };
@@ -32,7 +32,7 @@ export default function ResponseBenchmark() {
 
               <div className="mt-5 space-y-2 text-sm">
                 <div className="flex items-center justify-between rounded-lg bg-slate-950/80 px-3 py-2">
-                  <span className="text-slate-400">Best-in-class AI tímy</span>
+                  <span className="text-slate-400">Špičkové tímy s AI (referenčná úroveň)</span>
                   <span className="font-semibold text-emerald-300">{bestInClass} min</span>
                 </div>
                 <div className="flex items-center justify-between rounded-lg bg-slate-950/80 px-3 py-2">

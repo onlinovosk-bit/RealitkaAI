@@ -1,7 +1,7 @@
 'use client';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { AI_ASSISTANT_NAME } from '@/lib/ai-brand';
+import { LANDING_AI_ASSISTANT_NAME } from '@/app/(marketing)/landing/landing-ai-label';
 import { RadiantSpriteIcon, type RadiantIconKey } from '@/components/shared/radiant-sprite-icon';
 
 export default function PreviewSection() {
@@ -71,7 +71,7 @@ export default function PreviewSection() {
                 <div className="grid gap-3 md:grid-cols-3">
                   {/* Chart */}
                   <div className="col-span-2 rounded-2xl bg-slate-950/80 p-3">
-                    <p className="text-xs font-medium text-slate-400 mb-2">Buyer readiness dnes</p>
+                    <p className="text-xs font-medium text-slate-400 mb-2">Index pripravenosti kúpy dnes</p>
                     <div className="flex items-end gap-1.5 h-16">
                       {[80, 55, 40, 65, 90, 35, 70].map((h, i) => (
                         <motion.div
@@ -91,7 +91,7 @@ export default function PreviewSection() {
                       ))}
                     </div>
                     <p className="text-[10px] text-slate-500 mt-2">
-                      AI zvýrazní top 10 klientov pripravených na akciu.
+                      AI zvýrazní 10 najvhodnejších klientov pripravených na akciu.
                     </p>
                   </div>
 
@@ -136,7 +136,7 @@ export default function PreviewSection() {
                     className="w-2 h-2 rounded-full bg-cyan-400 flex-shrink-0"
                   />
                   <p className="text-xs text-slate-400">
-                    <span className="text-cyan-300 font-medium">{AI_ASSISTANT_NAME} navrhuje:</span>{' '}
+                    <span className="text-cyan-300 font-medium">{LANDING_AI_ASSISTANT_NAME} navrhuje:</span>{' '}
                     Zavolajte Martinovi Kováčovi — jeho záujem o byt na Ružinove vzrástol o 47 %.
                   </p>
                 </div>
