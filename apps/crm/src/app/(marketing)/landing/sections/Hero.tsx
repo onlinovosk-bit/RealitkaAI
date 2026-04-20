@@ -141,7 +141,7 @@ export default function Hero() {
               className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-4 py-1.5 text-sm text-cyan-300"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-              AI obchodný pomocník pre realitku
+              Toto nie je ďalší CRM. Je to tvoj AI obchodník.
             </motion.div>
 
             <motion.h1
@@ -167,7 +167,7 @@ export default function Hero() {
               className="text-lg text-slate-300 max-w-lg"
             >
               Revolis.AI každý deň vyberie najdôležitejšie príležitosti, nájde vhodné
-              nehnuteľnosti a odporučí ďalší krok ešte pred otvorením CRM.
+              nehnuteľnosti a povie tvojmu tímu čo robiť — skôr než príde do práce.
             </motion.p>
 
             <motion.div
@@ -196,10 +196,10 @@ export default function Hero() {
               transition={{ delay: 0.8 }}
               className="flex flex-wrap gap-5 text-sm text-slate-200 pt-2 font-medium"
             >
-              <span className="inline-flex items-center gap-1.5 text-slate-100"><span className="w-2 h-2 rounded-full bg-green-400" /> <strong className="text-white">847</strong> aktívnych maklérov</span>
-              <span className="inline-flex items-center gap-1.5 text-slate-100"><RadiantSpriteIcon icon="dashboard" sizeClassName="h-4 w-4" className="rounded-sm border-cyan-400/20 shadow-none" /> <strong className="text-white">4.9/5</strong> hodnotenie</span>
-              <span className="inline-flex items-center gap-1.5 text-slate-100"><RadiantSpriteIcon icon="pipeline" sizeClassName="h-4 w-4" className="rounded-sm border-cyan-400/20 shadow-none" /> <strong className="text-cyan-300">+34%</strong> konverzia</span>
-              <span className="text-slate-100">Vyrobené na Slovensku</span>
+              <span className="inline-flex items-center gap-1.5 text-slate-100"><span className="w-2 h-2 rounded-full bg-green-400" /> Nasadenie <strong className="text-white">do 30 min</strong></span>
+              <span className="inline-flex items-center gap-1.5 text-slate-100"><RadiantSpriteIcon icon="dashboard" sizeClassName="h-4 w-4" className="rounded-sm border-cyan-400/20 shadow-none" /> <strong className="text-white">30-dňová</strong> garancia vrátenia</span>
+              <span className="inline-flex items-center gap-1.5 text-slate-100"><RadiantSpriteIcon icon="pipeline" sizeClassName="h-4 w-4" className="rounded-sm border-cyan-400/20 shadow-none" /> <strong className="text-cyan-300">+34%</strong> konverzný pomer</span>
+              <span className="text-slate-100">Vyrobené na Slovensku 🇸🇰</span>
             </motion.div>
 
             <LiveLeadCounter />

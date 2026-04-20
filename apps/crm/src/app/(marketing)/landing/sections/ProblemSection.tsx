@@ -25,7 +25,7 @@ export default function ProblemSection() {
           viewport={{ once: true, margin: '-100px' }}
           className="text-lg text-slate-400 max-w-2xl mx-auto mb-16"
         >
-          Nové dopyty pribúdajú. Času je menej. Najdôležitejší klient ostane zakopaný v CRM
+          Nové dopyty pribúdajú. Času je menej. Najdôležitejší klient ostane zakopaný v správach a portáloch
           — a odíde ku konkurencii.
         </motion.p>
 

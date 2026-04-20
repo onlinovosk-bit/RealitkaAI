@@ -23,7 +23,7 @@ function useCountUp(target: number, duration = 1800, trigger = false) {
 const METRICS = [
   { prefix: '+', value: 34, suffix: '%', label: 'priemerný rast konverzií', color: '#22D3EE' },
   { prefix: '', value: 2, suffix: ' min', label: `priemerná odpoveď ${LANDING_AI_ASSISTANT_NAME}`, color: '#818CF8' },
-  { prefix: '', value: 847, suffix: '', label: 'aktívnych maklérov', color: '#34D399' },
+  { prefix: '<', value: 30, suffix: ' min', label: 'nasadenie bez IT oddelenia', color: '#34D399' },
   { prefix: '€', value: 2400, suffix: '', label: 'ušetrených mesačne', color: '#FBBF24' },
 ];
 
