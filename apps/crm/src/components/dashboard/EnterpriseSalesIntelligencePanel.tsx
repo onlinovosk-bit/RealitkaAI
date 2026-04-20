@@ -7,6 +7,14 @@ import type { EnterpriseInsightRow } from "@/lib/db/enterprise-intelligence-stor
 import { subscribeLeadEvents } from "@/lib/realtime/enterprise-lead-events";
 import { supabaseClient } from "@/lib/supabase/client";
 
+type BriHistoryRow = {
+  id: string;
+  bri_score: number;
+  reasoning_string: string;
+  calculated_at: string;
+  leads: { id: string; name: string } | null;
+};
+
 type Props = {
   enabled: boolean;
 };
@@ -16,20 +24,28 @@ export default function EnterpriseSalesIntelligencePanel({ enabled }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [agencyId, setAgencyId] = useState<string | null>(null);
+  const [briHistory, setBriHistory] = useState<BriHistoryRow[]>([]);
 
   const load = useCallback(async () => {
     if (!enabled) return;
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/ai/insights");
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data?.error ?? "Nepodarilo sa načítať AI insight.");
+      const [insightsRes, briRes] = await Promise.all([
+        fetch("/api/ai/insights"),
+        fetch("/api/l99/bri-history"),
+      ]);
+      const insightsData = await insightsRes.json();
+      if (!insightsRes.ok) {
+        setError(insightsData?.error ?? "Nepodarilo sa načítať AI insight.");
         setInsights([]);
-        return;
+      } else {
+        setInsights(Array.isArray(insightsData.insights) ? insightsData.insights : []);
       }
-      setInsights(Array.isArray(data.insights) ? data.insights : []);
+      if (briRes.ok) {
+        const briData = await briRes.json();
+        setBriHistory(Array.isArray(briData.history) ? briData.history : []);
+      }
     } catch {
       setError("Chyba siete pri načítaní insightov.");
       setInsights([]);
@@ -74,7 +90,34 @@ export default function EnterpriseSalesIntelligencePanel({ enabled }: Props) {
   }, [enabled, agencyId, load]);
 
   if (!enabled) {
-    return null;
+    return (
+      <div className="relative overflow-hidden rounded-2xl border border-indigo-500/25 bg-gradient-to-br from-slate-950/90 via-slate-900/80 to-indigo-950/40 p-5">
+        <div className="enterprise-locked">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-indigo-300/90">Enterprise</p>
+          <h3 className="text-lg font-bold text-slate-100">AI Sales Intelligence</h3>
+          <p className="mt-1 text-xs text-slate-500">Deal Moment · Risk · Client DNA · BRI skóre</p>
+          <div className="mt-4 space-y-2">
+            {["Záujemca Novák – BRI 91/100 🔥", "Záujemca Kováč – BRI 78/100 ⚡", "Záujemca Horváth – BRI 65/100 📊"].map((item) => (
+              <div key={item} className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-slate-400">{item}</div>
+            ))}
+          </div>
+        </div>
+        <div className="enterprise-locked-overlay">
+          <div className="px-6 text-center">
+            <p className="mb-2 text-2xl">⭐</p>
+            <p className="mb-1 text-sm font-bold text-white">AI Sales Intelligence – len Enterprise</p>
+            <p className="mb-4 text-xs text-slate-500">BRI skóre, sledovanie konkurencie, dormantné príležitosti a executive reporting.</p>
+            <Link
+              href="/billing"
+              className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all hover:scale-105"
+              style={{ background: "linear-gradient(135deg, #6366F1, #F59E0B)", color: "#fff" }}
+            >
+              ✦ Prejsť na Enterprise
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -140,6 +183,31 @@ export default function EnterpriseSalesIntelligencePanel({ enabled }: Props) {
           </li>
         ))}
       </ul>
+
+      {briHistory.length > 0 && (
+        <div className="mt-6 border-t border-slate-800 pt-4">
+          <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-indigo-300/70">
+            🧠 Posledné BRI skóre pripravenosti
+          </p>
+          <ul className="space-y-2">
+            {briHistory.map((row) => {
+              const score = row.bri_score;
+              const color = score >= 90 ? "#EF4444" : score >= 88 ? "#F59E0B" : score >= 70 ? "#6366F1" : "#64748B";
+              return (
+                <li key={row.id} className="flex items-center justify-between rounded-lg border border-white/5 bg-white/3 px-3 py-2">
+                  <div>
+                    <p className="text-xs font-semibold text-slate-200">{row.leads?.name ?? "—"}</p>
+                    <p className="mt-0.5 text-[10px] italic text-slate-500 line-clamp-1">{row.reasoning_string}</p>
+                  </div>
+                  <span className="ml-3 shrink-0 text-sm font-bold" style={{ color }}>
+                    {score}/100
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

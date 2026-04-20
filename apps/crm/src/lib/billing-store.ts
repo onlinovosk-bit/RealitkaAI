@@ -2,8 +2,52 @@ import Stripe from "stripe";
 import { autoErrorCapture } from "./auto-error-capture";
 import { createActivity } from "@/lib/activities-store";
 import { PLAN_KEYS, PLAN_LIMITS, type PlanKey } from "@/lib/billing-types";
-
+import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { logInfo } from "./logger";
+
+// Pomocná funkcia – zapíše account_tier do profiles
+// Preferuje authUserId z metadát, fallback na stripe_customer_id
+async function syncAccountTier(
+  stripeCustomerIdOrAuthUserId: string,
+  priceId: string | null | undefined,
+  opts?: { lockDowngrade?: boolean; resetLock?: boolean; byAuthUserId?: boolean }
+): Promise<void> {
+  const supabase = createServiceRoleClient();
+  if (!supabase) return;
+
+  const tier = resolvePlanKeyFromStripePriceId(priceId);
+  const update: Record<string, string | null> = { account_tier: tier };
+
+  if (opts?.lockDowngrade) {
+    update.tier_locked_at = new Date().toISOString();
+    update.tier_downgraded_from = "enterprise";
+  }
+  if (opts?.resetLock) {
+    update.tier_locked_at = null;
+    update.tier_downgraded_from = null;
+  }
+
+  if (opts?.byAuthUserId) {
+    await supabase
+      .from("profiles")
+      .update(update)
+      .eq("auth_user_id", stripeCustomerIdOrAuthUserId);
+  } else {
+    // Fallback – hľadaj cez email zákazníka zo Stripe
+    const stripe = getStripe();
+    if (!stripe) return;
+    try {
+      const customer = await stripe.customers.retrieve(stripeCustomerIdOrAuthUserId);
+      if (customer.deleted || !("email" in customer) || !customer.email) return;
+      const { data: users } = await supabase.auth.admin.listUsers();
+      const match = users?.users?.find((u) => u.email === customer.email);
+      if (!match) return;
+      await supabase.from("profiles").update(update).eq("auth_user_id", match.id);
+    } catch {
+      // Stripe alebo Supabase lookup zlyhal – tier ostáva nezmenený
+    }
+  }
+}
 function getStripe() {
   const secretKey = process.env.STRIPE_SECRET_KEY;
   if (!secretKey) {
@@ -321,6 +365,16 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
 
   try {
     if (event.type === "checkout.session.completed") {
+      const priceId = object.metadata?.planKey
+        ? BILLING_PLANS.find((p) => p.key === object.metadata.planKey)?.priceId
+        : undefined;
+      const authUserId = object.metadata?.authUserId as string | undefined;
+      if (authUserId) {
+        await syncAccountTier(authUserId, priceId, { byAuthUserId: true, resetLock: true });
+      } else if (object.customer) {
+        await syncAccountTier(object.customer as string, priceId, { resetLock: true });
+      }
+
       await createActivity({
         leadId: null,
         type: "Billing",
@@ -331,15 +385,14 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
         actorName: "Stripe",
         source: "billing",
         severity: "success",
-        meta: {
-          eventType: event.type,
-          customer: object.customer,
-          subscription: object.subscription,
-        },
+        meta: { eventType: event.type, customer: object.customer, subscription: object.subscription },
       });
     }
 
     if (event.type === "customer.subscription.created") {
+      const priceId = (object as Stripe.Subscription).items.data[0]?.price.id;
+      await syncAccountTier(object.customer as string, priceId, { resetLock: true });
+
       await createActivity({
         leadId: null,
         type: "Billing",
@@ -350,15 +403,24 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
         actorName: "Stripe",
         source: "billing",
         severity: "success",
-        meta: {
-          eventType: event.type,
-          customer: object.customer,
-          status: object.status,
-        },
+        meta: { eventType: event.type, customer: object.customer, status: object.status },
       });
     }
 
     if (event.type === "customer.subscription.updated") {
+      const subscription = object as Stripe.Subscription;
+      const newPriceId = subscription.items.data[0]?.price.id;
+      const previousPriceId = (event.data.previous_attributes as any)?.items?.data?.[0]?.price?.id;
+      const wasEnterprise = previousPriceId === process.env.STRIPE_PRICE_ENTERPRISE;
+      const isEnterprise = newPriceId === process.env.STRIPE_PRICE_ENTERPRISE;
+      const isDowngradeFromEnterprise = wasEnterprise && !isEnterprise;
+
+      await syncAccountTier(
+        object.customer as string,
+        newPriceId,
+        isDowngradeFromEnterprise ? { lockDowngrade: true } : { resetLock: isEnterprise }
+      );
+
       await createActivity({
         leadId: null,
         type: "Billing",
@@ -369,15 +431,13 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
         actorName: "Stripe",
         source: "billing",
         severity: "info",
-        meta: {
-          eventType: event.type,
-          customer: object.customer,
-          status: object.status,
-        },
+        meta: { eventType: event.type, customer: object.customer, status: object.status },
       });
     }
 
     if (event.type === "customer.subscription.deleted") {
+      await syncAccountTier(object.customer as string, null);
+
       await createActivity({
         leadId: null,
         type: "Billing",
@@ -388,11 +448,7 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
         actorName: "Stripe",
         source: "billing",
         severity: "warning",
-        meta: {
-          eventType: event.type,
-          customer: object.customer,
-          status: object.status,
-        },
+        meta: { eventType: event.type, customer: object.customer, status: object.status },
       });
     }
 
