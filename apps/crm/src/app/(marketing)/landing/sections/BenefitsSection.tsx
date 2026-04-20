@@ -29,7 +29,6 @@ const MAJITEL_VYHODY = [
   { ikona: "👑", text: "Prehľad celej kancelárie v reálnom čase na jednej obrazovke" },
   { ikona: "🧠", text: "Zdieľaná AI pamäť tímu — každý maklér ťaží zo skúseností kolegov" },
   { ikona: "📊", text: "Automatický týždenný report pre vedenie bez manuálnej práce" },
-  { ikona: "🎯", text: "AI objektívne hodnotí výkon každého makléra" },
   { ikona: "🔮", text: "Sledovanie cien a trendov vo vašej lokalite" },
   { ikona: "⚡", text: "Upozornenie keď konkurencia kontaktuje tvojho klienta" },
   { ikona: "🗺", text: "Správa viacerých pobočiek a lokalít z jedného miesta" },
