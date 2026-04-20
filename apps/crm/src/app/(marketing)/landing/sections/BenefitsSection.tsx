@@ -20,9 +20,7 @@ const MAKLÉR_VYHODY = [
   { ikona: "🗺", text: "Mapa aktivity záujemcov vo tvojej oblasti" },
   { ikona: "💰", text: "Predikcia tvojich príjmov na 3 mesiace dopredu" },
   { ikona: "🧠", text: "AI predikcia pravdepodobnosti uzavretia každého obchodu" },
-  { ikona: "📱", text: "Mobilná aplikácia — plný prístup na cestách" },
   { ikona: "🔗", text: "Prepojenie s Nehnuteľnosti.sk, Reality.sk, TopReality.sk" },
-  { ikona: "🎓", text: "Revolis Academy + certifikát pre makléra" },
 ];
 
 const MAJITEL_VYHODY = [
