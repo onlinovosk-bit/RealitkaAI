@@ -30,15 +30,15 @@ export function buildOwnerTeamAnalytics(
       : 0;
 
   const filtered = cutoff
-    ? leads.filter((l) => new Date(l.createdAt ?? 0).getTime() >= cutoff)
+    ? leads.filter((l) => new Date((l as Record<string, unknown>).created_at as string ?? 0).getTime() >= cutoff)
     : leads;
 
-  const assigned = filtered.filter((l) => (l as any).assigned_to);
-  const closed = filtered.filter((l) => l.status === "Uzatvorený");
+  const assigned = filtered.filter((l) => (l as Record<string, unknown>).assigned_to);
+  const closed = filtered.filter((l) => l.status === "Ponuka");
 
   const agentStats = profiles.map((p) => {
-    const agentLeads = filtered.filter((l) => (l as any).assigned_to === p.id);
-    const agentClosed = agentLeads.filter((l) => l.status === "Uzatvorený");
+    const agentLeads = filtered.filter((l) => (l as Record<string, unknown>).assigned_to === p.id);
+    const agentClosed = agentLeads.filter((l) => l.status === "Ponuka");
     return {
       profileId: p.id,
       name: p.full_name ?? p.email ?? p.id,

@@ -1,6 +1,13 @@
 "use client";
+import { Bot, Clock, Star, TrendingUp, Smile, Briefcase, Zap } from "lucide-react";
 import { useOnboarding } from "../useOnboarding";
 import { PrimaryBtn, SecondaryBtn, Toggle } from "./shared";
+
+const TONE_OPTIONS = [
+  { id: "professional", short: "Profesionálny", Icon: Briefcase },
+  { id: "friendly", short: "Priateľský", Icon: Smile },
+  { id: "energetic", short: "Energický", Icon: Zap },
+];
 
 export default function Step4({ slug }: { slug: string }) {
   const { formData, update, next, back, loaded } = useOnboarding(slug);
