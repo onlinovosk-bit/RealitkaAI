@@ -25,7 +25,6 @@ import {
 import { useRealtimeLeadScore } from "@/hooks/useRealtimeLeadScore";
 import SalesBrainPanel from "@/components/leads/sales-brain-panel";
 import DealStrategyCard from "@/components/leads/deal-strategy-card";
-import EnterpriseAiProcessButton from "@/components/leads/enterprise-ai-process-button";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -326,9 +325,9 @@ export default function LeadDetailPage() {
       });
       const data = await res.json();
       if (data.ok) setSofiaAnswer(data.answer);
-      else setSofiaAnswer(`${AI_ASSISTANT_NAME} momentálne nie je dostupný.`);
+      else setSofiaAnswer(`${AI_ASSISTANT_NAME} momentálne nie je dostupná.`);
     } catch {
-      setSofiaAnswer(`${AI_ASSISTANT_NAME} momentálne nie je dostupný.`);
+      setSofiaAnswer(`${AI_ASSISTANT_NAME} momentálne nie je dostupná.`);
     } finally {
       setSofiaAsking(false);
     }
@@ -584,14 +583,13 @@ export default function LeadDetailPage() {
                 href={`/dashboard?lead=${encodeURIComponent(id)}`}
                 className="block rounded-2xl border border-indigo-500/25 bg-indigo-950/30 px-4 py-3 text-sm text-indigo-100 transition hover:bg-indigo-950/50"
               >
-                <span className="font-semibold text-white">{AI_ASSISTANT_NAME}</span>
+                <span className="font-semibold text-white">AI Asistent (Codai)</span>
                 <span className="mt-0.5 block text-xs text-indigo-200/80">
                   Otvoriť dashboard s kontextom tejto príležitosti →
                 </span>
               </Link>
             ) : null}
             {id ? <SalesBrainPanel leadId={id} /> : null}
-            {id ? <EnterpriseAiProcessButton leadId={id} /> : null}
             {id ? <DealStrategyCard leadId={id} /> : null}
 
             {/* AI Score */}

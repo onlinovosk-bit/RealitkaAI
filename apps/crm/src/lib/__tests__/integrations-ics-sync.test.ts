@@ -26,32 +26,13 @@ vi.mock('@/lib/supabase/server', () => ({
 }));
 import { syncCalendarFromIcs } from '../integrations-store';
 import * as activitiesStore from '../activities-store';
-import type { ActivityItem } from '../activities-store';
 import { describe, it, beforeEach, expect, vi } from 'vitest';
-
-function stubActivity(partial: Partial<ActivityItem> & Pick<ActivityItem, "type" | "text">): ActivityItem {
-  return {
-    id: "test-activity",
-    leadId: partial.leadId ?? null,
-    profileId: partial.profileId ?? null,
-    type: partial.type,
-    title: partial.title ?? "",
-    text: partial.text,
-    entityType: partial.entityType ?? "lead",
-    entityId: partial.entityId ?? null,
-    actorName: partial.actorName ?? "",
-    source: partial.source ?? "system",
-    severity: partial.severity ?? "info",
-    meta: partial.meta ?? {},
-    createdAt: partial.createdAt ?? new Date().toISOString(),
-  };
-}
 
 // Mock fetch for ICS
 const validIcs = `BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:Test Event\nDTSTART:20260321T120000Z\nDTEND:20260321T130000Z\nEND:VEVENT\nEND:VCALENDAR`;
 const emptyIcs = `BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR`;
 
-function mockFetch(response: string, ok = true) {
+function mockFetch(response, ok = true) {
   return vi.fn().mockResolvedValue({
     ok,
     text: async () => response,
@@ -66,9 +47,7 @@ describe('ICS Calendar Sync', () => {
 
   it('Validná synchronizácia ICS', async () => {
     global.fetch = mockFetch(validIcs);
-    const createActivitySpy = vi
-      .spyOn(activitiesStore, 'createActivity')
-      .mockResolvedValue(stubActivity({ profileId: 'lead-1', type: 'Kalendár', text: 'Test Event' }));
+    const createActivitySpy = vi.spyOn(activitiesStore, 'createActivity').mockResolvedValue(undefined);
     const result = await syncCalendarFromIcs('https://test/ics.ics', 'lead-1');
     expect(result.synced).toBe(1);
     expect(result.message).toMatch(/Synchronizovaných udalostí/);
@@ -88,9 +67,7 @@ describe('ICS Calendar Sync', () => {
 
   it('ICS bez udalostí', async () => {
     global.fetch = mockFetch(emptyIcs);
-    const createActivitySpy = vi
-      .spyOn(activitiesStore, 'createActivity')
-      .mockResolvedValue(stubActivity({ type: 'Kalendár', text: '-' }));
+    const createActivitySpy = vi.spyOn(activitiesStore, 'createActivity').mockResolvedValue(undefined);
     const result = await syncCalendarFromIcs('https://test/empty.ics', 'lead-1');
     expect(result.synced).toBe(0);
     expect(result.message).toMatch(/Synchronizovaných udalostí: 0/);
@@ -99,9 +76,7 @@ describe('ICS Calendar Sync', () => {
 
   it('Duplicitné udalosti', async () => {
     global.fetch = mockFetch(validIcs);
-    const createActivitySpy = vi
-      .spyOn(activitiesStore, 'createActivity')
-      .mockResolvedValue(stubActivity({ profileId: 'lead-1', type: 'Kalendár', text: 'Test Event' }));
+    const createActivitySpy = vi.spyOn(activitiesStore, 'createActivity').mockResolvedValue(undefined);
     // First sync
     await syncCalendarFromIcs('https://test/ics.ics', 'lead-1');
     // Second sync (should not create duplicates, but for now just check call count)

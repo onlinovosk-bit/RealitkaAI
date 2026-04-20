@@ -10,8 +10,15 @@ import UserCreateForm from "@/components/team/user-create-form";
 import TeamsTable from "@/components/team/teams-table";
 import TeamUsersTable from "@/components/team/team-users-table";
 import LeadAssignmentTable from "@/components/team/lead-assignment-table";
+import TeamOwnerInsights from "@/components/team/team-owner-insights";
 import { safeServerAction } from "@/lib/safe-action";
 import { getCurrentProfile } from "@/lib/auth";
+import type { Lead } from "@/lib/mock-data";
+import {
+  buildOwnerTeamAnalytics,
+  type AnalyticsPeriod,
+} from "@/lib/owner-team-analytics";
+import { listPersistedMatches } from "@/lib/matching-store";
 import { getTeamDashboardData } from "@/lib/team-store";
 import {
   canManageTeamArea,
@@ -22,10 +29,15 @@ import {
 } from "@/lib/team-visibility";
 import { getFeatureGateState } from "@/lib/feature-gating";
 
+function parseAnalyticsPeriod(raw: string | undefined): AnalyticsPeriod {
+  if (raw === "7d" || raw === "30d") return raw;
+  return "all";
+}
+
 export default async function TeamPage({
   searchParams,
 }: {
-  searchParams: Promise<{ teamId?: string }>;
+  searchParams: Promise<{ teamId?: string; period?: string; target?: string }>;
 }) {
   const params = await searchParams;
   const currentProfile = await getCurrentProfile();
@@ -35,8 +47,8 @@ export default async function TeamPage({
   if (!gate.enabled) {
     return (
       <ModuleShell
-        title="Používatelia a tímy"
-        description="Role-aware pohľady, priraďovanie príležitostí a filtrovanie podľa tímu."
+        title="Môj tím a výkon"
+        description="Správa ľudí, rebríček predajcov, pipeline a rozhodovacie metriky pre majiteľa kancelárie."
       >
         <LockedFeatureCard
           title="Team management je zamknutý"
@@ -57,8 +69,8 @@ export default async function TeamPage({
   if (!result.ok) {
     return (
       <ModuleShell
-        title="Používatelia a tímy"
-        description="Role-aware pohľady, priraďovanie príležitostí a filtrovanie podľa tímu."
+        title="Môj tím a výkon"
+        description="Správa ľudí, rebríček predajcov, pipeline a rozhodovacie metriky pre majiteľa kancelárie."
       >
         <ErrorState
           title="Modul tímov sa nepodarilo načítať"
@@ -75,6 +87,11 @@ export default async function TeamPage({
   const visibleLeadsAll = getVisibleLeadsForProfile(currentProfile as any, leads, profiles);
 
   const selectedTeamId = params.teamId ?? "";
+  const period = parseAnalyticsPeriod(params.period);
+  const parsedTarget = parseInt(params.target ?? "15", 10);
+  const monthlyLeadTargetPerAgent = Number.isFinite(parsedTarget)
+    ? Math.min(80, Math.max(5, parsedTarget))
+    : 15;
 
   const visibleTeams = selectedTeamId
     ? visibleTeamsAll.filter((team) => team.id === selectedTeamId)
@@ -114,10 +131,19 @@ export default async function TeamPage({
     teams.find((team) => team.id === (currentProfile as any)?.teamId)?.name ||
     null;
 
+  const matches = await listPersistedMatches();
+  const ownerAnalytics = buildOwnerTeamAnalytics(
+    visibleProfiles,
+    visibleTeams,
+    visibleLeads as Lead[],
+    matches,
+    { period, monthlyLeadTargetPerAgent },
+  );
+
   return (
     <ModuleShell
-      title="Používatelia a tímy"
-      description="Role-aware pohľady, priraďovanie príležitostí a filtrovanie podľa tímu."
+      title="Môj tím a výkon"
+      description="Správa ľudí, rebríček predajcov, pipeline a rozhodovacie metriky pre majiteľa kancelárie."
     >
       <FeatureGateBanner description="Team management je aktivovaný v tvojom pláne." title="Team management je aktívny" />
 
@@ -133,12 +159,12 @@ export default async function TeamPage({
         </div>
 
         <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Viditeľné leady</p>
+          <p className="text-sm text-gray-500">Viditeľné príležitosti</p>
           <h2 className="mt-2 text-3xl font-bold text-gray-900">{totalLeads}</h2>
         </div>
 
         <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Priradené leady</p>
+          <p className="text-sm text-gray-500">Priradené príležitosti</p>
           <h2 className="mt-2 text-3xl font-bold text-gray-900">{assignedLeads}</h2>
         </div>
 
@@ -147,6 +173,15 @@ export default async function TeamPage({
           teamName={currentTeamName}
         />
       </section>
+
+      <TeamOwnerInsights
+        data={ownerAnalytics}
+        teamQuery={{
+          teamId: selectedTeamId || undefined,
+          period,
+          target: monthlyLeadTargetPerAgent,
+        }}
+      />
 
       <section className="mb-6">
         <TeamFilters

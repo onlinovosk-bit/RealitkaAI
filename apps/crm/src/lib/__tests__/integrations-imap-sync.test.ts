@@ -12,7 +12,7 @@ vi.mock('@/lib/supabase/client', () => ({
 import { describe, it, beforeEach, expect, vi } from 'vitest';
 
 // ESM hoisted mock for createActivity must be declared before any vi.mock
-let createActivityMock: ReturnType<typeof vi.fn>;
+var createActivityMock;
 
 // Error mock for ImapFlow
 class ImapFlowErrorMock {
@@ -51,22 +51,19 @@ class ImapFlowMock {
   logout = vi.fn().mockResolvedValue(undefined);
 }
 
-vi.mock("../activities-store-proxy", () => ({ get createActivity() { return createActivityMock; } }));
-vi.mock("imapflow", () => ({ ImapFlow: ImapFlowMock }));
-vi.mock("node_modules/imapflow", () => ({ ImapFlow: ImapFlowMock }));
+vi.mock('../activities-store-proxy', () => ({ get createActivity() { return createActivityMock; } }), { overwrite: true });
+vi.mock('imapflow', () => ({ ImapFlow: ImapFlowMock }), { overwrite: true });
+vi.mock('node_modules/imapflow', () => ({ ImapFlow: ImapFlowMock }), { overwrite: true });
 
 describe('IMAP Email Sync', () => {
   beforeEach(async () => {
     vi.resetModules();
-    createActivityMock = vi.fn(async (_profileId: string, _kind: string, _subject: string) => undefined);
+    createActivityMock = vi.fn().mockResolvedValue(undefined);
   });
 
   it('Synchronizuje nové emaily', async () => {
     const syncEmailInboxFn = (await import('../integrations-store')).syncEmailInbox;
-    const result = await syncEmailInboxFn(
-      "mock-profile",
-      createActivityMock as Parameters<typeof syncEmailInboxFn>[1],
-    );
+    const result = await syncEmailInboxFn('mock-profile', createActivityMock);
     console.log('createActivityMock calls:', createActivityMock.mock.calls);
     expect(result.synced).toBe(2);
     expect(result.message).toMatch(/Synchronizovaných emailov/);
@@ -76,13 +73,13 @@ describe('IMAP Email Sync', () => {
 
 
   it('Chýbajúca IMAP konfigurácia', async () => {
-    vi.mock("@/lib/supabase/server", () => ({
+    vi.mock('@/lib/supabase/server', () => ({
       createClient: () => ({
         from: () => ({
           select: () => ({ eq: () => ({ single: () => ({ data: null, error: null }) }) }),
         }),
       }),
-    }));
+    }), { overwrite: true });
     const syncEmailInboxFn = (await import('../integrations-store')).syncEmailInbox;
     const result = await syncEmailInboxFn('missing-profile');
     expect(result.synced).toBe(0);

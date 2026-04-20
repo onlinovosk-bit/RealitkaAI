@@ -34,44 +34,21 @@ export default function HowItWorks() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
           viewport={{ once: true, margin: '-80px' }}
-          className="mb-16 text-center"
+          className="text-center mb-16"
         >
-          <p
-            className="mb-6 text-sm uppercase tracking-[0.3em]"
-            style={{ color: '#22D3EE' }}
-          >
-            Ako to funguje?
+          <p className="text-sm uppercase tracking-[0.3em] mb-4"
+             style={{ color: '#22D3EE' }}>
+            Ako to funguje
           </p>
-          <div className="mx-auto max-w-2xl space-y-8">
-            <div className="space-y-3">
-              <p
-                className="text-2xl font-bold sm:text-3xl"
-                style={{ fontFamily: 'var(--font-syne)', color: '#F0F9FF' }}
-              >
-                Ako to funguje
-              </p>
-              <h2
-                className="text-4xl font-extrabold sm:text-5xl"
-                style={{ fontFamily: 'var(--font-syne)', color: '#F0F9FF' }}
-              >
-                Od záujemcu k obchodu.
-                <br />
-                <span style={{ color: '#22D3EE' }}>3 kroky.</span>
-              </h2>
-              <p style={{ color: '#64748B' }}>Bez manuálnej práce. Bez chaosu.</p>
-            </div>
-            <div className="space-y-3 border-t border-slate-800/80 pt-8">
-              <h3
-                className="text-4xl font-extrabold sm:text-5xl"
-                style={{ fontFamily: 'var(--font-syne)', color: '#F0F9FF' }}
-              >
-                Od záujemcu k obchodu.
-                <br />
-                <span style={{ color: '#22D3EE' }}>3 kroky.</span>
-              </h3>
-              <p style={{ color: '#64748B' }}>Bez manuálnej práce. Bez chaosu a stresu.</p>
-            </div>
-          </div>
+          <h2
+            className="text-4xl sm:text-5xl font-extrabold mb-4"
+            style={{ fontFamily: 'var(--font-syne)', color: '#F0F9FF' }}
+          >
+            Od záujemcu k obchodu.
+            <br />
+            <span style={{ color: '#22D3EE' }}>3 kroky.</span>
+          </h2>
+          <p style={{ color: '#64748B' }}>Bez manuálnej práce. Bez chaosu.</p>
         </motion.div>
         {/* Steps */}
         <div className="relative grid grid-cols-1 md:grid-cols-3 gap-8">

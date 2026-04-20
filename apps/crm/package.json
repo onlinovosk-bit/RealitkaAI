@@ -12,19 +12,12 @@
     "seed:properties": "npx tsx scripts/seed-properties-bulk.ts",
     "seed:leads": "npx tsx scripts/seed-leads-bulk.ts",
     "pilot:check": "node scripts/pilot-checklist.mjs",
-    "verify:realtime": "node scripts/verify-realtime.mjs",
-    "verify:sales-brain": "node scripts/verify-sales-brain.mjs",
-    "verify:e2e-user": "node scripts/verify-e2e-test-user.mjs",
-    "test:unit": "vitest run",
-    "test:e2e:call-analyzer": "playwright test tests/call-analyzer.spec.ts --project=chromium-call-analyzer",
-    "test:e2e:public": "playwright test --project=chromium-public",
-    "perf:smoke": "node scripts/perf-http-smoke.mjs"
+    "verify:realtime": "node scripts/verify-realtime.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.9.0",
     "@supabase/supabase-js": "^2.101.1",
     "@types/three": "^0.183.1",
-    "cheerio": "^1.2.0",
     "dotenv": "^17.4.1",
     "fast-xml-parser": "^5.5.11",
     "framer-motion": "^12.38.0",

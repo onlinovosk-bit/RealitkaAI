@@ -1,4 +1,3 @@
-import { BLOG_PROMO_ITEMS } from "@/lib/blog-articles";
 import { listLeads } from "@/lib/leads-store";
 import { listProperties } from "@/lib/properties-store";
 import { listTasks } from "@/lib/tasks-store";
@@ -20,16 +19,6 @@ export async function runSmokeTests(): Promise<{
   checks: SmokeCheck[];
 }> {
   const checks: SmokeCheck[] = [];
-
-  checks.push({
-    key: "blog-promo-config",
-    label: "Blog promo (marketing riadok)",
-    ok: BLOG_PROMO_ITEMS.length >= 1,
-    message:
-      BLOG_PROMO_ITEMS.length >= 1
-        ? `Konfigurácia blogu: ${BLOG_PROMO_ITEMS.length} položiek (BlogPromoTicker).`
-        : "BLOG_PROMO_ITEMS je prázdne — informačný riadok s článkami sa nevykreslí.",
-  });
 
   try {
     const leads = await listLeads();

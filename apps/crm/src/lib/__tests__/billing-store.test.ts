@@ -27,18 +27,13 @@ describe('billing-store', () => {
   });
 
   describe('createCustomerPortalSession', () => {
-    it(
-      'returns hasStripeConfigured: false when STRIPE_SECRET_KEY is missing',
-      async () => {
-        vi.stubEnv('STRIPE_SECRET_KEY', '');
-        vi.resetModules();
-        const { createCustomerPortalSession } = await import('@/lib/billing-store');
-        const result = await createCustomerPortalSession();
-        expect(result.hasStripeConfigured).toBe(false);
-        expect(result.url).toBeNull();
-      },
-      15_000,
-    );
+    it('returns hasStripeConfigured: false when STRIPE_SECRET_KEY is missing', async () => {
+      vi.stubEnv('STRIPE_SECRET_KEY', '');
+      const { createCustomerPortalSession } = await import('@/lib/billing-store');
+      const result = await createCustomerPortalSession();
+      expect(result.hasStripeConfigured).toBe(false);
+      expect(result.url).toBeNull();
+    });
   });
 
   describe('createBillingCheckoutSession', () => {

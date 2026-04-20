@@ -4,3 +4,4 @@
 {"timestamp":"2026-03-25T12:13:29.154Z","context":"getStripe","message":"Neznáma chyba","raw":"Stripe client initialized"}
 {"timestamp":"2026-03-25T12:15:02.004Z","context":"getStripe","message":"Neznáma chyba","raw":"Stripe client initialized"}
 {"timestamp":"2026-03-25T12:15:02.039Z","context":"getStripe","message":"Neznáma chyba","raw":"Stripe client initialized"}
+{"timestamp":"2026-04-19T19:08:29.005Z","context":"getSupabaseClient","message":"Neznáma chyba","raw":"Supabase client initialized (ai-scoring)"}

@@ -133,7 +133,7 @@ export default function PricingCards({ plans }: { plans: Plan[] }) {
               </h2>
 
               {/* Popis */}
-              <p className="text-sm leading-relaxed mb-4" style={{ color: '#64748B' }}>
+              <p className="text-base leading-relaxed mb-4 sm:text-[17px]" style={{ color: '#64748B' }}>
                 {plan.description}
               </p>
 
@@ -166,7 +166,7 @@ export default function PricingCards({ plans }: { plans: Plan[] }) {
 
               {/* Billing note */}
               {plan.billingNote && (
-                <p className="text-xs mb-6" style={{ color: '#475569' }}>
+                <p className="mb-6 text-sm leading-relaxed sm:text-base" style={{ color: '#475569' }}>
                   {plan.billingNote}
                 </p>
               )}
@@ -175,7 +175,7 @@ export default function PricingCards({ plans }: { plans: Plan[] }) {
               {plan.features && plan.features.length > 0 && (
                 <ul className="mb-8 space-y-2.5 flex-1">
                   {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-2.5 text-sm">
+                    <li key={feature} className="flex items-start gap-2.5 text-base sm:text-[17px]">
                       <span style={{ color: '#22D3EE', flexShrink: 0 }}>✓</span>
                       <span style={{ color: '#94A3B8' }}>{feature}</span>
                     </li>

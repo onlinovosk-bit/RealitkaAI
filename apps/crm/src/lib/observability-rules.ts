@@ -62,16 +62,6 @@ export const OBSERVABILITY_RULES: ObservabilityRule[] = [
     severity: "P2",
     action: "Enable degraded mode widgets and inspect slow queries.",
   },
-  {
-    id: "system-smoke-pack",
-    name: "System smoke pack (incl. blog promo config)",
-    area: "api",
-    metric: "GET /api/system/smoke returns ok: true",
-    window: "5m",
-    threshold: "any failure",
-    severity: "P3",
-    action: "Inspect /api/observability/probes and /api/system/smoke checks; verify BlogPromoTicker + BLOG_PROMO_ITEMS.",
-  },
 ];
 
 export const INCIDENT_SEVERITY_MAP: Array<{

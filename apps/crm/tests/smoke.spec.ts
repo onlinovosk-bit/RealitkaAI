@@ -5,7 +5,7 @@ import { test, expect } from '@playwright/test';
 
 const BASE_URL = process.env.E2E_BASE_URL || 'http://localhost:3000';
 
-function randomEmail(prefix: string) {
+function randomEmail(prefix) {
     return `${prefix}_${Math.random().toString(36).substring(2, 8)}@example.com`;
 }
 

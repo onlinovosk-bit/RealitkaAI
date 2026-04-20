@@ -11,42 +11,7 @@ const publicItems = [
   {
     title: "Privacy Policy",
     href: "/privacy-policy",
-    description: "Ako spracúvame osobné údaje, kategórie, retention, práva a cookies.",
-  },
-  {
-    title: "MSA (Master Service Agreement)",
-    href: "/legal/msa",
-    description: "Enterprise zmluva — licencia, cena, dôvernosť, IP, trvanie a export dát.",
-  },
-  {
-    title: "DPA (GDPR)",
-    href: "/legal/dpa",
-    description: "Dohoda o spracovaní osobných údajov — účely, EÚ hosting, práva dotknutých, subprocesori.",
-  },
-  {
-    title: "SLA (detail annex)",
-    href: "/legal/sla",
-    description: "Uptime tier, servisné kredity, priority podpory a AI výkonnostné záruky.",
-  },
-  {
-    title: "Odškodnenie (Indemnification)",
-    href: "/legal/indemnification",
-    description: "Obojstranné odškodnenie a limit zodpovednosti — súčasť MSA.",
-  },
-  {
-    title: "VOP — doplnok k MSA",
-    href: "/legal/enterprise-vop",
-    description: "AUP, API limity a spory — dopĺňa MSA (verejné VOP sú na /terms).",
-  },
-  {
-    title: "Enterprise FAQ",
-    href: "/legal/enterprise-faq",
-    description: "Due diligence: dáta, explainability, EU AI Act, bezpečnosť.",
-  },
-  {
-    title: "Readiness checklist",
-    href: "/legal/readiness-checklist",
-    description: "Kontrola dokumentácie pred enterprise podpisom.",
+    description: "Ako spracúvame osobné údaje, právne základy, retention a práva dotknutých osôb.",
   },
   {
     title: "VOP / Terms",

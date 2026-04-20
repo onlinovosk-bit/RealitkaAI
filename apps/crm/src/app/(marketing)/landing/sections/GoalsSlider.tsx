@@ -121,7 +121,7 @@ export default function GoalsSlider() {
                   ))}
                 </ul>
                 <p className="mt-4 text-center text-sm font-normal text-slate-400">
-                  V ďalšom kroku Ti ukážeme, ako bude vyzerať Tvoj prehľad.
+                  V ďalšom kroku ti ukážeme, ako bude vyzerať tvoj prehľad.
                 </p>
               </div>
               <Link

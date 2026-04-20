@@ -1,5 +1,6 @@
 import { Syne, Instrument_Sans } from 'next/font/google';
 import Hero from './sections/Hero';
+import TickerBanner from './sections/TickerBanner';
 import ProblemSection from './sections/ProblemSection';
 import HowItWorks from './sections/HowItWorks';
 import Metrics from './sections/Metrics';
@@ -19,8 +20,10 @@ import BlogPromoTicker from '@/components/marketing/BlogPromoTicker';
 import { CtaAbProvider } from '@/components/landing/CtaAbProvider';
 import { CTASection } from '@/components/landing/CTASection';
 import { FearReductionSection } from '@/components/landing/FearReductionSection';
+import FounderSpotsLandingStrip from '@/components/landing/FounderSpotsLandingStrip';
 import { HeroSection } from '@/components/landing/HeroSection';
 import { ValueSection } from '@/components/landing/ValueSection';
+import { FounderDiscountSpotsProvider } from '@/components/shared/founder-discount-spots-context';
 
 const syne = Syne({
   subsets: ['latin'],
@@ -46,9 +49,14 @@ export default function LandingPage() {
     >
       {/* 1. Hero – prvý dojem, živý produkt */}
       <Hero />
+      <TickerBanner />
 
-      {/* 1.1 ROI kalkulačka v hero */}
-      <RoiCalculatorHero />
+      {/* 1.0 Uvádzacia zľava — počítadlo (zdieľané s Final CTA) */}
+      <FounderDiscountSpotsProvider>
+        <FounderSpotsLandingStrip />
+
+        {/* 1.1 ROI kalkulačka v hero */}
+        <RoiCalculatorHero />
 
       {/* 2. Problem – emócia, identifikácia problému */}
       <ProblemSection />

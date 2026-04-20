@@ -7,7 +7,6 @@ import OutreachSendPanel from "@/components/outreach/outreach-send-panel";
 import CampaignBuilder from "@/components/outreach/campaign-builder";
 import OutreachLogTable from "@/components/outreach/outreach-log-table";
 import FollowupSequencePanel from "@/components/outreach/followup-sequence-panel";
-import OutboundPanel from "@/components/dashboard/OutboundPanel";
 import { safeServerAction } from "@/lib/safe-action";
 import { listLeads } from "@/lib/leads-store";
 import { listOutreachMessages } from "@/lib/outreach-store";
@@ -79,10 +78,6 @@ export default async function OutreachPage() {
       description="AI automaticky napíše a odošle email klientovi."
     >
       <FeatureGateBanner description="Outreach je aktivovaný v tvojom pláne." title="Outreach je aktívny" />
-
-      <div className="mt-6">
-        <OutboundPanel />
-      </div>
 
       <section className="mt-6 mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">

@@ -18,7 +18,7 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
   },
   {
     key: "playbook",
-    label: "AI Plán krokov",
+    label: "AI Plán práce",
     path: "/playbook",
     emoji: "🎯",
     visibleFor: ["agent", "owner"],

@@ -12,7 +12,7 @@ export function getLandingCtaCopy(variant: LandingCtaVariant) {
       finalCta: {
         title: "Odomkni viac uzavretí s AI",
         subtitle:
-          "AI pripraví ďalší krok a návrh odpovede — ty rozhoduješ, ty uzatváraš.",
+          "AI pripraví ďalší krok a skript — ty rozhoduješ, ty uzatváraš.",
         button: "Začať s Revolis.AI",
       },
     };
