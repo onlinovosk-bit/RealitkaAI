@@ -3,6 +3,7 @@ import Hero from './sections/Hero';
 import TickerBanner from './sections/TickerBanner';
 import ProblemSection from './sections/ProblemSection';
 import HowItWorks from './sections/HowItWorks';
+import BenefitsSection from './sections/BenefitsSection';
 import Metrics from './sections/Metrics';
 import Pipeline from './sections/Pipeline';
 import GoalsSlider from './sections/GoalsSlider';
@@ -80,6 +81,9 @@ export default function LandingPage() {
 
       {/* 3. HowItWorks – 3 kroky, riešenie */}
       <HowItWorks />
+
+      {/* 3.5 Benefits – výhody podľa roly */}
+      <BenefitsSection />
 
       {/* 4. Metrics – dôveryhodnosť číslami */}
       <Metrics />

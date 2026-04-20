@@ -224,3 +224,48 @@ body { background-color: var(--space-bg); }
   66% { transform: translate(-20px, 15px) scale(0.95); }
   100% { transform: translate(0, 0) scale(1); }
 }
+
+/* ============================================
+   RADIANT ENTERPRISE LAYER – L99 Visual System
+   ============================================ */
+
+.radiant-glow-enterprise {
+  background: linear-gradient(135deg,
+    rgba(99, 102, 241, 0.15) 0%,
+    rgba(245, 158, 11, 0.10) 100%
+  );
+  border: 1px solid rgba(99, 102, 241, 0.30);
+  box-shadow:
+    0 0 30px rgba(99, 102, 241, 0.15),
+    0 0 60px rgba(245, 158, 11, 0.08);
+}
+
+.radiant-glow-enterprise:hover {
+  box-shadow:
+    0 0 40px rgba(99, 102, 241, 0.25),
+    0 0 80px rgba(245, 158, 11, 0.12);
+  transition: box-shadow 0.3s ease;
+}
+
+.bri-critical { color: #EF4444; border-color: rgba(239,68,68,0.30); }
+.bri-high     { color: #F59E0B; border-color: rgba(245,158,11,0.30); }
+.bri-medium   { color: #6366F1; border-color: rgba(99,102,241,0.30); }
+.bri-low      { color: #64748B; border-color: rgba(100,116,139,0.30); }
+
+.enterprise-locked {
+  filter: blur(4px);
+  pointer-events: none;
+  user-select: none;
+}
+
+.enterprise-locked-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5, 9, 20, 0.85);
+  backdrop-filter: blur(2px);
+  border-radius: inherit;
+  z-index: 10;
+}

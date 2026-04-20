@@ -8,6 +8,7 @@ import UsageMetricsEnterpriseCard from "@/components/settings/usage-metrics-ente
 import { safeServerAction } from "@/lib/safe-action";
 import { BILLING_PLANS, getCurrentBillingStatus } from "@/lib/billing-store";
 import { requireRole } from "@/lib/permissions";
+import FeatureComparisonTable from "@/components/billing/FeatureComparisonTable";
 
 export default async function BillingPage({
   searchParams,
@@ -115,6 +116,10 @@ export default async function BillingPage({
           features: [...item.features],
         }))}
       />
+
+      <section className="mt-6">
+        <FeatureComparisonTable />
+      </section>
     </ModuleShell>
   );
 }

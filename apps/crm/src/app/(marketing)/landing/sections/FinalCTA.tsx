@@ -173,6 +173,21 @@ export default function FinalCTA() {
             </div>
           </div>
 
+          <div className="flex flex-col items-center gap-2 text-center">
+            <p
+              className="text-2xl font-extrabold tracking-tight"
+              style={{ fontFamily: 'var(--font-syne)', color: '#F0F9FF' }}
+            >
+              Predaj viac · Pracuj menej
+            </p>
+            <p className="text-sm" style={{ color: '#22D3EE' }}>
+              Realitky ktoré víťazia, používajú Revolis.AI
+            </p>
+            <p className="text-xs mt-1" style={{ color: '#334155' }}>
+              Revolis.AI nestojí ani zlomok jedného strateného obchodu.
+            </p>
+          </div>
+
           <div className="flex flex-wrap items-center justify-center gap-3 text-[11px] text-slate-400 max-w-2xl">
             <Link href="/privacy-policy" className="hover:text-cyan-300 transition-colors">
               Zásady ochrany osobných údajov
