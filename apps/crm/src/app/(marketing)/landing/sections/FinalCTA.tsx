@@ -140,23 +140,24 @@ export default function FinalCTA() {
 
             {/* Enterprise */}
             <div className={`${cardShell} lg:order-3 border-indigo-500/30`}>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-indigo-400/90 mb-2">Enterprise</p>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-indigo-400/90 mb-2">Enterprise — pre majiteľov kancelárií</p>
               <div className="flex flex-wrap items-end gap-x-2 gap-y-1 mb-2">
                 <span className="text-3xl font-extrabold text-white" style={{ fontFamily: 'var(--font-syne)' }}>
-                  299 €
+                  399 €
                 </span>
-                <span className="text-slate-400 text-sm mb-0.5">/mes za balík</span>
+                <span className="text-slate-400 text-sm mb-0.5">/mes</span>
               </div>
               <p className="text-sm text-slate-300 mb-5 border-l-2 border-amber-400/40 pl-3">
-                <span className="font-semibold text-amber-200/90">Až 4 licencie</span> — štyria makléri v jednom balíku.
-                Vhodné pre kancelárie a tímy.
+                <span className="font-semibold text-amber-200/90">5 Pro licencií v cene</span> (hodnota 495 €) +
+                exkluzívne nástroje pre majiteľa kancelárie.
               </p>
               <ul className="space-y-2.5 mb-6 flex-1">
                 {[
-                  'Jedna faktúra za celý tím (až 4 makléri)',
-                  'Rovnaké funkcie ako Pro na každej licencii',
-                  'Prioritná podpora a onboarding',
-                  'SLA a súlad podľa dohody',
+                  '5 Pro licencií pre maklérov (hodnota 495 €/mes)',
+                  'Prehľad celej kancelárie v reálnom čase',
+                  'Zdieľaná AI pamäť tímu naprieč maklérmni',
+                  'Upozornenie keď konkurencia kontaktuje tvojho klienta',
+                  'Dedikovaný správca účtu · SLA 1h',
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-2.5 text-sm text-slate-300">
                     <span className="mt-0.5 text-indigo-400/90 flex-shrink-0">•</span>

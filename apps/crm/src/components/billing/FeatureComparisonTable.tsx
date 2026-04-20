@@ -60,7 +60,7 @@ const FEATURES: FeatureRow[] = [
   // Tím
   { category: "Tím",
     feature: "Počet maklérov",
-    starter: "Do 3", pro: "Neobmedzení", enterprise: "Neobmedzení" },
+    starter: "Do 3", pro: "1 licencia / seat", enterprise: "5 licencií v cene" },
   { category: "Tím",
     feature: "Zdieľaná AI pamäť tímu",
     starter: false, pro: false, enterprise: true },
