@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 
 const MAKLÉR_VYHODY = [
-  { ikona: "🤖", text: "AI Asistent odpovie záujemcovi do 2 minút — aj keď ty nespiš" },
+  { ikona: "🤖", text: "AI Asistent odpovie záujemcovi do 2 minút — aj keď ty spiš" },
   { ikona: "📊", text: "Skóre pripravenosti každého záujemcu — vidíš kto je blízko kúpy" },
   { ikona: "📋", text: "Denný AI prehľad o 8:00 — 5 priorít na ráno bez premýšľania" },
   { ikona: "🔔", text: "Okamžitá notifikácia keď záujemca dosiahne vysoké skóre pripravenosti" },
