@@ -211,7 +211,7 @@ export default function DashboardPage() {
         </div>
 
         <section className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <AIAssistBanner />
+          <AIAssistBanner plan={plan ?? "free"} />
           <AssistantPanelDynamic
             defaultLeadId={assistantDefaultLeadId}
             leadOptions={assistantLeadOptions}

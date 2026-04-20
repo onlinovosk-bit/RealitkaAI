@@ -116,6 +116,7 @@ export default function LandingPage() {
 
       {/* Rotujúci blog pás (odkazy prečo Revolis.AI) */}
       <BlogPromoTicker />
+      </FounderDiscountSpotsProvider>
     </main>
   );
 }

@@ -15,7 +15,7 @@ export default function ProblemSection() {
         >
           Strácaš klientov,
           <br />
-          <span className="text-slate-400">pretože nemáš prehľad.</span>
+          <span className="text-slate-400">pretože nemáš dostatok času a občas nemáš prehľad.</span>
         </motion.h2>
 
         <motion.p

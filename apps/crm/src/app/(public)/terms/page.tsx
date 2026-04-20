@@ -1,4 +1,56 @@
 import LegalPageShell from "@/components/legal/legal-page-shell";
+import Link from "next/link";
+
+const legalSuiteChapters = [
+  {
+    title: "Dokument 1: Master Service Agreement (MSA)",
+    summary: "Rozsah služieb, licencia, obchodné podmienky, IP a ukončenie.",
+    href: "/trust-center",
+    cta: "Požiadať o MSA cez Trust Center",
+  },
+  {
+    title: "Dokument 2: Data Processing Agreement (DPA)",
+    summary: "GDPR režim spracovania, subprocesori, incident reporting a bezpečnosť.",
+    href: "/trust-center",
+    cta: "Požiadať o DPA cez Trust Center",
+  },
+  {
+    title: "Dokument 3: Privacy Policy",
+    summary: "Právne základy spracovania, retention a práva dotknutých osôb.",
+    href: "/privacy-policy",
+    cta: "Otvoriť Privacy Policy",
+  },
+  {
+    title: "Dokument 4: Service Level Agreement (SLA)",
+    summary: "Dostupnosť, reakčné časy, servisné kredity a výluky zo SLA.",
+    href: "/support",
+    cta: "Otvoriť Support SLA",
+  },
+  {
+    title: "Dokument 5: Indemnification Clause",
+    summary: "Vzájomné odškodnenie strán a limity zodpovednosti.",
+    href: "/trust-center",
+    cta: "Požiadať o indemnification annex",
+  },
+  {
+    title: "Dokument 6: VOP / Terms",
+    summary: "Self-serve podmienky, fair use limity, black-box AI a export dát.",
+    href: "/terms",
+    cta: "Ste na tejto stránke",
+  },
+  {
+    title: "Dokument 7: AI Compliance & Enterprise FAQ",
+    summary: "AI governance, security posture a odpovede pre enterprise due diligence.",
+    href: "/security",
+    cta: "Otvoriť Security & Compliance",
+  },
+  {
+    title: "Dokument 8: MSA Checklist — Enterprise Readiness",
+    summary: "Praktický readiness plán pred enterprise onboardingom klienta.",
+    href: "/legal/first-client-readiness",
+    cta: "Otvoriť Readiness 14D",
+  },
+];
 
 export const metadata = {
   title: "VOP / Terms | Revolis.AI",
@@ -12,6 +64,28 @@ export default function TermsPage() {
       subtitle="Všeobecné obchodné podmienky pre používanie Revolis.AI. Posledná aktualizácia: 15. apríla 2026."
     >
       <div className="space-y-6 text-sm text-slate-200">
+        <section className="rounded-xl border border-cyan-500/25 bg-cyan-500/5 p-4">
+          <h2 className="text-lg font-semibold text-white">Mapovanie kapitol Legal Suite</h2>
+          <p className="mt-2 text-slate-300">
+            Jednotlivé kapitoly z dokumentu <strong>Revolis AI Legal Suite</strong> sú nasadené na príslušné verejné
+            podstránky alebo cez Trust Center request flow.
+          </p>
+          <div className="mt-4 space-y-3">
+            {legalSuiteChapters.map((chapter) => (
+              <article key={chapter.title} className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+                <h3 className="text-sm font-semibold text-cyan-200">{chapter.title}</h3>
+                <p className="mt-1 text-xs text-slate-300">{chapter.summary}</p>
+                <Link
+                  href={chapter.href}
+                  className="mt-2 inline-block rounded-full border border-cyan-400/40 px-3 py-1 text-[11px] font-semibold text-cyan-100 transition-colors hover:border-cyan-300"
+                >
+                  {chapter.cta}
+                </Link>
+              </article>
+            ))}
+          </div>
+        </section>
+
         <section>
           <h2 className="text-lg font-semibold text-white">1. Licencia a povolené používanie</h2>
           <p className="mt-2 text-slate-300">
