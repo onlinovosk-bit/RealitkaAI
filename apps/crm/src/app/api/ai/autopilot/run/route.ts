@@ -1,0 +1,17 @@
+import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { DEFAULT_AUTOPILOT_RULES } from "@/lib/ai/autopilot-rules";
+import { runAutopilotRules } from "@/lib/ai/autopilot-runner";
+
+export async function POST(req: Request) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
+  const body = (await req.json()) as { leadId: string; score?: number; daysSinceContact?: number; emailClicked?: boolean };
+  const results = await runAutopilotRules(
+    { leadId: body.leadId, score: body.score ?? 50, daysSinceContact: body.daysSinceContact ?? 0, emailClicked: body.emailClicked ?? false },
+    DEFAULT_AUTOPILOT_RULES
+  );
+  return NextResponse.json({ ok: true, results });
+}

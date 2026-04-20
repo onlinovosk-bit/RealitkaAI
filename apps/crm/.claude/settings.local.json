@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(vercel --prod --yes)"
+      "Bash(vercel --prod --yes)",
+      "Bash(xargs grep:*)",
+      "Bash(ls:*)",
+      "Bash(xargs wc:*)"
     ]
   }
 }
