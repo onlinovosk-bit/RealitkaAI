@@ -103,10 +103,30 @@ export default function EnterpriseSalesIntelligencePanel({ enabled }: Props) {
           </div>
         </div>
         <div className="enterprise-locked-overlay">
-          <div className="px-6 text-center">
+          <div className="px-6 text-center max-w-sm mx-auto">
             <p className="mb-2 text-2xl">⭐</p>
             <p className="mb-1 text-sm font-bold text-white">AI Obchodná inteligencia – len Enterprise</p>
-            <p className="mb-4 text-xs text-slate-500">BRI skóre pripravenosti, sledovanie konkurencie, spiace príležitosti a manažérske reporty.</p>
+            <div className="mb-4 grid grid-cols-2 gap-1.5 text-left">
+              {[
+                "BRI skóre pripravenosti kúpy",
+                "Prioritné SMS alerting (BRI ≥ 88)",
+                "Sledovanie konkurencie v reálnom čase",
+                "Spiace príležitosti — obnova starých leadov",
+                "Manažérske reporty pre vlastníka",
+                "AI pamäť celého tímu",
+                "Multi-tím a multi-pobočka",
+                "5 Pro licencií pre maklérov v cene",
+                "Dedikovaný Account Manager",
+                "SLA podpora do 1 hodiny",
+                "API prístup pre vlastné integrácie",
+                "Vlastné automatizácie bez kódu",
+              ].map((f) => (
+                <div key={f} className="flex items-start gap-1.5 text-[11px] text-slate-400">
+                  <span className="mt-px shrink-0 text-indigo-400">✓</span>
+                  {f}
+                </div>
+              ))}
+            </div>
             <Link
               href="/billing"
               className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all hover:scale-105"

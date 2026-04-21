@@ -112,9 +112,6 @@ export const AIAssistBanner = memo(function AIAssistBanner({ plan = "free" }: Pr
         })}
       </ul>
 
-      <p className="mt-4 border-t border-slate-800 pt-3 text-[10px]" style={{ color: "#334155" }}>
-        Revolis.AI ťa nenahradí - pracuje pre teba.
-      </p>
     </article>
   );
 });
