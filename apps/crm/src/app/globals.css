@@ -269,3 +269,23 @@ body { background-color: var(--space-bg); }
   border-radius: inherit;
   z-index: 10;
 }
+
+/* ── L99 Enterprise visual layer ─────────────────────────────── */
+.bg-radiant-enterprise {
+  background: linear-gradient(135deg, #1a237e 0%, #4a148c 50%, #1b4fd8 100%);
+  background-size: 200% 200%;
+  animation: radiant-flow 10s ease infinite;
+}
+
+@keyframes radiant-flow {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.text-gold-gradient {
+  background: linear-gradient(to right, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
