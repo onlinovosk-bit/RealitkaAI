@@ -51,16 +51,13 @@ const FEATURES: FeatureRow[] = [
     feature: "Mapa aktivity v oblasti",
     starter: false, pro: true, enterprise: true },
   { category: "Analytika",
-    feature: "Hodnotenie výkonu maklérov",
-    starter: false, pro: false, enterprise: true },
-  { category: "Analytika",
     feature: "Prehľad majiteľa kancelárie",
     starter: false, pro: false, enterprise: true },
 
   // Tím
   { category: "Tím",
     feature: "Počet maklérov",
-    starter: "Do 3", pro: "1 licencia / seat", enterprise: "5 licencií v cene" },
+    starter: "Do 3", pro: "1 licencia / 1 osoba", enterprise: "5 licencií v cene" },
   { category: "Tím",
     feature: "Zdieľaná AI pamäť tímu",
     starter: false, pro: false, enterprise: true },
@@ -69,9 +66,6 @@ const FEATURES: FeatureRow[] = [
     starter: false, pro: false, enterprise: true },
 
   // Integrácie
-  { category: "Integrácie",
-    feature: "Portály (Nehnuteľnosti.sk, Reality.sk)",
-    starter: false, pro: true, enterprise: true },
   { category: "Integrácie",
     feature: "API prístup",
     starter: false, pro: false, enterprise: true },
@@ -86,9 +80,6 @@ const FEATURES: FeatureRow[] = [
   { category: "Podpora",
     feature: "Dedikovaný správca účtu",
     starter: false, pro: false, enterprise: true },
-  { category: "Podpora",
-    feature: "Prístup k vzdelávacej akadémii",
-    starter: "5 lekcií", pro: "20 modulov", enterprise: "Všetko + vlastný onboarding" },
 ];
 
 function Cell({ value }: { value: string | boolean }) {

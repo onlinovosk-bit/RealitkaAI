@@ -75,11 +75,11 @@ export function MarketHeatmap({ hotspots }: { hotspots: MarketHotspot[] }) {
         <div className="mt-6 flex flex-wrap gap-4 text-[11px] text-slate-500">
           <span className="inline-flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
-            Lead interest
+            Záujemcovia (dopyt)
           </span>
           <span className="inline-flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.7)]" />
-            Properties
+            Nehnuteľnosti (ponuka)
           </span>
         </div>
       </div>

@@ -60,18 +60,26 @@ export default function RevolisAIClient({
       <div className="relative z-10 mx-auto max-w-6xl px-4 py-8 md:px-6">
         <header className="mb-10 flex flex-col gap-6 border-b border-white/10 pb-8 md:flex-row md:items-center md:justify-between">
           <div>
-            <div className="mb-2 flex items-start gap-2 text-indigo-400">
-              <RadiantSpriteIcon icon="revolis-ai" sizeClassName="h-12 w-12" className="mt-0.5" />
-              <span className="text-xs font-bold uppercase tracking-[0.25em]">
-                Revolis Intelligence
-              </span>
+            <div className="mb-3 flex items-center gap-3">
+              <div
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-sm font-bold text-white"
+                style={{
+                  background: "linear-gradient(135deg, #1B4FD8 0%, #22D3EE 100%)",
+                  boxShadow: "0 0 16px rgba(34,211,238,0.4)",
+                }}
+              >
+                R
+              </div>
+              <div>
+                <p className="text-sm font-bold leading-none" style={{ color: "#F0F9FF" }}>Revolis.AI</p>
+                <p className="text-[10px]" style={{ color: "#475569" }}>AI platforma pre maklérov</p>
+              </div>
             </div>
             <h1 className="text-3xl font-black uppercase tracking-tight text-white md:text-4xl">
               AI Párovanie
             </h1>
             <p className="mt-2 max-w-xl text-sm text-slate-400">
-              Denný trhový scan, hustota dopytu a živý Buyer Readiness Index – na
-              jednom mieste.
+              Denný trhový scan, hustota dopytu a živý Buyer Readiness Index – na jednom mieste.
             </p>
           </div>
 
