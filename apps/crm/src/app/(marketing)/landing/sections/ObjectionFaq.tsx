@@ -36,7 +36,7 @@ export default function ObjectionFaq() {
   const [open, setOpen] = useState(0);
   return (
     <section className="bg-slate-950 py-16">
-      <div className="mx-auto max-w-4xl px-6">
+      <div className="mx-auto max-w-4xl px-4 sm:px-6">
         <h3 className="mt-2 text-center text-3xl font-extrabold text-slate-100" style={{ fontFamily: 'var(--font-syne)' }}>
           Často kladené otázky
         </h3>

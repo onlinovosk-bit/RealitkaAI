@@ -44,7 +44,7 @@ export default function AiLoading() {
 
   return (
     <section ref={ref} className="bg-gradient-to-b from-slate-950 to-slate-900 py-24">
-      <div className="mx-auto max-w-lg px-6">
+      <div className="mx-auto max-w-lg px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}

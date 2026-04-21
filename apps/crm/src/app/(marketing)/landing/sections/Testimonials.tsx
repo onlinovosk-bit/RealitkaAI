@@ -104,7 +104,7 @@ const TESTIMONIALS = [
 export default function Testimonials() {
   return (
     <section className="py-28" style={{ background: '#050914' }}>
-      <div className="mx-auto max-w-5xl px-6">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}

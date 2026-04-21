@@ -36,7 +36,7 @@ export default function Pipeline() {
 
   return (
     <section id="pipeline" className="bg-gradient-to-b from-slate-950 to-slate-900 py-28">
-      <div className="mx-auto max-w-6xl px-6">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}

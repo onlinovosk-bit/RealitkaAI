@@ -18,7 +18,7 @@ export default function ResponseBenchmark() {
 
   return (
     <section className="bg-slate-950 py-16">
-      <div className="mx-auto max-w-6xl px-6">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="rounded-3xl border border-slate-700/70 bg-slate-900/50 p-6 md:p-8">
           <p className="text-xs uppercase tracking-[0.25em] text-cyan-300">Porovnanie rýchlosti odpovede s trhom</p>
           <h3 className="mt-2 text-2xl font-extrabold text-slate-100" style={{ fontFamily: 'var(--font-syne)' }}>

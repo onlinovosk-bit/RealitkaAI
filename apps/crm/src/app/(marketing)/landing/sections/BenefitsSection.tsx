@@ -51,7 +51,7 @@ export default function BenefitsSection() {
 
   return (
     <section className="py-28" style={{ background: "#080B12" }}>
-      <div className="mx-auto max-w-6xl px-6">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}

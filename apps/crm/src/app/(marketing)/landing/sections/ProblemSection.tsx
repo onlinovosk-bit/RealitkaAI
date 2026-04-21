@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 export default function ProblemSection() {
   return (
     <section className="bg-black py-28">
-      <div className="mx-auto max-w-4xl px-6 text-center">
+      <div className="mx-auto max-w-4xl px-4 sm:px-6 text-center">
         <motion.h2
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}

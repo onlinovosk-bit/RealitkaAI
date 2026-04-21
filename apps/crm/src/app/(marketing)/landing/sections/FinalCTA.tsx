@@ -18,7 +18,7 @@ export default function FinalCTA() {
         <div className="absolute w-[400px] h-[400px] rounded-full bg-indigo-500/[0.07] blur-[100px]" />
       </div>
 
-      <div className="relative z-10 mx-auto max-w-7xl px-6">
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}

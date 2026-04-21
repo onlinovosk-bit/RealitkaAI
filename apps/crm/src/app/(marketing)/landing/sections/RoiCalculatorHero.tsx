@@ -26,7 +26,7 @@ export default function RoiCalculatorHero() {
 
   return (
     <section className="bg-slate-950 pb-10">
-      <div className="mx-auto max-w-6xl px-6">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="rounded-3xl border border-cyan-400/20 bg-cyan-500/[0.06] p-6 md:p-8">
           <div className="mb-6">
             <p className="text-xs uppercase tracking-[0.25em] text-cyan-300">Kalkulačka návratnosti</p>

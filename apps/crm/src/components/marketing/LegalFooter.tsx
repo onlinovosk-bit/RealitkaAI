@@ -18,7 +18,7 @@ export default function LegalFooter() {
       className="border-t py-8 mt-16"
       style={{ borderColor: "#112240", background: "#050914" }}
     >
-      <div className="mx-auto max-w-6xl px-6">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div
           className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs"
           style={{ color: "#475569" }}

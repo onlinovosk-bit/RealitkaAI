@@ -46,7 +46,7 @@ export const metadata = {
 export default function LandingPage() {
   return (
     <main
-      className={`${syne.variable} ${instrument.variable} bg-slate-950 text-slate-50 min-h-screen`}
+      className={`${syne.variable} ${instrument.variable} bg-slate-950 text-slate-50 min-h-screen overflow-x-hidden`}
       style={{ fontFamily: 'var(--font-instrument)', WebkitFontSmoothing: 'antialiased' }}
     >
       {/* 1. Hero – prvý dojem, živý produkt */}

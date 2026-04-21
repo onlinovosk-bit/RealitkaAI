@@ -129,7 +129,7 @@ export default function Hero() {
 
       <motion.div
         style={{ y: contentY, opacity: contentOpacity }}
-        className="relative z-10 mx-auto w-full max-w-6xl px-6 pt-24 pb-16"
+        className="relative z-10 mx-auto w-full max-w-6xl px-4 sm:px-6 pt-20 pb-12 sm:pt-24 sm:pb-16"
       >
         <div className="flex flex-col lg:flex-row items-center gap-12">
           {/* LEFT */}

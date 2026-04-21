@@ -8,7 +8,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
+    <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth" className="overflow-x-hidden">
       <head>
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-R1GZQFV42V"
@@ -23,7 +23,7 @@ export default function RootLayout({
           `}
         </Script>
       </head>
-      <body suppressHydrationWarning>
+      <body suppressHydrationWarning className="overflow-x-hidden">
         {children}
         <CookieConsentBanner />
       </body>

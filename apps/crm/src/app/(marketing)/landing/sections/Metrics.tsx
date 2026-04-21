@@ -49,7 +49,7 @@ export default function Metrics() {
 
   return (
     <section ref={ref} className="py-24" style={{ background: '#050914' }}>
-      <div className="mx-auto max-w-5xl px-6">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}

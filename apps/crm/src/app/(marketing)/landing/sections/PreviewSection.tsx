@@ -7,7 +7,7 @@ import { RadiantSpriteIcon, type RadiantIconKey } from '@/components/shared/radi
 export default function PreviewSection() {
   return (
     <section className="bg-slate-950 py-28">
-      <div className="mx-auto max-w-6xl px-6">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="flex flex-col lg:flex-row items-center gap-14">
           {/* LEFT */}
           <motion.div
