@@ -212,18 +212,105 @@ export default function L99ScanPage() {
                 </div>
               ))}
             </div>
-
-            {/* Bottom CTA */}
-            <div className="mt-16 flex flex-col items-center gap-4">
-              <a href={UTM_LINK} className="l99-btn">
-                Zistiť hodnotu spiacich kontraktov
-              </a>
-              <p className="text-xs" style={{ color: "#52525B" }}>
-                Bezplatná analýza · Pre majiteľov RK · Výsledok do 24 h · GDPR
-              </p>
-            </div>
           </div>
         </section>
+
+        {/* ── 4. FOOTER / FINAL CONVERSION ── */}
+        <footer style={{ background: "#050509", borderTop: "1px solid rgba(255,255,255,0.08)" }} className="px-4 pb-10 pt-20 sm:px-6">
+          <div className="mx-auto max-w-6xl">
+
+            {/* Conversion card */}
+            <div
+              className="relative mb-20 overflow-hidden rounded-3xl p-8 text-center sm:p-12"
+              style={{ background: "linear-gradient(135deg, rgba(37,99,235,0.18), rgba(6,182,212,0.04))", border: "1px solid rgba(37,99,235,0.30)" }}
+            >
+              {/* Dekoratívna ikona */}
+              <div className="pointer-events-none absolute right-0 top-0 p-8 opacity-10">
+                <svg width="200" height="200" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#60A5FA" }}>
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                  <line x1="12" y1="22.08" x2="12" y2="12" />
+                </svg>
+              </div>
+
+              <h2 className="mb-6 text-3xl font-bold sm:text-5xl">
+                Ste pripravený na audit vášho spiaceho kapitálu?
+              </h2>
+              <p className="mx-auto mb-10 max-w-2xl text-lg sm:text-xl" style={{ color: "#94A3B8" }}>
+                Nežiadame prístup k vašim citlivým dátam. Ukážeme vám prediktívny
+                model na vzorke z vášho regiónu a vy sami vyčíslite hodnotu, o ktorú prichádzate.
+              </p>
+
+              <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+                <a
+                  href={UTM_LINK}
+                  className="rounded-xl px-8 py-4 text-base font-bold text-black transition-all hover:scale-105 hover:bg-blue-400"
+                  style={{ background: "#fff", boxShadow: "0 4px 20px rgba(255,255,255,0.15)" }}
+                >
+                  Rezervovať termín bezplatného auditu
+                </a>
+                <a
+                  href="mailto:andrej@revolis.ai"
+                  className="rounded-xl border px-8 py-4 text-base font-medium transition-all"
+                  style={{ borderColor: "rgba(255,255,255,0.20)", color: "#fff" }}
+                >
+                  Konzultovať s architektom (Andrej Ondruš)
+                </a>
+              </div>
+
+              <p className="mt-8 text-sm" style={{ color: "#71717A" }}>
+                <span className="mr-2 inline-block h-2 w-2 rounded-full" style={{ background: "#3B82F6" }} />
+                Aktuálna dostupnosť pre Prešovský/Košický kraj:{" "}
+                <strong style={{ color: "#CBD5E1" }}>3 voľné sloty na tento týždeň</strong>
+              </p>
+            </div>
+
+            {/* Linky */}
+            <div className="mb-16 grid grid-cols-2 gap-10 text-sm md:grid-cols-4">
+              <div className="col-span-2 md:col-span-1">
+                <div className="mb-5 text-xl font-black tracking-tighter">
+                  REVOLIS<span style={{ color: "#3B82F6" }}>.AI</span>
+                </div>
+                <p className="leading-relaxed" style={{ color: "#71717A" }}>
+                  Enterprise riešenia pre realitné kancelárie novej generácie.
+                  Vyvinuté v technologickom centre ONLINOVO.
+                </p>
+              </div>
+              <div>
+                <h4 className="mb-5 text-[10px] font-bold uppercase tracking-widest" style={{ color: "#71717A" }}>Technológia</h4>
+                <ul className="space-y-3" style={{ color: "#94A3B8" }}>
+                  {["L99 Predictive Engine", "BRI Index (Buyer Readiness)", "Churn Risk Detection"].map((t) => (
+                    <li key={t}>{t}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h4 className="mb-5 text-[10px] font-bold uppercase tracking-widest" style={{ color: "#71717A" }}>Spoločnosť</h4>
+                <ul className="space-y-3" style={{ color: "#94A3B8" }}>
+                  <li><a href="/terms" className="hover:text-blue-400 transition-colors">O nás (ONLINOVO)</a></li>
+                  <li><a href="/privacy" className="hover:text-blue-400 transition-colors">Privacy Policy</a></li>
+                  <li><a href="/support" className="hover:text-blue-400 transition-colors">Support</a></li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="mb-5 text-[10px] font-bold uppercase tracking-widest" style={{ color: "#71717A" }}>Právne informácie</h4>
+                <p className="text-[11px] leading-relaxed" style={{ color: "#71717A" }}>
+                  ONLINOVO, s.&nbsp;r.&nbsp;o.<br />
+                  Štúrova 130/25, 058&nbsp;01 Poprad<br />
+                  IČO: 54166942
+                </p>
+              </div>
+            </div>
+
+            <div
+              className="flex flex-col items-center justify-between gap-4 border-t pt-8 text-[11px] uppercase tracking-widest sm:flex-row"
+              style={{ borderColor: "rgba(255,255,255,0.05)", color: "#52525B" }}
+            >
+              <p>© 2026 Revolis.ai. Všetky práva vyhradené.</p>
+              <p>Design & Architecture by <span style={{ color: "#fff" }}>ONLINOVO</span></p>
+            </div>
+          </div>
+        </footer>
 
       </main>
     </>
