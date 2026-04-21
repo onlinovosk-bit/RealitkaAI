@@ -37,6 +37,10 @@ export default function SupportPage() {
           <a href="mailto:support@revolis.ai" className="underline text-cyan-300">
             support@revolis.ai
           </a>
+          {" "}·{" "}
+          <a href="tel:+421948444014" className="underline text-cyan-300">
+            +421 948 444 014
+          </a>
         </p>
 
         <section className="rounded-xl border border-cyan-500/25 bg-cyan-500/5 p-4">

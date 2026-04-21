@@ -16,6 +16,10 @@ export default function PrivacyPage() {
           Prevádzkovateľ:{" "}
           <strong className="text-white">ONLINOVO, s. r. o.</strong>, Štúrova 130/25, 058 01
           Poprad · IČO: 54166942 ·{" "}
+          <a href="tel:+421948444014" className="text-cyan-400 hover:underline">
+            +421 948 444 014
+          </a>{" "}
+          ·{" "}
           <a href="mailto:privacy@revolis.ai" className="text-cyan-400 hover:underline">
             privacy@revolis.ai
           </a>

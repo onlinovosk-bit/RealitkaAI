@@ -171,6 +171,12 @@ export default function FinalCTA() {
               >
                 Enterprise — kontaktovať predaj
               </Link>
+              <a
+                href="tel:+421948444014"
+                className="block text-center text-xs text-slate-500 transition-colors hover:text-cyan-400 mt-2"
+              >
+                +421 948 444 014
+              </a>
             </div>
           </div>
 

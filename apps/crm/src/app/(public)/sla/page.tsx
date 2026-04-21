@@ -73,6 +73,10 @@ export default function SlaPage() {
             Kredit je potrebné uplatniť do 30 dní od výpadku na{" "}
             <a href="mailto:support@revolis.ai" className="text-cyan-400">
               support@revolis.ai
+            </a>{" "}
+            alebo telefonicky{" "}
+            <a href="tel:+421948444014" className="text-cyan-400">
+              +421 948 444 014
             </a>
             . Kredit sa uplatňuje na nasledujúcu faktúru.
           </p>

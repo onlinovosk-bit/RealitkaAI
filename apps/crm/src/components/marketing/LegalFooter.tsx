@@ -35,6 +35,10 @@ export default function LegalFooter() {
         </div>
         <p className="mt-4 text-center text-xs" style={{ color: "#334155" }}>
           © {YEAR} ONLINOVO, s. r. o. · IČO: 54166942 ·{" "}
+          <a href="tel:+421948444014" className="transition-colors hover:text-cyan-400">
+            +421 948 444 014
+          </a>{" "}
+          ·{" "}
           <a
             href="mailto:legal@revolis.ai"
             className="transition-colors hover:text-cyan-400"
