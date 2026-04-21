@@ -31,7 +31,7 @@ function LiveLeadCounter() {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 1 }}
-      className="inline-flex items-center gap-3 rounded-2xl border border-red-500/20 bg-red-500/5 px-5 py-3 mt-6"
+      className="inline-flex flex-wrap items-center gap-3 rounded-2xl border border-red-500/20 bg-red-500/5 px-5 py-3 mt-6 max-w-full"
     >
       <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
         <span className="text-xs text-slate-400">Odhad ušlých príležitostí bez AI dnes:</span>
@@ -129,11 +129,11 @@ export default function Hero() {
 
       <motion.div
         style={{ y: contentY, opacity: contentOpacity }}
-        className="relative z-10 mx-auto w-full max-w-6xl px-4 sm:px-6 pt-20 pb-12 sm:pt-24 sm:pb-16"
+        className="relative z-10 mx-auto w-full max-w-6xl px-4 sm:px-6 pt-20 pb-12 sm:pt-24 sm:pb-16 overflow-x-hidden"
       >
         <div className="flex flex-col lg:flex-row items-center gap-12">
           {/* LEFT */}
-          <div className="flex-1 space-y-6">
+          <div className="flex-1 min-w-0 w-full space-y-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -148,7 +148,7 @@ export default function Hero() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className="text-5xl lg:text-6xl font-extrabold leading-[1.05] tracking-tight"
+              className="text-[1.6rem] leading-[1.15] sm:text-5xl lg:text-6xl font-extrabold tracking-tight break-words w-full"
               style={{ fontFamily: 'var(--font-syne)' }}
             >
               Získaj viac klientov.
@@ -164,7 +164,7 @@ export default function Hero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="text-lg text-slate-300 max-w-lg"
+              className="text-base sm:text-lg text-slate-300 max-w-full sm:max-w-lg"
             >
               Revolis.AI každý deň vyberie najdôležitejšie príležitosti, nájde vhodné
               nehnuteľnosti a povie tvojmu tímu čo robiť — skôr než príde do práce.
