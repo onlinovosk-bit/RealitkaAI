@@ -105,8 +105,8 @@ export default function EnterpriseSalesIntelligencePanel({ enabled }: Props) {
         <div className="enterprise-locked-overlay">
           <div className="px-6 text-center">
             <p className="mb-2 text-2xl">⭐</p>
-            <p className="mb-1 text-sm font-bold text-white">AI Sales Intelligence – len Enterprise</p>
-            <p className="mb-4 text-xs text-slate-500">BRI skóre, sledovanie konkurencie, dormantné príležitosti a executive reporting.</p>
+            <p className="mb-1 text-sm font-bold text-white">AI Obchodná inteligencia – len Enterprise</p>
+            <p className="mb-4 text-xs text-slate-500">BRI skóre pripravenosti, sledovanie konkurencie, spiace príležitosti a manažérske reporty.</p>
             <Link
               href="/billing"
               className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all hover:scale-105"
