@@ -141,7 +141,7 @@ export default function Hero() {
               className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-4 py-1.5 text-sm text-cyan-300"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-              Toto nie je ďalší CRM. Je to tvoj AI obchodník.
+              L99 Engine — prediktívny operačný systém pre zisk
             </motion.div>
 
             <motion.h1
@@ -151,12 +151,12 @@ export default function Hero() {
               className="text-[1.6rem] leading-[1.15] sm:text-5xl lg:text-6xl font-extrabold tracking-tight break-words w-full"
               style={{ fontFamily: 'var(--font-syne)' }}
             >
-              Získaj viac klientov.
+              Premeňte CRM na stroj,
               <br />
-              Uzatváraj viac obchodov.
+              ktorý generuje mandáty
               <br />
               <span className="bg-gradient-to-r from-cyan-300 via-sky-300 to-indigo-400 bg-clip-text text-transparent">
-                Bez chaosu.
+                skôr než konkurencia zdvihne telefón.
               </span>
             </motion.h1>
 
@@ -166,28 +166,26 @@ export default function Hero() {
               transition={{ duration: 0.6, delay: 0.4 }}
               className="text-base sm:text-lg text-slate-300 max-w-full sm:max-w-lg"
             >
-              Revolis.AI každý deň vyberie najdôležitejšie príležitosti, nájde vhodné
-              nehnuteľnosti a povie tvojmu tímu čo robiť — skôr než príde do práce.
+              Revolis.AI L99 Engine analyzuje správanie vašej databázy v reálnom čase.
+              Identifikujeme skrytý predajný zámer vašich bývalých klientov a doručíme
+              vám exkluzívne príležitosti s&nbsp;0&nbsp;% konkurenciou.
             </motion.p>
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.5 }}
-              className="flex flex-wrap gap-4"
+              className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4"
             >
               <Link
                 href="/register"
-                className="relative rounded-full bg-cyan-400 px-7 py-3.5 text-sm font-bold text-slate-950 shadow-[0_0_40px_rgba(34,211,238,0.6)] transition-all duration-200 hover:scale-105 hover:bg-cyan-300 hover:shadow-[0_0_60px_rgba(34,211,238,0.8)] active:scale-95"
+                className="relative rounded-full bg-cyan-400 px-7 py-3.5 text-sm font-bold text-slate-950 shadow-[0_0_40px_rgba(34,211,238,0.6)] transition-all duration-200 hover:scale-105 hover:bg-cyan-300 hover:shadow-[0_0_60px_rgba(34,211,238,0.8)] active:scale-95 text-center"
               >
-                Aktivovať Revolis.AI — 99 €/mes za makléra
+                Zistiť hodnotu spiacich kontraktov
               </Link>
-              <Link
-                href="#pipeline"
-                className="rounded-full border border-slate-600/80 bg-slate-900/50 px-7 py-3.5 text-sm font-medium text-slate-100 backdrop-blur-lg transition-all duration-200 hover:border-cyan-300/70 hover:bg-slate-900/80 hover:text-cyan-100"
-              >
-                Pozrieť demo naživo
-              </Link>
+              <div className="flex flex-col justify-center">
+                <span className="text-[11px] text-slate-500 sm:pl-1">Bezplatná analýza · Pre majiteľov RK · Výsledok do 24 h</span>
+              </div>
             </motion.div>
 
             <motion.div

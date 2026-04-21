@@ -15,6 +15,7 @@ import RoiCalculatorHero from './sections/RoiCalculatorHero';
 import ResponseBenchmark from './sections/ResponseBenchmark';
 import MiniPlaybookDemo from './sections/MiniPlaybookDemo';
 import IntegrationsTrustStrip from './sections/IntegrationsTrustStrip';
+import L99ComparisonSection from './sections/L99ComparisonSection';
 import ObjectionFaq from './sections/ObjectionFaq';
 import ProofNumbers from './sections/ProofNumbers';
 import BlogPromoTicker from '@/components/marketing/BlogPromoTicker';
@@ -62,6 +63,9 @@ export default function LandingPage() {
 
       {/* 2. Problem – emócia, identifikácia problému */}
       <ProblemSection />
+
+      {/* 2.5 L99 Strategic Gap – tradičné vs Revolis */}
+      <L99ComparisonSection />
 
       {/* 2.0 AI Asistent — messaging (Hero + value + trust + CTA) */}
       <CtaAbProvider>

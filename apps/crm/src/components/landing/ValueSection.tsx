@@ -1,17 +1,20 @@
 const items = [
   {
-    title: "Shadow Inventory Engine™",
-    body: "Odomknite neviditeľnú ponuku. Naša AI identifikuje budúcich predajcov vo vašej vlastnej databáze skôr, než stihnú zavolať konkurencii. Aktivujte prediktívny re-sale.",
+    tag: "Eliminácia mŕtveho kapitálu",
+    title: "Vracíme vám ROI z marketingu, ktorý ste už raz zaplatili.",
+    body: "AI autonómne ohreje vašu databázu. Sleduje, kedy sa starý kontakt vráti na web, kedy si pozerá hypotéky alebo odhad ceny — a upozorní vás skôr, než zdvihne telefón konkurencii.",
     isEnterprise: true,
   },
   {
-    title: "Buyer Readiness Index (BRI)™",
-    body: "Nestrácajte čas s 'turistami'. Asistent AI v reálnom čase vyhodnocuje nákupný úmysel a prioritizuje záujemcov s BRI skóre nad 85. Volajte na istotu.",
+    tag: "AI Audit výkonnosti tímu",
+    title: "High-Value List o 08:00 — 5 kontaktov s 85 %+ pravdepodobnosťou konverzie.",
+    body: "AI nezabudne na top klienta namiesto makléra. Každé ráno dostanete objektívny prehľad priority bez emócií. Dohľad nad kvalitou práce tímu bez mikromanagementu.",
     isEnterprise: true,
   },
   {
-    title: "Autonomous Sales Loops",
-    body: "Váš Asistent AI pracuje, kým vy spíte. Automatizovane kvalifikuje leady a pripraví vám presný komunikačný skript na mieru pre každý konkrétny obchodný prípad.",
+    tag: "Mandate Hunter",
+    title: "Exkluzívne mandáty v obývačke klienta — nie v aukcii na portáli.",
+    body: "Revolis identifikuje signály predajného zámeru (latentný intent) týždne pred zverejnením inzerátu. Získajte mandát v čase, keď ešte neexistuje konkurencia.",
     isEnterprise: false,
   },
 ];
@@ -48,8 +51,11 @@ export function ValueSection() {
               </div>
             )}
 
+            <p className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-cyan-400/70">
+              {item.tag}
+            </p>
             <h3
-              className="mb-3 text-xl font-bold"
+              className="mb-3 text-base font-bold leading-snug"
               style={{ color: item.isEnterprise ? "#F0F9FF" : "#CBD5E1" }}
             >
               {item.title}
