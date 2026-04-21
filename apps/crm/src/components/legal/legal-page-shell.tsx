@@ -8,17 +8,18 @@ type LegalPageShellProps = {
 
 const legalNavItems = [
   { href: "/legal", label: "Legal Hub" },
-  { href: "/privacy-policy", label: "Privacy Policy" },
   { href: "/terms", label: "VOP / Terms" },
-  { href: "/security", label: "Security & Compliance" },
-  { href: "/status", label: "Status" },
+  { href: "/privacy", label: "Ochrana údajov" },
+  { href: "/privacy-policy", label: "Privacy Policy (detail)" },
+  { href: "/cookies", label: "Cookies" },
+  { href: "/aup", label: "Pravidlá (AUP)" },
+  { href: "/sla", label: "SLA" },
+  { href: "/security", label: "Bezpečnosť" },
   { href: "/trust-center", label: "Trust Center" },
-  { href: "/cookie-policy", label: "Cookie Policy" },
-  { href: "/support", label: "Support SLA" },
-  { href: "/legal/first-client-readiness", label: "Readiness 14D" },
-  { href: "/legal/quality-gate", label: "Quality Gate" },
-  { href: "/status/incidents", label: "Incident Log" },
-  { href: "/legal/changelog", label: "Legal Changelog" },
+  { href: "/legal/sub-processors", label: "Sub-procesori" },
+  { href: "/status", label: "Status" },
+  { href: "/support", label: "Support" },
+  { href: "/legal/changelog", label: "Changelog" },
 ];
 
 export default function LegalPageShell({ title, subtitle, children }: LegalPageShellProps) {

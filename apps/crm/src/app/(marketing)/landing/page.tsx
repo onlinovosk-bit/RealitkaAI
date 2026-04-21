@@ -25,6 +25,7 @@ import FounderSpotsLandingStrip from '@/components/landing/FounderSpotsLandingSt
 import { HeroSection } from '@/components/landing/HeroSection';
 import { ValueSection } from '@/components/landing/ValueSection';
 import { FounderDiscountSpotsProvider } from '@/components/shared/founder-discount-spots-context';
+import LegalFooter from '@/components/marketing/LegalFooter';
 
 const syne = Syne({
   subsets: ['latin'],
@@ -121,6 +122,8 @@ export default function LandingPage() {
       {/* Rotujúci blog pás (odkazy prečo Revolis.AI) */}
       <BlogPromoTicker />
       </FounderDiscountSpotsProvider>
+
+      <LegalFooter />
     </main>
   );
 }
