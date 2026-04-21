@@ -116,11 +116,34 @@ export function estimatePopradGoldListingBri(): number {
   return 87;
 }
 
+/** Interné testovacie leady pre Poprad gold-matching simuláciu (nezobrazujú sa v UI). */
+const _popradSimLeads: Lead[] = [
+  {
+    id: "6",
+    name: "Lucia Petrášová",
+    email: "lucia.petrasova@email.com",
+    phone: "+421 905 600 600",
+    location: "Poprad - Západ",
+    budget: "704 €/mes",
+    propertyType: "Byt",
+    rooms: "3 izby",
+    financing: "Hotovosť",
+    timeline: "Ihneď",
+    source: "Organický web",
+    status: "Horúci",
+    score: 93,
+    assignedAgent: "Lucia Hrivnáková",
+    assignedProfileId: "33333333-3333-3333-3333-333333333331",
+    lastContact: "Dnes 08:00",
+    note: "Hľadá prenájom v Poprade, balkón a parking výhodou.",
+  },
+];
+
 /**
  * Simulácia: leady z `leads` s zhodou na zlatý byt nad prahem (default 90 %).
  */
 export function runPopradGoldMatchingSimulation(minScore = 90) {
-  return getMatchingLeadsForProperty(GOLD_STANDARD_POPRAD_STUROVA_3I, leads, minScore);
+  return getMatchingLeadsForProperty(GOLD_STANDARD_POPRAD_STUROVA_3I, _popradSimLeads, minScore);
 }
 
 export const activities: Activity[] = [
