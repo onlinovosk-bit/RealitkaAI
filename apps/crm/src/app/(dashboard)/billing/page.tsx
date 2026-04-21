@@ -109,7 +109,7 @@ export default async function BillingPage({
           key: item.key,
           name: item.name,
           priceLabel: item.priceLabel,
-          originalPriceLabel: item.originalPriceLabel,
+          originalPriceLabel: (item as { originalPriceLabel?: string }).originalPriceLabel,
           description: item.description,
           billingNote: item.billingNote,
           recommended: item.recommended,

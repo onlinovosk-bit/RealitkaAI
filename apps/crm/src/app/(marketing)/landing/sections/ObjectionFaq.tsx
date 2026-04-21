@@ -16,7 +16,7 @@ const faq = [
   },
   {
     q: 'Oplatí sa to finančne?',
-    a: 'Revolis.AI nestojí ani zlomok jedného strateného obchodu. Priemerná maklérska provízia na Slovensku je 2 000 – 4 000 €. Mesačné predplatné Starter stojí 49 €. Stačí uzatvoriť o jeden obchod viac za rok — a systém sa zaplatí mnohonásobne.',
+    a: '<strong><em>Revolis.AI nestojí ani zlomok jedného strateného obchodu.</em></strong> Priemerná maklérska provízia na Slovensku je 2 000 – 4 000 €. Mesačné predplatné Starter stojí 49 €. Stačí uzatvoriť o jeden obchod viac za rok — a systém sa zaplatí mnohonásobne.',
   },
   {
     q: 'Môžem to vyskúšať bez záväzku?',
@@ -48,7 +48,12 @@ export default function ObjectionFaq() {
                 <span className="text-sm font-semibold text-slate-100">{item.q}</span>
                 <span className="text-cyan-300">{open === i ? '−' : '+'}</span>
               </button>
-              {open === i && <p className="mt-3 text-sm text-slate-400">{item.a}</p>}
+              {open === i && (
+                <p
+                  className="mt-3 text-sm text-slate-400"
+                  dangerouslySetInnerHTML={{ __html: item.a }}
+                />
+              )}
             </div>
           ))}
         </div>

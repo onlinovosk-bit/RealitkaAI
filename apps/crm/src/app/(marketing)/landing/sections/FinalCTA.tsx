@@ -181,10 +181,10 @@ export default function FinalCTA() {
             >
               Predaj viac · Pracuj menej
             </p>
-            <p className="text-sm" style={{ color: '#22D3EE' }}>
+            <p className="text-base font-semibold" style={{ color: '#22D3EE' }}>
               Realitky ktoré víťazia, používajú Revolis.AI
             </p>
-            <p className="text-xs mt-1" style={{ color: '#334155' }}>
+            <p className="text-sm mt-1 font-bold italic" style={{ color: '#64748B' }}>
               Revolis.AI nestojí ani zlomok jedného strateného obchodu.
             </p>
           </div>

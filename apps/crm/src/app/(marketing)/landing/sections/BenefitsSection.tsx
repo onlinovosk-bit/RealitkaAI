@@ -20,7 +20,6 @@ const MAKLÉR_VYHODY = [
   { ikona: "🗺", text: "Mapa aktivity záujemcov vo tvojej oblasti" },
   { ikona: "💰", text: "Predikcia tvojich príjmov na 3 mesiace dopredu" },
   { ikona: "🧠", text: "AI predikcia pravdepodobnosti uzavretia každého obchodu" },
-  { ikona: "🔗", text: "Prepojenie s Nehnuteľnosti.sk, Reality.sk, TopReality.sk" },
 ];
 
 const MAJITEL_VYHODY = [

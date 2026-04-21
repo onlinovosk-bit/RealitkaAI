@@ -79,7 +79,6 @@ export const BILLING_PLANS = [
     name: "Starter",
     priceId: process.env.STRIPE_PRICE_STARTER || "",
     priceLabel: "49 € / mesiac",
-    originalPriceLabel: "98 € / mesiac",
     description:
       "Ideálny štart pre samostatných maklérov. AI Asistent odpovedá počas pracovných hodín, Buyer Readiness Index prioritizuje tvoje príležitosti a denný briefing ti povie čo robiť každé ráno. Väčšina maklérov vidí prvé výsledky do 7 dní.",
     billingNote: "Fakturované mesačne · Zrušenie kedykoľvek · Do 3 maklérov · Podpora 48h",
@@ -142,7 +141,6 @@ export const BILLING_PLANS = [
     name: "Enterprise",
     priceId: process.env.STRIPE_PRICE_ENTERPRISE || "",
     priceLabel: "399 € / mesiac",
-    originalPriceLabel: "798 € / mesiac",
     description:
       "Brokerage OS pre majiteľov kancelárií. Zahŕňa 5 Pro licencií pre maklérov + exkluzívne owner nástroje: prehľad celej kancelárie, zdieľaná AI pamäť tímu, sledovanie konkurencie a executive reporting. Pro je pre makléra. Enterprise je pre majiteľa.",
     billingNote: "5 Pro licencií v cene · Multi-tím · SLA 1h · Dedikovaný AM · Zrušenie kedykoľvek",

@@ -128,7 +128,15 @@ export default function PricingCards({ plans }: { plans: Plan[] }) {
               )}
 
               {/* Názov */}
-              <h2 className="text-xl font-bold mb-2" style={{ color: '#F0F9FF' }}>
+              <h2
+                className="text-xl mb-2"
+                style={{
+                  color: '#FFFFFF',
+                  fontWeight: isPro ? 700 : 800,
+                  fontSize: isPro ? undefined : '1.35rem',
+                  letterSpacing: isPro ? undefined : '0.02em',
+                }}
+              >
                 {plan.name}
               </h2>
 
@@ -140,7 +148,7 @@ export default function PricingCards({ plans }: { plans: Plan[] }) {
               {/* Cena */}
               <div className="mb-2">
                 {plan.originalPriceLabel && (
-                  <p className="text-sm line-through mb-1" style={{ color: '#334155' }}>
+                  <p className="text-sm font-bold line-through mb-1" style={{ color: '#94A3B8' }}>
                     {plan.originalPriceLabel}
                   </p>
                 )}

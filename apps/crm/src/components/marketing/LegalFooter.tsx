@@ -42,7 +42,7 @@ export default function LegalFooter() {
             legal@revolis.ai
           </a>
         </p>
-        <p className="mt-2 text-center text-[10px]" style={{ color: "#1e293b" }}>
+        <p className="mt-2 text-center text-[10px]" style={{ color: "#475569" }}>
           Revolis.AI využíva technológiu Asistent AI. Všetky predikcie majú informatívny charakter.
         </p>
       </div>
