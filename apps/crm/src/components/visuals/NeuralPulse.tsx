@@ -1,7 +1,8 @@
 "use client";
-import React, { useRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
+import type { Particle } from "@/types/intelligence-hub";
 
-export const NeuralPulse = () => {
+export function NeuralPulse() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -10,94 +11,92 @@ export const NeuralPulse = () => {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    type Particle = { x: number; y: number; vx: number; vy: number; size: number };
     let particles: Particle[] = [];
-    let mouse = { x: -999, y: -999 };
-    let animId: number;
+    let animationId: number;
+    const mouse = { x: -9999, y: -9999 };
 
-    const resize = () => {
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
-    };
+    function resize(): void {
+      if (!canvas) return;
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
 
-    const init = () => {
-      particles = [];
-      for (let i = 0; i < 85; i++) {
-        particles.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height,
-          vx: (Math.random() - 0.5) * 0.4,
-          vy: (Math.random() - 0.5) * 0.4,
-          size: Math.random() * 1.5,
-        });
+    function init(): void {
+      if (!canvas) return;
+      particles = Array.from({ length: 85 }, () => ({
+        x:    Math.random() * canvas!.width,
+        y:    Math.random() * canvas!.height,
+        vx:   (Math.random() - 0.5) * 0.4,
+        vy:   (Math.random() - 0.5) * 0.4,
+        size: Math.random() * 1.5 + 0.5,
+      }));
+    }
+
+    function drawConnections(): void {
+      if (!ctx || !canvas) return;
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx   = particles[i].x - particles[j].x;
+          const dy   = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 120) {
+            ctx.beginPath();
+            ctx.strokeStyle = `rgba(37,99,235,${0.15 * (1 - dist / 120)})`;
+            ctx.lineWidth   = 0.5;
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.stroke();
+          }
+        }
       }
-    };
+    }
 
-    const animate = () => {
+    function animate(): void {
+      if (!ctx || !canvas) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
       particles.forEach((p) => {
         p.x += p.vx;
         p.y += p.vy;
-        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
-        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
-
-        const dx = mouse.x - p.x;
-        const dy = mouse.y - p.y;
+        if (p.x < 0 || p.x > canvas!.width)  p.vx *= -1;
+        if (p.y < 0 || p.y > canvas!.height) p.vy *= -1;
+        const dx   = mouse.x - p.x;
+        const dy   = mouse.y - p.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 180) {
-          p.x -= dx * 0.012;
-          p.y -= dy * 0.012;
+        if (dist < 180 && dist > 0) {
+          p.x -= (dx / dist) * 1.5;
+          p.y -= (dy / dist) * 1.5;
         }
-
-        // Línie medzi blízkymi časticami
-        particles.forEach((p2) => {
-          const dx2 = p.x - p2.x;
-          const dy2 = p.y - p2.y;
-          const d2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
-          if (d2 < 100) {
-            ctx.beginPath();
-            ctx.strokeStyle = `rgba(37,99,235,${0.15 * (1 - d2 / 100)})`;
-            ctx.lineWidth = 0.5;
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(p2.x, p2.y);
-            ctx.stroke();
-          }
-        });
-
         ctx.beginPath();
-        ctx.fillStyle = "rgba(37, 99, 235, 0.35)";
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(37,99,235,0.35)";
         ctx.fill();
       });
+      drawConnections();
+      animationId = requestAnimationFrame(animate);
+    }
 
-      animId = requestAnimationFrame(animate);
-    };
+    const onMove  = (e: MouseEvent) => { mouse.x = e.clientX; mouse.y = e.clientY; };
+    const onLeave = () => { mouse.x = -9999; mouse.y = -9999; };
 
-    const onMouseMove = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      mouse.x = e.clientX - rect.left;
-      mouse.y = e.clientY - rect.top;
-    };
-
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("resize", resize);
-    resize();
-    init();
-    animate();
+    window.addEventListener("mousemove",  onMove);
+    window.addEventListener("mouseleave", onLeave);
+    window.addEventListener("resize",     resize);
+    resize(); init(); animate();
 
     return () => {
-      cancelAnimationFrame(animId);
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("resize", resize);
+      cancelAnimationFrame(animationId);
+      window.removeEventListener("mousemove",  onMove);
+      window.removeEventListener("mouseleave", onLeave);
+      window.removeEventListener("resize",     resize);
     };
   }, []);
 
   return (
     <canvas
       ref={canvasRef}
-      className="absolute inset-0 w-full h-full"
-      style={{ background: "transparent" }}
+      className="fixed inset-0 -z-10"
+      style={{ background: "#010103" }}
+      aria-hidden="true"
     />
   );
-};
+}

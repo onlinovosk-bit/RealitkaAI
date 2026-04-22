@@ -5,7 +5,18 @@ import { PLAN_KEYS, PLAN_LIMITS, type PlanKey } from "@/lib/billing-types";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { logInfo } from "./logger";
 
-// Pomocná funkcia – zapíše account_tier do profiles
+// Mapovanie tier → ui_role
+const TIER_TO_UI_ROLE: Record<string, string> = {
+  free:                "agent",
+  starter:             "agent",
+  pro:                 "agent",
+  enterprise:          "owner_vision",
+  market_vision:       "owner_vision",
+  command:             "owner_protocol",
+  protocol_authority:  "owner_protocol",
+};
+
+// Pomocná funkcia – zapíše account_tier + ui_role do profiles
 // Preferuje authUserId z metadát, fallback na stripe_customer_id
 async function syncAccountTier(
   stripeCustomerIdOrAuthUserId: string,
@@ -15,8 +26,13 @@ async function syncAccountTier(
   const supabase = createServiceRoleClient();
   if (!supabase) return;
 
-  const tier = resolvePlanKeyFromStripePriceId(priceId);
-  const update: Record<string, string | null> = { account_tier: tier };
+  const tier    = resolvePlanKeyFromStripePriceId(priceId);
+  const uiRole  = TIER_TO_UI_ROLE[tier] ?? "agent";
+  const update: Record<string, string | null | boolean> = {
+    account_tier:    tier,
+    ui_role:         uiRole,
+    protocol_active: uiRole === "owner_protocol",
+  };
 
   if (opts?.lockDowngrade) {
     update.tier_locked_at = new Date().toISOString();
@@ -74,9 +90,11 @@ async function loadAuthHelpers() {
 }
 
 export const BILLING_PLANS = [
+  // ── SMART START ──────────────────────────────────────────────────────────
   {
     key: PLAN_KEYS.STARTER,
-    name: "Starter",
+    landingName: "Smart Start",
+    name: "Smart Start",
     priceId: process.env.STRIPE_PRICE_STARTER || "",
     priceLabel: "49 € / mesiac",
     description:
@@ -103,71 +121,88 @@ export const BILLING_PLANS = [
     founderPrice: true,
     founderNote: "Zakladateľská cena – prvých 20 kancelárií",
   },
+  // ── ACTIVE FORCE ─────────────────────────────────────────────────────────
   {
     key: PLAN_KEYS.PRO,
-    name: "Pro",
+    landingName: "Active Force",
+    name: "Active Force",
     priceId: process.env.STRIPE_PRICE_PRO || "",
     priceLabel: "99 € / mesiac",
     originalPriceLabel: "198 € / mesiac",
     description:
-      "AI Revenue Machine pre ambicióznych maklérov a rastúce tímy. AI Asistent pracuje 24/7, predikuje uzavretia, detekuje intent kupujúcich a automatizuje celý follow-up proces. Kancelárie s Pro uzatvárajú o 34% viac obchodov.",
-    billingNote: "Fakturované mesačne · Zrušenie kedykoľvek · Neobmedzení makléri · Podpora 4h",
+      "Plný AI arzenál pre aktívneho makléra. Sofia AI 24/7, prediktívny scoring, hovorová analýza a automatické follow-upy.",
+    billingNote: "1 maklér · Plný AI prístup · Zrušenie kedykoľvek",
     recommended: true,
     features: [
-      "✅ Všetko zo Starter plánu",
-      "👥 Neobmedzení makléri",
-      "∞ Neobmedzené príležitosti",
-      "🤖 AI Asistent 24/7 – odpovede aj v noci a cez víkendy",
-      "🧠 Predictive Deal Scoring – AI predikuje pravdepodobnosť uzavretia",
-      "🏠 Unlimited AI párovanie príležitostí ↔ nehnuteľnosti",
-      "📞 AI hovorová analýza – prepis hovoru + súhrn + next steps",
-      "🎯 Intent Detection – AI rozozná kedy je klient pripravený kúpiť",
-      "⚡ Automated Nurture Sequences – 7-dňové follow-up kampane",
-      "📊 Pipeline Velocity Tracking – ako rýchlo sa príležitosti pohybujú",
-      "🗺 Territory Intelligence – heat mapa aktivity v tvojej oblasti",
-      "💬 AI Objection Handler – databáza 50+ námietok s odpoveďami",
-      "📅 Smart Calendar – AI navrhne optimálny čas pre obhliadku",
-      "🔄 CRM Sync – import z Excelu, Google Sheets, starého CRM",
-      "📈 Revenue Forecasting – predikcia príjmov na 3 mesiace",
-      "⚡ Prioritná podpora – odpoveď do 4 hodín",
-      "🛡 100% garancia vrátenia do 30 dní",
+      "1 maklérska licencia",
+      "🤖 AI Asistent 24/7 – odpovede aj v noci",
+      "🧠 Predictive Deal Scoring",
+      "📞 AI hovorová analýza",
+      "🎯 Intent Detection",
+      "⚡ Automatické follow-upy (7-dňové sekvencie)",
+      "🗺 Territory Intelligence",
+      "📊 Revenue Forecasting",
+      "🔗 Portálové integrácie",
+      "🛡 30-dňová garancia vrátenia",
     ],
     limits: PLAN_LIMITS.pro,
     founderPrice: true,
     founderNote: "Zakladateľská cena – prvých 20 kancelárií",
   },
+  // ── MARKET VISION ─────────────────────────────────────────────────────────
   {
     key: PLAN_KEYS.ENTERPRISE,
-    name: "Enterprise",
-    priceId: process.env.STRIPE_PRICE_ENTERPRISE || "",
-    priceLabel: "399 € / mesiac",
+    landingName: "Market Vision",
+    name: "Market Vision",
+    priceId: process.env.STRIPE_PRICE_ENTERPRISE || process.env.STRIPE_PRICE_MARKET_VISION || "",
+    priceLabel: "199 € / mesiac",
+    originalPriceLabel: "398 € / mesiac",
     description:
-      "Brokerage OS pre majiteľov kancelárií. Zahŕňa 5 Pro licencií pre maklérov + exkluzívne owner nástroje: prehľad celej kancelárie, zdieľaná AI pamäť tímu, sledovanie konkurencie a executive reporting. Pro je pre makléra. Enterprise je pre majiteľa.",
-    billingNote: "5 Pro licencií v cene · Multi-tím · SLA 1h · Dedikovaný AM · Zrušenie kedykoľvek",
+      "Tímová licencia pre majiteľa kancelárie. Owner dostane Market Vision menu s prehľadom tímu, 1 maklér dostane Active Force prístup.",
+    billingNote: "1 owner + 1 Active Force maklér · Tímová licencia",
     recommended: false,
     features: [
-      "✅ 5 Pro licencií pre maklérov v cene (hodnota 495 €)",
-      "🏢 Neobmedzené tímy a pobočky",
-      "👑 Founder Dashboard – real-time metriky celej kancelárie",
-      "🧠 Team AI Brain – zdieľaná AI pamäť naprieč celým tímom",
-      "📊 Executive Reporting – automatický týždenný report pre ownerov",
-      "🔮 Market Intelligence – AI sleduje ceny a trendy v lokalite",
-      "⚡ Competitor Alert – upozornenie keď konkurencia kontaktuje tvojho klienta",
-      "🤖 Custom AI Persona – vlastné meno a štýl komunikácie AI Asistenta",
-      "🔗 API Prístup – integrácia s vlastnými systémami",
-      "📋 Custom Workflow Builder – vlastné automatizácie bez kódu",
-      "💰 Performance Fee Tracking – sledovanie AI-sourced obchodov",
-      "🗺 Multi-Market Dashboard – správa viacerých lokalít naraz",
-      "📞 Dedicated AI Sales Coach – mesačný 1:1 call s AI strategistom",
-      "🎓 Enterprise Academy – kompletný prístup + custom onboarding tímu",
-      "🔒 SSO + Advanced Security – firemné prihlásenie",
-      "📄 White-label možnosť – vlastné logo na klientských materiáloch",
-      "🚀 Early Access – nové features ako prví",
-      "☎ Dedikovaný Account Manager – priama linka na podporu",
-      "⚡ SLA garancia 99.9% uptime",
-      "🛡 100% garancia vrátenia do 30 dní",
+      "👑 Owner: Market Vision menu",
+      "1× Active Force licencia pre makléra",
+      "📊 Prehľad výkonnosti tímu",
+      "🔍 Ghost Resurrection – dormantné príležitosti",
+      "📋 Executive reporting",
+      "🧠 Team AI Brain",
+      "🎯 Agent Performance Scoring",
+      "📈 Revenue Forecasting pre tím",
+      "⚡ Prioritná podpora",
+      "🛡 30-dňová garancia vrátenia",
     ],
     limits: PLAN_LIMITS.enterprise,
+    founderPrice: true,
+    founderNote: "Zakladateľská cena – prvých 20 kancelárií",
+  },
+  // ── PROTOCOL AUTHORITY ────────────────────────────────────────────────────
+  {
+    key: PLAN_KEYS.COMMAND,
+    landingName: "Protocol Authority",
+    name: "Protocol Authority",
+    priceId: process.env.STRIPE_PRICE_PROTOCOL_AUTH || "",
+    priceLabel: "449 € / mesiac",
+    originalPriceLabel: "598 € / mesiac",
+    description:
+      "Najvyššia úroveň. Owner má Protocol Authority menu s Competition Heatmap a Neural Intelligence. 4 makléri dostanú Active Force prístup.",
+    billingNote: "1 Protocol Authority owner + 4 Active Force makléri",
+    recommended: false,
+    features: [
+      "👑 Owner: Protocol Authority menu",
+      "4× Active Force licencie pre maklérov",
+      "🗺 Competition Heatmap – live radar konkurencie",
+      "👻 Ghost Resurrection – pokročilý režim",
+      "🛡 Ghost Mode Shield",
+      "🧠 Neural Intelligence Network",
+      "📊 Cross-tímová analytika",
+      "🏢 Multi-pobočková správa",
+      "☎ Dedikovaný Protocol Manager",
+      "⚡ SLA 99.99% uptime",
+      "🛡 30-dňová garancia vrátenia",
+    ],
+    limits: PLAN_LIMITS.command,
     founderPrice: true,
     founderNote: "Zakladateľská cena – prvých 20 kancelárií",
   },
@@ -496,9 +531,11 @@ export function resolvePlanKeyFromStripePriceId(
   priceId: string | null | undefined
 ): ResolvedBillingPlan {
   if (!priceId) return "free";
-  if (priceId === process.env.STRIPE_PRICE_ENTERPRISE) return PLAN_KEYS.ENTERPRISE;
-  if (priceId === process.env.STRIPE_PRICE_PRO) return PLAN_KEYS.PRO;
-  if (priceId === process.env.STRIPE_PRICE_STARTER) return PLAN_KEYS.STARTER;
+  if (priceId === process.env.STRIPE_PRICE_PROTOCOL_AUTH)  return PLAN_KEYS.COMMAND;
+  if (priceId === process.env.STRIPE_PRICE_MARKET_VISION)  return PLAN_KEYS.ENTERPRISE;
+  if (priceId === process.env.STRIPE_PRICE_ENTERPRISE)     return PLAN_KEYS.ENTERPRISE;
+  if (priceId === process.env.STRIPE_PRICE_PRO)            return PLAN_KEYS.PRO;
+  if (priceId === process.env.STRIPE_PRICE_STARTER)        return PLAN_KEYS.STARTER;
   return PLAN_KEYS.PRO;
 }
 

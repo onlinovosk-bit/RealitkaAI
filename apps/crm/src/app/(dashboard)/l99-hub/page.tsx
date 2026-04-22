@@ -4,24 +4,10 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Lock, Mic2, Map, AlertTriangle, Hammer, Globe, Users, Zap } from "lucide-react";
 import { NeuralPulse } from "@/components/visuals/NeuralPulse";
-import { GhostBanner } from "@/components/L99/GhostBanner";
-import { CompetitionMap } from "@/components/L99/CompetitionMap";
-import type { HubTier } from "@/types/intelligence-hub";
-
-// ─── Tier labels & colors ─────────────────────────────────────────────────
-const TIER_LABELS: Record<HubTier, string> = {
-  free:       "Smart Start",
-  starter:    "Smart Start",
-  pro:        "Market Vision",
-  enterprise: "Protocol Authority",
-};
-
-const TIER_PRICE: Record<HubTier, string | null> = {
-  free:       null,
-  starter:    null,
-  pro:        "199€ / mes",
-  enterprise: "449€ / mes",
-};
+import { GhostBanner } from "@/components/marketing/GhostBanner";
+import { CompetitionMap } from "@/components/marketing/CompetitionMap";
+import { TIER_DISPLAY_NAMES, TIER_PRICES } from "@/types/intelligence-hub";
+import type { HubTier, GhostSessionData } from "@/types/intelligence-hub";
 
 // ─── Moduly ───────────────────────────────────────────────────────────────
 const MODULES = [
@@ -88,7 +74,11 @@ const MODULES = [
 ];
 
 function tierLevel(t: HubTier): number {
-  return { free: 0, starter: 0, pro: 1, enterprise: 2 }[t];
+  const levels: Record<HubTier, number> = {
+    free: 0, starter: 0, pro: 1,
+    enterprise: 2, market_vision: 2, protocol_authority: 3,
+  };
+  return levels[t] ?? 0;
 }
 
 function isUnlocked(required: HubTier, current: HubTier): boolean {
@@ -96,11 +86,11 @@ function isUnlocked(required: HubTier, current: HubTier): boolean {
 }
 
 // ─── Ghost session (localStorage) ────────────────────────────────────────
-function getGhostSession() {
+function getGhostSession(): GhostSessionData | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = localStorage.getItem("l99_ghost_session");
-    return raw ? (JSON.parse(raw) as { mesto: string; stvrt: string; pocet: number }) : null;
+    return raw ? (JSON.parse(raw) as GhostSessionData) : null;
   } catch {
     return null;
   }
@@ -110,7 +100,7 @@ function getGhostSession() {
 export default function L99HubPage() {
   const [tier, setTier]               = useState<HubTier>("free");
   const [tierLoading, setTierLoading] = useState(true);
-  const [ghostData, setGhostData]     = useState<{ mesto: string; stvrt: string; pocet: number } | null>(null);
+  const [ghostData, setGhostData]     = useState<GhostSessionData | null>(null);
 
   useEffect(() => {
     // Načítaj skutočný tier zo servera
@@ -124,7 +114,7 @@ export default function L99HubPage() {
     setGhostData(getGhostSession());
   }, []);
 
-  const isEnterprise = tier === "enterprise";
+  const isEnterprise = tier === "enterprise" || tier === "market_vision" || tier === "protocol_authority";
   const isPro        = tier === "pro" || isEnterprise;
 
   return (
@@ -137,9 +127,8 @@ export default function L99HubPage() {
       {ghostData && (
         <GhostBanner
           data={ghostData}
-          onUnlock={() => {
-            if (!isPro) window.location.href = "/billing";
-          }}
+          onDismiss={() => setGhostData(null)}
+          onUnlock={() => { window.location.href = "/billing"; }}
         />
       )}
 
@@ -173,8 +162,8 @@ export default function L99HubPage() {
                   color: isEnterprise ? "#93C5FD" : isPro ? "#A5B4FC" : "#64748B",
                 }}
               >
-                {TIER_LABELS[tier]}
-                {TIER_PRICE[tier] && ` · ${TIER_PRICE[tier]}`}
+                {TIER_DISPLAY_NAMES[tier]}
+                {TIER_PRICES[tier] ? ` · ${TIER_PRICES[tier]}€/mes` : ""}
               </span>
               {!isPro && (
                 <a href="/billing" className="text-[10px] text-blue-400 hover:text-blue-300 underline uppercase tracking-wider">
@@ -193,7 +182,7 @@ export default function L99HubPage() {
             transition={{ delay: 0.2 }}
             className="mb-12"
           >
-            <CompetitionMap />
+            <CompetitionMap isProtocolActive={true} />
           </motion.div>
         )}
 

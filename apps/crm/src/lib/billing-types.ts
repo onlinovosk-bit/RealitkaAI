@@ -7,6 +7,7 @@ export const PLAN_KEYS = {
   STARTER:    "starter",
   PRO:        "pro",
   ENTERPRISE: "enterprise",
+  COMMAND:    "command",    // Protocol Authority
 } as const;
 
 export type PlanKey = (typeof PLAN_KEYS)[keyof typeof PLAN_KEYS];
@@ -38,7 +39,17 @@ export const PLAN_LIMITS = {
     aiScoring:           true,
     aiMatching:          true,
     portalIntegrations:  true,
-    performanceFee:      true,  // 2% z AI-sourced obchodov, max 500€
+    performanceFee:      true,
+    multiTeam:           true,
+    customAiModels:      true,
+  },
+  command: {
+    maxAgents:           -1,
+    maxLeadsPerMonth:    -1,
+    aiScoring:           true,
+    aiMatching:          true,
+    portalIntegrations:  true,
+    performanceFee:      true,
     multiTeam:           true,
     customAiModels:      true,
   },

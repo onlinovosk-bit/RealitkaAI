@@ -5,6 +5,7 @@ import { fetchJsonWithRetry } from "@/lib/request-helpers";
 type Plan = {
   key: string;
   name: string;
+  landingName?: string;
   priceLabel: string;
   originalPriceLabel?: string;
   description: string;
@@ -137,7 +138,7 @@ export default function PricingCards({ plans }: { plans: Plan[] }) {
                   letterSpacing: isPro ? undefined : '0.02em',
                 }}
               >
-                {plan.name}
+                {plan.landingName ?? plan.name}
               </h2>
 
               {/* Popis */}
