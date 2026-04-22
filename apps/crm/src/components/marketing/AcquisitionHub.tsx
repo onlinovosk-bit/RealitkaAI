@@ -33,7 +33,7 @@ const PLATFORM_LABELS: Record<StealthProspect["platform"], string> = {
 };
 
 // ─── Card wrapper ─────────────────────────────────────────────────────────
-function Card({ children, accent = "rgba(59,130,246,0.25)", tag, tagColor = "#93C5FD" }: {
+export function Card({ children, accent = "rgba(59,130,246,0.25)", tag, tagColor = "#93C5FD" }: {
   children: React.ReactNode; accent?: string; tag?: string; tagColor?: string;
 }) {
   return (
@@ -73,7 +73,7 @@ function Btn({ onClick, disabled, loading, children, variant = "primary", classN
 // ═══════════════════════════════════════════════════════════════════════════
 // MODULE 1: AI Odhadca 3.0
 // ═══════════════════════════════════════════════════════════════════════════
-function AiOdhadca() {
+export function AiOdhadca() {
   const [address, setAddress]   = useState("Sabinovská 12, Prešov");
   const [sqm, setSqm]           = useState(75);
   const [status, setStatus]     = useState<ModuleStatus>("idle");
@@ -193,7 +193,7 @@ function AiOdhadca() {
 // ═══════════════════════════════════════════════════════════════════════════
 // MODULE 2: Neighborhood Watch (live backend)
 // ═══════════════════════════════════════════════════════════════════════════
-function NeighborhoodWatch() {
+export function NeighborhoodWatch() {
   const [area, setArea]           = useState("presov");
   const [alerts, setAlerts]       = useState<NeighborAlert[]>([]);
   const [loading, setLoading]     = useState(true);
@@ -306,7 +306,7 @@ function NeighborhoodWatch() {
 // ═══════════════════════════════════════════════════════════════════════════
 // MODULE 3: AI Ghostwriter (real OpenAI + Resend)
 // ═══════════════════════════════════════════════════════════════════════════
-function AIGhostwriter() {
+export function AIGhostwriter() {
   const [address, setAddress]     = useState("");
   const [eventType, setEventType] = useState("dedičstvo");
   const [agentName, setAgentName] = useState("");
@@ -458,7 +458,7 @@ function AIGhostwriter() {
 // ═══════════════════════════════════════════════════════════════════════════
 // MODULE 4 → becomes slot 5: Real Estate Arbitrage
 // ═══════════════════════════════════════════════════════════════════════════
-function RealEstateArbitrage() {
+export function RealEstateArbitrage() {
   const [candidates, setCandidates] = useState<ArbitrageCandidate[]>([]);
   const [loading, setLoading]       = useState(false);
   const [loaded, setLoaded]         = useState(false);
@@ -538,7 +538,7 @@ function RealEstateArbitrage() {
 // ═══════════════════════════════════════════════════════════════════════════
 // MODULE 5 → becomes slot 3: Digital Twin Ads (Meta API)
 // ═══════════════════════════════════════════════════════════════════════════
-function DigitalTwin() {
+export function DigitalTwin() {
   const [phase, setPhase]   = useState<"idle" | "syncing" | "done">("idle");
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<{ audienceId: string; size: number; status: string; message: string } | null>(null);
@@ -649,7 +649,7 @@ function DigitalTwin() {
 // ═══════════════════════════════════════════════════════════════════════════
 // MODULE 6: Stealth Recruiter
 // ═══════════════════════════════════════════════════════════════════════════
-function StealthRecruiter() {
+export function StealthRecruiter() {
   const [prospects, setProspects]     = useState<StealthProspect[]>([]);
   const [loading, setLoading]         = useState(false);
   const [loaded, setLoaded]           = useState(false);

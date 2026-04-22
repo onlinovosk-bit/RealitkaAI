@@ -100,6 +100,49 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     emoji: "➕",
     visibleFor: ["owner"],
   },
+  // ─── Akvizičné moduly ─────────────────────────────────────────────────
+  {
+    key: "odhad-magnet",
+    label: "Odhad & Lead Magnet",
+    path: "/akvizieia/odhad-magnet",
+    emoji: "💰",
+    visibleFor: ["agent", "owner"],
+  },
+  {
+    key: "radar-okolia",
+    label: "Radar Okolia",
+    path: "/akvizieia/radar-okolia",
+    emoji: "📡",
+    visibleFor: ["agent", "owner"],
+  },
+  {
+    key: "listy-z-katastra",
+    label: "Listy z Katastra",
+    path: "/akvizieia/listy-z-katastra",
+    emoji: "📜",
+    visibleFor: ["agent", "owner"],
+  },
+  {
+    key: "kupujuci-predajca",
+    label: "Kupujúci = Predajca",
+    path: "/akvizieia/kupujuci-predajca",
+    emoji: "🔄",
+    visibleFor: ["agent", "owner"],
+  },
+  {
+    key: "klonovanie-kupujucich",
+    label: "Klonovanie Kupujúcich",
+    path: "/akvizieia/klonovanie-kupujucich",
+    emoji: "🎯",
+    visibleFor: ["agent", "owner"],
+  },
+  {
+    key: "zachran-samopredajcu",
+    label: "Zachrán Samopredajcu",
+    path: "/akvizieia/zachran-samopredajcu",
+    emoji: "🚨",
+    visibleFor: ["agent", "owner"],
+  },
   {
     key: "settings",
     label: "Nastavenia",
@@ -137,6 +180,17 @@ export const NAV_GROUPS = [
       "pipeline",
       "properties",
       "import",
+    ],
+  },
+  {
+    title: "Akvizícia AI",
+    keys: [
+      "odhad-magnet",
+      "radar-okolia",
+      "listy-z-katastra",
+      "kupujuci-predajca",
+      "klonovanie-kupujucich",
+      "zachran-samopredajcu",
     ],
   },
   {
