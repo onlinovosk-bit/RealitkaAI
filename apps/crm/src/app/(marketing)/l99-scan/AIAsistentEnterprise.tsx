@@ -151,13 +151,13 @@ const L99ScanDashboardV4 = () => {
             </div>
             <h3 className="text-xl font-bold text-white mb-3 uppercase italic">Emocionálny skener</h3>
             <p className="text-sm text-slate-400 mb-8 leading-relaxed">
-              <strong>Zjednodušene:</strong> AI počúva, ako sa klient tvári, keď hovorí o peniazoch. Povie ti, či fakt nemá peniaze, alebo len vyjednáva zľavu.
+              <strong>Zjednodušene:</strong> AI počúva, čo klienta na byte naozaj zaujíma a povie ti, na čo presne máš zatlačiť, aby si u neho vyvolal túžbu kúpiť to hneď.
             </p>
             <button
               onClick={() => handleCta("emocionalny-skener")}
-              className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl text-[11px] uppercase font-black tracking-widest hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all"
+              className="w-full py-4 bg-blue-600 text-white rounded-2xl text-[11px] uppercase font-black tracking-widest hover:scale-105 transition-all"
             >
-              Zistiť skutočný záujem kupujúceho
+              Vyvolať okamžitý záujem kupujúceho
             </button>
           </div>
 
