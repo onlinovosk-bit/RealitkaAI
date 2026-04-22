@@ -44,22 +44,38 @@ export async function POST(request: Request) {
 
     const supabase = getServiceClient();
 
+    const now = new Date().toISOString();
+    const baseMeta = {
+      userAgent: request.headers.get("user-agent") ?? "",
+      capturedAt: now,
+    };
+
+    // Pokus s gdpr stĺpcami
     const { error } = await supabase.from("leads_demo").insert({
       email: body.email.toLowerCase().trim(),
       address: body.address ?? null,
       source,
       estimated_price: body.estimatedPrice ?? null,
       gdpr_consent: true,
-      gdpr_consent_at: new Date().toISOString(),
-      meta: {
-        userAgent: request.headers.get("user-agent") ?? "",
-        capturedAt: new Date().toISOString(),
-      },
+      gdpr_consent_at: now,
+      meta: baseMeta,
     });
 
     if (error) {
       if (error.code === "23505") {
         return NextResponse.json({ ok: true, duplicate: true });
+      }
+      // Ak gdpr stĺpce ešte neexistujú (migrácia nebola spustená), skús bez nich
+      if (error.code === "42703" || error.message?.includes("gdpr_consent")) {
+        const { error: e2 } = await supabase.from("leads_demo").insert({
+          email: body.email.toLowerCase().trim(),
+          address: body.address ?? null,
+          source,
+          estimated_price: body.estimatedPrice ?? null,
+          meta: { ...baseMeta, gdprConsent: true, gdprConsentAt: now },
+        });
+        if (e2 && e2.code !== "23505") throw e2;
+        return NextResponse.json({ ok: true, duplicate: e2?.code === "23505" });
       }
       throw error;
     }
