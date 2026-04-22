@@ -2,14 +2,14 @@
 
 import React, { useState } from "react";
 import {
-  Calculator, Search,
-  Target, Zap, Lock, BarChart3,
+  Mail, Bell, Map, Zap, Lock,
+  Mic2, ListChecks, PhoneCall, Activity,
 } from "lucide-react";
 
-const L99ScanDashboard = () => {
+const L99ScanDashboardV4 = () => {
   const [activeTab, setActiveTab] = useState("enterprise");
 
-  const handleUnlock = (feature: string) => {
+  const handleCta = (feature: string) => {
     window.location.href = `https://app.revolis.ai/register?utm_source=l99scan&utm_content=${encodeURIComponent(feature)}`;
   };
 
@@ -19,28 +19,20 @@ const L99ScanDashboard = () => {
 
         {/* HEADER */}
         <header className="mb-16">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 mb-6">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
-            </span>
-            <span className="text-[10px] uppercase tracking-widest font-bold text-blue-400">
-              L99 Intelligence Active
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 mb-6 text-blue-400">
+            <span className="text-[10px] uppercase tracking-widest font-bold italic">
+              Revolis L99 Intelligence
             </span>
           </div>
           <h1 className="text-4xl md:text-6xl font-black text-white mb-4 tracking-tight uppercase">
-            Operačný Systém{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-500">
-              Revolis
-            </span>
+            REVOLIS <span className="text-blue-500">EKOSYSTÉM</span>
           </h1>
-          <p className="text-lg text-slate-400 max-w-2xl leading-relaxed">
-            Premeňte svoju RK z reaktívnej kancelárie na technologický monopol.
-            Vlastnite dáta, ktoré konkurencia ani nevidí.
+          <p className="text-lg text-slate-400 max-w-2xl">
+            Všetko pre tvoj realitný biznis. Od ranného plánu práce až po tajné informácie z trhu.
           </p>
         </header>
 
-        {/* PREPÍNAČ PROGRAMOV */}
+        {/* PROGRAM SELECTOR */}
         <div className="flex flex-wrap gap-4 mb-12 border-b border-white/5 pb-8">
           {(["starter", "pro", "enterprise"] as const).map((tab) => (
             <button
@@ -52,138 +44,136 @@ const L99ScanDashboard = () => {
                   : "bg-white/5 text-slate-500 hover:bg-white/10"
               }`}
             >
-              {tab === "enterprise" ? "L99 Enterprise" : tab}
+              {tab === "enterprise"
+                ? "Enterprise (L99)"
+                : tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
           ))}
         </div>
 
-        {/* FEATURE GRID */}
+        {/* FEATURES GRID */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
 
-          {/* 1: SHADOW MARKET SCANNER */}
-          <div className={`group p-8 rounded-[2rem] border transition-all duration-500 ${
-            activeTab === "enterprise"
-              ? "bg-[#0A0A12] border-blue-500/30"
-              : "bg-[#050508] border-white/5 opacity-50"
-          }`}>
-            <div className="flex justify-between items-start mb-8">
-              <div className="p-3 bg-blue-500/10 rounded-2xl text-blue-400">
-                <Search size={32} />
-              </div>
-              <Lock size={16} className="text-slate-700" />
-            </div>
-            <h3 className="text-xl font-bold text-white mb-3 uppercase italic">
-              Shadow Market Scanner
-            </h3>
-            <p className="text-sm text-slate-400 mb-8 leading-relaxed">
-              Získajte prístup k nehnuteľnostiam v procese dedenia a zmien na LV
-              skôr, než sa objavia na Bazoši.
+          {/* STARTER */}
+          <div className="p-8 rounded-[2rem] border bg-[#0A0A12] border-white/10">
+            <div className="mb-8 text-blue-400"><ListChecks size={32} /></div>
+            <h3 className="text-xl font-bold text-white mb-3 uppercase italic">AI Plán práce</h3>
+            <p className="text-sm text-slate-400 leading-relaxed">
+              <strong>Zjednodušene:</strong> AI ti ráno povie, komu máš zavolať ako prvému, aby si dnes zarobil čo najviac. Nemusíš nad tým rozmýšľať.
             </p>
-            <button
-              onClick={() => handleUnlock("Shadow Market")}
-              className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl text-[11px] uppercase font-black tracking-widest hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all"
-            >
-              Odomknúť mapu slepých miest v Prešove
-            </button>
           </div>
 
-          {/* 2: AI PERSUADER */}
-          <div className={`group p-8 rounded-[2rem] border transition-all duration-500 ${
+          <div className="p-8 rounded-[2rem] border bg-[#0A0A12] border-white/10">
+            <div className="mb-8 text-blue-400"><PhoneCall size={32} /></div>
+            <h3 className="text-xl font-bold text-white mb-3 uppercase italic">AI Call Analyzer</h3>
+            <p className="text-sm text-slate-400 leading-relaxed">
+              <strong>Zjednodušene:</strong> Robot si vypočuje tvoj hovor a napíše ti, čo si urobil dobre a kde si mal radšej mlčať, aby si klienta presvedčil.
+            </p>
+          </div>
+
+          <div className="p-8 rounded-[2rem] border bg-[#0A0A12] border-white/10">
+            <div className="mb-8 text-blue-400"><Activity size={32} /></div>
+            <h3 className="text-xl font-bold text-white mb-3 uppercase italic">Stav klientov</h3>
+            <p className="text-sm text-slate-400 leading-relaxed">
+              <strong>Zjednodušene:</strong> Vidíš všetkých svojich ľudí na jednej kope a hneď vieš, kto je &quot;horúci&quot; na nákup a kto ťa len naťahuje.
+            </p>
+          </div>
+
+          {/* PRO */}
+          <div className={`p-8 rounded-[2rem] border transition-all duration-500 ${
             activeTab !== "starter"
               ? "bg-[#0A0A12] border-indigo-500/30"
-              : "bg-[#050508] border-white/5 opacity-50"
+              : "bg-[#050508] border-white/5 opacity-30 pointer-events-none"
           }`}>
-            <div className="flex justify-between items-start mb-8">
-              <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400">
-                <Target size={32} />
-              </div>
-              <Zap size={16} className="text-slate-700" />
+            <div className="flex justify-between mb-8 text-indigo-400">
+              <Mail size={32} /><Zap size={16} />
             </div>
-            <h3 className="text-xl font-bold text-white mb-3 uppercase italic">
-              AI Persuader
-            </h3>
+            <h3 className="text-xl font-bold text-white mb-3 uppercase italic">AI Ghostwriter</h3>
             <p className="text-sm text-slate-400 mb-8 leading-relaxed">
-              Automatizované nábory cez behaviorálne listy. AI vie, kedy je
-              majiteľ psychologicky pripravený predávať.
+              <strong>Zjednodušene:</strong> Stlačíš gombík a AI napíše majiteľovi domu taký presvedčivý list, že ti sám zavolá, aby si mu dom predal ty.
             </p>
             <button
-              onClick={() => handleUnlock("AI Persuader")}
+              onClick={() => handleCta("ai-ghostwriter")}
               className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl text-[11px] uppercase font-black tracking-widest hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all"
             >
-              Zistiť, prečo 4 z 10 predajov končia v tichosti
+              Chcem vidieť, ako píše AI listy
             </button>
           </div>
 
-          {/* 3: ROI ORACLE */}
-          <div className={`group p-8 rounded-[2rem] border transition-all duration-500 ${
-            activeTab === "enterprise"
-              ? "bg-[#0A0A12] border-purple-500/30"
-              : "bg-[#050508] border-white/5 opacity-50"
+          <div className={`p-8 rounded-[2rem] border transition-all duration-500 ${
+            activeTab !== "starter"
+              ? "bg-[#0A0A12] border-indigo-500/30"
+              : "bg-[#050508] border-white/5 opacity-30 pointer-events-none"
           }`}>
-            <div className="flex justify-between items-start mb-8">
-              <div className="p-3 bg-purple-500/10 rounded-2xl text-purple-400">
-                <BarChart3 size={32} />
-              </div>
-              <Lock size={16} className="text-slate-700" />
+            <div className="flex justify-between mb-8 text-red-400">
+              <Bell size={32} /><Zap size={16} />
             </div>
-            <h3 className="text-xl font-bold text-white mb-3 uppercase italic">
-              ROI Oracle
-            </h3>
+            <h3 className="text-xl font-bold text-white mb-3 uppercase italic">Katastrálny Radar</h3>
             <p className="text-sm text-slate-400 mb-8 leading-relaxed">
-              Predpoveď čistého zisku z každého mandátu ešte pred jeho
-              podpísaním. Diagnostika ziskovosti pobočky.
+              <strong>Zjednodušene:</strong> Robot, ktorý ti pípne vždy, keď niekto na úrade zmení majiteľa bytu (napr. dedičstvo). Budeš tam prvý.
             </p>
             <button
-              onClick={() => handleUnlock("ROI Oracle")}
-              className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl text-[11px] uppercase font-black tracking-widest hover:bg-purple-600 hover:text-white hover:border-purple-600 transition-all"
+              onClick={() => handleCta("katastralny-radar")}
+              className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl text-[11px] uppercase font-black tracking-widest hover:bg-red-600 hover:text-white hover:border-red-600 transition-all"
             >
-              Zobraziť skrytý potenciál mojej siete
+              Zobraziť čerstvé dedičstvá v PO
             </button>
           </div>
 
-          {/* 4: AI ODHADCA */}
-          <div className="group p-8 rounded-[2rem] border bg-[#0A0A12] border-white/10 transition-all duration-500">
-            <div className="flex justify-between items-start mb-8">
-              <div className="p-3 bg-slate-500/10 rounded-2xl text-slate-400">
-                <Calculator size={32} />
-              </div>
+          {/* ENTERPRISE */}
+          <div className={`p-8 rounded-[2rem] border transition-all duration-500 ${
+            activeTab === "enterprise"
+              ? "bg-[#0A0A12] border-blue-500/30"
+              : "bg-[#050508] border-white/5 opacity-30 pointer-events-none"
+          }`}>
+            <div className="flex justify-between mb-8 text-blue-400">
+              <Map size={32} /><Lock size={16} />
             </div>
-            <h3 className="text-xl font-bold text-white mb-3 uppercase italic">
-              AI Odhadca 3.0
-            </h3>
+            <h3 className="text-xl font-bold text-white mb-3 uppercase italic">Bio-Social Bod Zlomu</h3>
             <p className="text-sm text-slate-400 mb-8 leading-relaxed">
-              Zmeňte svoj web na magnet na kontakty. Majiteľ získa trhovú cenu,
-              vy získate exkluzívny lead.
+              <strong>Zjednodušene:</strong> Mapa mesta, ktorá ti povie: &quot;Na tejto ulici sa o chvíľu začne sťahovať veľa ľudí&quot;. Vieš to skôr ako oni.
             </p>
             <button
-              onClick={() => handleUnlock("AI Odhadca")}
-              className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl text-[11px] uppercase font-black tracking-widest hover:bg-white hover:text-black transition-all"
+              onClick={() => handleCta("bod-zlomu")}
+              className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl text-[11px] uppercase font-black tracking-widest hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all"
             >
-              Zistiť, o koľko sused nadhodnotil svoju cenu
+              Odomknúť mapu &quot;Bod zlomu&quot;
+            </button>
+          </div>
+
+          <div className={`p-8 rounded-[2rem] border transition-all duration-500 ${
+            activeTab === "enterprise"
+              ? "bg-[#0A0A12] border-blue-500/30"
+              : "bg-[#050508] border-white/5 opacity-30 pointer-events-none"
+          }`}>
+            <div className="flex justify-between mb-8 text-blue-400">
+              <Mic2 size={32} /><Lock size={16} />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-3 uppercase italic">Emocionálny skener</h3>
+            <p className="text-sm text-slate-400 mb-8 leading-relaxed">
+              <strong>Zjednodušene:</strong> AI počúva, ako sa klient tvári, keď hovorí o peniazoch. Povie ti, či fakt nemá peniaze, alebo len vyjednáva zľavu.
+            </p>
+            <button
+              onClick={() => handleCta("emocionalny-skener")}
+              className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl text-[11px] uppercase font-black tracking-widest hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all"
+            >
+              Zistiť skutočný záujem kupujúceho
             </button>
           </div>
 
         </div>
 
         {/* FOOTER CTA */}
-        <footer className="mt-24 p-12 bg-gradient-to-b from-blue-600/20 to-transparent border border-blue-500/20 rounded-[3rem] text-center">
-          <h2 className="text-3xl font-black text-white mb-6 uppercase italic tracking-tighter">
-            Pripravený na technologický monopol v Prešove?
+        <footer className="mt-20 p-12 bg-blue-600/10 border border-blue-500/20 rounded-[3rem] text-center">
+          <h2 className="text-2xl font-black text-white mb-4 uppercase italic">
+            Chceš odomknúť plnú silu Revolis?
           </h2>
-          <div className="flex flex-col md:flex-row gap-4 justify-center">
-            <button
-              onClick={() => handleUnlock("neviditelny-makler")}
-              className="px-10 py-5 bg-blue-600 text-white font-black rounded-2xl text-xs uppercase tracking-widest hover:scale-105 transition-transform"
-            >
-              Aktivovať režim &quot;Neviditeľný maklér&quot;
-            </button>
-            <button
-              onClick={() => handleUnlock("prestali-inzerovat")}
-              className="px-10 py-5 bg-white/5 border border-white/10 text-white font-black rounded-2xl text-xs uppercase tracking-widest hover:bg-white/10 transition-all"
-            >
-              Prečo najúspešnejšie RK prestávajú inzerovať?
-            </button>
-          </div>
+          <button
+            onClick={() => handleCta("plna-sila-revolis")}
+            className="px-10 py-5 bg-blue-600 text-white font-black rounded-xl text-xs uppercase tracking-widest hover:scale-105 transition-all"
+          >
+            Zobraziť neférovú výhodu pre moju RK
+          </button>
         </footer>
 
       </div>
@@ -191,4 +181,4 @@ const L99ScanDashboard = () => {
   );
 };
 
-export default L99ScanDashboard;
+export default L99ScanDashboardV4;
