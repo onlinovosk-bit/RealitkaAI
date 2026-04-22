@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 
 function prefersReducedMotion() {
@@ -9,10 +9,64 @@ function prefersReducedMotion() {
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
+function isWebGLAvailable(): boolean {
+  try {
+    const canvas = document.createElement("canvas");
+    return !!(
+      canvas.getContext("webgl") ||
+      canvas.getContext("experimental-webgl")
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** CSS-only fallback keď WebGL nie je dostupný */
+function SpaceBackgroundFallback() {
+  return (
+    <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+      <div
+        className="absolute -left-32 -top-20 h-[700px] w-[700px] rounded-full"
+        style={{ background: "radial-gradient(circle, #4f46e5 0%, transparent 70%)", opacity: 0.22 }}
+      />
+      <div
+        className="absolute -bottom-20 -right-20 h-[600px] w-[600px] rounded-full"
+        style={{ background: "radial-gradient(circle, #6366f1 0%, transparent 70%)", opacity: 0.18 }}
+      />
+      <div
+        className="absolute inset-0"
+        style={{
+          background: "linear-gradient(135deg, #050914 0%, #0a0f1e 100%)",
+        }}
+      />
+    </div>
+  );
+}
+
 export default function SpaceBackground() {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const mouseTarget = useRef({ x: 0, y: 0 });
+  const [webGLAvailable, setWebGLAvailable] = useState(true);
 
+  useEffect(() => {
+    if (!isWebGLAvailable()) {
+      console.warn("[SpaceBackground] WebGL nie je dostupný, prepínam na CSS fallback.");
+      setWebGLAvailable(false);
+    }
+  }, []);
+
+  if (!webGLAvailable) return <SpaceBackgroundFallback />;
+
+  return <SpaceBackgroundInner mountRef={mountRef} mouseTarget={mouseTarget} />;
+}
+
+function SpaceBackgroundInner({
+  mountRef,
+  mouseTarget,
+}: {
+  mountRef: React.RefObject<HTMLDivElement | null>;
+  mouseTarget: React.MutableRefObject<{ x: number; y: number }>;
+}) {
   useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
@@ -22,7 +76,13 @@ export default function SpaceBackground() {
     const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1200);
     camera.position.z = 220;
 
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    } catch (err) {
+      console.warn("[SpaceBackground] WebGLRenderer zlyhál:", err);
+      return;
+    }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
     mount.appendChild(renderer.domElement);
@@ -91,7 +151,7 @@ export default function SpaceBackground() {
       renderer.dispose();
       if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
     };
-  }, []);
+  }, [mountRef, mouseTarget]);
 
   return (
     <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
