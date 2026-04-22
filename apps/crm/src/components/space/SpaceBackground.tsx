@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, Component, type ReactNode, type ErrorInfo } from "react";
 import * as THREE from "three";
 
 function prefersReducedMotion() {
@@ -9,19 +9,7 @@ function prefersReducedMotion() {
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-function isWebGLAvailable(): boolean {
-  try {
-    const canvas = document.createElement("canvas");
-    return !!(
-      canvas.getContext("webgl") ||
-      canvas.getContext("experimental-webgl")
-    );
-  } catch {
-    return false;
-  }
-}
-
-/** CSS-only fallback keď WebGL nie je dostupný */
+// ─── CSS-only fallback ─────────────────────────────────────────────────────
 function SpaceBackgroundFallback() {
   return (
     <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
@@ -33,78 +21,66 @@ function SpaceBackgroundFallback() {
         className="absolute -bottom-20 -right-20 h-[600px] w-[600px] rounded-full"
         style={{ background: "radial-gradient(circle, #6366f1 0%, transparent 70%)", opacity: 0.18 }}
       />
-      <div
-        className="absolute inset-0"
-        style={{
-          background: "linear-gradient(135deg, #050914 0%, #0a0f1e 100%)",
-        }}
-      />
+      <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, #050914 0%, #0a0f1e 100%)" }} />
     </div>
   );
 }
 
-export default function SpaceBackground() {
-  const mountRef = useRef<HTMLDivElement | null>(null);
-  const mouseTarget = useRef({ x: 0, y: 0 });
-  const [webGLAvailable, setWebGLAvailable] = useState(true);
-
-  useEffect(() => {
-    if (!isWebGLAvailable()) {
-      console.warn("[SpaceBackground] WebGL nie je dostupný, prepínam na CSS fallback.");
-      setWebGLAvailable(false);
-    }
-  }, []);
-
-  if (!webGLAvailable) return <SpaceBackgroundFallback />;
-
-  return <SpaceBackgroundInner mountRef={mountRef} mouseTarget={mouseTarget} />;
+// ─── Error Boundary ────────────────────────────────────────────────────────
+class SpaceBoundary extends Component<{ children: ReactNode }, { crashed: boolean }> {
+  state = { crashed: false };
+  static getDerivedStateFromError() { return { crashed: true }; }
+  componentDidCatch(err: Error, info: ErrorInfo) {
+    console.warn("[SpaceBackground] ErrorBoundary zachytil:", err.message, info.componentStack);
+  }
+  render() {
+    return this.state.crashed ? <SpaceBackgroundFallback /> : this.props.children;
+  }
 }
 
-function SpaceBackgroundInner({
-  mountRef,
-  mouseTarget,
-}: {
-  mountRef: React.RefObject<HTMLDivElement | null>;
-  mouseTarget: React.MutableRefObject<{ x: number; y: number }>;
-}) {
+// ─── Three.js hviezdy ─────────────────────────────────────────────────────
+function SpaceBackgroundThree() {
+  const mountRef = useRef<HTMLDivElement | null>(null);
+  const mouseTarget = useRef({ x: 0, y: 0 });
+
   useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
+
+    // Pokus o WebGL — pri zlyhaní ticho vrátime (ErrorBoundary to nezachytí, ale
+    // komponent jednoducho nenamontuje renderer a DOM zostane prázdny)
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ alpha: true, antialias: false, powerPreference: "low-power" });
+    } catch (err) {
+      console.warn("[SpaceBackground] WebGLRenderer zlyhál, skipping:", err);
+      return;
+    }
 
     const reduced = prefersReducedMotion();
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1200);
     camera.position.z = 220;
 
-    let renderer: THREE.WebGLRenderer;
-    try {
-      renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    } catch (err) {
-      console.warn("[SpaceBackground] WebGLRenderer zlyhál:", err);
-      return;
-    }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
     mount.appendChild(renderer.domElement);
 
-    const count = 4000;
+    const count = 3000; // znížené z 4000
     const positions = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
     const color = new THREE.Color();
 
     for (let i = 0; i < count; i++) {
       const i3 = i * 3;
-      positions[i3] = (Math.random() - 0.5) * 900;
+      positions[i3]     = (Math.random() - 0.5) * 900;
       positions[i3 + 1] = (Math.random() - 0.5) * 700;
       positions[i3 + 2] = (Math.random() - 0.5) * 800;
-
       const r = Math.random();
       if (r < 0.8) color.set("#ffffff");
       else if (r < 0.95) color.set("#93c5fd");
       else color.set("#c4b5fd");
-      colors[i3] = color.r;
-      colors[i3 + 1] = color.g;
-      colors[i3 + 2] = color.b;
+      colors[i3] = color.r; colors[i3 + 1] = color.g; colors[i3 + 2] = color.b;
     }
 
     const geometry = new THREE.BufferGeometry();
@@ -126,7 +102,6 @@ function SpaceBackgroundInner({
       renderer.setSize(window.innerWidth, window.innerHeight);
     };
     window.addEventListener("resize", onResize);
-
     const resizeObserver = new ResizeObserver(onResize);
     resizeObserver.observe(document.body);
 
@@ -138,7 +113,6 @@ function SpaceBackgroundInner({
       renderer.render(scene, camera);
       if (!reduced) raf = requestAnimationFrame(animate);
     };
-
     animate();
 
     return () => {
@@ -151,34 +125,37 @@ function SpaceBackgroundInner({
       renderer.dispose();
       if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
     };
-  }, [mountRef, mouseTarget]);
+  }, []);
 
   return (
     <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
       <div ref={mountRef} className="absolute inset-0" />
-      <div
-        className="absolute -left-32 -top-20 h-[700px] w-[700px] rounded-full"
-        style={{ background: "radial-gradient(circle, #4f46e5 0%, transparent 70%)", opacity: 0.22 }}
-      />
-      <div
-        className="absolute -bottom-20 -right-20 h-[600px] w-[600px] rounded-full"
-        style={{ background: "radial-gradient(circle, #6366f1 0%, transparent 70%)", opacity: 0.18 }}
-      />
-      <div
-        className="absolute left-1/2 top-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full animate-[nebulaPulse_8s_ease-in-out_infinite]"
-        style={{ background: "radial-gradient(circle, #818cf8 0%, transparent 70%)", opacity: 0.15 }}
-      />
-      <div
-        className="absolute inset-0 animate-[spaceGrid_12s_linear_infinite]"
-        style={{
-          transform: "perspective(800px) rotateX(60deg)",
-          transformOrigin: "center top",
-          backgroundImage:
-            "linear-gradient(rgba(99,102,241,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.12) 1px, transparent 1px)",
-          backgroundSize: "60px 60px",
-        }}
-      />
+      <div className="absolute -left-32 -top-20 h-[700px] w-[700px] rounded-full"
+           style={{ background: "radial-gradient(circle, #4f46e5 0%, transparent 70%)", opacity: 0.22 }} />
+      <div className="absolute -bottom-20 -right-20 h-[600px] w-[600px] rounded-full"
+           style={{ background: "radial-gradient(circle, #6366f1 0%, transparent 70%)", opacity: 0.18 }} />
+      <div className="absolute left-1/2 top-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full animate-[nebulaPulse_8s_ease-in-out_infinite]"
+           style={{ background: "radial-gradient(circle, #818cf8 0%, transparent 70%)", opacity: 0.15 }} />
+      <div className="absolute inset-0 animate-[spaceGrid_12s_linear_infinite]"
+           style={{
+             transform: "perspective(800px) rotateX(60deg)",
+             transformOrigin: "center top",
+             backgroundImage: "linear-gradient(rgba(99,102,241,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.12) 1px, transparent 1px)",
+             backgroundSize: "60px 60px",
+           }} />
     </div>
   );
 }
 
+// ─── Public export: ErrorBoundary + lazy mount ─────────────────────────────
+export default function SpaceBackground() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+  if (!mounted) return <SpaceBackgroundFallback />;
+
+  return (
+    <SpaceBoundary>
+      <SpaceBackgroundThree />
+    </SpaceBoundary>
+  );
+}
