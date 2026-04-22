@@ -4,7 +4,9 @@
       "Bash(vercel --prod --yes)",
       "Bash(xargs grep:*)",
       "Bash(ls:*)",
-      "Bash(xargs wc:*)"
+      "Bash(xargs wc:*)",
+      "Bash(gh run:*)",
+      "Bash(npx vitest:*)"
     ]
   }
 }
