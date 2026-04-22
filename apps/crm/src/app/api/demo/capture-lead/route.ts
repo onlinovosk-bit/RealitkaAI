@@ -1,16 +1,14 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 
 function getServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) throw new Error("Supabase config chýba.");
-  return createClient(url, key, {
+  return createServiceClient(url, key, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 }
-
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(request: Request) {
   try {
@@ -19,19 +17,30 @@ export async function POST(request: Request) {
       address?: string;
       source?: string;
       estimatedPrice?: number;
+      gdprConsent?: boolean;
     };
 
-    if (!body.email || !EMAIL_REGEX.test(body.email)) {
+    // Email validácia
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!body.email || !emailRegex.test(body.email)) {
       return NextResponse.json(
         { error: "Zadajte platný email." },
         { status: 400 }
       );
     }
 
-    const validSources = ['ai_odhadca', 'neighborhood_watch', 'digital_twin'] as const;
+    // GDPR validácia – POVINNÉ
+    if (!body.gdprConsent) {
+      return NextResponse.json(
+        { error: "Súhlas so spracovaním osobných údajov je povinný." },
+        { status: 400 }
+      );
+    }
+
+    const validSources = ["ai_odhadca", "neighborhood_watch", "digital_twin"] as const;
     const source = validSources.includes(body.source as typeof validSources[number])
       ? body.source
-      : 'ai_odhadca';
+      : "ai_odhadca";
 
     const supabase = getServiceClient();
 
@@ -40,6 +49,8 @@ export async function POST(request: Request) {
       address: body.address ?? null,
       source,
       estimated_price: body.estimatedPrice ?? null,
+      gdpr_consent: true,
+      gdpr_consent_at: new Date().toISOString(),
       meta: {
         userAgent: request.headers.get("user-agent") ?? "",
         capturedAt: new Date().toISOString(),
@@ -47,12 +58,10 @@ export async function POST(request: Request) {
     });
 
     if (error) {
-      // Duplicate email je OK pre demo
       if (error.code === "23505") {
         return NextResponse.json({ ok: true, duplicate: true });
       }
-      console.error("[demo/capture-lead] Supabase error:", error);
-      throw new Error(error.message);
+      throw error;
     }
 
     return NextResponse.json({ ok: true, duplicate: false });

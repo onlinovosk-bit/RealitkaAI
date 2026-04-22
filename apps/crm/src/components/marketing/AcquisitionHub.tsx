@@ -81,6 +81,8 @@ export function AiOdhadca() {
   const [email, setEmail]       = useState("");
   const [emailSent, setEmailSent] = useState(false);
   const [error, setError]       = useState<string | null>(null);
+  const [gdprConsent, setGdprConsent] = useState(false);
+  const [gdprError, setGdprError]     = useState(false);
 
   const calculate = useCallback(async () => {
     if (address.trim().length < 5) { setError("Zadajte platnú adresu."); return; }
@@ -96,19 +98,25 @@ export function AiOdhadca() {
   }, [address, sqm]);
 
   const sendEmail = useCallback(async () => {
+    if (!gdprConsent) { setGdprError(true); return; }
+    setGdprError(false);
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError("Zadajte platný email."); return; }
     setError(null); setStatus("email_pending");
     try {
-      await fetch("/api/demo/capture-lead", {
+      const res = await fetch("/api/demo/capture-lead", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, address, source: "ai_odhadca", estimatedPrice: estimate?.estimatedPrice }),
+        body: JSON.stringify({ email, address, source: "ai_odhadca", estimatedPrice: estimate?.estimatedPrice, gdprConsent: true }),
       });
+      if (!res.ok) {
+        const data = await res.json() as { error?: string };
+        throw new Error(data.error ?? "Chyba servera.");
+      }
       setEmailSent(true); setStatus("email_sent");
       if (typeof window !== "undefined" && typeof (window as unknown as { gtag?: unknown }).gtag === "function") {
-        (window as unknown as { gtag: (...a: unknown[]) => void }).gtag("event", "demo_lead_captured", { source: "ai_odhadca" });
+        (window as unknown as { gtag: (...a: unknown[]) => void }).gtag("event", "demo_lead_captured", { source: "ai_odhadca", gdpr_consent: true });
       }
-    } catch { setStatus("done"); }
-  }, [email, address, estimate]);
+    } catch (err) { setError(err instanceof Error ? err.message : "Neznáma chyba."); setStatus("done"); }
+  }, [email, address, estimate, gdprConsent]);
 
   return (
     <Card accent="rgba(59,130,246,0.30)" tag="Lead Magnet" tagColor="#93C5FD">
@@ -158,7 +166,7 @@ export function AiOdhadca() {
           </div>
         )}
         {status === "done" && !emailSent && (
-          <div className="pt-1">
+          <div className="pt-1 space-y-2">
             <p className="text-xs mb-2" style={{ color: "#64748B" }}>Email pre stiahnutie AI Reportu:</p>
             <div className="flex gap-2">
               <input type="email" value={email} onChange={e => setEmail(e.target.value)}
@@ -171,6 +179,45 @@ export function AiOdhadca() {
                 style={{ background: "#22C55E", color: "#050914" }}>
                 <ArrowRight size={15} />
               </button>
+            </div>
+            {/* GDPR Checkbox */}
+            <div className="mt-1">
+              <label
+                className="flex items-start gap-3 cursor-pointer"
+                onClick={() => { setGdprConsent(!gdprConsent); setGdprError(false); }}
+              >
+                <div
+                  className="flex-shrink-0 w-4 h-4 mt-0.5 rounded flex items-center justify-center transition-all"
+                  style={{
+                    background: gdprConsent ? "#22C55E" : "rgba(255,255,255,0.05)",
+                    border: gdprError ? "1px solid #FCA5A5" : gdprConsent ? "1px solid #22C55E" : "1px solid rgba(255,255,255,0.15)",
+                  }}
+                >
+                  {gdprConsent && (
+                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                      <path d="M1 4L3.5 6.5L9 1" stroke="#050914" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </div>
+                <span className="text-[11px] leading-relaxed" style={{ color: "#64748B" }}>
+                  Súhlasím so spracovaním mojich osobných údajov (email, adresa) za účelom zasielania reportu.{" "}
+                  <a
+                    href="/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:opacity-80"
+                    style={{ color: "#22D3EE" }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Privacy Policy
+                  </a>
+                </span>
+              </label>
+              {gdprError && (
+                <p className="text-[11px] mt-1" style={{ color: "#FCA5A5" }}>
+                  ⚠ Súhlas so spracovaním údajov je povinný.
+                </p>
+              )}
             </div>
           </div>
         )}

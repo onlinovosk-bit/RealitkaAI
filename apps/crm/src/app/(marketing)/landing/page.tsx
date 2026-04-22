@@ -27,6 +27,7 @@ import { HeroSection } from '@/components/landing/HeroSection';
 import { ValueSection } from '@/components/landing/ValueSection';
 import { FounderDiscountSpotsProvider } from '@/components/shared/founder-discount-spots-context';
 import LegalFooter from '@/components/marketing/LegalFooter';
+import RoiGuaranteeSection from '@/components/marketing/RoiGuaranteeSection';
 
 const syne = Syne({
   subsets: ['latin'],
@@ -119,6 +120,11 @@ export default function LandingPage() {
 
       {/* 9.2 FAQ námietky */}
       <ObjectionFaq />
+
+      {/* 9.3 ROI Garancia */}
+      <div className="mx-auto max-w-4xl px-4">
+        <RoiGuaranteeSection />
+      </div>
 
       {/* 10. FinalCTA – posledný úder */}
       <FinalCTA />
