@@ -7,7 +7,6 @@ type FormState = "idle" | "submitting" | "success" | "error";
 const GUARANTEES = [
   "Ak AI Asistent nepomôže uzatvoriť aspoň 1 obchod navyše za 30 dní",
   "Vrátime 100% zaplatenej sumy bez otázok",
-  "Plus 50€ kompenzácia za váš čas",
   "Stačí napísať dôvod – zvyšok riešime my",
 ];
 
