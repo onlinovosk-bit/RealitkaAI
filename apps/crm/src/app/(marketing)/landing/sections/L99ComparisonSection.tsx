@@ -67,10 +67,10 @@ export default function L99ComparisonSection() {
             className="relative overflow-hidden rounded-2xl border border-blue-500/30 bg-blue-500/[0.05] p-8"
           >
             <div className="absolute right-0 top-0 rounded-bl-xl bg-blue-500 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white">
-              L99 Advantage
+              AI Asistent Advantage
             </div>
             <h3 className="mb-6 text-lg font-semibold text-blue-400">
-              Proaktívny model — Revolis L99
+              Proaktívny model — Revolis AI Asistent
             </h3>
             <ul className="space-y-4">
               {NEW.map((item) => (

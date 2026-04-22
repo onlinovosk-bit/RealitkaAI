@@ -53,7 +53,7 @@ export default function TickerBanner() {
           <span key={i} className="inline-flex items-center gap-3 px-2">
             <span
               className={`font-semibold tracking-wide ${item.includes("víťazia") ? "text-base" : "text-sm"}`}
-              style={{ color: i % 4 === 0 ? "#22D3EE" : "#94A3B8" }}
+              style={{ color: "#22D3EE" }}
             >
               {item}
             </span>

@@ -141,7 +141,7 @@ export default function Hero() {
               className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-4 py-1.5 text-sm text-cyan-300"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-              L99 Engine — prediktívny operačný systém pre zisk
+              AI Asistent — prediktívny operačný systém pre zisk
             </motion.div>
 
             <motion.h1
@@ -166,7 +166,7 @@ export default function Hero() {
               transition={{ duration: 0.6, delay: 0.4 }}
               className="text-base sm:text-lg text-slate-300 max-w-full sm:max-w-lg"
             >
-              Revolis.AI L99 Engine analyzuje správanie vašej databázy v reálnom čase.
+              Revolis.AI AI Asistent analyzuje správanie vašej databázy v reálnom čase.
               Identifikujeme skrytý predajný zámer vašich bývalých klientov a doručíme
               vám exkluzívne príležitosti s&nbsp;0&nbsp;% konkurenciou.
             </motion.p>

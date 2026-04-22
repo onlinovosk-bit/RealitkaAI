@@ -1,7 +1,7 @@
 const items = [
   {
     tag: "Eliminácia mŕtveho kapitálu",
-    title: "Vracíme vám ROI z marketingu, ktorý ste už raz zaplatili.",
+    title: "Vraciame Vám ROI z marketingu, ktorý ste už raz zaplatili.",
     body: "AI autonómne ohreje vašu databázu. Sleduje, kedy sa starý kontakt vráti na web, kedy si pozerá hypotéky alebo odhad ceny — a upozorní vás skôr, než zdvihne telefón konkurencii.",
     isEnterprise: true,
   },
@@ -46,7 +46,7 @@ export function ValueSection() {
             {item.isEnterprise && (
               <div className="absolute right-5 top-4">
                 <span className="text-gold-gradient text-[10px] font-black uppercase tracking-tight">
-                  L99 Enterprise
+                  AI Asistent
                 </span>
               </div>
             )}

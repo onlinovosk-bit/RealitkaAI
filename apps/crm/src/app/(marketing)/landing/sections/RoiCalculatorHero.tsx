@@ -51,11 +51,11 @@ export default function RoiCalculatorHero() {
               </label>
             </div>
 
-            <div className="rounded-2xl border border-cyan-300/25 bg-slate-950/70 p-4">
+            <div className="overflow-hidden rounded-2xl border border-cyan-300/25 bg-slate-950/70 p-4">
               <p className="text-xs text-slate-500">Odhad úniku mesačne</p>
-              <p className="mt-1 text-3xl font-extrabold text-red-300">€{model.monthlyLeakEur.toLocaleString('sk-SK')}</p>
+              <p className="mt-1 text-2xl font-extrabold text-red-300 sm:text-3xl">€{model.monthlyLeakEur.toLocaleString('sk-SK')}</p>
               <p className="mt-3 text-xs text-slate-500">Potenciálny zisk s Pro</p>
-              <p className="mt-1 text-2xl font-bold text-cyan-300">+€{model.recoveredEur.toLocaleString('sk-SK')}</p>
+              <p className="mt-1 text-xl font-bold text-cyan-300 sm:text-2xl">+€{model.recoveredEur.toLocaleString('sk-SK')}</p>
               <p className="mt-3 text-xs text-slate-400">Projekcia uzavretých obchodov: {model.projectedDeals} / mes.</p>
               <Link href="/register" className="mt-4 inline-flex rounded-full bg-cyan-400 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-cyan-300">
                 Spustiť úvodné nastavenie Pro
