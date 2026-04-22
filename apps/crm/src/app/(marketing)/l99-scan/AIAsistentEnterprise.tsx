@@ -1,379 +1,194 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import React, { useState } from "react";
 import {
-  ShieldAlert, Calculator, Users, Mail, Download, Send,
-  RefreshCcw, CheckCircle, Loader2, ChevronDown, ChevronUp, Zap,
+  Calculator, Search,
+  Target, Zap, Lock, BarChart3,
 } from "lucide-react";
 
-const UTM = "https://app.revolis.ai/register?utm_source=email&utm_medium=direct-outreach&utm_campaign=smolko_reality&utm_content=enterprise_v32";
+const L99ScanDashboard = () => {
+  const [activeTab, setActiveTab] = useState("enterprise");
 
-const EVENT_TYPE_LABELS: Record<string, string> = {
-  dedičstvo:   "Zápis dedičstva",
-  plomba:      "Katastrálna plomba",
-  zmena:       "Zmena vlastníka",
-  hypotéka:    "Zápis hypotéky",
-  exekúcia:    "Exekúčné konanie",
-  výmaz:       "Výmaz záložného práva",
-};
-
-// ─── Module 1: AI Ghostwriter (real OpenAI backend) ───────────────────────
-function AIGhostwriter() {
-  const [address, setAddress]   = useState("");
-  const [eventType, setEventType] = useState("dedičstvo");
-  const [agentName, setAgentName] = useState("");
-  const [status, setStatus]     = useState<"idle" | "generating" | "done" | "error" | "email_pending" | "email_sent">("idle");
-  const [letter, setLetter]     = useState<{ id: string; letterHtml: string; letterText: string } | null>(null);
-  const [email, setEmail]       = useState("");
-  const [emailSent, setEmailSent] = useState(false);
-  const [error, setError]       = useState<string | null>(null);
-  const [showPreview, setShowPreview] = useState(false);
-
-  const generate = useCallback(async () => {
-    if (address.trim().length < 5) { setError("Zadajte adresu nehnuteľnosti."); return; }
-    setError(null); setStatus("generating"); setLetter(null); setEmailSent(false);
-    try {
-      const res = await fetch("/api/ghostwriter/generate", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ownerAddress: address, eventType, agentName: agentName || undefined }),
-      });
-      if (!res.ok) throw new Error(((await res.json()) as { error?: string }).error ?? "Chyba servera");
-      setLetter(await res.json() as { id: string; letterHtml: string; letterText: string });
-      setStatus("done");
-    } catch (e) { setError(e instanceof Error ? e.message : "Chyba"); setStatus("error"); }
-  }, [address, eventType, agentName]);
-
-  const sendEmail = useCallback(async () => {
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError("Zadajte platný email."); return; }
-    if (!letter) return;
-    setError(null); setStatus("email_pending");
-    try {
-      const res = await fetch("/api/ghostwriter/send-email", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ letterId: letter.id, recipientEmail: email, letterHtml: letter.letterHtml, ownerAddress: address }),
-      });
-      if (!res.ok) throw new Error(((await res.json()) as { error?: string }).error ?? "Chyba");
-      setEmailSent(true); setStatus("email_sent");
-    } catch (e) { setError(e instanceof Error ? e.message : "Chyba"); setStatus("done"); }
-  }, [email, letter, address]);
-
-  const downloadHtml = () => {
-    if (!letter) return;
-    const html = `<!DOCTYPE html><html lang="sk"><head><meta charset="UTF-8"><title>List – ${address}</title><style>body{font-family:Georgia,serif;max-width:620px;margin:40px auto;padding:0 20px;color:#1e293b}@media print{body{margin:0}}</style></head><body>${letter.letterHtml}</body></html>`;
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([html], { type: "text/html" }));
-    a.download = `list_${address.replace(/[^a-z0-9]/gi, "_").slice(0, 40)}.html`;
-    a.click(); URL.revokeObjectURL(a.href);
-  };
-
-  const printPdf = () => {
-    if (!letter) return;
-    const w = window.open("", "_blank");
-    if (w) {
-      w.document.write(`<style>body{font-family:Georgia,serif;max-width:620px;margin:40px auto;padding:0 20px;color:#1e293b}@media print{body{margin:0}}</style>${letter.letterHtml}`);
-      w.document.close();
-      setTimeout(() => w.print(), 500);
-    }
+  const handleUnlock = (feature: string) => {
+    window.location.href = `https://app.revolis.ai/register?utm_source=l99scan&utm_content=${encodeURIComponent(feature)}`;
   };
 
   return (
-    <div className="bg-[#0C0C14] border border-red-500/20 rounded-3xl p-8 hover:border-red-500/40 transition-all group">
-      <div className="flex justify-between items-start mb-8">
-        <ShieldAlert className="text-red-500 group-hover:scale-110 transition-transform" size={44} />
-        <div className="text-[10px] bg-red-500/10 text-red-500 px-2 py-1 rounded font-bold uppercase border border-red-500/20">
-          Active Monitoring
-        </div>
-      </div>
-      <h2 className="text-2xl font-bold mb-3 italic">AI Ghostwriter</h2>
-      <p className="text-sm text-slate-400 mb-6 leading-relaxed">
-        Katastrálny radar identifikuje plomby a dedičstvá. AI okamžite generuje expertný list pre majiteľa s analýzou ceny.
-      </p>
-
-      <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-5 space-y-4">
-        {/* Adresa */}
-        <div>
-          <label className="text-[10px] font-bold uppercase tracking-wider text-red-400 block mb-1.5">
-            Adresa nehnuteľnosti (LV)
-          </label>
-          <input type="text" value={address} onChange={e => setAddress(e.target.value)}
-            placeholder="Sabinovská 12, Prešov"
-            className="w-full px-4 py-3 rounded-xl text-sm bg-white/5 border border-white/10 text-white outline-none focus:border-red-500/40 transition-colors" />
-        </div>
-
-        {/* Typ udalosti */}
-        <div>
-          <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1.5">
-            Typ katastrálnej udalosti
-          </label>
-          <select value={eventType} onChange={e => setEventType(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl text-sm bg-white/5 border border-white/10 text-white outline-none">
-            {Object.entries(EVENT_TYPE_LABELS).map(([k, v]) => (
-              <option key={k} value={k}>{v}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Agent meno */}
-        <div>
-          <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1.5">
-            Vaše meno (voliteľné)
-          </label>
-          <input type="text" value={agentName} onChange={e => setAgentName(e.target.value)}
-            placeholder="Ing. Ján Novák"
-            className="w-full px-4 py-3 rounded-xl text-sm bg-white/5 border border-white/10 text-white outline-none focus:border-red-500/40 transition-colors" />
-        </div>
-
-        {/* Error */}
-        {error && (
-          <p className="text-xs px-3 py-2.5 rounded-xl bg-red-500/10 text-red-300 border border-red-500/20">⚠ {error}</p>
-        )}
-
-        {/* Náhľad listu */}
-        {letter && (
-          <div className="space-y-3">
-            <div className="p-3 bg-red-500/5 border border-red-500/20 rounded-xl text-[11px] text-green-400">
-              <CheckCircle size={12} className="inline mr-1" />
-              <strong>List vygenerovaný!</strong> GPT-4o vytvoril personalizovaný list pre {address}.
-            </div>
-
-            <button onClick={() => setShowPreview(!showPreview)}
-              className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs bg-white/[0.03] border border-white/10 text-slate-400 hover:text-white transition-colors">
-              <span>Náhľad textu</span>
-              {showPreview ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-            </button>
-
-            {showPreview && letter.letterText && (
-              <div className="rounded-xl p-4 max-h-48 overflow-y-auto text-xs leading-relaxed text-slate-400 bg-white/[0.02] border border-white/5">
-                {letter.letterText}
-              </div>
-            )}
-
-            {/* Akcie */}
-            <div className="flex gap-2">
-              <button onClick={downloadHtml}
-                className="flex-1 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 bg-white/5 border border-white/10 text-slate-400 hover:text-white transition-colors">
-                <Download size={12} /> HTML
-              </button>
-              <button onClick={printPdf}
-                className="flex-1 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 bg-white/5 border border-white/10 text-slate-400 hover:text-white transition-colors">
-                PDF (Print)
-              </button>
-            </div>
-
-            {!emailSent ? (
-              <div>
-                <p className="text-[10px] text-slate-500 mb-2">Odoslať emailom majiteľovi:</p>
-                <div className="flex gap-2">
-                  <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                    placeholder="majitel@email.sk"
-                    className="flex-1 px-3 py-2.5 rounded-xl text-xs bg-white/5 border border-red-500/30 text-white outline-none" />
-                  <button onClick={() => void sendEmail()} disabled={status === "email_pending"}
-                    className="px-4 py-2.5 bg-red-600 hover:bg-red-500 rounded-xl transition-all disabled:opacity-50 flex items-center gap-1.5 text-xs font-bold">
-                    {status === "email_pending" ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 text-xs text-green-400">
-                <CheckCircle size={13} /> List odoslaný majiteľovi!
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Generate button */}
-        {status === "idle" || status === "error" ? (
-          <button onClick={() => void generate()}
-            className="w-full py-4 bg-red-600 hover:bg-red-500 rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all">
-            <Mail size={14} /> Vygenerovať list
-          </button>
-        ) : status === "generating" ? (
-          <button disabled
-            className="w-full py-4 rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 bg-red-600/20 text-red-300">
-            <Loader2 size={14} className="animate-spin" /> GPT-4o píše list...
-          </button>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-// ─── Module 2: AI Odhadca (arbitrage simulation) ──────────────────────────
-function AIArbitrage() {
-  const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{
-    arbitrageScore: number; ownedAddress?: string; reasoning: string; recommendedAction: string;
-  } | null>(null);
-
-  const runAnalysis = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/arbitrage/analyze", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ useLive: false }),
-      });
-      const data = await res.json() as { candidates?: Array<{ arbitrageScore: number; ownedAddress?: string; reasoning: string; recommendedAction: string }> };
-      const top = data.candidates?.[0];
-      if (top) { setResult(top); setStep(3); }
-      else setStep(2);
-    } catch { setStep(2); }
-    setLoading(false);
-  }, []);
-
-  return (
-    <div className="bg-[#0C0C14] border border-blue-500/20 rounded-3xl p-8 hover:border-blue-500/40 transition-all">
-      <div className="flex justify-between items-start mb-8">
-        <Calculator className="text-blue-500" size={44} />
-        <div className="text-[10px] bg-blue-500/10 text-blue-500 px-2 py-1 rounded font-bold uppercase border border-blue-500/20">
-          Lead Magnet
-        </div>
-      </div>
-      <h2 className="text-2xl font-bold mb-3 italic">AI Arbitráž</h2>
-      <p className="text-sm text-slate-400 mb-6 leading-relaxed">
-        Konvertuje neúspešných kupujúcich na predajcov. Systém preverí Exit Strategy každého záujemcu o obhliadku.
-      </p>
-
-      <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-5">
-        {step === 1 && (
-          <button type="button" onClick={() => { setStep(2); void runAnalysis(); }}
-            className="w-full py-4 bg-blue-600 hover:bg-blue-500 rounded-xl font-black text-xs uppercase tracking-widest transition-all">
-            Spustiť arbitráž analýzu
-          </button>
-        )}
-        {step === 2 && loading && (
-          <div className="flex items-center justify-center gap-2 py-4 text-blue-300 text-xs">
-            <Loader2 size={14} className="animate-spin" /> Analyzujem CRM dáta...
-          </div>
-        )}
-        {step === 3 && result && (
-          <div style={{ animation: "fadeSlideUp 0.35s ease-out both" }} className="space-y-3">
-            <div className="p-3 bg-blue-500/5 border border-blue-500/20 rounded-lg text-[11px] text-blue-300">
-              <strong>AI Arbitráž:</strong> {result.reasoning}
-            </div>
-            <div className="flex items-center justify-between px-3 py-2 bg-yellow-500/5 border border-yellow-500/20 rounded-xl">
-              <span className="text-xs text-slate-400">Skóre príležitosti</span>
-              <span className="text-lg font-black" style={{ color: result.arbitrageScore >= 80 ? "#34D399" : "#FCD34D" }}>
-                {result.arbitrageScore}%
-              </span>
-            </div>
-            {result.ownedAddress && (
-              <p className="text-[11px] text-yellow-300 px-1">
-                <Zap size={11} className="inline mr-1" />
-                Vlastní: {result.ownedAddress}
-              </p>
-            )}
-            <p className="text-[11px] text-green-400 px-1">{result.recommendedAction}</p>
-            <a href={UTM}
-              className="w-full py-4 bg-green-600 hover:bg-green-500 rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center transition-all">
-              Vytvoriť záznam v CRM
-            </a>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ─── Module 3: Digital Twin (Meta Lookalike) ──────────────────────────────
-function DigitalTwinMeta() {
-  const [syncStatus, setSyncStatus] = useState<"idle" | "analyzing" | "synced">("idle");
-  const [result, setResult] = useState<{ size?: number; message?: string } | null>(null);
-
-  const startSync = useCallback(async () => {
-    if (syncStatus !== "idle") return;
-    setSyncStatus("analyzing");
-    try {
-      const res = await fetch("/api/meta/lookalike", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ source: "leads_demo" }),
-      });
-      const data = await res.json() as { size?: number; message?: string };
-      setResult(data);
-    } catch { /* fallback */ }
-    setSyncStatus("synced");
-  }, [syncStatus]);
-
-  return (
-    <div className="bg-[#0C0C14] border border-purple-500/20 rounded-3xl p-8 hover:border-purple-500/40 transition-all">
-      <div className="flex justify-between items-start mb-8">
-        <Users className="text-purple-500" size={44} />
-        <div className="text-[10px] bg-purple-500/10 text-purple-500 px-2 py-1 rounded font-bold uppercase border border-purple-500/20">
-          Scale Engine
-        </div>
-      </div>
-      <h2 className="text-2xl font-bold mb-3 italic">Digital Twin</h2>
-      <p className="text-sm text-slate-400 mb-6 leading-relaxed">
-        Diagnostikuje neúspech samopredajcov na Bazoši a hľadá ich digitálne dvojčatá pre Lookalike kampane na Meta.
-      </p>
-
-      <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-5 space-y-4">
-        <div className="mb-2 h-5 flex items-center">
-          {syncStatus === "analyzing" && (
-            <div className="h-1 bg-purple-500 w-full animate-pulse rounded" />
-          )}
-          {syncStatus === "synced" && result && (
-            <p className="text-[10px] text-green-400 font-bold uppercase w-full text-center">
-              Sync Complete · {result.size ?? 241} kontaktov
-            </p>
-          )}
-          {syncStatus === "synced" && !result && (
-            <p className="text-[10px] text-green-400 font-bold uppercase w-full text-center">Sync Complete!</p>
-          )}
-        </div>
-        <button type="button" onClick={() => void startSync()} disabled={syncStatus === "analyzing"}
-          className="w-full py-4 border border-purple-500/30 text-purple-400 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-purple-500/10 transition-all flex items-center justify-center gap-2 disabled:opacity-60">
-          {syncStatus === "analyzing" ? <RefreshCcw size={14} className="animate-spin" /> : <Users size={14} />}
-          {syncStatus === "synced" ? "Audiencia Live na Meta" : "Aktivovať AI Targeting"}
-        </button>
-        {syncStatus === "synced" && result?.message && (
-          <p className="text-[10px] text-slate-500 text-center">{result.message}</p>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ─── Main page ────────────────────────────────────────────────────────────
-export default function AIAsistentEnterprise() {
-  return (
-    <div className="min-h-screen bg-[#050509] text-white p-6 md:p-16 font-sans">
-      <style>{`@keyframes fadeSlideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}`}</style>
+    <div className="min-h-screen bg-[#020205] text-slate-200 font-sans p-4 md:p-12">
       <div className="max-w-7xl mx-auto">
 
         {/* HEADER */}
-        <div className="mb-16 border-b border-white/5 pb-10">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="bg-blue-600 px-3 py-1 rounded text-[10px] font-black tracking-tighter uppercase">
-              Enterprise AI
-            </div>
-            <div className="text-slate-500 text-sm font-mono tracking-widest">v3.2 Production Release</div>
+        <header className="mb-16">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 mb-6">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
+            </span>
+            <span className="text-[10px] uppercase tracking-widest font-bold text-blue-400">
+              L99 Intelligence Active
+            </span>
           </div>
-          <h1 className="text-5xl md:text-7xl font-black mb-6 tracking-tighter">
-            AI ASISTENT <span className="text-blue-500">REVOLIS</span>
+          <h1 className="text-4xl md:text-6xl font-black text-white mb-4 tracking-tight uppercase">
+            Operačný Systém{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-500">
+              Revolis
+            </span>
           </h1>
-          <p className="text-xl text-slate-400 max-w-3xl leading-relaxed">
-            Nelineárna akvizícia nehnuteľností. Tri produkčné moduly s reálnym AI backendom — žiadna simulácia.
+          <p className="text-lg text-slate-400 max-w-2xl leading-relaxed">
+            Premeňte svoju RK z reaktívnej kancelárie na technologický monopol.
+            Vlastnite dáta, ktoré konkurencia ani nevidí.
           </p>
+        </header>
+
+        {/* PREPÍNAČ PROGRAMOV */}
+        <div className="flex flex-wrap gap-4 mb-12 border-b border-white/5 pb-8">
+          {(["starter", "pro", "enterprise"] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-8 py-3 rounded-xl font-bold uppercase text-xs tracking-widest transition-all ${
+                activeTab === tab
+                  ? "bg-blue-600 text-white shadow-[0_0_20px_-5px_rgba(37,99,235,0.6)]"
+                  : "bg-white/5 text-slate-500 hover:bg-white/10"
+              }`}
+            >
+              {tab === "enterprise" ? "L99 Enterprise" : tab}
+            </button>
+          ))}
         </div>
 
-        {/* 3 MODULY */}
-        <div className="grid lg:grid-cols-3 gap-10">
-          <AIGhostwriter />
-          <AIArbitrage />
-          <DigitalTwinMeta />
+        {/* FEATURE GRID */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+          {/* 1: SHADOW MARKET SCANNER */}
+          <div className={`group p-8 rounded-[2rem] border transition-all duration-500 ${
+            activeTab === "enterprise"
+              ? "bg-[#0A0A12] border-blue-500/30"
+              : "bg-[#050508] border-white/5 opacity-50"
+          }`}>
+            <div className="flex justify-between items-start mb-8">
+              <div className="p-3 bg-blue-500/10 rounded-2xl text-blue-400">
+                <Search size={32} />
+              </div>
+              <Lock size={16} className="text-slate-700" />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-3 uppercase italic">
+              Shadow Market Scanner
+            </h3>
+            <p className="text-sm text-slate-400 mb-8 leading-relaxed">
+              Získajte prístup k nehnuteľnostiam v procese dedenia a zmien na LV
+              skôr, než sa objavia na Bazoši.
+            </p>
+            <button
+              onClick={() => handleUnlock("Shadow Market")}
+              className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl text-[11px] uppercase font-black tracking-widest hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all"
+            >
+              Odomknúť mapu slepých miest v Prešove
+            </button>
+          </div>
+
+          {/* 2: AI PERSUADER */}
+          <div className={`group p-8 rounded-[2rem] border transition-all duration-500 ${
+            activeTab !== "starter"
+              ? "bg-[#0A0A12] border-indigo-500/30"
+              : "bg-[#050508] border-white/5 opacity-50"
+          }`}>
+            <div className="flex justify-between items-start mb-8">
+              <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400">
+                <Target size={32} />
+              </div>
+              <Zap size={16} className="text-slate-700" />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-3 uppercase italic">
+              AI Persuader
+            </h3>
+            <p className="text-sm text-slate-400 mb-8 leading-relaxed">
+              Automatizované nábory cez behaviorálne listy. AI vie, kedy je
+              majiteľ psychologicky pripravený predávať.
+            </p>
+            <button
+              onClick={() => handleUnlock("AI Persuader")}
+              className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl text-[11px] uppercase font-black tracking-widest hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all"
+            >
+              Zistiť, prečo 4 z 10 predajov končia v tichosti
+            </button>
+          </div>
+
+          {/* 3: ROI ORACLE */}
+          <div className={`group p-8 rounded-[2rem] border transition-all duration-500 ${
+            activeTab === "enterprise"
+              ? "bg-[#0A0A12] border-purple-500/30"
+              : "bg-[#050508] border-white/5 opacity-50"
+          }`}>
+            <div className="flex justify-between items-start mb-8">
+              <div className="p-3 bg-purple-500/10 rounded-2xl text-purple-400">
+                <BarChart3 size={32} />
+              </div>
+              <Lock size={16} className="text-slate-700" />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-3 uppercase italic">
+              ROI Oracle
+            </h3>
+            <p className="text-sm text-slate-400 mb-8 leading-relaxed">
+              Predpoveď čistého zisku z každého mandátu ešte pred jeho
+              podpísaním. Diagnostika ziskovosti pobočky.
+            </p>
+            <button
+              onClick={() => handleUnlock("ROI Oracle")}
+              className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl text-[11px] uppercase font-black tracking-widest hover:bg-purple-600 hover:text-white hover:border-purple-600 transition-all"
+            >
+              Zobraziť skrytý potenciál mojej siete
+            </button>
+          </div>
+
+          {/* 4: AI ODHADCA */}
+          <div className="group p-8 rounded-[2rem] border bg-[#0A0A12] border-white/10 transition-all duration-500">
+            <div className="flex justify-between items-start mb-8">
+              <div className="p-3 bg-slate-500/10 rounded-2xl text-slate-400">
+                <Calculator size={32} />
+              </div>
+            </div>
+            <h3 className="text-xl font-bold text-white mb-3 uppercase italic">
+              AI Odhadca 3.0
+            </h3>
+            <p className="text-sm text-slate-400 mb-8 leading-relaxed">
+              Zmeňte svoj web na magnet na kontakty. Majiteľ získa trhovú cenu,
+              vy získate exkluzívny lead.
+            </p>
+            <button
+              onClick={() => handleUnlock("AI Odhadca")}
+              className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl text-[11px] uppercase font-black tracking-widest hover:bg-white hover:text-black transition-all"
+            >
+              Zistiť, o koľko sused nadhodnotil svoju cenu
+            </button>
+          </div>
+
         </div>
 
         {/* FOOTER CTA */}
-        <div className="mt-20 p-12 bg-gradient-to-br from-blue-600/10 to-transparent border border-white/5 rounded-[40px] text-center">
-          <h3 className="text-3xl font-bold mb-6 italic">Pripravené na trhovú expanziu.</h3>
-          <a href={UTM}
-            className="inline-block px-12 py-6 bg-white text-black font-black rounded-2xl text-sm uppercase tracking-tighter hover:scale-105 transition-all">
-            Aktivovať Enterprise balík pre Vaše Nehnuteľnosti
-          </a>
-        </div>
+        <footer className="mt-24 p-12 bg-gradient-to-b from-blue-600/20 to-transparent border border-blue-500/20 rounded-[3rem] text-center">
+          <h2 className="text-3xl font-black text-white mb-6 uppercase italic tracking-tighter">
+            Pripravený na technologický monopol v Prešove?
+          </h2>
+          <div className="flex flex-col md:flex-row gap-4 justify-center">
+            <button
+              onClick={() => handleUnlock("neviditelny-makler")}
+              className="px-10 py-5 bg-blue-600 text-white font-black rounded-2xl text-xs uppercase tracking-widest hover:scale-105 transition-transform"
+            >
+              Aktivovať režim &quot;Neviditeľný maklér&quot;
+            </button>
+            <button
+              onClick={() => handleUnlock("prestali-inzerovat")}
+              className="px-10 py-5 bg-white/5 border border-white/10 text-white font-black rounded-2xl text-xs uppercase tracking-widest hover:bg-white/10 transition-all"
+            >
+              Prečo najúspešnejšie RK prestávajú inzerovať?
+            </button>
+          </div>
+        </footer>
 
       </div>
     </div>
   );
-}
+};
+
+export default L99ScanDashboard;
