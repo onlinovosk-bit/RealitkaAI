@@ -66,9 +66,9 @@ describe('billing-store', () => {
   });
 
   describe('BILLING_PLANS', () => {
-    it('has 3 plans defined', async () => {
+    it('has 4 plans defined', async () => {
       const { BILLING_PLANS } = await import('@/lib/billing-store');
-      expect(BILLING_PLANS).toHaveLength(3);
+      expect(BILLING_PLANS).toHaveLength(4);
     });
 
     it('each plan has required fields', async () => {
