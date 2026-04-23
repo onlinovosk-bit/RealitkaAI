@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, Zap, Eye, Crown, ShieldCheck } from "lucide-react";
@@ -13,19 +13,27 @@ import { AI_ASSISTANT_STATUS_ACTIVE } from "@/lib/ai-brand";
 import { RadiantSpriteIcon } from "@/components/shared/radiant-sprite-icon";
 
 // ─── Programové balíky (accordion) ───────────────────────────────────────
-const PROGRAMS = [
+type ProgramItem = { name: string; href: string };
+
+const PROGRAMS: {
+  id: string;
+  name: string;
+  icon: React.ElementType;
+  color: string;
+  items: ProgramItem[];
+}[] = [
   {
     id: "starter",
     name: "Smart Start",
     icon: Zap,
     color: "#EAB308",
     items: [
-      "Monitoring realitných portálov",
-      "Lead Generation (Standard)",
-      "Základná cenová mapa SR",
-      "Filtrovanie súkromnej inzercie",
-      "Notifikácie nových ponúk",
-      "Export listov nehnuteľností",
+      { name: "Monitoring realitných portálov", href: "/dashboard" },
+      { name: "Lead Generation (Standard)",     href: "/leads" },
+      { name: "Základná cenová mapa SR",         href: "/dashboard" },
+      { name: "Filtrovanie súkromnej inzercie",  href: "/leads" },
+      { name: "Notifikácie nových ponúk",        href: "/leads" },
+      { name: "Export listov nehnuteľností",     href: "/properties" },
     ],
   },
   {
@@ -34,12 +42,12 @@ const PROGRAMS = [
     icon: Eye,
     color: "#818CF8",
     items: [
-      "AI Asistent 24/7",
-      "Prediktívny deal scoring",
-      "AI analýza hovorov",
-      "Automatické follow-upy",
-      "AI Ghostwriter (správy)",
-      "Kataster radar",
+      { name: "AI Asistent 24/7",           href: "/revolis-ai" },
+      { name: "Prediktívny deal scoring",   href: "/pipeline" },
+      { name: "AI analýza hovorov",         href: "/leads" },
+      { name: "Automatické follow-upy",     href: "/tasks" },
+      { name: "AI Ghostwriter (správy)",    href: "/revolis-ai" },
+      { name: "Kataster radar",             href: "/l99-hub" },
     ],
   },
   {
@@ -48,12 +56,12 @@ const PROGRAMS = [
     icon: Crown,
     color: "#5AAF3C",
     items: [
-      "Owner dashboard + tím",
-      "Ghost Resurrection",
-      "Register závierok (B2B)",
-      "Predpoveď obratu pre tím",
-      "Tímový AI mozog",
-      "Manažérske reporty",
+      { name: "Owner dashboard + tím",       href: "/dashboard" },
+      { name: "Ghost Resurrection",          href: "/leads" },
+      { name: "Register závierok (B2B)",     href: "/dashboard" },
+      { name: "Predpoveď obratu pre tím",    href: "/dashboard" },
+      { name: "Tímový AI mozog",             href: "/revolis-ai" },
+      { name: "Manažérske reporty",          href: "/dashboard" },
     ],
   },
   {
@@ -62,15 +70,15 @@ const PROGRAMS = [
     icon: ShieldCheck,
     color: "#60A5FA",
     items: [
-      '„Za koľko predal sused?"',
-      "Kataster Pulse (zmeny LV)",
-      "Ghost Resurrection – pokročilý",
-      "Diskrétny náborový modul",
-      "Neural Pulse Engine (real-time)",
-      "💎 Shadow Inventory (off-market)",
-      "🛡️ Agent Integrity Monitor",
-      "Competition Heatmap",
-      "L99 Expert Support 24/7",
+      { name: '„Za koľko predal sused?"',        href: "/l99-hub" },
+      { name: "Kataster Pulse (zmeny LV)",        href: "/l99-hub" },
+      { name: "Ghost Resurrection – pokročilý",   href: "/leads" },
+      { name: "Diskrétny náborový modul",         href: "/leads" },
+      { name: "Neural Pulse Engine (real-time)",  href: "/l99-hub" },
+      { name: "💎 Shadow Inventory (off-market)", href: "/l99-hub" },
+      { name: "🛡️ Agent Integrity Monitor",      href: "/l99-hub" },
+      { name: "Competition Heatmap",              href: "/l99-hub" },
+      { name: "L99 Expert Support 24/7",          href: "/billing" },
     ],
   },
 ];
@@ -124,18 +132,21 @@ function ProgramAccordion() {
                   >
                     <div className="ml-8 mt-1 mb-2 space-y-0.5 border-l-2" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
                       {prog.items.map((item) => (
-                        <span
-                          key={item}
-                          className="block px-4 py-2 text-[11px] font-medium transition-all"
+                        <Link
+                          key={item.name}
+                          href={item.href}
+                          className="block px-4 py-2 text-[11px] font-medium transition-all duration-150 hover:pl-6 rounded-lg hover:bg-white/[0.04]"
                           style={{
-                            color: item.startsWith("💎") || item.startsWith("🛡️")
+                            color: item.name.startsWith("💎") || item.name.startsWith("🛡️")
                               ? "#60A5FA"
                               : "#475569",
-                            fontStyle: item.startsWith("💎") || item.startsWith("🛡️") ? "italic" : "normal",
+                            fontStyle: item.name.startsWith("💎") || item.name.startsWith("🛡️") ? "italic" : "normal",
                           }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = item.name.startsWith("💎") || item.name.startsWith("🛡️") ? "#93C5FD" : "#CBD5E1"; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = item.name.startsWith("💎") || item.name.startsWith("🛡️") ? "#60A5FA" : "#475569"; }}
                         >
-                          {item}
-                        </span>
+                          {item.name}
+                        </Link>
                       ))}
                     </div>
                   </motion.div>
