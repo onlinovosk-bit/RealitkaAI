@@ -52,6 +52,58 @@ const legalSuiteChapters = [
   },
 ];
 
+const programOverview = [
+  {
+    name: "Free",
+    note: "Vstupný plán pre zoznámenie sa s platformou.",
+    features: [
+      "AI Asistent - základný režim",
+      "Základné AI hodnotenie príležitostí",
+      "Obmedzený prehľad príležitostí",
+    ],
+  },
+  {
+    name: "Štarter",
+    note: "Plán pre samostatných maklérov a menšie tímy.",
+    features: [
+      "AI Asistent - odpovede do 2 minút počas pracovných hodín",
+      "Buyer Readiness Index pre prioritizáciu príležitostí",
+      "Denný AI briefing o 8:00",
+      "Hot Alert pri vysokom skóre leadu",
+      "Týždenný konverzný report",
+      "Revolis Academy - 5 lekcií",
+    ],
+  },
+  {
+    name: "Pro",
+    note: "Plán pre rastúce tímy s vyššou mierou automatizácie.",
+    features: [
+      "AI Asistent 24/7",
+      "Predictive Deal Scoring",
+      "AI hovorová analýza - prepis, súhrn, next steps",
+      "Intent Detection pripravenosti kúpy",
+      "Automatické opätovné kontakty (7-dňové sekvencie)",
+      "Territory Intelligence (heat mapa)",
+      "Revenue Forecasting na 3 mesiace",
+      "Integrácie: Nehnuteľnosti.sk, Reality.sk, TopReality.sk",
+    ],
+  },
+  {
+    name: "Enterprise",
+    note: "Plán pre kancelárie s požiadavkou na executive reporting a SLA.",
+    features: [
+      "Prehľad majiteľa (kancelárske metriky)",
+      "Team AI Brain (zdieľaná AI pamäť tímu)",
+      "Competitor Alert",
+      "Vlastná AI Persona",
+      "API prístup pre vlastné systémy",
+      "White-label výstupy",
+      "Dedikovaný Account Manager",
+      "SLA garancia 99.9% uptime",
+    ],
+  },
+];
+
 export const metadata = {
   title: "VOP / Terms | Revolis.AI",
   description: "Všeobecné obchodné podmienky Revolis.AI pre self-serve zákazníkov.",
@@ -81,6 +133,27 @@ export default function TermsPage() {
                 >
                   {chapter.cta}
                 </Link>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-xl border border-violet-500/25 bg-violet-500/5 p-4">
+          <h2 className="text-lg font-semibold text-white">Kapitola: Podrobný prehľad 4 programov</h2>
+          <p className="mt-2 text-slate-300">
+            Nižšie je orientačný prehľad programov a feature setu. Záväzný rozsah služieb, limity a SLA vždy určuje
+            aktuálny objednávkový formulár, VOP a prípadné enterprise annexy.
+          </p>
+          <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
+            {programOverview.map((program) => (
+              <article key={program.name} className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+                <h3 className="text-sm font-semibold text-violet-200">{program.name}</h3>
+                <p className="mt-1 text-xs text-slate-400">{program.note}</p>
+                <ul className="mt-3 space-y-1 text-xs text-slate-300">
+                  {program.features.map((feature) => (
+                    <li key={feature}>- {feature}</li>
+                  ))}
+                </ul>
               </article>
             ))}
           </div>
