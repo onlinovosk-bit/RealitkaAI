@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import OpenAI from "openai";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+function getOpenAI() { return new OpenAI({ apiKey: process.env.OPENAI_API_KEY ?? "" }); }
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function getServiceClient() {
@@ -66,7 +66,7 @@ Napíš krátku, priateľskú správu (SMS/email štýl, max 5 viet):
 
 Vráť IBA text správy (bez uvodzoviek). Tón: ľudský, nie korporátny.`;
 
-    const completion = await openai.chat.completions.create({
+    const completion = await getOpenAI().chat.completions.create({
       model:       "gpt-4o",
       max_tokens:  400,
       temperature: 0.75,

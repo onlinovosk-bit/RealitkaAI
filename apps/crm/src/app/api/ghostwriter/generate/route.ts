@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import OpenAI from "openai";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+function getOpenAI() { return new OpenAI({ apiKey: process.env.OPENAI_API_KEY ?? "" }); }
 
 const EVENT_TYPE_LABELS: Record<string, string> = {
   dedičstvo:    "zápis dedičstva",
@@ -53,7 +53,7 @@ Požiadavky na list:
 
 Vráť IBA HTML obsah listu (bez <!DOCTYPE>, <html>, <head> tagov). Použi inline štýly pre profesionálny vzhľad.`;
 
-    const completion = await openai.chat.completions.create({
+    const completion = await getOpenAI().chat.completions.create({
       model:       "gpt-4o",
       max_tokens:  1200,
       temperature: 0.7,

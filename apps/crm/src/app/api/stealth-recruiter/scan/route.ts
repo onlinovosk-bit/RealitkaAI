@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import OpenAI from "openai";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+function getOpenAI() { return new OpenAI({ apiKey: process.env.OPENAI_API_KEY ?? "" }); }
 
 function getServiceClient() {
   return createClient(
@@ -97,7 +97,7 @@ Kandidáti:
 ${DEMO_PROSPECTS.map(p => `- ${p.id}: ${p.address}, ${p.daysListed} dní inzeruje, znížil cenu o ${p.priceDropPercent}%`).join("\n")}`;
 
         try {
-          const completion = await openai.chat.completions.create({
+          const completion = await getOpenAI().chat.completions.create({
             model: "gpt-4o-mini",
             max_tokens: 400,
             temperature: 0.5,

@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireEnterprise } from "./entitlements";
 import type { ShadowInventorySignal } from "./types";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+function getOpenAI() { return new OpenAI({ apiKey: process.env.OPENAI_API_KEY ?? "" }); }
 
 export async function scanDormantLeads(agencyId: string): Promise<ShadowInventorySignal[]> {
   await requireEnterprise();
@@ -73,7 +73,7 @@ async function generateDormantReasoning(lead: {
   last_contact_at: string;
 }): Promise<string> {
   try {
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAI().chat.completions.create({
       model: "gpt-4o",
       messages: [{
         role: "user",

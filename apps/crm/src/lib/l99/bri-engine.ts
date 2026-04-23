@@ -10,7 +10,7 @@ import {
   type ReasoningFactor,
 } from "./types";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+function getOpenAI() { return new OpenAI({ apiKey: process.env.OPENAI_API_KEY ?? "" }); }
 
 export function calculateBriScore(components: BriComponents): number {
   return Math.round(
@@ -67,7 +67,7 @@ async function generateReasoningString(
   leadContext: { name: string; lastActivity: string }
 ): Promise<string> {
   try {
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAI().chat.completions.create({
       model: "gpt-4o",
       messages: [{
         role: "user",
