@@ -1,12 +1,12 @@
 import { Metadata } from "next";
-import AcquisitionHub from "@/components/marketing/AcquisitionHub";
+import UnifiedDemo from "@/components/marketing/UnifiedDemo";
 
 export const metadata: Metadata = {
-  title: "AI Asistent Demo – Revolis.AI",
+  title: "Demo – AI Odhadca, L99 Hub, ROI Kalkulačka | Revolis.AI",
   description:
-    "Živá ukážka AI modulov: odhadca ceny, monitoring susedov, AI targeting.",
+    "Živá ukážka AI modulov: odhadca ceny, L99 prediktívna inteligencia, ROI kalkulačka.",
 };
 
 export default function DemoPage() {
-  return <AcquisitionHub />;
+  return <UnifiedDemo />;
 }
