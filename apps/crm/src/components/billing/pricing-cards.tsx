@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Plus, Zap } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { fetchJsonWithRetry } from "@/lib/request-helpers";
+import { EmailMockup } from "./EmailMockup";
 
 const ONBOARDING_FEE = 99;
 
@@ -80,6 +81,8 @@ export default function PricingCards({ plans }: { plans: Plan[] }) {
     }
   }
 
+  const isSmolko = promoCode === "SMOLKO_VIP_50";
+
   return (
     <div>
       {/* Promo banner */}
@@ -118,8 +121,16 @@ export default function PricingCards({ plans }: { plans: Plan[] }) {
         </div>
       </div>
 
-      {/* Cards */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-4">
+      {/* Smolko mockup — mobile: nad kartami */}
+      {isSmolko && (
+        <div className="xl:hidden mb-8">
+          <EmailMockup />
+        </div>
+      )}
+
+      {/* Cards + desktop mockup wrapper */}
+      <div className={isSmolko ? "flex flex-col xl:flex-row gap-10 items-start" : ""}>
+      <div className={`grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-4 ${isSmolko ? "xl:flex-1" : ""}`}>
         {plans.map((plan) => {
           const isPro = plan.key === "pro" || plan.recommended;
           const isEnterprise = plan.key === "enterprise";
@@ -292,6 +303,14 @@ export default function PricingCards({ plans }: { plans: Plan[] }) {
           );
         })}
       </div>
+
+      {/* Smolko mockup — desktop: vpravo */}
+      {isSmolko && (
+        <div className="hidden xl:block xl:w-[380px] flex-shrink-0 sticky top-8">
+          <EmailMockup />
+        </div>
+      )}
+      </div>{/* end isSmolko wrapper */}
 
       {checkoutError && (
         <div
