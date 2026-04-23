@@ -4,6 +4,7 @@ import { useState } from "react";
 import { NeuralPulse } from "@/components/visuals/NeuralPulse";
 import { GhostBanner } from "@/components/marketing/GhostBanner";
 import { CompetitionMap } from "@/components/marketing/CompetitionMap";
+import { FeatureGrid } from "@/components/marketing/FeatureGrid";
 
 const GHOST_DATA = {
   sessionId:   "smolko-demo-2024",
@@ -120,6 +121,14 @@ export function SmolkoDemoPage() {
           {/* Konkurenčná mapa */}
           <CompetitionMap isProtocolActive={false} onUpgrade={() => { window.location.href = "/billing"; }} />
 
+        </div>
+
+        {/* Feature Grid */}
+        <div className="mt-16">
+          <p className="text-[10px] font-black uppercase tracking-widest text-blue-500 mb-6">
+            Moduly aktívne vo vašom protokole
+          </p>
+          <FeatureGrid />
         </div>
 
         <footer className="mt-20 pb-20 text-center">
