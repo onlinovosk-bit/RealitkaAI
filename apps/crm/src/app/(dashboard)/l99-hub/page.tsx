@@ -141,13 +141,13 @@ export default function L99HubPage() {
           className="mb-16"
         >
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 mb-6 text-blue-400 font-bold italic text-[10px] uppercase tracking-widest">
-            <Zap size={10} /> Revolis L99 Protocol Active
+            <Zap size={10} /> Revolis Protocol Active
           </div>
           <h1 className="text-4xl md:text-6xl font-black text-white mb-4 tracking-tight uppercase italic">
-            L99 <span className="text-blue-500">HUB</span>
+            PREDIKTÍVNA <span className="text-blue-500">INTELIGENCIA</span>
           </h1>
-          <p className="text-lg text-slate-400 max-w-2xl">
-            Prediktívna inteligencia. Dáta ktoré konkurencia nemá.
+          <p className="text-lg text-slate-400 max-w-2xl uppercase tracking-wide">
+            Dáta ktoré konkurencia nemá.
           </p>
 
           {/* Tier badge */}
@@ -222,10 +222,10 @@ export default function L99HubPage() {
                   {!unlocked && <Lock size={14} style={{ color: "#334155" }} />}
                 </div>
 
-                <h3 className="text-lg font-black text-white mb-2 uppercase italic">
+                <h3 className="text-lg font-black text-white mb-2 uppercase italic tracking-wide">
                   {mod.title}
                 </h3>
-                <p className="text-sm text-slate-400 mb-6 leading-relaxed">
+                <p className="text-xs text-slate-400 mb-6 leading-relaxed uppercase tracking-wider">
                   {mod.text}
                 </p>
 
@@ -260,8 +260,8 @@ export default function L99HubPage() {
               border: "1px solid rgba(37,99,235,0.20)",
             }}
           >
-            <h3 className="text-2xl font-black text-white mb-3 uppercase italic">
-              {isPro ? "Aktivuj Protocol Authority" : "Začni s Market Vision"}
+            <h3 className="text-2xl font-black text-white mb-3 uppercase italic tracking-wide">
+              {isPro ? "AKTIVUJ PROTOCOL AUTHORITY" : "ZAČNI S MARKET VISION"}
             </h3>
             <p className="text-sm text-slate-400 mb-6 max-w-lg mx-auto">
               {isPro

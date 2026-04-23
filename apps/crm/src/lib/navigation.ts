@@ -32,7 +32,7 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
   },
   {
     key: "l99-hub",
-    label: "L99 Hub",
+    label: "Prediktívna Intel.",
     path: "/l99-hub",
     emoji: "⚡",
     visibleFor: ["agent", "owner"],
