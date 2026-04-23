@@ -12,7 +12,7 @@ export default async function DashboardLayout({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profile, error } = await supabase
+  const { data: profile } = await supabase
     .from("profiles")
     .select(`
       ui_role,
@@ -23,9 +23,7 @@ export default async function DashboardLayout({
       team_license_id
     `)
     .eq("auth_user_id", user.id)
-    .single();
-
-  if (error || !profile) redirect("/login");
+    .maybeSingle();
 
   return (
     <div
