@@ -230,6 +230,8 @@ export async function createBillingCheckoutSession(planKey: string) {
 
   const appUrl = getAppUrl();
 
+  const onboardingPriceId = process.env.STRIPE_PRICE_ONBOARDING;
+
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
     line_items: [
@@ -237,6 +239,9 @@ export async function createBillingCheckoutSession(planKey: string) {
         price: plan.priceId,
         quantity: 1,
       },
+      ...(onboardingPriceId
+        ? [{ price: onboardingPriceId, quantity: 1 }]
+        : []),
     ],
     success_url: `${appUrl}/billing?checkout=success`,
     cancel_url: `${appUrl}/billing?checkout=cancel`,
