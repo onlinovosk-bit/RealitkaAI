@@ -219,7 +219,7 @@ export default function ProgramComparison() {
                       </td>
                       {PLANS.map((plan) => (
                         <td key={plan.key} className="py-3 px-3 text-center">
-                          <Cell value={feature.plans[plan.key]} color={plan.color} />
+                          <Cell value={feature.plans[plan.key as PlanKey]} color={plan.color} />
                         </td>
                       ))}
                     </tr>
