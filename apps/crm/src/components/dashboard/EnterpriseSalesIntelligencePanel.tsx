@@ -91,72 +91,87 @@ export default function EnterpriseSalesIntelligencePanel({ enabled }: Props) {
 
   if (!enabled) {
     return (
-      <div className="relative overflow-hidden rounded-2xl border border-indigo-500/25 bg-gradient-to-br from-slate-950/90 via-slate-900/80 to-indigo-950/40 p-5">
-        <div className="enterprise-locked">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-indigo-300/90">Enterprise</p>
-          <h3 className="text-lg font-bold text-slate-100">AI Sales Intelligence</h3>
-          <p className="mt-1 text-xs text-slate-500">Deal Moment · Risk · Client DNA · BRI skóre</p>
-          <div className="mt-4 space-y-2">
-            {["Záujemca Novák – BRI 91/100 🔥", "Záujemca Kováč – BRI 78/100 ⚡", "Záujemca Horváth – BRI 65/100 📊"].map((item) => (
-              <div key={item} className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-slate-400">{item}</div>
+      <div
+        className="relative overflow-hidden rounded-2xl p-5"
+        style={{
+          background: "linear-gradient(135deg, rgba(202,138,4,0.08) 0%, #060D1C 60%)",
+          border: "1px solid rgba(234,179,8,0.25)",
+        }}
+      >
+        <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: "#EAB308" }}>
+          Protocol Authority
+        </p>
+        <h3 className="text-lg font-bold text-slate-100">AI Sales Intelligence</h3>
+        <p className="mt-1 text-xs text-slate-500">BRI skóre · Kataster Pulse · Competition Heatmap · Neural Pulse</p>
+
+        {/* Demo preview */}
+        <div className="mt-4 space-y-2 opacity-40 pointer-events-none select-none">
+          {["Novák – BRI 91/100 🔥", "Kováč – BRI 78/100 ⚡", "Horváth – BRI 65/100 📊"].map((item) => (
+            <div key={item} className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-slate-400">{item}</div>
+          ))}
+        </div>
+
+        {/* Upsell overlay */}
+        <div className="mt-6 rounded-2xl p-5 text-center" style={{ background: "rgba(234,179,8,0.06)", border: "1px solid rgba(234,179,8,0.15)" }}>
+          <p className="mb-1 text-sm font-black text-white">★ Dostupné v Protocol Authority</p>
+          <div className="mb-4 mt-3 grid grid-cols-2 gap-1.5 text-left">
+            {[
+              "BRI skóre pripravenosti kúpy",
+              "Hot Alert (BRI ≥ 75) — okamžite",
+              "Kataster Pulse — zmeny LV",
+              "Competition Heatmap",
+              "Neural Pulse Engine (real-time)",
+              "Ghost Resurrection — pokročilý",
+              "💎 Shadow Inventory (off-market)",
+              "🛡️ Agent Integrity Monitor",
+              "1 owner + 4 Active Force makléri",
+              "Manažérske reporty",
+              "Dedikovaný Protocol manažér",
+              "SLA 99.99% uptime",
+            ].map((f) => (
+              <div key={f} className="flex items-start gap-1.5 text-[11px] text-slate-400">
+                <span className="mt-px shrink-0" style={{ color: "#EAB308" }}>✓</span>
+                {f}
+              </div>
             ))}
           </div>
-        </div>
-        <div className="enterprise-locked-overlay">
-          <div className="px-6 text-center max-w-sm mx-auto">
-            <p className="mb-2 text-2xl">⭐</p>
-            <p className="mb-1 text-sm font-bold text-white">AI Obchodná inteligencia – len Enterprise</p>
-            <div className="mb-4 grid grid-cols-2 gap-1.5 text-left">
-              {[
-                "BRI skóre pripravenosti kúpy",
-                "Prioritné SMS alerting (BRI ≥ 88)",
-                "Sledovanie konkurencie v reálnom čase",
-                "Spiace príležitosti — obnova starých leadov",
-                "Manažérske reporty pre vlastníka",
-                "AI pamäť celého tímu",
-                "Multi-tím a multi-pobočka",
-                "5 Pro licencií pre maklérov v cene",
-                "Dedikovaný Account Manager",
-                "SLA podpora do 1 hodiny",
-                "API prístup pre vlastné integrácie",
-                "Vlastné automatizácie bez kódu",
-              ].map((f) => (
-                <div key={f} className="flex items-start gap-1.5 text-[11px] text-slate-400">
-                  <span className="mt-px shrink-0 text-indigo-400">✓</span>
-                  {f}
-                </div>
-              ))}
-            </div>
-            <Link
-              href="/billing"
-              className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all hover:scale-105"
-              style={{ background: "linear-gradient(135deg, #6366F1, #F59E0B)", color: "#fff" }}
-            >
-              ✦ Prejsť na Enterprise
-            </Link>
-          </div>
+          <Link
+            href="/billing"
+            className="inline-flex items-center gap-2 rounded-full px-5 py-2 text-xs font-black uppercase tracking-widest transition-all hover:scale-105"
+            style={{ background: "linear-gradient(135deg, #EAB308, #CA8A04)", color: "#010103", boxShadow: "0 0 20px rgba(234,179,8,0.25)" }}
+          >
+            ★ Aktivovať Protocol Authority
+          </Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl border border-indigo-500/25 bg-gradient-to-br from-slate-950/90 via-slate-900/80 to-indigo-950/40 p-5 shadow-[0_0_40px_rgba(99,102,241,0.12)]">
+    <div
+      className="rounded-2xl p-5"
+      style={{
+        background: "linear-gradient(135deg, rgba(202,138,4,0.10) 0%, #060D1C 60%)",
+        border: "1px solid rgba(234,179,8,0.30)",
+        boxShadow: "0 0 40px rgba(234,179,8,0.08)",
+      }}
+    >
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-indigo-300/90">
-            Enterprise
+          <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: "#EAB308" }}>
+            Protocol Authority
           </p>
           <h3 className="text-lg font-bold text-slate-100">
             AI Sales Intelligence
           </h3>
           <p className="mt-1 text-xs text-slate-500">
-            Deal Moment · Risk · Client DNA · odporúčané akcie (iba Enterprise plán)
+            BRI skóre · Kataster Pulse · Competition Heatmap · Neural Pulse
           </p>
         </div>
         <Link
           href="/billing"
-          className="text-xs font-medium text-indigo-300/90 underline-offset-2 hover:text-indigo-200 hover:underline"
+          className="text-xs font-medium underline-offset-2 hover:underline"
+          style={{ color: "#EAB308" }}
         >
           Plány
         </Link>
@@ -195,7 +210,8 @@ export default function EnterpriseSalesIntelligencePanel({ enabled }: Props) {
             <div className="mt-3 flex flex-wrap gap-2">
               <Link
                 href={`/leads/${item.lead_id}`}
-                className="inline-flex rounded-lg bg-indigo-500/90 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-indigo-400"
+                className="inline-flex rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-80"
+                style={{ background: "rgba(234,179,8,0.80)" }}
               >
                 Otvoriť príležitosť
               </Link>
@@ -206,7 +222,7 @@ export default function EnterpriseSalesIntelligencePanel({ enabled }: Props) {
 
       {briHistory.length > 0 && (
         <div className="mt-6 border-t border-slate-800 pt-4">
-          <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-indigo-300/70">
+          <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em]" style={{ color: "rgba(234,179,8,0.70)" }}>
             🧠 Posledné BRI skóre pripravenosti
           </p>
           <ul className="space-y-2">
