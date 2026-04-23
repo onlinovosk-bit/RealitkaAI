@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResend() { return new Resend(process.env.RESEND_API_KEY ?? ""); }
 
 export async function POST(request: Request) {
   try {
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
     if (error) throw error;
 
     // Notifikácia na legal@revolis.ai
-    await resend.emails.send({
+    await getResend().emails.send({
       from: "Revolis.AI <support@revolis.ai>",
       to: "legal@revolis.ai",
       subject: `🔔 Nová ROI Guarantee reklamácia – ${body.email}`,
@@ -63,7 +63,7 @@ Riešiť do 5 pracovných dní.
     });
 
     // Potvrdenie zákazníkovi
-    await resend.emails.send({
+    await getResend().emails.send({
       from: "Revolis.AI <support@revolis.ai>",
       to: body.email,
       subject: "Revolis.AI – Prijali sme vašu žiadosť o vrátenie",
