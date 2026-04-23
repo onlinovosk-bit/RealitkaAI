@@ -116,8 +116,6 @@ function Cell({ value, color }: { value: boolean | string | undefined; color: st
 
 // ─── Component ────────────────────────────────────────────────────────────
 export default function ProgramComparison() {
-  const base = PLANS[0].price;
-
   return (
     <div className="min-h-screen bg-[#010103] text-slate-200 pb-20">
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-12">
@@ -141,7 +139,6 @@ export default function ProgramComparison() {
                 <th className="text-left pb-6 pr-4 w-[260px]" />
 
                 {PLANS.map((plan, i) => {
-                  const diff = plan.price - base;
                   const prevDiff = i > 0 ? plan.price - PLANS[i - 1].price : 0;
                   return (
                     <th key={plan.key} className="pb-6 px-3 text-center" style={{ minWidth: 140 }}>
@@ -168,24 +165,16 @@ export default function ProgramComparison() {
                           <span className="text-[10px] text-slate-500 font-normal">/mes</span>
                         </div>
 
-                        {/* Cenový rozdiel */}
-                        {diff > 0 && (
-                          <div className="mt-2 space-y-1">
+                        {/* Cenový rozdiel — iba voči o úroveň nižšiemu */}
+                        {i > 0 && (
+                          <div className="mt-2">
                             <div
-                              className="text-[9px] font-bold rounded-full px-2 py-0.5 inline-block"
-                              style={{ background: "rgba(255,255,255,0.05)", color: "#475569" }}
+                              className="text-[9px] font-bold rounded-full px-2 py-0.5 inline-flex items-center gap-1"
+                              style={{ background: `${plan.color}18`, color: plan.color }}
                             >
-                              +{diff} € vs Smart Start
+                              <TrendingUp size={8} />
+                              +{prevDiff} € vs {PLANS[i - 1].name.split(" ")[0]}
                             </div>
-                            {i > 1 && (
-                              <div
-                                className="text-[9px] font-bold rounded-full px-2 py-0.5 inline-flex items-center gap-1"
-                                style={{ background: `${plan.color}15`, color: plan.color }}
-                              >
-                                <TrendingUp size={8} />
-                                +{prevDiff} € vs {PLANS[i - 1].name.split(" ")[0]}
-                              </div>
-                            )}
                           </div>
                         )}
 
