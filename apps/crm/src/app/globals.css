@@ -306,3 +306,23 @@ body { background-color: var(--space-bg); }
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+/* ─── AppSidebar scrollbar hide ─────────────────────────── */
+nav::-webkit-scrollbar {
+  display: none;
+}
+nav {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ─── Sidebar mobile drawer animácia ────────────────────── */
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+/* ─── Nav item hover plynulý prechod ────────────────────── */
+a[href] {
+  transition: background 0.12s ease, border-color 0.12s ease;
+}

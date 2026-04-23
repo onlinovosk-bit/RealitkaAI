@@ -1,26 +1,57 @@
-﻿import { getCurrentProfile, requireUser } from "@/lib/auth";
-import { mapProfileRole } from "@/lib/navigation";
-
-import DashboardClientLayout from "./dashboard-client-layout";
+import { createClient }  from "@/lib/supabase/server";
+import { redirect }      from "next/navigation";
+import AppSidebar        from "@/components/layout/AppSidebar";
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const user = await requireUser();
-  const profile = await getCurrentProfile();
+  const supabase = await createClient();
 
-  const userName =
-    profile?.full_name ||
-    user.email ||
-    "Prihlásený používateľ";
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
 
-  const role = mapProfileRole(profile?.role);
+  const { data: profile, error } = await supabase
+    .from("profiles")
+    .select(`
+      ui_role,
+      account_tier,
+      full_name,
+      agency_name,
+      role,
+      team_license_id
+    `)
+    .eq("auth_user_id", user.id)
+    .single();
+
+  if (error || !profile) redirect("/login");
 
   return (
-    <DashboardClientLayout userName={userName} role={role}>
-      {children}
-    </DashboardClientLayout>
+    <div
+      style={{
+        display:   "flex",
+        minHeight: "100vh",
+        background: "#050914",
+      }}
+    >
+      <AppSidebar
+        uiRole={profile.ui_role       ?? "agent"}
+        accountTier={profile.account_tier ?? "free"}
+        isInTeam={!!profile.team_license_id}
+        appRole={profile.role          ?? undefined}
+        agencyName={profile.agency_name  ?? undefined}
+        userName={profile.full_name    ?? undefined}
+      />
+      <main
+        style={{
+          flex:      1,
+          minWidth:  0,
+          overflowY: "auto",
+        }}
+      >
+        {children}
+      </main>
+    </div>
   );
 }
