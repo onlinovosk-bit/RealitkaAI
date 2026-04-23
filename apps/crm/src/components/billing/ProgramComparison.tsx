@@ -131,7 +131,7 @@ export default function ProgramComparison() {
         </div>
 
         {/* Sticky plan headers */}
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto overflow-y-visible">
           <table className="w-full border-separate border-spacing-x-1" style={{ minWidth: 700 }}>
             <thead>
               <tr>
@@ -141,7 +141,7 @@ export default function ProgramComparison() {
                 {PLANS.map((plan, i) => {
                   const prevDiff = i > 0 ? plan.price - PLANS[i - 1].price : 0;
                   return (
-                    <th key={plan.key} className="pb-6 px-3 text-center" style={{ minWidth: 140 }}>
+                    <th key={plan.key} className="pt-8 pb-6 px-3 text-center" style={{ minWidth: 140 }}>
                       <div
                         className={`rounded-2xl px-3 py-5 relative${plan.key === "protocol" ? " scale-[1.04] z-10" : ""}`}
                         style={{

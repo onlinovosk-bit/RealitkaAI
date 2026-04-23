@@ -160,9 +160,9 @@ const SECTIONS: Section[] = [
 
 const PLANS = [
   { key: "starter",  name: "Smart Start",       price: "49 €",  featured: false, color: "#64748B" },
-  { key: "pro",      name: "Active Force",       price: "99 €",  featured: false, color: "#818CF8" },
-  { key: "market",   name: "Market Vision",      price: "199 €", featured: true,  color: "#5AAF3C" },
-  { key: "protocol", name: "Protocol Authority", price: "449 €", featured: false, color: "#34D399" },
+  { key: "pro",      name: "Active Force",       price: "99 €",  featured: false, color: "#60A5FA" },
+  { key: "market",   name: "Market Vision",      price: "199 €", featured: false, color: "#CBD5E1" },
+  { key: "protocol", name: "Protocol Authority", price: "449 €", featured: true,  color: "#EAB308" },
 ];
 
 // ─── Modal ────────────────────────────────────────────────────────────────
@@ -233,14 +233,14 @@ function FeatureModal({ row, onClose }: { row: Row; onClose: () => void }) {
 // ─── Cell ─────────────────────────────────────────────────────────────────
 
 function Cell({ value, featured }: { value: CellValue; featured: boolean }) {
-  const fl = featured ? "0.5px solid rgba(90,175,60,0.18)" : undefined;
-  const bg = featured ? "rgba(90,175,60,0.06)" : "transparent";
+  const fl = featured ? "0.5px solid rgba(234,179,8,0.18)" : undefined;
+  const bg = featured ? "rgba(234,179,8,0.06)" : "transparent";
 
   if (value === true) {
     return (
       <td className="py-2.5 px-3 text-center" style={{ background: bg, borderLeft: fl, borderRight: fl }}>
-        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full" style={{ background: "rgba(90,175,60,0.15)" }}>
-          <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l2.5 2.5L9 1" stroke="#5AAF3C" strokeWidth="1.5" strokeLinecap="round"/></svg>
+        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full" style={{ background: "rgba(234,179,8,0.15)" }}>
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l2.5 2.5L9 1" stroke="#EAB308" strokeWidth="1.5" strokeLinecap="round"/></svg>
         </span>
       </td>
     );
@@ -257,7 +257,7 @@ function Cell({ value, featured }: { value: CellValue; featured: boolean }) {
   return (
     <td className="py-2.5 px-3 text-center" style={{ background: bg, borderLeft: fl, borderRight: fl }}>
       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"
-        style={{ background: featured ? "rgba(90,175,60,0.15)" : "rgba(255,255,255,0.06)", color: featured ? "#5AAF3C" : "#64748B" }}>
+        style={{ background: featured ? "rgba(234,179,8,0.15)" : "rgba(255,255,255,0.06)", color: featured ? "#5AAF3C" : "#64748B" }}>
         {value}
       </span>
     </td>
@@ -293,15 +293,15 @@ export default function RozpisFunkcionalit() {
                     <div
                       className="px-3 py-5 relative"
                       style={{
-                        background:   plan.featured ? "rgba(90,175,60,0.08)" : "rgba(255,255,255,0.02)",
-                        borderLeft:   plan.featured ? "0.5px solid rgba(90,175,60,0.30)" : undefined,
-                        borderRight:  plan.featured ? "0.5px solid rgba(90,175,60,0.30)" : undefined,
+                        background:   plan.featured ? "rgba(234,179,8,0.08)" : "rgba(255,255,255,0.02)",
+                        borderLeft:   plan.featured ? "0.5px solid rgba(234,179,8,0.30)" : undefined,
+                        borderRight:  plan.featured ? "0.5px solid rgba(234,179,8,0.30)" : undefined,
                         borderBottom: "1px solid rgba(255,255,255,0.06)",
                       }}
                     >
                       {plan.featured && (
                         <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full whitespace-nowrap"
-                          style={{ background: "#5AAF3C", color: "#010103" }}>
+                          style={{ background: "linear-gradient(135deg,#EAB308,#CA8A04)", color: "#010103" }}>
                           Odporúčané
                         </div>
                       )}
@@ -316,9 +316,9 @@ export default function RozpisFunkcionalit() {
             <tbody>
               {SECTIONS.map((section) => (
                 <>
-                  <tr key={`s-${section.title}`} style={{ background: "rgba(90,175,60,0.06)" }}>
+                  <tr key={`s-${section.title}`} style={{ background: "rgba(234,179,8,0.06)" }}>
                     <td colSpan={5} className="px-4 py-2 text-[10px] font-black uppercase tracking-widest"
-                      style={{ color: "#3B6D11", borderBottom: "0.5px solid rgba(90,175,60,0.15)" }}>
+                      style={{ color: "#92400E", borderBottom: "0.5px solid rgba(234,179,8,0.15)" }}>
                       {section.title}
                     </td>
                   </tr>
@@ -348,15 +348,15 @@ export default function RozpisFunkcionalit() {
                 {PLANS.map((plan) => (
                   <td key={plan.key} className="px-3 py-4 text-center"
                     style={{
-                      background:  plan.featured ? "rgba(90,175,60,0.08)" : undefined,
-                      borderLeft:  plan.featured ? "0.5px solid rgba(90,175,60,0.30)" : undefined,
-                      borderRight: plan.featured ? "0.5px solid rgba(90,175,60,0.30)" : undefined,
+                      background:  plan.featured ? "rgba(234,179,8,0.08)" : undefined,
+                      borderLeft:  plan.featured ? "0.5px solid rgba(234,179,8,0.30)" : undefined,
+                      borderRight: plan.featured ? "0.5px solid rgba(234,179,8,0.30)" : undefined,
                       borderTop:   "1px solid rgba(255,255,255,0.06)",
                     }}>
                     <a href="/billing"
                       className="block w-full py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all hover:opacity-80"
                       style={plan.featured
-                        ? { background: "#3B6D11", color: "#EAF3DE" }
+                        ? { background: "linear-gradient(135deg,#EAB308,#CA8A04)", color: "#010103" }
                         : { border: "0.5px solid rgba(255,255,255,0.12)", color: "#64748B" }}>
                       Začať ↗
                     </a>
