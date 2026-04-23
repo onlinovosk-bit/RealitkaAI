@@ -38,6 +38,13 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     visibleFor: ["agent", "owner"],
   },
   {
+    key: "porovnanie-programov",
+    label: "Porovnanie programov",
+    path: "/porovnanie-programov",
+    emoji: "📊",
+    visibleFor: ["agent", "owner"],
+  },
+  {
     key: "call-analyzer",
     label: "AI Call Analyzer",
     path: "/call-analyzer",
@@ -206,8 +213,12 @@ export const NAV_GROUPS = [
     keys: ["forecast", "scoring", "team", "invite"],
   },
   {
+    title: "Programy",
+    keys: ["porovnanie-programov", "billing"],
+  },
+  {
     title: "Účet",
-    keys: ["settings", "billing", "admin-health"],
+    keys: ["settings", "admin-health"],
   },
 ];
 
