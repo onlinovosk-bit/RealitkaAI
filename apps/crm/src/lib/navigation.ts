@@ -45,6 +45,13 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     visibleFor: ["agent", "owner"],
   },
   {
+    key: "rozpis-funkcionalit",
+    label: "Rozpis funkcionalít",
+    path: "/rozpis-funkcionalit",
+    emoji: "📋",
+    visibleFor: ["agent", "owner"],
+  },
+  {
     key: "call-analyzer",
     label: "AI Call Analyzer",
     path: "/call-analyzer",
@@ -214,7 +221,7 @@ export const NAV_GROUPS = [
   },
   {
     title: "Programy",
-    keys: ["porovnanie-programov", "billing"],
+    keys: ["porovnanie-programov", "rozpis-funkcionalit", "billing"],
   },
   {
     title: "Účet",
