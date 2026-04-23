@@ -3,11 +3,12 @@
 import { Check, Minus, TrendingUp } from "lucide-react";
 
 // ─── Plány ────────────────────────────────────────────────────────────────
+// Nordic Slate paleta — gradácia od tmavej po svetlú; Authority je zlatá anomália
 const PLANS = [
-  { key: "starter",  name: "SMART START",       price: 49,  color: "#64748B", accent: "rgba(100,116,139,0.15)", border: "rgba(100,116,139,0.25)", recommended: false },
-  { key: "pro",      name: "ACTIVE FORCE",       price: 99,  color: "#818CF8", accent: "rgba(129,140,248,0.15)", border: "rgba(129,140,248,0.35)", recommended: true  },
-  { key: "market",   name: "MARKET VISION",      price: 199, color: "#60A5FA", accent: "rgba(96,165,250,0.12)",  border: "rgba(96,165,250,0.30)",  recommended: false },
-  { key: "protocol", name: "PROTOCOL AUTHORITY", price: 449, color: "#EAB308", accent: "rgba(234,179,8,0.10)",  border: "rgba(234,179,8,0.45)",  recommended: false },
+  { key: "starter",  name: "SMART START",       price: 49,  color: "#64748B", accent: "#0F172A",                                                     border: "rgba(100,116,139,0.40)", recommended: false },
+  { key: "pro",      name: "ACTIVE FORCE",       price: 99,  color: "#60A5FA", accent: "#1E293B",                                                     border: "rgba(96,165,250,0.25)",  recommended: false },
+  { key: "market",   name: "MARKET VISION",      price: 199, color: "#CBD5E1", accent: "#334155",                                                     border: "rgba(203,213,225,0.20)", recommended: false },
+  { key: "protocol", name: "PROTOCOL AUTHORITY", price: 449, color: "#EAB308", accent: "linear-gradient(160deg, #451a03 0%, #010103 100%)",           border: "rgba(234,179,8,0.50)",  recommended: true  },
 ];
 
 type PlanKey = "starter" | "pro" | "market" | "protocol";
@@ -142,19 +143,21 @@ export default function ProgramComparison() {
                   return (
                     <th key={plan.key} className="pb-6 px-3 text-center" style={{ minWidth: 140 }}>
                       <div
-                        className="rounded-2xl px-3 py-5 relative"
+                        className={`rounded-2xl px-3 py-5 relative${plan.key === "protocol" ? " scale-[1.04] z-10" : ""}`}
                         style={{
-                          background: plan.key === "protocol"
-                            ? "linear-gradient(160deg, rgba(234,179,8,0.14) 0%, rgba(120,53,15,0.08) 100%)"
-                            : plan.accent,
+                          background: plan.accent,
                           border: `1px solid ${plan.border}`,
-                          boxShadow: plan.key === "protocol" ? "0 0 30px rgba(234,179,8,0.15)" : undefined,
+                          boxShadow: plan.key === "protocol" ? "0 0 30px rgba(202,138,4,0.20)" : undefined,
                         }}
                       >
                         {plan.recommended && (
                           <div
-                            className="absolute -top-3 left-1/2 -translate-x-1/2 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full whitespace-nowrap"
-                            style={{ background: plan.color, color: "#010103" }}
+                            className="absolute -top-3 left-1/2 -translate-x-1/2 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full whitespace-nowrap animate-pulse"
+                            style={{
+                              background: "linear-gradient(135deg, #EAB308, #CA8A04)",
+                              color: "#010103",
+                              boxShadow: "0 0 12px rgba(234,179,8,0.50)",
+                            }}
                           >
                             NAJPOPULÁRNEJŠÍ
                           </div>
@@ -183,9 +186,13 @@ export default function ProgramComparison() {
                         <a
                           href="/billing"
                           className="mt-3 block w-full py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all hover:opacity-80"
-                          style={{ background: plan.color, color: "#010103" }}
+                          style={
+                            plan.key === "protocol"
+                              ? { background: "linear-gradient(135deg, #EAB308, #CA8A04)", color: "#010103", boxShadow: "0 0 16px rgba(234,179,8,0.35)" }
+                              : { background: plan.color, color: "#010103" }
+                          }
                         >
-                          Vybrať →
+                          {plan.key === "protocol" ? "★ Aktivovať →" : "Vybrať →"}
                         </a>
                       </div>
                     </th>
