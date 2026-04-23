@@ -26,6 +26,7 @@ export default function PricingCards({ plans }: { plans: Plan[] }) {
   const searchParams = useSearchParams();
 
   useEffect(() => {
+    if (!searchParams) return;
     const promo = searchParams.get("promo");
     if (promo) setPromoCode(promo.toUpperCase());
   }, [searchParams]);
