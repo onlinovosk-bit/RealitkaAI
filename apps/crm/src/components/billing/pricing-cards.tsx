@@ -1,6 +1,7 @@
 "use client";
-import { useState } from "react";
-import { Plus } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Plus, Zap } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { fetchJsonWithRetry } from "@/lib/request-helpers";
 
 const ONBOARDING_FEE = 99;
@@ -18,8 +19,15 @@ type Plan = {
 };
 
 export default function PricingCards({ plans }: { plans: Plan[] }) {
-  const [loadingKey, setLoadingKey] = useState<string | null>(null);
+  const [loadingKey, setLoadingKey]       = useState<string | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [promoCode, setPromoCode]         = useState<string | null>(null);
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const promo = searchParams.get("promo");
+    if (promo) setPromoCode(promo.toUpperCase());
+  }, [searchParams]);
 
   function getCheckoutErrorMessage(error: unknown) {
     const fallback = "Nepodarilo sa spustiť checkout.";
@@ -53,7 +61,7 @@ export default function PricingCards({ plans }: { plans: Plan[] }) {
         "/api/billing/checkout",
         {
           method: "POST",
-          body: JSON.stringify({ planKey }),
+          body: JSON.stringify({ planKey, promoCode: promoCode ?? undefined }),
         },
         {
           retries: 2,
@@ -74,6 +82,22 @@ export default function PricingCards({ plans }: { plans: Plan[] }) {
 
   return (
     <div>
+      {/* Promo banner */}
+      {promoCode && (
+        <div
+          className="mb-8 flex items-center justify-center gap-3 rounded-2xl p-4 text-center animate-pulse"
+          style={{
+            background: 'rgba(37,99,235,0.12)',
+            border: '1px solid rgba(37,99,235,0.35)',
+          }}
+        >
+          <Zap size={14} style={{ color: '#60A5FA', flexShrink: 0 }} />
+          <p className="text-xs font-black uppercase tracking-widest" style={{ color: '#93C5FD' }}>
+            Špeciálna autorizácia aktívna — kód <span style={{ color: '#fff' }}>{promoCode}</span> — zľava sa aplikuje pri platbe
+          </p>
+        </div>
+      )}
+
       {/* Header */}
       <div className="mb-8 text-center">
         <h2 className="text-2xl font-bold" style={{ color: '#F0F9FF' }}>

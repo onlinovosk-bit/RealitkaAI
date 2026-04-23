@@ -208,7 +208,7 @@ export const BILLING_PLANS = [
   },
 ] as const;
 
-export async function createBillingCheckoutSession(planKey: string) {
+export async function createBillingCheckoutSession(planKey: string, promoCode?: string) {
   const stripe = getStripe();
   if (!stripe) {
     // Stripe nie je nakonfigurovaný, vráť null alebo vyhoď špecifickú chybu podľa potreby
@@ -247,7 +247,10 @@ export async function createBillingCheckoutSession(planKey: string) {
     cancel_url: `${appUrl}/billing?checkout=cancel`,
     customer_email: user.email,
     client_reference_id: user.id,
-    allow_promotion_codes: true,
+    // Ak prišiel promo kód z URL, aplikuj coupon — inak zobraz pole pre kód
+    ...(promoCode
+      ? { discounts: [{ coupon: promoCode }] }
+      : { allow_promotion_codes: true }),
     metadata: {
       authUserId: user.id,
       profileId: profile?.id || "",

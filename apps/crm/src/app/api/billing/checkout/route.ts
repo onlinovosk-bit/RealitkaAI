@@ -4,13 +4,14 @@ import { createBillingCheckoutSession } from "@/lib/billing-store";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const planKey = String(body?.planKey ?? "");
+    const planKey   = String(body?.planKey ?? "");
+    const promoCode = body?.promoCode ? String(body.promoCode) : undefined;
 
     if (!planKey) {
       return errorResponse("Chýba planKey.", 400);
     }
 
-    const result = await createBillingCheckoutSession(planKey);
+    const result = await createBillingCheckoutSession(planKey, promoCode);
 
     if (!result) {
       return errorResponse(
