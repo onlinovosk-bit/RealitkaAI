@@ -218,26 +218,14 @@ export default function PricingCards({ plans }: { plans: Plan[] }) {
                 theme.scale,
               ].filter(Boolean).join(" ")}
             >
-              {/* Protocol Authority — Holy Grail badge */}
+              {/* Protocol Authority — NAJPOPULÁRNEJŠÍ badge */}
               {isProtocol && (
                 <div
-                  className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full px-5 py-1.5 text-[10px] font-black uppercase tracking-widest whitespace-nowrap animate-bounce"
+                  className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full px-5 py-1.5 text-[10px] font-black uppercase tracking-widest whitespace-nowrap animate-pulse"
                   style={{
                     background: 'linear-gradient(135deg, #EAB308, #CA8A04)',
                     color: '#050914',
-                    boxShadow: '0 0 20px rgba(234,179,8,0.40)',
-                  }}
-                >
-                  ★ SVÄTÝ GRÁL
-                </div>
-              )}
-              {/* Pro badge */}
-              {isPro && (
-                <div
-                  className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full px-5 py-1.5 text-xs font-bold whitespace-nowrap"
-                  style={{
-                    background: 'linear-gradient(135deg, #818CF8, #6366F1)',
-                    color: '#050914',
+                    boxShadow: '0 0 20px rgba(234,179,8,0.50)',
                   }}
                 >
                   ⭐ NAJPOPULÁRNEJŠÍ
