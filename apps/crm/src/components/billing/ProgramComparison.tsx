@@ -209,7 +209,7 @@ export default function ProgramComparison() {
                     <td colSpan={5} className="pt-8 pb-2">
                       <div
                         className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg inline-block"
-                        style={{ background: "rgba(255,255,255,0.04)", color: "#334155" }}
+                        style={{ background: "rgba(96,165,250,0.06)", color: "#60A5FA" }}
                       >
                         {cat.title}
                       </div>

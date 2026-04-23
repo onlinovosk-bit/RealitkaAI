@@ -316,9 +316,9 @@ export default function RozpisFunkcionalit() {
             <tbody>
               {SECTIONS.map((section) => (
                 <>
-                  <tr key={`s-${section.title}`} style={{ background: "rgba(234,179,8,0.06)" }}>
+                  <tr key={`s-${section.title}`} style={{ background: "rgba(96,165,250,0.04)" }}>
                     <td colSpan={5} className="px-4 py-2 text-[10px] font-black uppercase tracking-widest"
-                      style={{ color: "#92400E", borderBottom: "0.5px solid rgba(234,179,8,0.15)" }}>
+                      style={{ color: "#60A5FA", borderBottom: "0.5px solid rgba(96,165,250,0.15)" }}>
                       {section.title}
                     </td>
                   </tr>
