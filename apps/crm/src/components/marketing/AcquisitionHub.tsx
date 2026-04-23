@@ -759,9 +759,9 @@ export function StealthRecruiter() {
   return (
     <Card accent="rgba(34,211,238,0.20)" tag="Shadow MLS" tagColor="#67E8F9">
       <UserSearch className="mb-5" size={32} style={{ color: "#22D3EE" }} />
-      <h2 className="text-xl font-bold text-white mb-1.5">6. Stealth Recruiter</h2>
+      <h2 className="text-xl font-bold text-white mb-1.5">6. Tichý Náborár</h2>
       <p className="text-xs mb-4" style={{ color: "#64748B" }}>
-        Diagnostikuje vyhorených samopredajcov na Bazoši. AI generuje personalizovaný outreach skript pre každého.
+        Nájde predajcov na Bazoši, ktorým sa nedarí predať. AI napíše správu každému presne na mieru.
       </p>
       <div className="flex-1 space-y-2">
         {!loaded ? (
