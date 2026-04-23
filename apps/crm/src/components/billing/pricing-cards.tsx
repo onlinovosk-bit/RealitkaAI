@@ -119,7 +119,7 @@ export default function PricingCards({ plans }: { plans: Plan[] }) {
       </div>
 
       {/* Cards */}
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-4">
         {plans.map((plan) => {
           const isPro = plan.key === "pro" || plan.recommended;
           const isEnterprise = plan.key === "enterprise";
