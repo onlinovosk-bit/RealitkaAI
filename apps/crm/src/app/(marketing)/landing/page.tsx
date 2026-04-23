@@ -18,7 +18,6 @@ import IntegrationsTrustStrip from './sections/IntegrationsTrustStrip';
 import L99ComparisonSection from './sections/L99ComparisonSection';
 import ObjectionFaq from './sections/ObjectionFaq';
 import ProofNumbers from './sections/ProofNumbers';
-import BlogPromoTicker from '@/components/marketing/BlogPromoTicker';
 import { CtaAbProvider } from '@/components/landing/CtaAbProvider';
 import { CTASection } from '@/components/landing/CTASection';
 import { FearReductionSection } from '@/components/landing/FearReductionSection';
@@ -129,9 +128,7 @@ export default function LandingPage() {
       {/* 10. FinalCTA – posledný úder */}
       <FinalCTA />
 
-      {/* Rotujúci blog pás (odkazy prečo Revolis.AI) */}
-      <BlogPromoTicker />
-      </FounderDiscountSpotsProvider>
+</FounderDiscountSpotsProvider>
 
       <LegalFooter />
     </main>
