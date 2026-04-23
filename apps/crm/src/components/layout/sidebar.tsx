@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, Zap, Eye, Crown, ShieldCheck } from "lucide-react";
+import { ChevronDown, Zap, Eye, Crown, ShieldCheck, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   NAVIGATION_ITEMS,
@@ -12,6 +12,54 @@ import {
 import { AI_ASSISTANT_STATUS_ACTIVE } from "@/lib/ai-brand";
 import { RadiantSpriteIcon } from "@/components/shared/radiant-sprite-icon";
 
+// ─── Farebné identity podľa tieru ────────────────────────────────────────
+const TIER_STYLES = {
+  starter: {
+    btnInactive: { color: "#94A3B8", background: "transparent", border: "1px solid transparent" },
+    btnActive:   { color: "#F0F9FF", background: "rgba(100,116,139,0.10)", border: "1px solid rgba(100,116,139,0.30)" },
+    iconActive:  "#94A3B8",
+    iconInactive: "#475569",
+    borderLeft:  "rgba(255,255,255,0.05)",
+    itemDefault: "#475569",
+    itemHover:   "#CBD5E1",
+    itemSpecial: null,
+    glow: undefined as string | undefined,
+  },
+  pro: {
+    btnInactive: { color: "#94A3B8", background: "transparent", border: "1px solid transparent" },
+    btnActive:   { color: "#C7D2FE", background: "rgba(129,140,248,0.10)", border: "1px solid rgba(129,140,248,0.30)" },
+    iconActive:  "#818CF8",
+    iconInactive: "#475569",
+    borderLeft:  "rgba(129,140,248,0.15)",
+    itemDefault: "#475569",
+    itemHover:   "#C7D2FE",
+    itemSpecial: null,
+    glow: undefined as string | undefined,
+  },
+  market: {
+    btnInactive: { color: "#94A3B8", background: "transparent", border: "1px solid transparent" },
+    btnActive:   { color: "#BBF7D0", background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.25)" },
+    iconActive:  "#34D399",
+    iconInactive: "#475569",
+    borderLeft:  "rgba(52,211,153,0.15)",
+    itemDefault: "#475569",
+    itemHover:   "#6EE7B7",
+    itemSpecial: null,
+    glow: undefined as string | undefined,
+  },
+  protocol: {
+    btnInactive: { color: "#92400E", background: "transparent", border: "1px solid rgba(202,138,4,0.15)" },
+    btnActive:   { color: "#FEF3C7", background: "linear-gradient(135deg, rgba(202,138,4,0.15) 0%, rgba(120,53,15,0.10) 100%)", border: "1px solid rgba(234,179,8,0.40)", boxShadow: "0 0 24px rgba(234,179,8,0.18)" },
+    iconActive:  "#EAB308",
+    iconInactive: "#92400E",
+    borderLeft:  "rgba(234,179,8,0.25)",
+    itemDefault: "#92400E",
+    itemHover:   "#FDE68A",
+    itemSpecial: "#EAB308",
+    glow: "0 0 24px rgba(234,179,8,0.18)",
+  },
+} as const;
+
 // ─── Programové balíky (accordion) ───────────────────────────────────────
 type ProgramItem = { name: string; href: string };
 
@@ -19,14 +67,15 @@ const PROGRAMS: {
   id: string;
   name: string;
   icon: React.ElementType;
-  color: string;
+  tier: keyof typeof TIER_STYLES;
+  isHolyGrail?: boolean;
   items: ProgramItem[];
 }[] = [
   {
     id: "starter",
     name: "Smart Start",
     icon: Zap,
-    color: "#EAB308",
+    tier: "starter",
     items: [
       { name: "Monitoring realitných portálov", href: "/dashboard" },
       { name: "Lead Generation (Standard)",     href: "/leads" },
@@ -40,7 +89,7 @@ const PROGRAMS: {
     id: "pro",
     name: "Active Force",
     icon: Eye,
-    color: "#818CF8",
+    tier: "pro",
     items: [
       { name: "AI Asistent 24/7",           href: "/revolis-ai" },
       { name: "Prediktívny deal scoring",   href: "/pipeline" },
@@ -54,7 +103,7 @@ const PROGRAMS: {
     id: "market",
     name: "Market Vision",
     icon: Crown,
-    color: "#5AAF3C",
+    tier: "market",
     items: [
       { name: "Owner dashboard + tím",       href: "/dashboard" },
       { name: "Ghost Resurrection",          href: "/leads" },
@@ -68,7 +117,8 @@ const PROGRAMS: {
     id: "protocol",
     name: "Protocol Authority",
     icon: ShieldCheck,
-    color: "#60A5FA",
+    tier: "protocol",
+    isHolyGrail: true,
     items: [
       { name: '„Za koľko predal sused?"',        href: "/l99-hub" },
       { name: "Kataster Pulse (zmeny LV)",        href: "/l99-hub" },
@@ -91,31 +141,50 @@ function ProgramAccordion() {
       <p className="px-4 mb-2 text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: "#1D4ED8" }}>
         Programové balíky
       </p>
-      <div className="space-y-1">
+      <div className="space-y-1.5">
         {PROGRAMS.map((prog) => {
           const Icon = prog.icon;
           const isOpen = open === prog.id;
+          const ts = TIER_STYLES[prog.tier];
+          const btnStyle = isOpen ? ts.btnActive : ts.btnInactive;
+
           return (
             <div key={prog.id}>
               <button
                 onClick={() => setOpen(isOpen ? null : prog.id)}
-                className="w-full flex items-center justify-between rounded-xl px-4 py-3 transition-all duration-200 text-left"
-                style={{
-                  background:  isOpen ? "rgba(37,99,235,0.10)" : "transparent",
-                  border:      isOpen ? "1px solid rgba(37,99,235,0.20)" : "1px solid transparent",
-                  color:       isOpen ? "#F0F9FF" : "#94A3B8",
-                }}
+                className="w-full flex items-center justify-between rounded-xl px-4 py-3 transition-all duration-300 text-left"
+                style={btnStyle}
               >
                 <div className="flex items-center gap-3">
-                  <Icon size={15} style={{ color: isOpen ? prog.color : "#475569" }} />
-                  <span className="text-sm font-bold uppercase tracking-tight">{prog.name}</span>
+                  {/* Protocol Authority: Sparkles keď otvorený */}
+                  {prog.isHolyGrail && isOpen
+                    ? <Sparkles size={15} style={{ color: ts.iconActive }} className="animate-pulse" />
+                    : <Icon size={15} style={{ color: isOpen ? ts.iconActive : ts.iconInactive }} />
+                  }
+
+                  {/* Protocol Authority: shimmer text keď otvorený */}
+                  {prog.isHolyGrail && isOpen ? (
+                    <span
+                      className="text-sm font-black uppercase tracking-tight animate-shimmer bg-clip-text"
+                      style={{
+                        backgroundImage: "linear-gradient(90deg, #CA8A04 0%, #FEF08A 40%, #EAB308 60%, #CA8A04 100%)",
+                        backgroundSize: "200% auto",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                      }}
+                    >
+                      {prog.name}
+                    </span>
+                  ) : (
+                    <span className="text-sm font-bold uppercase tracking-tight">{prog.name}</span>
+                  )}
                 </div>
                 <ChevronDown
                   size={14}
                   className="transition-transform duration-300"
                   style={{
                     transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
-                    color: isOpen ? "#60A5FA" : "#334155",
+                    color: isOpen ? ts.iconActive : "#334155",
                   }}
                 />
               </button>
@@ -130,24 +199,30 @@ function ProgramAccordion() {
                     transition={{ duration: 0.25, ease: "easeInOut" }}
                     className="overflow-hidden"
                   >
-                    <div className="ml-8 mt-1 mb-2 space-y-0.5 border-l-2" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
-                      {prog.items.map((item) => (
-                        <Link
-                          key={item.name}
-                          href={item.href}
-                          className="block px-4 py-2 text-[11px] font-medium transition-all duration-150 hover:pl-6 rounded-lg hover:bg-white/[0.04]"
-                          style={{
-                            color: item.name.startsWith("💎") || item.name.startsWith("🛡️")
-                              ? "#60A5FA"
-                              : "#475569",
-                            fontStyle: item.name.startsWith("💎") || item.name.startsWith("🛡️") ? "italic" : "normal",
-                          }}
-                          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = item.name.startsWith("💎") || item.name.startsWith("🛡️") ? "#93C5FD" : "#CBD5E1"; }}
-                          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = item.name.startsWith("💎") || item.name.startsWith("🛡️") ? "#60A5FA" : "#475569"; }}
-                        >
-                          {item.name}
-                        </Link>
-                      ))}
+                    <div
+                      className="ml-8 mt-1 mb-2 space-y-0.5 border-l-2"
+                      style={{ borderColor: ts.borderLeft }}
+                    >
+                      {prog.items.map((item) => {
+                        const isSpecial = item.name.startsWith("💎") || item.name.startsWith("🛡️");
+                        const defaultColor = isSpecial && ts.itemSpecial ? ts.itemSpecial : ts.itemDefault;
+                        const hoverColor = ts.itemHover;
+                        return (
+                          <Link
+                            key={item.name}
+                            href={item.href}
+                            className="block px-4 py-2 text-[11px] font-medium transition-all duration-150 hover:pl-6 rounded-lg"
+                            style={{
+                              color: defaultColor,
+                              fontStyle: isSpecial ? "italic" : "normal",
+                            }}
+                            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = hoverColor; }}
+                            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = defaultColor; }}
+                          >
+                            {item.name}
+                          </Link>
+                        );
+                      })}
                     </div>
                   </motion.div>
                 )}
@@ -279,8 +354,27 @@ export default function Sidebar({ role }: { role: UserRole }) {
       </nav>
 
       {/* Footer */}
-      <div className="px-6 py-4" style={{ borderTop: "1px solid #0F1F3D" }}>
-        <div className="text-[10px]" style={{ color: "#1E3A5F" }}>© 2025 Revolis.AI</div>
+      <div className="px-4 py-4" style={{ borderTop: "1px solid #0F1F3D" }}>
+        <Link
+          href="/billing"
+          className="flex items-center justify-between rounded-xl px-4 py-3 transition-all duration-200 hover:opacity-80"
+          style={{
+            background: "rgba(202,138,4,0.08)",
+            border: "1px solid rgba(202,138,4,0.20)",
+          }}
+        >
+          <div className="flex items-center gap-2.5">
+            <ShieldCheck size={14} style={{ color: "#EAB308" }} />
+            <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: "#EAB308" }}>
+              Upgrade Status
+            </span>
+          </div>
+          <span
+            className="h-2 w-2 rounded-full animate-ping"
+            style={{ background: "#EAB308", boxShadow: "0 0 6px rgba(234,179,8,0.8)" }}
+          />
+        </Link>
+        <div className="mt-2 text-[9px] text-center" style={{ color: "#1E3A5F" }}>© 2025 Revolis.AI</div>
       </div>
     </aside>
   );
