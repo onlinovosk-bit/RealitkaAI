@@ -184,7 +184,7 @@ export const BILLING_PLANS = [
     name: "Protocol Authority",
     priceId: process.env.STRIPE_PRICE_PROTOCOL_AUTH || "",
     priceLabel: "449 € / mesiac",
-    originalPriceLabel: "598 € / mesiac",
+    originalPriceLabel: "898 € / mesiac",
     description:
       "Najvyššia úroveň. Owner má Protocol Authority menu s Competition Heatmap a Neural Intelligence. 4 makléri dostanú Active Force prístup.",
     billingNote: "1 Protocol Authority owner + 4 Active Force makléri",
