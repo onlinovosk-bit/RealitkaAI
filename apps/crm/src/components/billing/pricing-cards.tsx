@@ -7,12 +7,48 @@ import { EmailMockup } from "./EmailMockup";
 
 const ONBOARDING_FEE = 99;
 
-// ─── Per-plan vizuálne štýly ──────────────────────────────────────────────
-const CARD_STYLE: Record<string, React.CSSProperties> = {
-  starter:  { background: '#07111F', border: '1px solid #1E293B' },
-  pro:      { background: 'linear-gradient(135deg, #0C1C32 0%, #142A4E 100%)', border: '2px solid rgba(129,140,248,0.40)', boxShadow: '0 0 30px rgba(129,140,248,0.10)' },
-  market:   { background: 'linear-gradient(135deg, #061610 0%, #0B2218 100%)', border: '1px solid rgba(52,211,153,0.25)', boxShadow: '0 0 20px rgba(52,211,153,0.08)' },
-  protocol: { background: 'linear-gradient(160deg, rgba(202,138,4,0.12) 0%, rgba(120,53,15,0.06) 50%, #06100E 100%)', border: '2px solid rgba(234,179,8,0.50)', boxShadow: '0 0 50px rgba(202,138,4,0.20)', transform: 'scale(1.03)', zIndex: 10 },
+// ─── Per-plan vizuálne štýly (Tailwind triedy) ───────────────────────────
+const PLAN_THEMES = {
+  starter: {
+    border: "border-slate-800",
+    bg:     "bg-slate-900/40",
+    accent: "text-slate-500",
+    shadow: "shadow-none",
+    glow:   "",
+    scale:  "",
+  },
+  visionary: {
+    border: "border-indigo-900/50",
+    bg:     "bg-indigo-900/10",
+    accent: "text-indigo-400",
+    shadow: "shadow-[0_0_20px_rgba(79,70,229,0.05)]",
+    glow:   "",
+    scale:  "",
+  },
+  link: {
+    border: "border-emerald-900/50",
+    bg:     "bg-emerald-900/10",
+    accent: "text-emerald-400",
+    shadow: "shadow-[0_0_20px_rgba(16,185,129,0.05)]",
+    glow:   "",
+    scale:  "",
+  },
+  authority: {
+    border: "border-yellow-600/60",
+    bg:     "bg-gradient-to-b from-yellow-600/15 via-yellow-900/5 to-transparent",
+    accent: "text-yellow-500 font-black",
+    shadow: "shadow-[0_0_50px_rgba(234,179,8,0.2)]",
+    glow:   "before:absolute before:-inset-px before:bg-gradient-to-b before:from-yellow-500/50 before:to-transparent before:rounded-[2rem] before:-z-10",
+    scale:  "scale-[1.03] z-10",
+  },
+} as const;
+
+// Mapovanie plan key → PLAN_THEMES key
+const THEME_KEY: Record<string, keyof typeof PLAN_THEMES> = {
+  starter:  "starter",
+  pro:      "visionary",
+  market:   "link",
+  protocol: "authority",
 };
 
 const PRICE_COLOR: Record<string, string> = {
@@ -168,11 +204,19 @@ export default function PricingCards({ plans }: { plans: Plan[] }) {
           const priceAmount = parseInt(plan.priceLabel) || 0;
           const firstPayment = priceAmount + ONBOARDING_FEE;
 
+          const theme = PLAN_THEMES[THEME_KEY[plan.key] ?? "starter"];
+
           return (
             <div
               key={plan.key}
-              className="relative rounded-3xl p-8 flex flex-col transition-all duration-300"
-              style={CARD_STYLE[plan.key] ?? CARD_STYLE.starter}
+              className={[
+                "relative rounded-3xl p-8 flex flex-col transition-all duration-300 border-2",
+                theme.border,
+                theme.bg,
+                theme.shadow,
+                theme.glow,
+                theme.scale,
+              ].filter(Boolean).join(" ")}
             >
               {/* Protocol Authority — Holy Grail badge */}
               {isProtocol && (
