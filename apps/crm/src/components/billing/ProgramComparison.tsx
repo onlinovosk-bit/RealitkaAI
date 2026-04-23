@@ -4,13 +4,13 @@ import { Check, Minus, TrendingUp } from "lucide-react";
 
 // ─── Plány ────────────────────────────────────────────────────────────────
 const PLANS = [
-  { key: "starter",   name: "SMART START",         price: 49,  color: "#64748B", accent: "rgba(100,116,139,0.15)", border: "rgba(100,116,139,0.25)" },
-  { key: "pro",       name: "ACTIVE FORCE",         price: 99,  color: "#818CF8", accent: "rgba(129,140,248,0.15)", border: "rgba(129,140,248,0.35)", recommended: true },
-  { key: "market",    name: "MARKET VISION",        price: 199, color: "#60A5FA", accent: "rgba(96,165,250,0.12)",  border: "rgba(96,165,250,0.30)" },
-  { key: "protocol",  name: "PROTOCOL AUTHORITY",   price: 449, color: "#34D399", accent: "rgba(52,211,153,0.12)",  border: "rgba(52,211,153,0.30)" },
-] as const;
+  { key: "starter",  name: "SMART START",       price: 49,  color: "#64748B", accent: "rgba(100,116,139,0.15)", border: "rgba(100,116,139,0.25)", recommended: false },
+  { key: "pro",      name: "ACTIVE FORCE",       price: 99,  color: "#818CF8", accent: "rgba(129,140,248,0.15)", border: "rgba(129,140,248,0.35)", recommended: true  },
+  { key: "market",   name: "MARKET VISION",      price: 199, color: "#60A5FA", accent: "rgba(96,165,250,0.12)",  border: "rgba(96,165,250,0.30)",  recommended: false },
+  { key: "protocol", name: "PROTOCOL AUTHORITY", price: 449, color: "#34D399", accent: "rgba(52,211,153,0.12)",  border: "rgba(52,211,153,0.30)",  recommended: false },
+];
 
-type PlanKey = (typeof PLANS)[number]["key"];
+type PlanKey = "starter" | "pro" | "market" | "protocol";
 
 // ─── Kategórie a funkcie ──────────────────────────────────────────────────
 type FeatureRow = {
