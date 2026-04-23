@@ -1,6 +1,9 @@
 "use client";
 import { useState } from "react";
+import { Plus } from "lucide-react";
 import { fetchJsonWithRetry } from "@/lib/request-helpers";
+
+const ONBOARDING_FEE = 99;
 
 type Plan = {
   key: string;
@@ -97,6 +100,8 @@ export default function PricingCards({ plans }: { plans: Plan[] }) {
           const isPro = plan.key === "pro" || plan.recommended;
           const isEnterprise = plan.key === "enterprise";
           const isLoading = loadingKey === plan.key;
+          const priceAmount = parseInt(plan.priceLabel) || 0;
+          const firstPayment = priceAmount + ONBOARDING_FEE;
 
           return (
             <div
@@ -171,6 +176,21 @@ export default function PricingCards({ plans }: { plans: Plan[] }) {
                     −50% zľava
                   </span>
                 )}
+
+                {/* Onboarding fee badge */}
+                <div
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1"
+                  style={{
+                    background: 'rgba(251,146,60,0.10)',
+                    border: '1px solid rgba(251,146,60,0.25)',
+                    color: '#FB923C',
+                  }}
+                >
+                  <Plus size={10} />
+                  <span className="text-[10px] font-bold uppercase tracking-widest">
+                    {ONBOARDING_FEE} € jednorazový onboarding
+                  </span>
+                </div>
               </div>
 
               {/* Billing note */}
@@ -190,6 +210,24 @@ export default function PricingCards({ plans }: { plans: Plan[] }) {
                     </li>
                   ))}
                 </ul>
+              )}
+
+              {/* Prvá platba spolu */}
+              {priceAmount > 0 && (
+                <div
+                  className="mb-4 flex items-center justify-between rounded-2xl px-4 py-3"
+                  style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.06)',
+                  }}
+                >
+                  <span className="text-[10px] uppercase tracking-wider" style={{ color: '#475569' }}>
+                    Prvá platba spolu:
+                  </span>
+                  <span className="text-sm font-bold" style={{ color: '#F0F9FF' }}>
+                    {firstPayment} € s DPH
+                  </span>
+                </div>
               )}
 
               {/* CTA Button */}
