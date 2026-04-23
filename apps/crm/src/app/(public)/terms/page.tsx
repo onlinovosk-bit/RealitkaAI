@@ -63,7 +63,7 @@ const programOverview = [
     ],
   },
   {
-    name: "Štarter",
+    name: "Starter",
     note: "Plán pre samostatných maklérov a menšie tímy.",
     features: [
       "AI Asistent - odpovede do 2 minút počas pracovných hodín",
@@ -138,7 +138,7 @@ export default function TermsPage() {
           </div>
         </section>
 
-        <section className="rounded-xl border border-violet-500/25 bg-violet-500/5 p-4">
+        <section id="programy" className="rounded-xl border border-violet-500/25 bg-violet-500/5 p-4">
           <h2 className="text-lg font-semibold text-white">Kapitola: Podrobný prehľad 4 programov</h2>
           <p className="mt-2 text-slate-300">
             Nižšie je orientačný prehľad programov a feature setu. Záväzný rozsah služieb, limity a SLA vždy určuje
