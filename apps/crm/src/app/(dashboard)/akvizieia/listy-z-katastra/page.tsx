@@ -8,7 +8,7 @@ export default function ListyZKastraPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-black text-white mb-1">Listy z Katastra</h1>
         <p className="text-sm" style={{ color: "#64748B" }}>
-          Dedičstvo, plomba, zmena vlastníka — AI vygeneruje profesionálny list majiteľovi skôr, ako sa dozvedí konkurencia. Prvý kontakt rozhoduje o mandáte.
+          Dedičstvo, plomba, zmena vlastníka — AI vygeneruje profesionálny list majiteľovi skôr, ako sa dozvie konkurencia. Prvý kontakt rozhoduje o mandáte.
         </p>
       </div>
       <AIGhostwriter />
