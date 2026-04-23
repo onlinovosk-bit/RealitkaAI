@@ -7,7 +7,7 @@ const FEATURES = [
     icon: Eye,
     badge: "L99 MODULE",
     badgeColor: "#60A5FA",
-    title: "„Za koľko predal sused?"",
+    title: '„Za koľko predal sused?"',
     desc: "Unikátny monitoring pohybov cien na konkrétnej ulici. Aktivuje zvedavosť klientov a udržuje značku Reality Smolko v ich povedomí mesiace pred samotným predajom.",
     tier: "starter",
   },
