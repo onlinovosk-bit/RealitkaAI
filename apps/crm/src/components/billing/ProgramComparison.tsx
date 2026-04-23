@@ -7,7 +7,7 @@ const PLANS = [
   { key: "starter",  name: "SMART START",       price: 49,  color: "#64748B", accent: "rgba(100,116,139,0.15)", border: "rgba(100,116,139,0.25)", recommended: false },
   { key: "pro",      name: "ACTIVE FORCE",       price: 99,  color: "#818CF8", accent: "rgba(129,140,248,0.15)", border: "rgba(129,140,248,0.35)", recommended: true  },
   { key: "market",   name: "MARKET VISION",      price: 199, color: "#60A5FA", accent: "rgba(96,165,250,0.12)",  border: "rgba(96,165,250,0.30)",  recommended: false },
-  { key: "protocol", name: "PROTOCOL AUTHORITY", price: 449, color: "#34D399", accent: "rgba(52,211,153,0.12)",  border: "rgba(52,211,153,0.30)",  recommended: false },
+  { key: "protocol", name: "PROTOCOL AUTHORITY", price: 449, color: "#EAB308", accent: "rgba(234,179,8,0.10)",  border: "rgba(234,179,8,0.45)",  recommended: false },
 ];
 
 type PlanKey = "starter" | "pro" | "market" | "protocol";
@@ -131,7 +131,7 @@ export default function ProgramComparison() {
 
         {/* Sticky plan headers */}
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse" style={{ minWidth: 700 }}>
+          <table className="w-full border-separate border-spacing-x-1" style={{ minWidth: 700 }}>
             <thead>
               <tr>
                 {/* Feature label column */}
@@ -144,8 +144,11 @@ export default function ProgramComparison() {
                       <div
                         className="rounded-2xl px-3 py-5 relative"
                         style={{
-                          background: plan.accent,
+                          background: plan.key === "protocol"
+                            ? "linear-gradient(160deg, rgba(234,179,8,0.14) 0%, rgba(120,53,15,0.08) 100%)"
+                            : plan.accent,
                           border: `1px solid ${plan.border}`,
+                          boxShadow: plan.key === "protocol" ? "0 0 30px rgba(234,179,8,0.15)" : undefined,
                         }}
                       >
                         {plan.recommended && (
@@ -217,7 +220,14 @@ export default function ProgramComparison() {
                         {feature.label}
                       </td>
                       {PLANS.map((plan) => (
-                        <td key={plan.key} className="py-3 px-3 text-center">
+                        <td
+                          key={plan.key}
+                          className="py-3 px-3 text-center"
+                          style={plan.key === "protocol" ? {
+                            background: "rgba(234,179,8,0.04)",
+                            borderBottom: "1px solid rgba(234,179,8,0.10)",
+                          } : undefined}
+                        >
                           <Cell value={feature.plans[plan.key as PlanKey]} color={plan.color} />
                         </td>
                       ))}

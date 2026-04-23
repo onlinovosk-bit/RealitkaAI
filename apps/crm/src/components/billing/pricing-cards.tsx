@@ -1,11 +1,40 @@
 "use client";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Plus, Zap } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { fetchJsonWithRetry } from "@/lib/request-helpers";
 import { EmailMockup } from "./EmailMockup";
 
 const ONBOARDING_FEE = 99;
+
+// ─── Per-plan vizuálne štýly ──────────────────────────────────────────────
+const CARD_STYLE: Record<string, React.CSSProperties> = {
+  starter:  { background: '#07111F', border: '1px solid #1E293B' },
+  pro:      { background: 'linear-gradient(135deg, #0C1C32 0%, #142A4E 100%)', border: '2px solid rgba(129,140,248,0.40)', boxShadow: '0 0 30px rgba(129,140,248,0.10)' },
+  market:   { background: 'linear-gradient(135deg, #061610 0%, #0B2218 100%)', border: '1px solid rgba(52,211,153,0.25)', boxShadow: '0 0 20px rgba(52,211,153,0.08)' },
+  protocol: { background: 'linear-gradient(160deg, rgba(202,138,4,0.12) 0%, rgba(120,53,15,0.06) 50%, #06100E 100%)', border: '2px solid rgba(234,179,8,0.50)', boxShadow: '0 0 50px rgba(202,138,4,0.20)', transform: 'scale(1.03)', zIndex: 10 },
+};
+
+const PRICE_COLOR: Record<string, string> = {
+  starter:  '#F0F9FF',
+  pro:      '#818CF8',
+  market:   '#34D399',
+  protocol: '#EAB308',
+};
+
+const CTA_STYLE: Record<string, React.CSSProperties> = {
+  starter:  { background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.10)', color: '#94A3B8' },
+  pro:      { background: 'linear-gradient(135deg, #818CF8, #6366F1)', color: '#050914', boxShadow: '0 0 20px rgba(129,140,248,0.30)' },
+  market:   { background: 'linear-gradient(135deg, #34D399, #059669)', color: '#050914' },
+  protocol: { background: 'linear-gradient(135deg, #EAB308, #CA8A04)', color: '#050914', boxShadow: '0 0 30px rgba(234,179,8,0.35)' },
+};
+
+const CTA_LABEL: Record<string, string> = {
+  starter:  'Vybrať Smart Start',
+  pro:      '✦ Vybrať Active Force',
+  market:   '✦ Vybrať Market Vision',
+  protocol: '★ Aktivovať Protocol',
+};
 
 type Plan = {
   key: string;
@@ -133,8 +162,8 @@ export default function PricingCards({ plans }: { plans: Plan[] }) {
       <div className={isSmolko ? "flex flex-col xl:flex-row gap-10 items-start" : ""}>
       <div className={`grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-4 ${isSmolko ? "xl:flex-1" : ""}`}>
         {plans.map((plan) => {
-          const isPro = plan.key === "pro" || plan.recommended;
-          const isEnterprise = plan.key === "enterprise";
+          const isProtocol = plan.key === "protocol";
+          const isPro = (plan.key === "pro" || plan.recommended) && !isProtocol;
           const isLoading = loadingKey === plan.key;
           const priceAmount = parseInt(plan.priceLabel) || 0;
           const firstPayment = priceAmount + ONBOARDING_FEE;
@@ -143,25 +172,27 @@ export default function PricingCards({ plans }: { plans: Plan[] }) {
             <div
               key={plan.key}
               className="relative rounded-3xl p-8 flex flex-col transition-all duration-300"
-              style={
-                isPro
-                  ? {
-                      background: 'linear-gradient(135deg, #0D2137 0%, #1B3A6B 100%)',
-                      border: '2px solid #22D3EE',
-                      boxShadow: '0 0 40px rgba(34,211,238,0.15)',
-                    }
-                  : {
-                      background: '#0A1628',
-                      border: `1px solid ${isEnterprise ? '#1B4FD8' : '#112240'}`,
-                    }
-              }
+              style={CARD_STYLE[plan.key] ?? CARD_STYLE.starter}
             >
-              {/* Odporúčané badge */}
+              {/* Protocol Authority — Holy Grail badge */}
+              {isProtocol && (
+                <div
+                  className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full px-5 py-1.5 text-[10px] font-black uppercase tracking-widest whitespace-nowrap animate-bounce"
+                  style={{
+                    background: 'linear-gradient(135deg, #EAB308, #CA8A04)',
+                    color: '#050914',
+                    boxShadow: '0 0 20px rgba(234,179,8,0.40)',
+                  }}
+                >
+                  ★ SVÄTÝ GRÁL
+                </div>
+              )}
+              {/* Pro badge */}
               {isPro && (
                 <div
                   className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full px-5 py-1.5 text-xs font-bold whitespace-nowrap"
                   style={{
-                    background: 'linear-gradient(135deg, #22D3EE, #818CF8)',
+                    background: 'linear-gradient(135deg, #818CF8, #6366F1)',
                     color: '#050914',
                   }}
                 >
@@ -173,10 +204,10 @@ export default function PricingCards({ plans }: { plans: Plan[] }) {
               <h2
                 className="text-xl mb-2"
                 style={{
-                  color: '#FFFFFF',
-                  fontWeight: isPro ? 700 : 800,
-                  fontSize: isPro ? undefined : '1.35rem',
-                  letterSpacing: isPro ? undefined : '0.02em',
+                  color: isProtocol ? '#EAB308' : '#FFFFFF',
+                  fontWeight: 800,
+                  fontSize: '1.35rem',
+                  letterSpacing: '0.02em',
                 }}
               >
                 {plan.landingName ?? plan.name}
@@ -196,7 +227,7 @@ export default function PricingCards({ plans }: { plans: Plan[] }) {
                 )}
                 <p
                   className="text-4xl font-extrabold"
-                  style={{ color: isPro ? '#22D3EE' : '#F0F9FF' }}
+                  style={{ color: PRICE_COLOR[plan.key] ?? '#F0F9FF' }}
                 >
                   {plan.priceLabel}
                 </p>
@@ -272,30 +303,12 @@ export default function PricingCards({ plans }: { plans: Plan[] }) {
                 onClick={() => startCheckout(plan.key)}
                 disabled={isLoading}
                 className="w-full rounded-xl px-5 py-3.5 text-sm font-bold transition-all duration-200 disabled:opacity-60 hover:opacity-90 mt-auto"
-                style={
-                  isPro
-                    ? {
-                        background: 'linear-gradient(135deg, #22D3EE, #818CF8)',
-                        color: '#050914',
-                        boxShadow: '0 0 20px rgba(34,211,238,0.3)',
-                      }
-                    : {
-                        background: 'rgba(34,211,238,0.08)',
-                        border: '1px solid rgba(34,211,238,0.20)',
-                        color: '#22D3EE',
-                      }
-                }
+                style={CTA_STYLE[plan.key] ?? CTA_STYLE.starter}
               >
-                {isLoading
-                  ? "Presmerovávam..."
-                  : isPro
-                  ? "✦ Vybrať Pro"
-                  : isEnterprise
-                  ? "Enterprise"
-                  : "Vybrať Starter"}
+                {isLoading ? "Presmerovávam..." : (CTA_LABEL[plan.key] ?? "Vybrať")}
               </button>
 
-              {isPro && (
+              {(isPro || isProtocol) && (
                 <p className="mt-4 text-center text-xs" style={{ color: '#475569' }}>
                   💡 100% garancia vrátenia do 30 dní
                 </p>
