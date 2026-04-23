@@ -625,9 +625,9 @@ export function DigitalTwin() {
   }, [phase]);
 
   return (
-    <Card accent="rgba(168,85,247,0.25)" tag="Scale Engine" tagColor="#C4B5FD">
+    <Card accent="rgba(168,85,247,0.25)" tag="Motor Rastu" tagColor="#C4B5FD">
       <Users className="mb-5" size={32} style={{ color: "#A855F7" }} />
-      <h2 className="text-xl font-bold text-white mb-1.5">3. Digital Twin Ads</h2>
+      <h2 className="text-xl font-bold text-white mb-1.5">3. Digitálne Dvojča Reklám</h2>
       <p className="text-xs mb-4" style={{ color: "#64748B" }}>
         AI nájde na Facebooku digitálne dvojičky vašich predajcov a zacieli Lookalike kampaň s presnosťou 94 %.
       </p>
@@ -638,7 +638,7 @@ export function DigitalTwin() {
             <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#94A3B8" }}>
               {phase === "idle" && "Čaká na aktiváciu"}
               {phase === "syncing" && "Synchronizujem s Meta API..."}
-              {phase === "done" && "Lookalike Audience pripravená"}
+              {phase === "done" && "Podobné publikum pripravené"}
             </span>
             {phase !== "idle" && (
               <span className="text-[10px] font-bold" style={{ color: "#A855F7" }}>{Math.round(progress)}%</span>
@@ -673,9 +673,9 @@ export function DigitalTwin() {
             background: phase === "done" ? "rgba(52,211,153,.08)" : "rgba(168,85,247,.08)",
             cursor: phase === "syncing" ? "not-allowed" : "pointer",
           }}>
-          {phase === "idle" && "Aktivovať AI Targeting"}
+          {phase === "idle" && "Aktivovať AI Cielenie"}
           {phase === "syncing" && <><Loader2 size={13} className="animate-spin inline mr-1.5" />Synchronizujem...</>}
-          {phase === "done" && "✓ Audience Aktívna"}
+          {phase === "done" && "✓ Publikum Aktívne"}
         </button>
         <div className="mt-4 flex items-center gap-2.5">
           <div className="flex -space-x-2">
