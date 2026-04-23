@@ -1,76 +1,67 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Plus, Zap } from "lucide-react";
+import { Plus, Zap, Eye, Crown, ShieldCheck } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { fetchJsonWithRetry } from "@/lib/request-helpers";
 import { EmailMockup } from "./EmailMockup";
 
 const ONBOARDING_FEE = 99;
 
-// ─── Per-plan vizuálne štýly (Tailwind triedy) ───────────────────────────
-const PLAN_THEMES = {
+// ─── Cyberpunk farebné identity ───────────────────────────────────────────
+const CYBER_CARD = {
   starter: {
-    border: "border-slate-800",
-    bg:     "bg-slate-900/40",
-    accent: "text-slate-500",
-    shadow: "shadow-none",
-    glow:   "",
-    scale:  "",
+    outerClass: "p-[1px] rounded-[2.5rem] bg-gradient-to-b from-white/20 to-transparent",
+    outerStyle: {} as React.CSSProperties,
+    innerClass: "h-full p-8 rounded-[2.5rem] bg-white/[0.03] backdrop-blur-xl flex flex-col border border-white/5 transition-all duration-500 group-hover:bg-white/[0.06]",
+    Icon: Zap,
+    iconClass: "text-white/40 mb-4",
+    nameClass: "text-[10px] font-black uppercase tracking-[0.3em] text-white/40",
+    priceClass: "text-4xl font-black text-white italic tracking-tighter",
+    diffClass: "text-[10px] text-white/20 uppercase mt-1 font-bold",
+    btnClass: "w-full py-3 rounded-2xl bg-white/5 border border-white/10 text-white text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all",
+    btnLabel: "Aktivovať",
+    scale: "",
   },
-  visionary: {
-    border: "border-indigo-900/50",
-    bg:     "bg-indigo-900/10",
-    accent: "text-indigo-400",
-    shadow: "shadow-[0_0_20px_rgba(79,70,229,0.05)]",
-    glow:   "",
-    scale:  "",
+  pro: {
+    outerClass: "p-[1px] rounded-[2.5rem] bg-gradient-to-b from-purple-500/30 to-transparent",
+    outerStyle: { boxShadow: "0 0 40px rgba(168,85,247,0.10)" } as React.CSSProperties,
+    innerClass: "h-full p-8 rounded-[2.5rem] bg-purple-500/[0.02] backdrop-blur-xl flex flex-col border border-purple-500/10 transition-all duration-500 group-hover:bg-purple-500/[0.05]",
+    Icon: Eye,
+    iconClass: "text-purple-400/60 mb-4",
+    nameClass: "text-[10px] font-black uppercase tracking-[0.3em] text-purple-400/60",
+    priceClass: "text-4xl font-black text-white italic tracking-tighter",
+    diffClass: "text-[10px] text-purple-400/30 uppercase mt-1 font-bold",
+    btnClass: "w-full py-3 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-200 text-[10px] font-black uppercase tracking-widest hover:bg-purple-500/20 transition-all",
+    btnLabel: "✦ Aktivovať",
+    scale: "",
   },
-  link: {
-    border: "border-emerald-900/50",
-    bg:     "bg-emerald-900/10",
-    accent: "text-emerald-400",
-    shadow: "shadow-[0_0_20px_rgba(16,185,129,0.05)]",
-    glow:   "",
-    scale:  "",
+  market: {
+    outerClass: "p-[1px] rounded-[2.5rem] bg-gradient-to-b from-cyan-500/30 to-transparent",
+    outerStyle: { boxShadow: "0 0 40px rgba(6,182,212,0.10)" } as React.CSSProperties,
+    innerClass: "h-full p-8 rounded-[2.5rem] bg-cyan-500/[0.02] backdrop-blur-xl flex flex-col border border-cyan-500/10 transition-all duration-500 group-hover:bg-cyan-500/[0.05]",
+    Icon: Crown,
+    iconClass: "text-cyan-400/60 mb-4",
+    nameClass: "text-[10px] font-black uppercase tracking-[0.3em] text-cyan-400/60",
+    priceClass: "text-4xl font-black text-white italic tracking-tighter",
+    diffClass: "text-[10px] text-cyan-400/30 uppercase mt-1 font-bold",
+    btnClass: "w-full py-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-200 text-[10px] font-black uppercase tracking-widest hover:bg-cyan-500/20 transition-all",
+    btnLabel: "✦ Aktivovať",
+    scale: "",
   },
-  authority: {
-    border: "border-yellow-600/60",
-    bg:     "bg-gradient-to-b from-yellow-600/15 via-yellow-900/5 to-transparent",
-    accent: "text-yellow-500 font-black",
-    shadow: "shadow-[0_0_50px_rgba(234,179,8,0.2)]",
-    glow:   "before:absolute before:-inset-px before:bg-gradient-to-b before:from-yellow-500/50 before:to-transparent before:rounded-[2rem] before:-z-10",
-    scale:  "scale-[1.03] z-10",
+  protocol: {
+    outerClass: "p-[2px] rounded-[2.5rem] bg-gradient-to-b from-yellow-500 via-yellow-200 to-yellow-800",
+    outerStyle: { boxShadow: "0 0 60px rgba(234,179,8,0.30)" } as React.CSSProperties,
+    innerClass: "h-full p-8 rounded-[2.5rem] bg-gradient-to-br from-yellow-600/20 via-[#0a0a05] to-yellow-900/40 backdrop-blur-3xl flex flex-col border border-yellow-500/20 overflow-hidden",
+    Icon: ShieldCheck,
+    iconClass: "text-yellow-500 mb-4 drop-shadow-[0_0_10px_rgba(234,179,8,0.5)]",
+    nameClass: "text-[11px] font-black uppercase tracking-[0.4em] text-yellow-500 drop-shadow-sm",
+    priceClass: "text-5xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 to-yellow-600 italic tracking-tighter",
+    diffClass: "text-[11px] text-yellow-500/50 uppercase mt-2 font-black tracking-widest italic",
+    btnClass: "w-full py-4 rounded-2xl bg-gradient-to-r from-yellow-600 via-yellow-400 to-yellow-600 bg-[length:200%_auto] text-[#010103] text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:bg-right transition-all duration-500 animate-gradient",
+    btnLabel: "★ Aktivovať Protocol —",
+    scale: "scale-110 z-10",
   },
 } as const;
-
-// Mapovanie plan key → PLAN_THEMES key
-const THEME_KEY: Record<string, keyof typeof PLAN_THEMES> = {
-  starter:  "starter",
-  pro:      "visionary",
-  market:   "link",
-  protocol: "authority",
-};
-
-const PRICE_COLOR: Record<string, string> = {
-  starter:  '#F0F9FF',
-  pro:      '#818CF8',
-  market:   '#34D399',
-  protocol: '#EAB308',
-};
-
-const CTA_STYLE: Record<string, React.CSSProperties> = {
-  starter:  { background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.10)', color: '#94A3B8' },
-  pro:      { background: 'linear-gradient(135deg, #818CF8, #6366F1)', color: '#050914', boxShadow: '0 0 20px rgba(129,140,248,0.30)' },
-  market:   { background: 'linear-gradient(135deg, #34D399, #059669)', color: '#050914' },
-  protocol: { background: 'linear-gradient(135deg, #EAB308, #CA8A04)', color: '#050914', boxShadow: '0 0 30px rgba(234,179,8,0.35)' },
-};
-
-const CTA_LABEL: Record<string, string> = {
-  starter:  'Vybrať Smart Start',
-  pro:      '✦ Vybrať Active Force',
-  market:   '✦ Vybrať Market Vision',
-  protocol: '★ Aktivovať Protocol',
-};
 
 type Plan = {
   key: string;
@@ -204,147 +195,145 @@ export default function PricingCards({ plans }: { plans: Plan[] }) {
           const priceAmount = parseInt(plan.priceLabel) || 0;
           const firstPayment = priceAmount + ONBOARDING_FEE;
 
-          const theme = PLAN_THEMES[THEME_KEY[plan.key] ?? "starter"];
+          const cyber = CYBER_CARD[plan.key as keyof typeof CYBER_CARD] ?? CYBER_CARD.starter;
+          const CyberIcon = cyber.Icon;
 
           return (
-            <div
-              key={plan.key}
-              className={[
-                "relative rounded-3xl p-8 flex flex-col transition-all duration-300 border-2",
-                theme.border,
-                theme.bg,
-                theme.shadow,
-                theme.glow,
-                theme.scale,
-              ].filter(Boolean).join(" ")}
-            >
+            <div key={plan.key} className={`relative group ${cyber.scale}`}>
               {/* Protocol Authority — NAJPOPULÁRNEJŠÍ badge */}
               {isProtocol && (
                 <div
-                  className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full px-5 py-1.5 text-[10px] font-black uppercase tracking-widest whitespace-nowrap animate-pulse"
+                  className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full px-5 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] whitespace-nowrap animate-pulse z-20 italic"
                   style={{
                     background: 'linear-gradient(135deg, #EAB308, #CA8A04)',
-                    color: '#050914',
-                    boxShadow: '0 0 20px rgba(234,179,8,0.50)',
+                    color: '#010103',
+                    boxShadow: '0 10px 20px rgba(0,0,0,0.5), 0 0 20px rgba(234,179,8,0.40)',
+                    border: '1px solid rgba(254,240,138,0.3)',
                   }}
                 >
-                  ⭐ NAJPOPULÁRNEJŠÍ
+                  ⭐ Najpopulárnejší
                 </div>
               )}
 
-              {/* Názov */}
-              <h2
-                className="text-xl mb-2"
-                style={{
-                  color: isProtocol ? '#EAB308' : '#FFFFFF',
-                  fontWeight: 800,
-                  fontSize: '1.35rem',
-                  letterSpacing: '0.02em',
-                }}
-              >
-                {plan.landingName ?? plan.name}
-              </h2>
+              {/* Gradient border wrapper */}
+              <div className={cyber.outerClass} style={cyber.outerStyle}>
+                <div className={`relative ${cyber.innerClass}`}>
 
-              {/* Popis */}
-              <p className="text-base leading-relaxed mb-4 sm:text-[17px]" style={{ color: '#64748B' }}>
-                {plan.description}
-              </p>
+                  {/* Protocol shimmer overlay */}
+                  {isProtocol && (
+                    <div className="absolute -top-[100%] -left-[100%] w-[300%] h-[300%] bg-gradient-to-br from-transparent via-yellow-500/10 to-transparent rotate-45 animate-shimmer pointer-events-none" />
+                  )}
 
-              {/* Cena */}
-              <div className="mb-2">
-                {plan.originalPriceLabel && (
-                  <p className="text-sm font-bold line-through mb-1" style={{ color: '#94A3B8' }}>
-                    {plan.originalPriceLabel}
+                  {/* Ikona + názov */}
+                  <CyberIcon size={isProtocol ? 32 : 24} className={cyber.iconClass} />
+                  <div className={`${cyber.nameClass} mb-6`}>{plan.landingName ?? plan.name}</div>
+
+                  {/* Popis */}
+                  <p className="text-sm leading-relaxed mb-4" style={{ color: '#475569' }}>
+                    {plan.description}
                   </p>
-                )}
-                <p
-                  className="text-4xl font-extrabold"
-                  style={{ color: PRICE_COLOR[plan.key] ?? '#F0F9FF' }}
-                >
-                  {plan.priceLabel}
-                </p>
-                {plan.originalPriceLabel && (
-                  <span
-                    className="mt-2 inline-block rounded-full px-3 py-0.5 text-xs font-bold"
+
+                  {/* Cena */}
+                  <div className="mb-3 text-center">
+                    {plan.originalPriceLabel && (
+                      <p className="text-xs font-bold line-through mb-1" style={{ color: '#64748B' }}>
+                        {plan.originalPriceLabel}
+                      </p>
+                    )}
+                    <span className={cyber.priceClass}>{plan.priceLabel}</span>
+                    {plan.originalPriceLabel && (
+                      <div className="mt-2">
+                        <span
+                          className="inline-block rounded-full px-3 py-0.5 text-[10px] font-bold"
+                          style={{
+                            background: isProtocol ? 'rgba(234,179,8,0.15)' : 'rgba(34,211,238,0.12)',
+                            color: isProtocol ? '#EAB308' : '#22D3EE',
+                            border: `1px solid ${isProtocol ? 'rgba(234,179,8,0.25)' : 'rgba(34,211,238,0.20)'}`,
+                          }}
+                        >
+                          −50% zľava
+                        </span>
+                      </div>
+                    )}
+                    {/* diff vs nižší plán */}
+                    {priceAmount > 0 && (
+                      <div className={`${cyber.diffClass} mt-2`}>
+                        {plan.key === 'pro'      && '+ 50 € vs Smart Start'}
+                        {plan.key === 'market'   && '+ 100 € vs Active Force'}
+                        {plan.key === 'protocol' && '+ 250 € vs Market Vision'}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Onboarding fee badge */}
+                  <div
+                    className="mb-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1"
                     style={{
-                      background: 'rgba(34,211,238,0.12)',
-                      color: '#22D3EE',
-                      border: '1px solid rgba(34,211,238,0.20)',
+                      background: 'rgba(251,146,60,0.10)',
+                      border: '1px solid rgba(251,146,60,0.25)',
+                      color: '#FB923C',
                     }}
                   >
-                    −50% zľava
-                  </span>
-                )}
+                    <Plus size={10} />
+                    <span className="text-[10px] font-bold uppercase tracking-widest">
+                      {ONBOARDING_FEE} € jednorazový onboarding
+                    </span>
+                  </div>
 
-                {/* Onboarding fee badge */}
-                <div
-                  className="mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1"
-                  style={{
-                    background: 'rgba(251,146,60,0.10)',
-                    border: '1px solid rgba(251,146,60,0.25)',
-                    color: '#FB923C',
-                  }}
-                >
-                  <Plus size={10} />
-                  <span className="text-[10px] font-bold uppercase tracking-widest">
-                    {ONBOARDING_FEE} € jednorazový onboarding
-                  </span>
+                  {/* Billing note */}
+                  {plan.billingNote && (
+                    <p className="mb-4 text-xs leading-relaxed" style={{ color: '#334155' }}>
+                      {plan.billingNote}
+                    </p>
+                  )}
+
+                  {/* Features */}
+                  {plan.features && plan.features.length > 0 && (
+                    <ul className="mb-6 space-y-2 flex-1 w-full">
+                      {plan.features.map((feature) => (
+                        <li key={feature} className="flex items-start gap-2 text-xs">
+                          <span style={{ color: isProtocol ? '#EAB308' : '#22D3EE', flexShrink: 0 }}>✓</span>
+                          <span style={{ color: '#94A3B8' }}>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  {/* Prvá platba spolu */}
+                  {priceAmount > 0 && (
+                    <div
+                      className="mb-4 flex items-center justify-between rounded-2xl px-4 py-3 w-full"
+                      style={{
+                        background: 'rgba(255,255,255,0.03)',
+                        border: '1px solid rgba(255,255,255,0.06)',
+                      }}
+                    >
+                      <span className="text-[10px] uppercase tracking-wider" style={{ color: '#475569' }}>
+                        Prvá platba spolu:
+                      </span>
+                      <span className="text-sm font-bold" style={{ color: '#F0F9FF' }}>
+                        {firstPayment} € s DPH
+                      </span>
+                    </div>
+                  )}
+
+                  {/* CTA Button */}
+                  <button
+                    type="button"
+                    onClick={() => startCheckout(plan.key)}
+                    disabled={isLoading}
+                    className={`${cyber.btnClass} disabled:opacity-60 mt-auto`}
+                  >
+                    {isLoading ? "Presmerovávam..." : cyber.btnLabel}
+                  </button>
+
+                  {isProtocol && (
+                    <p className="mt-4 text-center text-[10px]" style={{ color: '#92400E' }}>
+                      💡 100% garancia vrátenia do 30 dní
+                    </p>
+                  )}
                 </div>
               </div>
-
-              {/* Billing note */}
-              {plan.billingNote && (
-                <p className="mb-6 text-sm leading-relaxed sm:text-base" style={{ color: '#475569' }}>
-                  {plan.billingNote}
-                </p>
-              )}
-
-              {/* Features */}
-              {plan.features && plan.features.length > 0 && (
-                <ul className="mb-8 space-y-2.5 flex-1">
-                  {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-2.5 text-base sm:text-[17px]">
-                      <span style={{ color: '#22D3EE', flexShrink: 0 }}>✓</span>
-                      <span style={{ color: '#94A3B8' }}>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-
-              {/* Prvá platba spolu */}
-              {priceAmount > 0 && (
-                <div
-                  className="mb-4 flex items-center justify-between rounded-2xl px-4 py-3"
-                  style={{
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                  }}
-                >
-                  <span className="text-[10px] uppercase tracking-wider" style={{ color: '#475569' }}>
-                    Prvá platba spolu:
-                  </span>
-                  <span className="text-sm font-bold" style={{ color: '#F0F9FF' }}>
-                    {firstPayment} € s DPH
-                  </span>
-                </div>
-              )}
-
-              {/* CTA Button */}
-              <button
-                type="button"
-                onClick={() => startCheckout(plan.key)}
-                disabled={isLoading}
-                className="w-full rounded-xl px-5 py-3.5 text-sm font-bold transition-all duration-200 disabled:opacity-60 hover:opacity-90 mt-auto"
-                style={CTA_STYLE[plan.key] ?? CTA_STYLE.starter}
-              >
-                {isLoading ? "Presmerovávam..." : (CTA_LABEL[plan.key] ?? "Vybrať")}
-              </button>
-
-              {(isPro || isProtocol) && (
-                <p className="mt-4 text-center text-xs" style={{ color: '#475569' }}>
-                  💡 100% garancia vrátenia do 30 dní
-                </p>
-              )}
             </div>
           );
         })}
