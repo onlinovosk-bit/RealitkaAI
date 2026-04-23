@@ -6,9 +6,6 @@ const nextConfig = {
 		// Tree-shake veľké balíky — menej JS na klientovi (ikonky, motion).
 		optimizePackageImports: ["lucide-react", "framer-motion"],
 	},
-	turbopack: {
-		root: path.resolve(__dirname, "../.."),
-	},
 	async redirects() {
 		return [
 			{ source: "/demo-odhad", destination: "/demo", permanent: true },

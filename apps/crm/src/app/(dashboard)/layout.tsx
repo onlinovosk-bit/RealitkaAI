@@ -34,12 +34,12 @@ export default async function DashboardLayout({
       }}
     >
       <AppSidebar
-        uiRole={profile.ui_role       ?? "agent"}
-        accountTier={profile.account_tier ?? "free"}
-        isInTeam={!!profile.team_license_id}
-        appRole={profile.role          ?? undefined}
-        agencyName={profile.agency_name  ?? undefined}
-        userName={profile.full_name    ?? undefined}
+        uiRole={profile?.ui_role       ?? "agent"}
+        accountTier={profile?.account_tier ?? "free"}
+        isInTeam={!!profile?.team_license_id}
+        appRole={profile?.role          ?? undefined}
+        agencyName={profile?.agency_name  ?? undefined}
+        userName={profile?.full_name    ?? undefined}
       />
       <main
         style={{
