@@ -94,7 +94,6 @@ const CATEGORIES: Category[] = [
       { label: "Podpora",                           plans: { starter: "48h", pro: "Prioritná", market: "Prioritná", protocol: "Dedikovaná" } },
       { label: "30-dňová garancia vrátenia",        plans: { starter: true, pro: true, market: true, protocol: true } },
       { label: "Portálové integrácie",              plans: { pro: true, market: true, protocol: true } },
-      { label: "Revolis Academy",                   plans: { starter: true, pro: true, market: true, protocol: true } },
     ],
   },
 ];
