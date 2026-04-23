@@ -159,10 +159,10 @@ const SECTIONS: Section[] = [
 ];
 
 const PLANS = [
-  { key: "starter",  name: "Smart Start",       price: "49 €",  featured: false, color: "#64748B" },
-  { key: "pro",      name: "Active Force",       price: "99 €",  featured: false, color: "#60A5FA" },
-  { key: "market",   name: "Market Vision",      price: "199 €", featured: false, color: "#CBD5E1" },
-  { key: "protocol", name: "Protocol Authority", price: "449 €", featured: true,  color: "#EAB308" },
+  { key: "starter",  name: "Smart Start",       price: "49 €",  featured: false, color: "#64748B", accent: "#0F172A",                                         border: "rgba(100,116,139,0.40)" },
+  { key: "pro",      name: "Active Force",       price: "99 €",  featured: false, color: "#60A5FA", accent: "#1E293B",                                         border: "rgba(96,165,250,0.25)"  },
+  { key: "market",   name: "Market Vision",      price: "199 €", featured: false, color: "#CBD5E1", accent: "#334155",                                         border: "rgba(203,213,225,0.20)" },
+  { key: "protocol", name: "Protocol Authority", price: "449 €", featured: true,  color: "#EAB308", accent: "linear-gradient(160deg, #451a03 0%, #010103 100%)", border: "rgba(234,179,8,0.50)"  },
 ];
 
 // ─── Modal ────────────────────────────────────────────────────────────────
@@ -232,15 +232,15 @@ function FeatureModal({ row, onClose }: { row: Row; onClose: () => void }) {
 
 // ─── Cell ─────────────────────────────────────────────────────────────────
 
-function Cell({ value, featured }: { value: CellValue; featured: boolean }) {
+function Cell({ value, color, featured }: { value: CellValue; color: string; featured: boolean }) {
   const fl = featured ? "0.5px solid rgba(234,179,8,0.18)" : undefined;
-  const bg = featured ? "rgba(234,179,8,0.06)" : "transparent";
+  const bg = featured ? "rgba(234,179,8,0.04)" : "transparent";
 
   if (value === true) {
     return (
       <td className="py-2.5 px-3 text-center" style={{ background: bg, borderLeft: fl, borderRight: fl }}>
-        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full" style={{ background: "rgba(234,179,8,0.15)" }}>
-          <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l2.5 2.5L9 1" stroke="#EAB308" strokeWidth="1.5" strokeLinecap="round"/></svg>
+        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full" style={{ background: `${color}18` }}>
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l2.5 2.5L9 1" stroke={color} strokeWidth="1.5" strokeLinecap="round"/></svg>
         </span>
       </td>
     );
@@ -249,7 +249,7 @@ function Cell({ value, featured }: { value: CellValue; featured: boolean }) {
     return (
       <td className="py-2.5 px-3 text-center" style={{ background: bg, borderLeft: fl, borderRight: fl }}>
         <span className="inline-flex items-center justify-center w-5 h-5 rounded-full" style={{ background: "rgba(255,255,255,0.04)" }}>
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 2l6 6M8 2l-6 6" stroke="#334155" strokeWidth="1.2" strokeLinecap="round"/></svg>
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 2l6 6M8 2l-6 6" stroke="#1E293B" strokeWidth="1.2" strokeLinecap="round"/></svg>
         </span>
       </td>
     );
@@ -257,7 +257,7 @@ function Cell({ value, featured }: { value: CellValue; featured: boolean }) {
   return (
     <td className="py-2.5 px-3 text-center" style={{ background: bg, borderLeft: fl, borderRight: fl }}>
       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"
-        style={{ background: featured ? "rgba(234,179,8,0.15)" : "rgba(255,255,255,0.06)", color: featured ? "#5AAF3C" : "#64748B" }}>
+        style={{ background: `${color}18`, color }}>
         {value}
       </span>
     </td>
@@ -293,10 +293,10 @@ export default function RozpisFunkcionalit() {
                     <div
                       className="px-3 py-5 relative"
                       style={{
-                        background:   plan.featured ? "rgba(234,179,8,0.08)" : "rgba(255,255,255,0.02)",
-                        borderLeft:   plan.featured ? "0.5px solid rgba(234,179,8,0.30)" : undefined,
-                        borderRight:  plan.featured ? "0.5px solid rgba(234,179,8,0.30)" : undefined,
+                        background:   plan.accent,
+                        border:       `1px solid ${plan.border}`,
                         borderBottom: "1px solid rgba(255,255,255,0.06)",
+                        boxShadow:    plan.featured ? "0 0 30px rgba(202,138,4,0.15)" : undefined,
                       }}
                     >
                       {plan.featured && (
@@ -336,7 +336,7 @@ export default function RozpisFunkcionalit() {
                         </button>
                       </td>
                       {row.cells.map((cell, ci) => (
-                        <Cell key={ci} value={cell} featured={PLANS[ci].featured} />
+                        <Cell key={ci} value={cell} color={PLANS[ci].color} featured={PLANS[ci].featured} />
                       ))}
                     </tr>
                   ))}
@@ -348,16 +348,16 @@ export default function RozpisFunkcionalit() {
                 {PLANS.map((plan) => (
                   <td key={plan.key} className="px-3 py-4 text-center"
                     style={{
-                      background:  plan.featured ? "rgba(234,179,8,0.08)" : undefined,
-                      borderLeft:  plan.featured ? "0.5px solid rgba(234,179,8,0.30)" : undefined,
-                      borderRight: plan.featured ? "0.5px solid rgba(234,179,8,0.30)" : undefined,
+                      background:  plan.featured ? "rgba(234,179,8,0.06)" : `${plan.color}08`,
+                      borderLeft:  `0.5px solid ${plan.border}`,
+                      borderRight: `0.5px solid ${plan.border}`,
                       borderTop:   "1px solid rgba(255,255,255,0.06)",
                     }}>
                     <a href="/billing"
                       className="block w-full py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all hover:opacity-80"
                       style={plan.featured
-                        ? { background: "linear-gradient(135deg,#EAB308,#CA8A04)", color: "#010103" }
-                        : { border: "0.5px solid rgba(255,255,255,0.12)", color: "#64748B" }}>
+                        ? { background: "linear-gradient(135deg,#EAB308,#CA8A04)", color: "#010103", boxShadow: "0 0 16px rgba(234,179,8,0.35)" }
+                        : { background: plan.color, color: "#010103" }}>
                       Začať ↗
                     </a>
                   </td>
