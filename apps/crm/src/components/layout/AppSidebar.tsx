@@ -425,6 +425,24 @@ export default function AppSidebar({
           >
             Revolis.AI
           </span>
+          {isFounderDemo && (
+            <span
+              style={{
+                fontSize: "9px",
+                fontWeight: "700",
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                borderRadius: "9999px",
+                padding: "2px 7px",
+                color: "#06213F",
+                background: "#22D3EE",
+                border: "1px solid rgba(103,232,249,0.65)",
+                boxShadow: "0 0 12px rgba(34,211,238,0.35)",
+              }}
+            >
+              Demo
+            </span>
+          )}
         </div>
 
         {/* Greeting + plan badge */}

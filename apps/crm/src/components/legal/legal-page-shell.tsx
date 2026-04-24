@@ -8,6 +8,7 @@ type LegalPageShellProps = {
 
 const legalNavItems = [
   { href: "/legal", label: "Legal Hub" },
+  { href: "/legal/zmluva-o-poskytovani-softverovych-sluzieb", label: "SaaS zmluva" },
   { href: "/terms", label: "VOP / Terms" },
   { href: "/terms#programy", label: "Porovnanie programov" },
   { href: "/privacy", label: "Ochrana údajov" },

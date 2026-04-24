@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 const LINKS = [
+  { label: "SaaS zmluva", href: "/legal/zmluva-o-poskytovani-softverovych-sluzieb" },
   { label: "Podmienky", href: "/terms" },
   { label: "Ochrana údajov", href: "/privacy" },
   { label: "Cookies", href: "/cookies" },
@@ -8,6 +9,7 @@ const LINKS = [
   { label: "SLA", href: "/sla" },
   { label: "Bezpečnosť", href: "/security" },
   { label: "Trust Center", href: "/trust-center" },
+  { label: "Legal Changelog", href: "/legal/changelog" },
 ];
 
 const YEAR = new Date().getFullYear();

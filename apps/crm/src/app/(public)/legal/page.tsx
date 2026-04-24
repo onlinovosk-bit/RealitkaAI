@@ -9,6 +9,11 @@ export const metadata = {
 
 const publicItems = [
   {
+    title: "Zmluva o poskytovaní softvérových služieb",
+    href: "/legal/zmluva-o-poskytovani-softverovych-sluzieb",
+    description: "Rámcová SaaS zmluva (MSA-ready prehľad) pre enterprise procurement a podpisový proces.",
+  },
+  {
     title: "Privacy Policy",
     href: "/privacy-policy",
     description: "Ako spracúvame osobné údaje, právne základy, retention a práva dotknutých osôb.",
@@ -75,6 +80,12 @@ const publicItems = [
   },
 ];
 
+const internalItems = [
+  "Podpisové redline verzie MSA/DPA/SLA/Indemnification",
+  "Security evidence pack (detailné test reports a interné kontroly)",
+  "Procurement Q&A pack pre enterprise due diligence",
+];
+
 export default function LegalHubPage() {
   return (
     <LegalPageShell
@@ -99,6 +110,14 @@ export default function LegalHubPage() {
           Enterprise due diligence dokumenty (DPA template, detailné SLA annexy, security evidence pack) poskytujeme
           cez Trust Center proces na vyžiadanie.
         </p>
+        <div className="mt-3 rounded-lg border border-emerald-400/20 bg-slate-950/40 p-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-emerald-300">Interné / na vyžiadanie</p>
+          <ul className="mt-2 space-y-1 text-xs text-emerald-100/90">
+            {internalItems.map((item) => (
+              <li key={item}>- {item}</li>
+            ))}
+          </ul>
+        </div>
         <a
           href="mailto:legal@revolis.ai?subject=Trust%20Center%20Request"
           className="mt-3 inline-block rounded-full border border-emerald-400/40 px-4 py-2 text-xs font-semibold text-emerald-100 transition-colors hover:border-emerald-300"

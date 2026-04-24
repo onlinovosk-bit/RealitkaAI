@@ -7,6 +7,16 @@ export const metadata = {
 
 const releases = [
   {
+    version: "v2.4",
+    date: "20. apríla 2026",
+    items: [
+      "Publikovaná verejná stránka: Zmluva o poskytovaní softvérových služieb.",
+      "Doplnené prelinkovanie legal dokumentov v Legal Hub, Terms a Trust Center.",
+      "Pridaný verejný vs interný dokumentový rozpis a Trust Center flow kroky.",
+      "Synchronizovaný markdown legal changelog a enterprise contract artefakt.",
+    ],
+  },
+  {
     version: "v2.3",
     date: "15. apríla 2026",
     items: [

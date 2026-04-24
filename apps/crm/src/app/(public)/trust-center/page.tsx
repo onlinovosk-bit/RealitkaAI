@@ -15,6 +15,20 @@ const docs = [
   "Sales legal checklist + redline fallback framework",
 ];
 
+const publicDocs = [
+  { label: "SaaS zmluva (verejný prehľad)", href: "/legal/zmluva-o-poskytovani-softverovych-sluzieb" },
+  { label: "VOP / Terms", href: "/terms" },
+  { label: "Privacy Policy", href: "/privacy-policy" },
+  { label: "Security & Compliance", href: "/security" },
+  { label: "Legal Changelog", href: "/legal/changelog" },
+];
+
+const internalDocs = [
+  "Podpisové redline verzie MSA/DPA/SLA/Indemnification",
+  "Detailný security evidence pack (na NDA / procurement request)",
+  "Interné auditné podklady a kontrolné checklisty",
+];
+
 export default function TrustCenterPage() {
   return (
     <LegalPageShell
@@ -52,6 +66,38 @@ export default function TrustCenterPage() {
               Kontaktovať security tím
             </a>
           </div>
+        </section>
+
+        <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <article className="rounded-xl border border-slate-700 bg-slate-950/50 p-4">
+            <h3 className="font-semibold text-cyan-200">Verejné dokumenty</h3>
+            <ul className="mt-3 space-y-2">
+              {publicDocs.map((doc) => (
+                <li key={doc.href}>
+                  <Link href={doc.href} className="text-xs text-cyan-100 underline hover:text-cyan-200">
+                    {doc.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </article>
+          <article className="rounded-xl border border-slate-700 bg-slate-950/50 p-4">
+            <h3 className="font-semibold text-amber-200">Interné / na vyžiadanie</h3>
+            <ul className="mt-3 space-y-2 text-xs text-slate-300">
+              {internalDocs.map((doc) => (
+                <li key={doc}>- {doc}</li>
+              ))}
+            </ul>
+          </article>
+        </section>
+
+        <section className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4">
+          <h3 className="font-semibold text-emerald-200">Trust Center flow</h3>
+          <ol className="mt-2 space-y-2 text-xs text-emerald-100/90">
+            <li>1) Vyplníte DPA request na stránke /dpa-request alebo pošlete e-mail na legal@revolis.ai.</li>
+            <li>2) Legal tím preverí scope, jurisdikciu, požadované annexy a procurement termíny.</li>
+            <li>3) Dohodneme podpisový balík a redline workflow (MSA/DPA/SLA/Indemnification).</li>
+          </ol>
         </section>
       </div>
     </LegalPageShell>

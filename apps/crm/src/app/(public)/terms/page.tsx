@@ -5,8 +5,8 @@ const legalSuiteChapters = [
   {
     title: "Dokument 1: Master Service Agreement (MSA)",
     summary: "Rozsah služieb, licencia, obchodné podmienky, IP a ukončenie.",
-    href: "/trust-center",
-    cta: "Požiadať o MSA cez Trust Center",
+    href: "/legal/zmluva-o-poskytovani-softverovych-sluzieb",
+    cta: "Otvoriť SaaS zmluvu",
   },
   {
     title: "Dokument 2: Data Processing Agreement (DPA)",

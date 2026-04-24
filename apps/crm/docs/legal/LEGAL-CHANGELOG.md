@@ -1,5 +1,11 @@
 # LEGAL CHANGELOG — REVOLIS.AI
 
+## v2.4 — 20. apríla 2026
+- Publikovaná verejná stránka: Zmluva o poskytovaní softvérových služieb.
+- Prelinkované legal stránky: Legal Hub, Terms, Trust Center, footer.
+- Doplnený rozpis verejných vs interných dokumentov a Trust Center request flow.
+- Aktualizovaný enterprise contract artefakt pre podpisový proces.
+
 ## v2.3 — 15. apríla 2026
 - Doplnené verejné stránky: Legal Hub, Privacy Policy, VOP/Terms, Security & Compliance.
 - Zavedený Trust Center flow vrátane DPA request formulára.
