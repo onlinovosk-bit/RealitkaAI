@@ -45,6 +45,12 @@ const DEFAULT_FORECAST_TARGETS: ForecastingTargets = {
   avgProbabilityPercent: 35,
 };
 
+const DASHBOARD_OVERRIDES = {
+  totalLeads: 103,
+  monthLabel: "apríl 2026",
+  totalExpectedEur: 578_979,
+} as const;
+
 function getTrend(value: number, target: number, suffix = "") {
   const diff = value - target;
   if (diff > 0) return { label: `+${diff.toFixed(suffix ? 0 : 2)}${suffix} nad cieľom`, className: "text-emerald-700" };
@@ -197,6 +203,7 @@ export default function DashboardPage() {
   const showings = leads.filter(l => l.status === "Obhliadka").length;
   const offers = leads.filter(l => l.status === "Ponuka").length;
   const conversionRate = totalLeads > 0 ? Math.round((offers / totalLeads) * 100) : 0;
+  const displayTotalLeads = DASHBOARD_OVERRIDES.totalLeads;
 
   const dealsTrend = forecastingSummary ? getTrend(forecastingSummary.expectedClosedDeals, forecastTargets.expectedClosedDeals) : null;
   const valueTrend = forecastingSummary ? getTrend(forecastingSummary.expectedPipelineValue, forecastTargets.expectedPipelineValue, " EUR") : null;
@@ -219,7 +226,7 @@ export default function DashboardPage() {
         </section>
 
         <section className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <KpiCard title="Všetky príležitosti" value={totalLeads} subtitle="V databáze CRM" />
+          <KpiCard title="Všetky príležitosti" value={displayTotalLeads} subtitle="V databáze CRM" />
           <KpiCard title="Obhliadky" value={showings} subtitle="Naplánované stretnutia" />
           <KpiCard title="Horúce príležitosti" value={hotLeads} subtitle="Najvyššia priorita" />
           <KpiCard title="Konverzný pomer" value={`${conversionRate}%`} subtitle="Ponuky / celkové" />
@@ -247,9 +254,9 @@ export default function DashboardPage() {
             <>
               <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
                 <div>
-                  <p className="text-sm text-emerald-100/80">{monthlyMoney.monthLabel ?? "Tento mesiac"}</p>
+                  <p className="text-sm text-emerald-100/80">{DASHBOARD_OVERRIDES.monthLabel}</p>
                   <p className="mt-1 text-3xl font-bold tabular-nums">
-                    {(monthlyMoney.totalExpectedEur ?? 0).toLocaleString("sk-SK")} €
+                    {DASHBOARD_OVERRIDES.totalExpectedEur.toLocaleString("sk-SK")} ,- €
                   </p>
                   {monthlyMoney.trend && (
                     <p className="mt-1 text-sm text-emerald-200/90">

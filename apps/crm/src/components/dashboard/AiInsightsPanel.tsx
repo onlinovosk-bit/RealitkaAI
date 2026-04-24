@@ -146,17 +146,7 @@ export default function AiInsightsPanel({
                       color: "#BAE6FD",
                     }}
                   >
-                    <p className="mb-2">Odomkni ďalšie príležitosti s programom Pro za 49 €.</p>
-                    <Link
-                      href="/billing"
-                      className="inline-flex rounded-full px-3 py-1 text-[11px] font-semibold"
-                      style={{
-                        background: "linear-gradient(135deg, #22D3EE, #818CF8)",
-                        color: "#050914",
-                      }}
-                    >
-                      Odomknúť Pro
-                    </Link>
+                    <p>Ďalšie príležitosti odomkneš v programe Smart Start.</p>
                   </div>
                 )}
               </div>

@@ -36,7 +36,7 @@ export default function PaywallLock({
           +{lockedCount} ďalších {feature}
         </p>
         <p className="text-xs text-slate-500 mb-4">
-          Odomkni PRO a získaj viac klientov každý deň.
+          Odomkni Smart Start a získaj viac klientov každý deň.
         </p>
         <Link
           href="/billing"
@@ -47,7 +47,7 @@ export default function PaywallLock({
             boxShadow: "0 0 20px rgba(34,211,238,0.3)",
           }}
         >
-          ✦ Odomknúť PRO – od €49/mes
+          ✦ Odomknúť Smart Start – od €49/mes
         </Link>
       </div>
     </motion.div>
