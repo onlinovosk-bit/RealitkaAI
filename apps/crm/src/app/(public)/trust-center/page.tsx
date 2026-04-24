@@ -27,6 +27,7 @@ const internalDocs = [
   "Podpisové redline verzie MSA/DPA/SLA/Indemnification",
   "Detailný security evidence pack (na NDA / procurement request)",
   "Interné auditné podklady a kontrolné checklisty",
+  "Performance Fee model (INTERNÉ ONLY, mimo verejných stránok)",
 ];
 
 export default function TrustCenterPage() {

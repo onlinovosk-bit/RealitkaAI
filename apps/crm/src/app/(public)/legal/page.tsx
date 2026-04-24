@@ -84,6 +84,7 @@ const internalItems = [
   "Podpisové redline verzie MSA/DPA/SLA/Indemnification",
   "Security evidence pack (detailné test reports a interné kontroly)",
   "Procurement Q&A pack pre enterprise due diligence",
+  "Performance Fee model (len interné, na vyžiadanie cez legal@revolis.ai)",
 ];
 
 export default function LegalHubPage() {
