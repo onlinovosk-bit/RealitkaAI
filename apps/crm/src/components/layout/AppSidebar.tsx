@@ -72,7 +72,7 @@ function NavItemRow({
       onMouseEnter={(e) => {
         if (!isActive) {
           (e.currentTarget as HTMLElement).style.background =
-            "rgba(255,255,255,0.04)";
+            "rgba(34,211,238,0.10)";
         }
       }}
       onMouseLeave={(e) => {
@@ -308,15 +308,16 @@ export default function AppSidebar({
         flexDirection:  "column",
         height:         "100%",
         background:     "#050914",  // Revolis dark bg
-        borderRight:    "1px solid rgba(255,255,255,0.06)",
+        borderRight:    "1px solid rgba(34,211,238,0.18)",
         overflow:       "hidden",
+        backgroundImage: "linear-gradient(180deg, #06122A 0%, #040B1F 100%)",
       }}
     >
       {/* Akcentový top border podľa role */}
       <div
         style={{
           height:     "2px",
-          background: `linear-gradient(90deg, ${theme.accentColor}80, transparent)`,
+          background: `linear-gradient(90deg, rgba(34,211,238,0.95), rgba(59,130,246,0.45), transparent)`,
           flexShrink: 0,
         }}
       />
@@ -324,8 +325,8 @@ export default function AppSidebar({
       {/* Header */}
       <div
         style={{
-          padding:      "16px 12px 14px",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          padding:      "16px 12px 14px 48px",
+          borderBottom: "1px solid rgba(34,211,238,0.16)",
           flexShrink:   0,
         }}
       >
@@ -352,6 +353,7 @@ export default function AppSidebar({
               fontWeight:  "700",
               color:       theme.accentColor,
               letterSpacing: "-0.02em",
+              boxShadow:   "0 0 14px rgba(34,211,238,0.25)",
             }}
           >
             R
@@ -433,7 +435,7 @@ export default function AppSidebar({
                 <div
                   style={{
                     height:     "1px",
-                    background: "rgba(255,255,255,0.05)",
+                    background: "rgba(34,211,238,0.14)",
                     margin:     "8px 0",
                   }}
                 />
@@ -464,7 +466,7 @@ export default function AppSidebar({
       {/* Settings separator + user footer */}
       <div
         style={{
-          borderTop: "1px solid rgba(255,255,255,0.06)",
+          borderTop: "1px solid rgba(34,211,238,0.16)",
           padding:   "10px 10px 12px",
           flexShrink: 0,
         }}
@@ -489,7 +491,7 @@ export default function AppSidebar({
               marginTop:  "8px",
               padding:    "6px 8px",
               borderRadius: "8px",
-              background: "rgba(255,255,255,0.03)",
+              background: "rgba(34,211,238,0.06)",
             }}
           >
             <div
@@ -573,8 +575,9 @@ export default function AppSidebar({
           width:        "36px",
           height:       "36px",
           borderRadius: "8px",
-          background:   "#0A0F1E",
-          border:       `1px solid ${theme.accentColor}30`,
+              background:   "linear-gradient(135deg, #06213F 0%, #0B1630 100%)",
+              border:       "1px solid rgba(34,211,238,0.45)",
+              boxShadow:    "0 0 16px rgba(34,211,238,0.22)",
           display:      "flex",
           flexDirection: "column",
           alignItems:   "center",
