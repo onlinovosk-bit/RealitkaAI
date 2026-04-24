@@ -133,7 +133,12 @@ export default function PriorityLeads({ leads, plan = "free" }: PriorityLeadsPro
         )}
 
         {lockedCount > 0 && (
-          <PaywallLock lockedCount={lockedCount} feature="prioritných príležitostí" />
+          <PaywallLock
+            lockedCount={lockedCount}
+            feature="prioritných príležitostí"
+            titleOverride="+4 ďalších prioritných príležitostí"
+            ctaLabel="✦ Odomknúť Active Force od 99 € mesačne"
+          />
         )}
       </div>
     </div>

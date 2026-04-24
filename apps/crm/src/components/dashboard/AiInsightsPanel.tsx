@@ -157,7 +157,12 @@ export default function AiInsightsPanel({
 
       {/* Paywall pre locked insights */}
       {isLocked && (
-        <PaywallLock lockedCount={locked.length} feature="AI odporúčaní" />
+        <PaywallLock
+          lockedCount={locked.length}
+          feature="príležitostí"
+          titleOverride="+6 ďalších príležitostí"
+          ctaLabel="✦ Odomknúť Market Vision od 199 € mesačne"
+        />
       )}
     </div>
   );

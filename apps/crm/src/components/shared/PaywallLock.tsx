@@ -5,11 +5,15 @@ import { motion } from "framer-motion";
 interface PaywallLockProps {
   lockedCount: number;
   feature?: string;
+  titleOverride?: string;
+  ctaLabel?: string;
 }
 
 export default function PaywallLock({
   lockedCount,
   feature = "AI odporúčania",
+  titleOverride,
+  ctaLabel,
 }: PaywallLockProps) {
   return (
     <motion.div
@@ -33,10 +37,10 @@ export default function PaywallLock({
       <div className="relative z-10">
         <div className="mb-3 text-2xl">🔒</div>
         <p className="text-sm font-semibold text-slate-200 mb-1">
-          +{lockedCount} ďalších {feature}
+          {titleOverride ?? `+${lockedCount} ďalších ${feature}`}
         </p>
         <p className="text-xs text-slate-500 mb-4">
-          Odomkni Smart Start a získaj viac klientov každý deň.
+          Odomkni vyšší program a získaj viac klientov každý deň.
         </p>
         <Link
           href="/billing"
@@ -47,7 +51,7 @@ export default function PaywallLock({
             boxShadow: "0 0 20px rgba(34,211,238,0.3)",
           }}
         >
-          ✦ Odomknúť Smart Start – od €49/mes
+          {ctaLabel ?? "✦ Odomknúť Smart Start – od €49/mes"}
         </Link>
       </div>
     </motion.div>

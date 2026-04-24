@@ -229,7 +229,12 @@ export default function DailyActionPanel({ leads, plan = "free" }: { leads: Lead
 
       {lockedCount > 0 && (
         <div className="mt-3">
-          <PaywallLock lockedCount={lockedCount} feature="denných akcií" />
+          <PaywallLock
+            lockedCount={lockedCount}
+            feature="príležitostí"
+            titleOverride="+8 ďalších príležitostí"
+            ctaLabel="✦ Odomknúť Protocol Authority od 449 € mesačne"
+          />
         </div>
       )}
     </div>
