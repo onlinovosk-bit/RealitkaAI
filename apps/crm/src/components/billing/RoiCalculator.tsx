@@ -131,7 +131,7 @@ export default function RoiCalculator() {
           }}
         >
           <p className="text-xs mb-1" style={{ color: "#94A3B8" }}>
-            S Revolis.AI Pro
+            S Revolis.AI Market Vision
           </p>
           <p className="text-2xl font-bold" style={{ color: "#22D3EE" }}>
             {Math.round(withRevolis).toLocaleString("sk-SK")} €
