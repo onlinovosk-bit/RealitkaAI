@@ -58,7 +58,7 @@ function NavItemRow({
         display:         "flex",
         alignItems:      "flex-start",
         gap:             "10px",
-        padding:         "8px 10px",
+        padding:         "10px 12px",
         borderRadius:    "8px",
         background:      isActive ? theme.accentBg : "transparent",
         textDecoration:  "none",
@@ -84,8 +84,8 @@ function NavItemRow({
       {/* Ikona kontajner */}
       <div
         style={{
-          width:           "26px",
-          height:          "26px",
+          width:           "30px",
+          height:          "30px",
           borderRadius:    "6px",
           background:      isActive
             ? theme.accentBg
@@ -103,7 +103,7 @@ function NavItemRow({
       >
         <NavIcon
           name={item.icon}
-          size={13}
+          size={15}
           color={
             isActive
               ? theme.accentColor
@@ -124,12 +124,12 @@ function NavItemRow({
         >
           <span
             style={{
-              fontSize:    "12px",
-              fontWeight:  isActive ? "500" : "400",
+              fontSize:    "14px",
+              fontWeight:  isActive ? "600" : "500",
               color:       isActive
                 ? "#F0F9FF"
-                : "rgba(148,163,184,0.85)",
-              lineHeight:  "1.3",
+                : "rgba(203,213,225,0.92)",
+              lineHeight:  "1.35",
               letterSpacing: "-0.01em",
             }}
           >
@@ -158,13 +158,16 @@ function NavItemRow({
 
         <p
           style={{
-            fontSize:      "10px",
-            color:         "rgba(71,85,105,0.90)",
-            marginTop:     "1px",
+            fontSize:      "12px",
+            color:         "rgba(148,163,184,0.90)",
+            marginTop:     "2px",
             lineHeight:    "1.3",
             overflow:      "hidden",
             textOverflow:  "ellipsis",
-            whiteSpace:    "nowrap",
+            display:       "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            whiteSpace:    "normal",
           }}
         >
           {item.sublabel}
@@ -185,8 +188,8 @@ function SectionHeader({
   return (
     <div
       style={{
-        padding:       "10px 10px 4px",
-        fontSize:      "9px",
+        padding:       "12px 12px 6px",
+        fontSize:      "10px",
         fontWeight:    "600",
         color:         `${accentColor}80`,
         textTransform: "uppercase",
@@ -544,8 +547,8 @@ export default function AppSidebar({
       {/* ─── Desktop sidebar ─────────────────────────────────── */}
       <aside
         style={{
-          width:        "220px",
-          minWidth:     "220px",
+          width:        "248px",
+          minWidth:     "248px",
           height:       "100vh",
           position:     "sticky",
           top:          0,
@@ -620,7 +623,7 @@ export default function AppSidebar({
           <aside
             style={{
               position:  "relative",
-              width:     "260px",
+              width:     "288px",
               height:    "100%",
               zIndex:    1,
               display:   "flex",
