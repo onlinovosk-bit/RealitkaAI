@@ -3,12 +3,16 @@ import { verifyGoogleOAuthState } from "@/lib/google-oauth-state";
 import { saveGoogleCalendarTokens } from "@/lib/google-calendar-server";
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
+  const reqUrl = new URL(req.url);
+  const { searchParams } = reqUrl;
   const code = searchParams.get("code");
   const state = searchParams.get("state");
   const err = searchParams.get("error");
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+  const appUrl =
+    process.env.NEXT_PUBLIC_APP_URL?.trim() ||
+    process.env.APP_URL?.trim() ||
+    reqUrl.origin;
 
   if (err) {
     return NextResponse.redirect(
@@ -27,13 +31,17 @@ export async function GET(req: Request) {
     );
   }
 
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const clientId =
+    process.env.GOOGLE_CLIENT_ID?.trim() ||
+    process.env.GOOGLE_OAUTH_CLIENT_ID?.trim();
+  const clientSecret =
+    process.env.GOOGLE_CLIENT_SECRET?.trim() ||
+    process.env.GOOGLE_OAUTH_CLIENT_SECRET?.trim();
   const redirectUri = `${appUrl}/api/integrations/google/callback`;
 
   if (!clientId || !clientSecret) {
     return NextResponse.json(
-      { error: "Missing GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET" },
+      { error: "Missing Google OAuth envs (GOOGLE_CLIENT_ID/SECRET)." },
       { status: 500 }
     );
   }
@@ -72,9 +80,12 @@ export async function GET(req: Request) {
     expires_in: tokenData.expires_in,
   });
 
-  if (!saved) {
+  if (!saved.ok) {
     return NextResponse.redirect(
-      new URL("/settings?google=error&reason=save_failed", appUrl)
+      new URL(
+        `/settings?google=error&reason=${encodeURIComponent(saved.reason)}`,
+        appUrl
+      )
     );
   }
 

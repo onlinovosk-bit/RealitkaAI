@@ -4,15 +4,19 @@ import { getCurrentProfile } from "@/lib/auth";
 import { signGoogleOAuthState } from "@/lib/google-oauth-state";
 
 // Presmerovanie na Google OAuth (Calendar + Gmail scope ako predtým)
-export async function GET() {
+export async function GET(req: Request) {
+  const reqUrl = new URL(req.url);
+  const appUrl =
+    process.env.NEXT_PUBLIC_APP_URL?.trim() ||
+    process.env.APP_URL?.trim() ||
+    reqUrl.origin;
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    const base = process.env.NEXT_PUBLIC_APP_URL || "";
-    return NextResponse.redirect(new URL("/login", base));
+    return NextResponse.redirect(new URL("/login", appUrl));
   }
 
   const profile = await getCurrentProfile();
@@ -23,11 +27,12 @@ export async function GET() {
     );
   }
 
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-  if (!clientId || !appUrl) {
+  const clientId =
+    process.env.GOOGLE_CLIENT_ID?.trim() ||
+    process.env.GOOGLE_OAUTH_CLIENT_ID?.trim();
+  if (!clientId) {
     return NextResponse.json(
-      { error: "Chýba GOOGLE_CLIENT_ID alebo NEXT_PUBLIC_APP_URL." },
+      { error: "Chýba GOOGLE_CLIENT_ID (alebo GOOGLE_OAUTH_CLIENT_ID)." },
       { status: 500 }
     );
   }

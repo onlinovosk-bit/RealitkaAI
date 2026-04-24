@@ -11,6 +11,10 @@ type TokenRow = {
   access_expires_at: string | null;
 };
 
+export type SaveGoogleCalendarTokensResult =
+  | { ok: true }
+  | { ok: false; reason: string };
+
 export async function saveGoogleCalendarTokens(
   profileId: string,
   tokens: {
@@ -18,9 +22,9 @@ export async function saveGoogleCalendarTokens(
     access_token: string;
     expires_in?: number;
   }
-): Promise<boolean> {
+): Promise<SaveGoogleCalendarTokensResult> {
   const sb = createServiceRoleClient();
-  if (!sb) return false;
+  if (!sb) return { ok: false, reason: "missing_service_role_client" };
 
   let refresh = tokens.refresh_token;
   if (!refresh) {
@@ -33,7 +37,7 @@ export async function saveGoogleCalendarTokens(
   }
   if (!refresh) {
     console.warn("google oauth: missing refresh_token (need prompt=consent)");
-    return false;
+    return { ok: false, reason: "missing_refresh_token" };
   }
 
   const expiresAt =
@@ -54,9 +58,12 @@ export async function saveGoogleCalendarTokens(
 
   if (error) {
     console.error("saveGoogleCalendarTokens:", error.message);
-    return false;
+    return {
+      ok: false,
+      reason: `db_upsert_failed:${error.code ?? "unknown"}:${error.message ?? "unknown"}`,
+    };
   }
-  return true;
+  return { ok: true };
 }
 
 async function loadTokenRow(profileId: string): Promise<TokenRow | null> {
