@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Lock, Mic2, Map, AlertTriangle, Hammer, Globe, Users, Zap } from "lucide-react";
 import { NeuralPulse } from "@/components/visuals/NeuralPulse";
-import { GhostBanner } from "@/components/marketing/GhostBanner";
-import { CompetitionMap } from "@/components/marketing/CompetitionMap";
+import { GhostBanner } from "@/components/l99/GhostBanner";
+import { CompetitionMap } from "@/components/l99/CompetitionMap";
 import { TIER_DISPLAY_NAMES, TIER_PRICES } from "@/types/intelligence-hub";
 import type { HubTier, GhostSessionData } from "@/types/intelligence-hub";
 
