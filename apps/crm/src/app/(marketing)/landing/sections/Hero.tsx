@@ -2,6 +2,7 @@
 
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useRef, useEffect, useState } from 'react';
+import Link from 'next/link';
 import { LANDING_AI_ASSISTANT_NAME } from '@/app/(marketing)/landing/landing-ai-label';
 import { RadiantSpriteIcon } from '@/components/shared/radiant-sprite-icon';
 import {
@@ -117,6 +118,7 @@ export default function Hero() {
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
   const contentY = useTransform(scrollYProgress, [0, 1], ['0%', '25%']);
   const contentOpacity = useTransform(scrollYProgress, [0, 0.7], [1, 0]);
+  const useInlineCapture = process.env.NEXT_PUBLIC_LANDING_HERO_VARIANT !== 'classic';
 
   return (
     <section ref={ref} className="relative min-h-screen flex items-center overflow-hidden bg-slate-950">
@@ -165,27 +167,63 @@ export default function Hero() {
               </span>
             </motion.h1>
 
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="text-base sm:text-lg text-slate-300 max-w-full sm:max-w-lg"
-            >
-              {HERO_SUBHEADLINE}
-            </motion.p>
+            {useInlineCapture ? (
+              <>
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.4 }}
+                  className="text-base sm:text-lg text-slate-300 max-w-full sm:max-w-lg"
+                >
+                  {HERO_SUBHEADLINE}
+                </motion.p>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
-              className="mt-1 flex flex-col items-start"
-            >
-              <HeroSocialProof />
-              <div className="mt-4">
-                <HeroEmailCapture />
-              </div>
-              <HeroTrustBar />
-            </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.5 }}
+                  className="mt-1 flex flex-col items-start"
+                >
+                  <HeroSocialProof />
+                  <div className="mt-4">
+                    <HeroEmailCapture />
+                  </div>
+                  <HeroTrustBar />
+                </motion.div>
+              </>
+            ) : (
+              <>
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.4 }}
+                  className="text-base sm:text-lg text-slate-300 max-w-full sm:max-w-lg"
+                >
+                  Revolis.AI AI Asistent analyzuje správanie vašej databázy v reálnom čase. Identifikujeme skrytý
+                  predajný zámer vašich bývalých klientov a doručíme vám exkluzívne príležitosti s&nbsp;0&nbsp;%
+                  konkurenciou.
+                </motion.p>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.5 }}
+                  className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4"
+                >
+                  <Link
+                    href="/register"
+                    className="relative rounded-full bg-cyan-400 px-7 py-3.5 text-sm font-bold text-slate-950 shadow-[0_0_40px_rgba(34,211,238,0.6)] transition-all duration-200 hover:scale-105 hover:bg-cyan-300 hover:shadow-[0_0_60px_rgba(34,211,238,0.8)] active:scale-95 text-center"
+                  >
+                    Zistiť hodnotu spiacich kontraktov
+                  </Link>
+                  <div className="flex flex-col justify-center">
+                    <span className="text-[11px] text-slate-500 sm:pl-1">
+                      Bezplatná analýza · Pre majiteľov RK · Výsledok do 24 h
+                    </span>
+                  </div>
+                </motion.div>
+              </>
+            )}
 
             <motion.div
               initial={{ opacity: 0 }}
