@@ -2,9 +2,14 @@
 
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useRef, useEffect, useState } from 'react';
-import Link from 'next/link';
 import { LANDING_AI_ASSISTANT_NAME } from '@/app/(marketing)/landing/landing-ai-label';
 import { RadiantSpriteIcon } from '@/components/shared/radiant-sprite-icon';
+import {
+  HeroEmailCapture,
+  HeroSocialProof,
+  HERO_SUBHEADLINE,
+  HeroTrustBar,
+} from './HeroEmailCapture';
 
 function Orb({ className }: { className: string }) {
   return (
@@ -166,26 +171,20 @@ export default function Hero() {
               transition={{ duration: 0.6, delay: 0.4 }}
               className="text-base sm:text-lg text-slate-300 max-w-full sm:max-w-lg"
             >
-              Revolis.AI AI Asistent analyzuje správanie vašej databázy v reálnom čase.
-              Identifikujeme skrytý predajný zámer vašich bývalých klientov a doručíme
-              vám exkluzívne príležitosti s&nbsp;0&nbsp;% konkurenciou.
+              {HERO_SUBHEADLINE}
             </motion.p>
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.5 }}
-              className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4"
+              className="mt-1 flex flex-col items-start"
             >
-              <Link
-                href="/register"
-                className="relative rounded-full bg-cyan-400 px-7 py-3.5 text-sm font-bold text-slate-950 shadow-[0_0_40px_rgba(34,211,238,0.6)] transition-all duration-200 hover:scale-105 hover:bg-cyan-300 hover:shadow-[0_0_60px_rgba(34,211,238,0.8)] active:scale-95 text-center"
-              >
-                Zistiť hodnotu spiacich kontraktov
-              </Link>
-              <div className="flex flex-col justify-center">
-                <span className="text-[11px] text-slate-500 sm:pl-1">Bezplatná analýza · Pre majiteľov RK · Výsledok do 24 h</span>
+              <HeroSocialProof />
+              <div className="mt-4">
+                <HeroEmailCapture />
               </div>
+              <HeroTrustBar />
             </motion.div>
 
             <motion.div

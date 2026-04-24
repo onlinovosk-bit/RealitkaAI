@@ -4,7 +4,7 @@ import { register } from "./actions";
 export default async function RegisterPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; email?: string }>;
 }) {
   const params = await searchParams;
 
@@ -39,6 +39,7 @@ export default async function RegisterPage({
             <input
               name="email"
               type="email"
+              defaultValue={params.email ?? ""}
               required
               className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-gray-500"
             />

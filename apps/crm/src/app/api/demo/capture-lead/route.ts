@@ -37,7 +37,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const validSources = ["ai_odhadca", "neighborhood_watch", "digital_twin"] as const;
+    const validSources = ["ai_odhadca", "neighborhood_watch", "digital_twin", "hero_email_capture"] as const;
     const source = validSources.includes(body.source as typeof validSources[number])
       ? body.source
       : "ai_odhadca";
