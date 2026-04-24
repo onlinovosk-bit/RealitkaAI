@@ -49,6 +49,11 @@ const DASHBOARD_OVERRIDES = {
   totalLeads: 103,
   monthLabel: "apríl 2026",
   totalExpectedEur: 578_979,
+  breakdown: [
+    { segment: "Horúci (80+)", count: 7, expectedEur: 312_450 },
+    { segment: "Teplý (50–79)", count: 18, expectedEur: 188_529 },
+    { segment: "Studený (<50)", count: 41, expectedEur: 78_000 },
+  ],
 } as const;
 
 function getTrend(value: number, target: number, suffix = "") {
@@ -269,7 +274,7 @@ export default function DashboardPage() {
                 <div className="text-right text-xs text-emerald-100/70">
                   <p>Hot / warm / cold (rozpad)</p>
                   <ul className="mt-1 space-y-0.5">
-                    {(monthlyMoney.breakdown ?? []).map((b) => (
+                    {DASHBOARD_OVERRIDES.breakdown.map((b) => (
                       <li key={b.segment}>
                         {b.segment}: {b.count} → {b.expectedEur.toLocaleString("sk-SK")} €
                       </li>
@@ -310,8 +315,8 @@ export default function DashboardPage() {
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Forecasting & Benchmarky</h2>
-                <p className="mt-1 text-sm text-gray-500">Predikcia stavu klientov, benchmark zdrojov príležitostí a výkonu agentov.</p>
+                <h2 className="text-lg font-semibold text-gray-900">Kde zarobíme a kde zaostávame.</h2>
+                <p className="mt-1 text-sm text-gray-500">Predpoveď vývoja klientov, porovnanie zdrojov príležitostí a výkonu maklérov.</p>
               </div>
               <span className="text-sm font-medium text-gray-700">Otvoriť →</span>
             </div>
