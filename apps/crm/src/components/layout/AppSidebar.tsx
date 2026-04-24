@@ -285,7 +285,13 @@ export default function AppSidebar({
   userName,
 }: AppSidebarProps) {
   const pathname = usePathname();
-  const isFounderDemo = appRole === "founder";
+  const isFounderDemo =
+    appRole === "founder" ||
+    appRole === "owner" ||
+    appRole === "admin" ||
+    appRole === "manager" ||
+    uiRole === "owner_vision" ||
+    uiRole === "owner_protocol";
 
   const [mobileOpen,   setMobileOpen]   = useState(false);
   const [permissions,  setPermissions]  = useState<TeamMemberPermissions>(
