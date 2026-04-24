@@ -16,6 +16,41 @@ import {
   type TeamMemberPermissions,
 } from "@/types/navigation";
 
+type FounderDemoProgram = "free" | "active_force" | "market_vision" | "protocol_authority";
+
+const FOUNDER_DEMO_PROGRAMS: Array<{ id: FounderDemoProgram; label: string }> = [
+  { id: "free", label: "Free" },
+  { id: "active_force", label: "Active Force" },
+  { id: "market_vision", label: "Market Vision" },
+  { id: "protocol_authority", label: "Protocol Authority" },
+];
+
+function getDemoVariant(program: FounderDemoProgram): MenuVariant {
+  switch (program) {
+    case "free":
+      return "agent_solo";
+    case "active_force":
+      return "agent_team";
+    case "market_vision":
+      return "owner_vision";
+    case "protocol_authority":
+      return "owner_protocol";
+    default:
+      return "owner_protocol";
+  }
+}
+
+function filterItemsByDemoProgram(items: NavItem[], program: FounderDemoProgram): NavItem[] {
+  if (program === "free") {
+    const allowedFreeIds = new Set(["today", "contacts", "settings"]);
+    return items.filter((item) => allowedFreeIds.has(item.id));
+  }
+  if (program === "active_force" || program === "market_vision") {
+    return items.filter((item) => item.id !== "competition");
+  }
+  return items;
+}
+
 // ─── Typy props ────────────────────────────────────────────────────────────
 interface AppSidebarProps {
   uiRole:       string;
@@ -250,31 +285,53 @@ export default function AppSidebar({
   userName,
 }: AppSidebarProps) {
   const pathname = usePathname();
+  const isFounderDemo = appRole === "founder";
 
   const [mobileOpen,   setMobileOpen]   = useState(false);
   const [permissions,  setPermissions]  = useState<TeamMemberPermissions>(
     DEFAULT_TEAM_PERMISSIONS
   );
   const [permLoading, setPermLoading]   = useState(false);
+  const [demoProgram, setDemoProgram] = useState<FounderDemoProgram>("protocol_authority");
 
   // Vypočítaj variant
   const variant: MenuVariant = getMenuVariant(uiRole, isInTeam, appRole);
-  const theme                = VARIANT_THEMES[variant];
-  const planLabel            = getPlanDisplayName(variant, accountTier);
+  const demoVariant          = getDemoVariant(demoProgram);
+  const renderVariant        = isFounderDemo ? demoVariant : variant;
+  const theme                = VARIANT_THEMES[renderVariant];
+  const planLabel            = isFounderDemo
+    ? FOUNDER_DEMO_PROGRAMS.find((p) => p.id === demoProgram)?.label ?? "Protocol Authority"
+    : getPlanDisplayName(variant, accountTier);
+
+  useEffect(() => {
+    if (!isFounderDemo || typeof window === "undefined") return;
+    const stored = window.localStorage.getItem("founderDemoProgram");
+    if (
+      stored === "free" ||
+      stored === "active_force" ||
+      stored === "market_vision" ||
+      stored === "protocol_authority"
+    ) {
+      setDemoProgram(stored);
+    }
+  }, [isFounderDemo]);
 
   // Načítaj permissions pre tímového makléra
   useEffect(() => {
-    if (variant !== "agent_team") return;
+    if (renderVariant !== "agent_team") return;
     setPermLoading(true);
     fetch("/api/nav/permissions")
       .then((r) => r.ok ? r.json() : DEFAULT_TEAM_PERMISSIONS)
       .then((data: TeamMemberPermissions) => setPermissions(data))
       .catch(() => setPermissions(DEFAULT_TEAM_PERMISSIONS))
       .finally(() => setPermLoading(false));
-  }, [variant]);
+  }, [renderVariant]);
 
   // Nav položky filtrované podľa variantu + permissions
-  const navItems = getNavItems(variant, permissions);
+  const navItems = filterItemsByDemoProgram(
+    getNavItems(renderVariant, permissions),
+    demoProgram
+  );
 
   // Zoskup do sekcií v správnom poradí
   const SECTION_ORDER: NavSection[] = ["main", "team", "tools", "settings"];
@@ -388,6 +445,57 @@ export default function AppSidebar({
           icon={theme.planIcon}
           accentColor={theme.accentColor}
         />
+
+        {isFounderDemo && (
+          <div style={{ marginTop: "8px" }}>
+            <p
+              style={{
+                fontSize: "10px",
+                color: "rgba(148,163,184,0.90)",
+                marginBottom: "6px",
+                fontWeight: "600",
+                letterSpacing: "0.04em",
+                textTransform: "uppercase",
+              }}
+            >
+              Founder Demo Mode
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
+              {FOUNDER_DEMO_PROGRAMS.map((program) => {
+                const selected = demoProgram === program.id;
+                return (
+                  <button
+                    key={program.id}
+                    type="button"
+                    onClick={() => {
+                      setDemoProgram(program.id);
+                      if (typeof window !== "undefined") {
+                        window.localStorage.setItem("founderDemoProgram", program.id);
+                      }
+                    }}
+                    style={{
+                      fontSize: "10px",
+                      fontWeight: selected ? "700" : "600",
+                      borderRadius: "7px",
+                      padding: "6px 8px",
+                      border: selected
+                        ? `1px solid ${theme.accentColor}`
+                        : "1px solid rgba(148,163,184,0.25)",
+                      background: selected
+                        ? `${theme.accentColor}20`
+                        : "rgba(15,23,42,0.40)",
+                      color: selected ? "#E0F2FE" : "rgba(203,213,225,0.92)",
+                      textAlign: "left",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {program.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Agency name */}
         {agencyName && (
