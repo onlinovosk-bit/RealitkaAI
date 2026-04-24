@@ -86,7 +86,7 @@ export const VARIANT_THEMES: Record<MenuVariant, VariantTheme> = {
     planLabel:    "Active Force",
     planIcon:     "◆",
     roleLabel:    "Maklér",
-    greeting:     "Denný obchodný prehľad",
+    greeting:     "Prioritné príležitosti na dnes",
     badgeColors: {
       hot:      { bg: "rgba(239,68,68,0.15)",   color: "#FCA5A5", border: "rgba(239,68,68,0.30)"   },
       new:      { bg: "rgba(34,211,238,0.12)",  color: "#67E8F9", border: "rgba(34,211,238,0.25)"  },
@@ -106,7 +106,7 @@ export const VARIANT_THEMES: Record<MenuVariant, VariantTheme> = {
     planLabel:    "Active Force · Tím",
     planIcon:     "◈",
     roleLabel:    "Maklér tímu",
-    greeting:     "Denný prehľad tímu",
+    greeting:     "Denný prehľad tímových priorít",
     badgeColors: {
       hot:      { bg: "rgba(239,68,68,0.15)",   color: "#FCA5A5", border: "rgba(239,68,68,0.30)"   },
       new:      { bg: "rgba(34,211,238,0.12)",  color: "#67E8F9", border: "rgba(34,211,238,0.25)"  },
@@ -126,7 +126,7 @@ export const VARIANT_THEMES: Record<MenuVariant, VariantTheme> = {
     planLabel:    "Market Vision",
     planIcon:     "◉",
     roleLabel:    "Majiteľ kancelárie",
-    greeting:     "Kde dnes rastieme",
+    greeting:     "Prehľad tržieb a výkonnosť pipeline",
     badgeColors: {
       hot:      { bg: "rgba(239,68,68,0.15)",   color: "#FCA5A5", border: "rgba(239,68,68,0.30)"   },
       new:      { bg: "rgba(6,182,212,0.12)",   color: "#67E8F9", border: "rgba(6,182,212,0.25)"   },
@@ -146,7 +146,7 @@ export const VARIANT_THEMES: Record<MenuVariant, VariantTheme> = {
     planLabel:    "Protocol Authority",
     planIcon:     "⬡",
     roleLabel:    "Protocol Commander",
-    greeting:     "Protocol Authority online",
+    greeting:     "Kľúčové trhové upozornenia a príležitosti",
     badgeColors: {
       hot:      { bg: "rgba(239,68,68,0.15)",   color: "#FCA5A5", border: "rgba(239,68,68,0.30)"   },
       new:      { bg: "rgba(59,130,246,0.15)",  color: "#93C5FD", border: "rgba(59,130,246,0.30)"  },
