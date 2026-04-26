@@ -312,7 +312,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
     id: "team-permissions",
     label: "Čo vidí môj tím",
     sublabel: "Prístupy per maklér · Nastavenia",
-    href: "/team/permissions",
+    href: "/dashboard/reputation/integrity",
     icon: "lock",
     badge: { label: "nové", variant: "new" },
     section: "main",

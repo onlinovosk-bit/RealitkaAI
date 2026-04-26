@@ -18,11 +18,11 @@ const FEATURE_PATHS: Record<string, string> = {
   ai_pricing: "/dashboard/revolis-ai",
   shadow_inv: "/api/l99/shadow-inventory",
   market_gap: "/api/reports/generate-developer-insights?city=Presov",
-  broker_profile: "/makleri/smolko-reality",
+  broker_profile: "/dashboard/reputation/profile",
   verified_cert: "/makleri/smolko-reality",
-  ai_coaching: "/dashboard",
+  ai_coaching: "/dashboard/reputation/coaching",
   digital_onboarding: "/onboarding",
-  integrity_monitor: "/l99-hub",
+  integrity_monitor: "/dashboard/reputation/integrity",
   performance: "/performance",
 };
 
