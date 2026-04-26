@@ -5,6 +5,6 @@ export default async function TeamProtectedLayout({
 }: {
   children: React.ReactNode;
 }) {
-  await requireRole(["owner", "manager"]);
+  await requireRole(["owner", "manager", "agent"]);
   return <>{children}</>;
 }

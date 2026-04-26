@@ -10,6 +10,15 @@ import IntelBrief from "@/components/protocol/IntelBrief";
 import { TIER_DISPLAY_NAMES, TIER_PRICES } from "@/types/intelligence-hub";
 import type { HubTier, GhostSessionData } from "@/types/intelligence-hub";
 
+const MODULE_ROUTES: Record<string, string> = {
+  skener: "/call-analyzer",
+  "bod-zlomu": "/dashboard/revolis-ai",
+  financie: "/l99-hub?tab=ghost",
+  stavba: "/l99-hub?tab=market",
+  "zmena-okolia": "/dashboard/revolis-ai",
+  komunita: "/l99-hub?tab=community",
+};
+
 // ─── Moduly ───────────────────────────────────────────────────────────────
 const MODULES = [
   {
@@ -257,7 +266,13 @@ export default function L99HubPage() {
                 </p>
 
                 <button
-                  onClick={() => { if (!unlocked) window.location.href = "/billing"; }}
+                  onClick={() => {
+                    if (!unlocked) {
+                      window.location.href = "/billing";
+                      return;
+                    }
+                    window.location.href = MODULE_ROUTES[mod.id] ?? "/l99-hub";
+                  }}
                   className={`w-full py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
                     unlocked
                       ? "text-white hover:scale-105"

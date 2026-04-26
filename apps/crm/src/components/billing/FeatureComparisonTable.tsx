@@ -1,85 +1,172 @@
 "use client";
+import { Fragment } from "react";
 import { useState } from "react";
 
 type FeatureRow = {
   category: string;
   feature: string;
-  starter: string | boolean;
-  pro: string | boolean;
-  enterprise: string | boolean;
+  smartStart: string | boolean;
+  activeForce: string | boolean;
+  marketVision: string | boolean;
+  protocolAuthority: string | boolean;
   highlight?: boolean;
 };
 
 const FEATURES: FeatureRow[] = [
-  // AI Asistent
-  { category: "AI Asistent",
-    feature: "Automatické odpovede",
-    starter: "Pracovné hodiny", pro: "24/7", enterprise: "24/7 + vlastná persona",
-    highlight: true },
-  { category: "AI Asistent",
-    feature: "Skóre pripravenosti záujemcu",
-    starter: true, pro: true, enterprise: true },
-  { category: "AI Asistent",
-    feature: "Detekcia zámeru kúpy",
-    starter: false, pro: true, enterprise: true },
-  { category: "AI Asistent",
-    feature: "Analýza hovoru (prepis + súhrn)",
-    starter: false, pro: true, enterprise: true },
-
-  // Príležitosti
-  { category: "Príležitosti",
-    feature: "Počet príležitostí",
-    starter: "Do 100/mes", pro: "Neobmedzené", enterprise: "Neobmedzené" },
-  { category: "Príležitosti",
-    feature: "AI párovanie s nehnuteľnosťami",
-    starter: "Do 10/mes", pro: "Neobmedzené", enterprise: "Neobmedzené" },
-  { category: "Príležitosti",
-    feature: "Automatické sledovacie kampane (7 dní)",
-    starter: false, pro: true, enterprise: true },
-  { category: "Príležitosti",
-    feature: "Sledovanie rýchlosti postupu príležitostí",
-    starter: false, pro: true, enterprise: true },
-
-  // Analytika
-  { category: "Analytika",
-    feature: "Týždenný konverzný report",
-    starter: true, pro: true, enterprise: true },
-  { category: "Analytika",
-    feature: "Predikcia príjmov (3 mesiace)",
-    starter: false, pro: true, enterprise: true },
-  { category: "Analytika",
-    feature: "Mapa aktivity v oblasti",
-    starter: false, pro: true, enterprise: true },
-  { category: "Analytika",
-    feature: "Prehľad majiteľa kancelárie",
-    starter: false, pro: false, enterprise: true },
-
-  // Tím
-  { category: "Tím",
-    feature: "Počet maklérov",
-    starter: "Do 3", pro: "1 licencia / 1 osoba", enterprise: "5 licencií v cene" },
-  { category: "Tím",
-    feature: "Zdieľaná AI pamäť tímu",
-    starter: false, pro: false, enterprise: true },
-  { category: "Tím",
-    feature: "Upozornenie na konkurenciu",
-    starter: false, pro: false, enterprise: true },
-
-  // Integrácie
-  { category: "Integrácie",
-    feature: "API prístup",
-    starter: false, pro: false, enterprise: true },
-  { category: "Integrácie",
-    feature: "Vlastné firemné logo (white-label)",
-    starter: false, pro: false, enterprise: true },
-
-  // Podpora
-  { category: "Podpora",
-    feature: "Reakčná doba podpory",
-    starter: "48h", pro: "4h", enterprise: "1h" },
-  { category: "Podpora",
-    feature: "Dedikovaný správca účtu",
-    starter: false, pro: false, enterprise: true },
+  // 14+ nových L99 feature flagov podľa aktuálnej matice
+  {
+    category: "Živé Obchody",
+    feature: "Ambient Deal Radar",
+    smartStart: false,
+    activeForce: false,
+    marketVision: false,
+    protocolAuthority: true,
+    highlight: true,
+  },
+  {
+    category: "Živé Obchody",
+    feature: "Ghost 2.0 (BSM 2026)",
+    smartStart: false,
+    activeForce: false,
+    marketVision: true,
+    protocolAuthority: true,
+    highlight: true,
+  },
+  {
+    category: "Živé Obchody",
+    feature: "Kataster Pulse (Limit 100)",
+    smartStart: false,
+    activeForce: false,
+    marketVision: true,
+    protocolAuthority: true,
+    highlight: true,
+  },
+  {
+    category: "Živé Obchody",
+    feature: "Kataster Pulse UNLIMITED",
+    smartStart: false,
+    activeForce: false,
+    marketVision: false,
+    protocolAuthority: true,
+    highlight: true,
+  },
+  {
+    category: "Živé Obchody",
+    feature: "Zero-Click Ingestor",
+    smartStart: false,
+    activeForce: true,
+    marketVision: true,
+    protocolAuthority: true,
+  },
+  {
+    category: "Živé Obchody",
+    feature: "Ambient Radar Digest",
+    smartStart: false,
+    activeForce: false,
+    marketVision: true,
+    protocolAuthority: true,
+  },
+  {
+    category: "Trhová Prevaha",
+    feature: "Neural Lead Scoring",
+    smartStart: false,
+    activeForce: false,
+    marketVision: true,
+    protocolAuthority: true,
+  },
+  {
+    category: "Trhová Prevaha",
+    feature: "Hyper-local Heatmaps",
+    smartStart: false,
+    activeForce: false,
+    marketVision: true,
+    protocolAuthority: true,
+    highlight: true,
+  },
+  {
+    category: "Trhová Prevaha",
+    feature: "Competitor Sleep Detector",
+    smartStart: false,
+    activeForce: false,
+    marketVision: false,
+    protocolAuthority: true,
+    highlight: true,
+  },
+  {
+    category: "Trhová Prevaha",
+    feature: "AI Cenotvorba",
+    smartStart: false,
+    activeForce: false,
+    marketVision: true,
+    protocolAuthority: true,
+  },
+  {
+    category: "Trhová Prevaha",
+    feature: "Shadow Inventory",
+    smartStart: false,
+    activeForce: false,
+    marketVision: false,
+    protocolAuthority: true,
+    highlight: true,
+  },
+  {
+    category: "Trhová Prevaha",
+    feature: "Market Gap Report",
+    smartStart: false,
+    activeForce: false,
+    marketVision: false,
+    protocolAuthority: true,
+  },
+  {
+    category: "Hodnota Značky",
+    feature: "Broker Reputation Profile",
+    smartStart: true,
+    activeForce: true,
+    marketVision: true,
+    protocolAuthority: true,
+  },
+  {
+    category: "Hodnota Značky",
+    feature: "Verified Certificate",
+    smartStart: false,
+    activeForce: false,
+    marketVision: false,
+    protocolAuthority: true,
+    highlight: true,
+  },
+  {
+    category: "Hodnota Značky",
+    feature: "AI Coaching",
+    smartStart: false,
+    activeForce: false,
+    marketVision: false,
+    protocolAuthority: true,
+    highlight: true,
+  },
+  {
+    category: "Hodnota Značky",
+    feature: "Digital Onboarding",
+    smartStart: false,
+    activeForce: true,
+    marketVision: true,
+    protocolAuthority: true,
+  },
+  {
+    category: "Hodnota Značky",
+    feature: "Agent Integrity Monitor",
+    smartStart: false,
+    activeForce: false,
+    marketVision: false,
+    protocolAuthority: true,
+  },
+  {
+    category: "Hodnota Značky",
+    feature: "Performance Analytics",
+    smartStart: false,
+    activeForce: true,
+    marketVision: true,
+    protocolAuthority: true,
+  },
 ];
 
 function Cell({ value }: { value: string | boolean }) {
@@ -117,13 +204,13 @@ export default function FeatureComparisonTable() {
                 <th className="p-4 text-left" style={{ color: "#64748B" }}>
                   Funkcia
                 </th>
-                {["Štarter", "Pro", "Enterprise"].map((plan, i) => (
+                {["Smart Start", "Active Force", "Market Vision", "Protocol Authority"].map((plan, i) => (
                   <th
                     key={plan}
                     className="p-4 text-center font-bold"
-                    style={{ color: i === 1 ? "#22D3EE" : "#F0F9FF" }}
+                    style={{ color: i === 3 ? "#EAB308" : i === 2 ? "#34D399" : "#F0F9FF" }}
                   >
-                    {i === 1 && <span className="mr-1">⭐</span>}
+                    {i === 2 && <span className="mr-1">⭐</span>}
                     {plan}
                   </th>
                 ))}
@@ -131,10 +218,10 @@ export default function FeatureComparisonTable() {
             </thead>
             <tbody>
               {categories.map((category) => (
-                <>
-                  <tr key={`cat-${category}`} style={{ background: "#050914" }}>
+                <Fragment key={`cat-group-${category}`}>
+                  <tr style={{ background: "#050914" }}>
                     <td
-                      colSpan={4}
+                      colSpan={5}
                       className="px-4 py-2 text-xs font-bold uppercase tracking-wider"
                       style={{ color: "#334155" }}
                     >
@@ -156,17 +243,20 @@ export default function FeatureComparisonTable() {
                         {feature.feature}
                       </td>
                       <td className="p-4 text-center">
-                        <Cell value={feature.starter} />
+                        <Cell value={feature.smartStart} />
                       </td>
                       <td className="p-4 text-center">
-                        <Cell value={feature.pro} />
+                        <Cell value={feature.activeForce} />
                       </td>
                       <td className="p-4 text-center">
-                        <Cell value={feature.enterprise} />
+                        <Cell value={feature.marketVision} />
+                      </td>
+                      <td className="p-4 text-center">
+                        <Cell value={feature.protocolAuthority} />
                       </td>
                     </tr>
                   ))}
-                </>
+                </Fragment>
               ))}
             </tbody>
           </table>
