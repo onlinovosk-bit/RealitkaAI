@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import { Loader2, Zap } from "lucide-react";
 
+import DemandHeatmap from "@/components/analytics/DemandHeatmap";
 import { AIActivityFeed } from "@/components/revolis/AIActivityFeed";
 import { BriLivePulse } from "@/components/revolis/BriLivePulse";
 import { MarketHeatmap } from "@/components/revolis/MarketHeatmap";
@@ -13,9 +14,29 @@ import type { AiActivityFeedItem } from "@/lib/app-mode-types";
 export default function RevolisAIClient({
   hotspots,
   feedSeed,
+  demandData,
+  supplyData,
+  detectedGap,
 }: {
   hotspots: MarketHotspot[];
   feedSeed: AiActivityFeedItem[];
+  demandData: {
+    type: "FeatureCollection";
+    features: Array<{
+      type: "Feature";
+      geometry: { type: "Point"; coordinates: [number, number] };
+      properties: { search_weight: number };
+    }>;
+  };
+  supplyData: {
+    type: "FeatureCollection";
+    features: Array<{
+      type: "Feature";
+      geometry: { type: "Point"; coordinates: [number, number] };
+      properties: { search_weight: number };
+    }>;
+  };
+  detectedGap: string | null;
 }) {
   const [scanning, setScanning] = useState(false);
   const [scanMessage, setScanMessage] = useState<string | null>(null);
@@ -116,6 +137,10 @@ export default function RevolisAIClient({
           <div className="lg:col-span-2">
             <AIActivityFeed items={feedSeed} />
           </div>
+        </div>
+
+        <div className="mt-8">
+          <DemandHeatmap demandData={demandData} supplyData={supplyData} detectedGap={detectedGap} />
         </div>
       </div>
     </div>
