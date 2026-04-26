@@ -32,6 +32,7 @@ export interface GatheredData {
     activeLeads:    number
     newInquiries:   number
     scoreIncreases: number
+    weeklyRevForecast: number | null
   }
 }
 
@@ -169,6 +170,7 @@ export async function gatherBriefData(profileId: string): Promise<GatheredData |
       activeLeads:    activeLeads ?? 0,
       newInquiries:   newLeads,
       scoreIncreases,
+      weeklyRevForecast: null,
     },
   }
 }
