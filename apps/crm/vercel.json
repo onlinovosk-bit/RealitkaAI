@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/morning-brief",
+      "schedule": "30 5 * * *"
+    },
+    {
+      "path": "/api/cron/recompute-bri",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/bri-snapshot",
+      "schedule": "0 2 * * *"
+    }
+  ]
+}

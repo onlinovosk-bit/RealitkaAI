@@ -1,81 +1,82 @@
-/**
- * POST /api/events — signály → skóre → Socket.IO + platform_events + uloženie leadu.
- */
-export const runtime = "nodejs";
+// ================================================================
+// Revolis.AI — POST /api/events
+// Client-side event beacon endpoint
+// ================================================================
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient }              from '@/lib/supabase/server'
+import { logEvent }                  from '@/lib/events/log-event'
+import { checkIntegrity }            from '@/lib/events/integrity-monitor'
+import { recomputeBRI }              from '@/lib/events/bri-score'
+import type { EntityType, EventType } from '@/types/events'
 
-import { calculateLeadScore } from "@/lib/ai/scoring-engine";
-import { ensureLearningDataLoaded } from "@/lib/ai/bootstrap-learning";
-import { storeOutcome } from "@/lib/ai/learning-store";
-import { getCurrentProfile } from "@/lib/auth";
-import { okResponse, errorResponse } from "@/lib/api-response";
-import { getLead, isSupabaseConfigured, updateLead } from "@/lib/leads-store";
-import { emitLeadUpdate, getIOOptional } from "@/lib/realtime/server";
-import { emitPlatformEventServer } from "@/lib/platform-events-server";
+// Events that trigger BRI recomputation
+const BRI_TRIGGER_EVENTS: EventType[] = [
+  'message_opened', 'message_replied', 'call_completed',
+  'property_viewed', 'lead_viewed',
+]
 
-type Body = {
-  leadId: string;
-  signals: Record<string, number>;
-  /** Voliteľne zaznamenaj výsledok pre auto-tune (bez ML). */
-  converted?: boolean;
-  /** Meta pre audit. */
-  action?: string;
-};
+// Events that trigger integrity check
+const INTEGRITY_EVENTS: EventType[] = [
+  'export_contacts', 'bulk_view', 'csv_download', 'data_export',
+]
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    ensureLearningDataLoaded();
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const profile = await getCurrentProfile();
-    if (isSupabaseConfigured() && !profile) {
-      return errorResponse("Neautorizovaný prístup.", 401);
+    // Get profile
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('auth_user_id', user.id)
+      .single()
+    if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+
+    const body = await request.json() as {
+      entityType: EntityType
+      entityId?:  string
+      eventType:  EventType
+      payload?:   Record<string, unknown>
+      sessionId?: string
     }
 
-    const body = (await request.json()) as Body;
-    const leadId = String(body.leadId || "").trim();
-    const signals = body.signals && typeof body.signals === "object" ? body.signals : null;
+    // Insert event
+    const eventId = await logEvent({
+      profileId:  profile.id,
+      entityType: body.entityType,
+      entityId:   body.entityId,
+      eventType:  body.eventType,
+      payload:    body.payload ?? {},
+      sessionId:  body.sessionId,
+    })
 
-    if (!leadId || !signals) {
-      return errorResponse("Chýba leadId alebo signals.", 400);
+    // Side effects (fire-and-forget, don't block response)
+    const sideEffects: Promise<unknown>[] = []
+
+    // 1. Recompute BRI if triggered
+    if (BRI_TRIGGER_EVENTS.includes(body.eventType) && body.entityId) {
+      sideEffects.push(
+        recomputeBRI(body.entityId, profile.id).catch(console.error)
+      )
     }
 
-    const existing = await getLead(leadId);
-    if (!existing) {
-      return errorResponse("Lead sa nenašiel.", 404);
+    // 2. Check integrity if export action
+    if (INTEGRITY_EVENTS.includes(body.eventType)) {
+      const entityCount = (body.payload?.count as number) ?? 1
+      sideEffects.push(
+        checkIntegrity(profile.id, user.id, body.eventType, entityCount)
+          .catch(console.error)
+      )
     }
 
-    const score = calculateLeadScore(signals);
+    // Don't await side effects — respond immediately
+    Promise.all(sideEffects).catch(console.error)
 
-    if (typeof body.converted === "boolean") {
-      storeOutcome({ signals, converted: body.converted });
-    }
-
-    const lead = await updateLead(leadId, { score });
-
-    const at = new Date().toISOString();
-    const payload = {
-      leadId,
-      score,
-      action: body.action ?? "signals",
-      signals,
-      at,
-    };
-
-    emitLeadUpdate({ leadId, score, source: "api/events", at });
-
-    void emitPlatformEventServer({
-      agencyId: profile?.agency_id ?? null,
-      eventType: "lead:update",
-      payload,
-    });
-
-    return okResponse({
-      success: true,
-      leadId,
-      score,
-      realtime: Boolean(getIOOptional()),
-      lead,
-    });
-  } catch (e) {
-    return errorResponse(e instanceof Error ? e.message : "Chyba spracovania udalosti.", 400);
+    return NextResponse.json({ ok: true, event_id: eventId })
+  } catch (err) {
+    console.error('[POST /api/events]', err)
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
 }
