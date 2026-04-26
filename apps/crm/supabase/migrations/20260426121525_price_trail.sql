@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS public.property_price_trail (
 
   -- Source of truth — one of these must be set
   listing_id        UUID          REFERENCES public.portal_listings(id) ON DELETE CASCADE,
-  property_id       UUID          REFERENCES public.properties(id)      ON DELETE CASCADE,
+  property_id       TEXT,
   lead_id           TEXT,
 
   -- The price point
@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS public.seller_motivation (
   id                   UUID    DEFAULT gen_random_uuid() PRIMARY KEY,
   profile_id           UUID    NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   listing_id           UUID    REFERENCES public.portal_listings(id) ON DELETE CASCADE,
-  property_id          UUID    REFERENCES public.properties(id)      ON DELETE CASCADE,
+  property_id          TEXT,
 
   -- Motivation score 0–100
   motivation_score     SMALLINT NOT NULL DEFAULT 0
@@ -141,7 +141,7 @@ CREATE TABLE IF NOT EXISTS public.price_alerts (
   id                UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
   profile_id        UUID        NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   listing_id        UUID        REFERENCES public.portal_listings(id) ON DELETE CASCADE,
-  property_id       UUID        REFERENCES public.properties(id)      ON DELETE CASCADE,
+  property_id       TEXT,
   lead_id           TEXT,
 
   watch_type        TEXT        NOT NULL DEFAULT 'any_drop'
@@ -177,7 +177,7 @@ CREATE POLICY "users manage own alerts"
 CREATE OR REPLACE FUNCTION public.compute_motivation_score(
   p_profile_id  UUID,
   p_listing_id  UUID DEFAULT NULL,
-  p_property_id UUID DEFAULT NULL
+  p_property_id TEXT DEFAULT NULL
 ) RETURNS JSONB AS $$
 DECLARE
   v_points          RECORD;
@@ -382,7 +382,7 @@ CREATE OR REPLACE FUNCTION public.add_price_point(
   p_price       NUMERIC,
   p_source      TEXT     DEFAULT 'manual',
   p_listing_id  UUID     DEFAULT NULL,
-  p_property_id UUID     DEFAULT NULL,
+  p_property_id TEXT     DEFAULT NULL,
   p_lead_id     TEXT     DEFAULT NULL,
   p_note        TEXT     DEFAULT NULL
 ) RETURNS JSONB AS $$
