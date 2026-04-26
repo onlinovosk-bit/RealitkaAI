@@ -125,7 +125,7 @@ CREATE TABLE IF NOT EXISTS public.arbitrage_matches (
   status           TEXT        NOT NULL DEFAULT 'new'
     CHECK (status IN ('new','viewed','contacted','dismissed','expired')),
   dismissed_reason TEXT,
-  lead_id          UUID        REFERENCES public.leads(id),
+  lead_id          TEXT,
 
   detected_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   expires_at       TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '14 days'),
@@ -287,7 +287,22 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ── Enable realtime on matches ────────────────────────────────
-ALTER PUBLICATION supabase_realtime ADD TABLE public.arbitrage_matches;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM pg_publication p
+    WHERE p.pubname = 'supabase_realtime'
+  ) AND NOT EXISTS (
+    SELECT 1
+    FROM pg_publication_tables t
+    WHERE t.pubname = 'supabase_realtime'
+      AND t.schemaname = 'public'
+      AND t.tablename = 'arbitrage_matches'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.arbitrage_matches;
+  END IF;
+END $$;
 
 COMMENT ON TABLE public.portal_listings IS
   'Raw cache of all scraped listings from nehnutelnosti.sk, Bazoš.sk and other portals. Cross-portal matching runs against this table.';

@@ -1,7 +1,9 @@
 -- ================================================================
 -- Revolis.AI Event Sourcing Pipeline
--- Migration: event_pipeline
+-- Migration: event_pipeline (compat variant for existing schemas)
 -- ================================================================
+
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- ── Core events table ──────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.events (
@@ -15,11 +17,21 @@ CREATE TABLE IF NOT EXISTS public.events (
   payload        JSONB       NOT NULL DEFAULT '{}',
   session_id     TEXT,
   user_agent     TEXT,
-  ip_hash        TEXT,        -- SHA256 of IP — GDPR compliant, no raw IP
+  ip_hash        TEXT,
   created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- ── Indexes for common query patterns ─────────────────────────
+ALTER TABLE public.events
+  ADD COLUMN IF NOT EXISTS profile_id UUID,
+  ADD COLUMN IF NOT EXISTS entity_type TEXT,
+  ADD COLUMN IF NOT EXISTS entity_id TEXT,
+  ADD COLUMN IF NOT EXISTS event_type TEXT,
+  ADD COLUMN IF NOT EXISTS payload JSONB DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS session_id TEXT,
+  ADD COLUMN IF NOT EXISTS user_agent TEXT,
+  ADD COLUMN IF NOT EXISTS ip_hash TEXT,
+  ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
+
 CREATE INDEX IF NOT EXISTS idx_events_profile_id
   ON public.events(profile_id);
 CREATE INDEX IF NOT EXISTS idx_events_entity
@@ -31,63 +43,38 @@ CREATE INDEX IF NOT EXISTS idx_events_created_at
 CREATE INDEX IF NOT EXISTS idx_events_payload
   ON public.events USING gin(payload jsonb_path_ops);
 
--- ── RLS: strict tenant isolation ───────────────────────────────
-ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "users see own profile events"
-  ON public.events FOR SELECT
-  USING (
-    profile_id IN (
-      SELECT id FROM public.profiles
-      WHERE auth_user_id = auth.uid()
-    )
-  );
-
-CREATE POLICY "users insert own profile events"
-  ON public.events FOR INSERT
-  WITH CHECK (
-    profile_id IN (
-      SELECT id FROM public.profiles
-      WHERE auth_user_id = auth.uid()
-    )
-  );
-
--- Service role can do everything (for server-side logging)
-CREATE POLICY "service role full access"
-  ON public.events
-  USING (auth.role() = 'service_role')
-  WITH CHECK (auth.role() = 'service_role');
-
--- ── Lead score cache table ──────────────────────────────────────
+-- ── Lead score cache table ─────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.lead_scores (
-  id              UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
-  profile_id      UUID        NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-  lead_id         TEXT        NOT NULL,
-  bri_score       SMALLINT    NOT NULL DEFAULT 0 CHECK (bri_score BETWEEN 0 AND 100),
-  recency_score   SMALLINT    NOT NULL DEFAULT 0,
-  engagement_score SMALLINT   NOT NULL DEFAULT 0,
-  source_score    SMALLINT    NOT NULL DEFAULT 0,
-  match_score     SMALLINT    NOT NULL DEFAULT 0,
-  time_decay      NUMERIC(4,3) NOT NULL DEFAULT 1.0,
-  score_factors   JSONB       NOT NULL DEFAULT '{}',
-  computed_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  id               UUID         DEFAULT gen_random_uuid() PRIMARY KEY,
+  profile_id       UUID         NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  lead_id          TEXT         NOT NULL,
+  bri_score        SMALLINT     NOT NULL DEFAULT 0 CHECK (bri_score BETWEEN 0 AND 100),
+  recency_score    SMALLINT     NOT NULL DEFAULT 0,
+  engagement_score SMALLINT     NOT NULL DEFAULT 0,
+  source_score     SMALLINT     NOT NULL DEFAULT 0,
+  match_score      SMALLINT     NOT NULL DEFAULT 0,
+  time_decay       NUMERIC(4,3) NOT NULL DEFAULT 1.0,
+  score_factors    JSONB        NOT NULL DEFAULT '{}',
+  computed_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
   UNIQUE(profile_id, lead_id)
 );
+
+ALTER TABLE public.lead_scores
+  ADD COLUMN IF NOT EXISTS profile_id UUID,
+  ADD COLUMN IF NOT EXISTS lead_id TEXT,
+  ADD COLUMN IF NOT EXISTS bri_score SMALLINT DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS recency_score SMALLINT DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS engagement_score SMALLINT DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS source_score SMALLINT DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS match_score SMALLINT DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS time_decay NUMERIC(4,3) DEFAULT 1.0,
+  ADD COLUMN IF NOT EXISTS score_factors JSONB DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS computed_at TIMESTAMPTZ DEFAULT NOW();
 
 CREATE INDEX IF NOT EXISTS idx_lead_scores_profile_bri
   ON public.lead_scores(profile_id, bri_score DESC);
 
-ALTER TABLE public.lead_scores ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "users see own scores"
-  ON public.lead_scores FOR ALL
-  USING (
-    profile_id IN (
-      SELECT id FROM public.profiles WHERE auth_user_id = auth.uid()
-    )
-  );
-
--- ── Integrity alerts table ──────────────────────────────────────
+-- ── Integrity alerts table ─────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.integrity_alerts (
   id             UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
   profile_id     UUID        NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -101,7 +88,56 @@ CREATE TABLE IF NOT EXISTS public.integrity_alerts (
   created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+ALTER TABLE public.integrity_alerts
+  ADD COLUMN IF NOT EXISTS profile_id UUID,
+  ADD COLUMN IF NOT EXISTS triggered_by UUID,
+  ADD COLUMN IF NOT EXISTS alert_type TEXT,
+  ADD COLUMN IF NOT EXISTS threshold_hit INTEGER,
+  ADD COLUMN IF NOT EXISTS payload JSONB DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
+
+-- ── RLS and policies ───────────────────────────────────────────
+ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.lead_scores ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.integrity_alerts ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "users see own profile events" ON public.events;
+CREATE POLICY "users see own profile events"
+  ON public.events FOR SELECT
+  USING (
+    profile_id IN (
+      SELECT id FROM public.profiles
+      WHERE auth_user_id = auth.uid()
+    )
+  );
+
+DROP POLICY IF EXISTS "users insert own profile events" ON public.events;
+CREATE POLICY "users insert own profile events"
+  ON public.events FOR INSERT
+  WITH CHECK (
+    profile_id IN (
+      SELECT id FROM public.profiles
+      WHERE auth_user_id = auth.uid()
+    )
+  );
+
+DROP POLICY IF EXISTS "service role full access" ON public.events;
+CREATE POLICY "service role full access"
+  ON public.events
+  USING (auth.role() = 'service_role')
+  WITH CHECK (auth.role() = 'service_role');
+
+DROP POLICY IF EXISTS "users see own scores" ON public.lead_scores;
+CREATE POLICY "users see own scores"
+  ON public.lead_scores FOR ALL
+  USING (
+    profile_id IN (
+      SELECT id FROM public.profiles WHERE auth_user_id = auth.uid()
+    )
+  );
+
+DROP POLICY IF EXISTS "owner sees own workspace alerts" ON public.integrity_alerts;
 CREATE POLICY "owner sees own workspace alerts"
   ON public.integrity_alerts FOR ALL
   USING (
@@ -110,7 +146,7 @@ CREATE POLICY "owner sees own workspace alerts"
     )
   );
 
--- ── Helper function: safe event insert (no auth required for server) ──
+-- ── Helper function: safe event insert ────────────────────────
 CREATE OR REPLACE FUNCTION public.log_event(
   p_profile_id  UUID,
   p_entity_type TEXT,
@@ -142,7 +178,6 @@ DECLARE
   v_event_count  INTEGER;
   v_hours_since  NUMERIC;
 BEGIN
-  -- Recency score (30%): based on last event timestamp
   SELECT MAX(created_at) INTO v_last_event
   FROM public.events
   WHERE profile_id = p_profile_id
@@ -154,7 +189,6 @@ BEGIN
     v_recency := GREATEST(0, LEAST(100, 100 - (v_hours_since * 1.2)::INTEGER));
   END IF;
 
-  -- Engagement score (25%): event count in last 7 days
   SELECT COUNT(*) INTO v_event_count
   FROM public.events
   WHERE profile_id = p_profile_id
@@ -164,7 +198,6 @@ BEGIN
 
   v_engagement := LEAST(100, v_event_count * 12);
 
-  -- Source score (20%): based on lead source quality
   SELECT CASE
     WHEN payload->>'source' = 'referral'         THEN 90
     WHEN payload->>'source' = 'direct_call'      THEN 85
@@ -182,7 +215,6 @@ BEGIN
 
   v_source := COALESCE(v_source, 40);
 
-  -- Match score (15%): property interest alignment (simplified)
   SELECT LEAST(100, COUNT(*) * 20) INTO v_match
   FROM public.events
   WHERE profile_id = p_profile_id
@@ -190,24 +222,20 @@ BEGIN
     AND entity_id = p_lead_id
     AND event_type IN ('property_viewed','saved_search','price_alert_clicked');
 
-  -- Time decay (reduces score for stale leads)
   IF v_last_event IS NOT NULL THEN
     v_decay := GREATEST(0.1, 1.0 - (EXTRACT(EPOCH FROM (NOW() - v_last_event)) / 86400 * 0.03));
   END IF;
 
-  -- Weighted final score
   v_score := (
     (v_recency    * 0.30) +
     (v_engagement * 0.25) +
     (v_source     * 0.20) +
     (v_match      * 0.15) +
-    (40           * 0.10)   -- base score
+    (40           * 0.10)
   )::INTEGER;
 
-  -- Apply time decay
   v_score := GREATEST(0, LEAST(100, (v_score * v_decay)::INTEGER));
 
-  -- Upsert into cache
   INSERT INTO public.lead_scores(
     profile_id, lead_id, bri_score,
     recency_score, engagement_score, source_score, match_score,
@@ -225,14 +253,14 @@ BEGIN
   )
   ON CONFLICT (profile_id, lead_id)
   DO UPDATE SET
-    bri_score       = EXCLUDED.bri_score,
-    recency_score   = EXCLUDED.recency_score,
-    engagement_score= EXCLUDED.engagement_score,
-    source_score    = EXCLUDED.source_score,
-    match_score     = EXCLUDED.match_score,
-    time_decay      = EXCLUDED.time_decay,
-    score_factors   = EXCLUDED.score_factors,
-    computed_at     = NOW();
+    bri_score        = EXCLUDED.bri_score,
+    recency_score    = EXCLUDED.recency_score,
+    engagement_score = EXCLUDED.engagement_score,
+    source_score     = EXCLUDED.source_score,
+    match_score      = EXCLUDED.match_score,
+    time_decay       = EXCLUDED.time_decay,
+    score_factors    = EXCLUDED.score_factors,
+    computed_at      = NOW();
 
   RETURN v_score;
 END;

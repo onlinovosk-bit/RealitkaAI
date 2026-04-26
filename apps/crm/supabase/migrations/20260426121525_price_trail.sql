@@ -4,6 +4,11 @@
 -- Extends: listing_price_history (from arbitrage_engine migration)
 -- ================================================================
 
+-- Safety for environments where arbitrage migration has not run yet
+CREATE TABLE IF NOT EXISTS public.portal_listings (
+  id UUID PRIMARY KEY
+);
+
 -- ── Property price trail — works for BOTH portal listings
 -- AND manually tracked properties (lead-linked)
 CREATE TABLE IF NOT EXISTS public.property_price_trail (
@@ -480,10 +485,28 @@ LEFT JOIN public.portal_listings pl
   ON pl.id = sm.listing_id;
 
 -- ── Realtime: push trail updates to UI ───────────────────────
-ALTER PUBLICATION supabase_realtime
-  ADD TABLE public.property_price_trail;
-ALTER PUBLICATION supabase_realtime
-  ADD TABLE public.seller_motivation;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_publication_tables
+      WHERE pubname = 'supabase_realtime'
+        AND schemaname = 'public'
+        AND tablename = 'property_price_trail'
+    ) THEN
+      ALTER PUBLICATION supabase_realtime ADD TABLE public.property_price_trail;
+    END IF;
+
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_publication_tables
+      WHERE pubname = 'supabase_realtime'
+        AND schemaname = 'public'
+        AND tablename = 'seller_motivation'
+    ) THEN
+      ALTER PUBLICATION supabase_realtime ADD TABLE public.seller_motivation;
+    END IF;
+  END IF;
+END $$;
 
 COMMENT ON TABLE public.property_price_trail IS
   'Full price history for every tracked property. The compounding asset: older the Revolis installation, richer this table. Powers negotiation intelligence, seller motivation scoring, and market analytics.';

@@ -25,6 +25,7 @@ import {
 import { useRealtimeLeadScore } from "@/hooks/useRealtimeLeadScore";
 import SalesBrainPanel from "@/components/leads/sales-brain-panel";
 import DealStrategyCard from "@/components/leads/deal-strategy-card";
+import KatasterMonitorCard from "@/components/leads/KatasterMonitorCard";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -174,6 +175,8 @@ export default function LeadDetailPage() {
   const { msg: toast, show: showToast } = useToast();
 
   const [scorePulse, setScorePulse] = useState(false);
+  const [watchedCount, setWatchedCount] = useState(0);
+  const [activatingWatch, setActivatingWatch] = useState(false);
 
   const onRealtimeScore = useCallback(
     (u: { leadId: string; score: number }) => {
@@ -187,6 +190,8 @@ export default function LeadDetailPage() {
   );
 
   useRealtimeLeadScore(id || undefined, onRealtimeScore);
+
+  const accountTier: "market_vision" | "authority" = "market_vision";
 
   // ── load ──
   useEffect(() => {
@@ -222,6 +227,21 @@ export default function LeadDetailPage() {
     } catch {
       // ignore invalid local setting payload
     }
+  }, []);
+
+  useEffect(() => {
+    async function loadWatchCount() {
+      try {
+        const res = await fetch("/api/kataster/watch", { cache: "no-store" });
+        const data = (await res.json()) as { ok?: boolean; count?: number };
+        if (res.ok && data.ok) {
+          setWatchedCount(data.count ?? 0);
+        }
+      } catch {
+        // best-effort for demo card
+      }
+    }
+    void loadWatchCount();
   }, []);
 
   // ── patch lead ──
@@ -591,6 +611,39 @@ export default function LeadDetailPage() {
             ) : null}
             {id ? <SalesBrainPanel leadId={id} /> : null}
             {id ? <DealStrategyCard leadId={id} /> : null}
+            {id ? (
+              <KatasterMonitorCard
+                parcelId={id}
+                accountTier={accountTier}
+                currentWatchedCount={watchedCount}
+                isSubmitting={activatingWatch}
+                onActivate={async () => {
+                  try {
+                    setActivatingWatch(true);
+                    const res = await fetch("/api/kataster/watch", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        parcelId: id,
+                        leadId: id,
+                        accountTier,
+                      }),
+                    });
+                    const data = (await res.json()) as { ok?: boolean; error?: string };
+                    if (!res.ok || !data.ok) {
+                      showToast(data.error ?? "Aktivácia sledovania zlyhala.");
+                      return;
+                    }
+                    setWatchedCount((prev) => prev + 1);
+                    showToast("Kataster Pulse aktivovaný.");
+                  } catch {
+                    showToast("Chyba siete pri aktivácii sledovania.");
+                  } finally {
+                    setActivatingWatch(false);
+                  }
+                }}
+              />
+            ) : null}
 
             {/* AI Score */}
             <div
