@@ -6,6 +6,7 @@ import { Lock, Mic2, Map, AlertTriangle, Hammer, Globe, Users, Zap } from "lucid
 import { NeuralPulse } from "@/components/visuals/NeuralPulse";
 import { GhostBanner } from "@/components/l99/GhostBanner";
 import { CompetitionMap } from "@/components/l99/CompetitionMap";
+import IntelBrief from "@/components/protocol/IntelBrief";
 import { TIER_DISPLAY_NAMES, TIER_PRICES } from "@/types/intelligence-hub";
 import type { HubTier, GhostSessionData } from "@/types/intelligence-hub";
 
@@ -101,6 +102,17 @@ export default function L99HubPage() {
   const [tier, setTier]               = useState<HubTier>("free");
   const [tierLoading, setTierLoading] = useState(true);
   const [ghostData, setGhostData]     = useState<GhostSessionData | null>(null);
+  const [strategicAlerts, setStrategicAlerts] = useState<
+    {
+      id: string;
+      title: string;
+      description: string;
+      severity: "low" | "medium" | "high" | "critical";
+      type: string;
+      location_focus?: string | null;
+      created_at?: string;
+    }[]
+  >([]);
 
   useEffect(() => {
     // Načítaj skutočný tier zo servera
@@ -112,9 +124,15 @@ export default function L99HubPage() {
 
     // Ghost Resurrection – ak má user predchádzajúcu session
     setGhostData(getGhostSession());
+
+    fetch("/api/strategic-alerts")
+      .then((r) => r.json())
+      .then((d: { alerts?: typeof strategicAlerts }) => setStrategicAlerts(d.alerts ?? []))
+      .catch(() => setStrategicAlerts([]));
   }, []);
 
   const isEnterprise = tier === "enterprise" || tier === "market_vision" || tier === "protocol_authority";
+  const isProtocolAuthority = tier === "protocol_authority" || tier === "enterprise";
   const isPro        = tier === "pro" || isEnterprise;
 
   return (
@@ -185,6 +203,15 @@ export default function L99HubPage() {
             <CompetitionMap isProtocolActive={true} />
           </motion.div>
         )}
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="mb-12"
+        >
+          <IntelBrief alerts={strategicAlerts} locked={!isProtocolAuthority} />
+        </motion.div>
 
         {/* Moduly grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
