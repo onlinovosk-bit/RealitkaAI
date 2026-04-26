@@ -10,6 +10,7 @@ import DashboardClientShell from "./DashboardClientShell";
 type Props = {
   userName: string;
   role: UserRole;
+  accountTier?: string | null;
   children: ReactNode;
 };
 
@@ -17,7 +18,7 @@ type Props = {
  * Prvý SSR + hydratačný paint musí byť deterministický.
  * Celý „živý“ chrome (Zustand, čas, atď.) sa vykreslí až po mounte klienta — žiadny #418 / #185 z nezhody server vs klient.
  */
-export default function DashboardClientLayout({ userName, role, children }: Props) {
+export default function DashboardClientLayout({ userName, role, accountTier, children }: Props) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -47,7 +48,7 @@ export default function DashboardClientLayout({ userName, role, children }: Prop
       <div className="relative flex min-h-0 flex-1">
         <SpaceBackground />
         <div className="hidden md:block" style={{ position: "relative", zIndex: 1 }}>
-          <Sidebar role={role} />
+          <Sidebar role={role} accountTier={accountTier} />
         </div>
         <div className="flex min-w-0 flex-1 flex-col" style={{ position: "relative", zIndex: 1 }}>
           <SpaceHeader userName={userName} />

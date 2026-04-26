@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
-const MARKET_VISION_LIMIT = 500;
+const MARKET_VISION_LIMIT = 100;
 
 export async function GET() {
   const supabase = await createClient();
@@ -80,7 +80,7 @@ export async function POST(req: Request) {
 
   if (accountTier !== "authority" && (count ?? 0) >= MARKET_VISION_LIMIT) {
     return NextResponse.json(
-      { ok: false, error: "Limit Market Vision (500) bol dosiahnutý." },
+      { ok: false, error: "Limit Market Vision (100) bol dosiahnutý." },
       { status: 403 },
     );
   }

@@ -13,6 +13,7 @@ import QuickActionsBar from "@/components/dashboard/QuickActionsBar";
 import RecentActivityFeed from "@/components/dashboard/recent-activity-feed";
 import DailyActionPanel from "@/components/dashboard/DailyActionPanel";
 import BrokerCoach from "@/components/coaching/BrokerCoach";
+import RevenueView from "@/components/dashboard/RevenueView";
 import { useMockAIActivity } from "@/hooks/useMockAIActivity";
 import { useCountUp, useGlowOnHover } from "@/hooks/useSpaceInteractions";
 import AIPulseSystem from "@/components/space/AIPulseSystem";
@@ -247,6 +248,9 @@ export default function DashboardPage() {
   const dealsTrend = forecastingSummary ? getTrend(forecastingSummary.expectedClosedDeals, forecastTargets.expectedClosedDeals) : null;
   const valueTrend = forecastingSummary ? getTrend(forecastingSummary.expectedPipelineValue, forecastTargets.expectedPipelineValue, " EUR") : null;
   const probabilityTrend = forecastingSummary ? getTrend(forecastingSummary.avgProbabilityPercent, forecastTargets.avgProbabilityPercent, " %") : null;
+  const showRevenueCommandCenter =
+    plan === ("protocol_authority" as PlanTier) ||
+    plan === ("enterprise" as PlanTier);
 
   return (
     <main className="p-6">
@@ -351,6 +355,12 @@ export default function DashboardPage() {
             enabled={enterpriseSalesIntelligence}
           />
         </section>
+
+        {showRevenueCommandCenter ? (
+          <section className="mb-6">
+            <RevenueView />
+          </section>
+        ) : null}
 
         <section className="mb-6">
           <RecentActivityFeed />

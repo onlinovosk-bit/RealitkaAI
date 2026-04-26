@@ -12,7 +12,7 @@ type KatasterMonitorCardProps = {
   isSubmitting?: boolean;
 };
 
-const LIMIT = 500;
+const LIMIT = 100;
 
 export default function KatasterMonitorCard({
   parcelId,
@@ -54,7 +54,7 @@ export default function KatasterMonitorCard({
           <div className="rounded-2xl border border-yellow-600/20 bg-yellow-600/10 p-4 text-center">
             <Lock className="mx-auto mb-2 text-yellow-600" size={16} />
             <p className="text-[10px] font-bold uppercase tracking-tighter text-yellow-600">
-              Limit 500 parciel dosiahnutý
+              Limit 100 parciel dosiahnutý
             </p>
             <button type="button" className="mt-2 text-[9px] font-black text-yellow-500 underline">
               UPGRADE NA PROTOCOL AUTHORITY
