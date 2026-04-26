@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS public.events (
   entity_type    TEXT        NOT NULL CHECK (entity_type IN (
                                'lead','property','contact','message',
                                'call','import','export','session','system')),
-  entity_id      UUID,
+  entity_id      TEXT,
   event_type     TEXT        NOT NULL,
   payload        JSONB       NOT NULL DEFAULT '{}',
   session_id     TEXT,
@@ -62,7 +62,7 @@ CREATE POLICY "service role full access"
 CREATE TABLE IF NOT EXISTS public.lead_scores (
   id              UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
   profile_id      UUID        NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-  lead_id         UUID        NOT NULL REFERENCES public.leads(id) ON DELETE CASCADE,
+  lead_id         TEXT        NOT NULL,
   bri_score       SMALLINT    NOT NULL DEFAULT 0 CHECK (bri_score BETWEEN 0 AND 100),
   recency_score   SMALLINT    NOT NULL DEFAULT 0,
   engagement_score SMALLINT   NOT NULL DEFAULT 0,
@@ -114,7 +114,7 @@ CREATE POLICY "owner sees own workspace alerts"
 CREATE OR REPLACE FUNCTION public.log_event(
   p_profile_id  UUID,
   p_entity_type TEXT,
-  p_entity_id   UUID,
+  p_entity_id   TEXT,
   p_event_type  TEXT,
   p_payload     JSONB DEFAULT '{}'
 ) RETURNS UUID AS $$
@@ -129,7 +129,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ── BRI score computation function ────────────────────────────
-CREATE OR REPLACE FUNCTION public.compute_bri_score(p_lead_id UUID, p_profile_id UUID)
+CREATE OR REPLACE FUNCTION public.compute_bri_score(p_lead_id TEXT, p_profile_id UUID)
 RETURNS INTEGER AS $$
 DECLARE
   v_score        INTEGER := 0;

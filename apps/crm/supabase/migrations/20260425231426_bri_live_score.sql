@@ -20,7 +20,7 @@ ALTER TABLE public.lead_scores
 CREATE TABLE IF NOT EXISTS public.bri_score_history (
   id             UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
   profile_id     UUID        NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-  lead_id        UUID        NOT NULL REFERENCES public.leads(id)    ON DELETE CASCADE,
+  lead_id        TEXT        NOT NULL,
   score          SMALLINT    NOT NULL CHECK (score BETWEEN 0 AND 100),
   delta          SMALLINT    NOT NULL DEFAULT 0,
   trigger_event  TEXT        NOT NULL,
@@ -76,7 +76,7 @@ CREATE POLICY "users manage own bri config"
 
 -- ── Core BRI computation — extended version ───────────────────
 CREATE OR REPLACE FUNCTION public.compute_bri_score_v2(
-  p_lead_id        UUID,
+  p_lead_id        TEXT,
   p_profile_id     UUID,
   p_trigger_event  TEXT DEFAULT 'manual'
 )

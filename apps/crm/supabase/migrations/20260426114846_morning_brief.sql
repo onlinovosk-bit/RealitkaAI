@@ -46,10 +46,10 @@ CREATE TABLE IF NOT EXISTS public.morning_briefs (
   delivered_at     TIMESTAMPTZ,
   opened_at        TIMESTAMPTZ,
   clicked_at       TIMESTAMPTZ,
-  lead_id_clicked  UUID        REFERENCES public.leads(id),
+  lead_id_clicked  TEXT,
 
   -- Content snapshot
-  top_lead_id      UUID        REFERENCES public.leads(id),
+  top_lead_id      TEXT,
   top_lead_score   SMALLINT,
   brief_text       TEXT,         -- the 3-sentence AI text
   action_text      TEXT,         -- the specific recommended action
@@ -91,7 +91,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 CREATE OR REPLACE FUNCTION public.record_brief_click(
   p_brief_id UUID,
-  p_lead_id  UUID
+  p_lead_id  TEXT
 ) RETURNS VOID AS $$
 BEGIN
   UPDATE public.morning_briefs
