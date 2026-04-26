@@ -12,6 +12,7 @@ import PropertiesSummaryWidget from "@/components/dashboard/properties-summary-w
 import QuickActionsBar from "@/components/dashboard/QuickActionsBar";
 import RecentActivityFeed from "@/components/dashboard/recent-activity-feed";
 import DailyActionPanel from "@/components/dashboard/DailyActionPanel";
+import BrokerCoach from "@/components/coaching/BrokerCoach";
 import { useMockAIActivity } from "@/hooks/useMockAIActivity";
 import { useCountUp, useGlowOnHover } from "@/hooks/useSpaceInteractions";
 import AIPulseSystem from "@/components/space/AIPulseSystem";
@@ -37,6 +38,19 @@ type ForecastingTargets = {
   expectedClosedDeals: number;
   expectedPipelineValue: number;
   avgProbabilityPercent: number;
+};
+
+type CoachingInsightPayload = {
+  stats: {
+    funnelDropOffStage: string;
+    followUpConsistency: number;
+    avgDealVelocityDays: number;
+  };
+  insight: string;
+  streakDays: number;
+  followUpRankLabel: string;
+  dealVelocityLabel: string;
+  dealVelocityDeltaLabel: string;
 };
 
 const DEFAULT_FORECAST_TARGETS: ForecastingTargets = {
@@ -95,6 +109,7 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [enterpriseSalesIntelligence, setEnterpriseSalesIntelligence] = useState(false);
+  const [coachingPayload, setCoachingPayload] = useState<CoachingInsightPayload | null>(null);
 
   const assistantLeadOptions = useMemo(
     () => leads.map((l) => ({ id: l.id, name: l.name })),
@@ -163,6 +178,25 @@ export default function DashboardPage() {
             }
           }
         } catch { /* plan optional */ }
+
+        try {
+          const coachingRes = await fetch("/api/coaching/insight");
+          if (coachingRes.ok) {
+            const coachingData = (await coachingRes.json()) as { ok?: boolean } & CoachingInsightPayload;
+            if (coachingData?.ok) {
+              setCoachingPayload({
+                stats: coachingData.stats,
+                insight: coachingData.insight,
+                streakDays: coachingData.streakDays,
+                followUpRankLabel: coachingData.followUpRankLabel,
+                dealVelocityLabel: coachingData.dealVelocityLabel,
+                dealVelocityDeltaLabel: coachingData.dealVelocityDeltaLabel,
+              });
+            }
+          }
+        } catch {
+          // coaching panel is optional
+        }
       } catch (error) {
         console.error("Failed to load dashboard:", error);
         setLoadError("Nepodarilo sa načítať dáta pre prehľad. Skúste obnoviť stránku.");
@@ -292,6 +326,20 @@ export default function DashboardPage() {
         <QuickActionsBar />
 
         <DailyActionPanel leads={leads} plan={plan} />
+
+        {coachingPayload ? (
+          <section className="mb-6">
+            <BrokerCoach
+              insight={coachingPayload.insight}
+              streakDays={coachingPayload.streakDays}
+              brokerStats={{
+                followUpRankLabel: coachingPayload.followUpRankLabel,
+                dealVelocityLabel: coachingPayload.dealVelocityLabel,
+                dealVelocityDeltaLabel: coachingPayload.dealVelocityDeltaLabel,
+              }}
+            />
+          </section>
+        ) : null}
 
         <section className="mb-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
           <PriorityLeads leads={leads} plan={plan} />
