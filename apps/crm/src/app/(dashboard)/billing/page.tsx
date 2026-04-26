@@ -44,6 +44,9 @@ export default async function BillingPage({
       title="Predplatné"
       description="Správa predplatného a platieb."
     >
+      <p className="mb-4 text-[10px] uppercase tracking-wider text-slate-500">
+        release: l99-2026-04-26b
+      </p>
       {params.checkout === "success" && (
         <div className="mb-6 rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
           Checkout bol úspešne dokončený.

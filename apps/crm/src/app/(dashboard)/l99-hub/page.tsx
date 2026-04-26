@@ -109,6 +109,7 @@ function getGhostSession(): GhostSessionData | null {
 // ─── Page ─────────────────────────────────────────────────────────────────
 export default function L99HubPage() {
   const [tier, setTier]               = useState<HubTier>("free");
+  const [demoTierOverride, setDemoTierOverride] = useState<HubTier | null>(null);
   const [tierLoading, setTierLoading] = useState(true);
   const [ghostData, setGhostData]     = useState<GhostSessionData | null>(null);
   const [strategicAlerts, setStrategicAlerts] = useState<
@@ -140,9 +141,29 @@ export default function L99HubPage() {
       .catch(() => setStrategicAlerts([]));
   }, []);
 
-  const isEnterprise = tier === "enterprise" || tier === "market_vision" || tier === "protocol_authority";
-  const isProtocolAuthority = tier === "protocol_authority" || tier === "enterprise";
-  const isPro        = tier === "pro" || isEnterprise;
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const founderProgram = window.localStorage.getItem("founderDemoProgram");
+    const map: Record<string, HubTier> = {
+      free: "free",
+      active_force: "pro",
+      market_vision: "market_vision",
+      protocol_authority: "protocol_authority",
+    };
+    if (founderProgram && map[founderProgram]) {
+      setDemoTierOverride(map[founderProgram]);
+    } else {
+      setDemoTierOverride(null);
+    }
+  }, []);
+
+  const effectiveTier = demoTierOverride ?? tier;
+  const isEnterprise =
+    effectiveTier === "enterprise" ||
+    effectiveTier === "market_vision" ||
+    effectiveTier === "protocol_authority";
+  const isProtocolAuthority = effectiveTier === "protocol_authority" || effectiveTier === "enterprise";
+  const isPro = effectiveTier === "pro" || isEnterprise;
 
   return (
     <div className="min-h-screen bg-[#010103] text-slate-200 relative overflow-hidden">
@@ -189,8 +210,8 @@ export default function L99HubPage() {
                   color: isEnterprise ? "#93C5FD" : isPro ? "#A5B4FC" : "#64748B",
                 }}
               >
-                {TIER_DISPLAY_NAMES[tier]}
-                {TIER_PRICES[tier] ? ` · ${TIER_PRICES[tier]}€/mes` : ""}
+                {TIER_DISPLAY_NAMES[effectiveTier]}
+                {TIER_PRICES[effectiveTier] ? ` · ${TIER_PRICES[effectiveTier]}€/mes` : ""}
               </span>
               {!isPro && (
                 <a href="/billing" className="text-[10px] text-blue-400 hover:text-blue-300 underline uppercase tracking-wider">
@@ -199,6 +220,9 @@ export default function L99HubPage() {
               )}
             </div>
           )}
+          <p className="mt-2 text-[10px] uppercase tracking-wider text-slate-600">
+            release: l99-2026-04-26b
+          </p>
         </motion.header>
 
         {/* Competition Map – len pre Protocol Authority */}
@@ -225,7 +249,7 @@ export default function L99HubPage() {
         {/* Moduly grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {MODULES.map((mod, i) => {
-            const unlocked = isUnlocked(mod.requiredTier, tier);
+            const unlocked = isUnlocked(mod.requiredTier, effectiveTier);
             const Icon = mod.icon;
             return (
               <motion.div
