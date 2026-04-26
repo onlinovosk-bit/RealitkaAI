@@ -12,7 +12,7 @@ const nextConfig = {
 			{ source: "/demo-odhad", destination: "/demo", permanent: true },
 			{ source: "/l99-scan",   destination: "/demo", permanent: true },
 			{ source: "/home",       destination: "/landing", permanent: true },
-			{ source: "/team/permissions", destination: "/dashboard/reputation/integrity", permanent: true },
+			{ source: "/team/permissions", destination: "/dashboard", permanent: true },
 		];
 	},
 };
