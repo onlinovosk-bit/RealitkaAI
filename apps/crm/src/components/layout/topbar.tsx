@@ -1,74 +1,99 @@
-"use client";
-import AuthButton from "@/components/auth/auth-button";
-import { AppModeToggle } from "@/components/layout/app-mode-toggle";
-import MobileNav from "@/components/layout/mobile-nav";
-import { type UserRole } from "@/lib/navigation";
-import { AI_ASSISTANT_STATUS_ONLINE } from "@/lib/ai-brand";
+'use client'
 
-export default function Topbar({
-  userName,
-  role,
-}: {
-  userName: string;
-  role: UserRole;
-}) {
-  const roleLabel = role === "owner" ? "Majiteľ" : "Maklér";
+type UserRole = 'owner' | 'agent' | 'senior' | string
+
+interface TopBarProps {
+  userName?: string
+  role?: UserRole
+  title?: string
+  subtitle?: string
+  onAlertClick?: () => void
+}
+
+export function TopBar({ userName, role, title, subtitle, onAlertClick }: TopBarProps) {
+  const displayTitle = title ?? userName ?? 'Revolis.AI'
+  const displaySubtitle = subtitle ?? ''
 
   return (
-    <header
-      className="flex h-16 items-center justify-between px-4 md:px-6"
-      style={{
-        background: '#080D1A',
-        borderBottom: '1px solid #0F1F3D',
-        backdropFilter: 'blur(12px)',
-      }}
-    >
-      {/* Left */}
-      <div className="flex items-center gap-3">
-        <MobileNav role={role} />
-        <div>
-          <h2 className="text-base font-semibold md:text-lg" style={{ color: '#F0F9FF' }}>
-            Revolis.AI
-          </h2>
-          <p className="hidden text-xs sm:block" style={{ color: '#475569' }}>
-            {userName}
-          </p>
-        </div>
+    <header style={{
+      height:         'var(--topbar-h)',
+      background:     'var(--surface-card)',
+      borderBottom:   '1px solid var(--border-light)',
+      display:        'flex',
+      alignItems:     'center',
+      justifyContent: 'space-between',
+      padding:        '0 22px',
+      flexShrink:     0,
+      position:       'sticky',
+      top:            0,
+      zIndex:         40,
+    }}>
+      {/* Title */}
+      <div>
+        <h1 style={{
+          fontSize:      15,
+          fontWeight:    700,
+          color:         'var(--text-primary)',
+          lineHeight:    1.2,
+        }}>{displayTitle}</h1>
+        <p style={{
+          fontSize: 10,
+          color:    'var(--text-secondary)',
+          marginTop: 1,
+        }}>{displaySubtitle}</p>
       </div>
 
       {/* Right */}
-      <div className="flex items-center gap-3">
-        <AppModeToggle />
-
-        <span
-          className="hidden rounded-full px-3 py-1 text-xs font-semibold sm:inline"
-          style={{
-            background: 'rgba(34,211,238,0.10)',
-            border: '1px solid rgba(34,211,238,0.25)',
-            color: '#67E8F9',
-          }}
-        >
-          {roleLabel}
-        </span>
-
-        <div
-          className="hidden items-center gap-2 rounded-full px-3 py-1 sm:flex"
-          style={{
-            background: 'rgba(34,211,238,0.06)',
-            border: '1px solid rgba(34,211,238,0.15)',
-          }}
-        >
-          <span
-            className="h-1.5 w-1.5 rounded-full animate-pulse"
-            style={{ background: '#22D3EE', boxShadow: '0 0 6px rgba(34,211,238,0.9)' }}
-          />
-          <span className="text-xs" style={{ color: '#22D3EE' }}>
-            {AI_ASSISTANT_STATUS_ONLINE}
-          </span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        {/* Status */}
+        <div style={{
+          display:     'flex', alignItems: 'center', gap: 5,
+          padding:     '4px 10px',
+          background:  'var(--success-bg)',
+          borderRadius: 20,
+          border:      '0.5px solid var(--success-bd)',
+          fontSize:    11, color: 'var(--success)',
+        }}>
+          <div style={{
+            width: 5, height: 5, borderRadius: '50%',
+            background: 'var(--success)',
+          }} />
+          Prešov online
         </div>
 
-        <AuthButton />
+        {/* Alerts */}
+        <button
+          onClick={onAlertClick}
+          style={{
+            padding:      '4px 12px',
+            background:   'var(--warn-bg)',
+            border:       '1px solid var(--gold-400)',
+            borderRadius: 7,
+            fontSize:     11,
+            fontWeight:   700,
+            color:        '#92400E',
+            cursor:       'pointer',
+            fontFamily:   'var(--font-body)',
+            transition:   'opacity var(--t-fast)',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.opacity = '0.8')}
+          onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+        >
+          ⚠ 3 alerty
+        </button>
+
+        {/* Avatar */}
+        <div style={{
+          width:         30, height: 30,
+          borderRadius:  7,
+          background:    'var(--navy-100)',
+          border:        '1px solid var(--border-light)',
+          display:       'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize:      11, fontWeight: 800,
+          color:         'var(--navy-800)',
+          cursor:        'pointer',
+        }}>{(userName?.slice(0, 2) ?? role?.slice(0, 2) ?? 'RS').toUpperCase()}</div>
       </div>
     </header>
-  );
+  )
 }

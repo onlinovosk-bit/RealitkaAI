@@ -1,5 +1,5 @@
-import Sidebar from "@/components/layout/sidebar";
-import Topbar from "@/components/layout/topbar";
+import { Sidebar } from "@/components/layout/sidebar";
+import { TopBar } from "@/components/layout/topbar";
 import { getCurrentProfile, requireUser } from "@/lib/auth";
 import { mapProfileRole } from "@/lib/navigation";
 
@@ -25,7 +25,7 @@ export default async function DashboardSegmentLayout({
         <Sidebar role={role} accountTier={accountTier} />
       </div>
       <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar userName={userName} role={role} />
+        <TopBar userName={userName} role={role} />
         <DashboardClientShell userId={userName}>{children}</DashboardClientShell>
       </div>
     </div>
