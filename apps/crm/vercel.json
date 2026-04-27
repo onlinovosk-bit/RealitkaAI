@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/cron/recompute-bri",
-      "schedule": "0 */6 * * *"
+      "schedule": "0 6 * * *"
     },
     {
       "path": "/api/cron/bri-snapshot",
@@ -14,11 +14,11 @@
     },
     {
       "path": "/api/cron/arbitrage-scan",
-      "schedule": "0 */6 * * *"
+      "schedule": "0 7 * * *"
     },
     {
       "path": "/api/cron/price-trail-sync",
-      "schedule": "30 */6 * * *"
+      "schedule": "30 7 * * *"
     }
   ]
 }
