@@ -16,6 +16,12 @@ test.describe('Error states and API failures', () => {
     await expect(page).toHaveURL(/login/);
   });
 
+  test('Legacy team permissions URL does not 404', async ({ page }) => {
+    await page.goto(`${BASE_URL}/team/permissions`);
+    await expect(page).not.toHaveURL(/team\/permissions$/);
+    await expect(page).not.toHaveTitle(/404/i);
+  });
+
   test('Shows error for non-existent lead', async ({ page }) => {
     // Login first
     await page.goto(`${BASE_URL}/login`);
