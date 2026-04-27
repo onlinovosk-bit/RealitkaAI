@@ -50,6 +50,7 @@ export async function GET() {
     probeUrl(`${base}/api/auth/login`, [400, 401, 405, 200]),
     probeUrl(`${base}/api/billing/checkout`, [400, 401, 405, 200]),
     probeUrl(`${base}/api/billing/portal`, [400, 401, 405, 200]),
+    probeUrl(`${base}/api/leads`, [200]),
     probeUrl(`${base}/dashboard`, [200, 302, 303, 307, 308]),
     probeUrl(`${base}/team/permissions`, [200, 302, 303, 307, 308]),
     probeUrl(`${base}/api/healthz`, [200]),
