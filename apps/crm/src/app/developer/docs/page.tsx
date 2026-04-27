@@ -25,7 +25,7 @@ export default function DeveloperDocsPage() {
             </h2>
             <div className="rounded-3xl border border-white/5 bg-white/[0.02] p-6 text-sm leading-relaxed">
               <p className="mb-4 text-slate-500">
-                // Returns anonymized real-time price data for SK regions
+                Returns anonymized real-time price data for SK regions.
               </p>
               <code className="text-blue-400">
                 curl -X GET "https://api.revolis.ai/v1/market-pulse?city=Presov"
