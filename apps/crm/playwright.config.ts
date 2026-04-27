@@ -41,12 +41,18 @@ export default defineConfig({
     // 2. PROJEKT: CHROMIUM (Tento súbor VYŽADUJE storageState)
     {
       name: 'chromium',
-      testIgnore: /call-analyzer\.spec\.ts/,
+      testIgnore: [/call-analyzer\.spec\.ts/, /routing-legacy\.spec\.ts/],
       use: {
         ...devices['Desktop Chrome'],
         storageState: authFile, // Playwright ho začne hľadať až TU
       },
       dependencies: ['setup'],
+    },
+    // Public routing checks bez auth setup dependency (legacy URL guards)
+    {
+      name: 'chromium-public',
+      testMatch: /routing-legacy\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'] },
     },
     // Call Analyzer: E2E_BYPASS_AUTH=1 (webServer alebo ručný dev — pozri docs)
     {
