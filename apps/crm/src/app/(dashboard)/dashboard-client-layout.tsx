@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import Sidebar from "@/components/layout/sidebar";
+import { Sidebar } from "@/components/layout/sidebar";
 import SpaceHeader from "@/components/layout/SpaceHeader";
 import SpaceBackground from "@/components/space/SpaceBackground";
 import type { UserRole } from "@/lib/navigation";
