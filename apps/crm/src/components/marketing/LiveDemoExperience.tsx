@@ -147,9 +147,9 @@ export default function LiveDemoExperience({
 
       <section id="demo-cta" className="border-t border-white/10 px-4 py-10 md:px-8">
         <div className="mx-auto max-w-4xl rounded-3xl border border-white/10 bg-[#060914] p-6 md:p-8">
-          <h2 className="text-2xl font-black uppercase tracking-tight text-white">Požiadať o živé zaškolenie</h2>
+          <h2 className="text-2xl font-black uppercase tracking-tight text-white">Požiadať o prezentáciu</h2>
           <p className="mt-2 text-sm text-slate-400">
-            Vyplňte kontakt a tím Revolis vás spojí s úvodným hovorom.
+            Vyplňte kontakt a tím Revolis sa s Vami spojí.
           </p>
 
           <div className="mt-5 grid gap-3 md:grid-cols-2">
