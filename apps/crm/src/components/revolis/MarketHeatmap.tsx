@@ -1,11 +1,17 @@
 "use client";
 
 import { Fragment } from "react";
-import { MapPin } from "lucide-react";
+import { Lock, MapPin } from "lucide-react";
 
 import type { MarketHotspot } from "@/lib/analytics/market-density";
 
-export function MarketHeatmap({ hotspots }: { hotspots: MarketHotspot[] }) {
+export function MarketHeatmap({
+  hotspots,
+  canSeeDetails = true,
+}: {
+  hotspots: MarketHotspot[];
+  canSeeDetails?: boolean;
+}) {
   return (
     <div className="relative min-h-[300px] w-full overflow-hidden rounded-2xl border border-indigo-500/25 bg-slate-950/90 shadow-[0_0_60px_-12px_rgba(99,102,241,0.35)]">
       <div
@@ -25,6 +31,7 @@ export function MarketHeatmap({ hotspots }: { hotspots: MarketHotspot[] }) {
         }}
       />
 
+      <div className={canSeeDetails ? "" : "blur-[5px] saturate-50"}>
       {hotspots.map((h, i) => (
         <Fragment key={`${h.kind}-${i}-${h.x}-${h.y}-${h.label ?? ""}`}>
           <div
@@ -55,6 +62,7 @@ export function MarketHeatmap({ hotspots }: { hotspots: MarketHotspot[] }) {
           ) : null}
         </Fragment>
       ))}
+      </div>
 
       <div className="relative z-10 flex h-full flex-col justify-between p-5">
         <div className="flex items-start justify-between gap-3">
@@ -83,6 +91,41 @@ export function MarketHeatmap({ hotspots }: { hotspots: MarketHotspot[] }) {
           </span>
         </div>
       </div>
+
+      {!canSeeDetails ? (
+        <div
+          className="absolute inset-0 z-30 flex items-center justify-center p-6"
+          style={{ background: "rgba(2,6,23,0.58)", backdropFilter: "blur(3px)" }}
+        >
+          <div
+            className="max-w-md rounded-2xl border p-4 text-center"
+            style={{
+              background: "rgba(15,23,42,0.92)",
+              borderColor: "rgba(59,130,246,0.35)",
+            }}
+          >
+            <div className="mb-2 flex items-center justify-center gap-2">
+              <Lock className="h-4 w-4 text-blue-300" aria-hidden />
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-300">
+                Smart Tier Gating
+              </p>
+            </div>
+            <p className="text-sm font-semibold text-slate-100">
+              V tejto zóne (Sekčov) práve vzniká dopytový pretlak o 22%.
+            </p>
+            <p className="mt-2 text-xs text-slate-300">
+              Chceš vidieť presné ulice a zoznam čakajúcich kupcov? Aktivuj Market Vision.
+            </p>
+            <a
+              href="/billing"
+              className="mt-4 inline-flex rounded-xl px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-white"
+              style={{ background: "linear-gradient(135deg,#1D4ED8,#2563EB)" }}
+            >
+              Aktivovať Market Vision
+            </a>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

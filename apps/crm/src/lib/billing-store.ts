@@ -163,6 +163,8 @@ export const BILLING_PLANS = [
     recommended: false,
     features: [
       "👑 Owner: Market Vision menu",
+      "✅ Kto je pripravený kúpiť",
+      "✅ Dnes uzavriem",
       "1× Active Force licencia pre makléra",
       "📊 Prehľad výkonnosti tímu",
       "🔍 Prebúdza starých klientov, ktorí ťa zabudli kontaktovať",
@@ -191,6 +193,8 @@ export const BILLING_PLANS = [
     recommended: false,
     features: [
       "👑 Owner: Protocol Authority menu",
+      "✅ Kto je pripravený kúpiť",
+      "✅ Dnes uzavriem",
       "4× Active Force licencie pre maklérov",
       "🗺 Tepelná mapa konkurencie – živý radar",
       "👻 Prebúdza starých klientov, ktorí ťa zabudli kontaktovať – pokročilý režim",

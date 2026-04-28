@@ -132,7 +132,7 @@ function RoiCalculator() {
 // ─── Tabs ─────────────────────────────────────────────────────────────────
 const TABS = [
   { id: "odhadca",  label: "AI Odhadca",       icon: Calculator },
-  { id: "l99",      label: "L99 Prehľad trhu", icon: Zap },
+  { id: "l99",      label: "Radar príležitostí", icon: Zap },
   { id: "roi",      label: "ROI Kalkulačka",   icon: TrendingUp },
 ] as const;
 

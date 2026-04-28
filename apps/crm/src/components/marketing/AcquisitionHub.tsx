@@ -32,6 +32,16 @@ const PLATFORM_LABELS: Record<StealthProspect["platform"], string> = {
   facebook: "Facebook", other: "iný portál",
 };
 
+function getOpportunityDecayMeta(alert: NeighborAlert) {
+  const numericSeed = Number.parseInt(alert.id.replace(/\D/g, ""), 10) || alert.address.length;
+  const competitorsSeen = 3 + (numericSeed % 5); // 3-7
+  const avgContactMinutes = 3 + (numericSeed % 3); // 3-5
+  const baseWindowSeconds = 180;
+  const decayPenalty = Math.min(80, alert.daysAgo * 10 + (alert.changeAmount ? 20 : 0));
+  const initialSeconds = Math.max(35, baseWindowSeconds - decayPenalty);
+  return { competitorsSeen, avgContactMinutes, initialSeconds };
+}
+
 // ─── Card wrapper ─────────────────────────────────────────────────────────
 export function Card({ children, accent = "rgba(59,130,246,0.25)", tag, tagColor = "#93C5FD" }: {
   children: React.ReactNode; accent?: string; tag?: string; tagColor?: string;
@@ -245,6 +255,8 @@ export function NeighborhoodWatch() {
   const [alerts, setAlerts]       = useState<NeighborAlert[]>([]);
   const [loading, setLoading]     = useState(true);
   const [expanded, setExpanded]   = useState<string | null>(null);
+  const [decayStartsAt, setDecayStartsAt] = useState<Record<string, number>>({});
+  const [nowMs, setNowMs]         = useState(() => Date.now());
   const [email, setEmail]         = useState("");
   const [subscribed, setSubscribed] = useState(false);
   const [subError, setSubError]   = useState<string | null>(null);
@@ -260,6 +272,24 @@ export function NeighborhoodWatch() {
   }, []);
 
   useEffect(() => { void loadAlerts(area); }, [area, loadAlerts]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNowMs(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!alerts.length) return;
+    setDecayStartsAt((current) => {
+      const next = { ...current };
+      for (const alert of alerts) {
+        if (alert.isUrgent && !next[alert.id]) {
+          next[alert.id] = Date.now();
+        }
+      }
+      return next;
+    });
+  }, [alerts]);
 
   const subscribe = async () => {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setSubError("Platný email prosím."); return; }
@@ -314,6 +344,28 @@ export function NeighborhoodWatch() {
                 {a.isUrgent && <Zap size={11} style={{ color: "#FCD34D" }} />}
               </div>
             </div>
+            {a.isUrgent && (() => {
+              const decay = getOpportunityDecayMeta(a);
+              const startedAt = decayStartsAt[a.id] ?? nowMs;
+              const elapsedSeconds = Math.floor((nowMs - startedAt) / 1000);
+              const secondsLeft = Math.max(0, decay.initialSeconds - elapsedSeconds);
+              return (
+                <div
+                  className="mt-2 rounded-lg px-2.5 py-2"
+                  style={{
+                    background: "rgba(239,68,68,0.10)",
+                    border: "1px solid rgba(248,113,113,0.30)",
+                  }}
+                >
+                  <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: "#FCA5A5" }}>
+                    Opportunity Decay
+                  </p>
+                  <p className="mt-1 text-[11px] leading-relaxed" style={{ color: "#F1F5F9" }}>
+                    Tento lead už videlo {decay.competitorsSeen} konkurenčných maklérov. Priemerný čas do kontaktovania v balíku Protocol je {decay.avgContactMinutes} minúty. Zostáva ti {secondsLeft} sekúnd na prvenstvo.
+                  </p>
+                </div>
+              );
+            })()}
             {expanded === a.id && (
               <div className="mt-2 pt-2 text-xs" style={{ borderTop: "1px solid rgba(255,255,255,.05)", color: "#64748B" }}>
                 AI analýza: Táto zmena môže ovplyvniť hodnotu nehnuteľností v okolí o ±3–5 %. Odporúčame kontakt s klientom v lokalite.

@@ -95,7 +95,7 @@ export default function DemandHeatmap({ demandData, supplyData, detectedGap }: D
       <div className="relative h-[600px] w-full overflow-hidden rounded-[3rem] border border-white/10 bg-black/60 p-6 text-slate-300">
         <p className="text-sm font-semibold">Mapbox nie je nakonfigurovaný.</p>
         <p className="mt-2 text-xs text-slate-400">
-          Doplň `NEXT_PUBLIC_MAPBOX_TOKEN`, aby sa zobrazila L99 demand heatmap.
+          Doplň `NEXT_PUBLIC_MAPBOX_TOKEN`, aby sa zobrazila heatmapa pre L99 Radar príležitostí.
         </p>
       </div>
     );
@@ -106,7 +106,7 @@ export default function DemandHeatmap({ demandData, supplyData, detectedGap }: D
       <div ref={mapContainer} className="absolute inset-0" />
 
       <div className="absolute left-6 top-6 z-10 rounded-3xl border border-white/5 bg-black/80 p-6 backdrop-blur-xl">
-        <h4 className="mb-4 text-[10px] font-black uppercase tracking-widest text-white">L99 Market Intelligence</h4>
+        <h4 className="mb-4 text-[10px] font-black uppercase tracking-widest text-white">L99 Radar príležitostí</h4>
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <div className="h-3 w-3 animate-pulse rounded-full bg-red-500" />

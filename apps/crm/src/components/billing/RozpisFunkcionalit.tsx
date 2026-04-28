@@ -82,7 +82,7 @@ const SECTIONS: Section[] = [
     ],
   },
   {
-    title: "L99 Intelligence",
+    title: "L99 Radar príležitostí",
     rows: [
       {
         label: "Kataster radar",

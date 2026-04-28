@@ -17,6 +17,7 @@ export default function RevolisAIClient({
   demandData,
   supplyData,
   detectedGap,
+  accountTier,
 }: {
   hotspots: MarketHotspot[];
   feedSeed: AiActivityFeedItem[];
@@ -37,6 +38,7 @@ export default function RevolisAIClient({
     }>;
   };
   detectedGap: string | null;
+  accountTier: string | null;
 }) {
   const [scanning, setScanning] = useState(false);
   const [scanMessage, setScanMessage] = useState<string | null>(null);
@@ -67,6 +69,12 @@ export default function RevolisAIClient({
       setScanning(false);
     }
   }, []);
+
+  const canSeeMarketVisionDetails =
+    accountTier === "market_vision" ||
+    accountTier === "enterprise" ||
+    accountTier === "protocol_authority" ||
+    accountTier === "command";
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#030712] text-slate-100">
@@ -132,7 +140,7 @@ export default function RevolisAIClient({
 
         <div className="grid gap-6 lg:grid-cols-5">
           <div className="relative lg:col-span-3">
-            <MarketHeatmap hotspots={hotspots} />
+            <MarketHeatmap hotspots={hotspots} canSeeDetails={canSeeMarketVisionDetails} />
           </div>
           <div className="lg:col-span-2">
             <AIActivityFeed items={feedSeed} />

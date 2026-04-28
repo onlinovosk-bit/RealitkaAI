@@ -19,7 +19,7 @@ const L99ScanDashboardFinalV5 = () => {
 
         <header className="mb-16">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 mb-6 text-blue-400 font-bold italic text-[10px] uppercase tracking-widest">
-            Revolis L99 Intelligence Active
+            Revolis L99 Radar príležitostí aktívny
           </div>
           <h1 className="text-4xl md:text-6xl font-black text-white mb-4 tracking-tight uppercase italic">
             REVOLIS <span className="text-blue-500">EKOSYSTÉM</span>

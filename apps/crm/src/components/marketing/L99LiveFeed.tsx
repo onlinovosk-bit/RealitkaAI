@@ -22,7 +22,7 @@ export default function L99LiveFeed() {
   const totalWidth = FEED_ITEMS.length * itemWidth;
 
   useEffect(() => {
-    const speed = 0.08; // px/ms → ~4.8px/s (levitovanie namiesto rýchleho tickeru)
+    const speed = 0.01; // px/ms → ~0.6px/s (8x pomalšie pre pokojný premium efekt)
     function tick(ts: number) {
       if (startRef.current === null) startRef.current = ts;
       const elapsed = ts - startRef.current;

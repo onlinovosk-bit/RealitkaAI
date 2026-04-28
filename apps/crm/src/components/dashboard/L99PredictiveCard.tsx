@@ -14,7 +14,7 @@ export function L99PredictiveCard({ result }: { result: L99Result }) {
             🔒
           </div>
           <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">
-            L99 PREDICTIVE ENGINE
+            L99 RADAR PRÍLEŽITOSTÍ
           </h3>
           <p className="mt-1 text-[10px] text-slate-500">
             Dostupné iba v programe Enterprise
