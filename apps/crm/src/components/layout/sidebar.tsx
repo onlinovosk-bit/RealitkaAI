@@ -28,18 +28,18 @@ interface NavGroup {
 const NAV_GROUPS: NavGroup[] = [
   {
     id: 'money-today',
-    label: 'Kde sú moje peniaze dnes',
+    label: 'Denné tržby a rozhodnutia',
     items: [
       {
         label: 'Kde sú peniaze dnes',
-        sub:   'Revenue pulse · Hot dealy · Alerty',
+        sub:   'Revenue pulse · Hot dealy · Tímové alerty',
         href:  '/dashboard',
         icon:  '💰',
         live:  true,
       },
       {
         label: 'Koľko zarobíme tento mesiac',
-        sub:   'Revenue forecast · Pipeline · AI predikcia',
+        sub:   'Revenue forecast · Pipeline hodnota · AI predikcia obratu',
         href:  '/dashboard/forecast',
         icon:  '📈',
         minPlan: 'active',
@@ -48,17 +48,17 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     id: 'execution',
-    label: 'Akvizícia a výkon',
+    label: 'Výkon obchodu',
     items: [
       {
         label: 'Môj tím výkonnosť',
-        sub:   'Agent scoring · Aktivity · Ghost Resurrection',
+        sub:   'Agent scoring · Aktivity · Sloty · Ghost Resurrection',
         href:  '/dashboard/team',
         icon:  '👥',
         minPlan: 'market',
       },
       {
-        label: 'Predplatné a licencie',
+        label: 'Predplatné & licencie',
         sub:   'Plán · Fakturácia · Sloty maklérov',
         href:  '/dashboard/billing',
         icon:  '📋',
@@ -68,30 +68,30 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     id: 'system',
-    label: 'Nastavenia a integrácie',
+    label: 'Trhová prevaha',
     items: [
       {
-        label: 'Nastavenia a integrácie',
-        sub:   'Portály · GDPR · API · Notifikácie',
-        href:  '/dashboard/settings',
-        icon:  '⚙️',
-      },
-      {
-        label: 'L99 Operačný hub',
-        sub:   'Signály trhu · Prioritné akcie',
+        label: 'Kde konkurencia spí',
+        sub:   'Competition heatmap · Kataster radar · Register úpadcov',
         href:  '/l99-hub',
         icon:  '🧭',
         minPlan: 'protocol',
+      },
+      {
+        label: 'Nastavenia & integrácie',
+        sub:   'Portály · GDPR · API · Notifikácie',
+        href:  '/dashboard/settings',
+        icon:  '⚙️',
       },
     ],
   },
   {
     id: 'csm',
-    label: 'CSM a retencia',
+    label: 'Retencia a follow-up',
     items: [
       {
-        label: 'At-risk klienti',
-        sub:   'Onboarding riziká · D1/D3/D7',
+        label: 'Čo mám urobiť dnes',
+        sub:   'At-risk klienti · Onboarding riziká · D1/D3/D7',
         href:  '/system/csm-onboarding',
         icon:  '🛟',
         minPlan: 'protocol',
