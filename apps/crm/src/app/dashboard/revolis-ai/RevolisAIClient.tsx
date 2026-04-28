@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { Loader2, Zap } from "lucide-react";
 
 import DemandHeatmap from "@/components/analytics/DemandHeatmap";
+import { PredatorModules } from "@/components/dashboard/PredatorModules";
 import { AIActivityFeed } from "@/components/revolis/AIActivityFeed";
 import { BriLivePulse } from "@/components/revolis/BriLivePulse";
 import { MarketHeatmap } from "@/components/revolis/MarketHeatmap";
@@ -150,6 +151,10 @@ export default function RevolisAIClient({
         <div className="mt-8">
           <DemandHeatmap demandData={demandData} supplyData={supplyData} detectedGap={detectedGap} />
         </div>
+
+        <section className="mt-8">
+          <PredatorModules />
+        </section>
       </div>
     </div>
   );

@@ -24,76 +24,78 @@ interface NavGroup {
   items: NavItem[]
 }
 
-/* ── CRO navigation hierarchy (4 blocks) ─────────────────────── */
+/* ── CRO navigation hierarchy (psychology-first) ─────────────── */
 const NAV_GROUPS: NavGroup[] = [
   {
-    id: 'money-today',
-    label: 'Denné tržby a rozhodnutia',
+    id: 'arena-prilezitosti',
+    label: 'ARÉNA PRÍLEŽITOSTÍ',
     items: [
       {
-        label: 'Kde sú peniaze dnes',
-        sub:   'Revenue pulse · Hot dealy · Tímové alerty',
-        href:  '/dashboard',
-        icon:  '💰',
-        live:  true,
+        label: 'Predčasný signál obchodov',
+        sub:   'Prístup k ponukám skôr, než sa stanú verejnými.',
+        href:  '/l99-hub?tab=radar',
+        icon:  '📡',
+        minPlan: 'protocol',
+        live: true,
       },
       {
-        label: 'Koľko zarobíme tento mesiac',
-        sub:   'Revenue forecast · Pipeline hodnota · AI predikcia obratu',
-        href:  '/dashboard/forecast',
-        icon:  '📈',
-        minPlan: 'active',
-      },
-    ],
-  },
-  {
-    id: 'execution',
-    label: 'Výkon obchodu',
-    items: [
-      {
-        label: 'Môj tím výkonnosť',
-        sub:   'Agent scoring · Aktivity · Sloty · Ghost Resurrection',
-        href:  '/dashboard/team',
-        icon:  '👥',
+        label: 'Extrakcia mŕtveho kapitálu',
+        sub:   'Premena neaktívnych leadov na živé provízie.',
+        href:  '/l99-hub?tab=ghost',
+        icon:  '♻️',
         minPlan: 'market',
       },
       {
-        label: 'Predplatné & licencie',
-        sub:   'Plán · Fakturácia · Sloty maklérov',
-        href:  '/dashboard/billing',
-        icon:  '📋',
-        tag:   'v2',
+        label: 'Kataster Röntgen',
+        sub:   'Hĺbková analýza majetkových pohybov na trhu.',
+        href:  '/akvizieia/radar-okolia',
+        icon:  '🧾',
+        minPlan: 'market',
       },
     ],
   },
   {
-    id: 'system',
-    label: 'Trhová prevaha',
+    id: 'trhova-dominancia',
+    label: 'TRHOVÁ DOMINANCIA',
     items: [
       {
-        label: 'Kde konkurencia spí',
-        sub:   'Competition heatmap · Kataster radar · Register úpadcov',
+        label: 'Algoritmus priority (Kill-Chain)',
+        sub:   'AI poradovník hovorov s najvyššou pravdepodobnosťou úspechu.',
+        href:  '/revolis-ai',
+        icon:  '🎯',
+        minPlan: 'market',
+      },
+      {
+        label: 'Detektor slabosti konkurencie',
+        sub:   'Identifikácia miest, kde vaši rivali strácajú dych.',
         href:  '/l99-hub',
-        icon:  '🧭',
+        icon:  '🕳️',
+        minPlan: 'protocol',
+      },
+    ],
+  },
+  {
+    id: 'autorita-protokol',
+    label: 'AUTORITA A PROTOKOL',
+    items: [
+      {
+        label: 'Digitálny certifikát dôvery',
+        sub:   'Vaša vizuálna zbraň pri nábore exkluzivít.',
+        href:  '/team',
+        icon:  '🏅',
+      },
+      {
+        label: 'Protokol úniku peňazí',
+        sub:   'Ochrana firemného know-how a kontrola efektivity tímu.',
+        href:  '/dashboard/reputation/integrity',
+        icon:  '🛡️',
         minPlan: 'protocol',
       },
       {
-        label: 'Nastavenia & integrácie',
-        sub:   'Portály · GDPR · API · Notifikácie',
-        href:  '/dashboard/settings',
-        icon:  '⚙️',
-      },
-    ],
-  },
-  {
-    id: 'csm',
-    label: 'Retencia a follow-up',
-    items: [
-      {
-        label: 'Čo mám urobiť dnes',
-        sub:   'At-risk klienti · Onboarding riziká · D1/D3/D7',
-        href:  '/system/csm-onboarding',
-        icon:  '🛟',
+        label: 'Neuro-lingvistický tréning',
+        sub:   'Okamžitý upgrade obchodných zručností cez AI mentorstvo.',
+        href:  '/revolis-ai',
+        icon:  '🧠',
         minPlan: 'protocol',
       },
     ],
@@ -135,10 +137,9 @@ export function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname()
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
-    'money-today': true,
-    execution: true,
-    system: false,
-    csm: false,
+    'arena-prilezitosti': true,
+    'trhova-dominancia': true,
+    'autorita-protokol': true,
   })
   const resolvedPlan: Plan = currentPlan
     ?? (accountTier === 'protocol_authority'
@@ -403,6 +404,28 @@ export function Sidebar({
           )
         })}
       </nav>
+
+      <div style={{ padding: '8px 12px 12px' }}>
+        <Link
+          href="/billing"
+          style={{
+            display: 'block',
+            textDecoration: 'none',
+            padding: '10px 12px',
+            borderRadius: 9,
+            textAlign: 'center',
+            fontSize: 10,
+            fontWeight: 800,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            color: '#111827',
+            background: 'linear-gradient(135deg, #F59E0B, #FBBF24)',
+            boxShadow: '0 8px 18px rgba(245,158,11,.25)',
+          }}
+        >
+          ZASTAVIŤ VYTRÁCANIE MOJICH PROVÍZIÍ
+        </Link>
+      </div>
 
       {/* ── User ── */}
       <div style={{
