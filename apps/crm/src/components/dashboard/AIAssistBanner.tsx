@@ -1,69 +1,43 @@
 "use client";
 import { memo } from "react";
+import { FEATURES as FEATURE_MATRIX } from "@/components/billing/FeatureComparisonTable";
 
-const PLAN_FEATURES = {
-  starter: [
-    "🤖 AI Asistent – odpovede do 2 minút (pracovné hodiny)",
-    "📊 Buyer Readiness Index – AI skóre každej príležitosti",
-    "📋 Denný AI briefing o 8:00 – 5 priorít každé ráno",
-    "🔔 Hot Alert – notifikácia pri skóre 75+",
-    "📈 Týždenný konverzný report",
-    "✅ Revolis Academy – 5 lekcií zadarmo",
-  ],
-  pro: [
-    "🤖 AI Asistent realitného makléra 24/7",
-    "🧠 Predictive Deal Scoring – predikcia uzavretia",
-    "📞 AI hovorová analýza – prepis + súhrn + next steps",
-    "🎯 Intent Detection – AI rozozná pripravenosť kúpy",
-    "⚡ Automatické opätovné kontakty – 7-dňové sekvencie",
-    "🗺 Territory Intelligence – heat mapa aktivity",
-    "📊 Revenue Forecasting – predikcia na 3 mesiace",
-    "🔗 Integrácie: Nehnuteľnosti.sk, Reality.sk, TopReality.sk",
-  ],
-  enterprise: [
-    "👑 Prehľad majiteľa – metriky celej kancelárie",
-    "🧠 Team AI Brain – zdieľaná AI pamäť tímu",
-    "⚡ Competitor Alert – sledovanie konkurencie",
-    "🤖 Vlastná AI Persona – meno a štýl komunikácie",
-    "🔗 API Prístup – integrácia s vlastnými systémami",
-    "📄 White-label – vlastné logo na materiáloch",
-    "☎ Dedikovaný Account Manager",
-    "⚡ SLA garancia 99.9% uptime",
-  ],
-  free: [
-    "🤖 AI Asistent – základný režim",
-    "📊 Základné AI hodnotenie príležitostí",
-    "📋 Obmedzený prehľad príležitostí",
-  ],
-} as const;
+type BannerPlan = "smartStart" | "activeForce" | "marketVision" | "protocolAuthority";
 
-const PLAN_LABELS: Record<string, string> = {
-  starter: "Štarter",
-  pro: "Pro",
-  enterprise: "Enterprise",
-  free: "Free",
+const PLAN_FEATURES: Record<BannerPlan, string[]> = {
+  smartStart: FEATURE_MATRIX.filter((f) => f.smartStart === true).map((f) => f.feature),
+  activeForce: FEATURE_MATRIX.filter((f) => f.activeForce === true).map((f) => f.feature),
+  marketVision: FEATURE_MATRIX.filter((f) => f.marketVision === true).map((f) => f.feature),
+  protocolAuthority: FEATURE_MATRIX.filter((f) => f.protocolAuthority === true).map((f) => f.feature),
 };
 
-const PLAN_COLORS: Record<string, { bg: string; border: string; color: string }> = {
-  starter: {
+const PLAN_LABELS: Record<BannerPlan, string> = {
+  smartStart: "Smart Start",
+  activeForce: "Active Force",
+  marketVision: "Market Vision",
+  protocolAuthority: "Protocol Authority",
+};
+
+const PLAN_COLORS: Record<BannerPlan, { bg: string; border: string; color: string }> = {
+  smartStart: {
     bg: "rgba(34,211,238,0.08)",
     border: "rgba(34,211,238,0.20)",
     color: "#22D3EE",
   },
-  pro: {
+  activeForce: {
     bg: "rgba(99,102,241,0.12)",
     border: "rgba(99,102,241,0.30)",
     color: "#818CF8",
   },
-  enterprise: {
+  marketVision: {
+    bg: "rgba(16,185,129,0.10)",
+    border: "rgba(16,185,129,0.22)",
+    color: "#34D399",
+  },
+  protocolAuthority: {
     bg: "rgba(245,158,11,0.10)",
     border: "rgba(245,158,11,0.25)",
     color: "#FCD34D",
-  },
-  free: {
-    bg: "rgba(100,116,139,0.10)",
-    border: "rgba(100,116,139,0.20)",
-    color: "#94A3B8",
   },
 };
 
@@ -71,11 +45,25 @@ interface Props {
   plan?: string;
 }
 
+function resolveBannerPlan(plan: string | undefined): BannerPlan {
+  const normalized = (plan ?? "").toLowerCase();
+  if (normalized === "protocol_authority" || normalized === "protocol" || normalized === "enterprise") {
+    return "protocolAuthority";
+  }
+  if (normalized === "market_vision" || normalized === "market") {
+    return "marketVision";
+  }
+  if (normalized === "active_force" || normalized === "active" || normalized === "pro") {
+    return "activeForce";
+  }
+  return "smartStart";
+}
+
 export const AIAssistBanner = memo(function AIAssistBanner({ plan = "free" }: Props) {
-  const key = plan.toLowerCase() as keyof typeof PLAN_FEATURES;
-  const features = PLAN_FEATURES[key] ?? PLAN_FEATURES.free;
-  const label = PLAN_LABELS[key] ?? "Free";
-  const colors = PLAN_COLORS[key] ?? PLAN_COLORS.free;
+  const resolvedPlan = resolveBannerPlan(plan);
+  const features = PLAN_FEATURES[resolvedPlan];
+  const label = PLAN_LABELS[resolvedPlan];
+  const colors = PLAN_COLORS[resolvedPlan];
 
   return (
     <article className="rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-slate-900 via-slate-900 to-cyan-950/60 p-5 shadow-[0_0_26px_rgba(6,182,212,0.18)]">
@@ -100,13 +88,10 @@ export const AIAssistBanner = memo(function AIAssistBanner({ plan = "free" }: Pr
 
       <ul className="space-y-2">
         {features.map((feature) => {
-          const firstSpace = feature.indexOf(" ");
-          const emoji = firstSpace >= 0 ? feature.slice(0, firstSpace) : feature;
-          const text = firstSpace >= 0 ? feature.slice(firstSpace + 1) : "";
           return (
             <li key={feature} className="flex items-start gap-2.5 text-xs">
-              <span className="shrink-0 text-sm">{emoji}</span>
-              <span style={{ color: "#94A3B8" }}>{text}</span>
+              <span className="shrink-0 text-sm" style={{ color: colors.color }}>✓</span>
+              <span style={{ color: "#94A3B8" }}>{feature}</span>
             </li>
           );
         })}
