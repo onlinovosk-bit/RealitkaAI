@@ -22,7 +22,7 @@ export default async function DashboardSegmentLayout({
   return (
     <div className="flex min-h-screen" style={{ background: "#050914" }}>
       <div className="hidden md:block">
-        <Sidebar role={role} accountTier={accountTier} />
+        <Sidebar userName={userName} role={role} accountTier={accountTier} />
       </div>
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar userName={userName} role={role} />

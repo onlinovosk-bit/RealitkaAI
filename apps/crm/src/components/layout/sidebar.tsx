@@ -11,59 +11,114 @@ interface NavItem {
   sub:      string
   href:     string
   icon:     string
+  minPlan?: Plan
   badge?:   string | number
   badgeStyle?: 'hot' | 'blue' | 'gold'
   live?:    boolean
   tag?:     string
 }
 
-/* ── Nav structure — text from screenshots ───────────────────── */
-const NAV_ITEMS: NavItem[] = [
+interface NavGroup {
+  id: string
+  label: string
+  items: NavItem[]
+}
+
+/* ── CRO navigation hierarchy (4 blocks) ─────────────────────── */
+const NAV_GROUPS: NavGroup[] = [
   {
-    label: 'Kde sú peniaze dnes',
-    sub:   'Revenue pulse · Hot dealy · Alerty',
-    href:  '/dashboard',
-    icon:  '💰',
-    live:  true,
+    id: 'money-today',
+    label: 'Kde sú moje peniaze dnes',
+    items: [
+      {
+        label: 'Kde sú peniaze dnes',
+        sub:   'Revenue pulse · Hot dealy · Alerty',
+        href:  '/dashboard',
+        icon:  '💰',
+        live:  true,
+      },
+      {
+        label: 'Koľko zarobíme tento mesiac',
+        sub:   'Revenue forecast · Pipeline · AI predikcia',
+        href:  '/dashboard/forecast',
+        icon:  '📈',
+        minPlan: 'active',
+      },
+    ],
   },
   {
-    label: 'Koľko zarobíme tento mesiac',
-    sub:   'Revenue forecast · Pipeline · AI predikcia',
-    href:  '/dashboard/forecast',
-    icon:  '📈',
+    id: 'execution',
+    label: 'Akvizícia a výkon',
+    items: [
+      {
+        label: 'Môj tím výkonnosť',
+        sub:   'Agent scoring · Aktivity · Ghost Resurrection',
+        href:  '/dashboard/team',
+        icon:  '👥',
+        minPlan: 'market',
+      },
+      {
+        label: 'Predplatné a licencie',
+        sub:   'Plán · Fakturácia · Sloty maklérov',
+        href:  '/dashboard/billing',
+        icon:  '📋',
+        tag:   'v2',
+      },
+    ],
   },
   {
-    label: 'Môj tím výkonnosť',
-    sub:   'Agent scoring · Aktivity · Ghost Resurrection',
-    href:  '/dashboard/team',
-    icon:  '👥',
-  },
-  {
-    label:   'Predplatné a licencie',
-    sub:     'Plán · Fakturácia · Sloty maklérov',
-    href:    '/dashboard/billing',
-    icon:    '📋',
-    tag:     'v2',
-  },
-  {
+    id: 'system',
     label: 'Nastavenia a integrácie',
-    sub:   'Portály · GDPR · API · Notifikácie',
-    href:  '/dashboard/settings',
-    icon:  '⚙️',
+    items: [
+      {
+        label: 'Nastavenia a integrácie',
+        sub:   'Portály · GDPR · API · Notifikácie',
+        href:  '/dashboard/settings',
+        icon:  '⚙️',
+      },
+      {
+        label: 'L99 Operačný hub',
+        sub:   'Signály trhu · Prioritné akcie',
+        href:  '/l99-hub',
+        icon:  '🧭',
+        minPlan: 'protocol',
+      },
+    ],
+  },
+  {
+    id: 'csm',
+    label: 'CSM a retencia',
+    items: [
+      {
+        label: 'At-risk klienti',
+        sub:   'Onboarding riziká · D1/D3/D7',
+        href:  '/system/csm-onboarding',
+        icon:  '🛟',
+        minPlan: 'protocol',
+      },
+    ],
   },
 ]
 
 const PLANS: { id: Plan; label: string; price: string }[] = [
-  { id: 'starter',  label: 'Smart Start',        price: '49 €' },
+  { id: 'starter',  label: 'Smart Starter',      price: '49 €' },
   { id: 'active',   label: 'Active Force',        price: '99 €' },
   { id: 'market',   label: 'Market Vision',       price: '199 €' },
   { id: 'protocol', label: 'Protocol Authority',  price: '449 €' },
 ]
 
+const PLAN_LEVEL: Record<Plan, number> = {
+  starter: 0,
+  active: 1,
+  market: 2,
+  protocol: 3,
+}
+
 /* ── Props ──────────────────────────────────────────────────── */
 type UserRole = 'owner' | 'agent' | 'senior' | string
 
 interface SidebarProps {
+  userName?: string
   role?: UserRole
   accountTier?: string | null
   currentPlan?: Plan
@@ -72,12 +127,19 @@ interface SidebarProps {
 
 /* ── Component ──────────────────────────────────────────────── */
 export function Sidebar({
+  userName,
   role,
   accountTier,
   currentPlan,
   onPlanChange,
 }: SidebarProps) {
   const pathname = usePathname()
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
+    'money-today': true,
+    execution: true,
+    system: false,
+    csm: false,
+  })
   const resolvedPlan: Plan = currentPlan
     ?? (accountTier === 'protocol_authority'
       ? 'protocol'
@@ -86,6 +148,18 @@ export function Sidebar({
         : accountTier === 'active_force'
           ? 'active'
           : 'starter')
+  const roleLabel =
+    role === 'owner' ? 'Majiteľ kancelárie' :
+    role === 'agent' ? 'Maklér' :
+    role === 'senior' ? 'Senior maklér' :
+    (role ? String(role) : 'Používateľ')
+  const displayName = userName?.trim() || 'Prihlásený používateľ'
+  const initials = displayName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(part => part[0]?.toUpperCase() ?? '')
+    .join('') || 'RV'
 
   return (
     <aside style={{
@@ -208,87 +282,124 @@ export function Sidebar({
 
       {/* ── Navigation ── */}
       <nav style={{ flex: 1, overflowY: 'auto', padding: '10px 0' }}>
-        {NAV_ITEMS.map(item => {
-          const active = !!pathname && (pathname === item.href ||
-            (item.href !== '/dashboard' && pathname.startsWith(item.href)))
-
+        {NAV_GROUPS.map(group => {
+          const groupOpen = !!openGroups[group.id]
           return (
-            <Link key={item.href} href={item.href} style={{ textDecoration: 'none' }}>
-              <div style={{
-                display:    'flex',
-                alignItems: 'flex-start',
-                gap:        10,
-                padding:    '9px 14px',
-                borderLeft: `2px solid ${active ? 'var(--sb-active-line)' : 'transparent'}`,
-                background: active ? 'var(--sb-active)' : 'transparent',
-                transition: 'all var(--t-fast)',
-                cursor:     'pointer',
-              }}
-              onMouseEnter={e => {
-                if (!active) {
-                  (e.currentTarget as HTMLElement).style.background = 'var(--sb-hover)'
-                  ;(e.currentTarget as HTMLElement).style.borderLeftColor = 'rgba(148,197,253,.4)'
-                }
-              }}
-              onMouseLeave={e => {
-                if (!active) {
-                  (e.currentTarget as HTMLElement).style.background = 'transparent'
-                  ;(e.currentTarget as HTMLElement).style.borderLeftColor = 'transparent'
-                }
-              }}
+            <div key={group.id} style={{ marginBottom: 8 }}>
+              <button
+                type="button"
+                onClick={() => setOpenGroups(prev => ({ ...prev, [group.id]: !prev[group.id] }))}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '8px 14px',
+                  border: 'none',
+                  background: 'transparent',
+                  color: 'var(--sb-muted)',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  cursor: 'pointer',
+                }}
               >
-                {/* Icon */}
-                <div style={{
-                  width:         26, height: 26,
-                  borderRadius:  6,
-                  display:       'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize:      12,
-                  background:    active ? 'rgba(37,99,235,.25)' : 'rgba(255,255,255,.06)',
-                  flexShrink:    0,
-                  marginTop:     1,
-                }}>
-                  {item.icon}
-                </div>
+                <span>{group.label}</span>
+                <span style={{ color: 'rgba(255,255,255,.45)' }}>{groupOpen ? '▾' : '▸'}</span>
+              </button>
 
-                {/* Text */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{
-                    fontSize:   12, fontWeight: 600,
-                    color:      active ? '#fff' : 'var(--sb-text)',
-                    display:    'flex', alignItems: 'center', gap: 5,
-                    flexWrap:   'wrap',
-                    lineHeight: 1.3,
-                  }}>
-                    {item.label}
-                    {item.live && (
-                      <span className="tag-live" style={{
-                        fontSize:     8, padding: '1px 5px',
-                        borderRadius: 3,
-                        background:   'rgba(16,185,129,.22)',
-                        color:        '#6EE7B7', fontWeight: 700,
-                        letterSpacing: '0.06em',
-                      }}>live</span>
-                    )}
-                    {item.tag && (
-                      <span style={{
-                        fontSize:     8, padding: '1px 5px',
-                        borderRadius: 3,
-                        background:   'rgba(37,99,235,.28)',
-                        color:        '#93C5FD', fontWeight: 700,
-                      }}>{item.tag}</span>
-                    )}
-                  </div>
-                  <div style={{
-                    fontSize:     10, color: 'var(--sb-muted)',
-                    marginTop:    2, lineHeight: 1.4,
-                    whiteSpace:   'nowrap', overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}>
-                    {item.sub}
-                  </div>
-                </div>
-              </div>
-            </Link>
+              {groupOpen && group.items.map(item => {
+                const minPlan = item.minPlan ?? 'starter'
+                const isLocked = PLAN_LEVEL[resolvedPlan] < PLAN_LEVEL[minPlan]
+                const active = !!pathname && (pathname === item.href ||
+                  (item.href !== '/dashboard' && pathname.startsWith(item.href)))
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={isLocked ? '#' : item.href}
+                    style={{ textDecoration: 'none', pointerEvents: isLocked ? 'none' : 'auto' }}
+                  >
+                    <div style={{
+                      display:    'flex',
+                      alignItems: 'flex-start',
+                      gap:        10,
+                      padding:    '9px 14px',
+                      marginInline: 6,
+                      borderRadius: 8,
+                      borderLeft: `2px solid ${active ? 'var(--sb-active-line)' : 'transparent'}`,
+                      background: active ? 'var(--sb-active)' : 'transparent',
+                      transition: 'all var(--t-fast)',
+                      cursor:     isLocked ? 'not-allowed' : 'pointer',
+                      opacity:    isLocked ? 0.55 : 1,
+                    }}
+                    >
+                      <div style={{
+                        width:         26, height: 26,
+                        borderRadius:  6,
+                        display:       'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize:      12,
+                        background:    active ? 'rgba(37,99,235,.25)' : 'rgba(255,255,255,.06)',
+                        flexShrink:    0,
+                        marginTop:     1,
+                      }}>
+                        {item.icon}
+                      </div>
+
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          fontSize:   12, fontWeight: 600,
+                          color:      active ? '#fff' : 'var(--sb-text)',
+                          display:    'flex', alignItems: 'center', gap: 5,
+                          flexWrap:   'wrap',
+                          lineHeight: 1.3,
+                        }}>
+                          {item.label}
+                          {item.live && (
+                            <span className="tag-live" style={{
+                              fontSize:     8, padding: '1px 5px',
+                              borderRadius: 3,
+                              background:   'rgba(16,185,129,.22)',
+                              color:        '#6EE7B7', fontWeight: 700,
+                              letterSpacing: '0.06em',
+                            }}>live</span>
+                          )}
+                          {item.tag && (
+                            <span style={{
+                              fontSize:     8, padding: '1px 5px',
+                              borderRadius: 3,
+                              background:   'rgba(37,99,235,.28)',
+                              color:        '#93C5FD', fontWeight: 700,
+                            }}>{item.tag}</span>
+                          )}
+                          {isLocked && (
+                            <span style={{
+                              fontSize: 8,
+                              padding: '1px 5px',
+                              borderRadius: 3,
+                              background: 'rgba(245,197,24,.16)',
+                              color: 'var(--gold-400)',
+                              fontWeight: 700,
+                            }}>
+                              Od {PLANS.find(p => p.id === minPlan)?.label}
+                            </span>
+                          )}
+                        </div>
+                        <div style={{
+                          fontSize:     10, color: 'var(--sb-muted)',
+                          marginTop:    2, lineHeight: 1.4,
+                          whiteSpace:   'nowrap', overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}>
+                          {item.sub}
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
           )
         })}
       </nav>
@@ -306,15 +417,15 @@ export function Sidebar({
           display:      'flex', alignItems: 'center', justifyContent: 'center',
           fontSize:     11, fontWeight: 800, color: '#BFDBFE',
           flexShrink:   0,
-        }}>RS</div>
+        }}>{initials}</div>
         <div style={{ minWidth: 0 }}>
           <div style={{
             fontSize: 12, fontWeight: 600,
             color: 'rgba(255,255,255,.85)',
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-          }}>Reality Smolko</div>
+          }}>{displayName}</div>
           <div style={{ fontSize: 10, color: 'var(--sb-muted)' }}>
-            {PLANS.find(p => p.id === resolvedPlan)?.label} · {role ?? 'Owner'}
+            {PLANS.find(p => p.id === resolvedPlan)?.label} · {roleLabel}
           </div>
         </div>
       </div>

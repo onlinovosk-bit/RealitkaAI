@@ -48,7 +48,7 @@ export default function DashboardClientLayout({ userName, role, accountTier, chi
       <div className="relative flex min-h-0 flex-1">
         <SpaceBackground />
         <div className="hidden md:block" style={{ position: "relative", zIndex: 1 }}>
-          <Sidebar role={role} accountTier={accountTier} />
+          <Sidebar userName={userName} role={role} accountTier={accountTier} />
         </div>
         <div className="flex min-w-0 flex-1 flex-col" style={{ position: "relative", zIndex: 1 }}>
           <SpaceHeader userName={userName} />
