@@ -116,17 +116,17 @@ export default function EnterpriseSalesIntelligencePanel({ enabled }: Props) {
           <p className="mb-1 text-sm font-black text-white">★ Dostupné v Protocol Authority</p>
           <div className="mb-4 mt-3 grid grid-cols-2 gap-1.5 text-left">
             {[
-              "BRI skóre pripravenosti kúpy",
-              "Hot Alert (BRI ≥ 75) — okamžite",
-              "Kataster Pulse — zmeny LV",
-              "Competition Heatmap",
-              "Neural Pulse Engine (real-time)",
-              "Ghost Resurrection — pokročilý",
-              "💎 Shadow Inventory (off-market)",
-              "🛡️ Agent Integrity Monitor",
-              "1 owner + 4 Active Force makléri",
-              "Manažérske reporty",
-              "Dedikovaný Protocol manažér",
+              "Kto je pripravený kúpiť hneď (skóre 0-100)",
+              "Okamžité upozornenie na horúceho klienta",
+              "Kataster naživo: hneď vidíš zmeny vlastníkov",
+              "Mapa, kde konkurencia nestíha (tam sú peniaze dnes)",
+              "Živý AI radar: kde sa trh hýbe práve teraz",
+              "Návrat starých klientov, čo sa dlho neozvali",
+              "Skryté ponuky mimo bežných portálov",
+              "Ochrana tvojich dát a tímu",
+              "1 majiteľ + 4 makléri v cene",
+              "Jednoduché reporty: kde sme zarobili a kde unikajú peniaze",
+              "Osobný Protocol manažér pre rýchlu pomoc",
               "SLA 99.99% uptime",
             ].map((f) => (
               <div key={f} className="flex items-start gap-1.5 text-[11px] text-slate-400">
