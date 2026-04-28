@@ -238,7 +238,7 @@ export function AiOdhadca() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// MODULE 2: Neighborhood Watch (live backend)
+// MODULE 2: Radar okolia (live backend)
 // ═══════════════════════════════════════════════════════════════════════════
 export function NeighborhoodWatch() {
   const [area, setArea]           = useState("presov");
@@ -274,11 +274,11 @@ export function NeighborhoodWatch() {
   };
 
   return (
-    <Card accent="rgba(239,68,68,0.25)" tag="Live Monitoring" tagColor="#FCA5A5">
+    <Card accent="rgba(239,68,68,0.25)" tag="Živé sledovanie" tagColor="#FCA5A5">
       <Eye className="mb-5" size={32} style={{ color: "#EF4444" }} />
-      <h2 className="text-xl font-bold text-white mb-1.5">2. Neighborhood Watch</h2>
+      <h2 className="text-xl font-bold text-white mb-1.5">2. Radar okolia</h2>
       <p className="text-xs mb-4" style={{ color: "#64748B" }}>
-        Pohyby cien susedov v reálnom čase. Udržuje klientov vo vašom ekosystéme mesiace pred predajom.
+        Kde sa hýbu vaše peniaze dnes: ceny, zmeny vlastníctva a urgentné udalosti vo vašom rajóne.
       </p>
 
       <select value={area} onChange={e => { setArea(e.target.value); setSubscribed(false); }}
@@ -351,7 +351,7 @@ export function NeighborhoodWatch() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// MODULE 3: AI Ghostwriter (real OpenAI + Resend)
+// MODULE 3: AI písač listov (real OpenAI + Resend)
 // ═══════════════════════════════════════════════════════════════════════════
 export function AIGhostwriter() {
   const [address, setAddress]     = useState("");
@@ -403,7 +403,7 @@ export function AIGhostwriter() {
   return (
     <Card accent="rgba(239,68,68,0.25)" tag="Legal Watch" tagColor="#FCA5A5">
       <Mail className="mb-5" size={32} style={{ color: "#EF4444" }} />
-      <h2 className="text-xl font-bold text-white mb-1.5">4. AI Ghostwriter</h2>
+      <h2 className="text-xl font-bold text-white mb-1.5">4. AI písač listov</h2>
       <p className="text-xs mb-4" style={{ color: "#64748B" }}>
         Katastrálny radar deteguje dedičstvá a plomby. AI okamžite generuje expertný list pre majiteľa.
       </p>
@@ -840,7 +840,7 @@ export default function AcquisitionHub() {
 
         <div className="text-center mb-12">
           <p className="text-xs font-bold uppercase tracking-[0.3em] mb-3" style={{ color: "#3B82F6" }}>
-            Revolis.AI · Live Demo
+            Revolis.AI · Živé DEMO
           </p>
           <h1 className="text-4xl md:text-5xl font-black mb-3"
               style={{ background: "linear-gradient(135deg,#60A5FA,#22D3EE)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
