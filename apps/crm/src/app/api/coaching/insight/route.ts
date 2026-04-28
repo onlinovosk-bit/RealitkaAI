@@ -16,7 +16,8 @@ type CoachingPayload = {
 
 function buildFallbackInsight(stage: string, consistency: number) {
   const pct = Math.round(consistency * 100);
-  return `Fakty: Najväčší prepad máš vo fáze ${stage} a follow-up konzistencia je ${pct}%. Technika: po obhliadke pošli do 24h sumarizačnú správu + konkrétny ďalší krok. Motivácia: pri tejto disciplíne vieš zrýchliť uzavretie a zvýšiť počet rezervácií.`;
+  const stageLabel = stage === "after_first_viewing" ? "po prvej obhliadke" : stage;
+  return `Fakty: Najviac obchodov strácaš ${stageLabel} a pravidelný follow-up máš na ${pct}%. Technika: po obhliadke pošli klientovi do 24 hodín krátku správu: čo ste videli a aký je ďalší krok. Motivácia: keď to budeš robiť vždy, obchody sa uzavrú rýchlejšie a získaš viac rezervácií.`;
 }
 
 export async function GET() {
