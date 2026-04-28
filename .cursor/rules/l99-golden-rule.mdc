@@ -1,0 +1,31 @@
+---
+description: L99 deployment and PR safety gate
+alwaysApply: true
+---
+
+# L99 Zlaté pravidlo
+
+Platí vždy pre zmeny v tomto repozitári:
+
+- 1 PR = 1 logická zmena.
+- Každý PR musí mať vlastný Vercel Preview Deploy.
+- Merge do `main` je povolený len po zelenom CI a zelených smoke testoch.
+
+## Nikdy
+
+- Nespájaj viac features do jedného commit/PR bez samostatného deploy overenia.
+- Nemerguj, ak CI nie je zelené.
+- Nemeň manuálne Vercel Build/Install/Output nastavenia bez dokumentácie v PR.
+
+## Vždy
+
+- Pri build/regresii spusti `git bisect run npm run build`.
+- Po každej zmene deploy nastavení skontroluj:
+  `Vercel -> Settings -> Build and Deployment -> Production Overrides`.
+- Pred merge vždy spusti `tests/smoke.spec.ts` (alebo ekvivalentný smoke run).
+
+## PR kontrolný zoznam
+
+- Preview deploy je `Ready` a routy/API prešli smoke kontrolou.
+- CI je zelené.
+- Zmena deploy nastavení je explicitne popísaná v PR.
