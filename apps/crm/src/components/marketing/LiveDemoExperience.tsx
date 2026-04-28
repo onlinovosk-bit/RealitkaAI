@@ -1,0 +1,159 @@
+"use client";
+
+import { useState } from "react";
+import UnifiedDemo from "@/components/marketing/UnifiedDemo";
+
+type RequestState = "idle" | "loading" | "success" | "error";
+
+export default function LiveDemoExperience({
+  agency,
+  rep,
+}: {
+  agency: string;
+  rep: string;
+}) {
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [company, setCompany] = useState(agency === "Vašu kanceláriu" ? "" : agency);
+  const [phone, setPhone] = useState("");
+  const [city, setCity] = useState("");
+  const [agentsCount, setAgentsCount] = useState(3);
+  const [note, setNote] = useState("");
+  const [state, setState] = useState<RequestState>("idle");
+  const [error, setError] = useState("");
+
+  async function submitDemoRequest() {
+    if (!name.trim() || !email.trim() || !company.trim() || agentsCount <= 0) {
+      setState("error");
+      setError("Vyplňte meno, email, spoločnosť a počet maklérov.");
+      return;
+    }
+
+    setState("loading");
+    setError("");
+
+    try {
+      const res = await fetch("/api/demo/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          email: email.trim(),
+          company: company.trim(),
+          phone: phone.trim(),
+          city: city.trim(),
+          agentsCount,
+          note: note.trim(),
+          source: "Live Demo Link",
+        }),
+      });
+
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        throw new Error(data.error ?? "Nepodarilo sa odoslať žiadosť.");
+      }
+
+      setState("success");
+    } catch (err) {
+      setState("error");
+      setError(err instanceof Error ? err.message : "Nepodarilo sa odoslať žiadosť.");
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-[#010103] text-slate-100">
+      <section className="border-b border-white/10 px-4 py-10 md:px-8">
+        <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[1.5fr_1fr]">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-cyan-300">
+              Live Demo Link
+            </p>
+            <h1 className="mt-3 text-3xl font-black uppercase tracking-tight text-white md:text-5xl">
+              Revolis.AI pre <span className="text-cyan-300">{agency}</span>
+            </h1>
+            <p className="mt-3 max-w-3xl text-sm text-slate-400 md:text-base">
+              {rep}, toto je plne klikateľná ukážka. Klient si vie prejsť hlavné moduly ešte pred aktiváciou
+              plateného prístupu.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <a className="rounded-xl bg-cyan-400 px-4 py-2 text-xs font-black uppercase tracking-wider text-[#031018]" href="#demo-core">
+                1) Kliknúť DEMO
+              </a>
+              <a className="rounded-xl border border-white/20 px-4 py-2 text-xs font-black uppercase tracking-wider text-white" href="#demo-cta">
+                2) Poslať žiadosť
+              </a>
+              <a className="rounded-xl border border-white/20 px-4 py-2 text-xs font-black uppercase tracking-wider text-white" href="/billing">
+                3) Aktivovať prístup
+              </a>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/5 p-5">
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-cyan-300">Demo script</p>
+            <ul className="mt-3 space-y-2 text-sm text-slate-300">
+              <li>1. Odhadca: ukážte vstup leadu + výstup ceny.</li>
+              <li>2. L99 Hub: ukážte trhové signály a alerty.</li>
+              <li>3. ROI: prepočet návratnosti pre kanceláriu.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="demo-core" className="mx-auto max-w-7xl px-4 py-8 md:px-8">
+        <UnifiedDemo />
+      </section>
+
+      <section id="demo-cta" className="border-t border-white/10 px-4 py-10 md:px-8">
+        <div className="mx-auto max-w-4xl rounded-3xl border border-white/10 bg-[#060914] p-6 md:p-8">
+          <h2 className="text-2xl font-black uppercase tracking-tight text-white">Požiadať o live onboarding</h2>
+          <p className="mt-2 text-sm text-slate-400">
+            Vyplňte kontakt a tím Revolis vás spojí s onboarding callom.
+          </p>
+
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            <input className="rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm outline-none" placeholder="Meno a priezvisko" value={name} onChange={(e) => setName(e.target.value)} />
+            <input className="rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm outline-none" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <input className="rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm outline-none" placeholder="Spoločnosť" value={company} onChange={(e) => setCompany(e.target.value)} />
+            <input className="rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm outline-none" placeholder="Telefón" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            <input className="rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm outline-none" placeholder="Mesto" value={city} onChange={(e) => setCity(e.target.value)} />
+            <input className="rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm outline-none" type="number" min={1} placeholder="Počet maklérov" value={agentsCount} onChange={(e) => setAgentsCount(Number(e.target.value || 0))} />
+          </div>
+
+          <textarea
+            className="mt-3 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm outline-none"
+            rows={3}
+            placeholder="Poznámka (voliteľné): napr. preferovaný čas callu"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+          />
+
+          {state === "error" && <p className="mt-3 text-sm text-rose-400">{error}</p>}
+          {state === "success" && (
+            <p className="mt-3 text-sm text-emerald-400">
+              Ďakujeme. Žiadosť je odoslaná, ozveme sa vám s termínom onboarding callu.
+            </p>
+          )}
+
+          <div className="mt-5 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={submitDemoRequest}
+              disabled={state === "loading"}
+              className="rounded-xl bg-cyan-400 px-5 py-3 text-xs font-black uppercase tracking-wider text-[#031018] disabled:opacity-60"
+            >
+              {state === "loading" ? "Odosielam..." : "Požiadať o onboarding"}
+            </button>
+            <a
+              href="/billing"
+              className="rounded-xl border border-white/20 px-5 py-3 text-xs font-black uppercase tracking-wider text-white"
+            >
+              Aktivovať platený prístup
+            </a>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
