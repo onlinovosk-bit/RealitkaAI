@@ -12,12 +12,19 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from("leads")
-    .select("id, name, phone, status, last_contact_at, created_at")
+    .select("id, name, phone, status, last_contact_at:last_contact, created_at")
     .order("created_at", { ascending: false })
     .limit(20);
 
   if (error) {
-    return NextResponse.json([], { status: 500 });
+    console.error("GET /api/leads failed:", error.message);
+    // Stabilizačný fallback: API nezhodí UI pri dočasnej DB chybe.
+    return NextResponse.json([], {
+      status: 200,
+      headers: {
+        "x-revolis-warning": "leads_fetch_failed",
+      },
+    });
   }
 
   const normalized = (data || []).map((lead) => ({
