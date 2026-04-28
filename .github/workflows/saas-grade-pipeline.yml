@@ -97,7 +97,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: crm-next-build
-          path: apps/crm/.next
+          path: |
+            .next
+            ${{ env.APP_DIR }}/.next
           if-no-files-found: error
           retention-days: 7
 
