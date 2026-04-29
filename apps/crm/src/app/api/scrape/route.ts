@@ -42,8 +42,7 @@ export async function GET() {
         source: agency.source,
         status: "PROSPECT",
         raw_data: agency,
-      })
-      .catch(() => {});
+      });
   }
 
   return NextResponse.json({ inserted: results.length });
