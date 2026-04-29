@@ -6,25 +6,13 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main, master, develop]
+    branches: [main]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
-permissions:
-  contents: read
-
-env:
-  NODE_VERSION: 22
-  APP_DIR: apps/crm
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  NEXT_TELEMETRY_DISABLED: 1
 
 jobs:
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
   ci:
     name: Lint, test, build, E2E
     runs-on: ubuntu-latest
@@ -95,26 +83,14 @@ concurrency:
           if-no-files-found: ignore
           retention-days: 7
 
-      - name: Upload Next.js build artifact
-        if: success()
+    - name: Upload Next.js build artifact
         uses: actions/upload-artifact@v4
         with:
-          - name: Upload Next.js build artifact
-  uses: actions/upload-artifact@v4
-  with:
-    name: next-build
-    path: apps/crm/.next
-  deploy:
-    name: Deploy (Vercel production)
-    needs: ci
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    defaults:
-      run:
-        working-directory: apps/crm
-
-    env:
+          name: next-build
+          path: apps/crm/.next
+          if-no-files-found: error
+          retention-days: 1
+      env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
