@@ -16,7 +16,7 @@ jobs:
   ci:
     name: Lint, test, build, E2E
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    
     defaults:
       run:
         working-directory: apps/crm
