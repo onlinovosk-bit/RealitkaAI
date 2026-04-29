@@ -1,5 +1,10 @@
 {
   "name": "realitka-ai-monorepo",
   "private": true,
-  "workspaces": ["apps/crm"]
+  "workspaces": [
+    "apps/crm"
+  ],
+  "dependencies": {
+    "cheerio": "^1.2.0"
+  }
 }
