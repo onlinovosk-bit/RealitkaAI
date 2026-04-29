@@ -130,11 +130,6 @@ export default function LiveDemoExperience({
             </ul>
             <div className="mt-4 rounded-xl border border-white/10 bg-black/20 p-3 text-xs text-slate-300">
               <p className="font-bold text-cyan-200">Audit copy (3 slabšie línie + prepis)</p>
-              <ul className="mt-2 space-y-1">
-                <li>Slabé: „Máte málo leadov.“ → Lepšie: „Bez leadov dnes nevznikne provízia zajtra.“</li>
-                <li>Slabé: „Pipeline je prázdny.“ → Lepšie: „Prázdny pipeline znamená slabší cashflow už o 30 dní.“</li>
-                <li>Slabé: „AI pomáha.“ → Lepšie: „AI asistent doručí konkrétny next step ku každému horúcemu leadu.“</li>
-              </ul>
             </div>
           </div>
         </div>
