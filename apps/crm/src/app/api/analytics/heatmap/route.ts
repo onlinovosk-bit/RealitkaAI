@@ -1,35 +1,31 @@
-/**
- * GET /api/analytics/heatmap
- *
- * Vracia hodinovú distribúciu aktivít klientov (0–23).
- * Query params:
- *   agentId  – voliteľný (zatiaľ ignorovaný, RLS filtruje automaticky)
- *   days     – koľko dní dozadu (default 30)
- */
+import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
-import { okResponse, errorResponse } from "@/lib/api-response";
-import { createClient } from "@/lib/supabase/server";
-import { buildActivityHeatmap } from "@/services/analytics/heatmap";
+export async function GET() {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
 
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const days = Math.min(parseInt(searchParams.get("days") ?? "30", 10), 90);
-
-  const supabase = await createClient();
-
-  const since = new Date(Date.now() - days * 86_400_000).toISOString();
-
-  const { data: activities, error } = await supabase
-    .from("activities")
-    .select("created_at")
-    .gte("created_at", since);
+  const { data, error } = await supabase
+    .from("AI AGENT AUTOMAT ONBOARDING no.2.01")
+    .select("segment, contacted_at, demo_clicked_at");
 
   if (error) {
-    return errorResponse(`Nepodarilo sa načítať aktivity: ${error.message}`, 500);
+    console.error("Heatmap fetch failed:", error);
+    return NextResponse.json({ error: "fetch_failed" }, { status: 500 });
   }
 
-  const events = (activities ?? []).map((a) => ({ occurredAt: a.created_at }));
-  const result = buildActivityHeatmap(events);
+  const stats: Record<string, { total: number; contacted: number; demo_clicked: number }> = {};
 
-  return okResponse({ days, ...result });
+  for (const row of data ?? []) {
+    const seg = row.segment ?? "UNKNOWN";
+    if (!stats[seg]) stats[seg] = { total: 0, contacted: 0, demo_clicked: 0 };
+
+    stats[seg].total += 1;
+    if (row.contacted_at) stats[seg].contacted += 1;
+    if (row.demo_clicked_at) stats[seg].demo_clicked += 1;
+  }
+
+  return NextResponse.json({ stats });
 }

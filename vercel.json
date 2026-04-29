@@ -16,6 +16,14 @@
     {
       "path": "/api/outreach",
       "schedule": "15 * * * *"
+    },
+    {
+      "path": "/api/demo",
+      "schedule": "20 * * * *"
+    },
+    {
+      "path": "/api/playbook/auto",
+      "schedule": "25 * * * *"
     }
   ]
 }
