@@ -14,9 +14,6 @@ jobs:
   ci:
     name: Lint, test, build
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: apps/crm
 
     steps:
       - uses: actions/checkout@v4
@@ -29,26 +26,37 @@ jobs:
 
       - name: Install
         run: npm ci
+        working-directory: apps/crm
 
       - name: Lint
         run: npm run lint
+        working-directory: apps/crm
 
       - name: Test
         run: npm test
+        working-directory: apps/crm
 
       - name: Build
         run: npm run build
+        working-directory: apps/crm
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      - name: Verify .next exists
-        run: test -d .next && echo "OK" || (echo "MISSING .next" && exit 1)
+
+      - name: Debug - find .next
+        run: |
+          echo "=== Workspace root ==="
+          ls -la ${{ github.workspace }}
+          echo "=== apps/crm contents ==="
+          ls -la ${{ github.workspace }}/apps/crm/
+          echo "=== .next exists? ==="
+          ls -la ${{ github.workspace }}/apps/crm/.next/ || echo "NOT FOUND"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: nextjs-build-${{ github.sha }}
-          path: apps/crm/.next/
+          path: ${{ github.workspace }}/apps/crm/.next/
           retention-days: 7
           if-no-files-found: error
