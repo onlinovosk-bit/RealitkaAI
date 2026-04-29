@@ -52,7 +52,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: next-build
-          path: apps/crm/.next
+          path: apps/crm/.next/
           if-no-files-found: error
           retention-days: 1
 
