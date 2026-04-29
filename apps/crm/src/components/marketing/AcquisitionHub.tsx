@@ -455,7 +455,7 @@ export function AIGhostwriter() {
   return (
     <Card accent="rgba(239,68,68,0.25)" tag="Legal Watch" tagColor="#FCA5A5">
       <Mail className="mb-5" size={32} style={{ color: "#EF4444" }} />
-      <h2 className="text-xl font-bold text-white mb-1.5">4. AI písač listov</h2>
+      <h2 className="text-xl font-bold text-white mb-1.5">4. AI Asistent písania listov</h2>
       <p className="text-xs mb-4" style={{ color: "#64748B" }}>
         Katastrálny radar deteguje dedičstvá a plomby. AI okamžite generuje expertný list pre majiteľa.
       </p>
@@ -582,7 +582,7 @@ export function RealEstateArbitrage() {
   return (
     <Card accent="rgba(234,179,8,0.25)" tag="Flow Engine" tagColor="#FCD34D">
       <GitMerge className="mb-5" size={32} style={{ color: "#EAB308" }} />
-      <h2 className="text-xl font-bold text-white mb-1.5">5. Real Estate Arbitrage</h2>
+      <h2 className="text-xl font-bold text-white mb-1.5">5. Realitná arbitráž</h2>
       <p className="text-xs mb-4" style={{ color: "#64748B" }}>
         Premieňa neúspešných kupujúcich na predajcov. AI identifikuje exit-strategy kandídátov vo vašom CRM.
       </p>
