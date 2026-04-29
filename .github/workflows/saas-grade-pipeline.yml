@@ -73,3 +73,4 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           working-directory: apps/crm
           vercel-args: '--prod'
+          
