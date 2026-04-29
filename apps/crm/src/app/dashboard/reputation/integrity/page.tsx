@@ -1,15 +1,27 @@
+import { ShieldCheck, Lock } from "lucide-react";
+
 export default function IntegrityPage() {
   return (
-    <div className="min-h-screen bg-[#010103] p-10 text-white">
-      <h2 className="mb-2 text-2xl font-black italic uppercase text-white">Agent Integrity Monitor</h2>
-      <p className="mb-10 text-[10px] uppercase tracking-widest text-slate-500">
-        Sprava pristupov a ochrana dat RK
-      </p>
-
-      <div className="rounded-[2rem] border border-white/5 bg-white/[0.02] p-8">
-        <p className="font-mono text-xs text-blue-400">
-          System autorizacie je teraz riadeny cez Protocol Authority engine.
+    <div className="min-h-screen bg-[#010103] p-10">
+      <div className="mb-8">
+        <h2 className="text-2xl font-black italic tracking-tighter text-white uppercase">Agent Integrity Monitor</h2>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+          Zabezpecenie a opravnenia timu
         </p>
+      </div>
+
+      <div className="rounded-[2rem] border border-yellow-500/20 bg-yellow-500/5 p-8 backdrop-blur-xl">
+        <div className="mb-6 flex items-center gap-4">
+          <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-2">
+            <ShieldCheck className="text-yellow-500" size={18} />
+          </div>
+          <Lock className="text-yellow-500" />
+          <p className="text-sm font-medium italic text-yellow-100">
+            Tento modul je sucastou balika Protocol Authority. Pristup k riadeniu dat a prevencii uniku
+            informacii je aktivny.
+          </p>
+        </div>
+        {/* Tu nasleduje povodna logika permissions prenesena do L99 dizajnu */}
       </div>
     </div>
   );

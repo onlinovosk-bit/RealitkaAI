@@ -177,6 +177,8 @@ export default function LeadDetailPage() {
   const [scorePulse, setScorePulse] = useState(false);
   const [watchedCount, setWatchedCount] = useState(0);
   const [activatingWatch, setActivatingWatch] = useState(false);
+  const [decisionBusy, setDecisionBusy] = useState<string | null>(null);
+  const [decisionOutput, setDecisionOutput] = useState<string>("");
 
   const onRealtimeScore = useCallback(
     (u: { leadId: string; score: number }) => {
@@ -328,6 +330,46 @@ export default function LeadDetailPage() {
     });
     openGoogleCalendarUrl(url);
     showToast("Otváram Google Kalendár…");
+  }
+
+  async function runDecisionAction(
+    action:
+      | "score-lead"
+      | "recompute-queue"
+      | "closing-window"
+      | "rescue-trigger"
+      | "micro-actions",
+  ) {
+    if (!id) return;
+    setDecisionBusy(action);
+    try {
+      const map: Record<typeof action, { url: string; body?: Record<string, unknown> }> = {
+        "score-lead": { url: "/api/ai/decision/score-lead", body: { leadId: id } },
+        "recompute-queue": { url: "/api/ai/decision/recompute-queue" },
+        "closing-window": { url: "/api/ai/closing-window/recompute", body: { leadId: id } },
+        "rescue-trigger": { url: "/api/ai/rescue/trigger", body: { leadId: id, triggerType: "manual_ui" } },
+        "micro-actions": { url: "/api/ai/micro-actions/schedule", body: { leadId: id } },
+      };
+
+      const selected = map[action];
+      const res = await fetch(selected.url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: selected.body ? JSON.stringify(selected.body) : undefined,
+      });
+      const data = (await res.json()) as { ok?: boolean; error?: string };
+      if (!res.ok || !data.ok) {
+        showToast(data.error ?? "L99 operácia zlyhala.");
+        setDecisionOutput(JSON.stringify(data, null, 2));
+        return;
+      }
+      showToast("L99 operácia dokončená.");
+      setDecisionOutput(JSON.stringify(data, null, 2));
+    } catch {
+      showToast("Chyba siete pri L99 operácii.");
+    } finally {
+      setDecisionBusy(null);
+    }
   }
 
   // ── sofia chat ──
@@ -754,6 +796,58 @@ export default function LeadDetailPage() {
                   {sofiaAnswer}
                 </div>
               )}
+            </div>
+
+            <div className="rounded-2xl border border-cyan-200/60 bg-gradient-to-b from-cyan-50/70 to-white p-5 shadow-sm">
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-cyan-700">L99 Decision Ops (beta)</p>
+              <p className="mb-3 text-xs text-slate-600">
+                Additive AI vrstva. Pôvodné flowy ostávajú nezmenené. Operácie rešpektujú feature flagy.
+              </p>
+              <div className="grid grid-cols-1 gap-2">
+                <button
+                  type="button"
+                  onClick={() => void runDecisionAction("score-lead")}
+                  disabled={decisionBusy !== null}
+                  className="rounded-lg border border-cyan-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-cyan-50 disabled:opacity-60"
+                >
+                  {decisionBusy === "score-lead" ? "Počítam score..." : "1) Score lead (who/what/when/prob/revenue)"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void runDecisionAction("recompute-queue")}
+                  disabled={decisionBusy !== null}
+                  className="rounded-lg border border-cyan-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-cyan-50 disabled:opacity-60"
+                >
+                  {decisionBusy === "recompute-queue" ? "Prepočítavam queue..." : "2) Recompute priority queue"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void runDecisionAction("closing-window")}
+                  disabled={decisionBusy !== null}
+                  className="rounded-lg border border-cyan-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-cyan-50 disabled:opacity-60"
+                >
+                  {decisionBusy === "closing-window" ? "Počítam closing window..." : "3) Recompute closing window"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void runDecisionAction("rescue-trigger")}
+                  disabled={decisionBusy !== null}
+                  className="rounded-lg border border-cyan-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-cyan-50 disabled:opacity-60"
+                >
+                  {decisionBusy === "rescue-trigger" ? "Spúšťam rescue..." : "4) Trigger rescue plan"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void runDecisionAction("micro-actions")}
+                  disabled={decisionBusy !== null}
+                  className="rounded-lg border border-cyan-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-cyan-50 disabled:opacity-60"
+                >
+                  {decisionBusy === "micro-actions" ? "Plánujem micro-actions..." : "5) Schedule micro-actions"}
+                </button>
+              </div>
+              <pre className="mt-3 max-h-52 overflow-auto rounded-lg border border-slate-200 bg-slate-950 p-3 text-[11px] text-cyan-200">
+                {decisionOutput || '{ "info": "Spusti operáciu pre výstup." }'}
+              </pre>
             </div>
 
             {/* Meta Info */}

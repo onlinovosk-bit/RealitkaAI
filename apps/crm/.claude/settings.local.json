@@ -6,7 +6,12 @@
       "Bash(ls:*)",
       "Bash(xargs wc:*)",
       "Bash(gh run:*)",
-      "Bash(npx vitest:*)"
+      "Bash(npx vitest:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(git push:*)",
+      "Bash(cat C:/RealitkaAI/.github/workflows/*.yml)",
+      "Bash(node -e \"const p = require\\('./package.json'\\); console.log\\('next:', p.dependencies.next\\)\")"
     ]
   }
 }

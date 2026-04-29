@@ -26,16 +26,16 @@ export default function LiveDemoExperience({
   const [company, setCompany] = useState(agency === "Vašu kanceláriu" ? "" : agency);
   const [phone, setPhone] = useState(prefill?.phone ?? "");
   const [city, setCity] = useState(prefill?.city ?? "");
-  const [agentsCount, setAgentsCount] = useState(Number(prefill?.agents ?? 3) || 3);
+  const agentsCount = Number(prefill?.agents ?? 3) || 3;
   const [note, setNote] = useState("");
   const [state, setState] = useState<RequestState>("idle");
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
 
   async function submitDemoRequest() {
-    if (!name.trim() || !email.trim() || !company.trim() || agentsCount <= 0) {
+    if (!name.trim() || !email.trim() || !company.trim()) {
       setState("error");
-      setError("Vyplňte meno, email, spoločnosť a počet maklérov.");
+      setError("Vyplňte meno, email a spoločnosť.");
       return;
     }
 
@@ -78,7 +78,6 @@ export default function LiveDemoExperience({
     if (email.trim()) params.set("email", email.trim());
     if (phone.trim()) params.set("phone", phone.trim());
     if (city.trim()) params.set("city", city.trim());
-    if (Number.isFinite(agentsCount) && agentsCount > 0) params.set("agents", String(agentsCount));
 
     const query = params.toString();
     const base = typeof window !== "undefined" ? window.location.origin : "https://app.revolis.ai";
@@ -158,7 +157,6 @@ export default function LiveDemoExperience({
             <input className="rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm outline-none" placeholder="Spoločnosť" value={company} onChange={(e) => setCompany(e.target.value)} />
             <input className="rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm outline-none" placeholder="Telefón" value={phone} onChange={(e) => setPhone(e.target.value)} />
             <input className="rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm outline-none" placeholder="Mesto" value={city} onChange={(e) => setCity(e.target.value)} />
-            <input className="rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm outline-none" type="number" min={1} placeholder="Počet maklérov" value={agentsCount} onChange={(e) => setAgentsCount(Number(e.target.value || 0))} />
           </div>
 
           <textarea

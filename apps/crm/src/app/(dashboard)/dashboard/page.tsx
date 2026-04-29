@@ -19,6 +19,7 @@ import { useCountUp, useGlowOnHover } from "@/hooks/useSpaceInteractions";
 import AIPulseSystem from "@/components/space/AIPulseSystem";
 import { AIAssistBanner } from "@/components/dashboard/AIAssistBanner";
 import { AssistantPanelDynamic } from "@/components/dashboard/AssistantPanel.dynamic";
+import L99DecisionOpsPanel from "@/components/dashboard/L99DecisionOpsPanel";
 
 type ForecastingSummary = {
   totalLeads: number;
@@ -330,6 +331,7 @@ export default function DashboardPage() {
         <QuickActionsBar />
 
         <DailyActionPanel leads={leads} plan={plan} />
+        <L99DecisionOpsPanel leads={assistantLeadOptions} />
 
         {coachingPayload ? (
           <section className="mb-6">
