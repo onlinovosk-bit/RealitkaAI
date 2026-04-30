@@ -1,24 +1,29 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
     {
-      "path": "/api/cron/morning-brief",
-      "schedule": "30 5 * * *"
+      "path": "/api/scrape?key=YOUR_SECRET_CRON_KEY",
+      "schedule": "0 * * * *"
     },
     {
-      "path": "/api/cron/recompute-bri",
-      "schedule": "0 6 * * *"
+      "path": "/api/scoring?key=YOUR_SECRET_CRON_KEY",
+      "schedule": "10 * * * *"
     },
     {
-      "path": "/api/cron/bri-snapshot",
-      "schedule": "0 2 * * *"
+      "path": "/api/segmentation?key=YOUR_SECRET_CRON_KEY",
+      "schedule": "20 * * * *"
     },
     {
-      "path": "/api/cron/arbitrage-scan",
-      "schedule": "0 7 * * *"
+      "path": "/api/outreach?key=YOUR_SECRET_CRON_KEY",
+      "schedule": "30 * * * *"
     },
     {
-      "path": "/api/cron/price-trail-sync",
-      "schedule": "30 7 * * *"
+      "path": "/api/demo?key=YOUR_SECRET_CRON_KEY",
+      "schedule": "40 * * * *"
+    },
+    {
+      "path": "/api/playbook/auto?key=YOUR_SECRET_CRON_KEY",
+      "schedule": "50 * * * *"
     }
   ]
 }
