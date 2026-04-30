@@ -14,7 +14,7 @@ import { requireRole } from "@/lib/permissions";
 import { getFeatureGateState } from "@/lib/feature-gating";
 
 export default async function ForecastingPage() {
-  await requireRole(["owner", "manager"]);
+  await requireRole(["owner", "manager", "agent", "founder", "admin"]);
 
   const gate = await getFeatureGateState("forecasting");
 
@@ -112,3 +112,5 @@ export default async function ForecastingPage() {
     </ModuleShell>
   );
 }
+
+

@@ -1,21 +1,26 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* apps/crm/src/app/globals.css */
+
+/* Importujeme Tailwind priamo - toto vyrieši chybu s unknown utility */
+@import "tailwindcss";
 
 @layer base {
   body {
-    @apply antialiased text-slate-900;
-    /* Slack font stack */
-    font-family: "Slack-Lato", "Slack-Icons", apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    /* Použijeme štandardné CSS pre farbu, aby sme sa vyhli konfliktom pri builde */
+    color: #0f172a; /* Ekvivalent slate-900 */
+    background-color: #1a1d21;
+    font-family: "Slack-Lato", apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
-/* Úplné odstránenie starých CSS nánosov */
-#old-sidebar, .sidebar-container, .nav-wrapper {
-  display: none !important;
-}
-
-/* Zabezpečenie bieleho pozadia pre hlavný obsah */
+/* Zabezpečenie, aby hlavný obsah nebol čierny */
 main {
   background-color: #ffffff !important;
+  color: #1a1d21 !important;
+}
+
+/* Skrytie starých elementov, ktoré strašili na obrázkoch */
+.sidebar-container, .nav-wrapper, #old-menu {
+  display: none !important;
 }

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import UnifiedDemo from "@/components/marketing/UnifiedDemo";
@@ -130,6 +130,11 @@ export default function LiveDemoExperience({
             </ul>
             <div className="mt-4 rounded-xl border border-white/10 bg-black/20 p-3 text-xs text-slate-300">
               <p className="font-bold text-cyan-200">Audit copy (3 slabšie línie + prepis)</p>
+              <ul className="mt-2 space-y-1 text-slate-300">
+                <li>„Bez leadov dnes nevznikne provízia zajtra."</li>
+                <li>„Prázdny pipeline znamená slabší cashflow už o 30 dní."</li>
+                <li>„AI asistent doručí konkrétny next step ku každému horúcemu leadu."</li>
+              </ul>
             </div>
           </div>
         </div>
@@ -151,7 +156,7 @@ export default function LiveDemoExperience({
             <input className="rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm outline-none" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
             <input className="rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm outline-none" placeholder="Spoločnosť" value={company} onChange={(e) => setCompany(e.target.value)} />
             <input className="rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm outline-none" placeholder="Telefón" value={phone} onChange={(e) => setPhone(e.target.value)} />
-            <input className="rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm outline-none" placeholder="Mesto" value={city} onChange={(e) => setCity(e.target.value)} />
+            <input type="hidden" value={city} onChange={(e) => setCity(e.target.value)} />
           </div>
 
           <textarea

@@ -1,11 +1,11 @@
-import Stripe from "stripe";
+﻿import Stripe from "stripe";
 import { autoErrorCapture } from "./auto-error-capture";
 import { createActivity } from "@/lib/activities-store";
 import { PLAN_KEYS, PLAN_LIMITS, type PlanKey } from "@/lib/billing-types";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { logInfo } from "./logger";
 
-// Mapovanie tier → ui_role
+// Mapovanie tier â†’ ui_role
 const TIER_TO_UI_ROLE: Record<string, string> = {
   free:                "agent",
   starter:             "agent",
@@ -16,8 +16,8 @@ const TIER_TO_UI_ROLE: Record<string, string> = {
   protocol_authority:  "owner_protocol",
 };
 
-// Pomocná funkcia – zapíše account_tier + ui_role do profiles
-// Preferuje authUserId z metadát, fallback na stripe_customer_id
+// PomocnĂˇ funkcia â€“ zapĂ­Ĺˇe account_tier + ui_role do profiles
+// Preferuje authUserId z metadĂˇt, fallback na stripe_customer_id
 async function syncAccountTier(
   stripeCustomerIdOrAuthUserId: string,
   priceId: string | null | undefined,
@@ -49,7 +49,7 @@ async function syncAccountTier(
       .update(update)
       .eq("auth_user_id", stripeCustomerIdOrAuthUserId);
   } else {
-    // Fallback – hľadaj cez email zákazníka zo Stripe
+    // Fallback â€“ hÄľadaj cez email zĂˇkaznĂ­ka zo Stripe
     const stripe = getStripe();
     if (!stripe) return;
     try {
@@ -60,7 +60,7 @@ async function syncAccountTier(
       if (!match) return;
       await supabase.from("profiles").update(update).eq("auth_user_id", match.id);
     } catch {
-      // Stripe alebo Supabase lookup zlyhal – tier ostáva nezmenený
+      // Stripe alebo Supabase lookup zlyhal â€“ tier ostĂˇva nezmenenĂ˝
     }
   }
 }
@@ -90,132 +90,132 @@ async function loadAuthHelpers() {
 }
 
 export const BILLING_PLANS = [
-  // ── SMART START ──────────────────────────────────────────────────────────
+  // â”€â”€ SMART START â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   {
     key: PLAN_KEYS.STARTER,
     landingName: "Smart Start",
     name: "Smart Start",
     priceId: process.env.STRIPE_PRICE_STARTER || "",
-    priceLabel: "49 € / mesiac",
+    priceLabel: "49 â‚¬ / mesiac",
     description:
-      "Ideálny štart pre samostatných maklérov. AI Asistent odpovedá počas pracovných hodín, Buyer Readiness Index prioritizuje tvoje príležitosti a denný briefing ti povie čo robiť každé ráno. Väčšina maklérov vidí prvé výsledky do 7 dní.",
-    billingNote: "Fakturované mesačne · Zrušenie kedykoľvek · Do 3 maklérov · Podpora 48h",
+      "IdeĂˇlny Ĺˇtart pre samostatnĂ˝ch maklĂ©rov. AI Asistent odpovedĂˇ poÄŤas pracovnĂ˝ch hodĂ­n, Buyer Readiness Index prioritizuje tvoje prĂ­leĹľitosti a dennĂ˝ briefing ti povie ÄŤo robiĹĄ kaĹľdĂ© rĂˇno. VĂ¤ÄŤĹˇina maklĂ©rov vidĂ­ prvĂ© vĂ˝sledky do 7 dnĂ­.",
+    billingNote: "FakturovanĂ© mesaÄŤne Â· ZruĹˇenie kedykoÄľvek Â· Do 3 maklĂ©rov Â· Podpora 48h",
     recommended: false,
     features: [
-      "Do 3 maklérov v tíme",
-      "Do 100 príležitostí mesačne",
-      "🤖 AI Asistent – odpovede do 2 minút (pracovné hodiny)",
-      "📊 Buyer Readiness Index – AI skóre každej príležitosti",
-      "📱 WhatsApp + SMS automatické odpovede",
-      "🏠 Auto-párovanie príležitostí s nehnuteľnosťami (do 10/mes)",
-      "📧 AI email skripty – personalizované podľa správania klienta",
-      "⚡ One-click follow-up – AI Asistent navrhne správu, ty schváliš",
-      "📋 Denný AI briefing – 5 priorít každé ráno o 8:00",
-      "🔔 Hot Alert – notifikácia keď príležitosť dosiahne skóre 75+",
-      "📈 Základná analytika konverzií (týždenný report)",
-      "🎓 Revolis Academy – prístup k freemium modulom (5 lekcií)",
-      "✅ Revolis.AI Certified Agent certifikát",
-      "🛡 100% garancia vrátenia do 30 dní",
+      "Do 3 maklĂ©rov v tĂ­me",
+      "Do 100 prĂ­leĹľitostĂ­ mesaÄŤne",
+      "đź¤– AI Asistent â€“ odpovede do 2 minĂşt (pracovnĂ© hodiny)",
+      "đź“Š Buyer Readiness Index â€“ AI skĂłre kaĹľdej prĂ­leĹľitosti",
+      "đź“± WhatsApp + SMS automatickĂ© odpovede",
+      "đźŹ  Auto-pĂˇrovanie prĂ­leĹľitostĂ­ s nehnuteÄľnosĹĄami (do 10/mes)",
+      "đź“§ AI email skripty â€“ personalizovanĂ© podÄľa sprĂˇvania klienta",
+      "âšˇ One-click follow-up â€“ AI Asistent navrhne sprĂˇvu, ty schvĂˇliĹˇ",
+      "đź“‹ DennĂ˝ AI briefing â€“ 5 priorĂ­t kaĹľdĂ© rĂˇno o 8:00",
+      "đź”” Hot Alert â€“ notifikĂˇcia keÄŹ prĂ­leĹľitosĹĄ dosiahne skĂłre 75+",
+      "đź“ ZĂˇkladnĂˇ analytika konverziĂ­ (tĂ˝ĹľdennĂ˝ report)",
+      "đźŽ“ Revolis Academy â€“ prĂ­stup k freemium modulom (5 lekciĂ­)",
+      "âś… Revolis.AI Certified Agent certifikĂˇt",
+      "đź›ˇ 100% garancia vrĂˇtenia do 30 dnĂ­",
     ],
     limits: PLAN_LIMITS.starter,
     founderPrice: true,
-    founderNote: "Zakladateľská cena – prvých 20 kancelárií",
+    founderNote: "ZakladateÄľskĂˇ cena â€“ prvĂ˝ch 20 kancelĂˇriĂ­",
   },
-  // ── ACTIVE FORCE ─────────────────────────────────────────────────────────
+  // â”€â”€ ACTIVE FORCE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   {
     key: PLAN_KEYS.PRO,
     landingName: "Active Force",
     name: "Active Force",
     priceId: process.env.STRIPE_PRICE_PRO || "",
-    priceLabel: "99 € / mesiac",
-    originalPriceLabel: "198 € / mesiac",
+    priceLabel: "99 â‚¬ / mesiac",
+    originalPriceLabel: "198 â‚¬ / mesiac",
     description:
-      "Plný AI arzenál pre aktívneho makléra. Sofia AI 24/7, prediktívny scoring, hovorová analýza a automatické follow-upy.",
-    billingNote: "1 maklér · Plný AI prístup · Zrušenie kedykoľvek",
+      "PlnĂ˝ AI arzenĂˇl pre aktĂ­vneho maklĂ©ra. Sofia AI 24/7, prediktĂ­vny scoring, hovorovĂˇ analĂ˝za a automatickĂ© follow-upy.",
+    billingNote: "1 maklĂ©r Â· PlnĂ˝ AI prĂ­stup Â· ZruĹˇenie kedykoÄľvek",
     recommended: true,
     features: [
-      "1 maklérska licencia",
-      "🤖 AI Asistent 24/7 – odpovede aj v noci",
-      "🧠 Prediktívne skórovanie obchodov",
-      "📞 AI analýza hovorov",
-      "🎯 Detekcia záujmu klienta",
-      "⚡ Automatické follow-upy (7-dňové sekvencie)",
-      "🗺 Teritoriálna inteligencia",
-      "📊 Predpoveď obratu",
-      "🔗 Portálové integrácie",
-      "🛡 30-dňová garancia vrátenia",
+      "1 maklĂ©rska licencia",
+      "đź¤– AI Asistent 24/7 â€“ odpovede aj v noci",
+      "đź§  PrediktĂ­vne skĂłrovanie obchodov",
+      "đź“ž AI analĂ˝za hovorov",
+      "đźŽŻ Detekcia zĂˇujmu klienta",
+      "âšˇ AutomatickĂ© follow-upy (7-dĹovĂ© sekvencie)",
+      "đź—ş TeritoriĂˇlna inteligencia",
+      "đź“Š PredpoveÄŹ obratu",
+      "đź”— PortĂˇlovĂ© integrĂˇcie",
+      "đź›ˇ 30-dĹovĂˇ garancia vrĂˇtenia",
     ],
     limits: PLAN_LIMITS.pro,
     founderPrice: true,
-    founderNote: "Zakladateľská cena – prvých 20 kancelárií",
+    founderNote: "ZakladateÄľskĂˇ cena â€“ prvĂ˝ch 20 kancelĂˇriĂ­",
   },
-  // ── MARKET VISION ─────────────────────────────────────────────────────────
+  // â”€â”€ MARKET VISION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   {
     key: PLAN_KEYS.ENTERPRISE,
     landingName: "Market Vision",
     name: "Market Vision",
-    priceId: process.env.STRIPE_PRICE_ENTERPRISE || process.env.STRIPE_PRICE_MARKET_VISION || "",
-    priceLabel: "199 € / mesiac",
-    originalPriceLabel: "398 € / mesiac",
+    priceId: process.env.STRIPE_PRICE_MARKET_VISION || "",
+    priceLabel: "199 â‚¬ / mesiac",
+    originalPriceLabel: "398 â‚¬ / mesiac",
     description:
-      "Tímová licencia pre majiteľa kancelárie. Owner dostane Market Vision menu s prehľadom tímu, 1 maklér dostane Active Force prístup.",
-    billingNote: "1 owner + 1 Active Force maklér · Tímová licencia",
+      "TĂ­movĂˇ licencia pre majiteÄľa kancelĂˇrie. Owner dostane Market Vision menu s prehÄľadom tĂ­mu, 1 maklĂ©r dostane Active Force prĂ­stup.",
+    billingNote: "1 owner + 1 Active Force maklĂ©r Â· TĂ­movĂˇ licencia",
     recommended: false,
     features: [
-      "👑 Owner: Market Vision menu",
-      "✅ Kto je pripravený kúpiť",
-      "✅ Dnes uzavriem",
-      "1× Active Force licencia pre makléra",
-      "📊 Prehľad výkonnosti tímu",
-      "🔍 Prebúdza starých klientov, ktorí ťa zabudli kontaktovať",
-      "📋 Manažérske reporty",
-      "🧠 Tímový AI mozog",
-      "🎯 Hodnotenie výkonnosti maklérov",
-      "📈 Predpoveď obratu pre tím",
-      "⚡ Prioritná podpora",
-      "🛡 30-dňová garancia vrátenia",
+      "đź‘‘ Owner: Market Vision menu",
+      "âś… Kto je pripravenĂ˝ kĂşpiĹĄ",
+      "âś… Dnes uzavriem",
+      "1Ă— Active Force licencia pre maklĂ©ra",
+      "đź“Š PrehÄľad vĂ˝konnosti tĂ­mu",
+      "đź”Ť PrebĂşdza starĂ˝ch klientov, ktorĂ­ ĹĄa zabudli kontaktovaĹĄ",
+      "đź“‹ ManaĹľĂ©rske reporty",
+      "đź§  TĂ­movĂ˝ AI mozog",
+      "đźŽŻ Hodnotenie vĂ˝konnosti maklĂ©rov",
+      "đź“ PredpoveÄŹ obratu pre tĂ­m",
+      "âšˇ PrioritnĂˇ podpora",
+      "đź›ˇ 30-dĹovĂˇ garancia vrĂˇtenia",
     ],
     limits: PLAN_LIMITS.enterprise,
     founderPrice: true,
-    founderNote: "Zakladateľská cena – prvých 20 kancelárií",
+    founderNote: "ZakladateÄľskĂˇ cena â€“ prvĂ˝ch 20 kancelĂˇriĂ­",
   },
-  // ── PROTOCOL AUTHORITY ────────────────────────────────────────────────────
+  // â”€â”€ PROTOCOL AUTHORITY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   {
     key: PLAN_KEYS.COMMAND,
     landingName: "Protocol Authority",
     name: "Protocol Authority",
     priceId: process.env.STRIPE_PRICE_PROTOCOL_AUTH || "",
-    priceLabel: "449 € / mesiac",
-    originalPriceLabel: "898 € / mesiac",
+    priceLabel: "449 â‚¬ / mesiac",
+    originalPriceLabel: "898 â‚¬ / mesiac",
     description:
-      "Najvyššia úroveň. Owner má Protocol Authority menu s Competition Heatmap a Neural Intelligence. 4 makléri dostanú Active Force prístup.",
-    billingNote: "1 Protocol Authority owner + 4 Active Force makléri",
+      "NajvyĹˇĹˇia ĂşroveĹ. Owner mĂˇ Protocol Authority menu s Competition Heatmap a Neural Intelligence. 4 maklĂ©ri dostanĂş Active Force prĂ­stup.",
+    billingNote: "1 Protocol Authority owner + 4 Active Force maklĂ©ri",
     recommended: false,
     features: [
-      "👑 Owner: Protocol Authority menu",
-      "✅ Kto je pripravený kúpiť",
-      "✅ Dnes uzavriem",
-      "4× Active Force licencie pre maklérov",
-      "🗺 Tepelná mapa konkurencie – živý radar",
-      "👻 Prebúdza starých klientov, ktorí ťa zabudli kontaktovať – pokročilý režim",
-      "🛡 Štít anonymného režimu",
-      "🧠 Neurónová spravodajská sieť",
-      "📊 Medzitrímová analytika",
-      "🏢 Správa viacerých pobočiek",
-      "☎ Dedikovaný Protocol manažér",
-      "⚡ SLA 99.99% uptime",
-      "🛡 30-dňová garancia vrátenia",
+      "đź‘‘ Owner: Protocol Authority menu",
+      "âś… Kto je pripravenĂ˝ kĂşpiĹĄ",
+      "âś… Dnes uzavriem",
+      "4Ă— Active Force licencie pre maklĂ©rov",
+      "đź—ş TepelnĂˇ mapa konkurencie â€“ ĹľivĂ˝ radar",
+      "đź‘» PrebĂşdza starĂ˝ch klientov, ktorĂ­ ĹĄa zabudli kontaktovaĹĄ â€“ pokroÄŤilĂ˝ reĹľim",
+      "đź›ˇ Ĺ tĂ­t anonymnĂ©ho reĹľimu",
+      "đź§  NeurĂłnovĂˇ spravodajskĂˇ sieĹĄ",
+      "đź“Š MedzitrĂ­movĂˇ analytika",
+      "đźŹ˘ SprĂˇva viacerĂ˝ch poboÄŤiek",
+      "âŽ DedikovanĂ˝ Protocol manaĹľĂ©r",
+      "âšˇ SLA 99.99% uptime",
+      "đź›ˇ 30-dĹovĂˇ garancia vrĂˇtenia",
     ],
     limits: PLAN_LIMITS.command,
     founderPrice: true,
-    founderNote: "Zakladateľská cena – prvých 20 kancelárií",
+    founderNote: "ZakladateÄľskĂˇ cena â€“ prvĂ˝ch 20 kancelĂˇriĂ­",
   },
 ] as const;
 
 export async function createBillingCheckoutSession(planKey: string, promoCode?: string) {
   const stripe = getStripe();
   if (!stripe) {
-    // Stripe nie je nakonfigurovaný, vráť null alebo vyhoď špecifickú chybu podľa potreby
+    // Stripe nie je nakonfigurovanĂ˝, vrĂˇĹĄ null alebo vyhoÄŹ ĹˇpecifickĂş chybu podÄľa potreby
     return null;
   }
   const { getCurrentUser, getCurrentProfile } = await loadAuthHelpers();
@@ -223,13 +223,13 @@ export async function createBillingCheckoutSession(planKey: string, promoCode?: 
   const profile = await getCurrentProfile();
 
   if (!user?.email) {
-    throw new Error("Používateľ nemá email.");
+    throw new Error("PouĹľĂ­vateÄľ nemĂˇ email.");
   }
 
   const plan = BILLING_PLANS.find((item) => item.key === planKey);
 
   if (!plan || !plan.priceId) {
-    throw new Error("Neplatný plan alebo chýba Stripe price ID.");
+    throw new Error("NeplatnĂ˝ plan alebo chĂ˝ba Stripe price ID.");
   }
 
   const appUrl = getAppUrl();
@@ -251,7 +251,7 @@ export async function createBillingCheckoutSession(planKey: string, promoCode?: 
     cancel_url: `${appUrl}/billing?checkout=cancel`,
     customer_email: user.email,
     client_reference_id: user.id,
-    // Ak prišiel promo kód z URL, aplikuj coupon — inak zobraz pole pre kód
+    // Ak priĹˇiel promo kĂłd z URL, aplikuj coupon â€” inak zobraz pole pre kĂłd
     ...(promoCode
       ? { discounts: [{ coupon: promoCode }] }
       : { allow_promotion_codes: true }),
@@ -304,7 +304,7 @@ export async function createCustomerPortalSession() {
   const customer = await findStripeCustomerByCurrentUserEmail();
 
   if (!customer) {
-    // user nemá Stripe customer – NIE je to 500 error, ale stav
+    // user nemĂˇ Stripe customer â€“ NIE je to 500 error, ale stav
     return {
       hasStripeConfigured: true,
       hasCustomer: false,
@@ -418,8 +418,8 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
       await createActivity({
         leadId: null,
         type: "Billing",
-        title: "Checkout session dokončená",
-        text: `Stripe checkout bol úspešne dokončený pre ${object.customer_email || "zákazníka"}.`,
+        title: "Checkout session dokonÄŤenĂˇ",
+        text: `Stripe checkout bol ĂşspeĹˇne dokonÄŤenĂ˝ pre ${object.customer_email || "zĂˇkaznĂ­ka"}.`,
         entityType: "billing",
         entityId: object.id,
         actorName: "Stripe",
@@ -436,8 +436,8 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
       await createActivity({
         leadId: null,
         type: "Billing",
-        title: "Predplatné bolo vytvorené",
-        text: `Vzniklo nové Stripe predplatné ${object.id}.`,
+        title: "PredplatnĂ© bolo vytvorenĂ©",
+        text: `Vzniklo novĂ© Stripe predplatnĂ© ${object.id}.`,
         entityType: "billing",
         entityId: object.id,
         actorName: "Stripe",
@@ -464,8 +464,8 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
       await createActivity({
         leadId: null,
         type: "Billing",
-        title: "Predplatné bolo upravené",
-        text: `Stripe predplatné ${object.id} bolo aktualizované na stav ${object.status}.`,
+        title: "PredplatnĂ© bolo upravenĂ©",
+        text: `Stripe predplatnĂ© ${object.id} bolo aktualizovanĂ© na stav ${object.status}.`,
         entityType: "billing",
         entityId: object.id,
         actorName: "Stripe",
@@ -481,8 +481,8 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
       await createActivity({
         leadId: null,
         type: "Billing",
-        title: "Predplatné bolo zrušené",
-        text: `Stripe predplatné ${object.id} bolo zrušené.`,
+        title: "PredplatnĂ© bolo zruĹˇenĂ©",
+        text: `Stripe predplatnĂ© ${object.id} bolo zruĹˇenĂ©.`,
         entityType: "billing",
         entityId: object.id,
         actorName: "Stripe",
@@ -496,8 +496,8 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
       await createActivity({
         leadId: null,
         type: "Billing",
-        title: "Faktúra bola uhradená",
-        text: `Stripe faktúra ${object.id} bola úspešne uhradená.`,
+        title: "FaktĂşra bola uhradenĂˇ",
+        text: `Stripe faktĂşra ${object.id} bola ĂşspeĹˇne uhradenĂˇ.`,
         entityType: "billing",
         entityId: object.id,
         actorName: "Stripe",
@@ -516,8 +516,8 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
       await createActivity({
         leadId: null,
         type: "Billing",
-        title: "Platba za faktúru zlyhala",
-        text: `Platba za Stripe faktúru ${object.id} zlyhala.`,
+        title: "Platba za faktĂşru zlyhala",
+        text: `Platba za Stripe faktĂşru ${object.id} zlyhala.`,
         entityType: "billing",
         entityId: object.id,
         actorName: "Stripe",
@@ -568,10 +568,12 @@ export function verifyStripeWebhook(payload: string | Buffer, signature: string)
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
 
   if (!secret) {
-    throw new Error("Chýba STRIPE_WEBHOOK_SECRET.");
+    throw new Error("ChĂ˝ba STRIPE_WEBHOOK_SECRET.");
   }
   if (!stripe) {
-    throw new Error("Stripe client nie je inicializovaný.");
+    throw new Error("Stripe client nie je inicializovanĂ˝.");
   }
   return stripe.webhooks.constructEvent(payload, signature, secret);
 }
+
+
