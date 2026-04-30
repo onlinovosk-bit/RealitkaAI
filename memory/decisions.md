@@ -67,3 +67,8 @@
 - **Prečo:** Konzistencia. Užívateľ nesmie pociťovať skoky medzi starým a novým dizajnom.
 - **Výsledok testu:** 1000 leadov spracovaných úspešne. Architektúra škáluje lineárne.
 ---
+## [2026-04-30] - UI Cleanup & Slack Purple Theme
+- **Rozhodnutie:** Odstránenie auditných textov z dema, zrýchlenie scrollovania o 10% (na 18s cyklus) a implementácia Purple/Dark toggle.
+- **Prečo:** Vyčistenie vizuálneho šumu a zvýšenie dynamiky rozhrania. Personalizácia podľa preferencií p. Smolka (Slack identity).
+- **Dôsledok:** Demo pôsobí profesionálnejšie a systém získal ikonický Slack Purple vzhľad.
+---
