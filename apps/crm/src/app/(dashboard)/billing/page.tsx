@@ -1,128 +1,47 @@
-import ModuleShell from "@/components/shared/module-shell";
-import ErrorState from "@/components/shared/error-state";
-import PricingCards from "@/components/billing/pricing-cards";
-import RoiCalculator from "@/components/billing/RoiCalculator";
-import CurrentSubscriptionCard from "@/components/billing/current-subscription-card";
-import { ManageSubscriptionButton } from "@/components/billing/manage-subscription-button";
-import UsageMetricsEnterpriseCard from "@/components/settings/usage-metrics-enterprise-card";
-import { safeServerAction } from "@/lib/safe-action";
-import { BILLING_PLANS, getCurrentBillingStatus } from "@/lib/billing-store";
-import { requireRole } from "@/lib/permissions";
-import FeatureComparisonTable from "@/components/billing/FeatureComparisonTable";
+'use client';
+import React from 'react';
 
-export default async function BillingPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ checkout?: string }>;
-}) {
-  await requireRole(["owner", "manager", "agent"]);
-  const params = await searchParams;
-
-  const result = await safeServerAction(
-    () => getCurrentBillingStatus(),
-    "Nepodarilo sa načítať stav predplatného."
-  );
-
-  if (!result.ok) {
-    return (
-      <ModuleShell
-        title="Predplatné"
-        description="Správa predplatného a platieb."
-      >
-        <ErrorState
-          title="Predplatné sa nepodarilo načítať"
-          description={result.error}
-        />
-      </ModuleShell>
-    );
-  }
-
-  const billing = result.data;
-
+export default function BillingPage() {
   return (
-    <ModuleShell
-      title="Predplatné"
-      description="Správa predplatného a platieb."
-    >
-      <p className="mb-4 text-[10px] uppercase tracking-wider text-slate-500">
-        release: l99-2026-04-26b
-      </p>
-      {params.checkout === "success" && (
-        <div className="mb-6 rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
-          Checkout bol úspešne dokončený.
-        </div>
-      )}
+    <div className="mx-auto max-w-4xl py-8">
+      <header className="mb-8 border-b pb-4">
+        <h1 className="text-3xl font-bold text-gray-900">Predplatné a licencie</h1>
+        <p className="text-gray-500">Spravujte svoj balík a fakturačné údaje pre Reality Monopol.</p>
+      </header>
 
-      {params.checkout === "cancel" && (
-        <div className="mb-6 rounded-2xl border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-700">
-          Checkout bol zrušený.
-        </div>
-      )}
-
-      <section className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Stripe customer</p>
-          <h2 className="mt-2 text-3xl font-bold text-gray-900">
-            {billing.hasCustomer ? "Áno" : "Nie"}
-          </h2>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        {/* Karta Aktuálneho Plánu */}
+        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="mb-4 flex items-start justify-between">
+            <div>
+              <h3 className="text-lg font-semibold">Aktuálny program</h3>
+              <span className="inline-flex items-center rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-800">
+                PROTOCOL AUTHORITY
+              </span>
+            </div>
+            <span className="text-2xl font-bold">449 €<span className="text-sm font-normal text-gray-500">/mes</span></span>
+          </div>
+          <button className="w-full rounded-md bg-[#4a154b] py-2 text-white transition hover:bg-[#3f0e40]">
+            Spravovať v Stripe
+          </button>
         </div>
 
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Predplatné</p>
-          <h2 className="mt-2 text-3xl font-bold text-gray-900">
-            {billing.hasSubscription ? "Aktívne" : "Nie"}
-          </h2>
-        </div>
-
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Faktúry</p>
-          <h2 className="mt-2 text-3xl font-bold text-gray-900">
-            {billing.invoices.length}
-          </h2>
-        </div>
-
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Portál predplatného</p>
-          <div className="mt-3">
-            {billing.hasSubscription ? (
-              <ManageSubscriptionButton />
-            ) : (
-              <p className="text-sm" style={{ color: '#475569' }}>
-                Dostupné po aktivácii plánu
-              </p>
-            )}
+        {/* Karta Štatistík */}
+        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h3 className="mb-4 text-lg font-semibold">Využitie zdrojov</h3>
+          <div className="space-y-4">
+            <div>
+              <div className="mb-1 flex justify-between text-sm">
+                <span>AI Tokeny</span>
+                <span>85%</span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-gray-200">
+                <div className="h-2 rounded-full bg-purple-600" style={{ width: '85%' }} />
+              </div>
+            </div>
           </div>
         </div>
-      </section>
-
-      <section className="mb-6">
-        <CurrentSubscriptionCard billing={billing} />
-      </section>
-
-      <section className="mb-6">
-        <UsageMetricsEnterpriseCard />
-      </section>
-
-      <section className="mb-6">
-        <RoiCalculator />
-      </section>
-
-      <PricingCards
-        plans={BILLING_PLANS.map((item) => ({
-          key: item.key,
-          name: item.name,
-          priceLabel: item.priceLabel,
-          originalPriceLabel: (item as { originalPriceLabel?: string }).originalPriceLabel,
-          description: item.description,
-          billingNote: item.billingNote,
-          recommended: item.recommended,
-          features: [...item.features],
-        }))}
-      />
-
-      <section className="mt-6">
-        <FeatureComparisonTable />
-      </section>
-    </ModuleShell>
+      </div>
+    </div>
   );
 }
