@@ -1,15 +1,15 @@
 ﻿{
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
-    { "path": "/api/cron/night-watch?key=YOUR_SECRET_CRON_KEY", "schedule": "0 20 * * *" },
-    { "path": "/api/agents/deal-trigger?key=YOUR_SECRET_CRON_KEY", "schedule": "*/15 * * * *" },
-    { "path": "/api/agents/competitor-watch?key=YOUR_SECRET_CRON_KEY", "schedule": "*/30 * * * *" },
-    { "path": "/api/cron/morning-brief?key=YOUR_SECRET_CRON_KEY", "schedule": "0 8 * * *" },
-    { "path": "/api/scrape?key=YOUR_SECRET_CRON_KEY", "schedule": "0 * * * *" },
-    { "path": "/api/scoring?key=YOUR_SECRET_CRON_KEY", "schedule": "10 * * * *" },
-    { "path": "/api/segmentation?key=YOUR_SECRET_CRON_KEY", "schedule": "20 * * * *" },
-    { "path": "/api/outreach?key=YOUR_SECRET_CRON_KEY", "schedule": "30 * * * *" },
-    { "path": "/api/demo?key=YOUR_SECRET_CRON_KEY", "schedule": "40 * * * *" },
-    { "path": "/api/playbook/auto?key=YOUR_SECRET_CRON_KEY", "schedule": "50 * * * *" }
+    { "path": "/api/cron/night-watch", "schedule": "0 20 * * *" },
+    { "path": "/api/agents/deal-trigger", "schedule": "*/15 * * * *" },
+    { "path": "/api/agents/competitor-watch", "schedule": "*/30 * * * *" },
+    { "path": "/api/cron/morning-brief", "schedule": "0 8 * * *" },
+    { "path": "/api/scrape", "schedule": "0 * * * *" },
+    { "path": "/api/scoring", "schedule": "10 * * * *" },
+    { "path": "/api/segmentation", "schedule": "20 * * * *" },
+    { "path": "/api/outreach", "schedule": "30 * * * *" },
+    { "path": "/api/demo", "schedule": "40 * * * *" },
+    { "path": "/api/playbook/auto", "schedule": "50 * * * *" }
   ]
 }
