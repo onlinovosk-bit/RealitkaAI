@@ -22,3 +22,8 @@
 - **Alternatívy:** Posielanie čiastkových kódov, vysvetľovanie ciest k súborom.
 - **Prečo:** Rýchlosť exekúcie. Spojenie generovania kľúčov, úpravy .env, vercel.json a endpointov do jedného Bash skriptu eliminuje chybu používateľa.
 ---
+## [2026-04-30] - Slack & Morning Briefing Integration
+- **Rozhodnutie:** Centralizácia Slack notifikácií do /lib/slack.js a vytvorenie briefing endpointu.
+- **Prečo:** Aby ranný briefing aj Outreach engine zdieľali rovnakú infraštruktúru a tajomstvá (.env).
+- **Dôsledok:** Automatizovaný prehľad každé ráno o 8:00 (podľa vercel.json).
+---

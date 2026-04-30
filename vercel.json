@@ -1,6 +1,7 @@
 ﻿{
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
+    { "path": "/api/cron/morning-brief?key=YOUR_SECRET_CRON_KEY", "schedule": "0 8 * * *" },
     { "path": "/api/scrape?key=YOUR_SECRET_CRON_KEY", "schedule": "0 * * * *" },
     { "path": "/api/scoring?key=YOUR_SECRET_CRON_KEY", "schedule": "10 * * * *" },
     { "path": "/api/segmentation?key=YOUR_SECRET_CRON_KEY", "schedule": "20 * * * *" },
