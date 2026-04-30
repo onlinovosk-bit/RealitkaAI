@@ -62,3 +62,8 @@
 - **Prečo:** Odstránenie chaosu. Zvýšenie prehľadnosti cez hierarchické usporiadanie (Ikony -> Kapitoly -> Obsah).
 - **Dôsledok:** Profesionálne, scannovateľné rozhranie pripravené na škálovanie (Agent Team).
 ---
+## [2026-04-30] - Global UI Shift & Stress Test Evaluation
+- **Rozhodnutie:** Preklopenie celej aplikácie na SlackLayout cez root layout.
+- **Prečo:** Konzistencia. Užívateľ nesmie pociťovať skoky medzi starým a novým dizajnom.
+- **Výsledok testu:** 1000 leadov spracovaných úspešne. Architektúra škáluje lineárne.
+---

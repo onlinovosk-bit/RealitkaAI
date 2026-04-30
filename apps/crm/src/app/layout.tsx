@@ -1,19 +1,14 @@
-import type { Metadata } from 'next'
-import '../styles/globals.css'
+import { SlackLayout } from '@/components/navigation/SlackLayout';
+import '../styles/globals.css';
 
-export const metadata: Metadata = {
-  title: 'Revolis.AI — Revenue OS',
-  description: 'Realitný AI CRM pre slovenské realitné kancelárie',
-}
-
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="sk">
-      <body>{children}</body>
+      <body>
+        <SlackLayout>
+          {children}
+        </SlackLayout>
+      </body>
     </html>
-  )
+  );
 }
