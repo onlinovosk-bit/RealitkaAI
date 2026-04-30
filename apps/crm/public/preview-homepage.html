@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Revolis.AI — Homepage Preview</title>
+<style>
+  :root {
+    --bg: #F8FAFC;
+    --bg2: #F1F5F9;
+    --dark: #050A18;
+    --dark2: #0A0F1E;
+    --navy: #0F172A;
+    --cyan: #0EA5E9;
+    --cyan2: #38BDF8;
+    --purple: #7C3AED;
+    --green: #16A34A;
+    --red: #DC2626;
+    --orange: #EA580C;
+    --gold: #D97706;
+    --text: #0F172A;
+    --muted: #64748B;
+    --border: #E2E8F0;
+    --white: #FFFFFF;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; overflow-x:hidden; }
+  ::-webkit-scrollbar { width:6px; }
+  ::-webkit-scrollbar-track { background:var(--bg2); }
+  ::-webkit-scrollbar-thumb { background:var(--cyan); border-radius:3px; }
+
+  /* ── NAV ── */
+  nav {
+    position:fixed; top:0; left:0; right:0; z-index:100;
+    padding:16px 48px; display:flex; align-items:center; justify-content:space-between;
+    background:rgba(255,255,255,.92); backdrop-filter:blur(20px);
+    border-bottom:1px solid var(--border);
+  }
+  .logo { font-size:18px; font-weight:900; letter-spacing:.05em; color:var(--dark); }
+  .logo span { color:var(--cyan); }
+  .nav-links { display:flex; gap:32px; }
+  .nav-links a { font-size:13px; font-weight:600; color:var(--muted); text-decoration:none; transition:color .2s; }
+  .nav-links a:hover { color:var(--text); }
+  .nav-cta {
+    padding:10px 24px; border-radius:10px; font-size:13px; font-weight:800;
+    background:var(--dark); color:#fff; border:none; cursor:pointer;
+    transition:background .2s, transform .2s;
+  }
+  .nav-cta:hover { background:var(--navy); transform:translateY(-1px); }
+
+  /* ── HERO ── */
+  .hero {
+    min-height:100vh; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; text-align:center; padding:120px 24px 80px;
+    background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(14,165,233,.08) 0%, transparent 70%);
+    position:relative; overflow:hidden;
+  }
+  .hero::before {
+    content:''; position:absolute; inset:0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230EA5E9' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    pointer-events:none;
+  }
+  .hero-eyebrow {
+    display:inline-flex; align-items:center; gap:8px;
+    padding:6px 16px; border-radius:999px; margin-bottom:28px;
+    background:rgba(14,165,233,.08); border:1px solid rgba(14,165,233,.2);
+    font-size:12px; font-weight:700; color:var(--cyan); letter-spacing:.1em; text-transform:uppercase;
+  }
+  .live-dot { width:7px; height:7px; border-radius:50%; background:var(--green); animation:blink 1.5s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+
+  h1 {
+    font-size: clamp(42px,7vw,88px); font-weight:900; line-height:1.02;
+    letter-spacing:-.04em; color:var(--dark); margin-bottom:28px;
+    animation: fadeUp .7s ease both;
+  }
+  h1 em { font-style:normal; color:var(--cyan); }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:none} }
+
+  .hero-sub {
+    font-size:clamp(17px,2vw,22px); color:var(--muted); max-width:600px;
+    line-height:1.65; margin-bottom:44px;
+    animation: fadeUp .7s .15s ease both;
+  }
+  .hero-sub strong { color:var(--text); }
+
+  .hero-cta-row { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; animation:fadeUp .7s .3s ease both; margin-bottom:60px; }
+  .btn-dark {
+    padding:18px 40px; border-radius:12px; font-size:15px; font-weight:800;
+    background:var(--dark); color:#fff; border:none; cursor:pointer;
+    transition:transform .2s, box-shadow .2s;
+    display:flex; align-items:center; gap:8px;
+  }
+  .btn-dark:hover { transform:translateY(-2px); box-shadow:0 12px 40px rgba(15,23,42,.25); }
+  .btn-outline {
+    padding:18px 40px; border-radius:12px; font-size:15px; font-weight:700;
+    background:transparent; border:2px solid var(--border); color:var(--text); cursor:pointer;
+    transition:border-color .2s, background .2s;
+  }
+  .btn-outline:hover { border-color:var(--cyan); background:rgba(14,165,233,.04); }
+
+  /* Trust bar */
+  .trust-bar {
+    display:flex; gap:32px; justify-content:center; flex-wrap:wrap;
+    font-size:13px; color:var(--muted); animation:fadeUp .7s .45s ease both;
+  }
+  .trust-item { display:flex; align-items:center; gap:6px; }
+  .trust-check { color:var(--green); font-weight:900; }
+
+  /* ── STATS STRIP ── */
+  .stats-strip {
+    background:var(--dark); padding:48px 24px;
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:0;
+    max-width:1200px; margin:0 auto; border-radius:24px;
+    position:relative; z-index:1; top:-32px;
+  }
+  .stat-cell {
+    text-align:center; padding:16px;
+    border-right:1px solid rgba(255,255,255,.08);
+  }
+  .stat-cell:last-child { border-right:none; }
+  .stat-num { font-size:36px; font-weight:900; color:var(--cyan2); font-variant-numeric:tabular-nums; }
+  .stat-label { font-size:12px; color:rgba(255,255,255,.4); margin-top:4px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; }
+
+  /* ── SECTION WRAPPERS ── */
+  .section { padding:96px 24px; max-width:1200px; margin:0 auto; }
+  .section-label {
+    font-size:11px; font-weight:800; letter-spacing:.2em; text-transform:uppercase;
+    color:var(--cyan); margin-bottom:12px;
+  }
+  .section-h2 { font-size:clamp(28px,4vw,52px); font-weight:900; line-height:1.1; letter-spacing:-.03em; margin-bottom:16px; }
+  .section-p { font-size:17px; color:var(--muted); line-height:1.7; max-width:560px; margin-bottom:56px; }
+
+  /* ── PAIN CARDS ── */
+  .pain-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:20px; }
+  .pain-card {
+    background:var(--white); border:1px solid var(--border); border-radius:16px;
+    padding:28px; transition:transform .3s, box-shadow .3s, border-color .3s;
+    opacity:0; transform:translateY(16px); transition:opacity .5s ease, transform .5s ease, box-shadow .3s;
+  }
+  .pain-card.visible { opacity:1; transform:none; }
+  .pain-card:hover { box-shadow:0 8px 32px rgba(15,23,42,.08); border-color:rgba(14,165,233,.2); transform:translateY(-3px); }
+  .pain-icon { font-size:28px; margin-bottom:12px; }
+  .pain-title { font-size:16px; font-weight:800; margin-bottom:8px; color:var(--dark); }
+  .pain-text { font-size:14px; color:var(--muted); line-height:1.65; }
+
+  /* ── FEATURE ROWS ── */
+  .feature-row {
+    display:grid; grid-template-columns:1fr 1fr; gap:64px; align-items:center;
+    padding:64px 0; border-bottom:1px solid var(--border);
+    opacity:0; transform:translateY(20px); transition:opacity .6s ease, transform .6s ease;
+  }
+  .feature-row.visible { opacity:1; transform:none; }
+  .feature-row:last-child { border-bottom:none; }
+  .feature-row.reverse { direction:rtl; }
+  .feature-row.reverse > * { direction:ltr; }
+  .feat-label { font-size:10px; font-weight:800; letter-spacing:.2em; text-transform:uppercase; margin-bottom:12px; }
+  .feat-title { font-size:clamp(22px,3vw,34px); font-weight:900; line-height:1.15; letter-spacing:-.02em; margin-bottom:16px; }
+  .feat-desc { font-size:15px; color:var(--muted); line-height:1.7; margin-bottom:24px; }
+  .feat-contrast {
+    display:grid; grid-template-columns:1fr 1fr; gap:12px;
+  }
+  .contrast-box {
+    padding:14px; border-radius:10px; font-size:12px; line-height:1.6;
+  }
+  .contrast-before { background:#FEF2F2; color:#991B1B; border:1px solid #FECACA; }
+  .contrast-after { background:#F0FDF4; color:#166534; border:1px solid #BBF7D0; }
+  .contrast-label { font-size:10px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; margin-bottom:6px; opacity:.7; }
+
+  /* FEATURE VISUAL CARDS */
+  .feat-visual {
+    background:var(--dark2); border-radius:20px; padding:28px;
+    border:1px solid rgba(255,255,255,.07); min-height:260px;
+    display:flex; flex-direction:column; justify-content:space-between;
+  }
+  .feat-vis-header { font-size:12px; font-weight:700; color:rgba(255,255,255,.4); margin-bottom:20px; letter-spacing:.08em; text-transform:uppercase; }
+
+  /* Score gauge */
+  .score-row { display:flex; align-items:center; gap:16px; margin-bottom:12px; }
+  .score-name { font-size:13px; color:rgba(255,255,255,.7); width:120px; flex-shrink:0; }
+  .score-bar-track { flex:1; height:8px; background:rgba(255,255,255,.08); border-radius:4px; overflow:hidden; }
+  .score-bar-fill { height:100%; border-radius:4px; width:0; transition:width 1.2s ease; }
+  .score-val { font-size:13px; font-weight:800; width:40px; text-align:right; }
+
+  /* Funnel viz */
+  .funnel { display:flex; flex-direction:column; gap:8px; }
+  .funnel-stage {
+    border-radius:8px; padding:10px 16px; display:flex; justify-content:space-between; align-items:center;
+    font-size:13px; font-weight:700;
+  }
+  .funnel-val { font-size:18px; font-weight:900; }
+
+  /* Comparison table */
+  .comp-table { width:100%; border-collapse:collapse; font-size:13px; }
+  .comp-table th { padding:10px 12px; font-size:11px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.4); border-bottom:1px solid rgba(255,255,255,.07); text-align:left; }
+  .comp-table td { padding:10px 12px; border-bottom:1px solid rgba(255,255,255,.05); color:rgba(255,255,255,.7); }
+  .comp-table tr:last-child td { border-bottom:none; }
+  .check-yes { color:#4ADE80; font-size:16px; }
+  .check-no { color:rgba(255,255,255,.2); font-size:16px; }
+
+  /* ── NUMBERS STRIP ── */
+  .numbers-grid {
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:1px;
+    background:var(--border); border-radius:20px; overflow:hidden;
+  }
+  .number-cell {
+    background:var(--white); padding:36px 24px; text-align:center;
+    opacity:0; transform:scale(.96); transition:opacity .5s ease, transform .5s ease;
+  }
+  .number-cell.visible { opacity:1; transform:none; }
+  .number-big { font-size:42px; font-weight:900; letter-spacing:-.03em; }
+  .number-label { font-size:13px; font-weight:700; color:var(--muted); margin-top:6px; }
+  .number-ctx { font-size:12px; color:var(--muted); margin-top:4px; opacity:.7; }
+
+  /* ── PRICING ── */
+  .pricing-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:20px; align-items:start; }
+  .price-card {
+    background:var(--white); border:2px solid var(--border); border-radius:20px; padding:32px;
+    transition:transform .3s, box-shadow .3s, border-color .3s;
+    opacity:0; transform:translateY(16px); transition:opacity .5s ease, transform .5s ease;
+  }
+  .price-card.visible { opacity:1; transform:translateY(0); }
+  .price-card:hover { transform:translateY(-6px); box-shadow:0 20px 60px rgba(15,23,42,.12); }
+  .price-card.featured {
+    background:var(--dark); border-color:var(--dark); color:#fff;
+    transform:scale(1.04);
+  }
+  .price-card.featured.visible { transform:scale(1.04) translateY(0); }
+  .price-card.featured:hover { transform:scale(1.04) translateY(-6px); }
+  .plan-name { font-size:11px; font-weight:800; letter-spacing:.2em; text-transform:uppercase; margin-bottom:8px; }
+  .plan-price { font-size:40px; font-weight:900; letter-spacing:-.03em; line-height:1; margin-bottom:4px; }
+  .plan-period { font-size:14px; font-weight:500; opacity:.5; }
+  .plan-tagline { font-size:13px; margin:16px 0; line-height:1.5; opacity:.7; }
+  .plan-divider { border:none; border-top:1px solid; opacity:.1; margin:20px 0; }
+  .plan-features { list-style:none; display:flex; flex-direction:column; gap:10px; margin-bottom:28px; }
+  .plan-features li { font-size:13px; display:flex; gap:8px; align-items:flex-start; }
+  .plan-features li::before { content:'✓'; font-weight:900; flex-shrink:0; margin-top:1px; }
+  .plan-cta {
+    width:100%; padding:14px; border-radius:10px; font-size:14px; font-weight:800;
+    cursor:pointer; border:none; transition:transform .2s, box-shadow .2s;
+  }
+  .plan-cta:hover { transform:translateY(-1px); }
+  .badge-popular {
+    display:inline-block; padding:3px 12px; border-radius:999px;
+    font-size:10px; font-weight:800; letter-spacing:.1em; text-transform:uppercase;
+    background:rgba(14,165,233,.15); color:var(--cyan2); border:1px solid rgba(14,165,233,.25);
+    margin-bottom:16px;
+  }
+
+  /* ── FAQ ── */
+  .faq-list { display:flex; flex-direction:column; gap:0; }
+  .faq-item {
+    border-bottom:1px solid var(--border); overflow:hidden;
+  }
+  .faq-q {
+    width:100%; text-align:left; padding:22px 0; background:none; border:none; cursor:pointer;
+    display:flex; justify-content:space-between; align-items:center; gap:16px;
+    font-size:16px; font-weight:700; color:var(--text);
+  }
+  .faq-icon { font-size:20px; font-weight:900; color:var(--cyan); flex-shrink:0; transition:transform .3s; }
+  .faq-a { font-size:14px; color:var(--muted); line-height:1.7; max-height:0; overflow:hidden; transition:max-height .3s ease, padding .3s; }
+  .faq-item.open .faq-a { max-height:200px; padding-bottom:20px; }
+  .faq-item.open .faq-icon { transform:rotate(45deg); }
+
+  /* ── FINAL CTA ── */
+  .final-cta {
+    background:var(--dark); color:#fff; padding:100px 24px;
+    text-align:center; position:relative; overflow:hidden;
+  }
+  .final-cta::before {
+    content:''; position:absolute; top:-200px; left:50%; transform:translateX(-50%);
+    width:800px; height:400px; border-radius:50%;
+    background:radial-gradient(ellipse, rgba(14,165,233,.15), transparent 70%);
+    pointer-events:none;
+  }
+  .final-cta h2 { font-size:clamp(32px,5vw,64px); font-weight:900; letter-spacing:-.03em; margin-bottom:16px; position:relative; }
+  .final-cta p { font-size:18px; color:rgba(255,255,255,.5); max-width:500px; margin:0 auto 44px; position:relative; }
+  .final-cta-btn {
+    padding:20px 56px; border-radius:14px; font-size:16px; font-weight:800;
+    background:var(--cyan); color:var(--dark); border:none; cursor:pointer;
+    transition:transform .2s, box-shadow .2s; position:relative;
+    animation:pulseCta 3s ease-in-out infinite;
+  }
+  @keyframes pulseCta { 0%,100%{box-shadow:0 0 0 0 rgba(14,165,233,.4)} 50%{box-shadow:0 0 0 16px rgba(14,165,233,0)} }
+  .final-cta-btn:hover { transform:translateY(-3px); }
+  .final-micro { font-size:13px; color:rgba(255,255,255,.25); margin-top:16px; position:relative; }
+
+  /* ── RESPONSIVE ── */
+  @media(max-width:768px) {
+    nav { padding:14px 20px; }
+    .nav-links { display:none; }
+    .feature-row { grid-template-columns:1fr; gap:32px; }
+    .feature-row.reverse { direction:ltr; }
+    .stats-strip { grid-template-columns:repeat(2,1fr); }
+    .stat-cell:nth-child(2n) { border-right:none; }
+    .stat-cell { border-bottom:1px solid rgba(255,255,255,.08); }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">REVOLIS<span>.AI</span></div>
+  <div class="nav-links">
+    <a href="#">Features</a>
+    <a href="#">Demo</a>
+    <a href="#">Cenník</a>
+    <a href="#">Blog</a>
+  </div>
+  <button class="nav-cta">Získať prístup →</button>
+</nav>
+
+<!-- ═══════════════════════════════════════ HERO -->
+<div class="hero">
+  <div class="hero-eyebrow">
+    <span class="live-dot"></span>
+    340+ kancelárií · 6 krajín · Live
+  </div>
+  <h1>Kto odpovie ako prvý,<br><em>uzavrie obchod.</em></h1>
+  <p class="hero-sub">
+    Revolis.AI odpovedá na každý dopyt za <strong>90 sekúnd</strong>, sleduje klientov
+    <strong>18 mesiacov</strong> a ukáže ti presne koho kontaktovať dnes.
+  </p>
+  <div class="hero-cta-row">
+    <button class="btn-dark">
+      Spusti Revolis.AI za 4 minúty
+      <span style="opacity:.6">→</span>
+    </button>
+    <button class="btn-outline">Pozri 2-min demo</button>
+  </div>
+  <div class="trust-bar">
+    <div class="trust-item"><span class="trust-check">✓</span> Bez dlhodobých záväzkov</div>
+    <div class="trust-item"><span class="trust-check">✓</span> Trial bez záväzkov</div>
+    <div class="trust-item"><span class="trust-check">✓</span> Nastavenie za 4 minúty</div>
+    <div class="trust-item"><span class="trust-check">✓</span> Zrušenie kedykoľvek</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ STATS STRIP -->
+<div style="padding:0 24px;max-width:1200px;margin:0 auto;">
+  <div class="stats-strip">
+    <div class="stat-cell">
+      <div class="stat-num" id="s1">0%</div>
+      <div class="stat-label">Nárast zmlúv za Q1</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-num" id="s2">0s</div>
+      <div class="stat-label">Priem. čas odpovede</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-num" id="s3">0%</div>
+      <div class="stat-label">Reaktivovaných leadov</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-num" id="s4">0€</div>
+      <div class="stat-label">Priem. nový obrat Q1</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-num" id="s5">0%</div>
+      <div class="stat-label">Menej nekvalif. hovorov</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-num" id="s6">0min</div>
+      <div class="stat-label">Čas nasadenia</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ PAIN -->
+<div class="section">
+  <div class="section-label">Problém</div>
+  <div class="section-h2">Bolí ťa toto?</div>
+  <p class="section-p">Každý maklér pozná tieto momenty. Každý z nich je stratená provízia.</p>
+  <div class="pain-grid">
+    <div class="pain-card">
+      <div class="pain-icon">😴</div>
+      <div class="pain-title">Dopyt prišiel o 22:47. Odpovedal si ráno. Bolo neskoro.</div>
+      <div class="pain-text">Prvý kto odpovie dostane lead. Priemerný čas odpovede makléra: 7 hodín. Revolis.AI: 90 sekúnd, 24/7.</div>
+    </div>
+    <div class="pain-card">
+      <div class="pain-icon">👻</div>
+      <div class="pain-title">Písal si mu pred 3 mesiacmi. Kúpil od niekoho iného.</div>
+      <div class="pain-text">Mal záujem. Bol "ešte nie pripravený." Vypadol z radaru. Revolis by ho sledoval 18 mesiacov automaticky.</div>
+    </div>
+    <div class="pain-card">
+      <div class="pain-icon">💸</div>
+      <div class="pain-title">68 % leadov nebolo nikdy druhýkrát kontaktovaných.</div>
+      <div class="pain-text">CRM zaznamenáva. Revolis.AI aktívne pracuje s databázou každý deň — bez tvojho vstupu.</div>
+    </div>
+    <div class="pain-card">
+      <div class="pain-icon">🚪</div>
+      <div class="pain-title">Maklér odišiel. Jeho leads odišli s ním.</div>
+      <div class="pain-text">Revolis drží vzťahy na úrovni kancelárie — nie v telefóne jednotlivca. Nikdy viac.</div>
+    </div>
+    <div class="pain-card">
+      <div class="pain-icon">❓</div>
+      <div class="pain-title">Minul si 1 200 € na reklamu. Nevieš ktorá fungovala.</div>
+      <div class="pain-text">Revolis.AI mapuje každý lead od prvej reklamy po podpis. Škáluješ len to, čo prináša podpisy.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ FEATURES -->
+<div class="section" style="padding-top:32px;">
+  <div class="section-label">Riešenie</div>
+  <div class="section-h2">Čo Revolis.AI robí za teba</div>
+  <p class="section-p">Nie ďalší CRM ktorý musíš aktualizovať. Systém ktorý pracuje namiesto teba — každú hodinu.</p>
+
+  <!-- Feature 1 -->
+  <div class="feature-row">
+    <div>
+      <div class="feat-label" style="color:var(--cyan)">AI Lead Scoring</div>
+      <div class="feat-title">Vieš kto kúpi tento mesiac.</div>
+      <p class="feat-desc">Revolis analyzuje správanie každého leadu a priradí skóre 1–100. Ty zavoláš len tým s 80+. Čas na nekvalifikovaných leadoch: −67 %.</p>
+      <div class="feat-contrast">
+        <div class="contrast-box contrast-before">
+          <div class="contrast-label">Bez Revolis</div>
+          Voláš všetkým. 9 z 10 hovorov je zbytočných. Únava, frustrácia, strata motivácie.
+        </div>
+        <div class="contrast-box contrast-after">
+          <div class="contrast-label">S Revolis.AI</div>
+          Voláš tým, ktorí sú pripravení. 3× vyššia konverzia hovoru na stretnutie.
+        </div>
+      </div>
+    </div>
+    <div class="feat-visual">
+      <div class="feat-vis-header">Lead Scoring — Tvoji kontakty dnes</div>
+      <div>
+        <div class="score-row">
+          <div class="score-name">Ján Kováč</div>
+          <div class="score-bar-track"><div class="score-bar-fill" data-w="91" style="background:linear-gradient(90deg,#22C55E,#4ADE80)"></div></div>
+          <div class="score-val" style="color:#4ADE80">91</div>
+        </div>
+        <div class="score-row">
+          <div class="score-name">Marta Horáková</div>
+          <div class="score-bar-track"><div class="score-bar-fill" data-w="84" style="background:linear-gradient(90deg,#22C55E,#4ADE80)"></div></div>
+          <div class="score-val" style="color:#4ADE80">84</div>
+        </div>
+        <div class="score-row">
+          <div class="score-name">Peter Benko</div>
+          <div class="score-bar-track"><div class="score-bar-fill" data-w="71" style="background:linear-gradient(90deg,#0EA5E9,#38BDF8)"></div></div>
+          <div class="score-val" style="color:#38BDF8">71</div>
+        </div>
+        <div class="score-row">
+          <div class="score-name">Lucia Tóthová</div>
+          <div class="score-bar-track"><div class="score-bar-fill" data-w="58" style="background:linear-gradient(90deg,#F59E0B,#FCD34D)"></div></div>
+          <div class="score-val" style="color:#FCD34D">58</div>
+        </div>
+        <div class="score-row">
+          <div class="score-name">Rastislav Horák</div>
+          <div class="score-bar-track"><div class="score-bar-fill" data-w="29" style="background:linear-gradient(90deg,#EF4444,#F87171)"></div></div>
+          <div class="score-val" style="color:#F87171">29</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+        <span style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;background:rgba(34,197,94,.15);color:#4ADE80">🟢 Zavolaj teraz: 2</span>
+        <span style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;background:rgba(14,165,233,.15);color:#38BDF8">🔵 Sleduj: 1</span>
+        <span style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;background:rgba(239,68,68,.15);color:#F87171">🔴 Nurture: 2</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feature 2 -->
+  <div class="feature-row reverse">
+    <div>
+      <div class="feat-label" style="color:#7C3AED">24/7 AI Response Engine</div>
+      <div class="feat-title">Odpoveď za 90 sekúnd. Vždy.</div>
+      <p class="feat-desc">Každý dopyt dostane personalizovanú odpoveď do 90 sekúnd. AI píše v tóne tvojej kancelárie, v jazyku klienta, s konkrétnou nehnuteľnosťou.</p>
+      <div class="feat-contrast">
+        <div class="contrast-box contrast-before">
+          <div class="contrast-label">Bez Revolis</div>
+          Prvý hovor až ráno. Lead si medzitým zobral 3 ďalšie kontakty a vybral si.
+        </div>
+        <div class="contrast-box contrast-after">
+          <div class="contrast-label">S Revolis.AI</div>
+          Lead dostane odpoveď skôr ako odíde zo stránky. Konverzácia začína ihneď.
+        </div>
+      </div>
+    </div>
+    <div class="feat-visual">
+      <div class="feat-vis-header">Live Response Feed — posledná hodina</div>
+      <div class="funnel">
+        <div class="funnel-stage" style="background:rgba(124,58,237,.15);color:#A78BFA">
+          <span>Prichádzajúce dopyty</span><span class="funnel-val">47</span>
+        </div>
+        <div class="funnel-stage" style="background:rgba(14,165,233,.15);color:#38BDF8">
+          <span>Odpovedané do 90s</span><span class="funnel-val">47</span>
+        </div>
+        <div class="funnel-stage" style="background:rgba(34,197,94,.15);color:#4ADE80">
+          <span>Potvrdené stretnutia</span><span class="funnel-val">12</span>
+        </div>
+        <div class="funnel-stage" style="background:rgba(212,175,55,.15);color:#FCD34D">
+          <span>Kvalifikovaných leadov</span><span class="funnel-val">8</span>
+        </div>
+      </div>
+      <div style="margin-top:16px;padding:12px;background:rgba(34,197,94,.08);border-radius:10px;border:1px solid rgba(34,197,94,.15);font-size:12px;color:rgba(255,255,255,.6);">
+        ✓ Priemerný čas odpovede dnes: <strong style="color:#4ADE80">74 sekúnd</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feature 3 — Comparison -->
+  <div class="feature-row">
+    <div>
+      <div class="feat-label" style="color:#D97706">Tvoji mŕtvi leads nie sú mŕtvi.</div>
+      <div class="feat-title">Revolis prebúdza databázu. Každý deň.</div>
+      <p class="feat-desc">Priemerná kancelária reaktivuje 22 % leadov starších ako 6 mesiacov. Nadia Kovač (ex Structurely): záujem nikdy nezomrie — len spí.</p>
+      <div class="feat-contrast">
+        <div class="contrast-box contrast-before">
+          <div class="contrast-label">Bez Revolis</div>
+          Lead "nie, ešte nie" = zabudnutý navždy. Databáza rastie, obrat nie.
+        </div>
+        <div class="contrast-box contrast-after">
+          <div class="contrast-label">S Revolis.AI</div>
+          18-mesačný nurturing. Reaktivačná rate 22 %. Nové obchody z leadov za ktoré si zaplatil.
+        </div>
+      </div>
+    </div>
+    <div class="feat-visual">
+      <div class="feat-vis-header">Porovnanie — Revolis.AI vs. štandardný CRM</div>
+      <table class="comp-table">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Revolis.AI</th>
+            <th>Štandard CRM</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>24/7 auto-odpoveď</td><td class="check-yes">✓</td><td class="check-no">✗</td></tr>
+          <tr><td>AI lead scoring</td><td class="check-yes">✓</td><td class="check-no">✗</td></tr>
+          <tr><td>Dormant reaktivácia</td><td class="check-yes">✓</td><td class="check-no">✗</td></tr>
+          <tr><td>Conversation intel.</td><td class="check-yes">✓</td><td class="check-no">✗</td></tr>
+          <tr><td>Multi-jazyčná AI</td><td class="check-yes">✓</td><td class="check-no">✗</td></tr>
+          <tr><td>Marketing attribution</td><td class="check-yes">✓</td><td style="color:rgba(255,255,255,.3)">Čiastočne</td></tr>
+          <tr><td>5-ročný rel. plán</td><td class="check-yes">✓</td><td class="check-no">✗</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ HOW IT WORKS -->
+<style>
+  .steps-wrap { display:grid; grid-template-columns:repeat(3,1fr); gap:0; position:relative; }
+  @media(max-width:768px){ .steps-wrap { grid-template-columns:1fr; gap:32px; } }
+
+  .step-connector {
+    position:absolute; top:52px; left:calc(33.33% - 0px); width:33.33%;
+    height:2px; background:linear-gradient(90deg,var(--cyan),var(--purple));
+    transform-origin:left; transform:scaleX(0);
+    transition:transform 1s ease;
+  }
+  .step-connector.right { left:calc(66.66%); }
+  .step-connector.visible { transform:scaleX(1); }
+  @media(max-width:768px){ .step-connector { display:none; } }
+
+  .step-card {
+    text-align:center; padding:0 32px;
+    opacity:0; transform:translateY(24px);
+    transition:opacity .6s ease, transform .6s ease;
+  }
+  .step-card.visible { opacity:1; transform:none; }
+
+  .step-num-wrap {
+    width:104px; height:104px; border-radius:50%; margin:0 auto 24px;
+    display:flex; align-items:center; justify-content:center;
+    position:relative;
+  }
+  .step-num-wrap::before {
+    content:''; position:absolute; inset:-3px; border-radius:50%;
+    background:conic-gradient(var(--cyan) var(--arc,0deg), transparent 0deg);
+    transition:--arc 1.2s ease;
+  }
+  .step-num-wrap::after {
+    content:''; position:absolute; inset:3px; border-radius:50%; background:var(--white);
+  }
+  .step-num-inner {
+    position:relative; z-index:1; width:96px; height:96px; border-radius:50%;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:var(--white);
+  }
+  .step-icon { font-size:32px; line-height:1; }
+  .step-num { font-size:11px; font-weight:900; letter-spacing:.1em; text-transform:uppercase; margin-top:4px; }
+  .step-title { font-size:20px; font-weight:900; letter-spacing:-.02em; margin-bottom:10px; color:var(--dark); }
+  .step-desc { font-size:14px; color:var(--muted); line-height:1.7; }
+  .step-time {
+    display:inline-flex; align-items:center; gap:5px;
+    margin-top:14px; padding:5px 14px; border-radius:999px;
+    font-size:11px; font-weight:800; letter-spacing:.08em;
+  }
+
+  /* Day-in-life strip */
+  .daylife-strip {
+    background:var(--dark); border-radius:20px; padding:36px 40px;
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:0;
+    margin-top:64px; position:relative; overflow:hidden;
+  }
+  .daylife-strip::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:2px;
+    background:linear-gradient(90deg,var(--cyan),var(--purple),var(--gold));
+  }
+  .daylife-item {
+    padding:20px 24px; border-right:1px solid rgba(255,255,255,.06);
+    opacity:0; transform:translateY(10px);
+    transition:opacity .4s ease, transform .4s ease;
+  }
+  .daylife-item:last-child { border-right:none; }
+  .daylife-item.visible { opacity:1; transform:none; }
+  .daylife-time { font-size:11px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; margin-bottom:8px; }
+  .daylife-action { font-size:13px; font-weight:700; color:#fff; margin-bottom:4px; }
+  .daylife-detail { font-size:12px; color:rgba(255,255,255,.4); line-height:1.5; }
+  .daylife-tag {
+    display:inline-block; padding:2px 8px; border-radius:999px;
+    font-size:9px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; margin-top:6px;
+  }
+</style>
+
+<div style="padding:96px 24px; background:var(--white);">
+  <div style="max-width:1100px;margin:0 auto;">
+    <div style="text-align:center;margin-bottom:64px;">
+      <div class="section-label">Ako to funguje</div>
+      <div class="section-h2">Od registrácie po prvý uzavretý obchod.<br>Bez IT oddelenia.</div>
+    </div>
+
+    <div class="steps-wrap" id="stepsWrap">
+      <div class="step-connector" id="conn1"></div>
+      <div class="step-connector right" id="conn2"></div>
+
+      <!-- Krok 1 -->
+      <div class="step-card" id="step1">
+        <div class="step-num-wrap" style="--arc:0deg" id="arc1">
+          <div class="step-num-inner">
+            <div class="step-icon">🔌</div>
+            <div class="step-num" style="color:var(--cyan)">Krok 1</div>
+          </div>
+        </div>
+        <div class="step-title">Napoj kanceláriu</div>
+        <div class="step-desc">Pripoj email, importuj kontakty z CRM alebo CSV. Revolis.AI sa automaticky naučí tvoj štýl komunikácie.</div>
+        <div class="step-time" style="background:rgba(14,165,233,.08);color:var(--cyan);border:1px solid rgba(14,165,233,.2)">
+          ⚡ 4 minúty
+        </div>
+      </div>
+
+      <!-- Krok 2 -->
+      <div class="step-card" id="step2">
+        <div class="step-num-wrap" style="--arc:0deg" id="arc2">
+          <div class="step-num-inner">
+            <div class="step-icon">🧠</div>
+            <div class="step-num" style="color:var(--purple)">Krok 2</div>
+          </div>
+        </div>
+        <div class="step-title">AI sa naučí teba</div>
+        <div class="step-desc">Počas prvých 24 hodín Revolis.AI analyzuje históriu kontaktov, identifikuje vzorce a nastaví scoring model pre tvoj trh.</div>
+        <div class="step-time" style="background:rgba(124,58,237,.08);color:var(--purple);border:1px solid rgba(124,58,237,.2)">
+          ⏱ 24 hodín
+        </div>
+      </div>
+
+      <!-- Krok 3 -->
+      <div class="step-card" id="step3">
+        <div class="step-num-wrap" style="--arc:0deg" id="arc3">
+          <div class="step-num-inner">
+            <div class="step-icon">🏆</div>
+            <div class="step-num" style="color:var(--gold)">Krok 3</div>
+          </div>
+        </div>
+        <div class="step-title">Uzatváraj obchody</div>
+        <div class="step-desc">Od tohto momentu Revolis.AI pracuje na pozadí — odpovedá, sleduje, reaktivuje. Ty dostávaš len notifikácie: "zavolaj teraz."</div>
+        <div class="step-time" style="background:rgba(217,119,6,.08);color:var(--gold);border:1px solid rgba(217,119,6,.2)">
+          ∞ Navždy automaticky
+        </div>
+      </div>
+    </div>
+
+    <!-- Day in life strip -->
+    <div class="daylife-strip" id="daylifeStrip">
+      <div style="position:absolute;top:16px;right:24px;font-size:11px;font-weight:700;color:rgba(255,255,255,.25);letter-spacing:.1em;text-transform:uppercase;">Typický deň makléra s Revolis.AI</div>
+
+      <div class="daylife-item">
+        <div class="daylife-time" style="color:var(--cyan)">07:58</div>
+        <div class="daylife-action">Denný briefing</div>
+        <div class="daylife-detail">AI pripravila 5 priorít dňa. Ján Kováč má skóre 91 — prvý hovor.</div>
+        <span class="daylife-tag" style="background:rgba(14,165,233,.15);color:#38BDF8">Automatické</span>
+      </div>
+
+      <div class="daylife-item">
+        <div class="daylife-time" style="color:var(--green)">09:14</div>
+        <div class="daylife-action">Nový dopyt z portálu</div>
+        <div class="daylife-detail">AI odpovedala za 67 sekúnd. Ponúkla 2 nehnuteľnosti, navrhla termín.</div>
+        <span class="daylife-tag" style="background:rgba(34,197,94,.15);color:#4ADE80">90 sekúnd</span>
+      </div>
+
+      <div class="daylife-item">
+        <div class="daylife-time" style="color:var(--purple)">11:30</div>
+        <div class="daylife-action">Reaktivácia</div>
+        <div class="daylife-detail">AI kontaktovala 3 dormantné kontakty. Jeden odpovedal: „Áno, teraz som pripravený."</div>
+        <span class="daylife-tag" style="background:rgba(124,58,237,.15);color:#A78BFA">AI iniciovala</span>
+      </div>
+
+      <div class="daylife-item">
+        <div class="daylife-time" style="color:var(--gold)">14:45</div>
+        <div class="daylife-action">Hot Alert</div>
+        <div class="daylife-detail">Kontakt Marta N. dosiahla skóre 88. Notifikácia: „Zavolaj teraz, okno je otvorené."</div>
+        <span class="daylife-tag" style="background:rgba(217,119,6,.15);color:#FCD34D">Skóre 88/100</span>
+      </div>
+
+      <div class="daylife-item">
+        <div class="daylife-time" style="color:#F472B6">22:47</div>
+        <div class="daylife-action">Nočný dopyt</div>
+        <div class="daylife-detail">Záujemca odoslal dopyt. AI odpovedala okamžite. Maklér spal. Stretnutie je naplánované.</div>
+        <span class="daylife-tag" style="background:rgba(244,114,182,.15);color:#F472B6">Maklér spal</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ NUMBERS -->
+<div style="background:var(--bg2);padding:96px 24px;">
+  <div style="max-width:1200px;margin:0 auto;">
+    <div style="text-align:center;margin-bottom:48px;">
+      <div class="section-label" style="text-align:center">Výsledky</div>
+      <div class="section-h2" style="text-align:center">Čísla hovoria za nás</div>
+    </div>
+    <div class="numbers-grid">
+      <div class="number-cell">
+        <div class="number-big" style="color:var(--cyan)" id="n1">0%</div>
+        <div class="number-label">Nárast zmlúv za Q1</div>
+        <div class="number-ctx">Priemerná kancelária, prvých 90 dní</div>
+      </div>
+      <div class="number-cell">
+        <div class="number-big" style="color:var(--purple)" id="n2">0s</div>
+        <div class="number-label">Čas odpovede</div>
+        <div class="number-ctx">Vs. 7-hodinový priemer trhu</div>
+      </div>
+      <div class="number-cell">
+        <div class="number-big" style="color:var(--green)" id="n3">0%</div>
+        <div class="number-label">Reaktivovaných leadov</div>
+        <div class="number-ctx">Z leadov starších ako 6 mesiacov</div>
+      </div>
+      <div class="number-cell">
+        <div class="number-big" style="color:var(--gold)" id="n4">0€</div>
+        <div class="number-label">Priemerný nový obrat</div>
+        <div class="number-ctx">5–15 maklérov, prvý kvartál</div>
+      </div>
+      <div class="number-cell">
+        <div class="number-big" style="color:var(--red)" id="n5">0%</div>
+        <div class="number-label">Menej zbytočných hovorov</div>
+        <div class="number-ctx">Vďaka AI lead scoringu</div>
+      </div>
+      <div class="number-cell">
+        <div class="number-big" style="color:var(--cyan)" id="n6">0min</div>
+        <div class="number-label">Čas nasadenia</div>
+        <div class="number-ctx">Od registrácie po prvú AI odpoveď</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ PRICING -->
+<style>
+  .pricing-grid-full { display:grid; grid-template-columns:repeat(4,1fr); gap:20px; align-items:start; }
+  @media(max-width:1100px){ .pricing-grid-full { grid-template-columns:repeat(2,1fr); } }
+  @media(max-width:640px){ .pricing-grid-full { grid-template-columns:1fr; } }
+
+  .feat-section-title {
+    font-size:10px; font-weight:800; letter-spacing:.18em; text-transform:uppercase;
+    padding:10px 0 6px; border-top:1px solid; margin-top:14px;
+  }
+  .plan-features li { font-size:12.5px; display:flex; gap:7px; align-items:flex-start; padding:3px 0; }
+  .plan-features li::before { content:'✓'; font-weight:900; flex-shrink:0; margin-top:1px; font-size:11px; }
+
+  .expert-bonus {
+    border-radius:10px; padding:10px 12px; margin-top:6px;
+    border-left:3px solid;
+  }
+  .expert-bonus-label {
+    font-size:9px; font-weight:800; letter-spacing:.15em; text-transform:uppercase; margin-bottom:3px;
+  }
+  .expert-bonus-text { font-size:12px; line-height:1.5; }
+
+  .orig-price { font-size:13px; font-weight:600; text-decoration:line-through; opacity:.4; margin-bottom:2px; }
+  .founder-tag {
+    display:inline-block; padding:2px 10px; border-radius:999px;
+    font-size:9px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; margin-bottom:10px;
+  }
+</style>
+
+<div class="section" style="max-width:1300px;">
+  <div class="section-label" style="text-align:center">Cenník</div>
+  <div class="section-h2" style="text-align:center">Vyber plán pre tvoju kanceláriu.</div>
+  <p class="section-p" style="text-align:center;margin:0 auto 56px;">Žiadne skryté poplatky. Žiadne obmedzenia na počet nehnuteľností. Zrušenie kedykoľvek.</p>
+  <div class="pricing-grid-full">
+
+    <!-- ══ SMART START ══ -->
+    <div class="price-card visible" style="border-color:#CBD5E1;">
+      <div class="founder-tag" style="background:rgba(100,116,139,.1);color:#64748B;border:1px solid #CBD5E1">Zakladateľská cena</div>
+      <div class="plan-name" style="color:var(--muted)">Smart Start</div>
+      <div class="orig-price">98 €/mes</div>
+      <div class="plan-price">49 <span class="plan-period">€/mes</span></div>
+      <div class="plan-tagline" style="color:var(--muted)">Ideálny štart pre samostatných maklérov. Prvé výsledky do 7 dní.</div>
+      <hr class="plan-divider" style="border-color:var(--border);margin:16px 0;">
+
+      <div class="feat-section-title" style="color:var(--muted);border-color:var(--border)">Tím a limity</div>
+      <ul class="plan-features">
+        <li style="color:var(--muted)">Do 3 maklérov v tíme</li>
+        <li style="color:var(--muted)">Do 100 príležitostí mesačne</li>
+        <li style="color:var(--muted)">100% garancia vrátenia do 30 dní</li>
+      </ul>
+
+      <div class="feat-section-title" style="color:var(--muted);border-color:var(--border)">AI Asistent & Komunikácia</div>
+      <ul class="plan-features">
+        <li style="color:var(--muted)">🤖 AI Asistent — odpovede do 2 min (pracovné hodiny)</li>
+        <li style="color:var(--muted)">📱 WhatsApp + SMS automatické odpovede</li>
+        <li style="color:var(--muted)">📧 AI email skripty personalizované správaním klienta</li>
+        <li style="color:var(--muted)">⚡ One-click follow-up — AI navrhne, ty schváliš</li>
+      </ul>
+
+      <div class="feat-section-title" style="color:var(--muted);border-color:var(--border)">Scoring & Analytika</div>
+      <ul class="plan-features">
+        <li style="color:var(--muted)">📊 Buyer Readiness Index — AI skóre každej príl.</li>
+        <li style="color:var(--muted)">🏠 Auto-párovanie s nehnuteľnosťami (do 10/mes)</li>
+        <li style="color:var(--muted)">📋 Denný AI briefing — 5 priorít každé ráno o 8:00</li>
+        <li style="color:var(--muted)">🔔 Hot Alert — notif. pri skóre 75+</li>
+        <li style="color:var(--muted)">📝 Základná analytika konverzií (týždenný report)</li>
+      </ul>
+
+      <div class="feat-section-title" style="color:var(--muted);border-color:var(--border)">Vzdelávanie & Certifikát</div>
+      <ul class="plan-features">
+        <li style="color:var(--muted)">🎓 Revolis Academy — freemium (5 lekcií)</li>
+        <li style="color:var(--muted)">✅ Revolis.AI Certified Agent certifikát</li>
+      </ul>
+
+      <div class="feat-section-title" style="color:#7C3AED;border-color:#DDD6FE">⭐ Expert bonusy</div>
+      <div class="expert-bonus" style="background:#F5F3FF;border-color:#7C3AED;">
+        <div class="expert-bonus-label" style="color:#7C3AED">Oliver Strauss · ex Wise Agent</div>
+        <div class="expert-bonus-text" style="color:#4C1D95">Neviditeľná AI — každá feature je 1 klik. Maklér ani nevie že používa AI, len vidí výsledky.</div>
+      </div>
+      <div class="expert-bonus" style="background:#FFF7ED;border-color:#EA580C;">
+        <div class="expert-bonus-label" style="color:#EA580C">Amara Osei · ex LionDesk</div>
+        <div class="expert-bonus-text" style="color:#7C2D12">Tichá 7-dňová sekvencia — SMS deň 1, email deň 3, WhatsApp deň 5, push deň 7. Všetko na pozadí bez akcie makléra.</div>
+      </div>
+
+      <button class="plan-cta" style="background:var(--bg2);color:var(--text);margin-top:20px;">Aktivovať Smart Start →</button>
+    </div>
+
+    <!-- ══ ACTIVE FORCE ══ -->
+    <div class="price-card visible" style="border-color:#BAE6FD;">
+      <div class="founder-tag" style="background:rgba(14,165,233,.08);color:var(--cyan);border:1px solid rgba(14,165,233,.25)">Zakladateľská cena</div>
+      <div class="plan-name" style="color:var(--cyan)">Active Force</div>
+      <div class="orig-price">198 €/mes</div>
+      <div class="plan-price">99 <span class="plan-period">€/mes</span></div>
+      <div class="plan-tagline" style="color:var(--muted)">Plný AI arzenál pre aktívneho makléra. Sofia AI 24/7 aj v noci.</div>
+      <hr class="plan-divider" style="border-color:#BAE6FD;margin:16px 0;">
+
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;background:rgba(14,165,233,.07);border:1px solid rgba(14,165,233,.2);margin-bottom:4px;">
+        <span style="font-size:14px;">📦</span>
+        <span style="font-size:12px;font-weight:800;color:var(--cyan)">Obsahuje všetko zo Smart Start</span>
+      </div>
+      <div class="feat-section-title" style="color:var(--cyan);border-color:#BAE6FD">Licencia</div>
+      <ul class="plan-features">
+        <li style="color:var(--muted)">1 maklérska licencia (plný prístup)</li>
+        <li style="color:var(--muted)">30-dňová garancia vrátenia</li>
+      </ul>
+
+      <div class="feat-section-title" style="color:var(--cyan);border-color:#BAE6FD">AI Asistent 24/7</div>
+      <ul class="plan-features">
+        <li style="color:var(--muted)">🤖 AI Asistent 24/7 — odpovede aj o polnoci</li>
+        <li style="color:var(--muted)">📞 AI analýza hovorov — prepis + kľúčové momenty</li>
+        <li style="color:var(--muted)">🎯 Detekcia záujmu klienta v reálnom čase</li>
+        <li style="color:var(--muted)">⚡ Automatické follow-upy (7-dňové sekvencie)</li>
+      </ul>
+
+      <div class="feat-section-title" style="color:var(--cyan);border-color:#BAE6FD">Scoring & Predikcia</div>
+      <ul class="plan-features">
+        <li style="color:var(--muted)">🧠 Prediktívne skórovanie obchodov (ML model)</li>
+        <li style="color:var(--muted)">📊 Predpoveď obratu (mesačná)</li>
+        <li style="color:var(--muted)">🗺 Teritoriálna inteligencia — analýza lokality</li>
+      </ul>
+
+      <div class="feat-section-title" style="color:var(--cyan);border-color:#BAE6FD">Integrácie</div>
+      <ul class="plan-features">
+        <li style="color:var(--muted)">🔗 Portálové integrácie (Nehnuteľnosti.sk, Reality.sk…)</li>
+      </ul>
+
+      <div class="feat-section-title" style="color:#0891B2;border-color:#A5F3FC">⭐ Expert bonusy</div>
+      <div class="expert-bonus" style="background:#F0FDFF;border-color:#0891B2;">
+        <div class="expert-bonus-label" style="color:#0891B2">Nadia Kovač · ex Structurely</div>
+        <div class="expert-bonus-text" style="color:#164E63">Lead Half-Life Calculator — každý lead má vypočítaný „bod rozpadu" záujmu. AI kontaktuje lead presne v optimálnom okamihu, nie keď má maklér čas.</div>
+      </div>
+      <div class="expert-bonus" style="background:#F0FDF4;border-color:#16A34A;">
+        <div class="expert-bonus-label" style="color:#16A34A">Riku Tanaka · ex Follow Up Boss</div>
+        <div class="expert-bonus-text" style="color:#14532D">Triple Match Score — správny maklér × správny čas × správna správa = 4.2× vyššia miera odpovede. AI vypočíta kombináciu automaticky.</div>
+      </div>
+      <div class="expert-bonus" style="background:#FDF4FF;border-color:#9333EA;">
+        <div class="expert-bonus-label" style="color:#9333EA">James Thornton · ex Gong</div>
+        <div class="expert-bonus-text" style="color:#581C87">SK/CZ Conversation Intelligence — natívna analýza hovorov v slovenčine a češtine. 340 buying signálov špecifických pre realitný trh.</div>
+      </div>
+
+      <button class="plan-cta" style="background:rgba(14,165,233,.1);color:var(--cyan);border:1px solid rgba(14,165,233,.25);margin-top:20px;">Aktivovať Active Force →</button>
+    </div>
+
+    <!-- ══ MARKET VISION ══ -->
+    <div class="price-card featured visible">
+      <div class="badge-popular">★ Najpopulárnejší</div>
+      <div class="founder-tag" style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.15)">Zakladateľská cena</div>
+      <div class="plan-name" style="color:rgba(255,255,255,.5)">Market Vision</div>
+      <div class="orig-price" style="color:rgba(255,255,255,.3)">398 €/mes</div>
+      <div class="plan-price" style="color:#fff">199 <span class="plan-period" style="color:rgba(255,255,255,.35)">€/mes</span></div>
+      <div class="plan-tagline" style="color:rgba(255,255,255,.5)">Tímová licencia pre majiteľa. Owner vidí tím, maklér má Active Force.</div>
+      <hr class="plan-divider" style="border-color:rgba(255,255,255,.1);margin:16px 0;">
+
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.2);margin-bottom:4px;">
+        <span style="font-size:14px;">📦</span>
+        <span style="font-size:12px;font-weight:800;color:#38BDF8">Obsahuje všetko z Active Force</span>
+      </div>
+      <div class="feat-section-title" style="color:#38BDF8;border-color:rgba(56,189,248,.2)">Licencia & Tím</div>
+      <ul class="plan-features" style="color:rgba(255,255,255,.7)">
+        <li>👑 Owner: Market Vision menu (exkluzívny dashboard)</li>
+        <li>1× Active Force licencia pre makléra v tíme</li>
+        <li>30-dňová garancia vrátenia</li>
+      </ul>
+
+      <div class="feat-section-title" style="color:#38BDF8;border-color:rgba(56,189,248,.2)">Owner Intelligence</div>
+      <ul class="plan-features" style="color:rgba(255,255,255,.7)">
+        <li>✅ Kto je pripravený kúpiť — live zoznam</li>
+        <li>✅ Dnes uzavriem — AI denná prioritizácia</li>
+        <li>📊 Prehľad výkonnosti celého tímu</li>
+        <li>🎯 Hodnotenie výkonnosti maklérov (KPI)</li>
+        <li>📝 Predpoveď obratu pre celý tím</li>
+        <li>📋 Manažérske reporty (týždenné + mesačné)</li>
+      </ul>
+
+      <div class="feat-section-title" style="color:#38BDF8;border-color:rgba(56,189,248,.2)">AI Reaktivácia & Analytika</div>
+      <ul class="plan-features" style="color:rgba(255,255,255,.7)">
+        <li>📍 Prebúdza starých klientov ktorí ťa zabudli</li>
+        <li>🧠 Tímový AI mozog — zdieľané znalosti</li>
+        <li>⚡ Prioritná podpora (24h odozva)</li>
+      </ul>
+
+      <div class="feat-section-title" style="color:#67E8F9;border-color:rgba(103,232,249,.2)">⭐ Expert bonusy</div>
+      <div class="expert-bonus" style="background:rgba(255,255,255,.06);border-color:#38BDF8;">
+        <div class="expert-bonus-label" style="color:#38BDF8">Elena Vasquez · ex HubSpot</div>
+        <div class="expert-bonus-text" style="color:rgba(255,255,255,.65)">Automatický obsahový magnet — klient dostane personalizovaný market report bez toho aby o to žiadal. Maklér vyzerá ako expert, bez práce.</div>
+      </div>
+      <div class="expert-bonus" style="background:rgba(255,255,255,.06);border-color:#4ADE80;">
+        <div class="expert-bonus-label" style="color:#4ADE80">Dmitri Volkov · ex BoomTown</div>
+        <div class="expert-bonus-text" style="color:rgba(255,255,255,.65)">ROI Ticker — každá feature zobrazuje svoju €/mes hodnotu priamo v UI. „Tento follow-up ušetril 3.2h = +€124 pri tvojej hodinovej sadzbe."</div>
+      </div>
+      <div class="expert-bonus" style="background:rgba(255,255,255,.06);border-color:#A78BFA;">
+        <div class="expert-bonus-label" style="color:#A78BFA">Yuki Nakamura · ex Notion</div>
+        <div class="expert-bonus-text" style="color:rgba(255,255,255,.65)">3 pohľady jedným klikom — Board (pipeline), Table (analytika), Calendar (časovanie). Každý maklér si vyberie čo mu sedí.</div>
+      </div>
+      <div class="expert-bonus" style="background:rgba(255,255,255,.06);border-color:#FCD34D;">
+        <div class="expert-bonus-label" style="color:#FCD34D">Trevor Blackwood · ex Market Leader</div>
+        <div class="expert-bonus-text" style="color:rgba(255,255,255,.65)">Street-Level Insight — maklér príde na stretnutie s dátami o klientovej ulici ktoré klient nikde nenájde. Priemerné ceny, čas predaja, aktívni kupujúci v lokalite.</div>
+      </div>
+
+      <button class="plan-cta" style="background:var(--cyan);color:var(--dark);margin-top:20px;">Aktivovať Market Vision →</button>
+    </div>
+
+    <!-- ══ PROTOCOL AUTHORITY ══ -->
+    <div class="price-card visible" style="border:2px solid #D4AF37;background:linear-gradient(160deg,#FFFBEB 0%,#FFF 60%);">
+      <div class="founder-tag" style="background:rgba(217,119,6,.12);color:#92400E;border:1px solid #FDE68A">Zakladateľská cena</div>
+      <div class="plan-name" style="color:#92400E">Protocol Authority</div>
+      <div class="orig-price" style="color:#D97706">898 €/mes</div>
+      <div class="plan-price" style="color:#92400E">449 <span class="plan-period" style="color:#D97706">€/mes</span></div>
+      <div class="plan-tagline" style="color:#78350F">Najvyšší level. Owner má Protocol menu, 4 makléri dostanú Active Force.</div>
+      <hr class="plan-divider" style="border-color:#FDE68A;margin:16px 0;">
+
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;background:rgba(217,119,6,.1);border:1px solid #FDE68A;margin-bottom:4px;">
+        <span style="font-size:14px;">📦</span>
+        <span style="font-size:12px;font-weight:800;color:#B45309">Obsahuje všetko z Market Vision</span>
+      </div>
+      <div class="feat-section-title" style="color:#B45309;border-color:#FDE68A">Licencia & Tím</div>
+      <ul class="plan-features" style="color:#78350F">
+        <li>👑 Owner: Protocol Authority menu (najvyšší level)</li>
+        <li>4× Active Force licencie pre maklérov</li>
+        <li>30-dňová garancia vrátenia</li>
+      </ul>
+
+      <div class="feat-section-title" style="color:#B45309;border-color:#FDE68A">Protocol Intelligence</div>
+      <ul class="plan-features" style="color:#78350F">
+        <li>✅ Kto je pripravený kúpiť — live, celá sieť</li>
+        <li>✅ Dnes uzavriem — AI cross-team prioritizácia</li>
+        <li>🗺 Competition Heatmap — živý radar konkurencie</li>
+        <li>🛡 Štít anonymného režimu — skryté akcie</li>
+        <li>🧠 Neurónová spravodajská sieť (Neural Intelligence)</li>
+        <li>📊 Medzitímová analytika (cross-agency benchmark)</li>
+        <li>🏢 Správa viacerých pobočiek z jedného miesta</li>
+      </ul>
+
+      <div class="feat-section-title" style="color:#B45309;border-color:#FDE68A">Pokročilá Reaktivácia</div>
+      <ul class="plan-features" style="color:#78350F">
+        <li>💻 Prebúdza starých klientov — pokročilý AI režim</li>
+        <li>⎈ Dedikovaný Protocol manažér (osobný kontakt)</li>
+        <li>⚡ SLA 99.99% uptime garantovaný zmluvou</li>
+      </ul>
+
+      <div class="feat-section-title" style="color:#D97706;border-color:#FDE68A">⭐ Expert bonusy — TOP výber pre majiteľov</div>
+      <div class="expert-bonus" style="background:rgba(239,68,68,.06);border-color:#DC2626;">
+        <div class="expert-bonus-label" style="color:#DC2626">Marcus Chen · ex kvCORE</div>
+        <div class="expert-bonus-text" style="color:#7F1D1D">Silence Revenue Map — vizuálna mapa ukazuje kde PRESNE na mape maklér prichádza o peniaze kvôli žiadnej akcii. „Toto je tvoj ušlý obrat za 90 dní."</div>
+      </div>
+      <div class="expert-bonus" style="background:rgba(124,58,237,.06);border-color:#7C3AED;">
+        <div class="expert-bonus-label" style="color:#7C3AED">Priya Sharma · ex Salesforce Einstein</div>
+        <div class="expert-bonus-text" style="color:#3B0764">Revenue Probability Score — „Táto rodina kúpi do 47 dní, pravdepodobnosť 84 %, pretože…" Explicitné vysvetlenie, nie čierna skrinka. Fortune 500 AI pre každého makléra.</div>
+      </div>
+      <div class="expert-bonus" style="background:rgba(14,165,233,.06);border-color:#0EA5E9;">
+        <div class="expert-bonus-label" style="color:#0EA5E9">Aiden O'Sullivan · ex Lofty/Chime</div>
+        <div class="expert-bonus-text" style="color:#0C4A6E">Life Moment Detection — algoritmus deteguje životné zmeny klienta (sťahovanie, zmena práce, rodina) PRED tým než to klient sám vie. Okno príležitosti: 2–3 týždne.</div>
+      </div>
+      <div class="expert-bonus" style="background:rgba(22,163,74,.06);border-color:#16A34A;">
+        <div class="expert-bonus-label" style="color:#16A34A">Sofia Reyes · ex Real Geeks</div>
+        <div class="expert-bonus-text" style="color:#14532D">Revealed Preference Engine — rozdiel medzi čo klient píše (stated) a čo klikne (revealed) = skutočný budget a motivácia. Maklér dostane brief: „Nekomunikuj cenu. Komunikuj priestor."</div>
+      </div>
+      <div class="expert-bonus" style="background:rgba(217,119,6,.06);border-color:#D97706;">
+        <div class="expert-bonus-label" style="color:#D97706">Cassandra Mills · ex Top Producer</div>
+        <div class="expert-bonus-text" style="color:#78350F">5-Year Relationship Horizon — po každom uzavretom obchode sa automaticky spustí 5-ročný plán: výročie kúpy, trhový update, refinančné okno, predpoveď apreciácie, žiadosť o odporúčanie.</div>
+      </div>
+
+      <button class="plan-cta" style="background:linear-gradient(135deg,#D97706,#B45309);color:#fff;margin-top:20px;font-size:13px;">★ Aktivovať Protocol Authority →</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ FAQ -->
+<div style="background:var(--bg2);padding:96px 24px;">
+  <div style="max-width:720px;margin:0 auto;">
+    <div class="section-label" style="text-align:center">FAQ</div>
+    <div class="section-h2" style="text-align:center;margin-bottom:48px;">Otázky ktoré ti napadnú</div>
+    <div class="faq-list">
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          Máme už CRM. Prečo potrebujeme ešte jedno?
+          <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-a">Revolis.AI nie je CRM. CRM zaznamenáva čo sa stalo — Revolis robí to, čo sa má stať. Integruje sa s tvojím CRM za 8 minút a začne pracovať s databázou, ktorú už máš.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          Naši makléri nebudú chcieť ďalší systém na učenie.
+          <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-a">Priemerný čas prvej aktívnej akcie makléra v Revolis.AI: 11 minút. Maklér dostane notifikáciu "zavolaj teraz tomuto klientovi" — nemusí otvoriť nič iné. Systém pracuje za neho.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          AI nenapíše správu tak dobre ako naši makléri.
+          <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-a">AI píše v tóne tvojej kancelárie, trénovaná na tvojich najlepších konverziách. Po 30 dňoch Revolis.AI píše lepšie ako priemerný maklér — nikdy nie je unavená, nikdy nezabudne čo klient hovoril minule.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          Sú naše dáta v bezpečí?
+          <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-a">EU servery, GDPR compliant, AES-256 šifrovanie. Tvoje dáta nie sú nikdy zdieľané ani použité na tréning modelov. Plná exportovateľnosť kedykoľvek, bez poplatku.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          Je to drahé bez záruk výsledku?
+          <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-a">Smart Start 49 €/mes. Jeden reaktivovaný záujemca = priemerná provízia 2 400 €. ROI pri prvom reaktivovanom kontakte: 4 800 %. Kontaktuj nás a dohodneme podmienky skúšobného obdobia priamo pre tvoju kanceláriu.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          Nemáme čas na implementáciu teraz.
+          <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-a">Implementácia trvá 4 minúty — registrácia, pripojenie emailu, nahratie databázy. Revolis začne pracovať so starými leadmi okamžite. Druhý najlepší čas je teraz.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ FINAL CTA -->
+<div class="final-cta">
+  <h2>Každý deň bez Revolis.AI<br>je lead ktorý odpovedá konkurencii.</h2>
+  <p>340 kancelárií sa rozhodlo prestať strácať leads v noci, cez víkend a počas dovoleniek.</p>
+  <button class="final-cta-btn">Aktivovať Revolis.AI pre moju kanceláriu →</button>
+  <div class="final-micro">Bez záväzkov · Zrušenie kedykoľvek · Prvý AI follow-up za 4 minúty</div>
+</div>
+
+<script>
+// ── COUNTER ANIMATION ──
+function animCount(el, target, suffix='', duration=1800){
+  let start=null;
+  function step(ts){
+    if(!start)start=ts;
+    const p=Math.min((ts-start)/duration,1);
+    const ease=1-Math.pow(1-p,3);
+    const val=Math.floor(ease*target);
+    el.textContent=val.toLocaleString()+suffix;
+    if(p<1)requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+// Stats strip
+window.addEventListener('load',()=>{
+  setTimeout(()=>{
+    animCount(document.getElementById('s1'),34,'%');
+    animCount(document.getElementById('s2'),90,'s');
+    animCount(document.getElementById('s3'),22,'%');
+    animCount(document.getElementById('s4'),61000,'€');
+    animCount(document.getElementById('s5'),67,'%');
+    animCount(document.getElementById('s6'),4,'min');
+  },400);
+});
+
+// ── INTERSECTION OBSERVER ──
+const obs=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(!e.isIntersecting)return;
+    // Pain cards
+    e.target.querySelectorAll('.pain-card').forEach((c,i)=>
+      setTimeout(()=>c.classList.add('visible'),i*80));
+    // Feature rows
+    e.target.querySelectorAll('.feature-row').forEach((r,i)=>
+      setTimeout(()=>r.classList.add('visible'),i*100));
+    // Number cells
+    e.target.querySelectorAll('.number-cell').forEach((c,i)=>{
+      setTimeout(()=>c.classList.add('visible'),i*80);
+    });
+    // Price cards
+    e.target.querySelectorAll('.price-card').forEach((c,i)=>
+      setTimeout(()=>c.classList.add('visible'),i*100));
+    // Score bars
+    e.target.querySelectorAll('.score-bar-fill[data-w]').forEach(el=>
+      setTimeout(()=>el.style.width=el.dataset.w+'%',300));
+    // Number counters
+    const nc={n1:[34,'%'],n2:[90,'s'],n3:[22,'%'],n4:[61000,'€'],n5:[67,'%'],n6:[4,'min']};
+    Object.entries(nc).forEach(([id,[val,suf]])=>{
+      const el=document.getElementById(id);
+      if(el&&e.target.contains(el))animCount(el,val,suf);
+    });
+  });
+},{threshold:.15});
+
+document.querySelectorAll('.section,.section>div,[class*="section"],[style*="padding:96px"],.numbers-grid,.pricing-grid').forEach(el=>obs.observe(el));
+// Also observe specific containers
+document.querySelectorAll('.pain-grid,.feature-row,.numbers-grid,.pricing-grid').forEach(el=>obs.observe(el));
+
+// ── FAQ ──
+function toggleFaq(btn){
+  const item=btn.closest('.faq-item');
+  const wasOpen=item.classList.contains('open');
+  document.querySelectorAll('.faq-item').forEach(i=>i.classList.remove('open'));
+  if(!wasOpen)item.classList.add('open');
+}
+</script>
+</body>
+</html>

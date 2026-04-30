@@ -16,18 +16,21 @@ import {
   type TeamMemberPermissions,
 } from "@/types/navigation";
 
-type FounderDemoProgram = "free" | "active_force" | "market_vision" | "protocol_authority";
+type FounderDemoProgram = "free" | "starter" | "active_force" | "market_vision" | "protocol_authority";
 
 const FOUNDER_DEMO_PROGRAMS: Array<{ id: FounderDemoProgram; label: string }> = [
-  { id: "free", label: "Free" },
-  { id: "active_force", label: "Active Force" },
-  { id: "market_vision", label: "Market Vision" },
+  { id: "free",               label: "Free"               },
+  { id: "starter",            label: "Smart Start"        },
+  { id: "active_force",       label: "Active Force"       },
+  { id: "market_vision",      label: "Market Vision"      },
   { id: "protocol_authority", label: "Protocol Authority" },
 ];
 
 function getDemoVariant(program: FounderDemoProgram): MenuVariant {
   switch (program) {
     case "free":
+      return "agent_solo";
+    case "starter":
       return "agent_solo";
     case "active_force":
       return "agent_team";
@@ -45,7 +48,7 @@ function filterItemsByDemoProgram(items: NavItem[], program: FounderDemoProgram)
     const allowedFreeIds = new Set(["today", "contacts", "settings"]);
     return items.filter((item) => allowedFreeIds.has(item.id));
   }
-  if (program === "active_force" || program === "market_vision") {
+  if (program === "starter" || program === "active_force" || program === "market_vision") {
     return items.filter((item) => item.id !== "competition");
   }
   return items;
@@ -308,6 +311,7 @@ export default function AppSidebar({
     const stored = window.localStorage.getItem("founderDemoProgram");
     if (
       stored === "free" ||
+      stored === "starter" ||
       stored === "active_force" ||
       stored === "market_vision" ||
       stored === "protocol_authority"
@@ -489,6 +493,7 @@ export default function AppSidebar({
                       setDemoProgram(program.id);
                       if (typeof window !== "undefined") {
                         window.localStorage.setItem("founderDemoProgram", program.id);
+                        window.dispatchEvent(new CustomEvent("founderDemoProgramChanged", { detail: program.id }));
                       }
                     }}
                     style={{
