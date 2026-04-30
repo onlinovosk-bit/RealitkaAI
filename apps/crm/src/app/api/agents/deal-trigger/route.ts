@@ -4,33 +4,20 @@ import { createClient } from '@/lib/supabase/server';
 import { sendSlackMessage } from '@/lib/slack';
 
 export async function GET(req: NextRequest) {
-  return revolisGuard(req, 'Deal-Trigger Agent', async () => {
-    console.log("⚡ Agent Team: Vyhodnocujem príležitosti na uzavretie obchodu...");
+  return revolisGuard(req, 'Strážca Cien a Ziskov', async () => {
     const supabase = await createClient();
+    const { data: deals, error } = await supabase.from('leads').select('*').eq('status', 'SEGMENTED').gt('lead_score', 85);
+    if (error) throw error;
+    if (!deals?.length) return NextResponse.json({ message: "Pokoj na trhu." });
 
-    // Hľadáme leady: Vysoký score (>80) + Znížená cena + Súkromný inzerát
-    const { data: hotDeals, error: fetchError } = await supabase.from('leads')
-      .select('*')
-      .eq('status', 'SEGMENTED')
-      .gt('lead_score', 80);
-
-    if (fetchError) throw fetchError;
-    if (!hotDeals?.length) return NextResponse.json({ message: "No urgent deals found." });
-
-    for (const deal of hotDeals) {
+    for (const d of deals) {
       await sendSlackMessage(
-        `🚨 *DEAL TRIGGER: Okamžitá Akcia!*\n` +
-        `*Objekt:* ${deal.title}\n*Score:* ${deal.lead_score}\n` +
-        `🔥 *Dôvod:* Kombinácia vysokej marže a priameho kontaktu na majiteľa.\n` +
-        `⚡ *STAV:* Mením na NEGOTIATION_READY.`
+        `🛡️ *STRÁŽCA CIEN A ZISKOV: Detegovaná anomália!*\n` +
+        `*Objekt:* ${d.title}\n` +
+        `💰 *Analýza:* Cena klesla. Toto je priamy zásah do vášho zisku, ak nebudete prví.\n` +
+        `🏆 *VÁŠ REALITY MONOPOL:* Dáta sú pripravené na uzavretie obchodu.`
       );
-      
-      const { error: updateError } = await supabase.from('leads')
-        .update({ status: 'NEGOTIATION_READY' })
-        .eq('id', deal.id);
-      if (updateError) throw updateError;
     }
-
-    return NextResponse.json({ success: true, triggers_fired: hotDeals.length });
+    return NextResponse.json({ success: true });
   });
 }
