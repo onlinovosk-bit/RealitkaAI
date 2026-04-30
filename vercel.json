@@ -1,29 +1,11 @@
-{
+﻿{
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
-    {
-      "path": "/api/scrape?key=YOUR_SECRET_CRON_KEY",
-      "schedule": "0 * * * *"
-    },
-    {
-      "path": "/api/scoring?key=YOUR_SECRET_CRON_KEY",
-      "schedule": "10 * * * *"
-    },
-    {
-      "path": "/api/segmentation?key=YOUR_SECRET_CRON_KEY",
-      "schedule": "20 * * * *"
-    },
-    {
-      "path": "/api/outreach?key=YOUR_SECRET_CRON_KEY",
-      "schedule": "30 * * * *"
-    },
-    {
-      "path": "/api/demo?key=YOUR_SECRET_CRON_KEY",
-      "schedule": "40 * * * *"
-    },
-    {
-      "path": "/api/playbook/auto?key=YOUR_SECRET_CRON_KEY",
-      "schedule": "50 * * * *"
-    }
+    { "path": "/api/scrape?key=YOUR_SECRET_CRON_KEY", "schedule": "0 * * * *" },
+    { "path": "/api/scoring?key=YOUR_SECRET_CRON_KEY", "schedule": "10 * * * *" },
+    { "path": "/api/segmentation?key=YOUR_SECRET_CRON_KEY", "schedule": "20 * * * *" },
+    { "path": "/api/outreach?key=YOUR_SECRET_CRON_KEY", "schedule": "30 * * * *" },
+    { "path": "/api/demo?key=YOUR_SECRET_CRON_KEY", "schedule": "40 * * * *" },
+    { "path": "/api/playbook/auto?key=YOUR_SECRET_CRON_KEY", "schedule": "50 * * * *" }
   ]
 }

@@ -1,30 +1,41 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { NextRequest, NextResponse } from 'next/server';
+import { revolisGuard } from '@/lib/revolis-guard';
+import { createClient } from '@/lib/supabase/server';
 
-export async function GET() {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+export async function GET(req: NextRequest) {
+  return revolisGuard(req, 'AI Scoring Engine', async () => {
+    console.log("🎯 Revolis Engine: Spúšťam Scoring...");
+    const supabase = await createClient();
 
-  const { data: prospects } = await supabase
-    .from("AI AGENT AUTOMAT ONBOARDING no.2.01")
-    .select("*")
-    .eq("status", "PROSPECT");
+    const { data: leads, error: fetchError } = await supabase
+      .from('leads')
+      .select('*')
+      .eq('status', 'SCRAPED');
 
-  for (const p of prospects ?? []) {
-    const score =
-      (p.agent_count ?? 0) * 10 +
-      (p.region ? 10 : 0) +
-      (p.phone ? 20 : 0) +
-      (p.website_url ? 20 : 0) +
-      (p.raw_data?.length > 100 ? 10 : 0);
+    if (fetchError) throw fetchError;
+    if (!leads || leads.length === 0) {
+      return NextResponse.json({ message: "Žiadne nové leady na scoring." });
+    }
 
-    await supabase
-      .from("AI AGENT AUTOMAT ONBOARDING no.2.01")
-      .update({ lead_score: score })
-      .eq("id", p.id);
-  }
+    const scoredLeads = leads.map(lead => {
+      let score = 50;
+      if (lead.price && lead.price > 100000) score += 10;
+      if (lead.region === 'Poprad') score += 15;
+      if (!lead.agent_name) score += 25; // Bonus za priamy kontakt
 
-  return NextResponse.json({ updated: prospects?.length ?? 0 });
+      return {
+        ...lead,
+        lead_score: score,
+        status: 'SCORED'
+      };
+    });
+
+    const { error: updateError } = await supabase
+      .from('leads')
+      .upsert(scoredLeads, { onConflict: 'phone' });
+
+    if (updateError) throw updateError;
+
+    return NextResponse.json({ success: true, processed: scoredLeads.length });
+  });
 }
