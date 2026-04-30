@@ -42,3 +42,13 @@
 - **Prečo:** Implementácia Hormoziho princípu "Speed to Opportunity". Sledovanie konkurencie nesmie brzdiť hlavný scraping.
 - **Dôsledok:** Systém sa mení z lineárnej štafety na paralelnú fabriku (Agent Team).
 ---
+## [2026-04-30] - Deployment of Social Media Scout Agent
+- **Rozhodnutie:** Vytvorenie POST endpointu pre externé sociálne leady.
+- **Prečo:** Facebook skupiny sú "čierny trh" s realitami. Potrebujeme tam mať sondu, ktorá zachytáva dopyt skôr, než sa dostane na portály.
+- **Dôsledok:** Revolis AI už nesleduje len oficiálne weby, ale nasáva dáta z komunitného priestoru.
+---
+## [2026-04-30] - Deal-Trigger Deployment & Smoke Test Fix
+- **Rozhodnutie:** Nasadenie Deal-Trigger Agenta (15 min interval) a vytvorenie Profit Dashboardu.
+- **Prečo:** Prechod od detekcie k akcii (NEGOTIATION_READY). Odblokovanie CI/CD cez dummy ENV kriedenciály.
+- **Dôsledok:** Systém už len neinformuje, ale proaktívne tlačí najlepšie ponuky p. Smolkovi pod nos.
+---
