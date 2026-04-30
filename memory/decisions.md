@@ -27,3 +27,13 @@
 - **Prečo:** Aby ranný briefing aj Outreach engine zdieľali rovnakú infraštruktúru a tajomstvá (.env).
 - **Dôsledok:** Automatizovaný prehľad každé ráno o 8:00 (podľa vercel.json).
 ---
+## [2026-04-30] - Definícia AI Soul & Personality
+- **Rozhodnutie:** Vytvorenie personality.md ako riadiaceho dokumentu pre AI.
+- **Prečo:** Aby každá nová session začínala s jasným pochopením tvojich preferencií (rýchlosť, automatizácia, bezpečnosť).
+- **Dôsledok:** Eliminácia repetitívnych inštrukcií. AI sa stáva tvojím digitálnym dvojčaťom v inžinierstve.
+---
+## [2026-04-30] - Implementácia Productivity Framework (2x-50x)
+- **Rozhodnutie:** Klasifikácia Revolis.AI podľa 20x Agent modelu a vytvorenie skills.md.
+- **Prečo:** Aby sme vedeli, kde sa nachádzame na ceste k 50x Agent Teamu.
+- **Dôsledok:** Každá nová funkcia bude navrhovaná ako Skill Chain (10x), nie ako samostatný Prompt.
+---
