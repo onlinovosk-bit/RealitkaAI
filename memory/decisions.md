@@ -37,3 +37,8 @@
 - **Prečo:** Aby sme vedeli, kde sa nachádzame na ceste k 50x Agent Teamu.
 - **Dôsledok:** Každá nová funkcia bude navrhovaná ako Skill Chain (10x), nie ako samostatný Prompt.
 ---
+## [2026-04-30] - Transition to 50x Agent Team (Competitor Agent)
+- **Rozhodnutie:** Nasadenie prvého špecializovaného Agenta bežiaceho paralelne s hlavným flowom.
+- **Prečo:** Implementácia Hormoziho princípu "Speed to Opportunity". Sledovanie konkurencie nesmie brzdiť hlavný scraping.
+- **Dôsledok:** Systém sa mení z lineárnej štafety na paralelnú fabriku (Agent Team).
+---
