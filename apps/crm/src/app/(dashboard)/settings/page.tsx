@@ -1,106 +1,41 @@
-import ModuleShell from "@/components/shared/module-shell";
-import ErrorState from "@/components/shared/error-state";
-import PlanStatusCard from "@/components/settings/plan-status-card";
-import PlanSelectorCard from "@/components/settings/plan-selector-card";
-import FeatureFlagsCard from "@/components/settings/feature-flags-card";
-import UsageLimitsCard from "@/components/settings/usage-limits-card";
-import TrialGraceCard from "@/components/settings/trial-grace-card";
-import { getSaasOpsSnapshot } from "@/lib/saas-ops";
-import { safeServerAction } from "@/lib/safe-action";
-import { requireRole } from "@/lib/permissions";
-import GoogleConnectButton from "@/components/integrations/GoogleConnectButton";
-import GoogleCalendarDemo from "@/components/integrations/GoogleCalendarDemo";
-import UsageMetricsEnterpriseCard from "@/components/settings/usage-metrics-enterprise-card";
-import Link from "next/link";
-import { AI_ASSISTANT_CHAT_LABEL } from "@/lib/ai-brand";
+'use client';
+import React from 'react';
 
-export default async function SettingsPage() {
-  await requireRole(["owner", "manager", "agent"]);
-
-  const result = await safeServerAction(
-    () => getSaasOpsSnapshot(),
-    "Nepodarilo sa načítať admin settings."
-  );
-
-  if (!result.ok) {
-    return (
-      <ModuleShell
-        title="Nastavenia a SaaS prevádzka"
-        description="Správa plánu, funkčných prepínačov, limitov a logiky skúšobného obdobia/odkladnej lehoty."
-      >
-        <ErrorState
-          title="Admin settings sa nepodarilo načítať"
-          description={result.error}
-        />
-      </ModuleShell>
-    );
-  }
-
-  const data = result.data;
-
-  // Vypíš do konzoly všetky vypnuté features podľa snapshotu
-  if (typeof window !== "undefined" && data?.flags) {
-    const disabled = Object.entries(data.flags)
-      .filter(([_, v]) => !v)
-      .map(([k]) => k);
-    if (disabled.length > 0) {
-      console.log("Vypnuté features:", disabled);
-    } else {
-      console.log("Všetky features sú zapnuté");
-    }
-  }
-
+export default function SettingsPage() {
   return (
-    <ModuleShell
-      title="Nastavenia a SaaS prevádzka"
-      description="Správa plánu, funkčných prepínačov, limitov a logiky skúšobného obdobia/odkladnej lehoty."
-    >
-      <section className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <PlanStatusCard
-          plan={data.plan}
-          billingStatus={data.billing.subscription?.status || "no_subscription"}
-          canUseFullApp={data.canUseFullApp}
-        />
-        <PlanSelectorCard plan={data.plan} />
-      </section>
-
-      <section className="mb-6">
-        <TrialGraceCard trialGrace={data.trialGrace} />
-      </section>
-
-      <section className="mb-6">
-        <UsageLimitsCard
-          usage={data.usage}
-          limits={data.limits}
-          usageHealth={data.usageHealth}
-        />
-      </section>
-
-      <section className="mb-6">
-        <UsageMetricsEnterpriseCard />
-      </section>
-
-      <section className="mb-6">
-        <Link
-          href="/settings/nexus-ai-chat"
-          className="block rounded-2xl border border-indigo-200 bg-indigo-50 p-5 shadow-sm transition hover:border-indigo-300 hover:bg-indigo-100/60"
-        >
-          <h2 className="text-base font-semibold text-indigo-900">{AI_ASSISTANT_CHAT_LABEL}</h2>
-          <p className="mt-1 text-sm text-indigo-800">
-            Nastav štýl odpovedí, dĺžku výstupov a formát email návrhov.
-          </p>
-          <span className="mt-2 inline-block text-sm font-medium text-indigo-700">Otvoriť nastavenia →</span>
-        </Link>
-      </section>
-
-      <FeatureFlagsCard flags={data.flags} />
-
-      {/* Integrácie Google - demo */}
-      <div className="mt-10">
-        <h2 className="text-lg font-bold mb-2">Integrácia Google (demo)</h2>
-        <GoogleConnectButton />
-        <GoogleCalendarDemo />
+    <div className="mx-auto max-w-5xl p-10 font-sans">
+      <div className="mb-10">
+        <h1 className="text-3xl font-black tracking-tight text-gray-900">Nastavenia a SaaS prevádzka</h1>
+        <p className="mt-2 text-gray-500">Správa plánu, funkčných prepínačov a limitov.</p>
       </div>
-    </ModuleShell>
+
+      <div className="space-y-8">
+        {/* Sekcia Plán */}
+        <section className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+          <div className="border-b border-gray-100 bg-gray-50/50 p-6">
+            <h3 className="text-lg font-bold">Aktuálny plán</h3>
+          </div>
+          <div className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Váš program</p>
+                <p className="text-xl font-bold uppercase text-purple-700">Protocol Authority</p>
+              </div>
+              <button className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-bold text-white transition hover:bg-black">
+                Spravovať predplatné
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* Sekcia Skúšobné obdobie */}
+        <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h3 className="mb-4 text-lg font-bold">Skúšobné obdobie / ochranná lehota</h3>
+          <div className="rounded-lg border border-blue-100 bg-blue-50 p-4 text-sm text-blue-800">
+            Vaša ochranná lehota končí o 14 dní.
+          </div>
+        </section>
+      </div>
+    </div>
   );
 }
