@@ -1,8 +1,10 @@
-﻿import { okResponse, errorResponse } from "@/lib/api-response";
+﻿import { NextResponse } from "next/server";
+import { okResponse, errorResponse } from "@/lib/api-response";
 import { deleteLead, getLead, updateLead } from "@/lib/leads-store";
 import { createActivity } from "@/lib/activities-store";
 import { autoRecalculateForLead } from "@/lib/matching-hooks";
 import { rescoreLead } from "@/lib/rescore-lead";
+import { UUIDSchema } from "@/lib/api-validate";
 
 export async function PATCH(
   request: Request,
@@ -10,6 +12,15 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
+
+    const idValidation = UUIDSchema.safeParse(id);
+    if (!idValidation.success) {
+      return NextResponse.json(
+        { ok: false, error: "Invalid lead ID format" },
+        { status: 400 }
+      );
+    }
+
     const body = await request.json();
 
     const oldLead = await getLead(id);
@@ -78,6 +89,15 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+
+    const idValidation = UUIDSchema.safeParse(id);
+    if (!idValidation.success) {
+      return NextResponse.json(
+        { ok: false, error: "Invalid lead ID format" },
+        { status: 400 }
+      );
+    }
+
     const oldLead = await getLead(id);
 
     await deleteLead(id);
@@ -111,6 +131,15 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+
+    const idValidation = UUIDSchema.safeParse(id);
+    if (!idValidation.success) {
+      return NextResponse.json(
+        { ok: false, error: "Invalid lead ID format" },
+        { status: 400 }
+      );
+    }
+
     const lead = await getLead(id);
     if (!lead) {
       // Always return valid JSON, even if not found

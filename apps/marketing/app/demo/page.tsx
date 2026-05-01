@@ -273,7 +273,7 @@ export default function DemoPage() {
           </div>
           <div className="tick-item">
             <div className="tick-num" id="t2">0</div>
-            <div className="tick-label">Prebudených leadov</div>
+            <div className="tick-label">Prebudených príležitostí</div>
           </div>
           <div className="tick-item">
             <div className="tick-num" id="t3">0%</div>
@@ -353,19 +353,19 @@ export default function DemoPage() {
       {/* ── SEKCIA 2 — ACTIVITY CHART ── */}
       <section>
         <div className="section-title">Stratený obrat má svoju adresu</div>
-        <p className="section-sub">73 % stratených obchodov bolo zachrániteľných. Toto je tvoja databáza — červená = peniaze ktoré odišli ku konkurencii.</p>
+        <p className="section-sub">73 % stratených obchodov bolo zachrániteľných. Toto je Vaša databáza — červená = peniaze ktoré odišli ku konkurencii.</p>
         <div className="card-grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))' }}>
           <div className="card visible" style={{ borderColor: 'rgba(239,68,68,.2)' }}>
             <div className="card-icon">🔴</div>
             <div className="card-title" style={{ color: '#F87171' }}>Kritické — okamžitá akcia</div>
-            <div className="card-desc">8 leadov s hodnotou 85k+ € — posledný kontakt 60+ dní</div>
+            <div className="card-desc">8 príležitostí s hodnotou 85k+ € — posledný kontakt 60+ dní</div>
             <div className="card-metric" style={{ color: '#F87171' }}>€ 212,400</div>
             <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>odhadovaná ušlá provízia</div>
           </div>
           <div className="card visible" style={{ borderColor: 'rgba(249,115,22,.2)' }}>
             <div className="card-icon">🟠</div>
             <div className="card-title" style={{ color: 'var(--orange)' }}>Ohrozené — 30-60 dní</div>
-            <div className="card-desc">14 leadov v chladiacom období — záujem ešte aktívny</div>
+            <div className="card-desc">14 príležitostí v chladiacom období — záujem ešte aktívny</div>
             <div className="card-metric" style={{ color: 'var(--orange)' }}>€ 89,600</div>
             <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>zachrániteľné do 14 dní</div>
           </div>
@@ -382,7 +382,7 @@ export default function DemoPage() {
         <div style={{ marginTop: '36px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
             <div>
-              <div style={{ fontSize: '14px', fontWeight: 800, color: '#E2E8F0' }}>Aktivita leadov — posledných 30 dní</div>
+              <div style={{ fontSize: '14px', fontWeight: 800, color: '#E2E8F0' }}>Aktivita príležitostí — posledných 30 dní</div>
               <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '3px' }}>Počet interakcií · Reaktivácie · Nové dopyty</div>
             </div>
             <div style={{ display: 'flex', gap: '20px' }}>
@@ -470,7 +470,7 @@ export default function DemoPage() {
 
       {/* ── SEKCIA 3 — CONVERSATION INTELLIGENCE ── */}
       <section>
-        <div className="section-title">Vieš presne kedy si stratil klienta.</div>
+        <div className="section-title">Viete presne kedy ste stratili klienta.</div>
         <p className="section-sub">37 sekúnd pred koncom hovoru. James Thornton (ex Gong): <em style={{ color: '#A78BFA' }}>čo maklér nepovedal je silnejší signál ako čo povedal.</em></p>
         <div className="waveform-wrap">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -542,8 +542,8 @@ export default function DemoPage() {
 
       {/* ── SEKCIA 5 — STREET INTELLIGENCE ── */}
       <section>
-        <div className="section-title">Tvoj klient si myslí že pozná svoju ulicu.</div>
-        <p className="section-sub">Ty ju poznáš lepšie — Trevor Blackwood (ex Market Leader): Street-level insight na úrovni konkrétnej adresy.</p>
+        <div className="section-title">Váš klient si myslí že pozná svoju ulicu.</div>
+        <p className="section-sub">Vy ju poznáte lepšie — Trevor Blackwood (ex Market Leader): Street-level insight na úrovni konkrétnej adresy.</p>
         <div className="street-card">
           <div>
             <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--muted)', marginBottom: '20px', letterSpacing: '.1em', textTransform: 'uppercase' }}>📍 Galvaniho 7, Bratislava</div>
@@ -585,7 +585,7 @@ export default function DemoPage() {
       {/* FOOTER CTA */}
       <div className="footer-cta">
         <div className="usp-tag">★ World&rsquo;s First · Kombinácia neexistuje nikde inde</div>
-        <h2>Každý deň bez Revolis.AI<br />Ťa stojí konkrétnu sumu.</h2>
+        <h2>Každý deň bez Revolis.AI<br />Vás stojí konkrétnu sumu.</h2>
         <p>Spusti 14-dňový trial. Bez kreditnej karty. Prvý AI follow-up odchádza za 4 minúty.</p>
         <button className="btn-primary" style={{ fontSize: '16px', padding: '20px 48px' }}>Začni zadarmo — výsledky do 48 hodín →</button>
         <div style={{ marginTop: '16px', fontSize: '12px', color: 'var(--muted)' }}>847 maklérov začalo tento mesiac · Zrušenie kedykoľvek</div>
@@ -602,9 +602,9 @@ export default function DemoPage() {
       >
         <div className="exit-card">
           <button className="exit-close" aria-label="Zatvoriť" onClick={handleExitClose}>&#x2715;</button>
-          <div className="exit-title" id="exit-title">Počkaj — toto si ešte nevideľ.</div>
-          <div className="exit-sub">Ukážeme ti živé dáta pre tvoju oblasť. Bez registrácie.</div>
-          <input className="exit-input" id="exit-email" type="email" placeholder="tvoj@email.sk" autoComplete="email" />
+          <div className="exit-title" id="exit-title">Počkajte — toto ste ešte nevideli.</div>
+          <div className="exit-sub">Ukážeme Vám živé dáta pre Vašu oblasť. Bez registrácie.</div>
+          <input className="exit-input" id="exit-email" type="email" placeholder="vas@email.sk" autoComplete="email" />
           <button className="exit-btn" onClick={handleExitSubmit}>Zobraziť moje dáta →</button>
         </div>
       </div>

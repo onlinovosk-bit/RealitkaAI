@@ -3,8 +3,15 @@
 // On-demand BRI recompute for a single lead
 // ================================================================
 import { NextRequest, NextResponse } from 'next/server'
+import { z }                         from 'zod'
 import { createClient }              from '@/lib/supabase/server'
 import { computeBRI }                from '@/lib/bri/engine'
+import { UUIDSchema, validateBody }  from '@/lib/api-validate'
+
+const BRIRecomputeSchema = z.object({
+  leadId:  UUIDSchema,
+  trigger: z.string().max(100).optional(),
+})
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,11 +26,10 @@ export async function POST(request: NextRequest) {
       .single()
     if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
 
-    const { leadId, trigger } = await request.json() as {
-      leadId:   string
-      trigger?: string
-    }
-    if (!leadId) return NextResponse.json({ error: 'leadId required' }, { status: 400 })
+    const validation = await validateBody(request, BRIRecomputeSchema)
+    if (!validation.ok) return validation.response
+
+    const { leadId, trigger } = validation.data
 
     const result = await computeBRI(leadId, profile.id, trigger ?? 'manual_recompute')
     if (!result) return NextResponse.json({ error: 'Compute failed' }, { status: 500 })

@@ -1,10 +1,34 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { okResponse, errorResponse } from "@/lib/api-response";
 import { autoErrorCapture } from "@/lib/auto-error-capture";
 import { createActivity } from "@/lib/activities-store";
 import { createClient } from "@/lib/supabase/server";
 import { createLead } from "@/lib/leads-store";
 import { autoRecalculateForLead } from "@/lib/matching-hooks";
+import { validateBody } from "@/lib/api-validate";
+
+const CreateLeadSchema = z.object({
+  name: z.string().min(1).max(200),
+  email: z.string().email().optional().or(z.literal("")),
+  phone: z.string().max(50).optional().default(""),
+  location: z.string().max(200).optional().default(""),
+  budget: z.string().max(100).optional().default(""),
+  propertyType: z
+    .enum(["Byt", "Dom", "Pozemok", "Komerčný priestor"])
+    .default("Byt"),
+  rooms: z.string().max(50).optional().default("2 izby"),
+  financing: z
+    .enum(["Hypotéka", "Hotovosť", "Kombinácia"])
+    .optional()
+    .default("Hypotéka"),
+  timeline: z.string().max(100).optional().default("Do 3 mesiacov"),
+  source: z.string().max(100).optional().default("Web formulár"),
+  status: z.string().max(50).optional().default("Nový"),
+  score: z.coerce.number().int().min(0).max(100).optional().default(50),
+  assignedAgent: z.string().max(200).optional().default("Nepriradený"),
+  note: z.string().max(5000).optional().default(""),
+});
 
 /** Legacy AI endpoint – normalizované leady pre scoring (session). */
 export async function GET() {
@@ -44,23 +68,25 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const validation = await validateBody(request, CreateLeadSchema);
+    if (!validation.ok) return validation.response;
+    const body = validation.data;
 
     const lead = await createLead({
-      name: body.name ?? "",
+      name: body.name,
       email: body.email ?? "",
-      phone: body.phone ?? "",
-      location: body.location ?? "",
-      budget: body.budget ?? "",
-      propertyType: body.propertyType ?? "Byt",
-      rooms: body.rooms ?? "2 izby",
-      financing: body.financing ?? "Hypotéka",
-      timeline: body.timeline ?? "Do 3 mesiacov",
-      source: body.source ?? "Web formulár",
-      status: body.status ?? "Nový",
-      score: Number(body.score ?? 50),
-      assignedAgent: body.assignedAgent ?? "Nepriradený",
-      note: body.note ?? "",
+      phone: body.phone,
+      location: body.location,
+      budget: body.budget,
+      propertyType: body.propertyType,
+      rooms: body.rooms,
+      financing: body.financing,
+      timeline: body.timeline,
+      source: body.source,
+      status: body.status,
+      score: body.score,
+      assignedAgent: body.assignedAgent,
+      note: body.note,
     });
 
     try {

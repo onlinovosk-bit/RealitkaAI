@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient }              from '@/lib/supabase/server'
 import { getBRIHistory }             from '@/lib/bri/engine'
+import { UUIDSchema }                from '@/lib/api-validate'
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,11 +20,16 @@ export async function GET(request: NextRequest) {
       .single()
     if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
 
-    const params = request.nextUrl.searchParams
-    const leadId = params.get('leadId')
-    const limit  = parseInt(params.get('limit') ?? '30', 10)
+    const searchParams = request.nextUrl.searchParams
+    const leadId = searchParams.get('leadId')
+    const limit  = parseInt(searchParams.get('limit') ?? '30', 10)
 
-    if (!leadId) return NextResponse.json({ error: 'leadId required' }, { status: 400 })
+    if (!leadId) return NextResponse.json({ ok: false, error: 'leadId required' }, { status: 400 })
+
+    const leadIdValidation = UUIDSchema.safeParse(leadId)
+    if (!leadIdValidation.success) {
+      return NextResponse.json({ ok: false, error: 'leadId must be a valid UUID' }, { status: 400 })
+    }
 
     const history = await getBRIHistory(leadId, profile.id, Math.min(limit, 100))
     return NextResponse.json({ ok: true, history })

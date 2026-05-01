@@ -245,10 +245,10 @@ export default function HomePage() {
           <span className="live-dot"></span>
           340+ kancelárií · 6 krajín · Live
         </div>
-        <h1>Kto odpovie ako prvý,<br /><em>uzavrie obchod.</em></h1>
+        <h1>Každú noc prídu 2–3 príležitosti.<br /><em>Revolis.AI odpovedá aj o 22:47.</em></h1>
         <p className="hero-sub">
           Revolis.AI odpovedá na každý dopyt za <strong>90 sekúnd</strong>, sleduje klientov{' '}
-          <strong>18 mesiacov</strong> a ukáže ti presne koho kontaktovať dnes.
+          <strong>18 mesiacov</strong> a ukáže Vám presne koho kontaktovať dnes.
         </p>
         <div className="hero-cta-row">
           <button className="btn-dark">
@@ -270,7 +270,7 @@ export default function HomePage() {
         <div className="stats-strip">
           <div className="stat-cell"><div className="stat-num" id="s1">0%</div><div className="stat-label">Nárast zmlúv za Q1</div></div>
           <div className="stat-cell"><div className="stat-num" id="s2">0s</div><div className="stat-label">Priem. čas odpovede</div></div>
-          <div className="stat-cell"><div className="stat-num" id="s3">0%</div><div className="stat-label">Reaktivovaných leadov</div></div>
+          <div className="stat-cell"><div className="stat-num" id="s3">0%</div><div className="stat-label">Reaktivovaných príležitostí</div></div>
           <div className="stat-cell"><div className="stat-num" id="s4">0€</div><div className="stat-label">Priem. nový obrat Q1</div></div>
           <div className="stat-cell"><div className="stat-num" id="s5">0%</div><div className="stat-label">Menej nekvalif. hovorov</div></div>
           <div className="stat-cell"><div className="stat-num" id="s6">0min</div><div className="stat-label">Čas nasadenia</div></div>
@@ -280,35 +280,35 @@ export default function HomePage() {
       {/* PAIN */}
       <div className="section">
         <div className="section-label">Problém</div>
-        <div className="section-h2">Bolí ťa toto?</div>
+        <div className="section-h2">Bolí Vás toto?</div>
         <p className="section-p">Každý maklér pozná tieto momenty. Každý z nich je stratená provízia.</p>
         <div className="pain-grid">
-          <div className="pain-card"><div className="pain-icon">😴</div><div className="pain-title">Dopyt prišiel o 22:47. Odpovedal si ráno. Bolo neskoro.</div><div className="pain-text">Prvý kto odpovie dostane lead. Priemerný čas odpovede makléra: 7 hodín. Revolis.AI: 90 sekúnd, 24/7.</div></div>
-          <div className="pain-card"><div className="pain-icon">👻</div><div className="pain-title">Písal si mu pred 3 mesiacmi. Kúpil od niekoho iného.</div><div className="pain-text">Mal záujem. Bol "ešte nie pripravený." Vypadol z radaru. Revolis by ho sledoval 18 mesiacov automaticky.</div></div>
-          <div className="pain-card"><div className="pain-icon">💸</div><div className="pain-title">68 % leadov nebolo nikdy druhýkrát kontaktovaných.</div><div className="pain-text">CRM zaznamenáva. Revolis.AI aktívne pracuje s databázou každý deň — bez tvojho vstupu.</div></div>
-          <div className="pain-card"><div className="pain-icon">🚪</div><div className="pain-title">Maklér odišiel. Jeho leads odišli s ním.</div><div className="pain-text">Revolis drží vzťahy na úrovni kancelárie — nie v telefóne jednotlivca. Nikdy viac.</div></div>
-          <div className="pain-card"><div className="pain-icon">❓</div><div className="pain-title">Minul si 1 200 € na reklamu. Nevieš ktorá fungovala.</div><div className="pain-text">Revolis.AI mapuje každý lead od prvej reklamy po podpis. Škáluješ len to, čo prináša podpisy.</div></div>
+          <div className="pain-card"><div className="pain-icon">😴</div><div className="pain-title">Dopyt prišiel o 22:47. Odpovedali ste ráno. Bolo neskoro.</div><div className="pain-text">Prvý kto odpovie dostane príležitosť. Priemerný čas odpovede makléra: 7 hodín. Revolis.AI: 90 sekúnd, 24/7.</div></div>
+          <div className="pain-card"><div className="pain-icon">👻</div><div className="pain-title">Písali ste mu pred 3 mesiacmi. Kúpil od niekoho iného.</div><div className="pain-text">Mal záujem. Bol "ešte nie pripravený." Vypadol z radaru. Revolis by ho sledoval 18 mesiacov automaticky.</div></div>
+          <div className="pain-card"><div className="pain-icon">💸</div><div className="pain-title">68 % príležitostí nebolo nikdy druhýkrát kontaktovaných.</div><div className="pain-text">CRM zaznamenáva. Revolis.AI aktívne pracuje s databázou každý deň — bez Vášho vstupu.</div></div>
+          <div className="pain-card"><div className="pain-icon">🚪</div><div className="pain-title">Maklér odišiel. Jeho príležitosti odišli s ním.</div><div className="pain-text">Revolis drží vzťahy na úrovni kancelárie — nie v telefóne jednotlivca. Nikdy viac.</div></div>
+          <div className="pain-card"><div className="pain-icon">❓</div><div className="pain-title">Minuli ste 1 200 € na reklamu. Neviete ktorá fungovala.</div><div className="pain-text">Revolis.AI mapuje každú príležitosť od prvej reklamy po podpis. Škálujete len to, čo prináša podpisy.</div></div>
         </div>
       </div>
 
       {/* FEATURES */}
       <div className="section" style={{ paddingTop: 32 }}>
         <div className="section-label">Riešenie</div>
-        <div className="section-h2">Čo Revolis.AI robí za teba</div>
-        <p className="section-p">Nie ďalší CRM ktorý musíš aktualizovať. Systém ktorý pracuje namiesto teba — každú hodinu.</p>
+        <div className="section-h2">Čo Revolis.AI robí za Vás</div>
+        <p className="section-p">Nie ďalší CRM ktorý musíte aktualizovať. Systém ktorý pracuje namiesto Vás — každú hodinu.</p>
 
         <div className="feature-row">
           <div>
             <div className="feat-label" style={{ color: 'var(--cyan)' }}>AI Lead Scoring</div>
-            <div className="feat-title">Vieš kto kúpi tento mesiac.</div>
-            <p className="feat-desc">Revolis analyzuje správanie každého leadu a priradí skóre 1–100. Ty zavoláš len tým s 80+. Čas na nekvalifikovaných leadoch: −67 %.</p>
+            <div className="feat-title">Viete kto kúpi tento mesiac.</div>
+            <p className="feat-desc">Revolis analyzuje správanie každej príležitosti a priradí skóre 1–100. Vy zavoláte len tým s 80+. Čas na nekvalifikovaných príležitostiach: −67 %.</p>
             <div className="feat-contrast">
               <div className="contrast-box contrast-before"><div className="contrast-label">Bez Revolis</div>Voláš všetkým. 9 z 10 hovorov je zbytočných. Únava, frustrácia, strata motivácie.</div>
               <div className="contrast-box contrast-after"><div className="contrast-label">S Revolis.AI</div>Voláš tým, ktorí sú pripravení. 3× vyššia konverzia hovoru na stretnutie.</div>
             </div>
           </div>
           <div className="feat-visual">
-            <div className="feat-vis-header">Lead Scoring — Tvoji kontakty dnes</div>
+            <div className="feat-vis-header">Lead Scoring — Vaše kontakty dnes</div>
             <div>
               <div className="score-row"><div className="score-name">Ján Kováč</div><div className="score-bar-track"><div className="score-bar-fill" data-w="91" style={{ background: 'linear-gradient(90deg,#22C55E,#4ADE80)' }}></div></div><div className="score-val" style={{ color: '#4ADE80' }}>91</div></div>
               <div className="score-row"><div className="score-name">Marta Horáková</div><div className="score-bar-track"><div className="score-bar-fill" data-w="84" style={{ background: 'linear-gradient(90deg,#22C55E,#4ADE80)' }}></div></div><div className="score-val" style={{ color: '#4ADE80' }}>84</div></div>
@@ -328,7 +328,7 @@ export default function HomePage() {
           <div>
             <div className="feat-label" style={{ color: '#7C3AED' }}>24/7 AI Response Engine</div>
             <div className="feat-title">Odpoveď za 90 sekúnd. Vždy.</div>
-            <p className="feat-desc">Každý dopyt dostane personalizovanú odpoveď do 90 sekúnd. AI píše v tóne tvojej kancelárie, v jazyku klienta, s konkrétnou nehnuteľnosťou.</p>
+            <p className="feat-desc">Každý dopyt dostane personalizovanú odpoveď do 90 sekúnd. AI píše v tóne Vašej kancelárie, v jazyku klienta, s konkrétnou nehnuteľnosťou.</p>
             <div className="feat-contrast">
               <div className="contrast-box contrast-before"><div className="contrast-label">Bez Revolis</div>Prvý hovor až ráno. Lead si medzitým zobral 3 ďalšie kontakty a vybral si.</div>
               <div className="contrast-box contrast-after"><div className="contrast-label">S Revolis.AI</div>Lead dostane odpoveď skôr ako odíde zo stránky. Konverzácia začína ihneď.</div>
@@ -340,7 +340,7 @@ export default function HomePage() {
               <div className="funnel-stage" style={{ background: 'rgba(124,58,237,.15)', color: '#A78BFA' }}><span>Prichádzajúce dopyty</span><span className="funnel-val">47</span></div>
               <div className="funnel-stage" style={{ background: 'rgba(14,165,233,.15)', color: '#38BDF8' }}><span>Odpovedané do 90s</span><span className="funnel-val">47</span></div>
               <div className="funnel-stage" style={{ background: 'rgba(34,197,94,.15)', color: '#4ADE80' }}><span>Potvrdené stretnutia</span><span className="funnel-val">12</span></div>
-              <div className="funnel-stage" style={{ background: 'rgba(212,175,55,.15)', color: '#FCD34D' }}><span>Kvalifikovaných leadov</span><span className="funnel-val">8</span></div>
+              <div className="funnel-stage" style={{ background: 'rgba(212,175,55,.15)', color: '#FCD34D' }}><span>Kvalifikovaných príležitostí</span><span className="funnel-val">8</span></div>
             </div>
             <div style={{ marginTop: 16, padding: 12, background: 'rgba(34,197,94,.08)', borderRadius: 10, border: '1px solid rgba(34,197,94,.15)', fontSize: 12, color: 'rgba(255,255,255,.6)' }}>
               ✓ Priemerný čas odpovede dnes: <strong style={{ color: '#4ADE80' }}>74 sekúnd</strong>
@@ -350,12 +350,12 @@ export default function HomePage() {
 
         <div className="feature-row">
           <div>
-            <div className="feat-label" style={{ color: '#D97706' }}>Tvoji mŕtvi leads nie sú mŕtvi.</div>
+            <div className="feat-label" style={{ color: '#D97706' }}>Vaše mŕtve príležitosti nie sú mŕtve.</div>
             <div className="feat-title">Revolis prebúdza databázu. Každý deň.</div>
-            <p className="feat-desc">Priemerná kancelária reaktivuje 22 % leadov starších ako 6 mesiacov. Nadia Kovač (ex Structurely): záujem nikdy nezomrie — len spí.</p>
+            <p className="feat-desc">Priemerná kancelária reaktivuje 22 % príležitostí starších ako 6 mesiacov. Nadia Kovač (ex Structurely): záujem nikdy nezomrie — len spí.</p>
             <div className="feat-contrast">
               <div className="contrast-box contrast-before"><div className="contrast-label">Bez Revolis</div>Lead "nie, ešte nie" = zabudnutý navždy. Databáza rastie, obrat nie.</div>
-              <div className="contrast-box contrast-after"><div className="contrast-label">S Revolis.AI</div>18-mesačný nurturing. Reaktivačná rate 22 %. Nové obchody z leadov za ktoré si zaplatil.</div>
+              <div className="contrast-box contrast-after"><div className="contrast-label">S Revolis.AI</div>18-mesačný nurturing. Reaktivačná rate 22 %. Nové obchody z príležitostí za ktoré ste zaplatili.</div>
             </div>
           </div>
           <div className="feat-visual">
@@ -390,24 +390,24 @@ export default function HomePage() {
               <div className="step-num-wrap" style={{'--arc': '0deg'} as React.CSSProperties} id="arc1">
                 <div className="step-num-inner"><div className="step-icon">🔌</div><div className="step-num" style={{ color: 'var(--cyan)' }}>Krok 1</div></div>
               </div>
-              <div className="step-title">Napoj kanceláriu</div>
-              <div className="step-desc">Pripoj email, importuj kontakty z CRM alebo CSV. Revolis.AI sa automaticky naučí tvoj štýl komunikácie.</div>
+              <div className="step-title">Napojte kanceláriu</div>
+              <div className="step-desc">Pripojte email, importujte kontakty z CRM alebo CSV. Revolis.AI sa automaticky naučí Váš štýl komunikácie.</div>
               <div className="step-time" style={{ background: 'rgba(14,165,233,.08)', color: 'var(--cyan)', border: '1px solid rgba(14,165,233,.2)' }}>⚡ 4 minúty</div>
             </div>
             <div className="step-card" id="step2">
               <div className="step-num-wrap" style={{'--arc': '0deg'} as React.CSSProperties} id="arc2">
                 <div className="step-num-inner"><div className="step-icon">🧠</div><div className="step-num" style={{ color: 'var(--purple)' }}>Krok 2</div></div>
               </div>
-              <div className="step-title">AI sa naučí teba</div>
-              <div className="step-desc">Počas prvých 24 hodín Revolis.AI analyzuje históriu kontaktov, identifikuje vzorce a nastaví scoring model pre tvoj trh.</div>
+              <div className="step-title">AI sa naučí Vás</div>
+              <div className="step-desc">Počas prvých 24 hodín Revolis.AI analyzuje históriu kontaktov, identifikuje vzorce a nastaví scoring model pre Váš trh.</div>
               <div className="step-time" style={{ background: 'rgba(124,58,237,.08)', color: 'var(--purple)', border: '1px solid rgba(124,58,237,.2)' }}>⏱ 24 hodín</div>
             </div>
             <div className="step-card" id="step3">
               <div className="step-num-wrap" style={{'--arc': '0deg'} as React.CSSProperties} id="arc3">
                 <div className="step-num-inner"><div className="step-icon">🏆</div><div className="step-num" style={{ color: 'var(--gold)' }}>Krok 3</div></div>
               </div>
-              <div className="step-title">Uzatváraj obchody</div>
-              <div className="step-desc">Od tohto momentu Revolis.AI pracuje na pozadí — odpovedá, sleduje, reaktivuje. Ty dostávaš len notifikácie: "zavolaj teraz."</div>
+              <div className="step-title">Uzatvárajte obchody</div>
+              <div className="step-desc">Od tohto momentu Revolis.AI pracuje na pozadí — odpovedá, sleduje, reaktivuje. Vy dostávate len notifikácie: "zavolaj teraz."</div>
               <div className="step-time" style={{ background: 'rgba(217,119,6,.08)', color: 'var(--gold)', border: '1px solid rgba(217,119,6,.2)' }}>∞ Navždy automaticky</div>
             </div>
           </div>
@@ -432,7 +432,7 @@ export default function HomePage() {
           <div className="numbers-grid">
             <div className="number-cell"><div className="number-big" style={{ color: 'var(--cyan)' }} id="n1">0%</div><div className="number-label">Nárast zmlúv za Q1</div><div className="number-ctx">Priemerná kancelária, prvých 90 dní</div></div>
             <div className="number-cell"><div className="number-big" style={{ color: 'var(--purple)' }} id="n2">0s</div><div className="number-label">Čas odpovede</div><div className="number-ctx">Vs. 7-hodinový priemer trhu</div></div>
-            <div className="number-cell"><div className="number-big" style={{ color: 'var(--green)' }} id="n3">0%</div><div className="number-label">Reaktivovaných leadov</div><div className="number-ctx">Z leadov starších ako 6 mesiacov</div></div>
+            <div className="number-cell"><div className="number-big" style={{ color: 'var(--green)' }} id="n3">0%</div><div className="number-label">Reaktivovaných príležitostí</div><div className="number-ctx">Z príležitostí starších ako 6 mesiacov</div></div>
             <div className="number-cell"><div className="number-big" style={{ color: 'var(--gold)' }} id="n4">0€</div><div className="number-label">Priemerný nový obrat</div><div className="number-ctx">5–15 maklérov, prvý kvartál</div></div>
             <div className="number-cell"><div className="number-big" style={{ color: 'var(--red)' }} id="n5">0%</div><div className="number-label">Menej zbytočných hovorov</div><div className="number-ctx">Vďaka AI lead scoringu</div></div>
             <div className="number-cell"><div className="number-big" style={{ color: 'var(--cyan)' }} id="n6">0min</div><div className="number-label">Čas nasadenia</div><div className="number-ctx">Od registrácie po prvú AI odpoveď</div></div>
@@ -445,13 +445,13 @@ export default function HomePage() {
         <div className="roi-inner">
           <div style={{ textAlign: 'center' }}>
             <div className="section-label">Návratnosť investície</div>
-            <div className="section-h2">Vypočítaj svoj návrat</div>
-            <p className="section-p" style={{ margin: '0 auto 0', textAlign: 'center' }}>Posuň slidery podľa svojej kancelárie — výsledok sa prepočíta okamžite.</p>
+            <div className="section-h2">Vaša kancelária. 80 príležitostí. 4 500 € provízia. Výsledok nižšie.</div>
+            <p className="section-p" style={{ margin: '0 auto 0', textAlign: 'center' }}>Posuňte slidery podľa Vašej kancelárie — výsledok sa prepočíta okamžite.</p>
           </div>
           <div className="roi-grid">
             <div className="roi-inputs">
               <div>
-                <div className="roi-input-label">Počet leadov mesačne<span className="roi-input-val" id="roi-leads-val">80</span></div>
+                <div className="roi-input-label">Počet príležitostí mesačne<span className="roi-input-val" id="roi-leads-val">80</span></div>
                 <input className="roi-slider" id="roi-leads" type="range" min="10" max="500" step="1" defaultValue="80" />
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--muted)', marginTop: 4 }}><span>10</span><span>500</span></div>
               </div>
@@ -467,11 +467,11 @@ export default function HomePage() {
               </div>
               <div style={{ padding: 20, background: 'var(--bg2)', borderRadius: 16, border: '1px solid var(--border)' }}>
                 <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--cyan)', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 8 }}>Ako to funguje</div>
-                <div style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.7 }}>Revolis.AI zvyšuje konverznú mieru o <strong style={{ color: 'var(--text)' }}>+34 %</strong> vďaka AI lead scoringu, okamžitým odpoveďam a reaktivácii dormantných leadov.</div>
+                <div style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.7 }}>Revolis.AI zvyšuje konverznú mieru o <strong style={{ color: 'var(--text)' }}>+34 %</strong> vďaka AI lead scoringu, okamžitým odpoveďam a reaktivácii dormantných príležitostí.</div>
               </div>
             </div>
             <div className="roi-result">
-              <div style={{ fontSize: 12, fontWeight: 800, color: 'rgba(255,255,255,.3)', letterSpacing: '.15em', textTransform: 'uppercase', marginBottom: 20 }}>Výsledky pre tvoju kanceláriu</div>
+              <div style={{ fontSize: 12, fontWeight: 800, color: 'rgba(255,255,255,.3)', letterSpacing: '.15em', textTransform: 'uppercase', marginBottom: 20 }}>Výsledky pre Vašu kanceláriu</div>
               <div className="roi-result-row"><div className="roi-result-label">Váš aktuálny obrat</div><div className="roi-result-num current" id="roi-out-current">0 €/mes</div></div>
               <div className="roi-result-row"><div className="roi-result-label">S Revolis.AI</div><div className="roi-result-num revolis" id="roi-out-revolis">0 €/mes</div></div>
               <div className="roi-result-row" style={{ paddingTop: 20 }}><div className="roi-result-label">Mesačný nárast</div><div className="roi-result-num monthly" id="roi-out-monthly">+0 €</div></div>
@@ -489,7 +489,7 @@ export default function HomePage() {
       {/* PRICING */}
       <div className="section" style={{ maxWidth: 1300 }}>
         <div className="section-label" style={{ textAlign: 'center' }}>Cenník</div>
-        <div className="section-h2" style={{ textAlign: 'center' }}>Vyber plán pre tvoju kanceláriu.</div>
+        <div className="section-h2" style={{ textAlign: 'center' }}>Vyberte plán pre Vašu kanceláriu.</div>
         <p className="section-p" style={{ textAlign: 'center', margin: '0 auto 56px' }}>Žiadne skryté poplatky. Žiadne obmedzenia na počet nehnuteľností. Zrušenie kedykoľvek.</p>
         <div className="pricing-grid-full">
 
@@ -504,7 +504,7 @@ export default function HomePage() {
             <div className="feat-section-title" style={{ color: 'var(--muted)', borderColor: 'var(--border)' }}>Tím a limity</div>
             <ul className="plan-features"><li style={{ color: 'var(--muted)' }}>Do 3 maklérov v tíme</li><li style={{ color: 'var(--muted)' }}>Do 100 príležitostí mesačne</li><li style={{ color: 'var(--muted)' }}>100% garancia vrátenia do 30 dní</li></ul>
             <div className="feat-section-title" style={{ color: 'var(--muted)', borderColor: 'var(--border)' }}>AI Asistent &amp; Komunikácia</div>
-            <ul className="plan-features"><li style={{ color: 'var(--muted)' }}>🤖 AI Asistent — odpovede do 2 min (pracovné hodiny)</li><li style={{ color: 'var(--muted)' }}>📱 WhatsApp + SMS automatické odpovede</li><li style={{ color: 'var(--muted)' }}>📧 AI email skripty personalizované správaním klienta</li><li style={{ color: 'var(--muted)' }}>⚡ One-click follow-up — AI navrhne, ty schváliš</li></ul>
+            <ul className="plan-features"><li style={{ color: 'var(--muted)' }}>🤖 AI Asistent — odpovede do 2 min (pracovné hodiny)</li><li style={{ color: 'var(--muted)' }}>📱 WhatsApp + SMS automatické odpovede</li><li style={{ color: 'var(--muted)' }}>📧 AI email skripty personalizované správaním klienta</li><li style={{ color: 'var(--muted)' }}>⚡ One-click follow-up — AI navrhne, Vy schválite</li></ul>
             <div className="feat-section-title" style={{ color: 'var(--muted)', borderColor: 'var(--border)' }}>Scoring &amp; Analytika</div>
             <ul className="plan-features"><li style={{ color: 'var(--muted)' }}>📊 Buyer Readiness Index — AI skóre každej príl.</li><li style={{ color: 'var(--muted)' }}>🏠 Auto-párovanie s nehnuteľnosťami (do 10/mes)</li><li style={{ color: 'var(--muted)' }}>📋 Denný AI briefing — 5 priorít každé ráno o 8:00</li><li style={{ color: 'var(--muted)' }}>🔔 Hot Alert — notif. pri skóre 75+</li><li style={{ color: 'var(--muted)' }}>📝 Základná analytika konverzií (týždenný report)</li></ul>
             <div className="feat-section-title" style={{ color: 'var(--muted)', borderColor: 'var(--border)' }}>Vzdelávanie &amp; Certifikát</div>
@@ -533,7 +533,7 @@ export default function HomePage() {
             <div className="feat-section-title" style={{ color: 'var(--cyan)', borderColor: '#BAE6FD' }}>Integrácie</div>
             <ul className="plan-features"><li style={{ color: 'var(--muted)' }}>🔗 Portálové integrácie (Nehnuteľnosti.sk, Reality.sk…)</li></ul>
             <div className="feat-section-title" style={{ color: '#0891B2', borderColor: '#A5F3FC' }}>⭐ Expert bonusy</div>
-            <div className="expert-bonus" style={{ background: '#F0FDFF', borderColor: '#0891B2' }}><div className="expert-bonus-label" style={{ color: '#0891B2' }}>Nadia Kovač · ex Structurely</div><div className="expert-bonus-text" style={{ color: '#164E63' }}>Lead Half-Life Calculator — každý lead má vypočítaný „bod rozpadu" záujmu. AI kontaktuje lead presne v optimálnom okamihu, nie keď má maklér čas.</div></div>
+            <div className="expert-bonus" style={{ background: '#F0FDFF', borderColor: '#0891B2' }}><div className="expert-bonus-label" style={{ color: '#0891B2' }}>Nadia Kovač · ex Structurely</div><div className="expert-bonus-text" style={{ color: '#164E63' }}>Lead Half-Life Calculator — každá príležitosť má vypočítaný „bod rozpadu" záujmu. AI kontaktuje príležitosť presne v optimálnom okamihu, nie keď má maklér čas.</div></div>
             <div className="expert-bonus" style={{ background: '#F0FDF4', borderColor: '#16A34A' }}><div className="expert-bonus-label" style={{ color: '#16A34A' }}>Riku Tanaka · ex Follow Up Boss</div><div className="expert-bonus-text" style={{ color: '#14532D' }}>Triple Match Score — správny maklér × správny čas × správna správa = 4.2× vyššia miera odpovede. AI vypočíta kombináciu automaticky.</div></div>
             <div className="expert-bonus" style={{ background: '#FDF4FF', borderColor: '#9333EA' }}><div className="expert-bonus-label" style={{ color: '#9333EA' }}>James Thornton · ex Gong</div><div className="expert-bonus-text" style={{ color: '#581C87' }}>SK/CZ Conversation Intelligence — natívna analýza hovorov v slovenčine a češtine. 340 buying signálov špecifických pre realitný trh.</div></div>
             <button className="plan-cta" style={{ background: 'rgba(14,165,233,.1)', color: 'var(--cyan)', border: '1px solid rgba(14,165,233,.25)', marginTop: 20 }}>Aktivovať Active Force →</button>
@@ -554,10 +554,10 @@ export default function HomePage() {
             <div className="feat-section-title" style={{ color: '#38BDF8', borderColor: 'rgba(56,189,248,.2)' }}>Owner Intelligence</div>
             <ul className="plan-features" style={{ color: 'rgba(255,255,255,.7)' }}><li>✅ Kto je pripravený kúpiť — live zoznam</li><li>✅ Dnes uzavriem — AI denná prioritizácia</li><li>📊 Prehľad výkonnosti celého tímu</li><li>🎯 Hodnotenie výkonnosti maklérov (KPI)</li><li>📝 Predpoveď obratu pre celý tím</li><li>📋 Manažérske reporty (týždenné + mesačné)</li></ul>
             <div className="feat-section-title" style={{ color: '#38BDF8', borderColor: 'rgba(56,189,248,.2)' }}>AI Reaktivácia &amp; Analytika</div>
-            <ul className="plan-features" style={{ color: 'rgba(255,255,255,.7)' }}><li>📍 Prebúdza starých klientov ktorí ťa zabudli</li><li>🧠 Tímový AI mozog — zdieľané znalosti</li><li>⚡ Prioritná podpora (24h odozva)</li></ul>
+            <ul className="plan-features" style={{ color: 'rgba(255,255,255,.7)' }}><li>📍 Prebúdza starých klientov ktorí Vás zabudli</li><li>🧠 Tímový AI mozog — zdieľané znalosti</li><li>⚡ Prioritná podpora (24h odozva)</li></ul>
             <div className="feat-section-title" style={{ color: '#67E8F9', borderColor: 'rgba(103,232,249,.2)' }}>⭐ Expert bonusy</div>
             <div className="expert-bonus" style={{ background: 'rgba(255,255,255,.06)', borderColor: '#38BDF8' }}><div className="expert-bonus-label" style={{ color: '#38BDF8' }}>Elena Vasquez · ex HubSpot</div><div className="expert-bonus-text" style={{ color: 'rgba(255,255,255,.65)' }}>Automatický obsahový magnet — klient dostane personalizovaný market report bez toho aby o to žiadal. Maklér vyzerá ako expert, bez práce.</div></div>
-            <div className="expert-bonus" style={{ background: 'rgba(255,255,255,.06)', borderColor: '#4ADE80' }}><div className="expert-bonus-label" style={{ color: '#4ADE80' }}>Dmitri Volkov · ex BoomTown</div><div className="expert-bonus-text" style={{ color: 'rgba(255,255,255,.65)' }}>ROI Ticker — každá feature zobrazuje svoju €/mes hodnotu priamo v UI. „Tento follow-up ušetril 3.2h = +€124 pri tvojej hodinovej sadzbe."</div></div>
+            <div className="expert-bonus" style={{ background: 'rgba(255,255,255,.06)', borderColor: '#4ADE80' }}><div className="expert-bonus-label" style={{ color: '#4ADE80' }}>Dmitri Volkov · ex BoomTown</div><div className="expert-bonus-text" style={{ color: 'rgba(255,255,255,.65)' }}>ROI Ticker — každá feature zobrazuje svoju €/mes hodnotu priamo v UI. „Tento follow-up ušetril 3.2h = +€124 pri Vašej hodinovej sadzbe."</div></div>
             <div className="expert-bonus" style={{ background: 'rgba(255,255,255,.06)', borderColor: '#A78BFA' }}><div className="expert-bonus-label" style={{ color: '#A78BFA' }}>Yuki Nakamura · ex Notion</div><div className="expert-bonus-text" style={{ color: 'rgba(255,255,255,.65)' }}>3 pohľady jedným klikom — Board (pipeline), Table (analytika), Calendar (časovanie). Každý maklér si vyberie čo mu sedí.</div></div>
             <div className="expert-bonus" style={{ background: 'rgba(255,255,255,.06)', borderColor: '#FCD34D' }}><div className="expert-bonus-label" style={{ color: '#FCD34D' }}>Trevor Blackwood · ex Market Leader</div><div className="expert-bonus-text" style={{ color: 'rgba(255,255,255,.65)' }}>Street-Level Insight — maklér príde na stretnutie s dátami o klientovej ulici ktoré klient nikde nenájde. Priemerné ceny, čas predaja, aktívni kupujúci v lokalite.</div></div>
             <button className="plan-cta" style={{ background: 'var(--cyan)', color: 'var(--dark)', marginTop: 20 }}>Aktivovať Market Vision →</button>
@@ -579,7 +579,7 @@ export default function HomePage() {
             <div className="feat-section-title" style={{ color: '#B45309', borderColor: '#FDE68A' }}>Pokročilá Reaktivácia</div>
             <ul className="plan-features" style={{ color: '#78350F' }}><li>💻 Prebúdza starých klientov — pokročilý AI režim</li><li>⎈ Dedikovaný Protocol manažér (osobný kontakt)</li><li>⚡ SLA 99.99% uptime garantovaný zmluvou</li></ul>
             <div className="feat-section-title" style={{ color: '#D97706', borderColor: '#FDE68A' }}>⭐ Expert bonusy — TOP výber pre majiteľov</div>
-            <div className="expert-bonus" style={{ background: 'rgba(239,68,68,.06)', borderColor: '#DC2626' }}><div className="expert-bonus-label" style={{ color: '#DC2626' }}>Marcus Chen · ex kvCORE</div><div className="expert-bonus-text" style={{ color: '#7F1D1D' }}>Silence Revenue Map — vizuálna mapa ukazuje kde PRESNE na mape maklér prichádza o peniaze kvôli žiadnej akcii. „Toto je tvoj ušlý obrat za 90 dní."</div></div>
+            <div className="expert-bonus" style={{ background: 'rgba(239,68,68,.06)', borderColor: '#DC2626' }}><div className="expert-bonus-label" style={{ color: '#DC2626' }}>Marcus Chen · ex kvCORE</div><div className="expert-bonus-text" style={{ color: '#7F1D1D' }}>Silence Revenue Map — vizuálna mapa ukazuje kde PRESNE na mape maklér prichádza o peniaze kvôli žiadnej akcii. „Toto je Váš ušlý obrat za 90 dní."</div></div>
             <div className="expert-bonus" style={{ background: 'rgba(124,58,237,.06)', borderColor: '#7C3AED' }}><div className="expert-bonus-label" style={{ color: '#7C3AED' }}>Priya Sharma · ex Salesforce Einstein</div><div className="expert-bonus-text" style={{ color: '#3B0764' }}>Revenue Probability Score — „Táto rodina kúpi do 47 dní, pravdepodobnosť 84 %, pretože…" Explicitné vysvetlenie, nie čierna skrinka. Fortune 500 AI pre každého makléra.</div></div>
             <div className="expert-bonus" style={{ background: 'rgba(14,165,233,.06)', borderColor: '#0EA5E9' }}><div className="expert-bonus-label" style={{ color: '#0EA5E9' }}>Aiden O&apos;Sullivan · ex Lofty/Chime</div><div className="expert-bonus-text" style={{ color: '#0C4A6E' }}>Life Moment Detection — algoritmus deteguje životné zmeny klienta (sťahovanie, zmena práce, rodina) PRED tým než to klient sám vie. Okno príležitosti: 2–3 týždne.</div></div>
             <div className="expert-bonus" style={{ background: 'rgba(22,163,74,.06)', borderColor: '#16A34A' }}><div className="expert-bonus-label" style={{ color: '#16A34A' }}>Sofia Reyes · ex Real Geeks</div><div className="expert-bonus-text" style={{ color: '#14532D' }}>Revealed Preference Engine — rozdiel medzi čo klient píše (stated) a čo klikne (revealed) = skutočný budget a motivácia. Maklér dostane brief: „Nekomunikuj cenu. Komunikuj priestor."</div></div>
@@ -594,15 +594,15 @@ export default function HomePage() {
       <div style={{ background: 'var(--bg2)', padding: '96px 24px' }}>
         <div style={{ maxWidth: 720, margin: '0 auto' }}>
           <div className="section-label" style={{ textAlign: 'center' }}>FAQ</div>
-          <div className="section-h2" style={{ textAlign: 'center', marginBottom: 48 }}>Otázky ktoré ti napadnú</div>
+          <div className="section-h2" style={{ textAlign: 'center', marginBottom: 48 }}>Otázky ktoré Vám napadnú</div>
           <div className="faq-list">
             {[
-              ['Máme už CRM. Prečo potrebujeme ešte jedno?', 'Revolis.AI nie je CRM. CRM zaznamenáva čo sa stalo — Revolis robí to, čo sa má stať. Integruje sa s tvojím CRM za 8 minút a začne pracovať s databázou, ktorú už máš.'],
+              ['Máme už CRM. Prečo potrebujeme ešte jedno?', 'Revolis.AI nie je CRM. CRM zaznamenáva čo sa stalo — Revolis robí to, čo sa má stať. Integruje sa s Vašim CRM za 8 minút a začne pracovať s databázou, ktorú už máte.'],
               ['Naši makléri nebudú chcieť ďalší systém na učenie.', 'Priemerný čas prvej aktívnej akcie makléra v Revolis.AI: 11 minút. Maklér dostane notifikáciu "zavolaj teraz tomuto klientovi" — nemusí otvoriť nič iné. Systém pracuje za neho.'],
-              ['AI nenapíše správu tak dobre ako naši makléri.', 'AI píše v tóne tvojej kancelárie, trénovaná na tvojich najlepších konverziách. Po 30 dňoch Revolis.AI píše lepšie ako priemerný maklér — nikdy nie je unavená, nikdy nezabudne čo klient hovoril minule.'],
-              ['Sú naše dáta v bezpečí?', 'EU servery, GDPR compliant, AES-256 šifrovanie. Tvoje dáta nie sú nikdy zdieľané ani použité na tréning modelov. Plná exportovateľnosť kedykoľvek, bez poplatku.'],
-              ['Je to drahé bez záruk výsledku?', 'Smart Start 49 €/mes. Jeden reaktivovaný záujemca = priemerná provízia 2 400 €. ROI pri prvom reaktivovanom kontakte: 4 800 %. Kontaktuj nás a dohodneme podmienky skúšobného obdobia priamo pre tvoju kanceláriu.'],
-              ['Nemáme čas na implementáciu teraz.', 'Implementácia trvá 4 minúty — registrácia, pripojenie emailu, nahratie databázy. Revolis začne pracovať so starými leadmi okamžite. Druhý najlepší čas je teraz.'],
+              ['AI nenapíše správu tak dobre ako naši makléri.', 'AI píše v tóne Vašej kancelárie, trénovaná na Vašich najlepších konverziách. Po 30 dňoch Revolis.AI píše lepšie ako priemerný maklér — nikdy nie je unavená, nikdy nezabudne čo klient hovoril minule.'],
+              ['Sú naše dáta v bezpečí?', 'EU servery, GDPR compliant, AES-256 šifrovanie. Vaše dáta nie sú nikdy zdieľané ani použité na tréning modelov. Plná exportovateľnosť kedykoľvek, bez poplatku.'],
+              ['Je to drahé bez záruk výsledku?', 'Smart Start 49 €/mes. Jeden reaktivovaný záujemca = priemerná provízia 2 400 €. ROI pri prvom reaktivovanom kontakte: 4 800 %. Kontaktujte nás a dohodneme podmienky skúšobného obdobia priamo pre Vašu kanceláriu.'],
+              ['Nemáme čas na implementáciu teraz.', 'Implementácia trvá 4 minúty — registrácia, pripojenie emailu, nahratie databázy. Revolis začne pracovať so starými príležitosťami okamžite. Druhý najlepší čas je teraz.'],
             ].map(([q, a], i) => (
               <div className="faq-item" key={i}>
                 <button className="faq-q" onClick={(e) => toggleFaq(e.currentTarget)}>
@@ -617,8 +617,8 @@ export default function HomePage() {
 
       {/* FINAL CTA */}
       <div className="final-cta">
-        <h2>Každý deň bez Revolis.AI<br />je lead ktorý odpovedá konkurencii.</h2>
-        <p>340 kancelárií sa rozhodlo prestať strácať leads v noci, cez víkend a počas dovoleniek.</p>
+        <h2>Dnes v noci príde 8 dopytov.<br />Bez Revolis.AI ich všetky dostane konkurencia.</h2>
+        <p>340 kancelárií sa rozhodlo prestať strácať príležitosti v noci, cez víkend a počas dovoleniek.</p>
         <button className="final-cta-btn">Aktivovať Revolis.AI pre moju kanceláriu →</button>
         <div className="final-micro">Bez záväzkov · Zrušenie kedykoľvek · Prvý AI follow-up za 4 minúty</div>
       </div>
