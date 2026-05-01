@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Revolis.AI — Homepage Preview</title>
 <style>
+  @property --arc { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
   :root {
     --bg: #F8FAFC;
     --bg2: #F1F5F9;
@@ -1145,8 +1146,39 @@ const obs=new IntersectionObserver((entries)=>{
 },{threshold:.15});
 
 document.querySelectorAll('.section,.section>div,[class*="section"],[style*="padding:96px"],.numbers-grid,.pricing-grid').forEach(el=>obs.observe(el));
-// Also observe specific containers
 document.querySelectorAll('.pain-grid,.feature-row,.numbers-grid,.pricing-grid').forEach(el=>obs.observe(el));
+
+// ── STEPS + DAYLIFE OBSERVER ──
+const stepsObs=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(!e.isIntersecting)return;
+    stepsObs.unobserve(e.target);
+    if(e.target.id==='stepsWrap'){
+      const arcTargets=[{id:'arc1',deg:120},{id:'arc2',deg:240},{id:'arc3',deg:360}];
+      document.querySelectorAll('.step-card').forEach((c,i)=>{
+        setTimeout(()=>{
+          c.classList.add('visible');
+          const arc=arcTargets[i];
+          if(arc){
+            const el=document.getElementById(arc.id);
+            if(el) setTimeout(()=>el.style.setProperty('--arc',arc.deg+'deg'),200);
+          }
+        },i*180);
+      });
+      setTimeout(()=>document.getElementById('conn1')?.classList.add('visible'),120);
+      setTimeout(()=>document.getElementById('conn2')?.classList.add('visible'),300);
+    }
+    if(e.target.id==='daylifeStrip'){
+      e.target.querySelectorAll('.daylife-item').forEach((item,i)=>
+        setTimeout(()=>item.classList.add('visible'),i*120));
+    }
+  });
+},{threshold:.1});
+
+const stepsWrap=document.getElementById('stepsWrap');
+const daylifeStrip=document.getElementById('daylifeStrip');
+if(stepsWrap) stepsObs.observe(stepsWrap);
+if(daylifeStrip) stepsObs.observe(daylifeStrip);
 
 // ── FAQ ──
 function toggleFaq(btn){
