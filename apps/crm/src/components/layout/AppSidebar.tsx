@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { NavIcon } from "@/components/ui/NavIcon";
 import {
   getNavItems,
@@ -54,6 +54,47 @@ function filterItemsByDemoProgram(items: NavItem[], program: FounderDemoProgram)
   return items;
 }
 
+// ─── Kontextový subtitle podľa demo programu ──────────────────────────────
+function getDemoSubtitle(program: FounderDemoProgram): string {
+  switch (program) {
+    case "free":
+    case "starter":
+      return "Základný prehľad";
+    case "active_force":
+      return "Prioritné príležitosti";
+    case "market_vision":
+      return "Trhová analytika";
+    case "protocol_authority":
+      return "Plná kontrola";
+    default:
+      return "Základný prehľad";
+  }
+}
+
+// ─── Velocity arrow pre badge hodnoty ─────────────────────────────────────
+const VELOCITY_VALUES: Record<string, number> = {
+  "owner-dashboard": 23,
+  "forecast":        8,
+};
+
+function getVelocityArrow(itemId: string): { arrow: string; color: string } | null {
+  const val = VELOCITY_VALUES[itemId];
+  if (val === undefined) return null;
+  if (val > 10)  return { arrow: "↑", color: "#22C55E" };
+  if (val >= 5)  return { arrow: "→", color: "#94A3B8" };
+  return         { arrow: "↓", color: "#EF4444" };
+}
+
+// ─── Keyboard shortcut mapa ────────────────────────────────────────────────
+const KB_SHORTCUTS: Record<string, string> = {
+  "today":          "G+D",
+  "owner-dashboard":"G+D",
+  "contacts":       "G+L",
+  "pipeline":       "G+L",
+  "performance":    "G+R",
+  "forecast":       "G+R",
+};
+
 // ─── Typy props ────────────────────────────────────────────────────────────
 interface AppSidebarProps {
   uiRole:       string;
@@ -80,14 +121,22 @@ function NavItemRow({
   item,
   isActive,
   theme,
+  demoProgram,
 }: {
-  item:     NavItem;
-  isActive: boolean;
-  theme:    typeof VARIANT_THEMES[MenuVariant];
+  item:        NavItem;
+  isActive:    boolean;
+  theme:       typeof VARIANT_THEMES[MenuVariant];
+  demoProgram: FounderDemoProgram;
 }) {
+  const [hovered, setHovered] = useState(false);
+
   const badgeStyle = item.badge
     ? theme.badgeColors[item.badge.variant]
     : null;
+
+  const velocity  = getVelocityArrow(item.id);
+  const shortcut  = KB_SHORTCUTS[item.id];
+  const subtitle  = getDemoSubtitle(demoProgram);
 
   return (
     <Link
@@ -106,14 +155,17 @@ function NavItemRow({
         marginLeft:      "-2px",
         transition:      "background 0.12s ease, border-color 0.12s ease",
         cursor:          "pointer",
+        position:        "relative",
       }}
       onMouseEnter={(e) => {
+        setHovered(true);
         if (!isActive) {
           (e.currentTarget as HTMLElement).style.background =
             "rgba(34,211,238,0.10)";
         }
       }}
       onMouseLeave={(e) => {
+        setHovered(false);
         if (!isActive) {
           (e.currentTarget as HTMLElement).style.background = "transparent";
         }
@@ -192,6 +244,42 @@ function NavItemRow({
               {item.badge.label}
             </span>
           )}
+
+          {/* Velocity arrow */}
+          {velocity && (
+            <span
+              style={{
+                fontSize:   "11px",
+                fontWeight: "700",
+                color:      velocity.color,
+                flexShrink: 0,
+                lineHeight: "1",
+              }}
+            >
+              {velocity.arrow}
+            </span>
+          )}
+
+          {/* Keyboard shortcut hint – zobrazí sa pri hover */}
+          {shortcut && hovered && (
+            <span
+              style={{
+                marginLeft:   "auto",
+                fontSize:     "9px",
+                padding:      "1px 5px",
+                borderRadius: "3px",
+                background:   "rgba(148,163,184,0.12)",
+                color:        "rgba(148,163,184,0.70)",
+                border:       "0.5px solid rgba(148,163,184,0.20)",
+                fontWeight:   "600",
+                flexShrink:   0,
+                letterSpacing: "0.04em",
+                fontFamily:   "monospace",
+              }}
+            >
+              {shortcut}
+            </span>
+          )}
         </div>
 
         <p
@@ -210,33 +298,77 @@ function NavItemRow({
         >
           {item.sublabel}
         </p>
+
+        {/* Kontextový subtitle – len pri aktívnej položke */}
+        {isActive && (
+          <p
+            style={{
+              fontSize:     "10px",
+              color:        "rgba(148,163,184,0.55)",
+              marginTop:    "3px",
+              lineHeight:   "1.2",
+              overflow:     "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace:   "nowrap",
+              maxWidth:     "160px",
+            }}
+          >
+            {subtitle}
+          </p>
+        )}
       </div>
     </Link>
   );
 }
 
-// ─── Sekcia hlavička ───────────────────────────────────────────────────────
+// ─── Sekcia hlavička (collapsible) ─────────────────────────────────────────
 function SectionHeader({
   label,
   accentColor,
+  sectionKey,
+  collapsed,
+  onToggle,
 }: {
   label:       string;
   accentColor: string;
+  sectionKey:  NavSection;
+  collapsed:   boolean;
+  onToggle:    (key: NavSection) => void;
 }) {
   return (
-    <div
+    <button
+      type="button"
+      onClick={() => onToggle(sectionKey)}
       style={{
+        display:       "flex",
+        alignItems:    "center",
+        justifyContent: "space-between",
+        width:         "100%",
         padding:       "12px 12px 6px",
         fontSize:      "10px",
         fontWeight:    "600",
         color:         `${accentColor}80`,
-        textTransform: "uppercase",
+        textTransform: "uppercase" as const,
         letterSpacing: "0.10em",
         marginTop:     "6px",
+        background:    "transparent",
+        border:        "none",
+        cursor:        "pointer",
       }}
     >
-      {label}
-    </div>
+      <span>{label}</span>
+      <span
+        style={{
+          fontSize:   "9px",
+          color:      `${accentColor}60`,
+          transition: "transform 0.2s ease",
+          display:    "inline-block",
+          transform:  collapsed ? "rotate(-90deg)" : "rotate(0deg)",
+        }}
+      >
+        ▾
+      </span>
+    </button>
   );
 }
 
@@ -278,6 +410,75 @@ function PlanBadge({
   );
 }
 
+// ─── Revenue Toast ─────────────────────────────────────────────────────────
+function RevenueToast({
+  visible,
+  onClose,
+}: {
+  visible: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      style={{
+        position:   "fixed",
+        bottom:     "24px",
+        right:      "24px",
+        zIndex:     9999,
+        transition: "opacity 0.35s ease, transform 0.35s ease",
+        opacity:    visible ? 1 : 0,
+        transform:  visible ? "translateY(0)" : "translateY(12px)",
+        pointerEvents: visible ? "auto" : "none",
+      }}
+    >
+      <div
+        style={{
+          display:      "flex",
+          alignItems:   "center",
+          gap:          "10px",
+          background:   "#1E293B",
+          borderLeft:   "3px solid #22D3EE",
+          borderRadius: "8px",
+          padding:      "12px 14px",
+          boxShadow:    "0 8px 32px rgba(0,0,0,0.45), 0 0 0 1px rgba(34,211,238,0.12)",
+          minWidth:     "260px",
+          maxWidth:     "320px",
+        }}
+      >
+        <span style={{ fontSize: "15px", flexShrink: 0 }}>🔥</span>
+        <span
+          style={{
+            flex:       1,
+            fontSize:   "13px",
+            fontWeight: "500",
+            color:      "#F0F9FF",
+            lineHeight: "1.4",
+          }}
+        >
+          Hot Alert: Ján Kováč — skóre 91
+        </span>
+        <button
+          type="button"
+          onClick={onClose}
+          style={{
+            background:  "transparent",
+            border:      "none",
+            color:       "rgba(148,163,184,0.70)",
+            fontSize:    "16px",
+            lineHeight:  "1",
+            cursor:      "pointer",
+            padding:     "0 2px",
+            flexShrink:  0,
+          }}
+          aria-label="Zavrieť notifikáciu"
+        >
+          ×
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Hlavný komponent ──────────────────────────────────────────────────────
 export default function AppSidebar({
   uiRole,
@@ -288,14 +489,19 @@ export default function AppSidebar({
   userName,
 }: AppSidebarProps) {
   const pathname = usePathname();
+  const router   = useRouter();
   const isFounderDemo = true;
 
-  const [mobileOpen,   setMobileOpen]   = useState(false);
-  const [permissions,  setPermissions]  = useState<TeamMemberPermissions>(
+  const [mobileOpen,      setMobileOpen]      = useState(false);
+  const [permissions,     setPermissions]     = useState<TeamMemberPermissions>(
     DEFAULT_TEAM_PERMISSIONS
   );
-  const [permLoading, setPermLoading]   = useState(false);
-  const [demoProgram, setDemoProgram] = useState<FounderDemoProgram>("protocol_authority");
+  const [permLoading,     setPermLoading]     = useState(false);
+  const [demoProgram,     setDemoProgram]     = useState<FounderDemoProgram>("protocol_authority");
+  const [toastVisible,    setToastVisible]    = useState(false);
+  const [collapsedGroups, setCollapsedGroups] = useState<NavSection[]>([]);
+  const gKeyRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const gPressedRef = useRef(false);
 
   // Vypočítaj variant
   const variant: MenuVariant = getMenuVariant(uiRole, isInTeam, appRole);
@@ -306,6 +512,7 @@ export default function AppSidebar({
     ? FOUNDER_DEMO_PROGRAMS.find((p) => p.id === demoProgram)?.label ?? "Protocol Authority"
     : getPlanDisplayName(variant, accountTier);
 
+  // Načítaj demo program z localStorage
   useEffect(() => {
     if (!isFounderDemo || typeof window === "undefined") return;
     const stored = window.localStorage.getItem("founderDemoProgram");
@@ -320,6 +527,69 @@ export default function AppSidebar({
     }
   }, [isFounderDemo]);
 
+  // Načítaj stav zbalených skupín z localStorage
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem("sidebarCollapsed");
+      if (raw) {
+        const parsed = JSON.parse(raw) as NavSection[];
+        setCollapsedGroups(parsed);
+      }
+    } catch {
+      // ignoruj
+    }
+  }, []);
+
+  // Toast — zobraz 3s po načítaní, zmizne po 4s
+  useEffect(() => {
+    const showTimer = setTimeout(() => {
+      setToastVisible(true);
+      const hideTimer = setTimeout(() => {
+        setToastVisible(false);
+      }, 4000);
+      return () => clearTimeout(hideTimer);
+    }, 3000);
+    return () => clearTimeout(showTimer);
+  }, []);
+
+  // Keyboard shortcuts: G+D, G+L, G+R
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+
+      if (e.key === "g" || e.key === "G") {
+        gPressedRef.current = true;
+        if (gKeyRef.current) clearTimeout(gKeyRef.current);
+        gKeyRef.current = setTimeout(() => {
+          gPressedRef.current = false;
+        }, 500);
+        return;
+      }
+
+      if (gPressedRef.current) {
+        gPressedRef.current = false;
+        if (gKeyRef.current) clearTimeout(gKeyRef.current);
+
+        switch (e.key.toLowerCase()) {
+          case "d":
+            router.push("/dashboard");
+            break;
+          case "l":
+            router.push("/contacts");
+            break;
+          case "r":
+            router.push("/analytics");
+            break;
+        }
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [router]);
+
   // Načítaj permissions pre tímového makléra
   useEffect(() => {
     if (renderVariant !== "agent_team") return;
@@ -330,6 +600,19 @@ export default function AppSidebar({
       .catch(() => setPermissions(DEFAULT_TEAM_PERMISSIONS))
       .finally(() => setPermLoading(false));
   }, [renderVariant]);
+
+  // Toggle collapsible group
+  const toggleGroup = useCallback((sectionKey: NavSection) => {
+    setCollapsedGroups((prev) => {
+      const next = prev.includes(sectionKey)
+        ? prev.filter((k) => k !== sectionKey)
+        : [...prev, sectionKey];
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("sidebarCollapsed", JSON.stringify(next));
+      }
+      return next;
+    });
+  }, []);
 
   // Nav položky filtrované podľa variantu + permissions
   const navItems = filterItemsByDemoProgram(
@@ -361,14 +644,14 @@ export default function AppSidebar({
     setMobileOpen(false);
   }, [pathname]);
 
-  // ─── Obsah sidebaru ──────────────────────────────────────────
+  // ─── Obsah sidebaru ──────────────────────────────────
   const sidebarContent = (
     <div
       style={{
         display:        "flex",
         flexDirection:  "column",
         height:         "100%",
-        background:     "#050914",  // Revolis dark bg
+        background:     "#050914",
         borderRight:    "1px solid rgba(34,211,238,0.18)",
         overflow:       "hidden",
         backgroundImage: "linear-gradient(180deg, #06122A 0%, #040B1F 100%)",
@@ -429,6 +712,17 @@ export default function AppSidebar({
           >
             Revolis.AI
           </span>
+
+          {/* Gold Protocol badge */}
+          {demoProgram === "protocol_authority" && (
+            <span
+              className="bg-yellow-500/10 text-yellow-400 text-[9px] font-bold px-1.5 py-0.5 rounded"
+              style={{ letterSpacing: "0.06em" }}
+            >
+              PROTOCOL
+            </span>
+          )}
+
           {isFounderDemo && (
             <span
               style={{
@@ -553,6 +847,7 @@ export default function AppSidebar({
           if (sectionKey === "settings") return null;
 
           const sectionLabel = SECTION_LABELS[sectionKey];
+          const isCollapsed  = collapsedGroups.includes(sectionKey);
 
           return (
             <div
@@ -572,23 +867,35 @@ export default function AppSidebar({
                 />
               )}
 
-              {/* Sekcia nadpis */}
-              {sectionLabel && (
+              {/* Sekcia nadpis – collapsible len ak má label */}
+              {sectionLabel ? (
                 <SectionHeader
                   label={sectionLabel}
                   accentColor={theme.accentColor}
+                  sectionKey={sectionKey}
+                  collapsed={isCollapsed}
+                  onToggle={toggleGroup}
                 />
-              )}
+              ) : null}
 
-              {/* Položky */}
-              {items.map((item) => (
-                <NavItemRow
-                  key={item.id}
-                  item={item}
-                  isActive={isActive(item.href)}
-                  theme={theme}
-                />
-              ))}
+              {/* Položky s smooth max-height transition */}
+              <div
+                style={{
+                  overflow:   "hidden",
+                  maxHeight:  isCollapsed ? "0px" : "600px",
+                  transition: "max-height 0.25s ease",
+                }}
+              >
+                {items.map((item) => (
+                  <NavItemRow
+                    key={item.id}
+                    item={item}
+                    isActive={isActive(item.href)}
+                    theme={theme}
+                    demoProgram={demoProgram}
+                  />
+                ))}
+              </div>
             </div>
           );
         })}
@@ -609,6 +916,7 @@ export default function AppSidebar({
             item={item}
             isActive={isActive(item.href)}
             theme={theme}
+            demoProgram={demoProgram}
           />
         ))}
 
@@ -796,6 +1104,12 @@ export default function AppSidebar({
           </aside>
         </div>
       )}
+
+      {/* ─── Revenue Toast notifikácia ────────────────────────── */}
+      <RevenueToast
+        visible={toastVisible}
+        onClose={() => setToastVisible(false)}
+      />
     </>
   );
 }

@@ -451,8 +451,12 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
       const subscription = object as Stripe.Subscription;
       const newPriceId = subscription.items.data[0]?.price.id;
       const previousPriceId = (event.data.previous_attributes as any)?.items?.data?.[0]?.price?.id;
-      const wasEnterprise = previousPriceId === process.env.STRIPE_PRICE_ENTERPRISE;
-      const isEnterprise = newPriceId === process.env.STRIPE_PRICE_ENTERPRISE;
+      const wasEnterprise =
+        previousPriceId === process.env.STRIPE_PRICE_ENTERPRISE ||
+        previousPriceId === process.env.STRIPE_PRICE_MARKET_VISION;
+      const isEnterprise =
+        newPriceId === process.env.STRIPE_PRICE_ENTERPRISE ||
+        newPriceId === process.env.STRIPE_PRICE_MARKET_VISION;
       const isDowngradeFromEnterprise = wasEnterprise && !isEnterprise;
 
       await syncAccountTier(

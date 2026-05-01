@@ -4,6 +4,34 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Revolis.AI — Homepage Preview</title>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-REVOLIS2026"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-REVOLIS2026', {
+    page_title: document.title,
+    send_page_view: true
+  });
+  // UTM parameter capture
+  (function(){
+    const urlParams = new URLSearchParams(window.location.search);
+    const utmData = {
+      source: urlParams.get('utm_source'),
+      medium: urlParams.get('utm_medium'),
+      campaign: urlParams.get('utm_campaign'),
+      term: urlParams.get('utm_term'),
+      content: urlParams.get('utm_content')
+    };
+    if (utmData.source) {
+      sessionStorage.setItem('utm_data', JSON.stringify(utmData));
+      if (typeof gtag !== 'undefined') {
+        gtag('set', 'user_properties', { utm_source: utmData.source, utm_campaign: utmData.campaign });
+      }
+    }
+  })();
+</script>
 <style>
   @property --arc { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
   :root {
@@ -291,11 +319,107 @@
   @media(max-width:768px) {
     nav { padding:14px 20px; }
     .nav-links { display:none; }
+    .nav-cta { padding:9px 18px; font-size:12px; }
     .feature-row { grid-template-columns:1fr; gap:32px; }
     .feature-row.reverse { direction:ltr; }
     .stats-strip { grid-template-columns:repeat(2,1fr); }
     .stat-cell:nth-child(2n) { border-right:none; }
     .stat-cell { border-bottom:1px solid rgba(255,255,255,.08); }
+    h1 { font-size:clamp(32px,10vw,56px); max-width:90vw; }
+    .hero-sub { font-size:16px; }
+    .hero-cta-row { flex-direction:column; align-items:stretch; }
+    .btn-dark, .btn-outline { width:100%; justify-content:center; padding:16px 24px; }
+    .trust-bar { flex-direction:column; align-items:center; gap:10px; }
+    .pain-grid { grid-template-columns:1fr; }
+    .numbers-grid { grid-template-columns:1fr 1fr; }
+    .pricing-grid-full { grid-template-columns:1fr !important; }
+    .feat-contrast { grid-template-columns:1fr; }
+    .final-cta-btn { width:100%; padding:18px 24px; }
+    .section { padding:64px 16px; }
+    .daylife-strip {
+      display:flex; flex-wrap:nowrap; overflow-x:auto; overflow-y:hidden;
+      padding:36px 16px; gap:0; -webkit-overflow-scrolling:touch;
+      scroll-snap-type:x mandatory;
+    }
+    .daylife-strip::before { display:none; }
+    .daylife-item { min-width:200px; flex-shrink:0; scroll-snap-align:start; border-right:1px solid rgba(255,255,255,.06); }
+  }
+  @media(max-width:480px) {
+    .numbers-grid { grid-template-columns:1fr; }
+    .stats-strip { grid-template-columns:1fr; }
+    .stat-cell { border-right:none; }
+  }
+
+  /* ── ROI CALCULATOR ── */
+  .roi-section {
+    background: var(--white); padding: 96px 24px;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .roi-inner {
+    max-width: 1100px; margin: 0 auto;
+  }
+  .roi-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: start;
+    margin-top: 48px;
+  }
+  .roi-inputs { display: flex; flex-direction: column; gap: 32px; }
+  .roi-input-label {
+    font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 8px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .roi-input-val {
+    font-size: 16px; font-weight: 900; color: var(--cyan);
+    background: rgba(14,165,233,.07); border: 1px solid rgba(14,165,233,.2);
+    border-radius: 8px; padding: 2px 12px;
+  }
+  .roi-slider {
+    width: 100%; -webkit-appearance: none; appearance: none;
+    height: 6px; border-radius: 3px; outline: none;
+    background: linear-gradient(90deg, var(--cyan) var(--pct,0%), var(--border) var(--pct,0%));
+    accent-color: var(--cyan); cursor: pointer;
+  }
+  .roi-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%;
+    background: var(--cyan); border: 3px solid var(--white);
+    box-shadow: 0 0 0 3px rgba(14,165,233,.25); cursor: pointer;
+  }
+  .roi-slider::-moz-range-thumb {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--cyan); border: 3px solid var(--white);
+    box-shadow: 0 0 0 3px rgba(14,165,233,.25); cursor: pointer;
+  }
+
+  .roi-result {
+    background: var(--dark); border-radius: 24px; padding: 40px 36px;
+    border: 1px solid rgba(255,255,255,.07); position: sticky; top: 90px;
+  }
+  .roi-result-row {
+    display: flex; flex-direction: column; gap: 4px;
+    padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,.07);
+  }
+  .roi-result-row:last-of-type { border-bottom: none; }
+  .roi-result-label { font-size: 12px; font-weight: 700; color: rgba(255,255,255,.35); letter-spacing: .08em; text-transform: uppercase; }
+  .roi-result-num { font-size: 24px; font-weight: 900; font-variant-numeric: tabular-nums; transition: color .2s; }
+  .roi-result-num.current { color: rgba(255,255,255,.45); }
+  .roi-result-num.revolis { color: #22D3EE; }
+  .roi-result-num.monthly { color: #4ADE80; font-size: 36px; }
+  .roi-result-num.yearly { color: #FCD34D; font-size: 52px; letter-spacing: -.02em; }
+  .roi-result-yearly-label { font-size: 12px; color: rgba(255,255,255,.3); margin-top: 2px; }
+
+  .roi-cta-wrap { margin-top: 28px; }
+  .roi-cta-btn {
+    width: 100%; padding: 16px; border-radius: 12px; font-size: 15px; font-weight: 800;
+    background: var(--dark2); color: #fff; border: 2px solid rgba(255,255,255,.12); cursor: pointer;
+    transition: border-color .2s, background .2s, transform .2s;
+    letter-spacing: .02em;
+  }
+  .roi-cta-btn:hover { border-color: var(--cyan); background: rgba(14,165,233,.08); transform: translateY(-2px); }
+
+  @media(max-width:768px) {
+    .roi-grid { grid-template-columns: 1fr; gap: 32px; }
+    .roi-result { position: static; }
+    .roi-result-num.yearly { font-size: 40px; }
   }
 </style>
 </head>
@@ -761,6 +885,87 @@
   </div>
 </div>
 
+<!-- ═══════════════════════════════════════ ROI CALCULATOR -->
+<div class="roi-section">
+  <div class="roi-inner">
+    <div style="text-align:center;">
+      <div class="section-label">Návratnosť investície</div>
+      <div class="section-h2">Vypočítaj svoj návrat</div>
+      <p class="section-p" style="margin:0 auto 0;text-align:center;">Posuň slidery podľa svojej kancelárie — výsledok sa prepočíta okamžite.</p>
+    </div>
+    <div class="roi-grid">
+
+      <!-- INPUTS -->
+      <div class="roi-inputs">
+
+        <div>
+          <div class="roi-input-label">
+            Počet leadov mesačne
+            <span class="roi-input-val" id="roi-leads-val">80</span>
+          </div>
+          <input class="roi-slider" id="roi-leads" type="range" min="10" max="500" step="1" value="80">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:4px;"><span>10</span><span>500</span></div>
+        </div>
+
+        <div>
+          <div class="roi-input-label">
+            Priemerná provízia (€)
+            <span class="roi-input-val" id="roi-comm-val">4 500 €</span>
+          </div>
+          <input class="roi-slider" id="roi-comm" type="range" min="1000" max="15000" step="100" value="4500">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:4px;"><span>1 000 €</span><span>15 000 €</span></div>
+        </div>
+
+        <div>
+          <div class="roi-input-label">
+            Aktuálna konverzná miera (%)
+            <span class="roi-input-val" id="roi-conv-val">3.0 %</span>
+          </div>
+          <input class="roi-slider" id="roi-conv" type="range" min="0.5" max="20" step="0.5" value="3">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:4px;"><span>0.5 %</span><span>20 %</span></div>
+        </div>
+
+        <div style="padding:20px;background:var(--bg2);border-radius:16px;border:1px solid var(--border);">
+          <div style="font-size:12px;font-weight:800;color:var(--cyan);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;">Ako to funguje</div>
+          <div style="font-size:13px;color:var(--muted);line-height:1.7;">Revolis.AI zvyšuje konverznú mieru o <strong style="color:var(--text)">+34 %</strong> vďaka AI lead scoringu, okamžitým odpoveďam a reaktivácii dormantných leadov.</div>
+        </div>
+
+      </div>
+
+      <!-- OUTPUT -->
+      <div class="roi-result">
+        <div style="font-size:12px;font-weight:800;color:rgba(255,255,255,.3);letter-spacing:.15em;text-transform:uppercase;margin-bottom:20px;">Výsledky pre tvoju kanceláriu</div>
+
+        <div class="roi-result-row">
+          <div class="roi-result-label">Váš aktuálny obrat</div>
+          <div class="roi-result-num current" id="roi-out-current">0 €/mes</div>
+        </div>
+
+        <div class="roi-result-row">
+          <div class="roi-result-label">S Revolis.AI</div>
+          <div class="roi-result-num revolis" id="roi-out-revolis">0 €/mes</div>
+        </div>
+
+        <div class="roi-result-row" style="padding-top:20px;">
+          <div class="roi-result-label">Mesačný nárast</div>
+          <div class="roi-result-num monthly" id="roi-out-monthly">+0 €</div>
+        </div>
+
+        <div style="margin-top:24px;padding-top:24px;border-top:1px solid rgba(255,255,255,.07);">
+          <div style="font-size:12px;font-weight:800;color:rgba(255,255,255,.3);letter-spacing:.15em;text-transform:uppercase;margin-bottom:8px;">Ročný nárast</div>
+          <div class="roi-result-num yearly" id="roi-out-yearly">+0 €</div>
+          <div class="roi-result-yearly-label">Za 12 mesiacov s Revolis.AI</div>
+        </div>
+
+        <div class="roi-cta-wrap">
+          <button class="roi-cta-btn">Aktivovať Revolis.AI →</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════════════════════════════════ PRICING -->
 <style>
   .pricing-grid-full { display:grid; grid-template-columns:repeat(4,1fr); gap:20px; align-items:start; }
@@ -1185,8 +1390,187 @@ function toggleFaq(btn){
   const item=btn.closest('.faq-item');
   const wasOpen=item.classList.contains('open');
   document.querySelectorAll('.faq-item').forEach(i=>i.classList.remove('open'));
-  if(!wasOpen)item.classList.add('open');
+  if(!wasOpen){
+    item.classList.add('open');
+    const questionText=btn.querySelector('span:first-child')?.textContent?.trim()||btn.textContent.replace('+','').trim();
+    if(typeof gtag!=='undefined')gtag('event','faq_interaction',{question:questionText});
+  }
 }
+
+// ── ROI CALCULATOR ──
+(function(){
+  const sliderLeads = document.getElementById('roi-leads');
+  const sliderComm  = document.getElementById('roi-comm');
+  const sliderConv  = document.getElementById('roi-conv');
+  if(!sliderLeads) return;
+
+  const elLeadsVal   = document.getElementById('roi-leads-val');
+  const elCommVal    = document.getElementById('roi-comm-val');
+  const elConvVal    = document.getElementById('roi-conv-val');
+  const elCurrent    = document.getElementById('roi-out-current');
+  const elRevolis    = document.getElementById('roi-out-revolis');
+  const elMonthly    = document.getElementById('roi-out-monthly');
+  const elYearly     = document.getElementById('roi-out-yearly');
+
+  // Animated number counter helper
+  function animNum(el, target, prefix, suffix, duration){
+    const start = parseInt(el.dataset.displayed||'0')||0;
+    el.dataset.displayed = target;
+    const diff = target - start;
+    let startTime = null;
+    function step(ts){
+      if(!startTime) startTime = ts;
+      const p = Math.min((ts - startTime)/duration, 1);
+      const ease = 1 - Math.pow(1 - p, 3);
+      const val = Math.round(start + diff * ease);
+      el.textContent = prefix + val.toLocaleString('sk-SK') + suffix;
+      if(p < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  // Track slider fill percent for CSS gradient
+  function updateSliderFill(slider){
+    const min = parseFloat(slider.min);
+    const max = parseFloat(slider.max);
+    const val = parseFloat(slider.value);
+    const pct = ((val - min) / (max - min)) * 100;
+    slider.style.setProperty('--pct', pct + '%');
+  }
+
+  function compute(){
+    const leads = parseInt(sliderLeads.value);
+    const comm  = parseInt(sliderComm.value);
+    const conv  = parseFloat(sliderConv.value);
+
+    const currentRevenue = Math.round(leads * (conv / 100) * comm);
+    const revolisRevenue = Math.round(leads * ((conv * 1.34) / 100) * comm);
+    const monthlyGain    = revolisRevenue - currentRevenue;
+    const yearlyGain     = monthlyGain * 12;
+
+    // Label displays
+    elLeadsVal.textContent = leads;
+    elCommVal.textContent  = comm.toLocaleString('sk-SK') + ' €';
+    elConvVal.textContent  = conv.toFixed(1) + ' %';
+
+    // Animated outputs
+    animNum(elCurrent, currentRevenue, '', ' €/mes', 300);
+    animNum(elRevolis, revolisRevenue, '', ' €/mes', 300);
+    animNum(elMonthly, monthlyGain,    '+', ' €',     300);
+    animNum(elYearly,  yearlyGain,     '+', ' €',     300);
+
+    updateSliderFill(sliderLeads);
+    updateSliderFill(sliderComm);
+    updateSliderFill(sliderConv);
+  }
+
+  sliderLeads.addEventListener('input', compute);
+  sliderComm.addEventListener('input', compute);
+  sliderConv.addEventListener('input', compute);
+
+  // Init on load
+  updateSliderFill(sliderLeads);
+  updateSliderFill(sliderComm);
+  updateSliderFill(sliderConv);
+  compute();
+})();
+</script>
+
+<!-- ═══════════ GA4 EVENT TRACKING ═══════════ -->
+<script>
+(function(){
+  // ── HERO CTA BUTTONS ──
+  (function(){
+    const ctaRow=document.querySelector('.hero-cta-row');
+    if(!ctaRow)return;
+    const buttons=ctaRow.querySelectorAll('button');
+    if(buttons[0]){
+      buttons[0].addEventListener('click',function(){
+        const buttonText=this.textContent.trim().replace(/\s+/g,' ');
+        if(typeof gtag!=='undefined')gtag('event','hero_cta_click',{cta_text:buttonText,position:'hero'});
+      });
+    }
+    if(buttons[1]){
+      buttons[1].addEventListener('click',function(){
+        const buttonText=this.textContent.trim().replace(/\s+/g,' ');
+        if(typeof gtag!=='undefined')gtag('event','hero_secondary_click',{cta_text:buttonText});
+      });
+    }
+  })();
+
+  // ── NAV CTA ──
+  (function(){
+    const navCta=document.querySelector('.nav-cta');
+    if(!navCta)return;
+    navCta.addEventListener('click',function(){
+      const buttonText=this.textContent.trim();
+      if(typeof gtag!=='undefined')gtag('event','hero_cta_click',{cta_text:buttonText,position:'nav'});
+    });
+  })();
+
+  // ── PRICING CTA BUTTONS ──
+  (function(){
+    const planMap={
+      'Smart Start':{name:'Smart Start',price:'49'},
+      'Active Force':{name:'Active Force',price:'99'},
+      'Market Vision':{name:'Market Vision',price:'199'},
+      'Protocol Authority':{name:'Protocol Authority',price:'449'}
+    };
+    document.querySelectorAll('.plan-cta').forEach(function(btn){
+      btn.addEventListener('click',function(){
+        const card=this.closest('.price-card');
+        const planNameEl=card?card.querySelector('.plan-name'):null;
+        const planPriceEl=card?card.querySelector('.plan-price'):null;
+        const planName=planNameEl?planNameEl.textContent.trim():'unknown';
+        const planPrice=planPriceEl?planPriceEl.textContent.replace(/[^\d]/g,'').trim():'0';
+        if(typeof gtag!=='undefined')gtag('event','pricing_cta_click',{plan_name:planName,plan_price:planPrice});
+      });
+    });
+  })();
+
+  // ── FINAL CTA BUTTON ──
+  (function(){
+    const finalBtn=document.querySelector('.final-cta-btn');
+    if(!finalBtn)return;
+    finalBtn.addEventListener('click',function(){
+      if(typeof gtag!=='undefined')gtag('event','final_cta_click',{position:'footer_cta'});
+    });
+  })();
+
+  // ── SCROLL DEPTH — SECTION VIEW ──
+  (function(){
+    const sections=[
+      {id:'hero',el:document.querySelector('.hero')},
+      {id:'features',el:document.querySelectorAll('.section')[1]},
+      {id:'how_it_works',el:document.getElementById('stepsWrap')?.closest('[style*="padding:96px"]')||document.getElementById('stepsWrap')?.parentElement?.parentElement},
+      {id:'numbers',el:document.querySelector('.numbers-grid')?.closest('[style*="padding:96px"]')||document.querySelector('.numbers-grid')?.parentElement?.parentElement},
+      {id:'pricing',el:document.querySelector('.pricing-grid-full')?.closest('.section')},
+      {id:'faq',el:document.querySelector('.faq-list')?.closest('[style*="padding:96px"]')},
+      {id:'final_cta',el:document.querySelector('.final-cta')}
+    ];
+    const fired=new Set();
+    const sectionObs=new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting&&!fired.has(e.target)){
+          const found=sections.find(function(s){return s.el===e.target;});
+          if(found){
+            fired.add(e.target);
+            if(typeof gtag!=='undefined')gtag('event','section_view',{section_name:found.id});
+          }
+        }
+      });
+    },{threshold:0.3});
+    sections.forEach(function(s){if(s.el)sectionObs.observe(s.el);});
+  })();
+
+  // ── TIME ON PAGE MILESTONES ──
+  [30,60,120,300].forEach(function(seconds){
+    setTimeout(function(){
+      if(typeof gtag!=='undefined')gtag('event','time_on_page',{seconds:seconds});
+    },seconds*1000);
+  });
+
+})();
 </script>
 </body>
 </html>
