@@ -36,16 +36,6 @@ export default function DemoPage() {
         ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
         ctx.fillStyle = `rgba(0,212,255,${p.a * .4})`; ctx.fill()
       })
-      particles.forEach((p, i) => {
-        particles.slice(i + 1).forEach(q => {
-          const d = Math.hypot(p.x - q.x, p.y - q.y)
-          if (d < 120) {
-            ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y)
-            ctx.strokeStyle = `rgba(0,212,255,${.15 * (1 - d / 120)})`
-            ctx.lineWidth = .5; ctx.stroke()
-          }
-        })
-      })
       rafId = requestAnimationFrame(drawParticles)
     }
     drawParticles()
