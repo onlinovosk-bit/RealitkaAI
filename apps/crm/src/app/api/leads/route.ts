@@ -7,6 +7,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createLead } from "@/lib/leads-store";
 import { autoRecalculateForLead } from "@/lib/matching-hooks";
 import { validateBody } from "@/lib/api-validate";
+import { globalEventBus } from "@/infra/messaging/EventBus";
+import { createLeadCreatedEvent } from "@/domain/leads/events";
 
 const CreateLeadSchema = z.object({
   name: z.string().min(1).max(200),
@@ -106,6 +108,14 @@ export async function POST(request: Request) {
     }
 
     await autoRecalculateForLead(lead.id);
+
+    globalEventBus.emit(createLeadCreatedEvent(lead.id, {
+      name: lead.name,
+      email: lead.email,
+      phone: lead.phone ?? null,
+      source: body.source,
+      agencyId: null,
+    })).catch(() => {/* best-effort */});
 
     return okResponse({ lead });
   } catch (error) {

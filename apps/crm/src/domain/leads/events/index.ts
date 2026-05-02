@@ -8,7 +8,7 @@ export interface LeadCreatedPayload {
   email: string | null;
   phone: string | null;
   source: string;
-  agencyId: string;
+  agencyId: string | null;
   assignedProfileId?: string | null;
 }
 
@@ -68,7 +68,7 @@ export function createLeadScoredEvent(
 export interface LeadStatusChangedPayload {
   fromStatus: string;
   toStatus: string;
-  agencyId: string;
+  agencyId: string | null;
   changedByProfileId?: string;
 }
 

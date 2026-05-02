@@ -5,6 +5,8 @@ import { createActivity } from "@/lib/activities-store";
 import { autoRecalculateForLead } from "@/lib/matching-hooks";
 import { rescoreLead } from "@/lib/rescore-lead";
 import { UUIDSchema } from "@/lib/api-validate";
+import { globalEventBus } from "@/infra/messaging/EventBus";
+import { createLeadStatusChangedEvent } from "@/domain/leads/events";
 
 export async function PATCH(
   request: Request,
@@ -73,6 +75,14 @@ export async function PATCH(
 
     await autoRecalculateForLead(id);
     rescoreLead(id); // fire-and-forget: update score + AI insight
+
+    if (oldLead?.status !== lead.status) {
+      globalEventBus.emit(createLeadStatusChangedEvent(id, {
+        fromStatus: oldLead?.status ?? "Nový",
+        toStatus: lead.status,
+        agencyId: null,
+      }, 1)).catch(() => {/* best-effort */});
+    }
 
     return okResponse({ lead });
   } catch (error) {
