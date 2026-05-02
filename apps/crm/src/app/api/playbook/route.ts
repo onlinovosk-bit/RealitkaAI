@@ -7,7 +7,7 @@
 
 import { okResponse } from "@/lib/api-response";
 import { createClient } from "@/lib/supabase/server";
-import { generateDailyPlaybook } from "@/services/simulator/daySimulator";
+import { generateDailyPlaybook } from "@/services/playbook/generateDailyPlaybook";
 import type { PlaybookResponse } from "@/services/playbook/types";
 import { mockBusyDay } from "@/services/playbook/mock";
 
