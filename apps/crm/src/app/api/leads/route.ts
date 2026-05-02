@@ -26,7 +26,7 @@ const CreateLeadSchema = z.object({
     .default("Hypotéka"),
   timeline: z.string().max(100).optional().default("Do 3 mesiacov"),
   source: z.string().max(100).optional().default("Web formulár"),
-  status: z.string().max(50).optional().default("Nový"),
+  status: z.enum(["Nový", "Teplý", "Horúci", "Obhliadka", "Ponuka"]).optional().default("Nový"),
   score: z.coerce.number().int().min(0).max(100).optional().default(50),
   assignedAgent: z.string().max(200).optional().default("Nepriradený"),
   note: z.string().max(5000).optional().default(""),

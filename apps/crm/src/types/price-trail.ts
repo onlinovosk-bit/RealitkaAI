@@ -49,6 +49,7 @@ export interface SellerMotivation {
 
 // ── Negotiation brief (from view) ─────────────────────────────
 export interface NegotiationBrief extends SellerMotivation {
+  profile_id:      string | null
   listing_id:      string | null
   property_id:     string | null
   motivation_brief: string          // human-readable SQL-generated text

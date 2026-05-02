@@ -12,7 +12,8 @@ vi.mock('@/lib/supabase/client', () => ({
 import { describe, it, beforeEach, expect, vi } from 'vitest';
 
 // ESM hoisted mock for createActivity must be declared before any vi.mock
-var createActivityMock;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let createActivityMock: ((...args: any[]) => Promise<any>) & { mock: { calls: any[] } };
 
 // Error mock for ImapFlow
 class ImapFlowErrorMock {
@@ -51,9 +52,9 @@ class ImapFlowMock {
   logout = vi.fn().mockResolvedValue(undefined);
 }
 
-vi.mock('../activities-store-proxy', () => ({ get createActivity() { return createActivityMock; } }), { overwrite: true });
-vi.mock('imapflow', () => ({ ImapFlow: ImapFlowMock }), { overwrite: true });
-vi.mock('node_modules/imapflow', () => ({ ImapFlow: ImapFlowMock }), { overwrite: true });
+vi.mock('../activities-store-proxy', () => ({ get createActivity() { return createActivityMock; } }));
+vi.mock('imapflow', () => ({ ImapFlow: ImapFlowMock }));
+vi.mock('node_modules/imapflow', () => ({ ImapFlow: ImapFlowMock }));
 
 describe('IMAP Email Sync', () => {
   beforeEach(async () => {
@@ -79,7 +80,7 @@ describe('IMAP Email Sync', () => {
           select: () => ({ eq: () => ({ single: () => ({ data: null, error: null }) }) }),
         }),
       }),
-    }), { overwrite: true });
+    }));
     const syncEmailInboxFn = (await import('../integrations-store')).syncEmailInbox;
     const result = await syncEmailInboxFn('missing-profile');
     expect(result.synced).toBe(0);
