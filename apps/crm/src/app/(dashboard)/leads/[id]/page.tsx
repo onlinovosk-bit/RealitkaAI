@@ -795,61 +795,45 @@ export default function LeadDetailPage() {
                   value={sofiaQ}
                   onChange={e => setSofiaQ(e.target.value)}
                   placeholder={`Opýtaj sa ${AI_ASSISTANT_NAME}…`}
-                  className="w-full rounded-xl border border-violet-200 bg-white px-3 py-2 text-sm outline-none focus:border-violet-400 placeholder:text-violet-300"
+                  className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
+                  style={{ background: "rgba(99,102,241,0.08)", borderColor: "rgba(99,102,241,0.25)", color: "#E0E7FF" }}
                 />
                 <button
                   type="submit"
                   disabled={sofiaAsking || !sofiaQ.trim()}
-                  className="w-full rounded-xl bg-violet-600 px-3 py-2 text-xs font-semibold text-white hover:bg-violet-700 disabled:opacity-40 transition-colors"
+                  className="w-full rounded-xl px-3 py-2.5 text-xs font-semibold min-h-[40px] transition-all active:scale-95 disabled:opacity-40"
+                  style={{ background: "rgba(99,102,241,0.3)", color: "#C7D2FE" }}
                 >
                   {sofiaAsking ? "Myslím…" : `${AI_ASSISTANT_CHAT_CTA} →`}
                 </button>
               </form>
               {sofiaAnswer && (
-                <div className="mt-3 rounded-xl border border-violet-300/40 bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900 p-3 text-sm text-white shadow-[0_0_24px_rgba(76,29,149,0.20)]">
+                <div className="mt-3 rounded-xl border p-3 text-sm" style={{ background: "rgba(99,102,241,0.1)", borderColor: "rgba(99,102,241,0.2)", color: "#E0E7FF" }}>
                   {sofiaAnswer}
                 </div>
               )}
             </div>
 
-            <div className="rounded-2xl border border-cyan-200/60 bg-gradient-to-b from-cyan-50/70 to-white p-5 shadow-sm">
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-cyan-700">L99 Decision Ops (beta)</p>
-              <p className="mb-3 text-xs text-slate-600">
-                Additive AI vrstva. Pôvodné flowy ostávajú nezmenené. Operácie rešpektujú feature flagy.
-              </p>
-              <div className="grid grid-cols-1 gap-2">
+            <div className="rounded-2xl border p-4 md:p-5" style={{ background: "#080D1A", borderColor: "rgba(34,211,238,0.1)" }}>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide" style={{ color: "#22D3EE" }}>L99 Decision Ops</p>
+              <div className="grid grid-cols-1 gap-2 mt-3">
+                {[
+                  { action: "score-lead" as const, label: "Score lead" },
+                  { action: "recompute-queue" as const, label: "Recompute queue" },
+                  { action: "closing-window" as const, label: "Closing window" },
+                  { action: "rescue-trigger" as const, label: "Rescue plan" },
+                ].map(({ action, label }) => (
                 <button
+                  key={action}
                   type="button"
-                  onClick={() => void runDecisionAction("score-lead")}
+                  onClick={() => void runDecisionAction(action)}
                   disabled={decisionBusy !== null}
-                  className="rounded-lg border border-cyan-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-cyan-50 disabled:opacity-60"
+                  className="rounded-xl border px-3 py-2.5 text-left text-xs font-semibold min-h-[40px] transition-all active:scale-95 disabled:opacity-60"
+                  style={{ borderColor: "rgba(34,211,238,0.12)", color: "#94A3B8", background: "rgba(34,211,238,0.03)" }}
                 >
-                  {decisionBusy === "score-lead" ? "Počítam score..." : "1) Score lead (who/what/when/prob/revenue)"}
+                  {decisionBusy === action ? "Pracujem…" : label}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => void runDecisionAction("recompute-queue")}
-                  disabled={decisionBusy !== null}
-                  className="rounded-lg border border-cyan-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-cyan-50 disabled:opacity-60"
-                >
-                  {decisionBusy === "recompute-queue" ? "Prepočítavam queue..." : "2) Recompute priority queue"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void runDecisionAction("closing-window")}
-                  disabled={decisionBusy !== null}
-                  className="rounded-lg border border-cyan-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-cyan-50 disabled:opacity-60"
-                >
-                  {decisionBusy === "closing-window" ? "Počítam closing window..." : "3) Recompute closing window"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void runDecisionAction("rescue-trigger")}
-                  disabled={decisionBusy !== null}
-                  className="rounded-lg border border-cyan-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-cyan-50 disabled:opacity-60"
-                >
-                  {decisionBusy === "rescue-trigger" ? "Spúšťam rescue..." : "4) Trigger rescue plan"}
-                </button>
+                ))}
                 <button
                   type="button"
                   onClick={() => void runDecisionAction("micro-actions")}
@@ -865,20 +849,20 @@ export default function LeadDetailPage() {
             </div>
 
             {/* Meta Info */}
-            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Meta</p>
+            <div className="rounded-2xl border p-4 md:p-5" style={{ background: "#080D1A", borderColor: "#0F1F3D" }}>
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wide" style={{ color: "#475569" }}>Meta</p>
               <dl className="space-y-2 text-sm">
                 <div>
-                  <dt className="text-xs text-gray-400">Zdroj</dt>
-                  <dd className="font-medium text-gray-700">{lead.source || "—"}</dd>
+                  <dt className="text-xs" style={{ color: "#475569" }}>Zdroj</dt>
+                  <dd className="font-medium" style={{ color: "#CBD5E1" }}>{lead.source || "—"}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-gray-400">Maklér</dt>
-                  <dd className="font-medium text-gray-700">{lead.assignedAgent || "Nepriradený"}</dd>
+                  <dt className="text-xs" style={{ color: "#475569" }}>Maklér</dt>
+                  <dd className="font-medium" style={{ color: "#CBD5E1" }}>{lead.assignedAgent || "Nepriradený"}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-gray-400">Posledný kontakt</dt>
-                  <dd className="font-medium text-gray-700">{lead.lastContact || "—"}</dd>
+                  <dt className="text-xs" style={{ color: "#475569" }}>Posledný kontakt</dt>
+                  <dd className="font-medium" style={{ color: "#CBD5E1" }}>{lead.lastContact || "—"}</dd>
                 </div>
                 {(() => {
                   const extra = lead as unknown as Record<string, unknown>;
