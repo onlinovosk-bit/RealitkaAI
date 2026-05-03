@@ -78,12 +78,11 @@ function InlineField({
     if (draft !== value) onSave(draft);
   }
 
-  const sharedClass =
-    "w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-gray-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-slate-500";
+  const fieldStyle = { background: "#050914", borderColor: "rgba(34,211,238,0.15)", color: "#F0F9FF" };
 
   return (
     <div>
-      <p className="mb-1 text-xs font-medium uppercase tracking-wide text-gray-400">{label}</p>
+      <p className="mb-1 text-[10px] font-medium uppercase tracking-wide" style={{ color: "#475569" }}>{label}</p>
       {editing ? (
         multiline ? (
           <textarea
@@ -92,7 +91,8 @@ function InlineField({
             value={draft}
             onChange={e => setDraft(e.target.value)}
             onBlur={commit}
-            className={sharedClass}
+            className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
+            style={fieldStyle}
           />
         ) : (
           <input
@@ -102,16 +102,18 @@ function InlineField({
             onChange={e => setDraft(e.target.value)}
             onBlur={commit}
             onKeyDown={e => e.key === "Enter" && commit()}
-            className={sharedClass}
+            className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
+            style={fieldStyle}
           />
         )
       ) : (
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="w-full rounded-lg border border-transparent px-3 py-2 text-left text-sm text-gray-900 transition-all hover:border-cyan-100 hover:bg-gradient-to-r hover:from-cyan-50/70 hover:to-indigo-50/70 dark:text-slate-100 dark:hover:border-slate-700 dark:hover:bg-slate-800"
+          className="w-full rounded-xl border px-3 py-2.5 text-left text-sm min-h-[42px] transition-all"
+          style={{ background: "#080D1A", borderColor: "rgba(34,211,238,0.08)", color: draft ? "#CBD5E1" : "#334155" }}
         >
-          {draft || <span className="text-gray-400">Klikni na úpravu…</span>}
+          {draft || "Klikni na úpravu…"}
         </button>
       )}
     </div>
@@ -133,11 +135,12 @@ function InlineSelect({
 }) {
   return (
     <div>
-      <p className="mb-1 text-xs font-medium uppercase tracking-wide text-gray-400">{label}</p>
+      <p className="mb-1 text-[10px] font-medium uppercase tracking-wide" style={{ color: "#475569" }}>{label}</p>
       <select
         value={value}
         onChange={e => onSave(e.target.value)}
-        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+        className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
+        style={{ background: "#050914", borderColor: "rgba(34,211,238,0.15)", color: "#F0F9FF" }}
       >
         {options.map(o => <option key={o} value={o}>{o}</option>)}
       </select>
