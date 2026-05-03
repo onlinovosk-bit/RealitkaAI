@@ -10,7 +10,7 @@ const TONE_OPTIONS = [
 ];
 
 export default function Step4({ slug }: { slug: string }) {
-  const { formData, update, next, back, loaded } = useOnboarding(slug);
+  const { formData, update, next, back, loaded, patchChecklist } = useOnboarding(slug);
   if (!loaded) return <div className="animate-pulse text-gray-400">Načítavam...</div>;
 
   return (
@@ -140,7 +140,7 @@ export default function Step4({ slug }: { slug: string }) {
 
       <div className="mt-8 flex gap-3">
         <SecondaryBtn onClick={back}>← Späť</SecondaryBtn>
-        <PrimaryBtn onClick={next}>Generovať AI & pokračovať →</PrimaryBtn>
+        <PrimaryBtn onClick={() => { void patchChecklist({ firstAiBriefViewed: true }).then(() => next()); }}>Generovať AI & pokračovať →</PrimaryBtn>
       </div>
     </div>
   );

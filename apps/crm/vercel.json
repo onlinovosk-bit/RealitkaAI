@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/auto-tune",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/onboarding-dispatch",
+      "schedule": "0 8 * * *"
     }
   ]
 }

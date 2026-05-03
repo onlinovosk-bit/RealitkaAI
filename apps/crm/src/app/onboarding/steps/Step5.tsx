@@ -12,7 +12,7 @@ const IMPORT_OPTIONS = [
 ];
 
 export default function Step5({ slug }: { slug: string }) {
-  const { formData, update, next, back, skip, loaded } = useOnboarding(slug);
+  const { formData, update, next, back, skip, loaded, patchChecklist } = useOnboarding(slug);
   if (!loaded) return <div className="animate-pulse text-gray-400">Načítavam...</div>;
 
   return (
@@ -43,7 +43,10 @@ export default function Step5({ slug }: { slug: string }) {
         <button type="button" onClick={skip} className="text-sm text-gray-400 hover:text-gray-600 underline underline-offset-2">
           Preskočiť na neskôr
         </button>
-        <PrimaryBtn onClick={next}>Pokračovať →</PrimaryBtn>
+        <PrimaryBtn onClick={() => {
+          const shouldMark = formData.importSource !== "" && formData.importSource !== "skip";
+          void (shouldMark ? patchChecklist({ importedLeads: true }) : Promise.resolve(null)).then(() => next());
+        }}>Pokračovať →</PrimaryBtn>
       </div>
     </div>
   );

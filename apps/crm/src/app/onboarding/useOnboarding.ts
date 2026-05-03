@@ -1,10 +1,11 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 import { supabaseClient } from "@/lib/supabase/client";
 import { AI_ASSISTANT_NAME } from "@/lib/ai-brand";
 import { getNextSlug, getPrevSlug, getStepBySlug } from "./config";
+import type { OnboardingChecklist } from "@/lib/onboarding-mvp";
 
 export type OnboardingData = {
   name: string; role: string;
@@ -33,6 +34,26 @@ export const DEFAULT_DATA: OnboardingData = {
   primaryGoal: "",
   kpiLeads: 30, kpiDays: 45, kpiConversion: 15,
 };
+
+async function patchOnboardingChecklist(
+  company: string,
+  contactEmail: string,
+  patch: Partial<OnboardingChecklist>,
+  contactName?: string,
+): Promise<string | null> {
+  try {
+    const res = await fetch("/api/onboarding/mvp/checklist", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ company, contactEmail, contactName: contactName ?? "", checklist: patch }),
+    });
+    if (!res.ok) return null;
+    const json = (await res.json()) as { progress?: { id?: string } };
+    return json.progress?.id ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export function useOnboarding(currentSlug: string) {
   const router = useRouter();
@@ -63,7 +84,7 @@ export function useOnboarding(currentSlug: string) {
     formDataRef.current = formData;
   }, [formData]);
 
-  /** Uloží lokálne hneď; Supabase na pozadí — navigácia nesmie čakať na sieť (inak „Pokračovať“ nefunguje). */
+  /** Uloží lokálne hneď; Supabase na pozadí — navigácia nesmie čakať na sieť (inak „Pokračovať" nefunguje). */
   const save = (data: OnboardingData) => {
     let sessionId = sessionIdRef.current;
     if (!sessionId) {
@@ -111,5 +132,14 @@ export function useOnboarding(currentSlug: string) {
     if (nextSlug) router.push(`/onboarding/${nextSlug}`);
   };
 
-  return { formData, update, next, back, skip, loaded };
+  const patchChecklist = useCallback(async (patch: Partial<OnboardingChecklist>): Promise<string | null> => {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    const email = session?.user?.email ?? "";
+    const company = formDataRef.current.agencyName;
+    const contactName = formDataRef.current.name;
+    if (!company || !email) return null;
+    return patchOnboardingChecklist(company, email, patch, contactName);
+  }, []);
+
+  return { formData, update, next, back, skip, loaded, patchChecklist };
 }

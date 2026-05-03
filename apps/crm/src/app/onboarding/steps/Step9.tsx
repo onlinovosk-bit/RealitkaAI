@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AI_ASSISTANT_NAME } from "@/lib/ai-brand";
@@ -26,7 +26,19 @@ function leadsSk(n: number): string {
 
 export default function Step9({ slug }: { slug: string }) {
   const router = useRouter();
-  const { formData, loaded: formLoaded } = useOnboarding(slug);
+  const { formData, loaded: formLoaded, patchChecklist } = useOnboarding(slug);
+
+  const goToDashboard = useCallback(async () => {
+    const progressId = await patchChecklist({});
+    if (progressId) {
+      void fetch("/api/onboarding/mvp/messages/schedule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ progressId }),
+      }).catch(() => {});
+    }
+    router.push("/dashboard");
+  }, [patchChecklist, router]);
 
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(true);
@@ -156,7 +168,7 @@ export default function Step9({ slug }: { slug: string }) {
       <div className="flex justify-center">
         <button
           type="button"
-          onClick={() => router.push("/dashboard")}
+          onClick={() => { void goToDashboard(); }}
           className="bg-gray-900 text-white px-8 py-3.5 rounded-xl font-semibold text-sm hover:bg-gray-700 transition-all flex items-center gap-2"
         >
           ✨ Prejsť do Revolis.AI Dashboard

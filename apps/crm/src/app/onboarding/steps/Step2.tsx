@@ -3,7 +3,7 @@ import { useOnboarding } from "../useOnboarding";
 import { PrimaryBtn, SecondaryBtn, TagGroup } from "./shared";
 
 export default function Step2({ slug }: { slug: string }) {
-  const { formData, update, next, back, loaded } = useOnboarding(slug);
+  const { formData, update, next, back, loaded, patchChecklist } = useOnboarding(slug);
   if (!loaded) return <div className="animate-pulse text-gray-400">Načítavam...</div>;
 
   return (
@@ -57,7 +57,10 @@ export default function Step2({ slug }: { slug: string }) {
 
       <div className="mt-8 flex gap-3">
         <SecondaryBtn onClick={back}>← Späť</SecondaryBtn>
-        <PrimaryBtn disabled={!formData.agencyName || !formData.city} onClick={next}>Pokračovať →</PrimaryBtn>
+        <PrimaryBtn
+          disabled={!formData.agencyName || !formData.city}
+          onClick={() => { void patchChecklist({ configuredTeam: true }).then(() => next()); }}
+        >Pokračovať →</PrimaryBtn>
       </div>
     </div>
   );

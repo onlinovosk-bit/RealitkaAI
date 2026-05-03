@@ -14,7 +14,7 @@ const TOOLS = [
 ];
 
 export default function Step7({ slug }: { slug: string }) {
-  const { formData, update, next, back, skip, loaded } = useOnboarding(slug);
+  const { formData, update, next, back, skip, loaded, patchChecklist } = useOnboarding(slug);
   if (!loaded) return <div className="animate-pulse text-gray-400">Načítavam...</div>;
 
   return (
@@ -58,7 +58,9 @@ export default function Step7({ slug }: { slug: string }) {
         <button type="button" onClick={skip} className="text-sm text-gray-400 hover:text-gray-600 underline underline-offset-2">
           Preskočiť
         </button>
-        <PrimaryBtn onClick={next}>Pokračovať →</PrimaryBtn>
+        <PrimaryBtn onClick={() => {
+          void (formData.connectedTools.length > 0 ? patchChecklist({ connectedCrm: true }) : Promise.resolve(null)).then(() => next());
+        }}>Pokračovať →</PrimaryBtn>
       </div>
     </div>
   );

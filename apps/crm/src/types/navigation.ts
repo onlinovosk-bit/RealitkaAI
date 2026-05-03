@@ -363,6 +363,16 @@ export const ALL_NAV_ITEMS: NavItem[] = [
     section: "settings",
     showFor: ["agent_solo", "agent_team", "owner_vision", "owner_protocol"],
   },
+  {
+    id: "onboarding-monitor",
+    label: "Onboarding Automat",
+    sublabel: "Adopcia klientov · At-risk · Emaily",
+    href: "/onboarding-monitor",
+    icon: "chart-up",
+    badge: { label: "automat", variant: "new" },
+    section: "settings",
+    showFor: ["owner_vision", "owner_protocol"],
+  },
 ];
 
 // ─── Helper funkcie ────────────────────────────────────────────────────────
