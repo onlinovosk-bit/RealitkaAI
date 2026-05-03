@@ -29,6 +29,10 @@
 .DS_Store
 *.pem
 
+# generated artifacts — do not commit
+repo-structure.txt
+*.bak
+
 # debug
 npm-debug.log*
 yarn-debug.log*

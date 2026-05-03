@@ -14,7 +14,8 @@
         "seed:leads": "npx tsx scripts/seed-leads-bulk.ts",
         "pilot:check": "node scripts/pilot-checklist.mjs",
         "verify:realtime": "node scripts/verify-realtime.mjs",
-        "test": "echo 'No tests yet' && exit 0"
+        "test": "vitest run",
+        "test:watch": "vitest"
     },
     "dependencies": {
         "@anthropic-ai/sdk": "^0.91.1",
