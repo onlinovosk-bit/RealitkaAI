@@ -17,7 +17,30 @@ import { resolve } from "path";
 config({ path: resolve(process.cwd(), ".env.local") });
 
 import { createClient } from "@supabase/supabase-js";
-import { generateRandomEvents, groupEventsByBuyer } from "../src/services/simulator/generator";
+
+const ACTIVITY_TYPES = ["Obhliadka", "Dopyt", "Hovor", "Portál", "Email", "SMS", "Poznámka"];
+const SK_NAMES = ["Ján Novák","Peter Kováč","Mária Horváth","Tomáš Lukáč","Zuzana Baláž","Martin Blaho","Eva Oravec","Michal Varga","Katarína Tóth","Ladislav Farkas"];
+
+interface DemoEvent { type: string; occurredAt: Date }
+
+function generateRandomEvents(count: number, days: number): DemoEvent[] {
+  return Array.from({ length: count }, () => ({
+    type: ACTIVITY_TYPES[Math.floor(Math.random() * ACTIVITY_TYPES.length)],
+    occurredAt: new Date(Date.now() - Math.random() * days * 86400000),
+  }));
+}
+
+function groupEventsByBuyer(events: DemoEvent[]): Map<string, { name: string; events: DemoEvent[] }> {
+  const map = new Map<string, { name: string; events: DemoEvent[] }>();
+  const buyers = SK_NAMES.map((name, i) => ({ name, email: `demo${i + 1}@revolis.ai` }));
+  for (const ev of events) {
+    const buyer = buyers[Math.floor(Math.random() * buyers.length)];
+    const existing = map.get(buyer.email);
+    if (existing) existing.events.push(ev);
+    else map.set(buyer.email, { name: buyer.name, events: [ev] });
+  }
+  return map;
+}
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;

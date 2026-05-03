@@ -1,7 +1,7 @@
 // src/domain/playbook/engine.ts
 
 import { computeBuyerReadiness } from "@/domain/buyer-readiness/engine";
-import type { LeadSnapshot, LeadActivity, PlaybookAction } from "./types";
+import type { LeadSnapshot, LeadActivity, PlaybookAction, PlaybookActionType } from "./types";
 
 export interface BuildPlaybookOptions {
   threshold?: number; // default 70
@@ -15,7 +15,7 @@ export interface BuildPlaybookOptions {
 function resolveActionType(
   segment: string,
   status: string | null
-): import("./types").PlaybookActionType {
+): PlaybookActionType {
   if (status === "Ponuka" || status === "Obhliadka") return "CALL";
   if (segment === "HOT_NOW") return "CALL";
   if (segment === "HIGH_PRIORITY") return "MESSAGE";

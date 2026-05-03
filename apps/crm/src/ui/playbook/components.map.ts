@@ -3,7 +3,8 @@
  * Zdroj pravdy pre typy, props a Figma spec.
  */
 
-export type PlaybookItemType = "CALL" | "MESSAGE" | "RISK" | "OPPORTUNITY";
+import type { PlaybookActionType } from "@/domain/playbook/types";
+export type PlaybookItemType = PlaybookActionType;
 
 export interface PlaybookItemProps {
   id: string;

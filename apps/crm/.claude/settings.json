@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(npx *)",
+      "Bash(npm *)",
+      "Bash(node *)",
+      "Bash(cd *)",
+      "Bash(ls *)",
+      "Bash(dir *)",
+      "PowerShell(git *)",
+      "PowerShell(npx *)",
+      "PowerShell(npm *)",
+      "PowerShell(cd *)",
+      "PowerShell(ls *)"
+    ]
+  }
+}
