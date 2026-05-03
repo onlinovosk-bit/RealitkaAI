@@ -8,7 +8,7 @@ export function MobileFab() {
   const pathname = usePathname();
   const router = useRouter();
 
-  if (HIDE_ON.includes(pathname)) return null;
+  if (!pathname || HIDE_ON.includes(pathname)) return null;
 
   const handleTap = () => {
     if (pathname.startsWith("/leads")) {

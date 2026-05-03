@@ -7,6 +7,7 @@ import { rescoreLead } from "@/lib/rescore-lead";
 import { UUIDSchema } from "@/lib/api-validate";
 import { globalEventBus } from "@/infra/messaging/EventBus";
 import { createLeadStatusChangedEvent } from "@/domain/leads/events";
+import { notifyHotLead } from "@/services/push/PushNotificationService";
 
 export async function PATCH(
   request: Request,
@@ -82,6 +83,10 @@ export async function PATCH(
         toStatus: lead.status,
         agencyId: null,
       }, 1)).catch(() => {/* best-effort */});
+
+      if (lead.status === "Horúci" && lead.assignedProfileId) {
+        notifyHotLead(lead.assignedProfileId, lead.name, id).catch(() => {/* best-effort */});
+      }
     }
 
     return okResponse({ lead });

@@ -30,7 +30,7 @@ export function PlaybookItemCard(props: PlaybookItemProps) {
 
   return (
     <article
-      className="flex items-start justify-between gap-4 rounded-xl border p-4 transition-all hover:shadow-sm"
+      className="flex flex-col gap-3 rounded-xl border p-4 transition-all active:scale-[0.99] sm:flex-row sm:items-start sm:justify-between sm:gap-4"
       style={{
         background: "#0A1628",
         borderColor: "#112240",
@@ -58,28 +58,28 @@ export function PlaybookItemCard(props: PlaybookItemProps) {
         </div>
 
         {/* Titles */}
-        <h3 className="text-sm font-semibold truncate" style={{ color: "#F0F9FF" }}>
+        <h3 className="text-sm font-semibold" style={{ color: "#F0F9FF" }}>
           {title}
         </h3>
-        <p className="text-sm truncate" style={{ color: "#64748B" }}>
+        <p className="text-sm" style={{ color: "#64748B" }}>
           {subtitle}
         </p>
 
         {/* Property */}
         {propertyTitle && (
           <p className="text-xs" style={{ color: "#475569" }}>
-            🏠 {propertyTitle}
+            {propertyTitle}
           </p>
         )}
 
         {/* Reason */}
         <p className="text-xs" style={{ color: "#334155" }}>
-          Dôvod: {reason}
+          {reason}
         </p>
       </div>
 
-      {/* Right side */}
-      <div className="flex flex-col items-end gap-3 flex-shrink-0">
+      {/* Right side — full-width CTA on mobile, normal on sm+ */}
+      <div className="flex items-center justify-between gap-3 sm:flex-col sm:items-end sm:flex-shrink-0">
         {buyerScore !== undefined && (
           <div
             className="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold"
@@ -91,7 +91,7 @@ export function PlaybookItemCard(props: PlaybookItemProps) {
           >
             {buyerScore}
             <span className="font-normal text-[10px]" style={{ color: "#475569" }}>
-              /100 IPK
+              /100
             </span>
           </div>
         )}
@@ -102,7 +102,7 @@ export function PlaybookItemCard(props: PlaybookItemProps) {
             e.stopPropagation();
             onClick?.();
           }}
-          className="rounded-full px-3 py-1.5 text-xs font-bold transition-all hover:opacity-90 active:scale-95 disabled:cursor-wait disabled:opacity-70"
+          className="flex-1 sm:flex-none rounded-full px-4 py-2.5 text-sm font-bold transition-all hover:opacity-90 active:scale-95 disabled:cursor-wait disabled:opacity-70 min-h-[44px] sm:min-h-0 sm:py-1.5 sm:text-xs"
           style={{
             background: "linear-gradient(135deg, #22D3EE, #818CF8)",
             color: "#050914",

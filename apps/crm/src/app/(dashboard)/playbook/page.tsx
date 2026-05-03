@@ -182,7 +182,7 @@ export default function PlaybookPage() {
   };
 
   return (
-    <main className="flex h-full flex-col gap-6 p-6" style={{ background: "#050914" }}>
+    <main className="flex h-full flex-col gap-4 p-3 md:gap-6 md:p-6" style={{ background: "#050914" }}>
       {/* Header */}
       {toast && (
         <div
