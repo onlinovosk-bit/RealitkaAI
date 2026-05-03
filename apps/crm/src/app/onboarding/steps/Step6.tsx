@@ -14,7 +14,7 @@ const AUTOMATIONS = [
 ];
 
 export default function Step6({ slug }: { slug: string }) {
-  const { formData, update, next, back, loaded } = useOnboarding(slug);
+  const { formData, update, next, back, loaded, patchChecklist } = useOnboarding(slug);
   if (!loaded) return <div className="animate-pulse text-gray-400">Načítavam...</div>;
 
   return (
@@ -58,7 +58,7 @@ export default function Step6({ slug }: { slug: string }) {
 
       <div className="mt-8 flex gap-3">
         <SecondaryBtn onClick={back}>← Späť</SecondaryBtn>
-        <PrimaryBtn onClick={next}>Pokračovať →</PrimaryBtn>
+        <PrimaryBtn onClick={() => { void patchChecklist({ pipelineConfigured: true }).then(() => next()); }}>Pokračovať →</PrimaryBtn>
       </div>
     </div>
   );

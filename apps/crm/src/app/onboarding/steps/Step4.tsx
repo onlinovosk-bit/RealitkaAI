@@ -140,7 +140,7 @@ export default function Step4({ slug }: { slug: string }) {
 
       <div className="mt-8 flex gap-3">
         <SecondaryBtn onClick={back}>← Späť</SecondaryBtn>
-        <PrimaryBtn onClick={() => { void patchChecklist({ firstAiBriefViewed: true }).then(() => next()); }}>Generovať AI & pokračovať →</PrimaryBtn>
+        <PrimaryBtn onClick={() => { void patchChecklist({ firstAiBriefViewed: true, firstAutomationLive: formData.autoReply === true }).then(() => next()); }}>Generovať AI & pokračovať →</PrimaryBtn>
       </div>
     </div>
   );

@@ -16,7 +16,7 @@ const KPI_SLIDERS = [
 ];
 
 export default function Step8({ slug }: { slug: string }) {
-  const { formData, update, next, back, loaded } = useOnboarding(slug);
+  const { formData, update, next, back, loaded, patchChecklist } = useOnboarding(slug);
   if (!loaded) return <div className="animate-pulse text-gray-400">Načítavam...</div>;
 
   return (
@@ -65,7 +65,13 @@ export default function Step8({ slug }: { slug: string }) {
 
       <div className="mt-8 flex gap-3">
         <SecondaryBtn onClick={back}>← Späť</SecondaryBtn>
-        <PrimaryBtn onClick={next}>✨ Spustiť Revolis.AI</PrimaryBtn>
+        <PrimaryBtn onClick={() => {
+          if (formData.primaryGoal !== "" || formData.kpiLeads > 0) {
+            void patchChecklist({ goalsDefined: true }).then(() => next());
+          } else {
+            next();
+          }
+        }}>✨ Spustiť Revolis.AI</PrimaryBtn>
       </div>
     </div>
   );

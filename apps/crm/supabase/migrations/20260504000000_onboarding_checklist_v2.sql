@@ -1,0 +1,2 @@
+-- OnboardingChecklist v2: pipelineConfigured + goalsDefined fields added
+-- No schema change required — checklist is JSONB
