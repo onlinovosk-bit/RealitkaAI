@@ -491,8 +491,8 @@ export default function LeadDetailPage() {
           <div className="xl:col-span-2 space-y-6">
 
             {/* Lead Info Card */}
-            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-              <h2 className="mb-4 text-base font-semibold text-gray-900">Informácie o príležitosti</h2>
+            <div className="rounded-2xl border p-4 md:p-6" style={{ background: "#080D1A", borderColor: "#0F1F3D" }}>
+              <h2 className="mb-4 text-base font-semibold" style={{ color: "#F0F9FF" }}>Informácie o príležitosti</h2>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <InlineField label="Meno" value={lead.name} onSave={v => patchLead({ name: v })} />
                 <InlineField label="Email" value={lead.email} type="email" onSave={v => patchLead({ email: v })} />
@@ -510,16 +510,17 @@ export default function LeadDetailPage() {
             </div>
 
             {/* Activity Timeline */}
-            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-              <h2 className="mb-4 text-base font-semibold text-gray-900">Aktivity</h2>
+            <div className="rounded-2xl border p-4 md:p-6" style={{ background: "#080D1A", borderColor: "#0F1F3D" }}>
+              <h2 className="mb-4 text-base font-semibold" style={{ color: "#F0F9FF" }}>Aktivity</h2>
 
               {/* Add activity form */}
-              <form onSubmit={addActivity} className="mb-6 rounded-xl border border-gray-100 bg-gray-50 p-4">
-                <div className="mb-3 flex gap-3">
+              <form onSubmit={addActivity} className="mb-5 rounded-xl border p-3 md:p-4" style={{ background: "#050914", borderColor: "#0F1F3D" }}>
+                <div className="mb-3 flex gap-2">
                   <select
                     value={actType}
                     onChange={e => setActType(e.target.value)}
-                    className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+                    className="rounded-xl border px-3 py-2.5 text-sm outline-none flex-1"
+                    style={{ background: "#080D1A", borderColor: "rgba(34,211,238,0.15)", color: "#F0F9FF" }}
                   >
                     {["Telefonát", "Email", "Obhliadka", "Poznámka"].map(t => (
                       <option key={t} value={t}>{t}</option>
@@ -531,17 +532,16 @@ export default function LeadDetailPage() {
                   onChange={e => setActNote(e.target.value)}
                   placeholder="Čo sa stalo? Zapíš poznámku…"
                   rows={2}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500 mb-3"
+                  className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none mb-3"
+                  style={{ background: "#080D1A", borderColor: "rgba(34,211,238,0.15)", color: "#F0F9FF" }}
                 />
-                <p className="mb-3 text-xs text-gray-400">
-                  Tip: Dátum a čas obhliadky píš do poznámky (napr. 15.4.2026 14:00 je len ukážka). Pripomienka na 8:00 sa vytvorí na ten deň, ktorý v poznámke uvedieš — vždy iný podľa textu. Ak máš pripojený Google účet v nastaveniach, udalosť sa uloží priamo do kalendára.
-                </p>
                 <button
                   type="submit"
                   disabled={isAddingAct || !actNote.trim()}
-                  className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+                  className="rounded-xl px-4 py-2.5 text-sm font-semibold min-h-[40px] transition-all active:scale-95 disabled:opacity-50"
+                  style={{ background: "linear-gradient(135deg, #22D3EE, #0EA5E9)", color: "#050914" }}
                 >
-                  {isAddingAct ? "Pridávam…" : "+ Pridať aktivitu"}
+                  {isAddingAct ? "Pridávam…" : "+ Aktivita"}
                 </button>
               </form>
 
