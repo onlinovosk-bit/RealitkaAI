@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#050914"/>
+  <rect width="512" height="512" rx="96" fill="url(#grad)"/>
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0A1628"/>
+      <stop offset="100%" style="stop-color:#050914"/>
+    </linearGradient>
+  </defs>
+  <circle cx="256" cy="256" r="180" fill="none" stroke="#22D3EE" stroke-width="6" opacity="0.15"/>
+  <text x="256" y="300" font-family="system-ui,-apple-system,sans-serif" font-weight="800"
+        font-size="260" fill="#22D3EE" text-anchor="middle" letter-spacing="-8">R</text>
+  <text x="256" y="390" font-family="system-ui,-apple-system,sans-serif" font-weight="500"
+        font-size="52" fill="#22D3EE" opacity="0.6" text-anchor="middle" letter-spacing="6">EVOLIS</text>
+</svg>
