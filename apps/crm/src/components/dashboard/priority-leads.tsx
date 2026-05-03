@@ -43,20 +43,21 @@ export default function PriorityLeads({ leads, plan = "free" }: PriorityLeadsPro
   const lockedCount = plan === "pro" ? 0 : Math.max(0, allPriorityLeads.length - FREE_LIMIT);
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border p-4 md:p-5" style={{ background: "#080D1A", borderColor: "#0F1F3D" }}>
       <div className="flex items-center justify-between gap-3 mb-4">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">Prioritné príležitosti</h2>
-          <p className="text-sm text-gray-500">
-            Klienti s vysokým skóre alebo horúcim stavom.
+          <h2 className="text-base font-semibold" style={{ color: "#F0F9FF" }}>Prioritné príležitosti</h2>
+          <p className="text-xs" style={{ color: "#475569" }}>
+            Klienti s vysokým BRI alebo horúcim stavom.
           </p>
         </div>
 
         <Link
           href="/leads"
-          className="rounded-lg border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="rounded-xl border px-3 py-1.5 text-xs font-medium min-h-[32px] flex items-center"
+          style={{ borderColor: "rgba(34,211,238,0.2)", color: "#22D3EE" }}
         >
-          Zobraziť všetky
+          Všetky →
         </Link>
       </div>
 
@@ -64,16 +65,13 @@ export default function PriorityLeads({ leads, plan = "free" }: PriorityLeadsPro
         {priorityLeads.map((lead) => (
           <div
             key={lead.id}
-            className="group rounded-xl border border-slate-300/90 bg-white p-3 shadow-sm transition-shadow hover:shadow-md"
+            className="group rounded-xl border p-3 transition-all active:scale-[0.99]"
+            style={{ background: "#0A1628", borderColor: "#112240" }}
           >
             <div className="flex items-center justify-between gap-3">
               <Link href={`/leads/${lead.id}`} className="flex-1 min-w-0">
-                <div className="truncate bg-gradient-to-r from-slate-900 via-cyan-600 to-slate-900 bg-[length:220%_100%] bg-left bg-clip-text font-medium text-gray-900 transition-all duration-500 group-hover:bg-right group-hover:text-transparent">
-                  {lead.name}
-                </div>
-                <div className="truncate bg-gradient-to-r from-slate-500 via-indigo-500 to-slate-500 bg-[length:220%_100%] bg-left bg-clip-text text-sm text-gray-500 transition-all duration-500 group-hover:bg-right group-hover:text-transparent">
-                  {lead.location}
-                </div>
+                <div className="truncate text-sm font-semibold" style={{ color: "#F0F9FF" }}>{lead.name}</div>
+                <div className="truncate text-xs mt-0.5" style={{ color: "#64748B" }}>{lead.location}</div>
               </Link>
 
               <div className="flex items-center gap-2 flex-shrink-0">
@@ -127,7 +125,7 @@ export default function PriorityLeads({ leads, plan = "free" }: PriorityLeadsPro
         ))}
 
         {priorityLeads.length === 0 && (
-          <p className="text-sm text-gray-500 text-center py-4">
+          <p className="text-sm text-center py-4" style={{ color: "#475569" }}>
             Žiadne prioritné príležitosti zatiaľ.
           </p>
         )}
