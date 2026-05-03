@@ -88,12 +88,12 @@ function KpiCard({ title, value, subtitle }: { title: string; value: string | nu
   return (
     <div
       ref={glowRef as any}
-      style={glowStyle}
-      className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-sm backdrop-blur-xl"
+      style={{ ...glowStyle, background: "#080D1A", borderColor: "rgba(34,211,238,0.10)" }}
+      className="rounded-2xl border p-4 md:p-5"
     >
-      <p className="text-sm text-gray-500">{title}</p>
-      <h2 className="mt-2 text-3xl font-bold text-gray-900">{shownValue}</h2>
-      <p className="mt-2 text-sm text-gray-500">{subtitle}</p>
+      <p className="text-xs md:text-sm" style={{ color: "#64748B" }}>{title}</p>
+      <h2 className="mt-1.5 text-2xl md:text-3xl font-bold" style={{ color: "#F0F9FF" }}>{shownValue}</h2>
+      <p className="mt-1 text-xs md:text-sm" style={{ color: "#475569" }}>{subtitle}</p>
     </div>
   );
 }
@@ -254,11 +254,11 @@ export default function DashboardPage() {
     plan === ("enterprise" as PlanTier);
 
   return (
-    <main className="p-6">
+    <main className="p-3 md:p-6" style={{ background: "#050914", minHeight: "100vh" }}>
       <div className="mx-auto max-w-7xl">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Prehľad biznisu</h1>
-          <p className="mt-1 text-gray-500">Prehľad výkonnosti tímu a prioritných príležitostí.</p>
+        <div className="mb-4 md:mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold" style={{ color: "#F0F9FF" }}>Prehľad biznisu</h1>
+          <p className="mt-1 text-sm" style={{ color: "#64748B" }}>Prehľad výkonnosti tímu a prioritných príležitostí.</p>
         </div>
 
         <section className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
