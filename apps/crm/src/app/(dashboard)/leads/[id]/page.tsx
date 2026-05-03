@@ -587,13 +587,14 @@ export default function LeadDetailPage() {
             </div>
 
             {/* Quick Actions */}
-            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Rýchle akcie</p>
+            <div className="rounded-2xl border p-4 md:p-5" style={{ background: "#080D1A", borderColor: "#0F1F3D" }}>
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wide" style={{ color: "#475569" }}>Rýchle akcie</p>
               <div className="space-y-2">
                 {lead.phone && (
                   <a
                     href={`tel:${lead.phone}`}
-                    className="flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition-all hover:border-cyan-200 hover:bg-gradient-to-r hover:from-cyan-50/70 hover:to-indigo-50/70 w-full"
+                    className="flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium w-full min-h-[44px] transition-all active:scale-95"
+                    style={{ borderColor: "rgba(34,211,238,0.15)", color: "#CBD5E1", background: "rgba(34,211,238,0.04)" }}
                   >
                     📞 Zavolať
                   </a>
@@ -601,17 +602,19 @@ export default function LeadDetailPage() {
                 {lead.email && (
                   <a
                     href={`mailto:${lead.email}`}
-                    className="flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition-all hover:border-cyan-200 hover:bg-gradient-to-r hover:from-cyan-50/70 hover:to-indigo-50/70 w-full"
+                    className="flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium w-full min-h-[44px] transition-all active:scale-95"
+                    style={{ borderColor: "rgba(34,211,238,0.15)", color: "#CBD5E1", background: "rgba(34,211,238,0.04)" }}
                   >
-                    ✉️ Poslať email
+                    ✉️ Email
                   </a>
                 )}
                 <button
                   type="button"
                   onClick={openViewingCalendar}
-                  className="flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition-all hover:border-cyan-200 hover:bg-gradient-to-r hover:from-cyan-50/70 hover:to-indigo-50/70 w-full"
+                  className="flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium w-full min-h-[44px] transition-all active:scale-95"
+                  style={{ borderColor: "rgba(34,211,238,0.15)", color: "#CBD5E1", background: "rgba(34,211,238,0.04)" }}
                 >
-                  📅 Naplánovať obhliadku
+                  📅 Obhliadka
                 </button>
                 <button
                   type="button"
@@ -641,7 +644,8 @@ export default function LeadDetailPage() {
                       showToast("Chyba siete pri autopilot-e.");
                     }
                   }}
-                  className="flex items-center gap-2 rounded-lg border border-emerald-200/80 bg-emerald-50/90 px-4 py-2.5 text-sm font-medium text-emerald-900 transition-all hover:bg-emerald-100 w-full"
+                  className="flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium w-full min-h-[44px] transition-all active:scale-95"
+                  style={{ borderColor: "rgba(16,185,129,0.2)", color: "#34D399", background: "rgba(16,185,129,0.06)" }}
                 >
                   🤖 Spustiť AI Autopilot
                 </button>
