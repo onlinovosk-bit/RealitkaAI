@@ -573,12 +573,13 @@ export default function LeadDetailPage() {
           <div className="space-y-4">
 
             {/* Status Panel */}
-            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">Status</p>
+            <div className="rounded-2xl border p-4 md:p-5" style={{ background: "#080D1A", borderColor: "#0F1F3D" }}>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: "#475569" }}>Stav</p>
               <select
                 value={lead.status}
                 onChange={e => patchLead({ status: e.target.value as Lead["status"] })}
-                className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm font-medium outline-none focus:border-gray-500"
+                className="w-full rounded-xl border px-3 py-2.5 text-sm font-semibold outline-none min-h-[44px]"
+                style={{ background: "#050914", borderColor: "rgba(34,211,238,0.2)", color: "#22D3EE" }}
               >
                 {leadStatusOptions.map(s => (
                   <option key={s} value={s}>{s}</option>
