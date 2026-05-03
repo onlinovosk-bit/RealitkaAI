@@ -65,30 +65,22 @@ export default function LeadsModule({
         <LeadCreateForm />
       </div>
 
-      <section className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Zobrazené príležitosti</p>
-          <h2 className="mt-2 text-3xl font-bold text-gray-900">{filtered.length}</h2>
-        </div>
-
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Horúce príležitosti</p>
-          <h2 className="mt-2 text-3xl font-bold text-gray-900">
-            {filtered.filter((item) => item.status === "Horúci").length}
-          </h2>
-        </div>
-
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Obhliadky</p>
-          <h2 className="mt-2 text-3xl font-bold text-gray-900">
-            {filtered.filter((item) => item.status === "Obhliadka").length}
-          </h2>
-        </div>
-
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Priemerné skóre</p>
-          <h2 className="mt-2 text-3xl font-bold text-gray-900">{avgScore}</h2>
-        </div>
+      <section className="mb-4 grid grid-cols-2 gap-2 md:gap-4 xl:grid-cols-4">
+        {[
+          { label: "Príležitosti", value: filtered.length, color: "#22D3EE" },
+          { label: "Horúce", value: filtered.filter((i) => i.status === "Horúci").length, color: "#EF4444" },
+          { label: "Obhliadky", value: filtered.filter((i) => i.status === "Obhliadka").length, color: "#0EA5E9" },
+          { label: "Avg BRI", value: avgScore, color: "#A855F7" },
+        ].map(({ label, value, color }) => (
+          <div
+            key={label}
+            className="rounded-2xl border p-3 md:p-5"
+            style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
+          >
+            <p className="text-xs" style={{ color: "#64748B" }}>{label}</p>
+            <h2 className="mt-1 text-2xl md:text-3xl font-bold tabular-nums" style={{ color }}>{value}</h2>
+          </div>
+        ))}
       </section>
 
       {filtered.length === 0 ? (

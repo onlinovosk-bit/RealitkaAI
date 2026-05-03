@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ProfilesRepository } from "@/domain/profiles/ProfilesRepository";
 import type { PlaybookItemDto } from "@/services/playbook/types";
 import { generateDailyPlaybook } from "@/services/playbook/generateDailyPlaybook";
+import { notifyDailyPlaybook } from "@/services/push/PushNotificationService";
 
 export class DailyPlaybookService {
   constructor(
@@ -30,6 +31,9 @@ export class DailyPlaybookService {
       console.log(`  Agent: ${label} (${agent.id})`);
       const items = await this.runForAgent(agent.id, limit);
       console.log(`    → ${items.length} položiek v Playbooku`);
+      if (items.length > 0) {
+        notifyDailyPlaybook(agent.id, items.length).catch(() => {/* best-effort */});
+      }
     }
   }
 
