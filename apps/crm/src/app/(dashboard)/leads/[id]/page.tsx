@@ -409,40 +409,44 @@ export default function LeadDetailPage() {
 
   if (isLoading) {
     return (
-      <main className="p-6">
-        <div className="text-center text-sm text-gray-400">Načítavam…</div>
+      <main className="p-3 md:p-6" style={{ background: "#050914", minHeight: "100vh" }}>
+        <div className="text-center text-sm" style={{ color: "#475569" }}>Načítavam…</div>
       </main>
     );
   }
   if (!lead) return null;
 
   return (
-    <main className="p-6">
+    <main className="p-3 md:p-6" style={{ background: "#050914", minHeight: "100vh" }}>
       {/* toast */}
       {toast && (
-        <div className="fixed top-4 right-4 z-50 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-800 shadow-lg">
+        <div
+          className="fixed top-4 right-4 z-50 rounded-xl border px-4 py-3 text-sm font-medium shadow-lg"
+          style={{ background: "#080D1A", borderColor: "rgba(34,211,238,0.2)", color: "#E0F2FE" }}
+        >
           {toast}
         </div>
       )}
 
       <div className="mx-auto max-w-6xl">
         {/* back */}
-        <Link href="/leads" className="text-sm text-gray-400 hover:text-gray-700">
-          ← Späť na príležitosti
+        <Link href="/leads" className="inline-flex items-center gap-1 text-sm" style={{ color: "#475569" }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          Späť
         </Link>
 
         {/* ── HEADER ─────────────────────────────────────────────────────── */}
-        <div className="mt-4 mb-6 flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">{lead.name}</h1>
-            <div className="mt-1 flex flex-wrap items-center gap-3">
+        <div className="mt-3 mb-4 md:mt-4 md:mb-6 flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl md:text-3xl font-bold truncate" style={{ color: "#F0F9FF" }}>{lead.name}</h1>
+            <div className="mt-1.5 flex flex-wrap items-center gap-2 md:gap-3">
               {lead.email && (
-                <a href={`mailto:${lead.email}`} className="text-sm text-blue-600 hover:underline">
+                <a href={`mailto:${lead.email}`} className="text-sm truncate max-w-[160px] md:max-w-none" style={{ color: "#22D3EE" }}>
                   {lead.email}
                 </a>
               )}
               {lead.phone && (
-                <a href={`tel:${lead.phone}`} className="text-sm text-gray-600 hover:text-gray-900">
+                <a href={`tel:${lead.phone}`} className="text-sm" style={{ color: "#94A3B8" }}>
                   {lead.phone}
                 </a>
               )}
@@ -450,28 +454,29 @@ export default function LeadDetailPage() {
                 {lead.status}
               </span>
               {isSavingField && (
-                <span className="text-xs text-gray-400">Ukladám…</span>
+                <span className="text-xs" style={{ color: "#475569" }}>Ukladám…</span>
               )}
             </div>
           </div>
 
           {/* header actions */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 shrink-0">
             {!confirmDelete ? (
               <button
                 type="button"
                 onClick={() => setConfirmDelete(true)}
-                className="rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                className="rounded-xl border px-3 py-2 text-xs font-medium min-h-[36px]"
+                style={{ borderColor: "rgba(239,68,68,0.3)", color: "#EF4444" }}
               >
-                Zmazať príležitosť
+                Zmazať
               </button>
             ) : (
-              <div className="flex items-center gap-2 rounded-lg border border-red-300 bg-red-50 px-3 py-2">
-                <span className="text-sm text-red-700">Naozaj zmazať?</span>
-                <button type="button" onClick={deleteLead} className="text-sm font-semibold text-red-700 hover:text-red-900">
+              <div className="flex items-center gap-2 rounded-xl border px-3 py-2" style={{ borderColor: "rgba(239,68,68,0.4)", background: "rgba(239,68,68,0.08)" }}>
+                <span className="text-xs" style={{ color: "#FCA5A5" }}>Naozaj zmazať?</span>
+                <button type="button" onClick={deleteLead} className="text-xs font-semibold" style={{ color: "#EF4444" }}>
                   Áno
                 </button>
-                <button type="button" onClick={() => setConfirmDelete(false)} className="text-sm text-gray-500">
+                <button type="button" onClick={() => setConfirmDelete(false)} className="text-xs" style={{ color: "#64748B" }}>
                   Nie
                 </button>
               </div>
