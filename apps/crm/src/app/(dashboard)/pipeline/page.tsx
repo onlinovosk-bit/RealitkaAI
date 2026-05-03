@@ -11,10 +11,13 @@ function StatCard({
   subtitle: string;
 }) {
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-      <p className="text-sm text-gray-500">{title}</p>
-      <h2 className="mt-2 text-3xl font-bold text-gray-900">{value}</h2>
-      <p className="mt-2 text-sm text-gray-500">{subtitle}</p>
+    <div
+      className="rounded-2xl border p-5"
+      style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
+    >
+      <p className="text-sm" style={{ color: "#64748B" }}>{title}</p>
+      <h2 className="mt-2 text-3xl font-bold" style={{ color: "#F0F9FF" }}>{value}</h2>
+      <p className="mt-2 text-sm" style={{ color: "#64748B" }}>{subtitle}</p>
     </div>
   );
 }
@@ -29,10 +32,10 @@ export default async function PipelinePage() {
   const offerCount = leads.filter((lead) => lead.status === "Ponuka").length;
 
   return (
-    <main className="p-6">
+    <main className="p-6" style={{ background: "#050914", minHeight: "100vh" }}>
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Fázy príležitostí</h1>
-        <p className="mt-1 text-gray-500">
+        <h1 className="text-3xl font-bold" style={{ color: "#F0F9FF" }}>Fázy príležitostí</h1>
+        <p className="mt-1" style={{ color: "#64748B" }}>
           Kartový prehľad s AI odporúčaniami, bočným detailom a históriou presunov.
         </p>
       </div>

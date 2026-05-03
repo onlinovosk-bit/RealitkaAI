@@ -67,17 +67,17 @@ function getNextAction(score: number, status: string) {
 function getColumnAccent(status: string) {
   switch (status) {
     case "Nový":
-      return "border-gray-300";
+      return "border-slate-600";
     case "Teplý":
-      return "border-yellow-300";
+      return "border-yellow-600";
     case "Horúci":
-      return "border-green-300";
+      return "border-green-600";
     case "Obhliadka":
-      return "border-blue-300";
+      return "border-blue-600";
     case "Ponuka":
-      return "border-purple-300";
+      return "border-purple-600";
     default:
-      return "border-gray-300";
+      return "border-slate-600";
   }
 }
 
@@ -122,19 +122,23 @@ export default function PipelineSlideOver({
       aria-hidden={!isOpen}
     >
       <div
-        className={`absolute inset-0 bg-black/30 transition-opacity ${isOpen ? "opacity-100" : "opacity-0"}`}
+        className={`absolute inset-0 bg-black/60 transition-opacity ${isOpen ? "opacity-100" : "opacity-0"}`}
         onClick={onClose}
       />
 
       <aside
-        className={`absolute right-0 top-0 h-full w-full max-w-2xl overflow-y-auto border-l border-gray-200 bg-white shadow-2xl transition-transform ${
+        className={`absolute right-0 top-0 h-full w-full max-w-2xl overflow-y-auto border-l shadow-2xl transition-transform ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
+        style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
       >
-        <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-gray-200 bg-white px-6 py-5">
+        <div
+          className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b px-6 py-5"
+          style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
+        >
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">{lead.name}</h2>
-            <p className="mt-1 text-sm text-gray-500">
+            <h2 className="text-2xl font-bold" style={{ color: "#F0F9FF" }}>{lead.name}</h2>
+            <p className="mt-1 text-sm" style={{ color: "#64748B" }}>
               Detail klienta priamo z fáz príležitostí
             </p>
           </div>
@@ -142,7 +146,12 @@ export default function PipelineSlideOver({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="rounded-lg border px-3 py-2 text-sm font-medium transition"
+            style={{
+              borderColor: "rgba(34,211,238,0.2)",
+              color: "#94A3B8",
+              background: "rgba(34,211,238,0.06)",
+            }}
           >
             Zavrieť
           </button>
@@ -150,13 +159,19 @@ export default function PipelineSlideOver({
 
         <div className="space-y-6 p-6">
           <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-              <p className="text-sm text-gray-500">Skóre príležitosti</p>
-              <p className="mt-2 text-2xl font-bold text-gray-900">{lead.score}/100</p>
+            <div
+              className="rounded-2xl border p-4"
+              style={{ background: "#0A1628", borderColor: "#0F1F3D" }}
+            >
+              <p className="text-sm" style={{ color: "#64748B" }}>Skóre príležitosti</p>
+              <p className="mt-2 text-2xl font-bold" style={{ color: "#F0F9FF" }}>{lead.score}/100</p>
             </div>
 
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-              <p className="text-sm text-gray-500">Stav</p>
+            <div
+              className="rounded-2xl border p-4"
+              style={{ background: "#0A1628", borderColor: "#0F1F3D" }}
+            >
+              <p className="text-sm" style={{ color: "#64748B" }}>Stav</p>
               <p className="mt-2">
                 <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getStatusClasses(lead.status)}`}>
                   {lead.status}
@@ -164,102 +179,108 @@ export default function PipelineSlideOver({
               </p>
             </div>
 
-            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-              <p className="text-sm text-gray-500">AI ďalší krok</p>
-              <p className="mt-2 text-sm font-semibold text-gray-900">
+            <div
+              className="rounded-2xl border p-4"
+              style={{ background: "#0A1628", borderColor: "#0F1F3D" }}
+            >
+              <p className="text-sm" style={{ color: "#64748B" }}>AI ďalší krok</p>
+              <p className="mt-2 text-sm font-semibold" style={{ color: "#22D3EE" }}>
                 {getNextAction(lead.score, lead.status)}
               </p>
             </div>
           </section>
 
-          <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-            <h3 className="text-lg font-semibold text-gray-900">Kontaktné a obchodné údaje</h3>
+          <section
+            className="rounded-2xl border p-5"
+            style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
+          >
+            <h3 className="text-lg font-semibold" style={{ color: "#F0F9FF" }}>Kontaktné a obchodné údaje</h3>
 
             <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="rounded-xl bg-gray-50 p-4">
-                <p className="text-sm text-gray-500">Email</p>
-                <p className="mt-1 font-medium text-gray-900">{lead.email}</p>
-              </div>
-
-              <div className="rounded-xl bg-gray-50 p-4">
-                <p className="text-sm text-gray-500">Telefón</p>
-                <p className="mt-1 font-medium text-gray-900">{lead.phone}</p>
-              </div>
-
-              <div className="rounded-xl bg-gray-50 p-4">
-                <p className="text-sm text-gray-500">Lokalita</p>
-                <p className="mt-1 font-medium text-gray-900">{lead.location}</p>
-              </div>
-
-              <div className="rounded-xl bg-gray-50 p-4">
-                <p className="text-sm text-gray-500">Rozpočet</p>
-                <p className="mt-1 font-medium text-gray-900">{lead.budget}</p>
-              </div>
-
-              <div className="rounded-xl bg-gray-50 p-4">
-                <p className="text-sm text-gray-500">Typ nehnuteľnosti</p>
-                <p className="mt-1 font-medium text-gray-900">
-                  {lead.propertyType} • {lead.rooms}
-                </p>
-              </div>
-
-              <div className="rounded-xl bg-gray-50 p-4">
-                <p className="text-sm text-gray-500">Financovanie</p>
-                <p className="mt-1 font-medium text-gray-900">{lead.financing}</p>
-              </div>
-
-              <div className="rounded-xl bg-gray-50 p-4">
-                <p className="text-sm text-gray-500">Čas kúpy</p>
-                <p className="mt-1 font-medium text-gray-900">{lead.timeline}</p>
-              </div>
-
-              <div className="rounded-xl bg-gray-50 p-4">
-                <p className="text-sm text-gray-500">Maklér</p>
-                <p className="mt-1 font-medium text-gray-900">{lead.assignedAgent}</p>
-              </div>
+              {[
+                { label: "Email", value: lead.email },
+                { label: "Telefón", value: lead.phone },
+                { label: "Lokalita", value: lead.location },
+                { label: "Rozpočet", value: lead.budget },
+                { label: "Typ nehnuteľnosti", value: `${lead.propertyType} • ${lead.rooms}` },
+                { label: "Financovanie", value: lead.financing },
+                { label: "Čas kúpy", value: lead.timeline },
+                { label: "Maklér", value: lead.assignedAgent },
+              ].map(({ label, value }) => (
+                <div
+                  key={label}
+                  className="rounded-xl p-4"
+                  style={{ background: "#0A1628", border: "1px solid #112240" }}
+                >
+                  <p className="text-sm" style={{ color: "#64748B" }}>{label}</p>
+                  <p className="mt-1 font-medium" style={{ color: "#F0F9FF" }}>{value}</p>
+                </div>
+              ))}
             </div>
           </section>
 
-          <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-            <h3 className="text-lg font-semibold text-gray-900">AI odporúčanie</h3>
+          <section
+            className="rounded-2xl border p-5"
+            style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
+          >
+            <h3 className="text-lg font-semibold" style={{ color: "#F0F9FF" }}>AI odporúčanie</h3>
 
-            <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
-              <p className="text-sm font-semibold text-gray-900">Odporúčaný ďalší krok</p>
-              <p className="mt-2 text-sm text-gray-700">
+            <div
+              className="mt-4 rounded-xl border p-4"
+              style={{ background: "#0A1628", borderColor: "rgba(34,211,238,0.15)" }}
+            >
+              <p className="text-sm font-semibold" style={{ color: "#22D3EE" }}>Odporúčaný ďalší krok</p>
+              <p className="mt-2 text-sm" style={{ color: "#94A3B8" }}>
                 {getNextAction(lead.score, lead.status)}
               </p>
             </div>
 
-            <div className="mt-4 rounded-xl border border-gray-200 p-4">
-              <p className="text-sm font-semibold text-gray-900">Poznámka ku klientovi</p>
-              <p className="mt-2 text-sm text-gray-700">{lead.note || "Bez poznámky."}</p>
+            <div
+              className="mt-4 rounded-xl border p-4"
+              style={{ background: "#0A1628", borderColor: "#0F1F3D" }}
+            >
+              <p className="text-sm font-semibold" style={{ color: "#F0F9FF" }}>Poznámka ku klientovi</p>
+              <p className="mt-2 text-sm" style={{ color: "#94A3B8" }}>{lead.note || "Bez poznámky."}</p>
             </div>
           </section>
 
-          <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-            <h3 className="text-lg font-semibold text-gray-900">História presunov vo fázach príležitostí</h3>
+          <section
+            className="rounded-2xl border p-5"
+            style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
+          >
+            <h3 className="text-lg font-semibold" style={{ color: "#F0F9FF" }}>História presunov vo fázach príležitostí</h3>
 
             <div className="mt-4 space-y-3">
               {loadingMoves ? (
-                <div className="rounded-xl border border-dashed border-gray-300 p-4 text-sm text-gray-500">
+                <div
+                  className="rounded-xl border border-dashed p-4 text-sm"
+                  style={{ borderColor: "#0F1F3D", color: "#475569" }}
+                >
                   Načítavam históriu...
                 </div>
               ) : moves.length > 0 ? (
                 moves.map((item) => (
-                <div key={item.id} className="rounded-xl border border-gray-200 p-4">
+                  <div
+                    key={item.id}
+                    className="rounded-xl border p-4"
+                    style={{ background: "#0A1628", borderColor: "#112240" }}
+                  >
                     <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium" style={{ color: "#F0F9FF" }}>
                         {item.fromStatus} → {item.toStatus}
                       </p>
-                      <p className="text-xs text-gray-500">{item.changedAt}</p>
+                      <p className="text-xs" style={{ color: "#475569" }}>{item.changedAt}</p>
                     </div>
-                    <p className="mt-2 text-sm text-gray-600">
-                      Príležitosť <span className="font-medium">{item.leadName}</span> bola presunutá do nového stavu.
+                    <p className="mt-2 text-sm" style={{ color: "#94A3B8" }}>
+                      Príležitosť <span className="font-medium" style={{ color: "#F0F9FF" }}>{item.leadName}</span> bola presunutá do nového stavu.
                     </p>
                   </div>
                 ))
               ) : (
-                <div className="rounded-xl border border-dashed border-gray-300 p-4 text-sm text-gray-500">
+                <div
+                  className="rounded-xl border border-dashed p-4 text-sm"
+                  style={{ borderColor: "#0F1F3D", color: "#475569" }}
+                >
                   Zatiaľ nie je zaznamenaná žiadna história presunov.
                 </div>
               )}

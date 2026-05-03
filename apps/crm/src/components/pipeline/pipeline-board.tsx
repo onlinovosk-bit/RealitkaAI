@@ -193,24 +193,38 @@ export default function PipelineBoard({
     }
   }
 
+  const inputStyle = {
+    background: "#050914",
+    border: "1px solid rgba(34,211,238,0.2)",
+    color: "#F0F9FF",
+  } as const;
+
+  const labelStyle = { color: "#64748B" } as const;
+
   return (
     <div className="space-y-6">
       <AgentStats leads={leads} />
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+      <section
+        className="rounded-2xl border p-4"
+        style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
+      >
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
           <label className="block">
-            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">Hľadať príležitosť</span>
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide" style={labelStyle}>
+              Hľadať príležitosť
+            </span>
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Meno alebo lokalita"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+              className="w-full rounded-lg px-3 py-2 text-sm outline-none"
+              style={inputStyle}
             />
           </label>
 
           <label className="block">
-            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide" style={labelStyle}>
               Min. AI skóre ({minScore})
             </span>
             <input
@@ -220,16 +234,19 @@ export default function PipelineBoard({
               step={5}
               value={minScore}
               onChange={(e) => setMinScore(Number(e.target.value))}
-              className="mt-2 w-full accent-gray-800"
+              className="mt-2 w-full accent-cyan-400"
             />
           </label>
 
           <label className="block">
-            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">Zdroj</span>
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide" style={labelStyle}>
+              Zdroj
+            </span>
             <select
               value={sourceFilter}
               onChange={(e) => setSourceFilter(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+              className="w-full rounded-lg px-3 py-2 text-sm outline-none"
+              style={inputStyle}
             >
               {sources.map((source) => (
                 <option key={source} value={source}>
@@ -240,11 +257,14 @@ export default function PipelineBoard({
           </label>
 
           <label className="block">
-            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">Maklér</span>
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide" style={labelStyle}>
+              Maklér
+            </span>
             <select
               value={agentFilter}
               onChange={(e) => setAgentFilter(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+              className="w-full rounded-lg px-3 py-2 text-sm outline-none"
+              style={inputStyle}
             >
               {agents.map((agent) => (
                 <option key={agent} value={agent}>
@@ -255,11 +275,14 @@ export default function PipelineBoard({
           </label>
 
           <label className="block">
-            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">Dátum posledného kontaktu</span>
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide" style={labelStyle}>
+              Dátum posledného kontaktu
+            </span>
             <select
               value={contactFilter}
               onChange={(e) => setContactFilter(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+              className="w-full rounded-lg px-3 py-2 text-sm outline-none"
+              style={inputStyle}
             >
               {["Kedykoľvek", "Dnes", "Včera", "Tento týždeň"].map((option) => (
                 <option key={option} value={option}>
@@ -281,14 +304,13 @@ export default function PipelineBoard({
                 moveLead(draggedLeadId, column);
               }
             }}
-            className={`min-h-[520px] rounded-2xl border-2 bg-white p-4 shadow-sm ${getColumnAccent(
-              column
-            )}`}
+            className={`min-h-[520px] rounded-2xl border-2 p-4 ${getColumnAccent(column)}`}
+            style={{ background: "#080D1A" }}
           >
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h2 className="text-base font-semibold text-gray-900">{column}</h2>
-                <p className="text-sm text-gray-500">{columnLeads.length} príležitostí</p>
+                <h2 className="text-base font-semibold" style={{ color: "#F0F9FF" }}>{column}</h2>
+                <p className="text-sm" style={{ color: "#64748B" }}>{columnLeads.length} príležitostí</p>
               </div>
 
               <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getStatusClasses(column)}`}>
@@ -304,16 +326,15 @@ export default function PipelineBoard({
                   draggable
                   onDragStart={() => setDraggedLeadId(lead.id)}
                   onClick={() => openLead(lead)}
-                  className={`w-full cursor-grab rounded-xl border bg-gray-50 p-4 text-left transition hover:bg-white ${getColumnAccent(
-                    column
-                  )} ${
+                  className={`w-full cursor-grab rounded-xl border p-4 text-left transition ${getColumnAccent(lead.status)} ${
                     savingId === lead.id ? "opacity-60" : ""
                   }`}
+                  style={{ background: "#0A1628" }}
                 >
                   <div className="mb-3 flex items-start justify-between gap-3">
                     <div>
-                      <h3 className="font-medium text-gray-900">{lead.name}</h3>
-                      <p className="text-xs text-gray-500">{lead.location}</p>
+                      <h3 className="font-medium" style={{ color: "#F0F9FF" }}>{lead.name}</h3>
+                      <p className="text-xs" style={{ color: "#64748B" }}>{lead.location}</p>
                     </div>
 
                     <span
@@ -325,32 +346,38 @@ export default function PipelineBoard({
                     </span>
                   </div>
 
-                  <div className="space-y-2 text-sm text-gray-600">
+                  <div className="space-y-2 text-sm" style={{ color: "#94A3B8" }}>
                     <p>
-                      <span className="font-medium text-gray-800">Rozpočet:</span>{" "}
+                      <span className="font-medium" style={{ color: "#CBD5E1" }}>Rozpočet:</span>{" "}
                       {lead.budget}
                     </p>
                     <p>
-                      <span className="font-medium text-gray-800">Maklér:</span>{" "}
+                      <span className="font-medium" style={{ color: "#CBD5E1" }}>Maklér:</span>{" "}
                       {lead.assignedAgent}
                     </p>
                     <p>
-                      <span className="font-medium text-gray-800">Zdroj:</span>{" "}
+                      <span className="font-medium" style={{ color: "#CBD5E1" }}>Zdroj:</span>{" "}
                       {lead.source}
                     </p>
                   </div>
 
-                  <div className="mt-4 rounded-lg border border-gray-200 bg-white p-3">
-                    <p className="text-xs font-semibold text-gray-900">AI ďalší krok</p>
-                    <p className="mt-1 text-xs text-gray-600">
+                  <div
+                    className="mt-4 rounded-lg border p-3"
+                    style={{ background: "#050914", borderColor: "#0F1F3D" }}
+                  >
+                    <p className="text-xs font-semibold" style={{ color: "#22D3EE" }}>AI ďalší krok</p>
+                    <p className="mt-1 text-xs" style={{ color: "#94A3B8" }}>
                       {getNextAction(lead.score, lead.status)}
                     </p>
                   </div>
 
                   <div className="mt-4 flex items-center justify-between gap-2">
-                    <span className="text-xs text-gray-500">{lead.lastContact}</span>
+                    <span className="text-xs" style={{ color: "#475569" }}>{lead.lastContact}</span>
 
-                    <span className="rounded-full bg-gray-100 px-3 py-1 text-[11px] font-semibold text-gray-700">
+                    <span
+                      className="rounded-full px-3 py-1 text-[11px] font-semibold"
+                      style={{ background: "rgba(34,211,238,0.08)", color: "#22D3EE" }}
+                    >
                       Otvoriť detail
                     </span>
                   </div>
@@ -358,7 +385,10 @@ export default function PipelineBoard({
               ))}
 
               {columnLeads.length === 0 && (
-                <div className="rounded-xl border border-dashed border-gray-300 p-4 text-sm text-gray-500">
+                <div
+                  className="rounded-xl border border-dashed p-4 text-sm"
+                  style={{ borderColor: "#0F1F3D", color: "#475569" }}
+                >
                   Sem môžeš presunúť príležitosť.
                 </div>
               )}
