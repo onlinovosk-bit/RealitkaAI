@@ -701,11 +701,14 @@ export default function LeadDetailPage() {
 
             {/* AI Score */}
             <div
-              className={`rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow duration-500 ${
-                scorePulse ? "ring-2 ring-cyan-400/80 shadow-[0_0_24px_rgba(34,211,238,0.35)]" : ""
-              }`}
+              className="rounded-2xl border p-4 md:p-5 transition-shadow duration-500"
+              style={{
+                background: "#080D1A",
+                borderColor: scorePulse ? "rgba(34,211,238,0.5)" : "#0F1F3D",
+                boxShadow: scorePulse ? "0 0 24px rgba(34,211,238,0.25)" : undefined,
+              }}
             >
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">AI Skóre (CRM)</p>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: "#475569" }}>BRI Skóre</p>
               {lead.ai_engine && (
                 <p className="mb-2 text-[10px] leading-snug text-slate-500">
                   Uložený Brain (DB): {lead.ai_engine.combinedScore}/100 · conf. {lead.ai_engine.confidence}% · TTC
@@ -714,27 +717,26 @@ export default function LeadDetailPage() {
               )}
               <div className="flex items-end gap-2">
                 <span
-                  className={`text-3xl font-bold transition-all duration-500 ${
-                  (lead.score ?? 0) >= 70 ? "text-emerald-600" :
-                  (lead.score ?? 0) >= 40 ? "text-amber-600" : "text-gray-500"
-                } ${scorePulse ? "scale-105" : ""}`}
+                  className={`text-3xl font-bold transition-all duration-500 ${scorePulse ? "scale-105" : ""}`}
+                  style={{ color: (lead.score ?? 0) >= 70 ? "#22C55E" : (lead.score ?? 0) >= 40 ? "#EAB308" : "#475569" }}
                 >
                   {lead.score ?? "—"}
                 </span>
-                <span className="mb-1 text-sm text-gray-400">/ 100</span>
+                <span className="mb-1 text-sm" style={{ color: "#475569" }}>/ 100</span>
               </div>
-              <div className="mt-2 h-1.5 w-full rounded-full bg-gray-100">
+              <div className="mt-2 h-1.5 w-full rounded-full" style={{ background: "#0F1F3D" }}>
                 <div
-                  className={`h-1.5 rounded-full transition-[width] duration-700 ease-out ${
-                    (lead.score ?? 0) >= 70 ? "bg-emerald-500" :
-                    (lead.score ?? 0) >= 40 ? "bg-amber-400" : "bg-gray-300"
-                  }`}
-                  style={{ width: `${lead.score ?? 0}%` }}
+                  className="h-1.5 rounded-full transition-[width] duration-700 ease-out"
+                  style={{
+                    width: `${lead.score ?? 0}%`,
+                    background: (lead.score ?? 0) >= 70 ? "#22C55E" : (lead.score ?? 0) >= 40 ? "#EAB308" : "#475569",
+                  }}
                 />
               </div>
               <button
                 type="button"
-                className="mt-3 w-full rounded-lg border border-cyan-200/80 bg-gradient-to-r from-cyan-50/90 to-indigo-50/80 px-3 py-2 text-xs font-semibold text-slate-800 transition hover:border-cyan-300 hover:from-cyan-50 hover:to-indigo-50"
+                className="mt-3 w-full rounded-xl border px-3 py-2.5 text-xs font-semibold min-h-[40px] transition-all active:scale-95"
+                style={{ borderColor: "rgba(34,211,238,0.2)", color: "#22D3EE", background: "rgba(34,211,238,0.06)" }}
                 onClick={async () => {
                   try {
                     const res = await fetch("/api/events", {
@@ -776,15 +778,15 @@ export default function LeadDetailPage() {
             </div>
 
             {/* Sofia Insight */}
-            <div className="rounded-2xl border border-violet-100 bg-violet-50 p-5 shadow-sm">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-violet-500">{AI_ASSISTANT_CHAT_LABEL}</p>
-              <Link href="/settings/nexus-ai-chat" className="mb-2 inline-block text-xs font-medium text-violet-700 hover:underline">
-                Nastaviť štýl odpovedí →
+            <div className="rounded-2xl border p-4 md:p-5" style={{ background: "rgba(99,102,241,0.06)", borderColor: "rgba(99,102,241,0.2)" }}>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: "#818CF8" }}>{AI_ASSISTANT_CHAT_LABEL}</p>
+              <Link href="/settings/nexus-ai-chat" className="mb-2 inline-block text-xs font-medium" style={{ color: "#A5B4FC" }}>
+                Nastaviť štýl →
               </Link>
               {sofiaInsight ? (
-                <p className="text-sm text-violet-900">{sofiaInsight}</p>
+                <p className="text-sm" style={{ color: "#C7D2FE" }}>{sofiaInsight}</p>
               ) : (
-                <p className="text-sm text-violet-400">Insight sa vygeneruje po prvej zmene príležitosti.</p>
+                <p className="text-sm" style={{ color: "#4338CA" }}>Insight sa vygeneruje po prvej zmene príležitosti.</p>
               )}
 
               {/* Chat */}
