@@ -24,7 +24,7 @@ export const SlackLayout = ({ children }: { children: React.ReactNode }) => {
           </button>
         </div>
       </header>
-      <div className="flex flex-1 overflow-hidden">{children}</div>
+      <div className="flex flex-1 overflow-y-auto md:overflow-hidden">{children}</div>
     </div>
   );
 };
