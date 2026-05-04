@@ -38,6 +38,11 @@ function isCronRoute(pathname: string): boolean {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Redirect legacy team/permissions URL
+  if (pathname === "/team/permissions" || pathname.startsWith("/team/permissions/")) {
+    return NextResponse.redirect(new URL("/dashboard/reputation/integrity", request.url), 308);
+  }
+
   // Pass through public paths immediately
   if (isPublic(pathname)) return NextResponse.next();
 
