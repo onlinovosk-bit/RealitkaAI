@@ -1,7 +1,7 @@
 # Revolis.AI — Progress & Status
 
-**Posledná aktualizácia:** 03.05.2026  
-**Verzia:** v11 (aktuálna produkčná)  
+**Posledná aktualizácia:** 04.05.2026  
+**Verzia:** v12 (aktuálna produkčná)  
 **Repo:** github.com/onlinovosk-bit/RealitkaAI · Branch: `main`  
 **Produkcia:** app.revolis.ai · revolis.ai · Vercel region: iad1 / fra1
 
@@ -289,11 +289,10 @@ Pricing tiers: Intelligence Feed 990 €/mes · Market Pulse 3 490 €/mes · Ri
 - `/team/permissions` → presunutý do `(dashboard)` group (commit `98d8072`)
 - `api/scrape` `.catch()` na PostgrestFilterBuilder opravený
 
-### Zostatok — presunúť do `(dashboard)` group
-```
-src/app/dashboard/reputation/integrity/page.tsx
-src/app/dashboard/revolis-ai/page.tsx
-```
+### Vyriešené (04.05.2026)
+- `dashboard/revolis-ai` → presunutý do `(dashboard)/revolis-ai` (commit `3fc852c`)
+- `dashboard/reputation/integrity` → presunutý do `(dashboard)/dashboard/reputation/integrity` (commit `3fc852c`)
+- Redirect: `/dashboard/revolis-ai` → `/revolis-ai` pridaný v `next.config.js`
 
 ---
 
@@ -305,9 +304,19 @@ src/app/dashboard/revolis-ai/page.tsx
 
 ### Technické
 - [ ] `npm audit fix` — 8 moderate vulnerabilities
-- [ ] Presunúť `dashboard/reputation/integrity` a `dashboard/revolis-ai` do `(dashboard)` group
 - [ ] `firstMeetingBooked` trigger — keď agent zabookuje 1. stretnutie
 - [ ] Dark theme: Performance, Forecast stránky (low priority — sú redirecty)
+- [ ] Fáza 1 — RevolisGuard v2: HMAC header namiesto `?key=` query param
+- [ ] Fáza 1 — Upstash Redis rate-limit (nahradiť in-process Map)
+- [ ] Landing page + lead funnel (fáza A — rozpracované)
+
+### Hotové (04.05.2026)
+- **L99 Architecture Audit** — analýza 802 TS súborov, 12-fázový refactor plán (`docs/architecture/L99_ARCHITECTURE_AUDIT.md`)
+- **Fáza 0 stabilizácia** (commit `033b3ed`) — .bak cleanup, vitest runner, vercel.json 10 cronov, E2E guard, workspaces fix
+- **Routing fix MVP B** (commit `3fc852c`) — revolis-ai + integrity do `(dashboard)` group, DASHBOARD_OVERRIDES → reálne dáta
+- **docs/AGENT_STANDARD.md** — 5-časový prompt štandard, 7 agentov
+- **docs/MASTER_PROMPT.md** — L99 Multi-Agent OS (Orchestrator + 4 Specialist Agents, RACI, HubSpot+GA4, A/B, MindStudio)
+- **7-Agent systém** v pamäti — Architekt→Refactor→Bug Hunter→Performance→Clean Code→Tests→Autonomous Loop
 
 ### Hotové (03.05.2026)
 - Legal Suite finálny (Zmluva v10, Order Form v5, DPA v3 + 4 ostatné)
@@ -323,7 +332,6 @@ src/app/dashboard/revolis-ai/page.tsx
 - Onboarding checklist v2 — pipelineConfigured + goalsDefined + firstAutomationLive
 - Agency scraping cron
 - Marketing site deployed na revolis.ai
-- docs/progress.md
 
 ---
 
