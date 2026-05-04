@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { syncLeadToHubSpot } from "@/lib/hubspot/sync";
 
 function getServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -51,15 +52,16 @@ export async function POST(request: Request) {
     };
 
     // Pokus s gdpr stĺpcami
-    const { error } = await supabase.from("leads_demo").insert({
-      email: body.email.toLowerCase().trim(),
+    const normalizedEmail = body.email.toLowerCase().trim();
+    const { data: inserted, error } = await supabase.from("leads_demo").insert({
+      email: normalizedEmail,
       address: body.address ?? null,
       source,
       estimated_price: body.estimatedPrice ?? null,
       gdpr_consent: true,
       gdpr_consent_at: now,
       meta: baseMeta,
-    });
+    }).select("id").single();
 
     if (error) {
       if (error.code === "23505") {
@@ -67,17 +69,25 @@ export async function POST(request: Request) {
       }
       // Ak gdpr stĺpce ešte neexistujú (migrácia nebola spustená), skús bez nich
       if (error.code === "42703" || error.message?.includes("gdpr_consent")) {
-        const { error: e2 } = await supabase.from("leads_demo").insert({
-          email: body.email.toLowerCase().trim(),
+        const { data: inserted2, error: e2 } = await supabase.from("leads_demo").insert({
+          email: normalizedEmail,
           address: body.address ?? null,
           source,
           estimated_price: body.estimatedPrice ?? null,
           meta: { ...baseMeta, gdprConsent: true, gdprConsentAt: now },
-        });
+        }).select("id").single();
         if (e2 && e2.code !== "23505") throw e2;
+        if (!e2 && inserted2?.id) {
+          syncLeadToHubSpot({ id: inserted2.id, email: normalizedEmail, status: "new", source, estimatedPrice: body.estimatedPrice }).catch(() => {})
+        }
         return NextResponse.json({ ok: true, duplicate: e2?.code === "23505" });
       }
       throw error;
+    }
+
+    // Fire-and-forget HubSpot sync — non-blocking
+    if (inserted?.id) {
+      syncLeadToHubSpot({ id: inserted.id, email: normalizedEmail, status: "new", source, estimatedPrice: body.estimatedPrice }).catch(() => {})
     }
 
     return NextResponse.json({ ok: true, duplicate: false });
