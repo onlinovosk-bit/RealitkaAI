@@ -15,9 +15,9 @@ const PUBLIC_PATHS = new Set([
   "/api/demo/prefill-links",
   "/api/billing/webhook",
   "/api/integrations/google/callback",
+  "/api/webhooks/hubspot",
 ]);
 
-// CRON routes — authenticated via CRON_SECRET query param, not user session
 const CRON_PATH_PREFIX = "/api/agents";
 const SCORING_CRON_PATHS = ["/api/scoring", "/api/segmentation"];
 
@@ -35,7 +35,7 @@ function isCronRoute(pathname: string): boolean {
   return SCORING_CRON_PATHS.some((p) => pathname.startsWith(p));
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Redirect legacy team/permissions URL
@@ -43,13 +43,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard/reputation/integrity", request.url), 308);
   }
 
-  // Pass through public paths immediately
   if (isPublic(pathname)) return NextResponse.next();
-
-  // CRON routes use CRON_SECRET — skip user session check
   if (isCronRoute(pathname)) return NextResponse.next();
 
-  // Create a response to mutate cookies
   let response = NextResponse.next({
     request: { headers: request.headers },
   });
@@ -75,12 +71,10 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Refresh session if expired
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // API routes — return 401 instead of redirect
   if (!user && pathname.startsWith("/api/")) {
     return NextResponse.json(
       { ok: false, error: "Unauthorized" },
@@ -88,7 +82,6 @@ export async function middleware(request: NextRequest) {
     );
   }
 
-  // Dashboard/app routes — redirect to login
   if (!user && (pathname.startsWith("/dashboard") || pathname.startsWith("/app"))) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirectTo", pathname);
