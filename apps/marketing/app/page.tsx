@@ -1,9 +1,12 @@
 'use client'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import LeadCaptureModal from '../components/LeadCaptureModal'
 
 declare global { interface Window { gtag?: (...args: unknown[]) => void } }
 
 export default function HomePage() {
+  const [leadModal, setLeadModal] = useState<string | null>(null)
+  const openModal = (source: string) => setLeadModal(source)
 
   function toggleFaq(btn: HTMLButtonElement) {
     const item = btn.closest('.faq-item')!
@@ -168,27 +171,7 @@ export default function HomePage() {
       compute()
     }
 
-    // ── GA4 TRACKING ──
-    const heroCta = document.querySelector<HTMLButtonElement>('.hero-cta-row button:first-child')
-    const heroSecondary = document.querySelector<HTMLButtonElement>('.hero-cta-row button:last-child')
-    const navCta = document.querySelector<HTMLButtonElement>('.nav-cta')
-    const finalBtn = document.querySelector<HTMLButtonElement>('.final-cta-btn')
-    const roiCtaBtn = document.querySelector<HTMLButtonElement>('.roi-cta-btn')
-
-    heroCta?.addEventListener('click', () => window.gtag?.('event', 'hero_cta_click', { cta_text: heroCta.textContent?.trim(), position: 'hero' }))
-    heroSecondary?.addEventListener('click', () => window.gtag?.('event', 'hero_secondary_click', { cta_text: heroSecondary.textContent?.trim() }))
-    navCta?.addEventListener('click', () => window.gtag?.('event', 'hero_cta_click', { cta_text: navCta.textContent?.trim(), position: 'nav' }))
-    finalBtn?.addEventListener('click', () => window.gtag?.('event', 'final_cta_click', { position: 'footer_cta' }))
-    roiCtaBtn?.addEventListener('click', () => window.gtag?.('event', 'roi_cta_click'))
-
-    document.querySelectorAll<HTMLButtonElement>('.plan-cta').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const card = btn.closest('.price-card')
-        const planName = card?.querySelector('.plan-name')?.textContent?.trim() || 'unknown'
-        const planPrice = card?.querySelector('.plan-price')?.textContent?.replace(/[^\d]/g, '').trim() || '0'
-        window.gtag?.('event', 'pricing_cta_click', { plan_name: planName, plan_price: planPrice })
-      })
-    })
+    // GA4 CTA click tracking moved to React onClick handlers on each button
 
     const sectionIds = ['hero', 'features', 'how_it_works', 'numbers', 'pricing', 'faq', 'final_cta']
     const sectionEls = [
@@ -236,7 +219,7 @@ export default function HomePage() {
           <a href="#">Cenník</a>
           <a href="#">Blog</a>
         </div>
-        <button className="nav-cta">Získať prístup →</button>
+        <button className="nav-cta" onClick={() => { window.gtag?.('event', 'hero_cta_click', { position: 'nav' }); openModal('nav') }}>Získať prístup →</button>
       </nav>
 
       {/* HERO */}
@@ -251,11 +234,11 @@ export default function HomePage() {
           <strong>18 mesiacov</strong> a ukáže Vám presne koho kontaktovať dnes.
         </p>
         <div className="hero-cta-row">
-          <button className="btn-dark">
+          <button className="btn-dark" onClick={() => { window.gtag?.('event', 'hero_cta_click', { position: 'hero' }); openModal('hero') }}>
             Spusti Revolis.AI za 4 minúty
             <span style={{ opacity: .6 }}>→</span>
           </button>
-          <button className="btn-outline">Pozri 2-min demo</button>
+          <a href="/demo" className="btn-outline" style={{ textDecoration: 'none' }} onClick={() => window.gtag?.('event', 'hero_secondary_click', { cta_text: 'Pozri 2-min demo' })}>Pozri 2-min demo</a>
         </div>
         <div className="trust-bar">
           <div className="trust-item"><span className="trust-check">✓</span> Bez dlhodobých záväzkov</div>
@@ -480,7 +463,7 @@ export default function HomePage() {
                 <div className="roi-result-num yearly" id="roi-out-yearly">+0 €</div>
                 <div className="roi-result-yearly-label">Za 12 mesiacov s Revolis.AI</div>
               </div>
-              <div className="roi-cta-wrap"><button className="roi-cta-btn">Aktivovať Revolis.AI →</button></div>
+              <div className="roi-cta-wrap"><button className="roi-cta-btn" onClick={() => { window.gtag?.('event', 'roi_cta_click'); openModal('roi') }}>Aktivovať Revolis.AI →</button></div>
             </div>
           </div>
         </div>
@@ -512,7 +495,7 @@ export default function HomePage() {
             <div className="feat-section-title" style={{ color: '#7C3AED', borderColor: '#DDD6FE' }}>⭐ Expert bonusy</div>
             <div className="expert-bonus" style={{ background: '#F5F3FF', borderColor: '#7C3AED' }}><div className="expert-bonus-label" style={{ color: '#7C3AED' }}>Oliver Strauss · ex Wise Agent</div><div className="expert-bonus-text" style={{ color: '#4C1D95' }}>Neviditeľná AI — každá feature je 1 klik. Maklér ani nevie že používa AI, len vidí výsledky.</div></div>
             <div className="expert-bonus" style={{ background: '#FFF7ED', borderColor: '#EA580C' }}><div className="expert-bonus-label" style={{ color: '#EA580C' }}>Amara Osei · ex LionDesk</div><div className="expert-bonus-text" style={{ color: '#7C2D12' }}>Tichá 7-dňová sekvencia — SMS deň 1, email deň 3, WhatsApp deň 5, push deň 7. Všetko na pozadí bez akcie makléra.</div></div>
-            <button className="plan-cta" style={{ background: 'var(--bg2)', color: 'var(--text)', marginTop: 20 }}>Aktivovať Smart Start →</button>
+            <button className="plan-cta" style={{ background: 'var(--bg2)', color: 'var(--text)', marginTop: 20 }} onClick={() => { window.gtag?.('event', 'pricing_cta_click', { plan_name: 'Smart Start', plan_price: '49' }); openModal('pricing-smart-start') }}>Aktivovať Smart Start →</button>
           </div>
 
           {/* ACTIVE FORCE */}
@@ -536,7 +519,7 @@ export default function HomePage() {
             <div className="expert-bonus" style={{ background: '#F0FDFF', borderColor: '#0891B2' }}><div className="expert-bonus-label" style={{ color: '#0891B2' }}>Nadia Kovač · ex Structurely</div><div className="expert-bonus-text" style={{ color: '#164E63' }}>Lead Half-Life Calculator — každá príležitosť má vypočítaný „bod rozpadu" záujmu. AI kontaktuje príležitosť presne v optimálnom okamihu, nie keď má maklér čas.</div></div>
             <div className="expert-bonus" style={{ background: '#F0FDF4', borderColor: '#16A34A' }}><div className="expert-bonus-label" style={{ color: '#16A34A' }}>Riku Tanaka · ex Follow Up Boss</div><div className="expert-bonus-text" style={{ color: '#14532D' }}>Triple Match Score — správny maklér × správny čas × správna správa = 4.2× vyššia miera odpovede. AI vypočíta kombináciu automaticky.</div></div>
             <div className="expert-bonus" style={{ background: '#FDF4FF', borderColor: '#9333EA' }}><div className="expert-bonus-label" style={{ color: '#9333EA' }}>James Thornton · ex Gong</div><div className="expert-bonus-text" style={{ color: '#581C87' }}>SK/CZ Conversation Intelligence — natívna analýza hovorov v slovenčine a češtine. 340 buying signálov špecifických pre realitný trh.</div></div>
-            <button className="plan-cta" style={{ background: 'rgba(14,165,233,.1)', color: 'var(--cyan)', border: '1px solid rgba(14,165,233,.25)', marginTop: 20 }}>Aktivovať Active Force →</button>
+            <button className="plan-cta" style={{ background: 'rgba(14,165,233,.1)', color: 'var(--cyan)', border: '1px solid rgba(14,165,233,.25)', marginTop: 20 }} onClick={() => { window.gtag?.('event', 'pricing_cta_click', { plan_name: 'Active Force', plan_price: '99' }); openModal('pricing-active-force') }}>Aktivovať Active Force →</button>
           </div>
 
           {/* MARKET VISION */}
@@ -560,7 +543,7 @@ export default function HomePage() {
             <div className="expert-bonus" style={{ background: 'rgba(255,255,255,.06)', borderColor: '#4ADE80' }}><div className="expert-bonus-label" style={{ color: '#4ADE80' }}>Dmitri Volkov · ex BoomTown</div><div className="expert-bonus-text" style={{ color: 'rgba(255,255,255,.65)' }}>ROI Ticker — každá feature zobrazuje svoju €/mes hodnotu priamo v UI. „Tento follow-up ušetril 3.2h = +€124 pri Vašej hodinovej sadzbe."</div></div>
             <div className="expert-bonus" style={{ background: 'rgba(255,255,255,.06)', borderColor: '#A78BFA' }}><div className="expert-bonus-label" style={{ color: '#A78BFA' }}>Yuki Nakamura · ex Notion</div><div className="expert-bonus-text" style={{ color: 'rgba(255,255,255,.65)' }}>3 pohľady jedným klikom — Board (pipeline), Table (analytika), Calendar (časovanie). Každý maklér si vyberie čo mu sedí.</div></div>
             <div className="expert-bonus" style={{ background: 'rgba(255,255,255,.06)', borderColor: '#FCD34D' }}><div className="expert-bonus-label" style={{ color: '#FCD34D' }}>Trevor Blackwood · ex Market Leader</div><div className="expert-bonus-text" style={{ color: 'rgba(255,255,255,.65)' }}>Street-Level Insight — maklér príde na stretnutie s dátami o klientovej ulici ktoré klient nikde nenájde. Priemerné ceny, čas predaja, aktívni kupujúci v lokalite.</div></div>
-            <button className="plan-cta" style={{ background: 'var(--cyan)', color: 'var(--dark)', marginTop: 20 }}>Aktivovať Market Vision →</button>
+            <button className="plan-cta" style={{ background: 'var(--cyan)', color: 'var(--dark)', marginTop: 20 }} onClick={() => { window.gtag?.('event', 'pricing_cta_click', { plan_name: 'Market Vision', plan_price: '199' }); openModal('pricing-market-vision') }}>Aktivovať Market Vision →</button>
           </div>
 
           {/* PROTOCOL AUTHORITY */}
@@ -584,7 +567,7 @@ export default function HomePage() {
             <div className="expert-bonus" style={{ background: 'rgba(14,165,233,.06)', borderColor: '#0EA5E9' }}><div className="expert-bonus-label" style={{ color: '#0EA5E9' }}>Aiden O&apos;Sullivan · ex Lofty/Chime</div><div className="expert-bonus-text" style={{ color: '#0C4A6E' }}>Life Moment Detection — algoritmus deteguje životné zmeny klienta (sťahovanie, zmena práce, rodina) PRED tým než to klient sám vie. Okno príležitosti: 2–3 týždne.</div></div>
             <div className="expert-bonus" style={{ background: 'rgba(22,163,74,.06)', borderColor: '#16A34A' }}><div className="expert-bonus-label" style={{ color: '#16A34A' }}>Sofia Reyes · ex Real Geeks</div><div className="expert-bonus-text" style={{ color: '#14532D' }}>Revealed Preference Engine — rozdiel medzi čo klient píše (stated) a čo klikne (revealed) = skutočný budget a motivácia. Maklér dostane brief: „Nekomunikuj cenu. Komunikuj priestor."</div></div>
             <div className="expert-bonus" style={{ background: 'rgba(217,119,6,.06)', borderColor: '#D97706' }}><div className="expert-bonus-label" style={{ color: '#D97706' }}>Cassandra Mills · ex Top Producer</div><div className="expert-bonus-text" style={{ color: '#78350F' }}>5-Year Relationship Horizon — po každom uzavretom obchode sa automaticky spustí 5-ročný plán: výročie kúpy, trhový update, refinančné okno, predpoveď apreciácie, žiadosť o odporúčanie.</div></div>
-            <button className="plan-cta" style={{ background: 'linear-gradient(135deg,#D97706,#B45309)', color: '#fff', marginTop: 20, fontSize: 13 }}>★ Aktivovať Protocol Authority →</button>
+            <button className="plan-cta" style={{ background: 'linear-gradient(135deg,#D97706,#B45309)', color: '#fff', marginTop: 20, fontSize: 13 }} onClick={() => { window.gtag?.('event', 'pricing_cta_click', { plan_name: 'Protocol Authority', plan_price: '449' }); openModal('pricing-protocol-authority') }}>★ Aktivovať Protocol Authority →</button>
           </div>
 
         </div>
@@ -619,9 +602,13 @@ export default function HomePage() {
       <div className="final-cta">
         <h2>Dnes v noci príde 8 dopytov.<br />Bez Revolis.AI ich všetky dostane konkurencia.</h2>
         <p>340 kancelárií sa rozhodlo prestať strácať príležitosti v noci, cez víkend a počas dovoleniek.</p>
-        <button className="final-cta-btn">Aktivovať Revolis.AI pre moju kanceláriu →</button>
+        <button className="final-cta-btn" onClick={() => { window.gtag?.('event', 'final_cta_click', { position: 'footer_cta' }); openModal('final-cta') }}>Aktivovať Revolis.AI pre moju kanceláriu →</button>
         <div className="final-micro">Bez záväzkov · Zrušenie kedykoľvek · Prvý AI follow-up za 4 minúty</div>
       </div>
+
+      {leadModal !== null && (
+        <LeadCaptureModal source={leadModal} onClose={() => setLeadModal(null)} />
+      )}
     </>
   )
 }
