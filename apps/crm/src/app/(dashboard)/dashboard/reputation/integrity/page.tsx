@@ -6,7 +6,7 @@ export default function IntegrityPage() {
       <div className="mb-8">
         <h2 className="text-2xl font-black italic tracking-tighter text-white uppercase">Agent Integrity Monitor</h2>
         <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
-          Zabezpecenie a opravnenia timu
+          Zabezpečenie a oprávnenia tímu
         </p>
       </div>
 
@@ -17,11 +17,10 @@ export default function IntegrityPage() {
           </div>
           <Lock className="text-yellow-500" />
           <p className="text-sm font-medium italic text-yellow-100">
-            Tento modul je sucastou balika Protocol Authority. Pristup k riadeniu dat a prevencii uniku
-            informacii je aktivny.
+            Tento modul je súčasťou balíka Protocol Authority. Prístup k riadeniu dát a prevencii úniku
+            informácií je aktívny.
           </p>
         </div>
-        {/* Tu nasleduje povodna logika permissions prenesena do L99 dizajnu */}
       </div>
     </div>
   );

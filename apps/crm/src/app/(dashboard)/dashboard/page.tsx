@@ -61,16 +61,6 @@ const DEFAULT_FORECAST_TARGETS: ForecastingTargets = {
   avgProbabilityPercent: 35,
 };
 
-const DASHBOARD_OVERRIDES = {
-  totalLeads: 103,
-  monthLabel: "apríl 2026",
-  totalExpectedEur: 578_979,
-  breakdown: [
-    { segment: "Horúci (80+)", count: 7, expectedEur: 312_450 },
-    { segment: "Teplý (50–79)", count: 18, expectedEur: 188_529 },
-    { segment: "Studený (<50)", count: 41, expectedEur: 78_000 },
-  ],
-} as const;
 
 function getTrend(value: number, target: number, suffix = "") {
   const diff = value - target;
@@ -244,7 +234,7 @@ export default function DashboardPage() {
   const showings = leads.filter(l => l.status === "Obhliadka").length;
   const offers = leads.filter(l => l.status === "Ponuka").length;
   const conversionRate = totalLeads > 0 ? Math.round((offers / totalLeads) * 100) : 0;
-  const displayTotalLeads = DASHBOARD_OVERRIDES.totalLeads;
+  const displayTotalLeads = totalLeads;
 
   const dealsTrend = forecastingSummary ? getTrend(forecastingSummary.expectedClosedDeals, forecastTargets.expectedClosedDeals) : null;
   const valueTrend = forecastingSummary ? getTrend(forecastingSummary.expectedPipelineValue, forecastTargets.expectedPipelineValue, " EUR") : null;
@@ -298,9 +288,9 @@ export default function DashboardPage() {
             <>
               <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
                 <div>
-                  <p className="text-sm text-emerald-100/80">{DASHBOARD_OVERRIDES.monthLabel}</p>
+                  <p className="text-sm text-emerald-100/80">{monthlyMoney.monthLabel}</p>
                   <p className="mt-1 text-3xl font-bold tabular-nums">
-                    {DASHBOARD_OVERRIDES.totalExpectedEur.toLocaleString("sk-SK")} ,- €
+                    {monthlyMoney.totalExpectedEur?.toLocaleString("sk-SK")} ,- €
                   </p>
                   {monthlyMoney.trend && (
                     <p className="mt-1 text-sm text-emerald-200/90">
@@ -312,13 +302,15 @@ export default function DashboardPage() {
                 </div>
                 <div className="text-right text-xs text-emerald-100/70">
                   <p>Hot / warm / cold (rozpad)</p>
-                  <ul className="mt-1 space-y-0.5">
-                    {DASHBOARD_OVERRIDES.breakdown.map((b) => (
-                      <li key={b.segment}>
-                        {b.segment}: {b.count} → {b.expectedEur.toLocaleString("sk-SK")} €
-                      </li>
-                    ))}
-                  </ul>
+                  {monthlyMoney.breakdown && (
+                    <ul className="mt-1 space-y-0.5">
+                      {monthlyMoney.breakdown.map((b) => (
+                        <li key={b.segment}>
+                          {b.segment}: {b.count} → {b.expectedEur.toLocaleString("sk-SK")} €
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               </div>
               <p className="mt-3 text-[11px] text-emerald-200/60">

@@ -18,6 +18,7 @@ const nextConfig = {
 			{ source: "/l99-scan",   destination: "/demo", permanent: true },
 			{ source: "/home",       destination: "/landing", permanent: true },
 			{ source: "/team/permissions", destination: "/dashboard/reputation/integrity", permanent: true },
+			{ source: "/dashboard/revolis-ai", destination: "/revolis-ai", permanent: true },
 		];
 	},
 };

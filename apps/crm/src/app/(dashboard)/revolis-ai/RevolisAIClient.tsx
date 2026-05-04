@@ -8,7 +8,6 @@ import { PredatorModules } from "@/components/dashboard/PredatorModules";
 import { AIActivityFeed } from "@/components/revolis/AIActivityFeed";
 import { BriLivePulse } from "@/components/revolis/BriLivePulse";
 import { MarketHeatmap } from "@/components/revolis/MarketHeatmap";
-import { RadiantSpriteIcon } from "@/components/shared/radiant-sprite-icon";
 import type { MarketHotspot } from "@/lib/analytics/market-density";
 import type { AiActivityFeedItem } from "@/lib/app-mode-types";
 
