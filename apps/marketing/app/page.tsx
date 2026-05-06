@@ -573,55 +573,55 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* AUDIT UPSELL */}
-      <div className="audit-section">
-        <div className="audit-inner">
-          <div className="audit-eyebrow">
+      {/* REVENUE SCAN REPORT */}
+      <div className="rscan-section">
+        <div className="rscan-inner">
+          <div className="rscan-eyebrow">
             <span>★</span> Jednorazová služba — bez predplatného
           </div>
-          <div className="audit-headline">
+          <div className="rscan-headline">
             Máte v databáze<br /><em>spiace peniaze.</em><br />Nevíte o nich.
           </div>
-          <p className="audit-sub">
+          <p className="rscan-sub">
             Priemerná kancelária má 400+ kontaktov. 22 % z nich dnes hľadá investičný byt, rodinný dom alebo predáva — a vy o tom neviete, pretože vám to nikto nepovedal.
           </p>
 
-          <div className="audit-grid">
+          <div className="rscan-grid">
             {/* LEFT — what you get */}
             <div>
-              <div className="audit-what">
-                <div className="audit-what-title">Čo dostanete do 24 hodín</div>
-                <div className="audit-item">
-                  <div className="audit-item-icon">🔍</div>
-                  <div className="audit-item-text">
+              <div className="rscan-what">
+                <div className="rscan-what-title">Čo dostanete do 24 hodín</div>
+                <div className="rscan-item">
+                  <div className="rscan-item-icon">🔍</div>
+                  <div className="rscan-item-text">
                     <strong>Zoznam spiacich príležitostí</strong>
                     <span>Konkrétni ľudia z vašej databázy, ktorí sú dnes pripravení kupovať alebo predávať — aj keď ste s nimi nekomunikovali mesiace.</span>
                   </div>
                 </div>
-                <div className="audit-item">
-                  <div className="audit-item-icon">📊</div>
-                  <div className="audit-item-text">
+                <div className="rscan-item">
+                  <div className="rscan-item-icon">📊</div>
+                  <div className="rscan-item-text">
                     <strong>BRI skóre každého kontaktu</strong>
                     <span>Buyer Readiness Index 0–100 pre každý kontakt, doplnený o aktuálne trhové signály z vášho regiónu.</span>
                   </div>
                 </div>
-                <div className="audit-item">
-                  <div className="audit-item-icon">📞</div>
-                  <div className="audit-item-text">
+                <div className="rscan-item">
+                  <div className="rscan-item-icon">📞</div>
+                  <div className="rscan-item-text">
                     <strong>Čo presne povedať</strong>
                     <span>Pre každý kontakt: odporúčaná akcia, optimálny kanál (telefón / správa / email) a script prvej vety.</span>
                   </div>
                 </div>
-                <div className="audit-item">
-                  <div className="audit-item-icon">🗺️</div>
-                  <div className="audit-item-text">
+                <div className="rscan-item">
+                  <div className="rscan-item-icon">🗺️</div>
+                  <div className="rscan-item-text">
                     <strong>Trhový kontext vášho regiónu</strong>
                     <span>AI porovná vaše kontakty s aktuálnymi signálmi trhu — ceny, dopyt, aktivita v lokalite — a zvýrazní časové okná.</span>
                   </div>
                 </div>
-                <div className="audit-item">
-                  <div className="audit-item-icon">📄</div>
-                  <div className="audit-item-text">
+                <div className="rscan-item">
+                  <div className="rscan-item-icon">📄</div>
+                  <div className="rscan-item-text">
                     <strong>PDF report + CSV export</strong>
                     <span>Importovateľný priamo do vášho CRM. Každý kontakt s plným kontextom, nie len skóre.</span>
                   </div>
@@ -631,87 +631,87 @@ export default function HomePage() {
 
             {/* RIGHT — sample output */}
             <div>
-              <div className="audit-sample">
-                <div className="audit-sample-label">
-                  <span>🔎</span> Ukážka výstupu Auditu
+              <div className="rscan-sample">
+                <div className="rscan-sample-label">
+                  <span>🔎</span> Ukážka výstupu Revenue Scan
                 </div>
 
-                <div className="audit-contact-card">
-                  <div className="audit-bri-row">
-                    <div className="audit-contact-name">Ján Novák</div>
-                    <div className="audit-bri-score">78</div>
+                <div className="rscan-contact-card">
+                  <div className="rscan-bri-row">
+                    <div className="rscan-contact-name">Ján Novák</div>
+                    <div className="rscan-bri-score">78</div>
                   </div>
-                  <div className="audit-bri-row" style={{ marginBottom: 8 }}>
-                    <div className="audit-bri-label">Posledný kontakt: pred 14 mesiacmi</div>
-                    <div className="audit-bri-label">BRI skóre</div>
+                  <div className="rscan-bri-row" style={{ marginBottom: 8 }}>
+                    <div className="rscan-bri-label">Posledný kontakt: pred 14 mesiacmi</div>
+                    <div className="rscan-bri-label">BRI skóre</div>
                   </div>
-                  <div className="audit-contact-meta">
+                  <div className="rscan-contact-meta">
                     Záujem: investičný byt · Bratislava III · budget ~180 000 €
                   </div>
-                  <div className="audit-contact-why">
+                  <div className="rscan-contact-why">
                     💡 BA III ceny +9 % YoY · podobný profil kupoval Q1 · okno sa zatvára do 6 týždňov
                   </div>
-                  <div className="audit-action-chip">📞 Zavolaj tento týždeň</div>
+                  <div className="rscan-action-chip">📞 Zavolaj tento týždeň</div>
                 </div>
 
-                <div className="audit-contact-card">
-                  <div className="audit-bri-row">
-                    <div className="audit-contact-name">Marta Horáková</div>
-                    <div className="audit-bri-score">64</div>
+                <div className="rscan-contact-card">
+                  <div className="rscan-bri-row">
+                    <div className="rscan-contact-name">Marta Horáková</div>
+                    <div className="rscan-bri-score">64</div>
                   </div>
-                  <div className="audit-bri-row" style={{ marginBottom: 8 }}>
-                    <div className="audit-bri-label">Posledný kontakt: pred 9 mesiacmi</div>
-                    <div className="audit-bri-label">BRI skóre</div>
+                  <div className="rscan-bri-row" style={{ marginBottom: 8 }}>
+                    <div className="rscan-bri-label">Posledný kontakt: pred 9 mesiacmi</div>
+                    <div className="rscan-bri-label">BRI skóre</div>
                   </div>
-                  <div className="audit-contact-meta">
+                  <div className="rscan-contact-meta">
                     Záujem: rodinný dom · Košice okolie · budget ~250 000 €
                   </div>
-                  <div className="audit-contact-why">
+                  <div className="rscan-contact-why">
                     💡 Košice výstavba spomalila · dopyt po domoch +18 % · jej deti idú na školu → načasovanie ideálne
                   </div>
-                  <div className="audit-action-chip">📧 Pošli market report</div>
+                  <div className="rscan-action-chip">📧 Pošli market report</div>
                 </div>
 
                 <div style={{ fontSize: 11, color: 'rgba(255,255,255,.25)', marginTop: 12, fontStyle: 'italic' }}>
-                  * Ukážka je anonymizovaná. Váš audit bude obsahovať reálne mená z vašej databázy.
+                  * Ukážka je anonymizovaná. Váš Revenue Scan bude obsahovať reálne mená z vašej databázy.
                 </div>
               </div>
             </div>
           </div>
 
           {/* PRICING BOX */}
-          <div className="audit-pricing-box">
-            <div className="audit-pricing-row">
+          <div className="rscan-pricing-box">
+            <div className="rscan-pricing-row">
               <div>
-                <div className="audit-price-group">
-                  <div className="audit-price-tag">Jednorazový Audit databázy</div>
-                  <div className="audit-price-main"><sup>€</sup>149</div>
-                  <div className="audit-price-sub">
+                <div className="rscan-price-group">
+                  <div className="rscan-price-tag">Revenue Scan Report — jednorazovo</div>
+                  <div className="rscan-price-main"><sup>€</sup>149</div>
+                  <div className="rscan-price-sub">
                     Aktívni predplatitelia Revolis.AI: <strong style={{ color: 'rgba(167,139,250,.9)' }}>99 €</strong> &nbsp;·&nbsp; Pri ročnom upgrade: <strong style={{ color: 'rgba(74,222,128,.8)' }}>zadarmo</strong>
                   </div>
                 </div>
-                <div className="audit-trust-row">
-                  <div className="audit-trust-item"><span>✓</span> Výsledky do 24 hodín</div>
-                  <div className="audit-trust-item"><span>✓</span> GDPR compliant — vaše dáta neopustia EU</div>
-                  <div className="audit-trust-item"><span>✓</span> Bez predplatného</div>
-                  <div className="audit-trust-item"><span>✓</span> Import priamo do CRM</div>
+                <div className="rscan-trust-row">
+                  <div className="rscan-trust-item"><span>✓</span> Výsledky do 24 hodín</div>
+                  <div className="rscan-trust-item"><span>✓</span> GDPR compliant — vaše dáta neopustia EU</div>
+                  <div className="rscan-trust-item"><span>✓</span> Bez predplatného</div>
+                  <div className="rscan-trust-item"><span>✓</span> Import priamo do CRM</div>
                 </div>
-                <div className="audit-no-plan">
+                <div className="rscan-no-plan">
                   Nepotrebujete Revolis.AI plán. Ale väčšina klientov ho objedná potom, čo uvidia výsledky.
                 </div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-start' }}>
                 <button
-                  className="audit-cta-btn"
+                  className="rscan-cta-btn"
                   onClick={() => {
-                    window.gtag?.('event', 'audit_cta_click', { position: 'pricing_box' })
-                    openModal('audit-upsell')
+                    window.gtag?.('event', 'rscan_cta_click', { position: 'pricing_box' })
+                    openModal('revenue-scan')
                   }}
                 >
-                  Chcem Audit databázy →
+                  Spustiť Revenue Scan Report →
                 </button>
-                <div className="audit-subscriber-note">
-                  <span>🎁</span> Predplatitelia: zadajte email z vášho konta a získate cenu 99 €
+                <div className="rscan-subscriber-note">
+                  <span>🎁</span> Aktívni predplatitelia: Revenue Scan za 99 € · Pri ročnom upgrade: zadarmo
                 </div>
               </div>
             </div>
@@ -722,17 +722,17 @@ export default function HomePage() {
             <div style={{ flex: 1, minWidth: 220, padding: '20px 24px', borderRadius: 14, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)' }}>
               <div style={{ fontSize: 28, fontWeight: 900, color: '#A78BFA', marginBottom: 4 }}>8.4</div>
               <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 4 }}>príležitostí v priemere</div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,.35)' }}>Priemerný počet aktívnych spiacich kontaktov objavených na 1 audit</div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,.35)' }}>Priemerný počet aktívnych spiacich kontaktov objavených na 1 Revenue Scan</div>
             </div>
             <div style={{ flex: 1, minWidth: 220, padding: '20px 24px', borderRadius: 14, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)' }}>
               <div style={{ fontSize: 28, fontWeight: 900, color: '#4ADE80', marginBottom: 4 }}>22 %</div>
               <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 4 }}>konverzná miera</div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,.35)' }}>Kontaktov odhalených auditom, ktoré konvertovali do 60 dní</div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,.35)' }}>Kontaktov odhalených Revenue Scanom, ktoré konvertovali do 60 dní</div>
             </div>
             <div style={{ flex: 1, minWidth: 220, padding: '20px 24px', borderRadius: 14, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)' }}>
               <div style={{ fontSize: 28, fontWeight: 900, color: '#FCD34D', marginBottom: 4 }}>14 900 €</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 4 }}>priemerné ROI auditu</div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,.35)' }}>Hodnota uzavretých obchodov z prvého auditu · pri priemernej provízi 2 400 €</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 4 }}>priemerné ROI Revenue Scanu</div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,.35)' }}>Hodnota uzavretých obchodov z prvého Revenue Scanu · pri priemernej provízi 2 400 €</div>
             </div>
           </div>
         </div>

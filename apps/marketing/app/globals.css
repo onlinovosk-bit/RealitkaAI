@@ -452,134 +452,134 @@ h1 em { font-style:normal; color:var(--cyan); }
   .stat-cell { border-right:none; }
 }
 
-/* ── AUDIT UPSELL SECTION ── */
-.audit-section {
+/* ── REVENUE SCAN REPORT SECTION ── */
+.rscan-section {
   background:var(--dark); padding:96px 24px; position:relative; overflow:hidden;
 }
-.audit-section::before {
+.rscan-section::before {
   content:''; position:absolute; top:-120px; left:50%; transform:translateX(-50%);
   width:700px; height:700px; border-radius:50%;
   background:radial-gradient(ellipse,rgba(124,58,237,.18) 0%,transparent 70%);
   pointer-events:none;
 }
-.audit-inner { max-width:1100px; margin:0 auto; }
-.audit-eyebrow {
+.rscan-inner { max-width:1100px; margin:0 auto; }
+.rscan-eyebrow {
   display:inline-flex; align-items:center; gap:8px;
   padding:6px 16px; border-radius:999px; margin-bottom:20px;
   background:rgba(124,58,237,.15); border:1px solid rgba(124,58,237,.3);
   font-size:11px; font-weight:800; color:#A78BFA; letter-spacing:.12em; text-transform:uppercase;
 }
-.audit-headline {
+.rscan-headline {
   font-size:clamp(30px,5vw,54px); font-weight:900; line-height:1.08;
   letter-spacing:-.03em; color:#fff; margin-bottom:16px;
 }
-.audit-headline em { font-style:normal; color:#A78BFA; }
-.audit-sub {
+.rscan-headline em { font-style:normal; color:#A78BFA; }
+.rscan-sub {
   font-size:17px; color:rgba(255,255,255,.5); max-width:560px; line-height:1.65; margin-bottom:56px;
 }
-.audit-grid {
+.rscan-grid {
   display:grid; grid-template-columns:1fr 1fr; gap:40px; align-items:start;
 }
-@media(max-width:860px){ .audit-grid { grid-template-columns:1fr; } }
-.audit-what {
+@media(max-width:860px){ .rscan-grid { grid-template-columns:1fr; } }
+.rscan-what {
   background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
   border-radius:20px; padding:32px;
 }
-.audit-what-title {
+.rscan-what-title {
   font-size:12px; font-weight:800; color:rgba(255,255,255,.3);
   letter-spacing:.12em; text-transform:uppercase; margin-bottom:20px;
 }
-.audit-item {
+.rscan-item {
   display:flex; align-items:flex-start; gap:14px; margin-bottom:16px;
   padding:14px; border-radius:12px; background:rgba(255,255,255,.03);
   border:1px solid rgba(255,255,255,.05);
   transition:background .2s, border-color .2s;
 }
-.audit-item:hover { background:rgba(124,58,237,.08); border-color:rgba(124,58,237,.2); }
-.audit-item-icon { font-size:20px; flex-shrink:0; margin-top:1px; }
-.audit-item-text strong { display:block; font-size:13px; font-weight:800; color:#fff; margin-bottom:3px; }
-.audit-item-text span { font-size:12px; color:rgba(255,255,255,.45); line-height:1.5; }
-.audit-sample {
+.rscan-item:hover { background:rgba(124,58,237,.08); border-color:rgba(124,58,237,.2); }
+.rscan-item-icon { font-size:20px; flex-shrink:0; margin-top:1px; }
+.rscan-item-text strong { display:block; font-size:13px; font-weight:800; color:#fff; margin-bottom:3px; }
+.rscan-item-text span { font-size:12px; color:rgba(255,255,255,.45); line-height:1.5; }
+.rscan-sample {
   background:rgba(255,255,255,.04); border:1px solid rgba(124,58,237,.25);
   border-radius:20px; padding:32px;
 }
-.audit-sample-label {
+.rscan-sample-label {
   font-size:11px; font-weight:800; color:#A78BFA; letter-spacing:.12em;
   text-transform:uppercase; margin-bottom:20px; display:flex; align-items:center; gap:8px;
 }
-.audit-contact-card {
+.rscan-contact-card {
   background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08);
   border-radius:14px; padding:18px 20px; margin-bottom:12px;
   position:relative; overflow:hidden;
 }
-.audit-contact-card::before {
+.rscan-contact-card::before {
   content:''; position:absolute; left:0; top:0; bottom:0; width:3px;
   background:linear-gradient(180deg,#A78BFA,#7C3AED);
 }
-.audit-contact-name {
+.rscan-contact-name {
   font-size:14px; font-weight:800; color:#fff; margin-bottom:4px;
 }
-.audit-contact-meta {
+.rscan-contact-meta {
   font-size:11px; color:rgba(255,255,255,.4); margin-bottom:10px; line-height:1.5;
 }
-.audit-contact-why {
+.rscan-contact-why {
   font-size:11px; color:rgba(167,139,250,.8); line-height:1.55;
   padding:8px 10px; background:rgba(124,58,237,.1); border-radius:8px;
   border:1px solid rgba(124,58,237,.15);
 }
-.audit-bri-row {
+.rscan-bri-row {
   display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;
 }
-.audit-bri-label { font-size:11px; font-weight:700; color:rgba(255,255,255,.4); }
-.audit-bri-score {
+.rscan-bri-label { font-size:11px; font-weight:700; color:rgba(255,255,255,.4); }
+.rscan-bri-score {
   font-size:18px; font-weight:900; color:#A78BFA;
 }
-.audit-action-chip {
+.rscan-action-chip {
   display:inline-flex; align-items:center; gap:6px;
   padding:5px 12px; border-radius:999px; margin-top:10px;
   background:rgba(124,58,237,.15); border:1px solid rgba(124,58,237,.3);
   font-size:11px; font-weight:800; color:#A78BFA;
 }
-.audit-pricing-box {
+.rscan-pricing-box {
   margin-top:40px; background:rgba(255,255,255,.04); border:1px solid rgba(124,58,237,.3);
   border-radius:20px; padding:32px; position:relative;
 }
-.audit-pricing-row {
+.rscan-pricing-row {
   display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:20px;
 }
-.audit-price-group {}
-.audit-price-tag {
+.rscan-price-group {}
+.rscan-price-tag {
   font-size:11px; font-weight:800; color:rgba(255,255,255,.35);
   letter-spacing:.12em; text-transform:uppercase; margin-bottom:4px;
 }
-.audit-price-main {
+.rscan-price-main {
   font-size:48px; font-weight:900; line-height:1; color:#fff;
 }
-.audit-price-main sup { font-size:22px; vertical-align:top; margin-top:10px; color:rgba(255,255,255,.5); }
-.audit-price-sub {
+.rscan-price-main sup { font-size:22px; vertical-align:top; margin-top:10px; color:rgba(255,255,255,.5); }
+.rscan-price-sub {
   font-size:13px; color:rgba(255,255,255,.4); margin-top:4px;
 }
-.audit-price-sub s { color:rgba(255,255,255,.25); }
-.audit-subscriber-note {
+.rscan-price-sub s { color:rgba(255,255,255,.25); }
+.rscan-subscriber-note {
   padding:10px 16px; border-radius:10px; background:rgba(34,197,94,.08);
   border:1px solid rgba(34,197,94,.2); font-size:12px; color:rgba(74,222,128,.8);
   display:flex; align-items:center; gap:8px;
 }
-.audit-cta-btn {
+.rscan-cta-btn {
   padding:18px 36px; border-radius:14px; font-size:15px; font-weight:900;
   background:linear-gradient(135deg,#7C3AED,#6D28D9); color:#fff; border:none; cursor:pointer;
   transition:transform .2s, box-shadow .2s; white-space:nowrap;
   box-shadow:0 8px 32px rgba(124,58,237,.35);
 }
-.audit-cta-btn:hover { transform:translateY(-2px); box-shadow:0 14px 48px rgba(124,58,237,.45); }
-.audit-trust-row {
+.rscan-cta-btn:hover { transform:translateY(-2px); box-shadow:0 14px 48px rgba(124,58,237,.45); }
+.rscan-trust-row {
   display:flex; gap:20px; flex-wrap:wrap; margin-top:16px;
 }
-.audit-trust-item {
+.rscan-trust-item {
   font-size:12px; color:rgba(255,255,255,.35); display:flex; align-items:center; gap:5px;
 }
-.audit-trust-item span { color:rgba(74,222,128,.7); font-weight:800; }
-.audit-no-plan {
+.rscan-trust-item span { color:rgba(74,222,128,.7); font-weight:800; }
+.rscan-no-plan {
   margin-top:12px; font-size:12px; color:rgba(255,255,255,.3); font-style:italic;
 }
 

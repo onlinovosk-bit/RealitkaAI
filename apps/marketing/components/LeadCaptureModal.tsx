@@ -169,10 +169,10 @@ function AuditModal({ onClose }: { onClose: () => void }) {
     setErrorMsg('')
     setStep('redirecting')
 
-    window.gtag?.('event', 'audit_checkout_start', { price_tier: '149' })
+    window.gtag?.('event', 'rscan_checkout_start', { price_tier: '149' })
 
     try {
-      const res = await fetch('/api/audit/checkout', {
+      const res = await fetch('/api/revenue-scan/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, phone }),
@@ -200,7 +200,7 @@ function AuditModal({ onClose }: { onClose: () => void }) {
         </div>
 
         <div style={{ fontSize: 24, fontWeight: 900, color: '#fff', lineHeight: 1.2, marginBottom: 12 }}>
-          Sleeping Contacts Audit
+          Revenue Scan Report
         </div>
         <p style={{ fontSize: 14, color: 'rgba(255,255,255,.55)', lineHeight: 1.7, marginBottom: 24 }}>
           Nahrajte databázu kontaktov. Za 48 hodín dostanete BRI skóre každého
@@ -224,7 +224,7 @@ function AuditModal({ onClose }: { onClose: () => void }) {
 
         <button
           onClick={() => {
-            window.gtag?.('event', 'audit_modal_open', { source: 'audit-upsell' })
+            window.gtag?.('event', 'rscan_modal_open', { source: 'revenue-scan' })
             setStep('form')
           }}
           style={{
@@ -340,7 +340,7 @@ function AuditModal({ onClose }: { onClose: () => void }) {
 // ── Root component ─────────────────────────────────────────────────────────
 
 export default function LeadCaptureModal({ source, onClose }: Props) {
-  const isAudit = source === 'audit-upsell'
+  const isAudit = source === 'revenue-scan'
 
   return (
     <div
