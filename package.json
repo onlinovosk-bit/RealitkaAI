@@ -3,7 +3,12 @@
   "private": true,
   "workspaces": [
     "apps/crm",
-    "apps/marketing"
+    "apps/marketing",
+    "packages/mcp-shared",
+    "packages/mcp-crm",
+    "packages/mcp-comm",
+    "packages/mcp-calendar",
+    "packages/mcp-telephony"
   ],
   "dependencies": {
     "cheerio": "^1.2.0",

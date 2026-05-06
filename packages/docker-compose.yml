@@ -1,0 +1,43 @@
+version: "3.9"
+
+# All MCP servers share the same .env file at the monorepo root.
+# stdio-based MCP servers don't expose HTTP ports — they are spawned
+# by the MCP client process. This compose file is for local integration
+# testing only (e.g. smoke-test scripts that pipe JSON-RPC payloads).
+
+services:
+  mcp-crm:
+    build:
+      context: ..
+      dockerfile: packages/mcp-crm/Dockerfile
+    env_file: ../.env
+    stdin_open: true
+    tty: false
+    restart: "no"
+
+  mcp-comm:
+    build:
+      context: ..
+      dockerfile: packages/mcp-comm/Dockerfile
+    env_file: ../.env
+    stdin_open: true
+    tty: false
+    restart: "no"
+
+  mcp-calendar:
+    build:
+      context: ..
+      dockerfile: packages/mcp-calendar/Dockerfile
+    env_file: ../.env
+    stdin_open: true
+    tty: false
+    restart: "no"
+
+  mcp-telephony:
+    build:
+      context: ..
+      dockerfile: packages/mcp-telephony/Dockerfile
+    env_file: ../.env
+    stdin_open: true
+    tty: false
+    restart: "no"

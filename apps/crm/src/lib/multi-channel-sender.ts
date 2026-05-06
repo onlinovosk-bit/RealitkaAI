@@ -125,16 +125,16 @@ export async function sendTestMessage(leadId: string, to: string, body: string) 
 }
 
 
-// === AI odpoveď cez LLM (OpenAI) alebo fallback ===
-import OpenAI from "openai";
+// === KF5 — AI odpoveď cez Claude (nahradenie broken OpenAI) ===
+import { getClaudeClient, CLAUDE_HAIKU } from "@/lib/ai/claude";
 
-function getOpenAIClient() {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return null;
-  return new OpenAI({ apiKey });
-}
+const CHANNEL_STYLE: Record<Channel, { instruction: string; maxTokens: number }> = {
+  email:    { instruction: "Formálna, profesionálna, 3-5 viet, bez emoji. Zakončiť menom a kontaktom.", maxTokens: 200 },
+  sms:      { instruction: "Maximálne 1-2 vety, bez diakritiky, bez emoji, max 160 znakov.", maxTokens: 60 },
+  whatsapp: { instruction: "Priateľská, stručná, 1-3 vety, môže byť menej formálna, bez emoji.", maxTokens: 100 },
+  linkedin: { instruction: "Profesionálna, sieťovacia, 2-3 vety, bez spamu, bez emoji.", maxTokens: 120 },
+};
 
-// Rozšírené AI odpovede pre všetky kanály s lepším promptom a kontextom
 export async function generateAiReply(context: {
   leadId: string;
   channel: Channel;
@@ -154,47 +154,43 @@ export async function generateAiReply(context: {
     note?: string;
   };
 }): Promise<string> {
-  const client = getOpenAIClient();
-  // Dynamický prompt podľa kanála
-  let style = '';
-  let maxTokens = 120;
-  switch (context.channel) {
-    case 'email':
-      style = 'Formálna, profesionálna, dlhšia odpoveď (3-5 viet), bez emoji.';
-      maxTokens = 180;
-      break;
-    case 'sms':
-      style = 'Veľmi stručná, jasná, max 1-2 vety, bez diakritiky, bez emoji.';
-      maxTokens = 60;
-      break;
-    case 'whatsapp':
-      style = 'Priateľská, stručná, 1-3 vety, môže byť menej formálna, bez emoji.';
-      maxTokens = 80;
-      break;
-    case 'linkedin':
-      style = 'Profesionálna, sieťovacia, 2-3 vety, žiadny spam, žiadne emoji.';
-      maxTokens = 100;
-      break;
-    default:
-      style = 'Stručná odpoveď.';
-  }
-  // Kontext leadu
-  const lead = context.lead || {};
-  const leadInfo = `Meno: ${lead.name || ''}\nEmail: ${lead.email || ''}\nTelefón: ${lead.phone || ''}\nLokalita: ${lead.location || ''}\nRozpočet: ${lead.budget || ''}\nTyp: ${lead.propertyType || ''}\nIzby: ${lead.rooms || ''}\nFinancovanie: ${lead.financing || ''}\nČasový horizont: ${lead.timeline || ''}\nStav: ${lead.status || ''}\nScore: ${lead.score || ''}\nPoznámka: ${lead.note || ''}`;
-  const prompt = `Napíš AI odpoveď v slovenčine na správu klienta cez kanál ${context.channel}.\nŠtýl: ${style}\n\nLead:\n${leadInfo}\n\nPosledná správa od klienta:\n${context.lastMessage}\n\nOdpoveď:`;
-  if (!client) {
-    return `AI odpoveď na kanáli ${context.channel}: (stub)`;
-  }
+  const { channel, lastMessage, lead = {} } = context;
+  const style = CHANNEL_STYLE[channel] ?? CHANNEL_STYLE.email;
+
+  const leadContext = [
+    lead.name      && `Meno: ${lead.name}`,
+    lead.location  && `Lokalita: ${lead.location}`,
+    lead.budget    && `Rozpočet: ${lead.budget}`,
+    lead.propertyType && `Typ: ${lead.propertyType}`,
+    lead.rooms     && `Izby: ${lead.rooms}`,
+    lead.financing && `Financovanie: ${lead.financing}`,
+    lead.timeline  && `Horizont: ${lead.timeline}`,
+    lead.status    && `Status: ${lead.status}`,
+    lead.note      && `Poznámka: ${lead.note}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
   try {
-    const response = await client.completions.create({
-      model: "gpt-4.1-mini",
-      prompt,
-      max_tokens: maxTokens,
-      temperature: 0.7,
+    const claude = getClaudeClient();
+    const response = await claude.messages.create({
+      model: CLAUDE_HAIKU,
+      max_tokens: style.maxTokens,
+      system: `Si asistent realitného makléra pre slovenský trh. Píšeš odpovede klientom v slovenčine. \
+Štýl pre kanál ${channel}: ${style.instruction} \
+NIKDY nevymýšľaj informácie o nehnuteľnosti. Ak niečo nevieš, opýtaj sa klienta.`,
+      messages: [
+        {
+          role: "user",
+          content: `Kontekst leadu:\n${leadContext || "Žiadne dáta"}\n\nPosledná správa od klienta:\n"${lastMessage}"\n\nNapíš odpoveď makléra:`,
+        },
+      ],
     });
-    const text = response.choices?.[0]?.text?.trim();
-    return text || `AI odpoveď na kanáli ${context.channel}: (empty)`;
-  } catch {
-    return `AI odpoveď na kanáli ${context.channel}: (error)`;
+    return response.content[0].type === "text"
+      ? response.content[0].text.trim()
+      : "(prázdna odpoveď)";
+  } catch (err) {
+    console.error("generateAiReply chyba:", err);
+    return `Ospravedlňujeme sa, momentálne nemôžeme odpovedať automaticky. Maklér vás čoskoro kontaktuje.`;
   }
 }
