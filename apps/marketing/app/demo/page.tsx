@@ -1,11 +1,14 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import LeadCaptureModal from '../../components/LeadCaptureModal'
 
 declare global { interface Window { gtag?: (...args: unknown[]) => void } }
 
 export default function DemoPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [exitVisible, setExitVisible] = useState(false)
+  const [leadModal, setLeadModal] = useState<string | null>(null)
+  const openModal = (source: string) => setLeadModal(source)
 
   useEffect(() => {
     // ── PARTICLES ──
@@ -251,7 +254,7 @@ export default function DemoPage() {
       {/* NAV */}
       <nav>
         <div className="logo">REVOLIS<span>.AI</span></div>
-        <button className="nav-cta">Spusti Demo →</button>
+        <button className="nav-cta" onClick={() => { window.gtag?.('event', 'demo_cta_click', { position: 'nav' }); openModal('demo-nav') }}>Spusti Demo →</button>
       </nav>
 
       {/* HERO */}
@@ -263,8 +266,8 @@ export default function DemoPage() {
           a koná skôr, než klient zavolá <span>konkurencii</span>.
         </p>
         <div className="hero-cta-wrap">
-          <button className="btn-primary">Spusti živé demo →</button>
-          <button className="btn-secondary">Pozri 2-min video</button>
+          <button className="btn-primary" onClick={() => { window.gtag?.('event', 'demo_cta_click', { position: 'hero_primary' }); openModal('demo-hero') }}>Spusti živé demo →</button>
+          <button className="btn-secondary" onClick={() => { window.gtag?.('event', 'demo_cta_click', { position: 'hero_secondary' }); document.querySelector('section')?.scrollIntoView({ behavior: 'smooth' }) }}>Pozri 2-min video</button>
         </div>
         <div className="ticker">
           <div className="tick-item">
@@ -587,9 +590,13 @@ export default function DemoPage() {
         <div className="usp-tag">★ World&rsquo;s First · Kombinácia neexistuje nikde inde</div>
         <h2>Každý deň bez Revolis.AI<br />Vás stojí konkrétnu sumu.</h2>
         <p>Spusti 14-dňový trial. Bez kreditnej karty. Prvý AI follow-up odchádza za 4 minúty.</p>
-        <button className="btn-primary" style={{ fontSize: '16px', padding: '20px 48px' }}>Začni zadarmo — výsledky do 48 hodín →</button>
+        <button className="btn-primary" style={{ fontSize: '16px', padding: '20px 48px' }} onClick={() => { window.gtag?.('event', 'final_cta_click', { position: 'footer_cta' }); openModal('demo-footer') }}>Začni zadarmo — výsledky do 48 hodín →</button>
         <div style={{ marginTop: '16px', fontSize: '12px', color: 'var(--muted)' }}>847 maklérov začalo tento mesiac · Zrušenie kedykoľvek</div>
       </div>
+
+      {leadModal !== null && (
+        <LeadCaptureModal source={leadModal} onClose={() => setLeadModal(null)} />
+      )}
 
       {/* EXIT-INTENT OVERLAY */}
       <div

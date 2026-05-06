@@ -451,3 +451,18 @@ h1 em { font-style:normal; color:var(--cyan); }
   .stats-strip { grid-template-columns:1fr; }
   .stat-cell { border-right:none; }
 }
+
+/* ── BUTTON SHIMMER ── */
+.btn-dark, .btn-outline, .plan-cta, .final-cta-btn, .roi-cta-btn, .nav-cta {
+  position:relative; overflow:hidden;
+}
+.btn-dark::after, .btn-outline::after, .plan-cta::after,
+.final-cta-btn::after, .roi-cta-btn::after, .nav-cta::after {
+  content:''; position:absolute; top:0; left:-100%; width:60%; height:100%;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.15), transparent);
+  transition:left .45s ease; pointer-events:none;
+}
+.btn-dark:hover::after, .btn-outline:hover::after, .plan-cta:hover::after,
+.final-cta-btn:hover::after, .roi-cta-btn:hover::after, .nav-cta:hover::after {
+  left:150%;
+}

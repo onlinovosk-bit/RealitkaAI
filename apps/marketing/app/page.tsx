@@ -215,7 +215,7 @@ export default function HomePage() {
         <div className="logo">REVOLIS<span>.AI</span></div>
         <div className="nav-links">
           <a href="#">Features</a>
-          <a href="#">Demo</a>
+          <a href="/demo">Demo</a>
           <a href="#">Cenník</a>
           <a href="#">Blog</a>
         </div>
@@ -501,7 +501,7 @@ export default function HomePage() {
           {/* ACTIVE FORCE */}
           <div className="price-card visible" style={{ borderColor: '#BAE6FD' }}>
             <div className="founder-tag" style={{ background: 'rgba(14,165,233,.08)', color: 'var(--cyan)', border: '1px solid rgba(14,165,233,.25)' }}>Zakladateľská cena</div>
-            <div className="plan-name" style={{ color: 'var(--cyan)' }}>Active Force</div>
+            <div className="plan-name" style={{ color: 'var(--cyan)' }}>RADAR MAKLÉRA</div>
             <div className="orig-price">198 €/mes</div>
             <div className="plan-price">99 <span className="plan-period">€/mes</span></div>
             <div className="plan-tagline" style={{ color: 'var(--muted)' }}>Plný AI arzenál pre aktívneho makléra. Sofia AI 24/7 aj v noci.</div>
@@ -519,14 +519,14 @@ export default function HomePage() {
             <div className="expert-bonus" style={{ background: '#F0FDFF', borderColor: '#0891B2' }}><div className="expert-bonus-label" style={{ color: '#0891B2' }}>Nadia Kovač · ex Structurely</div><div className="expert-bonus-text" style={{ color: '#164E63' }}>Lead Half-Life Calculator — každá príležitosť má vypočítaný „bod rozpadu" záujmu. AI kontaktuje príležitosť presne v optimálnom okamihu, nie keď má maklér čas.</div></div>
             <div className="expert-bonus" style={{ background: '#F0FDF4', borderColor: '#16A34A' }}><div className="expert-bonus-label" style={{ color: '#16A34A' }}>Riku Tanaka · ex Follow Up Boss</div><div className="expert-bonus-text" style={{ color: '#14532D' }}>Triple Match Score — správny maklér × správny čas × správna správa = 4.2× vyššia miera odpovede. AI vypočíta kombináciu automaticky.</div></div>
             <div className="expert-bonus" style={{ background: '#FDF4FF', borderColor: '#9333EA' }}><div className="expert-bonus-label" style={{ color: '#9333EA' }}>James Thornton · ex Gong</div><div className="expert-bonus-text" style={{ color: '#581C87' }}>SK/CZ Conversation Intelligence — natívna analýza hovorov v slovenčine a češtine. 340 buying signálov špecifických pre realitný trh.</div></div>
-            <button className="plan-cta" style={{ background: 'rgba(14,165,233,.1)', color: 'var(--cyan)', border: '1px solid rgba(14,165,233,.25)', marginTop: 20 }} onClick={() => { window.gtag?.('event', 'pricing_cta_click', { plan_name: 'Active Force', plan_price: '99' }); openModal('pricing-active-force') }}>Aktivovať Active Force →</button>
+            <button className="plan-cta" style={{ background: 'rgba(14,165,233,.1)', color: 'var(--cyan)', border: '1px solid rgba(14,165,233,.25)', marginTop: 20 }} onClick={() => { window.gtag?.('event', 'pricing_cta_click', { plan_name: 'RADAR MAKLÉRA', plan_price: '99' }); openModal('pricing-active-force') }}>Aktivovať RADAR MAKLÉRA →</button>
           </div>
 
           {/* MARKET VISION */}
           <div className="price-card featured visible">
             <div className="badge-popular">★ Najpopulárnejší</div>
             <div className="founder-tag" style={{ background: 'rgba(255,255,255,.1)', color: 'rgba(255,255,255,.6)', border: '1px solid rgba(255,255,255,.15)' }}>Zakladateľská cena</div>
-            <div className="plan-name" style={{ color: 'rgba(255,255,255,.5)' }}>Market Vision</div>
+            <div className="plan-name" style={{ color: 'rgba(255,255,255,.5)' }}>STRÁŽCA CIEN A ZISKOV</div>
             <div className="orig-price" style={{ color: 'rgba(255,255,255,.3)' }}>398 €/mes</div>
             <div className="plan-price" style={{ color: '#fff' }}>199 <span className="plan-period" style={{ color: 'rgba(255,255,255,.35)' }}>€/mes</span></div>
             <div className="plan-tagline" style={{ color: 'rgba(255,255,255,.5)' }}>Tímová licencia pre majiteľa. Owner vidí tím, maklér má Active Force.</div>
@@ -543,13 +543,13 @@ export default function HomePage() {
             <div className="expert-bonus" style={{ background: 'rgba(255,255,255,.06)', borderColor: '#4ADE80' }}><div className="expert-bonus-label" style={{ color: '#4ADE80' }}>Dmitri Volkov · ex BoomTown</div><div className="expert-bonus-text" style={{ color: 'rgba(255,255,255,.65)' }}>ROI Ticker — každá feature zobrazuje svoju €/mes hodnotu priamo v UI. „Tento follow-up ušetril 3.2h = +€124 pri Vašej hodinovej sadzbe."</div></div>
             <div className="expert-bonus" style={{ background: 'rgba(255,255,255,.06)', borderColor: '#A78BFA' }}><div className="expert-bonus-label" style={{ color: '#A78BFA' }}>Yuki Nakamura · ex Notion</div><div className="expert-bonus-text" style={{ color: 'rgba(255,255,255,.65)' }}>3 pohľady jedným klikom — Board (pipeline), Table (analytika), Calendar (časovanie). Každý maklér si vyberie čo mu sedí.</div></div>
             <div className="expert-bonus" style={{ background: 'rgba(255,255,255,.06)', borderColor: '#FCD34D' }}><div className="expert-bonus-label" style={{ color: '#FCD34D' }}>Trevor Blackwood · ex Market Leader</div><div className="expert-bonus-text" style={{ color: 'rgba(255,255,255,.65)' }}>Street-Level Insight — maklér príde na stretnutie s dátami o klientovej ulici ktoré klient nikde nenájde. Priemerné ceny, čas predaja, aktívni kupujúci v lokalite.</div></div>
-            <button className="plan-cta" style={{ background: 'var(--cyan)', color: 'var(--dark)', marginTop: 20 }} onClick={() => { window.gtag?.('event', 'pricing_cta_click', { plan_name: 'Market Vision', plan_price: '199' }); openModal('pricing-market-vision') }}>Aktivovať Market Vision →</button>
+            <button className="plan-cta" style={{ background: 'var(--cyan)', color: 'var(--dark)', marginTop: 20 }} onClick={() => { window.gtag?.('event', 'pricing_cta_click', { plan_name: 'STRÁŽCA CIEN A ZISKOV', plan_price: '199' }); openModal('pricing-market-vision') }}>Aktivovať STRÁŽCA CIEN A ZISKOV →</button>
           </div>
 
           {/* PROTOCOL AUTHORITY */}
           <div className="price-card visible" style={{ border: '2px solid #D4AF37', background: 'linear-gradient(160deg,#FFFBEB 0%,#FFF 60%)' }}>
             <div className="founder-tag" style={{ background: 'rgba(217,119,6,.12)', color: '#92400E', border: '1px solid #FDE68A' }}>Zakladateľská cena</div>
-            <div className="plan-name" style={{ color: '#92400E' }}>Protocol Authority</div>
+            <div className="plan-name" style={{ color: '#92400E' }}>REALITY MONOPOL</div>
             <div className="orig-price" style={{ color: '#D97706' }}>898 €/mes</div>
             <div className="plan-price" style={{ color: '#92400E' }}>449 <span className="plan-period" style={{ color: '#D97706' }}>€/mes</span></div>
             <div className="plan-tagline" style={{ color: '#78350F' }}>Najvyšší level. Owner má Protocol menu, 4 makléri dostanú Active Force.</div>
@@ -567,7 +567,7 @@ export default function HomePage() {
             <div className="expert-bonus" style={{ background: 'rgba(14,165,233,.06)', borderColor: '#0EA5E9' }}><div className="expert-bonus-label" style={{ color: '#0EA5E9' }}>Aiden O&apos;Sullivan · ex Lofty/Chime</div><div className="expert-bonus-text" style={{ color: '#0C4A6E' }}>Life Moment Detection — algoritmus deteguje životné zmeny klienta (sťahovanie, zmena práce, rodina) PRED tým než to klient sám vie. Okno príležitosti: 2–3 týždne.</div></div>
             <div className="expert-bonus" style={{ background: 'rgba(22,163,74,.06)', borderColor: '#16A34A' }}><div className="expert-bonus-label" style={{ color: '#16A34A' }}>Sofia Reyes · ex Real Geeks</div><div className="expert-bonus-text" style={{ color: '#14532D' }}>Revealed Preference Engine — rozdiel medzi čo klient píše (stated) a čo klikne (revealed) = skutočný budget a motivácia. Maklér dostane brief: „Nekomunikuj cenu. Komunikuj priestor."</div></div>
             <div className="expert-bonus" style={{ background: 'rgba(217,119,6,.06)', borderColor: '#D97706' }}><div className="expert-bonus-label" style={{ color: '#D97706' }}>Cassandra Mills · ex Top Producer</div><div className="expert-bonus-text" style={{ color: '#78350F' }}>5-Year Relationship Horizon — po každom uzavretom obchode sa automaticky spustí 5-ročný plán: výročie kúpy, trhový update, refinančné okno, predpoveď apreciácie, žiadosť o odporúčanie.</div></div>
-            <button className="plan-cta" style={{ background: 'linear-gradient(135deg,#D97706,#B45309)', color: '#fff', marginTop: 20, fontSize: 13 }} onClick={() => { window.gtag?.('event', 'pricing_cta_click', { plan_name: 'Protocol Authority', plan_price: '449' }); openModal('pricing-protocol-authority') }}>★ Aktivovať Protocol Authority →</button>
+            <button className="plan-cta" style={{ background: 'linear-gradient(135deg,#D97706,#B45309)', color: '#fff', marginTop: 20, fontSize: 13 }} onClick={() => { window.gtag?.('event', 'pricing_cta_click', { plan_name: 'REALITY MONOPOL', plan_price: '449' }); openModal('pricing-protocol-authority') }}>★ Aktivovať REALITY MONOPOL →</button>
           </div>
 
         </div>

@@ -293,3 +293,17 @@ section {
   .ticker { gap:16px; }
   h1 { font-size:32px; }
 }
+
+/* ── BUTTON SHIMMER ── */
+.btn-primary, .btn-secondary, .nav-cta, .exit-btn {
+  position:relative; overflow:hidden;
+}
+.btn-primary::after, .btn-secondary::after, .nav-cta::after, .exit-btn::after {
+  content:''; position:absolute; top:0; left:-100%; width:60%; height:100%;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.15), transparent);
+  transition:left .45s ease; pointer-events:none;
+}
+.btn-primary:hover::after, .btn-secondary:hover::after,
+.nav-cta:hover::after, .exit-btn:hover::after {
+  left:150%;
+}
