@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Revolis.AI — Design Preview · 8 navrhovaných vylepšení</title>
+
+<!-- EXISTING: Inter (body text — zachovaný) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- NEW #1: Sora — display font pre headings -->
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+/* ═══════════════════════════════════════════════════════
+   EXISTING CSS VARIABLES — nezmenené
+═══════════════════════════════════════════════════════ */
+:root {
+  --bg: #F8FAFC; --bg2: #F1F5F9;
+  --dark: #050A18; --dark2: #0A0F1E; --navy: #0F172A;
+  --cyan: #0EA5E9; --cyan2: #38BDF8; --purple: #7C3AED;
+  --green: #16A34A; --red: #DC2626; --orange: #EA580C; --gold: #D97706;
+  --text: #0F172A; --muted: #64748B; --border: #E2E8F0; --white: #FFFFFF;
+
+  /* ── NEW #2: Glow variables (aditívne) ── */
+  --cyan-glow: rgba(14,165,233,.35);
+  --purple-glow: rgba(124,58,237,.25);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; overflow-x:hidden; }
+
+/* ── NEW #1: Sora font pre všetky headings ──
+   Aplikuje sa na: h1, h2, .section-h2, .feat-title,
+   .step-title, .section-title, .plan-name, .card-title
+   Body text zostáva Inter. */
+h1, h2, h3,
+.section-h2, .feat-title, .step-title,
+.section-title, .plan-name, .card-title,
+.hero-h1-preview {
+  font-family: 'Sora', sans-serif !important;
+}
+
+/* ─────────────────────────────────────────────────────
+   PREVIEW SHELL — iba pre tento demo súbor
+───────────────────────────────────────────────────── */
+.changelog {
+  background: var(--dark); color: #fff;
+  padding: 40px 48px; border-bottom: 2px solid var(--cyan);
+}
+.changelog h2 {
+  font-family: 'Sora', sans-serif;
+  font-size: 28px; font-weight: 900; color: var(--cyan2);
+  letter-spacing: -.02em; margin-bottom: 8px;
+}
+.changelog p { color: rgba(255,255,255,.5); font-size: 14px; margin-bottom: 24px; }
+.changes-list {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(320px,1fr)); gap: 10px;
+}
+.change-item {
+  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+  border-radius: 10px; padding: 12px 16px;
+  display: flex; align-items: flex-start; gap: 12px;
+}
+.change-num {
+  width: 24px; height: 24px; border-radius: 50%; background: var(--cyan);
+  color: var(--dark); font-size: 11px; font-weight: 900;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.change-text strong { font-size: 13px; color: #fff; display: block; margin-bottom: 2px; }
+.change-text span { font-size: 12px; color: rgba(255,255,255,.4); }
+.change-status {
+  margin-left: auto; padding: 2px 8px; border-radius: 999px;
+  font-size: 10px; font-weight: 700; white-space: nowrap; flex-shrink: 0;
+}
+.status-new { background: rgba(16,163,74,.15); color: #4ADE80; border: 1px solid rgba(16,163,74,.3); }
+.status-micro { background: rgba(14,165,233,.12); color: var(--cyan2); border: 1px solid rgba(14,165,233,.25); }
+
+.section-divider {
+  background: var(--dark); color: rgba(255,255,255,.25);
+  padding: 12px 48px; font-size: 11px; font-weight: 800;
+  letter-spacing: .2em; text-transform: uppercase;
+  display: flex; align-items: center; gap: 12px;
+}
+.section-divider::after {
+  content: ''; flex: 1; height: 1px; background: rgba(255,255,255,.08);
+}
+
+/* ─────────────────────────────────────────────────────
+   #1 FONT PREVIEW — Sora vs Inter
+───────────────────────────────────────────────────── */
+.font-compare {
+  display: grid; grid-template-columns: 1fr 1fr;
+  background: var(--bg); padding: 64px 48px; gap: 0;
+  border-bottom: 1px solid var(--border);
+}
+.font-col { padding: 32px; }
+.font-col.before { border-right: 1px solid var(--border); }
+.font-col-label {
+  font-size: 10px; font-weight: 800; letter-spacing: .2em;
+  text-transform: uppercase; margin-bottom: 20px;
+}
+.font-col.before .font-col-label { color: var(--muted); }
+.font-col.after .font-col-label { color: var(--cyan); }
+
+.font-h1-before {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(36px, 5vw, 64px); font-weight: 900;
+  line-height: 1.02; letter-spacing: -.04em; color: var(--dark); margin-bottom: 16px;
+}
+.font-h1-before em { font-style: normal; color: var(--cyan); }
+
+.font-h1-after {
+  font-family: 'Sora', sans-serif;
+  font-size: clamp(36px, 5vw, 64px); font-weight: 900;
+  line-height: 1.02; letter-spacing: -.04em; color: var(--dark); margin-bottom: 16px;
+}
+/* NEW #3: Cyan em glow animation */
+.font-h1-after em {
+  font-style: normal; color: var(--cyan);
+  animation: emGlow 3s ease-in-out infinite;
+}
+@keyframes emGlow {
+  0%,100% { text-shadow: 0 0 0 transparent; }
+  50% { text-shadow: 0 0 40px rgba(14,165,233,.5), 0 0 80px rgba(14,165,233,.2); }
+}
+
+.font-sub { font-size: 17px; color: var(--muted); line-height: 1.65; max-width: 440px; }
+
+/* ─────────────────────────────────────────────────────
+   #2 HERO — Grain texture + animated gradient mesh
+───────────────────────────────────────────────────── */
+.hero-preview {
+  position: relative; overflow: hidden;
+  min-height: 480px;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; text-align: center;
+  padding: 80px 48px;
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(14,165,233,.08) 0%, transparent 70%);
+}
+
+/* EXISTING: pattern background */
+.hero-preview::before {
+  content:''; position:absolute; inset:0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230EA5E9' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  pointer-events:none;
+}
+
+/* NEW #4: Grain texture overlay (aditívne ::after) */
+.hero-preview::after {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none;
+  opacity: .6;
+  mix-blend-mode: overlay;
+}
+
+/* NEW #5: Animated gradient mesh behind hero */
+.hero-mesh {
+  position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(ellipse 40% 30% at 20% 80%, rgba(124,58,237,.06) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 80% 20%, rgba(14,165,233,.07) 0%, transparent 70%);
+  animation: meshFloat 12s ease-in-out infinite alternate;
+}
+@keyframes meshFloat {
+  from { transform: scale(1) rotate(0deg); }
+  to   { transform: scale(1.08) rotate(1deg); }
+}
+
+.hero-preview .content { position: relative; z-index: 1; max-width: 700px; }
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px; margin-bottom: 28px;
+  background: rgba(14,165,233,.08); border: 1px solid rgba(14,165,233,.2);
+  font-size: 12px; font-weight: 700; color: var(--cyan); letter-spacing: .1em; text-transform: uppercase;
+}
+.live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: blink 1.5s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+
+.hero-h1-preview {
+  font-size: clamp(42px, 6vw, 80px); font-weight: 900; line-height: 1.02;
+  letter-spacing: -.04em; color: var(--dark); margin-bottom: 24px;
+  animation: fadeUp .7s ease both;
+}
+.hero-h1-preview em {
+  font-style: normal; color: var(--cyan);
+  animation: emGlow 3s 1s ease-in-out infinite;
+}
+@keyframes fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:none} }
+
+.hero-sub-preview {
+  font-size: clamp(17px,2vw,21px); color: var(--muted); line-height: 1.65;
+  margin-bottom: 40px; animation: fadeUp .7s .15s ease both;
+}
+.hero-sub-preview strong { color: var(--text); }
+
+/* ─────────────────────────────────────────────────────
+   #3 BUTTONS — Shimmer sweep effect
+───────────────────────────────────────────────────── */
+.btn-preview-wrap {
+  display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
+  padding: 48px; background: var(--bg2); border-bottom: 1px solid var(--border);
+}
+
+/* EXISTING btn-dark + NEW shimmer */
+.btn-dark-preview {
+  position: relative; overflow: hidden;
+  padding: 18px 40px; border-radius: 12px; font-size: 15px; font-weight: 800;
+  background: var(--dark); color: #fff; border: none; cursor: pointer;
+  transition: transform .2s, box-shadow .2s;
+  display: flex; align-items: center; gap: 8px;
+  font-family: 'Inter', sans-serif;
+}
+.btn-dark-preview:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(15,23,42,.25); }
+
+/* NEW #6: shimmer sweep */
+.btn-dark-preview::after {
+  content: '';
+  position: absolute; top: 0; left: -100%; width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.12), transparent);
+  transition: left .5s ease;
+  pointer-events: none;
+}
+.btn-dark-preview:hover::after { left: 150%; }
+
+/* EXISTING btn-outline */
+.btn-outline-preview {
+  position: relative; overflow: hidden;
+  padding: 18px 40px; border-radius: 12px; font-size: 15px; font-weight: 700;
+  background: transparent; border: 2px solid var(--border); color: var(--text); cursor: pointer;
+  transition: border-color .2s, background .2s;
+  font-family: 'Inter', sans-serif;
+}
+.btn-outline-preview:hover { border-color: var(--cyan); background: rgba(14,165,233,.04); }
+.btn-outline-preview::after {
+  content: '';
+  position: absolute; top: 0; left: -100%; width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(14,165,233,.08), transparent);
+  transition: left .5s ease;
+  pointer-events: none;
+}
+.btn-outline-preview:hover::after { left: 150%; }
+
+.btn-label {
+  text-align: center; font-size: 11px; font-weight: 700;
+  letter-spacing: .15em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 12px;
+}
+
+/* ─────────────────────────────────────────────────────
+   #4 SCROLL PROGRESS BAR
+───────────────────────────────────────────────────── */
+/* NEW #7: Fixed 3px line at top */
+#scroll-progress {
+  position: fixed; top: 0; left: 0; height: 3px; z-index: 9999;
+  background: linear-gradient(90deg, var(--cyan), var(--purple));
+  width: 0%; transition: width .1s linear;
+  box-shadow: 0 0 8px rgba(14,165,233,.6);
+}
+
+/* ─────────────────────────────────────────────────────
+   #5 STATS STRIP — Cyan number glow (dark bg)
+───────────────────────────────────────────────────── */
+.stats-preview {
+  background: var(--dark); padding: 48px 24px;
+  display: grid; grid-template-columns: repeat(6,1fr); gap: 0;
+  max-width: 100%; margin: 0;
+}
+.stat-cell-p {
+  text-align: center; padding: 16px;
+  border-right: 1px solid rgba(255,255,255,.08);
+}
+.stat-cell-p:last-child { border-right: none; }
+/* EXISTING .stat-num + NEW glow */
+.stat-num-p {
+  font-size: 36px; font-weight: 900; color: var(--cyan2);
+  font-variant-numeric: tabular-nums;
+  /* NEW #5: subtle glow on dark bg */
+  text-shadow: 0 0 30px rgba(56,189,248,.4);
+  animation: numPulse 4s ease-in-out infinite;
+}
+@keyframes numPulse {
+  0%,100% { text-shadow: 0 0 20px rgba(56,189,248,.3); }
+  50% { text-shadow: 0 0 50px rgba(56,189,248,.6), 0 0 80px rgba(56,189,248,.2); }
+}
+.stat-label-p {
+  font-size: 12px; color: rgba(255,255,255,.4); margin-top: 4px;
+  font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+}
+
+/* ─────────────────────────────────────────────────────
+   #6 PAIN CARDS — Gradient border hover
+───────────────────────────────────────────────────── */
+.pain-grid-p { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; padding: 64px 48px; background: var(--white); border-bottom: 1px solid var(--border); }
+
+.pain-card-p {
+  /* EXISTING styles */
+  background: var(--white); border-radius: 16px; padding: 28px;
+  cursor: default;
+  transition: transform .3s, box-shadow .3s;
+  /* NEW #8: gradient border via background trick */
+  background-clip: padding-box;
+  border: 1px solid transparent;
+  background-image: linear-gradient(var(--white), var(--white)),
+    linear-gradient(135deg, var(--border), var(--border));
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+.pain-card-p:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(15,23,42,.08);
+  background-image: linear-gradient(var(--white), var(--white)),
+    linear-gradient(135deg, var(--cyan), var(--purple));
+}
+.pain-icon-p { font-size: 28px; margin-bottom: 12px; }
+.pain-title-p { font-family: 'Sora', sans-serif; font-size: 16px; font-weight: 800; margin-bottom: 8px; color: var(--dark); }
+.pain-text-p { font-size: 14px; color: var(--muted); line-height: 1.65; }
+
+/* ─────────────────────────────────────────────────────
+   #7 CUSTOM CURSOR
+───────────────────────────────────────────────────── */
+/* NEW #9: Cursor — iba v preview, aplikuje sa na celý body */
+* { cursor: none !important; }
+#cursor-dot {
+  position: fixed; pointer-events: none; z-index: 99999;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--cyan);
+  transform: translate(-50%, -50%);
+  transition: transform .08s ease, width .2s ease, height .2s ease, opacity .2s;
+  mix-blend-mode: multiply;
+}
+#cursor-ring {
+  position: fixed; pointer-events: none; z-index: 99998;
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 1.5px solid rgba(14,165,233,.4);
+  transform: translate(-50%, -50%);
+  transition: transform .15s ease, width .2s ease, height .2s ease, opacity .3s;
+}
+body:has(button:hover) #cursor-dot { width: 12px; height: 12px; background: var(--purple); }
+body:has(button:hover) #cursor-ring { width: 44px; height: 44px; border-color: rgba(124,58,237,.5); }
+
+/* ─────────────────────────────────────────────────────
+   #8 SECTION LABEL — animated left bar
+───────────────────────────────────────────────────── */
+.section-label-new {
+  font-size: 11px; font-weight: 800; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--cyan); margin-bottom: 12px;
+  display: flex; align-items: center; gap: 10px;
+}
+.section-label-new::before {
+  content: '';
+  width: 0; height: 2px; background: var(--cyan);
+  border-radius: 1px;
+  animation: barGrow .8s .3s ease both;
+}
+@keyframes barGrow { from { width: 0 } to { width: 24px } }
+
+/* ─────────────────────────────────────────────────────
+   DEMO SECTION + FINAL
+───────────────────────────────────────────────────── */
+.demo-section {
+  padding: 64px 48px; background: var(--bg);
+}
+.demo-section h2 {
+  font-size: clamp(28px,4vw,48px); font-weight: 900; line-height: 1.1;
+  letter-spacing: -.03em; margin-bottom: 16px; color: var(--dark);
+}
+.demo-section p { font-size: 17px; color: var(--muted); line-height: 1.7; margin-bottom: 0; max-width: 560px; }
+
+.final-note {
+  background: var(--dark); color: #fff; padding: 48px;
+  display: flex; align-items: center; justify-content: space-between; gap: 32px; flex-wrap: wrap;
+}
+.final-note h3 { font-family: 'Sora', sans-serif; font-size: 20px; font-weight: 900; margin-bottom: 8px; color: var(--cyan2); }
+.final-note p { color: rgba(255,255,255,.5); font-size: 14px; max-width: 480px; }
+.approve-btn {
+  padding: 14px 32px; border-radius: 10px; font-size: 14px; font-weight: 800;
+  background: var(--cyan); color: var(--dark); border: none; cursor: pointer;
+  transition: transform .2s;
+  font-family: 'Inter', sans-serif;
+  white-space: nowrap;
+}
+.approve-btn:hover { transform: translateY(-2px); }
+
+/* ─────────────────────────────────────────────────────
+   TOGGLE SECTION LABELS
+───────────────────────────────────────────────────── */
+.tag {
+  display: inline-block; padding: 2px 9px; border-radius: 999px;
+  font-size: 9px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
+  background: rgba(14,165,233,.12); color: var(--cyan); border: 1px solid rgba(14,165,233,.25);
+  margin-bottom: 8px;
+}
+
+@media(max-width:768px) {
+  .font-compare { grid-template-columns: 1fr; }
+  .font-col.before { border-right: none; border-bottom: 1px solid var(--border); }
+  .stats-preview { grid-template-columns: repeat(2,1fr); }
+  .pain-grid-p { grid-template-columns: 1fr; }
+  .changelog { padding: 32px 24px; }
+  .btn-preview-wrap { padding: 32px 24px; }
+  .pain-grid-p { padding: 48px 24px; }
+  .demo-section { padding: 48px 24px; }
+  .final-note { padding: 32px 24px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Custom Cursor -->
+<div id="cursor-dot"></div>
+<div id="cursor-ring"></div>
+
+<!-- Scroll Progress Bar -->
+<div id="scroll-progress"></div>
+
+<!-- ═══════════════════════════════════════
+     CHANGELOG HEADER
+═══════════════════════════════════════ -->
+<div class="changelog">
+  <h2>Revolis.AI — Design Preview</h2>
+  <p>Všetky zmeny sú <strong style="color:#4ADE80">aditívne</strong> — existujúci kód zostáva nedotknutý. Schváľte len tie čo chcete.</p>
+  <div class="changes-list">
+    <div class="change-item">
+      <div class="change-num">1</div>
+      <div class="change-text">
+        <strong>Font: Inter → Sora (headings)</strong>
+        <span>h1, h2, .section-h2, .feat-title, .plan-name · body zostáva Inter</span>
+      </div>
+      <div class="change-status status-new">NOVÝ</div>
+    </div>
+    <div class="change-item">
+      <div class="change-num">2</div>
+      <div class="change-text">
+        <strong>Gradient mesh background v hero</strong>
+        <span>2 radial gradients animované meshFloat · čisto additive ::before</span>
+      </div>
+      <div class="change-status status-micro">MICRO</div>
+    </div>
+    <div class="change-item">
+      <div class="change-num">3</div>
+      <div class="change-text">
+        <strong>Cyan em glow animation</strong>
+        <span>text-shadow pulse na h1 em · „Revolis.AI odpovedá aj o 22:47"</span>
+      </div>
+      <div class="change-status status-micro">MICRO</div>
+    </div>
+    <div class="change-item">
+      <div class="change-num">4</div>
+      <div class="change-text">
+        <strong>Grain texture na hero</strong>
+        <span>SVG noise filter cez mix-blend-mode overlay · opacity 0.035</span>
+      </div>
+      <div class="change-status status-micro">MICRO</div>
+    </div>
+    <div class="change-item">
+      <div class="change-num">5</div>
+      <div class="change-text">
+        <strong>Stats strip — number glow</strong>
+        <span>text-shadow pulse na .stat-num · vizuálne na tmavom pozadí</span>
+      </div>
+      <div class="change-status status-micro">MICRO</div>
+    </div>
+    <div class="change-item">
+      <div class="change-num">6</div>
+      <div class="change-text">
+        <strong>Shimmer sweep na CTA buttons</strong>
+        <span>::after pseudo-element · sweep pri hover · 0 breaking risk</span>
+      </div>
+      <div class="change-status status-micro">MICRO</div>
+    </div>
+    <div class="change-item">
+      <div class="change-num">7</div>
+      <div class="change-text">
+        <strong>Scroll progress bar</strong>
+        <span>3px fixed linka hore · cyan→purple gradient · scroll listener</span>
+      </div>
+      <div class="change-status status-new">NOVÝ</div>
+    </div>
+    <div class="change-item">
+      <div class="change-num">8</div>
+      <div class="change-text">
+        <strong>Pain cards — gradient border on hover</strong>
+        <span>border transparent → cyan-to-purple gradient · existujúci hover zachovaný</span>
+      </div>
+      <div class="change-status status-micro">MICRO</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     #1 + #3: FONT COMPARE
+═══════════════════════════════════════ -->
+<div class="section-divider">Zmena #1 · Font: Inter vs Sora (headings)</div>
+<div class="font-compare">
+  <div class="font-col before">
+    <div class="font-col-label">Aktuálne — Inter</div>
+    <div class="font-h1-before">
+      Každú noc prídu 2–3 príležitosti.<br><em>Revolis.AI odpovedá aj o 22:47.</em>
+    </div>
+    <p class="font-sub">Revolis.AI odpovedá na každý dopyt za <strong>90 sekúnd</strong>, sleduje klientov <strong>18 mesiacov</strong> a ukáže Vám presne koho kontaktovať dnes.</p>
+  </div>
+  <div class="font-col after">
+    <div class="font-col-label">Navrhované — Sora headings + glow (#3)</div>
+    <div class="font-h1-after">
+      Každú noc prídu 2–3 príležitosti.<br><em>Revolis.AI odpovedá aj o 22:47.</em>
+    </div>
+    <p class="font-sub">Revolis.AI odpovedá na každý dopyt za <strong>90 sekúnd</strong>, sleduje klientov <strong>18 mesiacov</strong> a ukáže Vám presne koho kontaktovať dnes.</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     #2 + #4: HERO s mesh + grain
+═══════════════════════════════════════ -->
+<div class="section-divider">Zmeny #2 + #4 · Hero: gradient mesh + grain texture</div>
+<div class="hero-preview">
+  <div class="hero-mesh"></div>
+  <div class="content">
+    <div class="hero-eyebrow">
+      <span class="live-dot"></span>
+      340+ kancelárií · 6 krajín · Live
+    </div>
+    <div class="hero-h1-preview">
+      Každú noc prídu 2–3 príležitosti.<br><em>Revolis.AI odpovedá aj o 22:47.</em>
+    </div>
+    <p class="hero-sub-preview">
+      Revolis.AI odpovedá na každý dopyt za <strong>90 sekúnd</strong>, sleduje klientov <strong>18 mesiacov</strong> a ukáže Vám presne koho kontaktovať dnes.
+    </p>
+    <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
+      <button class="btn-dark-preview">
+        Spusti Revolis.AI za 4 minúty <span style="opacity:.6">→</span>
+      </button>
+      <button class="btn-outline-preview">Pozri 2-min demo</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     #6: BUTTON SHIMMER
+═══════════════════════════════════════ -->
+<div class="section-divider">Zmena #6 · Buttons: shimmer sweep pri hover</div>
+<div class="btn-preview-wrap">
+  <div>
+    <div class="btn-label">Hover pre shimmer →</div>
+    <button class="btn-dark-preview">Spusti Revolis.AI za 4 minúty <span style="opacity:.6">→</span></button>
+  </div>
+  <div>
+    <div class="btn-label">Hover pre shimmer →</div>
+    <button class="btn-outline-preview">Pozri 2-min demo</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     #5: STATS STRIP GLOW
+═══════════════════════════════════════ -->
+<div class="section-divider">Zmena #5 · Stats strip: number glow (animovaný)</div>
+<div class="stats-preview">
+  <div class="stat-cell-p"><div class="stat-num-p">34%</div><div class="stat-label-p">Nárast zmlúv za Q1</div></div>
+  <div class="stat-cell-p"><div class="stat-num-p">90s</div><div class="stat-label-p">Priem. čas odpovede</div></div>
+  <div class="stat-cell-p"><div class="stat-num-p">22%</div><div class="stat-label-p">Reaktivovaných príl.</div></div>
+  <div class="stat-cell-p"><div class="stat-num-p">61k€</div><div class="stat-label-p">Priem. nový obrat Q1</div></div>
+  <div class="stat-cell-p"><div class="stat-num-p">67%</div><div class="stat-label-p">Menej zbytočných hovorov</div></div>
+  <div class="stat-cell-p"><div class="stat-num-p">4min</div><div class="stat-label-p">Čas nasadenia</div></div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     #8: PAIN CARDS — gradient border
+═══════════════════════════════════════ -->
+<div class="section-divider">Zmena #8 · Pain cards: gradient border pri hover (hover pre efekt)</div>
+<div class="pain-grid-p">
+  <div class="pain-card-p">
+    <div class="pain-icon-p">😴</div>
+    <div class="pain-title-p">Dopyt prišiel o 22:47. Odpovedali ste ráno. Bolo neskoro.</div>
+    <div class="pain-text-p">Prvý kto odpovie dostane príležitosť. Priemerný čas odpovede makléra: 7 hodín. Revolis.AI: 90 sekúnd, 24/7.</div>
+  </div>
+  <div class="pain-card-p">
+    <div class="pain-icon-p">👻</div>
+    <div class="pain-title-p">Písali ste mu pred 3 mesiacmi. Kúpil od niekoho iného.</div>
+    <div class="pain-text-p">Mal záujem. Bol "ešte nie pripravený." Vypadol z radaru. Revolis by ho sledoval 18 mesiacov automaticky.</div>
+  </div>
+  <div class="pain-card-p">
+    <div class="pain-icon-p">💸</div>
+    <div class="pain-title-p">68 % príležitostí nebolo nikdy druhýkrát kontaktovaných.</div>
+    <div class="pain-text-p">CRM zaznamenáva. Revolis.AI aktívne pracuje s databázou každý deň — bez Vášho vstupu.</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SECTION LABEL PREVIEW
+═══════════════════════════════════════ -->
+<div class="section-divider">Bonus · Section label: animovaný left bar</div>
+<div class="demo-section">
+  <div class="tag">Aktuálne</div>
+  <div style="font-size:11px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--cyan);margin-bottom:24px;">
+    Riešenie
+  </div>
+  <div class="tag">Navrhované</div>
+  <div class="section-label-new">Riešenie</div>
+  <h2 style="margin-bottom:16px;">Čo Revolis.AI robí za Vás</h2>
+  <p>Nie ďalší CRM ktorý musíte aktualizovať. Systém ktorý pracuje namiesto Vás — každú hodinu.</p>
+</div>
+
+<!-- ═══════════════════════════════════════
+     FINAL
+═══════════════════════════════════════ -->
+<div class="final-note">
+  <div>
+    <h3>Scroll progress bar je aktívny</h3>
+    <p>Vidíte ho hore pri scrollovaní — 3px cyan→purple linka. Scroll progress + custom cursor + shimmer + glow sú čisto JS/CSS aditíva bez zmeny existujúceho kódu.</p>
+  </div>
+  <button class="approve-btn" onclick="alert('Povedzte mi ktoré čísla chcete: napr. 1,3,6,7 — a ja ich implementujem.')">
+    Schváliť vybrané →
+  </button>
+</div>
+
+<script>
+// ── Scroll progress ──
+const bar = document.getElementById('scroll-progress')
+window.addEventListener('scroll', () => {
+  const h = document.documentElement.scrollHeight - window.innerHeight
+  bar.style.width = (window.scrollY / h * 100) + '%'
+})
+
+// ── Custom cursor ──
+const dot = document.getElementById('cursor-dot')
+const ring = document.getElementById('cursor-ring')
+let mx = 0, my = 0, rx = 0, ry = 0
+window.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY })
+function moveCursor() {
+  rx += (mx - rx) * 0.12
+  ry += (my - ry) * 0.12
+  dot.style.left = mx + 'px'; dot.style.top = my + 'px'
+  ring.style.left = rx + 'px'; ring.style.top = ry + 'px'
+  requestAnimationFrame(moveCursor)
+}
+moveCursor()
+</script>
+</body>
+</html>
