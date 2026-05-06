@@ -2315,6 +2315,439 @@ GDPR compliance on all lead capture | 100%             | GDPR layer check
 
 ---
 
+# PART 24: EVALUATION RUBRIC — GOLDEN REFERENCE
+
+## Purpose
+
+This section defines the minimum acceptable quality bar for any agent output
+produced by the Revolis.AI L99 Agent OS V3 system.
+Use it to evaluate whether a given Claude / MindStudio / Breeze agent response
+has reached true L99 standard — not just superficially, but structurally.
+
+A response that satisfies the Golden RACI format and Golden Scenario format
+is ready for production use in MindStudio or HubSpot Breeze.
+A response that falls short must be iterated before execution.
+
+---
+
+## GOLDEN REFERENCE 1: RACI Matrix Format
+
+This is the canonical RACI table format every agent and the Orchestrator must produce.
+Any deviation from this structure is a RACI violation and triggers a rejection.
+
+### Structure Rules
+
+```
+1. Column order: Activity | Agent Team | R | A | C | I
+2. R column: "X" if this agent team does the work. One or more X allowed.
+3. A column: "X" for exactly ONE agent team. Never blank. Never two X in one row.
+4. C column: List of consulted agent teams (names, comma-separated). Can be blank.
+5. I column: List of informed agent teams or stakeholders. Can be blank.
+6. Every row must have at least one R and exactly one A.
+7. The Orchestrator rejects any row missing R or A.
+```
+
+### Golden RACI — Landing Page & Funnel Optimization (Brokerage Owners, +20% MQL)
+
+| Activity | Agent Team | R | A | C | I |
+|----------|------------|---|---|---|---|
+| Define project goal & success metrics | Product & Strategy | X | X | Leadership L99, Data+CRM+Revenue | All other teams |
+| Create high-level project brief + RACI | Orchestrator | X | X | Product & Strategy, Leadership L99 | All other teams |
+| Baseline funnel analysis (Visitor→MQL for owners) | Data+CRM+Revenue | X | X | Growth & Funnels, Product & Strategy | Leadership L99, Orchestrator |
+| Market Intelligence brief (SK market signals) | Market Intelligence | X | X | — | All agents |
+| Define target persona & JTBD | Product & Strategy | X | X | UX Research & Design, Content & Messaging | Growth & Funnels, Leadership L99 |
+| Define messaging pillars + value proposition | Product & Strategy | X | X | Content & Messaging, UX | Growth & Funnels |
+| UX research plan (heatmaps, interviews, survey) | UX Research & Design | X | | Data+CRM+Revenue, Product & Strategy | Orchestrator, Leadership L99 |
+| Execute UX research & synthesize insights | UX Research & Design | X | X | Data+CRM+Revenue, Growth & Funnels | Orchestrator |
+| Draft IA, wireframes & UX copy | UX Research & Design | X | | Product & Strategy, Growth & Funnels | Web & Engineering, Content |
+| Approve UX direction | Product & Strategy | | X | UX Research & Design, Growth & Funnels | Leadership L99 |
+| Write copy variants (headline, subhead, CTA, social proof) | Content & Messaging | X | | UX Research & Design, Product & Strategy | Growth & Funnels |
+| Approve final copy for A/B variants | Product & Strategy | | X | Content & Messaging, Growth & Funnels | Leadership L99 |
+| Implement landing page variants in frontend/HubSpot | Web & Engineering | X | X | UX, Content, Data+CRM+Revenue | Orchestrator |
+| Implement GA4 + HubSpot tracking (events, parameters) | Web & Engineering | X | | Data+CRM+Revenue | Growth & Funnels, Orchestrator |
+| Validate tracking & data quality | Data+CRM+Revenue | X | X | Web & Engineering | Orchestrator, Leadership L99 |
+| QA + staging sign-off | Web & Engineering | X | X | UX Research & Design | Growth & Funnels, Data+CRM |
+| Human approval: production deploy | Orchestrator | X | X | — | All agents |
+| Configure A/B test & traffic allocation | Growth & Funnels | X | X | Web & Engineering, Data+CRM+Revenue | Orchestrator |
+| Align lead routing & scoring for brokerage owner MQLs | Data+CRM+Revenue | X | X | Growth & Funnels, Product & Strategy | Leadership L99, Orchestrator |
+| Define sales follow-up sequences for brokerage owner leads | Data+CRM+Revenue | X | | Content & Messaging | Sales (human) |
+| Monitor test performance (weekly) | Data+CRM+Revenue | X | | Growth & Funnels, Product & Strategy | Orchestrator, Leadership L99 |
+| Human approval: early stop or continue decision | Orchestrator | X | X | Data+CRM+Revenue, Growth & Funnels | Leadership L99 |
+| Interpret A/B test results & recommend next steps | Growth & Funnels | X | X | Data+CRM+Revenue, UX, Product & Strategy | Leadership L99 |
+| Statistical significance sign-off | Data+CRM+Revenue | X | X | Growth & Funnels | Orchestrator |
+| Executive decision: rollout / iterate / pivot | Leadership L99 | | X | Orchestrator, Product & Strategy, Growth, Data | All teams |
+| Implement winning variant (global rollout) | Web & Engineering | X | X | UX, Content | Orchestrator, Growth |
+| Update HubSpot CRM pipeline & CS playbooks | Data+CRM+Revenue | X | X | Growth & Funnels, Content | Leadership L99 |
+| Document learnings & update Experiment Library | Orchestrator | X | X | All agent teams | Leadership L99 |
+| Propose next experiment from backlog | Growth & Funnels | X | X | Product & Strategy, Data+CRM+Revenue | Orchestrator, Leadership L99 |
+
+### RACI Validation Checklist (run before submitting any RACI table)
+
+```
+[ ] Every row has exactly one "X" in the A column
+[ ] Every row has at least one "X" in the R column
+[ ] No row has the same agent in both R and A where they should be separated
+[ ] Approval activities (Approve UX, Approve copy, Deploy, Go/No-go) have their own rows
+[ ] Learning/documentation activities have their own rows
+[ ] Human approval rows are present for all critical gates
+[ ] Market Intelligence Agent appears in C or I for all research-dependent activities
+[ ] GDPR check row present if any personal data is collected or processed
+```
+
+---
+
+## GOLDEN REFERENCE 2: Step-by-Step Agent Collaboration Scenario
+
+This is the canonical narrative format for describing how agents collaborate
+on a multi-agent initiative. Every major project output must be describable
+in this format. If an agent cannot describe its contribution in this structure,
+it has not completed its task.
+
+### Scenario: Landing Page & Funnel Optimization (Brokerage Owners, +20% MQL)
+
+```
+SCENARIO NAME:    Landing Page & Funnel Optimization — Brokerage Owners
+OBJECTIVE:        Increase Visitor→MQL conversion for brokerage owners by 20% in 90 days
+ENTRY CONDITION:  Landing page exists. HubSpot + GA4 tracking active. Conversion below benchmark.
+EXIT CONDITION:   ≥ 1 full experiment cycle completed. Rollout decision made. Playbooks updated.
+KEY TOOLS:        HubSpot (Marketing + Sales), GA4, Next.js frontend, Supabase, Market Intel pipeline
+```
+
+**Step 1 — Kickoff (Orchestrator + Leadership L99 + Product & Strategy)**
+
+Leadership L99 Agent defines the business objective:
+"Increase brokerage owner MQLs by 20% without increasing ad spend."
+
+Orchestrator creates project brief (Stripe/Notion spec format):
+- Goal, scope, constraints, 90-day timeline
+- High-level RACI skeleton
+- Distributes to: Product & Strategy, Data+CRM+Revenue, Market Intelligence, UX, Content, Growth, Engineering
+
+Market Intelligence Agent delivers fresh 24h brief:
+- "Bratislava listings +14% MoM — 17 agencies showing growth signal"
+- "Content hook: agencies not tracking this in real-time are already behind"
+
+Output: Project brief + RACI skeleton + Market Intelligence Brief
+
+---
+
+**Step 2 — Baseline & Persona (Product & Strategy + Data+CRM+Revenue)**
+
+Data+CRM+Revenue Agent pulls from GA4 + HubSpot:
+- Current Visitor→MQL rate for brokerage owners by source, device, region
+- Funnel drop-off by stage (identifies primary bottleneck)
+- Produces baseline funnel report + measurement plan
+
+Product & Strategy Agent (Notion PM style):
+- Updates brokerage owner persona (JTBD, pains, desired outcomes)
+- Confirms +20% target is achievable given baseline and traffic volume
+- Defines messaging pillars (handed to Content Agent):
+  Primary: "Market intelligence that acts before you do"
+  Proof: "SK agencies using Revolis.AI close deals 30% faster"
+
+Output: Baseline funnel report + Persona JTBD doc + Messaging pillars
+
+---
+
+**Step 3 — UX Research & Insights (UX Research & Design + Data+CRM+Revenue)**
+
+UX Research & Design Agent (Airbnb UX Researcher style):
+- Designs research plan: heatmap analysis + 5–10 brokerage owner interviews + on-site survey
+- Analyzes scroll, click, and form drop-off data (from Data+CRM+Revenue)
+- Identifies primary friction: form field 4 (company size) causes 60% drop — cognitive overload
+- Synthesizes into UX Research Report (findings, insights, prioritized problems)
+
+Output: UX Research Plan + UX Research Report
+
+---
+
+**Step 4 — Strategy & Hypothesis Framing (Product & Strategy + Growth & Funnels)**
+
+Product & Strategy Agent defines 3–5 hypotheses (ICE scored):
+1. Market-data headline (Bratislava +14%) → +20% form_start (ICE: 8.5)
+2. 3-field form vs 7-field form → +25% form_submit (ICE: 8.0)
+3. Social proof above fold → +10% generate_lead (ICE: 6.5)
+4. "Free market audit" CTA vs "Book demo" → +30% demo_cta_click (ICE: 9.0)
+
+Growth & Funnels Agent designs experiments per hypothesis:
+- RVLS-EXP-001: Variant A (control) / B (market-data headline + 3-field) / C (outcome-focused)
+- Traffic split: 33/33/33
+- Sample size: 1,847 per variant (95% confidence, 80% power)
+- Runtime: 21 days minimum
+- Primary metric: generate_lead (GA4 event)
+
+Output: Experiment backlog (ICE scored) + Detailed brief for RVLS-EXP-001
+
+---
+
+**Step 5 — UX & Copy Design (UX Research & Design + Content & Messaging)**
+
+UX Research & Design Agent (Figma/Notion designer style):
+- Wireframe Variant A: Current 7-field form (control)
+- Wireframe Variant B: 3-field form (email + company name + city) + market-data hero
+- Wireframe Variant C: 2-step form (email only → enrichment post-capture)
+- UX copy suggestions using Market Intel hook
+- UX acceptance criteria: "Variant wins if form_submit rate ≥ 15% lift"
+
+Content & Messaging Agent (Intercom copywriter style):
+- Variant A: "AI platforma pre realitné kancelárie" / CTA: "Rezervujte demo"
+- Variant B: "V Bratislave pribúda 14% inzerátov. Vedia to vaši makléri?" / CTA: "Zobrazte mi trh zadarmo"
+- Variant C: "Vaša kancelária. Viditeľná výkonnosť. Žiadne prekvapenia." / CTA: "Začnite 14-dňový trial →"
+- Brand Voice Check: ✓ Confident ✓ Data-driven ✓ Human ✓ Direct
+- SK localization check: ✓ natural for SK real estate professional
+
+Output: Wireframes (3 variants) + Copy variants A/B/C + Brand Voice check
+
+---
+
+**Step 6 — Implementation & Tracking (Web & Engineering + Data+CRM+Revenue)**
+
+Data+CRM+Revenue Agent delivers GA4 event spec:
+- experiment_viewed (experiment_id, variant), hero_cta_click, form_start,
+  form_submit, generate_lead — all with experiment_id, variant, tenant_id parameters
+
+Web & Engineering Agent (Shopify FE + Stripe Tracking style):
+- Implements 3 page variants in Next.js + Tailwind
+- Implements all GA4 events via GTM
+- Integrates HubSpot form (3-field for B/C, 7-field for A)
+- QA checklist: all 11 items signed off in staging
+- Performance: Lighthouse 94/100, LCP 1.8s mobile, CLS 0.02
+- Rollback plan: Vercel instant rollback to previous deployment
+
+[HUMAN APPROVAL CHECKPOINT — staging sign-off]
+
+Output: 3 variants live on staging + tracking validated + QA signed off
+
+---
+
+**Step 7 — A/B Test Setup & CRM Alignment (Growth & Funnels + Data+CRM+Revenue)**
+
+Growth & Funnels Agent:
+- Configures A/B split in HubSpot or custom routing (33/33/33)
+- Sets primary metric, secondary metrics, stopping rules in HubSpot report
+- Confirms runtime: 21 days minimum, max 35 days
+
+Data+CRM+Revenue Agent:
+- Updates HubSpot lifecycle stage trigger:
+  generate_lead + company_size ≥ 4 + persona = brokerage_owner → MQL immediately
+- Lead scoring: 3-field form submit = +15 pts (same as 7-field — no penalty)
+- Sales SLA confirmed: contact within 1 business day for brokerage owner MQLs
+- Sales follow-up sequence activated for brokerage owner segment
+
+[HUMAN APPROVAL CHECKPOINT — AskUserQuest → approve test launch?]
+
+Output: Live A/B test + CRM and workflows aligned to new funnel
+
+---
+
+**Step 8 — Monitoring & Analysis (Data+CRM+Revenue + Growth & Funnels)**
+
+Data+CRM+Revenue Agent monitors daily:
+- Sessions by variant, MQL conversion by variant
+- form_start rate, form_submit rate, generate_lead rate
+- Time to first conversion, segment breakdown (source, device, region)
+- Tracks when statistical significance is reached (no peeking before Day 21)
+
+Growth & Funnels Agent weekly checkpoint:
+- Interprets trend signals (no decision until minimum runtime)
+- Monitors lead quality alongside volume (MQL quality, SQL rate per variant)
+- Checks secondary metrics for regression signals
+
+Output: Weekly experiment status report (Days 7, 14, 21)
+
+---
+
+**Step 9 — Decision & Rollout (Orchestrator + Leadership L99 + All)**
+
+Data+CRM+Revenue Agent final analysis (Day 21):
+- Variant B: +24% generate_lead vs control at 97% confidence — WINNER
+- Variant C: +11% generate_lead at 83% confidence — not significant
+- Effect size: Cohen's d = 0.31 (medium, real-world meaningful)
+- Secondary: form_start rate +18% for Variant B (UX friction reduced)
+
+Orchestrator compiles Executive Summary (2 pages, Stripe/Notion spec format).
+
+[HUMAN APPROVAL CHECKPOINT — AskUserQuest → rollout / iterate / pivot?]
+
+Leadership L99 Strategic Decision:
+- DECISION: GO — global rollout of Variant B
+- PRIORITY: Accelerate RVLS-EXP-002 (CTA offer optimization) and RVLS-EXP-004
+- ROADMAP: Live market data in headline validates Market Intel as differentiator
+  → New Product brief: "Live SK market stat widget on landing page"
+
+Web & Engineering rolls out Variant B to 100% traffic.
+Data+CRM+Revenue updates HubSpot funnel report (new control = Variant B).
+Data+CRM+Revenue updates CS playbooks with new MQL profile.
+
+Output: Global rollout + Strategic Decision + Updated CRM + Updated playbooks
+
+---
+
+**Step 10 — Documentation & Learning Loop (Orchestrator + All Agents)**
+
+Orchestrator:
+- Creates Experiment Library entry:
+  Hypothesis · Setup · Results · Learnings · Next test
+- Updates RACI history log
+- Sets trigger for next L99 Loop cycle (RVLS-EXP-002)
+
+Product & Strategy Agent:
+- Opens new product brief: "Live SK market data widget on landing page"
+- Updates experiment backlog with learnings
+
+Growth & Funnels Agent:
+- Proposes RVLS-EXP-002: CTA offer — "Free market audit" vs "Book demo"
+  Expected lift: +30% on demo_cta_click, ICE: 9.0
+
+Market Intelligence Agent:
+- Identifies 17 high-growth agencies flagged during experiment period
+- Passes to Data+CRM+Revenue Agent for HubSpot enrichment
+
+Content & Messaging Agent:
+- Updates Brand Voice Guide:
+  "SK market-specific data in headlines outperforms generic value propositions"
+  "14% stat outperformed 'AI platform' by +24% — always anchor to local market"
+
+Output: Experiment Library entry + Updated roadmap + Next experiment brief
+
+---
+
+## GOLDEN REFERENCE 3: Evaluation Rubric
+
+When evaluating whether a Claude / MindStudio / Breeze agent response meets L99 standard,
+score it against these criteria. Minimum passing score: 14/18.
+
+### Structural Criteria (9 points)
+
+```
+[1] RACI table present with correct column structure (Activity|Team|R|A|C|I)?    Y=1 / N=0
+[2] Every RACI row has exactly one A?                                             Y=1 / N=0
+[3] Every RACI row has at least one R?                                            Y=1 / N=0
+[4] Approval activities have their own RACI rows?                                 Y=1 / N=0
+[5] Scenario is described step-by-step with agent name + company style persona?   Y=1 / N=0
+[6] Human approval checkpoints are explicitly marked in the scenario?             Y=1 / N=0
+[7] Primary metric is specific (exact GA4 event or HubSpot property)?            Y=1 / N=0
+[8] Sample size is calculated (not estimated or vague)?                           Y=1 / N=0
+[9] Stopping rules defined (win + early stop + max runtime)?                      Y=1 / N=0
+```
+
+### Content Quality Criteria (6 points)
+
+```
+[10] SK real estate context is reflected (not generic SaaS copy)?                 Y=1 / N=0
+[11] Market Intelligence signal referenced in at least one agent step?            Y=1 / N=0
+[12] Feedback loop to Product Agent is defined at end of scenario?                Y=1 / N=0
+[13] Experiment Library / documentation step is included?                         Y=1 / N=0
+[14] GDPR / consent consideration present if personal data collected?             Y=1 / N=0
+[15] Brand voice check referenced for copy variants?                              Y=1 / N=0
+```
+
+### L99 Discipline Criteria (3 points)
+
+```
+[16] Agent self-assessment rubric score ≥ 4/5 referenced or implied?             Y=1 / N=0
+[17] Conflict resolution protocol referenced if any agent conflict exists?        Y=1 / N=0
+[18] L99 Quality Bar score (X/13) present in final output?                        Y=1 / N=0
+```
+
+### Scoring
+
+```
+18/18  → Full L99 compliance. Ready for production.
+14–17  → Accepted with notes. Minor gaps logged and addressed in next iteration.
+10–13  → Below L99. Return to responsible agent with specific gap list.
+< 10   → Rejected. Fundamental structural gaps. Re-brief from Orchestrator required.
+```
+
+### Common Failure Modes (what causes L99 rejection most often)
+
+```
+FAILURE MODE 1: Missing A in RACI
+  → Most common error. Two agents listed in A column, or A column blank.
+  → Fix: Orchestrator returns RACI with comment "Activity X: A must be exactly one agent."
+
+FAILURE MODE 2: Generic SaaS copy without SK real estate grounding
+  → Copy that could apply to any B2B SaaS. No SK market data. No local context.
+  → Fix: Content Agent mandatory re-brief with Market Intelligence hook.
+
+FAILURE MODE 3: Vague primary metric ("conversion rate", "leads")
+  → No specific GA4 event named. No HubSpot property referenced.
+  → Fix: Data+CRM+Revenue Agent provides exact event name before test setup.
+
+FAILURE MODE 4: Sample size absent or stated as a round number
+  → "We'll need about 500 per variant" — not calculated.
+  → Fix: Growth Agent required to calculate using 95% confidence, 80% power formula.
+
+FAILURE MODE 5: No human approval checkpoint
+  → Scenario jumps from "test designed" to "test live" without approval gate.
+  → Fix: Orchestrator inserts AskUserQuest before every irreversible action.
+
+FAILURE MODE 6: No learning loop at the end
+  → Scenario ends at rollout decision. No Experiment Library entry. No next hypothesis.
+  → Fix: Orchestrator enforces Step 10 (documentation) as mandatory before project close.
+
+FAILURE MODE 7: Leadership L99 missing or acting as executor
+  → L99 Agent writing copy or managing tasks instead of issuing Strategic Decisions.
+  → Fix: L99 Agent receives only Executive Summary. Returns only Strategic Decision.
+```
+
+---
+
+## GOLDEN REFERENCE 4: Experiment Library Entry Format
+
+Every completed experiment must be logged in this format.
+This is the institutional memory of the Revolis.AI growth system.
+
+```
+─────────────────────────────────────────────────────────────
+EXPERIMENT LIBRARY ENTRY
+─────────────────────────────────────────────────────────────
+Test ID:          RVLS-EXP-001
+Date run:         [start date] – [end date]
+Runtime:          [N days]
+Project:          Landing Page Optimization — Brokerage Owners
+
+Hypothesis:       If we use a SK-market-data headline + 3-field form (Variant B),
+                  then generate_lead rate will increase by 20% vs control,
+                  because brokerage owners respond to specific local market data
+                  (FOMO signal) more than generic value propositions.
+
+Segment:          New visitors, brokerage owner persona, SK traffic
+Variants:         A (7-field form, generic headline) / B (3-field, market-data headline)
+                  / C (2-step form, outcome headline)
+Sample per variant: 1,847
+Primary metric:   generate_lead (GA4 event)
+
+Results:
+  Variant A: baseline (control)
+  Variant B: +24% generate_lead vs A — 97% confidence — WINNER
+  Variant C: +11% generate_lead vs A — 83% confidence — not significant
+  Effect size: Cohen's d = 0.31
+
+Secondary metrics:
+  form_start rate: Variant B +18% vs A (UX friction reduced)
+  time_on_page: no significant difference
+
+Decision:         ROLLOUT — Variant B → 100% traffic
+
+Key learnings:
+  1. SK market-specific data in headlines outperforms generic positioning by +24%
+  2. Reducing form fields from 7 to 3 reduces friction — no MQL quality loss observed
+  3. Outcome-focused copy (Variant C) needs stronger social proof to reach significance
+
+Next experiment:  RVLS-EXP-002 — CTA offer: "Free market audit" vs "Book demo"
+                  Hypothesis: outcome-focused free offer will outperform transactional CTA
+                  Expected lift: +30% on demo_cta_click
+                  ICE score: 9.0 — Priority: P0
+
+Agents involved:  All Tier 2 agents + Market Intelligence (brief provided SK data)
+RACI compliance:  13/13 activities documented
+L99 Quality Score: 13/13
+─────────────────────────────────────────────────────────────
+```
+
+---
+
 # END OF REVOLIS.AI L99 AGENT OPERATING SYSTEM V3
 # Version: 3.0 | Date: 2026-05-06
 # Next review: 2026-08-06 (quarterly) or on major architecture change
