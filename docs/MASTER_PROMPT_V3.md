@@ -2304,6 +2304,249 @@ Time-to-experiment                  | ≤ 10 business days | Orchestrator log
 Active experiments at any time      | 2–4              | Growth Agent backlog
 Experiments with valid winner       | ≥ 50% of closed  | Data+CRM analysis
 Average lift per winning experiment | ≥ 15%            | Data+CRM analysis
+```
+
+---
+
+# PART 25: AUDIT FULFILLMENT WORKFLOW — "SLEEPING CONTACTS" DATABASE AUDIT
+
+## Product Definition
+
+```
+ID:         RVLS-AUDIT-V1
+Name:       Sleeping Contacts Database Audit
+Type:       One-time paid service (NOT a subscription)
+Price:      149€ standalone | 99€ active subscriber | free with annual upgrade
+Delivery:   48h from payment confirmation
+Output:     PDF report + scored CSV with BRI columns
+Job-to-be-done: Diagnostic snapshot ("RTG snímka") — subscriptions are ongoing treatment
+```
+
+## RACI — Audit Fulfillment
+
+```
+Activity                                          | R          | A              | C               | I
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Payment confirmed (Stripe webhook)                | Engineering| Orchestrator   | Data+CRM        | Leadership L99
+Contact file received & validated                 | Engineering| Orchestrator   | Data+CRM        | —
+Market Intel enrichment (live SK signals)         | Market Intel| Orchestrator  | Data+CRM        | —
+BRI engine scoring (0–100 per contact)            | Data+CRM   | Orchestrator   | Market Intel    | —
+Prioritized report generation (PDF + CSV)         | Data+CRM   | Orchestrator   | Content         | —
+Personalized cover note (SK, agent name)          | Content    | Orchestrator   | Data+CRM        | —
+Delivery email to customer                        | Engineering| Orchestrator   | Content         | Customer
+HubSpot contact enrichment (new contacts found)   | Data+CRM   | Orchestrator   | Growth          | —
+7-day post-audit upsell sequence activation       | Growth     | Orchestrator   | Content         | Customer
+Leadership L99 Executive Summary                  | Orchestrator| Leadership L99| —               | —
+```
+
+Orchestrator MUST reject any handoff missing both R and A.
+
+## Workflow Card — RVLS-AUDIT-V1
+
+```
+TRIGGER: Stripe webhook payment.succeeded (product_id = audit_149 | audit_99 | audit_free_annual)
+
+STEP 1 — INTAKE (Engineering Agent)
+  Action: Validate uploaded contacts CSV (UTF-8, min columns: meno, email, telefon, posledny_kontakt)
+  Gate: If invalid format → reject with format guide, do NOT proceed
+  Output: contacts_raw_{audit_id}.csv → Supabase bucket audit_uploads/{tenant_id}/{audit_id}/
+
+STEP 2 — ENRICHMENT (Market Intelligence Agent)
+  Input: contacts_raw_{audit_id}.csv
+  For each contact:
+    → Lookup address/region against realvia canonical schema (listings_snapshot table)
+    → Attach: median_price_m2, yoy_price_change_pct, avg_days_on_market, supply_demand_ratio
+    → Tag: market_trend (RISING | STABLE | COOLING)
+  Output: contacts_enriched_{audit_id}.csv
+  SLO: ≤ 15 min for up to 500 contacts
+  Cost guardrail: ≤ 0.08€ per contact enriched; escalate to Orchestrator if exceeded
+
+STEP 3 — BRI SCORING (Data + CRM + Revenue Agent)
+  Input: contacts_enriched_{audit_id}.csv
+  For each contact compute BRI (0–100):
+    base_score = (months_since_contact / 24) × 40          # recency weight 40pts
+    intent_score = intent_signals_count × 5                 # max 20pts
+    market_score = market_fit(region, budget_range) × 0.3  # max 30pts
+    lifecycle_bonus = lifecycle_adjustment(stage) × 0.1    # max 10pts
+    BRI = min(100, base_score + intent_score + market_score + lifecycle_bonus)
+  Segmentation:
+    BRI ≥ 70: HORÚCI — okamžitá akcia (red badge)
+    BRI 50–69: TEPLÝ — follow-up do 7 dní (orange badge)
+    BRI 30–49: STUDENÝ — dlhodobá sekvencia (blue badge)
+    BRI < 30: HIBERNOVANÝ — iba market newsletter (grey badge)
+  Output: contacts_scored_{audit_id}.csv (all original columns + bri, bri_segment, bri_reasoning)
+  Human approval gate: If > 30% of contacts score BRI ≥ 70, Orchestrator flags for manual review
+    (anomaly detection — file may contain non-sleeping contacts)
+
+STEP 4 — REPORT GENERATION (Data + CRM + Revenue Agent)
+  Input: contacts_scored_{audit_id}.csv
+  Generate PDF report (SK language, Revolis.AI branding):
+    Page 1: Executive Summary
+      - Total contacts analyzed: N
+      - HORÚCI: N (X%), TEPLÝ: N (X%), STUDENÝ: N (X%), HIBERNOVANÝ: N (X%)
+      - Estimated total opportunity value: N × avg_deal_size_sk
+      - Top 3 action recommendations
+    Page 2–3: Top 10 HORÚCI contacts (table: meno, BRI, región, posledný_kontakt, odporúčaná_akcia)
+    Page 4: Market Context — live SK signals for top 3 regions represented in the file
+      Source: Market Intelligence Agent enrichment (STEP 2)
+    Page 5: Methodology & BRI Explanation (builds trust, reduces churn objection)
+    Page 6: Next Steps — upgrade CTA (Starter 79€/m or Pro 149€/m) with urgency framing
+  Output: audit_report_{audit_id}.pdf → Supabase bucket audit_reports/{tenant_id}/{audit_id}/
+
+STEP 5 — COVER NOTE (Content & Messaging Agent)
+  Input: audit_report_{audit_id}.pdf metadata + customer_name + total_contacts + top_bri_count
+  Generate personalized SK email body:
+    - Address customer by name (agent/broker name from purchase form)
+    - 3 specific insights from their data (not generic)
+    - Specific HORÚCI contact mention (first name only, BRI score, recommended action)
+    - Soft upgrade CTA at bottom: "Chcete, aby sme HORÚCICH kontaktov automaticky oslovili za vás?"
+  Brand Voice: Direct, data-driven, zero fluff, SK professional tone
+  Output: cover_note_{audit_id}.txt
+  L99 Quality Bar: Must reference at least 2 specific numbers from the actual report
+
+STEP 6 — DELIVERY (Engineering Agent)
+  Compose and send email via Resend:
+    To: customer email (from Stripe metadata)
+    Subject: "Váš Sleeping Contacts audit je pripravený — {top_bri_count} HORÚCICH príležitostí"
+    Body: cover_note_{audit_id}.txt
+    Attachments:
+      - audit_report_{audit_id}.pdf
+      - contacts_scored_{audit_id}.csv (BRI columns only — no raw data duplication)
+  Log: delivery_log_{audit_id}.json (timestamp, resend_id, status)
+  Fallback: If Resend fails → retry 3× with 5-min backoff → escalate to Orchestrator
+
+STEP 7 — HUBSPOT ENRICHMENT (Data + CRM + Revenue Agent)
+  For each contact in contacts_scored_{audit_id}.csv:
+    → Upsert to HubSpot (if email not already exists): create contact with BRI + market properties
+    → If already exists: update custom properties (bri_score, bri_segment, last_audit_date)
+  Custom HubSpot properties required:
+    bri_score (number), bri_segment (single-line text), last_audit_date (date),
+    market_trend (single-line text), audit_id (single-line text)
+  Cost guardrail: ≤ 500 HubSpot API calls per audit; batch if needed
+
+STEP 8 — POST-AUDIT UPSELL SEQUENCE (Growth & Funnels Agent)
+  Enroll customer in HubSpot workflow RVLS-WORKFLOW-AUDIT-UPSELL:
+    Day 0: Delivery email (STEP 6)
+    Day 1: "Ako ste spokojní s auditom?" — 1-question NPS (Typeform embed)
+    Day 3: Case study email — "Ako Peter z Bratislavy premenil 12 HORÚCICH kontaktov na 3 zmluvy"
+    Day 5: Feature highlight — "Čo by sa stalo, keby sme HORÚCICH oslovili automaticky za vás?"
+            [CTA: Vyskúšať Starter plán 79€/mesiac — prvý mesiac zadarmo]
+    Day 7: Final nudge — "Vaša ponuka vyprší zajtra" (scarcity: -30€ first month)
+  Segment: Send only to customers who have NOT upgraded by Day 3 (HubSpot enrollment trigger)
+  Exit condition: upgrade payment.succeeded OR sequence day 7 reached
+
+STEP 9 — L99 EXECUTIVE SUMMARY (Orchestrator → Leadership L99)
+  Format:
+    AUDIT DELIVERED: audit_{audit_id}
+    Customer: {name} | Contacts: {N} | HORÚCI: {N} | Delivery time: {X}h
+    BRI anomaly flag: YES/NO
+    HubSpot enrichment: {N} new / {N} updated contacts
+    Upsell sequence: ACTIVE | Days remaining: 7
+    Estimated upsell conversion probability: {pct}% (based on BRI distribution)
+    Next action: Monitor Day 3 NPS for early upgrade intent signal
+```
+
+## HubSpot Automation Setup — Audit Product
+
+```
+WORKFLOW: RVLS-WORKFLOW-AUDIT-TRIGGER
+  Trigger: Deal stage = "Audit Purchased" (Stripe webhook sets this via API)
+  Actions:
+    1. Set contact property: product_type = "audit_one_time"
+    2. Enroll in RVLS-WORKFLOW-AUDIT-UPSELL (Day 0)
+    3. Create task: "Review audit delivery in 48h" → assigned to Data+CRM Agent
+
+WORKFLOW: RVLS-WORKFLOW-AUDIT-UPSELL (sequence described in STEP 8 above)
+
+DEAL PIPELINE: "Sleeping Contacts Audit"
+  Stages: Lead → Purchased → Delivered → Upgraded | Churned
+
+CUSTOM PROPERTIES (Contact):
+  bri_score           | Number     | 0–100
+  bri_segment         | Dropdown   | HORÚCI / TEPLÝ / STUDENÝ / HIBERNOVANÝ
+  last_audit_date     | Date       |
+  market_trend        | Text       | RISING / STABLE / COOLING
+  audit_id            | Text       | UUID reference
+
+REPORT: "Audit Cohort Conversion" (monthly)
+  Columns: audit_month, total_audits, day7_upgrades, upgrade_rate, avg_bri_score, avg_contacts
+  Owner: Data+CRM + Revenue Agent
+```
+
+## LeadCaptureModal — Audit-Upsell Flow
+
+```
+openModal('audit-upsell') renders a dedicated modal variant:
+
+SCREEN 1 — Intro (not the standard lead form)
+  Headline: "Sleeping Contacts Audit — 149€"
+  Subline: "Nahrajte kontakty. My vám za 48h povieme, koho osloviť ako prvého."
+  CTA: "Pokračovať →"
+
+SCREEN 2 — Contact Details
+  Fields: Meno (agent/broker), Email, Telefón (optional)
+  Note: "Súbor kontaktov nahráte po zaplatení."
+  CTA: "Prejsť na platbu" → Stripe Checkout (product: audit_149 | audit_99 | audit_free)
+
+SCREEN 3 — Post-Payment Upload (redirect from Stripe success_url)
+  Headline: "Platba prebehla! Nahrajte teraz kontakty."
+  File upload: .csv or .xlsx, max 10MB, max 2 000 contacts
+  Format guide: meno, email, telefon, posledny_kontakt (date), poznamky (optional)
+  CTA: "Odoslať kontakty" → POST /api/audit/upload → Engineering Agent intake (STEP 1)
+
+SCREEN 4 — Confirmation
+  "Vaše kontakty sme prijali. Správu s auditom dostanete do 48 hodín."
+  GA4 event: audit_upload_complete (contacts_count, bri_tier: 'paid')
+
+GA4 event taxonomy:
+  audit_cta_click       (position: 'pricing_box' | 'hero' | 'sticky')
+  audit_modal_open      (source: 'audit-upsell')
+  audit_checkout_start  (price_tier: '149' | '99' | 'free')
+  audit_payment_success (price_tier, contacts_estimated)
+  audit_upload_complete (contacts_count)
+  audit_report_opened   (delivery_hours_actual)
+```
+
+## Pricing Logic — Audit Tier Resolution
+
+```typescript
+// Resolved server-side at checkout session creation
+function resolveAuditPrice(customerId: string): AuditPriceTier {
+  const subscription = getActiveSubscription(customerId);
+  if (subscription?.plan === 'annual')    return { price: 0,   stripe_product: 'audit_free_annual' };
+  if (subscription?.status === 'active')  return { price: 99,  stripe_product: 'audit_99' };
+  return                                         { price: 149, stripe_product: 'audit_149' };
+}
+```
+
+## Agent Responsibility Summary — Audit
+
+```
+Agent               | Audit Responsibility
+────────────────────────────────────────────────────────────────────────────
+Engineering [A4]    | Intake validation, delivery email, Stripe webhook, upload API
+Market Intel [BONUS]| Region enrichment, live price signals, market_trend tagging
+Data+CRM [A6]       | BRI scoring, PDF report generation, HubSpot enrichment
+Content [A3]        | Personalized SK cover note (2+ specific data references required)
+Growth [A5]         | 7-day post-audit upsell sequence, NPS Day 1, upgrade conversion
+Orchestrator        | RACI enforcement, anomaly gate, Executive Summary to Leadership L99
+Leadership L99      | Receives summary only; approves pricing/policy changes
+```
+
+## Success Metrics — Audit Product
+
+```
+Metric                              | Target       | Owner
+──────────────────────────────────────────────────────────────────────
+Audit delivery time (payment → email)| ≤ 48h       | Engineering + Orchestrator
+BRI scoring accuracy (manual sample) | ≥ 85%       | Data+CRM Agent
+Day 7 upsell conversion rate         | ≥ 18%       | Growth Agent
+Audit → Starter upgrade              | ≥ 25%       | Growth + Orchestrator
+Customer NPS (Day 1 survey)          | ≥ 8.0       | Content + Data+CRM
+Monthly audits delivered             | ≥ 20        | Orchestrator KPI dashboard
+HubSpot enrichment success rate      | ≥ 95%       | Data+CRM Agent
+```
+Average lift per winning experiment | ≥ 15%            | Data+CRM analysis
 RACI compliance rate                | 100%             | Orchestrator enforcement
 Human approval violations           | 0                | Orchestrator log
 L99 Quality Score per project       | ≥ 10/13          | Self-assessment
