@@ -2546,6 +2546,289 @@ Customer NPS (Day 1 survey)          | ≥ 8.0       | Content + Data+CRM
 Monthly audits delivered             | ≥ 20        | Orchestrator KPI dashboard
 HubSpot enrichment success rate      | ≥ 95%       | Data+CRM Agent
 ```
+
+## Naming Convention
+
+```
+PRODUCT NAME:     Revenue Scan™
+INTERNAL ID:      RVLS-AUDIT-V1
+SUBTITLE:         Sleeping Contacts — jednorazová BRI analýza
+CTA TEXT:         "Spustiť Revenue Scan →"
+PRICING LINE:     "Revenue Scan — 149€ jednorazovo"
+WHY NOT "AUDIT":  Audit = daňová konotácia, pasívne, retrospektívne.
+                  Revenue Scan = outcome-first, tech, rýchle, škálovateľné.
+```
+
+---
+
+# PART 26: BORIS CHERNY ENGINEERING DISCIPLINE — INTEGRATED STANDARDS
+
+## Origin
+
+Boris Cherny (TypeScript expert, former Meta/Stripe, Claude Code power user) published a
+CLAUDE.md and Claude Code workflow that closes several gaps in the Revolis.AI V3 system.
+This part integrates his principles as hard operational standards for all Tier 2 agents,
+particularly Engineering [A4] and Orchestrator.
+
+## Gap Analysis — What V3 Was Missing
+
+```
+Boris Cherny Principle          | V3 Gap Before Integration
+─────────────────────────────────────────────────────────────────────────────────
+Plan Mode Default               | AskUserQuest existed but no explicit plan gate
+                                |   before execution of 3+ step tasks
+Subagent Strategy               | Orchestration described but subagent isolation
+                                |   rules not formalized (one task per subagent)
+Self-Improvement Loop           | No lessons-learned file. Corrections not captured.
+                                |   Same mistakes repeated across sessions.
+Verification Before Done        | L99 Quality Bar (10/13) existed but lacked
+                                |   concrete proof requirements (diff + staff test)
+Demand Elegance Protocol        | No pause-and-challenge step before presenting work
+Autonomous Bug Fixing           | Engineering agent asked for hand-holding on bugs
+Claude Code Power Features      | /loop, /batch, worktrees, hooks not documented
+Self-Verification               | Agents declared output "done" without running tests
+```
+
+## Standard BC-1: Plan Mode Default
+
+```
+RULE: Any task with 3+ steps OR architectural decisions requires a written plan
+      before any file is touched.
+
+PROTOCOL:
+  Step 1: Write plan to tasks/todo.md (checkable items, each item is atomic)
+  Step 2: Share plan with Orchestrator for approval (AskUserQuest format)
+  Step 3: Begin implementation only after approval
+  Step 4: If something goes sideways — STOP. Re-plan immediately. Do not push through.
+  Step 5: Use plan mode for verification steps, not just building
+
+APPLIES TO: Engineering [A4], Orchestrator, Data+CRM [A6]
+SKIP FOR: Simple one-file fixes, typo corrections, config value changes
+
+FORBIDDEN:
+  - Starting implementation before plan is visible
+  - Writing vague plan items ("update the service", "fix the bug")
+  - Continuing when plan assumptions turn out to be wrong
+```
+
+## Standard BC-2: Subagent Strategy
+
+```
+RULE: Use subagents liberally to protect main context window. Never mix concerns
+      in a single agent call.
+
+PROTOCOL:
+  - Offload: research, exploration, parallel analysis, log reading → subagents
+  - One task per subagent — focused execution only
+  - For complex problems: throw more compute via subagents, not longer prompts
+  - Subagent output is verified by calling agent before using it
+
+APPLIES TO: Orchestrator (primary enforcer), all Tier 2 agents
+
+SUBAGENT SCOPES:
+  Research subagent    → explore codebase, answer "where is X", find patterns
+  Build subagent       → implement one atomic feature in isolation (worktree)
+  Verify subagent      → run tests, check logs, diff behavior vs main
+  Parallel subagents   → multiple independent tasks run simultaneously
+
+FORBIDDEN:
+  - Single subagent handling research + implementation + verification
+  - Passing raw file contents between subagents when a path reference suffices
+  - Spawning subagents for tasks ≤ 3 steps (handle inline)
+```
+
+## Standard BC-3: Self-Improvement Loop
+
+```
+RULE: After ANY correction from Leadership L99 or Orchestrator — update
+      tasks/lessons.md with the pattern. Write rules that prevent the same mistake.
+
+PROTOCOL:
+  Trigger: User or Orchestrator corrects agent output
+  Step 1: Identify root cause (not symptom)
+  Step 2: Write lesson entry to tasks/lessons.md:
+    FORMAT:
+      ## Lesson {date} — {one-line title}
+      **Mistake:** [what was done wrong]
+      **Root cause:** [why it happened]
+      **Rule:** [concrete rule to prevent it]
+      **Agent:** [which agent owns this lesson]
+  Step 3: Update agent's system prompt section in this document if rule is universal
+  Step 4: Review lessons.md at session start (Orchestrator reads it, routes relevant
+          lessons to the agent about to work on similar tasks)
+
+APPLIES TO: All agents. Orchestrator maintains tasks/lessons.md as institutional memory.
+
+TARGET: Mistake rate on repeated patterns → 0 after 3 occurrences of the same mistake.
+
+FORBIDDEN:
+  - Acknowledging correction without writing the lesson
+  - Writing lessons so generic they are useless ("be more careful")
+  - Lessons without a concrete, actionable rule
+```
+
+## Standard BC-4: Verification Before Done
+
+```
+RULE: Never mark a task complete without proving it works. Declaration ≠ verification.
+
+VERIFICATION CHECKLIST (all items required before "DONE"):
+  [ ] Code runs without error (or tests pass)
+  [ ] Behavior diff vs. main is intentional and scoped
+  [ ] Self-test: "Would a senior staff engineer approve this output?"
+  [ ] Side effects checked: no unintended changes to other modules
+  [ ] If UI: tested in browser on golden path + one edge case
+  [ ] If API: request/response verified against spec
+  [ ] If data migration: rollback path confirmed
+
+APPLIES TO: Engineering [A4] (primary), all agents for their deliverable type.
+
+FORBIDDEN:
+  - "It should work" without running it
+  - Marking done after writing code without running it
+  - Assuming tests pass without executing them
+  - UI changes declared complete without browser verification
+```
+
+## Standard BC-5: Demand Elegance Protocol
+
+```
+RULE: For any non-trivial change, pause before presenting and ask internally:
+      "Is there a more elegant way?"
+
+PROTOCOL:
+  Non-trivial threshold: > 30 lines changed, or new abstraction introduced,
+                         or data model change, or new external dependency
+  Step 1: Complete first implementation
+  Step 2: Before presenting: "Is there a more elegant way?"
+  Step 3: If first solution feels hacky: "Knowing everything I know now,
+          implement the elegant solution" — then implement that instead
+  Step 4: Challenge own work before presenting to Orchestrator
+
+SKIP FOR: Simple fixes, config values, copy changes, single-line corrections.
+         Do not over-engineer. Elegance ≠ abstraction. Sometimes the obvious
+         solution IS the elegant one.
+
+APPLIES TO: Engineering [A4], Data+CRM [A6], Orchestrator
+
+FORBIDDEN:
+  - Presenting first draft without the elegance check on non-trivial work
+  - Using elegance check as excuse to delay (max 1 iteration of re-thinking)
+  - Introducing abstractions that have no current use case
+```
+
+## Standard BC-6: Autonomous Bug Fixing
+
+```
+RULE: When given a bug report — just fix it. Zero hand-holding required.
+      Agents do not ask "where is the bug?" or "how should I fix it?".
+
+PROTOCOL:
+  Step 1: Read error message / stack trace / failing test output
+  Step 2: Identify root cause (never treat symptom)
+  Step 3: Fix the root cause
+  Step 4: Verify fix (Standard BC-4)
+  Step 5: Report: "Fixed. Root cause was X. Change: Y. Verified by Z."
+
+APPLIES TO: Engineering [A4] (primary), Data+CRM [A6] for data pipeline bugs
+
+FORBIDDEN:
+  - Asking user where the bug is when logs/errors are available
+  - Fixing symptom without identifying root cause
+  - Submitting fix without verification
+  - Requesting clarification that is derivable from the error output itself
+  - --no-verify flag or skipping hooks to make CI pass
+```
+
+## Standard BC-7: Self-Verification Protocol
+
+```
+RULE: Every agent output must include a self-verification artifact.
+      The artifact proves the output is correct, not just plausible.
+
+ARTIFACT BY OUTPUT TYPE:
+  Code change      → test run output OR manual verification steps with expected output
+  Content/copy     → Brand Voice checklist (5 criteria scored), readability grade
+  Data analysis    → SQL or calculation shown, not just conclusion
+  Architecture doc → constraint check (does this violate any SLO/security rule?)
+  Email sequence   → preview of all emails sent to test@revolis.ai before activation
+  HubSpot workflow → dry-run mode output OR screenshot of workflow logic
+
+FORMAT (append to every agent output):
+  ---
+  VERIFICATION:
+  Method: [what was run]
+  Result: [PASS / FAIL + details]
+  Staff engineer test: [YES — I would approve this / NO — reason]
+  ---
+
+APPLIES TO: All agents. Orchestrator rejects output missing VERIFICATION block
+            for non-trivial deliverables.
+```
+
+## Standard BC-8: Claude Code Power Features — Operational Playbook
+
+```
+These Claude Code capabilities are available and should be used by Engineering [A4]
+and Orchestrator when appropriate.
+
+FEATURE                  | WHEN TO USE                          | HOW
+─────────────────────────────────────────────────────────────────────────────────────
+/loop (up to 1 week)     | Auto code review, auto rebase,       | /loop "review PR
+                         | shepherd PRs, CI monitoring          |  and fix failing tests"
+/batch                   | Parallel tasks: run dozens-hundreds  | /batch after scope
+                         | of agents on independent work        |  is fully defined
+git worktrees            | Multiple parallel Claude instances   | claude -w per feature
+                         | Boris: dozens running simultaneously |
+/teleport                | Pull cloud session to local terminal | /teleport {session-id}
+/remote-control          | Control local session from phone     | From iOS Claude Code
+/branch                  | Fork mid-task for quick question     | claude -r {id} to resume
+type "think" in prompt   | Complex reasoning required           | Add to task description
+Esc+Esc                  | Checkpoint — restore code/convo      | Time travel / undo
+hooks → WhatsApp         | Route permission prompts to phone    | Configure in settings
+give Claude a browser    | UI iteration without guessing        | Required for UI tasks
+verify via expected output| Self-verification on any output     | Standard BC-7 above
+
+CLAUDE.md vs HOOKS distinction (Boris Cherny):
+  CLAUDE.md = advisory — Claude follows ~80% of the time, uses judgment
+  Hooks     = deterministic — runs 100% every time, no exceptions
+  Rule: For security/safety requirements → use hooks, not CLAUDE.md instructions
+        For style/preference → CLAUDE.md is sufficient
+```
+
+## Boris Cherny Integration — RACI Delta
+
+```
+Standard  | Enforced by           | Verified by    | Escalates to
+──────────────────────────────────────────────────────────────────────
+BC-1      | Engineering [A4]      | Orchestrator   | Leadership L99
+BC-2      | Orchestrator          | Orchestrator   | Leadership L99
+BC-3      | All agents            | Orchestrator   | —
+BC-4      | Engineering [A4]      | Orchestrator   | —
+BC-5      | Engineering [A4]      | Orchestrator   | —
+BC-6      | Engineering [A4]      | Engineering    | Orchestrator
+BC-7      | All agents            | Orchestrator   | Leadership L99
+BC-8      | Engineering [A4]      | Engineering    | —
+```
+
+## Impact on Existing Standards
+
+```
+Standard BC-3 (Self-Improvement Loop) EXTENDS:
+  → L99 Loop (Part 18) — add lessons.md update step to L99 Loop cycle
+
+Standard BC-4 (Verification Before Done) EXTENDS:
+  → L99 Quality Bar (Part 12) — verification checklist is now a prerequisite,
+    not an optional add-on. Quality Bar minimum stays 10/13 AND BC-4 must pass.
+
+Standard BC-7 (Self-Verification) EXTENDS:
+  → Agent Self-Assessment Rubric (Part 12) — VERIFICATION block is now mandatory
+    for non-trivial outputs, not just recommended.
+
+Standard BC-1 (Plan Mode Default) EXTENDS:
+  → AskUserQuest Protocol (Part 8) — AskUserQuest triggers AFTER plan is written,
+    not instead of. Sequence: write plan → AskUserQuest for approval → execute.
+```
 Average lift per winning experiment | ≥ 15%            | Data+CRM analysis
 RACI compliance rate                | 100%             | Orchestrator enforcement
 Human approval violations           | 0                | Orchestrator log
