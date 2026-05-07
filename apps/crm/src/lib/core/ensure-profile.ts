@@ -16,7 +16,7 @@ export async function ensureProfile(user: any) {
 
     const role = !count || count === 0 ? "owner" : "agent";
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("profiles")
       .insert({
         auth_user_id: user.id,
@@ -28,6 +28,7 @@ export async function ensureProfile(user: any) {
       .select()
       .single();
 
+    if (error) throw error;
     return data;
   }
 

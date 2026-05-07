@@ -41,7 +41,7 @@ export async function gatherBriefData(profileId: string): Promise<GatheredData |
   const since     = new Date(Date.now() - OVERNIGHT_WINDOW_HOURS * 3_600_000).toISOString()
 
   // ── Profile + settings ────────────────────────────────────
-  const [{ data: profile }, { data: settings }] = await Promise.all([
+  const [{ data: profile, error: profileErr }, { data: settings, error: settingsErr }] = await Promise.all([
     supabase
       .from('profiles')
       .select('full_name, email')
@@ -53,6 +53,8 @@ export async function gatherBriefData(profileId: string): Promise<GatheredData |
       .eq('profile_id', profileId)
       .single(),
   ])
+  if (profileErr) console.error('[gather] profile fetch error', profileErr.message)
+  if (settingsErr) console.error('[gather] settings fetch error', settingsErr.message)
 
   if (!profile || !settings) return null
 

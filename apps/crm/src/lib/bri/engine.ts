@@ -69,12 +69,13 @@ export async function getBRI(
   profileId: string
 ): Promise<BRIScoreV2 | null> {
   const supabase = await createClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('lead_scores')
     .select('*')
     .eq('lead_id', leadId)
     .eq('profile_id', profileId)
     .single()
+  if (error && error.code !== 'PGRST116') console.error('[bri] score fetch error', error.message)
   return (data as BRIScoreV2) ?? null
 }
 

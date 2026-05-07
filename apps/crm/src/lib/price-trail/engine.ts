@@ -112,7 +112,8 @@ export async function getNegotiationBrief(opts: {
   if (opts.listingId)  query = query.eq('listing_id',  opts.listingId)
   if (opts.propertyId) query = query.eq('property_id', opts.propertyId)
 
-  const { data } = await query.single()
+  const { data, error } = await query.single()
+  if (error && error.code !== 'PGRST116') console.error('[price-trail] brief fetch error', error.message)
   return (data as NegotiationBrief) ?? null
 }
 

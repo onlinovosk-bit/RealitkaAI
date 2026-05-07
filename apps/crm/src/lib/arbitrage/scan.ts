@@ -186,21 +186,26 @@ export async function runArbitrageScan(
 
 async function loadConfig(profileId: string): Promise<ArbitrageConfig | null> {
   const supabase = await createClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('arbitrage_config')
     .select('*')
     .eq('profile_id', profileId)
     .single()
 
   if (data) return data as ArbitrageConfig
+  if (error && error.code !== 'PGRST116') {
+    console.error('[arbitrage] config fetch error', error.message)
+    return null
+  }
 
   // Create defaults
-  const { data: created } = await supabase
+  const { data: created, error: createErr } = await supabase
     .from('arbitrage_config')
     .insert({ profile_id: profileId })
     .select()
     .single()
 
+  if (createErr) console.error('[arbitrage] config create error', createErr.message)
   return (created as ArbitrageConfig) ?? null
 }
 
