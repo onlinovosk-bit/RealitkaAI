@@ -29,33 +29,28 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ sent: 0, failed: 0, profiles: [] })
   }
 
-  let sent   = 0
-  let failed = 0
-  const profiles: Array<{ profileId: string; delivered: boolean; channels: string[]; error?: string }> = []
+  const BATCH = 5  // conservative — brief delivery calls Resend email API
+  const all: Array<{ profileId: string; delivered: boolean; channels: string[]; error?: string }> = []
 
-  for (const { profile_id } of settings) {
-    try {
-      const result = await generateAndDeliverBrief(profile_id)
-
-      if (result) {
-        if (result.delivered) sent++
-        else failed++
-        profiles.push({
-          profileId: result.profileId,
-          delivered: result.delivered,
-          channels:  result.channels,
-          error:     result.error,
-        })
-      } else {
-        // No hot leads — skip silently
-        profiles.push({ profileId: profile_id, delivered: false, channels: [] })
-      }
-    } catch (err: any) {
-      console.error(`[morning-brief cron] profile ${profile_id} failed:`, err.message)
-      failed++
-      profiles.push({ profileId: profile_id, delivered: false, channels: [], error: err.message })
-    }
+  for (let i = 0; i < settings.length; i += BATCH) {
+    const batchResults = await Promise.all(
+      settings.slice(i, i + BATCH).map(async ({ profile_id }) => {
+        try {
+          const result = await generateAndDeliverBrief(profile_id)
+          if (result) return { profileId: result.profileId, delivered: result.delivered, channels: result.channels, error: result.error }
+          return { profileId: profile_id, delivered: false, channels: [] }
+        } catch (err: any) {
+          console.error(`[morning-brief cron] profile ${profile_id} failed:`, err.message)
+          return { profileId: profile_id, delivered: false, channels: [], error: err.message }
+        }
+      })
+    )
+    all.push(...batchResults)
   }
+
+  const sent   = all.filter(r => r.delivered).length
+  const failed = all.filter(r => !r.delivered).length
+  const profiles = all
 
   return NextResponse.json({
     ok:           true,

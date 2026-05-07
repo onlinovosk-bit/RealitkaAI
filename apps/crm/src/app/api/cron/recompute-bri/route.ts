@@ -23,9 +23,12 @@ export async function GET(request: NextRequest) {
     if (!profiles?.length) return NextResponse.json({ ok: true, computed: 0 })
 
     let totalComputed = 0
-    for (const profile of profiles) {
-      const count = await batchRecomputeBRI(profile.id)
-      totalComputed += count
+    const BATCH = 5
+    for (let i = 0; i < profiles.length; i += BATCH) {
+      const counts = await Promise.all(
+        profiles.slice(i, i + BATCH).map(p => batchRecomputeBRI(p.id))
+      )
+      totalComputed += counts.reduce((s, n) => s + n, 0)
     }
 
     return NextResponse.json({

@@ -29,11 +29,12 @@ export async function GET(request: NextRequest) {
     }
 
     let totalSynced = 0
-
-    for (const profile of profiles) {
-      const n = await syncFromPortalListings(profile.id, 'portal_import')
-      totalSynced += n
-      await new Promise(r => setTimeout(r, 100))
+    const BATCH = 5
+    for (let i = 0; i < profiles.length; i += BATCH) {
+      const counts = await Promise.all(
+        profiles.slice(i, i + BATCH).map(p => syncFromPortalListings(p.id, 'portal_import'))
+      )
+      totalSynced += counts.reduce((s, n) => s + n, 0)
     }
 
     return NextResponse.json({

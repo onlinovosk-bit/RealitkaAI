@@ -68,7 +68,8 @@ export async function listPersistedMatches(): Promise<PersistedLeadPropertyMatch
     .from("lead_property_matches")
     .select("*")
     .order("score", { ascending: false })
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(1000);
 
   if (error || !data) {
     console.error("listPersistedMatches error:", error?.message);
