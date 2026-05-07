@@ -31,32 +31,25 @@ export interface ListingContent {
   seo_keywords: string[];
 }
 
-// Cache system prompt — platí pre každé volanie s rovnakým agentom.
-const SYSTEM_PROMPT = `Si senior copywriter pre slovenský realitný trh s 15 rokmi skúseností. \
+export const SYSTEM_PROMPT = `Si senior copywriter pre slovenský realitný trh s 15 rokmi skúseností. \
 Píšeš texty čo skutočne predávajú — konkrétne, emocionálne, bez generických klišé. \
 NIKDY nepoužívaj: "krásny byt", "ideálna poloha", "výnimočná príležitosť", "moderný", "priestranný". \
 Namiesto toho: fakty, čísla, konkrétne výhody, silné otváracie vety. \
 Výstup je VŽDY validný JSON bez komentárov a markdown.`;
 
-const PERSONA_CONTEXT: Record<ListingPersona, string> = {
+export const PERSONA_CONTEXT: Record<ListingPersona, string> = {
   INVESTOR: "Cieľ: investor hľadajúci výnos. Zdôrazni: výnos z prenájmu (%), lokalitu, dopyty v okolí, potenciál rastu ceny, rýchlosť predaja.",
   FAMILY:   "Cieľ: rodina s deťmi. Zdôrazni: bezpečnosť, školy a škôlky v pešej dostupnosti, priestor na hranie, tiché susedstvo, záhrada/balkón.",
   DOWNSIZER:"Cieľ: ľudia zmenšujúci bývanie (50+). Zdôrazni: nízka údržba, výťah/bezbariérovosť, blízkosť lekárne a prírody, pohodlie.",
   GENERAL:  "Cieľ: všeobecný kupujúci. Vyvážený text, zdôrazni hlavné silné stránky.",
 };
 
-export async function generateListingContent(
-  property: PropertyInput,
-  persona: ListingPersona = "GENERAL"
-): Promise<ListingContent> {
-  const client = getClaudeClient();
-
+export function buildListingUserPrompt(property: PropertyInput, persona: ListingPersona = "GENERAL"): string {
   const priceFormatted = property.price.toLocaleString("sk-SK");
   const floorInfo = property.floor != null
     ? `${property.floor}. poschodie z ${property.total_floors ?? "?"}`
     : "neuvedené";
-
-  const userPrompt = `NEHNUTEĽNOSŤ NA PREDAJ:
+  return `NEHNUTEĽNOSŤ NA PREDAJ:
 Typ: ${property.type}
 Lokalita: ${property.location}${property.district ? `, ${property.district}` : ""}
 Výmera: ${property.size_m2} m²  |  Izby: ${property.rooms ?? "neuvedené"}
@@ -77,6 +70,14 @@ Vygeneruj JSON:
   "email_body": "Telo emailu pre databázu klientov — 160-200 slov. Osobný tón, hlavné výhody, jasný ďalší krok.",
   "seo_keywords": ["6 kľúčových slov pre portálové vyhľadávanie, konkrétne a hľadané"]
 }`;
+}
+
+export async function generateListingContent(
+  property: PropertyInput,
+  persona: ListingPersona = "GENERAL"
+): Promise<ListingContent> {
+  const client = getClaudeClient();
+  const userPrompt = buildListingUserPrompt(property, persona);
 
   const response = await client.messages.create({
     model: CLAUDE_SONNET,

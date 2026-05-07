@@ -71,7 +71,6 @@ const programOverview = [
       "Denný AI briefing o 8:00",
       "Hot Alert pri vysokom skóre leadu",
       "Týždenný konverzný report",
-      "Revolis Academy - 5 lekcií",
     ],
   },
   {

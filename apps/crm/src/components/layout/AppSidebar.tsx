@@ -490,7 +490,7 @@ export default function AppSidebar({
 }: AppSidebarProps) {
   const pathname = usePathname();
   const router   = useRouter();
-  const isFounderDemo = true;
+  const isFounderDemo = appRole === "founder";
 
   const [mobileOpen,      setMobileOpen]      = useState(false);
   const [permissions,     setPermissions]     = useState<TeamMemberPermissions>(

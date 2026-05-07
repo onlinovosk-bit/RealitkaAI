@@ -1,16 +1,22 @@
 /* apps/crm/src/app/globals.css */
 
-/* Importujeme Tailwind priamo - toto vyrieši chybu s unknown utility */
 @import "tailwindcss";
 
 @layer base {
+  html {
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%; /* Zabraňuje iOS Safari auto-zoom pri rotate */
+  }
+
   body {
-    /* Použijeme štandardné CSS pre farbu, aby sme sa vyhli konfliktom pri builde */
-    color: #0f172a; /* Ekvivalent slate-900 */
+    color: #0f172a;
     background-color: #1a1d21;
     font-family: "Slack-Lato", apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    /* Scroll padding pre MobileBottomNav (56px) + safe area — klavesnica neprykrýva inputy */
+    scroll-padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
   }
 }
 

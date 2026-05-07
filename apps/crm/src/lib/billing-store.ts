@@ -113,8 +113,6 @@ export const BILLING_PLANS = [
       "đź“‹ DennĂ˝ AI briefing â€“ 5 priorĂ­t kaĹľdĂ© rĂˇno o 8:00",
       "đź”” Hot Alert â€“ notifikĂˇcia keÄŹ prĂ­leĹľitosĹĄ dosiahne skĂłre 75+",
       "đź“ ZĂˇkladnĂˇ analytika konverziĂ­ (tĂ˝ĹľdennĂ˝ report)",
-      "đźŽ“ Revolis Academy â€“ prĂ­stup k freemium modulom (5 lekciĂ­)",
-      "âś… Revolis.AI Certified Agent certifikĂˇt",
       "đź›ˇ 100% garancia vrĂˇtenia do 30 dnĂ­",
     ],
     limits: PLAN_LIMITS.starter,

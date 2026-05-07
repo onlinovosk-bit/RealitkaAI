@@ -8,7 +8,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  const { data: lead } = await supabase.from("leads").select("*").eq("id", id).single();
+  const { data: lead } = await supabase
+    .from("leads")
+    .select("id, status, score, bri_score, budget, location, property_type, rooms, last_contact_at, created_at, financing, timeline")
+    .eq("id", id)
+    .single();
   if (!lead) return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 });
 
   const insight = await analyzeSalesBrain(id, lead as Record<string, unknown>);

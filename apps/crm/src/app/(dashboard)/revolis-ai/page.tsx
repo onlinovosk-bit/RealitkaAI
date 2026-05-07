@@ -11,7 +11,13 @@ export default async function RevolisAIPage() {
     getCurrentProfile(),
   ]);
   const feedSeed = getAiActivityFeedSeed();
-  const accountTier = (profile as { account_tier?: string | null } | null)?.account_tier ?? "free";
+  const raw = profile as { account_tier?: string | null; ui_role?: string | null; role?: string | null } | null;
+  // ui_role is the authoritative access gate — set by billing webhook, not localStorage
+  const uiRole     = raw?.ui_role ?? "agent";
+  const accountTier =
+    uiRole === "owner_protocol" || raw?.role === "founder"
+      ? "protocol_authority"
+      : (raw?.account_tier ?? "free");
 
   return (
     <RevolisAIClient

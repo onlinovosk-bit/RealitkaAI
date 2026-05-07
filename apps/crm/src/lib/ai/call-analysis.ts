@@ -9,15 +9,17 @@
 import { getClaudeClient, CLAUDE_HAIKU, extractJson } from "./claude";
 
 export type CallAnalysisResult = {
-  sentiment:       "positive" | "neutral" | "negative";
-  sentiment_arc:   "IMPROVING" | "DECLINING" | "FLAT";
-  keyTopics:       string[];
-  objections:      string[];
-  buying_signals:  string[];
-  nextAction:      string;
-  score:           number;   // 0–100 záujmové skóre leadu po hovore
-  summary:         string;
-  escalation_needed: boolean; // true ak treba senior makléra/manažéra
+  sentiment:           "positive" | "neutral" | "negative" | "inconclusive";
+  sentiment_arc:       "IMPROVING" | "DECLINING" | "FLAT";
+  analysis_confidence: "high" | "medium" | "low";  // AI istota v analýze (Wang round table)
+  inconclusive_reason?: string;  // Konkrétny dôvod prečo nedostatok dát
+  keyTopics:           string[];
+  objections:          string[];
+  buying_signals:      string[];
+  nextAction:          string;
+  score:               number;   // 0–100 záujmové skóre leadu po hovore
+  summary:             string;
+  escalation_needed:   boolean;
 };
 
 const SYSTEM = `Si expert analytik realitných hovorov pre slovenský trh. \
@@ -43,8 +45,10 @@ export async function analyzeCall(transcript: string): Promise<CallAnalysisResul
         role: "user",
         content: `Analyzuj tento prepis hovoru makléra s klientom:\n\n${safeTranscript}\n\nVráť JSON:
 {
-  "sentiment": "positive|neutral|negative",
+  "sentiment": "positive|neutral|negative|inconclusive — použi 'inconclusive' ak prepis nie je dosť jasný na určenie sentimentu",
   "sentiment_arc": "IMPROVING|DECLINING|FLAT",
+  "analysis_confidence": "high|medium|low — ako istý si touto analýzou na základe prepisu",
+  "inconclusive_reason": "Ak sentiment=inconclusive: konkrétny dôvod prečo (napr. 'Prepis obsahuje len technické otázky bez emocionálnych signálov'). Inak null.",
   "keyTopics": ["zoznam tém diskutovaných v hovore"],
   "objections": ["námietky klienta — buď konkrétny, napr. 'cena je 20k nad rozpočtom'"],
   "buying_signals": ["signály záujmu — napr. 'pýtal sa na termín odovzdania'"],
@@ -67,14 +71,16 @@ export async function analyzeCall(transcript: string): Promise<CallAnalysisResul
 
 function fallback(msg: string): CallAnalysisResult {
   return {
-    sentiment: "neutral",
-    sentiment_arc: "FLAT",
-    keyTopics: [],
-    objections: [],
-    buying_signals: [],
-    nextAction: msg,
-    score: 50,
-    summary: msg,
-    escalation_needed: false,
+    sentiment:           "inconclusive",
+    sentiment_arc:       "FLAT",
+    analysis_confidence: "low",
+    inconclusive_reason: msg,
+    keyTopics:           [],
+    objections:          [],
+    buying_signals:      [],
+    nextAction:          "Skontroluj prepis manuálne — analýza nedostupná.",
+    score:               50,
+    summary:             msg,
+    escalation_needed:   false,
   };
 }

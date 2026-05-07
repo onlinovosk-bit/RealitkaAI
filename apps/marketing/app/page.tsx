@@ -228,10 +228,10 @@ export default function HomePage() {
           <span className="live-dot"></span>
           340+ kancelárií · 6 krajín · Live
         </div>
-        <h1>Každú noc prídu 2–3 príležitosti.<br /><em>Revolis.AI odpovedá aj o 22:47.</em></h1>
+        <h1>Revolis.AI ukazuje maklérom, komu zavolať ako prvému.<br /><em>A automaticky stráži follow-upy.</em></h1>
         <p className="hero-sub">
-          Revolis.AI odpovedá na každý dopyt za <strong>90 sekúnd</strong>, sleduje klientov{' '}
-          <strong>18 mesiacov</strong> a ukáže Vám presne koho kontaktovať dnes.
+          <strong>AI odporúča. Maklér rozhoduje.</strong>{' '}
+          Žiadne stratené leady. Žiadne zabudnuté follow-upy. Majiteľ vidí čo sa deje — bez mikromanagementu.
         </p>
         <div className="hero-cta-row">
           <button className="btn-dark" onClick={() => { window.gtag?.('event', 'hero_cta_click', { position: 'hero' }); openModal('hero') }}>
@@ -241,6 +241,8 @@ export default function HomePage() {
           <a href="/demo" className="btn-outline" style={{ textDecoration: 'none' }} onClick={() => window.gtag?.('event', 'hero_secondary_click', { cta_text: 'Pozri 2-min demo' })}>Pozri 2-min demo</a>
         </div>
         <div className="trust-bar">
+          <div className="trust-item"><span className="trust-check">✓</span> AI odporúča. Maklér rozhoduje.</div>
+          <div className="trust-item"><span className="trust-check">✓</span> Žiadne osobné dáta klientov neopúšťajú vašu agentúru</div>
           <div className="trust-item"><span className="trust-check">✓</span> Bez dlhodobých záväzkov</div>
           <div className="trust-item"><span className="trust-check">✓</span> Trial bez záväzkov</div>
           <div className="trust-item"><span className="trust-check">✓</span> Nastavenie za 4 minúty</div>
@@ -490,8 +492,6 @@ export default function HomePage() {
             <ul className="plan-features"><li style={{ color: 'var(--muted)' }}>🤖 AI Asistent — odpovede do 2 min (pracovné hodiny)</li><li style={{ color: 'var(--muted)' }}>📱 WhatsApp + SMS automatické odpovede</li><li style={{ color: 'var(--muted)' }}>📧 AI email skripty personalizované správaním klienta</li><li style={{ color: 'var(--muted)' }}>⚡ One-click follow-up — AI navrhne, Vy schválite</li></ul>
             <div className="feat-section-title" style={{ color: 'var(--muted)', borderColor: 'var(--border)' }}>Scoring &amp; Analytika</div>
             <ul className="plan-features"><li style={{ color: 'var(--muted)' }}>📊 Buyer Readiness Index — AI skóre každej príl.</li><li style={{ color: 'var(--muted)' }}>🏠 Auto-párovanie s nehnuteľnosťami (do 10/mes)</li><li style={{ color: 'var(--muted)' }}>📋 Denný AI briefing — 5 priorít každé ráno o 8:00</li><li style={{ color: 'var(--muted)' }}>🔔 Hot Alert — notif. pri skóre 75+</li><li style={{ color: 'var(--muted)' }}>📝 Základná analytika konverzií (týždenný report)</li></ul>
-            <div className="feat-section-title" style={{ color: 'var(--muted)', borderColor: 'var(--border)' }}>Vzdelávanie &amp; Certifikát</div>
-            <ul className="plan-features"><li style={{ color: 'var(--muted)' }}>🎓 Revolis Academy — freemium (5 lekcií)</li><li style={{ color: 'var(--muted)' }}>✅ Revolis.AI Certified Agent certifikát</li></ul>
             <div className="feat-section-title" style={{ color: '#7C3AED', borderColor: '#DDD6FE' }}>⭐ Expert bonusy</div>
             <div className="expert-bonus" style={{ background: '#F5F3FF', borderColor: '#7C3AED' }}><div className="expert-bonus-label" style={{ color: '#7C3AED' }}>Oliver Strauss · ex Wise Agent</div><div className="expert-bonus-text" style={{ color: '#4C1D95' }}>Neviditeľná AI — každá feature je 1 klik. Maklér ani nevie že používa AI, len vidí výsledky.</div></div>
             <div className="expert-bonus" style={{ background: '#FFF7ED', borderColor: '#EA580C' }}><div className="expert-bonus-label" style={{ color: '#EA580C' }}>Amara Osei · ex LionDesk</div><div className="expert-bonus-text" style={{ color: '#7C2D12' }}>Tichá 7-dňová sekvencia — SMS deň 1, email deň 3, WhatsApp deň 5, push deň 7. Všetko na pozadí bez akcie makléra.</div></div>

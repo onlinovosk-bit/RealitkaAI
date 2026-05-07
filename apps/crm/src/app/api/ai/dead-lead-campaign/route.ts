@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { generateReactivationPlan } from "@/lib/ai/dead-lead-campaign";
+import { generateBatchReactivationPlan } from "@/lib/ai/dead-lead-campaign";
 import type { DeadLeadInput } from "@/lib/ai/dead-lead-campaign";
+import { sendMessage } from "@/lib/multi-channel-sender";
 
 /** GET /api/ai/dead-lead-campaign — generuje preview kampaň, NEnposiela správy */
 export async function GET(req: Request) {
@@ -22,16 +23,9 @@ export async function GET(req: Request) {
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
   if (!leads?.length) return NextResponse.json({ ok: true, candidates: [], total: 0 });
 
-  // Paralelné volania Claude — max 5 naraz aby sme neprekročili rate limit
-  const results = await Promise.allSettled(
-    leads.map((lead) => generateReactivationPlan(lead as DeadLeadInput))
-  );
-
-  const candidates = results
-    .map((r) => (r.status === "fulfilled" ? r.value : null))
-    .filter(Boolean);
-
-  const toReactivate = candidates.filter((c) => c!.should_reactivate);
+  // Batch: 5 leadov per Claude call — 10x menej API calls
+  const candidates = await generateBatchReactivationPlan(leads as DeadLeadInput[]);
+  const toReactivate = candidates.filter((c) => c.should_reactivate);
 
   return NextResponse.json({
     ok: true,
@@ -59,27 +53,37 @@ export async function POST(req: Request) {
 
   if (!leads?.length) return NextResponse.json({ ok: false, error: "No leads found" }, { status: 404 });
 
-  const plans = await Promise.allSettled(
-    leads.map((l) => generateReactivationPlan(l as DeadLeadInput))
-  );
-
-  const approved = plans
-    .map((r) => (r.status === "fulfilled" ? r.value : null))
-    .filter((c) => c?.should_reactivate);
+  // Batch: menej API calls
+  const plans     = await generateBatchReactivationPlan(leads as DeadLeadInput[]);
+  const approved  = plans.filter((c) => c.should_reactivate);
 
   if (body.dry_run) {
     return NextResponse.json({ ok: true, dry_run: true, would_send: approved.length, plans: approved });
   }
 
-  // TODO: Zavolať sendMessage() pre každý schválený plán
-  // import { sendMessage } from "@/lib/multi-channel-sender";
-  // for (const plan of approved) {
-  //   await sendMessage({ leadId: plan.lead.id, to: plan.lead.phone ?? plan.lead.email!, channel: plan.channel, body: plan.message, subject: plan.subject, aiGenerated: true });
-  // }
+  const results = await Promise.allSettled(
+    approved
+      .filter((plan) => plan!.lead.phone || plan!.lead.email)
+      .map((plan) =>
+        sendMessage({
+          leadId:      plan!.lead.id,
+          to:          plan!.lead.phone ?? plan!.lead.email!,
+          channel:     plan!.channel,
+          body:        plan!.message,
+          subject:     plan!.subject,
+          aiGenerated: true,
+        })
+      )
+  );
+
+  const sent    = results.filter((r) => r.status === "fulfilled" && r.value.ok).length;
+  const failed  = results.length - sent;
+  const noContact = approved.length - results.length;
 
   return NextResponse.json({
-    ok: true,
-    sent: approved.length,
-    skipped: plans.length - approved.length,
+    ok:      true,
+    sent,
+    failed,
+    skipped: plans.length - approved.length + noContact,
   });
 }

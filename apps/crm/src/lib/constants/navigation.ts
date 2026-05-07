@@ -53,7 +53,6 @@ export const REVOLIS_NAV_MATRIX: Record<
     features: [
       { id: "buyer_readiness_index", name: "Buyer Readiness Index", minTier: "STARTER" },
       { id: "weekly_conversion_report", name: "Týždenný konverzný report", minTier: "STARTER" },
-      { id: "revolis_academy", name: "Revolis Academy", minTier: "STARTER" },
       { id: "ai_assistant_24_7", name: "AI Asistent 24/7", minTier: "MARKET_VISION" },
       { id: "ai_call_analysis", name: "AI hovorová analýza", minTier: "MARKET_VISION" },
       { id: "auto_recontact", name: "Automatické opätovné kontakty", minTier: "MARKET_VISION" },

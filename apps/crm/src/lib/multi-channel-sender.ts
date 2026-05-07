@@ -173,12 +173,12 @@ export async function generateAiReply(context: {
 
   try {
     const claude = getClaudeClient();
+    const SYSTEM_REPLY = `Si asistent realitného makléra pre slovenský trh. Píšeš odpovede klientom v slovenčine. \
+NIKDY nevymýšľaj informácie o nehnuteľnosti. Ak niečo nevieš, opýtaj sa klienta.`;
     const response = await claude.messages.create({
       model: CLAUDE_HAIKU,
       max_tokens: style.maxTokens,
-      system: `Si asistent realitného makléra pre slovenský trh. Píšeš odpovede klientom v slovenčine. \
-Štýl pre kanál ${channel}: ${style.instruction} \
-NIKDY nevymýšľaj informácie o nehnuteľnosti. Ak niečo nevieš, opýtaj sa klienta.`,
+      system: [{ type: "text", text: `${SYSTEM_REPLY} Štýl pre kanál ${channel}: ${style.instruction}`, cache_control: { type: "ephemeral" } }],
       messages: [
         {
           role: "user",

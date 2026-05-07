@@ -10,7 +10,9 @@ import { getClaudeClient, CLAUDE_HAIKU, extractJson } from "./claude";
 
 export type SalesBrainInsight = {
   headline:        string;                        // max 6 slov
-  reasoning:       string;                        // 1 veta prečo
+  reasoning:       string;                        // 1 veta prečo — "Why this recommendation?" (Wang)
+  confidence:      "high" | "medium" | "low";    // AI istota — zobrazuj v UI (Cherny)
+  data_points:     string[];                      // 3 konkrétne dátové body z ktorých AI vychádzala (tooltip)
   priority:        "high" | "medium" | "low";
   suggestedAction: string;                        // 1 veta, imperatív
 };
@@ -52,7 +54,9 @@ export async function analyzeSalesBrain(
 Vráť JSON:
 {
   "headline": "Stručný popis situácie — max 6 slov",
-  "reasoning": "Prečo táto priorita — 1 veta s konkrétnym dôvodom",
+  "reasoning": "Prečo táto priorita — 1 veta s konkrétnym dôvodom z dát",
+  "confidence": "high|medium|low — ako istý si touto analýzou na základe dostupných dát",
+  "data_points": ["3 konkrétne fakty z dát ktoré rozhodli (napr. 'Financovanie: schválené', '4 dni bez kontaktu', 'BRI skóre 87/100')"],
   "priority": "high|medium|low",
   "suggestedAction": "Čo má maklér urobiť TERAZ — 1 veta, imperatív, max 12 slov"
 }`,
@@ -66,9 +70,11 @@ Vráť JSON:
   } catch {
     const s = typeof data.score === "number" ? data.score : 50;
     return {
-      headline: s >= 75 ? "Horúci lead — konaj" : "Lead potrebuje kontakt",
-      reasoning: `Skóre ${s}/100`,
-      priority: s >= 75 ? "high" : s >= 45 ? "medium" : "low",
+      headline:        s >= 75 ? "Horúci lead — konaj" : "Lead potrebuje kontakt",
+      reasoning:       `Skóre ${s}/100 — automatický fallback, AI nedostupná`,
+      confidence:      "low" as const,
+      data_points:     [`Skóre: ${s}/100`, "AI analýza nedostupná", "Skontroluj manuálne"],
+      priority:        s >= 75 ? "high" : s >= 45 ? "medium" : "low",
       suggestedAction: s >= 75 ? "Zavolaj dnes, nie zajtra." : "Pošli stručnú správu so zaujímavosťou.",
     };
   }
