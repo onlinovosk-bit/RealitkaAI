@@ -78,11 +78,16 @@ export async function processInboundLead(
   }
 
   // 4. Generate AI reply
-  const { data: profile } = await supabase
+  const { data: profile, error: profileErr } = await supabase
     .from('profiles')
     .select('full_name')
     .eq('id', payload.profileId)
     .single()
+
+  if (profileErr || !profile) {
+    console.error('[processInboundLead] profile not found:', payload.profileId)
+    return { leadId, briScore, replySent: false, replyChannels }
+  }
 
   const reply = await generateAutoReply({
     leadName:     payload.name,
@@ -104,13 +109,13 @@ export async function processInboundLead(
       text:    reply.body,
     })
     replyChannels.push('email')
-    void logEvent({
+    logEvent({
       profileId:  payload.profileId,
       entityType: 'lead',
       entityId:   leadId,
       eventType:  'message_sent',
       payload:    { channel: 'email', subject: reply.subject, auto_reply: true },
-    })
+    }).catch(e => console.error('[processInboundLead] logEvent email:', e))
   } catch (err: any) {
     console.error('[processInboundLead] email failed:', err.message)
   }
@@ -120,13 +125,13 @@ export async function processInboundLead(
     try {
       await sendWhatsApp(payload.phone, reply.body)
       replyChannels.push('whatsapp')
-      void logEvent({
+      logEvent({
         profileId:  payload.profileId,
         entityType: 'lead',
         entityId:   leadId,
         eventType:  'message_sent',
         payload:    { channel: 'whatsapp', auto_reply: true },
-      })
+      }).catch(e => console.error('[processInboundLead] logEvent whatsapp:', e))
     } catch (err: any) {
       console.error('[processInboundLead] WhatsApp failed:', err.message)
     }

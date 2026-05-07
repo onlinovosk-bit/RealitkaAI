@@ -8,12 +8,8 @@ import { runPulseCheck } from '@/lib/infra/pulse'
 
 export async function GET(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET
-
-  if (cronSecret) {
-    const authHeader = request.headers.get('authorization')
-    if (authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  if (!cronSecret || request.headers.get('authorization') !== `Bearer ${cronSecret}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   const result = await runPulseCheck()

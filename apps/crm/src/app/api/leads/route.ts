@@ -35,6 +35,8 @@ const CreateLeadSchema = z.object({
 /** Legacy AI endpoint – normalizované leady pre scoring (session). */
 export async function GET() {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json([], { status: 401 });
 
   const { data, error } = await supabase
     .from("leads")
@@ -70,6 +72,10 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const supabaseAuth = await createClient();
+    const { data: { user } } = await supabaseAuth.auth.getUser();
+    if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
     const validation = await validateBody(request, CreateLeadSchema);
     if (!validation.ok) return validation.response;
     const body = validation.data;

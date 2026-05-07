@@ -42,5 +42,9 @@ export function extractJson<T>(text: string): T {
     .replace(/^```\s*/m, "")
     .replace(/```\s*$/m, "")
     .trim();
-  return JSON.parse(clean) as T;
+  try {
+    return JSON.parse(clean) as T;
+  } catch {
+    throw new Error(`AI returned invalid JSON: ${clean.slice(0, 120)}`);
+  }
 }
