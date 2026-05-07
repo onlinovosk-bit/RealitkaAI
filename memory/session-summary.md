@@ -48,3 +48,17 @@ Zmazať 4 dead routes (po potvrdení). Potom: streaming pre call-coach — kópi
 ## Session ended: 
 ## Session ended: 
 ## Session ended: 
+## Session ended: 
+## Session ended: 
+## Session ended: 
+## Session ended: 
+## Session ended: 
+## Session ended: 
+## Session ended: 
+## Session ended: 
+## Session ended: 
+## Session ended: 
+## Session ended: 
+## Session ended: 
+## Session ended: 
+## Session ended: 

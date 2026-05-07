@@ -19,14 +19,16 @@ type LeadRow = {
 
 export async function POST(request: Request) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
     const body = await request.json();
     const leads: LeadRow[] = Array.isArray(body.leads) ? body.leads : [];
 
     if (leads.length === 0) {
       return NextResponse.json({ ok: false, error: "Žiadne leady na import." }, { status: 400 });
     }
-
-    const supabase = await createClient();
     let imported = 0;
     let updated = 0;
     let errors = 0;

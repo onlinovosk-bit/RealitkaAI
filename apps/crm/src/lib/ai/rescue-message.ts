@@ -7,6 +7,7 @@
  */
 
 import { getClaudeClient, CLAUDE_HAIKU, extractJson } from "./claude";
+import { withAiTimeout } from "./fallback";
 
 export type RescueChannel = "call" | "sms" | "email" | "whatsapp";
 
@@ -77,19 +78,17 @@ Vráť JSON:
   "status": "scheduled"
 }`;
 
-  const response = await client.messages.create({
+  const aiCall = client.messages.create({
     model: CLAUDE_HAIKU,
     max_tokens: 400,
     system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
     messages: [{ role: "user", content: userPrompt }],
+  }).then((response) => {
+    const raw = response.content[0].type === "text" ? response.content[0].text : "";
+    return extractJson<RescuePlanOutput>(raw);
   });
 
-  const raw = response.content[0].type === "text" ? response.content[0].text : "";
-  try {
-    return extractJson<RescuePlanOutput>(raw);
-  } catch {
-    return hardcodedFallback(context, channel);
-  }
+  return withAiTimeout(aiCall, hardcodedFallback(context, channel), 500);
 }
 
 function hardcodedFallback(ctx: RescueContext, channel: RescueChannel): RescuePlanOutput {
