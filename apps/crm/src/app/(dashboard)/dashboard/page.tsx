@@ -93,6 +93,7 @@ export default function DashboardPage() {
   const [userName, setUserName] = useState<string | undefined>(undefined);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [plan, setPlan] = useState<PlanTier>("free");
+  const [planKey, setPlanKey] = useState<string>("free");
   const [forecastingSummary, setForecastingSummary] = useState<ForecastingSummary | null>(null);
   const [monthlyMoney, setMonthlyMoney] = useState<MonthlyMoneyForecastPayload | null>(null);
   /** Prečo niekedy nevidno blok: fetch na /api/ai/monthly-forecast musí vrátiť 200 + ok:true (inak starý deploy alebo 500). */
@@ -165,6 +166,7 @@ export default function DashboardPage() {
           if (planRes.ok) {
             const planData = await planRes.json();
             if (planData?.tier) setPlan(planData.tier as PlanTier);
+            if (planData?.planKey) setPlanKey(planData.planKey as string);
             if (planData?.enterpriseSalesIntelligence) {
               setEnterpriseSalesIntelligence(true);
             }
@@ -239,9 +241,7 @@ export default function DashboardPage() {
   const dealsTrend = forecastingSummary ? getTrend(forecastingSummary.expectedClosedDeals, forecastTargets.expectedClosedDeals) : null;
   const valueTrend = forecastingSummary ? getTrend(forecastingSummary.expectedPipelineValue, forecastTargets.expectedPipelineValue, " EUR") : null;
   const probabilityTrend = forecastingSummary ? getTrend(forecastingSummary.avgProbabilityPercent, forecastTargets.avgProbabilityPercent, " %") : null;
-  const showRevenueCommandCenter =
-    plan === ("protocol_authority" as PlanTier) ||
-    plan === ("enterprise" as PlanTier);
+  const showRevenueCommandCenter = planKey === "command" || planKey === "enterprise";
 
   return (
     <main className="p-3 md:p-6" style={{ background: "#050914", minHeight: "100vh" }}>

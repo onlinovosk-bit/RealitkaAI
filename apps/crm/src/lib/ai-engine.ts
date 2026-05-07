@@ -125,7 +125,7 @@ export function getExplanation(lead: Lead): string[] {
 
 // ─── PAYWALL LOGIKA ───────────────────────────────────────────
 
-export type PlanTier = "free" | "pro";
+export type PlanTier = "free" | "starter" | "pro" | "enterprise" | "command";
 
 export function getVisibleRecommendations<T>(
   items: T[],
