@@ -128,10 +128,13 @@ export async function batchRecomputeBRI(profileId: string): Promise<number> {
 
   if (error || !leads) return 0
 
+  const BATCH = 10
   let computed = 0
-  for (const lead of leads) {
-    const result = await recomputeBRI(lead.id, profileId)
-    if (result) computed++
+  for (let i = 0; i < leads.length; i += BATCH) {
+    const results = await Promise.all(
+      leads.slice(i, i + BATCH).map(lead => recomputeBRI(lead.id, profileId))
+    )
+    computed += results.filter(Boolean).length
   }
   return computed
 }

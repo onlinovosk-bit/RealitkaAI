@@ -118,42 +118,44 @@ export async function runArbitrageScan(
 
     summary.matches_found = candidates.length
 
-    // ── 7. Upsert new matches ─────────────────────────────────
-    for (const cand of candidates) {
-      // Look up price drop history
-      const { data: bazosHistory } = await supabase
-        .from('listing_price_history')
-        .select('price')
-        .eq('listing_id', cand.bazos.id)
-        .order('recorded_at', { ascending: true })
+    // ── 7. Upsert new matches — parallel per candidate ───────
+    const matchCounts = await Promise.all(
+      candidates.map(async (cand) => {
+        const { data: bazosHistory } = await supabase
+          .from('listing_price_history')
+          .select('price')
+          .eq('listing_id', cand.bazos.id)
+          .order('recorded_at', { ascending: true })
 
-      const priceDropCount = countPriceDrops(
-        (bazosHistory ?? []).map(h => h.price as number)
-      )
+        const priceDropCount = countPriceDrops(
+          (bazosHistory ?? []).map(h => h.price as number)
+        )
 
-      const match = {
-        profile_id:       profileId,
-        listing_portal:   cand.portal.id,
-        listing_bazos:    cand.bazos.id,
-        price_portal:     cand.portal.price!,
-        price_bazos:      cand.bazos.price!,
-        delta_eur:        cand.delta_eur,
-        delta_pct:        cand.delta_pct,
-        match_score:      Math.round(cand.score * 1000) / 1000,
-        match_reasons:    cand.reasons,
-        city:             cand.portal.city,
-        address_display:  cand.portal.street ?? cand.portal.location_raw,
-        price_drop_count: priceDropCount,
-        seller_is_private: cand.bazos.seller_type === 'private',
-        expires_at:       new Date(Date.now() + 14 * 86400_000).toISOString(),
-      }
+        const match = {
+          profile_id:        profileId,
+          listing_portal:    cand.portal.id,
+          listing_bazos:     cand.bazos.id,
+          price_portal:      cand.portal.price!,
+          price_bazos:       cand.bazos.price!,
+          delta_eur:         cand.delta_eur,
+          delta_pct:         cand.delta_pct,
+          match_score:       Math.round(cand.score * 1000) / 1000,
+          match_reasons:     cand.reasons,
+          city:              cand.portal.city,
+          address_display:   cand.portal.street ?? cand.portal.location_raw,
+          price_drop_count:  priceDropCount,
+          seller_is_private: cand.bazos.seller_type === 'private',
+          expires_at:        new Date(Date.now() + 14 * 86400_000).toISOString(),
+        }
 
-      const { error: matchErr } = await supabase
-        .from('arbitrage_matches')
-        .upsert(match, { onConflict: 'listing_portal,listing_bazos', ignoreDuplicates: false })
+        const { error: matchErr } = await supabase
+          .from('arbitrage_matches')
+          .upsert(match, { onConflict: 'listing_portal,listing_bazos', ignoreDuplicates: false })
 
-      if (!matchErr) summary.matches_new++
-    }
+        return matchErr ? 0 : 1
+      })
+    )
+    summary.matches_new = matchCounts.reduce((s, n) => s + n, 0)
 
     // ── 8. Log event ─────────────────────────────────────────
     await logEvent({

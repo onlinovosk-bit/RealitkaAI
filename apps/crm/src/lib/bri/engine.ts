@@ -136,12 +136,13 @@ export async function batchComputeBRI(profileId: string): Promise<number> {
 
   if (!leads?.length) return 0
 
+  const BATCH = 10
   let computed = 0
-  // Serialize to avoid DB overload — 50ms gap between each
-  for (const lead of leads) {
-    const result = await computeBRI(lead.id, profileId, 'cron_6h')
-    if (result) computed++
-    await new Promise(r => setTimeout(r, 50))
+  for (let i = 0; i < leads.length; i += BATCH) {
+    const results = await Promise.all(
+      leads.slice(i, i + BATCH).map(lead => computeBRI(lead.id, profileId, 'cron_6h'))
+    )
+    computed += results.filter(Boolean).length
   }
   return computed
 }

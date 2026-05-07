@@ -744,7 +744,8 @@ export async function listLeads(filters?: LeadFilters): Promise<Lead[]> {
     .from("leads")
     .select("*")
     .order("score", { ascending: false })
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(500);
 
   if (filters?.status) {
     query = query.eq("status", filters.status);

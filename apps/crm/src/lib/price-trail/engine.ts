@@ -160,33 +160,32 @@ export async function syncFromPortalListings(
 
   if (!listings?.length) return 0
 
-  let synced = 0
-  for (const listing of listings) {
-    if (!listing.price) continue
+  // Batch-fetch last recorded price for all listings (one query instead of N)
+  const { data: lastPoints } = await supabase
+    .from('property_price_trail')
+    .select('listing_id, price')
+    .eq('profile_id', profileId)
+    .in('listing_id', listings.map(l => l.id))
+    .order('recorded_at', { ascending: false })
 
-    // Only add if price is different from last recorded point
-    const { data: lastPoint } = await supabase
-      .from('property_price_trail')
-      .select('price')
-      .eq('profile_id', profileId)
-      .eq('listing_id', listing.id)
-      .order('recorded_at', { ascending: false })
-      .limit(1)
-      .single()
+  const lastPriceMap = new Map<string, number>()
+  for (const pt of (lastPoints ?? [])) {
+    if (!lastPriceMap.has(pt.listing_id)) lastPriceMap.set(pt.listing_id, pt.price as number)
+  }
 
-    const lastRecorded = lastPoint?.price ?? null
-    if (lastRecorded === listing.price) continue  // no change
+  const toSync = listings.filter(l => l.price && lastPriceMap.get(l.id) !== l.price)
+  if (!toSync.length) return 0
 
-    const result = await addPricePoint({
+  const results = await Promise.all(
+    toSync.map(listing => addPricePoint({
       profileId,
       price:     listing.price,
       source,
       listingId: listing.id,
-    })
-    if (result) synced++
-  }
+    }))
+  )
 
-  return synced
+  return results.filter(Boolean).length
 }
 
 // ── Price alert management ─────────────────────────────────────
@@ -236,36 +235,37 @@ async function checkAndDispatchAlerts(
 
   if (!alerts?.length) return
 
-  for (const alert of alerts as PriceAlert[]) {
-    let triggered = false
+  await Promise.all(
+    (alerts as PriceAlert[]).map(async (alert) => {
+      let triggered = false
 
-    switch (alert.watch_type) {
-      case 'any_drop':
-        triggered = result.is_drop
-        break
-      case 'drop_threshold':
-        triggered = result.is_drop &&
-          Math.abs(result.delta_eur ?? 0) >= (alert.threshold_eur ?? 0)
-        break
-      case 'target_price':
-        triggered = result.price <= (alert.target_price ?? 0)
-        break
-    }
+      switch (alert.watch_type) {
+        case 'any_drop':
+          triggered = result.is_drop
+          break
+        case 'drop_threshold':
+          triggered = result.is_drop &&
+            Math.abs(result.delta_eur ?? 0) >= (alert.threshold_eur ?? 0)
+          break
+        case 'target_price':
+          triggered = result.price <= (alert.target_price ?? 0)
+          break
+      }
 
-    if (!triggered) continue
+      if (!triggered) return
 
-    // Update trigger timestamp
-    await supabase
-      .from('price_alerts')
-      .update({
-        last_triggered_at: new Date().toISOString(),
-        trigger_count:     (alert.trigger_count ?? 0) + 1,
-      })
-      .eq('id', alert.id)
-
-    // Send notification
-    await dispatchAlertNotification(profileId, alert, result)
-  }
+      await Promise.all([
+        supabase
+          .from('price_alerts')
+          .update({
+            last_triggered_at: new Date().toISOString(),
+            trigger_count:     (alert.trigger_count ?? 0) + 1,
+          })
+          .eq('id', alert.id),
+        dispatchAlertNotification(profileId, alert, result),
+      ])
+    })
+  )
 }
 
 async function dispatchAlertNotification(
