@@ -524,7 +524,6 @@ export default function HomePage() {
 
           {/* MARKET VISION */}
           <div className="price-card featured visible">
-            <div className="badge-popular">★ Najpopulárnejší</div>
             <div className="founder-tag" style={{ background: 'rgba(255,255,255,.1)', color: 'rgba(255,255,255,.6)', border: '1px solid rgba(255,255,255,.15)' }}>Zakladateľská cena</div>
             <div className="plan-name" style={{ color: 'rgba(255,255,255,.5)' }}>STRÁŽCA CIEN A ZISKOV</div>
             <div className="orig-price" style={{ color: 'rgba(255,255,255,.3)' }}>398 €/mes</div>
@@ -548,6 +547,7 @@ export default function HomePage() {
 
           {/* PROTOCOL AUTHORITY */}
           <div className="price-card visible" style={{ border: '2px solid #D4AF37', background: 'linear-gradient(160deg,#FFFBEB 0%,#FFF 60%)' }}>
+            <div className="badge-popular" style={{ background: 'linear-gradient(135deg,#D97706,#B45309)', color: '#fff' }}>★ Najpopulárnejší</div>
             <div className="founder-tag" style={{ background: 'rgba(217,119,6,.12)', color: '#92400E', border: '1px solid #FDE68A' }}>Zakladateľská cena</div>
             <div className="plan-name" style={{ color: '#92400E' }}>REALITY MONOPOL</div>
             <div className="orig-price" style={{ color: '#D97706' }}>898 €/mes</div>
