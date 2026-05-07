@@ -337,10 +337,143 @@ function AuditModal({ onClose }: { onClose: () => void }) {
   )
 }
 
+// ── Pricing checkout flow ──────────────────────────────────────────────────
+
+const PLAN_LABELS: Record<string, { name: string; price: string }> = {
+  'pricing-smart-start':        { name: 'Smart Start',             price: '49 €/mes' },
+  'pricing-active-force':       { name: 'RADAR MAKLÉRA',           price: '99 €/mes' },
+  'pricing-market-vision':      { name: 'STRÁŽCA CIEN A ZISKOV',   price: '199 €/mes' },
+  'pricing-protocol-authority': { name: 'REALITY MONOPOL',         price: '449 €/mes' },
+}
+
+function PricingModal({ source, onClose }: Props) {
+  const [email, setEmail]     = useState('')
+  const [name, setName]       = useState('')
+  const [status, setStatus]   = useState<'idle' | 'loading' | 'error'>('idle')
+  const [errorMsg, setErrorMsg] = useState('')
+
+  const plan = PLAN_LABELS[source] ?? { name: source, price: '' }
+
+  const inputBase: React.CSSProperties = {
+    width: '100%', padding: '14px 16px',
+    borderRadius: 12, background: 'rgba(255,255,255,.04)',
+    color: '#fff', fontSize: 15, outline: 'none',
+    fontFamily: 'inherit', display: 'block',
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!email) return
+    setStatus('loading')
+    setErrorMsg('')
+
+    window.gtag?.('event', 'pricing_checkout_start', { plan: source })
+
+    try {
+      const res = await fetch('/api/checkout/subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, name, plan: source }),
+      })
+      const data = await res.json() as { url?: string; error?: string }
+      if (!res.ok || !data.url) throw new Error(data.error ?? 'checkout_failed')
+      window.location.href = data.url
+    } catch (err) {
+      setStatus('error')
+      setErrorMsg(err instanceof Error ? err.message : 'Nastala chyba. Skúste znova.')
+    }
+  }
+
+  if (status === 'loading') {
+    return (
+      <div style={{ textAlign: 'center', padding: '40px 0' }}>
+        <div style={{ fontSize: 36, marginBottom: 16 }}>⏳</div>
+        <div style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 8 }}>
+          Presmerovávam na platbu...
+        </div>
+        <p style={{ color: 'rgba(255,255,255,.4)', fontSize: 14 }}>Bezpečná platba cez Stripe</p>
+      </div>
+    )
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <div style={{
+        display: 'inline-flex', alignItems: 'center', gap: 6,
+        padding: '4px 12px', borderRadius: 999,
+        background: 'rgba(14,165,233,.1)', border: '1px solid rgba(14,165,233,.2)',
+        fontSize: 11, fontWeight: 700, color: '#0EA5E9',
+        letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 16,
+      }}>
+        <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16A34A', display: 'inline-block' }} />
+        Zakladateľská cena — obmedzené miesta
+      </div>
+
+      <div style={{ fontSize: 24, fontWeight: 900, color: '#fff', lineHeight: 1.2, marginBottom: 4 }}>
+        {plan.name}
+      </div>
+      <div style={{ fontSize: 28, fontWeight: 900, color: '#0EA5E9', marginBottom: 16 }}>
+        {plan.price} <span style={{ fontSize: 13, color: 'rgba(255,255,255,.35)', fontWeight: 400 }}>s DPH</span>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
+        <input
+          type="text"
+          placeholder="Vaše meno (nepovinné)"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          style={{ ...inputBase, border: '1px solid rgba(255,255,255,.1)' }}
+        />
+        <input
+          type="email"
+          placeholder="Váš pracovný email *"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          required
+          style={{ ...inputBase, border: '1px solid rgba(14,165,233,.35)', background: 'rgba(14,165,233,.04)' }}
+        />
+      </div>
+
+      {status === 'error' && (
+        <p style={{ color: '#EF4444', fontSize: 13, marginBottom: 8 }}>{errorMsg}</p>
+      )}
+
+      <button
+        type="submit"
+        style={{
+          width: '100%', padding: '16px',
+          borderRadius: 12, border: 'none', cursor: 'pointer',
+          background: 'linear-gradient(135deg,#0EA5E9,#0284C7)',
+          color: '#fff', fontSize: 16, fontWeight: 800,
+          fontFamily: 'inherit', marginTop: 4,
+        }}
+      >
+        Prejsť na platbu →
+      </button>
+
+      <div style={{ display: 'flex', gap: 16, justifyContent: 'center', marginTop: 14, flexWrap: 'wrap' }}>
+        {['Bezpečná platba', 'GDPR compliant', 'Zrušenie kedykoľvek'].map(t => (
+          <span key={t} style={{ fontSize: 12, color: 'rgba(255,255,255,.3)', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ color: '#4ADE80' }}>✓</span> {t}
+          </span>
+        ))}
+      </div>
+    </form>
+  )
+}
+
 // ── Root component ─────────────────────────────────────────────────────────
 
+const PRICING_SOURCES = new Set([
+  'pricing-smart-start',
+  'pricing-active-force',
+  'pricing-market-vision',
+  'pricing-protocol-authority',
+])
+
 export default function LeadCaptureModal({ source, onClose }: Props) {
-  const isAudit = source === 'revenue-scan'
+  const isAudit   = source === 'revenue-scan'
+  const isPricing = PRICING_SOURCES.has(source)
 
   return (
     <div
@@ -354,7 +487,7 @@ export default function LeadCaptureModal({ source, onClose }: Props) {
     >
       <div style={{
         background: '#0A0F1E',
-        border: `1px solid ${isAudit ? 'rgba(168,85,247,.3)' : 'rgba(14,165,233,.25)'}`,
+        border: `1px solid ${isAudit ? 'rgba(168,85,247,.3)' : isPricing ? 'rgba(14,165,233,.3)' : 'rgba(14,165,233,.25)'}`,
         borderRadius: 20,
         padding: '40px 36px',
         maxWidth: 460, width: '100%',
@@ -373,10 +506,9 @@ export default function LeadCaptureModal({ source, onClose }: Props) {
           aria-label="Zavrieť"
         >×</button>
 
-        {isAudit
-          ? <AuditModal onClose={onClose} />
-          : <StandardModal source={source} onClose={onClose} />
-        }
+        {isAudit   ? <AuditModal onClose={onClose} /> :
+         isPricing ? <PricingModal source={source} onClose={onClose} /> :
+                     <StandardModal source={source} onClose={onClose} />}
       </div>
     </div>
   )
