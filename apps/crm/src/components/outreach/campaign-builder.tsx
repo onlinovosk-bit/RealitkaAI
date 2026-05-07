@@ -4,15 +4,18 @@ import { useState, useEffect } from "react";
 
 
 type Option = { id: string; name: string };
-// TODO: Replace with real data loading from assets/DB
-const fetchSegments = async (): Promise<Option[]> => [
-  { id: "seg1", name: "Segment 1" },
-  { id: "seg2", name: "Segment 2" },
-];
-const fetchTemplates = async (): Promise<Option[]> => [
-  { id: "tmpl1", name: "Cold Email 1" },
-  { id: "tmpl2", name: "Cold Email 2" },
-];
+
+const fetchSegments = async (): Promise<Option[]> => {
+  const res = await fetch('/api/outreach/segments')
+  if (!res.ok) return []
+  return res.json()
+}
+
+const fetchTemplates = async (): Promise<Option[]> => {
+  const res = await fetch('/api/outreach/templates')
+  if (!res.ok) return []
+  return res.json()
+}
 
 
 export default function CampaignBuilder() {
