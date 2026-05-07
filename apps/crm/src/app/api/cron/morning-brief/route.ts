@@ -1,21 +1,67 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { revolisGuard } from '@/lib/revolis-guard';
-import { sendSlackMessage } from '@/lib/slack';
+// ================================================================
+// Revolis.AI — Morning Brief Cron
+// Delivers personalised brief to every profile with enabled settings
+// vercel.json: {"path": "/api/cron/morning-brief", "schedule": "0 6 * * *"}
+// ================================================================
+import { NextRequest, NextResponse }     from 'next/server'
+import { createClient }                  from '@/lib/supabase/server'
+import { generateAndDeliverBrief }       from '@/lib/morning-brief/assemble'
 
-export async function GET(req: NextRequest) {
-  return revolisGuard(req, 'Morning Briefing', async () => {
-    const activeTodos = "Dokončiť integráciu Slacku a otestovať Outreach flow.";
-    
-    const briefing = `*🌅 Revolis Morning Briefing*\n\n` +
-      `*Naposledy si pracoval na:* Zabezpečení API a rotácii kľúčov.\n` +
-      `*Aktuálne TODO:* ${activeTodos}\n\n` +
-      `*3 Priority na dnes:*\n` +
-      `1. ✅ Otestovať Outreach trigger do Slacku\n` +
-      `2. 📊 Skontrolovať úspešnosť scrapingu v Supabase\n` +
-      `3. 🤖 Navrhnúť šablóny pre A-segment outreach\n\n` +
-      `_Dajme do toho 100%, šéfe!_`;
+export async function GET(request: NextRequest) {
+  const cronSecret = process.env.CRON_SECRET
+  if (!cronSecret || request.headers.get('authorization') !== `Bearer ${cronSecret}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
-    await sendSlackMessage(briefing);
-    return NextResponse.json({ success: true, message: "Briefing sent to Slack" });
-  });
+  const supabase = await createClient()
+
+  const { data: settings, error } = await supabase
+    .from('morning_brief_settings')
+    .select('profile_id')
+    .eq('enabled', true)
+
+  if (error) {
+    console.error('[morning-brief cron] settings fetch failed:', error.message)
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  if (!settings?.length) {
+    return NextResponse.json({ sent: 0, failed: 0, profiles: [] })
+  }
+
+  let sent   = 0
+  let failed = 0
+  const profiles: Array<{ profileId: string; delivered: boolean; channels: string[]; error?: string }> = []
+
+  for (const { profile_id } of settings) {
+    try {
+      const result = await generateAndDeliverBrief(profile_id)
+
+      if (result) {
+        if (result.delivered) sent++
+        else failed++
+        profiles.push({
+          profileId: result.profileId,
+          delivered: result.delivered,
+          channels:  result.channels,
+          error:     result.error,
+        })
+      } else {
+        // No hot leads — skip silently
+        profiles.push({ profileId: profile_id, delivered: false, channels: [] })
+      }
+    } catch (err: any) {
+      console.error(`[morning-brief cron] profile ${profile_id} failed:`, err.message)
+      failed++
+      profiles.push({ profileId: profile_id, delivered: false, channels: [], error: err.message })
+    }
+  }
+
+  return NextResponse.json({
+    ok:           true,
+    sent,
+    failed,
+    profiles,
+    generated_at: new Date().toISOString(),
+  })
 }
