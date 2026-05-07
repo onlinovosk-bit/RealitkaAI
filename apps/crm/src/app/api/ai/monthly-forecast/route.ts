@@ -12,10 +12,13 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
+  const { data: profile } = await supabase.from("profiles").select("id").eq("auth_user_id", user.id).single();
+
   const { data: leads } = await supabase
     .from("leads")
     .select("score, budget")
-    .eq("is_active", true);
+    .eq("is_active", true)
+    .eq("assigned_profile_id", profile?.id ?? "");
 
   const rows = (leads ?? []).map((l) => ({
     score: typeof l.score === "number" ? l.score : 50,
