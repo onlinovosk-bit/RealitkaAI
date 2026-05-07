@@ -45,7 +45,7 @@ export async function generateCallCoachFeedback(transcript: string): Promise<Coa
       },
     ],
   }).then((response) => {
-    const raw = response.content[0].type === "text" ? response.content[0].text : "";
+    const raw = response.content?.[0]?.type === "text" ? (response.content[0] as { text: string }).text : "";
     return extractJson<CoachFeedback>(raw);
   });
 

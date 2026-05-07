@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
 
-// --- Typy pre summary ---
 export type DashboardSummaryResponse = {
   period: 'today' | 'last_7_days' | 'last_30_days';
   totals: {
@@ -11,19 +11,19 @@ export type DashboardSummaryResponse = {
     dealsWon: number;
   };
   buyerReadiness: {
-    averageScore: number; // 0-100
-    hotCount: number;     // score >= 70
-    warmCount: number;    // 40–69
-    coldCount: number;    // < 40
+    averageScore: number;
+    hotCount: number;
+    warmCount: number;
+    coldCount: number;
   };
   topHotLeads: Array<{
     id: string;
     name: string;
     segment: 'buyer' | 'seller' | 'investor';
-    readinessScore: number; // 0-100
-    lastActivityAt: string; // ISO
-    nextStep?: string;      // e.g. "Call", "Follow-up email"
-    propertyInterestSummary?: string; // krátky opis
+    readinessScore: number;
+    lastActivityAt: string;
+    nextStep?: string;
+    propertyInterestSummary?: string;
   }>;
   activity: {
     callsToday: number;
@@ -33,57 +33,72 @@ export type DashboardSummaryResponse = {
 };
 
 export async function GET() {
-  // TODO: načítaj dáta z DB
-  const data: DashboardSummaryResponse = {
-    period: 'today',
-    totals: {
-      newLeads: 8,
-      activeLeads: 42,
-      hotLeads: 12,
-      dealsInPipeline: 19,
-      dealsWon: 3,
-    },
-    buyerReadiness: {
-      averageScore: 67,
-      hotCount: 12,
-      warmCount: 21,
-      coldCount: 17,
-    },
-    topHotLeads: [
-      {
-        id: 'lead_1',
-        name: 'Ján Novák',
-        segment: 'buyer',
-        readinessScore: 92,
-        lastActivityAt: new Date().toISOString(),
-        nextStep: 'Call',
-        propertyInterestSummary: '3-izbový byt, Prešov, 150k €',
-      },
-      {
-        id: 'lead_2',
-        name: 'Petra Kováčová',
-        segment: 'buyer',
-        readinessScore: 91,
-        lastActivityAt: new Date().toISOString(),
-        nextStep: 'Call',
-        propertyInterestSummary: '2-izbový byt, Košice, 180k €',
-      },
-      {
-        id: 'lead_3',
-        name: 'Marek Horváth',
-        segment: 'investor',
-        readinessScore: 90,
-        lastActivityAt: new Date().toISOString(),
-        nextStep: 'Meeting',
-        propertyInterestSummary: 'Polyfunkčný objekt, Prešov, 500k €',
-      },
-    ],
-    activity: {
-      callsToday: 4,
-      emailsToday: 9,
-      viewingsScheduled: 3,
-    },
-  };
+  try {
+    const supabase  = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  return NextResponse.json(data);
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+    const todayISO = todayStart.toISOString()
+
+    const [
+      { count: newLeads },
+      { count: activeLeads },
+      { data: hotLeadsData },
+      { data: topLeads },
+      { count: callsToday },
+      { count: emailsToday },
+    ] = await Promise.all([
+      supabase.from('leads').select('id', { count: 'exact', head: true }).gte('created_at', todayISO),
+      supabase.from('leads').select('id', { count: 'exact', head: true }).neq('status', 'Archivovaný'),
+      supabase.from('lead_scores').select('bri_score').gte('bri_score', 70),
+      supabase.from('leads')
+        .select('id, name, property_type, location, budget, last_contact_at, created_at')
+        .order('score', { ascending: false })
+        .limit(5),
+      supabase.from('events').select('id', { count: 'exact', head: true })
+        .eq('event_type', 'call_completed').gte('created_at', todayISO),
+      supabase.from('events').select('id', { count: 'exact', head: true })
+        .eq('event_type', 'message_sent').gte('created_at', todayISO),
+    ])
+
+    const scores  = (hotLeadsData ?? []).map(r => r.bri_score as number)
+    const avg     = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0
+    const hotCnt  = scores.filter(s => s >= 70).length
+    const warmCnt = scores.filter(s => s >= 40 && s < 70).length
+    const coldCnt = scores.filter(s => s < 40).length
+
+    const topHotLeads = (topLeads ?? []).map(l => ({
+      id:                     l.id,
+      name:                   l.name,
+      segment:                'buyer' as const,
+      readinessScore:         0,
+      lastActivityAt:         l.last_contact_at ?? l.created_at,
+      propertyInterestSummary: [l.property_type, l.location, l.budget].filter(Boolean).join(', ') || undefined,
+    }))
+
+    const data: DashboardSummaryResponse = {
+      period: 'today',
+      totals: {
+        newLeads:        newLeads  ?? 0,
+        activeLeads:     activeLeads ?? 0,
+        hotLeads:        hotCnt,
+        dealsInPipeline: 0,
+        dealsWon:        0,
+      },
+      buyerReadiness: { averageScore: avg, hotCount: hotCnt, warmCount: warmCnt, coldCount: coldCnt },
+      topHotLeads,
+      activity: {
+        callsToday:         callsToday  ?? 0,
+        emailsToday:        emailsToday ?? 0,
+        viewingsScheduled:  0,
+      },
+    }
+
+    return NextResponse.json(data)
+  } catch (err) {
+    console.error('[dashboard/summary]', err)
+    return NextResponse.json({ error: 'Interná chyba.' }, { status: 500 })
+  }
 }

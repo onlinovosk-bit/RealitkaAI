@@ -8,7 +8,8 @@ export async function POST(req: Request) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
-  const body = (await req.json()) as { leadId: string; score?: number; daysSinceContact?: number; emailClicked?: boolean };
+  let body: { leadId: string; score?: number; daysSinceContact?: number; emailClicked?: boolean };
+  try { body = await req.json(); } catch { return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 }); }
   const results = await runAutopilotRules(
     { leadId: body.leadId, score: body.score ?? 50, daysSinceContact: body.daysSinceContact ?? 0, emailClicked: body.emailClicked ?? false },
     DEFAULT_AUTOPILOT_RULES

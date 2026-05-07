@@ -7,7 +7,9 @@ export async function POST(req: Request) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
-  const { transcript } = (await req.json()) as { transcript: string };
+  let body: { transcript?: string };
+  try { body = await req.json(); } catch { return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 }); }
+  const { transcript } = body;
   if (!transcript) return NextResponse.json({ ok: false, error: "transcript required" }, { status: 400 });
 
   const result = await analyzeCall(transcript);

@@ -60,7 +60,7 @@ export async function analyzeCall(transcript: string): Promise<CallAnalysisResul
       },
     ],
   }).then((response) => {
-    const raw = response.content[0].type === "text" ? response.content[0].text : "";
+    const raw = response.content?.[0]?.type === "text" ? (response.content[0] as { text: string }).text : "";
     return extractJson<CallAnalysisResult>(raw);
   });
 

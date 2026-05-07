@@ -12,7 +12,8 @@ function getServiceClient() {
 }
 
 export async function POST(request: Request) {
-  const body = await request.json() as { source?: string };
+  let body: { source?: string };
+  try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
   const source = body.source ?? "leads_demo";
 
   const accessToken = process.env.META_ACCESS_TOKEN;

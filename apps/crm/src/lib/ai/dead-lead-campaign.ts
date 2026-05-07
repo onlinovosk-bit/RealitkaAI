@@ -118,7 +118,7 @@ Vráť JSON array (jeden objekt per lead, zachovaj idx):
     ],
   });
 
-  const raw = response.content[0].type === "text" ? response.content[0].text : "[]";
+  const raw = response.content?.[0]?.type === "text" ? (response.content[0] as { text: string }).text : "[]";
   try {
     const decisions = extractJson<BatchDecision[]>(raw);
     const map = new Map(decisions.map((d) => [d.idx, d]));
