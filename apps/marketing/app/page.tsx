@@ -483,7 +483,7 @@ export default function HomePage() {
             <div className="founder-tag" style={{ background: 'rgba(100,116,139,.1)', color: '#64748B', border: '1px solid #CBD5E1' }}>Zakladateľská cena</div>
             <div className="plan-name" style={{ color: 'var(--muted)' }}>Smart Start</div>
             <div className="orig-price">98 €/mes</div>
-            <div className="plan-price">49 <span className="plan-period">€/mes</span></div>
+            <div className="plan-price">49 <span className="plan-period">€/mes s DPH</span></div>
             <div className="plan-tagline" style={{ color: 'var(--muted)' }}>Ideálny štart pre samostatných maklérov. Prvé výsledky do 7 dní.</div>
             <hr className="plan-divider" style={{ borderColor: 'var(--border)', margin: '16px 0' }} />
             <div className="feat-section-title" style={{ color: 'var(--muted)', borderColor: 'var(--border)' }}>Tím a limity</div>
@@ -503,7 +503,7 @@ export default function HomePage() {
             <div className="founder-tag" style={{ background: 'rgba(14,165,233,.08)', color: 'var(--cyan)', border: '1px solid rgba(14,165,233,.25)' }}>Zakladateľská cena</div>
             <div className="plan-name" style={{ color: 'var(--cyan)' }}>RADAR MAKLÉRA</div>
             <div className="orig-price">198 €/mes</div>
-            <div className="plan-price">99 <span className="plan-period">€/mes</span></div>
+            <div className="plan-price">99 <span className="plan-period">€/mes s DPH</span></div>
             <div className="plan-tagline" style={{ color: 'var(--muted)' }}>Plný AI arzenál pre aktívneho makléra. Sofia AI 24/7 aj v noci.</div>
             <hr className="plan-divider" style={{ borderColor: '#BAE6FD', margin: '16px 0' }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 10, background: 'rgba(14,165,233,.07)', border: '1px solid rgba(14,165,233,.2)', marginBottom: 4 }}><span style={{ fontSize: 14 }}>📦</span><span style={{ fontSize: 12, fontWeight: 800, color: 'var(--cyan)' }}>Obsahuje všetko zo Smart Start</span></div>
@@ -528,10 +528,10 @@ export default function HomePage() {
             <div className="founder-tag" style={{ background: 'rgba(255,255,255,.1)', color: 'rgba(255,255,255,.6)', border: '1px solid rgba(255,255,255,.15)' }}>Zakladateľská cena</div>
             <div className="plan-name" style={{ color: 'rgba(255,255,255,.5)' }}>STRÁŽCA CIEN A ZISKOV</div>
             <div className="orig-price" style={{ color: 'rgba(255,255,255,.3)' }}>398 €/mes</div>
-            <div className="plan-price" style={{ color: '#fff' }}>199 <span className="plan-period" style={{ color: 'rgba(255,255,255,.35)' }}>€/mes</span></div>
+            <div className="plan-price" style={{ color: '#fff' }}>199 <span className="plan-period" style={{ color: 'rgba(255,255,255,.35)' }}>€/mes s DPH</span></div>
             <div className="plan-tagline" style={{ color: 'rgba(255,255,255,.5)' }}>Tímová licencia pre majiteľa. Owner vidí tím, maklér má Active Force.</div>
             <hr className="plan-divider" style={{ borderColor: 'rgba(255,255,255,.1)', margin: '16px 0' }} />
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 10, background: 'rgba(56,189,248,.08)', border: '1px solid rgba(56,189,248,.2)', marginBottom: 4 }}><span style={{ fontSize: 14 }}>📦</span><span style={{ fontSize: 12, fontWeight: 800, color: '#38BDF8' }}>Obsahuje všetko z Active Force</span></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 10, background: 'rgba(56,189,248,.08)', border: '1px solid rgba(56,189,248,.2)', marginBottom: 4 }}><span style={{ fontSize: 14 }}>📦</span><span style={{ fontSize: 12, fontWeight: 800, color: '#38BDF8' }}>Obsahuje všetko z RADAR MAKLÉRA</span></div>
             <div className="feat-section-title" style={{ color: '#38BDF8', borderColor: 'rgba(56,189,248,.2)' }}>Licencia &amp; Tím</div>
             <ul className="plan-features" style={{ color: 'rgba(255,255,255,.7)' }}><li>👑 Owner: Market Vision menu (exkluzívny dashboard)</li><li>1× Active Force licencia pre makléra v tíme</li><li>30-dňová garancia vrátenia</li></ul>
             <div className="feat-section-title" style={{ color: '#38BDF8', borderColor: 'rgba(56,189,248,.2)' }}>Owner Intelligence</div>
@@ -551,10 +551,10 @@ export default function HomePage() {
             <div className="founder-tag" style={{ background: 'rgba(217,119,6,.12)', color: '#92400E', border: '1px solid #FDE68A' }}>Zakladateľská cena</div>
             <div className="plan-name" style={{ color: '#92400E' }}>REALITY MONOPOL</div>
             <div className="orig-price" style={{ color: '#D97706' }}>898 €/mes</div>
-            <div className="plan-price" style={{ color: '#92400E' }}>449 <span className="plan-period" style={{ color: '#D97706' }}>€/mes</span></div>
+            <div className="plan-price" style={{ color: '#92400E' }}>449 <span className="plan-period" style={{ color: '#D97706' }}>€/mes s DPH</span></div>
             <div className="plan-tagline" style={{ color: '#78350F' }}>Najvyšší level. Owner má Protocol menu, 4 makléri dostanú Active Force.</div>
             <hr className="plan-divider" style={{ borderColor: '#FDE68A', margin: '16px 0' }} />
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 10, background: 'rgba(217,119,6,.1)', border: '1px solid #FDE68A', marginBottom: 4 }}><span style={{ fontSize: 14 }}>📦</span><span style={{ fontSize: 12, fontWeight: 800, color: '#B45309' }}>Obsahuje všetko z Market Vision</span></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 10, background: 'rgba(217,119,6,.1)', border: '1px solid #FDE68A', marginBottom: 4 }}><span style={{ fontSize: 14 }}>📦</span><span style={{ fontSize: 12, fontWeight: 800, color: '#B45309' }}>Obsahuje všetko zo STRÁŽCA CIEN A ZISKOV</span></div>
             <div className="feat-section-title" style={{ color: '#B45309', borderColor: '#FDE68A' }}>Licencia &amp; Tím</div>
             <ul className="plan-features" style={{ color: '#78350F' }}><li>👑 Owner: Protocol Authority menu (najvyšší level)</li><li>4× Active Force licencie pre maklérov</li><li>30-dňová garancia vrátenia</li></ul>
             <div className="feat-section-title" style={{ color: '#B45309', borderColor: '#FDE68A' }}>Protocol Intelligence</div>
