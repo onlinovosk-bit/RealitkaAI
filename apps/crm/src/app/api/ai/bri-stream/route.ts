@@ -7,6 +7,7 @@ export const runtime = "nodejs";
 
 import { getDemoShowcaseLeads } from "@/lib/mock-data";
 import { listLeads } from "@/lib/leads-store";
+import { createClient } from "@/lib/supabase/server";
 
 type BriLeadSlice = {
   id: string;
@@ -44,6 +45,10 @@ async function loadLeadSlices(): Promise<BriLeadSlice[]> {
 }
 
 export async function GET() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return new Response("Unauthorized", { status: 401 });
+
   let intervalRef: ReturnType<typeof setInterval> | null = null;
 
   const stream = new ReadableStream({

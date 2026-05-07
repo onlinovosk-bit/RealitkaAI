@@ -18,6 +18,8 @@ export async function POST(req: Request) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
+  const { data: profile } = await supabase.from("profiles").select("id").eq("auth_user_id", user.id).single();
+
   const body = (await req.json()) as Body;
   if (!body.leadId) return NextResponse.json({ ok: false, error: "Missing leadId" }, { status: 400 });
 
@@ -25,6 +27,7 @@ export async function POST(req: Request) {
     .from("leads")
     .select("id, score, bri_score, status")
     .eq("id", body.leadId)
+    .eq("assigned_profile_id", profile?.id ?? "")
     .single();
 
   if (leadError || !lead) return NextResponse.json({ ok: false, error: "Lead not found" }, { status: 404 });

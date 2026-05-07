@@ -2,9 +2,14 @@
 import { autoErrorCapture } from "@/lib/auto-error-capture";
 import { sendAiOutreachEmail } from "@/lib/outreach-store";
 import { requireFeature } from "@/lib/feature-gating";
+import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return errorResponse("Unauthorized", 401);
+
     await requireFeature("outreach");
 
     const body = await request.json();
