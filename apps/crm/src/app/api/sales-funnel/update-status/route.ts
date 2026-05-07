@@ -1,16 +1,9 @@
-import { okResponse, errorResponse } from "@/lib/api-response";
-import { createClient } from "@supabase/supabase-js";
+﻿import { okResponse, errorResponse } from "@/lib/api-response";
+import { getSupabaseClient } from "@/lib/supabase/client";
 
 const VALID_STATUSES = ["new", "contacted", "demo_booked", "proposal_sent", "won", "lost"];
 
-function getSupabaseClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key =
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) return null;
-  return createClient(url, key);
-}
+
 
 export async function POST(request: Request) {
   try {

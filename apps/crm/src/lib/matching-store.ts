@@ -1,4 +1,4 @@
-﻿import { supabaseClient } from "@/lib/supabase/client";
+﻿import { supabaseClient, getSupabaseClient } from "@/lib/supabase/client";
 import { listLeads, getLead } from "@/lib/leads-store";
 import { listProperties, getProperty } from "@/lib/properties-store";
 import { getMatchingPropertiesForLead, getMatchingLeadsForProperty } from "@/lib/matching";
@@ -41,19 +41,6 @@ export type LeadPropertyMatchListItem = PersistedLeadPropertyMatch & {
   propertyTitle: string;
   propertyLocation: string;
 };
-
-function getSupabaseClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key =
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !key) {
-    return null;
-  }
-
-  return supabaseClient;
-}
 
 function isMissingMatchingColumnError(message: string | undefined) {
   const normalized = String(message ?? "").toLowerCase();

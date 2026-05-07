@@ -7,7 +7,7 @@
  * Toto zachováva deterministickú logiku výberu leadov a pridáva AI vrstvu.
  */
 
-import { getClaudeClient, CLAUDE_HAIKU, extractJson } from "./claude";
+import { callClaude, CLAUDE_HAIKU, extractJson } from "./claude";
 import type { PlaybookItemDto } from "@/services/playbook/types";
 
 export interface EnrichedPlaybookItem extends PlaybookItemDto {
@@ -47,8 +47,6 @@ export async function enrichPlaybookWithClaude(
     };
   }
 
-  const client = getClaudeClient();
-
   // Skomprimovaný vstup — len čo Claude potrebuje
   const compactItems = items.slice(0, 10).map((item, i) => ({
     idx: i + 1,
@@ -59,7 +57,7 @@ export async function enrichPlaybookWithClaude(
     subtitle: item.subtitle,
   }));
 
-  const response = await client.messages.create({
+  const response = await callClaude({
     model: CLAUDE_HAIKU,
     max_tokens: 1_200,
     system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],

@@ -1,4 +1,4 @@
-import { supabaseClient } from "@/lib/supabase/client";
+﻿import { supabaseClient, getSupabaseClient } from "@/lib/supabase/client";
 import { autoErrorCapture } from "./auto-error-capture";
 import { Resend } from "resend";
 import { createActivity } from "@/lib/activities-store";
@@ -16,19 +16,8 @@ type SaaSLeadInput = {
   status?: string;
 };
 
-function getSupabaseClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key =
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (!url || !key) {
-    autoErrorCapture("Supabase credentials missing", "getSupabaseClient");
-    return null;
-  }
   autoErrorCapture("Supabase client initialized", "getSupabaseClient");
-  return supabaseClient;
-}
 
 function getResendClient() {
   const apiKey = process.env.RESEND_API_KEY;

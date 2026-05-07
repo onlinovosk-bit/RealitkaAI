@@ -1,4 +1,4 @@
-// jednotný enum statusov (budúci štandard – EN)
+﻿// jednotný enum statusov (budúci štandard – EN)
 export const LeadStatusEnum = {
   NEW: "new",
   WARM: "warm",
@@ -58,7 +58,7 @@ import {
   type LeadStatus,
   type Recommendation,
 } from "@/lib/mock-data";
-import { supabaseClient } from "@/lib/supabase/client";
+import { supabaseClient, getSupabaseClient } from "@/lib/supabase/client";
 
 export type { Lead, LeadStatus, Recommendation } from "@/lib/mock-data";
 
@@ -215,19 +215,6 @@ type SupabaseAiRecommendationRow = {
   model_version: string;
   created_at: string;
 };
-
-function getSupabaseClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key =
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !key) {
-    return null;
-  }
-
-  return supabaseClient;
-}
 
 export function isSupabaseConfigured() {
   return Boolean(

@@ -1,4 +1,4 @@
-import { supabaseClient } from "@/lib/supabase/client";
+﻿import { supabaseClient, getSupabaseClient } from "@/lib/supabase/client";
 
 export type Task = {
   id: string;
@@ -51,17 +51,6 @@ function getDemoTasksStore() {
 
 export const taskStatusOptions = ["open", "in_progress", "done"];
 export const taskPriorityOptions = ["low", "medium", "high"];
-
-function getSupabaseClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !anonKey) {
-    return null;
-  }
-
-  return supabaseClient;
-}
 
 function normalizeLeadId(value: string | null | undefined) {
   const normalized = String(value ?? "").trim();

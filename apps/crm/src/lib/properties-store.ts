@@ -1,5 +1,5 @@
 ﻿import { readDemoModeFromCookie } from "@/lib/demo-mode-cookie";
-import { supabaseClient } from "@/lib/supabase/client";
+import { supabaseClient, getSupabaseClient } from "@/lib/supabase/client";
 import { generateSyntheticProperties } from "@/lib/demo/synthetic-properties";
 import { GOLD_STANDARD_POPRAD_STUROVA_3I } from "@/lib/mock-data";
 
@@ -123,19 +123,6 @@ function getDemoShowcaseProperties(): Property[] {
         : [...p.features, "demo: Revolis spotlight"],
     };
   });
-}
-
-function getSupabaseClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key =
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !key) {
-    return null;
-  }
-
-  return supabaseClient;
 }
 
 function normalize(text: string) {

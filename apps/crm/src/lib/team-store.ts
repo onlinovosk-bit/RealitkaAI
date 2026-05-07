@@ -1,4 +1,4 @@
-import { supabaseClient } from "@/lib/supabase/client";
+﻿import { supabaseClient, getSupabaseClient } from "@/lib/supabase/client";
 import { listLeads, type Lead } from "@/lib/leads-store";
 
 export type Agency = {
@@ -56,17 +56,6 @@ type SupabaseProfileRow = {
   phone: string | null;
   is_active: boolean;
 };
-
-function getSupabaseClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !anonKey) {
-    return null;
-  }
-
-  return supabaseClient;
-}
 
 const demoAgency: Agency = {
   id: "11111111-1111-1111-1111-111111111111",

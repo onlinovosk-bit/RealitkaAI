@@ -1,4 +1,4 @@
-import { listLeads } from "@/lib/leads-store";
+﻿import { listLeads } from "@/lib/leads-store";
 import { autoErrorCapture } from "./auto-error-capture";
 import { listPersistedMatches } from "@/lib/matching-store";
 import { listRecommendations } from "@/lib/recommendations-store";
@@ -6,21 +6,10 @@ import { listTasks } from "@/lib/tasks-store";
 import { listOutreachMessages } from "@/lib/outreach-store";
 import { calculateLeadAiScore, type ScoringResult } from "@/lib/ai-scoring";
 import { createActivity } from "@/lib/activities-store";
-import { supabaseClient } from "@/lib/supabase/client";
+import { supabaseClient, getSupabaseClient } from "@/lib/supabase/client";
 
-function getSupabaseClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key =
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (!url || !key) {
-    autoErrorCapture("Supabase credentials missing", "getSupabaseClient");
-    return null;
-  }
   autoErrorCapture("Supabase client initialized (ai-scoring)", "getSupabaseClient");
-  return supabaseClient;
-}
 
 function isMissingRecommendationColumnError(message: string | undefined) {
   const normalized = String(message ?? "").toLowerCase();

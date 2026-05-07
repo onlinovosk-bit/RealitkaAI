@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+﻿import { getSupabaseClient } from "@/lib/supabase/client";
 
 export type SchemaCheck = {
   key: string;
@@ -6,19 +6,6 @@ export type SchemaCheck = {
   ok: boolean;
   message: string;
 };
-
-function getSupabaseClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey =
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !anonKey) {
-    return null;
-  }
-
-  return createClient(url, anonKey);
-}
 
 async function checkTableColumns(
   table: string,

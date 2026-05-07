@@ -1,4 +1,4 @@
-import { supabaseClient } from "@/lib/supabase/client";
+﻿import { supabaseClient, getSupabaseClient } from "@/lib/supabase/client";
 
 export type ActivityItem = {
   id: string;
@@ -20,17 +20,6 @@ export type ActivityItem = {
     [key: string]: any;
   };
 };
-
-function getSupabaseClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !anonKey) {
-    return null;
-  }
-
-  return supabaseClient;
-}
 
 function repairTextEncoding(value: string) {
   if (!value) return "";

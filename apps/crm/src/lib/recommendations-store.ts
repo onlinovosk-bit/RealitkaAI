@@ -1,4 +1,4 @@
-﻿import { supabaseClient } from "@/lib/supabase/client";
+﻿import { supabaseClient, getSupabaseClient } from "@/lib/supabase/client";
 import { listLeads } from "@/lib/leads-store";
 import { generateRecommendationsForLead, type GeneratedRecommendation, type SimpleMatch } from "@/lib/recommendations-engine";
 
@@ -14,17 +14,6 @@ export type PersistedRecommendation = {
   modelVersion: string;
   createdAt?: string;
 };
-
-function getSupabaseClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !anonKey) {
-    return null;
-  }
-
-  return supabaseClient;
-}
 
 const globalRecommendationsStore = globalThis as typeof globalThis & {
   __realitkaDemoRecommendations?: PersistedRecommendation[];
