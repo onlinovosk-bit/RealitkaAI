@@ -4,12 +4,17 @@ import { createActivity } from "@/lib/activities-store";
 import { rescoreLead } from "@/lib/rescore-lead";
 import { getCurrentProfile } from "@/lib/auth";
 import { tryCreateReminderFromNote } from "@/lib/google-calendar-server";
+import { createClient } from "@/lib/supabase/server";
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
     const { id } = await params;
     const activities = await getActivitiesByLeadId(id);
     return NextResponse.json({ ok: true, activities });
@@ -24,6 +29,10 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
     const { id } = await params;
     const body = await request.json();
 

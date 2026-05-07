@@ -8,12 +8,17 @@ import { UUIDSchema } from "@/lib/api-validate";
 import { globalEventBus } from "@/infra/messaging/EventBus";
 import { createLeadStatusChangedEvent } from "@/domain/leads/events";
 import { notifyHotLead } from "@/services/push/PushNotificationService";
+import { createClient } from "@/lib/supabase/server";
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
     const { id } = await params;
 
     const idValidation = UUIDSchema.safeParse(id);
@@ -103,6 +108,10 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
     const { id } = await params;
 
     const idValidation = UUIDSchema.safeParse(id);
@@ -145,6 +154,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
     const { id } = await params;
 
     const idValidation = UUIDSchema.safeParse(id);

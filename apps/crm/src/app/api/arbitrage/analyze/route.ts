@@ -59,12 +59,19 @@ export async function POST(request: Request) {
 
     // Živé dáta z CRM ak useLive=true a leadId zadaný
     if (body.useLive && body.leadId) {
+      const { data: profile } = await supabaseAuth
+        .from("profiles")
+        .select("id")
+        .eq("auth_user_id", user.id)
+        .single();
+
       const supabase = getServiceClient();
 
       const { data: lead } = await supabase
         .from("leads")
         .select("id, name, email, phone, notes, address, status")
         .eq("id", body.leadId)
+        .eq("assigned_profile_id", profile?.id ?? "")
         .single();
 
       if (!lead) {

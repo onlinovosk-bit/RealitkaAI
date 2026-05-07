@@ -22,9 +22,16 @@ export async function POST() {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("auth_user_id", user.id)
+    .single();
+
   const { data: leads, error } = await supabase
     .from("leads")
     .select("id, name, score, bri_score, budget, status")
+    .eq("assigned_profile_id", profile?.id ?? "")
     .limit(500);
 
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
