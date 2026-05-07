@@ -1,11 +1,17 @@
-﻿import { okResponse, errorResponse } from "@/lib/api-response";
+﻿import { NextResponse } from "next/server";
+import { okResponse, errorResponse } from "@/lib/api-response";
 import {
   recalculateScoringAndRecommendations,
   recalculateSingleLeadScoring,
 } from "@/lib/ai-scoring-store";
 import { requireFeature } from "@/lib/feature-gating";
+import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
   try {
     await requireFeature("aiScoring");
 

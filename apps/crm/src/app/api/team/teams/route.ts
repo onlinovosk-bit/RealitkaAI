@@ -1,9 +1,14 @@
 ﻿import { NextResponse } from "next/server";
 import { createTeam, listTeams } from "@/lib/team-store";
 import { createActivity } from "@/lib/activities-store";
+import { createClient } from "@/lib/supabase/server";
 
 export async function GET() {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
     const teams = await listTeams();
     return NextResponse.json({ ok: true, teams });
   } catch (error) {
@@ -22,6 +27,10 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
     const body = await request.json();
 
     const team = await createTeam({

@@ -8,6 +8,7 @@ import {
   type AiRecommendationAdminItem,
   type AiRecommendationStatus,
 } from "@/lib/leads-store";
+import { createClient } from "@/lib/supabase/server";
 
 function formatDate(value: Date) {
   return value.toLocaleString("sk-SK", {
@@ -21,6 +22,10 @@ function formatDate(value: Date) {
 
 export async function PATCH(request: Request) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
     const body = (await request.json()) as {
       ids?: string[];
       status?: AiRecommendationStatus;

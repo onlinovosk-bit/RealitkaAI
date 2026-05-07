@@ -2,9 +2,14 @@
 import { createProfile, listProfiles } from "@/lib/team-store";
 import { sendOnboardingEmail } from "@/lib/send-onboarding-email";
 import { createActivity } from "@/lib/activities-store";
+import { createClient } from "@/lib/supabase/server";
 
 export async function GET() {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
     const profiles = await listProfiles();
     return NextResponse.json({ ok: true, profiles });
   } catch (error) {
@@ -23,6 +28,10 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
     const body = await request.json();
 
 
