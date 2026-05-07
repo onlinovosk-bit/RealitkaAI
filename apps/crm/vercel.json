@@ -1,6 +1,10 @@
 {
   "crons": [
     {
+      "path": "/api/cron/pulse",
+      "schedule": "*/5 * * * *"
+    },
+    {
       "path": "/api/cron/bri-snapshot",
       "schedule": "0 2 * * *"
     },

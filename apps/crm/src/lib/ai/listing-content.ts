@@ -4,7 +4,7 @@
  * Toto je prvá AI feature viditeľná priamo maklérom.
  */
 
-import { getClaudeClient, CLAUDE_SONNET, extractJson } from "./claude";
+import { callClaude, CLAUDE_SONNET, extractJson } from "./claude";
 
 export interface PropertyInput {
   type: string;           // "3-izbový byt", "rodinný dom", ...
@@ -76,10 +76,9 @@ export async function generateListingContent(
   property: PropertyInput,
   persona: ListingPersona = "GENERAL"
 ): Promise<ListingContent> {
-  const client = getClaudeClient();
   const userPrompt = buildListingUserPrompt(property, persona);
 
-  const response = await client.messages.create({
+  const response = await callClaude({
     model: CLAUDE_SONNET,
     max_tokens: 2200,
     system: [

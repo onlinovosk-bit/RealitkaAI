@@ -45,3 +45,6 @@
 ### Ďalší krok
 Zmazať 4 dead routes (po potvrdení). Potom: streaming pre call-coach — kópia vzoru z listing-content/stream/route.ts.
 ## Session ended: 
+## Session ended: 
+## Session ended: 
+## Session ended: 

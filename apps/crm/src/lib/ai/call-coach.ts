@@ -6,7 +6,8 @@
  * Existujúce volania tejto funkcie fungujú bez zmien.
  */
 
-import { getClaudeClient, CLAUDE_HAIKU, extractJson } from "./claude";
+import { callClaude, CLAUDE_HAIKU, extractJson } from "./claude";
+import { withAiTimeout, callCoachFallback } from "./fallback";
 
 export type CoachFeedback = {
   score:           number;        // 0–100 kvalita hovoru
@@ -26,9 +27,7 @@ export async function generateCallCoachFeedback(transcript: string): Promise<Coa
     return defaultFeedback();
   }
 
-  const client = getClaudeClient();
-
-  const response = await client.messages.create({
+  const aiCall = callClaude({
     model: CLAUDE_HAIKU,
     max_tokens: 500,
     system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
@@ -45,14 +44,12 @@ export async function generateCallCoachFeedback(transcript: string): Promise<Coa
 }`,
       },
     ],
+  }).then((response) => {
+    const raw = response.content[0].type === "text" ? response.content[0].text : "";
+    return extractJson<CoachFeedback>(raw);
   });
 
-  const raw = response.content[0].type === "text" ? response.content[0].text : "";
-  try {
-    return extractJson<CoachFeedback>(raw);
-  } catch {
-    return defaultFeedback();
-  }
+  return withAiTimeout(aiCall, callCoachFallback(), 500);
 }
 
 function defaultFeedback(): CoachFeedback {

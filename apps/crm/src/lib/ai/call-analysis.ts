@@ -6,7 +6,8 @@
  * Existujúce route: POST /api/ai/call/analyze — volá analyzeCall() bez zmien.
  */
 
-import { getClaudeClient, CLAUDE_HAIKU, extractJson } from "./claude";
+import { callClaude, CLAUDE_HAIKU, extractJson } from "./claude";
+import { withAiTimeout, callAnalysisFallback } from "./fallback";
 
 export type CallAnalysisResult = {
   sentiment:           "positive" | "neutral" | "negative" | "inconclusive";
@@ -32,11 +33,10 @@ export async function analyzeCall(transcript: string): Promise<CallAnalysisResul
     return fallback("Prepis je príliš krátky na analýzu.");
   }
 
-  const client = getClaudeClient();
   // Max 8 000 znakov — zvyšok je dekorujúci text, nie kľúčové info.
   const safeTranscript = transcript.slice(0, 8_000);
 
-  const response = await client.messages.create({
+  const aiCall = callClaude({
     model: CLAUDE_HAIKU,
     max_tokens: 600,
     system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
@@ -59,14 +59,12 @@ export async function analyzeCall(transcript: string): Promise<CallAnalysisResul
 }`,
       },
     ],
+  }).then((response) => {
+    const raw = response.content[0].type === "text" ? response.content[0].text : "";
+    return extractJson<CallAnalysisResult>(raw);
   });
 
-  const raw = response.content[0].type === "text" ? response.content[0].text : "";
-  try {
-    return extractJson<CallAnalysisResult>(raw);
-  } catch {
-    return fallback("Analýza zlyhala — skontroluj prepis.");
-  }
+  return withAiTimeout(aiCall, callAnalysisFallback(), 500);
 }
 
 function fallback(msg: string): CallAnalysisResult {

@@ -5,7 +5,7 @@
  * Workflow: GET /api/ai/dead-lead-campaign/preview → admin schváli → POST /api/ai/dead-lead-campaign/send
  */
 
-import { getClaudeClient, CLAUDE_HAIKU, extractJson } from "./claude";
+import { callClaude, CLAUDE_HAIKU, extractJson } from "./claude";
 
 export interface DeadLeadInput {
   id:              string;
@@ -78,8 +78,6 @@ async function processBatch(
   leads: DeadLeadInput[],
   marketContext?: string
 ): Promise<ReactivationCandidate[]> {
-  const client = getClaudeClient();
-
   const compactLeads = leads.map((lead, i) => ({
     idx:                i + 1,
     name:               lead.name,
@@ -92,7 +90,7 @@ async function processBatch(
     note:               lead.note ?? "",
   }));
 
-  const response = await client.messages.create({
+  const response = await callClaude({
     model:      CLAUDE_HAIKU,
     max_tokens: BATCH_SIZE * 160,
     system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],

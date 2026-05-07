@@ -1,10 +1,22 @@
 "use client";
 import { useState } from "react";
 
+type CoachFeedback = {
+  score:            number;
+  strengths:        string[];
+  improvements:     string[];
+  tip:              string;
+  next_suggestions: string[];
+};
+
 export default function CallAnalyzerClient() {
-  const [transcript, setTranscript] = useState("");
-  const [result, setResult] = useState<{ sentiment: string; nextAction: string; summary: string } | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [transcript, setTranscript]       = useState("");
+  const [result, setResult]               = useState<{ sentiment: string; nextAction: string; summary: string } | null>(null);
+  const [loading, setLoading]             = useState(false);
+  const [coachLoading, setCoachLoading]   = useState(false);
+  const [coachRaw, setCoachRaw]           = useState("");
+  const [coachParsed, setCoachParsed]     = useState<CoachFeedback | null>(null);
+  const [coachError, setCoachError]       = useState<string | null>(null);
 
   async function analyze() {
     if (!transcript.trim()) return;
@@ -19,6 +31,80 @@ export default function CallAnalyzerClient() {
     setLoading(false);
   }
 
+  async function runCoaching() {
+    if (!transcript.trim()) return;
+    setCoachLoading(true);
+    setCoachRaw("");
+    setCoachParsed(null);
+    setCoachError(null);
+
+    const res = await fetch("/api/ai/call-coach/stream", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ transcript }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: "Neznáma chyba" }));
+      setCoachError(err.error === "transcript_too_short"
+        ? "Prepis je príliš krátky (min. 80 znakov)."
+        : err.error ?? "Neznáma chyba");
+      setCoachLoading(false);
+      return;
+    }
+
+    const reader  = res.body!.getReader();
+    const decoder = new TextDecoder();
+    let accumulated = "";
+
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split("\n");
+
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        const payload = line.slice(6).trim();
+        if (payload === "[DONE]") {
+          try {
+            const clean = accumulated
+              .replace(/^```json\s*/m, "")
+              .replace(/^```\s*/m, "")
+              .replace(/```\s*$/m, "")
+              .trim();
+            setCoachParsed(JSON.parse(clean) as CoachFeedback);
+          } catch {
+            // JSON parse failed — raw text is already shown
+          }
+          break;
+        }
+        try {
+          const parsed = JSON.parse(payload) as { text?: string; error?: string };
+          if (parsed.error) {
+            setCoachError(parsed.error);
+            break;
+          }
+          if (parsed.text) {
+            accumulated += parsed.text;
+            setCoachRaw(accumulated);
+          }
+        } catch {
+          // partial chunk — ignore
+        }
+      }
+    }
+
+    setCoachLoading(false);
+  }
+
+  function scoreColor(score: number): string {
+    if (score >= 70) return "text-green-400";
+    if (score >= 50) return "text-yellow-400";
+    return "text-red-400";
+  }
+
   return (
     <div className="space-y-4">
       <textarea
@@ -28,6 +114,8 @@ export default function CallAnalyzerClient() {
         value={transcript}
         onChange={(e) => setTranscript(e.target.value)}
       />
+
+      {/* ── Existing analyze section ── */}
       <button
         onClick={analyze}
         disabled={loading}
@@ -35,6 +123,7 @@ export default function CallAnalyzerClient() {
       >
         {loading ? "Analyzujem..." : "Analyzovať"}
       </button>
+
       {result && (
         <div className="rounded-xl border border-white/10 bg-slate-900/60 p-4 space-y-2">
           <p className="text-xs text-slate-400">Sentiment: <span className="text-white">{result.sentiment}</span></p>
@@ -42,6 +131,102 @@ export default function CallAnalyzerClient() {
           <p className="text-xs text-slate-300">{result.summary}</p>
         </div>
       )}
+
+      {/* ── Call coaching section ── */}
+      <div className="pt-2 border-t border-white/10">
+        <button
+          onClick={runCoaching}
+          disabled={coachLoading}
+          className="rounded-xl bg-slate-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-600 disabled:opacity-50 transition-colors"
+        >
+          {coachLoading ? "Analyzujem koučing..." : "Koučing hovoru"}
+        </button>
+
+        {coachError && (
+          <p className="mt-3 text-sm text-red-400">{coachError}</p>
+        )}
+
+        {/* Streaming raw text — shown while loading, hidden once parsed */}
+        {coachLoading && coachRaw && !coachParsed && (
+          <div className="mt-3 rounded-xl border border-white/10 bg-slate-900/60 p-4">
+            <p className="text-xs text-slate-400 font-mono whitespace-pre-wrap break-words">{coachRaw}</p>
+          </div>
+        )}
+
+        {/* Structured result */}
+        {coachParsed && (
+          <div className="mt-3 rounded-xl border border-white/10 bg-slate-900/60 p-4 space-y-4">
+            {/* Score */}
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-slate-400 uppercase tracking-wider">Skóre hovoru</span>
+              <span className={`text-2xl font-bold ${scoreColor(coachParsed.score)}`}>
+                {coachParsed.score}
+                <span className="text-base font-normal text-slate-500">/100</span>
+              </span>
+            </div>
+
+            {/* Strengths */}
+            {coachParsed.strengths.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Silné stránky</p>
+                <ul className="space-y-1">
+                  {coachParsed.strengths.map((s, i) => (
+                    <li key={i} className="flex gap-2 text-sm text-slate-200">
+                      <span className="text-green-400 shrink-0">+</span>
+                      {s}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Improvements */}
+            {coachParsed.improvements.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Zlepšenia</p>
+                <ul className="space-y-1">
+                  {coachParsed.improvements.map((s, i) => (
+                    <li key={i} className="flex gap-2 text-sm text-slate-200">
+                      <span className="text-yellow-400 shrink-0">→</span>
+                      {s}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Tip */}
+            {coachParsed.tip && (
+              <div className="rounded-lg bg-cyan-500/10 border border-cyan-500/30 px-3 py-2">
+                <p className="text-xs font-semibold text-cyan-400 uppercase tracking-wider mb-0.5">Kľúčový tip</p>
+                <p className="text-sm text-cyan-200">{coachParsed.tip}</p>
+              </div>
+            )}
+
+            {/* Next suggestions */}
+            {coachParsed.next_suggestions.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Ďalšie návrhy</p>
+                <ul className="space-y-1">
+                  {coachParsed.next_suggestions.map((s, i) => (
+                    <li key={i} className="flex gap-2 text-sm text-slate-300">
+                      <span className="text-slate-500 shrink-0">{i + 1}.</span>
+                      {s}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Fallback: raw text if JSON parse failed but stream completed */}
+        {!coachLoading && !coachParsed && !coachError && coachRaw && (
+          <div className="mt-3 rounded-xl border border-white/10 bg-slate-900/60 p-4">
+            <p className="text-xs text-slate-400 font-mono whitespace-pre-wrap break-words">{coachRaw}</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

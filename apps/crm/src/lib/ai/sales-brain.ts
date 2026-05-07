@@ -6,7 +6,8 @@
  * Existujúce volania analyzeSalesBrain() fungujú bez zmien.
  */
 
-import { getClaudeClient, CLAUDE_HAIKU, extractJson } from "./claude";
+import { callClaude, CLAUDE_HAIKU, extractJson } from "./claude";
+import { withAiTimeout, salesBrainFallback } from "./fallback";
 
 export type SalesBrainInsight = {
   headline:        string;                        // max 6 slov
@@ -25,8 +26,6 @@ export async function analyzeSalesBrain(
   _leadId: string,
   data: Record<string, unknown>
 ): Promise<SalesBrainInsight> {
-  const client = getClaudeClient();
-
   // Filtrovanie citlivých polí pred poslaním do Claude
   const safeData = {
     status: data.status,
@@ -42,7 +41,9 @@ export async function analyzeSalesBrain(
     timeline: data.timeline,
   };
 
-  const response = await client.messages.create({
+  const score = typeof data.score === "number" ? data.score : 50;
+
+  const aiCall = callClaude({
     model: CLAUDE_HAIKU,
     max_tokens: 250,
     system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
@@ -62,20 +63,10 @@ Vráť JSON:
 }`,
       },
     ],
+  }).then((response) => {
+    const raw = response.content[0].type === "text" ? response.content[0].text : "";
+    return extractJson<SalesBrainInsight>(raw);
   });
 
-  const raw = response.content[0].type === "text" ? response.content[0].text : "";
-  try {
-    return extractJson<SalesBrainInsight>(raw);
-  } catch {
-    const s = typeof data.score === "number" ? data.score : 50;
-    return {
-      headline:        s >= 75 ? "Horúci lead — konaj" : "Lead potrebuje kontakt",
-      reasoning:       `Skóre ${s}/100 — automatický fallback, AI nedostupná`,
-      confidence:      "low" as const,
-      data_points:     [`Skóre: ${s}/100`, "AI analýza nedostupná", "Skontroluj manuálne"],
-      priority:        s >= 75 ? "high" : s >= 45 ? "medium" : "low",
-      suggestedAction: s >= 75 ? "Zavolaj dnes, nie zajtra." : "Pošli stručnú správu so zaujímavosťou.",
-    };
-  }
+  return withAiTimeout(aiCall, salesBrainFallback(score), 500);
 }

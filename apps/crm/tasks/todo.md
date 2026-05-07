@@ -8,7 +8,7 @@
 
 ### SPRINT: L99 AUTOMAT ONBOARDING — Agency Scraping (Bod 1)
 
-- [ ] **[A4]** Presunúť existujúci scraping kód do `PortalNehnutelnostiSource.discoverNewAgencies`
+- [x] **[A4]** Presunúť existujúci scraping kód do `PortalNehnutelnostiSource.discoverNewAgencies`
   - Skontrolovať `tmp-nehnutelnosti.html` a `src/infra/scraping/PortalNehnutelnostiSource.ts`
   - Doplniť reálny HTTP fetch + cheerio parsing z nehnutelnosti.sk do `discoverNewAgencies`
   - Overiť návratový tvar `DiscoveredAgency[]` (vrátane `externalId`, `name`, `email`, `phone`, `city`, `listingsCount`)
