@@ -11,12 +11,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const supabase = createAdminClient();
-  const agenciesRepo = new SupabaseAgenciesRepository(supabase);
-  const discoveryEngine = new AgencyDiscoveryEngine([new PortalNehnutelnostiSource(3)], agenciesRepo);
-  const scrapingService = new AgencyScrapingService(discoveryEngine);
+  try {
+    const supabase = createAdminClient();
+    const agenciesRepo = new SupabaseAgenciesRepository(supabase);
+    const discoveryEngine = new AgencyDiscoveryEngine([new PortalNehnutelnostiSource(3)], agenciesRepo);
+    const scrapingService = new AgencyScrapingService(discoveryEngine);
 
-  await scrapingService.runFullCycle();
+    await scrapingService.runFullCycle();
 
-  return NextResponse.json({ ok: true, ts: new Date().toISOString() });
+    return NextResponse.json({ ok: true, ts: new Date().toISOString() });
+  } catch (error) {
+    console.error("[agency-scraping]", error);
+    return NextResponse.json(
+      { ok: false, error: error instanceof Error ? error.message : "Scraping zlyhal." },
+      { status: 500 }
+    );
+  }
 }

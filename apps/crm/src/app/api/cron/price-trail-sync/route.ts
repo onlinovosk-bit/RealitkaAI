@@ -14,33 +14,40 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const startedAt = Date.now()
-  const supabase  = await createClient()
+  try {
+    const startedAt = Date.now()
+    const supabase  = await createClient()
 
-  // Get all active profiles
-  const { data: profiles } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('account_status', 'active')
-    .limit(500)
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('account_status', 'active')
+      .limit(500)
 
-  if (!profiles?.length) {
-    return NextResponse.json({ ok: true, synced: 0, duration_ms: Date.now() - startedAt })
+    if (!profiles?.length) {
+      return NextResponse.json({ ok: true, synced: 0, duration_ms: Date.now() - startedAt })
+    }
+
+    let totalSynced = 0
+
+    for (const profile of profiles) {
+      const n = await syncFromPortalListings(profile.id, 'portal_import')
+      totalSynced += n
+      await new Promise(r => setTimeout(r, 100))
+    }
+
+    return NextResponse.json({
+      ok:              true,
+      profiles:        profiles.length,
+      points_synced:   totalSynced,
+      duration_ms:     Date.now() - startedAt,
+      ran_at:          new Date().toISOString(),
+    })
+  } catch (error) {
+    console.error('[price-trail-sync]', error)
+    return NextResponse.json(
+      { ok: false, error: error instanceof Error ? error.message : 'Sync zlyhal.' },
+      { status: 500 }
+    )
   }
-
-  let totalSynced = 0
-
-  for (const profile of profiles) {
-    const n = await syncFromPortalListings(profile.id, 'portal_import')
-    totalSynced += n
-    await new Promise(r => setTimeout(r, 100)) // pace requests
-  }
-
-  return NextResponse.json({
-    ok:              true,
-    profiles:        profiles.length,
-    points_synced:   totalSynced,
-    duration_ms:     Date.now() - startedAt,
-    ran_at:          new Date().toISOString(),
-  })
 }

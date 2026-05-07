@@ -13,24 +13,32 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const supabase = await createClient()
-  const { data: profiles } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('account_status', 'active')
+  try {
+    const supabase = await createClient()
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('account_status', 'active')
 
-  if (!profiles?.length) return NextResponse.json({ computed: 0 })
+    if (!profiles?.length) return NextResponse.json({ ok: true, computed: 0 })
 
-  let totalComputed = 0
-  for (const profile of profiles) {
-    const count = await batchRecomputeBRI(profile.id)
-    totalComputed += count
+    let totalComputed = 0
+    for (const profile of profiles) {
+      const count = await batchRecomputeBRI(profile.id)
+      totalComputed += count
+    }
+
+    return NextResponse.json({
+      ok: true,
+      profiles_processed: profiles.length,
+      scores_computed: totalComputed,
+      computed_at: new Date().toISOString(),
+    })
+  } catch (error) {
+    console.error('[recompute-bri]', error)
+    return NextResponse.json(
+      { ok: false, error: error instanceof Error ? error.message : 'Recompute zlyhal.' },
+      { status: 500 }
+    )
   }
-
-  return NextResponse.json({
-    ok: true,
-    profiles_processed: profiles.length,
-    scores_computed: totalComputed,
-    computed_at: new Date().toISOString(),
-  })
 }

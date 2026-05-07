@@ -14,16 +14,18 @@ export async function POST(request: Request) {
     return errorResponse("CRON_SECRET nie je nastavený.", 503);
   }
 
-  const hdr = request.headers.get("x-cron-secret");
-  if (hdr !== secret) {
-    const url = new URL(request.url);
-    const qp = url.searchParams.get("secret");
-    if (qp !== secret) {
-      return errorResponse("Neautorizované.", 401);
-    }
+  if (request.headers.get("x-cron-secret") !== secret) {
+    return errorResponse("Neautorizované.", 401);
   }
 
-  ensureLearningDataLoaded();
-  const result = autoTuneWeights();
-  return okResponse({ tuned: result });
+  try {
+    ensureLearningDataLoaded();
+    const result = autoTuneWeights();
+    return okResponse({ tuned: result });
+  } catch (error) {
+    return errorResponse(
+      error instanceof Error ? error.message : "auto-tune zlyhal.",
+      500
+    );
+  }
 }
