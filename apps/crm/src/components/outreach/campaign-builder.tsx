@@ -33,11 +33,20 @@ export default function CampaignBuilder() {
     e.preventDefault();
     setSaving(true);
     setMessage("");
-    // TODO: Save campaign logic
-    setTimeout(() => {
-      setSaving(false);
+    try {
+      const res = await fetch("/api/outreach/campaigns", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, segmentId: segment, templateId: template }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok) throw new Error(json.error ?? "Nepodarilo sa uložiť kampaň.");
       setMessage("Kampaň bola uložená.");
-    }, 1000);
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Chyba pri ukladaní kampane.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (

@@ -1,11 +1,16 @@
 ﻿import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient as createAnonClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/server";
 import { getLeadById, logMatchingActivity } from "@/lib/leads-store";
 import { getProperty } from "@/lib/properties-store";
 import { calculatePropertyMatch } from "@/lib/matching";
 
 export async function POST(request: Request) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
     const body = await request.json();
     const leadId = body?.leadId as string | undefined;
     const propertyId = body?.propertyId as string | undefined;
@@ -42,7 +47,7 @@ export async function POST(request: Request) {
     const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
     if (url && anonKey) {
-      const supabase = createClient(url, anonKey);
+      const supabase = createAnonClient(url, anonKey);
       await supabase.from("lead_property_matches").upsert(
         {
           lead_id: leadId,

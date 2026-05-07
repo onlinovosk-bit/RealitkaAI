@@ -13,6 +13,5 @@ export async function POST(req: Request) {
   if (!isMimeTypeAllowed(file.type)) return NextResponse.json({ ok: false, error: "Unsupported format" }, { status: 400 });
   if (!isFileSizeAllowed(file.size)) return NextResponse.json({ ok: false, error: "File too large" }, { status: 400 });
 
-  // Stub — v produkcii použiť OpenAI Whisper
-  return NextResponse.json({ ok: true, transcript: "Transkript nie je k dispozícii — nakonfiguruj OpenAI API kľúč." });
+  return NextResponse.json({ ok: false, error: "Transkripcia nie je dostupná — nakonfiguruj OPENAI_API_KEY." }, { status: 501 });
 }

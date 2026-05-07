@@ -9,6 +9,7 @@ import {
   type AiRecommendationInput,
 } from "@/lib/leads-store";
 import { sendOnboardingEmail } from "@/lib/send-onboarding-email";
+import { createClient } from "@/lib/supabase/server";
 
 function formatPriority(priority: string) {
   if (priority === "high") return "Vysoká";
@@ -21,6 +22,10 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
     const { id } = await params;
     const body = (await request.json()) as Partial<AiRecommendationInput>;
     const previous = await getAiRecommendationById(id);

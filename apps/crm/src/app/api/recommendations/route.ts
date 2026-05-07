@@ -7,9 +7,14 @@ import {
   type AiRecommendationAuditItem,
   type AiRecommendationInput,
 } from "@/lib/leads-store";
+import { createClient } from "@/lib/supabase/server";
 
 export async function GET() {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
     const recommendations = await listAiRecommendationsAdmin();
     return NextResponse.json({ ok: true, recommendations });
   } catch (error) {
@@ -24,6 +29,10 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
     const body = (await request.json()) as AiRecommendationInput;
     const recommendation = await createAiRecommendation(body);
     const lead = await getLeadById(recommendation.leadId);
