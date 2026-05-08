@@ -1,20 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+const mockQueryChain = {
+  select: () => mockQueryChain,
+  order:  () => mockQueryChain,
+  limit:  () => ({ data: [], error: null }),
+  eq:     () => ({ ...mockQueryChain, single: () => ({ data: null, error: null }), data: [], error: null }),
+  single: () => ({ data: null, error: null }),
+  data:   [],
+  error:  null,
+};
+
+const mockClient = {
+  auth: { getUser: () => ({ data: { user: null } }) },
+  from: () => mockQueryChain,
+};
+
 vi.mock('@/lib/supabase/client', () => ({
-  supabaseClient: {
-    auth: { getUser: () => ({ data: { user: null } }) },
-    from: () => ({
-      select: () => ({
-        order: () => ({
-          order: () => ({
-            data: [],
-            error: null,
-          }),
-        }),
-        eq: () => ({ single: () => ({ data: null, error: null }) }),
-      }),
-    }),
-  },
+  supabaseClient:   mockClient,
+  getSupabaseClient: () => mockClient,
 }));
 
 vi.mock('@/lib/auto-error-capture', () => ({
@@ -36,8 +39,8 @@ describe('dashboard data safety', () => {
 
   describe('getLeads', () => {
     it('returns array even when DB is empty', async () => {
-      const { getLeads } = await import('@/lib/leads-store');
-      const leads = await getLeads();
+      const { listLeads } = await import('@/lib/leads-store');
+      const leads = await listLeads();
       expect(Array.isArray(leads)).toBe(true);
     });
   });
@@ -45,11 +48,11 @@ describe('dashboard data safety', () => {
   describe('dashboard KPI calculations with empty data', () => {
     it('handles empty leads array for KPI metrics', () => {
       const leads: any[] = [];
-      const totalLeads = leads.length;
-      const hotLeads = leads.filter(l => l.status === "Horúci").length;
-      const showings = leads.filter(l => l.status === "Obhliadka").length;
-      const offers = leads.filter(l => l.status === "Ponuka").length;
-      const conversionRate = totalLeads > 0 ? Math.round((offers / totalLeads) * 100) : 0;
+      const totalLeads      = leads.length;
+      const hotLeads        = leads.filter(l => l.status === "Horúci").length;
+      const showings        = leads.filter(l => l.status === "Obhliadka").length;
+      const offers          = leads.filter(l => l.status === "Ponuka").length;
+      const conversionRate  = totalLeads > 0 ? Math.round((offers / totalLeads) * 100) : 0;
 
       expect(totalLeads).toBe(0);
       expect(hotLeads).toBe(0);
@@ -60,7 +63,7 @@ describe('dashboard data safety', () => {
 
     it('handles leads with missing fields without crashing', () => {
       const leads = [
-        { id: '1', name: 'Test', status: null, score: undefined },
+        { id: '1', name: 'Test',   status: null,    score: undefined },
         { id: '2', name: 'Test 2', status: 'Horúci', score: 90 },
       ] as any[];
 
@@ -74,21 +77,15 @@ describe('dashboard data safety', () => {
 
   describe('forecasting data safety', () => {
     it('handles null/undefined forecasting summary', () => {
-      const summary = null;
-      const targets = {
-        expectedClosedDeals: 3,
-        expectedPipelineValue: 500000,
-        avgProbabilityPercent: 35,
-      };
-
+      const summary    = null;
       const dealsTrend = summary ? 'has value' : null;
       expect(dealsTrend).toBeNull();
     });
 
     it('handles partial forecasting API response', () => {
-      const payload = { ok: true };
-      const summary = (payload as any)?.summary ?? null;
-      const targets = (payload as any)?.targets ?? null;
+      const payload  = { ok: true };
+      const summary  = (payload as any)?.summary  ?? null;
+      const targets  = (payload as any)?.targets  ?? null;
 
       expect(summary).toBeNull();
       expect(targets).toBeNull();

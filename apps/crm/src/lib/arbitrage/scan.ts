@@ -155,7 +155,7 @@ export async function runArbitrageScan(
         return matchErr ? 0 : 1
       })
     )
-    summary.matches_new = matchCounts.reduce((s, n) => s + n, 0)
+    summary.matches_new = matchCounts.reduce<number>((s, n) => s + n, 0)
 
     // ── 8. Log event ─────────────────────────────────────────
     await logEvent({
