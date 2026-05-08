@@ -20,6 +20,9 @@ const ENTITY_TYPES = ["lead", "property"] as const;
 type EntityType = (typeof ENTITY_TYPES)[number];
 
 export async function POST(req: Request) {
+  const { data: { user } } = await (await createClient()).auth.getUser();
+  if (!user) return errorResponse("Unauthorized", 401);
+
   let body: unknown;
   try {
     body = await req.json();

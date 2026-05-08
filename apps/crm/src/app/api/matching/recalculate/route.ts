@@ -1,4 +1,5 @@
 ﻿import { okResponse, errorResponse } from "@/lib/api-response";
+import { createClient } from "@/lib/supabase/server";
 import {
   recalculateAllMatches,
   recalculateMatchesForLead,
@@ -7,6 +8,10 @@ import {
 import { createActivity } from "@/lib/activities-store";
 
 export async function POST(request: Request) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return errorResponse("Unauthorized", 401);
+
   try {
     const body = await request.json().catch(() => ({}));
     const leadId = body?.leadId as string | undefined;

@@ -50,6 +50,10 @@ type SearchResult = LeadSearchResult | PropertySearchResult;
 // ─── Handler ──────────────────────────────────────────────────
 
 export async function POST(req: Request) {
+  const supabaseAuth = await createClient();
+  const { data: { user } } = await supabaseAuth.auth.getUser();
+  if (!user) return errorResponse("Unauthorized", 401);
+
   let body: unknown;
   try {
     body = await req.json();

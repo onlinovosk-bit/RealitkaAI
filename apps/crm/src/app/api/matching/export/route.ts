@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { listPersistedMatches } from "@/lib/matching-store";
 import { listLeads } from "@/lib/leads-store";
 import { listProperties } from "@/lib/properties-store";
@@ -9,6 +10,10 @@ function escapeCsv(value: string | number | null | undefined) {
 }
 
 export async function GET(request: Request) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
   try {
     const url = new URL(request.url);
     const statusFilter = url.searchParams.get("status")?.trim() || undefined;

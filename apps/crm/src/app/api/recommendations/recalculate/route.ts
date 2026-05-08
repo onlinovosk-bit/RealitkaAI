@@ -1,8 +1,13 @@
 ﻿import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { recalculateAllRecommendations, recalculateRecommendationsForLead } from "@/lib/recommendations-store";
 import { createActivity } from "@/lib/activities-store";
 
 export async function POST(request: Request) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
   try {
     const body = await request.json().catch(() => ({}));
     const leadId = body?.leadId as string | undefined;
