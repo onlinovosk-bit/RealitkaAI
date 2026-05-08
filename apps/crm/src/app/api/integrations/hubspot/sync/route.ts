@@ -16,6 +16,12 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabaseAuth.auth.getUser();
   if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
+  const { data: callerProfile } = await supabaseAuth
+    .from("profiles")
+    .select("agency_id")
+    .eq("id", user.id)
+    .maybeSingle();
+
   let body: { leadId?: string }
   try {
     body = await request.json()
@@ -41,6 +47,10 @@ export async function POST(request: Request) {
       { ok: false, error: fetchError?.message ?? "Lead not found" },
       { status: 404 }
     )
+  }
+
+  if (callerProfile?.agency_id && lead.agency_id !== callerProfile.agency_id) {
+    return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 })
   }
 
   let result: HubSpotSyncResult

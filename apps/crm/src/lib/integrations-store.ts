@@ -179,12 +179,27 @@ function parseIcs(raw: string): IcsEvent[] {
   return events;
 }
 
+function assertSafeIcsUrl(rawUrl: string): void {
+  let parsed: URL;
+  try { parsed = new URL(rawUrl); } catch { throw new Error("Neplatná ICS URL"); }
+  if (!["https:", "http:"].includes(parsed.protocol)) throw new Error("ICS URL musí byť http(s)");
+  const h = parsed.hostname.toLowerCase();
+  if (h === "localhost" || h === "127.0.0.1" || h === "::1") throw new Error("Interná URL nie je povolená");
+  // Block link-local / cloud metadata
+  if (/^169\.254\./.test(h) || /^10\./.test(h) || /^192\.168\./.test(h) || /^172\.(1[6-9]|2\d|3[01])\./.test(h)) {
+    throw new Error("Interná sieť nie je povolená");
+  }
+}
+
 export async function syncCalendarFromIcs(
   calendarIcsUrl: string,
   profileId: string
 ): Promise<{ synced: number; message: string }> {
   if (!calendarIcsUrl) {
     return { synced: 0, message: "Chýba ICS URL" };
+  }
+  try { assertSafeIcsUrl(calendarIcsUrl); } catch (e) {
+    return { synced: 0, message: e instanceof Error ? e.message : "Neplatná URL" };
   }
 
   let raw: string;
