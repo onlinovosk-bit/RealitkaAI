@@ -1,4 +1,5 @@
 // Resend webhooks: inbound replies + email.opened / email.clicked (lead_id tag)
+import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { recordEmailClick, recordEmailOpen } from "@/lib/ai/email-engagement-store";
 import { storeReply } from "@/lib/email-tracking";
@@ -13,7 +14,24 @@ function leadIdFromTags(tags: unknown): string | null {
 }
 
 export async function POST(req: NextRequest) {
-  const body = (await req.json()) as Record<string, unknown>;
+  const rawBody = await req.text();
+
+  const webhookSecret = process.env.RESEND_WEBHOOK_SECRET;
+  if (webhookSecret) {
+    const signature = req.headers.get("svix-signature") ?? "";
+    const hmac = crypto.createHmac("sha256", webhookSecret).update(rawBody).digest("hex");
+    let sigValid = false;
+    try {
+      sigValid = crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(hmac));
+    } catch {
+      // length mismatch — treated as invalid
+    }
+    if (!sigValid) {
+      return NextResponse.json({ ok: false, error: "Invalid signature" }, { status: 401 });
+    }
+  }
+
+  const body = JSON.parse(rawBody) as Record<string, unknown>;
   const type = typeof body.type === "string" ? body.type : "";
   const createdAt =
     typeof body.created_at === "string" ? body.created_at : new Date().toISOString();

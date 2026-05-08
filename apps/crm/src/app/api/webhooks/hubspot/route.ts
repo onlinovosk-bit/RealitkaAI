@@ -59,25 +59,25 @@ function processEventsAsync(events: HubSpotWebhookEvent[]): void {
 export async function POST(request: Request) {
   const secret = process.env.HUBSPOT_WEBHOOK_SECRET
 
+  if (!secret) {
+    return NextResponse.json({ ok: false, error: "Webhook not configured" }, { status: 503 })
+  }
+
   const body = await request.text()
 
-  if (secret) {
-    const sig = request.headers.get("x-hubspot-signature-v3")
-    const timestamp = request.headers.get("x-hubspot-request-timestamp") ?? ""
+  const sig = request.headers.get("x-hubspot-signature-v3")
+  const timestamp = request.headers.get("x-hubspot-request-timestamp") ?? ""
 
-    if (!sig) {
-      return new NextResponse("Missing x-hubspot-signature-v3", { status: 403 })
-    }
+  if (!sig) {
+    return new NextResponse("Missing x-hubspot-signature-v3", { status: 403 })
+  }
 
-    // HubSpot requires the full request URI; reconstruct from request.url
-    const url = new URL(request.url)
-    const uri = url.origin + url.pathname + url.search
+  // HubSpot requires the full request URI; reconstruct from request.url
+  const url = new URL(request.url)
+  const uri = url.origin + url.pathname + url.search
 
-    if (!verifyHubSpotSignature(secret, "POST", uri, body, timestamp, sig)) {
-      return new NextResponse("Invalid signature", { status: 403 })
-    }
-  } else {
-    console.warn("[HubSpot] HUBSPOT_WEBHOOK_SECRET not set — skipping signature verification")
+  if (!verifyHubSpotSignature(secret, "POST", uri, body, timestamp, sig)) {
+    return new NextResponse("Invalid signature", { status: 403 })
   }
 
   let events: HubSpotWebhookEvent[]
