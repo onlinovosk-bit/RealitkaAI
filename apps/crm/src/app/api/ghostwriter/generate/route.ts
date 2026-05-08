@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
 import { callOpenAI } from "@/lib/ai/openai";
+import { checkAiRateLimit } from "@/lib/ai/rate-guard";
 
 const EVENT_TYPE_LABELS: Record<string, string> = {
   dedičstvo:    "zápis dedičstva",
@@ -24,6 +25,9 @@ export async function POST(request: Request) {
   const supabaseAuth = await createServerClient();
   const { data: { user } } = await supabaseAuth.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const block = await checkAiRateLimit(user.id, "ghostwriter", 20);
+  if (block) return NextResponse.json(block, { status: 429 });
 
   try {
     const body = await request.json() as {

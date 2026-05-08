@@ -16,11 +16,20 @@ import { createClient } from "@/lib/supabase/server";
 import { computeBuyerReadiness } from "@/domain/buyer-readiness/engine";
 import { buildCallScriptPrompt } from "@/ai/prompts/call-scripts";
 import { callOpenAI } from "@/lib/ai/openai";
+import { checkAiRateLimit } from "@/lib/ai/rate-guard";
+import { NextResponse } from "next/server";
 import type { BuyerReadinessDto } from "@/services/playbook/types";
 
 const OPENAI_MODEL = "gpt-4o-mini" as const;
 
 export async function POST(req: Request) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return errorResponse("Unauthorized", 401);
+
+  const block = await checkAiRateLimit(user.id, "call-script", 30);
+  if (block) return NextResponse.json(block, { status: 429 });
+
   let body: {
     leadId?: string;
     propertyTitle?: string;
@@ -39,8 +48,6 @@ export async function POST(req: Request) {
   if (!leadId) {
     return errorResponse("Chýba leadId", 400);
   }
-
-  const supabase = await createClient();
 
   // ── 1. Načítaj lead ───────────────────────────────────────
   const { data: lead, error: leadError } = await supabase
