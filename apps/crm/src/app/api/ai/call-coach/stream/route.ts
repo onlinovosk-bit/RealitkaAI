@@ -12,6 +12,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getClaudeClient, CLAUDE_HAIKU } from "@/lib/ai/claude";
+import { checkAiRateLimit } from "@/lib/ai/rate-guard";
 
 const SYSTEM = `Si realitný sales coach so 20 rokmi praxe v SR. \
 Dávaš úprimnú, konkrétnu spätnú väzbu — nie generické pochvaly. \
@@ -22,6 +23,9 @@ export async function POST(req: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
+  const block = await checkAiRateLimit(user.id, "call-coach-stream", 10);
+  if (block) return NextResponse.json(block, { status: 429 });
 
   let transcript: string;
   try {

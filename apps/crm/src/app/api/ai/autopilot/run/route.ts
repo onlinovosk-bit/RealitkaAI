@@ -3,11 +3,15 @@ import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_AUTOPILOT_RULES } from "@/lib/ai/autopilot-rules";
 import { runAutopilotRules } from "@/lib/ai/autopilot-runner";
 import { executeAction } from "@/lib/ai/action-executor";
+import { checkAiRateLimit } from "@/lib/ai/rate-guard";
 
 export async function POST(req: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
+  const block = await checkAiRateLimit(user.id, "autopilot-run", 10);
+  if (block) return NextResponse.json(block, { status: 429 });
 
   let body: { leadId: string; score?: number; daysSinceContact?: number; emailClicked?: boolean };
   try { body = await req.json(); } catch {
