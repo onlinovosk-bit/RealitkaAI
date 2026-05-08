@@ -12,6 +12,11 @@ function getServiceClient() {
 }
 
 export async function POST(request: Request) {
+  const apiKey = process.env.DEMO_CAPTURE_API_KEY;
+  if (apiKey && request.headers.get("x-api-key") !== apiKey) {
+    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await request.json() as {
       email?: string;

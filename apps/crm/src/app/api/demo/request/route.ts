@@ -2,8 +2,13 @@ import { errorResponse, okResponse } from "@/lib/api-response";
 import { createSaasLead } from "@/lib/sales-funnel-store";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { DEFAULT_CHECKLIST, computeReadinessScore } from "@/lib/onboarding-mvp";
+import { checkAiRateLimit } from "@/lib/ai/rate-guard";
 
 export async function POST(request: Request) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const block = await checkAiRateLimit(ip, "demo-request", 3);
+  if (block) return Response.json(block, { status: 429 });
+
   try {
     const body = await request.json();
 
