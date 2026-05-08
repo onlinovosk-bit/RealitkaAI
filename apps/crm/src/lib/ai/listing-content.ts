@@ -57,7 +57,7 @@ Podlažie: ${floorInfo}
 Cena: ${priceFormatted} €  (${Math.round(property.price / property.size_m2).toLocaleString("sk-SK")} €/m²)
 Stav: ${property.condition}
 Vybavenie: ${property.features.join(", ")}
-${property.agent_notes ? `Poznámky makléra: ${property.agent_notes}` : ""}
+${property.agent_notes ? `Poznámky makléra: ${property.agent_notes.slice(0, 5_000)}` : ""}
 
 Stratégia pre kupujúceho: ${PERSONA_CONTEXT[persona]}
 

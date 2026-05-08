@@ -36,13 +36,11 @@ export async function POST(request: Request) {
   }
 
   let xml = "";
-  let agencyIdFromBody: string | null | undefined;
   const ct = request.headers.get("content-type") ?? "";
 
   if (ct.includes("application/json")) {
-    const body = (await request.json()) as { xml?: string; agencyId?: string | null };
+    const body = (await request.json()) as { xml?: string };
     xml = typeof body.xml === "string" ? body.xml : "";
-    agencyIdFromBody = body.agencyId ?? undefined;
   } else {
     xml = await request.text();
   }
@@ -60,10 +58,7 @@ export async function POST(request: Request) {
   }
 
   const profile = await getCurrentProfile();
-  const agencyId =
-    (typeof agencyIdFromBody === "string" ? agencyIdFromBody : null) ??
-    profile?.agency_id ??
-    null;
+  const agencyId = profile?.agency_id ?? null;
 
   const input = mapRealsoftToPropertyInput(parsed, { agencyId });
 

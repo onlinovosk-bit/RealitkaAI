@@ -87,7 +87,7 @@ async function processBatch(
     location:           lead.location ?? "neznáma",
     days_since_contact: daysSince(lead.last_contact_at),
     score:              lead.score ?? 50,
-    note:               lead.note ?? "",
+    note:               (lead.note ?? "").slice(0, 2_000),
   }));
 
   const response = await callClaude({
