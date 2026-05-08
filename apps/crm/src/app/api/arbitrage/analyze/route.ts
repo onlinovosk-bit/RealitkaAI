@@ -63,7 +63,8 @@ export async function POST(request: Request) {
         .from("profiles")
         .select("id")
         .eq("auth_user_id", user.id)
-        .single();
+        .maybeSingle();
+      if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
 
       const supabase = getServiceClient();
 
@@ -71,7 +72,7 @@ export async function POST(request: Request) {
         .from("leads")
         .select("id, name, email, phone, notes, address, status")
         .eq("id", body.leadId)
-        .eq("assigned_profile_id", profile?.id ?? "")
+        .eq("assigned_profile_id", profile.id)
         .single();
 
       if (!lead) {

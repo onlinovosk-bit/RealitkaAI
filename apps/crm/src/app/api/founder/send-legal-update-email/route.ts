@@ -1,20 +1,31 @@
 import { NextResponse } from "next/server";
 import { requireRole } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/server";
+import { rateLimit } from "@/lib/rate-limit";
 import { Resend } from "resend";
+
+const BATCH_CAP = 200;
 
 function getResend() { return new Resend(process.env.RESEND_API_KEY ?? ""); }
 
 export async function POST() {
-  await requireRole(["founder"]);
+  const caller = await requireRole(["founder"]);
+  const rateLimitKey = `founder-legal-email:${caller?.id ?? "global"}`;
+  const { allowed } = await rateLimit(rateLimitKey, 1, 3_600_000);
+  if (!allowed) {
+    return NextResponse.json({ ok: false, error: "Rate limit: max 1 odoslanie za hodinu." }, { status: 429 });
+  }
+
   const supabase = await createClient();
 
-  const { data: profiles } = await supabase
+  const { data: allProfiles } = await supabase
     .from("profiles")
     .select("email, full_name")
     .eq("role", "owner");
 
-  if (!profiles?.length) return NextResponse.json({ sent: 0 });
+  if (!allProfiles?.length) return NextResponse.json({ sent: 0 });
+
+  const profiles = allProfiles.slice(0, BATCH_CAP);
 
   let sent = 0;
   for (const profile of profiles) {
