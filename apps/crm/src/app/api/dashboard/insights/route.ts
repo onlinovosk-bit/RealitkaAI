@@ -24,10 +24,12 @@ export type DashboardInsightsResponse = {
 };
 
 export async function POST(req: Request) {
-  const body = (await req.json()) as DashboardInsightsRequest;
   const profile = await getCurrentProfile();
-  const userId = profile?.id || 'demo';
-  const userName = profile?.full_name || profile?.email || "Používateľ";
+  if (!profile) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const body = (await req.json()) as DashboardInsightsRequest;
+  const userId   = profile.id;
+  const userName = profile.full_name || profile.email || "Používateľ";
 
   let insights: DashboardInsightsResponse = {
     headline: `Dnes máš ${body.summary.totals.hotLeads} horúcich klientov, ${userName}, ktorí čakajú na tvoj krok.`,

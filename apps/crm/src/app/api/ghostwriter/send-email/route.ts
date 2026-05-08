@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function getServiceClient() {
-  return createClient(
+  return createServiceClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     { auth: { autoRefreshToken: false, persistSession: false } }
@@ -13,13 +14,17 @@ function getServiceClient() {
 }
 
 export async function POST(request: Request) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   try {
     const body = await request.json() as {
-      letterId?: string;
+      letterId?:       string;
       recipientEmail?: string;
-      letterHtml?: string;
-      ownerAddress?: string;
-      agentEmail?: string;
+      letterHtml?:     string;
+      ownerAddress?:   string;
+      agentEmail?:     string;
     };
 
     if (!body.recipientEmail || !EMAIL_REGEX.test(body.recipientEmail)) {
@@ -35,7 +40,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Email service nie je nakonfigurovaný." }, { status: 503 });
     }
 
-    const resend = new Resend(resendKey);
+    const resend   = new Resend(resendKey);
     const fromEmail = process.env.OUTREACH_FROM_EMAIL?.includes("revolis.ai")
       ? `AI Asistent <noreply@revolis.ai>`
       : `AI Asistent <onboarding@resend.dev>`;
@@ -69,10 +74,9 @@ export async function POST(request: Request) {
       throw new Error((error as { message?: string }).message ?? "Email sa nepodarilo odoslať.");
     }
 
-    // Označ list ako odoslaný
     if (body.letterId && !body.letterId.startsWith("tmp_")) {
-      const supabase = getServiceClient();
-      await supabase
+      const admin = getServiceClient();
+      await admin
         .from("ghostwriter_letters")
         .update({ email_sent_to: body.recipientEmail, sent_at: new Date().toISOString() })
         .eq("id", body.letterId);

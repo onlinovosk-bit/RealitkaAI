@@ -1,19 +1,15 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { updateLeadPropertyMatchStatus } from "@/lib/matching-store";
 import { addLeadActivity } from "@/lib/leads-store";
 
 function formatMatchStatus(status: string) {
   switch (status) {
-    case "sent":
-      return "Odoslané";
-    case "viewed":
-      return "Prezreté";
-    case "interested":
-      return "Záujem";
-    case "rejected":
-      return "Odmietnuté";
-    default:
-      return status;
+    case "sent":      return "Odoslané";
+    case "viewed":    return "Prezreté";
+    case "interested": return "Záujem";
+    case "rejected":  return "Odmietnuté";
+    default:          return status;
   }
 }
 
@@ -21,6 +17,10 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string; matchId: string }> }
 ) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
   try {
     const { id, matchId } = await params;
     const body = await request.json();
@@ -48,11 +48,9 @@ export async function PATCH(
 
     return NextResponse.json({ ok: true, match });
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Nepodarilo sa zmeniť stav matchu.";
-
-    return NextResponse.json({ ok: false, error: message }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: error instanceof Error ? error.message : "Nepodarilo sa zmeniť stav matchu." },
+      { status: 400 }
+    );
   }
 }
