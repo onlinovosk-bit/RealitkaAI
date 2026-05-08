@@ -1,6 +1,6 @@
 -- Replace open "demo" policies on tasks and ai_recommendations
 -- with proper tenant-scoped policies via profile_agencies_for_auth()
--- Note: wrap SETOF function in ARRAY() so = ANY() receives an array, not a set.
+-- Use IN (SELECT ...) — consistent with existing migrations; ANY() not allowed in RLS.
 
 -- ─── tasks ────────────────────────────────────────────────────────────────────
 DROP POLICY IF EXISTS "demo_select_tasks"   ON public.tasks;
@@ -12,17 +12,15 @@ CREATE POLICY "tasks_agency"
   ON public.tasks
   FOR ALL
   USING (
-    EXISTS (
-      SELECT 1 FROM public.leads l
-      WHERE l.id = tasks.lead_id
-        AND l.agency_id = ANY(ARRAY(SELECT profile_agencies_for_auth()))
+    lead_id IN (
+      SELECT id FROM public.leads
+      WHERE agency_id IN (SELECT profile_agencies_for_auth())
     )
   )
   WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM public.leads l
-      WHERE l.id = tasks.lead_id
-        AND l.agency_id = ANY(ARRAY(SELECT profile_agencies_for_auth()))
+    lead_id IN (
+      SELECT id FROM public.leads
+      WHERE agency_id IN (SELECT profile_agencies_for_auth())
     )
   );
 
@@ -35,16 +33,14 @@ CREATE POLICY "ai_recommendations_agency"
   ON public.ai_recommendations
   FOR ALL
   USING (
-    EXISTS (
-      SELECT 1 FROM public.leads l
-      WHERE l.id = ai_recommendations.lead_id
-        AND l.agency_id = ANY(ARRAY(SELECT profile_agencies_for_auth()))
+    lead_id IN (
+      SELECT id FROM public.leads
+      WHERE agency_id IN (SELECT profile_agencies_for_auth())
     )
   )
   WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM public.leads l
-      WHERE l.id = ai_recommendations.lead_id
-        AND l.agency_id = ANY(ARRAY(SELECT profile_agencies_for_auth()))
+    lead_id IN (
+      SELECT id FROM public.leads
+      WHERE agency_id IN (SELECT profile_agencies_for_auth())
     )
   );
