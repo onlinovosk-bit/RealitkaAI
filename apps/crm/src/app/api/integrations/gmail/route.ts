@@ -33,13 +33,6 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-    // Debug: log cookies prijaté serverom
-    try {
-      const { cookies } = await import('next/headers');
-      console.log('COOKIES (server):', await cookies());
-    } catch (e) {
-      console.log('COOKIES DEBUG ERROR', e);
-    }
   try {
     const profile = await getCurrentProfile();
     if (!profile) {

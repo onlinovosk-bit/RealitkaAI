@@ -12,6 +12,12 @@ function getServiceClient() {
 }
 
 export async function POST(request: Request) {
+  // Internal admin tool — require CRON_SECRET bearer token
+  const auth = request.headers.get("authorization");
+  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   let body: { source?: string };
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
   const source = body.source ?? "leads_demo";
