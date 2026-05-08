@@ -11,12 +11,11 @@ export async function GET(req: NextRequest) {
     if (error) throw error;
     if (!deals?.length) return NextResponse.json({ message: "Pokoj na trhu." });
 
-    for (const d of deals) {
-      // Vygenerovanie konceptu (Výber 2B)
+    // Send all Slack notifications in parallel
+    await Promise.all(deals.map((d) => {
       const draft = SMS_TEMPLATES.EXCLUSIVITY_INFORMATIONAL
         .replace('{{name}}', d.title ?? 'nehnuteľnosť');
-
-      await sendSlackMessage(
+      return sendSlackMessage(
         `🛡️ *STRÁŽCA CIEN: Pripravený koncept SMS*\n` +
         `*Pre:* ${d.phone}\n` +
         `*Cieľ:* Získanie exkluzivity (3B)\n` +
@@ -25,10 +24,13 @@ export async function GET(req: NextRequest) {
         `--- \n` +
         `📲 *AKCIA:* Skopírujte a pošlite, alebo kliknite na [ODOSLAŤ CEZ BRÁNU] (ak je aktívna).`
       );
+    }));
 
-      const { error: updateError } = await supabase.from('leads').update({ status: 'SMS_DRAFTED' }).eq('id', d.id);
-      if (updateError) throw updateError;
-    }
+    // Batch update all dealt records in one query
+    const ids = deals.map((d) => d.id);
+    const { error: updateError } = await supabase.from('leads').update({ status: 'SMS_DRAFTED' }).in('id', ids);
+    if (updateError) throw updateError;
+
     return NextResponse.json({ success: true, drafted: deals.length });
   });
 }

@@ -14,9 +14,9 @@ export async function GET(req: NextRequest) {
     if (error) throw error;
     if (!leads?.length) return NextResponse.json({ message: "No hot leads for Slack" });
 
-    for (const lead of leads) {
-      await sendSlackMessage(`🔥 *Nový HOT Lead (A-Segment)!*\n*Mesto:* ${lead.region}\n*Cena:* ${lead.price}€\n*Kontakt:* ${lead.phone}\n_Pripravené na kontaktovanie._`);
-    }
+    await Promise.all(leads.map((lead) =>
+      sendSlackMessage(`🔥 *Nový HOT Lead (A-Segment)!*\n*Mesto:* ${lead.region}\n*Cena:* ${lead.price}€\n*Kontakt:* ${lead.phone}\n_Pripravené na kontaktovanie._`)
+    ));
 
     const updated = leads.map((l) => ({ ...l, status: 'OUTREACH_DONE' }));
     const { error: upsertError } = await supabase.from('leads').upsert(updated, { onConflict: 'phone' });

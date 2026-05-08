@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+const ONBOARDING_TABLE = "AI AGENT AUTOMAT ONBOARDING no.2.01";
+
 export async function GET(request: Request) {
   const auth = request.headers.get("authorization");
   if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -13,7 +15,7 @@ export async function GET(request: Request) {
   );
 
   const { data: leads, error } = await supabase
-    .from("AI AGENT AUTOMAT ONBOARDING no.2.01")
+    .from(ONBOARDING_TABLE)
     .select("id, agency_name, segment, demo_url, contacted_at");
 
   if (error) {
@@ -23,7 +25,7 @@ export async function GET(request: Request) {
 
   const today = new Date().toISOString().slice(0, 10);
 
-  for (const l of leads ?? []) {
+  const upsertRows = (leads ?? []).map((l) => {
     const tasks: string[] = [];
 
     if (l.segment === "A") {
@@ -32,22 +34,24 @@ export async function GET(request: Request) {
         `Pošli follow-up email s konkrétnym use-case.`,
       );
     } else if (l.segment === "B") {
-      tasks.push(
-        `Skontroluj web ${l.agency_name} a priprav personalizovaný angle.`,
-      );
+      tasks.push(`Skontroluj web ${l.agency_name} a priprav personalizovaný angle.`);
     } else {
       tasks.push(`Len pasívne sleduj signály pre ${l.agency_name}.`);
     }
 
-    try {
-      await supabase
-        .from("AI AGENT AUTOMAT ONBOARDING no.2.01")
-        .update({ playbook_date: today, playbook_tasks: tasks })
-        .eq("id", l.id);
-    } catch (e) {
-      console.error("Update playbook failed:", e);
+    return { id: l.id, playbook_date: today, playbook_tasks: tasks };
+  });
+
+  if (upsertRows.length > 0) {
+    const { error: upsertError } = await supabase
+      .from(ONBOARDING_TABLE)
+      .upsert(upsertRows, { onConflict: "id" });
+
+    if (upsertError) {
+      console.error("Batch playbook upsert failed:", upsertError);
+      return NextResponse.json({ error: "upsert_failed" }, { status: 500 });
     }
   }
 
-  return NextResponse.json({ playbooks_generated: leads?.length ?? 0 });
+  return NextResponse.json({ playbooks_generated: upsertRows.length });
 }
