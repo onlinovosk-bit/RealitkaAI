@@ -33,8 +33,16 @@ export async function POST(request: Request) {
 
     const body = await request.json();
 
+    // Enforce caller's own agency — prevents privilege escalation via body.agencyId
+    const { data: callerProfile } = await supabase
+      .from("profiles")
+      .select("agency_id")
+      .eq("id", user.id)
+      .maybeSingle();
+    const agencyId: string = callerProfile?.agency_id ?? body.agencyId ?? "";
+
     const team = await createTeam({
-      agencyId: body.agencyId,
+      agencyId,
       name: body.name,
     });
 

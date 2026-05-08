@@ -10,6 +10,12 @@ function getServiceClient() {
 }
 
 export async function POST(request: Request) {
+  // Require auth — this route reads leads and pushes to HubSpot
+  const { createClient } = await import("@/lib/supabase/server");
+  const supabaseAuth = await createClient();
+  const { data: { user } } = await supabaseAuth.auth.getUser();
+  if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
   let body: { leadId?: string }
   try {
     body = await request.json()

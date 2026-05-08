@@ -28,7 +28,7 @@ export async function PATCH(
       description: body.description,
       ownerName:   body.ownerName,
       ownerPhone:  body.ownerPhone,
-      agencyId:    body.agencyId,
+      // agencyId is intentionally NOT accepted from body — prevents cross-tenant reassignment
     });
 
     try {

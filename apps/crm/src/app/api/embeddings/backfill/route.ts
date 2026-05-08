@@ -42,6 +42,11 @@ function sleep(ms: number) {
 }
 
 export async function POST(req: Request) {
+  const auth = req.headers.get("authorization");
+  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+    return errorResponse("Unauthorized", 401);
+  }
+
   let body: unknown;
   try {
     body = await req.json();
