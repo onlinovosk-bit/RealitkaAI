@@ -462,7 +462,6 @@ export async function updateProperty(id: string, input: Partial<PropertyInput>) 
 
   const payload: any = {};
 
-  if (typeof input.agencyId !== "undefined") payload.agency_id = input.agencyId;
   if (typeof input.title !== "undefined") payload.title = input.title;
   if (typeof input.location !== "undefined") payload.location = input.location;
   if (typeof input.price !== "undefined") payload.price = Number(input.price);

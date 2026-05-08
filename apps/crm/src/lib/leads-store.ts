@@ -83,6 +83,7 @@ export type LeadFilters = {
 };
 
 export type LeadInput = {
+  agencyId: string;
   name: string;
   email: string;
   phone: string;
@@ -171,6 +172,7 @@ type ActivityLogInput = {
 
 type SupabaseLeadRow = {
   id: string;
+  agency_id: string;
   name: string;
   email: string;
   phone: string;
@@ -842,6 +844,7 @@ export async function createLead(input: LeadInput & ActivityLogInput) {
 
   const payload: SupabaseLeadRow = {
     id: crypto.randomUUID(),
+    agency_id: input.agencyId,
     name: input.name,
     email: input.email,
     phone: input.phone,

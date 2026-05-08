@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { NextResponse }  from "next/server";
+import { NextResponse } from "next/server";
+import { createProperty } from "@/lib/properties-store";
 
 async function getAuthUser() {
   const supabase = await createClient()
@@ -20,10 +21,29 @@ export async function POST(req: Request) {
   const { supabase, user } = await getAuthUser()
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
+  const { data: callerProfile } = await supabase.from("profiles").select("agency_id").eq("id", user.id).maybeSingle()
+  const agencyId = callerProfile?.agency_id ?? ""
+
   const body = await req.json()
-  const { data, error } = await supabase.from("properties").insert([body]).select()
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data)
+  try {
+    const property = await createProperty({
+      agencyId,
+      title: body.title ?? "",
+      location: body.location ?? "",
+      price: Number(body.price ?? 0),
+      type: body.type ?? "Byt",
+      rooms: body.rooms ?? "2 izby",
+      features: Array.isArray(body.features) ? body.features : [],
+      status: body.status ?? "Aktívna",
+      description: body.description ?? "",
+      ownerName: body.ownerName ?? "",
+      ownerPhone: body.ownerPhone ?? "",
+    })
+    return NextResponse.json(property)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error"
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
 }
 
 export async function PUT(req: Request) {

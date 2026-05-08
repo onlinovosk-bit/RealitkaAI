@@ -76,11 +76,15 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabaseAuth.auth.getUser();
     if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
+    const { data: callerProfile } = await supabaseAuth.from("profiles").select("agency_id").eq("id", user.id).maybeSingle();
+    const agencyId = callerProfile?.agency_id ?? "";
+
     const validation = await validateBody(request, CreateLeadSchema);
     if (!validation.ok) return validation.response;
     const body = validation.data;
 
     const lead = await createLead({
+      agencyId,
       name: body.name,
       email: body.email ?? "",
       phone: body.phone,
@@ -120,7 +124,7 @@ export async function POST(request: Request) {
       email: lead.email,
       phone: lead.phone ?? null,
       source: body.source,
-      agencyId: null,
+      agencyId,
     })).catch(() => {/* best-effort */});
 
     return okResponse({ lead });
