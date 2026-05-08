@@ -1,5 +1,6 @@
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { AI_ASSISTANT_NAME } from "@/lib/ai-brand";
+import { callOpenAI } from "@/lib/ai/openai";
 
 type AssistantResponse =
   | { ok: true; answer: string }
@@ -9,11 +10,6 @@ export async function getAssistantAnswer(
   leadId: string,
   question: string
 ): Promise<AssistantResponse> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    return { ok: false, error: "OpenAI kľúč chýba.", status: 400 };
-  }
-
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {
@@ -48,47 +44,31 @@ export async function getAssistantAnswer(
     .filter(Boolean)
     .join("\n");
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
+  try {
+    const { content: answer } = await callOpenAI({
+      model:      "gpt-4o-mini",
       max_tokens: 200,
+      tag:        "assistant-chat",
       messages: [
         {
-          role: "system",
+          role:    "system",
           content:
             `Si ${AI_ASSISTANT_NAME}, AI asistentka pre slovenských realitných maklérov. ` +
             "Odpovedaj výhradne v slovenčine. Buď konkrétna, praktická, max 3 vety. " +
             "Nikdy nehovor čo nevieš — ak informácia chýba, povedz čo by maklér mal zistiť.",
         },
         {
-          role: "user",
+          role:    "user",
           content: `Kontext príležitosti:\n${context}\n\nOtázka: ${question}`,
         },
       ],
-    }),
-  });
-
-  if (!res.ok) {
-    let detail = "";
-    try {
-      const payload = (await res.json()) as { error?: { message?: string } };
-      detail = payload?.error?.message ? ` (${payload.error.message})` : "";
-    } catch {
-      // ignore parse errors and keep generic fallback
-    }
+    });
+    return { ok: true, answer };
+  } catch (err) {
     return {
-      ok: false,
-      error: `OpenAI API zlyhalo: ${res.status}${detail}`,
+      ok:     false,
+      error:  `OpenAI API zlyhalo: ${err instanceof Error ? err.message : String(err)}`,
       status: 500,
     };
   }
-
-  const data = await res.json();
-  const answer = data.choices?.[0]?.message?.content?.trim() ?? "";
-  return { ok: true, answer };
 }

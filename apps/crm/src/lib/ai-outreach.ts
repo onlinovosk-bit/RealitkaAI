@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { sanitizeText, rehydrate } from "@/lib/ai/sanitize";
 
 type LeadLike = {
   id: string;
@@ -128,12 +129,13 @@ Vráť iba JSON:
   const model = getOutreachModel(lead.score);
   const maxOutputTokens = getNumberFromEnv(process.env.OUTREACH_MAX_OUTPUT_TOKENS, 220);
 
+  const { sanitized: sanitizedPrompt, vault } = sanitizeText(prompt);
   let response: OpenAI.Responses.Response | null = null;
 
   try {
     response = await client.responses.create({
       model,
-      input: prompt,
+      input: sanitizedPrompt,
       max_output_tokens: maxOutputTokens,
       text: {
         format: {
@@ -171,9 +173,10 @@ Vráť iba JSON:
   const usage = (response as unknown as { usage?: { total_tokens?: number } })?.usage;
   const totalTokens = usage?.total_tokens;
 
-  const outputText =
+  const rawOutput =
     response?.output_text ||
     '{"subject":"Ponuka nehnuteľnosti","body":"Dobrý deň, radi Vám pomôžeme s výberom nehnuteľnosti."}';
+  const outputText = rehydrate(rawOutput, vault);
 
   try {
     const parsed = JSON.parse(outputText);

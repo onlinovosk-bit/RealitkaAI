@@ -9,6 +9,7 @@
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { computeBrainRescorePayload } from "@/lib/ai/brain-rescore";
 import { AI_ASSISTANT_NAME } from "@/lib/ai-brand";
+import { callOpenAI } from "@/lib/ai/openai";
 
 type LeadRow = {
   id: string;
@@ -36,41 +37,29 @@ function getAdmin() {
 }
 
 async function getOpenAiInsight(lead: LeadRow, score: number): Promise<string | null> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return null;
-
   try {
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        max_tokens: 80,
-        messages: [
-          {
-            role: "system",
-            content:
-              `Si ${AI_ASSISTANT_NAME}, AI asistentka pre slovenských realitných maklérov. ` +
-              "Odpovedaj výhradne v slovenčine. Buď konkrétna a stručná (max 1 veta).",
-          },
-          {
-            role: "user",
-            content:
-              `Lead: ${lead.name}, status: ${lead.status}, rozpočet: ${lead.budget}, ` +
-              `lokalita: ${lead.location}, financovanie: ${lead.financing}, ` +
-              `horizont: ${lead.timeline}, AI skóre: ${score}/100. ` +
-              "Napíš jeden konkrétny next step pre makléra.",
-          },
-        ],
-      }),
+    const { content } = await callOpenAI({
+      model:      "gpt-4o-mini",
+      max_tokens: 80,
+      tag:        "rescore-insight",
+      messages: [
+        {
+          role:    "system",
+          content:
+            `Si ${AI_ASSISTANT_NAME}, AI asistentka pre slovenských realitných maklérov. ` +
+            "Odpovedaj výhradne v slovenčine. Buď konkrétna a stručná (max 1 veta).",
+        },
+        {
+          role:    "user",
+          content:
+            `Lead: ${lead.name}, status: ${lead.status}, rozpočet: ${lead.budget}, ` +
+            `lokalita: ${lead.location}, financovanie: ${lead.financing}, ` +
+            `horizont: ${lead.timeline}, AI skóre: ${score}/100. ` +
+            "Napíš jeden konkrétny next step pre makléra.",
+        },
+      ],
     });
-
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.choices?.[0]?.message?.content?.trim() ?? null;
+    return content.trim() || null;
   } catch {
     return null;
   }

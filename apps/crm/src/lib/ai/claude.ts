@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { sanitizeMessages, sanitizeSystem, rehydrate, type Vault } from "./sanitize";
 
 let _client: Anthropic | null = null;
 
@@ -15,20 +16,46 @@ export const CLAUDE_SONNET = "claude-sonnet-4-6";
 export const CLAUDE_HAIKU  = "claude-haiku-4-5-20251001";
 
 /**
- * Thin wrapper nad client.messages.create s latency + token logovaním.
- * Logy idú na stderr — neovplyvňujú MCP protokol ani HTTP response.
- * Výstup: evaluation infrastructure (Alexander Wang round table).
+ * Thin wrapper nad client.messages.create.
+ * Automaticky maskuje PII (email, telefón, IBAN, RČ) pred odoslaním do Claude
+ * a rehydruje placeholdery v odpovedi.
  */
 export async function callClaude(
-  params:  Anthropic.MessageCreateParamsNonStreaming,
-  tag?:    string
+  params: Anthropic.MessageCreateParamsNonStreaming,
+  tag?:   string
 ): Promise<Anthropic.Message> {
   const client = getClaudeClient();
   const t0     = Date.now();
-  const resp   = await client.messages.create(params);
-  const ms     = Date.now() - t0;
+
+  const vault: Vault = {};
+
+  const { messages } = sanitizeMessages(
+    params.messages as Array<{ role: string; content: string | Array<{ type: string; text?: string }> }>,
+    vault
+  );
+  const system = sanitizeSystem(
+    params.system as string | Array<{ type: string; text?: string }> | undefined,
+    vault
+  );
+
+  const sanitizedParams: Anthropic.MessageCreateParamsNonStreaming = {
+    ...params,
+    messages: messages as Anthropic.MessageParam[],
+    ...(system !== undefined ? { system: system as Anthropic.MessageCreateParamsNonStreaming['system'] } : {}),
+  };
+
+  const resp = await client.messages.create(sanitizedParams);
+  const ms   = Date.now() - t0;
+
+  const vaultSize = Object.keys(vault).length;
+  if (vaultSize > 0) {
+    (resp as { content: Anthropic.ContentBlock[] }).content = resp.content.map(block =>
+      block.type === 'text' ? { ...block, text: rehydrate(block.text, vault) } : block
+    );
+  }
+
   process.stderr.write(
-    `[ai:${tag ?? params.model}] ${ms}ms | in:${resp.usage.input_tokens} out:${resp.usage.output_tokens} | stop:${resp.stop_reason}\n`
+    `[ai:${tag ?? params.model}] ${ms}ms | in:${resp.usage.input_tokens} out:${resp.usage.output_tokens} | stop:${resp.stop_reason} | masked:${vaultSize}\n`
   );
   return resp;
 }

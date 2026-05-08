@@ -15,15 +15,10 @@ import { okResponse, errorResponse } from "@/lib/api-response";
 import { createClient } from "@/lib/supabase/server";
 import { computeBuyerReadiness } from "@/domain/buyer-readiness/engine";
 import { buildCallScriptPrompt } from "@/ai/prompts/call-scripts";
+import { callOpenAI } from "@/lib/ai/openai";
 import type { BuyerReadinessDto } from "@/services/playbook/types";
 
 const OPENAI_MODEL = "gpt-4o-mini" as const;
-
-function getOpenAIKey(): string {
-  const key = process.env.OPENAI_API_KEY;
-  if (!key) throw new Error("OPENAI_API_KEY nie je nastavený");
-  return key;
-}
 
 export async function POST(req: Request) {
   let body: {
@@ -111,30 +106,14 @@ export async function POST(req: Request) {
   let script: string;
 
   try {
-    const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${getOpenAIKey()}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: OPENAI_MODEL,
-        temperature: 0.7,
-        max_tokens: 400,
-        messages: [{ role: "user", content: prompt }],
-      }),
+    const { content } = await callOpenAI({
+      model:       OPENAI_MODEL,
+      temperature: 0.7,
+      max_tokens:  400,
+      tag:         "call-script",
+      messages:    [{ role: "user", content: prompt }],
     });
-
-    if (!openaiRes.ok) {
-      const err = await openaiRes.text();
-      return errorResponse(`OpenAI API error: ${err}`, 502);
-    }
-
-    const openaiData = (await openaiRes.json()) as {
-      choices: Array<{ message: { content: string } }>;
-    };
-
-    script = openaiData.choices[0]?.message?.content?.trim() ?? "";
+    script = content.trim();
   } catch (err) {
     console.error("[call-script] OpenAI zlyhalo:", err);
     return errorResponse("Nepodarilo sa vygenerovať skript", 502);
