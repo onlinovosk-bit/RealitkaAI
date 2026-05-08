@@ -1,5 +1,6 @@
 import { okResponse, errorResponse } from "@/lib/api-response";
 import { getCurrentProfile } from "@/lib/auth";
+import { checkAiRateLimit } from "@/lib/ai/rate-guard";
 import {
   fetchLeadAgencyId,
   runEnterprisePipelineAndPersist,
@@ -27,6 +28,9 @@ export async function POST(req: Request) {
     if (!profile) {
       return errorResponse("Unauthorized", 401);
     }
+
+    const block = await checkAiRateLimit(profile.auth_user_id ?? profile.id, "process-lead", 10);
+    if (block) return errorResponse(block.error, 429);
 
     const body = (await req.json()) as { leadId?: string };
     const leadId = body.leadId?.trim();

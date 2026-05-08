@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { checkAiRateLimit } from "@/lib/ai/rate-guard";
 
 type LeadRow = {
   name?: string;
@@ -22,6 +23,9 @@ export async function POST(request: Request) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
+    const block = await checkAiRateLimit(user.id, "import", 5);
+    if (block) return NextResponse.json(block, { status: 429 });
 
     // Resolve agency_id once for all inserts
     const { data: profile } = await supabase

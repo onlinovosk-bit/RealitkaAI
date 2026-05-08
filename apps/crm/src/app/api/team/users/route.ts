@@ -1,8 +1,17 @@
 ﻿import { NextResponse } from "next/server";
+import { z } from "zod";
 import { createProfile, listProfiles } from "@/lib/team-store";
 import { sendOnboardingEmail } from "@/lib/send-onboarding-email";
 import { createActivity } from "@/lib/activities-store";
 import { createClient } from "@/lib/supabase/server";
+
+const CreateUserBody = z.object({
+  fullName: z.string().min(1).max(200),
+  email: z.string().email().max(254),
+  role: z.string().min(1).max(100),
+  phone: z.string().max(30).optional(),
+  teamId: z.string().uuid().nullable().optional(),
+});
 
 export async function GET() {
   try {
@@ -32,7 +41,12 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
-    const body = await request.json();
+    const rawBody = await request.json();
+    const parsed = CreateUserBody.safeParse(rawBody);
+    if (!parsed.success) {
+      return NextResponse.json({ ok: false, error: parsed.error.issues[0].message }, { status: 400 });
+    }
+    const body = parsed.data;
 
     // Enforce caller's own agency — prevents privilege escalation via body.agencyId
     const { data: callerProfile } = await supabase
@@ -40,15 +54,15 @@ export async function POST(request: Request) {
       .select("agency_id")
       .eq("id", user.id)
       .maybeSingle();
-    const agencyId: string = callerProfile?.agency_id ?? body.agencyId ?? "";
+    const agencyId: string = callerProfile?.agency_id ?? (rawBody.agencyId as string | undefined) ?? "";
 
     const profile = await createProfile({
       agencyId,
-      teamId: body.teamId || null,
+      teamId: body.teamId ?? null,
       fullName: body.fullName,
       email: body.email,
       role: body.role,
-      phone: body.phone,
+      phone: body.phone ?? "",
     });
 
     // Odoslanie welcome emailu

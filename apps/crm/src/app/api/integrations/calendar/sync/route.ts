@@ -1,5 +1,6 @@
 import { okResponse, errorResponse } from "@/lib/api-response";
 import { getCurrentProfile } from "@/lib/auth";
+import { checkAiRateLimit } from "@/lib/ai/rate-guard";
 import { getCalendarIntegration, syncCalendarFromIcs } from "@/lib/integrations-store";
 import { requireFeature } from "@/lib/feature-gating";
 
@@ -9,6 +10,9 @@ export async function POST() {
 
     const profile = await getCurrentProfile();
     if (!profile) return errorResponse("Neautorizovaný prístup.", 401);
+
+    const block = await checkAiRateLimit(profile.auth_user_id ?? profile.id, "calendar-sync", 2);
+    if (block) return errorResponse(block.error, 429);
 
     const integration = await getCalendarIntegration(profile.id);
     if (!integration?.calendarIcsUrl) {

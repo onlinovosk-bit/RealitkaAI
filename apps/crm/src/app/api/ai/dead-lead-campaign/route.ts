@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { checkAiRateLimit } from "@/lib/ai/rate-guard";
 import { generateBatchReactivationPlan } from "@/lib/ai/dead-lead-campaign";
 import type { DeadLeadInput } from "@/lib/ai/dead-lead-campaign";
 import { sendMessage } from "@/lib/multi-channel-sender";
@@ -9,6 +10,9 @@ export async function GET(req: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
+  const block = await checkAiRateLimit(user.id, "dead-lead-campaign", 3);
+  if (block) return NextResponse.json(block, { status: 429 });
 
   const { searchParams } = new URL(req.url);
   const limit = Math.min(Number(searchParams.get("limit") ?? 20), 50);
@@ -40,6 +44,9 @@ export async function POST(req: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
+  const block = await checkAiRateLimit(user.id, "dead-lead-campaign", 3);
+  if (block) return NextResponse.json(block, { status: 429 });
 
   const body = (await req.json()) as { lead_ids?: string[]; dry_run?: boolean };
   if (!body.lead_ids?.length) {
