@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
-import OpenAI from "openai";
-
-function getOpenAI() { return new OpenAI({ apiKey: process.env.OPENAI_API_KEY ?? "" }); }
+import { callOpenAI } from "@/lib/ai/openai";
 
 const EVENT_TYPE_LABELS: Record<string, string> = {
   dedičstvo:    "zápis dedičstva",
@@ -58,17 +56,18 @@ Požiadavky na list:
 
 Vráť IBA HTML obsah listu (bez <!DOCTYPE>, <html>, <head> tagov). Použi inline štýly pre profesionálny vzhľad.`;
 
-    const completion = await getOpenAI().chat.completions.create({
+    const { content: letterHtmlRaw } = await callOpenAI({
       model:       "gpt-4o",
       max_tokens:  1200,
       temperature: 0.7,
+      tag:         "ghostwriter",
       messages: [
         { role: "system", content: "Si expert na slovenský realitný trh a profesionálnu komunikáciu." },
         { role: "user",   content: prompt },
       ],
     });
 
-    const letterHtml = completion.choices[0]?.message?.content?.trim() ?? "";
+    const letterHtml = letterHtmlRaw.trim();
     const letterText = letterHtml.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 
     // Ulož do Supabase

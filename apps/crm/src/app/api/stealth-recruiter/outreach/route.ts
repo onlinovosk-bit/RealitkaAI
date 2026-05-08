@@ -2,9 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
-import OpenAI from "openai";
-
-function getOpenAI() { return new OpenAI({ apiKey: process.env.OPENAI_API_KEY ?? "" }); }
+import { callOpenAI } from "@/lib/ai/openai";
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function getServiceClient() {
@@ -71,17 +69,16 @@ Napíš krátku, priateľskú správu (SMS/email štýl, max 5 viet):
 
 Vráť IBA text správy (bez uvodzoviek). Tón: ľudský, nie korporátny.`;
 
-    const completion = await getOpenAI().chat.completions.create({
+    const { content: outreachText } = await callOpenAI({
       model:       "gpt-4o",
       max_tokens:  400,
       temperature: 0.75,
+      tag:         "stealth-outreach",
       messages: [
         { role: "system", content: "Si slovenský realitný expert. Píš prirodzene, bez floskúl." },
         { role: "user",   content: prompt },
       ],
     });
-
-    const outreachText = completion.choices[0]?.message?.content?.trim() ?? "";
 
     // Ulož outreach do DB
     const supabase = getServiceClient();

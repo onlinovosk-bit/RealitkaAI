@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Lock, Mic2, Map, AlertTriangle, Hammer, Globe, Users, Zap } from "lucide-react";
 import { NeuralPulse } from "@/components/visuals/NeuralPulse";
@@ -9,6 +10,12 @@ import { CompetitionMap } from "@/components/l99/CompetitionMap";
 import IntelBrief from "@/components/protocol/IntelBrief";
 import { TIER_DISPLAY_NAMES, TIER_PRICES } from "@/types/intelligence-hub";
 import type { HubTier, GhostSessionData } from "@/types/intelligence-hub";
+
+const TAB_TO_MODULE: Record<string, string> = {
+  ghost:     "financie",
+  market:    "stavba",
+  community: "komunita",
+};
 
 const MODULE_ROUTES: Record<string, string> = {
   skener: "/call-analyzer",
@@ -108,6 +115,9 @@ function getGhostSession(): GhostSessionData | null {
 
 // ─── Page ─────────────────────────────────────────────────────────────────
 export default function L99HubPage() {
+  const searchParams    = useSearchParams();
+  const activeModuleId  = TAB_TO_MODULE[searchParams?.get("tab") ?? ""] ?? null;
+
   const [tier, setTier]               = useState<HubTier>("free");
   const [demoTierOverride, setDemoTierOverride] = useState<HubTier | null>(null);
   const [tierLoading, setTierLoading] = useState(true);
@@ -261,7 +271,7 @@ export default function L99HubPage() {
                   unlocked
                     ? "bg-[#0A0A12] border-blue-500/30 shadow-[0_0_30px_-10px_rgba(37,99,235,0.2)] hover:border-blue-500/50"
                     : "bg-[#050508] border-white/5 opacity-40 cursor-not-allowed"
-                }`}
+                } ${mod.id === activeModuleId ? "ring-2 ring-blue-400 ring-offset-2 ring-offset-[#010103]" : ""}`}
               >
                 {/* Tier badge */}
                 {!unlocked && (

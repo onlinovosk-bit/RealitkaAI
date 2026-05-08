@@ -1,5 +1,5 @@
-import OpenAI from "openai";
 import { createClient } from "@/lib/supabase/server";
+import { callOpenAI } from "@/lib/ai/openai";
 import { requireEnterprise } from "./entitlements";
 import { dispatchPriorityAlert } from "./alert-dispatch";
 import {
@@ -9,8 +9,6 @@ import {
   type BriAlertLevel,
   type ReasoningFactor,
 } from "./types";
-
-function getOpenAI() { return new OpenAI({ apiKey: process.env.OPENAI_API_KEY ?? "" }); }
 
 export function calculateBriScore(components: BriComponents): number {
   return Math.round(
@@ -67,8 +65,11 @@ async function generateReasoningString(
   leadContext: { name: string; lastActivity: string }
 ): Promise<string> {
   try {
-    const response = await getOpenAI().chat.completions.create({
-      model: "gpt-4o",
+    const { content } = await callOpenAI({
+      model:       "gpt-4o",
+      max_tokens:  150,
+      temperature: 0.2,
+      tag:         "bri-reasoning",
       messages: [{
         role: "user",
         content: `Vygeneruj stručný, transparentný vysvetľovací text (max 2 vety, slovensky) prečo
@@ -84,11 +85,8 @@ Komponenty:
 Formát: "Príležitosť označená ako [úroveň] (${score}) z dôvodu [hlavný faktor] a [vedľajší faktor]."
 Buď konkrétny a merateľný. Žiadne generické frázy.`,
       }],
-      max_tokens: 150,
-      temperature: 0.2,
     });
-    return response.choices[0]?.message?.content?.trim() ??
-      `Príležitosť hodnotená na ${score}/100 na základe AI analýzy správania.`;
+    return content.trim() || `Príležitosť hodnotená na ${score}/100 na základe AI analýzy správania.`;
   } catch {
     return `Príležitosť hodnotená na ${score}/100 na základe AI analýzy správania.`;
   }

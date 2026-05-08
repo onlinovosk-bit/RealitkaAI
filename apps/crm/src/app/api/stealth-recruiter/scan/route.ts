@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
-import OpenAI from "openai";
-
-function getOpenAI() { return new OpenAI({ apiKey: process.env.OPENAI_API_KEY ?? "" }); }
+import { callOpenAI } from "@/lib/ai/openai";
 
 function getServiceClient() {
   return createClient(
@@ -102,18 +100,19 @@ Kandidáti:
 ${DEMO_PROSPECTS.map(p => `- ${p.id}: ${p.address}, ${p.daysListed} dní inzeruje, znížil cenu o ${p.priceDropPercent}%`).join("\n")}`;
 
         try {
-          const completion = await getOpenAI().chat.completions.create({
-            model: "gpt-4o-mini",
-            max_tokens: 400,
-            temperature: 0.5,
+          const { content: rawJson } = await callOpenAI({
+            model:           "gpt-4o-mini",
+            max_tokens:      400,
+            temperature:     0.5,
+            tag:             "stealth-scan",
+            response_format: { type: "json_object" },
             messages: [
               { role: "system", content: "Odpovedaj VŽDY validným JSON." },
               { role: "user",   content: scoredPrompt },
             ],
-            response_format: { type: "json_object" },
           });
 
-          const raw = JSON.parse(completion.choices[0]?.message?.content ?? "{}") as
+          const raw = JSON.parse(rawJson || "{}") as
             { candidates?: CommentItem[] } | CommentItem[];
           const comments: CommentItem[] = Array.isArray(raw) ? raw : (raw as { candidates?: CommentItem[] }).candidates ?? [];
 

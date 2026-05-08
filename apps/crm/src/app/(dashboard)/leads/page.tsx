@@ -6,7 +6,12 @@ import { listLeads } from "@/lib/leads-store";
 import { listTeams, listProfiles } from "@/lib/team-store";
 import { recommendations } from "@/lib/mock-data";
 
-export default async function LeadsPage() {
+export default async function LeadsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ scope?: string }>;
+}) {
+  const { scope } = await searchParams;
 
   const result = await safeServerAction(
     async () => {
@@ -39,9 +44,21 @@ export default async function LeadsPage() {
 
   return (
     <ModuleShell
-      title="Príležitosti"
+      title={scope === "team" ? "Leady kolegov" : "Príležitosti"}
       description="Profesionálny prehľad klientov, priorít a AI odporúčaní."
     >
+      {scope === "team" && (
+        <div
+          className="mb-4 rounded-lg px-4 py-2 text-sm"
+          style={{
+            background:   "rgba(34,211,238,0.08)",
+            border:       "1px solid rgba(34,211,238,0.2)",
+            color:        "#22D3EE",
+          }}
+        >
+          Zobrazujú sa príležitosti pridelené kolegom vo vašom tíme.
+        </div>
+      )}
       <LeadsModule
         leads={leads}
         teams={teams.map((team) => ({ id: team.id, name: team.name }))}

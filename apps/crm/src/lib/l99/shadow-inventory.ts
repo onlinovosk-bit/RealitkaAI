@@ -1,9 +1,7 @@
-import OpenAI from "openai";
 import { createClient } from "@/lib/supabase/server";
+import { callOpenAI } from "@/lib/ai/openai";
 import { requireEnterprise } from "./entitlements";
 import type { ShadowInventorySignal } from "./types";
-
-function getOpenAI() { return new OpenAI({ apiKey: process.env.OPENAI_API_KEY ?? "" }); }
 
 export async function scanDormantLeads(agencyId: string): Promise<ShadowInventorySignal[]> {
   await requireEnterprise();
@@ -73,19 +71,19 @@ async function generateDormantReasoning(lead: {
   last_contact_at: string;
 }): Promise<string> {
   try {
-    const response = await getOpenAI().chat.completions.create({
-      model: "gpt-4o",
+    const { content } = await callOpenAI({
+      model:       "gpt-4o",
+      max_tokens:  80,
+      temperature: 0.3,
+      tag:         "shadow-inventory",
       messages: [{
         role: "user",
         content: `Vygeneruj 1 krátku vetu (slovensky) prečo sa oplatí znovu kontaktovať
 príležitosť "${lead.name}" (AI skóre: ${lead.score}, neaktívna od: ${lead.last_contact_at}).
 Buď konkrétny a motivujúci pre makléra.`,
       }],
-      max_tokens: 80,
-      temperature: 0.3,
     });
-    return response.choices[0]?.message?.content?.trim() ??
-      `Príležitosť s históriou záujmu – vhodný čas na opätovný kontakt.`;
+    return content.trim() || `Príležitosť s históriou záujmu – vhodný čas na opätovný kontakt.`;
   } catch {
     return `Príležitosť s históriou záujmu – vhodný čas na opätovný kontakt.`;
   }

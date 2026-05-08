@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
-import OpenAI from "openai";
-
-function getOpenAI() {
-  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY ?? "" });
-}
+import { callOpenAI } from "@/lib/ai/openai";
 
 function getServiceClient() {
   return createClient(
@@ -95,18 +91,19 @@ Odpovedz v JSON formáte:
   "recommendedAction": "<konkrétna akcia slovensky>"
 }`;
 
-      const completion = await getOpenAI().chat.completions.create({
-        model: "gpt-4o-mini",
-        max_tokens: 300,
-        temperature: 0.3,
+      const { content: rawAnalysis } = await callOpenAI({
+        model:           "gpt-4o-mini",
+        max_tokens:      300,
+        temperature:     0.3,
+        tag:             "arbitrage-analyze",
+        response_format: { type: "json_object" },
         messages: [
           { role: "system", content: "Si expert na analýzu realitných leadov. Odpovedaj VŽDY validným JSON." },
           { role: "user",   content: analysisPrompt },
         ],
-        response_format: { type: "json_object" },
       });
 
-      const analysis = JSON.parse(completion.choices[0]?.message?.content ?? "{}") as {
+      const analysis = JSON.parse(rawAnalysis || "{}") as {
         arbitrageScore?: number;
         ownedAddress?: string;
         reasoning?: string;
