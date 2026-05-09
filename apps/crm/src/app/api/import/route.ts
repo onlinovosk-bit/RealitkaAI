@@ -36,7 +36,12 @@ export async function POST(request: Request) {
     const agencyId: string | null = profile?.agency_id ?? null;
 
     const body = await request.json();
-    const leads: LeadRow[] = Array.isArray(body.leads) ? body.leads : [];
+
+    if (!Array.isArray(body.leads) || body.leads.length > 500) {
+      return NextResponse.json({ ok: false, error: "Max 500 záznamov na import." }, { status: 400 });
+    }
+
+    const leads: LeadRow[] = body.leads;
 
     if (leads.length === 0) {
       return NextResponse.json({ ok: false, error: "Žiadne leady na import." }, { status: 400 });

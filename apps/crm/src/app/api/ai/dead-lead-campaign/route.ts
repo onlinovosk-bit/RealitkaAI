@@ -52,6 +52,9 @@ export async function POST(req: Request) {
   if (!body.lead_ids?.length) {
     return NextResponse.json({ ok: false, error: "lead_ids required" }, { status: 400 });
   }
+  if (body.lead_ids.length > 50) {
+    return NextResponse.json({ ok: false, error: "Max 50 lead_ids na jeden request." }, { status: 400 });
+  }
 
   const { data: leads } = await supabase
     .from("leads")
