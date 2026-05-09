@@ -4,6 +4,8 @@ import { deleteProperty, getProperty, updateProperty } from "@/lib/properties-st
 import { createActivity } from "@/lib/activities-store";
 import { autoRecalculateForProperty } from "@/lib/matching-hooks";
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -14,6 +16,7 @@ export async function PATCH(
 
   try {
     const { id } = await params;
+    if (!UUID_RE.test(id)) return errorResponse("Invalid ID", 400);
     const body = await request.json();
     const [oldProperty, { data: callerProfile }] = await Promise.all([
       getProperty(id),
@@ -72,6 +75,7 @@ export async function DELETE(
 
   try {
     const { id } = await params;
+    if (!UUID_RE.test(id)) return errorResponse("Invalid ID", 400);
     const [oldProperty, { data: callerProfile }] = await Promise.all([
       getProperty(id),
       supabase.from("profiles").select("agency_id").eq("id", user.id).maybeSingle(),

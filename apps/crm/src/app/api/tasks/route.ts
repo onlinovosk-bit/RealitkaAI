@@ -3,12 +3,16 @@ import { createTask } from "@/lib/tasks-store";
 import { createActivity } from "@/lib/activities-store";
 import { autoErrorCapture } from "@/lib/auto-error-capture";
 import { createClient } from "@/lib/supabase/server";
+import { checkAiRateLimit } from "@/lib/ai/rate-guard";
 
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
+    const rateLimitBlock = await checkAiRateLimit(user.id, "tasks:create", 30);
+    if (rateLimitBlock) return NextResponse.json(rateLimitBlock, { status: 429 });
 
     const body = await request.json();
 

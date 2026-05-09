@@ -9,6 +9,7 @@ import { autoRecalculateForLead } from "@/lib/matching-hooks";
 import { validateBody } from "@/lib/api-validate";
 import { globalEventBus } from "@/infra/messaging/EventBus";
 import { createLeadCreatedEvent } from "@/domain/leads/events";
+import { checkAiRateLimit } from "@/lib/ai/rate-guard";
 
 const CreateLeadSchema = z.object({
   name: z.string().min(1).max(200),
@@ -78,6 +79,9 @@ export async function POST(request: Request) {
 
     const { data: callerProfile } = await supabaseAuth.from("profiles").select("agency_id").eq("id", user.id).maybeSingle();
     const agencyId = callerProfile?.agency_id ?? "";
+
+    const rateLimitBlock = await checkAiRateLimit(user.id, "leads:create", 30);
+    if (rateLimitBlock) return NextResponse.json(rateLimitBlock, { status: 429 });
 
     const validation = await validateBody(request, CreateLeadSchema);
     if (!validation.ok) return validation.response;
