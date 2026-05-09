@@ -19,7 +19,8 @@ export async function GET(req: NextRequest) {
     ));
 
     const updated = leads.map((l) => ({ ...l, status: 'OUTREACH_DONE' }));
-    const { error: upsertError } = await supabase.from('leads').upsert(updated, { onConflict: 'phone' });
+    // Use 'id' (UUID) as conflict key — never 'phone', which can collide across tenants.
+    const { error: upsertError } = await supabase.from('leads').upsert(updated, { onConflict: 'id' });
 
     if (upsertError) throw upsertError;
     return NextResponse.json({ success: true, alerted: leads.length });
