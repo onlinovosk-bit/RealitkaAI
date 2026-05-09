@@ -191,6 +191,17 @@ export async function GET(
       // Always return valid JSON, even if not found
       return okResponse({ lead: null });
     }
+
+    const { data: callerProfile } = await supabase
+      .from("profiles").select("agency_id").eq("id", user.id).maybeSingle();
+    if (callerProfile?.agency_id) {
+      const { data: leadRow } = await supabase
+        .from("leads").select("agency_id").eq("id", id).maybeSingle();
+      if (leadRow?.agency_id !== callerProfile.agency_id) {
+        return errorResponse("Forbidden", 403);
+      }
+    }
+
     return okResponse({ lead });
   } catch (error) {
     return errorResponse(

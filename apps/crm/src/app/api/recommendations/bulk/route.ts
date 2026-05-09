@@ -42,6 +42,10 @@ export async function PATCH(request: Request) {
       );
     }
 
+    if (!Array.isArray(ids) || ids.length > 100) {
+      return NextResponse.json({ ok: false, error: "Max 100 položiek." }, { status: 400 });
+    }
+
     if (body.status !== "active" && body.status !== "inactive") {
       return NextResponse.json(
         { ok: false, error: "Neplatný cieľový stav odporúčaní." },
