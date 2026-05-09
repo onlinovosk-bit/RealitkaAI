@@ -19,15 +19,15 @@ export async function POST(req: Request) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
   let profileId: string | null = null;
-  if (user?.id) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("auth_user_id", user.id)
-      .maybeSingle();
-    profileId = profile?.id ?? null;
-  }
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("auth_user_id", user.id)
+    .maybeSingle();
+  profileId = profile?.id ?? null;
 
   const { error } = await supabase.from("bsm_reforma_leads").insert({
     profile_id: profileId,

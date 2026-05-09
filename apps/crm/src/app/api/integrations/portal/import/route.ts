@@ -1,9 +1,15 @@
+import { NextResponse } from "next/server";
 import { okResponse, errorResponse } from "@/lib/api-response";
 import { importPortalLeadsFromCsv } from "@/lib/integrations-store";
 import { requireFeature } from "@/lib/feature-gating";
+import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
     await requireFeature("integrations");
 
     const body = await request.json();
