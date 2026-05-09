@@ -1,6 +1,7 @@
 import { NextResponse }  from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAssignmentRule, listAssignmentRules } from "@/lib/lead-automation-store";
+import { checkAiRateLimit } from "@/lib/ai/rate-guard";
 
 export async function GET() {
   try {
@@ -21,7 +22,13 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
+    const rateLimitBlock = await checkAiRateLimit(user.id, "automation:create", 20);
+    if (rateLimitBlock) return NextResponse.json(rateLimitBlock, { status: 429 });
+
     const body = await request.json();
+    if (!body.name || typeof body.name !== "string" || !body.name.trim()) {
+      return NextResponse.json({ ok: false, error: "name je povinné pole." }, { status: 400 });
+    }
     const rule = await createAssignmentRule({
       name:       body.name,
       ruleType:   body.ruleType,

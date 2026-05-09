@@ -4,6 +4,7 @@ import { createProfile, listProfiles } from "@/lib/team-store";
 import { sendOnboardingEmail } from "@/lib/send-onboarding-email";
 import { createActivity } from "@/lib/activities-store";
 import { createClient } from "@/lib/supabase/server";
+import { checkAiRateLimit } from "@/lib/ai/rate-guard";
 
 const CreateUserBody = z.object({
   fullName: z.string().min(1).max(200),
@@ -40,6 +41,9 @@ export async function POST(request: Request) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
+    const rateLimitBlock = await checkAiRateLimit(user.id, "team:create-user", 10);
+    if (rateLimitBlock) return NextResponse.json(rateLimitBlock, { status: 429 });
 
     const rawBody = await request.json();
     const parsed = CreateUserBody.safeParse(rawBody);
