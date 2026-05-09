@@ -1,16 +1,8 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase/server";
 import { Resend } from "resend";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function getServiceClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  );
-}
 
 export async function POST(request: Request) {
   try {
@@ -26,7 +18,7 @@ export async function POST(request: Request) {
       .trim()
       .slice(0, 100);
 
-    const supabase = getServiceClient();
+    const supabase = createAdminClient();
 
     const { error } = await supabase.from("neighborhood_subscriptions").upsert(
       { email: body.email.toLowerCase().trim(), area },

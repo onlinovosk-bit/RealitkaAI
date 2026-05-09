@@ -1,15 +1,7 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase/server";
 
 const META_API_BASE = "https://graph.facebook.com/v19.0";
-
-function getServiceClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  );
-}
 
 export async function POST(request: Request) {
   // Internal admin tool — require CRON_SECRET bearer token
@@ -38,7 +30,7 @@ export async function POST(request: Request) {
 
   try {
     // 1. Načítaj emaily z leads_demo
-    const supabase = getServiceClient();
+    const supabase = createAdminClient();
     const { data: leads, error } = await supabase
       .from("leads_demo")
       .select("email")

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient as createServerClient } from "@/lib/supabase/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient as createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { callOpenAI } from "@/lib/ai/openai";
 import { checkAiRateLimit } from "@/lib/ai/rate-guard";
 
@@ -12,14 +11,6 @@ const EVENT_TYPE_LABELS: Record<string, string> = {
   exekúcia:     "exekúčné konanie",
   výmaz:        "výmaz záložného práva",
 };
-
-function getServiceClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  );
-}
 
 export async function POST(request: Request) {
   const supabaseAuth = await createServerClient();
@@ -75,7 +66,7 @@ Vráť IBA HTML obsah listu (bez <!DOCTYPE>, <html>, <head> tagov). Použi inlin
     const letterText = letterHtml.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 
     // Ulož do Supabase
-    const supabase = getServiceClient();
+    const supabase = createAdminClient();
     const { data: saved, error: saveError } = await supabase
       .from("ghostwriter_letters")
       .insert({

@@ -1,8 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
-import { createClient as createAdminClient } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
   try {
@@ -22,16 +21,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: "Vyplňte meno a email." }, { status: 400 });
     }
 
-    const url  = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key  = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!url || !key) {
-      return NextResponse.json({ ok: false, error: "Chýba konfigurácia Supabase." }, { status: 500 });
-    }
-
-    const admin = createAdminClient(url, key, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
+    const admin = createAdminClient();
 
     const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
       data: { full_name: fullName, role: role ?? "agent" },

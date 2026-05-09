@@ -1,8 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
-import { createClient as createAdminClient } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 
 export async function POST(req: Request) {
   try {
@@ -23,15 +22,7 @@ export async function POST(req: Request) {
     // Mapuj "owner" → "manager" (existujúca DB hodnota), "agent" → "agent"
     const dbRole = role === "owner" ? "manager" : "agent";
 
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!url || !key) {
-      return NextResponse.json({ ok: false, error: "Konfigurácia chýba." }, { status: 500 });
-    }
-
-    const admin = createAdminClient(url, key, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
+    const admin = createAdminClient();
 
     await admin
       .from("profiles")

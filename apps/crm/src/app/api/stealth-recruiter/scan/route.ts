@@ -1,16 +1,7 @@
 import { NextResponse } from "next/server";
-import { createClient as createServerClient } from "@/lib/supabase/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient as createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { callOpenAI } from "@/lib/ai/openai";
 import { checkAiRateLimit } from "@/lib/ai/rate-guard";
-
-function getServiceClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  );
-}
 
 // Realistické demo dáta — simulujú Bazos.sk / Nehnutelnosti.sk samopredajcov
 const DEMO_PROSPECTS = [
@@ -84,7 +75,7 @@ export async function POST(request: Request) {
     const minScore = body.minScore ?? 60;
 
     // Skús načítať z DB
-    const supabase = getServiceClient();
+    const supabase = createAdminClient();
     const { data: dbProspects } = await supabase
       .from("stealth_recruiter_prospects")
       .select("*")

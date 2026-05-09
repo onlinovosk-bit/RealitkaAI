@@ -1,11 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-function getServiceClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
-}
+import { createAdminClient } from "@/lib/supabase/server";
 
 // Seed dáta — realistické SK adresy pre demo
 const SEED_ALERTS = [
@@ -28,7 +22,7 @@ export async function GET(request: Request) {
   const area = (searchParams.get("area") ?? "presov").toLowerCase();
 
   try {
-    const supabase = getServiceClient();
+    const supabase = createAdminClient();
 
     // Skús načítať z Supabase
     const { data, error } = await supabase

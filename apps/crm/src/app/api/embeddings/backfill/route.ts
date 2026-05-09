@@ -9,7 +9,7 @@
  * má limit 3000 RPM na free tier → ~50 req/s → 200ms medzera je bezpečná).
  */
 
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase/server";
 import { okResponse, errorResponse } from "@/lib/api-response";
 import {
   generateEmbedding,
@@ -17,18 +17,6 @@ import {
   buildPropertyEmbeddingText,
 } from "@/lib/embeddings";
 import { incrementUsageMetric, SYSTEM_USAGE_AGENCY_ID } from "@/lib/usage-metrics";
-
-/** Service role client – bypasses RLS, len pre server-side admin operácie */
-function getAdminClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !serviceKey) {
-    throw new Error("Chýba NEXT_PUBLIC_SUPABASE_URL alebo SUPABASE_SERVICE_ROLE_KEY");
-  }
-  return createSupabaseClient(url, serviceKey, {
-    auth: { persistSession: false },
-  });
-}
 
 const ENTITY_TYPES = ["leads", "properties"] as const;
 type EntityType = (typeof ENTITY_TYPES)[number];
@@ -68,7 +56,7 @@ export async function POST(req: Request) {
     MAX_BATCH
   );
 
-  const supabase = getAdminClient();
+  const supabase = createAdminClient();
 
   try {
     const result =
@@ -87,7 +75,7 @@ export async function POST(req: Request) {
 // ─── Lead backfill ────────────────────────────────────────────
 
 async function backfillLeads(
-  supabase: ReturnType<typeof getAdminClient>,
+  supabase: ReturnType<typeof createAdminClient>,
   batchSize: number
 ) {
   const { data: rows, error } = await supabase
@@ -160,7 +148,7 @@ async function backfillLeads(
 // ─── Property backfill ────────────────────────────────────────
 
 async function backfillProperties(
-  supabase: ReturnType<typeof getAdminClient>,
+  supabase: ReturnType<typeof createAdminClient>,
   batchSize: number
 ) {
   const { data: rows, error } = await supabase

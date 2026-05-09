@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase/server";
 
 const ONBOARDING_TABLE = "AI AGENT AUTOMAT ONBOARDING no.2.01";
 
@@ -9,12 +9,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  if (!supabaseUrl) return NextResponse.json({ ok: false, error: "Database service not configured" }, { status: 503 })
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!serviceRoleKey) return NextResponse.json({ ok: false, error: "Database service not configured" }, { status: 503 })
-
-  const supabase = createClient(supabaseUrl, serviceRoleKey);
+  const supabase = createAdminClient();
 
   const { data, error } = await supabase
     .from(ONBOARDING_TABLE)

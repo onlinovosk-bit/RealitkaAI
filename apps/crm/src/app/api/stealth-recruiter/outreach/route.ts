@@ -1,18 +1,9 @@
 import { NextResponse } from "next/server";
-import { createClient as createServerClient } from "@/lib/supabase/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient as createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { Resend } from "resend";
 import { callOpenAI } from "@/lib/ai/openai";
 import { checkAiRateLimit } from "@/lib/ai/rate-guard";
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function getServiceClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  );
-}
 
 export async function POST(request: Request) {
   const supabaseAuth = await createServerClient();
@@ -85,7 +76,7 @@ Vráť IBA text správy (bez uvodzoviek). Tón: ľudský, nie korporátny.`;
     });
 
     // Ulož outreach do DB
-    const supabase = getServiceClient();
+    const supabase = createAdminClient();
     if (body.prospectId) {
       try {
         await supabase
