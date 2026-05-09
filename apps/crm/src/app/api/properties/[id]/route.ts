@@ -15,7 +15,14 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const oldProperty = await getProperty(id);
+    const [oldProperty, { data: callerProfile }] = await Promise.all([
+      getProperty(id),
+      supabase.from("profiles").select("agency_id").eq("id", user.id).maybeSingle(),
+    ]);
+
+    if (callerProfile?.agency_id && oldProperty?.agencyId && oldProperty.agencyId !== callerProfile.agency_id) {
+      return errorResponse("Forbidden", 403);
+    }
 
     const property = await updateProperty(id, {
       title:       body.title,
@@ -65,7 +72,14 @@ export async function DELETE(
 
   try {
     const { id } = await params;
-    const oldProperty = await getProperty(id);
+    const [oldProperty, { data: callerProfile }] = await Promise.all([
+      getProperty(id),
+      supabase.from("profiles").select("agency_id").eq("id", user.id).maybeSingle(),
+    ]);
+
+    if (callerProfile?.agency_id && oldProperty?.agencyId && oldProperty.agencyId !== callerProfile.agency_id) {
+      return errorResponse("Forbidden", 403);
+    }
 
     await deleteProperty(id);
 
