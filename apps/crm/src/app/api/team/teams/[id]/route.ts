@@ -12,6 +12,17 @@ export async function PATCH(
 
   try {
     const { id } = await params;
+
+    const { data: callerProfile } = await supabase
+      .from("profiles").select("agency_id").eq("id", user.id).maybeSingle();
+
+    const { data: teamRow } = await supabase
+      .from("teams").select("agency_id").eq("id", id).maybeSingle();
+
+    if (callerProfile?.agency_id && teamRow?.agency_id !== callerProfile.agency_id) {
+      return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+    }
+
     const body = await request.json();
 
     const team = await updateTeam(id, {

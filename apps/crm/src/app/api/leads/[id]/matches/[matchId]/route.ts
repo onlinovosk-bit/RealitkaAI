@@ -23,6 +23,17 @@ export async function PATCH(
 
   try {
     const { id, matchId } = await params;
+
+    const { data: callerProfile } = await supabase
+      .from("profiles").select("agency_id").eq("id", user.id).maybeSingle();
+
+    const { data: lead } = await supabase
+      .from("leads").select("agency_id").eq("id", id).maybeSingle();
+
+    if (callerProfile?.agency_id && lead?.agency_id !== callerProfile.agency_id) {
+      return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+    }
+
     const body = await request.json();
 
     if (typeof body.status !== "string" || !body.status.trim()) {

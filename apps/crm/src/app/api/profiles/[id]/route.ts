@@ -24,6 +24,16 @@ export async function GET(
   if (!profile) {
     return NextResponse.json({ error: "Profil nenájdený" }, { status: 404 });
   }
+
+  if (id !== user.id) {
+    const { data: callerProfile } = await supabase
+      .from("profiles").select("agency_id").eq("id", user.id).maybeSingle();
+
+    if (callerProfile?.agency_id && profile.agencyId !== callerProfile.agency_id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
+
   return NextResponse.json({ profile });
 }
 
