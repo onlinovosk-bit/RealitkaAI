@@ -207,7 +207,8 @@ export async function listProperties(filters?: PropertyFilters): Promise<Propert
   let query = supabase
     .from("properties")
     .select("*")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(500);
 
   if (filters?.status) {
     query = query.eq("status", filters.status);
@@ -235,7 +236,8 @@ export async function listProperties(filters?: PropertyFilters): Promise<Propert
       const fallbackQuery = supabase
         .from("properties")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(500);
 
       let retriedQuery = fallbackQuery;
 

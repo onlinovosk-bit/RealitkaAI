@@ -41,7 +41,11 @@ export async function POST(req: Request) {
   });
 
   if (error) {
-    return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+    const isClientError = error.message.includes("invalid") || error.message.includes("required");
+    return NextResponse.json(
+      { ok: false, error: isClientError ? error.message : "Interná chyba servera." },
+      { status: isClientError ? 400 : 500 }
+    );
   }
 
   return NextResponse.json({ ok: true });
