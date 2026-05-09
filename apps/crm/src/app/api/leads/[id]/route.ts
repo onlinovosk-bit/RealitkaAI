@@ -19,6 +19,9 @@ export async function PATCH(
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
+    const { data: callerProfile } = await supabase
+      .from("profiles").select("agency_id").eq("id", user.id).maybeSingle();
+
     const { id } = await params;
 
     const idValidation = UUIDSchema.safeParse(id);
@@ -27,6 +30,12 @@ export async function PATCH(
         { ok: false, error: "Invalid lead ID format" },
         { status: 400 }
       );
+    }
+
+    const { data: leadRow } = await supabase
+      .from("leads").select("agency_id").eq("id", id).maybeSingle();
+    if (callerProfile?.agency_id && leadRow?.agency_id !== callerProfile.agency_id) {
+      return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
     }
 
     const body = await request.json();
@@ -112,6 +121,9 @@ export async function DELETE(
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
+    const { data: callerProfile } = await supabase
+      .from("profiles").select("agency_id").eq("id", user.id).maybeSingle();
+
     const { id } = await params;
 
     const idValidation = UUIDSchema.safeParse(id);
@@ -120,6 +132,12 @@ export async function DELETE(
         { ok: false, error: "Invalid lead ID format" },
         { status: 400 }
       );
+    }
+
+    const { data: leadRow } = await supabase
+      .from("leads").select("agency_id").eq("id", id).maybeSingle();
+    if (callerProfile?.agency_id && leadRow?.agency_id !== callerProfile.agency_id) {
+      return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
     }
 
     const oldLead = await getLead(id);

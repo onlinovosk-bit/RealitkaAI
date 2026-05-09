@@ -11,6 +11,9 @@ export async function PATCH(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
+  const { data: callerProfile } = await supabase
+    .from("profiles").select("agency_id").eq("id", user.id).maybeSingle();
+
   try {
     const { id } = await params;
     const body = await request.json();
@@ -20,6 +23,14 @@ export async function PATCH(
         { ok: false, error: "Vyber lead. Úloha bez leadu sa nedá uložiť." },
         { status: 400 }
       );
+    }
+
+    if (callerProfile?.agency_id) {
+      const { data: leadRow } = await supabase
+        .from("leads").select("agency_id").eq("id", body.leadId).maybeSingle();
+      if (leadRow?.agency_id !== callerProfile.agency_id) {
+        return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+      }
     }
 
     const completedAt =
@@ -68,8 +79,23 @@ export async function DELETE(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
+  const { data: callerProfile } = await supabase
+    .from("profiles").select("agency_id").eq("id", user.id).maybeSingle();
+
   try {
     const { id } = await params;
+
+    if (callerProfile?.agency_id) {
+      const { data: taskRow } = await supabase
+        .from("tasks").select("lead_id").eq("id", id).maybeSingle();
+      if (taskRow?.lead_id) {
+        const { data: leadRow } = await supabase
+          .from("leads").select("agency_id").eq("id", taskRow.lead_id).maybeSingle();
+        if (leadRow?.agency_id !== callerProfile.agency_id) {
+          return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+        }
+      }
+    }
 
     await deleteTask(id);
 

@@ -35,7 +35,18 @@ export async function PATCH(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const { data: callerProfile } = await supabase
+    .from("profiles").select("agency_id").eq("id", user.id).maybeSingle();
+
   const { id } = await params;
+
+  if (id !== user.id && callerProfile?.agency_id) {
+    const targetProfile = await getProfileById(id);
+    if (targetProfile?.agencyId !== callerProfile.agency_id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
+
   let body: Partial<ProfileInput>;
   try {
     body = await req.json();

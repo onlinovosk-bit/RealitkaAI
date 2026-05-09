@@ -26,9 +26,20 @@ export async function PATCH(
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
+    const { data: callerProfile } = await supabase
+      .from("profiles").select("agency_id").eq("id", user.id).maybeSingle();
+
     const { id } = await params;
     const body = (await request.json()) as Partial<AiRecommendationInput>;
     const previous = await getAiRecommendationById(id);
+
+    if (callerProfile?.agency_id && previous?.leadId) {
+      const { data: leadRow } = await supabase
+        .from("leads").select("agency_id").eq("id", previous.leadId).maybeSingle();
+      if (leadRow?.agency_id !== callerProfile.agency_id) {
+        return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+      }
+    }
 
     let recommendation = await updateAiRecommendation(id, body);
     // Ochrana: ak by recommendation bol pole, vezmi prvý objekt

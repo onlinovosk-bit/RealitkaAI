@@ -15,7 +15,19 @@ export async function GET(
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
+    const { data: callerProfile } = await supabase
+      .from("profiles").select("agency_id").eq("id", user.id).maybeSingle();
+
     const { id } = await params;
+
+    if (callerProfile?.agency_id) {
+      const { data: leadRow } = await supabase
+        .from("leads").select("agency_id").eq("id", id).maybeSingle();
+      if (leadRow?.agency_id !== callerProfile.agency_id) {
+        return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+      }
+    }
+
     const activities = await getActivitiesByLeadId(id);
     return NextResponse.json({ ok: true, activities });
   } catch (error) {
@@ -33,7 +45,19 @@ export async function POST(
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
+    const { data: callerProfile } = await supabase
+      .from("profiles").select("agency_id").eq("id", user.id).maybeSingle();
+
     const { id } = await params;
+
+    if (callerProfile?.agency_id) {
+      const { data: leadRow } = await supabase
+        .from("leads").select("agency_id").eq("id", id).maybeSingle();
+      if (leadRow?.agency_id !== callerProfile.agency_id) {
+        return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+      }
+    }
+
     const body = await request.json();
 
     const note = typeof body.note === "string" ? body.note : "";
