@@ -1,16 +1,7 @@
 import { NextResponse } from "next/server";
-import { createClient as createServerClient } from "@/lib/supabase/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient as createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { callOpenAI } from "@/lib/ai/openai";
 import { checkAiRateLimit } from "@/lib/ai/rate-guard";
-
-function getServiceClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  );
-}
 
 // Statické demo kandidáti — simulujú reálne scenáre
 const DEMO_CANDIDATES = [
@@ -61,19 +52,25 @@ export async function POST(request: Request) {
     if (body.useLive && body.leadId) {
       const { data: profile } = await supabaseAuth
         .from("profiles")
-        .select("id")
+        .select("id, agency_id")
         .eq("auth_user_id", user.id)
         .maybeSingle();
       if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
 
-      const supabase = getServiceClient();
+      const supabase = createAdminClient();
 
-      const { data: lead } = await supabase
+      const leadsQuery = supabase
         .from("leads")
         .select("id, name, email, phone, notes, address, status")
         .eq("id", body.leadId)
-        .eq("assigned_profile_id", profile.id)
-        .single();
+        .eq("assigned_profile_id", profile.id);
+
+      // Agency isolation: prevent cross-tenant lead access
+      if (profile.agency_id) {
+        leadsQuery.eq("agency_id", profile.agency_id);
+      }
+
+      const { data: lead } = await leadsQuery.single();
 
       if (!lead) {
         return NextResponse.json({ error: "Lead nenájdený." }, { status: 404 });

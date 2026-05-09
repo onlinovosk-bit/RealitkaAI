@@ -1,18 +1,9 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { checkAiRateLimit } from "@/lib/ai/rate-guard";
 import { Resend } from "resend";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function getServiceClient() {
-  return createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  );
-}
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -79,11 +70,32 @@ export async function POST(request: Request) {
     }
 
     if (body.letterId && !body.letterId.startsWith("tmp_")) {
-      const admin = getServiceClient();
-      await admin
-        .from("ghostwriter_letters")
-        .update({ email_sent_to: body.recipientEmail, sent_at: new Date().toISOString() })
-        .eq("id", body.letterId);
+      const admin = createAdminClient();
+
+      // Resolve caller's profile_id once
+      const { data: callerProfile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("auth_user_id", user.id)
+        .maybeSingle();
+
+      if (callerProfile) {
+        // Verify ownership before updating — only update if the letter belongs to this profile
+        const { data: letter } = await admin
+          .from("ghostwriter_letters")
+          .select("profile_id")
+          .eq("id", body.letterId)
+          .maybeSingle();
+
+        if (!letter || letter.profile_id === callerProfile.id) {
+          // letter.profile_id is null (no ownership column yet) OR matches caller — safe to update
+          await admin
+            .from("ghostwriter_letters")
+            .update({ email_sent_to: body.recipientEmail, sent_at: new Date().toISOString() })
+            .eq("id", body.letterId);
+        }
+        // else: letter belongs to a different profile — skip silently
+      }
     }
 
     return NextResponse.json({ ok: true, emailId: (data as { id?: string } | null)?.id });
