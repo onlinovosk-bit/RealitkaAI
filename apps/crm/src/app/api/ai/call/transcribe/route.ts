@@ -13,5 +13,5 @@ export async function POST(req: Request) {
   if (!isMimeTypeAllowed(file.type)) return NextResponse.json({ ok: false, error: "Unsupported format" }, { status: 400 });
   if (!isFileSizeAllowed(file.size)) return NextResponse.json({ ok: false, error: "File too large" }, { status: 400 });
 
-  return NextResponse.json({ ok: false, error: "Transkripcia nie je dostupná — nakonfiguruj OPENAI_API_KEY." }, { status: 501 });
+  return NextResponse.json({ ok: false, error: "Voice transcription service is not available" }, { status: 501 });
 }

@@ -101,7 +101,9 @@ export async function processInboundLead(
 
   // 5. Email via Resend
   try {
-    const resend = new Resend(process.env.RESEND_API_KEY!)
+    const resendKey = process.env.RESEND_API_KEY
+    if (!resendKey) throw new Error('RESEND_API_KEY is not configured')
+    const resend = new Resend(resendKey)
     await resend.emails.send({
       from:    FROM,
       to:      payload.email,
@@ -141,8 +143,10 @@ export async function processInboundLead(
 }
 
 async function sendWhatsApp(phone: string, message: string): Promise<void> {
-  const token   = process.env.WHATSAPP_TOKEN!
-  const phoneId = process.env.WHATSAPP_PHONE_ID!
+  const token = process.env.WHATSAPP_TOKEN
+  if (!token) throw new Error('WHATSAPP_TOKEN is not configured')
+  const phoneId = process.env.WHATSAPP_PHONE_ID
+  if (!phoneId) throw new Error('WHATSAPP_PHONE_ID is not configured')
   // Ensure E.164 — default to SK prefix if no country code
   const to = phone.startsWith('+')
     ? phone.replace(/\s/g, '')

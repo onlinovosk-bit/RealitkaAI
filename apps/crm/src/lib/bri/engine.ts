@@ -202,7 +202,9 @@ async function dispatchBRINotifications(
   if (!profile?.email) return
 
   const { Resend } = await import('resend')
-  const resend = new Resend(process.env.RESEND_API_KEY!)
+  const resendKey = process.env.RESEND_API_KEY
+  if (!resendKey) throw new Error('RESEND_API_KEY is not configured')
+  const resend = new Resend(resendKey)
 
   if (crossedHot && config.notify_on_hot) {
     await resend.emails.send({

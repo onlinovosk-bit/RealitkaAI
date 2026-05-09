@@ -9,10 +9,12 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  if (!supabaseUrl) return NextResponse.json({ ok: false, error: "Database service not configured" }, { status: 503 })
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!serviceRoleKey) return NextResponse.json({ ok: false, error: "Database service not configured" }, { status: 503 })
+
+  const supabase = createClient(supabaseUrl, serviceRoleKey);
 
   const { data, error } = await supabase
     .from(ONBOARDING_TABLE)

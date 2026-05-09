@@ -120,7 +120,9 @@ export async function generateAndDeliverBrief(
   // ── Email ────────────────────────────────────────────────
   if (channels.includes('email')) {
     try {
-      const resend   = new Resend(process.env.RESEND_API_KEY!)
+      const resendKey = process.env.RESEND_API_KEY
+      if (!resendKey) throw new Error('RESEND_API_KEY is not configured')
+      const resend   = new Resend(resendKey)
       const emailHtml = renderBriefEmail(brief)
 
       await resend.emails.send({
