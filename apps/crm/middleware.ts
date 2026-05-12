@@ -20,6 +20,10 @@ const BYPASS_PREFIXES = [
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  if (pathname === '/admin/integrations/realvia') {
+    return NextResponse.redirect(new URL('/integrations/realvia', request.url), 308)
+  }
+
   // Only guard API routes
   if (!pathname.startsWith('/api/')) return NextResponse.next()
 
@@ -64,5 +68,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: '/api/:path*',
+  matcher: ['/api/:path*', '/admin/integrations/realvia'],
 }
