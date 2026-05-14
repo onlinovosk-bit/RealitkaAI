@@ -12,6 +12,7 @@ import PropertiesSummaryWidget from "@/components/dashboard/properties-summary-w
 import QuickActionsBar from "@/components/dashboard/QuickActionsBar";
 import RecentActivityFeed from "@/components/dashboard/recent-activity-feed";
 import DailyActionPanel from "@/components/dashboard/DailyActionPanel";
+import TodaysTenLeads from "@/components/dashboard/TodaysTenLeads";
 import BrokerCoach from "@/components/coaching/BrokerCoach";
 import RevenueView from "@/components/dashboard/RevenueView";
 import { useMockAIActivity } from "@/hooks/useMockAIActivity";
@@ -323,6 +324,9 @@ export default function DashboardPage() {
         <QuickActionsBar />
 
         <DailyActionPanel leads={leads} plan={plan} />
+        <div className="mb-6">
+          <TodaysTenLeads leads={leads} />
+        </div>
         <L99DecisionOpsPanel leads={assistantLeadOptions} />
 
         {coachingPayload ? (

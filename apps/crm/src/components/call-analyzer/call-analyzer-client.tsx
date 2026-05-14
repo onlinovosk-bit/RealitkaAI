@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getLeads } from "@/lib/leads-store";
 
 type CoachFeedback = {
   score:            number;
@@ -11,12 +12,27 @@ type CoachFeedback = {
 
 export default function CallAnalyzerClient() {
   const [transcript, setTranscript]       = useState("");
-  const [result, setResult]               = useState<{ sentiment: string; nextAction: string; summary: string } | null>(null);
+  const [result, setResult]               = useState<{
+    sentiment: string;
+    nextAction: string;
+    summary: string;
+    persisted?: { activity_id?: string; task_id?: string };
+  } | null>(null);
+  const [leadOptions, setLeadOptions]     = useState<{ id: string; name: string }[]>([]);
+  const [persistLeadId, setPersistLeadId] = useState("");
+  const [persistCRM, setPersistCRM]       = useState(false);
+  const [transcribing, setTranscribing]   = useState(false);
   const [loading, setLoading]             = useState(false);
   const [coachLoading, setCoachLoading]   = useState(false);
   const [coachRaw, setCoachRaw]           = useState("");
   const [coachParsed, setCoachParsed]     = useState<CoachFeedback | null>(null);
   const [coachError, setCoachError]       = useState<string | null>(null);
+
+  useEffect(() => {
+    void getLeads()
+      .then((ls) => setLeadOptions(ls.map((l) => ({ id: l.id, name: l.name }))))
+      .catch(() => {});
+  }, []);
 
   async function analyze() {
     if (!transcript.trim()) return;
@@ -24,11 +40,34 @@ export default function CallAnalyzerClient() {
     const res = await fetch("/api/ai/call/analyze", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ transcript }),
+      body: JSON.stringify({
+        transcript,
+        lead_id: persistLeadId.trim() || undefined,
+        persist_to_crm: persistCRM && persistLeadId.trim().length > 0,
+      }),
     });
     const data = await res.json();
-    if (data.ok) setResult(data);
+    if (data.ok)
+      setResult({
+        sentiment: data.sentiment,
+        nextAction: data.nextAction,
+        summary: data.summary,
+        persisted: data.persisted,
+      });
     setLoading(false);
+  }
+
+  async function transcribeFile(file: File) {
+    setTranscribing(true);
+    try {
+      const fd = new FormData();
+      fd.set("file", file);
+      const res = await fetch("/api/ai/call/transcribe", { method: "POST", body: fd });
+      const data = await res.json();
+      if (data.ok && data.transcript) setTranscript(String(data.transcript));
+    } finally {
+      setTranscribing(false);
+    }
   }
 
   async function runCoaching() {
@@ -107,6 +146,24 @@ export default function CallAnalyzerClient() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-white/10 bg-slate-900/40 p-3 space-y-2">
+        <p className="text-xs text-slate-400">
+          Nahraj krátku nahrávku — Whisper vyžaduje nastavený{" "}
+          <code className="text-cyan-300">OPENAI_API_KEY</code> na serveri.
+        </p>
+        <input
+          type="file"
+          accept="audio/*"
+          disabled={transcribing}
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void transcribeFile(f);
+          }}
+          className="text-xs text-slate-300"
+        />
+        {transcribing ? <p className="text-xs text-slate-500">Transkriptujem…</p> : null}
+      </div>
+
       <textarea
         className="w-full rounded-xl border border-white/10 bg-slate-900/60 p-3 text-sm text-white placeholder:text-slate-500 resize-none"
         rows={8}
@@ -114,6 +171,29 @@ export default function CallAnalyzerClient() {
         value={transcript}
         onChange={(e) => setTranscript(e.target.value)}
       />
+
+      <div className="flex flex-col gap-2 rounded-xl border border-white/10 bg-slate-900/40 p-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <label className="flex items-center gap-2 text-xs text-slate-300">
+          <input
+            type="checkbox"
+            checked={persistCRM}
+            onChange={(e) => setPersistCRM(e.target.checked)}
+          />
+          Uložiť súhrn + úlohu do CRM
+        </label>
+        <select
+          className="rounded-lg border border-white/15 bg-slate-900 px-2 py-1 text-xs text-white min-w-[200px]"
+          value={persistLeadId}
+          onChange={(e) => setPersistLeadId(e.target.value)}
+        >
+          <option value="">— vyber leada —</option>
+          {leadOptions.map((l) => (
+            <option key={l.id} value={l.id}>
+              {l.name}
+            </option>
+          ))}
+        </select>
+      </div>
 
       {/* ── Existing analyze section ── */}
       <button
@@ -129,6 +209,11 @@ export default function CallAnalyzerClient() {
           <p className="text-xs text-slate-400">Sentiment: <span className="text-white">{result.sentiment}</span></p>
           <p className="text-xs text-slate-400">Ďalší krok: <span className="text-cyan-300">{result.nextAction}</span></p>
           <p className="text-xs text-slate-300">{result.summary}</p>
+          {result.persisted?.task_id ? (
+            <p className="text-[11px] text-emerald-400">
+              Uložené do CRM (úloha {result.persisted.task_id.slice(0, 8)}…)
+            </p>
+          ) : null}
         </div>
       )}
 

@@ -9,6 +9,7 @@ import { globalEventBus } from "@/infra/messaging/EventBus";
 import { createLeadStatusChangedEvent } from "@/domain/leads/events";
 import { notifyHotLead } from "@/services/push/PushNotificationService";
 import { createClient } from "@/lib/supabase/server";
+import { normalizeAiPriority } from "@/lib/workflows/lead-ai-priority";
 
 export async function PATCH(
   request: Request,
@@ -58,6 +59,15 @@ export async function PATCH(
       assignedAgent: body.assignedAgent,
       lastContact: body.lastContact,
       note: body.note,
+      ...(body.aiPriority !== undefined
+        ? { aiPriority: normalizeAiPriority(body.aiPriority) }
+        : {}),
+      ...(body.aiReason !== undefined
+        ? { aiReason: String(body.aiReason).slice(0, 2000) }
+        : {}),
+      ...(body.aiTriageManualLock === true || body.aiTriageManualLock === false
+        ? { aiTriageManualLock: body.aiTriageManualLock }
+        : {}),
     });
 
     try {

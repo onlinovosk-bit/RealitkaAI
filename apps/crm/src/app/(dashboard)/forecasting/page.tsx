@@ -8,13 +8,15 @@ import PipelineForecastPanel from "@/components/forecasting/pipeline-forecast-pa
 import SourceBenchmarkTable from "@/components/forecasting/source-benchmark-table";
 import AgentBenchmarkTable from "@/components/forecasting/agent-benchmark-table";
 import StageBenchmarkTable from "@/components/forecasting/stage-benchmark-table";
+import DealHealthPanel from "@/components/forecasting/deal-health-panel";
 import { safeServerAction } from "@/lib/safe-action";
 import { getForecastingData } from "@/lib/forecasting-store";
 import { requireRole } from "@/lib/permissions";
+import { FEATURE_PERMISSIONS } from "@/lib/role-config";
 import { getFeatureGateState } from "@/lib/feature-gating";
 
 export default async function ForecastingPage() {
-  await requireRole(["owner", "manager", "agent", "founder", "admin"]);
+  await requireRole(FEATURE_PERMISSIONS.FORECASTING);
 
   const gate = await getFeatureGateState("forecasting");
 
@@ -97,6 +99,10 @@ export default async function ForecastingPage() {
         <>
           <section className="mt-6">
             <PipelineForecastPanel rows={data.topForecastLeads} />
+          </section>
+
+          <section className="mt-6">
+            <DealHealthPanel rows={data.dealHealth} />
           </section>
 
           <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">

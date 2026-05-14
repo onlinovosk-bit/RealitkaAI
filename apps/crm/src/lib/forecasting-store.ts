@@ -8,6 +8,16 @@ function normalize(text: string) {
   return String(text || "").toLowerCase().trim();
 }
 
+export type DealHealthIssue = {
+  leadId: string;
+  leadName: string;
+  kind: "after_deadline_open_tasks" | "high_value_no_tasks";
+  probabilityPercent: number;
+  openTasks: number;
+  overdueOpenTasks: number;
+  note: string;
+};
+
 function extractBudget(value: string) {
   const digits = String(value || "").replace(/[^\d]/g, "");
   return digits ? Number(digits) : 0;
@@ -251,6 +261,57 @@ export async function getForecastingData() {
     .sort((a, b) => b.weightedValue - a.weightedValue)
     .slice(0, 12);
 
+  const overdueByLead = new Map<string, number>();
+  const nowMs = Date.now();
+  for (const t of tasks) {
+    if (normalize(t.status) === "done" || !t.leadId) continue;
+    if (t.dueAt && new Date(t.dueAt).getTime() < nowMs) {
+      overdueByLead.set(t.leadId, (overdueByLead.get(t.leadId) ?? 0) + 1);
+    }
+  }
+
+  const healthMap = new Map<string, DealHealthIssue>();
+  for (const item of enriched) {
+    const overdue = overdueByLead.get(item.leadId) ?? 0;
+    if (overdue > 0) {
+      healthMap.set(item.leadId, {
+        leadId: item.leadId,
+        leadName: item.leadName,
+        kind: "after_deadline_open_tasks",
+        probabilityPercent: Math.round(item.probability * 100),
+        openTasks: item.openTasks,
+        overdueOpenTasks: overdue,
+        note: `${overdue} otvorená úloha po termíne`,
+      });
+    }
+  }
+
+  for (const item of enriched) {
+    const st = normalize(item.status);
+    if (
+      (st.includes("obhliad") || st.includes("ponuk")) &&
+      item.openTasks === 0 &&
+      item.probability >= 0.35 &&
+      !(overdueByLead.get(item.leadId) ?? 0)
+    ) {
+      if (!healthMap.has(item.leadId)) {
+        healthMap.set(item.leadId, {
+          leadId: item.leadId,
+          leadName: item.leadName,
+          kind: "high_value_no_tasks",
+          probabilityPercent: Math.round(item.probability * 100),
+          openTasks: 0,
+          overdueOpenTasks: 0,
+          note: "Pokročilá fáza bez otvorených úloh",
+        });
+      }
+    }
+  }
+
+  const dealHealth = [...healthMap.values()]
+    .sort((a, b) => b.overdueOpenTasks - a.overdueOpenTasks || b.probabilityPercent - a.probabilityPercent)
+    .slice(0, 24);
+
   return {
     kpis: {
       totalLeads,
@@ -262,5 +323,6 @@ export async function getForecastingData() {
     agentBenchmarks,
     stageBenchmarks,
     topForecastLeads,
+    dealHealth,
   };
 }

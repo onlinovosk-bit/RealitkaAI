@@ -195,6 +195,12 @@ type SupabaseLeadRow = {
   ai_insight?: string | null;
   sofia_insight?: string | null;
   ai_engine?: AiEngineSnapshot | Record<string, unknown> | null;
+  ai_priority?: string | null;
+  ai_reason?: string | null;
+  ai_triage_at?: string | null;
+  ai_priority_manual_at?: string | null;
+  last_ai_followup_at?: string | null;
+  ai_followup_count?: number | null;
 };
 
 type SupabaseActivityRow = {
@@ -282,6 +288,12 @@ function mapRowToLead(row: SupabaseLeadRow): Lead {
     ai_insight: row.ai_insight ?? null,
     sofia_insight: row.sofia_insight ?? null,
     ai_engine: parseAiEngineColumn(row.ai_engine),
+    aiPriority: row.ai_priority ?? null,
+    aiReason: row.ai_reason ?? null,
+    aiTriageAt: row.ai_triage_at ?? null,
+    aiPriorityManualAt: row.ai_priority_manual_at ?? null,
+    lastAiFollowupAt: row.last_ai_followup_at ?? null,
+    aiFollowupCount: row.ai_followup_count ?? 0,
   };
 }
 
@@ -897,6 +909,10 @@ export async function updateLead(
       lastContact: string;
       assignedProfileId: string | null;
       ai_engine: AiEngineSnapshot | null;
+      aiPriority?: string | null;
+      aiReason?: string | null;
+      aiTriageManualLock?: boolean | null;
+      skipActivityLog?: boolean;
     } & ActivityLogInput
   >
 ) {
@@ -933,6 +949,12 @@ export async function updateLead(
       ...(input.lastContact !== undefined ? { lastContact: input.lastContact } : {}),
       ...(input.note !== undefined ? { note: input.note } : {}),
       ...(input.ai_engine !== undefined ? { ai_engine: input.ai_engine } : {}),
+      ...(input.aiPriority !== undefined ? { aiPriority: input.aiPriority } : {}),
+      ...(input.aiReason !== undefined ? { aiReason: input.aiReason } : {}),
+      ...(input.aiTriageManualLock === true
+        ? { aiPriorityManualAt: new Date().toISOString() }
+        : {}),
+      ...(input.aiTriageManualLock === false ? { aiPriorityManualAt: null } : {}),
     };
 
     mockLeads[index] = updated;
@@ -977,6 +999,12 @@ export async function updateLead(
     ...(input.lastContact ? { last_contact: input.lastContact } : {}),
     ...(typeof input.note === "string" ? { note: input.note } : {}),
     ...(input.ai_engine !== undefined ? { ai_engine: input.ai_engine } : {}),
+    ...(input.aiPriority !== undefined ? { ai_priority: input.aiPriority } : {}),
+    ...(input.aiReason !== undefined ? { ai_reason: input.aiReason } : {}),
+    ...(input.aiTriageManualLock === true
+      ? { ai_priority_manual_at: new Date().toISOString() }
+      : {}),
+    ...(input.aiTriageManualLock === false ? { ai_priority_manual_at: null } : {}),
   };
 
   const { data, error } = await supabase
@@ -1004,6 +1032,13 @@ export async function updateLead(
   }
   if (assignedAgentName && before?.assigned_agent !== assignedAgentName) {
     changes.push(`maklér ${before?.assigned_agent ?? "Nepriradený"} -> ${assignedAgentName}`);
+  }
+  if (input.aiPriority !== undefined && input.aiPriority !== before?.ai_priority) {
+    changes.push(`AI priorita -> ${input.aiPriority ?? "—"}`);
+  }
+
+  if (input.skipActivityLog) {
+    return mapRowToLead(data as SupabaseLeadRow);
   }
 
   await appendActivity(
