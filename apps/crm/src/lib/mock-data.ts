@@ -29,6 +29,14 @@ export type Lead = {
   sofia_insight?: string | null;
   /** AI Sales Brain v2 snapshot (Supabase `ai_engine` jsonb). */
   ai_engine?: AiEngineSnapshot | null;
+  /** W1 batch Haiku — `Vysoká` | `Stredná` | `Nízka` */
+  aiPriority?: string | null;
+  aiReason?: string | null;
+  aiTriageAt?: string | null;
+  /** Ak nastavené — cron triáže už neprepisuje prioritu. ISO timestamp. */
+  aiPriorityManualAt?: string | null;
+  lastAiFollowupAt?: string | null;
+  aiFollowupCount?: number;
 };
 
 export type Activity = {
