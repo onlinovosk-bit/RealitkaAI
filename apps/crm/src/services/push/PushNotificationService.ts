@@ -1,11 +1,20 @@
 import webpush from "web-push";
 import { createAdminClient } from "@/lib/supabase/server";
 
-webpush.setVapidDetails(
-  "mailto:admin@revolis.ai",
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
+let vapidConfigured = false;
+
+function ensureVapidConfigured(): boolean {
+  const pub = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim();
+  const priv = process.env.VAPID_PRIVATE_KEY?.trim();
+  if (!pub || !priv) {
+    return false;
+  }
+  if (!vapidConfigured) {
+    webpush.setVapidDetails("mailto:admin@revolis.ai", pub, priv);
+    vapidConfigured = true;
+  }
+  return true;
+}
 
 export interface PushPayload {
   title: string;
@@ -17,6 +26,10 @@ export interface PushPayload {
 }
 
 export async function sendPushToUser(userId: string, payload: PushPayload) {
+  if (!ensureVapidConfigured()) {
+    return { sent: 0 };
+  }
+
   const supabase = createAdminClient();
   const { data: subs } = await supabase
     .from("push_subscriptions")
