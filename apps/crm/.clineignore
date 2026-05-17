@@ -1,10 +1,20 @@
+# Cline indexing hygiene (align with repo .gitignore / .cursorignore).
+
 node_modules/
 .git/
 tmp-revolis-import/
 repo-structure
-package-lock.json
+
+__pycache__/
+*.py[cod]
+
 *.log
 test-results/
 .next/
+coverage/
+playwright-report/
+
+**/.temp/
+
 dist/
 build/

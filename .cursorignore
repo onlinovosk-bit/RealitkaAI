@@ -1,0 +1,28 @@
+﻿# Reduce Cursor / AI context noise (mirrors hygiene rules in .gitignore).
+# Does not affect builds or runtime.
+
+node_modules/
+__pycache__/
+*.py[cod]
+
+.next/
+out/
+build/
+dist/
+
+coverage/
+playwright-report/
+test-results/
+
+*.log
+**/.temp/
+
+.env
+.env*.local
+!.env.example
+!.env.*.example
+
+.DS_Store
+.vercel
+
+tmp-revolis-import/
