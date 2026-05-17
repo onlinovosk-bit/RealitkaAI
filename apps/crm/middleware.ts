@@ -1,6 +1,12 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 
+import {
+  copyResponseCookies,
+  nextResponseWithForwardedTenant,
+  resolveTenantFromSupabaseSession,
+} from '@/auth/rls-middleware'
+
 // These prefixes bypass user-session validation — they handle auth themselves
 const BYPASS_PREFIXES = [
   '/api/auth/',               // Supabase OAuth callbacks
@@ -57,7 +63,14 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const unauthorized = NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    copyResponseCookies(response, unauthorized)
+    return unauthorized
+  }
+
+  const tenant = await resolveTenantFromSupabaseSession(supabase)
+  if (tenant) {
+    return nextResponseWithForwardedTenant(request, tenant, response)
   }
 
   return response

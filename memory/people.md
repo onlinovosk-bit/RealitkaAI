@@ -1,6 +1,6 @@
 # Revolis.AI — Agent Directory & Group Architecture
 
-> Posledná aktualizácia: 2026-05-07 — všetky konflikty vyriešené duplikáciou, Head of Data + CRO doplnené
+> Posledná aktualizácia: 2026-05-07
 > Celkový počet agentov: ~100 (Virtual Squad + Dream Team + nové roly)
 > Orchestrátor systém: 7 skupín, každá má Group Lead + C-level nadriadeného
 
@@ -34,8 +34,8 @@ Všetky Group Leads a C-level pozície zodpovedajú priamo jemu.
 | **Head of Design** | Group B — denný lead | B |
 | **Head of Growth** | Group D — exekúcia (pod VP Growth) | D |
 | **Head of Marketing** | Group E — denný lead (pod CMO) | E |
-| **Head of Data / Chief Analytics Officer** | Group F — denný lead | F |
-| **Chief Revenue Officer (CRO)** | Group G — denný lead | G |
+
+> Skupiny F a G nemajú C-level orchestrátora — pozri sekciu GAPS na konci.
 
 ---
 

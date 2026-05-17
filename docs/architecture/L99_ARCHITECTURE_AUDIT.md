@@ -35,7 +35,7 @@ Ciele auditu (per `CLAUDE.md` projektových inštrukcií): identifikovať archit
 - `apps/marketing` — samostatný Next.js 15.3 web (NIE je v root `workspaces`)
 - `supabase/` — 36 očíslovaných SQL migrácií
 - `scripts/`, `briefs/`, `memory/`, `tmp-revolis-import/`
-- `REVOLIS_L99_MASTER_PROMPT.md` (15 KB špecifikácie),
+- `prompts/ai/REVOLIS_L99_MASTER_PROMPT.md` (15 KB špecifikácie),
   `repo-structure.txt` (3 MB textový snapshot — checked-in artifact)
 
 ### 2.2 Aplikácia `apps/crm`

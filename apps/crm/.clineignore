@@ -1,0 +1,10 @@
+node_modules/
+.git/
+tmp-revolis-import/
+repo-structure
+package-lock.json
+*.log
+test-results/
+.next/
+dist/
+build/

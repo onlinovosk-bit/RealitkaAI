@@ -1,5 +1,5 @@
 // ================================================================
-// Revolis.AI Service Worker v2 — Offline cache + Web Push
+// Revolis.AI Service Worker v2.1 — Fixed Redirects + Offline Cache
 // ================================================================
 
 const CACHE_NAME = "revolis-v2";
@@ -71,6 +71,8 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       caches.match(request).then(
         (cached) => cached ?? fetch(request).then((res) => {
+          // Only cache successful static responses
+          if (!res || res.status !== 200 || res.type !== 'basic') return res;
           const clone = res.clone();
           caches.open(CACHE_NAME).then((c) => c.put(request, clone));
           return res;
@@ -84,6 +86,14 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     fetch(request)
       .then((res) => {
+        // L99 FIX: If it's a redirect (3xx), return it immediately.
+        // Cloning or putting a redirect into cache in 'navigate' mode 
+        // causes the "redirect mode is not follow" error.
+        if (res.status >= 300 && res.status < 400) {
+          return res;
+        }
+
+        // Cache successful page loads
         if (res.ok) {
           const clone = res.clone();
           caches.open(CACHE_NAME).then((c) => c.put(request, clone));
@@ -92,7 +102,15 @@ self.addEventListener("fetch", (event) => {
       })
       .catch(async () => {
         const cached = await caches.match(request);
-        return cached ?? (await caches.match(OFFLINE_URL)) ?? new Response("Offline", { status: 503 });
+        if (cached) return cached;
+
+        // Only show offline page for navigation requests
+        if (request.mode === 'navigate') {
+          const offlinePage = await caches.match(OFFLINE_URL);
+          return offlinePage ?? new Response("Offline", { status: 503 });
+        }
+
+        return new Response("Offline", { status: 503 });
       })
   );
 });
@@ -139,7 +157,7 @@ self.addEventListener("notificationclick", (event) => {
         );
         if (existing) {
           existing.focus();
-          existing.navigate(url);
+          if (existing.url !== url) existing.navigate(url);
           return;
         }
         return clients.openWindow(url);

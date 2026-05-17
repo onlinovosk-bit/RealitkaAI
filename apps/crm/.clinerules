@@ -1,0 +1,40 @@
+# Cline Rules — RealitkaAI
+
+## Model Routing
+- Plan Mode: DeepSeek V3 (planning, architecture, brainstorming)
+- Act Mode: Claude Sonnet 4.6 (implementation, coding)
+
+## Context Management
+- When context reaches 70%, finish current step and propose new task
+- Never read repo-structure file
+- Never read package-lock.json
+- Read only files directly relevant to current task
+
+## Response Style
+- Be concise — no verbose explanations unless asked
+- No confirmation of obvious steps
+- Code blocks only, no surrounding prose when delivering code
+
+## Task Approach
+- Always start complex tasks in Plan Mode first
+- Use @ mentions for specific files instead of broad exploration
+- Maximum 2 Cline instances running in parallel
+
+## Cost Protection
+
+- Never scan entire repository unless explicitly requested
+- Prefer targeted file reads
+- Avoid recursive exploration
+- Stop and ask before reading more than 10 files
+- Use concise responses
+
+## Production Safety Rules
+
+- Never remove existing production functionality
+- Never overwrite existing DB tables without migration
+- Always generate migrations incrementally
+- Never expose secrets in frontend
+- Never trust incoming webhook payloads
+- Always validate external input
+- Never block webhook response with heavy processing
+- Prefer defensive coding over concise coding

@@ -32,3 +32,10 @@ export function nextResponseWithForwardedTenant(
 
   return response;
 }
+
+/** Presun session cookies (napr. po Supabase refresh) na odpoveď ako 401. */
+export function copyResponseCookies(from: NextResponse, to: NextResponse): void {
+  from.cookies.getAll().forEach((cookie) => {
+    to.cookies.set(cookie);
+  });
+}

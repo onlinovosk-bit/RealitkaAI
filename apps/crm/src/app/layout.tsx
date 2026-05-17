@@ -3,6 +3,7 @@ import { SlackLayout } from "@/components/navigation/SlackLayout";
 import { MobileBottomNav } from "@/components/navigation/MobileBottomNav";
 import { PwaInstallBanner } from "@/components/pwa/PwaInstallBanner";
 import { MobileFab } from "@/components/pwa/MobileFab";
+import ClientProviders from "@/components/ClientProviders";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -55,29 +56,13 @@ export default function RootLayout({
         <meta name="application-name" content="Revolis.AI" />
       </head>
       <body className="antialiased">
-        <SlackLayout>{children}</SlackLayout>
-        <MobileBottomNav />
-        <MobileFab />
-        <PwaInstallBanner />
-        <ServiceWorkerRegistration />
+        <ClientProviders>
+          <SlackLayout>{children}</SlackLayout>
+          <MobileBottomNav />
+          <MobileFab />
+          <PwaInstallBanner />
+        </ClientProviders>
       </body>
     </html>
-  );
-}
-
-function ServiceWorkerRegistration() {
-  return (
-    <script
-      dangerouslySetInnerHTML={{
-        __html: `
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
-    navigator.serviceWorker.register('/sw.js', { scope: '/' })
-      .catch(function(e) { console.warn('SW registration failed:', e); });
-  });
-}
-        `.trim(),
-      }}
-    />
   );
 }

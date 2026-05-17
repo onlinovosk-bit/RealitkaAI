@@ -1,0 +1,51 @@
+{
+  "_meta": {
+    "purpose": "Anonymized examples matching Revolis CRM Realvia ingest (types.ts). Replace URLs and IDs before sharing externally.",
+    "webhook_post_url": "https://app.revolis.ai/api/webhooks/realvia",
+    "headers_example": {
+      "Content-Type": "application/json",
+      "identifikator": "<REALVIA_IDENTIFIER from env>",
+      "identifikator2": "<REALVIA_IDENTIFIER_2 from env>"
+    },
+    "note_identifikator34": "Headers identifikator3/identifikator4 are NOT validated by Revolis today — extend validate.ts + agencies if Realvia requires them."
+  },
+  "advert_create_or_update": {
+    "office": [],
+    "broker": {
+      "source_id": 90001,
+      "first_name": "Demo",
+      "last_name": "Makléř",
+      "degree_before": null,
+      "degree_after": null,
+      "deleted": false,
+      "phone": "+421900000001",
+      "email": "broker@example-agency.sk"
+    },
+    "advert": {
+      "source_id": 500042,
+      "category": 12,
+      "geo_point": { "lat": 48.15, "lon": 17.12 },
+      "transaction": 123,
+      "title": "Demo listing — anonymized",
+      "description": "Sample description.",
+      "price": 189000,
+      "currency": 167,
+      "usable_area": 65,
+      "floor": 4,
+      "rooms_count": 3,
+      "street": "Demo Street",
+      "images": [
+        { "url": "https://cdn.example.com/listings/500042/photo-1.jpg" },
+        { "url": "https://cdn.example.com/listings/500042/plan.pdf", "tags": ["podorys"] }
+      ],
+      "extra": {
+        "balcony_area": 6,
+        "parking_count": 1
+      }
+    }
+  },
+  "delete_or_cancel_listing": {
+    "source_id": 500042,
+    "deleted": true
+  }
+}

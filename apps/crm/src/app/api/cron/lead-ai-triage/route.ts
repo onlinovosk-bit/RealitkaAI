@@ -3,8 +3,9 @@
  * vercel.json: schedule napr. 0 5 * * * (pred ranným briefom).
  */
 import { NextRequest, NextResponse } from "next/server";
+
+import { executeTriageWithIdempotency } from "@/ai/triage-with-idempotency";
 import { createAdminClient } from "@/lib/supabase/server";
-import { triageLeadBatches, type TriageLeadInput } from "@/lib/ai/lead-triage-batch";
 
 const OPEN_STATUSES = ["Nový", "Teplý", "Horúci", "Obhliadka", "Ponuka"];
 
@@ -30,44 +31,21 @@ export async function GET(request: NextRequest) {
   }
 
   const list = rows ?? [];
-  const inputs: TriageLeadInput[] = list.map((r) => ({
-    id: String(r.id),
-    name: String(r.name ?? ""),
-    status: String(r.status ?? ""),
-    score: Number(r.score ?? 0),
-    last_contact: r.last_contact ?? "",
-    note: r.note ?? "",
-    source: r.source ?? "",
-  }));
-
-  let updated = 0;
-  const triagedAt = new Date().toISOString();
-
-  if (inputs.length > 0) {
-    try {
-      const results = await triageLeadBatches(inputs);
-      for (const row of results) {
-        const { error: upErr } = await admin
-          .from("leads")
-          .update({
-            ai_priority: row.priority,
-            ai_reason: row.reason,
-            ai_triage_at: triagedAt,
-          })
-          .eq("id", row.lead_id);
-
-        if (!upErr) updated += 1;
-      }
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      return NextResponse.json({ ok: false, error: msg, queued: inputs.length }, { status: 500 });
-    }
+  try {
+    const outcome = await executeTriageWithIdempotency(admin, list);
+    return NextResponse.json({
+      ok: true,
+      examined: list.length,
+      processed: outcome.processed,
+      updated: outcome.updated,
+      skipped_dupe: outcome.skipped_dupe,
+      triaged_at: outcome.triaged_at,
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return NextResponse.json(
+      { ok: false, error: msg, queued: list.length },
+      { status: 500 },
+    );
   }
-
-  return NextResponse.json({
-    ok: true,
-    processed: inputs.length,
-    updated,
-    triaged_at: triagedAt,
-  });
 }

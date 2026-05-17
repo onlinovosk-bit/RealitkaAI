@@ -1,49 +1,44 @@
-## Session 2026-05-07 — L99 Operation Trust Dominance
-
+## Session 2026-05-07 (pokračovanie — po context compaction)
 ### Dokončené
+- **Wave 3** (`235f745`): auth guard na 6 routes — team/teams GET+POST, team/users GET+POST, recommendations/bulk PATCH, leads/[id]/matches GET, leads/[id]/moves GET+POST, scoring/recalculate POST
+- **Wave 4** (`62e6255`): auth guard na 5 routes — recommendations GET+POST, recommendations/[id] PATCH, matching/action POST, activities GET, tasks POST; transcribe ok:true→ok:false+501; CampaignBuilder fake setTimeout→real API POST; nová /api/outreach/campaigns route + migrácia
+- **Wave 5** (`18a5a2f`): .single() error destructuring — deal-strategy route, ensure-profile, morning-brief/gather, bri/engine, arbitrage/scan, price-trail/engine
+- Marketing badge presun: ★ Najpopulárnejší z STRÁŽCA CIEN na REALITY MONOPOL
+- WhatsApp Cloud API inbound pipeline: auto-reply.ts, process-lead.ts, webhooks/inbound-lead/route.ts
+- Morning brief real pipeline (generateAndDeliverBrief, CRON_SECRET guard)
+- Dashboard summary: hardcoded mock → real Supabase queries
+- Daily actions: hardcoded leads → real Supabase query
 
-**Phase 1 — AI Integrity:**
-- `call-analysis.ts`: `sentiment: "inconclusive"` namiesto forced neutral, + `analysis_confidence`, `inconclusive_reason`; fallback viac nevracia "neutral"
-- `listing-content.ts`: exportovaný `SYSTEM_PROMPT`, `PERSONA_CONTEXT`, `buildListingUserPrompt()` — reusable pre streaming
-- `apps/crm/src/app/api/ai/listing-content/stream/route.ts` — **nový** SSE endpoint; UI vidí text okamžite, žiadny spinner > 1s
-
-**Phase 2 — Mobile + Purge:**
-- `globals.css`: `overflow-x: hidden` na html+body, `scroll-padding-bottom` pre MobileBottomNav, `-webkit-text-size-adjust`
-- Feature audit hotový (report: 4 dead routes: /api/system/schema, /api/test-db, /api/admin/check-migration, /api/l99/shadow-inventory)
-
-**Phase 3 — Trust Engineering:**
-- `sales-brain.ts`: + `data_points: string[]` (3 konkrétne fakty), + `confidence`, prompt aktualizovaný
-- `sales-brain-panel.tsx`: confidence badge (farebne) + expandable "Prečo toto odporúčanie?" s data_points tooltipom
-- `api/leads/[id]/sales-brain/route.ts`: `select("*")` → selektívne polia
-- `marketing/app/page.tsx`: hero rewrite — "Revolis.AI ukazuje maklérom, komu zavolať ako prvému..." + trust bar GDPR seal
-
-**Phase 4 — Performance:**
-- `LeadCardMobile.tsx`: `onTouchStart/onMouseEnter` → `router.prefetch()` (nulová perceived latency)
-- `LeadCardMobile.tsx`: optimistic status change — tap badge → quick menu → okamžitá UI aktualizácia + PATCH na pozadí + revert on error
-
-**Token savings:**
-- `dead-lead-campaign.ts`: batch mode (5 leads/call = 10x menej API calls)
-- `sales-brain route.ts`: select("*") → selective fields
-- `multi-channel-sender.ts`: cache_control pridaný (posledný súbor bez neho)
-- `callClaude()` wrapper v claude.ts: latency logging
+### Celkové štatistiky (všetky waves v session)
+- 16+ CRITICAL/HIGH auth routes opravených
+- 3 stub replacements s real DB queries
+- 6 .single() bez error check opravených
+- 3 AI content[0] optional chain guards
+- 3 req.json() crash fixes
+- 1 nový outreach campaigns endpoint + migrácia
 
 ### Rozpracované / Pending
-- Dead routes sú identifikované ale NEzmazané — čakajú na potvrdenie: `/api/system/schema`, `/api/test-db`, `/api/admin/check-migration`, `/api/l99/shadow-inventory`
-- Migrácia AI modulov na `callClaude()` wrapper — next sprint
-- Streaming pre call-coach (analogicky k listing-content/stream)
+- **MANUAL - Vercel**: Rename `STRIPE_PRICE_Active_Force` → `STRIPE_PRICE_PRO`
+- **MANUAL - Vercel**: Add `WHATSAPP_TOKEN` + `WHATSAPP_PHONE_ID`
+- **CODE**: Zostávajúce .single() bez error check (~18 ďalších v hooks/lib — l99-engine, alert-dispatch, assistant-chat, rescore-lead, use-bri-live, use-morning-brief, use-arbitrage, use-bri-score)
+- **CODE**: `lib/ai/action-executor.ts` — stub, no callers, nízka priorita
+- **CODE**: `lib/analytics/dashboard.ts` + `reporting.ts` — stubs, no callers, nízka priorita
+- **CODE**: `sendLinkedin()` — LinkedIn API externá závislosť
+- **INFRA**: Cron renewal — hourly summary expires 2026-05-14
 
 ### Kľúčové súbory zmenené
-- `apps/crm/src/lib/ai/call-analysis.ts`: inconclusive sentiment
-- `apps/crm/src/lib/ai/listing-content.ts`: exporty + buildListingUserPrompt
-- `apps/crm/src/lib/ai/sales-brain.ts`: data_points + confidence
-- `apps/crm/src/app/api/ai/listing-content/stream/route.ts`: NEW SSE streaming
-- `apps/crm/src/components/leads/sales-brain-panel.tsx`: "Prečo?" tooltip
-- `apps/crm/src/components/leads/LeadCardMobile.tsx`: prefetch + optimistic status
-- `apps/crm/src/app/globals.css`: mobile overflow fix
-- `apps/marketing/app/page.tsx`: hero copy + trust bar
+- `apps/crm/src/app/api/outreach/campaigns/route.ts`: NEW
+- `apps/crm/supabase/migrations/20260507120000_outreach_campaigns.sql`: NEW
+- `apps/crm/src/components/outreach/campaign-builder.tsx`: real API call
+- `apps/crm/src/lib/bri/engine.ts`: .single() error log
+- `apps/crm/src/lib/arbitrage/scan.ts`: .single() error log + bail on non-404 errors
+- `apps/crm/src/lib/morning-brief/gather.ts`: .single() error log
 
 ### Ďalší krok
-Zmazať 4 dead routes (po potvrdení). Potom: streaming pre call-coach — kópia vzoru z listing-content/stream/route.ts.
+Fixovať zostávajúce .single() v auth-critical lib kóde: lib/l99/entitlements.ts (line 12), lib/l99/alert-dispatch.ts (line 10), lib/assistant-chat.ts (line 27), lib/ai/l99-engine.ts (lines 34+64)
+## Session ended: 
+## Session ended: 
+## Session ended: 
 ## Session ended: 
 ## Session ended: 
 ## Session ended: 

@@ -2598,7 +2598,7 @@ RULE: Any task with 3+ steps OR architectural decisions requires a written plan
       before any file is touched.
 
 PROTOCOL:
-  Step 1: Write plan to tasks/todo.md (checkable items, each item is atomic)
+  Step 1: Write plan to docs/crm/tasks/todo.md (checkable items, each item is atomic)
   Step 2: Share plan with Orchestrator for approval (AskUserQuest format)
   Step 3: Begin implementation only after approval
   Step 4: If something goes sideways — STOP. Re-plan immediately. Do not push through.
@@ -2643,12 +2643,12 @@ FORBIDDEN:
 
 ```
 RULE: After ANY correction from Leadership L99 or Orchestrator — update
-      tasks/lessons.md with the pattern. Write rules that prevent the same mistake.
+      docs/crm/tasks/lessons.md with the pattern. Write rules that prevent the same mistake.
 
 PROTOCOL:
   Trigger: User or Orchestrator corrects agent output
   Step 1: Identify root cause (not symptom)
-  Step 2: Write lesson entry to tasks/lessons.md:
+  Step 2: Write lesson entry to docs/crm/tasks/lessons.md:
     FORMAT:
       ## Lesson {date} — {one-line title}
       **Mistake:** [what was done wrong]
@@ -2659,7 +2659,7 @@ PROTOCOL:
   Step 4: Review lessons.md at session start (Orchestrator reads it, routes relevant
           lessons to the agent about to work on similar tasks)
 
-APPLIES TO: All agents. Orchestrator maintains tasks/lessons.md as institutional memory.
+APPLIES TO: All agents. Orchestrator maintains docs/crm/tasks/lessons.md as institutional memory.
 
 TARGET: Mistake rate on repeated patterns → 0 after 3 occurrences of the same mistake.
 

@@ -51,7 +51,7 @@
 
 ## Backlog
 
-- [ ] Pridať `tasks/lessons.md` ako živý dokument po každej korekcii (BC-3)
-- [ ] RACI review — Boris Cherny delta RACI (PART 26, riadky ~2799 v MASTER_PROMPT_V3.md)
+- [ ] Pridať `docs/crm/tasks/lessons.md` ako živý dokument po každej korekcii (BC-3)
+- [ ] RACI review — Boris Cherny delta RACI (PART 26, riadky ~2799 v prompts/ai/MASTER_PROMPT_V3.md)
 - [ ] Nasadiť `realvia-ingestion` pipeline na staging (Market Intel Agent)
 - [ ] Audit modal flow + Stripe checkout — verifikácia webhook `payment.succeeded` (RVLS-AUDIT-V1)
