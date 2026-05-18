@@ -1,4 +1,5 @@
 import { getTeamPerformanceKpis, getAgentPerformanceMetrics } from "@/lib/team-store";
+import CoachingNotSurveillanceCallout from "@/components/shared/coaching-not-surveillance-callout";
 
 export default async function TeamAnalyticsPage() {
   const [teamKpis, agentMetrics] = await Promise.all([
@@ -14,6 +15,7 @@ export default async function TeamAnalyticsPage() {
           <p className="mt-1 text-gray-500">
             Výkon tímov a agentov na základe metrik.
           </p>
+          <CoachingNotSurveillanceCallout variant="compact" />
         </div>
 
         {/* Teams Performance */}

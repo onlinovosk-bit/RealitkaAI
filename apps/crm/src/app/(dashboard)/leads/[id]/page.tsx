@@ -26,6 +26,7 @@ import { useRealtimeLeadScore } from "@/hooks/useRealtimeLeadScore";
 import SalesBrainPanel from "@/components/leads/sales-brain-panel";
 import DealStrategyCard from "@/components/leads/deal-strategy-card";
 import KatasterMonitorCard from "@/components/leads/KatasterMonitorCard";
+import AiTriageExplainBlock from "@/components/leads/AiTriageExplainBlock";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -665,6 +666,16 @@ export default function LeadDetailPage() {
               </Link>
             ) : null}
             {id ? <SalesBrainPanel leadId={id} /> : null}
+            <AiTriageExplainBlock
+              variant="card"
+              leadId={id ?? undefined}
+              priority={lead.aiPriority}
+              reason={lead.aiReason}
+              status={lead.status}
+              budget={lead.budget}
+              lastContact={lead.lastContact}
+              triagedAt={lead.aiTriageAt}
+            />
             {id ? <DealStrategyCard leadId={id} /> : null}
             {id ? (
               <KatasterMonitorCard

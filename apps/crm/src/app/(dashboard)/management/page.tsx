@@ -1,4 +1,5 @@
-﻿import ModuleShell from "@/components/shared/module-shell";
+﻿import CoachingNotSurveillanceCallout from "@/components/shared/coaching-not-surveillance-callout";
+import ModuleShell from "@/components/shared/module-shell";
 import ErrorState from "@/components/shared/error-state";
 import ManagementKpis from "@/components/management/management-kpis";
 import AgentPerformanceTable from "@/components/management/agent-performance-table";
@@ -83,6 +84,7 @@ export default async function ManagementPage() {
       title="Management dashboard"
       description="Riadiaci panel pre ownera a managera: výkon tímu, stav klientov, úlohy, matching a AI."
     >
+      <CoachingNotSurveillanceCallout />
       <ManagementKpis cards={cards} />
 
       <section className="mt-6">

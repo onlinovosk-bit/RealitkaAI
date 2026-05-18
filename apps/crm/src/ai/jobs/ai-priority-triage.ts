@@ -39,7 +39,7 @@ export async function executeAiPriorityTriageJob(
   const { data: rows, error } = await admin
     .from("leads")
     .select(
-      "id,name,status,score,last_contact,note,source,ai_priority_manual_at",
+      "id,name,status,score,budget,last_contact,note,source,ai_priority_manual_at",
     )
     .in("id", leadIds);
 
@@ -57,7 +57,7 @@ export async function executeAiPriorityTriageJob(
     return;
   }
 
-  await executeTriageWithIdempotency(admin, list);
+  await executeTriageWithIdempotency(admin, list, { source: "ai_jobs_queue" });
 }
 
 export async function enqueueAiPriorityTriage(

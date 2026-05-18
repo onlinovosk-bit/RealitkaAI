@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
 
   const { data: rows, error } = await admin
     .from("leads")
-    .select("id,name,status,score,last_contact,note,source,ai_priority_manual_at")
+    .select("id,name,status,score,budget,last_contact,note,source,ai_priority_manual_at")
     .in("status", OPEN_STATUSES)
     .is("ai_priority_manual_at", null)
     .order("updated_at", { ascending: false })

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { Lead } from "@/lib/mock-data";
 import { AI_PRIORITY_SK, priorityRank } from "@/lib/workflows/lead-ai-priority";
+import AiTriageExplainBlock from "@/components/leads/AiTriageExplainBlock";
 
 function sortForToday(l: Lead[]): Lead[] {
   return [...l].sort((a, b) => {
@@ -78,12 +79,19 @@ export default function TodaysTenLeads({ leads }: { leads: Lead[] }) {
                     {lead.name}
                   </Link>
                   <p className="text-[11px] text-slate-500">
-                    Skóre {lead.score} · {lead.status}
+                    {lead.status}
                     {lead.aiTriageAt ? ` · triáž ${new Date(lead.aiTriageAt).toLocaleString("sk-SK")}` : ""}
                   </p>
-                  {lead.aiReason ? (
-                    <p className="mt-1 text-xs text-slate-400">{lead.aiReason}</p>
-                  ) : null}
+                  <AiTriageExplainBlock
+                    variant="compact"
+                    leadId={lead.id}
+                    priority={draft.p}
+                    reason={lead.aiReason}
+                    status={lead.status}
+                    budget={lead.budget}
+                    lastContact={lead.lastContact}
+                    triagedAt={lead.aiTriageAt}
+                  />
                 </div>
                 <div className="flex flex-col gap-1 min-w-[140px]">
                   <select

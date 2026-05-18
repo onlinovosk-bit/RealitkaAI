@@ -21,12 +21,23 @@ export function isStaleLock(
 
 const PG_UNIQUE_VIOLATION = "23505";
 
+export type LeadTriageClaimResult =
+  | { ok: true; path: "insert" | "reclaim_failed" | "reclaim_stale" }
+  | {
+      ok: false;
+      reason:
+        | "already_completed"
+        | "lock_held"
+        | "reclaim_race_lost"
+        | "missing_row_after_dup";
+    };
+
 export async function tryClaimLeadTriage(
   admin: SupabaseClient,
   leadId: string,
   dayUtc: string,
   staleMs: number = DEFAULT_TRIAGE_STALE_MS,
-): Promise<boolean> {
+): Promise<LeadTriageClaimResult> {
   const nowIso = new Date().toISOString();
 
   const { data: ins, error: insErr } = await admin
@@ -42,7 +53,7 @@ export async function tryClaimLeadTriage(
     .maybeSingle();
 
   if (!insErr && ins) {
-    return true;
+    return { ok: true, path: "insert" };
   }
 
   if (insErr) {
@@ -68,11 +79,11 @@ export async function tryClaimLeadTriage(
   }
 
   if (!row) {
-    return false;
+    return { ok: false, reason: "missing_row_after_dup" };
   }
 
   if (row.state === "completed") {
-    return false;
+    return { ok: false, reason: "already_completed" };
   }
 
   const nowMs = Date.now();
@@ -90,12 +101,14 @@ export async function tryClaimLeadTriage(
       .eq("state", "failed")
       .select("lead_id")
       .maybeSingle();
-    return !!reclaimed;
+    return reclaimed
+      ? { ok: true, path: "reclaim_failed" }
+      : { ok: false, reason: "reclaim_race_lost" };
   }
 
   if (row.state === "processing") {
     if (!isStaleLock(row.processing_started_at, nowMs, staleMs)) {
-      return false;
+      return { ok: false, reason: "lock_held" };
     }
 
     const thresholdIso = new Date(nowMs - staleMs).toISOString();
@@ -111,10 +124,12 @@ export async function tryClaimLeadTriage(
       .lte("processing_started_at", thresholdIso)
       .select("lead_id")
       .maybeSingle();
-    return !!reclaimed;
+    return reclaimed
+      ? { ok: true, path: "reclaim_stale" }
+      : { ok: false, reason: "reclaim_race_lost" };
   }
 
-  return false;
+  return { ok: false, reason: "reclaim_race_lost" };
 }
 
 export async function completeLeadTriage(

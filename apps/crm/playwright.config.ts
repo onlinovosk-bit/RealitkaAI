@@ -48,6 +48,11 @@ export default defineConfig({
       },
       dependencies: ['setup'],
     },
+    {
+      name: 'chromium-smoke',
+      testMatch: /smoke\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'] },
+    },
     // Public routing checks bez auth setup dependency (legacy URL guards)
     {
       name: 'chromium-public',

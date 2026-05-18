@@ -1,6 +1,7 @@
-'use client';
-import React, { useState, useEffect } from 'react';
-import { PushNotificationsToggle } from '@/components/settings/PushNotificationsToggle';
+"use client";
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { PushNotificationsToggle } from "@/components/settings/PushNotificationsToggle";
 
 const PLAN_NAMES: Record<string, string> = {
   free:               'FREE',
@@ -80,6 +81,39 @@ export default function SettingsPage() {
         </section>
 
         <PushNotificationsToggle />
+
+        <Link
+          href="/settings/operational-trust"
+          className="block overflow-hidden rounded-2xl border p-4 md:p-6 transition hover:border-emerald-500/25"
+          style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
+        >
+          <h3 className="text-base font-bold" style={{ color: "#F0F9FF" }}>
+            Prevádzková istota (pre-mortem)
+          </h3>
+          <p className="mt-2 text-sm leading-relaxed" style={{ color: "#64748B" }}>
+            Prioritizované kroky pre vedenie, GDPR a adopciu. Súvisí s dokumentmi v{" "}
+            <code className="text-slate-600">docs/</code>.
+          </p>
+          <span className="mt-3 inline-block text-sm font-semibold" style={{ color: "#34D399" }}>
+            Otvoriť →
+          </span>
+        </Link>
+
+        <Link
+          href="/settings/ai-triage"
+          className="block overflow-hidden rounded-2xl border p-4 md:p-6 transition hover:border-cyan-500/30"
+          style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
+        >
+          <h3 className="text-base font-bold" style={{ color: "#F0F9FF" }}>
+            AI triáž — viditeľnosť
+          </h3>
+          <p className="mt-2 text-sm leading-relaxed" style={{ color: "#64748B" }}>
+            Pomer AI vs záložné skóre (24 h) a návod na logy pre výkon, stabilitu a zlyhania modelu.
+          </p>
+          <span className="mt-3 inline-block text-sm font-semibold" style={{ color: "#22D3EE" }}>
+            Otvoriť →
+          </span>
+        </Link>
       </div>
     </div>
   );
