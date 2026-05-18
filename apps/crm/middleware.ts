@@ -1,11 +1,13 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 
+/** Segment-safe: `/api/webhooks/*` without matching `/api/webhooks-evil`. */
+const WEBHOOK_API_SEGMENT = '/api/webhooks'
+
 // These prefixes bypass user-session validation — they handle auth themselves
 const BYPASS_PREFIXES = [
   '/api/auth/',               // Supabase OAuth callbacks
   '/api/cron/',               // CRON_SECRET header auth
-  '/api/webhooks/',           // HMAC-verified webhooks
   '/api/resend-webhook/',     // Resend event stream (signature-verified)
   '/api/health',              // uptime monitoring (public)
   '/api/healthz',             // uptime monitoring (public)
@@ -17,11 +19,27 @@ const BYPASS_PREFIXES = [
   '/api/onboarding/mvp/',     // service-role based onboarding flows
 ]
 
+/** Exact ingest route (+ optional trailing slash); avoids `/api/realvia/import-*` leaks. */
+function isRealviaImportPath(pathname: string): boolean {
+  return pathname === '/api/realvia/import' || pathname === '/api/realvia/import/'
+}
+
+function isWebhookApiPath(pathname: string): boolean {
+  return (
+    pathname === WEBHOOK_API_SEGMENT ||
+    pathname.startsWith(`${WEBHOOK_API_SEGMENT}/`)
+  )
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Only guard API routes
   if (!pathname.startsWith('/api/')) return NextResponse.next()
+
+  if (isRealviaImportPath(pathname)) return NextResponse.next()
+
+  if (isWebhookApiPath(pathname)) return NextResponse.next()
 
   // Explicit bypass paths
   if (BYPASS_PREFIXES.some(p => pathname.startsWith(p))) return NextResponse.next()
