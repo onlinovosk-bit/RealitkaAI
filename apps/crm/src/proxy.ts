@@ -20,6 +20,18 @@ const PUBLIC_PATHS = new Set([
 
 const CRON_PATH_PREFIX = "/api/agents";
 const SCORING_CRON_PATHS = ["/api/scoring", "/api/segmentation"];
+const WEBHOOK_API_SEGMENT = "/api/webhooks";
+
+function isRealviaImportPath(pathname: string): boolean {
+  return pathname === "/api/realvia/import" || pathname === "/api/realvia/import/";
+}
+
+function isWebhookApiPath(pathname: string): boolean {
+  return (
+    pathname === WEBHOOK_API_SEGMENT ||
+    pathname.startsWith(`${WEBHOOK_API_SEGMENT}/`)
+  );
+}
 
 function isPublic(pathname: string): boolean {
   if (PUBLIC_PATHS.has(pathname)) return true;
@@ -44,6 +56,8 @@ export async function proxy(request: NextRequest) {
   }
 
   if (isPublic(pathname)) return NextResponse.next();
+  if (isRealviaImportPath(pathname)) return NextResponse.next();
+  if (isWebhookApiPath(pathname)) return NextResponse.next();
   if (isCronRoute(pathname)) return NextResponse.next();
 
   let response = NextResponse.next({

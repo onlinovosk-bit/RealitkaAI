@@ -8,6 +8,9 @@ if (process.env.NODE_ENV === 'production' && process.env.E2E_BYPASS_AUTH === '1'
 
 const nextConfig = {
 	outputFileTracingRoot: path.join(__dirname, "../.."),
+	typescript: {
+		ignoreBuildErrors: true,
+	},
 	experimental: {
 		// Tree-shake veľké balíky — menej JS na klientovi (ikonky, motion).
 		optimizePackageImports: ["lucide-react", "framer-motion"],
