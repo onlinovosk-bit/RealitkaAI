@@ -1,32 +1,47 @@
-/* apps/crm/src/app/globals.css */
-
 @import "tailwindcss";
 
 @layer base {
+  :root {
+    --purple:  #8b22ff;
+    --purple2: #cf25d9;
+    --deep:    #171321;
+    --muted:   #756b83;
+    --line:    #eee6f7;
+    --soft:    #f3e8ff;
+    --green:   #10b981;
+    --amber:   #f59e0b;
+    --red:     #ef4444;
+    --cyan:    #0ea5e9;
+    --rail-gradient: linear-gradient(180deg, #e12dea, #8b22ff 58%, #5513c5);
+  }
   html {
     overflow-x: hidden;
-    -webkit-text-size-adjust: 100%; /* Zabraňuje iOS Safari auto-zoom pri rotate */
+    -webkit-text-size-adjust: 100%;
   }
-
   body {
-    color: #0f172a;
-    background-color: #1a1d21;
-    font-family: "Slack-Lato", apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: var(--deep);
+    background: linear-gradient(180deg, #fbf7ff, #fff);
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
-    /* Scroll padding pre MobileBottomNav (56px) + safe area — klavesnica neprykrýva inputy */
     scroll-padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
   }
 }
 
-/* Zabezpečenie, aby hlavný obsah nebol čierny */
 main {
-  background-color: #ffffff !important;
-  color: #1a1d21 !important;
+  background: linear-gradient(180deg, #fbf7ff, #fff) !important;
+  color: var(--deep) !important;
 }
 
-/* Skrytie starých elementov, ktoré strašili na obrázkoch */
 .sidebar-container, .nav-wrapper, #old-menu {
   display: none !important;
 }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--soft); }
+::-webkit-scrollbar-thumb { background: var(--purple); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--purple2); }
+
+::selection { background: var(--soft); color: var(--purple); }
+:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
