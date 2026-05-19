@@ -26,13 +26,13 @@
   --gold-50:  #FEFCE8;
 
   /* Semantic */
-  --success:  #059669;
+  --success:  #047857;
   --success-bg:#F0FDF4;
   --success-bd:#BBF7D0;
-  --danger:   #DC2626;
+  --danger:   #be123c;
   --danger-bg:#FEF2F2;
   --danger-bd:#FECACA;
-  --warn:     #D97706;
+  --warn:     #7a4b00;
   --warn-bg:  #FFFBEB;
   --warn-bd:  #FDE68A;
   --info:     #2563EB;
@@ -148,11 +148,11 @@ body {
   letter-spacing: 0.04em;
 }
 
-.tag-free   { background: #F1F5F9; color: #64748B; border: 0.5px solid #CBD5E1; }
+.tag-free   { background: #F1F5F9; color: #756b83; border: 0.5px solid #CBD5E1; }
 .tag-hot    { background: #FEE2E2; color: #991B1B; }
 .tag-warm   { background: #FEF3C7; color: #92400E; }
 .tag-live   { background: rgba(16,185,129,.18); color: #065F46; }
-.tag-v2     { background: rgba(37,99,235,.18);  color: #1E40AF; }
+.tag-v2     { background: rgba(37,99,235,.18);  color: #5513c5; }
 .tag-gold   { background: var(--gold-50); color: var(--gold-600); border: 0.5px solid var(--gold-200); }
 .tag-active { background: #D1FAE5; color: #065F46; }
 
