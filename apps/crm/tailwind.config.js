@@ -4,9 +4,27 @@ module.exports = {
     "./components/**/*.{js,ts,jsx,tsx}",
     "./app/**/*.{js,ts,jsx,tsx}"
   ],
-  safelist: [], // Pridaj sem dynamické triedy ak ich používaš
+  safelist: [],
   theme: {
     extend: {
+      colors: {
+        purple: {
+          DEFAULT: '#8b22ff',
+          light:   '#cf25d9',
+          soft:    '#f3e8ff',
+          deep:    '#5513c5',
+        },
+        brand: {
+          bg:     '#fbf7ff',
+          line:   '#eee6f7',
+          muted:  '#756b83',
+          deep:   '#171321',
+        },
+      },
+      backgroundImage: {
+        'rail': 'linear-gradient(180deg, #e12dea, #8b22ff 58%, #5513c5)',
+        'hero': 'linear-gradient(120deg, #130526 0%, #3b0f80 42%, #174ea6 78%, #052842 100%)',
+      },
       animation: {
         shimmer:  "shimmer 5s infinite linear",
         gradient: "gradient 3s ease infinite",
