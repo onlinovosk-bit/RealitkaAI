@@ -1,7 +1,7 @@
 // ================================================================
 // Revolis.AI — Pulse Cron Endpoint
 // Runs every 5 minutes to verify all critical integrations are alive
-// vercel.json: {"path": "/api/cron/pulse", "schedule": "*/5 * * * *"}
+// vercel.json: {"path": "/api/cron/pulse", "schedule": "0 * * * *"}
 // ================================================================
 import { NextRequest, NextResponse } from 'next/server'
 import { runPulseCheck } from '@/lib/infra/pulse'
