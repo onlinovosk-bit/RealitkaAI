@@ -28,13 +28,13 @@ export const metadata: Metadata = {
     "mobile-web-app-capable": "yes",
     "apple-mobile-web-app-capable": "yes",
     "apple-mobile-web-app-status-bar-style": "black-translucent",
-    "msapplication-TileColor": "#050914",
+    "msapplication-TileColor": "#8b22ff",
     "msapplication-TileImage": "/icons/revolis-144.png",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#050914",
+  themeColor: "#8b22ff",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
