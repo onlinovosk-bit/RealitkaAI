@@ -21,7 +21,7 @@ type Props = {
 export default function L99DecisionOpsPanel({ leads }: Props) {
   const [selectedLeadId, setSelectedLeadId] = useState<string>(leads[0]?.id ?? "");
   const [busy, setBusy] = useState<DecisionAction | null>(null);
-  const [output, setOutput] = useState<string>('{ "info": "Vyber príležitosť a spusti operáciu." }');
+  const [output, setOutput] = useState<string>('{ "info": "Vyber klienta — ukážeme ti, kde sú peniaze." }');
 
   const disabled = useMemo(() => busy !== null, [busy]);
 
@@ -37,7 +37,7 @@ export default function L99DecisionOpsPanel({ leads }: Props) {
       };
 
       if (action !== "recompute-queue" && !selectedLeadId) {
-        setOutput('{ "ok": false, "error": "Najprv vyber príležitosť." }');
+        setOutput('{ "ok": false, "error": "Najprv vyber klienta." }');
         return;
       }
 
@@ -61,20 +61,20 @@ export default function L99DecisionOpsPanel({ leads }: Props) {
     <section className="mb-6 rounded-2xl border border-cyan-500/25 bg-gradient-to-br from-slate-900 via-slate-900 to-cyan-950/50 p-5 shadow-[0_0_24px_rgba(6,182,212,0.15)]">
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-300/90">L99 Decision Ops</p>
-          <h3 className="mt-1 text-base font-bold text-white">Action Scoring / Closing Window / Rescue</h3>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-300/90">Kde sú peniaze dnes</p>
+          <h3 className="mt-1 text-base font-bold text-white">Kto zaplatí · Kedy inkasuješ · Nech ti neutečie</h3>
         </div>
       </div>
 
       <div className="mb-3">
-        <label className="mb-1 block text-xs text-slate-300">Príležitosť</label>
+        <label className="mb-1 block text-xs text-slate-300">Kto ti môže dnes zarobiť</label>
         <select
           value={selectedLeadId}
           onChange={(e) => setSelectedLeadId(e.target.value)}
           className="w-full rounded-lg border border-cyan-800/60 bg-slate-950/80 px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-500"
         >
           {leads.length === 0 ? (
-            <option value="">Žiadne príležitosti</option>
+            <option value="">Nikto v zozname</option>
           ) : (
             leads.map((lead) => (
               <option key={lead.id} value={lead.id}>
@@ -87,19 +87,19 @@ export default function L99DecisionOpsPanel({ leads }: Props) {
 
       <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-5">
         <button disabled={disabled} onClick={() => void run("score-lead")} className="rounded-lg border border-cyan-700/70 bg-slate-950/70 px-3 py-2 text-xs font-semibold text-cyan-200 hover:bg-slate-900 disabled:opacity-60">
-          {busy === "score-lead" ? "Počítam..." : "1) Score lead"}
+          {busy === "score-lead" ? "Zisťujem, kto kúpi…" : "1) Kto je pripravený kúpiť?"}
         </button>
         <button disabled={disabled} onClick={() => void run("recompute-queue")} className="rounded-lg border border-cyan-700/70 bg-slate-950/70 px-3 py-2 text-xs font-semibold text-cyan-200 hover:bg-slate-900 disabled:opacity-60">
-          {busy === "recompute-queue" ? "Počítam..." : "2) Recompute queue"}
+          {busy === "recompute-queue" ? "Radím prioritu volaní…" : "2) Komu volať ako prvému?"}
         </button>
         <button disabled={disabled} onClick={() => void run("closing-window")} className="rounded-lg border border-cyan-700/70 bg-slate-950/70 px-3 py-2 text-xs font-semibold text-cyan-200 hover:bg-slate-900 disabled:opacity-60">
-          {busy === "closing-window" ? "Počítam..." : "3) Closing window"}
+          {busy === "closing-window" ? "Počítam termín inkasa…" : "3) Kedy inkasujem províziu?"}
         </button>
         <button disabled={disabled} onClick={() => void run("rescue-trigger")} className="rounded-lg border border-cyan-700/70 bg-slate-950/70 px-3 py-2 text-xs font-semibold text-cyan-200 hover:bg-slate-900 disabled:opacity-60">
-          {busy === "rescue-trigger" ? "Spúšťam..." : "4) Rescue trigger"}
+          {busy === "rescue-trigger" ? "Pripravujem záchranu…" : "4) Ako zachrániť províziu?"}
         </button>
         <button disabled={disabled} onClick={() => void run("micro-actions")} className="rounded-lg border border-cyan-700/70 bg-slate-950/70 px-3 py-2 text-xs font-semibold text-cyan-200 hover:bg-slate-900 disabled:opacity-60">
-          {busy === "micro-actions" ? "Plánujem..." : "5) Micro-actions"}
+          {busy === "micro-actions" ? "Píšem dnešný plán…" : "5) Čo spraviť dnes?"}
         </button>
       </div>
 

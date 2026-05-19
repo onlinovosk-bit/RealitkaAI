@@ -816,13 +816,13 @@ export default function LeadDetailPage() {
             </div>
 
             <div className="rounded-2xl border p-4 md:p-5" style={{ background: "#080D1A", borderColor: "rgba(34,211,238,0.1)" }}>
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide" style={{ color: "#22D3EE" }}>L99 Decision Ops</p>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide" style={{ color: "#22D3EE" }}>Kde sú peniaze dnes</p>
               <div className="grid grid-cols-1 gap-2 mt-3">
                 {[
-                  { action: "score-lead" as const, label: "Score lead" },
-                  { action: "recompute-queue" as const, label: "Recompute queue" },
-                  { action: "closing-window" as const, label: "Closing window" },
-                  { action: "rescue-trigger" as const, label: "Rescue plan" },
+                  { action: "score-lead" as const, label: "Kto je pripravený kúpiť?" },
+                  { action: "recompute-queue" as const, label: "Komu volať ako prvému?" },
+                  { action: "closing-window" as const, label: "Kedy inkasujem províziu?" },
+                  { action: "rescue-trigger" as const, label: "Ako zachrániť províziu?" },
                 ].map(({ action, label }) => (
                 <button
                   key={action}
@@ -841,7 +841,7 @@ export default function LeadDetailPage() {
                   disabled={decisionBusy !== null}
                   className="rounded-lg border border-cyan-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-cyan-50 disabled:opacity-60"
                 >
-                  {decisionBusy === "micro-actions" ? "Plánujem micro-actions..." : "5) Schedule micro-actions"}
+                  {decisionBusy === "micro-actions" ? "Píšem dnešný plán…" : "Čo spraviť dnes?"}
                 </button>
               </div>
               <pre className="mt-3 max-h-52 overflow-auto rounded-lg border border-slate-200 bg-slate-950 p-3 text-[11px] text-cyan-200">
