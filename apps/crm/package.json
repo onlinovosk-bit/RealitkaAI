@@ -5,7 +5,7 @@
     "scripts": {
         "dev": "next dev --webpack",
         "dev:ws": "node server.mjs",
-        "build": "next build",
+        "build": "next build --webpack",
         "start": "next start",
         "start:ws": "node server.mjs",
         "lint": "eslint --quiet --rule \"react/no-unescaped-entities:0\" --rule \"react-hooks/set-state-in-effect:0\" --rule \"react-hooks/purity:0\" --rule \"react-hooks/immutability:0\" --rule \"@next/next/no-html-link-for-pages:0\" --rule \"no-var:0\"",
