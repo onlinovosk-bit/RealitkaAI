@@ -2,16 +2,71 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Flame,
+  Loader2,
+  MessageSquare,
+  Phone,
+  Sparkles,
+} from "lucide-react";
 import { PlaybookFilterToggle } from "@/ui/playbook/PlaybookFilterToggle";
 import { PlaybookSectionHeader } from "@/ui/playbook/PlaybookSectionHeader";
 import { PlaybookItemCard } from "@/ui/playbook/PlaybookItemCard";
 import { useEventStream } from "@/hooks/useEventStream";
 import type { PlaybookItemDto } from "@/services/playbook/types";
 import { AI_ASSISTANT_NAME } from "@/lib/ai-brand";
-import { RadiantSpriteIcon } from "@/components/shared/radiant-sprite-icon";
 import type { PlaybookItemType } from "@/ui/playbook/components.map";
 
 type SummarySegment = "ALL" | PlaybookItemType;
+
+const SECTION_CONFIG: Record<
+  PlaybookItemType,
+  {
+    label: string;
+    colorClass: string;
+    Icon: typeof Phone;
+  }
+> = {
+  CALL: {
+    label: "Hovory",
+    colorClass: "text-blue-700",
+    Icon: Phone,
+  },
+  OPPORTUNITY: {
+    label: "Na uzavretie",
+    colorClass: "text-emerald-700",
+    Icon: Flame,
+  },
+  MESSAGE: {
+    label: "Správy",
+    colorClass: "text-slate-700",
+    Icon: MessageSquare,
+  },
+  RISK: {
+    label: "Riziká",
+    colorClass: "text-red-600",
+    Icon: AlertTriangle,
+  },
+};
+
+function TypeSectionHeader({
+  type,
+  count,
+}: {
+  type: PlaybookItemType;
+  count: number;
+}) {
+  const { label, colorClass, Icon } = SECTION_CONFIG[type];
+
+  return (
+    <p className={`mt-4 flex items-center gap-2 text-xs font-bold uppercase tracking-widest ${colorClass}`}>
+      <Icon className="h-4 w-4" aria-hidden />
+      {label} ({count})
+    </p>
+  );
+}
 
 export default function PlaybookPage() {
   const router = useRouter();
@@ -182,17 +237,12 @@ export default function PlaybookPage() {
   };
 
   return (
-    <main className="flex h-full flex-col gap-4 p-3 md:gap-6 md:p-6" style={{ background: "#050914" }}>
+    <main className="flex h-full flex-col gap-4 bg-slate-50 p-3 text-slate-900 md:gap-6 md:p-6">
       {/* Header */}
       {toast && (
         <div
           role="status"
-          className="rounded-xl border px-4 py-3 text-sm"
-          style={{
-            background: "rgba(34,211,238,0.08)",
-            borderColor: "rgba(34,211,238,0.25)",
-            color: "#E0F2FE",
-          }}
+          className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-800 shadow-sm"
         >
           {toast}
         </div>
@@ -200,13 +250,15 @@ export default function PlaybookPage() {
 
       <header className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="flex items-start gap-3">
-          <RadiantSpriteIcon icon="playbook" sizeClassName="h-12 w-12" className="mt-0.5" />
+          <div className="mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-700 shadow-sm">
+            <Sparkles className="h-6 w-6" aria-hidden />
+          </div>
           <div>
-            <h1 className="text-2xl font-bold" style={{ color: "#F0F9FF" }}>
+            <h1 className="text-2xl font-bold text-slate-950">
               AI Plán krokov
             </h1>
-            <p className="mt-1 text-sm" style={{ color: "#64748B" }}>
-            Denný plán práce, zoradený podľa Indexu pripravenosti kupujúceho. Žiadny prehľad, len konkrétne kroky.
+            <p className="mt-1 max-w-2xl text-sm text-slate-600">
+              Denný plán práce, zoradený podľa Indexu pripravenosti kupujúceho. Žiadny prehľad, len konkrétne kroky.
             </p>
           </div>
         </div>
@@ -214,14 +266,12 @@ export default function PlaybookPage() {
           <div className="flex items-center gap-2">
             <span
               className="h-2 w-2 rounded-full"
-              style={{
-                background: connected ? "#22D3EE" : "#475569",
-                boxShadow: connected ? "0 0 6px #22D3EE" : "none",
-              }}
+              style={{ background: connected ? "#16A34A" : "#94A3B8" }}
             />
             <span
-              className="max-w-[220px] truncate text-xs"
-              style={{ color: connected ? "#22D3EE" : "#475569" }}
+              className={`max-w-[220px] truncate text-xs font-medium ${
+                connected ? "text-emerald-700" : "text-slate-500"
+              }`}
               title={
                 typeof lastLive?.type === "string" ? lastLive.type : undefined
               }
@@ -239,20 +289,17 @@ export default function PlaybookPage() {
 
       {/* Loading */}
       {loading && (
-        <div className="flex items-center gap-2 text-sm" style={{ color: "#475569" }}>
-          <span className="animate-spin">⏳</span>
-          Načítavam AI plán…
+        <div className="flex items-center gap-2 text-sm font-medium text-slate-500">
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+          Načítavam AI plán...
         </div>
       )}
 
       {/* Empty */}
       {!loading && items.length === 0 && (
-        <div
-          className="rounded-2xl border p-10 text-center"
-          style={{ background: "#0A1628", borderColor: "#112240" }}
-        >
-          <p className="text-3xl mb-2">✅</p>
-          <p className="text-sm" style={{ color: "#64748B" }}>
+        <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+          <CheckCircle2 className="mx-auto mb-3 h-8 w-8 text-emerald-600" aria-hidden />
+          <p className="text-sm text-slate-600">
             Všetky akcie sú splnené. Žiadne položky pre{" "}
             {filter === "TODAY" ? "dnešok" : "tento týždeň"}.
           </p>
@@ -264,18 +311,10 @@ export default function PlaybookPage() {
           {/* Hlavný stĺpec */}
           <section
             id="playbook-summary-top"
-            className="col-span-2 scroll-mt-28 rounded-2xl border p-5"
-            style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
+            className="col-span-2 scroll-mt-28 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
           >
             {hasMockItems && (
-              <div
-                className="mb-4 rounded-xl border px-3 py-2 text-xs"
-                style={{
-                  background: "rgba(250, 204, 21, 0.08)",
-                  borderColor: "rgba(250, 204, 21, 0.22)",
-                  color: "#FDE68A",
-                }}
-              >
+              <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
                 Zobrazené sú demo položky (označené značkou DEMO), kým nie sú dostupné živé dáta Indexu pripravenosti.
               </div>
             )}
@@ -285,17 +324,10 @@ export default function PlaybookPage() {
             />
 
             {summarySegment !== "ALL" && (
-              <div
-                className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2 text-xs"
-                style={{
-                  background: "rgba(34,211,238,0.06)",
-                  borderColor: "rgba(34,211,238,0.2)",
-                  color: "#94A3B8",
-                }}
-              >
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-slate-600">
                 <span>
                   Zobrazený segment:{" "}
-                  <span className="font-semibold text-cyan-200">
+                  <span className="font-semibold text-blue-700">
                     {summarySegment === "CALL" && "Hovory"}
                     {summarySegment === "OPPORTUNITY" && "Na uzavretie"}
                     {summarySegment === "MESSAGE" && "Správy"}
@@ -304,7 +336,7 @@ export default function PlaybookPage() {
                 </span>
                 <button
                   type="button"
-                  className="shrink-0 font-semibold text-cyan-400 hover:text-cyan-300"
+                  className="min-h-11 shrink-0 rounded-lg px-2 font-semibold text-blue-700 transition-colors hover:bg-blue-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
                   onClick={() => setSummarySegment("ALL")}
                 >
                   Zobraziť všetky segmenty
@@ -316,9 +348,7 @@ export default function PlaybookPage() {
               {/* Hovory */}
               {showCalls && callItems.length > 0 && (
                 <div id="playbook-calls" className="scroll-mt-28">
-                  <p className="text-[10px] font-bold uppercase tracking-widest mt-2" style={{ color: "#22D3EE" }}>
-                    📞 Hovory ({callItems.length})
-                  </p>
+                  <TypeSectionHeader type="CALL" count={callItems.length} />
                   {callItems.map((item) => (
                     <PlaybookItemCard
                       key={item.id}
@@ -333,9 +363,7 @@ export default function PlaybookPage() {
               {/* Príležitosti */}
               {showOpportunities && opportunityItems.length > 0 && (
                 <div id="playbook-opportunities" className="scroll-mt-28">
-                  <p className="text-[10px] font-bold uppercase tracking-widest mt-2" style={{ color: "#FCD34D" }}>
-                    🔥 Na uzavretie ({opportunityItems.length})
-                  </p>
+                  <TypeSectionHeader type="OPPORTUNITY" count={opportunityItems.length} />
                   {opportunityItems.map((item) => (
                     <PlaybookItemCard
                       key={item.id}
@@ -348,11 +376,9 @@ export default function PlaybookPage() {
               )}
 
               {/* Správy */}
-              {messageItems.length > 0 && (
-                <div id="playbook-messages">
-                  <p className="text-[10px] font-bold uppercase tracking-widest mt-2" style={{ color: "#818CF8" }}>
-                    💬 Správy ({messageItems.length})
-                  </p>
+              {showMessages && messageItems.length > 0 && (
+                <div id="playbook-messages" className="scroll-mt-28">
+                  <TypeSectionHeader type="MESSAGE" count={messageItems.length} />
                   {messageItems.map((item) => (
                     <PlaybookItemCard key={item.id} {...withDemoBadge(item)} onClick={() => navigateToLead(item.leadId)} />
                   ))}
@@ -362,9 +388,7 @@ export default function PlaybookPage() {
               {/* Riziká */}
               {showRisks && riskItems.length > 0 && (
                 <div id="playbook-risks" className="scroll-mt-28">
-                  <p className="text-[10px] font-bold uppercase tracking-widest mt-2" style={{ color: "#FCA5A5" }}>
-                    ⚠️ Riziká ({riskItems.length})
-                  </p>
+                  <TypeSectionHeader type="RISK" count={riskItems.length} />
                   {riskItems.map((item) => (
                     <PlaybookItemCard
                       key={item.id}
@@ -380,11 +404,8 @@ export default function PlaybookPage() {
 
           {/* Pravý stĺpec – summary */}
           <aside className="flex flex-col gap-4">
-            <div
-              className="rounded-2xl border p-5"
-              style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
-            >
-              <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: "#1D4ED8" }}>
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <p className="mb-4 text-xs font-bold uppercase tracking-widest text-blue-700">
                 Súhrn
               </p>
               <div className="space-y-3">
@@ -392,78 +413,72 @@ export default function PlaybookPage() {
                   {
                     label: "Hovory",
                     count: callItems.length,
-                    color: "#22D3EE",
+                    colorClass: "text-blue-700",
                     type: "CALL" as const,
                   },
                   {
                     label: "Na uzavretie",
                     count: opportunityItems.length,
-                    color: "#FCD34D",
+                    colorClass: "text-emerald-700",
                     type: "OPPORTUNITY" as const,
                   },
                   {
                     label: "Správy",
                     count: messageItems.length,
-                    color: "#818CF8",
+                    colorClass: "text-slate-700",
                     type: "MESSAGE" as const,
                   },
                   {
                     label: "Riziká",
                     count: riskItems.length,
-                    color: "#FCA5A5",
+                    colorClass: "text-red-600",
                     type: "RISK" as const,
                   },
-                ].map(({ label, count, color, type }) => (
+                ].map(({ label, count, colorClass, type }) => (
                   <button
                     key={label}
                     type="button"
                     disabled={count === 0}
                     onClick={() => handleSummaryRow(type, count)}
-                    className={`flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-white/5 disabled:cursor-default disabled:opacity-40 ${
-                      summarySegment === type ? "bg-white/10 ring-1 ring-cyan-500/30" : ""
+                    className={`flex min-h-11 w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left transition-colors hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:cursor-default disabled:opacity-40 ${
+                      summarySegment === type ? "bg-blue-50 ring-1 ring-blue-200" : ""
                     }`}
                   >
-                    <span className="text-sm" style={{ color: "#64748B" }}>
+                    <span className="text-sm text-slate-600">
                       {label}
                     </span>
-                    <span className="text-sm font-bold tabular-nums" style={{ color }}>
+                    <span className={`text-sm font-bold tabular-nums ${colorClass}`}>
                       {count}
                     </span>
                   </button>
                 ))}
                 <button
                   type="button"
-                  className={`mt-1 flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-white/5 ${
-                    summarySegment === "ALL" ? "bg-white/10 ring-1 ring-slate-500/25" : ""
+                  className={`mt-1 flex min-h-11 w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left transition-colors hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${
+                    summarySegment === "ALL" ? "bg-slate-100 ring-1 ring-slate-200" : ""
                   }`}
                   onClick={() => {
                     setSummarySegment("ALL");
                     window.setTimeout(() => scrollToTopOfPlan(), 50);
                   }}
                 >
-                  <span className="text-sm font-semibold" style={{ color: "#94A3B8" }}>
+                  <span className="text-sm font-semibold text-slate-700">
                     Celkom
                   </span>
-                  <span className="text-sm font-bold tabular-nums" style={{ color: "#F0F9FF" }}>
+                  <span className="text-sm font-bold tabular-nums text-slate-950">
                     {items.length}
                   </span>
                 </button>
               </div>
             </div>
 
-            <div
-              className="rounded-2xl border p-5"
-              style={{
-                background: "rgba(34,211,238,0.04)",
-                borderColor: "rgba(34,211,238,0.12)",
-              }}
-            >
-              <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#22D3EE" }}>
+            <div className="rounded-2xl border border-blue-100 bg-blue-50 p-5 shadow-sm">
+              <p className="mb-2 text-xs font-bold uppercase tracking-widest text-blue-700">
                 {AI_ASSISTANT_NAME} radí
               </p>
-              <p className="text-sm leading-relaxed" style={{ color: "#94A3B8" }}>
+              <p className="text-sm leading-relaxed text-slate-700">
                 Začni hovory so záujemcom s najvyšším IPK. Záujemca s IPK 80+ volaný v deň signálu má{" "}
-                <span className="font-semibold" style={{ color: "#22D3EE" }}>3× vyššiu</span> šancu na uzavretie
+                <span className="font-semibold text-blue-700">3× vyššiu</span> šancu na uzavretie
                 ako záujemca kontaktovaný po 5+ dňoch.
               </p>
             </div>

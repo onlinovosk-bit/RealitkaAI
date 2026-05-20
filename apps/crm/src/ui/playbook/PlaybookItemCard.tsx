@@ -1,15 +1,46 @@
 "use client";
 
+import { AlertTriangle, Flame, MessageSquare, Phone } from "lucide-react";
 import type { PlaybookItemProps, PlaybookItemType } from "./components.map";
 
 const TYPE_CONFIG: Record<
   PlaybookItemType,
-  { label: string; emoji: string; accent: string }
+  {
+    label: string;
+    Icon: typeof Phone;
+    accentClass: string;
+    badgeClass: string;
+    scoreClass: string;
+  }
 > = {
-  CALL:        { label: "Hovor",       emoji: "📞", accent: "#22D3EE" },
-  MESSAGE:     { label: "Správa",      emoji: "💬", accent: "#818CF8" },
-  RISK:        { label: "Riziko",      emoji: "⚠️", accent: "#FCA5A5" },
-  OPPORTUNITY: { label: "Príležitosť", emoji: "🔥", accent: "#FCD34D" },
+  CALL: {
+    label: "Hovor",
+    Icon: Phone,
+    accentClass: "text-blue-700",
+    badgeClass: "border-blue-100 bg-blue-50 text-blue-700",
+    scoreClass: "border-blue-200 bg-blue-50 text-blue-700",
+  },
+  MESSAGE: {
+    label: "Správa",
+    Icon: MessageSquare,
+    accentClass: "text-slate-700",
+    badgeClass: "border-slate-200 bg-slate-100 text-slate-700",
+    scoreClass: "border-slate-200 bg-slate-50 text-slate-700",
+  },
+  RISK: {
+    label: "Riziko",
+    Icon: AlertTriangle,
+    accentClass: "text-red-600",
+    badgeClass: "border-red-100 bg-red-50 text-red-700",
+    scoreClass: "border-red-200 bg-red-50 text-red-700",
+  },
+  OPPORTUNITY: {
+    label: "Príležitosť",
+    Icon: Flame,
+    accentClass: "text-emerald-700",
+    badgeClass: "border-emerald-100 bg-emerald-50 text-emerald-700",
+    scoreClass: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  },
 };
 
 export function PlaybookItemCard(props: PlaybookItemProps) {
@@ -27,30 +58,23 @@ export function PlaybookItemCard(props: PlaybookItemProps) {
   } = props;
 
   const cfg = TYPE_CONFIG[type];
+  const Icon = cfg.Icon;
 
   return (
     <article
-      className="flex flex-col gap-3 rounded-xl border p-4 transition-all active:scale-[0.99] sm:flex-row sm:items-start sm:justify-between sm:gap-4"
-      style={{
-        background: "#0A1628",
-        borderColor: "#112240",
-      }}
+      className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:border-blue-200 hover:shadow-md active:scale-[0.99] sm:flex-row sm:items-start sm:justify-between sm:gap-4"
     >
       <div className="flex flex-1 flex-col gap-1.5 min-w-0">
         {/* Type + badges */}
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-bold uppercase tracking-wider" style={{ color: cfg.accent }}>
-            {cfg.emoji} {cfg.label}
+          <span className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider ${cfg.accentClass}`}>
+            <Icon className="h-3.5 w-3.5" aria-hidden />
+            {cfg.label}
           </span>
           {badges?.map((b) => (
             <span
               key={b}
-              className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
-              style={{
-                background: "rgba(34,211,238,0.08)",
-                color: "#94A3B8",
-                border: "1px solid rgba(34,211,238,0.12)",
-              }}
+              className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${cfg.badgeClass}`}
             >
               {b}
             </span>
@@ -58,22 +82,22 @@ export function PlaybookItemCard(props: PlaybookItemProps) {
         </div>
 
         {/* Titles */}
-        <h3 className="text-sm font-semibold" style={{ color: "#F0F9FF" }}>
+        <h3 className="text-sm font-semibold text-slate-950">
           {title}
         </h3>
-        <p className="text-sm" style={{ color: "#64748B" }}>
+        <p className="text-sm text-slate-600">
           {subtitle}
         </p>
 
         {/* Property */}
         {propertyTitle && (
-          <p className="text-xs" style={{ color: "#475569" }}>
+          <p className="text-xs text-slate-500">
             {propertyTitle}
           </p>
         )}
 
         {/* Reason */}
-        <p className="text-xs" style={{ color: "#334155" }}>
+        <p className="text-xs text-slate-500">
           {reason}
         </p>
       </div>
@@ -82,15 +106,10 @@ export function PlaybookItemCard(props: PlaybookItemProps) {
       <div className="flex items-center justify-between gap-3 sm:flex-col sm:items-end sm:flex-shrink-0">
         {buyerScore !== undefined && (
           <div
-            className="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold"
-            style={{
-              background: "rgba(34,211,238,0.08)",
-              border: "1px solid rgba(34,211,238,0.20)",
-              color: "#22D3EE",
-            }}
+            className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold ${cfg.scoreClass}`}
           >
             {buyerScore}
-            <span className="font-normal text-[10px]" style={{ color: "#475569" }}>
+            <span className="text-[10px] font-normal text-slate-500">
               /100
             </span>
           </div>
@@ -102,13 +121,9 @@ export function PlaybookItemCard(props: PlaybookItemProps) {
             e.stopPropagation();
             onClick?.();
           }}
-          className="flex-1 sm:flex-none rounded-full px-4 py-2.5 text-sm font-bold transition-all hover:opacity-90 active:scale-95 disabled:cursor-wait disabled:opacity-70 min-h-[44px] sm:min-h-0 sm:py-1.5 sm:text-xs"
-          style={{
-            background: "linear-gradient(135deg, #22D3EE, #818CF8)",
-            color: "#050914",
-          }}
+          className="min-h-11 flex-1 cursor-pointer rounded-full bg-orange-500 px-4 py-2.5 text-sm font-bold text-white transition-all hover:bg-orange-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-600 active:scale-95 disabled:cursor-wait disabled:opacity-70 sm:min-h-0 sm:flex-none sm:py-1.5 sm:text-xs"
         >
-          {ctaLoading ? "…" : ctaLabel}
+          {ctaLoading ? "..." : ctaLabel}
         </button>
       </div>
     </article>
