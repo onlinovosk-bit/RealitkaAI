@@ -22,22 +22,23 @@ export function PushNotificationsToggle() {
       ? "Zapnuté"
       : "Vypnuté";
 
-  const statusColor = isSubscribed ? "#22C55E" : permission === "denied" ? "#EF4444" : "#475569";
+  const statusClass = isSubscribed
+    ? "text-emerald-700"
+    : permission === "denied"
+      ? "text-red-700"
+      : "text-slate-600";
 
   return (
-    <section
-      className="rounded-2xl border p-4 md:p-6"
-      style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
-    >
+    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-6">
       <div className="flex items-center justify-between gap-4">
         <div className="flex-1 min-w-0">
-          <h3 className="text-base font-bold" style={{ color: "#F0F9FF" }}>
+          <h3 className="text-base font-bold text-slate-950">
             Push notifikácie
           </h3>
-          <p className="mt-0.5 text-xs" style={{ color: "#64748B" }}>
+          <p className="mt-0.5 text-xs leading-5 text-slate-600">
             HOT leady, denný plán a dôležité upozornenia priamo na mobil.
           </p>
-          <p className="mt-1.5 text-xs font-medium" style={{ color: statusColor }}>
+          <p className={`mt-1.5 text-xs font-semibold ${statusClass}`}>
             {statusLabel}
           </p>
         </div>
@@ -47,27 +48,23 @@ export function PushNotificationsToggle() {
           disabled={permission === "denied"}
           onClick={() => void handleToggle()}
           aria-pressed={isSubscribed}
-          className="relative flex h-7 w-12 shrink-0 items-center rounded-full transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-40"
-          style={{
-            background: isSubscribed
-              ? "linear-gradient(135deg, #22D3EE, #0EA5E9)"
-              : "rgba(71,85,105,0.4)",
-            border: "1px solid rgba(34,211,238,0.15)",
-          }}
+          className={`relative flex h-7 w-12 shrink-0 items-center rounded-full border transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${
+            isSubscribed
+              ? "border-blue-600 bg-blue-600"
+              : "border-slate-300 bg-slate-200"
+          }`}
         >
           <span
-            className="h-5 w-5 rounded-full transition-transform duration-200"
+            className="h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200"
             style={{
-              background: "#F0F9FF",
               transform: isSubscribed ? "translateX(22px)" : "translateX(2px)",
-              boxShadow: "0 1px 4px rgba(0,0,0,0.4)",
             }}
           />
         </button>
       </div>
 
       {permission === "denied" && (
-        <p className="mt-3 text-xs" style={{ color: "#475569" }}>
+        <p className="mt-3 text-xs text-slate-600">
           Notifikácie sú zablokované. Povoľ ich v nastaveniach prehliadača.
         </p>
       )}
