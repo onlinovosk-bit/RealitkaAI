@@ -27,6 +27,10 @@ const FOUNDER_DEMO_PROGRAMS: Array<{ id: FounderDemoProgram; label: string }> = 
   { id: "protocol_authority", label: "Protocol Authority" },
 ];
 
+const RAIL_WIDTH_PX = 76;
+const SIDEBAR_WIDTH_PX = 300;
+const REVENUE_TOAST_ENABLED = process.env.NODE_ENV !== "production";
+
 const WORKDESK = {
   brand:       "#2563EB",
   brandDeep:   "#1D4ED8",
@@ -445,14 +449,16 @@ function RevenueToast({
 }) {
   return (
     <div
+      className="hidden lg:block"
       style={{
-        position:   "fixed",
-        bottom:     "24px",
-        right:      "24px",
-        zIndex:     9999,
-        transition: "opacity 0.35s ease, transform 0.35s ease",
-        opacity:    visible ? 1 : 0,
-        transform:  visible ? "translateY(0)" : "translateY(12px)",
+        position:      "fixed",
+        bottom:        "24px",
+        left:          `${RAIL_WIDTH_PX + SIDEBAR_WIDTH_PX + 24}px`,
+        right:         "auto",
+        zIndex:        35,
+        transition:    "opacity 0.35s ease, transform 0.35s ease",
+        opacity:       visible ? 1 : 0,
+        transform:     visible ? "translateY(0)" : "translateY(12px)",
         pointerEvents: visible ? "auto" : "none",
       }}
     >
@@ -528,7 +534,9 @@ export default function AppSidebar({
 }: AppSidebarProps) {
   const pathname = usePathname();
   const router   = useRouter();
+  const isProduction = process.env.NODE_ENV === "production";
   const isFounderDemo = appRole === "founder";
+  const showFounderDemo = isFounderDemo && !isProduction;
 
   const [mobileOpen,      setMobileOpen]      = useState(false);
   const [permissions,     setPermissions]     = useState<TeamMemberPermissions>(
@@ -544,15 +552,15 @@ export default function AppSidebar({
   // Vypočítaj variant
   const variant: MenuVariant = getMenuVariant(uiRole, isInTeam, appRole);
   const demoVariant          = getDemoVariant(demoProgram);
-  const renderVariant        = isFounderDemo ? demoVariant : variant;
+  const renderVariant        = showFounderDemo ? demoVariant : variant;
   const theme                = VARIANT_THEMES[renderVariant];
-  const planLabel            = isFounderDemo
+  const planLabel            = showFounderDemo
     ? FOUNDER_DEMO_PROGRAMS.find((p) => p.id === demoProgram)?.label ?? "Protocol Authority"
     : getPlanDisplayName(variant, accountTier);
 
   // Načítaj demo program z localStorage
   useEffect(() => {
-    if (!isFounderDemo || typeof window === "undefined") return;
+    if (!showFounderDemo || typeof window === "undefined") return;
     const stored = window.localStorage.getItem("founderDemoProgram");
     if (
       stored === "free" ||
@@ -563,7 +571,7 @@ export default function AppSidebar({
     ) {
       setDemoProgram(stored);
     }
-  }, [isFounderDemo]);
+  }, [showFounderDemo]);
 
   // Načítaj stav zbalených skupín z localStorage
   useEffect(() => {
@@ -579,8 +587,9 @@ export default function AppSidebar({
     }
   }, []);
 
-  // Toast — zobraz 3s po načítaní, zmizne po 4s
+  // Toast — len mimo produkcie; v main stĺpci, nie nad AI panelom vpravo
   useEffect(() => {
+    if (!REVENUE_TOAST_ENABLED) return;
     const showTimer = setTimeout(() => {
       setToastVisible(true);
       const hideTimer = setTimeout(() => {
@@ -653,10 +662,10 @@ export default function AppSidebar({
   }, []);
 
   // Nav položky filtrované podľa variantu + permissions
-  const navItems = filterItemsByDemoProgram(
-    getNavItems(renderVariant, permissions),
-    demoProgram
-  );
+  const baseNavItems = getNavItems(renderVariant, permissions);
+  const navItems = showFounderDemo
+    ? filterItemsByDemoProgram(baseNavItems, demoProgram)
+    : baseNavItems;
 
   // Zoskup do sekcií v správnom poradí
   const SECTION_ORDER: NavSection[] = ["main", "team", "tools", "settings"];
@@ -751,7 +760,7 @@ export default function AppSidebar({
           </span>
 
           {/* Gold Protocol badge */}
-          {demoProgram === "protocol_authority" && (
+          {showFounderDemo && demoProgram === "protocol_authority" && (
             <span
               className="rounded bg-orange-100 px-1.5 py-0.5 text-[9px] font-bold text-orange-700"
               style={{ letterSpacing: "0.06em" }}
@@ -760,7 +769,7 @@ export default function AppSidebar({
             </span>
           )}
 
-          {isFounderDemo && (
+          {showFounderDemo && (
             <span
               style={{
                 fontSize: "9px",
@@ -798,7 +807,7 @@ export default function AppSidebar({
           accentColor={theme.accentColor}
         />
 
-        {isFounderDemo && (
+        {showFounderDemo && (
           <div style={{ marginTop: "8px" }}>
             <p
               style={{
@@ -1021,17 +1030,28 @@ export default function AppSidebar({
 
   return (
     <>
+      {/* Rezervuje miesto v flex layoute; panel je fixed pri raili */}
+      <div
+        aria-hidden
+        className="hidden shrink-0 lg:block"
+        style={{
+          width:    `${SIDEBAR_WIDTH_PX}px`,
+          minWidth: `${SIDEBAR_WIDTH_PX}px`,
+        }}
+      />
+
       {/* ─── Desktop sidebar ─────────────────────────────────── */}
       <aside
         style={{
-          width:        "300px",
-          minWidth:     "300px",
-          height:       "100vh",
-          position:     "sticky",
-          top:          0,
-          flexShrink:   0,
-          display:      "flex",
-          flexDirection: "column",
+          width:           `${SIDEBAR_WIDTH_PX}px`,
+          height:          "100vh",
+          position:        "fixed",
+          left:            `${RAIL_WIDTH_PX}px`,
+          top:             0,
+          bottom:          0,
+          zIndex:          40,
+          display:         "flex",
+          flexDirection:   "column",
         }}
         className="hidden lg:flex"
       >
@@ -1141,11 +1161,13 @@ export default function AppSidebar({
         </div>
       )}
 
-      {/* ─── Revenue Toast notifikácia ────────────────────────── */}
-      <RevenueToast
-        visible={toastVisible}
-        onClose={() => setToastVisible(false)}
-      />
+      {/* ─── Revenue Toast notifikácia (dev/preview only) ─────── */}
+      {REVENUE_TOAST_ENABLED && (
+        <RevenueToast
+          visible={toastVisible}
+          onClose={() => setToastVisible(false)}
+        />
+      )}
     </>
   );
 }
