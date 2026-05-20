@@ -19,6 +19,7 @@ const PUBLIC_PATHS = new Set([
 ]);
 
 const CRON_PATH_PREFIX = "/api/agents";
+const CRON_API_PATH_PREFIX = "/api/cron/";
 const SCORING_CRON_PATHS = ["/api/scoring", "/api/segmentation"];
 const WEBHOOK_API_SEGMENT = "/api/webhooks";
 
@@ -44,6 +45,7 @@ function isPublic(pathname: string): boolean {
 
 function isCronRoute(pathname: string): boolean {
   if (pathname.startsWith(CRON_PATH_PREFIX)) return true;
+  if (pathname.startsWith(CRON_API_PATH_PREFIX)) return true;
   return SCORING_CRON_PATHS.some((p) => pathname.startsWith(p));
 }
 
