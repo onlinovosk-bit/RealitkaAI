@@ -21,11 +21,11 @@ type Team = {
 function getRoleBadge(role: string) {
   switch (role) {
     case "owner":
-      return "bg-purple-100 text-purple-700";
+      return "bg-blue-50 text-blue-700 ring-1 ring-blue-200";
     case "manager":
-      return "bg-blue-100 text-blue-700";
+      return "bg-slate-100 text-slate-700 ring-1 ring-slate-200";
     default:
-      return "bg-green-100 text-green-700";
+      return "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200";
   }
 }
 
@@ -88,15 +88,15 @@ export default function TeamUsersTable({
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-      <div className="border-b border-gray-200 px-5 py-4">
-        <h2 className="text-lg font-semibold text-gray-900">Používatelia</h2>
-        <p className="text-sm text-gray-500">Zoznam agentov, manažérov a ownerov.</p>
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-blue-950/5">
+      <div className="border-b border-slate-200 px-5 py-4">
+        <h2 className="text-lg font-semibold text-slate-950">Používatelia</h2>
+        <p className="text-sm text-slate-500">Zoznam agentov, manažérov a ownerov.</p>
       </div>
 
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
-          <thead className="bg-gray-50 text-left text-gray-500">
+          <thead className="bg-slate-50 text-left text-slate-500">
             <tr>
               <th className="px-5 py-3 font-medium">Meno</th>
               <th className="px-5 py-3 font-medium">Email</th>
@@ -108,41 +108,41 @@ export default function TeamUsersTable({
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-slate-100">
             {profiles.map((profile) => {
               const team = teams.find((item) => item.id === profile.teamId);
 
               return (
-                <tr key={profile.id} className="hover:bg-gray-50">
-                  <td className="px-5 py-4 font-medium text-gray-900">
+                <tr key={profile.id} className="transition-colors hover:bg-blue-50/50">
+                  <td className="px-5 py-4 font-medium text-slate-950">
                     {editingId === profile.id ? (
                       <input
                         value={form.fullName}
                         onChange={(e) => setForm((current) => ({ ...current, fullName: e.target.value }))}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                       />
                     ) : (
                       profile.fullName
                     )}
                   </td>
-                  <td className="px-5 py-4 text-gray-700">
+                  <td className="px-5 py-4 text-slate-700">
                     {editingId === profile.id ? (
                       <input
                         type="email"
                         value={form.email}
                         onChange={(e) => setForm((current) => ({ ...current, email: e.target.value }))}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                       />
                     ) : (
                       profile.email
                     )}
                   </td>
-                  <td className="px-5 py-4 text-gray-700">
+                  <td className="px-5 py-4 text-slate-700">
                     {editingId === profile.id ? (
                       <input
                         value={form.phone}
                         onChange={(e) => setForm((current) => ({ ...current, phone: e.target.value }))}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                       />
                     ) : (
                       profile.phone
@@ -153,7 +153,7 @@ export default function TeamUsersTable({
                       <select
                         value={form.role}
                         onChange={(e) => setForm((current) => ({ ...current, role: e.target.value }))}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                       >
                         <option value="agent">agent</option>
                         <option value="manager">manager</option>
@@ -165,12 +165,12 @@ export default function TeamUsersTable({
                       </span>
                     )}
                   </td>
-                  <td className="px-5 py-4 text-gray-700">
+                  <td className="px-5 py-4 text-slate-700">
                     {editingId === profile.id ? (
                       <select
                         value={form.teamId}
                         onChange={(e) => setForm((current) => ({ ...current, teamId: e.target.value }))}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                       >
                         <option value="">Bez tímu</option>
                         {teams.map((item) => (
@@ -185,17 +185,17 @@ export default function TeamUsersTable({
                   </td>
                   <td className="px-5 py-4">
                     {editingId === profile.id ? (
-                      <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                      <label className="inline-flex items-center gap-2 text-sm text-slate-700">
                         <input
                           type="checkbox"
                           checked={form.isActive}
                           onChange={(e) => setForm((current) => ({ ...current, isActive: e.target.checked }))}
-                          className="h-4 w-4 rounded border-gray-300"
+                          className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                         />
                         Aktívny
                       </label>
                     ) : (
-                      <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
+                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${profile.isActive ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200" : "bg-amber-50 text-amber-700 ring-1 ring-amber-200"}`}>
                         {profile.isActive ? "Aktívny" : "Neaktívny"}
                       </span>
                     )}
@@ -217,14 +217,14 @@ export default function TeamUsersTable({
                                 isActive: form.isActive,
                               })
                             }
-                            className="rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white hover:bg-gray-800 disabled:opacity-60"
+                            className="min-h-11 rounded-lg bg-orange-500 px-3 py-2 text-xs font-semibold text-white shadow-sm shadow-orange-500/20 transition-colors hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 disabled:opacity-60 sm:min-h-0"
                           >
                             Uložiť
                           </button>
                           <button
                             type="button"
                             onClick={() => setEditingId(null)}
-                            className="rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                            className="min-h-11 rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 sm:min-h-0"
                           >
                             Zrušiť
                           </button>
@@ -234,7 +234,7 @@ export default function TeamUsersTable({
                           <button
                             type="button"
                             onClick={() => openEdit(profile)}
-                            className="rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                            className="min-h-11 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 sm:min-h-0"
                           >
                             Upraviť
                           </button>
@@ -244,7 +244,7 @@ export default function TeamUsersTable({
                             onClick={() =>
                               void submitPatch(profile.id, { isActive: !profile.isActive })
                             }
-                            className="rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                            className="min-h-11 rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-60 sm:min-h-0"
                           >
                             {profile.isActive ? "Deaktivovať" : "Aktivovať"}
                           </button>

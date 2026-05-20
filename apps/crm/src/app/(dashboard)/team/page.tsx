@@ -148,24 +148,24 @@ export default async function TeamPage({
       <FeatureGateBanner description="Team management je aktivovaný v tvojom pláne." title="Team management je aktívny" />
 
       <section className="mt-6 mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Viditeľní používatelia</p>
-          <h2 className="mt-2 text-3xl font-bold text-gray-900">{totalUsers}</h2>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-blue-950/5">
+          <p className="text-sm text-slate-500">Viditeľní používatelia</p>
+          <h2 className="mt-2 text-3xl font-bold text-slate-950">{totalUsers}</h2>
         </div>
 
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Viditeľné tímy</p>
-          <h2 className="mt-2 text-3xl font-bold text-gray-900">{totalTeams}</h2>
+        <div className="rounded-2xl border border-blue-100 bg-blue-50 p-5 shadow-sm shadow-blue-950/5">
+          <p className="text-sm text-blue-700">Viditeľné tímy</p>
+          <h2 className="mt-2 text-3xl font-bold text-blue-800">{totalTeams}</h2>
         </div>
 
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Viditeľné príležitosti</p>
-          <h2 className="mt-2 text-3xl font-bold text-gray-900">{totalLeads}</h2>
+        <div className="rounded-2xl border border-amber-100 bg-amber-50 p-5 shadow-sm shadow-amber-950/5">
+          <p className="text-sm text-amber-700">Viditeľné príležitosti</p>
+          <h2 className="mt-2 text-3xl font-bold text-amber-800">{totalLeads}</h2>
         </div>
 
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Priradené príležitosti</p>
-          <h2 className="mt-2 text-3xl font-bold text-gray-900">{assignedLeads}</h2>
+        <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-5 shadow-sm shadow-emerald-950/5">
+          <p className="text-sm text-emerald-700">Priradené príležitosti</p>
+          <h2 className="mt-2 text-3xl font-bold text-emerald-800">{assignedLeads}</h2>
         </div>
 
         <TeamVisibilityBanner

@@ -35,9 +35,9 @@ function MetricBox({
   value: string;
 }) {
   return (
-    <div className="rounded-2xl border border-white/5 bg-white/[0.03] p-4">
-      <div className="mb-1 flex justify-center text-yellow-500">{icon}</div>
-      <div className="text-xs font-black italic">{value}</div>
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-blue-950/5">
+      <div className="mb-1 flex justify-center text-blue-700">{icon}</div>
+      <div className="text-xs font-black italic text-slate-950">{value}</div>
       <div className="text-[8px] uppercase tracking-widest text-slate-500">{label}</div>
     </div>
   );
@@ -74,23 +74,23 @@ export default async function PublicBrokerProfilePage({
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(profileUrl)}`;
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-[#010103] p-4 text-white">
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-yellow-600/10 to-transparent" />
+    <div className="relative flex min-h-screen items-center justify-center bg-slate-50 p-4 text-slate-950">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(37,99,235,0.12),_transparent_34%),linear-gradient(180deg,_#f8fafc_0%,_#eff6ff_100%)]" />
 
-      <div className="w-full max-w-md rounded-[3rem] bg-gradient-to-br from-yellow-500 via-yellow-200 to-yellow-700 p-[2px] shadow-[0_0_80px_rgba(234,179,8,0.2)]">
-        <div className="relative overflow-hidden rounded-[3rem] bg-[#0a0a0b] p-8 text-center backdrop-blur-3xl">
+      <div className="w-full max-w-md rounded-[3rem] bg-gradient-to-br from-blue-700 via-orange-400 to-blue-800 p-[2px] shadow-2xl shadow-blue-950/15">
+        <div className="relative overflow-hidden rounded-[3rem] bg-white p-8 text-center">
           <div className="mb-6 flex justify-center">
             <div className="relative">
-              <div className="absolute inset-0 rounded-full bg-yellow-400/20 blur-xl" />
-              <ShieldCheck size={64} className="relative z-10 text-yellow-500" />
+              <div className="absolute inset-0 rounded-full bg-blue-400/20 blur-xl" />
+              <ShieldCheck size={64} className="relative z-10 text-blue-700" />
             </div>
           </div>
 
-          <h1 className="mb-1 text-2xl font-black italic tracking-tighter">CERTIFIED BY REVOLIS.AI</h1>
-          <p className="mb-2 text-sm font-bold text-white">
+          <h1 className="mb-1 text-2xl font-black italic tracking-tighter text-slate-950">CERTIFIED BY REVOLIS.AI</h1>
+          <p className="mb-2 text-sm font-bold text-slate-900">
             {broker.display_name || broker.slug}
           </p>
-          <p className="mb-8 text-[10px] font-bold uppercase tracking-[0.4em] text-yellow-500/60">
+          <p className="mb-8 text-[10px] font-bold uppercase tracking-[0.4em] text-blue-700">
             Verified Reputation Protocol
           </p>
 
@@ -101,13 +101,13 @@ export default async function PublicBrokerProfilePage({
             <MetricBox icon={<ShieldCheck size={16} />} label="Trust Score" value={trustScore} />
           </div>
 
-          <div className="rounded-2xl border border-white/5 bg-white/5 p-6">
+          <div className="rounded-2xl border border-orange-100 bg-orange-50 p-6">
             <img
               src={qrUrl}
               alt="QR"
-              className="mx-auto mb-4 rounded-lg grayscale transition-all hover:grayscale-0"
+              className="mx-auto mb-4 rounded-lg ring-1 ring-orange-200 transition-all hover:ring-orange-400"
             />
-            <p className="text-[9px] font-black uppercase text-slate-500">Scan to verify credentials</p>
+            <p className="text-[9px] font-black uppercase text-orange-700">Scan to verify credentials</p>
           </div>
         </div>
       </div>

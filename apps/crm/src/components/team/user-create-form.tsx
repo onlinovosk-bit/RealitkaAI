@@ -83,55 +83,55 @@ export default function UserCreateForm({
   }
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-      <h2 className="text-lg font-semibold text-gray-900">Pridať používateľa</h2>
-      <p className="mt-1 text-sm text-gray-500">
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-blue-950/5">
+      <h2 className="text-lg font-semibold text-slate-950">Pridať používateľa</h2>
+      <p className="mt-1 text-sm text-slate-500">
         Vytvor nového agenta, manažéra alebo ownera.
       </p>
 
       {message && (
-        <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
+        <div className="mt-4 rounded-lg border border-blue-100 bg-blue-50 p-3 text-sm text-blue-700">
           {message}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="mt-4 grid grid-cols-1 gap-4">
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">Meno</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700">Meno</label>
           <input
             required
             value={form.fullName}
             onChange={(e) => updateField("fullName", e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
           />
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">Email</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700">Email</label>
           <input
             required
             type="email"
             value={form.email}
             onChange={(e) => updateField("email", e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
           />
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">Telefón</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700">Telefón</label>
           <input
             value={form.phone}
             onChange={(e) => updateField("phone", e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
           />
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">Rola</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700">Rola</label>
           <select
             value={form.role}
             onChange={(e) => updateField("role", e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
           >
             <option value="agent">Agent</option>
             <option value="manager">Manager</option>
@@ -140,11 +140,11 @@ export default function UserCreateForm({
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">Tím</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700">Tím</label>
           <select
             value={form.teamId}
             onChange={(e) => updateField("teamId", e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
           >
             {teams.map((team) => (
               <option key={team.id} value={team.id}>
@@ -157,7 +157,7 @@ export default function UserCreateForm({
         <button
           type="submit"
           disabled={isSaving}
-          className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-60"
+          className="min-h-11 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-orange-500/20 transition-colors hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 disabled:opacity-60"
         >
           {isSaving ? "Ukladám..." : "Vytvoriť používateľa"}
         </button>

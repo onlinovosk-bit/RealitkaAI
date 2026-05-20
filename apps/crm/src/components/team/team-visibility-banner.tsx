@@ -13,9 +13,9 @@ export default function TeamVisibilityBanner({
       : `Vidíš len svoje dáta${teamName ? ` (${teamName})` : ""}`;
 
   return (
-    <div className="rounded-2xl border border-blue-100 bg-blue-50 p-5 shadow-sm">
-      <p className="text-sm text-blue-600">Viditeľnosť</p>
-      <h2 className="mt-1 text-sm font-semibold text-blue-900">{label}</h2>
+    <div className="rounded-2xl border border-blue-100 bg-blue-50 p-5 shadow-sm shadow-blue-950/5">
+      <p className="text-sm font-medium text-blue-700">Viditeľnosť</p>
+      <h2 className="mt-1 text-sm font-semibold text-blue-950">{label}</h2>
     </div>
   );
 }

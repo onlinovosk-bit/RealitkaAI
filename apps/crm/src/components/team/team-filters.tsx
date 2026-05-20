@@ -25,12 +25,12 @@ export default function TeamFilters({
   }
 
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-      <label className="text-sm font-medium text-gray-700">Filtrovať podľa tímu:</label>
+    <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-blue-950/5 sm:flex-row sm:items-center">
+      <label className="text-sm font-medium text-slate-700">Filtrovať podľa tímu:</label>
       <select
         value={selectedTeamId}
         onChange={handleChange}
-        className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
+        className="min-h-11 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-950 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:min-h-0 sm:py-1.5"
       >
         <option value="">Všetky tímy</option>
         {visibleTeams.map((team) => (

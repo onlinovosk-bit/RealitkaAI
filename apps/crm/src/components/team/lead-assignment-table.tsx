@@ -53,14 +53,14 @@ export default function LeadAssignmentTable({
   }
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
-      <div className="border-b border-gray-100 px-5 py-4">
-        <h2 className="text-lg font-semibold text-gray-900">Priraďovanie leadov</h2>
-        {message && <p className="mt-1 text-sm text-gray-600">{message}</p>}
+    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-blue-950/5">
+      <div className="border-b border-slate-100 px-5 py-4">
+        <h2 className="text-lg font-semibold text-slate-950">Priraďovanie leadov</h2>
+        {message && <p className="mt-1 text-sm text-blue-700">{message}</p>}
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-left text-xs font-medium uppercase text-gray-500">
+          <thead className="bg-slate-50 text-left text-xs font-medium uppercase text-slate-500">
             <tr>
               <th className="px-5 py-3">Lead</th>
               <th className="px-5 py-3">Lokalita</th>
@@ -69,20 +69,20 @@ export default function LeadAssignmentTable({
               {canAssign && <th className="px-5 py-3">Priradiť</th>}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-slate-100">
             {leads.map((lead) => (
-              <tr key={lead.id} className="hover:bg-gray-50">
-                <td className="px-5 py-3 font-medium text-gray-900">{lead.name}</td>
-                <td className="px-5 py-3 text-gray-600">{lead.location ?? "—"}</td>
-                <td className="px-5 py-3 text-gray-600">{lead.status ?? "—"}</td>
-                <td className="px-5 py-3 text-gray-600">{lead.assignedAgent}</td>
+              <tr key={lead.id} className="transition-colors hover:bg-blue-50/50">
+                <td className="px-5 py-3 font-medium text-slate-950">{lead.name}</td>
+                <td className="px-5 py-3 text-slate-600">{lead.location ?? "—"}</td>
+                <td className="px-5 py-3 text-slate-600">{lead.status ?? "—"}</td>
+                <td className="px-5 py-3 text-slate-600">{lead.assignedAgent}</td>
                 {canAssign && (
                   <td className="px-5 py-3">
                     <select
                       defaultValue={lead.assignedProfileId ?? ""}
                       disabled={busy === lead.id}
                       onChange={(e) => handleAssign(lead.id, e.target.value)}
-                      className="rounded-lg border border-gray-300 px-2 py-1 text-sm"
+                      className="min-h-11 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-950 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 sm:min-h-0 sm:py-1"
                     >
                       <option value="">— Vyber agenta —</option>
                       {assignableProfiles.map((p) => (
@@ -98,7 +98,7 @@ export default function LeadAssignmentTable({
           </tbody>
         </table>
         {leads.length === 0 && (
-          <p className="px-5 py-8 text-center text-sm text-gray-500">
+          <p className="px-5 py-8 text-center text-sm text-slate-500">
             Žiadne leady nie sú k dispozícii.
           </p>
         )}

@@ -40,15 +40,15 @@ export default function TeamsTable({ teams }: { teams: Team[] }) {
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-      <div className="border-b border-gray-200 px-5 py-4">
-        <h2 className="text-lg font-semibold text-gray-900">Tímy</h2>
-        <p className="text-sm text-gray-500">Prehľad organizačných jednotiek.</p>
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-blue-950/5">
+      <div className="border-b border-slate-200 px-5 py-4">
+        <h2 className="text-lg font-semibold text-slate-950">Tímy</h2>
+        <p className="text-sm text-slate-500">Prehľad organizačných jednotiek.</p>
       </div>
 
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
-          <thead className="bg-gray-50 text-left text-gray-500">
+          <thead className="bg-slate-50 text-left text-slate-500">
             <tr>
               <th className="px-5 py-3 font-medium">Názov tímu</th>
               <th className="px-5 py-3 font-medium">Stav</th>
@@ -56,22 +56,22 @@ export default function TeamsTable({ teams }: { teams: Team[] }) {
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-slate-100">
             {teams.map((team) => (
-              <tr key={team.id} className="hover:bg-gray-50">
-                <td className="px-5 py-4 font-medium text-gray-900">
+              <tr key={team.id} className="transition-colors hover:bg-blue-50/50">
+                <td className="px-5 py-4 font-medium text-slate-950">
                   {editingId === team.id ? (
                     <input
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                     />
                   ) : (
                     team.name
                   )}
                 </td>
                 <td className="px-5 py-4">
-                  <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
+                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${team.isActive ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200" : "bg-amber-50 text-amber-700 ring-1 ring-amber-200"}`}>
                     {team.isActive ? "Aktívny" : "Neaktívny"}
                   </span>
                 </td>
@@ -83,7 +83,7 @@ export default function TeamsTable({ teams }: { teams: Team[] }) {
                           type="button"
                           disabled={isSaving || !name.trim()}
                           onClick={() => void submitPatch(team.id, { name: name.trim() })}
-                          className="rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white hover:bg-gray-800 disabled:opacity-60"
+                          className="min-h-11 rounded-lg bg-orange-500 px-3 py-2 text-xs font-semibold text-white shadow-sm shadow-orange-500/20 transition-colors hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 disabled:opacity-60 sm:min-h-0"
                         >
                           Uložiť
                         </button>
@@ -93,7 +93,7 @@ export default function TeamsTable({ teams }: { teams: Team[] }) {
                             setEditingId(null);
                             setName("");
                           }}
-                          className="rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                          className="min-h-11 rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 sm:min-h-0"
                         >
                           Zrušiť
                         </button>
@@ -106,7 +106,7 @@ export default function TeamsTable({ teams }: { teams: Team[] }) {
                             setEditingId(team.id);
                             setName(team.name);
                           }}
-                          className="rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                          className="min-h-11 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 sm:min-h-0"
                         >
                           Upraviť
                         </button>
@@ -114,7 +114,7 @@ export default function TeamsTable({ teams }: { teams: Team[] }) {
                           type="button"
                           disabled={isSaving}
                           onClick={() => void submitPatch(team.id, { isActive: !team.isActive })}
-                          className="rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                          className="min-h-11 rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-60 sm:min-h-0"
                         >
                           {team.isActive ? "Deaktivovať" : "Aktivovať"}
                         </button>
