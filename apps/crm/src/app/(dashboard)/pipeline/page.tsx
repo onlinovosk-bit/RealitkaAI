@@ -1,23 +1,23 @@
 import PipelineBoard from "@/components/pipeline/pipeline-board";
+import ModuleShell from "@/components/shared/module-shell";
 import { listLeads } from "@/lib/leads-store";
 
 function StatCard({
   title,
   value,
   subtitle,
+  valueClass,
 }: {
   title: string;
   value: string | number;
   subtitle: string;
+  valueClass: string;
 }) {
   return (
-    <div
-      className="rounded-2xl border p-5"
-      style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
-    >
-      <p className="text-sm" style={{ color: "#64748B" }}>{title}</p>
-      <h2 className="mt-2 text-3xl font-bold" style={{ color: "#F0F9FF" }}>{value}</h2>
-      <p className="mt-2 text-sm" style={{ color: "#64748B" }}>{subtitle}</p>
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
+      <p className="text-xs font-medium text-slate-500">{title}</p>
+      <h2 className={`mt-1 text-2xl font-bold tabular-nums md:text-3xl ${valueClass}`}>{value}</h2>
+      <p className="mt-1 text-[11px] text-slate-500">{subtitle}</p>
     </div>
   );
 }
@@ -32,43 +32,44 @@ export default async function PipelinePage() {
   const offerCount = leads.filter((lead) => lead.status === "Ponuka").length;
 
   return (
-    <main className="p-6" style={{ background: "#050914", minHeight: "100vh" }}>
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold" style={{ color: "#F0F9FF" }}>Fázy príležitostí</h1>
-        <p className="mt-1" style={{ color: "#64748B" }}>
-          Kartový prehľad s AI odporúčaniami, bočným detailom a históriou presunov.
-        </p>
-      </div>
-
-      <section className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+    <ModuleShell
+      title="Fázy príležitostí"
+      description="Kartový prehľad s AI odporúčaniami, bočným detailom a históriou presunov."
+    >
+      <section className="mb-6 grid grid-cols-2 gap-2 md:gap-4 xl:grid-cols-5">
         <StatCard
           title="Nové"
           value={newCount}
-          subtitle="Čakajú na prvý kontakt"
+          subtitle="Komu volať ako prvému?"
+          valueClass="text-blue-700"
         />
         <StatCard
           title="Teplé"
           value={warmCount}
           subtitle="Vyžadujú follow-up"
+          valueClass="text-amber-600"
         />
         <StatCard
           title="Horúce"
           value={hotCount}
           subtitle="Najvyššia priorita"
+          valueClass="text-red-600"
         />
         <StatCard
           title="Obhliadky"
           value={showingCount}
-          subtitle="Naplánované stretnutia"
+          subtitle="Najbližší krok k provízii"
+          valueClass="text-emerald-700"
         />
         <StatCard
           title="Ponuky"
           value={offerCount}
-          subtitle="Príležitosť je vo finálnej fáze"
+          subtitle="Kedy inkasujem províziu?"
+          valueClass="text-orange-600"
         />
       </section>
 
       <PipelineBoard initialLeads={leads} />
-    </main>
+    </ModuleShell>
   );
 }

@@ -46,13 +46,10 @@ export default function AgentStats({ leads }: AgentStatsProps) {
     .sort((a, b) => b.total - a.total);
 
   return (
-    <div
-      className="rounded-2xl border p-5"
-      style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
-    >
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="mb-4">
-        <h2 className="text-lg font-semibold" style={{ color: "#F0F9FF" }}>Počítadlá podľa maklérov</h2>
-        <p className="text-sm" style={{ color: "#64748B" }}>
+        <h2 className="text-lg font-semibold text-slate-950">Počítadlá podľa maklérov</h2>
+        <p className="text-sm text-slate-500">
           Výkonnosť, počet príležitostí a kvalita portfólia.
         </p>
       </div>
@@ -61,32 +58,22 @@ export default function AgentStats({ leads }: AgentStatsProps) {
         {grouped.map((agent) => (
           <div
             key={agent.name}
-            className="rounded-xl border p-4"
-            style={{ background: "#0A1628", borderColor: "#112240" }}
+            className="rounded-xl border border-slate-100 bg-slate-50 p-4"
           >
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
-                <h3 className="font-medium" style={{ color: "#F0F9FF" }}>{agent.name}</h3>
-                <p className="text-sm" style={{ color: "#64748B" }}>{agent.total} príležitostí celkom</p>
+                <h3 className="font-medium text-slate-950">{agent.name}</h3>
+                <p className="text-sm text-slate-500">{agent.total} príležitostí celkom</p>
               </div>
 
               <div className="flex flex-wrap gap-2">
-                <span
-                  className="rounded-full px-3 py-1 text-xs font-semibold"
-                  style={{ background: "rgba(34,211,238,0.10)", color: "#22D3EE" }}
-                >
+                <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 ring-1 ring-red-200">
                   Horúce: {agent.hot}
                 </span>
-                <span
-                  className="rounded-full px-3 py-1 text-xs font-semibold"
-                  style={{ background: "rgba(99,102,241,0.12)", color: "#A5B4FC" }}
-                >
+                <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
                   Obhliadky: {agent.showings}
                 </span>
-                <span
-                  className="rounded-full px-3 py-1 text-xs font-semibold"
-                  style={{ background: "rgba(52,211,153,0.12)", color: "#34D399" }}
-                >
+                <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 ring-1 ring-blue-200">
                   Priem. score: {agent.avgScore}
                 </span>
               </div>
@@ -95,10 +82,7 @@ export default function AgentStats({ leads }: AgentStatsProps) {
         ))}
 
         {grouped.length === 0 && (
-          <div
-            className="rounded-xl border border-dashed p-4 text-sm"
-            style={{ borderColor: "#0F1F3D", color: "#475569" }}
-          >
+          <div className="rounded-xl border border-dashed border-slate-200 p-4 text-sm text-slate-500">
             Zatiaľ nie sú dostupné žiadne údaje o makléroch.
           </div>
         )}
