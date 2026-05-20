@@ -14,7 +14,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     .maybeSingle();
 
   return (
-    <div style={{ display: "flex", flex: 1, minHeight: 0, width: "100%", overflow: "hidden" }}>
+    <div className="workdesk-shell">
       <AppSidebar
         uiRole={profile?.ui_role ?? "agent"}
         accountTier={profile?.account_tier ?? "free"}
@@ -23,16 +23,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         agencyName={profile?.agency_name ?? undefined}
         userName={profile?.full_name ?? undefined}
       />
-      <main
-        style={{
-          flex: 1,
-          minWidth: 0,
-          overflowY: "auto",
-          background: "linear-gradient(180deg, var(--brand-bg), #fff)",
-        }}
-      >
-        {children}
-      </main>
+      <div className="workdesk-content">{children}</div>
     </div>
   );
 }

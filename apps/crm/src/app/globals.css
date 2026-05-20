@@ -22,6 +22,8 @@
     --hero-gradient: linear-gradient(120deg, #172554 0%, #1e40af 38%, #2563eb 72%, #1e3a8a 100%);
     --shadow-rail: rgba(37, 99, 235, 0.18);
     --shadow-topbar: rgba(37, 99, 235, 0.25);
+    --shell-rail: 76px;
+    --shell-sidebar: 300px;
 
     /* Deprecated Purple v2 aliases kept for PR #15 compatibility. */
     --purple: var(--brand);
@@ -49,6 +51,21 @@
 main {
   background: linear-gradient(180deg, var(--brand-bg), #fff) !important;
   color: var(--deep) !important;
+}
+
+.workdesk-shell {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+.workdesk-content {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
 }
 
 .sidebar-container, .nav-wrapper, #old-menu {
