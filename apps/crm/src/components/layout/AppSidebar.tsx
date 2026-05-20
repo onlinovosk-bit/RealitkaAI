@@ -13,6 +13,7 @@ import {
   type MenuVariant,
   type NavItem,
   type NavSection,
+  type BadgeVariant,
   type TeamMemberPermissions,
 } from "@/types/navigation";
 
@@ -25,6 +26,29 @@ const FOUNDER_DEMO_PROGRAMS: Array<{ id: FounderDemoProgram; label: string }> = 
   { id: "market_vision",      label: "Market Vision"      },
   { id: "protocol_authority", label: "Protocol Authority" },
 ];
+
+const WORKDESK = {
+  brand:       "#2563EB",
+  brandDeep:   "#1D4ED8",
+  brandSoft:   "#EFF6FF",
+  brandBorder: "#BFDBFE",
+  text:        "#1E293B",
+  muted:       "#64748B",
+  line:        "#E2E8F0",
+  cta:         "#F97316",
+  green:       "#047857",
+  red:         "#BE123C",
+};
+
+const SLATE_BADGE_COLORS: Record<BadgeVariant, { bg: string; color: string; border: string }> = {
+  hot:      { bg: "#FEE2E2", color: WORKDESK.red,       border: "#FECACA" },
+  new:      { bg: WORKDESK.brandSoft, color: WORKDESK.brandDeep, border: WORKDESK.brandBorder },
+  live:     { bg: "#FEE2E2", color: WORKDESK.red,       border: "#FECACA" },
+  pro:      { bg: "#FFEDD5", color: "#C2410C",          border: "#FED7AA" },
+  owner:    { bg: WORKDESK.brandSoft, color: WORKDESK.brandDeep, border: WORKDESK.brandBorder },
+  team:     { bg: "#FEF3C7", color: "#92400E",          border: "#FDE68A" },
+  protocol: { bg: WORKDESK.brandSoft, color: WORKDESK.brandDeep, border: WORKDESK.brandBorder },
+};
 
 function getDemoVariant(program: FounderDemoProgram): MenuVariant {
   switch (program) {
@@ -131,8 +155,9 @@ function NavItemRow({
   const [hovered, setHovered] = useState(false);
 
   const badgeStyle = item.badge
-    ? theme.badgeColors[item.badge.variant]
+    ? SLATE_BADGE_COLORS[item.badge.variant]
     : null;
+  const accentColor = theme.accentColor === "#F59E0B" ? WORKDESK.cta : WORKDESK.brand;
 
   const velocity  = getVelocityArrow(item.id);
   const shortcut  = KB_SHORTCUTS[item.id];
@@ -146,14 +171,14 @@ function NavItemRow({
         alignItems:      "flex-start",
         gap:             "10px",
         padding:         "10px 12px",
-        borderRadius:    "8px",
-        background:      isActive ? theme.accentBg : "transparent",
+        borderRadius:    "14px",
+        background:      isActive ? WORKDESK.brandSoft : "transparent",
         textDecoration:  "none",
         borderLeft:      isActive
-          ? `2px solid ${theme.accentBorder}`
+          ? `2px solid ${accentColor}`
           : "2px solid transparent",
         marginLeft:      "-2px",
-        transition:      "background 0.12s ease, border-color 0.12s ease",
+        transition:      "background 0.2s ease, border-color 0.2s ease",
         cursor:          "pointer",
         position:        "relative",
       }}
@@ -161,7 +186,7 @@ function NavItemRow({
         setHovered(true);
         if (!isActive) {
           (e.currentTarget as HTMLElement).style.background =
-            "rgba(34,211,238,0.10)";
+            "rgba(239,246,255,0.95)";
         }
       }}
       onMouseLeave={(e) => {
@@ -178,17 +203,17 @@ function NavItemRow({
           height:          "30px",
           borderRadius:    "6px",
           background:      isActive
-            ? theme.accentBg
-            : "rgba(255,255,255,0.05)",
+            ? "#DBEAFE"
+            : "#F8FAFC",
           display:         "flex",
           alignItems:      "center",
           justifyContent:  "center",
           flexShrink:      0,
           marginTop:       "1px",
           border:          isActive
-            ? `1px solid ${theme.accentBorder}30`
-            : "1px solid rgba(255,255,255,0.06)",
-          transition:      "all 0.12s ease",
+            ? `1px solid ${WORKDESK.brandBorder}`
+            : `1px solid ${WORKDESK.line}`,
+          transition:      "all 0.2s ease",
         }}
       >
         <NavIcon
@@ -196,8 +221,8 @@ function NavItemRow({
           size={15}
           color={
             isActive
-              ? theme.accentColor
-              : "rgba(148,163,184,0.70)"
+              ? accentColor
+              : WORKDESK.muted
           }
         />
       </div>
@@ -217,8 +242,8 @@ function NavItemRow({
               fontSize:    "14px",
               fontWeight:  isActive ? "600" : "500",
               color:       isActive
-                ? "#F0F9FF"
-                : "rgba(203,213,225,0.92)",
+                ? WORKDESK.brandDeep
+                : "#334155",
               lineHeight:  "1.35",
               letterSpacing: "-0.01em",
             }}
@@ -268,9 +293,9 @@ function NavItemRow({
                 fontSize:     "9px",
                 padding:      "1px 5px",
                 borderRadius: "3px",
-                background:   "rgba(148,163,184,0.12)",
-                color:        "rgba(148,163,184,0.70)",
-                border:       "0.5px solid rgba(148,163,184,0.20)",
+                background:   "#F8FAFC",
+                color:        WORKDESK.muted,
+                border:       `0.5px solid ${WORKDESK.line}`,
                 fontWeight:   "600",
                 flexShrink:   0,
                 letterSpacing: "0.04em",
@@ -285,7 +310,7 @@ function NavItemRow({
         <p
           style={{
             fontSize:      "12px",
-            color:         "rgba(148,163,184,0.90)",
+            color:         WORKDESK.muted,
             marginTop:     "2px",
             lineHeight:    "1.3",
             overflow:      "hidden",
@@ -304,7 +329,7 @@ function NavItemRow({
           <p
             style={{
               fontSize:     "10px",
-              color:        "rgba(148,163,184,0.55)",
+              color:        WORKDESK.muted,
               marginTop:    "3px",
               lineHeight:   "1.2",
               overflow:     "hidden",
@@ -347,7 +372,7 @@ function SectionHeader({
         padding:       "12px 12px 6px",
         fontSize:      "10px",
         fontWeight:    "600",
-        color:         `${accentColor}80`,
+        color:         WORKDESK.muted,
         textTransform: "uppercase" as const,
         letterSpacing: "0.10em",
         marginTop:     "6px",
@@ -360,7 +385,7 @@ function SectionHeader({
       <span
         style={{
           fontSize:   "9px",
-          color:      `${accentColor}60`,
+          color:      accentColor,
           transition: "transform 0.2s ease",
           display:    "inline-block",
           transform:  collapsed ? "rotate(-90deg)" : "rotate(0deg)",
@@ -389,9 +414,9 @@ function PlanBadge({
         alignItems:   "center",
         gap:          "5px",
         padding:      "3px 8px",
-        borderRadius: "4px",
-        background:   `${accentColor}12`,
-        border:       `0.5px solid ${accentColor}30`,
+        borderRadius: "999px",
+        background:   WORKDESK.brandSoft,
+        border:       `0.5px solid ${WORKDESK.brandBorder}`,
         marginTop:    "5px",
       }}
     >
@@ -436,22 +461,35 @@ function RevenueToast({
           display:      "flex",
           alignItems:   "center",
           gap:          "10px",
-          background:   "#1E293B",
-          borderLeft:   "3px solid #22D3EE",
-          borderRadius: "8px",
+          background:   "#FFFFFF",
+          borderLeft:   `3px solid ${WORKDESK.cta}`,
+          borderRadius: "12px",
           padding:      "12px 14px",
-          boxShadow:    "0 8px 32px rgba(0,0,0,0.45), 0 0 0 1px rgba(34,211,238,0.12)",
+          boxShadow:    "0 16px 40px rgba(30,41,59,0.14), 0 0 0 1px rgba(226,232,240,0.9)",
           minWidth:     "260px",
           maxWidth:     "320px",
         }}
       >
-        <span style={{ fontSize: "15px", flexShrink: 0 }}>🔥</span>
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke={WORKDESK.cta}
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{ flexShrink: 0 }}
+          aria-hidden="true"
+        >
+          <path d="M13 2 3 14h8l-1 8 10-12h-8l1-8z" />
+        </svg>
         <span
           style={{
             flex:       1,
             fontSize:   "13px",
             fontWeight: "500",
-            color:      "#F0F9FF",
+            color:      WORKDESK.text,
             lineHeight: "1.4",
           }}
         >
@@ -463,7 +501,7 @@ function RevenueToast({
           style={{
             background:  "transparent",
             border:      "none",
-            color:       "rgba(148,163,184,0.70)",
+            color:       WORKDESK.muted,
             fontSize:    "16px",
             lineHeight:  "1",
             cursor:      "pointer",
@@ -651,17 +689,17 @@ export default function AppSidebar({
         display:        "flex",
         flexDirection:  "column",
         height:         "100%",
-        background:     "#050914",
-        borderRight:    "1px solid rgba(34,211,238,0.18)",
+        background:     "rgba(255,255,255,0.96)",
+        borderRight:    `1px solid ${WORKDESK.line}`,
         overflow:       "hidden",
-        backgroundImage: "linear-gradient(180deg, #06122A 0%, #040B1F 100%)",
+        backdropFilter: "blur(16px)",
       }}
     >
       {/* Akcentový top border podľa role */}
       <div
         style={{
           height:     "2px",
-          background: `linear-gradient(90deg, rgba(34,211,238,0.95), rgba(59,130,246,0.45), transparent)`,
+          background: `linear-gradient(90deg, ${WORKDESK.brand}, ${WORKDESK.cta}, transparent)`,
           flexShrink: 0,
         }}
       />
@@ -669,8 +707,8 @@ export default function AppSidebar({
       {/* Header */}
       <div
         style={{
-          padding:      "16px 12px 14px 48px",
-          borderBottom: "1px solid rgba(34,211,238,0.16)",
+          padding:      "18px 18px 16px",
+          borderBottom: `1px solid ${WORKDESK.line}`,
           flexShrink:   0,
         }}
       >
@@ -687,17 +725,16 @@ export default function AppSidebar({
             style={{
               width:       "24px",
               height:      "24px",
-              borderRadius: "5px",
-              background:  `${theme.accentColor}20`,
-              border:      `1px solid ${theme.accentColor}40`,
+              borderRadius: "8px",
+              background:  WORKDESK.brandSoft,
+              border:      `1px solid ${WORKDESK.brandBorder}`,
               display:     "flex",
               alignItems:  "center",
               justifyContent: "center",
               fontSize:    "11px",
               fontWeight:  "700",
-              color:       theme.accentColor,
+              color:       WORKDESK.brandDeep,
               letterSpacing: "-0.02em",
-              boxShadow:   "0 0 14px rgba(34,211,238,0.25)",
             }}
           >
             R
@@ -706,7 +743,7 @@ export default function AppSidebar({
             style={{
               fontSize:   "14px",
               fontWeight: "600",
-              color:      "#F0F9FF",
+              color:      WORKDESK.text,
               letterSpacing: "-0.02em",
             }}
           >
@@ -716,7 +753,7 @@ export default function AppSidebar({
           {/* Gold Protocol badge */}
           {demoProgram === "protocol_authority" && (
             <span
-              className="bg-yellow-500/10 text-yellow-400 text-[9px] font-bold px-1.5 py-0.5 rounded"
+              className="rounded bg-orange-100 px-1.5 py-0.5 text-[9px] font-bold text-orange-700"
               style={{ letterSpacing: "0.06em" }}
             >
               PROTOCOL
@@ -732,10 +769,9 @@ export default function AppSidebar({
                 textTransform: "uppercase",
                 borderRadius: "9999px",
                 padding: "2px 7px",
-                color: "#06213F",
-                background: "#22D3EE",
-                border: "1px solid rgba(103,232,249,0.65)",
-                boxShadow: "0 0 12px rgba(34,211,238,0.35)",
+                color: "#FFFFFF",
+                background: WORKDESK.cta,
+                border: "1px solid #FDBA74",
               }}
             >
               Demo
@@ -747,7 +783,7 @@ export default function AppSidebar({
         <p
           style={{
             fontSize:   "10px",
-            color:      `${theme.accentColor}90`,
+            color:      WORKDESK.muted,
             marginBottom: "4px",
             fontWeight: "500",
             letterSpacing: "0.02em",
@@ -767,7 +803,7 @@ export default function AppSidebar({
             <p
               style={{
                 fontSize: "10px",
-                color: "rgba(148,163,184,0.90)",
+                color: WORKDESK.muted,
                 marginBottom: "6px",
                 fontWeight: "600",
                 letterSpacing: "0.04em",
@@ -796,12 +832,12 @@ export default function AppSidebar({
                       borderRadius: "7px",
                       padding: "6px 8px",
                       border: selected
-                        ? `1px solid ${theme.accentColor}`
-                        : "1px solid rgba(148,163,184,0.25)",
+                        ? `1px solid ${WORKDESK.brandBorder}`
+                        : `1px solid ${WORKDESK.line}`,
                       background: selected
-                        ? `${theme.accentColor}20`
-                        : "rgba(15,23,42,0.40)",
-                      color: selected ? "#E0F2FE" : "rgba(203,213,225,0.92)",
+                        ? WORKDESK.brandSoft
+                        : "#FFFFFF",
+                      color: selected ? WORKDESK.brandDeep : "#334155",
                       textAlign: "left",
                       cursor: "pointer",
                     }}
@@ -819,7 +855,7 @@ export default function AppSidebar({
           <p
             style={{
               fontSize:  "10px",
-              color:     "rgba(71,85,105,0.80)",
+              color:     WORKDESK.muted,
               marginTop: "6px",
               overflow:  "hidden",
               textOverflow: "ellipsis",
@@ -836,7 +872,7 @@ export default function AppSidebar({
         style={{
           flex:      1,
           overflowY: "auto",
-          padding:   "8px 10px",
+          padding:   "10px 14px",
           scrollbarWidth: "none",
         }}
       >
@@ -861,7 +897,7 @@ export default function AppSidebar({
                 <div
                   style={{
                     height:     "1px",
-                    background: "rgba(34,211,238,0.14)",
+                    background: WORKDESK.line,
                     margin:     "8px 0",
                   }}
                 />
@@ -904,8 +940,8 @@ export default function AppSidebar({
       {/* Settings separator + user footer */}
       <div
         style={{
-          borderTop: "1px solid rgba(34,211,238,0.16)",
-          padding:   "10px 10px 12px",
+          borderTop: `1px solid ${WORKDESK.line}`,
+          padding:   "10px 14px 12px",
           flexShrink: 0,
         }}
       >
@@ -930,7 +966,7 @@ export default function AppSidebar({
               marginTop:  "8px",
               padding:    "6px 8px",
               borderRadius: "8px",
-              background: "rgba(34,211,238,0.06)",
+              background: WORKDESK.brandSoft,
             }}
           >
             <div
@@ -938,14 +974,14 @@ export default function AppSidebar({
                 width:          "26px",
                 height:         "26px",
                 borderRadius:   "50%",
-                background:     `${theme.accentColor}15`,
-                border:         `1px solid ${theme.accentColor}30`,
+                background:     "#FFFFFF",
+                border:         `1px solid ${WORKDESK.brandBorder}`,
                 display:        "flex",
                 alignItems:     "center",
                 justifyContent: "center",
                 fontSize:       "10px",
                 fontWeight:     "600",
-                color:          theme.accentColor,
+                color:          WORKDESK.brandDeep,
                 flexShrink:     0,
                 letterSpacing:  "0.02em",
               }}
@@ -957,7 +993,7 @@ export default function AppSidebar({
                 style={{
                   fontSize:     "11px",
                   fontWeight:   "500",
-                  color:        "#CBD5E1",
+                  color:        WORKDESK.text,
                   overflow:     "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace:   "nowrap",
@@ -969,7 +1005,7 @@ export default function AppSidebar({
               <p
                 style={{
                   fontSize:  "10px",
-                  color:     `${theme.accentColor}70`,
+                  color:     WORKDESK.muted,
                   marginTop: "1px",
                   lineHeight: "1.2",
                 }}
@@ -988,8 +1024,8 @@ export default function AppSidebar({
       {/* ─── Desktop sidebar ─────────────────────────────────── */}
       <aside
         style={{
-          width:        "248px",
-          minWidth:     "248px",
+          width:        "300px",
+          minWidth:     "300px",
           height:       "100vh",
           position:     "sticky",
           top:          0,
@@ -1013,10 +1049,10 @@ export default function AppSidebar({
           zIndex:       60,
           width:        "36px",
           height:       "36px",
-          borderRadius: "8px",
-              background:   "linear-gradient(135deg, #06213F 0%, #0B1630 100%)",
-              border:       "1px solid rgba(34,211,238,0.45)",
-              boxShadow:    "0 0 16px rgba(34,211,238,0.22)",
+          borderRadius: "10px",
+          background:   WORKDESK.brand,
+          border:       `1px solid ${WORKDESK.brandDeep}`,
+          boxShadow:    "0 8px 24px rgba(37,99,235,0.25)",
           display:      "flex",
           flexDirection: "column",
           alignItems:   "center",
@@ -1032,7 +1068,7 @@ export default function AppSidebar({
             style={{
               width:       i === 1 ? "12px" : "16px",
               height:      "1.5px",
-              background:  theme.accentColor,
+              background:  "#FFFFFF",
               borderRadius: "1px",
               transition:  "width 0.2s ease",
             }}
@@ -1055,7 +1091,7 @@ export default function AppSidebar({
             style={{
               position:   "absolute",
               inset:      0,
-              background: "rgba(0,0,0,0.60)",
+              background: "rgba(15,23,42,0.45)",
               backdropFilter: "blur(2px)",
             }}
             onClick={() => setMobileOpen(false)}
@@ -1082,9 +1118,9 @@ export default function AppSidebar({
                 width:        "36px",
                 height:       "36px",
                 borderRadius: "50%",
-                background:   "rgba(15,20,40,0.90)",
-                border:       "1px solid rgba(255,255,255,0.10)",
-                color:        "#94A3B8",
+                background:   "#FFFFFF",
+                border:       `1px solid ${WORKDESK.line}`,
+                color:        WORKDESK.muted,
                 fontSize:     "18px",
                 lineHeight:   "1",
                 cursor:       "pointer",

@@ -23,7 +23,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
         agencyName={profile?.agency_name ?? undefined}
         userName={profile?.full_name ?? undefined}
       />
-      <main style={{ flex: 1, minWidth: 0, overflowY: "auto", background: "#050914" }}>
+      <main
+        style={{
+          flex: 1,
+          minWidth: 0,
+          overflowY: "auto",
+          background: "linear-gradient(180deg, var(--brand-bg), #fff)",
+        }}
+      >
         {children}
       </main>
     </div>
