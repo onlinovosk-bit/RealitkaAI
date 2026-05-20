@@ -9,21 +9,29 @@ module.exports = {
     extend: {
       colors: {
         purple: {
-          DEFAULT: '#8b22ff',
-          light:   '#cf25d9',
-          soft:    '#f3e8ff',
-          deep:    '#5513c5',
+          DEFAULT: '#2563EB',
+          light:   '#60A5FA',
+          soft:    '#EFF6FF',
+          deep:    '#1D4ED8',
         },
         brand: {
-          bg:     '#fbf7ff',
-          line:   '#eee6f7',
-          muted:  '#756b83',
-          deep:   '#171321',
+          DEFAULT: '#2563EB',
+          light:  '#60A5FA',
+          soft:   '#EFF6FF',
+          deep:   '#1D4ED8',
+          bg:     '#F8FAFC',
+          line:   '#E2E8F0',
+          muted:  '#64748B',
+          text:   '#1E293B',
+        },
+        cta: {
+          DEFAULT: '#F97316',
+          light:   '#FB923C',
         },
       },
       backgroundImage: {
-        'rail': 'linear-gradient(180deg, #e12dea, #8b22ff 58%, #5513c5)',
-        'hero': 'linear-gradient(120deg, #130526 0%, #3b0f80 42%, #174ea6 78%, #052842 100%)',
+        'rail': 'linear-gradient(180deg, #60A5FA, #2563EB 58%, #1D4ED8)',
+        'hero': 'linear-gradient(120deg, #172554 0%, #1E40AF 38%, #2563EB 72%, #1E3A8A 100%)',
       },
       animation: {
         shimmer:  "shimmer 5s infinite linear",

@@ -5,7 +5,7 @@ export const SlackLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div
       className="flex h-screen w-full flex-col overflow-hidden antialiased"
-      style={{ background: 'linear-gradient(180deg, #fbf7ff 0%, #fff 100%)' }}
+      style={{ background: 'linear-gradient(180deg, var(--brand-bg) 0%, #fff 100%)' }}
     >
       <header style={{
         height: '44px',
@@ -14,11 +14,11 @@ export const SlackLayout = ({ children }: { children: React.ReactNode }) => {
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '0 16px',
-        background: 'linear-gradient(90deg, #8b22ff 0%, #cf25d9 100%)',
-        borderBottom: '1px solid rgba(139,34,255,0.2)',
+        background: 'linear-gradient(90deg, var(--brand) 0%, var(--brand2) 100%)',
+        borderBottom: '1px solid rgba(37,99,235,0.2)',
         zIndex: 50,
         flexShrink: 0,
-        boxShadow: '0 2px 20px rgba(139,34,255,0.25)',
+        boxShadow: '0 2px 20px var(--shadow-topbar)',
       }}>
         <div style={{ width: '44px' }} />
         <div style={{ flex: 1, maxWidth: '560px', margin: '0 auto' }}>
@@ -70,7 +70,7 @@ export const SlackLayout = ({ children }: { children: React.ReactNode }) => {
         overflowY: 'auto',
         overflowX: 'hidden',
         background: 'transparent',
-        color: '#171321',
+        color: 'var(--brand-text)',
       }}>
         {children}
       </main>

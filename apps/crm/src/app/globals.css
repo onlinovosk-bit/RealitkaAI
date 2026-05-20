@@ -2,17 +2,34 @@
 
 @layer base {
   :root {
-    --purple:  #8b22ff;
-    --purple2: #cf25d9;
-    --deep:    #171321;
-    --muted:   #756b83;
-    --line:    #eee6f7;
-    --soft:    #f3e8ff;
-    --green:   #10b981;
-    --amber:   #f59e0b;
-    --red:     #ef4444;
-    --cyan:    #0ea5e9;
-    --rail-gradient: linear-gradient(180deg, #e12dea, #8b22ff 58%, #5513c5);
+    --brand: #2563eb;
+    --brand2: #60a5fa;
+    --brand-deep: #1d4ed8;
+    --brand-bg: #f8fafc;
+    --brand-soft: #eff6ff;
+    --brand-soft-border: #bfdbfe;
+    --brand-text: #1e293b;
+    --brand-muted: #64748b;
+    --brand-line: #e2e8f0;
+    --cta: #f97316;
+    --cta2: #fb923c;
+    --green: #10b981;
+    --money: #047857;
+    --amber: #f97316;
+    --red: #ef4444;
+    --cyan: #0ea5e9;
+    --rail-gradient: linear-gradient(180deg, #60a5fa, #2563eb 58%, #1d4ed8);
+    --hero-gradient: linear-gradient(120deg, #172554 0%, #1e40af 38%, #2563eb 72%, #1e3a8a 100%);
+    --shadow-rail: rgba(37, 99, 235, 0.18);
+    --shadow-topbar: rgba(37, 99, 235, 0.25);
+
+    /* Deprecated Purple v2 aliases kept for PR #15 compatibility. */
+    --purple: var(--brand);
+    --purple2: var(--brand2);
+    --deep: var(--brand-text);
+    --muted: var(--brand-muted);
+    --line: var(--brand-line);
+    --soft: var(--brand-soft);
   }
   html {
     overflow-x: hidden;
@@ -20,7 +37,7 @@
   }
   body {
     color: var(--deep);
-    background: linear-gradient(180deg, #fbf7ff, #fff);
+    background: linear-gradient(180deg, var(--brand-bg), #fff);
     font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -30,7 +47,7 @@
 }
 
 main {
-  background: linear-gradient(180deg, #fbf7ff, #fff) !important;
+  background: linear-gradient(180deg, var(--brand-bg), #fff) !important;
   color: var(--deep) !important;
 }
 
@@ -40,8 +57,8 @@ main {
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--soft); }
-::-webkit-scrollbar-thumb { background: var(--purple); border-radius: 999px; }
-::-webkit-scrollbar-thumb:hover { background: var(--purple2); }
+::-webkit-scrollbar-thumb { background: var(--brand); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--brand2); }
 
-::selection { background: var(--soft); color: var(--purple); }
-:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+::selection { background: var(--soft); color: var(--brand); }
+:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
