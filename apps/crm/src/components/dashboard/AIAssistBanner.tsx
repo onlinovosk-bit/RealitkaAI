@@ -1,6 +1,7 @@
 "use client";
 import { memo } from "react";
 import { FEATURES as FEATURE_MATRIX } from "@/components/billing/FeatureComparisonTable";
+import { AI_ASSISTANT_NAME, AI_ASSISTANT_STATUS_ACTIVE } from "@/lib/ai-brand";
 
 type BannerPlan = "smartStart" | "activeForce" | "marketVision" | "protocolAuthority";
 
@@ -18,27 +19,11 @@ const PLAN_LABELS: Record<BannerPlan, string> = {
   protocolAuthority: "Protocol Authority",
 };
 
-const PLAN_COLORS: Record<BannerPlan, { bg: string; border: string; color: string }> = {
-  smartStart: {
-    bg: "rgba(34,211,238,0.08)",
-    border: "rgba(34,211,238,0.20)",
-    color: "#22D3EE",
-  },
-  activeForce: {
-    bg: "rgba(99,102,241,0.12)",
-    border: "rgba(99,102,241,0.30)",
-    color: "#818CF8",
-  },
-  marketVision: {
-    bg: "rgba(16,185,129,0.10)",
-    border: "rgba(16,185,129,0.22)",
-    color: "#34D399",
-  },
-  protocolAuthority: {
-    bg: "rgba(245,158,11,0.10)",
-    border: "rgba(245,158,11,0.25)",
-    color: "#FCD34D",
-  },
+const PLAN_BADGE: Record<BannerPlan, string> = {
+  smartStart: "border-cyan-200 bg-cyan-50 text-cyan-800",
+  activeForce: "border-blue-200 bg-blue-50 text-blue-800",
+  marketVision: "border-emerald-200 bg-emerald-50 text-emerald-800",
+  protocolAuthority: "border-amber-200 bg-amber-50 text-amber-900",
 };
 
 interface Props {
@@ -63,40 +48,38 @@ export const AIAssistBanner = memo(function AIAssistBanner({ plan = "free" }: Pr
   const resolvedPlan = resolveBannerPlan(plan);
   const features = PLAN_FEATURES[resolvedPlan];
   const label = PLAN_LABELS[resolvedPlan];
-  const colors = PLAN_COLORS[resolvedPlan];
+  const badgeClass = PLAN_BADGE[resolvedPlan];
 
   return (
-    <article className="rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-slate-900 via-slate-900 to-cyan-950/60 p-5 shadow-[0_0_26px_rgba(6,182,212,0.18)]">
-      <div className="mb-3 flex items-center justify-between">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-300/90">AI Assist Mode</p>
+    <article className="h-full rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/70">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-700">
+          {AI_ASSISTANT_NAME} · plán
+        </p>
         <span
-          className="rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
-          style={{
-            background: colors.bg,
-            border: `1px solid ${colors.border}`,
-            color: colors.color,
-          }}
+          className={`rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${badgeClass}`}
         >
           {label}
         </span>
       </div>
 
-      <h2 className="mb-1 text-lg font-bold text-white">AI Asistent je aktívny</h2>
-      <p className="mb-4 text-xs" style={{ color: "#64748B" }}>
-        AI Asistent pracuje za teba - ty uzatváraš obchody.
+      <h2 className="mb-1 text-lg font-extrabold tracking-tight text-slate-950">
+        {AI_ASSISTANT_STATUS_ACTIVE}
+      </h2>
+      <p className="mb-4 text-xs leading-5 text-slate-600">
+        {AI_ASSISTANT_NAME} radí pri telefonátoch a obchodoch — ty uzatváraš a inkasuješ províziu.
       </p>
 
       <ul className="space-y-2">
-        {features.map((feature) => {
-          return (
-            <li key={feature} className="flex items-start gap-2.5 text-xs">
-              <span className="shrink-0 text-sm" style={{ color: colors.color }}>✓</span>
-              <span style={{ color: "#94A3B8" }}>{feature}</span>
-            </li>
-          );
-        })}
+        {features.map((feature) => (
+          <li key={feature} className="flex items-start gap-2.5 text-xs text-slate-700">
+            <span className="mt-0.5 shrink-0 font-bold text-emerald-600" aria-hidden>
+              ✓
+            </span>
+            <span>{feature}</span>
+          </li>
+        ))}
       </ul>
-
     </article>
   );
 });

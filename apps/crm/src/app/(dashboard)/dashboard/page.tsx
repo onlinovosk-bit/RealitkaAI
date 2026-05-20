@@ -204,15 +204,15 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <main className="min-h-screen bg-slate-50 p-6">
+      <div className="p-3 md:p-6">
         <div className="text-center text-sm font-medium text-slate-600">Načítavam prehľad...</div>
-      </main>
+      </div>
     );
   }
 
   if (loadError) {
     return (
-      <main className="min-h-screen bg-slate-50 p-6">
+      <div className="p-3 md:p-6">
         <div className="mx-auto max-w-md text-center">
           <h2 className="text-lg font-bold text-slate-950">Chyba pri načítaní</h2>
           <p className="mt-2 text-sm text-slate-600">{loadError}</p>
@@ -223,7 +223,7 @@ export default function DashboardPage() {
             Obnoviť stránku
           </button>
         </div>
-      </main>
+      </div>
     );
   }
 
@@ -240,7 +240,7 @@ export default function DashboardPage() {
   const showRevenueCommandCenter = planKey === "command" || planKey === "enterprise";
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-blue-50/40 p-3 md:p-6">
+    <div className="min-h-full bg-gradient-to-b from-slate-50 via-white to-blue-50/40 p-3 md:p-6">
       <div className="mx-auto max-w-7xl">
         <section className="mb-6 overflow-hidden rounded-3xl bg-gradient-to-br from-blue-950 via-blue-800 to-blue-600 p-5 text-white shadow-xl shadow-blue-900/20 md:p-7">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
@@ -270,7 +270,10 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <section className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <section
+          className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2"
+          aria-label="AI Asistent a dnešné odporúčania"
+        >
           <AIAssistBanner plan={plan ?? "free"} />
           <AssistantPanelDynamic
             defaultLeadId={assistantDefaultLeadId}
@@ -425,6 +428,6 @@ export default function DashboardPage() {
         </section>
       </div>
       <AIPulseSystem />
-    </main>
+    </div>
   );
 }
