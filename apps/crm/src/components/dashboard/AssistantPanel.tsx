@@ -9,7 +9,7 @@ import {
   type AssistantContext,
 } from "@/lib/ai/assistant-script";
 import { getSalesScript } from "@/lib/sales/sales-script";
-import { AI_ASSISTANT_NAME } from "@/lib/ai-brand";
+import { AI_ASSISTANT_NAME, AI_ASSISTANT_NAME_GENITIVE } from "@/lib/ai-brand";
 
 const SESSION_LEAD_KEY = "assistant_panel_lead_id_v1";
 
@@ -90,7 +90,7 @@ function AssistantPanelInner({ defaultLeadId, leadOptions = [] }: AssistantPanel
           error?: string;
         };
         if (!res.ok || !data.ok || !data.answer?.trim()) {
-          setError(data.error ?? "Asistent nie je dostupný.");
+          setError(data.error ?? `${AI_ASSISTANT_NAME} nie je dostupný.`);
           return;
         }
         setAnswer(data.answer.trim());
@@ -117,21 +117,31 @@ function AssistantPanelInner({ defaultLeadId, leadOptions = [] }: AssistantPanel
     !showApiAnswer && Boolean(effectiveLeadId) && (Boolean(error) || (!loading && !answer));
 
   return (
-    <div className="rounded-2xl border border-indigo-500/25 bg-gradient-to-br from-indigo-950/50 via-slate-900/80 to-slate-950 p-5 text-white shadow-[0_0_24px_rgba(99,102,241,0.12)]">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="h-full rounded-2xl border border-slate-200 bg-white p-5 text-slate-950 shadow-sm shadow-slate-200/70">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h3 className="text-lg font-bold text-white">{AI_ASSISTANT_NAME}</h3>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-700">
+            Komu volať ako prvému?
+          </p>
+          <h3 className="mt-1 text-lg font-extrabold tracking-tight text-slate-950">
+            {AI_ASSISTANT_NAME}
+          </h3>
+          <p className="mt-1 text-xs leading-5 text-slate-600">
+            Odporúčanie pre vybranú príležitosť — bez zmeny dát v CRM.
+          </p>
         </div>
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Kontext pre AI Asistenta">
           {contexts.map((c) => (
             <button
               key={c.id}
               type="button"
+              role="tab"
+              aria-selected={ctx === c.id}
               onClick={() => setCtx(c.id)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+              className={`min-h-9 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
                 ctx === c.id
-                  ? "bg-indigo-500/30 text-indigo-100 ring-1 ring-indigo-400/40"
-                  : "bg-white/5 text-slate-400 hover:bg-white/10"
+                  ? "border border-blue-200 bg-blue-50 text-blue-800"
+                  : "border border-slate-200 bg-slate-50 text-slate-600 hover:border-blue-200 hover:bg-blue-50/80"
               }`}
             >
               {c.label}
@@ -141,18 +151,18 @@ function AssistantPanelInner({ defaultLeadId, leadOptions = [] }: AssistantPanel
       </div>
 
       {leadFromUrl && (
-        <p className="mt-3 text-[11px] text-cyan-300/80">
-          Kontext leadu z URL (?lead=…)
+        <p className="mt-3 text-[11px] font-medium text-blue-700">
+          Kontext príležitosti z odkazu (?lead=…)
         </p>
       )}
 
       {!leadFromUrl && leadOptions.length > 1 && (
-        <label className="mt-3 block text-xs text-slate-400">
+        <label className="mt-3 block text-xs font-medium text-slate-600">
           Príležitosť
           <select
             value={effectiveLeadId ?? ""}
             onChange={(e) => setLeadAndPersist(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-white/15 bg-slate-950/80 px-3 py-2 text-sm text-white"
+            className="mt-1 w-full min-h-11 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
           >
             {leadOptions.map((o) => (
               <option key={o.id} value={o.id}>
@@ -164,27 +174,29 @@ function AssistantPanelInner({ defaultLeadId, leadOptions = [] }: AssistantPanel
       )}
 
       {!effectiveLeadId && (
-        <p className="mt-4 text-sm text-amber-200/90">
-          Žiadna príležitosť na analýzu. Pridaj lead do CRM alebo použi odkaz z detailu leadu s parametrom{" "}
-          <code className="rounded bg-black/40 px-1">?lead=</code>.
+        <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-900">
+          Žiadna príležitosť na analýzu. Pridaj lead do CRM alebo otvor detail s parametrom{" "}
+          <code className="rounded bg-white px-1 text-amber-950">?lead=</code>.
         </p>
       )}
 
       {loading && effectiveLeadId && (
-        <p className="mt-4 text-sm text-indigo-200/80">Načítavam odpoveď asistenta…</p>
+        <p className="mt-4 text-sm font-medium text-slate-600">
+          Načítavam odpoveď {AI_ASSISTANT_NAME_GENITIVE}…
+        </p>
       )}
 
       {showApiAnswer && (
-        <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-indigo-100/95">
+        <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-slate-800">
           {answer}
         </p>
       )}
 
       {showFallbackLine && (
         <>
-          <p className="mt-4 text-sm leading-relaxed text-indigo-100/95">{fallbackMessage}</p>
+          <p className="mt-4 text-sm leading-relaxed text-slate-800">{fallbackMessage}</p>
           {error && (
-            <p className="mt-2 text-xs text-amber-300/90">
+            <p className="mt-2 text-xs text-amber-800">
               API: {error} (zobrazujem záložný text.)
             </p>
           )}
@@ -192,7 +204,7 @@ function AssistantPanelInner({ defaultLeadId, leadOptions = [] }: AssistantPanel
       )}
 
       {!showApiAnswer && (
-        <ul className="mt-4 space-y-1.5 border-t border-white/10 pt-4 text-xs text-slate-400">
+        <ul className="mt-4 space-y-1.5 border-t border-slate-100 pt-4 text-xs text-slate-600">
           {bullets.map((b) => (
             <li key={b}>• {b}</li>
           ))}
