@@ -77,7 +77,7 @@ export const SlackLayout = ({ children }: { children: React.ReactNode }) => {
       style={{ background: 'linear-gradient(180deg, var(--brand-bg) 0%, #fff 100%)' }}
     >
       <aside
-        className="fixed inset-y-0 left-0 z-50 hidden w-[76px] overflow-y-auto px-2.5 py-3 text-white shadow-[8px_0_32px_var(--shadow-rail)] md:block"
+        className="fixed inset-y-0 left-0 z-50 hidden w-[var(--shell-rail)] overflow-y-auto px-2.5 py-3 text-white shadow-[8px_0_32px_var(--shadow-rail)] lg:block"
         style={{ background: 'var(--rail-gradient)' }}
         aria-label="Hlavná navigácia"
       >
@@ -122,19 +122,16 @@ export const SlackLayout = ({ children }: { children: React.ReactNode }) => {
         </nav>
       </aside>
 
-      <header className="px-5 md:pl-[96px]" style={{
+      <header
+        className="flex shrink-0 items-center justify-between border-b border-[rgba(37,99,235,0.2)] px-5 shadow-[0_2px_20px_var(--shadow-topbar)] lg:pl-[calc(var(--shell-rail)+20px)]"
+        style={{
         height: '56px',
         minHeight: '56px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
         background: 'linear-gradient(90deg, var(--brand) 0%, var(--brand2) 100%)',
-        borderBottom: '1px solid rgba(37,99,235,0.2)',
         zIndex: 50,
-        flexShrink: 0,
-        boxShadow: '0 2px 20px var(--shadow-topbar)',
-      }}>
-        <div className="hidden text-xs font-semibold uppercase tracking-[0.16em] text-white/75 md:block">
+      }}
+      >
+        <div className="hidden text-xs font-semibold uppercase tracking-[0.16em] text-white/75 lg:block">
           Revolis Workdesk
         </div>
         <div style={{ flex: 1, maxWidth: '520px', margin: '0 auto' }}>
@@ -167,7 +164,7 @@ export const SlackLayout = ({ children }: { children: React.ReactNode }) => {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px' }}>
           <button
             type="button"
-            className="hidden h-9 cursor-pointer rounded-xl border-0 bg-cta px-3 text-xs font-bold text-white shadow-sm transition-colors duration-200 hover:bg-cta-light focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white md:inline-flex md:items-center"
+            className="hidden h-9 cursor-pointer rounded-xl border-0 bg-cta px-3 text-xs font-bold text-white shadow-sm transition-colors duration-200 hover:bg-cta-light focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white lg:inline-flex lg:items-center"
           >
             Spustiť akcie
           </button>
@@ -187,14 +184,7 @@ export const SlackLayout = ({ children }: { children: React.ReactNode }) => {
           }}>R</div>
         </div>
       </header>
-      <main className="md:pl-[76px]" style={{
-        flex: 1,
-        overflowY: 'auto',
-        overflowX: 'hidden',
-        background: 'transparent',
-        color: 'var(--brand-text)',
-        paddingLeft: 0,
-      }}>
+      <main className="workdesk-main flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto text-brand-text lg:pl-[var(--shell-rail)]">
         {children}
       </main>
     </div>
