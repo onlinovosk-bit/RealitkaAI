@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAIActivityStore, type ActivityType } from "@/store/aiActivityStore";
+import { supabaseClient } from "@/lib/supabase/client";
 
 type LeadEntry = { name: string; id: string };
 
@@ -34,12 +35,66 @@ function randomDelayMs() {
   return Math.floor(8000 + Math.random() * 7000);
 }
 
+/** Mock pulses: local dev always; production only for founder demo (role=founder). */
+export function canRunMockAIActivity(isFounder: boolean): boolean {
+  return process.env.NODE_ENV === "development" || isFounder;
+}
+
+function useMockAIActivityEnabled(): boolean {
+  const [isFounder, setIsFounder] = useState(false);
+  const [resolved, setResolved] = useState(process.env.NODE_ENV === "development");
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === "development") {
+      setResolved(true);
+      return;
+    }
+
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const {
+          data: { user },
+        } = await supabaseClient.auth.getUser();
+        if (!user || cancelled) {
+          if (!cancelled) setResolved(true);
+          return;
+        }
+
+        const { data: profile } = await supabaseClient
+          .from("profiles")
+          .select("role")
+          .eq("auth_user_id", user.id)
+          .maybeSingle();
+
+        if (!cancelled) {
+          setIsFounder(profile?.role === "founder");
+          setResolved(true);
+        }
+      } catch {
+        if (!cancelled) setResolved(true);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!resolved) return false;
+  return canRunMockAIActivity(isFounder);
+}
+
 export function useMockAIActivity() {
+  const enabled = useMockAIActivityEnabled();
   const addActivity = useAIActivityStore((s) => s.addActivity);
   const setSofiaStatus = useAIActivityStore((s) => s.setSofiaStatus);
   const leadsRef = useRef<LeadEntry[]>(FALLBACK_LEADS);
 
   useEffect(() => {
+    if (!enabled) return;
+
     let cancelled = false;
     fetch("/api/leads")
       .then((r) => (r.ok ? r.json() : null))
@@ -51,10 +106,14 @@ export function useMockAIActivity() {
           .map((l: { id: string; name: string }) => ({ name: l.name, id: l.id }));
       })
       .catch(() => {});
-    return () => { cancelled = true; };
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [enabled]);
 
   useEffect(() => {
+    if (!enabled) return;
+
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
     let cancelled = false;
 
@@ -93,5 +152,5 @@ export function useMockAIActivity() {
       if (timeoutId) clearTimeout(timeoutId);
       setSofiaStatus("idle", "AI Asistent je pripravený");
     };
-  }, [addActivity, setSofiaStatus]);
+  }, [enabled, addActivity, setSofiaStatus]);
 }
