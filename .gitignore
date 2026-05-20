@@ -23,6 +23,8 @@ backups/
 # misc
 .DS_Store
 *.pem
+__pycache__/
+*.pyc
 
 # debug
 npm-debug.log*
@@ -32,6 +34,7 @@ yarn-error.log*
 # local env files
 .env*.local
 .env
+.env.local
 
 # vercel
 .vercel
