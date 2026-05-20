@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { sourceOptions } from "@/lib/leads-store";
-import { RadiantSpriteIcon } from "@/components/shared/radiant-sprite-icon";
 
 const initialState = {
   name: "",
@@ -63,7 +62,7 @@ export default function LeadCreateForm() {
 
       setForm(initialState);
       setIsOpen(false);
-      showToast("✓ Príležitosť uložená");
+      showToast("Príležitosť uložená");
       router.refresh();
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Nepodarilo sa uložiť príležitosť.");
@@ -72,41 +71,34 @@ export default function LeadCreateForm() {
     }
   }
 
-  const inputClass = "w-full rounded-xl border px-3 py-2.5 text-sm outline-none transition-colors";
-  const inputStyle = {
-    background: "#050914",
-    borderColor: "rgba(34,211,238,0.15)",
-    color: "#F0F9FF",
-  };
+  const inputClass =
+    "w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20";
 
   return (
     <div className="relative">
       {toast && (
         <div
-          className="fixed top-4 right-4 z-50 rounded-xl border px-4 py-3 text-sm font-medium shadow-lg"
-          style={{ background: "#080D1A", borderColor: "rgba(34,211,238,0.2)", color: "#E0F2FE" }}
+          className="fixed right-4 top-4 z-50 rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm font-medium text-emerald-700 shadow-lg"
         >
           {toast}
         </div>
       )}
 
-      <div
-        className="rounded-2xl border p-4 md:p-5"
-        style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
-      >
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-base font-semibold" style={{ color: "#F0F9FF" }}>Pridať príležitosť</h2>
-            <p className="text-xs mt-0.5" style={{ color: "#475569" }}>Uložená do 10 sekúnd.</p>
+            <h2 className="text-base font-semibold text-slate-950">Pridať príležitosť</h2>
+            <p className="mt-0.5 text-xs text-slate-500">Nový kontakt uložíš do 10 sekúnd.</p>
           </div>
           <button
             type="button"
             onClick={() => setIsOpen(prev => !prev)}
-            className="rounded-xl px-4 py-2 text-sm font-semibold min-h-[40px] transition-all active:scale-95"
-            style={{
-              background: isOpen ? "rgba(71,85,105,0.3)" : "linear-gradient(135deg, #22D3EE, #0EA5E9)",
-              color: isOpen ? "#94A3B8" : "#050914",
-            }}
+            className={
+              "min-h-[44px] rounded-xl px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 " +
+              (isOpen
+                ? "border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
+                : "bg-orange-500 text-white shadow-sm shadow-orange-500/20 hover:bg-orange-600")
+            }
           >
             {isOpen ? "Zavrieť" : "+ Nová"}
           </button>
@@ -115,8 +107,8 @@ export default function LeadCreateForm() {
         {isOpen && (
           <form onSubmit={handleSubmit} className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-medium" style={{ color: "#64748B" }}>
-                Meno <span style={{ color: "#EF4444" }}>*</span>
+              <label className="mb-1 block text-xs font-medium text-slate-600">
+                Meno <span className="text-red-600">*</span>
               </label>
               <input
                 required
@@ -125,41 +117,37 @@ export default function LeadCreateForm() {
                 onChange={e => update("name", e.target.value)}
                 placeholder="Ján Novák"
                 className={inputClass}
-                style={inputStyle}
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-medium" style={{ color: "#64748B" }}>Email</label>
+              <label className="mb-1 block text-xs font-medium text-slate-600">Email</label>
               <input
                 type="email"
                 value={form.email}
                 onChange={e => update("email", e.target.value)}
                 placeholder="jan@email.com"
                 className={inputClass}
-                style={inputStyle}
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-medium" style={{ color: "#64748B" }}>Telefón</label>
+              <label className="mb-1 block text-xs font-medium text-slate-600">Telefón</label>
               <input
                 type="tel"
                 value={form.phone}
                 onChange={e => update("phone", e.target.value)}
                 placeholder="+421 9XX XXX XXX"
                 className={inputClass}
-                style={inputStyle}
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-medium" style={{ color: "#64748B" }}>Zdroj</label>
+              <label className="mb-1 block text-xs font-medium text-slate-600">Zdroj</label>
               <select
                 value={form.source}
                 onChange={e => update("source", e.target.value)}
                 className={inputClass}
-                style={inputStyle}
               >
                 {sourceOptions.map(s => (
                   <option key={s} value={s}>{s}</option>
@@ -168,14 +156,13 @@ export default function LeadCreateForm() {
             </div>
 
             <div className="md:col-span-2">
-              <label className="mb-1 block text-xs font-medium" style={{ color: "#64748B" }}>Poznámka</label>
+              <label className="mb-1 block text-xs font-medium text-slate-600">Poznámka</label>
               <textarea
                 value={form.note}
                 onChange={e => update("note", e.target.value)}
                 rows={2}
                 placeholder="Záujem o 3-izbový byt v Ružinove..."
                 className={inputClass}
-                style={inputStyle}
               />
             </div>
 
@@ -183,19 +170,14 @@ export default function LeadCreateForm() {
               <button
                 type="submit"
                 disabled={isSaving}
-                className="flex-1 sm:flex-none rounded-xl px-5 py-2.5 text-sm font-semibold min-h-[44px] transition-all active:scale-95 disabled:opacity-60"
-                style={{
-                  background: "linear-gradient(135deg, #22D3EE, #0EA5E9)",
-                  color: "#050914",
-                }}
+                className="min-h-[44px] flex-1 rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-orange-500/20 transition-colors hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 disabled:opacity-60 sm:flex-none"
               >
                 {isSaving ? "Ukladám..." : "Pridať príležitosť"}
               </button>
               <button
                 type="button"
                 onClick={() => { setIsOpen(false); setForm(initialState); }}
-                className="rounded-xl border px-4 py-2.5 text-sm font-medium min-h-[44px]"
-                style={{ borderColor: "rgba(71,85,105,0.4)", color: "#64748B" }}
+                className="min-h-[44px] rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
               >
                 Zrušiť
               </button>

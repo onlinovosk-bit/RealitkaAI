@@ -41,7 +41,7 @@ export default function LeadRowActions({ lead, onDelete }: LeadRowActionsProps) 
       <button
         type="button"
         onClick={() => router.push(`/leads/${lead.id}`)}
-        className="rounded-lg border border-gray-300 px-2 py-1 text-xs sm:px-3 sm:text-sm font-medium text-gray-700 hover:bg-gray-50"
+        className="min-h-[36px] rounded-lg border border-blue-200 bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 sm:px-3 sm:text-sm"
       >
         Detail
       </button>
@@ -49,7 +49,7 @@ export default function LeadRowActions({ lead, onDelete }: LeadRowActionsProps) 
       <button
         type="button"
         onClick={() => router.push(`/leads/${lead.id}?edit=true`)}
-        className="rounded-lg border border-gray-300 px-2 py-1 text-xs sm:px-3 sm:text-sm font-medium text-gray-700 hover:bg-gray-50"
+        className="min-h-[36px] rounded-lg border border-slate-200 px-2 py-1 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 sm:px-3 sm:text-sm"
       >
         Upraviť
       </button>
@@ -58,7 +58,7 @@ export default function LeadRowActions({ lead, onDelete }: LeadRowActionsProps) 
         type="button"
         onClick={handleDelete}
         disabled={isDeleting}
-        className="rounded-lg border border-red-300 px-2 py-1 text-xs sm:px-3 sm:text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-60"
+        className="min-h-[36px] rounded-lg border border-red-200 px-2 py-1 text-xs font-medium text-red-700 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:opacity-60 sm:px-3 sm:text-sm"
       >
         {isDeleting ? "Mažem..." : "Vymazať"}
       </button>

@@ -50,6 +50,9 @@ export default function LeadsModule({
     [filtered, recommendations]
   );
 
+  const hotLeads = filtered.filter((lead) => lead.status === "Horúci").length;
+  const inspectionLeads = filtered.filter((lead) => lead.status === "Obhliadka").length;
+
   return (
     <>
       <div className="mb-6 flex flex-col gap-4">
@@ -67,18 +70,38 @@ export default function LeadsModule({
 
       <section className="mb-4 grid grid-cols-2 gap-2 md:gap-4 xl:grid-cols-4">
         {[
-          { label: "Príležitosti", value: filtered.length, color: "#22D3EE" },
-          { label: "Horúce", value: filtered.filter((i) => i.status === "Horúci").length, color: "#EF4444" },
-          { label: "Obhliadky", value: filtered.filter((i) => i.status === "Obhliadka").length, color: "#0EA5E9" },
-          { label: "Avg BRI", value: avgScore, color: "#A855F7" },
-        ].map(({ label, value, color }) => (
+          {
+            label: "Príležitosti",
+            helper: "Kde mám peniaze dnes?",
+            value: filtered.length,
+            valueClass: "text-blue-700",
+          },
+          {
+            label: "Horúce",
+            helper: "Komu volať ako prvému?",
+            value: hotLeads,
+            valueClass: "text-red-600",
+          },
+          {
+            label: "Obhliadky",
+            helper: "Najbližší krok k provízii",
+            value: inspectionLeads,
+            valueClass: "text-emerald-700",
+          },
+          {
+            label: "Avg BRI",
+            helper: "Priemerná kvalita fronty",
+            value: avgScore,
+            valueClass: avgScore >= 85 ? "text-emerald-700" : avgScore >= 70 ? "text-amber-600" : "text-red-600",
+          },
+        ].map(({ label, helper, value, valueClass }) => (
           <div
             key={label}
-            className="rounded-2xl border p-3 md:p-5"
-            style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
+            className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm md:p-5"
           >
-            <p className="text-xs" style={{ color: "#64748B" }}>{label}</p>
-            <h2 className="mt-1 text-2xl md:text-3xl font-bold tabular-nums" style={{ color }}>{value}</h2>
+            <p className="text-xs font-medium text-slate-500">{label}</p>
+            <h2 className={`mt-1 text-2xl font-bold tabular-nums md:text-3xl ${valueClass}`}>{value}</h2>
+            <p className="mt-1 text-[11px] text-slate-500">{helper}</p>
           </div>
         ))}
       </section>
@@ -89,7 +112,7 @@ export default function LeadsModule({
           description="Vytvor prvú príležitosť cez formulár vyššie alebo uprav filtre."
         />
       ) : (
-        <section className="flex flex-col gap-8">
+        <section className="flex flex-col gap-6">
           <div className="min-w-0 w-full">
             <LeadsWorkspace leads={filtered} />
           </div>

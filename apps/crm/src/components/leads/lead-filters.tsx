@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { type Lead } from "@/lib/leads-store";
-import { RadiantSpriteIcon } from "@/components/shared/radiant-sprite-icon";
 
 type TeamOption = {
   id: string;
@@ -122,103 +121,91 @@ export default function LeadFilters({
     setTeamId("");
   }
 
-  const selectStyle = { background: "#050914", borderColor: "rgba(34,211,238,0.15)", color: "#F0F9FF" };
-  const inputStyle = selectStyle;
-  const labelStyle = { color: "#64748B" };
+  const fieldClass =
+    "w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20";
+  const labelClass = "mb-1 block text-xs font-medium text-slate-600";
 
   return (
-    <div className="rounded-2xl border p-4 md:p-5" style={{ background: "#080D1A", borderColor: "#0F1F3D" }}>
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-sm font-semibold" style={{ color: "#F0F9FF" }}>Filtre</h2>
+          <h2 className="text-sm font-semibold text-slate-950">Filtre</h2>
+          <p className="mt-0.5 text-xs text-slate-500">Komu volať ako prvému?</p>
         </div>
-        {/* Hot Leads quick filter */}
         <button
           type="button"
           onClick={isHotFilter ? clearFilters : activateHotFilter}
-          className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all duration-200 hover:scale-105 active:scale-95 flex-shrink-0"
-          style={
-            isHotFilter
-              ? {
-                  background: "linear-gradient(135deg, #0D2137 0%, #1B3A6B 100%)",
-                  color: "#67E8F9",
-                  border: "1px solid #22D3EE",
-                  boxShadow: "0 0 20px rgba(34,211,238,0.25)",
-                }
-              : {
-                  background: "rgba(34,211,238,0.08)",
-                  color: "#22D3EE",
-                  border: "1px solid rgba(34,211,238,0.25)",
-                }
+          className={
+            "inline-flex min-h-[44px] flex-shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 " +
+            (isHotFilter
+              ? "border border-orange-300 bg-orange-50 text-orange-700"
+              : "border border-orange-200 bg-white text-orange-600 hover:bg-orange-50")
           }
         >
-          🔥 Horúce príležitosti
+          Horúce príležitosti
           <span
-            className="rounded-full px-2 py-0.5 text-[11px] font-bold"
-            style={{
-              background: isHotFilter ? "rgba(34,211,238,0.25)" : "rgba(34,211,238,0.15)",
-              color: "#22D3EE",
-            }}
+            className={
+              "rounded-full px-2 py-0.5 text-[11px] font-bold " +
+              (isHotFilter ? "bg-orange-100 text-orange-800" : "bg-orange-50 text-orange-700")
+            }
           >
             {hotCount}
           </span>
-          {isHotFilter && <span className="text-[11px] opacity-70">✕ zrušiť</span>}
+          {isHotFilter && <span className="text-[11px] opacity-80">zrušiť</span>}
         </button>
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         <div className="col-span-2 md:col-span-1 xl:col-span-1">
-          <label className="mb-1 block text-xs font-medium" style={labelStyle}>Hľadať</label>
+          <label className={labelClass}>Hľadať</label>
           <input
             type="text"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Meno, email..."
-            className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
-            style={inputStyle}
+            className={fieldClass}
           />
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-medium" style={labelStyle}>Stav</label>
-          <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none" style={selectStyle}>
+          <label className={labelClass}>Stav</label>
+          <select value={status} onChange={(e) => setStatus(e.target.value)} className={fieldClass}>
             <option value="">Všetky</option>
             {statuses.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-medium" style={labelStyle}>Lokalita</label>
-          <select value={location} onChange={(e) => setLocation(e.target.value)} className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none" style={selectStyle}>
+          <label className={labelClass}>Lokalita</label>
+          <select value={location} onChange={(e) => setLocation(e.target.value)} className={fieldClass}>
             <option value="">Všetky</option>
             {locations.map((l) => <option key={l} value={l}>{l}</option>)}
           </select>
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-medium" style={labelStyle}>Min. BRI</label>
+          <label className={labelClass}>Min. BRI</label>
           <input
             type="number"
             value={minScore}
             onChange={(e) => setMinScore(e.target.value)}
             min="0" max="100"
             placeholder="70"
-            className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
-            style={inputStyle}
+            className={fieldClass}
           />
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-medium" style={labelStyle}>Tím</label>
-          <select value={teamId} onChange={(e) => setTeamId(e.target.value)} className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none" style={selectStyle}>
+          <label className={labelClass}>Tím</label>
+          <select value={teamId} onChange={(e) => setTeamId(e.target.value)} className={fieldClass}>
             <option value="">Všetky</option>
             {teams.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-medium" style={labelStyle}>Agent</label>
-          <select value={assignedProfileId} onChange={(e) => setAssignedProfileId(e.target.value)} className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none" style={selectStyle}>
+          <label className={labelClass}>Agent</label>
+          <select value={assignedProfileId} onChange={(e) => setAssignedProfileId(e.target.value)} className={fieldClass}>
             <option value="">Všetci</option>
             {activeProfiles.filter((p) => !teamId || p.teamId === teamId).map((p) => (
               <option key={p.id} value={p.id}>{p.fullName}</option>
@@ -231,8 +218,7 @@ export default function LeadFilters({
         <button
           type="button"
           onClick={clearFilters}
-          className="rounded-xl border px-4 py-2 text-xs font-medium min-h-[36px]"
-          style={{ borderColor: "rgba(71,85,105,0.4)", color: "#64748B" }}
+          className="min-h-[44px] rounded-xl border border-slate-200 px-4 py-2 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
         >
           Vymazať filtre
         </button>

@@ -48,14 +48,7 @@ export default async function LeadsPage({
       description="Profesionálny prehľad klientov, priorít a AI odporúčaní."
     >
       {scope === "team" && (
-        <div
-          className="mb-4 rounded-lg px-4 py-2 text-sm"
-          style={{
-            background:   "rgba(34,211,238,0.08)",
-            border:       "1px solid rgba(34,211,238,0.2)",
-            color:        "#22D3EE",
-          }}
-        >
+        <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700">
           Zobrazujú sa príležitosti pridelené kolegom vo vašom tíme.
         </div>
       )}
