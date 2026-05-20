@@ -11,7 +11,8 @@
 
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getClaudeClient, CLAUDE_SONNET } from "@/lib/ai/claude";
+import { checkAiRateLimit } from "@/lib/ai/rate-guard";
+import { CLAUDE_SONNET, streamClaude } from "@/lib/ai/claude";
 import { SYSTEM_PROMPT, buildListingUserPrompt } from "@/lib/ai/listing-content";
 import type { PropertyInput, ListingPersona } from "@/lib/ai/listing-content";
 
@@ -19,6 +20,9 @@ export async function POST(req: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
+  const block = await checkAiRateLimit(user.id, "listing-content-stream", 10);
+  if (block) return NextResponse.json(block, { status: 429 });
 
   let property: PropertyInput, persona: ListingPersona;
   try {
@@ -36,26 +40,22 @@ export async function POST(req: Request) {
   const readable = new ReadableStream({
     async start(controller) {
       try {
-        const stream = getClaudeClient().messages.stream({
+        const stream = streamClaude({
           model:      CLAUDE_SONNET,
           max_tokens: 2200,
           system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
           messages: [{ role: "user", content: userPrompt }],
-        });
+        }, "listing-content-stream");
 
-        for await (const event of stream) {
-          if (
-            event.type === "content_block_delta" &&
-            event.delta.type === "text_delta" &&
-            event.delta.text
-          ) {
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: event.delta.text })}\n\n`));
-          }
+        for await (const text of stream) {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`));
         }
 
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
       } catch (err) {
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: String(err) })}\n\n`));
+        console.error("[listing-content-stream]", err);
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: "listing_content_stream_failed" })}\n\n`));
+        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
       } finally {
         controller.close();
       }

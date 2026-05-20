@@ -8,9 +8,6 @@ import { calculateLeadAiScore, type ScoringResult } from "@/lib/ai-scoring";
 import { createActivity } from "@/lib/activities-store";
 import { supabaseClient, getSupabaseClient } from "@/lib/supabase/client";
 
-
-  autoErrorCapture("Supabase client initialized (ai-scoring)", "getSupabaseClient");
-
 function isMissingRecommendationColumnError(message: string | undefined) {
   const normalized = String(message ?? "").toLowerCase();
   return ["property_id", "model_version"].some((col) => normalized.includes(col));

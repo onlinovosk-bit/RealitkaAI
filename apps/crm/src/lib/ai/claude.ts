@@ -60,6 +60,64 @@ export async function callClaude(
   return resp;
 }
 
+type StreamClaudeParams = Omit<Anthropic.MessageCreateParamsStreaming, "stream"> & {
+  stream?: true;
+};
+
+/**
+ * Streaming sibling of callClaude.
+ * Keeps the same PII masking and telemetry contract for SSE endpoints.
+ */
+export async function* streamClaude(
+  params: StreamClaudeParams,
+  tag?: string
+): AsyncGenerator<string> {
+  const client = getClaudeClient();
+  const t0 = Date.now();
+  const vault: Vault = {};
+  let outputTokens = 0;
+
+  const { messages } = sanitizeMessages(
+    params.messages as Array<{ role: string; content: string | Array<{ type: string; text?: string }> }>,
+    vault
+  );
+  const system = sanitizeSystem(
+    params.system as string | Array<{ type: string; text?: string }> | undefined,
+    vault
+  );
+
+  const sanitizedParams: Anthropic.MessageCreateParamsStreaming = {
+    ...params,
+    stream: true,
+    messages: messages as Anthropic.MessageParam[],
+    ...(system !== undefined ? { system: system as Anthropic.MessageCreateParamsStreaming["system"] } : {}),
+  };
+
+  try {
+    const stream = client.messages.stream(sanitizedParams);
+
+    for await (const event of stream) {
+      if (event.type === "message_delta" && event.usage?.output_tokens) {
+        outputTokens = event.usage.output_tokens;
+      }
+
+      if (
+        event.type === "content_block_delta" &&
+        event.delta.type === "text_delta" &&
+        event.delta.text
+      ) {
+        yield rehydrate(event.delta.text, vault);
+      }
+    }
+  } finally {
+    const ms = Date.now() - t0;
+    const vaultSize = Object.keys(vault).length;
+    process.stderr.write(
+      `[ai:${tag ?? params.model}:stream] ${ms}ms | out:${outputTokens} | masked:${vaultSize}\n`
+    );
+  }
+}
+
 /**
  * Extrakt JSON z response (odstraňuje markdown bloky ak model ich pridá).
  */

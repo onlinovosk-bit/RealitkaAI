@@ -1,7 +1,8 @@
 ﻿import { supabaseClient, getSupabaseClient } from "@/lib/supabase/client";
-import { autoErrorCapture } from "./auto-error-capture";
 import { Resend } from "resend";
 import { createActivity } from "@/lib/activities-store";
+import { autoErrorCapture } from "./auto-error-capture";
+import { logInfo } from "./logger";
 
 type SaaSLeadInput = {
   id: string;
@@ -16,16 +17,13 @@ type SaaSLeadInput = {
   status?: string;
 };
 
-
-  autoErrorCapture("Supabase client initialized", "getSupabaseClient");
-
 function getResendClient() {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     autoErrorCapture("RESEND_API_KEY is missing", "getResendClient");
     return null;
   }
-  autoErrorCapture("Resend client initialized", "getResendClient");
+  logInfo("Resend client initialized", { context: "getResendClient" });
   return new Resend(apiKey);
 }
 

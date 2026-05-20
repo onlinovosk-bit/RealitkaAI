@@ -126,7 +126,7 @@ export async function sendTestMessage(leadId: string, to: string, body: string) 
 
 
 // === KF5 — AI odpoveď cez Claude (nahradenie broken OpenAI) ===
-import { getClaudeClient, CLAUDE_HAIKU } from "@/lib/ai/claude";
+import { callClaude, CLAUDE_HAIKU } from "@/lib/ai/claude";
 
 const CHANNEL_STYLE: Record<Channel, { instruction: string; maxTokens: number }> = {
   email:    { instruction: "Formálna, profesionálna, 3-5 viet, bez emoji. Zakončiť menom a kontaktom.", maxTokens: 200 },
@@ -172,10 +172,9 @@ export async function generateAiReply(context: {
     .join("\n");
 
   try {
-    const claude = getClaudeClient();
     const SYSTEM_REPLY = `Si asistent realitného makléra pre slovenský trh. Píšeš odpovede klientom v slovenčine. \
 NIKDY nevymýšľaj informácie o nehnuteľnosti. Ak niečo nevieš, opýtaj sa klienta.`;
-    const response = await claude.messages.create({
+    const response = await callClaude({
       model: CLAUDE_HAIKU,
       max_tokens: style.maxTokens,
       system: [{ type: "text", text: `${SYSTEM_REPLY} Štýl pre kanál ${channel}: ${style.instruction}`, cache_control: { type: "ephemeral" } }],
@@ -185,7 +184,7 @@ NIKDY nevymýšľaj informácie o nehnuteľnosti. Ak niečo nevieš, opýtaj sa 
           content: `Kontekst leadu:\n${leadContext || "Žiadne dáta"}\n\nPosledná správa od klienta:\n"${lastMessage}"\n\nNapíš odpoveď makléra:`,
         },
       ],
-    });
+    }, "multi-channel-reply");
     return response.content[0].type === "text"
       ? response.content[0].text.trim()
       : "(prázdna odpoveď)";

@@ -6,7 +6,7 @@
  * Volaný z: /api/ai/rescue/trigger
  */
 
-import { getClaudeClient, CLAUDE_HAIKU, extractJson } from "./claude";
+import { callClaude, CLAUDE_HAIKU, extractJson } from "./claude";
 import { withAiTimeout } from "./fallback";
 
 export type RescueChannel = "call" | "sms" | "email" | "whatsapp";
@@ -41,8 +41,6 @@ export async function generateRescuePlan(
   context: RescueContext,
   channel: RescueChannel = "sms"
 ): Promise<RescuePlanOutput> {
-  const client = getClaudeClient();
-
   const channelInstructions: Record<RescueChannel, string> = {
     sms:      "SMS: max 2 vety, bez diakritiky, personalizovaný háčik, konkrétna výzva na akciu.",
     whatsapp: "WhatsApp: 2-3 vety, priateľský tón, môže mať 1 otázku, ľudský.",
@@ -78,12 +76,12 @@ Vráť JSON:
   "status": "scheduled"
 }`;
 
-  const aiCall = client.messages.create({
+  const aiCall = callClaude({
     model: CLAUDE_HAIKU,
     max_tokens: 400,
     system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
     messages: [{ role: "user", content: userPrompt }],
-  }).then((response) => {
+  }, "rescue-message").then((response) => {
     const raw = response.content[0].type === "text" ? response.content[0].text : "";
     return extractJson<RescuePlanOutput>(raw);
   });

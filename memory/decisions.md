@@ -1,4 +1,5 @@
 # Critical Decisions Log
+- [2026-05-20] Product priority after Slate UI migration: build Realvia-style **Publikačné centrum ponuky** as priority #1. Scope: per-property portal export controls/status, export quality checks, portal-specific listing text variants, broker/branch/priority metadata, export history/errors, and AI recommendation for where/how to publish. Trigger reminder immediately after Slate UI migration reaches completion/merge-ready state.
 - [2026-04-29] CI/CD: Vyriešený "Nuclear Option" pre artifacty (apps/crm/.next). Pipeline je ZELENÁ.
 - [2026-04-29] XML Feed: Zvolená Varianta 1 (Vlastný web) pre utajenie pred Webexom.
 - [2026-04-29] Outreach: Definované šablóny pre segmenty A (Hot), B (Warm), C (Cold).

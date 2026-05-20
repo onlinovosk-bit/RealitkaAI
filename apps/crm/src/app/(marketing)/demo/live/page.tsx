@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default async function LiveDemoPage({
   searchParams,
 }: {
-  searchParams?: {
+  searchParams?: Promise<{
     agency?: string;
     rep?: string;
     name?: string;
@@ -23,19 +23,25 @@ export default async function LiveDemoPage({
     city?: string;
     agents?: string;
     sid?: string;
-  };
+  }>;
 }) {
-  let agency = searchParams?.agency?.trim() || "Vašu kanceláriu";
-  let rep = searchParams?.rep?.trim() || "tím";
-  let prefillName = searchParams?.name?.trim() || (rep && rep !== "tím" ? rep : "");
-  let prefillEmail = searchParams?.email?.trim() || searchParams?.mail?.trim() || "";
+  const resolvedSearchParams = await searchParams;
+
+  let agency = resolvedSearchParams?.agency?.trim() || "Vašu kanceláriu";
+  let rep = resolvedSearchParams?.rep?.trim() || "tím";
+  let prefillName = resolvedSearchParams?.name?.trim() || (rep && rep !== "tím" ? rep : "");
+  let prefillEmail =
+    resolvedSearchParams?.email?.trim() || resolvedSearchParams?.mail?.trim() || "";
   let prefillPhone =
-    searchParams?.phone?.trim() || searchParams?.tel?.trim() || searchParams?.telefon?.trim() || "";
-  let prefillCity = searchParams?.city?.trim() ?? "";
-  let prefillAgents = searchParams?.agents?.trim() ?? "";
+    resolvedSearchParams?.phone?.trim() ||
+    resolvedSearchParams?.tel?.trim() ||
+    resolvedSearchParams?.telefon?.trim() ||
+    "";
+  let prefillCity = resolvedSearchParams?.city?.trim() ?? "";
+  let prefillAgents = resolvedSearchParams?.agents?.trim() ?? "";
 
   // Preferred secure mode: sid token carries private prefill server-side.
-  const sid = searchParams?.sid?.trim();
+  const sid = resolvedSearchParams?.sid?.trim();
   if (sid) {
     const supabase = createServiceRoleClient();
     if (supabase) {

@@ -15,8 +15,13 @@ function getUrl() {
 }
 
 export function createAdminClient() {
-  const url = getUrl() || "https://placeholder-project.supabase.co";
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || getKey() || "placeholder-key";
+  const url = getUrl();
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+
+  if (!url || !serviceKey) {
+    throw new Error("Supabase admin client requires NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.");
+  }
+
   return createSupabaseClient(url, serviceKey, { auth: { persistSession: false } });
 }
 

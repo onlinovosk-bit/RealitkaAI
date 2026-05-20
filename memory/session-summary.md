@@ -28,6 +28,7 @@
 - `callClaude()` wrapper v claude.ts: latency logging
 
 ### Rozpracované / Pending
+- Po dokončení Slate UI migrácie okamžite pripomenúť prioritu č. 1: Realvia-style Publikačné centrum ponuky (portálové exporty/status, AI kontrola pripravenosti, portálové textové varianty, maklér/pobočka/priorita, export history/errors).
 - Dead routes sú identifikované ale NEzmazané — čakajú na potvrdenie: `/api/system/schema`, `/api/test-db`, `/api/admin/check-migration`, `/api/l99/shadow-inventory`
 - Migrácia AI modulov na `callClaude()` wrapper — next sprint
 - Streaming pre call-coach (analogicky k listing-content/stream)

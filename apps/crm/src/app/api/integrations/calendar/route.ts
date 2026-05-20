@@ -4,7 +4,6 @@ import {
   disconnectCalendarIntegration,
   getCalendarIntegration,
   saveCalendarIntegration,
-  syncCalendarFromIcs,
 } from '@/lib/integrations-store';
 
 export async function GET() {
@@ -100,23 +99,6 @@ export async function POST(request: Request) {
       },
       { status: 500 }
     );
-  }
-}
-
-export async function POST_sync(request: Request) {
-  try {
-    const profile = await getCurrentProfile();
-    if (!profile) {
-      return NextResponse.json({ ok: false, error: 'Pouzivatel nie je prihlaseny.' }, { status: 401 });
-    }
-    const integration = await getCalendarIntegration(profile.id);
-    if (!integration?.calendarIcsUrl) {
-      return NextResponse.json({ ok: false, error: 'Nie je nakonfigurovaný ICS kalendár.' }, { status: 400 });
-    }
-    const result = await syncCalendarFromIcs(integration.calendarIcsUrl, profile.id);
-    return NextResponse.json({ ok: true, ...result });
-  } catch (error) {
-    return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : 'Chyba pri synchronizácii kalendára' }, { status: 500 });
   }
 }
 

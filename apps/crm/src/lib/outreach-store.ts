@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { autoErrorCapture } from "./auto-error-capture";
+import { logInfo } from "./logger";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { logAiActionAudit } from "@/lib/ai-action-audit";
 import { generateOutreachEmail } from "@/lib/ai-outreach";
@@ -44,7 +45,7 @@ function getResendClient() {
     throw new Error("RESEND_API_KEY má neplatný formát. Očakáva sa kľúč začínajúci na re_.");
   }
 
-  autoErrorCapture("Resend client initialized", "getResendClient");
+  logInfo("Resend client initialized", { context: "getResendClient" });
   return new Resend(apiKey);
 }
 

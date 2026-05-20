@@ -11,7 +11,7 @@
 
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getClaudeClient, CLAUDE_HAIKU } from "@/lib/ai/claude";
+import { CLAUDE_HAIKU, streamClaude } from "@/lib/ai/claude";
 import { checkAiRateLimit } from "@/lib/ai/rate-guard";
 
 const SYSTEM = `Si realitný sales coach so 20 rokmi praxe v SR. \
@@ -43,7 +43,7 @@ export async function POST(req: Request) {
   const readable = new ReadableStream({
     async start(controller) {
       try {
-        const stream = getClaudeClient().messages.stream({
+        const stream = streamClaude({
           model:      CLAUDE_HAIKU,
           max_tokens: 500,
           system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
@@ -60,21 +60,17 @@ export async function POST(req: Request) {
 }`,
             },
           ],
-        });
+        }, "call-coach-stream");
 
-        for await (const event of stream) {
-          if (
-            event.type === "content_block_delta" &&
-            event.delta.type === "text_delta" &&
-            event.delta.text
-          ) {
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: event.delta.text })}\n\n`));
-          }
+        for await (const text of stream) {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`));
         }
 
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
       } catch (err) {
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: String(err) })}\n\n`));
+        console.error("[call-coach-stream]", err);
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: "call_coach_stream_failed" })}\n\n`));
+        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
       } finally {
         controller.close();
       }
