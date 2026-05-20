@@ -1,6 +1,5 @@
 "use client";
 import Link from "next/link";
-import { RadiantSpriteIcon } from "@/components/shared/radiant-sprite-icon";
 
 export default function QuickActionsBar() {
   const actions = [
@@ -16,10 +15,10 @@ export default function QuickActionsBar() {
         <Link
           key={href}
           href={href}
-          className="flex items-center justify-center rounded-xl px-3 py-2.5 text-xs md:text-sm font-semibold transition-all active:scale-95 min-h-[40px]"
-          style={primary
-            ? { background: "linear-gradient(135deg, #22D3EE, #0EA5E9)", color: "#050914" }
-            : { background: "rgba(34,211,238,0.06)", border: "1px solid rgba(34,211,238,0.12)", color: "#94A3B8" }
+          className={
+            primary
+              ? "flex min-h-11 items-center justify-center rounded-xl bg-orange-500 px-3 py-2.5 text-xs font-semibold text-white shadow-sm shadow-orange-500/20 transition-colors hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 md:text-sm"
+              : "flex min-h-11 items-center justify-center rounded-xl border border-blue-100 bg-white px-3 py-2.5 text-xs font-semibold text-blue-800 shadow-sm shadow-slate-200/60 transition-colors hover:border-blue-200 hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 md:text-sm"
           }
         >
           {label}

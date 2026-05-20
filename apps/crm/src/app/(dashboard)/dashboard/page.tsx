@@ -71,7 +71,7 @@ function getTrend(value: number, target: number, suffix = "") {
 }
 
 function KpiCard({ title, value, subtitle }: { title: string; value: string | number; subtitle: string }) {
-  const [glowRef, glowStyle] = useGlowOnHover();
+  const [glowRef, glowStyle] = useGlowOnHover("#2563EB");
   const numeric = typeof value === "number" ? value : Number(String(value).replace("%", ""));
   const animated = useCountUp(Number.isNaN(numeric) ? 0 : numeric);
   const shownValue = typeof value === "string" && value.includes("%") ? `${animated}%` : animated;
@@ -79,12 +79,12 @@ function KpiCard({ title, value, subtitle }: { title: string; value: string | nu
   return (
     <div
       ref={glowRef as any}
-      style={{ ...glowStyle, background: "#080D1A", borderColor: "rgba(34,211,238,0.10)" }}
-      className="rounded-2xl border p-4 md:p-5"
+      style={glowStyle}
+      className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/70 md:p-5"
     >
-      <p className="text-xs md:text-sm" style={{ color: "#64748B" }}>{title}</p>
-      <h2 className="mt-1.5 text-2xl md:text-3xl font-bold" style={{ color: "#F0F9FF" }}>{shownValue}</h2>
-      <p className="mt-1 text-xs md:text-sm" style={{ color: "#475569" }}>{subtitle}</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 md:text-sm">{title}</p>
+      <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-slate-950 md:text-3xl">{shownValue}</h2>
+      <p className="mt-1 text-xs leading-5 text-slate-600 md:text-sm">{subtitle}</p>
     </div>
   );
 }
@@ -204,26 +204,21 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <main className="p-6">
-        <div className="text-center text-sm text-gray-400">Načítavam prehľad…</div>
+      <main className="min-h-screen bg-slate-50 p-6">
+        <div className="text-center text-sm font-medium text-slate-600">Načítavam prehľad...</div>
       </main>
     );
   }
 
   if (loadError) {
     return (
-      <main className="p-6">
+      <main className="min-h-screen bg-slate-50 p-6">
         <div className="mx-auto max-w-md text-center">
-          <h2 className="text-lg font-bold text-gray-100">Chyba pri načítaní</h2>
-          <p className="mt-2 text-sm text-gray-400">{loadError}</p>
+          <h2 className="text-lg font-bold text-slate-950">Chyba pri načítaní</h2>
+          <p className="mt-2 text-sm text-slate-600">{loadError}</p>
           <button
             onClick={() => window.location.reload()}
-            className="mt-4 rounded-xl px-5 py-2.5 text-sm font-semibold"
-            style={{
-              background: "rgba(34,211,238,0.08)",
-              border: "1px solid rgba(34,211,238,0.2)",
-              color: "#22d3ee",
-            }}
+            className="mt-4 min-h-11 rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
           >
             Obnoviť stránku
           </button>
@@ -245,12 +240,35 @@ export default function DashboardPage() {
   const showRevenueCommandCenter = planKey === "command" || planKey === "enterprise";
 
   return (
-    <main className="p-3 md:p-6" style={{ background: "#050914", minHeight: "100vh" }}>
+    <main className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-blue-50/40 p-3 md:p-6">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-4 md:mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold" style={{ color: "#F0F9FF" }}>Prehľad biznisu</h1>
-          <p className="mt-1 text-sm" style={{ color: "#64748B" }}>Prehľad výkonnosti tímu a prioritných príležitostí.</p>
-        </div>
+        <section className="mb-6 overflow-hidden rounded-3xl bg-gradient-to-br from-blue-950 via-blue-800 to-blue-600 p-5 text-white shadow-xl shadow-blue-900/20 md:p-7">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <span className="inline-flex rounded-full border border-white/20 bg-white/15 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-blue-50">
+                Slate Horizon · Broker cockpit
+              </span>
+              <h1 className="mt-4 text-3xl font-extrabold tracking-tight md:text-4xl">Kde mám peniaze dnes?</h1>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-blue-50/85 md:text-base">
+                Prehľad biznisu ukazuje maklérovi najbližšiu províziu, prioritné telefonáty a riziká, ktoré treba vyriešiť ešte dnes.
+              </p>
+            </div>
+            <div className="grid min-w-0 grid-cols-1 gap-2 text-sm sm:grid-cols-3 lg:min-w-[430px]">
+              <div className="rounded-2xl border border-white/15 bg-white/10 p-3">
+                <p className="text-xs text-blue-100/80">Komu volať</p>
+                <p className="mt-1 font-bold text-white">najvyšší dopad</p>
+              </div>
+              <div className="rounded-2xl border border-white/15 bg-white/10 p-3">
+                <p className="text-xs text-blue-100/80">Kedy inkasujem</p>
+                <p className="mt-1 font-bold text-emerald-200">provízny radar</p>
+              </div>
+              <div className="rounded-2xl border border-white/15 bg-white/10 p-3">
+                <p className="text-xs text-blue-100/80">Čo horí</p>
+                <p className="mt-1 font-bold text-orange-200">dnešné riziko</p>
+              </div>
+            </div>
+          </div>
+        </section>
 
         <section className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
           <AIAssistBanner plan={plan ?? "free"} />
@@ -267,19 +285,19 @@ export default function DashboardPage() {
           <KpiCard title="Konverzný pomer" value={`${conversionRate}%`} subtitle="Ponuky / celkové" />
         </section>
 
-        <section className="mb-6 rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-950/40 via-slate-900/80 to-slate-950 p-5 text-white shadow-[0_0_32px_rgba(16,185,129,0.12)]">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-300/90">
+        <section className="mb-6 rounded-3xl border border-emerald-100 bg-white p-5 text-slate-950 shadow-sm shadow-slate-200/70">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-700">
             AI Sales OS — mesačný odhad (€)
           </p>
           {monthlyMoneyStatus === "loading" && (
-            <p className="mt-3 text-sm text-emerald-100/80">Načítavam mesačný odhad…</p>
+            <p className="mt-3 text-sm text-slate-600">Načítavam mesačný odhad...</p>
           )}
           {monthlyMoneyStatus === "error" && (
-            <div className="mt-3 text-sm text-amber-100/95">
+            <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
               <p>Mesačný odhad sa nepodarilo načítať.</p>
-              <p className="mt-2 text-xs text-emerald-200/70">
+              <p className="mt-2 text-xs leading-5 text-amber-800">
                 Skontroluj v novom paneli prehliadača adresu{" "}
-                <code className="rounded bg-black/30 px-1">/api/ai/monthly-forecast</code> — ak dostaneš{" "}
+                <code className="rounded bg-white px-1 text-amber-950">/api/ai/monthly-forecast</code> — ak dostaneš{" "}
                 <strong>404</strong>, na produkcii ešte nie je nasadený kód s touto route. Po úspešnom deployi
                 sa tu zobrazí suma a rozpad.
               </p>
@@ -289,19 +307,19 @@ export default function DashboardPage() {
             <>
               <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
                 <div>
-                  <p className="text-sm text-emerald-100/80">{monthlyMoney.monthLabel}</p>
-                  <p className="mt-1 text-3xl font-bold tabular-nums">
+                  <p className="text-sm font-medium text-slate-600">{monthlyMoney.monthLabel}</p>
+                  <p className="mt-1 text-3xl font-extrabold tabular-nums text-emerald-700">
                     {monthlyMoney.totalExpectedEur?.toLocaleString("sk-SK")} ,- €
                   </p>
                   {monthlyMoney.trend && (
-                    <p className="mt-1 text-sm text-emerald-200/90">
+                    <p className="mt-1 text-sm font-medium text-emerald-700">
                       Trend vs. posledný výpočet: {monthlyMoney.trend.percent > 0 ? "+" : ""}
                       {monthlyMoney.trend.percent}% ({monthlyMoney.trend.diffEur > 0 ? "+" : ""}
                       {monthlyMoney.trend.diffEur.toLocaleString("sk-SK")} €)
                     </p>
                   )}
                 </div>
-                <div className="text-right text-xs text-emerald-100/70">
+                <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-right text-xs text-emerald-900">
                   <p>Hot / warm / cold (rozpad)</p>
                   {monthlyMoney.breakdown && (
                     <ul className="mt-1 space-y-0.5">
@@ -314,7 +332,7 @@ export default function DashboardPage() {
                   )}
                 </div>
               </div>
-              <p className="mt-3 text-[11px] text-emerald-200/60">
+              <p className="mt-3 text-[11px] leading-5 text-slate-500">
                 Model: hodnota z rozpočtu × pravdepodobnosť podľa skóre (viac v dokumentácii AI Sales OS).
               </p>
             </>
