@@ -4,6 +4,14 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { taskPriorityOptions, taskStatusOptions } from "@/lib/tasks-store";
 
+const fieldClass =
+  "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20";
+const labelClass = "mb-1 block text-sm font-medium text-slate-700";
+const primaryButtonClass =
+  "rounded-lg bg-[#F97316] px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 disabled:opacity-60";
+const secondaryButtonClass =
+  "rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2";
+
 type LeadOption = {
   id: string;
   name: string;
@@ -98,26 +106,26 @@ export default function TaskCreateForm({
   }
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">Pridať úlohu</h2>
-          <p className="text-sm text-gray-500">
-            Následná úloha pre tím alebo konkrétneho agenta.
+          <h2 className="text-lg font-semibold text-slate-950">Pridať úlohu</h2>
+          <p className="text-sm text-slate-500">
+            Naplánuj ďalší krok pre lead, agenta alebo dnešné inkaso.
           </p>
         </div>
 
         <button
           type="button"
           onClick={() => setIsOpen((prev) => !prev)}
-          className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+          className={primaryButtonClass}
         >
           {isOpen ? "Zavrieť formulár" : "Nová úloha"}
         </button>
       </div>
 
       {message && (
-        <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
+        <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
           {message}
         </div>
       )}
@@ -125,31 +133,31 @@ export default function TaskCreateForm({
       {isOpen && (
         <form onSubmit={handleSubmit} className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="md:col-span-2">
-            <label className="mb-1 block text-sm font-medium text-gray-700">Názov úlohy</label>
+            <label className={labelClass}>Názov úlohy</label>
             <input
               required
               value={form.title}
               onChange={(e) => updateField("title", e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+              className={fieldClass}
             />
           </div>
 
           <div className="md:col-span-2">
-            <label className="mb-1 block text-sm font-medium text-gray-700">Popis</label>
+            <label className={labelClass}>Popis</label>
             <textarea
               rows={4}
               value={form.description}
               onChange={(e) => updateField("description", e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+              className={fieldClass}
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Status</label>
+            <label className={labelClass}>Status</label>
             <select
               value={form.status}
               onChange={(e) => updateField("status", e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+              className={fieldClass}
             >
               {taskStatusOptions.map((item) => (
                 <option key={item} value={item}>
@@ -160,11 +168,11 @@ export default function TaskCreateForm({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Priorita</label>
+            <label className={labelClass}>Priorita</label>
             <select
               value={form.priority}
               onChange={(e) => updateField("priority", e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+              className={fieldClass}
             >
               {taskPriorityOptions.map((item) => (
                 <option key={item} value={item}>
@@ -175,12 +183,12 @@ export default function TaskCreateForm({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Lead</label>
+            <label className={labelClass}>Lead</label>
             <select
               required
               value={form.leadId}
               onChange={(e) => updateField("leadId", e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+              className={fieldClass}
             >
               <option value="">Vyber lead</option>
               {leads.map((lead) => (
@@ -192,11 +200,11 @@ export default function TaskCreateForm({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Priradený agent</label>
+            <label className={labelClass}>Priradený agent</label>
             <select
               value={form.assignedProfileId}
               onChange={(e) => updateField("assignedProfileId", e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+              className={fieldClass}
             >
               <option value="">Nepriradené</option>
               {profiles.map((profile) => (
@@ -208,12 +216,12 @@ export default function TaskCreateForm({
           </div>
 
           <div className="md:col-span-2">
-            <label className="mb-1 block text-sm font-medium text-gray-700">Deadline</label>
+            <label className={labelClass}>Deadline</label>
             <input
               type="datetime-local"
               value={form.dueAt}
               onChange={(e) => updateField("dueAt", e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+              className={fieldClass}
             />
           </div>
 
@@ -221,7 +229,7 @@ export default function TaskCreateForm({
             <button
               type="submit"
               disabled={isSaving}
-              className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-60"
+              className={primaryButtonClass}
             >
               {isSaving ? "Ukladám..." : "Uložiť úlohu"}
             </button>
@@ -229,7 +237,7 @@ export default function TaskCreateForm({
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className={secondaryButtonClass}
             >
               Zrušiť
             </button>

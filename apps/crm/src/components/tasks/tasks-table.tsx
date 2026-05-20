@@ -20,15 +20,15 @@ const PRIORITY_LABEL: Record<string, string> = {
 };
 
 const PRIORITY_CLASS: Record<string, string> = {
-  high:   "bg-red-100 text-red-700",
-  medium: "bg-yellow-100 text-yellow-700",
-  low:    "bg-gray-100 text-gray-600",
+  high:   "border border-red-200 bg-red-50 text-red-700",
+  medium: "border border-amber-200 bg-amber-50 text-amber-700",
+  low:    "border border-slate-200 bg-slate-50 text-slate-600",
 };
 
 const STATUS_CLASS: Record<string, string> = {
-  open:        "bg-blue-100 text-blue-700",
-  in_progress: "bg-yellow-100 text-yellow-700",
-  done:        "bg-green-100 text-green-700",
+  open:        "border border-blue-200 bg-blue-50 text-blue-700",
+  in_progress: "border border-amber-200 bg-amber-50 text-amber-700",
+  done:        "border border-green-200 bg-green-50 text-green-700",
 };
 
 const FILTERS = [
@@ -85,23 +85,23 @@ export default function TasksTable({
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       {/* Filter tabs */}
-      <div className="flex gap-1 border-b border-gray-200 px-4 pt-3">
+      <div className="flex gap-1 border-b border-slate-200 bg-slate-50/70 px-4 pt-3">
         {FILTERS.map((f) => (
           <button
             key={f.key}
             type="button"
             onClick={() => setFilter(f.key)}
-            className={`flex items-center gap-1.5 rounded-t-lg px-4 py-2 text-sm font-medium transition-colors
+            className={`flex min-h-11 items-center gap-1.5 rounded-t-lg px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2
               ${filter === f.key
-                ? "border-b-2 border-gray-900 text-gray-900"
-                : "text-gray-500 hover:text-gray-700"
+                ? "border-b-2 border-blue-700 text-blue-950"
+                : "text-slate-500 hover:text-slate-700"
               }`}
           >
             {f.label}
             <span className={`rounded-full px-1.5 py-0.5 text-xs font-semibold
-              ${filter === f.key ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600"}`}>
+              ${filter === f.key ? "bg-blue-700 text-white" : "bg-white text-slate-600 ring-1 ring-slate-200"}`}>
               {counts[f.key as keyof typeof counts]}
             </span>
           </button>
@@ -110,7 +110,7 @@ export default function TasksTable({
 
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
-          <thead className="bg-gray-50 text-left text-gray-500">
+          <thead className="bg-slate-50 text-left text-slate-500">
             <tr>
               <th className="w-10 px-4 py-3"></th>
               <th className="px-5 py-3 font-medium">Úloha</th>
@@ -123,14 +123,14 @@ export default function TasksTable({
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-slate-100">
             {visible.map((task) => {
               const lead    = leads.find((l) => l.id === task.leadId);
               const profile = profiles.find((p) => p.id === task.assignedProfileId);
               const isDone  = task.status === "done";
 
               return (
-                <tr key={task.id} className={`hover:bg-gray-50 ${isDone ? "opacity-60" : ""}`}>
+                <tr key={task.id} className={`hover:bg-blue-50/40 ${isDone ? "opacity-60" : ""}`}>
                   {/* Quick done checkbox */}
                   <td className="px-4 py-4 text-center">
                     <button
@@ -138,10 +138,10 @@ export default function TasksTable({
                       title={isDone ? "Znovu otvoriť" : "Označiť ako hotové"}
                       disabled={toggling === task.id}
                       onClick={() => toggleDone(task)}
-                      className={`h-5 w-5 rounded border-2 flex items-center justify-center transition-colors
+                      className={`flex h-10 w-10 items-center justify-center rounded-xl border-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2
                         ${isDone
-                          ? "border-green-500 bg-green-500 text-white"
-                          : "border-gray-300 hover:border-gray-500"
+                          ? "border-green-600 bg-green-600 text-white"
+                          : "border-slate-300 hover:border-blue-600"
                         } disabled:opacity-40`}
                     >
                       {isDone && (
@@ -153,11 +153,11 @@ export default function TasksTable({
                   </td>
 
                   <td className="px-5 py-4">
-                    <div className={`font-medium ${isDone ? "line-through text-gray-400" : "text-gray-900"}`}>
+                    <div className={`font-medium ${isDone ? "line-through text-slate-400" : "text-slate-950"}`}>
                       {task.title}
                     </div>
                     {task.description && (
-                      <div className="mt-0.5 max-w-xs truncate text-xs text-gray-500">
+                      <div className="mt-0.5 max-w-xs truncate text-xs text-slate-500">
                         {task.description}
                       </div>
                     )}
@@ -167,35 +167,35 @@ export default function TasksTable({
                     {lead ? (
                       <a
                         href={`/leads/${task.leadId}`}
-                        className="text-gray-700 hover:text-gray-900 hover:underline"
+                        className="font-medium text-blue-700 hover:text-blue-950 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                       >
                         {lead.name}
                       </a>
                     ) : (
-                      <span className="text-gray-400">-</span>
+                      <span className="text-slate-400">-</span>
                     )}
                   </td>
 
-                  <td className="px-5 py-4 text-gray-700">
-                    {profile?.fullName ?? <span className="text-gray-400">-</span>}
+                  <td className="px-5 py-4 text-slate-700">
+                    {profile?.fullName ?? <span className="text-slate-400">-</span>}
                   </td>
 
                   <td className="px-5 py-4">
-                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${PRIORITY_CLASS[task.priority] ?? "bg-gray-100 text-gray-600"}`}>
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${PRIORITY_CLASS[task.priority] ?? "border border-slate-200 bg-slate-50 text-slate-600"}`}>
                       {PRIORITY_LABEL[task.priority] ?? task.priority}
                     </span>
                   </td>
 
                   <td className="px-5 py-4">
-                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_CLASS[task.status] ?? "bg-gray-100 text-gray-600"}`}>
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_CLASS[task.status] ?? "border border-slate-200 bg-slate-50 text-slate-600"}`}>
                       {STATUS_LABEL[task.status] ?? task.status}
                     </span>
                   </td>
 
-                  <td className="px-5 py-4 text-gray-700">
+                  <td className="px-5 py-4 text-slate-700">
                     {task.dueAt
                       ? new Date(task.dueAt).toLocaleDateString("sk-SK", { day: "numeric", month: "short" })
-                      : <span className="text-gray-400">-</span>
+                      : <span className="text-slate-400">-</span>
                     }
                   </td>
 
@@ -203,7 +203,7 @@ export default function TasksTable({
                     <button
                       type="button"
                       onClick={() => onEdit?.(task)}
-                      className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                      className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                     >
                       Upraviť
                     </button>
@@ -215,7 +215,7 @@ export default function TasksTable({
         </table>
 
         {visible.length === 0 && (
-          <div className="border-t border-gray-100 p-6 text-center text-sm text-gray-400">
+          <div className="border-t border-slate-100 p-6 text-center text-sm text-slate-500">
             {filter === "done"
               ? "Zatiaľ žiadne hotové úlohy."
               : filter === "in_progress"

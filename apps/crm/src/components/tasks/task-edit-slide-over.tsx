@@ -4,6 +4,14 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { taskPriorityOptions, taskStatusOptions, type Task } from "@/lib/tasks-store";
 
+const fieldClass =
+  "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20";
+const labelClass = "mb-1 block text-sm font-medium text-slate-700";
+const primaryButtonClass =
+  "rounded-lg bg-[#F97316] px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 disabled:opacity-60";
+const secondaryButtonClass =
+  "rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2";
+
 type LeadOption = {
   id: string;
   name: string;
@@ -175,22 +183,22 @@ export default function TaskEditSlideOver({
       />
 
       <aside
-        className={`absolute right-0 top-0 h-full w-full max-w-2xl overflow-y-auto border-l border-gray-200 bg-white shadow-2xl transition-transform ${
+        className={`absolute right-0 top-0 h-full w-full max-w-2xl overflow-y-auto border-l border-slate-200 bg-white shadow-2xl transition-transform ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-gray-200 bg-white px-6 py-5">
+        <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-200 bg-slate-50/95 px-6 py-5 backdrop-blur">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Detail / edit úlohy</h2>
-            <p className="mt-1 text-sm text-gray-500">
-              Správa tasku v slide-over paneli.
+            <h2 className="text-2xl font-bold text-slate-950">Detail / edit úlohy</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Udrž ďalší krok v pohybe bez zmeny toku leadu.
             </p>
           </div>
 
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className={secondaryButtonClass}
           >
             Zavrieť
           </button>
@@ -198,38 +206,38 @@ export default function TaskEditSlideOver({
 
         <form onSubmit={handleSubmit} className="space-y-6 p-6">
           {message && (
-            <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
               {message}
             </div>
           )}
 
           <div className="grid grid-cols-1 gap-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Názov úlohy</label>
+              <label className={labelClass}>Názov úlohy</label>
               <input
                 value={form.title}
                 onChange={(e) => updateField("title", e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+                className={fieldClass}
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Popis</label>
+              <label className={labelClass}>Popis</label>
               <textarea
                 rows={4}
                 value={form.description}
                 onChange={(e) => updateField("description", e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+                className={fieldClass}
               />
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Status</label>
+                <label className={labelClass}>Status</label>
                 <select
                   value={form.status}
                   onChange={(e) => updateField("status", e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+                  className={fieldClass}
                 >
                   {taskStatusOptions.map((item) => (
                     <option key={item} value={item}>
@@ -240,11 +248,11 @@ export default function TaskEditSlideOver({
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Priorita</label>
+                <label className={labelClass}>Priorita</label>
                 <select
                   value={form.priority}
                   onChange={(e) => updateField("priority", e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+                  className={fieldClass}
                 >
                   {taskPriorityOptions.map((item) => (
                     <option key={item} value={item}>
@@ -255,12 +263,12 @@ export default function TaskEditSlideOver({
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Lead</label>
+                <label className={labelClass}>Lead</label>
                 <select
                   required
                   value={form.leadId ?? ""}
                   onChange={(e) => updateField("leadId", e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+                  className={fieldClass}
                 >
                   <option value="">Vyber lead</option>
                   {leads.map((lead) => (
@@ -272,11 +280,11 @@ export default function TaskEditSlideOver({
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Priradený agent</label>
+                <label className={labelClass}>Priradený agent</label>
                 <select
                   value={form.assignedProfileId ?? ""}
                   onChange={(e) => updateField("assignedProfileId", e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+                  className={fieldClass}
                 >
                   <option value="">Nepriradené</option>
                   {profiles.map((profile) => (
@@ -289,12 +297,12 @@ export default function TaskEditSlideOver({
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Deadline</label>
+              <label className={labelClass}>Deadline</label>
               <input
                 type="datetime-local"
                 value={form.dueAt ?? ""}
                 onChange={(e) => updateField("dueAt", e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
+                className={fieldClass}
               />
             </div>
           </div>
@@ -303,7 +311,7 @@ export default function TaskEditSlideOver({
             <button
               type="submit"
               disabled={saving}
-              className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-60"
+              className={primaryButtonClass}
             >
               {saving ? "Ukladám..." : "Uložiť zmeny"}
             </button>
@@ -312,7 +320,7 @@ export default function TaskEditSlideOver({
               type="button"
               onClick={handleMarkDone}
               disabled={saving}
-              className="rounded-lg border border-green-300 px-4 py-2 text-sm font-medium text-green-700 hover:bg-green-50 disabled:opacity-60"
+              className="rounded-lg border border-green-300 px-4 py-2 text-sm font-medium text-green-700 transition hover:bg-green-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 disabled:opacity-60"
             >
               Dokončiť
             </button>
@@ -321,7 +329,7 @@ export default function TaskEditSlideOver({
               type="button"
               onClick={handleDelete}
               disabled={saving}
-              className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-60"
+              className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:opacity-60"
             >
               Zmazať
             </button>

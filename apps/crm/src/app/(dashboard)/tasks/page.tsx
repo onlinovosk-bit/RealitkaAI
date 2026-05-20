@@ -9,6 +9,32 @@ import { listProfiles } from "@/lib/team-store";
 import { safeServerAction } from "@/lib/safe-action";
 import Link from "next/link";
 
+const statCards = [
+  {
+    href: "/tasks?filter=open",
+    label: "Otvorené úlohy",
+    tone: "border-blue-200 bg-blue-50/80 text-blue-700 hover:border-blue-300",
+    valueClass: "text-blue-950",
+  },
+  {
+    label: "Rozpracované",
+    tone: "border-amber-200 bg-amber-50/80 text-amber-700",
+    valueClass: "text-amber-950",
+  },
+  {
+    href: "/tasks?filter=done",
+    label: "Dokončené",
+    tone: "border-green-200 bg-green-50/80 text-green-700 hover:border-green-300",
+    valueClass: "text-green-950",
+  },
+  {
+    href: "/tasks?filter=high",
+    label: "Vysoká priorita",
+    tone: "border-red-200 bg-red-50/80 text-red-700 hover:border-red-300",
+    valueClass: "text-red-950",
+  },
+];
+
 export default async function TasksPage({
   searchParams,
 }: {
@@ -60,28 +86,33 @@ export default async function TasksPage({
   return (
     <ModuleShell
       title="Úlohy"
-      description="Denná operatíva, následné úlohy a vykonávanie odporúčaní v praxi."
+      description="Komu volať ako prvému, čo dokončiť dnes a ktoré úlohy blokujú províziu."
     >
       <section className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Link href="/tasks?filter=open" className="rounded-2xl border border-blue-100 bg-blue-50 p-5 shadow-sm transition hover:shadow-md hover:border-blue-200">
-          <p className="text-sm text-blue-600">Otvorené úlohy</p>
-          <h2 className="mt-2 text-3xl font-bold text-blue-900">{openTasks}</h2>
-        </Link>
+        {statCards.map((card, index) => {
+          const value = [openTasks, inProgressTasks, doneTasks, highPriority][index];
+          const className = `rounded-2xl border p-5 shadow-sm transition ${card.tone}`;
+          const content = (
+            <>
+              <p className="text-sm font-medium">{card.label}</p>
+              <h2 className={`mt-2 text-3xl font-bold ${card.valueClass}`}>{value}</h2>
+            </>
+          );
 
-        <div className="rounded-2xl border border-yellow-100 bg-yellow-50 p-5 shadow-sm">
-          <p className="text-sm text-yellow-600">Rozpracované</p>
-          <h2 className="mt-2 text-3xl font-bold text-yellow-900">{inProgressTasks}</h2>
-        </div>
-
-        <Link href="/tasks?filter=done" className="rounded-2xl border border-green-100 bg-green-50 p-5 shadow-sm transition hover:shadow-md hover:border-green-200">
-          <p className="text-sm text-green-600">Dokončené</p>
-          <h2 className="mt-2 text-3xl font-bold text-green-900">{doneTasks}</h2>
-        </Link>
-
-        <Link href="/tasks?filter=high" className="rounded-2xl border border-red-100 bg-red-50 p-5 shadow-sm transition hover:shadow-md hover:border-red-200">
-          <p className="text-sm text-red-600">Vysoká priorita</p>
-          <h2 className="mt-2 text-3xl font-bold text-red-900">{highPriority}</h2>
-        </Link>
+          return card.href ? (
+            <Link
+              key={card.label}
+              href={card.href}
+              className={`${className} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2`}
+            >
+              {content}
+            </Link>
+          ) : (
+            <div key={card.label} className={className}>
+              {content}
+            </div>
+          );
+        })}
       </section>
 
       <section className="mb-6">
