@@ -16,6 +16,11 @@ import {
   type BadgeVariant,
   type TeamMemberPermissions,
 } from "@/types/navigation";
+import {
+  getPlanLabel,
+  resolveProfilePlanKey,
+  type DisplayPlanKey,
+} from "@/lib/plan-display";
 
 type FounderDemoProgram = "free" | "starter" | "active_force" | "market_vision" | "protocol_authority";
 
@@ -127,17 +132,6 @@ interface AppSidebarProps {
   appRole?:     string;
   agencyName?:  string;
   userName?:    string;
-}
-
-// ─── Smart Start badge (iný label pre 49€ plán) ────────────────────────────
-function getPlanDisplayName(
-  variant:     MenuVariant,
-  accountTier: string
-): string {
-  if (variant === "agent_solo" && accountTier === "starter") {
-    return "Smart Start";
-  }
-  return VARIANT_THEMES[variant].planLabel;
 }
 
 // ─── Jedna nav položka ─────────────────────────────────────────────────────
@@ -541,14 +535,21 @@ export default function AppSidebar({
   const gKeyRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const gPressedRef = useRef(false);
 
-  // Vypočítaj variant
-  const variant: MenuVariant = getMenuVariant(uiRole, isInTeam, appRole);
+  // Vypočítaj variant a plán z profilu (nie len z menu variantu)
+  const variant: MenuVariant = getMenuVariant(uiRole, isInTeam, appRole, accountTier);
   const demoVariant          = getDemoVariant(demoProgram);
   const renderVariant        = isFounderDemo ? demoVariant : variant;
   const theme                = VARIANT_THEMES[renderVariant];
-  const planLabel            = isFounderDemo
+  const profilePlanKey: DisplayPlanKey = resolveProfilePlanKey({
+    account_tier: accountTier,
+    ui_role:      uiRole,
+  });
+  const planLabel = isFounderDemo
     ? FOUNDER_DEMO_PROGRAMS.find((p) => p.id === demoProgram)?.label ?? "Protocol Authority"
-    : getPlanDisplayName(variant, accountTier);
+    : getPlanLabel(profilePlanKey);
+  const showProtocolBadge = isFounderDemo
+    ? demoProgram === "protocol_authority"
+    : profilePlanKey === "protocol_authority";
 
   // Načítaj demo program z localStorage
   useEffect(() => {
@@ -750,8 +751,8 @@ export default function AppSidebar({
             Revolis.AI
           </span>
 
-          {/* Gold Protocol badge */}
-          {demoProgram === "protocol_authority" && (
+          {/* Protocol badge — len skutočný PA plán alebo founder demo */}
+          {showProtocolBadge && (
             <span
               className="rounded bg-orange-100 px-1.5 py-0.5 text-[9px] font-bold text-orange-700"
               style={{ letterSpacing: "0.06em" }}

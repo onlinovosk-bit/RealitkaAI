@@ -390,14 +390,21 @@ export function getNavItems(
 }
 
 export function getMenuVariant(
-  uiRole:   string,
-  isInTeam: boolean,
-  appRole?: string
+  uiRole:      string,
+  isInTeam:    boolean,
+  appRole?:    string,
+  accountTier?: string,
 ): MenuVariant {
-  if (appRole === "founder")              return "owner_protocol";
-  if (uiRole === "owner_protocol")        return "owner_protocol";
-  if (uiRole === "owner_vision")          return "owner_vision";
-  if (uiRole === "agent" && isInTeam)     return "agent_team";
+  if (appRole === "founder") return "owner_protocol";
+
+  const tier = (accountTier ?? "").trim().toLowerCase();
+  if (uiRole === "owner_protocol" || tier === "protocol_authority" || tier === "command") {
+    return "owner_protocol";
+  }
+  if (uiRole === "owner_vision" || tier === "market_vision" || tier === "enterprise") {
+    return "owner_vision";
+  }
+  if (uiRole === "agent" && isInTeam) return "agent_team";
   return "agent_solo";
 }
 

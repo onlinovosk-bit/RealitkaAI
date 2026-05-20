@@ -1,40 +1,66 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { PushNotificationsToggle } from '@/components/settings/PushNotificationsToggle';
+import { getPlanLabel } from '@/lib/plan-display';
 
-const PLAN_NAMES: Record<string, string> = {
-  free:               'FREE',
-  starter:            'SMART START',
-  active_force:       'ACTIVE FORCE',
-  market_vision:      'MARKET VISION',
-  protocol_authority: 'PROTOCOL AUTHORITY',
-};
+const SUPPORT_EMAIL = 'support@revolis.ai';
 
 export default function SettingsPage() {
-  const [planKey, setPlanKey]             = useState<string | null>(null);
-  const [portalLoading, setPortalLoading] = useState(false);
+  const [planKey, setPlanKey]               = useState<string | null>(null);
+  const [planLabel, setPlanLabel]           = useState<string | null>(null);
+  const [canManageInStripe, setCanManageInStripe] = useState(false);
+  const [portalLoading, setPortalLoading]   = useState(false);
+  const [portalError, setPortalError]       = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/billing/plan')
-      .then(r => r.json())
-      .then(d => setPlanKey(d.planKey ?? 'free'))
-      .catch(() => setPlanKey('free'));
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.ok) {
+          setPlanKey(d.planKey ?? 'free');
+          setPlanLabel(d.planLabel ?? getPlanLabel(d.planKey, { uppercase: true }));
+          setCanManageInStripe(Boolean(d.canManageInStripe));
+        } else {
+          setPlanKey('free');
+          setPlanLabel('FREE');
+        }
+      })
+      .catch(() => {
+        setPlanKey('free');
+        setPlanLabel('FREE');
+      });
   }, []);
 
   async function handlePortal() {
     setPortalLoading(true);
+    setPortalError(null);
     try {
       const res  = await fetch('/api/billing/portal', { method: 'POST' });
       const data = await res.json();
       if (data.ok && data.result?.url) {
         window.location.href = data.result.url;
+        return;
       }
+      if (data.code === 'NO_CUSTOMER') {
+        setPortalError(
+          `Váš program je spravovaný priamo Revolis tímom (manuálna zmluva). Pre fakturáciu alebo zmeny kontaktujte ${SUPPORT_EMAIL}.`,
+        );
+        return;
+      }
+      if (data.code === 'STRIPE_NOT_CONFIGURED') {
+        setPortalError(`Platobný portál nie je dostupný. Kontaktujte ${SUPPORT_EMAIL}.`);
+        return;
+      }
+      setPortalError(data.error ?? 'Nepodarilo sa otvoriť správu plánu.');
+    } catch {
+      setPortalError('Nepodarilo sa otvoriť správu plánu. Skúste znova neskôr.');
     } finally {
       setPortalLoading(false);
     }
   }
 
-  const planName = planKey ? (PLAN_NAMES[planKey] ?? planKey.toUpperCase()) : '…';
+  const displayPlan = planLabel ?? (planKey ? getPlanLabel(planKey, { uppercase: true }) : '…');
 
   return (
     <div className="mx-auto max-w-5xl p-4 md:p-10 font-sans" style={{ background: "#050914", minHeight: "100vh" }}>
@@ -59,7 +85,7 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-xs" style={{ color: "#64748B" }}>Váš program</p>
-                <p className="text-lg font-bold uppercase mt-0.5" style={{ color: "#A855F7" }}>{planName}</p>
+                <p className="text-lg font-bold uppercase mt-0.5" style={{ color: "#A855F7" }}>{displayPlan}</p>
               </div>
               <button
                 onClick={handlePortal}
@@ -73,9 +99,24 @@ export default function SettingsPage() {
                   cursor: (portalLoading || !planKey) ? 'not-allowed' : 'pointer',
                 }}
               >
-                {portalLoading ? 'Otvára sa…' : 'Spravovať'}
+                {portalLoading ? 'Otvára sa…' : canManageInStripe ? 'Spravovať' : 'Kontaktovať podporu'}
               </button>
             </div>
+            {portalError && (
+              <p className="mt-3 text-sm leading-6" style={{ color: "#FCA5A5" }} role="alert">
+                {portalError}{' '}
+                {!canManageInStripe && (
+                  <Link href="/billing" className="underline" style={{ color: "#93C5FD" }}>
+                    Viac o fakturácii
+                  </Link>
+                )}
+              </p>
+            )}
+            {!canManageInStripe && planKey && planKey !== 'free' && !portalError && (
+              <p className="mt-3 text-xs leading-5" style={{ color: "#64748B" }}>
+                Program je aktívny cez manuálnu zmluvu. Stripe portál nie je potrebný.
+              </p>
+            )}
           </div>
         </section>
 
