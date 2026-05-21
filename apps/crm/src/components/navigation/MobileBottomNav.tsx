@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { isChromelessRoute } from "@/lib/chromeless-routes";
 
 const NAV_ITEMS = [
   {
@@ -63,6 +64,8 @@ const NAV_ITEMS = [
 
 export function MobileBottomNav() {
   const pathname = usePathname();
+
+  if (isChromelessRoute(pathname)) return null;
 
   return (
     <nav

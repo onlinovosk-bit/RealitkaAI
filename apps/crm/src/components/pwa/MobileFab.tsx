@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import { isChromelessRoute } from "@/lib/chromeless-routes";
 
 const HIDE_ON = ["/leads/new", "/contacts/new"];
 
@@ -8,7 +9,7 @@ export function MobileFab() {
   const pathname = usePathname();
   const router = useRouter();
 
-  if (!pathname || HIDE_ON.includes(pathname)) return null;
+  if (!pathname || HIDE_ON.includes(pathname) || isChromelessRoute(pathname)) return null;
 
   const handleTap = () => {
     if (pathname.startsWith("/leads")) {

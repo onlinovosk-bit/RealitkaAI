@@ -6,6 +6,7 @@ import Link from "next/link";
 import { supabaseClient } from "@/lib/supabase/client";
 import BlogPromoTicker from "@/components/marketing/BlogPromoTicker";
 import { AI_ASSISTANT_NAME, AI_ASSISTANT_STATUS_ACTIVE } from "@/lib/ai-brand";
+import { LANDING_FOCUS_RING, LANDING_INPUT_FOCUS } from "@/lib/landing-a11y";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -34,8 +35,8 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-      if (error) throw error;
+      const { error: signInError } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (signInError) throw signInError;
       router.push("/dashboard");
       router.refresh();
     } catch (err) {
@@ -46,132 +47,159 @@ export default function LoginPage() {
   }
 
   return (
-    <>
-    <main className="min-h-screen bg-gray-50 px-4 py-10">
-      <div className="mx-auto grid w-full max-w-5xl gap-6 lg:grid-cols-2">
-        <div className="rounded-3xl border border-gray-200 bg-white p-8 shadow-sm">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900">Revolis.AI</h1>
-            <p className="mt-2 text-sm text-gray-500">Prihlás sa do svojho účtu.</p>
+    <div className="flex min-h-screen flex-col bg-gradient-to-b from-sky-50 via-teal-50/40 to-white">
+      <header
+        className="border-b border-teal-200/60 px-4 py-3 sm:px-6"
+        style={{ background: "linear-gradient(90deg, #0F766E 0%, #14B8A6 55%, #0EA5E9 100%)" }}
+      >
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-teal-100/90">Revolis Workdesk</p>
+            <h1 className="text-lg font-bold text-white sm:text-xl">Revolis.AI</h1>
           </div>
-
-          {error && (
-            <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Email</label>
-              <input
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-gray-500"
-                placeholder="jan@realitka.sk"
-              />
-            </div>
-
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Heslo</label>
-              <input
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-gray-500"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full rounded-xl bg-gray-900 px-4 py-3 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-60"
-            >
-              {isLoading ? "Prihlásenie…" : "Prihlásiť sa"}
-            </button>
-          </form>
-
-          <p className="mt-6 text-sm text-gray-500">
-            Nemáš účet?{" "}
-            <Link href="/register" className="font-medium text-gray-900 underline">
-              Registrácia
-            </Link>
-          </p>
-          <p className="mt-4 text-xs text-gray-500">
-            Právne informácie:{" "}
-            <Link href="/privacy-policy" className="underline text-gray-700">
-              Privacy Policy
-            </Link>{" "}
-            ·{" "}
-            <Link href="/terms" className="underline text-gray-700">
-              VOP / Terms
-            </Link>{" "}
-            ·{" "}
-            <Link href="/security" className="underline text-gray-700">
-              Security & Compliance
-            </Link>
-            {" · "}
-            <Link href="/cookie-policy" className="underline text-gray-700">
-              Cookie Policy
-            </Link>
-          </p>
+          <Link
+            href="/landing"
+            className={`rounded-lg border border-white/30 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-white/20 ${LANDING_FOCUS_RING}`}
+          >
+            Späť na landing
+          </Link>
         </div>
+      </header>
 
-        <section className="rounded-3xl border border-indigo-200/40 bg-[#080c1c] p-6 text-white shadow-sm">
-          <p className="text-xs uppercase tracking-[0.18em] text-indigo-300">Space UI Preview</p>
-          <h2 className="mt-2 text-xl font-semibold">Takto vyzerá nový dashboard po prihlásení</h2>
-          <p className="mt-2 text-sm text-slate-300">
-            Po úspešnom login uvidíš tmavý Space layout, živý status header, AI pulse notifikácie a glassmorphism KPI karty.
-          </p>
+      <div role="main" className="flex-1 px-4 py-8 sm:px-6 sm:py-10">
+        <div className="mx-auto grid w-full max-w-5xl gap-6 lg:grid-cols-2">
+          <div className="rounded-3xl border border-teal-200/70 bg-white p-8 shadow-[0_20px_60px_rgba(15,118,110,0.08)]">
+            <div className="mb-6">
+              <h2 className="text-3xl font-bold text-teal-950">Prihlásenie</h2>
+              <p className="mt-2 text-sm text-teal-700/80">Prihlás sa do svojho účtu.</p>
+            </div>
 
-          <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur">
-            <div className="mb-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-xs text-slate-200">{AI_ASSISTANT_STATUS_ACTIVE}</span>
+            {error && (
+              <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700" role="alert">
+                {error}
               </div>
-              <span className="text-xs text-indigo-200">MON 14 APR 2026 13:20:11</span>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-xl border border-white/10 bg-white/10 p-3">
-                <p className="text-[11px] text-slate-300">Všetky príležitosti</p>
-                <p className="mt-1 text-lg font-semibold">128</p>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="login-email" className="mb-1 block text-sm font-medium text-teal-900">
+                  Email
+                </label>
+                <input
+                  id="login-email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={`w-full rounded-xl border border-teal-200 bg-white px-4 py-3 text-sm text-teal-950 outline-none transition-colors focus:border-teal-500 ${LANDING_INPUT_FOCUS}`}
+                  placeholder="jan@realitka.sk"
+                />
               </div>
-              <div className="rounded-xl border border-white/10 bg-white/10 p-3">
-                <p className="text-[11px] text-slate-300">Horúce príležitosti</p>
-                <p className="mt-1 text-lg font-semibold">17</p>
+
+              <div>
+                <label htmlFor="login-password" className="mb-1 block text-sm font-medium text-teal-900">
+                  Heslo
+                </label>
+                <input
+                  id="login-password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className={`w-full rounded-xl border border-teal-200 bg-white px-4 py-3 text-sm text-teal-950 outline-none transition-colors focus:border-teal-500 ${LANDING_INPUT_FOCUS}`}
+                />
               </div>
-            </div>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className={`w-full rounded-xl px-4 py-3 text-sm font-semibold text-white transition-opacity duration-200 hover:opacity-95 disabled:opacity-60 ${LANDING_FOCUS_RING}`}
+                style={{ background: "linear-gradient(90deg, #0F766E 0%, #14B8A6 100%)" }}
+              >
+                {isLoading ? "Prihlásenie…" : "Prihlásiť sa"}
+              </button>
+            </form>
+
+            <p className="mt-6 text-sm text-teal-700/80">
+              Nemáš účet?{" "}
+              <Link href="/register" className={`font-semibold text-teal-900 underline ${LANDING_FOCUS_RING}`}>
+                Registrácia
+              </Link>
+            </p>
+            <p className="mt-4 text-xs text-teal-700/70">
+              Právne informácie:{" "}
+              <Link href="/privacy-policy" className="underline text-teal-800">
+                Privacy Policy
+              </Link>{" "}
+              ·{" "}
+              <Link href="/terms" className="underline text-teal-800">
+                VOP / Terms
+              </Link>{" "}
+              ·{" "}
+              <Link href="/security" className="underline text-teal-800">
+                Security & Compliance
+              </Link>
+              {" · "}
+              <Link href="/cookie-policy" className="underline text-teal-800">
+                Cookie Policy
+              </Link>
+            </p>
           </div>
 
-          <div className="mt-4 rounded-2xl border border-cyan-300/25 bg-slate-900/70 p-3 backdrop-blur">
-            <p className="text-[11px] uppercase tracking-[0.15em] text-cyan-200">Live AI Pulse</p>
-            <div className="mt-2 space-y-2">
-              <div className="flex items-start gap-2 rounded-xl border border-white/10 bg-white/5 p-2">
-                <span className="mt-1 h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
-                <p key={toastIdx} className="text-xs text-slate-200 animate-pulse">
-                  {previewToasts[toastIdx]}
-                </p>
+          <section className="rounded-3xl border border-teal-200/70 bg-white/80 p-6 shadow-[0_20px_60px_rgba(14,165,233,0.08)] backdrop-blur-sm">
+            <p className="text-xs uppercase tracking-[0.18em] text-teal-600">Workdesk Preview</p>
+            <h2 className="mt-2 text-xl font-semibold text-teal-950">Takto vyzerá dashboard po prihlásení</h2>
+            <p className="mt-2 text-sm text-teal-800/80">
+              Svetlé Ocean Trust rozhranie — prehľad príležitostí, AI pulse notifikácie a KPI karty bez vizuálneho
+              šumu.
+            </p>
+
+            <div className="mt-5 rounded-2xl border border-teal-200/80 bg-gradient-to-br from-sky-50 to-teal-50 p-4">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 motion-reduce:animate-none animate-pulse" />
+                  <span className="text-xs font-medium text-teal-800">{AI_ASSISTANT_STATUS_ACTIVE}</span>
+                </div>
+                <span className="text-xs text-teal-600">Dnes · live sync</span>
               </div>
-              <div className="flex items-start gap-2 rounded-xl border border-white/10 bg-white/5 p-2 opacity-80">
-                <span className="mt-1 h-2 w-2 rounded-full bg-indigo-300" />
-                <p key={secondaryToastIdx} className="text-xs text-slate-300">
-                  {previewToasts[secondaryToastIdx]}
-                </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl border border-teal-200/70 bg-white p-3 shadow-sm">
+                  <p className="text-[11px] text-teal-700/80">Všetky príležitosti</p>
+                  <p className="mt-1 text-lg font-semibold text-teal-950">128</p>
+                </div>
+                <div className="rounded-xl border border-teal-200/70 bg-white p-3 shadow-sm">
+                  <p className="text-[11px] text-teal-700/80">Horúce príležitosti</p>
+                  <p className="mt-1 text-lg font-semibold text-teal-950">17</p>
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+
+            <div className="mt-4 rounded-2xl border border-sky-200/80 bg-white p-3">
+              <p className="text-[11px] uppercase tracking-[0.15em] text-sky-700">Live AI Pulse</p>
+              <div className="mt-2 space-y-2">
+                <div className="flex items-start gap-2 rounded-xl border border-teal-100 bg-teal-50/60 p-2">
+                  <span className="mt-1 h-2 w-2 rounded-full bg-emerald-500" />
+                  <p key={toastIdx} className="text-xs text-teal-900">
+                    {previewToasts[toastIdx]}
+                  </p>
+                </div>
+                <div className="flex items-start gap-2 rounded-xl border border-sky-100 bg-sky-50/60 p-2 opacity-90">
+                  <span className="mt-1 h-2 w-2 rounded-full bg-sky-500" />
+                  <p key={secondaryToastIdx} className="text-xs text-teal-800">
+                    {previewToasts[secondaryToastIdx]}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
       </div>
-    </main>
-    <BlogPromoTicker />
-    </>
+
+      <BlogPromoTicker />
+    </div>
   );
 }

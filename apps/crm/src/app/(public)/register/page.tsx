@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { register } from "./actions";
+import { LANDING_FOCUS_RING, LANDING_INPUT_FOCUS } from "@/lib/landing-a11y";
 
 export default async function RegisterPage({
   searchParams,
@@ -9,11 +10,11 @@ export default async function RegisterPage({
   const params = await searchParams;
 
   return (
-    <main className="min-h-screen bg-gray-50 px-4 py-10">
-      <div className="mx-auto max-w-md rounded-3xl border border-gray-200 bg-white p-8 shadow-sm">
+    <div className="min-h-screen bg-gradient-to-b from-sky-50 via-teal-50/40 to-white px-4 py-10">
+      <div className="mx-auto max-w-md rounded-3xl border border-teal-200/70 bg-white p-8 shadow-[0_20px_60px_rgba(15,118,110,0.08)]">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Registrácia</h1>
-          <p className="mt-2 text-sm text-gray-500">
+          <h1 className="text-3xl font-bold text-teal-950">Registrácia</h1>
+          <p className="mt-2 text-sm text-teal-700/80">
             Prvý účet sa nastaví ako owner, ďalšie ako agent.
           </p>
         </div>
@@ -26,74 +27,75 @@ export default async function RegisterPage({
 
         <form action={register} className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Meno a priezvisko</label>
+            <label className="mb-1 block text-sm font-medium text-teal-900">Meno a priezvisko</label>
             <input
               name="fullName"
               required
-              className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-gray-500"
+              className={`w-full rounded-xl border border-teal-200 px-4 py-3 text-sm outline-none transition-colors focus:border-teal-500 ${LANDING_INPUT_FOCUS}`}
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Email</label>
+            <label className="mb-1 block text-sm font-medium text-teal-900">Email</label>
             <input
               name="email"
               type="email"
               defaultValue={params.email ?? ""}
               required
-              className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-gray-500"
+              className={`w-full rounded-xl border border-teal-200 px-4 py-3 text-sm outline-none transition-colors focus:border-teal-500 ${LANDING_INPUT_FOCUS}`}
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Telefón</label>
+            <label className="mb-1 block text-sm font-medium text-teal-900">Telefón</label>
             <input
               name="phone"
-              className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-gray-500"
+              className={`w-full rounded-xl border border-teal-200 px-4 py-3 text-sm outline-none transition-colors focus:border-teal-500 ${LANDING_INPUT_FOCUS}`}
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Heslo</label>
+            <label className="mb-1 block text-sm font-medium text-teal-900">Heslo</label>
             <input
               name="password"
               type="password"
               required
               minLength={6}
-              className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-gray-500"
+              className={`w-full rounded-xl border border-teal-200 px-4 py-3 text-sm outline-none transition-colors focus:border-teal-500 ${LANDING_INPUT_FOCUS}`}
             />
           </div>
 
           <button
             type="submit"
-            className="w-full rounded-xl bg-gray-900 px-4 py-3 text-sm font-medium text-white hover:bg-gray-800"
+            className={`w-full rounded-xl px-4 py-3 text-sm font-semibold text-white transition-opacity duration-200 hover:opacity-95 ${LANDING_FOCUS_RING}`}
+            style={{ background: "linear-gradient(90deg, #0F766E 0%, #14B8A6 100%)" }}
           >
             Vytvoriť účet
           </button>
         </form>
 
-        <p className="mt-6 text-sm text-gray-500">
+        <p className="mt-6 text-sm text-teal-700/80">
           Už máš účet?{" "}
-          <Link href="/login" className="font-medium text-gray-900 underline">
+          <Link href="/login" className={`font-semibold text-teal-900 underline ${LANDING_FOCUS_RING}`}>
             Prihlás sa
           </Link>
         </p>
-        <p className="mt-4 text-xs text-gray-500">
+        <p className="mt-4 text-xs text-teal-700/70">
           Pokračovaním súhlasíte s{" "}
-          <Link href="/terms" className="underline text-gray-700">
+          <Link href="/terms" className="underline text-teal-800">
             VOP
           </Link>{" "}
           a beriete na vedomie{" "}
-          <Link href="/privacy-policy" className="underline text-gray-700">
+          <Link href="/privacy-policy" className="underline text-teal-800">
             Privacy Policy
           </Link>
           {" · "}
-          <Link href="/cookie-policy" className="underline text-gray-700">
+          <Link href="/cookie-policy" className="underline text-teal-800">
             Cookie Policy
           </Link>
           .
         </p>
       </div>
-    </main>
+    </div>
   );
 }
