@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
 import { sourceOptions, propertyTypeOptions, financingOptions, timelineOptions } from "@/lib/leads-store";
+import { SLATE_HORIZON, WORKDESK_INPUT, WORKDESK_PANEL } from "@/lib/slate-horizon-theme";
 
 const initial = {
   name: "", email: "", phone: "", source: "Web formulár",
@@ -11,8 +12,18 @@ const initial = {
   financing: "Hypotéka", timeline: "Do 3 mesiacov", note: "",
 };
 
-const INPUT = "w-full rounded-xl border px-3 py-3 text-sm outline-none transition-colors";
-const INPUT_STYLE = { background: "#080D1A", borderColor: "rgba(34,211,238,0.15)", color: "#F0F9FF" };
+const INPUT = "w-full px-3 py-3 text-sm outline-none transition-colors";
+const INPUT_STYLE = {
+  background: WORKDESK_INPUT.background,
+  border: `1px solid ${WORKDESK_INPUT.borderColor}`,
+  color: WORKDESK_INPUT.color,
+  borderRadius: WORKDESK_INPUT.borderRadius,
+} as const;
+const PANEL_STYLE = {
+  background: WORKDESK_PANEL.background,
+  borderColor: WORKDESK_PANEL.borderColor,
+  boxShadow: WORKDESK_PANEL.boxShadow,
+} as const;
 
 export default function NewLeadPage() {
   const router = useRouter();
@@ -48,36 +59,36 @@ export default function NewLeadPage() {
   }
 
   return (
-    <main className="min-h-screen p-4 md:p-8" style={{ background: "#050914" }}>
+    <main className="min-h-screen p-4 md:p-8" style={{ background: SLATE_HORIZON.bg }}>
       <div className="mx-auto max-w-lg">
         {/* Header */}
         <div className="mb-6 flex items-center gap-3">
-          <Link href="/leads" className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: "rgba(34,211,238,0.08)", color: "#22D3EE" }}>
+          <Link href="/leads" className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: SLATE_HORIZON.soft, color: SLATE_HORIZON.brandDeep }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           </Link>
           <div>
-            <h1 className="text-xl font-bold" style={{ color: "#F0F9FF" }}>Nová príležitosť</h1>
-            <p className="text-xs" style={{ color: "#475569" }}>Záujemca bude uložený okamžite</p>
+            <h1 className="text-xl font-bold" style={{ color: SLATE_HORIZON.ink }}>Nová príležitosť</h1>
+            <p className="text-xs" style={{ color: SLATE_HORIZON.muted }}>Záujemca bude uložený okamžite</p>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Základné info */}
-          <section className="rounded-2xl border p-4 space-y-3" style={{ background: "#080D1A", borderColor: "#0F1F3D" }}>
-            <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "#22D3EE" }}>Kontakt</p>
+          <section className="rounded-2xl border p-4 space-y-3" style={PANEL_STYLE}>
+            <p className="text-xs font-bold uppercase tracking-widest" style={{ color: SLATE_HORIZON.brandDeep }}>Kontakt</p>
             <div>
-              <label className="mb-1 block text-xs" style={{ color: "#64748B" }}>Meno *</label>
+              <label className="mb-1 block text-xs" style={{ color: SLATE_HORIZON.muted }}>Meno *</label>
               <input autoFocus required value={form.name} onChange={e => update("name", e.target.value)}
                 placeholder="Ján Novák" className={INPUT} style={INPUT_STYLE} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="mb-1 block text-xs" style={{ color: "#64748B" }}>Email</label>
+                <label className="mb-1 block text-xs" style={{ color: SLATE_HORIZON.muted }}>Email</label>
                 <input type="email" value={form.email} onChange={e => update("email", e.target.value)}
                   placeholder="jan@email.com" className={INPUT} style={INPUT_STYLE} />
               </div>
               <div>
-                <label className="mb-1 block text-xs" style={{ color: "#64748B" }}>Telefón</label>
+                <label className="mb-1 block text-xs" style={{ color: SLATE_HORIZON.muted }}>Telefón</label>
                 <input type="tel" value={form.phone} onChange={e => update("phone", e.target.value)}
                   placeholder="+421 9XX" className={INPUT} style={INPUT_STYLE} />
               </div>
@@ -85,29 +96,29 @@ export default function NewLeadPage() {
           </section>
 
           {/* Nehnuteľnosť */}
-          <section className="rounded-2xl border p-4 space-y-3" style={{ background: "#080D1A", borderColor: "#0F1F3D" }}>
-            <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "#22D3EE" }}>Nehnuteľnosť</p>
+          <section className="rounded-2xl border p-4 space-y-3" style={PANEL_STYLE}>
+            <p className="text-xs font-bold uppercase tracking-widest" style={{ color: SLATE_HORIZON.brandDeep }}>Nehnuteľnosť</p>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="mb-1 block text-xs" style={{ color: "#64748B" }}>Typ</label>
+                <label className="mb-1 block text-xs" style={{ color: SLATE_HORIZON.muted }}>Typ</label>
                 <select value={form.propertyType} onChange={e => update("propertyType", e.target.value)} className={INPUT} style={INPUT_STYLE}>
                   {propertyTypeOptions.map(o => <option key={o} value={o}>{o}</option>)}
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-xs" style={{ color: "#64748B" }}>Izby</label>
+                <label className="mb-1 block text-xs" style={{ color: SLATE_HORIZON.muted }}>Izby</label>
                 <input value={form.rooms} onChange={e => update("rooms", e.target.value)}
                   placeholder="2 izby" className={INPUT} style={INPUT_STYLE} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="mb-1 block text-xs" style={{ color: "#64748B" }}>Lokalita</label>
+                <label className="mb-1 block text-xs" style={{ color: SLATE_HORIZON.muted }}>Lokalita</label>
                 <input value={form.location} onChange={e => update("location", e.target.value)}
                   placeholder="Bratislava" className={INPUT} style={INPUT_STYLE} />
               </div>
               <div>
-                <label className="mb-1 block text-xs" style={{ color: "#64748B" }}>Rozpočet</label>
+                <label className="mb-1 block text-xs" style={{ color: SLATE_HORIZON.muted }}>Rozpočet</label>
                 <input value={form.budget} onChange={e => update("budget", e.target.value)}
                   placeholder="200 000 €" className={INPUT} style={INPUT_STYLE} />
               </div>
@@ -115,30 +126,30 @@ export default function NewLeadPage() {
           </section>
 
           {/* Financie & termín */}
-          <section className="rounded-2xl border p-4 space-y-3" style={{ background: "#080D1A", borderColor: "#0F1F3D" }}>
-            <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "#22D3EE" }}>Podrobnosti</p>
+          <section className="rounded-2xl border p-4 space-y-3" style={PANEL_STYLE}>
+            <p className="text-xs font-bold uppercase tracking-widest" style={{ color: SLATE_HORIZON.brandDeep }}>Podrobnosti</p>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="mb-1 block text-xs" style={{ color: "#64748B" }}>Financovanie</label>
+                <label className="mb-1 block text-xs" style={{ color: SLATE_HORIZON.muted }}>Financovanie</label>
                 <select value={form.financing} onChange={e => update("financing", e.target.value)} className={INPUT} style={INPUT_STYLE}>
                   {financingOptions.map(o => <option key={o} value={o}>{o}</option>)}
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-xs" style={{ color: "#64748B" }}>Termín</label>
+                <label className="mb-1 block text-xs" style={{ color: SLATE_HORIZON.muted }}>Termín</label>
                 <select value={form.timeline} onChange={e => update("timeline", e.target.value)} className={INPUT} style={INPUT_STYLE}>
                   {timelineOptions.map(o => <option key={o} value={o}>{o}</option>)}
                 </select>
               </div>
             </div>
             <div>
-              <label className="mb-1 block text-xs" style={{ color: "#64748B" }}>Zdroj</label>
+              <label className="mb-1 block text-xs" style={{ color: SLATE_HORIZON.muted }}>Zdroj</label>
               <select value={form.source} onChange={e => update("source", e.target.value)} className={INPUT} style={INPUT_STYLE}>
                 {sourceOptions.map(o => <option key={o} value={o}>{o}</option>)}
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs" style={{ color: "#64748B" }}>Poznámka</label>
+              <label className="mb-1 block text-xs" style={{ color: SLATE_HORIZON.muted }}>Poznámka</label>
               <textarea value={form.note} onChange={e => update("note", e.target.value)}
                 rows={3} placeholder="Záujem o 3-izbový byt v Ružinove..."
                 className={INPUT} style={INPUT_STYLE} />
@@ -146,7 +157,7 @@ export default function NewLeadPage() {
           </section>
 
           {error && (
-            <p className="text-sm text-center" style={{ color: "#EF4444" }}>{error}</p>
+            <p className="text-sm text-center" style={{ color: SLATE_HORIZON.red }}>{error}</p>
           )}
 
           {/* Submit */}
@@ -155,9 +166,8 @@ export default function NewLeadPage() {
             disabled={isSaving}
             className="w-full rounded-2xl py-4 text-base font-bold transition-all active:scale-[0.98] disabled:opacity-60"
             style={{
-              background: "linear-gradient(135deg, #22D3EE 0%, #0EA5E9 100%)",
-              color: "#050914",
-              boxShadow: "0 4px 20px rgba(34,211,238,0.3)",
+              background: SLATE_HORIZON.ctaGradient,
+              color: "#FFFFFF",
             }}
           >
             {isSaving ? "Ukladám..." : "Uložiť príležitosť"}

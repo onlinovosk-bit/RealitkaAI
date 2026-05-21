@@ -1,5 +1,6 @@
 import PipelineBoard from "@/components/pipeline/pipeline-board";
 import { listLeads } from "@/lib/leads-store";
+import { SLATE_HORIZON, WORKDESK_KPI } from "@/lib/slate-horizon-theme";
 
 function StatCard({
   title,
@@ -13,11 +14,16 @@ function StatCard({
   return (
     <div
       className="rounded-2xl border p-5"
-      style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
+      style={{
+        background: WORKDESK_KPI.background,
+        borderColor: WORKDESK_KPI.borderColor,
+        boxShadow: WORKDESK_KPI.boxShadow,
+        borderRadius: WORKDESK_KPI.borderRadius,
+      }}
     >
-      <p className="text-sm" style={{ color: "#64748B" }}>{title}</p>
-      <h2 className="mt-2 text-3xl font-bold" style={{ color: "#F0F9FF" }}>{value}</h2>
-      <p className="mt-2 text-sm" style={{ color: "#64748B" }}>{subtitle}</p>
+      <p className="text-sm" style={{ color: SLATE_HORIZON.muted }}>{title}</p>
+      <h2 className="mt-2 text-3xl font-bold" style={{ color: SLATE_HORIZON.ink }}>{value}</h2>
+      <p className="mt-2 text-sm" style={{ color: SLATE_HORIZON.muted }}>{subtitle}</p>
     </div>
   );
 }
@@ -32,10 +38,10 @@ export default async function PipelinePage() {
   const offerCount = leads.filter((lead) => lead.status === "Ponuka").length;
 
   return (
-    <main className="p-6" style={{ background: "#050914", minHeight: "100vh" }}>
+    <main className="min-h-screen p-6" style={{ background: SLATE_HORIZON.bg }}>
       <div className="mb-6">
-        <h1 className="text-3xl font-bold" style={{ color: "#F0F9FF" }}>Fázy príležitostí</h1>
-        <p className="mt-1" style={{ color: "#64748B" }}>
+        <h1 className="text-3xl font-bold" style={{ color: SLATE_HORIZON.ink }}>Fázy príležitostí</h1>
+        <p className="mt-1" style={{ color: SLATE_HORIZON.muted }}>
           Kartový prehľad s AI odporúčaniami, bočným detailom a históriou presunov.
         </p>
       </div>
