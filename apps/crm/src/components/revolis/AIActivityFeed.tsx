@@ -14,6 +14,7 @@ import {
 
 import type { AiActivityFeedItem, AiActivityType } from "@/lib/app-mode-types";
 import { RadiantSpriteIcon } from "@/components/shared/radiant-sprite-icon";
+import { SLATE_HORIZON, WORKDESK_CARD } from "@/lib/slate-horizon-theme";
 
 function iconForType(t: AiActivityType) {
   switch (t) {
@@ -106,20 +107,31 @@ export function AIActivityFeed({ items }: { items: AiActivityFeedItem[] }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   return (
-    <div className="rounded-2xl border border-indigo-500/20 bg-slate-950/70 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-md">
+    <div
+      className="rounded-2xl border p-5"
+      style={{
+        background: WORKDESK_CARD.background,
+        borderColor: WORKDESK_CARD.borderColor,
+        boxShadow: WORKDESK_CARD.boxShadow,
+      }}
+    >
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="pt-0.5">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-indigo-400/90">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: SLATE_HORIZON.brandDeep }}>
             AI Aktivita
           </p>
-          <h3 className="text-lg font-semibold text-slate-100">
+          <h3 className="text-lg font-semibold" style={{ color: SLATE_HORIZON.ink }}>
             Prečo AI urobila krok
           </h3>
         </div>
         <RadiantSpriteIcon icon="pipeline" sizeClassName="h-12 w-12" className="mt-0.5" />
       </div>
 
-      <ol className="relative space-y-0 before:absolute before:left-[15px] before:top-2 before:h-[calc(100%-16px)] before:w-px before:bg-gradient-to-b before:from-indigo-500/50 before:via-indigo-500/15 before:to-transparent">
+      <ol
+        className="relative space-y-0 before:absolute before:left-[15px] before:top-2 before:h-[calc(100%-16px)] before:w-px"
+        style={{ ["--tw-gradient-from" as string]: SLATE_HORIZON.line }}
+      >
+        <div className="pointer-events-none absolute left-[15px] top-2 h-[calc(100%-16px)] w-px bg-slate-200" />
         {items.map((item) => {
           const Icon = iconForType(item.activityType);
           const isExpanded = expandedId === item.id;
@@ -127,59 +139,75 @@ export function AIActivityFeed({ items }: { items: AiActivityFeedItem[] }) {
 
           return (
             <li key={item.id} className="relative flex gap-4 pl-1">
-              <div className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-indigo-500/30 bg-slate-900/90 text-indigo-400 shadow-[0_0_12px_rgba(99,102,241,0.25)]">
+              <div
+                className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border"
+                style={{
+                  borderColor: SLATE_HORIZON.softBorder,
+                  background: SLATE_HORIZON.soft,
+                  color: SLATE_HORIZON.brandDeep,
+                }}
+              >
                 <Icon className="h-4 w-4" aria-hidden />
               </div>
               <div className="min-w-0 flex-1 pb-6">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full border border-indigo-500/20 bg-indigo-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-300">
+                  <span
+                    className="rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+                    style={{
+                      borderColor: SLATE_HORIZON.softBorder,
+                      background: SLATE_HORIZON.soft,
+                      color: SLATE_HORIZON.brandDeep,
+                    }}
+                  >
                     {labelForType(item.activityType)}
                   </span>
-                  <time
-                    className="text-[11px] text-slate-500"
-                    dateTime={item.createdAt}
-                  >
+                  <time className="text-[11px]" style={{ color: SLATE_HORIZON.muted }} dateTime={item.createdAt}>
                     {formatTime(item.createdAt)}
                   </time>
                 </div>
                 <button
                   type="button"
                   onClick={() => setExpandedId(isExpanded ? null : item.id)}
-                  className="mt-1 w-full rounded-md p-1 text-left transition-colors hover:bg-indigo-500/5"
+                  className="mt-1 w-full rounded-md p-1 text-left transition-colors hover:bg-slate-50"
                 >
                   <span className="flex items-center justify-between gap-3">
-                    <span className="text-sm font-medium text-slate-100">{item.title}</span>
+                    <span className="text-sm font-medium" style={{ color: SLATE_HORIZON.ink }}>
+                      {item.title}
+                    </span>
                     <ChevronDown
-                      className={`h-4 w-4 shrink-0 text-indigo-300 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                      className={`h-4 w-4 shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                      style={{ color: SLATE_HORIZON.brandDeep }}
                       aria-hidden
                     />
                   </span>
-                  <span className="mt-1 block text-xs leading-relaxed text-slate-400">
+                  <span className="mt-1 block text-xs leading-relaxed" style={{ color: SLATE_HORIZON.muted }}>
                     {item.body}
                   </span>
-                  <span className="mt-1 block text-[11px] text-indigo-300/80">
+                  <span className="mt-1 block text-[11px]" style={{ color: SLATE_HORIZON.brandDeep }}>
                     Klikni pre konkrétny návrh ďalšieho kroku
                   </span>
                 </button>
                 {isExpanded && (
-                  <div className="mt-3 rounded-lg border border-indigo-500/20 bg-slate-900/60 p-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-indigo-300">
+                  <div
+                    className="mt-3 rounded-lg border p-3"
+                    style={{ borderColor: SLATE_HORIZON.line, background: SLATE_HORIZON.bg }}
+                  >
+                    <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.brandDeep }}>
                       Detail pre makléra
                     </p>
-                    <p className="mt-2 text-xs text-cyan-300">
+                    <p className="mt-2 text-xs" style={{ color: SLATE_HORIZON.navText }}>
                       Odporúčaný ďalší krok: {nextStepForType(item.activityType)}
                     </p>
                     {hasMeta ? (
                       <div className="mt-2 space-y-1">
                         {Object.entries(item.meta ?? {}).map(([key, value]) => (
-                          <p key={key} className="text-xs text-slate-300">
-                            <span className="text-slate-400">{formatMetaLabel(key)}:</span>{" "}
-                            {String(value)}
+                          <p key={key} className="text-xs" style={{ color: SLATE_HORIZON.navText }}>
+                            <span style={{ color: SLATE_HORIZON.muted }}>{formatMetaLabel(key)}:</span> {String(value)}
                           </p>
                         ))}
                       </div>
                     ) : (
-                      <p className="mt-2 text-xs text-slate-400">
+                      <p className="mt-2 text-xs" style={{ color: SLATE_HORIZON.muted }}>
                         K tomuto kroku zatiaľ nie sú dostupné doplnkové metadáta.
                       </p>
                     )}
@@ -188,7 +216,8 @@ export function AIActivityFeed({ items }: { items: AiActivityFeedItem[] }) {
                         {item.meta?.leadId && (
                           <Link
                             href={`/leads/${String(item.meta.leadId)}`}
-                            className="rounded-md border border-cyan-400/40 px-2 py-1 text-xs font-medium text-cyan-300 transition-colors hover:bg-cyan-400/10"
+                            className="rounded-md border px-2 py-1 text-xs font-medium transition-colors hover:opacity-80"
+                            style={{ borderColor: SLATE_HORIZON.softBorder, color: SLATE_HORIZON.brandDeep }}
                           >
                             Otvoriť príležitosť
                           </Link>
@@ -196,7 +225,8 @@ export function AIActivityFeed({ items }: { items: AiActivityFeedItem[] }) {
                         {item.meta?.propertyId && (
                           <Link
                             href={`/properties/${String(item.meta.propertyId)}`}
-                            className="rounded-md border border-indigo-400/40 px-2 py-1 text-xs font-medium text-indigo-300 transition-colors hover:bg-indigo-400/10"
+                            className="rounded-md border px-2 py-1 text-xs font-medium transition-colors hover:opacity-80"
+                            style={{ borderColor: SLATE_HORIZON.softBorder, color: SLATE_HORIZON.brandDeep }}
                           >
                             Otvoriť nehnuteľnosť
                           </Link>
