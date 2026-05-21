@@ -1,8 +1,10 @@
 "use client";
 import { Fragment } from "react";
 import { useState } from "react";
+import { Check, Minus } from "lucide-react";
+import { SLATE_HORIZON, WORKDESK_CARD } from "@/lib/slate-horizon-theme";
 
-type FeatureRow = {
+export type FeatureRow = {
   category: string;
   feature: string;
   smartStart: string | boolean;
@@ -13,8 +15,6 @@ type FeatureRow = {
 };
 
 export const FEATURES: FeatureRow[] = [
-  // Legacy migration mapping rule:
-  // Starter -> Smart Start, Pro -> Market Vision, Enterprise -> Protocol Authority
   {
     category: "Základné Funkcie",
     feature: "AI pomocník počas dňa (rýchle odpovede klientom)",
@@ -191,8 +191,6 @@ export const FEATURES: FeatureRow[] = [
     marketVision: false,
     protocolAuthority: true,
   },
-
-  // 14+ nových L99 feature flagov podľa aktuálnej matice
   {
     category: "Živé Obchody",
     feature: "Živý radar obchodov: kde sú peniaze práve teraz",
@@ -348,10 +346,20 @@ export const FEATURES: FeatureRow[] = [
   },
 ];
 
+const PLAN_COLORS = ["#64748B", SLATE_HORIZON.brandDeep, "#4338CA", "#B45309"] as const;
+
 function Cell({ value }: { value: string | boolean }) {
-  if (value === true) return <span style={{ color: "#22D3EE" }}>✓</span>;
-  if (value === false) return <span style={{ color: "#334155" }}>—</span>;
-  return <span className="text-xs" style={{ color: "#94A3B8" }}>{value}</span>;
+  if (value === true) {
+    return <Check size={14} style={{ color: SLATE_HORIZON.brandDeep, margin: "0 auto" }} />;
+  }
+  if (value === false) {
+    return <Minus size={14} style={{ color: SLATE_HORIZON.line, margin: "0 auto" }} />;
+  }
+  return (
+    <span className="block text-center text-xs font-medium" style={{ color: SLATE_HORIZON.navText }}>
+      {value}
+    </span>
+  );
 }
 
 export default function FeatureComparisonTable() {
@@ -361,12 +369,13 @@ export default function FeatureComparisonTable() {
   return (
     <div className="mt-8">
       <button
+        type="button"
         onClick={() => setOpen(!open)}
-        className="w-full rounded-2xl p-4 text-sm font-semibold transition-all"
+        className="w-full rounded-2xl border p-4 text-sm font-semibold transition-all hover:opacity-90"
         style={{
-          background: "rgba(34,211,238,0.04)",
-          border: "1px solid rgba(34,211,238,0.10)",
-          color: "#22D3EE",
+          background: SLATE_HORIZON.soft,
+          borderColor: SLATE_HORIZON.softBorder,
+          color: SLATE_HORIZON.brandDeep,
         }}
       >
         {open ? "▲ Skryť" : "▼ Zobraziť"} kompletné porovnanie funkcií
@@ -374,22 +383,26 @@ export default function FeatureComparisonTable() {
 
       {open && (
         <div
-          className="mt-4 overflow-hidden rounded-2xl"
-          style={{ border: "1px solid #112240" }}
+          className="mt-4 overflow-hidden rounded-2xl border"
+          style={{
+            borderColor: WORKDESK_CARD.borderColor,
+            boxShadow: WORKDESK_CARD.boxShadow,
+            background: WORKDESK_CARD.background,
+          }}
         >
           <table className="w-full text-sm">
             <thead>
-              <tr style={{ background: "#0A1628" }}>
-                <th className="p-4 text-left" style={{ color: "#64748B" }}>
+              <tr style={{ background: SLATE_HORIZON.bg, borderBottom: `1px solid ${SLATE_HORIZON.line}` }}>
+                <th className="p-4 text-left font-semibold" style={{ color: SLATE_HORIZON.muted }}>
                   Funkcia
                 </th>
                 {["Smart Start", "Active Force", "Market Vision", "Protocol Authority"].map((plan, i) => (
                   <th
                     key={plan}
-                    className="p-4 text-center font-bold"
-                    style={{ color: i === 3 ? "#EAB308" : i === 2 ? "#34D399" : "#F0F9FF" }}
+                    className="p-4 text-center text-xs font-bold uppercase tracking-wide"
+                    style={{ color: PLAN_COLORS[i] }}
                   >
-                    {i === 2 && <span className="mr-1">⭐</span>}
+                    {i === 3 && <span className="mr-1">★</span>}
                     {plan}
                   </th>
                 ))}
@@ -398,11 +411,11 @@ export default function FeatureComparisonTable() {
             <tbody>
               {categories.map((category) => (
                 <Fragment key={`cat-group-${category}`}>
-                  <tr style={{ background: "#050914" }}>
+                  <tr style={{ background: SLATE_HORIZON.soft }}>
                     <td
                       colSpan={5}
                       className="px-4 py-2 text-xs font-bold uppercase tracking-wider"
-                      style={{ color: "#334155" }}
+                      style={{ color: SLATE_HORIZON.brandDeep }}
                     >
                       {category}
                     </td>
@@ -410,15 +423,13 @@ export default function FeatureComparisonTable() {
                   {FEATURES.filter((f) => f.category === category).map((feature, i) => (
                     <tr
                       key={`${category}-${i}`}
-                      className="border-t"
+                      className="border-t transition-colors hover:bg-slate-50/80"
                       style={{
-                        borderColor: "#0F1F3D",
-                        background: feature.highlight
-                          ? "rgba(34,211,238,0.03)"
-                          : "#0A1628",
+                        borderColor: SLATE_HORIZON.line,
+                        background: feature.highlight ? "rgba(255,251,235,0.45)" : "#FFFFFF",
                       }}
                     >
-                      <td className="p-4" style={{ color: "#CBD5E1" }}>
+                      <td className="p-4 text-sm" style={{ color: SLATE_HORIZON.navText }}>
                         {feature.feature}
                       </td>
                       <td className="p-4 text-center">
