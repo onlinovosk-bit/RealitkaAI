@@ -9,6 +9,7 @@ import SourceBenchmarkTable from "@/components/forecasting/source-benchmark-tabl
 import AgentBenchmarkTable from "@/components/forecasting/agent-benchmark-table";
 import StageBenchmarkTable from "@/components/forecasting/stage-benchmark-table";
 import DealHealthPanel from "@/components/forecasting/deal-health-panel";
+import ForecastRiskStrip from "@/components/forecasting/ForecastRiskStrip";
 import { safeServerAction } from "@/lib/safe-action";
 import { getForecastingData } from "@/lib/forecasting-store";
 import { requireRole } from "@/lib/permissions";
@@ -84,6 +85,15 @@ export default async function ForecastingPage() {
       description="Predikcia stavu klientov, benchmark zdrojov príležitostí, výkonu agentov a stavov príležitostí."
     >
       <FeatureGateBanner description="Forecasting je dostupný v tvojom aktuálnom pláne." title="Forecasting je aktívny" />
+
+      <div className="mt-6">
+        <ForecastRiskStrip
+          expectedPipelineValue={data.kpis.expectedPipelineValue}
+          expectedClosedDeals={data.kpis.expectedClosedDeals}
+          dealHealth={data.dealHealth}
+        />
+      </div>
+
       <div className="mt-6">
         <ForecastKpis cards={cards} />
       </div>

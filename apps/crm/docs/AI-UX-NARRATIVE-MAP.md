@@ -21,5 +21,6 @@ Každý modul musí aktívne riadiť používateľa, nie len zobrazovať dáta.
 
 - ✅ Dashboard: `AIPriorityStrip`, `NextBestActionPanel`, `executive-signals.ts`
 - ✅ Leads: `LeadsHotStrip`
-- ⏳ Forecast: narrative defined, UI pending
+- ✅ Forecast: `ForecastRiskStrip`, `forecast-signals.ts`, light `DealHealthPanel`
+- ⏳ Pipeline: narrative defined, UI pending
 - ✅ Telemetry: `ai-telemetry.ts` → `CustomEvent('monitoring')`
