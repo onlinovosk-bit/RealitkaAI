@@ -4,60 +4,73 @@ import { Zap, Eye, Crown, ShieldCheck } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { fetchJsonWithRetry } from "@/lib/request-helpers";
 import { EmailMockup } from "./EmailMockup";
+import { SLATE_HORIZON, WORKDESK_CARD } from "@/lib/slate-horizon-theme";
 
-// ─── Premium Banking Palette (luxusný + dôveryhodný variant) ──────────────
-const CYBER_CARD = {
+const ENTERPRISE_CARD = {
   starter: {
-    outerClass: "p-[1px] rounded-[2.5rem] bg-gradient-to-b from-slate-300/25 to-transparent",
-    outerStyle: { boxShadow: "0 0 22px rgba(15,23,42,0.20)" } as React.CSSProperties,
-    innerClass: "h-full p-8 rounded-[2.5rem] bg-[#070A12]/95 backdrop-blur-xl flex flex-col border transition-all duration-500 group-hover:bg-[#0A0E18]/95",
+    outerClass: "rounded-[2rem] border",
+    outerStyle: { boxShadow: WORKDESK_CARD.boxShadow, borderColor: SLATE_HORIZON.line } as React.CSSProperties,
+    innerClass: "h-full p-8 rounded-[2rem] bg-white flex flex-col transition-all duration-300",
     Icon: ShieldCheck,
-    iconClass: "text-slate-300/80 mb-4",
-    nameClass: "text-[10px] font-black uppercase tracking-[0.3em] text-slate-200/75",
-    priceClass: "text-4xl font-black text-white italic tracking-tighter",
-    diffClass: "text-[10px] text-slate-400/70 uppercase mt-1 font-bold",
-    btnClass: "w-full py-3 rounded-2xl bg-[#1E293B]/25 border border-[#1E293B]/60 text-slate-100 text-[10px] font-black uppercase tracking-widest hover:bg-[#1E293B]/40 transition-all",
+    iconClass: "text-slate-500 mb-4",
+    nameClass: "text-[10px] font-black uppercase tracking-[0.3em] text-slate-500",
+    priceClass: "text-4xl font-black italic tracking-tighter",
+    priceStyle: { color: SLATE_HORIZON.ink } as React.CSSProperties,
+    diffClass: "text-[10px] uppercase mt-1 font-bold",
+    diffStyle: { color: SLATE_HORIZON.muted } as React.CSSProperties,
+    btnClass: "w-full py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all hover:opacity-90",
+    btnStyle: { background: SLATE_HORIZON.bg, border: `1px solid ${SLATE_HORIZON.line}`, color: SLATE_HORIZON.ink } as React.CSSProperties,
     btnLabel: "Aktivovať",
     scale: "",
   },
   pro: {
-    outerClass: "p-[1px] rounded-[2.5rem] bg-gradient-to-b from-blue-400/30 to-transparent",
-    outerStyle: { boxShadow: "0 0 30px rgba(30,64,175,0.22)" } as React.CSSProperties,
-    innerClass: "h-full p-8 rounded-[2.5rem] bg-[#070A12]/95 backdrop-blur-xl flex flex-col border transition-all duration-500 group-hover:bg-[#0B1020]/95",
+    outerClass: "rounded-[2rem] border",
+    outerStyle: { boxShadow: WORKDESK_CARD.boxShadow, borderColor: "#BFDBFE" } as React.CSSProperties,
+    innerClass: "h-full p-8 rounded-[2rem] bg-white flex flex-col transition-all duration-300",
     Icon: Eye,
-    iconClass: "text-blue-300/80 mb-4",
-    nameClass: "text-[10px] font-black uppercase tracking-[0.3em] text-blue-300/75",
-    priceClass: "text-4xl font-black text-white italic tracking-tighter",
-    diffClass: "text-[10px] text-blue-300/70 uppercase mt-1 font-bold",
-    btnClass: "w-full py-3 rounded-2xl bg-[#1E3A8A]/30 border border-[#1E3A8A]/60 text-blue-100 text-[10px] font-black uppercase tracking-widest hover:bg-[#1D4ED8]/35 transition-all",
-    btnLabel: "✦ Aktivovať",
+    iconClass: "text-blue-600 mb-4",
+    nameClass: "text-[10px] font-black uppercase tracking-[0.3em] text-blue-700",
+    priceClass: "text-4xl font-black italic tracking-tighter",
+    priceStyle: { color: SLATE_HORIZON.brandDeep } as React.CSSProperties,
+    diffClass: "text-[10px] uppercase mt-1 font-bold",
+    diffStyle: { color: SLATE_HORIZON.brandDeep } as React.CSSProperties,
+    btnClass: "w-full py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white transition-all hover:opacity-90",
+    btnStyle: { background: SLATE_HORIZON.brandDeep } as React.CSSProperties,
+    btnLabel: "Aktivovať",
     scale: "",
   },
   market: {
-    outerClass: "p-[1px] rounded-[2.5rem] bg-gradient-to-b from-cyan-400/25 to-transparent",
-    outerStyle: { boxShadow: "0 0 28px rgba(14,116,144,0.20)" } as React.CSSProperties,
-    innerClass: "h-full p-8 rounded-[2.5rem] bg-[#070A12]/95 backdrop-blur-xl flex flex-col border transition-all duration-500 group-hover:bg-[#07131A]/95",
+    outerClass: "rounded-[2rem] border",
+    outerStyle: { boxShadow: WORKDESK_CARD.boxShadow, borderColor: "#C7D2FE" } as React.CSSProperties,
+    innerClass: "h-full p-8 rounded-[2rem] bg-white flex flex-col transition-all duration-300",
     Icon: Crown,
-    iconClass: "text-cyan-300/80 mb-4",
-    nameClass: "text-[10px] font-black uppercase tracking-[0.3em] text-cyan-300/75",
-    priceClass: "text-4xl font-black text-white italic tracking-tighter",
-    diffClass: "text-[10px] text-cyan-300/70 uppercase mt-1 font-bold",
-    btnClass: "w-full py-3 rounded-2xl bg-[#0E7490]/25 border border-[#0E7490]/60 text-cyan-100 text-[10px] font-black uppercase tracking-widest hover:bg-[#0891B2]/35 transition-all",
-    btnLabel: "✦ Aktivovať",
+    iconClass: "text-indigo-600 mb-4",
+    nameClass: "text-[10px] font-black uppercase tracking-[0.3em] text-indigo-700",
+    priceClass: "text-4xl font-black italic tracking-tighter",
+    priceStyle: { color: "#4338CA" } as React.CSSProperties,
+    diffClass: "text-[10px] uppercase mt-1 font-bold",
+    diffStyle: { color: "#4338CA" } as React.CSSProperties,
+    btnClass: "w-full py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white transition-all hover:opacity-90",
+    btnStyle: { background: "#4338CA" } as React.CSSProperties,
+    btnLabel: "Aktivovať",
     scale: "",
   },
   protocol: {
-    outerClass: "p-[2px] rounded-[2.5rem] bg-gradient-to-b from-amber-200 via-[#D4AF37] to-amber-700",
-    outerStyle: { boxShadow: "0 0 42px rgba(212,175,55,0.24)" } as React.CSSProperties,
-    innerClass: "h-full p-8 rounded-[2.5rem] bg-[radial-gradient(circle_at_18%_10%,rgba(212,175,55,0.18),rgba(7,10,18,0.98)_40%),radial-gradient(circle_at_85%_18%,rgba(212,175,55,0.10),transparent_42%)] backdrop-blur-3xl flex flex-col border border-amber-300/35 overflow-hidden",
+    outerClass: "rounded-[2rem] border-2",
+    outerStyle: { boxShadow: "0 12px 40px rgba(245,158,11,0.15)", borderColor: "#FDE68A" } as React.CSSProperties,
+    innerClass: "h-full p-8 rounded-[2rem] flex flex-col overflow-hidden",
+    innerStyle: { background: "linear-gradient(160deg, #FFFBEB 0%, #FFFFFF 72%)" } as React.CSSProperties,
     Icon: ShieldCheck,
-    iconClass: "text-amber-300 mb-4 drop-shadow-[0_0_10px_rgba(212,175,55,0.35)]",
-    nameClass: "text-[11px] font-black uppercase tracking-[0.4em] text-amber-200 drop-shadow-sm",
-    priceClass: "text-5xl font-black text-transparent bg-clip-text bg-gradient-to-b from-amber-100 to-amber-500 italic tracking-tighter",
-    diffClass: "text-[11px] text-amber-300/70 uppercase mt-2 font-black tracking-widest italic",
-    btnClass: "w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-300 to-amber-500 bg-[length:200%_auto] text-[#111827] text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:bg-right transition-all duration-500 animate-gradient",
-    btnLabel: "★ Aktivovať Protocol —",
-    scale: "scale-110 z-10",
+    iconClass: "text-amber-600 mb-4",
+    nameClass: "text-[11px] font-black uppercase tracking-[0.4em] text-amber-700",
+    priceClass: "text-5xl font-black italic tracking-tighter",
+    priceStyle: { color: "#B45309" } as React.CSSProperties,
+    diffClass: "text-[11px] uppercase mt-2 font-black tracking-widest italic",
+    diffStyle: { color: "#B45309" } as React.CSSProperties,
+    btnClass: "w-full py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all hover:opacity-90",
+    btnStyle: { background: "linear-gradient(135deg, #F59E0B, #D97706)", color: SLATE_HORIZON.inkDeep } as React.CSSProperties,
+    btnLabel: "★ Aktivovať Protocol",
+    scale: "scale-[1.03] z-10",
   },
 } as const;
 
@@ -143,33 +156,33 @@ export default function PricingCards({ plans }: { plans: Plan[] }) {
       {/* Promo banner */}
       {promoCode && (
         <div
-          className="mb-8 flex items-center justify-center gap-3 rounded-2xl p-4 text-center animate-pulse"
+          className="mb-8 flex items-center justify-center gap-3 rounded-2xl border p-4 text-center"
           style={{
-            background: "rgba(30,64,175,0.14)",
-            border: "1px solid rgba(59,130,246,0.35)",
+            background: SLATE_HORIZON.soft,
+            borderColor: SLATE_HORIZON.softBorder,
           }}
         >
-          <Zap size={14} style={{ color: "#93C5FD", flexShrink: 0 }} />
-          <p className="text-xs font-black uppercase tracking-widest" style={{ color: "#BFDBFE" }}>
-            Špeciálna autorizácia aktívna — kód <span style={{ color: '#fff' }}>{promoCode}</span> — zľava sa aplikuje pri platbe
+          <Zap size={14} style={{ color: SLATE_HORIZON.brandDeep, flexShrink: 0 }} />
+          <p className="text-xs font-black uppercase tracking-widest" style={{ color: SLATE_HORIZON.brandDeep }}>
+            Špeciálna autorizácia aktívna — kód <span style={{ color: SLATE_HORIZON.ink }}>{promoCode}</span> — zľava sa aplikuje pri platbe
           </p>
         </div>
       )}
 
       {/* Header */}
       <div className="mb-8 text-center">
-        <h2 className="text-2xl font-bold" style={{ color: "#E2E8F0" }}>
+        <h2 className="text-2xl font-bold" style={{ color: SLATE_HORIZON.ink }}>
           Vyberte si plán
         </h2>
-        <p className="mt-2 text-sm" style={{ color: "#94A3B8" }}>
+        <p className="mt-2 text-sm" style={{ color: SLATE_HORIZON.muted }}>
           Všetky plány zahŕňajú 100% garanciu vrátenia do 30 dní
         </p>
         <div
-          className="mt-4 inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-extrabold"
+          className="mt-4 inline-flex items-center gap-2 rounded-full border px-5 py-2 text-sm font-extrabold"
           style={{
-            background: "rgba(180,83,9,0.16)",
-            border: "1px solid rgba(217,119,6,0.35)",
-            color: "#FCD34D",
+            background: "#FFFBEB",
+            borderColor: "#FDE68A",
+            color: "#B45309",
           }}
         >
           🔥 Špeciálna ponuka spustenia — 50% zľava pre prvých 20 realitiek
@@ -188,118 +201,99 @@ export default function PricingCards({ plans }: { plans: Plan[] }) {
       <div className={`grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 ${isSmolko ? "xl:flex-1" : ""}`}>
         {plans.map((plan) => {
           const isProtocol = plan.key === "protocol";
-          const isPro = (plan.key === "pro" || plan.recommended) && !isProtocol;
           const isLoading = loadingKey === plan.key;
           const priceAmount = parseInt(plan.priceLabel) || 0;
-          const cyber = CYBER_CARD[plan.key as keyof typeof CYBER_CARD] ?? CYBER_CARD.starter;
-          const CyberIcon = cyber.Icon;
-          const cardBorderColor =
-            plan.key === "starter"
-              ? "rgba(30,41,59,0.55)"
-              : plan.key === "pro"
-                ? "rgba(49,46,129,0.55)"
-                : plan.key === "market"
-                  ? "rgba(6,78,59,0.55)"
-                  : "rgba(234,179,8,0.28)";
+          const card = ENTERPRISE_CARD[plan.key as keyof typeof ENTERPRISE_CARD] ?? ENTERPRISE_CARD.starter;
+          const CardIcon = card.Icon;
 
           return (
-            <div key={plan.key} className={`relative group ${cyber.scale}`}>
-              {/* Protocol Authority — NAJPOPULÁRNEJŠÍ badge */}
+            <div key={plan.key} className={`relative group ${card.scale}`}>
               {isProtocol && (
                 <div
-                  className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full px-5 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] whitespace-nowrap animate-pulse z-20 italic"
+                  className="absolute -top-4 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-full px-5 py-1.5 text-[10px] font-black uppercase italic tracking-[0.2em]"
                   style={{
-                    background: 'linear-gradient(135deg, #EAB308, #CA8A04)',
-                    color: '#010103',
-                    boxShadow: '0 10px 20px rgba(0,0,0,0.5), 0 0 20px rgba(234,179,8,0.40)',
-                    border: '1px solid rgba(254,240,138,0.3)',
+                    background: "linear-gradient(135deg, #F59E0B, #D97706)",
+                    color: SLATE_HORIZON.inkDeep,
+                    boxShadow: "0 4px 12px rgba(245,158,11,0.25)",
                   }}
                 >
                   ⭐ Najpopulárnejší
                 </div>
               )}
 
-              {/* Gradient border wrapper */}
-              <div className={cyber.outerClass} style={cyber.outerStyle}>
-                <div className={`relative ${cyber.innerClass}`} style={{ borderColor: cardBorderColor }}>
+              <div className={card.outerClass} style={card.outerStyle}>
+                <div
+                  className={`relative ${card.innerClass}`}
+                  style={"innerStyle" in card ? card.innerStyle : undefined}
+                >
+                  <CardIcon size={isProtocol ? 32 : 24} className={card.iconClass} />
+                  <div className={`${card.nameClass} mb-6`}>{plan.landingName ?? plan.name}</div>
 
-                  {/* Protocol shimmer overlay */}
-                  {isProtocol && (
-                    <div className="absolute -top-[100%] -left-[100%] w-[300%] h-[300%] bg-gradient-to-br from-transparent via-yellow-500/10 to-transparent rotate-45 animate-shimmer pointer-events-none" />
-                  )}
-
-                  {/* Ikona + názov */}
-                  <CyberIcon size={isProtocol ? 32 : 24} className={cyber.iconClass} />
-                  <div className={`${cyber.nameClass} mb-6`}>{plan.landingName ?? plan.name}</div>
-
-                  {/* Popis */}
-                  <p className="text-sm leading-relaxed mb-4" style={{ color: "#94A3B8" }}>
+                  <p className="mb-4 text-sm leading-relaxed" style={{ color: SLATE_HORIZON.muted }}>
                     {plan.description}
                   </p>
 
-                  {/* Cena */}
                   <div className="mb-3 text-center">
                     {plan.originalPriceLabel && (
-                      <p className="text-xs font-bold line-through mb-1" style={{ color: "#64748B" }}>
+                      <p className="mb-1 text-xs font-bold line-through" style={{ color: SLATE_HORIZON.muted }}>
                         {plan.originalPriceLabel}
                       </p>
                     )}
-                    <span className={cyber.priceClass}>{plan.priceLabel}</span>
+                    <span className={card.priceClass} style={card.priceStyle}>
+                      {plan.priceLabel}
+                    </span>
                     {plan.originalPriceLabel && (
                       <div className="mt-2">
                         <span
-                          className="inline-block rounded-full px-3 py-0.5 text-[10px] font-bold"
+                          className="inline-block rounded-full border px-3 py-0.5 text-[10px] font-bold"
                           style={{
-                            background: isProtocol ? "rgba(212,175,55,0.18)" : "rgba(59,130,246,0.14)",
-                            color: isProtocol ? "#FCD34D" : "#93C5FD",
-                            border: `1px solid ${isProtocol ? "rgba(212,175,55,0.30)" : "rgba(59,130,246,0.28)"}`,
+                            background: isProtocol ? "#FFFBEB" : SLATE_HORIZON.soft,
+                            color: isProtocol ? "#B45309" : SLATE_HORIZON.brandDeep,
+                            borderColor: isProtocol ? "#FDE68A" : SLATE_HORIZON.softBorder,
                           }}
                         >
                           −50% zľava
                         </span>
                       </div>
                     )}
-                    {/* diff vs nižší plán */}
                     {priceAmount > 0 && (
-                      <div className={`${cyber.diffClass} mt-2`}>
-                        {plan.key === 'pro'      && '+ 50 € vs Smart Start'}
-                        {plan.key === 'market'   && '+ 100 € vs Active Force'}
-                        {plan.key === 'protocol' && '+ 250 € vs Market Vision'}
+                      <div className={`${card.diffClass} mt-2`} style={card.diffStyle}>
+                        {plan.key === "pro" && "+ 50 € vs Smart Start"}
+                        {plan.key === "market" && "+ 100 € vs Active Force"}
+                        {plan.key === "protocol" && "+ 250 € vs Market Vision"}
                       </div>
                     )}
                   </div>
 
-                  {/* Billing note */}
                   {plan.billingNote && (
-                    <p className="mb-4 text-xs leading-relaxed" style={{ color: '#334155' }}>
+                    <p className="mb-4 text-xs leading-relaxed" style={{ color: SLATE_HORIZON.muted }}>
                       {plan.billingNote}
                     </p>
                   )}
 
-                  {/* Features */}
                   {plan.features && plan.features.length > 0 && (
-                    <ul className="mb-6 space-y-2 flex-1 w-full">
+                    <ul className="mb-6 flex-1 w-full space-y-2">
                       {plan.features.map((feature) => (
                         <li key={feature} className="flex items-start gap-2 text-xs">
-                          <span style={{ color: isProtocol ? "#FCD34D" : "#93C5FD", flexShrink: 0 }}>✓</span>
-                          <span style={{ color: "#CBD5E1" }}>{feature}</span>
+                          <span style={{ color: isProtocol ? "#B45309" : SLATE_HORIZON.brandDeep, flexShrink: 0 }}>✓</span>
+                          <span style={{ color: SLATE_HORIZON.navText }}>{feature}</span>
                         </li>
                       ))}
                     </ul>
                   )}
 
-                  {/* CTA Button */}
                   <button
                     type="button"
                     onClick={() => startCheckout(plan.key)}
                     disabled={isLoading}
-                    className={`${cyber.btnClass} disabled:opacity-60 mt-auto`}
+                    className={`${card.btnClass} mt-auto disabled:opacity-60`}
+                    style={card.btnStyle}
                   >
-                    {isLoading ? "Presmerovávam..." : cyber.btnLabel}
+                    {isLoading ? "Presmerovávam..." : card.btnLabel}
                   </button>
 
                   {isProtocol && (
-                    <p className="mt-4 text-center text-[10px]" style={{ color: "#FBBF24" }}>
+                    <p className="mt-4 text-center text-[10px]" style={{ color: "#B45309" }}>
                       💡 100% garancia vrátenia do 30 dní
                     </p>
                   )}
@@ -320,15 +314,15 @@ export default function PricingCards({ plans }: { plans: Plan[] }) {
 
       {checkoutError && (
         <div
-          className="mt-6 rounded-2xl p-4 text-center text-sm"
+          className="mt-6 rounded-2xl border p-4 text-center text-sm"
           style={{
-            background: "rgba(220,38,38,0.10)",
-            border: "1px solid rgba(248,113,113,0.25)",
-            color: "#FCA5A5",
+            background: "#FEF2F2",
+            borderColor: "#FECACA",
+            color: SLATE_HORIZON.danger,
           }}
         >
           {checkoutError}
-          <p className="mt-2 text-xs text-red-200/90">
+          <p className="mt-2 text-xs" style={{ color: SLATE_HORIZON.muted }}>
             Ak ide o dočasný výpadok, skúste znova o pár sekúnd. Checkout používa automatický retry.
           </p>
         </div>
@@ -336,15 +330,16 @@ export default function PricingCards({ plans }: { plans: Plan[] }) {
 
       {/* Trust signals */}
       <div
-        className="mt-8 rounded-2xl p-5 text-center"
+        className="mt-8 rounded-2xl border p-5 text-center"
         style={{
-          background: "rgba(30,58,138,0.12)",
-          border: "1px solid rgba(59,130,246,0.18)",
+          background: WORKDESK_CARD.background,
+          borderColor: WORKDESK_CARD.borderColor,
+          boxShadow: WORKDESK_CARD.boxShadow,
         }}
       >
         <div
           className="flex flex-wrap items-center justify-center gap-6 text-xs"
-          style={{ color: "#CBD5E1" }}
+          style={{ color: SLATE_HORIZON.navText }}
         >
           <span>✓ Bez viazanosti</span>
           <span>✓ Zrušenie kedykoľvek</span>
