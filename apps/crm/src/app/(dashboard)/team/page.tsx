@@ -11,6 +11,7 @@ import TeamsTable from "@/components/team/teams-table";
 import TeamUsersTable from "@/components/team/team-users-table";
 import LeadAssignmentTable from "@/components/team/lead-assignment-table";
 import TeamOwnerInsights from "@/components/team/team-owner-insights";
+import { TeamActionStrip } from "@/components/team/TeamActionStrip";
 import { safeServerAction } from "@/lib/safe-action";
 import { getCurrentProfile } from "@/lib/auth";
 import type { Lead } from "@/lib/mock-data";
@@ -146,6 +147,15 @@ export default async function TeamPage({
       description="Správa ľudí, rebríček predajcov, pipeline a rozhodovacie metriky pre majiteľa kancelárie."
     >
       <FeatureGateBanner description="Team management je aktivovaný v tvojom pláne." title="Team management je aktívny" />
+
+      <TeamActionStrip
+        leads={visibleLeads as Lead[]}
+        profiles={visibleProfiles.map((profile) => ({
+          id: profile.id,
+          fullName: profile.fullName,
+        }))}
+        monthlyTargetPerAgent={monthlyLeadTargetPerAgent}
+      />
 
       <section className="mt-6 mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
         <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
