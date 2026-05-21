@@ -1,3 +1,11 @@
+import {
+  SLATE_HORIZON,
+  SLATE_HORIZON_BADGES,
+  WORKDESK_CARD,
+  WORKDESK_INNER_ROW,
+  WORKDESK_PANEL,
+} from "@/lib/slate-horizon-theme";
+
 type AgentStatsProps = {
   leads: Array<{
     id: string;
@@ -48,11 +56,15 @@ export default function AgentStats({ leads }: AgentStatsProps) {
   return (
     <div
       className="rounded-2xl border p-5"
-      style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
+      style={{
+        background: WORKDESK_PANEL.background,
+        borderColor: WORKDESK_PANEL.borderColor,
+        boxShadow: WORKDESK_PANEL.boxShadow,
+      }}
     >
       <div className="mb-4">
-        <h2 className="text-lg font-semibold" style={{ color: "#F0F9FF" }}>Počítadlá podľa maklérov</h2>
-        <p className="text-sm" style={{ color: "#64748B" }}>
+        <h2 className="text-lg font-semibold" style={{ color: SLATE_HORIZON.ink }}>Počítadlá podľa maklérov</h2>
+        <p className="text-sm" style={{ color: SLATE_HORIZON.muted }}>
           Výkonnosť, počet príležitostí a kvalita portfólia.
         </p>
       </div>
@@ -62,30 +74,42 @@ export default function AgentStats({ leads }: AgentStatsProps) {
           <div
             key={agent.name}
             className="rounded-xl border p-4"
-            style={{ background: "#0A1628", borderColor: "#112240" }}
+            style={{
+              background: WORKDESK_INNER_ROW.background,
+              borderColor: WORKDESK_CARD.borderColor,
+            }}
           >
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
-                <h3 className="font-medium" style={{ color: "#F0F9FF" }}>{agent.name}</h3>
-                <p className="text-sm" style={{ color: "#64748B" }}>{agent.total} príležitostí celkom</p>
+                <h3 className="font-medium" style={{ color: SLATE_HORIZON.ink }}>{agent.name}</h3>
+                <p className="text-sm" style={{ color: SLATE_HORIZON.muted }}>{agent.total} príležitostí celkom</p>
               </div>
 
               <div className="flex flex-wrap gap-2">
                 <span
                   className="rounded-full px-3 py-1 text-xs font-semibold"
-                  style={{ background: "rgba(34,211,238,0.10)", color: "#22D3EE" }}
+                  style={{
+                    background: SLATE_HORIZON_BADGES.hot.bg,
+                    color: SLATE_HORIZON_BADGES.hot.color,
+                  }}
                 >
                   Horúce: {agent.hot}
                 </span>
                 <span
                   className="rounded-full px-3 py-1 text-xs font-semibold"
-                  style={{ background: "rgba(99,102,241,0.12)", color: "#A5B4FC" }}
+                  style={{
+                    background: SLATE_HORIZON_BADGES.pro.bg,
+                    color: SLATE_HORIZON_BADGES.pro.color,
+                  }}
                 >
                   Obhliadky: {agent.showings}
                 </span>
                 <span
                   className="rounded-full px-3 py-1 text-xs font-semibold"
-                  style={{ background: "rgba(52,211,153,0.12)", color: "#34D399" }}
+                  style={{
+                    background: "#DCFCE7",
+                    color: SLATE_HORIZON.greenDark,
+                  }}
                 >
                   Priem. score: {agent.avgScore}
                 </span>
@@ -97,7 +121,7 @@ export default function AgentStats({ leads }: AgentStatsProps) {
         {grouped.length === 0 && (
           <div
             className="rounded-xl border border-dashed p-4 text-sm"
-            style={{ borderColor: "#0F1F3D", color: "#475569" }}
+            style={{ borderColor: WORKDESK_CARD.borderColor, color: SLATE_HORIZON.muted }}
           >
             Zatiaľ nie sú dostupné žiadne údaje o makléroch.
           </div>

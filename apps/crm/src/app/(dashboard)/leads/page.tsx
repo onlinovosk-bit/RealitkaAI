@@ -5,6 +5,7 @@ import { safeServerAction } from "@/lib/safe-action";
 import { listLeads } from "@/lib/leads-store";
 import { listTeams, listProfiles } from "@/lib/team-store";
 import { recommendations } from "@/lib/mock-data";
+import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
 
 export default async function LeadsPage({
   searchParams,
@@ -51,9 +52,9 @@ export default async function LeadsPage({
         <div
           className="mb-4 rounded-lg px-4 py-2 text-sm"
           style={{
-            background:   "rgba(34,211,238,0.08)",
-            border:       "1px solid rgba(34,211,238,0.2)",
-            color:        "#22D3EE",
+            background: SLATE_HORIZON.soft,
+            border: `1px solid ${SLATE_HORIZON.softBorder}`,
+            color: SLATE_HORIZON.brandDeep,
           }}
         >
           Zobrazujú sa príležitosti pridelené kolegom vo vašom tíme.

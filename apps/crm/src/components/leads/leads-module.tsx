@@ -9,6 +9,7 @@ import EmptyState from "@/components/shared/empty-state";
 import SemanticSearchBar from "@/components/search/SemanticSearchBar";
 import type { Lead } from "@/lib/leads-store";
 import type { Recommendation } from "@/lib/mock-data";
+import { SLATE_HORIZON, WORKDESK_KPI } from "@/lib/slate-horizon-theme";
 
 type TeamOption = {
   id: string;
@@ -67,18 +68,22 @@ export default function LeadsModule({
 
       <section className="mb-4 grid grid-cols-2 gap-2 md:gap-4 xl:grid-cols-4">
         {[
-          { label: "Príležitosti", value: filtered.length, color: "#22D3EE" },
-          { label: "Horúce", value: filtered.filter((i) => i.status === "Horúci").length, color: "#EF4444" },
-          { label: "Obhliadky", value: filtered.filter((i) => i.status === "Obhliadka").length, color: "#0EA5E9" },
-          { label: "Avg BRI", value: avgScore, color: "#A855F7" },
+          { label: "Príležitosti", value: filtered.length, color: SLATE_HORIZON.brand },
+          { label: "Horúce", value: filtered.filter((i) => i.status === "Horúci").length, color: SLATE_HORIZON.red },
+          { label: "Obhliadky", value: filtered.filter((i) => i.status === "Obhliadka").length, color: SLATE_HORIZON.brandDeep },
+          { label: "Avg BRI", value: avgScore, color: SLATE_HORIZON.brandNavy },
         ].map(({ label, value, color }) => (
           <div
             key={label}
             className="rounded-2xl border p-3 md:p-5"
-            style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
+            style={{
+              background: WORKDESK_KPI.background,
+              borderColor: WORKDESK_KPI.borderColor,
+              boxShadow: WORKDESK_KPI.boxShadow,
+            }}
           >
-            <p className="text-xs" style={{ color: "#64748B" }}>{label}</p>
-            <h2 className="mt-1 text-2xl md:text-3xl font-bold tabular-nums" style={{ color }}>{value}</h2>
+            <p className="text-xs text-slate-700" style={{ color: SLATE_HORIZON.navText }}>{label}</p>
+            <h2 className="mt-1 text-2xl md:text-3xl font-bold tabular-nums text-slate-900" style={{ color }}>{value}</h2>
           </div>
         ))}
       </section>

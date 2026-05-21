@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { type Lead } from "@/lib/leads-store";
-import { RadiantSpriteIcon } from "@/components/shared/radiant-sprite-icon";
+import { SLATE_HORIZON, WORKDESK_INPUT, WORKDESK_PANEL } from "@/lib/slate-horizon-theme";
 
 type TeamOption = {
   id: string;
@@ -122,15 +122,26 @@ export default function LeadFilters({
     setTeamId("");
   }
 
-  const selectStyle = { background: "#050914", borderColor: "rgba(34,211,238,0.15)", color: "#F0F9FF" };
+  const selectStyle = {
+    background: WORKDESK_INPUT.background,
+    borderColor: WORKDESK_INPUT.borderColor,
+    color: WORKDESK_INPUT.color,
+  };
   const inputStyle = selectStyle;
-  const labelStyle = { color: "#64748B" };
+  const labelStyle = { color: SLATE_HORIZON.muted };
 
   return (
-    <div className="rounded-2xl border p-4 md:p-5" style={{ background: "#080D1A", borderColor: "#0F1F3D" }}>
+    <div
+      className="rounded-2xl border p-4 md:p-5"
+      style={{
+        background: WORKDESK_PANEL.background,
+        borderColor: WORKDESK_PANEL.borderColor,
+        boxShadow: WORKDESK_PANEL.boxShadow,
+      }}
+    >
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-sm font-semibold" style={{ color: "#F0F9FF" }}>Filtre</h2>
+          <h2 className="text-sm font-semibold text-slate-900" style={{ color: SLATE_HORIZON.ink }}>Filtre</h2>
         </div>
         {/* Hot Leads quick filter */}
         <button
@@ -140,15 +151,15 @@ export default function LeadFilters({
           style={
             isHotFilter
               ? {
-                  background: "linear-gradient(135deg, #0D2137 0%, #1B3A6B 100%)",
-                  color: "#67E8F9",
-                  border: "1px solid #22D3EE",
-                  boxShadow: "0 0 20px rgba(34,211,238,0.25)",
+                  background: SLATE_HORIZON.soft,
+                  color: SLATE_HORIZON.brandDeep,
+                  border: `1px solid ${SLATE_HORIZON.softBorder}`,
+                  boxShadow: "0 4px 16px rgba(37,99,235,0.12)",
                 }
               : {
-                  background: "rgba(34,211,238,0.08)",
-                  color: "#22D3EE",
-                  border: "1px solid rgba(34,211,238,0.25)",
+                  background: SLATE_HORIZON.bg,
+                  color: SLATE_HORIZON.brandDeep,
+                  border: `1px solid ${WORKDESK_INPUT.borderColor}`,
                 }
           }
         >
@@ -156,8 +167,8 @@ export default function LeadFilters({
           <span
             className="rounded-full px-2 py-0.5 text-[11px] font-bold"
             style={{
-              background: isHotFilter ? "rgba(34,211,238,0.25)" : "rgba(34,211,238,0.15)",
-              color: "#22D3EE",
+              background: isHotFilter ? SLATE_HORIZON.softBorder : SLATE_HORIZON.soft,
+              color: SLATE_HORIZON.brandDeep,
             }}
           >
             {hotCount}
@@ -232,7 +243,7 @@ export default function LeadFilters({
           type="button"
           onClick={clearFilters}
           className="rounded-xl border px-4 py-2 text-xs font-medium min-h-[36px]"
-          style={{ borderColor: "rgba(71,85,105,0.4)", color: "#64748B" }}
+          style={{ borderColor: WORKDESK_INPUT.borderColor, color: SLATE_HORIZON.muted }}
         >
           Vymazať filtre
         </button>

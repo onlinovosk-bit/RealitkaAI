@@ -1,6 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
 import type { DealStrategy } from "@/lib/ai/deal-strategy";
+import {
+  SLATE_HORIZON,
+  WORKDESK_CARD,
+  WORKDESK_INNER_ROW,
+} from "@/lib/slate-horizon-theme";
 
 export default function DealStrategyCard({ leadId }: { leadId: string }) {
   const [strategy, setStrategy] = useState<DealStrategy | null>(null);
@@ -13,20 +18,34 @@ export default function DealStrategyCard({ leadId }: { leadId: string }) {
       .finally(() => setLoading(false));
   }, [leadId]);
 
-  if (loading) return <div className="animate-pulse h-24 rounded-xl bg-white/5" />;
+  if (loading) {
+    return (
+      <div
+        className="animate-pulse h-24 rounded-xl"
+        style={{ background: WORKDESK_INNER_ROW.background }}
+      />
+    );
+  }
   if (!strategy) return null;
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-4">
-      <h3 className="text-sm font-semibold text-white mb-2">Deal stratégia</h3>
-      <p className="text-xs text-slate-300 mb-2">{strategy.summary}</p>
-      <p className="text-xs font-medium text-slate-400 mb-1">Ďalšie kroky:</p>
+    <div
+      className="rounded-2xl border p-4"
+      style={{
+        background: WORKDESK_CARD.background,
+        borderColor: WORKDESK_CARD.borderColor,
+        boxShadow: WORKDESK_CARD.boxShadow,
+      }}
+    >
+      <h3 className="text-sm font-semibold mb-2" style={{ color: SLATE_HORIZON.ink }}>Deal stratégia</h3>
+      <p className="text-xs mb-2" style={{ color: SLATE_HORIZON.navText }}>{strategy.summary}</p>
+      <p className="text-xs font-medium mb-1" style={{ color: SLATE_HORIZON.muted }}>Ďalšie kroky:</p>
       <ul className="space-y-1">
         {strategy.nextSteps.map((s) => (
-          <li key={s} className="text-xs text-slate-300">• {s}</li>
+          <li key={s} className="text-xs" style={{ color: SLATE_HORIZON.navText }}>• {s}</li>
         ))}
       </ul>
-      <p className="mt-2 text-xs text-cyan-300">Technika: {strategy.closingTechnique}</p>
+      <p className="mt-2 text-xs" style={{ color: SLATE_HORIZON.brandDeep }}>Technika: {strategy.closingTechnique}</p>
     </div>
   );
 }

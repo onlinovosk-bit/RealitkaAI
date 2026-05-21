@@ -46,6 +46,41 @@ export const WORKDESK_INNER_ROW = {
   borderColor: SLATE_HORIZON.line,
 } as const;
 
+/** Standard white enterprise card — Preview 11 / Bloomberg light */
+export const WORKDESK_CARD = {
+  background: "#FFFFFF",
+  borderColor: "#E2E8F0",
+  boxShadow: "0 8px 30px rgba(15,23,42,0.06)",
+  borderRadius: "24px",
+} as const;
+
+/** Standard white input */
+export const WORKDESK_INPUT = {
+  background: "#FFFFFF",
+  borderColor: "#E2E8F0",
+  color: "#0F172A",
+  placeholder: "#94A3B8",
+  borderRadius: "12px",
+} as const;
+
+/** KPI strip card */
+export const WORKDESK_KPI = {
+  background: "#FFFFFF",
+  borderColor: "#E2E8F0",
+  borderRadius: "24px",
+  boxShadow: "0 8px 30px rgba(15,23,42,0.06)",
+} as const;
+
+/** Premium locked / upgrade overlay */
+export const WORKDESK_LOCKED = {
+  background: "#FFFFFF",
+  borderColor: "#E2E8F0",
+  overlay: "linear-gradient(to bottom, transparent 0%, rgba(248,250,252,0.92) 100%)",
+  glow: "0 8px 32px rgba(37,99,235,0.1)",
+  titleColor: "#0F172A",
+  subtitleColor: "#64748B",
+} as const;
+
 export const SLATE_HORIZON_BADGES = {
   hot: { bg: "#FEE2E2", color: "#BE123C", border: "#FECACA" },
   new: { bg: "#EFF6FF", color: "#1D4ED8", border: "#BFDBFE" },
