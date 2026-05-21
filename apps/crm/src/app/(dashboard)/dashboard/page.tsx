@@ -20,6 +20,8 @@ import { AIAssistBanner } from "@/components/dashboard/AIAssistBanner";
 import { AssistantPanelDynamic } from "@/components/dashboard/AssistantPanel.dynamic";
 import L99DecisionOpsPanel from "@/components/dashboard/L99DecisionOpsPanel";
 import { WorkdeskCommandHero } from "@/components/dashboard/WorkdeskCommandHero";
+import { AIPriorityStrip } from "@/components/dashboard/AIPriorityStrip";
+import { NextBestActionPanel } from "@/components/dashboard/NextBestActionPanel";
 import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
 
 type ForecastingSummary = {
@@ -252,6 +254,10 @@ export default function DashboardPage() {
     <div className="p-3 md:p-6" style={{ minHeight: "100%" }} id="actions">
       <div className="mx-auto max-w-6xl">
         <WorkdeskCommandHero leads={leads} />
+
+        <AIPriorityStrip leads={leads} loading={isLoading} />
+
+        <NextBestActionPanel leads={leads} loading={isLoading} />
 
         <section className="mb-6 grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
           <KpiCard

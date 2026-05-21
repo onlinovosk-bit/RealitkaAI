@@ -7,6 +7,7 @@ import LeadsWorkspace from "@/components/leads/leads-workspace";
 import AiPanel from "@/components/leads/ai-panel";
 import EmptyState from "@/components/shared/empty-state";
 import SemanticSearchBar from "@/components/search/SemanticSearchBar";
+import { LeadsHotStrip } from "@/components/leads/LeadsHotStrip";
 import type { Lead } from "@/lib/leads-store";
 import type { Recommendation } from "@/lib/mock-data";
 import { SLATE_HORIZON, WORKDESK_KPI } from "@/lib/slate-horizon-theme";
@@ -53,6 +54,8 @@ export default function LeadsModule({
 
   return (
     <>
+      <LeadsHotStrip leads={filtered} />
+
       <div className="mb-6 flex flex-col gap-4">
         <SemanticSearchBar type="leads" className="w-full" />
 

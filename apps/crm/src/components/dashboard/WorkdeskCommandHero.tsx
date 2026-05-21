@@ -1,13 +1,21 @@
 "use client";
 
+import {
+  buildExecutiveSignals,
+  formatMoneyEur,
+} from "@/lib/workdesk/executive-signals";
 import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
 import type { Lead } from "@/lib/leads-store";
+import Link from "next/link";
 
 type Props = {
   leads: Lead[];
 };
 
 export function WorkdeskCommandHero({ leads }: Props) {
+  const signals = buildExecutiveSignals(leads, 3);
+  const placeholders = signals.length === 0;
+
   return (
     <section
       className="workdesk-command-hero relative mb-5 overflow-hidden rounded-[22px] p-7 text-white md:p-8"
@@ -59,72 +67,45 @@ export function WorkdeskCommandHero({ leads }: Props) {
           ))}
         </div>
         <div className="mt-5 grid grid-cols-1 gap-2.5 md:grid-cols-3">
-          {leads.slice(0, 3).map((lead) => (
-            <div
-              key={lead.id}
-              className="rounded-2xl p-3.5 backdrop-blur-[2px]"
+          {(placeholders
+            ? [
+                { leadId: "demo-1", name: "Lucia Šimko", moneyEur: 7200, confidence: 91, timing: "volať do 15 min" },
+                { leadId: "demo-2", name: "Lukáš Nagy", moneyEur: null, confidence: 87, timing: "posunúť pipeline" },
+                { leadId: "demo-3", name: "Jana Horváth", moneyEur: 5400, confidence: 78, timing: "poslať SMS dnes" },
+              ]
+            : signals.map((s) => ({
+                leadId: s.leadId,
+                name: s.name,
+                moneyEur: s.moneyEur,
+                confidence: s.confidence,
+                timing: s.timing,
+              }))
+          ).map((item) => (
+            <Link
+              key={item.leadId}
+              href={item.leadId.startsWith("demo-") ? "/leads" : `/leads/${item.leadId}`}
+              className="rounded-2xl p-3.5 backdrop-blur-[2px] transition-transform duration-200 hover:scale-[1.01]"
               style={{
                 background: "rgba(255,255,255,0.08)",
                 border: "1px solid rgba(255,255,255,0.14)",
               }}
             >
               <b className="block text-sm font-bold">
-                {lead.name}
-                {lead.budget ? (
+                {item.name}
+                {item.moneyEur ? (
                   <>
                     {" · "}
-                    <span style={{ color: "#86efac" }}>
-                      €{Math.round(lead.budget * 0.03).toLocaleString("sk-SK")}
-                    </span>
+                    <span style={{ color: "#86efac" }}>{formatMoneyEur(item.moneyEur)}</span>
                   </>
                 ) : null}
               </b>
               <span className="text-xs text-white/75">
-                {lead.score}% istota · {lead.status === "Horúci" ? "volať do 15 min" : "posunúť pipeline"}
+                {item.confidence}% istota · {item.timing}
               </span>
-            </div>
+            </Link>
           ))}
-          {leads.length === 0 && (
-            <>
-              <PriorityPlaceholder name="Lucia Šimko · €7 200" detail="91% istota · volať do 15 min" money />
-              <PriorityPlaceholder name="Lukáš Nagy · hypotéka OK" detail="87% · posunúť pipeline" />
-              <PriorityPlaceholder name="Jana Horváth · obhliadka" detail="78% · poslať SMS dnes" />
-            </>
-          )}
         </div>
       </div>
     </section>
-  );
-}
-
-function PriorityPlaceholder({
-  name,
-  detail,
-  money,
-}: {
-  name: string;
-  detail: string;
-  money?: boolean;
-}) {
-  const [label, value] = money ? name.split(" · ") : [name, null];
-  return (
-    <div
-      className="rounded-2xl p-3.5"
-      style={{
-        background: "rgba(255,255,255,0.08)",
-        border: "1px solid rgba(255,255,255,0.14)",
-      }}
-    >
-      <b className="block text-sm font-bold">
-        {value ? (
-          <>
-            {label} · <span style={{ color: "#86efac" }}>{value}</span>
-          </>
-        ) : (
-          name
-        )}
-      </b>
-      <span className="text-xs text-white/75">{detail}</span>
-    </div>
   );
 }
