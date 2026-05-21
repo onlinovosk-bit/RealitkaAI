@@ -1,4 +1,5 @@
 import PipelineBoard from "@/components/pipeline/pipeline-board";
+import { PipelineActionStrip } from "@/components/pipeline/PipelineActionStrip";
 import { listLeads } from "@/lib/leads-store";
 import { SLATE_HORIZON, WORKDESK_KPI } from "@/lib/slate-horizon-theme";
 
@@ -73,6 +74,8 @@ export default async function PipelinePage() {
           subtitle="Príležitosť je vo finálnej fáze"
         />
       </section>
+
+      <PipelineActionStrip leads={leads} />
 
       <PipelineBoard initialLeads={leads} />
     </main>
