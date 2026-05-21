@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SLATE_HORIZON, WORKDESK_CARD } from "@/lib/slate-horizon-theme";
 
 const STEP_LABELS: Record<string, string> = {
   connectedCrm: "CRM prepojenie",
@@ -19,15 +20,15 @@ function timeAgo(iso?: string | null): string {
 }
 
 function riskBadge(risk: string) {
-  if (risk === "high") return { label: "Vysoké riziko", bg: "rgba(239,68,68,0.15)", color: "#F87171", border: "rgba(239,68,68,0.3)" };
-  if (risk === "medium") return { label: "Stredné riziko", bg: "rgba(245,158,11,0.15)", color: "#FCD34D", border: "rgba(245,158,11,0.3)" };
-  return { label: "V poriadku", bg: "rgba(34,197,94,0.15)", color: "#4ADE80", border: "rgba(34,197,94,0.3)" };
+  if (risk === "high") return { label: "Vysoké riziko", bg: "#FEE2E2", color: SLATE_HORIZON.danger, border: "#FECACA" };
+  if (risk === "medium") return { label: "Stredné riziko", bg: "#FEF3C7", color: SLATE_HORIZON.warning, border: "#FDE68A" };
+  return { label: "V poriadku", bg: "#D1FAE5", color: SLATE_HORIZON.greenDark, border: "#A7F3D0" };
 }
 
 function scoreColor(score: number) {
-  if (score >= 75) return "#4ADE80";
-  if (score >= 50) return "#FCD34D";
-  return "#F87171";
+  if (score >= 75) return SLATE_HORIZON.green;
+  if (score >= 50) return SLATE_HORIZON.warning;
+  return SLATE_HORIZON.red;
 }
 
 type Client = {
@@ -65,11 +66,11 @@ export default async function OnboardingMonitorPage() {
     : 0;
 
   return (
-    <div className="min-h-screen p-4 md:p-8" style={{ background: "#050914" }}>
+    <div className="min-h-screen p-4 md:p-8" style={{ background: SLATE_HORIZON.bg }}>
       <div className="max-w-5xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-xl font-bold" style={{ color: "#F0F9FF" }}>Onboarding Automat</h1>
-          <p className="text-sm mt-1" style={{ color: "#64748B" }}>Sledovanie adopcie klientov</p>
+          <h1 className="text-xl font-bold" style={{ color: SLATE_HORIZON.ink }}>Onboarding Automat</h1>
+          <p className="text-sm mt-1" style={{ color: SLATE_HORIZON.muted }}>Sledovanie adopcie klientov</p>
         </div>
 
         {/* Stats */}
@@ -82,15 +83,19 @@ export default async function OnboardingMonitorPage() {
             <div
               key={stat.label}
               className="rounded-2xl border p-4 text-center"
-              style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
+              style={{
+                background: WORKDESK_CARD.background,
+                borderColor: WORKDESK_CARD.borderColor,
+                boxShadow: WORKDESK_CARD.boxShadow,
+              }}
             >
               <div
                 className="text-2xl font-bold"
-                style={{ color: stat.highlight ? "#F87171" : "#F0F9FF" }}
+                style={{ color: stat.highlight ? SLATE_HORIZON.red : SLATE_HORIZON.ink }}
               >
                 {stat.value}
               </div>
-              <div className="text-xs mt-1" style={{ color: "#64748B" }}>{stat.label}</div>
+              <div className="text-xs mt-1" style={{ color: SLATE_HORIZON.muted }}>{stat.label}</div>
             </div>
           ))}
         </div>
@@ -99,9 +104,13 @@ export default async function OnboardingMonitorPage() {
         {data.clients.length === 0 ? (
           <div
             className="rounded-2xl border p-8 text-center"
-            style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
+            style={{
+              background: WORKDESK_CARD.background,
+              borderColor: WORKDESK_CARD.borderColor,
+              boxShadow: WORKDESK_CARD.boxShadow,
+            }}
           >
-            <p style={{ color: "#475569" }}>Žiadni at-risk klienti.</p>
+            <p style={{ color: SLATE_HORIZON.muted }}>Žiadni at-risk klienti.</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -112,12 +121,16 @@ export default async function OnboardingMonitorPage() {
                 <div
                   key={client.id}
                   className="rounded-2xl border p-4"
-                  style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
+                  style={{
+                    background: WORKDESK_CARD.background,
+                    borderColor: WORKDESK_CARD.borderColor,
+                    boxShadow: WORKDESK_CARD.boxShadow,
+                  }}
                 >
                   <div className="flex items-start justify-between gap-3 flex-wrap">
                     <div className="min-w-0">
-                      <div className="font-semibold text-sm" style={{ color: "#F0F9FF" }}>{client.company}</div>
-                      <div className="text-xs mt-0.5" style={{ color: "#64748B" }}>
+                      <div className="font-semibold text-sm" style={{ color: SLATE_HORIZON.ink }}>{client.company}</div>
+                      <div className="text-xs mt-0.5" style={{ color: SLATE_HORIZON.muted }}>
                         {client.contact_name ? `${client.contact_name} · ` : ""}{client.contact_email}
                       </div>
                     </div>
@@ -128,7 +141,7 @@ export default async function OnboardingMonitorPage() {
                       >
                         {badge.label}
                       </span>
-                      <span className="text-xs" style={{ color: "#64748B" }}>
+                      <span className="text-xs" style={{ color: SLATE_HORIZON.muted }}>
                         {timeAgo(client.last_activity_at)}
                       </span>
                     </div>
@@ -137,10 +150,10 @@ export default async function OnboardingMonitorPage() {
                   {/* Score bar */}
                   <div className="mt-3">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs" style={{ color: "#64748B" }}>Readiness</span>
+                      <span className="text-xs" style={{ color: SLATE_HORIZON.muted }}>Readiness</span>
                       <span className="text-xs font-semibold" style={{ color }}>{client.readiness_score}%</span>
                     </div>
-                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "#0F1F3D" }}>
+                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: SLATE_HORIZON.line }}>
                       <div
                         className="h-full rounded-full transition-all"
                         style={{ width: `${client.readiness_score}%`, background: color }}
@@ -155,7 +168,11 @@ export default async function OnboardingMonitorPage() {
                         <span
                           key={step}
                           className="rounded-md px-2 py-0.5 text-[11px] font-medium"
-                          style={{ background: "rgba(100,116,139,0.12)", color: "#94A3B8", border: "1px solid rgba(100,116,139,0.2)" }}
+                          style={{
+                            background: SLATE_HORIZON.bg,
+                            color: SLATE_HORIZON.muted,
+                            border: `1px solid ${SLATE_HORIZON.line}`,
+                          }}
                         >
                           {STEP_LABELS[step] ?? step}
                         </span>
@@ -169,7 +186,7 @@ export default async function OnboardingMonitorPage() {
         )}
 
         <div className="mt-6">
-          <Link href="/dashboard" className="text-xs" style={{ color: "#22D3EE" }}>← Dashboard</Link>
+          <Link href="/dashboard" className="text-xs" style={{ color: SLATE_HORIZON.brand }}>← Dashboard</Link>
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 "use client";
 import { memo } from "react";
 import { FEATURES as FEATURE_MATRIX } from "@/components/billing/FeatureComparisonTable";
+import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
 
 type BannerPlan = "smartStart" | "activeForce" | "marketVision" | "protocolAuthority";
 
@@ -66,9 +67,21 @@ export const AIAssistBanner = memo(function AIAssistBanner({ plan = "free" }: Pr
   const colors = PLAN_COLORS[resolvedPlan];
 
   return (
-    <article className="rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-slate-900 via-slate-900 to-cyan-950/60 p-5 shadow-[0_0_26px_rgba(6,182,212,0.18)]">
+    <article
+      className="rounded-[20px] border p-5"
+      style={{
+        background: SLATE_HORIZON.cardBg,
+        borderColor: SLATE_HORIZON.line,
+        boxShadow: SLATE_HORIZON.cardShadow,
+      }}
+    >
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-300/90">AI Assist Mode</p>
+        <p
+          className="text-[10px] font-semibold uppercase tracking-[0.2em]"
+          style={{ color: SLATE_HORIZON.brandDeep }}
+        >
+          AI Assist Mode
+        </p>
         <span
           className="rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
           style={{
@@ -81,9 +94,9 @@ export const AIAssistBanner = memo(function AIAssistBanner({ plan = "free" }: Pr
         </span>
       </div>
 
-      <h2 className="mb-1 text-lg font-bold text-white">AI Asistent je aktívny</h2>
-      <p className="mb-4 text-xs" style={{ color: "#64748B" }}>
-        AI Asistent pracuje za teba - ty uzatváraš obchody.
+      <h2 className="mb-1 text-lg font-bold" style={{ color: SLATE_HORIZON.deep }}>AI Asistent je aktívny</h2>
+      <p className="mb-4 text-xs" style={{ color: SLATE_HORIZON.muted }}>
+        AI Asistent pracuje za teba — ty uzatváraš obchody.
       </p>
 
       <ul className="space-y-2">
@@ -91,7 +104,7 @@ export const AIAssistBanner = memo(function AIAssistBanner({ plan = "free" }: Pr
           return (
             <li key={feature} className="flex items-start gap-2.5 text-xs">
               <span className="shrink-0 text-sm" style={{ color: colors.color }}>✓</span>
-              <span style={{ color: "#94A3B8" }}>{feature}</span>
+              <span style={{ color: SLATE_HORIZON.navText }}>{feature}</span>
             </li>
           );
         })}

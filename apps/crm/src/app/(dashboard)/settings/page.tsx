@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { PushNotificationsToggle } from '@/components/settings/PushNotificationsToggle';
+import { SLATE_HORIZON, WORKDESK_CARD } from '@/lib/slate-horizon-theme';
 
 const PLAN_NAMES: Record<string, string> = {
   free:               'FREE',
@@ -37,12 +38,12 @@ export default function SettingsPage() {
   const planName = planKey ? (PLAN_NAMES[planKey] ?? planKey.toUpperCase()) : '…';
 
   return (
-    <div className="mx-auto max-w-5xl p-4 md:p-10 font-sans" style={{ background: "#050914", minHeight: "100vh" }}>
+    <div className="mx-auto max-w-5xl p-4 md:p-10 font-sans" style={{ background: SLATE_HORIZON.bg, minHeight: "100vh" }}>
       <div className="mb-8">
-        <h1 className="text-2xl md:text-3xl font-black tracking-tight" style={{ color: "#F0F9FF" }}>
+        <h1 className="text-2xl md:text-3xl font-black tracking-tight" style={{ color: SLATE_HORIZON.ink }}>
           Nastavenia
         </h1>
-        <p className="mt-2 text-sm" style={{ color: "#64748B" }}>
+        <p className="mt-2 text-sm" style={{ color: SLATE_HORIZON.muted }}>
           Správa plánu, notifikácií a preferencií.
         </p>
       </div>
@@ -50,25 +51,29 @@ export default function SettingsPage() {
       <div className="space-y-4">
         <section
           className="overflow-hidden rounded-2xl border"
-          style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
+          style={{
+            background: WORKDESK_CARD.background,
+            borderColor: WORKDESK_CARD.borderColor,
+            boxShadow: WORKDESK_CARD.boxShadow,
+          }}
         >
-          <div className="border-b p-4 md:p-6" style={{ borderColor: "#0F1F3D" }}>
-            <h3 className="text-base font-bold" style={{ color: "#F0F9FF" }}>Aktuálny plán</h3>
+          <div className="border-b p-4 md:p-6" style={{ borderColor: WORKDESK_CARD.borderColor }}>
+            <h3 className="text-base font-bold" style={{ color: SLATE_HORIZON.ink }}>Aktuálny plán</h3>
           </div>
           <div className="p-4 md:p-6">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-xs" style={{ color: "#64748B" }}>Váš program</p>
-                <p className="text-lg font-bold uppercase mt-0.5" style={{ color: "#A855F7" }}>{planName}</p>
+                <p className="text-xs" style={{ color: SLATE_HORIZON.muted }}>Váš program</p>
+                <p className="text-lg font-bold uppercase mt-0.5" style={{ color: SLATE_HORIZON.brandDeep }}>{planName}</p>
               </div>
               <button
                 onClick={handlePortal}
                 disabled={portalLoading || !planKey}
                 className="rounded-xl px-4 py-2.5 text-sm font-bold min-h-[44px]"
                 style={{
-                  background: "rgba(168,85,247,0.12)",
-                  border: "1px solid rgba(168,85,247,0.3)",
-                  color: "#A855F7",
+                  background: SLATE_HORIZON.soft,
+                  border: `1px solid ${SLATE_HORIZON.softBorder}`,
+                  color: SLATE_HORIZON.brandDeep,
                   opacity: (portalLoading || !planKey) ? 0.6 : 1,
                   cursor: (portalLoading || !planKey) ? 'not-allowed' : 'pointer',
                 }}

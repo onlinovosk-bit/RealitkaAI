@@ -10,6 +10,7 @@ import {
 } from "@/lib/ai/assistant-script";
 import { getSalesScript } from "@/lib/sales/sales-script";
 import { AI_ASSISTANT_NAME } from "@/lib/ai-brand";
+import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
 
 const SESSION_LEAD_KEY = "assistant_panel_lead_id_v1";
 
@@ -117,10 +118,18 @@ function AssistantPanelInner({ defaultLeadId, leadOptions = [] }: AssistantPanel
     !showApiAnswer && Boolean(effectiveLeadId) && (Boolean(error) || (!loading && !answer));
 
   return (
-    <div className="rounded-2xl border border-indigo-500/25 bg-gradient-to-br from-indigo-950/50 via-slate-900/80 to-slate-950 p-5 text-white shadow-[0_0_24px_rgba(99,102,241,0.12)]">
+    <div
+      className="rounded-[20px] border p-5"
+      style={{
+        background: SLATE_HORIZON.cardBg,
+        borderColor: SLATE_HORIZON.line,
+        boxShadow: SLATE_HORIZON.cardShadow,
+        color: SLATE_HORIZON.deep,
+      }}
+    >
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h3 className="text-lg font-bold text-white">{AI_ASSISTANT_NAME}</h3>
+          <h3 className="text-lg font-bold" style={{ color: SLATE_HORIZON.deep }}>{AI_ASSISTANT_NAME}</h3>
         </div>
         <div className="flex flex-wrap gap-1.5">
           {contexts.map((c) => (
@@ -128,11 +137,12 @@ function AssistantPanelInner({ defaultLeadId, leadOptions = [] }: AssistantPanel
               key={c.id}
               type="button"
               onClick={() => setCtx(c.id)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+              className="rounded-lg px-3 py-1.5 text-xs font-medium transition"
+              style={
                 ctx === c.id
-                  ? "bg-indigo-500/30 text-indigo-100 ring-1 ring-indigo-400/40"
-                  : "bg-white/5 text-slate-400 hover:bg-white/10"
-              }`}
+                  ? { background: SLATE_HORIZON.soft, color: SLATE_HORIZON.brandDeep, border: `1px solid ${SLATE_HORIZON.softBorder}` }
+                  : { background: SLATE_HORIZON.bg, color: SLATE_HORIZON.muted, border: `1px solid ${SLATE_HORIZON.line}` }
+              }
             >
               {c.label}
             </button>
@@ -141,18 +151,23 @@ function AssistantPanelInner({ defaultLeadId, leadOptions = [] }: AssistantPanel
       </div>
 
       {leadFromUrl && (
-        <p className="mt-3 text-[11px] text-cyan-300/80">
+        <p className="mt-3 text-[11px]" style={{ color: SLATE_HORIZON.brandDeep }}>
           Kontext leadu z URL (?lead=…)
         </p>
       )}
 
       {!leadFromUrl && leadOptions.length > 1 && (
-        <label className="mt-3 block text-xs text-slate-400">
+        <label className="mt-3 block text-xs" style={{ color: SLATE_HORIZON.muted }}>
           Príležitosť
           <select
             value={effectiveLeadId ?? ""}
             onChange={(e) => setLeadAndPersist(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-white/15 bg-slate-950/80 px-3 py-2 text-sm text-white"
+            className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
+            style={{
+              borderColor: SLATE_HORIZON.line,
+              background: "#fff",
+              color: SLATE_HORIZON.deep,
+            }}
           >
             {leadOptions.map((o) => (
               <option key={o.id} value={o.id}>
@@ -164,27 +179,27 @@ function AssistantPanelInner({ defaultLeadId, leadOptions = [] }: AssistantPanel
       )}
 
       {!effectiveLeadId && (
-        <p className="mt-4 text-sm text-amber-200/90">
+        <p className="mt-4 text-sm" style={{ color: "#92400E" }}>
           Žiadna príležitosť na analýzu. Pridaj lead do CRM alebo použi odkaz z detailu leadu s parametrom{" "}
-          <code className="rounded bg-black/40 px-1">?lead=</code>.
+          <code className="rounded px-1" style={{ background: SLATE_HORIZON.bg }}>?lead=</code>.
         </p>
       )}
 
       {loading && effectiveLeadId && (
-        <p className="mt-4 text-sm text-indigo-200/80">Načítavam odpoveď asistenta…</p>
+        <p className="mt-4 text-sm" style={{ color: SLATE_HORIZON.muted }}>Načítavam odpoveď asistenta…</p>
       )}
 
       {showApiAnswer && (
-        <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-indigo-100/95">
+        <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed" style={{ color: SLATE_HORIZON.navText }}>
           {answer}
         </p>
       )}
 
       {showFallbackLine && (
         <>
-          <p className="mt-4 text-sm leading-relaxed text-indigo-100/95">{fallbackMessage}</p>
+          <p className="mt-4 text-sm leading-relaxed" style={{ color: SLATE_HORIZON.navText }}>{fallbackMessage}</p>
           {error && (
-            <p className="mt-2 text-xs text-amber-300/90">
+            <p className="mt-2 text-xs" style={{ color: "#92400E" }}>
               API: {error} (zobrazujem záložný text.)
             </p>
           )}
@@ -192,7 +207,7 @@ function AssistantPanelInner({ defaultLeadId, leadOptions = [] }: AssistantPanel
       )}
 
       {!showApiAnswer && (
-        <ul className="mt-4 space-y-1.5 border-t border-white/10 pt-4 text-xs text-slate-400">
+        <ul className="mt-4 space-y-1.5 border-t pt-4 text-xs" style={{ borderColor: SLATE_HORIZON.line, color: SLATE_HORIZON.muted }}>
           {bullets.map((b) => (
             <li key={b}>• {b}</li>
           ))}

@@ -16,6 +16,7 @@ import {
   type TeamMemberPermissions,
 } from "@/types/navigation";
 import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
+import { WorkdeskRail } from "@/components/layout/WorkdeskRail";
 
 type FounderDemoProgram = "free" | "starter" | "active_force" | "market_vision" | "protocol_authority";
 
@@ -115,6 +116,67 @@ function getPlanDisplayName(
     return "Smart Start";
   }
   return VARIANT_THEMES[variant].planLabel;
+}
+
+// ─── Workdesk kompaktná položka (secondary sidebar) ───────────────────────
+function WorkdeskNavRow({
+  item,
+  isActive,
+}: {
+  item: NavItem;
+  isActive: boolean;
+}) {
+  const countStyle = item.badge?.variant === "hot"
+    ? { background: SLATE_HORIZON.red, color: "#fff" }
+    : item.badge?.variant === "team"
+      ? { background: SLATE_HORIZON.amber, color: "#fff" }
+      : { background: SLATE_HORIZON.brand, color: "#fff" };
+
+  return (
+    <Link
+      href={item.href}
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        gap: 8,
+        padding: "10px 12px",
+        borderRadius: 14,
+        fontSize: 13,
+        fontWeight: 600,
+        color: isActive ? SLATE_HORIZON.brandDeep : SLATE_HORIZON.navText,
+        background: isActive ? SLATE_HORIZON.soft : "transparent",
+        textDecoration: "none",
+        transition: "background 0.15s ease, color 0.15s ease",
+      }}
+    >
+      <span style={{ display: "flex", alignItems: "center", gap: 8, lineHeight: 1.25 }}>
+        <NavIcon
+          name={item.icon}
+          size={18}
+          color={isActive ? SLATE_HORIZON.brandDeep : SLATE_HORIZON.muted}
+        />
+        <b style={{ fontWeight: 700 }}>{item.label}</b>
+      </span>
+      {item.badge ? (
+        <span
+          style={{
+            minWidth: 24,
+            height: 24,
+            borderRadius: 999,
+            display: "grid",
+            placeItems: "center",
+            fontSize: 11,
+            fontWeight: 700,
+            padding: "0 6px",
+            ...countStyle,
+          }}
+        >
+          {item.badge.label === "live" ? "3" : item.badge.label === "hot" ? "17" : item.badge.label.slice(0, 3)}
+        </span>
+      ) : null}
+    </Link>
+  );
 }
 
 // ─── Jedna nav položka ─────────────────────────────────────────────────────
@@ -654,174 +716,105 @@ export default function AppSidebar({
         background:     SLATE_HORIZON.sidebarBg,
         borderRight:    `1px solid ${SLATE_HORIZON.line}`,
         overflow:       "hidden",
-        boxShadow:      "4px 0 24px rgba(37,99,235,0.06)",
       }}
     >
-      {/* Akcentový top border podľa role */}
+      {/* Header — planbox ako v preview */}
       <div
         style={{
-          height:     "2px",
-          background: SLATE_HORIZON.topbarGradient,
-          flexShrink: 0,
-        }}
-      />
-
-      {/* Header */}
-      <div
-        style={{
-          padding:      "16px 12px 14px 48px",
-          borderBottom: `1px solid ${SLATE_HORIZON.line}`,
+          padding:      "18px",
           flexShrink:   0,
         }}
       >
-        {/* Logo */}
-        <div
-          style={{
-            display:     "flex",
-            alignItems:  "center",
-            gap:         "8px",
-            marginBottom: "10px",
-          }}
-        >
-          <div
-            style={{
-              width:       "24px",
-              height:      "24px",
-              borderRadius: "5px",
-              background:  `${theme.accentColor}20`,
-              border:      `1px solid ${theme.accentColor}40`,
-              display:     "flex",
-              alignItems:  "center",
-              justifyContent: "center",
-              fontSize:    "11px",
-              fontWeight:  "700",
-              color:       theme.accentColor,
-              letterSpacing: "-0.02em",
-              boxShadow:   "0 0 14px rgba(34,211,238,0.25)",
-            }}
-          >
-            R
-          </div>
-          <span
-            style={{
-              fontSize:   "14px",
-              fontWeight: "600",
-              color:      SLATE_HORIZON.deep,
-              letterSpacing: "-0.02em",
-            }}
-          >
-            Revolis.AI
-          </span>
-
-          {/* Gold Protocol badge */}
-          {demoProgram === "protocol_authority" && (
-            <span
-              className="bg-yellow-500/10 text-yellow-400 text-[9px] font-bold px-1.5 py-0.5 rounded"
-              style={{ letterSpacing: "0.06em" }}
-            >
-              PROTOCOL
-            </span>
-          )}
-
-          {isFounderDemo && (
-            <span
-              style={{
-                fontSize: "9px",
-                fontWeight: "700",
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-                borderRadius: "9999px",
-                padding: "2px 7px",
-                color: "#06213F",
-                background: "#22D3EE",
-                border: "1px solid rgba(103,232,249,0.65)",
-                boxShadow: "0 0 12px rgba(34,211,238,0.35)",
-              }}
-            >
-              Demo
-            </span>
-          )}
-        </div>
-
-        {/* Greeting + plan badge */}
         <p
           style={{
-            fontSize:   "10px",
-            color:      `${theme.accentColor}90`,
-            marginBottom: "4px",
-            fontWeight: "500",
-            letterSpacing: "0.02em",
+            fontSize: 13,
+            color: SLATE_HORIZON.muted,
+            marginBottom: 14,
+            lineHeight: 1.45,
+            marginTop: 0,
           }}
         >
-          {theme.greeting}
+          Predajný kokpit realitnej kancelárie
         </p>
 
-        <PlanBadge
-          label={planLabel}
-          icon={theme.planIcon}
-          accentColor={theme.accentColor}
-        />
-
-        {isFounderDemo && (
-          <div style={{ marginTop: "8px" }}>
-            <p
+        <div
+          style={{
+            padding: 16,
+            borderRadius: 18,
+            background: `linear-gradient(135deg, ${SLATE_HORIZON.bg}, #fff)`,
+            border: `1px solid ${SLATE_HORIZON.line}`,
+          }}
+        >
+          <label
+            style={{
+              display: "block",
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+              fontSize: 11,
+              color: SLATE_HORIZON.muted,
+              fontWeight: 700,
+              marginBottom: 8,
+            }}
+          >
+            Program používateľa
+          </label>
+          {isFounderDemo ? (
+            <select
+              value={demoProgram}
+              onChange={(e) => {
+                const next = e.target.value as FounderDemoProgram;
+                setDemoProgram(next);
+                if (typeof window !== "undefined") {
+                  window.localStorage.setItem("founderDemoProgram", next);
+                  window.dispatchEvent(new CustomEvent("founderDemoProgramChanged", { detail: next }));
+                }
+              }}
               style={{
-                fontSize: "10px",
-                color: "rgba(148,163,184,0.90)",
-                marginBottom: "6px",
-                fontWeight: "600",
-                letterSpacing: "0.04em",
-                textTransform: "uppercase",
+                width: "100%",
+                border: `1px solid ${SLATE_HORIZON.line}`,
+                background: "#fff",
+                borderRadius: 12,
+                padding: "11px 12px",
+                fontWeight: 600,
+                fontSize: 14,
+                color: SLATE_HORIZON.deep,
+                cursor: "pointer",
               }}
             >
-              Founder Demo Mode
-            </p>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
-              {FOUNDER_DEMO_PROGRAMS.map((program) => {
-                const selected = demoProgram === program.id;
-                return (
-                  <button
-                    key={program.id}
-                    type="button"
-                    onClick={() => {
-                      setDemoProgram(program.id);
-                      if (typeof window !== "undefined") {
-                        window.localStorage.setItem("founderDemoProgram", program.id);
-                        window.dispatchEvent(new CustomEvent("founderDemoProgramChanged", { detail: program.id }));
-                      }
-                    }}
-                    style={{
-                      fontSize: "10px",
-                      fontWeight: selected ? "700" : "600",
-                      borderRadius: "7px",
-                      padding: "6px 8px",
-                      border: selected
-                        ? `1px solid ${SLATE_HORIZON.softBorder}`
-                        : `1px solid ${SLATE_HORIZON.line}`,
-                      background: selected
-                        ? SLATE_HORIZON.soft
-                        : SLATE_HORIZON.bg,
-                      color: selected ? SLATE_HORIZON.brandDeep : SLATE_HORIZON.navText,
-                      textAlign: "left",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {program.label}
-                  </button>
-                );
-              })}
+              {FOUNDER_DEMO_PROGRAMS.map((program) => (
+                <option key={program.id} value={program.id}>
+                  {program.label}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <div
+              style={{
+                width: "100%",
+                border: `1px solid ${SLATE_HORIZON.line}`,
+                background: "#fff",
+                borderRadius: 12,
+                padding: "11px 12px",
+                fontWeight: 600,
+                fontSize: 14,
+                color: SLATE_HORIZON.deep,
+              }}
+            >
+              {planLabel}
             </div>
-          </div>
-        )}
+          )}
+          <p style={{ margin: "10px 0 0", fontSize: 12, color: SLATE_HORIZON.muted, lineHeight: 1.45 }}>
+            Menu sa mení podľa zaplateného programu.
+          </p>
+        </div>
 
-        {/* Agency name */}
         {agencyName && (
           <p
             style={{
-              fontSize:  "10px",
-              color:     "rgba(71,85,105,0.80)",
-              marginTop: "6px",
-              overflow:  "hidden",
+              fontSize: 11,
+              color: SLATE_HORIZON.muted,
+              marginTop: 10,
+              overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
             }}
@@ -836,38 +829,44 @@ export default function AppSidebar({
         style={{
           flex:      1,
           overflowY: "auto",
-          padding:   "8px 10px",
+          padding:   "0 18px 8px",
           scrollbarWidth: "none",
         }}
       >
+        <p
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            color: SLATE_HORIZON.muted,
+            margin: "0 4px 8px",
+            textTransform: "uppercase",
+            letterSpacing: "0.07em",
+          }}
+        >
+          Najdôležitejšie pre RK
+        </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          {(grouped.main ?? []).map((item) => (
+            <WorkdeskNavRow key={item.id} item={item} isActive={isActive(item.href)} />
+          ))}
+        </div>
+
         {SECTION_ORDER.map((sectionKey) => {
           const items = grouped[sectionKey];
-          if (!items) return null;
-          // Settings sú renderované v footer div
-          if (sectionKey === "settings") return null;
+          if (!items || sectionKey === "main" || sectionKey === "settings") return null;
 
           const sectionLabel = SECTION_LABELS[sectionKey];
           const isCollapsed  = collapsedGroups.includes(sectionKey);
 
           return (
-            <div
-              key={sectionKey}
-              style={{
-                marginBottom: "4px",
-              }}
-            >
-              {/* Oddeľovač pred tools a team */}
-              {(sectionKey === "tools" || sectionKey === "team") && (
-                <div
-                  style={{
-                    height:     "1px",
-                    background: SLATE_HORIZON.line,
-                    margin:     "8px 0",
-                  }}
-                />
-              )}
-
-              {/* Sekcia nadpis – collapsible len ak má label */}
+            <div key={sectionKey} style={{ marginTop: 16 }}>
+              <div
+                style={{
+                  height: 1,
+                  background: SLATE_HORIZON.line,
+                  margin: "8px 0 12px",
+                }}
+              />
               {sectionLabel ? (
                 <SectionHeader
                   label={sectionLabel}
@@ -877,12 +876,10 @@ export default function AppSidebar({
                   onToggle={toggleGroup}
                 />
               ) : null}
-
-              {/* Položky s smooth max-height transition */}
               <div
                 style={{
-                  overflow:   "hidden",
-                  maxHeight:  isCollapsed ? "0px" : "600px",
+                  overflow: "hidden",
+                  maxHeight: isCollapsed ? "0px" : "600px",
                   transition: "max-height 0.25s ease",
                 }}
               >
@@ -957,7 +954,7 @@ export default function AppSidebar({
                 style={{
                   fontSize:     "11px",
                   fontWeight:   "500",
-                  color:        "#CBD5E1",
+                  color:        SLATE_HORIZON.deep,
                   overflow:     "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace:   "nowrap",
@@ -985,22 +982,23 @@ export default function AppSidebar({
 
   return (
     <>
-      {/* ─── Desktop sidebar ─────────────────────────────────── */}
-      <aside
-        style={{
-          width:        "248px",
-          minWidth:     "248px",
-          height:       "100vh",
-          position:     "sticky",
-          top:          0,
-          flexShrink:   0,
-          display:      "flex",
-          flexDirection: "column",
-        }}
-        className="hidden lg:flex"
-      >
-        {sidebarContent}
-      </aside>
+      {/* ─── Desktop: rail + sidebar ─────────────────────────── */}
+      <div className="hidden lg:flex" style={{ flexShrink: 0, height: "100vh" }}>
+        <WorkdeskRail />
+        <aside
+          style={{
+            width: SLATE_HORIZON.sidebarWidth,
+            minWidth: SLATE_HORIZON.sidebarWidth,
+            height: "100vh",
+            position: "sticky",
+            top: 0,
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          {sidebarContent}
+        </aside>
+      </div>
 
       {/* ─── Mobile hamburger tlačidlo ────────────────────────── */}
       <button
@@ -1014,9 +1012,9 @@ export default function AppSidebar({
           width:        "36px",
           height:       "36px",
           borderRadius: "8px",
-              background:   "linear-gradient(135deg, #06213F 0%, #0B1630 100%)",
-              border:       "1px solid rgba(34,211,238,0.45)",
-              boxShadow:    "0 0 16px rgba(34,211,238,0.22)",
+              background:   SLATE_HORIZON.railGradient,
+          border:       "1px solid rgba(255,255,255,0.35)",
+          boxShadow:    "0 4px 16px rgba(37,99,235,0.25)",
           display:      "flex",
           flexDirection: "column",
           alignItems:   "center",
@@ -1032,7 +1030,7 @@ export default function AppSidebar({
             style={{
               width:       i === 1 ? "12px" : "16px",
               height:      "1.5px",
-              background:  theme.accentColor,
+              background:  "#fff",
               borderRadius: "1px",
               transition:  "width 0.2s ease",
             }}

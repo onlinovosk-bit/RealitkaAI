@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import { SLATE_HORIZON, WORKDESK_CARD } from '@/lib/slate-horizon-theme';
 
 const PLAN_NAMES: Record<string, string> = {
   free:               'FREE',
@@ -49,46 +50,49 @@ export default function BillingPage() {
   return (
     <div
       className="mx-auto max-w-4xl py-8 px-6"
-      style={{ background: "#050914", minHeight: "100vh" }}
+      style={{ background: SLATE_HORIZON.bg, minHeight: "100vh" }}
     >
       <header
         className="mb-8 border-b pb-4"
-        style={{ borderColor: "#0F1F3D" }}
+        style={{ borderColor: SLATE_HORIZON.line }}
       >
-        <h1 className="text-3xl font-bold" style={{ color: "#F0F9FF" }}>Predplatné a licencie</h1>
-        <p style={{ color: "#64748B" }}>Spravujte svoj balík a fakturačné údaje pre Reality Monopol.</p>
+        <h1 className="text-3xl font-bold" style={{ color: SLATE_HORIZON.ink }}>Predplatné a licencie</h1>
+        <p style={{ color: SLATE_HORIZON.muted }}>Spravujte svoj balík a fakturačné údaje pre Reality Monopol.</p>
       </header>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div
           className="rounded-xl border p-6"
-          style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
+          style={{
+            background: WORKDESK_CARD.background,
+            borderColor: WORKDESK_CARD.borderColor,
+            boxShadow: WORKDESK_CARD.boxShadow,
+          }}
         >
           <div className="mb-4 flex items-start justify-between">
             <div>
-              <h3 className="text-lg font-semibold" style={{ color: "#F0F9FF" }}>Aktuálny program</h3>
+              <h3 className="text-lg font-semibold" style={{ color: SLATE_HORIZON.ink }}>Aktuálny program</h3>
               {!loading && (
                 <span
                   className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                  style={{ background: "rgba(34,211,238,0.12)", color: "#22D3EE" }}
+                  style={{ background: SLATE_HORIZON.soft, color: SLATE_HORIZON.brandDeep }}
                 >
                   {planName}
                 </span>
               )}
             </div>
             {!loading && (
-              <span className="text-2xl font-bold" style={{ color: "#F0F9FF" }}>
-                {planPrice}<span className="text-sm font-normal" style={{ color: "#64748B" }}>/mes</span>
+              <span className="text-2xl font-bold" style={{ color: SLATE_HORIZON.ink }}>
+                {planPrice}<span className="text-sm font-normal" style={{ color: SLATE_HORIZON.muted }}>/mes</span>
               </span>
             )}
           </div>
           <button
             onClick={handleStripePortal}
             disabled={portalLoading || loading}
-            className="w-full rounded-md py-2 font-semibold transition"
+            className="w-full rounded-md py-2 font-semibold text-white transition"
             style={{
-              background: "linear-gradient(135deg, #22D3EE, #0EA5E9)",
-              color: "#050914",
+              background: SLATE_HORIZON.topbarGradient,
               opacity: (portalLoading || loading) ? 0.6 : 1,
               cursor: (portalLoading || loading) ? 'not-allowed' : 'pointer',
             }}
@@ -99,10 +103,14 @@ export default function BillingPage() {
 
         <div
           className="rounded-xl border p-6"
-          style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
+          style={{
+            background: WORKDESK_CARD.background,
+            borderColor: WORKDESK_CARD.borderColor,
+            boxShadow: WORKDESK_CARD.boxShadow,
+          }}
         >
-          <h3 className="mb-4 text-lg font-semibold" style={{ color: "#F0F9FF" }}>Využitie zdrojov</h3>
-          <p className="text-sm" style={{ color: "#64748B" }}>
+          <h3 className="mb-4 text-lg font-semibold" style={{ color: SLATE_HORIZON.ink }}>Využitie zdrojov</h3>
+          <p className="text-sm" style={{ color: SLATE_HORIZON.muted }}>
             Prehľad spotreby AI tokenov bude dostupný v nasledujúcej verzii.
           </p>
         </div>

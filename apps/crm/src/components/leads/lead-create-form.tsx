@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { sourceOptions } from "@/lib/leads-store";
-import { RadiantSpriteIcon } from "@/components/shared/radiant-sprite-icon";
+import { SLATE_HORIZON, WORKDESK_INPUT, WORKDESK_PANEL } from "@/lib/slate-horizon-theme";
 
 const initialState = {
   name: "",
@@ -74,9 +74,9 @@ export default function LeadCreateForm() {
 
   const inputClass = "w-full rounded-xl border px-3 py-2.5 text-sm outline-none transition-colors";
   const inputStyle = {
-    background: "#050914",
-    borderColor: "rgba(34,211,238,0.15)",
-    color: "#F0F9FF",
+    background: WORKDESK_INPUT.background,
+    borderColor: WORKDESK_INPUT.borderColor,
+    color: WORKDESK_INPUT.color,
   };
 
   return (
@@ -84,7 +84,12 @@ export default function LeadCreateForm() {
       {toast && (
         <div
           className="fixed top-4 right-4 z-50 rounded-xl border px-4 py-3 text-sm font-medium shadow-lg"
-          style={{ background: "#080D1A", borderColor: "rgba(34,211,238,0.2)", color: "#E0F2FE" }}
+          style={{
+            background: WORKDESK_PANEL.background,
+            borderColor: WORKDESK_PANEL.borderColor,
+            color: SLATE_HORIZON.ink,
+            boxShadow: WORKDESK_PANEL.boxShadow,
+          }}
         >
           {toast}
         </div>
@@ -92,21 +97,33 @@ export default function LeadCreateForm() {
 
       <div
         className="rounded-2xl border p-4 md:p-5"
-        style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
+        style={{
+          background: WORKDESK_PANEL.background,
+          borderColor: WORKDESK_PANEL.borderColor,
+          boxShadow: WORKDESK_PANEL.boxShadow,
+        }}
       >
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-base font-semibold" style={{ color: "#F0F9FF" }}>Pridať príležitosť</h2>
-            <p className="text-xs mt-0.5" style={{ color: "#475569" }}>Uložená do 10 sekúnd.</p>
+            <h2 className="text-base font-semibold text-slate-900" style={{ color: SLATE_HORIZON.ink }}>Pridať príležitosť</h2>
+            <p className="text-xs mt-0.5" style={{ color: SLATE_HORIZON.muted }}>Uložená do 10 sekúnd.</p>
           </div>
           <button
             type="button"
             onClick={() => setIsOpen(prev => !prev)}
             className="rounded-xl px-4 py-2 text-sm font-semibold min-h-[40px] transition-all active:scale-95"
-            style={{
-              background: isOpen ? "rgba(71,85,105,0.3)" : "linear-gradient(135deg, #22D3EE, #0EA5E9)",
-              color: isOpen ? "#94A3B8" : "#050914",
-            }}
+            style={
+              isOpen
+                ? {
+                    background: SLATE_HORIZON.bg,
+                    color: SLATE_HORIZON.muted,
+                    border: `1px solid ${WORKDESK_INPUT.borderColor}`,
+                  }
+                : {
+                    background: `linear-gradient(135deg, ${SLATE_HORIZON.brandDeep}, ${SLATE_HORIZON.brand})`,
+                    color: "#FFFFFF",
+                  }
+            }
           >
             {isOpen ? "Zavrieť" : "+ Nová"}
           </button>
@@ -115,8 +132,8 @@ export default function LeadCreateForm() {
         {isOpen && (
           <form onSubmit={handleSubmit} className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-medium" style={{ color: "#64748B" }}>
-                Meno <span style={{ color: "#EF4444" }}>*</span>
+              <label className="mb-1 block text-xs font-medium" style={{ color: SLATE_HORIZON.muted }}>
+                Meno <span style={{ color: SLATE_HORIZON.red }}>*</span>
               </label>
               <input
                 required
@@ -130,7 +147,7 @@ export default function LeadCreateForm() {
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-medium" style={{ color: "#64748B" }}>Email</label>
+              <label className="mb-1 block text-xs font-medium" style={{ color: SLATE_HORIZON.muted }}>Email</label>
               <input
                 type="email"
                 value={form.email}
@@ -142,7 +159,7 @@ export default function LeadCreateForm() {
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-medium" style={{ color: "#64748B" }}>Telefón</label>
+              <label className="mb-1 block text-xs font-medium" style={{ color: SLATE_HORIZON.muted }}>Telefón</label>
               <input
                 type="tel"
                 value={form.phone}
@@ -154,7 +171,7 @@ export default function LeadCreateForm() {
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-medium" style={{ color: "#64748B" }}>Zdroj</label>
+              <label className="mb-1 block text-xs font-medium" style={{ color: SLATE_HORIZON.muted }}>Zdroj</label>
               <select
                 value={form.source}
                 onChange={e => update("source", e.target.value)}
@@ -168,7 +185,7 @@ export default function LeadCreateForm() {
             </div>
 
             <div className="md:col-span-2">
-              <label className="mb-1 block text-xs font-medium" style={{ color: "#64748B" }}>Poznámka</label>
+              <label className="mb-1 block text-xs font-medium" style={{ color: SLATE_HORIZON.muted }}>Poznámka</label>
               <textarea
                 value={form.note}
                 onChange={e => update("note", e.target.value)}
@@ -185,8 +202,8 @@ export default function LeadCreateForm() {
                 disabled={isSaving}
                 className="flex-1 sm:flex-none rounded-xl px-5 py-2.5 text-sm font-semibold min-h-[44px] transition-all active:scale-95 disabled:opacity-60"
                 style={{
-                  background: "linear-gradient(135deg, #22D3EE, #0EA5E9)",
-                  color: "#050914",
+                  background: `linear-gradient(135deg, ${SLATE_HORIZON.brandDeep}, ${SLATE_HORIZON.brand})`,
+                  color: "#FFFFFF",
                 }}
               >
                 {isSaving ? "Ukladám..." : "Pridať príležitosť"}
@@ -195,7 +212,7 @@ export default function LeadCreateForm() {
                 type="button"
                 onClick={() => { setIsOpen(false); setForm(initialState); }}
                 className="rounded-xl border px-4 py-2.5 text-sm font-medium min-h-[44px]"
-                style={{ borderColor: "rgba(71,85,105,0.4)", color: "#64748B" }}
+                style={{ borderColor: WORKDESK_INPUT.borderColor, color: SLATE_HORIZON.muted }}
               >
                 Zrušiť
               </button>

@@ -8,6 +8,7 @@ import { PlaybookItemCard } from "@/ui/playbook/PlaybookItemCard";
 import { useEventStream } from "@/hooks/useEventStream";
 import type { PlaybookItemDto } from "@/services/playbook/types";
 import { AI_ASSISTANT_NAME } from "@/lib/ai-brand";
+import { SLATE_HORIZON, WORKDESK_CARD } from "@/lib/slate-horizon-theme";
 import { RadiantSpriteIcon } from "@/components/shared/radiant-sprite-icon";
 import type { PlaybookItemType } from "@/ui/playbook/components.map";
 
@@ -182,16 +183,16 @@ export default function PlaybookPage() {
   };
 
   return (
-    <main className="flex h-full flex-col gap-4 p-3 md:gap-6 md:p-6" style={{ background: "#050914" }}>
+    <main className="flex h-full flex-col gap-4 p-3 md:gap-6 md:p-6" style={{ background: SLATE_HORIZON.bg }}>
       {/* Header */}
       {toast && (
         <div
           role="status"
           className="rounded-xl border px-4 py-3 text-sm"
           style={{
-            background: "rgba(34,211,238,0.08)",
-            borderColor: "rgba(34,211,238,0.25)",
-            color: "#E0F2FE",
+            background: SLATE_HORIZON.soft,
+            borderColor: SLATE_HORIZON.softBorder,
+            color: SLATE_HORIZON.brandDeep,
           }}
         >
           {toast}
@@ -202,10 +203,10 @@ export default function PlaybookPage() {
         <div className="flex items-start gap-3">
           <RadiantSpriteIcon icon="playbook" sizeClassName="h-12 w-12" className="mt-0.5" />
           <div>
-            <h1 className="text-2xl font-bold" style={{ color: "#F0F9FF" }}>
+            <h1 className="text-2xl font-bold" style={{ color: SLATE_HORIZON.ink }}>
               AI Plán krokov
             </h1>
-            <p className="mt-1 text-sm" style={{ color: "#64748B" }}>
+            <p className="mt-1 text-sm" style={{ color: SLATE_HORIZON.muted }}>
             Denný plán práce, zoradený podľa Indexu pripravenosti kupujúceho. Žiadny prehľad, len konkrétne kroky.
             </p>
           </div>
@@ -215,13 +216,13 @@ export default function PlaybookPage() {
             <span
               className="h-2 w-2 rounded-full"
               style={{
-                background: connected ? "#22D3EE" : "#475569",
-                boxShadow: connected ? "0 0 6px #22D3EE" : "none",
+                background: connected ? SLATE_HORIZON.brand : SLATE_HORIZON.muted,
+                boxShadow: connected ? `0 0 6px ${SLATE_HORIZON.brand}` : "none",
               }}
             />
             <span
               className="max-w-[220px] truncate text-xs"
-              style={{ color: connected ? "#22D3EE" : "#475569" }}
+              style={{ color: connected ? SLATE_HORIZON.brandDeep : SLATE_HORIZON.muted }}
               title={
                 typeof lastLive?.type === "string" ? lastLive.type : undefined
               }
@@ -239,7 +240,7 @@ export default function PlaybookPage() {
 
       {/* Loading */}
       {loading && (
-        <div className="flex items-center gap-2 text-sm" style={{ color: "#475569" }}>
+        <div className="flex items-center gap-2 text-sm" style={{ color: SLATE_HORIZON.muted }}>
           <span className="animate-spin">⏳</span>
           Načítavam AI plán…
         </div>
@@ -249,10 +250,14 @@ export default function PlaybookPage() {
       {!loading && items.length === 0 && (
         <div
           className="rounded-2xl border p-10 text-center"
-          style={{ background: "#0A1628", borderColor: "#112240" }}
+          style={{
+            background: WORKDESK_CARD.background,
+            borderColor: WORKDESK_CARD.borderColor,
+            boxShadow: WORKDESK_CARD.boxShadow,
+          }}
         >
           <p className="text-3xl mb-2">✅</p>
-          <p className="text-sm" style={{ color: "#64748B" }}>
+          <p className="text-sm" style={{ color: SLATE_HORIZON.muted }}>
             Všetky akcie sú splnené. Žiadne položky pre{" "}
             {filter === "TODAY" ? "dnešok" : "tento týždeň"}.
           </p>
@@ -265,7 +270,11 @@ export default function PlaybookPage() {
           <section
             id="playbook-summary-top"
             className="col-span-2 scroll-mt-28 rounded-2xl border p-5"
-            style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
+            style={{
+              background: WORKDESK_CARD.background,
+              borderColor: WORKDESK_CARD.borderColor,
+              boxShadow: WORKDESK_CARD.boxShadow,
+            }}
           >
             {hasMockItems && (
               <div
@@ -288,14 +297,14 @@ export default function PlaybookPage() {
               <div
                 className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2 text-xs"
                 style={{
-                  background: "rgba(34,211,238,0.06)",
-                  borderColor: "rgba(34,211,238,0.2)",
-                  color: "#94A3B8",
+                  background: SLATE_HORIZON.soft,
+                  borderColor: SLATE_HORIZON.softBorder,
+                  color: SLATE_HORIZON.muted,
                 }}
               >
                 <span>
                   Zobrazený segment:{" "}
-                  <span className="font-semibold text-cyan-200">
+                  <span className="font-semibold" style={{ color: SLATE_HORIZON.brandDeep }}>
                     {summarySegment === "CALL" && "Hovory"}
                     {summarySegment === "OPPORTUNITY" && "Na uzavretie"}
                     {summarySegment === "MESSAGE" && "Správy"}
@@ -304,7 +313,8 @@ export default function PlaybookPage() {
                 </span>
                 <button
                   type="button"
-                  className="shrink-0 font-semibold text-cyan-400 hover:text-cyan-300"
+                  className="shrink-0 font-semibold hover:opacity-80"
+                  style={{ color: SLATE_HORIZON.brand }}
                   onClick={() => setSummarySegment("ALL")}
                 >
                   Zobraziť všetky segmenty
@@ -316,7 +326,7 @@ export default function PlaybookPage() {
               {/* Hovory */}
               {showCalls && callItems.length > 0 && (
                 <div id="playbook-calls" className="scroll-mt-28">
-                  <p className="text-[10px] font-bold uppercase tracking-widest mt-2" style={{ color: "#22D3EE" }}>
+                  <p className="text-[10px] font-bold uppercase tracking-widest mt-2" style={{ color: SLATE_HORIZON.brand }}>
                     📞 Hovory ({callItems.length})
                   </p>
                   {callItems.map((item) => (
@@ -333,7 +343,7 @@ export default function PlaybookPage() {
               {/* Príležitosti */}
               {showOpportunities && opportunityItems.length > 0 && (
                 <div id="playbook-opportunities" className="scroll-mt-28">
-                  <p className="text-[10px] font-bold uppercase tracking-widest mt-2" style={{ color: "#FCD34D" }}>
+                  <p className="text-[10px] font-bold uppercase tracking-widest mt-2" style={{ color: SLATE_HORIZON.warning }}>
                     🔥 Na uzavretie ({opportunityItems.length})
                   </p>
                   {opportunityItems.map((item) => (
@@ -350,7 +360,7 @@ export default function PlaybookPage() {
               {/* Správy */}
               {messageItems.length > 0 && (
                 <div id="playbook-messages">
-                  <p className="text-[10px] font-bold uppercase tracking-widest mt-2" style={{ color: "#818CF8" }}>
+                  <p className="text-[10px] font-bold uppercase tracking-widest mt-2" style={{ color: SLATE_HORIZON.brandNavy }}>
                     💬 Správy ({messageItems.length})
                   </p>
                   {messageItems.map((item) => (
@@ -362,7 +372,7 @@ export default function PlaybookPage() {
               {/* Riziká */}
               {showRisks && riskItems.length > 0 && (
                 <div id="playbook-risks" className="scroll-mt-28">
-                  <p className="text-[10px] font-bold uppercase tracking-widest mt-2" style={{ color: "#FCA5A5" }}>
+                  <p className="text-[10px] font-bold uppercase tracking-widest mt-2" style={{ color: SLATE_HORIZON.danger }}>
                     ⚠️ Riziká ({riskItems.length})
                   </p>
                   {riskItems.map((item) => (
@@ -382,9 +392,13 @@ export default function PlaybookPage() {
           <aside className="flex flex-col gap-4">
             <div
               className="rounded-2xl border p-5"
-              style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
+              style={{
+                background: WORKDESK_CARD.background,
+                borderColor: WORKDESK_CARD.borderColor,
+                boxShadow: WORKDESK_CARD.boxShadow,
+              }}
             >
-              <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: "#1D4ED8" }}>
+              <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: SLATE_HORIZON.brandDeep }}>
                 Súhrn
               </p>
               <div className="space-y-3">
@@ -392,25 +406,25 @@ export default function PlaybookPage() {
                   {
                     label: "Hovory",
                     count: callItems.length,
-                    color: "#22D3EE",
+                    color: SLATE_HORIZON.brand,
                     type: "CALL" as const,
                   },
                   {
                     label: "Na uzavretie",
                     count: opportunityItems.length,
-                    color: "#FCD34D",
+                    color: SLATE_HORIZON.warning,
                     type: "OPPORTUNITY" as const,
                   },
                   {
                     label: "Správy",
                     count: messageItems.length,
-                    color: "#818CF8",
+                    color: SLATE_HORIZON.brandNavy,
                     type: "MESSAGE" as const,
                   },
                   {
                     label: "Riziká",
                     count: riskItems.length,
-                    color: "#FCA5A5",
+                    color: SLATE_HORIZON.danger,
                     type: "RISK" as const,
                   },
                 ].map(({ label, count, color, type }) => (
@@ -419,11 +433,17 @@ export default function PlaybookPage() {
                     type="button"
                     disabled={count === 0}
                     onClick={() => handleSummaryRow(type, count)}
-                    className={`flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-white/5 disabled:cursor-default disabled:opacity-40 ${
-                      summarySegment === type ? "bg-white/10 ring-1 ring-cyan-500/30" : ""
-                    }`}
+                    className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left transition-colors disabled:cursor-default disabled:opacity-40"
+                    style={
+                      summarySegment === type
+                        ? {
+                            background: SLATE_HORIZON.soft,
+                            boxShadow: `inset 0 0 0 1px ${SLATE_HORIZON.softBorder}`,
+                          }
+                        : undefined
+                    }
                   >
-                    <span className="text-sm" style={{ color: "#64748B" }}>
+                    <span className="text-sm" style={{ color: SLATE_HORIZON.muted }}>
                       {label}
                     </span>
                     <span className="text-sm font-bold tabular-nums" style={{ color }}>
@@ -433,18 +453,24 @@ export default function PlaybookPage() {
                 ))}
                 <button
                   type="button"
-                  className={`mt-1 flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-white/5 ${
-                    summarySegment === "ALL" ? "bg-white/10 ring-1 ring-slate-500/25" : ""
-                  }`}
+                  className="mt-1 flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left transition-colors"
+                  style={
+                    summarySegment === "ALL"
+                      ? {
+                          background: SLATE_HORIZON.soft,
+                          boxShadow: `inset 0 0 0 1px ${WORKDESK_CARD.borderColor}`,
+                        }
+                      : undefined
+                  }
                   onClick={() => {
                     setSummarySegment("ALL");
                     window.setTimeout(() => scrollToTopOfPlan(), 50);
                   }}
                 >
-                  <span className="text-sm font-semibold" style={{ color: "#94A3B8" }}>
+                  <span className="text-sm font-semibold" style={{ color: SLATE_HORIZON.muted }}>
                     Celkom
                   </span>
-                  <span className="text-sm font-bold tabular-nums" style={{ color: "#F0F9FF" }}>
+                  <span className="text-sm font-bold tabular-nums" style={{ color: SLATE_HORIZON.ink }}>
                     {items.length}
                   </span>
                 </button>
@@ -454,16 +480,16 @@ export default function PlaybookPage() {
             <div
               className="rounded-2xl border p-5"
               style={{
-                background: "rgba(34,211,238,0.04)",
-                borderColor: "rgba(34,211,238,0.12)",
+                background: SLATE_HORIZON.soft,
+                borderColor: SLATE_HORIZON.softBorder,
               }}
             >
-              <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#22D3EE" }}>
+              <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: SLATE_HORIZON.brandDeep }}>
                 {AI_ASSISTANT_NAME} radí
               </p>
-              <p className="text-sm leading-relaxed" style={{ color: "#94A3B8" }}>
+              <p className="text-sm leading-relaxed" style={{ color: SLATE_HORIZON.muted }}>
                 Začni hovory so záujemcom s najvyšším IPK. Záujemca s IPK 80+ volaný v deň signálu má{" "}
-                <span className="font-semibold" style={{ color: "#22D3EE" }}>3× vyššiu</span> šancu na uzavretie
+                <span className="font-semibold" style={{ color: SLATE_HORIZON.brand }}>3× vyššiu</span> šancu na uzavretie
                 ako záujemca kontaktovaný po 5+ dňoch.
               </p>
             </div>

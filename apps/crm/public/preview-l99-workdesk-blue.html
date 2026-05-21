@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Revolis L99 Workdesk · Blue (Slate Horizon)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand:#2563EB;--brand2:#60A5FA;--brand-deep:#1D4ED8;
+  --deep:#1E293B;--muted:#64748B;--line:#E2E8F0;--soft:#EFF6FF;
+  --green:#10B981;--green-dark:#047857;--amber:#F97316;--red:#EF4444;
+  --bg:#F8FAFC;
+  --rail:linear-gradient(180deg,#60A5FA 0%,#2563EB 58%,#1D4ED8 100%);
+  --hero:linear-gradient(120deg,#172554 0%,#1E40AF 38%,#2563EB 72%,#1E3A8A 100%);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.count{animation:none!important}}
+body{margin:0;font-family:Inter,system-ui,sans-serif;background:linear-gradient(180deg,var(--bg),#fff);color:var(--deep)}
+a{text-decoration:none;color:inherit}
+svg.icon{width:20px;height:20px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.app{display:flex;min-height:100vh}
+.rail{position:fixed;inset:0 auto 0 0;width:76px;background:var(--rail);padding:14px 10px;color:#fff;z-index:50;box-shadow:8px 0 32px rgba(37,99,235,.18);overflow:auto}
+.logo{width:44px;height:44px;border-radius:14px;background:rgba(255,255,255,.22);display:grid;place-items:center;font-weight:800;font-size:16px;margin:0 auto 16px}
+.railnav{display:flex;flex-direction:column;gap:6px}
+.railnav a{min-height:52px;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px 4px;font-size:9px;font-weight:700;text-align:center;cursor:pointer;transition:background .15s;color:#fff}
+.railnav a:hover,.railnav a.active{background:rgba(255,255,255,.18)}
+.sidebar{position:fixed;left:76px;top:0;bottom:0;width:300px;background:rgba(255,255,255,.98);backdrop-filter:blur(16px);border-right:1px solid var(--line);padding:18px;overflow:auto;z-index:40}
+.note{font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.45}
+.planbox{padding:16px;border-radius:18px;background:linear-gradient(135deg,var(--bg),#fff);border:1px solid var(--line)}
+.planbox label{display:block;text-transform:uppercase;letter-spacing:.06em;font-size:11px;color:var(--muted);font-weight:700;margin-bottom:8px}
+select{width:100%;border:1px solid var(--line);background:#fff;border-radius:12px;padding:11px 12px;font-weight:600;font-size:14px;color:var(--deep);cursor:pointer}
+.planbox p{margin:10px 0 0;font-size:12px;color:var(--muted);line-height:1.45}
+.menu-title{font-size:11px;font-weight:700;color:var(--muted);margin:20px 4px 8px;text-transform:uppercase;letter-spacing:.07em}
+.nav{display:flex;flex-direction:column;gap:4px}
+.nav a{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 12px;border-radius:14px;font-size:13px;font-weight:600;color:#334155;cursor:pointer;transition:background .15s,color .15s}
+.nav a:hover,.nav a.active{background:var(--soft);color:var(--brand-deep)}
+.nav a .left{display:flex;align-items:center;gap:8px;line-height:1.25}
+.nav a.locked{opacity:.35;pointer-events:none;filter:grayscale(.4)}
+.count{min-width:24px;height:24px;border-radius:999px;display:grid;place-items:center;background:var(--red);color:#fff;font-size:11px;font-weight:700}
+.count.gold{background:var(--amber)}.count.brand{background:var(--brand)}
+.pill{border-radius:999px;padding:4px 8px;background:#ecfdf5;color:var(--green-dark);font-size:10px;font-weight:700}
+.main{margin-left:376px;width:calc(100% - 376px);min-width:0}
+.topbar{position:sticky;top:0;height:56px;background:linear-gradient(90deg,var(--brand),var(--brand2));display:flex;align-items:center;justify-content:space-between;padding:0 20px;z-index:30;box-shadow:0 2px 16px rgba(37,99,235,.25)}
+.search-wrap{flex:1;max-width:480px;margin:0 auto}
+.search-wrap label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+.search{width:100%;height:36px;border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.14);border-radius:10px;padding:0 14px;color:#fff;font-size:13px}
+.search::placeholder{color:rgba(255,255,255,.65)}
+.search:focus{outline:2px solid rgba(255,255,255,.5);outline-offset:1px}
+.actions{display:flex;align-items:center;gap:8px}
+.btn{border:0;border-radius:12px;height:36px;padding:0 14px;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .15s,transform .1s}
+.btn:hover{opacity:.92}.btn:active{transform:scale(.98)}
+.btn.primary{background:#fff;color:var(--brand-deep);box-shadow:0 0 20px rgba(255,255,255,.35)}
+.btn.ghost{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25)}
+.btn.dark{background:#1E293B;color:#fff}
+.avatar{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.35);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:800;cursor:pointer}
+.wrap{padding:22px;max-width:1200px}
+.command{background:var(--hero);color:#fff;border-radius:22px;padding:28px 26px;margin-bottom:20px;box-shadow:0 20px 50px rgba(23,37,84,.28)}
+.badge{display:inline-flex;border-radius:999px;padding:5px 10px;font-size:11px;font-weight:700}
+.b-brand-soft{background:rgba(239,246,255,.22);color:#EFF6FF;border:1px solid rgba(255,255,255,.2)}
+.command h1{font-size:clamp(28px,4vw,44px);line-height:1.05;letter-spacing:-.03em;margin:12px 0 10px;font-weight:800}
+.command .command-desc{font-size:16px;color:rgba(255,255,255,.82);line-height:1.55;max-width:720px;margin:0}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.chip{border-radius:999px;padding:6px 11px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);font-size:12px;font-weight:600;cursor:pointer}
+.priority-strip{margin-top:18px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.priority{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:16px;padding:14px}
+.priority b{display:block;font-size:14px;font-weight:700;margin-bottom:4px}
+.priority span{font-size:12px;color:rgba(255,255,255,.75)}
+.priority .eur{color:#86efac;font-weight:800}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.card{background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:0 12px 40px rgba(30,41,59,.06)}
+.panel{padding:20px}
+.kpi{padding:18px}
+.kpi b{display:block;font-size:32px;font-weight:800;letter-spacing:-.03em;color:var(--deep)}
+.kpi span{font-size:13px;color:var(--muted);margin-top:4px;display:block}
+.b-green{background:#dcfce7;color:var(--green-dark)}
+.b-red{background:#ffe4e6;color:#be123c}
+.b-amber{background:#fef3c7;color:#92400e}
+.b-brand{background:var(--soft);color:var(--brand-deep)}
+h2{font-size:22px;font-weight:800;letter-spacing:-.02em;margin:8px 0 12px}
+.section-desc{font-size:14px;color:var(--muted);margin:-8px 0 14px;line-height:1.5}
+.lead{background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:14px;margin:10px 0}
+.lead-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px}
+.lead h3{margin:0;font-size:15px;font-weight:700}
+.lead p{margin:6px 0;font-size:13px;color:var(--muted);line-height:1.45}
+.money{font-weight:700;color:var(--green-dark)}
+.cta-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.smallbtn{border:0;border-radius:10px;padding:9px 12px;font-size:12px;font-weight:700;cursor:pointer;transition:opacity .15s}
+.smallbtn.primary{background:linear-gradient(90deg,#F97316,#FB923C);color:#fff}
+.smallbtn.soft{background:#fff;border:1px solid var(--line);color:var(--deep)}
+.timeline{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:10px}
+.step{padding:8px 4px;border-radius:10px;background:var(--soft);border:1px solid #BFDBFE;text-align:center;font-weight:700;font-size:11px;color:var(--brand-deep)}
+.step.done{background:#dcfce7;border-color:#bbf7d0;color:var(--green-dark)}
+.step.active{background:#fef3c7;border-color:#fde68a;color:#92400e}
+.locked-card{opacity:.4;filter:grayscale(.35);position:relative;pointer-events:none}
+.locked-card::after{content:"Dostupné vo vyššom programe";position:absolute;inset:auto 14px 14px 14px;background:var(--deep);color:#fff;border-radius:10px;padding:8px;text-align:center;font-weight:700;font-size:11px}
+.demo-banner{background:var(--deep);color:#fff;text-align:center;padding:8px 12px;font-size:12px;font-weight:600}
+.demo-banner a{color:var(--brand2);font-weight:700}
+@media(max-width:1100px){.grid4{grid-template-columns:1fr 1fr}.priority-strip{grid-template-columns:1fr}}
+@media(max-width:900px){.sidebar{display:none}.main{margin-left:76px;width:calc(100% - 76px)}.grid2{grid-template-columns:1fr}}
+@media(max-width:640px){.rail{display:none}.main{margin-left:0;width:100%}.grid4{grid-template-columns:1fr}.actions .ghost,.actions .dark{display:none}.wrap{padding:14px}}
+</style>
+</head>
+<body>
+<p class="demo-banner">Cieľový dizajn · <b>Modrý Workdesk</b> (1:1 ako purple preview, farby Slate Horizon) · <a href="preview-l99-workdesk-v2.html">purple verzia</a> · <a href="preview-palette-index.html">palety</a></p>
+<div class="app">
+  <aside class="rail" aria-label="Hlavná navigácia">
+    <div class="logo">R</div>
+    <nav class="railnav">
+      <a href="#money" class="active"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 100 4h4a2 2 0 110 4H8"/><path d="M12 18V6"/></svg><span class="label">Peniaze</span></a>
+      <a href="#queue"><svg class="icon" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg><span class="label">Volať</span></a>
+      <a href="#leads"><svg class="icon" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><span class="label">Leady</span></a>
+      <a href="#tasks"><svg class="icon" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg><span class="label">Úlohy</span></a>
+      <a href="#forecast"><svg class="icon" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg><span class="label">Obrat</span></a>
+    </nav>
+  </aside>
+  <aside class="sidebar">
+    <p class="note">Predajný kokpit realitnej kancelárie</p>
+    <div class="planbox">
+      <label for="plan">Program používateľa</label>
+      <select id="plan">
+        <option value="smart">Smart Start</option>
+        <option value="radar">Radar makléra</option>
+        <option value="guardian">Strážca cien a ziskov</option>
+        <option value="monopol" selected>Reality Monopol</option>
+      </select>
+      <p>Menu sa mení podľa zaplateného programu.</p>
+    </div>
+    <p class="menu-title">Najdôležitejšie pre RK</p>
+    <nav class="nav" id="sideNav">
+      <a href="#money" class="active" data-plan="smart"><span class="left"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 100 4h4a2 2 0 110 4H8"/></svg><b>Kde mám peniaze dnes?</b></span><span class="count">3</span></a>
+      <a href="#daily" data-plan="smart"><span class="left"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><b>Dnešné rozhodnutia</b></span><span class="count gold">3</span></a>
+      <a href="#queue" data-plan="radar"><span class="left"><svg class="icon" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg><b>Komu volať teraz</b></span><span class="count">3</span></a>
+      <a href="#leads" data-plan="radar"><span class="left"><svg class="icon" viewBox="0 0 24 24"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7-6.3-4.6L5.7 21l2.3-7-6-4.6h7.6z"/></svg><b>Horúce príležitosti</b></span><span class="count">17</span></a>
+      <a href="#risk" data-plan="guardian"><span class="left"><svg class="icon" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><b>Kde unikajú peniaze</b></span><span class="count gold">5</span></a>
+      <a href="#forecast" data-plan="guardian"><span class="left"><svg class="icon" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 12v5"/><path d="M12 8v9"/><path d="M17 6v11"/></svg><b>Predpoklad obratu</b></span><span class="pill">Strážca+</span></a>
+      <a href="#market" data-plan="monopol"><span class="left"><svg class="icon" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg><b>Trhové signály</b></span><span class="pill">Monopol</span></a>
+    </nav>
+  </aside>
+  <main class="main">
+    <header class="topbar">
+      <div style="width:36px"></div>
+      <div class="search-wrap"><label for="q">Hľadať</label><input id="q" class="search" placeholder="Hľadať lead, lokalitu, makléra, províziu…" /></div>
+      <div class="actions">
+        <button type="button" class="btn ghost">Programy</button>
+        <button type="button" class="btn dark">Prihlásiť sa</button>
+        <button type="button" class="btn primary">Spustiť akcie</button>
+        <div class="avatar" role="button" aria-label="Profil">OS</div>
+      </div>
+    </header>
+    <div class="wrap">
+      <section class="command" id="money">
+        <span class="badge b-brand-soft">AI REVENUE OPERATING SYSTEM</span>
+        <h1>Kde mám peniaze dnes?</h1>
+        <p class="command-desc">Revolis neukazuje dáta — vedie ťa ku krokom, ktoré najrýchliejšie posunú obchod k provízii.</p>
+        <div class="chips">
+          <span class="chip">AI Priority Strip</span>
+          <span class="chip">Lost Revenue Radar</span>
+          <span class="chip">Call Order AI</span>
+          <span class="chip">Owner Pressure View</span>
+        </div>
+        <div class="priority-strip">
+          <div class="priority"><b>Lucia Šimko · <span class="eur">€7 200</span></b><span>91% istota · volať do 15 min</span></div>
+          <div class="priority"><b>Lukáš Nagy · hypotéka OK</b><span>87% · posunúť pipeline</span></div>
+          <div class="priority"><b>Jana Horváth · obhliadka</b><span>78% · poslať SMS dnes</span></div>
+        </div>
+      </section>
+      <div class="grid4">
+        <div class="card kpi"><b>€124k</b><span>predpoklad obratu tento mesiac</span></div>
+        <div class="card kpi"><b>24</b><span>pripravení kúpiť (AI)</span></div>
+        <div class="card kpi"><b>7</b><span>akcie s vysokým dopadom dnes</span></div>
+        <div class="card kpi"><b>€18.4k</b><span>ohrozené provízie</span></div>
+      </div>
+      <div class="grid2" id="daily">
+        <div class="card panel">
+          <span class="badge b-brand">Ranný briefing</span>
+          <h2>Čo urobiť pred obedom</h2>
+          <p class="section-desc">3 rozhodnutia, ktoré ovplyvnia províziu ešte dnes.</p>
+          <div class="lead"><div class="lead-head"><h3>4 obchody blízko podpisu</h3><span class="badge b-green">dnes</span></div><p>AI zaradila podľa provízie a urgency.</p></div>
+          <div class="lead"><div class="lead-head"><h3>2 kritické follow-upy</h3><span class="badge b-red">riziko</span></div><p>Bez reakcie dnes klesne šanca pod 50%.</p></div>
+        </div>
+        <div class="card panel" id="assistant">
+          <span class="badge b-green">Ďalší krok AI</span>
+          <h2>Teraz urob toto</h2>
+          <div class="lead">
+            <h3>1. Zavolaj Lucii Šimko</h3>
+            <p>3× klik na ponuku, otvorený email, rozpočet sedí.</p>
+            <p><b>Istota:</b> <span class="money">91%</span> · <b>Provízia:</b> <span class="money">€7 200</span></p>
+            <div class="cta-row"><button type="button" class="smallbtn primary">Zavolať</button><button type="button" class="smallbtn soft">SMS</button></div>
+          </div>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="card panel" id="queue" data-required="radar">
+          <span class="badge b-brand">Poradie volaní</span>
+          <h2>Komu volať ako prvému</h2>
+          <div class="lead"><div class="lead-head"><h3>1. Lucia Šimko</h3><span class="badge b-brand">BRI 92</span></div><p>3i byt Prešov · provízia <span class="money">€7 200</span></p><div class="cta-row"><button type="button" class="smallbtn primary">Zavolať teraz</button></div></div>
+          <div class="lead"><div class="lead-head"><h3>2. Lukáš Nagy</h3><span class="badge b-brand">BRI 87</span></div><p>RD Vyšná Šebastová · <span class="money">€4 800</span></p></div>
+        </div>
+        <div class="card panel locked-card" id="risk" data-required="guardian">
+          <span class="badge b-red">Radar stratených provízií</span>
+          <h2>Kde unikajú peniaze?</h2>
+          <div class="lead"><h3>€18 400 v ohrození</h3><p>5 follow-upov bez reakcie.</p></div>
+        </div>
+      </div>
+      <div class="card panel" id="leads" style="margin-bottom:20px">
+        <span class="badge b-brand">Pipeline</span>
+        <h2>Kde sa obchod zasekol?</h2>
+        <div class="lead">
+          <div class="lead-head"><h3>Lucia Šimko · 3i byt Prešov</h3><span class="badge b-green">blízko podpisu</span></div>
+          <div class="timeline">
+            <div class="step done">Lead</div><div class="step done">Kontakt</div><div class="step active">Obhliadka</div>
+            <div class="step">Financ.</div><div class="step">Rezerv.</div><div class="step">Podpis</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<script>
+const levels={smart:0,radar:1,guardian:2,monopol:3};
+const select=document.getElementById("plan");
+function applyPlan(){
+  const c=select.value;
+  document.querySelectorAll("[data-plan]").forEach(el=>{el.classList.toggle("locked",levels[c]<levels[el.dataset.plan]);});
+  document.querySelectorAll("[data-required]").forEach(el=>{el.classList.toggle("locked-card",levels[c]<levels[el.dataset.required]);});
+}
+select.addEventListener("change",applyPlan);
+applyPlan();
+</script>
+</body>
+</html>

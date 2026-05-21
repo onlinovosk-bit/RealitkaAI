@@ -1,6 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  SLATE_HORIZON,
+  WORKDESK_CARD,
+  WORKDESK_INNER_ROW,
+  WORKDESK_PANEL,
+} from "@/lib/slate-horizon-theme";
 
 export const columns = ["Nový", "Teplý", "Horúci", "Obhliadka", "Ponuka"];
 
@@ -67,17 +73,17 @@ function getNextAction(score: number, status: string) {
 function getColumnAccent(status: string) {
   switch (status) {
     case "Nový":
-      return "border-slate-600";
+      return "border-slate-300";
     case "Teplý":
-      return "border-yellow-600";
+      return "border-yellow-400";
     case "Horúci":
-      return "border-green-600";
+      return "border-green-400";
     case "Obhliadka":
-      return "border-blue-600";
+      return "border-blue-400";
     case "Ponuka":
-      return "border-purple-600";
+      return "border-purple-400";
     default:
-      return "border-slate-600";
+      return "border-slate-300";
   }
 }
 
@@ -122,23 +128,31 @@ export default function PipelineSlideOver({
       aria-hidden={!isOpen}
     >
       <div
-        className={`absolute inset-0 bg-black/60 transition-opacity ${isOpen ? "opacity-100" : "opacity-0"}`}
+        className={`absolute inset-0 transition-opacity ${isOpen ? "opacity-100" : "opacity-0"}`}
+        style={{ background: "rgba(15,23,42,0.25)" }}
         onClick={onClose}
       />
 
       <aside
-        className={`absolute right-0 top-0 h-full w-full max-w-2xl overflow-y-auto border-l shadow-2xl transition-transform ${
+        className={`absolute right-0 top-0 h-full w-full max-w-2xl overflow-y-auto border-l transition-transform ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
-        style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
+        style={{
+          background: WORKDESK_PANEL.background,
+          borderColor: WORKDESK_PANEL.borderColor,
+          boxShadow: WORKDESK_PANEL.boxShadow,
+        }}
       >
         <div
           className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b px-6 py-5"
-          style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
+          style={{
+            background: WORKDESK_PANEL.background,
+            borderColor: WORKDESK_PANEL.borderColor,
+          }}
         >
           <div>
-            <h2 className="text-2xl font-bold" style={{ color: "#F0F9FF" }}>{lead.name}</h2>
-            <p className="mt-1 text-sm" style={{ color: "#64748B" }}>
+            <h2 className="text-2xl font-bold" style={{ color: SLATE_HORIZON.ink }}>{lead.name}</h2>
+            <p className="mt-1 text-sm" style={{ color: SLATE_HORIZON.muted }}>
               Detail klienta priamo z fáz príležitostí
             </p>
           </div>
@@ -148,9 +162,9 @@ export default function PipelineSlideOver({
             onClick={onClose}
             className="rounded-lg border px-3 py-2 text-sm font-medium transition"
             style={{
-              borderColor: "rgba(34,211,238,0.2)",
-              color: "#94A3B8",
-              background: "rgba(34,211,238,0.06)",
+              borderColor: WORKDESK_CARD.borderColor,
+              color: SLATE_HORIZON.navText,
+              background: SLATE_HORIZON.bg,
             }}
           >
             Zavrieť
@@ -161,17 +175,25 @@ export default function PipelineSlideOver({
           <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div
               className="rounded-2xl border p-4"
-              style={{ background: "#0A1628", borderColor: "#0F1F3D" }}
+              style={{
+                background: WORKDESK_CARD.background,
+                borderColor: WORKDESK_CARD.borderColor,
+                boxShadow: WORKDESK_CARD.boxShadow,
+              }}
             >
-              <p className="text-sm" style={{ color: "#64748B" }}>Skóre príležitosti</p>
-              <p className="mt-2 text-2xl font-bold" style={{ color: "#F0F9FF" }}>{lead.score}/100</p>
+              <p className="text-sm" style={{ color: SLATE_HORIZON.muted }}>Skóre príležitosti</p>
+              <p className="mt-2 text-2xl font-bold" style={{ color: SLATE_HORIZON.ink }}>{lead.score}/100</p>
             </div>
 
             <div
               className="rounded-2xl border p-4"
-              style={{ background: "#0A1628", borderColor: "#0F1F3D" }}
+              style={{
+                background: WORKDESK_CARD.background,
+                borderColor: WORKDESK_CARD.borderColor,
+                boxShadow: WORKDESK_CARD.boxShadow,
+              }}
             >
-              <p className="text-sm" style={{ color: "#64748B" }}>Stav</p>
+              <p className="text-sm" style={{ color: SLATE_HORIZON.muted }}>Stav</p>
               <p className="mt-2">
                 <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getStatusClasses(lead.status)}`}>
                   {lead.status}
@@ -181,10 +203,14 @@ export default function PipelineSlideOver({
 
             <div
               className="rounded-2xl border p-4"
-              style={{ background: "#0A1628", borderColor: "#0F1F3D" }}
+              style={{
+                background: WORKDESK_CARD.background,
+                borderColor: WORKDESK_CARD.borderColor,
+                boxShadow: WORKDESK_CARD.boxShadow,
+              }}
             >
-              <p className="text-sm" style={{ color: "#64748B" }}>AI ďalší krok</p>
-              <p className="mt-2 text-sm font-semibold" style={{ color: "#22D3EE" }}>
+              <p className="text-sm" style={{ color: SLATE_HORIZON.muted }}>AI ďalší krok</p>
+              <p className="mt-2 text-sm font-semibold" style={{ color: SLATE_HORIZON.brand }}>
                 {getNextAction(lead.score, lead.status)}
               </p>
             </div>
@@ -192,9 +218,13 @@ export default function PipelineSlideOver({
 
           <section
             className="rounded-2xl border p-5"
-            style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
+            style={{
+              background: WORKDESK_PANEL.background,
+              borderColor: WORKDESK_PANEL.borderColor,
+              boxShadow: WORKDESK_PANEL.boxShadow,
+            }}
           >
-            <h3 className="text-lg font-semibold" style={{ color: "#F0F9FF" }}>Kontaktné a obchodné údaje</h3>
+            <h3 className="text-lg font-semibold" style={{ color: SLATE_HORIZON.ink }}>Kontaktné a obchodné údaje</h3>
 
             <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
               {[
@@ -210,10 +240,13 @@ export default function PipelineSlideOver({
                 <div
                   key={label}
                   className="rounded-xl p-4"
-                  style={{ background: "#0A1628", border: "1px solid #112240" }}
+                  style={{
+                    background: WORKDESK_INNER_ROW.background,
+                    border: `1px solid ${WORKDESK_INNER_ROW.borderColor}`,
+                  }}
                 >
-                  <p className="text-sm" style={{ color: "#64748B" }}>{label}</p>
-                  <p className="mt-1 font-medium" style={{ color: "#F0F9FF" }}>{value}</p>
+                  <p className="text-sm" style={{ color: SLATE_HORIZON.muted }}>{label}</p>
+                  <p className="mt-1 font-medium" style={{ color: SLATE_HORIZON.ink }}>{value}</p>
                 </div>
               ))}
             </div>
@@ -221,40 +254,54 @@ export default function PipelineSlideOver({
 
           <section
             className="rounded-2xl border p-5"
-            style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
+            style={{
+              background: WORKDESK_PANEL.background,
+              borderColor: WORKDESK_PANEL.borderColor,
+              boxShadow: WORKDESK_PANEL.boxShadow,
+            }}
           >
-            <h3 className="text-lg font-semibold" style={{ color: "#F0F9FF" }}>AI odporúčanie</h3>
+            <h3 className="text-lg font-semibold" style={{ color: SLATE_HORIZON.ink }}>AI odporúčanie</h3>
 
             <div
               className="mt-4 rounded-xl border p-4"
-              style={{ background: "#0A1628", borderColor: "rgba(34,211,238,0.15)" }}
+              style={{
+                background: SLATE_HORIZON.soft,
+                borderColor: SLATE_HORIZON.softBorder,
+              }}
             >
-              <p className="text-sm font-semibold" style={{ color: "#22D3EE" }}>Odporúčaný ďalší krok</p>
-              <p className="mt-2 text-sm" style={{ color: "#94A3B8" }}>
+              <p className="text-sm font-semibold" style={{ color: SLATE_HORIZON.brandDeep }}>Odporúčaný ďalší krok</p>
+              <p className="mt-2 text-sm" style={{ color: SLATE_HORIZON.navText }}>
                 {getNextAction(lead.score, lead.status)}
               </p>
             </div>
 
             <div
               className="mt-4 rounded-xl border p-4"
-              style={{ background: "#0A1628", borderColor: "#0F1F3D" }}
+              style={{
+                background: WORKDESK_INNER_ROW.background,
+                borderColor: WORKDESK_INNER_ROW.borderColor,
+              }}
             >
-              <p className="text-sm font-semibold" style={{ color: "#F0F9FF" }}>Poznámka ku klientovi</p>
-              <p className="mt-2 text-sm" style={{ color: "#94A3B8" }}>{lead.note || "Bez poznámky."}</p>
+              <p className="text-sm font-semibold" style={{ color: SLATE_HORIZON.ink }}>Poznámka ku klientovi</p>
+              <p className="mt-2 text-sm" style={{ color: SLATE_HORIZON.muted }}>{lead.note || "Bez poznámky."}</p>
             </div>
           </section>
 
           <section
             className="rounded-2xl border p-5"
-            style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
+            style={{
+              background: WORKDESK_PANEL.background,
+              borderColor: WORKDESK_PANEL.borderColor,
+              boxShadow: WORKDESK_PANEL.boxShadow,
+            }}
           >
-            <h3 className="text-lg font-semibold" style={{ color: "#F0F9FF" }}>História presunov vo fázach príležitostí</h3>
+            <h3 className="text-lg font-semibold" style={{ color: SLATE_HORIZON.ink }}>História presunov vo fázach príležitostí</h3>
 
             <div className="mt-4 space-y-3">
               {loadingMoves ? (
                 <div
                   className="rounded-xl border border-dashed p-4 text-sm"
-                  style={{ borderColor: "#0F1F3D", color: "#475569" }}
+                  style={{ borderColor: WORKDESK_CARD.borderColor, color: SLATE_HORIZON.muted }}
                 >
                   Načítavam históriu...
                 </div>
@@ -263,23 +310,26 @@ export default function PipelineSlideOver({
                   <div
                     key={item.id}
                     className="rounded-xl border p-4"
-                    style={{ background: "#0A1628", borderColor: "#112240" }}
+                    style={{
+                      background: WORKDESK_INNER_ROW.background,
+                      borderColor: WORKDESK_INNER_ROW.borderColor,
+                    }}
                   >
                     <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-medium" style={{ color: "#F0F9FF" }}>
+                      <p className="text-sm font-medium" style={{ color: SLATE_HORIZON.ink }}>
                         {item.fromStatus} → {item.toStatus}
                       </p>
-                      <p className="text-xs" style={{ color: "#475569" }}>{item.changedAt}</p>
+                      <p className="text-xs" style={{ color: SLATE_HORIZON.muted }}>{item.changedAt}</p>
                     </div>
-                    <p className="mt-2 text-sm" style={{ color: "#94A3B8" }}>
-                      Príležitosť <span className="font-medium" style={{ color: "#F0F9FF" }}>{item.leadName}</span> bola presunutá do nového stavu.
+                    <p className="mt-2 text-sm" style={{ color: SLATE_HORIZON.navText }}>
+                      Príležitosť <span className="font-medium" style={{ color: SLATE_HORIZON.ink }}>{item.leadName}</span> bola presunutá do nového stavu.
                     </p>
                   </div>
                 ))
               ) : (
                 <div
                   className="rounded-xl border border-dashed p-4 text-sm"
-                  style={{ borderColor: "#0F1F3D", color: "#475569" }}
+                  style={{ borderColor: WORKDESK_CARD.borderColor, color: SLATE_HORIZON.muted }}
                 >
                   Zatiaľ nie je zaznamenaná žiadna história presunov.
                 </div>

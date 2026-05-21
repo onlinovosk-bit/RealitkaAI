@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { Lead } from "@/lib/leads-store";
 import type { PlanTier } from "@/lib/ai-engine";
 import PaywallLock from "@/components/shared/PaywallLock";
+import { SLATE_HORIZON, WORKDESK_INNER_ROW, WORKDESK_PANEL } from "@/lib/slate-horizon-theme";
 
 function getStatusClasses(status: Lead["status"]) {
   switch (status) {
@@ -43,19 +44,28 @@ export default function PriorityLeads({ leads, plan = "free" }: PriorityLeadsPro
   const lockedCount = plan === "pro" ? 0 : Math.max(0, allPriorityLeads.length - FREE_LIMIT);
 
   return (
-    <div className="rounded-2xl border p-4 md:p-5" style={{ background: "#080D1A", borderColor: "#0F1F3D" }}>
+    <div
+      className="rounded-[20px] border p-4 md:p-5"
+      style={{
+        background: WORKDESK_PANEL.background,
+        borderColor: WORKDESK_PANEL.borderColor,
+        boxShadow: WORKDESK_PANEL.boxShadow,
+      }}
+    >
       <div className="flex items-center justify-between gap-3 mb-4">
         <div>
-          <h2 className="text-base font-semibold" style={{ color: "#F0F9FF" }}>Prioritné príležitosti</h2>
-          <p className="text-xs" style={{ color: "#475569" }}>
+          <h2 className="text-base font-semibold" style={{ color: SLATE_HORIZON.deep }}>
+            Horúce príležitosti
+          </h2>
+          <p className="text-xs" style={{ color: SLATE_HORIZON.muted }}>
             Klienti s vysokým BRI alebo horúcim stavom.
           </p>
         </div>
 
         <Link
           href="/leads"
-          className="rounded-xl border px-3 py-1.5 text-xs font-medium min-h-[32px] flex items-center"
-          style={{ borderColor: "rgba(34,211,238,0.2)", color: "#22D3EE" }}
+          className="cursor-pointer rounded-xl border px-3 py-1.5 text-xs font-medium min-h-[32px] flex items-center transition-colors duration-200 hover:border-blue-200"
+          style={{ borderColor: SLATE_HORIZON.line, color: SLATE_HORIZON.brandDeep }}
         >
           Všetky →
         </Link>
@@ -65,80 +75,51 @@ export default function PriorityLeads({ leads, plan = "free" }: PriorityLeadsPro
         {priorityLeads.map((lead) => (
           <div
             key={lead.id}
-            className="group rounded-xl border p-3 transition-all active:scale-[0.99]"
-            style={{ background: "#0A1628", borderColor: "#112240" }}
+            className="group cursor-pointer rounded-2xl border p-3 transition-colors duration-200 hover:border-blue-200"
+            style={{
+              background: WORKDESK_INNER_ROW.background,
+              borderColor: WORKDESK_INNER_ROW.borderColor,
+            }}
           >
             <div className="flex items-center justify-between gap-3">
               <Link href={`/leads/${lead.id}`} className="flex-1 min-w-0">
-                <div className="truncate text-sm font-semibold" style={{ color: "#F0F9FF" }}>{lead.name}</div>
-                <div className="truncate text-xs mt-0.5" style={{ color: "#64748B" }}>{lead.location}</div>
+                <div className="truncate text-sm font-semibold" style={{ color: SLATE_HORIZON.deep }}>
+                  {lead.name}
+                </div>
+                <div className="truncate text-xs mt-0.5" style={{ color: SLATE_HORIZON.muted }}>
+                  {lead.location}
+                </div>
               </Link>
 
               <div className="flex items-center gap-2 flex-shrink-0">
                 <span className={`rounded-full px-2 py-1 text-xs font-semibold ${getStatusClasses(lead.status)}`}>
                   {lead.status}
                 </span>
-                <span className={`rounded-full px-2 py-1 text-xs font-semibold ${getScoreClasses(lead.score)}`}>
+                <span className={`rounded-full px-2 py-1 text-xs font-bold ${getScoreClasses(lead.score)}`}>
                   {lead.score}
                 </span>
               </div>
-            </div>
-            {/* Quick action buttons */}
-            <div className="mt-2 flex gap-2">
-              {lead.phone ? (
-                <a
-                  href={`tel:${lead.phone}`}
-                  className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all hover:scale-105"
-                  style={{
-                    background: "rgba(34,211,238,0.10)",
-                    color: "#22D3EE",
-                    border: "1px solid rgba(34,211,238,0.25)",
-                  }}
-                >
-                  📞 Zavolať
-                </a>
-              ) : null}
-              <a
-                href={lead.phone ? `sms:${lead.phone}` : "#"}
-                className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all hover:scale-105"
-                style={{
-                  background: "rgba(99,102,241,0.10)",
-                  color: "#A5B4FC",
-                  border: "1px solid rgba(99,102,241,0.25)",
-                }}
-              >
-                💬 SMS
-              </a>
-              <Link
-                href={`/leads/${lead.id}`}
-                className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all hover:scale-105"
-                style={{
-                  background: "rgba(255,255,255,0.05)",
-                  color: "#94A3B8",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                }}
-              >
-                → Detail
-              </Link>
             </div>
           </div>
         ))}
 
         {priorityLeads.length === 0 && (
-          <p className="text-sm text-center py-4" style={{ color: "#475569" }}>
-            Žiadne prioritné príležitosti zatiaľ.
+          <p className="text-sm" style={{ color: SLATE_HORIZON.muted }}>
+            Zatiaľ žiadne horúce príležitosti.
           </p>
         )}
+      </div>
 
-        {lockedCount > 0 && (
+      {lockedCount > 0 && (
+        <div className="mt-4">
           <PaywallLock
             lockedCount={lockedCount}
-            feature="prioritných príležitostí"
-            titleOverride="+4 ďalších prioritných príležitostí"
-            ctaLabel="✦ Odomknúť Active Force od 99 € mesačne"
+            feature="príležitostí"
+            titleOverride="+8 ďalších príležitostí"
+            ctaLabel="Odomknúť Protocol Authority od 449 € mesačne"
           />
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

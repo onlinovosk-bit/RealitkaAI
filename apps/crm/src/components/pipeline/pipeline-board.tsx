@@ -11,6 +11,13 @@ import PipelineSlideOver, {
   getStatusClasses,
 } from "@/components/pipeline/pipeline-slide-over";
 import AgentStats from "@/components/pipeline/agent-stats";
+import {
+  SLATE_HORIZON,
+  WORKDESK_CARD,
+  WORKDESK_INNER_ROW,
+  WORKDESK_INPUT,
+  WORKDESK_PANEL,
+} from "@/lib/slate-horizon-theme";
 
 export type PipelineLead = {
   id: string;
@@ -194,12 +201,13 @@ export default function PipelineBoard({
   }
 
   const inputStyle = {
-    background: "#050914",
-    border: "1px solid rgba(34,211,238,0.2)",
-    color: "#F0F9FF",
+    background: WORKDESK_INPUT.background,
+    border: `1px solid ${WORKDESK_INPUT.borderColor}`,
+    color: WORKDESK_INPUT.color,
+    borderRadius: WORKDESK_INPUT.borderRadius,
   } as const;
 
-  const labelStyle = { color: "#64748B" } as const;
+  const labelStyle = { color: SLATE_HORIZON.muted } as const;
 
   return (
     <div className="space-y-6">
@@ -207,7 +215,11 @@ export default function PipelineBoard({
 
       <section
         className="rounded-2xl border p-4"
-        style={{ background: "#080D1A", borderColor: "#0F1F3D" }}
+        style={{
+          background: WORKDESK_PANEL.background,
+          borderColor: WORKDESK_PANEL.borderColor,
+          boxShadow: WORKDESK_PANEL.boxShadow,
+        }}
       >
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
           <label className="block">
@@ -234,7 +246,7 @@ export default function PipelineBoard({
               step={5}
               value={minScore}
               onChange={(e) => setMinScore(Number(e.target.value))}
-              className="mt-2 w-full accent-cyan-400"
+              className="mt-2 w-full accent-blue-600"
             />
           </label>
 
@@ -305,12 +317,15 @@ export default function PipelineBoard({
               }
             }}
             className={`min-h-[520px] rounded-2xl border-2 p-4 ${getColumnAccent(column)}`}
-            style={{ background: "#080D1A" }}
+            style={{
+              background: WORKDESK_INNER_ROW.background,
+              borderColor: WORKDESK_INNER_ROW.borderColor,
+            }}
           >
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h2 className="text-base font-semibold" style={{ color: "#F0F9FF" }}>{column}</h2>
-                <p className="text-sm" style={{ color: "#64748B" }}>{columnLeads.length} príležitostí</p>
+                <h2 className="text-base font-semibold" style={{ color: SLATE_HORIZON.ink }}>{column}</h2>
+                <p className="text-sm" style={{ color: SLATE_HORIZON.muted }}>{columnLeads.length} príležitostí</p>
               </div>
 
               <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getStatusClasses(column)}`}>
@@ -329,12 +344,16 @@ export default function PipelineBoard({
                   className={`w-full cursor-grab rounded-xl border p-4 text-left transition ${getColumnAccent(lead.status)} ${
                     savingId === lead.id ? "opacity-60" : ""
                   }`}
-                  style={{ background: "#0A1628" }}
+                  style={{
+                    background: WORKDESK_CARD.background,
+                    borderColor: WORKDESK_CARD.borderColor,
+                    boxShadow: WORKDESK_CARD.boxShadow,
+                  }}
                 >
                   <div className="mb-3 flex items-start justify-between gap-3">
                     <div>
-                      <h3 className="font-medium" style={{ color: "#F0F9FF" }}>{lead.name}</h3>
-                      <p className="text-xs" style={{ color: "#64748B" }}>{lead.location}</p>
+                      <h3 className="font-medium" style={{ color: SLATE_HORIZON.ink }}>{lead.name}</h3>
+                      <p className="text-xs" style={{ color: SLATE_HORIZON.muted }}>{lead.location}</p>
                     </div>
 
                     <span
@@ -346,37 +365,40 @@ export default function PipelineBoard({
                     </span>
                   </div>
 
-                  <div className="space-y-2 text-sm" style={{ color: "#94A3B8" }}>
+                  <div className="space-y-2 text-sm" style={{ color: SLATE_HORIZON.muted }}>
                     <p>
-                      <span className="font-medium" style={{ color: "#CBD5E1" }}>Rozpočet:</span>{" "}
+                      <span className="font-medium" style={{ color: SLATE_HORIZON.navText }}>Rozpočet:</span>{" "}
                       {lead.budget}
                     </p>
                     <p>
-                      <span className="font-medium" style={{ color: "#CBD5E1" }}>Maklér:</span>{" "}
+                      <span className="font-medium" style={{ color: SLATE_HORIZON.navText }}>Maklér:</span>{" "}
                       {lead.assignedAgent}
                     </p>
                     <p>
-                      <span className="font-medium" style={{ color: "#CBD5E1" }}>Zdroj:</span>{" "}
+                      <span className="font-medium" style={{ color: SLATE_HORIZON.navText }}>Zdroj:</span>{" "}
                       {lead.source}
                     </p>
                   </div>
 
                   <div
                     className="mt-4 rounded-lg border p-3"
-                    style={{ background: "#050914", borderColor: "#0F1F3D" }}
+                    style={{
+                      background: WORKDESK_INNER_ROW.background,
+                      borderColor: WORKDESK_INNER_ROW.borderColor,
+                    }}
                   >
-                    <p className="text-xs font-semibold" style={{ color: "#22D3EE" }}>AI ďalší krok</p>
-                    <p className="mt-1 text-xs" style={{ color: "#94A3B8" }}>
+                    <p className="text-xs font-semibold" style={{ color: SLATE_HORIZON.brand }}>AI ďalší krok</p>
+                    <p className="mt-1 text-xs" style={{ color: SLATE_HORIZON.muted }}>
                       {getNextAction(lead.score, lead.status)}
                     </p>
                   </div>
 
                   <div className="mt-4 flex items-center justify-between gap-2">
-                    <span className="text-xs" style={{ color: "#475569" }}>{lead.lastContact}</span>
+                    <span className="text-xs" style={{ color: SLATE_HORIZON.muted }}>{lead.lastContact}</span>
 
                     <span
                       className="rounded-full px-3 py-1 text-[11px] font-semibold"
-                      style={{ background: "rgba(34,211,238,0.08)", color: "#22D3EE" }}
+                      style={{ background: SLATE_HORIZON.soft, color: SLATE_HORIZON.brandDeep }}
                     >
                       Otvoriť detail
                     </span>
@@ -387,7 +409,7 @@ export default function PipelineBoard({
               {columnLeads.length === 0 && (
                 <div
                   className="rounded-xl border border-dashed p-4 text-sm"
-                  style={{ borderColor: "#0F1F3D", color: "#475569" }}
+                  style={{ borderColor: WORKDESK_CARD.borderColor, color: SLATE_HORIZON.muted }}
                 >
                   Sem môžeš presunúť príležitosť.
                 </div>

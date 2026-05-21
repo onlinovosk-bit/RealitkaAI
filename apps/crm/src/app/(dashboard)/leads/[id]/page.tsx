@@ -26,6 +26,12 @@ import { useRealtimeLeadScore } from "@/hooks/useRealtimeLeadScore";
 import SalesBrainPanel from "@/components/leads/sales-brain-panel";
 import DealStrategyCard from "@/components/leads/deal-strategy-card";
 import KatasterMonitorCard from "@/components/leads/KatasterMonitorCard";
+import {
+  SLATE_HORIZON,
+  WORKDESK_INNER_ROW,
+  WORKDESK_INPUT,
+  WORKDESK_PANEL,
+} from "@/lib/slate-horizon-theme";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -78,11 +84,15 @@ function InlineField({
     if (draft !== value) onSave(draft);
   }
 
-  const fieldStyle = { background: "#050914", borderColor: "rgba(34,211,238,0.15)", color: "#F0F9FF" };
+  const fieldStyle = {
+    background: WORKDESK_INPUT.background,
+    borderColor: WORKDESK_INPUT.borderColor,
+    color: WORKDESK_INPUT.color,
+  };
 
   return (
     <div>
-      <p className="mb-1 text-[10px] font-medium uppercase tracking-wide" style={{ color: "#475569" }}>{label}</p>
+      <p className="mb-1 text-[10px] font-medium uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>{label}</p>
       {editing ? (
         multiline ? (
           <textarea
@@ -111,7 +121,11 @@ function InlineField({
           type="button"
           onClick={() => setEditing(true)}
           className="w-full rounded-xl border px-3 py-2.5 text-left text-sm min-h-[42px] transition-all"
-          style={{ background: "#080D1A", borderColor: "rgba(34,211,238,0.08)", color: draft ? "#CBD5E1" : "#334155" }}
+          style={{
+            background: WORKDESK_INNER_ROW.background,
+            borderColor: WORKDESK_INPUT.borderColor,
+            color: draft ? SLATE_HORIZON.ink : SLATE_HORIZON.muted,
+          }}
         >
           {draft || "Klikni na úpravu…"}
         </button>
@@ -135,12 +149,16 @@ function InlineSelect({
 }) {
   return (
     <div>
-      <p className="mb-1 text-[10px] font-medium uppercase tracking-wide" style={{ color: "#475569" }}>{label}</p>
+      <p className="mb-1 text-[10px] font-medium uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>{label}</p>
       <select
         value={value}
         onChange={e => onSave(e.target.value)}
         className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
-        style={{ background: "#050914", borderColor: "rgba(34,211,238,0.15)", color: "#F0F9FF" }}
+        style={{
+          background: WORKDESK_INPUT.background,
+          borderColor: WORKDESK_INPUT.borderColor,
+          color: WORKDESK_INPUT.color,
+        }}
       >
         {options.map(o => <option key={o} value={o}>{o}</option>)}
       </select>
@@ -412,20 +430,24 @@ export default function LeadDetailPage() {
 
   if (isLoading) {
     return (
-      <main className="p-3 md:p-6" style={{ background: "#050914", minHeight: "100vh" }}>
-        <div className="text-center text-sm" style={{ color: "#475569" }}>Načítavam…</div>
+      <main className="min-h-screen p-3 md:p-6" style={{ background: SLATE_HORIZON.bg }}>
+        <div className="text-center text-sm" style={{ color: SLATE_HORIZON.muted }}>Načítavam…</div>
       </main>
     );
   }
   if (!lead) return null;
 
   return (
-    <main className="p-3 md:p-6" style={{ background: "#050914", minHeight: "100vh" }}>
+    <main className="min-h-screen p-3 md:p-6" style={{ background: SLATE_HORIZON.bg }}>
       {/* toast */}
       {toast && (
         <div
           className="fixed top-4 right-4 z-50 rounded-xl border px-4 py-3 text-sm font-medium shadow-lg"
-          style={{ background: "#080D1A", borderColor: "rgba(34,211,238,0.2)", color: "#E0F2FE" }}
+          style={{
+            background: SLATE_HORIZON.soft,
+            borderColor: SLATE_HORIZON.softBorder,
+            color: SLATE_HORIZON.brandDeep,
+          }}
         >
           {toast}
         </div>
@@ -433,7 +455,7 @@ export default function LeadDetailPage() {
 
       <div className="mx-auto max-w-6xl">
         {/* back */}
-        <Link href="/leads" className="inline-flex items-center gap-1 text-sm" style={{ color: "#475569" }}>
+        <Link href="/leads" className="inline-flex items-center gap-1 text-sm" style={{ color: SLATE_HORIZON.muted }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           Späť
         </Link>
@@ -441,15 +463,15 @@ export default function LeadDetailPage() {
         {/* ── HEADER ─────────────────────────────────────────────────────── */}
         <div className="mt-3 mb-4 md:mt-4 md:mb-6 flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <h1 className="text-xl md:text-3xl font-bold truncate" style={{ color: "#F0F9FF" }}>{lead.name}</h1>
+            <h1 className="text-xl md:text-3xl font-bold truncate" style={{ color: SLATE_HORIZON.ink }}>{lead.name}</h1>
             <div className="mt-1.5 flex flex-wrap items-center gap-2 md:gap-3">
               {lead.email && (
-                <a href={`mailto:${lead.email}`} className="text-sm truncate max-w-[160px] md:max-w-none" style={{ color: "#22D3EE" }}>
+                <a href={`mailto:${lead.email}`} className="text-sm truncate max-w-[160px] md:max-w-none" style={{ color: SLATE_HORIZON.brand }}>
                   {lead.email}
                 </a>
               )}
               {lead.phone && (
-                <a href={`tel:${lead.phone}`} className="text-sm" style={{ color: "#94A3B8" }}>
+                <a href={`tel:${lead.phone}`} className="text-sm" style={{ color: SLATE_HORIZON.muted }}>
                   {lead.phone}
                 </a>
               )}
@@ -457,7 +479,7 @@ export default function LeadDetailPage() {
                 {lead.status}
               </span>
               {isSavingField && (
-                <span className="text-xs" style={{ color: "#475569" }}>Ukladám…</span>
+                <span className="text-xs" style={{ color: SLATE_HORIZON.muted }}>Ukladám…</span>
               )}
             </div>
           </div>
@@ -474,12 +496,12 @@ export default function LeadDetailPage() {
                 Zmazať
               </button>
             ) : (
-              <div className="flex items-center gap-2 rounded-xl border px-3 py-2" style={{ borderColor: "rgba(239,68,68,0.4)", background: "rgba(239,68,68,0.08)" }}>
-                <span className="text-xs" style={{ color: "#FCA5A5" }}>Naozaj zmazať?</span>
-                <button type="button" onClick={deleteLead} className="text-xs font-semibold" style={{ color: "#EF4444" }}>
+              <div className="flex items-center gap-2 rounded-xl border px-3 py-2" style={{ borderColor: "rgba(239,68,68,0.35)", background: "#FEF2F2" }}>
+                <span className="text-xs" style={{ color: SLATE_HORIZON.danger }}>Naozaj zmazať?</span>
+                <button type="button" onClick={deleteLead} className="text-xs font-semibold" style={{ color: SLATE_HORIZON.red }}>
                   Áno
                 </button>
-                <button type="button" onClick={() => setConfirmDelete(false)} className="text-xs" style={{ color: "#64748B" }}>
+                <button type="button" onClick={() => setConfirmDelete(false)} className="text-xs" style={{ color: SLATE_HORIZON.muted }}>
                   Nie
                 </button>
               </div>
@@ -494,8 +516,15 @@ export default function LeadDetailPage() {
           <div className="xl:col-span-2 space-y-6">
 
             {/* Lead Info Card */}
-            <div className="rounded-2xl border p-4 md:p-6" style={{ background: "#080D1A", borderColor: "#0F1F3D" }}>
-              <h2 className="mb-4 text-base font-semibold" style={{ color: "#F0F9FF" }}>Informácie o príležitosti</h2>
+            <div
+              className="rounded-2xl border p-4 md:p-6"
+              style={{
+                background: WORKDESK_PANEL.background,
+                borderColor: WORKDESK_PANEL.borderColor,
+                boxShadow: WORKDESK_PANEL.boxShadow,
+              }}
+            >
+              <h2 className="mb-4 text-base font-semibold" style={{ color: SLATE_HORIZON.ink }}>Informácie o príležitosti</h2>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <InlineField label="Meno" value={lead.name} onSave={v => patchLead({ name: v })} />
                 <InlineField label="Email" value={lead.email} type="email" onSave={v => patchLead({ email: v })} />
@@ -513,17 +542,35 @@ export default function LeadDetailPage() {
             </div>
 
             {/* Activity Timeline */}
-            <div className="rounded-2xl border p-4 md:p-6" style={{ background: "#080D1A", borderColor: "#0F1F3D" }}>
-              <h2 className="mb-4 text-base font-semibold" style={{ color: "#F0F9FF" }}>Aktivity</h2>
+            <div
+              className="rounded-2xl border p-4 md:p-6"
+              style={{
+                background: WORKDESK_PANEL.background,
+                borderColor: WORKDESK_PANEL.borderColor,
+                boxShadow: WORKDESK_PANEL.boxShadow,
+              }}
+            >
+              <h2 className="mb-4 text-base font-semibold" style={{ color: SLATE_HORIZON.ink }}>Aktivity</h2>
 
               {/* Add activity form */}
-              <form onSubmit={addActivity} className="mb-5 rounded-xl border p-3 md:p-4" style={{ background: "#050914", borderColor: "#0F1F3D" }}>
+              <form
+                onSubmit={addActivity}
+                className="mb-5 rounded-xl border p-3 md:p-4"
+                style={{
+                  background: WORKDESK_INNER_ROW.background,
+                  borderColor: WORKDESK_INNER_ROW.borderColor,
+                }}
+              >
                 <div className="mb-3 flex gap-2">
                   <select
                     value={actType}
                     onChange={e => setActType(e.target.value)}
                     className="rounded-xl border px-3 py-2.5 text-sm outline-none flex-1"
-                    style={{ background: "#080D1A", borderColor: "rgba(34,211,238,0.15)", color: "#F0F9FF" }}
+                    style={{
+                      background: WORKDESK_INPUT.background,
+                      borderColor: WORKDESK_INPUT.borderColor,
+                      color: WORKDESK_INPUT.color,
+                    }}
                   >
                     {["Telefonát", "Email", "Obhliadka", "Poznámka"].map(t => (
                       <option key={t} value={t}>{t}</option>
@@ -536,13 +583,17 @@ export default function LeadDetailPage() {
                   placeholder="Čo sa stalo? Zapíš poznámku…"
                   rows={2}
                   className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none mb-3"
-                  style={{ background: "#080D1A", borderColor: "rgba(34,211,238,0.15)", color: "#F0F9FF" }}
+                  style={{
+                    background: WORKDESK_INPUT.background,
+                    borderColor: WORKDESK_INPUT.borderColor,
+                    color: WORKDESK_INPUT.color,
+                  }}
                 />
                 <button
                   type="submit"
                   disabled={isAddingAct || !actNote.trim()}
                   className="rounded-xl px-4 py-2.5 text-sm font-semibold min-h-[40px] transition-all active:scale-95 disabled:opacity-50"
-                  style={{ background: "linear-gradient(135deg, #22D3EE, #0EA5E9)", color: "#050914" }}
+                  style={{ background: SLATE_HORIZON.ctaGradient, color: "#FFFFFF" }}
                 >
                   {isAddingAct ? "Pridávam…" : "+ Aktivita"}
                 </button>
@@ -573,13 +624,24 @@ export default function LeadDetailPage() {
           <div className="space-y-4">
 
             {/* Status Panel */}
-            <div className="rounded-2xl border p-4 md:p-5" style={{ background: "#080D1A", borderColor: "#0F1F3D" }}>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: "#475569" }}>Stav</p>
+            <div
+              className="rounded-2xl border p-4 md:p-5"
+              style={{
+                background: WORKDESK_PANEL.background,
+                borderColor: WORKDESK_PANEL.borderColor,
+                boxShadow: WORKDESK_PANEL.boxShadow,
+              }}
+            >
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>Stav</p>
               <select
                 value={lead.status}
                 onChange={e => patchLead({ status: e.target.value as Lead["status"] })}
                 className="w-full rounded-xl border px-3 py-2.5 text-sm font-semibold outline-none min-h-[44px]"
-                style={{ background: "#050914", borderColor: "rgba(34,211,238,0.2)", color: "#22D3EE" }}
+                style={{
+                  background: WORKDESK_INPUT.background,
+                  borderColor: WORKDESK_INPUT.borderColor,
+                  color: SLATE_HORIZON.brandDeep,
+                }}
               >
                 {leadStatusOptions.map(s => (
                   <option key={s} value={s}>{s}</option>
@@ -588,14 +650,25 @@ export default function LeadDetailPage() {
             </div>
 
             {/* Quick Actions */}
-            <div className="rounded-2xl border p-4 md:p-5" style={{ background: "#080D1A", borderColor: "#0F1F3D" }}>
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wide" style={{ color: "#475569" }}>Rýchle akcie</p>
+            <div
+              className="rounded-2xl border p-4 md:p-5"
+              style={{
+                background: WORKDESK_PANEL.background,
+                borderColor: WORKDESK_PANEL.borderColor,
+                boxShadow: WORKDESK_PANEL.boxShadow,
+              }}
+            >
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>Rýchle akcie</p>
               <div className="space-y-2">
                 {lead.phone && (
                   <a
                     href={`tel:${lead.phone}`}
                     className="flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium w-full min-h-[44px] transition-all active:scale-95"
-                    style={{ borderColor: "rgba(34,211,238,0.15)", color: "#CBD5E1", background: "rgba(34,211,238,0.04)" }}
+                    style={{
+                      borderColor: WORKDESK_INNER_ROW.borderColor,
+                      color: SLATE_HORIZON.ink,
+                      background: WORKDESK_INNER_ROW.background,
+                    }}
                   >
                     📞 Zavolať
                   </a>
@@ -604,7 +677,11 @@ export default function LeadDetailPage() {
                   <a
                     href={`mailto:${lead.email}`}
                     className="flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium w-full min-h-[44px] transition-all active:scale-95"
-                    style={{ borderColor: "rgba(34,211,238,0.15)", color: "#CBD5E1", background: "rgba(34,211,238,0.04)" }}
+                    style={{
+                      borderColor: WORKDESK_INNER_ROW.borderColor,
+                      color: SLATE_HORIZON.ink,
+                      background: WORKDESK_INNER_ROW.background,
+                    }}
                   >
                     ✉️ Email
                   </a>
@@ -613,7 +690,11 @@ export default function LeadDetailPage() {
                   type="button"
                   onClick={openViewingCalendar}
                   className="flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium w-full min-h-[44px] transition-all active:scale-95"
-                  style={{ borderColor: "rgba(34,211,238,0.15)", color: "#CBD5E1", background: "rgba(34,211,238,0.04)" }}
+                  style={{
+                    borderColor: WORKDESK_INNER_ROW.borderColor,
+                    color: SLATE_HORIZON.ink,
+                    background: WORKDESK_INNER_ROW.background,
+                  }}
                 >
                   📅 Obhliadka
                 </button>
@@ -656,10 +737,15 @@ export default function LeadDetailPage() {
             {id ? (
               <Link
                 href={`/dashboard?lead=${encodeURIComponent(id)}`}
-                className="block rounded-2xl border border-indigo-500/25 bg-indigo-950/30 px-4 py-3 text-sm text-indigo-100 transition hover:bg-indigo-950/50"
+                className="block rounded-2xl border px-4 py-3 text-sm transition hover:opacity-90"
+                style={{
+                  background: SLATE_HORIZON.soft,
+                  borderColor: SLATE_HORIZON.softBorder,
+                  color: SLATE_HORIZON.brandDeep,
+                }}
               >
-                <span className="font-semibold text-white">AI Asistent (Codai)</span>
-                <span className="mt-0.5 block text-xs text-indigo-200/80">
+                <span className="font-semibold" style={{ color: SLATE_HORIZON.ink }}>AI Asistent (Codai)</span>
+                <span className="mt-0.5 block text-xs" style={{ color: SLATE_HORIZON.muted }}>
                   Otvoriť dashboard s kontextom tejto príležitosti →
                 </span>
               </Link>
@@ -704,12 +790,12 @@ export default function LeadDetailPage() {
             <div
               className="rounded-2xl border p-4 md:p-5 transition-shadow duration-500"
               style={{
-                background: "#080D1A",
-                borderColor: scorePulse ? "rgba(34,211,238,0.5)" : "#0F1F3D",
-                boxShadow: scorePulse ? "0 0 24px rgba(34,211,238,0.25)" : undefined,
+                background: WORKDESK_PANEL.background,
+                borderColor: scorePulse ? SLATE_HORIZON.brand : WORKDESK_PANEL.borderColor,
+                boxShadow: scorePulse ? "0 0 24px rgba(37,99,235,0.18)" : WORKDESK_PANEL.boxShadow,
               }}
             >
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: "#475569" }}>BRI Skóre</p>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>BRI Skóre</p>
               {lead.ai_engine && (
                 <p className="mb-2 text-[10px] leading-snug text-slate-500">
                   Uložený Brain (DB): {lead.ai_engine.combinedScore}/100 · conf. {lead.ai_engine.confidence}% · TTC
@@ -723,9 +809,9 @@ export default function LeadDetailPage() {
                 >
                   {lead.score ?? "—"}
                 </span>
-                <span className="mb-1 text-sm" style={{ color: "#475569" }}>/ 100</span>
+                <span className="mb-1 text-sm" style={{ color: SLATE_HORIZON.muted }}>/ 100</span>
               </div>
-              <div className="mt-2 h-1.5 w-full rounded-full" style={{ background: "#0F1F3D" }}>
+              <div className="mt-2 h-1.5 w-full rounded-full" style={{ background: SLATE_HORIZON.line }}>
                 <div
                   className="h-1.5 rounded-full transition-[width] duration-700 ease-out"
                   style={{
@@ -737,7 +823,11 @@ export default function LeadDetailPage() {
               <button
                 type="button"
                 className="mt-3 w-full rounded-xl border px-3 py-2.5 text-xs font-semibold min-h-[40px] transition-all active:scale-95"
-                style={{ borderColor: "rgba(34,211,238,0.2)", color: "#22D3EE", background: "rgba(34,211,238,0.06)" }}
+                style={{
+                  borderColor: SLATE_HORIZON.softBorder,
+                  color: SLATE_HORIZON.brandDeep,
+                  background: SLATE_HORIZON.soft,
+                }}
                 onClick={async () => {
                   try {
                     const res = await fetch("/api/events", {
@@ -779,15 +869,18 @@ export default function LeadDetailPage() {
             </div>
 
             {/* Sofia Insight */}
-            <div className="rounded-2xl border p-4 md:p-5" style={{ background: "rgba(99,102,241,0.06)", borderColor: "rgba(99,102,241,0.2)" }}>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: "#818CF8" }}>{AI_ASSISTANT_CHAT_LABEL}</p>
-              <Link href="/settings/nexus-ai-chat" className="mb-2 inline-block text-xs font-medium" style={{ color: "#A5B4FC" }}>
+            <div
+              className="rounded-2xl border p-4 md:p-5"
+              style={{ background: SLATE_HORIZON.soft, borderColor: SLATE_HORIZON.softBorder }}
+            >
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.brandDeep }}>{AI_ASSISTANT_CHAT_LABEL}</p>
+              <Link href="/settings/nexus-ai-chat" className="mb-2 inline-block text-xs font-medium" style={{ color: SLATE_HORIZON.brand }}>
                 Nastaviť štýl →
               </Link>
               {sofiaInsight ? (
-                <p className="text-sm" style={{ color: "#C7D2FE" }}>{sofiaInsight}</p>
+                <p className="text-sm" style={{ color: SLATE_HORIZON.ink }}>{sofiaInsight}</p>
               ) : (
-                <p className="text-sm" style={{ color: "#4338CA" }}>Insight sa vygeneruje po prvej zmene príležitosti.</p>
+                <p className="text-sm" style={{ color: SLATE_HORIZON.muted }}>Insight sa vygeneruje po prvej zmene príležitosti.</p>
               )}
 
               {/* Chat */}
@@ -797,26 +890,44 @@ export default function LeadDetailPage() {
                   onChange={e => setSofiaQ(e.target.value)}
                   placeholder={`Opýtaj sa ${AI_ASSISTANT_NAME}…`}
                   className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
-                  style={{ background: "rgba(99,102,241,0.08)", borderColor: "rgba(99,102,241,0.25)", color: "#E0E7FF" }}
+                  style={{
+                    background: WORKDESK_INPUT.background,
+                    borderColor: WORKDESK_INPUT.borderColor,
+                    color: WORKDESK_INPUT.color,
+                  }}
                 />
                 <button
                   type="submit"
                   disabled={sofiaAsking || !sofiaQ.trim()}
                   className="w-full rounded-xl px-3 py-2.5 text-xs font-semibold min-h-[40px] transition-all active:scale-95 disabled:opacity-40"
-                  style={{ background: "rgba(99,102,241,0.3)", color: "#C7D2FE" }}
+                  style={{ background: SLATE_HORIZON.brand, color: "#FFFFFF" }}
                 >
                   {sofiaAsking ? "Myslím…" : `${AI_ASSISTANT_CHAT_CTA} →`}
                 </button>
               </form>
               {sofiaAnswer && (
-                <div className="mt-3 rounded-xl border p-3 text-sm" style={{ background: "rgba(99,102,241,0.1)", borderColor: "rgba(99,102,241,0.2)", color: "#E0E7FF" }}>
+                <div
+                  className="mt-3 rounded-xl border p-3 text-sm"
+                  style={{
+                    background: WORKDESK_INNER_ROW.background,
+                    borderColor: WORKDESK_INNER_ROW.borderColor,
+                    color: SLATE_HORIZON.ink,
+                  }}
+                >
                   {sofiaAnswer}
                 </div>
               )}
             </div>
 
-            <div className="rounded-2xl border p-4 md:p-5" style={{ background: "#080D1A", borderColor: "rgba(34,211,238,0.1)" }}>
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide" style={{ color: "#22D3EE" }}>L99 Decision Ops</p>
+            <div
+              className="rounded-2xl border p-4 md:p-5"
+              style={{
+                background: WORKDESK_PANEL.background,
+                borderColor: WORKDESK_PANEL.borderColor,
+                boxShadow: WORKDESK_PANEL.boxShadow,
+              }}
+            >
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.brandDeep }}>L99 Decision Ops</p>
               <div className="grid grid-cols-1 gap-2 mt-3">
                 {[
                   { action: "score-lead" as const, label: "Score lead" },
@@ -830,7 +941,11 @@ export default function LeadDetailPage() {
                   onClick={() => void runDecisionAction(action)}
                   disabled={decisionBusy !== null}
                   className="rounded-xl border px-3 py-2.5 text-left text-xs font-semibold min-h-[40px] transition-all active:scale-95 disabled:opacity-60"
-                  style={{ borderColor: "rgba(34,211,238,0.12)", color: "#94A3B8", background: "rgba(34,211,238,0.03)" }}
+                  style={{
+                    borderColor: WORKDESK_INNER_ROW.borderColor,
+                    background: WORKDESK_INNER_ROW.background,
+                    color: SLATE_HORIZON.brandDeep,
+                  }}
                 >
                   {decisionBusy === action ? "Pracujem…" : label}
                 </button>
@@ -839,31 +954,50 @@ export default function LeadDetailPage() {
                   type="button"
                   onClick={() => void runDecisionAction("micro-actions")}
                   disabled={decisionBusy !== null}
-                  className="rounded-lg border border-cyan-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-cyan-50 disabled:opacity-60"
+                  className="rounded-xl border px-3 py-2.5 text-left text-xs font-semibold min-h-[40px] transition-all active:scale-95 disabled:opacity-60"
+                  style={{
+                    borderColor: WORKDESK_INNER_ROW.borderColor,
+                    background: WORKDESK_INNER_ROW.background,
+                    color: SLATE_HORIZON.brandDeep,
+                  }}
                 >
                   {decisionBusy === "micro-actions" ? "Plánujem micro-actions..." : "5) Schedule micro-actions"}
                 </button>
               </div>
-              <pre className="mt-3 max-h-52 overflow-auto rounded-lg border border-slate-200 bg-slate-950 p-3 text-[11px] text-cyan-200">
+              <pre
+                className="mt-3 max-h-52 overflow-auto rounded-lg border p-3 text-[11px]"
+                style={{
+                  borderColor: WORKDESK_INNER_ROW.borderColor,
+                  background: SLATE_HORIZON.bg,
+                  color: SLATE_HORIZON.deep,
+                }}
+              >
                 {decisionOutput || '{ "info": "Spusti operáciu pre výstup." }'}
               </pre>
             </div>
 
             {/* Meta Info */}
-            <div className="rounded-2xl border p-4 md:p-5" style={{ background: "#080D1A", borderColor: "#0F1F3D" }}>
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wide" style={{ color: "#475569" }}>Meta</p>
+            <div
+              className="rounded-2xl border p-4 md:p-5"
+              style={{
+                background: WORKDESK_PANEL.background,
+                borderColor: WORKDESK_PANEL.borderColor,
+                boxShadow: WORKDESK_PANEL.boxShadow,
+              }}
+            >
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>Meta</p>
               <dl className="space-y-2 text-sm">
                 <div>
-                  <dt className="text-xs" style={{ color: "#475569" }}>Zdroj</dt>
-                  <dd className="font-medium" style={{ color: "#CBD5E1" }}>{lead.source || "—"}</dd>
+                  <dt className="text-xs" style={{ color: SLATE_HORIZON.muted }}>Zdroj</dt>
+                  <dd className="font-medium" style={{ color: SLATE_HORIZON.ink }}>{lead.source || "—"}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs" style={{ color: "#475569" }}>Maklér</dt>
-                  <dd className="font-medium" style={{ color: "#CBD5E1" }}>{lead.assignedAgent || "Nepriradený"}</dd>
+                  <dt className="text-xs" style={{ color: SLATE_HORIZON.muted }}>Maklér</dt>
+                  <dd className="font-medium" style={{ color: SLATE_HORIZON.ink }}>{lead.assignedAgent || "Nepriradený"}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs" style={{ color: "#475569" }}>Posledný kontakt</dt>
-                  <dd className="font-medium" style={{ color: "#CBD5E1" }}>{lead.lastContact || "—"}</dd>
+                  <dt className="text-xs" style={{ color: SLATE_HORIZON.muted }}>Posledný kontakt</dt>
+                  <dd className="font-medium" style={{ color: SLATE_HORIZON.ink }}>{lead.lastContact || "—"}</dd>
                 </div>
                 {(() => {
                   const extra = lead as unknown as Record<string, unknown>;
