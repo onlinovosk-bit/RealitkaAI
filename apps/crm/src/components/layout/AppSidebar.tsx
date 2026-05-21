@@ -15,6 +15,7 @@ import {
   type NavSection,
   type TeamMemberPermissions,
 } from "@/types/navigation";
+import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
 
 type FounderDemoProgram = "free" | "starter" | "active_force" | "market_vision" | "protocol_authority";
 
@@ -160,8 +161,7 @@ function NavItemRow({
       onMouseEnter={(e) => {
         setHovered(true);
         if (!isActive) {
-          (e.currentTarget as HTMLElement).style.background =
-            "rgba(34,211,238,0.10)";
+          (e.currentTarget as HTMLElement).style.background = SLATE_HORIZON.soft;
         }
       }}
       onMouseLeave={(e) => {
@@ -178,16 +178,16 @@ function NavItemRow({
           height:          "30px",
           borderRadius:    "6px",
           background:      isActive
-            ? theme.accentBg
-            : "rgba(255,255,255,0.05)",
+            ? SLATE_HORIZON.soft
+            : SLATE_HORIZON.bg,
           display:         "flex",
           alignItems:      "center",
           justifyContent:  "center",
           flexShrink:      0,
           marginTop:       "1px",
           border:          isActive
-            ? `1px solid ${theme.accentBorder}30`
-            : "1px solid rgba(255,255,255,0.06)",
+            ? `1px solid ${SLATE_HORIZON.softBorder}`
+            : `1px solid ${SLATE_HORIZON.line}`,
           transition:      "all 0.12s ease",
         }}
       >
@@ -196,8 +196,8 @@ function NavItemRow({
           size={15}
           color={
             isActive
-              ? theme.accentColor
-              : "rgba(148,163,184,0.70)"
+              ? SLATE_HORIZON.brandDeep
+              : SLATE_HORIZON.muted
           }
         />
       </div>
@@ -217,8 +217,8 @@ function NavItemRow({
               fontSize:    "14px",
               fontWeight:  isActive ? "600" : "500",
               color:       isActive
-                ? "#F0F9FF"
-                : "rgba(203,213,225,0.92)",
+                ? SLATE_HORIZON.brandDeep
+                : SLATE_HORIZON.navText,
               lineHeight:  "1.35",
               letterSpacing: "-0.01em",
             }}
@@ -651,17 +651,17 @@ export default function AppSidebar({
         display:        "flex",
         flexDirection:  "column",
         height:         "100%",
-        background:     "#050914",
-        borderRight:    "1px solid rgba(34,211,238,0.18)",
+        background:     SLATE_HORIZON.sidebarBg,
+        borderRight:    `1px solid ${SLATE_HORIZON.line}`,
         overflow:       "hidden",
-        backgroundImage: "linear-gradient(180deg, #06122A 0%, #040B1F 100%)",
+        boxShadow:      "4px 0 24px rgba(37,99,235,0.06)",
       }}
     >
       {/* Akcentový top border podľa role */}
       <div
         style={{
           height:     "2px",
-          background: `linear-gradient(90deg, rgba(34,211,238,0.95), rgba(59,130,246,0.45), transparent)`,
+          background: SLATE_HORIZON.topbarGradient,
           flexShrink: 0,
         }}
       />
@@ -670,7 +670,7 @@ export default function AppSidebar({
       <div
         style={{
           padding:      "16px 12px 14px 48px",
-          borderBottom: "1px solid rgba(34,211,238,0.16)",
+          borderBottom: `1px solid ${SLATE_HORIZON.line}`,
           flexShrink:   0,
         }}
       >
@@ -706,7 +706,7 @@ export default function AppSidebar({
             style={{
               fontSize:   "14px",
               fontWeight: "600",
-              color:      "#F0F9FF",
+              color:      SLATE_HORIZON.deep,
               letterSpacing: "-0.02em",
             }}
           >
@@ -796,12 +796,12 @@ export default function AppSidebar({
                       borderRadius: "7px",
                       padding: "6px 8px",
                       border: selected
-                        ? `1px solid ${theme.accentColor}`
-                        : "1px solid rgba(148,163,184,0.25)",
+                        ? `1px solid ${SLATE_HORIZON.softBorder}`
+                        : `1px solid ${SLATE_HORIZON.line}`,
                       background: selected
-                        ? `${theme.accentColor}20`
-                        : "rgba(15,23,42,0.40)",
-                      color: selected ? "#E0F2FE" : "rgba(203,213,225,0.92)",
+                        ? SLATE_HORIZON.soft
+                        : SLATE_HORIZON.bg,
+                      color: selected ? SLATE_HORIZON.brandDeep : SLATE_HORIZON.navText,
                       textAlign: "left",
                       cursor: "pointer",
                     }}
@@ -861,7 +861,7 @@ export default function AppSidebar({
                 <div
                   style={{
                     height:     "1px",
-                    background: "rgba(34,211,238,0.14)",
+                    background: SLATE_HORIZON.line,
                     margin:     "8px 0",
                   }}
                 />
@@ -904,7 +904,7 @@ export default function AppSidebar({
       {/* Settings separator + user footer */}
       <div
         style={{
-          borderTop: "1px solid rgba(34,211,238,0.16)",
+          borderTop: `1px solid ${SLATE_HORIZON.line}`,
           padding:   "10px 10px 12px",
           flexShrink: 0,
         }}
@@ -930,7 +930,7 @@ export default function AppSidebar({
               marginTop:  "8px",
               padding:    "6px 8px",
               borderRadius: "8px",
-              background: "rgba(34,211,238,0.06)",
+              background: SLATE_HORIZON.soft,
             }}
           >
             <div

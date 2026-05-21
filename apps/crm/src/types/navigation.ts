@@ -80,9 +80,9 @@ export type VariantTheme = {
 export const VARIANT_THEMES: Record<MenuVariant, VariantTheme> = {
   // ── AGENT SOLO: Smart Start / Active Force ──────────────────
   agent_solo: {
-    accentColor:  "#22D3EE",   // cyan
-    accentBg:     "rgba(34,211,238,0.08)",
-    accentBorder: "#22D3EE",
+    accentColor:  "#2563EB",
+    accentBg:     "#EFF6FF",
+    accentBorder: "#2563EB",
     planLabel:    "Active Force",
     planIcon:     "◆",
     roleLabel:    "Maklér",

@@ -1,6 +1,7 @@
 ﻿import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import AppSidebar from "@/components/layout/AppSidebar";
+import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -14,7 +15,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
     .maybeSingle();
 
   return (
-    <div style={{ display: "flex", flex: 1, minHeight: 0, width: "100%", overflow: "hidden" }}>
+    <div
+      data-theme="slate-horizon"
+      style={{ display: "flex", flex: 1, minHeight: 0, width: "100%", overflow: "hidden" }}
+    >
       <AppSidebar
         uiRole={profile?.ui_role ?? "agent"}
         accountTier={profile?.account_tier ?? "free"}
@@ -23,7 +27,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
         agencyName={profile?.agency_name ?? undefined}
         userName={profile?.full_name ?? undefined}
       />
-      <main style={{ flex: 1, minWidth: 0, overflowY: "auto", background: "#050914" }}>
+      <main
+        style={{
+          flex: 1,
+          minWidth: 0,
+          overflowY: "auto",
+          background: `linear-gradient(180deg, ${SLATE_HORIZON.bg}, #ffffff)`,
+        }}
+      >
         {children}
       </main>
     </div>

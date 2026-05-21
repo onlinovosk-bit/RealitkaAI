@@ -1,66 +1,70 @@
 ﻿'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { usePathname } from 'next/navigation';
 import { isChromelessRoute } from '@/lib/chromeless-routes';
+import { SLATE_HORIZON } from '@/lib/slate-horizon-theme';
 
 export const SlackLayout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
-  const [theme, setTheme] = useState<'dark' | 'purple'>('dark');
 
   if (isChromelessRoute(pathname)) {
     return <>{children}</>;
   }
 
-  const topBg =
-    theme === 'dark'
-      ? 'linear-gradient(90deg, #06122A 0%, #040B1F 100%)'
-      : 'linear-gradient(90deg, #3f0e40 0%, #4a154b 100%)';
-
   return (
-    <div className="flex h-screen w-full flex-col overflow-hidden antialiased" style={{ background: '#050914' }}>
+    <div
+      className="flex h-screen w-full flex-col overflow-hidden antialiased"
+      style={{ background: SLATE_HORIZON.bg }}
+      data-theme="slate-horizon"
+    >
       <header
         style={{
-          height: '44px',
-          minHeight: '44px',
+          height: '56px',
+          minHeight: '56px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0 16px',
-          background: topBg,
-          borderBottom: '1px solid rgba(34,211,238,0.14)',
+          padding: '0 20px',
+          background: SLATE_HORIZON.topbarGradient,
+          boxShadow: '0 2px 16px rgba(37,99,235,0.25)',
           zIndex: 50,
           flexShrink: 0,
         }}
       >
-        <div style={{ width: '44px' }} />
-        <div style={{ flex: 1, maxWidth: '560px', margin: '0 auto' }}>
+        <div style={{ width: '44px' }} aria-hidden />
+        <div style={{ flex: 1, maxWidth: '480px', margin: '0 auto' }}>
+          <label htmlFor="revolis-global-search" className="sr-only">
+            Hľadať lead, lokalitu, províziu
+          </label>
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between',
-              background: 'rgba(255,255,255,0.08)',
-              border: '1px solid rgba(34,211,238,0.18)',
-              borderRadius: '8px',
-              padding: '0 12px',
-              height: '28px',
               gap: '8px',
+              background: 'rgba(255,255,255,0.14)',
+              border: '1px solid rgba(255,255,255,0.28)',
+              borderRadius: '10px',
+              padding: '0 14px',
+              height: '36px',
             }}
           >
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, opacity: 0.5 }}>
-              <circle cx="6.5" cy="6.5" r="5" stroke="#22D3EE" strokeWidth="1.5" />
-              <path d="M10.5 10.5L14 14" stroke="#22D3EE" strokeWidth="1.5" strokeLinecap="round" />
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, opacity: 0.75 }}>
+              <circle cx="6.5" cy="6.5" r="5" stroke="#fff" strokeWidth="1.5" />
+              <path d="M10.5 10.5L14 14" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
-            <span style={{ flex: 1, fontSize: '13px', color: 'rgba(203,213,225,0.55)', userSelect: 'none' }}>
-              Search Revolis Intelligence...
+            <span
+              id="revolis-global-search"
+              style={{ flex: 1, fontSize: '13px', color: 'rgba(255,255,255,0.85)', userSelect: 'none' }}
+            >
+              Hľadať lead, lokalitu, províziu…
             </span>
             <kbd
               style={{
                 fontSize: '10px',
-                color: 'rgba(148,163,184,0.40)',
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.10)',
+                color: 'rgba(255,255,255,0.65)',
+                background: 'rgba(255,255,255,0.12)',
+                border: '1px solid rgba(255,255,255,0.22)',
                 borderRadius: '4px',
                 padding: '1px 5px',
               }}
@@ -70,34 +74,17 @@ export const SlackLayout = ({ children }: { children: React.ReactNode }) => {
           </div>
         </div>
         <div style={{ width: '44px', display: 'flex', justifyContent: 'flex-end' }}>
-          <button
-            type="button"
-            onClick={() => setTheme(theme === 'dark' ? 'purple' : 'dark')}
+          <span
             style={{
               fontSize: '11px',
-              fontWeight: '500',
-              color: 'rgba(203,213,225,0.70)',
-              background: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.10)',
-              borderRadius: '6px',
-              padding: '3px 8px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              whiteSpace: 'nowrap',
+              fontWeight: 700,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              color: 'rgba(255,255,255,0.92)',
             }}
           >
-            {theme === 'dark' ? (
-              <>
-                <span>Purple</span>
-              </>
-            ) : (
-              <>
-                <span>Dark</span>
-              </>
-            )}
-          </button>
+            Workdesk
+          </span>
         </div>
       </header>
       <div className="flex flex-1 overflow-y-auto md:overflow-hidden">{children}</div>

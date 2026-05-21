@@ -21,6 +21,7 @@ import AIPulseSystem from "@/components/space/AIPulseSystem";
 import { AIAssistBanner } from "@/components/dashboard/AIAssistBanner";
 import { AssistantPanelDynamic } from "@/components/dashboard/AssistantPanel.dynamic";
 import L99DecisionOpsPanel from "@/components/dashboard/L99DecisionOpsPanel";
+import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
 
 type ForecastingSummary = {
   totalLeads: number;
@@ -78,13 +79,18 @@ function KpiCard({ title, value, subtitle }: { title: string; value: string | nu
 
   return (
     <div
-      ref={glowRef as any}
-      style={{ ...glowStyle, background: "#080D1A", borderColor: "rgba(34,211,238,0.10)" }}
-      className="rounded-2xl border p-4 md:p-5"
+      ref={glowRef as React.RefObject<HTMLDivElement> | undefined}
+      style={{
+        ...glowStyle,
+        background: SLATE_HORIZON.cardBg,
+        borderColor: SLATE_HORIZON.line,
+        boxShadow: SLATE_HORIZON.cardShadow,
+      }}
+      className="rounded-2xl border p-4 md:p-5 transition-colors duration-200"
     >
-      <p className="text-xs md:text-sm" style={{ color: "#64748B" }}>{title}</p>
-      <h2 className="mt-1.5 text-2xl md:text-3xl font-bold" style={{ color: "#F0F9FF" }}>{shownValue}</h2>
-      <p className="mt-1 text-xs md:text-sm" style={{ color: "#475569" }}>{subtitle}</p>
+      <p className="text-xs md:text-sm" style={{ color: SLATE_HORIZON.muted }}>{title}</p>
+      <h2 className="mt-1.5 text-2xl md:text-3xl font-bold" style={{ color: SLATE_HORIZON.deep }}>{shownValue}</h2>
+      <p className="mt-1 text-xs md:text-sm" style={{ color: SLATE_HORIZON.muted }}>{subtitle}</p>
     </div>
   );
 }
@@ -204,31 +210,27 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <main className="p-6">
-        <div className="text-center text-sm text-gray-400">Načítavam prehľad…</div>
-      </main>
+      <div className="p-6">
+        <div className="text-center text-sm" style={{ color: SLATE_HORIZON.muted }}>Načítavam prehľad…</div>
+      </div>
     );
   }
 
   if (loadError) {
     return (
-      <main className="p-6">
+      <div className="p-6">
         <div className="mx-auto max-w-md text-center">
-          <h2 className="text-lg font-bold text-gray-100">Chyba pri načítaní</h2>
-          <p className="mt-2 text-sm text-gray-400">{loadError}</p>
+          <h2 className="text-lg font-bold" style={{ color: SLATE_HORIZON.deep }}>Chyba pri načítaní</h2>
+          <p className="mt-2 text-sm" style={{ color: SLATE_HORIZON.muted }}>{loadError}</p>
           <button
             onClick={() => window.location.reload()}
-            className="mt-4 rounded-xl px-5 py-2.5 text-sm font-semibold"
-            style={{
-              background: "rgba(34,211,238,0.08)",
-              border: "1px solid rgba(34,211,238,0.2)",
-              color: "#22d3ee",
-            }}
+            className="mt-4 cursor-pointer rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-opacity duration-200 hover:opacity-95"
+            style={{ background: SLATE_HORIZON.topbarGradient }}
           >
             Obnoviť stránku
           </button>
         </div>
-      </main>
+      </div>
     );
   }
 
@@ -245,11 +247,17 @@ export default function DashboardPage() {
   const showRevenueCommandCenter = planKey === "command" || planKey === "enterprise";
 
   return (
-    <main className="p-3 md:p-6" style={{ background: "#050914", minHeight: "100vh" }}>
+    <div className="p-3 md:p-6" style={{ minHeight: "100%" }}>
       <div className="mx-auto max-w-7xl">
-        <div className="mb-4 md:mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold" style={{ color: "#F0F9FF" }}>Prehľad biznisu</h1>
-          <p className="mt-1 text-sm" style={{ color: "#64748B" }}>Prehľad výkonnosti tímu a prioritných príležitostí.</p>
+        <div
+          className="mb-4 md:mb-6 rounded-[22px] p-6 text-white md:p-7"
+          style={{ background: SLATE_HORIZON.heroGradient, boxShadow: "0 20px 50px rgba(23,37,84,0.28)" }}
+        >
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-100/90">Revolis Workdesk</p>
+          <h1 className="mt-2 text-2xl font-extrabold md:text-3xl">Prehľad biznisu</h1>
+          <p className="mt-2 max-w-2xl text-sm text-blue-100/85">
+            Prehľad výkonnosti tímu a prioritných príležitostí — Slate Horizon.
+          </p>
         </div>
 
         <section className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -267,19 +275,26 @@ export default function DashboardPage() {
           <KpiCard title="Konverzný pomer" value={`${conversionRate}%`} subtitle="Ponuky / celkové" />
         </section>
 
-        <section className="mb-6 rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-950/40 via-slate-900/80 to-slate-950 p-5 text-white shadow-[0_0_32px_rgba(16,185,129,0.12)]">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-300/90">
+        <section
+          className="mb-6 rounded-2xl border p-5"
+          style={{
+            borderColor: "#BBF7D0",
+            background: "linear-gradient(135deg, #ECFDF5 0%, #FFFFFF 100%)",
+            boxShadow: SLATE_HORIZON.cardShadow,
+          }}
+        >
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em]" style={{ color: SLATE_HORIZON.greenDark }}>
             AI Sales OS — mesačný odhad (€)
           </p>
           {monthlyMoneyStatus === "loading" && (
-            <p className="mt-3 text-sm text-emerald-100/80">Načítavam mesačný odhad…</p>
+            <p className="mt-3 text-sm" style={{ color: SLATE_HORIZON.muted }}>Načítavam mesačný odhad…</p>
           )}
           {monthlyMoneyStatus === "error" && (
-            <div className="mt-3 text-sm text-amber-100/95">
+            <div className="mt-3 text-sm" style={{ color: "#92400E" }}>
               <p>Mesačný odhad sa nepodarilo načítať.</p>
-              <p className="mt-2 text-xs text-emerald-200/70">
+              <p className="mt-2 text-xs" style={{ color: SLATE_HORIZON.muted }}>
                 Skontroluj v novom paneli prehliadača adresu{" "}
-                <code className="rounded bg-black/30 px-1">/api/ai/monthly-forecast</code> — ak dostaneš{" "}
+                <code className="rounded bg-white px-1">/api/ai/monthly-forecast</code> — ak dostaneš{" "}
                 <strong>404</strong>, na produkcii ešte nie je nasadený kód s touto route. Po úspešnom deployi
                 sa tu zobrazí suma a rozpad.
               </p>
@@ -289,19 +304,19 @@ export default function DashboardPage() {
             <>
               <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
                 <div>
-                  <p className="text-sm text-emerald-100/80">{monthlyMoney.monthLabel}</p>
-                  <p className="mt-1 text-3xl font-bold tabular-nums">
+                  <p className="text-sm" style={{ color: SLATE_HORIZON.muted }}>{monthlyMoney.monthLabel}</p>
+                  <p className="mt-1 text-3xl font-bold tabular-nums" style={{ color: SLATE_HORIZON.money }}>
                     {monthlyMoney.totalExpectedEur?.toLocaleString("sk-SK")} ,- €
                   </p>
                   {monthlyMoney.trend && (
-                    <p className="mt-1 text-sm text-emerald-200/90">
+                    <p className="mt-1 text-sm" style={{ color: SLATE_HORIZON.greenDark }}>
                       Trend vs. posledný výpočet: {monthlyMoney.trend.percent > 0 ? "+" : ""}
                       {monthlyMoney.trend.percent}% ({monthlyMoney.trend.diffEur > 0 ? "+" : ""}
                       {monthlyMoney.trend.diffEur.toLocaleString("sk-SK")} €)
                     </p>
                   )}
                 </div>
-                <div className="text-right text-xs text-emerald-100/70">
+                <div className="text-right text-xs" style={{ color: SLATE_HORIZON.muted }}>
                   <p>Hot / warm / cold (rozpad)</p>
                   {monthlyMoney.breakdown && (
                     <ul className="mt-1 space-y-0.5">
@@ -314,7 +329,7 @@ export default function DashboardPage() {
                   )}
                 </div>
               </div>
-              <p className="mt-3 text-[11px] text-emerald-200/60">
+              <p className="mt-3 text-[11px]" style={{ color: SLATE_HORIZON.muted }}>
                 Model: hodnota z rozpočtu × pravdepodobnosť podľa skóre (viac v dokumentácii AI Sales OS).
               </p>
             </>
@@ -367,7 +382,8 @@ export default function DashboardPage() {
         <section className="mb-6">
           <Link
             href="/forecasting"
-            className="block rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:border-gray-300 hover:shadow"
+            className="block cursor-pointer rounded-2xl border bg-white p-6 shadow-sm transition-colors duration-200 hover:border-blue-200 hover:shadow-md"
+            style={{ borderColor: SLATE_HORIZON.line, boxShadow: SLATE_HORIZON.cardShadow }}
           >
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -407,6 +423,6 @@ export default function DashboardPage() {
         </section>
       </div>
       <AIPulseSystem />
-    </main>
+    </div>
   );
 }
