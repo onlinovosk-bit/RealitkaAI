@@ -8,6 +8,7 @@ Každý modul musí aktívne riadiť používateľa, nie len zobrazovať dáta.
 | **Leads** | Kto je pripravený kúpiť | Zníženie response time | „Kto je pripravený kúpiť dnes?" strip | Hot lead count + € | `hot_leads_click`, `lead_priority_open` |
 | **Forecast** | Čo ohrozuje mesiac | Ochrana pipeline hodnoty | „€{gap} riziko — dealy bez follow-up" | Expected pipeline € | `forecast_alert_open` |
 | **Pipeline** | Ktorý deal posunúť | Zrýchlenie closingu | „Ktorý deal treba posunúť dnes?" | Weighted pipeline € | `dashboard_module_open` (pipeline_action) |
+| **Team** | Kto stráca peniaze | Ochrana výkonu tímu | „Ktorý maklér práve stráca peniaze?" | Risk € per agent | `team_alert_click` |
 
 ## License depth (budúca fáza)
 
@@ -24,4 +25,5 @@ Každý modul musí aktívne riadiť používateľa, nie len zobrazovať dáta.
 - ✅ Leads: `LeadsHotStrip`
 - ✅ Forecast: `ForecastRiskStrip`, `forecast-signals.ts`, light `DealHealthPanel`
 - ✅ Pipeline: `PipelineActionStrip`
+- ✅ Team: `TeamActionStrip`, `team-signals.ts`, light `TeamOwnerInsights`
 - ✅ Telemetry: `ai-telemetry.ts` → `CustomEvent('monitoring')`

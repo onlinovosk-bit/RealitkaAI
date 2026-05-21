@@ -7,7 +7,8 @@ export type WorkdeskTelemetryEvent =
   | "next_best_action_click"
   | "dashboard_module_open"
   | "hot_leads_click"
-  | "lead_priority_open";
+  | "lead_priority_open"
+  | "team_alert_click";
 
 type TelemetryDetail = Record<string, string | number | boolean | null | undefined>;
 
