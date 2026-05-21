@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { Lead } from "@/lib/mock-data";
 import { AI_PRIORITY_SK, priorityRank } from "@/lib/workflows/lead-ai-priority";
+import { SLATE_HORIZON, WORKDESK_INNER_ROW, WORKDESK_PANEL } from "@/lib/slate-horizon-theme";
 
 function sortForToday(l: Lead[]): Lead[] {
   return [...l].sort((a, b) => {
@@ -42,21 +43,42 @@ export default function TodaysTenLeads({ leads }: { leads: Lead[] }) {
 
   if (!top.length) {
     return (
-      <section className="rounded-2xl border border-white/10 bg-slate-900/40 p-4 md:p-5">
-        <h2 className="text-sm font-semibold text-slate-100">Dnešných 10</h2>
-        <p className="mt-2 text-xs text-slate-500">Zatiaľ žiadne leady na zobrazenie.</p>
+      <section
+        className="rounded-[20px] border p-4 md:p-5"
+        style={{
+          background: WORKDESK_PANEL.background,
+          borderColor: WORKDESK_PANEL.borderColor,
+          boxShadow: WORKDESK_PANEL.boxShadow,
+        }}
+      >
+        <h2 className="text-sm font-semibold" style={{ color: SLATE_HORIZON.deep }}>Dnešných 10</h2>
+        <p className="mt-2 text-xs" style={{ color: SLATE_HORIZON.muted }}>Zatiaľ žiadne leady na zobrazenie.</p>
       </section>
     );
   }
 
   return (
-    <section className="rounded-2xl border border-cyan-500/20 bg-slate-900/50 p-4 md:p-5">
+    <section
+      className="rounded-[20px] border p-4 md:p-5"
+      style={{
+        background: WORKDESK_PANEL.background,
+        borderColor: WORKDESK_PANEL.borderColor,
+        boxShadow: WORKDESK_PANEL.boxShadow,
+      }}
+    >
       <div className="flex items-baseline justify-between gap-2">
-        <h2 className="text-sm font-semibold text-cyan-100">Dnešných 10 (AI priorita)</h2>
-        <span className="text-[10px] uppercase tracking-wide text-slate-500">W1 triage</span>
+        <h2 className="text-sm font-semibold" style={{ color: SLATE_HORIZON.deep }}>
+          Dnešných 10 (AI priorita)
+        </h2>
+        <span
+          className="text-[10px] font-semibold uppercase tracking-wide"
+          style={{ color: SLATE_HORIZON.muted }}
+        >
+          W1 triage
+        </span>
       </div>
-      <p className="mt-1 text-xs text-slate-500">
-        Zoradené podľa `Vysoká` → `Nízka`, potom skóre. Override zafixuje prioritu pred nočným cron-om.
+      <p className="mt-1 text-xs" style={{ color: SLATE_HORIZON.muted }}>
+        Zoradené podľa priority a skóre. Override zafixuje prioritu pred nočným cron-om.
       </p>
       <ul className="mt-4 space-y-3">
         {top.map((lead) => {
@@ -67,27 +89,37 @@ export default function TodaysTenLeads({ leads }: { leads: Lead[] }) {
           return (
             <li
               key={lead.id}
-              className="rounded-xl border border-white/5 bg-slate-950/60 p-3 text-sm"
+              className="rounded-2xl border p-3 text-sm"
+              style={{
+                background: WORKDESK_INNER_ROW.background,
+                borderColor: WORKDESK_INNER_ROW.borderColor,
+              }}
             >
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <Link
                     href={`/leads/${lead.id}`}
-                    className="font-medium text-white hover:text-cyan-300"
+                    className="cursor-pointer font-medium transition-colors duration-200 hover:opacity-80"
+                    style={{ color: SLATE_HORIZON.brandDeep }}
                   >
                     {lead.name}
                   </Link>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-[11px]" style={{ color: SLATE_HORIZON.muted }}>
                     Skóre {lead.score} · {lead.status}
                     {lead.aiTriageAt ? ` · triáž ${new Date(lead.aiTriageAt).toLocaleString("sk-SK")}` : ""}
                   </p>
                   {lead.aiReason ? (
-                    <p className="mt-1 text-xs text-slate-400">{lead.aiReason}</p>
+                    <p className="mt-1 text-xs" style={{ color: SLATE_HORIZON.navText }}>{lead.aiReason}</p>
                   ) : null}
                 </div>
                 <div className="flex flex-col gap-1 min-w-[140px]">
                   <select
-                    className="rounded-lg border border-white/10 bg-slate-900 px-2 py-1 text-xs text-white"
+                    className="cursor-pointer rounded-lg border px-2 py-1 text-xs outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                    style={{
+                      borderColor: SLATE_HORIZON.line,
+                      background: "#fff",
+                      color: SLATE_HORIZON.deep,
+                    }}
                     value={draft.p}
                     onChange={(e) =>
                       setLocal((prev) => ({
@@ -105,7 +137,12 @@ export default function TodaysTenLeads({ leads }: { leads: Lead[] }) {
                   <input
                     type="text"
                     placeholder="Dôvod (voliteľné)"
-                    className="rounded-lg border border-white/10 bg-slate-900 px-2 py-1 text-[11px] text-white placeholder:text-slate-600"
+                    className="rounded-lg border px-2 py-1 text-[11px] outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                    style={{
+                      borderColor: SLATE_HORIZON.line,
+                      background: "#fff",
+                      color: SLATE_HORIZON.deep,
+                    }}
                     value={draft.r}
                     onChange={(e) =>
                       setLocal((prev) => ({
@@ -118,7 +155,8 @@ export default function TodaysTenLeads({ leads }: { leads: Lead[] }) {
                     type="button"
                     disabled={busy === lead.id}
                     onClick={() => void savePriority(lead.id)}
-                    className="rounded-lg bg-white/10 px-2 py-1 text-[11px] text-slate-200 hover:bg-white/15 disabled:opacity-40"
+                    className="cursor-pointer rounded-lg px-2 py-1 text-[11px] font-semibold text-white transition-opacity duration-200 hover:opacity-90 disabled:opacity-40"
+                    style={{ background: SLATE_HORIZON.brand }}
                   >
                     {busy === lead.id ? "..." : "Uložiť prioritu"}
                   </button>

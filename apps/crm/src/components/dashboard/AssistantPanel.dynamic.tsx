@@ -7,7 +7,13 @@ const AssistantPanelLazy = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="rounded-2xl border border-slate-700/50 bg-slate-900/60 p-5 animate-pulse">
+      <div
+        className="rounded-[20px] border p-5 animate-pulse"
+        style={{
+          background: "#fff",
+          borderColor: "#E2E8F0",
+        }}
+      >
         <p className="text-sm text-slate-500">Načítavam AI Asistenta…</p>
       </div>
     ),

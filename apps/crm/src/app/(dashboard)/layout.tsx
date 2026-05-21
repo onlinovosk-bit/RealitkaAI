@@ -1,6 +1,7 @@
 ﻿import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import AppSidebar from "@/components/layout/AppSidebar";
+import { WorkdeskTopbar } from "@/components/layout/WorkdeskTopbar";
 import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -27,16 +28,19 @@ export default async function DashboardLayout({ children }: { children: React.Re
         agencyName={profile?.agency_name ?? undefined}
         userName={profile?.full_name ?? undefined}
       />
-      <main
-        style={{
-          flex: 1,
-          minWidth: 0,
-          overflowY: "auto",
-          background: `linear-gradient(180deg, ${SLATE_HORIZON.bg}, #ffffff)`,
-        }}
-      >
-        {children}
-      </main>
+      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <WorkdeskTopbar userName={profile?.full_name ?? undefined} />
+        <main
+          style={{
+            flex: 1,
+            minWidth: 0,
+            overflowY: "auto",
+            background: `linear-gradient(180deg, ${SLATE_HORIZON.bg}, #ffffff)`,
+          }}
+        >
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

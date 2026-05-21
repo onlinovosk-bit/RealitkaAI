@@ -3,6 +3,7 @@
 import React from 'react';
 import { usePathname } from 'next/navigation';
 import { isChromelessRoute } from '@/lib/chromeless-routes';
+import { isWorkdeskRoute } from '@/lib/workdesk-routes';
 import { SLATE_HORIZON } from '@/lib/slate-horizon-theme';
 
 export const SlackLayout = ({ children }: { children: React.ReactNode }) => {
@@ -10,6 +11,20 @@ export const SlackLayout = ({ children }: { children: React.ReactNode }) => {
 
   if (isChromelessRoute(pathname)) {
     return <>{children}</>;
+  }
+
+  const workdesk = isWorkdeskRoute(pathname);
+
+  if (workdesk) {
+    return (
+      <div
+        className="flex h-screen w-full overflow-hidden antialiased"
+        style={{ background: SLATE_HORIZON.bg }}
+        data-theme="slate-horizon"
+      >
+        {children}
+      </div>
+    );
   }
 
   return (

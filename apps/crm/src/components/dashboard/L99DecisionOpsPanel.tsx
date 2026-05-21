@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { SLATE_HORIZON, WORKDESK_INNER_ROW, WORKDESK_PANEL } from "@/lib/slate-horizon-theme";
 
 type LeadOption = {
   id: string;
@@ -58,20 +59,38 @@ export default function L99DecisionOpsPanel({ leads }: Props) {
   }
 
   return (
-    <section className="mb-6 rounded-2xl border border-cyan-500/25 bg-gradient-to-br from-slate-900 via-slate-900 to-cyan-950/50 p-5 shadow-[0_0_24px_rgba(6,182,212,0.15)]">
+    <section
+      className="mb-6 rounded-[20px] border p-5"
+      style={{
+        background: WORKDESK_PANEL.background,
+        borderColor: WORKDESK_PANEL.borderColor,
+        boxShadow: WORKDESK_PANEL.boxShadow,
+      }}
+    >
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-300/90">L99 Decision Ops</p>
-          <h3 className="mt-1 text-base font-bold text-white">Action Scoring / Closing Window / Rescue</h3>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em]" style={{ color: SLATE_HORIZON.brandDeep }}>
+            L99 Decision Ops
+          </p>
+          <h3 className="mt-1 text-base font-bold" style={{ color: SLATE_HORIZON.ink }}>
+            Action Scoring / Closing Window / Rescue
+          </h3>
         </div>
       </div>
 
       <div className="mb-3">
-        <label className="mb-1 block text-xs text-slate-300">Príležitosť</label>
+        <label className="mb-1 block text-xs" style={{ color: SLATE_HORIZON.muted }}>
+          Príležitosť
+        </label>
         <select
           value={selectedLeadId}
           onChange={(e) => setSelectedLeadId(e.target.value)}
-          className="w-full rounded-lg border border-cyan-800/60 bg-slate-950/80 px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-500"
+          className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:border-blue-400"
+          style={{
+            borderColor: WORKDESK_INNER_ROW.borderColor,
+            background: WORKDESK_INNER_ROW.background,
+            color: SLATE_HORIZON.ink,
+          }}
         >
           {leads.length === 0 ? (
             <option value="">Žiadne príležitosti</option>
@@ -86,24 +105,39 @@ export default function L99DecisionOpsPanel({ leads }: Props) {
       </div>
 
       <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-5">
-        <button disabled={disabled} onClick={() => void run("score-lead")} className="rounded-lg border border-cyan-700/70 bg-slate-950/70 px-3 py-2 text-xs font-semibold text-cyan-200 hover:bg-slate-900 disabled:opacity-60">
-          {busy === "score-lead" ? "Počítam..." : "1) Score lead"}
-        </button>
-        <button disabled={disabled} onClick={() => void run("recompute-queue")} className="rounded-lg border border-cyan-700/70 bg-slate-950/70 px-3 py-2 text-xs font-semibold text-cyan-200 hover:bg-slate-900 disabled:opacity-60">
-          {busy === "recompute-queue" ? "Počítam..." : "2) Recompute queue"}
-        </button>
-        <button disabled={disabled} onClick={() => void run("closing-window")} className="rounded-lg border border-cyan-700/70 bg-slate-950/70 px-3 py-2 text-xs font-semibold text-cyan-200 hover:bg-slate-900 disabled:opacity-60">
-          {busy === "closing-window" ? "Počítam..." : "3) Closing window"}
-        </button>
-        <button disabled={disabled} onClick={() => void run("rescue-trigger")} className="rounded-lg border border-cyan-700/70 bg-slate-950/70 px-3 py-2 text-xs font-semibold text-cyan-200 hover:bg-slate-900 disabled:opacity-60">
-          {busy === "rescue-trigger" ? "Spúšťam..." : "4) Rescue trigger"}
-        </button>
-        <button disabled={disabled} onClick={() => void run("micro-actions")} className="rounded-lg border border-cyan-700/70 bg-slate-950/70 px-3 py-2 text-xs font-semibold text-cyan-200 hover:bg-slate-900 disabled:opacity-60">
-          {busy === "micro-actions" ? "Plánujem..." : "5) Micro-actions"}
-        </button>
+        {(
+          [
+            ["score-lead", "1) Score lead"],
+            ["recompute-queue", "2) Recompute queue"],
+            ["closing-window", "3) Closing window"],
+            ["rescue-trigger", "4) Rescue trigger"],
+            ["micro-actions", "5) Micro-actions"],
+          ] as const
+        ).map(([action, label]) => (
+          <button
+            key={action}
+            disabled={disabled}
+            onClick={() => void run(action)}
+            className="rounded-lg border px-3 py-2 text-xs font-semibold transition hover:border-blue-200 disabled:opacity-60"
+            style={{
+              borderColor: WORKDESK_INNER_ROW.borderColor,
+              background: WORKDESK_INNER_ROW.background,
+              color: SLATE_HORIZON.brandDeep,
+            }}
+          >
+            {busy === action ? "Počítam…" : label}
+          </button>
+        ))}
       </div>
 
-      <pre className="mt-3 max-h-64 overflow-auto rounded-lg border border-slate-700 bg-slate-950 p-3 text-[11px] text-cyan-200">
+      <pre
+        className="mt-3 max-h-64 overflow-auto rounded-lg border p-3 text-[11px]"
+        style={{
+          borderColor: WORKDESK_INNER_ROW.borderColor,
+          background: SLATE_HORIZON.bg,
+          color: SLATE_HORIZON.deep,
+        }}
+      >
         {output}
       </pre>
     </section>

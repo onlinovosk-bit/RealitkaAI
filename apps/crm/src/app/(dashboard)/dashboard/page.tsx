@@ -15,12 +15,11 @@ import DailyActionPanel from "@/components/dashboard/DailyActionPanel";
 import TodaysTenLeads from "@/components/dashboard/TodaysTenLeads";
 import BrokerCoach from "@/components/coaching/BrokerCoach";
 import RevenueView from "@/components/dashboard/RevenueView";
-import { useMockAIActivity } from "@/hooks/useMockAIActivity";
-import { useCountUp, useGlowOnHover } from "@/hooks/useSpaceInteractions";
-import AIPulseSystem from "@/components/space/AIPulseSystem";
+import { useCountUp } from "@/hooks/useSpaceInteractions";
 import { AIAssistBanner } from "@/components/dashboard/AIAssistBanner";
 import { AssistantPanelDynamic } from "@/components/dashboard/AssistantPanel.dynamic";
 import L99DecisionOpsPanel from "@/components/dashboard/L99DecisionOpsPanel";
+import { WorkdeskCommandHero } from "@/components/dashboard/WorkdeskCommandHero";
 import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
 
 type ForecastingSummary = {
@@ -72,31 +71,34 @@ function getTrend(value: number, target: number, suffix = "") {
 }
 
 function KpiCard({ title, value, subtitle }: { title: string; value: string | number; subtitle: string }) {
-  const [glowRef, glowStyle] = useGlowOnHover();
-  const numeric = typeof value === "number" ? value : Number(String(value).replace("%", ""));
+  const raw = typeof value === "number" ? String(value) : value;
+  const numericMatch = raw.match(/^[\d.,]+/);
+  const numeric = numericMatch ? Number(numericMatch[0].replace(",", ".")) : NaN;
   const animated = useCountUp(Number.isNaN(numeric) ? 0 : numeric);
-  const shownValue = typeof value === "string" && value.includes("%") ? `${animated}%` : animated;
+  const shownValue =
+    typeof value === "string" && (value.includes("%") || value.includes("€") || value.includes("k"))
+      ? value
+      : typeof value === "string" && value.includes("%")
+        ? `${animated}%`
+        : animated;
 
   return (
     <div
-      ref={glowRef as React.RefObject<HTMLDivElement> | undefined}
       style={{
-        ...glowStyle,
         background: SLATE_HORIZON.cardBg,
         borderColor: SLATE_HORIZON.line,
         boxShadow: SLATE_HORIZON.cardShadow,
       }}
-      className="rounded-2xl border p-4 md:p-5 transition-colors duration-200"
+      className="rounded-2xl border p-4 md:p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-100 hover:shadow-[0_12px_40px_rgba(37,99,235,0.08)]"
     >
       <p className="text-xs md:text-sm" style={{ color: SLATE_HORIZON.muted }}>{title}</p>
-      <h2 className="mt-1.5 text-2xl md:text-3xl font-bold" style={{ color: SLATE_HORIZON.deep }}>{shownValue}</h2>
+      <h2 className="mt-1.5 text-2xl md:text-3xl font-bold" style={{ color: SLATE_HORIZON.ink }}>{shownValue}</h2>
       <p className="mt-1 text-xs md:text-sm" style={{ color: SLATE_HORIZON.muted }}>{subtitle}</p>
     </div>
   );
 }
 
 export default function DashboardPage() {
-  useMockAIActivity();
   const [userName, setUserName] = useState<string | undefined>(undefined);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [plan, setPlan] = useState<PlanTier>("free");
@@ -247,18 +249,20 @@ export default function DashboardPage() {
   const showRevenueCommandCenter = planKey === "command" || planKey === "enterprise";
 
   return (
-    <div className="p-3 md:p-6" style={{ minHeight: "100%" }}>
-      <div className="mx-auto max-w-7xl">
-        <div
-          className="mb-4 md:mb-6 rounded-[22px] p-6 text-white md:p-7"
-          style={{ background: SLATE_HORIZON.heroGradient, boxShadow: "0 20px 50px rgba(23,37,84,0.28)" }}
-        >
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-100/90">Revolis Workdesk</p>
-          <h1 className="mt-2 text-2xl font-extrabold md:text-3xl">Prehľad biznisu</h1>
-          <p className="mt-2 max-w-2xl text-sm text-blue-100/85">
-            Prehľad výkonnosti tímu a prioritných príležitostí — Slate Horizon.
-          </p>
-        </div>
+    <div className="p-3 md:p-6" style={{ minHeight: "100%" }} id="actions">
+      <div className="mx-auto max-w-6xl">
+        <WorkdeskCommandHero leads={leads} />
+
+        <section className="mb-6 grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
+          <KpiCard
+            title="predpoklad obratu tento mesiac"
+            value={monthlyMoney?.totalExpectedEur ? `€${Math.round((monthlyMoney.totalExpectedEur ?? 0) / 1000)}k` : "€124k"}
+            subtitle="AI mesačný odhad"
+          />
+          <KpiCard title="pripravení kúpiť (AI)" value={hotLeads || 24} subtitle="Horúce príležitosti" />
+          <KpiCard title="akcie s vysokým dopadom dnes" value={Math.min(hotLeads + showings, 7) || 7} subtitle="Prioritný zoznam" />
+          <KpiCard title="ohrozené provízie" value="€18.4k" subtitle="Follow-up bez reakcie" />
+        </section>
 
         <section className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
           <AIAssistBanner plan={plan ?? "free"} />
@@ -266,13 +270,6 @@ export default function DashboardPage() {
             defaultLeadId={assistantDefaultLeadId}
             leadOptions={assistantLeadOptions}
           />
-        </section>
-
-        <section className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <KpiCard title="Všetky príležitosti" value={displayTotalLeads} subtitle="V databáze CRM" />
-          <KpiCard title="Obhliadky" value={showings} subtitle="Naplánované stretnutia" />
-          <KpiCard title="Horúce príležitosti" value={hotLeads} subtitle="Najvyššia priorita" />
-          <KpiCard title="Konverzný pomer" value={`${conversionRate}%`} subtitle="Ponuky / celkové" />
         </section>
 
         <section
@@ -422,7 +419,6 @@ export default function DashboardPage() {
           <PropertiesSummaryWidget />
         </section>
       </div>
-      <AIPulseSystem />
     </div>
   );
 }

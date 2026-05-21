@@ -2,25 +2,29 @@
 
 @layer base {
   :root {
-    --purple:  #8b22ff;
-    --purple2: #cf25d9;
-    --deep:    #171321;
-    --muted:   #756b83;
-    --line:    #eee6f7;
-    --soft:    #f3e8ff;
-    --green:   #10b981;
-    --amber:   #f59e0b;
-    --red:     #ef4444;
-    --cyan:    #0ea5e9;
-    --rail-gradient: linear-gradient(180deg, #e12dea, #8b22ff 58%, #5513c5);
+    --brand:   #2563EB;
+    --brand2:  #3B82F6;
+    --brand-deep: #1D4ED8;
+    --brand-navy: #174EA6;
+    --ink:     #0F172A;
+    --ink-deep:#081120;
+    --deep:    #1E293B;
+    --muted:   #64748B;
+    --line:    #EBF0F7;
+    --soft:    #EEF2FF;
+    --bg:      #F8FAFC;
+    --green:   #10B981;
+    --amber:   #F59E0B;
+    --red:     #DC2626;
+    --rail-gradient: linear-gradient(180deg, #174EA6 0%, #1D4ED8 48%, #081120 100%);
   }
   html {
     overflow-x: hidden;
     -webkit-text-size-adjust: 100%;
   }
   body {
-    color: var(--deep);
-    background: linear-gradient(180deg, #fbf7ff, #fff);
+    color: var(--ink);
+    background: var(--bg);
     font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -30,8 +34,23 @@
 }
 
 main {
-  background: linear-gradient(180deg, #fbf7ff, #fff) !important;
-  color: var(--deep) !important;
+  background: var(--bg) !important;
+  color: var(--ink) !important;
+}
+
+@keyframes workdesk-hero-ambient {
+  0%, 100% { opacity: 0.32; transform: scale(1); }
+  50% { opacity: 0.48; transform: scale(1.06); }
+}
+
+.workdesk-hero-glow {
+  animation: workdesk-hero-ambient 14s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workdesk-hero-glow {
+    animation: none;
+  }
 }
 
 .sidebar-container, .nav-wrapper, #old-menu {
@@ -40,8 +59,8 @@ main {
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--soft); }
-::-webkit-scrollbar-thumb { background: var(--purple); border-radius: 999px; }
-::-webkit-scrollbar-thumb:hover { background: var(--purple2); }
+::-webkit-scrollbar-thumb { background: var(--brand-deep); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--brand); }
 
-::selection { background: var(--soft); color: var(--purple); }
-:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+::selection { background: var(--soft); color: var(--brand-deep); }
+:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }

@@ -1,11 +1,13 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useMemo } from "react";
 import Link from "next/link";
 import type { Lead } from "@/lib/leads-store";
 import type { PlanTier } from "@/lib/ai-engine";
 import PaywallLock from "@/components/shared/PaywallLock";
-import { RadiantSpriteIcon } from "@/components/shared/radiant-sprite-icon";
+import { Phone, MessageSquare, Home } from "lucide-react";
+import { SLATE_HORIZON, WORKDESK_INNER_ROW, WORKDESK_PANEL } from "@/lib/slate-horizon-theme";
 
 interface Action {
   id: string;
@@ -109,15 +111,15 @@ function buildActions(leads: Lead[]): Action[] {
   return actions.slice(0, 9);
 }
 
-const TYPE_ICON: Record<Action["type"], string> = {
-  call: "📞",
-  followup: "💬",
-  showing: "🏠",
+const TYPE_ICON: Record<Action["type"], ReactNode> = {
+  call: <Phone className="h-4 w-4" aria-hidden />,
+  followup: <MessageSquare className="h-4 w-4" aria-hidden />,
+  showing: <Home className="h-4 w-4" aria-hidden />,
 };
 
 const URGENCY_STYLE: Record<Action["urgency"], string> = {
-  high: "border-l-[3px] border-cyan-400",
-  medium: "border-l-[3px] border-slate-600",
+  high: "border-l-[3px] border-orange-400",
+  medium: "border-l-[3px] border-slate-300",
 };
 
 const FREE_LIMIT = 3;
@@ -132,94 +134,90 @@ export default function DailyActionPanel({ leads, plan = "free" }: { leads: Lead
 
   return (
     <div
-      className="rounded-2xl border p-5 mb-6"
+      className="rounded-[20px] border p-5 mb-6"
       style={{
-        background: "linear-gradient(135deg, #050F2A 0%, #071028 100%)",
-        borderColor: "#0F2A5A",
-        boxShadow: "0 0 40px rgba(34,211,238,0.06)",
+        background: WORKDESK_PANEL.background,
+        borderColor: WORKDESK_PANEL.borderColor,
+        boxShadow: WORKDESK_PANEL.boxShadow,
       }}
     >
-      {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-start gap-3">
-          <RadiantSpriteIcon icon="tasks" sizeClassName="h-12 w-12" className="mt-0.5" />
-          <div>
-            <h2 className="text-sm font-bold" style={{ color: "#F0F9FF" }}>
-              Dnes urob
-            </h2>
-            <p className="text-sm font-bold" style={{ color: "#64748B" }}>
-              {actions.length} akcií na základe AI prioritizácie
-            </p>
-          </div>
+        <div>
+          <span
+            className="inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+            style={{ background: SLATE_HORIZON.soft, color: SLATE_HORIZON.brandDeep }}
+          >
+            Ranný briefing
+          </span>
+          <h2 className="mt-2 text-lg font-bold" style={{ color: SLATE_HORIZON.deep }}>
+            Čo urobiť pred obedom
+          </h2>
+          <p className="text-sm" style={{ color: SLATE_HORIZON.muted }}>
+            {actions.length} akcií na základe AI prioritizácie
+          </p>
         </div>
-        <span
-          className="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide"
-          style={{ background: "rgba(34,211,238,0.12)", color: "#22D3EE" }}
-        >
-          AI
-        </span>
       </div>
 
-      {/* Actions */}
       <ul className="space-y-2">
         {visibleActions.map((action) => (
           <li
             key={action.id}
-            className={`flex items-center gap-3 rounded-xl px-4 py-3 ${URGENCY_STYLE[action.urgency]}`}
-            style={{ background: "rgba(255,255,255,0.03)" }}
+            className={`flex items-center gap-3 rounded-2xl border px-4 py-3 ${URGENCY_STYLE[action.urgency]}`}
+            style={{
+              background: WORKDESK_INNER_ROW.background,
+              borderColor: WORKDESK_INNER_ROW.borderColor,
+            }}
           >
-            <span className="text-base flex-shrink-0">{TYPE_ICON[action.type]}</span>
+            <span className="flex-shrink-0" style={{ color: SLATE_HORIZON.brandDeep }}>
+              {TYPE_ICON[action.type]}
+            </span>
             <div className="flex-1 min-w-0">
               <Link
                 href={`/leads/${action.leadId}`}
-                className="text-sm font-semibold hover:underline truncate block"
-                style={{ color: "#CBD5E1" }}
+                className="cursor-pointer text-sm font-semibold hover:underline truncate block"
+                style={{ color: SLATE_HORIZON.deep }}
               >
                 {action.leadName}
               </Link>
-              <p className="truncate text-sm" style={{ color: "#64748B" }}>
+              <p className="truncate text-sm" style={{ color: SLATE_HORIZON.muted }}>
                 {action.text}
               </p>
             </div>
-            {/* Quick actions */}
             <div className="flex gap-1.5 flex-shrink-0">
               {action.phone && (
                 <a
                   href={`tel:${action.phone}`}
-                  className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition-all hover:scale-105"
-                  style={{
-                    background: "rgba(34,211,238,0.15)",
-                    color: "#22D3EE",
-                    border: "1px solid rgba(34,211,238,0.3)",
-                  }}
+                  className="cursor-pointer flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-white transition-opacity duration-200 hover:opacity-90"
+                  style={{ background: SLATE_HORIZON.ctaGradient }}
                 >
-                  📞 Zavolať
+                  <Phone className="h-3 w-3" aria-hidden />
+                  Zavolať
                 </a>
               )}
               {action.type === "followup" && (
                 <Link
                   href={`/leads/${action.leadId}`}
-                  className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition-all hover:scale-105"
+                  className="cursor-pointer flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition-colors duration-200 hover:border-blue-200"
                   style={{
-                    background: "rgba(99,102,241,0.15)",
-                    color: "#A5B4FC",
-                    border: "1px solid rgba(99,102,241,0.3)",
+                    background: "#fff",
+                    color: SLATE_HORIZON.deep,
+                    borderColor: SLATE_HORIZON.line,
                   }}
                 >
-                  💬 Správa
+                  SMS
                 </Link>
               )}
               {action.type === "showing" && (
                 <Link
                   href={`/leads/${action.leadId}`}
-                  className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition-all hover:scale-105"
+                  className="cursor-pointer flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition-colors duration-200 hover:border-blue-200"
                   style={{
-                    background: "rgba(16,185,129,0.15)",
-                    color: "#34D399",
-                    border: "1px solid rgba(16,185,129,0.3)",
+                    background: "#fff",
+                    color: SLATE_HORIZON.deep,
+                    borderColor: SLATE_HORIZON.line,
                   }}
                 >
-                  🏠 Detail
+                  Detail
                 </Link>
               )}
             </div>

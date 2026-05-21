@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { RadiantSpriteIcon } from "@/components/shared/radiant-sprite-icon";
+import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
 
 export default function QuickActionsBar() {
   const actions = [
@@ -18,8 +18,8 @@ export default function QuickActionsBar() {
           href={href}
           className="flex items-center justify-center rounded-xl px-3 py-2.5 text-xs md:text-sm font-semibold transition-all active:scale-95 min-h-[40px]"
           style={primary
-            ? { background: "linear-gradient(135deg, #22D3EE, #0EA5E9)", color: "#050914" }
-            : { background: "rgba(34,211,238,0.06)", border: "1px solid rgba(34,211,238,0.12)", color: "#94A3B8" }
+            ? { background: SLATE_HORIZON.ctaGradient, color: "#fff" }
+            : { background: "#fff", border: `1px solid ${SLATE_HORIZON.line}`, color: SLATE_HORIZON.deep }
           }
         >
           {label}
