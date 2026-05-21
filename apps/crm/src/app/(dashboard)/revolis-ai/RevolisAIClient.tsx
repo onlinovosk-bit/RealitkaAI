@@ -10,6 +10,7 @@ import { BriLivePulse } from "@/components/revolis/BriLivePulse";
 import { MarketHeatmap } from "@/components/revolis/MarketHeatmap";
 import type { MarketHotspot } from "@/lib/analytics/market-density";
 import type { AiActivityFeedItem } from "@/lib/app-mode-types";
+import { useLicenseCapabilities } from "@/hooks/useLicenseCapabilities";
 
 export default function RevolisAIClient({
   hotspots,
@@ -70,11 +71,8 @@ export default function RevolisAIClient({
     }
   }, []);
 
-  const canSeeMarketVisionDetails =
-    accountTier === "market_vision" ||
-    accountTier === "enterprise" ||
-    accountTier === "protocol_authority" ||
-    accountTier === "command";
+  const { can } = useLicenseCapabilities(accountTier);
+  const canSeeMarketVisionDetails = can("canUseMarketIntel");
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#030712] text-slate-100">
@@ -148,7 +146,12 @@ export default function RevolisAIClient({
         </div>
 
         <div className="mt-8">
-          <DemandHeatmap demandData={demandData} supplyData={supplyData} detectedGap={detectedGap} />
+          <DemandHeatmap
+            demandData={demandData}
+            supplyData={supplyData}
+            detectedGap={detectedGap}
+            canViewDetails={can("canViewDemandHeatmap")}
+          />
         </div>
 
         <section className="mt-8">
