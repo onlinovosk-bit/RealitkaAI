@@ -67,7 +67,8 @@ export function getUiPermissions(
     tier === "pro" ||
     tier === "market_vision" ||
     tier === "enterprise" ||
-    tier === "protocol_authority";
+    tier === "protocol_authority" ||
+    tier === "command";
 
   return {
     canSeeCompetitionHeatmap: isOwnerProtocol,

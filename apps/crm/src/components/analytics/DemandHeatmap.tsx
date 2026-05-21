@@ -4,10 +4,8 @@ import { useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { SLATE_HORIZON, WORKDESK_CARD } from "@/lib/slate-horizon-theme";
-
-const DEFAULT_MAP_STYLE_URL =
-  process.env.NEXT_PUBLIC_MAP_STYLE_URL ??
-  "https://tiles.openfreemap.org/styles/liberty";
+import { DEFAULT_MAP_STYLE_URL } from "@/lib/license/capability-registry";
+import { PremiumLockedBlur, PremiumLockedOverlay } from "@/components/license/PremiumLockedOverlay";
 
 type FeatureCollection = {
   type: "FeatureCollection";
@@ -22,9 +20,15 @@ type DemandHeatmapProps = {
   demandData: FeatureCollection;
   supplyData: FeatureCollection;
   detectedGap?: string | null;
+  canViewDetails?: boolean;
 };
 
-export default function DemandHeatmap({ demandData, supplyData, detectedGap }: DemandHeatmapProps) {
+export default function DemandHeatmap({
+  demandData,
+  supplyData,
+  detectedGap,
+  canViewDetails = true,
+}: DemandHeatmapProps) {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
 
@@ -99,7 +103,9 @@ export default function DemandHeatmap({ demandData, supplyData, detectedGap }: D
       className="relative h-[600px] w-full overflow-hidden rounded-3xl border"
       style={{ borderColor: WORKDESK_CARD.borderColor, boxShadow: WORKDESK_CARD.boxShadow }}
     >
-      <div ref={mapContainer} className="absolute inset-0" />
+      <PremiumLockedBlur active={!canViewDetails}>
+        <div ref={mapContainer} className="absolute inset-0" />
+      </PremiumLockedBlur>
 
       <div
         className="absolute left-6 top-6 z-10 rounded-3xl border p-6"
@@ -130,6 +136,14 @@ export default function DemandHeatmap({ demandData, supplyData, detectedGap }: D
           </div>
         ) : null}
       </div>
+
+      {!canViewDetails ? (
+        <PremiumLockedOverlay
+          capability="canViewDemandHeatmap"
+          headline="V tejto zóne práve vzniká dopytový pretlak."
+          subline="Chceš vidieť presné ulice a zoznam čakajúcich kupcov? Odomkni Market Vision."
+        />
+      ) : null}
     </div>
   );
 }
