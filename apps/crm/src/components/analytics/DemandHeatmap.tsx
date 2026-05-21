@@ -1,8 +1,13 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import mapboxgl from "mapbox-gl";
-import "mapbox-gl/dist/mapbox-gl.css";
+import maplibregl from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
+import { SLATE_HORIZON, WORKDESK_CARD } from "@/lib/slate-horizon-theme";
+
+const DEFAULT_MAP_STYLE_URL =
+  process.env.NEXT_PUBLIC_MAP_STYLE_URL ??
+  "https://tiles.openfreemap.org/styles/liberty";
 
 type FeatureCollection = {
   type: "FeatureCollection";
@@ -19,23 +24,22 @@ type DemandHeatmapProps = {
   detectedGap?: string | null;
 };
 
-mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
-
 export default function DemandHeatmap({ demandData, supplyData, detectedGap }: DemandHeatmapProps) {
   const mapContainer = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
 
   useEffect(() => {
-    if (!mapContainer.current || mapRef.current || !mapboxgl.accessToken) return;
+    if (!mapContainer.current || mapRef.current) return;
 
-    const map = new mapboxgl.Map({
+    const map = new maplibregl.Map({
       container: mapContainer.current,
-      style: "mapbox://styles/mapbox/dark-v11",
+      style: DEFAULT_MAP_STYLE_URL,
       center: [21.26, 48.99],
       zoom: 12,
       pitch: 45,
     });
     mapRef.current = map;
+    map.addControl(new maplibregl.NavigationControl(), "bottom-right");
 
     map.on("load", () => {
       map.addSource("demand", { type: "geojson", data: demandData });
@@ -84,42 +88,45 @@ export default function DemandHeatmap({ demandData, supplyData, detectedGap }: D
     const map = mapRef.current;
     if (!map || !map.isStyleLoaded()) return;
 
-    const demandSource = map.getSource("demand") as mapboxgl.GeoJSONSource | undefined;
+    const demandSource = map.getSource("demand") as maplibregl.GeoJSONSource | undefined;
     if (demandSource) demandSource.setData(demandData);
-    const supplySource = map.getSource("supply") as mapboxgl.GeoJSONSource | undefined;
+    const supplySource = map.getSource("supply") as maplibregl.GeoJSONSource | undefined;
     if (supplySource) supplySource.setData(supplyData);
   }, [demandData, supplyData]);
 
-  if (!mapboxgl.accessToken) {
-    return (
-      <div className="relative h-[600px] w-full overflow-hidden rounded-[3rem] border border-white/10 bg-black/60 p-6 text-slate-300">
-        <p className="text-sm font-semibold">Mapbox nie je nakonfigurovaný.</p>
-        <p className="mt-2 text-xs text-slate-400">
-          Doplň `NEXT_PUBLIC_MAPBOX_TOKEN`, aby sa zobrazila heatmapa pre L99 Radar príležitostí.
-        </p>
-      </div>
-    );
-  }
-
   return (
-    <div className="relative h-[600px] w-full overflow-hidden rounded-[3rem] border border-white/10">
+    <div
+      className="relative h-[600px] w-full overflow-hidden rounded-3xl border"
+      style={{ borderColor: WORKDESK_CARD.borderColor, boxShadow: WORKDESK_CARD.boxShadow }}
+    >
       <div ref={mapContainer} className="absolute inset-0" />
 
-      <div className="absolute left-6 top-6 z-10 rounded-3xl border border-white/5 bg-black/80 p-6 backdrop-blur-xl">
-        <h4 className="mb-4 text-[10px] font-black uppercase tracking-widest text-white">L99 Radar príležitostí</h4>
+      <div
+        className="absolute left-6 top-6 z-10 rounded-3xl border p-6"
+        style={{
+          background: "rgba(255,255,255,0.94)",
+          borderColor: SLATE_HORIZON.line,
+          boxShadow: WORKDESK_CARD.boxShadow,
+        }}
+      >
+        <h4 className="mb-4 text-[10px] font-black uppercase tracking-widest" style={{ color: SLATE_HORIZON.ink }}>
+          L99 Radar príležitostí
+        </h4>
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <div className="h-3 w-3 animate-pulse rounded-full bg-red-500" />
-            <span className="text-[9px] uppercase text-slate-400">Vysoký dopyt (Kupujúci)</span>
+            <span className="text-[9px] uppercase" style={{ color: SLATE_HORIZON.muted }}>Vysoký dopyt (Kupujúci)</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="h-3 w-3 rounded-full bg-blue-500" />
-            <span className="text-[9px] uppercase text-slate-400">Aktuálna ponuka (Supply)</span>
+            <span className="text-[9px] uppercase" style={{ color: SLATE_HORIZON.muted }}>Aktuálna ponuka (Supply)</span>
           </div>
         </div>
         {detectedGap ? (
-          <div className="mt-4 border-t border-white/5 pt-4">
-            <p className="text-[9px] font-black italic text-yellow-500">DETECTED GAP: {detectedGap}</p>
+          <div className="mt-4 border-t pt-4" style={{ borderColor: SLATE_HORIZON.line }}>
+            <p className="text-[9px] font-black italic" style={{ color: SLATE_HORIZON.amber }}>
+              DETECTED GAP: {detectedGap}
+            </p>
           </div>
         ) : null}
       </div>

@@ -81,7 +81,8 @@ const envSchema = z.object({
   CRON_SECRET: z.string().min(1),
 
   // ── Misc ─────────────────────────────────────────────────────
-  NEXT_PUBLIC_MAPBOX_TOKEN: z.string().optional(),
+  NEXT_PUBLIC_MAP_STYLE_URL: z.string().url().optional(),
+  NEXT_PUBLIC_MAPBOX_TOKEN: z.string().optional(), // deprecated — MapLibre + OpenFreeMap default
   NEXT_PUBLIC_REALTIME_SOCKET: z.string().optional(),
   NEXT_PUBLIC_LANDING_HERO_VARIANT: z.string().default("classic"),
   APP_TRIAL_DAYS: z.coerce.number().default(14),
