@@ -6,7 +6,8 @@ Každý modul musí aktívne riadiť používateľa, nie len zobrazovať dáta.
 |--------|------------|------------------|-------------------------|--------------|-----------------|
 | **Dashboard** | Kde sú peniaze dnes | Owner vie kam ísť prvý | „Zavolaj {lead} — {timing}" | Provízia € z budget | `priority_strip_view`, `next_best_action_click`, `call_now_click` |
 | **Leads** | Kto je pripravený kúpiť | Zníženie response time | „Kto je pripravený kúpiť dnes?" strip | Hot lead count + € | `hot_leads_click`, `lead_priority_open` |
-| **Forecast** | Čo ohrozuje mesiac | Ochrana pipeline hodnoty | „€{gap} riziko — 3 dealy bez follow-up" | Expected pipeline € | `forecast_alert_open` |
+| **Forecast** | Čo ohrozuje mesiac | Ochrana pipeline hodnoty | „€{gap} riziko — dealy bez follow-up" | Expected pipeline € | `forecast_alert_open` |
+| **Pipeline** | Ktorý deal posunúť | Zrýchlenie closingu | „Ktorý deal treba posunúť dnes?" | Weighted pipeline € | `dashboard_module_open` (pipeline_action) |
 
 ## License depth (budúca fáza)
 
@@ -22,5 +23,5 @@ Každý modul musí aktívne riadiť používateľa, nie len zobrazovať dáta.
 - ✅ Dashboard: `AIPriorityStrip`, `NextBestActionPanel`, `executive-signals.ts`
 - ✅ Leads: `LeadsHotStrip`
 - ✅ Forecast: `ForecastRiskStrip`, `forecast-signals.ts`, light `DealHealthPanel`
-- ⏳ Pipeline: narrative defined, UI pending
+- ✅ Pipeline: `PipelineActionStrip`
 - ✅ Telemetry: `ai-telemetry.ts` → `CustomEvent('monitoring')`
