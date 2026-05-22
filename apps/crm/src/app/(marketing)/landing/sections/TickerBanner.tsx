@@ -1,5 +1,7 @@
 "use client";
 
+import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
+
 const ITEMS = [
   "Revolis.AI",
   "Predaj viac",
@@ -24,48 +26,52 @@ export default function TickerBanner() {
     <div
       className="relative overflow-hidden py-3"
       style={{
-        background: "rgba(34,211,238,0.06)",
-        borderTop: "1px solid rgba(34,211,238,0.12)",
-        borderBottom: "1px solid rgba(34,211,238,0.12)",
+        background: SLATE_HORIZON.soft,
+        borderTop: `1px solid ${SLATE_HORIZON.softBorder}`,
+        borderBottom: `1px solid ${SLATE_HORIZON.softBorder}`,
       }}
     >
-      {/* Fade left */}
       <div
         className="pointer-events-none absolute bottom-0 left-0 top-0 z-10 w-20"
         style={{
-          background: "linear-gradient(90deg, #050914 0%, transparent 100%)",
+          background: `linear-gradient(90deg, ${SLATE_HORIZON.bg} 0%, transparent 100%)`,
         }}
       />
-      {/* Fade right */}
       <div
         className="pointer-events-none absolute bottom-0 right-0 top-0 z-10 w-20"
         style={{
-          background: "linear-gradient(270deg, #050914 0%, transparent 100%)",
+          background: `linear-gradient(270deg, ${SLATE_HORIZON.bg} 0%, transparent 100%)`,
         }}
       />
 
-      {/* Ticker track */}
       <div
-        className="flex whitespace-nowrap"
+        className="flex whitespace-nowrap motion-reduce:animate-none"
         style={{ animation: "ticker 30s linear infinite" }}
       >
-        {ITEMS.map((item, i) => (
-          <span key={i} className="inline-flex items-center gap-3 px-2">
-            <span
-              className={`font-semibold tracking-wide ${item.includes("víťazia") ? "text-base" : "text-sm"}`}
-              style={{ color: "#22D3EE" }}
-            >
-              {item}
-            </span>
-            <span style={{ color: "rgba(34,211,238,0.4)" }}>·</span>
+        {[...ITEMS, ...ITEMS].map((item, i) => (
+          <span
+            key={`${item}-${i}`}
+            className="mx-6 text-xs font-semibold uppercase tracking-[0.18em]"
+            style={{ color: SLATE_HORIZON.brandDeep }}
+          >
+            {item}
           </span>
         ))}
       </div>
 
-      <style>{`
+      <style jsx>{`
         @keyframes ticker {
-          0%   { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          div {
+            animation: none !important;
+          }
         }
       `}</style>
     </div>

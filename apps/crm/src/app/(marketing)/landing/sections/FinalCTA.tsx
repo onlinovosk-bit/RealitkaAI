@@ -1,105 +1,131 @@
 'use client';
+
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import CountdownTimer from './CountdownTimer';
 import SpotsCounter from './SpotsCounter';
 import { LANDING_AI_ASSISTANT_NAME } from '@/app/(marketing)/landing/landing-ai-label';
 import { RadiantSpriteIcon } from '@/components/shared/radiant-sprite-icon';
+import { SLATE_HORIZON, WORKDESK_CARD } from '@/lib/slate-horizon-theme';
 
-const cardShell =
-  'flex flex-col rounded-2xl border p-6 text-left h-full ' +
-  'bg-gradient-to-br from-[#0A1628] to-[#0D1F3D] border-slate-700/60';
+const cardStyle = {
+  background: WORKDESK_CARD.background,
+  borderColor: WORKDESK_CARD.borderColor,
+  boxShadow: WORKDESK_CARD.boxShadow,
+};
 
 export default function FinalCTA() {
   return (
-    <section className="relative py-32 overflow-hidden bg-slate-950">
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="w-[800px] h-[800px] rounded-full bg-cyan-500/[0.07] blur-[160px]" />
-        <div className="absolute w-[400px] h-[400px] rounded-full bg-indigo-500/[0.07] blur-[100px]" />
-      </div>
+    <section className="relative overflow-hidden py-24 sm:py-32" style={{ background: SLATE_HORIZON.bg }}>
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{ background: SLATE_HORIZON.heroAmbient }}
+      />
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
           viewport={{ once: true, margin: '-80px' }}
           className="flex flex-col items-center gap-8 text-center"
         >
-          <p className="text-sm text-slate-500 uppercase tracking-[0.3em]">Limitovaná ponuka</p>
+          <p
+            className="text-sm uppercase tracking-[0.3em]"
+            style={{ color: SLATE_HORIZON.muted }}
+          >
+            Limitovaná ponuka
+          </p>
 
           <h2
-            className="text-5xl md:text-6xl font-extrabold text-white leading-tight"
-            style={{ fontFamily: 'var(--font-syne)' }}
+            className="text-4xl font-extrabold leading-tight md:text-5xl lg:text-6xl"
+            style={{ color: SLATE_HORIZON.ink }}
           >
             Váš AI obchodný pomocník.
             <br />
-            <span className="bg-gradient-to-r from-cyan-300 to-indigo-400 bg-clip-text text-transparent">
-              Za cenu obeda.
-            </span>
+            <span style={{ color: SLATE_HORIZON.brandDeep }}>Za cenu obeda.</span>
           </h2>
 
           <div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-3 lg:items-stretch">
-            {/* Starter */}
-            <div className={`${cardShell} lg:order-1`}>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Starter</p>
-              <div className="flex flex-wrap items-end gap-x-2 gap-y-1 mb-2">
-                <span className="text-3xl font-extrabold text-white" style={{ fontFamily: 'var(--font-syne)' }}>
+            <div className="flex h-full flex-col rounded-2xl border p-6 text-left lg:order-1" style={cardStyle}>
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em]" style={{ color: SLATE_HORIZON.muted }}>
+                Starter
+              </p>
+              <div className="mb-2 flex flex-wrap items-end gap-x-2 gap-y-1">
+                <span className="text-3xl font-extrabold" style={{ color: SLATE_HORIZON.ink }}>
                   €29
                 </span>
-                <span className="text-slate-400 text-sm mb-0.5">/mesiac za jedného makléra</span>
+                <span className="mb-0.5 text-sm" style={{ color: SLATE_HORIZON.muted }}>
+                  /mesiac za jedného makléra
+                </span>
               </div>
-              <p className="text-xs text-slate-500 mb-5">Vstup do Revolis — vhodné na začiatok a menšie objemy.</p>
-              <ul className="space-y-2.5 mb-6 flex-1">
+              <p className="mb-5 text-xs" style={{ color: SLATE_HORIZON.muted }}>
+                Vstup do Revolis — vhodné na začiatok a menšie objemy.
+              </p>
+              <ul className="mb-6 flex-1 space-y-2.5">
                 {[
                   'Prehľad dopytov a klientov na jednom mieste',
                   'Základné AI návrhy ďalších krokov',
                   'Jedna licencia · email podpora',
                 ].map((item) => (
-                  <li key={item} className="flex items-start gap-2.5 text-sm text-slate-300">
-                    <span className="mt-0.5 text-cyan-400/80 flex-shrink-0">•</span>
+                  <li key={item} className="flex items-start gap-2.5 text-sm" style={{ color: SLATE_HORIZON.deep }}>
+                    <span className="mt-0.5 flex-shrink-0" style={{ color: SLATE_HORIZON.brand }}>
+                      •
+                    </span>
                     {item}
                   </li>
                 ))}
               </ul>
               <Link
                 href="/register"
-                className="mt-auto block w-full rounded-full border border-cyan-500/40 bg-slate-900/80 py-3.5 text-center text-sm font-bold text-cyan-200 transition-all hover:border-cyan-400/60 hover:bg-slate-800/90"
+                className={`mt-auto block w-full cursor-pointer rounded-full border py-3.5 text-center text-sm font-bold transition-all duration-200 hover:opacity-90 ${SLATE_HORIZON.focusRing}`}
+                style={{
+                  borderColor: SLATE_HORIZON.softBorder,
+                  color: SLATE_HORIZON.brandDeep,
+                  background: SLATE_HORIZON.soft,
+                }}
               >
                 Začať so Starter
               </Link>
             </div>
 
-            {/* Pro — highlighted */}
             <div
-              className={
-                'relative flex flex-col rounded-2xl border p-6 pt-7 text-left h-full lg:order-2 ' +
-                'border-cyan-400/50 bg-gradient-to-br from-[#0A1628] to-[#0D1F3D] ' +
-                'shadow-[0_0_60px_rgba(34,211,238,0.12)] ring-2 ring-cyan-400/30 lg:scale-[1.02] lg:z-10'
-              }
+              className="relative flex h-full flex-col rounded-2xl border p-6 pt-7 text-left lg:z-10 lg:order-2 lg:scale-[1.02]"
+              style={{
+                ...cardStyle,
+                borderColor: SLATE_HORIZON.brand,
+                boxShadow: '0 12px 48px rgba(37,99,235,0.14)',
+              }}
             >
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-cyan-400 px-4 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-950">
+              <div
+                className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-4 py-1 text-[11px] font-bold uppercase tracking-wider text-white"
+                style={{ background: SLATE_HORIZON.ctaGradient }}
+              >
                 Odporúčané
               </div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400/90 mb-2">Pro</p>
-              <div className="flex flex-wrap items-end gap-x-3 gap-y-1 mb-1">
-                <span className="text-4xl font-extrabold text-white" style={{ fontFamily: 'var(--font-syne)' }}>
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em]" style={{ color: SLATE_HORIZON.brandDeep }}>
+                Pro
+              </p>
+              <div className="mb-1 flex flex-wrap items-end gap-x-3 gap-y-1">
+                <span className="text-4xl font-extrabold" style={{ color: SLATE_HORIZON.ink }}>
                   €99
                 </span>
-                <span className="text-slate-400 text-base mb-1">
-                  /mesiac <span className="text-slate-300">za jedného makléra</span>
+                <span className="mb-1 text-base" style={{ color: SLATE_HORIZON.muted }}>
+                  /mesiac <span style={{ color: SLATE_HORIZON.deep }}>za jedného makléra</span>
                 </span>
-                <span className="ml-auto text-slate-500 line-through text-lg mb-1">€198</span>
+                <span className="mb-1 ml-auto text-lg line-through" style={{ color: SLATE_HORIZON.muted }}>
+                  €198
+                </span>
               </div>
-              <p className="text-xs text-cyan-400 font-semibold mb-4 uppercase tracking-wider">
+              <p className="mb-4 text-xs font-semibold uppercase tracking-wider" style={{ color: SLATE_HORIZON.brandDeep }}>
                 Zakladateľská cena za makléra · Prvých 20 kancelárií · Potom €198/mes za makléra
               </p>
 
               <div
-                className="rounded-xl px-4 py-3 mb-5 flex items-center gap-3"
-                style={{ background: 'rgba(34,211,238,0.05)', border: '1px solid rgba(34,211,238,0.12)' }}
+                className="mb-5 flex items-center gap-3 rounded-xl border px-4 py-3"
+                style={{ background: SLATE_HORIZON.soft, borderColor: SLATE_HORIZON.softBorder }}
               >
-                <RadiantSpriteIcon icon="tasks" sizeClassName="h-5 w-5" className="rounded-md border-cyan-400/20 shadow-none" />
+                <RadiantSpriteIcon icon="tasks" sizeClassName="h-5 w-5" className="rounded-md shadow-none" />
                 <CountdownTimer />
               </div>
 
@@ -107,7 +133,7 @@ export default function FinalCTA() {
                 <SpotsCounter />
               </div>
 
-              <ul className="space-y-2.5 mb-6 flex-1">
+              <ul className="mb-6 flex-1 space-y-2.5">
                 {[
                   'AI prioritizácia príležitostí každý deň',
                   `${LANDING_AI_ASSISTANT_NAME} — váš AI obchodný pomocník 24/7`,
@@ -116,8 +142,10 @@ export default function FinalCTA() {
                   'Pro: každý maklér má vlastnú licenciu — 99 €/mes (nie zdieľaný účet pre celý tím)',
                   '30-dňová záruka vrátenia peňazí',
                 ].map((item) => (
-                  <li key={item} className="flex items-start gap-2.5 text-sm text-slate-300">
-                    <span className="mt-0.5 text-cyan-400 flex-shrink-0">•</span>
+                  <li key={item} className="flex items-start gap-2.5 text-sm" style={{ color: SLATE_HORIZON.deep }}>
+                    <span className="mt-0.5 flex-shrink-0" style={{ color: SLATE_HORIZON.brand }}>
+                      •
+                    </span>
                     {item}
                   </li>
                 ))}
@@ -125,33 +153,41 @@ export default function FinalCTA() {
 
               <Link
                 href="/register"
-                className="mt-auto block w-full rounded-full py-4 text-center text-base font-bold text-slate-950 transition-all hover:scale-[1.02] hover:brightness-110 active:scale-95"
-                style={{
-                  background: 'linear-gradient(135deg, #22D3EE 0%, #818CF8 100%)',
-                  boxShadow: '0 0 40px rgba(34,211,238,0.4)',
-                }}
+                className={`mt-auto block w-full cursor-pointer rounded-full py-4 text-center text-base font-bold text-white transition-all duration-200 hover:opacity-90 active:scale-[0.98] ${SLATE_HORIZON.focusRing}`}
+                style={{ background: SLATE_HORIZON.ctaGradient }}
               >
                 Zabezpečiť Pro za 99 €/mes za makléra
               </Link>
-              <p className="mt-3 text-center text-xs text-slate-600">
+              <p className="mt-3 text-center text-xs" style={{ color: SLATE_HORIZON.muted }}>
                 Bez kreditnej karty · Zrušenie kedykoľvek · GDPR · vyrobené na Slovensku
               </p>
             </div>
 
-            {/* Enterprise */}
-            <div className={`${cardShell} lg:order-3 border-indigo-500/30`}>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-indigo-400/90 mb-2">Enterprise — pre majiteľov kancelárií</p>
-              <div className="flex flex-wrap items-end gap-x-2 gap-y-1 mb-2">
-                <span className="text-3xl font-extrabold text-white" style={{ fontFamily: 'var(--font-syne)' }}>
+            <div
+              className="flex h-full flex-col rounded-2xl border p-6 text-left lg:order-3"
+              style={{ ...cardStyle, borderColor: SLATE_HORIZON.softBorder }}
+            >
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em]" style={{ color: SLATE_HORIZON.brandNavy }}>
+                Enterprise — pre majiteľov kancelárií
+              </p>
+              <div className="mb-2 flex flex-wrap items-end gap-x-2 gap-y-1">
+                <span className="text-3xl font-extrabold" style={{ color: SLATE_HORIZON.ink }}>
                   399 €
                 </span>
-                <span className="text-slate-400 text-sm mb-0.5">/mes</span>
+                <span className="mb-0.5 text-sm" style={{ color: SLATE_HORIZON.muted }}>
+                  /mes
+                </span>
               </div>
-              <p className="text-sm text-slate-300 mb-5 border-l-2 border-amber-400/40 pl-3">
-                <span className="font-semibold text-amber-200/90">5 Pro licencií v cene</span> (hodnota 495 €) +
-                exkluzívne nástroje pre majiteľa kancelárie.
+              <p
+                className="mb-5 border-l-2 pl-3 text-sm"
+                style={{ borderColor: SLATE_HORIZON.amber, color: SLATE_HORIZON.deep }}
+              >
+                <span className="font-semibold" style={{ color: SLATE_HORIZON.amber }}>
+                  5 Pro licencií v cene
+                </span>{' '}
+                (hodnota 495 €) + exkluzívne nástroje pre majiteľa kancelárie.
               </p>
-              <ul className="space-y-2.5 mb-6 flex-1">
+              <ul className="mb-6 flex-1 space-y-2.5">
                 {[
                   '5 Pro licencií pre maklérov (hodnota 495 €/mes)',
                   'Prehľad celej kancelárie v reálnom čase',
@@ -159,21 +195,29 @@ export default function FinalCTA() {
                   'Upozornenie keď konkurencia kontaktuje tvojho klienta',
                   'Dedikovaný správca účtu · SLA 1h',
                 ].map((item) => (
-                  <li key={item} className="flex items-start gap-2.5 text-sm text-slate-300">
-                    <span className="mt-0.5 text-indigo-400/90 flex-shrink-0">•</span>
+                  <li key={item} className="flex items-start gap-2.5 text-sm" style={{ color: SLATE_HORIZON.deep }}>
+                    <span className="mt-0.5 flex-shrink-0" style={{ color: SLATE_HORIZON.brandNavy }}>
+                      •
+                    </span>
                     {item}
                   </li>
                 ))}
               </ul>
               <Link
                 href="/support"
-                className="mt-auto block w-full rounded-full border border-indigo-500/50 bg-indigo-950/40 py-3.5 text-center text-sm font-bold text-indigo-100 transition-all hover:border-indigo-400/70 hover:bg-indigo-950/70"
+                className={`mt-auto block w-full cursor-pointer rounded-full border py-3.5 text-center text-sm font-bold transition-all duration-200 hover:opacity-90 ${SLATE_HORIZON.focusRing}`}
+                style={{
+                  borderColor: SLATE_HORIZON.softBorder,
+                  color: SLATE_HORIZON.brandDeep,
+                  background: SLATE_HORIZON.soft,
+                }}
               >
                 Enterprise — kontaktovať predaj
               </Link>
               <a
                 href="tel:+421948444014"
-                className="block text-center text-xs text-slate-500 transition-colors hover:text-cyan-400 mt-2"
+                className="mt-2 block cursor-pointer text-center text-xs transition-colors duration-200 hover:opacity-80"
+                style={{ color: SLATE_HORIZON.muted }}
               >
                 +421 948 444 014
               </a>
@@ -181,34 +225,34 @@ export default function FinalCTA() {
           </div>
 
           <div className="flex flex-col items-center gap-2 text-center">
-            <p
-              className="text-2xl font-extrabold tracking-tight"
-              style={{ fontFamily: 'var(--font-syne)', color: '#F0F9FF' }}
-            >
+            <p className="text-2xl font-extrabold tracking-tight" style={{ color: SLATE_HORIZON.ink }}>
               Predaj viac · Pracuj menej
             </p>
-            <p className="text-base font-semibold" style={{ color: '#22D3EE' }}>
+            <p className="text-base font-semibold" style={{ color: SLATE_HORIZON.brandDeep }}>
               Realitky ktoré víťazia, používajú Revolis.AI
             </p>
-            <p className="text-sm mt-1 font-bold italic" style={{ color: '#64748B' }}>
+            <p className="mt-1 text-sm font-bold italic" style={{ color: SLATE_HORIZON.muted }}>
               Revolis.AI nestojí ani zlomok jedného strateného obchodu.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-3 text-[11px] text-slate-400 max-w-2xl">
-            <Link href="/privacy-policy" className="hover:text-cyan-300 transition-colors">
+          <div
+            className="flex max-w-2xl flex-wrap items-center justify-center gap-3 text-[11px]"
+            style={{ color: SLATE_HORIZON.muted }}
+          >
+            <Link href="/privacy-policy" className="cursor-pointer transition-colors duration-200 hover:text-blue-700">
               Zásady ochrany osobných údajov
             </Link>
             <span>·</span>
-            <Link href="/terms" className="hover:text-cyan-300 transition-colors">
+            <Link href="/terms" className="cursor-pointer transition-colors duration-200 hover:text-blue-700">
               VOP / podmienky
             </Link>
             <span>·</span>
-            <Link href="/security" className="hover:text-cyan-300 transition-colors">
+            <Link href="/security" className="cursor-pointer transition-colors duration-200 hover:text-blue-700">
               Bezpečnosť a súlad
             </Link>
             <span>·</span>
-            <Link href="/trust-center" className="hover:text-cyan-300 transition-colors">
+            <Link href="/trust-center" className="cursor-pointer transition-colors duration-200 hover:text-blue-700">
               Centrum dôvery
             </Link>
           </div>
@@ -218,20 +262,28 @@ export default function FinalCTA() {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.2 }}
             viewport={{ once: true }}
-            className="flex items-center gap-3 rounded-2xl border px-6 py-4 max-w-md w-full"
+            className="flex w-full max-w-md items-center gap-3 rounded-2xl border px-6 py-4"
             style={{
-              background: 'rgba(16,185,129,0.05)',
-              borderColor: 'rgba(16,185,129,0.2)',
+              background: '#ECFDF5',
+              borderColor: '#A7F3D0',
             }}
           >
-            <RadiantSpriteIcon icon="billing" sizeClassName="h-8 w-8" className="rounded-lg border-cyan-400/20 shadow-none" />
+            <RadiantSpriteIcon icon="billing" sizeClassName="h-8 w-8" className="rounded-lg shadow-none" />
             <div className="text-left">
-              <p className="text-sm font-semibold text-emerald-400">30-dňová záruka vrátenia peňazí</p>
-              <p className="text-xs text-slate-500 mt-0.5">Nie ste spokojní? Vrátime každý cent. Bez otázok.</p>
+              <p className="text-sm font-semibold" style={{ color: SLATE_HORIZON.greenDark }}>
+                30-dňová záruka vrátenia peňazí
+              </p>
+              <p className="mt-0.5 text-xs" style={{ color: SLATE_HORIZON.muted }}>
+                Nie ste spokojní? Vrátime každý cent. Bez otázok.
+              </p>
             </div>
           </motion.div>
 
-          <Link href="/login" className="text-sm text-slate-500 hover:text-slate-300 transition-colors">
+          <Link
+            href="/login"
+            className="cursor-pointer text-sm transition-colors duration-200 hover:opacity-80"
+            style={{ color: SLATE_HORIZON.muted }}
+          >
             Už máte účet | Prihlásiť sa
           </Link>
         </motion.div>
