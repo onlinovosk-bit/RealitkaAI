@@ -5,6 +5,7 @@ import { Lock } from "lucide-react";
 import { trackUpgradeIntent } from "@/lib/license/upgrade-analytics";
 import type { LicenseCapability } from "@/lib/license/types";
 import { getCapabilityDefinition, LICENSE_PROGRAMS } from "@/lib/license/capability-registry";
+import { SLATE_HORIZON, WORKDESK_CARD } from "@/lib/slate-horizon-theme";
 
 type PremiumLockedOverlayProps = {
   capability: LicenseCapability;
@@ -25,6 +26,7 @@ export function PremiumLockedOverlay({
 }: PremiumLockedOverlayProps) {
   const def = getCapabilityDefinition(capability);
   const program = LICENSE_PROGRAMS[def.upgradeProgram];
+  const regionLabel = `Premium funkcia — ${program.displayName}`;
 
   function handleView() {
     void trackUpgradeIntent(def.revenueTrigger, {
@@ -44,7 +46,9 @@ export function PremiumLockedOverlay({
 
   return (
     <div
-      className="absolute inset-0 z-30 flex items-center justify-center p-6"
+      role="region"
+      aria-label={regionLabel}
+      className="absolute inset-0 z-30 flex items-center justify-center p-6 motion-reduce:backdrop-blur-none"
       style={{ background: "rgba(248,250,252,0.72)", backdropFilter: "blur(3px)" }}
       onMouseEnter={handleView}
     >
@@ -71,24 +75,27 @@ export function PremiumLockedOverlay({
         <a
           href="/billing"
           onClick={handleCtaClick}
-          className="mt-4 inline-flex rounded-xl px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-white transition hover:opacity-90"
+          className={`mt-4 inline-flex min-h-[44px] cursor-pointer items-center rounded-xl px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-white transition-opacity duration-200 hover:opacity-90 ${SLATE_HORIZON.focusRing}`}
           style={{ background: SLATE_HORIZON.brandDeep }}
         >
           {ctaLabel ?? def.upgradeCta}
         </a>
         <a
           href="/porovnanie-programov"
-          className="mt-2 block text-[10px] font-semibold hover:opacity-80"
+          className={`mt-2 block cursor-pointer text-[10px] font-semibold transition-opacity duration-200 hover:opacity-80 ${SLATE_HORIZON.focusRing}`}
           style={{ color: SLATE_HORIZON.brandDeep }}
         >
           Porovnať programy →
         </a>
       </div>
-      <span className="sr-only">{blurClassName}</span>
     </div>
   );
 }
 
 export function PremiumLockedBlur({ active, children }: { active: boolean; children: ReactNode }) {
-  return <div className={active ? "blur-[5px] saturate-50" : undefined}>{children}</div>;
+  return (
+    <div className={active ? "motion-reduce:opacity-60 motion-reduce:blur-none blur-[5px] saturate-50" : undefined}>
+      {children}
+    </div>
+  );
 }
