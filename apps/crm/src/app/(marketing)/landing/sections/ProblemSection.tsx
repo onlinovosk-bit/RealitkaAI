@@ -1,21 +1,23 @@
 'use client';
+
 import { motion } from 'framer-motion';
+import { SLATE_HORIZON, SLATE_HORIZON_BADGES, WORKDESK_CARD } from '@/lib/slate-horizon-theme';
 
 export default function ProblemSection() {
   return (
-    <section className="bg-black py-28">
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 text-center">
+    <section className="py-24 sm:py-28" style={{ background: SLATE_HORIZON.bg }}>
+      <div className="mx-auto max-w-4xl px-4 text-center sm:px-6">
         <motion.h2
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
           viewport={{ once: true, margin: '-100px' }}
-          className="text-4xl sm:text-5xl font-extrabold text-slate-50 leading-tight mb-8"
-          style={{ fontFamily: 'var(--font-syne)' }}
+          className="mb-8 text-4xl font-extrabold leading-tight sm:text-5xl"
+          style={{ color: SLATE_HORIZON.ink }}
         >
           Strácaš klientov,
           <br />
-          <span className="text-slate-400">pretože nemáš dostatok času a občas nemáš prehľad.</span>
+          <span style={{ color: SLATE_HORIZON.muted }}>pretože nemáš dostatok času a občas nemáš prehľad.</span>
         </motion.h2>
 
         <motion.p
@@ -23,14 +25,15 @@ export default function ProblemSection() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: 'easeOut', delay: 0.2 }}
           viewport={{ once: true, margin: '-100px' }}
-          className="text-lg text-slate-400 max-w-2xl mx-auto mb-16"
+          className="mx-auto mb-16 max-w-2xl text-lg"
+          style={{ color: SLATE_HORIZON.deep }}
         >
-          Nové dopyty pribúdajú. Času je menej. Najdôležitejší klient ostane zakopaný v správach a portáloch
-          — a odíde ku konkurencii.
+          Nové dopyty pribúdajú. Času je menej. Najdôležitejší klient ostane zakopaný v správach a portáloch — a odíde
+          ku konkurencii.
         </motion.p>
 
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-3 gap-6"
+          className="grid grid-cols-1 gap-6 md:grid-cols-3"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: '-80px' }}
@@ -49,15 +52,19 @@ export default function ProblemSection() {
                 hidden: { opacity: 0, y: 30 },
                 visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } },
               }}
-              className="rounded-2xl border border-red-500/20 bg-red-500/5 p-6 text-center"
+              className="rounded-2xl border p-6 text-center"
+              style={{
+                background: SLATE_HORIZON_BADGES.hot.bg,
+                borderColor: SLATE_HORIZON_BADGES.hot.border,
+                boxShadow: WORKDESK_CARD.boxShadow,
+              }}
             >
-              <div
-                className="text-4xl font-extrabold text-red-400 mb-2"
-                style={{ fontFamily: 'var(--font-syne)' }}
-              >
+              <div className="mb-2 text-4xl font-extrabold" style={{ color: SLATE_HORIZON.danger }}>
                 {item.stat}
               </div>
-              <p className="text-sm text-slate-500">{item.desc}</p>
+              <p className="text-sm" style={{ color: SLATE_HORIZON.deep }}>
+                {item.desc}
+              </p>
             </motion.div>
           ))}
         </motion.div>
