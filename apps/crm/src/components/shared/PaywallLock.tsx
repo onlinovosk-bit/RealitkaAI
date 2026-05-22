@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { SLATE_HORIZON, WORKDESK_LOCKED } from "@/lib/slate-horizon-theme";
+import { trackRevenueTelemetry } from "@/lib/analytics/revenue-telemetry";
 
 interface PaywallLockProps {
   lockedCount: number;
@@ -48,6 +49,13 @@ export default function PaywallLock({
         </p>
         <Link
           href="/billing"
+          onClick={() => {
+            void trackRevenueTelemetry("upgrade_cta", {
+              source: "paywall_lock",
+              lockedCount,
+              feature,
+            });
+          }}
           className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold text-white transition-all hover:scale-[1.02] hover:opacity-95"
           style={{
             background: SLATE_HORIZON.ctaGradient,
