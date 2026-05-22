@@ -153,7 +153,7 @@ export default function DailyActionPanel({ leads, plan = "free" }: { leads: Lead
             Čo urobiť pred obedom
           </h2>
           <p className="text-sm" style={{ color: SLATE_HORIZON.muted }}>
-            {actions.length} akcií na základe AI prioritizácie
+            {actions.length} akcií · ďalší krok s najvyšším dopadom na províziu
           </p>
         </div>
       </div>
@@ -187,7 +187,7 @@ export default function DailyActionPanel({ leads, plan = "free" }: { leads: Lead
               {action.phone && (
                 <a
                   href={`tel:${action.phone}`}
-                  className="cursor-pointer flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-white transition-opacity duration-200 hover:opacity-90"
+                  className={`flex min-h-11 cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-white transition-opacity duration-200 hover:opacity-90 ${SLATE_HORIZON.focusRing}`}
                   style={{ background: SLATE_HORIZON.ctaGradient }}
                 >
                   <Phone className="h-3 w-3" aria-hidden />
@@ -231,7 +231,7 @@ export default function DailyActionPanel({ leads, plan = "free" }: { leads: Lead
             lockedCount={lockedCount}
             feature="príležitostí"
             titleOverride="+8 ďalších príležitostí"
-            ctaLabel="✦ Odomknúť Protocol Authority od 449 € mesačne"
+            ctaLabel="Odomknúť Protocol Authority od 449 € mesačne"
           />
         </div>
       )}

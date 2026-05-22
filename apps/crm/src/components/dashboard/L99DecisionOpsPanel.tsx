@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { SLATE_HORIZON, WORKDESK_INNER_ROW, WORKDESK_PANEL } from "@/lib/slate-horizon-theme";
+import { SLATE_HORIZON, SLATE_HORIZON_BADGES, WORKDESK_INNER_ROW, WORKDESK_PANEL } from "@/lib/slate-horizon-theme";
 
 type LeadOption = {
   id: string;
@@ -69,12 +69,22 @@ export default function L99DecisionOpsPanel({ leads }: Props) {
     >
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em]" style={{ color: SLATE_HORIZON.brandDeep }}>
-            L99 Decision Ops
-          </p>
-          <h3 className="mt-1 text-base font-bold" style={{ color: SLATE_HORIZON.ink }}>
+          <span
+            className="inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+            style={{
+              background: SLATE_HORIZON_BADGES.protocol.bg,
+              color: SLATE_HORIZON_BADGES.protocol.color,
+              border: `1px solid ${SLATE_HORIZON_BADGES.protocol.border}`,
+            }}
+          >
+            AI Decision Ops
+          </span>
+          <h3 className="mt-2 text-base font-bold" style={{ color: SLATE_HORIZON.ink }}>
             Kde sú peniaze · Kedy podpíše · Zachráň províziu
           </h3>
+          <p className="mt-1 text-xs" style={{ color: SLATE_HORIZON.muted }}>
+            Operácie s priamym dopadom na inkaso a pipeline.
+          </p>
         </div>
       </div>
 
@@ -118,7 +128,7 @@ export default function L99DecisionOpsPanel({ leads }: Props) {
             key={action}
             disabled={disabled}
             onClick={() => void run(action)}
-            className="rounded-lg border px-3 py-2 text-xs font-semibold transition hover:border-blue-200 disabled:opacity-60"
+            className={`min-h-11 rounded-lg border px-3 py-2 text-xs font-semibold transition hover:border-blue-200 disabled:opacity-60 ${SLATE_HORIZON.focusRing}`}
             style={{
               borderColor: WORKDESK_INNER_ROW.borderColor,
               background: WORKDESK_INNER_ROW.background,

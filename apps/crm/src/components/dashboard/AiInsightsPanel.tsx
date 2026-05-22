@@ -5,7 +5,7 @@ import PaywallLock from "@/components/shared/PaywallLock";
 import Link from "next/link";
 import { useState } from "react";
 import { AlertTriangle, Flame, Zap } from "lucide-react";
-import { SLATE_HORIZON, WORKDESK_INNER_ROW, WORKDESK_PANEL } from "@/lib/slate-horizon-theme";
+import { SLATE_HORIZON, SLATE_HORIZON_BADGES, WORKDESK_INNER_ROW, WORKDESK_PANEL } from "@/lib/slate-horizon-theme";
 
 interface AiInsightsPanelProps {
   leads: Lead[];
@@ -89,11 +89,21 @@ export default function AiInsightsPanel({
     >
       <div className="mb-4 flex items-center justify-between">
         <div>
+          <span
+            className="mb-2 inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+            style={{
+              background: SLATE_HORIZON_BADGES.new.bg,
+              color: SLATE_HORIZON_BADGES.new.color,
+              border: `1px solid ${SLATE_HORIZON_BADGES.new.border}`,
+            }}
+          >
+            AI Operating Signal
+          </span>
           <h3 className="text-base font-semibold" style={{ color: SLATE_HORIZON.ink }}>
-            AI Odporúčania
+            Kde unikajú peniaze · Čo urobiť teraz
           </h3>
           <p className="text-xs" style={{ color: SLATE_HORIZON.muted }}>
-            Denné odporúčania na základe tvojich dát
+            Denné odporúčania s dopadom na províziu a follow-up
           </p>
         </div>
         {plan === "free" && (
@@ -211,7 +221,7 @@ export default function AiInsightsPanel({
             lockedCount={locked.length}
             feature="príležitostí"
             titleOverride="+6 ďalších príležitostí"
-            ctaLabel="✦ Odomknúť Market Vision od 199 € mesačne"
+            ctaLabel="Odomknúť Market Vision od 199 € mesačne"
           />
         )}
       </div>
