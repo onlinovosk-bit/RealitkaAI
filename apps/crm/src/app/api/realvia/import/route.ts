@@ -1,15 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { validateRequest } from '@/lib/realvia/validate';
+import {
+  realviaError,
+  realviaErrorFromValidation,
+  realviaSuccess,
+} from '@/lib/realvia/responses';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  return NextResponse.json({
-    ok: true,
-    service: 'realvia-import',
-    timestamp: new Date().toISOString(),
-  });
+  return realviaSuccess('realvia-import endpoint ready');
 }
 
 export async function POST(req: NextRequest) {
@@ -17,24 +18,13 @@ export async function POST(req: NextRequest) {
     const validation = validateRequest(req);
 
     if (!validation.valid) {
-      return NextResponse.json(
-        { error: 'Forbidden', details: validation.errors },
-        { status: 403 },
-      );
+      return realviaErrorFromValidation(validation.errors, 403);
     }
 
     const contentType = req.headers.get('content-type');
 
     if (!contentType?.includes('xml')) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: 'Invalid content type',
-        },
-        {
-          status: 400,
-        },
-      );
+      return realviaError('Invalid content type', 400);
     }
 
     const xml = await req.text();
@@ -42,20 +32,9 @@ export async function POST(req: NextRequest) {
     console.log('REALVIA IMPORT');
     console.log(xml.slice(0, 1000));
 
-    return NextResponse.json({
-      ok: true,
-      received: true,
-    });
+    return realviaSuccess('Export received');
   } catch (error) {
     console.error(error);
-
-    return NextResponse.json(
-      {
-        ok: false,
-      },
-      {
-        status: 500,
-      },
-    );
+    return realviaError('Internal server error', 500);
   }
 }
