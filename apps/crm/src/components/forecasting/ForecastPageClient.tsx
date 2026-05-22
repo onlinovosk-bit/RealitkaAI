@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import ModuleShell from "@/components/shared/module-shell";
 import EmptyState from "@/components/shared/empty-state";
 import FeatureGateBanner from "@/components/shared/feature-gate-banner";
@@ -12,6 +13,7 @@ import DealHealthPanel from "@/components/forecasting/deal-health-panel";
 import ForecastRiskStrip from "@/components/forecasting/ForecastRiskStrip";
 import { PremiumLockedBlur, PremiumLockedOverlay } from "@/components/license/PremiumLockedOverlay";
 import { useLicenseCapabilities } from "@/hooks/useLicenseCapabilities";
+import { trackRevenueTelemetry } from "@/lib/analytics/revenue-telemetry";
 import type { DealHealthIssue } from "@/lib/forecasting-store";
 
 type ForecastPageClientProps = {
@@ -65,6 +67,13 @@ type ForecastPageClientProps = {
 export default function ForecastPageClient({ accountTier, data }: ForecastPageClientProps) {
   const { can } = useLicenseCapabilities(accountTier);
   const canViewForecast = can("canViewForecast");
+
+  useEffect(() => {
+    void trackRevenueTelemetry("forecast_open", {
+      canViewForecast,
+      accountTier: accountTier ?? "unknown",
+    });
+  }, [canViewForecast, accountTier]);
 
   const cards = [
     {

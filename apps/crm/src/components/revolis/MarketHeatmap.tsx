@@ -1,9 +1,10 @@
 "use client";
 
-import { Fragment } from "react";
+import { Fragment, useEffect } from "react";
 import { MapPin } from "lucide-react";
 
 import type { MarketHotspot } from "@/lib/analytics/market-density";
+import { trackRevenueTelemetry } from "@/lib/analytics/revenue-telemetry";
 import { SLATE_HORIZON, WORKDESK_CARD } from "@/lib/slate-horizon-theme";
 import { PremiumLockedBlur, PremiumLockedOverlay } from "@/components/license/PremiumLockedOverlay";
 
@@ -14,6 +15,16 @@ export function MarketHeatmap({
   hotspots: MarketHotspot[];
   canSeeDetails?: boolean;
 }) {
+  useEffect(() => {
+    if (hotspots.length === 0) return;
+    void trackRevenueTelemetry("market_signal", {
+      hotspotCount: hotspots.length,
+      canSeeDetails,
+      leadSignals: hotspots.filter((h) => h.kind === "lead").length,
+      listingSignals: hotspots.filter((h) => h.kind === "property").length,
+    });
+  }, [hotspots, canSeeDetails]);
+
   return (
     <div
       className="relative min-h-[300px] w-full overflow-hidden rounded-2xl border"
