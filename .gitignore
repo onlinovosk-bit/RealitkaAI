@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# --- Local / agent noise (do not commit) ---
+.claude-flow/
+.claude/skills/
+**/__pycache__/
+apps/crm/error-capture.log
+apps/crm/tmp-*.json
+tmp-*.md
+apps/crm/design-handoff-zips/
