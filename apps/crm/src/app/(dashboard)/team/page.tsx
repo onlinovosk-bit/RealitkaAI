@@ -29,6 +29,9 @@ import {
   getVisibleTeamsForProfile,
 } from "@/lib/team-visibility";
 import { getFeatureGateState } from "@/lib/feature-gating";
+import { hasCapability, normalizeLicenseTier } from "@/lib/license/capability-registry";
+import { TeamPressureGate } from "@/components/team/TeamPressureGate";
+import { resolveTeamAccountTier } from "@/components/team/resolve-team-account-tier";
 
 function parseAnalyticsPeriod(raw: string | undefined): AnalyticsPeriod {
   if (raw === "7d" || raw === "30d") return raw;
@@ -42,6 +45,13 @@ export default async function TeamPage({
 }) {
   const params = await searchParams;
   const currentProfile = await getCurrentProfile();
+  const accountTier = resolveTeamAccountTier(
+    currentProfile as { account_tier?: string | null; ui_role?: string | null; role?: string | null } | null,
+  );
+  const canAccessTeamPressure = hasCapability(
+    normalizeLicenseTier(accountTier),
+    "canAccessTeamPressure",
+  );
 
   const gate = await getFeatureGateState("teamManagement");
 
@@ -148,14 +158,16 @@ export default async function TeamPage({
     >
       <FeatureGateBanner description="Team management je aktivovaný v tvojom pláne." title="Team management je aktívny" />
 
-      <TeamActionStrip
-        leads={visibleLeads as Lead[]}
-        profiles={visibleProfiles.map((profile) => ({
-          id: profile.id,
-          fullName: profile.fullName,
-        }))}
-        monthlyTargetPerAgent={monthlyLeadTargetPerAgent}
-      />
+      <TeamPressureGate canAccess={canAccessTeamPressure}>
+        <TeamActionStrip
+          leads={visibleLeads as Lead[]}
+          profiles={visibleProfiles.map((profile) => ({
+            id: profile.id,
+            fullName: profile.fullName,
+          }))}
+          monthlyTargetPerAgent={monthlyLeadTargetPerAgent}
+        />
+      </TeamPressureGate>
 
       <section className="mt-6 mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
         <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -184,14 +196,16 @@ export default async function TeamPage({
         />
       </section>
 
-      <TeamOwnerInsights
-        data={ownerAnalytics}
-        teamQuery={{
-          teamId: selectedTeamId || undefined,
-          period,
-          target: monthlyLeadTargetPerAgent,
-        }}
-      />
+      <TeamPressureGate canAccess={canAccessTeamPressure}>
+        <TeamOwnerInsights
+          data={ownerAnalytics}
+          teamQuery={{
+            teamId: selectedTeamId || undefined,
+            period,
+            target: monthlyLeadTargetPerAgent,
+          }}
+        />
+      </TeamPressureGate>
 
       <section className="mb-6">
         <TeamFilters
