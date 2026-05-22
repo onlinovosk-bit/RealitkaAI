@@ -12,7 +12,7 @@ export {
 } from './responses';
 export type { RealviaApiBody, RealviaApiResult } from './responses';
 export { storeWebhookLog, enqueueProcessingJob, fetchPendingJobs } from './webhookStore';
-export { validateRequest, extractClientIP } from './validate';
+export { validateRequest, extractClientIP, collectRequestHeaders } from './validate';
 export { resolveAgencyIdFromRealviaHeaders } from './resolveAgency';
 export { enqueueReplayForWebhookLog } from './webhookStore';
 export {
