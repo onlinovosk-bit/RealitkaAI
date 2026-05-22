@@ -60,13 +60,18 @@ export default function RecentActivityFeed() {
         boxShadow: WORKDESK_PANEL.boxShadow,
       }}
     >
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-base font-semibold" style={{ color: SLATE_HORIZON.deep }}>
-          Posledné aktivity
-        </h2>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-base font-semibold" style={{ color: SLATE_HORIZON.deep }}>
+            Posledné signály
+          </h2>
+          <p className="text-xs" style={{ color: SLATE_HORIZON.muted }}>
+            Čo sa hýbe v pipeline — kontakt, obhliadka, AI scoring.
+          </p>
+        </div>
         <Link
           href="/activities"
-          className="cursor-pointer text-xs transition-colors duration-200 hover:opacity-80"
+          className={`flex min-h-11 cursor-pointer items-center text-xs transition-colors duration-200 hover:opacity-80 ${SLATE_HORIZON.focusRing}`}
           style={{ color: SLATE_HORIZON.brandDeep }}
         >
           Všetky →

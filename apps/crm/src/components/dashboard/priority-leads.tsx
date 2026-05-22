@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { Lead } from "@/lib/leads-store";
 import type { PlanTier } from "@/lib/ai-engine";
 import PaywallLock from "@/components/shared/PaywallLock";
-import { SLATE_HORIZON, WORKDESK_INNER_ROW, WORKDESK_PANEL } from "@/lib/slate-horizon-theme";
+import { SLATE_HORIZON, SLATE_HORIZON_BADGES, WORKDESK_INNER_ROW, WORKDESK_PANEL } from "@/lib/slate-horizon-theme";
 
 function getStatusClasses(status: Lead["status"]) {
   switch (status) {
@@ -52,19 +52,29 @@ export default function PriorityLeads({ leads, plan = "free" }: PriorityLeadsPro
         boxShadow: WORKDESK_PANEL.boxShadow,
       }}
     >
-      <div className="flex items-center justify-between gap-3 mb-4">
+      <div className="mb-4 flex items-center justify-between gap-3">
         <div>
+          <span
+            className="mb-2 inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+            style={{
+              background: SLATE_HORIZON_BADGES.hot.bg,
+              color: SLATE_HORIZON_BADGES.hot.color,
+              border: `1px solid ${SLATE_HORIZON_BADGES.hot.border}`,
+            }}
+          >
+            Poradie volaní
+          </span>
           <h2 className="text-base font-semibold" style={{ color: SLATE_HORIZON.deep }}>
-            Horúce príležitosti
+            Komu volať ako prvému
           </h2>
           <p className="text-xs" style={{ color: SLATE_HORIZON.muted }}>
-            Klienti s vysokým BRI alebo horúcim stavom.
+            BRI a horúci stav — kde je najbližšia provízia.
           </p>
         </div>
 
         <Link
           href="/leads"
-          className="cursor-pointer rounded-xl border px-3 py-1.5 text-xs font-medium min-h-[32px] flex items-center transition-colors duration-200 hover:border-blue-200"
+          className={`flex min-h-11 cursor-pointer items-center rounded-xl border px-3 py-1.5 text-xs font-medium transition-colors duration-200 hover:border-blue-200 ${SLATE_HORIZON.focusRing}`}
           style={{ borderColor: SLATE_HORIZON.line, color: SLATE_HORIZON.brandDeep }}
         >
           Všetky →
@@ -86,8 +96,15 @@ export default function PriorityLeads({ leads, plan = "free" }: PriorityLeadsPro
                 <div className="truncate text-sm font-semibold" style={{ color: SLATE_HORIZON.deep }}>
                   {lead.name}
                 </div>
-                <div className="truncate text-xs mt-0.5" style={{ color: SLATE_HORIZON.muted }}>
+                <div className="mt-0.5 truncate text-xs" style={{ color: SLATE_HORIZON.muted }}>
                   {lead.location}
+                  {lead.budget ? (
+                    <>
+                      {" "}
+                      ·{" "}
+                      <span style={{ color: SLATE_HORIZON.money, fontWeight: 600 }}>{lead.budget}</span>
+                    </>
+                  ) : null}
                 </div>
               </Link>
 
