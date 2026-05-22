@@ -8,6 +8,7 @@ export {
   realviaError,
   realviaErrorFromValidation,
   realviaSuccess,
+  REALVIA_AUTH_ERROR_MESSAGE,
 } from './responses';
 export type { RealviaApiBody, RealviaApiResult } from './responses';
 export { storeWebhookLog, enqueueProcessingJob, fetchPendingJobs } from './webhookStore';

@@ -5,6 +5,7 @@
 
 import { NextRequest } from 'next/server';
 import { logWarn, logError } from '@/lib/logger';
+import { REALVIA_AUTH_ERROR_MESSAGE } from './responses';
 
 /** Max payload size: 5MB */
 const MAX_PAYLOAD_BYTES = 5 * 1024 * 1024;
@@ -78,7 +79,7 @@ export function validateSecret(request: NextRequest): {
   if (!expectedSecret) {
     if (process.env.NODE_ENV === 'production') {
       logError('[realvia-webhook] REALVIA_SHARED_SECRET not configured in production');
-      return { valid: false, reason: 'Server misconfiguration: secret not set' };
+      return { valid: false, reason: REALVIA_AUTH_ERROR_MESSAGE };
     }
     // In development, allow without secret
     return { valid: true };
@@ -99,7 +100,7 @@ export function validateSecret(request: NextRequest): {
   if (expectedId1 && expectedId2) {
     if (!identifier1 && !identifier2 && !xRevoliSecret) {
       logWarn('[realvia-webhook] Missing authentication headers');
-      return { valid: false, reason: 'Missing authentication headers' };
+      return { valid: false, reason: REALVIA_AUTH_ERROR_MESSAGE };
     }
 
     if (identifier1 || identifier2) {
@@ -108,7 +109,7 @@ export function validateSecret(request: NextRequest): {
 
       if (!id1Valid || !id2Valid) {
         logWarn('[realvia-webhook] Invalid identifikator headers');
-        return { valid: false, reason: 'Invalid authentication' };
+        return { valid: false, reason: REALVIA_AUTH_ERROR_MESSAGE };
       }
       return { valid: true };
     }
@@ -118,7 +119,7 @@ export function validateSecret(request: NextRequest): {
   if (xRevoliSecret && expectedSecret) {
     if (!timingSafeEqual(expectedSecret, xRevoliSecret)) {
       logWarn('[realvia-webhook] Invalid X-Revolis-Secret');
-      return { valid: false, reason: 'Invalid authentication' };
+      return { valid: false, reason: REALVIA_AUTH_ERROR_MESSAGE };
     }
     return { valid: true };
   }
@@ -126,11 +127,11 @@ export function validateSecret(request: NextRequest): {
   // No valid auth provided
   if (!identifier1 && !identifier2 && !xRevoliSecret) {
     logWarn('[realvia-webhook] Missing authentication header');
-    return { valid: false, reason: 'Missing authentication header' };
+    return { valid: false, reason: REALVIA_AUTH_ERROR_MESSAGE };
   }
 
   logWarn('[realvia-webhook] Auth header provided but no server secret configured');
-  return { valid: false, reason: 'Invalid authentication' };
+  return { valid: false, reason: REALVIA_AUTH_ERROR_MESSAGE };
 }
 
 /** Validate HTTPS in production */
