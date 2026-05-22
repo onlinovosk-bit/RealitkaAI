@@ -5,7 +5,8 @@ import { NextRequest, NextResponse } from 'next/server'
 const BYPASS_PREFIXES = [
   '/api/auth/',               // Supabase OAuth callbacks
   '/api/cron/',               // CRON_SECRET header auth
-  '/api/webhooks/',           // HMAC-verified webhooks
+  '/api/webhooks/',           // Route-level auth (Realvia identifikator, signatures, etc.)
+  '/api/realvia/',            // Realvia XML import — validateRequest in route handler
   '/api/resend-webhook/',     // Resend event stream (signature-verified)
   '/api/health',              // uptime monitoring (public)
   '/api/healthz',             // uptime monitoring (public)

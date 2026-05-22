@@ -37,6 +37,25 @@ export function extractClientIP(request: NextRequest): string {
   return 'unknown';
 }
 
+/** Collect incoming request headers for audit/debug (secrets redacted). */
+export function collectRequestHeaders(request: NextRequest): Record<string, string> {
+  const headersMap: Record<string, string> = {};
+  request.headers.forEach((value, key) => {
+    const lower = key.toLowerCase();
+    if (
+      lower === 'x-revolis-secret' ||
+      lower === 'authorization' ||
+      lower.includes('password') ||
+      lower.includes('secret')
+    ) {
+      headersMap[key] = '[REDACTED]';
+    } else {
+      headersMap[key] = value;
+    }
+  });
+  return headersMap;
+}
+
 /** Validate source IP against allowed list */
 export function validateSourceIP(request: NextRequest): {
   valid: boolean;
@@ -68,55 +87,50 @@ export function validateSourceIP(request: NextRequest): {
   return { valid: true, ip };
 }
 
-/** Validate shared secret header */
+/** Validate Realvia authentication (provider contract: identifikator pair). */
 export function validateSecret(request: NextRequest): {
   valid: boolean;
   reason?: string;
 } {
-  const expectedSecret = process.env.REALVIA_SHARED_SECRET;
-
-  // If no secret configured, reject in production
-  if (!expectedSecret) {
-    if (process.env.NODE_ENV === 'production') {
-      logError('[realvia-webhook] REALVIA_SHARED_SECRET not configured in production');
-      return { valid: false, reason: REALVIA_AUTH_ERROR_MESSAGE };
-    }
-    // In development, allow without secret
-    return { valid: true };
-  }
-
-  // Validate identifikator header (Realvia sends this as auth)
   const identifier1 = request.headers.get('identifikator') ?? '';
   const identifier2 = request.headers.get('identifikator2') ?? '';
   const xRevoliSecret = request.headers.get('x-revolis-secret') ?? '';
-
-  // Support both auth modes:
-  // 1. identifikator + identifikator2 (Realvia native headers)
-  // 2. X-Revolis-Secret (our custom header)
   const expectedId1 = process.env.REALVIA_IDENTIFIER ?? '';
   const expectedId2 = process.env.REALVIA_IDENTIFIER_2 ?? '';
+  const expectedSecret = process.env.REALVIA_SHARED_SECRET;
 
-  // Mode 1: Realvia native identifikator headers
-  if (expectedId1 && expectedId2) {
-    if (!identifier1 && !identifier2 && !xRevoliSecret) {
-      logWarn('[realvia-webhook] Missing authentication headers');
-      return { valid: false, reason: REALVIA_AUTH_ERROR_MESSAGE };
-    }
-
-    if (identifier1 || identifier2) {
-      const id1Valid = !expectedId1 || timingSafeEqual(expectedId1, identifier1);
-      const id2Valid = !expectedId2 || timingSafeEqual(expectedId2, identifier2);
-
-      if (!id1Valid || !id2Valid) {
-        logWarn('[realvia-webhook] Invalid identifikator headers');
-        return { valid: false, reason: REALVIA_AUTH_ERROR_MESSAGE };
-      }
+  // Local dev: allow when no Realvia auth env is configured (smoke tests)
+  if (process.env.NODE_ENV !== 'production') {
+    const hasAuthConfig = Boolean(expectedId1 && expectedId2) || Boolean(expectedSecret);
+    if (!hasAuthConfig) {
       return { valid: true };
     }
   }
 
-  // Mode 2: X-Revolis-Secret fallback
-  if (xRevoliSecret && expectedSecret) {
+  // Mode 1: Realvia export v2 — identifikator + identifikator2 (production primary)
+  if (expectedId1 && expectedId2) {
+    if (identifier1 && identifier2) {
+      const id1Valid = timingSafeEqual(expectedId1, identifier1);
+      const id2Valid = timingSafeEqual(expectedId2, identifier2);
+      if (id1Valid && id2Valid) {
+        return { valid: true };
+      }
+      logWarn('[realvia-webhook] Invalid identifikator headers');
+      return { valid: false, reason: REALVIA_AUTH_ERROR_MESSAGE };
+    }
+
+    if (identifier1 || identifier2) {
+      logWarn('[realvia-webhook] Partial identifikator headers');
+      return { valid: false, reason: REALVIA_AUTH_ERROR_MESSAGE };
+    }
+  }
+
+  // Mode 2: Optional internal/dev fallback — X-Revolis-Secret (not sent by Realvia)
+  if (xRevoliSecret) {
+    if (!expectedSecret) {
+      logWarn('[realvia-webhook] X-Revolis-Secret received but REALVIA_SHARED_SECRET not configured');
+      return { valid: false, reason: REALVIA_AUTH_ERROR_MESSAGE };
+    }
     if (!timingSafeEqual(expectedSecret, xRevoliSecret)) {
       logWarn('[realvia-webhook] Invalid X-Revolis-Secret');
       return { valid: false, reason: REALVIA_AUTH_ERROR_MESSAGE };
@@ -124,13 +138,12 @@ export function validateSecret(request: NextRequest): {
     return { valid: true };
   }
 
-  // No valid auth provided
-  if (!identifier1 && !identifier2 && !xRevoliSecret) {
-    logWarn('[realvia-webhook] Missing authentication header');
+  if (process.env.NODE_ENV === 'production' && (!expectedId1 || !expectedId2)) {
+    logError('[realvia-webhook] REALVIA_IDENTIFIER and REALVIA_IDENTIFIER_2 must be set in production');
     return { valid: false, reason: REALVIA_AUTH_ERROR_MESSAGE };
   }
 
-  logWarn('[realvia-webhook] Auth header provided but no server secret configured');
+  logWarn('[realvia-webhook] Missing authentication headers');
   return { valid: false, reason: REALVIA_AUTH_ERROR_MESSAGE };
 }
 

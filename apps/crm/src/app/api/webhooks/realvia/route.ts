@@ -10,7 +10,7 @@
 // ================================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { validateRequest } from '@/lib/realvia/validate';
+import { validateRequest, extractClientIP, collectRequestHeaders } from '@/lib/realvia/validate';
 import { resolveAgencyIdFromRealviaHeaders } from '@/lib/realvia/resolveAgency';
 import { storeWebhookLog, enqueueProcessingJob } from '@/lib/realvia/webhookStore';
 import { isAdvertPayload, isDeletePayload } from '@/lib/realvia/types';
@@ -30,6 +30,15 @@ export async function POST(request: NextRequest) {
   let requestId = crypto.randomUUID();
 
   try {
+    const incomingHeaders = collectRequestHeaders(request);
+    const clientIp = extractClientIP(request);
+
+    logInfo('[realvia-webhook] Incoming headers', {
+      requestId,
+      ip: clientIp,
+      headers: incomingHeaders,
+    });
+
     // ── 1. SECURITY VALIDATION ──────────────────────────────────
     const validation = validateRequest(request);
 
@@ -37,6 +46,7 @@ export async function POST(request: NextRequest) {
       logWarn('[realvia-webhook] Request rejected', {
         ip: validation.ip,
         errors: validation.errors,
+        headers: incomingHeaders,
       });
 
       return realviaErrorFromValidation(validation.errors, 403);
@@ -73,15 +83,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ── 4. EXTRACT HEADERS FOR LOGGING ──────────────────────────
-    const headersMap: Record<string, string> = {};
-    request.headers.forEach((value, key) => {
-      // Redact sensitive headers
-      if (key.toLowerCase() === 'x-revolis-secret' || key.toLowerCase().includes('password')) {
-        headersMap[key] = '[REDACTED]';
-      } else {
-        headersMap[key] = value;
-      }
-    });
+    const headersMap = incomingHeaders;
 
     const identifikatorRaw = request.headers.get('identifikator') ?? '';
     const identifikator2Raw = request.headers.get('identifikator2') ?? '';
@@ -157,9 +159,18 @@ export async function POST(request: NextRequest) {
 
 /**
  * Health check — GET returns endpoint status.
- * Useful for monitoring and Realvia support debugging.
+ * ?dump=headers echoes incoming headers (debug Realvia/Vercel forwarding).
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  if (request.nextUrl.searchParams.get('dump') === 'headers') {
+    return NextResponse.json({
+      service: 'realvia-webhook',
+      ip: extractClientIP(request),
+      headers: collectRequestHeaders(request),
+      timestamp: new Date().toISOString(),
+    });
+  }
+
   return NextResponse.json({
     status: 'ok',
     service: 'realvia-webhook',
