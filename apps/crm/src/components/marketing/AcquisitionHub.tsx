@@ -6,6 +6,17 @@ import {
   CheckCircle, Zap, ArrowRight, TrendingUp, TrendingDown,
   Minus, Loader2, Shield, RefreshCcw, Send, Download, ChevronDown, ChevronUp,
 } from "lucide-react";
+import { SLATE_HORIZON, WORKDESK_CARD } from "@/lib/slate-horizon-theme";
+import {
+  DEMO,
+  DEMO_ERROR,
+  DEMO_INPUT_BRAND,
+  DEMO_INPUT_STYLE,
+  DEMO_INNER_PANEL,
+  DEMO_LIST_ITEM,
+  DEMO_LIST_ITEM_URGENT,
+  DEMO_PROGRESS_TRACK,
+} from "@/lib/demo-slate-styles";
 import type {
   PropertyEstimate, NeighborAlert, ArbitrageCandidate,
   StealthProspect, ModuleStatus,
@@ -43,15 +54,28 @@ function getOpportunityDecayMeta(alert: NeighborAlert) {
 }
 
 // ─── Card wrapper ─────────────────────────────────────────────────────────
-export function Card({ children, accent = "rgba(59,130,246,0.25)", tag, tagColor = "#93C5FD" }: {
+export function Card({ children, accent, tag, tagColor = SLATE_HORIZON.brandDeep }: {
   children: React.ReactNode; accent?: string; tag?: string; tagColor?: string;
 }) {
   return (
-    <div className="rounded-3xl p-7 relative overflow-hidden flex flex-col"
-         style={{ background: "#0C0C14", border: `1px solid ${accent}` }}>
+    <div
+      className="relative flex flex-col overflow-hidden rounded-3xl p-7"
+      style={{
+        background: WORKDESK_CARD.background,
+        border: `1px solid ${accent ?? WORKDESK_CARD.borderColor}`,
+        boxShadow: WORKDESK_CARD.boxShadow,
+      }}
+    >
       {tag && (
-        <div className="absolute top-0 right-0 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-bl-xl"
-             style={{ background: `${tagColor}18`, color: tagColor, borderLeft: `1px solid ${tagColor}30`, borderBottom: `1px solid ${tagColor}30` }}>
+        <div
+          className="absolute right-0 top-0 rounded-bl-xl px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest"
+          style={{
+            background: DEMO.brandTint,
+            color: tagColor,
+            borderLeft: `1px solid ${SLATE_HORIZON.softBorder}`,
+            borderBottom: `1px solid ${SLATE_HORIZON.softBorder}`,
+          }}
+        >
           {tag}
         </div>
       )}
@@ -65,16 +89,20 @@ function Btn({ onClick, disabled, loading, children, variant = "primary", classN
   children: React.ReactNode; variant?: "primary" | "outline" | "success" | "danger"; className?: string;
 }) {
   const styles: Record<string, React.CSSProperties> = {
-    primary: { background: "linear-gradient(135deg,#2563EB,#1D4ED8)", color: "#fff", boxShadow: "0 0 20px rgba(37,99,235,.25)" },
-    outline: { background: "transparent", color: "#94A3B8", border: "1px solid rgba(255,255,255,.12)" },
-    success: { background: "#16A34A", color: "#fff" },
-    danger:  { background: "#DC2626", color: "#fff" },
+    primary: { background: SLATE_HORIZON.topbarGradient, color: "#fff", boxShadow: "0 8px 24px rgba(37,99,235,0.2)" },
+    outline: { background: "#FFFFFF", color: SLATE_HORIZON.muted, border: `1px solid ${SLATE_HORIZON.line}` },
+    success: { background: SLATE_HORIZON.green, color: "#fff" },
+    danger: { background: SLATE_HORIZON.danger, color: "#fff" },
   };
   return (
-    <button onClick={onClick} disabled={disabled || loading}
-      className={`w-full py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 ${className}`}
-      style={styles[variant]}>
-      {loading && <Loader2 size={14} className="animate-spin" />}
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled || loading}
+      className={`flex min-h-11 w-full items-center justify-center gap-2 rounded-xl py-3.5 text-xs font-bold uppercase tracking-wider transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 ${SLATE_HORIZON.focusRing} ${className}`}
+      style={styles[variant]}
+    >
+      {loading && <Loader2 size={14} className="animate-spin" aria-hidden />}
       {children}
     </button>
   );
@@ -131,12 +159,12 @@ export function AiOdhadca() {
   return (
     <Card accent="rgba(59,130,246,0.30)" tag="Lead Magnet" tagColor="#93C5FD">
       <Calculator className="mb-5" size={32} style={{ color: "#3B82F6" }} />
-      <h2 className="text-xl font-bold text-white mb-1.5">1. AI Odhadca 3.0</h2>
+      <h2 className="text-xl font-bold mb-1.5" style={{ color: SLATE_HORIZON.ink }}>1. AI Odhadca 3.0</h2>
       <p className="text-xs mb-5" style={{ color: "#64748B" }}>
         Mení anonymných návštevníkov na overené kontakty cez prediktívnu analýzu ceny.
       </p>
       <div className="flex-1 rounded-2xl p-4 space-y-3"
-           style={{ background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.06)" }}>
+           style={DEMO_INNER_PANEL}>
         <div>
           <label className="text-[10px] font-bold uppercase tracking-wider block mb-1" style={{ color: "#3B82F6" }}>
             Adresa nehnuteľnosti
@@ -144,11 +172,11 @@ export function AiOdhadca() {
           <input type="text" value={address} onChange={e => setAddress(e.target.value)}
             disabled={status === "calculating"}
             className="w-full px-3 py-2.5 rounded-xl text-sm"
-            style={{ background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.10)", color: "#F0F9FF", outline: "none" }} />
+            style={DEMO_INPUT_STYLE} />
         </div>
         <div>
           <label className="text-[10px] font-bold uppercase tracking-wider block mb-1" style={{ color: "#94A3B8" }}>
-            Výmera: <span style={{ color: "#F0F9FF" }}>{sqm} m²</span>
+            Výmera: <span style={{ color: SLATE_HORIZON.ink }}>{sqm} m²</span>
           </label>
           <input type="range" min={30} max={300} step={5} value={sqm}
             onChange={e => setSqm(Number(e.target.value))} disabled={status === "calculating"}
@@ -182,7 +210,7 @@ export function AiOdhadca() {
               <input type="email" value={email} onChange={e => setEmail(e.target.value)}
                 placeholder="vas@email.sk"
                 className="flex-1 px-3 py-2.5 rounded-xl text-sm"
-                style={{ background: "rgba(255,255,255,.05)", border: "1px solid rgba(59,130,246,.30)", color: "#F0F9FF", outline: "none" }}
+                style={DEMO_INPUT_BRAND}
                 onKeyDown={e => { if (e.key === "Enter") void sendEmail(); }} />
               <button onClick={() => void sendEmail()}
                 className="px-3 py-2.5 rounded-xl font-bold transition-all hover:scale-105"
@@ -199,8 +227,8 @@ export function AiOdhadca() {
                 <div
                   className="flex-shrink-0 w-4 h-4 mt-0.5 rounded flex items-center justify-center transition-all"
                   style={{
-                    background: gdprConsent ? "#22C55E" : "rgba(255,255,255,0.05)",
-                    border: gdprError ? "1px solid #FCA5A5" : gdprConsent ? "1px solid #22C55E" : "1px solid rgba(255,255,255,0.15)",
+                    background: gdprConsent ? SLATE_HORIZON.green : "#FFFFFF",
+                    border: gdprError ? `1px solid ${SLATE_HORIZON.red}` : gdprConsent ? `1px solid ${SLATE_HORIZON.green}` : `1px solid ${SLATE_HORIZON.line}`,
                   }}
                 >
                   {gdprConsent && (
@@ -306,14 +334,14 @@ export function NeighborhoodWatch() {
   return (
     <Card accent="rgba(239,68,68,0.25)" tag="Živé sledovanie" tagColor="#FCA5A5">
       <Eye className="mb-5" size={32} style={{ color: "#EF4444" }} />
-      <h2 className="text-xl font-bold text-white mb-1.5">2. Radar okolia</h2>
+      <h2 className="text-xl font-bold mb-1.5" style={{ color: SLATE_HORIZON.ink }}>2. Radar okolia</h2>
       <p className="text-xs mb-4" style={{ color: "#64748B" }}>
         Kde sa hýbu vaše peniaze dnes: ceny, zmeny vlastníctva a urgentné udalosti vo vašom rajóne.
       </p>
 
       <select value={area} onChange={e => { setArea(e.target.value); setSubscribed(false); }}
         className="w-full px-3 py-2 rounded-xl text-xs mb-4"
-        style={{ background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.10)", color: "#F0F9FF", outline: "none" }}>
+        style={DEMO_INPUT_STYLE}>
         <option value="presov">Prešov</option>
         <option value="kosice">Košice</option>
         <option value="bratislava">Bratislava</option>
@@ -327,13 +355,10 @@ export function NeighborhoodWatch() {
         ) : alerts.slice(0, 5).map(a => (
           <button key={a.id} onClick={() => setExpanded(expanded === a.id ? null : a.id)}
             className="w-full text-left rounded-xl p-3 transition-all hover:scale-[1.01]"
-            style={{
-              background: a.isUrgent ? "rgba(239,68,68,.06)" : "rgba(255,255,255,.02)",
-              border: a.isUrgent ? "1px solid rgba(239,68,68,.20)" : "1px solid rgba(255,255,255,.05)",
-            }}>
+            style={a.isUrgent ? DEMO_LIST_ITEM_URGENT : DEMO_LIST_ITEM}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-white">{a.address}</p>
+                <p className="text-xs font-bold" style={{ color: SLATE_HORIZON.ink }}>{a.address}</p>
                 <p className="text-[10px] mt-0.5" style={{ color: EVENT_COLORS[a.eventType] }}>
                   {EVENT_LABELS[a.eventType]}
                   {a.changeAmount != null && ` ${a.changeAmount > 0 ? "+" : ""}${a.changeAmount.toLocaleString("sk-SK")} €`}
@@ -367,7 +392,7 @@ export function NeighborhoodWatch() {
               );
             })()}
             {expanded === a.id && (
-              <div className="mt-2 pt-2 text-xs" style={{ borderTop: "1px solid rgba(255,255,255,.05)", color: "#64748B" }}>
+              <div className="mt-2 pt-2 text-xs" style={{ borderTop: `1px solid ${SLATE_HORIZON.line}`, color: SLATE_HORIZON.muted }}>
                 AI analýza: Táto zmena môže ovplyvniť hodnotu nehnuteľností v okolí o ±3–5 %. Odporúčame kontakt s klientom v lokalite.
               </div>
             )}
@@ -384,7 +409,7 @@ export function NeighborhoodWatch() {
           <div className="flex gap-2">
             <input type="email" value={email} onChange={e => { setEmail(e.target.value); setSubError(null); }}
               placeholder="vas@email.sk" className="flex-1 px-3 py-2 rounded-xl text-xs"
-              style={{ background: "rgba(255,255,255,.05)", border: `1px solid ${subError ? "rgba(239,68,68,.40)" : "rgba(239,68,68,.25)"}`, color: "#F0F9FF", outline: "none" }} />
+              style={{ ...DEMO_INPUT_STYLE, border: `1px solid ${subError ? SLATE_HORIZON.red : "#FECACA"}` }} />
             <button onClick={() => void subscribe()}
               className="px-3 py-2 rounded-xl font-bold text-xs transition-all hover:scale-105"
               style={{ background: "#DC2626", color: "#fff" }}>
@@ -455,12 +480,12 @@ export function AIGhostwriter() {
   return (
     <Card accent="rgba(239,68,68,0.25)" tag="Legal Watch" tagColor="#FCA5A5">
       <Mail className="mb-5" size={32} style={{ color: "#EF4444" }} />
-      <h2 className="text-xl font-bold text-white mb-1.5">4. AI Asistent písania listov</h2>
+      <h2 className="text-xl font-bold mb-1.5" style={{ color: SLATE_HORIZON.ink }}>4. AI Asistent písania listov</h2>
       <p className="text-xs mb-4" style={{ color: "#64748B" }}>
         Katastrálny radar deteguje dedičstvá a plomby. AI okamžite generuje expertný list pre majiteľa.
       </p>
       <div className="flex-1 rounded-2xl p-4 space-y-3"
-           style={{ background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.06)" }}>
+           style={DEMO_INNER_PANEL}>
         <div>
           <label className="text-[10px] font-bold uppercase tracking-wider block mb-1" style={{ color: "#FCA5A5" }}>
             Adresa nehnuteľnosti (LV)
@@ -468,7 +493,7 @@ export function AIGhostwriter() {
           <input type="text" value={address} onChange={e => setAddress(e.target.value)}
             placeholder="Sabinovská 12, Prešov"
             className="w-full px-3 py-2.5 rounded-xl text-sm"
-            style={{ background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.10)", color: "#F0F9FF", outline: "none" }} />
+            style={DEMO_INPUT_STYLE} />
         </div>
         <div>
           <label className="text-[10px] font-bold uppercase tracking-wider block mb-1" style={{ color: "#94A3B8" }}>
@@ -476,7 +501,7 @@ export function AIGhostwriter() {
           </label>
           <select value={eventType} onChange={e => setEventType(e.target.value)}
             className="w-full px-3 py-2.5 rounded-xl text-xs"
-            style={{ background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.10)", color: "#F0F9FF", outline: "none" }}>
+            style={DEMO_INPUT_STYLE}>
             <option value="dedičstvo">Zápis dedičstva</option>
             <option value="plomba">Katastrálna plomba</option>
             <option value="zmena">Zmena vlastníka</option>
@@ -492,7 +517,7 @@ export function AIGhostwriter() {
           <input type="text" value={agentName} onChange={e => setAgentName(e.target.value)}
             placeholder="Ing. Ján Novák"
             className="w-full px-3 py-2.5 rounded-xl text-xs"
-            style={{ background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.10)", color: "#F0F9FF", outline: "none" }} />
+            style={DEMO_INPUT_STYLE} />
         </div>
         {error && <p className="text-xs px-3 py-2 rounded-lg" style={{ background: "rgba(239,68,68,.08)", color: "#FCA5A5" }}>⚠ {error}</p>}
         {letter && status === "done" && (
@@ -504,20 +529,20 @@ export function AIGhostwriter() {
               {showPreview ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
             </button>
             {showPreview && (
-              <div className="rounded-xl p-3 max-h-40 overflow-y-auto text-xs leading-relaxed"
-                   style={{ background: "rgba(255,255,255,.02)", border: "1px solid rgba(255,255,255,.06)", color: "#94A3B8" }}>
+              <div className="max-h-40 overflow-y-auto rounded-xl p-3 text-xs leading-relaxed"
+                   style={{ ...DEMO_INNER_PANEL, color: SLATE_HORIZON.muted }}>
                 {letter.letterText}
               </div>
             )}
             <div className="flex gap-2">
               <button onClick={downloadHtml}
-                className="flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all hover:scale-[1.02]"
-                style={{ background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.12)", color: "#94A3B8" }}>
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold transition-all hover:scale-[1.02]"
+                style={{ background: SLATE_HORIZON.bg, border: `1px solid ${SLATE_HORIZON.line}`, color: SLATE_HORIZON.muted }}>
                 <Download size={12} /> HTML
               </button>
               <button onClick={() => { if (typeof window !== "undefined") { const w = window.open("", "_blank"); if (w) { w.document.write(`<style>body{font-family:Georgia,serif;max-width:620px;margin:40px auto;padding:0 20px}@media print{body{margin:0}}</style>${letter.letterHtml}`); w.document.close(); setTimeout(() => w.print(), 500); } } }}
-                className="flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all hover:scale-[1.02]"
-                style={{ background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.12)", color: "#94A3B8" }}>
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold transition-all hover:scale-[1.02]"
+                style={{ background: SLATE_HORIZON.bg, border: `1px solid ${SLATE_HORIZON.line}`, color: SLATE_HORIZON.muted }}>
                 PDF (Print)
               </button>
             </div>
@@ -528,7 +553,7 @@ export function AIGhostwriter() {
                   <input type="email" value={email} onChange={e => setEmail(e.target.value)}
                     placeholder="majitel@email.sk"
                     className="flex-1 px-3 py-2 rounded-xl text-xs"
-                    style={{ background: "rgba(255,255,255,.05)", border: "1px solid rgba(239,68,68,.30)", color: "#F0F9FF", outline: "none" }} />
+                    style={{ ...DEMO_INPUT_STYLE, border: `1px solid ${SLATE_HORIZON.red}` }} />
                   <button onClick={() => void sendEmail()}
                     className="px-3 py-2 rounded-xl transition-all hover:scale-105 disabled:opacity-50"
                     style={{ background: "#DC2626", color: "#fff" }}>
@@ -582,7 +607,7 @@ export function RealEstateArbitrage() {
   return (
     <Card accent="rgba(234,179,8,0.25)" tag="Flow Engine" tagColor="#FCD34D">
       <GitMerge className="mb-5" size={32} style={{ color: "#EAB308" }} />
-      <h2 className="text-xl font-bold text-white mb-1.5">5. Realitná arbitráž</h2>
+      <h2 className="text-xl font-bold mb-1.5" style={{ color: SLATE_HORIZON.ink }}>5. Realitná arbitráž</h2>
       <p className="text-xs mb-4" style={{ color: "#64748B" }}>
         Premieňa neúspešných kupujúcich na predajcov. AI identifikuje exit-strategy kandídátov vo vašom CRM.
       </p>
@@ -595,9 +620,9 @@ export function RealEstateArbitrage() {
         ) : candidates.map(c => (
           <button key={c.id} onClick={() => setExpanded(expanded === c.id ? null : c.id)}
             className="w-full text-left rounded-xl p-3 transition-all hover:scale-[1.01]"
-            style={{ background: "rgba(255,255,255,.02)", border: "1px solid rgba(234,179,8,.15)" }}>
+            style={{ background: "#FFFBEB", border: "1px solid #FDE68A" }}>
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-bold text-white">{c.name}</span>
+              <span className="text-xs font-bold" style={{ color: SLATE_HORIZON.ink }}>{c.name}</span>
               <span className="text-xs font-black" style={{ color: scoreColor(c.arbitrageScore) }}>
                 {c.arbitrageScore}%
               </span>
@@ -610,7 +635,7 @@ export function RealEstateArbitrage() {
             )}
             {expanded === c.id && (
               <div className="mt-2 pt-2 space-y-1.5 text-xs"
-                   style={{ borderTop: "1px solid rgba(255,255,255,.05)" }}>
+                   style={{ borderTop: `1px solid ${SLATE_HORIZON.line}` }}>
                 <p style={{ color: "#94A3B8" }}>{c.reasoning}</p>
                 <div className="flex items-start gap-1.5 px-2 py-1.5 rounded-lg"
                      style={{ background: "rgba(234,179,8,.08)", border: "1px solid rgba(234,179,8,.15)" }}>
@@ -679,7 +704,7 @@ export function DigitalTwin() {
   return (
     <Card accent="rgba(168,85,247,0.25)" tag="Motor Rastu" tagColor="#C4B5FD">
       <Users className="mb-5" size={32} style={{ color: "#A855F7" }} />
-      <h2 className="text-xl font-bold text-white mb-1.5">3. Digitálne Dvojča Reklám</h2>
+      <h2 className="text-xl font-bold mb-1.5" style={{ color: SLATE_HORIZON.ink }}>3. Digitálne Dvojča Reklám</h2>
       <p className="text-xs mb-4" style={{ color: "#64748B" }}>
         AI nájde na Facebooku digitálne dvojičky vašich predajcov a zacieli Lookalike kampaň s presnosťou 94 %.
       </p>
@@ -696,7 +721,7 @@ export function DigitalTwin() {
               <span className="text-[10px] font-bold" style={{ color: "#A855F7" }}>{Math.round(progress)}%</span>
             )}
           </div>
-          <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,.05)" }}>
+          <div className="w-full h-1.5 rounded-full overflow-hidden" style={DEMO_PROGRESS_TRACK}>
             <div className="h-full rounded-full transition-all duration-300"
                  style={{
                    width: `${progress}%`,
@@ -733,10 +758,10 @@ export function DigitalTwin() {
           <div className="flex -space-x-2">
             {["A","B","C","D","E"].map(l => (
               <div key={l} className="w-7 h-7 rounded-full border-2 flex items-center justify-center text-[9px] font-bold"
-                   style={{ background: "#1E1B2E", borderColor: "#0C0C14", color: "#94A3B8" }}>{l}</div>
+                   style={{ background: SLATE_HORIZON.bg, borderColor: SLATE_HORIZON.line, color: SLATE_HORIZON.muted }}>{l}</div>
             ))}
-            <div className="w-7 h-7 rounded-full border-2 flex items-center justify-center text-[9px] font-bold"
-                 style={{ background: "#7C3AED", borderColor: "#0C0C14", color: "#fff" }}>241+</div>
+            <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 text-[9px] font-bold"
+                 style={{ background: "#7C3AED", borderColor: "#FFFFFF", color: "#fff" }}>241+</div>
           </div>
           <p className="text-[10px]" style={{ color: "#475569" }}>potenciálnych predajcov identifikovaných</p>
         </div>
@@ -811,7 +836,7 @@ export function StealthRecruiter() {
   return (
     <Card accent="rgba(34,211,238,0.20)" tag="Shadow MLS" tagColor="#67E8F9">
       <UserSearch className="mb-5" size={32} style={{ color: "#22D3EE" }} />
-      <h2 className="text-xl font-bold text-white mb-1.5">6. Tichý Náborár</h2>
+      <h2 className="text-xl font-bold mb-1.5" style={{ color: SLATE_HORIZON.ink }}>6. Tichý Náborár</h2>
       <p className="text-xs mb-4" style={{ color: "#64748B" }}>
         Nájde predajcov na Bazoši, ktorým sa nedarí predať. AI napíše správu každému presne na mieru.
       </p>
@@ -828,12 +853,12 @@ export function StealthRecruiter() {
                 <button key={p.id} onClick={() => void generateOutreach(p)}
                   className="w-full text-left rounded-xl p-2.5 transition-all hover:scale-[1.01]"
                   style={{
-                    background: selected?.id === p.id ? "rgba(34,211,238,.08)" : "rgba(255,255,255,.02)",
-                    border: `1px solid ${selected?.id === p.id ? "rgba(34,211,238,.30)" : "rgba(255,255,255,.06)"}`,
+                    background: selected?.id === p.id ? "#ECFEFF" : SLATE_HORIZON.bg,
+                    border: `1px solid ${selected?.id === p.id ? "#67E8F9" : SLATE_HORIZON.line}`,
                   }}>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-xs font-bold text-white">{p.address}</p>
+                      <p className="text-xs font-bold" style={{ color: SLATE_HORIZON.ink }}>{p.address}</p>
                       <p className="text-[10px]" style={{ color: "#64748B" }}>
                         {PLATFORM_LABELS[p.platform]} · {p.daysListed}d · -{p.priceDropPercent}%
                       </p>
@@ -858,7 +883,7 @@ export function StealthRecruiter() {
                   <div className="flex gap-2">
                     <input type="email" value={sendEmail} onChange={e => setSendEmail(e.target.value)}
                       placeholder="samopredajca@email.sk" className="flex-1 px-3 py-2 rounded-xl text-xs"
-                      style={{ background: "rgba(255,255,255,.05)", border: "1px solid rgba(34,211,238,.25)", color: "#F0F9FF", outline: "none" }} />
+                      style={{ ...DEMO_INPUT_STYLE, border: "1px solid #67E8F9" }} />
                     <button onClick={() => void doSend()} disabled={outreachLoading}
                       className="px-3 py-2 rounded-xl transition-all hover:scale-105 disabled:opacity-50"
                       style={{ background: "#0891B2", color: "#fff" }}>
@@ -887,48 +912,56 @@ export function StealthRecruiter() {
 // ═══════════════════════════════════════════════════════════════════════════
 export default function AcquisitionHub() {
   return (
-    <div className="min-h-screen p-4 md:p-10" style={{ background: "#050509", color: "#F0F9FF" }}>
-      <div className="max-w-7xl mx-auto">
+    <div>
+      <div className="mb-10 text-center">
+        <p className="mb-3 text-xs font-bold uppercase tracking-[0.3em]" style={{ color: SLATE_HORIZON.brand }}>
+          Akvizičný hub
+        </p>
+        <h2 className="mb-3 text-2xl font-black uppercase italic md:text-3xl" style={{ color: SLATE_HORIZON.ink }}>
+          6 produkčných modulov
+        </h2>
+        <p className="text-sm" style={{ color: SLATE_HORIZON.muted }}>
+          Všetky živé · Žiadna simulácia
+        </p>
+      </div>
 
-        <div className="text-center mb-12">
-          <p className="text-xs font-bold uppercase tracking-[0.3em] mb-3" style={{ color: "#3B82F6" }}>
-            Revolis.AI · Živé DEMO
-          </p>
-          <h1 className="text-4xl md:text-5xl font-black mb-3"
-              style={{ background: "linear-gradient(135deg,#60A5FA,#22D3EE)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-            AI ASISTENT: AKVIZIČNÝ HUB
-          </h1>
-          <p className="text-sm" style={{ color: "#475569" }}>
-            6 produkčných modulov · Všetky živé · Žiadna simulácia
-          </p>
-        </div>
+      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <AiOdhadca />
+        <NeighborhoodWatch />
+        <DigitalTwin />
+        <AIGhostwriter />
+        <RealEstateArbitrage />
+        <StealthRecruiter />
+      </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-          <AiOdhadca />
-          <NeighborhoodWatch />
-          <DigitalTwin />
-          <AIGhostwriter />
-          <RealEstateArbitrage />
-          <StealthRecruiter />
-        </div>
-
-        <div className="mt-14 text-center p-8 rounded-[28px]"
-             style={{ background: "rgba(255,255,255,.01)", border: "1px solid rgba(255,255,255,.05)" }}>
-          <Shield className="mx-auto mb-3" size={24} style={{ color: "rgba(59,130,246,.50)" }} />
-          <h3 className="text-xl font-bold text-white mb-2">Plná atribúcia každého mandátu</h3>
-          <p className="text-sm max-w-xl mx-auto mb-6" style={{ color: "#475569" }}>
-            Všetky kontakty sa okamžite objavia v dashboarde so značkou{" "}
-            <span className="font-bold text-xs px-2 py-0.5 rounded" style={{ color: "#60A5FA", background: "rgba(59,130,246,.10)" }}>
-              GENEROVANÉ AI ASISTENTOM
-            </span>
-          </p>
-          <a href="/register"
-             className="inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl font-black text-sm transition-all hover:scale-105"
-             style={{ background: "#fff", color: "#050914" }}>
-            AKTIVOVAŤ PRE MOJU KANCELÁRIU <ArrowRight size={15} />
-          </a>
-        </div>
-
+      <div
+        className="mt-14 rounded-[28px] p-8 text-center"
+        style={{
+          background: WORKDESK_CARD.background,
+          border: `1px solid ${WORKDESK_CARD.borderColor}`,
+          boxShadow: WORKDESK_CARD.boxShadow,
+        }}
+      >
+        <Shield className="mx-auto mb-3" size={24} style={{ color: SLATE_HORIZON.brand }} aria-hidden />
+        <h3 className="mb-2 text-xl font-bold" style={{ color: SLATE_HORIZON.ink }}>
+          Plná atribúcia každého mandátu
+        </h3>
+        <p className="mx-auto mb-6 max-w-xl text-sm" style={{ color: SLATE_HORIZON.muted }}>
+          Všetky kontakty sa okamžite objavia v dashboarde so značkou{" "}
+          <span
+            className="rounded px-2 py-0.5 text-xs font-bold"
+            style={{ color: SLATE_HORIZON.brandDeep, background: DEMO.brandTint }}
+          >
+            GENEROVANÉ AI ASISTENTOM
+          </span>
+        </p>
+        <a
+          href="/register"
+          className={`inline-flex min-h-11 items-center gap-2 rounded-2xl px-8 py-3.5 text-sm font-black transition-all hover:scale-[1.02] ${SLATE_HORIZON.focusRing}`}
+          style={{ background: SLATE_HORIZON.ctaGradient, color: "#fff" }}
+        >
+          AKTIVOVAŤ PRE MOJU KANCELÁRIU <ArrowRight size={15} aria-hidden />
+        </a>
       </div>
     </div>
   );
