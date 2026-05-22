@@ -87,3 +87,23 @@
 - **Prečo:** Uzatvorenie feedback loopu (p. Smolko vidí výsledok dňa) a zefektívnenie komunikácie cez multi-select otázky.
 - **Dôsledok:** Systém je plne autonómny v reportovaní a AI je riadená rýchlymi voľbami užívateľa.
 ---
+## [2026-05-22] - Realvia Export v2 Integration Contract
+- **Rozhodnutie:** Všetky Realvia-facing endpointy vracajú `{ result: "ok"|"error", message: string }` (PR #58).
+- **Prečo:** Realvia feedback cielil výhradne na response format — posledný technický blocker integrácie.
+- **Dôsledok:** Webhook + import majú jednotný kontrakt zladený s Realvia dokumentáciou.
+
+## [2026-05-22] - Realvia Delete Payload v2
+- **Rozhodnutie:** `isDeletePayload` rozpoznáva `{ source_id, action: "delete", archiveType? }` namiesto `deleted: true` (PR #59).
+- **Prečo:** Realvia export v2 posiela `action: delete`, nie legacy boolean flag.
+- **Dôsledok:** archiveType mapuje status: sold→Predaná, rent→Prenajatá, cancel→Stiahnutá.
+
+## [2026-05-22] - Unified Realvia Auth Error Message
+- **Rozhodnutie:** Všetky auth failure z `validateSecret` vracajú `Invalid authentication` (PR #60).
+- **Prečo:** Konzistentný externý kontrakt; interné logy zachovávajú detail.
+- **Dôsledok:** Realvia vždy vidí rovnakú auth error message bez ohľadu na missing/wrong token.
+
+## [2026-05-22] - AI Shared Memory Layer (P0)
+- **Rozhodnutie:** GitHub `memory/` ako handoff vrstva medzi Cursor/Claude a ChatGPT (nie Notion/CrewAI teraz).
+- **Prečo:** Eliminácia copy/paste drift; repo už má `session-summary.md`, `decisions.md`, rules, agents.
+- **Dôsledok:** Jeden súbor handoff namiesto celého chatu; orchestration tools až po Realvia GO.
+---

@@ -11,6 +11,7 @@
 | Osoba | Rola | Status |
 |---|---|---|
 | **p. Smolko** | Reality Smolko — Kľúčový partner, operácia "Trójsky kôň" s XML feedom | Aktívny |
+| **Lýdia Bereczová** | Realvia / Webex — integračný kontakt pre export v2 | Aktívna (Export ID 1423691836) |
 
 ---
 
