@@ -3,6 +3,8 @@ import { TopBar } from "@/components/layout/topbar";
 import { getCurrentProfile, requireUser } from "@/lib/auth";
 import { mapProfileRole } from "@/lib/navigation";
 
+import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
+
 import DashboardClientShell from "../(dashboard)/DashboardClientShell";
 
 export default async function DashboardSegmentLayout({
@@ -20,7 +22,7 @@ export default async function DashboardSegmentLayout({
   const accountTier = (profile as { account_tier?: string | null } | null)?.account_tier ?? null;
 
   return (
-    <div className="flex min-h-screen" style={{ background: "#050914" }}>
+    <div className="flex min-h-screen" style={{ background: SLATE_HORIZON.bg }}>
       <div className="hidden md:block">
         <Sidebar userName={userName} role={role} accountTier={accountTier} />
       </div>

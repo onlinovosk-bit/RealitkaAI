@@ -1,5 +1,7 @@
 "use client";
 
+import { SLATE_HORIZON, WORKDESK_CARD, WORKDESK_KPI } from "@/lib/slate-horizon-theme";
+
 const chartData = [
   { date: "W1", "Avg Market Speed": 24, "Revolis Alpha Speed": 20 },
   { date: "W2", "Avg Market Speed": 23, "Revolis Alpha Speed": 19 },
@@ -14,8 +16,19 @@ const gapData = [
   { name: "Pozemky - rast", value: 14 },
 ];
 
-function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <div className={`rounded-2xl border p-5 ${className}`}>{children}</div>;
+function Card({ children, accent }: { children: React.ReactNode; accent?: string }) {
+  return (
+    <div
+      className="rounded-2xl border p-5"
+      style={{
+        background: WORKDESK_CARD.background,
+        borderColor: accent ?? WORKDESK_CARD.borderColor,
+        boxShadow: WORKDESK_CARD.boxShadow,
+      }}
+    >
+      {children}
+    </div>
+  );
 }
 
 export default function RevenueView() {
@@ -25,94 +38,140 @@ export default function RevenueView() {
   const totalGap = gapData.reduce((acc, g) => acc + g.value, 0);
 
   return (
-    <section className="space-y-10 rounded-[2rem] border border-white/10 bg-[#010103] p-10 selection:bg-yellow-500/30">
-      <header className="flex items-end justify-between">
+    <section
+      className="space-y-8 rounded-[2rem] border p-6 md:p-8"
+      style={{
+        background: WORKDESK_KPI.background,
+        borderColor: WORKDESK_KPI.borderColor,
+        boxShadow: WORKDESK_KPI.boxShadow,
+      }}
+    >
+      <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="text-4xl font-black italic tracking-tighter text-white">COMMAND CENTER</h2>
-          <p className="mt-2 text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">
-            Regional Intelligence: Prešov / Košice
+          <p
+            className="text-[10px] font-bold uppercase tracking-[0.2em]"
+            style={{ color: SLATE_HORIZON.brandDeep }}
+          >
+            Revenue intelligence
+          </p>
+          <h2 className="mt-1 text-2xl font-black tracking-tight md:text-3xl" style={{ color: SLATE_HORIZON.ink }}>
+            Kde vzniká príležitosť
+          </h2>
+          <p className="mt-2 text-xs" style={{ color: SLATE_HORIZON.muted }}>
+            Regionálny prehľad · Prešov / Košice
           </p>
         </div>
         <div className="text-right">
-          <p className="text-[8px] font-black uppercase text-slate-500">Live Market Pulse</p>
-          <p className="font-mono text-xs text-emerald-500">88.4ms Response</p>
+          <p className="text-[10px] font-bold uppercase" style={{ color: SLATE_HORIZON.muted }}>
+            Live market pulse
+          </p>
+          <p className="font-mono text-xs font-semibold" style={{ color: SLATE_HORIZON.greenDark }}>
+            88.4ms response
+          </p>
         </div>
       </header>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <Card className="border-white/5 bg-[#0a0a0b] ring-1 ring-blue-500/20">
-          <p className="mb-2 text-[10px] font-black uppercase text-slate-500">Likvidita v Radare</p>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Card accent={SLATE_HORIZON.softBorder}>
+          <p className="mb-2 text-[10px] font-bold uppercase" style={{ color: SLATE_HORIZON.muted }}>
+            Likvidita v Radare
+          </p>
           <div className="flex items-baseline gap-2">
-            <p className="text-4xl font-black italic text-white">1,42M €</p>
-            <span className="rounded-full border border-emerald-400/30 bg-emerald-500/15 px-2 py-1 text-xs font-bold text-emerald-300">
+            <p className="text-3xl font-black md:text-4xl" style={{ color: SLATE_HORIZON.ink }}>
+              1,42M €
+            </p>
+            <span
+              className="rounded-full border px-2 py-1 text-xs font-bold"
+              style={{
+                borderColor: "#BBF7D0",
+                background: "#ECFDF5",
+                color: SLATE_HORIZON.greenDark,
+              }}
+            >
               +12%
             </span>
           </div>
         </Card>
 
-        <Card className="border-white/5 bg-[#0a0a0b] ring-1 ring-yellow-500/20">
-          <p className="mb-2 text-[10px] font-black uppercase italic text-yellow-500/70">Protocol Opportunity Alerts</p>
-          <p className="text-4xl font-black text-white">9 Alerts</p>
+        <Card accent="#FDE68A">
+          <p className="mb-2 text-[10px] font-bold uppercase" style={{ color: SLATE_HORIZON.amber }}>
+            Protocol opportunity alerts
+          </p>
+          <p className="text-3xl font-black md:text-4xl" style={{ color: SLATE_HORIZON.ink }}>
+            9 Alerts
+          </p>
         </Card>
 
-        <Card className="border-white/5 bg-[#0a0a0b]">
-          <p className="mb-2 text-[10px] font-black uppercase text-slate-500">Neural Prediction Accuracy</p>
-          <p className="text-4xl font-black text-blue-500">94.8%</p>
+        <Card>
+          <p className="mb-2 text-[10px] font-bold uppercase" style={{ color: SLATE_HORIZON.muted }}>
+            Neural prediction accuracy
+          </p>
+          <p className="text-3xl font-black md:text-4xl" style={{ color: SLATE_HORIZON.brandDeep }}>
+            94.8%
+          </p>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
-        <Card className="border-white/5 bg-[#0a0a0b]">
-          <h3 className="mb-8 text-center text-xs font-black uppercase italic tracking-widest text-white">
-            Pipeline Velocity (Market Speed)
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <Card>
+          <h3 className="mb-6 text-center text-xs font-bold uppercase tracking-widest" style={{ color: SLATE_HORIZON.deep }}>
+            Pipeline velocity (market speed)
           </h3>
           <div className="space-y-4">
             {chartData.map((item) => (
               <div key={item.date}>
-                <p className="mb-1 text-[10px] font-bold text-slate-400">{item.date}</p>
+                <p className="mb-1 text-[10px] font-bold" style={{ color: SLATE_HORIZON.muted }}>
+                  {item.date}
+                </p>
                 <div className="flex gap-2">
-                  <div className="h-3 flex-1 rounded bg-slate-800">
+                  <div className="h-3 flex-1 rounded" style={{ background: SLATE_HORIZON.line }}>
                     <div
-                      className="h-3 rounded bg-slate-500"
+                      className="h-3 rounded bg-slate-400"
                       style={{ width: `${(item["Avg Market Speed"] / maxAreaValue) * 100}%` }}
                     />
                   </div>
-                  <div className="h-3 flex-1 rounded bg-slate-800">
+                  <div className="h-3 flex-1 rounded" style={{ background: SLATE_HORIZON.line }}>
                     <div
-                      className="h-3 rounded bg-blue-500"
-                      style={{ width: `${(item["Revolis Alpha Speed"] / maxAreaValue) * 100}%` }}
+                      className="h-3 rounded"
+                      style={{
+                        width: `${(item["Revolis Alpha Speed"] / maxAreaValue) * 100}%`,
+                        background: SLATE_HORIZON.brand,
+                      }}
                     />
                   </div>
                 </div>
               </div>
             ))}
-            <div className="mt-4 flex items-center gap-4 text-[10px] uppercase text-slate-500">
+            <div className="mt-4 flex flex-wrap items-center gap-4 text-[10px] uppercase" style={{ color: SLATE_HORIZON.muted }}>
               <span className="inline-flex items-center gap-1">
-                <span className="h-2 w-2 rounded-full bg-slate-500" /> Avg Market Speed
+                <span className="h-2 w-2 rounded-full bg-slate-400" /> Avg market speed
               </span>
               <span className="inline-flex items-center gap-1">
-                <span className="h-2 w-2 rounded-full bg-blue-500" /> Revolis Alpha Speed
+                <span className="h-2 w-2 rounded-full" style={{ background: SLATE_HORIZON.brand }} /> Revolis alpha speed
               </span>
             </div>
           </div>
         </Card>
 
-        <Card className="border-white/5 bg-[#0a0a0b]">
-          <h3 className="mb-8 text-center text-xs font-black uppercase italic tracking-widest text-white">
-            Demand/Supply Gap: PO-KE Area
+        <Card>
+          <h3 className="mb-6 text-center text-xs font-bold uppercase tracking-widest" style={{ color: SLATE_HORIZON.deep }}>
+            Demand/supply gap: PO-KE area
           </h3>
           <div className="space-y-4">
             {gapData.map((item, idx) => {
-              const colors = ["bg-blue-500", "bg-cyan-500", "bg-yellow-500", "bg-indigo-500"];
+              const colors = [SLATE_HORIZON.brand, "#06B6D4", SLATE_HORIZON.amber, "#6366F1"];
               const pct = Math.round((item.value / totalGap) * 100);
               return (
                 <div key={item.name}>
-                  <div className="mb-1 flex items-center justify-between text-[11px] text-slate-300">
+                  <div className="mb-1 flex items-center justify-between text-[11px]" style={{ color: SLATE_HORIZON.deep }}>
                     <span>{item.name}</span>
                     <span>{pct}%</span>
                   </div>
-                  <div className="h-2 rounded bg-slate-800">
-                    <div className={`h-2 rounded ${colors[idx % colors.length]}`} style={{ width: `${pct}%` }} />
+                  <div className="h-2 rounded" style={{ background: SLATE_HORIZON.line }}>
+                    <div
+                      className="h-2 rounded"
+                      style={{ width: `${pct}%`, background: colors[idx % colors.length] }}
+                    />
                   </div>
                 </div>
               );
