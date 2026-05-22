@@ -1,6 +1,8 @@
 "use client";
+
 import Link from "next/link";
 import { useCtaAbVariant } from "./CtaAbProvider";
+import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
 
 export function CTASection() {
   const variant = useCtaAbVariant();
@@ -10,12 +12,14 @@ export function CTASection() {
     <div className="flex flex-col items-center gap-3 py-4">
       <Link
         href="/register"
-        className="rounded-full px-8 py-3.5 text-base font-bold text-slate-950 transition-all hover:scale-[1.02]"
-        style={{ background: "linear-gradient(135deg, #22D3EE 0%, #818CF8 100%)", boxShadow: "0 0 32px rgba(34,211,238,0.35)" }}
+        className={`cursor-pointer rounded-full px-8 py-3.5 text-base font-bold text-white transition-all duration-200 hover:opacity-90 ${SLATE_HORIZON.focusRing}`}
+        style={{ background: SLATE_HORIZON.ctaGradient }}
       >
         {label}
       </Link>
-      <p className="text-xs text-slate-500">Bez kreditnej karty · 30-dňová garancia vrátenia</p>
+      <p className="text-xs" style={{ color: SLATE_HORIZON.muted }}>
+        Bez kreditnej karty · 30-dňová garancia vrátenia
+      </p>
     </div>
   );
 }

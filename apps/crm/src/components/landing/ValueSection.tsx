@@ -1,3 +1,5 @@
+import { SLATE_HORIZON, WORKDESK_CARD } from "@/lib/slate-horizon-theme";
+
 const items = [
   {
     tag: "Eliminácia mŕtveho kapitálu",
@@ -22,52 +24,41 @@ const items = [
 export function ValueSection() {
   return (
     <section className="relative py-12">
-      {/* Radiant glow na pozadí */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-5"
-        style={{
-          background:
-            "radial-gradient(ellipse 80% 60% at 50% 50%, rgba(99,102,241,0.6), transparent)",
-          filter: "blur(100px)",
-        }}
-      />
-
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         {items.map((item) => (
           <div
             key={item.title}
-            className={`group relative overflow-hidden rounded-3xl border p-8 backdrop-blur-md transition-all duration-500 ${
-              item.isEnterprise
-                ? "border-indigo-500/30 bg-slate-900/80 hover:border-indigo-400/60 hover:shadow-[0_0_30px_rgba(99,102,241,0.2)]"
-                : "border-white/10 bg-slate-900/40 hover:border-cyan-500/30"
-            }`}
+            className="group relative overflow-hidden rounded-3xl border p-8 transition-all duration-200 hover:shadow-lg"
+            style={{
+              background: WORKDESK_CARD.background,
+              borderColor: item.isEnterprise ? SLATE_HORIZON.softBorder : SLATE_HORIZON.line,
+              boxShadow: WORKDESK_CARD.boxShadow,
+            }}
           >
-            {/* Enterprise tag */}
             {item.isEnterprise && (
               <div className="absolute right-5 top-4">
-                <span className="text-gold-gradient text-[10px] font-black uppercase tracking-tight">
+                <span className="text-[10px] font-black uppercase tracking-tight" style={{ color: SLATE_HORIZON.brandDeep }}>
                   AI Asistent
                 </span>
               </div>
             )}
 
-            <p className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-cyan-400/70">
+            <p className="mb-2 text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: SLATE_HORIZON.brand }}>
               {item.tag}
             </p>
-            <h3
-              className="mb-3 text-base font-bold leading-snug"
-              style={{ color: item.isEnterprise ? "#F0F9FF" : "#CBD5E1" }}
-            >
+            <h3 className="mb-3 text-base font-bold leading-snug" style={{ color: SLATE_HORIZON.ink }}>
               {item.title}
             </h3>
 
-            <p className="text-sm leading-relaxed text-slate-400 transition-colors group-hover:text-slate-300">
+            <p className="text-sm leading-relaxed" style={{ color: SLATE_HORIZON.deep }}>
               {item.body}
             </p>
 
-            {/* Radiant linka na spodku pre Enterprise karty */}
             {item.isEnterprise && (
-              <div className="absolute bottom-0 left-0 h-[2px] w-0 bg-gradient-to-r from-indigo-500 via-cyan-400 to-transparent transition-all duration-700 group-hover:w-full" />
+              <div
+                className="absolute bottom-0 left-0 h-[2px] w-0 transition-all duration-300 group-hover:w-full"
+                style={{ background: `linear-gradient(90deg, ${SLATE_HORIZON.brand}, transparent)` }}
+              />
             )}
           </div>
         ))}
