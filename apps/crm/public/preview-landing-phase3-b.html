@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Revolis Landing · Verzia B · Slate Horizon Phase 3</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand:#2563EB;--brand-deep:#1D4ED8;--ink:#0F172A;--muted:#64748B;--line:#E2E8F0;
+  --bg:#F8FAFC;--soft:#EFF6FF;--soft-border:#BFDBFE;--green-dark:#047857;--money:#047857;
+  --cta:linear-gradient(90deg,#F97316,#FB923C);--shadow:0 8px 32px rgba(15,23,42,0.06);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,sans-serif;background:linear-gradient(180deg,var(--bg),#fff);color:var(--ink)}
+.banner{position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid var(--line);padding:12px 16px;text-align:center;font-size:13px;color:var(--muted)}
+.banner b{color:var(--brand-deep)}
+.banner a{color:var(--brand);font-weight:700;margin:0 6px}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px 60px}
+.sec{padding:48px 0;border-bottom:1px solid var(--line)}
+.tag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.22em;color:var(--brand-deep)}
+.title{font-size:clamp(1.5rem,4vw,2rem);font-weight:800;line-height:1.2;margin:10px 0;color:var(--ink)}
+.desc{font-size:14px;line-height:1.6;color:var(--muted);margin:0}
+.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:20px;margin-top:16px;box-shadow:var(--shadow)}
+.inner{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:10px}
+.btn{display:inline-flex;align-items:center;min-height:44px;padding:0 20px;border:0;border-radius:999px;background:var(--cta);color:#fff;font-size:13px;font-weight:800;margin-top:16px;cursor:pointer;box-shadow:0 8px 24px rgba(249,115,22,.22)}
+.list{margin:14px 0 0;padding:0;list-style:none;display:grid;gap:10px}
+.list li{font-size:13px;color:var(--muted);display:flex;gap:8px}
+.list li::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--brand);margin-top:7px;flex-shrink:0}
+.money{color:var(--money);font-weight:800}
+.stat{color:var(--green-dark);font-size:28px;font-weight:800;margin:8px 0 0}
+.grid3{display:grid;gap:10px;margin-top:14px}
+@media(min-width:640px){.grid3{grid-template-columns:repeat(3,1fr)}}
+.faq{border:1px solid var(--line);background:#fff;border-radius:14px;padding:14px;margin-top:10px;box-shadow:var(--shadow)}
+.faq-q{font-size:14px;font-weight:600;color:var(--ink);margin:0}
+.mock{border:1px solid var(--line);background:#fff;border-radius:18px;padding:16px;margin-top:16px;box-shadow:var(--shadow)}
+.row{display:flex;justify-content:space-between;align-items:center;font-size:12px}
+.badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:10px;font-weight:700;background:var(--soft);color:var(--brand-deep);border:1px solid var(--soft-border)}
+.bar-wrap{margin-top:10px;height:48px;display:flex;align-items:flex-end;gap:4px}
+.bar-col{width:16%;border-radius:4px 4px 0 0;background:#CBD5E1}
+.bar-col.hi{background:var(--brand);height:90%}
+.bar-col.m1{height:80%}.bar-col.m2{height:55%}.bar-col.m3{height:65%}
+.kpi{font-size:10px;color:var(--muted);margin:0}
+</style>
+</head>
+<body>
+<p class="banner">
+  <b>Verzia B</b> · Slate Horizon Phase 3 ·
+  <a href="preview-landing-phase3-a.html">Verzia A</a> ·
+  <a href="preview-landing-phase3-ab.html">A vs B</a> ·
+  <a href="/landing">/landing</a>
+</p>
+<div class="wrap">
+
+<section class="sec">
+  <p class="tag">PreviewSection · SLATE_HORIZON.bg</p>
+  <h1 class="title">Toto je tvoj nový systém.</h1>
+  <p class="desc">Jeden pohľad stačí: kto je pripravený kúpiť, ktoré nehnuteľnosti sú vhodné a čo má tím urobiť dnes.</p>
+  <ul class="list">
+    <li>AI skóre pripravenosti pre každého klienta</li>
+    <li>Automatické párovanie klientov s nehnuteľnosťami</li>
+    <li>Denné priority pre každého makléra v tíme</li>
+    <li>Notifikácie keď je klient pripravený na akciu</li>
+  </ul>
+  <button type="button" class="btn">Spustiť úvodné nastavenie do 30 sekúnd</button>
+  <div class="mock">
+    <div class="row" style="margin-bottom:12px"><span class="badge">Revolis.AI · Prehľad</span><span style="color:var(--muted)">Horúci záujem</span></div>
+    <div class="inner">
+      <p class="kpi">Index pripravenosti kúpy dnes</p>
+      <div class="bar-wrap">
+        <div class="bar-col m1"></div><div class="bar-col m2"></div><div class="bar-col hi"></div><div class="bar-col m3"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <p class="tag">ProofNumbers</p>
+  <div class="card">
+    <h2 class="title" style="font-size:1.35rem">Čísla, ktoré rozhodujú o nákupe</h2>
+    <div class="grid3">
+      <div class="inner"><p class="kpi">Odozva (95. percentil)</p><p class="stat">&lt; 2 min</p><p class="kpi">AI prvá odpoveď</p></div>
+      <div class="inner"><p class="kpi">Pokrytie follow-upov</p><p class="stat">92%</p></div>
+      <div class="inner"><p class="kpi">Nárast úspešnosti</p><p class="stat">+34%</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <p class="tag">ResponseBenchmark</p>
+  <h2 class="title" style="font-size:1.25rem">Kto odpovedá prvý, berie províziu</h2>
+  <div class="inner"><div class="row"><span>Priemerná kancelária</span><strong>4h 12m</strong></div></div>
+  <div class="inner" style="border-color:#BBF7D0;background:#F0FDF4"><div class="row"><span style="font-weight:700">Revolis.AI</span><strong class="money">&lt; 2 min</strong></div></div>
+</section>
+
+<section class="sec">
+  <p class="tag">RoiCalculatorHero</p>
+  <div class="card">
+    <h2 class="title" style="font-size:1.25rem">Koľko mesačne uniká bez AI?</h2>
+    <div class="inner"><p class="kpi">Odhad úniku mesačne</p><p class="stat" style="color:#DC2626">€4 320</p><p class="kpi" style="margin-top:12px">Potenciál s Pro</p><p class="money" style="font-size:22px">+€950</p></div>
+  </div>
+</section>
+
+<section class="sec">
+  <p class="tag">ObjectionFaq</p>
+  <h2 class="title" style="text-align:center;font-size:1.5rem">Často kladené otázky</h2>
+  <div class="faq"><p class="faq-q">Oplatí sa to finančne?</p><p class="desc" style="margin-top:10px">Starter 49 € vs provízia 2 000–4 000 €.</p></div>
+  <div class="faq"><p class="faq-q">Môžem to vyskúšať bez záväzku?</p><p class="desc" style="margin-top:10px">30-dňová garancia vrátenia peňazí.</p></div>
+</section>
+
+</div>
+</body>
+</html>

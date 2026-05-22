@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Revolis · Landing Phase 3 · Slate Horizon Preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand:#2563EB;--brand-deep:#1D4ED8;--brand-navy:#174EA6;
+  --ink:#0F172A;--deep:#1E293B;--muted:#64748B;--line:#E2E8F0;--soft:#EFF6FF;--soft-border:#BFDBFE;
+  --bg:#F8FAFC;--green:#10B981;--green-dark:#047857;--money:#047857;
+  --amber:#F97316;--cta:linear-gradient(90deg,#F97316,#FB923C);
+  --card-shadow:0 8px 32px rgba(15,23,42,0.06);
+  --hero:linear-gradient(125deg,#081120 0%,#0F172A 28%,#174EA6 55%,#1D4ED8 100%);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+body{margin:0;font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--deep)}
+
+.banner{position:sticky;top:0;z-index:100;background:#0F172A;color:#fff;text-align:center;padding:10px 16px;font-size:13px;font-weight:600;border-bottom:1px solid #1E293B}
+.banner a{color:#93C5FD;font-weight:700}
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;padding:14px 16px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:42px;z-index:99}
+.toolbar p{margin:0;font-size:12px;color:var(--muted);font-weight:600}
+.toggle{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--bg)}
+.toggle button{border:0;background:transparent;padding:10px 16px;font-size:12px;font-weight:700;cursor:pointer;color:var(--muted);min-height:44px}
+.toggle button.active{background:var(--soft);color:var(--brand-deep)}
+.wrap{max-width:1100px;margin:0 auto;padding:0 16px 80px}
+
+/* ── Section shells ── */
+.sec{padding:56px 0}
+.sec-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.22em;margin-bottom:8px}
+.sec-title{font-size:clamp(1.75rem,4vw,2.5rem);font-weight:800;line-height:1.15;letter-spacing:-.02em;margin:0 0 12px;color:inherit}
+.sec-desc{font-size:15px;line-height:1.6;color:inherit;opacity:.85;max-width:640px}
+
+/* LIGHT theme (Phase 3 target) */
+body[data-theme="light"] .sec{background:transparent;color:var(--ink)}
+body[data-theme="light"] .sec.alt{background:#fff}
+body[data-theme="light"] .sec-label{color:var(--brand-deep)}
+body[data-theme="light"] .sec-desc{color:var(--muted)}
+body[data-theme="light"] .card{background:#fff;border:1px solid var(--line);box-shadow:var(--card-shadow);border-radius:20px}
+body[data-theme="light"] .card-inner{background:var(--bg);border:1px solid var(--line);border-radius:14px}
+body[data-theme="light"] .badge{display:inline-flex;border-radius:999px;padding:4px 10px;font-size:10px;font-weight:700;border:1px solid var(--soft-border);background:var(--soft);color:var(--brand-deep)}
+body[data-theme="light"] .badge.green{background:#ECFDF5;border-color:#BBF7D0;color:var(--green-dark)}
+body[data-theme="light"] .badge.amber{background:#FFF7ED;border-color:#FED7AA;color:#C2410C}
+body[data-theme="light"] .money{color:var(--money);font-weight:800}
+body[data-theme="light"] .btn-cta{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 22px;border:0;border-radius:999px;background:var(--cta);color:#fff;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 8px 24px rgba(249,115,22,.25)}
+body[data-theme="light"] .btn-soft{display:inline-flex;align-items:center;min-height:44px;padding:0 18px;border-radius:12px;border:1px solid var(--line);background:#fff;color:var(--deep);font-size:13px;font-weight:700;cursor:pointer}
+body[data-theme="light"] .faq-item{border:1px solid var(--line);background:#fff;border-radius:16px}
+body[data-theme="light"] .faq-q{color:var(--ink)}
+body[data-theme="light"] .faq-a{color:var(--muted)}
+body[data-theme="light"] .mock-screen{border:1px solid var(--line);background:#fff;box-shadow:var(--card-shadow)}
+body[data-theme="light"] .mock-inner{background:var(--bg);border:1px solid var(--line)}
+body[data-theme="light"] .bar-track{background:var(--line)}
+body[data-theme="light"] .stat-val{color:var(--green-dark)}
+
+/* DARK theme (current production sections) */
+body[data-theme="dark"]{background:#020617;color:#e2e8f0}
+body[data-theme="dark"] .sec{background:#020617}
+body[data-theme="dark"] .sec.alt{background:#0f172a}
+body[data-theme="dark"] .sec-label{color:#22d3ee}
+body[data-theme="dark"] .sec-title{color:#f8fafc}
+body[data-theme="dark"] .sec-desc{color:#94a3b8}
+body[data-theme="dark"] .card{background:rgba(15,23,42,.6);border:1px solid rgba(51,65,85,.7);border-radius:20px;box-shadow:none}
+body[data-theme="dark"] .card-inner{background:rgba(2,6,23,.8);border:1px solid rgba(51,65,85,.5);border-radius:14px}
+body[data-theme="dark"] .badge{display:inline-flex;border-radius:999px;padding:4px 10px;font-size:10px;font-weight:700;border:1px solid rgba(34,211,238,.3);background:rgba(34,211,238,.08);color:#67e8f9}
+body[data-theme="dark"] .badge.green{border-color:rgba(52,211,153,.3);background:rgba(52,211,153,.08);color:#6ee7b7}
+body[data-theme="dark"] .money{color:#6ee7b7;font-weight:800}
+body[data-theme="dark"] .btn-cta{display:inline-flex;align-items:center;min-height:44px;padding:0 22px;border:0;border-radius:999px;background:#22d3ee;color:#020617;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 0 40px rgba(34,211,238,.4)}
+body[data-theme="dark"] .btn-soft{display:inline-flex;align-items:center;min-height:44px;padding:0 18px;border-radius:12px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;font-size:13px;font-weight:700}
+body[data-theme="dark"] .faq-item{border:1px solid rgba(51,65,85,.7);background:rgba(15,23,42,.6);border-radius:16px}
+body[data-theme="dark"] .faq-q{color:#f1f5f9}
+body[data-theme="dark"] .faq-a{color:#94a3b8}
+body[data-theme="dark"] .mock-screen{border:1px solid rgba(51,65,85,.7);background:rgba(15,23,42,.8);box-shadow:0 0 60px rgba(15,23,42,.85)}
+body[data-theme="dark"] .mock-inner{background:rgba(2,6,23,.8);border:1px solid rgba(51,65,85,.5)}
+body[data-theme="dark"] .bar-track{background:#1e293b}
+body[data-theme="dark"] .stat-val{color:#6ee7b7}
+
+.grid2{display:grid;grid-template-columns:1fr;gap:32px;align-items:center}
+@media(min-width:900px){.grid2{grid-template-columns:1fr 1fr}}
+.grid3{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:768px){.grid3{grid-template-columns:repeat(3,1fr)}}
+.p16{padding:16px}.p24{padding:24px}
+.list{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:10px}
+.list li{display:flex;gap:10px;font-size:13px;line-height:1.45;color:inherit;opacity:.9}
+.dot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex-shrink:0;background:var(--brand)}
+body[data-theme="dark"] .dot{background:#22d3ee}
+.faq-list{display:grid;gap:10px;margin-top:24px}
+.faq-item{padding:16px}
+.faq-q{font-size:14px;font-weight:600;width:100%;text-align:left;background:none;border:0;cursor:pointer;display:flex;justify-content:space-between;gap:12px;padding:0;color:inherit}
+.faq-a{margin:12px 0 0;font-size:13px;line-height:1.55;display:none}
+.faq-item.open .faq-a{display:block}
+.range{width:100%;accent-color:#2563EB}
+body[data-theme="dark"] .range{accent-color:#22d3ee}
+.hero-mini{background:var(--hero);color:#fff;border-radius:22px;padding:28px;margin:24px 0 0;text-align:center}
+.hero-mini h1{margin:0;font-size:clamp(1.5rem,3vw,2rem);font-weight:800}
+.hero-mini p{margin:8px 0 0;font-size:14px;opacity:.85}
+.note-box{margin-top:32px;padding:16px 18px;border-radius:14px;border:1px solid var(--soft-border);background:var(--soft);font-size:13px;line-height:1.5;color:var(--brand-deep)}
+body[data-theme="dark"] .note-box{border-color:#334155;background:#0f172a;color:#94a3b8}
+</style>
+</head>
+<body data-theme="light">
+
+<p class="banner">
+  Ukážka <b>Landing Phase 3</b> — rovnaký obsah a layout, iná téma ·
+  <a href="/landing">aktuálny /landing</a> ·
+  <a href="preview-workdesk-light-v1-pure.html">Preview 11</a>
+</p>
+
+<div class="toolbar">
+  <p>Porovnaj vizuál:</p>
+  <div class="toggle" role="tablist" aria-label="Téma ukážky">
+    <button type="button" id="btn-light" class="active" aria-selected="true">Slate Horizon Phase 3 (ciel)</button>
+    <button type="button" id="btn-dark" aria-selected="false">Dark (dnes na /landing)</button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="hero-mini">
+    <p style="margin:0;font-size:11px;font-weight:700;letter-spacing:.25em;text-transform:uppercase;opacity:.8">Kontext · Phase 1+2 už merged</p>
+    <h1>Hero, Problem, HowItWorks — light ✓</h1>
+    <p>Toto preview ukazuje len zvyšné sekcie, ktoré ešte majú <code>bg-slate-950</code></p>
+  </div>
+
+  <!-- PreviewSection -->
+  <section class="sec alt" id="preview">
+    <span class="badge">PreviewSection</span>
+    <div class="grid2" style="margin-top:20px">
+      <div>
+        <p class="sec-label">Tvoj nový systém</p>
+        <h2 class="sec-title">Toto je tvoj nový systém.</h2>
+        <p class="sec-desc">Jeden pohľad stačí: kto je pripravený kúpiť, ktoré nehnuteľnosti sú vhodné a čo má tím urobiť dnes.</p>
+        <ul class="list">
+          <li><span class="dot"></span>AI skóre pripravenosti pre každého klienta</li>
+          <li><span class="dot"></span>Automatické párovanie klientov s nehnuteľnosťami</li>
+          <li><span class="dot"></span>Denné priority pre každého makléra</li>
+          <li><span class="dot"></span>Notifikácie keď je klient pripravený na akciu</li>
+        </ul>
+        <div style="margin-top:20px;display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+          <button type="button" class="btn-cta">Spustiť úvodné nastavenie</button>
+          <span style="font-size:11px;opacity:.7">100 % garancia 30 dní</span>
+        </div>
+      </div>
+      <div class="mock-screen p16" style="border-radius:24px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:11px;opacity:.75">
+          <span class="badge">Revolis.AI · Prehľad</span>
+          <span>Horúci záujemcovia</span>
+        </div>
+        <div class="grid2" style="gap:10px">
+          <div class="mock-inner p16" style="grid-column:span 2">
+            <p style="margin:0 0 8px;font-size:11px;font-weight:600;opacity:.75">Index pripravenosti kúpy</p>
+            <div style="display:flex;align-items:flex-end;gap:4px;height:64px">
+              <div style="flex:1;background:var(--brand);height:80%;border-radius:4px 4px 0 0;opacity:.85"></div>
+              <div style="flex:1;background:var(--brand);height:55%;border-radius:4px 4px 0 0;opacity:.65"></div>
+              <div style="flex:1;background:var(--brand);height:40%;border-radius:4px 4px 0 0;opacity:.55"></div>
+              <div style="flex:1;background:var(--brand);height:65%;border-radius:4px 4px 0 0;opacity:.7"></div>
+              <div style="flex:1;background:var(--brand);height:90%;border-radius:4px 4px 0 0"></div>
+            </div>
+          </div>
+          <div class="mock-inner p16">
+            <p style="margin:0;font-size:10px;opacity:.7">Horúci</p>
+            <p style="margin:4px 0 0;font-size:20px;font-weight:800">12</p>
+          </div>
+          <div class="mock-inner p16">
+            <p style="margin:0;font-size:10px;opacity:.7">Provízia v pipeline</p>
+            <p class="money" style="margin:4px 0 0;font-size:18px">€84k</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ProofNumbers -->
+  <section class="sec" id="proof">
+    <div class="card p24">
+      <span class="badge green">ProofNumbers</span>
+      <h2 class="sec-title" style="margin-top:12px">Čísla, ktoré rozhodujú o nákupe</h2>
+      <div class="grid3" style="margin-top:20px">
+        <div class="card-inner p16">
+          <p style="margin:0;font-size:11px;opacity:.75">Odozva (95. percentil)</p>
+          <p class="stat-val" style="margin:8px 0 0;font-size:28px;font-weight:800">&lt; 2 min</p>
+          <p style="margin:6px 0 0;font-size:11px;opacity:.75">AI prvá odpoveď na dopyt</p>
+        </div>
+        <div class="card-inner p16">
+          <p style="margin:0;font-size:11px;opacity:.75">Pokrytie follow-upov</p>
+          <p class="stat-val" style="margin:8px 0 0;font-size:28px;font-weight:800">92%</p>
+          <p style="margin:6px 0 0;font-size:11px;opacity:.75">Aktívny ďalší kontakt</p>
+        </div>
+        <div class="card-inner p16">
+          <p style="margin:0;font-size:11px;opacity:.75">Nárast úspešnosti</p>
+          <p class="stat-val" style="margin:8px 0 0;font-size:28px;font-weight:800">+34%</p>
+          <p style="margin:6px 0 0;font-size:11px;opacity:.75">Po dokončenom setup</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ResponseBenchmark + MiniPlaybook -->
+  <section class="sec alt">
+    <div class="grid2">
+      <div class="card p24">
+        <span class="badge">ResponseBenchmark</span>
+        <h2 class="sec-title" style="margin-top:12px;font-size:1.5rem">Kto odpovedá prvý, berie províziu</h2>
+        <div style="margin-top:16px;display:grid;gap:8px">
+          <div class="card-inner p16" style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:13px">Priemerná kancelária</span>
+            <strong style="opacity:.8">4h 12m</strong>
+          </div>
+          <div class="card-inner p16" style="display:flex;justify-content:space-between;align-items:center;border-color:#BBF7D0">
+            <span style="font-size:13px;font-weight:700">Revolis.AI</span>
+            <strong class="money">&lt; 2 min</strong>
+          </div>
+        </div>
+      </div>
+      <div class="card p24">
+        <span class="badge amber">MiniPlaybookDemo</span>
+        <h2 class="sec-title" style="margin-top:12px;font-size:1.5rem">Denný playbook</h2>
+        <div style="margin-top:14px;display:grid;gap:8px">
+          <div class="card-inner p16">
+            <p style="margin:0;font-size:13px;font-weight:700">Lucia Šimková · BRI 91</p>
+            <p style="margin:4px 0 0;font-size:12px;opacity:.75">Zavolať do 10:00 · provízia <span class="money">€7 200</span></p>
+          </div>
+          <div class="card-inner p16">
+            <p style="margin:0;font-size:13px;font-weight:700">Peter Horváth · follow-up</p>
+            <p style="margin:4px 0 0;font-size:12px;opacity:.75">48h bez odpovede — SMS šablóna pripravená</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RoiCalculatorHero -->
+  <section class="sec" id="roi">
+    <div class="card p24">
+      <span class="badge">RoiCalculatorHero</span>
+      <h2 class="sec-title" style="margin-top:12px">Koľko mesačne uniká bez AI?</h2>
+      <div class="grid2" style="margin-top:16px">
+        <div>
+          <label style="display:block;font-size:12px;margin-bottom:12px;opacity:.85">Nové dopyty / mesiac: <strong>80</strong></label>
+          <input class="range" type="range" min="20" max="300" value="80" aria-label="Dopyty mesačne">
+          <label style="display:block;font-size:12px;margin:16px 0 12px;opacity:.85">Priemerná odpoveď (min): <strong>120</strong></label>
+          <input class="range" type="range" min="2" max="360" value="120" aria-label="Odpoveď v minútach">
+        </div>
+        <div class="card-inner p24">
+          <p style="margin:0;font-size:12px;opacity:.75">Odhad úniku mesačne</p>
+          <p style="margin:6px 0 0;font-size:32px;font-weight:800;color:#DC2626">€4 320</p>
+          <p style="margin:16px 0 0;font-size:12px;opacity:.75">Potenciál s Pro</p>
+          <p class="money" style="margin:6px 0 0;font-size:24px;font-weight:800">+€950</p>
+          <button type="button" class="btn-cta" style="margin-top:16px">Spustiť Pro setup</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ObjectionFaq -->
+  <section class="sec alt" id="faq">
+    <h2 class="sec-title" style="text-align:center">Často kladené otázky</h2>
+    <p class="sec-desc" style="text-align:center;margin:0 auto 8px">ObjectionFaq — accordion, rovnaká štruktúra</p>
+    <div class="faq-list">
+      <div class="faq-item open">
+        <button type="button" class="faq-q" aria-expanded="true">Čo ak nemáme čas na zavedenie? <span>−</span></button>
+        <p class="faq-a">Začíname s minimálnou konfiguráciou. Prvé výsledky vidíš po zapnutí AI odpovedí a denného plánu úloh.</p>
+      </div>
+      <div class="faq-item">
+        <button type="button" class="faq-q" aria-expanded="false">Oplatí sa to finančne? <span>+</span></button>
+        <p class="faq-a">Priemerná provízia 2 000–4 000 €. Starter 49 €/mes — stačí jeden extra obchod ročne.</p>
+      </div>
+      <div class="faq-item">
+        <button type="button" class="faq-q" aria-expanded="false">Môžem to vyskúšať bez záväzku? <span>+</span></button>
+        <p class="faq-a">30-dňová garancia vrátenia peňazí bez otázok.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="note-box">
+    <strong>Čo sa nemení (preto „bez redesignu“):</strong> poradie sekcií, texty, CTA ciele, grid 2-stĺpec / 3-KPI, accordion FAQ.
+    <br><strong>Čo sa mení:</strong> <code>bg-slate-950</code> → <code>#F8FAFC</code> + white cards, cyan CTAs → orange gradient, emojis → Lucide (v React verzii), 44px touch targets.
+  </div>
+
+</div>
+
+<script>
+const body=document.body;
+const btnLight=document.getElementById('btn-light');
+const btnDark=document.getElementById('btn-dark');
+function setTheme(t){
+  body.setAttribute('data-theme',t);
+  btnLight.classList.toggle('active',t==='light');
+  btnDark.classList.toggle('active',t==='dark');
+  btnLight.setAttribute('aria-selected',t==='light');
+  btnDark.setAttribute('aria-selected',t==='dark');
+}
+btnLight.addEventListener('click',()=>setTheme('light'));
+btnDark.addEventListener('click',()=>setTheme('dark'));
+
+document.querySelectorAll('.faq-q').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const item=btn.closest('.faq-item');
+    const open=item.classList.contains('open');
+    document.querySelectorAll('.faq-item').forEach(i=>{i.classList.remove('open');i.querySelector('.faq-q span').textContent='+'});
+    if(!open){item.classList.add('open');btn.querySelector('span').textContent='−'}
+  });
+});
+</script>
+</body>
+</html>
