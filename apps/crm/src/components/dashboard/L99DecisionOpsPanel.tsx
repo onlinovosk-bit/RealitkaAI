@@ -73,7 +73,7 @@ export default function L99DecisionOpsPanel({ leads }: Props) {
             L99 Decision Ops
           </p>
           <h3 className="mt-1 text-base font-bold" style={{ color: SLATE_HORIZON.ink }}>
-            Action Scoring / Closing Window / Rescue
+            Kde sú peniaze · Kedy podpíše · Zachráň províziu
           </h3>
         </div>
       </div>
@@ -107,11 +107,11 @@ export default function L99DecisionOpsPanel({ leads }: Props) {
       <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-5">
         {(
           [
-            ["score-lead", "1) Score lead"],
-            ["recompute-queue", "2) Recompute queue"],
-            ["closing-window", "3) Closing window"],
-            ["rescue-trigger", "4) Rescue trigger"],
-            ["micro-actions", "5) Micro-actions"],
+            ["score-lead", "1) Koľko mi prinesie?"],
+            ["recompute-queue", "2) Komu volať ako prvému?"],
+            ["closing-window", "3) Kedy inkasujem?"],
+            ["rescue-trigger", "4) Zastav únik dealu"],
+            ["micro-actions", "5) Akcia na dnes"],
           ] as const
         ).map(([action, label]) => (
           <button

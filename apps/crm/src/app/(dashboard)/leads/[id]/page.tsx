@@ -930,10 +930,10 @@ export default function LeadDetailPage() {
               <p className="mb-1 text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.brandDeep }}>L99 Decision Ops</p>
               <div className="grid grid-cols-1 gap-2 mt-3">
                 {[
-                  { action: "score-lead" as const, label: "Score lead" },
-                  { action: "recompute-queue" as const, label: "Recompute queue" },
-                  { action: "closing-window" as const, label: "Closing window" },
-                  { action: "rescue-trigger" as const, label: "Rescue plan" },
+                  { action: "score-lead" as const, label: "1) Koľko mi prinesie?" },
+                  { action: "recompute-queue" as const, label: "2) Komu volať ako prvému?" },
+                  { action: "closing-window" as const, label: "3) Kedy inkasujem?" },
+                  { action: "rescue-trigger" as const, label: "4) Zastav únik dealu" },
                 ].map(({ action, label }) => (
                 <button
                   key={action}
@@ -961,7 +961,7 @@ export default function LeadDetailPage() {
                     color: SLATE_HORIZON.brandDeep,
                   }}
                 >
-                  {decisionBusy === "micro-actions" ? "Plánujem micro-actions..." : "5) Schedule micro-actions"}
+                  {decisionBusy === "micro-actions" ? "Plánujem akciu na dnes…" : "5) Akcia na dnes"}
                 </button>
               </div>
               <pre

@@ -10,6 +10,8 @@ import { BriLivePulse } from "@/components/revolis/BriLivePulse";
 import { MarketHeatmap } from "@/components/revolis/MarketHeatmap";
 import type { MarketHotspot } from "@/lib/analytics/market-density";
 import type { AiActivityFeedItem } from "@/lib/app-mode-types";
+import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
+import { useLicenseCapabilities } from "@/hooks/useLicenseCapabilities";
 
 export default function RevolisAIClient({
   hotspots,
@@ -70,44 +72,30 @@ export default function RevolisAIClient({
     }
   }, []);
 
-  const canSeeMarketVisionDetails =
-    accountTier === "market_vision" ||
-    accountTier === "enterprise" ||
-    accountTier === "protocol_authority" ||
-    accountTier === "command";
+  const { can } = useLicenseCapabilities(accountTier);
+  const canSeeMarketVisionDetails = can("canUseMarketIntel");
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#030712] text-slate-100">
-      <div
-        className="pointer-events-none absolute inset-0 opacity-40"
-        style={{
-          background:
-            "radial-gradient(ellipse 70% 50% at 20% -10%, rgba(99,102,241,0.35), transparent), radial-gradient(ellipse 50% 40% at 90% 20%, rgba(34,211,238,0.12), transparent)",
-        }}
-      />
-
-      <div className="relative z-10 mx-auto max-w-6xl px-4 py-8 md:px-6">
-        <header className="mb-10 flex flex-col gap-6 border-b border-white/10 pb-8 md:flex-row md:items-center md:justify-between">
+    <div className="relative min-h-screen" style={{ background: SLATE_HORIZON.bg, color: SLATE_HORIZON.ink }}>
+      <div className="mx-auto max-w-6xl px-4 py-8 md:px-6">
+        <header className="mb-10 flex flex-col gap-6 border-b pb-8 md:flex-row md:items-center md:justify-between" style={{ borderColor: SLATE_HORIZON.line }}>
           <div>
             <div className="mb-3 flex items-center gap-3">
               <div
                 className="flex h-9 w-9 items-center justify-center rounded-lg text-sm font-bold text-white"
-                style={{
-                  background: "linear-gradient(135deg, #1B4FD8 0%, #22D3EE 100%)",
-                  boxShadow: "0 0 16px rgba(34,211,238,0.4)",
-                }}
+                style={{ background: SLATE_HORIZON.brandDeep }}
               >
                 R
               </div>
               <div>
-                <p className="text-sm font-bold leading-none" style={{ color: "#F0F9FF" }}>Revolis.AI</p>
-                <p className="text-[10px]" style={{ color: "#475569" }}>AI platforma pre maklérov</p>
+                <p className="text-sm font-bold leading-none" style={{ color: SLATE_HORIZON.ink }}>Revolis.AI</p>
+                <p className="text-[10px]" style={{ color: SLATE_HORIZON.muted }}>AI platforma pre maklérov</p>
               </div>
             </div>
-            <h1 className="text-3xl font-black uppercase tracking-tight text-white md:text-4xl">
+            <h1 className="text-3xl font-black uppercase tracking-tight md:text-4xl" style={{ color: SLATE_HORIZON.ink }}>
               AI Párovanie
             </h1>
-            <p className="mt-2 max-w-xl text-sm text-slate-400">
+            <p className="mt-2 max-w-xl text-sm" style={{ color: SLATE_HORIZON.muted }}>
               Denný trhový scan, hustota dopytu a živý Buyer Readiness Index – na jednom mieste.
             </p>
           </div>
@@ -118,7 +106,8 @@ export default function RevolisAIClient({
               type="button"
               onClick={runScan}
               disabled={scanning}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-indigo-500 px-8 py-3.5 text-sm font-bold text-white shadow-[0_0_24px_rgba(99,102,241,0.45)] transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center justify-center gap-2 rounded-xl px-8 py-3.5 text-sm font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              style={{ background: SLATE_HORIZON.brandDeep }}
             >
               {scanning ? (
                 <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
@@ -132,7 +121,8 @@ export default function RevolisAIClient({
 
         {scanMessage ? (
           <p
-            className={`mb-6 text-sm ${scanMessage.includes("Hotovo") ? "text-emerald-400/90" : "text-amber-400/90"}`}
+            className="mb-6 text-sm font-medium"
+            style={{ color: scanMessage.includes("Hotovo") ? SLATE_HORIZON.greenDark : SLATE_HORIZON.amber }}
           >
             {scanMessage}
           </p>
@@ -148,7 +138,12 @@ export default function RevolisAIClient({
         </div>
 
         <div className="mt-8">
-          <DemandHeatmap demandData={demandData} supplyData={supplyData} detectedGap={detectedGap} />
+          <DemandHeatmap
+            demandData={demandData}
+            supplyData={supplyData}
+            detectedGap={detectedGap}
+            canViewDetails={can("canViewDemandHeatmap")}
+          />
         </div>
 
         <section className="mt-8">
