@@ -2,6 +2,8 @@
 
 import { useCallback, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
+import { WORKDESK_INPUT } from "@/lib/slate-horizon-theme";
 
 declare global {
   interface Window {
@@ -19,8 +21,8 @@ export function HeroSocialProof() {
     <div
       className="inline-flex items-center gap-2 rounded-full px-3 py-1.5"
       style={{
-        background: "rgba(34,211,238,0.08)",
-        border: "1px solid rgba(34,211,238,0.18)",
+        background: SLATE_HORIZON.soft,
+        border: `1px solid ${SLATE_HORIZON.softBorder}`,
       }}
     >
       <div className="flex -space-x-1.5">
@@ -29,16 +31,16 @@ export function HeroSocialProof() {
             key={initials}
             className="flex h-5 w-5 items-center justify-center rounded-full border text-[8px] font-bold"
             style={{
-              background: "rgba(34,211,238,0.15)",
-              borderColor: "rgba(34,211,238,0.25)",
-              color: "#22D3EE",
+              background: "#DBEAFE",
+              borderColor: "#BFDBFE",
+              color: SLATE_HORIZON.brandDeep,
             }}
           >
             {initials}
           </div>
         ))}
       </div>
-      <span className="text-[11px] font-medium text-cyan-400/80">
+      <span className="text-[11px] font-medium" style={{ color: SLATE_HORIZON.deep }}>
         13 kancelárií sa pridalo tento mesiac
       </span>
     </div>
@@ -57,8 +59,10 @@ export function HeroTrustBar() {
     <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
       {items.map((item) => (
         <div key={item} className="flex items-center gap-1.5">
-          <span className="h-1.5 w-1.5 rounded-full bg-cyan-400/80" />
-          <span className="text-[11px] text-slate-500">{item}</span>
+          <span className="h-1.5 w-1.5 rounded-full" style={{ background: SLATE_HORIZON.green }} />
+          <span className="text-[11px]" style={{ color: SLATE_HORIZON.muted }}>
+            {item}
+          </span>
         </div>
       ))}
     </div>
@@ -114,9 +118,9 @@ export function HeroEmailCapture() {
 
   if (status === "success") {
     return (
-      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="py-3">
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="py-3" role="status">
         <p className="text-sm font-medium text-white">Skvelé! Presmerovávam vás...</p>
-        <p className="text-xs text-slate-500">Nastavenie trvá 2 minúty.</p>
+        <p className="text-xs text-white/70">Nastavenie trvá 2 minúty.</p>
       </motion.div>
     );
   }
@@ -124,7 +128,11 @@ export function HeroEmailCapture() {
   return (
     <div className="w-full max-w-md">
       <div className="mb-2 flex gap-2">
+        <label htmlFor="hero-email" className="sr-only">
+          Váš pracovný email
+        </label>
         <input
+          id="hero-email"
           ref={inputRef}
           type="email"
           value={email}
@@ -140,43 +148,51 @@ export function HeroEmailCapture() {
           onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
           placeholder="vas@email.sk"
           disabled={status === "loading"}
-          className="min-w-0 flex-1 rounded-xl border border-white/[0.12] bg-white/[0.06] px-4 py-3 text-sm text-white placeholder-slate-500 outline-none transition-all duration-150 focus:border-cyan-400/50 focus:bg-white/[0.08] disabled:opacity-50"
+          className={`min-w-0 flex-1 px-4 py-3 text-sm outline-none transition-all duration-200 disabled:opacity-50 ${SLATE_HORIZON.focusRing}`}
+          style={{
+            borderRadius: WORKDESK_INPUT.borderRadius,
+            border: `1px solid rgba(255,255,255,0.28)`,
+            background: "rgba(255,255,255,0.14)",
+            color: "#FFFFFF",
+          }}
         />
         <button
+          type="button"
           onClick={handleSubmit}
           disabled={status === "loading"}
-          className="flex flex-shrink-0 items-center gap-2 rounded-xl bg-cyan-400 px-5 py-3 text-sm font-semibold text-[#050508] transition-all duration-150 hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
-          style={{ boxShadow: "0 0 20px rgba(34,211,238,0.35)" }}
+          className={`flex min-h-[44px] flex-shrink-0 cursor-pointer items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white transition-all duration-200 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 ${SLATE_HORIZON.focusRing}`}
+          style={{ background: SLATE_HORIZON.ctaGradient }}
         >
-          {status === "loading" ? "Čakajte..." : "Začať ->"}
+          {status === "loading" ? "Čakajte..." : "Začať →"}
         </button>
       </div>
 
       <AnimatePresence>
         {status === "error" && errorMsg && (
           <motion.p
+            role="alert"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="mb-2 px-1 text-xs text-red-400"
+            className="mb-2 px-1 text-xs text-red-200"
           >
             {errorMsg}
           </motion.p>
         )}
       </AnimatePresence>
 
-      <p className="text-xs text-slate-600">
+      <p className="text-xs text-white/65">
         alebo{" "}
         <a
           href="/demo"
-          className="text-slate-500 underline underline-offset-2 transition-colors hover:text-slate-400"
+          className="cursor-pointer underline underline-offset-2 transition-colors duration-200 hover:text-white"
         >
           pozrite živé demo
         </a>{" "}
         · Odoslaním súhlasíte s{" "}
         <a
           href="/privacy"
-          className="text-slate-600 underline underline-offset-2 transition-colors hover:text-slate-500"
+          className="cursor-pointer underline underline-offset-2 transition-colors duration-200 hover:text-white/90"
         >
           Privacy Policy
         </a>
