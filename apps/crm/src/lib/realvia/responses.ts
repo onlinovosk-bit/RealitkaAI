@@ -8,6 +8,9 @@ export type RealviaApiBody = {
   message: string;
 };
 
+/** Unified auth failure message for all Realvia-facing endpoints. */
+export const REALVIA_AUTH_ERROR_MESSAGE = 'Invalid authentication';
+
 /** Pick the primary user-facing message from validation errors. */
 export function pickRealviaErrorMessage(errors: readonly string[]): string {
   if (errors.length === 0) return 'Request rejected';
