@@ -10,6 +10,8 @@ export {
   realviaSuccess,
 } from './responses';
 export type { RealviaApiBody, RealviaApiResult } from './responses';
+export { assertRealviaContractBody, parseRealviaContractBody } from './contract';
+export type { RealviaContractBody } from './contract';
 export { storeWebhookLog, enqueueProcessingJob, fetchPendingJobs } from './webhookStore';
 export { validateRequest, extractClientIP } from './validate';
 export { resolveAgencyIdFromRealviaHeaders } from './resolveAgency';

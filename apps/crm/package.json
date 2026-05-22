@@ -15,7 +15,9 @@
         "pilot:check": "node scripts/pilot-checklist.mjs",
         "verify:realtime": "node scripts/verify-realtime.mjs",
         "test": "vitest run",
-        "test:watch": "vitest"
+        "test:watch": "vitest",
+        "test:realvia": "vitest run src/lib/realvia src/app/api/realvia src/app/api/webhooks/realvia --pool=threads",
+        "smoke:realvia": "node scripts/realvia-smoke.mjs"
     },
     "dependencies": {
         "@anthropic-ai/sdk": "^0.91.1",
