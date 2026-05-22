@@ -16,6 +16,11 @@ import { storeWebhookLog, enqueueProcessingJob } from '@/lib/realvia/webhookStor
 import { isAdvertPayload, isDeletePayload } from '@/lib/realvia/types';
 import type { RealviaWebhookLogEntry } from '@/lib/realvia/types';
 import { logInfo, logError, logWarn } from '@/lib/logger';
+import {
+  realviaError,
+  realviaErrorFromValidation,
+  realviaSuccess,
+} from '@/lib/realvia/responses';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -34,10 +39,7 @@ export async function POST(request: NextRequest) {
         errors: validation.errors,
       });
 
-      return NextResponse.json(
-        { error: 'Forbidden', details: validation.errors },
-        { status: 403 },
-      );
+      return realviaErrorFromValidation(validation.errors, 403);
     }
 
     // ── 2. PARSE JSON BODY ──────────────────────────────────────
@@ -47,19 +49,13 @@ export async function POST(request: NextRequest) {
 
       // Double-check payload size after reading
       if (text.length > 5 * 1024 * 1024) {
-        return NextResponse.json(
-          { error: 'Payload too large' },
-          { status: 413 },
-        );
+        return realviaError('Payload too large', 413);
       }
 
       payload = JSON.parse(text);
     } catch {
       logWarn('[realvia-webhook] Invalid JSON body', { ip: validation.ip });
-      return NextResponse.json(
-        { error: 'Invalid JSON' },
-        { status: 400 },
-      );
+      return realviaError('Invalid JSON', 400);
     }
 
     // ── 3. DETERMINE PAYLOAD TYPE ───────────────────────────────
@@ -116,10 +112,7 @@ export async function POST(request: NextRequest) {
       });
 
       // Return 500 so Realvia knows to retry
-      return NextResponse.json(
-        { error: 'Internal storage error', request_id: requestId },
-        { status: 500 },
-      );
+      return realviaError('Internal storage error', 500);
     }
 
     // ── 6. ENQUEUE FOR ASYNC PROCESSING ─────────────────────────
@@ -146,15 +139,7 @@ export async function POST(request: NextRequest) {
       durationMs: duration,
     });
 
-    return NextResponse.json(
-      {
-        ok: true,
-        request_id: requestId,
-        payload_type: payloadType,
-        queued: queueResult.success,
-      },
-      { status: 200 },
-    );
+    return realviaSuccess('Webhook received');
   } catch (err) {
     // ── CATCH-ALL: NEVER CRASH ──────────────────────────────────
     const message = err instanceof Error ? err.message : 'Unknown error';
@@ -166,10 +151,7 @@ export async function POST(request: NextRequest) {
       durationMs: duration,
     });
 
-    return NextResponse.json(
-      { error: 'Internal server error', request_id: requestId },
-      { status: 500 },
-    );
+    return realviaError('Internal server error', 500);
   }
 }
 
