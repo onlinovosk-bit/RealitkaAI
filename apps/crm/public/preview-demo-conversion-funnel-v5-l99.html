@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Revolis · Ukážka · Predajný postup v5</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand:#2563EB;--brand-deep:#1D4ED8;--ink:#0F172A;--deep:#1E293B;--muted:#64748B;--line:#E2E8F0;
+  --soft:#EFF6FF;--soft-border:#BFDBFE;--bg:#F8FAFC;--green:#10B981;--green-dark:#047857;--red:#EF4444;
+  --gold:#CA8A04;--gold-light:#EAB308;--gold-pale:#FEF3C7;--gold-deep:#A16207;
+  --cta:linear-gradient(90deg,#CA8A04,#EAB308);
+  --hero:linear-gradient(125deg,#081120 0%,#0F172A 28%,#174EA6 55%,#1D4ED8 100%);
+  --shadow:0 8px 32px rgba(15,23,42,.06);
+  --s1:#FEE2E2;--s2:#FEF9C3;--s3:#ECFDF5;--s4:#EFF6FF;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important}}
+body{margin:0;font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+svg.icon{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+a{text-decoration:none;color:inherit}
+.approve{position:sticky;top:0;z-index:200;background:#0F172A;color:#fff;text-align:center;padding:10px 14px;font-size:12px;font-weight:600;border-bottom:1px solid #1E293B}
+.approve b{color:#FCD34D}
+.approve a{color:#93C5FD;font-weight:700;margin:0 4px}
+.sticky-cta{position:fixed;bottom:0;left:0;right:0;z-index:150;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:10px 16px;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;box-shadow:0 -8px 30px rgba(15,23,42,.08)}
+.sticky-cta p{margin:0;font-size:12px;color:var(--muted);font-weight:600}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 20px;border-radius:12px;font-size:13px;font-weight:800;cursor:pointer;border:0;transition:opacity .2s,transform .15s,border-color .2s}
+.btn:hover{opacity:.95}.btn:active{transform:scale(.98)}
+.btn:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.btn-primary{background:var(--cta);color:#0F172A;box-shadow:0 8px 24px rgba(202,138,4,.32)}
+.btn-brand{background:var(--brand);color:#fff}
+.btn-ghost{background:#fff;color:var(--deep);border:1px solid var(--line)}
+.btn-sm{min-height:40px;padding:0 14px;font-size:11px}
+.hero{position:relative;padding:48px 20px 40px;text-align:center;color:#fff;background:var(--hero);overflow:hidden}
+.hero-inner{position:relative;max-width:800px;margin:0 auto}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:rgba(191,219,254,.9)}
+.hero h1{margin:12px 0;font-size:clamp(1.65rem,4.5vw,2.65rem);font-weight:800;line-height:1.08;letter-spacing:-.02em}
+.hero .sub{font-size:15px;line-height:1.6;color:rgba(219,234,254,.88);max-width:620px;margin:0 auto 20px}
+.persona{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:20px}
+.persona button{min-height:44px;padding:0 16px;border-radius:999px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font-size:12px;font-weight:700;cursor:pointer}
+.persona button.on{background:rgba(252,211,77,.25);border-color:#FCD34D;color:#FEF3C7}
+.progress-wrap{max-width:960px;margin:-24px auto 0;padding:0 16px;position:relative;z-index:10}
+.progress{background:#fff;border:1px solid var(--line);border-radius:20px;padding:14px;box-shadow:var(--shadow);display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.progress .step{text-align:center;padding:8px 4px;border-radius:12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);cursor:pointer;min-height:48px;display:grid;place-items:center;border:0;background:transparent;font-family:inherit}
+.progress .step.active{font-weight:800;color:var(--ink)}
+.progress .step.s1.active{background:var(--s1);color:#BE123C}
+.progress .step.s2.active{background:var(--s2);color:var(--gold-deep)}
+.progress .step.s3.active{background:var(--s3);color:var(--green-dark)}
+.progress .step.s4.active{background:var(--s4);color:var(--brand-deep)}
+.wrap{max-width:1140px;margin:0 auto;padding:28px 16px 110px}
+.panel{display:none}.panel.on{display:block}
+.sec{margin-bottom:36px}
+.tag{display:inline-flex;border-radius:999px;padding:4px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;background:var(--soft);color:var(--brand-deep);border:1px solid var(--soft-border)}
+.sec h2{margin:10px 0 8px;font-size:clamp(1.3rem,3vw,1.75rem);font-weight:800;letter-spacing:-.02em}
+.sec p.lead{margin:0 0 16px;font-size:14px;color:var(--muted);max-width:680px;line-height:1.55}
+.glass{background:#fff;border:1px solid var(--line);border-radius:20px;padding:20px;box-shadow:var(--shadow)}
+.leak-val{font-size:clamp(1.75rem,4vw,2.25rem);font-weight:800;color:var(--red)}
+.proof{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(min-width:640px){.proof{grid-template-columns:repeat(4,1fr)}}
+.proof-item{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center}
+.proof-item b{display:block;font-size:20px;font-weight:800}
+.proof-item span{font-size:11px;color:var(--muted)}
+.compare{width:100%;border-collapse:collapse;font-size:12px;margin-top:12px}
+.compare th,.compare td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left}
+.compare th{color:var(--muted);font-weight:700;font-size:10px;text-transform:uppercase}
+.compare .win{color:var(--green-dark);font-weight:700}
+.compare .lose{color:var(--muted)}
+.program-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}
+.program-tabs button{min-height:44px;padding:0 16px;border-radius:12px;border:1px solid var(--line);background:#fff;font-size:12px;font-weight:800;cursor:pointer}
+.program-tabs button.on{border-color:var(--gold);background:var(--gold-pale);color:var(--gold-deep)}
+.program-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:16px}
+.program-head .price{font-size:28px;font-weight:800;color:var(--ink)}
+.program-head .feel{font-size:13px;color:var(--muted);font-style:italic}
+.feature-search{width:100%;max-width:360px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;font-size:14px;margin-bottom:14px}
+.feature-grid{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:640px){.feature-grid{grid-template-columns:repeat(2,1fr)}}
+.feat{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;cursor:default;transition:border-color .2s,box-shadow .2s}
+.feat:hover{border-color:var(--soft-border);box-shadow:0 4px 16px rgba(15,23,42,.04)}
+.feat h4{margin:0 0 10px;font-size:14px;font-weight:800;line-height:1.3}
+.feat-pain{margin:0 0 10px;font-size:12px;color:#9F1239;line-height:1.6;background:#FFF1F2;border-left:3px solid #FDA4AF;padding:10px 12px;border-radius:0 10px 10px 0}
+.feat-pain strong{color:#BE123C;font-weight:800}
+.feat-sol{margin:0;font-size:12px;color:#334155;line-height:1.65}
+.feat-sol strong{color:var(--ink);font-weight:800}
+.feat .outcome{display:inline-block;margin-top:10px;font-size:10px;font-weight:700;color:var(--green-dark);background:#ECFDF5;border:1px solid #BBF7D0;border-radius:999px;padding:4px 10px}
+.feat-count{font-size:12px;font-weight:700;color:var(--gold-deep);margin-left:8px}
+.faq details{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:8px}
+.faq summary{font-weight:800;font-size:13px;cursor:pointer;min-height:44px;display:flex;align-items:center}
+.faq p{margin:10px 0 0;font-size:13px;color:var(--muted);line-height:1.55}
+.demo-box{background:#fff;border:1px solid var(--line);border-radius:20px;overflow:hidden}
+.demo-tabs{display:flex;flex-wrap:wrap;gap:8px;padding:12px;border-bottom:1px solid var(--line)}
+.tab{min-height:44px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--bg);font-size:11px;font-weight:800;cursor:pointer}
+.tab.on{background:var(--soft);border-color:var(--soft-border);color:var(--brand-deep)}
+.demo-body{display:none;padding:20px}.demo-body.on{display:block}
+.demo-body .feat-pain,.demo-body .feat-sol{margin-bottom:12px}
+.demo-how{margin:0 0 14px;font-size:12px;color:var(--muted);line-height:1.6;padding:12px;background:var(--bg);border-radius:12px;border:1px solid var(--line)}
+.demo-how strong{color:var(--ink)}
+.demo-roi-wrap{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
+.demo-roi-wrap label{display:block;margin-bottom:8px}
+.final{background:var(--hero);color:#fff;border-radius:24px;padding:32px 24px;text-align:center}
+.mitigation-strip{display:grid;grid-template-columns:1fr;gap:8px;margin-top:16px}
+@media(min-width:768px){.mitigation-strip{grid-template-columns:repeat(3,1fr)}}
+.mit{font-size:11px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:rgba(226,232,240,.9)}
+.advisory-grid{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:768px){.advisory-grid{grid-template-columns:repeat(2,1fr)}}
+.advisory-card{padding:18px!important}
+.advisory-card h3{margin:10px 0 10px;font-size:16px;font-weight:800;line-height:1.35;color:var(--ink)}
+</style>
+</head>
+<body>
+
+<p class="approve">
+  <b>v5 · Ukážka predajného postupu</b> · <span id="approve-feat-count">60</span> schopností · 4 programy ·
+  <a href="preview-demo-conversion-funnel.html">v4</a> ·
+  <a href="/demo">/demo</a>
+</p>
+
+<header class="hero">
+  <div class="hero-inner">
+    <p class="eyebrow">AI systém na zarábanie provízií · nie ďalší CRM</p>
+    <h1 id="hero-h1">Majiteľ RK: koľko provízií vám mesačne uniká?</h1>
+    <p class="sub" id="hero-sub">60 schopností v 4 programoch. Jeden postup od dopytu po mandát. Ukážka za 60 s ukáže váš trh — nie screenshot cudzieho systému.</p>
+    <div class="persona" role="tablist" aria-label="Pre koho">
+      <button type="button" class="on" onclick="setPersona('owner',this)">Majiteľ kancelárie</button>
+      <button type="button" onclick="setPersona('broker',this)">Skúsený maklér</button>
+    </div>
+    <button type="button" class="btn btn-primary" onclick="goStep(1)">Spočítať stratu bez Revolis.AI →</button>
+  </div>
+</header>
+
+<div class="progress-wrap">
+  <div class="progress" role="tablist">
+    <button type="button" class="step s1 active" id="step-btn-1" onclick="goStep(1)"><span class="step-num">1</span>Strata €</button>
+    <button type="button" class="step s2" id="step-btn-2" onclick="goStep(2)"><span class="step-num">2</span>4 programy</button>
+    <button type="button" class="step s3" id="step-btn-3" onclick="goStep(3)"><span class="step-num">3</span>Poradný tím</button>
+    <button type="button" class="step s4" id="step-btn-4" onclick="goStep(4)"><span class="step-num">4</span>Ukážka + zárobok</button>
+  </div>
+</div>
+
+<main class="wrap">
+
+<!-- STEP 1: PAIN -->
+<div class="panel on" id="panel-1" data-funnel-step="loss">
+  <section class="sec">
+    <span class="tag">Krok 1 · Konkrétna strata</span>
+    <h2>Nie „AI revolúcia“. Koľko € vám uniká tento mesiac?</h2>
+    <p class="lead">Najprv peniaze — až potom ukážka. Tu je kalkulačka straty provízií bez Revolis.AI.</p>
+    <div class="glass" style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px">
+      <div>
+        <p style="margin:0 0 4px;font-size:13px;font-weight:600">Odhad straty provízií bez Revolis.AI</p>
+        <p class="leak-val" id="leak-val">€4 320</p>
+        <p style="margin:6px 0 0;font-size:12px;color:var(--muted)">80 dopytov · odpoveď &gt;2 h · provízia €2 700 · 40 % stratených</p>
+      </div>
+      <button type="button" class="btn btn-primary" onclick="goStep(2)">Ukáž 60 schopností →</button>
+    </div>
+  </section>
+  <section class="sec">
+    <div class="proof">
+      <div class="proof-item"><b>&lt;2 min</b><span>AI prvá odpoveď</span></div>
+      <div class="proof-item"><b>92 %</b><span>Dobehnutie kontaktov</span></div>
+      <div class="proof-item"><b>30 dní</b><span>Garancia vrátenia peňazí</span></div>
+      <div class="proof-item"><b>24 h</b><span>Spustenie za vás</span></div>
+    </div>
+  </section>
+  <section class="sec">
+    <span class="tag">Krok 2 · Nie ďalší CRM</span>
+    <h2>Revolis vs. to, čo používate dnes</h2>
+    <div class="glass" style="overflow-x:auto">
+      <table class="compare">
+        <thead><tr><th></th><th>Excel + WhatsApp</th><th>Bežný CRM</th><th class="win">Revolis AI</th></tr></thead>
+        <tbody>
+          <tr><td>Ukáže kde leží provízia dnes</td><td class="lose">Nie</td><td class="lose">Reporty až zajtra</td><td class="win">Áno · naživo</td></tr>
+          <tr><td>AI odpoveď klientovi</td><td class="lose">Manuálne</td><td class="lose">Šablóny</td><td class="win">&lt;2 min</td></tr>
+          <tr><td>Radar trhu / konkurencia</td><td class="lose">Nie</td><td class="lose">Nie</td><td class="win">Radar makléra → Reality Monopol</td></tr>
+          <tr><td>AI poradný tím (8 módov)</td><td class="lose">Nie</td><td class="lose">Nie</td><td class="win">Áno</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<!-- STEP 2: 4 PROGRAMS + 52 FEATURES -->
+<div class="panel" id="panel-2" data-funnel-step="programs">
+  <section class="sec">
+    <span class="tag">Krok 3 · Postupný rast programov</span>
+    <h2>4 programy · <span id="feat-total">60</span> schopností<span class="feat-count" id="feat-visible"></span></h2>
+    <p class="lead">Smart Start → Radar makléra → Strážca cien a ziskov → Reality Monopol. Pri každej schopnosti najprv problém, potom riešenie — nič nie je skryté pred rozhodnutím.</p>
+    <div class="program-tabs" id="program-tabs" role="tablist"></div>
+    <div class="program-head glass">
+      <div>
+        <p class="tag" id="prog-tag">Smart Start</p>
+        <p class="feel" id="prog-feel">„Konečne mám poriadok“</p>
+      </div>
+      <p class="price" id="prog-price">od 49 €/mes</p>
+    </div>
+    <input class="feature-search" type="search" placeholder="Hľadať schopnosť (napr. predpoveď, kataster, pripravenosť kupujúceho…)" oninput="filterFeatures(this.value)" aria-label="Hľadať schopnosti">
+    <div class="feature-grid" id="feature-grid" role="list"></div>
+    <div style="margin-top:20px;text-align:center">
+      <button type="button" class="btn btn-brand" onclick="goStep(3)">Vybrať problém → AI poradný tím →</button>
+    </div>
+  </section>
+</div>
+
+<!-- STEP 3: ADVISORY (compact v4 cards) -->
+<div class="panel" id="panel-3" data-funnel-step="advisory">
+  <section class="sec">
+    <span class="tag">Krok 3 · AI poradný tím</span>
+    <h2>Ktorý problém vás dnes stojí najviac €?</h2>
+    <p class="lead">Vyberte situáciu, ktorá vás trápi najviac. Pri každej karte najprv problém v € — potom presné riešenie od AI poradného tímu.</p>
+    <div id="advisory-grid" class="advisory-grid"></div>
+    <div style="margin-top:16px;text-align:center">
+      <button type="button" class="btn btn-primary" onclick="goStep(4)">Spustiť živú ukážku →</button>
+    </div>
+  </section>
+</div>
+
+<!-- STEP 4: DEMO + FAQ + CLOSE -->
+<div class="panel" id="panel-4" data-funnel-step="demo">
+  <section class="sec">
+    <span class="tag">Krok 4 · Skutočná ukážka</span>
+    <h2>Produkčné moduly — nie statický návrh</h2>
+    <p class="lead">Maklér bez ukázanej bolesti nevie, že problém existuje — a nevidí dôvod platiť. Preto každý modul najprv pomenúje stratu €, potom ukáže, ako ju riešime v produkcii.</p>
+    <div class="demo-box">
+      <div class="demo-tabs">
+        <button type="button" class="tab on" onclick="demoTab('odhadca',this)">AI Odhadca</button>
+        <button type="button" class="tab" onclick="demoTab('radar',this)">Radar makléra</button>
+        <button type="button" class="tab" onclick="demoTab('roi',this)">Výpočet zárobku</button>
+      </div>
+      <div class="demo-body on" id="demo-odhadca">
+        <p class="feat-pain"><strong>Problém:</strong> Potrebujete dopyty, ale nemáte rozpočet na drahú reklamu. Klient príde na web, pozrie si inzerát a odíde — vy o ňom neviete nič. Mesačne prichádzate o 10–20 kontaktov, ktoré skončia u makléra, kto klientovi niečo okamžite ponúkol.</p>
+        <p class="feat-sol"><strong>Riešenie:</strong> AI Odhadca dá klientovi okamžitú hodnotu — odhad ceny z adresy — a vám jeho e-mail a hotový dopyt v systéme. Klient niečo dostane zadarmo, vy kontakt na obchod. Nástroj pracuje 24 hodín denne, aj keď ste na obhliadke.</p>
+        <p class="demo-how"><strong>Ako to funguje:</strong> Klient zadá adresu → dostane odhad nehnuteľnosti → nechá e-mail → dopyt sa uloží vo vašom systéme → vy voláte do 15 minút, kým je ešte horúci.</p>
+        <span class="feat outcome">+8–15 dopytov/mes bez reklám</span>
+      </div>
+      <div class="demo-body" id="demo-radar">
+        <p class="feat-pain"><strong>Problém:</strong> Neviete, kde vo vašom meste ľudia aktívne hľadajú byt — chodíte na náhodu z ulice do ulice. Kolega v susednej lokalite má plný kalendár, vy týždne míňate čas tam, kde dopyt vôbec nie je. Každý deň bez mapy trhu = stratené hodiny a nevzniknuté mandáty.</p>
+        <p class="feat-sol"><strong>Riešenie:</strong> Radar makléra zobrazí mapu dopytu vo vašom rajóne — kde je záujem skôr, než sa objaví inzerát na portáli. Vidíte ulice s dopytom bez ponuky a viete presne, kde hľadať mandáty a kam poslať kupujúcich z obhliadok.</p>
+        <p class="demo-how"><strong>Ako to funguje:</strong> Mapa ukáže zóny dopytu v reálnom čase — kde ľudia hľadajú, kde chýba ponuka a kde konkurencia ešte nereaguje. Každé ráno viete, v ktorých uliciach dnes zarobíte, nie kde „sa možno niečo udeje".</p>
+        <span class="feat outcome">+2–3 mandáty/mes v správnych uliciach</span>
+      </div>
+      <div class="demo-body" id="demo-roi">
+        <p class="feat-pain"><strong>Problém:</strong> Klient aj vy sami neviete, koľko € vám Revolis reálne prinesie navyše. Keď príde námietka „99 € mesačne je drahé", nemáte číslo — rozhodujete sa naslepo a často odmietnete nástroj, ktorý by vám mesačne priniesol tisíce.</p>
+        <p class="feat-sol"><strong>Riešenie:</strong> Výpočet zárobku premení váš počet mandátov na konkrétny odhad extra provízie s Revolis.AI. Nie marketingové sľuby — číslo v €, ktoré môžete ukázať sebe, majiteľovi kancelárie aj klientovi pri rozhodnutí.</p>
+        <div class="demo-roi-wrap">
+          <p class="demo-how" style="margin-bottom:14px"><strong>Vyskúšajte na svojich číslach:</strong> Posuňte posuvník podľa mandátov, ktoré mesačne uzavriete — uvidíte odhad extra provízie.</p>
+          <label style="font-size:13px;color:var(--ink);font-weight:600">Mandátov mesačne: <strong id="roi-m">4</strong></label>
+          <input type="range" min="1" max="15" value="4" style="width:100%;margin-top:8px;accent-color:var(--gold)" oninput="document.getElementById('roi-m').textContent=this.value;calcRoi()" aria-label="Počet mandátov mesačne">
+          <p style="margin:10px 0 4px;font-size:12px;color:var(--muted)">Odhad extra provízie s Revolis.AI</p>
+          <p id="roi-out" style="font-size:32px;font-weight:800;color:var(--green-dark);margin:0">€8 160</p>
+        </div>
+        <span class="feat outcome" style="margin-top:12px">obhajoba za 30 sekúnd · € v rukách</span>
+      </div>
+    </div>
+  </section>
+  <section class="sec faq">
+    <span class="tag">Pred rozhodnutím · Otázky</span>
+    <h2>Často kladené otázky</h2>
+    <details><summary>„Je to len ďalší CRM?“</summary><p>Nie. CRM len eviduje kontakty. Revolis ukazuje kde sú peniaze, odpovedá za vás a chráni províziu — Smart Start až Reality Monopol je postupný rast, nie zoznam funkcií naraz.</p></details>
+    <details><summary>„Nemám čas na zavádzanie“</summary><p>Spustíme za vás do 24 hodín. Ukážka trvá 60 sekúnd. 30-dňová garancia — ak neuvidíte rozdiel, vrátime peniaze.</p></details>
+    <details><summary>„Reality Monopol znie príliš agresívne“</summary><p>Technický názov najvyššieho programu. Pre väčšinu kancelárií stačí Strážca cien a ziskov — Reality Monopol je pre veľké RK a sieťové štruktúry.</p></details>
+  </section>
+  <section class="sec final">
+    <h2 id="close-h2">Aktivujte AI systém, ktorý zarába — nie tabuľku dopytov</h2>
+    <p>30 dní bez rizika · Spustenie do 24 h · Ukážka bez platobnej karty</p>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:16px">
+      <a href="/register" class="btn btn-primary">Aktivovať pre moju kanceláriu</a>
+      <a href="/billing" class="btn btn-ghost" style="background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.25);color:#fff">Porovnať programy</a>
+    </div>
+    <div class="mitigation-strip">
+      <div class="mit"><strong>#7</strong> Text pre majiteľa aj makléra</div>
+      <div class="mit"><strong>#8</strong> 60 schopností viditeľných vopred</div>
+      <div class="mit"><strong>#9</strong> Otázky + garancia pred platbou</div>
+    </div>
+  </section>
+</div>
+
+</main>
+
+<div class="sticky-cta">
+  <p><strong id="sticky-label">Krok 1/4 · Strata €4 320/mes</strong></p>
+  <button type="button" class="btn btn-primary" onclick="goStep(4)">Živá ukážka →</button>
+</div>
+
+<script src="preview-demo-funnel-programs-v5.js"></script>
+<script>
+
+let activeProgram='smart';
+const stickyLabels=['Krok 1/4 · Strata €4 320/mes','Krok 2/4 · 60 schopností · 4 programy','Krok 3/4 · AI poradný tím','Krok 4/4 · Ukážka + výpočet zárobku'];
+
+function setPersona(p,btn){
+  document.querySelectorAll('.persona button').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  const h=document.getElementById('hero-h1'),s=document.getElementById('hero-sub'),c=document.getElementById('close-h2');
+  if(p==='owner'){
+    h.textContent='Majiteľ RK: koľko provízií vám mesačne uniká?';
+    s.textContent='60 schopností v 4 programoch. Jeden postup pre celú kanceláriu — nie chaos v Exceli.';
+    if(c) c.textContent='Aktivujte AI systém pre celú kanceláriu — nie tabuľku dopytov';
+  }else{
+    h.textContent='Skúsený maklér: koľko provízií ti uniká kvôli pomalému dobehnutiu?';
+    s.textContent='Od Smart Start po Reality Monopol — rastieš s produktom. Ukážka za 60 s ukáže tvoj ďalší mandát.';
+    if(c) c.textContent='Aktivuj AI poradný tím — a uzatváraj viac mandátov';
+  }
+}
+
+function goStep(n){
+  for(let i=1;i<=4;i++){
+    document.getElementById('panel-'+i).classList.toggle('on',i===n);
+    document.getElementById('step-btn-'+i).classList.toggle('active',i===n);
+  }
+  document.getElementById('sticky-label').textContent=stickyLabels[n-1];
+}
+
+function renderProgramTabs(){
+  const tabs=document.getElementById('program-tabs');
+  tabs.innerHTML='';
+  ['smart','radar','guardian','monopol'].forEach(id=>{
+    const p=PROGRAMS[id];
+    const b=document.createElement('button');
+    b.type='button';
+    b.textContent=p.name+' · '+p.features.length;
+    b.className=id===activeProgram?'on':'';
+    b.onclick=()=>{activeProgram=id;renderProgramTabs();renderFeatures();};
+    tabs.appendChild(b);
+  });
+}
+
+function renderFeatures(filter=''){
+  const p=PROGRAMS[activeProgram];
+  document.getElementById('prog-tag').textContent=p.tag;
+  document.getElementById('prog-feel').textContent=p.feel;
+  document.getElementById('prog-price').textContent=p.price;
+  const q=filter.toLowerCase().trim();
+  const list=p.features.filter(f=>!q||f.t.toLowerCase().includes(q)||(f.pain&&f.pain.toLowerCase().includes(q))||f.d.toLowerCase().includes(q));
+  const grid=document.getElementById('feature-grid');
+  grid.innerHTML='';
+  list.forEach(f=>{
+    const el=document.createElement('article');
+    el.className='feat';
+    el.innerHTML='<h4>'+f.t+'</h4><p class="feat-pain"><strong>Problém:</strong> '+f.pain+'</p><p class="feat-sol"><strong>Riešenie:</strong> '+f.d+'</p><span class="outcome">'+f.o+'</span>';
+    grid.appendChild(el);
+  });
+  document.getElementById('feat-visible').textContent=' · zobrazených '+list.length;
+  let total=0;['smart','radar','guardian','monopol'].forEach(id=>total+=PROGRAMS[id].features.length);
+  document.getElementById('feat-total').textContent=total;
+  const approveCount=document.getElementById('approve-feat-count');
+  if(approveCount) approveCount.textContent=total;
+}
+
+function filterFeatures(v){renderFeatures(v);}
+
+function renderAdvisory(){
+  const g=document.getElementById('advisory-grid');
+  g.innerHTML=ADVISORY.map(a=>'<article class="glass advisory-card" tabindex="0"><span class="tag" style="background:#FEE2E2;color:#BE123C;border-color:#FECACA">'+a.tag+'</span><h3>'+a.h+'</h3><p class="feat-pain"><strong>Problém:</strong> '+a.pain+'</p><p class="feat-sol"><strong>Riešenie:</strong> '+a.d+'</p><span class="feat outcome">'+a.o+'</span></article>').join('');
+}
+
+function demoTab(id,btn){
+  document.querySelectorAll('.demo-body').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('demo-'+id).classList.add('on');
+  btn.classList.add('on');
+}
+function calcRoi(){
+  const m=+document.getElementById('roi-m').textContent;
+  document.getElementById('roi-out').textContent='€'+(m*3200*0.7*0.9).toLocaleString('sk-SK',{maximumFractionDigits:0});
+}
+
+renderProgramTabs();
+renderFeatures();
+renderAdvisory();
+calcRoi();
+</script>
+</body>
+</html>
