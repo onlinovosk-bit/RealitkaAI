@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Revolis · Landing Phase 3 · A vs B</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand:#2563EB;--brand-deep:#1D4ED8;
+  --ink:#0F172A;--deep:#1E293B;--muted:#64748B;--line:#E2E8F0;--soft:#EFF6FF;--soft-border:#BFDBFE;
+  --bg:#F8FAFC;--green-dark:#047857;--money:#047857;--amber:#F97316;
+  --cta:linear-gradient(90deg,#F97316,#FB923C);
+  --card-shadow:0 8px 32px rgba(15,23,42,0.06);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;font-family:Inter,system-ui,sans-serif;background:#0B1220;color:#e2e8f0}
+
+.top{position:sticky;top:0;z-index:200;background:#0F172A;border-bottom:1px solid #1E293B;padding:12px 16px;text-align:center}
+.top h1{margin:0;font-size:15px;font-weight:800;color:#fff}
+.top p{margin:6px 0 0;font-size:12px;color:#94a3b8}
+.top a{color:#93C5FD;font-weight:700}
+
+.compare{display:grid;grid-template-columns:1fr 1fr;min-height:calc(100vh - 64px)}
+.col{overflow-x:hidden;border-right:2px solid #1E293B}
+.col:last-child{border-right:0}
+.col-head{position:sticky;top:64px;z-index:100;padding:12px 16px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;text-align:center;border-bottom:2px solid}
+.col-a .col-head{background:#020617;color:#22d3ee;border-color:#164e63}
+.col-b .col-head{background:var(--soft);color:var(--brand-deep);border-color:var(--soft-border)}
+
+/* ── A: dark (current) ── */
+.col-a{background:#020617;color:#e2e8f0}
+.col-a .sec{padding:40px 20px;border-bottom:1px solid rgba(51,65,85,.35)}
+.col-a .tag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.2em;color:#22d3ee}
+.col-a .title{font-size:clamp(1.25rem,2.5vw,1.75rem);font-weight:800;line-height:1.2;margin:8px 0;color:#f8fafc}
+.col-a .desc{font-size:13px;line-height:1.55;color:#94a3b8;margin:0}
+.col-a .card{background:rgba(15,23,42,.65);border:1px solid rgba(51,65,85,.7);border-radius:18px;padding:16px}
+.col-a .inner{background:rgba(2,6,23,.85);border:1px solid rgba(51,65,85,.5);border-radius:12px;padding:12px}
+.col-a .btn{display:inline-flex;align-items:center;min-height:44px;padding:0 18px;border:0;border-radius:999px;background:#22d3ee;color:#020617;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 0 32px rgba(34,211,238,.35)}
+.col-a .money{color:#6ee7b7;font-weight:800}
+.col-a .stat{color:#6ee7b7;font-size:24px;font-weight:800;margin:6px 0 0}
+.col-a .list{margin:12px 0 0;padding:0;list-style:none;display:grid;gap:8px}
+.col-a .list li{font-size:12px;color:#94a3b8;display:flex;gap:8px}
+.col-a .list li::before{content:'';width:6px;height:6px;border-radius:50%;background:#22d3ee;margin-top:6px;flex-shrink:0}
+.col-a .faq{border:1px solid rgba(51,65,85,.7);background:rgba(15,23,42,.6);border-radius:14px;padding:12px;margin-top:8px}
+.col-a .faq-q{font-size:13px;font-weight:600;color:#f1f5f9}
+.col-a .bar{background:#1e293b;border-radius:4px;height:8px;overflow:hidden}
+.col-a .bar>span{display:block;height:100%;background:#3b82f6;border-radius:4px}
+
+/* ── B: Slate Horizon Phase 3 ── */
+.col-b{background:linear-gradient(180deg,var(--bg),#fff);color:var(--ink)}
+.col-b .sec{padding:40px 20px;border-bottom:1px solid var(--line)}
+.col-b .tag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.2em;color:var(--brand-deep)}
+.col-b .title{font-size:clamp(1.25rem,2.5vw,1.75rem);font-weight:800;line-height:1.2;margin:8px 0;color:var(--ink)}
+.col-b .desc{font-size:13px;line-height:1.55;color:var(--muted);margin:0}
+.col-b .card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--card-shadow)}
+.col-b .inner{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px}
+.col-b .btn{display:inline-flex;align-items:center;min-height:44px;padding:0 18px;border:0;border-radius:999px;background:var(--cta);color:#fff;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 8px 20px rgba(249,115,22,.22)}
+.col-b .money{color:var(--money);font-weight:800}
+.col-b .stat{color:var(--green-dark);font-size:24px;font-weight:800;margin:6px 0 0}
+.col-b .list{margin:12px 0 0;padding:0;list-style:none;display:grid;gap:8px}
+.col-b .list li{font-size:12px;color:var(--muted);display:flex;gap:8px}
+.col-b .list li::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--brand);margin-top:6px;flex-shrink:0}
+.col-b .faq{border:1px solid var(--line);background:#fff;border-radius:14px;padding:12px;margin-top:8px;box-shadow:var(--card-shadow)}
+.col-b .faq-q{font-size:13px;font-weight:600;color:var(--ink)}
+.col-b .bar{background:var(--line);border-radius:4px;height:8px;overflow:hidden}
+.col-b .bar>span{display:block;height:100%;background:var(--brand);border-radius:4px}
+
+.grid2{display:grid;grid-template-columns:1fr;gap:12px;margin-top:14px}
+.grid3{display:grid;grid-template-columns:1fr;gap:10px;margin-top:14px}
+.kpi-label{font-size:10px;opacity:.75;margin:0}
+.kpi-note{font-size:10px;opacity:.65;margin:4px 0 0}
+.mock{margin-top:14px;border-radius:18px;padding:14px}
+.col-a .mock{border:1px solid rgba(51,65,85,.7);background:rgba(15,23,42,.8)}
+.col-b .mock{border:1px solid var(--line);background:#fff;box-shadow:var(--card-shadow)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px}
+.badge-a{display:inline-block;padding:3px 8px;border-radius:999px;font-size:9px;font-weight:700;background:rgba(34,211,238,.12);color:#67e8f9;border:1px solid rgba(34,211,238,.25)}
+.badge-b{display:inline-block;padding:3px 8px;border-radius:999px;font-size:9px;font-weight:700;background:var(--soft);color:var(--brand-deep);border:1px solid var(--soft-border)}
+.section-id{font-size:9px;font-weight:700;opacity:.45;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+
+@media(max-width:960px){
+  .compare{grid-template-columns:1fr}
+  .col{border-right:0;border-bottom:3px solid #1E293B}
+  .col-head{top:64px}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <h1>Landing Phase 3 · A vs B · vedľa seba</h1>
+  <p>Scrollovaním porovnaj oba stĺpce ·
+    <a href="preview-landing-phase3-index.html">Index ukážok</a> ·
+    <a href="preview-landing-phase3-a.html">Len A</a> ·
+    <a href="preview-landing-phase3-b.html">Len B</a> ·
+    <a href="/landing">/landing</a>
+  </p>
+</header>
+
+<div class="compare">
+
+  <!-- ═══ VERZIA A — DARK ═══ -->
+  <div class="col col-a">
+    <div class="col-head">Verzia A · Dark (produkcia dnes)</div>
+
+    <section class="sec">
+      <p class="section-id">PreviewSection</p>
+      <p class="tag">Tvoj nový systém</p>
+      <h2 class="title">Toto je tvoj nový systém.</h2>
+      <p class="desc">Jeden pohľad stačí: kto je pripravený kúpiť a čo má tím urobiť dnes.</p>
+      <ul class="list">
+        <li>AI skóre pripravenosti pre každého klienta</li>
+        <li>Automatické párovanie klientov s nehnuteľnosťami</li>
+        <li>Denné priority pre každého makléra</li>
+      </ul>
+      <div style="margin-top:14px"><button type="button" class="btn">Spustiť setup</button></div>
+      <div class="mock">
+        <div class="row" style="margin-bottom:10px"><span class="badge-a">Revolis · Prehľad</span><span style="opacity:.5;font-size:10px">Horúci záujem</span></div>
+        <div class="inner">
+          <p class="kpi-label">Index pripravenosti</p>
+          <div class="bar" style="margin-top:8px;height:48px;background:transparent;display:flex;align-items:flex-end;gap:3px">
+            <span style="width:14%;height:80%;background:#64748b;border-radius:3px 3px 0 0"></span>
+            <span style="width:14%;height:55%;background:#64748b;border-radius:3px 3px 0 0"></span>
+            <span style="width:14%;height:90%;background:#3b82f6;border-radius:3px 3px 0 0"></span>
+            <span style="width:14%;height:65%;background:#64748b;border-radius:3px 3px 0 0"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec">
+      <p class="section-id">ProofNumbers</p>
+      <div class="card">
+        <p class="tag" style="color:#6ee7b7">Dôkazové čísla</p>
+        <h2 class="title" style="font-size:1.25rem">Čísla, ktoré rozhodujú</h2>
+        <div class="grid3">
+          <div class="inner"><p class="kpi-label">Odozva</p><p class="stat">&lt; 2 min</p><p class="kpi-note">AI prvá odpoveď</p></div>
+          <div class="inner"><p class="kpi-label">Follow-up</p><p class="stat">92%</p><p class="kpi-note">Aktívny kontakt</p></div>
+          <div class="inner"><p class="kpi-label">Úspešnosť</p><p class="stat">+34%</p><p class="kpi-note">Po setup</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec">
+      <p class="section-id">ResponseBenchmark</p>
+      <h2 class="title" style="font-size:1.15rem">Kto odpovedá prvý, berie províziu</h2>
+      <div class="inner" style="margin-top:10px"><div class="row"><span>Priemer trhu</span><strong>4h 12m</strong></div></div>
+      <div class="inner" style="margin-top:8px;border-color:rgba(52,211,153,.3)"><div class="row"><span>Revolis.AI</span><strong class="money">&lt; 2 min</strong></div></div>
+    </section>
+
+    <section class="sec">
+      <p class="section-id">RoiCalculatorHero</p>
+      <div class="card">
+        <h2 class="title" style="font-size:1.15rem">Koľko mesačne uniká?</h2>
+        <div class="grid2">
+          <div><p class="kpi-label">Dopyty / mesiac: 80</p><div class="bar" style="margin-top:8px"><span style="width:45%"></span></div></div>
+          <div class="inner"><p class="kpi-label">Únik</p><p class="stat" style="color:#fca5a5">€4 320</p><p class="kpi-label" style="margin-top:8px">Pro potenciál</p><p class="money" style="font-size:18px">+€950</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec">
+      <p class="section-id">ObjectionFaq</p>
+      <h2 class="title" style="font-size:1.25rem;text-align:center">FAQ</h2>
+      <div class="faq"><p class="faq-q">Oplatí sa to finančne?</p><p class="desc" style="margin-top:8px">Starter 49 € vs provízia 2–4k €.</p></div>
+      <div class="faq"><p class="faq-q">Môžem bez záväzku?</p></div>
+    </section>
+  </div>
+
+  <!-- ═══ VERZIA B — SLATE HORIZON ═══ -->
+  <div class="col col-b">
+    <div class="col-head">Verzia B · Slate Horizon Phase 3 (ciel)</div>
+
+    <section class="sec">
+      <p class="section-id">PreviewSection</p>
+      <p class="tag">Tvoj nový systém</p>
+      <h2 class="title">Toto je tvoj nový systém.</h2>
+      <p class="desc">Jeden pohľad stačí: kto je pripravený kúpiť a čo má tím urobiť dnes.</p>
+      <ul class="list">
+        <li>AI skóre pripravenosti pre každého klienta</li>
+        <li>Automatické párovanie klientov s nehnuteľnosťami</li>
+        <li>Denné priority pre každého makléra</li>
+      </ul>
+      <div style="margin-top:14px"><button type="button" class="btn">Spustiť setup</button></div>
+      <div class="mock">
+        <div class="row" style="margin-bottom:10px"><span class="badge-b">Revolis · Prehľad</span><span style="color:var(--muted);font-size:10px">Horúci záujem</span></div>
+        <div class="inner">
+          <p class="kpi-label">Index pripravenosti</p>
+          <div style="margin-top:8px;height:48px;display:flex;align-items:flex-end;gap:3px">
+            <span style="width:14%;height:80%;background:#CBD5E1;border-radius:3px 3px 0 0"></span>
+            <span style="width:14%;height:55%;background:#CBD5E1;border-radius:3px 3px 0 0"></span>
+            <span style="width:14%;height:90%;background:var(--brand);border-radius:3px 3px 0 0"></span>
+            <span style="width:14%;height:65%;background:#CBD5E1;border-radius:3px 3px 0 0"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec">
+      <p class="section-id">ProofNumbers</p>
+      <div class="card">
+        <p class="tag" style="color:var(--green-dark)">Dôkazové čísla</p>
+        <h2 class="title" style="font-size:1.25rem">Čísla, ktoré rozhodujú</h2>
+        <div class="grid3">
+          <div class="inner"><p class="kpi-label">Odozva</p><p class="stat">&lt; 2 min</p><p class="kpi-note">AI prvá odpoveď</p></div>
+          <div class="inner"><p class="kpi-label">Follow-up</p><p class="stat">92%</p><p class="kpi-note">Aktívny kontakt</p></div>
+          <div class="inner"><p class="kpi-label">Úspešnosť</p><p class="stat">+34%</p><p class="kpi-note">Po setup</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec">
+      <p class="section-id">ResponseBenchmark</p>
+      <h2 class="title" style="font-size:1.15rem">Kto odpovedá prvý, berie províziu</h2>
+      <div class="inner" style="margin-top:10px"><div class="row"><span>Priemer trhu</span><strong style="color:var(--deep)">4h 12m</strong></div></div>
+      <div class="inner" style="margin-top:8px;border-color:#BBF7D0;background:#F0FDF4"><div class="row"><span style="font-weight:700">Revolis.AI</span><strong class="money">&lt; 2 min</strong></div></div>
+    </section>
+
+    <section class="sec">
+      <p class="section-id">RoiCalculatorHero</p>
+      <div class="card">
+        <h2 class="title" style="font-size:1.15rem">Koľko mesačne uniká?</h2>
+        <div class="grid2">
+          <div><p class="kpi-label">Dopyty / mesiac: 80</p><div class="bar" style="margin-top:8px"><span style="width:45%"></span></div></div>
+          <div class="inner"><p class="kpi-label">Únik</p><p class="stat" style="color:#DC2626">€4 320</p><p class="kpi-label" style="margin-top:8px">Pro potenciál</p><p class="money" style="font-size:18px">+€950</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec">
+      <p class="section-id">ObjectionFaq</p>
+      <h2 class="title" style="font-size:1.25rem;text-align:center">FAQ</h2>
+      <div class="faq"><p class="faq-q">Oplatí sa to finančne?</p><p class="desc" style="margin-top:8px">Starter 49 € vs provízia 2–4k €.</p></div>
+      <div class="faq"><p class="faq-q">Môžem bez záväzku?</p></div>
+    </section>
+  </div>
+
+</div>
+
+</body>
+</html>
