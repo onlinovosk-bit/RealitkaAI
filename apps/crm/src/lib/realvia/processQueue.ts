@@ -22,6 +22,7 @@ import {
 } from './types';
 import type {
   RealviaWebhookPayload,
+  RealviaDeletePayload,
   RealviaProcessingResult,
 } from './types';
 
@@ -80,7 +81,11 @@ export async function processRealviaQueue(): Promise<{
       if (isAdvertPayload(payload)) {
         result = await processAdvertPayload(payload, agency_id);
       } else if (isDeletePayload(payload)) {
-        result = await processDeletePayload(payload.source_id, agency_id);
+        result = await processDeletePayload(
+          payload.source_id,
+          agency_id,
+          payload.archiveType,
+        );
       } else {
         result = {
           success: false,
@@ -319,11 +324,12 @@ async function processAdvertPayload(
 
 /**
  * Process a delete/cancellation payload.
- * NEVER hard-deletes — sets status to REMOVED or SOLD.
+ * NEVER hard-deletes — maps archiveType to property status.
  */
 async function processDeletePayload(
   sourceId: number,
   agencyId: string | null,
+  archiveType?: RealviaDeletePayload['archiveType'],
 ): Promise<RealviaProcessingResult> {
   const sb = createServiceRoleClient();
   if (!sb) {
@@ -349,11 +355,17 @@ async function processDeletePayload(
       };
     }
 
-    // Mark as removed (never hard delete)
+    const newStatus =
+      archiveType === 'sold'
+        ? PROPERTY_STATUS.SOLD
+        : archiveType === 'rent'
+          ? PROPERTY_STATUS.RENTED
+          : PROPERTY_STATUS.REMOVED;
+
     const { error } = await sb
       .from('properties')
       .update({
-        status: PROPERTY_STATUS.REMOVED,
+        status: newStatus,
         updated_at: new Date().toISOString(),
         realvia_updated_at: new Date().toISOString(),
       })
@@ -369,9 +381,11 @@ async function processDeletePayload(
       };
     }
 
-    logInfo('[realvia-worker] Property marked as removed', {
+    logInfo('[realvia-worker] Property marked as deleted', {
       propertyId: existing.id,
       sourceId,
+      archiveType,
+      status: newStatus,
     });
 
     return {

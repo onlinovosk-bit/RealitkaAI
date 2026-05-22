@@ -105,10 +105,11 @@ export interface RealviaWebhookPayload {
   readonly advert: RealviaAdvert;
 }
 
-/** Delete/cancellation payload */
+/** Delete/cancellation payload (Realvia export v2) */
 export interface RealviaDeletePayload {
   readonly source_id: number;
-  readonly deleted: true;
+  readonly action: 'delete';
+  readonly archiveType?: 'sold' | 'rent' | 'cancel';
 }
 
 /** Type guard: is this a delete payload? */
@@ -117,11 +118,7 @@ export function isDeletePayload(
 ): payload is RealviaDeletePayload {
   if (typeof payload !== 'object' || payload === null) return false;
   const p = payload as Record<string, unknown>;
-  return (
-    typeof p.source_id === 'number' &&
-    p.deleted === true &&
-    !('advert' in p)
-  );
+  return typeof p.source_id === 'number' && p.action === 'delete';
 }
 
 /** Type guard: is this a standard advert payload? */
@@ -152,6 +149,7 @@ export interface RealviaProcessingResult {
 export const PROPERTY_STATUS = {
   ACTIVE: 'Aktívna',
   SOLD: 'Predaná',
+  RENTED: 'Prenajatá',
   REMOVED: 'Stiahnutá',
   RESERVED: 'Rezervovaná',
 } as const;
