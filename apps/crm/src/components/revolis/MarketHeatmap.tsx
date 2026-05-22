@@ -4,6 +4,7 @@ import { Fragment } from "react";
 import { MapPin } from "lucide-react";
 
 import type { MarketHotspot } from "@/lib/analytics/market-density";
+import { SLATE_HORIZON, WORKDESK_CARD } from "@/lib/slate-horizon-theme";
 import { PremiumLockedBlur, PremiumLockedOverlay } from "@/components/license/PremiumLockedOverlay";
 
 export function MarketHeatmap({
@@ -14,20 +15,27 @@ export function MarketHeatmap({
   canSeeDetails?: boolean;
 }) {
   return (
-    <div className="relative min-h-[300px] w-full overflow-hidden rounded-2xl border border-indigo-500/25 bg-slate-950/90 shadow-[0_0_60px_-12px_rgba(99,102,241,0.35)]">
+    <div
+      className="relative min-h-[300px] w-full overflow-hidden rounded-2xl border"
+      style={{
+        background: WORKDESK_CARD.background,
+        borderColor: WORKDESK_CARD.borderColor,
+        boxShadow: WORKDESK_CARD.boxShadow,
+      }}
+    >
       <div
-        className="pointer-events-none absolute inset-0 opacity-90"
+        className="pointer-events-none absolute inset-0 opacity-60"
         style={{
           background:
-            "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99,102,241,0.25), transparent), radial-gradient(ellipse 60% 40% at 100% 100%, rgba(34,211,238,0.12), transparent)",
+            "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(37,99,235,0.08), transparent), radial-gradient(ellipse 60% 40% at 100% 100%, rgba(59,130,246,0.06), transparent)",
         }}
       />
 
       <div
-        className="pointer-events-none absolute inset-0 opacity-50"
+        className="pointer-events-none absolute inset-0 opacity-40"
         style={{
           backgroundImage:
-            "linear-gradient(rgba(15,23,42,0.35) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,0.35) 1px, transparent 1px)",
+            "linear-gradient(rgba(226,232,240,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(226,232,240,0.8) 1px, transparent 1px)",
           backgroundSize: "24px 24px",
         }}
       />
@@ -36,7 +44,7 @@ export function MarketHeatmap({
         {hotspots.map((h, i) => (
           <Fragment key={`${h.kind}-${i}-${h.x}-${h.y}-${h.label ?? ""}`}>
             <div
-              className="pointer-events-none absolute rounded-full mix-blend-screen"
+              className="pointer-events-none absolute rounded-full"
               style={{
                 left: `${h.x}%`,
                 top: `${h.y}%`,
@@ -46,8 +54,8 @@ export function MarketHeatmap({
                 opacity: h.opacity,
                 background:
                   h.kind === "lead"
-                    ? "radial-gradient(circle, rgba(129,140,248,0.95) 0%, rgba(99,102,241,0.35) 35%, transparent 72%)"
-                    : "radial-gradient(circle, rgba(45,212,191,0.85) 0%, rgba(34,211,238,0.28) 38%, transparent 72%)",
+                    ? "radial-gradient(circle, rgba(37,99,235,0.55) 0%, rgba(37,99,235,0.15) 40%, transparent 72%)"
+                    : "radial-gradient(circle, rgba(14,165,233,0.45) 0%, rgba(14,165,233,0.12) 40%, transparent 72%)",
                 filter: "blur(10px)",
               }}
             />
@@ -56,7 +64,14 @@ export function MarketHeatmap({
                 className="pointer-events-none absolute z-20 -translate-x-1/2 text-center"
                 style={{ left: `${h.x}%`, top: `calc(${h.y}% + 32px)` }}
               >
-                <span className="inline-block max-w-[9rem] rounded-full border border-cyan-400/25 bg-slate-950/95 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-100/95 shadow-[0_0_20px_rgba(34,211,238,0.2)]">
+                <span
+                  className="inline-block max-w-[9rem] rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]"
+                  style={{
+                    background: "#FFFFFF",
+                    borderColor: SLATE_HORIZON.softBorder,
+                    color: SLATE_HORIZON.brandDeep,
+                  }}
+                >
                   {h.label}
                 </span>
               </div>
@@ -68,26 +83,26 @@ export function MarketHeatmap({
       <div className="relative z-10 flex h-full flex-col justify-between p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-indigo-400/90">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: SLATE_HORIZON.brandDeep }}>
               Market density
             </p>
-            <h3 className="mt-1 text-lg font-semibold text-slate-100">
+            <h3 className="mt-1 text-lg font-semibold" style={{ color: SLATE_HORIZON.ink }}>
               Dopyt vs. inventár
             </h3>
-            <p className="mt-1 max-w-md text-xs text-slate-500">
-              Agregované lokácie leadov (indigo) a ponúk (cyan). Vyššia intenzita = viac záznamov v zóne.
+            <p className="mt-1 max-w-md text-xs" style={{ color: SLATE_HORIZON.muted }}>
+              Agregované lokácie leadov (modrá) a ponúk (cyan). Vyššia intenzita = viac záznamov v zóne.
             </p>
           </div>
-          <MapPin className="h-8 w-8 shrink-0 text-indigo-500/40" aria-hidden />
+          <MapPin className="h-8 w-8 shrink-0" style={{ color: SLATE_HORIZON.softBorder }} aria-hidden />
         </div>
 
-        <div className="mt-6 flex flex-wrap gap-4 text-[11px] text-slate-500">
+        <div className="mt-6 flex flex-wrap gap-4 text-[11px]" style={{ color: SLATE_HORIZON.muted }}>
           <span className="inline-flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
+            <span className="h-2 w-2 rounded-full" style={{ background: SLATE_HORIZON.brandDeep }} />
             Záujemcovia (dopyt)
           </span>
           <span className="inline-flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.7)]" />
+            <span className="h-2 w-2 rounded-full bg-sky-500" />
             Nehnuteľnosti (ponuka)
           </span>
         </div>
