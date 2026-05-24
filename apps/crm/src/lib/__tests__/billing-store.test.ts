@@ -1,5 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+/** Avoid loading the real Stripe SDK in Vitest — cold import can exceed default test timeout on Windows */
+vi.mock('stripe', () => ({
+  default: vi.fn(function StripePlaceholder(this: Record<string, unknown>) {
+    this.billingPortal = { sessions: { create: vi.fn() } };
+    this.customers = {
+      list: vi.fn(async () => ({ data: [] })),
+      retrieve: vi.fn(),
+    };
+    return undefined;
+  }),
+}));
+
 vi.mock('@/lib/supabase/client', () => ({
   supabaseClient: {
     auth: { getUser: () => ({ data: { user: null } }) },
