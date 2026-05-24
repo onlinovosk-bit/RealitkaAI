@@ -1,5 +1,7 @@
 # L99 Master prompt — Revolis CRM
 
+**Project Rules mirror:** tá istá náplň je aj v Cursor súbore **`.cursor/rules/l99-master-prompt-ref.mdc`** (`alwaysApply: true`). Pri zmene textu najprv uprav tento MD a potom zhodu aj v `.mdc`.
+
 Tento dokument je **kopírovateľná inštrukcia** pre nové AI chaty / custom instructions. Oficiálny zdroj pravdy pre pravidlá súborov Cursor je repo:
 
 - `.cursor/rules/l99-role-and-quality-standard.mdc`
