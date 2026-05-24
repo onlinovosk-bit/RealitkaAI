@@ -21,6 +21,7 @@ import {
   realviaErrorFromValidation,
   realviaSuccess,
 } from '@/lib/realvia/responses';
+import { buildRealviaInboundConfigSnapshot } from '@/lib/realvia/inboundDiagnostics';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -167,6 +168,21 @@ export async function GET(request: NextRequest) {
       service: 'realvia-webhook',
       ip: extractClientIP(request),
       headers: collectRequestHeaders(request),
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  /** Operator checklist — same auth as cron (`Authorization: Bearer $CRON_SECRET`). No secrets in body. */
+  if (request.nextUrl.searchParams.get('diag') === 'config') {
+    const cronSecret = process.env.CRON_SECRET?.trim();
+    if (!cronSecret || request.headers.get('authorization') !== `Bearer ${cronSecret}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const snapshot = buildRealviaInboundConfigSnapshot();
+    return NextResponse.json({
+      service: 'realvia-webhook',
+      diag: 'inbound-config',
+      ...snapshot,
       timestamp: new Date().toISOString(),
     });
   }
