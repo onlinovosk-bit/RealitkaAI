@@ -1,22 +1,28 @@
-## Session 2026-05-22 — Realvia integration GO + workspace cleanup
+## Session 2026-05-24 — Realvia L99 doplnenie
 
 ### Dokončené
-- PR #58–#61 merged — response contract, delete payload, auth message, identifikator-only auth
-- Production deploy (Vercel redeploy) — header dump + `Invalid authentication` live
-- Auth verified: produkčný curl s tokenmi → IP block (OK); lokálny curl → **200 OK**
-- Email brief pre Bereczovú / p. Smolka pripravený
-- `.gitignore` cleanup — agent logy a lokálny šum mimo Git
+- **Inbound diagnostics** — `apps/crm/src/lib/realvia/inboundDiagnostics.ts`, Vitest `inboundDiagnostics.test.ts`, GET `?diag=config` (+ CRON Bearer) na `route.ts`; hint pre prod len `REALVIA_SHARED_SECRET` vs Realvia párované hlavičky.
+- **Krizový brief** — `apps/crm/docs/REALVIA-REVOLIS-CRISIS-TEAM-BRIEF.md` (+ postup „neznáma chyba X“).
+- Vitest `src/lib/realvia`: **19 passed** (4 súbory).
 
-### Rozpracované / Pending
-- Finálny re-test exportu od Realvie (Bereczová)
-- Demo funnel v5 HTML — samostatný PR po schválení
-- Publishing Center WIP — samostatný PR
-- `resolveAgency.ts` agency DB lookup fix (P1)
+### Pending (operácia mimo kódu)
+- Nasadiť migráciu `20260523183000_resolve_agency_id_for_realvia_rpc.sql` na Supabase (ak ešte nie).
+- Push commity na `origin`; preview + smoke podľa L99.
 
-### Kľúčové súbory (produkcia)
-- `apps/crm/src/lib/realvia/validate.ts` — identifikator auth, no mandatory SHARED_SECRET
-- `apps/crm/src/app/api/webhooks/realvia/route.ts` — header dump logging
-- `docs/REALVIA_ONBOARDING.md` — aktualizovaný onboarding
+### Kľúčové cesty
+- `apps/crm/src/app/api/webhooks/realvia/route.ts`
+- `apps/crm/src/lib/realvia/resolveAgency.ts` + migrácia RPC
+- `apps/crm/docs/REALVIA-REVOLIS-CRISIS-TEAM-BRIEF.md`
 
 ### Ďalší krok
-Po potvrdení od Bereczovej: overiť `realvia_webhook_logs` v Supabase. Potom demo funnel v5 PR.
+Dva oddelené PR: (1) inbound diag + dokument, (2) agency RPC migrácia + `resolveAgency`.
+
+---
+
+## Session 2026-05-23 — dokumentácia / agency
+
+### Dokončené (história)
+- L99 dokumenty (`L99-master-prompt.md`, routing skill, Ruflo orchestration …), Project Rules `.mdc`.
+
+### Poznámka
+Staršie línie „Session ended“ odstránené pri údržbe tohto súboru.
