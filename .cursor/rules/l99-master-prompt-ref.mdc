@@ -1,0 +1,12 @@
+---
+description: Odkaz na zlučovací L99 Master prompt (pre chaty / Agent) — duplicita s jemnými l99-* pravidlami
+alwaysApply: true
+---
+
+# L99 Master prompt (referencia)
+
+Pre každú konverzáciu ber ako **rozšírenú** L99 inštrukciu obsah súboru:
+
+**`apps/crm/docs/L99-master-prompt.md`**
+
+Základné pravidlá sú už v `l99-role-and-quality-standard.mdc`, `l99-golden-rule.mdc` a `l99-agent-operating-standard.mdc`. Ak by bol rozdiel, **prísnejšia** požiadavka (CI, smoke, 1 PR = 1 zmena, dôkaz pred fixom) má prednosť.
