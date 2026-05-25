@@ -78,6 +78,15 @@ describe('validateSecret — unified auth error message', () => {
     expect(result.valid).toBe(true);
   });
 
+  it('accepts identifikator headers with surrounding square brackets (Realvia quirk)', () => {
+    vi.stubEnv('REALVIA_IDENTIFIER', 'id1');
+    vi.stubEnv('REALVIA_IDENTIFIER_2', 'id2');
+    const result = validateSecret(
+      makeRequest({ identifikator: '[id1]', identifikator2: '[id2]' }),
+    );
+    expect(result.valid).toBe(true);
+  });
+
   it('rejects production requests when identifikator env is missing', () => {
     vi.unstubAllEnvs();
     vi.stubEnv('REALVIA_IDENTIFIER', '');

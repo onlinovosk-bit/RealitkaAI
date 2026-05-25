@@ -65,6 +65,19 @@ describe('resolveAgencyIdFromRealviaHeaders', () => {
     expect(client.from).not.toHaveBeenCalled();
   });
 
+  it('strips surrounding square brackets from Realvia identifikator headers before RPC', async () => {
+    const { client } = makeSupabaseStub({ data: UUID_FROM_RPC, error: null }, { row: null, error: null });
+    vi.mocked(createServiceRoleClient).mockReturnValue(client as unknown as ReturnType<
+      typeof createServiceRoleClient
+    >);
+
+    await resolveAgencyIdFromRealviaHeaders('[a]', '[b]');
+    expect(client.rpc).toHaveBeenCalledWith('resolve_agency_id_for_realvia', {
+      p_ident1: 'a',
+      p_ident2: 'b',
+    });
+  });
+
   it('falls back to legacy .eq when RPC returns transport error', async () => {
     const { client } = makeSupabaseStub(
       { data: null, error: { message: 'postgres boom', code: 'PGRST301' } },

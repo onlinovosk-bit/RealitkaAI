@@ -5,6 +5,7 @@
 
 import { NextRequest } from 'next/server';
 import { logWarn, logError } from '@/lib/logger';
+import { normalizeRealviaIdentifikatorHeaderValue } from './resolveAgency';
 import { REALVIA_AUTH_ERROR_MESSAGE } from './responses';
 
 /** Max payload size: 5MB */
@@ -92,11 +93,11 @@ export function validateSecret(request: NextRequest): {
   valid: boolean;
   reason?: string;
 } {
-  const identifier1 = request.headers.get('identifikator') ?? '';
-  const identifier2 = request.headers.get('identifikator2') ?? '';
+  const identifier1 = normalizeRealviaIdentifikatorHeaderValue(request.headers.get('identifikator') ?? '');
+  const identifier2 = normalizeRealviaIdentifikatorHeaderValue(request.headers.get('identifikator2') ?? '');
   const xRevoliSecret = request.headers.get('x-revolis-secret') ?? '';
-  const expectedId1 = process.env.REALVIA_IDENTIFIER ?? '';
-  const expectedId2 = process.env.REALVIA_IDENTIFIER_2 ?? '';
+  const expectedId1 = normalizeRealviaIdentifikatorHeaderValue(process.env.REALVIA_IDENTIFIER ?? '');
+  const expectedId2 = normalizeRealviaIdentifikatorHeaderValue(process.env.REALVIA_IDENTIFIER_2 ?? '');
   const expectedSecret = process.env.REALVIA_SHARED_SECRET;
 
   // Local dev: allow when no Realvia auth env is configured (smoke tests)

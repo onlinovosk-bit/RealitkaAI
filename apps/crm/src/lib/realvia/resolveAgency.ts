@@ -10,6 +10,11 @@ type RpcResolveResult =
   | { kind: 'no_row' }
   | { kind: 'rpc_unavailable' };
 
+/** Niektoré prostrední Realvie posielajú identifikátory s obklopujúcimi [ ] — zarovnaj na DB pár. */
+export function normalizeRealviaIdentifikatorHeaderValue(raw: string): string {
+  return raw.replace(/^\[|\]$/g, '').trim();
+}
+
 /**
  * Headers used by Realvia push API; pair must match an agencies row when both set.
  * When only X-Revolis-Secret is used (dev / alternate mode), callers should use defaultAgencyId fallback.
@@ -21,8 +26,8 @@ export async function resolveAgencyIdFromRealviaHeaders(
   identifikator: string,
   identifikator2: string,
 ): Promise<string | null> {
-  const id1 = identifikator.trim();
-  const id2 = identifikator2.trim();
+  const id1 = normalizeRealviaIdentifikatorHeaderValue(identifikator);
+  const id2 = normalizeRealviaIdentifikatorHeaderValue(identifikator2);
 
   if (!id1 || !id2) {
     return defaultAgencyIdFromEnv();
