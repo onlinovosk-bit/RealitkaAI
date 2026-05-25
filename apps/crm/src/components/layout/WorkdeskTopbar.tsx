@@ -1,20 +1,54 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import type { CSSProperties } from "react";
+import { useState } from "react";
+import { supabaseClient } from "@/lib/supabase/client";
 import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
 
 type WorkdeskTopbarProps = {
   userName?: string;
 };
 
+/** Neutral fallback — avoid implying a fixed person when `full_name` is missing */
 function initials(name?: string): string {
-  if (!name) return "OS";
+  if (!name?.trim()) return "RV";
   const parts = name.trim().split(/\s+/);
   if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
   return name.slice(0, 2).toUpperCase();
 }
 
+const pillNeutral: CSSProperties = {
+  border: "1px solid rgba(255,255,255,0.16)",
+  borderRadius: 12,
+  height: 38,
+  padding: "0 16px",
+  fontSize: 13,
+  fontWeight: 700,
+  color: "#fff",
+  background: "rgba(255,255,255,0.06)",
+  display: "inline-flex",
+  alignItems: "center",
+  textDecoration: "none",
+  cursor: "pointer",
+  fontFamily: "inherit",
+};
+
 export function WorkdeskTopbar({ userName }: WorkdeskTopbarProps) {
+  const router = useRouter();
+  const [signingOut, setSigningOut] = useState(false);
+
+  async function handleSignOut() {
+    setSigningOut(true);
+    try {
+      await supabaseClient.auth.signOut();
+      router.push("/login");
+      router.refresh();
+    } finally {
+      setSigningOut(false);
+    }
+  }
   return (
     <header
       style={{
@@ -110,6 +144,20 @@ export function WorkdeskTopbar({ userName }: WorkdeskTopbarProps) {
         >
           Spustiť akcie
         </Link>
+        <Link href="/login" style={pillNeutral}>
+          Prihlásiť sa
+        </Link>
+        <button
+          type="button"
+          disabled={signingOut}
+          onClick={() => void handleSignOut()}
+          style={{
+            ...pillNeutral,
+            opacity: signingOut ? 0.65 : 1,
+          }}
+        >
+          {signingOut ? "Odhlásenie…" : "Odhlásiť sa"}
+        </button>
         <div
           aria-label="Profil"
           title={userName}
