@@ -8,14 +8,16 @@ import { listRecommendations } from "@/lib/recommendations-store";
 import { listLeads } from "@/lib/leads-store";
 import { listProperties } from "@/lib/properties-store";
 import { safeServerAction } from "@/lib/safe-action";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function RecommendationsPage() {
   const result = await safeServerAction(
     async () => {
+      const supabase = await createClient();
       const [recommendations, leads, properties] = await Promise.all([
-        listRecommendations(),
-        listLeads(),
-        listProperties(),
+        listRecommendations(supabase),
+        listLeads(undefined, supabase),
+        listProperties(undefined, supabase),
       ]);
 
       return { recommendations, leads, properties };

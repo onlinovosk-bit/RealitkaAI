@@ -1,4 +1,5 @@
 ﻿import { supabaseClient, getSupabaseClient } from "@/lib/supabase/client";
+import { resolveTenantSupabase } from "@/lib/supabase/resolve-client";
 
 export type Task = {
   id: string;
@@ -57,8 +58,10 @@ function normalizeLeadId(value: string | null | undefined) {
   return normalized.length > 0 ? normalized : null;
 }
 
-export async function listTasks(): Promise<Task[]> {
-  const supabase = getSupabaseClient();
+export async function listTasks(
+  scopedSupabase?: import("@supabase/supabase-js").SupabaseClient | null,
+): Promise<Task[]> {
+  const supabase = await resolveTenantSupabase(scopedSupabase);
 
   if (!supabase) {
     return [...getDemoTasksStore()].sort((a, b) => {
@@ -93,7 +96,7 @@ export async function listTasks(): Promise<Task[]> {
 }
 
 export async function createTask(input: TaskInput) {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
   const leadId = normalizeLeadId(input.leadId);
 
   if (!leadId) {
@@ -155,7 +158,7 @@ export async function updateTask(
   id: string,
   input: Partial<TaskInput & { completedAt: string | null }>
 ) {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
   const normalizedLeadId =
     typeof input.leadId !== "undefined" ? normalizeLeadId(input.leadId) : undefined;
 
@@ -236,7 +239,7 @@ export async function updateTask(
 }
 
 export async function deleteTask(id: string) {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     const store = getDemoTasksStore();

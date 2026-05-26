@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { listLeads } from "@/lib/leads-store";
 import { getProperty as getPropertyById } from "@/lib/properties-store";
+import { getRscSupabase } from "@/lib/supabase/rsc-client";
 import LogMatchButton from "@/components/matching/log-match-button";
 import { calculatePropertyMatch } from "@/lib/matching";
 
@@ -15,13 +16,14 @@ export default async function MatchingPropertyDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const property = await getPropertyById(id);
+  const supabase = await getRscSupabase();
+  const property = await getPropertyById(id, supabase);
 
   if (!property) {
     notFound();
   }
 
-  const leads = await listLeads();
+  const leads = await listLeads(undefined, supabase);
   const matchedLeads = leads
     .map((lead) => ({
       lead,

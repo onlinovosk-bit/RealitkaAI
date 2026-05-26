@@ -1,4 +1,5 @@
 ﻿import { supabaseClient, getSupabaseClient } from "@/lib/supabase/client";
+import { resolveTenantSupabase } from "@/lib/supabase/resolve-client";
 import { listLeads, getLead } from "@/lib/leads-store";
 import { listProperties, getProperty } from "@/lib/properties-store";
 import { getMatchingPropertiesForLead, getMatchingLeadsForProperty } from "@/lib/matching";
@@ -81,8 +82,10 @@ function payloadWithoutOptionalColumns(row: {
   return { lead_id: row.lead_id, property_id: row.property_id, score: row.score };
 }
 
-export async function listPersistedMatches(): Promise<PersistedLeadPropertyMatch[]> {
-  const supabase = getSupabaseClient();
+export async function listPersistedMatches(
+  scopedSupabase?: import("@supabase/supabase-js").SupabaseClient | null,
+): Promise<PersistedLeadPropertyMatch[]> {
+  const supabase = await resolveTenantSupabase(scopedSupabase);
 
   if (!supabase) {
     return [];
@@ -157,7 +160,7 @@ export async function updateLeadPropertyMatchStatus(
   matchId: string,
   status: string
 ): Promise<{ match: LeadPropertyMatchListItem; previousStatus: string | null }> {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     throw new Error("Supabase nie je nastavený. Matching sa nedá aktualizovať.");
@@ -306,7 +309,7 @@ export async function getLeadPropertyMatchPerformanceSummary(): Promise<LeadProp
 }
 
 export async function recalculateMatchesForLead(leadId: string) {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     throw new Error("Supabase nie je nastavený. Matching sa nedá zapísať do databázy.");
@@ -387,7 +390,7 @@ export async function recalculateMatchesForLead(leadId: string) {
 }
 
 export async function recalculateMatchesForProperty(propertyId: string) {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     throw new Error("Supabase nie je nastavený. Matching sa nedá zapísať do databázy.");
@@ -468,7 +471,7 @@ export async function recalculateMatchesForProperty(propertyId: string) {
 }
 
 export async function recalculateAllMatches() {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     throw new Error("Supabase nie je nastavený. Matching sa nedá zapísať do databázy.");

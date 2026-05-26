@@ -59,6 +59,7 @@ import {
   type Recommendation,
 } from "@/lib/mock-data";
 import { supabaseClient, getSupabaseClient } from "@/lib/supabase/client";
+import { resolveTenantSupabase } from "@/lib/supabase/resolve-client";
 
 export type { Lead, LeadStatus, Recommendation } from "@/lib/mock-data";
 
@@ -516,7 +517,7 @@ function validateAiRecommendationInput(input: Partial<AiRecommendationInput>) {
 }
 
 export async function listAiRecommendationsAdmin(): Promise<AiRecommendationAdminItem[]> {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     return mockRecommendations.map((item) => ({
@@ -553,7 +554,7 @@ export async function listAiRecommendationsAdmin(): Promise<AiRecommendationAdmi
 export async function getAiRecommendationById(
   id: string
 ): Promise<AiRecommendationAdminItem | undefined> {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     const items = await listAiRecommendationsAdmin();
@@ -578,7 +579,7 @@ export async function createAiRecommendation(
 ): Promise<AiRecommendationAdminItem> {
   validateAiRecommendationInput(input);
 
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     return {
@@ -622,7 +623,7 @@ export async function updateAiRecommendation(
 ): Promise<AiRecommendationAdminItem> {
   validateAiRecommendationInput(input);
 
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     throw new Error("Supabase nie je nastavený.");
@@ -669,7 +670,7 @@ async function appendActivity(
   type: ActivityType = "Telefonat",
   meta?: ActivityMeta
 ) {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     return;
@@ -751,7 +752,7 @@ export async function listLeads(
     return applyFilters(getDemoShowcaseLeads(), filters);
   }
 
-  const supabase = scopedSupabase ?? getSupabaseClient();
+  const supabase = await resolveTenantSupabase(scopedSupabase);
 
   if (!supabase) {
     return applyFilters(mockLeads, filters);
@@ -798,7 +799,7 @@ export async function getLead(id: string): Promise<Lead | undefined> {
     return getDemoShowcaseLeads().find((lead) => lead.id === id);
   }
 
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     return mockLeads.find((lead) => lead.id === id);
@@ -818,7 +819,7 @@ export async function getLead(id: string): Promise<Lead | undefined> {
 }
 
 export async function createLead(input: LeadInput & ActivityLogInput) {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     const lead: Lead = {
@@ -919,7 +920,7 @@ export async function updateLead(
     } & ActivityLogInput
   >
 ) {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     const index = mockLeads.findIndex((lead) => lead.id === id);
@@ -1058,7 +1059,7 @@ export async function updateLead(
 }
 
 export async function deleteLead(id: string) {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     const index = mockLeads.findIndex((lead) => lead.id === id);
@@ -1090,7 +1091,7 @@ export async function getRecommendations() {
     return getDemoShowcaseRecommendations();
   }
 
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     return mockRecommendations;
@@ -1104,7 +1105,7 @@ export async function getLeadById(id: string): Promise<Lead | undefined> {
 }
 
 export async function getActivitiesByLeadId(id: string): Promise<LeadActivity[]> {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     return [
@@ -1151,7 +1152,7 @@ export async function getActivitiesByLeadId(id: string): Promise<LeadActivity[]>
 export async function listAiRecommendationAuditTrail(
   limit = 12
 ): Promise<AiRecommendationAuditItem[]> {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     return [];
@@ -1196,7 +1197,7 @@ export async function getAiRecommendationAuditByLeadId(
   leadId: string,
   limit = 8
 ): Promise<AiRecommendationAuditItem[]> {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     return [];
@@ -1250,7 +1251,7 @@ export async function getRecommendationsByLeadId(id: string) {
     return getDemoShowcaseRecommendations().filter((item) => item.leadId === id);
   }
 
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     return mockRecommendations.filter((item) => item.leadId === id);
@@ -1275,7 +1276,7 @@ export async function appendPipelineMove(
   fromStatus: string,
   toStatus: string
 ) {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
   if (!supabase) return;
 
   const { error } = await supabase.from("pipeline_moves").insert({
@@ -1289,7 +1290,7 @@ export async function appendPipelineMove(
 }
 
 export async function getPipelineMovesByLeadId(leadId: string): Promise<PipelineMove[]> {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
   if (!supabase) return [];
 
   const { data, error } = await supabase
@@ -1330,7 +1331,7 @@ export type AiRecommendationMetricsTimeline = {
 };
 
 export async function getAiRecommendationMetricsForToday(): Promise<AiRecommendationMetric> {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     return { activated: 0, deactivated: 0, created: 0, updated: 0, total: 0 };
@@ -1369,7 +1370,7 @@ export async function getAiRecommendationMetricsForToday(): Promise<AiRecommenda
 }
 
 export async function getAiRecommendationMetricsLast7Days(): Promise<AiRecommendationMetricsTimeline[]> {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     return [];

@@ -20,9 +20,9 @@ export async function GET(request: Request) {
     const redactPii = shouldRedactPiiForExport(request);
 
     const [matches, leads, properties] = await Promise.all([
-      listPersistedMatches(),
-      listLeads(),
-      listProperties(),
+      listPersistedMatches(supabase),
+      listLeads(undefined, supabase),
+      listProperties(undefined, supabase),
     ]);
 
     const rows = matches

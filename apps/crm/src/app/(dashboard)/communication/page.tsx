@@ -4,6 +4,7 @@ import ErrorState from "@/components/shared/error-state";
 import { safeServerAction } from "@/lib/safe-action";
 import { listOutreachMessages } from "@/lib/outreach-store";
 import { listLeads } from "@/lib/leads-store";
+import { getRscSupabase } from "@/lib/supabase/rsc-client";
 import { requireRole } from "@/lib/permissions";
 import Link from "next/link";
 
@@ -46,9 +47,10 @@ export default async function CommunicationPage() {
 
   const result = await safeServerAction(
     async () => {
+      const supabase = await getRscSupabase();
       const [messages, leads] = await Promise.all([
         listOutreachMessages(),
-        listLeads(),
+        listLeads(undefined, supabase),
       ]);
       return { messages, leads };
     },

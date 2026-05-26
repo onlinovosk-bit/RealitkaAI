@@ -1,5 +1,6 @@
 ﻿import { readDemoModeFromCookie } from "@/lib/demo-mode-cookie";
 import { supabaseClient, getSupabaseClient } from "@/lib/supabase/client";
+import { resolveTenantSupabase } from "@/lib/supabase/resolve-client";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { generateSyntheticProperties } from "@/lib/demo/synthetic-properties";
 import { GOLD_STANDARD_POPRAD_STUROVA_3I } from "@/lib/mock-data";
@@ -309,7 +310,7 @@ export async function listProperties(
     return applyPropertyFilters(getDemoShowcaseProperties(), filters);
   }
 
-  const supabase = scopedSupabase ?? getSupabaseClient();
+  const supabase = await resolveTenantSupabase(scopedSupabase);
 
   if (!supabase) {
     return applyPropertyFilters(getDemoShowcaseProperties(), filters);
@@ -373,7 +374,7 @@ export async function getProperty(
     return getDemoShowcaseProperties().find((item) => item.id === id);
   }
 
-  const supabase = scopedSupabase ?? getSupabaseClient();
+  const supabase = await resolveTenantSupabase(scopedSupabase);
 
   if (!supabase) {
     return getDemoShowcaseProperties().find((item) => item.id === id);
@@ -408,7 +409,7 @@ export async function getProperty(
 }
 
 export async function createProperty(input: PropertyInput) {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     return {
@@ -511,7 +512,7 @@ export async function createProperty(input: PropertyInput) {
 }
 
 export async function updateProperty(id: string, input: Partial<PropertyInput>) {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     return {
@@ -610,7 +611,7 @@ export async function updateProperty(id: string, input: Partial<PropertyInput>) 
 }
 
 export async function deleteProperty(id: string) {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     return { ok: true };

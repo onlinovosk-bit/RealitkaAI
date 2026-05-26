@@ -1,4 +1,5 @@
 ﻿import { supabaseClient, getSupabaseClient } from "@/lib/supabase/client";
+import { resolveTenantSupabase } from "@/lib/supabase/resolve-client";
 
 export type ActivityItem = {
   id: string;
@@ -48,7 +49,7 @@ function repairTextEncoding(value: string) {
 }
 
 export async function listActivities(limit = 200): Promise<ActivityItem[]> {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     return [];
@@ -100,7 +101,7 @@ export async function createActivity(input: {
   severity?: string;
   meta?: Record<string, unknown>;
 }) {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   const payload = {
     lead_id: input.leadId ?? null,

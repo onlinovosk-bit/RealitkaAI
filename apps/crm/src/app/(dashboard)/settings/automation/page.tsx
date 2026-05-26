@@ -1,11 +1,13 @@
 import { listAssignmentRules, autoAssignLeads } from "@/lib/lead-automation-store";
 import { listProfiles } from "@/lib/team-store";
+import { getRscSupabase } from "@/lib/supabase/rsc-client";
 import AssignmentRulesPanel from "@/components/automation/assignment-rules-panel";
 
 export default async function AutomationPage() {
+  const supabase = await getRscSupabase();
   const [rules, profiles] = await Promise.all([
     listAssignmentRules(),
-    listProfiles(),
+    listProfiles(supabase),
   ]);
 
   return (

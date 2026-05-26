@@ -1,4 +1,5 @@
 ﻿import { supabaseClient, getSupabaseClient } from "@/lib/supabase/client";
+import { resolveTenantSupabase } from "@/lib/supabase/resolve-client";
 import { listLeads, type Lead } from "@/lib/leads-store";
 
 export type Agency = {
@@ -164,8 +165,10 @@ function mapProfile(row: SupabaseProfileRow): Profile {
   };
 }
 
-export async function listAgencies(): Promise<Agency[]> {
-  const supabase = getSupabaseClient();
+export async function listAgencies(
+  scopedSupabase?: import("@supabase/supabase-js").SupabaseClient | null,
+): Promise<Agency[]> {
+  const supabase = await resolveTenantSupabase(scopedSupabase);
   if (!supabase) return [demoAgency];
 
   const { data, error } = await supabase
@@ -178,8 +181,10 @@ export async function listAgencies(): Promise<Agency[]> {
   return (data as SupabaseAgencyRow[]).map(mapAgency);
 }
 
-export async function listTeams(): Promise<Team[]> {
-  const supabase = getSupabaseClient();
+export async function listTeams(
+  scopedSupabase?: import("@supabase/supabase-js").SupabaseClient | null,
+): Promise<Team[]> {
+  const supabase = await resolveTenantSupabase(scopedSupabase);
   if (!supabase) return getDemoTeamsStore();
 
   const { data, error } = await supabase
@@ -192,8 +197,10 @@ export async function listTeams(): Promise<Team[]> {
   return (data as SupabaseTeamRow[]).map(mapTeam);
 }
 
-export async function listProfiles(): Promise<Profile[]> {
-  const supabase = getSupabaseClient();
+export async function listProfiles(
+  scopedSupabase?: import("@supabase/supabase-js").SupabaseClient | null,
+): Promise<Profile[]> {
+  const supabase = await resolveTenantSupabase(scopedSupabase);
   if (!supabase) return getDemoProfilesStore();
 
   const { data, error } = await supabase
@@ -207,7 +214,7 @@ export async function listProfiles(): Promise<Profile[]> {
 }
 
 export async function createTeam(input: { agencyId: string; name: string }) {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     const teams = getDemoTeamsStore();
@@ -241,7 +248,7 @@ export async function updateTeam(
   id: string,
   input: { name?: string; isActive?: boolean }
 ) {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     const teams = getDemoTeamsStore();
@@ -285,7 +292,7 @@ export async function createProfile(input: {
   role: string;
   phone: string;
 }) {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     const profiles = getDemoProfilesStore();
@@ -324,7 +331,7 @@ export async function createProfile(input: {
 }
 
 export async function getProfileById(id: string): Promise<Profile | undefined> {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     return getDemoProfilesStore().find((profile) => profile.id === id);
@@ -354,7 +361,7 @@ export async function updateProfile(
     isActive?: boolean;
   }
 ): Promise<Profile> {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     const profiles = getDemoProfilesStore();
@@ -402,7 +409,7 @@ export async function updateProfile(
 }
 
 export async function assignLeadToProfile(leadId: string, profileId: string) {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     return { ok: true };
@@ -426,17 +433,19 @@ export async function assignLeadToProfile(leadId: string, profileId: string) {
   return { ok: true };
 }
 
-export async function getTeamDashboardData(): Promise<{
+export async function getTeamDashboardData(
+  scopedSupabase?: import("@supabase/supabase-js").SupabaseClient | null,
+): Promise<{
   agencies: Agency[];
   teams: Team[];
   profiles: Profile[];
   leads: Lead[];
 }> {
   const [agencies, teams, profiles, leads] = await Promise.all([
-    listAgencies(),
-    listTeams(),
-    listProfiles(),
-    listLeads(),
+    listAgencies(scopedSupabase),
+    listTeams(scopedSupabase),
+    listProfiles(scopedSupabase),
+    listLeads(undefined, scopedSupabase),
   ]);
 
   return {

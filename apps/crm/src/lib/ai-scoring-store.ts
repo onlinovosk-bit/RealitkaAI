@@ -7,6 +7,7 @@ import { listOutreachMessages } from "@/lib/outreach-store";
 import { calculateLeadAiScore, type ScoringResult } from "@/lib/ai-scoring";
 import { createActivity } from "@/lib/activities-store";
 import { supabaseClient, getSupabaseClient } from "@/lib/supabase/client";
+import { resolveTenantSupabase } from "@/lib/supabase/resolve-client";
 
 
   autoErrorCapture("Supabase client initialized (ai-scoring)", "getSupabaseClient");
@@ -16,12 +17,14 @@ function isMissingRecommendationColumnError(message: string | undefined) {
   return ["property_id", "model_version"].some((col) => normalized.includes(col));
 }
 
-export async function calculateAllLeadScores(): Promise<ScoringResult[]> {
+export async function calculateAllLeadScores(
+  scopedSupabase?: import("@supabase/supabase-js").SupabaseClient | null,
+): Promise<ScoringResult[]> {
   const [leads, matches, recommendations, tasks, messages] = await Promise.all([
-    listLeads(),
-    listPersistedMatches(),
-    listRecommendations(),
-    listTasks(),
+    listLeads(undefined, scopedSupabase),
+    listPersistedMatches(scopedSupabase),
+    listRecommendations(scopedSupabase),
+    listTasks(scopedSupabase),
     listOutreachMessages(),
   ]);
 
@@ -50,7 +53,7 @@ export async function calculateSingleLeadScore(leadId: string) {
 }
 
 export async function writeScoringRecommendations(results: ScoringResult[]) {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     return { inserted: 0 };

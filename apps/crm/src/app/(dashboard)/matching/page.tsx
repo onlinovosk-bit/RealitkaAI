@@ -8,14 +8,16 @@ import { listPersistedMatches } from "@/lib/matching-store";
 import { listLeads } from "@/lib/leads-store";
 import { listProperties } from "@/lib/properties-store";
 import { safeServerAction } from "@/lib/safe-action";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function MatchingPage() {
   const result = await safeServerAction(
     async () => {
+      const supabase = await createClient();
       const [matches, leads, properties] = await Promise.all([
-        listPersistedMatches(),
-        listLeads(),
-        listProperties(),
+        listPersistedMatches(supabase),
+        listLeads(undefined, supabase),
+        listProperties(undefined, supabase),
       ]);
 
       return { matches, leads, properties };
