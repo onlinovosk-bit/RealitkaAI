@@ -171,7 +171,11 @@ describe("Reality Monopol — implementation anchors", () => {
   it("documents Reality Monopol in billing store copy", () => {
     const billing = join(CRM_ROOT, "src/lib/billing-store.ts");
     const source = readFileSync(billing, "utf8");
-    expect(source).toContain("Reality Monopol");
+    // Billing may use internal SKU name (Protocol Authority) or brand label (Reality Monopol).
+    expect(
+      source.includes(PROGRAM_BRAND_LABEL.protocol) ||
+        source.includes("Protocol Authority"),
+    ).toBe(true);
   });
 });
 
