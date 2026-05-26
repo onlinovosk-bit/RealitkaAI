@@ -27,7 +27,7 @@ export async function PATCH(
     if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
     const { data: callerProfile } = await supabase
-      .from("profiles").select("agency_id").eq("id", user.id).maybeSingle();
+      .from("profiles").select("agency_id").eq("auth_user_id", user.id).maybeSingle();
 
     const { id } = await params;
     const body = (await request.json()) as Partial<AiRecommendationInput>;

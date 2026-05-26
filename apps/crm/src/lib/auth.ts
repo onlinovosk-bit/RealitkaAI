@@ -1,4 +1,4 @@
-import type { User } from "@supabase/supabase-js";
+import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -152,4 +152,17 @@ export async function requireUser() {
     redirect("/login");
   }
   return user;
+}
+
+/** Tenant scope: resolve agency_id from Supabase auth user id (not profiles PK). */
+export async function getAgencyIdForAuthUser(
+  supabase: SupabaseClient,
+  authUserId: string,
+): Promise<string | null> {
+  const { data } = await supabase
+    .from("profiles")
+    .select("agency_id")
+    .eq("auth_user_id", authUserId)
+    .maybeSingle();
+  return data?.agency_id ?? null;
 }

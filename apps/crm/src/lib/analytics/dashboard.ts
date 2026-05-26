@@ -25,7 +25,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   const { data: profile } = await supabase
     .from("profiles")
     .select("agency_id")
-    .eq("id", user.id)
+    .eq("auth_user_id", user.id)
     .maybeSingle();
 
   let query = supabase.from("leads").select("status, score, last_contact_at");

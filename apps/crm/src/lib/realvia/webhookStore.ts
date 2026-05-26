@@ -187,7 +187,8 @@ export async function fetchPendingJobs(
     const { data, error } = await sb
       .from('realvia_processing_queue')
       .select('id, webhook_log_id')
-      .or(`status.eq.pending,and(status.eq.failed,next_retry_at.lte.${now})`)
+      .eq('status', 'pending')
+      .or(`next_retry_at.is.null,next_retry_at.lte.${now}`)
       .order('created_at', { ascending: true })
       .limit(batchSize);
 

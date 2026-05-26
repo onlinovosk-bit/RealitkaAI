@@ -27,7 +27,7 @@ export async function getLeadsReport(filter: ReportFilter): Promise<LeadReportRo
   const { data: profile } = await supabase
     .from("profiles")
     .select("agency_id")
-    .eq("id", user.id)
+    .eq("auth_user_id", user.id)
     .maybeSingle();
 
   let query = supabase

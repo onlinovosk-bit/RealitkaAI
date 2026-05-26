@@ -20,7 +20,7 @@ export async function PATCH(
     const body = await request.json();
     const [oldProperty, { data: callerProfile }] = await Promise.all([
       getProperty(id),
-      supabase.from("profiles").select("agency_id").eq("id", user.id).maybeSingle(),
+      supabase.from("profiles").select("agency_id").eq("auth_user_id", user.id).maybeSingle(),
     ]);
 
     if (callerProfile?.agency_id && oldProperty?.agencyId && oldProperty.agencyId !== callerProfile.agency_id) {
@@ -78,7 +78,7 @@ export async function DELETE(
     if (!UUID_RE.test(id)) return errorResponse("Invalid ID", 400);
     const [oldProperty, { data: callerProfile }] = await Promise.all([
       getProperty(id),
-      supabase.from("profiles").select("agency_id").eq("id", user.id).maybeSingle(),
+      supabase.from("profiles").select("agency_id").eq("auth_user_id", user.id).maybeSingle(),
     ]);
 
     if (callerProfile?.agency_id && oldProperty?.agencyId && oldProperty.agencyId !== callerProfile.agency_id) {

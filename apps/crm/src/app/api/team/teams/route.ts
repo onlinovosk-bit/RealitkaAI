@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     const { data: callerProfile } = await supabase
       .from("profiles")
       .select("agency_id")
-      .eq("id", user.id)
+      .eq("auth_user_id", user.id)
       .maybeSingle();
     const agencyId: string = callerProfile?.agency_id ?? body.agencyId ?? "";
 

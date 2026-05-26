@@ -28,7 +28,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: "Invalid lead ID" }, { status: 400 });
     }
 
-    const { data: callerProfile } = await supabase.from("profiles").select("agency_id").eq("id", user.id).maybeSingle();
+    const { data: callerProfile } = await supabase.from("profiles").select("agency_id").eq("auth_user_id", user.id).maybeSingle();
 
     const { data: leadRow } = await supabase.from("leads").select("agency_id").eq("id", lead_id).maybeSingle();
     if (callerProfile?.agency_id && leadRow?.agency_id !== callerProfile.agency_id) {

@@ -27,7 +27,7 @@ export async function GET(
 
   if (id !== user.id) {
     const { data: callerProfile } = await supabase
-      .from("profiles").select("agency_id").eq("id", user.id).maybeSingle();
+      .from("profiles").select("agency_id").eq("auth_user_id", user.id).maybeSingle();
 
     if (callerProfile?.agency_id && profile.agencyId !== callerProfile.agency_id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -46,7 +46,7 @@ export async function PATCH(
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { data: callerProfile } = await supabase
-    .from("profiles").select("agency_id").eq("id", user.id).maybeSingle();
+    .from("profiles").select("agency_id").eq("auth_user_id", user.id).maybeSingle();
 
   const { id } = await params;
 
