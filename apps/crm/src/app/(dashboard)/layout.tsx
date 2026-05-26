@@ -1,18 +1,27 @@
-﻿import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import AppSidebar from "@/components/layout/AppSidebar";
 import { WorkdeskTopbar } from "@/components/layout/WorkdeskTopbar";
 import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
+import SessionRecovery from "@/components/auth/session-recovery";
+import { isInvalidRefreshTokenError } from "@/lib/supabase/auth-session";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError && isInvalidRefreshTokenError(authError)) {
+    await supabase.auth.signOut();
+    redirect("/login?reason=session_expired");
+  }
   if (!user) redirect("/login");
 
+  // Zhodné s profile_agencies_for_auth(): párovanie cez auth_user_id alebo legacy profiles.id.
   const { data: profile } = await supabase
     .from("profiles")
-    .select("ui_role, account_tier, full_name, agency_name, role, team_license_id")
-    .eq("auth_user_id", user.id)
+    .select(
+      "ui_role, account_tier, full_name, agency_name, agency_id, role, team_license_id"
+    )
+    .or(`auth_user_id.eq.${user.id},id.eq.${user.id}`)
     .maybeSingle();
 
   return (
@@ -20,6 +29,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       data-theme="slate-horizon"
       style={{ display: "flex", flex: 1, minHeight: 0, width: "100%", overflow: "hidden" }}
     >
+      <SessionRecovery />
       <AppSidebar
         uiRole={profile?.ui_role ?? "agent"}
         accountTier={profile?.account_tier ?? "free"}

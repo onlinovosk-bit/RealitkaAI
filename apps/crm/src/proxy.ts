@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { isInvalidRefreshTokenError } from "@/lib/supabase/auth-session";
 
 // Public routes — no auth required
 const PUBLIC_PATHS = new Set([
@@ -34,12 +35,21 @@ function isWebhookApiPath(pathname: string): boolean {
   );
 }
 
+const PUBLIC_STATIC_FILES = new Set([
+  "/manifest.json",
+  "/sw.js",
+  "/revolis-widget.js",
+]);
+
 function isPublic(pathname: string): boolean {
   if (PUBLIC_PATHS.has(pathname)) return true;
+  if (PUBLIC_STATIC_FILES.has(pathname)) return true;
   if (pathname.startsWith("/api/healthz")) return true;
   if (pathname.startsWith("/_next")) return true;
   if (pathname.startsWith("/favicon")) return true;
   if (pathname.startsWith("/images")) return true;
+  if (pathname.startsWith("/icons/")) return true;
+  if (pathname.startsWith("/logos/")) return true;
   return false;
 }
 
@@ -119,6 +129,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|manifest\\.json|sw\\.js|revolis-widget\\.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };
