@@ -16,6 +16,16 @@
 - Widget: najprv browser, potom API fallback.
 - `loadPropertiesInventory` + explicitný SELECT stĺpcov; PR #64 musí byť **merged do main** pred prod deployom.
 
+## Súvisiace symptómy (2026-05-26)
+
+### Maklér len v popise, prázdne „Meno vlastníka“
+- **Príčina:** `processQueue.ts` mapuje `broker` → `broker_name` / `broker_phone` / `broker_email`. Stĺpec `owner_name` Realvia neplní. Popis je `advert.description` (HTML podpis makléra).
+- **Fix:** SELECT + UI zobrazí `broker_*`; tabuľka „Vlastník / maklér“; v detaile blok „Maklér (Realvia)“.
+
+### „Moji klienti“ — 4 nuly (Príležitosti / Horúce / Obhliadky / Avg BRI)
+- **Príčina:** menu `/contacts` → redirect na `/leads`. `listLeads()` na SSR bez browser session → `[]` → všetky KPI = 0.
+- **Fix:** `LeadsModule` doplní leady cez `listLeads(undefined, getSupabaseClient())` v prehliadači.
+
 ## Overenie
 1. Prihlásený účet s `profiles.agency_id`.
 2. `/dashboard` Celkovo = N.

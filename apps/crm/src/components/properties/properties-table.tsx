@@ -1,4 +1,4 @@
-﻿import type { Property } from "@/lib/properties-store";
+﻿import { propertyListContactLabel, type Property } from "@/lib/properties-store";
 
 function getStatusBadge(status: string) {
   switch (status) {
@@ -59,7 +59,7 @@ export default function PropertiesTable({
                     {property.status}
                   </span>
                 </td>
-                <td className="px-5 py-4 text-gray-700">{property.ownerName || "-"}</td>
+                <td className="px-5 py-4 text-gray-700">{propertyListContactLabel(property)}</td>
                 <td className="px-5 py-4 text-right">
                   <button
                     type="button"

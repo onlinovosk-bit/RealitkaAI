@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { applyPropertyFilters, buildPropertiesSummary } from "@/lib/properties-store";
+import {
+  applyPropertyFilters,
+  buildPropertiesSummary,
+  propertyListContactLabel,
+} from "@/lib/properties-store";
 import type { Property } from "@/lib/properties-store";
 
 const sample: Property[] = [
@@ -39,6 +43,18 @@ describe("buildPropertiesSummary", () => {
     expect(s.total).toBe(2);
     expect(s.active).toBe(1);
     expect(s.sold).toBe(1);
+  });
+});
+
+describe("propertyListContactLabel", () => {
+  it("prefers owner, falls back to broker", () => {
+    expect(
+      propertyListContactLabel({ ownerName: "Majiteľ X", brokerName: "Ing. Maklér" }),
+    ).toBe("Majiteľ X");
+    expect(propertyListContactLabel({ ownerName: "", brokerName: "Ing. Maklér" })).toBe(
+      "Ing. Maklér",
+    );
+    expect(propertyListContactLabel({ ownerName: "", brokerName: "" })).toBe("-");
   });
 });
 

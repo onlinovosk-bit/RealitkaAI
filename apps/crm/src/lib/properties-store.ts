@@ -17,9 +17,22 @@ export type Property = {
   description: string;
   ownerName: string;
   ownerPhone: string;
+  /** Realvia broker — uložený v `broker_*` stĺpcoch, nie v popise. */
+  brokerName?: string;
+  brokerEmail?: string;
+  brokerPhone?: string;
   createdAt?: string;
   updatedAt?: string;
 };
+
+/** Kontakt v tabuľke: vlastník ak je, inak maklér z Realvie. */
+export function propertyListContactLabel(property: Pick<Property, "ownerName" | "brokerName">): string {
+  const owner = property.ownerName?.trim();
+  if (owner) return owner;
+  const broker = property.brokerName?.trim();
+  if (broker) return broker;
+  return "-";
+}
 
 export type PropertyInput = {
   title: string;
@@ -56,7 +69,7 @@ export type PropertiesInventory = {
 
 /** Stĺpce vždy prítomné v produkcii (Realvia import). */
 const PROPERTIES_SELECT_CORE =
-  "id, agency_id, title, location, price, type, rooms, features, status, created_at";
+  "id, agency_id, title, location, price, type, rooms, features, status, created_at, broker_name, broker_email, broker_phone";
 
 const PROPERTIES_SELECT_FULL = `${PROPERTIES_SELECT_CORE}, description, owner_name, owner_phone, updated_at`;
 
@@ -129,6 +142,9 @@ function mapPropertyRow(item: Record<string, unknown>): Property {
     description: String(item.description ?? ""),
     ownerName: String(item.owner_name ?? ""),
     ownerPhone: String(item.owner_phone ?? ""),
+    brokerName: String(item.broker_name ?? ""),
+    brokerEmail: String(item.broker_email ?? ""),
+    brokerPhone: String(item.broker_phone ?? ""),
     createdAt: item.created_at as string | undefined,
     updatedAt: item.updated_at as string | undefined,
   };

@@ -1,6 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { getSupabaseClient } from "@/lib/supabase/client";
+import { listLeads } from "@/lib/leads-store";
 import LeadFilters from "@/components/leads/lead-filters";
 import LeadCreateForm from "@/components/leads/lead-create-form";
 import LeadsWorkspace from "@/components/leads/leads-workspace";
@@ -35,7 +37,36 @@ export default function LeadsModule({
   profiles: ProfileOption[];
   recommendations: Recommendation[];
 }) {
+  const [leadItems, setLeadItems] = useState(leads);
   const [filtered, setFiltered] = useState(leads);
+  const [leadsLoading, setLeadsLoading] = useState(false);
+
+  useEffect(() => {
+    if (leads.length > 0) return;
+
+    let cancelled = false;
+    const supabase = getSupabaseClient();
+    if (!supabase) return;
+
+    setLeadsLoading(true);
+    void listLeads(undefined, supabase)
+      .then((rows) => {
+        if (cancelled || rows.length === 0) return;
+        setLeadItems(rows);
+        setFiltered(rows);
+      })
+      .finally(() => {
+        if (!cancelled) setLeadsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [leads.length]);
+
+  useEffect(() => {
+    setFiltered(leadItems);
+  }, [leadItems]);
 
   const avgScore =
     filtered.length > 0
@@ -60,7 +91,7 @@ export default function LeadsModule({
         <SemanticSearchBar type="leads" className="w-full" />
 
         <LeadFilters
-          leads={leads}
+          leads={leadItems}
           teams={teams}
           profiles={profiles}
           onFilter={setFiltered}
@@ -68,6 +99,10 @@ export default function LeadsModule({
 
         <LeadCreateForm />
       </div>
+
+      {leadsLoading ? (
+        <p className="mb-4 text-center text-sm text-gray-500">Načítavam príležitosti…</p>
+      ) : null}
 
       <section className="mb-4 grid grid-cols-2 gap-2 md:gap-4 xl:grid-cols-4">
         {[

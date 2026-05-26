@@ -743,12 +743,15 @@ export function getAvailableLocations(items: Lead[]) {
   );
 }
 
-export async function listLeads(filters?: LeadFilters): Promise<Lead[]> {
+export async function listLeads(
+  filters?: LeadFilters,
+  scopedSupabase?: import("@supabase/supabase-js").SupabaseClient | null,
+): Promise<Lead[]> {
   if (await readDemoModeFromCookie()) {
     return applyFilters(getDemoShowcaseLeads(), filters);
   }
 
-  const supabase = getSupabaseClient();
+  const supabase = scopedSupabase ?? getSupabaseClient();
 
   if (!supabase) {
     return applyFilters(mockLeads, filters);

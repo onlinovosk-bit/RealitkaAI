@@ -250,11 +250,32 @@ export default function PropertyEditSlideOver({
               />
             </div>
 
+            {form.brokerName ? (
+              <div className="md:col-span-2 rounded-lg border border-blue-100 bg-blue-50 p-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-blue-900">
+                  Maklér (Realvia)
+                </p>
+                <p className="mt-1 text-sm font-medium text-gray-900">{form.brokerName}</p>
+                {(form.brokerPhone || form.brokerEmail) && (
+                  <p className="mt-1 text-xs text-gray-600">
+                    {[form.brokerPhone, form.brokerEmail].filter(Boolean).join(" · ")}
+                  </p>
+                )}
+                <p className="mt-2 text-xs text-gray-500">
+                  Makléra ukladá import do stĺpcov <code className="text-[11px]">broker_*</code>, nie do
+                  mena vlastníka. Podpis v popise je len text inzerátu.
+                </p>
+              </div>
+            ) : null}
+
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Meno vlastníka</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Meno vlastníka (majiteľ nehnuteľnosti)
+              </label>
               <input
                 value={form.ownerName}
                 onChange={(e) => updateField("ownerName", e.target.value)}
+                placeholder={form.brokerName ? "Realvia neposiela majiteľa — doplňte ručne" : ""}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500"
               />
             </div>
