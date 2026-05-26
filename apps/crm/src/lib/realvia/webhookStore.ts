@@ -238,6 +238,31 @@ export async function fetchWebhookPayload(
 }
 
 /**
+ * Update agency_id only for webhook rows that do not have it yet.
+ */
+export async function updateWebhookLogAgencyIfNull(
+  webhookLogId: string,
+  agencyId: string,
+): Promise<void> {
+  const sb = createServiceRoleClient();
+  if (!sb) return;
+
+  try {
+    await sb
+      .from('realvia_webhook_logs')
+      .update({ agency_id: agencyId })
+      .eq('id', webhookLogId)
+      .is('agency_id', null);
+  } catch (err) {
+    logError('[realvia-store] Failed to update webhook agency_id', {
+      webhookLogId,
+      agencyId,
+      error: err instanceof Error ? err.message : 'Unknown',
+    });
+  }
+}
+
+/**
  * Re-queue a stored webhook log (upsert queue row). Resets webhook log processed flags.
  */
 export async function enqueueReplayForWebhookLog(
@@ -315,5 +340,51 @@ export async function enqueueReplayForWebhookLog(
     const message = err instanceof Error ? err.message : 'Unknown error';
     logError('[realvia-replay] enqueueReplay failed', message);
     return { ok: false, error: message };
+  }
+}
+
+/**
+ * Re-queue failed jobs (status=failed) back to pending in a bounded batch.
+ * Returns replayed count and per-row errors.
+ */
+export async function enqueueReplayFailedQueueJobs(
+  limit = 50,
+): Promise<{ replayedCount: number; errors: string[] }> {
+  const sb = createServiceRoleClient();
+  if (!sb) {
+    return { replayedCount: 0, errors: ['DB client unavailable'] };
+  }
+
+  const cappedLimit = Math.min(Math.max(1, limit), 500);
+
+  try {
+    const { data, error } = await sb
+      .from('realvia_processing_queue')
+      .select('webhook_log_id')
+      .eq('status', 'failed')
+      .order('created_at', { ascending: true })
+      .limit(cappedLimit);
+
+    if (error) {
+      return { replayedCount: 0, errors: [error.message] };
+    }
+
+    const uniqueWebhookIds = Array.from(new Set((data ?? []).map((row) => row.webhook_log_id).filter(Boolean)));
+    let replayedCount = 0;
+    const errors: string[] = [];
+
+    for (const webhookLogId of uniqueWebhookIds) {
+      const replayResult = await enqueueReplayForWebhookLog(webhookLogId);
+      if (replayResult.ok) {
+        replayedCount++;
+      } else {
+        errors.push(`${webhookLogId}: ${replayResult.error}`);
+      }
+    }
+
+    return { replayedCount, errors };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    return { replayedCount: 0, errors: [message] };
   }
 }

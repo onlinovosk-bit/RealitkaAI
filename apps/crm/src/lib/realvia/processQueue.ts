@@ -28,6 +28,7 @@ import type {
 
 /** Maximum jobs to process per invocation */
 const BATCH_SIZE = 10;
+export const REALVIA_PROCESSING_ERROR_AGENCY_RESOLUTION_FAILED = 'Agency resolution failed';
 
 /**
  * Main queue processor — call from cron or API route.
@@ -74,6 +75,18 @@ export async function processRealviaQueue(): Promise<{
       }
 
       const { payload_json: payload, agency_id } = webhookData;
+
+      if (!agency_id) {
+        await updateQueueJobStatus(job.id, 'failed', REALVIA_PROCESSING_ERROR_AGENCY_RESOLUTION_FAILED);
+        await markWebhookProcessed(job.webhook_log_id, REALVIA_PROCESSING_ERROR_AGENCY_RESOLUTION_FAILED);
+        results.push({
+          success: false,
+          action: 'skipped',
+          error: REALVIA_PROCESSING_ERROR_AGENCY_RESOLUTION_FAILED,
+        });
+        failed++;
+        continue;
+      }
 
       // Process based on payload type
       let result: RealviaProcessingResult;
