@@ -2,27 +2,42 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import type { PropertiesSummary } from "@/lib/properties-store";
+import { getSupabaseClient } from "@/lib/supabase/client";
+import {
+  loadPropertiesInventory,
+  type PropertiesSummary,
+} from "@/lib/properties-store";
 
 type Props = {
-  /** Ak príde z RSC/dashboard SSR, použijeme hodnoty hneď a nezávodíme s RLS v prehliadači o prvý fetch. */
   serverSummary?: PropertiesSummary;
 };
 
 export default function PropertiesSummaryWidget({ serverSummary }: Props) {
-  const hydratedFromServer = serverSummary !== undefined;
   const [summary, setSummary] = useState<PropertiesSummary | null>(
-    hydratedFromServer ? serverSummary : null,
+    serverSummary && serverSummary.total > 0 ? serverSummary : null,
   );
-  const [isLoading, setIsLoading] = useState(!hydratedFromServer);
+  const [isLoading, setIsLoading] = useState(!summary);
 
   useEffect(() => {
-    if (hydratedFromServer) {
-      setSummary(serverSummary);
-      setIsLoading(false);
-      return;
-    }
+    if (serverSummary && serverSummary.total > 0) return;
+
+    let cancelled = false;
+
     const load = async () => {
+      const supabase = getSupabaseClient();
+      if (supabase) {
+        try {
+          const { summary: browserSummary } = await loadPropertiesInventory(supabase);
+          if (!cancelled && browserSummary.total > 0) {
+            setSummary(browserSummary);
+            setIsLoading(false);
+            return;
+          }
+        } catch (err) {
+          console.error("Properties widget browser load:", err);
+        }
+      }
+
       try {
         const res = await fetch("/api/properties/inventory", {
           credentials: "include",
@@ -32,18 +47,21 @@ export default function PropertiesSummaryWidget({ serverSummary }: Props) {
           ok?: boolean;
           inventory?: { summary: PropertiesSummary };
         };
-        if (res.ok && data.ok && data.inventory?.summary) {
+        if (!cancelled && res.ok && data.ok && data.inventory?.summary) {
           setSummary(data.inventory.summary);
         }
       } catch (err) {
-        console.error("Error loading properties summary:", err);
+        console.error("Properties widget API load:", err);
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     };
 
     void load();
-  }, [hydratedFromServer, serverSummary]);
+    return () => {
+      cancelled = true;
+    };
+  }, [serverSummary]);
 
   if (isLoading) {
     return (
@@ -54,7 +72,7 @@ export default function PropertiesSummaryWidget({ serverSummary }: Props) {
     );
   }
 
-  if (!summary) {
+  if (!summary || summary.total === 0) {
     return null;
   }
 
@@ -62,8 +80,8 @@ export default function PropertiesSummaryWidget({ serverSummary }: Props) {
     <div className="bg-white rounded-lg shadow p-6">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">Nehnuteľnosti</h3>
-        <Link 
-          href="/properties" 
+        <Link
+          href="/properties"
           className="text-sm text-blue-600 hover:underline font-medium"
         >
           Pozri všetky →

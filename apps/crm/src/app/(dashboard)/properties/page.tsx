@@ -1,11 +1,7 @@
 ﻿import ModuleShell from "@/components/shared/module-shell";
 import ErrorState from "@/components/shared/error-state";
 import PropertiesPageClient from "@/components/properties/properties-page-client";
-import {
-  getAvailablePropertyLocations,
-  loadPropertiesInventory,
-  type PropertyFilters,
-} from "@/lib/properties-store";
+import { loadPropertiesInventory, type PropertyFilters } from "@/lib/properties-store";
 import { safeServerAction } from "@/lib/safe-action";
 import { createClient } from "@/lib/supabase/server";
 
@@ -38,6 +34,8 @@ export default async function PropertiesPage({
       } = await supabase.auth.getUser();
 
       let profileMissingAgency = false;
+      let inventorySummary = undefined;
+
       if (user) {
         const { data: profileRow } = await supabase
           .from("profiles")
@@ -45,19 +43,12 @@ export default async function PropertiesPage({
           .or(`auth_user_id.eq.${user.id},id.eq.${user.id}`)
           .maybeSingle();
         profileMissingAgency = !profileRow?.agency_id;
+
+        const { summary } = await loadPropertiesInventory(supabase);
+        inventorySummary = summary;
       }
 
-      const { items: allInventory, summary: inventorySummary } =
-        await loadPropertiesInventory(supabase);
-
-      const locations = getAvailablePropertyLocations(allInventory);
-
-      return {
-        allInventory,
-        inventorySummary,
-        profileMissingAgency,
-        locations,
-      };
+      return { inventorySummary, profileMissingAgency };
     },
     "Nepodarilo sa načítať nehnuteľnosti.",
   );
@@ -76,8 +67,7 @@ export default async function PropertiesPage({
     );
   }
 
-  const { allInventory, inventorySummary, profileMissingAgency, locations } =
-    result.data;
+  const { inventorySummary, profileMissingAgency } = result.data;
 
   return (
     <ModuleShell
@@ -85,9 +75,7 @@ export default async function PropertiesPage({
       description="Kompletný modul na správu nehnuteľností a ponúk realitnej kancelárie."
     >
       <PropertiesPageClient
-        initialAllInventory={allInventory}
         initialInventorySummary={inventorySummary}
-        initialLocations={locations}
         profileMissingAgency={profileMissingAgency}
         filters={filters}
       />

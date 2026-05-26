@@ -6,9 +6,11 @@ import PropertiesFilters from "@/components/properties/properties-filters";
 import PropertyCreateForm from "@/components/properties/property-create-form";
 import PropertiesWorkspace from "@/components/properties/properties-workspace";
 import SemanticSearchBar from "@/components/search/SemanticSearchBar";
+import { getSupabaseClient } from "@/lib/supabase/client";
 import {
   applyPropertyFilters,
   getAvailablePropertyLocations,
+  loadPropertiesInventory,
   propertyStatusOptions,
   propertyTypeOptions,
   type Property,
@@ -17,75 +19,92 @@ import {
 } from "@/lib/properties-store";
 
 type Props = {
-  /** Celý inventár kancelárie (pred URL filtrami). */
-  initialAllInventory: Property[];
-  initialInventorySummary: PropertiesSummary;
-  initialLocations: string[];
+  /** Voliteľný SSR súhrn (malý objekt); zoznam sa vždy načíta v prehliadači kvôli RLS session. */
+  initialInventorySummary?: PropertiesSummary;
   profileMissingAgency: boolean;
   filters: PropertyFilters;
 };
 
-type InventoryPayload = {
-  ok?: boolean;
-  inventory?: {
-    items: Property[];
-    summary: PropertiesSummary;
-  };
-  error?: string;
+const EMPTY_SUMMARY: PropertiesSummary = {
+  total: 0,
+  active: 0,
+  reserved: 0,
+  sold: 0,
 };
 
 export default function PropertiesPageClient({
-  initialAllInventory,
   initialInventorySummary,
-  initialLocations,
   profileMissingAgency,
   filters,
 }: Props) {
-  const [allInventory, setAllInventory] = useState<Property[]>(initialAllInventory);
-  const [inventorySummary, setInventorySummary] =
-    useState<PropertiesSummary>(initialInventorySummary);
-  const [locations, setLocations] = useState<string[]>(initialLocations);
-  const [syncNotice, setSyncNotice] = useState<string | null>(null);
+  const [allInventory, setAllInventory] = useState<Property[]>([]);
+  const [inventorySummary, setInventorySummary] = useState<PropertiesSummary>(
+    initialInventorySummary ?? EMPTY_SUMMARY,
+  );
+  const [locations, setLocations] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      const supabase = getSupabaseClient();
+      if (!supabase) {
+        if (!cancelled) {
+          setLoadError("Pripojenie k databáze nie je nakonfigurované.");
+          setLoading(false);
+        }
+        return;
+      }
+
+      try {
+        const inventory = await loadPropertiesInventory(supabase);
+        if (cancelled) return;
+        setAllInventory(inventory.items);
+        setInventorySummary(inventory.summary);
+        setLocations(getAvailablePropertyLocations(inventory.items));
+        setLoadError(null);
+      } catch (err) {
+        if (!cancelled) {
+          setLoadError(
+            err instanceof Error ? err.message : "Nepodarilo sa načítať nehnuteľnosti.",
+          );
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const properties = applyPropertyFilters(allInventory, filters);
 
   const filterNotice =
+    !loading &&
     properties.length !== inventorySummary.total &&
     !!(filters.q || filters.status || filters.location || filters.type);
 
-  useEffect(() => {
-    if (initialInventorySummary.total > 0) return;
+  if (loading) {
+    return (
+      <div className="rounded-2xl border border-gray-200 bg-white p-10 text-center text-sm text-gray-600">
+        Načítavam nehnuteľnosti…
+      </div>
+    );
+  }
 
-    let cancelled = false;
-
-    const syncFromSession = async () => {
-      try {
-        const res = await fetch("/api/properties/inventory", {
-          credentials: "include",
-          cache: "no-store",
-        });
-        const data = (await res.json()) as InventoryPayload;
-        if (cancelled || !res.ok || !data.ok || !data.inventory) return;
-
-        const { items, summary } = data.inventory;
-        if (summary.total === 0) return;
-
-        setAllInventory(items);
-        setInventorySummary(summary);
-        setLocations(getAvailablePropertyLocations(items));
-        setSyncNotice(
-          "Zoznam bol doplnený z aktívnej relácie — server pri prvom načítaní nevidel inventár (session/RLS).",
-        );
-      } catch {
-        // ticho — ostáva SSR stav
-      }
-    };
-
-    void syncFromSession();
-    return () => {
-      cancelled = true;
-    };
-  }, [initialInventorySummary.total]);
+  if (loadError) {
+    return (
+      <EmptyState
+        title="Nehnuteľnosti sa nepodarilo načítať"
+        description={loadError}
+      />
+    );
+  }
 
   return (
     <>
@@ -104,12 +123,6 @@ export default function PropertiesPageClient({
 
         <PropertyCreateForm />
       </div>
-
-      {syncNotice ? (
-        <p className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-          {syncNotice}
-        </p>
-      ) : null}
 
       {filterNotice ? (
         <p className="-mt-3 mb-2 text-center text-xs text-gray-600">
@@ -152,10 +165,10 @@ export default function PropertiesPageClient({
           }
           description={
             inventorySummary.total > 0
-              ? "Uprav kritériá alebo klikni na Reset v kartičke filtrov — v kancelárii máš nehnuteľnosti v súhrne vyššie."
+              ? "Uprav kritériá alebo klikni na Reset v kartičke filtrov."
               : profileMissingAgency
-                ? "Najskôr doplň agency_id vo svojom profile. Potom obnov stránku."
-                : "Pridaj prvú nehnuteľnosť cez formulár vyššie alebo uprav filtre."
+                ? "V profile chýba agency_id — bez neho RLS neukáže ponuky kancelárie. Skontroluj profil v Supabase."
+                : "Pridaj prvú nehnuteľnosť cez formulár vyššie alebo over Realvia import."
           }
         />
       ) : (

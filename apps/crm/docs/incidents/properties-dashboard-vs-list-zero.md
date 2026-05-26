@@ -9,11 +9,12 @@
 2. **`select *` + chýbajúce stĺpce** — fallback v `listProperties` sa spúšťal len pri chybe **a** aktívnom `q` filtri; pri chybe schémy bez `q` sa vracali demo dáta alebo prázdny výsledok podľa prostredia.
 3. **Čiastočný fix filtrov** — KPI z filtrovaného zoznamu namiesto celého inventára (opravené v `loadPropertiesInventory`).
 
-## Fix (2026-05-26)
-- `loadPropertiesInventory(supabase)` — jeden zdroj pre dashboard aj `/properties`.
-- Explicitný `PROPERTIES_SELECT` + retry na core stĺpce pri DDL chybe.
-- `GET /api/properties/inventory` + `PropertiesPageClient` client refetch ak SSR vráti 0.
-- `proxy.ts` — ochrana `/properties` rovnako ako `/dashboard`.
+## Fix (2026-05-26, v2)
+- **Root cause:** serverové RSC na Vercel často nevidí JWT rovnako ako prehliadač → SSR/API vráti `[]`, zatiaľ čo **browser Supabase** vráti 91.
+- Dashboard posielal len **súhrn** (4 čísla) cez SSR; `/properties` posielalo celé pole → prázdne KPI.
+- **Riešenie:** `/properties` načíta inventár **vždy v prehliadači** cez `getSupabaseClient()` + `loadPropertiesInventory()`.
+- Widget: najprv browser, potom API fallback.
+- `loadPropertiesInventory` + explicitný SELECT stĺpcov; PR #64 musí byť **merged do main** pred prod deployom.
 
 ## Overenie
 1. Prihlásený účet s `profiles.agency_id`.

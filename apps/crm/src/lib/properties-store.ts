@@ -304,10 +304,10 @@ export async function listProperties(
   const locationFilter = filters?.location?.trim();
   const qTrimmed = filters?.q?.trim();
 
-  const applyQueryFilters = (
-    base: ReturnType<SupabaseClient["from"]> extends (t: string) => infer R ? R : never,
-  ) => {
-    let query = base
+  const runSelect = async (selectColumns: string, includeDescriptionInOr: boolean) => {
+    let query = supabase
+      .from("properties")
+      .select(selectColumns)
       .order("created_at", { ascending: false })
       .limit(500);
 
@@ -322,45 +322,23 @@ export async function listProperties(
     }
     if (qTrimmed) {
       const q = qTrimmed.replace(/,/g, " ");
-      query = query.or(
-        `title.ilike.%${q}%,location.ilike.%${q}%,type.ilike.%${q}%,rooms.ilike.%${q}%,status.ilike.%${q}%,description.ilike.%${q}%,owner_name.ilike.%${q}%`,
-      );
+      const orClause = includeDescriptionInOr
+        ? `title.ilike.%${q}%,location.ilike.%${q}%,type.ilike.%${q}%,rooms.ilike.%${q}%,status.ilike.%${q}%,description.ilike.%${q}%,owner_name.ilike.%${q}%`
+        : `title.ilike.%${q}%,location.ilike.%${q}%,type.ilike.%${q}%,rooms.ilike.%${q}%,status.ilike.%${q}%`;
+      query = query.or(orClause);
     }
     return query;
   };
 
-  const runSelect = async (selectColumns: string) => {
-    const base = supabase.from("properties").select(selectColumns);
-    return applyQueryFilters(base);
-  };
-
-  let { data, error } = await runSelect(PROPERTIES_SELECT_FULL);
+  let { data, error } = await runSelect(PROPERTIES_SELECT_FULL, true);
 
   if (
     (error || !data) &&
     isMissingOptionalPropertiesColumnError(error?.message)
   ) {
-    const retried = await runSelect(PROPERTIES_SELECT_CORE);
+    const retried = await runSelect(PROPERTIES_SELECT_CORE, false);
     data = retried.data;
     error = retried.error;
-    if (qTrimmed && (error || !data)) {
-      const q = qTrimmed.replace(/,/g, " ");
-      let narrow = supabase
-        .from("properties")
-        .select(PROPERTIES_SELECT_CORE)
-        .order("created_at", { ascending: false })
-        .limit(500);
-      if (statusFilter) narrow = narrow.eq("status", statusFilter);
-      if (typeFilter) narrow = narrow.eq("type", typeFilter);
-      if (locationFilter) {
-        narrow = narrow.ilike("location", `%${locationFilter}%`);
-      }
-      const retriedOr = await narrow.or(
-        `title.ilike.%${q}%,location.ilike.%${q}%,type.ilike.%${q}%,rooms.ilike.%${q}%,status.ilike.%${q}%`,
-      );
-      data = retriedOr.data;
-      error = retriedOr.error;
-    }
   }
 
   if (error || !data) {
