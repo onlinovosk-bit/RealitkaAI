@@ -4,6 +4,7 @@ import LeadsModule from "@/components/leads/leads-module";
 import { safeServerAction } from "@/lib/safe-action";
 import { listLeads } from "@/lib/leads-store";
 import { listTeams, listProfiles } from "@/lib/team-store";
+import { getRscSupabase } from "@/lib/supabase/rsc-client";
 import { recommendations } from "@/lib/mock-data";
 import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
 
@@ -16,10 +17,11 @@ export default async function LeadsPage({
 
   const result = await safeServerAction(
     async () => {
+      const supabase = await getRscSupabase();
       const [leads, teams, profiles] = await Promise.all([
-        listLeads(),
-        listTeams(),
-        listProfiles(),
+        listLeads(undefined, supabase),
+        listTeams(supabase),
+        listProfiles(supabase),
       ]);
 
       return { leads, teams, profiles };

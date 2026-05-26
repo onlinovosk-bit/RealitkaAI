@@ -1,4 +1,5 @@
 ﻿import { supabaseClient, getSupabaseClient } from "@/lib/supabase/client";
+import { resolveTenantSupabase } from "@/lib/supabase/resolve-client";
 
 export type ProfileRole = "owner" | "manager" | "agent";
 
@@ -85,7 +86,7 @@ function mapRow(row: SupabaseProfileRow): Profile {
 }
 
 export async function listProfiles(): Promise<Profile[]> {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
   if (!supabase) return mockProfiles;
 
   const { data, error } = await supabase
@@ -102,7 +103,7 @@ export async function listProfiles(): Promise<Profile[]> {
 }
 
 export async function getProfileById(id: string): Promise<Profile | undefined> {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
   if (!supabase) return mockProfiles.find((p) => p.id === id);
 
   const { data, error } = await supabase
@@ -128,7 +129,7 @@ export async function updateProfile(
   id: string,
   input: Partial<ProfileInput>
 ): Promise<Profile> {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
   if (!supabase) throw new Error("Supabase nie je nastavený.");
 
   const patch: Partial<SupabaseProfileRow> = {};
@@ -151,7 +152,7 @@ export async function updateProfile(
 }
 
 export async function getProfilesWithStats(): Promise<ProfileWithStats[]> {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   const profiles = supabase ? await listProfiles() : mockProfiles;
 

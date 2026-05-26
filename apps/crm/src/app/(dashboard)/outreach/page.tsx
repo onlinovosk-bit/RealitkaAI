@@ -9,6 +9,7 @@ import OutreachLogTable from "@/components/outreach/outreach-log-table";
 import FollowupSequencePanel from "@/components/outreach/followup-sequence-panel";
 import { safeServerAction } from "@/lib/safe-action";
 import { listLeads } from "@/lib/leads-store";
+import { getRscSupabase } from "@/lib/supabase/rsc-client";
 import { listOutreachMessages } from "@/lib/outreach-store";
 import { requireRole } from "@/lib/permissions";
 import { getFeatureGateState } from "@/lib/feature-gating";
@@ -34,8 +35,9 @@ export default async function OutreachPage() {
 
   const result = await safeServerAction(
     async () => {
+      const supabase = await getRscSupabase();
       const [leads, messages] = await Promise.all([
-        listLeads(),
+        listLeads(undefined, supabase),
         listOutreachMessages(),
       ]);
       return { leads, messages };

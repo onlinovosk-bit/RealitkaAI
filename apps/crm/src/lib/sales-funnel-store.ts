@@ -1,4 +1,5 @@
 ﻿import { getSupabaseClient } from "@/lib/supabase/client";
+import { resolveTenantSupabase } from "@/lib/supabase/resolve-client";
 import { createActivity } from "@/lib/activities-store";
 
 export type SaaSLead = {
@@ -76,7 +77,7 @@ async function logSaasLeadActivity(lead: SaaSLead) {
 }
 
 export async function listSaasLeads(): Promise<SaaSLead[]> {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     return demoSaasLeads;
@@ -117,7 +118,7 @@ export async function createSaasLead(input: {
   note?: string;
   source?: string;
 }) {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   const fallbackLead: SaaSLead = {
     id: crypto.randomUUID(),

@@ -1,4 +1,5 @@
 ﻿import { supabaseClient, getSupabaseClient } from "@/lib/supabase/client";
+import { resolveTenantSupabase } from "@/lib/supabase/resolve-client";
 import { listLeads } from "@/lib/leads-store";
 import { generateRecommendationsForLead, type GeneratedRecommendation, type SimpleMatch } from "@/lib/recommendations-engine";
 
@@ -28,7 +29,7 @@ function getDemoRecommendationsStore() {
 }
 
 async function listPersistedMatches(): Promise<SimpleMatch[]> {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     return [];
@@ -52,8 +53,10 @@ async function listPersistedMatches(): Promise<SimpleMatch[]> {
   }));
 }
 
-export async function listRecommendations(): Promise<PersistedRecommendation[]> {
-  const supabase = getSupabaseClient();
+export async function listRecommendations(
+  scopedSupabase?: import("@supabase/supabase-js").SupabaseClient | null,
+): Promise<PersistedRecommendation[]> {
+  const supabase = await resolveTenantSupabase(scopedSupabase);
 
   if (!supabase) {
     return [...getDemoRecommendationsStore()].sort((a, b) => {
@@ -88,7 +91,7 @@ export async function listRecommendations(): Promise<PersistedRecommendation[]> 
 }
 
 async function clearRecommendations() {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     const store = getDemoRecommendationsStore();
@@ -107,7 +110,7 @@ async function clearRecommendations() {
 }
 
 async function insertRecommendations(rows: GeneratedRecommendation[]) {
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (!supabase) {
     const store = getDemoRecommendationsStore();
@@ -171,7 +174,7 @@ export async function recalculateRecommendationsForLead(leadId: string) {
     throw new Error("Lead nebol nájdený.");
   }
 
-  const supabase = getSupabaseClient();
+  const supabase = await resolveTenantSupabase();
 
   if (supabase) {
     const { error: deleteError } = await supabase

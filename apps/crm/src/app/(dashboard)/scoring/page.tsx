@@ -9,6 +9,7 @@ import ScoringInsightsPanel from "@/components/scoring/scoring-insights-panel";
 import { safeServerAction } from "@/lib/safe-action";
 import { calculateAllLeadScores } from "@/lib/ai-scoring-store";
 import { listLeads } from "@/lib/leads-store";
+import { getRscSupabase } from "@/lib/supabase/rsc-client";
 import { requireRole } from "@/lib/permissions";
 import { getFeatureGateState } from "@/lib/feature-gating";
 
@@ -33,9 +34,10 @@ export default async function ScoringPage() {
 
   const result = await safeServerAction(
     async () => {
+      const supabase = await getRscSupabase();
       const [scores, leads] = await Promise.all([
-        calculateAllLeadScores(),
-        listLeads(),
+        calculateAllLeadScores(supabase),
+        listLeads(undefined, supabase),
       ]);
 
       return { scores, leads };

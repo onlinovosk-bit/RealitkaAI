@@ -10,6 +10,7 @@ import { LANDING_FOCUS_RING, LANDING_INPUT_FOCUS } from "@/lib/landing-a11y";
 
 export default function LoginPage() {
   const router = useRouter();
+  const [sessionExpired, setSessionExpired] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -21,6 +22,13 @@ export default function LoginPage() {
   ];
   const [toastIdx, setToastIdx] = useState(0);
   const secondaryToastIdx = (toastIdx + previewToasts.length - 1) % previewToasts.length;
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("reason") === "session_expired") {
+      setSessionExpired(true);
+    }
+  }, []);
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -73,6 +81,16 @@ export default function LoginPage() {
               <h2 className="text-3xl font-bold text-teal-950">Prihlásenie</h2>
               <p className="mt-2 text-sm text-teal-700/80">Prihlás sa do svojho účtu.</p>
             </div>
+
+            {sessionExpired && (
+              <div
+                className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+                role="status"
+              >
+                Platnosť prihlásenia vypršala (neplatný refresh token). Prihlás sa znova — najčastejšie po
+                zmene preview deployu alebo Supabase projektu.
+              </div>
+            )}
 
             {error && (
               <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700" role="alert">

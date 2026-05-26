@@ -1,6 +1,7 @@
 import PipelineBoard from "@/components/pipeline/pipeline-board";
 import { PipelineActionStrip } from "@/components/pipeline/PipelineActionStrip";
 import { listLeads } from "@/lib/leads-store";
+import { getRscSupabase } from "@/lib/supabase/rsc-client";
 import { SLATE_HORIZON, WORKDESK_KPI } from "@/lib/slate-horizon-theme";
 
 function StatCard({
@@ -30,7 +31,8 @@ function StatCard({
 }
 
 export default async function PipelinePage() {
-  const leads = await listLeads();
+  const supabase = await getRscSupabase();
+  const leads = await listLeads(undefined, supabase);
 
   const newCount = leads.filter((lead) => lead.status === "Nový").length;
   const warmCount = leads.filter((lead) => lead.status === "Teplý").length;

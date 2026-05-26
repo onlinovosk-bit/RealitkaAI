@@ -21,6 +21,7 @@ import {
 } from "@/lib/owner-team-analytics";
 import { listPersistedMatches } from "@/lib/matching-store";
 import { getTeamDashboardData } from "@/lib/team-store";
+import { getRscSupabase } from "@/lib/supabase/rsc-client";
 import {
   canManageTeamArea,
   getAssignableProfilesForProfile,
@@ -69,11 +70,10 @@ export default async function TeamPage({
     );
   }
 
+  const supabase = await getRscSupabase();
+
   const result = await safeServerAction(
-    async () => {
-      const data = await getTeamDashboardData();
-      return data;
-    },
+    async () => getTeamDashboardData(supabase),
     "Nepodarilo sa načítať modul používateľov a tímov."
   );
 
@@ -142,7 +142,7 @@ export default async function TeamPage({
     teams.find((team) => team.id === (currentProfile as any)?.teamId)?.name ||
     null;
 
-  const matches = await listPersistedMatches();
+  const matches = await listPersistedMatches(supabase);
   const ownerAnalytics = buildOwnerTeamAnalytics(
     visibleProfiles,
     visibleTeams,

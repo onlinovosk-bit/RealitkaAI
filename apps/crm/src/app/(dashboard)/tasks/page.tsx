@@ -7,6 +7,7 @@ import { listTasks } from "@/lib/tasks-store";
 import { listLeads } from "@/lib/leads-store";
 import { listProfiles } from "@/lib/team-store";
 import { safeServerAction } from "@/lib/safe-action";
+import { getRscSupabase } from "@/lib/supabase/rsc-client";
 import Link from "next/link";
 
 export default async function TasksPage({
@@ -19,10 +20,11 @@ export default async function TasksPage({
 
   const result = await safeServerAction(
     async () => {
+      const supabase = await getRscSupabase();
       const [tasks, leads, profiles] = await Promise.all([
-        listTasks(),
-        listLeads(),
-        listProfiles(),
+        listTasks(supabase),
+        listLeads(undefined, supabase),
+        listProfiles(supabase),
       ]);
 
       return { tasks, leads, profiles };
