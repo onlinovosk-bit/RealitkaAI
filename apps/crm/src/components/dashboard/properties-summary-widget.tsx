@@ -2,17 +2,39 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { getPropertiesSummary, type PropertiesSummary } from "@/lib/properties-store";
+import type { PropertiesSummary } from "@/lib/properties-store";
 
-export default function PropertiesSummaryWidget() {
-  const [summary, setSummary] = useState<PropertiesSummary | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+type Props = {
+  /** Ak príde z RSC/dashboard SSR, použijeme hodnoty hneď a nezávodíme s RLS v prehliadači o prvý fetch. */
+  serverSummary?: PropertiesSummary;
+};
+
+export default function PropertiesSummaryWidget({ serverSummary }: Props) {
+  const hydratedFromServer = serverSummary !== undefined;
+  const [summary, setSummary] = useState<PropertiesSummary | null>(
+    hydratedFromServer ? serverSummary : null,
+  );
+  const [isLoading, setIsLoading] = useState(!hydratedFromServer);
 
   useEffect(() => {
+    if (hydratedFromServer) {
+      setSummary(serverSummary);
+      setIsLoading(false);
+      return;
+    }
     const load = async () => {
       try {
-        const data = await getPropertiesSummary();
-        setSummary(data);
+        const res = await fetch("/api/properties/inventory", {
+          credentials: "include",
+          cache: "no-store",
+        });
+        const data = (await res.json()) as {
+          ok?: boolean;
+          inventory?: { summary: PropertiesSummary };
+        };
+        if (res.ok && data.ok && data.inventory?.summary) {
+          setSummary(data.inventory.summary);
+        }
       } catch (err) {
         console.error("Error loading properties summary:", err);
       } finally {
@@ -20,8 +42,8 @@ export default function PropertiesSummaryWidget() {
       }
     };
 
-    load();
-  }, []);
+    void load();
+  }, [hydratedFromServer, serverSummary]);
 
   if (isLoading) {
     return (

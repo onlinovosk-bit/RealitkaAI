@@ -1,17 +1,15 @@
 ﻿import ModuleShell from "@/components/shared/module-shell";
-import EmptyState from "@/components/shared/empty-state";
 import ErrorState from "@/components/shared/error-state";
-import PropertiesFilters from "@/components/properties/properties-filters";
-import PropertyCreateForm from "@/components/properties/property-create-form";
-import PropertiesWorkspace from "@/components/properties/properties-workspace";
-import SemanticSearchBar from "@/components/search/SemanticSearchBar";
+import PropertiesPageClient from "@/components/properties/properties-page-client";
 import {
   getAvailablePropertyLocations,
-  listProperties,
-  propertyStatusOptions,
-  propertyTypeOptions,
+  loadPropertiesInventory,
+  type PropertyFilters,
 } from "@/lib/properties-store";
 import { safeServerAction } from "@/lib/safe-action";
+import { createClient } from "@/lib/supabase/server";
+
+export const dynamic = "force-dynamic";
 
 export default async function PropertiesPage({
   searchParams,
@@ -25,16 +23,43 @@ export default async function PropertiesPage({
 }) {
   const params = await searchParams;
 
-  const filters = {
-    q: params.q ?? "",
-    status: params.status ?? "",
-    location: params.location ?? "",
-    type: params.type ?? "",
+  const filters: PropertyFilters = {
+    q: (params.q ?? "").trim(),
+    status: (params.status ?? "").trim(),
+    location: (params.location ?? "").trim(),
+    type: (params.type ?? "").trim(),
   };
 
   const result = await safeServerAction(
-    () => listProperties(filters),
-    "Nepodarilo sa načítať nehnuteľnosti."
+    async () => {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      let profileMissingAgency = false;
+      if (user) {
+        const { data: profileRow } = await supabase
+          .from("profiles")
+          .select("agency_id")
+          .or(`auth_user_id.eq.${user.id},id.eq.${user.id}`)
+          .maybeSingle();
+        profileMissingAgency = !profileRow?.agency_id;
+      }
+
+      const { items: allInventory, summary: inventorySummary } =
+        await loadPropertiesInventory(supabase);
+
+      const locations = getAvailablePropertyLocations(allInventory);
+
+      return {
+        allInventory,
+        inventorySummary,
+        profileMissingAgency,
+        locations,
+      };
+    },
+    "Nepodarilo sa načítať nehnuteľnosti.",
   );
 
   if (!result.ok) {
@@ -51,72 +76,21 @@ export default async function PropertiesPage({
     );
   }
 
-  const properties = result.data;
-  const totalProperties = properties.length;
-  const activeProperties = properties.filter((item) => item.status === "Aktívna").length;
-  const reservedProperties = properties.filter((item) => item.status === "Rezervovaná").length;
-  const avgPrice =
-    properties.length > 0
-      ? Math.round(
-          properties.reduce((sum, item) => sum + item.price, 0) / properties.length
-        )
-      : 0;
-
-  const locations = getAvailablePropertyLocations(properties);
+  const { allInventory, inventorySummary, profileMissingAgency, locations } =
+    result.data;
 
   return (
     <ModuleShell
       title="Nehnuteľnosti"
       description="Kompletný modul na správu nehnuteľností a ponúk realitnej kancelárie."
     >
-      <div className="mb-6 flex flex-col gap-4">
-        <SemanticSearchBar type="properties" className="w-full" />
-
-        <PropertiesFilters
-          defaultQ={params.q ?? ""}
-          defaultStatus={params.status ?? ""}
-          defaultLocation={params.location ?? ""}
-          defaultType={params.type ?? ""}
-          statuses={propertyStatusOptions}
-          locations={locations}
-          types={propertyTypeOptions}
-        />
-
-        <PropertyCreateForm />
-      </div>
-
-      <section className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Zobrazené nehnuteľnosti</p>
-          <h2 className="mt-2 text-3xl font-bold text-gray-900">{totalProperties}</h2>
-        </div>
-
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Aktívne</p>
-          <h2 className="mt-2 text-3xl font-bold text-gray-900">{activeProperties}</h2>
-        </div>
-
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Rezervované</p>
-          <h2 className="mt-2 text-3xl font-bold text-gray-900">{reservedProperties}</h2>
-        </div>
-
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-gray-500">Priemerná cena</p>
-          <h2 className="mt-2 text-3xl font-bold text-gray-900">
-            {avgPrice.toLocaleString("sk-SK")} €
-          </h2>
-        </div>
-      </section>
-
-      {properties.length === 0 ? (
-        <EmptyState
-          title="Zatiaľ nemáš žiadne nehnuteľnosti"
-          description="Pridaj prvú nehnuteľnosť cez formulár vyššie alebo uprav filtre."
-        />
-      ) : (
-        <PropertiesWorkspace properties={properties} />
-      )}
+      <PropertiesPageClient
+        initialAllInventory={allInventory}
+        initialInventorySummary={inventorySummary}
+        initialLocations={locations}
+        profileMissingAgency={profileMissingAgency}
+        filters={filters}
+      />
     </ModuleShell>
   );
 }

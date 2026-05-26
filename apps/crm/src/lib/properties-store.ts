@@ -1,5 +1,6 @@
 ﻿import { readDemoModeFromCookie } from "@/lib/demo-mode-cookie";
 import { supabaseClient, getSupabaseClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { generateSyntheticProperties } from "@/lib/demo/synthetic-properties";
 import { GOLD_STANDARD_POPRAD_STUROVA_3I } from "@/lib/mock-data";
 
@@ -47,6 +48,91 @@ export type PropertiesSummary = {
   reserved: number;
   sold: number;
 };
+
+export type PropertiesInventory = {
+  items: Property[];
+  summary: PropertiesSummary;
+};
+
+/** Stĺpce vždy prítomné v produkcii (Realvia import). */
+const PROPERTIES_SELECT_CORE =
+  "id, agency_id, title, location, price, type, rooms, features, status, created_at";
+
+const PROPERTIES_SELECT_FULL = `${PROPERTIES_SELECT_CORE}, description, owner_name, owner_phone, updated_at`;
+
+const ACTIVE_STATUS_VALUES = new Set([
+  "aktívna",
+  "aktivna",
+  "active",
+  "aktivní",
+  "aktivni",
+]);
+
+const RESERVED_STATUS_VALUES = new Set([
+  "rezervovaná",
+  "rezervovana",
+  "reserved",
+]);
+
+const SOLD_STATUS_VALUES = new Set([
+  "predaná",
+  "predana",
+  "sold",
+]);
+
+function normalizeStatusKey(status: string): string {
+  return status.trim().toLowerCase();
+}
+
+export function buildPropertiesSummary(items: Property[]): PropertiesSummary {
+  let active = 0;
+  let reserved = 0;
+  let sold = 0;
+
+  for (const item of items) {
+    const key = normalizeStatusKey(item.status);
+    if (ACTIVE_STATUS_VALUES.has(key)) active += 1;
+    else if (RESERVED_STATUS_VALUES.has(key)) reserved += 1;
+    else if (SOLD_STATUS_VALUES.has(key)) sold += 1;
+  }
+
+  return {
+    total: items.length,
+    active,
+    reserved,
+    sold,
+  };
+}
+
+/**
+ * Jediný zdroj inventára pre kokpit aj /properties (SSR).
+ * Vždy predaj `await createClient()` z `@/lib/supabase/server`.
+ */
+export async function loadPropertiesInventory(
+  scopedSupabase: SupabaseClient,
+): Promise<PropertiesInventory> {
+  const items = await listProperties(undefined, scopedSupabase);
+  return { items, summary: buildPropertiesSummary(items) };
+}
+
+function mapPropertyRow(item: Record<string, unknown>): Property {
+  return {
+    id: String(item.id),
+    agencyId: (item.agency_id as string | null) ?? null,
+    title: String(item.title ?? ""),
+    location: String(item.location ?? ""),
+    price: Number(item.price ?? 0),
+    type: String(item.type ?? ""),
+    rooms: String(item.rooms ?? ""),
+    features: Array.isArray(item.features) ? (item.features as string[]) : [],
+    status: String(item.status ?? ""),
+    description: String(item.description ?? ""),
+    ownerName: String(item.owner_name ?? ""),
+    ownerPhone: String(item.owner_phone ?? ""),
+    createdAt: item.created_at as string | undefined,
+    updatedAt: item.updated_at as string | undefined,
+  };
+}
 
 export const propertyStatusOptions = [
   "Aktívna",
@@ -137,11 +223,13 @@ function isMissingOptionalPropertiesColumnError(message: string | undefined) {
   );
 }
 
-function applyFilters(items: Property[], filters?: PropertyFilters) {
+/** Lokálne filtrovanie (po jednom nefiltrovanom fetchi z DB). Export pre RSC, aby KPI sedeli s kokpitom. */
+export function applyPropertyFilters(items: Property[], filters?: PropertyFilters) {
   let result = [...items];
 
-  if (filters?.q) {
-    const q = normalize(filters.q);
+  const qRaw = filters?.q?.trim();
+  if (qRaw) {
+    const q = normalize(qRaw);
 
     result = result.filter((item) =>
       [
@@ -160,17 +248,20 @@ function applyFilters(items: Property[], filters?: PropertyFilters) {
     );
   }
 
-  if (filters?.status) {
-    result = result.filter((item) => item.status === filters.status);
+  const status = filters?.status?.trim();
+  if (status) {
+    result = result.filter((item) => item.status === status);
   }
 
-  if (filters?.location) {
-    const loc = normalize(filters.location);
+  const location = filters?.location?.trim();
+  if (location) {
+    const loc = normalize(location);
     result = result.filter((item) => item.location.toLowerCase().includes(loc));
   }
 
-  if (filters?.type) {
-    result = result.filter((item) => item.type === filters.type);
+  const type = filters?.type?.trim();
+  if (type) {
+    result = result.filter((item) => item.type === type);
   }
 
   return result.sort((a, b) => b.price - a.price);
@@ -182,130 +273,113 @@ export function getAvailablePropertyLocations(items: Property[]) {
   );
 }
 
-export async function getPropertiesSummary(): Promise<PropertiesSummary> {
-  const properties = await listProperties();
-
-  return {
-    total: properties.length,
-    active: properties.filter((item) => item.status === "Aktívna").length,
-    reserved: properties.filter((item) => item.status === "Rezervovaná").length,
-    sold: properties.filter((item) => item.status === "Predaná").length,
-  };
+export async function getPropertiesSummary(scopedSupabase?: SupabaseClient | null): Promise<PropertiesSummary> {
+  if (scopedSupabase) {
+    const { summary } = await loadPropertiesInventory(scopedSupabase);
+    return summary;
+  }
+  const properties = await listProperties(undefined, scopedSupabase);
+  return buildPropertiesSummary(properties);
 }
 
-export async function listProperties(filters?: PropertyFilters): Promise<Property[]> {
+/**
+ * @param scopedSupabase ak voláš z React Server Component alebo Route Handler, predaj výsledok `await createClient()` z `@/lib/supabase/server` — inak RLS vie vrátiť 0 riadkov (bez prihlásenia).
+ */
+export async function listProperties(
+  filters?: PropertyFilters,
+  scopedSupabase?: SupabaseClient | null,
+): Promise<Property[]> {
   if (await readDemoModeFromCookie()) {
-    return applyFilters(getDemoShowcaseProperties(), filters);
+    return applyPropertyFilters(getDemoShowcaseProperties(), filters);
   }
 
-  const supabase = getSupabaseClient();
+  const supabase = scopedSupabase ?? getSupabaseClient();
 
   if (!supabase) {
-    return applyFilters(getDemoShowcaseProperties(), filters);
+    return applyPropertyFilters(getDemoShowcaseProperties(), filters);
   }
 
-  let query = supabase
-    .from("properties")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(500);
+  const statusFilter = filters?.status?.trim();
+  const typeFilter = filters?.type?.trim();
+  const locationFilter = filters?.location?.trim();
+  const qTrimmed = filters?.q?.trim();
 
-  if (filters?.status) {
-    query = query.eq("status", filters.status);
-  }
+  const applyQueryFilters = (
+    base: ReturnType<SupabaseClient["from"]> extends (t: string) => infer R ? R : never,
+  ) => {
+    let query = base
+      .order("created_at", { ascending: false })
+      .limit(500);
 
-  if (filters?.type) {
-    query = query.eq("type", filters.type);
-  }
+    if (statusFilter) {
+      query = query.eq("status", statusFilter);
+    }
+    if (typeFilter) {
+      query = query.eq("type", typeFilter);
+    }
+    if (locationFilter) {
+      query = query.ilike("location", `%${locationFilter}%`);
+    }
+    if (qTrimmed) {
+      const q = qTrimmed.replace(/,/g, " ");
+      query = query.or(
+        `title.ilike.%${q}%,location.ilike.%${q}%,type.ilike.%${q}%,rooms.ilike.%${q}%,status.ilike.%${q}%,description.ilike.%${q}%,owner_name.ilike.%${q}%`,
+      );
+    }
+    return query;
+  };
 
-  if (filters?.location) {
-    query = query.ilike("location", `%${filters.location}%`);
-  }
+  const runSelect = async (selectColumns: string) => {
+    const base = supabase.from("properties").select(selectColumns);
+    return applyQueryFilters(base);
+  };
 
-  if (filters?.q) {
-    const q = filters.q.replace(/,/g, " ");
-    query = query.or(
-      `title.ilike.%${q}%,location.ilike.%${q}%,type.ilike.%${q}%,rooms.ilike.%${q}%,status.ilike.%${q}%,description.ilike.%${q}%,owner_name.ilike.%${q}%`
-    );
-  }
+  let { data, error } = await runSelect(PROPERTIES_SELECT_FULL);
 
-  const { data, error } = await query;
-
-  if (error || !data) {
-    if (isMissingOptionalPropertiesColumnError(error?.message) && filters?.q) {
-      const fallbackQuery = supabase
+  if (
+    (error || !data) &&
+    isMissingOptionalPropertiesColumnError(error?.message)
+  ) {
+    const retried = await runSelect(PROPERTIES_SELECT_CORE);
+    data = retried.data;
+    error = retried.error;
+    if (qTrimmed && (error || !data)) {
+      const q = qTrimmed.replace(/,/g, " ");
+      let narrow = supabase
         .from("properties")
-        .select("*")
+        .select(PROPERTIES_SELECT_CORE)
         .order("created_at", { ascending: false })
         .limit(500);
-
-      let retriedQuery = fallbackQuery;
-
-      if (filters?.status) {
-        retriedQuery = retriedQuery.eq("status", filters.status);
+      if (statusFilter) narrow = narrow.eq("status", statusFilter);
+      if (typeFilter) narrow = narrow.eq("type", typeFilter);
+      if (locationFilter) {
+        narrow = narrow.ilike("location", `%${locationFilter}%`);
       }
-
-      if (filters?.type) {
-        retriedQuery = retriedQuery.eq("type", filters.type);
-      }
-
-      if (filters?.location) {
-        retriedQuery = retriedQuery.ilike("location", `%${filters.location}%`);
-      }
-
-      const q = filters.q.replace(/,/g, " ");
-      const retried = await retriedQuery.or(
-        `title.ilike.%${q}%,location.ilike.%${q}%,type.ilike.%${q}%,rooms.ilike.%${q}%,status.ilike.%${q}%`
+      const retriedOr = await narrow.or(
+        `title.ilike.%${q}%,location.ilike.%${q}%,type.ilike.%${q}%,rooms.ilike.%${q}%,status.ilike.%${q}%`,
       );
-
-      if (!retried.error && retried.data) {
-        return retried.data.map((item: any) => ({
-          id: item.id,
-          agencyId: item.agency_id ?? null,
-          title: item.title,
-          location: item.location,
-          price: Number(item.price ?? 0),
-          type: item.type,
-          rooms: item.rooms,
-          features: Array.isArray(item.features) ? item.features : [],
-          status: item.status,
-          description: item.description ?? "",
-          ownerName: item.owner_name ?? "",
-          ownerPhone: item.owner_phone ?? "",
-          createdAt: item.created_at,
-          updatedAt: item.updated_at,
-        }));
-      }
+      data = retriedOr.data;
+      error = retriedOr.error;
     }
-
-    console.error("listProperties error:", error?.message);
-    return applyFilters(getDemoShowcaseProperties(), filters);
   }
 
-  return data.map((item: any) => ({
-    id: item.id,
-    agencyId: item.agency_id ?? null,
-    title: item.title,
-    location: item.location,
-    price: Number(item.price ?? 0),
-    type: item.type,
-    rooms: item.rooms,
-    features: Array.isArray(item.features) ? item.features : [],
-    status: item.status,
-    description: item.description ?? "",
-    ownerName: item.owner_name ?? "",
-    ownerPhone: item.owner_phone ?? "",
-    createdAt: item.created_at,
-    updatedAt: item.updated_at,
-  }));
+  if (error || !data) {
+    console.error("listProperties error:", error?.message);
+    return applyPropertyFilters(getDemoShowcaseProperties(), filters);
+  }
+
+  return data.map((item) => mapPropertyRow(item as Record<string, unknown>));
 }
 
-export async function getProperty(id: string): Promise<Property | undefined> {
+export async function getProperty(
+  id: string,
+  scopedSupabase?: SupabaseClient | null,
+): Promise<Property | undefined> {
   if (await readDemoModeFromCookie()) {
     return getDemoShowcaseProperties().find((item) => item.id === id);
   }
 
-  const supabase = getSupabaseClient();
+  const supabase = scopedSupabase ?? getSupabaseClient();
 
   if (!supabase) {
     return getDemoShowcaseProperties().find((item) => item.id === id);

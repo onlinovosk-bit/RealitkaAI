@@ -98,7 +98,13 @@ export async function proxy(request: NextRequest) {
     );
   }
 
-  if (!user && (pathname.startsWith("/dashboard") || pathname.startsWith("/app"))) {
+  if (
+    !user &&
+    (pathname.startsWith("/dashboard") ||
+      pathname.startsWith("/app") ||
+      pathname === "/properties" ||
+      pathname.startsWith("/properties/"))
+  ) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirectTo", pathname);
     return NextResponse.redirect(loginUrl);
