@@ -4,6 +4,7 @@ import { createActivity } from "@/lib/activities-store";
 import { PLAN_KEYS, PLAN_LIMITS, type PlanKey } from "@/lib/billing-types";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { logInfo } from "./logger";
+import { PROGRAM_BRAND_LABEL } from "@/lib/program-brand-names";
 
 // Mapovanie tier â†’ ui_role
 const TIER_TO_UI_ROLE: Record<string, string> = {
@@ -177,11 +178,11 @@ export const BILLING_PLANS = [
     founderPrice: true,
     founderNote: "ZakladateÄľskĂˇ cena â€“ prvĂ˝ch 20 kancelĂˇriĂ­",
   },
-  // â”€â”€ PROTOCOL AUTHORITY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // PROTOCOL AUTHORITY — Reality Monopol (PROGRAM_BRAND_LABEL.protocol)
   {
     key: PLAN_KEYS.COMMAND,
-    landingName: "Protocol Authority",
-    name: "Protocol Authority",
+    landingName: PROGRAM_BRAND_LABEL.protocol,
+    name: PROGRAM_BRAND_LABEL.protocol,
     priceId: process.env.STRIPE_PRICE_PROTOCOL_AUTH || "",
     priceLabel: "449 â‚¬ / mesiac",
     originalPriceLabel: "898 â‚¬ / mesiac",
