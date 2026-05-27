@@ -58,7 +58,30 @@ export default function LeadsPageClient({
       }
     };
 
+    const applyInventory = (
+      leadRows: Lead[],
+      teamRows: TeamOption[],
+      profileRows: ProfileOption[],
+    ) => {
+      setLeads(leadRows);
+      setTeams(teamRows);
+      setProfiles(profileRows);
+      setLoadError(null);
+    };
+
     const load = async () => {
+      const preferApiFirst =
+        typeof initialLeadCount === "number" && initialLeadCount > 0;
+
+      if (preferApiFirst) {
+        const ok = await loadViaApi();
+        if (cancelled) return;
+        if (ok) {
+          setLoading(false);
+          return;
+        }
+      }
+
       const supabase = getSupabaseClient();
       if (!supabase) {
         const ok = await loadViaApi();
@@ -80,37 +103,25 @@ export default function LeadsPageClient({
 
         if (cancelled) return;
 
+        const teamOptions = teamRows.map((team) => ({ id: team.id, name: team.name }));
+        const profileOptions = profileRows.map((profile) => ({
+          id: profile.id,
+          teamId: profile.teamId,
+          fullName: profile.fullName,
+          isActive: profile.isActive,
+        }));
+
         if (leadRows.length > 0) {
-          setLeads(leadRows);
-          setTeams(teamRows.map((team) => ({ id: team.id, name: team.name })));
-          setProfiles(
-            profileRows.map((profile) => ({
-              id: profile.id,
-              teamId: profile.teamId,
-              fullName: profile.fullName,
-              isActive: profile.isActive,
-            })),
-          );
-          setLoadError(null);
+          applyInventory(leadRows, teamOptions, profileOptions);
           setLoading(false);
           return;
         }
 
         const ok = await loadViaApi();
         if (!cancelled) {
-          if (!ok && leadRows.length === 0) {
-            setLeads([]);
-            setTeams(teamRows.map((team) => ({ id: team.id, name: team.name })));
-            setProfiles(
-              profileRows.map((profile) => ({
-                id: profile.id,
-                teamId: profile.teamId,
-                fullName: profile.fullName,
-                isActive: profile.isActive,
-              })),
-            );
+          if (!ok) {
+            applyInventory([], teamOptions, profileOptions);
           }
-          setLoadError(null);
         }
       } catch (err) {
         const ok = await loadViaApi();
@@ -128,7 +139,7 @@ export default function LeadsPageClient({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [initialLeadCount]);
 
   if (loading) {
     return (

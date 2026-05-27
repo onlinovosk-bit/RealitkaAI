@@ -62,10 +62,10 @@ export default function LeadsModule({
     [filtered, recommendations]
   );
 
+  const filtersHideAll = leadItems.length > 0 && filtered.length === 0;
+
   return (
     <>
-      <LeadsHotStrip leads={filtered} />
-
       <div className="mb-6 flex flex-col gap-4">
         <SemanticSearchBar type="leads" className="w-full" />
 
@@ -79,6 +79,8 @@ export default function LeadsModule({
         <LeadCreateForm />
       </div>
 
+      <LeadsHotStrip leads={leadItems} />
+
       {profileMissingAgency ? (
         <div
           className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
@@ -86,6 +88,16 @@ export default function LeadsModule({
         >
           V profile chýba <strong>agency_id</strong> — RLS neukáže klientov kancelárie. Skontroluj{" "}
           <code className="text-xs">GET /api/crm/tenant-health</code> alebo profil v Supabase.
+        </div>
+      ) : null}
+
+      {filtersHideAll ? (
+        <div
+          className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+          role="status"
+        >
+          Filtre skryli všetkých <strong>{leadItems.length}</strong> načítaných klientov (napr. príliš
+          vysoké Min. BRI). Kliknite <strong>Vymazať filtre</strong> nižšie v paneli filtrov.
         </div>
       ) : null}
 
@@ -113,13 +125,19 @@ export default function LeadsModule({
 
       {filtered.length === 0 ? (
         <EmptyState
-          title="Zatiaľ nemáš žiadne príležitosti"
+          title={
+            filtersHideAll
+              ? "Žiadny klient nevyhovuje filtrom"
+              : "Zatiaľ nemáš žiadne príležitosti"
+          }
           description={
-            profileMissingAgency
-              ? "Doplň agency_id v profile — bez neho RLS nevráti riadky z tabuľky leads."
-              : typeof initialLeadCount === "number" && initialLeadCount > 0
-                ? "Server načítal príležitosti, ale zoznam v prehliadači je prázdny — obnov stránku."
-                : "Vytvor prvú príležitosť cez formulár vyššie alebo uprav filtre."
+            filtersHideAll
+              ? `Máte ${leadItems.length} klientov v kancelárii, ale aktuálne filtre ich nezobrazujú. Kliknite „Vymazať filtre“ a skontrolujte pole Min. BRI (nechajte prázdne pre všetkých).`
+              : profileMissingAgency
+                ? "Doplň agency_id v profile — bez neho RLS nevráti riadky z tabuľky leads."
+                : typeof initialLeadCount === "number" && initialLeadCount > 0
+                  ? "Server načítal príležitosti, ale zoznam v prehliadači je prázdny — obnov stránku (Ctrl+Shift+R)."
+                  : "Vytvor prvú príležitosť cez formulár vyššie alebo uprav filtre."
           }
         />
       ) : (

@@ -213,7 +213,7 @@ export default function LeadFilters({
             value={minScore}
             onChange={(e) => setMinScore(e.target.value)}
             min="0" max="100"
-            placeholder="70"
+            placeholder="Všetky"
             className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
             style={inputStyle}
           />
