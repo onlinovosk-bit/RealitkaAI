@@ -23,9 +23,17 @@ Rovnaký incident ako nehnuteľnosti (pozri `docs/incidents/crm-zero-data-audit.
 - `/contacts` renderuje rovnaký client s titulkom **Moji klienti** (bez redirectu).
 - Banner pri `profileMissingAgency` + hint na `GET /api/crm/tenant-health`.
 
+## Filtre vs. 0 v zozname (2026-05-27)
+
+- Pole **Min. BRI** malo placeholder `70` — vyzeralo ako aktívny filter.
+- Horúci pás „Kto je pripravený kúpiť dnes?" používal filtrovaný zoznam → mohol ukázať klienta (napr. Jozef Test) pri **Príležitosti: 0**.
+- Oprava: pás z **všetkých** načítaných klientov, banner „Filtre skryli…", placeholder „Všetky", žiadne demo mená v páske.
+
 ## Smoke
 
 1. Prihlásenie tenant Smolko.
 2. `GET /api/crm/tenant-health` → `counts.leads` > 0 ak DB má dáta.
 3. `/contacts` a `/leads` — rovnaký počet ako tenant-health.
 4. Kokpit AI strip — reálne signály (nie len placeholder), ak `counts.leads` > 0.
+5. `/contacts` → **Vymazať filtre** → počet Príležitostí = tenant-health `counts.leads`.
+6. Iniciály v hlavičke: z `full_name` alebo e-mailu (nie vždy „RV").

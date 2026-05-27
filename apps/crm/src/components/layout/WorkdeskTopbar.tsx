@@ -11,12 +11,20 @@ type WorkdeskTopbarProps = {
   userName?: string;
 };
 
-/** Neutral fallback — avoid implying a fixed person when `full_name` is missing */
 function initials(name?: string): string {
-  if (!name?.trim()) return "RV";
-  const parts = name.trim().split(/\s+/);
+  const raw = name?.trim();
+  if (!raw) return "RV";
+  if (raw.includes("@")) {
+    const local = raw.split("@")[0] ?? "";
+    const chunks = local.split(/[._-]+/).filter(Boolean);
+    if (chunks.length >= 2) {
+      return `${chunks[0][0]}${chunks[1][0]}`.toUpperCase();
+    }
+    return local.slice(0, 2).toUpperCase() || "RV";
+  }
+  const parts = raw.split(/\s+/);
   if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-  return name.slice(0, 2).toUpperCase();
+  return raw.slice(0, 2).toUpperCase();
 }
 
 const pillNeutral: CSSProperties = {

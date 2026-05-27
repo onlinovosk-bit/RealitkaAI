@@ -21,41 +21,11 @@ export function LeadsHotStrip({ leads }: Props) {
   const source = hotLeads.length > 0 ? hotLeads : leads;
   const signals = buildExecutiveSignals(source, 3);
 
-  const items =
-    signals.length > 0
-      ? signals
-      : [
-          {
-            leadId: "demo-1",
-            name: "Lucia Šimko",
-            action: "Zavolaj teraz — vysoká priorita",
-            timing: "volať do 15 min",
-            confidence: 91,
-            moneyEur: 7200,
-            urgency: "critical" as const,
-            status: "Horúci" as const,
-          },
-          {
-            leadId: "demo-2",
-            name: "Lukáš Nagy",
-            action: "Posunúť do ponuky",
-            timing: "posunúť pipeline",
-            confidence: 87,
-            moneyEur: null,
-            urgency: "high" as const,
-            status: "Teplý" as const,
-          },
-          {
-            leadId: "demo-3",
-            name: "Jana Horváth",
-            action: "Pošli SMS s termínom obhliadky",
-            timing: "poslať SMS dnes",
-            confidence: 78,
-            moneyEur: 5400,
-            urgency: "medium" as const,
-            status: "Obhliadka" as const,
-          },
-        ];
+  if (signals.length === 0) {
+    return null;
+  }
+
+  const items = signals;
 
   return (
     <section

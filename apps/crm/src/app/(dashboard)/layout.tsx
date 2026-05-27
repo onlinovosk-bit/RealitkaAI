@@ -36,10 +36,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
         isInTeam={!!profile?.team_license_id}
         appRole={profile?.role ?? undefined}
         agencyName={profile?.agency_name ?? undefined}
-        userName={profile?.full_name ?? undefined}
+        userName={profile?.full_name ?? user.email ?? undefined}
       />
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        <WorkdeskTopbar userName={profile?.full_name ?? undefined} />
+        <WorkdeskTopbar userName={profile?.full_name ?? user.email ?? undefined} />
         <main
           style={{
             flex: 1,
