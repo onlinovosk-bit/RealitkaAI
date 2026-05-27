@@ -2,129 +2,123 @@
 
 > **Classification:** Internal execution board  
 > **Orchestrator:** Chief Principal Orchestrator + Ruflo autopilot  
-> **Last verified:** 2026-05-27 (git `main`, `gh pr list --state open`)
+> **Last verified:** 2026-05-27 (`origin/main` @ `118fa58`, `gh pr list`)
 
 ---
 
-## Ruflo autopilot status
+## Ruflo session state (2026-05-27)
 
 | Field | Value |
 |-------|-------|
-| **Enabled** | ✅ `true` |
+| **Autopilot** | ✅ Enabled (`autopilot_enable` idempotent) |
 | **Session ID** | `8e749a26-0cae-42cc-8d3e-22b2af832494` |
-| **Max iterations** | 50 |
+| **Iterations** | 0 / 50 max |
 | **Timeout** | 240 min |
 | **Task sources** | `team-tasks`, `swarm-tasks`, `file-checklist` |
+| **Board tasks** | 0 completed / 0 total (Ruflo internal counter) |
 
 ---
 
-## 🔴 CRITICAL
+## Master inventory — rozbehnutá práca
 
-### Leads UI 451 → 0
+| Task | % | Status | PR / evidence | Next action |
+|------|---|--------|---------------|-------------|
+| **Leads UI 451→0** | 85 % | Merged | [#69](https://github.com/onlinovosk-bit/RealitkaAI/pull/69) merged 2026-05-27 | Prod smoke `/leads` na `app.revolis.ai`; hotfix vetva len ak stále 0 |
+| **AI Decision Ops prod** | 100 % | Merged | [#65](https://github.com/onlinovosk-bit/RealitkaAI/pull/65) | Monitor `decision-flags` v prod logoch |
+| **P0 reliability (tenant, cron, Realvia backoff)** | 100 % | Merged | [#68](https://github.com/onlinovosk-bit/RealitkaAI/pull/68) | — |
+| **Copy + VISIT REAL email + Market Vision audit** | 90 % | In progress | [#73](https://github.com/onlinovosk-bit/RealitkaAI/pull/73) OPEN, CI ✅ | Merge po preview smoke `/porovnanie-programov`; Andrej odošle onboarding email |
+| **Stealth Recruiter production** | 85 % | In progress | [#72](https://github.com/onlinovosk-bit/RealitkaAI/pull/72) OPEN, CI ✅ | **Nemergerovať bez explicitného scope**; security + product sign-off |
+| **Event Scheduler Phase 1** | 40 % | In progress | [#70](https://github.com/onlinovosk-bit/RealitkaAI/pull/70) OPEN, CI ❌ | Rebase na `main`, opraviť CI; migrácia + `/api/scheduled-events` + 7 unit testov |
+| **Realvia replay + agency fail-hard** | 80 % | In progress | [#66](https://github.com/onlinovosk-bit/RealitkaAI/pull/66) OPEN, CI ✅, Vercel ❌ | Rebase + Vercel log triage → merge |
+| **Competitive analysis + board (tento PR)** | 95 % | In progress | Vetva `docs/strategy-rene-myport-revolis-task-board` | Merge docs PR; zatvoriť duplicitu [#71](https://github.com/onlinovosk-bit/RealitkaAI/pull/71) ak rovnaký scope |
+| **Brand parity web ↔ app** | 10 % | Not started | `PHASE-7-SALES-FUNNEL.md` checklist; žiadny dedikovaný PR | P0: tier matrix + hero sync `apps/marketing` ↔ CRM landing |
+| **FinalCTA / tier pricing sync** | 50 % | In progress | `FinalCTA.tsx` + `program-tier-pricing.ts` existujú; parity otvorená | P1 PR: jeden zdroj cien + CTA copy vs `/porovnanie-programov` |
+| **Proposal Generator** | 0 % | Not started | SWOT planned | P1 po Event Scheduler UI |
+| **Mobile App (native)** | 15 % | Not started | PWA v `layout.tsx`; nie native iOS/Android | P2 roadmap týždeň 4+ |
+| **Predictive Analytics** | 25 % | In progress | Architect W1–W4 čiastočne v `main` | P2: dokončiť batch triage + deal health podľa gap doc |
+| **Banking integrations** | 0 % | Not started | — | P2 backlog |
+| **Web-app content sync audit PRs** | 0 % | Not started | Audit findings nie sú v samostatných PR | P0: vytvoriť tracking PR z Phase 7 checklist |
 
-| Item | Detail |
-|------|--------|
-| **Symptom** | 451 leads in DB, 0 visible in browser UI |
-| **Fix** | PR [#69](https://github.com/onlinovosk-bit/RealitkaAI/pull/69) — browser-first leads |
-| **Merge status** | ✅ Merged to `main` @ 2026-05-27T10:35:26Z (`fix/contacts-leads-zero`) |
-| **Prod verification** | ⏳ Pending smoke on `app.revolis.ai` |
-| **Hotfix fork** | Local branch `fix/contacts-leads-zero-prod` exists — use only if prod still shows 0 after deploy |
-| **Owner** | Martin (Frontend) + Zuzana (QA/DevOps smoke) |
+**Poznámka k %:** Kód na `main` = 100 % merge; otvorené PR = odhad podľa fáz user spec + CI/deploy stavu.
+
+---
+
+## Event Scheduler — user spec vs repo
+
+| Fáza | User spec | Repo (PR #70) | % fázy | Gap / PR |
+|------|-----------|---------------|--------|----------|
+| 1 DB + backend | `realvia_events` | `scheduled_events` + RLS | ~75 % | Názov tabuľky; overiť `client_phone`, `sms_sent_at` |
+| 2 API | `/api/events` | `/api/scheduled-events` | ~70 % | Alias route v follow-up PR; SMS nie v #70 |
+| 3 UI | `EventScheduler.tsx` | Chýba | 0 % | Nový PR `feat/event-scheduler-ui` (nie #73) |
+| 4 Test + deploy | Unit + E2E + prod | 7 unit testov, CI red | ~30 % | PR po zelenej #70 |
+
+**Odporúčanie:** Canonical = `scheduled_events`. Dokumentovať mapovanie v `event-scheduler-implementation-guide.md`. Nerenamovať tabuľku po merge bez migrácie.
+
+---
+
+## Task board (priorita P0–P3)
+
+| ID | Task | Priority | Status | % | Owner / agent | Dependencies | Next action |
+|----|------|----------|--------|---|---------------|--------------|-------------|
+| T-01 | Leads UI prod overenie | P0 | Merged / verify | 85 % | Martin + Zuzana | #69 deploy | Smoke `/leads` |
+| T-02 | Event Scheduler Phase 1 merge | P0 | In progress | 40 % | Tomáš | #70 CI green | Fix CI, apply migrácia staging |
+| T-03 | Brand parity web ↔ app | P0 | Not started | 10 % | Peter + Martin | Phase 7 brief | Audit + 1 PR marketing sync |
+| T-04 | Realvia replay merge | P0 | In progress | 80 % | Tomáš + Zuzana | #66 Vercel | Rebase + preview |
+| T-05 | Proposal Generator MVP | P1 | Not started | 0 % | Tomáš | Event Scheduler UI | Špec + PR |
+| T-06 | FinalCTA + pricing parity | P1 | In progress | 50 % | Martin | #73 copy | Jednotný pricing source |
+| T-07 | Copy / VISIT REAL / MV audit | P1 | In progress | 90 % | Martin | — | Merge #73 |
+| T-08 | Stealth Recruiter prod | P1 | In progress | 85 % | Tomáš | **Explicit scope** | Review #72, no merge bez OK |
+| T-09 | Event Scheduler UI + SMS | P1 | Not started | 0 % | Martin + Tomáš | #70 merged | Nový PR UI |
+| T-10 | Mobile App Beta | P2 | Not started | 15 % | Platform | P1 stable | RN/Expo spike |
+| T-11 | Predictive Analytics | P2 | In progress | 25 % | Data + Backend | W1 columns | Cron triage hardening |
+| T-12 | Banking integrations | P2 | Not started | 0 % | Integrations | Realvia stable | Partner shortlist |
+| T-13 | Offline mode | P3 | Not started | 0 % | Mobile | T-10 | Backlog |
+| T-14 | eSignature + SMS auth | P3 | Not started | 0 % | Compliance | Legal | Backlog |
+| T-15 | Competitive docs na `main` | P0 | In progress | 95 % | Orchestrator | — | Merge tento docs PR |
 
 ---
 
 ## P0 merge queue
 
-| PR | Title | CI | Vercel | Blocker | Next action |
-|----|-------|-----|--------|---------|-------------|
-| [#66](https://github.com/onlinovosk-bit/RealitkaAI/pull/66) | Realvia replay failed queue + missing agency fail | ✅ Green | ❌ Preview failed | Rebase on `main`; Vercel deploy failure | Tomáš rebase → Zuzana inspect Vercel logs → merge when both green |
-| [#70](https://github.com/onlinovosk-bit/RealitkaAI/pull/70) | Event Scheduler Phase 1 | ❌ Test fail (`program-brand-names` import) | ✅ Preview (realitka-ai canceled by ignored step) | Unrelated test failure on branch base | Tomáš fix CI or rebase on green `main` → merge after green CI |
+| PR | Title | CI | Vercel | Blocker |
+|----|-------|-----|--------|---------|
+| [#66](https://github.com/onlinovosk-bit/RealitkaAI/pull/66) | Realvia replay | ✅ | ❌ failed | Vercel deploy |
+| [#70](https://github.com/onlinovosk-bit/RealitkaAI/pull/70) | Event Scheduler Phase 1 | ❌ Lint/test/build | Preview partial | Rebase + test fix |
+| [#73](https://github.com/onlinovosk-bit/RealitkaAI/pull/73) | Onboarding copy + audit | ✅ | ✅ marketing | Merge po smoke |
 
-**Rule:** Do not merge until CI + Vercel preview are green (L99 golden rule).
-
----
-
-## Event Scheduler — phase map
-
-| Phase | User spec | Repo / PR #70 | Gap | Recommended PR |
-|-------|-----------|---------------|-----|----------------|
-| **1 — DB + backend** | `realvia_events` table | `scheduled_events` + migration `20260527143000_event_scheduler_phase1.sql` | Table name + route prefix differ | **#70** (fix CI first) |
-| **2 — API** | `POST/GET/PATCH/DELETE /api/events` | `GET/POST /api/scheduled-events`, `GET/PATCH/DELETE /api/scheduled-events/[id]` | Route naming; SMS/calendar hooks not in user spec | **#72** — alias `/api/events` → store OR rename in follow-up |
-| **3 — UI** | `EventScheduler.tsx` (calendar, quick schedule, conflicts) | Not in #70 | Full UI missing | **#73** — `feat/event-scheduler-ui` |
-| **4 — Tests + deploy** | Unit + E2E + prod smoke | 7 unit tests in #70 only | E2E + smoke missing | **#74** — `feat/event-scheduler-e2e-smoke` |
-
-### Align vs rename (recommendation)
-
-**Recommend:** Keep `scheduled_events` as canonical internal name (tenant-scoped, not Realvia-specific). Add thin `/api/events` alias in PR #72 for API ergonomics. Document mapping in `event-scheduler-implementation-guide.md`. Do **not** rename table post-merge unless migration cost is acceptable — prefer view/alias layer.
-
-User spec fields to verify in #70 schema: `property_id`, `client_phone`, `client_name`, `sms_sent_at`, `confirmation_status` — confirm parity or add columns in #72.
+**Nepáčiť:** [#72](https://github.com/onlinovosk-bit/RealitkaAI/pull/72) Stealth Recruiter — bez explicitného produktového schválenia.
 
 ---
 
-## Backlog — priority matrix
+## Agent team — najbližších 7 dní
 
-| Initiative | Impact | Effort | Priority | Target window | Owner lane |
-|------------|--------|--------|----------|---------------|------------|
-| **Event Scheduler P1** | High | Low | P0 | Week 1 (May 27–Jun 3) | Backend + Frontend |
-| **Proposal Generator** | High | Medium | P1 | Weeks 2–3 | Full-stack |
-| **Mobile App Beta** | High | High | P1 | Week 4+ | Platform + Mobile |
-| **Predictive Analytics** | High | High | P2 | Jun+ | Data + Backend |
-| **eSignature + SMS Auth** | Medium | High | P3 | Backlog | Backend + Compliance |
-| **Banking Integrations** | Medium | High | P4 | Backlog | Integrations |
-| **Offline Mode** | Low | Low | P3 | Backlog | Mobile |
+| Persona | Lane | Owns | Deliverable |
+|---------|------|------|-------------|
+| **Tomáš Novák** | Backend | #66, #70 CI, Realvia | Green CI, staging migrácia |
+| **Martin Kollár** | Frontend | #73, leads smoke, Event UI špec | Merge #73; scaffold EventScheduler |
+| **Peter Horváth** | Platform / UX | Brand parity audit, calendar UX | Phase 7 gap list → PR |
+| **Zuzana Novotná** | DevOps / QA | Smoke, Vercel #66, merge gates | Signed smoke report |
 
 ---
 
-## Agent team — next 7 days (May 27 – Jun 3)
+## Top 5 priorít — ďalší sprint
 
-L99 personas mapped to functional lanes:
-
-| Persona | Lane | Owns (next 7 days) | Deliverables |
-|---------|------|-------------------|--------------|
-| **Tomáš Novák** | Backend / Full-stack | PR #66 rebase + merge; PR #70 CI fix; Event Scheduler API alias (#72 prep) | Green CI on #66/#70; `/api/events` RFC in PR #72 |
-| **Martin Kollár** | Frontend | Leads prod smoke (#69); EventScheduler.tsx scaffold (#73); lead-card “Schedule viewing” entry | Prod leads count > 0; UI branch ready for review |
-| **Peter Horváth** | Platform / UX | Calendar UX spec; conflict-detection rules; update implementation guide | Spec in `docs/event-scheduler-implementation-guide.md` |
-| **Zuzana Novotná** | DevOps / QA | Smoke `tests/smoke.spec.ts` post-#69; Vercel log triage #66; block merge until green | Smoke report; CI gate sign-off |
-
-### Parallel / background
-
-| Workstream | Branch | Notes |
-|------------|--------|-------|
-| Contacts prod hotfix | `fix/contacts-leads-zero-prod` | Only if #69 deploy insufficient |
-| Slate Horizon UI | PRs #15–#23 | Lower priority vs P0; batch after Event Scheduler P1 |
-| Realvia integrations page | PR #9 (DRAFT) | Not P0 |
+1. **Prod smoke leads** po #69 — potvrdiť, že P0 incident je uzavretý.
+2. **Merge #70** (Event Scheduler backend) po zelenej CI + staging migrácii.
+3. **Brand parity P0** — `apps/marketing` ↔ CRM landing tier matrix (Phase 7).
+4. **Merge #66** Realvia replay po Vercel fix.
+5. **Event Scheduler UI PR** — samostatný PR po #70; SMS + calendar entry z lead karty.
 
 ---
 
-## Immediate next 3 actions
-
-| # | Action | Owner | PR / target |
-|---|--------|-------|-------------|
-| **1** | **Prod smoke: leads visible** — run smoke + manual check `/leads` on production after #69 deploy | Zuzana + Martin | Verify #69; hotfix → `fix/contacts-leads-zero-prod` if needed |
-| **2** | **Unblock Event Scheduler Phase 1** — fix CI on #70 (rebase on green `main` or fix `program-brand-names` test import) | Tomáš | PR [#70](https://github.com/onlinovosk-bit/RealitkaAI/pull/70) |
-| **3** | **Rebase + merge Realvia replay** — rebase #66 on `main`, fix Vercel preview failure, merge when CI + preview green | Tomáš + Zuzana | PR [#66](https://github.com/onlinovosk-bit/RealitkaAI/pull/66) |
-
----
-
-## Recently merged (context)
+## Recently merged (kontext)
 
 | PR | Title | Merged |
 |----|-------|--------|
-| #69 | Browser-first leads (451→0 fix) | 2026-05-27 |
+| #69 | Browser-first leads | 2026-05-27 |
 | #68 | P0 production reliability | 2026-05-27 |
-| #67 | 8-layer architecture map | 2026-05-27 |
-| #65 | AI Decision Ops on production | 2026-05-27 |
+| #65 | AI Decision Ops | 2026-05-27 |
 
 ---
 
-## Open PR inventory (non-P0)
-
-| PR | Title | Notes |
-|----|-------|-------|
-| [#71](https://github.com/onlinovosk-bit/RealitkaAI/pull/71) | Competitive analysis + orchestrator task board | Docs-only — this PR |
-
-Stale Slate / Smolko PRs (#14–#30) remain open — **do not merge** without individual preview smoke per L99 (1 PR = 1 logical change).
-
----
-
-*Board owner: L99 Chief Orchestrator. Sync with Ruflo `autopilot_progress` after each merge.*
+*Board owner: L99 Chief Orchestrator. Sync po každom merge; Ruflo `autopilot_progress` pre long-horizon beh.*
