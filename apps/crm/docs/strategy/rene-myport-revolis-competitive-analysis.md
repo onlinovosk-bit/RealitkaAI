@@ -261,4 +261,4 @@ TÝŽDEŇ 4+: Mobile App Beta
 
 ---
 
-*Maintained by L99 Chief Orchestrator. Update when PR #70–#73 land or competitive landscape shifts.*
+*Maintained by L99 Chief Orchestrator. Update when PR #70–#74 land or competitive landscape shifts.*

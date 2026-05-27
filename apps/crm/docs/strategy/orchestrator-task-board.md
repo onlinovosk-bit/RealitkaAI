@@ -49,15 +49,15 @@
 | Phase | User spec | Repo / PR #70 | Gap | Recommended PR |
 |-------|-----------|---------------|-----|----------------|
 | **1 — DB + backend** | `realvia_events` table | `scheduled_events` + migration `20260527143000_event_scheduler_phase1.sql` | Table name + route prefix differ | **#70** (fix CI first) |
-| **2 — API** | `POST/GET/PATCH/DELETE /api/events` | `GET/POST /api/scheduled-events`, `GET/PATCH/DELETE /api/scheduled-events/[id]` | Route naming; SMS/calendar hooks not in user spec | **#71** — alias `/api/events` → store OR rename in follow-up |
-| **3 — UI** | `EventScheduler.tsx` (calendar, quick schedule, conflicts) | Not in #70 | Full UI missing | **#72** — `feat/event-scheduler-ui` |
-| **4 — Tests + deploy** | Unit + E2E + prod smoke | 7 unit tests in #70 only | E2E + smoke missing | **#73** — `feat/event-scheduler-e2e-smoke` |
+| **2 — API** | `POST/GET/PATCH/DELETE /api/events` | `GET/POST /api/scheduled-events`, `GET/PATCH/DELETE /api/scheduled-events/[id]` | Route naming; SMS/calendar hooks not in user spec | **#72** — alias `/api/events` → store OR rename in follow-up |
+| **3 — UI** | `EventScheduler.tsx` (calendar, quick schedule, conflicts) | Not in #70 | Full UI missing | **#73** — `feat/event-scheduler-ui` |
+| **4 — Tests + deploy** | Unit + E2E + prod smoke | 7 unit tests in #70 only | E2E + smoke missing | **#74** — `feat/event-scheduler-e2e-smoke` |
 
 ### Align vs rename (recommendation)
 
-**Recommend:** Keep `scheduled_events` as canonical internal name (tenant-scoped, not Realvia-specific). Add thin `/api/events` alias in PR #71 for API ergonomics. Document mapping in `event-scheduler-implementation-guide.md`. Do **not** rename table post-merge unless migration cost is acceptable — prefer view/alias layer.
+**Recommend:** Keep `scheduled_events` as canonical internal name (tenant-scoped, not Realvia-specific). Add thin `/api/events` alias in PR #72 for API ergonomics. Document mapping in `event-scheduler-implementation-guide.md`. Do **not** rename table post-merge unless migration cost is acceptable — prefer view/alias layer.
 
-User spec fields to verify in #70 schema: `property_id`, `client_phone`, `client_name`, `sms_sent_at`, `confirmation_status` — confirm parity or add columns in #71.
+User spec fields to verify in #70 schema: `property_id`, `client_phone`, `client_name`, `sms_sent_at`, `confirmation_status` — confirm parity or add columns in #72.
 
 ---
 
@@ -81,8 +81,8 @@ L99 personas mapped to functional lanes:
 
 | Persona | Lane | Owns (next 7 days) | Deliverables |
 |---------|------|-------------------|--------------|
-| **Tomáš Novák** | Backend / Full-stack | PR #66 rebase + merge; PR #70 CI fix; Event Scheduler API alias (#71 prep) | Green CI on #66/#70; `/api/events` RFC in PR #71 |
-| **Martin Kollár** | Frontend | Leads prod smoke (#69); EventScheduler.tsx scaffold (#72); lead-card “Schedule viewing” entry | Prod leads count > 0; UI branch ready for review |
+| **Tomáš Novák** | Backend / Full-stack | PR #66 rebase + merge; PR #70 CI fix; Event Scheduler API alias (#72 prep) | Green CI on #66/#70; `/api/events` RFC in PR #72 |
+| **Martin Kollár** | Frontend | Leads prod smoke (#69); EventScheduler.tsx scaffold (#73); lead-card “Schedule viewing” entry | Prod leads count > 0; UI branch ready for review |
 | **Peter Horváth** | Platform / UX | Calendar UX spec; conflict-detection rules; update implementation guide | Spec in `docs/event-scheduler-implementation-guide.md` |
 | **Zuzana Novotná** | DevOps / QA | Smoke `tests/smoke.spec.ts` post-#69; Vercel log triage #66; block merge until green | Smoke report; CI gate sign-off |
 
@@ -118,6 +118,10 @@ L99 personas mapped to functional lanes:
 ---
 
 ## Open PR inventory (non-P0)
+
+| PR | Title | Notes |
+|----|-------|-------|
+| [#71](https://github.com/onlinovosk-bit/RealitkaAI/pull/71) | Competitive analysis + orchestrator task board | Docs-only — this PR |
 
 Stale Slate / Smolko PRs (#14–#30) remain open — **do not merge** without individual preview smoke per L99 (1 PR = 1 logical change).
 
