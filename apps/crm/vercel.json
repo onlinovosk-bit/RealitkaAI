@@ -1,8 +1,5 @@
-{`n  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "nextjs",
-  "installCommand": "npm install",
-  "buildCommand": "npm run build",`n  "ignoreCommand": "exit 1",
-  "outputDirectory": ".next",
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
     {
       "path": "/api/cron/pulse",
