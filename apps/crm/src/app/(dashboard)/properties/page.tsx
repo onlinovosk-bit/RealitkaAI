@@ -2,6 +2,7 @@
 import ErrorState from "@/components/shared/error-state";
 import PropertiesPageClient from "@/components/properties/properties-page-client";
 import { loadPropertiesInventory, type PropertyFilters } from "@/lib/properties-store";
+import { resolveProfileForAuthUser } from "@/lib/profiles/resolve-profile-for-auth";
 import { safeServerAction } from "@/lib/safe-action";
 import { createClient } from "@/lib/supabase/server";
 
@@ -37,12 +38,12 @@ export default async function PropertiesPage({
       let inventorySummary = undefined;
 
       if (user) {
-        const { data: profileRow } = await supabase
-          .from("profiles")
-          .select("agency_id")
-          .or(`auth_user_id.eq.${user.id},id.eq.${user.id}`)
-          .maybeSingle();
-        profileMissingAgency = !profileRow?.agency_id;
+        const { profileMissingAgency: missing } = await resolveProfileForAuthUser(
+          supabase,
+          user.id,
+          "agency_id",
+        );
+        profileMissingAgency = missing;
 
         const { summary } = await loadPropertiesInventory(supabase);
         inventorySummary = summary;

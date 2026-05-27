@@ -1,12 +1,12 @@
 ﻿import ModuleShell from "@/components/shared/module-shell";
 import ErrorState from "@/components/shared/error-state";
-import LeadsModule from "@/components/leads/leads-module";
+import LeadsPageClient from "@/components/leads/leads-page-client";
 import { safeServerAction } from "@/lib/safe-action";
-import { listLeads } from "@/lib/leads-store";
-import { listTeams, listProfiles } from "@/lib/team-store";
-import { getRscSupabase } from "@/lib/supabase/rsc-client";
-import { recommendations } from "@/lib/mock-data";
+import { bootstrapLeadsPage } from "@/lib/leads/leads-page-bootstrap";
+import { createClient } from "@/lib/supabase/server";
 import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
+
+export const dynamic = "force-dynamic";
 
 export default async function LeadsPage({
   searchParams,
@@ -17,16 +17,10 @@ export default async function LeadsPage({
 
   const result = await safeServerAction(
     async () => {
-      const supabase = await getRscSupabase();
-      const [leads, teams, profiles] = await Promise.all([
-        listLeads(undefined, supabase),
-        listTeams(supabase),
-        listProfiles(supabase),
-      ]);
-
-      return { leads, teams, profiles };
+      const supabase = await createClient();
+      return bootstrapLeadsPage(supabase);
     },
-    "Nepodarilo sa načítať príležitosti."
+    "Nepodarilo sa načítať príležitosti.",
   );
 
   if (!result.ok) {
@@ -43,7 +37,7 @@ export default async function LeadsPage({
     );
   }
 
-  const { leads, teams, profiles } = result.data;
+  const { profileMissingAgency, initialLeadCount } = result.data;
 
   return (
     <ModuleShell
@@ -62,16 +56,9 @@ export default async function LeadsPage({
           Zobrazujú sa príležitosti pridelené kolegom vo vašom tíme.
         </div>
       )}
-      <LeadsModule
-        leads={leads}
-        teams={teams.map((team) => ({ id: team.id, name: team.name }))}
-        profiles={profiles.map((profile) => ({
-          id: profile.id,
-          teamId: profile.teamId,
-          fullName: profile.fullName,
-          isActive: profile.isActive,
-        }))}
-        recommendations={recommendations}
+      <LeadsPageClient
+        profileMissingAgency={profileMissingAgency}
+        initialLeadCount={initialLeadCount}
       />
     </ModuleShell>
   );
