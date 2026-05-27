@@ -50,6 +50,23 @@ export default function L99DecisionOpsPanel({ leads }: Props) {
       });
 
       const data = (await res.json()) as Record<string, unknown>;
+      if (res.status === 403 && typeof data.error === "string" && data.error.includes("feature flag")) {
+        setOutput(
+          JSON.stringify(
+            {
+              httpStatus: res.status,
+              ok: false,
+              error: data.error,
+              hint:
+                "Na produkcii skontroluj Vercel env: DECISION_ENGINE_ENABLED / CLOSING_WINDOW_ENABLED / RESCUE_AUTOMATION_ENABLED — nesmú byť explicitne false. Po deploye s novým decision-flags.ts stačí premenné odstrániť alebo nastaviť true.",
+              ...data,
+            },
+            null,
+            2
+          )
+        );
+        return;
+      }
       setOutput(JSON.stringify({ httpStatus: res.status, ...data }, null, 2));
     } catch {
       setOutput('{ "ok": false, "error": "Chyba siete." }');
