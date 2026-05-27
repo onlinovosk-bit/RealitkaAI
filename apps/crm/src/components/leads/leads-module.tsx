@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { getSupabaseClient } from "@/lib/supabase/client";
-import { listLeads } from "@/lib/leads-store";
 import LeadFilters from "@/components/leads/lead-filters";
 import LeadCreateForm from "@/components/leads/lead-create-form";
 import LeadsWorkspace from "@/components/leads/leads-workspace";
@@ -31,42 +29,23 @@ export default function LeadsModule({
   teams,
   profiles,
   recommendations,
+  profileMissingAgency = false,
+  initialLeadCount,
 }: {
   leads: Lead[];
   teams: TeamOption[];
   profiles: ProfileOption[];
   recommendations: Recommendation[];
+  profileMissingAgency?: boolean;
+  initialLeadCount?: number;
 }) {
   const [leadItems, setLeadItems] = useState(leads);
   const [filtered, setFiltered] = useState(leads);
-  const [leadsLoading, setLeadsLoading] = useState(false);
 
   useEffect(() => {
-    if (leads.length > 0) return;
-
-    let cancelled = false;
-    const supabase = getSupabaseClient();
-    if (!supabase) return;
-
-    setLeadsLoading(true);
-    void listLeads(undefined, supabase)
-      .then((rows) => {
-        if (cancelled || rows.length === 0) return;
-        setLeadItems(rows);
-        setFiltered(rows);
-      })
-      .finally(() => {
-        if (!cancelled) setLeadsLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [leads.length]);
-
-  useEffect(() => {
-    setFiltered(leadItems);
-  }, [leadItems]);
+    setLeadItems(leads);
+    setFiltered(leads);
+  }, [leads]);
 
   const avgScore =
     filtered.length > 0
@@ -100,8 +79,14 @@ export default function LeadsModule({
         <LeadCreateForm />
       </div>
 
-      {leadsLoading ? (
-        <p className="mb-4 text-center text-sm text-gray-500">Načítavam príležitosti…</p>
+      {profileMissingAgency ? (
+        <div
+          className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+          role="status"
+        >
+          V profile chýba <strong>agency_id</strong> — RLS neukáže klientov kancelárie. Skontroluj{" "}
+          <code className="text-xs">GET /api/crm/tenant-health</code> alebo profil v Supabase.
+        </div>
       ) : null}
 
       <section className="mb-4 grid grid-cols-2 gap-2 md:gap-4 xl:grid-cols-4">
@@ -129,7 +114,13 @@ export default function LeadsModule({
       {filtered.length === 0 ? (
         <EmptyState
           title="Zatiaľ nemáš žiadne príležitosti"
-          description="Vytvor prvú príležitosť cez formulár vyššie alebo uprav filtre."
+          description={
+            profileMissingAgency
+              ? "Doplň agency_id v profile — bez neho RLS nevráti riadky z tabuľky leads."
+              : typeof initialLeadCount === "number" && initialLeadCount > 0
+                ? "Server načítal príležitosti, ale zoznam v prehliadači je prázdny — obnov stránku."
+                : "Vytvor prvú príležitosť cez formulár vyššie alebo uprav filtre."
+          }
         />
       ) : (
         <section className="flex flex-col gap-8">

@@ -49,7 +49,7 @@ Všetky tenant read cesty v store sú prepojené na `resolveTenantSupabase()`:
 |----------|-------|----------|
 | Kokpit | `/dashboard` | `force-dynamic`; widgety + SSR cez resolve |
 | Nehnuteľnosti | `/properties` | inventory loader + browser fallback |
-| Moji klienti | `/contacts` → `/leads` | KPI z `listLeads()` |
+| Moji klienti | `/contacts`, `/leads` (LeadsPageClient) | Browser-first + `/api/leads/inventory`; `docs/qa/contacts-leads-zero-data.md` |
 | Úlohy | `/tasks` | `listTasks` + leads/profiles |
 | Matching | `/matching` | `listPersistedMatches` |
 | Odporúčania | `/recommendations` | `recommendations-store` |
@@ -71,4 +71,5 @@ Všetky tenant read cesty v store sú prepojené na `resolveTenantSupabase()`:
 
 ## PR
 
-- https://github.com/onlinovosk-bit/RealitkaAI/pull/64 — merge do `main` pred produkčným očakávaním fixu.
+- https://github.com/onlinovosk-bit/RealitkaAI/pull/64 — properties + resolve client (merged).
+- `fix/contacts-leads-zero` — leads/contacts browser-first (2026-05-27).

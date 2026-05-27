@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { resolveProfileForAuthUser } from "@/lib/profiles/resolve-profile-for-auth";
 import { resolveTenantSupabase } from "@/lib/supabase/resolve-client";
 
 export type TenantHealthSnapshot = {
@@ -53,11 +54,7 @@ export async function getTenantHealthSnapshot(
 
   let profileAgencyId: string | null = null;
   if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("agency_id")
-      .or(`auth_user_id.eq.${user.id},id.eq.${user.id}`)
-      .maybeSingle();
+    const { profile } = await resolveProfileForAuthUser(supabase, user.id, "agency_id");
     profileAgencyId = profile?.agency_id ?? null;
   }
 
