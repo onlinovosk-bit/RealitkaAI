@@ -289,7 +289,7 @@ export default function ProgramComparison() {
           }}
         >
           <p className="mb-3 text-xs uppercase tracking-widest" style={{ color: SLATE_HORIZON.muted }}>
-            Všetky plány obsahujú 30-dňovú garanciu vrátenia + jednorazový onboarding 99 €
+            Všetky plány obsahujú 30-dňovú garanciu vrátenia. Cena za jednorazový onboarding je 99 € s DPH.
           </p>
           <Link
             href="/billing"
