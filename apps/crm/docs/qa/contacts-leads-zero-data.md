@@ -1,7 +1,7 @@
 # QA: Moji klienti / Leads — 0 záznamov pri živých dátach
 
 **Dátum:** 2026-05-27  
-**Fix vetva:** `fix/contacts-leads-zero`
+**Fix vetva:** `fix/contacts-leads-zero` (+ hotfix `fix/contacts-leads-zero-hotfix` pre SW cache)
 
 ## Symptóm
 
@@ -27,5 +27,13 @@ Rovnaký incident ako nehnuteľnosti (pozri `docs/incidents/crm-zero-data-audit.
 
 1. Prihlásenie tenant Smolko.
 2. `GET /api/crm/tenant-health` → `counts.leads` > 0 ak DB má dáta.
-3. `/contacts` a `/leads` — rovnaký počet ako tenant-health.
-4. Kokpit AI strip — reálne signály (nie len placeholder), ak `counts.leads` > 0.
+3. `GET /api/leads/inventory` → `ok: true`, `inventory.leads.length` > 0.
+4. `/contacts` — URL **zostane** `/contacts`, titulok **Moji klienti**, počet > 0.
+5. `/leads` — rovnaký počet ako tenant-health.
+6. Kokpit AI strip — reálne signály (nie len placeholder), ak `counts.leads` > 0.
+
+## Ak stále vidíš redirect na `/leads`
+
+1. **Tvrdé obnovenie:** Ctrl+Shift+R (alebo vymaž site data pre `app.revolis.ai`).
+2. Service Worker: DevTools → Application → Service Workers → **Unregister**, potom reload.
+3. Over, že Production deploy je z **`main`** po merge hotfixu (nie starý rebuild z `docs/architecture-layers`).

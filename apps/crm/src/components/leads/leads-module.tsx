@@ -31,6 +31,7 @@ export default function LeadsModule({
   recommendations,
   profileMissingAgency = false,
   initialLeadCount,
+  emptyDescriptionOverride,
 }: {
   leads: Lead[];
   teams: TeamOption[];
@@ -38,6 +39,7 @@ export default function LeadsModule({
   recommendations: Recommendation[];
   profileMissingAgency?: boolean;
   initialLeadCount?: number;
+  emptyDescriptionOverride?: string;
 }) {
   const [leadItems, setLeadItems] = useState(leads);
   const [filtered, setFiltered] = useState(leads);
@@ -115,11 +117,12 @@ export default function LeadsModule({
         <EmptyState
           title="Zatiaľ nemáš žiadne príležitosti"
           description={
-            profileMissingAgency
+            emptyDescriptionOverride ??
+            (profileMissingAgency
               ? "Doplň agency_id v profile — bez neho RLS nevráti riadky z tabuľky leads."
               : typeof initialLeadCount === "number" && initialLeadCount > 0
-                ? "Server načítal príležitosti, ale zoznam v prehliadači je prázdny — obnov stránku."
-                : "Vytvor prvú príležitosť cez formulár vyššie alebo uprav filtre."
+                ? "Server načítal príležitosti, ale zoznam v prehliadači je prázdny — obnov stránku (Ctrl+Shift+R)."
+                : "Vytvor prvú príležitosť cez formulár vyššie alebo uprav filtre.")
           }
         />
       ) : (

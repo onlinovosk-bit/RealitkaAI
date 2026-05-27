@@ -2,12 +2,16 @@
 // Revolis.AI Service Worker v2 — Offline cache + Web Push
 // ================================================================
 
-const CACHE_NAME = "revolis-v2";
+const CACHE_NAME = "revolis-v3";
 const OFFLINE_URL = "/offline";
+
+/** CRM list pages must never fall back to stale cached HTML (old /contacts redirect). */
+const NETWORK_ONLY_PATHS = ["/contacts", "/leads"];
 
 const PRECACHE_URLS = [
   "/",
   "/playbook",
+  "/contacts",
   "/leads",
   "/dashboard",
   "/offline",
@@ -77,6 +81,15 @@ self.addEventListener("fetch", (event) => {
         })
       )
     );
+    return;
+  }
+
+  const isNetworkOnlyPage = NETWORK_ONLY_PATHS.some(
+    (p) => url.pathname === p || url.pathname.startsWith(`${p}/`),
+  );
+
+  if (isNetworkOnlyPage) {
+    event.respondWith(fetch(request));
     return;
   }
 

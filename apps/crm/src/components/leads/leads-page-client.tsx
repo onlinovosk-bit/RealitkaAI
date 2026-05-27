@@ -6,6 +6,11 @@ import LeadsModule from "@/components/leads/leads-module";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { listLeads, type Lead } from "@/lib/leads-store";
 import { listProfiles, listTeams } from "@/lib/team-store";
+import {
+  fetchLeadsInventoryFromApi,
+  fetchTenantHealthHint,
+  type LeadsInventorySnapshot,
+} from "@/lib/leads/load-leads-inventory-client";
 import { recommendations } from "@/lib/mock-data";
 
 type TeamOption = { id: string; name: string };
@@ -22,6 +27,40 @@ type Props = {
   initialLeadCount?: number;
 };
 
+function mapInventory(snapshot: LeadsInventorySnapshot): {
+  leads: Lead[];
+  teams: TeamOption[];
+  profiles: ProfileOption[];
+} {
+  return {
+    leads: snapshot.leads,
+    teams: snapshot.teams,
+    profiles: snapshot.profiles,
+  };
+}
+
+async function loadFromBrowser(): Promise<LeadsInventorySnapshot | null> {
+  const supabase = getSupabaseClient();
+  if (!supabase) return null;
+
+  const [leadRows, teamRows, profileRows] = await Promise.all([
+    listLeads(undefined, supabase),
+    listTeams(supabase),
+    listProfiles(supabase),
+  ]);
+
+  return {
+    leads: leadRows,
+    teams: teamRows.map((team) => ({ id: team.id, name: team.name })),
+    profiles: profileRows.map((profile) => ({
+      id: profile.id,
+      teamId: profile.teamId,
+      fullName: profile.fullName,
+      isActive: profile.isActive,
+    })),
+  };
+}
+
 export default function LeadsPageClient({
   profileMissingAgency,
   initialLeadCount,
@@ -31,97 +70,54 @@ export default function LeadsPageClient({
   const [profiles, setProfiles] = useState<ProfileOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [tenantLeadsCount, setTenantLeadsCount] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
-    const loadViaApi = async (): Promise<boolean> => {
-      try {
-        const res = await fetch("/api/leads/inventory");
-        if (!res.ok) return false;
-        const payload = (await res.json()) as {
-          inventory?: {
-            leads: Lead[];
-            teams: TeamOption[];
-            profiles: ProfileOption[];
-          };
-        };
-        if (!payload.inventory) return false;
-        if (cancelled) return true;
-        setLeads(payload.inventory.leads);
-        setTeams(payload.inventory.teams);
-        setProfiles(payload.inventory.profiles);
-        setLoadError(null);
-        return true;
-      } catch {
-        return false;
-      }
-    };
-
     const load = async () => {
-      const supabase = getSupabaseClient();
-      if (!supabase) {
-        const ok = await loadViaApi();
-        if (!cancelled) {
-          if (!ok) {
-            setLoadError("Pripojenie k databáze nie je nakonfigurované.");
-          }
-          setLoading(false);
-        }
+      const [browserSnapshot, apiResult] = await Promise.all([
+        loadFromBrowser().catch(() => null),
+        fetchLeadsInventoryFromApi(),
+      ]);
+
+      if (cancelled) return;
+
+      if (!apiResult.ok && apiResult.status === 401) {
+        setLoadError(apiResult.message);
+        setLoading(false);
         return;
       }
 
-      try {
-        const [leadRows, teamRows, profileRows] = await Promise.all([
-          listLeads(undefined, supabase),
-          listTeams(supabase),
-          listProfiles(supabase),
-        ]);
+      const apiSnapshot = apiResult.ok ? apiResult.inventory : null;
+      const browserCount = browserSnapshot?.leads.length ?? 0;
+      const apiCount = apiSnapshot?.leads.length ?? 0;
 
-        if (cancelled) return;
+      const chosen =
+        apiCount >= browserCount && apiSnapshot
+          ? apiSnapshot
+          : browserSnapshot ?? apiSnapshot;
 
-        if (leadRows.length > 0) {
-          setLeads(leadRows);
-          setTeams(teamRows.map((team) => ({ id: team.id, name: team.name })));
-          setProfiles(
-            profileRows.map((profile) => ({
-              id: profile.id,
-              teamId: profile.teamId,
-              fullName: profile.fullName,
-              isActive: profile.isActive,
-            })),
-          );
-          setLoadError(null);
-          setLoading(false);
-          return;
-        }
+      if (chosen) {
+        const mapped = mapInventory(chosen);
+        setLeads(mapped.leads);
+        setTeams(mapped.teams);
+        setProfiles(mapped.profiles);
+        setLoadError(null);
 
-        const ok = await loadViaApi();
-        if (!cancelled) {
-          if (!ok && leadRows.length === 0) {
-            setLeads([]);
-            setTeams(teamRows.map((team) => ({ id: team.id, name: team.name })));
-            setProfiles(
-              profileRows.map((profile) => ({
-                id: profile.id,
-                teamId: profile.teamId,
-                fullName: profile.fullName,
-                isActive: profile.isActive,
-              })),
-            );
+        if (chosen.leads.length === 0) {
+          const health = await fetchTenantHealthHint();
+          if (!cancelled && health) {
+            setTenantLeadsCount(health.leadsCount);
           }
-          setLoadError(null);
         }
-      } catch (err) {
-        const ok = await loadViaApi();
-        if (!cancelled && !ok) {
-          setLoadError(
-            err instanceof Error ? err.message : "Nepodarilo sa načítať príležitosti.",
-          );
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
+      } else if (!apiResult.ok) {
+        setLoadError(apiResult.message);
+      } else {
+        setLoadError("Nepodarilo sa načítať príležitosti.");
       }
+
+      if (!cancelled) setLoading(false);
     };
 
     void load();
@@ -147,6 +143,13 @@ export default function LeadsPageClient({
     );
   }
 
+  const zeroHint =
+    leads.length === 0 && tenantLeadsCount != null && tenantLeadsCount > 0
+      ? `Server pod RLS vidí ${tenantLeadsCount} leadov — skús tvrdé obnovenie (Ctrl+Shift+R) alebo odhlásenie a nové prihlásenie. Over GET /api/crm/tenant-health a GET /api/leads/inventory v DevTools.`
+      : leads.length === 0 && profileMissingAgency
+        ? "V profile chýba agency_id — RLS nevráti riadky. Skontroluj GET /api/crm/tenant-health."
+        : undefined;
+
   return (
     <LeadsModule
       leads={leads}
@@ -155,6 +158,7 @@ export default function LeadsPageClient({
       recommendations={recommendations}
       profileMissingAgency={profileMissingAgency}
       initialLeadCount={initialLeadCount}
+      emptyDescriptionOverride={zeroHint}
     />
   );
 }

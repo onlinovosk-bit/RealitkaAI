@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { FEATURES } from "@/components/billing/FeatureComparisonTable";
 import {
@@ -98,9 +98,13 @@ describe("Smart Start — program Smart (tier starter)", () => {
     expect(missing, missing.join("\n")).toEqual([]);
   });
 
-  it("contacts route redirects to leads (Smart Start klienti)", () => {
+  it("contacts route renders Moji klienti without redirect", () => {
     const contactsPage = join(APP_ROOT, "contacts", "page.tsx");
     expect(existsSync(contactsPage)).toBe(true);
+    const src = readFileSync(contactsPage, "utf8");
+    expect(src).not.toMatch(/redirect\s*\(\s*["'`]\/leads/);
+    expect(src).toContain("LeadsPageClient");
+    expect(src).toContain("Moji klienti");
   });
 
   it("has code anchors for marketed Smart Start features", () => {
