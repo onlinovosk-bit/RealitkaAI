@@ -12,6 +12,10 @@ Pamäťové háčiky projektu: `CLAUDE.md` ( priečinok `/memory` ).
 
 ---
 
+## Architektúra (north star)
+
+- Referenčná 8‑vrstvová mapa: `docs/architecture/layers.md`
+
 ## Verzia „Master“ (plná)
 
 ```
