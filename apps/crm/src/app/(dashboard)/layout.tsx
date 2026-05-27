@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { linkProfileToAuthUser } from "@/lib/profiles/resolve-profile-for-auth";
 import { redirect } from "next/navigation";
 import AppSidebar from "@/components/layout/AppSidebar";
 import { WorkdeskTopbar } from "@/components/layout/WorkdeskTopbar";
@@ -14,6 +15,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
     redirect("/login?reason=session_expired");
   }
   if (!user) redirect("/login");
+
+  await linkProfileToAuthUser(supabase, user.id, user.email);
 
   // Zhodné s profile_agencies_for_auth(): párovanie cez auth_user_id alebo legacy profiles.id.
   const { data: profile } = await supabase

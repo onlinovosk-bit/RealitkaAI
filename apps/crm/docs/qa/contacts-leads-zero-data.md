@@ -23,11 +23,20 @@ Rovnaký incident ako nehnuteľnosti (pozri `docs/incidents/crm-zero-data-audit.
 - `/contacts` renderuje rovnaký client s titulkom **Moji klienti** (bez redirectu).
 - Banner pri `profileMissingAgency` + hint na `GET /api/crm/tenant-health`.
 
-## Filtre vs. 0 v zozname (2026-05-27)
+## Skutočná príčina (RLS + profil) — 2026-05-27
 
-- Pole **Min. BRI** malo placeholder `70` — vyzeralo ako aktívny filter.
-- Horúci pás „Kto je pripravený kúpiť dnes?" používal filtrovaný zoznam → mohol ukázať klienta (napr. Jozef Test) pri **Príležitosti: 0**.
-- Oprava: pás z **všetkých** načítaných klientov, banner „Filtre skryli…", placeholder „Všetky", žiadne demo mená v páske.
+Ak `GET /api/crm/tenant-health` ukazuje `counts.leads: 0`, **nie sú to filtre** — Supabase RLS nevidí agentúru.
+
+1. `profile_agencies_for_auth()` vracia `agency_id` len ak `profiles.auth_user_id = auth.uid()` **alebo** `profiles.id = auth.uid()`.
+2. Profil Smolko často existuje pod e-mailom, ale **`auth_user_id` je prázdne** → RLS vráti 0 riadkov.
+3. Kokpit **AI Priority Strip** pri 0 leadoch zobrazuje **demo mená** (Lucia Šimko…) — nie živú databázu.
+
+**Náprava:** `linkProfileToAuthUser()` pri prihlásení, layoute, `/api/leads/inventory` a tenant-health doplní `auth_user_id`.
+
+## Filtre vs. 0 v zozname (iba ak tenant-health > 0)
+
+- Ak `counts.leads` > 0 ale UI ukazuje 0, skontrolujte banner „Filtre skryli…" a Min. BRI.
+- Placeholder BRI `70` bol UX problém (#75), nie root cause pri API = 0.
 
 ## Smoke
 
