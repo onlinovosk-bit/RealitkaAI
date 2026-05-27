@@ -29,5 +29,11 @@ describe("license capability registry", () => {
     expect(caps.canViewForecast).toBe(true);
     expect(caps.canUseMarketIntel).toBe(false);
     expect(caps.canUseMonopolDominance).toBe(false);
+    expect(caps.canUseStealthRecruiter).toBe(false);
+  });
+
+  it("gates stealth recruiter to monopol tier", () => {
+    expect(hasCapability("protocol_authority", "canUseStealthRecruiter")).toBe(true);
+    expect(hasCapability("market_vision", "canUseStealthRecruiter")).toBe(false);
   });
 });
