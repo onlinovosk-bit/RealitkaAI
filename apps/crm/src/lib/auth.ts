@@ -159,10 +159,9 @@ export async function getAgencyIdForAuthUser(
   supabase: SupabaseClient,
   authUserId: string,
 ): Promise<string | null> {
-  const { data } = await supabase
-    .from("profiles")
-    .select("agency_id")
-    .eq("auth_user_id", authUserId)
-    .maybeSingle();
-  return data?.agency_id ?? null;
+  const { resolveProfileForAuthUser } = await import(
+    "@/lib/profiles/resolve-profile-for-auth"
+  );
+  const { profile } = await resolveProfileForAuthUser(supabase, authUserId, "agency_id");
+  return profile?.agency_id ?? null;
 }

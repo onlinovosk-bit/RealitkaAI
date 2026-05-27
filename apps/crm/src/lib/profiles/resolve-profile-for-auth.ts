@@ -32,3 +32,58 @@ export async function resolveProfileForAuthUser(
     profileMissingAgency: !profile?.agency_id,
   };
 }
+
+/**
+ * Prepojí `profiles.auth_user_id` na aktuálne prihlásenie — RLS `profile_agencies_for_auth()`
+ * inak nevráti agency_id (profil existuje len pod e-mailom / legacy id).
+ */
+export async function linkProfileToAuthUser(
+  supabase: SupabaseClient,
+  userId: string,
+  email?: string | null,
+): Promise<ResolvedAuthProfile | null> {
+  const { profile } = await resolveProfileForAuthUser(
+    supabase,
+    userId,
+    "id, agency_id, auth_user_id, email",
+  );
+
+  if (profile?.auth_user_id === userId) {
+    return profile;
+  }
+
+  if (profile && !profile.auth_user_id) {
+    const { error } = await supabase
+      .from("profiles")
+      .update({ auth_user_id: userId })
+      .eq("id", profile.id);
+
+    if (!error) {
+      return { ...profile, auth_user_id: userId };
+    }
+    return profile;
+  }
+
+  if (!profile && email) {
+    const { data: byEmail } = await supabase
+      .from("profiles")
+      .select("id, agency_id, auth_user_id, email")
+      .eq("email", email)
+      .maybeSingle();
+
+    const row = (byEmail as ResolvedAuthProfile | null) ?? null;
+    if (row && !row.auth_user_id) {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ auth_user_id: userId })
+        .eq("id", row.id);
+
+      if (!error) {
+        return { ...row, auth_user_id: userId };
+      }
+    }
+    if (row) return row;
+  }
+
+  return profile;
+}

@@ -1,5 +1,8 @@
 import { listLeads } from "@/lib/leads-store";
-import { resolveProfileForAuthUser } from "@/lib/profiles/resolve-profile-for-auth";
+import {
+  linkProfileToAuthUser,
+  resolveProfileForAuthUser,
+} from "@/lib/profiles/resolve-profile-for-auth";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type LeadsPageBootstrap = {
@@ -18,6 +21,8 @@ export async function bootstrapLeadsPage(
   if (!user) {
     return { profileMissingAgency: false };
   }
+
+  await linkProfileToAuthUser(supabase, user.id, user.email);
 
   const { profileMissingAgency } = await resolveProfileForAuthUser(
     supabase,

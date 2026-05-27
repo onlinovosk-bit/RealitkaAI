@@ -70,16 +70,12 @@ export default function LeadsPageClient({
     };
 
     const load = async () => {
-      const preferApiFirst =
-        typeof initialLeadCount === "number" && initialLeadCount > 0;
-
-      if (preferApiFirst) {
-        const ok = await loadViaApi();
-        if (cancelled) return;
-        if (ok) {
-          setLoading(false);
-          return;
-        }
+      // Server route má session cookies + linkProfileToAuthUser pred RLS dotazom.
+      const apiOk = await loadViaApi();
+      if (cancelled) return;
+      if (apiOk) {
+        setLoading(false);
+        return;
       }
 
       const supabase = getSupabaseClient();

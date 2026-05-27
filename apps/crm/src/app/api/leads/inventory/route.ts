@@ -1,5 +1,6 @@
 import { okResponse, errorResponse } from "@/lib/api-response";
 import { listLeads } from "@/lib/leads-store";
+import { linkProfileToAuthUser } from "@/lib/profiles/resolve-profile-for-auth";
 import { listProfiles, listTeams } from "@/lib/team-store";
 import { createClient } from "@/lib/supabase/server";
 
@@ -18,6 +19,8 @@ export async function GET() {
   if (!user) {
     return errorResponse("Unauthorized", 401);
   }
+
+  await linkProfileToAuthUser(supabase, user.id, user.email);
 
   const [leads, teams, profiles] = await Promise.all([
     listLeads(undefined, supabase),
