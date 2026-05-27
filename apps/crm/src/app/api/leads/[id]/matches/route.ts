@@ -14,7 +14,7 @@ export async function GET(
     const { id } = await params;
 
     const { data: callerProfile } = await supabase
-      .from("profiles").select("agency_id").eq("id", user.id).maybeSingle();
+      .from("profiles").select("agency_id").eq("auth_user_id", user.id).maybeSingle();
 
     const { data: lead } = await supabase
       .from("leads").select("agency_id").eq("id", id).maybeSingle();

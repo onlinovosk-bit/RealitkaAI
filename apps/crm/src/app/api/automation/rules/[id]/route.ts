@@ -17,7 +17,7 @@ async function resolveOwnership(ruleId: string): Promise<{
   // Fetch the rule's agency_id alongside the user's own agency_id in one round-trip
   const [{ data: rule }, { data: profile }] = await Promise.all([
     supabase.from("lead_assignment_rules").select("agency_id").eq("id", ruleId).maybeSingle(),
-    supabase.from("profiles").select("agency_id").eq("id", user.id).maybeSingle(),
+    supabase.from("profiles").select("agency_id").eq("auth_user_id", user.id).maybeSingle(),
   ]);
 
   // If table/row doesn't exist yet (graceful for demo mode), allow

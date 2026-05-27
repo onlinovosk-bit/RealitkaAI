@@ -39,7 +39,7 @@ export async function POST(req: Request) {
   const rateLimitBlock = await checkAiRateLimit(user.id, "properties:create", 30);
   if (rateLimitBlock) return NextResponse.json(rateLimitBlock, { status: 429 });
 
-  const { data: callerProfile } = await supabase.from("profiles").select("agency_id").eq("id", user.id).maybeSingle()
+  const { data: callerProfile } = await supabase.from("profiles").select("agency_id").eq("auth_user_id", user.id).maybeSingle()
   const agencyId = callerProfile?.agency_id ?? ""
 
   const rawBody = await req.json()

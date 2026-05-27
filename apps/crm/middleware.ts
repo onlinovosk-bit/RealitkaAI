@@ -18,6 +18,13 @@ const BYPASS_PREFIXES = [
   '/api/onboarding/mvp/',     // service-role based onboarding flows
 ]
 
+/** Routes that verify HMAC in-handler via revolisGuard (not session cookies). */
+const REVOLIS_GUARD_PREFIXES = [
+  '/api/outreach',
+  '/api/agents/',
+  '/api/cron/night-watch',
+]
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
@@ -27,9 +34,9 @@ export async function middleware(request: NextRequest) {
   // Explicit bypass paths
   if (BYPASS_PREFIXES.some(p => pathname.startsWith(p))) return NextResponse.next()
 
-  // revolisGuard routes use HMAC headers (x-revolis-timestamp + x-revolis-signature).
-  // Let the route handler verify the HMAC — if headers are forged, revolisGuard rejects them.
+  // HMAC bypass only for routes that call revolisGuard in-handler (never all /api/*).
   if (
+    REVOLIS_GUARD_PREFIXES.some((p) => pathname.startsWith(p)) &&
     request.headers.get('x-revolis-timestamp') &&
     request.headers.get('x-revolis-signature')
   ) {

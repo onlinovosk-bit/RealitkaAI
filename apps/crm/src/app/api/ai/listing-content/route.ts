@@ -12,7 +12,12 @@ export async function POST(req: Request) {
   const block = await checkAiRateLimit(user.id, "listing-content", 10);
   if (block) return NextResponse.json(block, { status: 429 });
 
-  const body = (await req.json()) as { property: PropertyInput; persona?: ListingPersona };
+  let body: { property: PropertyInput; persona?: ListingPersona };
+  try {
+    body = (await req.json()) as { property: PropertyInput; persona?: ListingPersona };
+  } catch {
+    return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
+  }
 
   if (!body.property?.type || !body.property?.location || !body.property?.price) {
     return NextResponse.json(

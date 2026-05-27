@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   const { data: callerProfile } = await supabaseAuth
     .from("profiles")
     .select("agency_id")
-    .eq("id", user.id)
+    .eq("auth_user_id", user.id)
     .maybeSingle();
 
   let body: { leadId?: string }
