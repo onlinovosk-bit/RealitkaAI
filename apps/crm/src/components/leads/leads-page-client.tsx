@@ -20,11 +20,13 @@ type Props = {
   profileMissingAgency: boolean;
   /** Voliteľný SSR počet; zoznam sa vždy načíta v prehliadači kvôli RLS session. */
   initialLeadCount?: number;
+  inventoryView?: "leads" | "contacts";
 };
 
 export default function LeadsPageClient({
   profileMissingAgency,
   initialLeadCount,
+  inventoryView = "leads",
 }: Props) {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [teams, setTeams] = useState<TeamOption[]>([]);
@@ -37,7 +39,7 @@ export default function LeadsPageClient({
 
     const loadViaApi = async (): Promise<boolean> => {
       try {
-        const res = await fetch("/api/leads/inventory");
+        const res = await fetch(`/api/leads/inventory?view=${inventoryView}`);
         if (!res.ok) return false;
         const payload = (await res.json()) as {
           inventory?: {
@@ -135,7 +137,7 @@ export default function LeadsPageClient({
     return () => {
       cancelled = true;
     };
-  }, [initialLeadCount]);
+  }, [initialLeadCount, inventoryView]);
 
   if (loading) {
     return (
