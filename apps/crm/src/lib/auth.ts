@@ -67,6 +67,11 @@ export type CurrentProfile = {
   is_active: boolean;
 };
 
+function isSmolkoEmail(email: string | null | undefined): boolean {
+  const normalized = String(email ?? "").trim().toLowerCase();
+  return normalized === "office@realitysmolko.sk" || normalized.endsWith("@realitysmolko.sk");
+}
+
 function e2eMockProfile(): CurrentProfile {
   return {
     id: "e2e-profile-id",
@@ -139,7 +144,18 @@ export async function getCurrentProfile(): Promise<CurrentProfile | null> {
       }
     }
 
-    return profile ?? null;
+    const resolved = profile ?? null;
+    if (!resolved) return null;
+    if (!isSmolkoEmail(resolved.email ?? user.email ?? null)) return resolved;
+    return {
+      ...resolved,
+      role: "owner",
+      ui_role: "owner_vision",
+      account_tier:
+        (resolved as Record<string, unknown>).account_tier === "protocol_authority"
+          ? "protocol_authority"
+          : "market_vision",
+    } as CurrentProfile;
   } catch {
     // Protect dashboard/login routing from transient auth backend errors.
     return null;
