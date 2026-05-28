@@ -11,6 +11,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { processRealviaQueue } from '@/lib/realvia/processQueue';
+import { enqueueReplayFailedQueueJobs } from '@/lib/realvia/webhookStore';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -22,8 +23,26 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const replayFailedParam = request.nextUrl.searchParams.get('replay_failed');
+    const replayFailed =
+      replayFailedParam === '1' ||
+      replayFailedParam === 'true' ||
+      replayFailedParam === 'yes' ||
+      replayFailedParam === 'on';
+    const replayLimitRaw = Number(request.nextUrl.searchParams.get('replay_limit') ?? '50');
+    const replayLimit = Number.isFinite(replayLimitRaw) ? replayLimitRaw : 50;
+
+    let replayResult: { replayedCount: number; errors: string[] } | null = null;
+    if (replayFailed) {
+      replayResult = await enqueueReplayFailedQueueJobs(replayLimit);
+    }
+
     const result = await processRealviaQueue();
-    return NextResponse.json({ ok: true, ...result });
+    return NextResponse.json({
+      ok: true,
+      ...result,
+      ...(replayResult ? { replay_failed_jobs: replayResult } : {}),
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Worker failed';
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
