@@ -54,7 +54,12 @@ export async function getTenantHealthSnapshot(
 
   let profileAgencyId: string | null = null;
   if (user) {
-    const { profile } = await resolveProfileForAuthUser(supabase, user.id, "agency_id");
+    const { profile } = await resolveProfileForAuthUser(
+      supabase,
+      user.id,
+      "agency_id",
+      user.email,
+    );
     profileAgencyId = profile?.agency_id ?? null;
   }
 

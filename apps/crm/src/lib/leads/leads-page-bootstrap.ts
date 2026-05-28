@@ -28,6 +28,7 @@ export async function bootstrapLeadsPage(
     supabase,
     user.id,
     "agency_id",
+    user.email,
   );
 
   const leads = await listLeads(undefined, supabase);
