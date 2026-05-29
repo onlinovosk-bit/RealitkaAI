@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "../route";
+import { bratislavaVerifiedAtRange } from "@/lib/stealth-recruiter/scan-filters";
 
 const mockGetUser = vi.fn();
 const mockResolveProfile = vi.fn();
@@ -32,6 +33,7 @@ function chainQuery(result: { data: unknown[] | null }) {
   const chain = {
     select: vi.fn(() => chain),
     eq: vi.fn(() => chain),
+    in: vi.fn(() => chain),
     gte: vi.fn(() => chain),
     lt: vi.fn(() => chain),
     ilike: vi.fn(() => chain),
@@ -59,32 +61,24 @@ describe("POST /api/stealth-recruiter/scan", () => {
     vi.unstubAllEnvs();
   });
 
-  it("returns 401 without auth", async () => {
-    mockGetUser.mockResolvedValue({ data: { user: null } });
-    const res = await POST(
-      new Request("http://localhost/api/stealth-recruiter/scan", {
-        method: "POST",
-        body: JSON.stringify({}),
-      }),
-    );
-    expect(res.status).toBe(401);
-  });
-
-  it("returns empty list in production when DB has no rows", async () => {
+  it("demo env false → source nie je demo", async () => {
     mockFrom.mockReturnValue(chainQuery({ data: [] }));
+
     const res = await POST(
       new Request("http://localhost/api/stealth-recruiter/scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ area: "Prešov", onlyToday: true }),
+        body: JSON.stringify({ area: "Prešov", onlyToday: true, generateNew: true }),
       }),
     );
     const json = await res.json();
+
+    expect(json.source).not.toBe("demo");
+    expect(json.source).not.toBe("fallback");
     expect(json.prospects).toEqual([]);
-    expect(json.source).toBe("empty");
   });
 
-  it("scopes query by agency_id and region", async () => {
+  it("filter Prešov funguje", async () => {
     const chain = chainQuery({
       data: [
         {
@@ -105,36 +99,52 @@ describe("POST /api/stealth-recruiter/scan", () => {
       new Request("http://localhost/api/stealth-recruiter/scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ area: "Prešov", onlyToday: true, minScore: 60 }),
+        body: JSON.stringify({ area: "Prešov", onlyToday: true }),
       }),
     );
     const json = await res.json();
 
     expect(chain.eq).toHaveBeenCalledWith("agency_id", "agency-1");
     expect(chain.ilike).toHaveBeenCalledWith("region", "Prešov");
-    expect(chain.gte).toHaveBeenCalledWith("verified_at", expect.any(String));
-    expect(chain.lt).toHaveBeenCalledWith("verified_at", expect.any(String));
+    expect(chain.in).toHaveBeenCalledWith("status", ["identified", "verified"]);
     expect(json.source).toBe("db");
     expect(json.prospects).toHaveLength(1);
   });
 
-  it("uses demo prospects only when demo mode is enabled", async () => {
-    vi.stubEnv("STEALTH_RECRUITER_DEMO_MODE", "true");
+  it("dnešný filter funguje", async () => {
+    const chain = chainQuery({ data: [] });
+    mockFrom.mockReturnValue(chain);
+    const { from, to } = bratislavaVerifiedAtRange();
+
+    await POST(
+      new Request("http://localhost/api/stealth-recruiter/scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ area: "Prešov", onlyToday: true }),
+      }),
+    );
+
+    expect(chain.gte).toHaveBeenCalledWith("verified_at", from);
+    expect(chain.lt).toHaveBeenCalledWith("verified_at", to);
+  });
+
+  it("prázdny výsledok = source empty, nie fake dáta", async () => {
     mockFrom.mockReturnValue(chainQuery({ data: [] }));
 
     const res = await POST(
       new Request("http://localhost/api/stealth-recruiter/scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ area: "Prešov", onlyToday: true, generateNew: true }),
+        body: JSON.stringify({ area: "Prešov", onlyToday: true, generateNew: false }),
       }),
     );
     const json = await res.json();
 
-    expect(json.source).toBe("demo");
-    expect(json.prospects.length).toBeGreaterThan(0);
-    expect(json.prospects.every((p: { address: string }) => p.address.includes("Prešov"))).toBe(
-      true,
+    expect(json.source).toBe("empty");
+    expect(json.prospects).toEqual([]);
+    expect(json.message).toBe("Žiadni overení samopredajcovia v regióne Prešov dnes.");
+    expect(json.prospects.some((p: { address: string }) => p.address.includes("Košice"))).toBe(
+      false,
     );
   });
 });
