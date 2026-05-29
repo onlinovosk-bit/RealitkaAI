@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import { Phone } from "lucide-react";
 import {
   buildExecutiveSignals,
   formatMoneyEur,
@@ -17,39 +16,6 @@ type Props = {
   loading?: boolean;
 };
 
-const PLACEHOLDER_SIGNALS: ExecutiveSignal[] = [
-  {
-    leadId: "demo-1",
-    name: "Lucia Šimko",
-    action: "Zavolaj teraz — vysoká priorita",
-    timing: "volať do 15 min",
-    confidence: 91,
-    moneyEur: 7200,
-    urgency: "critical",
-    status: "Horúci",
-  },
-  {
-    leadId: "demo-2",
-    name: "Lukáš Nagy",
-    action: "Posunúť do ponuky",
-    timing: "posunúť pipeline",
-    confidence: 87,
-    moneyEur: null,
-    urgency: "high",
-    status: "Teplý",
-  },
-  {
-    leadId: "demo-3",
-    name: "Jana Horváth",
-    action: "Pošli SMS s termínom obhliadky",
-    timing: "poslať SMS dnes",
-    confidence: 78,
-    moneyEur: 5400,
-    urgency: "medium",
-    status: "Obhliadka",
-  },
-];
-
 function urgencyBadge(urgency: ExecutiveSignal["urgency"]) {
   if (urgency === "critical") return SLATE_HORIZON_BADGES.hot;
   if (urgency === "high") return SLATE_HORIZON_BADGES.owner;
@@ -58,8 +24,8 @@ function urgencyBadge(urgency: ExecutiveSignal["urgency"]) {
 
 export function AIPriorityStrip({ leads, loading }: Props) {
   const signals = buildExecutiveSignals(leads, 3);
-  const items = signals.length > 0 ? signals : PLACEHOLDER_SIGNALS;
-  const placeholders = signals.length === 0;
+  const items = signals;
+  const placeholders = false;
 
   useEffect(() => {
     if (loading) return;
@@ -80,6 +46,31 @@ export function AIPriorityStrip({ leads, loading }: Props) {
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-14 flex-1 rounded-xl" style={{ background: SLATE_HORIZON.bg }} />
           ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!loading && items.length === 0) {
+    return (
+      <div
+        className="sticky top-0 z-20 mb-5 overflow-hidden rounded-2xl border"
+        style={{
+          background: WORKDESK_CARD.background,
+          borderColor: WORKDESK_CARD.borderColor,
+          boxShadow: WORKDESK_CARD.boxShadow,
+        }}
+      >
+        <div
+          className="flex items-center justify-between gap-3 border-b px-4 py-2.5"
+          style={{ borderColor: SLATE_HORIZON.line, background: SLATE_HORIZON.bg }}
+        >
+          <span className="text-[11px] font-black uppercase tracking-widest" style={{ color: SLATE_HORIZON.brandDeep }}>
+            AI Priority Strip
+          </span>
+        </div>
+        <div className="p-6 text-center text-sm" style={{ color: SLATE_HORIZON.muted }}>
+          Žiadne aktívne signály dnes. Leady sa zobrazia po synchronizácii z Realvia.
         </div>
       </div>
     );
@@ -109,7 +100,7 @@ export function AIPriorityStrip({ leads, loading }: Props) {
       <div className="grid grid-cols-1 gap-2 p-3 md:grid-cols-3">
         {items.map((signal) => {
           const badge = urgencyBadge(signal.urgency);
-          const href = placeholders ? "/leads" : `/leads/${signal.leadId}`;
+          const href = `/leads/${signal.leadId}`;
 
           return (
             <Link
