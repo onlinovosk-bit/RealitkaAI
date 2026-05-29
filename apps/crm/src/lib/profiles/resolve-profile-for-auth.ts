@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { createServiceRoleClient } from "@/lib/supabase/admin";
 
 export type ResolvedAuthProfile = {
   id: string;
@@ -15,9 +16,19 @@ type ProfileLookupResult = {
   profile: ResolvedAuthProfile | null;
 };
 
-function isSmolkoEmail(email: string | null | undefined): boolean {
+/** Reality Smolko owner logins (prod + Google auth). */
+export function isSmolkoOwnerEmail(email: string | null | undefined): boolean {
   const normalized = String(email ?? "").trim().toLowerCase();
-  return normalized === "office@realitysmolko.sk" || normalized.endsWith("@realitysmolko.sk");
+  if (!normalized) return false;
+  return (
+    normalized === "office@realitysmolko.sk" ||
+    normalized === "rastislav.smolko@gmail.com" ||
+    normalized.endsWith("@realitysmolko.sk")
+  );
+}
+
+function isSmolkoEmail(email: string | null | undefined): boolean {
+  return isSmolkoOwnerEmail(email);
 }
 
 function enforceSmolkoOwnerDefaults(
@@ -41,15 +52,87 @@ export async function resolveProfileForAuthUser(
   supabase: SupabaseClient,
   userId: string,
   select = "id, agency_id, auth_user_id",
+  email?: string | null,
 ): Promise<{
   profile: ResolvedAuthProfile | null;
   profileMissingAgency: boolean;
 }> {
-  const { profile } = await findProfileForAuthUser(supabase, userId, undefined, select);
+  const { profile } = await findProfileForAuthUser(supabase, userId, email, select);
+  const normalized = enforceSmolkoOwnerDefaults(profile);
   return {
-    profile,
-    profileMissingAgency: !profile?.agency_id,
+    profile: normalized,
+    profileMissingAgency: !normalized?.agency_id,
   };
+}
+
+async function findProfileForAuthUserViaServiceRole(
+  userId: string,
+  email: string | null | undefined,
+  select: string,
+): Promise<ProfileLookupResult> {
+  const service = createServiceRoleClient();
+  if (!service) {
+    return { profile: null };
+  }
+
+  const byAuth = await service
+    .from("profiles")
+    .select(select)
+    .eq("auth_user_id", userId)
+    .maybeSingle();
+  if (byAuth.data) {
+    return { profile: byAuth.data as ResolvedAuthProfile };
+  }
+
+  const byLegacyId = await service
+    .from("profiles")
+    .select(select)
+    .eq("id", userId)
+    .maybeSingle();
+  if (byLegacyId.data) {
+    return { profile: byLegacyId.data as ResolvedAuthProfile };
+  }
+
+  if (email) {
+    const normalizedEmail = email.trim().toLowerCase();
+    const byEmail = await service
+      .from("profiles")
+      .select(select)
+      .ilike("email", normalizedEmail)
+      .maybeSingle();
+    if (byEmail.data) {
+      return { profile: byEmail.data as ResolvedAuthProfile };
+    }
+  }
+
+  return { profile: null };
+}
+
+async function persistAuthUserIdLink(
+  profileId: string,
+  userId: string,
+  supabase: SupabaseClient,
+): Promise<boolean> {
+  const { error } = await supabase
+    .from("profiles")
+    .update({ auth_user_id: userId })
+    .eq("id", profileId);
+
+  if (!error) {
+    return true;
+  }
+
+  const service = createServiceRoleClient();
+  if (!service) {
+    return false;
+  }
+
+  const { error: serviceError } = await service
+    .from("profiles")
+    .update({ auth_user_id: userId })
+    .eq("id", profileId);
+
+  return !serviceError;
 }
 
 async function findProfileForAuthUser(
@@ -88,7 +171,8 @@ async function findProfileForAuthUser(
     }
   }
 
-  return { profile: null };
+  // RLS profiles_agency_select nevidí riadok bez auth_user_id / legacy id — service role lookup.
+  return findProfileForAuthUserViaServiceRole(userId, email, select);
 }
 
 /**
@@ -129,27 +213,32 @@ export async function linkProfileToAuthUser(
   }
 
   if (profile && !profile.auth_user_id) {
-    const { error } = await supabase
-      .from("profiles")
-      .update({ auth_user_id: userId })
-      .eq("id", profile.id);
+    const linkedOk = await persistAuthUserIdLink(profile.id, userId, supabase);
+    const linked = enforceSmolkoOwnerDefaults(
+      linkedOk ? { ...profile, auth_user_id: userId } : profile,
+    );
 
-    if (!error) {
-      const linked = enforceSmolkoOwnerDefaults({ ...profile, auth_user_id: userId });
-      if (linked && (linked.role || linked.ui_role || linked.account_tier)) {
-        await supabase
-          .from("profiles")
-          .update({
-            role: linked.role,
-            ui_role: linked.ui_role,
-            account_tier: linked.account_tier,
-            tier_updated_at: new Date().toISOString(),
-          })
-          .eq("id", linked.id);
+    if (linkedOk && linked && (linked.role || linked.ui_role || linked.account_tier)) {
+      const tierPayload = {
+        role: linked.role,
+        ui_role: linked.ui_role,
+        account_tier: linked.account_tier,
+        tier_updated_at: new Date().toISOString(),
+      };
+      const { error: tierError } = await supabase
+        .from("profiles")
+        .update(tierPayload)
+        .eq("id", linked.id);
+
+      if (tierError) {
+        const service = createServiceRoleClient();
+        if (service) {
+          await service.from("profiles").update(tierPayload).eq("id", linked.id);
+        }
       }
-      return linked;
     }
-    return enforceSmolkoOwnerDefaults(profile);
+
+    return linked;
   }
 
   return enforceSmolkoOwnerDefaults(profile);

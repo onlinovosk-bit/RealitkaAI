@@ -42,6 +42,7 @@ export default async function PropertiesPage({
           supabase,
           user.id,
           "agency_id",
+          user.email,
         );
         profileMissingAgency = missing;
 
