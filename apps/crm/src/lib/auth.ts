@@ -1,6 +1,7 @@
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { isSmolkoOwnerEmail } from "@/lib/profiles/resolve-profile-for-auth";
 
 /** Iba pre Playwright / lokálne E2E — nikdy v produkcii (NODE_ENV=production). */
 function isE2eAuthBypass(): boolean {
@@ -68,8 +69,7 @@ export type CurrentProfile = {
 };
 
 function isSmolkoEmail(email: string | null | undefined): boolean {
-  const normalized = String(email ?? "").trim().toLowerCase();
-  return normalized === "office@realitysmolko.sk" || normalized.endsWith("@realitysmolko.sk");
+  return isSmolkoOwnerEmail(email);
 }
 
 function e2eMockProfile(): CurrentProfile {
@@ -146,7 +146,8 @@ export async function getCurrentProfile(): Promise<CurrentProfile | null> {
 
     const resolved = profile ?? null;
     if (!resolved) return null;
-    if (!isSmolkoEmail(resolved.email ?? user.email ?? null)) return resolved;
+    const loginEmail = user.email ?? resolved.email ?? null;
+    if (!isSmolkoEmail(resolved.email) && !isSmolkoEmail(loginEmail)) return resolved;
     return {
       ...resolved,
       role: "owner",

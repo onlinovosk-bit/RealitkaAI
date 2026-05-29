@@ -10,6 +10,8 @@ export type ResolvedAuthProfile = {
   role?: string | null;
   ui_role?: string | null;
   account_tier?: string | null;
+  team_license_id?: string | null;
+  agency_name?: string | null;
 };
 
 type ProfileLookupResult = {
@@ -31,11 +33,12 @@ function isSmolkoEmail(email: string | null | undefined): boolean {
   return isSmolkoOwnerEmail(email);
 }
 
-function enforceSmolkoOwnerDefaults(
+export function enforceSmolkoOwnerDefaults(
   profile: ResolvedAuthProfile | null,
+  authEmail?: string | null,
 ): ResolvedAuthProfile | null {
   if (!profile) return profile;
-  if (!isSmolkoEmail(profile.email)) return profile;
+  if (!isSmolkoEmail(profile.email) && !isSmolkoEmail(authEmail)) return profile;
   return {
     ...profile,
     role: "owner",
@@ -58,7 +61,7 @@ export async function resolveProfileForAuthUser(
   profileMissingAgency: boolean;
 }> {
   const { profile } = await findProfileForAuthUser(supabase, userId, email, select);
-  const normalized = enforceSmolkoOwnerDefaults(profile);
+  const normalized = enforceSmolkoOwnerDefaults(profile, email);
   return {
     profile: normalized,
     profileMissingAgency: !normalized?.agency_id,
@@ -192,7 +195,7 @@ export async function linkProfileToAuthUser(
   );
 
   if (profile?.auth_user_id === userId) {
-    const normalized = enforceSmolkoOwnerDefaults(profile);
+    const normalized = enforceSmolkoOwnerDefaults(profile, email);
     if (
       normalized &&
       (normalized.role !== profile.role ||
@@ -216,6 +219,7 @@ export async function linkProfileToAuthUser(
     const linkedOk = await persistAuthUserIdLink(profile.id, userId, supabase);
     const linked = enforceSmolkoOwnerDefaults(
       linkedOk ? { ...profile, auth_user_id: userId } : profile,
+      email,
     );
 
     if (linkedOk && linked && (linked.role || linked.ui_role || linked.account_tier)) {
@@ -241,5 +245,5 @@ export async function linkProfileToAuthUser(
     return linked;
   }
 
-  return enforceSmolkoOwnerDefaults(profile);
+  return enforceSmolkoOwnerDefaults(profile, email);
 }

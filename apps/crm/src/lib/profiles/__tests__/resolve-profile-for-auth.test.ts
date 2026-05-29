@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import {
+  enforceSmolkoOwnerDefaults,
   isSmolkoOwnerEmail,
   resolveProfileForAuthUser,
 } from "@/lib/profiles/resolve-profile-for-auth";
@@ -21,6 +22,26 @@ describe("isSmolkoOwnerEmail", () => {
     expect(isSmolkoOwnerEmail("rastislav.smolko@gmail.com")).toBe(true);
     expect(isSmolkoOwnerEmail("office@realitysmolko.sk")).toBe(true);
     expect(isSmolkoOwnerEmail("other@gmail.com")).toBe(false);
+  });
+});
+
+describe("enforceSmolkoOwnerDefaults", () => {
+  it("forces owner_vision when login email is Smolko gmail but profile row is agent", () => {
+    const normalized = enforceSmolkoOwnerDefaults(
+      {
+        id: "prof-stale",
+        agency_id: "b101361c",
+        email: "stale@example.com",
+        role: "agent",
+        ui_role: "agent",
+        account_tier: "pro",
+      },
+      "rastislav.smolko@gmail.com",
+    );
+
+    expect(normalized?.role).toBe("owner");
+    expect(normalized?.ui_role).toBe("owner_vision");
+    expect(normalized?.account_tier).toBe("market_vision");
   });
 });
 
