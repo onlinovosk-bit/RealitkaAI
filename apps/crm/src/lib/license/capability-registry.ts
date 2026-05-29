@@ -174,7 +174,7 @@ const PROGRAM_MIN_RANK: Record<LicenseProgramId, number> = {
 export function normalizeLicenseTier(raw: string | null | undefined): LicenseTierKey {
   const tier = (raw ?? "free").trim().toLowerCase();
   if (tier in TIER_RANK) return tier as LicenseTierKey;
-  if (tier === "scale") return "pro";
+  if (tier === "scale" || tier === "active_force" || tier === "active") return "pro";
   return "free";
 }
 
