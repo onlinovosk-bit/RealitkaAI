@@ -363,7 +363,36 @@ export async function listProperties(
     return applyPropertyFilters(getDemoShowcaseProperties(), filters);
   }
 
-  return data.map((item) => mapPropertyRow(item as Record<string, unknown>));
+  const tenantScoped = await scopePropertyRowsToProfileAgency(supabase, data);
+  return tenantScoped.map((item) => mapPropertyRow(item as Record<string, unknown>));
+}
+
+/**
+ * RLS properties policy still exposes `agency_id IS NULL` rows to every authenticated user.
+ * When profile has agency_id, keep only that tenant (defense in depth until migration tightens RLS).
+ */
+async function scopePropertyRowsToProfileAgency(
+  supabase: SupabaseClient,
+  rows: Record<string, unknown>[],
+): Promise<Record<string, unknown>[]> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return rows;
+
+  const { resolveProfileForAuthUser } = await import(
+    "@/lib/profiles/resolve-profile-for-auth"
+  );
+  const { profile } = await resolveProfileForAuthUser(
+    supabase,
+    user.id,
+    "agency_id",
+    user.email,
+  );
+  const agencyId = profile?.agency_id;
+  if (!agencyId) return rows;
+
+  return rows.filter((row) => row.agency_id === agencyId);
 }
 
 export async function getProperty(

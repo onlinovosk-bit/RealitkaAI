@@ -1,5 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
-import { resolveProfileForAuthUser } from "@/lib/profiles/resolve-profile-for-auth";
+import {
+  isSmolkoOwnerEmail,
+  resolveProfileForAuthUser,
+} from "@/lib/profiles/resolve-profile-for-auth";
 
 function buildSupabase(eqRows: Record<string, unknown | null>) {
   const select = vi.fn(() => ({
@@ -12,6 +15,14 @@ function buildSupabase(eqRows: Record<string, unknown | null>) {
   const from = vi.fn().mockReturnValue({ select });
   return { from } as unknown as import("@supabase/supabase-js").SupabaseClient;
 }
+
+describe("isSmolkoOwnerEmail", () => {
+  it("includes Reality Smolko Google login", () => {
+    expect(isSmolkoOwnerEmail("rastislav.smolko@gmail.com")).toBe(true);
+    expect(isSmolkoOwnerEmail("office@realitysmolko.sk")).toBe(true);
+    expect(isSmolkoOwnerEmail("other@gmail.com")).toBe(false);
+  });
+});
 
 describe("resolveProfileForAuthUser", () => {
   it("prefers auth_user_id and falls back to legacy id", async () => {

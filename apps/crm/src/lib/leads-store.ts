@@ -173,7 +173,7 @@ type ActivityLogInput = {
 
 type SupabaseLeadRow = {
   id: string;
-  agency_id: string;
+  agency_id: string | null;
   name: string;
   email: string;
   phone: string;
@@ -261,6 +261,34 @@ function parseAiEngineColumn(raw: SupabaseLeadRow["ai_engine"]): AiEngineSnapsho
     timeToCloseDays,
     updatedAt,
   };
+}
+
+/**
+ * RLS leads policy still exposes `agency_id IS NULL` rows to every authenticated user.
+ * When profile has agency_id, keep only that tenant (defense in depth until migration tightens RLS).
+ */
+async function scopeLeadRowsToProfileAgency(
+  supabase: import("@supabase/supabase-js").SupabaseClient,
+  rows: SupabaseLeadRow[],
+): Promise<SupabaseLeadRow[]> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return rows;
+
+  const { resolveProfileForAuthUser } = await import(
+    "@/lib/profiles/resolve-profile-for-auth"
+  );
+  const { profile } = await resolveProfileForAuthUser(
+    supabase,
+    user.id,
+    "agency_id",
+    user.email,
+  );
+  const agencyId = profile?.agency_id;
+  if (!agencyId) return rows;
+
+  return rows.filter((row) => row.agency_id === agencyId);
 }
 
 function mapRowToLead(row: SupabaseLeadRow): Lead {
@@ -791,7 +819,9 @@ export async function listLeads(
     return applyFilters(mockLeads, filters);
   }
 
-  return (data ?? []).map((row) => mapRowToLead(row as SupabaseLeadRow));
+  const rows = (data ?? []) as SupabaseLeadRow[];
+  const tenantScoped = await scopeLeadRowsToProfileAgency(supabase, rows);
+  return tenantScoped.map((row) => mapRowToLead(row));
 }
 
 export async function getLead(id: string): Promise<Lead | undefined> {

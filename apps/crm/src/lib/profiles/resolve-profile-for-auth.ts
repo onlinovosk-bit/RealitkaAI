@@ -16,9 +16,19 @@ type ProfileLookupResult = {
   profile: ResolvedAuthProfile | null;
 };
 
-function isSmolkoEmail(email: string | null | undefined): boolean {
+/** Reality Smolko owner logins (prod + Google auth). */
+export function isSmolkoOwnerEmail(email: string | null | undefined): boolean {
   const normalized = String(email ?? "").trim().toLowerCase();
-  return normalized === "office@realitysmolko.sk" || normalized.endsWith("@realitysmolko.sk");
+  if (!normalized) return false;
+  return (
+    normalized === "office@realitysmolko.sk" ||
+    normalized === "rastislav.smolko@gmail.com" ||
+    normalized.endsWith("@realitysmolko.sk")
+  );
+}
+
+function isSmolkoEmail(email: string | null | undefined): boolean {
+  return isSmolkoOwnerEmail(email);
 }
 
 function enforceSmolkoOwnerDefaults(
@@ -48,9 +58,10 @@ export async function resolveProfileForAuthUser(
   profileMissingAgency: boolean;
 }> {
   const { profile } = await findProfileForAuthUser(supabase, userId, email, select);
+  const normalized = enforceSmolkoOwnerDefaults(profile);
   return {
-    profile,
-    profileMissingAgency: !profile?.agency_id,
+    profile: normalized,
+    profileMissingAgency: !normalized?.agency_id,
   };
 }
 
