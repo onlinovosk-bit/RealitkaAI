@@ -7,19 +7,9 @@ import { getForecastingData } from "@/lib/forecasting-store";
 import { requireRole } from "@/lib/permissions";
 import { FEATURE_PERMISSIONS } from "@/lib/role-config";
 import { getFeatureGateState } from "@/lib/feature-gating";
-import { getCurrentProfile } from "@/lib/auth";
-
-function resolveAccountTier(profile: {
-  account_tier?: string | null;
-  ui_role?: string | null;
-  role?: string | null;
-} | null): string {
-  const uiRole = profile?.ui_role ?? "agent";
-  if (uiRole === "owner_protocol" || profile?.role === "founder") {
-    return "protocol_authority";
-  }
-  return profile?.account_tier ?? "free";
-}
+import { createClient } from "@/lib/supabase/server";
+import { resolveAccountTier } from "@/lib/license/resolve-account-tier";
+import { resolveProfileForAuthUser } from "@/lib/profiles/resolve-profile-for-auth";
 
 export default async function ForecastingPage() {
   await requireRole(FEATURE_PERMISSIONS.FORECASTING);
@@ -40,12 +30,22 @@ export default async function ForecastingPage() {
     );
   }
 
-  const [result, profile] = await Promise.all([
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const [result, { profile }] = await Promise.all([
     safeServerAction(
       () => getForecastingData(),
       "Nepodarilo sa načítať forecasting a benchmarky."
     ),
-    getCurrentProfile(),
+    resolveProfileForAuthUser(
+      supabase,
+      user?.id ?? "",
+      "ui_role, account_tier, role",
+      user?.email,
+    ),
   ]);
 
   if (!result.ok) {
@@ -62,9 +62,7 @@ export default async function ForecastingPage() {
     );
   }
 
-  const accountTier = resolveAccountTier(
-    profile as { account_tier?: string | null; ui_role?: string | null; role?: string | null } | null
-  );
+  const accountTier = resolveAccountTier(profile);
 
   return <ForecastPageClient accountTier={accountTier} data={result.data} />;
 }

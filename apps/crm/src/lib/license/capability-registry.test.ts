@@ -9,6 +9,7 @@ describe("license capability registry", () => {
   it("normalizes legacy tier aliases", () => {
     expect(normalizeLicenseTier("command")).toBe("command");
     expect(normalizeLicenseTier("scale")).toBe("pro");
+    expect(normalizeLicenseTier("active_force")).toBe("pro");
     expect(normalizeLicenseTier(null)).toBe("free");
   });
 

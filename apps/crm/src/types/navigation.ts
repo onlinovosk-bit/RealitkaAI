@@ -125,7 +125,7 @@ export const VARIANT_THEMES: Record<MenuVariant, VariantTheme> = {
     accentBorder: "#06B6D4",
     planLabel:    "Market Vision",
     planIcon:     "◉",
-    roleLabel:    "Majiteľ kancelárie",
+    roleLabel:    "Majiteľ RK",
     greeting:     "Prehľad tržieb a výkonnosť pipeline",
     badgeColors: {
       hot:      { bg: "rgba(239,68,68,0.15)",   color: "#FCA5A5", border: "rgba(239,68,68,0.30)"   },

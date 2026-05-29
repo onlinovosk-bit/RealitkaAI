@@ -67,11 +67,6 @@ export type CurrentProfile = {
   is_active: boolean;
 };
 
-function isSmolkoEmail(email: string | null | undefined): boolean {
-  const normalized = String(email ?? "").trim().toLowerCase();
-  return normalized === "office@realitysmolko.sk" || normalized.endsWith("@realitysmolko.sk");
-}
-
 function e2eMockProfile(): CurrentProfile {
   return {
     id: "e2e-profile-id",
@@ -119,42 +114,29 @@ export async function getCurrentProfile(): Promise<CurrentProfile | null> {
     const user = userData.user;
     if (!user) return null;
 
-    let { data: profile } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("auth_user_id", user.id)
-      .maybeSingle();
-
-    if (!profile && user.email) {
-      const fallback = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("email", user.email)
-        .maybeSingle();
-
-      profile = fallback.data ?? null;
-
-      if (profile && !profile.auth_user_id) {
-        await supabase
-          .from("profiles")
-          .update({ auth_user_id: user.id })
-          .eq("id", profile.id);
-
-        profile = { ...profile, auth_user_id: user.id };
-      }
-    }
-
-    const resolved = profile ?? null;
+    const { resolveProfileForAuthUser } = await import(
+      "@/lib/profiles/resolve-profile-for-auth"
+    );
+    const { profile: resolved } = await resolveProfileForAuthUser(
+      supabase,
+      user.id,
+      "*",
+      user.email,
+    );
     if (!resolved) return null;
-    if (!isSmolkoEmail(resolved.email ?? user.email ?? null)) return resolved;
+
     return {
-      ...resolved,
-      role: "owner",
-      ui_role: "owner_vision",
-      account_tier:
-        (resolved as Record<string, unknown>).account_tier === "protocol_authority"
-          ? "protocol_authority"
-          : "market_vision",
+      id: resolved.id,
+      agency_id: resolved.agency_id,
+      team_id: (resolved as { team_id?: string | null }).team_id ?? null,
+      auth_user_id: resolved.auth_user_id ?? user.id,
+      full_name: resolved.full_name ?? "",
+      email: resolved.email ?? user.email ?? null,
+      role: resolved.role ?? "agent",
+      phone: (resolved as { phone?: string | null }).phone ?? null,
+      is_active: (resolved as { is_active?: boolean }).is_active ?? true,
+      ui_role: resolved.ui_role,
+      account_tier: resolved.account_tier,
     } as CurrentProfile;
   } catch {
     // Protect dashboard/login routing from transient auth backend errors.
