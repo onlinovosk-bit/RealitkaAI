@@ -788,7 +788,7 @@ export function StealthRecruiter() {
     try {
       const res = await fetch("/api/stealth-recruiter/scan", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ area: "Prešov", onlyToday: true, generateNew: true }),
+        body: JSON.stringify({ area: "Prešov", onlyToday: true, generateNew: false }),
       });
       const data = await res.json() as { prospects?: StealthProspect[] };
       setProspects(data.prospects ?? []);

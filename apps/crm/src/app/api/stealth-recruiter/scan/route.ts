@@ -128,6 +128,7 @@ export async function POST(request: Request) {
       .from("stealth_recruiter_prospects")
       .select("*")
       .eq("agency_id", profile.agency_id)
+      .in("status", ["identified", "verified"])
       .gte("score", minScore)
       .order("score", { ascending: false })
       .limit(20);
@@ -283,6 +284,15 @@ ${demoSet.map((p) => `- ${p.id}: ${p.address}, ${p.daysListed} dní inzeruje, zn
     }));
 
     const filtered = result.filter((p) => p.score >= minScore);
+
+    if (filtered.length === 0 && !demoMode) {
+      return NextResponse.json({
+        prospects: [],
+        total: 0,
+        source: "empty",
+        message: "Žiadni overení samopredajcovia v regióne Prešov dnes.",
+      });
+    }
 
     return NextResponse.json({
       prospects: filtered,
