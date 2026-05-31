@@ -111,12 +111,18 @@ function mapToListing(item: BazosRawItem): Partial<PortalListing> {
     ? item.location_raw.split(',')[0].trim()
     : null
 
+  const listedAt = item.pubDate
+    ? new Date(item.pubDate).toISOString()
+    : new Date().toISOString()
+
   const raw: Partial<PortalListing> = {
     source:          'bazos_sk',
     external_id,
     external_url:    item.link,
     title:           item.title,
     price:           item.price,
+    first_seen_at:   listedAt,
+    last_seen_at:    listedAt,
     area_m2,
     rooms,
     property_type:   property_type as any,
