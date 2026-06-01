@@ -580,7 +580,7 @@ export default function HomePage() {
             <span>★</span> Jednorazová služba — bez predplatného
           </div>
           <div className="rscan-headline">
-            Máte v databáze<br /><em>spiace peniaze.</em><br />Nevíte o nich.
+            Máte v databáze<br /><em>spiace peniaze.</em><br />Neviete o nich.
           </div>
           <p className="rscan-sub">
             Priemerná kancelária má 400+ kontaktov. 22 % z nich dnes hľadá investičný byt, rodinný dom alebo predáva — a vy o tom neviete, pretože vám to nikto nepovedal.
