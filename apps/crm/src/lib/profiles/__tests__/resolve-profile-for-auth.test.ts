@@ -25,6 +25,15 @@ describe("isSmolkoOwnerEmail", () => {
   });
 });
 
+describe("smolkoProfileLookupEmails", () => {
+  it("includes office alias when logging in with gmail", async () => {
+    const { smolkoProfileLookupEmails } = await import("@/lib/profiles/resolve-profile-for-auth");
+    expect(smolkoProfileLookupEmails("rastislav.smolko@gmail.com")).toContain(
+      "office@realitysmolko.sk",
+    );
+  });
+});
+
 describe("enforceSmolkoOwnerDefaults", () => {
   it("forces owner_vision when login email is Smolko gmail but profile row is agent", () => {
     const normalized = enforceSmolkoOwnerDefaults(

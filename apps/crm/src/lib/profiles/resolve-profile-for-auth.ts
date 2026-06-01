@@ -33,6 +33,38 @@ function isSmolkoEmail(email: string | null | undefined): boolean {
   return isSmolkoOwnerEmail(email);
 }
 
+/**
+ * Google login (gmail) vs profiles.email (office@) — oba musia nájsť ten istý riadok.
+ */
+export function smolkoProfileLookupEmails(loginEmail: string | null | undefined): string[] {
+  const candidates = new Set<string>();
+  const normalized = String(loginEmail ?? "").trim().toLowerCase();
+  if (normalized) candidates.add(normalized);
+  if (isSmolkoOwnerEmail(normalized)) {
+    candidates.add("office@realitysmolko.sk");
+    candidates.add("rastislav.smolko@gmail.com");
+  }
+  return [...candidates];
+}
+
+async function findProfileByEmailCandidates(
+  client: SupabaseClient,
+  loginEmail: string | null | undefined,
+  select: string,
+): Promise<ProfileLookupResult> {
+  for (const candidate of smolkoProfileLookupEmails(loginEmail)) {
+    const { data } = await client
+      .from("profiles")
+      .select(select)
+      .ilike("email", candidate)
+      .maybeSingle();
+    if (data) {
+      return { profile: data as ResolvedAuthProfile };
+    }
+  }
+  return { profile: null };
+}
+
 export function enforceSmolkoOwnerDefaults(
   profile: ResolvedAuthProfile | null,
   authEmail?: string | null,
@@ -96,16 +128,9 @@ async function findProfileForAuthUserViaServiceRole(
     return { profile: byLegacyId.data as ResolvedAuthProfile };
   }
 
-  if (email) {
-    const normalizedEmail = email.trim().toLowerCase();
-    const byEmail = await service
-      .from("profiles")
-      .select(select)
-      .ilike("email", normalizedEmail)
-      .maybeSingle();
-    if (byEmail.data) {
-      return { profile: byEmail.data as ResolvedAuthProfile };
-    }
+  const byEmail = await findProfileByEmailCandidates(service, email, select);
+  if (byEmail.profile) {
+    return byEmail;
   }
 
   return { profile: null };
@@ -162,16 +187,9 @@ async function findProfileForAuthUser(
     return { profile: byLegacyId.data as ResolvedAuthProfile };
   }
 
-  if (email) {
-    const normalizedEmail = email.trim().toLowerCase();
-    const byEmail = await supabase
-      .from("profiles")
-      .select(select)
-      .ilike("email", normalizedEmail)
-      .maybeSingle();
-    if (byEmail.data) {
-      return { profile: byEmail.data as ResolvedAuthProfile };
-    }
+  const byEmail = await findProfileByEmailCandidates(supabase, email, select);
+  if (byEmail.profile) {
+    return byEmail;
   }
 
   // RLS profiles_agency_select nevidí riadok bez auth_user_id / legacy id — service role lookup.
