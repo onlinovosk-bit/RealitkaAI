@@ -8,15 +8,6 @@ export default function HomePage() {
   const [leadModal, setLeadModal] = useState<string | null>(null)
   const openModal = (source: string) => setLeadModal(source)
 
-  useEffect(() => {
-    if (window.location.hash !== '#cennik') return
-    const el = document.getElementById('cennik')
-    if (!el) return
-    requestAnimationFrame(() => {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    })
-  }, [])
-
   function toggleFaq(btn: HTMLButtonElement) {
     const item = btn.closest('.faq-item')!
     const wasOpen = item.classList.contains('open')
@@ -225,7 +216,7 @@ export default function HomePage() {
         <div className="nav-links">
           <a href="#">Features</a>
           <a href="/demo">Demo</a>
-          <a href="#cennik">Cenník</a>
+          <a href="#pricing">Cenník</a>
           <a href="#">Blog</a>
         </div>
         <button className="nav-cta" onClick={() => { window.gtag?.('event', 'hero_cta_click', { position: 'nav' }); openModal('nav') }}>Získať prístup →</button>
@@ -481,7 +472,7 @@ export default function HomePage() {
       </div>
 
       {/* PRICING */}
-      <div id="cennik" className="section" style={{ maxWidth: 1300, scrollMarginTop: 88 }}>
+      <div className="section" id="pricing" style={{ maxWidth: 1300 }}>
         <div className="section-label" style={{ textAlign: 'center' }}>Cenník</div>
         <div className="section-h2" style={{ textAlign: 'center' }}>Vyberte plán pre Vašu kanceláriu.</div>
         <p className="section-p" style={{ textAlign: 'center', margin: '0 auto 56px' }}>Žiadne skryté poplatky. Žiadne obmedzenia na počet nehnuteľností. Zrušenie kedykoľvek.</p>
