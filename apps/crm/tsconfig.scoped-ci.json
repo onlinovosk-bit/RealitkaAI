@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "src/lib/ai/lead-triage-batch.ts",
+    "src/app/api/cron/lead-ai-triage/route.ts",
+    "src/lib/__tests__/dashboard-data.test.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next",
+    "supabase/functions/**/*"
+  ]
+}
