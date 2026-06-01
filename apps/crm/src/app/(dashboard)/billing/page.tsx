@@ -6,6 +6,7 @@ const PLAN_NAMES: Record<string, string> = {
   free:               'FREE',
   starter:            'SMART START',
   active_force:       'ACTIVE FORCE',
+  enterprise:           'MARKET VISION',
   market_vision:      'MARKET VISION',
   protocol_authority: 'PROTOCOL AUTHORITY',
 };
@@ -14,6 +15,7 @@ const PLAN_PRICES: Record<string, string> = {
   free:               '0 €',
   starter:            '49 €',
   active_force:       '99 €',
+  enterprise:           '199 €',
   market_vision:      '199 €',
   protocol_authority: '449 €',
 };
