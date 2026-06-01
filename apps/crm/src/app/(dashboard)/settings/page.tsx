@@ -7,6 +7,7 @@ const PLAN_NAMES: Record<string, string> = {
   free:               'FREE',
   starter:            'SMART START',
   active_force:       'ACTIVE FORCE',
+  enterprise:         'MARKET VISION',
   market_vision:      'MARKET VISION',
   protocol_authority: 'PROTOCOL AUTHORITY',
 };
