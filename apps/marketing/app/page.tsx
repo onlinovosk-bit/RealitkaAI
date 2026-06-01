@@ -216,7 +216,7 @@ export default function HomePage() {
         <div className="nav-links">
           <a href="#">Features</a>
           <a href="/demo">Demo</a>
-          <a href="#">Cenník</a>
+          <a href="#pricing">Cenník</a>
           <a href="#">Blog</a>
         </div>
         <button className="nav-cta" onClick={() => { window.gtag?.('event', 'hero_cta_click', { position: 'nav' }); openModal('nav') }}>Získať prístup →</button>
@@ -472,7 +472,7 @@ export default function HomePage() {
       </div>
 
       {/* PRICING */}
-      <div className="section" style={{ maxWidth: 1300 }}>
+      <div className="section" id="pricing" style={{ maxWidth: 1300 }}>
         <div className="section-label" style={{ textAlign: 'center' }}>Cenník</div>
         <div className="section-h2" style={{ textAlign: 'center' }}>Vyberte plán pre Vašu kanceláriu.</div>
         <p className="section-p" style={{ textAlign: 'center', margin: '0 auto 56px' }}>Žiadne skryté poplatky. Žiadne obmedzenia na počet nehnuteľností. Zrušenie kedykoľvek.</p>

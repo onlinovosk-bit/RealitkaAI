@@ -46,4 +46,36 @@ describe("resolveProfileForAuthUser service fallback", () => {
     expect(result.profile?.agency_id).toBe("agency-smolko");
     expect(result.profileMissingAgency).toBe(false);
   });
+
+  it("resolves office@ profile when user signs in with Smolko gmail", async () => {
+    const emptyMaybeSingle = vi.fn().mockResolvedValue({ data: null });
+    const select = vi.fn(() => ({
+      eq: () => ({ maybeSingle: emptyMaybeSingle }),
+      ilike: () => ({ maybeSingle: emptyMaybeSingle }),
+    }));
+    const from = vi.fn().mockReturnValue({ select });
+    const supabase = { from } as unknown as import("@supabase/supabase-js").SupabaseClient;
+
+    serviceMaybeSingle
+      .mockResolvedValueOnce({ data: null })
+      .mockResolvedValueOnce({
+        data: {
+          id: "profile-office",
+          agency_id: "agency-smolko",
+          auth_user_id: null,
+          email: "office@realitysmolko.sk",
+          ui_role: "owner_vision",
+        },
+      });
+
+    const result = await resolveProfileForAuthUser(
+      supabase,
+      "auth-gmail-uuid",
+      "id, agency_id, auth_user_id, email, ui_role",
+      "rastislav.smolko@gmail.com",
+    );
+
+    expect(result.profile?.agency_id).toBe("agency-smolko");
+    expect(result.profile?.ui_role).toBe("owner_vision");
+  });
 });
