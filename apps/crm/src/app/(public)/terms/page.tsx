@@ -54,51 +54,42 @@ const legalSuiteChapters = [
 
 const programOverview = [
   {
-    name: "Free",
-    note: "Vstupný plán pre zoznámenie sa s platformou.",
+    name: "Solo Seat (79 €/mes/maklér)",
+    note: "Základný seat pre samostatného makléra alebo mikro tím.",
     features: [
-      "AI Asistent - základný režim",
-      "Základné AI hodnotenie príležitostí",
-      "Obmedzený prehľad príležitostí",
+      "1 maklérsky seat",
+      "Sofia AI a základný radar",
+      "Self-serve onboarding",
     ],
   },
   {
-    name: "Starter",
-    note: "Plán pre samostatných maklérov a menšie tímy.",
+    name: "Team Seat (71 €/seat/mes, 3-9 seatov)",
+    note: "Zvýhodnená cena pre tímový režim (10% zľava).",
     features: [
-      "AI Asistent - odpovede do 2 minút počas pracovných hodín",
-      "Buyer Readiness Index pre prioritizáciu príležitostí",
-      "Denný AI briefing o 8:00",
-      "Hot Alert pri vysokom skóre leadu",
-      "Týždenný konverzný report",
+      "Owner dashboard v cene tímu",
+      "Team radar a tímové prehľady",
+      "Seat expansion podľa počtu maklérov",
     ],
   },
   {
-    name: "Pro",
-    note: "Plán pre rastúce tímy s vyššou mierou automatizácie.",
+    name: "Office Seat (63 €/seat/mes, 10+ seatov)",
+    note: "Kancelársky režim s 20% zľavou a enterprise pripravenosťou.",
     features: [
-      "AI Asistent 24/7",
-      "Predictive Deal Scoring",
-      "AI hovorová analýza - prepis, súhrn, next steps",
-      "Intent Detection pripravenosti kúpy",
-      "Automatické opätovné kontakty (7-dňové sekvencie)",
-      "Territory Intelligence (heat mapa)",
-      "Revenue Forecasting na 3 mesiace",
-      "Integrácie: Nehnuteľnosti.sk, Reality.sk, TopReality.sk",
+      "Priority support",
+      "Protocol AI readiness",
+      "Rozšírené governance a compliance režimy",
     ],
   },
   {
-    name: "Enterprise",
-    note: "Plán pre kancelárie s požiadavkou na executive reporting a SLA.",
+    name: "Add-on moduly (tenant pricing)",
+    note: "Modulárny stack aktivovaný nad seat licenciami.",
     features: [
-      "Prehľad majiteľa (kancelárske metriky)",
-      "Team AI Brain (zdieľaná AI pamäť tímu)",
-      "Competitor Alert",
-      "Vlastná AI Persona",
-      "API prístup pre vlastné systémy",
-      "White-label výstupy",
-      "Dedikovaný Account Manager",
-      "SLA garancia 99.9% uptime",
+      "Leads Engine (79 €/mes)",
+      "Market Intelligence (99 €/mes)",
+      "Protocol AI (149 €/mes)",
+      "Active Force Calls (59 €/mes)",
+      "CRM Sync (49 €/mes)",
+      "White Label (299 €/mes)",
     ],
   },
 ];
@@ -112,7 +103,7 @@ export default function TermsPage() {
   return (
     <LegalPageShell
       title="VOP / Terms"
-      subtitle="Všeobecné obchodné podmienky pre používanie Revolis.AI. Posledná aktualizácia: 15. apríla 2026."
+      subtitle="Všeobecné obchodné podmienky pre používanie Revolis.AI. Posledná aktualizácia: 2. júna 2026."
     >
       <div className="space-y-6 text-sm text-slate-200">
         <section className="rounded-xl border border-cyan-500/25 bg-cyan-500/5 p-4">
@@ -140,7 +131,7 @@ export default function TermsPage() {
         <section id="programy" className="rounded-xl border border-violet-500/25 bg-violet-500/5 p-4">
           <h2 className="text-lg font-semibold text-white">Kapitola: Podrobný prehľad 4 programov</h2>
           <p className="mt-2 text-slate-300">
-            Nižšie je orientačný prehľad programov a feature setu. Záväzný rozsah služieb, limity a SLA vždy určuje
+            Nižšie je orientačný prehľad seatov a modulov podľa L99 stratégie. Záväzný rozsah služieb, limity a SLA vždy určuje
             aktuálny objednávkový formulár, VOP a prípadné enterprise annexy.
           </p>
           <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
