@@ -474,17 +474,17 @@ export default function HomePage() {
       {/* PRICING */}
       <div className="section" id="pricing" style={{ maxWidth: 1300 }}>
         <div className="section-label" style={{ textAlign: 'center' }}>Cenník</div>
-        <div className="section-h2" style={{ textAlign: 'center' }}>Vyberte plán pre Vašu kanceláriu.</div>
-        <p className="section-p" style={{ textAlign: 'center', margin: '0 auto 56px' }}>Žiadne skryté poplatky. Žiadne obmedzenia na počet nehnuteľností. Zrušenie kedykoľvek.</p>
+        <div className="section-h2" style={{ textAlign: 'center' }}>L99 seat-based model pre Vašu kanceláriu.</div>
+        <p className="section-p" style={{ textAlign: 'center', margin: '0 auto 56px' }}>Každý maklér = 1 seat. Voliteľné moduly aktivujete podľa potreby. Zrušenie kedykoľvek.</p>
         <div className="pricing-grid-full">
 
-          {/* SMART START */}
+          {/* SOLO SEAT */}
           <div className="price-card visible" style={{ borderColor: '#CBD5E1' }}>
             <div className="founder-tag" style={{ background: 'rgba(100,116,139,.1)', color: '#64748B', border: '1px solid #CBD5E1' }}>Zakladateľská cena</div>
-            <div className="plan-name" style={{ color: 'var(--muted)' }}>Smart Start</div>
-            <div className="orig-price">98 €/mes</div>
-            <div className="plan-price">49 <span className="plan-period">€/mes s DPH</span></div>
-            <div className="plan-tagline" style={{ color: 'var(--muted)' }}>Ideálny štart pre samostatných maklérov. Prvé výsledky do 7 dní.</div>
+            <div className="plan-name" style={{ color: 'var(--muted)' }}>SOLO SEAT</div>
+            <div className="orig-price">99 €/mes</div>
+            <div className="plan-price">79 <span className="plan-period">€/seat/mes</span></div>
+            <div className="plan-tagline" style={{ color: 'var(--muted)' }}>1 maklérsky seat + Sofia AI + základný radar.</div>
             <hr className="plan-divider" style={{ borderColor: 'var(--border)', margin: '16px 0' }} />
             <div className="feat-section-title" style={{ color: 'var(--muted)', borderColor: 'var(--border)' }}>Tím a limity</div>
             <ul className="plan-features"><li style={{ color: 'var(--muted)' }}>Do 3 maklérov v tíme</li><li style={{ color: 'var(--muted)' }}>Do 100 príležitostí mesačne</li><li style={{ color: 'var(--muted)' }}>100% garancia vrátenia do 30 dní</li></ul>
@@ -495,16 +495,16 @@ export default function HomePage() {
             <div className="feat-section-title" style={{ color: '#7C3AED', borderColor: '#DDD6FE' }}>⭐ Expert bonusy</div>
             <div className="expert-bonus" style={{ background: '#F5F3FF', borderColor: '#7C3AED' }}><div className="expert-bonus-text" style={{ color: '#4C1D95' }}>Neviditeľná AI — každá feature je 1 klik. Maklér ani nevie že používa AI, len vidí výsledky.</div></div>
             <div className="expert-bonus" style={{ background: '#FFF7ED', borderColor: '#EA580C' }}><div className="expert-bonus-text" style={{ color: '#7C2D12' }}>Tichá 7-dňová sekvencia — SMS deň 1, email deň 3, WhatsApp deň 5, push deň 7. Všetko na pozadí bez akcie makléra.</div></div>
-            <button className="plan-cta" style={{ background: 'var(--bg2)', color: 'var(--text)', marginTop: 20 }} onClick={() => { window.gtag?.('event', 'pricing_cta_click', { plan_name: 'Smart Start', plan_price: '49' }); openModal('pricing-smart-start') }}>Aktivovať Smart Start →</button>
+            <button className="plan-cta" style={{ background: 'var(--bg2)', color: 'var(--text)', marginTop: 20 }} onClick={() => { window.gtag?.('event', 'pricing_cta_click', { plan_name: 'SOLO SEAT', plan_price: '79' }); openModal('pricing-smart-start') }}>Aktivovať Solo Seat →</button>
           </div>
 
-          {/* ACTIVE FORCE */}
+          {/* TEAM SEAT */}
           <div className="price-card visible" style={{ borderColor: '#BAE6FD' }}>
             <div className="founder-tag" style={{ background: 'rgba(14,165,233,.08)', color: 'var(--cyan)', border: '1px solid rgba(14,165,233,.25)' }}>Zakladateľská cena</div>
-            <div className="plan-name" style={{ color: 'var(--cyan)' }}>RADAR MAKLÉRA</div>
-            <div className="orig-price">198 €/mes</div>
-            <div className="plan-price">99 <span className="plan-period">€/mes s DPH</span></div>
-            <div className="plan-tagline" style={{ color: 'var(--muted)' }}>Plný AI arzenál pre aktívneho makléra. Sofia AI 24/7 aj v noci.</div>
+            <div className="plan-name" style={{ color: 'var(--cyan)' }}>TEAM SEAT</div>
+            <div className="orig-price">79 €/seat/mes</div>
+            <div className="plan-price">71 <span className="plan-period">€/seat/mes</span></div>
+            <div className="plan-tagline" style={{ color: 'var(--muted)' }}>Pre tímy 3-9 maklérov. 10% tímová zľava + Owner dashboard.</div>
             <hr className="plan-divider" style={{ borderColor: '#BAE6FD', margin: '16px 0' }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 10, background: 'rgba(14,165,233,.07)', border: '1px solid rgba(14,165,233,.2)', marginBottom: 4 }}><span style={{ fontSize: 14 }}>📦</span><span style={{ fontSize: 12, fontWeight: 800, color: 'var(--cyan)' }}>Obsahuje všetko zo Smart Start</span></div>
             <div className="feat-section-title" style={{ color: 'var(--cyan)', borderColor: '#BAE6FD' }}>Licencia</div>
@@ -519,16 +519,16 @@ export default function HomePage() {
             <div className="expert-bonus" style={{ background: '#F0FDFF', borderColor: '#0891B2' }}><div className="expert-bonus-text" style={{ color: '#164E63' }}>Lead Half-Life Calculator — každá príležitosť má vypočítaný „bod rozpadu" záujmu. AI kontaktuje príležitosť presne v optimálnom okamihu, nie keď má maklér čas.</div></div>
             <div className="expert-bonus" style={{ background: '#F0FDF4', borderColor: '#16A34A' }}><div className="expert-bonus-text" style={{ color: '#14532D' }}>Triple Match Score — správny maklér × správny čas × správna správa = 4.2× vyššia miera odpovede. AI vypočíta kombináciu automaticky.</div></div>
             <div className="expert-bonus" style={{ background: '#FDF4FF', borderColor: '#9333EA' }}><div className="expert-bonus-text" style={{ color: '#581C87' }}>SK/CZ Conversation Intelligence — natívna analýza hovorov v slovenčine a češtine. 340 buying signálov špecifických pre realitný trh.</div></div>
-            <button className="plan-cta" style={{ background: 'rgba(14,165,233,.1)', color: 'var(--cyan)', border: '1px solid rgba(14,165,233,.25)', marginTop: 20 }} onClick={() => { window.gtag?.('event', 'pricing_cta_click', { plan_name: 'RADAR MAKLÉRA', plan_price: '99' }); openModal('pricing-active-force') }}>Aktivovať RADAR MAKLÉRA →</button>
+            <button className="plan-cta" style={{ background: 'rgba(14,165,233,.1)', color: 'var(--cyan)', border: '1px solid rgba(14,165,233,.25)', marginTop: 20 }} onClick={() => { window.gtag?.('event', 'pricing_cta_click', { plan_name: 'TEAM SEAT', plan_price: '71' }); openModal('pricing-active-force') }}>Aktivovať Team Seat →</button>
           </div>
 
-          {/* MARKET VISION */}
+          {/* OFFICE SEAT */}
           <div className="price-card featured visible">
             <div className="founder-tag" style={{ background: 'rgba(255,255,255,.1)', color: 'rgba(255,255,255,.6)', border: '1px solid rgba(255,255,255,.15)' }}>Zakladateľská cena</div>
-            <div className="plan-name" style={{ color: 'rgba(255,255,255,.5)' }}>STRÁŽCA CIEN A ZISKOV</div>
-            <div className="orig-price" style={{ color: 'rgba(255,255,255,.3)' }}>398 €/mes</div>
-            <div className="plan-price" style={{ color: '#fff' }}>199 <span className="plan-period" style={{ color: 'rgba(255,255,255,.35)' }}>€/mes s DPH</span></div>
-            <div className="plan-tagline" style={{ color: 'rgba(255,255,255,.5)' }}>Tímová licencia pre majiteľa. Owner vidí tím, maklér má Active Force.</div>
+            <div className="plan-name" style={{ color: 'rgba(255,255,255,.5)' }}>OFFICE SEAT</div>
+            <div className="orig-price" style={{ color: 'rgba(255,255,255,.3)' }}>71 €/seat/mes</div>
+            <div className="plan-price" style={{ color: '#fff' }}>63 <span className="plan-period" style={{ color: 'rgba(255,255,255,.35)' }}>€/seat/mes</span></div>
+            <div className="plan-tagline" style={{ color: 'rgba(255,255,255,.5)' }}>Kancelársky režim 10+ seatov. 20% zľava + priority support.</div>
             <hr className="plan-divider" style={{ borderColor: 'rgba(255,255,255,.1)', margin: '16px 0' }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 10, background: 'rgba(56,189,248,.08)', border: '1px solid rgba(56,189,248,.2)', marginBottom: 4 }}><span style={{ fontSize: 14 }}>📦</span><span style={{ fontSize: 12, fontWeight: 800, color: '#38BDF8' }}>Obsahuje všetko z RADAR MAKLÉRA</span></div>
             <div className="feat-section-title" style={{ color: '#38BDF8', borderColor: 'rgba(56,189,248,.2)' }}>Licencia &amp; Tím</div>
@@ -542,17 +542,17 @@ export default function HomePage() {
             <div className="expert-bonus" style={{ background: 'rgba(255,255,255,.06)', borderColor: '#4ADE80' }}><div className="expert-bonus-text" style={{ color: 'rgba(255,255,255,.65)' }}>ROI Ticker — každá feature zobrazuje svoju €/mes hodnotu priamo v UI. „Tento follow-up ušetril 3.2h = +€124 pri Vašej hodinovej sadzbe."</div></div>
             <div className="expert-bonus" style={{ background: 'rgba(255,255,255,.06)', borderColor: '#A78BFA' }}><div className="expert-bonus-text" style={{ color: 'rgba(255,255,255,.65)' }}>3 pohľady jedným klikom — Board (pipeline), Table (analytika), Calendar (časovanie). Každý maklér si vyberie čo mu sedí.</div></div>
             <div className="expert-bonus" style={{ background: 'rgba(255,255,255,.06)', borderColor: '#FCD34D' }}><div className="expert-bonus-text" style={{ color: 'rgba(255,255,255,.65)' }}>Street-Level Insight — maklér príde na stretnutie s dátami o klientovej ulici ktoré klient nikde nenájde. Priemerné ceny, čas predaja, aktívni kupujúci v lokalite.</div></div>
-            <button className="plan-cta" style={{ background: 'var(--cyan)', color: 'var(--dark)', marginTop: 20 }} onClick={() => { window.gtag?.('event', 'pricing_cta_click', { plan_name: 'STRÁŽCA CIEN A ZISKOV', plan_price: '199' }); openModal('pricing-market-vision') }}>Aktivovať STRÁŽCA CIEN A ZISKOV →</button>
+            <button className="plan-cta" style={{ background: 'var(--cyan)', color: 'var(--dark)', marginTop: 20 }} onClick={() => { window.gtag?.('event', 'pricing_cta_click', { plan_name: 'OFFICE SEAT', plan_price: '63' }); openModal('pricing-market-vision') }}>Aktivovať Office Seat →</button>
           </div>
 
-          {/* PROTOCOL AUTHORITY */}
+          {/* PROTOCOL AI MODULE */}
           <div className="price-card visible" style={{ border: '2px solid #D4AF37', background: 'linear-gradient(160deg,#FFFBEB 0%,#FFF 60%)' }}>
             <div className="badge-popular" style={{ background: 'linear-gradient(135deg,#D97706,#B45309)', color: '#fff' }}>★ Najpopulárnejší</div>
             <div className="founder-tag" style={{ background: 'rgba(217,119,6,.12)', color: '#92400E', border: '1px solid #FDE68A' }}>Zakladateľská cena</div>
-            <div className="plan-name" style={{ color: '#92400E' }}>REALITY MONOPOL</div>
-            <div className="orig-price" style={{ color: '#D97706' }}>898 €/mes</div>
-            <div className="plan-price" style={{ color: '#92400E' }}>449 <span className="plan-period" style={{ color: '#D97706' }}>€/mes s DPH</span></div>
-            <div className="plan-tagline" style={{ color: '#78350F' }}>Najvyšší level. Owner má Protocol menu, 4 makléri dostanú Active Force.</div>
+            <div className="plan-name" style={{ color: '#92400E' }}>PROTOCOL AI</div>
+            <div className="orig-price" style={{ color: '#D97706' }}>199 €/mes</div>
+            <div className="plan-price" style={{ color: '#92400E' }}>149 <span className="plan-period" style={{ color: '#D97706' }}>€/mes modul</span></div>
+            <div className="plan-tagline" style={{ color: '#78350F' }}>Voliteľný add-on modul pre rokovacie skripty a deal analyzer.</div>
             <hr className="plan-divider" style={{ borderColor: '#FDE68A', margin: '16px 0' }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 10, background: 'rgba(217,119,6,.1)', border: '1px solid #FDE68A', marginBottom: 4 }}><span style={{ fontSize: 14 }}>📦</span><span style={{ fontSize: 12, fontWeight: 800, color: '#B45309' }}>Obsahuje všetko zo STRÁŽCA CIEN A ZISKOV</span></div>
             <div className="feat-section-title" style={{ color: '#B45309', borderColor: '#FDE68A' }}>Licencia &amp; Tím</div>
@@ -567,7 +567,7 @@ export default function HomePage() {
             <div className="expert-bonus" style={{ background: 'rgba(14,165,233,.06)', borderColor: '#0EA5E9' }}><div className="expert-bonus-text" style={{ color: '#0C4A6E' }}>Life Moment Detection — algoritmus deteguje životné zmeny klienta (sťahovanie, zmena práce, rodina) PRED tým než to klient sám vie. Okno príležitosti: 2–3 týždne.</div></div>
             <div className="expert-bonus" style={{ background: 'rgba(22,163,74,.06)', borderColor: '#16A34A' }}><div className="expert-bonus-text" style={{ color: '#14532D' }}>Revealed Preference Engine — rozdiel medzi čo klient píše (stated) a čo klikne (revealed) = skutočný budget a motivácia. Maklér dostane brief: „Nekomunikuj cenu. Komunikuj priestor."</div></div>
             <div className="expert-bonus" style={{ background: 'rgba(217,119,6,.06)', borderColor: '#D97706' }}><div className="expert-bonus-text" style={{ color: '#78350F' }}>5-Year Relationship Horizon — po každom uzavretom obchode sa automaticky spustí 5-ročný plán: výročie kúpy, trhový update, refinančné okno, predpoveď apreciácie, žiadosť o odporúčanie.</div></div>
-            <button className="plan-cta" style={{ background: 'linear-gradient(135deg,#D97706,#B45309)', color: '#fff', marginTop: 20, fontSize: 13 }} onClick={() => { window.gtag?.('event', 'pricing_cta_click', { plan_name: 'REALITY MONOPOL', plan_price: '449' }); openModal('pricing-protocol-authority') }}>★ Aktivovať REALITY MONOPOL →</button>
+            <button className="plan-cta" style={{ background: 'linear-gradient(135deg,#D97706,#B45309)', color: '#fff', marginTop: 20, fontSize: 13 }} onClick={() => { window.gtag?.('event', 'pricing_cta_click', { plan_name: 'PROTOCOL AI', plan_price: '149' }); openModal('pricing-protocol-authority') }}>★ Aktivovať Protocol AI →</button>
           </div>
 
         </div>

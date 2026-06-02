@@ -9,7 +9,7 @@ export default function PrivacyPage() {
   return (
     <LegalPageShell
       title="Ochrana osobných údajov"
-      subtitle="Verzia 1.0 · Účinnosť od: 21. apríla 2026"
+      subtitle="Verzia 1.1 · Účinnosť od: 2. júna 2026"
     >
       <div className="space-y-6 text-sm text-slate-400">
         <p>
@@ -32,6 +32,7 @@ export default function PrivacyPage() {
             <li>Kontaktné údaje leadov vložených do systému</li>
             <li>Údaje o správaní v aplikácii (anonymizované)</li>
             <li>Fakturačné údaje</li>
+            <li>Seatové licencie, usage telemetry a aktivácia modulov (L99 metriky)</li>
           </ul>
         </section>
 
@@ -50,6 +51,14 @@ export default function PrivacyPage() {
             <a href="/legal/sub-processors" className="text-cyan-400 hover:underline">
               Úplný zoznam sub-procesorov →
             </a>
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-lg font-semibold text-white mb-2">L99 governance a bezpečnosť</h2>
+          <p>
+            Revolis.AI aplikuje human-in-the-loop pre kritické AI úkony, auditný changelog podstatných AI zmien a
+            incident reporting proces v súlade s GDPR a interným L99 štandardom spoľahlivosti.
           </p>
         </section>
 

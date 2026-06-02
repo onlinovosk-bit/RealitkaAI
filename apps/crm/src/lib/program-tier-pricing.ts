@@ -1,17 +1,16 @@
 /**
- * Kanonické ceny stupňov (EUR mesačne, kde aplikácia používa /mes makléra).
- * Zdroj pravdy spoločný pre landing FinalCTA aj stránku porovnanie programov.
+ * L99 seat-based ceny (EUR mesačne na makléra).
+ * Zdroj pravdy pre pricing copy v marketingu a CRM.
  */
 export const PLAN_PRICES_EUR = {
-  smartStart: 49,
-  activeForce: 99,
-  marketVision: 199,
-  protocolAuthority: 449,
+  soloSeat: 79,
+  teamSeat: 71,
+  officeSeat: 63,
 } as const;
 
-/** „Kotva“ vyššieho stupňa vo founder copy (aktuálny cenník: Strážca cien a ziskov). */
+/** Historická kotva pre porovnanie upsellu na tímový režim. */
 export function activeForceAnchoredFullTierReferenceEur(): number {
-  return PLAN_PRICES_EUR.marketVision;
+  return PLAN_PRICES_EUR.teamSeat;
 }
 
 /** Limitovaný founder pool — hodnoty upravuje produkt/marketing jedným miestom. */
@@ -24,9 +23,19 @@ export function founderKancelarieRemaining(): number {
 }
 
 /** Team / enterprise balík na landingu (SKU mimo štvorcového rebríčka v appke). */
-export const LANDING_ENTERPRISE_TEAM_PACK_EUR = 399;
+export const LANDING_ENTERPRISE_TEAM_PACK_EUR = 355;
 export const LANDING_ENTERPRISE_ACTIVE_FORCE_SEATS = 5;
 
 export function landingEnterpriseAttributedActiveForceValueEur(): number {
-  return LANDING_ENTERPRISE_ACTIVE_FORCE_SEATS * PLAN_PRICES_EUR.activeForce;
+  return LANDING_ENTERPRISE_ACTIVE_FORCE_SEATS * PLAN_PRICES_EUR.teamSeat;
 }
+
+/** Add-on moduly v L99 stratégii (EUR/mesiac na tenant). */
+export const L99_ADDON_MODULE_PRICES_EUR = {
+  leadsEngine: 79,
+  marketIntelligence: 99,
+  protocolAI: 149,
+  activeForceCalls: 59,
+  crmSync: 49,
+  whiteLabel: 299,
+} as const;

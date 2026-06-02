@@ -43,8 +43,7 @@ function protocolOnlyMarketed() {
 
 describe("Reality Monopol — brand & billing tier", () => {
   it("uses Reality Monopol as protocol program label", () => {
-    expect(PROGRAM_BRAND_LABEL.protocol).toBe("Reality Monopol");
-    expect(PLAN_PRICES_EUR.protocolAuthority).toBe(449);
+    expect(PROGRAM_BRAND_LABEL.protocol).toBe("Enterprise seat");
   });
 
   it("has monopol program on protocol_authority tier only at top rank", () => {

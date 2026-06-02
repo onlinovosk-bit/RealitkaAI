@@ -25,7 +25,7 @@
 
 1.8. **„Služby"** znamenajú súhrnne sprístupnenie Platformy, AI Modulov, technickú podporu, údržbu a akékoľvek ďalšie služby popísané v príslušnej objednávke alebo MSA.
 
-1.9. **„Predplatné"** znamená časovo ohraničené oprávnenie Zákazníka používať Služby podľa zvoleného cenového plánu (Starter, Pro, Enterprise).
+1.9. **„Predplatné"** znamená časovo ohraničené oprávnenie Zákazníka používať Služby podľa zvoleného seat-based modelu (Solo seat, Team seat, Office seat) a voliteľných modulov.
 
 ---
 
@@ -58,10 +58,11 @@
 
 ## ČLÁNOK 4 — CENOVÉ PLÁNY, PLATOBNÉ PODMIENKY A PERFORMANCE FEE
 
-4.1. **Cenové plány.** Zákazník si zvolí jeden z cenových plánov:
-   - **Starter** — základný plán s obmedzeným rozsahom funkcionalít
-   - **Pro** — plný plán vrátane AI Modulov
-   - **Enterprise** — individuálne nastavený plán s rozšírenou podporou, SLA a Performance Fee komponentou
+4.1. **Cenový model.** Zákazník si zvolí seat-based model a prípadné add-on moduly:
+   - **Solo seat** — 1 maklérsky seat (79 €/mes za seat)
+   - **Team seat** — 3 až 9 seatov (71 €/seat/mes)
+   - **Office seat** — 10+ seatov (63 €/seat/mes)
+   - **Add-on moduly** — Leads Engine, Market Intelligence, Protocol AI, Active Force Calls, CRM Sync, White Label
 
 4.2. **Predplatné.** Predplatné sa účtuje mesačne alebo ročne vopred podľa zvoleného fakturačného cyklu. Ročné predplatné je záväzné na celú dobu a nie je možné ho ukončiť pred uplynutím obdobia, ak nie je v MSA dohodnuté inak.
 
@@ -152,12 +153,12 @@
 
 ## ČLÁNOK 8 — API, FAIR USE A TECHNICKÉ OBMEDZENIA
 
-8.1. **API prístup.** Zákazník s plánom Pro alebo Enterprise má prístup k API rozhraniu Platformy v rozsahu dokumentácie API.
+8.1. **API prístup.** Zákazník s aktívnym seat predplatným a príslušným modulom má prístup k API rozhraniu Platformy v rozsahu dokumentácie API.
 
-8.2. **Rate limiting.** API volania podliehajú limitom podľa cenového plánu:
-   - Starter: 100 volaní/hodinu
-   - Pro: 1 000 volaní/hodinu
-   - Enterprise: individuálne podľa MSA (štandardne 10 000 volaní/hodinu)
+8.2. **Rate limiting.** API volania podliehajú limitom podľa seat tieru:
+   - Solo seat: 100 volaní/hodinu
+   - Team seat: 1 000 volaní/hodinu
+   - Office seat / Enterprise: individuálne podľa MSA (štandardne 10 000 volaní/hodinu)
 
 8.2.1. **Export limit.** Export kontaktov a leadov je limitovaný na maximálne 10 000 záznamov za kalendárny deň na jeden zákaznícky tenant, pokiaľ MSA alebo Enterprise objednávka neurčí inak.
 
@@ -356,5 +357,5 @@
 ---
 
 **Revolis.AI**
-Účinné od: 15. apríla 2026
-Verzia: 2.0
+Účinné od: 2. júna 2026
+Verzia: 2.1
