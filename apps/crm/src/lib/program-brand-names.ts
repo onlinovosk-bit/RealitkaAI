@@ -3,10 +3,10 @@
  * Nepremenúvaj vnútorné kľúče (`account_tier`, Stripe IDs); len používaj tieto reťazce pri zobrazení.
  */
 export const PROGRAM_BRAND_LABEL = {
-  starter: 'Smart Start',
-  active: 'Radar makléra',
-  market: 'Strážca cien a ziskov',
-  protocol: 'Reality Monopol',
+  starter: 'Solo seat',
+  active: 'Team seat',
+  market: 'Office seat',
+  protocol: 'Enterprise seat',
 } as const;
 
 export type ProgramBrandTier = keyof typeof PROGRAM_BRAND_LABEL;

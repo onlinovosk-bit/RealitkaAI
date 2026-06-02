@@ -49,18 +49,18 @@ export default function FinalCTA() {
           <div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-3 lg:items-stretch">
             <div className="flex h-full flex-col rounded-2xl border p-6 text-left lg:order-1" style={cardStyle}>
               <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em]" style={{ color: SLATE_HORIZON.muted }}>
-                Starter
+                Solo Seat
               </p>
               <div className="mb-2 flex flex-wrap items-end gap-x-2 gap-y-1">
                 <span className="text-3xl font-extrabold" style={{ color: SLATE_HORIZON.ink }}>
-                  €29
+                  €79
                 </span>
                 <span className="mb-0.5 text-sm" style={{ color: SLATE_HORIZON.muted }}>
                   /mesiac za jedného makléra
                 </span>
               </div>
               <p className="mb-5 text-xs" style={{ color: SLATE_HORIZON.muted }}>
-                Vstup do Revolis — vhodné na začiatok a menšie objemy.
+                Základný L99 seat pre samostatného makléra.
               </p>
               <ul className="mb-6 flex-1 space-y-2.5">
                 {[
@@ -85,7 +85,7 @@ export default function FinalCTA() {
                   background: SLATE_HORIZON.soft,
                 }}
               >
-                Začať so Starter
+                Začať so Solo Seat
               </Link>
             </div>
 
@@ -104,21 +104,19 @@ export default function FinalCTA() {
                 Odporúčané
               </div>
               <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em]" style={{ color: SLATE_HORIZON.brandDeep }}>
-                Pro
+                Team Seat
               </p>
               <div className="mb-1 flex flex-wrap items-end gap-x-3 gap-y-1">
                 <span className="text-4xl font-extrabold" style={{ color: SLATE_HORIZON.ink }}>
-                  €99
+                  €71
                 </span>
                 <span className="mb-1 text-base" style={{ color: SLATE_HORIZON.muted }}>
                   /mesiac <span style={{ color: SLATE_HORIZON.deep }}>za jedného makléra</span>
                 </span>
-                <span className="mb-1 ml-auto text-lg line-through" style={{ color: SLATE_HORIZON.muted }}>
-                  €198
-                </span>
+                <span className="mb-1 ml-auto text-lg line-through" style={{ color: SLATE_HORIZON.muted }}>€79</span>
               </div>
               <p className="mb-4 text-xs font-semibold uppercase tracking-wider" style={{ color: SLATE_HORIZON.brandDeep }}>
-                Zakladateľská cena za makléra · Prvých 20 kancelárií · Potom €198/mes za makléra
+                L99 tímová cena · 3-9 seatov · 10% zľava na seat
               </p>
 
               <div
@@ -139,7 +137,7 @@ export default function FinalCTA() {
                   `${LANDING_AI_ASSISTANT_NAME} — váš AI obchodný pomocník 24/7`,
                   'Stav klientov a pracovná plocha predikcie',
                   'Import príležitostí z portálov (Nehnuteľnosti.sk, Bazos.sk, Topreality.sk, Reality.sk)',
-                  'Pro: každý maklér má vlastnú licenciu — 99 €/mes (nie zdieľaný účet pre celý tím)',
+                  'Team Seat: každý maklér má vlastnú licenciu — 71 €/seat/mes',
                   '30-dňová záruka vrátenia peňazí',
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-2.5 text-sm" style={{ color: SLATE_HORIZON.deep }}>
@@ -156,7 +154,7 @@ export default function FinalCTA() {
                 className={`mt-auto block w-full cursor-pointer rounded-full py-4 text-center text-base font-bold text-white transition-all duration-200 hover:opacity-90 active:scale-[0.98] ${SLATE_HORIZON.focusRing}`}
                 style={{ background: SLATE_HORIZON.ctaGradient }}
               >
-                Zabezpečiť Pro za 99 €/mes za makléra
+                Aktivovať Team Seat za 71 €/seat
               </Link>
               <p className="mt-3 text-center text-xs" style={{ color: SLATE_HORIZON.muted }}>
                 Bez kreditnej karty · Zrušenie kedykoľvek · GDPR · vyrobené na Slovensku
@@ -168,14 +166,14 @@ export default function FinalCTA() {
               style={{ ...cardStyle, borderColor: SLATE_HORIZON.softBorder }}
             >
               <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em]" style={{ color: SLATE_HORIZON.brandNavy }}>
-                Enterprise — pre majiteľov kancelárií
+                Office Seat — pre kancelárie 10+
               </p>
               <div className="mb-2 flex flex-wrap items-end gap-x-2 gap-y-1">
                 <span className="text-3xl font-extrabold" style={{ color: SLATE_HORIZON.ink }}>
-                  399 €
+                  63 €
                 </span>
                 <span className="mb-0.5 text-sm" style={{ color: SLATE_HORIZON.muted }}>
-                  /mes
+                  /seat/mes
                 </span>
               </div>
               <p
@@ -183,17 +181,17 @@ export default function FinalCTA() {
                 style={{ borderColor: SLATE_HORIZON.amber, color: SLATE_HORIZON.deep }}
               >
                 <span className="font-semibold" style={{ color: SLATE_HORIZON.amber }}>
-                  5 Pro licencií v cene
+                  10+ seatov v kancelárskom režime
                 </span>{' '}
-                (hodnota 495 €) + exkluzívne nástroje pre majiteľa kancelárie.
+                + owner dashboard, priority support a modular add-ons.
               </p>
               <ul className="mb-6 flex-1 space-y-2.5">
                 {[
-                  '5 Pro licencií pre maklérov (hodnota 495 €/mes)',
+                  'Office Seat od 10 maklérov, 63 €/seat/mes',
                   'Prehľad celej kancelárie v reálnom čase',
                   'Zdieľaná AI pamäť tímu naprieč maklérmni',
                   'Upozornenie keď konkurencia kontaktuje tvojho klienta',
-                  'Dedikovaný správca účtu · SLA 1h',
+                  'Protocol AI modul voliteľný (149 €/mes)',
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-2.5 text-sm" style={{ color: SLATE_HORIZON.deep }}>
                     <span className="mt-0.5 flex-shrink-0" style={{ color: SLATE_HORIZON.brandNavy }}>
