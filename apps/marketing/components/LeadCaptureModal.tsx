@@ -340,10 +340,10 @@ function AuditModal({ onClose }: { onClose: () => void }) {
 // ── Pricing checkout flow ──────────────────────────────────────────────────
 
 const PLAN_LABELS: Record<string, { name: string; price: string }> = {
-  'pricing-smart-start':        { name: 'Smart Start',             price: '49 €/mes' },
-  'pricing-active-force':       { name: 'RADAR MAKLÉRA',           price: '99 €/mes' },
-  'pricing-market-vision':      { name: 'STRÁŽCA CIEN A ZISKOV',   price: '199 €/mes' },
-  'pricing-protocol-authority': { name: 'REALITY MONOPOL',         price: '449 €/mes' },
+  'pricing-smart-start':        { name: 'SOLO SEAT',     price: '79 €/seat/mes' },
+  'pricing-active-force':       { name: 'TEAM SEAT',     price: '71 €/seat/mes' },
+  'pricing-market-vision':      { name: 'OFFICE SEAT',   price: '63 €/seat/mes' },
+  'pricing-protocol-authority': { name: 'PROTOCOL AI',   price: '149 €/mes modul' },
 }
 
 function PricingModal({ source, onClose }: Props) {
