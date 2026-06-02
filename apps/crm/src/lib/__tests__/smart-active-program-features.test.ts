@@ -49,8 +49,8 @@ function marketed(plan: "smartStart" | "activeForce") {
 
 describe("Smart Start — program Smart (tier starter)", () => {
   it("maps billing brand and price", () => {
-    expect(PROGRAM_BRAND_LABEL.starter).toBe("Smart Start");
-    expect(PLAN_PRICES_EUR.smartStart).toBe(49);
+    expect(PROGRAM_BRAND_LABEL.starter).toBe("Solo seat");
+    expect(PLAN_PRICES_EUR.soloSeat).toBe(79);
   });
 
   it("has smart program and not radar/guardian", () => {
@@ -136,8 +136,8 @@ describe("Smart Start — program Smart (tier starter)", () => {
 
 describe("Active Force — program Radar (tier pro)", () => {
   it("maps billing brand and price", () => {
-    expect(PROGRAM_BRAND_LABEL.active).toBeTruthy();
-    expect(PLAN_PRICES_EUR.activeForce).toBe(99);
+    expect(PROGRAM_BRAND_LABEL.active).toBe("Team seat");
+    expect(PLAN_PRICES_EUR.teamSeat).toBe(71);
   });
 
   it("has smart + radar and not guardian", () => {
