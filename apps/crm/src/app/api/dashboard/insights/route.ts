@@ -60,24 +60,34 @@ export async function POST() {
   }
 
   const cached = row.payload as DashboardInsightsCachePayload;
+  const actions = Array.isArray(cached.actions) ? cached.actions : [];
   const insights = {
     headline: cached.headline,
     summary: cached.summary,
-    actions: personalizeInsights(cached.actions, profile),
+    actions: personalizeInsights(actions, profile),
     notesForOwner: cached.notesForOwner,
     generatedAt: row.generated_at as string,
     cacheStatus: 'hit' as const,
   };
 
-  await logAnalyticsEvent({
-    userId,
-    actionIdx: -1,
-    actionTitle: 'dashboard-insights',
-    event: 'viewed',
-    timestamp: new Date().toISOString(),
-  });
+  // Demo FS analytics/history — must not break cache read on Vercel (read-only FS).
+  try {
+    await logAnalyticsEvent({
+      userId,
+      actionIdx: -1,
+      actionTitle: 'dashboard-insights',
+      event: 'viewed',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (e) {
+    console.error('[dashboard/insights] analytics:', e);
+  }
 
-  await getUserHistory(userId);
+  try {
+    await getUserHistory(userId);
+  } catch (e) {
+    console.error('[dashboard/insights] history:', e);
+  }
 
   return NextResponse.json(insights);
 }
