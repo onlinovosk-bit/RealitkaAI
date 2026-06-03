@@ -10,7 +10,8 @@ export default async function RevolisAIPage() {
     buildDemandMoatPayload(),
     getCurrentProfile(),
   ]);
-  const feedSeed = getAiActivityFeedSeed();
+  const feedSeed =
+    process.env.NODE_ENV === "production" ? [] : getAiActivityFeedSeed();
   const raw = profile as { account_tier?: string | null; ui_role?: string | null; role?: string | null } | null;
   // ui_role is the authoritative access gate — set by billing webhook, not localStorage
   const uiRole     = raw?.ui_role ?? "agent";
