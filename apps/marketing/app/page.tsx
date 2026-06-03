@@ -38,7 +38,7 @@ export default function HomePage() {
     // Stats strip on load
     const statsTimer = setTimeout(() => {
       const ids: [string, number, string][] = [
-        ['s1', 34, '%'], ['s2', 90, 's'], ['s3', 22, '%'],
+        ['s1', 24, 'h'], ['s2', 90, 's'], ['s3', 18, '%'],
         ['s4', 61000, '€'], ['s5', 67, '%'], ['s6', 4, 'min']
       ]
       ids.forEach(([id, val, suf]) => {
@@ -62,7 +62,7 @@ export default function HomePage() {
         e.target.querySelectorAll<HTMLElement>('.score-bar-fill[data-w]').forEach(el =>
           setTimeout(() => { el.style.width = (el.dataset.w || '0') + '%' }, 300))
         const nc: Record<string, [number, string]> = {
-          n1: [34, '%'], n2: [90, 's'], n3: [22, '%'],
+          n1: [24, 'h'], n2: [90, 's'], n3: [18, '%'],
           n4: [61000, '€'], n5: [67, '%'], n6: [4, 'min']
         }
         Object.entries(nc).forEach(([id, [val, suf]]) => {
@@ -148,7 +148,8 @@ export default function HomePage() {
         const comm = parseInt(sliderComm.value)
         const conv = parseFloat(sliderConv.value)
         const currentRevenue = Math.round(leads * (conv / 100) * comm)
-        const revolisRevenue = Math.round(leads * ((conv * 1.34) / 100) * comm)
+        const upliftPct = 0.12
+        const revolisRevenue = Math.round(leads * ((conv * (1 + upliftPct)) / 100) * comm)
         const monthlyGain = revolisRevenue - currentRevenue
         const yearlyGain = monthlyGain * 12
         elLeadsVal.textContent = String(leads)
@@ -254,9 +255,9 @@ export default function HomePage() {
       {/* STATS STRIP */}
       <div style={{ padding: '0 24px', maxWidth: 1200, margin: '0 auto' }}>
         <div className="stats-strip">
-          <div className="stat-cell"><div className="stat-num" id="s1">0%</div><div className="stat-label">Nárast zmlúv za Q1</div></div>
+          <div className="stat-cell"><div className="stat-num" id="s1">0h</div><div className="stat-label">Ušetrený čas týždenne (priemer)</div></div>
           <div className="stat-cell"><div className="stat-num" id="s2">0s</div><div className="stat-label">Priem. čas odpovede</div></div>
-          <div className="stat-cell"><div className="stat-num" id="s3">0%</div><div className="stat-label">Reaktivovaných príležitostí</div></div>
+          <div className="stat-cell"><div className="stat-num" id="s3">0%</div><div className="stat-label">Priorít z BRI skórovania</div></div>
           <div className="stat-cell"><div className="stat-num" id="s4">0€</div><div className="stat-label">Priem. nový obrat Q1</div></div>
           <div className="stat-cell"><div className="stat-num" id="s5">0%</div><div className="stat-label">Menej nekvalif. hovorov</div></div>
           <div className="stat-cell"><div className="stat-num" id="s6">0min</div><div className="stat-label">Čas nasadenia</div></div>
@@ -312,24 +313,24 @@ export default function HomePage() {
 
         <div className="feature-row reverse">
           <div>
-            <div className="feat-label" style={{ color: '#7C3AED' }}>24/7 AI Response Engine</div>
-            <div className="feat-title">Odpoveď za 90 sekúnd. Vždy.</div>
-            <p className="feat-desc">Každý dopyt dostane personalizovanú odpoveď do 90 sekúnd. AI píše v tóne Vašej kancelárie, v jazyku klienta, s konkrétnou nehnuteľnosťou.</p>
+            <div className="feat-label" style={{ color: '#7C3AED' }}>AI follow-up &amp; odpovede</div>
+            <div className="feat-title">Rýchlejšie reakcie, menej ručnej práce.</div>
+            <p className="feat-desc">AI navrhne odpovede a follow-up v tóne kancelárie. Maklér schváli jedným klikom. Plný 24/7 engine je na roadmape — dnes prioritizujeme BRI, briefing a sekvencie.</p>
             <div className="feat-contrast">
               <div className="contrast-box contrast-before"><div className="contrast-label">Bez Revolis</div>Prvý hovor až ráno. Lead si medzitým zobral 3 ďalšie kontakty a vybral si.</div>
               <div className="contrast-box contrast-after"><div className="contrast-label">S Revolis.AI</div>Lead dostane odpoveď skôr ako odíde zo stránky. Konverzácia začína ihneď.</div>
             </div>
           </div>
           <div className="feat-visual">
-            <div className="feat-vis-header">Live Response Feed — posledná hodina</div>
+            <div className="feat-vis-header">Follow-up pipeline (ukážka)</div>
             <div className="funnel">
-              <div className="funnel-stage" style={{ background: 'rgba(124,58,237,.15)', color: '#A78BFA' }}><span>Prichádzajúce dopyty</span><span className="funnel-val">47</span></div>
-              <div className="funnel-stage" style={{ background: 'rgba(14,165,233,.15)', color: '#38BDF8' }}><span>Odpovedané do 90s</span><span className="funnel-val">47</span></div>
-              <div className="funnel-stage" style={{ background: 'rgba(34,197,94,.15)', color: '#4ADE80' }}><span>Potvrdené stretnutia</span><span className="funnel-val">12</span></div>
-              <div className="funnel-stage" style={{ background: 'rgba(212,175,55,.15)', color: '#FCD34D' }}><span>Kvalifikovaných príležitostí</span><span className="funnel-val">8</span></div>
+              <div className="funnel-stage" style={{ background: 'rgba(124,58,237,.15)', color: '#A78BFA' }}><span>Nové dopyty v CRM</span><span className="funnel-val">—</span></div>
+              <div className="funnel-stage" style={{ background: 'rgba(14,165,233,.15)', color: '#38BDF8' }}><span>AI návrh odpovede</span><span className="funnel-val">—</span></div>
+              <div className="funnel-stage" style={{ background: 'rgba(34,197,94,.15)', color: '#4ADE80' }}><span>Schválené maklérom</span><span className="funnel-val">—</span></div>
+              <div className="funnel-stage" style={{ background: 'rgba(212,175,55,.15)', color: '#FCD34D' }}><span>Priorita z BRI</span><span className="funnel-val">—</span></div>
             </div>
-            <div style={{ marginTop: 16, padding: 12, background: 'rgba(34,197,94,.08)', borderRadius: 10, border: '1px solid rgba(34,197,94,.15)', fontSize: 12, color: 'rgba(255,255,255,.6)' }}>
-              ✓ Priemerný čas odpovede dnes: <strong style={{ color: '#4ADE80' }}>74 sekúnd</strong>
+            <div style={{ marginTop: 16, padding: 12, background: 'rgba(14,165,233,.08)', borderRadius: 10, border: '1px solid rgba(14,165,233,.15)', fontSize: 12, color: 'rgba(255,255,255,.6)' }}>
+              Plný 24/7 response engine je na roadmape. Dnes: AI skripty, briefing a follow-up sekvencie v pracovnom režime.
             </div>
           </div>
         </div>
@@ -453,7 +454,7 @@ export default function HomePage() {
               </div>
               <div style={{ padding: 20, background: 'var(--bg2)', borderRadius: 16, border: '1px solid var(--border)' }}>
                 <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--cyan)', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 8 }}>Ako to funguje</div>
-                <div style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.7 }}>Revolis.AI zvyšuje konverznú mieru o <strong style={{ color: 'var(--text)' }}>+34 %</strong> vďaka AI lead scoringu, okamžitým odpoveďam a reaktivácii dormantných príležitostí.</div>
+                <div style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.7 }}>Modelovaný scenár: konzervatívny nárast konverzie o <strong style={{ color: 'var(--text)' }}>+12 %</strong> pri prioritizácii cez BRI skóre, ranný briefing a follow-up sekvencie (nie garantovaný výsledok).</div>
               </div>
             </div>
             <div className="roi-result">
@@ -533,7 +534,7 @@ export default function HomePage() {
             <hr className="plan-divider" style={{ borderColor: 'rgba(255,255,255,.1)', margin: '16px 0' }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 10, background: 'rgba(56,189,248,.08)', border: '1px solid rgba(56,189,248,.2)', marginBottom: 4 }}><span style={{ fontSize: 14 }}>📦</span><span style={{ fontSize: 12, fontWeight: 800, color: '#38BDF8' }}>Obsahuje všetko z RADAR MAKLÉRA</span></div>
             <div className="feat-section-title" style={{ color: '#38BDF8', borderColor: 'rgba(56,189,248,.2)' }}>Licencia &amp; Tím</div>
-            <ul className="plan-features" style={{ color: 'rgba(255,255,255,.7)' }}><li>👑 Owner: Market Vision menu (exkluzívny dashboard)</li><li>1× Active Force licencia pre makléra v tíme</li><li>30-dňová garancia vrátenia</li></ul>
+            <ul className="plan-features" style={{ color: 'rgba(255,255,255,.7)' }}><li>👑 Owner dashboard pre kanceláriu</li><li>Tímový prehľad a KPI maklérov</li><li>30-dňová garancia vrátenia</li></ul>
             <div className="feat-section-title" style={{ color: '#38BDF8', borderColor: 'rgba(56,189,248,.2)' }}>Owner Intelligence</div>
             <ul className="plan-features" style={{ color: 'rgba(255,255,255,.7)' }}><li>✅ Kto je pripravený kúpiť — live zoznam</li><li>✅ Dnes uzavriem — AI denná prioritizácia</li><li>📊 Prehľad výkonnosti celého tímu</li><li>🎯 Hodnotenie výkonnosti maklérov (KPI)</li><li>📝 Predpoveď obratu pre celý tím</li><li>📋 Manažérske reporty (týždenné + mesačné)</li></ul>
             <div className="feat-section-title" style={{ color: '#38BDF8', borderColor: 'rgba(56,189,248,.2)' }}>AI Reaktivácia &amp; Analytika</div>
@@ -546,29 +547,20 @@ export default function HomePage() {
             <button className="plan-cta" style={{ background: 'var(--cyan)', color: 'var(--dark)', marginTop: 20 }} onClick={() => { window.gtag?.('event', 'pricing_cta_click', { plan_name: 'OFFICE SEAT', plan_price: '63' }); openModal('pricing-market-vision') }}>Aktivovať Office Seat →</button>
           </div>
 
-          {/* PROTOCOL AI MODULE */}
-          <div className="price-card visible" style={{ border: '2px solid #D4AF37', background: 'linear-gradient(160deg,#FFFBEB 0%,#FFF 60%)' }}>
-            <div className="badge-popular" style={{ background: 'linear-gradient(135deg,#D97706,#B45309)', color: '#fff' }}>★ Najpopulárnejší</div>
-            <div className="founder-tag" style={{ background: 'rgba(217,119,6,.12)', color: '#92400E', border: '1px solid #FDE68A' }}>Zakladateľská cena</div>
-            <div className="plan-name" style={{ color: '#92400E' }}>PROTOCOL AI</div>
-            <div className="orig-price" style={{ color: '#D97706' }}>199 €/mes</div>
-            <div className="plan-price" style={{ color: '#92400E' }}>149 <span className="plan-period" style={{ color: '#D97706' }}>€/mes modul</span></div>
-            <div className="plan-tagline" style={{ color: '#78350F' }}>Voliteľný add-on modul pre rokovacie skripty a deal analyzer.</div>
-            <hr className="plan-divider" style={{ borderColor: '#FDE68A', margin: '16px 0' }} />
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 10, background: 'rgba(217,119,6,.1)', border: '1px solid #FDE68A', marginBottom: 4 }}><span style={{ fontSize: 14 }}>📦</span><span style={{ fontSize: 12, fontWeight: 800, color: '#B45309' }}>Obsahuje všetko zo STRÁŽCA CIEN A ZISKOV</span></div>
-            <div className="feat-section-title" style={{ color: '#B45309', borderColor: '#FDE68A' }}>Licencia &amp; Tím</div>
-            <ul className="plan-features" style={{ color: '#78350F' }}><li>👑 Owner: Protocol Authority menu (najvyšší level)</li><li>4× Active Force licencie pre maklérov</li><li>30-dňová garancia vrátenia</li></ul>
-            <div className="feat-section-title" style={{ color: '#B45309', borderColor: '#FDE68A' }}>Protocol Intelligence</div>
-            <ul className="plan-features" style={{ color: '#78350F' }}><li>✅ Kto je pripravený kúpiť — live, celá sieť</li><li>✅ Dnes uzavriem — AI cross-team prioritizácia</li><li>🗺 Competition Heatmap — živý radar konkurencie</li><li>🛡 Štít anonymného režimu — skryté akcie</li><li>🧠 Neurónová spravodajská sieť (Neural Intelligence)</li><li>📊 Medzitímová analytika (cross-agency benchmark)</li><li>🏢 Správa viacerých pobočiek z jedného miesta</li></ul>
-            <div className="feat-section-title" style={{ color: '#B45309', borderColor: '#FDE68A' }}>Pokročilá Reaktivácia</div>
-            <ul className="plan-features" style={{ color: '#78350F' }}><li>💻 Prebúdza starých klientov — pokročilý AI režim</li><li>⎈ Dedikovaný Protocol manažér (osobný kontakt)</li><li>⚡ SLA 99.99% uptime garantovaný zmluvou</li></ul>
-            <div className="feat-section-title" style={{ color: '#D97706', borderColor: '#FDE68A' }}>⭐ Expert bonusy — TOP výber pre majiteľov</div>
-            <div className="expert-bonus" style={{ background: 'rgba(239,68,68,.06)', borderColor: '#DC2626' }}><div className="expert-bonus-text" style={{ color: '#7F1D1D' }}>Silence Revenue Map — vizuálna mapa ukazuje kde PRESNE na mape maklér prichádza o peniaze kvôli žiadnej akcii. „Toto je Váš ušlý obrat za 90 dní."</div></div>
-            <div className="expert-bonus" style={{ background: 'rgba(124,58,237,.06)', borderColor: '#7C3AED' }}><div className="expert-bonus-text" style={{ color: '#3B0764' }}>Revenue Probability Score — „Táto rodina kúpi do 47 dní, pravdepodobnosť 84 %, pretože…" Explicitné vysvetlenie, nie čierna skrinka. Fortune 500 AI pre každého makléra.</div></div>
-            <div className="expert-bonus" style={{ background: 'rgba(14,165,233,.06)', borderColor: '#0EA5E9' }}><div className="expert-bonus-text" style={{ color: '#0C4A6E' }}>Life Moment Detection — algoritmus deteguje životné zmeny klienta (sťahovanie, zmena práce, rodina) PRED tým než to klient sám vie. Okno príležitosti: 2–3 týždne.</div></div>
-            <div className="expert-bonus" style={{ background: 'rgba(22,163,74,.06)', borderColor: '#16A34A' }}><div className="expert-bonus-text" style={{ color: '#14532D' }}>Revealed Preference Engine — rozdiel medzi čo klient píše (stated) a čo klikne (revealed) = skutočný budget a motivácia. Maklér dostane brief: „Nekomunikuj cenu. Komunikuj priestor."</div></div>
-            <div className="expert-bonus" style={{ background: 'rgba(217,119,6,.06)', borderColor: '#D97706' }}><div className="expert-bonus-text" style={{ color: '#78350F' }}>5-Year Relationship Horizon — po každom uzavretom obchode sa automaticky spustí 5-ročný plán: výročie kúpy, trhový update, refinančné okno, predpoveď apreciácie, žiadosť o odporúčanie.</div></div>
-            <button className="plan-cta" style={{ background: 'linear-gradient(135deg,#D97706,#B45309)', color: '#fff', marginTop: 20, fontSize: 13 }} onClick={() => { window.gtag?.('event', 'pricing_cta_click', { plan_name: 'PROTOCOL AI', plan_price: '149' }); openModal('pricing-protocol-authority') }}>★ Aktivovať Protocol AI →</button>
+          {/* ROADMAP MODULY — nie v self-serve predaji */}
+          <div className="price-card visible" style={{ border: '2px dashed #CBD5E1', background: 'linear-gradient(160deg,#F8FAFC 0%,#FFF 60%)' }}>
+            <div className="badge-popular" style={{ background: '#64748B', color: '#fff' }}>Roadmap · Čoskoro</div>
+            <div className="plan-name" style={{ color: '#475569' }}>MODULY V PRÍPRAVE</div>
+            <div className="plan-tagline" style={{ color: '#64748B', marginTop: 8 }}>Nie sú v self-serve checkout. Seat (Solo / Team / Office) je dnes hlavná ponuka.</div>
+            <hr className="plan-divider" style={{ borderColor: '#E2E8F0', margin: '16px 0' }} />
+            <ul className="plan-features" style={{ color: '#64748B' }}>
+              <li>Leads Engine — generovanie a ingest leadov</li>
+              <li>Market Intelligence — trhové feedy nad CRM dátami</li>
+              <li>Protocol AI — competition radar &amp; deal intelligence</li>
+              <li>Active Force Calls — rozšírená analýza hovorov</li>
+            </ul>
+            <p style={{ fontSize: 12, color: '#94A3B8', marginTop: 12 }}>Call analyzer a BRI skórovanie sú dostupné v seat plánoch. Moduly označené roadmap aktivujeme po QA.</p>
+            <button className="plan-cta" style={{ background: '#F1F5F9', color: '#475569', marginTop: 20, fontSize: 13, border: '1px solid #CBD5E1' }} onClick={() => { window.gtag?.('event', 'pricing_cta_click', { plan_name: 'ROADMAP_WAITLIST' }); openModal('waitlist') }}>Upozorniť ma pri spustení →</button>
           </div>
 
         </div>

@@ -82,14 +82,14 @@ const programOverview = [
   },
   {
     name: "Add-on moduly (tenant pricing)",
-    note: "Modulárny stack aktivovaný nad seat licenciami.",
+    note: "Modulárny stack aktivovaný nad seat licenciami. Moduly označené „Čoskoro“ nie sú v self-serve predaji.",
     features: [
-      "Leads Engine (79 €/mes)",
-      "Market Intelligence (99 €/mes)",
-      "Protocol AI (149 €/mes)",
-      "Active Force Calls (59 €/mes)",
-      "CRM Sync (49 €/mes)",
-      "White Label (299 €/mes)",
+      "CRM Sync (49 €/mes) — dostupné na vyžiadanie",
+      "White Label (299 €/mes) — dostupné na vyžiadanie",
+      "Leads Engine — roadmap / čoskoro (nie je v self-serve checkout)",
+      "Market Intelligence — roadmap / čoskoro",
+      "Protocol AI modul — roadmap / čoskoro",
+      "Active Force Calls — roadmap / čoskoro",
     ],
   },
 ];

@@ -191,7 +191,7 @@ export default function FinalCTA() {
                   'Prehľad celej kancelárie v reálnom čase',
                   'Zdieľaná AI pamäť tímu naprieč maklérmni',
                   'Upozornenie keď konkurencia kontaktuje tvojho klienta',
-                  'Protocol AI modul voliteľný (149 €/mes)',
+                  'Roadmap moduly (Protocol AI, Leads Engine) — čoskoro',
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-2.5 text-sm" style={{ color: SLATE_HORIZON.deep }}>
                     <span className="mt-0.5 flex-shrink-0" style={{ color: SLATE_HORIZON.brandNavy }}>

@@ -783,6 +783,7 @@ export async function listLeads(
   const supabase = await resolveTenantSupabase(scopedSupabase);
 
   if (!supabase) {
+    if (process.env.NODE_ENV === "production") return [];
     return applyFilters(mockLeads, filters);
   }
 
@@ -815,7 +816,10 @@ export async function listLeads(
   const { data, error } = await query;
 
   if (error) {
-    console.error("Supabase listLeads error, using mock fallback:", error.message);
+    console.error("Supabase listLeads error:", error.message);
+    if (process.env.NODE_ENV === "production") {
+      return [];
+    }
     return applyFilters(mockLeads, filters);
   }
 

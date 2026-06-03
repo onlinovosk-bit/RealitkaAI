@@ -156,6 +156,17 @@ export default function ProgramComparison() {
           <p className="text-sm uppercase tracking-wider" style={{ color: SLATE_HORIZON.muted }}>
             Presne vidíš čo získaš navyše a za koľko
           </p>
+          <p
+            className="mt-4 rounded-xl border px-4 py-3 text-sm leading-relaxed"
+            style={{
+              borderColor: SLATE_HORIZON.softBorder,
+              background: SLATE_HORIZON.soft,
+              color: SLATE_HORIZON.deep,
+            }}
+          >
+            <strong>Predaj dnes:</strong> Solo / Team / Office seat (79 / 71 / 63 € na makléra).
+            Moduly Leads Engine, Market Intelligence, Protocol AI a Active Force Calls sú na roadmape — nie v self-serve checkout.
+          </p>
         </div>
 
         <div className="overflow-x-auto overflow-y-visible">

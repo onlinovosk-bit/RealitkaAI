@@ -582,6 +582,8 @@ export function AIGhostwriter() {
 // ═══════════════════════════════════════════════════════════════════════════
 // MODULE 4 → becomes slot 5: Real Estate Arbitrage
 // ═══════════════════════════════════════════════════════════════════════════
+const ARBITRAGE_DEMO_ENABLED = process.env.NODE_ENV !== "production";
+
 export function RealEstateArbitrage() {
   const [candidates, setCandidates] = useState<ArbitrageCandidate[]>([]);
   const [loading, setLoading]       = useState(false);
@@ -589,6 +591,7 @@ export function RealEstateArbitrage() {
   const [expanded, setExpanded]     = useState<string | null>(null);
 
   const scan = async () => {
+    if (!ARBITRAGE_DEMO_ENABLED) return;
     setLoading(true);
     try {
       const res = await fetch("/api/arbitrage/analyze", {
@@ -612,10 +615,14 @@ export function RealEstateArbitrage() {
         Premieňa neúspešných kupujúcich na predajcov. AI identifikuje exit-strategy kandídátov vo vašom CRM.
       </p>
       <div className="flex-1 space-y-2">
-        {!loaded ? (
+        {!ARBITRAGE_DEMO_ENABLED ? (
+          <p className="text-xs rounded-xl px-3 py-3" style={{ background: SLATE_HORIZON.soft, color: SLATE_HORIZON.muted, border: `1px solid ${SLATE_HORIZON.line}` }}>
+            Live arbitráž z CRM dát — na ceste (roadmap). Demo scan je dostupný len v staging / vývoji.
+          </p>
+        ) : !loaded ? (
           <Btn onClick={() => void scan()} loading={loading} variant="outline"
                className="border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10">
-            {loading ? "Skenujem CRM..." : "SPUSTIŤ ARBITRÁŽ SCAN"}
+            {loading ? "Skenujem CRM..." : "SPUSTIŤ ARBITRÁŽ SCAN (demo)"}
           </Btn>
         ) : candidates.map(c => (
           <button key={c.id} onClick={() => setExpanded(expanded === c.id ? null : c.id)}

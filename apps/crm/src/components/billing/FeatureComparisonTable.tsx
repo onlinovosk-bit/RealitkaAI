@@ -262,11 +262,11 @@ export const FEATURES: FeatureRow[] = [
   },
   {
     category: "Trhová Prevaha",
-    feature: "Detektor kde konkurencia spí",
+    feature: "Detektor kde konkurencia spí (roadmap)",
     smartStart: false,
     activeForce: false,
     marketVision: false,
-    protocolAuthority: true,
+    protocolAuthority: "Čoskoro",
     highlight: true,
   },
   {
@@ -390,6 +390,9 @@ export default function FeatureComparisonTable() {
             background: WORKDESK_CARD.background,
           }}
         >
+          <p className="px-4 py-3 text-xs leading-relaxed" style={{ color: SLATE_HORIZON.muted, borderBottom: `1px solid ${SLATE_HORIZON.line}` }}>
+            Predajný checkout: seat plány. Položky označené roadmap (napr. competition radar) nie sú samostatne kúpiteľné.
+          </p>
           <table className="w-full text-sm">
             <thead>
               <tr style={{ background: SLATE_HORIZON.bg, borderBottom: `1px solid ${SLATE_HORIZON.line}` }}>

@@ -30,12 +30,35 @@ export function landingEnterpriseAttributedActiveForceValueEur(): number {
   return LANDING_ENTERPRISE_ACTIVE_FORCE_SEATS * PLAN_PRICES_EUR.teamSeat;
 }
 
-/** Add-on moduly v L99 stratégii (EUR/mesiac na tenant). */
-export const L99_ADDON_MODULE_PRICES_EUR = {
+/** Legacy add-on ceny — Stripe resolver / história; nie na predajnom UI. */
+export const L99_LEGACY_ADDON_MODULE_PRICES_EUR = {
   leadsEngine: 79,
   marketIntelligence: 99,
   protocolAI: 149,
   activeForceCalls: 59,
+} as const;
+
+export type L99LegacyAddonKey = keyof typeof L99_LEGACY_ADDON_MODULE_PRICES_EUR;
+
+/** Add-on moduly v predaji (LIVE alebo schválené na checkout). */
+export const L99_PURCHASABLE_ADDON_MODULE_PRICES_EUR = {
   crmSync: 49,
   whiteLabel: 299,
 } as const;
+
+/** Spätná kompatibilita exportu — celý katalóg (legacy + purchasable). */
+export const L99_ADDON_MODULE_PRICES_EUR = {
+  ...L99_LEGACY_ADDON_MODULE_PRICES_EUR,
+  ...L99_PURCHASABLE_ADDON_MODULE_PRICES_EUR,
+} as const;
+
+export const L99_ROADMAP_ADDON_LABELS: Record<L99LegacyAddonKey, string> = {
+  leadsEngine: "Leads Engine",
+  marketIntelligence: "Market Intelligence",
+  protocolAI: "Protocol AI",
+  activeForceCalls: "Active Force Calls",
+};
+
+export function formatAddonPriceEur(amount: number): string {
+  return `${amount} €/mes`;
+}
