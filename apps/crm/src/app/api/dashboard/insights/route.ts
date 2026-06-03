@@ -4,6 +4,8 @@ import { getCurrentProfile } from "@/lib/auth";
 import { personalizeInsights } from "@/lib/ai-insights/personalization";
 import { getUserHistory } from "@/lib/ai-insights/history";
 import { logAnalyticsEvent } from "@/lib/ai-insights/analytics";
+import { generateDashboardInsights } from "@/lib/ai/dashboard-insights";
+import { createClient } from "@/lib/supabase/server";
 
 export type DashboardInsightsRequest = {
   period: 'today' | 'last_7_days';
@@ -31,29 +33,31 @@ export async function POST(req: Request) {
   const userId   = profile.id;
   const userName = profile.full_name || profile.email || "Používateľ";
 
-  let insights: DashboardInsightsResponse = {
-    headline: `Dnes máš ${body.summary.totals.hotLeads} horúcich klientov, ${userName}, ktorí čakajú na tvoj krok.`,
-    summary: `Najväčší potenciál vidíme v kupujúcich s rozpočtom 150–250k € v Prešove a Košiciach. Posledné 3 dni boli aktívni, ale nedostali žiadny personalizovaný follow‑up.`,
-    actions: [
-      {
-        title: `Zavolaj top 3 hot leadom s readiness score > 90` + (userName ? ` (${userName})` : ""),
-        description: `Títo klienti reagovali na posledný email, pozerali si nové ponuky a sú blízko rozhodnutiu. Navrhni im 2–3 konkrétne nehnuteľnosti a dohodni obhliadku.`,
-        recommendedChannel: 'call',
-        relatedLeadIds: body.summary.topHotLeads.slice(0, 3).map(l => l.id),
-        impact: 'high',
-      },
-      {
-        title: 'Pošli follow‑up email 5 warm leadom bez kontaktu 7 dní',
-        description: 'Udržíš ich v hre a získaš lepší signál o záujme. AI ti navrhne text na mieru.',
-        recommendedChannel: 'email',
-        relatedLeadIds: body.summary.topHotLeads.slice(3, 5).map(l => l.id),
-        impact: 'medium',
-      },
-    ],
-    notesForOwner: 'Najaktívnejší makléri generujú 80 % obratov. Zváž, či ostatným nepomôže zjednodušený denný plán založený na týchto akciách.',
-  };
+  const supabase = await createClient();
+  const { data: properties } = await supabase
+    .from('properties')
+    .select('id, title, location, price, status')
+    .neq('status', 'Archivovaná')
+    .order('created_at', { ascending: false })
+    .limit(5);
 
-  insights.actions = personalizeInsights(insights.actions, profile);
+  let insights = await generateDashboardInsights({
+    period: body.period ?? 'today',
+    summary: body.summary,
+    userName,
+    properties: (properties ?? []).map(p => ({
+      id:       p.id as string,
+      title:    p.title as string,
+      location: (p.location as string) ?? '',
+      price:    (p.price as number) ?? 0,
+      status:   (p.status as string) ?? '',
+    })),
+  });
+
+  insights = {
+    ...insights,
+    actions: personalizeInsights(insights.actions, profile),
+  };
 
   await logAnalyticsEvent({
     userId,
