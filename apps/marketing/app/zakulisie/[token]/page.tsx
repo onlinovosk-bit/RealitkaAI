@@ -1,10 +1,11 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
-import LeadCaptureModal from '../../components/LeadCaptureModal'
+import LeadCaptureModal from '../../../components/LeadCaptureModal'
+import { zakulisiePath } from '../../../lib/zakulisie'
 
 declare global { interface Window { gtag?: (...args: unknown[]) => void } }
 
-export default function DemoPage() {
+export default function ZakulisiePage() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [exitVisible, setExitVisible] = useState(false)
   const [leadModal, setLeadModal] = useState<string | null>(null)
@@ -253,21 +254,37 @@ export default function DemoPage() {
 
       {/* NAV */}
       <nav>
-        <div className="logo">REVOLIS<span>.AI</span></div>
-        <button className="nav-cta" onClick={() => { window.gtag?.('event', 'demo_cta_click', { position: 'nav' }); openModal('demo-nav') }}>Spusti Demo →</button>
+        <a href="/" className="logo" style={{ textDecoration: 'none', color: 'inherit' }}>REVOLIS<span>.AI</span></a>
+        <button className="nav-cta" onClick={() => { window.gtag?.('event', 'zakulisie_cta_click', { position: 'nav' }); openModal('zakulisie-nav') }}>Spusti Demo →</button>
       </nav>
+
+      {/* BACKSTAGE — L99 seat + sales intent (ex /landing pitch) */}
+      <div className="zakulisie-strip" style={{
+        marginTop: 72, padding: '14px 48px', background: 'rgba(0,212,255,.06)',
+        borderBottom: '1px solid var(--border)', fontSize: 13, color: 'var(--muted)',
+        display: 'flex', flexWrap: 'wrap', gap: '12px 28px', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <span style={{ color: 'var(--cyan)', fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', fontSize: 11 }}>Zákulisie · L99</span>
+        <span><strong style={{ color: 'var(--text)' }}>Solo seat</strong> 79 €/seat</span>
+        <span><strong style={{ color: 'var(--text)' }}>Team seat</strong> 71 € (3–9)</span>
+        <span><strong style={{ color: 'var(--text)' }}>Office seat</strong> 63 € (10+)</span>
+        <span style={{ opacity: .85 }}>Moduly: Leads Engine, Market Intelligence, Protocol AI — podľa potreby.</span>
+      </div>
 
       {/* HERO */}
       <div className="hero">
-        <div className="hero-badge">Live AI Demo · Bez registrácie</div>
+        <div className="hero-badge">Zákulisie · Live AI demo · Bez registrácie</div>
         <h1>Kto odpovie ako prvý,<br /><em>uzavrie obchod.</em></h1>
         <p className="hero-sub">
           Revolis.AI vidí každý signál, každý záujem, každú príležitosť —
           a koná skôr, než klient zavolá <span>konkurencii</span>.
+          <span style={{ display: 'block', marginTop: 10, fontSize: 14, color: 'var(--muted)' }}>
+            Seat model: každý maklér = 1 seat · AI odporúča, maklér rozhoduje.
+          </span>
         </p>
         <div className="hero-cta-wrap">
-          <button className="btn-primary" onClick={() => { window.gtag?.('event', 'demo_cta_click', { position: 'hero_primary' }); openModal('demo-hero') }}>Spusti živé demo →</button>
-          <button className="btn-secondary" onClick={() => { window.gtag?.('event', 'demo_cta_click', { position: 'hero_secondary' }); document.querySelector('section')?.scrollIntoView({ behavior: 'smooth' }) }}>Pozri 2-min video</button>
+          <button className="btn-primary" onClick={() => { window.gtag?.('event', 'zakulisie_cta_click', { position: 'hero_primary' }); openModal('zakulisie-hero') }}>Spusti živé demo →</button>
+          <button className="btn-secondary" onClick={() => { window.gtag?.('event', 'zakulisie_cta_click', { position: 'hero_secondary' }); document.querySelector('section')?.scrollIntoView({ behavior: 'smooth' }) }}>Pozri 2-min prehľad</button>
         </div>
         <div className="ticker">
           <div className="tick-item">
@@ -589,9 +606,12 @@ export default function DemoPage() {
       <div className="footer-cta">
         <div className="usp-tag">★ World&rsquo;s First · Kombinácia neexistuje nikde inde</div>
         <h2>Každý deň bez Revolis.AI<br />Vás stojí konkrétnu sumu.</h2>
-        <p>Spusti 14-dňový trial. Bez kreditnej karty. Prvý AI follow-up odchádza za 4 minúty.</p>
-        <button className="btn-primary" style={{ fontSize: '16px', padding: '20px 48px' }} onClick={() => { window.gtag?.('event', 'final_cta_click', { position: 'footer_cta' }); openModal('demo-footer') }}>Začni zadarmo — výsledky do 48 hodín →</button>
-        <div style={{ marginTop: '16px', fontSize: '12px', color: 'var(--muted)' }}>847 maklérov začalo tento mesiac · Zrušenie kedykoľvek</div>
+        <p>Aktivujte seat od 79 €/mes. Trial bez záväzkov. Prvý AI follow-up odchádza za 4 minúty.</p>
+        <button className="btn-primary" style={{ fontSize: '16px', padding: '20px 48px' }} onClick={() => { window.gtag?.('event', 'final_cta_click', { position: 'footer_cta' }); openModal('zakulisie-footer') }}>Rezervovať seat — výsledky do 48 hodín →</button>
+        <div style={{ marginTop: '16px', fontSize: '12px', color: 'var(--muted)' }}>
+          <a href={zakulisiePath()} style={{ color: 'var(--cyan)', textDecoration: 'none' }}>Zákulisie L99</a>
+          {' · '}847 maklérov začalo tento mesiac · Zrušenie kedykoľvek
+        </div>
       </div>
 
       {leadModal !== null && (
