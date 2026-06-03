@@ -20,6 +20,26 @@
     {
       "path": "/api/cron/follow-up-sweep",
       "schedule": "0 22 * * *"
+    },
+    {
+      "path": "/api/cron/dashboard-insights",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/dashboard-insights",
+      "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/cron/arbitrage-scan",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/stealth-recruiter-ingest",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/price-trail-sync",
+      "schedule": "30 */6 * * *"
     }
   ]
 }
