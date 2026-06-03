@@ -1,16 +1,11 @@
 import { NextResponse } from 'next/server';
-import type { DashboardSummaryResponse } from '../summary/route';
 import { getCurrentProfile } from "@/lib/auth";
 import { personalizeInsights } from "@/lib/ai-insights/personalization";
 import { getUserHistory } from "@/lib/ai-insights/history";
 import { logAnalyticsEvent } from "@/lib/ai-insights/analytics";
-import { generateDashboardInsights } from "@/lib/ai/dashboard-insights";
+import { buildEmptyInsights } from "@/lib/ai/dashboard-insights";
+import type { DashboardInsightsCachePayload } from "@/lib/ai/dashboard-insights-cron";
 import { createClient } from "@/lib/supabase/server";
-
-export type DashboardInsightsRequest = {
-  period: 'today' | 'last_7_days';
-  summary: DashboardSummaryResponse;
-};
 
 export type DashboardInsightsResponse = {
   headline: string;
@@ -23,40 +18,55 @@ export type DashboardInsightsResponse = {
     impact: 'high' | 'medium' | 'low';
   }>;
   notesForOwner?: string;
+  generatedAt: string | null;
+  cacheStatus: 'hit' | 'missing';
 };
 
-export async function POST(req: Request) {
+export async function POST() {
   const profile = await getCurrentProfile();
   if (!profile) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = (await req.json()) as DashboardInsightsRequest;
-  const userId   = profile.id;
+  const userId = profile.id;
   const userName = profile.full_name || profile.email || "Používateľ";
 
+  if (!profile.agency_id) {
+    const empty = buildEmptyInsights(userName);
+    return NextResponse.json({
+      ...empty,
+      generatedAt: null,
+      cacheStatus: 'missing' as const,
+    });
+  }
+
   const supabase = await createClient();
-  const { data: properties } = await supabase
-    .from('properties')
-    .select('id, title, location, price, status')
-    .neq('status', 'Archivovaná')
-    .order('created_at', { ascending: false })
-    .limit(5);
+  const { data: row, error } = await supabase
+    .from('dashboard_insights_cache')
+    .select('payload, generated_at')
+    .eq('agency_id', profile.agency_id)
+    .maybeSingle();
 
-  let insights = await generateDashboardInsights({
-    period: body.period ?? 'today',
-    summary: body.summary,
-    userName,
-    properties: (properties ?? []).map(p => ({
-      id:       p.id as string,
-      title:    p.title as string,
-      location: (p.location as string) ?? '',
-      price:    (p.price as number) ?? 0,
-      status:   (p.status as string) ?? '',
-    })),
-  });
+  if (error) {
+    console.error('[dashboard/insights] cache read:', error.message);
+    return NextResponse.json({ error: 'Cache read failed' }, { status: 500 });
+  }
 
-  insights = {
-    ...insights,
-    actions: personalizeInsights(insights.actions, profile),
+  if (!row?.payload) {
+    const empty = buildEmptyInsights(userName);
+    return NextResponse.json({
+      ...empty,
+      generatedAt: null,
+      cacheStatus: 'missing' as const,
+    });
+  }
+
+  const cached = row.payload as DashboardInsightsCachePayload;
+  const insights = {
+    headline: cached.headline,
+    summary: cached.summary,
+    actions: personalizeInsights(cached.actions, profile),
+    notesForOwner: cached.notesForOwner,
+    generatedAt: row.generated_at as string,
+    cacheStatus: 'hit' as const,
   };
 
   await logAnalyticsEvent({
