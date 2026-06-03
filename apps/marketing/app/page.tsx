@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import LeadCaptureModal from '../components/LeadCaptureModal'
+import { zakulisiePath } from '../lib/zakulisie'
 
 declare global { interface Window { gtag?: (...args: unknown[]) => void } }
 
@@ -215,7 +216,7 @@ export default function HomePage() {
         <div className="logo">REVOLIS<span>.AI</span></div>
         <div className="nav-links">
           <a href="#">Features</a>
-          <a href="/demo">Demo</a>
+          <a href={zakulisiePath()}>Demo</a>
           <a href="#pricing">Cenník</a>
           <a href="#">Blog</a>
         </div>
@@ -238,7 +239,7 @@ export default function HomePage() {
             Spusti Revolis.AI za 4 minúty
             <span style={{ opacity: .6 }}>→</span>
           </button>
-          <a href="/demo" className="btn-outline" style={{ textDecoration: 'none' }} onClick={() => window.gtag?.('event', 'hero_secondary_click', { cta_text: 'Pozri 2-min demo' })}>Pozri 2-min demo</a>
+          <a href={zakulisiePath()} className="btn-outline" style={{ textDecoration: 'none' }} onClick={() => window.gtag?.('event', 'hero_secondary_click', { cta_text: 'Pozri 2-min demo' })}>Pozri 2-min demo</a>
         </div>
         <div className="trust-bar">
           <div className="trust-item"><span className="trust-check">✓</span> AI odporúča. Maklér rozhoduje.</div>
