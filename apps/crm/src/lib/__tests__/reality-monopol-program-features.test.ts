@@ -133,7 +133,6 @@ describe("Reality Monopol — implementation anchors", () => {
         "src/components/l99/CompetitionMap.tsx",
         "src/app/(dashboard)/l99-hub",
       ],
-      "Detektor kde konkurencia spí": ["src/components/l99/CompetitionMap.tsx"],
       "Živý radar obchodov: kde sú peniaze práve teraz": [
         "src/app/(dashboard)/l99-hub",
         "src/app/(dashboard)/dashboard",
