@@ -268,7 +268,7 @@ export default function ZakulisiePage() {
         <span><strong style={{ color: 'var(--text)' }}>Solo seat</strong> 79 €/seat</span>
         <span><strong style={{ color: 'var(--text)' }}>Team seat</strong> 71 € (3–9)</span>
         <span><strong style={{ color: 'var(--text)' }}>Office seat</strong> 63 € (10+)</span>
-        <span style={{ opacity: .85 }}>Moduly: Leads Engine, Market Intelligence, Protocol AI — podľa potreby.</span>
+        <span style={{ opacity: .85 }}>Roadmap moduly (Leads Engine, MI, Protocol AI) — čoskoro; dnes predaj seatov.</span>
       </div>
 
       {/* HERO */}
