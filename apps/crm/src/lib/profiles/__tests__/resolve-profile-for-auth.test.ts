@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from "vitest";
 import {
-  enforceSmolkoOwnerDefaults,
   isSmolkoOwnerEmail,
   resolveProfileForAuthUser,
 } from "@/lib/profiles/resolve-profile-for-auth";
+import { normalizeProfileEntitlements } from "@/lib/profiles/normalize-profile-entitlements";
 
 function buildSupabase(eqRows: Record<string, unknown | null>) {
   const select = vi.fn(() => ({
@@ -34,21 +34,17 @@ describe("smolkoProfileLookupEmails", () => {
   });
 });
 
-describe("enforceSmolkoOwnerDefaults", () => {
-  it("forces owner_vision when login email is Smolko gmail but profile row is agent", () => {
-    const normalized = enforceSmolkoOwnerDefaults(
-      {
-        id: "prof-stale",
-        agency_id: "b101361c",
-        email: "stale@example.com",
-        role: "agent",
-        ui_role: "agent",
-        account_tier: "pro",
-      },
-      "rastislav.smolko@gmail.com",
-    );
+describe("normalizeProfileEntitlements (via resolve path)", () => {
+  it("syncs owner menu fields when role=owner and tier=market_vision", () => {
+    const normalized = normalizeProfileEntitlements({
+      id: "prof-owner",
+      agency_id: "b101361c",
+      email: "owner@example.com",
+      role: "owner",
+      ui_role: "agent",
+      account_tier: "market_vision",
+    });
 
-    expect(normalized?.role).toBe("owner");
     expect(normalized?.ui_role).toBe("owner_vision");
     expect(normalized?.account_tier).toBe("market_vision");
   });

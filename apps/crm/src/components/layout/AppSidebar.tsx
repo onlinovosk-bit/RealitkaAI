@@ -6,7 +6,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { NavIcon } from "@/components/ui/NavIcon";
 import {
   getNavItems,
-  getMenuVariant,
   SECTION_LABELS,
   VARIANT_THEMES,
   DEFAULT_TEAM_PERMISSIONS,
@@ -15,6 +14,7 @@ import {
   type NavSection,
   type TeamMemberPermissions,
 } from "@/types/navigation";
+import { resolveWorkdeskMenuContext } from "@/lib/menu/resolve-workdesk-menu";
 import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
 import { WorkdeskRail } from "@/components/layout/WorkdeskRail";
 
@@ -105,17 +105,6 @@ interface AppSidebarProps {
   appRole?:     string;
   agencyName?:  string;
   userName?:    string;
-}
-
-// ─── Smart Start badge (iný label pre 49€ plán) ────────────────────────────
-function getPlanDisplayName(
-  variant:     MenuVariant,
-  accountTier: string
-): string {
-  if (variant === "agent_solo" && accountTier === "starter") {
-    return "Smart Start";
-  }
-  return VARIANT_THEMES[variant].planLabel;
 }
 
 // ─── Workdesk kompaktná položka (secondary sidebar) ───────────────────────
@@ -565,14 +554,21 @@ export default function AppSidebar({
   const gKeyRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const gPressedRef = useRef(false);
 
-  // Vypočítaj variant
-  const variant: MenuVariant = getMenuVariant(uiRole, isInTeam, appRole);
-  const demoVariant          = getDemoVariant(demoProgram);
-  const renderVariant        = isFounderDemo ? demoVariant : variant;
-  const theme                = VARIANT_THEMES[renderVariant];
-  const planLabel            = isFounderDemo
+  const menuContext = resolveWorkdeskMenuContext(
+    {
+      ui_role: uiRole,
+      account_tier: accountTier,
+      role: appRole,
+      team_license_id: isInTeam ? "team" : null,
+    },
+    { appRole },
+  );
+  const demoVariant   = getDemoVariant(demoProgram);
+  const renderVariant = isFounderDemo ? demoVariant : menuContext.variant;
+  const theme         = VARIANT_THEMES[renderVariant];
+  const planLabel     = isFounderDemo
     ? FOUNDER_DEMO_PROGRAMS.find((p) => p.id === demoProgram)?.label ?? "Protocol Authority"
-    : getPlanDisplayName(variant, accountTier);
+    : menuContext.planLabel;
 
   // Načítaj demo program z localStorage
   useEffect(() => {

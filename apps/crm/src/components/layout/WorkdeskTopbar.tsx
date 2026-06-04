@@ -152,9 +152,11 @@ export function WorkdeskTopbar({ userName }: WorkdeskTopbarProps) {
         >
           Spustiť akcie
         </Link>
-        <Link href="/login" style={pillNeutral}>
-          Prihlásiť sa
-        </Link>
+        {!userName ? (
+          <Link href="/login" style={pillNeutral}>
+            Prihlásiť sa
+          </Link>
+        ) : null}
         <button
           type="button"
           disabled={signingOut}
