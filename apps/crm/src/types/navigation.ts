@@ -277,6 +277,15 @@ export const ALL_NAV_ITEMS: NavItem[] = [
     section: "tools",
     showFor: ["agent_solo", "agent_team"],
   },
+  {
+    id: "arbitrage",
+    label: "Arbitrážne zhody",
+    sublabel: "Cross-portálové cenové rozdiely · Live scan",
+    href: "/arbitrage",
+    icon: "radar",
+    section: "tools",
+    showFor: ["agent_solo", "agent_team", "owner_vision", "owner_protocol"],
+  },
 
   // ════════ OWNER HLAVNÉ – owner_vision + owner_protocol ════════
 

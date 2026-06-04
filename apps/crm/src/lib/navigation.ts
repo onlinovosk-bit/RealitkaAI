@@ -218,6 +218,7 @@ export const NAV_GROUPS = [
       "radar-okolia",
       "listy-z-katastra",
       "kupujuci-predajca",
+      "arbitrage",
       "klonovanie-kupujucich",
       "zachran-samopredajcu",
     ],
