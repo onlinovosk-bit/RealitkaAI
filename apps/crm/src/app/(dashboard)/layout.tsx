@@ -21,14 +21,25 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   await linkProfileToAuthUser(supabase, user.id, user.email);
 
+  // `agency_name` lives on broker_profiles, not profiles — invalid column breaks the whole select.
   const SIDEBAR_PROFILE_SELECT =
-    "ui_role, account_tier, full_name, agency_name, agency_id, role, team_license_id, email";
+    "id, ui_role, account_tier, full_name, agency_id, role, team_license_id, email";
   const { profile } = await resolveProfileForAuthUser(
     supabase,
     user.id,
     SIDEBAR_PROFILE_SELECT,
     user.email,
   );
+
+  let agencyName: string | undefined;
+  if (profile?.agency_id) {
+    const { data: agency } = await supabase
+      .from("agencies")
+      .select("name")
+      .eq("id", profile.agency_id)
+      .maybeSingle();
+    agencyName = agency?.name ?? undefined;
+  }
 
   return (
     <div
@@ -41,7 +52,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         accountTier={profile?.account_tier ?? "free"}
         isInTeam={!!profile?.team_license_id}
         appRole={profile?.role ?? undefined}
-        agencyName={profile?.agency_name ?? undefined}
+        agencyName={agencyName}
         userName={profile?.full_name ?? user.email ?? undefined}
       />
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
