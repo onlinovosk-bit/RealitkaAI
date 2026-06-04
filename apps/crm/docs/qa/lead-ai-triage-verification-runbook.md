@@ -11,8 +11,16 @@ Provide a reproducible, low-risk verification path for `GET /api/cron/lead-ai-tr
 
 - Deployed CRM environment with reachable `APP_URL`.
 - `CRON_SECRET` matches the target environment.
+- Migration `20260604120000_leads_imported_to_novy.sql` applied (status `imported` → `Nový`).
 - For DB assertions: `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and one open lead id in `TRIAGE_TEST_LEAD_ID`.
-- The target lead should have `ai_priority_manual_at IS NULL` so the cron can update it.
+- The target lead should have `ai_priority_manual_at IS NULL` and `ai_triage_at IS NULL` so the cron can update it.
+
+## Backfill 439 importovaných leadov (Smolko)
+
+1. Aplikuj migráciu (status `Nový`).
+2. Nastav `TRIAGE_AGENCY_ID=<smolko agency uuid>` a `TRIAGE_LEAD_LIMIT=500` na Vercel.
+3. Spusti cron 1–3× (`GET /api/cron/lead-ai-triage` + Bearer), kým `processed` klesne na 0.
+4. Import bez kontextu dostane `ai_priority=Nízka` (heuristika), nie fiktívnu „Stredná“.
 
 ## Commands
 
