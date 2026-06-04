@@ -1,5 +1,6 @@
 import { getNextBestAction } from "@/lib/ai-engine";
 import type { Lead } from "@/lib/leads-store";
+import { getLeadDisplayScore } from "@/lib/leads/lead-display-score";
 
 export type SignalUrgency = "critical" | "high" | "medium";
 
@@ -72,7 +73,7 @@ export function formatMoneyEur(value: number | null): string {
 export function buildExecutiveSignals(leads: Lead[], limit = 3): ExecutiveSignal[] {
   return leads
     .filter((l) => !["Uzatvorený", "Stratený", "Zamietnutý"].includes(l.status as string))
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) => getLeadDisplayScore(b) - getLeadDisplayScore(a))
     .slice(0, limit)
     .map((lead) => ({
       leadId: lead.id,

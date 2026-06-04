@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { type Lead } from "@/lib/leads-store";
+import { isLeadHot } from "@/lib/leads/lead-display-score";
 import { SLATE_HORIZON, WORKDESK_INPUT, WORKDESK_PANEL } from "@/lib/slate-horizon-theme";
 
 type TeamOption = {
@@ -110,7 +111,7 @@ export default function LeadFilters({
     setTeamId("");
   }
 
-  const hotCount = leads.filter((l) => l.status === "Horúci" || l.score >= 85).length;
+  const hotCount = leads.filter(isLeadHot).length;
   const isHotFilter = status === "Horúci" && minScore === "";
 
   function activateHotFilter() {
