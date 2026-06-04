@@ -1,5 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
+import {
+  entitlementRank,
+  normalizeProfileEntitlements,
+} from "@/lib/profiles/normalize-profile-entitlements";
 
 export type ResolvedAuthProfile = {
   id: string;
@@ -27,10 +31,6 @@ export function isSmolkoOwnerEmail(email: string | null | undefined): boolean {
     normalized === "rastislav.smolko@gmail.com" ||
     normalized.endsWith("@realitysmolko.sk")
   );
-}
-
-function isSmolkoEmail(email: string | null | undefined): boolean {
-  return isSmolkoOwnerEmail(email);
 }
 
 /**
@@ -65,18 +65,15 @@ async function findProfileByEmailCandidates(
   return { profile: null };
 }
 
-export function enforceSmolkoOwnerDefaults(
-  profile: ResolvedAuthProfile | null,
-  authEmail?: string | null,
+function pickPreferredProfile(
+  authProfile: ResolvedAuthProfile | null,
+  emailProfile: ResolvedAuthProfile | null,
 ): ResolvedAuthProfile | null {
-  if (!profile) return profile;
-  if (!isSmolkoEmail(profile.email) && !isSmolkoEmail(authEmail)) return profile;
-  return {
-    ...profile,
-    role: "owner",
-    ui_role: "owner_vision",
-    account_tier: profile.account_tier === "protocol_authority" ? "protocol_authority" : "market_vision",
-  };
+  if (!authProfile) return emailProfile;
+  if (!emailProfile) return authProfile;
+  return entitlementRank(emailProfile) > entitlementRank(authProfile)
+    ? emailProfile
+    : authProfile;
 }
 
 /**
@@ -93,7 +90,7 @@ export async function resolveProfileForAuthUser(
   profileMissingAgency: boolean;
 }> {
   const { profile } = await findProfileForAuthUser(supabase, userId, email, select);
-  const normalized = enforceSmolkoOwnerDefaults(profile, email);
+  const normalized = normalizeProfileEntitlements(profile);
   return {
     profile: normalized,
     profileMissingAgency: !normalized?.agency_id,
@@ -174,26 +171,35 @@ async function findProfileForAuthUser(
     .select(select)
     .eq("auth_user_id", userId)
     .maybeSingle();
-  if (byAuth.data) {
-    return { profile: byAuth.data as ResolvedAuthProfile };
-  }
 
-  const byLegacyId = await supabase
-    .from("profiles")
-    .select(select)
-    .eq("id", userId)
-    .maybeSingle();
-  if (byLegacyId.data) {
-    return { profile: byLegacyId.data as ResolvedAuthProfile };
+  let authProfile: ResolvedAuthProfile | null = byAuth.data
+    ? (byAuth.data as ResolvedAuthProfile)
+    : null;
+
+  if (!authProfile) {
+    const byLegacyId = await supabase
+      .from("profiles")
+      .select(select)
+      .eq("id", userId)
+      .maybeSingle();
+    if (byLegacyId.data) {
+      authProfile = byLegacyId.data as ResolvedAuthProfile;
+    }
   }
 
   const byEmail = await findProfileByEmailCandidates(supabase, email, select);
-  if (byEmail.profile) {
-    return byEmail;
+  const preferred = pickPreferredProfile(authProfile, byEmail.profile);
+  if (preferred) {
+    return { profile: preferred };
   }
 
   // RLS profiles_agency_select nevidí riadok bez auth_user_id / legacy id — service role lookup.
-  return findProfileForAuthUserViaServiceRole(userId, email, select);
+  const service = await findProfileForAuthUserViaServiceRole(userId, email, select);
+  if (service.profile) {
+    return service;
+  }
+
+  return { profile: null };
 }
 
 /**
@@ -213,7 +219,7 @@ export async function linkProfileToAuthUser(
   );
 
   if (profile?.auth_user_id === userId) {
-    const normalized = enforceSmolkoOwnerDefaults(profile, email);
+    const normalized = normalizeProfileEntitlements(profile);
     if (
       normalized &&
       (normalized.role !== profile.role ||
@@ -235,9 +241,8 @@ export async function linkProfileToAuthUser(
 
   if (profile && !profile.auth_user_id) {
     const linkedOk = await persistAuthUserIdLink(profile.id, userId, supabase);
-    const linked = enforceSmolkoOwnerDefaults(
+    const linked = normalizeProfileEntitlements(
       linkedOk ? { ...profile, auth_user_id: userId } : profile,
-      email,
     );
 
     if (linkedOk && linked && (linked.role || linked.ui_role || linked.account_tier)) {
@@ -263,5 +268,5 @@ export async function linkProfileToAuthUser(
     return linked;
   }
 
-  return enforceSmolkoOwnerDefaults(profile, email);
+  return normalizeProfileEntitlements(profile);
 }

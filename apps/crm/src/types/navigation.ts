@@ -401,12 +401,22 @@ export function getNavItems(
 export function getMenuVariant(
   uiRole:   string,
   isInTeam: boolean,
-  appRole?: string
+  appRole?: string,
+  accountTier?: string,
 ): MenuVariant {
-  if (appRole === "founder")              return "owner_protocol";
-  if (uiRole === "owner_protocol")        return "owner_protocol";
-  if (uiRole === "owner_vision")          return "owner_vision";
-  if (uiRole === "agent" && isInTeam)     return "agent_team";
+  if (appRole === "founder") return "owner_protocol";
+  if (uiRole === "owner_protocol") return "owner_protocol";
+  if (uiRole === "owner_vision") return "owner_vision";
+
+  const tier = accountTier ?? "free";
+  if (appRole === "owner" || appRole === "manager" || appRole === "admin") {
+    if (tier === "protocol_authority") return "owner_protocol";
+    if (tier === "market_vision" || tier === "enterprise") return "owner_vision";
+  }
+  if (tier === "protocol_authority") return "owner_protocol";
+  if (tier === "market_vision" || tier === "enterprise") return "owner_vision";
+
+  if (uiRole === "agent" && isInTeam) return "agent_team";
   return "agent_solo";
 }
 
