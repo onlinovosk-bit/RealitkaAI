@@ -21,7 +21,7 @@ export function L99PredictiveCard({ result }: { result: L99Result }) {
             🔒
           </div>
           <h3 className="text-xs font-bold uppercase tracking-widest" style={{ color: SLATE_HORIZON.muted }}>
-            L99 RADAR PRÍLEŽITOSTÍ
+            Radar príležitostí
           </h3>
           <p className="mt-1 text-[10px]" style={{ color: SLATE_HORIZON.muted }}>
             Dostupné iba v programe Enterprise

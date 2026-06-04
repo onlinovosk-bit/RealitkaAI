@@ -60,7 +60,7 @@ export default function FinalCTA() {
                 </span>
               </div>
               <p className="mb-5 text-xs" style={{ color: SLATE_HORIZON.muted }}>
-                Základný L99 seat pre samostatného makléra.
+                Základný seat pre samostatného makléra.
               </p>
               <ul className="mb-6 flex-1 space-y-2.5">
                 {[
@@ -116,7 +116,7 @@ export default function FinalCTA() {
                 <span className="mb-1 ml-auto text-lg line-through" style={{ color: SLATE_HORIZON.muted }}>€79</span>
               </div>
               <p className="mb-4 text-xs font-semibold uppercase tracking-wider" style={{ color: SLATE_HORIZON.brandDeep }}>
-                L99 tímová cena · 3-9 seatov · 10% zľava na seat
+                Tímová cena · 3–9 seatov · 10% zľava na seat
               </p>
 
               <div

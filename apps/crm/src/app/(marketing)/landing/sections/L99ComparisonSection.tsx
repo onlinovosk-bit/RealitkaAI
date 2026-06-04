@@ -58,7 +58,7 @@ export default function L99ComparisonSection() {
             </ul>
           </motion.div>
 
-          {/* L99 model */}
+          {/* Proaktívny model Revolis */}
           <motion.div
             initial={{ opacity: 0, x: 30 }}
             whileInView={{ opacity: 1, x: 0 }}

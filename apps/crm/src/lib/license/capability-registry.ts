@@ -100,7 +100,7 @@ export const CAPABILITY_REGISTRY: Record<LicenseCapability, CapabilityDefinition
   },
   canViewDemandHeatmap: {
     capability: "canViewDemandHeatmap",
-    label: "L99 Radar príležitostí",
+    label: "Radar dopytu a ponuky",
     teaser: "Heatmapa dopytu vs. ponuky — kde je diera na trhu.",
     requiredProgram: "guardian",
     upgradeProgram: "guardian",

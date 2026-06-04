@@ -69,7 +69,7 @@ export function EmailMockup() {
           <div className="mt-5 pt-4 border-t border-slate-100 text-[9px] text-slate-400 leading-relaxed italic">
             Tento report Vám prináša{" "}
             <span className="font-bold text-slate-600">Reality Smolko</span>{" "}
-            v spolupráci s L99 Engine.
+            v spolupráci s Revolis AI Engine.
             Pán Smolko, Váš maklér, je pripravený na konzultáciu.
           </div>
         </div>
