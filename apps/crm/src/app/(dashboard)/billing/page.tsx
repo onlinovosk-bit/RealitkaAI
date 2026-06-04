@@ -59,7 +59,7 @@ export default function BillingPage() {
         style={{ borderColor: SLATE_HORIZON.line }}
       >
         <h1 className="text-3xl font-bold" style={{ color: SLATE_HORIZON.ink }}>Predplatné a licencie</h1>
-        <p style={{ color: SLATE_HORIZON.muted }}>Spravujte seat-based plán a fakturačné údaje v L99 modeli.</p>
+        <p style={{ color: SLATE_HORIZON.muted }}>Spravujte seat-based plán a fakturačné údaje Revolis.</p>
       </header>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">

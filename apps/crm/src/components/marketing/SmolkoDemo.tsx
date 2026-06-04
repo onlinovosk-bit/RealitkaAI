@@ -34,13 +34,13 @@ export function SmolkoDemoPage() {
         {/* Header */}
         <header className="mb-16 border-l-4 border-blue-600 pl-8">
           <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-blue-500 mb-3">
-            Revolis L99 Protocol · Exkluzívna ukážka
+            Revolis Protocol · Exkluzívna ukážka
           </p>
           <h1 className="text-5xl font-black uppercase italic tracking-tighter mb-4">
             Reality Smolko <span className="text-blue-500">×</span> Revolis
           </h1>
           <p className="text-slate-400 text-lg max-w-2xl font-light italic">
-            „Váš osobný sprievodca svetom realít – teraz s výkonom umelej inteligencie L99."
+            „Váš osobný sprievodca svetom realít – teraz s výkonom umelej inteligencie Revolis."
           </p>
         </header>
 
@@ -133,7 +133,7 @@ export function SmolkoDemoPage() {
 
         <footer className="mt-20 pb-20 text-center">
           <p className="text-[9px] uppercase tracking-[0.5em]" style={{ color: "#1E293B" }}>
-            Exkluzívne pre p. Rastislava Smolka, RSc. · Revolis L99 Protocol
+            Exkluzívne pre p. Rastislava Smolka, RSc. · Revolis Protocol
           </p>
         </footer>
 

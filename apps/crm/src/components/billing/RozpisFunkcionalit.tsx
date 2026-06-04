@@ -80,7 +80,7 @@ const SECTIONS: Section[] = [
     ],
   },
   {
-    title: "L99 Radar príležitostí",
+    title: "Radar dopytu a ponuky",
     rows: [
       { label: "Kataster radar", desc: "Sleduje zmeny na listoch vlastníctva v tvojej oblasti v reálnom čase.", cells: [N, Y, Y, Y] },
       { label: "Register úpadcov", desc: "AI monitoruje exekúcie, konkurzy a dlhy.", cells: [N, Y, Y, Y] },

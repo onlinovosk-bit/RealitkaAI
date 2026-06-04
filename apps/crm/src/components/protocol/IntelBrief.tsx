@@ -40,9 +40,12 @@ export default function IntelBrief({
             <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-yellow-500/50">Protocol Authority Access</p>
           </div>
         </div>
-        <button className="rounded-full bg-yellow-500 px-6 py-2 text-[10px] font-black uppercase text-black shadow-[0_0_20px_rgba(234,179,8,0.3)]">
-          Live Radar
-        </button>
+        <span
+          className="rounded-full border border-yellow-500/30 bg-yellow-500/10 px-6 py-2 text-[10px] font-black uppercase text-yellow-500/80"
+          aria-hidden
+        >
+          Intel feed
+        </span>
       </div>
 
       <div className="grid gap-4">
@@ -81,7 +84,8 @@ export default function IntelBrief({
         <div className="absolute inset-0 flex items-center justify-center bg-[#010103]/70 backdrop-blur-sm">
           <div className="text-center">
             <Zap className="mx-auto mb-2 text-yellow-500" />
-            <p className="text-xs font-black uppercase text-white">Unlock Strategic Dominance</p>
+            <p className="text-xs font-black uppercase text-white">Dostupné v pláne Protocol Authority</p>
+            <p className="mt-1 text-[10px] text-slate-400">Bez simulovaných alertov — len po aktivácii plánu.</p>
           </div>
         </div>
       ) : null}

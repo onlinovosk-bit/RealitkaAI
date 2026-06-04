@@ -51,6 +51,21 @@ export function MarketHeatmap({
         }}
       />
 
+      {hotspots.length === 0 ? (
+        <div
+          className="absolute inset-0 z-[5] flex flex-col items-center justify-center px-6 text-center"
+          style={{ background: "rgba(248,250,252,0.92)" }}
+        >
+          <p className="text-sm font-semibold" style={{ color: SLATE_HORIZON.ink }}>
+            Žiadne lokality v CRM
+          </p>
+          <p className="mt-2 max-w-sm text-xs leading-relaxed" style={{ color: SLATE_HORIZON.muted }}>
+            Hustota trhu sa počíta z lokalít pri príležitostiach a ponukách v tomto účte. Doplňte pole
+            lokalita — mapa sa naplní bez simulovaných bodov.
+          </p>
+        </div>
+      ) : null}
+
       <PremiumLockedBlur active={!canSeeDetails}>
         {hotspots.map((h, i) => (
           <Fragment key={`${h.kind}-${i}-${h.x}-${h.y}-${h.label ?? ""}`}>
@@ -122,8 +137,8 @@ export function MarketHeatmap({
       {!canSeeDetails ? (
         <PremiumLockedOverlay
           capability="canUseMarketIntel"
-          headline="V tejto zóne (Sekčov) práve vzniká dopytový pretlak o 22%."
-          subline="Chceš vidieť presné ulice a zoznam čakajúcich kupcov? Odomkni Market Vision."
+          headline="Detail hustoty trhu je v pláne Market Vision."
+          subline="Po upgrade uvidíte agregované zóny dopytu a ponuky z vášho CRM."
         />
       ) : null}
     </div>

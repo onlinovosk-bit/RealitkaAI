@@ -380,14 +380,14 @@ export default function LeadDetailPage() {
       });
       const data = (await res.json()) as { ok?: boolean; error?: string };
       if (!res.ok || !data.ok) {
-        showToast(data.error ?? "L99 operácia zlyhala.");
+        showToast(data.error ?? "AI operácia zlyhala.");
         setDecisionOutput(JSON.stringify(data, null, 2));
         return;
       }
-      showToast("L99 operácia dokončená.");
+      showToast("AI operácia dokončená.");
       setDecisionOutput(JSON.stringify(data, null, 2));
     } catch {
-      showToast("Chyba siete pri L99 operácii.");
+      showToast("Chyba siete pri AI operácii.");
     } finally {
       setDecisionBusy(null);
     }
@@ -927,7 +927,7 @@ export default function LeadDetailPage() {
                 boxShadow: WORKDESK_PANEL.boxShadow,
               }}
             >
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.brandDeep }}>L99 Decision Ops</p>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.brandDeep }}>AI Decision Ops</p>
               <div className="grid grid-cols-1 gap-2 mt-3">
                 {[
                   { action: "score-lead" as const, label: "1) Koľko mi prinesie?" },
