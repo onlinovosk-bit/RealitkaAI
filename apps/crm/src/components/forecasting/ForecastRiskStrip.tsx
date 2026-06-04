@@ -9,6 +9,7 @@ import type { DealHealthIssue } from "@/lib/forecasting-store";
 import { SLATE_HORIZON, WORKDESK_CARD } from "@/lib/slate-horizon-theme";
 
 type Props = {
+  totalLeads: number;
   expectedPipelineValue: number;
   expectedClosedDeals: number;
   dealHealth: DealHealthIssue[];
@@ -16,8 +17,9 @@ type Props = {
   targetClosedDeals?: number;
 };
 
-/** Forecast screen NBA — „Čo ohrozuje tento mesiac?" */
+/** Forecast screen NBA — „Čo ohrozuje tento mesiac?" (iba reálne dealHealth z CRM). */
 export default function ForecastRiskStrip({
+  totalLeads,
   expectedPipelineValue,
   expectedClosedDeals,
   dealHealth,
@@ -25,6 +27,7 @@ export default function ForecastRiskStrip({
   targetClosedDeals,
 }: Props) {
   const summary = buildForecastRiskSummary({
+    totalLeads,
     expectedPipelineValue,
     expectedClosedDeals,
     dealHealth,
@@ -32,34 +35,16 @@ export default function ForecastRiskStrip({
     targetClosedDeals,
   });
 
+  const hasLeads = totalLeads > 0;
+  const signals = summary.signals;
+
   useEffect(() => {
     trackWorkdeskEvent("forecast_alert_open", {
       gapEur: summary.gapEur,
       atRiskCount: summary.atRiskCount,
+      totalLeads,
     });
-  }, [summary.gapEur, summary.atRiskCount]);
-
-  const demoSignals =
-    summary.signals.length > 0
-      ? summary.signals
-      : [
-          {
-            leadId: "demo-f1",
-            leadName: "Martin Kováč",
-            riskEur: 54000,
-            probabilityPercent: 72,
-            note: "Ponuka bez follow-upu",
-            kind: "high_value_no_tasks" as const,
-          },
-          {
-            leadId: "demo-f2",
-            leadName: "Eva Poláková",
-            riskEur: 32000,
-            probabilityPercent: 48,
-            note: "2 úlohy po termíne",
-            kind: "after_deadline_open_tasks" as const,
-          },
-        ];
+  }, [summary.gapEur, summary.atRiskCount, totalLeads]);
 
   return (
     <section
@@ -95,32 +80,42 @@ export default function ForecastRiskStrip({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-2 p-3 md:grid-cols-2">
-        {demoSignals.map((signal) => (
-          <Link
-            key={signal.leadId}
-            href={signal.leadId.startsWith("demo-") ? "/forecasting" : `/leads/${signal.leadId}`}
-            onClick={() =>
-              trackWorkdeskEvent("forecast_alert_open", {
-                leadId: signal.leadId,
-                riskEur: signal.riskEur,
-              })
-            }
-            className="rounded-xl border p-3 transition-all hover:shadow-sm"
-            style={{ borderColor: SLATE_HORIZON.line }}
-          >
-            <p className="text-sm font-bold" style={{ color: SLATE_HORIZON.ink }}>
-              {signal.leadName}
-            </p>
-            <p className="mt-1 text-xs" style={{ color: SLATE_HORIZON.muted }}>
-              {signal.note}
-            </p>
-            <p className="mt-2 text-[11px] font-semibold" style={{ color: SLATE_HORIZON.money }}>
-              {signal.probabilityPercent}% · ~€{signal.riskEur.toLocaleString("sk-SK")} v riziku
-            </p>
-          </Link>
-        ))}
-      </div>
+      {!hasLeads ? (
+        <p className="px-4 py-6 text-center text-sm" style={{ color: SLATE_HORIZON.muted }}>
+          Zatiaľ nie sú dáta na predikciu rizika.
+        </p>
+      ) : signals.length === 0 ? (
+        <p className="px-4 py-6 text-center text-sm" style={{ color: SLATE_HORIZON.muted }}>
+          Žiadne kritické dealy v tomto mesiaci — pipeline drží cieľ alebo nie sú otvorené riziká z úloh.
+        </p>
+      ) : (
+        <div className="grid grid-cols-1 gap-2 p-3 md:grid-cols-2">
+          {signals.map((signal) => (
+            <Link
+              key={signal.leadId}
+              href={`/leads/${signal.leadId}`}
+              onClick={() =>
+                trackWorkdeskEvent("forecast_alert_open", {
+                  leadId: signal.leadId,
+                  riskEur: signal.riskEur,
+                })
+              }
+              className="rounded-xl border p-3 transition-all hover:shadow-sm"
+              style={{ borderColor: SLATE_HORIZON.line }}
+            >
+              <p className="text-sm font-bold" style={{ color: SLATE_HORIZON.ink }}>
+                {signal.leadName}
+              </p>
+              <p className="mt-1 text-xs" style={{ color: SLATE_HORIZON.muted }}>
+                {signal.note}
+              </p>
+              <p className="mt-2 text-[11px] font-semibold" style={{ color: SLATE_HORIZON.money }}>
+                {signal.probabilityPercent}% · ~€{signal.riskEur.toLocaleString("sk-SK")} v riziku
+              </p>
+            </Link>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

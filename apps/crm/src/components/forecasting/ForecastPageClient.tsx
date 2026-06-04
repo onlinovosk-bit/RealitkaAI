@@ -114,6 +114,7 @@ export default function ForecastPageClient({ accountTier, data }: ForecastPageCl
         <PremiumLockedBlur active={!canViewForecast}>
           <div className={canViewForecast ? undefined : "pointer-events-none select-none"}>
             <ForecastRiskStrip
+              totalLeads={data.kpis.totalLeads}
               expectedPipelineValue={data.kpis.expectedPipelineValue}
               expectedClosedDeals={data.kpis.expectedClosedDeals}
               dealHealth={data.dealHealth}
