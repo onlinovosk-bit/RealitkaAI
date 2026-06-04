@@ -2,9 +2,18 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { linkProfileToAuthUser } from "@/lib/profiles/resolve-profile-for-auth";
 
 const serviceUpdateEq = vi.fn().mockResolvedValue({ error: null });
+const serviceSelect = vi.fn(() => ({
+  eq: () => ({
+    maybeSingle: vi.fn().mockResolvedValue({ data: null }),
+  }),
+  ilike: () => ({
+    maybeSingle: vi.fn().mockResolvedValue({ data: null }),
+  }),
+}));
+
 const serviceFrom = vi.fn().mockReturnValue({
   update: vi.fn().mockReturnValue({ eq: serviceUpdateEq }),
-  select: vi.fn(),
+  select: serviceSelect,
 });
 
 vi.mock("@/lib/supabase/admin", () => ({

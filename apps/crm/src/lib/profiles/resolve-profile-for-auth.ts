@@ -97,40 +97,34 @@ export async function resolveProfileForAuthUser(
   };
 }
 
-async function findProfileForAuthUserViaServiceRole(
+/** Service role: merge auth, legacy id, and email rows — pick highest entitlement. */
+async function findProfileViaServiceRole(
+  service: SupabaseClient,
   userId: string,
   email: string | null | undefined,
   select: string,
-): Promise<ProfileLookupResult> {
-  const service = createServiceRoleClient();
-  if (!service) {
-    return { profile: null };
-  }
+  seed: ResolvedAuthProfile | null,
+): Promise<ResolvedAuthProfile | null> {
+  let best = seed;
 
   const byAuth = await service
     .from("profiles")
     .select(select)
     .eq("auth_user_id", userId)
     .maybeSingle();
-  if (byAuth.data) {
-    return { profile: byAuth.data as ResolvedAuthProfile };
-  }
+  best = pickPreferredProfile(best, (byAuth.data as ResolvedAuthProfile) ?? null);
 
   const byLegacyId = await service
     .from("profiles")
     .select(select)
     .eq("id", userId)
     .maybeSingle();
-  if (byLegacyId.data) {
-    return { profile: byLegacyId.data as ResolvedAuthProfile };
-  }
+  best = pickPreferredProfile(best, (byLegacyId.data as ResolvedAuthProfile) ?? null);
 
   const byEmail = await findProfileByEmailCandidates(service, email, select);
-  if (byEmail.profile) {
-    return byEmail;
-  }
+  best = pickPreferredProfile(best, byEmail.profile);
 
-  return { profile: null };
+  return best;
 }
 
 async function persistAuthUserIdLink(
@@ -188,15 +182,22 @@ async function findProfileForAuthUser(
   }
 
   const byEmail = await findProfileByEmailCandidates(supabase, email, select);
-  const preferred = pickPreferredProfile(authProfile, byEmail.profile);
-  if (preferred) {
-    return { profile: preferred };
+  let preferred = pickPreferredProfile(authProfile, byEmail.profile);
+
+  // RLS often hides the canonical email row while auth_user_id stub is visible — always merge via service role.
+  const service = createServiceRoleClient();
+  if (service) {
+    preferred = await findProfileViaServiceRole(
+      service,
+      userId,
+      email,
+      select,
+      preferred,
+    );
   }
 
-  // RLS profiles_agency_select nevidí riadok bez auth_user_id / legacy id — service role lookup.
-  const service = await findProfileForAuthUserViaServiceRole(userId, email, select);
-  if (service.profile) {
-    return service;
+  if (preferred) {
+    return { profile: preferred };
   }
 
   return { profile: null };
