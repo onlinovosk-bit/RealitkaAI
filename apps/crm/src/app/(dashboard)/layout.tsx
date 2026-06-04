@@ -1,8 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
+import { resolveAccountTier } from "@/lib/license/resolve-account-tier";
 import {
   linkProfileToAuthUser,
   resolveProfileForAuthUser,
 } from "@/lib/profiles/resolve-profile-for-auth";
+import { normalizeProfileEntitlements } from "@/lib/profiles/normalize-profile-entitlements";
 import { redirect } from "next/navigation";
 import AppSidebar from "@/components/layout/AppSidebar";
 import { WorkdeskTopbar } from "@/components/layout/WorkdeskTopbar";
@@ -21,15 +23,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   await linkProfileToAuthUser(supabase, user.id, user.email);
 
-  // `agency_name` lives on broker_profiles, not profiles — invalid column breaks the whole select.
+  // Only columns on `profiles` — invalid fields (e.g. agency_name, team_license_id) break the whole select.
   const SIDEBAR_PROFILE_SELECT =
-    "id, ui_role, account_tier, full_name, agency_id, role, team_license_id, email";
-  const { profile } = await resolveProfileForAuthUser(
+    "id, ui_role, account_tier, full_name, agency_id, role, email";
+  const { profile: rawProfile } = await resolveProfileForAuthUser(
     supabase,
     user.id,
     SIDEBAR_PROFILE_SELECT,
     user.email,
   );
+  const profile = normalizeProfileEntitlements(rawProfile);
+  const accountTier = resolveAccountTier(profile);
 
   let agencyName: string | undefined;
   if (profile?.agency_id) {
@@ -49,8 +53,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <SessionRecovery />
       <AppSidebar
         uiRole={profile?.ui_role ?? "agent"}
-        accountTier={profile?.account_tier ?? "free"}
-        isInTeam={!!profile?.team_license_id}
+        accountTier={accountTier}
+        isInTeam={false}
         appRole={profile?.role ?? undefined}
         agencyName={agencyName}
         userName={profile?.full_name ?? user.email ?? undefined}
