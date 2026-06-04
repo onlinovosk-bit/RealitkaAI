@@ -22,11 +22,59 @@ export type LeadTriageOutput = {
   reason: string;
 };
 
+export const TRIAGE_LOW_CONTEXT_REASON =
+  "Import alebo lead bez kontextu (skóre 0, bez kontaktu) — nízka priorita, kým nedoplníš údaje.";
+
 const SYSTEM = `Si strategický asistent slovenskej realitnej kancelárie.
 Tvoja úloha: pre každého leada v batchi vybrať práve jednu prioritu práce na **dnes**.
 Hodnoty priority sú VŽDY práve jedna z: \"Vysoká\", \"Stredná\", \"Nízka\" (presne takto napísané).
 \"reason\": jedna krátka veta po slovensky — konkrétne, nie vágna.
+Ak má lead skóre 0, prázdny/iba importný note a žiadny last_contact → **Nízka** (nehalucinuj vysokú prioritu).
 Vráť výhradne validný JSON pole objektov, bez markdown.`;
+
+/** Leady bez signálu — čestná Nízka bez volania modelu. */
+export function isSparseImportLead(lead: TriageLeadInput): boolean {
+  const score = Number(lead.score ?? 0);
+  if (score > 0) return false;
+  const last = String(lead.last_contact ?? "").trim();
+  if (last.length > 0) return false;
+  const note = String(lead.note ?? "").trim();
+  if (!note) return true;
+  if (/^Import Realvia/i.test(note) && note.length < 120) return true;
+  return false;
+}
+
+export function heuristicTriageResult(lead: TriageLeadInput): LeadTriageOutput {
+  return {
+    lead_id: lead.id,
+    priority: "Nízka",
+    reason: TRIAGE_LOW_CONTEXT_REASON,
+  };
+}
+
+export function splitLeadsForTriage(leads: TriageLeadInput[]): {
+  heuristic: LeadTriageOutput[];
+  forAi: TriageLeadInput[];
+} {
+  const heuristic: LeadTriageOutput[] = [];
+  const forAi: TriageLeadInput[] = [];
+  for (const lead of leads) {
+    if (isSparseImportLead(lead)) {
+      heuristic.push(heuristicTriageResult(lead));
+    } else {
+      forAi.push(lead);
+    }
+  }
+  return { heuristic, forAi };
+}
+
+function lowFallback(leadId: string, reason: string): LeadTriageOutput {
+  return {
+    lead_id: leadId,
+    priority: "Nízka",
+    reason,
+  };
+}
 
 async function triageChunk(leads: TriageLeadInput[]): Promise<LeadTriageOutput[]> {
   if (leads.length === 0) return [];
@@ -59,22 +107,16 @@ async function triageChunk(leads: TriageLeadInput[]): Promise<LeadTriageOutput[]
   try {
     parsed = extractJson<LeadTriageOutput[]>(raw);
   } catch {
-    return leads.map((l) => ({
-      lead_id: l.id,
-      priority: "Stredná",
-      reason: "Automatická záloha — model nevrátil platný výstup.",
-    }));
+    return leads.map((l) =>
+      lowFallback(l.id, "Automatická záloha — model nevrátil platný výstup (Nízka)."),
+    );
   }
 
   const byId = new Map(parsed.map((p) => [p.lead_id, p]));
   return leads.map((l) => {
     const row = byId.get(l.id);
     if (!row) {
-      return {
-        lead_id: l.id,
-        priority: "Stredná" as AiPrioritySk,
-        reason: "Chýbal záznam v batch výstupe.",
-      };
+      return lowFallback(l.id, "Chýbal záznam v batch výstupe (Nízka).");
     }
     return {
       lead_id: row.lead_id,
@@ -85,9 +127,10 @@ async function triageChunk(leads: TriageLeadInput[]): Promise<LeadTriageOutput[]
 }
 
 export async function triageLeadBatches(leads: TriageLeadInput[]): Promise<LeadTriageOutput[]> {
-  const out: LeadTriageOutput[] = [];
-  for (let i = 0; i < leads.length; i += TRIAGE_BATCH_SIZE) {
-    const chunk = leads.slice(i, i + TRIAGE_BATCH_SIZE);
+  const { heuristic, forAi } = splitLeadsForTriage(leads);
+  const out: LeadTriageOutput[] = [...heuristic];
+  for (let i = 0; i < forAi.length; i += TRIAGE_BATCH_SIZE) {
+    const chunk = forAi.slice(i, i + TRIAGE_BATCH_SIZE);
     const part = await triageChunk(chunk);
     out.push(...part);
   }
