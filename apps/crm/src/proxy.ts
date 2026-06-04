@@ -22,6 +22,8 @@ const PUBLIC_PATHS = new Set([
 const CRON_PATH_PREFIX = "/api/agents";
 const CRON_API_PATH_PREFIX = "/api/cron/";
 const SCORING_CRON_PATHS = ["/api/scoring", "/api/segmentation"];
+/** Removed routes — let Next return 404 (no session gate). PR-4 scrape removal. */
+const REMOVED_API_PATHS = new Set(["/api/scrape"]);
 const WEBHOOK_API_SEGMENT = "/api/webhooks";
 
 function isRealviaImportPath(pathname: string): boolean {
@@ -70,6 +72,7 @@ export async function proxy(request: NextRequest) {
   if (isPublic(pathname)) return NextResponse.next();
   if (isRealviaImportPath(pathname)) return NextResponse.next();
   if (isWebhookApiPath(pathname)) return NextResponse.next();
+  if (REMOVED_API_PATHS.has(pathname)) return NextResponse.next();
   if (isCronRoute(pathname)) return NextResponse.next();
 
   let response = NextResponse.next({

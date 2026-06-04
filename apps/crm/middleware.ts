@@ -31,6 +31,9 @@ export async function middleware(request: NextRequest) {
   // Only guard API routes
   if (!pathname.startsWith('/api/')) return NextResponse.next()
 
+  // PR-4: removed scrape route → 404; scoring 410 shim (prod uses src/proxy.ts too)
+  if (pathname === '/api/scrape' || pathname === '/api/scoring') return NextResponse.next()
+
   // Explicit bypass paths
   if (BYPASS_PREFIXES.some(p => pathname.startsWith(p))) return NextResponse.next()
 
