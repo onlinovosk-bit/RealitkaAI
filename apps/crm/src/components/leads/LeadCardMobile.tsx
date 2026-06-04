@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useTransition, useState, useCallback } from "react";
 import type { Lead } from "@/lib/leads-store";
+import { getLeadDisplayScore } from "@/lib/leads/lead-display-score";
 
 const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
   "Horúci":    { bg: "rgba(34,197,94,0.12)",  text: "#22C55E" },
@@ -33,6 +34,7 @@ interface LeadCardMobileProps {
 export function LeadCardMobile({ lead, onStatusChange }: LeadCardMobileProps) {
   const router        = useRouter();
   const [, startTransition] = useTransition();
+  const displayScore = getLeadDisplayScore(lead);
 
   // Optimistic status — UI aktualizuje okamžite, API call prebieha na pozadí
   const [optimisticStatus, setOptimisticStatus] = useState(lead.status);
@@ -81,7 +83,7 @@ export function LeadCardMobile({ lead, onStatusChange }: LeadCardMobileProps) {
         className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full"
         style={{ background: "rgba(5,9,20,0.8)", border: "1.5px solid rgba(34,211,238,0.15)" }}
       >
-        <ScoreArc score={lead.score} />
+        <ScoreArc score={displayScore} />
       </div>
 
       {/* Main info */}
@@ -90,6 +92,11 @@ export function LeadCardMobile({ lead, onStatusChange }: LeadCardMobileProps) {
           <span className="truncate text-sm font-semibold" style={{ color: "#F0F9FF" }}>
             {lead.name}
           </span>
+          {lead.aiPriority ? (
+            <span className="shrink-0 text-[10px]" style={{ color: "#64748B" }}>
+              {lead.aiPriority}
+            </span>
+          ) : null}
 
           {/* Optimistic status badge — tap to change quickly */}
           <button
@@ -111,6 +118,11 @@ export function LeadCardMobile({ lead, onStatusChange }: LeadCardMobileProps) {
             {lead.propertyType}{lead.rooms ? ` · ${lead.rooms}` : ""}
           </div>
         )}
+        {lead.aiReason ? (
+          <p className="mt-1 text-[10px] leading-snug line-clamp-2" style={{ color: "#64748B" }} title={lead.aiReason}>
+            {lead.aiReason}
+          </p>
+        ) : null}
       </div>
 
       {/* Chevron */}

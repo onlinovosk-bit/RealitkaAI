@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { useEffect } from "react";
 import type { Lead } from "@/lib/leads-store";
+import { getLeadDisplayScore } from "@/lib/leads/lead-display-score";
 import LeadRowActions from "./lead-row-actions";
 
 type SortField = "name" | "location" | "budget" | "status" | "score" | "assignedAgent" | "lastContact";
@@ -20,7 +21,8 @@ function getStatusClasses(status: Lead["status"]) {
 
 function getScoreClasses(score: number) {
   if (score >= 85) return "bg-green-100 text-green-700";
-  if (score >= 70) return "bg-yellow-100 text-yellow-700";
+  if (score >= 55) return "bg-yellow-100 text-yellow-700";
+  if (score >= 25) return "bg-slate-100 text-slate-600";
   return "bg-red-100 text-red-700";
 }
 
@@ -30,7 +32,9 @@ function exportToCsv(leads: Lead[]) {
     "Financovanie", "Termín", "Zdroj", "Stav", "Score", "Maklér", "Posledný kontakt", "Poznámka"];
   const rows = leads.map((l) =>
     [l.name, l.email, l.phone, l.location, l.budget, l.propertyType, l.rooms,
-      l.financing, l.timeline, l.source, l.status, String(l.score),
+      l.financing, l.timeline, l.source, l.status, String(getLeadDisplayScore(l)),
+      l.aiPriority ?? "",
+      l.aiReason ?? "",
       l.assignedAgent, l.lastContact, l.note]
       .map((v) => `"${(v ?? "").replace(/"/g, '""')}"`)
       .join(",")
@@ -47,8 +51,8 @@ function exportToCsv(leads: Lead[]) {
 
 function sortLeads(leads: Lead[], field: SortField, dir: SortDir): Lead[] {
   return [...leads].sort((a, b) => {
-    const av = field === "score" ? a[field] : String(a[field] ?? "");
-    const bv = field === "score" ? b[field] : String(b[field] ?? "");
+    const av = field === "score" ? getLeadDisplayScore(a) : String(a[field] ?? "");
+    const bv = field === "score" ? getLeadDisplayScore(b) : String(b[field] ?? "");
     if (av < bv) return dir === "asc" ? -1 : 1;
     if (av > bv) return dir === "asc" ? 1 : -1;
     return 0;
@@ -175,10 +179,27 @@ export default function LeadTable({ leads, onDelete }: LeadTableProps) {
                     {lead.status}
                   </span>
                 </td>
-                <td className="px-3 py-3 sm:px-5 sm:py-4 min-w-[80px]">
-                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getScoreClasses(lead.score)}`}>
-                    {lead.score}/100
-                  </span>
+                <td className="px-3 py-3 sm:px-5 sm:py-4 min-w-[140px]">
+                  {(() => {
+                    const displayScore = getLeadDisplayScore(lead);
+                    return (
+                      <div className="space-y-1">
+                        <span
+                          className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${getScoreClasses(displayScore)}`}
+                        >
+                          {displayScore}/100
+                          {lead.aiPriority ? (
+                            <span className="ml-1 font-normal opacity-80">· {lead.aiPriority}</span>
+                          ) : null}
+                        </span>
+                        {lead.aiReason ? (
+                          <p className="text-[11px] leading-snug text-gray-500 line-clamp-2" title={lead.aiReason}>
+                            {lead.aiReason}
+                          </p>
+                        ) : null}
+                      </div>
+                    );
+                  })()}
                 </td>
                 <td className="px-3 py-3 sm:px-5 sm:py-4 text-gray-700 min-w-[120px]">{lead.assignedAgent}</td>
                 <td className="px-3 py-3 sm:px-5 sm:py-4 text-gray-700 min-w-[120px]">{lead.lastContact}</td>
