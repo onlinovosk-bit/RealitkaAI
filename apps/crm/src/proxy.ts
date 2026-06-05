@@ -21,7 +21,7 @@ const PUBLIC_PATHS = new Set([
 
 const CRON_PATH_PREFIX = "/api/agents";
 const CRON_API_PATH_PREFIX = "/api/cron/";
-const SCORING_CRON_PATHS = ["/api/scoring", "/api/segmentation"];
+const SCORING_CRON_PATHS = ["/api/scoring"];
 /** Removed routes — let Next return 404 (no session gate). PR-4 scrape removal. */
 const REMOVED_API_PATHS = new Set(["/api/scrape"]);
 const WEBHOOK_API_SEGMENT = "/api/webhooks";
