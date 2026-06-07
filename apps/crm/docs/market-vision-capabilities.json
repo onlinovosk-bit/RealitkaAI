@@ -1,0 +1,81 @@
+{
+  "version": "2026-06-07",
+  "program": "guardian",
+  "tier": "market_vision",
+  "updatedBy": "TRACK-F overnight handoff",
+  "notes": {
+    "live": "Operational in production for Smolko",
+    "liveOverride": "Works but paywall not enforced — saas-ops dev overrides active",
+    "hidden": "Code/cron exists; UI or data not ready — not same as disabled",
+    "off": "Intentionally disabled"
+  },
+  "gating": {
+    "licenseGatingEnforced": false,
+    "canUseFullAppOverride": true,
+    "getFeatureFlagsForPlanOverride": true,
+    "phase5ForecastGate": false,
+    "phase5TeamGate": false,
+    "tenantRlsStrict": false
+  },
+  "capabilities": {
+    "coreCrm": {
+      "aiScoring": { "status": "live", "note": "ai_priority pipeline" },
+      "aiRecommendations": { "status": "live", "note": "morning brief, deal suggestions" },
+      "forecasting": { "status": "live", "note": "ForecastRiskStrip — PR #105" },
+      "communicationHub": { "status": "live" },
+      "outreach": { "status": "live" },
+      "integrations": { "status": "live", "note": "Realvia webhook — first webhooks confirmed" },
+      "teamManagement": { "status": "live" },
+      "advancedReporting": { "status": "live" },
+      "billing": { "status": "live", "note": "invoices" }
+    },
+    "decisionEngine": {
+      "decisionEngine": {
+        "status": "enabling",
+        "note": "DECISION_ENGINE_ENABLED=true in Vercel today; smoke recompute-queue pending"
+      }
+    },
+    "leadsPipeline": {
+      "leadImport": { "status": "live", "note": "439 contacts imported" },
+      "leadTriage": { "status": "live", "note": "cron lead-ai-triage" },
+      "pipeline": { "status": "live" },
+      "contacts": { "status": "live" }
+    },
+    "workdeskDashboard": {
+      "workdesk": { "status": "live", "note": "PR #101 merged" },
+      "morningBrief": { "status": "live", "note": "cron morning-brief" },
+      "dashboardInsights": { "status": "live", "note": "cron dashboard-insights 2x daily" },
+      "callAnalyzer": { "status": "live" }
+    },
+    "realviaSync": {
+      "realviaSync": { "status": "live", "note": "webhook + external cron cron-job.org" },
+      "propertySync": { "status": "live", "note": "properties table" }
+    },
+    "comingSoon": {
+      "recruiting": {
+        "status": "hidden",
+        "visible": false,
+        "reason": "legal_hold — awaiting lawyer; cron stealth-recruiter-ingest still scheduled"
+      },
+      "arbitrage": {
+        "status": "hidden",
+        "visible": false,
+        "reason": "portal_listings empty; cron arbitrage-scan still scheduled"
+      },
+      "marketIntelligence": {
+        "status": "hidden",
+        "visible": false,
+        "reason": "depends on portal_listings"
+      },
+      "socialScout": {
+        "status": "off",
+        "visible": false,
+        "reason": "GDPR risk"
+      }
+    },
+    "growth": {
+      "stealthFunnel": { "status": "pending", "note": "/start — in repo, not on main" },
+      "coldEmailUpdated": { "status": "pending", "note": "cold-email.md → /start link" }
+    }
+  }
+}
