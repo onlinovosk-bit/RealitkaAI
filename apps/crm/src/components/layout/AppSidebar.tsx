@@ -569,6 +569,9 @@ export default function AppSidebar({
   const planLabel     = isFounderDemo
     ? FOUNDER_DEMO_PROGRAMS.find((p) => p.id === demoProgram)?.label ?? "Protocol Authority"
     : menuContext.planLabel;
+  const roleLabel     = isFounderDemo
+    ? VARIANT_THEMES[demoVariant].roleLabel
+    : menuContext.roleLabel;
 
   // Načítaj demo program z localStorage
   useEffect(() => {
@@ -673,10 +676,9 @@ export default function AppSidebar({
   }, []);
 
   // Nav položky filtrované podľa variantu + permissions
-  const navItems = filterItemsByDemoProgram(
-    getNavItems(renderVariant, permissions),
-    demoProgram
-  );
+  const navItems = isFounderDemo
+    ? filterItemsByDemoProgram(getNavItems(renderVariant, permissions), demoProgram)
+    : getNavItems(renderVariant, permissions);
 
   // Zoskup do sekcií v správnom poradí
   const SECTION_ORDER: NavSection[] = ["main", "team", "tools", "settings"];
@@ -967,7 +969,7 @@ export default function AppSidebar({
                   lineHeight: "1.2",
                 }}
               >
-                {theme.roleLabel}
+                {roleLabel}
               </p>
             </div>
           </div>
