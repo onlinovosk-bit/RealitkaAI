@@ -4,12 +4,13 @@
 // vercel.json: {"path": "/api/cron/pulse", "schedule": "0 * * * *"}
 // ================================================================
 import { NextRequest, NextResponse } from 'next/server'
+import { err } from '@/lib/api-response'
 import { runPulseCheck } from '@/lib/infra/pulse'
 
 export async function GET(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET
   if (!cronSecret || request.headers.get('authorization') !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return err('Unauthorized', 401)
   }
 
   const result = await runPulseCheck()
