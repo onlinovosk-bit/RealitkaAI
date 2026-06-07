@@ -6,6 +6,7 @@ import type { SaaSLead } from "@/lib/sales-funnel-store";
 const STATUS_LABELS: Record<SaaSLead["status"], string> = {
   new: "Nový",
   contacted: "Kontaktovaný",
+  nda_accepted: "NDA podpísané",
   demo_booked: "Demo zarezervované",
   proposal_sent: "Ponuka odoslaná",
   won: "Vyhraté",
@@ -15,6 +16,7 @@ const STATUS_LABELS: Record<SaaSLead["status"], string> = {
 const STATUS_COLORS: Record<SaaSLead["status"], string> = {
   new: "bg-blue-100 text-blue-700",
   contacted: "bg-yellow-100 text-yellow-700",
+  nda_accepted: "bg-teal-100 text-teal-700",
   demo_booked: "bg-violet-100 text-violet-700",
   proposal_sent: "bg-orange-100 text-orange-700",
   won: "bg-green-100 text-green-700",

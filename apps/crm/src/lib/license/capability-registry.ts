@@ -6,6 +6,8 @@ import type {
   LicenseTierKey,
 } from "./types";
 
+export type { LicenseCapability } from "./types";
+
 /** Rank ladder — single source for tier comparisons */
 export const TIER_RANK: Record<LicenseTierKey, number> = {
   free: 0,
