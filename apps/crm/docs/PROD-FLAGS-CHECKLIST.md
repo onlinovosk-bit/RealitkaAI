@@ -77,6 +77,15 @@ curl -sS -o /dev/null -w "%{http_code}" -X POST \
 
 V UI: Dashboard → L99 Decision Ops → „2) Komu volať ako prvému?“ — nemá vrátiť 403 toast.
 
+### Smoke log (2026-06-07, unauthenticated)
+
+```text
+POST https://app.revolis.ai/api/ai/decision/recompute-queue
+→ {"ok":false,"error":"Unauthorized"} HTTP 401
+```
+
+401 bez session je **očakávané** — endpoint nie je verejný. Ďalší krok: Vercel `DECISION_ENGINE_ENABLED=true` + retest s prihlásenou session (očakávaj 200 alebo 403 ak flag off).
+
 ---
 
 ## 2. `canUseFullApp` dev override
