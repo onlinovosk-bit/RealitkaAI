@@ -7,26 +7,32 @@ Swarm objective: `swarm-mq48vemz` (REVOLIS P0 one-liner)
 - **Status:** ✅ Complete (readonly)
 - **Output:** `apps/crm/docs/PR-TRIAGE-MATRIX.md`
 - **Finding:** 17 open PRs; 12 Vercel FAILURE; #14 CONFLICTING; 3 TOUCH-GUARD
-- **Action:** Recommend **bulk close** Slate #14–#23; **close #26** (superseded); no merges performed
+- **Action:** Closed Slate **#14–#23** + **#26**; docs merged **#110**; no Slate merges
 
 ## P0-2: TRACK-D — feat/phase5-forecast-gating
 
-- **Status:** ✅ Draft PR created
-- **Branch:** `feat/phase5-forecast-gating` (commit `31538ef` ahead of main)
-- **PR:** https://github.com/onlinovosk-bit/RealitkaAI/pull/111
-- **Note:** `useLicenseCapabilities` + `PremiumLockedOverlay` already present on `main` in `ForecastPageClient.tsx` — PR may be redundant; review diff before merge
+- **Status:** ✅ Closed superseded
+- **PR #111:** closed — gating already on `main` (`ForecastPageClient.tsx`)
 
 ## P0-3: TRACK-E — feat/phase5-team-gating
 
-- **Status:** ✅ Draft PR created
-- **Branch:** `feat/phase5-team-gating` (commit `bde6af1` ahead of main)
-- **PR:** https://github.com/onlinovosk-bit/RealitkaAI/pull/112
-- **Note:** `TeamPressureGate` + `canAccessTeamPressure` pattern on branch; review vs main before merge
+- **Status:** ✅ Closed superseded
+- **PR #112:** closed — gating already on `main` (`TeamAnalyticsClient.tsx`)
 
-## P0-0 (swarm objective, not in bash script): DECISION_ENGINE smoke
+## Execution batch (2026-06-07 21:02 UTC)
 
-- **Status:** ⏳ Pending human
-- **Action:** Set `DECISION_ENGINE_ENABLED=true` in Vercel Production + authenticated POST smoke on `/api/ai/decision/recompute-queue`
+| Action | Result |
+|--------|--------|
+| Merge **#110** docs | ✅ `56cad191` on `main` |
+| Close **#111, #112, #26** | ✅ superseded |
+| Close Slate **#14–#23** | ✅ 10 PRs per triage matrix |
+| Ruflo tasks created | `task-1780866013102-n7w57p`, `task-1780866014953-oqs103` |
+
+## P0-0: DECISION_ENGINE smoke
+
+- **Status:** ⏳ Partial — unauthenticated curl returns **401** (expected)
+- **Prod check:** `POST /api/ai/decision/recompute-queue` → `{"ok":false,"error":"Unauthorized"}` HTTP 401
+- **Next:** Vercel `DECISION_ENGINE_ENABLED=true` + smoke with session cookie
 - **Doc:** `apps/crm/docs/PROD-FLAGS-CHECKLIST.md`
 
 ## Touch-Guard Compliance
@@ -41,7 +47,7 @@ Swarm objective: `swarm-mq48vemz` (REVOLIS P0 one-liner)
 
 ## Next human actions
 
-1. Review draft PR #111 + #112 CI — close if duplicate of main
-2. Vercel env + decision engine smoke
-3. Bulk-close Slate PRs per matrix recommendations
-4. Commit this report + matrix on `chore/overnight-docs` or new docs PR
+1. Vercel: `DECISION_ENGINE_ENABLED=true` + authenticated smoke
+2. Review open Smolko PRs **#25–#30** (not bulk-closed)
+3. `manual_plan` DB migration (activation_checklist step 1a–1c)
+4. Close **#24** billing slate PR if still open (TOUCH-GUARD)
