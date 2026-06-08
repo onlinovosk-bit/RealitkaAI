@@ -51,3 +51,22 @@ Swarm objective: `swarm-mq48vemz` (REVOLIS P0 one-liner)
 2. Review open Smolko PRs **#25–#30** (not bulk-closed)
 3. `manual_plan` DB migration (activation_checklist step 1a–1c)
 4. Close **#24** billing slate PR if still open (TOUCH-GUARD)
+
+---
+
+## AGENT-C: Demo landing page (`apps/marketing`)
+
+- **Status:** ✅ Complete
+- **Branch:** `feat/demo-landing-page`
+- **Scope:** `apps/marketing/` only (no CRM code changes)
+- **Route:** `/demo` — public SEO landing (removed permanent redirect to zakulisie)
+- **Source:** `apps/crm/public/preview-landing-phase3-b.html` + main marketing copy
+- **Components:** `HeroSection`, `PainSection`, `SolutionSection`, `DemoCTA`, `FaqSection`
+- **Files:**
+  - `apps/marketing/app/demo/page.tsx` — metadata + page shell
+  - `apps/marketing/app/demo/demo.css` — scoped Slate Horizon styles
+  - `apps/marketing/components/demo/DemoSections.tsx` — section components
+  - `apps/marketing/components/demo/DemoCTA.tsx` — client CTAs + lead modal
+  - `apps/marketing/next.config.ts` — `/demo` route no longer 301 to zakulisie
+- **Build:** `npm run build` in `apps/marketing` — ✅ pass (`/demo` static, 4.38 kB)
+- **PR:** see gh output below
