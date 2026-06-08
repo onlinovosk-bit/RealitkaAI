@@ -25,6 +25,14 @@ export function getLeadDisplayScore(
   return 0;
 }
 
+/** Tooltip pri „—“ v tabuľke / mobile karte. */
+export function getLeadScoreUnavailableHint(
+  lead: Pick<Lead, "score" | "lastContact" | "aiPriority" | "aiTriageAt">,
+): string | null {
+  if (!isSparseQualificationLead(lead)) return null;
+  return "Skóre zatiaľ nie je k dispozícii — import bez kvalifikácie. Doplňte budget, financovanie alebo prvý kontakt.";
+}
+
 /** Import / bez kontaktu — triáž Nízka, nie „horúci“ ani „kúpi dnes“. */
 export function isSparseQualificationLead(
   lead: Pick<Lead, "score" | "lastContact" | "aiPriority" | "aiTriageAt">
