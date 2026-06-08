@@ -45,6 +45,8 @@ export default function LoginPage() {
     try {
       const { error: signInError } = await supabaseClient.auth.signInWithPassword({ email, password });
       if (signInError) throw signInError;
+      // Server link profilu (Smolko gmail ↔ agency_id) — rovnaké ako dashboard layout.
+      await fetch("/api/crm/tenant-health", { credentials: "include" }).catch(() => null);
       router.push("/dashboard");
       router.refresh();
     } catch (err) {
