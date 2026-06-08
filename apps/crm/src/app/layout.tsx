@@ -60,14 +60,7 @@ export default function RootLayout({
         <MobileBottomNav />
         <MobileFab />
         <PwaInstallBanner />
-        <Script id="revolis-sw-register" strategy="afterInteractive">
-          {`if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function () {
-    navigator.serviceWorker.register('/sw.js', { scope: '/' })
-      .catch(function (e) { console.warn('SW registration failed:', e); });
-  });
-}`}
-        </Script>
+        <ServiceWorkerRegistration />
       </body>
     </html>
   );
