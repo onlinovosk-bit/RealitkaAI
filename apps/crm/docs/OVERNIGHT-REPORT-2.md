@@ -73,7 +73,7 @@ Generovaný: Cursor swarm | Brief 2.0 | 5 agentov (I → G → F → H → J)
 2. **#141** — Score honesty (Smolko UX)
 3. **#142** — Morning Brief v2
 4. **#143** — API hardening
-5. **#144** — Performance audit (po push)
+5. **#144** — Performance audit
 
 ### Brief 1.0 overnight PRs (stále open)
 
