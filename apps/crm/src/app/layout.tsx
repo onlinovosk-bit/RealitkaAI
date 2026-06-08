@@ -3,6 +3,7 @@ import { SlackLayout } from "@/components/navigation/SlackLayout";
 import { MobileBottomNav } from "@/components/navigation/MobileBottomNav";
 import { PwaInstallBanner } from "@/components/pwa/PwaInstallBanner";
 import { MobileFab } from "@/components/pwa/MobileFab";
+import { ServiceWorkerRegistration } from "@/components/pwa/ServiceWorkerRegistration";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -62,22 +63,5 @@ export default function RootLayout({
         <ServiceWorkerRegistration />
       </body>
     </html>
-  );
-}
-
-function ServiceWorkerRegistration() {
-  return (
-    <script
-      dangerouslySetInnerHTML={{
-        __html: `
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
-    navigator.serviceWorker.register('/sw.js', { scope: '/' })
-      .catch(function(e) { console.warn('SW registration failed:', e); });
-  });
-}
-        `.trim(),
-      }}
-    />
   );
 }
