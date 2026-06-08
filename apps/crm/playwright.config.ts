@@ -60,6 +60,14 @@ export default defineConfig({
       testMatch: /call-analyzer\.spec\.ts/,
       use: { ...devices['Desktop Chrome'] },
     },
+    // API + route smoke (engineering_live) — bez auth setup dependency
+    {
+      name: 'smoke',
+      testMatch: /smoke\.spec\.ts/,
+      workers: 1,
+      timeout: 90_000,
+      use: { ...devices['Desktop Chrome'] },
+    },
   ],
   ...(webServer ? { webServer } : {}),
 });

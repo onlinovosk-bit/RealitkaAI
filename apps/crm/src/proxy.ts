@@ -22,6 +22,8 @@ const PUBLIC_PATHS = new Set([
 const CRON_PATH_PREFIX = "/api/agents";
 const CRON_API_PATH_PREFIX = "/api/cron/";
 const SCORING_CRON_PATHS = ["/api/scoring"];
+/** 410 Gone shims — bypass session gate so callers receive deprecated response. */
+const DEPRECATED_API_SHIMS = new Set(["/api/scoring", "/api/segmentation"]);
 /** Removed routes — let Next return 404 (no session gate). PR-4 scrape removal. */
 const REMOVED_API_PATHS = new Set(["/api/scrape"]);
 const WEBHOOK_API_SEGMENT = "/api/webhooks";
@@ -73,6 +75,7 @@ export async function proxy(request: NextRequest) {
   if (isRealviaImportPath(pathname)) return NextResponse.next();
   if (isWebhookApiPath(pathname)) return NextResponse.next();
   if (REMOVED_API_PATHS.has(pathname)) return NextResponse.next();
+  if (DEPRECATED_API_SHIMS.has(pathname)) return NextResponse.next();
   if (isCronRoute(pathname)) return NextResponse.next();
 
   let response = NextResponse.next({
