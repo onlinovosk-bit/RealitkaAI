@@ -3,7 +3,7 @@
 **Tenant:** Reality Smolko / Rastislav Smolko  
 **Agency ID:** `11111111-1111-1111-1111-111111111111`  
 **Produkcia:** https://app.revolis.ai  
-**Posledná revízia:** 2026-06-08
+**Posledná revízia:** 2026-06-08 (ops skripty + runtime overenie)
 
 Operačný checklist pre podporu, deploy a incident triáž. Žiadne zmeny kódu v tomto dokumente — len postupy overené v audite a smoke testoch.
 
@@ -41,34 +41,49 @@ WHERE id = '11111111-1111-1111-1111-111111111111';
 
 ### Poznámky
 
-- Kódová read cesta pre `manual_plan` môže byť v samostatnom PR — **neodstraňuj** `saas-ops` override pre Smolko, kým nie je 1a + 1b na prod.
+- Kód číta `manual_plan` v sidebar, `/api/billing/plan` (#122, #126 — merged).
+- **Runtime 2026-06-08:** `manual_plan = market_vision` na prod overené cez `npm run ops:tenant-health`.
 - Povolené hodnoty `manual_plan`: `starter` | `pro` | `scale` | `market_vision` | `free`.
 
 ---
 
-## 2. Známe issue — skóre 22/100 (display placeholder)
+## 2. Skóre v UI — **—** (nie 22/100)
 
-Zdroj: `docs/LEADS-SCORE-AUDIT.md` (audit 2026-06-05, readonly SELECT).
+Zdroj: `docs/LEADS-SCORE-AUDIT.md` + fix #123, #127 (merged).
 
-| Metrika | Hodnota |
-|---------|---------|
+| Metrika | Hodnota (2026-06-08) |
+|---------|----------------------|
 | Celkový počet leadov | **439** |
-| DB `score` | **0** na všetkých (100 %) |
+| DB `score` | **0** na všetkých (pred backfillom) |
 | DB `ai_priority` | **„Nízka"** na všetkých (W1 triáž po importe) |
-| UI zobrazené skóre | **22/100** na všetkých — **nie reálne BRI** |
+| UI zobrazené skóre | **—** + tooltip pre sparse import leady |
 
-**Root cause:** Číslo 22 pochádza z display mapy `aiPriorityToDisplayScore()` (`apps/crm/src/lib/leads/lead-display-score.ts`): priorita „Nízka" → 22. V DB **nie je** `score = 22`.
+**Support:**
 
-**Čo to znamená pre support:**
-
-- Broker **nesmie** interpretovať 22/100 ako buyer intent — ide o placeholder po importe bez kvalifikačných údajov.
+- **—** znamená „ešte nekvalifikovaný import", nie BRI ani buyer intent.
 - `budget`, `buyer_readiness_score` sú prázdne na 100 % leadov.
-- Horúci lead badge je blokovaný cez `isSparseQualificationLead()` — po UI zmene display skóre overiť, že filter stále funguje.
+- Horúci lead badge je blokovaný cez `isSparseQualificationLead()`.
 
-**Odporúčaná budúca oprava (samostatný PR, nie v tomto runbooku):**
+**Po doplnení údajov:** `POST /api/scoring/recalculate` (nie legacy `/api/scoring` — 410).
 
-- UI: „—" / „N/A" namiesto 22/100 pre sparse import leady.
-- Po doplnení údajov: `POST /api/scoring/recalculate` (nie legacy `/api/scoring` — 410).
+### 2b. Ops skripty (lokálne, service role)
+
+Vyžaduje `apps/crm/.env.local` s `NEXT_PUBLIC_SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`.
+
+```bash
+cd apps/crm
+
+# Readonly health (Smolko default agency)
+npm run ops:tenant-health
+
+# Dry-run heuristického backfillu leads.score (načíta aj lead_property_matches)
+npm run ops:backfill-scoring
+
+# Zápis po review (batch)
+npx tsx scripts/backfill-tenant-scoring.ts --apply --limit 50
+```
+
+**Poznámka k backfillu:** Bez matchov dáva heuristika 0 (penalizácia „bez matchingu"). Skript načítava `lead_property_matches` pre tenant leady — inak `would update: 0`.
 
 ---
 
@@ -174,8 +189,19 @@ WHERE agency_id = '11111111-1111-1111-1111-111111111111';
 cd apps/crm
 npm run build
 npm run test
-# voliteľne: npx playwright test tests/smoke.spec.ts
+npx playwright test --project=smoke
 ```
+
+### 4f. Prod smoke (bez lokálneho dev servera)
+
+```bash
+cd apps/crm
+$env:PLAYWRIGHT_SKIP_WEBSERVER="1"
+$env:NEXT_PUBLIC_SITE_URL="https://app.revolis.ai"
+npx playwright test --project=smoke
+```
+
+Cron testy s `CRON_SECRET` sa preskočia, ak secret v env chýba.
 
 ---
 

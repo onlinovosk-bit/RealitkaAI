@@ -61,6 +61,25 @@ function parseArgs(argv: string[]) {
   return { agencyId, apply, limit };
 }
 
+async function loadMatchesForLeads(
+  sb: ReturnType<typeof createClient>,
+  leadIds: string[],
+) {
+  if (leadIds.length === 0) return [];
+
+  const { data, error } = await sb
+    .from("lead_property_matches")
+    .select("lead_id, score")
+    .in("lead_id", leadIds);
+
+  if (error) throw new Error(`lead_property_matches: ${error.message}`);
+
+  return (data ?? []).map((row) => ({
+    leadId: row.lead_id as string,
+    matchScore: Number(row.score ?? 0),
+  }));
+}
+
 function mapRow(row: LeadRow) {
   return {
     id: row.id,
@@ -105,11 +124,13 @@ async function main() {
   }
 
   const leads = (rows ?? []) as LeadRow[];
-  const emptyRelated = { matches: [], recommendations: [], tasks: [], messages: [] };
+  const leadIds = leads.map((row) => row.id);
+  const matches = await loadMatchesForLeads(sb, leadIds);
+  const related = { matches, recommendations: [], tasks: [], messages: [] };
 
   const scored = leads.map((row) => {
     const lead = mapRow(row);
-    const result = calculateLeadAiScore({ lead, ...emptyRelated });
+    const result = calculateLeadAiScore({ lead, ...related });
     return { id: row.id, name: row.name, oldScore: row.score ?? 0, newScore: result.score };
   });
 
@@ -124,7 +145,7 @@ async function main() {
   console.log("");
   console.log(`Backfill tenant scoring — agency ${agencyId}`);
   console.log(`Mode: ${apply ? "APPLY (writes score)" : "DRY-RUN"}`);
-  console.log(`Leads loaded: ${scored.length}, would update: ${wouldChange.length}`);
+  console.log(`Leads loaded: ${scored.length}, matches loaded: ${matches.length}, would update: ${wouldChange.length}`);
   console.log(`Distribution (new): low<40=${band.low}, 40-69=${band.mid}, 70+=${band.high}`);
   console.log("Sample:", wouldChange.slice(0, 5));
 
