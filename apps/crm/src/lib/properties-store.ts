@@ -313,7 +313,15 @@ export async function listProperties(
   const supabase = await resolveTenantSupabase(scopedSupabase);
 
   if (!supabase) {
+    if (process.env.NODE_ENV === "production") return [];
     return applyPropertyFilters(getDemoShowcaseProperties(), filters);
+  }
+
+  const { resolveSessionAgencyId } = await import("@/lib/tenant-scope");
+  const agencyId = await resolveSessionAgencyId(supabase);
+  if (!agencyId) {
+    console.warn("[properties-store] listProperties: missing profile agency_id — returning empty set");
+    return [];
   }
 
   const statusFilter = filters?.status?.trim();
@@ -360,39 +368,29 @@ export async function listProperties(
 
   if (error || !data) {
     console.error("listProperties error:", error?.message);
+    if (process.env.NODE_ENV === "production") return [];
     return applyPropertyFilters(getDemoShowcaseProperties(), filters);
   }
 
-  const tenantScoped = await scopePropertyRowsToProfileAgency(supabase, data);
+  const tenantScoped = await scopePropertyRowsToProfileAgency(
+    supabase,
+    data as unknown as Record<string, unknown>[]
+  );
   return tenantScoped.map((item) => mapPropertyRow(item as Record<string, unknown>));
 }
 
-/**
- * RLS properties policy still exposes `agency_id IS NULL` rows to every authenticated user.
- * When profile has agency_id, keep only that tenant (defense in depth until migration tightens RLS).
- */
 async function scopePropertyRowsToProfileAgency(
   supabase: SupabaseClient,
   rows: Record<string, unknown>[],
 ): Promise<Record<string, unknown>[]> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return rows;
-
-  const { resolveProfileForAuthUser } = await import(
-    "@/lib/profiles/resolve-profile-for-auth"
+  const { resolveSessionAgencyId, filterRowsByAgency } = await import(
+    "@/lib/tenant-scope"
   );
-  const { profile } = await resolveProfileForAuthUser(
-    supabase,
-    user.id,
-    "agency_id",
-    user.email,
+  const agencyId = await resolveSessionAgencyId(supabase);
+  return filterRowsByAgency(
+    rows as Array<Record<string, unknown> & { agency_id?: string | null }>,
+    agencyId,
   );
-  const agencyId = profile?.agency_id;
-  if (!agencyId) return rows;
-
-  return rows.filter((row) => row.agency_id === agencyId);
 }
 
 export async function getProperty(
@@ -406,16 +404,23 @@ export async function getProperty(
   const supabase = await resolveTenantSupabase(scopedSupabase);
 
   if (!supabase) {
+    if (process.env.NODE_ENV === "production") return undefined;
     return getDemoShowcaseProperties().find((item) => item.id === id);
   }
+
+  const { resolveSessionAgencyId } = await import("@/lib/tenant-scope");
+  const agencyId = await resolveSessionAgencyId(supabase);
+  if (!agencyId) return undefined;
 
   const { data, error } = await supabase
     .from("properties")
     .select("*")
     .eq("id", id)
+    .eq("agency_id", agencyId)
     .single();
 
   if (error || !data) {
+    if (process.env.NODE_ENV === "production") return undefined;
     return getDemoShowcaseProperties().find((item) => item.id === id);
   }
 
