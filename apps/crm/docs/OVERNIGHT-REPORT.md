@@ -51,3 +51,29 @@ Swarm objective: `swarm-mq48vemz` (REVOLIS P0 one-liner)
 2. Review open Smolko PRs **#25–#30** (not bulk-closed)
 3. `manual_plan` DB migration (activation_checklist step 1a–1c)
 4. Close **#24** billing slate PR if still open (TOUCH-GUARD)
+
+---
+
+# Overnight Report — 2026-06-08 (AGENT-D)
+
+Generovaný: AGENT-D — Universal Import smoke test suite
+
+## AGENT-D — Smoke Test Suite
+
+- **Status:** ✅ DONE
+- **Branch:** `chore/smoke-test-suite`
+- **Scope:** `apps/crm/src/lib/universal-import/__tests__/`, `apps/crm/tests/`, `playwright.config.ts`
+- **Vitest:** 31 passed (3 files — column-detector, map-contact, import-store)
+- **Playwright:** 2 tests (`universal-import-smoke.spec.ts` — `/import/universal` non-404)
+- **Fixtures:** `tests/fixtures/universal-import-smoke.csv`, `__tests__/fixtures/smoke-realvia.csv`
+- **Blokery:** —
+
+### Súbory
+
+| Súbor | Zmena |
+|-------|-------|
+| `column-detector.test.ts` | +Priezvisko, budget/status/source/agent/type, `detectColumnsFromHeaders`, smoke CSV |
+| `import-store.test.ts` | Nový — vitest mocks pre Supabase import job CRUD |
+| `universal-import-smoke.spec.ts` | Nový — route smoke bez auth setup |
+| `playwright.config.ts` | Projekt `universal-import-smoke` |
+| `smoke-realvia.csv` | Realvia smoke fixture pre unit testy |
