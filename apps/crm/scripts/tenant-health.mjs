@@ -8,7 +8,12 @@
  * Env: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
  */
 
+import { config } from "dotenv";
+import { resolve } from "path";
 import { createClient } from "@supabase/supabase-js";
+
+config({ path: resolve(process.cwd(), ".env.local") });
+config({ path: resolve(process.cwd(), ".env") });
 
 const SMOLKO_AGENCY_ID = "11111111-1111-1111-1111-111111111111";
 
