@@ -51,3 +51,52 @@ Swarm objective: `swarm-mq48vemz` (REVOLIS P0 one-liner)
 2. Review open Smolko PRs **#25–#30** (not bulk-closed)
 3. `manual_plan` DB migration (activation_checklist step 1a–1c)
 4. Close **#24** billing slate PR if still open (TOUCH-GUARD)
+
+---
+
+# Overnight Report — 2026-06-08
+
+Generovaný: Ruflo mesh swarm v3 | AGENT-E (readonly PR triage)
+
+## AGENT-E — PR Triage
+
+- **Status:** ✅ DONE
+- **Súbor:** `apps/crm/docs/PR-TRIAGE-MATRIX.md`
+- **PRs analyzovaných:** 4 open (+ 3 recently merged noted)
+- **Na merge:** 0 | **Na rebase:** 1 (#72 post-approval) | **Na close:** 3 (#6, #9, #30) | **Na hold:** 1 (#72)
+- **Blokery:** —
+
+### Výsledky
+
+| PR# | Odporúčanie | Poznámka |
+|-----|-------------|----------|
+| #72 | **HOLD** | Stealth Recruiter — CONFLICTING, green CI; Andy legal/product gate |
+| #30 | **CLOSE** | Orphaned Slate base, TOUCH-GUARD billing |
+| #9 | **CLOSE** | ai-core-v2 superseded by #132–#134 |
+| #6 | **CLOSE** | Draft, CI red, 27d stale |
+
+### Recently merged (2026-06-08)
+
+- ✅ **#132** — import schema + types + column detector
+- ✅ **#133** — import UI + API + preview wizard
+- ✅ **#134** — sidebar Import + onboarding banner
+
+### AGENT-E output PR
+
+- Triage docs PR: _(pending `gh pr create`)_
+
+## Pre Claude orchestrátora ráno
+
+### PRs na review + schválenie
+
+- [#72 Stealth Recruiter](https://github.com/onlinovosk-bit/RealitkaAI/pull/72) — HOLD until Andy sign-off + rebase
+
+### Rozhodnutia ktoré vyžadujú Andy
+
+1. Stealth Recruiter (#72) — prod launch approval + staging migration
+2. Bulk close #6, #9, #30 — confirm no cherry-pick needed
+
+### NESMIE sa robiť bez Andy review
+
+- Merge #72 (RLS migration + outreach APIs)
+- Cherry-pick from #30 (billing/plan TOUCH-GUARD)
