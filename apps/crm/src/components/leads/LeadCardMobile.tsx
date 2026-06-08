@@ -3,7 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useTransition, useState, useCallback } from "react";
 import type { Lead } from "@/lib/leads-store";
-import { getLeadDisplayScore, getLeadScoreUnavailableHint } from "@/lib/leads/lead-display-score";
+import { getLeadScoreUnavailableHint } from "@/lib/leads/lead-display-score";
+import { getScoreDisplay } from "@/lib/leads/score-display";
 
 const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
   "Horúci":    { bg: "rgba(34,197,94,0.12)",  text: "#22C55E" },
@@ -34,8 +35,17 @@ interface LeadCardMobileProps {
 export function LeadCardMobile({ lead, onStatusChange }: LeadCardMobileProps) {
   const router        = useRouter();
   const [, startTransition] = useTransition();
-  const displayScore = getLeadDisplayScore(lead);
+  const scoreDisplay = getScoreDisplay({
+    score: lead.score,
+    aiPriority: lead.aiPriority,
+    buyer_readiness_score: lead.buyer_readiness_score,
+    aiTriageAt: lead.aiTriageAt,
+    lastContact: lead.lastContact,
+  });
   const scoreHint = getLeadScoreUnavailableHint(lead);
+  const arcScore = scoreDisplay.showScore
+    ? parseInt(scoreDisplay.label, 10)
+    : null;
 
   // Optimistic status — UI aktualizuje okamžite, API call prebieha na pozadí
   const [optimisticStatus, setOptimisticStatus] = useState(lead.status);
@@ -84,8 +94,8 @@ export function LeadCardMobile({ lead, onStatusChange }: LeadCardMobileProps) {
         className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full"
         style={{ background: "rgba(5,9,20,0.8)", border: "1.5px solid rgba(34,211,238,0.15)" }}
       >
-        {displayScore != null ? (
-          <ScoreArc score={displayScore} />
+        {arcScore != null && !Number.isNaN(arcScore) ? (
+          <ScoreArc score={arcScore} />
         ) : (
           <span
             className="text-sm font-semibold"
