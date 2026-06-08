@@ -5,11 +5,13 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { NavIcon } from "@/components/ui/NavIcon";
 import {
+  applyImportNavBadges,
   getNavItems,
   SECTION_LABELS,
   VARIANT_THEMES,
   DEFAULT_TEAM_PERMISSIONS,
   type MenuVariant,
+  type NavBadge,
   type NavItem,
   type NavSection,
   type TeamMemberPermissions,
@@ -45,9 +47,15 @@ function getDemoVariant(program: FounderDemoProgram): MenuVariant {
   }
 }
 
+function formatWorkdeskBadgeLabel(badge: NavBadge): string {
+  if (badge.label === "live") return "3";
+  if (badge.label === "hot") return "17";
+  return badge.label;
+}
+
 function filterItemsByDemoProgram(items: NavItem[], program: FounderDemoProgram): NavItem[] {
   if (program === "free") {
-    const allowedFreeIds = new Set(["today", "contacts", "settings"]);
+    const allowedFreeIds = new Set(["today", "import-contacts", "contacts", "settings"]);
     return items.filter((item) => allowedFreeIds.has(item.id));
   }
   if (program === "starter" || program === "active_force" || program === "market_vision") {
@@ -162,7 +170,7 @@ function WorkdeskNavRow({
             ...countStyle,
           }}
         >
-          {item.badge.label === "live" ? "3" : item.badge.label === "hot" ? "17" : item.badge.label.slice(0, 3)}
+          {formatWorkdeskBadgeLabel(item.badge)}
         </span>
       ) : null}
     </Link>
@@ -553,6 +561,7 @@ export default function AppSidebar({
   const [demoProgram,     setDemoProgram]     = useState<FounderDemoProgram>("protocol_authority");
   const [toastVisible,    setToastVisible]    = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<NavSection[]>([]);
+  const [leadsCount, setLeadsCount] = useState<number | null>(null);
   const gKeyRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const gPressedRef = useRef(false);
 
@@ -653,6 +662,19 @@ export default function AppSidebar({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [router]);
 
+  // Počet leadov pre badge „Začni tu“ na importe
+  useEffect(() => {
+    fetch("/api/crm/tenant-health", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { snapshot?: { counts?: { leads?: number } } } | null) => {
+        const count = data?.snapshot?.counts?.leads;
+        if (typeof count === "number") setLeadsCount(count);
+      })
+      .catch(() => {
+        // badge je optional — bez countu necháme statické menu
+      });
+  }, []);
+
   // Načítaj permissions pre tímového makléra
   useEffect(() => {
     if (renderVariant !== "agent_team") return;
@@ -677,10 +699,13 @@ export default function AppSidebar({
     });
   }, []);
 
-  // Nav položky filtrované podľa variantu + permissions
-  const navItems = isFounderDemo
-    ? filterItemsByDemoProgram(getNavItems(renderVariant, permissions), demoProgram)
-    : getNavItems(renderVariant, permissions);
+  // Nav položky filtrované podľa variantu + permissions + import badge
+  const navItems = applyImportNavBadges(
+    isFounderDemo
+      ? filterItemsByDemoProgram(getNavItems(renderVariant, permissions), demoProgram)
+      : getNavItems(renderVariant, permissions),
+    leadsCount,
+  );
 
   // Zoskup do sekcií v správnom poradí
   const SECTION_ORDER: NavSection[] = ["main", "team", "tools", "settings"];

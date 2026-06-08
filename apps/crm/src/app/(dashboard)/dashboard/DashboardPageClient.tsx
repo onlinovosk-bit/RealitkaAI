@@ -21,6 +21,7 @@ import { AIAssistBanner } from "@/components/dashboard/AIAssistBanner";
 import { AssistantPanelDynamic } from "@/components/dashboard/AssistantPanel.dynamic";
 import L99DecisionOpsPanel from "@/components/dashboard/L99DecisionOpsPanel";
 import { WorkdeskCommandHero } from "@/components/dashboard/WorkdeskCommandHero";
+import { ImportContactsBanner } from "@/components/dashboard/ImportContactsBanner";
 import { AIPriorityStrip } from "@/components/dashboard/AIPriorityStrip";
 import { NextBestActionPanel } from "@/components/dashboard/NextBestActionPanel";
 import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
@@ -260,6 +261,8 @@ export default function DashboardPageClient({ initialPropertiesSummary }: Dashbo
     <div className="p-3 md:p-6" style={{ minHeight: "100%" }} id="actions">
       <div className="mx-auto max-w-6xl">
         <WorkdeskCommandHero leads={leads} />
+
+        <ImportContactsBanner leadsCount={totalLeads} />
 
         <AIPriorityStrip leads={leads} loading={isLoading} />
 

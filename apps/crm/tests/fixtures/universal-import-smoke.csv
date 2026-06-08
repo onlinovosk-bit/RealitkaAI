@@ -1,0 +1,4 @@
+Meno,Priezvisko,Telefon,Email,Adresa,Poznamka
+Smoke,Test Alpha,+421900999001,smoke.universal.001@revolis-test.invalid,Bratislava,SMOKE TEST — bezpečný import wizard; môžeš zmazať
+Smoke,Test Beta,+421900999002,smoke.universal.002@revolis-test.invalid,Prešov,SMOKE TEST — druhý riadok; žiadny existujúci lead
+Smoke,Test Gamma,+421900999003,smoke.universal.003@revolis-test.invalid,Košice,SMOKE TEST — tretí riadok; overenie reportu imported=3

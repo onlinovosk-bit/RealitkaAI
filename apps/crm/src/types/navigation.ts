@@ -26,7 +26,8 @@ export type NavIcon =
   | "ai"          // AI asistent
   | "team-pulse"  // Tímový pipeline
   | "shield"      // Leady kolegov
-  | "lock";       // Permissions
+  | "lock"        // Permissions
+  | "upload";     // Import kontaktov
 
 export type NavBadge = {
   label:   string;
@@ -175,6 +176,15 @@ export const ALL_NAV_ITEMS: NavItem[] = [
     showFor: ["agent_solo", "agent_team"],
   },
   {
+    id: "import-contacts",
+    label: "Importovať kontakty",
+    sublabel: "Realvia · RealSoft · CSV za < 10 min",
+    href: "/import/universal",
+    icon: "upload",
+    section: "main",
+    showFor: ["agent_solo", "agent_team"],
+  },
+  {
     id: "pipeline",
     label: "Kto je pripravený kúpiť",
     sublabel: "BRI scoring · Pipeline · AI predikcia",
@@ -309,6 +319,15 @@ export const ALL_NAV_ITEMS: NavItem[] = [
     showFor: ["owner_vision", "owner_protocol"],
   },
   {
+    id: "import-contacts",
+    label: "Importovať kontakty",
+    sublabel: "Realvia · RealSoft · CSV za < 10 min",
+    href: "/import/universal",
+    icon: "upload",
+    section: "main",
+    showFor: ["owner_vision", "owner_protocol"],
+  },
+  {
     id: "team",
     label: "Môj tím výkonnosť",
     sublabel: "Agent scoring · Aktivity · Ghost Resurrection",
@@ -386,6 +405,8 @@ export const ALL_NAV_ITEMS: NavItem[] = [
 
 // ─── Helper funkcie ────────────────────────────────────────────────────────
 
+export const IMPORT_CONTACTS_NAV_ID = "import-contacts";
+
 export function getNavItems(
   variant:     MenuVariant,
   permissions?: Partial<TeamMemberPermissions>
@@ -395,6 +416,23 @@ export function getNavItems(
     if (!item.showFor.includes(variant)) return false;
     if (item.permissionKey) return perms[item.permissionKey] === true;
     return true;
+  });
+}
+
+/** Badge „Začni tu“ pre nové RK s 0 leadmi — inak bez badge. */
+export function applyImportNavBadges(
+  items: NavItem[],
+  leadsCount: number | null,
+): NavItem[] {
+  if (leadsCount === null) return items;
+
+  return items.map((item) => {
+    if (item.id !== IMPORT_CONTACTS_NAV_ID) return item;
+    if (leadsCount === 0) {
+      return { ...item, badge: { label: "Začni tu", variant: "new" } };
+    }
+    const { badge: _removed, ...withoutBadge } = item;
+    return withoutBadge;
   });
 }
 
