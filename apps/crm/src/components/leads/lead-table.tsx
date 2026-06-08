@@ -185,9 +185,11 @@ export default function LeadTable({ leads, onDelete }: LeadTableProps) {
                     return (
                       <div className="space-y-1">
                         <span
-                          className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${getScoreClasses(displayScore)}`}
+                          className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${
+                            displayScore != null ? getScoreClasses(displayScore) : "bg-slate-100 text-slate-500"
+                          }`}
                         >
-                          {displayScore}/100
+                          {displayScore != null ? `${displayScore}/100` : "—"}
                           {lead.aiPriority ? (
                             <span className="ml-1 font-normal opacity-80">· {lead.aiPriority}</span>
                           ) : null}

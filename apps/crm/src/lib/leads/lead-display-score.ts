@@ -9,12 +9,15 @@ export function aiPriorityToDisplayScore(priority: string | null | undefined): n
   return null;
 }
 
-export function getLeadDisplayScore(lead: Pick<Lead, "score" | "buyer_readiness_score" | "aiPriority" | "aiTriageAt">): number {
+export function getLeadDisplayScore(
+  lead: Pick<Lead, "score" | "buyer_readiness_score" | "aiPriority" | "aiTriageAt" | "lastContact">
+): number | null {
   if (lead.buyer_readiness_score != null && Number.isFinite(lead.buyer_readiness_score)) {
     return Math.min(100, Math.round(lead.buyer_readiness_score));
   }
   const raw = Number(lead.score ?? 0);
   if (raw > 0) return Math.min(100, Math.round(raw));
+  if (isSparseQualificationLead(lead)) return null;
   if (lead.aiTriageAt) {
     const fromPriority = aiPriorityToDisplayScore(lead.aiPriority);
     if (fromPriority != null) return fromPriority;
