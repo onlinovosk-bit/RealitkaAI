@@ -91,4 +91,4 @@ Swarm objective: `swarm-mq48vemz` (REVOLIS P0 one-liner)
 
 ### AGENT-A output PR
 
-- Feature health PR: _(see PR URL below)_
+- Feature health PR: https://github.com/onlinovosk-bit/RealitkaAI/pull/139
