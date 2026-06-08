@@ -15,16 +15,17 @@ export interface GeneratedText {
 }
 
 const SYSTEM_A = `Si Revolis.AI — inteligentný realitný asistent pre slovenských maklérov.
-Píšeš ranný brief VÝLUČNE po slovensky. Štýl: priamy, konkrétny, žiadne floskuly.
-Pravidlá:
-- Presne 3 vety. Nie 2, nie 4. Presne 3.
-- Každá veta začína iným slovom ako predchádzajúca.
-- Žiadne "V súhrne", "Dobrý deň" ani iné intro/outro.
-- Veta 1: Kto je najhorúcejší a prečo (čísla).
-- Veta 2: Najdôležitejšia nočná zmena (ak žiadna: situácia v pipeline).
-- Veta 3: Jedna konkrétna akcia s časovým oknom.
-- Veta 3 NIKDY nezačína "Odporúčam" ani "Je vhodné".
-Formát: len čistý text, bez Markdown, bez odrážok.`
+Píšeš ranný brief VÝLUČNE po slovensky. Max 300 slov. Žiadny marketing jazyk.
+Štýl: priamy, konkrétny, akčný — nie všeobecné rady.
+
+Štruktúra (v tomto poradí, bez emoji v texte):
+1) DNEŠNÉ ČÍSLA — leady čakajúce na kontakt, HOT leady, neodpovedané >48h (konkrétne čísla z dát).
+2) TOP 3 PRIORITY — mená + jedna veta dôvodu urgentnosti pre každého (max 3).
+3) PIPELINE — hodnota pipeline v EUR ak je v dátach.
+4) TIP DŇA — jeden konkrétny tip podľa stavu pipeline (nie generický).
+5) AKCIA — jedna presná akcia s časovým oknom (napr. pred 10:00).
+
+Formát: krátke odseky, bez Markdown, bez odrážok.`
 
 const SYSTEM_B = `Si Revolis.AI — inteligentný realitný asistent pre slovenských maklérov.
 Píšeš ranný brief po slovensky. Štýl: analytický ale zrozumiteľný.
@@ -109,6 +110,13 @@ function buildContext(data: GatheredData): string {
   }
 
   lines.push(`\nPIPELINE: aktívnych: ${stats.activeLeads}, hot (>=60): ${stats.hotLeads}`)
+  lines.push(`Čakajú na kontakt: ${stats.pendingContact} (z toho HOT: ${stats.hotPending})`)
+  lines.push(`Neodpovedané >48h: ${stats.staleContacts48h}`)
+  lines.push(`Hodnota pipeline: ${stats.pipelineValueEur.toLocaleString('sk')} €`)
+  if (stats.priorityLeadNames.length) {
+    lines.push(`Priority leady: ${stats.priorityLeadNames.join(', ')}`)
+  }
+  lines.push(`Zmeny cien nehnuteľností: ${stats.priceDropCount}`)
   return lines.join('\n')
 }
 
@@ -131,26 +139,44 @@ function extractLastSentence(text: string): string {
   return sentences[sentences.length - 1]?.trim() ?? text
 }
 
+export function buildDeliveryFallbackText(
+  data: GatheredData,
+  hotLeads: number,
+): string {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.revolis.ai'
+  return [
+    '🌅 Dobré ráno!',
+    '',
+    `Dnes máte ${hotLeads} HOT leadov čakajúcich na kontakt.`,
+    `Neodpovedané správy staršie ako 48h: ${data.stats.staleContacts48h}.`,
+    'Systém momentálne generuje váš personalizovaný brief — skúste znova o 10 minút.',
+    '',
+    `Priamy odkaz na leady: ${baseUrl}/leads`,
+  ].join('\n')
+}
+
 function buildFallbackText(data: GatheredData, variant: BriefVariant): GeneratedText {
   const top   = data.hotLeads[0]
   const score = top?.bri_score ?? 0
-  const name  = top?.full_name ?? 'Váš top lead'
-  const { overnight } = data
+  const name  = top?.full_name ?? data.stats.priorityLeadNames[0] ?? 'Váš top lead'
+  const { overnight, stats } = data
 
-  const veta1 = `${name} má dnes BRI skóre ${score}/100 — najvyššia pripravenosť vo vašom pipeline.`
-  const veta2 = overnight.replies.length > 0
-    ? `${overnight.replies[0].leadName} odpovedal na vašu správu cez noc.`
-    : overnight.lvChanges.length > 0
-    ? `Zaznamenali sme zmenu na LV pre ${overnight.lvChanges[0].address}.`
-    : overnight.newLeads > 0
-    ? `Cez noc prišli ${overnight.newLeads} nové dopyty.`
-    : `Pipeline je stabilný — ${data.stats.activeLeads} aktívnych leadov čaká.`
+  const veta1 = `Dnes čaká ${stats.pendingContact} leadov na kontakt (${stats.hotPending} HOT). Pipeline: ${stats.pipelineValueEur.toLocaleString('sk')} €.`
+  const veta2 = top
+    ? `${name} má BRI ${score}/100 — priorita č. 1.`
+    : stats.priorityLeadNames.length
+    ? `Priority: ${stats.priorityLeadNames.slice(0, 3).join(', ')}.`
+    : overnight.replies.length > 0
+    ? `${overnight.replies[0].leadName} odpovedal cez noc.`
+    : `Neodpovedané >48h: ${stats.staleContacts48h}.`
   const veta3 = score >= 75
-    ? `Zavolajte ${name} dnes pred 10:00 — vysoké BRI skóre klesá bez kontaktu.`
-    : `Pošlite ${name} follow-up správu dnes dopoludnia.`
+    ? `Zavolajte ${name} dnes pred 10:00.`
+    : stats.staleContacts48h > 0
+    ? `Najprv kontaktujte ${stats.staleContacts48h} leadov bez odpovede >48h.`
+    : `Pošlite follow-up top 3 priority dnes dopoludnia.`
 
   const aiText      = [veta1, veta2, veta3].join(' ')
-  const subjectLine = `${name} · BRI ${score}/100 — ranný brief Revolis.AI`
+  const subjectLine = `${name} · brief Revolis.AI`
 
   return {
     aiText,
