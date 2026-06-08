@@ -22,6 +22,9 @@ type ProfileLookupResult = {
   profile: ResolvedAuthProfile | null;
 };
 
+/** Reality Smolko tenant — canonical agency UUID (prod). */
+export const SMOLKO_AGENCY_ID = "11111111-1111-1111-1111-111111111111";
+
 /** Reality Smolko owner logins (prod + Google auth). */
 export function isSmolkoOwnerEmail(email: string | null | undefined): boolean {
   const normalized = String(email ?? "").trim().toLowerCase();
@@ -41,10 +44,52 @@ export function smolkoProfileLookupEmails(loginEmail: string | null | undefined)
   const normalized = String(loginEmail ?? "").trim().toLowerCase();
   if (normalized) candidates.add(normalized);
   if (isSmolkoOwnerEmail(normalized)) {
-    candidates.add("office@realitysmolko.sk");
+    // Prod owner prihlásenie je gmail; office@ riadok nemusí existovať.
     candidates.add("rastislav.smolko@gmail.com");
+    candidates.add("office@realitysmolko.sk");
   }
   return [...candidates];
+}
+
+async function findSmolkoOwnerProfileViaServiceRole(
+  service: SupabaseClient,
+  userId: string,
+  loginEmail: string | null | undefined,
+  select: string,
+): Promise<ResolvedAuthProfile | null> {
+  if (!isSmolkoOwnerEmail(loginEmail)) return null;
+
+  const { data: owners } = await service
+    .from("profiles")
+    .select(select)
+    .eq("agency_id", SMOLKO_AGENCY_ID)
+    .in("role", ["owner", "founder"]);
+
+  if (!owners?.length) return null;
+
+  const linkedOwner = owners.find(
+    (row) => (row as ResolvedAuthProfile).auth_user_id === userId,
+  ) as ResolvedAuthProfile | undefined;
+  if (linkedOwner) {
+    return linkedOwner;
+  }
+
+  const loginCandidates = new Set(
+    smolkoProfileLookupEmails(loginEmail).map((e) => e.toLowerCase()),
+  );
+
+  let emailMatch: ResolvedAuthProfile | null = null;
+  let best: ResolvedAuthProfile | null = null;
+  for (const row of owners) {
+    const profile = row as ResolvedAuthProfile;
+    const rowEmail = String(profile.email ?? "").trim().toLowerCase();
+    if (loginCandidates.has(rowEmail)) {
+      emailMatch = pickPreferredProfile(emailMatch, profile);
+    }
+    best = pickPreferredProfile(best, profile);
+  }
+
+  return emailMatch ?? best;
 }
 
 async function findProfileByEmailCandidates(
@@ -123,6 +168,14 @@ async function findProfileViaServiceRole(
 
   const byEmail = await findProfileByEmailCandidates(service, email, select);
   best = pickPreferredProfile(best, byEmail.profile);
+
+  const smolkoOwner = await findSmolkoOwnerProfileViaServiceRole(
+    service,
+    userId,
+    email,
+    select,
+  );
+  best = pickPreferredProfile(best, smolkoOwner);
 
   return best;
 }
@@ -219,7 +272,25 @@ export async function linkProfileToAuthUser(
     "id, agency_id, auth_user_id, email, role, ui_role, account_tier",
   );
 
-  if (profile?.auth_user_id === userId) {
+  const service = createServiceRoleClient();
+  if (isSmolkoOwnerEmail(email) && service) {
+    const smolkoCanonical = await findSmolkoOwnerProfileViaServiceRole(
+      service,
+      userId,
+      email,
+      "id, agency_id, auth_user_id, email, role, ui_role, account_tier",
+    );
+    if (
+      smolkoCanonical &&
+      (!profile?.agency_id ||
+        profile.agency_id !== SMOLKO_AGENCY_ID ||
+        entitlementRank(smolkoCanonical) > entitlementRank(profile))
+    ) {
+      profile = smolkoCanonical;
+    }
+  }
+
+  if (profile?.auth_user_id === userId && profile.agency_id) {
     const normalized = normalizeProfileEntitlements(profile);
     if (
       normalized &&

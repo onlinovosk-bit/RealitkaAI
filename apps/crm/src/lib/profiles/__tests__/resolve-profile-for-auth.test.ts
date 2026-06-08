@@ -26,11 +26,11 @@ describe("isSmolkoOwnerEmail", () => {
 });
 
 describe("smolkoProfileLookupEmails", () => {
-  it("includes office alias when logging in with gmail", async () => {
+  it("includes gmail first and office alias when logging in with gmail", async () => {
     const { smolkoProfileLookupEmails } = await import("@/lib/profiles/resolve-profile-for-auth");
-    expect(smolkoProfileLookupEmails("rastislav.smolko@gmail.com")).toContain(
-      "office@realitysmolko.sk",
-    );
+    const emails = smolkoProfileLookupEmails("rastislav.smolko@gmail.com");
+    expect(emails[0]).toBe("rastislav.smolko@gmail.com");
+    expect(emails).toContain("office@realitysmolko.sk");
   });
 });
 

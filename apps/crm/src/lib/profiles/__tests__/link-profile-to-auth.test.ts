@@ -2,9 +2,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { linkProfileToAuthUser } from "@/lib/profiles/resolve-profile-for-auth";
 
 const serviceUpdateEq = vi.fn().mockResolvedValue({ error: null });
+const serviceInResult = vi.fn().mockResolvedValue({ data: [] });
 const serviceSelect = vi.fn(() => ({
   eq: () => ({
     maybeSingle: vi.fn().mockResolvedValue({ data: null }),
+    in: () => serviceInResult(),
   }),
   ilike: () => ({
     maybeSingle: vi.fn().mockResolvedValue({ data: null }),
@@ -25,6 +27,8 @@ vi.mock("@/lib/supabase/admin", () => ({
 beforeEach(() => {
   serviceUpdateEq.mockClear();
   serviceFrom.mockClear();
+  serviceInResult.mockReset();
+  serviceInResult.mockResolvedValue({ data: [] });
 });
 
 function buildSupabaseWithEqLookups(

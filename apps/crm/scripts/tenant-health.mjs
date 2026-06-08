@@ -127,6 +127,29 @@ async function main() {
   ok("with budget", `${budgetFilled ?? 0}/${withBudget}`);
   console.log("   ai_priority:", JSON.stringify(priorityCounts));
 
+  console.log("\nSmolko owner (primary login: rastislav.smolko@gmail.com):");
+  for (const ownerEmail of [
+    "rastislav.smolko@gmail.com",
+    "office@realitysmolko.sk",
+  ]) {
+    const { data: ownerRow } = await sb
+      .from("profiles")
+      .select("id, email, agency_id, auth_user_id, role")
+      .ilike("email", ownerEmail)
+      .maybeSingle();
+    if (!ownerRow) {
+      warn(ownerEmail, "no profile row");
+      continue;
+    }
+    if (ownerRow.agency_id === agencyId && ownerRow.auth_user_id) {
+      ok(ownerEmail, `owner linked (${ownerRow.role ?? "?"})`);
+    } else if (ownerRow.agency_id === agencyId) {
+      warn(ownerEmail, "agency OK but NO auth_user_id — login will show 0 until link");
+    } else {
+      warn(ownerEmail, `wrong agency_id ${ownerRow.agency_id ?? "null"}`);
+    }
+  }
+
   const { data: profiles, error: profError } = await sb
     .from("profiles")
     .select("id, email, agency_id, auth_user_id")

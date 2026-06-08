@@ -97,7 +97,7 @@ Podrobný audit: `docs/incidents/crm-zero-data-audit.md`, leads/contacts: `docs/
 
 | Krok | Akcia | Očakávanie |
 |------|-------|------------|
-| 1 | Prihlásenie ako Smolko owner | `office@realitysmolko.sk` alebo `rastislav.smolko@gmail.com` (Google) |
+| 1 | Prihlásenie ako Smolko owner | **`rastislav.smolko@gmail.com`** (primárne); `office@realitysmolko.sk` profil v DB nemusí existovať |
 | 2 | `GET /api/crm/tenant-health` | `snapshot.counts.*` > 0 ak DB má dáta |
 | 3 | Skontrolovať `profileAgencyId` | Musí byť `11111111-1111-1111-1111-111111111111` |
 | 4 | Ak `counts.leads: 0` | **Nie sú to UI filtre** — RLS nevidí agentúru |
@@ -110,7 +110,7 @@ Podrobný audit: `docs/incidents/crm-zero-data-audit.md`, leads/contacts: `docs/
 - `profiles.auth_user_id = auth.uid()`, **alebo**
 - `profiles.id = auth.uid()` (legacy).
 
-Profil Smolko často existuje pod `office@realitysmolko.sk`, ale **`auth_user_id` je prázdne** → všetky tenant počty = 0.
+Prod owner profil je pod **`rastislav.smolko@gmail.com`** (`agency_id` = Smolko UUID, `auth_user_id` musí byť vyplnené). Ak **`auth_user_id` je prázdne** → RLS vráti 0 leadov.
 
 **Náprava (automatická v kóde):** `linkProfileToAuthUser()` sa volá pri prihlásení, layoute, `/api/leads/inventory` a **`/api/crm/tenant-health`**. Po oprave znova načítať tenant-health.
 
