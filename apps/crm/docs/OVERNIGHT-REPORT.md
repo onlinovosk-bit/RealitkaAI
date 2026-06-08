@@ -69,4 +69,4 @@ Swarm objective: `swarm-mq48vemz` (REVOLIS P0 one-liner)
   - `apps/marketing/components/demo/DemoCTA.tsx` — client CTAs + lead modal
   - `apps/marketing/next.config.ts` — `/demo` route no longer 301 to zakulisie
 - **Build:** `npm run build` in `apps/marketing` — ✅ pass (`/demo` static, 4.38 kB)
-- **PR:** see gh output below
+- **PR:** https://github.com/onlinovosk-bit/RealitkaAI/pull/136
