@@ -56,7 +56,7 @@ Generovaný: Cursor swarm | Brief 2.0 | 5 agentov (I → G → F → H → J)
 ## AGENT-J — Performance Audit
 
 - **Status:** ✅ DONE
-- **PR:** (pending push — branch `chore/performance-audit`)
+- **PR:** https://github.com/onlinovosk-bit/RealitkaAI/pull/144
 - **PERFORMANCE-AUDIT.md:** vytvorený
 - **Largest route (First Load JS):** nezmerané presne (Next 16 build bez kB) — `/dashboard` odhad
 - **img → Image konverzií:** 0
