@@ -30,13 +30,13 @@ function baseLead(overrides: Partial<Lead> = {}): Lead {
 }
 
 describe("lead-display-score", () => {
-  it("mapuje Nízka triáž na nízke BRI, nie 0", () => {
+  it("sparse import s Nízka triážou nemá zobraziteľný BRI score", () => {
     const lead = baseLead({
       aiPriority: "Nízka",
       aiReason: "treba kvalifikovať",
       aiTriageAt: "2026-06-04T10:00:00Z",
     });
-    expect(getLeadDisplayScore(lead)).toBe(22);
+    expect(getLeadDisplayScore(lead)).toBeNull();
     expect(isSparseQualificationLead(lead)).toBe(true);
     expect(isLeadHot(lead)).toBe(false);
     expect(isLeadBuyerReadyToday(lead)).toBe(false);

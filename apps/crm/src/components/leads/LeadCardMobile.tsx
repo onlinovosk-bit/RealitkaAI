@@ -83,7 +83,11 @@ export function LeadCardMobile({ lead, onStatusChange }: LeadCardMobileProps) {
         className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full"
         style={{ background: "rgba(5,9,20,0.8)", border: "1.5px solid rgba(34,211,238,0.15)" }}
       >
-        <ScoreArc score={displayScore} />
+        {displayScore != null ? (
+          <ScoreArc score={displayScore} />
+        ) : (
+          <span className="text-sm font-semibold" style={{ color: "#64748B" }}>—</span>
+        )}
       </div>
 
       {/* Main info */}
