@@ -51,3 +51,44 @@ Swarm objective: `swarm-mq48vemz` (REVOLIS P0 one-liner)
 2. Review open Smolko PRs **#25–#30** (not bulk-closed)
 3. `manual_plan` DB migration (activation_checklist step 1a–1c)
 4. Close **#24** billing slate PR if still open (TOUCH-GUARD)
+
+---
+
+# Overnight Report — 2026-06-08
+
+## AGENT-A — Feature Health (dashboard UI)
+
+- **Status:** ✅ DONE
+- **Branch:** `fix/overnight-feature-health`
+- **Scope:** `apps/crm/src/app/(dashboard)/` + `apps/crm/src/components/` only
+- **Touch-Guard:** billing, auth, saas-ops.ts, lib — NOT TOUCHED
+
+### TypeScript fixes (dashboard/components)
+
+| File | Fix |
+|------|-----|
+| `components/leads/lead-table.tsx` | Null-safe sort when `getLeadDisplayScore` returns null |
+| `components/leads/leads-module.tsx` | Average score excludes null display scores |
+| `components/leads/LeadsHotStrip.tsx` | Null-safe descending sort for hot strip |
+| `components/sales-funnel/saas-leads-table.tsx` | `Record<string, string>` for status labels/colors (includes `nda_accepted`) |
+
+### Error/loading boundaries added
+
+| Route | Files |
+|-------|-------|
+| `/import/universal` | `error.tsx`, `loading.tsx` |
+
+**Already present (skipped):** `/import`, `/leads`, `/dashboard`, `/settings`
+
+**Nav import item:** skipped — already on main via PR #134
+
+### Build / test
+
+| Check | Result |
+|-------|--------|
+| `npx tsc --noEmit` (dashboard/components) | ✅ 0 errors in scope |
+| `npm run build` (apps/crm) | ✅ pass |
+
+### AGENT-A output PR
+
+- Feature health PR: _(see PR URL below)_

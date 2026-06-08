@@ -51,8 +51,14 @@ function exportToCsv(leads: Lead[]) {
 
 function sortLeads(leads: Lead[], field: SortField, dir: SortDir): Lead[] {
   return [...leads].sort((a, b) => {
-    const av = field === "score" ? getLeadDisplayScore(a) : String(a[field] ?? "");
-    const bv = field === "score" ? getLeadDisplayScore(b) : String(b[field] ?? "");
+    const av =
+      field === "score"
+        ? (getLeadDisplayScore(a) ?? -1)
+        : String(a[field] ?? "");
+    const bv =
+      field === "score"
+        ? (getLeadDisplayScore(b) ?? -1)
+        : String(b[field] ?? "");
     if (av < bv) return dir === "asc" ? -1 : 1;
     if (av > bv) return dir === "asc" ? 1 : -1;
     return 0;
