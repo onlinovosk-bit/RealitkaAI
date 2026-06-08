@@ -32,10 +32,10 @@ function getPlanDisplayName(variant: MenuVariant, accountTier: string): string {
  */
 export function resolveWorkdeskMenuContext(
   profile: WorkdeskMenuProfile | null,
-  opts?: { appRole?: string; isFounderDemo?: boolean },
+  opts?: { appRole?: string; isFounderDemo?: boolean; agencyManualPlan?: string | null },
 ): WorkdeskMenuContext {
   const uiRole = profile?.ui_role ?? "agent";
-  const accountTier = resolveAccountTier(profile);
+  const accountTier = resolveAccountTier(profile, opts?.agencyManualPlan);
   const appRole = opts?.appRole ?? profile?.role ?? undefined;
   const isInTeam = !!profile?.team_license_id;
 

@@ -19,4 +19,13 @@ describe("resolveAccountTier", () => {
       resolveAccountTier({ ui_role: "agent", account_tier: "market_vision", role: "founder" }),
     ).toBe("protocol_authority");
   });
+
+  it("prefers agencies.manual_plan over founder default (Smolko manual invoice)", () => {
+    expect(
+      resolveAccountTier(
+        { ui_role: "agent", account_tier: "free", role: "founder" },
+        "market_vision",
+      ),
+    ).toBe("market_vision");
+  });
 });

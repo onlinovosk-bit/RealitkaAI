@@ -33,17 +33,20 @@ export default async function DashboardLayout({ children }: { children: React.Re
     user.email,
   );
   const profile = normalizeProfileEntitlements(rawProfile);
-  const accountTier = resolveAccountTier(profile);
 
   let agencyName: string | undefined;
+  let agencyManualPlan: string | null = null;
   if (profile?.agency_id) {
     const { data: agency } = await supabase
       .from("agencies")
-      .select("name")
+      .select("name, manual_plan")
       .eq("id", profile.agency_id)
       .maybeSingle();
     agencyName = agency?.name ?? undefined;
+    agencyManualPlan = agency?.manual_plan ?? null;
   }
+
+  const accountTier = resolveAccountTier(profile, agencyManualPlan);
 
   return (
     <div
@@ -54,6 +57,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <AppSidebar
         uiRole={profile?.ui_role ?? "agent"}
         accountTier={accountTier}
+        agencyManualPlan={agencyManualPlan}
         isInTeam={false}
         appRole={profile?.role ?? undefined}
         agencyName={agencyName}
