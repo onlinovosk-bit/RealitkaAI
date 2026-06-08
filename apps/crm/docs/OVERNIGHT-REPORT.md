@@ -83,7 +83,7 @@ Generovaný: Ruflo mesh swarm v3 | AGENT-E (readonly PR triage)
 
 ### AGENT-E output PR
 
-- Triage docs PR: _(pending `gh pr create`)_
+- Triage docs PR: https://github.com/onlinovosk-bit/RealitkaAI/pull/135
 
 ## Pre Claude orchestrátora ráno
 
