@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useTransition, useState, useCallback } from "react";
 import type { Lead } from "@/lib/leads-store";
-import { getLeadDisplayScore } from "@/lib/leads/lead-display-score";
+import { getLeadDisplayScore, getLeadScoreUnavailableHint } from "@/lib/leads/lead-display-score";
 
 const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
   "Horúci":    { bg: "rgba(34,197,94,0.12)",  text: "#22C55E" },
@@ -35,6 +35,7 @@ export function LeadCardMobile({ lead, onStatusChange }: LeadCardMobileProps) {
   const router        = useRouter();
   const [, startTransition] = useTransition();
   const displayScore = getLeadDisplayScore(lead);
+  const scoreHint = getLeadScoreUnavailableHint(lead);
 
   // Optimistic status — UI aktualizuje okamžite, API call prebieha na pozadí
   const [optimisticStatus, setOptimisticStatus] = useState(lead.status);
@@ -86,7 +87,13 @@ export function LeadCardMobile({ lead, onStatusChange }: LeadCardMobileProps) {
         {displayScore != null ? (
           <ScoreArc score={displayScore} />
         ) : (
-          <span className="text-sm font-semibold" style={{ color: "#64748B" }}>—</span>
+          <span
+            className="text-sm font-semibold"
+            style={{ color: "#64748B" }}
+            title={scoreHint ?? undefined}
+          >
+            —
+          </span>
         )}
       </div>
 
