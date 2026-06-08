@@ -51,3 +51,32 @@ Swarm objective: `swarm-mq48vemz` (REVOLIS P0 one-liner)
 2. Review open Smolko PRs **#25–#30** (not bulk-closed)
 3. `manual_plan` DB migration (activation_checklist step 1a–1c)
 4. Close **#24** billing slate PR if still open (TOUCH-GUARD)
+
+---
+
+## AGENT-B — Migration Intelligence Wiring (2026-06-08)
+
+- **Status:** ✅ Complete
+- **Branch:** `feat/migration-intelligence-wiring`
+- **Scope:** `apps/crm/src/lib/universal-import/` + `apps/crm/src/app/api/universal-import/`
+
+### Wired
+
+| Component | Change |
+|-----------|--------|
+| `migration-metrics.ts` | `computeDataQualityScore`, `computeDuplicateRate`, `buildMigrationCaseInput` from `import_rows.mapped_data` |
+| `learned-mappings.ts` | `loadLearnedMappings` (service role → `migration_cases`) + `applyLearnedMappings` |
+| `import-store.ts` | `createMigrationCase` via `createServiceRoleClient` (RLS bypass); `recordMigrationCaseFromImport`; `listImportErrorRows` |
+| `run/route.ts` | Post-import migration case + agency name fetch + `downloadErrorCsvUrl` |
+| `start/route.ts` | Learned mappings applied at column detection |
+| `errors/route.ts` | GET CSV download for skipped/error/duplicate rows |
+
+### Verified
+
+- Vitest: `migration-metrics.test.ts`, `learned-mappings.test.ts` (8 tests)
+- `npm run build` in `apps/crm` — pass
+
+### Open / risk
+
+- `migration_cases` insert silently skipped if `SUPABASE_SERVICE_ROLE_KEY` missing (warn log only)
+- Supabase migration `20260608120000_universal_crm_import.sql` must be applied in prod for analytics table
