@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   getLeadDisplayScore,
+  getLeadScoreUnavailableHint,
   isLeadBuyerReadyToday,
   isLeadHot,
   isSparseQualificationLead,
@@ -40,6 +41,11 @@ describe("lead-display-score", () => {
     expect(isSparseQualificationLead(lead)).toBe(true);
     expect(isLeadHot(lead)).toBe(false);
     expect(isLeadBuyerReadyToday(lead)).toBe(false);
+    expect(getLeadScoreUnavailableHint(lead)).toContain("import bez kvalifikácie");
+  });
+
+  it("hint je null keď má lead skóre", () => {
+    expect(getLeadScoreUnavailableHint(baseLead({ score: 40, lastContact: "2026-06-01" }))).toBeNull();
   });
 
   it("horúci len pri Vysoká alebo status Horúci / score 85+", () => {
