@@ -4,12 +4,13 @@
 // vercel.json: {"path": "/api/cron/bri-snapshot", "schedule": "0 2 * * *"}
 // ================================================================
 import { NextRequest, NextResponse } from 'next/server'
+import { err } from '@/lib/api-response'
 import { createClient }              from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret || request.headers.get('authorization') !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return err('Unauthorized', 401)
   }
 
   const supabase = await createClient()

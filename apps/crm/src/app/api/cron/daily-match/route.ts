@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-
+import { err } from "@/lib/api-response";
 import { runAImatching } from "@/lib/ai/matching-engine";
 
 export const runtime = "nodejs";
@@ -29,7 +29,7 @@ function authorizeCron(request: Request): boolean {
  */
 export async function GET(request: Request) {
   if (!authorizeCron(request)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return err("Unauthorized", 401);
   }
 
   try {
