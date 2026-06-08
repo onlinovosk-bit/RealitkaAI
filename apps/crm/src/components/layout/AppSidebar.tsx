@@ -104,6 +104,7 @@ interface AppSidebarProps {
   isInTeam:     boolean;
   appRole?:     string;
   agencyName?:  string;
+  agencyManualPlan?: string | null;
   userName?:    string;
 }
 
@@ -537,6 +538,7 @@ export default function AppSidebar({
   isInTeam,
   appRole,
   agencyName,
+  agencyManualPlan,
   userName,
 }: AppSidebarProps) {
   const pathname = usePathname();
@@ -561,7 +563,7 @@ export default function AppSidebar({
       role: appRole,
       team_license_id: isInTeam ? "team" : null,
     },
-    { appRole },
+    { appRole, agencyManualPlan },
   );
   const demoVariant   = getDemoVariant(demoProgram);
   const renderVariant = isFounderDemo ? demoVariant : menuContext.variant;
