@@ -8,6 +8,13 @@ export default function ImportPage() {
         <p className="mt-1 text-gray-500">
           Nahrajte CSV súbor z Excelu alebo Google Sheets. Príležitosti sa importujú automaticky.
         </p>
+        <p className="mt-3 text-sm">
+          <a href="/import/universal" className="font-medium text-gray-900 underline hover:text-gray-700">
+            Universal CRM Import
+          </a>
+          {" "}
+          — Realvia, RealSoft a ďalšie zdroje s auto-mapovaním stĺpcov.
+        </p>
       </div>
       <CsvImport />
     </main>

@@ -186,7 +186,65 @@ export async function saveImportRows(
   const { error } = await supabase.from("import_rows").insert(payload);
   if (error) throw new Error(error.message);
 
-  await updateImportJobStatus(jobId, "preview", { totalRows: rows.length });
+  const { error: countError } = await supabase
+    .from("import_jobs")
+    .update({ total_rows: rows.length })
+    .eq("id", jobId);
+  if (countError) throw new Error(countError.message);
+}
+
+type ImportRowDb = {
+  id: string;
+  job_id: string;
+  agency_id: string;
+  row_number: number;
+  raw_data: Record<string, string>;
+  mapped_data: Record<string, unknown> | null;
+  status: ImportRowStatus;
+  skip_reason: SkipReason | null;
+  lead_id: string | null;
+};
+
+export async function listImportRows(
+  jobId: string,
+  limit?: number,
+): Promise<Array<{
+  id: string;
+  jobId: string;
+  agencyId: string;
+  rowNumber: number;
+  rawData: Record<string, string>;
+  mappedData?: Record<string, unknown>;
+  status: ImportRowStatus;
+  skipReason?: SkipReason;
+  leadId?: string;
+}>> {
+  const supabase = await createClient();
+  let query = supabase
+    .from("import_rows")
+    .select("*")
+    .eq("job_id", jobId)
+    .order("row_number", { ascending: true });
+
+  if (limit) query = query.limit(limit);
+
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+
+  return (data ?? []).map((row) => {
+    const typed = row as ImportRowDb;
+    return {
+      id: typed.id,
+      jobId: typed.job_id,
+      agencyId: typed.agency_id,
+      rowNumber: typed.row_number,
+      rawData: typed.raw_data,
+      mappedData: typed.mapped_data ?? undefined,
+      status: typed.status,
+      skipReason: typed.skip_reason ?? undefined,
+      leadId: typed.lead_id ?? undefined,
+    };
+  });
 }
 
 export async function updateImportRow(
