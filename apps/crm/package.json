@@ -14,6 +14,7 @@
         "seed:leads": "npx tsx scripts/seed-leads-bulk.ts",
         "pilot:check": "node scripts/pilot-checklist.mjs",
         "ops:tenant-health": "node scripts/tenant-health.mjs",
+        "ops:backfill-scoring": "npx tsx scripts/backfill-tenant-scoring.ts --dry-run",
         "verify:realtime": "node scripts/verify-realtime.mjs",
         "test": "vitest run",
         "test:watch": "vitest"
