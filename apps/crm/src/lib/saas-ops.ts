@@ -1,10 +1,21 @@
 import { getCurrentBillingStatus } from "@/lib/billing-store";
+import {
+  fetchAgencyManualPlan,
+  resolveBillingPlanFromManualPlan,
+} from "@/lib/billing/resolve-agency-manual-plan";
 import { getCurrentProfile, getCurrentUser } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
 import { listProfiles, listTeams } from "@/lib/team-store";
 import { listLeads } from "@/lib/leads-store";
 import { listProperties } from "@/lib/properties-store";
 
-export type PlanKey = "starter" | "pro" | "scale" | "free";
+export type PlanKey =
+  | "starter"
+  | "pro"
+  | "scale"
+  | "free"
+  | "market_vision"
+  | "protocol_authority";
 
 export type FeatureFlags = {
   aiScoring: boolean;
@@ -63,6 +74,32 @@ function getPlanFromPriceId(priceId: string | null | undefined): PlanKey {
   return "free";
 }
 
+function mapManualPlanToPlanKey(manualPlan: string | null | undefined): PlanKey | null {
+  const billingPlan = resolveBillingPlanFromManualPlan(manualPlan);
+  if (!billingPlan) return null;
+  switch (billingPlan) {
+    case "starter":
+      return "starter";
+    case "pro":
+    case "active_force":
+      return "pro";
+    case "enterprise":
+      return "scale";
+    case "command":
+      return "protocol_authority";
+    default:
+      return "free";
+  }
+}
+
+function mapManualPlanKeyToPlanKey(manualPlan: string | null | undefined): PlanKey | null {
+  const key = manualPlan?.trim().toLowerCase();
+  if (!key) return null;
+  if (key === "market_vision") return "market_vision";
+  if (key === "protocol_authority") return "protocol_authority";
+  return mapManualPlanToPlanKey(manualPlan);
+}
+
 export function getFeatureFlagsForPlan(plan: PlanKey): FeatureFlags {
   // DEV OVERRIDE: Always enable all features for development/testing
   return {
@@ -104,6 +141,8 @@ export function getLimitsForPlan(plan: PlanKey): PlanLimits {
       };
 
     case "scale":
+    case "market_vision":
+    case "protocol_authority":
       return {
         maxAgents: 999,
         maxLeads: 999999,
@@ -269,7 +308,19 @@ export async function getSaasOpsSnapshot() {
   ]);
 
   const priceId = billing.subscription?.items?.[0]?.priceId || null;
-  const plan = getPlanFromPriceId(priceId);
+  let plan = getPlanFromPriceId(priceId);
+
+  const user = await getCurrentUser();
+  if (user?.id) {
+    try {
+      const supabase = await createClient();
+      const manualPlan = await fetchAgencyManualPlan(supabase, user.id);
+      const manualKey = mapManualPlanKeyToPlanKey(manualPlan);
+      if (manualKey) plan = manualKey;
+    } catch (error) {
+      console.error("saas-ops manual_plan fallback:", error);
+    }
+  }
   const flags = getFeatureFlagsForPlan(plan);
   const limits = getLimitsForPlan(plan);
 
