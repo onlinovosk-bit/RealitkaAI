@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { errorResponse, okResponse } from "@/lib/api-response";
 import { buildAutoColumnMapping, mappingConfidenceLevel } from "@/lib/universal-import/auto-mapping";
 import { detectColumnsFromHeaders } from "@/lib/universal-import/column-detector";
+import { applyLearnedMappings, loadLearnedMappings } from "@/lib/universal-import/learned-mappings";
 import { MAX_IMPORT_ROWS, parseCsvBuffer } from "@/lib/universal-import/csv-parse";
 import { resolveImportAuthContext } from "@/lib/universal-import/import-context";
 import {
@@ -56,7 +57,14 @@ export async function POST(request: Request) {
     await updateImportJobStatus(job.id, "detecting");
 
     const sampleRows = rows.slice(0, 10);
-    const detectedColumns = detectColumnsFromHeaders(headers, sampleRows);
+    let detectedColumns = detectColumnsFromHeaders(headers, sampleRows);
+
+    const learnedMappings = await loadLearnedMappings(sourceSystem);
+    const mappingSource: "auto" | "learned" = learnedMappings ? "learned" : "auto";
+    if (learnedMappings) {
+      detectedColumns = applyLearnedMappings(detectedColumns, learnedMappings);
+    }
+
     const suggestedMapping = buildAutoColumnMapping(detectedColumns);
     const confidence = mappingConfidenceLevel(detectedColumns);
 
@@ -72,6 +80,7 @@ export async function POST(request: Request) {
       detectedColumns,
       suggestedMapping,
       confidence,
+      mappingSource,
       totalRows: rows.length,
     });
   } catch (err) {

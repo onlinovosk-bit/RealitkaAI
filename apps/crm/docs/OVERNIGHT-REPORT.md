@@ -49,19 +49,29 @@ billing · auth · RLS · saas-ops.ts — **NOT TOUCHED**
 
 ---
 
-## AGENT-C: Demo landing page (`apps/marketing`)
+## AGENT-B — Migration Intelligence Wiring (2026-06-08)
 
 - **Status:** ✅ Complete
-- **Branch:** `feat/demo-landing-page`
-- **Scope:** `apps/marketing/` only (no CRM code changes)
-- **Route:** `/demo` — public SEO landing (removed permanent redirect to zakulisie)
-- **Source:** `apps/crm/public/preview-landing-phase3-b.html` + main marketing copy
-- **Components:** `HeroSection`, `PainSection`, `SolutionSection`, `DemoCTA`, `FaqSection`
-- **Files:**
-  - `apps/marketing/app/demo/page.tsx` — metadata + page shell
-  - `apps/marketing/app/demo/demo.css` — scoped Slate Horizon styles
-  - `apps/marketing/components/demo/DemoSections.tsx` — section components
-  - `apps/marketing/components/demo/DemoCTA.tsx` — client CTAs + lead modal
-  - `apps/marketing/next.config.ts` — `/demo` route no longer 301 to zakulisie
-- **Build:** `npm run build` in `apps/marketing` — ✅ pass (`/demo` static, 4.38 kB)
-- **PR:** https://github.com/onlinovosk-bit/RealitkaAI/pull/136
+- **Branch:** `feat/migration-intelligence-wiring`
+- **Scope:** `apps/crm/src/lib/universal-import/` + `apps/crm/src/app/api/universal-import/`
+
+### Wired
+
+| Component | Change |
+|-----------|--------|
+| `migration-metrics.ts` | `computeDataQualityScore`, `computeDuplicateRate`, `buildMigrationCaseInput` from `import_rows.mapped_data` |
+| `learned-mappings.ts` | `loadLearnedMappings` (service role → `migration_cases`) + `applyLearnedMappings` |
+| `import-store.ts` | `createMigrationCase` via `createServiceRoleClient` (RLS bypass); `recordMigrationCaseFromImport`; `listImportErrorRows` |
+| `run/route.ts` | Post-import migration case + agency name fetch + `downloadErrorCsvUrl` |
+| `start/route.ts` | Learned mappings applied at column detection |
+| `errors/route.ts` | GET CSV download for skipped/error/duplicate rows |
+
+### Verified
+
+- Vitest: `migration-metrics.test.ts`, `learned-mappings.test.ts` (8 tests)
+- `npm run build` in `apps/crm` — pass
+
+### Open / risk
+
+- `migration_cases` insert silently skipped if `SUPABASE_SERVICE_ROLE_KEY` missing (warn log only)
+- Supabase migration `20260608120000_universal_crm_import.sql` must be applied in prod for analytics table

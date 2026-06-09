@@ -1,13 +1,17 @@
 "use server";
 
+import { buildMigrationCaseInput } from "@/lib/universal-import/migration-metrics";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/admin";
 import type {
   ColumnMapping,
   DetectedColumn,
   ImportJob,
   ImportJobStatus,
+  ImportReport,
   ImportRowStatus,
   ImportSourceSystem,
+  MappedContact,
   MigrationCase,
   SkipReason,
 } from "@/lib/universal-import/types";
@@ -291,10 +295,75 @@ export async function listImportJobs(agencyId: string): Promise<ImportJob[]> {
   return (data ?? []).map((row) => mapImportJob(row as ImportJobRow));
 }
 
+export async function listImportErrorRows(
+  jobId: string,
+): Promise<
+  Array<{
+    rowNumber: number;
+    rawData: Record<string, string>;
+    status: ImportRowStatus;
+    skipReason?: SkipReason;
+  }>
+> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("import_rows")
+    .select("row_number, raw_data, status, skip_reason")
+    .eq("job_id", jobId)
+    .in("status", ["skipped", "error", "duplicate"])
+    .order("row_number", { ascending: true });
+
+  if (error) throw new Error(error.message);
+
+  return (data ?? []).map((row) => ({
+    rowNumber: row.row_number as number,
+    rawData: row.raw_data as Record<string, string>,
+    status: row.status as ImportRowStatus,
+    skipReason: (row.skip_reason as SkipReason | null) ?? undefined,
+  }));
+}
+
+async function countMigrationAttempts(agencyId: string, sourceCrm: string): Promise<number> {
+  const supabase = createServiceRoleClient();
+  if (!supabase) return 1;
+
+  const { count, error } = await supabase
+    .from("migration_cases")
+    .select("id", { count: "exact", head: true })
+    .eq("agency_id", agencyId)
+    .eq("source_crm", sourceCrm);
+
+  if (error) return 1;
+  return (count ?? 0) + 1;
+}
+
+export async function recordMigrationCaseFromImport(input: {
+  job: ImportJob;
+  report: ImportReport;
+  agencyId: string;
+  agencyName: string;
+  mappedRows: Array<Partial<MappedContact> | Record<string, unknown>>;
+}): Promise<void> {
+  const completedAt = new Date().toISOString();
+  const migrationAttempts = await countMigrationAttempts(input.agencyId, input.job.sourceSystem);
+  const payload = buildMigrationCaseInput({
+    ...input,
+    migrationAttempts,
+    completedAt,
+  });
+
+  await createMigrationCase(payload);
+}
+
 export async function createMigrationCase(
   input: Omit<MigrationCase, "id" | "createdAt" | "updatedAt">,
 ): Promise<void> {
-  const supabase = await createClient();
+  const supabase = createServiceRoleClient();
+  if (!supabase) {
+    console.warn("[migration_cases] Service role unavailable — skipping analytics insert.");
+    return;
+  }
+
   const { error } = await supabase.from("migration_cases").insert({
     agency_id: input.agencyId ?? null,
     agency_name: input.agencyName,
