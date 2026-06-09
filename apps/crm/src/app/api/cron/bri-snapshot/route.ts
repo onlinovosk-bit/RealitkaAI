@@ -13,17 +13,27 @@ export async function GET(request: NextRequest) {
     return err('Unauthorized', 401)
   }
 
-  const supabase = await createClient()
-  const { data, error } = await supabase.rpc('rotate_bri_snapshots')
+  // Idempotency: rotate_bri_snapshots RPC handles daily rotation atomically.
+  // TODO: bri_snapshots per-agency table idempotency — not in schema; rely on RPC.
+  try {
+    const supabase = await createClient()
+    const { data, error } = await supabase.rpc('rotate_bri_snapshots')
 
-  if (error) {
-    console.error('[bri-snapshot cron]', error.message)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error('[bri-snapshot cron]', error.message)
+      return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
+    }
+
+    const rotated = typeof data === 'number' ? data : Number(data ?? 0)
+
+    return NextResponse.json({
+      ok: true,
+      rotated: Number.isFinite(rotated) ? rotated : 0,
+      rotated_at: new Date().toISOString(),
+    })
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    console.error('[bri-snapshot cron] unexpected', msg)
+    return NextResponse.json({ ok: false, error: msg }, { status: 500 })
   }
-
-  return NextResponse.json({
-    ok:         true,
-    rotated:    data as number,
-    rotated_at: new Date().toISOString(),
-  })
 }

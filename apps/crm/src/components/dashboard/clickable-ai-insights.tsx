@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { Lead } from "@/lib/leads-store";
 
 function computeInsights(leads: Lead[]) {
-  const urgentLeads = leads.filter((l) => l.status === "Horúci" || l.score >= 80);
+  const urgentLeads = leads.filter((l) => l.status === "Horúci" || (l.score ?? 0) >= 80);
 
   const sourceCounts: Record<string, number> = {};
   leads.forEach((l) => {
@@ -27,7 +27,7 @@ function computeInsights(leads: Lead[]) {
   const ponukaLeads = leads.filter((l) => l.status === "Ponuka").length;
   const avgScore =
     leads.length > 0
-      ? Math.round(leads.reduce((s, l) => s + l.score, 0) / leads.length)
+      ? Math.round(leads.reduce((s, l) => s + (l.score ?? 0), 0) / leads.length)
       : 0;
 
   return { urgentLeads, topSourceEntry, topSourcePct, topLocations, ponukaLeads, avgScore };

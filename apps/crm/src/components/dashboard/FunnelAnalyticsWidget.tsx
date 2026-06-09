@@ -34,7 +34,11 @@ export default function FunnelAnalyticsWidget() {
             <tr key={step.key}>
               <td>{step.label}</td>
               <td className="text-center">{stats.counts[i]}</td>
-              <td className="text-center">{i === 0 ? '-' : `${(stats.conversionRates[i] * 100).toFixed(1)} %`}</td>
+              <td className="text-center">
+                {i === 0
+                  ? '-'
+                  : `${((stats.conversionRates[i] ?? 0) * 100).toFixed(1)} %`}
+              </td>
             </tr>
           ))}
         </tbody>
