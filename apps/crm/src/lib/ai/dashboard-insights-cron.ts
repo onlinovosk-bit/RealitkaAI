@@ -9,6 +9,12 @@ import {
   gatherAgencyProperties,
 } from '@/lib/ai/dashboard-insights-gather'
 import { logAiActionAudit } from '@/lib/ai-action-audit'
+import { withTimeout } from '@/lib/async/with-timeout'
+
+const INSIGHTS_AI_TIMEOUT_MS = Math.max(
+  3000,
+  Number(process.env.DASHBOARD_INSIGHTS_TIMEOUT_MS ?? '8000'),
+)
 
 export type DashboardInsightsCachePayload = DashboardInsightsOutput & {
   period: 'today' | 'last_7_days'
@@ -60,12 +66,20 @@ export async function generateAndCacheAgencyInsights(
     const summary = await gatherAgencyDashboardSummary(admin, agencyId)
     const properties = await gatherAgencyProperties(admin, agencyId)
 
-    const insights = await generateDashboardInsights({
-      period: 'today',
-      summary,
-      userName: displayName,
-      properties,
-    })
+    const insights = await withTimeout(
+      generateDashboardInsights({
+        period: 'today',
+        summary,
+        userName: displayName,
+        properties,
+      }),
+      INSIGHTS_AI_TIMEOUT_MS,
+      {
+        headline: 'Insights momentálne nedostupné.',
+        actions: [],
+        summary: 'AI odpoveď prekročila časový limit — skúste obnoviť neskôr.',
+      },
+    )
 
     const payload: DashboardInsightsCachePayload = {
       ...insights,

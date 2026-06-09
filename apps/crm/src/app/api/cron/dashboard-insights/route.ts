@@ -37,7 +37,14 @@ export async function GET(request: NextRequest) {
   for (let i = 0; i < agencyIds.length; i += BATCH) {
     const batch = agencyIds.slice(i, i + BATCH)
     const batchResults = await Promise.all(
-      batch.map(agencyId => generateAndCacheAgencyInsights(admin, agencyId)),
+      batch.map(async (agencyId) => {
+        try {
+          return await generateAndCacheAgencyInsights(admin, agencyId)
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e)
+          return { agencyId, ok: false, empty: false, error: msg }
+        }
+      }),
     )
     results.push(...batchResults)
   }
