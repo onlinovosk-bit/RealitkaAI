@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { SaaSLead } from "@/lib/sales-funnel-store";
 
-const STATUS_LABELS: Record<SaaSLead["status"], string> = {
+const STATUS_LABELS: Record<string, string> = {
   new: "Nový",
   contacted: "Kontaktovaný",
   nda_accepted: "NDA podpísané",
@@ -13,7 +13,7 @@ const STATUS_LABELS: Record<SaaSLead["status"], string> = {
   lost: "Stratené",
 };
 
-const STATUS_COLORS: Record<SaaSLead["status"], string> = {
+const STATUS_COLORS: Record<string, string> = {
   new: "bg-blue-100 text-blue-700",
   contacted: "bg-yellow-100 text-yellow-700",
   nda_accepted: "bg-teal-100 text-teal-700",

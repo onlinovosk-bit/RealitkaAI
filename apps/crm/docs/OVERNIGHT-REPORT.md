@@ -49,29 +49,41 @@ billing · auth · RLS · saas-ops.ts — **NOT TOUCHED**
 
 ---
 
-## AGENT-B — Migration Intelligence Wiring (2026-06-08)
+# Overnight Report — 2026-06-08
 
-- **Status:** ✅ Complete
-- **Branch:** `feat/migration-intelligence-wiring`
-- **Scope:** `apps/crm/src/lib/universal-import/` + `apps/crm/src/app/api/universal-import/`
+## AGENT-A — Feature Health (dashboard UI)
 
-### Wired
+- **Status:** ✅ DONE
+- **Branch:** `fix/overnight-feature-health`
+- **Scope:** `apps/crm/src/app/(dashboard)/` + `apps/crm/src/components/` only
+- **Touch-Guard:** billing, auth, saas-ops.ts, lib — NOT TOUCHED
 
-| Component | Change |
-|-----------|--------|
-| `migration-metrics.ts` | `computeDataQualityScore`, `computeDuplicateRate`, `buildMigrationCaseInput` from `import_rows.mapped_data` |
-| `learned-mappings.ts` | `loadLearnedMappings` (service role → `migration_cases`) + `applyLearnedMappings` |
-| `import-store.ts` | `createMigrationCase` via `createServiceRoleClient` (RLS bypass); `recordMigrationCaseFromImport`; `listImportErrorRows` |
-| `run/route.ts` | Post-import migration case + agency name fetch + `downloadErrorCsvUrl` |
-| `start/route.ts` | Learned mappings applied at column detection |
-| `errors/route.ts` | GET CSV download for skipped/error/duplicate rows |
+### TypeScript fixes (dashboard/components)
 
-### Verified
+| File | Fix |
+|------|-----|
+| `components/leads/lead-table.tsx` | Null-safe sort when `getLeadDisplayScore` returns null |
+| `components/leads/leads-module.tsx` | Average score excludes null display scores |
+| `components/leads/LeadsHotStrip.tsx` | Null-safe descending sort for hot strip |
+| `components/sales-funnel/saas-leads-table.tsx` | `Record<string, string>` for status labels/colors (includes `nda_accepted`) |
 
-- Vitest: `migration-metrics.test.ts`, `learned-mappings.test.ts` (8 tests)
-- `npm run build` in `apps/crm` — pass
+### Error/loading boundaries added
 
-### Open / risk
+| Route | Files |
+|-------|-------|
+| `/import/universal` | `error.tsx`, `loading.tsx` |
 
-- `migration_cases` insert silently skipped if `SUPABASE_SERVICE_ROLE_KEY` missing (warn log only)
-- Supabase migration `20260608120000_universal_crm_import.sql` must be applied in prod for analytics table
+**Already present (skipped):** `/import`, `/leads`, `/dashboard`, `/settings`
+
+**Nav import item:** skipped — already on main via PR #134
+
+### Build / test
+
+| Check | Result |
+|-------|--------|
+| `npx tsc --noEmit` (dashboard/components) | ✅ 0 errors in scope |
+| `npm run build` (apps/crm) | ✅ pass |
+
+### AGENT-A output PR
+
+- Feature health PR: https://github.com/onlinovosk-bit/RealitkaAI/pull/139

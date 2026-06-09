@@ -48,11 +48,13 @@ export default function LeadsModule({
     setFiltered(leads);
   }, [leads]);
 
+  const scoredLeads = filtered
+    .map((lead) => getLeadDisplayScore(lead))
+    .filter((score): score is number => score != null);
   const avgScore =
-    filtered.length > 0
+    scoredLeads.length > 0
       ? Math.round(
-          filtered.reduce((sum, lead) => sum + getLeadDisplayScore(lead), 0) /
-            filtered.length
+          scoredLeads.reduce((sum, score) => sum + score, 0) / scoredLeads.length
         )
       : 0;
 

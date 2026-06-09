@@ -16,7 +16,10 @@ type Props = {
 export function LeadsHotStrip({ leads }: Props) {
   const readyLeads = leads
     .filter(isLeadBuyerReadyToday)
-    .sort((a, b) => getLeadDisplayScore(b) - getLeadDisplayScore(a))
+    .sort(
+      (a, b) =>
+        (getLeadDisplayScore(b) ?? 0) - (getLeadDisplayScore(a) ?? 0)
+    )
     .slice(0, 3);
 
   if (readyLeads.length === 0) {
