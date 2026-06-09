@@ -13,4 +13,10 @@ describe("resolveTeamAccountTier", () => {
       resolveTeamAccountTier({ ui_role: "owner_protocol", account_tier: "market_vision" }),
     ).toBe("protocol_authority");
   });
+
+  it("prefers agencies.manual_plan when profile has no account_tier", () => {
+    expect(
+      resolveTeamAccountTier({ ui_role: "agent", account_tier: null }, "market_vision"),
+    ).toBe("market_vision");
+  });
 });
