@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { generateOpenFollowUpsBatch } from "@/lib/ai/open-followup-generator";
 import { sendMessage } from "@/lib/multi-channel-sender";
 import type { StaleLeadInput } from "@/lib/ai/open-followup-generator";
+import { scoreFollowUp } from "@/lib/cron/follow-up-scoring";
 
 const OPEN_STATUSES = ["Nový", "Teplý", "Horúci", "Obhliadka", "Ponuka"];
 
@@ -45,7 +46,7 @@ export async function GET(request: NextRequest) {
   const { data: rows, error } = await admin
     .from("leads")
     .select(
-      "id,name,email,phone,status,budget,location,last_contact,note,score,updated_at,last_ai_followup_at,ai_followup_count"
+      "id,name,email,phone,status,budget,location,last_contact,note,score,updated_at,last_ai_followup_at,ai_followup_count,ai_priority"
     )
     .in("status", OPEN_STATUSES)
     .lt("updated_at", cutoff)
@@ -61,6 +62,20 @@ export async function GET(request: NextRequest) {
     const last = r.last_ai_followup_at;
     return !last || new Date(last).getTime() < new Date(weekAgo).getTime();
   }).slice(0, maxCandidates);
+
+  for (const r of eligible) {
+    const row = r as Record<string, unknown>;
+    const action = scoreFollowUp({
+      id: String(row.id),
+      name: row.name ? String(row.name) : null,
+      last_contact: row.last_contact ? String(row.last_contact) : null,
+      ai_priority: row.ai_priority ? String(row.ai_priority) : null,
+    });
+    await admin
+      .from("leads")
+      .update({ ai_reason: `${action.suggestedAction} — ${action.reason}` })
+      .eq("id", action.leadId);
+  }
 
   const inputs: StaleLeadInput[] = eligible.map((r: Record<string, unknown>) => ({
     id: String(r.id),
