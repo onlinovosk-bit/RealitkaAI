@@ -1,4 +1,4 @@
-# Overnight Report — 2026-06-07
+# Overnight Report — 2026-06-07 (historical)
 
 Swarm objective: `swarm-mq48vemz` (REVOLIS P0 one-liner)
 
@@ -6,46 +6,41 @@ Swarm objective: `swarm-mq48vemz` (REVOLIS P0 one-liner)
 
 - **Status:** ✅ Complete (readonly)
 - **Output:** `apps/crm/docs/PR-TRIAGE-MATRIX.md`
-- **Finding:** 17 open PRs; 12 Vercel FAILURE; #14 CONFLICTING; 3 TOUCH-GUARD
-- **Action:** Closed Slate **#14–#23** + **#26**; docs merged **#110**; no Slate merges
+- **Action:** Closed Slate **#14–#23** + **#26**; docs merged **#110**
 
-## P0-2: TRACK-D — feat/phase5-forecast-gating
+## P0-2 / P0-3: Phase5 gating PRs
 
-- **Status:** ✅ Closed superseded
-- **PR #111:** closed — gating already on `main` (`ForecastPageClient.tsx`)
+- **#111, #112:** closed — superseded by `main`
 
-## P0-3: TRACK-E — feat/phase5-team-gating
+## Touch-Guard (2026-06-07)
 
-- **Status:** ✅ Closed superseded
-- **PR #112:** closed — gating already on `main` (`TeamAnalyticsClient.tsx`)
+billing · auth · RLS · saas-ops.ts — **NOT TOUCHED**
 
-## Execution batch (2026-06-07 21:02 UTC)
+---
 
-| Action | Result |
-|--------|--------|
-| Merge **#110** docs | ✅ `56cad191` on `main` |
-| Close **#111, #112, #26** | ✅ superseded |
-| Close Slate **#14–#23** | ✅ 10 PRs per triage matrix |
-| Ruflo tasks created | `task-1780866013102-n7w57p`, `task-1780866014953-oqs103` |
+# Overnight Report — 2026-06-08
 
-## P0-0: DECISION_ENGINE smoke
+**Generovaný:** Ruflo mesh swarm v2 | 5 agentov (E → A → D → B → C)  
+**Brief:** `overnight-master-brief.md`  
+**Main @ merge time:** `1b23f91` (#134 sidebar import merged)
 
-- **Status:** ⏳ Partial — unauthenticated curl returns **401** (expected)
-- **Prod check:** `POST /api/ai/decision/recompute-queue` → `{"ok":false,"error":"Unauthorized"}` HTTP 401
-- **Next:** Vercel `DECISION_ENGINE_ENABLED=true` + smoke with session cookie
-- **Doc:** `apps/crm/docs/PROD-FLAGS-CHECKLIST.md`
+## Súhrn
 
-## Touch-Guard Compliance
+| Agent | Status | PR | CI |
+|-------|--------|-----|-----|
+| **E** PR Triage | ✅ DONE | [#135](https://github.com/onlinovosk-bit/RealitkaAI/pull/135) | ✅ |
+| **A** Feature Health | ✅ DONE | [#139](https://github.com/onlinovosk-bit/RealitkaAI/pull/139) | ✅ |
+| **D** Smoke Tests | ✅ DONE | [#137](https://github.com/onlinovosk-bit/RealitkaAI/pull/137) | ✅ |
+| **B** Migration Intelligence | ✅ DONE | [#138](https://github.com/onlinovosk-bit/RealitkaAI/pull/138) | ✅ |
+| **C** Marketing /demo | ✅ DONE | [#136](https://github.com/onlinovosk-bit/RealitkaAI/pull/136) | ✅ |
 
-| Area | Status |
-|------|--------|
-| billing | ❌ NOT TOUCHED |
-| auth | ❌ NOT TOUCHED |
-| RLS | ❌ NOT TOUCHED |
-| saas-ops.ts | ❌ NOT TOUCHED |
-| Slate bulk merge #14–#30 | ❌ NOT PERFORMED |
+### Už na `main` (pred overnight swarm)
 
-## Next human actions
+| PR | Obsah |
+|----|-------|
+| [#132](https://github.com/onlinovosk-bit/RealitkaAI/pull/132) | import schema + types + column detector |
+| [#133](https://github.com/onlinovosk-bit/RealitkaAI/pull/133) | UI + API + preview wizard |
+| [#134](https://github.com/onlinovosk-bit/RealitkaAI/pull/134) | sidebar Import + onboarding banner |
 
 1. Vercel: `DECISION_ENGINE_ENABLED=true` + authenticated smoke
 2. Review open Smolko PRs **#25–#30** (not bulk-closed)
