@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { useEffect } from "react";
 import type { Lead } from "@/lib/leads-store";
 import { getLeadDisplayScore, getLeadScoreUnavailableHint } from "@/lib/leads/lead-display-score";
+import { getScoreDisplay } from "@/lib/leads/score-display";
 import LeadRowActions from "./lead-row-actions";
 
 type SortField = "name" | "location" | "budget" | "status" | "score" | "assignedAgent" | "lastContact";
@@ -181,19 +182,28 @@ export default function LeadTable({ leads, onDelete }: LeadTableProps) {
                 </td>
                 <td className="px-3 py-3 sm:px-5 sm:py-4 min-w-[140px]">
                   {(() => {
-                    const displayScore = getLeadDisplayScore(lead);
+                    const display = getScoreDisplay({
+                      score: lead.score,
+                      aiPriority: lead.aiPriority,
+                      buyer_readiness_score: lead.buyer_readiness_score,
+                      aiTriageAt: lead.aiTriageAt,
+                      lastContact: lead.lastContact,
+                    });
                     const scoreHint = getLeadScoreUnavailableHint(lead);
+                    const numericScore = getLeadDisplayScore(lead);
                     return (
                       <div className="space-y-1">
                         <span
                           className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${
-                            displayScore != null ? getScoreClasses(displayScore) : "bg-slate-100 text-slate-500"
-                          }`}
-                          title={scoreHint ?? undefined}
+                            display.showScore && numericScore != null
+                              ? getScoreClasses(numericScore)
+                              : "bg-slate-100 text-slate-500"
+                          } ${display.colorClass}`}
+                          title={scoreHint ?? (display.sublabel || undefined)}
                         >
-                          {displayScore != null ? `${displayScore}/100` : "—"}
-                          {lead.aiPriority ? (
-                            <span className="ml-1 font-normal opacity-80">· {lead.aiPriority}</span>
+                          {display.label}
+                          {display.sublabel ? (
+                            <span className="ml-1 font-normal opacity-80">· {display.sublabel}</span>
                           ) : null}
                         </span>
                         {lead.aiReason ? (
