@@ -10,6 +10,10 @@
       "schedule": "0 2 * * *"
     },
     {
+      "path": "/api/cron/seller-rescue",
+      "schedule": "45 5 * * *"
+    },
+    {
       "path": "/api/cron/morning-brief",
       "schedule": "0 6 * * *"
     },
