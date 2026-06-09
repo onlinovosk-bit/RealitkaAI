@@ -1,4 +1,7 @@
 import { test, expect } from "@playwright/test";
+import { assertNotProduction } from "./helpers/env-guard";
+
+assertNotProduction();
 
 /**
  * Production smoke suite — engineering_live z market-vision-capabilities.json

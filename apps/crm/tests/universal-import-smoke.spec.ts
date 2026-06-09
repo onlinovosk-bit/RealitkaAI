@@ -1,4 +1,7 @@
 import { test, expect } from "@playwright/test";
+import { assertNotProduction } from "./helpers/env-guard";
+
+assertNotProduction();
 
 const BASE_URL = process.env.E2E_BASE_URL || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
