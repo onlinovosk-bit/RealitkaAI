@@ -22,6 +22,7 @@ import { WorkdeskCommandHero } from "@/components/dashboard/WorkdeskCommandHero"
 import { ImportContactsBanner } from "@/components/dashboard/ImportContactsBanner";
 import { AIPriorityStrip } from "@/components/dashboard/AIPriorityStrip";
 import { NextBestActionPanel } from "@/components/dashboard/NextBestActionPanel";
+import { FollowUpTodayCard } from "@/components/follow-up/FollowUpTodayCard";
 import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
 
 const EnterpriseSalesIntelligencePanel = dynamic(
@@ -278,6 +279,10 @@ export default function DashboardPageClient({ initialPropertiesSummary }: Dashbo
         <AIPriorityStrip leads={leads} loading={isLoading} />
 
         <NextBestActionPanel leads={leads} loading={isLoading} />
+
+        <div className="mb-6">
+          <FollowUpTodayCard leads={leads} />
+        </div>
 
         <section className="mb-6 grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
           <KpiCard
