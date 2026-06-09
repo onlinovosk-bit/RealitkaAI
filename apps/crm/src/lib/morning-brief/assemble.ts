@@ -3,7 +3,7 @@
 // Assembles MorningBriefData from gathered raw data + AI text
 // ================================================================
 import { gatherBriefData }      from './gather'
-import { generateBriefText }    from './generators/ai-text'
+import { buildDeliveryFallbackText, generateBriefText } from './generators/ai-text'
 import { renderBriefEmail }     from './generators/email-html'
 import { sendPushNotification } from './generators/web-push'
 import { createClient }         from '@/lib/supabase/server'
@@ -31,14 +31,29 @@ export async function generateAndDeliverBrief(
 
   // 1. Gather all data
   const gathered = await gatherBriefData(profileId)
-  if (!gathered || gathered.hotLeads.length === 0) return null
+  if (!gathered) return null
 
-  const top      = gathered.hotLeads[0]
+  const top      = gathered.hotLeads[0] ?? {
+    lead_id: 'none',
+    full_name: gathered.stats.priorityLeadNames[0] ?? gathered.ownerName,
+    bri_score: 0,
+    phone: null,
+  }
   const variant  = gathered.settings.a_b_variant
   const channels = gathered.settings.channels
 
-  // 2. Generate AI text
-  const generated = await generateBriefText(gathered, variant)
+  // 2. Generate AI text (with timeout fallback)
+  let generated = await generateBriefText(gathered, variant)
+  if (!generated.aiText?.trim()) {
+    generated = {
+      ...generated,
+      aiText: buildDeliveryFallbackText(gathered, gathered.stats.hotPending),
+      subjectLine: `Ranný brief — ${gathered.stats.hotPending} HOT leadov`,
+      actionVerb: 'Kontaktujte',
+      actionText: `Máte ${gathered.stats.pendingContact} leadov čakajúcich na kontakt.`,
+      urgency: gathered.stats.hotPending > 0 ? 'high' as const : 'medium' as const,
+    }
+  }
 
   // 3. Assemble MorningBriefData
   const brief: MorningBriefData = {
