@@ -37,7 +37,11 @@
     "workdesk": { "value": true, "layer": "LIVE", "note": "PR #101 merged a50a0e11 — safe profile SELECT" },
     "morningBrief": { "value": true, "layer": "LIVE", "note": "cron morning-brief 06:00 UTC — vercel.json" },
     "dashboardInsights": { "value": true, "layer": "LIVE", "note": "cron 06:00 + 13:00 UTC — zámer (2× denne refresh)" },
-    "callAnalyzer": { "value": true, "layer": "CODE", "note": "Kód existuje, prod verifikácia pending" },
+    "callAnalyzer": {
+      "value": true,
+      "layer": "CODE",
+      "note": "UI + /api/ai/call/analyze + /api/ai/call-coach/stream existujú; prod E2E neoverené (vyžaduje OPENAI_API_KEY + prihláseného usera; Whisper upload neauditovaný na prod)"
+    },
     "realviaSync": { "value": true, "layer": "LIVE", "note": "webhook + external cron cron-job.org — docs: realvia-external-cron-setup.md" },
     "propertySync": { "value": true, "layer": "LIVE", "note": "properties tabuľka — live" },
     "decisionEngine": { "value": true, "layer": "CODE", "note": "DECISION_ENGINE_ENABLED — env pending Vercel. Default ON v decision-flags.ts. Smoke curl not yet verified." }
