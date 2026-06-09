@@ -6,7 +6,8 @@ import { gatherBriefData }      from './gather'
 import { buildDeliveryFallbackText, generateBriefText } from './generators/ai-text'
 import { renderBriefEmail }     from './generators/email-html'
 import { sendPushNotification } from './generators/web-push'
-import { createClient }         from '@/lib/supabase/server'
+import { generateDirectorBrief } from './director-brief'
+import { createAdminClient, createClient } from '@/lib/supabase/server'
 import { Resend }               from 'resend'
 import type { MorningBriefData } from '@/types/morning-brief'
 
@@ -52,6 +53,28 @@ export async function generateAndDeliverBrief(
       actionVerb: 'Kontaktujte',
       actionText: `Máte ${gathered.stats.pendingContact} leadov čakajúcich na kontakt.`,
       urgency: gathered.stats.hotPending > 0 ? 'high' as const : 'medium' as const,
+    }
+  }
+
+  const { data: ownerProfile } = await supabase
+    .from('profiles')
+    .select('role, ui_role, agency_id')
+    .eq('id', profileId)
+    .maybeSingle();
+
+  const isOwner =
+    ownerProfile?.role === 'owner' || ownerProfile?.ui_role === 'owner_vision';
+
+  if (isOwner && ownerProfile?.agency_id) {
+    try {
+      const admin = createAdminClient();
+      const directorBrief = await generateDirectorBrief(ownerProfile.agency_id, admin);
+      generated = {
+        ...generated,
+        aiText: `${directorBrief}\n\n${generated.aiText}`,
+      };
+    } catch (err) {
+      console.error('[assemble] director brief failed:', err);
     }
   }
 
