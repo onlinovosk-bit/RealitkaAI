@@ -49,26 +49,19 @@ billing · auth · RLS · saas-ops.ts — **NOT TOUCHED**
 
 ---
 
-# Overnight Report — 2026-06-08 (AGENT-D)
+## AGENT-C: Demo landing page (`apps/marketing`)
 
-Generovaný: AGENT-D — Universal Import smoke test suite
-
-## AGENT-D — Smoke Test Suite
-
-- **Status:** ✅ DONE
-- **Branch:** `chore/smoke-test-suite`
-- **Scope:** `apps/crm/src/lib/universal-import/__tests__/`, `apps/crm/tests/`, `playwright.config.ts`
-- **Vitest:** 31 passed (3 files — column-detector, map-contact, import-store)
-- **Playwright:** 2 tests (`universal-import-smoke.spec.ts` — `/import/universal` non-404)
-- **Fixtures:** `tests/fixtures/universal-import-smoke.csv`, `__tests__/fixtures/smoke-realvia.csv`
-- **Blokery:** —
-
-### Súbory
-
-| Súbor | Zmena |
-|-------|-------|
-| `column-detector.test.ts` | +Priezvisko, budget/status/source/agent/type, `detectColumnsFromHeaders`, smoke CSV |
-| `import-store.test.ts` | Nový — vitest mocks pre Supabase import job CRUD |
-| `universal-import-smoke.spec.ts` | Nový — route smoke bez auth setup |
-| `playwright.config.ts` | Projekt `universal-import-smoke` |
-| `smoke-realvia.csv` | Realvia smoke fixture pre unit testy |
+- **Status:** ✅ Complete
+- **Branch:** `feat/demo-landing-page`
+- **Scope:** `apps/marketing/` only (no CRM code changes)
+- **Route:** `/demo` — public SEO landing (removed permanent redirect to zakulisie)
+- **Source:** `apps/crm/public/preview-landing-phase3-b.html` + main marketing copy
+- **Components:** `HeroSection`, `PainSection`, `SolutionSection`, `DemoCTA`, `FaqSection`
+- **Files:**
+  - `apps/marketing/app/demo/page.tsx` — metadata + page shell
+  - `apps/marketing/app/demo/demo.css` — scoped Slate Horizon styles
+  - `apps/marketing/components/demo/DemoSections.tsx` — section components
+  - `apps/marketing/components/demo/DemoCTA.tsx` — client CTAs + lead modal
+  - `apps/marketing/next.config.ts` — `/demo` route no longer 301 to zakulisie
+- **Build:** `npm run build` in `apps/marketing` — ✅ pass (`/demo` static, 4.38 kB)
+- **PR:** https://github.com/onlinovosk-bit/RealitkaAI/pull/136
