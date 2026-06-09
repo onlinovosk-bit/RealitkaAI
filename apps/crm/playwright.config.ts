@@ -68,6 +68,14 @@ export default defineConfig({
       timeout: 90_000,
       use: { ...devices['Desktop Chrome'] },
     },
+    // Universal import route smoke — bez auth setup dependency
+    {
+      name: 'universal-import-smoke',
+      testMatch: /universal-import-smoke\.spec\.ts/,
+      workers: 1,
+      timeout: 60_000,
+      use: { ...devices['Desktop Chrome'] },
+    },
   ],
   ...(webServer ? { webServer } : {}),
 });
