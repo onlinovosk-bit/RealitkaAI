@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import { getLeads, type Lead } from "@/lib/leads-store";
 import PriorityLeads from "@/components/dashboard/priority-leads";
 import AiInsightsPanel from "@/components/dashboard/AiInsightsPanel";
-import EnterpriseSalesIntelligencePanel from "@/components/dashboard/EnterpriseSalesIntelligencePanel";
 import { supabaseClient } from "@/lib/supabase/client";
 import type { PlanTier } from "@/lib/ai-engine";
 import type { PropertiesSummary } from "@/lib/properties-store";
@@ -14,8 +14,6 @@ import QuickActionsBar from "@/components/dashboard/QuickActionsBar";
 import RecentActivityFeed from "@/components/dashboard/recent-activity-feed";
 import DailyActionPanel from "@/components/dashboard/DailyActionPanel";
 import TodaysTenLeads from "@/components/dashboard/TodaysTenLeads";
-import BrokerCoach from "@/components/coaching/BrokerCoach";
-import RevenueView from "@/components/dashboard/RevenueView";
 import { useCountUp } from "@/hooks/useSpaceInteractions";
 import { AIAssistBanner } from "@/components/dashboard/AIAssistBanner";
 import { AssistantPanelDynamic } from "@/components/dashboard/AssistantPanel.dynamic";
@@ -25,6 +23,19 @@ import { ImportContactsBanner } from "@/components/dashboard/ImportContactsBanne
 import { AIPriorityStrip } from "@/components/dashboard/AIPriorityStrip";
 import { NextBestActionPanel } from "@/components/dashboard/NextBestActionPanel";
 import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
+
+const EnterpriseSalesIntelligencePanel = dynamic(
+  () => import("@/components/dashboard/EnterpriseSalesIntelligencePanel"),
+  { loading: () => <div className="animate-pulse h-48 rounded-2xl bg-slate-100" /> },
+);
+const BrokerCoach = dynamic(
+  () => import("@/components/coaching/BrokerCoach"),
+  { loading: () => <div className="animate-pulse h-40 rounded-2xl bg-slate-100" /> },
+);
+const RevenueView = dynamic(
+  () => import("@/components/dashboard/RevenueView"),
+  { loading: () => <div className="animate-pulse h-64 rounded-2xl bg-slate-100" /> },
+);
 
 type ForecastingSummary = {
   totalLeads: number;
