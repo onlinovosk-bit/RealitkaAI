@@ -1,36 +1,35 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { revolisGuard } from '@/lib/revolis-guard';
-import { createClient } from '@/lib/supabase/server';
-import { sendSlackMessage } from '@/lib/slack';
-import { SMS_TEMPLATES } from '@/lib/sms-templates';
+import { NextRequest, NextResponse } from "next/server";
+import { revolisGuard } from "@/lib/revolis-guard";
+import { createAdminClient } from "@/lib/supabase/server";
+import { runDealTrigger } from "@/lib/agents/deal-trigger";
 
+async function executeTrigger() {
+  const admin = createAdminClient();
+  const result = await runDealTrigger(admin);
+  return NextResponse.json(result);
+}
+
+function authorizeCronBearer(req: NextRequest): boolean {
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) return false;
+  return req.headers.get("authorization") === `Bearer ${cronSecret}`;
+}
+
+/** HMAC auth — internal / Revolis Guard callers */
 export async function GET(req: NextRequest) {
-  return revolisGuard(req, 'Strážca Cien a Ziskov', async () => {
-    const supabase = await createClient();
-    const { data: deals, error } = await supabase.from('leads').select('*').eq('status', 'SEGMENTED').gt('lead_score', 85);
-    if (error) throw error;
-    if (!deals?.length) return NextResponse.json({ message: "Pokoj na trhu." });
+  return revolisGuard(req, "Strážca Cien a Ziskov", executeTrigger);
+}
 
-    // Send all Slack notifications in parallel
-    await Promise.all(deals.map((d) => {
-      const draft = SMS_TEMPLATES.EXCLUSIVITY_INFORMATIONAL
-        .replace('{{name}}', d.title ?? 'nehnuteľnosť');
-      return sendSlackMessage(
-        `🛡️ *STRÁŽCA CIEN: Pripravený koncept SMS*\n` +
-        `*Pre:* ${d.phone}\n` +
-        `*Cieľ:* Získanie exkluzivity (3B)\n` +
-        `--- \n` +
-        `💬 \`${draft}\` \n` +
-        `--- \n` +
-        `📲 *AKCIA:* Skopírujte a pošlite, alebo kliknite na [ODOSLAŤ CEZ BRÁNU] (ak je aktívna).`
-      );
-    }));
-
-    // Batch update all dealt records in one query
-    const ids = deals.map((d) => d.id);
-    const { error: updateError } = await supabase.from('leads').update({ status: 'SMS_DRAFTED' }).in('id', ids);
-    if (updateError) throw updateError;
-
-    return NextResponse.json({ success: true, drafted: deals.length });
-  });
+/** Bearer CRON_SECRET — smoke / Vercel cron */
+export async function POST(req: NextRequest) {
+  if (!authorizeCronBearer(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  try {
+    return await executeTrigger();
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error("[deal-trigger]", msg);
+    return NextResponse.json({ ok: false, error: msg }, { status: 500 });
+  }
 }
