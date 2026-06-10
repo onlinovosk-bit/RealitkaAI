@@ -32,6 +32,13 @@ jobs:
         run: npm run lint
         working-directory: apps/crm
 
+      - name: Block E2E on production
+        run: |
+          if [[ "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" == *"ypgajkhqtbriqqmyawyv"* ]]; then
+            echo "❌ E2E testy nesmú bežať na prod DB!"
+            exit 1
+          fi
+
       - name: Test
         run: npm test
         working-directory: apps/crm

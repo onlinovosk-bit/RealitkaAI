@@ -1,4 +1,7 @@
 import { test, expect } from '@playwright/test';
+import { assertNotProduction } from './helpers/env-guard';
+
+assertNotProduction();
 
 // 1. Prihlásenie a odhlásenie používateľa
 // 2. Registrácia nového používateľa
