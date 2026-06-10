@@ -79,7 +79,7 @@ CREATE TABLE IF NOT EXISTS import_rows (
   -- 'missing_name' | 'missing_contact' | 'duplicate_phone'
   -- | 'duplicate_email' | 'invalid_format'
 
-  lead_id       UUID    REFERENCES leads(id),  -- vyplní sa po úspešnom importe
+  lead_id       TEXT    REFERENCES public.leads(id),  -- vyplní sa po úspešnom importe
 
   CONSTRAINT import_rows_status_check CHECK (
     status IN ('pending','imported','skipped','duplicate','error')
