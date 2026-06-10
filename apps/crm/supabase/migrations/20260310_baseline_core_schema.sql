@@ -18,6 +18,8 @@ create table if not exists public.leads (
   source text not null default 'Web formulár',
   status text not null default 'Nový',
   score integer not null default 50,
+  bri_score smallint not null default 0,
+  agent_id text,
   assigned_agent text not null default 'Nepriradený',
   last_contact text not null default 'Práve vytvorený',
   note text not null default '',
