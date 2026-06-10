@@ -91,7 +91,7 @@ BEGIN
       PERFORM cron.schedule(
         'cleanup-demand-signals-12m',
         '0 0 1 * *',
-        $$DELETE FROM public.demand_signals WHERE created_at < NOW() - INTERVAL '12 months'$$
+        $cron$DELETE FROM public.demand_signals WHERE created_at < NOW() - INTERVAL '12 months'$cron$
       );
     END IF;
   EXCEPTION WHEN others THEN
