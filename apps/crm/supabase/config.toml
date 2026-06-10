@@ -34,6 +34,12 @@ port = 54324
 enabled = true
 file_size_limit = "50MiB"
 
+# CI/local: explicit disable — newer CLI defaults vector buckets on and fails start.
+[storage.vector]
+enabled = false
+max_buckets = 10
+max_indexes = 5
+
 [auth]
 enabled = true
 site_url = "http://127.0.0.1:3000"
