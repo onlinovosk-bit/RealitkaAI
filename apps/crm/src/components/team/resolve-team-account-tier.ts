@@ -7,6 +7,9 @@ type ProfileLike = {
 } | null;
 
 /** Team UI tier — delegates to canonical license resolver. */
-export function resolveTeamAccountTier(profile: ProfileLike): string {
-  return resolveAccountTier(profile);
+export function resolveTeamAccountTier(
+  profile: ProfileLike,
+  agencyManualPlan?: string | null,
+): string {
+  return resolveAccountTier(profile, agencyManualPlan);
 }
