@@ -14,6 +14,7 @@ jobs:
   ci:
     name: Lint, test, build
     runs-on: ubuntu-latest
+    timeout-minutes: 25
 
     steps:
       - uses: actions/checkout@v4
@@ -32,23 +33,50 @@ jobs:
         run: npm run lint
         working-directory: apps/crm
 
-      - name: Block E2E on production
+      # ── Ephemeral test DB: žiadne prod secrets v test/build fáze ──
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start local Supabase
+        run: supabase start
+        working-directory: apps/crm
+
+      - name: Export local credentials
+        run: supabase status -o env | sed 's/"//g' >> "$GITHUB_ENV"
+        working-directory: apps/crm
+
+      # Allowlist guard: fail, ak DB NIE JE lokálne test prostredie.
+      # (Nahrádza pôvodný blacklist "Block E2E on production".)
+      - name: Guard - testy len proti allowlistu test DB
         run: |
-          if [[ "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" == *"ypgajkhqtbriqqmyawyv"* ]]; then
-            echo "❌ E2E testy nesmú bežať na prod DB!"
-            exit 1
-          fi
+          case "$API_URL" in
+            *127.0.0.1*|*localhost*)
+              echo "Guard OK: $API_URL" ;;
+            *)
+              echo "::error::DB URL nie je v allowliste test prostredí - testy zablokované."
+              exit 1 ;;
+          esac
+
+      - name: Reset DB (migracie + seed.sql)
+        run: supabase db reset
+        working-directory: apps/crm
 
       - name: Test
         run: npm test
         working-directory: apps/crm
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ env.API_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ env.ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ env.SERVICE_ROLE_KEY }}
 
       - name: Build
         run: npm run build
         working-directory: apps/crm
         env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ env.API_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ env.ANON_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
       - name: Debug - find .next
