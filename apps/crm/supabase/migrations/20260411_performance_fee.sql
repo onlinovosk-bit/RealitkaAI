@@ -7,8 +7,8 @@
 CREATE TABLE IF NOT EXISTS public.ai_sourced_deals (
   id                    UUID          DEFAULT gen_random_uuid() PRIMARY KEY,
   agency_id             UUID,
-  lead_id               UUID          REFERENCES public.leads(id) ON DELETE SET NULL,
-  property_id           UUID          REFERENCES public.properties(id) ON DELETE SET NULL,
+  lead_id               TEXT          REFERENCES public.leads(id) ON DELETE SET NULL,
+  property_id           TEXT          REFERENCES public.properties(id) ON DELETE SET NULL,
   deal_value            DECIMAL(12,2) NOT NULL,
   commission_value      DECIMAL(12,2),
   ai_attribution_score  DECIMAL(3,2)  DEFAULT 0.0
@@ -51,7 +51,7 @@ CREATE POLICY "Owners can view their agency deals"
     agency_id IN (
       SELECT p.agency_id
       FROM public.profiles p
-      WHERE p.user_id = auth.uid()
+      WHERE (p.auth_user_id = auth.uid() OR p.id = auth.uid())
         AND p.role IN ('owner', 'manager')
     )
   );
@@ -70,7 +70,7 @@ CREATE POLICY "Owners can update deal status"
     agency_id IN (
       SELECT p.agency_id
       FROM public.profiles p
-      WHERE p.user_id = auth.uid()
+      WHERE (p.auth_user_id = auth.uid() OR p.id = auth.uid())
         AND p.role IN ('owner', 'manager')
     )
   );

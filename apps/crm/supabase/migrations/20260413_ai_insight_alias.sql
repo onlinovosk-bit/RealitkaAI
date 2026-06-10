@@ -2,6 +2,7 @@
 -- Keeps backward compatibility with legacy `sofia_insight`.
 
 alter table public.leads
+  add column if not exists sofia_insight text,
   add column if not exists ai_insight text;
 
 -- Backfill existing values into the new column.
