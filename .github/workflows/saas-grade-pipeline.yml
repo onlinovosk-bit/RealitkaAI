@@ -47,7 +47,16 @@ jobs:
           version: latest
 
       - name: Start local Supabase
-        run: supabase start
+        run: |
+          set -o pipefail
+          supabase start 2>&1 | tee /tmp/supabase-start.log || START_RC=$?
+          if [ "${START_RC:-0}" -ne 0 ]; then
+            if grep -q "Vector service not configured" /tmp/supabase-start.log && supabase status >/dev/null 2>&1; then
+              echo "::warning::Supabase DB is up; ignoring vector buckets error on ephemeral CI."
+            else
+              exit "${START_RC}"
+            fi
+          fi
         working-directory: apps/crm
 
       - name: Export local credentials
