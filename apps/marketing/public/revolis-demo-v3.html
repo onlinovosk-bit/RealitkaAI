@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Revolis — Získaj viac klientov. Uzatváraj viac obchodov. Bez chaosu.</title>
+<meta name="description" content="Revolis každé ráno vyberie najdôležitejšie príležitosti a povie tvojmu tímu, komu volať ako prvému. Dopyty z portálov, skóre pripravenosti kúpy, denný plán. Rezervuj si demo.">
+<!-- TODO Andy: OG obrázok 1200×630 (tmavý, logo Revolis, headline) -->
+<meta property="og:title" content="Revolis — Uzatváraj viac obchodov. Bez chaosu.">
+<meta property="og:description" content="Systém, ktorý každé ráno povie tvojej kancelárii, komu volať ako prvému. Demo za 15–20 minút.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect fill='%230B0A12' width='32' height='32' rx='6'/%3E%3Ctext x='6' y='22' fill='%23A78BFA' font-family='monospace' font-size='14'%3E%E2%80%BA_%3C/text%3E%3C/svg%3E">
+<meta name="theme-color" content="#0B0A12">
+<link rel="canonical" href="https://www.revolis.ai/demo.html">
+<style>
+  :root{
+    --gap-section:30px;
+    --bg:#0B0A12; --surface:#15131F; --surface-2:#1C1929; --line:#2A2640;
+    --violet:#8B5CF6; --violet-soft:#A78BFA; --violet-dim:rgba(139,92,246,.14);
+    --text:#EDEBF6; --muted:#9B95B3; --good:#34D399; --hot:#FBBF24; --bad:#F87171;
+    --mono:ui-monospace,"Cascadia Code","SF Mono",Consolas,Menlo,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  section[id]{scroll-margin-top:80px}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  ::selection{background:var(--violet);color:#fff}
+  a{color:var(--violet-soft)}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 20px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--violet-soft);display:flex;align-items:center;gap:10px}
+  .eyebrow::before{content:"";width:22px;height:1px;background:var(--violet)}
+
+  header{position:sticky;top:0;z-index:50;background:rgba(11,10,18,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .nav{display:flex;align-items:center;justify-content:space-between;height:62px}
+  .logo{font-family:var(--mono);font-weight:700;font-size:17px;color:var(--text);text-decoration:none;letter-spacing:.02em}
+  .logo b{color:var(--violet-soft)}
+  .btn{display:inline-block;background:var(--violet);color:#fff;text-decoration:none;font-weight:600;font-size:15px;padding:11px 20px;border-radius:10px;transition:transform .15s ease,background .15s ease;border:none;cursor:pointer}
+  .btn:hover{background:#9D6FFF;transform:translateY(-1px)}
+  .btn:focus-visible{outline:2px solid #fff;outline-offset:3px}
+  .btn:active{transform:scale(.98)}
+  .btn-lg{padding:15px 28px;font-size:17px}
+  .btn-ghost{background:transparent;border:1px solid var(--line);color:var(--text)}
+  .btn-ghost:hover{background:var(--surface-2)}
+
+  .hero{padding:70px 0 30px;position:relative;overflow:hidden}
+  .hero::after{content:"";position:absolute;inset:auto -20% -60% -20%;height:380px;background:radial-gradient(50% 100% at 50% 100%,rgba(139,92,246,.16),transparent 70%);pointer-events:none}
+  .hero h1{font-size:clamp(34px,6vw,56px);line-height:1.07;font-weight:800;letter-spacing:-.02em;margin:18px 0 20px;max-width:18ch}
+  .hero h1 em{font-style:normal;color:var(--violet-soft)}
+  .hero p.lead{font-size:clamp(17px,2.2vw,20px);color:var(--muted);max-width:56ch;margin-bottom:28px}
+  .hero p.lead strong{color:var(--text);font-weight:600}
+  .hero-cta{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+  .micro{font-family:var(--mono);font-size:12.5px;color:var(--muted);margin-top:14px}
+
+  section{padding:var(--gap-section) 0}
+  .center{text-align:center}
+  h2{font-size:clamp(26px,4vw,38px);line-height:1.15;font-weight:800;letter-spacing:-.015em;margin:14px 0 12px}
+  .sub{color:var(--muted);max-width:58ch}
+
+  /* ── mockup ── */
+  .mock-frame{margin-top:34px;border:1px solid var(--line);border-radius:16px;background:var(--surface);box-shadow:0 30px 80px -30px rgba(139,92,246,.25),0 10px 30px rgba(0,0,0,.5);overflow:hidden}
+  .mock-top{display:flex;align-items:center;gap:8px;padding:11px 16px;border-bottom:1px solid var(--line);background:var(--surface-2);font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--line)}
+  .mock-title{margin-left:8px}
+  .mock-badge{margin-left:auto;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--line);border-radius:99px;padding:3px 10px;color:var(--muted)}
+  .mock-body{display:grid;grid-template-columns:1.05fr 1.4fr;min-height:320px}
+  .mock-col{padding:18px;border-left:1px solid var(--line)}
+  .mock-col:first-child{border-left:none}
+  .mock-h{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+  .lead-row{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:9px;background:var(--bg);font-size:14px;cursor:pointer}
+  .lead-row.sel{border-color:var(--violet);box-shadow:0 0 0 1px rgba(139,92,246,.35)}
+  .lead-row .nm{font-weight:600}
+  .lead-row .src{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .score{margin-left:auto;font-family:var(--mono);font-size:12.5px;font-weight:700;padding:3px 9px;border-radius:7px}
+  .score.hot{background:rgba(251,191,36,.13);color:var(--hot);position:relative;padding-left:18px}
+  .score.hot::before{content:"";position:absolute;left:6px;top:50%;transform:translateY(-50%);width:6px;height:6px;border-radius:50%;background:var(--hot);animation:pulse 1.6s ease-out infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(251,191,36,.55)}100%{box-shadow:0 0 0 9px rgba(251,191,36,0)}}
+  .score.ok{background:rgba(52,211,153,.12);color:var(--good)}
+  .score.cold{background:var(--surface-2);color:var(--muted)}
+  .nba{border:1px solid rgba(139,92,246,.4);background:linear-gradient(180deg,var(--violet-dim),transparent 70%);border-radius:12px;padding:14px;margin-bottom:14px}
+  .nba .tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;color:var(--violet-soft);text-transform:uppercase}
+  .nba p{font-size:14.5px;margin-top:6px}
+  .nba p b{color:var(--violet-soft)}
+  .ai-box{border:1px solid var(--line);border-radius:12px;background:var(--bg);padding:14px;font-family:var(--mono);font-size:13px;line-height:1.65;min-height:124px}
+  .ai-box .lbl{color:var(--muted);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:8px}
+  .caret{display:inline-block;width:8px;height:15px;background:var(--violet-soft);vertical-align:-2px;animation:blink 1s step-end infinite}
+  @keyframes blink{50%{opacity:0}}
+  .mock-foot{border-top:1px solid var(--line);padding:10px 16px;font-family:var(--mono);font-size:12px;color:var(--muted);display:flex;gap:18px;flex-wrap:wrap;background:var(--surface-2)}
+  .ok-dot{color:var(--good)}
+
+  /* ── kalkulačka ── */
+  .calc{margin-top:34px;border:1px solid var(--line);border-radius:18px;background:var(--surface);overflow:hidden;display:grid;grid-template-columns:1.3fr 1fr}
+  .calc-in{padding:26px;border-right:1px solid var(--line)}
+  .calc-in h3{font-size:19px;margin-bottom:18px}
+  .ctl{margin-bottom:20px}
+  .ctl label{display:flex;justify-content:space-between;font-size:14px;color:var(--muted);margin-bottom:8px}
+  .ctl label output{font-family:var(--mono);color:var(--text);font-weight:700}
+  input[type=range]{width:100%;accent-color:var(--violet);height:26px;cursor:pointer}
+  input[type=range]:focus-visible{outline:2px solid var(--violet);outline-offset:4px;border-radius:6px}
+  .calc-out{padding:26px;background:linear-gradient(180deg,var(--violet-dim),transparent 80%);display:flex;flex-direction:column;justify-content:center;gap:18px}
+  .calc-out .big b{font-family:var(--mono);font-size:clamp(30px,4vw,40px);color:var(--bad);display:block;line-height:1.1}
+  .calc-out .big span,.calc-out .mid span{font-size:13px;color:var(--muted)}
+  .calc-out .mid b{font-family:var(--mono);font-size:24px;color:var(--good);display:block}
+  .calc-note{font-family:var(--mono);font-size:11px;color:var(--muted);padding:10px 26px;border-top:1px solid var(--line);grid-column:1/-1}
+
+  /* ── kroky ── */
+  .steps3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:30px}
+  .step{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);padding:22px;position:relative}
+  .step .n{font-family:var(--mono);color:var(--violet-soft);font-size:22px;font-weight:700}
+  .step h3{font-size:17.5px;margin:10px 0 6px}
+  .step p{font-size:14.5px;color:var(--muted)}
+  .step p b{color:var(--text)}
+
+  /* ── goal picker ── */
+  .goals{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:28px}
+  .goal{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);padding:20px;cursor:pointer;text-align:left;color:var(--text);font-family:var(--sans);transition:border-color .15s ease,background .15s ease}
+  .goal h3{font-size:16.5px;margin-bottom:5px}
+  .goal p{font-size:14px;color:var(--muted)}
+  .goal .chk{float:right;font-family:var(--mono);color:var(--muted)}
+  .goal[aria-pressed=true]{border-color:var(--violet);background:linear-gradient(180deg,var(--violet-dim),var(--surface) 80%)}
+  .goal[aria-pressed=true] .chk{color:var(--violet-soft)}
+  .goal:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
+  .goal-result{margin-top:18px;border:1px solid rgba(139,92,246,.4);border-radius:12px;background:var(--surface);padding:18px;font-size:15px;display:none}
+  .goal-result.show{display:block}
+  .goal-result b{color:var(--violet-soft)}
+
+  /* ── pains ── */
+  .pains{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:30px}
+  .pain{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);padding:22px}
+  .pain h3{font-size:17.5px;margin-bottom:8px}
+  .pain p{font-size:15px;color:var(--muted)}
+  .pain .pk{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.1em;display:block;margin-bottom:10px}
+
+  /* ── case ── */
+  .case{border:1px solid rgba(139,92,246,.35);border-radius:18px;background:linear-gradient(160deg,var(--violet-dim),var(--surface) 55%);padding:34px;margin-top:32px;display:grid;grid-template-columns:1fr auto;gap:26px;align-items:center}
+  .case blockquote{font-size:clamp(19px,2.6vw,23px);line-height:1.45;font-weight:600;max-width:32ch}
+  .case .who{margin-top:14px;color:var(--muted);font-size:14px}
+  .case-num{text-align:center;border-left:1px solid var(--line);padding-left:26px}
+  .case-num b{font-family:var(--mono);font-size:44px;color:var(--violet-soft);display:block;line-height:1}
+  .case-num span{font-size:13px;color:var(--muted);display:block;max-width:16ch;margin-top:8px}
+
+  /* ── cenník ── */
+  .plans{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:30px;align-items:stretch}
+  .plan{border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:24px;display:flex;flex-direction:column}
+  .plan.featured{border-color:var(--violet);background:linear-gradient(180deg,var(--violet-dim),var(--surface) 60%);position:relative}
+  .plan .pill{position:absolute;top:-12px;left:24px;background:var(--violet);color:#fff;font-family:var(--mono);font-size:11px;letter-spacing:.08em;padding:4px 12px;border-radius:99px}
+  .plan h3{font-size:18px}
+  .price{font-family:var(--mono);font-size:34px;font-weight:700;margin:10px 0 2px}
+  .price small{font-size:13px;color:var(--muted);font-weight:400}
+  .price .was{font-size:16px;color:var(--muted);text-decoration:line-through;margin-left:8px}
+  .plan .note{font-size:13px;color:var(--muted);margin-bottom:14px}
+  .plan ul{list-style:none;margin:0 0 20px;flex:1}
+  .plan li{font-size:14.5px;color:var(--muted);padding:6px 0 6px 22px;position:relative}
+  .plan li::before{content:"✓";position:absolute;left:0;color:var(--good);font-family:var(--mono)}
+  .plan .btn{text-align:center}
+  .guarantee{margin-top:18px;text-align:center;font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+  .guarantee b{color:var(--good)}
+
+  /* ── badges / FAQ / final ── */
+  .badges{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+  .badge{font-family:var(--mono);font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:7px 14px;background:var(--surface)}
+  .faq{max-width:760px;margin-top:26px}
+  details{border:1px solid var(--line);border-radius:12px;background:var(--surface);margin-bottom:10px;overflow:hidden}
+  summary{cursor:pointer;list-style:none;padding:17px 20px;font-weight:600;font-size:16px;display:flex;justify-content:space-between;align-items:center;gap:14px}
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:"+";font-family:var(--mono);color:var(--violet-soft);font-size:18px;flex-shrink:0}
+  details[open] summary::after{content:"–"}
+  summary:focus-visible{outline:2px solid var(--violet);outline-offset:-2px;border-radius:12px}
+  details .a{padding:0 20px 18px;color:var(--muted);font-size:15px}
+  .final{text-align:center;border:1px solid var(--line);border-radius:20px;background:radial-gradient(60% 120% at 50% 0%,var(--violet-dim),var(--surface) 70%);padding:60px 24px;margin-bottom:30px}
+  .final h2{max-width:24ch;margin:14px auto 10px}
+  .final .sub{margin:0 auto 26px}
+  footer{border-top:1px solid var(--line);padding:26px 0 110px;font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+  footer .wrap{display:flex;flex-wrap:wrap;gap:8px 22px;justify-content:space-between}
+  footer a{color:var(--muted)}
+  .sticky-cta{position:fixed;left:0;right:0;bottom:0;z-index:60;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:rgba(11,10,18,.92);backdrop-filter:blur(10px);border-top:1px solid var(--line);transform:translateY(100%);transition:transform .25s ease}
+  .sticky-cta.show{transform:translateY(0)}
+  .sticky-cta .btn{display:block;text-align:center;width:100%}
+
+  @media (max-width:880px){
+    .mock-body{min-height:auto}
+    .mock-body,.calc,.goals,.pains,.steps3,.plans{grid-template-columns:1fr}
+    .mock-col{border-left:none;border-top:1px solid var(--line)}
+    .mock-col:first-child{border-top:none}
+    .calc-in{border-right:none;border-bottom:1px solid var(--line)}
+    .case{grid-template-columns:1fr}
+    .case-num{border-left:none;border-top:1px solid var(--line);padding:22px 0 0;text-align:left}
+    .sticky-cta{display:block}
+    section{padding:52px 0}
+    .plan.featured{order:-1}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation:none !important;transition:none !important}
+    html{scroll-behavior:auto}
+  }
+</style>
+<!-- TODO Andy: Plausible/Umami snippet -->
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Nemáme čas na zavádzanie nového systému.", "acceptedAnswer": {"@type": "Answer", "text": "Začíname s minimálnou konfiguráciou — prvé výsledky vidíš po zapnutí denného plánu a pripravených odpovedí. Tím nemusí meniť celý proces naraz."}}, {"@type": "Question", "name": "Funguje to s portálmi, ktoré používame?", "acceptedAnswer": {"@type": "Answer", "text": "Dopyty z hlavných slovenských portálov a e-mailu sa zbiehajú do jedného prehľadu. Na deme ti ukážeme presne tie, ktoré používa tvoja kancelária."}}, {"@type": "Question", "name": "Čo ak systém pošle klientovi nezmysel?", "acceptedAnswer": {"@type": "Answer", "text": "Nepošle nič bez teba. Každá správa čaká na tvoje schválenie — ty rozhoduješ, systém pripravuje. Plná kontrola ostáva u makléra."}}, {"@type": "Question", "name": "Nie som technický typ, zvládnem to?", "acceptedAnswer": {"@type": "Answer", "text": "Nepotrebuješ žiadne technické znalosti. Všetko nastavíme spolu a vysvetlíme na príkladoch z tvojho bežného dňa — obhliadky, inzeráty, klienti."}}, {"@type": "Question", "name": "Je to pre jednotlivca alebo celú kanceláriu?", "acceptedAnswer": {"@type": "Answer", "text": "Pre oboje. Maklérom pomáha stabilizovať príjem, majiteľom zjednotiť prácu tímu — kancelária pôsobí navonok jednotne a profesionálne."}}, {"@type": "Question", "name": "Čo s našimi dátami a GDPR?", "acceptedAnswer": {"@type": "Answer", "text": "Dáta sú uložené v EÚ a nikdy ich nezdieľame na marketingové účely. Spracúvajú ich výhradne naši zmluvní subdodávatelia viazaní GDPR. Kedykoľvek si ich vieš vyžiadať alebo nechať vymazať."}}, {"@type": "Question", "name": "Koľko to stojí a čo ak to nebude fungovať?", "acceptedAnswer": {"@type": "Answer", "text": "Od 29 €/mes za makléra — celý cenník je vyššie, žiadne prekvapenia. A prvých 30 dní platí záruka vrátenia peňazí bez otázok."}}]}</script>
+</head>
+<body>
+<a href="#main" class="skip-link">Preskočiť na obsah</a>
+<style>.skip-link{position:absolute;left:-9999px;top:auto}.skip-link:focus{left:16px;top:16px;z-index:100;background:var(--violet);color:#fff;padding:10px 16px;border-radius:8px}</style>
+<main id="main">
+
+<header>
+  <div class="wrap nav">
+    <a class="logo" href="#">REVOLIS<b>›_</b></a>
+    <a class="btn" href="https://calendly.com/revoliscrm/30min" target="_blank" rel="noopener" data-cta="nav">Rezervovať demo</a>
+  </div>
+</header>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Pre realitných maklérov a majiteľov RK na Slovensku</p>
+    <h1>Získaj viac klientov. Uzatváraj viac obchodov. <em>Bez chaosu.</em></h1>
+    <p class="lead">Revolis každé ráno vyberie najdôležitejšie príležitosti, zoradí záujemcov podľa pripravenosti kúpiť a povie tvojmu tímu, <strong>komu volať ako prvému</strong> — ešte pred prvou kávou.</p>
+    <div class="hero-cta">
+      <!-- TODO Andy: zladiť dĺžku Calendly eventu (copy 15–20 min vs. /30min) -->
+      <a class="btn btn-lg" href="https://calendly.com/revoliscrm/30min" target="_blank" rel="noopener" data-cta="hero">Rezervovať demo zdarma</a>
+      <a class="btn btn-lg btn-ghost" href="#kalkulacka" data-cta="hero-calc">Koľko ma stojí pomalá odpoveď? ↓</a>
+    </div>
+    <p class="micro">15–20 minút · žiadne záväzky · bez kreditnej karty</p>
+    <p class="micro" style="margin-top:6px">// prvý klient: ~10 h týždenne späť už v prvom mesiaci</p>
+  </div>
+</div>
+
+<!-- ── PRODUKT ── -->
+<section id="produkt">
+  <div class="wrap">
+    <p class="eyebrow">Toto je Revolis</p>
+    <h2>Tvoja kancelária na jednej obrazovke.</h2>
+    <p class="sub">Žiadne sľuby naslepo — takto vyzerá pracovné ráno v Revolise.</p>
+
+    <div class="mock-frame" aria-label="Ukážka rozhrania Revolis s ilustračnými dátami">
+      <div class="mock-top">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="mock-title">app.revolis.ai — Prehľad</span>
+        <span class="mock-badge">Vzorové dáta</span>
+      </div>
+      <div class="mock-body">
+        <div class="mock-col">
+          <p class="mock-h">Dnešní záujemcovia · zoradení podľa skóre</p>
+          <div class="lead-row" role="button" tabindex="0" aria-label="Priorita: Peter V." data-lead="peter"><span class="nm">Peter V.</span><span class="src">3-izb · Ružinov</span><span class="score hot">92 · HOT</span></div>
+          <div class="lead-row" role="button" tabindex="0" aria-label="Priorita: Jana K." data-lead="jana"><span class="nm">Jana K.</span><span class="src">2-izb · Petržalka</span><span class="score ok">74</span></div>
+          <div class="lead-row" role="button" tabindex="0" aria-label="Priorita: M. Horváth" data-lead="horvath"><span class="nm">M. Horváth</span><span class="src">dom · Senec</span><span class="score cold">58</span></div>
+          <div class="lead-row" role="button" tabindex="0" aria-label="Priorita: L. Tóthová" data-lead="toth"><span class="nm">L. Tóthová</span><span class="src">pozemok · Pezinok</span><span class="score cold">41</span></div>
+        </div>
+        <div class="mock-col">
+          <div class="nba">
+            <span class="tag">Denná priorita</span>
+            <p>Zavolaj <b>Petrovi V.</b> — pýtal sa na financovanie aj obhliadku. Najvyššia šanca na obchod tento týždeň.</p>
+          </div>
+          <div class="ai-box">
+            <span class="lbl">Návrh inzerátu — pripravený na tvoje schválenie</span>
+            <span id="typer" aria-hidden="true"></span><span class="caret" aria-hidden="true"></span>
+          <div style="display:flex;gap:8px;margin-top:12px;pointer-events:none" aria-hidden="true"><span class="btn" style="font-size:12px;padding:6px 12px;opacity:.7">✓ Schváliť</span><span class="btn btn-ghost" style="font-size:12px;padding:6px 12px;opacity:.7">Upraviť</span></div>
+        </div>
+        </div>
+      </div>
+      <div class="mock-foot">
+        <span><span class="ok-dot">●</span> Ranný report odoslaný majiteľovi · 06:00</span>
+        <span>4 následné správy čakajú na schválenie</span>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- ── PAINS ── -->
+<section id="pains">
+  <div class="wrap">
+    <p class="eyebrow">Poznáš to?</p>
+    <h2>Strácaš klientov, lebo nemáš prehľad.</h2>
+    <p class="sub">Nové dopyty pribúdajú, času je menej — a najdôležitejší klient ostane zakopaný v tabuľke, kým neodíde ku konkurencii.</p>
+    <div class="pains">
+      <div class="pain"><span class="pk">01 / RÝCHLOSŤ</span><h3>Konkurencia odpovedá skôr</h3><p>Klient ide k tomu, kto zareaguje prvý a pôsobí profesionálne. Nie k tomu, kto je objektívne lepší.</p></div>
+      <div class="pain"><span class="pk">02 / PRIORITY</span><h3>Nevieš, komu volať ako prvému</h3><p>Máš kontakty, ale nevieš, kto je pripravený kúpiť — a s kým len strácaš hodiny.</p></div>
+      <div class="pain"><span class="pk">03 / ČAS</span><h3>Hodiny denne pri inzerátoch</h3><p>Príprava jedného inzerátu zoberie 20–30 minút. A aj tak volajú skôr zvedavci než kupci.</p></div>
+      <div class="pain"><span class="pk">04 / CHAOS</span><h3>Dopyty roztrúsené po portáloch</h3><p>Nehnuteľnosti.sk, Topreality, Reality.sk, Bazoš, e-mail — každý kanál zvlášť, niečo sa vždy stratí.</p></div>
+    </div>
+  </div>
+</section>
+<!-- ── KALKULAČKA ── -->
+<section id="kalkulacka">
+  <div class="wrap">
+    <p class="eyebrow">Spočítaj si to sám</p>
+    <h2>Koľko ťa mesačne stojí pomalá odpoveď?</h2>
+    <p class="sub">Posuň hodnoty podľa svojej kancelárie. Čísla sa prepočítajú okamžite.</p>
+
+    <div class="calc">
+      <div class="calc-in">
+        <h3>Tvoja kancelária dnes</h3>
+        <div class="ctl">
+          <label for="rDop">Nové dopyty mesačne <output id="oDop">60</output></label>
+          <input type="range" id="rDop" min="10" max="300" step="5" value="60">
+        </div>
+        <div class="ctl">
+          <label for="rCas">Priemerný čas do odpovede <output id="oCas">120 min</output></label>
+          <input type="range" id="rCas" min="5" max="480" step="5" value="120">
+        </div>
+        <div class="ctl">
+          <label for="rKon">Konverzia dopytov na obchod <output id="oKon">8 %</output></label>
+          <input type="range" id="rKon" min="2" max="20" step="1" value="8">
+        </div>
+        <div class="ctl">
+          <label for="rPro">Priemerná provízia <output id="oPro">3 000 €</output></label>
+          <input type="range" id="rPro" min="1000" max="8000" step="250" value="3000">
+        </div>
+      </div>
+      <div class="calc-out" aria-live="polite">
+        <div id="calcFast" class="calc-fast" hidden><p><strong>Reaguješ rýchlo 👍</strong> Revolis ti ušetrí čas pri inzerátoch a follow-upoch.</p><a class="btn" href="https://calendly.com/revoliscrm/30min" data-cta="calc-fast" target="_blank" rel="noopener">Rezervovať demo →</a></div>
+        <div id="calcLoss">
+        <div class="big"><b id="outLoss">— €</b><span>odhad ušlých provízií mesačne kvôli pomalej reakcii</span></div>
+        <div class="mid"><b id="outYear">ročne ≈ — €</b><span>odhad ušlých provízií</span></div>
+        <div class="mid"><b id="outDeals">≈ — obchodov mesačne</b><span>stratené kvôli pomalej reakcii</span></div>
+        <div class="mid"><b id="outGain">+— €</b><span>potenciál pri odpovedi do pár minút</span></div>
+        <a class="btn" href="https://calendly.com/revoliscrm/30min" target="_blank" rel="noopener" data-cta="calc">Chcem tie peniaze späť → demo</a>
+      </div></div>
+<noscript><p class="calc-note">Príklad: 60 dopytov, 120 min odpoveď, 8 % konverzia, 3 000 € provízia → odhad straty stovky € mesačne.</p></noscript>
+<div class="calc-note">Ilustračný model: vychádza z predpokladu, že so stúpajúcim časom odpovede klesá šanca, že sa záujemca ešte ozve. Nie je to garancia výsledku — presný dopad ti ukážeme na tvojich dátach na deme.</div>
+    </div>
+  </div>
+</section>
+<!-- ── AKO TO FUNGUJE ── -->
+<section id="ako">
+  <div class="wrap">
+    <p class="eyebrow">Ako to funguje</p>
+    <h2>Od záujemcu k obchodu. Tri kroky.</h2>
+    <div class="steps3">
+      <div class="step"><span class="n">01</span><h3>Dopyty na jednom mieste</h3><p><b>Nehnuteľnosti.sk, Topreality, Reality.sk, Bazoš</b> aj e-mail — všetko sa zbieha do jedného prehľadu. Nič sa nestratí.</p></div>
+      <div class="step"><span class="n">02</span><h3>Systém zoradí a pripraví</h3><p>Každý záujemca dostane <b>skóre pripravenosti kúpy</b>. Odpovede a následné správy sú pripravené — ty ich len schváliš.</p></div>
+      <div class="step"><span class="n">03</span><h3>Ty uzatváraš obchody</h3><p>Deň začínaš zoznamom priorít, nie triedením e-mailov. <b>Viac uzavretí, menej stresu.</b></p></div>
+    </div>
+  </div>
+</section>
+<!-- ── CASE ── -->
+<section id="case">
+  <div class="wrap">
+    <p class="eyebrow">Prvý klient</p>
+    <h2>Realitná kancelária z Prešova.</h2>
+    <div class="case">
+      <div>
+        <blockquote>„Prvý mesiac sme ušetrili zhruba 10 hodín týždenne na inzercii a príprave podkladov."</blockquote>
+        <p class="who">majiteľ realitnej kancelárie, Prešov — náš prvý klient</p>
+        <!-- TODO Andy: po súhlase doplniť meno, logo a fotku (Reality Smolko) + presné číslo; ideálne 60s video -->
+      </div>
+      <div class="case-num"><b>10 h</b><span>týždenne späť v kalendári celého tímu</span></div>
+    </div>
+  </div>
+</section>
+<!-- ── GOAL PICKER ── -->
+<section id="goals">
+  <div class="wrap">
+    <p class="eyebrow">Personalizácia</p>
+    <h2>Čo chceš dosiahnuť?</h2>
+    <p class="sub">Vyber jeden alebo viac cieľov — demo ti pripravíme presne na ne.</p>
+    <div class="goals">
+      <button class="goal" type="button" aria-pressed="false" data-goal="Viac horúcich záujemcov"><span class="chk" aria-hidden="true">[ ]</span><h3>Chcem viac horúcich záujemcov</h3><p>Zorad mi klientov podľa toho, kto je pripravený kúpiť.</p></button>
+      <button class="goal" type="button" aria-pressed="false" data-goal="Poriadok v klientoch"><span class="chk" aria-hidden="true">[ ]</span><h3>Chcem poriadok v klientoch</h3><p>Jeden pohľad na všetkých klientov a ich stav.</p></button>
+      <button class="goal" type="button" aria-pressed="false" data-goal="Rýchlejšie odpovede"><span class="chk" aria-hidden="true">[ ]</span><h3>Chcem odpovedať do minút</h3><p>Pripravené odpovede na nové dopyty — bez nočných smien.</p></button>
+      <button class="goal" type="button" aria-pressed="false" data-goal="Prehľad pre majiteľa"><span class="chk" aria-hidden="true">[ ]</span><h3>Chcem prehľad o tíme</h3><p>Ranný report: leady, obchody, výkon — bez vypytovania.</p></button>
+    </div>
+    <div class="goal-result" id="goalResult" aria-live="polite"></div>
+    <a class="btn" id="goalCta" href="https://calendly.com/revoliscrm/30min" data-cta="goals" target="_blank" rel="noopener" style="display:none;margin-top:14px">Rezervovať demo na tieto ciele</a>
+  </div>
+</section>
+<!-- ── FAQ ── -->
+<section id="faq">
+  <div class="wrap">
+    <p class="eyebrow">Najčastejšie námietky</p>
+    <h2>Na čo sa makléri pýtajú.</h2>
+    <div class="faq">
+      <details>
+        <summary>Nemáme čas na zavádzanie nového systému.</summary>
+        <div class="a">Začíname s minimálnou konfiguráciou — prvé výsledky vidíš po zapnutí denného plánu a pripravených odpovedí. Tím nemusí meniť celý proces naraz.</div>
+      </details>
+      <details>
+        <summary>Funguje to s portálmi, ktoré používame?</summary>
+        <div class="a">Dopyty z hlavných slovenských portálov a e-mailu sa zbiehajú do jedného prehľadu. Na deme ti ukážeme presne tie, ktoré používa tvoja kancelária.</div>
+        <!-- TODO Andy: potvrdiť zoznam -->
+      </details>
+      <details>
+        <summary>Čo ak systém pošle klientovi nezmysel?</summary>
+        <div class="a">Nepošle nič bez teba. Každá správa čaká na tvoje schválenie — ty rozhoduješ, systém pripravuje. Plná kontrola ostáva u makléra.</div>
+      </details>
+      <details>
+        <summary>Nie som technický typ, zvládnem to?</summary>
+        <div class="a">Nepotrebuješ žiadne technické znalosti. Všetko nastavíme spolu a vysvetlíme na príkladoch z tvojho bežného dňa — obhliadky, inzeráty, klienti.</div>
+      </details>
+      <details>
+        <summary>Je to pre jednotlivca alebo celú kanceláriu?</summary>
+        <div class="a">Pre oboje. Maklérom pomáha stabilizovať príjem, majiteľom zjednotiť prácu tímu — kancelária pôsobí navonok jednotne a profesionálne.</div>
+      </details>
+      <details>
+        <summary>Čo s našimi dátami a GDPR?</summary>
+        <div class="a">Dáta sú uložené v EÚ a nikdy ich nezdieľame na marketingové účely. Spracúvajú ich výhradne naši zmluvní subdodávatelia viazaní GDPR. Kedykoľvek si ich vieš vyžiadať alebo nechať vymazať.</div>
+      </details>
+      <details>
+        <summary>Koľko to stojí a čo ak to nebude fungovať?</summary>
+        <div class="a">Od 29 €/mes za makléra — celý cenník je vyššie, žiadne prekvapenia. A prvých 30 dní platí záruka vrátenia peňazí bez otázok.</div>
+      </details>
+    </div>
+  </div>
+</section>
+<!-- ── FINAL ── -->
+<section id="final">
+  <div class="wrap">
+    <div class="final">
+      <p class="eyebrow" style="justify-content:center">Ďalší krok</p>
+      <h2>15–20 minút, ktoré ti môžu vrátiť hodiny každý týždeň.</h2>
+      <p class="sub">Demo vedie zakladateľ — uvidíš systém na príkladoch z tvojej praxe a odídeš s konkrétnymi krokmi. S nami alebo aj bez nás.</p>
+      <a class="btn btn-lg" href="https://calendly.com/revoliscrm/30min" target="_blank" rel="noopener" data-cta="final">Rezervovať demo zdarma</a>
+      <p class="micro">Žiadna zmluva. Žiadny predajný tlak.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Revolis — ONLINOVO s.r.o.</span>
+    <span><a href="https://app.revolis.ai/privacy-policy">Ochrana osobných údajov</a> · <a href="https://app.revolis.ai/terms">VOP</a> · <a href="mailto:info@revolis.ai">info@revolis.ai</a></span>
+  </div>
+</footer>
+</main>
+
+<div class="sticky-cta">
+  <a class="btn" href="https://calendly.com/revoliscrm/30min" target="_blank" rel="noopener" data-cta="sticky">Rezervovať demo zdarma →</a>
+</div>
+
+<script>
+(function(){
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function appendUtmToCalendly(){
+    var params = new URLSearchParams(location.search);
+    var utm = new URLSearchParams();
+    params.forEach(function(v,k){ if(k.indexOf('utm_')===0) utm.set(k,v); });
+    if(!utm.toString()) return;
+    document.querySelectorAll('a[href*="calendly.com"]').forEach(function(a){
+      try{ var u=new URL(a.href); utm.forEach(function(v,k){u.searchParams.set(k,v);}); a.href=u.toString(); }catch(e){}
+    });
+  }
+  document.addEventListener('DOMContentLoaded', appendUtmToCalendly);
+  document.addEventListener('click', function(e){
+    var t = e.target && e.target.closest ? e.target.closest('[data-cta]') : null;
+    if(!t) return;
+    try{ navigator.sendBeacon('/api/t', JSON.stringify({cta:t.getAttribute('data-cta'), ts:Date.now()})); }catch(err){}
+  });
+  var sticky = document.querySelector('.sticky-cta');
+  var heroEl = document.querySelector('.hero');
+  if(sticky && heroEl && 'IntersectionObserver' in window){
+    if(reduced){ sticky.classList.add('show'); }
+    else {
+      new IntersectionObserver(function(entries){
+        entries.forEach(function(en){ if(!en.isIntersecting) sticky.classList.add('show'); else sticky.classList.remove('show'); });
+      },{threshold:0}).observe(heroEl);
+    }
+  }
+  var nbaTexts = {
+    peter: 'Zavolaj <b>Petrovi V.</b> — pýtal sa na financovanie aj obhliadku. Najvyššia šanca na obchod tento týždeň.',
+    jana: 'Napíš <b>Jane K.</b> — 2-izb v Petržalke, skóre 74. Navrhni termín obhliadky tento týždeň.',
+    horvath: 'Follow-up <b>M. Horváth</b> — dom Senec, záujem o financovanie. Zavolaj po 15:00.',
+    toth: '<b>L. Tóthová</b> — pozemok Pezinok. Over budget a priprav krátky brief pred volaním.'
+  };
+  var nbaP = document.querySelector('.nba p');
+  document.querySelectorAll('.lead-row[data-lead]').forEach(function(row){
+    function pick(){
+      document.querySelectorAll('.lead-row').forEach(function(r){r.classList.remove('sel');});
+      row.classList.add('sel');
+      var k = row.getAttribute('data-lead');
+      if(nbaP && nbaTexts[k]) nbaP.innerHTML = nbaTexts[k];
+    }
+    row.addEventListener('click', pick);
+    row.addEventListener('keydown', function(ev){ if(ev.key==='Enter'||ev.key===' '){ ev.preventDefault(); pick(); }});
+  });
+  var first = document.querySelector('.lead-row[data-lead="peter"]'); if(first) first.classList.add('sel');
+  var el = document.getElementById('typer');
+  var texts = [
+    "3-izbový byt, Ružinov — 78 m², svetlý, po kompletnej rekonštrukcii. Loggia s výhľadom do zelene, pivnica, výborná občianska vybavenosť…",
+    "Rodinný dom, Senec — 5 izieb, pozemok 612 m², tichá ulica 10 minút od jazier. Ideálne pre rodinu, ktorá chce pokoj a rýchly dojazd…"
+  ];
+  if(el){ if(reduced){ el.textContent = texts[0]; } else { var t=0,i=0;(function type(){ var s=texts[t]; if(i<=s.length){el.textContent=s.slice(0,i++);setTimeout(type,28+Math.random()*34);} else {setTimeout(function(){i=0;t=(t+1)%texts.length;type();},3200);} })(); }}
+  var rDop=document.getElementById('rDop'), rCas=document.getElementById('rCas'), rKon=document.getElementById('rKon'), rPro=document.getElementById('rPro');
+  var calcLoss=document.getElementById('calcLoss'), calcFast=document.getElementById('calcFast');
+  var calcCta=document.querySelector('[data-cta="calc"]');
+  var fmt=function(n){return n.toLocaleString('sk-SK')+' €';};
+  function calc(){
+    var D=+rDop.value, T=+rCas.value, K=+rKon.value, P=+rPro.value;
+    document.getElementById('oDop').textContent=D;
+    document.getElementById('oCas').textContent=T+' min';
+    document.getElementById('oKon').textContent=K+' %';
+    document.getElementById('oPro').textContent=fmt(P);
+    var lostShare=Math.min(Math.max((T-10)/240,0),1)*0.5;
+    var lostDeals=D*(K/100)*lostShare;
+    var loss=Math.round(lostDeals*P/50)*50;
+    var gain=Math.round(loss*0.8/50)*50;
+    if(loss<100){
+      if(calcLoss) calcLoss.hidden=true;
+      if(calcFast) calcFast.hidden=false;
+    } else {
+      if(calcLoss) calcLoss.hidden=false;
+      if(calcFast) calcFast.hidden=true;
+      document.getElementById('outLoss').textContent='−'+fmt(loss);
+      document.getElementById('outGain').textContent='+'+fmt(gain);
+      document.getElementById('outYear').textContent='ročne ≈ '+fmt(loss*12);
+      document.getElementById('outDeals').textContent='≈ '+lostDeals.toFixed(1)+' obchodov mesačne';
+      if(calcCta){
+        var u=new URL(calcCta.href.split('?')[0]);
+        u.searchParams.set('utm_content','calc_loss_'+loss);
+        appendUtmToCalendly(); calcCta.href=u.toString();
+      }
+    }
+  }
+  [rDop,rCas,rKon,rPro].forEach(function(r){r.addEventListener('input',calc);}); calc();
+  var goals=document.querySelectorAll('.goal');
+  var res=document.getElementById('goalResult');
+  var goalCta=document.getElementById('goalCta');
+  function slug(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');}
+  function renderGoals(){
+    var picked=[];
+    goals.forEach(function(g){ var on=g.getAttribute('aria-pressed')==='true'; g.querySelector('.chk').textContent=on?'[✓]':'[ ]'; if(on) picked.push(g.dataset.goal); });
+    if(picked.length){
+      res.className='goal-result show';
+      res.innerHTML='Vybrané: <b>'+picked.join(' · ')+'</b>. Spomeň to pri rezervácii — demo postavíme presne na tieto ciele.';
+      if(goalCta){
+        goalCta.style.display='inline-block';
+        var u=new URL(goalCta.href.split('?')[0]);
+        u.searchParams.set('utm_content','goals_'+picked.map(slug).join('_'));
+        goalCta.href=u.toString();
+      }
+    } else { res.className='goal-result'; if(goalCta) goalCta.style.display='none'; }
+  }
+  goals.forEach(function(g){ g.addEventListener('click',function(){ g.setAttribute('aria-pressed', g.getAttribute('aria-pressed')==='true'?'false':'true'); renderGoals(); }); });
+})();
+</script>
+</body>
+</html>
