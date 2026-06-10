@@ -23,6 +23,10 @@
 | P2-17 | `<main>` + skip-link | A11y |
 | P2-18–27 | Favicon, JSON-LD, badges text, noscript, … | SEO, a11y, remeslo |
 
+## Post-build fix (2026-06-10)
+
+- FAQ „Koľko to stojí…“ — odstránený odkaz na cenník sekcia (29 € / „celý cenník vyššie“) → copy smeruje na demo.
+
 ## QA (manuálne overiť)
 
 - [ ] 380px viewport — bez horizontálneho scrollu
