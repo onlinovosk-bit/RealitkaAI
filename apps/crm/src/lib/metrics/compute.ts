@@ -10,6 +10,11 @@ import {
   bandCreditRevenuePct,
   bandNrr,
 } from "@/lib/metrics/guardrails";
+import {
+  aggregateAiCostWeek,
+  fourWeekBuckets,
+  sortAiCostDailyAsc,
+} from "@/lib/metrics/trends";
 import type {
   AgencyBillingRow,
   AiCostDailyRow,
@@ -17,6 +22,7 @@ import type {
   CreditActivity,
   CreditLedgerRow,
   FounderMetricsSnapshot,
+  MetricTrendSeries,
   MrrBreakdown,
 } from "@/lib/metrics/types";
 
@@ -189,6 +195,77 @@ export function computeAiCostSummary(
   };
 }
 
+function trendSeries(
+  metric: string,
+  label: string,
+  weekLabels: string[],
+  values: (number | null)[],
+): MetricTrendSeries {
+  return { metric, label, weekLabels, values };
+}
+
+/** Mini 4-week trends — credits + AI cost from time series; MRR snapshot on latest week only. */
+export function computeFourWeekTrends(input: {
+  agencies: AgencyBillingRow[];
+  ledger: CreditLedgerRow[];
+  aiCostDaily: AiCostDailyRow[];
+  aiCostDailyAvailable: boolean;
+  asOf?: Date;
+}): MetricTrendSeries[] {
+  const asOf = input.asOf ?? new Date();
+  const buckets = fourWeekBuckets(asOf);
+  const weekLabels = buckets.map((b) => b.label);
+  const snapshotMrr = computeMrrBreakdown(input.agencies).totalEur;
+
+  const creditsGranted: (number | null)[] = [];
+  const creditsSpent: (number | null)[] = [];
+  const creditsPurchased: (number | null)[] = [];
+  const creditRevenuePct: (number | null)[] = [];
+  const aiCreditsSpent: (number | null)[] = [];
+  const aiCostEur: (number | null)[] = [];
+  const aiMarginEur: (number | null)[] = [];
+  const mrrTrend: (number | null)[] = [];
+
+  buckets.forEach((bucket, index) => {
+    const isLatest = index === buckets.length - 1;
+    const credit = computeCreditActivity(input.ledger, bucket.start, bucket.end);
+    creditsGranted.push(credit.granted);
+    creditsSpent.push(credit.spent);
+    creditsPurchased.push(credit.purchased);
+    creditRevenuePct.push(computeCreditRevenuePct(snapshotMrr, credit.purchaseRevenueEur));
+    mrrTrend.push(isLatest ? snapshotMrr : null);
+
+    if (input.aiCostDailyAvailable) {
+      const ai = aggregateAiCostWeek(input.aiCostDaily, bucket.start, bucket.end);
+      aiCreditsSpent.push(ai.creditsSpent);
+      aiCostEur.push(ai.costEur);
+      aiMarginEur.push(ai.marginEur);
+    } else {
+      aiCreditsSpent.push(null);
+      aiCostEur.push(null);
+      aiMarginEur.push(null);
+    }
+  });
+
+  const result: MetricTrendSeries[] = [
+    trendSeries("mrr_total_eur", "MRR celkom", weekLabels, mrrTrend),
+    trendSeries("credits_granted", "Kredity grant", weekLabels, creditsGranted),
+    trendSeries("credits_spent", "Kredity spend", weekLabels, creditsSpent),
+    trendSeries("credits_purchased", "Kredity purchase", weekLabels, creditsPurchased),
+    trendSeries("credit_revenue_pct", "Credit revenue %", weekLabels, creditRevenuePct),
+  ];
+
+  if (input.aiCostDailyAvailable) {
+    result.push(
+      trendSeries("ai_credits_spent", "AI kredity spent", weekLabels, aiCreditsSpent),
+      trendSeries("ai_cost_eur", "AI cost EUR", weekLabels, aiCostEur),
+      trendSeries("ai_margin_eur", "AI margin EUR", weekLabels, aiMarginEur),
+    );
+  }
+
+  return result;
+}
+
 export function monthUtcBounds(reference: Date): { start: Date; end: Date; label: string } {
   const start = new Date(Date.UTC(reference.getUTCFullYear(), reference.getUTCMonth(), 1));
   const end = new Date(Date.UTC(reference.getUTCFullYear(), reference.getUTCMonth() + 1, 1));
@@ -215,6 +292,14 @@ export function computeFounderMetrics(input: {
 
   const activeAgencyCount = input.agencies.filter(isAgencyActive).length;
 
+  const trends = computeFourWeekTrends({
+    agencies: input.agencies,
+    ledger: input.ledger,
+    aiCostDaily: input.aiCostDaily,
+    aiCostDailyAvailable: input.aiCostDailyAvailable,
+    asOf,
+  });
+
   return {
     asOf: asOf.toISOString(),
     periodLabel: label,
@@ -235,5 +320,9 @@ export function computeFounderMetrics(input: {
       creditRevenuePct: creditRevenuePctOfTotal,
       creditRevenueBand: bandCreditRevenuePct(creditRevenuePctOfTotal),
     },
+    trends,
+    aiCostDailySeries: input.aiCostDailyAvailable
+      ? sortAiCostDailyAsc(input.aiCostDaily)
+      : [],
   };
 }
