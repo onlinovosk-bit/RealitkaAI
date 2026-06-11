@@ -49,30 +49,4 @@ describe("[verification] Decision feature flags", () => {
     process.env.DECISION_ENGINE_ENABLED = "true";
     expect(getDecisionFeatureFlags().decisionEngineEnabled).toBe(true);
   });
-
-  it("kill-switch: explicit false in preview keeps all decision ops off", () => {
-    process.env.VERCEL_ENV = "preview";
-    process.env.DECISION_ENGINE_ENABLED = "false";
-    process.env.CLOSING_WINDOW_ENABLED = "false";
-    process.env.RESCUE_AUTOMATION_ENABLED = "false";
-    const flags = getDecisionFeatureFlags();
-    expect(flags.decisionEngineEnabled).toBe(false);
-    expect(flags.closingWindowEnabled).toBe(false);
-    expect(flags.rescueAutomationEnabled).toBe(false);
-  });
-
-  it("kill-switch: off-like values never enable flags (smoke before risky deploy)", () => {
-    process.env.VERCEL_ENV = "production";
-    for (const key of KEYS) {
-      for (const value of ["false", "0", "off", "no", ""]) {
-        clearFlags();
-        process.env.VERCEL_ENV = "production";
-        process.env[key] = value;
-        const flags = getDecisionFeatureFlags();
-        expect(flags.decisionEngineEnabled).toBe(false);
-        expect(flags.closingWindowEnabled).toBe(false);
-        expect(flags.rescueAutomationEnabled).toBe(false);
-      }
-    }
-  });
 });

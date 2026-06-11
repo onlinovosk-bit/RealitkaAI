@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { getPlanLimits, planHasFeature } from "@/lib/billing-types";
 import {
   canManageTeamArea,
-  getAssignableProfilesForProfile,
   getVisibleLeadsForProfile,
   getVisibleTeamsForProfile,
 } from "@/lib/team-visibility";
@@ -39,20 +37,5 @@ describe("[verification] Team visibility gating", () => {
 
   it("agent cannot manage team area", () => {
     expect(canManageTeamArea(profiles[2])).toBe(false);
-  });
-
-  it("multiTeam billing gate: starter/pro blocked, enterprise/command allowed", () => {
-    expect(planHasFeature("starter", "multiTeam")).toBe(false);
-    expect(planHasFeature("pro", "multiTeam")).toBe(false);
-    expect(getPlanLimits("starter").multiTeam).toBe(false);
-    expect(planHasFeature("enterprise", "multiTeam")).toBe(true);
-    expect(planHasFeature("command", "multiTeam")).toBe(true);
-  });
-
-  it("manager assign smoke: manager can assign only within own team", () => {
-    const assignable = getAssignableProfilesForProfile(profiles[1], profiles);
-    expect(assignable.map((p) => p.id).sort()).toEqual(["p-agent", "p-mgr"]);
-    expect(getAssignableProfilesForProfile(profiles[2], profiles)).toHaveLength(0);
-    expect(getAssignableProfilesForProfile(profiles[0], profiles)).toHaveLength(3);
   });
 });

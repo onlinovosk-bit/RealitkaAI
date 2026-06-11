@@ -1,0 +1,11 @@
+ID kontaktu;Meno a priezvisko;E-mail;Telefón;Mesto;Adresa;Poznámka;Typ dopytu;Stav;Maklér;Dátum vytvorenia;Rozpočet
+C-9001;Jana Fiktívna;jana.fiktivna@example.sk;+421901111001;Prešov;Hlavná 1;Záujem o 3-izbový byt;Kúpa;Aktívny;Maklér Demo;2025-03-10;185000
+C-9002;Peter Testovací;petr.test@example.sk;0902111002;Košice;Mierová 5;Volanie po 17:00;Predaj;Aktívny;Maklér Demo;2025-03-11;220000
+C-9003;Eva Ukážková;eva.ukazkova@example.sk;0915123003;Žilina;Námestie 12;;Prenájom;Archivovaný;Maklér Demo;2025-02-01;650
+C-9004;Duplicitný Email;dup.email@example.sk;0900111004;Bratislava;Ružinovská 3;Prvý záznam;Kúpa;Aktívny;Maklér Demo;2025-01-15;150000
+C-9005;Iný Kontakt;dup.email@example.sk;0900111005;Bratislava;Ružinovská 9;Duplicitný email;Kúpa;Aktívny;Maklér Demo;2025-01-16;160000
+C-9006;Duplicitný Telefón;unique6@example.sk;0900333006;Trnava;Horná 2;Prvý telefón;Kúpa;Aktívny;Maklér Demo;2025-01-20;140000
+C-9007;Ďalší Telefón;unique7@example.sk;+421900333006;Trnava;Dolná 4;Rovnaký telefón ako C-9006;Kúpa;Aktívny;Maklér Demo;2025-01-21;145000
+C-9008;;bez.mena@example.sk;0900111008;Poprad;Jarná 1;Chýba meno;Kúpa;Aktívny;Maklér Demo;2025-01-22;120000
+C-9009;Bez Kontaktu;;;Martin;Stredná 7;Chýba email aj telefón;Kúpa;Aktívny;Maklér Demo;2025-01-23;110000
+C-9010;Len Telefón;;0918123010;Nitra;Nová 8;Import len s telefónom;Predaj;Aktívny;Maklér Demo;2025-01-24;98000
