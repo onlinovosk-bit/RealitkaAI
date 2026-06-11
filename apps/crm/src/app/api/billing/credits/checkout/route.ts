@@ -4,6 +4,10 @@ import {
   createSeatCheckoutSession,
   parseCheckoutBody,
 } from "@/lib/credits-billing";
+import {
+  areSeatCheckoutPricesConfigured,
+  areTopupCheckoutPricesConfigured,
+} from "@/lib/program-tier-pricing";
 
 export async function POST(request: Request) {
   try {
@@ -11,6 +15,9 @@ export async function POST(request: Request) {
     const parsed = parseCheckoutBody(body);
 
     if (parsed.type === "topup" && parsed.topupPackage) {
+      if (!areTopupCheckoutPricesConfigured()) {
+        return errorResponse("Top-up checkout nie je dostupný — chýbajú Stripe ceny.", 503);
+      }
       const result = await createTopupCheckoutSession(parsed.topupPackage);
       if (!result?.url) {
         return errorResponse("Top-up checkout nie je dostupný.", 503);
@@ -19,6 +26,9 @@ export async function POST(request: Request) {
     }
 
     if (parsed.type === "seat" && parsed.seatTier) {
+      if (!areSeatCheckoutPricesConfigured()) {
+        return errorResponse("Seat checkout nie je dostupný — chýbajú Stripe ceny.", 503);
+      }
       const result = await createSeatCheckoutSession({
         seatTier: parsed.seatTier,
         quantity: parsed.quantity ?? 1,
