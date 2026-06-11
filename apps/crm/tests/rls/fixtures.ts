@@ -45,7 +45,11 @@ function requireEnv(name: string): string {
 
 export function createServiceClient(): SupabaseClient {
   const url = requireEnv("NEXT_PUBLIC_SUPABASE_URL");
-  const key = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
+  const key =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ??
+    process.env.SERVICE_ROLE_KEY ??
+    process.env.SECRET_KEY;
+  if (!key) throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY for RLS fixture seed");
   return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 

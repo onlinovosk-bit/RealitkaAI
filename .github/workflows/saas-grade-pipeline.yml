@@ -51,7 +51,9 @@ jobs:
         working-directory: apps/crm
 
       - name: Export local credentials
-        run: supabase status -o env | sed 's/"//g' >> "$GITHUB_ENV"
+        run: |
+          supabase status -o env | sed 's/"//g' >> "$GITHUB_ENV"
+          echo "SUPABASE_SERVICE_ROLE_KEY=${SERVICE_ROLE_KEY}" >> "$GITHUB_ENV"
         working-directory: apps/crm
 
       # Allowlist guard: fail, ak DB NIE JE lokálne test prostredie.
@@ -72,14 +74,16 @@ jobs:
 
       - name: Test
         run: |
+          set -o pipefail
           npm test 2>&1 | tee test-output.log
           grep -E "RLS tenant isolation|tests/rls/" test-output.log
           grep -q "RLS tenant isolation suite" test-output.log || (echo "::error::RLS suite did not execute — check vitest include for tests/rls/" && exit 1)
+          grep -q "tests/rls/rls-tenant-isolation.test.ts" test-output.log || (echo "::error::RLS test file not in vitest output" && exit 1)
         working-directory: apps/crm
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ env.API_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ env.ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ env.SERVICE_ROLE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ env.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Build
         run: npm run build
