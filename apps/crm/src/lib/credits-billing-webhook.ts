@@ -4,6 +4,7 @@ import {
   applyTopupPurchase,
   triggerInitialGrantAfterSeatCheckout,
 } from "@/lib/credits-billing";
+import { recordMigrationDfyServiceOrder } from "@/lib/migration-dfy-service";
 import { parseSeatTier, parseTopupPackageKey } from "@/lib/program-tier-pricing";
 
 /**
@@ -46,6 +47,13 @@ export async function handlePricingCheckoutWebhook(
 
     if (ok) {
       await triggerInitialGrantAfterSeatCheckout(agencyId);
+      if (meta.migrationDfy === "true") {
+        await recordMigrationDfyServiceOrder({
+          agencyId,
+          stripeSessionId: session.id,
+          customerEmail: session.customer_details?.email ?? session.customer_email,
+        });
+      }
     }
     return ok;
   }

@@ -11,6 +11,11 @@ type CheckoutConfig = {
   seatCheckoutAvailable: boolean;
   topupCheckoutAvailable: boolean;
   checkoutAvailable: boolean;
+  migrationDfyAvailable: boolean;
+  migrationDfy: {
+    label: string;
+    priceEur: number;
+  };
   founderCockpitEligible: boolean;
   founderCockpitRemaining: number;
   seatTiers: Array<{
@@ -41,6 +46,7 @@ export default function UpgradePage() {
   const [seatTier, setSeatTier] = useState<SeatTierKey>('team');
   const [seatCount, setSeatCount] = useState(3);
   const [includeCockpit, setIncludeCockpit] = useState(false);
+  const [includeMigrationDfy, setIncludeMigrationDfy] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -233,6 +239,34 @@ export default function UpgradePage() {
             )}
           </div>
 
+          {config.migrationDfyAvailable && (
+            <label
+              className="mb-6 block cursor-pointer rounded-lg border p-4 transition"
+              style={{
+                borderColor: includeMigrationDfy ? SLATE_HORIZON.brand : SLATE_HORIZON.line,
+                background: includeMigrationDfy ? SLATE_HORIZON.soft : '#fff',
+              }}
+            >
+              <div className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={includeMigrationDfy}
+                  onChange={(e) => setIncludeMigrationDfy(e.target.checked)}
+                  className="mt-1 h-4 w-4"
+                />
+                <div>
+                  <div className="font-semibold" style={{ color: SLATE_HORIZON.ink }}>
+                    {config.migrationDfy.label} — {config.migrationDfy.priceEur} € jednorazovo
+                  </div>
+                  <p className="text-sm mt-1" style={{ color: SLATE_HORIZON.muted }}>
+                    Pošlete nám export z portálu alebo CRM — do 48 h máte dáta v Revolise,
+                    skontrolované a zoradené.
+                  </p>
+                </div>
+              </div>
+            </label>
+          )}
+
           <div className="flex items-center justify-between">
             <div>
               <span className="text-sm" style={{ color: SLATE_HORIZON.muted }}>
@@ -252,6 +286,7 @@ export default function UpgradePage() {
                     seatTier,
                     quantity: seatCount,
                     includeOwnerCockpit: includeCockpit && cockpitEligible,
+                    includeMigrationDfy: includeMigrationDfy && config.migrationDfyAvailable,
                   },
                   'seat',
                 )

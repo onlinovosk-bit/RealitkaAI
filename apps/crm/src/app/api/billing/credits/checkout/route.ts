@@ -33,6 +33,7 @@ export async function POST(request: Request) {
         seatTier: parsed.seatTier,
         quantity: parsed.quantity ?? 1,
         includeOwnerCockpit: parsed.includeOwnerCockpit,
+        includeMigrationDfy: parsed.includeMigrationDfy,
       });
       if (!result?.url) {
         return errorResponse("Seat checkout nie je dostupný.", 503);
