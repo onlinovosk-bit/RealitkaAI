@@ -80,6 +80,7 @@ export type CockpitProductConfig = {
   /** Founder kancelárie — fixná cena navždy (ak eligible). */
   founderPriceEur?: number;
   stripeEnvKey?: string;
+  founderStripeEnvKey?: string;
 };
 
 export const COCKPIT_PRODUCTS: Record<CockpitProductKey, CockpitProductConfig> = {
@@ -100,6 +101,7 @@ export const COCKPIT_PRODUCTS: Record<CockpitProductKey, CockpitProductConfig> =
     enabled: true,
     founderPriceEur: 249,
     stripeEnvKey: "STRIPE_PRICE_OWNER_COCKPIT",
+    founderStripeEnvKey: "STRIPE_PRICE_OWNER_COCKPIT_FOUNDER",
   },
   ownerPro: {
     key: "ownerPro",
@@ -263,13 +265,28 @@ export function getTopupStripePriceId(key: TopupPackageKey): string {
   return process.env[TOPUP_PACKAGES[key].stripeEnvKey] ?? "";
 }
 
-export function getOwnerCockpitStripePriceId(): string {
-  const envKey = COCKPIT_PRODUCTS.owner.stripeEnvKey;
+export function getOwnerCockpitStripePriceId(opts?: {
+  founderEligible?: boolean;
+}): string {
+  const owner = COCKPIT_PRODUCTS.owner;
+  if (opts?.founderEligible && owner.founderStripeEnvKey) {
+    const founderId = process.env[owner.founderStripeEnvKey] ?? "";
+    if (founderId) return founderId;
+  }
+  const envKey = owner.stripeEnvKey;
   return envKey ? (process.env[envKey] ?? "") : "";
 }
 
 export function areSeatCheckoutPricesConfigured(): boolean {
   return SEAT_TIERS.every((tier) => getSeatStripePriceId(tier).length > 0);
+}
+
+export function areTopupCheckoutPricesConfigured(): boolean {
+  return TOPUP_PACKAGE_KEYS.every((key) => getTopupStripePriceId(key).length > 0);
+}
+
+export function isCheckoutConfigured(): boolean {
+  return areSeatCheckoutPricesConfigured() && areTopupCheckoutPricesConfigured();
 }
 
 /** Mesačný grant z seatov (bez cockpit grantu). */

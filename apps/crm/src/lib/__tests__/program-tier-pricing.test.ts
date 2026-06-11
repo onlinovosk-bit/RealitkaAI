@@ -15,6 +15,8 @@ import {
   ownerCockpitPriceEur,
   getTopupStripePriceId,
   areSeatCheckoutPricesConfigured,
+  areTopupCheckoutPricesConfigured,
+  getOwnerCockpitStripePriceId,
 } from "@/lib/program-tier-pricing";
 
 describe("program-tier-pricing v1.0", () => {
@@ -148,6 +150,17 @@ describe("program-tier-pricing v1.0", () => {
 
     it("areSeatCheckoutPricesConfigured false when missing", () => {
       expect(areSeatCheckoutPricesConfigured()).toBe(false);
+    });
+
+    it("getOwnerCockpitStripePriceId prefers founder price when set", () => {
+      process.env.STRIPE_PRICE_OWNER_COCKPIT = "price_std";
+      process.env.STRIPE_PRICE_OWNER_COCKPIT_FOUNDER = "price_founder";
+      expect(getOwnerCockpitStripePriceId({ founderEligible: true })).toBe("price_founder");
+      expect(getOwnerCockpitStripePriceId({ founderEligible: false })).toBe("price_std");
+    });
+
+    it("areTopupCheckoutPricesConfigured false when any package missing", () => {
+      expect(areTopupCheckoutPricesConfigured()).toBe(false);
     });
   });
 });
