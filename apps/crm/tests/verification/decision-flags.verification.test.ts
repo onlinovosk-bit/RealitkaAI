@@ -18,16 +18,16 @@ describe("[verification] Decision feature flags", () => {
     expect(flags.rescueAutomationEnabled).toBe(false);
   });
 
-  it("stays off in production until explicit env opt-in (GATED)", () => {
+  it("defaults on in Vercel production/preview unless kill-switch (GATED)", () => {
     process.env.VERCEL_ENV = "production";
+    expect(getDecisionFeatureFlags().decisionEngineEnabled).toBe(true);
+    expect(getDecisionFeatureFlags().closingWindowEnabled).toBe(true);
+    process.env.DECISION_ENGINE_ENABLED = "false";
     expect(getDecisionFeatureFlags().decisionEngineEnabled).toBe(false);
-    expect(getDecisionFeatureFlags().closingWindowEnabled).toBe(false);
   });
 
-  it("enables when DECISION_ENGINE_ENABLED=true", () => {
+  it("enables explicitly in local dev when DECISION_ENGINE_ENABLED=true", () => {
     process.env.DECISION_ENGINE_ENABLED = "true";
     expect(getDecisionFeatureFlags().decisionEngineEnabled).toBe(true);
-    process.env.CLOSING_WINDOW_ENABLED = "true";
-    expect(getDecisionFeatureFlags().closingWindowEnabled).toBe(true);
   });
 });

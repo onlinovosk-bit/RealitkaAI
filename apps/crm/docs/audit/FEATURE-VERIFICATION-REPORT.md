@@ -43,7 +43,7 @@
 | Forecast gating (`canViewForecast`) | PARTIAL | **GATED** | `tests/verification/forecast-gating.verification.test.ts` | Upsell CTA audit na `/forecasting`; preview tier smoke |
 | Dashboard insights cron lib | ATRAPA / PARTIAL | **FUNGUJE-MOCK** | `tests/verification/dashboard-insights-cron.verification.test.ts` | Nahradiť hardcoded `/api/dashboard/insights` LLM + cache cron |
 | Routine notifications store | PARTIAL | **FUNGUJE-MOCK** | `tests/verification/notifications-store.verification.test.ts` | Inbox UI pre `routine_notifications`; seed pre CI ak treba |
-| Decision feature flags | PARTIAL | **GATED** | `tests/verification/decision-flags.verification.test.ts` | Dokumentovať prod enable checklist; staging smoke pred `=true` |
+| Decision feature flags | PARTIAL | **GATED** | `tests/verification/decision-flags.verification.test.ts` | Kill-switch audit; explicit `=false` smoke pred risky deploy |
 | Demo-ops lib | NEPOSTAVENÉ (main) | **NETESTOVATEĽNÉ LOKÁLNE** | `tests/verification/demo-ops.verification.test.ts` | Merge demo-ops PR; potom Calendly/UTM unit testy |
 | Prospecting ICP scoring (root) | PARTIAL | **FUNGUJE** | `tests/verification/prospecting-scoring.verification.test.ts` | Napojiť export do CRM ingest; nightly enrich cron |
 | Stealth Recruiter filters | PARTIAL | **FUNGUJE-MOCK** | `tests/verification/stealth-recruiter.verification.test.ts` | `STEALTH_RECRUITER_DEMO_MODE=false` prod; cron v `vercel.json` |
@@ -55,7 +55,7 @@
 
 ## Poznámky k rozdielom oproti auditu 2026-06-03
 
-1. **Decision flags** — na `main` sú default **OFF** vo všetkých env (opt-in cez `DECISION_*_ENABLED=true`). Audit spomínal auto-on na Vercel preview/prod; kód bol sprísnený.
+1. **Decision flags** — na `main` sú default **ON** na Vercel production/preview; kill-switch cez `DECISION_*_ENABLED=false`. Lokálne OFF pokiaľ nie je explicit `=true`.
 2. **Morning Brief** — backend gather/assemble vyžaduje Supabase; overený je exportovaný **fallback text** (`buildDeliveryFallbackText`).
 3. **Dashboard insights** — cron lib + `buildDataFallback` FUNGUJE; legacy route s hardcoded SK textom zostáva ATRAPA (mimo scope unit testu).
 4. **Demo-ops** — na `origin/main` **neexistuje** `apps/crm/src/lib/demo-ops/`; lokálny WIP môže byť prítomný necommitnutý.
