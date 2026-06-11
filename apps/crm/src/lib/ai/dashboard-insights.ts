@@ -1,7 +1,6 @@
 import type { DashboardSummaryResponse } from '@/app/api/dashboard/summary/route'
 import { estimateClaudeCostEur } from './llm-usage-cost'
 import { callClaude, CLAUDE_HAIKU, extractJson } from './claude'
-import { estimateClaudeCostEur } from './llm-usage-cost'
 import { withAiTimeout } from './fallback'
 
 export type PropertySnapshot = {

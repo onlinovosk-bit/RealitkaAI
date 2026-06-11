@@ -16,7 +16,10 @@ import {
   DASHBOARD_INSIGHTS_OVERDUE_FOLLOWUP_DAYS,
   overdueFollowupCutoffIso,
 } from '../dashboard-insights-gather'
-import { logAiAction } from '@/lib/ai-action-audit'
+
+const { logAiActionMock } = vi.hoisted(() => ({
+  logAiActionMock: vi.fn().mockResolvedValue(undefined),
+}))
 
 const emptySummary: DashboardSummaryResponse = {
   period: 'today',
@@ -210,7 +213,7 @@ vi.mock('@/lib/ai/dashboard-insights', async importOriginal => {
 })
 
 vi.mock('@/lib/ai-action-audit', () => ({
-  logAiAction: vi.fn().mockResolvedValue(undefined),
+  logAiAction: logAiActionMock,
   logAiActionAudit: vi.fn().mockResolvedValue(undefined),
 }))
 
@@ -301,7 +304,7 @@ describe('dashboard-insights-cron cache writer', () => {
   it('generateAndCacheAgencyInsights logs via logAiAction', async () => {
     const { from } = mockAdminForCache({ summary: smolkoSummary })
     await generateAndCacheAgencyInsights({ from } as never, AGENCY_ID)
-    expect(logAiAction).toHaveBeenCalledWith(
+    expect(logAiActionMock).toHaveBeenCalledWith(
       expect.objectContaining({
         action: 'dashboard_insights',
         agencyId: AGENCY_ID,
