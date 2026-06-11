@@ -1,0 +1,130 @@
+{
+  "clients": [
+    {
+      "id": 1001,
+      "owner": {
+        "name": "Ján Novák",
+        "archived": 0,
+        "status": "active",
+        "created": "2024-03-15T10:00:00Z",
+        "updated": "2025-11-01T08:30:00Z",
+        "type": "vlastnik",
+        "email": "jan.novak@example.sk",
+        "phone": "+421901234567",
+        "postalAddress": {
+          "street": "Hlavná",
+          "number": "12",
+          "city": "Prešov",
+          "zip": "08001"
+        },
+        "interests": { "type": 1, "category": 2 },
+        "notes": [
+          { "text": "Záujem o rýchly predaj.", "created": "2024-04-01T09:00:00Z" }
+        ],
+        "inspections": [
+          {
+            "date": "2024-05-10",
+            "propertyAddress": "Hlavná 12, Prešov",
+            "note": "Prvá obhliadka — stav dobrý",
+            "status": "done"
+          }
+        ]
+      }
+    },
+    {
+      "id": 1002,
+      "owner": {
+        "name": "Eva Kováčová",
+        "archived": 1,
+        "status": "finished",
+        "created": "2023-01-10T12:00:00Z",
+        "updated": "2025-06-01T14:00:00Z",
+        "type": "zaujemca",
+        "email": "eva.kovacova@example.sk",
+        "phone": "0902111222",
+        "postalAddress": {
+          "street": "Mierová",
+          "city": "Košice",
+          "zip": "04001"
+        },
+        "notes": [],
+        "inspections": []
+      }
+    },
+    {
+      "id": 1003,
+      "owner": {
+        "name": "Spam Kontakt s.r.o.",
+        "archived": 0,
+        "status": "active",
+        "type": "blacklist",
+        "email": "spam@blacklist.sk",
+        "phone": "0900000000",
+        "notes": [{ "text": "Opakovane odmietol kontakt." }],
+        "inspections": []
+      }
+    },
+    {
+      "id": 1004,
+      "owner": {
+        "name": "Peter Bez Emailu",
+        "archived": 0,
+        "status": "active",
+        "type": "zaujemca",
+        "phone": "0915123456",
+        "postalAddress": { "city": "Žilina" },
+        "notes": [],
+        "inspections": []
+      }
+    },
+    {
+      "id": 1005,
+      "owner": {
+        "name": "Ľudovít Šťastný",
+        "archived": 0,
+        "status": "active",
+        "type": "zaujemca",
+        "email": "ludovit.stastny@example.sk",
+        "phone": "0944123456",
+        "postalAddress": {
+          "street": "Štúrova",
+          "number": "7",
+          "city": "Banská Bystrica",
+          "zip": "97401"
+        },
+        "notes": [{ "text": "Diakritika v mene a adrese OK." }],
+        "inspections": []
+      },
+      "legacyField": "ignored-by-parser"
+    },
+    {
+      "id": 1006,
+      "owner": {
+        "name": "Mária Viac Obhliadok",
+        "archived": 0,
+        "status": "active",
+        "type": "zaujemca",
+        "email": "maria.viac@example.sk",
+        "phone": "0905333444",
+        "notes": [],
+        "inspections": [
+          {
+            "date": "2025-01-05",
+            "address": "Byt A, Jesenná 3, Bratislava",
+            "note": "Obhliadka 1"
+          },
+          {
+            "date": "2025-02-12",
+            "address": "Byt B, Jesenná 5, Bratislava",
+            "note": "Obhliadka 2"
+          },
+          {
+            "date": "2025-03-20",
+            "address": "Rodinný dom, Vinohrady",
+            "note": "Obhliadka 3"
+          }
+        ]
+      }
+    }
+  ]
+}
