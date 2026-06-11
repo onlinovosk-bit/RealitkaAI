@@ -4,6 +4,7 @@ import { personalizeInsights } from "@/lib/ai-insights/personalization";
 import { getUserHistory } from "@/lib/ai-insights/history";
 import { logAnalyticsEvent } from "@/lib/ai-insights/analytics";
 import { buildEmptyInsights } from "@/lib/ai/dashboard-insights";
+import { isDashboardInsightsCacheFresh } from "@/lib/ai/dashboard-insights-cache";
 import type { DashboardInsightsCachePayload } from "@/lib/ai/dashboard-insights-cron";
 import { createClient } from "@/lib/supabase/server";
 
@@ -50,7 +51,7 @@ export async function POST() {
     return NextResponse.json({ error: 'Cache read failed' }, { status: 500 });
   }
 
-  if (!row?.payload) {
+  if (!row?.payload || !isDashboardInsightsCacheFresh(row.generated_at as string)) {
     const empty = buildEmptyInsights(userName);
     return NextResponse.json({
       ...empty,

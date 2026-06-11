@@ -1,5 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { CLAUDE_HAIKU } from '@/lib/ai/claude'
 import {
+  buildDataFallback,
+  buildEmptyInsights,
   generateDashboardInsights,
   hasTenantData,
   type DashboardInsightsOutput,
@@ -66,21 +69,28 @@ export async function generateAndCacheAgencyInsights(
     const summary = await gatherAgencyDashboardSummary(admin, agencyId)
     const properties = await gatherAgencyProperties(admin, agencyId)
 
-    const insights = await withTimeout(
-      generateDashboardInsights({
-        period: 'today',
-        summary,
-        userName: displayName,
-        properties,
-      }),
+    const genInput = {
+      period: 'today' as const,
+      summary,
+      userName: displayName,
+      properties,
+    }
+
+    const generated = await withTimeout(
+      generateDashboardInsights(genInput),
       INSIGHTS_AI_TIMEOUT_MS,
-      {
-        headline: 'Insights momentálne nedostupné.',
-        actions: [],
-        summary: 'AI odpoveď prekročila časový limit — skúste obnoviť neskôr.',
-      },
+      hasTenantData(summary)
+        ? {
+            insights: buildDataFallback(genInput),
+            audit: { source: 'fallback' as const, model: CLAUDE_HAIKU, costEur: null, latencyMs: INSIGHTS_AI_TIMEOUT_MS },
+          }
+        : {
+            insights: buildEmptyInsights(displayName),
+            audit: { source: 'empty' as const, model: CLAUDE_HAIKU, costEur: null, latencyMs: INSIGHTS_AI_TIMEOUT_MS },
+          },
     )
 
+    const insights = generated.insights
     const payload: DashboardInsightsCachePayload = {
       ...insights,
       period: 'today',
@@ -104,11 +114,14 @@ export async function generateAndCacheAgencyInsights(
       actionKind: 'ai_suggested',
       channel: 'email',
       subjectPreview: payload.headline.slice(0, 200),
+      costEur: generated.audit.costEur,
       meta: {
         feature: 'dashboard-insights',
-        source: 'cron',
+        source: generated.audit.source,
+        model: generated.audit.model,
+        latency_ms: generated.audit.latencyMs,
         actions_count: payload.actions.length,
-        empty: payload.actions.length === 0 && !insights.headline.includes('priorita'),
+        empty: generated.audit.source === 'empty',
       },
     })
 

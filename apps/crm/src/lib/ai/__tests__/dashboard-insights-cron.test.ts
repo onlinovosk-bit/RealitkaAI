@@ -16,6 +16,7 @@ import {
   DASHBOARD_INSIGHTS_OVERDUE_FOLLOWUP_DAYS,
   overdueFollowupCutoffIso,
 } from '../dashboard-insights-gather'
+import { logAiActionAudit } from '@/lib/ai-action-audit'
 
 const emptySummary: DashboardSummaryResponse = {
   period: 'today',
@@ -195,9 +196,15 @@ vi.mock('@/lib/ai/dashboard-insights', async importOriginal => {
     ...actual,
     generateDashboardInsights: vi.fn(async (input: Parameters<typeof actual.generateDashboardInsights>[0]) => {
       if (!actual.hasTenantData(input.summary)) {
-        return actual.buildEmptyInsights(input.userName)
+        return {
+          insights: actual.buildEmptyInsights(input.userName),
+          audit: { source: 'empty' as const, model: null, costEur: null, latencyMs: null },
+        }
       }
-      return actual.buildDataFallback(input)
+      return {
+        insights: actual.buildDataFallback(input),
+        audit: { source: 'fallback' as const, model: 'claude-haiku-4-5-20251001', costEur: null, latencyMs: 12 },
+      }
     }),
   }
 })
@@ -236,8 +243,8 @@ describe('dashboard-insights generator (cron path)', () => {
       summary: emptySummary,
       userName: 'Nový tenant',
     })
-    expect(result.actions).toHaveLength(0)
-    expect(result.headline).toContain('Nový tenant')
+    expect(result.insights.actions).toHaveLength(0)
+    expect(result.insights.headline).toContain('Nový tenant')
   })
 })
 
@@ -289,6 +296,23 @@ describe('dashboard-insights-cron cache writer', () => {
     expect(result.empty).toBe(true)
     expect(upsert.mock.calls[0][0].payload.actions).toHaveLength(0)
   })
+
+  it('generateAndCacheAgencyInsights logs cost and latency to ai_action_audit', async () => {
+    const { from } = mockAdminForCache({ summary: smolkoSummary })
+    await generateAndCacheAgencyInsights({ from } as never, AGENCY_ID)
+    expect(logAiActionAudit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        agencyId: AGENCY_ID,
+        costEur: null,
+        meta: expect.objectContaining({
+          feature: 'dashboard-insights',
+          model: expect.any(String),
+          latency_ms: expect.any(Number),
+          source: 'fallback',
+        }),
+      }),
+    )
+  })
 })
 
 describe('dashboard insights reader route', () => {
@@ -303,5 +327,6 @@ describe('dashboard insights reader route', () => {
     expect(source).not.toContain('slice(0,3)')
     expect(source).not.toMatch(/Prešov|Košic|150–250k|80 %/)
     expect(source).toContain('dashboard_insights_cache')
+    expect(source).toContain('isDashboardInsightsCacheFresh')
   })
 })
