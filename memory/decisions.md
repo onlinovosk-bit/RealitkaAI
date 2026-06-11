@@ -107,6 +107,13 @@
 - **Prečo:** Eliminácia copy/paste drift; repo už má `session-summary.md`, `decisions.md`, rules, agents.
 - **Dôsledok:** Jeden súbor handoff namiesto celého chatu; orchestration tools až po Realvia GO.
 ---
+## [2026-06-12] - Aktivačná onboarding sekvencia (Brief 8 Agent C — e-maily)
+
+- **Rozhodnutie:** Nová vrstva `lib/activation/*` + `activation_email_events`; legacy `onboarding-dispatch` (buyer d1/d3/d7) **neduplikovať**.
+- **Flag:** `ONBOARDING_EMAILS_ENABLED` default OFF; D5 S4 = draft na `FOUNDER_EMAILS`, nie auto-send zákazníkovi.
+- **Kanon:** `apps/crm/docs/onboarding/activation-emails.md` > `docs/briefs/prompts/onboarding-emails-prompt.md`.
+- **Wizard 3 kroky:** stále otvorený (samostatný PR).
+
 ## [2026-06-04] - Arbitrage analyze: `empty` vs `source` (PR-3)
 - **Poznámka (nie bug):** Prázdny scan vracia `empty: true` + `source: 'live'`, nie `source: 'empty'`. UI spolieha na `empty`, nie na literal `'empty'`. Ak niečo neskôr filtruje `source === 'empty'`, nenájde to — stealth-recruiter používa `'empty'` inak.
 - **Cron / copy:** Hobby Vercel = denné sloty v `apps/crm/vercel.json` (#96). UI copy v `ArbitrageDashboard` zosúladené na „raz denne“ (lokálne, čaká malý PR).
