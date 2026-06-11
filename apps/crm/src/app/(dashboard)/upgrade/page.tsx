@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { SLATE_HORIZON, WORKDESK_CARD } from '@/lib/slate-horizon-theme';
+import { RedeemStarterPackCode } from '@/components/billing/RedeemStarterPackCode';
 
 type SeatTierKey = 'solo' | 'team' | 'office';
 type TopupKey = 'start' | 'rast' | 'pro' | 'mega';
@@ -267,6 +268,23 @@ export default function UpgradePage() {
           </div>
         </section>
       )}
+
+      <section
+        className="mb-8 rounded-xl border p-6"
+        style={{
+          background: WORKDESK_CARD.background,
+          borderColor: WORKDESK_CARD.borderColor,
+          boxShadow: WORKDESK_CARD.boxShadow,
+        }}
+      >
+        <h2 className="text-xl font-semibold mb-2" style={{ color: SLATE_HORIZON.ink }}>
+          Kód zo štartovacieho balíka
+        </h2>
+        <p className="text-sm mb-4" style={{ color: SLATE_HORIZON.muted }}>
+          Kúpil si maklérsky balík za 47 €? Zadaj kód z emailu — pripíšeme 47 € kreditov na účet.
+        </p>
+        <RedeemStarterPackCode />
+      </section>
 
       {config?.topupCheckoutAvailable && (
         <section
