@@ -10,6 +10,12 @@
     "packages/mcp-calendar",
     "packages/mcp-telephony"
   ],
+  "scripts": {
+    "prospect:enrich": "npx tsx scripts/prospecting/enrich.ts",
+    "prospect:score": "npx tsx scripts/prospecting/score.ts",
+    "prospect:export": "npx tsx scripts/prospecting/export.ts",
+    "prospect:test": "npm run test --prefix apps/crm -- --config ../../scripts/prospecting/vitest.config.ts"
+  },
   "dependencies": {
     "cheerio": "^1.2.0",
     "dotenv": "^17.4.2"
