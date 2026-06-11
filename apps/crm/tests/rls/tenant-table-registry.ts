@@ -78,7 +78,7 @@ export const TENANT_TABLES: TenantTableDef[] = [
   { table: "events", scope: "profile_id", pk: "id", domain: "communications" },
   { table: "integrity_alerts", scope: "profile_id", pk: "id", domain: "agencies" },
   { table: "bri_score_history", scope: "profile_id", pk: "id", domain: "leads" },
-  { table: "bri_config", scope: "profile_id", pk: "id", domain: "leads" },
+  { table: "bri_config", scope: "profile_id", pk: "profile_id", domain: "leads" },
   {
     table: "lead_conversions",
     scope: "user_id",
@@ -100,7 +100,7 @@ export const TENANT_TABLES: TenantTableDef[] = [
   { table: "seller_motivation", scope: "profile_id", pk: "id", domain: "properties" },
   { table: "price_alerts", scope: "profile_id", pk: "id", domain: "properties" },
   { table: "outreach_logs", scope: "lead_id", pk: "id", domain: "communications" },
-  { table: "arbitrage_config", scope: "profile_id", pk: "id", domain: "properties" },
+  { table: "arbitrage_config", scope: "profile_id", pk: "profile_id", domain: "properties" },
   { table: "arbitrage_matches", scope: "profile_id", pk: "id", domain: "properties" },
   { table: "broker_profiles", scope: "user_id", pk: "id", domain: "agencies" },
   { table: "broker_events", scope: "user_id", pk: "id", domain: "agencies" },

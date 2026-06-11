@@ -318,7 +318,8 @@ export async function seedRlsFixtures(admin: SupabaseClient): Promise<RlsFixture
     profile_id: f.brokerA,
   });
   await seedAgencyScopedTable(admin, rows, "ai_sourced_deals", f.agencyA, f.agencyB, f.leadA, f.leadB, {
-    status: "open",
+    deal_value: 250000,
+    status: "pending",
     ai_attribution_score: 0.8,
   });
 
@@ -440,16 +441,15 @@ export async function seedRlsFixtures(admin: SupabaseClient): Promise<RlsFixture
   rows.import_rows_a = { id: rowA, agency_id: f.agencyA };
   rows.import_rows_b = { id: rowB, agency_id: f.agencyB };
 
-  await seedProfileScoped(admin, rows, "morning_brief_settings", f.brokerA, f.brokerB, {
+  await seedProfilePkTable(admin, rows, "morning_brief_settings", f.brokerA, f.brokerB, {
     enabled: true,
-    send_hour: 7,
   });
   await seedProfileScoped(admin, rows, "morning_briefs", f.brokerA, f.brokerB, {
     brief_text: "RLS test brief",
   });
   await seedProfileScoped(admin, rows, "profile_integrations", f.brokerA, f.brokerB, {
-    provider: "google",
-    status: "active",
+    type: "calendar_ics",
+    config: { url: "https://example.com/cal.ics" },
   });
   await seedProfileScoped(admin, rows, "outreach_campaigns", f.brokerA, f.brokerB, {
     name: "Campaign",
@@ -457,7 +457,7 @@ export async function seedRlsFixtures(admin: SupabaseClient): Promise<RlsFixture
   });
   await seedProfileScoped(admin, rows, "outreach_segments", f.brokerA, f.brokerB, {
     name: "Segment",
-    filters: {},
+    filter_json: {},
   });
   await seedProfileScoped(admin, rows, "outreach_templates", f.brokerA, f.brokerB, {
     name: "Template",
@@ -478,7 +478,7 @@ export async function seedRlsFixtures(admin: SupabaseClient): Promise<RlsFixture
     score: 50,
     trigger_event: "rls_test",
   });
-  await seedProfileScoped(admin, rows, "bri_config", f.brokerA, f.brokerB, {});
+  await seedProfilePkTable(admin, rows, "bri_config", f.brokerA, f.brokerB, {});
   await seedUserScoped(admin, rows, "lead_conversions", authUserIds.brokerA, authUserIds.brokerB, {
     stage_name: "qualified",
     conversion_rate: 10,
@@ -505,14 +505,10 @@ export async function seedRlsFixtures(admin: SupabaseClient): Promise<RlsFixture
     property_id: f.propertyA,
     watch_type: "any_drop",
   });
-  await seedProfileScoped(admin, rows, "arbitrage_config", f.brokerA, f.brokerB, {
+  await seedProfilePkTable(admin, rows, "arbitrage_config", f.brokerA, f.brokerB, {
     enabled: false,
-    config: {},
   });
-  await seedProfileScoped(admin, rows, "arbitrage_matches", f.brokerA, f.brokerB, {
-    status: "new",
-    score: 0.5,
-  });
+  await seedArbitrageMatches(admin, rows, f.brokerA, f.brokerB);
 
   const outreachA = randomUUID();
   const outreachB = randomUUID();
@@ -650,6 +646,96 @@ export async function seedRlsFixtures(admin: SupabaseClient): Promise<RlsFixture
   return { admin, rows, authUserIds };
 }
 
+const LEAD_FK_TABLES = new Set([
+  "client_dna",
+  "deal_risk",
+  "deal_moments",
+  "ai_actions",
+  "lead_action_scores",
+  "lead_closing_windows",
+  "lead_rescue_runs",
+  "lead_micro_actions",
+  "ai_action_audit",
+  "ai_sourced_deals",
+]);
+
+async function seedProfilePkTable(
+  admin: SupabaseClient,
+  rows: FixtureRowMap,
+  table: string,
+  profileA: string,
+  profileB: string,
+  extra: Record<string, unknown>,
+): Promise<void> {
+  try {
+    await upsertRow(admin, table, { profile_id: profileA, ...extra });
+    await upsertRow(admin, table, { profile_id: profileB, ...extra });
+    rows[`${table}_a`] = { id: profileA, profile_id: profileA };
+    rows[`${table}_b`] = { id: profileB, profile_id: profileB };
+  } catch (e) {
+    rows[`${table}_a`] = { id: profileA, profile_id: profileA, _seedError: String(e) };
+    rows[`${table}_b`] = { id: profileB, profile_id: profileB, _seedError: String(e) };
+  }
+}
+
+async function seedArbitrageMatches(
+  admin: SupabaseClient,
+  rows: FixtureRowMap,
+  profileA: string,
+  profileB: string,
+): Promise<void> {
+  const portalA = randomUUID();
+  const portalB = randomUUID();
+  const bazosA = randomUUID();
+  const bazosB = randomUUID();
+  const matchA = randomUUID();
+  const matchB = randomUUID();
+  try {
+    for (const [listingId, profileId, ext] of [
+      [portalA, profileA, "portal-a"],
+      [portalB, profileB, "portal-b"],
+      [bazosA, profileA, "bazos-a"],
+      [bazosB, profileB, "bazos-b"],
+    ] as const) {
+      await upsertRow(admin, "portal_listings", {
+        id: listingId,
+        profile_id: profileId,
+        source: "bazos_sk",
+        external_id: ext,
+        title: `Listing ${ext}`,
+        price: 200000,
+      });
+    }
+    await upsertRow(admin, "arbitrage_matches", {
+      id: matchA,
+      profile_id: profileA,
+      listing_portal: portalA,
+      listing_bazos: bazosA,
+      price_portal: 200000,
+      price_bazos: 180000,
+      delta_eur: 20000,
+      delta_pct: 10,
+      match_score: 0.8,
+    });
+    await upsertRow(admin, "arbitrage_matches", {
+      id: matchB,
+      profile_id: profileB,
+      listing_portal: portalB,
+      listing_bazos: bazosB,
+      price_portal: 150000,
+      price_bazos: 140000,
+      delta_eur: 10000,
+      delta_pct: 6.67,
+      match_score: 0.75,
+    });
+    rows.arbitrage_matches_a = { id: matchA, profile_id: profileA };
+    rows.arbitrage_matches_b = { id: matchB, profile_id: profileB };
+  } catch (e) {
+    rows.arbitrage_matches_a = { id: matchA, profile_id: profileA, _seedError: String(e) };
+    rows.arbitrage_matches_b = { id: matchB, profile_id: profileB, _seedError: String(e) };
+  }
+}
+
 async function seedUserScoped(
   admin: SupabaseClient,
   rows: FixtureRowMap,
@@ -729,7 +815,7 @@ async function seedAgencyScopedTable(
   const idB = randomUUID();
   const baseA: Record<string, unknown> = { id: idA, agency_id: agencyA, ...extra };
   const baseB: Record<string, unknown> = { id: idB, agency_id: agencyB, ...extra };
-  if ("lead_id" in extra || table.includes("lead")) {
+  if ("lead_id" in extra || table.includes("lead") || LEAD_FK_TABLES.has(table)) {
     baseA.lead_id = leadA;
     baseB.lead_id = leadB;
   }
