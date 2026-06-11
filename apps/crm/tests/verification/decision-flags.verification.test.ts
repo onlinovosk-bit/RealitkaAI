@@ -15,15 +15,34 @@ describe("[verification] Decision feature flags", () => {
     clearFlags();
     const flags = getDecisionFeatureFlags();
     expect(flags.decisionEngineEnabled).toBe(false);
+    expect(flags.closingWindowEnabled).toBe(false);
     expect(flags.rescueAutomationEnabled).toBe(false);
   });
 
-  it("defaults on in Vercel production/preview unless kill-switch (GATED)", () => {
+  it("opt-in: OFF unless explicitly enabled (production)", () => {
+    clearFlags();
     process.env.VERCEL_ENV = "production";
-    expect(getDecisionFeatureFlags().decisionEngineEnabled).toBe(true);
-    expect(getDecisionFeatureFlags().closingWindowEnabled).toBe(true);
+
+    const unset = getDecisionFeatureFlags();
+    expect(unset.decisionEngineEnabled).toBe(false);
+    expect(unset.closingWindowEnabled).toBe(false);
+    expect(unset.rescueAutomationEnabled).toBe(false);
+
+    process.env.DECISION_ENGINE_ENABLED = "true";
+    process.env.CLOSING_WINDOW_ENABLED = "true";
+    process.env.RESCUE_AUTOMATION_ENABLED = "true";
+    const enabled = getDecisionFeatureFlags();
+    expect(enabled.decisionEngineEnabled).toBe(true);
+    expect(enabled.closingWindowEnabled).toBe(true);
+    expect(enabled.rescueAutomationEnabled).toBe(true);
+
     process.env.DECISION_ENGINE_ENABLED = "false";
-    expect(getDecisionFeatureFlags().decisionEngineEnabled).toBe(false);
+    process.env.CLOSING_WINDOW_ENABLED = "false";
+    process.env.RESCUE_AUTOMATION_ENABLED = "false";
+    const disabled = getDecisionFeatureFlags();
+    expect(disabled.decisionEngineEnabled).toBe(false);
+    expect(disabled.closingWindowEnabled).toBe(false);
+    expect(disabled.rescueAutomationEnabled).toBe(false);
   });
 
   it("enables explicitly in local dev when DECISION_ENGINE_ENABLED=true", () => {
