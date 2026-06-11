@@ -1,0 +1,15 @@
+{
+  "swarmId": "swarm-1781161981789-99mpur",
+  "brief": "OVERNIGHT MASTER BRIEF 6.0",
+  "baseline": "origin/main @ 843d612",
+  "startedAt": "2026-06-11T07:13:01Z",
+  "agents": {
+    "A": { "task": "feature-verification-6", "branch": "chore/feature-verification-6", "status": "done", "tests": "422 pass" },
+    "B": { "task": "w1-quick-wins", "branch": "fix/w1-quick-wins-bundle", "status": "done", "tests": "385 pass" },
+    "C": { "task": "prospecting-pipeline", "branch": "feat/prospecting-pipeline", "status": "done", "pr": 167 },
+    "D": { "task": "demo-ops", "branch": "feat/demo-ops", "status": "pr_open", "pr": 169 },
+    "E": { "task": "demo-v3", "branch": "feat/demo-page-v3", "status": "done", "pr": 166, "gaps": ["/kalkulacka standalone", "Lighthouse QA"] },
+    "F": { "task": "realvia-importer", "branch": "feat/realvia-importer", "status": "done", "tests": "399 pass" },
+    "orch": { "task": "OVERNIGHT-REPORT-6", "status": "done", "report": "apps/crm/docs/OVERNIGHT-REPORT-6.md" }
+  }
+}
