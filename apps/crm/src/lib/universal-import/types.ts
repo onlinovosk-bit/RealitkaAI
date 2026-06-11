@@ -6,6 +6,7 @@
 // ── Zdrojové systémy ────────────────────────────────────────
 export type ImportSourceSystem =
   | 'realvia'
+  | 'realvia-json'
   | 'realsoft'
   | 'nehnutelnosti_sk'
   | 'google_contacts'
@@ -17,6 +18,7 @@ export type ImportSourceSystem =
 
 export const SOURCE_SYSTEM_LABELS: Record<ImportSourceSystem, string> = {
   realvia:           'Realvia CRM',
+  'realvia-json':    'Realvia JSON export',
   realsoft:          'RealSoft',
   nehnutelnosti_sk:  'Nehnuteľnosti.sk export',
   google_contacts:   'Google Kontakty',
