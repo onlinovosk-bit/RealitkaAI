@@ -1,9 +1,12 @@
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 import {
+  grantExpiryIdempotencyKey,
+  monthlyGrantIdempotencyKey,
+} from "@/lib/credits/grant-idempotency";
+import {
   COCKPIT_PRODUCTS,
   CREDIT_GRANTS,
   monthlyAgencyGrantCredits,
-  parseSeatTier,
   type SeatTier,
 } from "@/lib/program-tier-pricing";
 
@@ -52,7 +55,7 @@ export async function grantMonthlyCreditsForAgency(
 
   if (amount <= 0) return { granted: 0, skipped: true };
 
-  const idempotencyKey = `grant:${agency.id}:${periodKey}`;
+  const idempotencyKey = monthlyGrantIdempotencyKey(agency.id, periodKey);
   const { data: existing } = await supabase
     .from("credit_ledger")
     .select("id")
@@ -106,7 +109,7 @@ export async function expireGrantCreditsForAgency(
   const toExpire = agency.grant_credits_balance;
   if (toExpire <= 0) return { expired: 0, skipped: true };
 
-  const idempotencyKey = `grant_expiry:${agency.id}:${periodKey}`;
+  const idempotencyKey = grantExpiryIdempotencyKey(agency.id, periodKey);
   const { data: existing } = await supabase
     .from("credit_ledger")
     .select("id")

@@ -83,12 +83,19 @@ Env: `STRIPE_PRICE_OWNER_COCKPIT` (recurring, qty 1, `send_invoice`)
 
 ---
 
+## Grant Engine (PR-2)
+
+- **Crons (handler v kóde):** `GET /api/cron/credits-grant` (1. deň mesiaca 06:00 UTC), `GET /api/cron/credits-expire` (1. deň mesiaca 05:00 UTC — sweep grantov predchádzajúceho mesiaca).
+- **Idempotencia:** `grant:{agency_id}:{YYYYMM}` a `grant_expiry:{agency_id}:{YYYYMM}` v `credit_ledger.idempotency_key`.
+- **SQL:** `spend_credits(agency, amount, reason, idempotency_key)` — atomicky míňa grant pool pred purchase pool; migrácia `20260611000003_spend_credits.sql`.
+- **Ledger source:** `grant` | `purchase`; legacy riadky (mimo `monthly_grant` / `grant_expiry`) backfill `purchase`.
+
 ## PR mapa
 
 | PR | Scope |
 |----|-------|
 | PR-1 | `program-tier-pricing.ts` + unit testy + tento dokument |
-| PR-2 | `credit_ledger.source`, grant engine crons |
+| PR-2 | `credit_ledger.source`, grant crons, `spend_credits`, testy idempotencie |
 | PR-3 | `ai_action_audit` cost + denný agregát |
 | PR-4 | Stripe checkout (seat, cockpit, top-up) + Andy runbook |
 
@@ -107,5 +114,6 @@ Env: `STRIPE_PRICE_OWNER_COCKPIT` (recurring, qty 1, `send_invoice`)
 3. **Supabase migrácie** (poradie):
    - `20260602_agency_billing_and_credits.sql` (ak ešte nie)
    - `20260611000001_credit_ledger_source.sql` (PR-2)
+   - `20260611000003_spend_credits.sql` (PR-2)
    - `20260611000002_ai_action_audit_cost.sql` (PR-3)
 4. **Smoke:** seat checkout → webhook → `agencies.seats` + grant cron 1. deň mesiaca.
