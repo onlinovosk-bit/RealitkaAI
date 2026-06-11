@@ -8,7 +8,7 @@ import { requireRole } from "@/lib/permissions";
 import { FEATURE_PERMISSIONS } from "@/lib/role-config";
 import { getFeatureGateState } from "@/lib/feature-gating";
 import { createClient } from "@/lib/supabase/server";
-import { resolveAccountTier } from "@/lib/license/resolve-account-tier";
+import { resolveTeamAccountTier } from "@/components/team/resolve-team-account-tier";
 import { resolveProfileForAuthUser } from "@/lib/profiles/resolve-profile-for-auth";
 
 export default async function ForecastingPage() {
@@ -43,10 +43,20 @@ export default async function ForecastingPage() {
     resolveProfileForAuthUser(
       supabase,
       user?.id ?? "",
-      "ui_role, account_tier, role",
+      "ui_role, account_tier, role, agency_id",
       user?.email,
     ),
   ]);
+
+  let agencyManualPlan: string | null = null;
+  if (profile?.agency_id) {
+    const { data: agency } = await supabase
+      .from("agencies")
+      .select("manual_plan")
+      .eq("id", profile.agency_id)
+      .maybeSingle();
+    agencyManualPlan = agency?.manual_plan ?? null;
+  }
 
   if (!result.ok) {
     return (
@@ -62,7 +72,7 @@ export default async function ForecastingPage() {
     );
   }
 
-  const accountTier = resolveAccountTier(profile);
+  const accountTier = resolveTeamAccountTier(profile, agencyManualPlan);
 
   return <ForecastPageClient accountTier={accountTier} data={result.data} />;
 }

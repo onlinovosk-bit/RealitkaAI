@@ -151,13 +151,6 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     visibleFor: ["agent", "owner"],
   },
   {
-    key: "arbitrage",
-    label: "Arbitrážne zhody",
-    path: "/arbitrage",
-    emoji: "⚡",
-    visibleFor: ["agent", "owner"],
-  },
-  {
     key: "klonovanie-kupujucich",
     label: "Klonovanie Kupujúcich",
     path: "/akvizieia/klonovanie-kupujucich",
@@ -218,7 +211,6 @@ export const NAV_GROUPS = [
       "radar-okolia",
       "listy-z-katastra",
       "kupujuci-predajca",
-      "arbitrage",
       "klonovanie-kupujucich",
       "zachran-samopredajcu",
     ],
