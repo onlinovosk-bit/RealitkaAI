@@ -16,6 +16,7 @@ import {
   DASHBOARD_INSIGHTS_OVERDUE_FOLLOWUP_DAYS,
   overdueFollowupCutoffIso,
 } from '../dashboard-insights-gather'
+import { logAiAction } from '@/lib/ai-action-audit'
 
 const emptySummary: DashboardSummaryResponse = {
   period: 'today',
@@ -195,14 +196,21 @@ vi.mock('@/lib/ai/dashboard-insights', async importOriginal => {
     ...actual,
     generateDashboardInsights: vi.fn(async (input: Parameters<typeof actual.generateDashboardInsights>[0]) => {
       if (!actual.hasTenantData(input.summary)) {
-        return actual.buildEmptyInsights(input.userName)
+        return {
+          insights: actual.buildEmptyInsights(input.userName),
+          audit: { source: 'empty' as const, model: null, costEur: null, latencyMs: null },
+        }
       }
-      return actual.buildDataFallback(input)
+      return {
+        insights: actual.buildDataFallback(input),
+        audit: { source: 'fallback' as const, model: 'claude-haiku-4-5-20251001', costEur: null, latencyMs: 12 },
+      }
     }),
   }
 })
 
 vi.mock('@/lib/ai-action-audit', () => ({
+  logAiAction: vi.fn().mockResolvedValue(undefined),
   logAiActionAudit: vi.fn().mockResolvedValue(undefined),
 }))
 
@@ -236,8 +244,8 @@ describe('dashboard-insights generator (cron path)', () => {
       summary: emptySummary,
       userName: 'Nový tenant',
     })
-    expect(result.actions).toHaveLength(0)
-    expect(result.headline).toContain('Nový tenant')
+    expect(result.insights.actions).toHaveLength(0)
+    expect(result.insights.headline).toContain('Nový tenant')
   })
 })
 
@@ -288,6 +296,17 @@ describe('dashboard-insights-cron cache writer', () => {
     expect(result.ok).toBe(true)
     expect(result.empty).toBe(true)
     expect(upsert.mock.calls[0][0].payload.actions).toHaveLength(0)
+  })
+
+  it('generateAndCacheAgencyInsights logs via logAiAction', async () => {
+    const { from } = mockAdminForCache({ summary: smolkoSummary })
+    await generateAndCacheAgencyInsights({ from } as never, AGENCY_ID)
+    expect(logAiAction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'dashboard_insights',
+        agencyId: AGENCY_ID,
+      }),
+    )
   })
 })
 

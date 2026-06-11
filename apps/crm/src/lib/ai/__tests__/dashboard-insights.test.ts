@@ -87,7 +87,8 @@ describe('dashboard-insights', () => {
       summary: emptySummary,
       userName: 'Nový tenant',
     })
-    expect(result.actions).toHaveLength(0)
-    expect(result.headline).toContain('Nový tenant')
+    expect(result.insights.actions).toHaveLength(0)
+    expect(result.audit.source).toBe('empty')
+    expect(result.insights.headline).toContain('Nový tenant')
   })
 })

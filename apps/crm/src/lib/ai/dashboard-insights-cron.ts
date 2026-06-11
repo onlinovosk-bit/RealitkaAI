@@ -8,7 +8,8 @@ import {
   gatherAgencyDashboardSummary,
   gatherAgencyProperties,
 } from '@/lib/ai/dashboard-insights-gather'
-import { logAiActionAudit } from '@/lib/ai-action-audit'
+import { logAiAction } from '@/lib/ai-action-audit'
+import { CREDIT_ACTION_COSTS } from '@/lib/program-tier-pricing'
 import { withTimeout } from '@/lib/async/with-timeout'
 
 const INSIGHTS_AI_TIMEOUT_MS = Math.max(
@@ -66,7 +67,7 @@ export async function generateAndCacheAgencyInsights(
     const summary = await gatherAgencyDashboardSummary(admin, agencyId)
     const properties = await gatherAgencyProperties(admin, agencyId)
 
-    const insights = await withTimeout(
+    const generated = await withTimeout(
       generateDashboardInsights({
         period: 'today',
         summary,
@@ -75,12 +76,16 @@ export async function generateAndCacheAgencyInsights(
       }),
       INSIGHTS_AI_TIMEOUT_MS,
       {
-        headline: 'Insights momentálne nedostupné.',
-        actions: [],
-        summary: 'AI odpoveď prekročila časový limit — skúste obnoviť neskôr.',
+        insights: {
+          headline: 'Insights momentálne nedostupné.',
+          actions: [],
+          summary: 'AI odpoveď prekročila časový limit — skúste obnoviť neskôr.',
+        },
+        audit: { source: 'fallback' as const, model: null, costEur: null, latencyMs: null },
       },
     )
 
+    const insights = generated.insights
     const payload: DashboardInsightsCachePayload = {
       ...insights,
       period: 'today',
@@ -98,17 +103,19 @@ export async function generateAndCacheAgencyInsights(
       return { agencyId, ok: false, empty: false, error: upsertErr.message }
     }
 
-    await logAiActionAudit({
+    await logAiAction({
+      action: 'dashboard_insights',
       agencyId,
-      leadId: null,
-      actionKind: 'ai_suggested',
-      channel: 'email',
+      creditsSpent: generated.audit.source === 'llm' ? CREDIT_ACTION_COSTS.leadAnalysis : 0,
+      costEur: generated.audit.costEur,
+      model: generated.audit.model,
+      latencyMs: generated.audit.latencyMs,
       subjectPreview: payload.headline.slice(0, 200),
       meta: {
-        feature: 'dashboard-insights',
-        source: 'cron',
+        source: generated.audit.source,
+        cron: true,
         actions_count: payload.actions.length,
-        empty: payload.actions.length === 0 && !insights.headline.includes('priorita'),
+        empty: generated.audit.source === 'empty',
       },
     })
 

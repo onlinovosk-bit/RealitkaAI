@@ -1,5 +1,6 @@
 import type { DashboardSummaryResponse } from '@/app/api/dashboard/summary/route'
 import { callClaude, CLAUDE_HAIKU, extractJson } from './claude'
+import { estimateClaudeCostEur } from './llm-usage-cost'
 import { withAiTimeout } from './fallback'
 
 export type PropertySnapshot = {
@@ -30,6 +31,18 @@ export type DashboardInsightsOutput = {
   summary: string
   actions: DashboardInsightsAction[]
   notesForOwner?: string
+}
+
+export type DashboardInsightsAudit = {
+  source: 'llm' | 'fallback' | 'empty'
+  model: string | null
+  costEur: number | null
+  latencyMs: number | null
+}
+
+export type GenerateDashboardInsightsResult = {
+  insights: DashboardInsightsOutput
+  audit: DashboardInsightsAudit
 }
 
 const SYSTEM = `Si Revolis.AI — inteligentný realitný asistent pre slovenských maklérov.
@@ -157,9 +170,13 @@ export function buildDataFallback(input: DashboardInsightsInput): DashboardInsig
 
 export async function generateDashboardInsights(
   input: DashboardInsightsInput,
-): Promise<DashboardInsightsOutput> {
+): Promise<GenerateDashboardInsightsResult> {
+  const t0 = Date.now()
   if (!hasTenantData(input.summary)) {
-    return buildEmptyInsights(input.userName)
+    return {
+      insights: buildEmptyInsights(input.userName),
+      audit: { source: 'empty', model: null, costEur: null, latencyMs: 0 },
+    }
   }
 
   const validLeadIds = new Set(input.summary.topHotLeads.map(l => l.id))
@@ -197,12 +214,25 @@ Vráť JSON:
     const raw = resp.content[0].type === 'text' ? resp.content[0].text : ''
     const parsed = extractJson<LlmInsightsPayload>(raw)
     return {
-      headline: parsed.headline?.trim() || fallback.headline,
-      summary: parsed.summary?.trim() || fallback.summary,
-      actions: sanitizeLeadIds(parsed.actions ?? [], validLeadIds),
-      notesForOwner: parsed.notesForOwner?.trim() || undefined,
+      insights: {
+        headline: parsed.headline?.trim() || fallback.headline,
+        summary: parsed.summary?.trim() || fallback.summary,
+        actions: sanitizeLeadIds(parsed.actions ?? [], validLeadIds),
+        notesForOwner: parsed.notesForOwner?.trim() || undefined,
+      },
+      audit: {
+        source: 'llm' as const,
+        model: CLAUDE_HAIKU,
+        costEur: estimateClaudeCostEur(CLAUDE_HAIKU, resp.usage.input_tokens, resp.usage.output_tokens),
+        latencyMs: Date.now() - t0,
+      },
     }
   })
 
-  return withAiTimeout(aiCall, fallback, 800)
+  const result = await withAiTimeout(aiCall, {
+    insights: fallback,
+    audit: { source: 'fallback' as const, model: CLAUDE_HAIKU, costEur: null, latencyMs: 0 },
+  }, 800)
+  if (result.audit.source === 'fallback') result.audit.latencyMs = Date.now() - t0
+  return result
 }
