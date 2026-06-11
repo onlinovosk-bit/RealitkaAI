@@ -51,10 +51,13 @@ jobs:
         working-directory: apps/crm
 
       - name: Export local credentials
-        run: |
-          supabase status -o env | sed 's/"//g' >> "$GITHUB_ENV"
-          echo "SUPABASE_SERVICE_ROLE_KEY=${SERVICE_ROLE_KEY}" >> "$GITHUB_ENV"
+        run: supabase status -o env | sed 's/"//g' >> "$GITHUB_ENV"
         working-directory: apps/crm
+
+      - name: Map service role key for Node tests
+        run: echo "SUPABASE_SERVICE_ROLE_KEY=${SERVICE_ROLE_KEY}" >> "$GITHUB_ENV"
+        env:
+          SERVICE_ROLE_KEY: ${{ env.SERVICE_ROLE_KEY }}
 
       # Allowlist guard: fail, ak DB NIE JE lokálne test prostredie.
       # (Nahrádza pôvodný blacklist "Block E2E on production".)
@@ -83,7 +86,7 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ env.API_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ env.ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ env.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ env.SUPABASE_SERVICE_ROLE_KEY || env.SERVICE_ROLE_KEY }}
 
       - name: Build
         run: npm run build
