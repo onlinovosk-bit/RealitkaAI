@@ -519,14 +519,16 @@ export async function seedRlsFixtures(admin: SupabaseClient): Promise<RlsFixture
   await upsertRow(admin, "outreach_logs", {
     id: outreachA,
     lead_id: f.leadA,
+    campaign: "rls_test",
     channel: "email",
-    status: "sent",
+    message_content: "RLS test A",
   });
   await upsertRow(admin, "outreach_logs", {
     id: outreachB,
     lead_id: f.leadB,
+    campaign: "rls_test",
     channel: "email",
-    status: "sent",
+    message_content: "RLS test B",
   });
   rows.outreach_logs_a = { id: outreachA, lead_id: f.leadA };
   rows.outreach_logs_b = { id: outreachB, lead_id: f.leadB };
