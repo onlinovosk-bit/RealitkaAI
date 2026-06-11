@@ -52,3 +52,33 @@ export async function markNotificationRead(id: string): Promise<void> {
     .update({ read_at: new Date().toISOString() })
     .eq("id", id);
 }
+
+export type RoutineNotificationRow = {
+  id: string;
+  agency_id: string;
+  profile_id: string | null;
+  type: string;
+  priority: string;
+  title: string;
+  body: string | null;
+  data: Record<string, unknown> | null;
+  read_at: string | null;
+  created_at: string;
+  expires_at: string | null;
+};
+
+export async function getCeoCommandNotifications(
+  agencyId: string,
+  limit = 30,
+): Promise<RoutineNotificationRow[]> {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("routine_notifications")
+    .select("*")
+    .eq("agency_id", agencyId)
+    .eq("type", "ceo_command")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []) as RoutineNotificationRow[];
+}
