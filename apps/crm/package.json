@@ -19,7 +19,8 @@
         "test": "vitest run",
         "test:watch": "vitest",
         "cleanup:smoke": "npx tsx ../../scripts/cleanup-smoke-profiles.ts",
-        "cleanup:smoke:dry": "npx tsx ../../scripts/cleanup-smoke-profiles.ts --dry-run"
+        "cleanup:smoke:dry": "npx tsx ../../scripts/cleanup-smoke-profiles.ts --dry-run",
+        "demo-ops:import-prospects": "npx tsx scripts/demo-ops/import-prospects.ts"
     },
     "dependencies": {
         "@anthropic-ai/sdk": "^0.91.1",
