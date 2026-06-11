@@ -107,6 +107,12 @@
 - **Prečo:** Eliminácia copy/paste drift; repo už má `session-summary.md`, `decisions.md`, rules, agents.
 - **Dôsledok:** Jeden súbor handoff namiesto celého chatu; orchestration tools až po Realvia GO.
 ---
+## [2026-06-11] - Ochrana proti merge zo zastaraného main (swarm)
+
+- **Rozhodnutie:** GitHub branch protection na `main`: **Require branches to be up to date before merging** + required check `Lint, test, build`.
+- **Prečo:** Tri incidenty za 3 dni (#160 bez allowlistu, stale capabilities JSON, stale `decision-flags.verification` po #170) — paralelné vetvy mergnuté bez rebase.
+- **Dôsledok:** Sémantické konflikty v CI pred merge. Agent pravidlo: grep `tests/verification/` pri zmene správania. Kanon: `apps/crm/tests/verification/README.md`.
+
 ## [2026-06-04] - Arbitrage analyze: `empty` vs `source` (PR-3)
 - **Poznámka (nie bug):** Prázdny scan vracia `empty: true` + `source: 'live'`, nie `source: 'empty'`. UI spolieha na `empty`, nie na literal `'empty'`. Ak niečo neskôr filtruje `source === 'empty'`, nenájde to — stealth-recruiter používa `'empty'` inak.
 - **Cron / copy:** Hobby Vercel = denné sloty v `apps/crm/vercel.json` (#96). UI copy v `ArbitrageDashboard` zosúladené na „raz denne“ (lokálne, čaká malý PR).
