@@ -1,0 +1,50 @@
+{
+  "exportType": "contacts",
+  "exportedAt": "2025-06-01T10:00:00Z",
+  "source": "nehnutelnosti-export",
+  "contacts": [
+    {
+      "id": "C-9101",
+      "name": "Mária JSONová",
+      "email": "maria.jsonova@example.sk",
+      "phone": "+421901234101",
+      "city": "Prešov",
+      "address": "Sadová 3",
+      "note": "JSON export — záujem o rodinný dom",
+      "inquiryType": "Kúpa",
+      "status": "Aktívny",
+      "agent": "Maklér Demo",
+      "createdAt": "2025-05-01",
+      "budget": 250000
+    },
+    {
+      "id": "C-9102",
+      "name": "Tomáš Exportný",
+      "email": "tomas.exportny@example.sk",
+      "phone": "0902123102",
+      "city": "Košice",
+      "inquiryType": "Predaj",
+      "status": "Ukončený",
+      "agent": "Maklér Demo",
+      "createdAt": "2025-04-15"
+    },
+    {
+      "id": "C-9103",
+      "name": "Duplicit JSON",
+      "email": "dup.json@example.sk",
+      "phone": "0900333103",
+      "city": "Bratislava",
+      "inquiryType": "Kúpa",
+      "status": "Aktívny"
+    },
+    {
+      "id": "C-9104",
+      "name": "Duplicit JSON 2",
+      "email": "dup.json@example.sk",
+      "phone": "0900333104",
+      "city": "Bratislava",
+      "inquiryType": "Kúpa",
+      "status": "Aktívny"
+    }
+  ]
+}

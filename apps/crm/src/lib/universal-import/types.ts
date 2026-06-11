@@ -16,6 +16,9 @@ export type ImportSourceSystem =
   | 'generic_csv'
   | 'xlsx';
 
+/** API route / export bundle identifier (maps to sourceSystem `nehnutelnosti_sk`). */
+export const NEHNUTELNOSTI_EXPORT_ROUTE = 'nehnutelnosti-export';
+
 export const SOURCE_SYSTEM_LABELS: Record<ImportSourceSystem, string> = {
   realvia:           'Realvia CRM',
   'realvia-json':    'Realvia JSON export',
