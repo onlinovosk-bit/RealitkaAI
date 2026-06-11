@@ -1,0 +1,28 @@
+{
+  "obhliadka": {
+    "sentiment": "positive",
+    "sentiment_arc": "IMPROVING",
+    "analysis_confidence": "high",
+    "inconclusive_reason": null,
+    "keyTopics": ["obhliadka 2-izbového bytu", "orientácia obývačky", "parkovanie v garáži"],
+    "objections": ["kuchyňa menšia ako očakávaná"],
+    "buying_signals": ["chce prejsť s manželkou cez víkend", "pýta sa na rezerváciu"],
+    "nextAction": "Zavolaj v pondelok ráno po víkendovom rozhodnutí.",
+    "score": 78,
+    "summary": "Klient reagoval pozitívne na obhliadku. Hlavná námietka bola veľkosť kuchyne, ale záujem o rezerváciu po konzultácii s manželkou je silný signál.",
+    "escalation_needed": false
+  },
+  "cenova_namietka": {
+    "sentiment": "neutral",
+    "sentiment_arc": "FLAT",
+    "analysis_confidence": "high",
+    "inconclusive_reason": null,
+    "keyTopics": ["cenová námietka", "financovanie", "vybavenie domu"],
+    "objections": ["cena 389k nad trhom", "schválené financovanie len 350k"],
+    "buying_signals": ["pri 360k príde na obhliadku"],
+    "nextAction": "Prejednaj s vlastníkom cenu 360k do zajtra.",
+    "score": 55,
+    "summary": "Klient má jasný cenový strop. Dom zaujal, ale bez zľavy na 360k nebude pokračovať.",
+    "escalation_needed": false
+  }
+}
