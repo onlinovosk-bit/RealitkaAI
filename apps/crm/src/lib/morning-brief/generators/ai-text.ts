@@ -2,9 +2,12 @@
 // Revolis.AI — Morning Brief AI Text Generator
 // ================================================================
 import { callClaude, CLAUDE_HAIKU } from '@/lib/ai/claude'
-import { withAiTimeout }            from '@/lib/ai/fallback'
 import type { GatheredData }        from '../gather'
-import type { BriefVariant }        from '@/types/morning-brief'
+import type {
+  BriefContentSource,
+  BriefFallbackReason,
+  BriefVariant,
+} from '@/types/morning-brief'
 
 export interface GeneratedText {
   aiText:      string
@@ -12,7 +15,11 @@ export interface GeneratedText {
   actionVerb:  string
   actionText:  string
   urgency:     'high' | 'medium' | 'low'
+  contentSource: BriefContentSource
+  fallbackReason: BriefFallbackReason | null
 }
+
+const AI_TIMEOUT_MS = 800
 
 const SYSTEM_A = `Si Revolis.AI — inteligentný realitný asistent pre slovenských maklérov.
 Píšeš ranný brief VÝLUČNE po slovensky. Max 300 slov. Žiadny marketing jazyk.
@@ -44,11 +51,11 @@ export async function generateBriefText(
   variant: BriefVariant = 'A'
 ): Promise<GeneratedText> {
   const top     = data.hotLeads[0]
-  const { overnight, stats } = data
+  const { overnight } = data
   const context = buildContext(data)
   const system  = variant === 'A' ? SYSTEM_A : SYSTEM_B
 
-  const fallback = buildFallbackText(data, variant)
+  const fallback = withSourceMeta(buildFallbackText(data, variant), 'fallback', 'timeout')
 
   const aiCall = Promise.all([
     callClaude({
@@ -74,16 +81,55 @@ export async function generateBriefText(
     const aiText     = (briefMsg.content[0]   as { text: string }).text.trim()
     const subjectLine = (subjectMsg.content[0] as { text: string }).text.trim()
     const urgency    = determineUrgency(top?.bri_score ?? 0, overnight)
-    return {
+    return withSourceMeta({
       aiText,
       subjectLine,
       actionVerb: extractActionVerb(aiText),
       actionText: extractLastSentence(aiText),
       urgency,
-    } satisfies GeneratedText
+    }, 'llm', null)
   })
 
-  return withAiTimeout(aiCall, fallback, 800)
+  return raceBriefAi(aiCall, fallback, AI_TIMEOUT_MS)
+}
+
+function withSourceMeta(
+  base: Omit<GeneratedText, 'contentSource' | 'fallbackReason'>,
+  contentSource: BriefContentSource,
+  fallbackReason: BriefFallbackReason | null,
+): GeneratedText {
+  return { ...base, contentSource, fallbackReason }
+}
+
+async function raceBriefAi(
+  aiCall: Promise<GeneratedText>,
+  fallback: GeneratedText,
+  ms: number,
+): Promise<GeneratedText> {
+  let apiError = false
+
+  const aiTracked = aiCall.catch(() => {
+    apiError = true
+    return withSourceMeta(stripSourceMeta(fallback), 'fallback', 'api_error')
+  })
+
+  const timeout = new Promise<GeneratedText>((resolve) => {
+    const id = setTimeout(
+      () => resolve(withSourceMeta(stripSourceMeta(fallback), 'fallback', 'timeout')),
+      ms,
+    )
+    if (typeof id === 'object' && 'unref' in id) id.unref()
+  })
+
+  const result = await Promise.race([aiTracked, timeout])
+  if (result.contentSource === 'llm') return result
+  if (apiError) return withSourceMeta(stripSourceMeta(result), 'fallback', 'api_error')
+  return result
+}
+
+function stripSourceMeta(text: GeneratedText): Omit<GeneratedText, 'contentSource' | 'fallbackReason'> {
+  const { contentSource: _s, fallbackReason: _r, ...rest } = text
+  return rest
 }
 
 function buildContext(data: GatheredData): string {
@@ -155,7 +201,10 @@ export function buildDeliveryFallbackText(
   ].join('\n')
 }
 
-function buildFallbackText(data: GatheredData, variant: BriefVariant): GeneratedText {
+function buildFallbackText(
+  data: GatheredData,
+  _variant: BriefVariant,
+): Omit<GeneratedText, 'contentSource' | 'fallbackReason'> {
   const top   = data.hotLeads[0]
   const score = top?.bri_score ?? 0
   const name  = top?.full_name ?? data.stats.priorityLeadNames[0] ?? 'Váš top lead'

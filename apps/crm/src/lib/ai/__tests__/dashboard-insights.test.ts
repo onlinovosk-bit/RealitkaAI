@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { DashboardSummaryResponse } from '@/app/api/dashboard/summary/route'
 import {
   buildEmptyInsights,
@@ -52,7 +52,21 @@ const smolkoSummary: DashboardSummaryResponse = {
   activity: { callsToday: 1, emailsToday: 2, viewingsScheduled: 0 },
 }
 
+vi.mock('../claude', async importOriginal => {
+  const actual = await importOriginal<typeof import('../claude')>()
+  return {
+    ...actual,
+    callClaude: vi.fn(),
+    extractJson: vi.fn((text: string) => JSON.parse(text)),
+  }
+})
+
+import { callClaude } from '../claude'
+
 describe('dashboard-insights', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
   it('hasTenantData returns false for empty tenant', () => {
     expect(hasTenantData(emptySummary)).toBe(false)
   })

@@ -322,5 +322,6 @@ describe('dashboard insights reader route', () => {
     expect(source).not.toContain('slice(0,3)')
     expect(source).not.toMatch(/Prešov|Košic|150–250k|80 %/)
     expect(source).toContain('dashboard_insights_cache')
+    expect(source).toContain('isDashboardInsightsCacheFresh')
   })
 })

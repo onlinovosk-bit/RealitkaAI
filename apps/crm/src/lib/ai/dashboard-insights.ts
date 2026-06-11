@@ -1,4 +1,5 @@
 import type { DashboardSummaryResponse } from '@/app/api/dashboard/summary/route'
+import { estimateClaudeCostEur } from './llm-usage-cost'
 import { callClaude, CLAUDE_HAIKU, extractJson } from './claude'
 import { estimateClaudeCostEur } from './llm-usage-cost'
 import { withAiTimeout } from './fallback'
@@ -180,7 +181,7 @@ export async function generateDashboardInsights(
   }
 
   const validLeadIds = new Set(input.summary.topHotLeads.map(l => l.id))
-  const fallback = buildDataFallback(input)
+  const fallbackInsights = buildDataFallback(input)
   const context = buildContext(input)
 
   const aiCall = callClaude({
@@ -211,6 +212,7 @@ Vráť JSON:
 }`,
     }],
   }, 'dashboard-insights').then(resp => {
+    const latencyMs = Date.now() - t0
     const raw = resp.content[0].type === 'text' ? resp.content[0].text : ''
     const parsed = extractJson<LlmInsightsPayload>(raw)
     return {

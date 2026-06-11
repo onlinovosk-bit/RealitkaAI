@@ -1,5 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { CLAUDE_HAIKU } from '@/lib/ai/claude'
 import {
+  buildDataFallback,
+  buildEmptyInsights,
   generateDashboardInsights,
   hasTenantData,
   type DashboardInsightsOutput,
@@ -111,6 +114,7 @@ export async function generateAndCacheAgencyInsights(
       model: generated.audit.model,
       latencyMs: generated.audit.latencyMs,
       subjectPreview: payload.headline.slice(0, 200),
+      costEur: generated.audit.costEur,
       meta: {
         source: generated.audit.source,
         cron: true,

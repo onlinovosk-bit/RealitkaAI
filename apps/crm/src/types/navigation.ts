@@ -327,6 +327,15 @@ export const ALL_NAV_ITEMS: NavItem[] = [
     showFor: ["owner_vision", "owner_protocol"],
   },
   {
+    id: "ceo-command",
+    label: "CEO Command",
+    sublabel: "Riaditeľské príkazy · Briefy z rutín",
+    href: "/ceo-command",
+    icon: "lock",
+    section: "main",
+    showFor: ["owner_vision", "owner_protocol"],
+  },
+  {
     id: "team-permissions",
     label: "Čo vidí môj tím",
     sublabel: "Prístupy per maklér · Nastavenia",
