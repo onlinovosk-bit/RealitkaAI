@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import FounderMetricsDashboard from "@/components/metrics/FounderMetricsDashboard";
+import FounderMetricsExportButtons from "@/components/metrics/FounderMetricsExportButtons";
 import { isFounderMetricsViewer } from "@/lib/metrics/access";
 import { fetchFounderMetrics } from "@/lib/metrics/fetch";
 import { METRICS_GUARDRAILS } from "@/lib/metrics/guardrails";
@@ -35,6 +36,9 @@ export default async function FounderMetricsPage() {
               As of {new Date(metrics.asOf).toLocaleString("sk-SK")} UTC
             </p>
           ) : null}
+          <div className="mt-4">
+            <FounderMetricsExportButtons />
+          </div>
         </header>
 
         {!metrics ? (

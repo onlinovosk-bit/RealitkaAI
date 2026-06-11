@@ -73,6 +73,8 @@ describe("founder metrics compute", () => {
     expect(snapshot.guardrails.nrrBand).toBe("unavailable");
     expect(snapshot.aiCost.available).toBe(true);
     expect(snapshot.aiCost.creditsSpent).toBe(20);
+    expect(snapshot.trends.length).toBeGreaterThan(0);
+    expect(snapshot.aiCostDailySeries).toHaveLength(1);
   });
 
   it("fails cockpit attach guardrail below 40 %", () => {
