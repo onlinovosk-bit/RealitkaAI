@@ -1,15 +1,16 @@
 {
   "_meta": {
-    "version": "1.1.0",
-    "date": "2026-06-07",
-    "author": "Claude orchestrátor + Andy review",
+    "version": "1.2.0",
+    "date": "2026-06-11",
+    "author": "Ruflo Swarm Agent B (overnight brief 6.0)",
     "purpose": "Authoritative capability snapshot pre market_vision plán. Tri vrstvy: LIVE, CODE, OVERRIDE.",
     "layers": {
       "LIVE": "Beží v prod, overené curl/oči",
       "CODE": "Kód/cron existuje, ale nie je go-live verified",
       "OVERRIDE": "Funguje len kvôli dev override, nie plánu"
     },
-    "warning": "Tento súbor je source of truth pre sales, compliance a license gating. Pred externým použitím skontroluj sekciu paywall_enforced."
+    "warning": "Tento súbor je source of truth pre sales, compliance a license gating. Pred externým použitím skontroluj sekciu paywall_enforced.",
+    "prod_value_unknown": "valueSetInProd UNKNOWN = Andy musí overiť SQL/runtime na prod"
   },
 
   "plan": "market_vision",
@@ -19,46 +20,70 @@
   "customer": "Reality Smolko s.r.o.",
   "agency_id": "11111111-1111-1111-1111-111111111111",
 
+  "manual_plan": {
+    "columnInSchema": true,
+    "migration": "20260607210500_agencies_manual_plan.sql",
+    "checkConstraint": "20260609130000_agencies_manual_plan_check.sql",
+    "valueSetInProd": "UNKNOWN",
+    "expectedValue": "market_vision",
+    "note": "Stĺpec v schéme na main; prod hodnota čaká na Andy SQL verify (tenant-health / SMOLKO-OPS-RUNBOOK §1b)"
+  },
+
   "market_ready": {
     "_comment": "Čo môžeš sľúbiť zákazníkovi — overené v prod",
     "aiScoring": { "value": true, "layer": "OVERRIDE", "note": "getFeatureFlagsForPlan vracia true pre všetky plány — nie plan-based" },
     "aiRecommendations": { "value": true, "layer": "OVERRIDE", "note": "Rovnaký override" },
-    "forecasting": { "value": true, "layer": "OVERRIDE", "note": "ForecastRiskStrip live po PR #105, ale gating cez override nie plán" },
+    "forecasting": { "value": true, "layer": "CODE", "note": "TRACK-D wired: canViewForecast + manual_plan tier chain (#150, W1 fix). Enforcement blocked by canUseFullApp override." },
     "communicationHub": { "value": true, "layer": "OVERRIDE" },
     "outreach": { "value": true, "layer": "OVERRIDE" },
     "integrations": { "value": true, "layer": "LIVE", "note": "Realvia webhook live — prvé webhooky potvrdené" },
-    "teamManagement": { "value": true, "layer": "OVERRIDE" },
+    "teamManagement": { "value": true, "layer": "CODE", "note": "TRACK-E wired: resolveTeamAccountTier + manual_plan (#157). Enforcement blocked by canUseFullApp override." },
     "advancedReporting": { "value": true, "layer": "OVERRIDE" },
     "billing": { "value": true, "layer": "LIVE", "note": "Faktúry viditeľné — live" },
     "leadImport": { "value": true, "layer": "LIVE", "note": "439 kontaktov importovaných — Realvia import pipeline" },
     "leadTriage": { "value": true, "layer": "LIVE", "note": "cron lead-ai-triage 05:00 UTC — vercel.json" },
     "pipeline": { "value": true, "layer": "LIVE" },
     "contacts": { "value": true, "layer": "LIVE" },
-    "workdesk": { "value": true, "layer": "LIVE", "note": "PR #101 merged a50a0e11 — safe profile SELECT" },
+    "workdesk": { "value": true, "layer": "LIVE", "note": "PR #101 merged — safe profile SELECT" },
     "morningBrief": { "value": true, "layer": "LIVE", "note": "cron morning-brief 06:00 UTC — vercel.json" },
     "dashboardInsights": { "value": true, "layer": "LIVE", "note": "cron 06:00 + 13:00 UTC — zámer (2× denne refresh)" },
     "callAnalyzer": {
       "value": true,
       "layer": "CODE",
-      "note": "UI + /api/ai/call/analyze + /api/ai/call-coach/stream existujú; prod E2E neoverené (vyžaduje OPENAI_API_KEY + prihláseného usera; Whisper upload neauditovaný na prod)"
+      "note": "UI + /api/ai/call/analyze + /api/ai/call-coach/stream existujú; prod E2E neoverené"
     },
-    "realviaSync": { "value": true, "layer": "LIVE", "note": "webhook + external cron cron-job.org — docs: realvia-external-cron-setup.md" },
+    "realviaSync": { "value": true, "layer": "LIVE", "note": "webhook + external cron cron-job.org" },
     "propertySync": { "value": true, "layer": "LIVE", "note": "properties tabuľka — live" },
-    "decisionEngine": { "value": true, "layer": "CODE", "note": "DECISION_ENGINE_ENABLED — env pending Vercel. Default ON v decision-flags.ts. Smoke curl not yet verified." }
+    "decisionEngine": {
+      "value": false,
+      "layer": "CODE",
+      "note": "Opt-in only (W1): DECISION_ENGINE_ENABLED=true vo Vercel. Default OFF v decision-flags.ts. Smoke curl not yet verified."
+    },
+    "sellerRescue": {
+      "value": true,
+      "layer": "CODE",
+      "note": "cron seller-rescue 05:45 UTC v vercel.json (#162 merged); prod E2E UNKNOWN"
+    }
   },
 
   "engineering_live": {
-    "_comment": "Čo reálne beží v infraštruktúre — crony, routes, DB",
+    "_comment": "Čo reálne beží v infraštruktúre — crony, routes, DB (sync s apps/crm/vercel.json 2026-06-11)",
     "crons_vercel": [
       { "path": "/api/cron/pulse", "schedule": "0 0 * * *", "status": "LIVE" },
       { "path": "/api/cron/bri-snapshot", "schedule": "0 2 * * *", "status": "LIVE" },
-      { "path": "/api/cron/morning-brief", "schedule": "0 6 * * *", "status": "LIVE" },
+      { "path": "/api/cron/seller-rescue", "schedule": "45 5 * * *", "status": "CODE", "note": "#162 merged; prod smoke UNKNOWN" },
       { "path": "/api/cron/lead-ai-triage", "schedule": "0 5 * * *", "status": "LIVE" },
+      { "path": "/api/cron/morning-brief", "schedule": "0 6 * * *", "status": "LIVE" },
       { "path": "/api/cron/follow-up-sweep", "schedule": "0 22 * * *", "status": "LIVE" },
       { "path": "/api/cron/dashboard-insights", "schedule": "0 6 * * *", "status": "LIVE", "note": "zámer — 2× denne" },
       { "path": "/api/cron/dashboard-insights", "schedule": "0 13 * * *", "status": "LIVE", "note": "zámer — 2× denne" },
-      { "path": "/api/cron/arbitrage-scan", "schedule": "0 3 * * *", "status": "CODE", "note": "Cron beží, portal_listings prázdne — no data" },
-      { "path": "/api/cron/price-trail-sync", "schedule": "30 4 * * *", "status": "CODE" }
+      { "path": "/api/cron/arbitrage-scan", "schedule": "0 3 * * *", "status": "CODE", "note": "Cron registrovaný; portal_listings prázdna; nav skrytá POST-V1 — zvážiť pauzu (Andy)" },
+      { "path": "/api/cron/price-trail-sync", "schedule": "30 4 * * *", "status": "CODE" },
+      { "path": "/api/cron/credits-expire", "schedule": "0 5 1 * *", "status": "CODE" },
+      { "path": "/api/cron/credits-grant", "schedule": "0 6 1 * *", "status": "CODE" }
+    ],
+    "crons_removed": [
+      { "path": "/api/cron/stealth-recruiter-ingest", "removedIn": "#164", "status": "REMOVED", "note": "Legal hold — tabuľka prázdna, CI grep guard" }
     ],
     "crons_external": [
       { "path": "/api/cron/realvia-process", "provider": "cron-job.org", "status": "LIVE", "note": "Hobby plan — sub-hourly externe" }
@@ -75,56 +100,59 @@
     "licenseGatingEnforced": {
       "value": false,
       "layer": "OVERRIDE",
+      "wiredInCode": true,
       "bloker": "canUseFullApp = true hardcoded v saas-ops.ts + getFeatureFlagsForPlan vracia všetko true",
-      "fix": "Krok 1: manual_plan DB migrácia → Krok 2: TRACK-D/E merge → Krok 3: override removal PR"
+      "fix": "Override removal PR až po manual_plan valueSetInProd overení + TRACK-D/E smoke"
     },
     "phase5ForecastGate": {
       "value": false,
       "layer": "CODE",
-      "bloker": "TRACK-D pending — feat/phase5-forecast-gating branch neexistuje"
+      "wiredInCode": true,
+      "bloker": "TRACK-D merged (#150) + W1 manual_plan fix — enforcement blocked by canUseFullApp"
     },
     "phase5TeamGate": {
       "value": false,
       "layer": "CODE",
-      "bloker": "TRACK-E pending — feat/phase5-team-gating branch neexistuje"
+      "wiredInCode": true,
+      "bloker": "TRACK-E merged (#157) — enforcement blocked by canUseFullApp"
     },
     "tenantRlsStrict": {
       "value": false,
       "layer": "CODE",
-      "bloker": "Migrácia 20260605130000_rls_strict_tenant_isolation — NEAPLIKOVANÁ na prod. /council bod 2 — čaká na rozhodnutie."
+      "bloker": "Migrácia 20260605130000_rls_strict_tenant_isolation — NEAPLIKOVANÁ na prod"
     },
     "manualPlanInDb": {
-      "value": false,
+      "columnInSchema": true,
+      "valueSetInProd": "UNKNOWN",
       "layer": "CODE",
-      "bloker": "agencies.manual_plan stĺpec neexistuje — potrebný pred override removal"
+      "note": "Stĺpec existuje na main; Smolko UPDATE overí Andy (tenant-health)"
     }
   },
 
   "hidden_not_off": {
-    "_comment": "Tieto features sú visible: false pre zákazníka, ale infraštruktúra beží. Nie sú vypnuté.",
+    "_comment": "Tieto features sú visible: false pre zákazníka, ale infraštruktúra môže bežať. Nie sú vypnuté.",
     "recruiting": {
       "visible": false,
       "status": "legal_hold",
-      "cron": "stealth-recruiter-ingest — VYPNUTÝ z vercel.json (PR A+B pending), kill-switch env pripravený",
-      "pr_open": "#72 feat/stealth-recruiter-production",
-      "bloker": "GDPR čl. 6(1)(f) Balancing Test — čaká na advokáta (AKMV office@akmv.sk)",
-      "legal_package": "revolis-legal-package-recruiting.zip — pripravený na odoslanie"
+      "cron": "stealth-recruiter-ingest — ODSTRÁNENÝ z vercel.json (#164), kill-switch env pripravený",
+      "bloker": "GDPR čl. 6(1)(f) Balancing Test — čaká na advokáta"
     },
     "arbitrage": {
       "visible": false,
       "status": "no_data",
-      "cron": "arbitrage-scan 03:00 UTC — beží, ale portal_listings tabuľka prázdna",
-      "bloker": "portal_listings feed — portal-parser.ts mŕtvy kód. Fix: bridge properties→portal_listings. POST-V1."
+      "nav": "skryté z navigation.ts + types/navigation.ts (W1 POST-V1); route /arbitrage ostáva",
+      "cron": "arbitrage-scan 03:00 UTC — stále v vercel.json; portal_listings prázdna — návrh pauzy pre Andy",
+      "bloker": "portal_listings feed — POST-V1 bridge"
     },
     "marketIntelligence": {
       "visible": false,
       "status": "blocked_by_arbitrage",
-      "bloker": "Závisí na portal_listings — rovnaký bloker ako arbitrage"
+      "bloker": "Závisí na portal_listings"
     },
     "socialScout": {
       "visible": false,
       "status": "gdpr_risk",
-      "bloker": "GDPR — sociálne siete monitoring. Nestavať bez legal clearance."
+      "bloker": "GDPR — sociálne siete monitoring"
     }
   },
 
@@ -133,50 +161,42 @@
     "stealthFunnel": {
       "value": false,
       "status": "CODE",
-      "note": "/start — v repe, nie na main. Untracked súbory."
+      "note": "/start — v repe, nie na main"
     },
     "coldEmailUpdated": {
       "value": false,
       "status": "TODO",
-      "note": "cold-email.md → /start link — pending"
+      "note": "cold-email.md → /start link — pending (stabilizácia first)"
     }
   },
 
   "tech_debt": {
     "slatePrStackOpen": {
       "value": true,
-      "prs": "#14–#30",
-      "count": 15,
-      "status": "TRACK-C triage pending — PR-TRIAGE-MATRIX.md (overnight swarm)"
+      "status": "TRACK-C triage pending"
     },
-    "rufloStoreStaleTasks": {
+    "decisionOpsOptIn": {
       "value": true,
-      "tasks": ["TRACK-A (superseded)", "TRACK-B", "TRACK-C", "TRACK-D", "TRACK-E"],
-      "note": "TRACK-F completed manuálne. Store.json treba vyčistiť po overnight swarm."
+      "note": "W1: decision-flags.ts default OFF; Vercel env DECISION_ENGINE_ENABLED=true keď ready"
     },
     "onboardingAutomat401": {
       "value": true,
-      "note": "SSR fetch dostane 401 — proxy.ts bypass /api/onboarding/mvp/ chýba. Backlog."
-    },
-    "duplicateDashboardInsightsCron": {
-      "value": false,
-      "note": "Zámer — 2× denne potvrdené komentárom v route.ts"
+      "note": "SSR fetch dostane 401 — proxy.ts bypass /api/onboarding/mvp/ chýba"
     }
   },
 
   "activation_checklist": {
-    "_comment": "Poradie krokov pred override removal — NIC sa nemení bez tohto poradia",
+    "_comment": "Poradie krokov pred override removal",
     "steps": [
-      { "step": "1a", "action": "Pridať manual_plan stĺpec do agencies tabuľky", "owner": "Andy + Claude", "status": "TODO", "priority": "P0" },
-      { "step": "1b", "action": "UPDATE agencies SET manual_plan='market_vision' WHERE agency_id='11111111-...'", "owner": "Andy", "status": "TODO", "priority": "P0" },
-      { "step": "1c", "action": "getFeatureFlagsForPlan čítať manual_plan ak Stripe null", "owner": "Claude", "status": "TODO", "priority": "P0" },
-      { "step": "2", "action": "DECISION_ENGINE_ENABLED=true vo Vercel + smoke curl verify", "owner": "Andy", "status": "TODO", "priority": "P0" },
-      { "step": "3", "action": "Overnight swarm: TRACK-C triage + TRACK-D/E PRs", "owner": "Ruflo", "status": "SCHEDULED", "priority": "P0" },
-      { "step": "4", "action": "TRACK-D + TRACK-E PRs review + merge", "owner": "Claude + Andy", "status": "BLOCKED_BY_3", "priority": "P0" },
-      { "step": "5", "action": "PR: odstránenie canUseFullApp + getFeatureFlagsForPlan override", "owner": "Claude", "status": "BLOCKED_BY_1_4", "priority": "P0" },
-      { "step": "6", "action": "RLS migrácia 20260605130000 apply na prod", "owner": "Andy + Claude", "status": "TODO", "priority": "P1", "note": "/council bod 2 — rozhodnúť pred spaním" },
-      { "step": "7", "action": "Advokát AKMV — odoslať legal package + čakať na podpis", "owner": "Andy", "status": "TODO", "priority": "P1" },
-      { "step": "8", "action": "PR #72 stealth-recruiter — merge po advokátovom podpise", "owner": "Andy + Claude", "status": "BLOCKED_BY_7", "priority": "P2" }
+      { "step": "1a", "action": "manual_plan stĺpec v agencies", "owner": "Claude", "status": "DONE", "priority": "P0" },
+      { "step": "1b", "action": "UPDATE agencies SET manual_plan='market_vision' WHERE agency_id='11111111-...'", "owner": "Andy", "status": "UNKNOWN", "priority": "P0", "note": "valueSetInProd UNKNOWN — overiť SQL" },
+      { "step": "1c", "action": "getFeatureFlagsForPlan čítať manual_plan ak Stripe null", "owner": "Claude", "status": "PARTIAL", "priority": "P0", "note": "saas-ops + sidebar + billing/plan; full override removal blocked" },
+      { "step": "2", "action": "DECISION_ENGINE_ENABLED=true vo Vercel + smoke curl verify", "owner": "Andy", "status": "TODO", "priority": "P0", "note": "Opt-in only od W1 — bez env = OFF" },
+      { "step": "3", "action": "TRACK-D/E smoke + W1 forecast manual_plan fix", "owner": "Ruflo", "status": "DONE", "priority": "P0" },
+      { "step": "4", "action": "PR: odstránenie canUseFullApp + getFeatureFlagsForPlan override", "owner": "Claude", "status": "BLOCKED_BY_1b", "priority": "P0" },
+      { "step": "5", "action": "RLS migrácia apply na prod", "owner": "Andy + Claude", "status": "TODO", "priority": "P1" },
+      { "step": "6", "action": "Advokát AKMV — legal package recruiting", "owner": "Andy", "status": "TODO", "priority": "P1" },
+      { "step": "7", "action": "Arbitrage cron pauza (vercel.json) — po Andy schválení", "owner": "Andy", "status": "PROPOSED", "priority": "P2" }
     ]
   }
 }

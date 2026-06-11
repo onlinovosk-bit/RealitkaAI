@@ -23,31 +23,35 @@ describe("getDecisionFeatureFlags", () => {
     expect(flags.rescueAutomationEnabled).toBe(false);
   });
 
-  it("defaults on in Vercel production when unset", () => {
+  it("defaults off in Vercel production when unset (opt-in only)", () => {
     clearFlags();
     process.env.VERCEL_ENV = "production";
+    const flags = getDecisionFeatureFlags();
+    expect(flags.decisionEngineEnabled).toBe(false);
+    expect(flags.closingWindowEnabled).toBe(false);
+    expect(flags.rescueAutomationEnabled).toBe(false);
+  });
+
+  it("defaults off in Vercel preview when unset", () => {
+    clearFlags();
+    process.env.VERCEL_ENV = "preview";
+    expect(getDecisionFeatureFlags().decisionEngineEnabled).toBe(false);
+  });
+
+  it("enables only when env is explicitly true", () => {
+    process.env.VERCEL_ENV = "production";
+    process.env.DECISION_ENGINE_ENABLED = "true";
+    process.env.CLOSING_WINDOW_ENABLED = "1";
+    process.env.RESCUE_AUTOMATION_ENABLED = "yes";
     const flags = getDecisionFeatureFlags();
     expect(flags.decisionEngineEnabled).toBe(true);
     expect(flags.closingWindowEnabled).toBe(true);
     expect(flags.rescueAutomationEnabled).toBe(true);
   });
 
-  it("defaults on in Vercel preview when unset", () => {
-    clearFlags();
-    process.env.VERCEL_ENV = "preview";
-    expect(getDecisionFeatureFlags().decisionEngineEnabled).toBe(true);
-  });
-
-  it("respects explicit false kill-switch on production", () => {
+  it("treats explicit false same as unset (off)", () => {
     process.env.VERCEL_ENV = "production";
     process.env.DECISION_ENGINE_ENABLED = "false";
     expect(getDecisionFeatureFlags().decisionEngineEnabled).toBe(false);
-    expect(getDecisionFeatureFlags().closingWindowEnabled).toBe(true);
-  });
-
-  it("respects explicit true in local dev", () => {
-    clearFlags();
-    process.env.DECISION_ENGINE_ENABLED = "true";
-    expect(getDecisionFeatureFlags().decisionEngineEnabled).toBe(true);
   });
 });

@@ -47,6 +47,10 @@
 
 **Rozhodnutie:** Skryť z navigácie POST-V1; zvážiť pauzu `arbitrage-scan` cronu.
 
+**W1 quick-wins (#fix/w1-quick-wins-bundle):** `/arbitrage` odstránené z `navigation.ts` + `types/navigation.ts` (route `/arbitrage` ostáva pre deep link).
+
+**Návrh pre Andyho (NEMENIŤ vercel.json v tomto PR):** `arbitrage-scan` (`0 3 * * *` v `apps/crm/vercel.json`) beží nad prázdnou `portal_listings` tabuľkou — zvážiť dočasné odstránenie cron riadku alebo pauzu, kým nebude feed bridge (POST-V1).
+
 ### #18 cold-email vs stabilizácia
 
 **Rozhodnutie:** Stabilizácia first; outreach po Vlne 1.
