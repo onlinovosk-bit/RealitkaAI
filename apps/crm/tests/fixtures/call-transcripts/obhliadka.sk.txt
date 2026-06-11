@@ -1,0 +1,8 @@
+Maklér: Dobrý deň, pán Novák, vitajte na obhliadke bytu na Hlavnej ulici v centre.
+Klient: Dobrý deň. Vyzerá to celkom dobre, ale kuchyňa je menšia ako som čakal.
+Maklér: Rozumiem, je to 2-izbový byt po kompletnej rekonštrukcii. Kuchyňa má 8 metrov štvorcových, ale máte priestor na jedáleň pri okne.
+Klient: Áno, to sa mi páči. Aká je orientácia obývačky?
+Maklér: Južná, takže budete mať svetlo celý deň. Parkovanie je v podzemnej garáži za 15-tisíc ročne.
+Klient: To je prijateľné. Kedy by sme mohli riešiť rezerváciu? Chcem to prejsť s manželkou cez víkend.
+Maklér: Samozrejme, môžeme si dať follow-up v pondelok ráno. Pošlem vám aj energetický certifikát a list vlastníctva.
+Klient: Výborne, teším sa. Ďakujem za prehliadku.
