@@ -10,6 +10,9 @@ import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { computeBrainRescorePayload } from "@/lib/ai/brain-rescore";
 import { AI_ASSISTANT_NAME } from "@/lib/ai-brand";
 import { callOpenAI } from "@/lib/ai/openai";
+import { logAiAction } from "@/lib/ai-action-audit";
+import { estimateOpenAiCostEur } from "@/lib/ai/llm-usage-cost";
+import { CREDIT_ACTION_COSTS } from "@/lib/program-tier-pricing";
 
 type LeadRow = {
   id: string;
@@ -36,10 +39,15 @@ function getAdmin() {
   });
 }
 
-async function getOpenAiInsight(lead: LeadRow, score: number): Promise<string | null> {
+async function getOpenAiInsight(
+  lead: LeadRow & { agency_id?: string | null },
+  score: number,
+): Promise<string | null> {
   try {
-    const { content } = await callOpenAI({
-      model:      "gpt-4o-mini",
+    const t0 = Date.now();
+    const model = "gpt-4o-mini";
+    const { content, promptTokens, completionTokens } = await callOpenAI({
+      model,
       max_tokens: 80,
       tag:        "rescore-insight",
       messages: [
@@ -59,6 +67,17 @@ async function getOpenAiInsight(lead: LeadRow, score: number): Promise<string | 
         },
       ],
     });
+
+    await logAiAction({
+      action: "rescore_insight",
+      agencyId: lead.agency_id ?? null,
+      leadId: lead.id,
+      creditsSpent: CREDIT_ACTION_COSTS.leadAnalysis,
+      costEur: estimateOpenAiCostEur(model, promptTokens ?? 0, completionTokens ?? 0),
+      model,
+      latencyMs: Date.now() - t0,
+    });
+
     return content.trim() || null;
   } catch {
     return null;
@@ -73,7 +92,7 @@ export async function rescoreLead(leadId: string): Promise<void> {
     const { data: row } = await admin
       .from("leads")
       .select(
-        "id,name,status,budget,location,property_type,rooms,financing,timeline,note,source,assigned_agent,last_contact"
+        "id,name,status,budget,location,property_type,rooms,financing,timeline,note,source,assigned_agent,last_contact,agency_id"
       )
       .eq("id", leadId)
       .single();

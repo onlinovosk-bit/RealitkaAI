@@ -10,6 +10,7 @@ import { generateDirectorBrief } from './director-brief'
 import { createAdminClient } from '@/lib/supabase/server'
 import { Resend }               from 'resend'
 import type { MorningBriefData } from '@/types/morning-brief'
+import { logAiAction } from '@/lib/ai-action-audit'
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.revolis.ai'
 
@@ -68,6 +69,14 @@ export async function generateAndDeliverBrief(
     .select('role, ui_role, agency_id')
     .eq('id', profileId)
     .maybeSingle();
+
+  await logAiAction({
+    action: 'morning_brief',
+    agencyId: ownerProfile?.agency_id ?? null,
+    profileId,
+    subjectPreview: generated.subjectLine?.slice(0, 200) ?? null,
+    meta: { variant, urgency: generated.urgency, hot_leads: gathered.stats.hotPending },
+  });
 
   const isOwner =
     ownerProfile?.role === 'owner' || ownerProfile?.ui_role === 'owner_vision';

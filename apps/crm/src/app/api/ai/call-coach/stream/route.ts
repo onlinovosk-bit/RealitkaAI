@@ -13,6 +13,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getClaudeClient, CLAUDE_HAIKU } from "@/lib/ai/claude";
 import { checkAiRateLimit } from "@/lib/ai/rate-guard";
+import { logAiAction } from "@/lib/ai-action-audit";
+import { estimateClaudeCostEur } from "@/lib/ai/llm-usage-cost";
 
 const SYSTEM = `Si realitný sales coach so 20 rokmi praxe v SR. \
 Dávaš úprimnú, konkrétnu spätnú väzbu — nie generické pochvaly. \
@@ -39,9 +41,15 @@ export async function POST(req: Request) {
   }
 
   const encoder = new TextEncoder();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("agency_id")
+    .eq("auth_user_id", user.id)
+    .maybeSingle();
 
   const readable = new ReadableStream({
     async start(controller) {
+      const t0 = Date.now();
       try {
         const stream = getClaudeClient().messages.stream({
           model:      CLAUDE_HAIKU,
@@ -71,6 +79,19 @@ export async function POST(req: Request) {
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: event.delta.text })}\n\n`));
           }
         }
+
+        const finalMessage = await stream.finalMessage();
+        await logAiAction({
+          action: "call_coach",
+          agencyId: profile?.agency_id ?? null,
+          costEur: estimateClaudeCostEur(
+            CLAUDE_HAIKU,
+            finalMessage.usage.input_tokens,
+            finalMessage.usage.output_tokens,
+          ),
+          model: CLAUDE_HAIKU,
+          latencyMs: Date.now() - t0,
+        });
 
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
       } catch (err) {

@@ -5,6 +5,7 @@
  */
 
 import { callClaude, CLAUDE_SONNET, extractJson } from "./claude";
+import { estimateClaudeCostEur } from "./llm-usage-cost";
 
 export interface PropertyInput {
   type: string;           // "3-izbový byt", "rodinný dom", ...
@@ -72,25 +73,33 @@ Vygeneruj JSON:
 }`;
 }
 
+export type ListingContentAudit = {
+  model: string;
+  costEur: number;
+  latencyMs: number;
+};
+
 export async function generateListingContent(
   property: PropertyInput,
-  persona: ListingPersona = "GENERAL"
-): Promise<ListingContent> {
+  persona: ListingPersona = "GENERAL",
+): Promise<{ content: ListingContent; audit: ListingContentAudit }> {
   const userPrompt = buildListingUserPrompt(property, persona);
+  const t0 = Date.now();
 
   const response = await callClaude({
     model: CLAUDE_SONNET,
     max_tokens: 2200,
-    system: [
-      {
-        type: "text",
-        text: SYSTEM_PROMPT,
-        cache_control: { type: "ephemeral" },
-      },
-    ],
+    system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
     messages: [{ role: "user", content: userPrompt }],
-  });
+  }, "listing-content");
 
   const raw = response.content[0].type === "text" ? response.content[0].text : "{}";
-  return extractJson<ListingContent>(raw);
+  return {
+    content: extractJson<ListingContent>(raw),
+    audit: {
+      model: CLAUDE_SONNET,
+      costEur: estimateClaudeCostEur(CLAUDE_SONNET, response.usage.input_tokens, response.usage.output_tokens),
+      latencyMs: Date.now() - t0,
+    },
+  };
 }

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient as createServerClient, createAdminClient } from "@/lib/supabase/server";
 import { callOpenAI } from "@/lib/ai/openai";
 import { checkAiRateLimit } from "@/lib/ai/rate-guard";
+import { logAiAction } from "@/lib/ai-action-audit";
+import { estimateOpenAiCostEur } from "@/lib/ai/llm-usage-cost";
 
 const EVENT_TYPE_LABELS: Record<string, string> = {
   dedičstvo:    "zápis dedičstva",
@@ -51,8 +53,10 @@ Požiadavky na list:
 
 Vráť IBA HTML obsah listu (bez <!DOCTYPE>, <html>, <head> tagov). Použi inline štýly pre profesionálny vzhľad.`;
 
-    const { content: letterHtmlRaw } = await callOpenAI({
-      model:       "gpt-4o",
+    const t0 = Date.now();
+    const model = "gpt-4o";
+    const { content: letterHtmlRaw, promptTokens, completionTokens } = await callOpenAI({
+      model,
       max_tokens:  1200,
       temperature: 0.7,
       tag:         "ghostwriter",
@@ -60,6 +64,20 @@ Vráť IBA HTML obsah listu (bez <!DOCTYPE>, <html>, <head> tagov). Použi inlin
         { role: "system", content: "Si expert na slovenský realitný trh a profesionálnu komunikáciu." },
         { role: "user",   content: prompt },
       ],
+    });
+
+    const { data: profile } = await supabaseAuth
+      .from("profiles")
+      .select("agency_id")
+      .eq("auth_user_id", user.id)
+      .maybeSingle();
+
+    await logAiAction({
+      action: "ghostwriter",
+      agencyId: profile?.agency_id ?? null,
+      costEur: estimateOpenAiCostEur(model, promptTokens ?? 0, completionTokens ?? 0),
+      model,
+      latencyMs: Date.now() - t0,
     });
 
     const letterHtml = letterHtmlRaw.trim();

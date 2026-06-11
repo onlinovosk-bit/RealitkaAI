@@ -175,7 +175,7 @@ export async function generateDashboardInsights(
   if (!hasTenantData(input.summary)) {
     return {
       insights: buildEmptyInsights(input.userName),
-      audit: { source: 'empty', model: CLAUDE_HAIKU, costEur: null, latencyMs: 0 },
+      audit: { source: 'empty', model: null, costEur: null, latencyMs: 0 },
     }
   }
 
@@ -216,8 +216,8 @@ Vráť JSON:
     const parsed = extractJson<LlmInsightsPayload>(raw)
     return {
       insights: {
-        headline: parsed.headline?.trim() || fallbackInsights.headline,
-        summary: parsed.summary?.trim() || fallbackInsights.summary,
+        headline: parsed.headline?.trim() || fallback.headline,
+        summary: parsed.summary?.trim() || fallback.summary,
         actions: sanitizeLeadIds(parsed.actions ?? [], validLeadIds),
         notesForOwner: parsed.notesForOwner?.trim() || undefined,
       },
@@ -225,17 +225,15 @@ Vráť JSON:
         source: 'llm' as const,
         model: CLAUDE_HAIKU,
         costEur: estimateClaudeCostEur(CLAUDE_HAIKU, resp.usage.input_tokens, resp.usage.output_tokens),
-        latencyMs,
+        latencyMs: Date.now() - t0,
       },
     }
   })
 
   const result = await withAiTimeout(aiCall, {
-    insights: fallbackInsights,
+    insights: fallback,
     audit: { source: 'fallback' as const, model: CLAUDE_HAIKU, costEur: null, latencyMs: 0 },
   }, 800)
-  if (result.audit.source === 'fallback') {
-    result.audit.latencyMs = Date.now() - t0
-  }
+  if (result.audit.source === 'fallback') result.audit.latencyMs = Date.now() - t0
   return result
 }

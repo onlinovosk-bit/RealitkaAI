@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { checkAiRateLimit } from "@/lib/ai/rate-guard";
 import { generateListingContent } from "@/lib/ai/listing-content";
 import type { PropertyInput, ListingPersona } from "@/lib/ai/listing-content";
+import { logAiAction } from "@/lib/ai-action-audit";
+import { CREDIT_ACTION_COSTS } from "@/lib/program-tier-pricing";
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -22,10 +24,26 @@ export async function POST(req: Request) {
   if (!body.property?.type || !body.property?.location || !body.property?.price) {
     return NextResponse.json(
       { ok: false, error: "Chýbajú povinné polia: type, location, price" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
-  const content = await generateListingContent(body.property, body.persona ?? "GENERAL");
+  const { content, audit } = await generateListingContent(body.property, body.persona ?? "GENERAL");
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("agency_id")
+    .eq("auth_user_id", user.id)
+    .maybeSingle();
+
+  await logAiAction({
+    action: "listing_description",
+    agencyId: profile?.agency_id ?? null,
+    creditsSpent: CREDIT_ACTION_COSTS.listingDescription,
+    costEur: audit.costEur,
+    model: audit.model,
+    latencyMs: audit.latencyMs,
+    meta: { persona: body.persona ?? "GENERAL" },
+  });
+
   return NextResponse.json({ ok: true, content });
 }
