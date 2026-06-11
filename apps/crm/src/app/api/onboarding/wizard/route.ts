@@ -1,5 +1,14 @@
 import { errorResponse, okResponse } from "@/lib/api-response";
 import { getActivationFeatureFlags } from "@/lib/activation/flags";
+import { gatherAgencyActivationSnapshot } from "@/lib/activation/gather-snapshot";
+import {
+  appendWizardMilestoneToChecklist,
+  buildWizardMilestoneRecord,
+  logWizardMilestoneToActivationEvents,
+  resolveActivationStateForWizard,
+  type WizardMilestoneRecord,
+  type WizardTransitionAction,
+} from "@/lib/activation/wizard-events";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -68,15 +77,20 @@ async function persistWizardState(
   contactName: string,
   checklistBase: Record<string, unknown>,
   wizard: WizardState,
+  milestone?: WizardMilestoneRecord,
 ) {
   const service = createServiceRoleClient();
   if (!service) return { error: "Service role nie je nakonfigurovaný." as const };
 
   const normalized = normalizeChecklist(checklistBase as never);
-  const mergedChecklist = mergeWizardIntoChecklist(
+  let mergedChecklist = mergeWizardIntoChecklist(
     normalized as unknown as Record<string, boolean | number | undefined>,
     wizard,
-  );
+  ) as Record<string, unknown>;
+
+  if (milestone) {
+    mergedChecklist = appendWizardMilestoneToChecklist(mergedChecklist, milestone);
+  }
 
   const { data, error } = await service
     .from("client_onboarding_progress")
@@ -226,11 +240,34 @@ export async function POST(request: Request) {
     nextState = completeWizardState(current);
   }
 
-  const saved = await persistWizardState(company, contactEmail, contactName, {}, nextState);
+  let milestone: WizardMilestoneRecord | undefined;
+  if (agencyId) {
+    const service = createServiceRoleClient();
+    const snapshot = service ? await gatherAgencyActivationSnapshot(service, agencyId) : null;
+    const activationState = resolveActivationStateForWizard(nextState, snapshot ?? undefined);
+    milestone = buildWizardMilestoneRecord(
+      action as WizardTransitionAction,
+      current,
+      nextState,
+      activationState,
+    );
+
+    if (service) {
+      await logWizardMilestoneToActivationEvents(service, {
+        agencyId,
+        recipientEmail: contactEmail,
+        milestone,
+      });
+    }
+  }
+
+  const saved = await persistWizardState(company, contactEmail, contactName, {}, nextState, milestone);
   if ("error" in saved) return errorResponse(saved.error, 500);
 
   return okResponse({
     state: saved.state,
+    activationState: milestone?.activationState,
+    milestone: milestone?.node,
     redirectTo: saved.state.wizardCompleted || saved.state.wizardSkipped ? "/dashboard" : undefined,
   });
 }

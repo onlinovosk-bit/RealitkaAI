@@ -47,7 +47,9 @@ export default function LoginPage() {
       if (signInError) throw signInError;
       // Server link profilu (Smolko gmail ↔ agency_id) — rovnaké ako dashboard layout.
       await fetch("/api/crm/tenant-health", { credentials: "include" }).catch(() => null);
-      router.push("/dashboard");
+      // /post-login gates wizard when ONBOARDING_WIZARD_ENABLED=true; otherwise → /dashboard.
+      // proxy.ts/middleware.ts are automerge denylist — client redirect avoids auth-tier touch.
+      router.push("/post-login");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Nepodarilo sa prihlásiť.");
