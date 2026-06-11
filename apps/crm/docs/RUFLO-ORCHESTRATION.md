@@ -55,6 +55,8 @@ Poznámka: dokumentácia Rufla môže spomínať aj CLI príkazy (napr. `swarm s
 3. Po dokončení `swarm_shutdown`.  
 4. `swarm_health` — diagnostika.
 
+**MERGED ≠ LIVE (DoD):** Agent nesmie reportovať DONE pre user-facing zmenu bez overenia cieľovej URL/route (curl, smoke) alebo bez explicitného kroku zapojenia + vlastníka (merge, env, cron, Stripe). Príklady: v3 súbor ≠ `/demo.html`; PR merged ≠ produkcia; handler bez `vercel.json`; checkout bez env.
+
 ---
 
 ## Ako volať MCP mimo aktuálneho chatu

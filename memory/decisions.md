@@ -107,6 +107,19 @@
 - **Prečo:** Eliminácia copy/paste drift; repo už má `session-summary.md`, `decisions.md`, rules, agents.
 - **Dôsledok:** Jeden súbor handoff namiesto celého chatu; orchestration tools až po Realvia GO.
 ---
+## [2026-06-12] - DoD: MERGED ≠ LIVE (zapojenie user-facing zmien)
+
+- **Rozhodnutie:** Pri každej user-facing zmene musí Definition of Done obsahovať: over, že zmena je **dosiahnuteľná na cieľovej URL/route**, alebo explicitne napíš, ktorý krok zapojenia ostáva a **komu patrí** (Andy merge, Vercel env, cron registrácia, Stripe produkty…).
+- **Prečo:** Štvrtý prípad za týždeň — allowlist mimo main, v3 mimo `/demo.html`, crony bez registrácie, checkout bez env; agenti reportujú DONE, zákazník to nevidí.
+- **Dôsledok:** Orchestrátor/swarm report nesmie písať DONE bez LIVE overenia alebo explicitného „zapojenie pending: X pre Y". Brief 9.0+ linkuje sem.
+- **Dôkaz:** demo.html consent fix (#182) — kód v repe, produkcia stará až po merge + curl.
+
+## [2026-06-11] - Ochrana proti merge zo zastaraného main (swarm)
+
+- **Rozhodnutie:** GitHub branch protection na `main`: require up to date + `Lint, test, build`.
+- **Prečo:** Stale testy/JSON po paralelných agentoch bez rebase.
+- **Kanón:** `apps/crm/tests/verification/README.md`, `RUFLO-ORCHESTRATION.md`.
+
 ## [2026-06-04] - Arbitrage analyze: `empty` vs `source` (PR-3)
 - **Poznámka (nie bug):** Prázdny scan vracia `empty: true` + `source: 'live'`, nie `source: 'empty'`. UI spolieha na `empty`, nie na literal `'empty'`. Ak niečo neskôr filtruje `source === 'empty'`, nenájde to — stealth-recruiter používa `'empty'` inak.
 - **Cron / copy:** Hobby Vercel = denné sloty v `apps/crm/vercel.json` (#96). UI copy v `ArbitrageDashboard` zosúladené na „raz denne“ (lokálne, čaká malý PR).

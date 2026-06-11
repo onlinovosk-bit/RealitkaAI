@@ -23,6 +23,7 @@ Platí vždy pre zmeny v tomto repozitári:
 - Po každej zmene deploy nastavení skontroluj:
   `Vercel -> Settings -> Build and Deployment -> Production Overrides`.
 - Pred merge vždy spusti `tests/smoke.spec.ts` (alebo ekvivalentný smoke run).
+- User-facing zmena: DoD overí **dosiahnuteľnosť na cieľovej URL/route** (curl/smoke), alebo explicitne „zapojenie pending" + vlastník. **MERGED ≠ LIVE.**
 
 ## PR kontrolný zoznam
 
