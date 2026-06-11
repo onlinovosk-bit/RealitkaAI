@@ -22,6 +22,10 @@ export async function logAiActionAudit(input: {
   variant?: string | null;
   subjectPreview?: string | null;
   bodyText?: string | null;
+  /** Reálny LLM náklad v EUR (PR-3 maržový report). */
+  costEur?: number | null;
+  /** Spotrebované kredity z agency poolu. */
+  creditsSpent?: number | null;
   meta?: Record<string, unknown>;
 }): Promise<void> {
   const supabase = createServiceRoleClient();
@@ -40,6 +44,8 @@ export async function logAiActionAudit(input: {
     variant: input.variant ?? null,
     subject_preview: input.subjectPreview?.slice(0, 500) ?? null,
     body_hash,
+    cost_eur: input.costEur ?? null,
+    credits_spent: input.creditsSpent ?? null,
     meta: input.meta ?? {},
   });
 
