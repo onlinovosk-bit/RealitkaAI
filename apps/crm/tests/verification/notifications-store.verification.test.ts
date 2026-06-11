@@ -48,4 +48,21 @@ describe("[verification] Routine notifications store", () => {
     });
     expect(insertMock.mock.calls[0]?.[0].type).toBe("ceo_command");
   });
+
+  it("CI seed shape: routine notification row matches inbox filter contract", async () => {
+    const seed = {
+      agencyId: "agency-ci",
+      type: "seller_rescue" as const,
+      priority: "normal" as const,
+      title: "CI seed — seller rescue",
+      body: "Fixture pre inbox smoke",
+      data: { leads: [], source: "ci_seed" },
+    };
+    await createNotification(seed);
+    const row = insertMock.mock.calls[0]?.[0];
+    expect(row.agency_id).toBe("agency-ci");
+    expect(row.type).toBe("seller_rescue");
+    expect(row.read_at).toBeUndefined();
+    expect(row.data?.source).toBe("ci_seed");
+  });
 });
