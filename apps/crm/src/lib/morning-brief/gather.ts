@@ -2,7 +2,7 @@
 // Revolis.AI — Morning Brief Data Gatherer
 // Collects all overnight signals for a single profile
 // ================================================================
-import { createClient }    from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import { getHotLeads }     from '@/lib/bri/engine'
 import type {
   BriefSettings,
@@ -52,7 +52,7 @@ function parseBudgetEur(raw: unknown): number {
 }
 
 export async function gatherBriefData(profileId: string): Promise<GatheredData | null> {
-  const supabase  = await createClient()
+  const supabase  = createAdminClient()
   const since     = new Date(Date.now() - OVERNIGHT_WINDOW_HOURS * 3_600_000).toISOString()
 
   // ── Profile + settings ────────────────────────────────────
@@ -74,7 +74,7 @@ export async function gatherBriefData(profileId: string): Promise<GatheredData |
   if (!profile || !settings) return null
 
   // ── Hot leads (BRI >= 60) ─────────────────────────────────
-  const hotLeads = await getHotLeads(profileId, settings.lead_count ?? 5)
+  const hotLeads = await getHotLeads(profileId, settings.lead_count ?? 5, supabase)
 
   // ── Overnight events ──────────────────────────────────────
   const { data: overnightEvents } = await supabase

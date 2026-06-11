@@ -4,6 +4,12 @@
 
 export type BriefChannel = 'email' | 'push' | 'whatsapp'
 export type BriefVariant = 'A' | 'B'
+export type BriefContentSource = 'llm' | 'fallback'
+export type BriefFallbackReason =
+  | 'timeout'
+  | 'api_error'
+  | 'empty_response'
+  | 'delivery_fallback'
   // A = 3 sentences, ultra-concise
   // B = full briefing with context paragraphs
 
@@ -145,6 +151,8 @@ export interface MorningBriefRecord {
   lv_changes_count: number
   arbitrage_count: number
   hot_leads_count: number
+  content_source?: BriefContentSource | null
+  content_source_reason?: BriefFallbackReason | null
 }
 
 // ── Stats view ────────────────────────────────────────────────

@@ -7,7 +7,7 @@ import { buildDeliveryFallbackText, generateBriefText } from './generators/ai-te
 import { renderBriefEmail }     from './generators/email-html'
 import { sendPushNotification } from './generators/web-push'
 import { generateDirectorBrief } from './director-brief'
-import { createAdminClient, createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import { Resend }               from 'resend'
 import type { MorningBriefData } from '@/types/morning-brief'
 
@@ -28,7 +28,7 @@ export interface DeliveryResult {
 export async function generateAndDeliverBrief(
   profileId: string
 ): Promise<DeliveryResult | null> {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   // 1. Gather all data
   const gathered = await gatherBriefData(profileId)
@@ -45,6 +45,9 @@ export async function generateAndDeliverBrief(
 
   // 2. Generate AI text (with timeout fallback)
   let generated = await generateBriefText(gathered, variant)
+  let contentSource = generated.contentSource
+  let contentSourceReason = generated.fallbackReason
+
   if (!generated.aiText?.trim()) {
     generated = {
       ...generated,
@@ -53,7 +56,11 @@ export async function generateAndDeliverBrief(
       actionVerb: 'Kontaktujte',
       actionText: `Máte ${gathered.stats.pendingContact} leadov čakajúcich na kontakt.`,
       urgency: gathered.stats.hotPending > 0 ? 'high' as const : 'medium' as const,
+      contentSource: 'fallback',
+      fallbackReason: 'delivery_fallback',
     }
+    contentSource = 'fallback'
+    contentSourceReason = 'delivery_fallback'
   }
 
   const { data: ownerProfile } = await supabase
@@ -67,8 +74,7 @@ export async function generateAndDeliverBrief(
 
   if (isOwner && ownerProfile?.agency_id) {
     try {
-      const admin = createAdminClient();
-      const directorBrief = await generateDirectorBrief(ownerProfile.agency_id, admin);
+      const directorBrief = await generateDirectorBrief(ownerProfile.agency_id, supabase);
       generated = {
         ...generated,
         aiText: `${directorBrief}\n\n${generated.aiText}`,
@@ -126,7 +132,7 @@ export async function generateAndDeliverBrief(
   }
 
   // 4. Persist brief record
-  const { data: record, error: insertErr } = await supabase
+  const { error: insertErr } = await supabase
     .from('morning_briefs')
     .insert({
       id:               brief.briefId,
@@ -143,6 +149,8 @@ export async function generateAndDeliverBrief(
       lv_changes_count: brief.overnight.lvChanges.length,
       arbitrage_count:  brief.overnight.arbitrage.length,
       hot_leads_count:  brief.stats.hotLeads,
+      content_source:        contentSource,
+      content_source_reason: contentSourceReason,
     })
     .select('id')
     .single()
@@ -191,7 +199,6 @@ export async function generateAndDeliverBrief(
       if (sent) deliveredChannels.push('push')
     } catch (err: any) {
       if (err.message === 'SUBSCRIPTION_EXPIRED') {
-        // Remove expired subscription
         await supabase
           .from('morning_brief_settings')
           .update({ push_subscription: null })
