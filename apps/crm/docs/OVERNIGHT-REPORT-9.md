@@ -23,6 +23,19 @@ _(doplní orchestrátor počas noci)_
 
 _(z #184 po merge)_
 
+## Agent H — housekeeping (Tier 1)
+
+| Úloha | Stav |
+|-------|------|
+| `git mv` cursor-brief + recruiting-modul z `overnight/` → `prompts/` | **preskočené** — súbory v `docs/briefs/overnight/` na `main` neexistujú |
+| `docs/ARCHIVE-PROPOSAL.md` | hotové |
+| `docs/briefs/README.md` | hotové |
+| `memory/decisions.md` automerge v1 | už synchronizované (2026-06-12 záznam) |
+
+### TODO — Andy
+
+- **`overnight-master-brief-6.md` chýba** v `docs/briefs/overnight/`. Doplniť z archívu / git histórie alebo v README označiť brief 6 ako zrušený, aby index nebol diera.
+
 ## Otázky pre Andyho
 
 _(doplní orchestrátor)_
