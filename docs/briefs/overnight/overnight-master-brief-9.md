@@ -5,12 +5,12 @@
 ---
 
 ## GLOBÁLNE PRAVIDLÁ
-1. Vetva + PR per úloha; merge robí ROBOT (Tier 1/2) alebo Andy (Tier 3). Agent NIKDY nemerguje sám.
+1. Vetva + PR per úloha; merge robí ROBOT (Tier 1/2) alebo Andy (Tier 3). Agent NIKDY nemerguje sám. **Politika:** [AUTOMERGE-POLICY.md](../../AUTOMERGE-POLICY.md) · **Report:** [OVERNIGHT-REPORT-9.md](../../../apps/crm/docs/OVERNIGHT-REPORT-9.md).
 2. ŽIADNA produkčná DB — len lokálna Supabase / fixtures. ŽIADNY deploy do produkcie.
 3. NEDOTÝKAŤ SA bez Tier 3 označenia: `.github/**`, `vercel.json`, billing/Stripe/entitlement, auth, `supabase/migrations/**` (nové migrácie = automaticky Tier 3 PR), `seat-pricing.ts`, verejné ceny, Smolko účet.
 4. CI zelené pred DONE. Copy k zákazníkom: žiadne AI zmienky, žiadne vymyslené entity, anonymná „RK z Prešova".
 5. Agent nemá právomoc meniť podmienené rozhodnutia briefu (ak X → Y); smie len konštatovať, či X nastalo.
-6. Každý PR dostane od orchestrátora label: `automerge` (len Tier 1/2 podľa AUTOMERGE-POLICY) alebo `tier-3-andy`.
+6. Každý PR dostane od orchestrátora label: `automerge` (len Tier 1/2 podľa [AUTOMERGE-POLICY.md](../../AUTOMERGE-POLICY.md)) alebo `tier-3-andy`.
 
 ## ⛔ ZAKÁZANÉ AKCIE (trvalý blok — vault decisions.md)
 Stealth Recruiter (legal hold) · Arbitrage live/cron (POST-V1) · scraping portálov · auto-send e-mailov zákazníkom/prospectom · zmena verejných cien mimo release · label `automerge` na denylist cesty.

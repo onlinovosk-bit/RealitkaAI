@@ -85,3 +85,16 @@ Všetky zmenené súbory musia spadať do **aspoň jedného** allowlist vzoru:
 ## Audit
 
 Každý auto-merge = PR komentár: verzia politiky (v1.0), tier, zoznam matchnutých ciest, čas UTC.
+
+---
+
+## Súvisiace dokumenty
+
+| Dokument | Odkaz |
+|----------|--------|
+| Overnight brief 9.0 | [overnight-master-brief-9.md](./briefs/overnight/overnight-master-brief-9.md) |
+| Overnight report 9 | [OVERNIGHT-REPORT-9.md](../apps/crm/docs/OVERNIGHT-REPORT-9.md) |
+| Briefs index | [docs/briefs/README.md](./briefs/README.md) |
+| Robot implementácia | `.github/workflows/auto-merge-policy.yml`, `.github/scripts/automerge-policy.mjs` |
+| Vault rozhodnutie | `memory/decisions.md` — Brief 9.0 automerge v1 |
+| Agent prompting štandard | [AGENT_STANDARD.md](./AGENT_STANDARD.md) |
