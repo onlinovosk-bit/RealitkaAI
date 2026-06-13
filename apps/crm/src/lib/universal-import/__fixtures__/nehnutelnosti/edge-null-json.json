@@ -1,0 +1,17 @@
+{
+  "contacts": [
+    {
+      "id": "C-E03",
+      "fullName": "JSON Null Fields",
+      "email": null,
+      "phone": "0905333003",
+      "city": "Žilina"
+    },
+    {
+      "id": "C-E04",
+      "name": "Only Email",
+      "email": "only.email@example.sk",
+      "phone": null
+    }
+  ]
+}

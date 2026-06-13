@@ -27,6 +27,18 @@ _(z #184 po merge)_
 
 _(doplní orchestrátor)_
 
+## Čas dokončenia per vlna (kalibrácia Brief 10)
+
+| Vlna | Plánované okno | Skutočný štart (UTC) | Posledný deliverable | Trvanie od Vlny 1 | Poznámka |
+|------|----------------|----------------------|----------------------|-------------------|----------|
+| Fáza 0 | večer | 2026-06-11 20:09 | #185 merged 20:19 | — | Andy Tier 3 |
+| Vlna 1 | 22:00–01:30 | 2026-06-11 20:35 | #186–#189 ~21:00 | ~25 min | 4 agenti paralelne |
+| Vlna 2 | 01:30–04:30 | 2026-06-11 ~21:00 | #190–#193 ~22:00 | ~85 min | stacked na W/M |
+| Vlna 3 | 04:30–06:30 | 2026-06-11 ~22:00 | #194 docs | +~30 min | Tier 1 |
+| Backlog | po Vlne 3 | 2026-06-12 | backlog PR | TBD | testy + fixtures |
+
+**Lekcia:** agent paralelizmus skracuje Vlnu 1 na ~25 min; Tier 2 robot delay (6 h) je nový bottleneck.
+
 ## Ranná Tier 3 fronta
 
 1. Merge #184 RLS — pred self-serve dátami

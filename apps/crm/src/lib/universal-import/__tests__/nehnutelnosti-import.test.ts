@@ -98,3 +98,63 @@ describe("nehnutelnosti import dry-run", () => {
     expect(report.mode).toBe("commit");
   });
 });
+
+describe("nehnutelnosti edge-case fixtures (Brief 9 backlog)", () => {
+  const edgeCases: Array<{ file: string; assert: (text: string) => void }> = [
+    {
+      file: "edge-utf8-bom.csv",
+      assert: (text) => {
+        const { report } = runNehnutelnostiExportImportFromText(text, { agencyId: AGENCY });
+        expect(report.contacts.some((c) => c.name?.includes("Štefan"))).toBe(true);
+      },
+    },
+    {
+      file: "edge-empty-rows.csv",
+      assert: (text) => {
+        const { report } = runNehnutelnostiExportImportFromText(text, { agencyId: AGENCY });
+        expect(report.summary.totalParsed).toBe(1);
+        expect(report.contacts[0]?.name).toBe("Platný Kontakt");
+      },
+    },
+    {
+      file: "edge-null-json.json",
+      assert: (text) => {
+        const { contacts } = parseNehnutelnostiExportText(text);
+        expect(contacts).toHaveLength(2);
+        expect(contacts[0]?.phone).toBe("0905333003");
+      },
+    },
+    {
+      file: "edge-phone-formats.csv",
+      assert: (text) => {
+        const { report } = runNehnutelnostiExportImportFromText(text, { agencyId: AGENCY });
+        expect(report.summary.totalParsed).toBe(3);
+        const keys = report.contacts.flatMap((c) => c.dedupeKeys.filter((k) => k.startsWith("phone:")));
+        expect(keys.length).toBeGreaterThanOrEqual(3);
+      },
+    },
+    {
+      file: "edge-email-case.csv",
+      assert: (text) => {
+        const { report } = runNehnutelnostiExportImportFromText(text, { agencyId: AGENCY });
+        expect(report.summary.duplicatesInFile).toBeGreaterThanOrEqual(1);
+      },
+    },
+    {
+      file: "edge-english-headers.csv",
+      assert: (text) => {
+        const { report } = runNehnutelnostiExportImportFromText(text, { agencyId: AGENCY });
+        // English-only headers bez SK aliasov → chýba email/meno mapovanie (known gap)
+        expect(report.summary.totalParsed).toBe(1);
+        expect(report.summary.wouldSkip).toBeGreaterThanOrEqual(1);
+      },
+    },
+  ];
+
+  edgeCases.forEach(({ file, assert }) => {
+    it(`handles ${file}`, () => {
+      const text = readFileSync(resolve(__dirname, `../__fixtures__/nehnutelnosti/${file}`), "utf8");
+      assert(text);
+    });
+  });
+});

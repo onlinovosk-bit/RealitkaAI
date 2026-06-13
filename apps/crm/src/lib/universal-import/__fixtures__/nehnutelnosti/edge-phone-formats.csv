@@ -1,0 +1,4 @@
+ID kontaktu;Meno a priezvisko;E-mail;Telefón;Mesto
+C-E05;Format 00421;fmt00421@example.sk;00421905444444;Trnava
+C-E06;Format 421;fmt421@example.sk;421905555555;Nitra
+C-E07;Format local;fmtlocal@example.sk;0905666666;Martin
