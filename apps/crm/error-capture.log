@@ -5,3 +5,13 @@
 {"timestamp":"2026-03-25T12:15:02.004Z","context":"getStripe","message":"Neznáma chyba","raw":"Stripe client initialized"}
 {"timestamp":"2026-03-25T12:15:02.039Z","context":"getStripe","message":"Neznáma chyba","raw":"Stripe client initialized"}
 {"timestamp":"2026-04-19T19:08:29.005Z","context":"getSupabaseClient","message":"Neznáma chyba","raw":"Supabase client initialized (ai-scoring)"}
+{"timestamp":"2026-06-11T21:30:04.748Z","context":"getSupabaseClient","message":"Neznáma chyba","raw":"Supabase client initialized (ai-scoring)"}
+{"timestamp":"2026-06-11T21:30:04.802Z","context":"getSupabaseClient","message":"Neznáma chyba","raw":"Supabase client initialized"}
+{"timestamp":"2026-06-11T21:30:04.875Z","context":"getSupabaseClient","message":"Neznáma chyba","raw":"Supabase client initialized (ai-scoring)"}
+{"timestamp":"2026-06-11T21:30:04.975Z","context":"getSupabaseClient","message":"Neznáma chyba","raw":"Supabase client initialized (ai-scoring)"}
+{"timestamp":"2026-06-11T21:30:05.028Z","context":"getSupabaseClient","message":"Neznáma chyba","raw":"Supabase client initialized (ai-scoring)"}
+{"timestamp":"2026-06-11T21:30:09.973Z","context":"getSupabaseClient","message":"Neznáma chyba","raw":"Supabase client initialized"}
+{"timestamp":"2026-06-11T21:30:10.021Z","context":"getSupabaseClient","message":"Neznáma chyba","raw":"Supabase client initialized (ai-scoring)"}
+{"timestamp":"2026-06-11T21:30:10.098Z","context":"getSupabaseClient","message":"Neznáma chyba","raw":"Supabase client initialized (ai-scoring)"}
+{"timestamp":"2026-06-11T21:30:11.223Z","context":"getSupabaseClient","message":"Neznáma chyba","raw":"Supabase client initialized (ai-scoring)"}
+{"timestamp":"2026-06-11T21:30:12.363Z","context":"getSupabaseClient","message":"Neznáma chyba","raw":"Supabase client initialized (ai-scoring)"}

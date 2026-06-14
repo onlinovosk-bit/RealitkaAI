@@ -32,3 +32,14 @@ _(doplní orchestrátor)_
 1. Merge #184 RLS — pred self-serve dátami
 2. Landing v2 (keď PR existuje) — len v release okne
 3. Migračné PRs mimo automerge
+
+---
+
+## Brief 9.5 — Growth (kompletné)
+
+| Vlna | PR | Tier | Stav |
+|------|-----|------|------|
+| G1 order bump 99 € | [#198](https://github.com/onlinovosk-bit/RealitkaAI/pull/198) | 3 | open — Andy merge |
+| G2 starter pack 47 € | [#199](https://github.com/onlinovosk-bit/RealitkaAI/pull/199) | 3 | open — Andy merge + obsah review |
+
+**Andy pred release:** Stripe 2 produkty · migrácie `service_orders` + `credit_redemption_codes` · review `docs/products/starter-pack/` · AKMV checkbox · DPH u účtovníka
