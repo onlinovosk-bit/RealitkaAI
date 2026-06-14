@@ -14,7 +14,7 @@ const DENYLIST = [
   /^apps\/crm\/supabase\/migrations\//,
   /(^|\/)seat-pricing\.ts$/,
   /(^|\/)program-tier-pricing\.ts$/,
-  /^apps\/crm\/src\/middleware\.ts$/,
+  /^apps\/crm\/middleware\.ts$/,
   /^apps\/crm\/src\/proxy\.ts$/,
   /^apps\/crm\/src\/lib\/credits-billing\.ts$/,
   /(^|\/)stripe\//,
