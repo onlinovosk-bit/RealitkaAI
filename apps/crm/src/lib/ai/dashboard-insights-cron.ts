@@ -11,7 +11,8 @@ import {
   gatherAgencyDashboardSummary,
   gatherAgencyProperties,
 } from '@/lib/ai/dashboard-insights-gather'
-import { logAiActionAudit } from '@/lib/ai-action-audit'
+import { logAiAction } from '@/lib/ai-action-audit'
+import { CREDIT_ACTION_COSTS } from '@/lib/program-tier-pricing'
 import { withTimeout } from '@/lib/async/with-timeout'
 
 const INSIGHTS_AI_TIMEOUT_MS = Math.max(
@@ -69,25 +70,22 @@ export async function generateAndCacheAgencyInsights(
     const summary = await gatherAgencyDashboardSummary(admin, agencyId)
     const properties = await gatherAgencyProperties(admin, agencyId)
 
-    const genInput = {
-      period: 'today' as const,
-      summary,
-      userName: displayName,
-      properties,
-    }
-
     const generated = await withTimeout(
-      generateDashboardInsights(genInput),
+      generateDashboardInsights({
+        period: 'today',
+        summary,
+        userName: displayName,
+        properties,
+      }),
       INSIGHTS_AI_TIMEOUT_MS,
-      hasTenantData(summary)
-        ? {
-            insights: buildDataFallback(genInput),
-            audit: { source: 'fallback' as const, model: CLAUDE_HAIKU, costEur: null, latencyMs: INSIGHTS_AI_TIMEOUT_MS },
-          }
-        : {
-            insights: buildEmptyInsights(displayName),
-            audit: { source: 'empty' as const, model: CLAUDE_HAIKU, costEur: null, latencyMs: INSIGHTS_AI_TIMEOUT_MS },
-          },
+      {
+        insights: {
+          headline: 'Insights momentálne nedostupné.',
+          actions: [],
+          summary: 'AI odpoveď prekročila časový limit — skúste obnoviť neskôr.',
+        },
+        audit: { source: 'fallback' as const, model: null, costEur: null, latencyMs: null },
+      },
     )
 
     const insights = generated.insights
@@ -108,18 +106,18 @@ export async function generateAndCacheAgencyInsights(
       return { agencyId, ok: false, empty: false, error: upsertErr.message }
     }
 
-    await logAiActionAudit({
+    await logAiAction({
+      action: 'dashboard_insights',
       agencyId,
-      leadId: null,
-      actionKind: 'ai_suggested',
-      channel: 'email',
+      creditsSpent: generated.audit.source === 'llm' ? CREDIT_ACTION_COSTS.leadAnalysis : 0,
+      costEur: generated.audit.costEur,
+      model: generated.audit.model,
+      latencyMs: generated.audit.latencyMs,
       subjectPreview: payload.headline.slice(0, 200),
       costEur: generated.audit.costEur,
       meta: {
-        feature: 'dashboard-insights',
         source: generated.audit.source,
-        model: generated.audit.model,
-        latency_ms: generated.audit.latencyMs,
+        cron: true,
         actions_count: payload.actions.length,
         empty: generated.audit.source === 'empty',
       },

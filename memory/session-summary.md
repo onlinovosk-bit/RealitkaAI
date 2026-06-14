@@ -1,28 +1,21 @@
-## Session 2026-05-24 — Realvia L99 doplnenie
-
+## Session 2026-06-11
 ### Dokončené
-- **Inbound diagnostics** — `apps/crm/src/lib/realvia/inboundDiagnostics.ts`, Vitest `inboundDiagnostics.test.ts`, GET `?diag=config` (+ CRON Bearer) na `route.ts`; hint pre prod len `REALVIA_SHARED_SECRET` vs Realvia párované hlavičky.
-- **Krizový brief** — `apps/crm/docs/REALVIA-REVOLIS-CRISIS-TEAM-BRIEF.md` (+ postup „neznáma chyba X“).
-- Vitest `src/lib/realvia`: **19 passed** (4 súbory).
+- Brief 9.0 Fáza 0 pripravená: `feat/automerge-policy` — AUTOMERGE-POLICY.md, auto-merge workflow, swarm bootstrap
+- Ruflo swarm init: `swarm-1781208552399-vakdrp`
+- Pre-flight Brief 8.0 inventár v `.swarm/overnight-brief-9-state.json` + OVERNIGHT-REPORT-9 skeleton
+- PR #184 RLS suite CI zelené (58/58) — čaká merge Andy
 
-### Pending (operácia mimo kódu)
-- Nasadiť migráciu `20260523183000_resolve_agency_id_for_realvia_rpc.sql` na Supabase (ak ešte nie).
-- Push commity na `origin`; preview + smoke podľa L99.
+### Rozpracované / Pending
+- Andy: merge PR Fáza 0 (automerge) + skontrolovať brief 9
+- Andy: vytvoriť GitHub labels automerge/hold/tier-3-andy
+- Po polnoci: Vlna 1 agenti (W, M, N, L) + robot Tier 1/2
 
-### Kľúčové cesty
-- `apps/crm/src/app/api/webhooks/realvia/route.ts`
-- `apps/crm/src/lib/realvia/resolveAgency.ts` + migrácia RPC
-- `apps/crm/docs/REALVIA-REVOLIS-CRISIS-TEAM-BRIEF.md`
+### Kľúčové súbory
+- `docs/AUTOMERGE-POLICY.md`
+- `.github/workflows/auto-merge-policy.yml`
+- `.github/scripts/automerge-policy.mjs`
+- `docs/briefs/overnight/overnight-master-brief-9.md`
+- `.swarm/overnight-brief-9-state.json`
 
 ### Ďalší krok
-Dva oddelené PR: (1) inbound diag + dokument, (2) agency RPC migrácia + `resolveAgency`.
-
----
-
-## Session 2026-05-23 — dokumentácia / agency
-
-### Dokončené (história)
-- L99 dokumenty (`L99-master-prompt.md`, routing skill, Ruflo orchestration …), Project Rules `.mdc`.
-
-### Poznámka
-Staršie línie „Session ended“ odstránené pri údržbe tohto súboru.
+Andy mergne Fáza 0 PR → orchestrátor spustí Vlnu 1 @ midnight gate.

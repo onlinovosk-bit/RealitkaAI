@@ -1,8 +1,10 @@
 import { Resend } from "resend";
 import { autoErrorCapture } from "./auto-error-capture";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import { logAiActionAudit } from "@/lib/ai-action-audit";
+import { logAiAction } from "@/lib/ai-action-audit";
 import { generateOutreachEmail } from "@/lib/ai-outreach";
+import { estimateOpenAiCostFromTotalTokens } from "@/lib/ai/llm-usage-cost";
+import { CREDIT_ACTION_COSTS } from "@/lib/program-tier-pricing";
 import { createActivity } from "@/lib/activities-store";
 import {
   fetchLeadAgencyId,
@@ -185,7 +187,8 @@ export async function sendAiOutreachEmail(leadId: string) {
     const cooldownH = outreachLeadCooldownHours();
     const sinceH = await getHoursSinceLastAiEmailToLead(lead.id);
     if (sinceH != null && sinceH < cooldownH) {
-      await logAiActionAudit({
+      await logAiAction({
+        action: "ai_email",
         agencyId,
         leadId: lead.id,
         actionKind: "frequency_blocked",
@@ -203,7 +206,9 @@ export async function sendAiOutreachEmail(leadId: string) {
     const variant = pickOutboundAbVariant();
     const generated = await generateOutreachEmail(lead, { variant });
 
-    await logAiActionAudit({
+    const model = generated.provider.replace(/^openai:/, "") || "gpt-4.1-mini";
+    await logAiAction({
+      action: "ai_email",
       agencyId,
       leadId: lead.id,
       actionKind: "ai_suggested",
@@ -211,6 +216,9 @@ export async function sendAiOutreachEmail(leadId: string) {
       variant,
       subjectPreview: generated.subject,
       bodyText: generated.body,
+      creditsSpent: CREDIT_ACTION_COSTS.aiEmail,
+      costEur: estimateOpenAiCostFromTotalTokens(model, generated.totalTokens ?? 0),
+      model,
       meta: {
         provider: generated.provider,
         totalTokens: generated.totalTokens ?? null,
@@ -229,7 +237,8 @@ export async function sendAiOutreachEmail(leadId: string) {
       const resendMsg: string = (sendResult as any).error.message || "";
       const normalized = resendMsg.toLowerCase();
 
-      await logAiActionAudit({
+      await logAiAction({
+        action: "outreach_send",
         agencyId,
         leadId: lead.id,
         actionKind: "send_failed",
@@ -307,7 +316,8 @@ export async function sendAiOutreachEmail(leadId: string) {
       },
     });
 
-    await logAiActionAudit({
+    await logAiAction({
+      action: "outreach_send",
       agencyId,
       leadId: lead.id,
       actionKind: "sent",

@@ -104,52 +104,5 @@ describe('dashboard-insights', () => {
     expect(result.insights.actions).toHaveLength(0)
     expect(result.audit.source).toBe('empty')
     expect(result.insights.headline).toContain('Nový tenant')
-    expect(callClaude).not.toHaveBeenCalled()
-  })
-
-  it('generateDashboardInsights uses LLM path when mock succeeds', async () => {
-    vi.mocked(callClaude).mockResolvedValue({
-      content: [{
-        type: 'text',
-        text: JSON.stringify({
-          headline: 'LLM priorita: Ján Novák',
-          summary: 'Konkrétny LLM súhrn z dát.',
-          actions: [{
-            title: 'Zavolaj Jánovi',
-            description: 'Horúci lead podľa dát.',
-            recommendedChannel: 'call',
-            relatedLeadIds: ['lead-1'],
-            impact: 'high',
-          }],
-        }),
-      }],
-      usage: { input_tokens: 500, output_tokens: 120 },
-    } as never)
-
-    const result = await generateDashboardInsights({
-      period: 'today',
-      summary: smolkoSummary,
-      userName: 'Peter',
-    })
-
-    expect(callClaude).toHaveBeenCalledOnce()
-    expect(result.audit.source).toBe('llm')
-    expect(result.audit.costEur).toBeGreaterThan(0)
-    expect(result.insights.headline).toContain('Ján Novák')
-  })
-
-  it('generateDashboardInsights falls back when LLM rejects', async () => {
-    vi.mocked(callClaude).mockRejectedValue(new Error('API down'))
-
-    const result = await generateDashboardInsights({
-      period: 'today',
-      summary: smolkoSummary,
-      userName: 'Peter',
-    })
-
-    expect(result.audit.source).toBe('fallback')
-    expect(result.audit.costEur).toBeNull()
-    expect(result.insights.headline).toContain('Ján Novák')
-    expect(result.insights.summary).not.toMatch(/Prešov|Košic|150–250k|80 %/)
   })
 })

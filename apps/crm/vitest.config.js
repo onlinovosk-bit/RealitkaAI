@@ -15,6 +15,7 @@ export default defineConfig({
     include: [
       'src/**/*.{test,spec}.{ts,tsx}',
       'tests/verification/**/*.{test,spec}.{ts,tsx}',
+      'tests/rls/**/*.{test,spec}.{ts,tsx}',
     ],
   },
 });

@@ -90,13 +90,20 @@ Env: `STRIPE_PRICE_OWNER_COCKPIT` (recurring, qty 1, `send_invoice`)
 - **SQL:** `spend_credits(agency, amount, reason, idempotency_key)` — atomicky míňa grant pool pred purchase pool; migrácia `20260611000003_spend_credits.sql`.
 - **Ledger source:** `grant` | `purchase`; legacy riadky (mimo `monthly_grant` / `grant_expiry`) backfill `purchase`.
 
+## Cost Logging (PR-3)
+
+- **Helper:** `logAiAction({ action, agencyId, creditsSpent, costEur, model, latencyMs })` → `ai_action_audit`.
+- **Odhad nákladu:** `llm-usage-cost.ts` (Claude + OpenAI token rates).
+- **View:** `ai_cost_daily` — deň, kredity, `cost_eur`, `revenue_eur_retail` @ 0,86 €/kr, `margin_eur`.
+- **Wiring:** insights cron, morning brief, outreach, listing, ghostwriter, call coach, rescore.
+
 ## PR mapa
 
 | PR | Scope |
 |----|-------|
 | PR-1 | `program-tier-pricing.ts` + unit testy + tento dokument |
 | PR-2 | `credit_ledger.source`, grant crons, `spend_credits`, testy idempotencie |
-| PR-3 | `ai_action_audit` cost + denný agregát |
+| PR-3 | `logAiAction`, `ai_cost_daily`, wiring AI akcií |
 | PR-4 | Stripe checkout (seat, cockpit, top-up) + Andy runbook |
 
 ---
@@ -116,4 +123,5 @@ Env: `STRIPE_PRICE_OWNER_COCKPIT` (recurring, qty 1, `send_invoice`)
    - `20260611000001_credit_ledger_source.sql` (PR-2)
    - `20260611000003_spend_credits.sql` (PR-2)
    - `20260611000002_ai_action_audit_cost.sql` (PR-3)
+   - `20260611000004_ai_cost_daily.sql` (PR-3)
 4. **Smoke:** seat checkout → webhook → `agencies.seats` + grant cron 1. deň mesiaca.

@@ -16,7 +16,10 @@ import {
   DASHBOARD_INSIGHTS_OVERDUE_FOLLOWUP_DAYS,
   overdueFollowupCutoffIso,
 } from '../dashboard-insights-gather'
-import { logAiActionAudit } from '@/lib/ai-action-audit'
+
+const { logAiActionMock } = vi.hoisted(() => ({
+  logAiActionMock: vi.fn().mockResolvedValue(undefined),
+}))
 
 const emptySummary: DashboardSummaryResponse = {
   period: 'today',
@@ -210,6 +213,7 @@ vi.mock('@/lib/ai/dashboard-insights', async importOriginal => {
 })
 
 vi.mock('@/lib/ai-action-audit', () => ({
+  logAiAction: logAiActionMock,
   logAiActionAudit: vi.fn().mockResolvedValue(undefined),
 }))
 
@@ -297,19 +301,13 @@ describe('dashboard-insights-cron cache writer', () => {
     expect(upsert.mock.calls[0][0].payload.actions).toHaveLength(0)
   })
 
-  it('generateAndCacheAgencyInsights logs cost and latency to ai_action_audit', async () => {
+  it('generateAndCacheAgencyInsights logs via logAiAction', async () => {
     const { from } = mockAdminForCache({ summary: smolkoSummary })
     await generateAndCacheAgencyInsights({ from } as never, AGENCY_ID)
-    expect(logAiActionAudit).toHaveBeenCalledWith(
+    expect(logAiActionMock).toHaveBeenCalledWith(
       expect.objectContaining({
+        action: 'dashboard_insights',
         agencyId: AGENCY_ID,
-        costEur: null,
-        meta: expect.objectContaining({
-          feature: 'dashboard-insights',
-          model: expect.any(String),
-          latency_ms: expect.any(Number),
-          source: 'fallback',
-        }),
       }),
     )
   })

@@ -1,6 +1,6 @@
 import { okResponse, errorResponse } from "@/lib/api-response";
 import { autoErrorCapture } from "@/lib/auto-error-capture";
-import { logAiActionAudit } from "@/lib/ai-action-audit";
+import { logAiAction } from "@/lib/ai-action-audit";
 import { getCurrentProfile, getCurrentUser } from "@/lib/auth";
 import { fetchLeadAgencyId } from "@/lib/outbound-orchestrator";
 import { requireFeature } from "@/lib/feature-gating";
@@ -33,7 +33,8 @@ export async function POST(request: Request) {
       profile?.agency_id ??
       SYSTEM_USAGE_AGENCY_ID;
 
-    await logAiActionAudit({
+    await logAiAction({
+      action: "outreach_approve",
       agencyId,
       leadId,
       profileId: profile?.id ?? null,
