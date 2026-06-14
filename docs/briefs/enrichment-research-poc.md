@@ -4,7 +4,7 @@
 
 - `src/lib/enrichment/` waterfall enrichment engine with provider interface and fallback flow.
 - `src/lib/research-agent/` dossier builder (schema-validated JSON + OpenAI optional call).
-- Supabase migration for `enrichment_log` and `contacts.dossier`.
+- Supabase migrations for `enrichment_log` and `leads.dossier`.
 
 ## Implemented
 
@@ -27,7 +27,7 @@
   3. compose deterministic dossier
   4. optionally refine with OpenAI JSON output
   5. validate with Zod schema
-  6. persist to `contacts.dossier` for contact records
+  6. persist to `leads.dossier` for lead records
 - Anti-hallucination rule: unknown facts remain `null` + `null_reasons`.
 
 ## Tests

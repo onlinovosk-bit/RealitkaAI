@@ -1,4 +1,4 @@
-export type EnrichmentRecordType = "contact" | "property";
+export type EnrichmentRecordType = "contact" | "property" | "lead";
 
 export interface EnrichmentInputRecord {
   id: string;

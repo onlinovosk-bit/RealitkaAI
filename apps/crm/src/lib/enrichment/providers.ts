@@ -44,10 +44,10 @@ export const emailValidationProvider: EnrichmentProvider = {
 export const katasterLookupProvider: EnrichmentProvider = {
   name: "kataster-stub",
   canHandle(field) {
-    return field === "owner_name" || field === "parcel_id";
+    return field === "owner_name" || field === "parcel_id" || field === "location";
   },
   async fetch(ctx) {
-    if (!ctx.record.data.address && !ctx.record.data.parcel_id) return null;
+    if (!ctx.record.data.address && !ctx.record.data.parcel_id && !ctx.record.data.location) return null;
     return {
       source: "kataster-stub",
       value: {

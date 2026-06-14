@@ -94,16 +94,16 @@ async function persistDossier(params: {
   dossier: Dossier;
   recordType: EnrichmentInputRecord["type"];
 }): Promise<void> {
-  if (params.recordType !== "contact") return;
+  if (params.recordType !== "lead") return;
   const sb = createServiceRoleClient();
   if (!sb) return;
   const { error } = await sb
-    .from("contacts")
+    .from("leads")
     .update({ dossier: params.dossier })
     .eq("id", params.recordId)
     .eq("agency_id", params.agencyId);
   if (error) {
-    throw new Error(`[research-agent] contacts.dossier update failed: ${error.message}`);
+    throw new Error(`[research-agent] leads.dossier update failed: ${error.message}`);
   }
 }
 
