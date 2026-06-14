@@ -5,12 +5,51 @@ import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { dossierSchema, type Dossier } from "./schema";
 import { enrichmentTool, webFetchStub } from "./tools";
 
+const FIELD_SIGNAL_REQUIREMENTS: Record<"owner" | "estimated_value_eur" | "company_ico", string[]> = {
+  owner: ["owner_resolved", "owner_verified"],
+  estimated_value_eur: ["estimated_value_from_input", "valuation_confirmed"],
+  company_ico: ["company_ico_detected", "company_registry_match"],
+};
+
 function buildNullReasons(dossier: Partial<Dossier>): Record<string, string> {
   const reasons: Record<string, string> = {};
   if (dossier.owner == null) reasons.owner = "No verified owner from enrichment/web sources.";
   if (dossier.estimated_value_eur == null) reasons.estimated_value_eur = "No valuation signal available.";
   if (dossier.company_ico == null) reasons.company_ico = "No company identifier found.";
   return reasons;
+}
+
+function enforceEvidenceGuard(input: Dossier): Dossier {
+  const guarded: Dossier = {
+    ...input,
+    risk_flags: [...input.risk_flags],
+    signals: [...input.signals],
+    sources: [...input.sources],
+    null_reasons: { ...input.null_reasons },
+  };
+
+  const hasSignal = (allowed: string[]) => guarded.signals.some((s) => allowed.includes(s.label));
+
+  if (guarded.owner != null && !hasSignal(FIELD_SIGNAL_REQUIREMENTS.owner)) {
+    guarded.owner = null;
+    guarded.null_reasons.owner = "Dropped by anti-hallucination guard: missing owner evidence signal.";
+    guarded.risk_flags.push("evidence_missing_owner");
+  }
+
+  if (guarded.estimated_value_eur != null && !hasSignal(FIELD_SIGNAL_REQUIREMENTS.estimated_value_eur)) {
+    guarded.estimated_value_eur = null;
+    guarded.null_reasons.estimated_value_eur =
+      "Dropped by anti-hallucination guard: missing valuation evidence signal.";
+    guarded.risk_flags.push("evidence_missing_estimated_value");
+  }
+
+  if (guarded.company_ico != null && !hasSignal(FIELD_SIGNAL_REQUIREMENTS.company_ico)) {
+    guarded.company_ico = null;
+    guarded.null_reasons.company_ico = "Dropped by anti-hallucination guard: missing company ICO evidence signal.";
+    guarded.risk_flags.push("evidence_missing_company_ico");
+  }
+
+  return dossierSchema.parse(guarded);
 }
 
 function composeDeterministicDossier(input: EnrichmentInputRecord, enrichedData: Record<string, unknown>): Dossier {
@@ -51,10 +90,11 @@ function composeDeterministicDossier(input: EnrichmentInputRecord, enrichedData:
     sources: ["enrichment-engine", "web-fetch-stub"],
   };
 
-  return dossierSchema.parse({
+  const parsed = dossierSchema.parse({
     ...partial,
     null_reasons: buildNullReasons(partial),
   });
+  return enforceEvidenceGuard(parsed);
 }
 
 async function maybeOpenAIDossier(params: {
@@ -82,7 +122,7 @@ async function maybeOpenAIDossier(params: {
       tag: "research-agent",
     });
     const parsed = JSON.parse(result.content);
-    return dossierSchema.parse(parsed);
+    return enforceEvidenceGuard(dossierSchema.parse(parsed));
   } catch {
     return params.deterministic;
   }
