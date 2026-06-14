@@ -55,6 +55,16 @@ Poznámka: dokumentácia Rufla môže spomínať aj CLI príkazy (napr. `swarm s
 3. Po dokončení `swarm_shutdown`.  
 4. `swarm_health` — diagnostika.
 
+### Orchestrátor — guardraily proti zastaranému `main`
+
+Pri 6+ paralelných agentoch za noc sa vetvy často postavia na `main`, ktorý medzitým posunie iný merge. Bez ochrany vzniká tichá regresia (stale testy, JSON, allowlist).
+
+**GitHub (povinné):** `main` branch protection — **Require branches to be up to date before merging** + required status `Lint, test, build`. Každý PR musí byť rebased pred merge; sémantické konflikty sa ukážu v CI, nie po merge.
+
+**Pravidlo agenta (povinné v tom istom PR):** meníš správanie flagu, featury, gatingu alebo verejného kontraktu → `rg` v `apps/crm/tests/verification/` → aktualizuj dotknuté `*.verification.test.ts`. Verification suite je **živá špecifikácia**, nie múzeum. Orchestrátor agenta neoznačí DONE, kým grep + verification testy nie sú v PR.
+
+**Ranný swarm checklist:** pred review rebasni otvorené PR na `origin/main` (Update branch / rebase), potom CI.
+
 ---
 
 ## Ako volať MCP mimo aktuálneho chatu

@@ -26,6 +26,8 @@ VYKONÁVANIE
 ZLATÉ PRAVIDLÁ REPA
 - 1 PR = 1 logická zmena; každý PR má vlastný Vercel Preview Deploy.
 - Merge do main len po zelenom CI a zelených smoke testoch (napr. tests/smoke.spec.ts alebo ekvivalent).
+- `main`: branch protection — PR musí byť **up to date** s `main` pred merge (rebase ráno pri swarm PR).
+- Zmena flagu/featury: grep `tests/verification/` a aktualizuj `*.verification.test.ts` v tom istom PR (`apps/crm/tests/verification/README.md`).
 - Neslučuj viac funkcií do jedného PR bez samostatného deploy overenia; nemeň Vercel build/install/output nastavenia bez dokumentácie v PR.
 - Pri build/regresii je vhodný git bisect s npm run build; po zmene deploy nastavení skontroluj Vercel → Production Overrides.
 
