@@ -1,0 +1,103 @@
+{
+  "swarmId": "swarm-1781384987032-o6n0n7",
+  "objective": "Realvia import release-ready gate for apps/crm.",
+  "status": "in-progress",
+  "topology": "hierarchical",
+  "strategy": "specialized",
+  "maxAgents": 4,
+  "branch": "ai-core-v2",
+  "baselineCommit": "13401627f",
+  "startedAt": "2026-06-13T21:09:47.033Z",
+  "orchestration": {
+    "hiveId": "hive-1781465024942",
+    "queenId": "wave-preview-deploy",
+    "spawnedAgents": [
+      "wave-preview-deploy",
+      "wave-preview-env",
+      "wave-realvia-smoke",
+      "wave-endpoint-decision"
+    ],
+    "managedAgentMode": "blocked-no-anthropic-api-key",
+    "broadcastMessageId": "msg-1781465038246-p3my01"
+  },
+  "workstreams": [
+    {
+      "id": "preview-deploy",
+      "owner": "deploy-agent",
+      "goal": "Find READY realitka-ai preview for branch and commit.",
+      "done": false,
+      "notes": "No READY realitka-ai preview deployment validated in this run."
+    },
+    {
+      "id": "preview-env-parity",
+      "owner": "env-agent",
+      "goal": "Ensure REALVIA_* variables exist in Preview and Production.",
+      "done": false,
+      "notes": "Preview env parity not confirmed in this run."
+    },
+    {
+      "id": "smoke-auth",
+      "owner": "qa-agent",
+      "goal": "POST /api/realvia/import with auth headers returns 200.",
+      "done": false,
+      "notes": "Production smoke result: 403 (Source IP not in allow list), not 200."
+    },
+    {
+      "id": "smoke-no-auth",
+      "owner": "qa-agent",
+      "goal": "POST /api/realvia/import without auth headers returns 403.",
+      "done": true,
+      "notes": "Production smoke result without auth: 403 Invalid authentication."
+    },
+    {
+      "id": "middleware-regression",
+      "owner": "qa-agent",
+      "goal": "Confirm no 401 from middleware for /api/realvia/import.",
+      "done": true,
+      "notes": "No 401 observed during this run; import endpoint returned 403/403."
+    },
+    {
+      "id": "endpoint-decision",
+      "owner": "product-agent",
+      "goal": "Document canonical endpoint with Realvia (webhooks vs import).",
+      "done": false,
+      "notes": "Recommendation remains /api/webhooks/realvia as canonical until partner confirms XML import path."
+    }
+  ],
+  "acceptanceCriteria": [
+    "Preview deployment READY on realitka-ai",
+    "Preview env parity for REALVIA_SHARED_SECRET, REALVIA_IDENTIFIER, REALVIA_IDENTIFIER_2, REALVIA_ALLOWED_IP",
+    "Auth XML smoke test => 200",
+    "No-auth XML smoke test => 403",
+    "No 401 on /api/realvia/import",
+    "Canonical endpoint decision captured"
+  ],
+  "smokeCommands": {
+    "withAuth": "curl.exe -sS -i -X POST \"$PREVIEW_URL/api/realvia/import\" -H \"Content-Type: application/xml\" -H \"identifikator: revolis-live-webhook\" -H \"identifikator2: rv_7F29xA91mK44pQ\" --data-binary \"@.\\tmp-realvia-import.xml\"",
+    "withoutAuth": "curl.exe -sS -i -X POST \"$PREVIEW_URL/api/realvia/import\" -H \"Content-Type: application/xml\" --data-binary \"@.\\tmp-realvia-import.xml\""
+  },
+  "risks": [
+    "Preview deployment missing or failed blocks smoke testing",
+    "REALVIA_ALLOWED_IP mismatch causes auth test to fail with 403",
+    "If middleware bypass absent in deployed build, endpoint returns 401"
+  ],
+  "latestSmokeRun": {
+    "executedAt": "2026-06-14T19:24:00Z",
+    "target": "https://app.revolis.ai",
+    "results": [
+      {
+        "path": "/api/realvia/import",
+        "mode": "with-auth",
+        "status": 403,
+        "body": "{\"result\":\"error\",\"message\":\"Source IP 46.34.231.80 not in allowed list\"}"
+      },
+      {
+        "path": "/api/realvia/import",
+        "mode": "without-auth",
+        "status": 403,
+        "body": "{\"result\":\"error\",\"message\":\"Invalid authentication\"}"
+      }
+    ]
+  },
+  "nextAction": "Bring up READY preview deploy for realitka-ai and rerun smokeCommands on preview until with-auth=200 and without-auth=403."
+}

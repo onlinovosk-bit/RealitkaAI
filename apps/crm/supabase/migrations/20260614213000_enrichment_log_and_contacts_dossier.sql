@@ -1,0 +1,48 @@
+-- Enrichment engine log + research dossier persistence.
+-- L99 note: RLS isolation via agency_id is mandatory.
+
+CREATE TABLE IF NOT EXISTS public.enrichment_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  agency_id UUID NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
+  record_id TEXT NOT NULL,
+  record_type TEXT NOT NULL DEFAULT 'contact',
+  field TEXT NOT NULL,
+  source TEXT NOT NULL,
+  value JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT enrichment_log_record_type_check CHECK (record_type IN ('contact', 'property', 'lead'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_enrichment_log_agency_created
+  ON public.enrichment_log(agency_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_enrichment_log_record
+  ON public.enrichment_log(record_id, record_type);
+
+ALTER TABLE public.enrichment_log ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "enrichment_log_agency_isolation" ON public.enrichment_log;
+CREATE POLICY "enrichment_log_agency_isolation"
+  ON public.enrichment_log FOR ALL
+  USING (
+    agency_id IN (
+      SELECT p.agency_id
+      FROM public.profiles p
+      WHERE p.auth_user_id = auth.uid()
+    )
+  )
+  WITH CHECK (
+    agency_id IN (
+      SELECT p.agency_id
+      FROM public.profiles p
+      WHERE p.auth_user_id = auth.uid()
+    )
+  );
+
+DROP POLICY IF EXISTS "enrichment_log_service_role_all" ON public.enrichment_log;
+CREATE POLICY "enrichment_log_service_role_all"
+  ON public.enrichment_log FOR ALL
+  USING (auth.role() = 'service_role')
+  WITH CHECK (auth.role() = 'service_role');
+
+COMMENT ON TABLE public.enrichment_log IS
+  'Audit trail for enrichment waterfall providers. One row per enriched field.';

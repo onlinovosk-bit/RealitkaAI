@@ -124,6 +124,15 @@ export const CREDIT_ACTION_COSTS = {
 
 export type CreditActionKey = keyof typeof CREDIT_ACTION_COSTS;
 
+/** G2 — Maklérsky štartovací balík (low-ticket, marketing /balik). */
+export const STARTER_PACK = {
+  label: "Maklérsky štartovací balík",
+  priceEur: 47,
+  creditValue: 47,
+  stripeEnvKey: "STRIPE_PRICE_STARTER_PACK",
+  checkoutType: "starter_pack" as const,
+} as const;
+
 /** Top-up balíčky — one-time Stripe Checkout (karta). */
 export const TOPUP_PACKAGE_KEYS = ["start", "rast", "pro", "mega"] as const;
 export type TopupPackageKey = (typeof TOPUP_PACKAGE_KEYS)[number];
@@ -263,6 +272,14 @@ export function getSeatStripePriceId(tier: SeatTier): string {
 
 export function getTopupStripePriceId(key: TopupPackageKey): string {
   return process.env[TOPUP_PACKAGES[key].stripeEnvKey] ?? "";
+}
+
+export function getStarterPackStripePriceId(): string {
+  return process.env[STARTER_PACK.stripeEnvKey] ?? "";
+}
+
+export function isStarterPackCheckoutAvailable(): boolean {
+  return getStarterPackStripePriceId().length > 0;
 }
 
 export function getOwnerCockpitStripePriceId(opts?: {

@@ -29,9 +29,10 @@
     "M2": { "wave": 2, "status": "blocked_on_M" },
     "I": { "wave": 2, "status": "pending" },
     "H": { "wave": 2, "tier": 1, "status": "pending" },
-    "S1": { "wave": 3, "tier": 1, "status": "pending" },
-    "S2": { "wave": 3, "tier": 1, "status": "pending" },
-    "S3": { "wave": 3, "tier": 1, "status": "pending" }
+    "S1": { "wave": 3, "tier": 1, "status": "pr-open", "pr": 195 },
+    "S3": { "wave": 3, "tier": 1, "status": "pr-open", "pr": 194 },
+    "G1": { "brief": "9.5", "tier": 3, "status": "pr-open", "pr": 198 },
+    "G2": { "brief": "9.5", "tier": 3, "status": "pr-open", "pr": 199 }
   },
   "midnightGate": { "scheduled": "2026-06-12T01:30:00+02:00", "status": "waiting_phase0_merge" },
   "forbidden": [
