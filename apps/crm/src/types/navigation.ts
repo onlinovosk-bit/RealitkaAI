@@ -1,4 +1,5 @@
 import type { UiRole } from "./intelligence-hub";
+import { canRenderModule, normalizeModuleTier, type ModuleKey } from "@/lib/modules/registry";
 
 // ─── Menu varianty ─────────────────────────────────────────────────────────
 export type MenuVariant =
@@ -402,18 +403,35 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   },
 ];
 
+const NAV_MODULE_KEYS: Partial<Record<NavItem["id"], ModuleKey>> = {
+  "hidden-market": "menu_hidden_market_hub",
+  competition: "menu_competition_radar",
+};
+
+function fallbackTierFromVariant(variant: MenuVariant): string {
+  if (variant === "owner_protocol") return "protocol_authority";
+  if (variant === "owner_vision") return "market_vision";
+  if (variant === "agent_team" || variant === "agent_solo") return "pro";
+  return "free";
+}
+
 // ─── Helper funkcie ────────────────────────────────────────────────────────
 
 export const IMPORT_CONTACTS_NAV_ID = "import-contacts";
 
 export function getNavItems(
   variant:     MenuVariant,
-  permissions?: Partial<TeamMemberPermissions>
+  permissions?: Partial<TeamMemberPermissions>,
+  accountTier?: string | null,
 ): NavItem[] {
   const perms = { ...DEFAULT_TEAM_PERMISSIONS, ...permissions };
+  const tier = normalizeModuleTier(accountTier ?? fallbackTierFromVariant(variant));
+
   return ALL_NAV_ITEMS.filter((item) => {
     if (!item.showFor.includes(variant)) return false;
     if (item.permissionKey) return perms[item.permissionKey] === true;
+    const moduleKey = NAV_MODULE_KEYS[item.id];
+    if (moduleKey) return canRenderModule(moduleKey, tier);
     return true;
   });
 }
