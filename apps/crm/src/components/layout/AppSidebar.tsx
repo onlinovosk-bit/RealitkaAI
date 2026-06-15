@@ -577,6 +577,14 @@ export default function AppSidebar({
   const demoVariant   = getDemoVariant(demoProgram);
   const renderVariant = isFounderDemo ? demoVariant : menuContext.variant;
   const theme         = VARIANT_THEMES[renderVariant];
+  const demoTierMap: Record<FounderDemoProgram, string> = {
+    free: "free",
+    starter: "starter",
+    active_force: "pro",
+    market_vision: "market_vision",
+    protocol_authority: "protocol_authority",
+  };
+  const navTier = isFounderDemo ? demoTierMap[demoProgram] : menuContext.accountTier;
   const planLabel     = isFounderDemo
     ? FOUNDER_DEMO_PROGRAMS.find((p) => p.id === demoProgram)?.label ?? "Protocol Authority"
     : menuContext.planLabel;
@@ -702,8 +710,8 @@ export default function AppSidebar({
   // Nav položky filtrované podľa variantu + permissions + import badge
   const navItems = applyImportNavBadges(
     isFounderDemo
-      ? filterItemsByDemoProgram(getNavItems(renderVariant, permissions), demoProgram)
-      : getNavItems(renderVariant, permissions),
+      ? filterItemsByDemoProgram(getNavItems(renderVariant, permissions, navTier), demoProgram)
+      : getNavItems(renderVariant, permissions, navTier),
     leadsCount,
   );
 

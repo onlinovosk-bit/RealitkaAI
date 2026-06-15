@@ -17,6 +17,8 @@ const DENYLIST = [
   /^apps\/crm\/middleware\.ts$/,
   /^apps\/crm\/src\/proxy\.ts$/,
   /^apps\/crm\/src\/lib\/credits-billing\.ts$/,
+  /^apps\/crm\/src\/lib\/modules\//,
+  /^apps\/crm\/src\/lib\/cadastre\//,
   /(^|\/)stripe\//,
   /stealth-recruiter/i,
   /smolko/i,
