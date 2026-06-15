@@ -3,11 +3,10 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { Hammer, Map, Globe, Zap } from "lucide-react";
+import { Hammer, Zap } from "lucide-react";
 import { NeuralPulse } from "@/components/visuals/NeuralPulse";
 import { GhostBanner } from "@/components/l99/GhostBanner";
-import { CompetitionMap } from "@/components/l99/CompetitionMap";
-import IntelBrief from "@/components/protocol/IntelBrief";
+import { CadastreMapView } from "@/components/l99/CadastreMapView";
 import { TIER_DISPLAY_NAMES, TIER_PRICES } from "@/types/intelligence-hub";
 import type { HubTier, GhostSessionData } from "@/types/intelligence-hub";
 import { canRenderModule, type ModuleKey } from "@/lib/modules/registry";
@@ -36,24 +35,6 @@ const HUB_PREVIEW_MODULES: Array<{
     badgeColor: "#60A5FA",
     text: "Stavebné povolenia a územné zmeny z verejných registrov — predikcia vývoja cien v zóne.",
   },
-  {
-    moduleKey: "hub_breaking_point",
-    id: "bod-zlomu",
-    title: "Bod zlomu",
-    icon: Map,
-    badge: "Market Vision",
-    badgeColor: "#818CF8",
-    text: "Mapa ulíc a zón, kde verejné dáta signalizujú blížiaci sa pohyb trhu (sťahovanie, nová výstavba).",
-  },
-  {
-    moduleKey: "hub_neighborhood_change",
-    id: "zmena-okolia",
-    title: "Zmena v okolí",
-    icon: Globe,
-    badge: "Protocol Authority",
-    badgeColor: "#60A5FA",
-    text: "Nová infraštruktúra (škola, diaľnica, park) z verejných zdrojov — kde môžu rásť ceny.",
-  },
 ] as const;
 
 function getGhostSession(): GhostSessionData | null {
@@ -74,17 +55,6 @@ export default function L99HubPage() {
   const [demoTierOverride, setDemoTierOverride] = useState<HubTier | null>(null);
   const [tierLoading, setTierLoading] = useState(true);
   const [ghostData, setGhostData] = useState<GhostSessionData | null>(null);
-  const [strategicAlerts, setStrategicAlerts] = useState<
-    {
-      id: string;
-      title: string;
-      description: string;
-      severity: "low" | "medium" | "high" | "critical";
-      type: string;
-      location_focus?: string | null;
-      created_at?: string;
-    }[]
-  >([]);
 
   useEffect(() => {
     fetch("/api/hub/get-tier")
@@ -94,11 +64,6 @@ export default function L99HubPage() {
       .finally(() => setTierLoading(false));
 
     setGhostData(getGhostSession());
-
-    fetch("/api/strategic-alerts")
-      .then((r) => r.json())
-      .then((d: { alerts?: typeof strategicAlerts }) => setStrategicAlerts(d.alerts ?? []))
-      .catch(() => setStrategicAlerts([]));
   }, []);
 
   useEffect(() => {
@@ -126,9 +91,9 @@ export default function L99HubPage() {
   const visiblePreviewModules = HUB_PREVIEW_MODULES.filter((mod) =>
     canRenderModule(mod.moduleKey, effectiveTier),
   );
-  const canShowCompetitionMap = canRenderModule("hub_competition_map", effectiveTier);
-  const canShowIntelBrief = canRenderModule("hub_intel_brief", effectiveTier);
-  const hasAnyLiveModule = canShowCompetitionMap || canShowIntelBrief;
+  const canShowBreakingPoint = canRenderModule("hub_breaking_point", effectiveTier);
+  const canShowNeighborhoodChange = canRenderModule("hub_neighborhood_change", effectiveTier);
+  const hasAnyLiveModule = canShowBreakingPoint || canShowNeighborhoodChange;
 
   return (
     <div className="min-h-screen bg-[#010103] text-slate-200 relative overflow-hidden">
@@ -194,25 +159,31 @@ export default function L99HubPage() {
           )}
         </motion.header>
 
-        {canShowCompetitionMap && (
+        {canShowBreakingPoint && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
             className="mb-12"
           >
-            <CompetitionMap isProtocolActive />
+            <CadastreMapView
+              title="Bod zlomu"
+              subtitle="Display-only katastralna parcelna vrstva z verejneho INSPIRE WMS."
+            />
           </motion.div>
         )}
 
-        {canShowIntelBrief && (
+        {canShowNeighborhoodChange && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.25 }}
             className="mb-12"
           >
-            <IntelBrief alerts={strategicAlerts} locked={false} />
+            <CadastreMapView
+              title="Zmena v okoli"
+              subtitle="Display-only parcelny overlay pre Protocol Authority bez signalovej vrstvy."
+            />
           </motion.div>
         )}
 
@@ -223,60 +194,62 @@ export default function L99HubPage() {
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {visiblePreviewModules.map((mod, i) => {
-            const Icon = mod.icon;
-            return (
-              <motion.div
-                key={mod.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 + i * 0.05 }}
-                className={`relative p-8 rounded-[2rem] border bg-[#0A0A12]/80 border-white/10 ${
-                  mod.id === activeModuleId ? "ring-2 ring-blue-400/60 ring-offset-2 ring-offset-[#010103]" : ""
-                }`}
-              >
-                <div
-                  className="absolute top-4 right-4 z-10 rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-wider"
-                  style={{
-                    background: "rgba(148,163,184,0.12)",
-                    color: "#94A3B8",
-                    border: "1px solid rgba(148,163,184,0.25)",
-                  }}
-                >
-                  Čoskoro
-                </div>
+                const Icon = mod.icon;
+                return (
+                  <motion.div
+                    key={mod.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 + i * 0.05 }}
+                    className={`relative p-8 rounded-[2rem] border bg-[#0A0A12]/80 border-white/10 ${
+                      mod.id === activeModuleId
+                        ? "ring-2 ring-blue-400/60 ring-offset-2 ring-offset-[#010103]"
+                        : ""
+                    }`}
+                  >
+                    <div
+                      className="absolute top-4 right-4 z-10 rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-wider"
+                      style={{
+                        background: "rgba(148,163,184,0.12)",
+                        color: "#94A3B8",
+                        border: "1px solid rgba(148,163,184,0.25)",
+                      }}
+                    >
+                      Čoskoro
+                    </div>
 
-                <div className="mb-6 flex justify-between">
-                  <Icon size={28} style={{ color: mod.badgeColor }} />
-                </div>
+                    <div className="mb-6 flex justify-between">
+                      <Icon size={28} style={{ color: mod.badgeColor }} />
+                    </div>
 
-                <span
-                  className="mb-3 inline-block rounded-full px-2 py-0.5 text-[8px] font-bold uppercase"
-                  style={{
-                    background: `${mod.badgeColor}18`,
-                    color: mod.badgeColor,
-                    border: `1px solid ${mod.badgeColor}40`,
-                  }}
-                >
-                  {mod.badge}
-                </span>
+                    <span
+                      className="mb-3 inline-block rounded-full px-2 py-0.5 text-[8px] font-bold uppercase"
+                      style={{
+                        background: `${mod.badgeColor}18`,
+                        color: mod.badgeColor,
+                        border: `1px solid ${mod.badgeColor}40`,
+                      }}
+                    >
+                      {mod.badge}
+                    </span>
 
-                <h3 className="text-lg font-black text-white mb-2 uppercase italic tracking-wide">
-                  {mod.title}
-                </h3>
-                <p className="text-xs text-slate-400 mb-6 leading-relaxed uppercase tracking-wider">
-                  {mod.text}
-                </p>
+                    <h3 className="text-lg font-black text-white mb-2 uppercase italic tracking-wide">
+                      {mod.title}
+                    </h3>
+                    <p className="text-xs text-slate-400 mb-6 leading-relaxed uppercase tracking-wider">
+                      {mod.text}
+                    </p>
 
-                <div
-                  className="w-full cursor-not-allowed rounded-2xl border border-white/10 bg-white/[0.03] py-3.5 text-center text-[10px] font-black uppercase tracking-widest text-slate-500"
-                  aria-disabled="true"
-                  role="status"
-                >
-                  Čoskoro — napojenie na verejné registre
-                </div>
-              </motion.div>
-            );
-          })}
+                    <div
+                      className="w-full cursor-not-allowed rounded-2xl border border-white/10 bg-white/[0.03] py-3.5 text-center text-[10px] font-black uppercase tracking-widest text-slate-500"
+                      aria-disabled="true"
+                      role="status"
+                    >
+                      Čoskoro — napojenie na verejné registre
+                    </div>
+                  </motion.div>
+                );
+              })}
             </div>
           </>
         )}

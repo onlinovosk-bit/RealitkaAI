@@ -21,14 +21,14 @@ describe("module registry visibility policy", () => {
   });
 
   it("hides protocol-only live modules from market vision", () => {
-    expect(canRenderModule("hub_competition_map", "market_vision")).toBe(false);
-    expect(canRenderModule("hub_intel_brief", "market_vision")).toBe(false);
+    expect(canRenderModule("hub_neighborhood_change", "market_vision")).toBe(false);
     expect(canRenderModule("menu_competition_radar", "market_vision")).toBe(false);
   });
 
-  it("shows protocol-only live modules for protocol authority", () => {
-    expect(canRenderModule("hub_competition_map", "protocol_authority")).toBe(true);
-    expect(canRenderModule("hub_intel_brief", "protocol_authority")).toBe(true);
+  it("shows cadastre modules according to tier policy", () => {
+    expect(canRenderModule("hub_breaking_point", "market_vision")).toBe(true);
+    expect(canRenderModule("hub_breaking_point", "protocol_authority")).toBe(true);
+    expect(canRenderModule("hub_neighborhood_change", "protocol_authority")).toBe(true);
     expect(canRenderModule("menu_competition_radar", "protocol_authority")).toBe(true);
   });
 
