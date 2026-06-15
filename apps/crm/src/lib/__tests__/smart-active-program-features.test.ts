@@ -80,7 +80,7 @@ describe("Smart Start — program Smart (tier starter)", () => {
   });
 
   it("exposes agent_solo navigation routes with pages", () => {
-    const nav = getNavItems(AGENT_SOLO);
+    const nav = getNavItems(AGENT_SOLO, undefined, "pro");
     expect(nav.length).toBeGreaterThanOrEqual(6);
     const hrefs = nav.map((i) => i.href);
     expect(hrefs).toContain("/dashboard");
@@ -162,8 +162,8 @@ describe("Active Force — program Radar (tier pro)", () => {
   });
 
   it("adds team-only nav for agent_team vs solo", () => {
-    const solo = getNavItems(AGENT_SOLO);
-    const team = getNavItems(AGENT_TEAM);
+    const solo = getNavItems(AGENT_SOLO, undefined, "pro");
+    const team = getNavItems(AGENT_TEAM, undefined, "pro");
     expect(team.length).toBeGreaterThan(solo.length);
     const teamOnly = ALL_NAV_ITEMS.filter(
       (i) =>

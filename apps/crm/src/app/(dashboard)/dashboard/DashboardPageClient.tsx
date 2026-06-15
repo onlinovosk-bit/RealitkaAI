@@ -24,6 +24,7 @@ import { AIPriorityStrip } from "@/components/dashboard/AIPriorityStrip";
 import { NextBestActionPanel } from "@/components/dashboard/NextBestActionPanel";
 import { FollowUpTodayCard } from "@/components/follow-up/FollowUpTodayCard";
 import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
+import { canRenderModule, normalizeModuleTier } from "@/lib/modules/registry";
 
 const EnterpriseSalesIntelligencePanel = dynamic(
   () => import("@/components/dashboard/EnterpriseSalesIntelligencePanel"),
@@ -268,6 +269,10 @@ export default function DashboardPageClient({ initialPropertiesSummary }: Dashbo
   const valueTrend = forecastingSummary ? getTrend(forecastingSummary.expectedPipelineValue, forecastTargets.expectedPipelineValue, " EUR") : null;
   const probabilityTrend = forecastingSummary ? getTrend(forecastingSummary.avgProbabilityPercent, forecastTargets.avgProbabilityPercent, " %") : null;
   const showRevenueCommandCenter = planKey === "command" || planKey === "enterprise";
+  const moduleTier = normalizeModuleTier(planKey || plan);
+  const canShowEnterpriseSalesIntelligence =
+    enterpriseSalesIntelligence &&
+    canRenderModule("dashboard_ai_sales_intelligence", moduleTier);
 
   return (
     <div className="p-3 md:p-6" style={{ minHeight: "100%" }} id="actions">
@@ -391,11 +396,11 @@ export default function DashboardPageClient({ initialPropertiesSummary }: Dashbo
           <AiInsightsPanel leads={leads} plan={plan} />
         </section>
 
-        <section className="mb-6">
-          <EnterpriseSalesIntelligencePanel
-            enabled={enterpriseSalesIntelligence}
-          />
-        </section>
+        {canShowEnterpriseSalesIntelligence && (
+          <section className="mb-6">
+            <EnterpriseSalesIntelligencePanel enabled />
+          </section>
+        )}
 
         {showRevenueCommandCenter ? (
           <section className="mb-6">

@@ -10,6 +10,7 @@ import { CompetitionMap } from "@/components/l99/CompetitionMap";
 import IntelBrief from "@/components/protocol/IntelBrief";
 import { TIER_DISPLAY_NAMES, TIER_PRICES } from "@/types/intelligence-hub";
 import type { HubTier, GhostSessionData } from "@/types/intelligence-hub";
+import { canRenderModule, type ModuleKey } from "@/lib/modules/registry";
 
 const TAB_TO_MODULE: Record<string, string> = {
   market: "stavba",
@@ -17,9 +18,17 @@ const TAB_TO_MODULE: Record<string, string> = {
   ghost: "zmena-okolia",
 };
 
-/** Legitímne moduly z verejných zdrojov — zatiaľ bez backendu, len „Čoskoro“. */
-const MODULES = [
+const HUB_PREVIEW_MODULES: Array<{
+  moduleKey: ModuleKey;
+  id: string;
+  title: string;
+  icon: typeof Hammer;
+  badge: string;
+  badgeColor: string;
+  text: string;
+}> = [
   {
+    moduleKey: "hub_planned_construction",
     id: "stavba",
     title: "Plánovaná stavba",
     icon: Hammer,
@@ -28,6 +37,7 @@ const MODULES = [
     text: "Stavebné povolenia a územné zmeny z verejných registrov — predikcia vývoja cien v zóne.",
   },
   {
+    moduleKey: "hub_breaking_point",
     id: "bod-zlomu",
     title: "Bod zlomu",
     icon: Map,
@@ -36,6 +46,7 @@ const MODULES = [
     text: "Mapa ulíc a zón, kde verejné dáta signalizujú blížiaci sa pohyb trhu (sťahovanie, nová výstavba).",
   },
   {
+    moduleKey: "hub_neighborhood_change",
     id: "zmena-okolia",
     title: "Zmena v okolí",
     icon: Globe,
@@ -111,8 +122,13 @@ export default function L99HubPage() {
     effectiveTier === "enterprise" ||
     effectiveTier === "market_vision" ||
     effectiveTier === "protocol_authority";
-  const isProtocolAuthority = effectiveTier === "protocol_authority" || effectiveTier === "enterprise";
   const isPro = effectiveTier === "pro" || isEnterprise;
+  const visiblePreviewModules = HUB_PREVIEW_MODULES.filter((mod) =>
+    canRenderModule(mod.moduleKey, effectiveTier),
+  );
+  const canShowCompetitionMap = canRenderModule("hub_competition_map", effectiveTier);
+  const canShowIntelBrief = canRenderModule("hub_intel_brief", effectiveTier);
+  const hasAnyLiveModule = canShowCompetitionMap || canShowIntelBrief;
 
   return (
     <div className="min-h-screen bg-[#010103] text-slate-200 relative overflow-hidden">
@@ -178,32 +194,35 @@ export default function L99HubPage() {
           )}
         </motion.header>
 
-        {isEnterprise && (
+        {canShowCompetitionMap && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
             className="mb-12"
           >
-            <CompetitionMap isProtocolActive={true} />
+            <CompetitionMap isProtocolActive />
           </motion.div>
         )}
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-          className="mb-12"
-        >
-          <IntelBrief alerts={strategicAlerts} locked={!isProtocolAuthority} />
-        </motion.div>
+        {canShowIntelBrief && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="mb-12"
+          >
+            <IntelBrief alerts={strategicAlerts} locked={false} />
+          </motion.div>
+        )}
 
-        <p className="mb-6 text-[10px] font-bold uppercase tracking-widest text-slate-500">
-          Moduly z verejných zdrojov (v príprave)
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {MODULES.map((mod, i) => {
+        {visiblePreviewModules.length > 0 && (
+          <>
+            <p className="mb-6 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+              Moduly z verejných zdrojov (v príprave)
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {visiblePreviewModules.map((mod, i) => {
             const Icon = mod.icon;
             return (
               <motion.div
@@ -258,34 +277,19 @@ export default function L99HubPage() {
               </motion.div>
             );
           })}
-        </div>
+            </div>
+          </>
+        )}
 
-        {!isEnterprise && !tierLoading && (
+        {!hasAnyLiveModule && !tierLoading && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="mt-16 p-10 rounded-[3rem] text-center"
-            style={{
-              background: "linear-gradient(135deg, rgba(37,99,235,0.08) 0%, rgba(99,102,241,0.08) 100%)",
-              border: "1px solid rgba(37,99,235,0.20)",
-            }}
+            transition={{ delay: 0.35 }}
+            className="mt-8 rounded-2xl border border-white/10 bg-[#0A0A12]/80 p-6 text-sm text-slate-400"
           >
-            <h3 className="text-2xl font-black text-white mb-3 uppercase italic tracking-wide">
-              {isPro ? "Aktivuj Protocol Authority" : "Začni s Market Vision"}
-            </h3>
-            <p className="text-sm text-slate-400 mb-6 max-w-lg mx-auto">
-              {isPro
-                ? "Odomkni radar konkurencie z portálových inzerátov a prediktívny intel brief."
-                : "Prvý krok k prediktívnej inteligencii. Od 199€/mes."
-              }
-            </p>
-            <a
-              href="/billing"
-              className="inline-block px-10 py-4 bg-blue-600 text-white font-black rounded-xl text-[10px] uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-blue-600/20"
-            >
-              {isPro ? "Upgradovať na Protocol Authority →" : "Aktivovať Market Vision →"}
-            </a>
+            V tomto pláne momentálne nie je dostupný žiadny live modul pre sekciu
+            Skryté príležitosti trhu.
           </motion.div>
         )}
       </div>
