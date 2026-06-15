@@ -38,6 +38,7 @@ describe("credits-billing", () => {
       STRIPE_PRICE_OWNER_COCKPIT: "price_cockpit",
       STRIPE_PRICE_OWNER_COCKPIT_FOUNDER: "price_cockpit_founder",
       STRIPE_PRICE_CREDITS_RAST: "price_rast",
+      STRIPE_PRICE_MIGRATION_DFY: "price_migration_dfy",
     };
 
     mockFrom.mockImplementation((table: string) => {
@@ -70,6 +71,14 @@ describe("credits-billing", () => {
               return { error: null };
             },
           }),
+        };
+      }
+      if (table === "service_orders") {
+        return {
+          select: () => ({
+            eq: () => ({ maybeSingle: mockMaybeSingle }),
+          }),
+          insert: mockInsert,
         };
       }
       return {};
@@ -111,6 +120,33 @@ describe("credits-billing", () => {
       expect(result.metadata.ownerCockpit).toBe("true");
       expect(result.metadata.founderCockpit).toBe("true");
     });
+
+    it("adds migration DFY line item when opted in and env configured", () => {
+      const result = buildSeatCheckoutSessionParams({
+        seatTier: "team",
+        quantity: 3,
+        includeMigrationDfy: true,
+      });
+
+      expect(result.lineItems).toEqual([
+        { price: "price_team", quantity: 3 },
+        { price: "price_migration_dfy", quantity: 1 },
+      ]);
+      expect(result.metadata.migrationDfy).toBe("true");
+    });
+
+    it("omits migration DFY line item when env missing", () => {
+      delete process.env.STRIPE_PRICE_MIGRATION_DFY;
+
+      const result = buildSeatCheckoutSessionParams({
+        seatTier: "team",
+        quantity: 3,
+        includeMigrationDfy: true,
+      });
+
+      expect(result.lineItems).toEqual([{ price: "price_team", quantity: 3 }]);
+      expect(result.metadata.migrationDfy).toBe("false");
+    });
   });
 
   describe("parseCheckoutBody", () => {
@@ -127,6 +163,14 @@ describe("credits-billing", () => {
       expect(
         parseCheckoutBody({ checkoutType: "topup", topupPackage: "mega" }),
       ).toMatchObject({ type: "topup", topupPackage: "mega" });
+
+      expect(
+        parseCheckoutBody({
+          checkoutType: "seat",
+          seatTier: "team",
+          migrationDfy: true,
+        }),
+      ).toMatchObject({ type: "seat", includeMigrationDfy: true });
     });
   });
 
@@ -213,6 +257,69 @@ describe("credits-billing", () => {
 
       expect(handled).toBe(true);
       expect(mockUpdate).toHaveBeenCalled();
+    });
+
+    it("records migration DFY service order on seat checkout with bump", async () => {
+      mockMaybeSingle.mockResolvedValueOnce({ data: null });
+
+      const handled = await handlePricingCheckoutWebhook({
+        type: "checkout.session.completed",
+        data: {
+          object: {
+            id: "cs_seat_migration",
+            customer: "cus_1",
+            subscription: "sub_1",
+            customer_details: { email: "client@example.com" },
+            metadata: {
+              checkoutType: "seat",
+              agencyId: "agency-1",
+              authUserId: "user-1",
+              seatTier: "team",
+              seatQuantity: "3",
+              ownerCockpit: "false",
+              migrationDfy: "true",
+            },
+          },
+        },
+      } as never);
+
+      expect(handled).toBe(true);
+      expect(mockInsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          agency_id: "agency-1",
+          type: "migration_dfy",
+          status: "requested",
+          stripe_session_id: "cs_seat_migration",
+        }),
+      );
+    });
+
+    it("skips duplicate migration DFY service order (idempotent)", async () => {
+      mockMaybeSingle.mockResolvedValueOnce({ data: { id: "existing-order" } });
+      mockInsert.mockClear();
+
+      await handlePricingCheckoutWebhook({
+        type: "checkout.session.completed",
+        data: {
+          object: {
+            id: "cs_seat_migration_dup",
+            subscription: "sub_1",
+            metadata: {
+              checkoutType: "seat",
+              agencyId: "agency-1",
+              authUserId: "user-1",
+              seatTier: "team",
+              seatQuantity: "3",
+              migrationDfy: "true",
+            },
+          },
+        },
+      } as never);
+
+      const serviceOrderInserts = mockInsert.mock.calls.filter(
+        (call) => call[0]?.type === "migration_dfy",
+      );
+      expect(serviceOrderInserts).toHaveLength(0);
     });
 
     it("handles credit topup checkout", async () => {

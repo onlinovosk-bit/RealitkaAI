@@ -7,8 +7,10 @@ import {
   cockpitLiteEligible,
   getOwnerCockpitStripePriceId,
   getSeatStripePriceId,
+  getMigrationDfyStripePriceId,
   getTopupStripePriceId,
   isFounderKancelariaEligible,
+  isMigrationDfyCheckoutAvailable,
   parseSeatTier,
   parseTopupPackageKey,
   type SeatTier,
@@ -38,6 +40,7 @@ export type SeatCheckoutInput = {
   seatTier: SeatTier;
   quantity: number;
   includeOwnerCockpit?: boolean;
+  includeMigrationDfy?: boolean;
 };
 
 /** Builds Stripe Checkout line items + metadata (unit-tested without Stripe). */
@@ -63,6 +66,15 @@ export function buildSeatCheckoutSessionParams(input: SeatCheckoutInput): {
     }
   }
 
+  const migrationDfy =
+    Boolean(input.includeMigrationDfy) && isMigrationDfyCheckoutAvailable();
+  if (migrationDfy) {
+    const migrationPriceId = getMigrationDfyStripePriceId();
+    if (migrationPriceId) {
+      lineItems.push({ price: migrationPriceId, quantity: 1 });
+    }
+  }
+
   return {
     lineItems,
     quantity: qty,
@@ -72,6 +84,7 @@ export function buildSeatCheckoutSessionParams(input: SeatCheckoutInput): {
       seatQuantity: String(qty),
       ownerCockpit: input.includeOwnerCockpit ? "true" : "false",
       founderCockpit: founderEligible ? "true" : "false",
+      migrationDfy: migrationDfy ? "true" : "false",
     },
   };
 }
@@ -293,6 +306,7 @@ export function parseCheckoutBody(body: Record<string, unknown>): {
   seatTier?: SeatTier;
   quantity?: number;
   includeOwnerCockpit?: boolean;
+  includeMigrationDfy?: boolean;
   topupPackage?: TopupPackageKey;
   planKey?: string;
 } {
@@ -303,6 +317,7 @@ export function parseCheckoutBody(body: Record<string, unknown>): {
       seatTier: parseSeatTier(String(body.seatTier ?? body.plan ?? "")),
       quantity: Number(body.quantity ?? body.seats ?? 1),
       includeOwnerCockpit: Boolean(body.includeOwnerCockpit ?? body.cockpit),
+      includeMigrationDfy: Boolean(body.includeMigrationDfy ?? body.migrationDfy),
     };
   }
   if (checkoutType === "topup" || checkoutType === "credits") {

@@ -124,6 +124,14 @@ export const CREDIT_ACTION_COSTS = {
 
 export type CreditActionKey = keyof typeof CREDIT_ACTION_COSTS;
 
+/** Order bump — DFY migrácia dát pri seat checkoute (one-time). */
+export const MIGRATION_DFY = {
+  label: "Prenesieme vaše dáta za vás",
+  priceEur: 99,
+  stripeEnvKey: "STRIPE_PRICE_MIGRATION_DFY",
+  type: "migration_dfy" as const,
+} as const;
+
 /** Top-up balíčky — one-time Stripe Checkout (karta). */
 export const TOPUP_PACKAGE_KEYS = ["start", "rast", "pro", "mega"] as const;
 export type TopupPackageKey = (typeof TOPUP_PACKAGE_KEYS)[number];
@@ -263,6 +271,14 @@ export function getSeatStripePriceId(tier: SeatTier): string {
 
 export function getTopupStripePriceId(key: TopupPackageKey): string {
   return process.env[TOPUP_PACKAGES[key].stripeEnvKey] ?? "";
+}
+
+export function getMigrationDfyStripePriceId(): string {
+  return process.env[MIGRATION_DFY.stripeEnvKey] ?? "";
+}
+
+export function isMigrationDfyCheckoutAvailable(): boolean {
+  return getMigrationDfyStripePriceId().length > 0;
 }
 
 export function getOwnerCockpitStripePriceId(opts?: {
