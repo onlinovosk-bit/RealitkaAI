@@ -59,8 +59,7 @@ export const REVENUE_TILE_REGISTRY: Record<RevenueTileKey, RevenueTilePolicy> = 
     label: "AI Priority Strip",
     cluster: 1,
     source: "leads.ai_priority",
-    status: "pending",
-    pendingMessage: "Počíta sa z AI triáže leadov. Zobrazí sa po stabilnej AI histórii.",
+    status: "live",
   },
   liquidity_radar: {
     key: "liquidity_radar",
@@ -96,8 +95,7 @@ export const REVENUE_TILE_REGISTRY: Record<RevenueTileKey, RevenueTilePolicy> = 
     label: "Kataster / parcelný kontext",
     cluster: 2,
     source: "ZBGIS WMS",
-    status: "pending",
-    pendingMessage: "Pripája sa na verejný kataster (ZBGIS) - čoskoro.",
+    status: "live",
   },
 };
 
@@ -123,5 +121,16 @@ export function countLeadsBySource(leads: Lead[]) {
   }
   return Array.from(tally.entries())
     .map(([source, count]) => ({ source, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
+export function countLeadsByAiPriority(leads: Lead[]) {
+  const tally = new Map<string, number>();
+  for (const lead of leads) {
+    const priority = lead.aiPriority?.trim() || "Nevyhodnotená";
+    tally.set(priority, (tally.get(priority) ?? 0) + 1);
+  }
+  return Array.from(tally.entries())
+    .map(([priority, count]) => ({ priority, count }))
     .sort((a, b) => b.count - a.count);
 }

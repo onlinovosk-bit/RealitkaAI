@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   REVENUE_TILE_REGISTRY,
+  countLeadsByAiPriority,
   countLeadsBySource,
   getActionQueueLeads,
 } from "@/lib/modules/revenue-intelligence";
@@ -12,9 +13,11 @@ describe("revenue intelligence registry", () => {
     }
   });
 
-  it("marks Action Queue and leads-by-source as live", () => {
+  it("marks currently wired tiles as live", () => {
     expect(REVENUE_TILE_REGISTRY.action_queue.status).toBe("live");
     expect(REVENUE_TILE_REGISTRY.leads_by_source.status).toBe("live");
+    expect(REVENUE_TILE_REGISTRY.ai_priority_strip.status).toBe("live");
+    expect(REVENUE_TILE_REGISTRY.kataster_context.status).toBe("live");
   });
 
   it("marks unsupported synthetic metrics as hidden", () => {
@@ -46,6 +49,21 @@ describe("revenue intelligence data wiring", () => {
       { source: "Realvia", count: 2 },
       { source: "Manual", count: 1 },
       { source: "Neznámy zdroj", count: 1 },
+    ]);
+  });
+
+  it("groups leads by AI priority for live strip tile", () => {
+    const grouped = countLeadsByAiPriority([
+      { aiPriority: "Nízka" },
+      { aiPriority: "Nízka" },
+      { aiPriority: "Stredná" },
+      {},
+    ] as any);
+
+    expect(grouped).toEqual([
+      { priority: "Nízka", count: 2 },
+      { priority: "Stredná", count: 1 },
+      { priority: "Nevyhodnotená", count: 1 },
     ]);
   });
 });
