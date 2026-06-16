@@ -1,5 +1,10 @@
 # CLAUDE.md - Memory System Hook
 
+> PRIME DIRECTIVE: Každá hodina vývoja je investícia rizikového kapitálu. Ak
+> funkcionalita nezvyšuje pravdepodobnosť získania ďalšieho platiaceho klienta
+> alebo retencie existujúceho, predpokladaj, že ide o nesprávnu investíciu,
+> pokiaľ sa nepreukáže opak.
+
 ## Initialization
 At the start of every session:
 1. Read all files in the `/memory` directory to synchronize project state.
@@ -21,7 +26,12 @@ At the start of every session:
    `gdpr-advisor` skill against the chosen source from the data-sourcing map
    before implementation. Document the legal basis (6(1)(f) + balancing test).
 6. UI/marketing copy: When writing any user-facing text (...) consult
-   `docs/architecture/clay-positioning-reframe.md`. Lead with the OUTCOME (...)      
+   `docs/architecture/clay-positioning-reframe.md`. Lead with the OUTCOME (...)  
+7. Decision gate: Before proposing or building ANY feature, run it through
+   `docs/architecture/revolis-constitution-v2.md` (12-question Founder Reality
+   Check). Respect the VETOES: "too early" timing → Strategic Backlog regardless
+   of score; "no customer would pay" → max VALIDATE. Record BUILD/BACKLOG +
+   reason in decisions.md.    
 
 ## Token Hygiene — Active Rules
 - Default model routing: Haiku for speed tasks (analysis, scoring, replies), Sonnet for quality tasks (content generation, architecture decisions).
