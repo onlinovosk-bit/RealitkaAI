@@ -1,0 +1,14 @@
+---
+description: Business priority gate — every dev hour is venture capital
+alwaysApply: true
+---
+
+# PRIME DIRECTIVE
+
+Každá hodina vývoja je investícia rizikového kapitálu. Ak funkcionalita nezvyšuje pravdepodobnosť získania ďalšieho platiaceho klienta alebo retencie existujúceho, predpokladaj, že ide o nesprávnu investíciu, pokiaľ sa nepreukáže opak.
+
+Pred stavaním AKEJKOĽVEK featury konzultuj `docs/architecture/revolis-constitution-v2.md` (12-otázkový Founder Reality Check).
+
+Rešpektuj vetá:
+- "Príliš skoro" (timing) → Strategic Backlog, bez ohľadu na skóre.
+- "Žiadny klient by dnes nezaplatil" → strop je VALIDATE.
