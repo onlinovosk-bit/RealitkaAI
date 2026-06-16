@@ -52,6 +52,7 @@ export const TENANT_TABLES: TenantTableDef[] = [
   { table: "dashboard_insights_cache", scope: "agency_id", pk: "agency_id", domain: "agencies" },
   { table: "import_jobs", scope: "agency_id", pk: "id", domain: "documents" },
   { table: "import_rows", scope: "agency_id", pk: "id", domain: "documents" },
+  { table: "realsoft_import_logs", scope: "agency_id", pk: "id", domain: "documents" },
   { table: "stealth_recruiter_prospects", scope: "agency_id", pk: "id", domain: "prospects" },
   { table: "demand_signals", scope: "profile_id", pk: "id", domain: "leads" },
   { table: "competitor_monitoring", scope: "profile_id", pk: "id", domain: "agencies" },
