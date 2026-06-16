@@ -441,6 +441,27 @@ export async function seedRlsFixtures(admin: SupabaseClient): Promise<RlsFixture
   rows.import_rows_a = { id: rowA, agency_id: f.agencyA };
   rows.import_rows_b = { id: rowB, agency_id: f.agencyB };
 
+  const realsoftLogA = randomUUID();
+  const realsoftLogB = randomUUID();
+  await upsertRow(admin, "realsoft_import_logs", {
+    id: realsoftLogA,
+    agency_id: f.agencyA,
+    action: 1,
+    external_id: `rls-rs-a-${realsoftLogA.slice(0, 8)}`,
+    raw_payload: { source: "rls-fixture-a" },
+    unmapped: {},
+  });
+  await upsertRow(admin, "realsoft_import_logs", {
+    id: realsoftLogB,
+    agency_id: f.agencyB,
+    action: 1,
+    external_id: `rls-rs-b-${realsoftLogB.slice(0, 8)}`,
+    raw_payload: { source: "rls-fixture-b" },
+    unmapped: {},
+  });
+  rows.realsoft_import_logs_a = { id: realsoftLogA, agency_id: f.agencyA };
+  rows.realsoft_import_logs_b = { id: realsoftLogB, agency_id: f.agencyB };
+
   await seedProfilePkTable(admin, rows, "morning_brief_settings", f.brokerA, f.brokerB, {
     enabled: true,
   });
