@@ -19,6 +19,7 @@ const DENYLIST = [
   /^apps\/crm\/src\/lib\/credits-billing\.ts$/,
   /^apps\/crm\/src\/lib\/modules\//,
   /^apps\/crm\/src\/lib\/cadastre\//,
+  /^apps\/crm\/src\/lib\/enrichment\//,
   /^apps\/crm\/src\/app\/api\/realsoft\//,
   /^apps\/crm\/src\/lib\/realsoft\//,
   /(^|\/)stripe\//,
