@@ -9,7 +9,13 @@ import type {
 } from "./types";
 
 function inferFields(record: EnrichmentInputRecord): string[] {
-  return Object.keys(record.data).filter((field) => field !== "id" && field !== "agency_id");
+  const fields = Object.keys(record.data).filter((field) => field !== "id" && field !== "agency_id");
+  if ("phone" in record.data && !fields.includes("phone_quality")) fields.push("phone_quality");
+  if ("email" in record.data && !fields.includes("email_quality")) fields.push("email_quality");
+  if ((record.data.ico || record.data.company_name) && !fields.includes("company_profile")) {
+    fields.push("company_profile");
+  }
+  return fields;
 }
 
 async function persistAudit(entries: EnrichmentAuditEntry[]): Promise<void> {
