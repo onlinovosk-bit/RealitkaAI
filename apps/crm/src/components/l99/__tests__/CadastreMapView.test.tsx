@@ -53,4 +53,25 @@ describe("CadastreMapView", () => {
     });
     expect(screen.getByText("Display only")).toBeInTheDocument();
   });
+
+  it("does not geocode leadAddress automatically", async () => {
+    const originalPath = window.location.pathname + window.location.search;
+    window.history.replaceState({}, "", "/?leadAddress=Bratislava");
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const source: ParcelSource = {
+      getMapLayer: ({ useFallback } = {}) => createLayer(useFallback ? "fallback-no-geocode" : "primary-no-geocode"),
+      getParcelAtPoint: async () => null,
+      getParcelsForLead: async () => {
+        throw new Error("unused");
+      },
+    };
+
+    render(<CadastreMapView title="Bod zlomu" subtitle="Display-only" source={source} />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Display only")).toBeInTheDocument();
+    });
+    expect(fetchSpy).not.toHaveBeenCalled();
+    window.history.replaceState({}, "", originalPath || "/");
+  });
 });

@@ -18,25 +18,6 @@ type CadastreMapViewProps = {
   initialCenter?: [number, number];
 };
 
-async function geocodeAddress(address: string): Promise<[number, number] | null> {
-  const query = address.trim();
-  if (!query) return null;
-  try {
-    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`;
-    const response = await fetch(url);
-    if (!response.ok) return null;
-    const body = (await response.json()) as Array<{ lon?: string; lat?: string }>;
-    const top = body[0];
-    if (!top?.lon || !top?.lat) return null;
-    const lng = Number(top.lon);
-    const lat = Number(top.lat);
-    if (!Number.isFinite(lng) || !Number.isFinite(lat)) return null;
-    return [lng, lat];
-  } catch {
-    return null;
-  }
-}
-
 export function CadastreMapView({
   title,
   subtitle,
@@ -58,13 +39,7 @@ export function CadastreMapView({
     const lng = Number(params.get("leadLng"));
     if (Number.isFinite(lat) && Number.isFinite(lng)) {
       setResolvedCenter([lng, lat]);
-      return;
     }
-    const leadAddress = params.get("leadAddress");
-    if (!leadAddress) return;
-    geocodeAddress(leadAddress).then((center) => {
-      if (center) setResolvedCenter(center);
-    });
   }, []);
 
   useEffect(() => {
