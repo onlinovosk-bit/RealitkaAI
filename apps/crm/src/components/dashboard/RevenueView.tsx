@@ -3,7 +3,6 @@
 import { SLATE_HORIZON, WORKDESK_CARD, WORKDESK_KPI } from "@/lib/slate-horizon-theme";
 import {
   REVENUE_TILE_REGISTRY,
-  countLeadsByAiPriority,
   countLeadsBySource,
   type RevenueTilePolicy,
 } from "@/lib/modules/revenue-intelligence";
@@ -50,15 +49,14 @@ function PendingTile({
 
 export default function RevenueView({ leads }: { leads: Lead[] }) {
   const sourceRows = countLeadsBySource(leads);
-  const aiPriorityRows = countLeadsByAiPriority(leads);
   const topSources = sourceRows.slice(0, 4);
-  const topPriority = aiPriorityRows.slice(0, 3);
   const totalNew = leads.filter((lead) => lead.status === "Nový" || lead.status === "new").length;
 
   const liquidityPolicy = REVENUE_TILE_REGISTRY.liquidity_radar;
   const pipelinePolicy = REVENUE_TILE_REGISTRY.pipeline_velocity;
   const demandGapPolicy = REVENUE_TILE_REGISTRY.demand_supply_gap;
   const forecastPolicy = REVENUE_TILE_REGISTRY.forecast_risk;
+  const aiPriorityPolicy = REVENUE_TILE_REGISTRY.ai_priority_strip;
   const neuralPolicy = REVENUE_TILE_REGISTRY.neural_prediction_accuracy;
   const pulsePolicy = REVENUE_TILE_REGISTRY.live_market_pulse;
 
@@ -83,7 +81,7 @@ export default function RevenueView({ leads }: { leads: Lead[] }) {
             Kde vzniká príležitosť
           </h2>
           <p className="mt-2 text-xs" style={{ color: SLATE_HORIZON.muted }}>
-            Live dlaždice: Action Queue, Leady podľa zdroja, AI Priority Strip a Kataster kontext.
+            Live dlaždice: Action Queue, Leady podľa zdroja a Kataster kontext.
           </p>
         </div>
         <div className="text-right">
@@ -145,27 +143,7 @@ export default function RevenueView({ leads }: { leads: Lead[] }) {
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <Card accent="#A5B4FC">
-          <p className="mb-2 text-[10px] font-bold uppercase" style={{ color: SLATE_HORIZON.muted }}>
-            AI Priority Strip
-          </p>
-          <div className="space-y-2">
-            {topPriority.length > 0 ? (
-              topPriority.map((row) => (
-                <div key={row.priority} className="flex items-center justify-between text-xs">
-                  <span style={{ color: SLATE_HORIZON.deep }}>{row.priority}</span>
-                  <span className="font-bold" style={{ color: SLATE_HORIZON.brandDeep }}>
-                    {row.count}
-                  </span>
-                </div>
-              ))
-            ) : (
-              <p className="text-xs" style={{ color: SLATE_HORIZON.muted }}>
-                AI priorita sa zobrazí po prvom triage behu.
-              </p>
-            )}
-          </div>
-        </Card>
+        <PendingTile title="AI Priority Strip" policy={aiPriorityPolicy} sourceLabel="leads.ai_priority" />
 
         <Card accent={SLATE_HORIZON.line}>
           <h3 className="mb-6 text-center text-xs font-bold uppercase tracking-widest" style={{ color: SLATE_HORIZON.deep }}>

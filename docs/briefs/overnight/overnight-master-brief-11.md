@@ -11,9 +11,9 @@
   - Added regression test to prevent accidental reintroduction of address-based auto-centering.
 - **Wave C (`feat/brief11-wave-c-tile-reconcile`)**
   - Revenue tile registry reconciled with real source availability:
-    - `ai_priority_strip` -> `live` (wired to real `leads.ai_priority`)
+    - `ai_priority_strip` -> `pending` (current triage distribution is weak-signal, not decision-grade)
     - `kataster_context` -> `live` (wired to real ZBGIS WMS display layer)
-  - Dashboard now renders these two tiles from real data/source state.
+  - Dashboard now renders kataster context as live display-only tool and keeps AI priority strip pending with honest messaging.
 
 ## Guardrails kept
 - No fake metrics rendered in revenue dashboard guard test.

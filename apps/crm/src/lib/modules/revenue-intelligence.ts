@@ -59,7 +59,8 @@ export const REVENUE_TILE_REGISTRY: Record<RevenueTileKey, RevenueTilePolicy> = 
     label: "AI Priority Strip",
     cluster: 1,
     source: "leads.ai_priority",
-    status: "live",
+    status: "pending",
+    pendingMessage: "Priorita sa odomkne po diverzifikácii AI triáže (nie keď všetko ostáva na jednej úrovni).",
   },
   liquidity_radar: {
     key: "liquidity_radar",
@@ -121,16 +122,5 @@ export function countLeadsBySource(leads: Lead[]) {
   }
   return Array.from(tally.entries())
     .map(([source, count]) => ({ source, count }))
-    .sort((a, b) => b.count - a.count);
-}
-
-export function countLeadsByAiPriority(leads: Lead[]) {
-  const tally = new Map<string, number>();
-  for (const lead of leads) {
-    const priority = lead.aiPriority?.trim() || "Nevyhodnotená";
-    tally.set(priority, (tally.get(priority) ?? 0) + 1);
-  }
-  return Array.from(tally.entries())
-    .map(([priority, count]) => ({ priority, count }))
     .sort((a, b) => b.count - a.count);
 }

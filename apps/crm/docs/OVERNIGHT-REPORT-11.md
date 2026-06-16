@@ -26,9 +26,9 @@
 
 ## Wave C — Revenue tile state reconcile
 - Reconciled tile registry with real source availability:
-  - `ai_priority_strip` marked `live` (real source `leads.ai_priority`)
+  - `ai_priority_strip` kept `pending` (current triage is mostly constant low-priority distribution; not actionable signal yet)
   - `kataster_context` marked `live` (real source ZBGIS WMS display overlay)
-- Dashboard now renders both tiles from actual source state.
+- Dashboard renders kataster context as live display-only tool and keeps AI priority strip in honest pending state.
 - Hidden/pending tiles with no legal live inflow remain unchanged.
 
 ## Verification executed
