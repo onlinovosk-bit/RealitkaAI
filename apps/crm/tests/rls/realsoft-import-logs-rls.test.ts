@@ -76,11 +76,12 @@ describe("realsoft_import_logs RLS isolation (TEST_SUPABASE_*)", () => {
     expect(signInErr?.message).toBeUndefined();
 
     const foreignLogId = randomUUID();
+    const foreignExternalId = `foreign-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
     const { error: seedForeignErr } = await admin.from("realsoft_import_logs").insert({
       id: foreignLogId,
       agency_id: agencyB,
       action: 1,
-      external_id: "foreign-1",
+      external_id: foreignExternalId,
       raw_payload: { source: "seed" },
       unmapped: {},
     });
