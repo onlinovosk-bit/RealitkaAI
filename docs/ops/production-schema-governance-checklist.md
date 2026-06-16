@@ -23,12 +23,13 @@ SELECT COUNT(*) AS row_count FROM public."AI AGENT AUTOMAT ONBOARDING no.2.01";
 SELECT COUNT(*) AS row_count FROM public."gpmmfashion@gmail.com tabulka";
 ```
 
-## 3) Drop only empty junk tables
+## 3) Prepare cleanup proposal (do NOT drop directly)
 
 ```sql
-DROP TABLE IF EXISTS public."AI AGENT AUTOMAT ONBOARDING";
-DROP TABLE IF EXISTS public."AI AGENT AUTOMAT ONBOARDING no.2.01";
-DROP TABLE IF EXISTS public."gpmmfashion@gmail.com tabulka";
+-- Proposal only (run through migration PR after founder approval):
+-- DROP TABLE IF EXISTS public."AI AGENT AUTOMAT ONBOARDING";
+-- DROP TABLE IF EXISTS public."AI AGENT AUTOMAT ONBOARDING no.2.01";
+-- DROP TABLE IF EXISTS public."gpmmfashion@gmail.com tabulka";
 ```
 
 ## 4) Audit writer identity (governance)
@@ -45,4 +46,4 @@ ORDER BY query_start DESC;
 
 - Keep service-role keys server-only.
 - Block ad-hoc schema writes from agent/test sandboxes.
-- Add explicit schema allowlist checks in migration pipeline.
+- Add explicit schema allowlist checks in scheduled CI guard.
