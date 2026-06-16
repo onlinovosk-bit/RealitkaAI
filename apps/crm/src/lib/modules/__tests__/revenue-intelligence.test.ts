@@ -12,9 +12,11 @@ describe("revenue intelligence registry", () => {
     }
   });
 
-  it("marks Action Queue and leads-by-source as live", () => {
+  it("marks currently wired tiles as live and keeps weak-signal tiles pending", () => {
     expect(REVENUE_TILE_REGISTRY.action_queue.status).toBe("live");
     expect(REVENUE_TILE_REGISTRY.leads_by_source.status).toBe("live");
+    expect(REVENUE_TILE_REGISTRY.kataster_context.status).toBe("live");
+    expect(REVENUE_TILE_REGISTRY.ai_priority_strip.status).toBe("pending");
   });
 
   it("marks unsupported synthetic metrics as hidden", () => {
@@ -48,4 +50,5 @@ describe("revenue intelligence data wiring", () => {
       { source: "Neznámy zdroj", count: 1 },
     ]);
   });
+
 });

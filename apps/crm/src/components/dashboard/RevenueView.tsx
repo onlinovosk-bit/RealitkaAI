@@ -56,7 +56,7 @@ export default function RevenueView({ leads }: { leads: Lead[] }) {
   const pipelinePolicy = REVENUE_TILE_REGISTRY.pipeline_velocity;
   const demandGapPolicy = REVENUE_TILE_REGISTRY.demand_supply_gap;
   const forecastPolicy = REVENUE_TILE_REGISTRY.forecast_risk;
-  const katasterPolicy = REVENUE_TILE_REGISTRY.kataster_context;
+  const aiPriorityPolicy = REVENUE_TILE_REGISTRY.ai_priority_strip;
   const neuralPolicy = REVENUE_TILE_REGISTRY.neural_prediction_accuracy;
   const pulsePolicy = REVENUE_TILE_REGISTRY.live_market_pulse;
 
@@ -81,7 +81,7 @@ export default function RevenueView({ leads }: { leads: Lead[] }) {
             Kde vzniká príležitosť
           </h2>
           <p className="mt-2 text-xs" style={{ color: SLATE_HORIZON.muted }}>
-            Live dlaždice: Action Queue + Leady podľa zdroja. Ostatné čestne pending/hidden.
+            Live dlaždice: Action Queue, Leady podľa zdroja a Kataster kontext.
           </p>
         </div>
         <div className="text-right">
@@ -129,10 +129,22 @@ export default function RevenueView({ leads }: { leads: Lead[] }) {
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <PendingTile title="Forecast / predikcia rizika" policy={forecastPolicy} sourceLabel="activities + status história" />
 
-        <PendingTile title="Kataster / parcelný kontext" policy={katasterPolicy} sourceLabel="ZBGIS WMS" />
+        <Card accent="#93C5FD">
+          <p className="mb-2 text-[10px] font-bold uppercase" style={{ color: SLATE_HORIZON.muted }}>
+            Kataster / parcelný kontext
+          </p>
+          <p className="text-sm font-semibold" style={{ color: SLATE_HORIZON.deep }}>
+            Live display-only nad ZBGIS WMS.
+          </p>
+          <p className="mt-2 text-xs" style={{ color: SLATE_HORIZON.muted }}>
+            Modul je dostupný v L99 Hub; bez vlastníkov a bez ukladania citlivých dát.
+          </p>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <PendingTile title="AI Priority Strip" policy={aiPriorityPolicy} sourceLabel="leads.ai_priority" />
+
         <Card accent={SLATE_HORIZON.line}>
           <h3 className="mb-6 text-center text-xs font-bold uppercase tracking-widest" style={{ color: SLATE_HORIZON.deep }}>
             Skrytá dlaždica

@@ -60,7 +60,7 @@ export const REVENUE_TILE_REGISTRY: Record<RevenueTileKey, RevenueTilePolicy> = 
     cluster: 1,
     source: "leads.ai_priority",
     status: "pending",
-    pendingMessage: "Počíta sa z AI triáže leadov. Zobrazí sa po stabilnej AI histórii.",
+    pendingMessage: "Priorita sa odomkne po diverzifikácii AI triáže (nie keď všetko ostáva na jednej úrovni).",
   },
   liquidity_radar: {
     key: "liquidity_radar",
@@ -96,8 +96,7 @@ export const REVENUE_TILE_REGISTRY: Record<RevenueTileKey, RevenueTilePolicy> = 
     label: "Kataster / parcelný kontext",
     cluster: 2,
     source: "ZBGIS WMS",
-    status: "pending",
-    pendingMessage: "Pripája sa na verejný kataster (ZBGIS) - čoskoro.",
+    status: "live",
   },
 };
 
