@@ -19,7 +19,9 @@ At the start of every session:
    Unconnected source → honest "computed from {source}" state, never a fake number.
 5. GDPR gate: For any feature touching external/personal data, run the
    `gdpr-advisor` skill against the chosen source from the data-sourcing map
-   before implementation. Document the legal basis (6(1)(f) + balancing test).   
+   before implementation. Document the legal basis (6(1)(f) + balancing test).
+6. UI/marketing copy: When writing any user-facing text (...) consult
+   `docs/architecture/clay-positioning-reframe.md`. Lead with the OUTCOME (...)      
 
 ## Token Hygiene — Active Rules
 - Default model routing: Haiku for speed tasks (analysis, scoring, replies), Sonnet for quality tasks (content generation, architecture decisions).
