@@ -12,6 +12,7 @@
 ## Delivered in this wave
 - `api/realsoft/import` receiver with auth + logging + idempotent dedupe.
 - Supabase migration for `realsoft_import_logs` and agency credentials columns.
+- Follow-up hardening migration: plaintext `realsoft_export_pass` removed, replaced by `realsoft_export_pass_hash` + DB-side verify RPC.
 - Universal import bridge artifacts (`import_jobs`, `import_rows`, `migration_cases`) per accepted payload.
 - Tests:
   - mapper guardrails (`src/lib/realsoft/__tests__/mapper.test.ts`)

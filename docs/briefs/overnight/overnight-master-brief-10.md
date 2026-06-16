@@ -4,6 +4,7 @@
 ## Scope delivered
 - Added `POST /api/realsoft/import` receiver with RealSoft-compatible JSON ack contract (`code/message`).
 - Added agency-scoped auth mapping via `agencies.realsoft_export_user` + `agencies.realsoft_export_pass`.
+- Hardened auth storage to `agencies.realsoft_export_pass_hash` (bcrypt via Postgres `crypt`) and removed plaintext password column.
 - Added raw audit table `realsoft_import_logs` with agency RLS and idempotency index by `(agency_id, action, external_id)`.
 - Wired receiver into Universal Import infrastructure (`import_jobs`, `import_rows`, `migration_cases`).
 - Added denylist rules for `realsoft` ingestion paths in auto-merge policy.
