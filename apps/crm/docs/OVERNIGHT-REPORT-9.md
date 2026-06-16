@@ -1,4 +1,4 @@
-# OVERNIGHT REPORT 9 — Brief 9.0
+# OVERNIGHT REPORT 9 — Brief 9.0 / 9 v2
 
 > **Baseline:** `origin/main` @ post-#184 · **Politika:** [AUTOMERGE-POLICY.md](../../docs/AUTOMERGE-POLICY.md) v1.0 · **Brief:** [overnight-master-brief-9.md](../../docs/briefs/overnight/overnight-master-brief-9.md)  
 > **Pravidlo:** REPORTOVANÉ ≠ COMMITNUTÉ — overené `git branch -a` + open PRs @ 2026-06-12 ~06:00 UTC.
@@ -12,6 +12,25 @@
 | [#185](https://github.com/onlinovosk-bit/RealitkaAI/pull/185) | `feat/automerge-policy` | 3 | **MERGED** — robot aktívny |
 
 Andy pred spaním: labels `automerge` / `hold` / `tier-3-andy` + branch protection „require up to date".
+
+## Brief 9 v2 — Revenue Intelligence (wire, not delete)
+
+### Stav
+- Dashboard RevenueView dlaždice sú klasifikované ako `live`/`pending`/`hidden` cez registry (`src/lib/modules/revenue-intelligence.ts`).
+- Live teraz: Action Queue (`status='Nový'`) + Leady podľa zdroja (`leads.source`).
+- Pending: Pipeline velocity, Forecast risk, Likvidita v radare, Kataster kontext.
+- Hidden: Demand/Supply gap, Live Market Pulse, Neural Prediction Accuracy.
+
+### Anti-hallucination guard
+- Zakázané mock metriky odstránené z `RevenueView` (napr. `94.8%`, `1,42M €`, `9 Alerts`, `88.4ms response`).
+- Guard test pridaný: `tests/verification/revenue-intelligence-guard.verification.test.ts`.
+
+### Action Queue wiring
+- Nový panel: `src/components/dashboard/ActionQueuePanel.tsx`.
+- Akcia `Volať/Napísať`:
+  - PATCH lead (`status='Kontaktovaný'`, `lastContact=ISO now`)
+  - POST activity na `/api/leads/{id}/activities` s typom `Kontakt`
+  - lead zmizne z Action Queue lokálne bez reloadu.
 
 ---
 

@@ -23,6 +23,7 @@ import { ImportContactsBanner } from "@/components/dashboard/ImportContactsBanne
 import { AIPriorityStrip } from "@/components/dashboard/AIPriorityStrip";
 import { NextBestActionPanel } from "@/components/dashboard/NextBestActionPanel";
 import { FollowUpTodayCard } from "@/components/follow-up/FollowUpTodayCard";
+import { ActionQueuePanel } from "@/components/dashboard/ActionQueuePanel";
 import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
 import { canRenderModule, normalizeModuleTier } from "@/lib/modules/registry";
 
@@ -134,6 +135,37 @@ export default function DashboardPageClient({ initialPropertiesSummary }: Dashbo
   const [loadError, setLoadError] = useState<string | null>(null);
   const [enterpriseSalesIntelligence, setEnterpriseSalesIntelligence] = useState(false);
   const [coachingPayload, setCoachingPayload] = useState<CoachingInsightPayload | null>(null);
+
+  async function markLeadContacted(leadId: string) {
+    const nowIso = new Date().toISOString();
+    await fetch(`/api/leads/${leadId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        status: "Teplý",
+        lastContact: nowIso,
+      }),
+    });
+    await fetch(`/api/leads/${leadId}/activities`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "Kontakt",
+        note: "Lead bol kontaktovaný cez Action Queue (Volať/Napísať).",
+      }),
+    });
+    setLeads((prev) =>
+      prev.map((lead) =>
+        lead.id === leadId
+          ? {
+              ...lead,
+              status: "Teplý",
+              lastContact: nowIso,
+            }
+          : lead,
+      ),
+    );
+  }
 
   const assistantLeadOptions = useMemo(
     () => leads.map((l) => ({ id: l.id, name: l.name })),
@@ -282,6 +314,7 @@ export default function DashboardPageClient({ initialPropertiesSummary }: Dashbo
         <ImportContactsBanner leadsCount={totalLeads} />
 
         <AIPriorityStrip leads={leads} loading={isLoading} />
+        <ActionQueuePanel leads={leads} onLeadAction={markLeadContacted} />
 
         <NextBestActionPanel leads={leads} loading={isLoading} />
 
@@ -404,7 +437,7 @@ export default function DashboardPageClient({ initialPropertiesSummary }: Dashbo
 
         {showRevenueCommandCenter ? (
           <section className="mb-6">
-            <RevenueView />
+            <RevenueView leads={leads} />
           </section>
         ) : null}
 
