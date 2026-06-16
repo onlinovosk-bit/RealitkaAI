@@ -23,11 +23,16 @@ export interface TableIsolationResult {
 
 export function assertLocalTestDb(): void {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-  const allowed = url.includes("127.0.0.1") || url.includes("localhost");
+  const allowRemoteTest = process.env.ALLOW_REMOTE_TEST_SUPABASE === "1";
+  const testUrl = process.env.TEST_SUPABASE_URL ?? "";
+  const allowed =
+    url.includes("127.0.0.1") ||
+    url.includes("localhost") ||
+    (allowRemoteTest && Boolean(testUrl) && url === testUrl);
   if (!allowed) {
     throw new Error(
-      `RLS isolation tests require local Supabase (got ${url || "unset"}). ` +
-        "Run: supabase start && supabase db reset",
+      `RLS isolation tests require local Supabase or explicit TEST override (got ${url || "unset"}). ` +
+        "Run local stack or set ALLOW_REMOTE_TEST_SUPABASE=1 with NEXT_PUBLIC_SUPABASE_URL=TEST_SUPABASE_URL",
     );
   }
 }
@@ -157,6 +162,11 @@ export async function testCrossTenantIsolation(
     insertPayload.payload = {};
     insertPayload.generated_at = new Date().toISOString();
   }
+  if (def.table === "outreach_logs") {
+    insertPayload.campaign = "rls_probe";
+    insertPayload.channel = "email";
+    insertPayload.message_content = "probe";
+  }
 
   const { error: insertError } = await client.from(def.table).insert(insertPayload);
   const insertBlocked = insertError != null;
@@ -167,9 +177,16 @@ export async function testCrossTenantIsolation(
   });
 
   // UPDATE other tenant row
+  const updatePatch: Record<string, unknown> =
+    def.table === "properties"
+      ? { title: `RLS update probe ${Date.now()}` }
+      : def.table === "outreach_logs"
+        ? { message_content: `RLS update probe ${Date.now()}` }
+        : { updated_at: new Date().toISOString() };
+
   const { data: updateData, error: updateError } = await client
     .from(def.table)
-    .update({ updated_at: new Date().toISOString() } as Record<string, unknown>)
+    .update(updatePatch)
     .eq(pk, otherId)
     .select(pk);
 

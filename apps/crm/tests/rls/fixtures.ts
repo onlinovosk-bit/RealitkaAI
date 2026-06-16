@@ -258,14 +258,14 @@ export async function seedRlsFixtures(admin: SupabaseClient): Promise<RlsFixture
     property_id: f.propertyA,
     property_title: "Property A",
     score: 80,
-  });
+  }, "lead_id,property_id");
   await upsertRow(admin, "lead_property_matches", {
     id: matchB,
     lead_id: f.leadB,
     property_id: f.propertyB,
     property_title: "Property B",
     score: 75,
-  });
+  }, "lead_id,property_id");
   rows.lead_property_matches_a = { id: matchA, lead_id: f.leadA };
   rows.lead_property_matches_b = { id: matchB, lead_id: f.leadB };
 
@@ -462,6 +462,29 @@ export async function seedRlsFixtures(admin: SupabaseClient): Promise<RlsFixture
   rows.realsoft_import_logs_a = { id: realsoftLogA, agency_id: f.agencyA };
   rows.realsoft_import_logs_b = { id: realsoftLogB, agency_id: f.agencyB };
 
+  const enrichmentA = randomUUID();
+  const enrichmentB = randomUUID();
+  await upsertRow(admin, "enrichment_log", {
+    id: enrichmentA,
+    agency_id: f.agencyA,
+    record_id: f.leadA,
+    record_type: "lead",
+    field: "phone_quality",
+    source: "phone-normalization",
+    value: { valid: true },
+  });
+  await upsertRow(admin, "enrichment_log", {
+    id: enrichmentB,
+    agency_id: f.agencyB,
+    record_id: f.leadB,
+    record_type: "lead",
+    field: "phone_quality",
+    source: "phone-normalization",
+    value: { valid: true },
+  });
+  rows.enrichment_log_a = { id: enrichmentA, agency_id: f.agencyA };
+  rows.enrichment_log_b = { id: enrichmentB, agency_id: f.agencyB };
+
   await seedProfilePkTable(admin, rows, "morning_brief_settings", f.brokerA, f.brokerB, {
     enabled: true,
   });
@@ -644,12 +667,12 @@ export async function seedRlsFixtures(admin: SupabaseClient): Promise<RlsFixture
     id: stealthA,
     agency_id: f.agencyA,
     address: "RLS Stealth Address A",
-  });
+  }, "agency_id,address");
   await upsertRow(admin, "stealth_recruiter_prospects", {
     id: stealthB,
     agency_id: f.agencyB,
     address: "RLS Stealth Address B",
-  });
+  }, "agency_id,address");
   rows.stealth_recruiter_prospects_a = { id: stealthA, agency_id: f.agencyA };
   rows.stealth_recruiter_prospects_b = { id: stealthB, agency_id: f.agencyB };
 
@@ -712,20 +735,25 @@ async function seedArbitrageMatches(
   const matchA = randomUUID();
   const matchB = randomUUID();
   try {
-    for (const [listingId, profileId, ext] of [
-      [portalA, profileA, "portal-a"],
-      [portalB, profileB, "portal-b"],
-      [bazosA, profileA, "bazos-a"],
-      [bazosB, profileB, "bazos-b"],
+    for (const [listingId, profileId] of [
+      [portalA, profileA],
+      [portalB, profileB],
+      [bazosA, profileA],
+      [bazosB, profileB],
     ] as const) {
-      await upsertRow(admin, "portal_listings", {
-        id: listingId,
-        profile_id: profileId,
-        source: "bazos_sk",
-        external_id: ext,
-        title: `Listing ${ext}`,
-        price: 200000,
-      });
+      try {
+        const ext = `rls-${listingId}`;
+        await upsertRow(admin, "portal_listings", {
+          id: listingId,
+          profile_id: profileId,
+          source: "bazos_sk",
+          external_id: ext,
+          title: `Listing ${ext}`,
+          price: 200000,
+        });
+      } catch {
+        await upsertRow(admin, "portal_listings", { id: listingId });
+      }
     }
     await upsertRow(admin, "arbitrage_matches", {
       id: matchA,
@@ -737,7 +765,7 @@ async function seedArbitrageMatches(
       delta_eur: 20000,
       delta_pct: 10,
       match_score: 0.8,
-    });
+    }, "listing_portal,listing_bazos");
     await upsertRow(admin, "arbitrage_matches", {
       id: matchB,
       profile_id: profileB,
@@ -748,7 +776,7 @@ async function seedArbitrageMatches(
       delta_eur: 10000,
       delta_pct: 6.67,
       match_score: 0.75,
-    });
+    }, "listing_portal,listing_bazos");
     rows.arbitrage_matches_a = { id: matchA, profile_id: profileA };
     rows.arbitrage_matches_b = { id: matchB, profile_id: profileB };
   } catch (e) {
@@ -841,8 +869,15 @@ async function seedAgencyScopedTable(
     baseB.lead_id = leadB;
   }
   try {
-    await upsertRow(admin, table, baseA);
-    await upsertRow(admin, table, baseB);
+    const conflictByTable: Record<string, string> = {
+      lead_scores: "lead_id",
+      client_dna: "lead_id",
+      deal_risk: "lead_id",
+      lead_closing_windows: "lead_id",
+    };
+    const onConflict = conflictByTable[table];
+    await upsertRow(admin, table, baseA, onConflict);
+    await upsertRow(admin, table, baseB, onConflict);
     rows[`${table}_a`] = { id: idA, agency_id: agencyA };
     rows[`${table}_b`] = { id: idB, agency_id: agencyB };
   } catch (e) {
@@ -863,8 +898,14 @@ async function seedProfileScoped(
   const idA = randomUUID();
   const idB = randomUUID();
   try {
-    await upsertRow(admin, table, { id: idA, profile_id: profileA, ...extra });
-    await upsertRow(admin, table, { id: idB, profile_id: profileB, ...extra });
+    const conflictByTable: Record<string, string> = {
+      profile_integrations: "profile_id,type",
+      watched_parcels: "profile_id,parcel_id",
+      seller_motivation: "profile_id,property_id",
+    };
+    const onConflict = conflictByTable[table];
+    await upsertRow(admin, table, { id: idA, profile_id: profileA, ...extra }, onConflict);
+    await upsertRow(admin, table, { id: idB, profile_id: profileB, ...extra }, onConflict);
     rows[`${table}_a`] = { id: idA, profile_id: profileA };
     rows[`${table}_b`] = { id: idB, profile_id: profileB };
   } catch (e) {
