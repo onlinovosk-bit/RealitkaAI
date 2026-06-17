@@ -7,6 +7,8 @@ const BYPASS_PREFIXES = [
   '/api/cron/',               // CRON_SECRET header auth
   '/api/webhooks/',           // Route-level auth (Realvia identifikator, signatures, etc.)
   '/api/realvia/',            // Realvia XML import — validateRequest in route handler
+  '/api/uc/',                 // UC Export API — user/pass in body (Brief 14)
+  '/api/realsoft/',           // RealSoft UC alias — same protocol as /api/uc/import
   '/api/resend-webhook/',     // Resend event stream (signature-verified)
   '/api/health',              // uptime monitoring (public)
   '/api/healthz',             // uptime monitoring (public)
