@@ -79,6 +79,17 @@ moat sa neprehĺbil, ďalší klient nie je bližšie.
 Brief 12 Wave B.
 **Kontrolór check:** bod 8 (verifikácia) + povinný STOP (deštruktívny/schéma zásah).
 
+## AP-009 — Agent vráti text namiesto artefaktu
+**Symptóm:** agent "odpovedal ✅" peknou prózou/plánom, ale nevytvoril vetvu,
+commit ani diff. Výstup vyzerá ako práca, reálne sa nezmenilo nič
+(nočný swarm wave12c/d/e + wave13c: text, žiadne commity).
+**Detekcia:** po behu `git branch` prázdny, `git status` čistý, žiadne PR.
+"Odpovedal" ≠ "spravil".
+**Fix:** done je definované ako OVERITEĽNÝ ARTEFAKT — existuje commit + zelené
+CI — nie ako "agent dohovoril". Open loop bez brány produkuje slop; brána musí
+byť niečo, s čím sa agent nevie hádať (build/test/CI), nie jeho vlastné vyhlásenie.
+**Kontrolór check:** bod 8 (verifikácia) + nové pravidlo nižšie.
+
 ---
 ## Ako pridať nový antipattern
 Keď nastane incident: zapíš sem AP-NNN (symptóm / detekcia / fix / Kontrolór check),
