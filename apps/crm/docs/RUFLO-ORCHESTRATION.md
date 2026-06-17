@@ -48,6 +48,49 @@ Poznámka: dokumentácia Rufla môže spomínať aj CLI príkazy (napr. `swarm s
 
 ---
 
+## `maxTokens` — default je príliš nízky pre kód + commit
+
+V repozitári **nie je** globálny Ruflo config s `max_tokens` (`.swarm/`, `.ruflo/`, `.claude-flow/` prázdne; `.cursor/mcp.json` len spúšťa `npx ruflo@latest mcp start`).
+
+| Cesta | Default | Kde |
+|-------|---------|-----|
+| `agent_execute` (MCP) | **1024** output tokenov | `@claude-flow/cli` → `agent-execute-core.js` (`max_tokens: input.maxTokens \|\| 1024`) |
+| `managed_agent_prompt` | bez parametra | cloud session — iné limity |
+| Cursor native agent | Cursor IDE | nie Ruflo |
+
+**1024 nestačí** na úlohu „napíš kód + test + commit message“ — odpoveď sa usekne (`stop_reason: max_tokens`), swarm vyzerá ako hotový, ale artefakt chýba (súvisí s AP-009).
+
+### Povinné pri `agent_execute`
+
+Vždy explicitne pošli `maxTokens` pri code/implementačných úlohách:
+
+```json
+{
+  "agentId": "agent-…",
+  "prompt": "…",
+  "maxTokens": 16384
+}
+```
+
+Odporúčané hodnoty:
+
+| Typ úlohy | `maxTokens` |
+|-----------|-------------|
+| Krátka analýza / routing | 2048–4096 |
+| Kód + testy + diff | **16384** |
+| Veľký refactor / viac súborov | **32768** (ak model podporuje) |
+
+Do orchestrátora / `system` promptu swarm agenta doplň:
+
+```markdown
+Pri každom volaní agent_execute pre implementáciu vždy nastav maxTokens >= 16384.
+Bez toho považuj výstup za neúplný (AP-009).
+```
+
+**Poznámka:** Ruflo zatiaľ nemá env premennú typu `RUFLO_MAX_TOKENS` — limit sa mení len per-call v `agent_execute`, nie v `mcp.json`.
+
+---
+
 ## Swarm — základný tok
 
 1. `swarm_init` (topology, maxAgents, strategy, config) → získaj `swarmId` (alebo podľa Rufla „latest“).  
@@ -94,6 +137,7 @@ PRACOVNÝ POSTUP
 2) Najmenší bezpečný diff.
 3) Kroky / patch inštrukcie.
 4) Verifikácia a blokery.
+5) Pri agent_execute: maxTokens >= 16384 pre implementáciu (default Ruflo je 1024).
 ```
 
 Konkrétny task (napr. Realvia, migrácia, UI) doplň ako samostatný blok pod týmto.
