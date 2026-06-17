@@ -124,6 +124,14 @@
 - **Plán + rola (P0 backlog):** Smolko screenshot = `agent_solo` (Active Force + Maklér) namiesto `owner_vision` + Market Vision. `enforceSmolkoOwnerDefaults` v kóde existuje — overiť, či beží na prod (profil lookup / email / deploy). Dôležitejšie než arbitráž link.
 ---
 
+## [2026-06-17] - Schema Governance Guard — schedule disabled until secrets
+- **Stav:** `SCHEMA_GUARD_SUPABASE_URL` + `SCHEMA_GUARD_SUPABASE_SERVICE_ROLE_KEY` nie sú v GitHub Actions secrets → scheduled guard padal každú noc (konfiguračný fail, nie drift).
+- **Rozhodnutie:** Cron v `.github/workflows/schema-governance-guard.yml` **dočasne vypnutý**; `workflow_dispatch` ostáva pre manuálny beh po nastavení secrets.
+- **Re-enable:** Po doplnení secrets odkomentovať `schedule` (04:17 UTC) — guard má chytať skutočný schema drift (AP-008), nie šumovať falošnými červenými.
+- **Súvis:** Brief 12 Wave B governance; Brief 14 merge #211 na `main`.
+
+---
+
 ## [2026-06-12] - Brief 9.0 + Auto-merge policy v1
 - **Rozhodnutie:** Overnight swarm Brief 9.0 — Fáza 0 `feat/automerge-policy` (Tier 3, merge Andy pred spaním); Vlny 1–3 až po merge robot PR + midnight gate.
 - **Pravidlá:** Tier 1 okamžitý merge (docs/tests/md); Tier 2 po 6 h; Tier 3 denylist (`.github`, migrácie, auth, billing, ceny, Smolko). Robot vykonáva `docs/AUTOMERGE-POLICY.md`, neinterpretuje.

@@ -2,8 +2,13 @@ name: Schema Governance Guard
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "17 4 * * *"
+  # SCHEDULE DISABLED (2026-06-17): nightly runs failed without SCHEMA_GUARD_* secrets
+  # and trained "always red" alarm fatigue. Re-enable after setting:
+  #   SCHEMA_GUARD_SUPABASE_URL
+  #   SCHEMA_GUARD_SUPABASE_SERVICE_ROLE_KEY
+  # in GitHub → Settings → Secrets → Actions. Manual workflow_dispatch still works.
+  # schedule:
+  #   - cron: "17 4 * * *"
 
 jobs:
   schema_guard:
