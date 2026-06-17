@@ -39,13 +39,23 @@ export function extractExternalIdFromConfiguredPath(
   action: RealsoftAction,
   data: unknown,
 ): string | null {
+  if (!isRecord(data)) return null;
+
   const path =
     action === 1
       ? process.env.REALSOFT_EXTERNAL_ID_PATH_ACTION_1
       : process.env.REALSOFT_EXTERNAL_ID_PATH_ACTION_2;
-  if (!path || !path.trim()) return null;
 
-  const value = getValueByPath(data, path);
-  return coerceString(value);
+  if (path?.trim()) {
+    const value = getValueByPath(data, path);
+    const fromPath = coerceString(value);
+    if (fromPath) return fromPath;
+  }
+
+  if (action === 1) {
+    return coerceString(data.object_id) ?? coerceString(data.id);
+  }
+
+  return coerceString(data.user_id) ?? coerceString(data.import_id);
 }
 

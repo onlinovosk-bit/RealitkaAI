@@ -1,5 +1,7 @@
-import { normalizePhone } from "@/lib/import/contacts-import-core";
+import { mapUcAgentPayload } from "@/lib/uc/mapper-agent";
+import { mapUcListingPayload } from "@/lib/uc/mapper-listing";
 import type { RealsoftAction } from "@/lib/realsoft/payload";
+import { isRecord } from "@/lib/uc/shared";
 
 export class RealsoftSampleRequiredError extends Error {
   constructor(action: RealsoftAction) {
@@ -16,31 +18,28 @@ export type RealsoftMappingResult = {
   unmapped: Record<string, unknown>;
 };
 
-/**
- * Brief-10 hard rule:
- * - no inferred schema without real payload fixture
- * - keep mapper as explicit TODO skeleton until fixture is provided
- */
+/** Back-compat wrapper — delegates to documented UC mappers (Brief 14). */
 export function mapRealsoftPayload(
   action: RealsoftAction,
   data: unknown,
 ): RealsoftMappingResult {
-  const sampleReady =
-    process.env.REALSOFT_SAMPLE_READY === "1" || process.env.REALSOFT_SAMPLE_READY === "true";
-  if (!sampleReady) {
+  if (!isRecord(data)) {
     throw new RealsoftSampleRequiredError(action);
   }
 
-  const normalizedPhones: string[] = [];
-  if (typeof data === "string") {
-    const candidate = normalizePhone(data);
-    if (candidate.phone) normalizedPhones.push(candidate.phone);
+  if (action === 2) {
+    const mapped = mapUcAgentPayload(data);
+    return {
+      action,
+      normalizedPhones: mapped.phone ? [mapped.phone] : [],
+      unmapped: mapped.raw,
+    };
   }
 
+  const mapped = mapUcListingPayload(data);
   return {
     action,
-    normalizedPhones,
-    unmapped: {},
+    normalizedPhones: [],
+    unmapped: mapped.raw,
   };
 }
-
