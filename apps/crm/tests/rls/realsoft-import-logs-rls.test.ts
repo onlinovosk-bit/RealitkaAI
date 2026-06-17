@@ -93,6 +93,7 @@ describe("realsoft_import_logs RLS isolation (TEST_SUPABASE_*)", () => {
       external_id: `own-${Date.now()}`,
       raw_payload: { source: "probe" },
       unmapped: {},
+      result_code: 1,
     });
     expect(ownInsertErr?.message).toBeUndefined();
 
