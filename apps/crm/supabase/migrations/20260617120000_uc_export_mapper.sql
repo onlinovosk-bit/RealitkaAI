@@ -17,6 +17,28 @@ COMMENT ON COLUMN public.profiles.import_source_id IS
 COMMENT ON COLUMN public.profiles.import_source_system IS
   'Import source system for external agent id (e.g. uc).';
 
+-- Properties import columns (from Realvia infra; required before tenant source index)
+ALTER TABLE IF EXISTS public.properties
+  ADD COLUMN IF NOT EXISTS source_id TEXT,
+  ADD COLUMN IF NOT EXISTS source_system TEXT NOT NULL DEFAULT 'manual',
+  ADD COLUMN IF NOT EXISTS broker_source_id TEXT,
+  ADD COLUMN IF NOT EXISTS broker_name TEXT NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS broker_email TEXT NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS broker_phone TEXT NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS payload_raw JSONB,
+  ADD COLUMN IF NOT EXISTS currency TEXT NOT NULL DEFAULT 'EUR',
+  ADD COLUMN IF NOT EXISTS usable_area NUMERIC(10, 2),
+  ADD COLUMN IF NOT EXISTS land_area NUMERIC(10, 2),
+  ADD COLUMN IF NOT EXISTS building_area NUMERIC(10, 2),
+  ADD COLUMN IF NOT EXISTS latitude NUMERIC(10, 7),
+  ADD COLUMN IF NOT EXISTS longitude NUMERIC(10, 7),
+  ADD COLUMN IF NOT EXISTS transaction_type TEXT NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS floor SMALLINT,
+  ADD COLUMN IF NOT EXISTS rooms_count SMALLINT,
+  ADD COLUMN IF NOT EXISTS images JSONB NOT NULL DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS description TEXT NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;
+
 -- Import audit: store UC result code (1=added, 2=edited, 3=deleted, ...)
 ALTER TABLE IF EXISTS public.realsoft_import_logs
   ADD COLUMN IF NOT EXISTS result_code SMALLINT;
