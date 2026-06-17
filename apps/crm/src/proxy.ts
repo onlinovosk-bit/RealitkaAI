@@ -34,6 +34,15 @@ function isRealviaImportPath(pathname: string): boolean {
   return pathname === "/api/realvia/import" || pathname === "/api/realvia/import/";
 }
 
+function isUcExportImportPath(pathname: string): boolean {
+  return (
+    pathname === "/api/uc/import" ||
+    pathname === "/api/uc/import/" ||
+    pathname === "/api/realsoft/import" ||
+    pathname === "/api/realsoft/import/"
+  );
+}
+
 function isWebhookApiPath(pathname: string): boolean {
   return (
     pathname === WEBHOOK_API_SEGMENT ||
@@ -75,6 +84,7 @@ export async function proxy(request: NextRequest) {
 
   if (isPublic(pathname)) return NextResponse.next();
   if (isRealviaImportPath(pathname)) return NextResponse.next();
+  if (isUcExportImportPath(pathname)) return NextResponse.next();
   if (isWebhookApiPath(pathname)) return NextResponse.next();
   if (REMOVED_API_PATHS.has(pathname)) return NextResponse.next();
   if (DEPRECATED_API_SHIMS.has(pathname)) return NextResponse.next();
