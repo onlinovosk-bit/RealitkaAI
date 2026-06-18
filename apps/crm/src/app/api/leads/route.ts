@@ -4,7 +4,7 @@ import { okResponse, errorResponse } from "@/lib/api-response";
 import { autoErrorCapture } from "@/lib/auto-error-capture";
 import { createActivity } from "@/lib/activities-store";
 import { createClient } from "@/lib/supabase/server";
-import { createLead } from "@/lib/leads-store";
+import { createLead, listLeads } from "@/lib/leads-store";
 import { autoRecalculateForLead } from "@/lib/matching-hooks";
 import { validateBody } from "@/lib/api-validate";
 import { globalEventBus } from "@/infra/messaging/EventBus";
@@ -39,25 +39,11 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json([], { status: 401 });
 
-  const { data, error } = await supabase
-    .from("leads")
-    .select("id, name, phone, status, last_contact_at:last_contact, created_at")
-    .order("created_at", { ascending: false })
-    .limit(20);
-
-  if (error) {
-    console.error("GET /api/leads failed:", error.message);
-    // Stabilizačný fallback: API nezhodí UI pri dočasnej DB chybe.
-    return NextResponse.json([], {
-      status: 200,
-      headers: {
-        "x-revolis-warning": "leads_fetch_failed",
-      },
-    });
-  }
-
-  const normalized = (data || []).map((lead) => ({
-    ...lead,
+  const leads = await listLeads(undefined, supabase);
+  const normalized = leads.slice(0, 20).map((lead) => ({
+    id: lead.id,
+    name: lead.name,
+    phone: lead.phone,
     status:
       lead.status === "Nový"
         ? "Nový"
@@ -66,6 +52,8 @@ export async function GET() {
           : lead.status === "Ponuka"
             ? "Ponuka"
             : "Iné",
+    last_contact_at: lead.lastContact,
+    created_at: undefined,
   }));
 
   return NextResponse.json(normalized);
