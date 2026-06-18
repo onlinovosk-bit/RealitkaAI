@@ -264,31 +264,17 @@ function parseAiEngineColumn(raw: SupabaseLeadRow["ai_engine"]): AiEngineSnapsho
 }
 
 /**
- * RLS leads policy still exposes `agency_id IS NULL` rows to every authenticated user.
- * When profile has agency_id, keep only that tenant (defense in depth until migration tightens RLS).
+ * Defense-in-depth tenant filter — RLS is primary; app layer drops cross-tenant rows.
  */
 async function scopeLeadRowsToProfileAgency(
   supabase: import("@supabase/supabase-js").SupabaseClient,
   rows: SupabaseLeadRow[],
 ): Promise<SupabaseLeadRow[]> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return rows;
-
-  const { resolveProfileForAuthUser } = await import(
-    "@/lib/profiles/resolve-profile-for-auth"
+  const { resolveSessionAgencyId, filterRowsByAgency } = await import(
+    "@/lib/tenant-scope"
   );
-  const { profile } = await resolveProfileForAuthUser(
-    supabase,
-    user.id,
-    "agency_id",
-    user.email,
-  );
-  const agencyId = profile?.agency_id;
-  if (!agencyId) return rows;
-
-  return rows.filter((row) => row.agency_id === agencyId);
+  const agencyId = await resolveSessionAgencyId(supabase);
+  return filterRowsByAgency(rows, agencyId);
 }
 
 function mapRowToLead(row: SupabaseLeadRow): Lead {
@@ -787,9 +773,17 @@ export async function listLeads(
     return applyFilters(mockLeads, filters);
   }
 
+  const { resolveSessionAgencyId } = await import("@/lib/tenant-scope");
+  const agencyId = await resolveSessionAgencyId(supabase);
+  if (!agencyId) {
+    console.warn("[leads-store] listLeads: missing profile agency_id — returning empty set");
+    return [];
+  }
+
   let query = supabase
     .from("leads")
     .select("*")
+    .eq("agency_id", agencyId)
     .order("score", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(500);
@@ -849,7 +843,14 @@ export async function getLead(id: string): Promise<Lead | undefined> {
     return mockLeads.find((lead) => lead.id === id);
   }
 
-  return mapRowToLead(data as SupabaseLeadRow);
+  const { resolveSessionAgencyId, filterRowsByAgency } = await import(
+    "@/lib/tenant-scope"
+  );
+  const agencyId = await resolveSessionAgencyId(supabase);
+  const [scopedRow] = filterRowsByAgency([data as SupabaseLeadRow], agencyId);
+  if (!scopedRow) return undefined;
+
+  return mapRowToLead(scopedRow);
 }
 
 export async function createLead(input: LeadInput & ActivityLogInput) {
