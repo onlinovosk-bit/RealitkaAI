@@ -90,6 +90,18 @@ CI — nie ako "agent dohovoril". Open loop bez brány produkuje slop; brána mu
 byť niečo, s čím sa agent nevie hádať (build/test/CI), nie jeho vlastné vyhlásenie.
 **Kontrolór check:** bod 8 (verifikácia) + nové pravidlo nižšie.
 
+## AP-010 — Success response napriek tichému zlyhaniu side-effectu
+**Symptóm:** operácia vráti úspech (napr. UC `{ code: 1 }`), ale povinný vedľajší
+efekt chýba — audit riadok v `realsoft_import_logs`, notifikácia, webhook log.
+Handler zaloguje len `logWarn` a klientovi vráti success.
+**Detekcia:** response OK, ale očakávaný side-effect v DB/logu chýba (napr. tabuľka
+audit 0 riadkov po smoke, zatiaľ čo `properties` má záznam). Kontrolór: side-effect
+≠ predpoklad, over query.
+**Fix:** ak je audit povinný, zlyhanie `store*Log` musí buď failnúť celú operáciu
+(nie success response), alebo vrátiť explicitné varovanie v response — nikdy tiché
+`code: 1`. Pred produkčným handoffom overiť audit query, nie len HTTP body.
+**Kontrolór check:** bod 6 (fikcia úplnosti) + bod 8 (verifikácia side-effectu) → STOP.
+
 ---
 ## Ako pridať nový antipattern
 Keď nastane incident: zapíš sem AP-NNN (symptóm / detekcia / fix / Kontrolór check),
