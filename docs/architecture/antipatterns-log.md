@@ -102,6 +102,20 @@ audit 0 riadkov po smoke, zatiaľ čo `properties` má záznam). Kontrolór: sid
 `code: 1`. Pred produkčným handoffom overiť audit query, nie len HTTP body.
 **Kontrolór check:** bod 6 (fikcia úplnosti) + bod 8 (verifikácia side-effectu) → STOP.
 
+## AP-011 — Guard chytá konkrétne meno, nie vzor
+**Symptóm:** bezpečnostný/zakázaný guard hľadá presný reťazec (`stealth-recruiter`),
+obíde ho rovnaká vec pod iným menom (`stealth-funnel`, `stealth-lead`,
+`stealth-funnel-programs`). CI a automerge vyzerajú bezpečné, ale nový variant
+prejde.
+**Detekcia:** zakázaná lead-gen funkcionalita prejde CI; grep guard matchuje len
+staré meno; nové súbory/routy existujú pod `stealth-funnel*` / `(marketing)/start`.
+**Fix:** guard hľadá **vzor** (regex rodina mien `stealth[-_]?(funnel|lead|recruiter|program)`),
+nie jeden string; vercel.json + `apps/crm/src` + automerge denylist zjednotené;
+grandfathered `stealth-recruiter` API strom ostáva až do removal ticketu — nové
+varianty a marketing `/start` funnel blokované.
+**Kontrolór check:** bod 8 (verifikácia) — pri každej novej „legal hold" oblasti
+over, či guard matchuje **triedu mien**, nie jeden historický slug.
+
 ---
 ## Ako pridať nový antipattern
 Keď nastane incident: zapíš sem AP-NNN (symptóm / detekcia / fix / Kontrolór check),

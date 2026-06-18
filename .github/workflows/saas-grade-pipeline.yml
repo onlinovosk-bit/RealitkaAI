@@ -21,10 +21,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Guard - legal-hold crons not in vercel.json
+      - name: Guard - stealth lead-gen legal hold (AP-011)
         run: |
-          if grep -q 'stealth-recruiter-ingest' apps/crm/vercel.json; then
-            echo "::error::stealth-recruiter-ingest must not be registered in vercel.json (GDPR legal hold)."
+          set -e
+          # Unified pattern — blocks funnel/lead/program variants AND recruiter crons in vercel.json
+          if grep -qiE 'stealth[-_]?(funnel|lead|recruiter|program)' apps/crm/vercel.json; then
+            echo "::error::stealth lead-gen cron must not be registered in vercel.json (GDPR legal hold)."
+            exit 1
+          fi
+          # New stealth surface in app code (stealth-funnel, stealth-lead, stealth-*-programs)
+          if grep -riE 'stealth[-_]?(funnel|lead|program)' apps/crm/src \
+            --include='*.ts' --include='*.tsx' 2>/dev/null; then
+            echo "::error::stealth lead-gen is legal-hold blocked (GDPR čl. 6(1)(f) nepodpísaný)"
+            exit 1
+          fi
+          # Marketing stealth entry routes
+          if [ -d "apps/crm/src/app/(marketing)/start" ]; then
+            echo "::error::stealth marketing route /start is legal-hold blocked"
             exit 1
           fi
 

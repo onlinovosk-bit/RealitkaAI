@@ -25,7 +25,7 @@ const DENYLIST = [
   /^apps\/crm\/src\/lib\/realsoft\//,
   /^apps\/crm\/src\/lib\/uc\//,
   /(^|\/)stripe\//,
-  /stealth-recruiter/i,
+  /stealth[-_]?(funnel|lead|recruiter|program)/i,
   /smolko/i,
 ];
 
