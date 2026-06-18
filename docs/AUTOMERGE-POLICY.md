@@ -26,7 +26,7 @@ Robot **vykonáva** pravidlá nižšie — neinterpretuje, nemení podmienky. Ak
 | `**/seat-pricing.ts`, `**/program-tier-pricing.ts` | verejné ceny |
 | `apps/crm/src/middleware.ts`, `apps/crm/src/proxy.ts` | auth |
 | `apps/crm/src/lib/credits-billing.ts`, `**/stripe/**` | billing |
-| `**/*stealth-recruiter*` | legal hold |
+| `**/*stealth*` (funnel/lead/recruiter/program) | legal hold — AP-011 pattern |
 | `**/*smolko*` (case-insensitive) | produkčný zákazník |
 
 Zakázané akcie z vault `decisions.md` (arbitrage live, scraping, auto-send e-mailov zákazníkom) — orchestrátor **nepridáva** `automerge` na PR, ktoré ich dotýka.
