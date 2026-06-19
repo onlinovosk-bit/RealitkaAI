@@ -7,7 +7,7 @@
 - [x] Brief 15 merge (#222 B1 reconcile, #227 K3b/c) — v `main`, CI zelené
 - [x] PROD reconcile `?reconcile_processed=1` — updated=5, scanned=13, skipped=8 (párovanie OK)
 - [x] **Push `memory/decisions.md`** + task-loop commits — pushnuté `35224b355`
-- [ ] **PROD cleanup** — audit `784691` (SELECT pred DELETE, user GO)
+- [x] **PROD cleanup** — audit `784691` smoke probe deleted (SELECT: verify=audit-fix-probe, 0 properties)
 - [ ] **Externý cron** — potvrdiť worker každých 5 min (cron-job.org)
 
 ## P1 — Smolko / hodnota pre klienta
