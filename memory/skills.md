@@ -11,3 +11,8 @@
 ## Skill: STEP_HANDOVER
 - **Popis:** Zmena statusu v databáze po úspešnom kroku.
 - **Pravidlá:** SCRAPED -> SCORED -> SEGMENTED -> OUTREACH_DONE.
+
+## Skill: TASK_LOOP
+- **Súbor:** `.claude/skills/task-loop/SKILL.md`
+- **Popis:** Na konci každej úlohy — sync memory, rank backlog (Ústava), navrhni JEDNU ďalšiu úlohu, klasifikuj bránu (AUTO-SAFE / GO REQUIRED / STOP).
+- **Pravidlo:** Automatizuje **výber**, nie **vykonávanie**. PROD/secrets/merge/nová scope = GO REQUIRED. Anti-drift, anti-doc.
