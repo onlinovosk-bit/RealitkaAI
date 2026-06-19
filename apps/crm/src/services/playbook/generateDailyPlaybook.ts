@@ -12,6 +12,15 @@ import { mapActionToDto } from "@/services/playbook/mapper";
 
 const DEFAULT_LIMIT = 40;
 
+/** ISO date from last_contact when stored as timestamp; human labels → undefined. */
+export function parseLeadLastContactIso(lastContact: string | null | undefined): string | undefined {
+  const raw = String(lastContact ?? "").trim();
+  if (!raw || raw === "Práve vytvorený" || raw === "Bez kontaktu") return undefined;
+  const parsed = Date.parse(raw);
+  if (Number.isNaN(parsed)) return undefined;
+  return new Date(parsed).toISOString();
+}
+
 /**
  * Orchestrátor: DB → domain engine → UI DTO.
  * Public API ostáva rovnaké, aby joby a UI nemuseli meniť import.
@@ -24,7 +33,7 @@ export async function generateDailyPlaybook(
   const { data: leads, error: leadsError } = await supabase
     .from("leads")
     .select(
-      "id, name, location, status, score, budget, property_type, rooms, last_contact_at, created_at"
+      "id, name, location, status, score, budget, property_type, rooms, last_contact, created_at"
     )
     .order("score", { ascending: false })
     .limit(limit);
@@ -50,7 +59,7 @@ export async function generateDailyPlaybook(
     budget: lead.budget,
     propertyType: lead.property_type,
     rooms: lead.rooms,
-    lastContactAt: lead.last_contact_at,
+    lastContactAt: parseLeadLastContactIso(lead.last_contact) ?? lead.created_at,
     createdAt: lead.created_at,
   }));
 
