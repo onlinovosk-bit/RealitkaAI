@@ -3,6 +3,7 @@
 // ================================================================
 
 export { processRealviaQueue } from './processQueue';
+export { reconcileWebhookProcessedFlags } from './reconcileWebhookProcessed';
 export {
   pickRealviaErrorMessage,
   realviaError,
