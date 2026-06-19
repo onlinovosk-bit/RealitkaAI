@@ -137,6 +137,17 @@
 
 ---
 
+## [2026-06-19] - BRI / Smolko 439 leadov — honest pending, žiadny backfill
+
+- **Fakt:** Realvia import = identita (meno+email), nie kvalifikácia. 439/439 prázdne `budget`/`timeline`/`financing`/`last_contact`; dáta nie sú v `payload_raw` ani inde.
+- **VETO backfill:** BRI sa **nedá** oživiť backfillom z Realvie — nemáme z čoho.
+- **Rozhodnutie A (BUILD teraz):** **Honest pending** — UI „Nekvalifikované / chýbajú údaje" (AP-001). BRI kód nemeníme; ožije pri reálnej práci makléra alebo kvalifikačnom formulári.
+- **Rozhodnutie B (VALIDATE):** Zdroj kvalifikácie = Smolko admin **Klienti/Dopyty** (Nehnuteľnosti) — preskúmať CSV export; nie enrichment engine na prázdnych poliach.
+- **Realvia:** Primárny zdroj nehnuteľností + identít leadov; UC direct handoff zrušený.
+- **Reconcile (B1, #222):** Spustiť `?reconcile_processed=1` **až po merge #222**; len párovanie cez `source_id` + existujúca property (AP-010), nie hromadný prepis. Kozmetika monitoringu, nie blocker.
+
+---
+
 ## [2026-06-12] - Brief 9.0 + Auto-merge policy v1
 - **Rozhodnutie:** Overnight swarm Brief 9.0 — Fáza 0 `feat/automerge-policy` (Tier 3, merge Andy pred spaním); Vlny 1–3 až po merge robot PR + midnight gate.
 - **Pravidlá:** Tier 1 okamžitý merge (docs/tests/md); Tier 2 po 6 h; Tier 3 denylist (`.github`, migrácie, auth, billing, ceny, Smolko). Robot vykonáva `docs/AUTOMERGE-POLICY.md`, neinterpretuje.
