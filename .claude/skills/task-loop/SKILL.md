@@ -2,9 +2,9 @@
 name: task-loop
 description: >-
   Closed-loop next-task engine. Use at END of every task: rank backlog by
-  Constitution value, propose ONE next task, classify GO gate. Automates
-  selection — NOT autonomous execution. Anti-drift, anti-doc. L99 Principal
-  standard.
+  Constitution value, propose ONE next task, classify GO gate. Swarm wave
+  planning (DAG, disjoint proof, write-probe). Automates selection — NOT
+  autonomous execution. Anti-drift, anti-doc. L99 Principal standard.
 ---
 
 # Task Loop — Closed-Loop Next-Task Engine (L99)
@@ -170,6 +170,65 @@ Brána: GO REQUIRED — nová UI scope, Constitution otázka 1
 Skvelá práca! Vlna 1 kompletná! Automaticky začínam enrichment engine pre 439 leadov...
 ```
 → chválenie + autonómna nová scope + ignoruje BRI VETO backfill.
+
+---
+
+## Krok 7 — Swarm plánovanie (Ruflo / paralelné vlny)
+
+Keď user požiada o **dávku úloh**, **overnight swarm** alebo **paralelné PR**, loop rozšíri výber na **plán vĺn** — stále s GO bránou na každú úlohu, **nie** autonómne vykonávanie celej dávky.
+
+### 7.1 Postav DAG
+
+- Každá úloha = uzol s explicitnými **závislosťami** (napr. K3b → K3a merged).
+- **Vlna N+1 nikdy pred merge Vlny N** do `main`.
+- Jedna vetva = jedna logická zmena = jeden PR = jeden Preview.
+
+### 7.2 Dôkaz nekrižovateľnosti (pred paralelizáciou)
+
+Paralelizovať smieš len ak pre každý pár v rovnakej vlne:
+
+| Kontrola | Požiadavka |
+|----------|------------|
+| Súbory | Disjunktné cesty (`git diff --name-only` na vetvách sa neprekrývajú) |
+| Dáta | Žiadna závislosť na tom istom riadku/tabuľke v PROD |
+| Migrácie | Žiadny zdieľaný migračný zásah v jednej vlne |
+| Konfig | Žiadna zmena rovnakého flagu/env bez koordinácie |
+
+**Pochybnosť = sekvenčne.** Nepreukázaná paralelizácia plodí konflikty a slop (stealth-funnel drift).
+
+### 7.3 Zoskup do vĺn
+
+```
+Vlna 1: [A, B] — paralelne len ak 7.2 prešlo
+         ↓ merge + CI + smoke
+Vlna 2: [C] — stacked na A alebo B ak DAG vyžaduje
+```
+
+Výstup plánu:
+
+```markdown
+## Swarm plán
+| Úloha | Vetva | Vlna | Paralel s | Závisí na | Brána |
+```
+
+### 7.4 Fáza 0 — write-probe
+
+Pred každou dávkou (ak swarm zapisuje do repa):
+
+- Krátky **write-probe** commit/branch overí, že agent vie pushnúť a CI beží.
+- Bez zeleného probe → **STOP**, nespúšťaj 6 agentov naraz.
+
+### 7.5 Brána v paralelizme
+
+- Každá úloha vo vlne má vlastnú **GO / AUTO-SAFE / STOP** klasifikáciu.
+- Merge každého PR = samostatné GO (alebo automerge policy Tier 1/2).
+- PROD/cron/secrets = **nikdy** v swarm batch bez explicitného foundera.
+
+### 7.6 Anti-drift vo swarme
+
+- Swarm **nevymýšľa** novú scope mimo briefu v `docs/briefs/overnight/`.
+- Ak agent pridá súbor mimo zadania (napr. enrichment engine pri K3 briefe) → **drift**, zastav vetvu.
+- Po vlne: task-loop Krok 1 — čo reálne merged vs. čo ostalo OPEN.
 
 ---
 

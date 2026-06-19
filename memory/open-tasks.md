@@ -6,8 +6,8 @@
 
 - [x] Brief 15 merge (#222 B1 reconcile, #227 K3b/c) — v `main`, CI zelené
 - [x] PROD reconcile `?reconcile_processed=1` — updated=5, scanned=13, skipped=8 (párovanie OK)
-- [ ] **Push `memory/decisions.md`** commit `8dea0dda1` na `origin/main`
-- [ ] **PROD cleanup** — test audit riadok `784691` v `realsoft_import_logs` pred Smolko live
+- [x] **Push `memory/decisions.md`** + task-loop commits — pushnuté `35224b355`
+- [ ] **PROD cleanup** — audit `784691` (SELECT pred DELETE, user GO)
 - [ ] **Externý cron** — potvrdiť worker každých 5 min (cron-job.org)
 
 ## P1 — Smolko / hodnota pre klienta
