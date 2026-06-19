@@ -100,6 +100,21 @@ BRÁNA: [AUTO-SAFE | GO REQUIRED | STOP]
 - Scope > 1 logická zmena
 - Externá komunikácia (klient, marketing)
 
+#### PROD DELETE — anti-reflex (povinné pred každým DELETE)
+
+Rovnaký `external_id` / `source_id` **≠** rovnaký záznam v čase. Vždy:
+
+1. **SELECT obe strany** (audit + entita), nie jedna tabuľka:
+   - `realsoft_import_logs` — `external_id`, `result_code`, `received_at`, `raw_payload`
+   - `properties` — `source_id`, `title`, `created_at`
+2. **Porovnaj timestamp** s posledným známym smoke/probe v session (10:42 ≠ 13:43 = iný beh).
+3. **Identifikuj zdroj** z `raw_payload` (napr. `audit-fix-probe` vs app smoke) — nepopisuj „starý smoke" bez dôkazu.
+4. **STOP** ak timestamp nečakaný, zdroj neznámy, alebo property existuje bez istoty o väzbe.
+5. DELETE len ak: obe strany overené, žiadna aktívna väzba, user GO alebo explicitný cleanup scope.
+6. **After:** before/after count na oboch tabuľkách; žiadna osirelá property.
+
+**Príklad chyby:** `result_code=1` v audit logu neimplikuje property riadok — over SELECTom.
+
 ### STOP (nahlás blocker, nepokračuj)
 
 - Chýba zdroj dát (data-sourcing map unknown)
