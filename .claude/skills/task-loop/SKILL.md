@@ -3,8 +3,8 @@ name: task-loop
 description: >-
   Closed-loop next-task engine. Use at END of every task: rank backlog by
   Constitution value, propose ONE next task, classify GO gate. Swarm wave
-  planning (DAG, disjoint proof, write-probe). Automates selection — NOT
-  autonomous execution. Anti-drift, anti-doc. L99 Principal standard.
+  planning (DAG, disjoint proof, write-probe). Anti-prehadzovanie (draft first).
+  Automates selection — NOT autonomous execution. Anti-drift, anti-doc. L99 Principal standard.
 ---
 
 # Task Loop — Closed-Loop Next-Task Engine (L99)
@@ -114,6 +114,42 @@ Rovnaký `external_id` / `source_id` **≠** rovnaký záznam v čase. Vždy:
 6. **After:** before/after count na oboch tabuľkách; žiadna osirelá property.
 
 **Príklad chyby:** `result_code=1` v audit logu neimplikuje property riadok — over SELECTom.
+
+#### Anti-prehadzovanie — „Robor svoju časť prv, než odovzdáš"
+
+**Problém:** Ďalší krok formulovaný ako „ty urob X" (email, príkaz, kontakt), hoci agent
+môže pripraviť 80 % práce. Founder potom robí copy-paste namiesto rozhodnutia.
+
+**Pravidlo:** Pred odovzdaním userovi over: *čo ešte viem urobiť ja bez secrets / bez odoslania v jeho mene?*
+
+| Typ ďalšieho kroku | Agent MUSÍ najprv | Odovzdá len |
+|--------------------|-------------------|-------------|
+| Kontaktovať človeka (Smolko, Tomáš, klient) | **Draft email/SMS** (tón, fakty, otázky, prílohy), kontext prečo teraz | Odoslanie, úprava tónu, obchodné rozhodnutie |
+| PROD operácia | Presný príkaz, SELECT pred DELETE, očakávaný JSON/log | Spustenie ak chýba PROD secret / GO |
+| Overiť stav | `grep`, `gh`, SELECT, read deploy — **sám spusti** | Interpretáciu ak nejednoznačné |
+| Dokument / rozhodnutie | Návrh textu do `decisions.md` / PR body | Schválenie BUILD/BACKLOG |
+
+**Zákaz v task-loop výstupe:**
+
+```
+❌ „Napíš Smolkovi o Dopytoch."
+❌ „Spusti reconcile ty."
+❌ „Over deploy a daj vedieť."
+```
+
+**Správne:**
+
+```
+✅ Draft email Smolko (VALIDATE Dopyty export) — [celý text], GO: odoslať?
+✅ Reconcile: [PowerShell one-liner s PROD CRON], GO: spustiť?
+✅ Deploy #221: grep main + posledný Vercel deploy — [výsledok]; ak treba smoke, GO.
+```
+
+**STOP — prehadzovanie:** ak ďalšia úloha = len „user nech urobí" bez draftu/príkazu/dôkazu,
+že agent už urobil maximum → **prepíš úlohu** alebo ju urob sám (AUTO-SAFE).
+
+**Príklad z praxe (2026-06-19):** email Smolkovi bez draftu; „odoslaný" stav neoverený —
+loop mal najprv draft + explicitné GO na send.
 
 ### STOP (nahlás blocker, nepokračuj)
 
