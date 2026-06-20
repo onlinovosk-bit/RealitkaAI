@@ -13,7 +13,7 @@
 ## P1 — Smolko / hodnota pre klienta
 
 - [ ] **Tomáš** — dual export Realvia + Revolis? (Smolko live čaká)
-- [ ] **VALIDATE:** Smolko admin export Klientov/Dopyty (CSV) — zdroj kvalifikácie pre BRI (nie backfill)
+- [ ] **VALIDATE → BUILD:** Smolko Dopyty CSV — brief pripravený: `docs/briefs/overnight/ruflo-swarm-smolko-dopyty-csv-import.md` (spusti po doručení CSV)
 - [ ] **K3 UI route** — banner/deck pre property (lib hotová, chýba `/app` route) — VALIDATE pred BUILD
 - [ ] Realvia re-test od Bereczovej — delete + create/update export
 
