@@ -23,6 +23,8 @@ export type RealviaPropertyRow = {
   broker_phone?: string | null;
   images?: unknown;
   payload_raw?: unknown;
+  latitude?: number | null;
+  longitude?: number | null;
 };
 
 function parseImages(raw: unknown): UcListingImage[] {

@@ -12,10 +12,17 @@ import { mapActionToDto } from "@/services/playbook/mapper";
 
 const DEFAULT_LIMIT = 40;
 
+const PLACEHOLDER_LAST_CONTACT = new Set([
+  "Práve vytvorený",
+  "Bez kontaktu",
+  "Práve importovaný",
+  "Priradené agentovi práve teraz",
+]);
+
 /** ISO date from last_contact when stored as timestamp; human labels → undefined. */
 export function parseLeadLastContactIso(lastContact: string | null | undefined): string | undefined {
   const raw = String(lastContact ?? "").trim();
-  if (!raw || raw === "Práve vytvorený" || raw === "Bez kontaktu") return undefined;
+  if (!raw || PLACEHOLDER_LAST_CONTACT.has(raw)) return undefined;
   const parsed = Date.parse(raw);
   if (Number.isNaN(parsed)) return undefined;
   return new Date(parsed).toISOString();

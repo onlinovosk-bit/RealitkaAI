@@ -87,11 +87,8 @@ function readGps(
   row: RealviaPropertyRow,
   advert: Record<string, unknown> | null,
 ): { lat: number | null; lon: number | null } {
-  const rowRec = row as Record<string, unknown>;
-  const latRow = rowRec.latitude;
-  const lonRow = rowRec.longitude;
-  if (typeof latRow === "number" && typeof lonRow === "number") {
-    return { lat: latRow, lon: lonRow };
+  if (row.latitude != null && row.longitude != null) {
+    return { lat: row.latitude, lon: row.longitude };
   }
 
   const geo = advert?.geo_point ?? advert?.geoPoint ?? advert?.location;
