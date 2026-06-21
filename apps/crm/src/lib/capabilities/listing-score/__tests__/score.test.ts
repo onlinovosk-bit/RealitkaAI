@@ -27,4 +27,32 @@ describe("listing-score scoreListingCompleteness", () => {
     expect(result.guardian.blockedPublish).toBe(false);
     expect(result.summary).toContain("44%");
   });
+
+  it("HTML in description is stripped before length check", () => {
+    // Short visible text padded with HTML tags — score should use plain text length
+    const htmlDescription = "<p>Krátky.</p>" + "<br />".repeat(50);
+    const result = scoreListingCompleteness({
+      agencyId: AGENCY,
+      property: { ...REALVIA_SMOLKO_13303557, description: htmlDescription },
+    });
+    // Plain text is "Krátky." (7 chars) — below MIN_DESCRIPTION_LENGTH (40)
+    expect(result.fields.find((f) => f.key === "description")?.present).toBe(false);
+  });
+
+  it("missing GPS — gps field not present in score", () => {
+    const result = scoreListingCompleteness({
+      agencyId: AGENCY,
+      property: { ...REALVIA_SMOLKO_13303557, latitude: null, longitude: null },
+    });
+    expect(result.fields.find((f) => f.key === "gps")?.present).toBe(false);
+    expect(result.missing).toContain("gps");
+  });
+
+  it("missing price (null) — price field not present", () => {
+    const result = scoreListingCompleteness({
+      agencyId: AGENCY,
+      property: { ...REALVIA_SMOLKO_13303557, price: null },
+    });
+    expect(result.fields.find((f) => f.key === "price")?.present).toBe(false);
+  });
 });

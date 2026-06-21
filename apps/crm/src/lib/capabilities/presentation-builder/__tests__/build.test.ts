@@ -29,4 +29,28 @@ describe("presentation-builder buildPresentationDeck", () => {
     expect(deck.audience).toBe("buyer");
     expect(deck.slides[0].title).toContain("kupujúceho");
   });
+
+  it("HTML in description — slides contain no HTML tags", () => {
+    const deck = buildPresentationDeck({
+      agencyId: AGENCY,
+      property: {
+        ...REALVIA_SMOLKO_13303557,
+        description: "Novostavba <strong>RD</strong> s <br/>veľkým pozemkom.",
+      },
+      audience: "owner",
+    });
+    const allText = deck.slides.flatMap((s) => [s.title, ...s.bullets]).join(" ");
+    expect(allText).not.toMatch(/<[^>]+>/);
+    expect(deck.guardianPass).toBe(true);
+  });
+
+  it("price=0 — Cena 0 not in slides", () => {
+    const deck = buildPresentationDeck({
+      agencyId: AGENCY,
+      property: REALVIA_SMOLKO_13303557,
+      audience: "owner",
+    });
+    const allText = deck.slides.flatMap((s) => [s.title, ...s.bullets]).join(" ");
+    expect(allText).not.toContain("Cena 0");
+  });
 });
