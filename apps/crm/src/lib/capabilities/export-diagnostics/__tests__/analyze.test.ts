@@ -43,4 +43,48 @@ describe("export-diagnostics analyzeExportDiagnostics", () => {
     expect(report.summary).toContain("Webhook:");
     expect(report.summary).not.toContain("niečo zlyhalo");
   });
+
+  it("empty arrays — returns zeros without crash", () => {
+    const report = analyzeExportDiagnostics({
+      agencyId: AGENCY,
+      webhooks: [],
+      imports: [],
+    });
+    expect(report.webhook.total).toBe(0);
+    expect(report.webhook.success).toBe(0);
+    expect(report.webhook.failed).toBe(0);
+    expect(report.webhook.pending).toBe(0);
+    expect(report.import.total).toBe(0);
+    expect(report.failureReasons).toHaveLength(0);
+  });
+
+  it("all webhooks processed — no failure reasons from webhook", () => {
+    const report = analyzeExportDiagnostics({
+      agencyId: AGENCY,
+      webhooks: [
+        { id: "w1", processed: true, processing_error: null },
+        { id: "w2", processed: true, processing_error: null },
+      ],
+      imports: [],
+    });
+    expect(report.webhook.success).toBe(2);
+    expect(report.webhook.failed).toBe(0);
+    expect(report.webhook.pending).toBe(0);
+    expect(report.failureReasons.filter((r) => r.source === "webhook")).toHaveLength(0);
+  });
+
+  it("repeated webhook error — reason count accumulates", () => {
+    const report = analyzeExportDiagnostics({
+      agencyId: AGENCY,
+      webhooks: [
+        { id: "w1", processed: false, processing_error: "timeout" },
+        { id: "w2", processed: false, processing_error: "timeout" },
+        { id: "w3", processed: false, processing_error: "timeout" },
+      ],
+      imports: [],
+    });
+    const reason = report.failureReasons.find((r) => r.reason === "timeout");
+    expect(reason?.count).toBe(3);
+    expect(reason?.sampleIds.length).toBeLessThanOrEqual(3);
+  });
 });
