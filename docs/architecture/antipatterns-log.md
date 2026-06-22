@@ -116,9 +116,7 @@ varianty a marketing `/start` funnel blokované.
 **Kontrolór check:** bod 8 (verifikácia) — pri každej novej „legal hold" oblasti
 over, či guard matchuje **triedu mien**, nie jeden historický slug.
 
-## AP-012 — (rezervované)
-
-## AP-013 — Time-coupled flaky test (zmrazený fixture, reálny Date.now())
+## AP-013 — Time-coupled flaky test
 **Symptóm:** test prejde pri merge, o pár dní padne v CI bez zmeny kódu. Test zmrazí
 čas pre fixture (`const NOW = …`, `daysAgo(n)`), ale testovaná funkcia volá
 `Date.now()` pri filtrovaní prahov (napr. `minDaysWithoutContact: 7`). Ako reálny
