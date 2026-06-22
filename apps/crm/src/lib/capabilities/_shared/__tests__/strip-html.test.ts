@@ -12,4 +12,23 @@ describe("stripHtmlToPlainText", () => {
   it("handles empty input", () => {
     expect(stripHtmlToPlainText("")).toBe("");
   });
+
+  it("converts named HTML entities", () => {
+    expect(stripHtmlToPlainText("cena &amp; podmienky &lt;bez tagov&gt;")).toBe(
+      "cena & podmienky <bez tagov>",
+    );
+  });
+
+  it("collapses multiple whitespace after stripping", () => {
+    const raw = "<p>Riadok 1.</p>   <p>Riadok 2.</p>";
+    const result = stripHtmlToPlainText(raw);
+    expect(result).not.toMatch(/\s{2,}/);
+    expect(result).toContain("Riadok 1.");
+    expect(result).toContain("Riadok 2.");
+  });
+
+  it("returns plain text unchanged", () => {
+    const plain = "Byt na predaj, 76 m², Modrá nad Cirochou.";
+    expect(stripHtmlToPlainText(plain)).toBe(plain);
+  });
 });
