@@ -1,9 +1,11 @@
 import Link from "next/link";
+import GuardianPanel from "@/components/property/GuardianPanel";
 import ModuleShell from "@/components/shared/module-shell";
 import { requireUser } from "@/lib/auth";
 import { resolveProfileForAuthUser } from "@/lib/profiles/resolve-profile-for-auth";
 import { createClient } from "@/lib/supabase/server";
 import { buildVerticalPackDemo, loadRealviaPropertyForDemo } from "@/lib/capabilities/vertical-pack-demo";
+import { buildGuardianPanelView } from "@/lib/capabilities/quality-guardian";
 import { SLATE_HORIZON, WORKDESK_CARD } from "@/lib/slate-horizon-theme";
 
 export const dynamic = "force-dynamic";
@@ -44,6 +46,10 @@ export default async function VerticalPackDemoPage({ params }: PageProps) {
 
   const loaded = await loadRealviaPropertyForDemo(supabase, sourceId || DEFAULT_SOURCE);
   const demo = buildVerticalPackDemo({ agencyId, property: loaded.property });
+  const guardianPanel = buildGuardianPanelView({
+    completeness: demo.completeness,
+    listing: demo.listing,
+  });
 
   return (
     <ModuleShell
@@ -70,6 +76,10 @@ export default async function VerticalPackDemoPage({ params }: PageProps) {
         <Link href="/properties" className="underline" style={{ color: SLATE_HORIZON.muted }}>
           ← Ponuky
         </Link>
+      </div>
+
+      <div className="mb-6">
+        <GuardianPanel view={guardianPanel} publishFlowAvailable={false} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
