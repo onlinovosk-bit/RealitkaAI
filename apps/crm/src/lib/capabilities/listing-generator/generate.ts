@@ -66,8 +66,10 @@ export function generateListingDraft(input: ListingGeneratorInput): GeneratedLis
   const claimedFacts: GeneratedListingDraft["claimedFacts"] = {
     title: facts.title,
   };
-  if (facts.price != null) claimedFacts.price = facts.price;
+  if (facts.price != null && facts.price > 0) claimedFacts.price = facts.price;
   if (facts.usableArea != null) claimedFacts.usableArea = facts.usableArea;
+  if (facts.buildingArea != null) claimedFacts.buildingArea = facts.buildingArea;
+  if (facts.plotArea != null) claimedFacts.plotArea = facts.plotArea;
   if (facts.location) claimedFacts.location = facts.location;
 
   const guardian = reviewGeneratedListing({
