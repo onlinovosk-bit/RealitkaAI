@@ -50,7 +50,9 @@ export function generateListingDraft(input: ListingGeneratorInput): GeneratedLis
   const bodyParts = [
     pickLangDescription(listing),
     listing.usableArea != null ? `Úžitková plocha ${listing.usableArea} m².` : "",
-    listing.price != null ? `Cena ${listing.price} ${listing.currency}.` : "",
+    listing.price != null && listing.price > 0
+      ? `Cena ${listing.price} ${listing.currency}.`
+      : "",
     listing.location ? `Lokalita: ${listing.location}.` : "",
   ].filter(Boolean);
 

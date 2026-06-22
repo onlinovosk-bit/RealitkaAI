@@ -1,4 +1,5 @@
 import type { UcListingMapped, UcListingImage } from "@/lib/uc/mapper-listing";
+import { stripHtmlToPlainText } from "@/lib/capabilities/_shared/strip-html";
 
 /** Row shape from `properties` (Realvia). Only fields that exist on real rows. */
 export type RealviaPropertyRow = {
@@ -47,7 +48,7 @@ function parseImages(raw: unknown): UcListingImage[] {
 export function realviaRowToUcListing(row: RealviaPropertyRow): UcListingMapped {
   const images = parseImages(row.images);
   const title = String(row.title ?? "").trim();
-  const description = String(row.description ?? "").trim();
+  const description = stripHtmlToPlainText(String(row.description ?? ""));
 
   return {
     externalId: row.source_id,

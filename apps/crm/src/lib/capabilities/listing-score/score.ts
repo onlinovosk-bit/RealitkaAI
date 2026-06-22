@@ -1,4 +1,5 @@
 import { appendCapabilityAudit } from "@/lib/capabilities/_shared/audit-log";
+import { stripHtmlToPlainText } from "@/lib/capabilities/_shared/strip-html";
 import { realviaRowToUcListing } from "@/lib/capabilities/_shared/realvia-property-row";
 import type { RealviaPropertyRow } from "@/lib/capabilities/_shared/realvia-property-row";
 import {
@@ -112,7 +113,7 @@ function buildFields(row: RealviaPropertyRow): CompletenessField[] {
   const listing = realviaRowToUcListing(row);
   const advert = advertPayload(row.payload_raw);
   const photoCount = listing.images.length;
-  const description = String(row.description ?? listing.description ?? "").trim();
+  const description = stripHtmlToPlainText(String(row.description ?? listing.description ?? ""));
   const price = row.price ?? listing.price ?? null;
   const { lat, lon } = readGps(row, advert);
   const energyCert = advert?.building_energy_rating_certificate;
