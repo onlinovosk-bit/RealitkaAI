@@ -7,6 +7,8 @@ export type PropertyFacts = {
   description: string;
   price: number | null;
   usableArea: number | null;
+  buildingArea: number | null;
+  plotArea: number | null;
   location: string;
   currency: string;
   rooms: string;
@@ -50,6 +52,8 @@ export function propertyFactsFromUcListing(mapped: UcListingMapped): PropertyFac
     description: mapped.description,
     price: mapped.price,
     usableArea: mapped.usableArea,
+    buildingArea: mapped.buildingArea,
+    plotArea: mapped.plotArea,
     location: mapped.location,
     currency: mapped.currency,
     rooms: mapped.rooms,

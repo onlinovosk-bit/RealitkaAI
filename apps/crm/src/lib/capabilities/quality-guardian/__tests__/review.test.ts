@@ -78,6 +78,59 @@ describe("quality-guardian reviewGeneratedListing", () => {
     expect(result.reasons.some((r) => r.startsWith("free_text_price_mismatch"))).toBe(true);
   });
 
+  it("PASS when body lists multiple area types from structured + source text (Smolko 13303557)", () => {
+    const source: import("@/lib/capabilities/quality-guardian/types").PropertyFacts = {
+      externalId: "13303557",
+      title: "Predaj novostavby RD",
+      description:
+        "Zastavaná plocha domu:167 m². Obytná plocha: 76 m². Úžitková plocha: 120 m². Celková rozloha pozemku: 4.500 m²",
+      price: 0,
+      usableArea: 120,
+      buildingArea: 167,
+      plotArea: 4500,
+      location: "Modrá nad Cirochou",
+      currency: "EUR",
+      rooms: "",
+    };
+
+    const result = reviewGeneratedListing({
+      agencyId: AGENCY,
+      source,
+      draft: {
+        draftId: "draft-smolko-areas",
+        headline: source.title,
+        body: `${source.description}\n\nÚžitková plocha ${source.usableArea} m².`,
+        claimedFacts: {
+          title: source.title,
+          usableArea: source.usableArea!,
+          buildingArea: source.buildingArea!,
+          plotArea: source.plotArea!,
+        },
+      },
+    });
+
+    expect(result.verdict).toBe("pass");
+    expect(result.blockedPublish).toBe(false);
+  });
+
+  it("FLAG when body lists area not in source facts", () => {
+    const mapped = mapUcListingPayload({ ...UC_DOC_LISTING_SAMPLE });
+    const source = propertyFactsFromUcListing(mapped);
+
+    const result = reviewGeneratedListing({
+      agencyId: AGENCY,
+      source,
+      draft: {
+        draftId: "draft-bad-area",
+        headline: mapped.title,
+        body: "Super ponuka 999 m² v centre.",
+      },
+    });
+
+    expect(result.verdict).toBe("flag");
+    expect(result.reasons.some((r) => r.startsWith("free_text_area_mismatch"))).toBe(true);
+  });
+
   it("FLAG blocks publish path — missing headline", () => {
     const mapped = mapUcListingPayload({ ...UC_DOC_LISTING_SAMPLE });
     const source = propertyFactsFromUcListing(mapped);

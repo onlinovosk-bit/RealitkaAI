@@ -30,11 +30,35 @@ function factValueMatches(
   return normalizeText(String(claimed)) === normalizeText(String(raw));
 }
 
+function parseAreaM2Token(raw: string): number | null {
+  const token = raw.trim();
+  if (!token) return null;
+  // European thousands: 4.500 or 4,500 → 4500
+  if (/^\d{1,3}(?:[.,]\d{3})+$/.test(token)) {
+    const n = Number(token.replace(/[.,]/g, ""));
+    return Number.isNaN(n) ? null : n;
+  }
+  const n = Number(token.replace(",", "."));
+  return Number.isNaN(n) ? null : n;
+}
+
+function collectAllowedAreas(source: PropertyFacts): Set<number> {
+  const allowed = new Set<number>();
+  for (const value of [source.usableArea, source.buildingArea, source.plotArea]) {
+    if (value != null && !Number.isNaN(value)) allowed.add(value);
+  }
+  for (const m of source.description.matchAll(/(\d+(?:[.,]\d+)?)\s*m²/gi)) {
+    const n = parseAreaM2Token(m[1] ?? "");
+    if (n != null) allowed.add(n);
+  }
+  return allowed;
+}
+
 /** Detect numeric claims in free text that contradict source (AP-001 guard). */
 function scanFreeTextFactDrift(body: string, source: PropertyFacts): string[] {
   const flags: string[] = [];
 
-  if (source.price != null) {
+  if (source.price != null && source.price > 0) {
     const amounts = [...body.matchAll(/\b(\d{3,7})\s*(€|EUR)/gi)];
     for (const m of amounts) {
       const n = Number(m[1]);
@@ -44,11 +68,11 @@ function scanFreeTextFactDrift(body: string, source: PropertyFacts): string[] {
     }
   }
 
-  if (source.usableArea != null) {
-    const areaMatch = body.match(/(\d+(?:[.,]\d+)?)\s*m²/i);
-    if (areaMatch) {
-      const claimed = Number(areaMatch[1].replace(",", "."));
-      if (!Number.isNaN(claimed) && claimed !== source.usableArea) {
+  const allowedAreas = collectAllowedAreas(source);
+  if (allowedAreas.size > 0) {
+    for (const m of body.matchAll(/(\d+(?:[.,]\d+)?)\s*m²/gi)) {
+      const claimed = parseAreaM2Token(m[1] ?? "");
+      if (claimed != null && !allowedAreas.has(claimed)) {
         flags.push(`free_text_area_mismatch:${claimed}`);
       }
     }
