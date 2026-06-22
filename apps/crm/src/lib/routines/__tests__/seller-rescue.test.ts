@@ -54,6 +54,7 @@ describe("seller-rescue routine", () => {
       ],
       activityCountByLeadId: {},
       minDaysWithoutContact: 7,
+      nowMs: NOW,
     });
     expect(candidates).toHaveLength(0);
   });
