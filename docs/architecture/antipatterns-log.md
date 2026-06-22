@@ -116,6 +116,25 @@ varianty a marketing `/start` funnel blokované.
 **Kontrolór check:** bod 8 (verifikácia) — pri každej novej „legal hold" oblasti
 over, či guard matchuje **triedu mien**, nie jeden historický slug.
 
+## AP-012 — (rezervované)
+
+## AP-013 — Time-coupled flaky test (zmrazený fixture, reálny Date.now())
+**Symptóm:** test prejde pri merge, o pár dní padne v CI bez zmeny kódu. Test zmrazí
+čas pre fixture (`const NOW = …`, `daysAgo(n)`), ale testovaná funkcia volá
+`Date.now()` pri filtrovaní prahov (napr. `minDaysWithoutContact: 7`). Ako reálny
+čas prekročí prah vo fixture, funkcia začne vracať záznam, ktorý test očakáva ako
+prázdny → `expected length 0 but got 1`.
+**Príklad (2026-06-21):** `seller-rescue.test.ts` — `lead-2` mal `last_contact:
+daysAgo(2)` voči `NOW=2026-06-16` (2 dni), ale `pickSellerRescueCandidates` počítal
+dni cez `Date.now()` (~2026-06-21) → 7 dní → kandidát v zozname.
+**Detekcia:** test s relatívnymi dátumami + funkcia bez vstreknutého času; grep
+`daysAgo|NOW` v teste vs `Date.now()` v implementácii bez parametra.
+**Fix:** funkcia prijme voliteľný `nowMs` (test hook); produkcia ho vynechá
+(`Date.now()`). Test vstrekne zmrazený `NOW`. **Nikdy** neopravovať zmenou
+očakávania (`toHaveLength(0)` → `(1)`) — to maskuje bug alebo časovú väzbu.
+**Kontrolór check:** bod 8 (verifikácia) — pri padnutí testu po čase bez diffu
+skontroluj časovú väzbu pred zmenou assertion.
+
 ---
 ## Ako pridať nový antipattern
 Keď nastane incident: zapíš sem AP-NNN (symptóm / detekcia / fix / Kontrolór check),
