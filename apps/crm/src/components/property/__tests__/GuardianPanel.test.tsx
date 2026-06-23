@@ -96,4 +96,11 @@ describe("GuardianPanel", () => {
     expect(screen.getByTestId("guardian-publish-followup")).toBeTruthy();
     expect(screen.queryByTestId("guardian-publish-button")).toBeNull();
   });
+
+  it("disables edit CTA when property is not in DB inventory (fixture mode)", () => {
+    render(<GuardianPanel view={baseView} propertyEditAvailable={false} />);
+    expect(screen.getByTestId("guardian-action-edit-unavailable")).toBeTruthy();
+    expect(screen.queryByTestId("guardian-action-edit")).toBeNull();
+    expect(screen.getByTestId("guardian-publish-followup").textContent).toContain("fixture");
+  });
 });

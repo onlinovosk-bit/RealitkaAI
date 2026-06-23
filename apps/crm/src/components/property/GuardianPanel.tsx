@@ -14,6 +14,8 @@ const STATUS_STYLES = {
 export type GuardianPanelProps = {
   view: GuardianPanelView;
   publishFlowAvailable?: boolean;
+  /** Keď false (napr. fixture bez DB riadku), CTA edit sa nezobrazí ako aktívny link. */
+  propertyEditAvailable?: boolean;
   propertyEditHref?: string;
   listingPreviewHref?: string;
   propertyTitle?: string;
@@ -45,6 +47,7 @@ function TodoIcon() {
 export default function GuardianPanel({
   view,
   publishFlowAvailable = false,
+  propertyEditAvailable = true,
   propertyEditHref = "/properties",
   listingPreviewHref = "#listing-preview",
   propertyTitle,
@@ -253,16 +256,29 @@ export default function GuardianPanel({
       >
         <p className="text-xs font-semibold uppercase tracking-wide text-white/45">Ďalší krok</p>
         <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-          <Link
-            href={propertyEditHref}
-            className="inline-flex flex-1 items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90"
-            style={{
-              background: `linear-gradient(90deg, ${GUARDIAN_PURPLE}, ${GUARDIAN_MAGENTA})`,
-            }}
-            data-testid="guardian-action-edit"
-          >
-            Upraviť ponuku
-          </Link>
+          {propertyEditAvailable ? (
+            <Link
+              href={propertyEditHref}
+              className="inline-flex flex-1 items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90"
+              style={{
+                background: `linear-gradient(90deg, ${GUARDIAN_PURPLE}, ${GUARDIAN_MAGENTA})`,
+              }}
+              data-testid="guardian-action-edit"
+            >
+              Upraviť ponuku
+            </Link>
+          ) : (
+            <span
+              className="inline-flex flex-1 cursor-not-allowed items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold text-white/50"
+              style={{
+                background: "rgba(139, 34, 255, 0.15)",
+              }}
+              data-testid="guardian-action-edit-unavailable"
+              title="Ponuka nie je v databáze tejto kancelárie"
+            >
+              Upraviť ponuku — najprv import
+            </span>
+          )}
           <Link
             href={listingPreviewHref}
             className="inline-flex flex-1 items-center justify-center rounded-xl border px-4 py-3 text-sm font-semibold text-white/90 transition hover:bg-white/5"
@@ -289,8 +305,9 @@ export default function GuardianPanel({
           </button>
         ) : (
           <p className="mt-3 text-xs text-white/45" data-testid="guardian-publish-followup">
-            Odoslanie na portál bude dostupné v ďalšej verzii — zatiaľ upravte ponuku a skontrolujte
-            text inzerátu.
+            {propertyEditAvailable
+              ? "Odoslanie na portál bude dostupné v ďalšej verzii — zatiaľ upravte ponuku a skontrolujte text inzerátu."
+              : "Ponuka je zobrazená zo Smolko fixture — úprava bude možná po importe z Realvie do vašej kancelárie."}
           </p>
         )}
       </footer>
