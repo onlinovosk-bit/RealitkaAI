@@ -13,7 +13,7 @@
 ## P1 — Smolko / hodnota pre klienta
 
 - [ ] **Guardian PROD smoke 5/5** — bod 4 klik (`/vertical-pack/13303557` → edit slide-over); 1/2/5 manuálne
-- [ ] **PR #241** — merge fixture-only disabled edit CTA (CI green)
+- [x] **PR #241** — merged (fixture-only disabled edit CTA)
 - [ ] **Lemon Squeezy Share** — fungoval / nefungoval / pending
 - [ ] **Tomáš** — dual export Realvia + Revolis? (Smolko live čaká)
 - [x] **VALIDATE CLOSED:** Smolko Klienti CSV = duplikát 439 leadov + maklér; Dopyty neexportovateľné — **import nerobiť** (`memory/decisions.md` 2026-06-21)
