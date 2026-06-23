@@ -12,5 +12,7 @@ export {
   isGuardianPublishEnabled,
   type GuardianPanelFlag,
   type GuardianPanelPassItem,
+  type GuardianPanelStatus,
+  type GuardianPanelTodoItem,
   type GuardianPanelView,
 } from "@/lib/capabilities/quality-guardian/panel-map";
