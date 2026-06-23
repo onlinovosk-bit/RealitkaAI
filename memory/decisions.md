@@ -169,7 +169,7 @@
 
 - **Overenie:** PROD popis explicitne: zastavaná **167 m²**, úžitková **120 m²**, pozemok **4.500 m²**; DB `building_area=167`, `usable_area=120`, `land_area=4500`.
 - **Rozhodnutie:** Cesta (b) — rozšíriť `PropertyFacts` (`buildingArea`, `plotArea`) + Guardian skenuje všetky m² v tele proti množine povolených plôch (štruktúrované + m² z `source.description`). Cena 0 nevyvoláva price drift scan.
-- **Výsledok:** PROD smoke script — **6/6 Guardian PASS**, 89%, `fromFixture: false`.
+- **Výsledok:** PROD smoke script — **6/6 capability Guardian PASS** (`fromFixture: false`). **Completeness score** (rubrika `scoreListingCompleteness`, 9 polí): **44 %** = 4/9 pre `13303557` — nie 89 % (89 % bol docs drift; jediný zdroj pravdy je `listing-score/score.ts`).
 - **Súbory:** `quality-guardian/types.ts`, `review.ts`, `listing-generator/generate.ts`, testy.
 
 ## [2026-06-22] - Blueprint Kit artefakt #5 RRA — v1 Medium

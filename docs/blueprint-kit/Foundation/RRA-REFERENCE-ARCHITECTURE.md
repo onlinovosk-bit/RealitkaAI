@@ -92,9 +92,10 @@ AP-001: RRA neobchádza Guardian — „Reference" znamená **kde** beží pravd
 text môže klamať.
 
 ## 11. EVIDENCE + CONFIDENCE
-- **Evidence:** Vertical Pack Vlna 1+2 verified na Smolko PROD (89%, reálny row);
-  #231 HTML strip + #235 multi-area Guardian na `13303557`; 673 testov CI;
-  Realvia webhook reconcile na `main`.
+- **Evidence:** Vertical Pack Vlna 1+2 verified na Smolko PROD (reálny row `13303557`);
+  completeness **44 %** (4/9 polí, `scoreListingCompleteness`); 6/6 capability Guardian PASS;
+  #231 HTML strip + #235 multi-area (167/120/4500 m² legitímne PASS, nie FLAG);
+  673 testov CI; Realvia webhook reconcile na `main`.
 - **Confidence:** Medium (1 produkčný projekt — Revolis CRM).
 
 ## 12. GENERALIZÁCIA
