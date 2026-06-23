@@ -148,7 +148,17 @@
 
 ---
 
-## [2026-06-19] - Wave 3 Lead Discovery (GATE 3) — analýza, nie build
+## [2026-06-20] - Vlna 1+2 verified (Smolko PROD vizuál + brána A3)
+
+- **Route:** `https://app.revolis.ai/vertical-pack/13303557` · login **Reality Smolko** (Rastislav Smolko).
+- **Vlna 1 (#228/#229):** verified — completeness z reálneho PROD riadku **89% (8/9)**, chýba len cena; listing score + capabilities bežia na živých dátach (10 fotiek).
+- **Vlna 2 (#230):** verified — bannery PASS, decky + microsite vykreslené; **žiadny** žltý „DB riadok nenájdený".
+- **Guardian FLAG** na listing/deck/microsite kvôli HTML v popise (`<br />`…) — očakávané správanie K1; fix **PR #231** (strip HTML + skip cena 0 v listing body).
+- **Poznámka:** 44% = len fixture fallback (iný účet); na Smolko PROD očakávaj **~89%**, nie 44%.
+- **A3 brána:** `processed=false` count = **2**; cleanup SQL nespustené autonómne (správne).
+- **Backlog kozmetika:** A3 annotate Section 2 (2 riadky); merge #231 + re-check demo.
+
+---
 
 - **Vstup:** `docs/prompts/L99-lead-discovery-prompt.md` · 5 právnych brán · 30-rolová perspektíva.
 - **Výstup:** `docs/briefs/overnight/wave3-lead-discovery-roadmap.md` (18 legálnych spôsobov, TOP 3, zahodené).
@@ -156,6 +166,18 @@
 - **VETO nestavať:** attribution engine, dedup ML, portálové scraping, buyer-intent scraping, enrichment bez súhlasu.
 - **Overnight sekvencia:** Vlny 1–2 mergnuté (#228–#230); A3 PROD SELECT = 2 pending webhook rows (unknown/delete, OK).
 - **BUILD brief (pripravený):** `docs/briefs/overnight/ruflo-swarm-smolko-dopyty-csv-import.md` — spusti po CSV od Smolka.
+
+---
+
+## [2026-06-21] - Smolko Klienti CSV — VALIDATE CLOSED (nie BUILD)
+
+- **Fakt z reálneho exportu:** stĺpce `ID, Email, Telefón, Meno, Priezvisko, Meno vlastníka, Rola vlastníka`.
+- **Už v DB (439 leadov z Realvia):** ID, email, telefón, meno, priezvisko — ~95% duplikát.
+- **Jediné nové:** priradenie klient → maklér (`Meno vlastníka` / `Rola vlastníka`) — marginálne, nie kvalifikácia.
+- **Dopyty:** kvalifikačné dáta (rozpočet, čo hľadá, timeline) — **hromadný export NEDOSTUPNÝ** (Smolko potvrdil).
+- **VETO BUILD:** CSV import Klientov **nespúšťať** — prínos (meno makléra) neodôvodňuje PROD write na 439 riadkov.
+- **BRI cesta:** reálna kvalifikácia pri kontakte makléra + honest pending UI; prípadne first-party formulár (roadmap TOP #2), nie export.
+- **Voliteľné backlog:** `assigned_makler` cez email match — len po Ústave GO; nie priorita.
 
 ---
 - **Rozhodnutie:** Overnight swarm Brief 9.0 — Fáza 0 `feat/automerge-policy` (Tier 3, merge Andy pred spaním); Vlny 1–3 až po merge robot PR + midnight gate.
@@ -171,6 +193,14 @@
 - **Rozhodnutie:** Cesta (b) — rozšíriť `PropertyFacts` (`buildingArea`, `plotArea`) + Guardian skenuje všetky m² v tele proti množine povolených plôch (štruktúrované + m² z `source.description`). Cena 0 nevyvoláva price drift scan.
 - **Výsledok:** PROD smoke script — **6/6 capability Guardian PASS** (`fromFixture: false`). **Completeness score** (rubrika `scoreListingCompleteness`, 9 polí): **44 %** = 4/9 pre `13303557` — nie 89 % (89 % bol docs drift; jediný zdroj pravdy je `listing-score/score.ts`).
 - **Súbory:** `quality-guardian/types.ts`, `review.ts`, `listing-generator/generate.ts`, testy.
+
+## [2026-06-23] - AP-012 nosič: vágny chore/docs commit (e7040db88) — VETO / cleanup
+
+- **Incident:** 4 L99 governance docs (`premortem-mitigations`, `gdpr-operational-checklist`, `tech-ownership`, `product-one-thing`) sa dostali na `main` cez `e7040db88` (`chore(crm): tier label tests, QA docs…`), nie cez schválený feature PR (#240 bol čistý kód).
+- **Vektor:** horší než „scope pri malom PR" — **vágna `chore`/`docs` nálepka**, ktorú nikto nečíta riadkovo.
+- **Rozhodnutie:** docs **vyhodené** z produkčného repa (PR #242); koncepty idú do Kit backlogu, nie do CRM pri oprave odkazu.
+- **Pravidlo:** `chore:` / `docs:` commit ≠ skip review; diff po riadkoch vždy. Zapísané aj v `.claude/anti-style.md`.
+- **Guardian PROD:** code-truth #240 OK; predajný argument až pri 5/5 PROD smoke.
 
 ## [2026-06-22] - Blueprint Kit artefakt #5 RRA — v1 Medium
 

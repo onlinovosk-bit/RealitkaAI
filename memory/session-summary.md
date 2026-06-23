@@ -1,22 +1,20 @@
-## Session 2026-06-19
+## Session 2026-06-23
 ### Dokončené
-- Brief 15: #220–#221, #222 (B1 reconcile), #227 (K3b/c restore); #226 mal len smoke fix
-- PROD reconcile: scanned=13, matched=5, updated=5, skipped=8; queue vytvorila `2772732443`
-- Enrichment smoke test fix (mock RPO/OpenAI, nie swarm drift)
-- `memory/decisions.md` — BRI honest pending, no backfill (commit lokálne `8dea0dda1`)
-- Skill: `.claude/skills/task-loop/SKILL.md` — closed-loop s GO bránou
+- PR #240 merged — Guardian CTA deep-link `source_id` + edit slide-over (code-truth OK)
+- PR #242 merged — vyhodenie 4 L99 governance docs (AP-012 cleanup, `e7040db88` nosič)
+- `.claude/anti-style.md` — AP-012 pravidlo: `chore`/`docs` ≠ skip review
+- `memory/decisions.md` — AP-012, Smolko VALIDATE CLOSED, Vlna 1+2 PROD notes
 
 ### Rozpracované / Pending
-- Push decisions.md commit
-- PROD cleanup smoke audit `784691`
-- K3 UI route (lib-only dnes)
-- Smolko Dopyty CSV export (VALIDATE)
-- Tomáš / dual export
+- PR #241 open — fixture-only disabled edit CTA (CI green, nezmergované)
+- Guardian PROD smoke **1/5** — bod 4 nepreklepnutý; 1/2/5 manuálne
+- Lemon Squeezy Share — pending blocker
+- Externý cron worker (5 min) — nepotvrdený
+- Tomáš / dual export Realvia + Revolis
 
 ### Kľúčové súbory zmenené
-- `.claude/skills/task-loop/SKILL.md`: next-task engine s human GO gate
-- `apps/crm/src/lib/realvia/reconcileWebhookProcessed.ts`: B1 source_id párovanie
-- `apps/crm/src/lib/capabilities/banner-factory/`, `presentation-builder/`: K3b/c
+- `apps/crm/src/lib/capabilities/quality-guardian/property-edit-href.ts`: deep-link identita
+- `apps/crm/docs/*` (4 governance docs removed via #242)
 
 ### Ďalší krok
-Push `decisions.md` + PROD cleanup `784691` (GO: PROD write)
+PROD re-smoke bod 4 na Smolko účte; merge #241 po GO

@@ -1,6 +1,7 @@
 # BUILD BRIEF — Smolko Dopyty CSV → CRM import mapper (1 PR)
 
-> **Stav:** BLOCKED na CSV od klienta · **Spusti až keď:** dorazí export z Realsoft admin (Klienti/Dopyty)  
+> **Stav:** **VALIDATE CLOSED (2026-06-21)** — Klienti export = duplikát + maklér; Dopyty neexportovateľné. **Nespúšťať.** Detail: `memory/decisions.md`
+> ~~BLOCKED na CSV od klienta~~ · Pôvodne: dorazí export z Realsoft admin (Klienti/Dopyty)  
 > **Roadmap:** `docs/briefs/overnight/wave3-lead-discovery-roadmap.md` TOP #1  
 > **Ústava:** Q1 áno (RK platí za CRM s dopytmi) · Q8 = správny čas **až s CSV** → potom BUILD
 

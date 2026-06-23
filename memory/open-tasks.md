@@ -1,6 +1,6 @@
 # Open Tasks — Prioritized Queue
 
-> Posledná aktualizácia: 2026-06-19 | Task-loop sync
+> Posledná aktualizácia: 2026-06-23 | Task-loop sync
 
 ## P0 — Dokončiť rozbehnuté (vykonávacie)
 
@@ -12,8 +12,11 @@
 
 ## P1 — Smolko / hodnota pre klienta
 
+- [ ] **Guardian PROD smoke 5/5** — bod 4 klik (`/vertical-pack/13303557` → edit slide-over); 1/2/5 manuálne
+- [ ] **PR #241** — merge fixture-only disabled edit CTA (CI green)
+- [ ] **Lemon Squeezy Share** — fungoval / nefungoval / pending
 - [ ] **Tomáš** — dual export Realvia + Revolis? (Smolko live čaká)
-- [ ] **VALIDATE → BUILD:** Smolko Dopyty CSV — brief pripravený: `docs/briefs/overnight/ruflo-swarm-smolko-dopyty-csv-import.md` (spusti po doručení CSV)
+- [x] **VALIDATE CLOSED:** Smolko Klienti CSV = duplikát 439 leadov + maklér; Dopyty neexportovateľné — **import nerobiť** (`memory/decisions.md` 2026-06-21)
 - [ ] **K3 UI route** — banner/deck pre property (lib hotová, chýba `/app` route) — VALIDATE pred BUILD
 - [ ] Realvia re-test od Bereczovej — delete + create/update export
 
