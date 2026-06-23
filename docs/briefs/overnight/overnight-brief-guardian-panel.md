@@ -46,7 +46,7 @@ Toto je veto-pozitívne na všetkých 6 otázkach Ústavy:
 
 Nepíš nič, kým toto nie je potvrdené v PR popise:
 1. **Kde žije detail nehnuteľnosti?** Nájdi route/page komponentu (pravdepodobne `apps/crm/src/app/.../[id]/...` alebo ekvivalent). Zapíš presnú cestu.
-2. **Odkiaľ prísť Guardian dáta?** Nájdi, kde sa completeness score a FLAGy počítajú/ukladajú/vracajú (server fn, RPC, alebo pole na zázname). Zapíš zdroj. Over na reálnom riadku `13303557` že vracia `89%` a `free_text_area_mismatch` (167 m² zastavaná vs 120 m² úžitková).
+2. **Odkiaľ prísť Guardian dáta?** `buildVerticalPackDemo()` → `scoreListingCompleteness()` + `generateListingDraft()` → `reviewGeneratedListing()`. Jediný completeness %: rubrika **9 polí** v `apps/crm/src/lib/capabilities/listing-score/score.ts`. Pre `13303557`: **44 %** (4/9) — úprimné; po #235 **žiadny** area FLAG (167/120/4500 m² validné). Test `free_text_area_mismatch` stále chytí fiktívnu plochu (napr. 999 m²).
 3. **Existuje „zverejniť" akcia?** Nájdi publish/export akciu pre inzerát.
    - Ak existuje → brána ju podmieni stavom FLAGov.
    - Ak NEEXISTUJE → brána sa degraduje na nezablokujúci warning v paneli; bránu zaznač ako follow-up. NEVYMÝŠĽAJ publish flow.
@@ -73,14 +73,14 @@ Tlačidlo „Potvrdiť a zverejniť" `disabled` pokiaľ `flags.some(f => f.sever
 
 ## 7. AKCEPTAČNÉ KRITÉRIÁ (Done = artefakt, nie text)
 
-- [ ] Panel sa zobrazí na detaile nehnuteľnosti `13303557` so skutočným skóre 89 %.
-- [ ] FLAG „rozpor v ploche 167 vs 120 m²" sa zobrazí ako blokujúci.
-- [ ] „Potvrdiť a zverejniť" je zamknuté, kým je FLAG nevyriešený; po vyriešení sa odomkne.
+- [ ] Panel na `/vertical-pack/13303557` so skutočným completeness **44 %** (4/9), konzistentné so spodnou kartou.
+- [ ] Chýbajúce polia (cena, GPS, video, …) v „Doplniť v ponuke"; **žiadny** area FLAG po #235 (167/120 legitímne).
+- [ ] Blokujúci FLAG stále funguje v kóde (test: `free_text_area_mismatch` na neexistujúcu plochu).
+- [ ] CTA „Upraviť ponuku" / „Pozrieť text inzerátu" fungujú; publish flow follow-up ak nie je zapojený.
 - [ ] Nehnuteľnosť bez Guardian výstupu → honest empty state, žiadne fiktívne číslo.
 - [ ] Žiadna nová migrácia v PR. Žiadny nový Guardian scoring.
-- [ ] Unit test na bránu (blocking flag → disabled) + render test panelu.
-- [ ] CI zelená (`saas-grade-pipeline.yml`, ephemeral local Supabase — žiadne testy proti PROD).
-- [ ] **Merge ≠ deployed ≠ verified:** po deployi vizuálny smoke na `app.revolis.ai`, riadok `13303557` (manuálny krok — Andy).
+- [ ] Unit test na bránu + render panelu; CI zelené.
+- [ ] **Merge ≠ deployed ≠ verified:** vizuálny smoke na PROD (Andy).
 
 ## 8. DÁTA / BEZPEČNOSŤ
 

@@ -1,7 +1,7 @@
 # RUFLO OVERNIGHT BRIEF — aktuálny stav (#231 + testy + docs)
 
 > **SUPERSEDES:** `ruflo-swarm-full-night-chain.md` (Vlna 1–2 už merged #228/#229/#230).
-> Vlna 1 (#228/#229) a Vlna 2 (#230) sú UŽ v kóde a verified (Smolko ~89%).
+> Vlna 1 (#228/#229) a Vlna 2 (#230) sú UŽ v kóde a verified (Smolko: 6/6 capability PASS, completeness **44 %** = 4/9 polí v rubrike `scoreListingCompleteness` — pozri `listing-score/score.ts`).
 > Tento brief stavia LEN to, čo je reálne otvorené. Nestavia hotové veci.
 > Self-gate: auto-postup len pri zelenom CI + nedeštruktívnej vlne. STOP pri PROD/externom.
 > Cesta: `docs/briefs/overnight/ruflo-overnight-brief-231-tests.md`
