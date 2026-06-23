@@ -30,7 +30,9 @@ describe("buildGuardianPanelView", () => {
     expect(view.hasOutput).toBe(true);
     expect(view.completenessPercent).toBe(demo.completeness.scorePercent);
     expect(view.passItems.length).toBeGreaterThan(0);
-    expect(view.passItems.every((p) => p.label.length > 0)).toBe(true);
+    expect(view.todoItems.length).toBeGreaterThan(0);
+    expect(view.status).toBe("needs_data");
+    expect(view.nextStepSummary.length).toBeGreaterThan(10);
   });
 
   it("maps area mismatch reason to blocking flag with human label", () => {

@@ -79,7 +79,13 @@ export default async function VerticalPackDemoPage({ params }: PageProps) {
       </div>
 
       <div className="mb-6">
-        <GuardianPanel view={guardianPanel} publishFlowAvailable={false} />
+        <GuardianPanel
+          view={guardianPanel}
+          publishFlowAvailable={false}
+          propertyEditHref="/properties"
+          listingPreviewHref="#listing-preview"
+          propertyTitle={demo.propertyTitle}
+        />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -106,6 +112,7 @@ export default async function VerticalPackDemoPage({ params }: PageProps) {
         </section>
 
         <section
+          id="listing-preview"
           className="rounded-2xl border p-5"
           style={{
             background: WORKDESK_CARD.background,
