@@ -6,6 +6,7 @@ import { resolveProfileForAuthUser } from "@/lib/profiles/resolve-profile-for-au
 import { createClient } from "@/lib/supabase/server";
 import { buildVerticalPackDemo, loadRealviaPropertyForDemo } from "@/lib/capabilities/vertical-pack-demo";
 import { buildGuardianPanelView } from "@/lib/capabilities/quality-guardian";
+import { buildGuardianPropertyEditHref } from "@/lib/capabilities/quality-guardian/property-edit-href";
 import { SLATE_HORIZON, WORKDESK_CARD } from "@/lib/slate-horizon-theme";
 
 export const dynamic = "force-dynamic";
@@ -82,7 +83,7 @@ export default async function VerticalPackDemoPage({ params }: PageProps) {
         <GuardianPanel
           view={guardianPanel}
           publishFlowAvailable={false}
-          propertyEditHref="/properties"
+          propertyEditHref={buildGuardianPropertyEditHref(demo.sourceId)}
           listingPreviewHref="#listing-preview"
           propertyTitle={demo.propertyTitle}
         />

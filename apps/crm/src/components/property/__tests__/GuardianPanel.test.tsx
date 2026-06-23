@@ -2,6 +2,7 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import GuardianPanel from "@/components/property/GuardianPanel";
+import { buildGuardianPropertyEditHref } from "@/lib/capabilities/quality-guardian/property-edit-href";
 import type { GuardianPanelView } from "@/lib/capabilities/quality-guardian/panel-map";
 
 const baseView: GuardianPanelView = {
@@ -48,12 +49,21 @@ describe("GuardianPanel", () => {
   });
 
   it("shows value prop, status, todos and action links", () => {
-    render(<GuardianPanel view={baseView} propertyTitle="Predaj RD" />);
+    const editHref = buildGuardianPropertyEditHref("13303557");
+    render(
+      <GuardianPanel
+        view={baseView}
+        propertyTitle="Predaj RD"
+        propertyEditHref={editHref}
+      />,
+    );
     expect(screen.getByTestId("guardian-panel")).toBeTruthy();
     expect(screen.getByTestId("guardian-status-badge").textContent).toContain("Treba doplniť");
     expect(screen.getByTestId("guardian-next-step")).toBeTruthy();
     expect(screen.getByTestId("guardian-todo-price")).toBeTruthy();
-    expect(screen.getByTestId("guardian-action-edit").getAttribute("href")).toBe("/properties");
+    const href = screen.getByTestId("guardian-action-edit").getAttribute("href");
+    expect(href).toContain("source_id=13303557");
+    expect(href).not.toBe("/properties");
     expect(screen.getByTestId("guardian-action-preview").getAttribute("href")).toBe(
       "#listing-preview",
     );
