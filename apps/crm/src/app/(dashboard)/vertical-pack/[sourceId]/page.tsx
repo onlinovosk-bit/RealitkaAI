@@ -66,7 +66,8 @@ export default async function VerticalPackDemoPage({ params }: PageProps) {
             color: SLATE_HORIZON.ink,
           }}
         >
-          DB riadok nenájdený — zobrazený reálny Smolko fixture (13303557).
+          DB riadok nenájdený — zobrazený reálny Smolko fixture (13303557). Úprava ponuky
+          bude dostupná po importe z Realvie do vašej kancelárie.
         </div>
       )}
 
@@ -83,7 +84,10 @@ export default async function VerticalPackDemoPage({ params }: PageProps) {
         <GuardianPanel
           view={guardianPanel}
           publishFlowAvailable={false}
-          propertyEditHref={buildGuardianPropertyEditHref(demo.sourceId)}
+          propertyEditAvailable={!loaded.fromFixture}
+          propertyEditHref={
+            loaded.fromFixture ? undefined : buildGuardianPropertyEditHref(demo.sourceId)
+          }
           listingPreviewHref="#listing-preview"
           propertyTitle={demo.propertyTitle}
         />

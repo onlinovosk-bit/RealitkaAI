@@ -148,6 +148,9 @@ export default function PropertiesPageClient({
         >
           <p>
             Ponuka <strong>{focusSourceId}</strong> sa v zozname nenašla.
+            {inventorySummary.total === 0
+              ? " V inventári kancelárie nie sú žiadne ponuky — skontrolujte Realvia import alebo účet kancelárie."
+              : null}
           </p>
           <a href="/properties" className="mt-2 inline-block font-semibold underline">
             Späť na celý zoznam
