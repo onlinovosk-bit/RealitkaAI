@@ -134,6 +134,7 @@ export default function PropertyEditSlideOver({
       />
 
       <aside
+        data-testid="property-edit-slide-over"
         className={`absolute right-0 top-0 h-full w-full max-w-2xl overflow-y-auto border-l border-gray-200 bg-white shadow-2xl transition-transform ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
