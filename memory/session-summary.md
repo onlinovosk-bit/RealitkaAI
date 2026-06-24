@@ -13,4 +13,4 @@
 - Tomáš / dual export Realvia + Revolis
 
 ### Ďalší krok
-PROD re-smoke bod 4 na Smolko účte (Andy klik)
+Spusti `prod-guardian-smoke-once.mjs` so Smolko creds; nastav GitHub SCHEMA_GUARD secrets + cron-job.org CRON_SECRET

@@ -1,0 +1,9 @@
+{
+  "at": "2026-06-24T05:46:51.164Z",
+  "base": "https://app.revolis.ai",
+  "loginEmail": "tes***",
+  "checks": {},
+  "errors": [
+    "page.waitForURL: Timeout 45000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================"
+  ]
+}

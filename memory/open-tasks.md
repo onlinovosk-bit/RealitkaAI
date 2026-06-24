@@ -1,6 +1,6 @@
 # Open Tasks — Prioritized Queue
 
-> Posledná aktualizácia: 2026-06-23 | Task-loop sync
+> Posledná aktualizácia: 2026-06-24 | Task-loop sync
 
 ## P0 — Dokončiť rozbehnuté (vykonávacie)
 
@@ -8,11 +8,11 @@
 - [x] PROD reconcile `?reconcile_processed=1` — updated=5, scanned=13, skipped=8 (párovanie OK)
 - [x] **Push `memory/decisions.md`** + task-loop commits — pushnuté `35224b355`
 - [x] **PROD cleanup** — audit `784691` smoke probe deleted (SELECT: verify=audit-fix-probe, 0 properties)
-- [ ] **Externý cron** — potvrdiť worker každých 5 min (cron-job.org)
+- [ ] **Externý cron** — agent: lokálny CRON_SECRET → PROD 401; overiť cron-job.org + Vercel Production secret (každých 5 min)
 
 ## P1 — Smolko / hodnota pre klienta
 
-- [ ] **Guardian PROD smoke 5/5** — bod 4 klik (`/vertical-pack/13303557` → edit slide-over); 1/2/5 manuálne
+- [ ] **Guardian PROD smoke 5/5** — agent: login blocked (TEST_USER ≠ Smolko); skript `apps/crm/scripts/prod-guardian-smoke-once.mjs` pripravený
 - [x] **PR #241** — merged (fixture-only disabled edit CTA)
 - [ ] **Lemon Squeezy Share** — fungoval / nefungoval / pending
 - [ ] **Tomáš** — dual export Realvia + Revolis? (Smolko live čaká)
@@ -23,7 +23,7 @@
 ## P2 — Realvia / ops
 
 - [ ] Preskúmať ~8 `realvia_webhook_logs processed=false` (skipped bez property match — delete/unknown?)
-- [ ] Schema Guard — nastaviť `SCHEMA_GUARD_*` secrets, re-enable cron
+- [ ] **Schema Guard** — agent: workflow_dispatch FAIL (secrets chýbajú v GitHub Actions)
 
 ## P3 — Product / tech debt (nie teraz ak nie P0/P1)
 
