@@ -5,8 +5,9 @@ import {
   STALE_CONTACT_DAYS,
 } from "@/lib/agents/followup/constants";
 import { evaluateFollowupBatch } from "@/lib/agents/followup/engine";
+import { attachGuardianToDrafts, summarizeGuardianDrafts } from "@/lib/agents/followup/guardianReview";
 import { computeContactedWithin24hPercent } from "@/lib/agents/followup/kpi";
-import type { DraftAction, FollowupLeadInput } from "@/lib/agents/followup/types";
+import type { DraftAction, GuardedDraftAction, FollowupLeadInput } from "@/lib/agents/followup/types";
 
 const MS_PER_DAY = 86_400_000;
 
@@ -16,7 +17,8 @@ export type FollowupPreviewResult = {
   agencyId: string;
   staleCutoff: string;
   scanned: number;
-  drafts: DraftAction[];
+  drafts: GuardedDraftAction[];
+  guardianSummary: ReturnType<typeof summarizeGuardianDrafts>;
   kpi: ReturnType<typeof computeContactedWithin24hPercent>;
 };
 
@@ -51,9 +53,10 @@ export async function buildFollowupPreview(agencyId: string): Promise<
   }));
 
   const engineResults = evaluateFollowupBatch(leads, { agencyId });
-  const drafts: DraftAction[] = engineResults
+  const rawDrafts = engineResults
     .map((r) => r.draft)
     .filter((d): d is DraftAction => Boolean(d && d.decision !== "wait" && d.body));
+  const drafts = attachGuardianToDrafts(rawDrafts, leads, agencyId);
 
   const kpiLeads = (rows ?? []).map((r: Record<string, unknown>) => ({
     id: String(r.id),
@@ -68,6 +71,7 @@ export async function buildFollowupPreview(agencyId: string): Promise<
     staleCutoff,
     scanned: leads.length,
     drafts,
+    guardianSummary: summarizeGuardianDrafts(drafts),
     kpi: computeContactedWithin24hPercent(kpiLeads),
   };
 }

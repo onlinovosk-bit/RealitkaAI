@@ -21,6 +21,16 @@ export type DraftAction = {
   reason: string;
 };
 
+export type FollowupGuardianVerdict = {
+  verdict: "pass" | "flag";
+  reasons: string[];
+  blockedSend: boolean;
+};
+
+export type GuardedDraftAction = DraftAction & {
+  guardian: FollowupGuardianVerdict;
+};
+
 export type Prediction = {
   agency_id: string;
   lead_id: string;
