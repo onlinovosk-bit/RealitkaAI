@@ -1,9 +1,11 @@
 import { createServiceRoleClient } from "@/lib/supabase/admin";
+import { FOLLOWUP_AGENT_NAME } from "@/lib/agents/followup/constants";
 import type { Prediction } from "@/lib/agents/followup/types";
 
 export type DecisionInsertRow = {
   agency_id: string;
   lead_id: string;
+  agent: string;
   decision: string;
   p_outcome: number;
   expected_value_eur: number;
@@ -26,6 +28,7 @@ export function toDecisionRow(prediction: Prediction): DecisionInsertRow {
   return {
     agency_id: prediction.agency_id,
     lead_id: prediction.lead_id,
+    agent: FOLLOWUP_AGENT_NAME,
     decision: prediction.decision,
     p_outcome: prediction.p_outcome,
     expected_value_eur: prediction.expected_value_eur,
