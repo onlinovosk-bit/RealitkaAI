@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import type { DraftAction } from "@/lib/agents/followup/types";
+import type { GuardedDraftAction } from "@/lib/agents/followup/types";
 import type { FollowupPreviewResult } from "@/lib/agents/followup/preview";
 import { SLATE_HORIZON, WORKDESK_CARD } from "@/lib/slate-horizon-theme";
 
@@ -12,10 +12,14 @@ const CHANNEL_LABEL: Record<string, string> = {
   none: "—",
 };
 
-function channelBadge(channel: DraftAction["channel"]) {
+function channelBadge(channel: GuardedDraftAction["channel"]) {
   if (channel === "email") return "bg-sky-100 text-sky-800";
   if (channel === "sms") return "bg-emerald-100 text-emerald-800";
   return "bg-slate-100 text-slate-600";
+}
+
+function guardianBadge(verdict: GuardedDraftAction["guardian"]["verdict"]) {
+  return verdict === "pass" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-900";
 }
 
 export function FollowupDraftsPanel() {
@@ -65,7 +69,9 @@ export function FollowupDraftsPanel() {
           <p className="mt-2 text-2xl font-bold" style={{ color: SLATE_HORIZON.ink }}>
             Náhľad
           </p>
-          <p className="mt-1 text-sm text-slate-600">Žiadne odoslanie — schválenie cez Guardian (TODO).</p>
+          <p className="mt-1 text-sm text-slate-600">
+            Guardian kontrola na každom drafte — odoslanie blokované pri FLAG.
+          </p>
         </div>
 
         <div
@@ -83,7 +89,9 @@ export function FollowupDraftsPanel() {
             {loading ? "…" : (data?.drafts.length ?? 0)}
           </p>
           <p className="mt-1 text-sm text-slate-600">
-            {loading ? "Načítavam…" : `${data?.scanned ?? 0} skenovaných leadov`}
+            {loading
+              ? "Načítavam…"
+              : `${data?.guardianSummary.pass ?? 0} PASS · ${data?.guardianSummary.flag ?? 0} FLAG · ${data?.scanned ?? 0} leadov`}
           </p>
         </div>
 
@@ -154,6 +162,12 @@ export function FollowupDraftsPanel() {
                     <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${channelBadge(draft.channel)}`}>
                       {CHANNEL_LABEL[draft.channel] ?? draft.channel}
                     </span>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${guardianBadge(draft.guardian.verdict)}`}
+                      data-testid={`followup-guardian-${draft.leadId}`}
+                    >
+                      Guardian {draft.guardian.verdict.toUpperCase()}
+                    </span>
                   </div>
                   <p className="mt-1 text-sm text-slate-600">{draft.reason}</p>
                 </div>
@@ -169,6 +183,11 @@ export function FollowupDraftsPanel() {
                     </p>
                   ) : null}
                   <pre className="whitespace-pre-wrap rounded-xl bg-slate-50 p-4 text-sm text-slate-800">{draft.body}</pre>
+                  {draft.guardian.verdict === "flag" ? (
+                    <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                      Guardian FLAG: {draft.guardian.reasons.join(", ")}
+                    </p>
+                  ) : null}
                   <div className="mt-3 flex flex-wrap gap-3">
                     <Link
                       href={`/leads/${draft.leadId}`}

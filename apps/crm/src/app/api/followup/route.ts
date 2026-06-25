@@ -11,6 +11,7 @@ import {
 import { evaluateFollowupBatch } from "@/lib/agents/followup/engine";
 import { computeContactedWithin24hPercent } from "@/lib/agents/followup/kpi";
 import { buildFollowupPreview, resolveFollowupAgencyId } from "@/lib/agents/followup/preview";
+import { attachGuardianToDrafts, summarizeGuardianDrafts } from "@/lib/agents/followup/guardianReview";
 import { writeOpenPredictions } from "@/lib/agents/followup/predictionWriter";
 import type { DraftAction, FollowupLeadInput } from "@/lib/agents/followup/types";
 
@@ -74,9 +75,11 @@ export async function POST(request: NextRequest) {
   }));
 
   const engineResults = evaluateFollowupBatch(leads, { agencyId: FOLLOWUP_AGENCY_ID });
-  const drafts: DraftAction[] = engineResults
+  const rawDrafts = engineResults
     .map((r) => r.draft)
     .filter((d): d is DraftAction => Boolean(d && d.decision !== "wait" && d.body));
+  const drafts = attachGuardianToDrafts(rawDrafts, leads, FOLLOWUP_AGENCY_ID);
+  const guardianSummary = summarizeGuardianDrafts(drafts);
 
   const predictions = engineResults
     .map((r) => r.prediction)
@@ -97,8 +100,6 @@ export async function POST(request: NextRequest) {
   }));
   const kpi = computeContactedWithin24hPercent(kpiLeads);
 
-  // TODO: route through Guardian before 5/5 — attach guardian review to each draft prior to broker send.
-
   return NextResponse.json({
     ok: true,
     mode: "draft_only",
@@ -106,6 +107,7 @@ export async function POST(request: NextRequest) {
     staleCutoff,
     scanned: leads.length,
     drafts,
+    guardianSummary,
     predictionsWritten: predictionIds.length,
     predictionIds,
     kpi,
