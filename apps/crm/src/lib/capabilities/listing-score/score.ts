@@ -197,7 +197,7 @@ export function scoreListingCompleteness(input: {
   const listing = realviaRowToUcListing(input.property);
   const facts = propertyFactsFromUcListing(listing);
   const missingLine = missing.length ? `Chýba: ${missing.join(", ")}.` : "Všetky sledované polia sú vyplnené.";
-  const summary = `Completeness ${scorePercent}% (${filledCount}/${totalCount}). ${missingLine}`;
+  const summary = `Úplnosť ${scorePercent}% (${filledCount}/${totalCount}). ${missingLine}`;
 
   const claimedFacts: Record<string, string | number> = { title: facts.title };
   if (facts.price != null && facts.price > 0) claimedFacts.price = facts.price;
@@ -209,7 +209,7 @@ export function scoreListingCompleteness(input: {
     source: facts,
     draft: {
       draftId: `listing-score-${input.property.source_id}`,
-      headline: `Completeness ${scorePercent}%`,
+      headline: `Úplnosť ${scorePercent}%`,
       body: summary,
       claimedFacts,
     },
