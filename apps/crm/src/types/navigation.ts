@@ -329,7 +329,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   },
   {
     id: "ceo-command",
-    label: "CEO Command",
+    label: "Riaditeľské centrum",
     sublabel: "Riaditeľské príkazy · Briefy z rutín",
     href: "/ceo-command",
     icon: "lock",
@@ -393,7 +393,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   },
   {
     id: "onboarding-monitor",
-    label: "Onboarding Automat",
+    label: "Automat onboardingu",
     sublabel: "Adopcia klientov · At-risk · Emaily",
     href: "/onboarding-monitor",
     icon: "chart-up",

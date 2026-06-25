@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { buildVerticalPackDemo, loadRealviaPropertyForDemo } from "@/lib/capabilities/vertical-pack-demo";
 import { buildGuardianPanelView } from "@/lib/capabilities/quality-guardian";
 import { buildGuardianPropertyEditHref } from "@/lib/capabilities/quality-guardian/property-edit-href";
+import { BANNER_STATE_LABELS } from "@/lib/capabilities/banner-factory/build";
 import { SLATE_HORIZON, WORKDESK_CARD } from "@/lib/slate-horizon-theme";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +27,7 @@ function PassBadge({ pass }: { pass: boolean }) {
         color: pass ? "#15803d" : "#b91c1c",
       }}
     >
-      {pass ? "Guardian PASS" : "Guardian FLAG"}
+      {pass ? "Guardian · v poriadku" : "Guardian · treba opraviť"}
     </span>
   );
 }
@@ -54,8 +55,8 @@ export default async function VerticalPackDemoPage({ params }: PageProps) {
 
   return (
     <ModuleShell
-      title="Vertical Pack — demo zákazky"
-      description={`Capabilities pre source_id=${demo.sourceId}. Banner, listing, deck, microsite, completeness score.`}
+      title="Balík zákazky"
+      description={`Nástroje pre zákazku ${demo.sourceId}: bannery, inzerát, prezentácie, microsite a skóre úplnosti.`}
     >
       {loaded.fromFixture && (
         <div
@@ -104,7 +105,7 @@ export default async function VerticalPackDemoPage({ params }: PageProps) {
         >
           <div className="mb-3 flex items-center justify-between gap-2">
             <h2 className="text-lg font-bold" style={{ color: SLATE_HORIZON.ink }}>
-              Completeness score
+              Úplnosť ponuky
             </h2>
             <span className="text-2xl font-bold tabular-nums" style={{ color: SLATE_HORIZON.brandDeep }}>
               {demo.completeness.scorePercent}%
@@ -127,7 +128,7 @@ export default async function VerticalPackDemoPage({ params }: PageProps) {
         >
           <div className="mb-3 flex items-center justify-between gap-2">
             <h2 className="text-lg font-bold" style={{ color: SLATE_HORIZON.ink }}>
-              Listing generator
+              Generátor inzerátu
             </h2>
             <PassBadge pass={demo.listing.guardian.verdict === "pass"} />
           </div>
@@ -149,7 +150,7 @@ export default async function VerticalPackDemoPage({ params }: PageProps) {
           }}
         >
           <h2 className="mb-3 text-lg font-bold" style={{ color: SLATE_HORIZON.ink }}>
-            Banner factory
+            Bannery
           </h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {demo.banners.map((banner) => (
@@ -158,8 +159,8 @@ export default async function VerticalPackDemoPage({ params }: PageProps) {
                 className="rounded-xl border p-4"
                 style={{ borderColor: SLATE_HORIZON.softBorder, background: SLATE_HORIZON.soft }}
               >
-                <p className="text-xs uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>
-                  {banner.state}
+                <p className="text-xs font-medium tracking-wide" style={{ color: SLATE_HORIZON.muted }}>
+                  {BANNER_STATE_LABELS[banner.state]}
                 </p>
                 <p className="mt-1 font-semibold" style={{ color: SLATE_HORIZON.ink }}>
                   {banner.headline}
@@ -185,7 +186,7 @@ export default async function VerticalPackDemoPage({ params }: PageProps) {
         >
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-lg font-bold" style={{ color: SLATE_HORIZON.ink }}>
-              Deck (majiteľ)
+              Prezentácia (majiteľ)
             </h2>
             <PassBadge pass={demo.deckOwner.guardianPass} />
           </div>
@@ -212,7 +213,7 @@ export default async function VerticalPackDemoPage({ params }: PageProps) {
         >
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-lg font-bold" style={{ color: SLATE_HORIZON.ink }}>
-              Deck (kupujúci)
+              Prezentácia (kupujúci)
             </h2>
             <PassBadge pass={demo.deckBuyer.guardianPass} />
           </div>
@@ -239,7 +240,7 @@ export default async function VerticalPackDemoPage({ params }: PageProps) {
         >
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-lg font-bold" style={{ color: SLATE_HORIZON.ink }}>
-              Property microsite
+              Microsite ponuky
             </h2>
             <PassBadge pass={demo.microsite.guardianPass} />
           </div>
@@ -250,7 +251,8 @@ export default async function VerticalPackDemoPage({ params }: PageProps) {
             {demo.microsite.heroSubtitle}
           </p>
           <p className="mt-2 text-xs" style={{ color: SLATE_HORIZON.muted }}>
-            noindex={String(demo.microsite.noindex)} · fotiek: {demo.microsite.imageUrls.length}
+            {demo.microsite.noindex ? "Bez indexácie vyhľadávačmi" : "Indexovateľná"} · Fotiek:{" "}
+            {demo.microsite.imageUrls.length}
           </p>
         </section>
       </div>

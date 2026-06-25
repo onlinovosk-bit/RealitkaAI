@@ -16,12 +16,14 @@ export type BannerSpec = {
   guardianPass: boolean;
 };
 
-const STATE_LABELS: Record<BannerState, string> = {
+export const BANNER_STATE_LABELS: Record<BannerState, string> = {
   for_sale: "Na predaj",
   reduced: "Znížená cena",
   sold: "Predané",
   reserved: "Rezervované",
 };
+
+const STATE_LABELS = BANNER_STATE_LABELS;
 
 export function buildBannerSpecs(input: {
   agencyId: string;
