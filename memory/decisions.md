@@ -208,3 +208,26 @@
 - **Cesty:** `docs/blueprint-kit/Foundation/RRA-REFERENCE-ARCHITECTURE.md`, scoreboard #5 Medium.
 - **Sync:** `C:\Revolis OS\Foundation\RRA-REFERENCE-ARCHITECTURE.md`.
 ---
+
+## [2026-06-24] - AP-015 North Star r2→r4 — BUILD (docs)
+
+- **Rozhodnutie:** North Star preformulovaný: Revolis = Knowledge Monopoly systém (Loops Revenue → Learning → Network → Evolution), nie „AI pre realitky“.
+- **Dokument:** `docs/architecture/north-star-2027-2030.md` (r4).
+- **Gate:** Genome Test — BUILD len ak 30-dňové KPI zákazníka A zapisuje do Loop 2.
+
+## [2026-06-24] - AP-016 Genome entity prijaté — BUILD (substrát)
+
+- **Rozhodnutie:** `public.decisions` (Prediction Registry) + `public.exclusivity_outcomes` (Genome) akceptované ako Loop 2 substrát.
+- **Stav:** Migrácia idempotentná v PROD (manuálne); rep migrácia vo Wave A briefe.
+- **Pravidlo:** Predikcie z Loop 1 (Follow-up Agent) zapisujú do `decisions`; žiadne auto-odosielanie.
+
+## [2026-06-24] - AP-017 Genome Factory rozdelený — BACKLOG / čiastočný smer
+
+- **Rozhodnutie:** Genome Factory **auto-deploy** parked (`l99-parked-concepts.md`); manuálna polovica (human approval) povolená až za Guardian 5/5 PROD.
+- **VETO:** Automatické nasadenie genómu bez founder GO.
+
+## [2026-06-24] - AP-018 Architektúra uzavretá → pivot exekúcia — BUILD (proces)
+
+- **Rozhodnutie:** Dokumentácia architektúry (North Star r4, parked concepts) uzavretá na úrovni smeru; ďalšie hodiny = Loop 1 exekúcia (Follow-up draft-only), nie nové koncepty.
+- **Overnight:** Brief 10 Wave B (tento commit); Wave A/C samostatné PR.
+- **Merge:** Human GO; nie auto-merge (AP-012).
