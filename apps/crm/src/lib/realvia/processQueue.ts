@@ -18,6 +18,7 @@ import { recordRealviaBatchMetrics } from './metrics';
 import {
   isAdvertPayload,
   isDeletePayload,
+  normalizeRealviaSourceId,
   PROPERTY_STATUS,
 } from './types';
 import type {
@@ -95,7 +96,7 @@ export async function processRealviaQueue(): Promise<{
         result = await processAdvertPayload(payload, agency_id);
       } else if (isDeletePayload(payload)) {
         result = await processDeletePayload(
-          payload.source_id,
+          normalizeRealviaSourceId(payload.source_id),
           agency_id,
           payload.archiveType,
         );
@@ -340,7 +341,7 @@ async function processAdvertPayload(
  * NEVER hard-deletes — maps archiveType to property status.
  */
 async function processDeletePayload(
-  sourceId: number,
+  sourceId: string,
   agencyId: string | null,
   archiveType?: RealviaDeletePayload['archiveType'],
 ): Promise<RealviaProcessingResult> {
@@ -349,7 +350,7 @@ async function processDeletePayload(
     return { success: false, action: 'skipped', error: 'DB client unavailable' };
   }
 
-  const sourceIdStr = String(sourceId);
+  const sourceIdStr = sourceId;
 
   try {
     const { data: existing } = await sb
