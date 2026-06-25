@@ -10,6 +10,11 @@ import { createLeadStatusChangedEvent } from "@/domain/leads/events";
 import { notifyHotLead } from "@/services/push/PushNotificationService";
 import { createClient } from "@/lib/supabase/server";
 import { normalizeAiPriority } from "@/lib/workflows/lead-ai-priority";
+import {
+  isTerminalLeadStatus,
+  resolveOpenDecisionsForLead,
+} from "@/lib/agents/followup/outcomeWriter";
+import { logError } from "@/lib/logger";
 
 export async function PATCH(
   request: Request,
@@ -110,6 +115,24 @@ export async function PATCH(
 
       if (lead.status === "Horúci" && lead.assignedProfileId) {
         notifyHotLead(lead.assignedProfileId, lead.name, id).catch(() => {/* best-effort */});
+      }
+
+      const agencyId = leadRow?.agency_id ?? callerProfile?.agency_id;
+      if (agencyId && isTerminalLeadStatus(lead.status)) {
+        try {
+          await resolveOpenDecisionsForLead({
+            leadId: id,
+            agencyId,
+            newStatus: lead.status,
+          });
+        } catch (outcomeError) {
+          logError("[loop2-outcome] resolveOpenDecisionsForLead failed", {
+            leadId: id,
+            agencyId,
+            status: lead.status,
+            error: outcomeError instanceof Error ? outcomeError.message : String(outcomeError),
+          });
+        }
       }
     }
 
