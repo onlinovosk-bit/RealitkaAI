@@ -20,6 +20,7 @@ describe("predictionWriter", () => {
     });
     expect(row.status).toBe("open");
     expect(row.lead_id).toBe("lead-1");
+    expect(row.agent).toBe("followup_agent");
   });
 
   it("writes open prediction via injected client", async () => {

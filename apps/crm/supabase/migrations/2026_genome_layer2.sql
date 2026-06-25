@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS public.decisions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   agency_id uuid NOT NULL,
   lead_id text NOT NULL,
+  agent text NOT NULL DEFAULT 'followup_agent',
   decision text NOT NULL,
   p_outcome numeric,
   expected_value_eur numeric,
@@ -29,11 +30,15 @@ CREATE TABLE IF NOT EXISTS public.exclusivity_outcomes (
 
 CREATE INDEX IF NOT EXISTS idx_exclusivity_outcomes_agency ON public.exclusivity_outcomes (agency_id, recorded_at DESC);
 
+-- PROD parity: column added manually before repo migration; idempotent for CI.
+ALTER TABLE public.decisions ADD COLUMN IF NOT EXISTS agent text NOT NULL DEFAULT 'followup_agent';
+
 CREATE OR REPLACE VIEW public.genome_decision_open AS
 SELECT
   d.id,
   d.agency_id,
   d.lead_id,
+  d.agent,
   d.decision,
   d.p_outcome,
   d.expected_value_eur,
