@@ -107,9 +107,21 @@ export interface RealviaWebhookPayload {
 
 /** Delete/cancellation payload (Realvia export v2) */
 export interface RealviaDeletePayload {
-  readonly source_id: number;
+  /** Realvia PROD sends numeric strings (e.g. "13303557"), not JSON numbers. */
+  readonly source_id: number | string;
   readonly action: 'delete';
   readonly archiveType?: 'sold' | 'rent' | 'cancel';
+}
+
+function isRealviaSourceId(value: unknown): value is number | string {
+  if (typeof value === 'number' && Number.isFinite(value)) return true;
+  if (typeof value === 'string' && value.trim().length > 0) return true;
+  return false;
+}
+
+/** Normalize Realvia source_id to a non-empty string for DB lookups. */
+export function normalizeRealviaSourceId(sourceId: number | string): string {
+  return String(sourceId).trim();
 }
 
 /** Type guard: is this a delete payload? */
@@ -118,7 +130,7 @@ export function isDeletePayload(
 ): payload is RealviaDeletePayload {
   if (typeof payload !== 'object' || payload === null) return false;
   const p = payload as Record<string, unknown>;
-  return typeof p.source_id === 'number' && p.action === 'delete';
+  return isRealviaSourceId(p.source_id) && p.action === 'delete';
 }
 
 /** Type guard: is this a standard advert payload? */

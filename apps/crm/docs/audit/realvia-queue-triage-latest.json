@@ -1,0 +1,37 @@
+{
+  "generatedAt": "2026-06-23T00:00:00.000Z",
+  "scope": "PROD realvia_webhook_logs + realvia_processing_queue",
+  "summary": {
+    "unknownPayloadTotal": 7,
+    "failedQueueJobs": 4,
+    "rootCause": "Realvia delete webhooks send source_id as JSON string (e.g. \"13303557\"); isDeletePayload required typeof number.",
+    "fix": "Accept number|string source_id; normalizeRealviaSourceId() before property lookup.",
+    "testPayloadsIgnored": 3,
+    "deletePayloadsRecoverable": 4
+  },
+  "samples": [
+    {
+      "id": "95ee4dfb-738f-4716-af0d-80b71a85d478",
+      "shape": "delete",
+      "source_id": "13303557",
+      "archiveType": null,
+      "action": "reprocess after deploy"
+    },
+    {
+      "id": "7fcc6dcc-bcc3-422c-a523-c865f7abea77",
+      "shape": "delete",
+      "source_id": "864984151",
+      "action": "reprocess after deploy"
+    },
+    {
+      "id": "a08cd0c5-1226-4ddd-9b69-458ef0273b4a",
+      "shape": "test",
+      "keys": ["test", "export_id"],
+      "action": "leave processed=false or mark skipped — not Realvia export"
+    }
+  ],
+  "postDeploy": {
+    "verify": "GET /api/cron/realvia-process with Bearer CRON_SECRET",
+    "requeueSql": "apps/crm/docs/ops/realvia-failed-delete-requeue.sql"
+  }
+}
