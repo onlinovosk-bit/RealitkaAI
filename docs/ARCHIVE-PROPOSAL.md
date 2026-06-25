@@ -12,7 +12,7 @@
 |-------|----------------|--------------|----------|
 | `AGENT_STANDARD.md` | aktívny štandard | **KEEP** | Canon pre agent prompty; odkazuje `CLAUDE.md` |
 | `AUTOMERGE-POLICY.md` | v1.0 (2026-06-12) | **KEEP** | Zdroj pravdy pre auto-merge robot (Brief 9 Fáza 0) |
-| `MASTER_PROMPT.md` | legacy L99 multi-agent | **ARCHIVE** → `docs/archive/prompts/` | Nahradené `MASTER_PROMPT_V3.md`; zachovať pre históriu |
+| `MASTER_PROMPT.md` | legacy L99 multi-agent | **DONE** → `docs/archive/prompts/` | Presunuté Brief 10 C3 (2026-06-25) |
 | `MASTER_PROMPT_V3.md` | v3.0 (2026-05-06) | **KEEP** | Aktuálny master prompt pre agent OS |
 | `REALVIA_ONBOARDING.md` | aktívny checklist | **KEEP** | Externý onboarding Realvia; živý runbook |
 | `design-preview.html` | statický HTML mock | **MOVE** → `docs/design/` alebo `apps/marketing/docs/` | Nie je markdown; mimo konvencie `docs/*.md` |
@@ -38,17 +38,23 @@
 | `briefs/prompts/` | **neexistuje** | Vytvoriť pri presune historických prompt briefov |
 | `cursor-brief-demo-page-final` v `briefs/overnight/` | **neexistuje** na `main` | Žiadny `git mv`; pravdepodobne nikdy nebol commitnutý alebo je mimo `docs/briefs/` |
 | `recruiting-modul-brief` v `briefs/overnight/` | **neexistuje** na `main` | Živá kópia: `apps/crm/docs/strategy/recruiting-modul-brief-2026-06-03.md` — nepresúvať bez Andyho (iný path) |
-| `overnight-master-brief-6.md` | **chýba** | TODO pre Andyho — doplniť alebo označiť ako zrušený brief |
+| `overnight-master-brief-6.md` | **placeholder** | Brief 10 C1 — `docs/briefs/overnight/overnight-master-brief-6.md` |
 
 ---
 
-## Navrhované ďalšie kroky (Tier 2+, nie v tomto PR)
+## Brief 10 Wave C — stav (2026-06-25)
 
-1. Vytvoriť `docs/archive/prompts/` a presunúť `MASTER_PROMPT.md` (git mv).
-2. Vytvoriť `docs/design/` a presunúť `design-preview.html`.
-3. Reconciliovať `docs/progress.md` vs `apps/crm/docs/progress.md` — jeden canonical progress doc.
-4. Po doplnení brief-6 aktualizovať `docs/briefs/README.md` tabuľku.
+| Úloha | Výsledok |
+|-------|----------|
+| **C1** brief-6 placeholder | Hotové (#246) |
+| **C2** demo/recruiting brief mv | **SKIP** — zdrojové súbory v `briefs/overnight/` neexistujú (pozri tabuľku vyššie) |
+| **C3** root → `docs/archive/` | **Čiastočne** — presunuté `MASTER_PROMPT.md`; ponechané kvôli referenciám: `MASTER_PROMPT_V3.md`, `AGENT_STANDARD.md`, `progress.md` |
+
+## Navrhované ďalšie kroky (Tier 2+)
+
+1. Vytvoriť `docs/design/` a presunúť `design-preview.html`.
+2. Reconciliovať `docs/progress.md` vs `apps/crm/docs/progress.md` — jeden canonical progress doc.
 
 ---
 
-*Tier 1 PR — len inventár; žiadne presuny v tomto kroku okrem plánovaných brief moves (súbory neexistovali).*
+*Tier 1 inventár: Brief 9 Agent H. Tier 2 archivácia: Brief 10 Wave C3.*

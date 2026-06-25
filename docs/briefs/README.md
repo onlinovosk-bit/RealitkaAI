@@ -7,7 +7,8 @@
 | 9.0 | [overnight-master-brief-9.md](./overnight/overnight-master-brief-9.md) | [OVERNIGHT-REPORT-9.md](../../apps/crm/docs/OVERNIGHT-REPORT-9.md) | **aktívny** — [#185](https://github.com/onlinovosk-bit/RealitkaAI/pull/185) merged |
 | 8.0 | [overnight-master-brief-8.md](./overnight/overnight-master-brief-8.md) | _(chýba)_ | čiastočne — B=#184, C=#183 subset |
 | 7.0 | [overnight-master-brief-7.md](./overnight/overnight-master-brief-7.md) | — | merged stack (#174–#178) |
-| 6.0 | `overnight-master-brief-6.md` | — | **CHÝBA** — TODO Andy: doplniť alebo označiť zrušený |
+| 6.0 | [overnight-master-brief-6.md](./overnight/overnight-master-brief-6.md) | — | **placeholder** (Brief 10 C1) |
+| 10.0 | [overnight-master-brief-10-loop1-genome.md](./overnight/overnight-master-brief-10-loop1-genome.md) | — | merged B/C/A (#245–247); Wave C cleanup v `chore/brief10-wave-c-cleanup` |
 
 ## Brief 8.0 — overené PR/vetvy (2026-06-11)
 
