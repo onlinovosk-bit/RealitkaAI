@@ -315,7 +315,7 @@ Pricing tiers: Intelligence Feed 990 €/mes · Market Pulse 3 490 €/mes · Ri
 - **Fáza 0 stabilizácia** (commit `033b3ed`) — .bak cleanup, vitest runner, vercel.json 10 cronov, E2E guard, workspaces fix
 - **Routing fix MVP B** (commit `3fc852c`) — revolis-ai + integrity do `(dashboard)` group, DASHBOARD_OVERRIDES → reálne dáta
 - **docs/AGENT_STANDARD.md** — 5-časový prompt štandard, 7 agentov
-- **docs/MASTER_PROMPT.md** — L99 Multi-Agent OS (Orchestrator + 4 Specialist Agents, RACI, HubSpot+GA4, A/B, MindStudio)
+- **docs/archive/prompts/MASTER_PROMPT.md** — L99 Multi-Agent OS (legacy; archivované Brief 10 C3)
 - **7-Agent systém** v pamäti — Architekt→Refactor→Bug Hunter→Performance→Clean Code→Tests→Autonomous Loop
 
 ### Hotové (03.05.2026)
