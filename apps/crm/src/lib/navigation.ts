@@ -38,6 +38,13 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     visibleFor: ["agent", "owner"],
   },
   {
+    key: "followup",
+    label: "Follow-up drafty",
+    path: "/followup",
+    emoji: "✉️",
+    visibleFor: ["agent", "owner"],
+  },
+  {
     key: "porovnanie-programov",
     label: "Porovnanie programov",
     path: "/porovnanie-programov",
@@ -196,6 +203,7 @@ export const NAV_GROUPS = [
       "playbook",
       "revolis-ai",
       "l99-hub",
+      "followup",
       "call-analyzer",
       "leads",
       "tasks",

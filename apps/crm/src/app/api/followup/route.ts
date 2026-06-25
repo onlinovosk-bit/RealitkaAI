@@ -2,7 +2,7 @@
  * Loop 1 — Follow-up Agent (DRAFT-ONLY). Generates approval drafts + open predictions.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/server";
+import { getCurrentProfile, getCurrentUser } from "@/lib/auth";
 import {
   FOLLOWUP_AGENCY_ID,
   OPEN_LEAD_STATUSES,
@@ -10,12 +10,13 @@ import {
 } from "@/lib/agents/followup/constants";
 import { evaluateFollowupBatch } from "@/lib/agents/followup/engine";
 import { computeContactedWithin24hPercent } from "@/lib/agents/followup/kpi";
+import { buildFollowupPreview, resolveFollowupAgencyId } from "@/lib/agents/followup/preview";
 import { writeOpenPredictions } from "@/lib/agents/followup/predictionWriter";
 import type { DraftAction, FollowupLeadInput } from "@/lib/agents/followup/types";
 
 const MS_PER_DAY = 86_400_000;
 
-function isAuthorized(request: NextRequest): boolean {
+function isCronAuthorized(request: NextRequest): boolean {
   const cronSecret = process.env.CRON_SECRET;
   if (cronSecret && request.headers.get("authorization") === `Bearer ${cronSecret}`) {
     return true;
@@ -23,12 +24,30 @@ function isAuthorized(request: NextRequest): boolean {
   return process.env.NODE_ENV === "test";
 }
 
-export async function POST(request: NextRequest) {
-  if (!isAuthorized(request)) {
+/** Read-only preview for CRM UI — no predictions written. */
+export async function GET() {
+  const user = await getCurrentUser();
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const admin = createAdminClient();
+  const profile = await getCurrentProfile();
+  const agencyId = resolveFollowupAgencyId(profile?.agency_id);
+  const result = await buildFollowupPreview(agencyId);
+
+  if (!result.ok) {
+    return NextResponse.json(result, { status: 500 });
+  }
+
+  return NextResponse.json(result);
+}
+
+export async function POST(request: NextRequest) {
+  if (!isCronAuthorized(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const admin = (await import("@/lib/supabase/server")).createAdminClient();
   const staleCutoff = new Date(Date.now() - STALE_CONTACT_DAYS * MS_PER_DAY).toISOString();
 
   const { data: rows, error } = await admin
