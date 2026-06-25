@@ -231,3 +231,9 @@
 - **Rozhodnutie:** Dokumentácia architektúry (North Star r4, parked concepts) uzavretá na úrovni smeru; ďalšie hodiny = Loop 1 exekúcia (Follow-up draft-only), nie nové koncepty.
 - **Overnight:** Brief 10 Wave B (tento commit); Wave A/C samostatné PR.
 - **Merge:** Human GO; nie auto-merge (AP-012).
+
+## [2026-06-25] - AP-019 Schema allowlist meta-pravidlo — BUILD (governance)
+
+- **Rozhodnutie:** Každá nová `public` tabuľka musí ísť do `apps/crm/config/public-schema-allowlist.json` v tom istom PR ako migrácia (alebo pred prod apply). Inak Schema Guard mlčí o drift (prípad CEO Command / `routine_notifications`).
+- **Incident:** `routine_notifications` v repe, nie na PROD, mimo allowlistu → `/api/ceo-command` 500, Guard ticho.
+- **Fix:** allowlist + scoped fallback v PR; migrácia = samostatný prod apply (GO).

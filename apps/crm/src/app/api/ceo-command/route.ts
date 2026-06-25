@@ -29,11 +29,19 @@ export async function GET() {
     return NextResponse.json({ ok: true, notifications: [], summary: null });
   }
 
+  let notifications: Awaited<ReturnType<typeof getCeoCommandNotifications>> = [];
   try {
-    const [notifications, summary] = await Promise.all([
-      getCeoCommandNotifications(profile.agency_id),
-      getCeoCommandSummary(supabase, profile.agency_id),
-    ]);
+    notifications = await getCeoCommandNotifications(profile.agency_id);
+  } catch (e) {
+    console.error("ceo_command notifications load failed", {
+      agencyId: profile.agency_id,
+      error: e instanceof Error ? e.message : String(e),
+    });
+    notifications = [];
+  }
+
+  try {
+    const summary = await getCeoCommandSummary(supabase, profile.agency_id);
     return NextResponse.json({ ok: true, notifications, summary });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
