@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { sourceOptions } from "@/lib/leads-store";
@@ -108,34 +109,44 @@ export default function LeadCreateForm() {
             <h2 className="text-base font-semibold text-slate-900" style={{ color: SLATE_HORIZON.ink }}>Pridať príležitosť</h2>
             <p className="text-xs mt-0.5" style={{ color: SLATE_HORIZON.muted }}>Uložená do 10 sekúnd.</p>
           </div>
-          <button
-            type="button"
-            onClick={() => setIsOpen(prev => !prev)}
-            className="rounded-xl px-4 py-2 text-sm font-semibold min-h-[40px] transition-all active:scale-95"
-            style={
-              isOpen
-                ? {
-                    background: SLATE_HORIZON.bg,
-                    color: SLATE_HORIZON.muted,
-                    border: `1px solid ${WORKDESK_INPUT.borderColor}`,
-                  }
-                : {
-                    background: `linear-gradient(135deg, ${SLATE_HORIZON.brandDeep}, ${SLATE_HORIZON.brand})`,
-                    color: "#FFFFFF",
-                  }
-            }
-          >
-            {isOpen ? "Zavrieť" : "+ Nová"}
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/leads/new"
+              className="rounded-xl border px-3 py-2 text-xs font-semibold min-h-[40px] inline-flex items-center transition-colors"
+              style={{ borderColor: WORKDESK_INPUT.borderColor, color: SLATE_HORIZON.brandDeep }}
+            >
+              Plný formulár
+            </Link>
+            <button
+              type="button"
+              onClick={() => setIsOpen(prev => !prev)}
+              className="rounded-xl px-4 py-2 text-sm font-semibold min-h-[40px] transition-all active:scale-95"
+              style={
+                isOpen
+                  ? {
+                      background: SLATE_HORIZON.bg,
+                      color: SLATE_HORIZON.muted,
+                      border: `1px solid ${WORKDESK_INPUT.borderColor}`,
+                    }
+                  : {
+                      background: `linear-gradient(135deg, ${SLATE_HORIZON.brandDeep}, ${SLATE_HORIZON.brand})`,
+                      color: "#FFFFFF",
+                    }
+              }
+            >
+              {isOpen ? "Zavrieť" : "+ Nová"}
+            </button>
+          </div>
         </div>
 
         {isOpen && (
           <form onSubmit={handleSubmit} className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-medium" style={{ color: SLATE_HORIZON.muted }}>
+              <label htmlFor="lead-quick-name" className="mb-1 block text-xs font-medium" style={{ color: SLATE_HORIZON.muted }}>
                 Meno <span style={{ color: SLATE_HORIZON.red }}>*</span>
               </label>
               <input
+                id="lead-quick-name"
                 required
                 autoFocus
                 value={form.name}
