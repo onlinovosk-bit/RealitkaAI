@@ -4,6 +4,7 @@ import { okResponse, errorResponse } from "@/lib/api-response";
 import { autoErrorCapture } from "@/lib/auto-error-capture";
 import { createActivity } from "@/lib/activities-store";
 import { createClient } from "@/lib/supabase/server";
+import { linkProfileToAuthUser } from "@/lib/profiles/resolve-profile-for-auth";
 import { createLead, listLeads } from "@/lib/leads-store";
 import { autoRecalculateForLead } from "@/lib/matching-hooks";
 import { validateBody } from "@/lib/api-validate";
@@ -65,8 +66,18 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabaseAuth.auth.getUser();
     if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
-    const { data: callerProfile } = await supabaseAuth.from("profiles").select("agency_id").eq("auth_user_id", user.id).maybeSingle();
+    await linkProfileToAuthUser(supabaseAuth, user.id, user.email);
+
+    const { data: callerProfile } = await supabaseAuth
+      .from("profiles")
+      .select("agency_id")
+      .eq("auth_user_id", user.id)
+      .maybeSingle();
     const agencyId = callerProfile?.agency_id ?? "";
+    if (!agencyId) {
+      console.error("[POST /api/leads] missing agency_id for auth user", { userId: user.id, email: user.email });
+      return NextResponse.json({ ok: false, error: "Chýba agentúra v profile." }, { status: 403 });
+    }
 
     const rateLimitBlock = await checkAiRateLimit(user.id, "leads:create", 30);
     if (rateLimitBlock) return NextResponse.json(rateLimitBlock, { status: 429 });
@@ -75,23 +86,26 @@ export async function POST(request: Request) {
     if (!validation.ok) return validation.response;
     const body = validation.data;
 
-    const lead = await createLead({
-      agencyId,
-      name: body.name,
-      email: body.email ?? "",
-      phone: body.phone,
-      location: body.location,
-      budget: body.budget,
-      propertyType: body.propertyType,
-      rooms: body.rooms,
-      financing: body.financing,
-      timeline: body.timeline,
-      source: body.source,
-      status: body.status,
-      score: body.score,
-      assignedAgent: body.assignedAgent,
-      note: body.note,
-    });
+    const lead = await createLead(
+      {
+        agencyId,
+        name: body.name,
+        email: body.email ?? "",
+        phone: body.phone,
+        location: body.location,
+        budget: body.budget,
+        propertyType: body.propertyType,
+        rooms: body.rooms,
+        financing: body.financing,
+        timeline: body.timeline,
+        source: body.source,
+        status: body.status,
+        score: body.score,
+        assignedAgent: body.assignedAgent,
+        note: body.note,
+      },
+      supabaseAuth,
+    );
 
     try {
       await createActivity({

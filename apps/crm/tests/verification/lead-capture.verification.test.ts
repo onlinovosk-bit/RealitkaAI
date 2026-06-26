@@ -12,8 +12,12 @@ describe("[verification] Lead capture (W-LEADS)", () => {
     );
 
     expect(route).toContain('if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })');
-    expect(route).toContain('.from("profiles").select("agency_id")');
+    expect(route).toContain('.from("profiles")');
+    expect(route).toContain('select("agency_id")');
+    expect(route).toContain("linkProfileToAuthUser");
     expect(route).toContain("agencyId");
+    expect(route).toContain("createLead(");
+    expect(route).toContain("supabaseAuth");
     expect(route).toContain("okResponse({ lead })");
   });
 
@@ -26,6 +30,15 @@ describe("[verification] Lead capture (W-LEADS)", () => {
     expect(page).toContain('fetch("/api/leads"');
     expect(page).toContain('method: "POST"');
     expect(page).toContain("router.push(`/leads/${data.lead.id}`)");
+  });
+
+  it("createLead uses scoped server client when provided", () => {
+    const store = readFileSync(
+      join(CRM_ROOT, "src/lib/leads-store.ts"),
+      "utf8",
+    );
+
+    expect(store).toContain("resolveTenantSupabase(scoped)");
   });
 
   it("quick capture form links to full /leads/new route", () => {

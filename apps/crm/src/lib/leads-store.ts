@@ -853,8 +853,11 @@ export async function getLead(id: string): Promise<Lead | undefined> {
   return mapRowToLead(scopedRow);
 }
 
-export async function createLead(input: LeadInput & ActivityLogInput) {
-  const supabase = await resolveTenantSupabase();
+export async function createLead(
+  input: LeadInput & ActivityLogInput,
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+) {
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     const lead: Lead = {
