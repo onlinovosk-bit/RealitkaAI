@@ -66,19 +66,16 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabaseAuth.auth.getUser();
     if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
-    await linkProfileToAuthUser(supabaseAuth, user.id, user.email);
-
     const { data: callerProfile } = await supabaseAuth
       .from("profiles")
       .select("agency_id")
       .eq("auth_user_id", user.id)
       .maybeSingle();
 
-    console.log("[leads.create] user.id=", user.id, "agencyId=", JSON.stringify(callerProfile?.agency_id ?? null));
+    console.log("[leads.create] user.id=", user.id, "agencyId=", JSON.stringify(callerProfile?.agency_id));
 
     if (!callerProfile?.agency_id) {
-      console.error("[POST /api/leads] missing agency_id for auth user", { userId: user.id, email: user.email });
-      return NextResponse.json({ ok: false, error: "Chýba agentúra v profile." }, { status: 403 });
+      return NextResponse.json({ ok: false, error: "Chýba agentúra v profile" }, { status: 403 });
     }
 
     const agencyId = callerProfile.agency_id;
