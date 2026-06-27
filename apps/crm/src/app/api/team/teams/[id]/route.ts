@@ -28,7 +28,7 @@ export async function PATCH(
     const team = await updateTeam(id, {
       name:     typeof body.name     === "string"  ? body.name     : undefined,
       isActive: typeof body.isActive === "boolean" ? body.isActive : undefined,
-    });
+    }, supabase);
 
     return NextResponse.json({ ok: true, team });
   } catch (error) {
