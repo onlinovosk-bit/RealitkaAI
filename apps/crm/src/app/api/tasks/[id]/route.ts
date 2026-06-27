@@ -45,7 +45,7 @@ export async function PATCH(
       priority:          body.priority,
       dueAt:             body.dueAt,
       completedAt,
-    });
+    }, supabase);
 
     await createActivity({
       leadId:     task.leadId ?? null,
@@ -60,7 +60,7 @@ export async function PATCH(
       source:     "tasks",
       severity:   task.status === "done" ? "success" : "info",
       meta:       { priority: task.priority, status: task.status },
-    });
+    }, supabase);
 
     return NextResponse.json({ ok: true, task });
   } catch (error) {
@@ -97,7 +97,7 @@ export async function DELETE(
       }
     }
 
-    await deleteTask(id);
+    await deleteTask(id, supabase);
 
     await createActivity({
       leadId:     null,
@@ -109,7 +109,7 @@ export async function DELETE(
       actorName:  "Systém",
       source:     "tasks",
       severity:   "warning",
-    });
+    }, supabase);
 
     return NextResponse.json({ ok: true });
   } catch (error) {
