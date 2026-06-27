@@ -66,7 +66,6 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabaseAuth.auth.getUser();
     if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
-<<<<<<< HEAD
     await linkProfileToAuthUser(supabaseAuth, user.id, user.email);
 
     const { data: callerProfile } = await supabaseAuth
@@ -91,28 +90,8 @@ export async function POST(request: Request) {
     if (!validation.ok) return validation.response;
     const body = validation.data;
 
-<<<<<<< HEAD
-    const lead = await createLead(
-      {
-        agencyId,
-        name: body.name,
-        email: body.email ?? "",
-        phone: body.phone,
-        location: body.location,
-        budget: body.budget,
-        propertyType: body.propertyType,
-        rooms: body.rooms,
-        financing: body.financing,
-        timeline: body.timeline,
-        source: body.source,
-        status: body.status,
-        score: body.score,
-        assignedAgent: body.assignedAgent,
-        note: body.note,
-      },
-      supabaseAuth,
-    );
-=======
+    console.log("[leads.create] agencyId=", JSON.stringify(agencyId), "user=", user.id);
+
     const lead = await createLead({
       agencyId,
       name: body.name,
@@ -130,7 +109,6 @@ export async function POST(request: Request) {
       assignedAgent: body.assignedAgent,
       note: body.note,
     }, supabaseAuth);
->>>>>>> ae15c6c (fix(crm): pass scoped supabase client to lead creation and add runtime diagnostics)
 
     try {
       await createActivity({
