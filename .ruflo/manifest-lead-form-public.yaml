@@ -1,0 +1,15 @@
+task: lead-form-public
+reads:
+  - agencies
+  - rate_limit_buckets
+writes:
+  - leads
+migrations: false
+requires:
+  - LEAD_FORM_TOKEN_SMOLKO
+  - LEAD_FORM_AGENCY_SMOLKO
+risk: production
+notes: |
+  - Public lead form endpoint at `app/f/[slug]` and `app/api/leads/inbound`.
+  - Server derives agency via env mapping: set `LEAD_FORM_TOKEN_SMOLKO` and `LEAD_FORM_AGENCY_SMOLKO` in Vercel.
+  - Honeypot field `hp`, consent required, source set to `web_form`.
