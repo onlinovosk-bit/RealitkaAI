@@ -2,10 +2,15 @@ import { okResponse, errorResponse } from "@/lib/api-response";
 import { assignLeadToProfile } from "@/lib/team-store";
 import { createActivity } from "@/lib/activities-store";
 import { requireFeature } from "@/lib/feature-gating";
+import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
   try {
     await requireFeature("teamManagement");
+
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return errorResponse("Unauthorized", 401);
 
     const body = await request.json();
 
@@ -16,7 +21,7 @@ export async function POST(request: Request) {
       return errorResponse("Chýba leadId alebo profileId.", 400);
     }
 
-    const result = await assignLeadToProfile(leadId, profileId);
+    const result = await assignLeadToProfile(leadId, profileId, supabase);
 
     try {
       await createActivity({
@@ -30,7 +35,7 @@ export async function POST(request: Request) {
         source: "team",
         severity: "info",
         meta: { leadId, profileId },
-      });
+      }, supabase);
     } catch {}
 
     return okResponse({ result });
