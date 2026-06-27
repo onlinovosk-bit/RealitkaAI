@@ -72,7 +72,7 @@ export async function POST(request: Request) {
       .eq("auth_user_id", user.id)
       .maybeSingle();
 
-    console.log("[leads.create] user.id=", user.id, "agencyId=", JSON.stringify(callerProfile?.agency_id));
+    // diagnostic log removed for production
 
     if (!callerProfile?.agency_id) {
       return NextResponse.json({ ok: false, error: "Chýba agentúra v profile" }, { status: 403 });
@@ -86,8 +86,6 @@ export async function POST(request: Request) {
     const validation = await validateBody(request, CreateLeadSchema);
     if (!validation.ok) return validation.response;
     const body = validation.data;
-
-    console.log("[leads.create] agencyId=", JSON.stringify(agencyId), "user=", user.id);
 
     const lead = await createLead({
       agencyId,
