@@ -66,6 +66,7 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabaseAuth.auth.getUser();
     if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
+<<<<<<< HEAD
     await linkProfileToAuthUser(supabaseAuth, user.id, user.email);
 
     const { data: callerProfile } = await supabaseAuth
@@ -73,11 +74,15 @@ export async function POST(request: Request) {
       .select("agency_id")
       .eq("auth_user_id", user.id)
       .maybeSingle();
-    const agencyId = callerProfile?.agency_id ?? "";
-    if (!agencyId) {
+
+    console.log("[leads.create] user.id=", user.id, "agencyId=", JSON.stringify(callerProfile?.agency_id ?? null));
+
+    if (!callerProfile?.agency_id) {
       console.error("[POST /api/leads] missing agency_id for auth user", { userId: user.id, email: user.email });
       return NextResponse.json({ ok: false, error: "Chýba agentúra v profile." }, { status: 403 });
     }
+
+    const agencyId = callerProfile.agency_id;
 
     const rateLimitBlock = await checkAiRateLimit(user.id, "leads:create", 30);
     if (rateLimitBlock) return NextResponse.json(rateLimitBlock, { status: 429 });
@@ -86,6 +91,7 @@ export async function POST(request: Request) {
     if (!validation.ok) return validation.response;
     const body = validation.data;
 
+<<<<<<< HEAD
     const lead = await createLead(
       {
         agencyId,
@@ -106,6 +112,25 @@ export async function POST(request: Request) {
       },
       supabaseAuth,
     );
+=======
+    const lead = await createLead({
+      agencyId,
+      name: body.name,
+      email: body.email ?? "",
+      phone: body.phone,
+      location: body.location,
+      budget: body.budget,
+      propertyType: body.propertyType,
+      rooms: body.rooms,
+      financing: body.financing,
+      timeline: body.timeline,
+      source: body.source,
+      status: body.status,
+      score: body.score,
+      assignedAgent: body.assignedAgent,
+      note: body.note,
+    }, supabaseAuth);
+>>>>>>> ae15c6c (fix(crm): pass scoped supabase client to lead creation and add runtime diagnostics)
 
     try {
       await createActivity({
