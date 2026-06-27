@@ -682,9 +682,10 @@ async function appendActivity(
   leadId: string,
   text: string,
   type: ActivityType = "Telefonat",
-  meta?: ActivityMeta
+  meta?: ActivityMeta,
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
 ) {
-  const supabase = await resolveTenantSupabase();
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     return;
@@ -822,12 +823,15 @@ export async function listLeads(
   return tenantScoped.map((row) => mapRowToLead(row));
 }
 
-export async function getLead(id: string): Promise<Lead | undefined> {
+export async function getLead(
+  id: string,
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+): Promise<Lead | undefined> {
   if (await readDemoModeFromCookie()) {
     return getDemoShowcaseLeads().find((lead) => lead.id === id);
   }
 
-  const supabase = await resolveTenantSupabase();
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     return mockLeads.find((lead) => lead.id === id);
@@ -956,9 +960,10 @@ export async function updateLead(
       aiTriageManualLock?: boolean | null;
       skipActivityLog?: boolean;
     } & ActivityLogInput
-  >
+  >,
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
 ) {
-  const supabase = await resolveTenantSupabase();
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     const index = mockLeads.findIndex((lead) => lead.id === id);
@@ -1090,14 +1095,19 @@ export async function updateLead(
         ? `Lead aktualizovaný: ${changes.join(", ")}.`
         : "Lead aktualizovaný cez formulár."
     ),
-    input.activityType || (input.status === "Obhliadka" ? "Obhliadka" : "Telefonat")
+    input.activityType || (input.status === "Obhliadka" ? "Obhliadka" : "Telefonat"),
+    undefined,
+    scoped,
   );
 
   return mapRowToLead(data as SupabaseLeadRow);
 }
 
-export async function deleteLead(id: string) {
-  const supabase = await resolveTenantSupabase();
+export async function deleteLead(
+  id: string,
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+) {
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     const index = mockLeads.findIndex((lead) => lead.id === id);
@@ -1142,8 +1152,11 @@ export async function getLeadById(id: string): Promise<Lead | undefined> {
   return getLead(id);
 }
 
-export async function getActivitiesByLeadId(id: string): Promise<LeadActivity[]> {
-  const supabase = await resolveTenantSupabase();
+export async function getActivitiesByLeadId(
+  id: string,
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+): Promise<LeadActivity[]> {
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     return [

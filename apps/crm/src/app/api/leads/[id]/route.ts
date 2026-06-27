@@ -46,7 +46,7 @@ export async function PATCH(
 
     const body = await request.json();
 
-    const oldLead = await getLead(id);
+    const oldLead = await getLead(id, supabase);
 
     const lead = await updateLead(id, {
       name: body.name,
@@ -73,7 +73,7 @@ export async function PATCH(
       ...(body.aiTriageManualLock === true || body.aiTriageManualLock === false
         ? { aiTriageManualLock: body.aiTriageManualLock }
         : {}),
-    });
+    }, supabase);
 
     try {
       if (oldLead?.status !== lead.status) {
@@ -87,7 +87,7 @@ export async function PATCH(
           actorName: lead.assignedAgent || "Systém",
           source: "pipeline",
           severity: "info",
-        });
+        }, supabase);
       } else {
         await createActivity({
           leadId: id,
@@ -99,7 +99,7 @@ export async function PATCH(
           actorName: lead.assignedAgent || "Systém",
           source: "crm",
           severity: "info",
-        });
+        }, supabase);
       }
     } catch {}
 
@@ -173,9 +173,9 @@ export async function DELETE(
       return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
     }
 
-    const oldLead = await getLead(id);
+    const oldLead = await getLead(id, supabase);
 
-    await deleteLead(id);
+    await deleteLead(id, supabase);
 
     try {
       await createActivity({
@@ -188,7 +188,7 @@ export async function DELETE(
         actorName: oldLead?.assignedAgent || "Systém",
         source: "crm",
         severity: "warning",
-      });
+      }, supabase);
     } catch {}
 
     return okResponse({ deletedId: id });
@@ -219,7 +219,7 @@ export async function GET(
       );
     }
 
-    const lead = await getLead(id);
+    const lead = await getLead(id, supabase);
     if (!lead) {
       // Always return valid JSON, even if not found
       return okResponse({ lead: null });

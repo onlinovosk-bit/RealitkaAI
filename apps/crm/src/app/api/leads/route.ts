@@ -118,7 +118,7 @@ export async function POST(request: Request) {
         actorName: lead.assignedAgent || "Systém",
         source: "crm",
         severity: "info",
-      });
+      }, supabaseAuth);
     } catch {
       /* best-effort */
     }
