@@ -44,4 +44,9 @@ describe("[verification] B1 public lead form (Wave B)", () => {
     expect(config).toContain("timingSafeEqual");
     expect(config).not.toContain("body.agency");
   });
+
+  it("middleware bypasses session auth for public inbound route", () => {
+    const mw = readFileSync(join(CRM_ROOT, "middleware.ts"), "utf8");
+    expect(mw).toContain("'/api/leads/inbound'");
+  });
 });
