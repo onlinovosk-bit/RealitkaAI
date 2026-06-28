@@ -1,4 +1,3 @@
-import { notFound } from "next/navigation";
 import { getSmolkoInboundConfig } from "@/lib/leads/inbound-form-config";
 
 export default async function PublicLeadFormPage({
@@ -13,7 +12,17 @@ export default async function PublicLeadFormPage({
   const config = getSmolkoInboundConfig();
 
   if (!config || slug !== config.slug) {
-    notFound();
+    return (
+      <main className="min-h-screen bg-slate-50 px-4 py-16">
+        <div className="mx-auto max-w-md rounded-2xl border border-amber-200 bg-white p-6 text-center shadow-sm">
+          <h1 className="text-lg font-semibold text-slate-900">Formulár nie je dostupný</h1>
+          <p className="mt-2 text-sm text-slate-600">
+            Verejný formulár nie je na serveri nakonfigurovaný. Skontrolujte env{" "}
+            <code className="text-xs">LEAD_FORM_TOKEN_SMOLKO</code> vo Vercel Production a redeploy.
+          </p>
+        </div>
+      </main>
+    );
   }
 
   const listing = String(query.listing ?? "").trim();
