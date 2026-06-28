@@ -7,9 +7,10 @@ writes:
 migrations: false
 requires:
   - LEAD_FORM_TOKEN_SMOLKO
-  - LEAD_FORM_AGENCY_SMOLKO
+  - LEAD_FORM_AGENCY_ID_SMOLKO
 risk: production
 notes: |
-  - Public lead form endpoint at `app/f/[slug]` and `app/api/leads/inbound`.
-  - Server derives agency via env mapping: set `LEAD_FORM_TOKEN_SMOLKO` and `LEAD_FORM_AGENCY_SMOLKO` in Vercel.
-  - Honeypot field `hp`, consent required, source set to `web_form`.
+  - Public lead form: `src/app/f/[slug]/page.tsx` + `src/app/api/leads/inbound/route.ts`
+  - Server derives agency via env: `LEAD_FORM_TOKEN_SMOLKO`, `LEAD_FORM_AGENCY_ID_SMOLKO`, slug `LEAD_FORM_SLUG_SMOLKO`
+  - Honeypot `hp`, GDPR consent required, `source=web_form`, no auto-email
+  - Does NOT import or modify `leads-store.ts`
