@@ -12,18 +12,6 @@ export default async function PublicLeadFormPage({
   const query = await searchParams;
   const config = getSmolkoInboundConfig();
 
-  // TEMP diagnostic — remove after env probe (log length only, never token value)
-  console.log(
-    "[lead-form] slug=",
-    slug,
-    "configSlug=",
-    config?.slug ?? "null",
-    "tokenLen=",
-    (process.env.LEAD_FORM_TOKEN_SMOLKO ?? "").length,
-    "expectedTokenLen=",
-    (config?.expectedToken ?? "").length,
-  );
-
   if (!config) {
     return (
       <main className="min-h-screen bg-slate-50 px-4 py-16">
