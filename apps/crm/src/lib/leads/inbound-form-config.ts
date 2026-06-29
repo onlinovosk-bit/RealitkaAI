@@ -20,7 +20,7 @@ export function getSmolkoInboundConfig(): InboundFormAgencyConfig | null {
   if (!token) return null;
 
   return {
-    slug: process.env.LEAD_FORM_SLUG_SMOLKO?.trim() || "smolko",
+    slug: (process.env.LEAD_FORM_SLUG_SMOLKO?.trim() || "smolko").toLowerCase(),
     agencyId: process.env.LEAD_FORM_AGENCY_ID_SMOLKO?.trim() || SMOLKO_AGENCY_ID,
     expectedToken: token,
   };
@@ -32,7 +32,7 @@ export function resolveInboundAgency(
 ): { agencyId: string } | null {
   const config = getSmolkoInboundConfig();
   if (!config) return null;
-  if (slug !== config.slug) return null;
+  if (slug.trim().toLowerCase() !== config.slug) return null;
   if (!token || !safeEqual(token, config.expectedToken)) return null;
   return { agencyId: config.agencyId };
 }

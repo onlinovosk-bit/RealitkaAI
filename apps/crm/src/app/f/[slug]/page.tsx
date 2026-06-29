@@ -7,7 +7,8 @@ export default async function PublicLeadFormPage({
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ listing?: string; submitted?: string }>;
 }) {
-  const { slug } = await params;
+  const { slug: slugParam } = await params;
+  const slug = String(slugParam ?? "").trim().toLowerCase();
   const query = await searchParams;
   const config = getSmolkoInboundConfig();
 
@@ -15,20 +16,36 @@ export default async function PublicLeadFormPage({
   console.log(
     "[lead-form] slug=",
     slug,
+    "configSlug=",
+    config?.slug ?? "null",
     "tokenLen=",
     (process.env.LEAD_FORM_TOKEN_SMOLKO ?? "").length,
     "expectedTokenLen=",
     (config?.expectedToken ?? "").length,
   );
 
-  if (!config || slug !== config.slug) {
+  if (!config) {
     return (
       <main className="min-h-screen bg-slate-50 px-4 py-16">
         <div className="mx-auto max-w-md rounded-2xl border border-amber-200 bg-white p-6 text-center shadow-sm">
           <h1 className="text-lg font-semibold text-slate-900">Formulár nie je dostupný</h1>
           <p className="mt-2 text-sm text-slate-600">
-            Verejný formulár nie je na serveri nakonfigurovaný. Skontrolujte env{" "}
-            <code className="text-xs">LEAD_FORM_TOKEN_SMOLKO</code> vo Vercel Production a redeploy.
+            Chýba env <code className="text-xs">LEAD_FORM_TOKEN_SMOLKO</code> vo Vercel Production — doplňte hodnotu a redeploy.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  if (slug !== config.slug) {
+    return (
+      <main className="min-h-screen bg-slate-50 px-4 py-16">
+        <div className="mx-auto max-w-md rounded-2xl border border-amber-200 bg-white p-6 text-center shadow-sm">
+          <h1 className="text-lg font-semibold text-slate-900">Formulár nie je dostupný</h1>
+          <p className="mt-2 text-sm text-slate-600">
+            URL slug <code className="text-xs">{slug}</code> sa nezhoduje s env{" "}
+            <code className="text-xs">LEAD_FORM_SLUG_SMOLKO</code> (server:{" "}
+            <code className="text-xs">{config.slug}</code>). Nastavte slug na <code className="text-xs">smolko</code> alebo premennú zmažte.
           </p>
         </div>
       </main>
