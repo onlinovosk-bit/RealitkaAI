@@ -72,8 +72,6 @@ export async function POST(request: Request) {
       .eq("auth_user_id", user.id)
       .maybeSingle();
 
-    // diagnostic log removed for production
-
     if (!callerProfile?.agency_id) {
       return NextResponse.json({ ok: false, error: "Chýba agentúra v profile" }, { status: 403 });
     }
