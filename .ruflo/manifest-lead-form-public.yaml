@@ -1,0 +1,16 @@
+task: lead-form-public
+reads:
+  - agencies
+  - rate_limit_buckets
+writes:
+  - leads
+migrations: false
+requires:
+  - LEAD_FORM_TOKEN_SMOLKO
+  - LEAD_FORM_AGENCY_ID_SMOLKO
+risk: production
+notes: |
+  - Public lead form: `src/app/f/[slug]/page.tsx` + `src/app/api/leads/inbound/route.ts`
+  - Server derives agency via env: `LEAD_FORM_TOKEN_SMOLKO`, `LEAD_FORM_AGENCY_ID_SMOLKO`, slug `LEAD_FORM_SLUG_SMOLKO`
+  - Honeypot `hp`, GDPR consent required, `source=web_form`, no auto-email
+  - Does NOT import or modify `leads-store.ts`

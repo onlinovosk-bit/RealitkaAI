@@ -17,6 +17,7 @@ const PUBLIC_PATHS = new Set([
   "/api/billing/webhook",
   "/api/integrations/google/callback",
   "/api/webhooks/hubspot",
+  "/api/leads/inbound",
 ]);
 
 const CRON_PATH_PREFIX = "/api/agents";

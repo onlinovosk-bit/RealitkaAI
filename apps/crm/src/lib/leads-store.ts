@@ -859,9 +859,9 @@ export async function getLead(
 
 export async function createLead(
   input: LeadInput & ActivityLogInput,
-  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+  scopedSupabase?: import("@supabase/supabase-js").SupabaseClient | null,
 ) {
-  const supabase = await resolveTenantSupabase(scoped);
+  const supabase = await resolveTenantSupabase(scopedSupabase);
 
   if (!supabase) {
     const lead: Lead = {
@@ -928,6 +928,7 @@ export async function createLead(
     .single();
 
   if (error) {
+    console.error("[leads.create] insert error=", JSON.stringify(error));
     throw new Error(error.message);
   }
 
