@@ -308,15 +308,18 @@ export async function getLeadPropertyMatchPerformanceSummary(): Promise<LeadProp
   };
 }
 
-export async function recalculateMatchesForLead(leadId: string) {
-  const supabase = await resolveTenantSupabase();
+export async function recalculateMatchesForLead(
+  leadId: string,
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+) {
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     throw new Error("Supabase nie je nastavený. Matching sa nedá zapísať do databázy.");
   }
 
-  const lead = await getLead(leadId);
-  const properties = await listProperties();
+  const lead = await getLead(leadId, scoped);
+  const properties = await listProperties(undefined, scoped);
 
   if (!lead) {
     throw new Error("Lead nebol nájdený.");
@@ -389,8 +392,11 @@ export async function recalculateMatchesForLead(leadId: string) {
   };
 }
 
-export async function recalculateMatchesForProperty(propertyId: string) {
-  const supabase = await resolveTenantSupabase();
+export async function recalculateMatchesForProperty(
+  propertyId: string,
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+) {
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     throw new Error("Supabase nie je nastavený. Matching sa nedá zapísať do databázy.");
@@ -470,8 +476,10 @@ export async function recalculateMatchesForProperty(propertyId: string) {
   };
 }
 
-export async function recalculateAllMatches() {
-  const supabase = await resolveTenantSupabase();
+export async function recalculateAllMatches(
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+) {
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     throw new Error("Supabase nie je nastavený. Matching sa nedá zapísať do databázy.");

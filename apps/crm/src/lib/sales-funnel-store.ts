@@ -45,7 +45,10 @@ const demoSaasLeads: SaaSLead[] = [
 
 
 
-async function logSaasLeadActivity(lead: SaaSLead) {
+async function logSaasLeadActivity(
+  lead: SaaSLead,
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+) {
   try {
     await createActivity({
       leadId: null,
@@ -64,7 +67,7 @@ async function logSaasLeadActivity(lead: SaaSLead) {
         source: lead.source,
         status: lead.status,
       },
-    });
+    }, scoped);
 
     console.log("[sales-funnel] Activity úspešne zapísaná pre SaaS lead:", lead.id);
   } catch (error) {
@@ -108,17 +111,20 @@ export async function listSaasLeads(): Promise<SaaSLead[]> {
   }));
 }
 
-export async function createSaasLead(input: {
-  name: string;
-  email: string;
-  phone?: string;
-  company: string;
-  agentsCount: number;
-  city?: string;
-  note?: string;
-  source?: string;
-}) {
-  const supabase = await resolveTenantSupabase();
+export async function createSaasLead(
+  input: {
+    name: string;
+    email: string;
+    phone?: string;
+    company: string;
+    agentsCount: number;
+    city?: string;
+    note?: string;
+    source?: string;
+  },
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+) {
+  const supabase = await resolveTenantSupabase(scoped);
 
   const fallbackLead: SaaSLead = {
     id: crypto.randomUUID(),
@@ -134,7 +140,7 @@ export async function createSaasLead(input: {
   };
 
   if (!supabase) {
-    await logSaasLeadActivity(fallbackLead);
+    await logSaasLeadActivity(fallbackLead, scoped);
     return fallbackLead;
   }
 
@@ -156,7 +162,7 @@ export async function createSaasLead(input: {
 
   if (error) {
     console.error("[sales-funnel] createSaasLead fallback:", error.message);
-    await logSaasLeadActivity(fallbackLead);
+    await logSaasLeadActivity(fallbackLead, scoped);
     return fallbackLead;
   }
 
@@ -174,7 +180,7 @@ export async function createSaasLead(input: {
     createdAt: data.created_at,
   };
 
-  await logSaasLeadActivity(result);
+  await logSaasLeadActivity(result, scoped);
   return result;
 }
 
