@@ -18,6 +18,7 @@ const PUBLIC_PATHS = new Set([
   "/api/integrations/google/callback",
   "/api/webhooks/hubspot",
   "/api/leads/inbound",
+  "/api/acquire/email",
 ]);
 
 const CRON_PATH_PREFIX = "/api/agents";

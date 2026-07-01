@@ -1,193 +1,155 @@
 import { createHash } from "crypto";
 
-/** Acquire Contract v1.2 — deterministic parser (no LLM). */
 export const PARSER_VERSION = "1.2";
-export const DATASET_VERSION = "1";
+export const DATASET_VERSION = "v1.1";
 
-export type AcquireEvent = {
-  source_type: string;
+export interface AcquireEvent {
+  eventId?: string;
+  rawHash?: string;
+  parserVersion: string;
+  datasetVersion: string;
+  extractionConfidence: number;
+  sourceType: "Portal" | "Website" | "Social" | "Unknown";
   source: string;
-  event_kind: string;
-  contact_name: string | null;
-  contact_email: string | null;
-  contact_phone: string | null;
-  listing_portal_id: string | null;
-  listing_internal_id: string | null;
-  listing_title: string | null;
-  inquiry_text: string | null;
-  inquiry_intent: string | null;
-  intent_reason: string | null;
-  received_at: string | null;
+  eventKind: "inquiry" | "reply" | "unsubscribe" | "update" | "spam" | "unknown";
+  contactName?: string | null;
+  contactEmail?: string | null;
+  contactPhone?: string | null;
+  listingPortalId?: string | null;
+  listingInternalId?: string | null;
+  listingTitle?: string | null;
+  inquiryText?: string | null;
+  inquiryIntent?: string | null;
+  intentReason?: string | null;
+  receivedAt?: string | null;
   warnings: string[];
-};
+}
 
-export type LeadCandidate = {
-  agency_id: null;
-  name: string | null;
-  email: string | null;
-  phone: string | null;
-  source: string;
-  status: string;
-  note: string;
-};
-
-const SOURCE_RULES: ReadonlyArray<[RegExp, string, string]> = [
-  [/nehnutelnosti\.sk|Nehnute\u013enosti\.sk/i, "Portal", "Nehnuteľnosti.sk"],
-  [/bazos\.sk|Bazos\.sk/i, "Portal", "Bazoš.sk"],
-  [/byty\.sk|Byty\.sk/i, "Portal", "Byty.sk"],
-  [/topreality\.sk|TopReality/i, "Portal", "TopReality.sk"],
-  [/reality\.sk|REALITY\.SK/i, "Portal", "Reality.sk"],
+const SOURCE_RULES: [RegExp, AcquireEvent["sourceType"], string][] = [
+  [/nehnutelnosti\.sk|Nehnuteľnosti\.sk/i, "Portal", "Nehnuteľnosti.sk"],
+  [/bazos\.sk/i, "Portal", "Bazoš.sk"],
+  [/byty\.sk/i, "Portal", "Byty.sk"],
+  [/topreality/i, "Portal", "TopReality.sk"],
+  [/reality\.sk/i, "Portal", "Reality.sk"],
   [/formular@realitysmolko\.sk/i, "Website", "realitysmolko.sk (web formulár)"],
 ];
 
 const EMAIL_RE = /[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+/;
 const PHONE_RE = /(?:\+421\s?|0)\d{3}\s?\d{3}\s?\d{3}/;
 const INTERNAL_ID_RE = /\b([A-Z]{2}\d{2,}[A-Z]?)\b/;
-
-const LABEL = {
+const L = {
   name: /(?:Meno(?:\s+a\s+priezvisko)?|Name)\s*:\s*(.+)/i,
-  phone: /(?:Telef[oó]n|Phone(?:\s+number)?|T\.?\u010d\.?)\s*:?\s*((?:\+421\s?|0)[\d\s]{7,})/i,
+  phone: /(?:Telef[oó]n|Phone(?:\s+number)?|T\.?č\.?)\s*:?\s*((?:\+421\s?|0)[\d\s]{7,})/i,
   email: new RegExp(`(?:E-?mail)\\s*:\\s*(${EMAIL_RE.source})`, "i"),
-  msg: /(?:Spr[aá]va(?:\s+od\s+z[aá]ujemcu[^:]*)?|Message|Reakcia na inzer[aá]t|Text)\s*:\s*(.+)/is,
-  portal_id: /(?:V[aá]\u0161 inzer[aá]t(?:\s+\u010d[ií]slo)?|Ad ID)\D{0,40}?\b([A-Za-z0-9]{8,})\b/,
+  msg: /(?:Spr[aá]va(?:\s+od\s+z[aá]ujemcu[^:]*)?|Message|Reakcia na inzer[aá]t|Text)\s*:\s*([\s\S]+)/i,
+  portalId: /(?:V[aá]š inzer[aá]t(?:\s+č[ií]slo)?|Ad ID)\D{0,40}?\b([A-Za-z0-9]{8,})\b/,
 };
-
-const INTENT: ReadonlyArray<[string, RegExp[]]> = [
-  ["Viewing Request", [/obhliadk/i, /najbli\u017e\u0161\u00ed term[ií]n/i]],
-  ["Price Objection", [/cena.{0,30}(?:vysok|\u010faleko od reality|nezodpoved)/i]],
-  ["Availability Question", [/od kedy.{0,15}vo\u013en/i, /kedy.{0,10}dostupn/i]],
+const INTENT: [string, RegExp[]][] = [
+  ["Viewing Request", [/obhliadk/i, /najbližš[ií] term[ií]n/i]],
+  ["Price Objection", [/cena.{0,30}(?:vysok|ďaleko od reality|nezodpoved)/i]],
+  ["Availability Question", [/od kedy.{0,15}voľn/i, /kedy.{0,10}dostupn/i]],
   ["Price Question", [/\bcen[au]\b/i, /n[aá]klad/i, /depozit/i]],
-  ["Information Request", [/inform[aá]ci/i, /fotk/i, /podrobnej\u0161/i]],
+  ["Information Request", [/inform[aá]ci/i, /fotk/i, /podrobnejš/i]],
 ];
 
-function detectSource(raw: string): [string, string] {
-  for (const [pat, sourceType, source] of SOURCE_RULES) {
-    if (pat.test(raw)) return [sourceType, source];
-  }
+function detectSource(raw: string): [AcquireEvent["sourceType"], string] {
+  for (const [re, st, s] of SOURCE_RULES) if (re.test(raw)) return [st, s];
   return ["Unknown", "Unknown"];
 }
 
-function classifyIntent(text: string | null): [string, string] {
-  const t = text ?? "";
-  for (const [intent, patterns] of INTENT) {
-    for (const pattern of patterns) {
-      const match = pattern.exec(t);
-      if (match) return [intent, `match: '${match[0].slice(0, 40)}'`];
+function classifyIntent(text: string): [string, string] {
+  for (const [intent, pats] of INTENT) {
+    for (const p of pats) {
+      const m = text.match(p);
+      if (m) return [intent, `match: '${m[0].slice(0, 40)}'`];
     }
   }
   return ["General Inquiry", "no keyword matched (default)"];
 }
 
-function validate(ev: AcquireEvent): string[] {
-  const warnings: string[] = [];
-  if (!ev.contact_email && !ev.contact_phone) warnings.push("no_contact");
-  if (!ev.listing_internal_id && !ev.listing_portal_id && !ev.listing_title) {
-    warnings.push("no_listing_ref");
+export function parseEmail(raw: string, receivedAt?: string): AcquireEvent {
+  const [sourceType, source] = detectSource(raw);
+  const nameM = raw.match(L.name);
+  const emailM = raw.match(L.email);
+  const phoneM = raw.match(L.phone);
+  const contactEmail = emailM ? emailM[1] : (raw.match(EMAIL_RE)?.[0] ?? null);
+  const contactPhone = phoneM
+    ? phoneM[1].replace(/\s+/g, "")
+    : (raw.match(PHONE_RE)?.[0]?.replace(/\s+/g, "") ?? null);
+  const msgM = raw.match(L.msg);
+  const inquiryText = msgM ? msgM[1].replace(/\s+/g, " ").trim().slice(0, 1000) : null;
+  const [intent, reason] = classifyIntent(inquiryText ?? raw);
+  const internalId = raw.match(INTERNAL_ID_RE)?.[1] ?? null;
+  const portalId = raw.match(L.portalId)?.[1] ?? null;
+  let listingTitle: string | null = null;
+  if (!internalId && !portalId) {
+    const t = raw.match(/(?:Odoslan[eé] z|EXKLUZ[IÍ]VNE)[:\s]*(.+)/);
+    if (t) listingTitle = t[1].trim().split("\n")[0].slice(0, 160);
   }
-  if (ev.source === "Unknown") warnings.push("unknown_source");
-  return warnings;
-}
-
-/** Parse raw email body into AcquireEvent (deterministic regex/heuristics). */
-export function parseEmail(raw: string, receivedAt?: string | null): AcquireEvent {
   const ev: AcquireEvent = {
-    source_type: "Unknown",
-    source: "Unknown",
-    event_kind: "inquiry",
-    contact_name: null,
-    contact_email: null,
-    contact_phone: null,
-    listing_portal_id: null,
-    listing_internal_id: null,
-    listing_title: null,
-    inquiry_text: null,
-    inquiry_intent: null,
-    intent_reason: null,
-    received_at: receivedAt ?? null,
+    parserVersion: PARSER_VERSION,
+    datasetVersion: DATASET_VERSION,
+    extractionConfidence: 0,
+    sourceType,
+    source,
+    eventKind: /unsubscribe|odhl[aá]siť/i.test(raw) ? "unsubscribe" : "inquiry",
+    contactName: nameM ? nameM[1].trim().split("\n")[0].slice(0, 120) : null,
+    contactEmail,
+    contactPhone,
+    listingPortalId: portalId,
+    listingInternalId: internalId,
+    listingTitle,
+    inquiryText,
+    inquiryIntent: intent,
+    intentReason: reason,
+    receivedAt: receivedAt ?? null,
     warnings: [],
   };
-
-  [ev.source_type, ev.source] = detectSource(raw);
-
-  const nameMatch = LABEL.name.exec(raw);
-  ev.contact_name = nameMatch
-    ? nameMatch[1].trim().split("\n")[0].slice(0, 120)
-    : null;
-
-  const emailMatch = LABEL.email.exec(raw);
-  if (emailMatch) {
-    ev.contact_email = emailMatch[1];
-  } else {
-    const freeEmail = EMAIL_RE.exec(raw);
-    ev.contact_email = freeEmail ? freeEmail[0] : null;
+  ev.rawHash = createHash("sha1").update(raw).digest("hex");
+  ev.eventId = createHash("sha1")
+    .update(ev.rawHash + (receivedAt ?? ""))
+    .digest("hex")
+    .slice(0, 16);
+  const core = [
+    ev.contactEmail || ev.contactPhone,
+    ev.source !== "Unknown",
+    ev.listingInternalId || ev.listingPortalId || ev.listingTitle,
+    ev.inquiryText,
+  ];
+  ev.extractionConfidence = Math.round((core.filter(Boolean).length / core.length) * 100) / 100;
+  if (!(ev.contactEmail || ev.contactPhone)) ev.warnings.push("no_contact");
+  if (!(ev.listingInternalId || ev.listingPortalId || ev.listingTitle)) {
+    ev.warnings.push("no_listing_ref");
   }
-
-  const phoneMatch = LABEL.phone.exec(raw);
-  if (phoneMatch) {
-    ev.contact_phone = phoneMatch[1].replace(/\s+/g, "");
-  } else {
-    const freePhone = PHONE_RE.exec(raw);
-    ev.contact_phone = freePhone ? freePhone[0].replace(/\s+/g, "") : null;
-  }
-
-  const internalMatch = INTERNAL_ID_RE.exec(raw);
-  ev.listing_internal_id = internalMatch ? internalMatch[1] : null;
-
-  const portalMatch = LABEL.portal_id.exec(raw);
-  ev.listing_portal_id = portalMatch ? portalMatch[1] : null;
-
-  const msgMatch = LABEL.msg.exec(raw);
-  if (msgMatch) {
-    ev.inquiry_text = msgMatch[1].replace(/\s+/g, " ").trim().slice(0, 1000);
-  }
-
-  [ev.inquiry_intent, ev.intent_reason] = classifyIntent(ev.inquiry_text ?? raw);
-
-  if (!ev.listing_internal_id && !ev.listing_portal_id) {
-    const titleMatch = /(?:Odoslan[eé] z|EXKLUZ[IÍ]VNE)[:\s]*(.+)/i.exec(raw);
-    if (titleMatch) {
-      ev.listing_title = titleMatch[1].trim().split("\n")[0].slice(0, 160);
-    }
-  }
-
-  if (/unsubscribe|odhl[aá]si\u0165/i.test(raw)) {
-    ev.event_kind = "unsubscribe";
-  }
-
-  ev.warnings = validate(ev);
+  if (ev.source === "Unknown") ev.warnings.push("unknown_source");
   return ev;
 }
 
-/** Stable dedup key for agency-scoped duplicate detection (Wave 2 route uses DB table). */
 export function dedupKey(ev: AcquireEvent): string {
   const base = [
-    ev.listing_portal_id ?? ev.listing_internal_id ?? ev.listing_title ?? "",
-    (ev.contact_email ?? ev.contact_phone ?? "").toLowerCase(),
-    ev.received_at ?? "",
+    ev.listingPortalId || ev.listingInternalId || ev.listingTitle || "",
+    (ev.contactEmail || ev.contactPhone || "").toLowerCase(),
+    ev.receivedAt || "",
   ].join("|");
   return createHash("sha1").update(base).digest("hex").slice(0, 16);
 }
 
-/** Map validated inquiry event to lead candidate; null when not lead-worthy. */
-export function toLeadCandidate(
-  ev: AcquireEvent,
-  duplicate: boolean,
-): LeadCandidate | null {
-  if (duplicate) return null;
-  if (ev.event_kind !== "inquiry") return null;
-  if (!ev.contact_email && !ev.contact_phone) return null;
-  if (ev.source === "Unknown") return null;
-
-  const listingRef = ev.listing_internal_id ?? ev.listing_portal_id ?? ev.listing_title;
-  const source = ev.source_type === "Website" ? "web_form" : `portal:${ev.source}`;
-
+/** NIE každý event je lead. Vracia null pre dup/unsubscribe/no-contact/unknown. */
+export function toLeadCandidate(ev: AcquireEvent, agencyId: string, duplicate: boolean) {
+  if (duplicate || ev.eventKind !== "inquiry") return null;
+  if (!(ev.contactEmail || ev.contactPhone) || ev.source === "Unknown") return null;
   return {
-    agency_id: null,
-    name: ev.contact_name,
-    email: ev.contact_email,
-    phone: ev.contact_phone,
-    source,
+    agencyId,
+    name: ev.contactName ?? "Neznámy",
+    email: ev.contactEmail ?? "",
+    phone: ev.contactPhone ?? "",
+    source: ev.sourceType === "Website" ? "web_form" : `portal:${ev.source}`,
     status: "Nový",
-    note: `[${ev.source}] ${ev.inquiry_text ?? ""} | inzerát: ${listingRef} | intent: ${ev.inquiry_intent} (${ev.intent_reason})`,
+    note: `[${ev.source}] ${ev.inquiryText ?? ""} | inzerát: ${ev.listingInternalId ?? ev.listingPortalId ?? ev.listingTitle ?? "-"} | intent: ${ev.inquiryIntent} (${ev.intentReason})`,
+    _meta: {
+      eventId: ev.eventId,
+      parserVersion: ev.parserVersion,
+      extractionConfidence: ev.extractionConfidence,
+    },
   };
 }

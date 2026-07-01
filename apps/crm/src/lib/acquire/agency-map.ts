@@ -1,12 +1,8 @@
-import { SMOLKO_AGENCY_ID } from "@/lib/profiles/resolve-profile-for-auth";
-
-const INBOUND_AGENCY_BY_ADDRESS: Readonly<Record<string, string>> = {
-  "smolko@inbound.revolis.ai": SMOLKO_AGENCY_ID,
+// Dedikovaná inbound adresa -> agency. Rozšíri sa pri zákazníkovi #2.
+const INBOUND_AGENCY_MAP: Record<string, string> = {
+  "smolko@inbound.revolis.ai": "11111111-1111-1111-1111-111111111111",
 };
 
-/** Static inbound address → agency_id map (Wave 1). DB lookup is Wave 2+. */
 export function agencyForInbound(toAddress: string): string | null {
-  const normalized = toAddress.trim().toLowerCase();
-  if (!normalized) return null;
-  return INBOUND_AGENCY_BY_ADDRESS[normalized] ?? null;
+  return INBOUND_AGENCY_MAP[toAddress.toLowerCase().trim()] ?? null;
 }
