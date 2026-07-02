@@ -163,6 +163,15 @@ export const CAPABILITY_REGISTRY: Record<LicenseCapability, CapabilityDefinition
     upgradeCta: "Aktivovať Reality Monopol",
     revenueTrigger: "locked_feature_view",
   },
+  canUseStealthRecruiter: {
+    capability: "canUseStealthRecruiter",
+    label: "Tichý Náborár",
+    teaser: "Nájdi samopredajcov s dlhým inzerátom a pošli im AI outreach.",
+    requiredProgram: "monopol",
+    upgradeProgram: "monopol",
+    upgradeCta: "Aktivovať Reality Monopol",
+    revenueTrigger: "locked_feature_view",
+  },
 };
 
 const PROGRAM_MIN_RANK: Record<LicenseProgramId, number> = {
