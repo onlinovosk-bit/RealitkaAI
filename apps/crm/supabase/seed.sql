@@ -1,0 +1,1 @@
+-- CI seed (optional). Migrations in supabase/migrations/ are applied by `supabase db reset`.

@@ -51,6 +51,7 @@ export default async function ContactsPage({ searchParams }: ContactsPageProps) 
       <LeadsPageClient
         profileMissingAgency={profileMissingAgency}
         initialLeadCount={initialLeadCount}
+        inventoryView="contacts"
       />
     </ModuleShell>
   );

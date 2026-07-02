@@ -107,6 +107,13 @@ const SVG_PATHS: Record<NavIcon, React.ReactNode> = {
       <circle cx="12" cy="16" r="1" fill="currentColor" stroke="none"/>
     </>
   ),
+  upload: (
+    <>
+      <path d="M12 16V6" strokeWidth="1.4" strokeLinecap="round"/>
+      <path d="M8 10l4-4 4 4" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M4 18h16" strokeWidth="1.4" strokeLinecap="round"/>
+    </>
+  ),
 };
 
 interface NavIconProps {

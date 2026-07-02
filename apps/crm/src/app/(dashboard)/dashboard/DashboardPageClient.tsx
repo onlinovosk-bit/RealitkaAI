@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import { getLeads, type Lead } from "@/lib/leads-store";
 import PriorityLeads from "@/components/dashboard/priority-leads";
 import AiInsightsPanel from "@/components/dashboard/AiInsightsPanel";
-import EnterpriseSalesIntelligencePanel from "@/components/dashboard/EnterpriseSalesIntelligencePanel";
 import { supabaseClient } from "@/lib/supabase/client";
 import type { PlanTier } from "@/lib/ai-engine";
 import type { PropertiesSummary } from "@/lib/properties-store";
@@ -14,16 +14,31 @@ import QuickActionsBar from "@/components/dashboard/QuickActionsBar";
 import RecentActivityFeed from "@/components/dashboard/recent-activity-feed";
 import DailyActionPanel from "@/components/dashboard/DailyActionPanel";
 import TodaysTenLeads from "@/components/dashboard/TodaysTenLeads";
-import BrokerCoach from "@/components/coaching/BrokerCoach";
-import RevenueView from "@/components/dashboard/RevenueView";
 import { useCountUp } from "@/hooks/useSpaceInteractions";
 import { AIAssistBanner } from "@/components/dashboard/AIAssistBanner";
 import { AssistantPanelDynamic } from "@/components/dashboard/AssistantPanel.dynamic";
 import L99DecisionOpsPanel from "@/components/dashboard/L99DecisionOpsPanel";
 import { WorkdeskCommandHero } from "@/components/dashboard/WorkdeskCommandHero";
+import { ImportContactsBanner } from "@/components/dashboard/ImportContactsBanner";
 import { AIPriorityStrip } from "@/components/dashboard/AIPriorityStrip";
 import { NextBestActionPanel } from "@/components/dashboard/NextBestActionPanel";
+import { FollowUpTodayCard } from "@/components/follow-up/FollowUpTodayCard";
+import { ActionQueuePanel } from "@/components/dashboard/ActionQueuePanel";
 import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
+import { canRenderModule, normalizeModuleTier } from "@/lib/modules/registry";
+
+const EnterpriseSalesIntelligencePanel = dynamic(
+  () => import("@/components/dashboard/EnterpriseSalesIntelligencePanel"),
+  { loading: () => <div className="animate-pulse h-48 rounded-2xl bg-slate-100" /> },
+);
+const BrokerCoach = dynamic(
+  () => import("@/components/coaching/BrokerCoach"),
+  { loading: () => <div className="animate-pulse h-40 rounded-2xl bg-slate-100" /> },
+);
+const RevenueView = dynamic(
+  () => import("@/components/dashboard/RevenueView"),
+  { loading: () => <div className="animate-pulse h-64 rounded-2xl bg-slate-100" /> },
+);
 
 type ForecastingSummary = {
   totalLeads: number;
@@ -120,6 +135,37 @@ export default function DashboardPageClient({ initialPropertiesSummary }: Dashbo
   const [loadError, setLoadError] = useState<string | null>(null);
   const [enterpriseSalesIntelligence, setEnterpriseSalesIntelligence] = useState(false);
   const [coachingPayload, setCoachingPayload] = useState<CoachingInsightPayload | null>(null);
+
+  async function markLeadContacted(leadId: string) {
+    const nowIso = new Date().toISOString();
+    await fetch(`/api/leads/${leadId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        status: "Teplý",
+        lastContact: nowIso,
+      }),
+    });
+    await fetch(`/api/leads/${leadId}/activities`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "Kontakt",
+        note: "Lead bol kontaktovaný cez Action Queue (Volať/Napísať).",
+      }),
+    });
+    setLeads((prev) =>
+      prev.map((lead) =>
+        lead.id === leadId
+          ? {
+              ...lead,
+              status: "Teplý",
+              lastContact: nowIso,
+            }
+          : lead,
+      ),
+    );
+  }
 
   const assistantLeadOptions = useMemo(
     () => leads.map((l) => ({ id: l.id, name: l.name })),
@@ -255,15 +301,26 @@ export default function DashboardPageClient({ initialPropertiesSummary }: Dashbo
   const valueTrend = forecastingSummary ? getTrend(forecastingSummary.expectedPipelineValue, forecastTargets.expectedPipelineValue, " EUR") : null;
   const probabilityTrend = forecastingSummary ? getTrend(forecastingSummary.avgProbabilityPercent, forecastTargets.avgProbabilityPercent, " %") : null;
   const showRevenueCommandCenter = planKey === "command" || planKey === "enterprise";
+  const moduleTier = normalizeModuleTier(planKey || plan);
+  const canShowEnterpriseSalesIntelligence =
+    enterpriseSalesIntelligence &&
+    canRenderModule("dashboard_ai_sales_intelligence", moduleTier);
 
   return (
     <div className="p-3 md:p-6" style={{ minHeight: "100%" }} id="actions">
       <div className="mx-auto max-w-6xl">
         <WorkdeskCommandHero leads={leads} />
 
+        <ImportContactsBanner leadsCount={totalLeads} />
+
         <AIPriorityStrip leads={leads} loading={isLoading} />
+        <ActionQueuePanel leads={leads} onLeadAction={markLeadContacted} />
 
         <NextBestActionPanel leads={leads} loading={isLoading} />
+
+        <div className="mb-6">
+          <FollowUpTodayCard leads={leads} />
+        </div>
 
         <section className="mb-6 grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
           <KpiCard
@@ -372,15 +429,15 @@ export default function DashboardPageClient({ initialPropertiesSummary }: Dashbo
           <AiInsightsPanel leads={leads} plan={plan} />
         </section>
 
-        <section className="mb-6">
-          <EnterpriseSalesIntelligencePanel
-            enabled={enterpriseSalesIntelligence}
-          />
-        </section>
+        {canShowEnterpriseSalesIntelligence && (
+          <section className="mb-6">
+            <EnterpriseSalesIntelligencePanel enabled />
+          </section>
+        )}
 
         {showRevenueCommandCenter ? (
           <section className="mb-6">
-            <RevenueView />
+            <RevenueView leads={leads} />
           </section>
         ) : null}
 

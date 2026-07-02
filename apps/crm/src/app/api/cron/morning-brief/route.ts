@@ -4,7 +4,7 @@
 // vercel.json: {"path": "/api/cron/morning-brief", "schedule": "0 6 * * *"}
 // ================================================================
 import { NextRequest, NextResponse }     from 'next/server'
-import { createClient }                  from '@/lib/supabase/server'
+import { createAdminClient }             from '@/lib/supabase/server'
 import { generateAndDeliverBrief }       from '@/lib/morning-brief/assemble'
 
 export async function GET(request: NextRequest) {
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const { data: settings, error } = await supabase
     .from('morning_brief_settings')

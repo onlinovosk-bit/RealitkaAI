@@ -4,7 +4,11 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
-import { triageLeadBatches, type TriageLeadInput } from "@/lib/ai/lead-triage-batch";
+import {
+  triageLeadBatches,
+  TRIAGE_LOW_CONTEXT_REASON,
+  type TriageLeadInput,
+} from "@/lib/ai/lead-triage-batch";
 
 const OPEN_STATUSES = ["Nový", "Teplý", "Horúci", "Obhliadka", "Ponuka"];
 
@@ -16,14 +20,22 @@ export async function GET(request: NextRequest) {
 
   const admin = createAdminClient();
   const limit = Math.min(Number(process.env.TRIAGE_LEAD_LIMIT ?? "200"), 500);
+  const agencyFilter = process.env.TRIAGE_AGENCY_ID?.trim() || null;
 
-  const { data: rows, error } = await admin
+  let query = admin
     .from("leads")
-    .select("id,name,status,score,last_contact,note,source,ai_priority_manual_at")
+    .select("id,name,status,score,last_contact,note,source,ai_priority_manual_at,agency_id")
     .in("status", OPEN_STATUSES)
     .is("ai_priority_manual_at", null)
+    .is("ai_triage_at", null)
     .order("updated_at", { ascending: false })
     .limit(limit);
+
+  if (agencyFilter) {
+    query = query.eq("agency_id", agencyFilter);
+  }
+
+  const { data: rows, error } = await query;
 
   if (error) {
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
@@ -41,12 +53,15 @@ export async function GET(request: NextRequest) {
   }));
 
   let updated = 0;
+  let heuristicOnly = 0;
   const triagedAt = new Date().toISOString();
 
   if (inputs.length > 0) {
     try {
       const results = await triageLeadBatches(inputs);
       for (const row of results) {
+        if (row.reason === TRIAGE_LOW_CONTEXT_REASON) heuristicOnly += 1;
+
         const { error: upErr } = await admin
           .from("leads")
           .update({
@@ -68,6 +83,8 @@ export async function GET(request: NextRequest) {
     ok: true,
     processed: inputs.length,
     updated,
+    heuristic_only: heuristicOnly,
+    agency_filter: agencyFilter,
     triaged_at: triagedAt,
   });
 }

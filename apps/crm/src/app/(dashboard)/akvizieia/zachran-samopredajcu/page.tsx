@@ -2,6 +2,13 @@ import { StealthRecruiter } from "@/components/marketing/AcquisitionHub";
 import { getCurrentProfile } from "@/lib/auth";
 import { resolveAccountTierFromProfile } from "@/lib/license/access";
 
+/** Stealth scan payload (AcquisitionHub): area Prešov, onlyToday, generateNew false */
+export const STEALTH_SCAN_PAYLOAD = {
+  area: "Prešov",
+  onlyToday: true,
+  generateNew: false,
+} as const;
+
 export const metadata = { title: "Zachrán Samopredajcu – Revolis.AI" };
 
 export default async function ZachranSamopredajcuPage() {

@@ -45,9 +45,22 @@ export default async function TeamPage({
   searchParams: Promise<{ teamId?: string; period?: string; target?: string }>;
 }) {
   const params = await searchParams;
+  const supabase = await getRscSupabase();
   const currentProfile = await getCurrentProfile();
+
+  let agencyManualPlan: string | null = null;
+  if (currentProfile?.agency_id) {
+    const { data: agency } = await supabase
+      .from("agencies")
+      .select("manual_plan")
+      .eq("id", currentProfile.agency_id)
+      .maybeSingle();
+    agencyManualPlan = agency?.manual_plan ?? null;
+  }
+
   const accountTier = resolveTeamAccountTier(
     currentProfile as { account_tier?: string | null; ui_role?: string | null; role?: string | null } | null,
+    agencyManualPlan,
   );
   const canAccessTeamPressure = hasCapability(
     normalizeLicenseTier(accountTier),
@@ -69,8 +82,6 @@ export default async function TeamPage({
       </ModuleShell>
     );
   }
-
-  const supabase = await getRscSupabase();
 
   const result = await safeServerAction(
     async () => getTeamDashboardData(supabase),

@@ -3,12 +3,14 @@
 // Assembles MorningBriefData from gathered raw data + AI text
 // ================================================================
 import { gatherBriefData }      from './gather'
-import { generateBriefText }    from './generators/ai-text'
+import { buildDeliveryFallbackText, generateBriefText } from './generators/ai-text'
 import { renderBriefEmail }     from './generators/email-html'
 import { sendPushNotification } from './generators/web-push'
-import { createClient }         from '@/lib/supabase/server'
+import { generateDirectorBrief } from './director-brief'
+import { createAdminClient } from '@/lib/supabase/server'
 import { Resend }               from 'resend'
 import type { MorningBriefData } from '@/types/morning-brief'
+import { logAiAction } from '@/lib/ai-action-audit'
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.revolis.ai'
 
@@ -27,18 +29,69 @@ export interface DeliveryResult {
 export async function generateAndDeliverBrief(
   profileId: string
 ): Promise<DeliveryResult | null> {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   // 1. Gather all data
   const gathered = await gatherBriefData(profileId)
-  if (!gathered || gathered.hotLeads.length === 0) return null
+  if (!gathered) return null
 
-  const top      = gathered.hotLeads[0]
+  const top      = gathered.hotLeads[0] ?? {
+    lead_id: 'none',
+    full_name: gathered.stats.priorityLeadNames[0] ?? gathered.ownerName,
+    bri_score: 0,
+    phone: null,
+  }
   const variant  = gathered.settings.a_b_variant
   const channels = gathered.settings.channels
 
-  // 2. Generate AI text
-  const generated = await generateBriefText(gathered, variant)
+  // 2. Generate AI text (with timeout fallback)
+  let generated = await generateBriefText(gathered, variant)
+  let contentSource = generated.contentSource
+  let contentSourceReason = generated.fallbackReason
+
+  if (!generated.aiText?.trim()) {
+    generated = {
+      ...generated,
+      aiText: buildDeliveryFallbackText(gathered, gathered.stats.hotPending),
+      subjectLine: `Ranný brief — ${gathered.stats.hotPending} HOT leadov`,
+      actionVerb: 'Kontaktujte',
+      actionText: `Máte ${gathered.stats.pendingContact} leadov čakajúcich na kontakt.`,
+      urgency: gathered.stats.hotPending > 0 ? 'high' as const : 'medium' as const,
+      contentSource: 'fallback',
+      fallbackReason: 'delivery_fallback',
+    }
+    contentSource = 'fallback'
+    contentSourceReason = 'delivery_fallback'
+  }
+
+  const { data: ownerProfile } = await supabase
+    .from('profiles')
+    .select('role, ui_role, agency_id')
+    .eq('id', profileId)
+    .maybeSingle();
+
+  await logAiAction({
+    action: 'morning_brief',
+    agencyId: ownerProfile?.agency_id ?? null,
+    profileId,
+    subjectPreview: generated.subjectLine?.slice(0, 200) ?? null,
+    meta: { variant, urgency: generated.urgency, hot_leads: gathered.stats.hotPending },
+  });
+
+  const isOwner =
+    ownerProfile?.role === 'owner' || ownerProfile?.ui_role === 'owner_vision';
+
+  if (isOwner && ownerProfile?.agency_id) {
+    try {
+      const directorBrief = await generateDirectorBrief(ownerProfile.agency_id, supabase);
+      generated = {
+        ...generated,
+        aiText: `${directorBrief}\n\n${generated.aiText}`,
+      };
+    } catch (err) {
+      console.error('[assemble] director brief failed:', err);
+    }
+  }
 
   // 3. Assemble MorningBriefData
   const brief: MorningBriefData = {
@@ -88,7 +141,7 @@ export async function generateAndDeliverBrief(
   }
 
   // 4. Persist brief record
-  const { data: record, error: insertErr } = await supabase
+  const { error: insertErr } = await supabase
     .from('morning_briefs')
     .insert({
       id:               brief.briefId,
@@ -105,6 +158,8 @@ export async function generateAndDeliverBrief(
       lv_changes_count: brief.overnight.lvChanges.length,
       arbitrage_count:  brief.overnight.arbitrage.length,
       hot_leads_count:  brief.stats.hotLeads,
+      content_source:        contentSource,
+      content_source_reason: contentSourceReason,
     })
     .select('id')
     .single()
@@ -153,7 +208,6 @@ export async function generateAndDeliverBrief(
       if (sent) deliveredChannels.push('push')
     } catch (err: any) {
       if (err.message === 'SUBSCRIPTION_EXPIRED') {
-        // Remove expired subscription
         await supabase
           .from('morning_brief_settings')
           .update({ push_subscription: null })

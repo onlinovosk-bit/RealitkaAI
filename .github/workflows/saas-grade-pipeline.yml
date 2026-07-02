@@ -5,6 +5,8 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -14,9 +16,30 @@ jobs:
   ci:
     name: Lint, test, build
     runs-on: ubuntu-latest
+    timeout-minutes: 25
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Guard - stealth lead-gen legal hold (AP-011)
+        run: |
+          set -e
+          # Unified pattern — blocks funnel/lead/program variants AND recruiter crons in vercel.json
+          if grep -qiE 'stealth[-_]?(funnel|lead|recruiter|program)' apps/crm/vercel.json; then
+            echo "::error::stealth lead-gen cron must not be registered in vercel.json (GDPR legal hold)."
+            exit 1
+          fi
+          # New stealth surface in app code (stealth-funnel, stealth-lead, stealth-*-programs)
+          if grep -riE 'stealth[-_]?(funnel|lead|program)' apps/crm/src \
+            --include='*.ts' --include='*.tsx' 2>/dev/null; then
+            echo "::error::stealth lead-gen is legal-hold blocked (GDPR čl. 6(1)(f) nepodpísaný)"
+            exit 1
+          fi
+          # Marketing stealth entry routes
+          if [ -d "apps/crm/src/app/(marketing)/start" ]; then
+            echo "::error::stealth marketing route /start is legal-hold blocked"
+            exit 1
+          fi
 
       - uses: actions/setup-node@v4
         with:
@@ -32,16 +55,87 @@ jobs:
         run: npm run lint
         working-directory: apps/crm
 
-      - name: Test
-        run: npm test
+      # ── Ephemeral test DB: žiadne prod secrets v test/build fáze ──
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start local Supabase
+        run: supabase start
         working-directory: apps/crm
+
+      - name: Export local credentials
+        run: supabase status -o env | sed 's/"//g' >> "$GITHUB_ENV"
+        working-directory: apps/crm
+
+      - name: Map service role key for Node tests
+        run: echo "SUPABASE_SERVICE_ROLE_KEY=${SERVICE_ROLE_KEY}" >> "$GITHUB_ENV"
+        env:
+          SERVICE_ROLE_KEY: ${{ env.SERVICE_ROLE_KEY }}
+
+      - name: Map ephemeral DB credentials to TEST_SUPABASE_*
+        run: |
+          echo "TEST_SUPABASE_URL=${API_URL}" >> "$GITHUB_ENV"
+          echo "TEST_SUPABASE_ANON_KEY=${ANON_KEY}" >> "$GITHUB_ENV"
+          echo "TEST_SUPABASE_SERVICE_ROLE_KEY=${SERVICE_ROLE_KEY}" >> "$GITHUB_ENV"
+        env:
+          API_URL: ${{ env.API_URL }}
+          ANON_KEY: ${{ env.ANON_KEY }}
+          SERVICE_ROLE_KEY: ${{ env.SERVICE_ROLE_KEY }}
+
+      - name: Guard - TEST_SUPABASE_* must point to ephemeral local DB
+        run: |
+          case "$TEST_SUPABASE_URL" in
+            *127.0.0.1*|*localhost*)
+              echo "TEST guard OK: $TEST_SUPABASE_URL" ;;
+            *)
+              echo "::error::TEST_SUPABASE_URL is not local ephemeral DB ($TEST_SUPABASE_URL)"
+              exit 1 ;;
+          esac
+        env:
+          TEST_SUPABASE_URL: ${{ env.TEST_SUPABASE_URL }}
+
+      # Allowlist guard: fail, ak DB NIE JE lokálne test prostredie.
+      # (Nahrádza pôvodný blacklist "Block E2E on production".)
+      - name: Guard - testy len proti allowlistu test DB
+        run: |
+          case "$API_URL" in
+            *127.0.0.1*|*localhost*)
+              echo "Guard OK: $API_URL" ;;
+            *)
+              echo "::error::DB URL nie je v allowliste test prostredí - testy zablokované."
+              exit 1 ;;
+          esac
+
+      - name: Reset DB (migracie + seed.sql)
+        run: supabase db reset
+        working-directory: apps/crm
+
+      - name: Test
+        run: |
+          set -o pipefail
+          npm test 2>&1 | tee test-output.log
+          grep -E "RLS tenant isolation|tests/rls/" test-output.log
+          grep -q "RLS tenant isolation suite" test-output.log || (echo "::error::RLS suite did not execute — check vitest include for tests/rls/" && exit 1)
+          grep -q "tests/rls/rls-tenant-isolation.test.ts" test-output.log || (echo "::error::RLS test file not in vitest output" && exit 1)
+          grep -q "tests/rls/enrichment-log-rls.test.ts" test-output.log || (echo "::error::enrichment-log RLS test file not in vitest output" && exit 1)
+          grep -q "enrichment_log RLS isolation" test-output.log || (echo "::error::enrichment_log RLS isolation suite did not execute" && exit 1)
+        working-directory: apps/crm
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ env.API_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ env.ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ env.SUPABASE_SERVICE_ROLE_KEY || env.SERVICE_ROLE_KEY }}
+          TEST_SUPABASE_URL: ${{ env.TEST_SUPABASE_URL }}
+          TEST_SUPABASE_ANON_KEY: ${{ env.TEST_SUPABASE_ANON_KEY }}
+          TEST_SUPABASE_SERVICE_ROLE_KEY: ${{ env.TEST_SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Build
         run: npm run build
         working-directory: apps/crm
         env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ env.API_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ env.ANON_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
       - name: Debug - find .next

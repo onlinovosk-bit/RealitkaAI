@@ -22,6 +22,8 @@ export type Property = {
   brokerName?: string;
   brokerEmail?: string;
   brokerPhone?: string;
+  /** Realvia webhook identita — mapované z `source_id` stĺpca. */
+  sourceId?: string;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -70,7 +72,7 @@ export type PropertiesInventory = {
 
 /** Stĺpce vždy prítomné v produkcii (Realvia import). */
 const PROPERTIES_SELECT_CORE =
-  "id, agency_id, title, location, price, type, rooms, features, status, created_at, broker_name, broker_email, broker_phone";
+  "id, agency_id, source_id, title, location, price, type, rooms, features, status, created_at, broker_name, broker_email, broker_phone";
 
 const PROPERTIES_SELECT_FULL = `${PROPERTIES_SELECT_CORE}, description, owner_name, owner_phone, updated_at`;
 
@@ -146,9 +148,19 @@ function mapPropertyRow(item: Record<string, unknown>): Property {
     brokerName: String(item.broker_name ?? ""),
     brokerEmail: String(item.broker_email ?? ""),
     brokerPhone: String(item.broker_phone ?? ""),
+    sourceId: item.source_id != null ? String(item.source_id) : undefined,
     createdAt: item.created_at as string | undefined,
     updatedAt: item.updated_at as string | undefined,
   };
+}
+
+export function findPropertyByFocusId(
+  items: Property[],
+  focusId: string,
+): Property | undefined {
+  const id = focusId.trim();
+  if (!id) return undefined;
+  return items.find((item) => item.sourceId === id || item.id === id);
 }
 
 export const propertyStatusOptions = [
@@ -313,7 +325,15 @@ export async function listProperties(
   const supabase = await resolveTenantSupabase(scopedSupabase);
 
   if (!supabase) {
+    if (process.env.NODE_ENV === "production") return [];
     return applyPropertyFilters(getDemoShowcaseProperties(), filters);
+  }
+
+  const { resolveSessionAgencyId } = await import("@/lib/tenant-scope");
+  const agencyId = await resolveSessionAgencyId(supabase);
+  if (!agencyId) {
+    console.warn("[properties-store] listProperties: missing profile agency_id — returning empty set");
+    return [];
   }
 
   const statusFilter = filters?.status?.trim();
@@ -360,10 +380,29 @@ export async function listProperties(
 
   if (error || !data) {
     console.error("listProperties error:", error?.message);
+    if (process.env.NODE_ENV === "production") return [];
     return applyPropertyFilters(getDemoShowcaseProperties(), filters);
   }
 
-  return data.map((item) => mapPropertyRow(item as Record<string, unknown>));
+  const tenantScoped = await scopePropertyRowsToProfileAgency(
+    supabase,
+    data as unknown as Record<string, unknown>[]
+  );
+  return tenantScoped.map((item) => mapPropertyRow(item as Record<string, unknown>));
+}
+
+async function scopePropertyRowsToProfileAgency(
+  supabase: SupabaseClient,
+  rows: Record<string, unknown>[],
+): Promise<Record<string, unknown>[]> {
+  const { resolveSessionAgencyId, filterRowsByAgency } = await import(
+    "@/lib/tenant-scope"
+  );
+  const agencyId = await resolveSessionAgencyId(supabase);
+  return filterRowsByAgency(
+    rows as Array<Record<string, unknown> & { agency_id?: string | null }>,
+    agencyId,
+  );
 }
 
 export async function getProperty(
@@ -377,16 +416,23 @@ export async function getProperty(
   const supabase = await resolveTenantSupabase(scopedSupabase);
 
   if (!supabase) {
+    if (process.env.NODE_ENV === "production") return undefined;
     return getDemoShowcaseProperties().find((item) => item.id === id);
   }
+
+  const { resolveSessionAgencyId } = await import("@/lib/tenant-scope");
+  const agencyId = await resolveSessionAgencyId(supabase);
+  if (!agencyId) return undefined;
 
   const { data, error } = await supabase
     .from("properties")
     .select("*")
     .eq("id", id)
+    .eq("agency_id", agencyId)
     .single();
 
   if (error || !data) {
+    if (process.env.NODE_ENV === "production") return undefined;
     return getDemoShowcaseProperties().find((item) => item.id === id);
   }
 

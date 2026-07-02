@@ -6,6 +6,7 @@ export type AccountTier =
   | "pro"                 // Active Force
   | "enterprise"          // Market Vision (CRM alias)
   | "market_vision"       // Market Vision (interný)
+  | "command"             // Command tier (license ladder)
   | "protocol_authority"; // Protocol Authority
 
 export type UiRole =
@@ -23,6 +24,7 @@ export const TIER_DISPLAY_NAMES: Record<AccountTier, string> = {
   pro:                 "Active Force",
   enterprise:          "Market Vision",
   market_vision:       "Market Vision",
+  command:             "Command",
   protocol_authority:  "Protocol Authority",
 };
 
@@ -33,6 +35,7 @@ export const TIER_PRICES: Record<AccountTier, number | null> = {
   pro:                 99,
   enterprise:          199,
   market_vision:       199,
+  command:             299,
   protocol_authority:  449,
 };
 

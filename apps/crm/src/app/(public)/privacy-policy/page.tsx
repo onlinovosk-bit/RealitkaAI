@@ -9,7 +9,7 @@ export default function PrivacyPolicyPage() {
   return (
     <LegalPageShell
       title="Privacy Policy"
-      subtitle="Zásady ochrany osobných údajov pre Revolis.AI. Posledná aktualizácia: 15. apríla 2026."
+      subtitle="Zásady ochrany osobných údajov pre Revolis.AI. Posledná aktualizácia: 2. júna 2026."
     >
       <div className="space-y-6 text-sm text-slate-200">
         <section>
@@ -24,7 +24,8 @@ export default function PrivacyPolicyPage() {
           <h2 className="text-lg font-semibold text-white">2. Aké údaje spracúvame</h2>
           <p className="mt-2 text-slate-300">
             Kontaktné údaje, údaje o interakcii v CRM, údaje súvisiace s obchodnými príležitosťami a prevádzkové logy
-            potrebné na poskytovanie služby, bezpečnosť a podporu.
+            potrebné na poskytovanie služby, bezpečnosť a podporu. V seat-based modeli spracúvame aj licenčné údaje o
+            počte seatov a aktivovaných moduloch.
           </p>
         </section>
 
@@ -41,6 +42,14 @@ export default function PrivacyPolicyPage() {
           <p className="mt-2 text-slate-300">
             Pri cezhraničných prenosoch používame primerané záruky vrátane SCC a doplnkových opatrení (TIA), ak je to
             potrebné.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-lg font-semibold text-white">6. AI governance (L99)</h2>
+          <p className="mt-2 text-slate-300">
+            AI výstupy slúžia ako podpora rozhodovania. Kritické obchodné a právne kroky zostávajú pod ľudskou
+            kontrolou, pričom podstatné zmeny AI logiky evidujeme v changelogu a prevádzkujeme s rollback režimom.
           </p>
         </section>
 

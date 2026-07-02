@@ -31,9 +31,11 @@ export default function DemandHeatmap({
 }: DemandHeatmapProps) {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
+  const pointCount = demandData.features.length + supplyData.features.length;
+  const hasGeoData = pointCount > 0;
 
   useEffect(() => {
-    if (!mapContainer.current || mapRef.current) return;
+    if (!hasGeoData || !mapContainer.current || mapRef.current) return;
 
     const map = new maplibregl.Map({
       container: mapContainer.current,
@@ -86,9 +88,10 @@ export default function DemandHeatmap({
       map.remove();
       mapRef.current = null;
     };
-  }, [demandData, supplyData]);
+  }, [demandData, supplyData, hasGeoData]);
 
   useEffect(() => {
+    if (!hasGeoData) return;
     const map = mapRef.current;
     if (!map || !map.isStyleLoaded()) return;
 
@@ -96,16 +99,31 @@ export default function DemandHeatmap({
     if (demandSource) demandSource.setData(demandData);
     const supplySource = map.getSource("supply") as maplibregl.GeoJSONSource | undefined;
     if (supplySource) supplySource.setData(supplyData);
-  }, [demandData, supplyData]);
+  }, [demandData, supplyData, hasGeoData]);
 
   return (
     <div
       className="relative h-[600px] w-full overflow-hidden rounded-3xl border"
       style={{ borderColor: WORKDESK_CARD.borderColor, boxShadow: WORKDESK_CARD.boxShadow }}
     >
-      <PremiumLockedBlur active={!canViewDetails}>
-        <div ref={mapContainer} className="absolute inset-0" />
-      </PremiumLockedBlur>
+      {!hasGeoData ? (
+        <div
+          className="absolute inset-0 z-[5] flex flex-col items-center justify-center px-8 text-center"
+          style={{ background: SLATE_HORIZON.bg }}
+        >
+          <p className="text-sm font-semibold" style={{ color: SLATE_HORIZON.ink }}>
+            Žiadne body na mape dopytu
+          </p>
+          <p className="mt-2 max-w-md text-xs leading-relaxed" style={{ color: SLATE_HORIZON.muted }}>
+            Heatmapa číta lokality z príležitostí a ponúk v CRM (nie simulované sektory). Importujte alebo
+            doplňte lokalitu — potom sa zobrazí dopyt (červená) a ponuka (modrá).
+          </p>
+        </div>
+      ) : (
+        <PremiumLockedBlur active={!canViewDetails}>
+          <div ref={mapContainer} className="absolute inset-0" />
+        </PremiumLockedBlur>
+      )}
 
       <div
         className="absolute left-6 top-6 z-10 rounded-3xl border p-6"
@@ -116,7 +134,7 @@ export default function DemandHeatmap({
         }}
       >
         <h4 className="mb-4 text-[10px] font-black uppercase tracking-widest" style={{ color: SLATE_HORIZON.ink }}>
-          L99 Radar príležitostí
+          Radar dopytu a ponuky
         </h4>
         <div className="space-y-2">
           <div className="flex items-center gap-2">

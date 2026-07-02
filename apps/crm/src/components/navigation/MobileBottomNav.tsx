@@ -65,7 +65,7 @@ const NAV_ITEMS = [
 export function MobileBottomNav() {
   const pathname = usePathname();
 
-  if (isChromelessRoute(pathname)) return null;
+  if (!pathname || isChromelessRoute(pathname)) return null;
 
   return (
     <nav

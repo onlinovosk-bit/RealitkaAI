@@ -340,10 +340,10 @@ function AuditModal({ onClose }: { onClose: () => void }) {
 // ── Pricing checkout flow ──────────────────────────────────────────────────
 
 const PLAN_LABELS: Record<string, { name: string; price: string }> = {
-  'pricing-smart-start':        { name: 'Smart Start',             price: '49 €/mes' },
-  'pricing-active-force':       { name: 'RADAR MAKLÉRA',           price: '99 €/mes' },
-  'pricing-market-vision':      { name: 'STRÁŽCA CIEN A ZISKOV',   price: '199 €/mes' },
-  'pricing-protocol-authority': { name: 'REALITY MONOPOL',         price: '449 €/mes' },
+  'pricing-smart-start':        { name: 'SOLO SEAT',     price: '79 €/seat/mes' },
+  'pricing-active-force':       { name: 'TEAM SEAT',     price: '71 €/seat/mes' },
+  'pricing-market-vision':      { name: 'OFFICE SEAT',   price: '63 €/seat/mes' },
+  'pricing-protocol-authority': { name: 'Roadmap moduly', price: 'Čoskoro — waitlist' },
 }
 
 function PricingModal({ source, onClose }: Props) {
@@ -468,12 +468,14 @@ const PRICING_SOURCES = new Set([
   'pricing-smart-start',
   'pricing-active-force',
   'pricing-market-vision',
-  'pricing-protocol-authority',
 ])
 
+const WAITLIST_SOURCES = new Set(['waitlist', 'pricing-protocol-authority'])
+
 export default function LeadCaptureModal({ source, onClose }: Props) {
-  const isAudit   = source === 'revenue-scan'
-  const isPricing = PRICING_SOURCES.has(source)
+  const isAudit    = source === 'revenue-scan'
+  const isPricing  = PRICING_SOURCES.has(source)
+  const isWaitlist = WAITLIST_SOURCES.has(source)
 
   return (
     <div
@@ -506,9 +508,10 @@ export default function LeadCaptureModal({ source, onClose }: Props) {
           aria-label="Zavrieť"
         >×</button>
 
-        {isAudit   ? <AuditModal onClose={onClose} /> :
-         isPricing ? <PricingModal source={source} onClose={onClose} /> :
-                     <StandardModal source={source} onClose={onClose} />}
+        {isAudit    ? <AuditModal onClose={onClose} /> :
+         isPricing  ? <PricingModal source={source} onClose={onClose} /> :
+         isWaitlist ? <StandardModal source="waitlist-roadmap" onClose={onClose} /> :
+                      <StandardModal source={source} onClose={onClose} />}
       </div>
     </div>
   )

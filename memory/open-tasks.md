@@ -1,33 +1,37 @@
 # Open Tasks — Prioritized Queue
 
-> Posledná aktualizácia: 2026-05-22 | Ruflo overnight handoff
+> Posledná aktualizácia: 2026-06-24 | Task-loop sync
 
-## P0 — Blockers / Integration
+## P0 — Dokončiť rozbehnuté (vykonávacie)
 
-- [ ] **Realvia re-test od Bereczovej** — delete (sold/rent/cancel) + create/update export
-- [ ] **Overiť produkčný deploy PR #60** — auth message `Invalid authentication` na oboch scenároch (missing + wrong token)
-- [ ] **Externý cron** — potvrdiť že worker beží každých 5 min (cron-job.org)
+- [x] Brief 15 merge (#222 B1 reconcile, #227 K3b/c) — v `main`, CI zelené
+- [x] PROD reconcile `?reconcile_processed=1` — updated=5, scanned=13, skipped=8 (párovanie OK)
+- [x] **Push `memory/decisions.md`** + task-loop commits — pushnuté `35224b355`
+- [x] **PROD cleanup** — audit `784691` smoke probe deleted (SELECT: verify=audit-fix-probe, 0 properties)
+- [ ] **Externý cron** — agent: lokálny CRON_SECRET → PROD 401; overiť cron-job.org + Vercel Production secret (každých 5 min)
 
-## P1 — Realvia hardening
+## P1 — Smolko / hodnota pre klienta
 
-- [ ] Fix `resolveAgency.ts` — DB lookup namiesto tichého fallbacku
-- [ ] Property upsert scoping podľa `agency_id`
-- [ ] Investigate Vercel preview deploy failures (realitka-ai)
+- [ ] **Guardian PROD smoke 5/5** — agent: login blocked (TEST_USER ≠ Smolko); skript `apps/crm/scripts/prod-guardian-smoke-once.mjs` pripravený
+- [x] **PR #241** — merged (fixture-only disabled edit CTA)
+- [ ] **Lemon Squeezy Share** — fungoval / nefungoval / pending
+- [ ] **Tomáš** — dual export Realvia + Revolis? (Smolko live čaká)
+- [x] **VALIDATE CLOSED:** Smolko Klienti CSV = duplikát 439 leadov + maklér; Dopyty neexportovateľné — **import nerobiť** (`memory/decisions.md` 2026-06-21)
+- [ ] **K3 UI route** — banner/deck pre property (lib hotová, chýba `/app` route) — VALIDATE pred BUILD
+- [ ] Realvia re-test od Bereczovej — delete + create/update export
 
-## P2 — Product / Demo
+## P2 — Realvia / ops
 
-- [ ] Demo funnel v5 HTML — schválenie + samostatný PR (`preview-demo-conversion-funnel-v5-l99.html`)
-- [ ] React `/demo` implementácia (až po HTML schválení)
+- [ ] Preskúmať ~8 `realvia_webhook_logs processed=false` (skipped bez property match — delete/unknown?)
+- [ ] **Schema Guard** — agent: workflow_dispatch FAIL (secrets chýbajú v GitHub Actions)
 
-## P3 — Tech debt
+## P3 — Product / tech debt (nie teraz ak nie P0/P1)
 
-- [ ] Zmazať 4 dead routes (po potvrdení): `/api/system/schema`, `/api/test-db`, `/api/admin/check-migration`, `/api/l99/shadow-inventory`
-- [ ] Streaming pre call-coach (vzor: `listing-content/stream`)
-- [ ] AI moduly migrácia na `callClaude()` wrapper
+- [ ] Demo funnel v5 HTML schválenie
+- [ ] Dead routes cleanup (po potvrdení)
+- [ ] Staršie otvorené PR (#189, #191, #186…) — triage
 
-## P4 — AI orchestration (shared memory)
+## BRI — uzavreté rozhodnutie (2026-06-19)
 
-- [x] `memory/integrations.md` — live integration status
-- [x] `memory/open-tasks.md` — prioritized queue
-- [ ] ChatGPT Project „Revolis OS“ s pinned `session-summary.md` + `decisions.md`
-- [ ] CrewAI / Mem0 — až po Realvia GO
+- **Honest pending** pre 439 leadov — žiadny backfill, žiadny enrichment engine na prázdnych poliach
+- Detail: `memory/decisions.md`, `docs/audit/bri-diagnostic.md`

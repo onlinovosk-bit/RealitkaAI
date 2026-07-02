@@ -5,7 +5,7 @@ import { Eye, Zap, AlertTriangle, Mic2, Map, TrendingUp } from "lucide-react";
 const FEATURES = [
   {
     icon: Eye,
-    badge: "L99 RADAR PRÍLEŽITOSTÍ",
+    badge: "RADAR PRÍLEŽITOSTÍ",
     badgeColor: "#60A5FA",
     title: '„Za koľko predal sused?"',
     desc: "Unikátny monitoring pohybov cien na konkrétnej ulici. Aktivuje zvedavosť klientov a udržuje značku Reality Smolko v ich povedomí mesiace pred samotným predajom.",
@@ -37,10 +37,10 @@ const FEATURES = [
   },
   {
     icon: Zap,
-    badge: "PROTOCOL AUTHORITY",
-    badgeColor: "#34D399",
-    title: "Stealth Bypass",
-    desc: "Sleduje aktivitu maklérov konkurencie. Vieš ktoré mandáty sa uvoľnia a kedy oslovia predávajúceho znova.",
+    badge: "ROADMAP",
+    badgeColor: "#94A3B8",
+    title: "Stealth Recruiter",
+    desc: "Sledovanie konkurenčnej aktivity a uvoľnených mandátov — v príprave pre Protocol tier. Dnes: základný stealth scan v beta režime.",
     tier: "enterprise",
   },
   {

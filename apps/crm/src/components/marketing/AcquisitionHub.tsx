@@ -584,23 +584,42 @@ export function AIGhostwriter() {
 // ═══════════════════════════════════════════════════════════════════════════
 // MODULE 4 → becomes slot 5: Real Estate Arbitrage
 // ═══════════════════════════════════════════════════════════════════════════
+const ARBITRAGE_EMPTY_FALLBACK =
+  "Arbitrážny scan beží — zatiaľ žiadne zhody. Zobrazia sa po prvom prebehnutí cronu.";
+
 export function RealEstateArbitrage() {
   const [candidates, setCandidates] = useState<ArbitrageCandidate[]>([]);
   const [loading, setLoading]       = useState(false);
   const [loaded, setLoaded]         = useState(false);
   const [expanded, setExpanded]     = useState<string | null>(null);
+  const [emptyMessage, setEmptyMessage] = useState<string | null>(null);
+  const [demoAllowed, setDemoAllowed]   = useState(false);
 
-  const scan = async () => {
+  const scan = async (opts?: { demo?: boolean }) => {
     setLoading(true);
+    setEmptyMessage(null);
     try {
       const res = await fetch("/api/arbitrage/analyze", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ useLive: false }),
+        body: JSON.stringify({ limit: 20, ...(opts?.demo ? { demo: true } : {}) }),
       });
-      const data = await res.json() as { candidates?: ArbitrageCandidate[] };
+      const data = await res.json() as {
+        candidates?: ArbitrageCandidate[];
+        empty?: boolean;
+        message?: string;
+        demoAllowed?: boolean;
+      };
       setCandidates(data.candidates ?? []);
+      if (data.demoAllowed) setDemoAllowed(true);
+      if (data.empty) {
+        setEmptyMessage(data.message ?? ARBITRAGE_EMPTY_FALLBACK);
+      }
       setLoaded(true);
-    } catch { setCandidates([]); setLoaded(true); }
+    } catch {
+      setCandidates([]);
+      setEmptyMessage(ARBITRAGE_EMPTY_FALLBACK);
+      setLoaded(true);
+    }
     setLoading(false);
   };
 
@@ -615,10 +634,18 @@ export function RealEstateArbitrage() {
       </p>
       <div className="flex-1 space-y-2">
         {!loaded ? (
-          <Btn onClick={() => void scan()} loading={loading} variant="outline"
-               className="border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10">
-            {loading ? "Skenujem CRM..." : "SPUSTIŤ ARBITRÁŽ SCAN"}
-          </Btn>
+          <div className="space-y-2">
+            <Btn onClick={() => void scan()} loading={loading} variant="outline"
+                 className="border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10">
+              {loading ? "Načítavam zhody..." : "SPUSTIŤ ARBITRÁŽ SCAN"}
+            </Btn>
+            {demoAllowed && (
+              <Btn onClick={() => void scan({ demo: true })} loading={loading} variant="outline"
+                   className="text-[10px] opacity-70">
+                Demo (interné)
+              </Btn>
+            )}
+          </div>
         ) : candidates.map(c => (
           <button key={c.id} onClick={() => setExpanded(expanded === c.id ? null : c.id)}
             className="w-full text-left rounded-xl p-3 transition-all hover:scale-[1.01]"
@@ -649,12 +676,22 @@ export function RealEstateArbitrage() {
           </button>
         ))}
         {loaded && candidates.length === 0 && (
-          <p className="text-xs text-center py-3" style={{ color: "#475569" }}>Žiadni kandidáti nenájdení.</p>
+          <p className="text-xs rounded-xl px-3 py-3 text-center" style={{ background: SLATE_HORIZON.soft, color: SLATE_HORIZON.muted, border: `1px solid ${SLATE_HORIZON.line}` }}>
+            {emptyMessage ?? ARBITRAGE_EMPTY_FALLBACK}
+          </p>
         )}
         {loaded && (
-          <Btn onClick={() => { setLoaded(false); setCandidates([]); }} variant="outline">
-            <RefreshCcw size={12} /> Nový scan
-          </Btn>
+          <div className="space-y-2">
+            <Btn onClick={() => { setLoaded(false); setCandidates([]); setEmptyMessage(null); }} variant="outline">
+              <RefreshCcw size={12} /> Nový scan
+            </Btn>
+            {demoAllowed && (
+              <Btn onClick={() => void scan({ demo: true })} loading={loading} variant="outline"
+                   className="text-[10px] opacity-70">
+                Demo (interné)
+              </Btn>
+            )}
+          </div>
         )}
       </div>
     </Card>
@@ -795,7 +832,7 @@ export function StealthRecruiter({ accountTier }: { accountTier?: string | null 
     try {
       const res = await fetch("/api/stealth-recruiter/scan", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ generateNew: true }),
+        body: JSON.stringify({ area: "Prešov", onlyToday: true, generateNew: false }),
       });
       const data = await res.json() as {
         prospects?: StealthProspect[];

@@ -43,8 +43,7 @@ function protocolOnlyMarketed() {
 
 describe("Reality Monopol — brand & billing tier", () => {
   it("uses Reality Monopol as protocol program label", () => {
-    expect(PROGRAM_BRAND_LABEL.protocol).toBe("Reality Monopol");
-    expect(PLAN_PRICES_EUR.protocolAuthority).toBe(449);
+    expect(PROGRAM_BRAND_LABEL.protocol).toBe("Enterprise seat");
   });
 
   it("has monopol program on protocol_authority tier only at top rank", () => {
@@ -135,7 +134,6 @@ describe("Reality Monopol — implementation anchors", () => {
         "src/components/l99/CompetitionMap.tsx",
         "src/app/(dashboard)/l99-hub",
       ],
-      "Detektor kde konkurencia spí": ["src/components/l99/CompetitionMap.tsx"],
       "Živý radar obchodov: kde sú peniaze práve teraz": [
         "src/app/(dashboard)/l99-hub",
         "src/app/(dashboard)/dashboard",
@@ -161,12 +159,13 @@ describe("Reality Monopol — implementation anchors", () => {
     expect(missing, missing.join("\n")).toEqual([]);
   });
 
-  it("wires L99 hub with CompetitionMap and IntelBrief", () => {
+  it("wires L99 hub with cadastre map and module policy guards", () => {
     const hub = join(CRM_ROOT, "src/app/(dashboard)/l99-hub/page.tsx");
     const source = readFileSync(hub, "utf8");
-    expect(source).toContain("CompetitionMap");
-    expect(source).toContain("IntelBrief");
-    expect(source).toContain("isProtocolAuthority");
+    expect(source).toContain("CadastreMapView");
+    expect(source).toContain('canRenderModule("hub_breaking_point"');
+    expect(source).toContain('canRenderModule("hub_neighborhood_change"');
+    expect(source).not.toContain("3 nové signály");
   });
 
   it("documents Reality Monopol in billing store copy", () => {

@@ -16,6 +16,8 @@ export default async function PropertiesPage({
     status?: string;
     location?: string;
     type?: string;
+    source_id?: string;
+    edit?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -26,6 +28,9 @@ export default async function PropertiesPage({
     location: (params.location ?? "").trim(),
     type: (params.type ?? "").trim(),
   };
+
+  const focusSourceId = (params.source_id ?? "").trim();
+  const autoOpenEdit = params.edit === "1";
 
   const result = await safeServerAction(
     async () => {
@@ -42,6 +47,7 @@ export default async function PropertiesPage({
           supabase,
           user.id,
           "agency_id",
+          user.email,
         );
         profileMissingAgency = missing;
 
@@ -79,6 +85,8 @@ export default async function PropertiesPage({
         initialInventorySummary={inventorySummary}
         profileMissingAgency={profileMissingAgency}
         filters={filters}
+        focusSourceId={focusSourceId}
+        autoOpenEdit={autoOpenEdit}
       />
     </ModuleShell>
   );

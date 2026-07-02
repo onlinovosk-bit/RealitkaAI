@@ -5,16 +5,18 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { NavIcon } from "@/components/ui/NavIcon";
 import {
+  applyImportNavBadges,
   getNavItems,
-  getMenuVariant,
   SECTION_LABELS,
   VARIANT_THEMES,
   DEFAULT_TEAM_PERMISSIONS,
   type MenuVariant,
+  type NavBadge,
   type NavItem,
   type NavSection,
   type TeamMemberPermissions,
 } from "@/types/navigation";
+import { resolveWorkdeskMenuContext } from "@/lib/menu/resolve-workdesk-menu";
 import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
 import { WorkdeskRail } from "@/components/layout/WorkdeskRail";
 
@@ -45,9 +47,15 @@ function getDemoVariant(program: FounderDemoProgram): MenuVariant {
   }
 }
 
+function formatWorkdeskBadgeLabel(badge: NavBadge): string {
+  if (badge.label === "live") return "3";
+  if (badge.label === "hot") return "17";
+  return badge.label;
+}
+
 function filterItemsByDemoProgram(items: NavItem[], program: FounderDemoProgram): NavItem[] {
   if (program === "free") {
-    const allowedFreeIds = new Set(["today", "contacts", "settings"]);
+    const allowedFreeIds = new Set(["today", "import-contacts", "contacts", "settings"]);
     return items.filter((item) => allowedFreeIds.has(item.id));
   }
   if (program === "starter" || program === "active_force" || program === "market_vision") {
@@ -104,18 +112,8 @@ interface AppSidebarProps {
   isInTeam:     boolean;
   appRole?:     string;
   agencyName?:  string;
+  agencyManualPlan?: string | null;
   userName?:    string;
-}
-
-// ─── Smart Start badge (iný label pre 49€ plán) ────────────────────────────
-function getPlanDisplayName(
-  variant:     MenuVariant,
-  accountTier: string
-): string {
-  if (variant === "agent_solo" && accountTier === "starter") {
-    return "Smart Start";
-  }
-  return VARIANT_THEMES[variant].planLabel;
 }
 
 // ─── Workdesk kompaktná položka (secondary sidebar) ───────────────────────
@@ -172,7 +170,7 @@ function WorkdeskNavRow({
             ...countStyle,
           }}
         >
-          {item.badge.label === "live" ? "3" : item.badge.label === "hot" ? "17" : item.badge.label.slice(0, 3)}
+          {formatWorkdeskBadgeLabel(item.badge)}
         </span>
       ) : null}
     </Link>
@@ -548,6 +546,7 @@ export default function AppSidebar({
   isInTeam,
   appRole,
   agencyName,
+  agencyManualPlan,
   userName,
 }: AppSidebarProps) {
   const pathname = usePathname();
@@ -562,17 +561,36 @@ export default function AppSidebar({
   const [demoProgram,     setDemoProgram]     = useState<FounderDemoProgram>("protocol_authority");
   const [toastVisible,    setToastVisible]    = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<NavSection[]>([]);
+  const [leadsCount, setLeadsCount] = useState<number | null>(null);
   const gKeyRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const gPressedRef = useRef(false);
 
-  // Vypočítaj variant
-  const variant: MenuVariant = getMenuVariant(uiRole, isInTeam, appRole);
-  const demoVariant          = getDemoVariant(demoProgram);
-  const renderVariant        = isFounderDemo ? demoVariant : variant;
-  const theme                = VARIANT_THEMES[renderVariant];
-  const planLabel            = isFounderDemo
+  const menuContext = resolveWorkdeskMenuContext(
+    {
+      ui_role: uiRole,
+      account_tier: accountTier,
+      role: appRole,
+      team_license_id: isInTeam ? "team" : null,
+    },
+    { appRole, agencyManualPlan },
+  );
+  const demoVariant   = getDemoVariant(demoProgram);
+  const renderVariant = isFounderDemo ? demoVariant : menuContext.variant;
+  const theme         = VARIANT_THEMES[renderVariant];
+  const demoTierMap: Record<FounderDemoProgram, string> = {
+    free: "free",
+    starter: "starter",
+    active_force: "pro",
+    market_vision: "market_vision",
+    protocol_authority: "protocol_authority",
+  };
+  const navTier = isFounderDemo ? demoTierMap[demoProgram] : menuContext.accountTier;
+  const planLabel     = isFounderDemo
     ? FOUNDER_DEMO_PROGRAMS.find((p) => p.id === demoProgram)?.label ?? "Protocol Authority"
-    : getPlanDisplayName(variant, accountTier);
+    : menuContext.planLabel;
+  const roleLabel     = isFounderDemo
+    ? VARIANT_THEMES[demoVariant].roleLabel
+    : menuContext.roleLabel;
 
   // Načítaj demo program z localStorage
   useEffect(() => {
@@ -652,6 +670,19 @@ export default function AppSidebar({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [router]);
 
+  // Počet leadov pre badge „Začni tu“ na importe
+  useEffect(() => {
+    fetch("/api/crm/tenant-health", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { snapshot?: { counts?: { leads?: number } } } | null) => {
+        const count = data?.snapshot?.counts?.leads;
+        if (typeof count === "number") setLeadsCount(count);
+      })
+      .catch(() => {
+        // badge je optional — bez countu necháme statické menu
+      });
+  }, []);
+
   // Načítaj permissions pre tímového makléra
   useEffect(() => {
     if (renderVariant !== "agent_team") return;
@@ -676,10 +707,12 @@ export default function AppSidebar({
     });
   }, []);
 
-  // Nav položky filtrované podľa variantu + permissions
-  const navItems = filterItemsByDemoProgram(
-    getNavItems(renderVariant, permissions),
-    demoProgram
+  // Nav položky filtrované podľa variantu + permissions + import badge
+  const navItems = applyImportNavBadges(
+    isFounderDemo
+      ? filterItemsByDemoProgram(getNavItems(renderVariant, permissions, navTier), demoProgram)
+      : getNavItems(renderVariant, permissions, navTier),
+    leadsCount,
   );
 
   // Zoskup do sekcií v správnom poradí
@@ -971,7 +1004,7 @@ export default function AppSidebar({
                   lineHeight: "1.2",
                 }}
               >
-                {theme.roleLabel}
+                {roleLabel}
               </p>
             </div>
           </div>

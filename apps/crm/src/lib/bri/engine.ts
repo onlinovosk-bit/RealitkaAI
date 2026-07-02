@@ -2,6 +2,7 @@
 // Revolis.AI — BRI Engine v2
 // Server-side compute, history, and notification dispatch
 // ================================================================
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { createClient }        from '@/lib/supabase/server'
 import { logEvent }            from '@/lib/events/log-event'
 import type {
@@ -104,9 +105,10 @@ export async function getBRIHistory(
  */
 export async function getHotLeads(
   profileId: string,
-  limit:     number = 10
+  limit:     number = 10,
+  client?:   SupabaseClient,
 ): Promise<Array<BRIScoreV2 & { full_name: string; phone: string | null }>> {
-  const supabase = await createClient()
+  const supabase = client ?? await createClient()
   const { data } = await supabase
     .from('lead_scores')
     .select('*, leads(full_name, phone)')

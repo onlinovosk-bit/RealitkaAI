@@ -1,0 +1,68 @@
+{
+  "at": "2026-06-26T19:49:36.379Z",
+  "base": "https://app.revolis.ai",
+  "pr": 257,
+  "mergeCommit": "e7887ea42",
+  "auth": {
+    "method": "admin_magic_link",
+    "email": "rastislav.smolko@gmail.com"
+  },
+  "steps": {
+    "apiUnauth": {
+      "ok": true,
+      "status": 401
+    },
+    "magicLinkAuth": {
+      "ok": true,
+      "userId": "91269dcd-6fe0-4431-a75d-6f9c5987ddba",
+      "cookieCount": 1
+    },
+    "leadsListLink": {
+      "ok": true,
+      "href": "/leads/new",
+      "linkText": "Plný formulár",
+      "url": "https://app.revolis.ai/leads"
+    },
+    "newLeadPage": {
+      "ok": true,
+      "url": "https://app.revolis.ai/leads/new",
+      "heading": "Nová príležitosť"
+    },
+    "createLead": {
+      "apiOk": true,
+      "redirectOk": true,
+      "ok": true,
+      "apiStatus": 200,
+      "apiError": null,
+      "leadId": "6d8dfbb3-0d21-4072-b24f-dae143078535",
+      "redirectUrl": "https://app.revolis.ai/leads/6d8dfbb3-0d21-4072-b24f-dae143078535",
+      "leadName": "W-LEADS smoke 2026-06-26 19:49:36",
+      "agencyId": null,
+      "note": "redirect optional — inventory pass satisfies acceptance"
+    },
+    "inventory": {
+      "ok": true,
+      "leadId": "6d8dfbb3-0d21-4072-b24f-dae143078535",
+      "leadName": "W-LEADS smoke 2026-06-26 19:49:36"
+    },
+    "browser": {
+      "ok": true
+    }
+  },
+  "db": {
+    "leadsBefore": 439,
+    "smokeLead": {
+      "id": "6d8dfbb3-0d21-4072-b24f-dae143078535",
+      "name": "W-LEADS smoke 2026-06-26 19:49:36",
+      "email": "w-leads-smoke+1782503376379@revolis.ai",
+      "source": "Web formulár",
+      "agency_id": "11111111-1111-1111-1111-111111111111"
+    },
+    "leadsAfter": 440,
+    "cleanedUp": true,
+    "leadsAfterCleanup": 439
+  },
+  "errors": [],
+  "ok": true,
+  "rootCause": null
+}

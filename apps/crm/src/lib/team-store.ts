@@ -213,8 +213,11 @@ export async function listProfiles(
   return (data as SupabaseProfileRow[]).map(mapProfile);
 }
 
-export async function createTeam(input: { agencyId: string; name: string }) {
-  const supabase = await resolveTenantSupabase();
+export async function createTeam(
+  input: { agencyId: string; name: string },
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+) {
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     const teams = getDemoTeamsStore();
@@ -246,9 +249,10 @@ export async function createTeam(input: { agencyId: string; name: string }) {
 
 export async function updateTeam(
   id: string,
-  input: { name?: string; isActive?: boolean }
+  input: { name?: string; isActive?: boolean },
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
 ) {
-  const supabase = await resolveTenantSupabase();
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     const teams = getDemoTeamsStore();
@@ -284,15 +288,18 @@ export async function updateTeam(
   return mapTeam(data as SupabaseTeamRow);
 }
 
-export async function createProfile(input: {
-  agencyId: string;
-  teamId: string | null;
-  fullName: string;
-  email: string;
-  role: string;
-  phone: string;
-}) {
-  const supabase = await resolveTenantSupabase();
+export async function createProfile(
+  input: {
+    agencyId: string;
+    teamId: string | null;
+    fullName: string;
+    email: string;
+    role: string;
+    phone: string;
+  },
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+) {
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     const profiles = getDemoProfilesStore();
@@ -408,8 +415,12 @@ export async function updateProfile(
   return mapProfile(data as SupabaseProfileRow);
 }
 
-export async function assignLeadToProfile(leadId: string, profileId: string) {
-  const supabase = await resolveTenantSupabase();
+export async function assignLeadToProfile(
+  leadId: string,
+  profileId: string,
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+) {
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     return { ok: true };

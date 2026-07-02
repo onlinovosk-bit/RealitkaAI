@@ -111,7 +111,7 @@ export function ArbitrageDashboard({ profileId }: ArbitrageDashboardProps) {
               : `Žiadne ${activeFilter === 'viewed' ? 'pozreté' : 'kontaktované'} záznamy`}
           </p>
           <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)', margin: 0 }}>
-            Ďalší sken prebehne automaticky každých 6 hodín
+            Ďalší sken prebehne automaticky raz denne
           </p>
         </div>
       ) : (

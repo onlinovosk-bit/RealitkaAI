@@ -34,7 +34,7 @@ export async function POST(request: Request) {
       status: body.status ?? "open",
       priority: body.priority ?? "medium",
       dueAt: body.dueAt ?? null,
-    });
+    }, supabase);
 
     await createActivity({
       leadId: task.leadId ?? null,
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
         priority: task.priority,
         status: task.status,
       },
-    });
+    }, supabase);
 
     return NextResponse.json({ ok: true, task });
   } catch (error) {

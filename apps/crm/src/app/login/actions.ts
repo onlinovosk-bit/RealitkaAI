@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { linkProfileToAuthUser } from "@/lib/profiles/resolve-profile-for-auth";
 
 function normalizeNextPath(value: string) {
   if (!value || !value.startsWith("/")) {
@@ -42,10 +43,12 @@ export async function login(formData: FormData) {
   const authUserId = data.user?.id;
 
   if (authUserId) {
+    await linkProfileToAuthUser(supabase, authUserId, data.user?.email);
+
     const { data: profile } = await supabase
       .from("profiles")
       .select("role")
-      .eq("auth_user_id", authUserId)
+      .or(`auth_user_id.eq.${authUserId},id.eq.${authUserId}`)
       .maybeSingle();
 
     const role = profile?.role ?? null;

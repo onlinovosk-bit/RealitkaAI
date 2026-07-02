@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     const propertyId = body?.propertyId as string | undefined;
 
     if (leadId) {
-      const result = await recalculateMatchesForLead(leadId);
+      const result = await recalculateMatchesForLead(leadId, supabase);
 
       try {
         await createActivity({
@@ -32,14 +32,14 @@ export async function POST(request: Request) {
           source: "matching",
           severity: "info",
           meta: result,
-        });
+        }, supabase);
       } catch {}
 
       return okResponse({ mode: "lead", result });
     }
 
     if (propertyId) {
-      const result = await recalculateMatchesForProperty(propertyId);
+      const result = await recalculateMatchesForProperty(propertyId, supabase);
 
       try {
         await createActivity({
@@ -53,13 +53,13 @@ export async function POST(request: Request) {
           source: "matching",
           severity: "info",
           meta: result,
-        });
+        }, supabase);
       } catch {}
 
       return okResponse({ mode: "property", result });
     }
 
-    const result = await recalculateAllMatches();
+    const result = await recalculateAllMatches(supabase);
 
     try {
       await createActivity({
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
         source: "matching",
         severity: "info",
         meta: result,
-      });
+      }, supabase);
     } catch {}
 
     return okResponse({ mode: "all", result });

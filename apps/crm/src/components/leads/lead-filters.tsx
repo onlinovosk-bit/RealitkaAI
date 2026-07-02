@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { type Lead } from "@/lib/leads-store";
+import { isLeadHot } from "@/lib/leads/lead-display-score";
+import { isLeadHotOrWarm, isLeadScored } from "@/lib/leads/score-display";
 import { SLATE_HORIZON, WORKDESK_INPUT, WORKDESK_PANEL } from "@/lib/slate-horizon-theme";
 
 type TeamOption = {
@@ -35,6 +37,7 @@ export default function LeadFilters({
   const [minScore, setMinScore] = useState("");
   const [assignedProfileId, setAssignedProfileId] = useState("");
   const [teamId, setTeamId] = useState("");
+  const [scoreView, setScoreView] = useState<"all" | "scored" | "hot_warm">("all");
 
   const statuses = useMemo(
     () => Array.from(new Set(leads.map((lead) => lead.status))),
@@ -98,8 +101,30 @@ export default function LeadFilters({
       );
     }
 
+    if (scoreView === "scored") {
+      filtered = filtered.filter((lead) =>
+        isLeadScored({
+          score: lead.score,
+          aiPriority: lead.aiPriority,
+          buyer_readiness_score: lead.buyer_readiness_score,
+          aiTriageAt: lead.aiTriageAt,
+          lastContact: lead.lastContact,
+        }),
+      );
+    } else if (scoreView === "hot_warm") {
+      filtered = filtered.filter((lead) =>
+        isLeadHotOrWarm({
+          score: lead.score,
+          aiPriority: lead.aiPriority,
+          buyer_readiness_score: lead.buyer_readiness_score,
+          aiTriageAt: lead.aiTriageAt,
+          lastContact: lead.lastContact,
+        }),
+      );
+    }
+
     onFilter(filtered);
-  }, [leads, q, status, location, minScore, assignedProfileId, teamId, activeProfiles, onFilter]);
+  }, [leads, q, status, location, minScore, assignedProfileId, teamId, scoreView, activeProfiles, onFilter]);
 
   function clearFilters() {
     setQ("");
@@ -108,9 +133,10 @@ export default function LeadFilters({
     setMinScore("");
     setAssignedProfileId("");
     setTeamId("");
+    setScoreView("all");
   }
 
-  const hotCount = leads.filter((l) => l.status === "Horúci" || l.score >= 85).length;
+  const hotCount = leads.filter(isLeadHot).length;
   const isHotFilter = status === "Horúci" && minScore === "";
 
   function activateHotFilter() {
@@ -213,7 +239,7 @@ export default function LeadFilters({
             value={minScore}
             onChange={(e) => setMinScore(e.target.value)}
             min="0" max="100"
-            placeholder="70"
+            placeholder="Všetky"
             className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
             style={inputStyle}
           />
@@ -238,7 +264,27 @@ export default function LeadFilters({
         </div>
       </div>
 
-      <div className="mt-3 flex gap-2">
+      <div className="mt-3 flex flex-wrap gap-2 items-center">
+        <span className="text-xs font-medium" style={labelStyle}>Skóre:</span>
+        {([
+          ["all", "Všetci leady"],
+          ["scored", "Iba skórované"],
+          ["hot_warm", "HOT/WARM"],
+        ] as const).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setScoreView(key)}
+            className="rounded-xl border px-3 py-1.5 text-xs font-medium min-h-[32px]"
+            style={{
+              borderColor: scoreView === key ? SLATE_HORIZON.brand : WORKDESK_INPUT.borderColor,
+              color: scoreView === key ? SLATE_HORIZON.brandDeep : SLATE_HORIZON.muted,
+              background: scoreView === key ? SLATE_HORIZON.soft : "transparent",
+            }}
+          >
+            {label}
+          </button>
+        ))}
         <button
           type="button"
           onClick={clearFilters}

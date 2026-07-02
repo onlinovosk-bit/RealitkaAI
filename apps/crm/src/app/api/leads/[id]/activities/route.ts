@@ -28,7 +28,7 @@ export async function GET(
       }
     }
 
-    const activities = await getActivitiesByLeadId(id);
+    const activities = await getActivitiesByLeadId(id, supabase);
     return NextResponse.json({ ok: true, activities });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Nepodarilo sa načítať aktivity.";
@@ -72,12 +72,12 @@ export async function POST(
       actorName: "Agent",
       source: "crm",
       severity: "info",
-    });
+    }, supabase);
 
     rescoreLead(id); // fire-and-forget
 
     const profile = await getCurrentProfile();
-    const lead = await getLead(id);
+    const lead = await getLead(id, supabase);
     const leadName = lead?.name?.trim() || "Kontakt";
 
     let calendar:

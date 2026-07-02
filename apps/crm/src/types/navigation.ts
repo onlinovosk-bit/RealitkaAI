@@ -1,4 +1,5 @@
 import type { UiRole } from "./intelligence-hub";
+import { canRenderModule, normalizeModuleTier, type ModuleKey } from "@/lib/modules/registry";
 
 // ─── Menu varianty ─────────────────────────────────────────────────────────
 export type MenuVariant =
@@ -26,7 +27,8 @@ export type NavIcon =
   | "ai"          // AI asistent
   | "team-pulse"  // Tímový pipeline
   | "shield"      // Leady kolegov
-  | "lock";       // Permissions
+  | "lock"        // Permissions
+  | "upload";     // Import kontaktov
 
 export type NavBadge = {
   label:   string;
@@ -125,7 +127,7 @@ export const VARIANT_THEMES: Record<MenuVariant, VariantTheme> = {
     accentBorder: "#06B6D4",
     planLabel:    "Market Vision",
     planIcon:     "◉",
-    roleLabel:    "Majiteľ kancelárie",
+    roleLabel:    "Majiteľ RK",
     greeting:     "Prehľad tržieb a výkonnosť pipeline",
     badgeColors: {
       hot:      { bg: "rgba(239,68,68,0.15)",   color: "#FCA5A5", border: "rgba(239,68,68,0.30)"   },
@@ -171,6 +173,15 @@ export const ALL_NAV_ITEMS: NavItem[] = [
     href: "/dashboard",
     icon: "clock",
     badge: { label: "live", variant: "hot" },
+    section: "main",
+    showFor: ["agent_solo", "agent_team"],
+  },
+  {
+    id: "import-contacts",
+    label: "Importovať kontakty",
+    sublabel: "Realvia · RealSoft · CSV za < 10 min",
+    href: "/import/universal",
+    icon: "upload",
     section: "main",
     showFor: ["agent_solo", "agent_team"],
   },
@@ -277,7 +288,6 @@ export const ALL_NAV_ITEMS: NavItem[] = [
     section: "tools",
     showFor: ["agent_solo", "agent_team"],
   },
-
   // ════════ OWNER HLAVNÉ – owner_vision + owner_protocol ════════
 
   {
@@ -300,11 +310,29 @@ export const ALL_NAV_ITEMS: NavItem[] = [
     showFor: ["owner_vision", "owner_protocol"],
   },
   {
+    id: "import-contacts",
+    label: "Importovať kontakty",
+    sublabel: "Realvia · RealSoft · CSV za < 10 min",
+    href: "/import/universal",
+    icon: "upload",
+    section: "main",
+    showFor: ["owner_vision", "owner_protocol"],
+  },
+  {
     id: "team",
     label: "Môj tím výkonnosť",
     sublabel: "Agent scoring · Aktivity · Ghost Resurrection",
     href: "/team",
     icon: "users",
+    section: "main",
+    showFor: ["owner_vision", "owner_protocol"],
+  },
+  {
+    id: "ceo-command",
+    label: "Riaditeľské centrum",
+    sublabel: "Riaditeľské príkazy · Briefy z rutín",
+    href: "/ceo-command",
+    icon: "lock",
     section: "main",
     showFor: ["owner_vision", "owner_protocol"],
   },
@@ -365,7 +393,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   },
   {
     id: "onboarding-monitor",
-    label: "Onboarding Automat",
+    label: "Automat onboardingu",
     sublabel: "Adopcia klientov · At-risk · Emaily",
     href: "/onboarding-monitor",
     icon: "chart-up",
@@ -375,29 +403,75 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   },
 ];
 
+const NAV_MODULE_KEYS: Partial<Record<NavItem["id"], ModuleKey>> = {
+  "hidden-market": "menu_hidden_market_hub",
+  competition: "menu_competition_radar",
+};
+
+function fallbackTierFromVariant(variant: MenuVariant): string {
+  if (variant === "owner_protocol") return "protocol_authority";
+  if (variant === "owner_vision") return "market_vision";
+  if (variant === "agent_team" || variant === "agent_solo") return "pro";
+  return "free";
+}
+
 // ─── Helper funkcie ────────────────────────────────────────────────────────
+
+export const IMPORT_CONTACTS_NAV_ID = "import-contacts";
 
 export function getNavItems(
   variant:     MenuVariant,
-  permissions?: Partial<TeamMemberPermissions>
+  permissions?: Partial<TeamMemberPermissions>,
+  accountTier?: string | null,
 ): NavItem[] {
   const perms = { ...DEFAULT_TEAM_PERMISSIONS, ...permissions };
+  const tier = normalizeModuleTier(accountTier ?? fallbackTierFromVariant(variant));
+
   return ALL_NAV_ITEMS.filter((item) => {
     if (!item.showFor.includes(variant)) return false;
     if (item.permissionKey) return perms[item.permissionKey] === true;
+    const moduleKey = NAV_MODULE_KEYS[item.id];
+    if (moduleKey) return canRenderModule(moduleKey, tier);
     return true;
+  });
+}
+
+/** Badge „Začni tu“ pre nové RK s 0 leadmi — inak bez badge. */
+export function applyImportNavBadges(
+  items: NavItem[],
+  leadsCount: number | null,
+): NavItem[] {
+  if (leadsCount === null) return items;
+
+  return items.map((item) => {
+    if (item.id !== IMPORT_CONTACTS_NAV_ID) return item;
+    if (leadsCount === 0) {
+      return { ...item, badge: { label: "Začni tu", variant: "new" } };
+    }
+    const { badge: _removed, ...withoutBadge } = item;
+    return withoutBadge;
   });
 }
 
 export function getMenuVariant(
   uiRole:   string,
   isInTeam: boolean,
-  appRole?: string
+  appRole?: string,
+  accountTier?: string,
 ): MenuVariant {
-  if (appRole === "founder")              return "owner_protocol";
-  if (uiRole === "owner_protocol")        return "owner_protocol";
-  if (uiRole === "owner_vision")          return "owner_vision";
-  if (uiRole === "agent" && isInTeam)     return "agent_team";
+  if (appRole === "founder") return "owner_protocol";
+  if (uiRole === "owner_protocol") return "owner_protocol";
+  if (uiRole === "owner_vision") return "owner_vision";
+
+  const tier = accountTier ?? "free";
+  if (appRole === "owner" || appRole === "manager" || appRole === "admin") {
+    if (tier === "protocol_authority") return "owner_protocol";
+    if (tier === "market_vision" || tier === "enterprise") return "owner_vision";
+  }
+  if (tier === "protocol_authority") return "owner_protocol";
+  if (tier === "market_vision" || tier === "enterprise") return "owner_vision";
+
+  if (uiRole === "agent" && isInTeam) return "agent_team";
   return "agent_solo";
 }
 

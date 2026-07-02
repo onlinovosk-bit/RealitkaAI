@@ -58,7 +58,7 @@ export default function L99DecisionOpsPanel({ leads }: Props) {
               ok: false,
               error: data.error,
               hint:
-                "Na produkcii skontroluj Vercel env: DECISION_ENGINE_ENABLED / CLOSING_WINDOW_ENABLED / RESCUE_AUTOMATION_ENABLED — nesmú byť explicitne false. Po deploye s novým decision-flags.ts stačí premenné odstrániť alebo nastaviť true.",
+                "Decision ops sú opt-in: nastav vo Vercel Production DECISION_ENGINE_ENABLED=true (a prípadne CLOSING_WINDOW_ENABLED / RESCUE_AUTOMATION_ENABLED=true). Bez explicitného true sú vypnuté.",
               ...data,
             },
             null,

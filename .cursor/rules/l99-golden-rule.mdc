@@ -10,6 +10,7 @@ Platí vždy pre zmeny v tomto repozitári:
 - 1 PR = 1 logická zmena.
 - Každý PR musí mať vlastný Vercel Preview Deploy.
 - Merge do `main` je povolený len po zelenom CI a zelených smoke testoch.
+- `main` branch protection: **Require branches to be up to date before merging** + required check `Lint, test, build` — pred merge vždy rebase na aktuálny `main`.
 
 ## Nikdy
 
@@ -23,6 +24,7 @@ Platí vždy pre zmeny v tomto repozitári:
 - Po každej zmene deploy nastavení skontroluj:
   `Vercel -> Settings -> Build and Deployment -> Production Overrides`.
 - Pred merge vždy spusti `tests/smoke.spec.ts` (alebo ekvivalentný smoke run).
+- Zmena správania flagu/featury: `rg` v `tests/verification/` a aktualizuj dotknuté `*.verification.test.ts` v **tom istom PR** (živá špecifikácia — pozri `apps/crm/tests/verification/README.md`).
 
 ## PR kontrolný zoznam
 

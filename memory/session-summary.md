@@ -1,28 +1,16 @@
-## Session 2026-05-24 — Realvia L99 doplnenie
-
+## Session 2026-06-23
 ### Dokončené
-- **Inbound diagnostics** — `apps/crm/src/lib/realvia/inboundDiagnostics.ts`, Vitest `inboundDiagnostics.test.ts`, GET `?diag=config` (+ CRON Bearer) na `route.ts`; hint pre prod len `REALVIA_SHARED_SECRET` vs Realvia párované hlavičky.
-- **Krizový brief** — `apps/crm/docs/REALVIA-REVOLIS-CRISIS-TEAM-BRIEF.md` (+ postup „neznáma chyba X“).
-- Vitest `src/lib/realvia`: **19 passed** (4 súbory).
+- PR #240 merged — Guardian CTA deep-link `source_id` + edit slide-over
+- PR #242 merged — vyhodenie 4 L99 governance docs (AP-012)
+- PR #241 merged — fixture-only disabled edit CTA + honest copy
+- Obsidian vault `RealitkaAI-Memory` AGENTS-CONTEXT sync (`3dfdb9d`)
+- Ruflo swarm `swarm-1782247126506-rsmezw` + hive `hive-1782247126587-mxn1n0` initialized
 
-### Pending (operácia mimo kódu)
-- Nasadiť migráciu `20260523183000_resolve_agency_id_for_realvia_rpc.sql` na Supabase (ak ešte nie).
-- Push commity na `origin`; preview + smoke podľa L99.
-
-### Kľúčové cesty
-- `apps/crm/src/app/api/webhooks/realvia/route.ts`
-- `apps/crm/src/lib/realvia/resolveAgency.ts` + migrácia RPC
-- `apps/crm/docs/REALVIA-REVOLIS-CRISIS-TEAM-BRIEF.md`
+### Rozpracované / Pending
+- Guardian PROD smoke **1/5** — bod 4 nepreklepnutý; 1/2/5 manuálne
+- Lemon Squeezy Share — pending blocker
+- Externý cron worker (5 min) — nepotvrdený
+- Tomáš / dual export Realvia + Revolis
 
 ### Ďalší krok
-Dva oddelené PR: (1) inbound diag + dokument, (2) agency RPC migrácia + `resolveAgency`.
-
----
-
-## Session 2026-05-23 — dokumentácia / agency
-
-### Dokončené (história)
-- L99 dokumenty (`L99-master-prompt.md`, routing skill, Ruflo orchestration …), Project Rules `.mdc`.
-
-### Poznámka
-Staršie línie „Session ended“ odstránené pri údržbe tohto súboru.
+Spusti `prod-guardian-smoke-once.mjs` so Smolko creds; nastav GitHub SCHEMA_GUARD secrets + cron-job.org CRON_SECRET

@@ -6,6 +6,8 @@ import type {
   LicenseTierKey,
 } from "./types";
 
+export type { LicenseCapability } from "./types";
+
 /** Rank ladder — single source for tier comparisons */
 export const TIER_RANK: Record<LicenseTierKey, number> = {
   free: 0,
@@ -100,7 +102,7 @@ export const CAPABILITY_REGISTRY: Record<LicenseCapability, CapabilityDefinition
   },
   canViewDemandHeatmap: {
     capability: "canViewDemandHeatmap",
-    label: "L99 Radar príležitostí",
+    label: "Radar dopytu a ponuky",
     teaser: "Heatmapa dopytu vs. ponuky — kde je diera na trhu.",
     requiredProgram: "guardian",
     upgradeProgram: "guardian",
@@ -183,7 +185,7 @@ const PROGRAM_MIN_RANK: Record<LicenseProgramId, number> = {
 export function normalizeLicenseTier(raw: string | null | undefined): LicenseTierKey {
   const tier = (raw ?? "free").trim().toLowerCase();
   if (tier in TIER_RANK) return tier as LicenseTierKey;
-  if (tier === "scale") return "pro";
+  if (tier === "scale" || tier === "active_force" || tier === "active") return "pro";
   return "free";
 }
 

@@ -1,4 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
+import { resolveAccountTier } from "@/lib/license/resolve-account-tier";
+import {
+  linkProfileToAuthUser,
+  resolveProfileForAuthUser,
+} from "@/lib/profiles/resolve-profile-for-auth";
+import { normalizeProfileEntitlements } from "@/lib/profiles/normalize-profile-entitlements";
 import { redirect } from "next/navigation";
 import AppSidebar from "@/components/layout/AppSidebar";
 import { WorkdeskTopbar } from "@/components/layout/WorkdeskTopbar";
@@ -15,14 +21,32 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
   if (!user) redirect("/login");
 
-  // Zhodné s profile_agencies_for_auth(): párovanie cez auth_user_id alebo legacy profiles.id.
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select(
-      "ui_role, account_tier, full_name, agency_name, agency_id, role, team_license_id"
-    )
-    .or(`auth_user_id.eq.${user.id},id.eq.${user.id}`)
-    .maybeSingle();
+  await linkProfileToAuthUser(supabase, user.id, user.email);
+
+  // Only columns on `profiles` — invalid fields (e.g. agency_name, team_license_id) break the whole select.
+  const SIDEBAR_PROFILE_SELECT =
+    "id, ui_role, account_tier, full_name, agency_id, role, email";
+  const { profile: rawProfile } = await resolveProfileForAuthUser(
+    supabase,
+    user.id,
+    SIDEBAR_PROFILE_SELECT,
+    user.email,
+  );
+  const profile = normalizeProfileEntitlements(rawProfile);
+
+  let agencyName: string | undefined;
+  let agencyManualPlan: string | null = null;
+  if (profile?.agency_id) {
+    const { data: agency } = await supabase
+      .from("agencies")
+      .select("name, manual_plan")
+      .eq("id", profile.agency_id)
+      .maybeSingle();
+    agencyName = agency?.name ?? undefined;
+    agencyManualPlan = agency?.manual_plan ?? null;
+  }
+
+  const accountTier = resolveAccountTier(profile, agencyManualPlan);
 
   return (
     <div
@@ -32,14 +56,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <SessionRecovery />
       <AppSidebar
         uiRole={profile?.ui_role ?? "agent"}
-        accountTier={profile?.account_tier ?? "free"}
-        isInTeam={!!profile?.team_license_id}
+        accountTier={accountTier}
+        agencyManualPlan={agencyManualPlan}
+        isInTeam={false}
         appRole={profile?.role ?? undefined}
-        agencyName={profile?.agency_name ?? undefined}
-        userName={profile?.full_name ?? undefined}
+        agencyName={agencyName}
+        userName={profile?.full_name ?? user.email ?? undefined}
       />
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        <WorkdeskTopbar userName={profile?.full_name ?? undefined} />
+        <WorkdeskTopbar userName={profile?.full_name ?? user.email ?? undefined} />
         <main
           style={{
             flex: 1,

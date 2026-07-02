@@ -7,10 +7,14 @@ const BYPASS_PREFIXES = [
   '/api/cron/',               // CRON_SECRET header auth
   '/api/webhooks/',           // Route-level auth (Realvia identifikator, signatures, etc.)
   '/api/realvia/',            // Realvia XML import — validateRequest in route handler
+  '/api/uc/',                 // UC Export API — user/pass in body (Brief 14)
+  '/api/realsoft/',           // RealSoft UC alias — same protocol as /api/uc/import
   '/api/resend-webhook/',     // Resend event stream (signature-verified)
   '/api/health',              // uptime monitoring (public)
   '/api/healthz',             // uptime monitoring (public)
   '/api/demo/',               // public demo capture (custom token or public form)
+  '/api/leads/inbound',       // public lead form B1 (token in body, not session)
+  '/api/acquire/email',       // Resend inbound webhook (signature in handler)
   '/api/bsm-reforma/',        // public BSM lead intake form
   '/api/sales-funnel/',       // public demo request form
   '/api/morning-brief/track/', // email open/click tracking pixels (must be public)
@@ -30,6 +34,11 @@ export async function middleware(request: NextRequest) {
 
   // Only guard API routes
   if (!pathname.startsWith('/api/')) return NextResponse.next()
+
+  // PR-4: removed scrape route → 404; scoring 410 shim (prod uses src/proxy.ts too)
+  if (pathname === '/api/scrape' || pathname === '/api/scoring' || pathname === '/api/segmentation') {
+    return NextResponse.next()
+  }
 
   // Explicit bypass paths
   if (BYPASS_PREFIXES.some(p => pathname.startsWith(p))) return NextResponse.next()

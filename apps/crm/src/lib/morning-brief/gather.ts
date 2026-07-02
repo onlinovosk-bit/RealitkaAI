@@ -2,7 +2,7 @@
 // Revolis.AI — Morning Brief Data Gatherer
 // Collects all overnight signals for a single profile
 // ================================================================
-import { createClient }    from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import { getHotLeads }     from '@/lib/bri/engine'
 import type {
   BriefSettings,
@@ -33,11 +33,26 @@ export interface GatheredData {
     newInquiries:   number
     scoreIncreases: number
     weeklyRevForecast: number | null
+    pendingContact: number
+    hotPending: number
+    staleContacts48h: number
+    pipelineValueEur: number
+    priorityLeadNames: string[]
+    priceDropCount: number
   }
 }
 
+const STALE_HOURS = 48
+
+function parseBudgetEur(raw: unknown): number {
+  if (typeof raw !== 'string') return 0
+  const digits = raw.replace(/[^\d]/g, '')
+  const n = parseInt(digits, 10)
+  return Number.isFinite(n) ? n : 0
+}
+
 export async function gatherBriefData(profileId: string): Promise<GatheredData | null> {
-  const supabase  = await createClient()
+  const supabase  = createAdminClient()
   const since     = new Date(Date.now() - OVERNIGHT_WINDOW_HOURS * 3_600_000).toISOString()
 
   // ── Profile + settings ────────────────────────────────────
@@ -59,7 +74,7 @@ export async function gatherBriefData(profileId: string): Promise<GatheredData |
   if (!profile || !settings) return null
 
   // ── Hot leads (BRI >= 60) ─────────────────────────────────
-  const hotLeads = await getHotLeads(profileId, settings.lead_count ?? 5)
+  const hotLeads = await getHotLeads(profileId, settings.lead_count ?? 5, supabase)
 
   // ── Overnight events ──────────────────────────────────────
   const { data: overnightEvents } = await supabase
@@ -155,11 +170,40 @@ export async function gatherBriefData(profileId: string): Promise<GatheredData |
   }
 
   // ── Active leads count ────────────────────────────────────
-  const { count: activeLeads } = await supabase
-    .from('leads')
-    .select('id', { count: 'exact', head: true })
-    .eq('profile_id', profileId)
-    .eq('status', 'active')
+  const staleCutoff = new Date(Date.now() - STALE_HOURS * 3_600_000).toISOString()
+
+  const [{ count: activeLeads }, { data: pipelineLeads }, { data: priorityLeads }, { count: staleContacts48h }] =
+    await Promise.all([
+      supabase
+        .from('leads')
+        .select('id', { count: 'exact', head: true })
+        .eq('profile_id', profileId)
+        .neq('status', 'closed')
+        .neq('status', 'lost'),
+      supabase
+        .from('leads')
+        .select('budget, status')
+        .eq('profile_id', profileId),
+      supabase
+        .from('leads')
+        .select('full_name, ai_priority, score, last_contact')
+        .eq('profile_id', profileId)
+        .in('ai_priority', ['Vysoká', 'Stredná'])
+        .order('ai_priority', { ascending: true })
+        .limit(5),
+      supabase
+        .from('leads')
+        .select('id', { count: 'exact', head: true })
+        .eq('profile_id', profileId)
+        .or(`last_contact.is.null,last_contact.lt.${staleCutoff}`),
+    ])
+
+  const pipelineValueEur = (pipelineLeads ?? [])
+    .filter((row) => row.status !== 'closed' && row.status !== 'lost')
+    .reduce((sum, row) => sum + parseBudgetEur(row.budget), 0)
+
+  const pendingContact = activeLeads ?? 0
+  const hotPending = hotLeads.length
 
   return {
     settings:  settings as BriefSettings,
@@ -168,11 +212,17 @@ export async function gatherBriefData(profileId: string): Promise<GatheredData |
     hotLeads,
     overnight: { newLeads, lvChanges, arbitrage, priceDrops, replies },
     stats: {
-      hotLeads:       hotLeads.length,
-      activeLeads:    activeLeads ?? 0,
-      newInquiries:   newLeads,
+      hotLeads: hotLeads.length,
+      activeLeads: activeLeads ?? 0,
+      newInquiries: newLeads,
       scoreIncreases,
       weeklyRevForecast: null,
+      pendingContact,
+      hotPending,
+      staleContacts48h: staleContacts48h ?? 0,
+      pipelineValueEur,
+      priorityLeadNames: (priorityLeads ?? []).map((l) => l.full_name ?? 'Lead'),
+      priceDropCount: priceDrops.length,
     },
   }
 }

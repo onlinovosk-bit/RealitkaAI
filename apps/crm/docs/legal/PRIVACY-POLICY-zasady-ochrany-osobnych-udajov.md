@@ -3,8 +3,8 @@
 **Prevádzkovateľ:** Revolis.AI
 **Platforma:** https://app.revolis.ai
 **Kontakt pre ochranu osobných údajov:** privacy@revolis.ai
-**Účinnosť od:** 15. apríla 2026
-**Verzia:** 2.0
+**Účinnosť od:** 2. júna 2026
+**Verzia:** 2.1
 
 ---
 
@@ -59,6 +59,13 @@ Naše AI moduly generujú z údajov vložených zákazníkmi:
 - **Predikcie** — pravdepodobnosť uzavretia obchodu
 
 Tieto údaje sú odvodené a pravdepodobnostné. Nepoužívame ich na automatizované rozhodovanie s právnymi účinkami (čl. 22 GDPR). Konečné rozhodnutie vždy robí človek (makléri).
+
+### 3.5 L99 seatové a prevádzkové údaje
+
+V rámci L99 modelu spracúvame aj:
+- počet aktívnych seatov na tenant
+- aktivované add-on moduly
+- metriky aktivácie (napr. použitie Sofia AI 10+ za 30 dní) na účely reliability, podpory a zmluvného plnenia
 
 ---
 
@@ -164,6 +171,8 @@ Nepoužívame reklamné cookies ani retargeting. Nastavenia cookies môžete zme
 
 O podstatných zmenách týchto zásad informujeme registrovaných používateľov e-mailom alebo notifikáciou v Platforme najmenej 14 dní pred účinnosťou zmeny. Aktuálnu verziu vždy nájdete na tejto stránke.
 
+Podstatné zmeny AI režimov evidujeme v zákaznícky dostupnom changelogu s dátumom nasadenia a stručným dopadom.
+
 ---
 
 ## 12. KONTAKT
@@ -180,5 +189,5 @@ Web: https://dataprotection.gov.sk
 
 ---
 
-**Účinné od:** 15. apríla 2026
-**Verzia:** 2.0
+**Účinné od:** 2. júna 2026
+**Verzia:** 2.1

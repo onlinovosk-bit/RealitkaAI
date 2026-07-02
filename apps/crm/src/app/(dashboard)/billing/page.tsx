@@ -4,18 +4,20 @@ import { SLATE_HORIZON, WORKDESK_CARD } from '@/lib/slate-horizon-theme';
 
 const PLAN_NAMES: Record<string, string> = {
   free:               'FREE',
-  starter:            'SMART START',
-  active_force:       'ACTIVE FORCE',
-  market_vision:      'MARKET VISION',
-  protocol_authority: 'PROTOCOL AUTHORITY',
+  starter:            'SOLO SEAT',
+  active_force:       'TEAM SEAT',
+  enterprise:         'OFFICE SEAT',
+  market_vision:      'OFFICE SEAT',
+  protocol_authority: 'ENTERPRISE SEAT',
 };
 
 const PLAN_PRICES: Record<string, string> = {
   free:               '0 €',
-  starter:            '49 €',
-  active_force:       '99 €',
-  market_vision:      '199 €',
-  protocol_authority: '449 €',
+  starter:            '79 €',
+  active_force:       '71 €',
+  enterprise:         '63 €',
+  market_vision:      '63 €',
+  protocol_authority: 'Custom',
 };
 
 export default function BillingPage() {
@@ -57,7 +59,7 @@ export default function BillingPage() {
         style={{ borderColor: SLATE_HORIZON.line }}
       >
         <h1 className="text-3xl font-bold" style={{ color: SLATE_HORIZON.ink }}>Predplatné a licencie</h1>
-        <p style={{ color: SLATE_HORIZON.muted }}>Spravujte svoj balík a fakturačné údaje pre Reality Monopol.</p>
+        <p style={{ color: SLATE_HORIZON.muted }}>Spravujte seat-based plán a fakturačné údaje Revolis.</p>
       </header>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">

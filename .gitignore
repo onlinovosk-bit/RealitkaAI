@@ -45,6 +45,8 @@ next-env.d.ts
 .claude/skills/
 **/__pycache__/
 apps/crm/error-capture.log
+.swarm/*.json
+apps/crm/supabase/.temp/
 apps/crm/tmp-*.json
 tmp-*.md
 apps/crm/design-handoff-zips/

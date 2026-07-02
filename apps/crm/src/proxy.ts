@@ -17,15 +17,34 @@ const PUBLIC_PATHS = new Set([
   "/api/billing/webhook",
   "/api/integrations/google/callback",
   "/api/webhooks/hubspot",
+  "/api/leads/inbound",
+  "/api/acquire/email",
 ]);
 
 const CRON_PATH_PREFIX = "/api/agents";
 const CRON_API_PATH_PREFIX = "/api/cron/";
-const SCORING_CRON_PATHS = ["/api/scoring", "/api/segmentation"];
+/** Bearer CRON_SECRET routes outside /api/cron/ — bypass session gate like cron. */
+const CRON_AUTH_API_PATHS = new Set(["/api/followup"]);
+const SCORING_CRON_PATHS = ["/api/scoring"];
+/** 410 Gone shims — bypass session gate so callers receive deprecated response. */
+const DEPRECATED_API_SHIMS = new Set(["/api/scoring", "/api/segmentation"]);
+/** Removed routes — let Next return 404 (no session gate). PR-4 scrape removal. */
+const REMOVED_API_PATHS = new Set(["/api/scrape"]);
 const WEBHOOK_API_SEGMENT = "/api/webhooks";
+/** Onboarding MVP APIs — service-role in route handlers; bypass session gate for SSR/cron callers. */
+const ONBOARDING_MVP_PREFIX = "/api/onboarding/mvp/";
 
 function isRealviaImportPath(pathname: string): boolean {
   return pathname === "/api/realvia/import" || pathname === "/api/realvia/import/";
+}
+
+function isUcExportImportPath(pathname: string): boolean {
+  return (
+    pathname === "/api/uc/import" ||
+    pathname === "/api/uc/import/" ||
+    pathname === "/api/realsoft/import" ||
+    pathname === "/api/realsoft/import/"
+  );
 }
 
 function isWebhookApiPath(pathname: string): boolean {
@@ -54,6 +73,7 @@ function isPublic(pathname: string): boolean {
 }
 
 function isCronRoute(pathname: string): boolean {
+  if (CRON_AUTH_API_PATHS.has(pathname)) return true;
   if (pathname.startsWith(CRON_PATH_PREFIX)) return true;
   if (pathname.startsWith(CRON_API_PATH_PREFIX)) return true;
   return SCORING_CRON_PATHS.some((p) => pathname.startsWith(p));
@@ -69,8 +89,12 @@ export async function proxy(request: NextRequest) {
 
   if (isPublic(pathname)) return NextResponse.next();
   if (isRealviaImportPath(pathname)) return NextResponse.next();
+  if (isUcExportImportPath(pathname)) return NextResponse.next();
   if (isWebhookApiPath(pathname)) return NextResponse.next();
+  if (REMOVED_API_PATHS.has(pathname)) return NextResponse.next();
+  if (DEPRECATED_API_SHIMS.has(pathname)) return NextResponse.next();
   if (isCronRoute(pathname)) return NextResponse.next();
+  if (pathname.startsWith(ONBOARDING_MVP_PREFIX)) return NextResponse.next();
 
   let response = NextResponse.next({
     request: { headers: request.headers },

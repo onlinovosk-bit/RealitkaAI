@@ -1,5 +1,7 @@
-
 import { test, expect } from '@playwright/test';
+import { assertNotProduction } from './helpers/env-guard';
+
+assertNotProduction();
 
 test('User registration, login, and logout flow', async ({ page }) => {
   // Generate unique email for each run

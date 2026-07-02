@@ -144,8 +144,36 @@ export default function CallAnalyzerClient() {
     return "text-red-400";
   }
 
+  const showIntroEmpty =
+    !transcript.trim() && !result && !coachParsed && !coachRaw && !coachLoading && !loading;
+
   return (
     <div className="space-y-4">
+      {showIntroEmpty ? (
+        <div className="text-center py-12 space-y-3 rounded-xl border border-dashed border-white/15 bg-slate-900/30">
+          <div className="text-4xl" aria-hidden>
+            📞
+          </div>
+          <h3 className="font-semibold text-lg text-white">Zatiaľ žiadne hovory</h3>
+          <p className="text-sm text-slate-400 max-w-sm mx-auto">
+            Nahrajte záznam hovoru alebo vložte prepis — systém vyhodnotí kľúčové momenty
+            a odporúčania pre makléra.
+          </p>
+          <label className="inline-flex cursor-pointer rounded-xl border border-white/20 px-4 py-2 text-sm font-medium text-white hover:bg-white/5">
+            Nahrať hovor
+            <input
+              type="file"
+              accept="audio/*"
+              className="sr-only"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void transcribeFile(f);
+              }}
+            />
+          </label>
+        </div>
+      ) : null}
+
       <div className="rounded-xl border border-white/10 bg-slate-900/40 p-3 space-y-2">
         <p className="text-xs text-slate-400">
           Nahraj krátku nahrávku — Whisper vyžaduje nastavený{" "}

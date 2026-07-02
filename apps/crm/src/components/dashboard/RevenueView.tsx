@@ -1,20 +1,12 @@
 "use client";
 
 import { SLATE_HORIZON, WORKDESK_CARD, WORKDESK_KPI } from "@/lib/slate-horizon-theme";
-
-const chartData = [
-  { date: "W1", "Avg Market Speed": 24, "Revolis Alpha Speed": 20 },
-  { date: "W2", "Avg Market Speed": 23, "Revolis Alpha Speed": 19 },
-  { date: "W3", "Avg Market Speed": 22, "Revolis Alpha Speed": 17 },
-  { date: "W4", "Avg Market Speed": 21, "Revolis Alpha Speed": 16 },
-];
-
-const gapData = [
-  { name: "2i byty - deficit", value: 38 },
-  { name: "3i byty - deficit", value: 27 },
-  { name: "Domy - stabilné", value: 21 },
-  { name: "Pozemky - rast", value: 14 },
-];
+import {
+  REVENUE_TILE_REGISTRY,
+  countLeadsBySource,
+  type RevenueTilePolicy,
+} from "@/lib/modules/revenue-intelligence";
+import type { Lead } from "@/lib/leads-store";
 
 function Card({ children, accent }: { children: React.ReactNode; accent?: string }) {
   return (
@@ -31,11 +23,42 @@ function Card({ children, accent }: { children: React.ReactNode; accent?: string
   );
 }
 
-export default function RevenueView() {
-  const maxAreaValue = Math.max(
-    ...chartData.flatMap((d) => [d["Avg Market Speed"], d["Revolis Alpha Speed"]]),
+function PendingTile({
+  title,
+  policy,
+  sourceLabel,
+}: {
+  title: string;
+  policy: RevenueTilePolicy;
+  sourceLabel?: string;
+}) {
+  return (
+    <Card accent={SLATE_HORIZON.softBorder}>
+      <p className="mb-2 text-[10px] font-bold uppercase" style={{ color: SLATE_HORIZON.muted }}>
+        {title}
+      </p>
+      <p className="text-sm font-semibold" style={{ color: SLATE_HORIZON.deep }}>
+        Počíta sa z {sourceLabel ?? policy.source}.
+      </p>
+      <p className="mt-2 text-xs" style={{ color: SLATE_HORIZON.muted }}>
+        {policy.pendingMessage ?? "Dlaždica čaká na napojenie dátového zdroja."}
+      </p>
+    </Card>
   );
-  const totalGap = gapData.reduce((acc, g) => acc + g.value, 0);
+}
+
+export default function RevenueView({ leads }: { leads: Lead[] }) {
+  const sourceRows = countLeadsBySource(leads);
+  const topSources = sourceRows.slice(0, 4);
+  const totalNew = leads.filter((lead) => lead.status === "Nový" || lead.status === "new").length;
+
+  const liquidityPolicy = REVENUE_TILE_REGISTRY.liquidity_radar;
+  const pipelinePolicy = REVENUE_TILE_REGISTRY.pipeline_velocity;
+  const demandGapPolicy = REVENUE_TILE_REGISTRY.demand_supply_gap;
+  const forecastPolicy = REVENUE_TILE_REGISTRY.forecast_risk;
+  const aiPriorityPolicy = REVENUE_TILE_REGISTRY.ai_priority_strip;
+  const neuralPolicy = REVENUE_TILE_REGISTRY.neural_prediction_accuracy;
+  const pulsePolicy = REVENUE_TILE_REGISTRY.live_market_pulse;
 
   return (
     <section
@@ -58,125 +81,92 @@ export default function RevenueView() {
             Kde vzniká príležitosť
           </h2>
           <p className="mt-2 text-xs" style={{ color: SLATE_HORIZON.muted }}>
-            Regionálny prehľad · Prešov / Košice
+            Live dlaždice: Action Queue, Leady podľa zdroja a Kataster kontext.
           </p>
         </div>
         <div className="text-right">
           <p className="text-[10px] font-bold uppercase" style={{ color: SLATE_HORIZON.muted }}>
-            Live market pulse
+            Action Queue
           </p>
           <p className="font-mono text-xs font-semibold" style={{ color: SLATE_HORIZON.greenDark }}>
-            88.4ms response
+            {totalNew} leadov čaká na prvý kontakt
           </p>
         </div>
       </header>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card accent={SLATE_HORIZON.softBorder}>
+        <PendingTile
+          title="Likvidita v Radare"
+          policy={liquidityPolicy}
+          sourceLabel="leads.budget"
+        />
+
+        <Card accent="#FDE68A">
           <p className="mb-2 text-[10px] font-bold uppercase" style={{ color: SLATE_HORIZON.muted }}>
-            Likvidita v Radare
+            Leady podľa zdroja
           </p>
-          <div className="flex items-baseline gap-2">
-            <p className="text-3xl font-black md:text-4xl" style={{ color: SLATE_HORIZON.ink }}>
-              1,42M €
-            </p>
-            <span
-              className="rounded-full border px-2 py-1 text-xs font-bold"
-              style={{
-                borderColor: "#BBF7D0",
-                background: "#ECFDF5",
-                color: SLATE_HORIZON.greenDark,
-              }}
-            >
-              +12%
-            </span>
+          <div className="space-y-2">
+            {topSources.length > 0 ? (
+              topSources.map((row) => (
+                <div key={row.source} className="flex items-center justify-between text-xs">
+                  <span style={{ color: SLATE_HORIZON.deep }}>{row.source}</span>
+                  <span className="font-bold" style={{ color: SLATE_HORIZON.brandDeep }}>
+                    {row.count}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <p className="text-xs" style={{ color: SLATE_HORIZON.muted }}>
+                Počkajte na prvé leady.
+              </p>
+            )}
           </div>
         </Card>
 
-        <Card accent="#FDE68A">
-          <p className="mb-2 text-[10px] font-bold uppercase" style={{ color: SLATE_HORIZON.amber }}>
-            Protocol opportunity alerts
-          </p>
-          <p className="text-3xl font-black md:text-4xl" style={{ color: SLATE_HORIZON.ink }}>
-            9 Alerts
-          </p>
-        </Card>
+        <PendingTile title="Pipeline Velocity" policy={pipelinePolicy} sourceLabel="zmeny status v čase" />
+      </div>
 
-        <Card>
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <PendingTile title="Forecast / predikcia rizika" policy={forecastPolicy} sourceLabel="activities + status história" />
+
+        <Card accent="#93C5FD">
           <p className="mb-2 text-[10px] font-bold uppercase" style={{ color: SLATE_HORIZON.muted }}>
-            Neural prediction accuracy
+            Kataster / parcelný kontext
           </p>
-          <p className="text-3xl font-black md:text-4xl" style={{ color: SLATE_HORIZON.brandDeep }}>
-            94.8%
+          <p className="text-sm font-semibold" style={{ color: SLATE_HORIZON.deep }}>
+            Live display-only nad ZBGIS WMS.
+          </p>
+          <p className="mt-2 text-xs" style={{ color: SLATE_HORIZON.muted }}>
+            Modul je dostupný v L99 Hub; bez vlastníkov a bez ukladania citlivých dát.
           </p>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <Card>
+        <PendingTile title="AI Priority Strip" policy={aiPriorityPolicy} sourceLabel="leads.ai_priority" />
+
+        <Card accent={SLATE_HORIZON.line}>
           <h3 className="mb-6 text-center text-xs font-bold uppercase tracking-widest" style={{ color: SLATE_HORIZON.deep }}>
-            Pipeline velocity (market speed)
+            Skrytá dlaždica
           </h3>
-          <div className="space-y-4">
-            {chartData.map((item) => (
-              <div key={item.date}>
-                <p className="mb-1 text-[10px] font-bold" style={{ color: SLATE_HORIZON.muted }}>
-                  {item.date}
-                </p>
-                <div className="flex gap-2">
-                  <div className="h-3 flex-1 rounded" style={{ background: SLATE_HORIZON.line }}>
-                    <div
-                      className="h-3 rounded bg-slate-400"
-                      style={{ width: `${(item["Avg Market Speed"] / maxAreaValue) * 100}%` }}
-                    />
-                  </div>
-                  <div className="h-3 flex-1 rounded" style={{ background: SLATE_HORIZON.line }}>
-                    <div
-                      className="h-3 rounded"
-                      style={{
-                        width: `${(item["Revolis Alpha Speed"] / maxAreaValue) * 100}%`,
-                        background: SLATE_HORIZON.brand,
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-            <div className="mt-4 flex flex-wrap items-center gap-4 text-[10px] uppercase" style={{ color: SLATE_HORIZON.muted }}>
-              <span className="inline-flex items-center gap-1">
-                <span className="h-2 w-2 rounded-full bg-slate-400" /> Avg market speed
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <span className="h-2 w-2 rounded-full" style={{ background: SLATE_HORIZON.brand }} /> Revolis alpha speed
-              </span>
-            </div>
-          </div>
+          <p className="text-sm font-semibold" style={{ color: SLATE_HORIZON.deep }}>
+            {demandGapPolicy.label}
+          </p>
+          <p className="mt-2 text-xs" style={{ color: SLATE_HORIZON.muted }}>
+            Skryté: zdroj {demandGapPolicy.source} ešte nie je legálne/prevádzkovo napojený.
+          </p>
         </Card>
 
-        <Card>
+        <Card accent={SLATE_HORIZON.line}>
           <h3 className="mb-6 text-center text-xs font-bold uppercase tracking-widest" style={{ color: SLATE_HORIZON.deep }}>
-            Demand/supply gap: PO-KE area
+            Skrytá dlaždica
           </h3>
-          <div className="space-y-4">
-            {gapData.map((item, idx) => {
-              const colors = [SLATE_HORIZON.brand, "#06B6D4", SLATE_HORIZON.amber, "#6366F1"];
-              const pct = Math.round((item.value / totalGap) * 100);
-              return (
-                <div key={item.name}>
-                  <div className="mb-1 flex items-center justify-between text-[11px]" style={{ color: SLATE_HORIZON.deep }}>
-                    <span>{item.name}</span>
-                    <span>{pct}%</span>
-                  </div>
-                  <div className="h-2 rounded" style={{ background: SLATE_HORIZON.line }}>
-                    <div
-                      className="h-2 rounded"
-                      style={{ width: `${pct}%`, background: colors[idx % colors.length] }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <p className="text-sm font-semibold" style={{ color: SLATE_HORIZON.deep }}>
+            {neuralPolicy.label} / {pulsePolicy.label}
+          </p>
+          <p className="mt-2 text-xs" style={{ color: SLATE_HORIZON.muted }}>
+            Skryté: vyžadujú historické/portálové zdroje, ktoré zatiaľ nie sú napojené.
+          </p>
         </Card>
       </div>
     </section>

@@ -9,6 +9,12 @@ import { SLATE_HORIZON } from '@/lib/slate-horizon-theme';
 export const SlackLayout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
 
+  // usePathname() is null on the first client pass while SSR already resolved the route —
+  // render passthrough so /login chromeless SSR matches hydration (avoids double chrome).
+  if (!pathname) {
+    return <>{children}</>;
+  }
+
   if (isChromelessRoute(pathname)) {
     return <>{children}</>;
   }

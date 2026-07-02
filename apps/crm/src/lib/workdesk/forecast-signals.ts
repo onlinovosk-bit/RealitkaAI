@@ -26,12 +26,25 @@ function formatEur(value: number): string {
 }
 
 export function buildForecastRiskSummary(input: {
+  totalLeads: number;
   expectedPipelineValue: number;
   expectedClosedDeals: number;
   dealHealth: DealHealthIssue[];
   targetPipelineValue?: number;
   targetClosedDeals?: number;
 }): ForecastRiskSummary {
+  if (input.totalLeads <= 0) {
+    return {
+      gapEur: 0,
+      atRiskCount: 0,
+      atRiskValueEur: 0,
+      headline: "Zatiaľ nie sú dáta na predikciu rizika",
+      subline:
+        "Forecast a riziká mesiaca sa počítajú z príležitostí v CRM — po importe alebo pridaní leadov sa zobrazia reálne signály.",
+      signals: [],
+    };
+  }
+
   const targetPipeline = input.targetPipelineValue ?? DEFAULT_TARGET_PIPELINE;
   const targetClosed = input.targetClosedDeals ?? DEFAULT_TARGET_CLOSED;
   const gapEur = Math.max(0, targetPipeline - input.expectedPipelineValue);

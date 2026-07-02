@@ -67,7 +67,7 @@ export async function POST(request: Request) {
       email: body.email,
       role: body.role,
       phone: body.phone ?? "",
-    });
+    }, supabase);
 
     // Odoslanie welcome emailu
     try {
@@ -93,7 +93,7 @@ export async function POST(request: Request) {
         role: profile.role,
         email: profile.email,
       },
-    });
+    }, supabase);
 
     return NextResponse.json({ ok: true, profile });
   } catch (error) {

@@ -72,6 +72,28 @@ ${prospects
   });
 }
 
+type ScanBody = {
+  area?: string;
+  minScore?: number;
+  generateNew?: boolean;
+  onlyToday?: boolean;
+};
+
+type CommentItem = { id: string; comment: string };
+
+type ProspectRow = {
+  id?: string;
+  address: string;
+  platform?: string;
+  region?: string | null;
+  days_listed?: number;
+  original_price: number;
+  current_price: number;
+  score?: number;
+  status?: string;
+  verified_at?: string | null;
+};
+
 export async function POST(request: Request) {
   const access = await checkCapabilityAccess("canUseStealthRecruiter");
   if (!access.allowed) {
@@ -80,6 +102,8 @@ export async function POST(request: Request) {
 
   const block = await checkAiRateLimit(access.userId!, "stealth-scan", 10);
   if (block) return NextResponse.json(block, { status: 429 });
+
+  const demoMode = isStealthRecruiterDemoMode();
 
   try {
     const body = (await request.json()) as { area?: string; minScore?: number; generateNew?: boolean };
@@ -150,6 +174,17 @@ export async function POST(request: Request) {
       } catch (aiErr) {
         console.warn("[stealth-recruiter/scan] AI enrich failed:", aiErr);
       }
+    }
+
+    const filtered = result.filter((p) => p.score >= minScore);
+
+    if (filtered.length === 0 && !demoMode) {
+      return NextResponse.json({
+        prospects: [],
+        total: 0,
+        source: "empty",
+        message: "Žiadni overení samopredajcovia v regióne Prešov dnes.",
+      });
     }
 
     return NextResponse.json({

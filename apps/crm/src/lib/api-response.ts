@@ -20,3 +20,10 @@ export function errorResponse(message: string, status = 400, extra?: Record<stri
     { status }
   );
 }
+
+/** Shorthand aliases for standardized API responses */
+export const ok = (data: unknown, init?: ResponseInit) =>
+  NextResponse.json({ ok: true, data }, init);
+
+export const err = (msg: string, status = 400) =>
+  NextResponse.json({ ok: false, error: msg }, { status });

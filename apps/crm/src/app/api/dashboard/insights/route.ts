@@ -1,14 +1,12 @@
 import { NextResponse } from 'next/server';
-import type { DashboardSummaryResponse } from '../summary/route';
 import { getCurrentProfile } from "@/lib/auth";
 import { personalizeInsights } from "@/lib/ai-insights/personalization";
 import { getUserHistory } from "@/lib/ai-insights/history";
 import { logAnalyticsEvent } from "@/lib/ai-insights/analytics";
-
-export type DashboardInsightsRequest = {
-  period: 'today' | 'last_7_days';
-  summary: DashboardSummaryResponse;
-};
+import { buildEmptyInsights } from "@/lib/ai/dashboard-insights";
+import { isDashboardInsightsCacheFresh } from "@/lib/ai/dashboard-insights-cache";
+import type { DashboardInsightsCachePayload } from "@/lib/ai/dashboard-insights-cron";
+import { createClient } from "@/lib/supabase/server";
 
 export type DashboardInsightsResponse = {
   headline: string;
@@ -21,49 +19,76 @@ export type DashboardInsightsResponse = {
     impact: 'high' | 'medium' | 'low';
   }>;
   notesForOwner?: string;
+  generatedAt: string | null;
+  cacheStatus: 'hit' | 'missing';
 };
 
-export async function POST(req: Request) {
+export async function POST() {
   const profile = await getCurrentProfile();
   if (!profile) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = (await req.json()) as DashboardInsightsRequest;
-  const userId   = profile.id;
+  const userId = profile.id;
   const userName = profile.full_name || profile.email || "Používateľ";
 
-  let insights: DashboardInsightsResponse = {
-    headline: `Dnes máš ${body.summary.totals.hotLeads} horúcich klientov, ${userName}, ktorí čakajú na tvoj krok.`,
-    summary: `Najväčší potenciál vidíme v kupujúcich s rozpočtom 150–250k € v Prešove a Košiciach. Posledné 3 dni boli aktívni, ale nedostali žiadny personalizovaný follow‑up.`,
-    actions: [
-      {
-        title: `Zavolaj top 3 hot leadom s readiness score > 90` + (userName ? ` (${userName})` : ""),
-        description: `Títo klienti reagovali na posledný email, pozerali si nové ponuky a sú blízko rozhodnutiu. Navrhni im 2–3 konkrétne nehnuteľnosti a dohodni obhliadku.`,
-        recommendedChannel: 'call',
-        relatedLeadIds: body.summary.topHotLeads.slice(0, 3).map(l => l.id),
-        impact: 'high',
-      },
-      {
-        title: 'Pošli follow‑up email 5 warm leadom bez kontaktu 7 dní',
-        description: 'Udržíš ich v hre a získaš lepší signál o záujme. AI ti navrhne text na mieru.',
-        recommendedChannel: 'email',
-        relatedLeadIds: body.summary.topHotLeads.slice(3, 5).map(l => l.id),
-        impact: 'medium',
-      },
-    ],
-    notesForOwner: 'Najaktívnejší makléri generujú 80 % obratov. Zváž, či ostatným nepomôže zjednodušený denný plán založený na týchto akciách.',
+  if (!profile.agency_id) {
+    const empty = buildEmptyInsights(userName);
+    return NextResponse.json({
+      ...empty,
+      generatedAt: null,
+      cacheStatus: 'missing' as const,
+    });
+  }
+
+  const supabase = await createClient();
+  const { data: row, error } = await supabase
+    .from('dashboard_insights_cache')
+    .select('payload, generated_at')
+    .eq('agency_id', profile.agency_id)
+    .maybeSingle();
+
+  if (error) {
+    console.error('[dashboard/insights] cache read:', error.message);
+    return NextResponse.json({ error: 'Cache read failed' }, { status: 500 });
+  }
+
+  if (!row?.payload || !isDashboardInsightsCacheFresh(row.generated_at as string)) {
+    const empty = buildEmptyInsights(userName);
+    return NextResponse.json({
+      ...empty,
+      generatedAt: null,
+      cacheStatus: 'missing' as const,
+    });
+  }
+
+  const cached = row.payload as DashboardInsightsCachePayload;
+  const actions = Array.isArray(cached.actions) ? cached.actions : [];
+  const insights = {
+    headline: cached.headline,
+    summary: cached.summary,
+    actions: personalizeInsights(actions, profile),
+    notesForOwner: cached.notesForOwner,
+    generatedAt: row.generated_at as string,
+    cacheStatus: 'hit' as const,
   };
 
-  insights.actions = personalizeInsights(insights.actions, profile);
+  // Demo FS analytics/history — must not break cache read on Vercel (read-only FS).
+  try {
+    await logAnalyticsEvent({
+      userId,
+      actionIdx: -1,
+      actionTitle: 'dashboard-insights',
+      event: 'viewed',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (e) {
+    console.error('[dashboard/insights] analytics:', e);
+  }
 
-  await logAnalyticsEvent({
-    userId,
-    actionIdx: -1,
-    actionTitle: 'dashboard-insights',
-    event: 'viewed',
-    timestamp: new Date().toISOString(),
-  });
-
-  await getUserHistory(userId);
+  try {
+    await getUserHistory(userId);
+  } catch (e) {
+    console.error('[dashboard/insights] history:', e);
+  }
 
   return NextResponse.json(insights);
 }

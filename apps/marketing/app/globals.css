@@ -19,6 +19,7 @@
 }
 * { margin:0; padding:0; box-sizing:border-box; }
 html { scroll-behavior:smooth; }
+#pricing { scroll-margin-top: 88px; }
 body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; overflow-x:hidden; }
 ::-webkit-scrollbar { width:6px; }
 ::-webkit-scrollbar-track { background:var(--bg2); }

@@ -3,6 +3,38 @@
 **Program:** Guardian (`market_vision` tier, UI role `owner_vision`)  
 **Cena:** 199 €/mes · **Brand:** STRÁŽCA CIEN A ZISKOV  
 
+## Súhrn auditu (2026-05-27)
+
+| Metrika | Hodnota |
+|---------|---------|
+| **Funkčná pripravenosť (odhad)** | **~77 %** — licencie, navigácia, heatmapa, forecast, tím, Vitest kotvy |
+| **Vitest** | `market-vision-features.test.ts` — **10/10 passed** (lokálne 2026-05-27) |
+| **Build** | `npm run build` v `apps/crm` — **OK** |
+
+### Čo funguje (high confidence)
+
+- Program `market_vision` → guardian capabilities v registry  
+- Owner menu routes (`/dashboard`, `/forecast`, `/team`, ghost tab, billing, onboarding-monitor)  
+- Marketing matrix ↔ filesystem kotvy v testoch  
+- Revolis AI / heatmapa pre tier s `canUseMarketIntel`  
+- Protocol-only features zamknuté (`Competition Radar`, stealth recruiter, monopol)
+
+### Čo je čiastočné / env-dependent
+
+| Oblasť | Stav | Poznámka |
+|--------|------|----------|
+| **Guardian revenue alerts** | Stub / UI bez plného backendu | `canAccessGuardianAlerts` v registry; produkčný alert stream nie je 100 % e2e |
+| **Rescue automation** | Env-dependent | `RESCUE_AUTOMATION_ENABLED` (default `false`); API `/api/ai/rescue/trigger` existuje, produkcia vyžaduje Vercel env + `decision-flags` |
+| **Decision engine panel** | Env-dependent | `DECISION_ENGINE_ENABLED`, `CLOSING_WINDOW_ENABLED` |
+| **RLS / tenant data** | Deploy-sensitive | Po PR #64 — overiť `/api/crm/tenant-health` na preview s reálnym owner účtom |
+| **Realvia import** | Samostatný pipeline | Cron + queue, nie súčasť MV menu smoke |
+
+### Odporúčaný ďalší krok (L99)
+
+1. Merge copy/QA PR → preview smoke s `market_vision` účtom.  
+2. Zapnúť rescue/decision env na staging, manuálny test z lead detail / L99 panel.  
+3. Dokončiť Guardian alerts backend alebo skryť teaser v UI do ďalšieho PR.
+
 ## Ruflo orchestrácia (2026-05-26)
 
 | Krok | Nástroj | Výsledok |

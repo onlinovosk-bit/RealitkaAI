@@ -1,0 +1,3142 @@
+{
+  "at": "2026-06-26T06:51:26.123Z",
+  "readOnly": true,
+  "source": {
+    "rls_snapshot": "rls_audit_snapshot()",
+    "allowlist": "config/public-schema-allowlist.json",
+    "policies": "supabase/migrations parse (repo truth; live pg_policies requires POSTGRES_URL)",
+    "app_paths": "grep api routes + *-store.ts"
+  },
+  "summary": {
+    "tables": 115,
+    "prod_tables": 96,
+    "allowlist_size": 96,
+    "p0": 42,
+    "p1": 7,
+    "p2": 66,
+    "unscoped_api_hits": 9
+  },
+  "write_scan": {
+    "hits": [
+      {
+        "route": "src\\app\\api\\agents\\social-scout\\route.ts",
+        "issue": "server_client_direct_write",
+        "severity": "P1"
+      },
+      {
+        "route": "src\\app\\api\\ai\\closing-window\\recompute\\route.ts",
+        "issue": "server_client_direct_write",
+        "severity": "P1"
+      },
+      {
+        "route": "src\\app\\api\\ai\\decision\\score-lead\\route.ts",
+        "issue": "server_client_direct_write",
+        "severity": "P1"
+      },
+      {
+        "route": "src\\app\\api\\ai\\lead-events\\route.ts",
+        "issue": "server_client_direct_write",
+        "severity": "P1"
+      },
+      {
+        "route": "src\\app\\api\\ai\\micro-actions\\schedule\\route.ts",
+        "issue": "server_client_direct_write",
+        "severity": "P1"
+      },
+      {
+        "route": "src\\app\\api\\ai\\rescue\\trigger\\route.ts",
+        "issue": "server_client_direct_write",
+        "severity": "P1"
+      },
+      {
+        "route": "src\\app\\api\\analytics\\demand-signals\\route.ts",
+        "issue": "server_client_direct_write",
+        "severity": "P1"
+      },
+      {
+        "route": "src\\app\\api\\arbitrage\\route.ts",
+        "issue": "server_client_direct_write",
+        "severity": "P1"
+      },
+      {
+        "route": "src\\app\\api\\bsm-reforma\\lead\\route.ts",
+        "issue": "server_client_direct_write",
+        "severity": "P1"
+      },
+      {
+        "route": "src\\app\\api\\cron\\seller-rescue\\route.ts",
+        "issue": "server_client_direct_write",
+        "severity": "P1"
+      },
+      {
+        "route": "src\\app\\api\\developer\\request-key\\route.ts",
+        "issue": "server_client_direct_write",
+        "severity": "P1"
+      },
+      {
+        "route": "src\\app\\api\\embeddings\\index\\route.ts",
+        "issue": "server_client_direct_write",
+        "severity": "P1"
+      },
+      {
+        "route": "src\\app\\api\\enterprise\\onboard-start\\route.ts",
+        "issue": "server_client_direct_write",
+        "severity": "P1"
+      },
+      {
+        "route": "src\\app\\api\\ghostwriter\\send-email\\route.ts",
+        "issue": "server_client_direct_write",
+        "severity": "P1"
+      },
+      {
+        "route": "src\\app\\api\\guarantee\\claim\\route.ts",
+        "issue": "server_client_direct_write",
+        "severity": "P1"
+      },
+      {
+        "route": "src\\app\\api\\import\\route.ts",
+        "issue": "server_client_direct_write",
+        "severity": "P1"
+      },
+      {
+        "route": "src\\app\\api\\integrations\\hubspot\\sync\\route.ts",
+        "issue": "server_client_direct_write",
+        "severity": "P1"
+      },
+      {
+        "route": "src\\app\\api\\invite\\route.ts",
+        "issue": "server_client_direct_write",
+        "severity": "P1"
+      },
+      {
+        "route": "src\\app\\api\\kataster\\watch\\route.ts",
+        "issue": "server_client_direct_write",
+        "severity": "P1"
+      },
+      {
+        "route": "src\\app\\api\\leads\\[id]\\activities\\route.ts",
+        "issue": "store_writer_without_scoped_client",
+        "severity": "P0"
+      },
+      {
+        "route": "src\\app\\api\\leads\\[id]\\route.ts",
+        "issue": "store_writer_without_scoped_client",
+        "severity": "P0"
+      },
+      {
+        "route": "src\\app\\api\\matching\\action\\route.ts",
+        "issue": "server_client_direct_write",
+        "severity": "P1"
+      },
+      {
+        "route": "src\\app\\api\\matching\\recalculate\\route.ts",
+        "issue": "store_writer_without_scoped_client",
+        "severity": "P0"
+      },
+      {
+        "route": "src\\app\\api\\notifications\\subscribe\\route.ts",
+        "issue": "server_client_direct_write",
+        "severity": "P1"
+      },
+      {
+        "route": "src\\app\\api\\onboarding\\role\\route.ts",
+        "issue": "server_client_direct_write",
+        "severity": "P1"
+      },
+      {
+        "route": "src\\app\\api\\outreach\\campaigns\\route.ts",
+        "issue": "server_client_direct_write",
+        "severity": "P1"
+      },
+      {
+        "route": "src\\app\\api\\outreach\\segments\\route.ts",
+        "issue": "server_client_direct_write",
+        "severity": "P1"
+      },
+      {
+        "route": "src\\app\\api\\outreach\\templates\\route.ts",
+        "issue": "server_client_direct_write",
+        "severity": "P1"
+      },
+      {
+        "route": "src\\app\\api\\properties\\route.ts",
+        "issue": "server_client_direct_write",
+        "severity": "P1"
+      },
+      {
+        "route": "src\\app\\api\\push\\subscribe\\route.ts",
+        "issue": "server_client_direct_write",
+        "severity": "P1"
+      },
+      {
+        "route": "src\\app\\api\\recommendations\\recalculate\\route.ts",
+        "issue": "store_writer_without_scoped_client",
+        "severity": "P0"
+      },
+      {
+        "route": "src\\app\\api\\sales-funnel\\update-status\\route.ts",
+        "issue": "server_client_direct_write",
+        "severity": "P1"
+      },
+      {
+        "route": "src\\app\\api\\tasks\\route.ts",
+        "issue": "store_writer_without_scoped_client",
+        "severity": "P0"
+      },
+      {
+        "route": "src\\app\\api\\tasks\\[id]\\route.ts",
+        "issue": "store_writer_without_scoped_client",
+        "severity": "P0"
+      },
+      {
+        "route": "src\\app\\api\\team\\assign-lead\\route.ts",
+        "issue": "store_writer_without_scoped_client",
+        "severity": "P0"
+      },
+      {
+        "route": "src\\app\\api\\team\\teams\\route.ts",
+        "issue": "store_writer_without_scoped_client",
+        "severity": "P0"
+      },
+      {
+        "route": "src\\app\\api\\team\\users\\route.ts",
+        "issue": "store_writer_without_scoped_client",
+        "severity": "P0"
+      }
+    ],
+    "storeUnscopedWriters": [
+      "activities-store.ts",
+      "sales-funnel-store.ts"
+    ]
+  },
+  "backlog": [
+    {
+      "id": "fix/resolveTenantSupabase-audit",
+      "severity": "P0",
+      "status": "open",
+      "note": "Unscoped store writers: activities-store.ts, sales-funnel-store.ts"
+    },
+    {
+      "id": "fix/rls-policy-activities",
+      "severity": "P0",
+      "status": "open",
+      "note": "replace using(true) with profile_agencies_for_auth"
+    },
+    {
+      "id": "fix/rls-policy-ai_sourced_deals",
+      "severity": "P0",
+      "status": "open",
+      "note": "replace using(true) with profile_agencies_for_auth"
+    },
+    {
+      "id": "fix/rls-enable-client_onboarding_messages",
+      "severity": "P0",
+      "status": "open",
+      "note": "enable RLS + tenant policy"
+    },
+    {
+      "id": "fix/rls-enable-client_onboarding_progress",
+      "severity": "P0",
+      "status": "open",
+      "note": "enable RLS + tenant policy"
+    },
+    {
+      "id": "fix/rls-policy-push_subscriptions",
+      "severity": "P0",
+      "status": "open",
+      "note": "replace using(true) with profile_agencies_for_auth"
+    },
+    {
+      "id": "fix/ci-ap019-guard",
+      "severity": "P1",
+      "status": "open",
+      "note": "schema-governance-guard: CREATE TABLE requires allowlist+policy+verification in same PR"
+    }
+  ],
+  "rows": [
+    {
+      "table": "AI AGENT AUTOMAT ONBOARDING",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "AI AGENT AUTOMAT ONBOARDING no.2.01",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "activities",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": true,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "activities_tenant_select",
+          "activities_tenant_write",
+          "activities_anon_insert"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "permissive_policy",
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P0",
+      "notes": [
+        "permissive using(true) without profile_agencies_for_auth scope"
+      ]
+    },
+    {
+      "table": "agencies",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": false,
+        "update": true,
+        "delete": false,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "agencies_member_select",
+          "agencies_member_update"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P0",
+      "notes": [
+        "RLS on but repo migrations missing SELECT/INSERT policy coverage"
+      ]
+    },
+    {
+      "table": "agency_signals",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": true,
+        "policyNames": [
+          "agency_signals_service_role_all"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "ai_action_audit",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "ai_action_audit_tenant"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "ai_actions",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "ai_actions_tenant"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "ai_jobs",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "ai_recommendations",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "ai_recommendations_agency"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "ai_sourced_deals",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": true,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "Owners can view their agency deals",
+          "Service role can insert deals",
+          "Owners can update deal status"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "permissive_policy",
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P0",
+      "notes": [
+        "permissive using(true) without profile_agencies_for_auth scope"
+      ]
+    },
+    {
+      "table": "ai_triage_feedback",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P0",
+      "notes": [
+        "RLS on but repo migrations missing SELECT/INSERT policy coverage"
+      ]
+    },
+    {
+      "table": "ai_triage_run_metrics",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P0",
+      "notes": [
+        "RLS on but repo migrations missing SELECT/INSERT policy coverage"
+      ]
+    },
+    {
+      "table": "api_keys",
+      "rls_enabled": null,
+      "has_agency_id": false,
+      "on_prod": false,
+      "in_allowlist": false,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": true,
+        "policyNames": [
+          "service role api keys full access"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "api_usage_logs",
+      "rls_enabled": null,
+      "has_agency_id": false,
+      "on_prod": false,
+      "in_allowlist": false,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": true,
+        "policyNames": [
+          "service role api usage full access"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "arbitrage_config",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "users manage own arbitrage config"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P1",
+      "notes": [
+        "no tenant-scoped policy in repo migrations"
+      ]
+    },
+    {
+      "table": "arbitrage_matches",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": true,
+        "policyNames": [
+          "users see own arbitrage matches",
+          "service role matches full access"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "bri_config",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "users manage own bri config"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P1",
+      "notes": [
+        "no tenant-scoped policy in repo migrations"
+      ]
+    },
+    {
+      "table": "bri_history",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P0",
+      "notes": [
+        "RLS on but repo migrations missing SELECT/INSERT policy coverage"
+      ]
+    },
+    {
+      "table": "bri_score_history",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": true,
+        "policyNames": [
+          "users see own bri history",
+          "service role bri history"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "broker_events",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": true,
+        "policyNames": [
+          "owners manage broker events",
+          "service role broker events full access"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "broker_performance_stats",
+      "rls_enabled": null,
+      "has_agency_id": false,
+      "on_prod": false,
+      "in_allowlist": false,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": true,
+        "policyNames": [
+          "users manage own broker stats"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "broker_profiles",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": true,
+        "policyNames": [
+          "public read broker profile by slug",
+          "owners manage broker profile",
+          "service role broker profiles full access"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "bsm_campaign_config",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": true,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "bsm config readable by authenticated"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "permissive_policy"
+      ],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "bsm_reforma_leads",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": true,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "bsm leads insert public",
+          "owners read own bsm leads"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "permissive_policy"
+      ],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "buyer_events",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P0",
+      "notes": [
+        "RLS on but repo migrations missing SELECT/INSERT policy coverage"
+      ]
+    },
+    {
+      "table": "buyer_intents",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P0",
+      "notes": [
+        "RLS on but repo migrations missing SELECT/INSERT policy coverage"
+      ]
+    },
+    {
+      "table": "client_dna",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "client_dna_tenant"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "client_onboarding_messages",
+      "rls_enabled": false,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "rls_off_tenant"
+      ],
+      "severity": "P0",
+      "notes": [
+        "RLS off on tenant-scoped table (cross-tenant leak at customer #2)"
+      ]
+    },
+    {
+      "table": "client_onboarding_progress",
+      "rls_enabled": false,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "rls_off_tenant"
+      ],
+      "severity": "P0",
+      "notes": [
+        "RLS off on tenant-scoped table (cross-tenant leak at customer #2)"
+      ]
+    },
+    {
+      "table": "competition_radar",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P0",
+      "notes": [
+        "RLS on but repo migrations missing SELECT/INSERT policy coverage"
+      ]
+    },
+    {
+      "table": "competitor_activity_logs",
+      "rls_enabled": null,
+      "has_agency_id": false,
+      "on_prod": false,
+      "in_allowlist": false,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "owners manage competitor activity logs"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "competitor_monitoring",
+      "rls_enabled": null,
+      "has_agency_id": false,
+      "on_prod": false,
+      "in_allowlist": false,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "owners manage competitor monitoring"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "credit_ledger",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "credit_ledger_tenant_select",
+          "credit_ledger_tenant_insert"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "dashboard_insights_cache",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "dashboard_insights_cache_select_tenant"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P0",
+      "notes": [
+        "RLS on but repo migrations missing SELECT/INSERT policy coverage"
+      ]
+    },
+    {
+      "table": "deal_moments",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "deal_moments_tenant"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "deal_risk",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "deal_risk_tenant"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "decisions",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P0",
+      "notes": [
+        "RLS on but repo migrations missing SELECT/INSERT policy coverage"
+      ]
+    },
+    {
+      "table": "demand_signals",
+      "rls_enabled": null,
+      "has_agency_id": false,
+      "on_prod": false,
+      "in_allowlist": false,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": true,
+        "policyNames": [
+          "owners read own demand signals",
+          "service role demand signals full access"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "demo_bookings",
+      "rls_enabled": null,
+      "has_agency_id": false,
+      "on_prod": false,
+      "in_allowlist": false,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "demo_prospects",
+      "rls_enabled": null,
+      "has_agency_id": false,
+      "on_prod": false,
+      "in_allowlist": false,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "developer_api_key_requests",
+      "rls_enabled": null,
+      "has_agency_id": false,
+      "on_prod": false,
+      "in_allowlist": false,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": true,
+        "policyNames": [
+          "public can insert api key requests",
+          "service role full api key requests"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "enrichment_log",
+      "rls_enabled": null,
+      "has_agency_id": false,
+      "on_prod": false,
+      "in_allowlist": false,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": true,
+        "policyNames": [
+          "enrichment_log_service_role_all",
+          "enrichment_log_agency_isolation"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P0",
+      "notes": [
+        "RLS off on tenant-scoped table (cross-tenant leak at customer #2)"
+      ]
+    },
+    {
+      "table": "events",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": true,
+        "policyNames": [
+          "users see own profile events",
+          "users insert own profile events"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "exclusivity_outcomes",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P0",
+      "notes": [
+        "RLS on but repo migrations missing SELECT/INSERT policy coverage"
+      ]
+    },
+    {
+      "table": "ghost_sessions",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P0",
+      "notes": [
+        "RLS on but repo migrations missing SELECT/INSERT policy coverage"
+      ]
+    },
+    {
+      "table": "ghostwriter_letters",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P0",
+      "notes": [
+        "RLS on but repo migrations missing SELECT/INSERT policy coverage"
+      ]
+    },
+    {
+      "table": "gpmmfashion@gmail.com tabulka",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "import_jobs",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P0",
+      "notes": [
+        "RLS on but repo migrations missing SELECT/INSERT policy coverage"
+      ]
+    },
+    {
+      "table": "import_rows",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P0",
+      "notes": [
+        "RLS on but repo migrations missing SELECT/INSERT policy coverage"
+      ]
+    },
+    {
+      "table": "integration_settings",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P0",
+      "notes": [
+        "RLS on but repo migrations missing SELECT/INSERT policy coverage"
+      ]
+    },
+    {
+      "table": "integrity_alerts",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "owner sees own workspace alerts"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "kataster_events",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": true,
+        "policyNames": [
+          "users read own kataster events",
+          "service role full kataster access"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "lead_action_scores",
+      "rls_enabled": null,
+      "has_agency_id": false,
+      "on_prod": false,
+      "in_allowlist": false,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "lead_action_scores_tenant"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P0",
+      "notes": [
+        "RLS off on tenant-scoped table (cross-tenant leak at customer #2)"
+      ]
+    },
+    {
+      "table": "lead_assignment_rules",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "lead_closing_windows",
+      "rls_enabled": null,
+      "has_agency_id": false,
+      "on_prod": false,
+      "in_allowlist": false,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "closing_windows_tenant"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P0",
+      "notes": [
+        "RLS off on tenant-scoped table (cross-tenant leak at customer #2)"
+      ]
+    },
+    {
+      "table": "lead_conversions",
+      "rls_enabled": null,
+      "has_agency_id": false,
+      "on_prod": false,
+      "in_allowlist": false,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "users manage own lead conversions"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "lead_events",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "lead_events_tenant"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "lead_micro_actions",
+      "rls_enabled": null,
+      "has_agency_id": false,
+      "on_prod": false,
+      "in_allowlist": false,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "micro_actions_tenant"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P0",
+      "notes": [
+        "RLS off on tenant-scoped table (cross-tenant leak at customer #2)"
+      ]
+    },
+    {
+      "table": "lead_property_events",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P0",
+      "notes": [
+        "RLS on but repo migrations missing SELECT/INSERT policy coverage"
+      ]
+    },
+    {
+      "table": "lead_property_matches",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "lead_property_matches_agency"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "lead_property_scores",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P0",
+      "notes": [
+        "RLS on but repo migrations missing SELECT/INSERT policy coverage"
+      ]
+    },
+    {
+      "table": "lead_rescue_runs",
+      "rls_enabled": null,
+      "has_agency_id": false,
+      "on_prod": false,
+      "in_allowlist": false,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "rescue_runs_tenant"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P0",
+      "notes": [
+        "RLS off on tenant-scoped table (cross-tenant leak at customer #2)"
+      ]
+    },
+    {
+      "table": "lead_scores",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "lead_scores_tenant",
+          "users see own scores"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "lead_triage_idempotency",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "leads",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "leads_tenant"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "leads_demo",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "listing_price_history",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": true,
+        "policyNames": [
+          "users see own price history",
+          "service role price history"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "listings_snapshot",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": true,
+        "policyNames": [
+          "listings_snapshot_service_role_all"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "migration_cases",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": true,
+        "policyNames": [
+          "migration_cases_service_role_all"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "morning_brief_settings",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "users manage own brief settings"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P1",
+      "notes": [
+        "no tenant-scoped policy in repo migrations"
+      ]
+    },
+    {
+      "table": "morning_briefs",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "users see own briefs"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P1",
+      "notes": [
+        "no tenant-scoped policy in repo migrations"
+      ]
+    },
+    {
+      "table": "neighborhood_alerts",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P0",
+      "notes": [
+        "RLS on but repo migrations missing SELECT/INSERT policy coverage"
+      ]
+    },
+    {
+      "table": "neighborhood_subscriptions",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P0",
+      "notes": [
+        "RLS on but repo migrations missing SELECT/INSERT policy coverage"
+      ]
+    },
+    {
+      "table": "notifications",
+      "rls_enabled": null,
+      "has_agency_id": false,
+      "on_prod": false,
+      "in_allowlist": false,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": true,
+        "policyNames": [
+          "users read own notifications",
+          "service role notifications full access"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "onboarding_sessions",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P0",
+      "notes": [
+        "RLS on but repo migrations missing SELECT/INSERT policy coverage"
+      ]
+    },
+    {
+      "table": "outbound_campaigns",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "outbound_messages",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": true,
+        "policyNames": [
+          "outbound_messages_service_role_all"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "outreach_campaigns",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "outreach_logs",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": true,
+        "policyNames": [
+          "service role outreach full access",
+          "outreach_logs_tenant"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "outreach_segments",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "outreach_templates",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "pipeline_moves",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P0",
+      "notes": [
+        "RLS on but repo migrations missing SELECT/INSERT policy coverage"
+      ]
+    },
+    {
+      "table": "platform_events",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P0",
+      "notes": [
+        "RLS on but repo migrations missing SELECT/INSERT policy coverage"
+      ]
+    },
+    {
+      "table": "portal_listings",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": true,
+        "policyNames": [
+          "users see own or public listings",
+          "service role listings full access"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "price_alerts",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "users manage own alerts"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P1",
+      "notes": [
+        "no tenant-scoped policy in repo migrations"
+      ]
+    },
+    {
+      "table": "priority_alerts",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P0",
+      "notes": [
+        "RLS on but repo migrations missing SELECT/INSERT policy coverage"
+      ]
+    },
+    {
+      "table": "profile_google_calendar",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P0",
+      "notes": [
+        "RLS on but repo migrations missing SELECT/INSERT policy coverage"
+      ]
+    },
+    {
+      "table": "profile_integrations",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "profile_integrations_self"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P1",
+      "notes": [
+        "no tenant-scoped policy in repo migrations"
+      ]
+    },
+    {
+      "table": "profiles",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": false,
+        "update": true,
+        "delete": false,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "profiles_agency_select",
+          "profiles_self_update"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P0",
+      "notes": [
+        "RLS on but repo migrations missing SELECT/INSERT policy coverage"
+      ]
+    },
+    {
+      "table": "projects",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "properties",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "properties_tenant"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "property_price_trail",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": true,
+        "policyNames": [
+          "users manage own price trail",
+          "service role price trail",
+          "property_price_trail_agency"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "push_subscriptions",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": false,
+        "permissiveTrue": true,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "Users manage own push subscriptions",
+          "Service role full access to push subscriptions"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "permissive_policy",
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P0",
+      "notes": [
+        "permissive using(true) without profile_agencies_for_auth scope"
+      ]
+    },
+    {
+      "table": "rate_limit_buckets",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "realsoft_import_logs",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": true,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "realsoft_import_logs_service_role_all",
+          "realsoft_import_logs_agency_read",
+          "realsoft_import_logs_agency_insert"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "realvia_metrics",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": true,
+        "policyNames": [
+          "realvia_metrics_service_role_all"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "realvia_price_history",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P0",
+      "notes": [
+        "RLS on but repo migrations missing SELECT/INSERT policy coverage"
+      ]
+    },
+    {
+      "table": "realvia_processing_queue",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "realvia_webhook_logs",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P0",
+      "notes": [
+        "RLS on but repo migrations missing SELECT/INSERT policy coverage"
+      ]
+    },
+    {
+      "table": "revolis_leads",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "revolis_zaujemcovia",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "roi_guarantee_claims",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "routine_notifications",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P0",
+      "notes": [
+        "RLS on but repo migrations missing SELECT/INSERT policy coverage"
+      ]
+    },
+    {
+      "table": "saas_lead_notes",
+      "rls_enabled": null,
+      "has_agency_id": false,
+      "on_prod": false,
+      "in_allowlist": false,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": true,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "Users can view notes",
+          "Users can insert notes"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "permissive_policy"
+      ],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "saas_leads",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": true,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "Users can view their leads",
+          "Users can update own leads",
+          "Users can insert leads"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "permissive_policy"
+      ],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "scheduled_events",
+      "rls_enabled": null,
+      "has_agency_id": false,
+      "on_prod": false,
+      "in_allowlist": false,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "scheduled_events_agency"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P0",
+      "notes": [
+        "RLS off on tenant-scoped table (cross-tenant leak at customer #2)"
+      ]
+    },
+    {
+      "table": "seller_motivation",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "users see own motivation scores"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "shadow_inventory",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P0",
+      "notes": [
+        "RLS on but repo migrations missing SELECT/INSERT policy coverage"
+      ]
+    },
+    {
+      "table": "stealth_recruiter_prospects",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "stealth_recruiter_prospects_tenant"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "strategic_alerts",
+      "rls_enabled": null,
+      "has_agency_id": false,
+      "on_prod": false,
+      "in_allowlist": false,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": true,
+        "policyNames": [
+          "owners read strategic alerts",
+          "service role strategic full access"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "tasks",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "tasks_agency"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "team_licenses",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P0",
+      "notes": [
+        "RLS on but repo migrations missing SELECT/INSERT policy coverage"
+      ]
+    },
+    {
+      "table": "teams",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": true,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "teams_agency"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [],
+      "severity": "P2",
+      "notes": []
+    },
+    {
+      "table": "usage_metrics_daily",
+      "rls_enabled": true,
+      "has_agency_id": true,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": false,
+      "policies_repo": {
+        "select": false,
+        "insert": false,
+        "update": false,
+        "delete": false,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": []
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P0",
+      "notes": [
+        "RLS on but repo migrations missing SELECT/INSERT policy coverage"
+      ]
+    },
+    {
+      "table": "watched_parcels",
+      "rls_enabled": true,
+      "has_agency_id": false,
+      "on_prod": true,
+      "in_allowlist": true,
+      "in_repo_migrations": true,
+      "policies_repo": {
+        "select": true,
+        "insert": true,
+        "update": true,
+        "delete": true,
+        "tenantPolicyOk": false,
+        "permissiveTrue": false,
+        "serviceRoleOnly": false,
+        "policyNames": [
+          "users manage own watched parcels"
+        ]
+      },
+      "app_write_paths": [],
+      "gaps": [
+        "missing_tenant_policy_repo"
+      ],
+      "severity": "P1",
+      "notes": [
+        "no tenant-scoped policy in repo migrations"
+      ]
+    }
+  ],
+  "exit": "p0_gaps_remain"
+}

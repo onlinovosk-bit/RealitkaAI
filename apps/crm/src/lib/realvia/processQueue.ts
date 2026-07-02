@@ -18,6 +18,7 @@ import { recordRealviaBatchMetrics } from './metrics';
 import {
   isAdvertPayload,
   isDeletePayload,
+  normalizeRealviaSourceId,
   PROPERTY_STATUS,
 } from './types';
 import type {
@@ -28,6 +29,7 @@ import type {
 
 /** Maximum jobs to process per invocation */
 const BATCH_SIZE = 10;
+export const REALVIA_PROCESSING_ERROR_AGENCY_RESOLUTION_FAILED = 'Agency resolution failed';
 
 /**
  * Main queue processor — call from cron or API route.
@@ -75,6 +77,18 @@ export async function processRealviaQueue(): Promise<{
 
       const { payload_json: payload, agency_id } = webhookData;
 
+      if (!agency_id) {
+        await updateQueueJobStatus(job.id, 'failed', REALVIA_PROCESSING_ERROR_AGENCY_RESOLUTION_FAILED);
+        await markWebhookProcessed(job.webhook_log_id, REALVIA_PROCESSING_ERROR_AGENCY_RESOLUTION_FAILED);
+        results.push({
+          success: false,
+          action: 'skipped',
+          error: REALVIA_PROCESSING_ERROR_AGENCY_RESOLUTION_FAILED,
+        });
+        failed++;
+        continue;
+      }
+
       // Process based on payload type
       let result: RealviaProcessingResult;
 
@@ -82,7 +96,7 @@ export async function processRealviaQueue(): Promise<{
         result = await processAdvertPayload(payload, agency_id);
       } else if (isDeletePayload(payload)) {
         result = await processDeletePayload(
-          payload.source_id,
+          normalizeRealviaSourceId(payload.source_id),
           agency_id,
           payload.archiveType,
         );
@@ -327,7 +341,7 @@ async function processAdvertPayload(
  * NEVER hard-deletes — maps archiveType to property status.
  */
 async function processDeletePayload(
-  sourceId: number,
+  sourceId: string,
   agencyId: string | null,
   archiveType?: RealviaDeletePayload['archiveType'],
 ): Promise<RealviaProcessingResult> {
@@ -336,7 +350,7 @@ async function processDeletePayload(
     return { success: false, action: 'skipped', error: 'DB client unavailable' };
   }
 
-  const sourceIdStr = String(sourceId);
+  const sourceIdStr = sourceId;
 
   try {
     const { data: existing } = await sb

@@ -542,6 +542,21 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
 
 export type ResolvedBillingPlan = PlanKey | "free";
 
+/** Legacy add-on Stripe price IDs — keep in env for existing subscriptions; archive products in Stripe dashboard. */
+function resolveLegacyAddonPlanKey(priceId: string): ResolvedBillingPlan | null {
+  const legacyMaps: Array<[string | undefined, ResolvedBillingPlan]> = [
+    [process.env.STRIPE_PRICE_ADDON_LEADS_ENGINE, PLAN_KEYS.PRO],
+    [process.env.STRIPE_PRICE_ADDON_MARKET_INTELLIGENCE, PLAN_KEYS.ENTERPRISE],
+    [process.env.STRIPE_PRICE_ADDON_PROTOCOL_AI, PLAN_KEYS.COMMAND],
+    [process.env.STRIPE_PRICE_ADDON_ACTIVE_FORCE_CALLS, PLAN_KEYS.PRO],
+    [process.env.STRIPE_PRICE_SCALE, PLAN_KEYS.PRO],
+  ];
+  for (const [envPrice, plan] of legacyMaps) {
+    if (envPrice && priceId === envPrice) return plan;
+  }
+  return null;
+}
+
 export function resolvePlanKeyFromStripePriceId(
   priceId: string | null | undefined
 ): ResolvedBillingPlan {
@@ -551,7 +566,19 @@ export function resolvePlanKeyFromStripePriceId(
   if (priceId === process.env.STRIPE_PRICE_ENTERPRISE)     return PLAN_KEYS.ENTERPRISE;
   if (priceId === process.env.STRIPE_PRICE_PRO)            return PLAN_KEYS.PRO;
   if (priceId === process.env.STRIPE_PRICE_STARTER)        return PLAN_KEYS.STARTER;
-  return PLAN_KEYS.PRO;
+
+  const legacyAddon = resolveLegacyAddonPlanKey(priceId);
+  if (legacyAddon) return legacyAddon;
+
+  const message = `Unknown Stripe price id — defaulting tier to free: ${priceId}`;
+  logInfo(message, "resolvePlanKeyFromStripePriceId");
+  console.warn(`[billing] ${message}`);
+  void autoErrorCapture(new Error(message), {
+    source: "billing",
+    priceId,
+    action: "resolvePlanKeyFromStripePriceId",
+  });
+  return "free";
 }
 
 export async function getCurrentPlanKey(): Promise<ResolvedBillingPlan> {

@@ -20,11 +20,13 @@ type Props = {
   profileMissingAgency: boolean;
   /** Voliteľný SSR počet; zoznam sa vždy načíta v prehliadači kvôli RLS session. */
   initialLeadCount?: number;
+  inventoryView?: "leads" | "contacts";
 };
 
 export default function LeadsPageClient({
   profileMissingAgency,
   initialLeadCount,
+  inventoryView = "leads",
 }: Props) {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [teams, setTeams] = useState<TeamOption[]>([]);
@@ -37,7 +39,7 @@ export default function LeadsPageClient({
 
     const loadViaApi = async (): Promise<boolean> => {
       try {
-        const res = await fetch("/api/leads/inventory");
+        const res = await fetch(`/api/leads/inventory?view=${inventoryView}`);
         if (!res.ok) return false;
         const payload = (await res.json()) as {
           inventory?: {
@@ -58,7 +60,26 @@ export default function LeadsPageClient({
       }
     };
 
+    const applyInventory = (
+      leadRows: Lead[],
+      teamRows: TeamOption[],
+      profileRows: ProfileOption[],
+    ) => {
+      setLeads(leadRows);
+      setTeams(teamRows);
+      setProfiles(profileRows);
+      setLoadError(null);
+    };
+
     const load = async () => {
+      // Server route má session cookies + linkProfileToAuthUser pred RLS dotazom.
+      const apiOk = await loadViaApi();
+      if (cancelled) return;
+      if (apiOk) {
+        setLoading(false);
+        return;
+      }
+
       const supabase = getSupabaseClient();
       if (!supabase) {
         const ok = await loadViaApi();
@@ -80,37 +101,25 @@ export default function LeadsPageClient({
 
         if (cancelled) return;
 
+        const teamOptions = teamRows.map((team) => ({ id: team.id, name: team.name }));
+        const profileOptions = profileRows.map((profile) => ({
+          id: profile.id,
+          teamId: profile.teamId,
+          fullName: profile.fullName,
+          isActive: profile.isActive,
+        }));
+
         if (leadRows.length > 0) {
-          setLeads(leadRows);
-          setTeams(teamRows.map((team) => ({ id: team.id, name: team.name })));
-          setProfiles(
-            profileRows.map((profile) => ({
-              id: profile.id,
-              teamId: profile.teamId,
-              fullName: profile.fullName,
-              isActive: profile.isActive,
-            })),
-          );
-          setLoadError(null);
+          applyInventory(leadRows, teamOptions, profileOptions);
           setLoading(false);
           return;
         }
 
         const ok = await loadViaApi();
         if (!cancelled) {
-          if (!ok && leadRows.length === 0) {
-            setLeads([]);
-            setTeams(teamRows.map((team) => ({ id: team.id, name: team.name })));
-            setProfiles(
-              profileRows.map((profile) => ({
-                id: profile.id,
-                teamId: profile.teamId,
-                fullName: profile.fullName,
-                isActive: profile.isActive,
-              })),
-            );
+          if (!ok) {
+            applyInventory([], teamOptions, profileOptions);
           }
-          setLoadError(null);
         }
       } catch (err) {
         const ok = await loadViaApi();
@@ -128,7 +137,7 @@ export default function LeadsPageClient({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [initialLeadCount, inventoryView]);
 
   if (loading) {
     return (

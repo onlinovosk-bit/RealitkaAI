@@ -80,7 +80,7 @@ const SECTIONS: Section[] = [
     ],
   },
   {
-    title: "L99 Radar príležitostí",
+    title: "Radar dopytu a ponuky",
     rows: [
       { label: "Kataster radar", desc: "Sleduje zmeny na listoch vlastníctva v tvojej oblasti v reálnom čase.", cells: [N, Y, Y, Y] },
       { label: "Register úpadcov", desc: "AI monitoruje exekúcie, konkurzy a dlhy.", cells: [N, Y, Y, Y] },
@@ -88,7 +88,7 @@ const SECTIONS: Section[] = [
       { label: "Ghost Resurrection", desc: "Prebúdza klientov, ktorí ťa kontaktovali pred mesiacmi.", cells: [N, N, Y, Y] },
       { label: "Register závierok (B2B)", desc: "Prístup k účtovným závierkam firiem a živnostníkov.", cells: [N, N, Y, Y] },
       { label: "Bio-Social demografika", desc: "Analýza verejných profilov kombinovaná s demografickými dátami.", cells: [N, N, N, Y] },
-      { label: "Competition Heatmap", desc: "Živá tepelná mapa aktivity konkurenčných maklérov.", cells: [N, N, N, Y] },
+      { label: "Competition Heatmap (roadmap)", desc: "Živá tepelná mapa aktivity konkurenčných maklérov — v príprave, nie v predaji.", cells: [N, N, N, "Čoskoro"] },
       { label: "Ghost Mode Shield", desc: "Anonymný režim pre citlivé transakcie a prieskum trhu.", cells: [N, N, N, Y] },
     ],
   },

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { handleStripeWebhookEvent, verifyStripeWebhook } from "@/lib/billing-store";
+import { handlePricingCheckoutWebhook } from "@/lib/credits-billing-webhook";
 import { autoErrorCapture } from "@/lib/auto-error-capture";
 
 export async function POST(request: Request) {
@@ -13,6 +14,7 @@ export async function POST(request: Request) {
     const payload = await request.text();
     const event = verifyStripeWebhook(payload, signature);
 
+    await handlePricingCheckoutWebhook(event);
     await handleStripeWebhookEvent(event);
 
     return NextResponse.json({ received: true });

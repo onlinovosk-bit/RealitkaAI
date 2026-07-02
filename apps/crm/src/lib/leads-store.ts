@@ -173,7 +173,7 @@ type ActivityLogInput = {
 
 type SupabaseLeadRow = {
   id: string;
-  agency_id: string;
+  agency_id: string | null;
   name: string;
   email: string;
   phone: string;
@@ -261,6 +261,20 @@ function parseAiEngineColumn(raw: SupabaseLeadRow["ai_engine"]): AiEngineSnapsho
     timeToCloseDays,
     updatedAt,
   };
+}
+
+/**
+ * Defense-in-depth tenant filter — RLS is primary; app layer drops cross-tenant rows.
+ */
+async function scopeLeadRowsToProfileAgency(
+  supabase: import("@supabase/supabase-js").SupabaseClient,
+  rows: SupabaseLeadRow[],
+): Promise<SupabaseLeadRow[]> {
+  const { resolveSessionAgencyId, filterRowsByAgency } = await import(
+    "@/lib/tenant-scope"
+  );
+  const agencyId = await resolveSessionAgencyId(supabase);
+  return filterRowsByAgency(rows, agencyId);
 }
 
 function mapRowToLead(row: SupabaseLeadRow): Lead {
@@ -668,9 +682,10 @@ async function appendActivity(
   leadId: string,
   text: string,
   type: ActivityType = "Telefonat",
-  meta?: ActivityMeta
+  meta?: ActivityMeta,
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
 ) {
-  const supabase = await resolveTenantSupabase();
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     return;
@@ -755,12 +770,21 @@ export async function listLeads(
   const supabase = await resolveTenantSupabase(scopedSupabase);
 
   if (!supabase) {
+    if (process.env.NODE_ENV === "production") return [];
     return applyFilters(mockLeads, filters);
+  }
+
+  const { resolveSessionAgencyId } = await import("@/lib/tenant-scope");
+  const agencyId = await resolveSessionAgencyId(supabase);
+  if (!agencyId) {
+    console.warn("[leads-store] listLeads: missing profile agency_id — returning empty set");
+    return [];
   }
 
   let query = supabase
     .from("leads")
     .select("*")
+    .eq("agency_id", agencyId)
     .order("score", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(500);
@@ -787,19 +811,27 @@ export async function listLeads(
   const { data, error } = await query;
 
   if (error) {
-    console.error("Supabase listLeads error, using mock fallback:", error.message);
+    console.error("Supabase listLeads error:", error.message);
+    if (process.env.NODE_ENV === "production") {
+      return [];
+    }
     return applyFilters(mockLeads, filters);
   }
 
-  return (data ?? []).map((row) => mapRowToLead(row as SupabaseLeadRow));
+  const rows = (data ?? []) as SupabaseLeadRow[];
+  const tenantScoped = await scopeLeadRowsToProfileAgency(supabase, rows);
+  return tenantScoped.map((row) => mapRowToLead(row));
 }
 
-export async function getLead(id: string): Promise<Lead | undefined> {
+export async function getLead(
+  id: string,
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+): Promise<Lead | undefined> {
   if (await readDemoModeFromCookie()) {
     return getDemoShowcaseLeads().find((lead) => lead.id === id);
   }
 
-  const supabase = await resolveTenantSupabase();
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     return mockLeads.find((lead) => lead.id === id);
@@ -815,11 +847,21 @@ export async function getLead(id: string): Promise<Lead | undefined> {
     return mockLeads.find((lead) => lead.id === id);
   }
 
-  return mapRowToLead(data as SupabaseLeadRow);
+  const { resolveSessionAgencyId, filterRowsByAgency } = await import(
+    "@/lib/tenant-scope"
+  );
+  const agencyId = await resolveSessionAgencyId(supabase);
+  const [scopedRow] = filterRowsByAgency([data as SupabaseLeadRow], agencyId);
+  if (!scopedRow) return undefined;
+
+  return mapRowToLead(scopedRow);
 }
 
-export async function createLead(input: LeadInput & ActivityLogInput) {
-  const supabase = await resolveTenantSupabase();
+export async function createLead(
+  input: LeadInput & ActivityLogInput,
+  scopedSupabase?: import("@supabase/supabase-js").SupabaseClient | null,
+) {
+  const supabase = await resolveTenantSupabase(scopedSupabase);
 
   if (!supabase) {
     const lead: Lead = {
@@ -886,6 +928,7 @@ export async function createLead(input: LeadInput & ActivityLogInput) {
     .single();
 
   if (error) {
+    console.error("[leads.create] insert error=", JSON.stringify(error));
     throw new Error(error.message);
   }
 
@@ -918,9 +961,10 @@ export async function updateLead(
       aiTriageManualLock?: boolean | null;
       skipActivityLog?: boolean;
     } & ActivityLogInput
-  >
+  >,
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
 ) {
-  const supabase = await resolveTenantSupabase();
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     const index = mockLeads.findIndex((lead) => lead.id === id);
@@ -1052,14 +1096,19 @@ export async function updateLead(
         ? `Lead aktualizovaný: ${changes.join(", ")}.`
         : "Lead aktualizovaný cez formulár."
     ),
-    input.activityType || (input.status === "Obhliadka" ? "Obhliadka" : "Telefonat")
+    input.activityType || (input.status === "Obhliadka" ? "Obhliadka" : "Telefonat"),
+    undefined,
+    scoped,
   );
 
   return mapRowToLead(data as SupabaseLeadRow);
 }
 
-export async function deleteLead(id: string) {
-  const supabase = await resolveTenantSupabase();
+export async function deleteLead(
+  id: string,
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+) {
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     const index = mockLeads.findIndex((lead) => lead.id === id);
@@ -1104,8 +1153,11 @@ export async function getLeadById(id: string): Promise<Lead | undefined> {
   return getLead(id);
 }
 
-export async function getActivitiesByLeadId(id: string): Promise<LeadActivity[]> {
-  const supabase = await resolveTenantSupabase();
+export async function getActivitiesByLeadId(
+  id: string,
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+): Promise<LeadActivity[]> {
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     return [

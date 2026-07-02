@@ -3,106 +3,40 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { Lock, Mic2, Map, AlertTriangle, Hammer, Globe, Users, Zap } from "lucide-react";
+import { Hammer, Zap } from "lucide-react";
 import { NeuralPulse } from "@/components/visuals/NeuralPulse";
 import { GhostBanner } from "@/components/l99/GhostBanner";
-import { CompetitionMap } from "@/components/l99/CompetitionMap";
-import IntelBrief from "@/components/protocol/IntelBrief";
+import { CadastreMapView } from "@/components/l99/CadastreMapView";
 import { TIER_DISPLAY_NAMES, TIER_PRICES } from "@/types/intelligence-hub";
 import type { HubTier, GhostSessionData } from "@/types/intelligence-hub";
+import { canRenderModule, type ModuleKey } from "@/lib/modules/registry";
 
 const TAB_TO_MODULE: Record<string, string> = {
-  ghost:     "financie",
-  market:    "stavba",
-  community: "komunita",
+  market: "stavba",
+  radar: "bod-zlomu",
+  ghost: "zmena-okolia",
 };
 
-const MODULE_ROUTES: Record<string, string> = {
-  skener: "/call-analyzer",
-  "bod-zlomu": "/dashboard/revolis-ai",
-  financie: "/l99-hub?tab=ghost",
-  stavba: "/l99-hub?tab=market",
-  "zmena-okolia": "/dashboard/revolis-ai",
-  komunita: "/l99-hub?tab=community",
-};
-
-// ─── Moduly ───────────────────────────────────────────────────────────────
-const MODULES = [
+const HUB_PREVIEW_MODULES: Array<{
+  moduleKey: ModuleKey;
+  id: string;
+  title: string;
+  icon: typeof Hammer;
+  badge: string;
+  badgeColor: string;
+  text: string;
+}> = [
   {
-    id: "skener",
-    title: "Emocionálny skener",
-    icon: Mic2,
-    requiredTier: "pro" as HubTier,
-    badge: "Market Vision",
-    badgeColor: "#818CF8",
-    text: "AI spozná čo sa klientovi páči počas obhliadky a povie ti, na čo máš zatlačiť.",
-    btn: "Aktivovať skener",
-  },
-  {
-    id: "bod-zlomu",
-    title: "Bod Zlomu",
-    icon: Map,
-    requiredTier: "pro" as HubTier,
-    badge: "Market Vision",
-    badgeColor: "#818CF8",
-    text: "Mapa ulíc, kde sa o chvíľu začne sťahovanie. Budeš tam prvý.",
-    btn: "Zobraziť mapu",
-  },
-  {
-    id: "financie",
-    title: "Finančné problémy",
-    icon: AlertTriangle,
-    requiredTier: "enterprise" as HubTier,
-    badge: "Protocol Authority",
-    badgeColor: "#60A5FA",
-    text: "AI sleduje exekúcie a dlhy. Vieš kto potrebuje rýchly predaj.",
-    btn: "Odomknúť radar",
-  },
-  {
+    moduleKey: "hub_planned_construction",
     id: "stavba",
     title: "Plánovaná stavba",
     icon: Hammer,
-    requiredTier: "enterprise" as HubTier,
     badge: "Protocol Authority",
     badgeColor: "#60A5FA",
-    text: "Sleduje stavebné povolenia. Budúci predajca bytu práve stavia dom.",
-    btn: "Sledovať úrady",
+    text: "Stavebné povolenia a územné zmeny z verejných registrov — predikcia vývoja cien v zóne.",
   },
-  {
-    id: "zmena-okolia",
-    title: "Zmena v okolí",
-    icon: Globe,
-    requiredTier: "enterprise" as HubTier,
-    badge: "Protocol Authority",
-    badgeColor: "#60A5FA",
-    text: "Nová škola, park, diaľnica — AI predpovedá kde porastú ceny.",
-    btn: "Aktivovať predikciu",
-  },
-  {
-    id: "komunita",
-    title: "Nálada v komunite",
-    icon: Users,
-    requiredTier: "enterprise" as HubTier,
-    badge: "Protocol Authority",
-    badgeColor: "#60A5FA",
-    text: "Sleduje Facebook skupiny a diskusie. Vieš čo ľudia plánujú predať.",
-    btn: "Monitorovať komunitu",
-  },
-];
+] as const;
 
-function tierLevel(t: HubTier): number {
-  const levels: Record<HubTier, number> = {
-    free: 0, starter: 0, pro: 1,
-    enterprise: 2, market_vision: 2, protocol_authority: 3,
-  };
-  return levels[t] ?? 0;
-}
-
-function isUnlocked(required: HubTier, current: HubTier): boolean {
-  return tierLevel(current) >= tierLevel(required);
-}
-
-// ─── Ghost session (localStorage) ────────────────────────────────────────
 function getGhostSession(): GhostSessionData | null {
   if (typeof window === "undefined") return null;
   try {
@@ -113,42 +47,23 @@ function getGhostSession(): GhostSessionData | null {
   }
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────
 export default function L99HubPage() {
-  const searchParams    = useSearchParams();
-  const activeModuleId  = TAB_TO_MODULE[searchParams?.get("tab") ?? ""] ?? null;
+  const searchParams = useSearchParams();
+  const activeModuleId = TAB_TO_MODULE[searchParams?.get("tab") ?? ""] ?? null;
 
-  const [tier, setTier]               = useState<HubTier>("free");
+  const [tier, setTier] = useState<HubTier>("free");
   const [demoTierOverride, setDemoTierOverride] = useState<HubTier | null>(null);
   const [tierLoading, setTierLoading] = useState(true);
-  const [ghostData, setGhostData]     = useState<GhostSessionData | null>(null);
-  const [strategicAlerts, setStrategicAlerts] = useState<
-    {
-      id: string;
-      title: string;
-      description: string;
-      severity: "low" | "medium" | "high" | "critical";
-      type: string;
-      location_focus?: string | null;
-      created_at?: string;
-    }[]
-  >([]);
+  const [ghostData, setGhostData] = useState<GhostSessionData | null>(null);
 
   useEffect(() => {
-    // Načítaj skutočný tier zo servera
     fetch("/api/hub/get-tier")
       .then((r) => r.json())
       .then((d: { tier: HubTier }) => setTier(d.tier))
       .catch(() => setTier("free"))
       .finally(() => setTierLoading(false));
 
-    // Ghost Resurrection – ak má user predchádzajúcu session
     setGhostData(getGhostSession());
-
-    fetch("/api/strategic-alerts")
-      .then((r) => r.json())
-      .then((d: { alerts?: typeof strategicAlerts }) => setStrategicAlerts(d.alerts ?? []))
-      .catch(() => setStrategicAlerts([]));
   }, []);
 
   useEffect(() => {
@@ -172,51 +87,60 @@ export default function L99HubPage() {
     effectiveTier === "enterprise" ||
     effectiveTier === "market_vision" ||
     effectiveTier === "protocol_authority";
-  const isProtocolAuthority = effectiveTier === "protocol_authority" || effectiveTier === "enterprise";
   const isPro = effectiveTier === "pro" || isEnterprise;
+  const visiblePreviewModules = HUB_PREVIEW_MODULES.filter((mod) =>
+    canRenderModule(mod.moduleKey, effectiveTier),
+  );
+  const canShowBreakingPoint = canRenderModule("hub_breaking_point", effectiveTier);
+  const canShowNeighborhoodChange = canRenderModule("hub_neighborhood_change", effectiveTier);
+  const hasAnyLiveModule = canShowBreakingPoint || canShowNeighborhoodChange;
 
   return (
     <div className="min-h-screen bg-[#010103] text-slate-200 relative overflow-hidden">
-
-      {/* Neural Pulse pozadie */}
       <NeuralPulse />
 
-      {/* Ghost Resurrection Banner */}
       {ghostData && (
         <GhostBanner
           data={ghostData}
           onDismiss={() => setGhostData(null)}
-          onUnlock={() => { window.location.href = "/billing"; }}
+          onUnlock={() => {
+            window.location.href = "/billing";
+          }}
         />
       )}
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-12 py-12">
-
-        {/* Header */}
         <motion.header
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-16"
         >
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 mb-6 text-blue-400 font-bold italic text-[10px] uppercase tracking-widest">
-            <Zap size={10} /> Revolis Protocol Active
+            <Zap size={10} /> Revolis prediktívna inteligencia
           </div>
           <h1 className="text-4xl md:text-6xl font-black text-white mb-4 tracking-tight uppercase italic">
-            PREDIKTÍVNA <span className="text-blue-500">INTELIGENCIA</span>
+            SKRYTÉ <span className="text-blue-500">PRÍLEŽITOSTI TRHU</span>
           </h1>
           <p className="text-lg text-slate-400 max-w-2xl uppercase tracking-wide">
-            Dáta ktoré konkurencia nemá.
+            Verejné dáta a trhový radar — bez simulovaných signálov.
           </p>
 
-          {/* Tier badge */}
           {!tierLoading && (
             <div className="mt-4 inline-flex items-center gap-2">
               <span className="text-xs text-slate-500">Tvoj plán:</span>
               <span
                 className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest"
                 style={{
-                  background: isEnterprise ? "rgba(37,99,235,0.15)" : isPro ? "rgba(129,140,248,0.15)" : "rgba(255,255,255,0.05)",
-                  border: isEnterprise ? "1px solid rgba(37,99,235,0.3)" : isPro ? "1px solid rgba(129,140,248,0.3)" : "1px solid rgba(255,255,255,0.1)",
+                  background: isEnterprise
+                    ? "rgba(37,99,235,0.15)"
+                    : isPro
+                      ? "rgba(129,140,248,0.15)"
+                      : "rgba(255,255,255,0.05)",
+                  border: isEnterprise
+                    ? "1px solid rgba(37,99,235,0.3)"
+                    : isPro
+                      ? "1px solid rgba(129,140,248,0.3)"
+                      : "1px solid rgba(255,255,255,0.1)",
                   color: isEnterprise ? "#93C5FD" : isPro ? "#A5B4FC" : "#64748B",
                 }}
               >
@@ -224,136 +148,123 @@ export default function L99HubPage() {
                 {TIER_PRICES[effectiveTier] ? ` · ${TIER_PRICES[effectiveTier]}€/mes` : ""}
               </span>
               {!isPro && (
-                <a href="/billing" className="text-[10px] text-blue-400 hover:text-blue-300 underline uppercase tracking-wider">
+                <a
+                  href="/billing"
+                  className="text-[10px] text-blue-400 hover:text-blue-300 underline uppercase tracking-wider"
+                >
                   Upgradovať →
                 </a>
               )}
             </div>
           )}
-          <p className="mt-2 text-[10px] uppercase tracking-wider text-slate-600">
-            release: l99-2026-04-26b
-          </p>
         </motion.header>
 
-        {/* Competition Map – len pre Protocol Authority */}
-        {isEnterprise && (
+        {canShowBreakingPoint && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
             className="mb-12"
           >
-            <CompetitionMap isProtocolActive={true} />
+            <CadastreMapView
+              title="Bod zlomu"
+              subtitle="Display-only katastralna parcelna vrstva z verejneho INSPIRE WMS."
+            />
           </motion.div>
         )}
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-          className="mb-12"
-        >
-          <IntelBrief alerts={strategicAlerts} locked={!isProtocolAuthority} />
-        </motion.div>
+        {canShowNeighborhoodChange && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="mb-12"
+          >
+            <CadastreMapView
+              title="Zmena v okoli"
+              subtitle="Display-only parcelny overlay pre Protocol Authority bez signalovej vrstvy."
+            />
+          </motion.div>
+        )}
 
-        {/* Moduly grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {MODULES.map((mod, i) => {
-            const unlocked = isUnlocked(mod.requiredTier, effectiveTier);
-            const Icon = mod.icon;
-            return (
-              <motion.div
-                key={mod.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 + i * 0.05 }}
-                className={`group relative p-8 rounded-[2rem] border transition-all duration-500 ${
-                  unlocked
-                    ? "bg-[#0A0A12] border-blue-500/30 shadow-[0_0_30px_-10px_rgba(37,99,235,0.2)] hover:border-blue-500/50"
-                    : "bg-[#050508] border-white/5 opacity-40 cursor-not-allowed"
-                } ${mod.id === activeModuleId ? "ring-2 ring-blue-400 ring-offset-2 ring-offset-[#010103]" : ""}`}
-              >
-                {/* Tier badge */}
-                {!unlocked && (
-                  <div
-                    className="absolute top-4 right-4 text-[9px] font-bold px-2.5 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity animate-pulse z-10"
-                    style={{
-                      background: `${mod.badgeColor}18`,
-                      color: mod.badgeColor,
-                      border: `1px solid ${mod.badgeColor}40`,
-                    }}
+        {visiblePreviewModules.length > 0 && (
+          <>
+            <p className="mb-6 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+              Moduly z verejných zdrojov (v príprave)
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {visiblePreviewModules.map((mod, i) => {
+                const Icon = mod.icon;
+                return (
+                  <motion.div
+                    key={mod.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 + i * 0.05 }}
+                    className={`relative p-8 rounded-[2rem] border bg-[#0A0A12]/80 border-white/10 ${
+                      mod.id === activeModuleId
+                        ? "ring-2 ring-blue-400/60 ring-offset-2 ring-offset-[#010103]"
+                        : ""
+                    }`}
                   >
-                    {mod.badge}
-                  </div>
-                )}
+                    <div
+                      className="absolute top-4 right-4 z-10 rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-wider"
+                      style={{
+                        background: "rgba(148,163,184,0.12)",
+                        color: "#94A3B8",
+                        border: "1px solid rgba(148,163,184,0.25)",
+                      }}
+                    >
+                      Čoskoro
+                    </div>
 
-                <div className="flex justify-between mb-6">
-                  <Icon size={28} style={{ color: unlocked ? mod.badgeColor : "#334155" }} />
-                  {!unlocked && <Lock size={14} style={{ color: "#334155" }} />}
-                </div>
+                    <div className="mb-6 flex justify-between">
+                      <Icon size={28} style={{ color: mod.badgeColor }} />
+                    </div>
 
-                <h3 className="text-lg font-black text-white mb-2 uppercase italic tracking-wide">
-                  {mod.title}
-                </h3>
-                <p className="text-xs text-slate-400 mb-6 leading-relaxed uppercase tracking-wider">
-                  {mod.text}
-                </p>
+                    <span
+                      className="mb-3 inline-block rounded-full px-2 py-0.5 text-[8px] font-bold uppercase"
+                      style={{
+                        background: `${mod.badgeColor}18`,
+                        color: mod.badgeColor,
+                        border: `1px solid ${mod.badgeColor}40`,
+                      }}
+                    >
+                      {mod.badge}
+                    </span>
 
-                <button
-                  onClick={() => {
-                    if (!unlocked) {
-                      window.location.href = "/billing";
-                      return;
-                    }
-                    window.location.href = MODULE_ROUTES[mod.id] ?? "/l99-hub";
-                  }}
-                  className={`w-full py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                    unlocked
-                      ? "text-white hover:scale-105"
-                      : "bg-white/5 text-slate-600"
-                  }`}
-                  style={unlocked ? {
-                    background: `linear-gradient(135deg, ${mod.badgeColor}40, ${mod.badgeColor}20)`,
-                    border: `1px solid ${mod.badgeColor}40`,
-                  } : undefined}
-                >
-                  {unlocked ? mod.btn : `Dostupné v ${mod.badge}`}
-                </button>
-              </motion.div>
-            );
-          })}
-        </div>
+                    <h3 className="text-lg font-black text-white mb-2 uppercase italic tracking-wide">
+                      {mod.title}
+                    </h3>
+                    <p className="text-xs text-slate-400 mb-6 leading-relaxed uppercase tracking-wider">
+                      {mod.text}
+                    </p>
 
-        {/* Upgrade CTA – len pre non-enterprise */}
-        {!isEnterprise && !tierLoading && (
+                    <div
+                      className="w-full cursor-not-allowed rounded-2xl border border-white/10 bg-white/[0.03] py-3.5 text-center text-[10px] font-black uppercase tracking-widest text-slate-500"
+                      aria-disabled="true"
+                      role="status"
+                    >
+                      Čoskoro — napojenie na verejné registre
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {!hasAnyLiveModule && !tierLoading && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="mt-16 p-10 rounded-[3rem] text-center"
-            style={{
-              background: "linear-gradient(135deg, rgba(37,99,235,0.08) 0%, rgba(99,102,241,0.08) 100%)",
-              border: "1px solid rgba(37,99,235,0.20)",
-            }}
+            transition={{ delay: 0.35 }}
+            className="mt-8 rounded-2xl border border-white/10 bg-[#0A0A12]/80 p-6 text-sm text-slate-400"
           >
-            <h3 className="text-2xl font-black text-white mb-3 uppercase italic tracking-wide">
-              {isPro ? "AKTIVUJ PROTOCOL AUTHORITY" : "ZAČNI S MARKET VISION"}
-            </h3>
-            <p className="text-sm text-slate-400 mb-6 max-w-lg mx-auto">
-              {isPro
-                ? "Odomkni Competition Map, Finančný radar, Plánované stavby a Náladu v komunite."
-                : "Prvý krok k prediktívnej inteligencii. Od 199€/mes."
-              }
-            </p>
-            <a
-              href="/billing"
-              className="inline-block px-10 py-4 bg-blue-600 text-white font-black rounded-xl text-[10px] uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-blue-600/20"
-            >
-              {isPro ? "Upgradovať na Protocol Authority →" : "Aktivovať Market Vision →"}
-            </a>
+            V tomto pláne momentálne nie je dostupný žiadny live modul pre sekciu
+            Skryté príležitosti trhu.
           </motion.div>
         )}
-
       </div>
     </div>
   );

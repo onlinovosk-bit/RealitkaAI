@@ -95,8 +95,11 @@ export async function listTasks(
   }));
 }
 
-export async function createTask(input: TaskInput) {
-  const supabase = await resolveTenantSupabase();
+export async function createTask(
+  input: TaskInput,
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+) {
+  const supabase = await resolveTenantSupabase(scoped);
   const leadId = normalizeLeadId(input.leadId);
 
   if (!leadId) {
@@ -156,9 +159,10 @@ export async function createTask(input: TaskInput) {
 
 export async function updateTask(
   id: string,
-  input: Partial<TaskInput & { completedAt: string | null }>
+  input: Partial<TaskInput & { completedAt: string | null }>,
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
 ) {
-  const supabase = await resolveTenantSupabase();
+  const supabase = await resolveTenantSupabase(scoped);
   const normalizedLeadId =
     typeof input.leadId !== "undefined" ? normalizeLeadId(input.leadId) : undefined;
 
@@ -238,8 +242,11 @@ export async function updateTask(
   };
 }
 
-export async function deleteTask(id: string) {
-  const supabase = await resolveTenantSupabase();
+export async function deleteTask(
+  id: string,
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+) {
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     const store = getDemoTasksStore();

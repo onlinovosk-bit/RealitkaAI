@@ -4,6 +4,7 @@ import {
   buildExecutiveSignals,
   formatMoneyEur,
 } from "@/lib/workdesk/executive-signals";
+import { countStaleLeads } from "@/lib/agents/deal-trigger";
 import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
 import type { Lead } from "@/lib/leads-store";
 import Link from "next/link";
@@ -15,6 +16,7 @@ type Props = {
 export function WorkdeskCommandHero({ leads }: Props) {
   const signals = buildExecutiveSignals(leads, 3);
   const placeholders = signals.length === 0;
+  const staleCount = countStaleLeads(leads);
 
   return (
     <section
@@ -46,9 +48,24 @@ export function WorkdeskCommandHero({ leads }: Props) {
         >
           AI REVENUE OPERATING SYSTEM
         </span>
-        <h1 className="mt-3 text-3xl font-extrabold tracking-tight md:text-[44px] md:leading-[1.05]">
-          Kde mám peniaze dnes?
-        </h1>
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <h1 className="text-3xl font-extrabold tracking-tight md:text-[44px] md:leading-[1.05]">
+            Kde mám peniaze dnes?
+          </h1>
+          {staleCount > 0 ? (
+            <Link
+              href="/leads"
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold"
+              style={{
+                background: "rgba(248,113,113,0.22)",
+                border: "1px solid rgba(252,165,165,0.45)",
+                color: "#FECACA",
+              }}
+            >
+              {staleCount} stagnujúcich
+            </Link>
+          ) : null}
+        </div>
         <p className="mt-3 max-w-2xl text-base leading-relaxed text-white/82">
           Revolis neukazuje dáta — vedie ťa ku krokom, ktoré najrýchliejšie posunú obchod k provízii.
         </p>

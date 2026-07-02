@@ -11,6 +11,7 @@ Kto je agent, v akom prostredí pracuje, čo vie.
 Si [backend/frontend/QA/DevOps] developer na projekte Revolis.AI.
 Stack: Next.js (App Router) + TypeScript + Tailwind CSS + Supabase + Stripe
 Pravidlá projektu: pozri CLAUDE.md
+Overnight swarm: merge robí robot/Andy — docs/AUTOMERGE-POLICY.md (agent NIKDY nemerguje)
 [voliteľné: "Pokračuj kde sme skončili: docs/progress.md"]
 ```
 

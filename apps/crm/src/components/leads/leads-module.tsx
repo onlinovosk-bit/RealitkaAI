@@ -8,6 +8,7 @@ import AiPanel from "@/components/leads/ai-panel";
 import EmptyState from "@/components/shared/empty-state";
 import SemanticSearchBar from "@/components/search/SemanticSearchBar";
 import { LeadsHotStrip } from "@/components/leads/LeadsHotStrip";
+import { getLeadDisplayScore, isLeadHot } from "@/lib/leads/lead-display-score";
 import type { Lead } from "@/lib/leads-store";
 import type { Recommendation } from "@/lib/mock-data";
 import { SLATE_HORIZON, WORKDESK_KPI } from "@/lib/slate-horizon-theme";
@@ -47,10 +48,13 @@ export default function LeadsModule({
     setFiltered(leads);
   }, [leads]);
 
+  const scoredLeads = filtered
+    .map((lead) => getLeadDisplayScore(lead))
+    .filter((score): score is number => score != null);
   const avgScore =
-    filtered.length > 0
+    scoredLeads.length > 0
       ? Math.round(
-          filtered.reduce((sum, lead) => sum + lead.score, 0) / filtered.length
+          scoredLeads.reduce((sum, score) => sum + score, 0) / scoredLeads.length
         )
       : 0;
 
@@ -62,10 +66,10 @@ export default function LeadsModule({
     [filtered, recommendations]
   );
 
+  const filtersHideAll = leadItems.length > 0 && filtered.length === 0;
+
   return (
     <>
-      <LeadsHotStrip leads={filtered} />
-
       <div className="mb-6 flex flex-col gap-4">
         <SemanticSearchBar type="leads" className="w-full" />
 
@@ -79,6 +83,8 @@ export default function LeadsModule({
         <LeadCreateForm />
       </div>
 
+      <LeadsHotStrip leads={leadItems} />
+
       {profileMissingAgency ? (
         <div
           className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
@@ -89,10 +95,20 @@ export default function LeadsModule({
         </div>
       ) : null}
 
+      {filtersHideAll ? (
+        <div
+          className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+          role="status"
+        >
+          Filtre skryli všetkých <strong>{leadItems.length}</strong> načítaných klientov (napr. príliš
+          vysoké Min. BRI). Kliknite <strong>Vymazať filtre</strong> nižšie v paneli filtrov.
+        </div>
+      ) : null}
+
       <section className="mb-4 grid grid-cols-2 gap-2 md:gap-4 xl:grid-cols-4">
         {[
           { label: "Príležitosti", value: filtered.length, color: SLATE_HORIZON.brand },
-          { label: "Horúce", value: filtered.filter((i) => i.status === "Horúci").length, color: SLATE_HORIZON.red },
+          { label: "Horúce", value: filtered.filter(isLeadHot).length, color: SLATE_HORIZON.red },
           { label: "Obhliadky", value: filtered.filter((i) => i.status === "Obhliadka").length, color: SLATE_HORIZON.brandDeep },
           { label: "Avg BRI", value: avgScore, color: SLATE_HORIZON.brandNavy },
         ].map(({ label, value, color }) => (
@@ -113,13 +129,19 @@ export default function LeadsModule({
 
       {filtered.length === 0 ? (
         <EmptyState
-          title="Zatiaľ nemáš žiadne príležitosti"
+          title={
+            filtersHideAll
+              ? "Žiadny klient nevyhovuje filtrom"
+              : "Zatiaľ nemáš žiadne príležitosti"
+          }
           description={
-            profileMissingAgency
-              ? "Doplň agency_id v profile — bez neho RLS nevráti riadky z tabuľky leads."
-              : typeof initialLeadCount === "number" && initialLeadCount > 0
-                ? "Server načítal príležitosti, ale zoznam v prehliadači je prázdny — obnov stránku."
-                : "Vytvor prvú príležitosť cez formulár vyššie alebo uprav filtre."
+            filtersHideAll
+              ? `Máte ${leadItems.length} klientov v kancelárii, ale aktuálne filtre ich nezobrazujú. Kliknite „Vymazať filtre“ a skontrolujte pole Min. BRI (nechajte prázdne pre všetkých).`
+              : profileMissingAgency
+                ? "Doplň agency_id v profile — bez neho RLS nevráti riadky z tabuľky leads."
+                : typeof initialLeadCount === "number" && initialLeadCount > 0
+                  ? "Server načítal príležitosti, ale zoznam v prehliadači je prázdny — obnov stránku (Ctrl+Shift+R)."
+                  : "Vytvor prvú príležitosť cez formulár vyššie alebo uprav filtre."
           }
         />
       ) : (
