@@ -110,6 +110,19 @@ chytá DRIFT smeru. Raz za mesiac si sadni a odpovedz:
 Ak odpoveď na "čo nevie konkurencia" je za celý mesiac "nič nové" → varovný
 signál: stavia sa, ale moat sa neprehlbuje. Zapíš výstup do decisions.md.
 
+## LOKÁLNY PRE-FLIGHT (pred commitom / PR)
+
+Pred každým commitom alebo otvorením PR v `apps/crm` spusti lokálne (v tomto poradí):
+
+```bash
+npm run lint
+npm run test
+npm run build
+```
+
+CI je **posledná** kontrola, nie prvá — neposielaj kód, ktorý si lokálne neprešiel.
+Merge do `main` až po zelenom CI; lokálny pre-flight znižuje zbytočné CI cykly.
+
 ## POUŽITIE
 - Pred každým briefom/featurou: prejdi 12 otázok, zapíš skóre + veto do briefu.
 - Agenti/swarm: konzultuj túto ústavu pred návrhom akejkoľvek featury.
