@@ -20,6 +20,18 @@ CREATE TABLE IF NOT EXISTS public.stealth_recruiter_prospects (
   UNIQUE (agency_id, address)
 );
 
+-- Table may already exist from 20260527120000 (no region/verified_at); add columns before indexes.
+ALTER TABLE public.stealth_recruiter_prospects
+  ADD COLUMN IF NOT EXISTS region          TEXT,
+  ADD COLUMN IF NOT EXISTS platform        TEXT,
+  ADD COLUMN IF NOT EXISTS days_listed     INTEGER,
+  ADD COLUMN IF NOT EXISTS original_price  NUMERIC,
+  ADD COLUMN IF NOT EXISTS current_price   NUMERIC,
+  ADD COLUMN IF NOT EXISTS ai_comment      TEXT,
+  ADD COLUMN IF NOT EXISTS ai_outreach     TEXT,
+  ADD COLUMN IF NOT EXISTS verified_at     TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS scraped_at      TIMESTAMPTZ DEFAULT NOW();
+
 CREATE INDEX IF NOT EXISTS idx_stealth_recruiter_prospects_agency
   ON public.stealth_recruiter_prospects (agency_id);
 
