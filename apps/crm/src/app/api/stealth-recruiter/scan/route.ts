@@ -79,6 +79,8 @@ type ScanBody = {
   onlyToday?: boolean;
 };
 
+type GithubCommentItem = { id: string; comment: string };
+
 type ProspectRow = {
   id?: string;
   address: string;
