@@ -5,19 +5,21 @@ import { join } from "node:path";
 const CRM_ROOT = process.cwd();
 
 describe("[verification] Acquire email gateway", () => {
-  it("route verifies Resend webhook on raw body and resolves agency server-side", () => {
+  it("route accepts Cloudflare Worker JSON payload with shared-secret auth", () => {
     const route = readFileSync(
       join(CRM_ROOT, "src/app/api/acquire/email/route.ts"),
       "utf8",
     );
 
-    expect(route).toContain("req.text()");
-    expect(route).not.toContain("req.json()");
-    expect(route).toContain("resend.webhooks.verify");
-    expect(route).toContain("emails.receiving.get");
-    expect(route).toContain("agencyForInbound");
+    expect(route).toContain("req.json()");
+    expect(route).not.toContain("req.text()");
+    expect(route).not.toContain("resend.webhooks.verify");
+    expect(route).not.toContain("emails.receiving.get");
+    expect(route).not.toMatch(/import\s*\{[^}]*agencyForInbound/);
+    expect(route).toContain("ACQUIRE_SHARED_SECRET");
+    expect(route).toContain("x-shared-secret");
+    expect(route).toContain("payload?.mailbox?.agencyId");
     expect(route).toContain("createServiceRoleClient");
-    expect(route).not.toContain("body.agency");
   });
 
   it("agency_id comes from inbound address map, not parsed email", () => {
