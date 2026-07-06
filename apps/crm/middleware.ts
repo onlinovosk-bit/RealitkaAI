@@ -75,12 +75,4 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  return response
-}
-
-export const config = {
-  matcher: '/api/:path*',
-}
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 
