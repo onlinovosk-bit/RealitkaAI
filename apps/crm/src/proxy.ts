@@ -14,6 +14,8 @@ const PUBLIC_PATHS = new Set([
   "/api/demo/capture-lead",
   "/api/demo/estimate",
   "/api/demo/prefill-links",
+  "/api/proof",
+  "/proof",
   "/api/billing/webhook",
   "/api/integrations/google/callback",
   "/api/webhooks/hubspot",
