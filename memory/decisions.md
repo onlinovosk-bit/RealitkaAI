@@ -236,7 +236,7 @@
 
 - **Rozhodnutie:** Verejná route `/proof` + `lib/proof` engine (extrakcia ROI z landing), `POST /api/proof` → `saas_leads` (`source=proof`, answers v `note` JSON). Žiadna migrácia (AP-019). Honest benchmark copy (AP-001).
 - **Brief:** `docs/briefs/BO-001-proof-of-value.md`
-- **PR / vetva:** (T5) · `feat/bo-001-proof`
+- **PR / vetva:** #275 · `feat/bo-001-proof`
 - **Reuse:** `createSaasLead`, `RoiCalculatorHero` leak model → `lib/proof/engine`, `SLATE_HORIZON`, `LegalFooter`
 - **Preview smoke:** `/proof` mobile, 6 krokov, lead v `saas_leads` so `source=proof`
 - **Merge:** founder GO (2026-07-06); nie auto-merge (AP-012)
