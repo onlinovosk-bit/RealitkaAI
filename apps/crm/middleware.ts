@@ -13,11 +13,11 @@ const BYPASS_PREFIXES = [
   '/api/health',              // uptime monitoring (public)
   '/api/healthz',             // uptime monitoring (public)
   '/api/demo/',               // public demo capture (custom token or public form)
-  '/api/proof',               // public proof funnel (rate-limit + zod in route handler)
   '/api/leads/inbound',       // public lead form B1 (token in body, not session)
   '/api/acquire/email',       // Resend inbound webhook (signature in handler)
   '/api/bsm-reforma/',        // public BSM lead intake form
   '/api/sales-funnel/',       // public demo request form
+  '/api/proof',               // public Proof of Value funnel (rate-limited + zod-validated in handler)
   '/api/morning-brief/track/', // email open/click tracking pixels (must be public)
   '/api/guarantee/',          // public guarantee claim form
   '/api/onboarding/mvp/',     // service-role based onboarding flows
@@ -75,4 +75,13 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  return response
+}
+
+export const config = {
+  matcher: '/api/:path*',
+}
+
