@@ -63,7 +63,7 @@ export default defineConfig({
     // API + route smoke (engineering_live) — bez auth setup dependency
     {
       name: 'smoke',
-      testMatch: /smoke\.spec\.ts/,
+      testMatch: /(smoke|proof-funnel)\.spec\.ts/,
       workers: 1,
       timeout: 90_000,
       use: { ...devices['Desktop Chrome'] },
