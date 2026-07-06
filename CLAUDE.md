@@ -46,6 +46,8 @@ At the end of each session, update:
 - `memory/people.md` (team/stakeholders changes).
 - `memory/session-summary.md` (compressed state: what was built, what's pending, last file paths touched).
 
+**Task-loop (povinné):** Pred ukončením turnu aplikuj `.claude/skills/task-loop/SKILL.md` — navrhni jednu ďalšiu úlohu s GO bránou. Nepokračuj autonómne na PROD/merge/novú scope bez explicitného GO.
+
 ## Session Summary Format (memory/session-summary.md)
 ```
 ## Session [DATE]

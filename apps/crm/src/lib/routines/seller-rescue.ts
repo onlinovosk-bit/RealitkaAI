@@ -58,14 +58,17 @@ export function pickSellerRescueCandidates(params: {
   activityCountByLeadId: Record<string, number>;
   minDaysWithoutContact?: number;
   limit?: number;
+  /** Test hook — production callers omit (uses Date.now()). */
+  nowMs?: number;
 }): SellerRescueCandidate[] {
   const minDays = params.minDaysWithoutContact ?? 7;
   const limit = params.limit ?? 10;
+  const nowMs = params.nowMs ?? Date.now();
 
   return params.leads
     .filter((lead) => !CLOSED_STATUSES.has(String(lead.status ?? "")))
     .map((lead) => {
-      const days = daysWithoutContact(lead);
+      const days = daysWithoutContact(lead, nowMs);
       const activityCount = params.activityCountByLeadId[lead.id] ?? 0;
       const riskScore = computeSellerRescueRiskScore({
         daysWithoutContact: days,

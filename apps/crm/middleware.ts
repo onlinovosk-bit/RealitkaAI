@@ -13,6 +13,8 @@ const BYPASS_PREFIXES = [
   '/api/health',              // uptime monitoring (public)
   '/api/healthz',             // uptime monitoring (public)
   '/api/demo/',               // public demo capture (custom token or public form)
+  '/api/leads/inbound',       // public lead form B1 (token in body, not session)
+  '/api/acquire/email',       // Resend inbound webhook (signature in handler)
   '/api/bsm-reforma/',        // public BSM lead intake form
   '/api/sales-funnel/',       // public demo request form
   '/api/morning-brief/track/', // email open/click tracking pixels (must be public)

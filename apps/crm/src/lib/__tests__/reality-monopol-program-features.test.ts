@@ -62,6 +62,7 @@ describe("Reality Monopol — capability registry", () => {
     }
     expect(MONOPOL_CAPABILITIES).toContain("canUseCompetitionRadar");
     expect(MONOPOL_CAPABILITIES).toContain("canUseMonopolDominance");
+    expect(MONOPOL_CAPABILITIES).toContain("canUseStealthRecruiter");
   });
 
   it("keeps monopol caps locked for market_vision", () => {

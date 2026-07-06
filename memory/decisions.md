@@ -124,7 +124,12 @@
 - **Plán + rola (P0 backlog):** Smolko screenshot = `agent_solo` (Active Force + Maklér) namiesto `owner_vision` + Market Vision. `enforceSmolkoOwnerDefaults` v kóde existuje — overiť, či beží na prod (profil lookup / email / deploy). Dôležitejšie než arbitráž link.
 ---
 
-## [2026-06-17] - Schema Governance Guard — schedule disabled until secrets
+## [2026-06-18] - Stealth funnel incident + CI guard AP-011
+- **Incident:** Cursor vygeneroval `stealth-funnel` (zakázané) bez explicitného pokynu — zahodené pred commitom; kontaminácia v `proxy.ts`, `sales-funnel-store`, `update-status` tiež vyčistená.
+- **Medzera:** CI guard hľadal len `stealth-recruiter`; nové meno `stealth-funnel` by prešlo.
+- **Rozhodnutie:** Guard rozšírený z konkrétneho mena na vzor `stealth[-_]?(funnel|lead|recruiter|program)` (PR guard-first, potom tenant isolation). Zápis AP-011 v `docs/architecture/antipatterns-log.md`.
+
+---
 - **Stav:** `SCHEMA_GUARD_SUPABASE_URL` + `SCHEMA_GUARD_SUPABASE_SERVICE_ROLE_KEY` nie sú v GitHub Actions secrets → scheduled guard padal každú noc (konfiguračný fail, nie drift).
 - **Rozhodnutie:** Cron v `.github/workflows/schema-governance-guard.yml` **dočasne vypnutý**; `workflow_dispatch` ostáva pre manuálny beh po nastavení secrets.
 - **Re-enable:** Po doplnení secrets odkomentovať `schedule` (04:17 UTC) — guard má chytať skutočný schema drift (AP-008), nie šumovať falošnými červenými.
@@ -132,10 +137,112 @@
 
 ---
 
-## [2026-06-12] - Brief 9.0 + Auto-merge policy v1
+## [2026-06-19] - BRI / Smolko 439 leadov — honest pending, žiadny backfill
+
+- **Fakt:** Realvia import = identita (meno+email), nie kvalifikácia. 439/439 prázdne `budget`/`timeline`/`financing`/`last_contact`; dáta nie sú v `payload_raw` ani inde.
+- **VETO backfill:** BRI sa **nedá** oživiť backfillom z Realvie — nemáme z čoho.
+- **Rozhodnutie A (BUILD teraz):** **Honest pending** — UI „Nekvalifikované / chýbajú údaje" (AP-001). BRI kód nemeníme; ožije pri reálnej práci makléra alebo kvalifikačnom formulári.
+- **Rozhodnutie B (VALIDATE):** Zdroj kvalifikácie = Smolko admin **Klienti/Dopyty** (Nehnuteľnosti) — preskúmať CSV export; nie enrichment engine na prázdnych poliach.
+- **Realvia:** Primárny zdroj nehnuteľností + identít leadov; UC direct handoff zrušený.
+- **Reconcile (B1, #222):** Spustiť `?reconcile_processed=1` **až po merge #222**; len párovanie cez `source_id` + existujúca property (AP-010), nie hromadný prepis. Kozmetika monitoringu, nie blocker.
+
+---
+
+## [2026-06-20] - Vlna 1+2 verified (Smolko PROD vizuál + brána A3)
+
+- **Route:** `https://app.revolis.ai/vertical-pack/13303557` · login **Reality Smolko** (Rastislav Smolko).
+- **Vlna 1 (#228/#229):** verified — completeness z reálneho PROD riadku **89% (8/9)**, chýba len cena; listing score + capabilities bežia na živých dátach (10 fotiek).
+- **Vlna 2 (#230):** verified — bannery PASS, decky + microsite vykreslené; **žiadny** žltý „DB riadok nenájdený".
+- **Guardian FLAG** na listing/deck/microsite kvôli HTML v popise (`<br />`…) — očakávané správanie K1; fix **PR #231** (strip HTML + skip cena 0 v listing body).
+- **Poznámka:** 44% = len fixture fallback (iný účet); na Smolko PROD očakávaj **~89%**, nie 44%.
+- **A3 brána:** `processed=false` count = **2**; cleanup SQL nespustené autonómne (správne).
+- **Backlog kozmetika:** A3 annotate Section 2 (2 riadky); merge #231 + re-check demo.
+
+---
+
+- **Vstup:** `docs/prompts/L99-lead-discovery-prompt.md` · 5 právnych brán · 30-rolová perspektíva.
+- **Výstup:** `docs/briefs/overnight/wave3-lead-discovery-roadmap.md` (18 legálnych spôsobov, TOP 3, zahodené).
+- **TOP 3 (VALIDATE/BUILD až po dátach):** (1) Smolko Dopyty CSV import, (2) first-party web/microsite formulár, (3) reaktivácia 439 so súhlasom — **#3 vyžaduje samostatný Ústava + gdpr-advisor pred kódom**.
+- **VETO nestavať:** attribution engine, dedup ML, portálové scraping, buyer-intent scraping, enrichment bez súhlasu.
+- **Overnight sekvencia:** Vlny 1–2 mergnuté (#228–#230); A3 PROD SELECT = 2 pending webhook rows (unknown/delete, OK).
+- **BUILD brief (pripravený):** `docs/briefs/overnight/ruflo-swarm-smolko-dopyty-csv-import.md` — spusti po CSV od Smolka.
+
+---
+
+## [2026-06-21] - Smolko Klienti CSV — VALIDATE CLOSED (nie BUILD)
+
+- **Fakt z reálneho exportu:** stĺpce `ID, Email, Telefón, Meno, Priezvisko, Meno vlastníka, Rola vlastníka`.
+- **Už v DB (439 leadov z Realvia):** ID, email, telefón, meno, priezvisko — ~95% duplikát.
+- **Jediné nové:** priradenie klient → maklér (`Meno vlastníka` / `Rola vlastníka`) — marginálne, nie kvalifikácia.
+- **Dopyty:** kvalifikačné dáta (rozpočet, čo hľadá, timeline) — **hromadný export NEDOSTUPNÝ** (Smolko potvrdil).
+- **VETO BUILD:** CSV import Klientov **nespúšťať** — prínos (meno makléra) neodôvodňuje PROD write na 439 riadkov.
+- **BRI cesta:** reálna kvalifikácia pri kontakte makléra + honest pending UI; prípadne first-party formulár (roadmap TOP #2), nie export.
+- **Voliteľné backlog:** `assigned_makler` cez email match — len po Ústave GO; nie priorita.
+
+---
 - **Rozhodnutie:** Overnight swarm Brief 9.0 — Fáza 0 `feat/automerge-policy` (Tier 3, merge Andy pred spaním); Vlny 1–3 až po merge robot PR + midnight gate.
 - **Pravidlá:** Tier 1 okamžitý merge (docs/tests/md); Tier 2 po 6 h; Tier 3 denylist (`.github`, migrácie, auth, billing, ceny, Smolko). Robot vykonáva `docs/AUTOMERGE-POLICY.md`, neinterpretuje.
 - **Swarm:** `swarm-1781208552399-vakdrp` (Ruflo hierarchical, 12 agentov).
 - **Pre-flight 8.0:** RLS #184 CI zelené; #183 partial; landing/metrics/nehnuteľnosti/w2 — vetvy neexistujú.
 - **Lekcia:** REPORTOVANÉ ≠ COMMITNUTÉ; vitest include ≠ CI run (opravené na #184).
 ---
+
+## [2026-06-22] - #235 Guardian multi-area (13303557) — BUILD
+
+- **Overenie:** PROD popis explicitne: zastavaná **167 m²**, úžitková **120 m²**, pozemok **4.500 m²**; DB `building_area=167`, `usable_area=120`, `land_area=4500`.
+- **Rozhodnutie:** Cesta (b) — rozšíriť `PropertyFacts` (`buildingArea`, `plotArea`) + Guardian skenuje všetky m² v tele proti množine povolených plôch (štruktúrované + m² z `source.description`). Cena 0 nevyvoláva price drift scan.
+- **Výsledok:** PROD smoke script — **6/6 capability Guardian PASS** (`fromFixture: false`). **Completeness score** (rubrika `scoreListingCompleteness`, 9 polí): **44 %** = 4/9 pre `13303557` — nie 89 % (89 % bol docs drift; jediný zdroj pravdy je `listing-score/score.ts`).
+- **Súbory:** `quality-guardian/types.ts`, `review.ts`, `listing-generator/generate.ts`, testy.
+
+## [2026-06-23] - AP-012 nosič: vágny chore/docs commit (e7040db88) — VETO / cleanup
+
+- **Incident:** 4 L99 governance docs (`premortem-mitigations`, `gdpr-operational-checklist`, `tech-ownership`, `product-one-thing`) sa dostali na `main` cez `e7040db88` (`chore(crm): tier label tests, QA docs…`), nie cez schválený feature PR (#240 bol čistý kód).
+- **Vektor:** horší než „scope pri malom PR" — **vágna `chore`/`docs` nálepka**, ktorú nikto nečíta riadkovo.
+- **Rozhodnutie:** docs **vyhodené** z produkčného repa (PR #242); koncepty idú do Kit backlogu, nie do CRM pri oprave odkazu.
+- **Pravidlo:** `chore:` / `docs:` commit ≠ skip review; diff po riadkoch vždy. Zapísané aj v `.claude/anti-style.md`.
+- **Guardian PROD:** code-truth #240 OK; predajný argument až pri 5/5 PROD smoke.
+
+## [2026-06-22] - Blueprint Kit artefakt #5 RRA — v1 Medium
+
+- **Rozhodnutie:** RRA extrahovaný z produkčného Revolis (5 vrstiev + 3 pravidlá toku).
+- **Cesty:** `docs/blueprint-kit/Foundation/RRA-REFERENCE-ARCHITECTURE.md`, scoreboard #5 Medium.
+- **Sync:** `C:\Revolis OS\Foundation\RRA-REFERENCE-ARCHITECTURE.md`.
+---
+
+## [2026-06-24] - AP-015 North Star r2→r4 — BUILD (docs)
+
+- **Rozhodnutie:** North Star preformulovaný: Revolis = Knowledge Monopoly systém (Loops Revenue → Learning → Network → Evolution), nie „AI pre realitky“.
+- **Dokument:** `docs/architecture/north-star-2027-2030.md` (r4).
+- **Gate:** Genome Test — BUILD len ak 30-dňové KPI zákazníka A zapisuje do Loop 2.
+
+## [2026-06-24] - AP-016 Genome entity prijaté — BUILD (substrát)
+
+- **Rozhodnutie:** `public.decisions` (Prediction Registry) + `public.exclusivity_outcomes` (Genome) akceptované ako Loop 2 substrát.
+- **Stav:** Migrácia idempotentná v PROD (manuálne); rep migrácia vo Wave A briefe.
+- **Pravidlo:** Predikcie z Loop 1 (Follow-up Agent) zapisujú do `decisions`; žiadne auto-odosielanie.
+
+## [2026-06-24] - AP-017 Genome Factory rozdelený — BACKLOG / čiastočný smer
+
+- **Rozhodnutie:** Genome Factory **auto-deploy** parked (`l99-parked-concepts.md`); manuálna polovica (human approval) povolená až za Guardian 5/5 PROD.
+- **VETO:** Automatické nasadenie genómu bez founder GO.
+
+## [2026-06-24] - AP-018 Architektúra uzavretá → pivot exekúcia — BUILD (proces)
+
+- **Rozhodnutie:** Dokumentácia architektúry (North Star r4, parked concepts) uzavretá na úrovni smeru; ďalšie hodiny = Loop 1 exekúcia (Follow-up draft-only), nie nové koncepty.
+- **Overnight:** Brief 10 Wave B (tento commit); Wave A/C samostatné PR.
+- **Merge:** Human GO; nie auto-merge (AP-012).
+
+## [2026-07-06] - BO-001 Proof of Value Engine (/proof) — BUILD
+
+- **Rozhodnutie:** Verejná route `/proof` + `lib/proof` engine (extrakcia ROI z landing), `POST /api/proof` → `saas_leads` (`source=proof`, answers v `note` JSON). Žiadna migrácia (AP-019). Honest benchmark copy (AP-001).
+- **Brief:** `docs/briefs/BO-001-proof-of-value.md`
+- **PR / vetva:** #275 · `feat/bo-001-proof`
+- **Reuse:** `createSaasLead`, `RoiCalculatorHero` leak model → `lib/proof/engine`, `SLATE_HORIZON`, `LegalFooter`
+- **Preview smoke:** `/proof` mobile, 6 krokov, lead v `saas_leads` so `source=proof`
+- **Merge:** founder GO (2026-07-06); nie auto-merge (AP-012)
+
+## [2026-06-XX] - AP-019 Schema allowlist — BUILD (incident CEO Command)
+
+- **Rozhodnutie:** Každá nová `public` tabuľka musí ísť do `apps/crm/config/public-schema-allowlist.json` v tom istom PR ako migrácia (alebo pred prod apply). Inak Schema Guard mlčí o drift (prípad CEO Command / `routine_notifications`).
+- **Incident:** `routine_notifications` v repe, nie na PROD, mimo allowlistu → `/api/ceo-command` 500, Guard ticho.
+- **Fix:** allowlist + scoped fallback v PR; migrácia = samostatný prod apply (GO).

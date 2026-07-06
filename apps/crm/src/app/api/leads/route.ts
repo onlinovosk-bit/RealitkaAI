@@ -4,7 +4,8 @@ import { okResponse, errorResponse } from "@/lib/api-response";
 import { autoErrorCapture } from "@/lib/auto-error-capture";
 import { createActivity } from "@/lib/activities-store";
 import { createClient } from "@/lib/supabase/server";
-import { createLead } from "@/lib/leads-store";
+import { linkProfileToAuthUser } from "@/lib/profiles/resolve-profile-for-auth";
+import { createLead, listLeads } from "@/lib/leads-store";
 import { autoRecalculateForLead } from "@/lib/matching-hooks";
 import { validateBody } from "@/lib/api-validate";
 import { globalEventBus } from "@/infra/messaging/EventBus";
@@ -39,25 +40,11 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json([], { status: 401 });
 
-  const { data, error } = await supabase
-    .from("leads")
-    .select("id, name, phone, status, last_contact_at:last_contact, created_at")
-    .order("created_at", { ascending: false })
-    .limit(20);
-
-  if (error) {
-    console.error("GET /api/leads failed:", error.message);
-    // Stabilizačný fallback: API nezhodí UI pri dočasnej DB chybe.
-    return NextResponse.json([], {
-      status: 200,
-      headers: {
-        "x-revolis-warning": "leads_fetch_failed",
-      },
-    });
-  }
-
-  const normalized = (data || []).map((lead) => ({
-    ...lead,
+  const leads = await listLeads(undefined, supabase);
+  const normalized = leads.slice(0, 20).map((lead) => ({
+    id: lead.id,
+    name: lead.name,
+    phone: lead.phone,
     status:
       lead.status === "Nový"
         ? "Nový"
@@ -66,6 +53,8 @@ export async function GET() {
           : lead.status === "Ponuka"
             ? "Ponuka"
             : "Iné",
+    last_contact_at: lead.lastContact,
+    created_at: undefined,
   }));
 
   return NextResponse.json(normalized);
@@ -77,8 +66,17 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabaseAuth.auth.getUser();
     if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
-    const { data: callerProfile } = await supabaseAuth.from("profiles").select("agency_id").eq("auth_user_id", user.id).maybeSingle();
-    const agencyId = callerProfile?.agency_id ?? "";
+    const { data: callerProfile } = await supabaseAuth
+      .from("profiles")
+      .select("agency_id")
+      .eq("auth_user_id", user.id)
+      .maybeSingle();
+
+    if (!callerProfile?.agency_id) {
+      return NextResponse.json({ ok: false, error: "Chýba agentúra v profile" }, { status: 403 });
+    }
+
+    const agencyId = callerProfile.agency_id;
 
     const rateLimitBlock = await checkAiRateLimit(user.id, "leads:create", 30);
     if (rateLimitBlock) return NextResponse.json(rateLimitBlock, { status: 429 });
@@ -103,7 +101,7 @@ export async function POST(request: Request) {
       score: body.score,
       assignedAgent: body.assignedAgent,
       note: body.note,
-    });
+    }, supabaseAuth);
 
     try {
       await createActivity({
@@ -116,7 +114,7 @@ export async function POST(request: Request) {
         actorName: lead.assignedAgent || "Systém",
         source: "crm",
         severity: "info",
-      });
+      }, supabaseAuth);
     } catch {
       /* best-effort */
     }

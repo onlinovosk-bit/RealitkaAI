@@ -1,0 +1,20 @@
+{
+  "generatedAt": "2026-06-25T10:32:04.000Z",
+  "scope": "Post-merge smoke after PR #250 #251 #252",
+  "realviaRequeue": {
+    "script": "apps/crm/scripts/realvia-requeue-delete-once.mjs",
+    "ok": true,
+    "requeued": 4,
+    "audit": "apps/crm/docs/audit/realvia-requeue-delete-latest.json"
+  },
+  "prodCronSmoke": {
+    "note": "Local .env CRON_SECRET != Vercel Production — curl returned 401 (expected).",
+    "realviaProcess": { "status": 401, "needs": "Bearer Production CRON_SECRET from Vercel" },
+    "followupPost": { "status": 401, "needs": "Bearer Production CRON_SECRET from Vercel" }
+  },
+  "manualNext": [
+    "curl POST /api/followup with Production CRON_SECRET",
+    "curl GET /api/cron/realvia-process with Production CRON_SECRET",
+    "Login PROD → /followup — verify drafts + Guardian badges after #253"
+  ]
+}

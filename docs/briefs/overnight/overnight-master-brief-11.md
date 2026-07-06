@@ -1,5 +1,5 @@
 # OVERNIGHT MASTER BRIEF 11 — Revival Wave (Zhluk 4 + Zhluk 2)
-**Dátum:** 2026-06-16 · **Status:** in-progress (waves split into dedicated PR branches)
+**Dátum:** 2026-06-16 · **Status:** CLOSED (2026-06-26) — vlny A/B/C merged (#204, #205, #206)
 
 ## Scope delivered by wave
 - **Wave A (`feat/brief11-wave-a-enrichment`)**
