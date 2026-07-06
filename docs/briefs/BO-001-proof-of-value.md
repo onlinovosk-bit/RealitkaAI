@@ -1,7 +1,7 @@
 # BO-001 — Proof of Value Engine (/proof)
 
 > Build Order podľa Revolis Builder Protocol (`.cursor/rules/revolis-builder.mdc`)
-> Status: **T5 — PR otvorený · founder GO na merge (2026-07-06)**
+> Status: **SHIPPED — merged #275 · prod smoke OK (2026-07-06)**
 > Cieľ: majiteľ RK za <5 min od prvej návštevy k rezervácii dema.
 
 ---

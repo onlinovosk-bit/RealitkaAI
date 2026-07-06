@@ -239,7 +239,7 @@
 - **PR / vetva:** #275 · `feat/bo-001-proof`
 - **Reuse:** `createSaasLead`, `RoiCalculatorHero` leak model → `lib/proof/engine`, `SLATE_HORIZON`, `LegalFooter`
 - **Preview smoke:** `/proof` mobile, 6 krokov, lead v `saas_leads` so `source=proof`
-- **Merge:** founder GO (2026-07-06); nie auto-merge (AP-012)
+- **Merge:** founder GO (2026-07-06) · merged #275 → `main` · prod `https://app.revolis.ai/proof` 200, `/api/proof` verejný (400 na prázdny body)
 
 ## [2026-06-XX] - AP-019 Schema allowlist — BUILD (incident CEO Command)
 
