@@ -1,16 +1,29 @@
 import type { ProofReport } from "@/lib/proof/types";
-import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
+import { SLATE_HORIZON, WORKDESK_CARD } from "@/lib/slate-horizon-theme";
 import MetricCard from "./MetricCard";
 import RiskCard from "./RiskCard";
 import CallToAction from "./CallToAction";
 
 type ReportLayoutProps = {
   report: ProofReport;
+  leadCaptureWarning?: string | null;
 };
 
-export default function ReportLayout({ report }: ReportLayoutProps) {
+export default function ReportLayout({ report, leadCaptureWarning }: ReportLayoutProps) {
   return (
     <section className="animate-in fade-in duration-500">
+      {leadCaptureWarning && (
+        <p
+          className="mb-6 rounded-xl border px-4 py-3 text-sm"
+          style={{
+            borderColor: SLATE_HORIZON.line,
+            color: SLATE_HORIZON.muted,
+            background: WORKDESK_CARD.background,
+          }}
+        >
+          {leadCaptureWarning}
+        </p>
+      )}
       <div className="text-center">
         <p className="text-xs uppercase tracking-[0.2em]" style={{ color: SLATE_HORIZON.muted }}>
           Revenue Health Index (odhad)

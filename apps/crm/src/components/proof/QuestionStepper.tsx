@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import type { ProofReport } from "@/lib/proof/types";
+import { computeProofReport } from "@/lib/proof/engine";
 import { SLATE_HORIZON, WORKDESK_CARD } from "@/lib/slate-horizon-theme";
 import ProgressBar from "./ProgressBar";
 
@@ -255,38 +256,73 @@ export default function QuestionStepper({ onSubmit, submitting, error }: Questio
 export function useProofSubmit() {
   const [phase, setPhase] = useState<"questions" | "loading" | "report">("questions");
   const [report, setReport] = useState<ProofReport | null>(null);
+  const [leadCaptureWarning, setLeadCaptureWarning] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const submit = useCallback(async (form: ProofFormState) => {
     setSubmitting(true);
     setError(null);
+    setLeadCaptureWarning(null);
+
+    const payload = {
+      agentsCount: Number(form.agentsCount),
+      leadsPerMonth: Number(form.leadsPerMonth),
+      responseMinutes: Number(form.responseMinutes),
+      dealRatePercent: Number(form.dealRatePercent),
+      followUpRatePercent: Number(form.followUpRatePercent),
+      name: form.name.trim(),
+      email: form.email.trim(),
+      company: form.company.trim(),
+      phone: form.phone.trim() || undefined,
+      city: form.city.trim() || undefined,
+      gdprConsent: form.gdprConsent as true,
+    };
+
+    let localReport: ProofReport;
+    try {
+      localReport = computeProofReport(payload);
+    } catch {
+      setError("Skontrolujte prosím vyplnené hodnoty a skúste znova.");
+      setSubmitting(false);
+      return;
+    }
+
     try {
       const res = await fetch("/api/proof", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          agentsCount: Number(form.agentsCount),
-          leadsPerMonth: Number(form.leadsPerMonth),
-          responseMinutes: Number(form.responseMinutes),
-          dealRatePercent: Number(form.dealRatePercent),
-          followUpRatePercent: Number(form.followUpRatePercent),
-          name: form.name,
-          email: form.email,
-          company: form.company,
-          phone: form.phone || undefined,
-          city: form.city || undefined,
-          gdprConsent: form.gdprConsent,
-        }),
+        body: JSON.stringify(payload),
       });
-      const data = (await res.json()) as { ok?: boolean; error?: string; report?: ProofReport };
-      if (!res.ok || !data.ok || !data.report) {
-        throw new Error(data.error || "Odoslanie zlyhalo.");
+      const data = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        errors?: Record<string, string[]>;
+        report?: ProofReport;
+      };
+
+      if (res.ok && data.ok && data.report) {
+        setReport(data.report);
+      } else {
+        setReport(localReport);
+        const validationMsg = data.errors
+          ? Object.values(data.errors).flat().join(" ")
+          : null;
+        const msg =
+          data.error ||
+          validationMsg ||
+          (res.status === 401
+            ? "Kontakt sa nepodarilo uložiť (session). Odhad zobrazujeme lokálne."
+            : "Kontakt sa nepodarilo uložiť. Odhad zobrazujeme z vašich odpovedí.");
+        setLeadCaptureWarning(msg);
       }
-      setReport(data.report);
       setPhase("loading");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Odoslanie zlyhalo.");
+    } catch {
+      setReport(localReport);
+      setLeadCaptureWarning(
+        "Kontakt sa nepodarilo uložiť (sieť). Odhad zobrazujeme z vašich odpovedí.",
+      );
+      setPhase("loading");
     } finally {
       setSubmitting(false);
     }
@@ -294,5 +330,5 @@ export function useProofSubmit() {
 
   const finishLoading = useCallback(() => setPhase("report"), []);
 
-  return { phase, report, submitting, error, submit, finishLoading };
+  return { phase, report, leadCaptureWarning, submitting, error, submit, finishLoading };
 }
