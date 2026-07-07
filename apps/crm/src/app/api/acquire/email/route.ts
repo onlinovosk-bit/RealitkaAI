@@ -8,11 +8,25 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { dedupKey, parseEmail, toLeadCandidate } from "@/lib/acquire/email-adapter";
+import { runInboundLeadTriageAndNotify } from "@/lib/acquire/inbound-lead-triage";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const SUPPORTED_VERSION = 1;
+type InboundEmailPayload = {
+  version?: number;
+  receivedAt?: string;
+  mailbox?: {
+    agencyId?: string;
+  };
+  email?: {
+    to?: string;
+    subject?: string;
+    text?: string;
+    html?: string;
+  };
+};
 
 function safeCompare(a: string, b: string): boolean {
   const bufA = Buffer.from(a);
@@ -39,9 +53,9 @@ export async function POST(req: NextRequest) {
     const requestId = req.headers.get("x-revolis-request-id") ?? "unknown";
 
     // 2. payload z Workera (JSON, nie raw text — nepotrebujeme svix podpis)
-    let payload: any;
+    let payload: InboundEmailPayload;
     try {
-      payload = await req.json();
+      payload = (await req.json()) as InboundEmailPayload;
     } catch {
       return NextResponse.json({ ok: false, error: "invalid_json" }, { status: 400 });
     }
@@ -116,7 +130,7 @@ export async function POST(req: NextRequest) {
         last_contact: "Práve vytvorený (email gateway)",
         note: candidate.note.slice(0, 5000),
       })
-      .select("id")
+      .select("id,name,status,score,last_contact,note,source,agency_id,ai_triage_at")
       .single();
 
     if (error) {
@@ -131,6 +145,8 @@ export async function POST(req: NextRequest) {
         .eq("agency_id", agencyId)
         .eq("email", email.to);
     }
+
+    await runInboundLeadTriageAndNotify(supa, lead, candidate);
 
     console.log(JSON.stringify({ status: "LEAD_CREATED", requestId, agencyId, lead_id: lead.id }));
     return NextResponse.json({
