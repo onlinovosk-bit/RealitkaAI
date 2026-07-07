@@ -11,7 +11,7 @@ export default function CallToAction() {
         Chcem vidieť analýzu na vlastných dátach
       </p>
       <Link
-        href="/demo?source=proof"
+        href="/demo/rezervacia?source=proof"
         className={`mt-4 inline-flex min-h-[44px] items-center justify-center rounded-full px-6 py-3 text-sm font-bold text-white ${SLATE_HORIZON.focusRing}`}
         style={{ background: SLATE_HORIZON.ctaGradient }}
       >

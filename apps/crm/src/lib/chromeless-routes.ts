@@ -21,6 +21,7 @@ const CHROMELESS_EXACT = new Set([
 const CHROMELESS_PREFIXES = [
   '/blog/',
   '/onboarding',
+  '/demo/',
   '/proof/',
   '/demo-odhad/',
   '/l99-scan/',
