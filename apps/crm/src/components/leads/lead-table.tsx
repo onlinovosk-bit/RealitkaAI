@@ -8,6 +8,7 @@ import { getScoreDisplay } from "@/lib/leads/score-display";
 import { LeadLastContact } from "./LeadLastContact";
 import { LeadSourceBadge } from "./LeadSourceBadge";
 import LeadRowActions from "./lead-row-actions";
+import { AiPriorityBadge } from "./AiPriorityBadge";
 
 type SortField = "name" | "location" | "budget" | "status" | "score" | "assignedAgent" | "lastContact";
 type SortDir = "asc" | "desc";
@@ -266,6 +267,14 @@ export default function LeadTable({ leads, onDelete }: LeadTableProps) {
                 </td>
                 <td className="px-3 py-3 sm:px-5 sm:py-4 min-w-[140px]">
                   <div className="font-medium text-gray-900 text-base md:text-sm">{lead.name}</div>
+                  <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                    <AiPriorityBadge priority={lead.aiPriority} />
+                  </div>
+                  {lead.aiReason ? (
+                    <p className="mt-1 text-[11px] leading-snug text-gray-500 line-clamp-2" title={lead.aiReason}>
+                      <span className="font-semibold text-gray-600">AI dôvod:</span> {lead.aiReason}
+                    </p>
+                  ) : null}
                   <div className="text-xs text-gray-500 break-all">{lead.email}</div>
                 </td>
                 <td className="px-3 py-3 sm:px-5 sm:py-4 min-w-[90px]">
@@ -304,11 +313,6 @@ export default function LeadTable({ leads, onDelete }: LeadTableProps) {
                             <span className="ml-1 font-normal opacity-80">· {display.sublabel}</span>
                           ) : null}
                         </span>
-                        {lead.aiReason ? (
-                          <p className="text-[11px] leading-snug text-gray-500 line-clamp-2" title={lead.aiReason}>
-                            {lead.aiReason}
-                          </p>
-                        ) : null}
                       </div>
                     );
                   })()}

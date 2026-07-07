@@ -168,7 +168,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
 
   {
     id: "today",
-    label: "Dnes uzavriem",
+    label: "Kde mám peniaze dnes?",
     sublabel: "Ranný briefing · Hot leady · Priority",
     href: "/dashboard",
     icon: "clock",
@@ -187,11 +187,10 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   },
   {
     id: "pipeline",
-    label: "Kto je pripravený kúpiť",
-    sublabel: "BRI scoring · Pipeline · AI predikcia",
+    label: "Komu volať teraz",
+    sublabel: "AI priorita · Pipeline · Kto čaká na kontakt",
     href: "/leads",
     icon: "fire",
-    badge: { label: "live", variant: "hot" },
     section: "main",
     showFor: ["agent_solo", "agent_team"],
   },
@@ -292,7 +291,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
 
   {
     id: "owner-dashboard",
-    label: "Kde sú peniaze dnes",
+    label: "Kde mám peniaze dnes?",
     sublabel: "Revenue pulse · Hot dealy · Alerty",
     href: "/dashboard",
     icon: "money",
@@ -328,9 +327,18 @@ export const ALL_NAV_ITEMS: NavItem[] = [
     showFor: ["owner_vision", "owner_protocol"],
   },
   {
+    id: "owner-leads",
+    label: "Komu volať teraz",
+    sublabel: "AI priorita · Nové leady · Kto čaká na kontakt",
+    href: "/leads",
+    icon: "fire",
+    section: "main",
+    showFor: ["owner_vision", "owner_protocol"],
+  },
+  {
     id: "ceo-command",
-    label: "Riaditeľské centrum",
-    sublabel: "Riaditeľské príkazy · Briefy z rutín",
+    label: "Kde unikajú peniaze",
+    sublabel: "Seller rescue · Rizikové dealy · Briefy z rutín",
     href: "/ceo-command",
     icon: "lock",
     section: "main",
@@ -450,6 +458,24 @@ export function applyImportNavBadges(
     }
     const { badge: _removed, ...withoutBadge } = item;
     return withoutBadge;
+  });
+}
+
+const LEADS_NAV_IDS = new Set(["pipeline", "owner-leads"]);
+
+/** Červený badge = počet leadov so statusom Nový (skrytý pri 0). */
+export function applyLeadsNavBadges(
+  items: NavItem[],
+  newStatusLeadCount: number | null,
+): NavItem[] {
+  if (newStatusLeadCount === null || newStatusLeadCount <= 0) return items;
+
+  return items.map((item) => {
+    if (!LEADS_NAV_IDS.has(item.id)) return item;
+    return {
+      ...item,
+      badge: { label: String(newStatusLeadCount), variant: "hot" },
+    };
   });
 }
 
