@@ -142,11 +142,13 @@ export default async function TeamPage({
   const totalUsers = visibleProfiles.length;
   const totalTeams = visibleTeams.length;
   const totalLeads = visibleLeads.length;
-  const assignedLeads = visibleLeads.filter(
-    (lead: any) => (lead.assignedAgent && lead.assignedAgent !== "Nepriradený")
-  ).length;
+  const assignedLeads = visibleLeads.filter((lead: any) => {
+    const assignedProfileId = lead.assignedProfileId ?? lead.assigned_profile_id ?? null;
+    return Boolean(assignedProfileId);
+  }).length;
 
   const canManage = canManageTeamArea(currentProfile as any);
+  const isAgencyOwner = (currentProfile as any)?.role === "owner";
   const primaryAgency = agencies[0];
   const currentTeamName =
     teams.find((team) => team.id === currentProfile?.team_id)?.name ||
@@ -207,16 +209,18 @@ export default async function TeamPage({
         />
       </section>
 
-      <TeamPressureGate canAccess={canAccessTeamPressure}>
-        <TeamOwnerInsights
-          data={ownerAnalytics}
-          teamQuery={{
-            teamId: selectedTeamId || undefined,
-            period,
-            target: monthlyLeadTargetPerAgent,
-          }}
-        />
-      </TeamPressureGate>
+      {isAgencyOwner ? (
+        <TeamPressureGate canAccess={canAccessTeamPressure}>
+          <TeamOwnerInsights
+            data={ownerAnalytics}
+            teamQuery={{
+              teamId: selectedTeamId || undefined,
+              period,
+              target: monthlyLeadTargetPerAgent,
+            }}
+          />
+        </TeamPressureGate>
+      ) : null}
 
       <section className="mb-6">
         <TeamFilters
