@@ -1,6 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  collectHeartbeatMetrics,
+  evaluateHeartbeatSignals,
+  type HeartbeatSignal,
+} from "@/lib/infra/platform-heartbeat";
 import { resolveProfileForAuthUser } from "@/lib/profiles/resolve-profile-for-auth";
 import { resolveTenantSupabase } from "@/lib/supabase/resolve-client";
+import { createAdminClient } from "@/lib/supabase/server";
 
 export type TenantHealthSnapshot = {
   userId: string | null;
@@ -12,6 +18,11 @@ export type TenantHealthSnapshot = {
     tasks: number;
     activities: number;
     leadPropertyMatches: number;
+  };
+  heartbeat?: {
+    ok: boolean;
+    checkedAt: string;
+    signals: HeartbeatSignal[];
   };
 };
 
@@ -78,6 +89,22 @@ export async function getTenantHealthSnapshot(
       safeCount(supabase, "lead_property_matches"),
     ]);
 
+  let heartbeat: TenantHealthSnapshot["heartbeat"];
+  if (profileAgencyId) {
+    try {
+      const admin = createAdminClient();
+      const metrics = await collectHeartbeatMetrics(admin, profileAgencyId);
+      const signals = evaluateHeartbeatSignals(metrics);
+      heartbeat = {
+        ok: signals.length === 0,
+        checkedAt: new Date().toISOString(),
+        signals,
+      };
+    } catch {
+      heartbeat = undefined;
+    }
+  }
+
   return {
     userId: user?.id ?? null,
     profileAgencyId,
@@ -89,5 +116,6 @@ export async function getTenantHealthSnapshot(
       activities,
       leadPropertyMatches,
     },
+    heartbeat,
   };
 }
