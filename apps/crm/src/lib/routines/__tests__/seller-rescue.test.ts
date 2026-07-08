@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   computeSellerRescueRiskScore,
   daysWithoutContact,
+  excludeLeadsWithOpenRescueTask,
   pickSellerRescueCandidates,
   type SellerRescueLeadInput,
 } from "@/lib/routines/seller-rescue";
@@ -57,6 +58,21 @@ describe("seller-rescue routine", () => {
       nowMs: NOW,
     });
     expect(candidates).toHaveLength(0);
+  });
+
+  it("excludes leads that already have an open rescue task", () => {
+    const candidates = [
+      { leadId: "lead-a", riskScore: 90 },
+      { leadId: "lead-b", riskScore: 80 },
+      { leadId: "lead-c", riskScore: 70 },
+    ];
+    const fresh = excludeLeadsWithOpenRescueTask(candidates, ["lead-a", "lead-c"]);
+    expect(fresh.map((c) => c.leadId)).toEqual(["lead-b"]);
+  });
+
+  it("keeps all candidates when no open rescue tasks exist", () => {
+    const candidates = [{ leadId: "lead-a" }, { leadId: "lead-b" }];
+    expect(excludeLeadsWithOpenRescueTask(candidates, [])).toEqual(candidates);
   });
 });
 

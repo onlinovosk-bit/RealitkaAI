@@ -91,3 +91,15 @@ export function pickSellerRescueCandidates(params: {
     .slice(0, limit);
 }
 
+/**
+ * Dedupe: leady s už otvorenou Seller Rescue úlohou sa nesmú úlohovať znova
+ * (bez tohto vznikala 1 duplicitná open úloha na lead denne).
+ */
+export function excludeLeadsWithOpenRescueTask<T extends { leadId: string }>(
+  candidates: T[],
+  openTaskLeadIds: Iterable<string>,
+): T[] {
+  const taken = new Set(openTaskLeadIds);
+  return candidates.filter((candidate) => !taken.has(candidate.leadId));
+}
+
