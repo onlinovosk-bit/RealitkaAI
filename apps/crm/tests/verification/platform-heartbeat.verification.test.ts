@@ -25,4 +25,13 @@ describe("platform heartbeat guard", () => {
     expect(source).toContain("heartbeat?:");
     expect(source).toContain("evaluateHeartbeatSignals");
   });
+
+  it("uses received_at for realvia_webhook_logs (schema column)", () => {
+    const source = readFileSync(
+      join(CRM_ROOT, "src/lib/infra/platform-heartbeat.ts"),
+      "utf8",
+    );
+    expect(source).toContain('realvia_webhook_logs", "received_at"');
+    expect(source).not.toContain('realvia_webhook_logs", "created_at"');
+  });
 });
