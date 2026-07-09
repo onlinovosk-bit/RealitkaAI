@@ -178,7 +178,7 @@ export async function collectHeartbeatMetrics(
         if (agencyId) query = query.eq("agency_id", agencyId);
         return query;
       }),
-      latestIso(supabase, "realvia_webhook_logs", "created_at", (q) =>
+      latestIso(supabase, "realvia_webhook_logs", "received_at", (q) =>
         agencyId ? q.eq("agency_id", agencyId) : q,
       ),
       safeCount(supabase, "realvia_webhook_logs", (q) =>
