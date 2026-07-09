@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-/** Demo Realitka — orphan seed rows without tenant. */
-export const DEMO_AGENCY_ID = "11111111-1111-1111-1111-111111111111";
+/** Revolis Demo tenant used for internal demo-safe operations. */
+export const DEMO_AGENCY_ID = "b101361c-e250-4c43-b099-52c4febeb450";
 
 export async function resolveSessionAgencyId(
   supabase: SupabaseClient,
