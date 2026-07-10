@@ -20,7 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
-          gtag('config', 'G-REVOLIS2026', { page_title: document.title, send_page_view: true });
+          gtag('config', 'G-R1GZQFV42V', { page_title: document.title, send_page_view: true });
           (function(){
             var p = new URLSearchParams(window.location.search);
             var u = { source: p.get('utm_source'), medium: p.get('utm_medium'), campaign: p.get('utm_campaign') };
