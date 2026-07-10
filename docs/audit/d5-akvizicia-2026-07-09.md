@@ -26,14 +26,14 @@ Technické kanály existujú (web, Calendly, `/proof`), ale v DB nie je ani jede
 | Priorita | Akcia |
 |----------|-------|
 | P0 | Andy: over GA4 property `G-REVOLIS2026` (existuje? Realtime?) |
-| P1 | Dokončiť demo tenant B–G (live 5-min demo = akvizičný asset) |
-| P2 | Sales tracker pre Košice outreach (spreadsheet, nie kód) |
-| P3 | Acquisition Order 2 z `docs/briefs/acquisition-order-2-10-skeleton.md` až po GO na demo smoke |
+| P1 | ✅ HOTOVO 2026-07-09 — demo tenant B–G Running (end-to-end, vrátane `new_lead` notifikácie 20:15) |
+| P2 | Sales tracker pre Košice outreach (`docs/sales/revolis-sales-tracker.xlsx`) |
+| P3 | Order 2+ podľa `docs/briefs/acquisition-order-2-10.md` (GO podľa brány v dokumente) |
 
 ## Súvisiace súbory
 
 | Súbor | Účel |
 |-------|------|
 | `docs/audit/celoplosny-audit-2026-07-08.md` | plný audit (riadok #5 = D5) |
-| `docs/briefs/acquisition-order-2-10-skeleton.md` | backlog orders 2–10 |
+| `docs/briefs/acquisition-order-2-10.md` | acquisition orders 2–10 (plný order) |
 | `docs/runbooks/demo-onboarding-b-g-draft.md` | demo tenant setup |
