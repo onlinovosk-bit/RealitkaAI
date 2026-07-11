@@ -9,7 +9,7 @@
 | # | Nález | Dôkaz | Dopad | Effort | Autonómia | Stav |
 |---|-------|-------|-------|--------|-----------|------|
 | D5-1 | **Žiadny merateľný inbound signál** | `saas_leads` = 14 celkom: 11× `proof` (väčšina garbage/smoke 2026-07-06/07), 2× `Demo request` + 1× `debug` (všetko 2026-03-20, test e-maily) | Akvizícia beží naslepo — žiadny reálny prospect | — | — | Potvrdené |
-| D5-2 | **GA4 pravdepodobne placeholder** | `apps/marketing/app/layout.tsx:18` → `G-REVOLIS2026` | Traffic/conversion neviditeľné | 15 min (Andy, GA4 Admin) | **B** | Neoverené (dashboard) |
+| D5-2 | **GA4 placeholder** | `apps/marketing/app/layout.tsx` → `G-R1GZQFV42V` (#285, #287 merged 2026-07-10) | Traffic merateľný po deployi | — | **B** | ✅ Kód hotový — Andy: Realtime smoke |
 | D5-3 | **Demo request flow technicky OK, dáta prázdne** | `client_onboarding_progress` = 0 riadkov; API existuje | Prvý reálny request ešte neprišiel | — | — | Potvrdené |
 | D5-4 | **`demo_bookings` tabuľka neexistuje v prod** | PostgREST probe: `table not found` | Calendly/demo-booking pipeline mŕtvy | 1–2 h | **B** | Potvrdené |
 | D5-5 | **Web CTA → Calendly funguje** | landing CTA + `DemoCTA` s gtag events | Jediný živý akvizičný kanál (kód) | — | — | Running |
@@ -25,7 +25,7 @@ Technické kanály existujú (web, Calendly, `/proof`), ale v DB nie je ani jede
 
 | Priorita | Akcia |
 |----------|-------|
-| P0 | Andy: over GA4 property `G-REVOLIS2026` (existuje? Realtime?) |
+| P0 | Andy: GA4 Realtime smoke po deployi (`G-R1GZQFV42V`) |
 | P1 | ✅ HOTOVO 2026-07-09 — demo tenant B–G Running (end-to-end, vrátane `new_lead` notifikácie 20:15) |
 | P2 | Sales tracker pre Košice outreach (`docs/sales/revolis-sales-tracker.xlsx`) |
 | P3 | Order 2+ podľa `docs/briefs/acquisition-order-2-10.md` (GO podľa brány v dokumente) |
