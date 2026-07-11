@@ -13,7 +13,7 @@ demo-bootstrap-profiles.cjs ako predloha), neduplikuje logiku. Dry-run default,
 `--execute` explicitný. Žiadny auth/invite krok (konsent, 1b samostatne).
 Vetva + PR + CI.
 
-**Status:** GO 2026-07-10 · implementácia `apps/crm/scripts/onboard-agency.cjs`
+**Status:** **Running** 2026-07-11 — dry-run + prod TEST `--execute` (verify 2 profiles, 1 mailbox) + cleanup OK. Fix: `agencies.email` odstránené (stĺpec na prod neexistuje).
 
 ---
 

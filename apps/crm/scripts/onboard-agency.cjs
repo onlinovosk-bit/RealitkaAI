@@ -278,7 +278,6 @@ async function main() {
       seats: billing.seats,
       seat_tier: billing.seat_tier,
       plan: billing.plan,
-      email: ownerEmail,
       is_active: true,
     });
     actions.push({
@@ -313,7 +312,6 @@ async function main() {
       seats: billing.seats,
       account_tier: billing.account_tier,
       billing_source: billing.billing_source,
-      email: ownerEmail,
       is_active: true,
     };
     if (billing.manual_plan) agencyInsert.manual_plan = billing.manual_plan;
