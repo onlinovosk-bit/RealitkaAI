@@ -84,7 +84,18 @@ export function AuthEmailTestsCard() {
           Auth e-mail testy
         </h3>
         <p className="mt-1 text-xs" style={{ color: SLATE_HORIZON.muted }}>
-          Interné testy pre onboarding: recovery na vlastný účet + invite na testovací e-mail.
+          Interné testy pre onboarding (B1): recovery na vlastný účet + invite na testovací e-mail.
+          Šablóny a SMTP:{" "}
+          <a
+            href="https://github.com/onlinovosk-bit/RealitkaAI/blob/main/docs/runbooks/supabase-auth-email-templates-sk.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline"
+            style={{ color: SLATE_HORIZON.brandDeep }}
+          >
+            runbook supabase-auth-email-templates-sk
+          </a>
+          . Pass = SMTP test + recovery + invite s telom e-mailu.
         </p>
       </div>
 

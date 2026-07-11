@@ -5,13 +5,13 @@
 
 ## Predpoklady (blokátory)
 
-| ID | Čo | Overenie |
-|----|-----|----------|
-| B1 | Auth mailing funguje | invite + recovery na test účte |
-| B2 | Kreditový model v schéme | `grant_credits_balance` existuje |
-| B3 | RLS na onboarding tabuľkách | `client_onboarding_*` rls enabled |
+| ID | Čo | Overenie | Fix |
+|----|-----|----------|-----|
+| B1 | Auth mailing funguje | invite + recovery na test účte | `docs/runbooks/supabase-auth-email-templates-sk.md` |
+| B2 | Kreditový model v schéme | `grant_credits_balance` existuje | `docs/audit/prod-migration-drift-2026-07-08.md` (✅ aplikované 2026-07-09) |
+| B3 | RLS na onboarding tabuľkách | `client_onboarding_*` rls enabled | tamtiež (✅ aplikované 2026-07-09) |
 
-Bez B1 nejde dokončiť login ownera (skript ho zámerne nerobí).
+Bez B1 nejde dokončiť login ownera. Postup: runbook vyššie → Nastavenia → Auth e-mail testy.
 
 ---
 
@@ -151,5 +151,5 @@ delete from agencies where id = '<test_uuid>';
 |-------|------|
 | `docs/runbooks/demo-onboarding-b-g-draft.md` | Overené B–G kroky (demo tenant) |
 | `apps/crm/docs/SMOLKO-OPS-RUNBOOK.md` | Referenčný klient — `manual_plan` |
-| `docs/drafts/supabase-auth-email-templates-sk.md` | B1 auth šablóny |
+| `docs/runbooks/supabase-auth-email-templates-sk.md` | B1 auth šablóny + SMTP |
 | `apps/crm/scripts/prod-smoke.md` | Post-deploy smoke |
