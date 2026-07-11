@@ -28,7 +28,7 @@ export const REVENUE_TILE_REGISTRY: Record<RevenueTileKey, RevenueTilePolicy> = 
     key: "action_queue",
     label: "Nekontaktované leady / Action Queue",
     cluster: 1,
-    source: "leads (status='Nový')",
+    source: "leads (status='Nový', posledných 14 dní)",
     status: "live",
   },
   leads_by_source: {
@@ -100,6 +100,10 @@ export const REVENUE_TILE_REGISTRY: Record<RevenueTileKey, RevenueTilePolicy> = 
   },
 };
 
+/** Fresh inbound window — excludes Realvia import backlog from "komu volať dnes". */
+export const ACTION_QUEUE_RECENCY_DAYS = 14;
+const MS_PER_DAY = 86_400_000;
+
 function leadCreatedAt(lead: Lead): number {
   const fallback = Number.MAX_SAFE_INTEGER;
   const raw = (lead as Lead & { createdAt?: string }).createdAt;
@@ -108,9 +112,19 @@ function leadCreatedAt(lead: Lead): number {
   return Number.isNaN(parsed) ? fallback : parsed;
 }
 
-export function getActionQueueLeads(leads: Lead[]) {
+function isWithinActionQueueWindow(lead: Lead, nowMs: number): boolean {
+  const createdAt = leadCreatedAt(lead);
+  if (createdAt === Number.MAX_SAFE_INTEGER) return false;
+  return createdAt >= nowMs - ACTION_QUEUE_RECENCY_DAYS * MS_PER_DAY;
+}
+
+export function getActionQueueLeads(leads: Lead[], nowMs = Date.now()) {
   return leads
-    .filter((lead) => lead.status === "Nový" || lead.status === "new")
+    .filter(
+      (lead) =>
+        (lead.status === "Nový" || lead.status === "new") &&
+        isWithinActionQueueWindow(lead, nowMs),
+    )
     .sort((a, b) => leadCreatedAt(a) - leadCreatedAt(b));
 }
 

@@ -46,14 +46,14 @@ export function ActionQueuePanel({ leads, onLeadAction }: ActionQueuePanelProps)
             Nekontaktované leady
           </h2>
           <p className="text-sm" style={{ color: SLATE_HORIZON.muted }}>
-            {queue.length} čaká na prvý hovor
+            {queue.length} čaká na prvý hovor (posledných 14 dní)
           </p>
         </div>
       </div>
 
       {queue.length === 0 ? (
         <p className="text-sm" style={{ color: SLATE_HORIZON.muted }}>
-          Action Queue je prázdna. Nové leady sa zobrazia po importe alebo po návrate leadu do stavu Nový.
+          Action Queue je prázdna. Zobrazia sa len čerstvé leady v stave Nový z posledných 14 dní.
         </p>
       ) : (
         <ul className="space-y-2.5">

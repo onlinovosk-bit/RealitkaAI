@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  ACTION_QUEUE_RECENCY_DAYS,
   REVENUE_TILE_REGISTRY,
   countLeadsBySource,
   getActionQueueLeads,
@@ -26,14 +27,29 @@ describe("revenue intelligence registry", () => {
 });
 
 describe("revenue intelligence data wiring", () => {
-  it("Action Queue returns only new leads sorted oldest first", () => {
-    const queue = getActionQueueLeads([
-      { id: "a", status: "new", source: "Realvia", createdAt: "2026-06-12T10:00:00.000Z" },
-      { id: "b", status: "Teplý", source: "Manual", createdAt: "2026-06-11T10:00:00.000Z" },
-      { id: "c", status: "Nový", source: "Realvia", createdAt: "2026-06-10T10:00:00.000Z" },
-    ] as any);
+  it("Action Queue returns only recent new leads sorted oldest first", () => {
+    const nowMs = Date.parse("2026-07-10T12:00:00.000Z");
+    const olderWithinWindow = new Date(
+      nowMs - (ACTION_QUEUE_RECENCY_DAYS - 3) * 86_400_000,
+    ).toISOString();
+    const newerWithinWindow = new Date(
+      nowMs - (ACTION_QUEUE_RECENCY_DAYS - 1) * 86_400_000,
+    ).toISOString();
+    const outsideWindow = new Date(
+      nowMs - (ACTION_QUEUE_RECENCY_DAYS + 1) * 86_400_000,
+    ).toISOString();
 
-    expect(queue.map((lead) => lead.id)).toEqual(["c", "a"]);
+    const queue = getActionQueueLeads(
+      [
+        { id: "a", status: "new", source: "Realvia", createdAt: newerWithinWindow },
+        { id: "b", status: "Teplý", source: "Manual", createdAt: newerWithinWindow },
+        { id: "c", status: "Nový", source: "Realvia", createdAt: outsideWindow },
+        { id: "d", status: "Nový", source: "Email", createdAt: olderWithinWindow },
+      ] as any,
+      nowMs,
+    );
+
+    expect(queue.map((lead) => lead.id)).toEqual(["a", "d"]);
   });
 
   it("groups leads by source for live source tile", () => {
