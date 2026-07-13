@@ -9,6 +9,7 @@ import { timingSafeEqual } from "crypto";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { dedupKey, parseEmail, toLeadCandidate } from "@/lib/acquire/email-adapter";
 import { runInboundLeadTriageAndNotify } from "@/lib/acquire/inbound-lead-triage";
+import { runInboundLeadAutoResponse } from "@/lib/acquire/inbound-lead-auto-response";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -147,6 +148,7 @@ export async function POST(req: NextRequest) {
     }
 
     await runInboundLeadTriageAndNotify(supa, lead, candidate);
+    await runInboundLeadAutoResponse(supa, lead, candidate);
 
     console.log(JSON.stringify({ status: "LEAD_CREATED", requestId, agencyId, lead_id: lead.id }));
     return NextResponse.json({

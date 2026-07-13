@@ -39,4 +39,34 @@ describe("[verification] Acquire email gateway", () => {
     expect(mw).toContain("'/api/acquire/email'");
     expect(proxy).toContain('"/api/acquire/email"');
   });
+
+  it("route delegates inbound auto-response to shared helper after triage", () => {
+    const route = readFileSync(
+      join(CRM_ROOT, "src/app/api/acquire/email/route.ts"),
+      "utf8",
+    );
+    const orchestrator = readFileSync(
+      join(CRM_ROOT, "src/lib/acquire/inbound-lead-auto-response.ts"),
+      "utf8",
+    );
+    const sender = readFileSync(
+      join(CRM_ROOT, "src/lib/acquire/send-inbound-auto-response.ts"),
+      "utf8",
+    );
+
+    expect(route).toContain("runInboundLeadTriageAndNotify");
+    expect(route).toContain("runInboundLeadAutoResponse");
+    expect(route).not.toMatch(/from\s+["']resend["']/);
+    expect(route).not.toContain("resend.emails.send");
+    expect(route).not.toMatch(/catch\s*\{\s*\}/);
+
+    expect(orchestrator).toContain("auto_response_enabled");
+    expect(orchestrator).toContain("auto_response_sent_at");
+    expect(orchestrator).toContain("autoErrorCapture");
+    expect(orchestrator).not.toMatch(/catch\s*\{\s*\}/);
+
+    expect(sender).toContain("replyTo");
+    expect(sender).not.toContain("reply_to");
+    expect(sender).toContain("buildInboundAutoResponseText");
+  });
 });
