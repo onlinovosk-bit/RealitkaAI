@@ -157,3 +157,175 @@ export type BuyerEvent = {
   meta: Record<string, unknown>;
   createdAt: string;
 };
+
+// ─── SK ↔ EN property type (leads table uses SK labels) ─────────────────────
+
+/** SK label stored on `leads.property_type` for each canonical intent type. */
+export const INTENT_TO_SK_PROPERTY_TYPE: Record<PropertyType, string> = {
+  flat: "Byt",
+  house: "Dom",
+  land: "Pozemok",
+  commercial: "Komerčný priestor",
+};
+
+const SK_PROPERTY_TYPE_ALIASES: Record<string, PropertyType> = {
+  byt: "flat",
+  dom: "house",
+  pozemok: "land",
+  komerčný: "commercial",
+  komercny: "commercial",
+  "komerčný priestor": "commercial",
+  "komerčné priestory": "commercial",
+  flat: "flat",
+  house: "house",
+  land: "land",
+  commercial: "commercial",
+  apartment: "flat",
+};
+
+/**
+ * Map `leads.property_type` (SK free text) → buyer_intents.property_type (EN).
+ * Returns null when input is empty or not a known dwelling type (no guessing).
+ */
+export function mapSkPropertyTypeToIntent(raw: string | null | undefined): PropertyType | null {
+  const trimmed = String(raw ?? "").trim();
+  if (!trimmed) return null;
+
+  const normalized = trimmed
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  return SK_PROPERTY_TYPE_ALIASES[normalized] ?? null;
+}
+
+/** Map onboarding / intent EN type → SK label for `leads.property_type`. */
+export function mapIntentPropertyTypeToSk(type: PropertyType): string {
+  return INTENT_TO_SK_PROPERTY_TYPE[type];
+}
+
+/** Infer deal_type from lead CRM fields — defaults to null when ambiguous. */
+export function inferDealTypeFromLeadFields(input: {
+  propertyType?: string | null;
+  financing?: string | null;
+  status?: string | null;
+}): DealType | null {
+  const prop = String(input.propertyType ?? "").trim().toLowerCase();
+  if (prop === "predaj" || prop === "predávam" || prop === "predavam") return "sell";
+
+  const financing = String(input.financing ?? "").trim().toLowerCase();
+  if (financing.includes("nájom") || financing.includes("najom") || financing.includes("prenájom")) {
+    return "rent";
+  }
+
+  const status = String(input.status ?? "").trim().toLowerCase();
+  if (status.includes("predáv") || status.includes("predav")) return "sell";
+
+  // Dwelling type on lead (Byt, Dom, …) = explicit buyer search signal
+  if (mapSkPropertyTypeToIntent(input.propertyType) !== null) return "buy";
+
+  return null;
+}
+
+/** Map CRM timeline text → canonical time horizon bucket. */
+export function mapLeadTimelineToHorizon(timeline: string | null | undefined): TimeHorizon {
+  const t = String(timeline ?? "").trim().toLowerCase();
+  if (!t) return "6-12";
+  if (t.includes("ihneď") || t.includes("ihned") || t.includes("okamž") || t.includes("okamz")) {
+    return "0-3";
+  }
+  if (t.includes("3 mes") || t.includes("do 3")) return "3-6";
+  if (t.includes("6 mes") || t.includes("do 6")) return "6-12";
+  if (t.includes("12") || t.includes("rok")) return "12+";
+  return "6-12";
+}
+
+/** Parse `leads.budget` free text → EUR min/max (0 when unknown). */
+export function parseLeadBudgetString(raw: string | null | undefined): { budgetMin: number; budgetMax: number } {
+  const text = String(raw ?? "").trim();
+  if (!text) return { budgetMin: 0, budgetMax: 0 };
+
+  const numbers = [...text.matchAll(/(\d[\d\s]*)/g)]
+    .map((m) => Number(m[1].replace(/\s/g, "")))
+    .filter((n) => Number.isFinite(n) && n > 0);
+
+  if (numbers.length === 0) return { budgetMin: 0, budgetMax: 0 };
+  if (numbers.length === 1) {
+    const lower = text.toLowerCase();
+    if (lower.includes("od ") || lower.startsWith("od")) {
+      return { budgetMin: numbers[0], budgetMax: 0 };
+    }
+    return { budgetMin: 0, budgetMax: numbers[0] };
+  }
+
+  const sorted = [...numbers].sort((a, b) => a - b);
+  return { budgetMin: sorted[0], budgetMax: sorted[sorted.length - 1] };
+}
+
+export type LeadIntentBackfillRow = {
+  id: string;
+  name: string;
+  email: string | null;
+  location: string | null;
+  budget: string | null;
+  property_type: string | null;
+  financing: string | null;
+  timeline: string | null;
+  status: string | null;
+  note: string | null;
+  client_segment: string | null;
+  buyer_readiness_score: number | null;
+};
+
+export type LeadIntentBackfillCandidate = {
+  leadId: string;
+  skipReason?: string;
+  intentInput?: BuyerIntentInput;
+  segment?: BuyerSegment;
+  readinessScore?: number;
+};
+
+/**
+ * Build a buyer_intents row from an existing lead (backfill).
+ * Skips leads without mappable property_type or inferable deal_type.
+ */
+export function buildBuyerIntentFromLead(lead: LeadIntentBackfillRow): LeadIntentBackfillCandidate {
+  const rawPropertyType = String(lead.property_type ?? "").trim();
+  if (!rawPropertyType) {
+    return { leadId: lead.id, skipReason: "insufficient_source_data" };
+  }
+
+  const propertyType = mapSkPropertyTypeToIntent(rawPropertyType);
+  if (!propertyType) {
+    return { leadId: lead.id, skipReason: "unmappable_property_type" };
+  }
+
+  const dealType = inferDealTypeFromLeadFields({
+    propertyType: lead.property_type,
+    financing: lead.financing,
+    status: lead.status,
+  });
+  if (!dealType) {
+    return { leadId: lead.id, skipReason: "ambiguous_deal_type" };
+  }
+
+  const { budgetMin, budgetMax } = parseLeadBudgetString(lead.budget);
+  const intentInput: BuyerIntentInput = {
+    dealType,
+    propertyType,
+    primaryCity: String(lead.location ?? "").trim(),
+    budgetMin,
+    budgetMax,
+    timeHorizonMonths: mapLeadTimelineToHorizon(lead.timeline),
+    newBuildOnly: false,
+    needsMortgageHelp: String(lead.financing ?? "").toLowerCase().includes("hypot"),
+    rawFocusText: String(lead.note ?? "").trim(),
+  };
+
+  return {
+    leadId: lead.id,
+    intentInput,
+    segment: deriveClientSegment(intentInput),
+    readinessScore: computeBuyerReadinessScore(intentInput),
+  };
+}
