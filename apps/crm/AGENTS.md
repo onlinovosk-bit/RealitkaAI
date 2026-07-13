@@ -17,6 +17,7 @@ Monorepo root pre CRM app: tento adresár (`apps/crm`).
 | Playwright smoke | route/API smoke | `npm run test:smoke` |
 | Preview smoke | po Vercel Preview deploy | `npm run test:smoke:preview` |
 | CI smoke | automaticky | `saas-grade-pipeline.yml` po build |
+| Nightly E2E | 03:00 UTC | `nightly-playwright.yml` — smoke + public; chromium ak sú TEST_USER secrets |
 
 ## Kľúčové cesty
 
