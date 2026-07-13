@@ -3,6 +3,7 @@ import { autoErrorCapture } from "@/lib/auto-error-capture";
 import { sendInboundAutoResponse } from "@/lib/acquire/send-inbound-auto-response";
 
 const OWNER_UI_ROLES = ["owner_vision", "owner_protocol"] as const;
+const MISSING_COLUMN = "42703";
 
 export type InboundLeadAutoResponseLead = {
   id: string;
@@ -27,6 +28,10 @@ type OwnerContact = {
   phone: string | null;
 };
 
+function isMissingColumnError(error: { code?: string } | null | undefined): boolean {
+  return error?.code === MISSING_COLUMN;
+}
+
 async function resolveOwnerContact(
   supa: SupabaseClient,
   agencyId: string,
@@ -44,6 +49,59 @@ async function resolveOwnerContact(
   }
 
   return data?.[0] ?? null;
+}
+
+/** Prod-safe agency load — tolerates missing optional columns (email, phone, flags). */
+export async function loadAgencyAutoResponseContext(
+  supa: SupabaseClient,
+  agencyId: string,
+): Promise<{ agency: AgencyRow | null; autoResponseEnabled: boolean }> {
+  const { data: base, error: baseError } = await supa
+    .from("agencies")
+    .select("name")
+    .eq("id", agencyId)
+    .maybeSingle();
+
+  if (baseError) {
+    throw new Error(`agency lookup failed: ${baseError.message}`);
+  }
+
+  const agency: AgencyRow = {
+    name: base?.name ?? null,
+    email: null,
+    phone: null,
+    auto_response_enabled: null,
+  };
+
+  let autoResponseEnabled = true;
+
+  const { data: flags, error: flagsError } = await supa
+    .from("agencies")
+    .select("auto_response_enabled")
+    .eq("id", agencyId)
+    .maybeSingle();
+
+  if (!flagsError && flags) {
+    agency.auto_response_enabled = flags.auto_response_enabled;
+    autoResponseEnabled = flags.auto_response_enabled !== false;
+  } else if (flagsError && !isMissingColumnError(flagsError)) {
+    throw new Error(`agency flags lookup failed: ${flagsError.message}`);
+  }
+
+  const { data: contact, error: contactError } = await supa
+    .from("agencies")
+    .select("email, phone")
+    .eq("id", agencyId)
+    .maybeSingle();
+
+  if (!contactError && contact) {
+    agency.email = contact.email;
+    agency.phone = contact.phone;
+  } else if (contactError && !isMissingColumnError(contactError)) {
+    throw new Error(`agency contact lookup failed: ${contactError.message}`);
+  }
+
+  return { agency, autoResponseEnabled };
 }
 
 export async function resolveInboundAutoResponseContacts(
@@ -89,20 +147,19 @@ export async function runInboundLeadAutoResponse(
       .maybeSingle();
 
     if (freshLeadError) {
+      if (isMissingColumnError(freshLeadError)) {
+        autoErrorCapture(
+          "leads.auto_response_sent_at missing — apply prod SQL migration bundle before enabling auto-response",
+          "inbound-auto-response:migration_required",
+        );
+        return;
+      }
       throw new Error(`dedup guard read failed: ${freshLeadError.message}`);
     }
     if (freshLead?.auto_response_sent_at) return;
 
-    const { data: agency, error: agencyError } = await supa
-      .from("agencies")
-      .select("name, email, phone, auto_response_enabled")
-      .eq("id", agencyId)
-      .maybeSingle();
-
-    if (agencyError) {
-      throw new Error(`agency lookup failed: ${agencyError.message}`);
-    }
-    if (agency?.auto_response_enabled === false) return;
+    const { agency, autoResponseEnabled } = await loadAgencyAutoResponseContext(supa, agencyId);
+    if (!autoResponseEnabled) return;
 
     const { replyTo, agencyPhone } = await resolveInboundAutoResponseContacts(
       supa,
