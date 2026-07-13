@@ -142,7 +142,9 @@ export async function runInboundLeadAutoResponse(
   try {
     const { data: freshLead, error: freshLeadError } = await supa
       .from("leads")
-      .select("auto_response_sent_at")
+      .select(
+        "auto_response_sent_at,name,assigned_agent,ai_reason,ai_priority,source",
+      )
       .eq("id", leadId)
       .maybeSingle();
 
@@ -177,10 +179,14 @@ export async function runInboundLeadAutoResponse(
 
     const sendResult = await sendInboundAutoResponse({
       to: leadEmail,
-      leadName: candidate.name,
+      leadName: freshLead?.name?.trim() || candidate.name,
       agencyName: agency?.name?.trim() || "Realitná kancelária",
       agencyPhone,
       replyTo,
+      assignedAgent: freshLead?.assigned_agent,
+      aiReason: freshLead?.ai_reason,
+      aiPriority: freshLead?.ai_priority,
+      source: freshLead?.source,
     });
 
     if (!sendResult.ok) {

@@ -30,7 +30,7 @@ function agenciesMock(handlers: Record<string, unknown>) {
 }
 
 describe("send-inbound-auto-response template", () => {
-  it("builds SK plain-text without quoting inquiry", async () => {
+  it("builds Variant A SK plain-text without quoting inquiry", async () => {
     const { buildInboundAutoResponseText } = await import("@/lib/acquire/send-inbound-auto-response");
     const text = buildInboundAutoResponseText({
       to: "lead@example.com",
@@ -38,10 +38,18 @@ describe("send-inbound-auto-response template", () => {
       agencyName: "Reality Smolko",
       agencyPhone: "+421900000000",
       replyTo: "office@realitysmolko.sk",
+      assignedAgent: "Demo Makler 1",
+      aiReason: "Byt 3+kk v centre Bratislavy.",
+      aiPriority: "Vysoká",
+      source: "portal:Nehnuteľnosti.sk",
     });
 
     expect(text).toContain("Dobrý deň, Ján");
-    expect(text).toContain("ďakujeme za váš dopyt");
+    expect(text).toContain("dostal som váš dopyt z portálu Nehnuteľnosti.sk");
+    expect(text).toContain("Viem, že hľadáte");
+    expect(text).toContain("ozvem sa vám dnes");
+    expect(text).toContain("Demo Makler 1");
+    expect(text).not.toContain("ďakujeme za váš dopyt");
     expect(text).not.toContain("citliv");
     expect(text).toContain("+421900000000");
   });
@@ -82,7 +90,17 @@ describe("runInboundLeadAutoResponse", () => {
           return {
             select: () => ({
               eq: () => ({
-                maybeSingle: async () => ({ data: { auto_response_sent_at: null }, error: null }),
+                maybeSingle: async () => ({
+                  data: {
+                    auto_response_sent_at: null,
+                    name: "Lead",
+                    assigned_agent: "Demo Makler 1",
+                    ai_reason: "Byt v centre.",
+                    ai_priority: "Vysoká",
+                    source: "portal:Nehnuteľnosti.sk",
+                  },
+                  error: null,
+                }),
               }),
             }),
             update: () => ({
@@ -131,7 +149,17 @@ describe("runInboundLeadAutoResponse", () => {
           return {
             select: () => ({
               eq: () => ({
-                maybeSingle: async () => ({ data: { auto_response_sent_at: null }, error: null }),
+                maybeSingle: async () => ({
+                  data: {
+                    auto_response_sent_at: null,
+                    name: "Lead",
+                    assigned_agent: "Demo Makler 1",
+                    ai_reason: "Byt v centre.",
+                    ai_priority: "Vysoká",
+                    source: "portal:Nehnuteľnosti.sk",
+                  },
+                  error: null,
+                }),
               }),
             }),
             update: () => ({
@@ -181,7 +209,13 @@ describe("runInboundLeadAutoResponse", () => {
     );
 
     expect(sendSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ replyTo: "owner@test.sk" }),
+      expect.objectContaining({
+        replyTo: "owner@test.sk",
+        assignedAgent: "Demo Makler 1",
+        aiReason: "Byt v centre.",
+        aiPriority: "Vysoká",
+        source: "portal:Nehnuteľnosti.sk",
+      }),
     );
   });
 });

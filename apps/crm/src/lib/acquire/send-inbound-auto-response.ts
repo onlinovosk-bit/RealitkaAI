@@ -6,9 +6,15 @@ export type InboundAutoResponsePayload = {
   agencyName: string;
   agencyPhone?: string | null;
   replyTo: string;
+  assignedAgent?: string | null;
+  aiReason?: string | null;
+  aiPriority?: string | null;
+  source?: string | null;
 };
 
-/** Extract bare email from OUTREACH_FROM_EMAIL (supports `Name <addr>`). */
+const FROM_EMAIL = "noreply@revolis.ai";
+
+/** Extract bare email from env (supports `Name <addr>`). */
 export function extractSenderEmail(fromEnv: string): string {
   const trimmed = fromEnv.trim();
   const bracket = trimmed.match(/<([^>]+)>/);
@@ -16,33 +22,63 @@ export function extractSenderEmail(fromEnv: string): string {
   return trimmed;
 }
 
-export function formatInboundFromAddress(agencyName: string, fromEnv: string): string {
-  const email = extractSenderEmail(fromEnv);
-  const safeName = agencyName.trim() || "Realitná kancelária";
-  return `${safeName} <${email}>`;
+export function formatInboundFromAddress(displayName: string, fromEmail: string = FROM_EMAIL): string {
+  const safeName = displayName.trim() || "Realitná kancelária";
+  return `${safeName} <${fromEmail}>`;
+}
+
+// --- ŠABLÓNA: Variant A (teplý maklér) ---
+
+export function buildInboundAutoResponseContent(payload: InboundAutoResponsePayload): {
+  subject: string;
+  body: string;
+  agentName: string;
+} {
+  const agencyName = payload.agencyName.trim() || "Realitná kancelária";
+  const agencyPhone = payload.agencyPhone?.trim() || "";
+  const rawAgent = payload.assignedAgent?.trim();
+  const agentName = rawAgent && rawAgent !== "Nepriradený" ? rawAgent : agencyName;
+
+  const aiReasonShort = payload.aiReason
+    ? payload.aiReason.split(/[.!?]/)[0].slice(0, 80).trim()
+    : null;
+
+  const responseTime =
+    payload.aiPriority === "Vysoká"
+      ? "dnes"
+      : payload.aiPriority === "Stredná"
+        ? "v najbližších hodinách"
+        : "v priebehu dňa";
+
+  const portalName = payload.source?.startsWith("portal:")
+    ? payload.source.replace("portal:", "")
+    : null;
+
+  const greeting = payload.leadName.trim() ? `Dobrý deň, ${payload.leadName.trim()},` : "Dobrý deň,";
+  const portalPart = portalName ? ` z portálu ${portalName}` : "";
+  const reasonPart = aiReasonShort
+    ? `Viem, že hľadáte ${aiReasonShort.charAt(0).toLowerCase() + aiReasonShort.slice(1)} — pozriem sa na to a ozvem sa vám ${responseTime}.`
+    : `Pozriem sa na to a ozvem sa vám ${responseTime}.`;
+
+  const subject = `Váš dopyt som dostal — ${agentName}`;
+
+  const body = `${greeting}
+
+dostal som váš dopyt${portalPart}. ${reasonPart}
+
+Ak medzitým chcete niečo doplniť alebo sa opýtať, pokojne odpovedzte na tento e-mail${agencyPhone ? ` alebo zavolajte na ${agencyPhone}` : ""}.
+
+${agentName}${agencyPhone ? `\n${agencyPhone}` : ""}`;
+
+  return { subject, body, agentName };
 }
 
 export function buildInboundAutoResponseText(payload: InboundAutoResponsePayload): string {
-  const greeting = payload.leadName.trim()
-    ? `Dobrý deň, ${payload.leadName.trim()},`
-    : "Dobrý deň,";
-
-  const phoneLine = payload.agencyPhone?.trim()
-    ? `\nAk máte medzitým otázky, pokojne odpovedzte na tento e-mail\nalebo nám zavolajte na ${payload.agencyPhone.trim()}.\n`
-    : "\nAk máte medzitým otázky, pokojne odpovedzte na tento e-mail.\n";
-
-  return `${greeting}
-
-ďakujeme za váš dopyt. Evidujeme ho a jeden z našich maklérov
-sa vám ozve v najbližšom čase.
-${phoneLine}
-S pozdravom,
-${payload.agencyName.trim() || "Realitná kancelária"}
-`;
+  return buildInboundAutoResponseContent(payload).body;
 }
 
-export function buildInboundAutoResponseSubject(agencyName: string): string {
-  return `Ďakujeme za váš dopyt — ${agencyName.trim() || "Realitná kancelária"}`;
+export function buildInboundAutoResponseSubject(payload: InboundAutoResponsePayload): string {
+  return buildInboundAutoResponseContent(payload).subject;
 }
 
 export type SendInboundAutoResponseResult =
@@ -66,15 +102,15 @@ export async function sendInboundAutoResponse(
     return { ok: false, error: "replyTo is required" };
   }
 
-  const fromEnv = process.env.OUTREACH_FROM_EMAIL?.trim() || "noreply@revolis.ai";
+  const { subject, body, agentName } = buildInboundAutoResponseContent(payload);
   const resend = new Resend(apiKey);
 
   const result = await resend.emails.send({
-    from: formatInboundFromAddress(payload.agencyName, fromEnv),
+    from: formatInboundFromAddress(agentName, FROM_EMAIL),
     to: payload.to,
     replyTo,
-    subject: buildInboundAutoResponseSubject(payload.agencyName),
-    text: buildInboundAutoResponseText(payload),
+    subject,
+    text: body,
   });
 
   if (result.error) {
