@@ -42,6 +42,8 @@ Pri písaní Build Orderu mapuj akceptačné kritériá na súbory nižšie.
 
 CI: `.github/workflows/saas-grade-pipeline.yml` — `npm run test:smoke:ci` po `next start`.
 
+Preview deploy: `.github/workflows/preview-playwright-smoke.yml` — `npm run test:smoke:preview` proti `realitka-ai` Vercel Preview URL.
+
 ## Príkazy
 
 ```bash

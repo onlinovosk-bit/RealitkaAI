@@ -15,6 +15,7 @@ Monorepo root pre CRM app: tento adresár (`apps/crm`).
 | Unit/RLS | každý PR | `npm test` |
 | Verification (živá špec) | zmena flagu/featury | `npx vitest run tests/verification/<súbor>.verification.test.ts` |
 | Playwright smoke | route/API smoke | `npm run test:smoke` |
+| Preview smoke | po Vercel Preview deploy | `npm run test:smoke:preview` |
 | CI smoke | automaticky | `saas-grade-pipeline.yml` po build |
 
 ## Kľúčové cesty
