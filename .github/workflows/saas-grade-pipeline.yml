@@ -16,7 +16,7 @@ jobs:
   ci:
     name: Lint, test, build
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
 
     steps:
       - uses: actions/checkout@v4
@@ -155,3 +155,49 @@ jobs:
           retention-days: 7
           if-no-files-found: error
           include-hidden-files: true
+
+      # ── Playwright smoke (Fáza 1): reálna smoke brána pred merge ──
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+        working-directory: apps/crm
+
+      - name: Playwright smoke (next start + ephemeral DB)
+        run: |
+          set -e
+          npm run start &
+          SERVER_PID=$!
+          trap "kill $SERVER_PID 2>/dev/null || true" EXIT
+          for i in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:3000/ > /dev/null; then
+              echo "Server ready after ${i} attempt(s)"
+              break
+            fi
+            if [ "$i" -eq 60 ]; then
+              echo "::error::next start did not become ready on :3000"
+              exit 1
+            fi
+            sleep 2
+          done
+          npm run test:smoke:ci
+        working-directory: apps/crm
+        env:
+          PLAYWRIGHT_SKIP_WEBSERVER: "1"
+          NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
+          NEXT_PUBLIC_SUPABASE_URL: ${{ env.API_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ env.ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ env.SUPABASE_SERVICE_ROLE_KEY || env.SERVICE_ROLE_KEY }}
+          CRON_SECRET: ci-smoke-cron-secret
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CI: true
+
+      - name: Upload Playwright artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-smoke-${{ github.sha }}
+          path: |
+            apps/crm/playwright-report/
+            apps/crm/test-results/
+          retention-days: 7
+          if-no-files-found: ignore
