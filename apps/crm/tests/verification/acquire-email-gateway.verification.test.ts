@@ -62,6 +62,7 @@ describe("[verification] Acquire email gateway", () => {
 
     expect(orchestrator).toContain("auto_response_enabled");
     expect(orchestrator).toContain("auto_response_sent_at");
+    expect(orchestrator).toContain("loadAgencyAutoResponseContext");
     expect(orchestrator).toContain("autoErrorCapture");
     expect(orchestrator).not.toMatch(/catch\s*\{\s*\}/);
 

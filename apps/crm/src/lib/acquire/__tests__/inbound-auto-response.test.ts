@@ -1,11 +1,33 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { runInboundLeadAutoResponse } from "@/lib/acquire/inbound-lead-auto-response";
+import {
+  loadAgencyAutoResponseContext,
+  runInboundLeadAutoResponse,
+} from "@/lib/acquire/inbound-lead-auto-response";
 import * as sendModule from "@/lib/acquire/send-inbound-auto-response";
 
 vi.mock("@/lib/auto-error-capture", () => ({
   autoErrorCapture: vi.fn(),
 }));
+
+function agenciesMock(handlers: Record<string, unknown>) {
+  return {
+    from: (table: string) => {
+      if (table !== "agencies") throw new Error(`unexpected table ${table}`);
+      return {
+        select: (cols: string) => ({
+          eq: () => ({
+            maybeSingle: async () => {
+              const row = handlers[cols];
+              if (typeof row === "function") return row(cols);
+              return row ?? { data: null, error: { code: "42703", message: "column missing" } };
+            },
+          }),
+        }),
+      };
+    },
+  } as unknown as SupabaseClient;
+}
 
 describe("send-inbound-auto-response template", () => {
   it("builds SK plain-text without quoting inquiry", async () => {
@@ -29,6 +51,20 @@ describe("send-inbound-auto-response template", () => {
     expect(formatInboundFromAddress("AA Reality", "noreply@revolis.ai")).toBe(
       "AA Reality <noreply@revolis.ai>",
     );
+  });
+});
+
+describe("loadAgencyAutoResponseContext", () => {
+  it("defaults auto_response_enabled when column missing on prod", async () => {
+    const supa = agenciesMock({
+      name: { data: { name: "Reality Smolko" }, error: null },
+      auto_response_enabled: { data: null, error: { code: "42703", message: "column missing" } },
+      "email, phone": { data: null, error: { code: "42703", message: "column missing" } },
+    });
+
+    const ctx = await loadAgencyAutoResponseContext(supa, "agency-1");
+    expect(ctx.agency?.name).toBe("Reality Smolko");
+    expect(ctx.autoResponseEnabled).toBe(true);
   });
 });
 
@@ -58,17 +94,15 @@ describe("runInboundLeadAutoResponse", () => {
         }
         if (table === "agencies") {
           return {
-            select: () => ({
+            select: (cols: string) => ({
               eq: () => ({
-                maybeSingle: async () => ({
-                  data: {
-                    name: "Smolko",
-                    email: "office@test.sk",
-                    phone: null,
-                    auto_response_enabled: false,
-                  },
-                  error: null,
-                }),
+                maybeSingle: async () => {
+                  if (cols === "name") return { data: { name: "Smolko" }, error: null };
+                  if (cols === "auto_response_enabled") {
+                    return { data: { auto_response_enabled: false }, error: null };
+                  }
+                  return { data: { email: "office@test.sk", phone: null }, error: null };
+                },
               }),
             }),
           };
@@ -109,17 +143,15 @@ describe("runInboundLeadAutoResponse", () => {
         }
         if (table === "agencies") {
           return {
-            select: () => ({
+            select: (cols: string) => ({
               eq: () => ({
-                maybeSingle: async () => ({
-                  data: {
-                    name: "Smolko",
-                    email: "",
-                    phone: "",
-                    auto_response_enabled: true,
-                  },
-                  error: null,
-                }),
+                maybeSingle: async () => {
+                  if (cols === "name") return { data: { name: "Smolko" }, error: null };
+                  if (cols === "auto_response_enabled") {
+                    return { data: { auto_response_enabled: true }, error: null };
+                  }
+                  return { data: null, error: { code: "42703", message: "column missing" } };
+                },
               }),
             }),
           };
