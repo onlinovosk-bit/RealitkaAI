@@ -18,6 +18,8 @@
         "verify:realtime": "node scripts/verify-realtime.mjs",
         "test": "vitest run",
         "test:watch": "vitest",
+        "test:smoke": "playwright test --project=smoke --project=universal-import-smoke",
+        "test:smoke:ci": "playwright test --project=smoke --project=universal-import-smoke --reporter=line",
         "cleanup:smoke": "npx tsx ../../scripts/cleanup-smoke-profiles.ts",
         "cleanup:smoke:dry": "npx tsx ../../scripts/cleanup-smoke-profiles.ts --dry-run",
         "demo-ops:import-prospects": "npx tsx scripts/demo-ops/import-prospects.ts"
