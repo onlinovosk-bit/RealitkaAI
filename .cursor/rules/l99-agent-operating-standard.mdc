@@ -1,6 +1,6 @@
 ---
-description: L99 agent operating position and execution quality
-alwaysApply: true
+description: L99 execution discipline — použij pri implementácii a debugovaní
+alwaysApply: false
 ---
 
 # L99 Agent Operating Standard

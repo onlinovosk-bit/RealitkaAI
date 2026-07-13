@@ -1,0 +1,26 @@
+---
+description: UI components — reuse landing sections, SLATE_HORIZON theme, honest copy
+globs:
+  - apps/crm/src/components/**
+  - apps/crm/src/app/**/page.tsx
+  - apps/crm/src/app/**/layout.tsx
+---
+
+# Revolis UI Patterns
+
+Pred novým komponentom: hľadaj v `src/components/*` a `src/app/(marketing)/landing/sections/*`.
+
+## Dizajn
+
+- Tokeny: `@/lib/slate-horizon-theme` (SLATE_HORIZON, WORKDESK_CARD).
+- Marketing copy: `docs/architecture/clay-positioning-reframe.md` — lead with OUTCOME.
+- Žiadne fake čísla vydávané za analýzu — odhad označ ako odhad + zdroj (AP-001).
+
+## Po UI zmene featury
+
+- Playwright: relevantné `apps/crm/tests/*.spec.ts` (ak existuje route smoke).
+- Verification: `rg "<feature>" apps/crm/tests/verification/`.
+
+## Poznámka
+
+`components/ui` je minimálny (NavIcon, Toast). Marketing UI žije v landing sections.
