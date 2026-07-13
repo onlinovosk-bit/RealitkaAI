@@ -42,6 +42,8 @@ Pri písaní Build Orderu mapuj akceptačné kritériá na súbory nižšie.
 
 CI: `.github/workflows/saas-grade-pipeline.yml` — `npm run test:smoke:ci` po `next start`.
 
+Nightly: `.github/workflows/nightly-playwright.yml` — 03:00 UTC, extended suite + optional auth chromium.
+
 ## Príkazy
 
 ```bash

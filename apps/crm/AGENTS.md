@@ -16,6 +16,7 @@ Monorepo root pre CRM app: tento adresár (`apps/crm`).
 | Verification (živá špec) | zmena flagu/featury | `npx vitest run tests/verification/<súbor>.verification.test.ts` |
 | Playwright smoke | route/API smoke | `npm run test:smoke` |
 | CI smoke | automaticky | `saas-grade-pipeline.yml` po build |
+| Nightly E2E | 03:00 UTC | `nightly-playwright.yml` — smoke + public; chromium ak sú TEST_USER secrets |
 
 ## Kľúčové cesty
 
