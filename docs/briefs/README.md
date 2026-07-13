@@ -1,4 +1,19 @@
-# Overnight briefs index
+# Briefs index
+
+## Build Orders (aktívny workflow)
+
+| Šablóna | Účel |
+|---------|------|
+| [`_BO-template.md`](./_BO-template.md) | Nový BO — Integration Report + Verification map + Plan Mode |
+| [`verification-index.md`](./verification-index.md) | BO → `tests/verification/*.verification.test.ts` mapovanie |
+| [`plans/README.md`](./plans/README.md) | Plan Mode artefakty (Save to workspace) |
+
+| BO | Súbor | Stav |
+|----|-------|------|
+| BO-001 | [BO-001-proof-of-value.md](./BO-001-proof-of-value.md) | **SHIPPED** |
+| BO-onboard | [BO-onboard-agency.md](./BO-onboard-agency.md) | aktívny |
+
+## Overnight briefs (historické swarms)
 
 **Auto-merge politika (Tier 1/2/3):** [AUTOMERGE-POLICY.md](../AUTOMERGE-POLICY.md) · robot vykonáva, agent nikdy nemerguje.
 
