@@ -1,4 +1,7 @@
--- ─── buyer_intents ───────────────────────────────────────────────────────────
+-- DEPRECATED: canonical definition lives in
+-- supabase/migrations/20260713140000_buyer_intents_tenant_rls.sql
+-- Keep for local bootstrap reference only; do not apply to prod separately.
+
 -- Source of truth for buyer preferences, segment and readiness score.
 -- Referenced by matching engine and CRM agent view.
 
