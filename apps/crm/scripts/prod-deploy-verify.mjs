@@ -46,17 +46,46 @@ checks.push(
 
 checks.push(
   await probe(sb, "buyer_intents upsert constraint", async () => {
+    const { data: existingIntent, error: intentError } = await sb
+      .from("buyer_intents")
+      .select("lead_id")
+      .limit(1)
+      .maybeSingle();
+
+    if (intentError) throw intentError;
+
+    const leadId = existingIntent?.lead_id;
+    if (!leadId) {
+      const { data: lead, error: leadError } = await sb
+        .from("leads")
+        .select("id")
+        .eq("agency_id", AGENCY)
+        .limit(1)
+        .maybeSingle();
+      if (leadError) throw leadError;
+      if (!lead?.id) throw new Error("no tenant lead for upsert probe");
+      throw new Error("buyer_intents empty — run backfill before upsert probe");
+    }
+
     const { error } = await sb.from("buyer_intents").upsert(
       {
-        lead_id: "__probe__",
+        lead_id: leadId,
         deal_type: "buy",
         property_type: "flat",
+        primary_city: "",
+        budget_min: 0,
+        budget_max: 0,
+        time_horizon_months: "6-12",
+        new_build_only: false,
+        needs_mortgage_help: false,
+        raw_focus_text: "",
+        client_segment: "other",
+        buyer_readiness_score: 0,
       },
-      { onConflict: "lead_id", ignoreDuplicates: true },
+      { onConflict: "lead_id" },
     );
     if (error) throw error;
-    await sb.from("buyer_intents").delete().eq("lead_id", "__probe__");
-    return "ok";
+    return `ok (lead_id=${leadId})`;
   }),
 );
 
@@ -70,6 +99,12 @@ const { count: intents } = await sb
   .from("buyer_intents")
   .select("id", { count: "exact", head: true });
 
+const { count: flatBuyCount } = await sb
+  .from("buyer_intents")
+  .select("id", { count: "exact", head: true })
+  .eq("property_type", "flat")
+  .eq("deal_type", "buy");
+
 const { data: owner } = await sb
   .from("profiles")
   .select("email,phone,full_name")
@@ -77,14 +112,20 @@ const { data: owner } = await sb
   .eq("role", "owner")
   .limit(1);
 
+const schemaReady = checks.every((c) => c.ok);
+const backfillComplete = (intents ?? 0) >= 2 && (flatBuyCount ?? 0) >= 2;
+
 console.log(
   JSON.stringify(
     {
       checks,
       agency,
       buyerIntents: intents ?? 0,
+      validFlatBuy: flatBuyCount ?? 0,
       ownerFallback: owner?.[0] ?? null,
-      readyForBackfillApply: checks.every((c) => c.ok),
+      schemaReady,
+      backfillComplete,
+      readyForInboundAutoResponseSmoke: schemaReady && Boolean(agency?.auto_response_enabled),
     },
     null,
     2,

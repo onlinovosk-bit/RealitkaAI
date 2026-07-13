@@ -119,6 +119,7 @@ END $$;
 
 -- >>> 20260713150000_inbound_auto_response.sql
 -- Inbound auto-response v1: dedup timestamp on lead, opt-out on agency.
+-- Run as one block. If COMMENT fails, run prod-sql-fix-leads-auto-response-sent-at.sql first.
 
 ALTER TABLE public.leads
   ADD COLUMN IF NOT EXISTS auto_response_sent_at timestamptz;
@@ -126,11 +127,19 @@ ALTER TABLE public.leads
 ALTER TABLE public.agencies
   ADD COLUMN IF NOT EXISTS auto_response_enabled boolean NOT NULL DEFAULT true;
 
-COMMENT ON COLUMN public.leads.auto_response_sent_at IS
-  'Set after first inbound auto-response email; NULL = not yet sent.';
+DO $$ BEGIN
+  COMMENT ON COLUMN public.leads.auto_response_sent_at IS
+    'Set after first inbound auto-response email; NULL = not yet sent.';
+EXCEPTION
+  WHEN undefined_column THEN NULL;
+END $$;
 
-COMMENT ON COLUMN public.agencies.auto_response_enabled IS
-  'When false, inbound gateway skips auto-response for this agency.';
+DO $$ BEGIN
+  COMMENT ON COLUMN public.agencies.auto_response_enabled IS
+    'When false, inbound gateway skips auto-response for this agency.';
+EXCEPTION
+  WHEN undefined_column THEN NULL;
+END $$;
 
 -- >>> 20260713160000_agencies_contact_columns.sql
 -- Optional agency contact columns for Reply-To / template phone (prod drift fix).
