@@ -12,7 +12,7 @@ export type InboundAutoResponsePayload = {
   source?: string | null;
 };
 
-const FROM_EMAIL = "noreply@revolis.ai";
+const DEFAULT_FROM_EMAIL = "onboarding@mg.revolis.ai";
 
 /** Extract bare email from env (supports `Name <addr>`). */
 export function extractSenderEmail(fromEnv: string): string {
@@ -22,9 +22,25 @@ export function extractSenderEmail(fromEnv: string): string {
   return trimmed;
 }
 
-export function formatInboundFromAddress(displayName: string, fromEmail: string = FROM_EMAIL): string {
+export function formatInboundFromAddress(displayName: string, fromEmail: string): string {
   const safeName = displayName.trim() || "Realitná kancelária";
   return `${safeName} <${fromEmail}>`;
+}
+
+/** Use agency reply-to as From when on verified Revolis domain; else verified outreach sender. */
+export function resolveInboundFromEmail(replyTo: string): string {
+  const replyDomain = replyTo.split("@")[1]?.toLowerCase() ?? "";
+  if (replyDomain === "revolis.ai" || replyDomain.endsWith(".revolis.ai")) {
+    return replyTo;
+  }
+
+  const outreach = process.env.OUTREACH_FROM_EMAIL?.trim();
+  const outreachEmail = outreach ? extractSenderEmail(outreach) : "";
+  if (outreachEmail && !outreachEmail.toLowerCase().startsWith("noreply@")) {
+    return outreachEmail;
+  }
+
+  return DEFAULT_FROM_EMAIL;
 }
 
 // --- ŠABLÓNA: Variant A (teplý maklér) ---
@@ -60,13 +76,18 @@ export function buildInboundAutoResponseContent(payload: InboundAutoResponsePayl
     ? `Viem, že hľadáte ${aiReasonShort.charAt(0).toLowerCase() + aiReasonShort.slice(1)} — pozriem sa na to a ozvem sa vám ${responseTime}.`
     : `Pozriem sa na to a ozvem sa vám ${responseTime}.`;
 
+  const replyTo = payload.replyTo.trim();
+  const contactLine = agencyPhone
+    ? `pokojne mi napíšte na ${replyTo} alebo zavolajte na ${agencyPhone}`
+    : `pokojne mi napíšte na ${replyTo}`;
+
   const subject = `Váš dopyt som dostal — ${agentName}`;
 
   const body = `${greeting}
 
 dostal som váš dopyt${portalPart}. ${reasonPart}
 
-Ak medzitým chcete niečo doplniť alebo sa opýtať, pokojne odpovedzte na tento e-mail${agencyPhone ? ` alebo zavolajte na ${agencyPhone}` : ""}.
+Ak medzitým chcete niečo doplniť alebo sa opýtať, ${contactLine}.
 
 ${agentName}${agencyPhone ? `\n${agencyPhone}` : ""}`;
 
@@ -103,10 +124,11 @@ export async function sendInboundAutoResponse(
   }
 
   const { subject, body, agentName } = buildInboundAutoResponseContent(payload);
+  const fromEmail = resolveInboundFromEmail(replyTo);
   const resend = new Resend(apiKey);
 
   const result = await resend.emails.send({
-    from: formatInboundFromAddress(agentName, FROM_EMAIL),
+    from: formatInboundFromAddress(agentName, fromEmail),
     to: payload.to,
     replyTo,
     subject,

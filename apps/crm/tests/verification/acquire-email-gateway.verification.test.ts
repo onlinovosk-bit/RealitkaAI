@@ -69,6 +69,7 @@ describe("[verification] Acquire email gateway", () => {
 
     expect(sender).toContain("replyTo");
     expect(sender).not.toContain("reply_to");
-    expect(sender).toContain("buildInboundAutoResponseText");
+    expect(sender).toContain("resolveInboundFromEmail");
+    expect(sender).not.toContain('const FROM_EMAIL = "noreply@revolis.ai"');
   });
 });

@@ -50,15 +50,28 @@ describe("send-inbound-auto-response template", () => {
     expect(text).toContain("ozvem sa vám dnes");
     expect(text).toContain("Demo Makler 1");
     expect(text).not.toContain("ďakujeme za váš dopyt");
-    expect(text).not.toContain("citliv");
-    expect(text).toContain("+421900000000");
+    expect(text).toContain("pokojne mi napíšte na office@realitysmolko.sk");
+    expect(text).not.toContain("odpovedzte na tento e-mail");
   });
 
-  it("formats From with agency display name", async () => {
+  it("formats From with agent display name and contact email", async () => {
     const { formatInboundFromAddress } = await import("@/lib/acquire/send-inbound-auto-response");
-    expect(formatInboundFromAddress("AA Reality", "noreply@revolis.ai")).toBe(
-      "AA Reality <noreply@revolis.ai>",
+    expect(formatInboundFromAddress("AA Reality", "owner@revolis.ai")).toBe(
+      "AA Reality <owner@revolis.ai>",
     );
+  });
+
+  it("uses agency reply-to as From on revolis.ai domain", async () => {
+    const { resolveInboundFromEmail } = await import("@/lib/acquire/send-inbound-auto-response");
+    expect(resolveInboundFromEmail("owner@revolis.ai")).toBe("owner@revolis.ai");
+  });
+
+  it("falls back to outreach sender for external reply-to", async () => {
+    const prev = process.env.OUTREACH_FROM_EMAIL;
+    process.env.OUTREACH_FROM_EMAIL = "Revolis <onboarding@mg.revolis.ai>";
+    const { resolveInboundFromEmail } = await import("@/lib/acquire/send-inbound-auto-response");
+    expect(resolveInboundFromEmail("makler@gmail.com")).toBe("onboarding@mg.revolis.ai");
+    process.env.OUTREACH_FROM_EMAIL = prev;
   });
 });
 
