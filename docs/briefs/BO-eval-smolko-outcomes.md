@@ -1,6 +1,6 @@
 # Build Order — BO-eval-smolko-outcomes: Parser + triage gold eval
 
-**Status:** SHIPPED (in progress)
+**Status:** SHIPPED
 **Cieľ:** Bazos inbound maily (Palenčár) nesmú padať ako NOT_A_LEAD; 4 Smolko gold outcomes ako merateľný triage eval.
 
 **Zdroj dát:** `docs/eval/eval-dataset-smolko-outcomes.md`
