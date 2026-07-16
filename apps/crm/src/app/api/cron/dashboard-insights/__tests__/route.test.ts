@@ -16,7 +16,7 @@ vi.mock('@/lib/ai/dashboard-insights-cron', () => ({
 }))
 
 function makeRequest(secret: string | null): NextRequest {
-  const init: RequestInit = {}
+  const init: ConstructorParameters<typeof NextRequest>[1] = {}
   if (secret) {
     init.headers = { authorization: `Bearer ${secret}` }
   }

@@ -23,7 +23,7 @@ function makeRequest(
   secret: string | null,
   query = "",
 ): NextRequest {
-  const init: RequestInit = {};
+  const init: ConstructorParameters<typeof NextRequest>[1] = {};
   if (secret) {
     init.headers = { authorization: `Bearer ${secret}` };
   }

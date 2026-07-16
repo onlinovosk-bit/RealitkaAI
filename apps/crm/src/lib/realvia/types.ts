@@ -152,7 +152,7 @@ export interface RealviaProcessingResult {
   readonly success: boolean;
   readonly action: 'created' | 'updated' | 'deleted' | 'skipped';
   readonly propertyId?: string;
-  readonly sourceId?: number;
+  readonly sourceId?: string | number;
   readonly error?: string;
   readonly priceChanged?: boolean;
 }

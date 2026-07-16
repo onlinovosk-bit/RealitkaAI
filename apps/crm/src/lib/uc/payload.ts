@@ -6,7 +6,7 @@ export type UcRequestPayload = {
   user: string;
   pass: string;
   action: UcAction;
-  data: unknown;
+  data: Record<string, unknown>;
 };
 
 export function parseUcIncomingPayload(raw: Record<string, unknown>): UcRequestPayload | null {

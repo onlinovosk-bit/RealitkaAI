@@ -68,8 +68,8 @@ async function findSmolkoOwnerProfileViaServiceRole(
   if (!owners?.length) return null;
 
   const linkedOwner = owners.find(
-    (row) => (row as ResolvedAuthProfile).auth_user_id === userId,
-  ) as ResolvedAuthProfile | undefined;
+    (row) => (row as unknown as ResolvedAuthProfile).auth_user_id === userId,
+  ) as unknown as ResolvedAuthProfile | undefined;
   if (linkedOwner) {
     return linkedOwner;
   }
@@ -81,7 +81,7 @@ async function findSmolkoOwnerProfileViaServiceRole(
   let emailMatch: ResolvedAuthProfile | null = null;
   let best: ResolvedAuthProfile | null = null;
   for (const row of owners) {
-    const profile = row as ResolvedAuthProfile;
+    const profile = row as unknown as ResolvedAuthProfile;
     const rowEmail = String(profile.email ?? "").trim().toLowerCase();
     if (loginCandidates.has(rowEmail)) {
       emailMatch = pickPreferredProfile(emailMatch, profile);
@@ -104,7 +104,7 @@ async function findProfileByEmailCandidates(
       .ilike("email", candidate)
       .maybeSingle();
     if (data) {
-      return { profile: data as ResolvedAuthProfile };
+      return { profile: data as unknown as ResolvedAuthProfile };
     }
   }
   return { profile: null };
@@ -157,14 +157,14 @@ async function findProfileViaServiceRole(
     .select(select)
     .eq("auth_user_id", userId)
     .maybeSingle();
-  best = pickPreferredProfile(best, (byAuth.data as ResolvedAuthProfile) ?? null);
+  best = pickPreferredProfile(best, (byAuth.data as unknown as ResolvedAuthProfile) ?? null);
 
   const byLegacyId = await service
     .from("profiles")
     .select(select)
     .eq("id", userId)
     .maybeSingle();
-  best = pickPreferredProfile(best, (byLegacyId.data as ResolvedAuthProfile) ?? null);
+  best = pickPreferredProfile(best, (byLegacyId.data as unknown as ResolvedAuthProfile) ?? null);
 
   const byEmail = await findProfileByEmailCandidates(service, email, select);
   best = pickPreferredProfile(best, byEmail.profile);
@@ -220,7 +220,7 @@ async function findProfileForAuthUser(
     .maybeSingle();
 
   let authProfile: ResolvedAuthProfile | null = byAuth.data
-    ? (byAuth.data as ResolvedAuthProfile)
+    ? (byAuth.data as unknown as ResolvedAuthProfile)
     : null;
 
   if (!authProfile) {
@@ -230,7 +230,7 @@ async function findProfileForAuthUser(
       .eq("id", userId)
       .maybeSingle();
     if (byLegacyId.data) {
-      authProfile = byLegacyId.data as ResolvedAuthProfile;
+      authProfile = byLegacyId.data as unknown as ResolvedAuthProfile;
     }
   }
 
@@ -265,12 +265,13 @@ export async function linkProfileToAuthUser(
   userId: string,
   email?: string | null,
 ): Promise<ResolvedAuthProfile | null> {
-  const { profile } = await findProfileForAuthUser(
+  const lookup = await findProfileForAuthUser(
     supabase,
     userId,
     email,
     "id, agency_id, auth_user_id, email, role, ui_role, account_tier",
   );
+  let profile = lookup.profile;
 
   const service = createServiceRoleClient();
   if (isSmolkoOwnerEmail(email) && service) {

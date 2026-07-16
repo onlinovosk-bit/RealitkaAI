@@ -62,7 +62,7 @@ function parseArgs(argv: string[]) {
 }
 
 async function loadMatchesForLeads(
-  sb: ReturnType<typeof createClient>,
+  sb: any,
   leadIds: string[],
 ) {
   if (leadIds.length === 0) return [];
@@ -74,7 +74,7 @@ async function loadMatchesForLeads(
 
   if (error) throw new Error(`lead_property_matches: ${error.message}`);
 
-  return (data ?? []).map((row) => ({
+  return (data ?? []).map((row: { lead_id: string; score: number | null }) => ({
     leadId: row.lead_id as string,
     matchScore: Number(row.score ?? 0),
   }));
