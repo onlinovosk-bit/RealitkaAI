@@ -81,7 +81,6 @@ function mapManualPlanToPlanKey(manualPlan: string | null | undefined): PlanKey 
     case "starter":
       return "starter";
     case "pro":
-    case "active_force":
       return "pro";
     case "enterprise":
       return "scale";

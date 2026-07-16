@@ -180,10 +180,10 @@ export async function generateDashboardInsights(
   }
 
   const validLeadIds = new Set(input.summary.topHotLeads.map(l => l.id))
-  const fallbackInsights = buildDataFallback(input)
+  const fallback = buildDataFallback(input)
   const context = buildContext(input)
 
-  const aiCall = callClaude({
+  const aiCall: Promise<GenerateDashboardInsightsResult> = callClaude({
     model: CLAUDE_HAIKU,
     max_tokens: 700,
     system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
@@ -230,7 +230,7 @@ Vráť JSON:
     }
   })
 
-  const result = await withAiTimeout(aiCall, {
+  const result: GenerateDashboardInsightsResult = await withAiTimeout(aiCall, {
     insights: fallback,
     audit: { source: 'fallback' as const, model: CLAUDE_HAIKU, costEur: null, latencyMs: 0 },
   }, 800)

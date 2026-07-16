@@ -75,7 +75,12 @@ export async function GET(request: NextRequest) {
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      return NextResponse.json({ ok: false, error: msg, queued: inputs.length }, { status: 500 });
+      const isConfig =
+        /ANTHROPIC_API_KEY|OPENAI_API_KEY|nie je nastaven/i.test(msg);
+      return NextResponse.json(
+        { ok: false, error: msg, queued: inputs.length },
+        { status: isConfig ? 503 : 500 },
+      );
     }
   }
 

@@ -25,14 +25,14 @@ const leads = [
 
 describe("[verification] Team visibility gating", () => {
   it("owner sees all teams and leads", () => {
-    expect(getVisibleTeamsForProfile(profiles[0], teams)).toHaveLength(2);
+    expect(getVisibleTeamsForProfile(profiles[0], teams as never)).toHaveLength(2);
     expect(getVisibleLeadsForProfile(profiles[0], leads as never, profiles as never)).toHaveLength(2);
     expect(canManageTeamArea(profiles[0])).toBe(true);
   });
 
   it("manager sees only own team scope", () => {
-    expect(getVisibleTeamsForProfile(profiles[1], teams)).toHaveLength(1);
-    expect(getVisibleTeamsForProfile(profiles[1], teams)[0]?.id).toBe("t-1");
+    expect(getVisibleTeamsForProfile(profiles[1], teams as never)).toHaveLength(1);
+    expect(getVisibleTeamsForProfile(profiles[1], teams as never)[0]?.id).toBe("t-1");
     const visible = getVisibleLeadsForProfile(profiles[1], leads as never, profiles as never);
     expect(visible.map((l) => l.id).sort()).toEqual(["l-1", "l-2"]);
   });
@@ -50,9 +50,9 @@ describe("[verification] Team visibility gating", () => {
   });
 
   it("manager assign smoke: manager can assign only within own team", () => {
-    const assignable = getAssignableProfilesForProfile(profiles[1], profiles);
+    const assignable = getAssignableProfilesForProfile(profiles[1], profiles as never);
     expect(assignable.map((p) => p.id).sort()).toEqual(["p-agent", "p-mgr"]);
-    expect(getAssignableProfilesForProfile(profiles[2], profiles)).toHaveLength(0);
-    expect(getAssignableProfilesForProfile(profiles[0], profiles)).toHaveLength(3);
+    expect(getAssignableProfilesForProfile(profiles[2], profiles as never)).toHaveLength(0);
+    expect(getAssignableProfilesForProfile(profiles[0], profiles as never)).toHaveLength(3);
   });
 });

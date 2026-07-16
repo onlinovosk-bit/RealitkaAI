@@ -11,9 +11,7 @@ export const proofSubmitSchema = z.object({
   company: z.string().trim().min(2).max(200),
   phone: z.string().trim().max(40).optional(),
   city: z.string().trim().max(80).optional(),
-  gdprConsent: z.literal(true, {
-    errorMap: () => ({ message: "Súhlas so spracovaním údajov je povinný." }),
-  }),
+  gdprConsent: z.literal(true, { error: "Súhlas so spracovaním údajov je povinný." }),
 });
 
 export type ProofSubmitBody = z.infer<typeof proofSubmitSchema>;

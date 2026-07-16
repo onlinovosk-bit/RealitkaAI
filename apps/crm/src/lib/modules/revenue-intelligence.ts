@@ -122,7 +122,7 @@ export function getActionQueueLeads(leads: Lead[], nowMs = Date.now()) {
   return leads
     .filter(
       (lead) =>
-        (lead.status === "Nový" || lead.status === "new") &&
+        (lead.status === "Nový" || (lead.status as string) === "new") &&
         isWithinActionQueueWindow(lead, nowMs),
     )
     .sort((a, b) => leadCreatedAt(a) - leadCreatedAt(b));

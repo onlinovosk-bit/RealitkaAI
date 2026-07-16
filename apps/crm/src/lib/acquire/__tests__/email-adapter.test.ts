@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   DATASET_VERSION,
@@ -26,6 +28,12 @@ E-mail: maria@test.sk
 Telefon: 0911222333
 Sprava: Informacie o cene prosim
 Odoslane z: 3-izbovy byt Poprad`;
+
+/** Eval sample 7 — Bazos Palenčár (Smolko gold, 18.03.2025) — docs/eval/eval-dataset-smolko-outcomes.md */
+const EVAL_BAZOS_PALENCAR = readFileSync(
+  join(process.cwd(), "../../docs/eval/fixtures/bazos-palencar-20250318.raw.txt"),
+  "utf8",
+);
 
 /** Eval sample 3 — Bazos.sk (reálny forward tvar) */
 const EVAL_BAZOS = `Re: Bazos.sk - odpoved na inzerat 181012929
@@ -73,6 +81,25 @@ describe("email-adapter eval dataset", () => {
     const lead = toLeadCandidate(ev, SMOLKO_AGENCY, false);
     expect(lead?.source).toBe("web_form");
     expect(lead?._meta.parserVersion).toBe("1.2");
+  });
+
+  it("eval 7: Bazos Palenčár availability inquiry (Smolko gold)", () => {
+    const ev = parseEmail(EVAL_BAZOS_PALENCAR, "2025-03-18");
+    expect(ev.sourceType).toBe("Portal");
+    expect(ev.source).toBe("Bazoš.sk");
+    expect(ev.contactName).toBe("Miroslav Palenčár");
+    expect(ev.contactEmail).toBe("palencarmiroslav3@gmail.com");
+    expect(ev.contactPhone).toBeNull();
+    expect(ev.listingPortalId).toBe("174767869");
+    expect(ev.listingInternalId).toBe("RS051N");
+    expect(ev.inquiryText).toContain("je váš inzerát ešte aktuálny");
+    expect(ev.inquiryIntent).toBe("Availability Question");
+
+    const lead = toLeadCandidate(ev, SMOLKO_AGENCY, false);
+    expect(lead).not.toBeNull();
+    expect(lead?.source).toBe("portal:Bazoš.sk");
+    expect(lead?.email).toBe("palencarmiroslav3@gmail.com");
+    expect(lead?.note).toContain("174767869");
   });
 
   it("eval 3: Bazos portal general inquiry", () => {

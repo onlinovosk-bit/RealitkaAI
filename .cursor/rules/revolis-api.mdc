@@ -1,0 +1,28 @@
+---
+description: API route patterns — validate, respond, telemetry, rate-limit, cron auth
+globs:
+  - apps/crm/src/app/api/**
+---
+
+# Revolis API Route Patterns
+
+Pred úpravou route: `rg` v `apps/crm/src/app/api/` — route takmer vždy už existuje; rozšír, nevytváraj duplicitu.
+
+## Povinné importy
+
+- Validácia: `@/lib/api-validate` (`validateBody`, `validateQuery`)
+- Odpovede: `@/lib/api-response` (`okResponse`, `errorResponse`)
+- Telemetria: `@/lib/usage-metrics` (`incrementUsageMetric`)
+- Chyby: `@/lib/auto-error-capture`
+- Rate limit: `@/lib/rate-limit` (verejné endpointy)
+- Cron auth: `Authorization: Bearer ${CRON_SECRET}` — vzor v `src/app/api/cron/**`
+
+## Po zmene správania
+
+1. `rg "<feature>" apps/crm/tests/verification/` — aktualizuj `*.verification.test.ts` v tom istom PR.
+2. Ak route je v `engineering_live` (market-vision-capabilities.json), over `apps/crm/tests/smoke.spec.ts`.
+
+## Zákazy
+
+- Žiadna hádaná schéma — mapper len z reálnej vzorky (AP-003).
+- Won/Lost nikdy na Leade — patrí Dealu (Business Canon E-1).

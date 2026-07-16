@@ -1,6 +1,6 @@
 ---
-description: L99 role posture and command execution quality
-alwaysApply: true
+description: L99 role posture — použij pri architektúrnych rozhodnutiach a quality review
+alwaysApply: false
 ---
 
 # L99 Role And Quality Standard

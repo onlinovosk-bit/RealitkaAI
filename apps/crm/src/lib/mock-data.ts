@@ -37,6 +37,8 @@ export type Lead = {
   aiPriorityManualAt?: string | null;
   lastAiFollowupAt?: string | null;
   aiFollowupCount?: number;
+  /** ISO timestamp from the persisted lead row. */
+  createdAt?: string;
 };
 
 export type Activity = {

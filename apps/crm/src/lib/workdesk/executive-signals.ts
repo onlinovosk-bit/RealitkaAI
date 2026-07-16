@@ -62,7 +62,7 @@ function resolveConfidence(lead: Lead): number {
   if (lead.buyer_readiness_score != null) {
     return Math.min(100, Math.round(lead.buyer_readiness_score));
   }
-  return Math.min(100, Math.round(lead.score));
+  return Math.min(100, Math.round(lead.score ?? 0));
 }
 
 export function formatMoneyEur(value: number | null): string {
@@ -73,7 +73,7 @@ export function formatMoneyEur(value: number | null): string {
 export function buildExecutiveSignals(leads: Lead[], limit = 3): ExecutiveSignal[] {
   return leads
     .filter((l) => !["Uzatvorený", "Stratený", "Zamietnutý"].includes(l.status as string))
-    .sort((a, b) => getLeadDisplayScore(b) - getLeadDisplayScore(a))
+    .sort((a, b) => (getLeadDisplayScore(b) ?? 0) - (getLeadDisplayScore(a) ?? 0))
     .slice(0, limit)
     .map((lead) => ({
       leadId: lead.id,

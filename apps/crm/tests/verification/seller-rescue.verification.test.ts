@@ -6,6 +6,7 @@ const baseLead = {
   name: "Risk Lead",
   status: "Kontaktovaný",
   created_at: new Date().toISOString(),
+  ai_priority: null,
 };
 
 describe("[verification] Seller Rescue churn score", () => {

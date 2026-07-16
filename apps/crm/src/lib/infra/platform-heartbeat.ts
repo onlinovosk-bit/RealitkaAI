@@ -124,7 +124,7 @@ export function evaluateHeartbeatSignals(
 async function safeCount(
   supabase: SupabaseClient,
   table: string,
-  apply?: (q: ReturnType<SupabaseClient["from"]>) => ReturnType<SupabaseClient["from"]>,
+  apply?: (q: any) => any,
 ): Promise<number> {
   try {
     let query = supabase.from(table).select("*", { count: "exact", head: true });
@@ -141,14 +141,14 @@ async function latestIso(
   supabase: SupabaseClient,
   table: string,
   column: string,
-  apply?: (q: ReturnType<SupabaseClient["from"]>) => ReturnType<SupabaseClient["from"]>,
+  apply?: (q: any) => any,
 ): Promise<string | null> {
   try {
     let query = supabase.from(table).select(column).order(column, { ascending: false }).limit(1);
     if (apply) query = apply(query);
     const { data, error } = await query;
     if (error || !data?.[0]) return null;
-    const row = data[0] as Record<string, string | null>;
+    const row = data[0] as unknown as Record<string, string | null>;
     return row[column] ?? null;
   } catch {
     return null;
@@ -162,7 +162,7 @@ export async function collectHeartbeatMetrics(
   const cutoff24h = isoHoursAgo(24);
   const cutoff7d = isoHoursAgo(24 * 7);
 
-  const agencyFilter = (q: ReturnType<SupabaseClient["from"]>) =>
+  const agencyFilter = (q: any) =>
     agencyId ? q.eq("agency_id", agencyId) : q;
 
   const [untriagedLeads24h, untriagedLeads7d, maxAiTriageAt, realviaLastWebhookAt, realviaWebhookTotal, inboundMailboxCount, sellerRescueLastNotifAt, sellerRescueLastTaskAt] =
