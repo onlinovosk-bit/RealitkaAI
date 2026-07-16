@@ -1,45 +1,54 @@
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
+import { resolveProfileForAuthUser } from "@/lib/profiles/resolve-profile-for-auth";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 
 const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? "https://app.revolis.ai").replace(/\/$/, "");
 
-async function getAuthorizedUser() {
+async function getAuthenticatedUser() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return { supabase, user: null, error: NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 }) };
+    return {
+      supabase,
+      user: null,
+      canManageUsers: false,
+      error: NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 }),
+    };
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("auth_user_id", user.id)
-    .single();
+  const { profile } = await resolveProfileForAuthUser(
+    supabase,
+    user.id,
+    "id, agency_id, auth_user_id, email, role, ui_role, account_tier",
+    user.email,
+  );
+  const canManageUsers =
+    profile?.role === "owner" ||
+    profile?.role === "founder" ||
+    profile?.ui_role === "owner_vision" ||
+    profile?.ui_role === "owner_protocol";
 
-  if (profile?.role !== "owner" && profile?.role !== "founder") {
-    return { supabase, user: null, error: NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 }) };
-  }
-
-  return { supabase, user, error: null };
+  return { supabase, user, canManageUsers, error: null };
 }
 
 export async function GET() {
-  const { user, error } = await getAuthorizedUser();
+  const { user, canManageUsers, error } = await getAuthenticatedUser();
   if (error) return error;
 
   return NextResponse.json({
     ok: true,
     email: user?.email ?? "",
+    canManageUsers,
   });
 }
 
 export async function POST(request: Request) {
-  const { supabase, user, error } = await getAuthorizedUser();
+  const { supabase, user, canManageUsers, error } = await getAuthenticatedUser();
   if (error) return error;
   if (!user?.email) {
     return NextResponse.json({ ok: false, error: "User email missing." }, { status: 400 });
@@ -49,9 +58,21 @@ export async function POST(request: Request) {
     const body = await request.json();
     const action = String(body?.action ?? "");
     const requestedEmail = String(body?.email ?? user.email).trim().toLowerCase();
+    const ownEmail = user.email.trim().toLowerCase();
 
     if ((action === "recovery" || action === "recovery-link") && (!requestedEmail || !requestedEmail.includes("@"))) {
       return NextResponse.json({ ok: false, error: "Zadaj platný e-mail používateľa." }, { status: 400 });
+    }
+
+    if (
+      (action === "recovery" || action === "recovery-link") &&
+      requestedEmail !== ownEmail &&
+      !canManageUsers
+    ) {
+      return NextResponse.json(
+        { ok: false, error: "Reset hesla iného používateľa môže vykonať iba vlastník účtu." },
+        { status: 403 },
+      );
     }
 
     if (action === "recovery") {
@@ -94,6 +115,13 @@ export async function POST(request: Request) {
     }
 
     if (action === "invite") {
+      if (!canManageUsers) {
+        return NextResponse.json(
+          { ok: false, error: "Pozvánky môže odosielať iba vlastník účtu." },
+          { status: 403 },
+        );
+      }
+
       const testEmail = String(body?.email ?? "").trim().toLowerCase();
       const fullName = String(body?.fullName ?? "").trim() || "Testovací používateľ";
 
