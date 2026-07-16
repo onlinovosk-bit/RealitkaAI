@@ -30,7 +30,7 @@ function agenciesMock(handlers: Record<string, unknown>) {
 }
 
 describe("send-inbound-auto-response template", () => {
-  it("builds SK plain-text without quoting inquiry", async () => {
+  it("builds Variant A SK plain-text without quoting inquiry", async () => {
     const { buildInboundAutoResponseText } = await import("@/lib/acquire/send-inbound-auto-response");
     const text = buildInboundAutoResponseText({
       to: "lead@example.com",
@@ -38,19 +38,40 @@ describe("send-inbound-auto-response template", () => {
       agencyName: "Reality Smolko",
       agencyPhone: "+421900000000",
       replyTo: "office@realitysmolko.sk",
+      assignedAgent: "Demo Makler 1",
+      aiReason: "Byt 3+kk v centre Bratislavy.",
+      aiPriority: "Vysoká",
+      source: "portal:Nehnuteľnosti.sk",
     });
 
     expect(text).toContain("Dobrý deň, Ján");
-    expect(text).toContain("ďakujeme za váš dopyt");
-    expect(text).not.toContain("citliv");
-    expect(text).toContain("+421900000000");
+    expect(text).toContain("dostal som váš dopyt z portálu Nehnuteľnosti.sk");
+    expect(text).toContain("Viem, že hľadáte");
+    expect(text).toContain("ozvem sa vám dnes");
+    expect(text).toContain("Demo Makler 1");
+    expect(text).not.toContain("ďakujeme za váš dopyt");
+    expect(text).toContain("pokojne mi napíšte na office@realitysmolko.sk");
+    expect(text).not.toContain("odpovedzte na tento e-mail");
   });
 
-  it("formats From with agency display name", async () => {
+  it("formats From with agent display name and contact email", async () => {
     const { formatInboundFromAddress } = await import("@/lib/acquire/send-inbound-auto-response");
-    expect(formatInboundFromAddress("AA Reality", "noreply@revolis.ai")).toBe(
-      "AA Reality <noreply@revolis.ai>",
+    expect(formatInboundFromAddress("AA Reality", "owner@revolis.ai")).toBe(
+      "AA Reality <owner@revolis.ai>",
     );
+  });
+
+  it("uses agency reply-to as From on revolis.ai domain", async () => {
+    const { resolveInboundFromEmail } = await import("@/lib/acquire/send-inbound-auto-response");
+    expect(resolveInboundFromEmail("owner@revolis.ai")).toBe("owner@revolis.ai");
+  });
+
+  it("falls back to outreach sender for external reply-to", async () => {
+    const prev = process.env.OUTREACH_FROM_EMAIL;
+    process.env.OUTREACH_FROM_EMAIL = "Revolis <onboarding@mg.revolis.ai>";
+    const { resolveInboundFromEmail } = await import("@/lib/acquire/send-inbound-auto-response");
+    expect(resolveInboundFromEmail("makler@gmail.com")).toBe("onboarding@mg.revolis.ai");
+    process.env.OUTREACH_FROM_EMAIL = prev;
   });
 });
 
@@ -82,7 +103,17 @@ describe("runInboundLeadAutoResponse", () => {
           return {
             select: () => ({
               eq: () => ({
-                maybeSingle: async () => ({ data: { auto_response_sent_at: null }, error: null }),
+                maybeSingle: async () => ({
+                  data: {
+                    auto_response_sent_at: null,
+                    name: "Lead",
+                    assigned_agent: "Demo Makler 1",
+                    ai_reason: "Byt v centre.",
+                    ai_priority: "Vysoká",
+                    source: "portal:Nehnuteľnosti.sk",
+                  },
+                  error: null,
+                }),
               }),
             }),
             update: () => ({
@@ -131,7 +162,17 @@ describe("runInboundLeadAutoResponse", () => {
           return {
             select: () => ({
               eq: () => ({
-                maybeSingle: async () => ({ data: { auto_response_sent_at: null }, error: null }),
+                maybeSingle: async () => ({
+                  data: {
+                    auto_response_sent_at: null,
+                    name: "Lead",
+                    assigned_agent: "Demo Makler 1",
+                    ai_reason: "Byt v centre.",
+                    ai_priority: "Vysoká",
+                    source: "portal:Nehnuteľnosti.sk",
+                  },
+                  error: null,
+                }),
               }),
             }),
             update: () => ({
@@ -181,7 +222,13 @@ describe("runInboundLeadAutoResponse", () => {
     );
 
     expect(sendSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ replyTo: "owner@test.sk" }),
+      expect.objectContaining({
+        replyTo: "owner@test.sk",
+        assignedAgent: "Demo Makler 1",
+        aiReason: "Byt v centre.",
+        aiPriority: "Vysoká",
+        source: "portal:Nehnuteľnosti.sk",
+      }),
     );
   });
 });
