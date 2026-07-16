@@ -114,7 +114,6 @@ export async function generateAndCacheAgencyInsights(
       model: generated.audit.model,
       latencyMs: generated.audit.latencyMs,
       subjectPreview: payload.headline.slice(0, 200),
-      costEur: generated.audit.costEur,
       meta: {
         source: generated.audit.source,
         cron: true,

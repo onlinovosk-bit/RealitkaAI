@@ -37,9 +37,6 @@ export async function GET() {
       ownerFounderPriceEur: ownerCockpitPriceEur({ founderEligible: true }),
       cockpitLiteEligible,
     },
-    topupPackages: TOPUP_PACKAGE_KEYS.map((key) => ({
-      key,
-      ...TOPUP_PACKAGES[key],
-    })),
+    topupPackages: TOPUP_PACKAGE_KEYS.map((key) => TOPUP_PACKAGES[key]),
   });
 }

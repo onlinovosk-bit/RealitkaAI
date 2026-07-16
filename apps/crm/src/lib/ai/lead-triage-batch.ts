@@ -32,6 +32,7 @@ Hodnoty priority sú VŽDY práve jedna z: \"Vysoká\", \"Stredná\", \"Nízka\"
 Signály **Vysokej** priority (overené na reálnych predajoch — stačí jeden profil, nie všetky naraz):
 (a) otázka na dostupnosť konkrétnej nehnuteľnosti / žiadosť o obhliadku + telefón — krátka správa NIE JE znak nízkeho záujmu, rozhoduje rýchlosť odpovede;
 (b) rieši financovanie/hypotéku, žiada podklady (list vlastníctva, ÚPI, katastrálna mapa) pre banku či znalca, pýta sa na vyjednávanie o cene, alebo prišiel na odporúčanie.
+**Pravidlo: Availability question na konkrétnom inzeráte** (napr. „je váš inzerát ešte aktuálny?", „je to ešte voľné?") **NIE JE nízka priorita** — dopytujúci reaguje na konkrétnu ponuku; aj keď napísal málo, prejavil záujem o konkrétnu nehnuteľnosť. Minimálna priorita: **Stredná**. Nízka len ak nie je žiadna identifikácia inzerátu ANI kontakt.
 Ak má lead skóre 0, prázdny/iba importný note a žiadny last_contact → **Nízka** (nehalucinuj vysokú prioritu).
 Vráť výhradne validný JSON pole objektov, bez markdown.`;
 

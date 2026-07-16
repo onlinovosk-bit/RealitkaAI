@@ -41,13 +41,14 @@ const L = {
   name: /(?:Meno(?:\s+a\s+priezvisko)?|Name)\s*:\s*(.+)/i,
   phone: /(?:Telef[oó]n|Phone(?:\s+number)?|T\.?č\.?)\s*:?\s*((?:\+421\s?|0)[\d\s]{7,})/i,
   email: new RegExp(`(?:E-?mail)\\s*:\\s*(${EMAIL_RE.source})`, "i"),
-  msg: /(?:Spr[aá]va(?:\s+od\s+z[aá]ujemcu[^:]*)?|Message|Reakcia na inzer[aá]t|Text)\s*:\s*([\s\S]+)/i,
+  msg: /(?:Spr[aá]va(?:\s+od\s+z[aá]ujemcu[^:]*)?|Text\s+spr[aá]vy|Message|Reakcia na inzer[aá]t)\s*:\s*([\s\S]+)/i,
   portalId: /(?:V[aá]š inzer[aá]t(?:\s+č[ií]slo)?|Ad ID)\D{0,40}?\b([A-Za-z0-9]{8,})\b/,
+  bazosInzerat: /inzer[aá]t\s+(\d{6,})/i,
 };
 const INTENT: [string, RegExp[]][] = [
   ["Viewing Request", [/obhliadk/i, /najbližš[ií] term[ií]n/i]],
   ["Price Objection", [/cena.{0,30}(?:vysok|ďaleko od reality|nezodpoved)/i]],
-  ["Availability Question", [/od kedy.{0,15}voľn/i, /kedy.{0,10}dostupn/i]],
+  ["Availability Question", [/od kedy.{0,15}voľn/i, /kedy.{0,10}dostupn/i, /akt[uú]áln/i, /je\s+v[aá]š\s+inzer[aá]t/i]],
   ["Price Question", [/\bcen[au]\b/i, /n[aá]klad/i, /depozit/i]],
   ["Information Request", [/inform[aá]ci/i, /fotk/i, /podrobnejš/i]],
 ];
@@ -77,10 +78,16 @@ export function parseEmail(raw: string, receivedAt?: string): AcquireEvent {
     ? phoneM[1].replace(/\s+/g, "")
     : (raw.match(PHONE_RE)?.[0]?.replace(/\s+/g, "") ?? null);
   const msgM = raw.match(L.msg);
-  const inquiryText = msgM ? msgM[1].replace(/\s+/g, " ").trim().slice(0, 1000) : null;
+  let inquiryText = msgM ? msgM[1].replace(/\s+/g, " ").trim() : null;
+  if (inquiryText) {
+    const footerCut = inquiryText.search(/\bIntern[eé]\s+č\./i);
+    if (footerCut > 0) inquiryText = inquiryText.slice(0, footerCut).trim();
+    inquiryText = inquiryText.slice(0, 1000);
+  }
   const [intent, reason] = classifyIntent(inquiryText ?? raw);
   const internalId = raw.match(INTERNAL_ID_RE)?.[1] ?? null;
-  const portalId = raw.match(L.portalId)?.[1] ?? null;
+  const portalId =
+    raw.match(L.portalId)?.[1] ?? raw.match(L.bazosInzerat)?.[1] ?? null;
   let listingTitle: string | null = null;
   if (!internalId && !portalId) {
     const t = raw.match(/(?:Odoslan[eé] z|EXKLUZ[IÍ]VNE)[:\s]*(.+)/);
@@ -145,7 +152,7 @@ export function toLeadCandidate(ev: AcquireEvent, agencyId: string, duplicate: b
     phone: ev.contactPhone ?? "",
     source: ev.sourceType === "Website" ? "web_form" : `portal:${ev.source}`,
     status: "Nový",
-    note: `[${ev.source}] ${ev.inquiryText ?? ""} | inzerát: ${ev.listingInternalId ?? ev.listingPortalId ?? ev.listingTitle ?? "-"} | intent: ${ev.inquiryIntent} (${ev.intentReason})`,
+    note: `[${ev.source}] ${ev.inquiryText ?? ""} | inzerát: ${ev.listingPortalId ?? ev.listingInternalId ?? ev.listingTitle ?? "-"} | intent: ${ev.inquiryIntent} (${ev.intentReason})`,
     _meta: {
       eventId: ev.eventId,
       parserVersion: ev.parserVersion,

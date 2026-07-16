@@ -7,6 +7,8 @@ type AsyncState = "idle" | "loading" | "success" | "error";
 
 export function AuthEmailTestsCard() {
   const [myEmail, setMyEmail] = useState("");
+  const [recoveryEmail, setRecoveryEmail] = useState("");
+  const [recoveryLink, setRecoveryLink] = useState("");
   const [testInviteEmail, setTestInviteEmail] = useState("");
   const [testInviteName, setTestInviteName] = useState("Testovací maklér");
 
@@ -20,6 +22,7 @@ export function AuthEmailTestsCard() {
       .then((d) => {
         if (d?.ok) {
           setMyEmail(d.email ?? "");
+          setRecoveryEmail(d.email ?? "");
         }
       })
       .catch(() => {
@@ -34,7 +37,7 @@ export function AuthEmailTestsCard() {
       const res = await fetch("/api/settings/auth-email-tests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "recovery" }),
+        body: JSON.stringify({ action: "recovery", email: recoveryEmail }),
       });
       const data = await res.json();
       if (!data.ok) throw new Error(data.error ?? "Recovery e-mail sa nepodarilo odoslať.");
@@ -44,6 +47,32 @@ export function AuthEmailTestsCard() {
       setRecoveryState("error");
       setMessage(err instanceof Error ? err.message : "Recovery e-mail sa nepodarilo odoslať.");
     }
+  }
+
+  async function createRecoveryLink() {
+    setRecoveryState("loading");
+    setRecoveryLink("");
+    setMessage("");
+    try {
+      const res = await fetch("/api/settings/auth-email-tests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "recovery-link", email: recoveryEmail }),
+      });
+      const data = await res.json();
+      if (!data.ok || !data.recoveryLink) throw new Error(data.error ?? "Odkaz sa nepodarilo vytvoriť.");
+      setRecoveryLink(data.recoveryLink);
+      setRecoveryState("success");
+      setMessage(data.message ?? "Odkaz na reset hesla je pripravený.");
+    } catch (err) {
+      setRecoveryState("error");
+      setMessage(err instanceof Error ? err.message : "Odkaz sa nepodarilo vytvoriť.");
+    }
+  }
+
+  async function copyRecoveryLink() {
+    await navigator.clipboard.writeText(recoveryLink);
+    setMessage("Odkaz bol skopírovaný. Môžeš ho poslať používateľovi.");
   }
 
   async function sendInvite(e: React.FormEvent) {
@@ -102,25 +131,41 @@ export function AuthEmailTestsCard() {
       <div className="space-y-5 p-4 md:p-6">
         <div className="rounded-xl border p-4" style={{ borderColor: WORKDESK_CARD.borderColor }}>
           <p className="text-sm font-semibold" style={{ color: SLATE_HORIZON.ink }}>
-            Send password recovery
+            Reset hesla používateľa
           </p>
           <p className="mt-1 text-xs" style={{ color: SLATE_HORIZON.muted }}>
-            Odošle recovery e-mail na tvoj aktuálne prihlásený účet{myEmail ? ` (${myEmail})` : ""}.
+            Zadaj e-mail používateľa. Pošli mu recovery e-mail alebo vytvor odkaz, ktorý mu odošleš sám.
           </p>
-          <button
-            type="button"
-            onClick={sendRecovery}
-            disabled={recoveryState === "loading"}
-            className="mt-3 rounded-xl px-4 py-2.5 text-sm font-bold min-h-[44px]"
-            style={{
-              background: SLATE_HORIZON.brandDeep,
-              color: "white",
-              opacity: recoveryState === "loading" ? 0.6 : 1,
-              cursor: recoveryState === "loading" ? "not-allowed" : "pointer",
-            }}
-          >
-            {recoveryState === "loading" ? "Odosielam..." : "Poslať recovery sebe"}
-          </button>
+          <label className="mt-3 block text-xs" style={{ color: SLATE_HORIZON.muted }}>
+            E-mail používateľa
+            <input
+              required
+              type="email"
+              value={recoveryEmail}
+              onChange={(e) => { setRecoveryEmail(e.target.value); setRecoveryLink(""); }}
+              placeholder={myEmail || "pouzivatel@realitka.sk"}
+              className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
+              style={{ borderColor: WORKDESK_CARD.borderColor, color: SLATE_HORIZON.ink, background: "white" }}
+            />
+          </label>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button type="button" onClick={sendRecovery} disabled={recoveryState === "loading" || !recoveryEmail} className="rounded-xl px-4 py-2.5 text-sm font-bold min-h-[44px]" style={{ background: SLATE_HORIZON.brandDeep, color: "white", opacity: recoveryState === "loading" ? 0.6 : 1 }}>
+              {recoveryState === "loading" ? "Pracujem..." : "Odoslať reset e-mail"}
+            </button>
+            <button type="button" onClick={createRecoveryLink} disabled={recoveryState === "loading" || !recoveryEmail} className="rounded-xl border px-4 py-2.5 text-sm font-bold min-h-[44px]" style={{ borderColor: SLATE_HORIZON.softBorder, color: SLATE_HORIZON.brandDeep, background: SLATE_HORIZON.soft }}>
+              Vytvoriť odkaz na reset hesla
+            </button>
+          </div>
+          {recoveryLink && (
+            <div className="mt-3 rounded-lg border p-3" style={{ borderColor: WORKDESK_CARD.borderColor, background: "#f8fafc" }}>
+              <p className="text-xs font-semibold" style={{ color: SLATE_HORIZON.ink }}>Vytvorený odkaz na resetovanie hesla</p>
+              <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                <input readOnly value={recoveryLink} className="min-w-0 flex-1 rounded-lg border bg-white px-3 py-2 text-xs" />
+                <button type="button" onClick={copyRecoveryLink} className="rounded-lg px-3 py-2 text-sm font-bold text-white" style={{ background: SLATE_HORIZON.brandDeep }}>Kopírovať odkaz</button>
+              </div>
+              <p className="mt-2 text-xs text-amber-700">Odkaz je jednorazový a citlivý. Pošli ho iba konkrétnemu používateľovi.</p>
+            </div>
+          )}
         </div>
 
         <form

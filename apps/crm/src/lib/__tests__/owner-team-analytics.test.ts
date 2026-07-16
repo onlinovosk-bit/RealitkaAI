@@ -13,7 +13,6 @@ const profiles = [
 
 function lead(partial: Partial<Lead> & { id: string }): Lead {
   return {
-    id: partial.id,
     name: partial.name ?? partial.id,
     email: "",
     phone: "",

@@ -57,7 +57,7 @@ export function realviaRowToUcListing(row: RealviaPropertyRow): UcListingMapped 
     title,
     description,
     location: String(row.location ?? "").trim(),
-    price: row.price ?? null,
+    price: row.price ?? 0,
     currency: String(row.currency ?? "EUR"),
     type: String(row.type ?? ""),
     rooms: String(row.rooms ?? ""),
