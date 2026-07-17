@@ -1,21 +1,16 @@
-## Session 2026-07-17
+## Session 2026-07-17 (evening)
 ### Dokončené
-- Outcome-first workdesk (P0–P3): copy kit, first-audit, Start-today CTA, short onboarding, honest KPIs/marketing
-- Verification: `first-audit.verification.test.ts` 7/7; `tsc --noEmit` OK
+- Diagnostika: Smolko password reset link broken — PKCE + chýbajúce `/auth/confirm`
+- Fix branch `fix/password-reset-auth-confirm`: auth/confirm, auth/callback, forgot-password, hardened reset-password, runbook TokenHash
 
 ### Rozpracované / Pending
-- Commit + PR (čaká GO)
-- Preview smoke po PR
-- Dead code: `OnboardingClient.tsx` / `TestDbClient.tsx` stále majú +34% (nepoužívané)
+- Merge + Andy: aktualizovať Supabase Reset Password šablónu na TokenHash
+- Po deploy: smoke s novým e-mailom pre Smolko
 
-### Kľúčové súbory zmenené
-- `apps/crm/src/lib/copy/outcome-copy.ts`: outcome messaging kit
-- `apps/crm/src/lib/workdesk/first-audit.ts`: 60s audit (pure)
-- `apps/crm/src/app/api/workdesk/first-audit/route.ts`: API
-- `apps/crm/src/components/dashboard/FirstAuditPanel.tsx` + `WorkdeskCommandHero.tsx`
-- `apps/crm/src/app/(dashboard)/dashboard/DashboardPageClient.tsx`: 1 CTA fokus, honest KPIs
-- `apps/crm/src/app/onboarding/config.ts` + `StepAudit.tsx` + short path
-- Landing/ROI: odstránené fake +34% / LiveLeadCounter
+### Kľúčové súbory
+- `apps/crm/src/app/auth/confirm/route.ts`, `auth/callback/route.ts`
+- `apps/crm/src/app/forgot-password/page.tsx`, `reset-password/page.tsx`
+- `docs/runbooks/supabase-auth-email-templates-sk.md`
 
 ### Ďalší krok
-Commit + otvoriť PR `feat/outcome-first-workdesk` (po GO); potom Preview smoke.
+PR merge → Andy dashboard šablóna → nový reset e-mail Smolkovi
