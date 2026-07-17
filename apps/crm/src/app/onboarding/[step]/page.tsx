@@ -9,6 +9,7 @@ import Step6 from "../steps/Step6";
 import Step7 from "../steps/Step7";
 import Step8 from "../steps/Step8";
 import Step9 from "../steps/Step9";
+import StepAudit from "../steps/StepAudit";
 
 type StepComponent = React.ComponentType<{ slug: string }>;
 
@@ -21,6 +22,7 @@ const STEP_MAP: Record<string, StepComponent> = {
   "step-6-pipeline":    Step6,
   "step-7-prepojenia":  Step7,
   "step-8-ciele":       Step8,
+  "step-audit":         StepAudit,
   "step-9-hotovo":      Step9,
 };
 

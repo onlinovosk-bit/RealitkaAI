@@ -232,6 +232,15 @@
 - **Overnight:** Brief 10 Wave B (tento commit); Wave A/C samostatné PR.
 - **Merge:** Human GO; nie auto-merge (AP-012).
 
+## [2026-07-17] - Outcome-first workdesk (Livappy psychology) — BUILD
+
+- **Rozhodnutie:** Implementovať outcome messaging + 60s first audit + 1 dashboard CTA + short onboarding path. Nie nový AI engine — orchestrácia existujúcich signálov (stale, triage, budget×3%).
+- **Brief:** `docs/briefs/BO-outcome-first-workdesk.md`
+- **Kľúčové:** `lib/copy/outcome-copy.ts`, `lib/workdesk/first-audit.ts`, `GET /api/workdesk/first-audit`, `FirstAuditPanel`, Start-today hero, onboarding `SHORT_PATH` + `step-audit`
+- **AP-001:** Odstránené fake KPI fallbacky (€124k / €18.4k), demo leady v hero, +34% claimy na landing/ROI (ROI = user scenario).
+- **Verification:** `tests/verification/first-audit.verification.test.ts` (7/7)
+- **Merge:** čaká founder GO na commit/PR
+
 ## [2026-07-06] - BO-001 Proof of Value Engine (/proof) — BUILD
 
 - **Rozhodnutie:** Verejná route `/proof` + `lib/proof` engine (extrakcia ROI z landing), `POST /api/proof` → `saas_leads` (`source=proof`, answers v `note` JSON). Žiadna migrácia (AP-019). Honest benchmark copy (AP-001).

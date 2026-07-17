@@ -19,13 +19,13 @@ import { AIAssistBanner } from "@/components/dashboard/AIAssistBanner";
 import { AssistantPanelDynamic } from "@/components/dashboard/AssistantPanel.dynamic";
 import L99DecisionOpsPanel from "@/components/dashboard/L99DecisionOpsPanel";
 import { WorkdeskCommandHero } from "@/components/dashboard/WorkdeskCommandHero";
+import { FirstAuditPanel } from "@/components/dashboard/FirstAuditPanel";
 import { ImportContactsBanner } from "@/components/dashboard/ImportContactsBanner";
-import { AIPriorityStrip } from "@/components/dashboard/AIPriorityStrip";
-import { NextBestActionPanel } from "@/components/dashboard/NextBestActionPanel";
 import { FollowUpTodayCard } from "@/components/follow-up/FollowUpTodayCard";
 import { ActionQueuePanel } from "@/components/dashboard/ActionQueuePanel";
 import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
 import { canRenderModule, normalizeModuleTier } from "@/lib/modules/registry";
+import { buildFirstAudit, formatAuditMoney } from "@/lib/workdesk/first-audit";
 
 const EnterpriseSalesIntelligencePanel = dynamic(
   () => import("@/components/dashboard/EnterpriseSalesIntelligencePanel"),
@@ -296,6 +296,10 @@ export default function DashboardPageClient({ initialPropertiesSummary }: Dashbo
   const offers = leads.filter(l => l.status === "Ponuka").length;
   const conversionRate = totalLeads > 0 ? Math.round((offers / totalLeads) * 100) : 0;
   const displayTotalLeads = totalLeads;
+  const firstAudit = useMemo(() => buildFirstAudit(leads), [leads]);
+  const showFirstAudit =
+    !isLoading &&
+    (firstAudit.dataQuality !== "ready" || firstAudit.forgottenLeads > 0 || firstAudit.atRiskDeals > 0);
 
   const dealsTrend = forecastingSummary ? getTrend(forecastingSummary.expectedClosedDeals, forecastTargets.expectedClosedDeals) : null;
   const valueTrend = forecastingSummary ? getTrend(forecastingSummary.expectedPipelineValue, forecastTargets.expectedPipelineValue, " EUR") : null;
@@ -313,10 +317,17 @@ export default function DashboardPageClient({ initialPropertiesSummary }: Dashbo
 
         <ImportContactsBanner leadsCount={totalLeads} />
 
-        <AIPriorityStrip leads={leads} loading={isLoading} />
-        <ActionQueuePanel leads={leads} onLeadAction={markLeadContacted} />
+        {showFirstAudit ? (
+          <FirstAuditPanel
+            leads={leads}
+            continueHref="#today-focus"
+            continueLabel="Ukáž mi dnešné príležitosti"
+          />
+        ) : null}
 
-        <NextBestActionPanel leads={leads} loading={isLoading} />
+        <div id="today-focus">
+          <ActionQueuePanel leads={leads} onLeadAction={markLeadContacted} />
+        </div>
 
         <div className="mb-6">
           <FollowUpTodayCard leads={leads} />
@@ -325,12 +336,38 @@ export default function DashboardPageClient({ initialPropertiesSummary }: Dashbo
         <section className="mb-6 grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
           <KpiCard
             title="predpoklad obratu tento mesiac"
-            value={monthlyMoney?.totalExpectedEur ? `€${Math.round((monthlyMoney.totalExpectedEur ?? 0) / 1000)}k` : "€124k"}
-            subtitle="AI mesačný odhad"
+            value={
+              monthlyMoney?.totalExpectedEur != null
+                ? `€${Math.round(monthlyMoney.totalExpectedEur / 1000)}k`
+                : firstAudit.commissionEstimateEur != null
+                  ? formatAuditMoney(firstAudit.commissionEstimateEur)
+                  : "—"
+            }
+            subtitle={
+              monthlyMoney?.totalExpectedEur != null
+                ? "Mesačný odhad z rozpočtov × skóre"
+                : "Odhad 3 % z rozpočtov (alebo — bez dát)"
+            }
           />
-          <KpiCard title="pripravení kúpiť (AI)" value={hotLeads || 24} subtitle="Horúce príležitosti" />
-          <KpiCard title="akcie s vysokým dopadom dnes" value={Math.min(hotLeads + showings, 7) || 7} subtitle="Prioritný zoznam" />
-          <KpiCard title="ohrozené provízie" value="€18.4k" subtitle="Follow-up bez reakcie" />
+          <KpiCard
+            title="horúce príležitosti"
+            value={hotLeads}
+            subtitle="Stav Horúci — z vášho CRM"
+          />
+          <KpiCard
+            title="stagnujúci / zabudnutí"
+            value={firstAudit.forgottenLeads}
+            subtitle="Bez kontaktu podľa prahu follow-upu"
+          />
+          <KpiCard
+            title="ohrozené provízie"
+            value={formatAuditMoney(firstAudit.atRiskCommissionEur)}
+            subtitle={
+              firstAudit.atRiskCommissionEur == null
+                ? "Doplňte rozpočty — inak bez odhadu"
+                : `${firstAudit.atRiskDeals} ohrozených · 3 % z rozpočtu`
+            }
+          />
         </section>
 
         <section className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">

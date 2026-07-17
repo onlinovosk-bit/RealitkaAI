@@ -15,8 +15,10 @@ export type ExecutiveSignal = {
   status: Lead["status"];
 };
 
-function parseBudgetCommission(budget: string): number | null {
-  const digits = budget.replace(/[^\d]/g, "");
+/** Odhad provízie = 3 % z rozpočtu. Null ak budget chýba / nie je číslo. */
+export function parseBudgetCommission(budget: string | null | undefined): number | null {
+  if (!budget) return null;
+  const digits = String(budget).replace(/[^\d]/g, "");
   if (!digits) return null;
   const value = Number(digits);
   if (!Number.isFinite(value) || value <= 0) return null;
