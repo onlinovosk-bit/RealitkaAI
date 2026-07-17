@@ -43,7 +43,7 @@ export function ActionQueuePanel({ leads, onLeadAction }: ActionQueuePanelProps)
             Action Queue
           </span>
           <h2 className="mt-2 text-lg font-bold" style={{ color: SLATE_HORIZON.deep }}>
-            Nekontaktované leady
+            Komu volať teraz
           </h2>
           <p className="text-sm" style={{ color: SLATE_HORIZON.muted }}>
             {queue.length} čaká na prvý hovor (posledných 14 dní)

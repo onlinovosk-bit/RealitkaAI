@@ -34,8 +34,8 @@ export default function Step5({ slug }: { slug: string }) {
         ))}
       </div>
 
-      <div className="bg-yellow-50 border border-yellow-100 rounded-xl p-4 text-sm text-gray-600 max-w-lg">
-        💡 <strong>Tip:</strong> Aj 20 starých kontaktov môže priniesť okamžité výsledky. Revolis AI automaticky osloví všetkých nevybavených leadov.
+      <div className="mb-6 max-w-lg rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm text-gray-600">
+        💡 <strong>Tip:</strong> Aj 20 starých kontaktov stačí. Po importe uvidíte za 60 sekúnd, komu volať a koho nestratiť.
       </div>
 
       <div className="mt-8 flex items-center gap-4 flex-wrap">

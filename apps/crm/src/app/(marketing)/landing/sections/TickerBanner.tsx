@@ -1,25 +1,9 @@
 "use client";
 
+import { OUTCOME } from "@/lib/copy/outcome-copy";
 import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
 
-const ITEMS = [
-  "Revolis.AI",
-  "Predaj viac",
-  "Pracuj menej",
-  "Realitky ktoré víťazia, používajú Revolis.AI",
-  "AI Asistent nikdy nespí. Ty môžeš.",
-  "AI Chief of Sales pre realitky",
-  "+34% konverzný pomer",
-  "Odpoveď do 2 minút. 24/7.",
-  "Revolis.AI",
-  "Predaj viac",
-  "Pracuj menej",
-  "Realitky ktoré víťazia, používajú Revolis.AI",
-  "AI Asistent nikdy nespí. Ty môžeš.",
-  "AI Chief of Sales pre realitky",
-  "+34% konverzný pomer",
-  "Odpoveď do 2 minút. 24/7.",
-];
+const ITEMS = [...OUTCOME.tickerItems];
 
 export default function TickerBanner() {
   return (

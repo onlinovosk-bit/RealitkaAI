@@ -1,16 +1,21 @@
-## Session 2026-06-23
+## Session 2026-07-17
 ### Dokončené
-- PR #240 merged — Guardian CTA deep-link `source_id` + edit slide-over
-- PR #242 merged — vyhodenie 4 L99 governance docs (AP-012)
-- PR #241 merged — fixture-only disabled edit CTA + honest copy
-- Obsidian vault `RealitkaAI-Memory` AGENTS-CONTEXT sync (`3dfdb9d`)
-- Ruflo swarm `swarm-1782247126506-rsmezw` + hive `hive-1782247126587-mxn1n0` initialized
+- Outcome-first workdesk (P0–P3): copy kit, first-audit, Start-today CTA, short onboarding, honest KPIs/marketing
+- Verification: `first-audit.verification.test.ts` 7/7; `tsc --noEmit` OK
 
 ### Rozpracované / Pending
-- Guardian PROD smoke **1/5** — bod 4 nepreklepnutý; 1/2/5 manuálne
-- Lemon Squeezy Share — pending blocker
-- Externý cron worker (5 min) — nepotvrdený
-- Tomáš / dual export Realvia + Revolis
+- Commit + PR (čaká GO)
+- Preview smoke po PR
+- Dead code: `OnboardingClient.tsx` / `TestDbClient.tsx` stále majú +34% (nepoužívané)
+
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/copy/outcome-copy.ts`: outcome messaging kit
+- `apps/crm/src/lib/workdesk/first-audit.ts`: 60s audit (pure)
+- `apps/crm/src/app/api/workdesk/first-audit/route.ts`: API
+- `apps/crm/src/components/dashboard/FirstAuditPanel.tsx` + `WorkdeskCommandHero.tsx`
+- `apps/crm/src/app/(dashboard)/dashboard/DashboardPageClient.tsx`: 1 CTA fokus, honest KPIs
+- `apps/crm/src/app/onboarding/config.ts` + `StepAudit.tsx` + short path
+- Landing/ROI: odstránené fake +34% / LiveLeadCounter
 
 ### Ďalší krok
-Spusti `prod-guardian-smoke-once.mjs` so Smolko creds; nastav GitHub SCHEMA_GUARD secrets + cron-job.org CRON_SECRET
+Commit + otvoriť PR `feat/outcome-first-workdesk` (po GO); potom Preview smoke.

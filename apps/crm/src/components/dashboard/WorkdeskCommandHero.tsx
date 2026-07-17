@@ -1,22 +1,26 @@
 "use client";
 
+import Link from "next/link";
 import {
   buildExecutiveSignals,
   formatMoneyEur,
 } from "@/lib/workdesk/executive-signals";
 import { countStaleLeads } from "@/lib/agents/deal-trigger";
+import { OUTCOME } from "@/lib/copy/outcome-copy";
 import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
 import type { Lead } from "@/lib/leads-store";
-import Link from "next/link";
 
 type Props = {
   leads: Lead[];
 };
 
+/**
+ * Single dominant CTA for the workdesk — outcome language, no demo/fake leads.
+ */
 export function WorkdeskCommandHero({ leads }: Props) {
   const signals = buildExecutiveSignals(leads, 3);
-  const placeholders = signals.length === 0;
   const staleCount = countStaleLeads(leads);
+  const hasLeads = leads.length > 0;
 
   return (
     <section
@@ -25,6 +29,7 @@ export function WorkdeskCommandHero({ leads }: Props) {
         background: SLATE_HORIZON.heroGradient,
         boxShadow: "0 24px 56px rgba(8,17,32,0.32)",
       }}
+      data-testid="start-today-hero"
     >
       <div
         className="pointer-events-none absolute inset-0"
@@ -46,11 +51,11 @@ export function WorkdeskCommandHero({ leads }: Props) {
             border: "1px solid rgba(255,255,255,0.16)",
           }}
         >
-          AI REVENUE OPERATING SYSTEM
+          Dnešný fokus
         </span>
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <h1 className="text-3xl font-extrabold tracking-tight md:text-[44px] md:leading-[1.05]">
-            Kde mám peniaze dnes?
+            {OUTCOME.dashboardHeadline}
           </h1>
           {staleCount > 0 ? (
             <Link
@@ -67,10 +72,31 @@ export function WorkdeskCommandHero({ leads }: Props) {
           ) : null}
         </div>
         <p className="mt-3 max-w-2xl text-base leading-relaxed text-white/82">
-          Revolis neukazuje dáta — vedie ťa ku krokom, ktoré najrýchliejšie posunú obchod k provízii.
+          {OUTCOME.dashboardSubhead}
         </p>
+
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <a
+            href="#today-focus"
+            className="inline-flex rounded-full px-6 py-3 text-sm font-bold text-white transition-opacity hover:opacity-95"
+            style={{ background: SLATE_HORIZON.ctaGradient }}
+            data-testid="start-today-cta"
+          >
+            {OUTCOME.startTodayCta}
+          </a>
+          {!hasLeads ? (
+            <Link
+              href="/import/universal"
+              className="inline-flex rounded-full border px-5 py-3 text-sm font-semibold text-white/90 transition-opacity hover:opacity-90"
+              style={{ borderColor: "rgba(255,255,255,0.28)" }}
+            >
+              Importovať kontakty
+            </Link>
+          ) : null}
+        </div>
+
         <div className="mt-4 flex flex-wrap gap-2">
-          {["AI Priority Strip", "Lost Revenue Radar", "Call Order AI", "Owner Pressure View"].map((chip) => (
+          {OUTCOME.timePromises.map((chip) => (
             <span
               key={chip}
               className="rounded-full px-3 py-1.5 text-xs font-semibold"
@@ -83,44 +109,45 @@ export function WorkdeskCommandHero({ leads }: Props) {
             </span>
           ))}
         </div>
+
         <div className="mt-5 grid grid-cols-1 gap-2.5 md:grid-cols-3">
-          {(placeholders
-            ? [
-                { leadId: "demo-1", name: "Lucia Šimko", moneyEur: 7200, confidence: 91, timing: "volať do 15 min" },
-                { leadId: "demo-2", name: "Lukáš Nagy", moneyEur: null, confidence: 87, timing: "posunúť pipeline" },
-                { leadId: "demo-3", name: "Jana Horváth", moneyEur: 5400, confidence: 78, timing: "poslať SMS dnes" },
-              ]
-            : signals.map((s) => ({
-                leadId: s.leadId,
-                name: s.name,
-                moneyEur: s.moneyEur,
-                confidence: s.confidence,
-                timing: s.timing,
-              }))
-          ).map((item) => (
-            <Link
-              key={item.leadId}
-              href={item.leadId.startsWith("demo-") ? "/leads" : `/leads/${item.leadId}`}
-              className="rounded-2xl p-3.5 backdrop-blur-[2px] transition-transform duration-200 hover:scale-[1.01]"
+          {hasLeads && signals.length > 0 ? (
+            signals.map((item) => (
+              <Link
+                key={item.leadId}
+                href={`/leads/${item.leadId}`}
+                className="rounded-2xl p-3.5 backdrop-blur-[2px] transition-transform duration-200 hover:scale-[1.01]"
+                style={{
+                  background: "rgba(255,255,255,0.08)",
+                  border: "1px solid rgba(255,255,255,0.14)",
+                }}
+              >
+                <b className="block text-sm font-bold">
+                  {item.name}
+                  {item.moneyEur ? (
+                    <>
+                      {" · "}
+                      <span style={{ color: "#86efac" }}>{formatMoneyEur(item.moneyEur)}</span>
+                    </>
+                  ) : null}
+                </b>
+                <span className="text-xs text-white/75">
+                  {item.confidence > 0 ? `${item.confidence}% istota · ` : null}
+                  {item.timing}
+                </span>
+              </Link>
+            ))
+          ) : (
+            <div
+              className="col-span-full rounded-2xl p-4 text-sm text-white/85"
               style={{
                 background: "rgba(255,255,255,0.08)",
                 border: "1px solid rgba(255,255,255,0.14)",
               }}
             >
-              <b className="block text-sm font-bold">
-                {item.name}
-                {item.moneyEur ? (
-                  <>
-                    {" · "}
-                    <span style={{ color: "#86efac" }}>{formatMoneyEur(item.moneyEur)}</span>
-                  </>
-                ) : null}
-              </b>
-              <span className="text-xs text-white/75">
-                {item.confidence}% istota · {item.timing}
-              </span>
-            </Link>
-          ))}
+              {OUTCOME.emptyNoLeads}
+            </div>
+          )}
         </div>
       </div>
     </section>

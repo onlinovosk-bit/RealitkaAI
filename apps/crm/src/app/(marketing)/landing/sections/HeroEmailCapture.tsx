@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { OUTCOME } from "@/lib/copy/outcome-copy";
 import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
 import { WORKDESK_INPUT } from "@/lib/slate-horizon-theme";
 
@@ -14,7 +15,7 @@ declare global {
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const HERO_SUBHEADLINE =
-  "Prvý obchod navyše zaplatí Revolis.AI na celý rok. Priemerná kancelária uzatvára o 28% viac obchodov - bez nových maklérov.";
+  "Otvorte Revolis. Za 30 sekúnd viete: komu volať, koho nestratiť a kde zarobíte najviac — bez týždňovej migrácie.";
 
 export function HeroSocialProof() {
   return (
@@ -48,12 +49,7 @@ export function HeroSocialProof() {
 }
 
 export function HeroTrustBar() {
-  const items = [
-    "Člen Realitnej únie SR",
-    "30-dňová garancia vrátenia",
-    "Zrušenie kedykoľvek",
-    "GDPR · Slovenský server",
-  ];
+  const items = [...OUTCOME.trustBar];
 
   return (
     <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
