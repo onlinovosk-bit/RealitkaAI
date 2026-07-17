@@ -50,7 +50,7 @@ function PendingTile({
 export default function RevenueView({ leads }: { leads: Lead[] }) {
   const sourceRows = countLeadsBySource(leads);
   const topSources = sourceRows.slice(0, 4);
-  const totalNew = leads.filter((lead) => lead.status === "Nový" || lead.status === "new").length;
+  const totalNew = leads.filter((lead) => lead.status === "Nový" || (lead.status as string) === "new").length;
 
   const liquidityPolicy = REVENUE_TILE_REGISTRY.liquidity_radar;
   const pipelinePolicy = REVENUE_TILE_REGISTRY.pipeline_velocity;

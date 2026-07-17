@@ -232,7 +232,16 @@
 - **Overnight:** Brief 10 Wave B (tento commit); Wave A/C samostatné PR.
 - **Merge:** Human GO; nie auto-merge (AP-012).
 
-## [2026-06-25] - AP-019 Schema allowlist meta-pravidlo — BUILD (governance)
+## [2026-07-06] - BO-001 Proof of Value Engine (/proof) — BUILD
+
+- **Rozhodnutie:** Verejná route `/proof` + `lib/proof` engine (extrakcia ROI z landing), `POST /api/proof` → `saas_leads` (`source=proof`, answers v `note` JSON). Žiadna migrácia (AP-019). Honest benchmark copy (AP-001).
+- **Brief:** `docs/briefs/BO-001-proof-of-value.md`
+- **PR / vetva:** #275 · `feat/bo-001-proof`
+- **Reuse:** `createSaasLead`, `RoiCalculatorHero` leak model → `lib/proof/engine`, `SLATE_HORIZON`, `LegalFooter`
+- **Preview smoke:** `/proof` mobile, 6 krokov, lead v `saas_leads` so `source=proof`
+- **Merge:** founder GO (2026-07-06) · merged #275 → `main` · prod `https://app.revolis.ai/proof` 200, `/api/proof` verejný (400 na prázdny body)
+
+## [2026-06-XX] - AP-019 Schema allowlist — BUILD (incident CEO Command)
 
 - **Rozhodnutie:** Každá nová `public` tabuľka musí ísť do `apps/crm/config/public-schema-allowlist.json` v tom istom PR ako migrácia (alebo pred prod apply). Inak Schema Guard mlčí o drift (prípad CEO Command / `routine_notifications`).
 - **Incident:** `routine_notifications` v repe, nie na PROD, mimo allowlistu → `/api/ceo-command` 500, Guard ticho.

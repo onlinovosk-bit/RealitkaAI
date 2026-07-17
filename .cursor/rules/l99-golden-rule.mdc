@@ -23,7 +23,7 @@ Platí vždy pre zmeny v tomto repozitári:
 - Pri build/regresii spusti `git bisect run npm run build`.
 - Po každej zmene deploy nastavení skontroluj:
   `Vercel -> Settings -> Build and Deployment -> Production Overrides`.
-- Pred merge vždy spusti `tests/smoke.spec.ts` (alebo ekvivalentný smoke run).
+- Pred merge vždy spusti `npm run test:smoke` lokálne (alebo over zelený CI krok Playwright smoke).
 - Zmena správania flagu/featury: `rg` v `tests/verification/` a aktualizuj dotknuté `*.verification.test.ts` v **tom istom PR** (živá špecifikácia — pozri `apps/crm/tests/verification/README.md`).
 
 ## PR kontrolný zoznam

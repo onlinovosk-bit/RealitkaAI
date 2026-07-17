@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { NavIcon } from "@/components/ui/NavIcon";
 import {
   applyImportNavBadges,
+  applyLeadsNavBadges,
   getNavItems,
   SECTION_LABELS,
   VARIANT_THEMES,
@@ -48,8 +49,6 @@ function getDemoVariant(program: FounderDemoProgram): MenuVariant {
 }
 
 function formatWorkdeskBadgeLabel(badge: NavBadge): string {
-  if (badge.label === "live") return "3";
-  if (badge.label === "hot") return "17";
   return badge.label;
 }
 
@@ -562,6 +561,7 @@ export default function AppSidebar({
   const [toastVisible,    setToastVisible]    = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<NavSection[]>([]);
   const [leadsCount, setLeadsCount] = useState<number | null>(null);
+  const [newStatusLeadCount, setNewStatusLeadCount] = useState<number | null>(null);
   const gKeyRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const gPressedRef = useRef(false);
 
@@ -674,9 +674,11 @@ export default function AppSidebar({
   useEffect(() => {
     fetch("/api/crm/tenant-health", { credentials: "include" })
       .then((r) => (r.ok ? r.json() : null))
-      .then((data: { snapshot?: { counts?: { leads?: number } } } | null) => {
+      .then((data: { snapshot?: { counts?: { leads?: number; newStatusLeads?: number } } } | null) => {
         const count = data?.snapshot?.counts?.leads;
+        const newCount = data?.snapshot?.counts?.newStatusLeads;
         if (typeof count === "number") setLeadsCount(count);
+        if (typeof newCount === "number") setNewStatusLeadCount(newCount);
       })
       .catch(() => {
         // badge je optional — bez countu necháme statické menu
@@ -708,11 +710,14 @@ export default function AppSidebar({
   }, []);
 
   // Nav položky filtrované podľa variantu + permissions + import badge
-  const navItems = applyImportNavBadges(
-    isFounderDemo
-      ? filterItemsByDemoProgram(getNavItems(renderVariant, permissions, navTier), demoProgram)
-      : getNavItems(renderVariant, permissions, navTier),
-    leadsCount,
+  const navItems = applyLeadsNavBadges(
+    applyImportNavBadges(
+      isFounderDemo
+        ? filterItemsByDemoProgram(getNavItems(renderVariant, permissions, navTier), demoProgram)
+        : getNavItems(renderVariant, permissions, navTier),
+      leadsCount,
+    ),
+    newStatusLeadCount,
   );
 
   // Zoskup do sekcií v správnom poradí

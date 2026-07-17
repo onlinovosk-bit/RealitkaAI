@@ -55,9 +55,9 @@ export function isLeadHot(lead: Lead): boolean {
 export function isLeadBuyerReadyToday(lead: Lead): boolean {
   if (isSparseQualificationLead(lead)) return false;
   if (lead.aiPriority === "Vysoká") return true;
-  if (lead.status === "Horúci" && getLeadDisplayScore(lead) >= 70) return true;
+  if (lead.status === "Horúci" && (getLeadDisplayScore(lead) ?? 0) >= 70) return true;
   if (lead.status === "Ponuka" || lead.status === "Obhliadka") {
-    return getLeadDisplayScore(lead) >= 60 && lead.aiPriority !== "Nízka";
+    return (getLeadDisplayScore(lead) ?? 0) >= 60 && lead.aiPriority !== "Nízka";
   }
   if ((lead.score ?? 0) >= 75 && priorityRank(lead.aiPriority as AiPrioritySk) >= priorityRank("Stredná")) {
     return true;

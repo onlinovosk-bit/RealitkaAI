@@ -4,7 +4,8 @@ export type NotificationType =
   | "seller_rescue"
   | "deal_risk"
   | "ceo_command"
-  | "weekly_performance";
+  | "weekly_performance"
+  | "new_lead";
 
 export type NotificationPriority = "critical" | "high" | "normal";
 

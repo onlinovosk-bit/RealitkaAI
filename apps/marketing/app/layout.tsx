@@ -15,12 +15,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-        <Script async src="https://www.googletagmanager.com/gtag/js?id=G-REVOLIS2026" strategy="beforeInteractive" />
+        <Script async src="https://www.googletagmanager.com/gtag/js?id=G-R1GZQFV42V" strategy="beforeInteractive" />
         <Script id="gtag-init" strategy="beforeInteractive">{`
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
-          gtag('config', 'G-REVOLIS2026', { page_title: document.title, send_page_view: true });
+          gtag('config', 'G-R1GZQFV42V', { page_title: document.title, send_page_view: true });
           (function(){
             var p = new URLSearchParams(window.location.search);
             var u = { source: p.get('utm_source'), medium: p.get('utm_medium'), campaign: p.get('utm_campaign') };

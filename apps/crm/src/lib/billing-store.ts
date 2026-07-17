@@ -573,11 +573,7 @@ export function resolvePlanKeyFromStripePriceId(
   const message = `Unknown Stripe price id — defaulting tier to free: ${priceId}`;
   logInfo(message, "resolvePlanKeyFromStripePriceId");
   console.warn(`[billing] ${message}`);
-  void autoErrorCapture(new Error(message), {
-    source: "billing",
-    priceId,
-    action: "resolvePlanKeyFromStripePriceId",
-  });
+  void autoErrorCapture(new Error(message), `billing:resolvePlanKeyFromStripePriceId:${priceId}`);
   return "free";
 }
 

@@ -12,9 +12,21 @@ const CHROMELESS_EXACT = new Set([
   '/trust-center',
   '/cookie-policy',
   '/forbidden',
+  '/proof',
+  '/demo-odhad',
+  '/l99-scan',
+  '/smolko',
 ]);
 
-const CHROMELESS_PREFIXES = ['/blog/', '/onboarding'];
+const CHROMELESS_PREFIXES = [
+  '/blog/',
+  '/onboarding',
+  '/demo/',
+  '/proof/',
+  '/demo-odhad/',
+  '/l99-scan/',
+  '/smolko/',
+];
 
 export function isChromelessRoute(pathname: string | null | undefined): boolean {
   if (!pathname) return false;

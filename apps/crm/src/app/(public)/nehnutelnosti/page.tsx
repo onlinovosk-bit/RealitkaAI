@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { listProperties, type Property } from "@/lib/properties-store";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import type { PropertySearchParams, BuyerIntent, PropertyType } from "@/lib/buyer-intent";
 
 // ── map buyer propertyType (EN) → SK type stored in properties table ──────────
@@ -20,7 +20,7 @@ const DEAL_TYPE_LABEL: Record<string, string> = {
 // ── try to fetch intent for personalization (soft fail) ───────────────────────
 async function fetchIntent(intentId: string): Promise<BuyerIntent | null> {
   try {
-    const supabase = await createClient();
+    const supabase = createAdminClient();
     const { data } = await supabase
       .from("buyer_intents")
       .select("*")

@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
         last_contact: "Práve vytvorený (email gateway)",
         note: candidate.note.slice(0, 5000),
       })
-      .select("id")
+      .select("id,name,status,score,last_contact,note,source,agency_id,ai_triage_at")
       .single();
 
     if (error) {

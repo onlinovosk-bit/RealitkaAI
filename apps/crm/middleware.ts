@@ -17,6 +17,7 @@ const BYPASS_PREFIXES = [
   '/api/acquire/email',       // Resend inbound webhook (signature in handler)
   '/api/bsm-reforma/',        // public BSM lead intake form
   '/api/sales-funnel/',       // public demo request form
+  '/api/proof',               // public Proof of Value funnel (rate-limited + zod-validated in handler)
   '/api/morning-brief/track/', // email open/click tracking pixels (must be public)
   '/api/guarantee/',          // public guarantee claim form
   '/api/onboarding/mvp/',     // service-role based onboarding flows
@@ -83,3 +84,4 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: '/api/:path*',
 }
+

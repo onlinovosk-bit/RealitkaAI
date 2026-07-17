@@ -32,6 +32,7 @@ import {
   WORKDESK_INPUT,
   WORKDESK_PANEL,
 } from "@/lib/slate-horizon-theme";
+import { AiPriorityBadge } from "@/components/leads/AiPriorityBadge";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -478,10 +479,17 @@ export default function LeadDetailPage() {
               <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusColor(lead.status)}`}>
                 {lead.status}
               </span>
+              <AiPriorityBadge priority={lead.aiPriority} />
               {isSavingField && (
                 <span className="text-xs" style={{ color: SLATE_HORIZON.muted }}>Ukladám…</span>
               )}
             </div>
+            {lead.aiReason ? (
+              <p className="mt-2 text-sm leading-relaxed" style={{ color: SLATE_HORIZON.navText }}>
+                <span className="font-semibold" style={{ color: SLATE_HORIZON.deep }}>AI dôvod:</span>{" "}
+                {lead.aiReason}
+              </p>
+            ) : null}
           </div>
 
           {/* header actions */}

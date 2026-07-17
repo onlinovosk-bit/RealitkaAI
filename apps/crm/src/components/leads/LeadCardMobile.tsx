@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useTransition, useState, useCallback } from "react";
 import type { Lead } from "@/lib/leads-store";
+import { AiPriorityBadge } from "./AiPriorityBadge";
 import { getLeadScoreUnavailableHint } from "@/lib/leads/lead-display-score";
 import { getScoreDisplay } from "@/lib/leads/score-display";
 
@@ -113,11 +114,7 @@ export function LeadCardMobile({ lead, onStatusChange }: LeadCardMobileProps) {
           <span className="truncate text-sm font-semibold" style={{ color: "#F0F9FF" }}>
             {lead.name}
           </span>
-          {lead.aiPriority ? (
-            <span className="shrink-0 text-[10px]" style={{ color: "#64748B" }}>
-              {lead.aiPriority}
-            </span>
-          ) : null}
+          <AiPriorityBadge priority={lead.aiPriority} />
 
           {/* Optimistic status badge — tap to change quickly */}
           <button
@@ -141,7 +138,7 @@ export function LeadCardMobile({ lead, onStatusChange }: LeadCardMobileProps) {
         )}
         {lead.aiReason ? (
           <p className="mt-1 text-[10px] leading-snug line-clamp-2" style={{ color: "#64748B" }} title={lead.aiReason}>
-            {lead.aiReason}
+            <span className="font-semibold" style={{ color: "#475569" }}>AI dôvod:</span> {lead.aiReason}
           </p>
         ) : null}
       </div>

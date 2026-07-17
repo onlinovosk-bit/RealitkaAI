@@ -5,7 +5,10 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { createNotification } from "@/lib/notifications/store";
 import { createClient } from "@/lib/supabase/server";
 import { generateRescuePlan } from "@/lib/ai/rescue-message";
-import { pickSellerRescueCandidates } from "@/lib/routines/seller-rescue";
+import {
+  excludeLeadsWithOpenRescueTask,
+  pickSellerRescueCandidates,
+} from "@/lib/routines/seller-rescue";
 import { resolveProfileForAuthUser } from "@/lib/profiles/resolve-profile-for-auth";
 import { isCeoCommandOwner } from "@/lib/ceo-command/access";
 
@@ -47,8 +50,26 @@ async function runSellerRescueForAgency(agencyId: string, minDaysWithoutContact 
     };
   }
 
+  const { data: openRescueTasks } = await supabase
+    .from("tasks")
+    .select("lead_id")
+    .in("lead_id", atRisk.map((candidate) => candidate.leadId))
+    .eq("status", "open")
+    .like("title", "Seller Rescue%");
+  const fresh = excludeLeadsWithOpenRescueTask(
+    atRisk,
+    (openRescueTasks ?? []).map((row) => String(row.lead_id)),
+  );
+
+  if (fresh.length === 0) {
+    return {
+      atRiskLeads: 0,
+      message: `Žiadne nové rizikové leady — ${atRisk.length} už má otvorenú Seller Rescue úlohu.`,
+    };
+  }
+
   const routineRows: Array<Record<string, unknown>> = [];
-  for (const candidate of atRisk) {
+  for (const candidate of fresh) {
     const draft = await generateRescuePlan(
       {
         leadName: candidate.leadName,
@@ -80,18 +101,18 @@ async function runSellerRescueForAgency(agencyId: string, minDaysWithoutContact 
     });
   }
 
-  const top = atRisk[0];
+  const top = fresh[0];
   await createNotification({
     agencyId,
     type: "seller_rescue",
     priority: top.riskScore >= 80 ? "critical" : "high",
-    title: `Seller Rescue: ${atRisk.length} leadov bez kontaktu nad ${minDaysWithoutContact} dní`,
+    title: `Seller Rescue: ${fresh.length} leadov bez kontaktu nad ${minDaysWithoutContact} dní`,
     body: "V1 beží na všetkých leadoch bez kontaktu (seller-only filter je pending do intent pola).",
     data: { leads: routineRows, minDaysWithoutContact },
     expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
   });
 
-  return { atRiskLeads: atRisk.length, message: `Vyhodnotené leady bez kontaktu nad ${minDaysWithoutContact} dní.` };
+  return { atRiskLeads: fresh.length, message: `Vyhodnotené leady bez kontaktu nad ${minDaysWithoutContact} dní.` };
 }
 
 async function runSellerRescue(minDaysWithoutContact = DEFAULT_DAYS) {
