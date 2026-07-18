@@ -172,6 +172,8 @@ export default function DashboardPageClient({ initialPropertiesSummary }: Dashbo
     [leads]
   );
   const assistantDefaultLeadId = useMemo(() => leads[0]?.id, [leads]);
+  // Must stay above early returns — rules-of-hooks.
+  const firstAudit = useMemo(() => buildFirstAudit(leads), [leads]);
 
   useEffect(() => {
     async function loadDashboard() {
@@ -296,10 +298,10 @@ export default function DashboardPageClient({ initialPropertiesSummary }: Dashbo
   const offers = leads.filter(l => l.status === "Ponuka").length;
   const conversionRate = totalLeads > 0 ? Math.round((offers / totalLeads) * 100) : 0;
   const displayTotalLeads = totalLeads;
-  const firstAudit = useMemo(() => buildFirstAudit(leads), [leads]);
   const showFirstAudit =
-    !isLoading &&
-    (firstAudit.dataQuality !== "ready" || firstAudit.forgottenLeads > 0 || firstAudit.atRiskDeals > 0);
+    firstAudit.dataQuality !== "ready" ||
+    firstAudit.forgottenLeads > 0 ||
+    firstAudit.atRiskDeals > 0;
 
   const dealsTrend = forecastingSummary ? getTrend(forecastingSummary.expectedClosedDeals, forecastTargets.expectedClosedDeals) : null;
   const valueTrend = forecastingSummary ? getTrend(forecastingSummary.expectedPipelineValue, forecastTargets.expectedPipelineValue, " EUR") : null;
