@@ -30,6 +30,7 @@ Pri písaní Build Orderu mapuj akceptačné kritériá na súbory nižšie.
 | Revenue intelligence | `revenue-intelligence-guard.verification.test.ts` | — |
 | Column detector (import) | `column-detector.verification.test.ts` | `universal-import-smoke.spec.ts` |
 | Onboarding RLS | `onboarding-client-rls.verification.test.ts` | `onboarding-*.spec.ts` |
+| Password recovery (auth/confirm) | `password-recovery.verification.test.ts` | — |
 | First audit / outcome workdesk | `first-audit.verification.test.ts` | — |
 | Platform heartbeat | `platform-heartbeat.verification.test.ts` | — |
 | Stealth recruiter (legal hold) | `stealth-recruiter.verification.test.ts` | `stealth-recruiter.smoke.spec.ts` |
