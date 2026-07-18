@@ -232,6 +232,14 @@
 - **Overnight:** Brief 10 Wave B (tento commit); Wave A/C samostatné PR.
 - **Merge:** Human GO; nie auto-merge (AP-012).
 
+## [2026-07-17] - Password reset broken for Smolko — BUILD (P0)
+
+- **Symptom:** E-mail s odkazom na zmenu hesla nefunguje (Smolko).
+- **Root cause:** PKCE/`@supabase/ssr` bez `/auth/confirm?token_hash=`; `ConfirmationURL`/`?code=` zlyhá na inom zariadení.
+- **Fix PR:** #302 · `fix/password-reset-auth-confirm`
+- **Ops (Andy, mimo kódu):** aktualizovať Supabase Reset Password šablónu podľa `docs/runbooks/supabase-auth-email-templates-sk.md` (TokenHash).
+- **Po merge:** nový reset e-mail (starý odkaz ostáva neplatný).
+
 ## [2026-07-17] - Outcome-first workdesk (Livappy psychology) — BUILD
 
 - **Rozhodnutie:** Implementovať outcome messaging + 60s first audit + 1 dashboard CTA + short onboarding path. Nie nový AI engine — orchestrácia existujúcich signálov (stale, triage, budget×3%).
