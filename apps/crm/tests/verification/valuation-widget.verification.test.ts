@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { getValuationAgency, listValuationAgencySlugs } from "@/lib/valuation/agency-config";
 
-const REPO_ROOT = path.resolve(__dirname, "../../..");
+const CRM_ROOT = process.cwd();
 
 describe("valuation widget (Wave 0)", () => {
   it("exposes reality-smolko agency config", () => {
@@ -14,7 +14,7 @@ describe("valuation widget (Wave 0)", () => {
 
   it("has public route page for agency slug", () => {
     const pagePath = path.join(
-      REPO_ROOT,
+      CRM_ROOT,
       "src/app/(marketing)/odhad/[agencySlug]/page.tsx",
     );
     expect(fs.existsSync(pagePath)).toBe(true);
@@ -22,14 +22,14 @@ describe("valuation widget (Wave 0)", () => {
 
   it("registers /odhad/ as chromeless (no dashboard nav)", () => {
     const chromeless = fs.readFileSync(
-      path.join(REPO_ROOT, "src/lib/chromeless-routes.ts"),
+      path.join(CRM_ROOT, "src/lib/chromeless-routes.ts"),
       "utf8",
     );
     expect(chromeless).toContain("'/odhad/'");
   });
 
   it("registers valuation submit API as public", () => {
-    const proxy = fs.readFileSync(path.join(REPO_ROOT, "src/proxy.ts"), "utf8");
+    const proxy = fs.readFileSync(path.join(CRM_ROOT, "src/proxy.ts"), "utf8");
     expect(proxy).toContain("/api/valuation/submit");
   });
 
