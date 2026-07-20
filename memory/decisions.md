@@ -232,6 +232,18 @@
 - **Overnight:** Brief 10 Wave B (tento commit); Wave A/C samostatné PR.
 - **Merge:** Human GO; nie auto-merge (AP-012).
 
+## [2026-07-19] - Valuation Widget — VALIDATE (+ Wave 0 route)
+
+- **Signál:** Reality Smolko a AA Reality Molnár verbálne potvrdili záujem, ale bez potvrdeného distribučného kanála, SLA a ochoty platiť.
+- **Dôkaz dopytu (2026-07-19):** `realitysmolko.sk/ponuka-dopyt` už obsahuje položku „Ocenenie nehnuteľnosti“ a vedie naň platená Google Ads kampaň (gclid). Dopyt validovaný klientom samým; kanál č. 1 = táto stránka. Predajný rámec: upgrade platenej kampane (okamžitý výsledok = vyššia konverzia + leady do Revolis triage namiesto e-mailu), nasadenie vo fázach (paralelné tlačidlo → náhrada formulára).
+- **Webex bypass (2026-07-19):** Pilot Fáza 0 = Ads priamo na Revolis URL, bez Webexu. Seliga voliteľný až pre tlačidlo na webe. Stealth: Revolis neoslovuje Webex pred dôkazom. Brief: `docs/briefs/validation-valuation-widget.md` § Webex bypass stratégia.
+- **Wave 0 route:** `/odhad/[agencySlug]` + `POST /api/valuation/submit` → `leads` (`source=valuation_widget`). Pilot tenant: `reality-smolko`. Bez falošného cenového pásma (maklér kontaktuje s odhadom).
+- **VETO na plný BUILD:** chýba licencovaný, reprodukovateľný zdroj cenových dát; LLM nesmie vytvárať trhové cenové pásmo bez neho.
+- **GDPR gate:** pred pilotom Privacy Notice, právny základ a controller/processor roly potvrdiť s AKMV.
+- **Brief:** `docs/briefs/validation-valuation-widget.md`
+- **Odomknutie:** 14-dňový pilotný kontrakt s konkrétnymi kanálmi, SLA, metrikami a data/GDPR bránou.
+- **Cenová stratégia (2026-07-19, founder GO):** widget sa nespoplatňuje samostatne — je súčasť balíka Revolis, monetizácia cez seaty. Klientovi sa cenová otázka nekladie; cenovú hypotézu validuje podpis Molnára ako 2. platiaceho zákazníka.
+
 ## [2026-07-17] - Outcome-first workdesk (Livappy psychology) — BUILD
 
 - **Rozhodnutie:** Implementovať outcome messaging + 60s first audit + 1 dashboard CTA + short onboarding path. Nie nový AI engine — orchestrácia existujúcich signálov (stale, triage, budget×3%).

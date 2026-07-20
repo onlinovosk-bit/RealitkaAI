@@ -23,6 +23,7 @@ const PUBLIC_PATHS = new Set([
   "/api/webhooks/hubspot",
   "/api/leads/inbound",
   "/api/acquire/email",
+  "/api/valuation/submit",
 ]);
 
 const CRON_PATH_PREFIX = "/api/agents";
