@@ -107,6 +107,9 @@ describe("valuation_tenants public RLS boundary", () => {
       .select("id")
       .limit(1);
     expect(leakedLeads ?? []).toEqual([]);
-    expect(leadsError).toBeFalsy();
+    expect(leadsError).toMatchObject({
+      code: "42501",
+      message: "permission denied for table leads",
+    });
   });
 });
