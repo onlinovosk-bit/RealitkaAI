@@ -16,6 +16,7 @@ type RegionalPricesFile = {
   band_rules: {
     type_specific: { lower_pct: number; upper_pct: number };
     region_all_fallback: { lower_pct: number; upper_pct: number };
+    national_type_fallback?: { lower_pct: number; upper_pct: number };
     round_to_eur: number;
   };
   regions: Record<
@@ -69,6 +70,21 @@ export function lookupVerifiedPricePerSqm(
     };
   }
 
+  const national = data.regions.SK;
+  const nationalType = national?.[typeKey];
+  const nationalBands = data.band_rules.national_type_fallback ?? data.band_rules.type_specific;
+  if (nationalType?.verified && nationalType.value != null && regionCode !== "SK") {
+    return {
+      pricePerSqm: nationalType.value,
+      bandLowerPct: nationalBands.lower_pct,
+      bandUpperPct: nationalBands.upper_pct,
+      regionLabel: `${region.label} (NBS ${propertyType === "byt" ? "byty" : "domy"} SK)`,
+      sourceQuarter: data.meta.quarter,
+      sourceNote: nationalType.source_note ?? "NBS celoštátny typový priemer",
+      usedFallback: true,
+    };
+  }
+
   if (region.all?.verified && region.all.value != null) {
     return {
       pricePerSqm: region.all.value,
@@ -86,4 +102,10 @@ export function lookupVerifiedPricePerSqm(
 
 export function roundBand(value: number, roundTo: number): number {
   return Math.round(value / roundTo) * roundTo;
+}
+
+export function estimateBandSpreadPct(low: number, high: number): number {
+  const mid = (low + high) / 2;
+  if (mid <= 0) return 0;
+  return Math.round(((high - low) / mid) * 100);
 }

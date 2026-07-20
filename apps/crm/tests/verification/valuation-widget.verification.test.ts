@@ -40,6 +40,15 @@ describe("valuation widget", () => {
     expect(listValuationAgencySlugs()).toContain("reality-smolko");
   });
 
+  it("starts with contact step before showing estimate", () => {
+    const form = fs.readFileSync(
+      path.join(CRM_ROOT, "src/components/valuation/ValuationWidgetForm.tsx"),
+      "utf8",
+    );
+    expect(form).toContain('useState<"contact" | "property" | "result">("contact")');
+    expect(form).toContain("Krok 1 z 2 · Kontakt");
+  });
+
   it("maps lead insert with estimate note", () => {
     const row = buildValuationLeadInsert("11111111-1111-1111-1111-111111111111", {
       agencySlug: "reality-smolko",
@@ -48,6 +57,7 @@ describe("valuation widget", () => {
       sqm: 70,
       name: "Test User",
       email: "test@example.com",
+      phone: "0900123456",
       sellWithin12Months: true,
       privacyAck: true,
       estimate: {

@@ -6,15 +6,28 @@ export type ValuationCondition =
   | "kompletna"
   | "novostavba";
 
+export type ValuationHeating =
+  | "plyn"
+  | "elektrina"
+  | "distancne"
+  | "tuhle"
+  | "ine";
+
 export type ValuationPropertyInput = {
   propertyType: ValuationPropertyType;
   location: string;
+  postalCode?: string;
   sqm: number;
   rooms?: number;
   condition?: ValuationCondition;
   floor?: number;
+  totalFloors?: number;
+  yearBuilt?: number;
   hasElevator?: boolean;
   hasBalcony?: boolean;
+  hasParking?: boolean;
+  landSqm?: number;
+  heating?: ValuationHeating;
 };
 
 export type ValuationEstimateResult = {
@@ -34,7 +47,8 @@ export type ValuationEstimateResult = {
 export type ValuationContactInput = {
   name: string;
   email: string;
-  phone?: string;
+  phone: string;
+  sellTimeline?: string;
   sellWithin12Months: boolean;
   privacyAck: boolean;
   marketingOptIn?: boolean;
