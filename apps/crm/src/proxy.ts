@@ -7,6 +7,7 @@ const PUBLIC_PATHS = new Set([
   "/",
   "/login",
   "/register",
+  "/forgot-password",
   "/reset-password",
   "/auth/callback",
   "/auth/confirm",
@@ -22,6 +23,7 @@ const PUBLIC_PATHS = new Set([
   "/api/webhooks/hubspot",
   "/api/leads/inbound",
   "/api/acquire/email",
+  "/api/valuation/submit",
 ]);
 
 const CRON_PATH_PREFIX = "/api/agents";

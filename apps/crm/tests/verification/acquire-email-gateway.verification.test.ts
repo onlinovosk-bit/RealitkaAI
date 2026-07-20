@@ -62,12 +62,14 @@ describe("[verification] Acquire email gateway", () => {
 
     expect(orchestrator).toContain("auto_response_enabled");
     expect(orchestrator).toContain("auto_response_sent_at");
+    expect(orchestrator).toContain("assigned_agent,ai_reason,ai_priority,source");
     expect(orchestrator).toContain("loadAgencyAutoResponseContext");
     expect(orchestrator).toContain("autoErrorCapture");
     expect(orchestrator).not.toMatch(/catch\s*\{\s*\}/);
 
     expect(sender).toContain("replyTo");
     expect(sender).not.toContain("reply_to");
-    expect(sender).toContain("buildInboundAutoResponseText");
+    expect(sender).toContain("resolveInboundFromEmail");
+    expect(sender).not.toContain('const FROM_EMAIL = "noreply@revolis.ai"');
   });
 });

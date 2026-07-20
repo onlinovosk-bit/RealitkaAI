@@ -1,16 +1,16 @@
-## Session 2026-06-23
+## Session 2026-07-17 (evening)
 ### Dokončené
-- PR #240 merged — Guardian CTA deep-link `source_id` + edit slide-over
-- PR #242 merged — vyhodenie 4 L99 governance docs (AP-012)
-- PR #241 merged — fixture-only disabled edit CTA + honest copy
-- Obsidian vault `RealitkaAI-Memory` AGENTS-CONTEXT sync (`3dfdb9d`)
-- Ruflo swarm `swarm-1782247126506-rsmezw` + hive `hive-1782247126587-mxn1n0` initialized
+- Diagnostika: Smolko password reset link broken — PKCE + chýbajúce `/auth/confirm`
+- Fix branch `fix/password-reset-auth-confirm`: auth/confirm, auth/callback, forgot-password, hardened reset-password, runbook TokenHash
 
 ### Rozpracované / Pending
-- Guardian PROD smoke **1/5** — bod 4 nepreklepnutý; 1/2/5 manuálne
-- Lemon Squeezy Share — pending blocker
-- Externý cron worker (5 min) — nepotvrdený
-- Tomáš / dual export Realvia + Revolis
+- Merge + Andy: aktualizovať Supabase Reset Password šablónu na TokenHash
+- Po deploy: smoke s novým e-mailom pre Smolko
+
+### Kľúčové súbory
+- `apps/crm/src/app/auth/confirm/route.ts`, `auth/callback/route.ts`
+- `apps/crm/src/app/forgot-password/page.tsx`, `reset-password/page.tsx`
+- `docs/runbooks/supabase-auth-email-templates-sk.md`
 
 ### Ďalší krok
-Spusti `prod-guardian-smoke-once.mjs` so Smolko creds; nastav GitHub SCHEMA_GUARD secrets + cron-job.org CRON_SECRET
+PR merge → Andy dashboard šablóna → nový reset e-mail Smolkovi

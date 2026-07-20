@@ -26,6 +26,7 @@ const CHROMELESS_PREFIXES = [
   '/demo-odhad/',
   '/l99-scan/',
   '/smolko/',
+  '/odhad/',
 ];
 
 export function isChromelessRoute(pathname: string | null | undefined): boolean {

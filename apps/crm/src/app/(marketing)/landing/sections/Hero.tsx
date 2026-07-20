@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
-import { useRef, useEffect, useState } from 'react';
+import { useRef } from 'react';
 import Link from 'next/link';
 import { LANDING_AI_ASSISTANT_NAME } from '@/app/(marketing)/landing/landing-ai-label';
 import { RadiantSpriteIcon } from '@/components/shared/radiant-sprite-icon';
@@ -13,21 +13,7 @@ import {
   HeroTrustBar,
 } from './HeroEmailCapture';
 
-function LiveLeadCounter() {
-  const prefersReducedMotion = useReducedMotion();
-  const [count, setCount] = useState(1247);
-  const [flash, setFlash] = useState(false);
-
-  useEffect(() => {
-    if (prefersReducedMotion) return;
-    const t = setInterval(() => {
-      setCount((p) => p + Math.floor(Math.random() * 5) + 2);
-      setFlash(true);
-      setTimeout(() => setFlash(false), 300);
-    }, 2800);
-    return () => clearInterval(t);
-  }, [prefersReducedMotion]);
-
+function OutcomePromiseBanner() {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -39,22 +25,10 @@ function LiveLeadCounter() {
         borderColor: SLATE_HORIZON_BADGES.hot.border,
       }}
     >
-      <span
-        className={`h-2 w-2 rounded-full ${prefersReducedMotion ? '' : 'animate-pulse'}`}
-        style={{ background: SLATE_HORIZON.red }}
-      />
-      <span className="text-xs" style={{ color: SLATE_HORIZON.deep }}>
-        Odhad ušlých príležitostí bez AI dnes:
+      <span className="h-2 w-2 rounded-full" style={{ background: SLATE_HORIZON.green }} />
+      <span className="text-sm font-semibold" style={{ color: SLATE_HORIZON.deep }}>
+        Za 30 sekúnd viete, komu volať — podľa dát vo vašom CRM, nie podľa pocitu.
       </span>
-      <motion.span
-        key={count}
-        initial={prefersReducedMotion ? false : { opacity: 0.5, y: -4 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="font-mono text-xl font-bold tabular-nums transition-colors duration-200"
-        style={{ color: flash ? SLATE_HORIZON.danger : SLATE_HORIZON.red }}
-      >
-        {count.toLocaleString('sk-SK')}
-      </motion.span>
     </motion.div>
   );
 }
@@ -186,7 +160,7 @@ export default function Hero() {
               }}
             >
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-sky-300" />
-              AI Asistent — prediktívny operačný systém pre zisk
+              Za 30 sekúnd viete, kde dnes zarobíte
             </motion.div>
 
             <motion.h1
@@ -268,7 +242,7 @@ export default function Hero() {
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <RadiantSpriteIcon icon="pipeline" sizeClassName="h-4 w-4" className="rounded-sm shadow-none" />
-                <strong style={{ color: '#93C5FD' }}>+34%</strong> konverzný pomer
+                <strong style={{ color: '#93C5FD' }}>Výsledky</strong> už prvý deň
               </span>
             </motion.div>
           </div>
@@ -280,7 +254,7 @@ export default function Hero() {
             className="w-full max-w-xl flex-1 lg:max-w-none"
           >
             <DashboardMock />
-            <LiveLeadCounter />
+            <OutcomePromiseBanner />
           </motion.div>
         </div>
       </motion.div>
