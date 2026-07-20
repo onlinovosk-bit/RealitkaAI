@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Valuation widget — /odhad/reality-smolko", () => {
-  test("public page renders property step on mobile", async ({ page }) => {
+  test("public page renders contact step first on mobile", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     const response = await page.goto("/odhad/reality-smolko");
     if (response?.status() === 404) {
@@ -9,16 +9,29 @@ test.describe("Valuation widget — /odhad/reality-smolko", () => {
       return;
     }
 
-    await expect(page.getByText(/Orientačný odhad/i)).toBeVisible();
-    await expect(page.getByRole("button", { name: /Zobraziť orientačný odhad/i })).toBeVisible();
+    await expect(page.getByText(/Krok 1 z 2/i)).toBeVisible();
+    await expect(page.getByRole("button", { name: /Pokračovať na nehnuteľnosť/i })).toBeVisible();
   });
 
-  test("estimate API returns band for Košice byt", async ({ request }) => {
+  test("estimate API requires contact before returning band", async ({ request }) => {
+    const blocked = await request.post("/api/valuation/estimate", {
+      data: {
+        propertyType: "byt",
+        location: "Košice",
+        sqm: 75,
+      },
+    });
+    expect(blocked.status()).toBe(400);
+
     const res = await request.post("/api/valuation/estimate", {
       data: {
         propertyType: "byt",
         location: "Košice",
         sqm: 75,
+        name: "Test User",
+        email: "test@example.com",
+        phone: "0900123456",
+        privacyAck: true,
       },
     });
     expect(res.status()).toBe(200);
