@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/rate-limit";
 import { getValuationAgency } from "@/lib/valuation/agency-config";
+import { resolveValuationAgencyId } from "@/lib/valuation/resolve-agency-id";
 
 type SubmitBody = {
   agencySlug?: string;
@@ -79,6 +80,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: "Služba nie je dostupná." }, { status: 503 });
     }
 
+    const agencyId = await resolveValuationAgencyId(supabase, agency);
+    if (!agencyId) {
+      return NextResponse.json(
+        { ok: false, error: "Agentúra ešte nie je aktivovaná pre odhadový formulár." },
+        { status: 503 },
+      );
+    }
+
     const note = [
       `valuation_widget`,
       `typ=${propertyType}`,
@@ -92,7 +101,7 @@ export async function POST(request: Request) {
 
     const { error } = await supabase.from("leads").insert({
       id: crypto.randomUUID(),
-      agency_id: agency.agencyId,
+      agency_id: agencyId,
       name: name.slice(0, 200),
       email: email.slice(0, 254),
       phone: phone.slice(0, 50),

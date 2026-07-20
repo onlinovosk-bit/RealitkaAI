@@ -33,7 +33,16 @@ describe("valuation widget (Wave 0)", () => {
     expect(proxy).toContain("/api/valuation/submit");
   });
 
-  it("lists at least one pilot agency slug", () => {
-    expect(listValuationAgencySlugs()).toContain("reality-smolko");
+  it("exposes aa-reality-kosice agency config", () => {
+    const agency = getValuationAgency("aa-reality-kosice");
+    expect(agency).not.toBeNull();
+    expect(agency?.displayName).toContain("AA REALITY");
+    expect(agency?.privacyUrl).toContain("aarealitykosice.sk");
+  });
+
+  it("lists both pilot agency slugs", () => {
+    expect(listValuationAgencySlugs()).toEqual(
+      expect.arrayContaining(["reality-smolko", "aa-reality-kosice"]),
+    );
   });
 });
