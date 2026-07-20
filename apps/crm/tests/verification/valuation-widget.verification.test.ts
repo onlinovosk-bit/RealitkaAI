@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
+import { buildValuationLeadInsert } from "@/lib/valuation/lead-mapper";
 import { getValuationAgency, listValuationAgencySlugs } from "@/lib/valuation/agency-config";
 
 const CRM_ROOT = process.cwd();
 
-describe("valuation widget (Wave 0)", () => {
+describe("valuation widget", () => {
   it("exposes reality-smolko agency config", () => {
     const agency = getValuationAgency("reality-smolko");
     expect(agency).not.toBeNull();
@@ -28,12 +29,39 @@ describe("valuation widget (Wave 0)", () => {
     expect(chromeless).toContain("'/odhad/'");
   });
 
-  it("registers valuation submit API as public", () => {
+  it("registers valuation APIs as public", () => {
     const proxy = fs.readFileSync(path.join(CRM_ROOT, "src/proxy.ts"), "utf8");
     expect(proxy).toContain("/api/valuation/submit");
+    expect(proxy).toContain("/api/valuation/estimate");
+    expect(proxy).toContain('pathname.startsWith("/odhad/")');
   });
 
   it("lists at least one pilot agency slug", () => {
     expect(listValuationAgencySlugs()).toContain("reality-smolko");
+  });
+
+  it("maps lead insert with estimate note", () => {
+    const row = buildValuationLeadInsert("11111111-1111-1111-1111-111111111111", {
+      agencySlug: "reality-smolko",
+      propertyType: "byt",
+      location: "Prešov",
+      sqm: 70,
+      name: "Test User",
+      email: "test@example.com",
+      sellWithin12Months: true,
+      privacyAck: true,
+      estimate: {
+        noEstimate: false,
+        low: 100000,
+        high: 120000,
+        currency: "EUR",
+        commentary: "test",
+        disclaimer: "test",
+        regionCode: "PO",
+      },
+    });
+    expect(row.source).toBe("valuation_widget");
+    expect(row.note).toContain("odhad=100000-120000EUR");
+    expect(row.timeline).toBe("do 12 mesiacov");
   });
 });
