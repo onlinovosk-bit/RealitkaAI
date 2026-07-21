@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Valuation widget — /odhad/reality-smolko", () => {
-  test("public page renders contact step first on mobile", async ({ page }) => {
+  test("public page renders property step first on mobile", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     const response = await page.goto("/odhad/reality-smolko");
     if (response?.status() === 404) {
@@ -9,8 +9,9 @@ test.describe("Valuation widget — /odhad/reality-smolko", () => {
       return;
     }
 
-    await expect(page.getByText(/Krok 1 z 2/i)).toBeVisible();
-    await expect(page.getByRole("button", { name: /Pokračovať na nehnuteľnosť/i })).toBeVisible();
+    await expect(page.getByText(/Krok 1 z 3 · Nehnuteľnosť/i)).toBeVisible();
+    await expect(page.getByRole("button", { name: /Pokračovať na kontakt/i })).toBeVisible();
+    await expect(page.getByText(/Krok 2 z 3/i)).not.toBeVisible();
   });
 
   test("estimate API requires contact before returning band", async ({ request }) => {
