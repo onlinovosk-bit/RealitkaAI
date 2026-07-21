@@ -23,6 +23,7 @@ const propertySchema = z.object({
   hasParking: z.boolean().optional(),
   landSqm: z.coerce.number().min(1).max(100000).optional(),
   heating: z.enum(["plyn", "elektrina", "distancne", "tuhle", "ine"]).optional(),
+  ownerPriceExpectation: z.coerce.number().min(1).max(50_000_000).optional(),
 });
 
 const bodySchema = propertySchema.extend({
@@ -35,6 +36,8 @@ const bodySchema = propertySchema.extend({
   privacyAck: z.literal(true),
   marketingOptIn: z.boolean().optional(),
   hp: z.string().optional(),
+  abVariant: z.enum(["A", "B"]).optional(),
+  sessionId: z.string().trim().max(64).optional(),
 });
 
 export async function POST(request: Request) {
@@ -84,6 +87,7 @@ export async function POST(request: Request) {
       hasParking: payload.hasParking,
       landSqm: payload.landSqm,
       heating: payload.heating,
+      ownerPriceExpectation: payload.ownerPriceExpectation,
     };
 
     const baseEstimate = buildDeterministicEstimate(propertyInput);
@@ -96,6 +100,8 @@ export async function POST(request: Request) {
       ...payload,
       ...propertyInput,
       estimate,
+      abVariant: payload.abVariant,
+      sessionId: payload.sessionId,
     });
 
     const { data: inserted, error } = await supabase

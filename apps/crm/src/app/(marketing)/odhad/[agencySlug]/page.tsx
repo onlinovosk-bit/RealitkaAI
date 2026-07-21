@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { ValuationWidgetForm } from "@/components/valuation/ValuationWidgetForm";
+import { ValuationWidgetShell } from "@/components/valuation/ValuationWidgetShell";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
@@ -65,7 +65,7 @@ export default async function ValuationWidgetPage({ params }: PageProps) {
       </div>
 
       <div className="mt-10">
-        <ValuationWidgetForm tenant={tenant} />
+        <ValuationWidgetShell tenant={tenant} />
       </div>
 
       <p className="mx-auto mt-8 max-w-lg text-center text-xs leading-relaxed" style={{ color: SLATE_HORIZON.muted }}>

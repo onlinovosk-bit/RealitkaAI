@@ -29,9 +29,16 @@ export function buildValuationLeadInsert(
     payload.sellTimeline ? `predaj=${payload.sellTimeline}` : "",
     payload.sellWithin12Months ? "predaj_do_12m=ano" : "predaj_do_12m=nie",
     payload.marketingOptIn ? "marketing=ano" : "marketing=nie",
+    payload.abVariant ? `ab=${payload.abVariant}` : "",
+    payload.sessionId ? `sid=${payload.sessionId.slice(0, 36)}` : "",
+    payload.ownerPriceExpectation != null
+      ? `majitel_cena=${payload.ownerPriceExpectation}EUR`
+      : "",
     formatEstimateNote(estimate),
     `gdpr_ver=${CONSENT_VERSION}`,
   ].filter(Boolean);
+
+  const consentAt = new Date().toISOString();
 
   return {
     id: crypto.randomUUID(),
@@ -54,6 +61,8 @@ export function buildValuationLeadInsert(
     assigned_profile_id: null,
     last_contact: "Práve vytvorený",
     note: noteParts.join(" · ").slice(0, 5000),
+    gdpr_consent_at: consentAt,
+    gdpr_consent_version: CONSENT_VERSION,
   };
 }
 

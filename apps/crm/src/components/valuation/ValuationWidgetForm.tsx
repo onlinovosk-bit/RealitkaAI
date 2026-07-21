@@ -1,9 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import type { ValuationAbVariant } from "@/lib/valuation/ab-test";
 import type { ValuationPageContext } from "@/lib/valuation/tenant";
-import type {
+import {
+  trackValuationAbandon,
+  trackValuationContactSubmitted,
+  trackValuationLeadSubmitted,
+  trackValuationShown,
+  trackValuationStarted,
+  trackValuationStepCompleted,
+} from "@/lib/valuation/analytics";import type {
   ValuationCondition,
   ValuationEstimateResult,
   ValuationHeating,
@@ -13,10 +21,11 @@ import { SLATE_HORIZON, WORKDESK_CARD } from "@/lib/slate-horizon-theme";
 
 type Props = {
   tenant: ValuationPageContext;
+  abVariant: ValuationAbVariant;
+  sessionId: string;
 };
 
-type Step = "property" | "contact" | "result";
-
+type Step = "property" | "contact" | "estimate" | "result";
 type PropertyForm = {
   propertyType: ValuationPropertyType;
   city: string;
@@ -33,6 +42,7 @@ type PropertyForm = {
   landSqm: string;
   heating: ValuationHeating | "";
   sellTimeline: string;
+  ownerPriceExpectation: string;
 };
 
 type ContactForm = {
@@ -59,6 +69,7 @@ const INITIAL_PROPERTY: PropertyForm = {
   landSqm: "",
   heating: "",
   sellTimeline: "",
+  ownerPriceExpectation: "",
 };
 
 const INITIAL_CONTACT: ContactForm = {
@@ -77,7 +88,7 @@ function sellWithin12Months(timeline: string): boolean {
   return ["do 3 mesiacov", "do 6 mesiacov", "do 12 mesiacov"].includes(timeline);
 }
 
-export function ValuationWidgetForm({ tenant }: Props) {
+export function ValuationWidgetForm({ tenant, abVariant, sessionId }: Props) {
   const [step, setStep] = useState<Step>("property");
   const [property, setProperty] = useState<PropertyForm>(INITIAL_PROPERTY);
   const [contact, setContact] = useState<ContactForm>(INITIAL_CONTACT);
@@ -85,9 +96,25 @@ export function ValuationWidgetForm({ tenant }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hp, setHp] = useState("");
+  const startedRef = useRef(false);
+  const completedRef = useRef(false);
 
   const brand = tenant.primaryColor || SLATE_HORIZON.brand;
 
+  function markStarted() {
+    if (startedRef.current) return;
+    startedRef.current = true;
+    trackValuationStarted(tenant.slug, abVariant, sessionId);
+  }
+
+  useEffect(() => {
+    function onBeforeUnload() {
+      if (completedRef.current || step === "result") return;
+      trackValuationAbandon(tenant.slug, abVariant, sessionId, step);
+    }
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [tenant.slug, abVariant, sessionId, step]);
   function updateProperty<K extends keyof PropertyForm>(key: K, value: PropertyForm[K]) {
     setProperty((prev) => ({ ...prev, [key]: value }));
   }
@@ -96,12 +123,76 @@ export function ValuationWidgetForm({ tenant }: Props) {
     setContact((prev) => ({ ...prev, [key]: value }));
   }
 
-  function handlePropertyContinue(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setStep("contact");
+  function buildPropertyPayload(location: string) {
+    return {
+      propertyType: property.propertyType,
+      location,
+      postalCode: property.postalCode || undefined,
+      sqm: Number(property.sqm),
+      rooms: property.rooms ? Number(property.rooms) : undefined,
+      condition: property.condition || undefined,
+      floor: property.floor ? Number(property.floor) : undefined,
+      totalFloors: property.totalFloors ? Number(property.totalFloors) : undefined,
+      yearBuilt: property.yearBuilt ? Number(property.yearBuilt) : undefined,
+      hasElevator: property.hasElevator,
+      hasBalcony: property.hasBalcony,
+      hasParking: property.hasParking,
+      landSqm: property.landSqm ? Number(property.landSqm) : undefined,
+      heating: property.heating || undefined,
+      ownerPriceExpectation: property.ownerPriceExpectation
+        ? Number(property.ownerPriceExpectation)
+        : undefined,
+    };
   }
 
+  async function handlePropertyContinue(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    markStarted();
+    trackValuationStepCompleted(tenant.slug, abVariant, sessionId, "property");
+
+    if (abVariant === "A") {
+      setStep("contact");
+      return;
+    }
+
+    setLoading(true);
+    const location = buildLocation(property.city, property.postalCode);
+    try {
+      const res = await fetch("/api/valuation/estimate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...buildPropertyPayload(location),
+          abVariant: "B",
+          sessionId,
+          hp,
+        }),
+      });
+      const data = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        estimate?: ValuationEstimateResult;
+      };
+      if (!res.ok || !data.ok || !data.estimate) {
+        setError(data.error ?? "Nepodarilo sa vypočítať odhad.");
+        return;
+      }
+      setEstimate(data.estimate);
+      trackValuationShown(tenant.slug, abVariant, sessionId, !data.estimate.noEstimate);
+      trackValuationStepCompleted(tenant.slug, abVariant, sessionId, "estimate");
+      setStep("estimate");
+    } catch {
+      setError("Nepodarilo sa vypočítať odhad.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleEstimateContinue() {
+    trackValuationStepCompleted(tenant.slug, abVariant, sessionId, "estimate_continue");
+    setStep("contact");
+  }
   async function handleContactSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -117,26 +208,14 @@ export function ValuationWidgetForm({ tenant }: Props) {
 
     setLoading(true);
     const location = buildLocation(property.city, property.postalCode);
+    trackValuationContactSubmitted(tenant.slug, abVariant, sessionId);
     try {
       const res = await fetch("/api/valuation/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           agencySlug: tenant.slug,
-          propertyType: property.propertyType,
-          location,
-          postalCode: property.postalCode || undefined,
-          sqm: Number(property.sqm),
-          rooms: property.rooms ? Number(property.rooms) : undefined,
-          condition: property.condition || undefined,
-          floor: property.floor ? Number(property.floor) : undefined,
-          totalFloors: property.totalFloors ? Number(property.totalFloors) : undefined,
-          yearBuilt: property.yearBuilt ? Number(property.yearBuilt) : undefined,
-          hasElevator: property.hasElevator,
-          hasBalcony: property.hasBalcony,
-          hasParking: property.hasParking,
-          landSqm: property.landSqm ? Number(property.landSqm) : undefined,
-          heating: property.heating || undefined,
+          ...buildPropertyPayload(location),
           name: contact.name,
           email: contact.email,
           phone: contact.phone,
@@ -144,6 +223,8 @@ export function ValuationWidgetForm({ tenant }: Props) {
           sellWithin12Months: sellWithin12Months(property.sellTimeline),
           privacyAck: true,
           marketingOptIn: contact.marketingOptIn,
+          abVariant,
+          sessionId,
           hp,
         }),
       });
@@ -152,11 +233,19 @@ export function ValuationWidgetForm({ tenant }: Props) {
         error?: string;
         estimate?: ValuationEstimateResult;
       };
-      if (!res.ok || !data.ok || !data.estimate) {
+      if (!res.ok || !data.ok) {
         setError(data.error ?? "Nepodarilo sa spracovať dopyt.");
         return;
       }
-      setEstimate(data.estimate);
+      if (data.estimate) {
+        setEstimate(data.estimate);
+        if (abVariant === "A") {
+          trackValuationShown(tenant.slug, abVariant, sessionId, !data.estimate.noEstimate);
+        }
+      }
+      trackValuationLeadSubmitted(tenant.slug, abVariant, sessionId, property.propertyType);
+      trackValuationStepCompleted(tenant.slug, abVariant, sessionId, "contact");
+      completedRef.current = true;
       setStep("result");
     } catch {
       setError("Nepodarilo sa spracovať dopyt.");
@@ -228,6 +317,53 @@ export function ValuationWidgetForm({ tenant }: Props) {
     );
   }
 
+  if (step === "estimate" && estimate) {
+    return (
+      <div className="mx-auto max-w-lg space-y-5 rounded-3xl p-6 sm:p-8" style={cardStyle}>
+        <div>
+          <p className="text-xs font-bold uppercase tracking-widest" style={{ color: brand }}>
+            Krok 2 z 3 · Odhad
+          </p>
+          <h2 className="mt-2 text-2xl font-bold" style={{ color: SLATE_HORIZON.ink }}>
+            Váš orientačný odhad
+          </h2>
+          {estimate.noEstimate ? (
+            <p className="mt-3 text-sm leading-relaxed" style={{ color: SLATE_HORIZON.muted }}>
+              {estimate.commentary}
+            </p>
+          ) : (
+            <>
+              <p className="mt-4 text-3xl font-black" style={{ color: SLATE_HORIZON.ink }}>
+                €{estimate.low?.toLocaleString("sk-SK")} – €{estimate.high?.toLocaleString("sk-SK")}
+              </p>
+              <p className="mt-3 text-sm leading-relaxed" style={{ color: SLATE_HORIZON.muted }}>
+                {estimate.commentary}
+              </p>
+            </>
+          )}
+          <p className="mt-4 text-xs leading-relaxed" style={{ color: SLATE_HORIZON.muted }}>
+            {estimate.disclaimer}
+            {estimate.sourceQuarter ? ` · Zdroj: NBS ${estimate.sourceQuarter}.` : ""}
+          </p>
+          <p className="mt-4 text-sm leading-relaxed" style={{ color: SLATE_HORIZON.muted }}>
+            Pre odoslanie dopytu a kontakt makléra zadajte ešte kontaktné údaje v ďalšom kroku.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={handleEstimateContinue}
+          className="w-full rounded-xl py-3.5 text-sm font-bold uppercase tracking-wide text-white"
+          style={{ background: brand }}
+        >
+          Pokračovať na kontakt
+        </button>
+        <button type="button" onClick={() => setStep("property")} className="w-full text-sm underline" style={{ color: SLATE_HORIZON.muted }}>
+          Späť na nehnuteľnosť
+        </button>
+      </div>
+    );
+  }
+
   if (step === "contact") {
     return (
       <form onSubmit={handleContactSubmit} className="mx-auto max-w-lg space-y-5 rounded-3xl p-6 sm:p-8" style={cardStyle}>
@@ -235,10 +371,12 @@ export function ValuationWidgetForm({ tenant }: Props) {
 
         <div>
           <p className="text-xs font-bold uppercase tracking-widest" style={{ color: brand }}>
-            Krok 2 z 3 · Kontakt
+            {abVariant === "B" ? "Krok 3 z 3 · Kontakt" : "Krok 2 z 3 · Kontakt"}
           </p>
           <p className="mt-2 text-sm leading-relaxed" style={{ color: SLATE_HORIZON.muted }}>
-            Pre zobrazenie orientačného odhadu zadajte kontakt — maklér vás potom osobne navštívi alebo zavolá.
+            {abVariant === "B"
+              ? "Odoslaním kontaktu dokončíte dopyt — maklér vás bude kontaktovať."
+              : "Pre zobrazenie orientačného odhadu zadajte kontakt — maklér vás potom osobne navštívi alebo zavolá."}
           </p>
         </div>
 
@@ -277,17 +415,17 @@ export function ValuationWidgetForm({ tenant }: Props) {
         {error && <p className="rounded-xl px-4 py-3 text-sm" style={{ background: "rgba(239,68,68,0.1)", color: "#FCA5A5" }}>{error}</p>}
 
         <button type="submit" disabled={loading} className="w-full rounded-xl py-3.5 text-sm font-bold uppercase tracking-wide text-white disabled:opacity-60" style={{ background: brand }}>
-          {loading ? "Počítam odhad…" : "Zobraziť môj odhad"}
+          {loading ? "Odosielam…" : abVariant === "B" ? "Odoslať dopyt" : "Zobraziť môj odhad"}
         </button>
-        <button type="button" onClick={() => setStep("property")} className="w-full text-sm underline" style={{ color: SLATE_HORIZON.muted }}>
-          Späť na nehnuteľnosť
+        <button type="button" onClick={() => setStep(abVariant === "B" ? "estimate" : "property")} className="w-full text-sm underline" style={{ color: SLATE_HORIZON.muted }}>
+          {abVariant === "B" ? "Späť na odhad" : "Späť na nehnuteľnosť"}
         </button>
       </form>
     );
   }
 
   return (
-    <form onSubmit={handlePropertyContinue} className="mx-auto max-w-lg space-y-5 rounded-3xl p-6 sm:p-8" style={cardStyle}>
+    <form onSubmit={handlePropertyContinue} onFocus={markStarted} className="mx-auto max-w-lg space-y-5 rounded-3xl p-6 sm:p-8" style={cardStyle}>
       <input type="text" name="hp" value={hp} onChange={(e) => setHp(e.target.value)} className="hidden" tabIndex={-1} autoComplete="off" aria-hidden />
 
       <div>
@@ -295,7 +433,9 @@ export function ValuationWidgetForm({ tenant }: Props) {
           Krok 1 z 3 · Nehnuteľnosť
         </p>
         <p className="mt-2 text-sm" style={{ color: SLATE_HORIZON.muted }}>
-          Najprv vyplňte údaje o nehnuteľnosti — orientačný odhad uvidíte v poslednom kroku po zadaní kontaktu.
+          {abVariant === "B"
+            ? "Vyplňte údaje o nehnuteľnosti — orientačný odhad uvidíte v ďalšom kroku."
+            : "Najprv vyplňte údaje o nehnuteľnosti — orientačný odhad uvidíte v poslednom kroku po zadaní kontaktu."}
         </p>
       </div>
 
@@ -338,6 +478,25 @@ export function ValuationWidgetForm({ tenant }: Props) {
           <option value="do 12 mesiacov">Do 12 mesiacov</option>
           <option value="neskôr">Neskôr ako za rok</option>
         </select>
+      </div>
+
+      <div>
+        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>
+          Vaša cenová predstava (€, nepovinné)
+        </label>
+        <input
+          type="number"
+          value={property.ownerPriceExpectation}
+          onChange={(e) => updateProperty("ownerPriceExpectation", e.target.value)}
+          placeholder="napr. 250000"
+          className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+          style={inputStyle}
+          min={1}
+          max={50000000}
+        />
+        <p className="mt-1 text-xs" style={{ color: SLATE_HORIZON.muted }}>
+          Nepoužívame na výpočet online odhadu — pomôže maklérovi pri osobnom kontakte.
+        </p>
       </div>
 
       {property.propertyType === "dom" && (
@@ -438,8 +597,8 @@ export function ValuationWidgetForm({ tenant }: Props) {
 
       {error && <p className="rounded-xl px-4 py-3 text-sm" style={{ background: "rgba(239,68,68,0.1)", color: "#FCA5A5" }}>{error}</p>}
 
-      <button type="submit" className="w-full rounded-xl py-3.5 text-sm font-bold uppercase tracking-wide text-white" style={{ background: brand }}>
-        Pokračovať na kontakt
+      <button type="submit" disabled={loading} className="w-full rounded-xl py-3.5 text-sm font-bold uppercase tracking-wide text-white disabled:opacity-60" style={{ background: brand }}>
+        {loading ? "Počítam odhad…" : abVariant === "B" ? "Zobraziť môj odhad" : "Pokračovať na kontakt"}
       </button>
     </form>
   );
