@@ -88,6 +88,7 @@ describe("valuation_tenants public RLS boundary", () => {
         logo_url: null,
         primary_color: "#6D28D9",
         calendly_url: null,
+        is_sandbox: false,
       },
     ]);
 
