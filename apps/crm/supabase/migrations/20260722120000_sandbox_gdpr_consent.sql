@@ -48,7 +48,9 @@ SET
   is_sandbox = EXCLUDED.is_sandbox;
 
 -- Public branding RPC exposes sandbox flag for UI badge
-CREATE OR REPLACE FUNCTION public.get_valuation_tenant(requested_slug text)
+DROP FUNCTION IF EXISTS public.get_valuation_tenant(text);
+
+CREATE FUNCTION public.get_valuation_tenant(requested_slug text)
 RETURNS TABLE (
   slug text,
   brand_name text,
