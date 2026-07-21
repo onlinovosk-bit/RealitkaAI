@@ -1,9 +1,10 @@
+import { LEGACY_CONSENT_NOTE_TAG, PRIVACY_POLICY_VERSION } from "@/lib/valuation/config";
 import type {
   ValuationEstimateResult,
   ValuationLeadPayload,
 } from "@/lib/valuation/types";
 
-const CONSENT_VERSION = "valuation-widget-v1-2026-07";
+export const CONSENT_VERSION = PRIVACY_POLICY_VERSION;
 
 export function buildValuationLeadInsert(
   agencyId: string,
@@ -35,7 +36,7 @@ export function buildValuationLeadInsert(
       ? `majitel_cena=${payload.ownerPriceExpectation}EUR`
       : "",
     formatEstimateNote(estimate),
-    `gdpr_ver=${CONSENT_VERSION}`,
+    LEGACY_CONSENT_NOTE_TAG,
   ].filter(Boolean);
 
   const consentAt = new Date().toISOString();
@@ -71,5 +72,3 @@ function formatEstimateNote(estimate?: ValuationEstimateResult): string {
   if (estimate.noEstimate) return "odhad=bez_verifikovanych_dat";
   return `odhad=${estimate.low}-${estimate.high}EUR;region=${estimate.regionCode ?? "?"};zdroj=${estimate.sourceNote ?? "?"}`;
 }
-
-export { CONSENT_VERSION };

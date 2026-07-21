@@ -7,6 +7,7 @@ export type ValuationTenantBranding = {
   logoUrl: string | null;
   primaryColor: string;
   calendlyUrl: string | null;
+  isSandbox: boolean;
 };
 
 export type ValuationPageContext = ValuationTenantBranding & {
@@ -15,6 +16,11 @@ export type ValuationPageContext = ValuationTenantBranding & {
   subhead: string;
   contactPromise: string;
   privacyUrl: string;
+};
+
+export type ValuationTenantRecord = {
+  agencyId: string;
+  isSandbox: boolean;
 };
 
 export async function fetchEnabledTenantBranding(
@@ -39,22 +45,37 @@ export async function fetchEnabledTenantBranding(
     logoUrl: row.logo_url ? String(row.logo_url) : null,
     primaryColor: String(row.primary_color ?? "#6D28D9"),
     calendlyUrl: row.calendly_url ? String(row.calendly_url) : null,
+    isSandbox: Boolean(row.is_sandbox),
   };
 }
 
-export async function resolveTenantAgencyId(
+export async function resolveTenantRecord(
   supabase: SupabaseClient,
   slug: string,
-): Promise<string | null> {
+): Promise<ValuationTenantRecord | null> {
   const { data, error } = await supabase
     .from("valuation_tenants")
-    .select("agency_id")
+    .select("agency_id, is_sandbox")
     .eq("slug", slug.trim().toLowerCase())
     .eq("enabled", true)
     .maybeSingle();
 
   if (error) throw error;
-  return data?.agency_id ?? null;
+  if (!data?.agency_id) return null;
+
+  return {
+    agencyId: String(data.agency_id),
+    isSandbox: Boolean(data.is_sandbox),
+  };
+}
+
+/** @deprecated Use resolveTenantRecord — kept for call sites that only need agency id. */
+export async function resolveTenantAgencyId(
+  supabase: SupabaseClient,
+  slug: string,
+): Promise<string | null> {
+  const record = await resolveTenantRecord(supabase, slug);
+  return record?.agencyId ?? null;
 }
 
 export function mergeTenantWithAgencyConfig(

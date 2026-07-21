@@ -11,7 +11,8 @@ import {
   trackValuationShown,
   trackValuationStarted,
   trackValuationStepCompleted,
-} from "@/lib/valuation/analytics";import type {
+} from "@/lib/valuation/analytics";
+import type {
   ValuationCondition,
   ValuationEstimateResult,
   ValuationHeating,
@@ -298,11 +299,23 @@ export function ValuationWidgetForm({ tenant, abVariant, sessionId }: Props) {
             {estimate.sourceQuarter ? ` · Zdroj: NBS ${estimate.sourceQuarter}.` : ""}
           </p>
           <p className="mt-4 text-sm leading-relaxed" style={{ color: SLATE_HORIZON.muted }}>
-            Maklér z {tenant.brandName} vás bude kontaktovať na {contact.phone}
-            {contact.email ? ` alebo ${contact.email}` : ""}. {tenant.contactPromise}
+            {tenant.isSandbox ? (
+              <>
+                Toto je ukážka. Vlastnú kalkulačku pre vašu kanceláriu vám spustíme —{" "}
+                <a href="mailto:info@revolis.ai" className="underline" style={{ color: brand }}>
+                  info@revolis.ai
+                </a>
+                .
+              </>
+            ) : (
+              <>
+                Maklér z {tenant.brandName} vás bude kontaktovať na {contact.phone}
+                {contact.email ? ` alebo ${contact.email}` : ""}. {tenant.contactPromise}
+              </>
+            )}
           </p>
         </div>
-        {tenant.calendlyUrl && (
+        {!tenant.isSandbox && tenant.calendlyUrl && (
           <a
             href={tenant.calendlyUrl}
             target="_blank"

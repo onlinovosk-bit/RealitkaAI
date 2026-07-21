@@ -78,6 +78,8 @@
   "push_subscriptions",
   "rate_limit_buckets",
   "realsoft_import_logs",
+  "lead_consents",
+  "sandbox_submissions",
   "realvia_metrics",
   "realvia_price_history",
   "realvia_processing_queue",

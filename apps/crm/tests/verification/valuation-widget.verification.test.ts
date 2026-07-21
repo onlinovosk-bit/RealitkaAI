@@ -130,4 +130,41 @@ describe("valuation widget", () => {
     expect(row.note).toContain("odhad=100000-120000EUR");
     expect(row.timeline).toBe("do 12 mesiacov");
   });
+
+  it("includes sandbox demo tenant migration and consent table", () => {
+    const migration = fs.readFileSync(
+      path.join(CRM_ROOT, "supabase/migrations/20260722120000_sandbox_gdpr_consent.sql"),
+      "utf8",
+    );
+    expect(migration).toContain("is_sandbox");
+    expect(migration).toContain("sandbox_submissions");
+    expect(migration).toContain("lead_consents");
+    expect(migration).toContain("'demo'");
+
+    expect(fs.existsSync(path.join(CRM_ROOT, "src/lib/valuation/sandbox.ts"))).toBe(true);
+    expect(fs.existsSync(path.join(CRM_ROOT, "src/lib/valuation/consent-mapper.ts"))).toBe(true);
+
+    const submitRoute = fs.readFileSync(
+      path.join(CRM_ROOT, "src/app/api/valuation/submit/route.ts"),
+      "utf8",
+    );
+    expect(submitRoute).toContain("sandbox_submissions");
+    expect(submitRoute).toContain("lead_consents");
+    expect(submitRoute).toContain("valuation-sandbox-submit");
+
+    const page = fs.readFileSync(
+      path.join(CRM_ROOT, "src/app/(marketing)/odhad/[agencySlug]/page.tsx"),
+      "utf8",
+    );
+    expect(page).toContain("Ukážková verzia");
+
+    const form = fs.readFileSync(
+      path.join(CRM_ROOT, "src/components/valuation/ValuationWidgetForm.tsx"),
+      "utf8",
+    );
+    expect(form).toContain("info@revolis.ai");
+    expect(form).toContain("tenant.isSandbox");
+
+    expect(getValuationAgency("demo")?.displayName).toContain("Ukážková");
+  });
 });
