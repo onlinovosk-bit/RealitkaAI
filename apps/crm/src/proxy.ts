@@ -24,6 +24,7 @@ const PUBLIC_PATHS = new Set([
   "/api/leads/inbound",
   "/api/acquire/email",
   "/api/valuation/submit",
+  "/api/valuation/estimate",
 ]);
 
 const CRON_PATH_PREFIX = "/api/agents";
@@ -67,6 +68,7 @@ const PUBLIC_STATIC_FILES = new Set([
 
 function isPublic(pathname: string): boolean {
   if (PUBLIC_PATHS.has(pathname)) return true;
+  if (pathname.startsWith("/odhad/")) return true;
   if (PUBLIC_STATIC_FILES.has(pathname)) return true;
   if (pathname.startsWith("/api/healthz")) return true;
   if (pathname.startsWith("/_next")) return true;

@@ -1,0 +1,192 @@
+{
+  "meta": {
+    "source": "NBS — Ceny nehnuteľností na bývanie podľa krajov (€/m²)",
+    "source_url": "https://nbs.sk/statisticke-udaje/vybrane-makroekonomicke-ukazovatele/ceny-nehnutelnosti-na-byvanie/ceny-nehnutelnosti-na-byvanie-podla-krajov/",
+    "quarter": "2026Q1",
+    "retrieved_at": "2026-07-20",
+    "retrieval_note": "Oficiálny NBS CSV export dodaný founderom (real-estate-price-by-region.csv).",
+    "license_note": "Verejná štatistika NBS; atribúcia vo widget UI povinná; viď docs/architecture/valuation-data-source-card.md.",
+    "methodology_note": "Ponukové ceny; transakčné typicky 5–10 % nižšie — kompenzované asymetrickým pásmom.",
+    "next_update_due": "2026-08-15",
+    "unit": "EUR_per_m2"
+  },
+  "band_rules": {
+    "type_specific": {
+      "lower_pct": 12,
+      "upper_pct": 8
+    },
+    "region_all_fallback": {
+      "lower_pct": 14,
+      "upper_pct": 9
+    },
+    "national_type_fallback": {
+      "lower_pct": 12,
+      "upper_pct": 8
+    },
+    "round_to_eur": 1000
+  },
+  "regions": {
+    "SK": {
+      "label": "Slovensko (celoštátny priemer)",
+      "all": {
+        "value": 3005.25,
+        "verified": true,
+        "source_note": "NBS CSV 1Q2026"
+      },
+      "byty": {
+        "value": 3378.0,
+        "verified": true,
+        "source_note": "NBS komentár 1Q2026"
+      },
+      "domy": {
+        "value": 2118.0,
+        "verified": true,
+        "source_note": "NBS komentár 1Q2026"
+      }
+    },
+    "KE": {
+      "label": "Košický kraj",
+      "all": {
+        "value": 2682.32,
+        "verified": true,
+        "source_note": "NBS CSV 1Q2026"
+      },
+      "byty": {
+        "value": null,
+        "verified": false,
+        "source_note": "Kraj×typ nie je v CSV 'podľa krajov' — engine používa region_all fallback pásmo"
+      },
+      "domy": {
+        "value": null,
+        "verified": false,
+        "source_note": "dtto"
+      }
+    },
+    "PO": {
+      "label": "Prešovský kraj",
+      "all": {
+        "value": 2411.77,
+        "verified": true,
+        "source_note": "NBS CSV 1Q2026 — OFICIÁLNE, nahrádza skorší odvodený odhad"
+      },
+      "byty": {
+        "value": null,
+        "verified": false,
+        "source_note": "Kraj×typ nie je v CSV — region_all fallback"
+      },
+      "domy": {
+        "value": null,
+        "verified": false,
+        "source_note": "dtto"
+      }
+    },
+    "BA": {
+      "label": "Bratislavský kraj",
+      "all": {
+        "value": 3844.97,
+        "verified": true,
+        "source_note": "NBS CSV 1Q2026"
+      },
+      "byty": {
+        "value": null,
+        "verified": false,
+        "source_note": "region_all fallback"
+      },
+      "domy": {
+        "value": null,
+        "verified": false,
+        "source_note": "dtto"
+      }
+    },
+    "TT": {
+      "label": "Trnavský kraj",
+      "all": {
+        "value": 2014.54,
+        "verified": true,
+        "source_note": "NBS CSV 1Q2026"
+      },
+      "byty": {
+        "value": null,
+        "verified": false,
+        "source_note": "region_all fallback"
+      },
+      "domy": {
+        "value": null,
+        "verified": false,
+        "source_note": "dtto"
+      }
+    },
+    "NR": {
+      "label": "Nitriansky kraj",
+      "all": {
+        "value": 1627.19,
+        "verified": true,
+        "source_note": "NBS CSV 1Q2026"
+      },
+      "byty": {
+        "value": null,
+        "verified": false,
+        "source_note": "region_all fallback"
+      },
+      "domy": {
+        "value": null,
+        "verified": false,
+        "source_note": "dtto"
+      }
+    },
+    "TN": {
+      "label": "Trenčiansky kraj",
+      "all": {
+        "value": 1878.18,
+        "verified": true,
+        "source_note": "NBS CSV 1Q2026"
+      },
+      "byty": {
+        "value": null,
+        "verified": false,
+        "source_note": "region_all fallback"
+      },
+      "domy": {
+        "value": null,
+        "verified": false,
+        "source_note": "dtto"
+      }
+    },
+    "ZA": {
+      "label": "Žilinský kraj",
+      "all": {
+        "value": 2282.46,
+        "verified": true,
+        "source_note": "NBS CSV 1Q2026"
+      },
+      "byty": {
+        "value": null,
+        "verified": false,
+        "source_note": "region_all fallback"
+      },
+      "domy": {
+        "value": null,
+        "verified": false,
+        "source_note": "dtto"
+      }
+    },
+    "BB": {
+      "label": "Banskobystrický kraj",
+      "all": {
+        "value": 1864.67,
+        "verified": true,
+        "source_note": "NBS CSV 1Q2026"
+      },
+      "byty": {
+        "value": null,
+        "verified": false,
+        "source_note": "region_all fallback"
+      },
+      "domy": {
+        "value": null,
+        "verified": false,
+        "source_note": "dtto"
+      }
+    }
+  }
+}
