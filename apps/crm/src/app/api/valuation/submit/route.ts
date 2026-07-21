@@ -4,9 +4,11 @@ import { runInboundLeadTriageAndNotify } from "@/lib/acquire/inbound-lead-triage
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/rate-limit";
 import { enrichEstimateCommentary } from "@/lib/valuation/commentary";
+import { buildLeadConsentInsert } from "@/lib/valuation/consent-mapper";
 import { buildDeterministicEstimate } from "@/lib/valuation/estimate-engine";
 import { buildValuationLeadInsert } from "@/lib/valuation/lead-mapper";
-import { resolveTenantAgencyId } from "@/lib/valuation/tenant";
+import { buildSandboxSubmissionPayload, hashClientIp } from "@/lib/valuation/sandbox";
+import { resolveTenantRecord } from "@/lib/valuation/tenant";
 
 const propertySchema = z.object({
   propertyType: z.enum(["byt", "dom"]),
@@ -40,13 +42,29 @@ const bodySchema = propertySchema.extend({
   sessionId: z.string().trim().max(64).optional(),
 });
 
+function buildPropertyInput(payload: z.infer<typeof bodySchema>) {
+  return {
+    propertyType: payload.propertyType,
+    location: payload.location,
+    postalCode: payload.postalCode,
+    sqm: payload.sqm,
+    rooms: payload.rooms,
+    condition: payload.condition,
+    floor: payload.floor,
+    totalFloors: payload.totalFloors,
+    yearBuilt: payload.yearBuilt,
+    hasElevator: payload.hasElevator,
+    hasBalcony: payload.hasBalcony,
+    hasParking: payload.hasParking,
+    landSqm: payload.landSqm,
+    heating: payload.heating,
+    ownerPriceExpectation: payload.ownerPriceExpectation,
+  };
+}
+
 export async function POST(request: Request) {
   try {
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-    const { allowed } = await rateLimit(`valuation-submit:${ip}`, 8, 60_000);
-    if (!allowed) {
-      return NextResponse.json({ ok: false, error: "Príliš veľa pokusov. Skúste neskôr." }, { status: 429 });
-    }
 
     const raw = await request.json();
     if (raw?.hp) {
@@ -67,36 +85,52 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: "Služba nie je dostupná." }, { status: 503 });
     }
 
-    const agencyId = await resolveTenantAgencyId(supabase, payload.agencySlug);
-    if (!agencyId) {
+    const tenant = await resolveTenantRecord(supabase, payload.agencySlug);
+    if (!tenant) {
       return NextResponse.json({ ok: false, error: "Neplatná agentúra." }, { status: 404 });
     }
 
-    const propertyInput = {
-      propertyType: payload.propertyType,
-      location: payload.location,
-      postalCode: payload.postalCode,
-      sqm: payload.sqm,
-      rooms: payload.rooms,
-      condition: payload.condition,
-      floor: payload.floor,
-      totalFloors: payload.totalFloors,
-      yearBuilt: payload.yearBuilt,
-      hasElevator: payload.hasElevator,
-      hasBalcony: payload.hasBalcony,
-      hasParking: payload.hasParking,
-      landSqm: payload.landSqm,
-      heating: payload.heating,
-      ownerPriceExpectation: payload.ownerPriceExpectation,
-    };
+    const rateKey = tenant.isSandbox
+      ? `valuation-sandbox-submit:${ip}`
+      : `valuation-submit:${ip}`;
+    const rateLimitMax = tenant.isSandbox ? 5 : 8;
+    const rateLimitWindow = tenant.isSandbox ? 3_600_000 : 60_000;
+    const { allowed } = await rateLimit(rateKey, rateLimitMax, rateLimitWindow);
+    if (!allowed) {
+      return NextResponse.json({ ok: false, error: "Príliš veľa pokusov. Skúste neskôr." }, { status: 429 });
+    }
 
+    const propertyInput = buildPropertyInput(payload);
     const baseEstimate = buildDeterministicEstimate(propertyInput);
     const estimate = {
       ...baseEstimate,
       commentary: await enrichEstimateCommentary(propertyInput, baseEstimate),
     };
 
-    const leadRow = buildValuationLeadInsert(agencyId, {
+    if (tenant.isSandbox) {
+      const sandboxPayload = buildSandboxSubmissionPayload({
+        ...propertyInput,
+        sellWithin12Months: payload.sellWithin12Months,
+        abVariant: payload.abVariant,
+        sessionId: payload.sessionId,
+        estimate,
+      });
+
+      const { error: sandboxError } = await supabase.from("sandbox_submissions").insert({
+        tenant_slug: payload.agencySlug.trim().toLowerCase(),
+        payload: sandboxPayload,
+        ip_hash: hashClientIp(ip),
+      });
+
+      if (sandboxError) {
+        console.error("[POST /api/valuation/submit] sandbox", sandboxError.message);
+        return NextResponse.json({ ok: false, error: "Nepodarilo sa uložiť dopyt." }, { status: 500 });
+      }
+
+      return NextResponse.json({ ok: true, leadId: crypto.randomUUID(), estimate, sandbox: true });
+    }
+
+    const leadRow = buildValuationLeadInsert(tenant.agencyId, {
       ...payload,
       ...propertyInput,
       estimate,
@@ -115,11 +149,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: "Nepodarilo sa uložiť dopyt." }, { status: 500 });
     }
 
+    const consentRow = buildLeadConsentInsert({
+      leadId: inserted.id,
+      tenantSlug: payload.agencySlug,
+      marketingOptIn: payload.marketingOptIn ?? false,
+      acknowledgedAt: leadRow.gdpr_consent_at,
+    });
+
+    const { error: consentError } = await supabase.from("lead_consents").insert(consentRow);
+    if (consentError) {
+      console.error("[POST /api/valuation/submit] consent", consentError.message);
+      await supabase.from("leads").delete().eq("id", inserted.id);
+      return NextResponse.json({ ok: false, error: "Nepodarilo sa uložiť dopyt." }, { status: 500 });
+    }
+
     void runInboundLeadTriageAndNotify(
       supabase,
       inserted,
       {
-        agencyId,
+        agencyId: tenant.agencyId,
         name: payload.name,
         status: "Nový",
         note: leadRow.note,

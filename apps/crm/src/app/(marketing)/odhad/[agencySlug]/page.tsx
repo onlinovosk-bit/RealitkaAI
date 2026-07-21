@@ -8,7 +8,7 @@ import {
   fetchEnabledTenantBranding,
   getAgencyConfigForSlug,
   mergeTenantWithAgencyConfig,
-  resolveTenantAgencyId,
+  resolveTenantRecord,
 } from "@/lib/valuation/tenant";
 
 type PageProps = {
@@ -36,13 +36,14 @@ export default async function ValuationWidgetPage({ params }: PageProps) {
   if (!branding) notFound();
 
   const admin = createServiceRoleClient();
-  const agencyId = admin ? await resolveTenantAgencyId(admin, slug) : null;
-  if (!agencyId) notFound();
+  const tenantRecord = admin ? await resolveTenantRecord(admin, slug) : null;
+  if (!tenantRecord) notFound();
 
   const config = getAgencyConfigForSlug(slug);
   const tenant = {
     ...mergeTenantWithAgencyConfig(branding, config),
-    agencyId,
+    agencyId: tenantRecord.agencyId,
+    isSandbox: tenantRecord.isSandbox || branding.isSandbox,
   };
 
   return (
@@ -51,7 +52,15 @@ export default async function ValuationWidgetPage({ params }: PageProps) {
       style={{ background: SLATE_HORIZON.bg, color: SLATE_HORIZON.ink }}
     >
       <div className="mx-auto max-w-2xl text-center">
-        {tenant.logoUrl && (
+        {tenant.isSandbox && (
+          <span
+            className="mb-4 inline-block rounded-full px-3 py-1 text-xs font-bold uppercase tracking-widest"
+            style={{ background: `${tenant.primaryColor}22`, color: tenant.primaryColor }}
+          >
+            Ukážková verzia
+          </span>
+        )}
+        {!tenant.isSandbox && tenant.logoUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={tenant.logoUrl} alt={tenant.brandName} className="mx-auto mb-4 h-12 object-contain" />
         )}
@@ -69,7 +78,9 @@ export default async function ValuationWidgetPage({ params }: PageProps) {
       </div>
 
       <p className="mx-auto mt-8 max-w-lg text-center text-xs leading-relaxed" style={{ color: SLATE_HORIZON.muted }}>
-        Technicky zabezpečuje Revolis · údaje spracúva {tenant.brandName} ako prevádzkovateľ.
+        {tenant.isSandbox
+          ? "Technicky zabezpečuje Revolis · ukážková verzia bez ukladania kontaktu do CRM."
+          : `Technicky zabezpečuje Revolis · údaje spracúva ${tenant.brandName} ako prevádzkovateľ.`}
       </p>
     </main>
   );

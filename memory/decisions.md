@@ -169,7 +169,13 @@
 
 ---
 
-## [2026-06-21] - Smolko Klienti CSV — VALIDATE CLOSED (nie BUILD)
+## [2026-07-22] - Sandbox demo + lead_consents (GO founder)
+
+- **Brief:** `docs/briefs/overnight/overnight-brief-sandbox-gdpr.md` — GO na migráciu 2026-07-22.
+- **Rozhodnutie:** Interná sandbox agency `22222222-...` + slug `demo` (FK bez nullable zmeny). Consent do `lead_consents`, nie ďalšie stĺpce na `leads`.
+- **Migrácia:** `20260722120000_sandbox_gdpr_consent.sql` — `is_sandbox`, `sandbox_submissions`, `lead_consents`, seed `/odhad/demo`.
+- **Brána po merge:** founder mobile smoke `/odhad/demo` + Supabase check (0 leads) pred zdieľaním demo linku.
+
 
 - **Fakt z reálneho exportu:** stĺpce `ID, Email, Telefón, Meno, Priezvisko, Meno vlastníka, Rola vlastníka`.
 - **Už v DB (439 leadov z Realvia):** ID, email, telefón, meno, priezvisko — ~95% duplikát.
