@@ -61,6 +61,7 @@ describe("valuation_tenants public RLS boundary", () => {
           brand_name: "Enabled valuation tenant",
           primary_color: "#6D28D9",
           enabled: true,
+          is_sandbox: false,
         },
         {
           agency_id: DISABLED_AGENCY_ID,
@@ -68,6 +69,7 @@ describe("valuation_tenants public RLS boundary", () => {
           brand_name: "Disabled valuation tenant",
           primary_color: "#6D28D9",
           enabled: false,
+          is_sandbox: false,
         },
       ],
       { onConflict: "slug" },
