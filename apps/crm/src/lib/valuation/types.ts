@@ -28,6 +28,8 @@ export type ValuationPropertyInput = {
   hasParking?: boolean;
   landSqm?: number;
   heating?: ValuationHeating;
+  /** Stored on lead only — never fed into estimate engine or LLM commentary. */
+  ownerPriceExpectation?: number;
 };
 
 export type ValuationEstimateResult = {
@@ -58,4 +60,6 @@ export type ValuationLeadPayload = ValuationPropertyInput &
   ValuationContactInput & {
     agencySlug: string;
     estimate?: ValuationEstimateResult;
+    abVariant?: "A" | "B";
+    sessionId?: string;
   };

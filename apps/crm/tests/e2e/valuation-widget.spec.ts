@@ -14,7 +14,7 @@ test.describe("Valuation widget — /odhad/reality-smolko", () => {
     await expect(page.getByText(/Krok 2 z 3/i)).not.toBeVisible();
   });
 
-  test("estimate API requires contact before returning band", async ({ request }) => {
+  test("estimate API allows variant B preview without contact", async ({ request }) => {
     const blocked = await request.post("/api/valuation/estimate", {
       data: {
         propertyType: "byt",
@@ -23,6 +23,17 @@ test.describe("Valuation widget — /odhad/reality-smolko", () => {
       },
     });
     expect(blocked.status()).toBe(400);
+
+    const preview = await request.post("/api/valuation/estimate", {
+      data: {
+        propertyType: "byt",
+        location: "Košice",
+        sqm: 75,
+        abVariant: "B",
+        sessionId: "test-session-preview-001",
+      },
+    });
+    expect(preview.status()).toBe(200);
 
     const res = await request.post("/api/valuation/estimate", {
       data: {

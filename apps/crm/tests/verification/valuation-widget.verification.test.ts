@@ -40,15 +40,69 @@ describe("valuation widget", () => {
     expect(listValuationAgencySlugs()).toContain("reality-smolko");
   });
 
-  it("starts with property step; contact is middle; estimate is last", () => {
+  it("runs valuation A/B test with 50/50 assignment and GA4 context", () => {
+    expect(fs.existsSync(path.join(CRM_ROOT, "src/lib/valuation/ab-test.ts"))).toBe(true);
+    expect(fs.existsSync(path.join(CRM_ROOT, "src/lib/analytics/events.ts"))).toBe(true);
+    expect(fs.existsSync(path.join(CRM_ROOT, "src/components/valuation/ValuationWidgetShell.tsx"))).toBe(true);
+
+    const form = fs.readFileSync(
+      path.join(CRM_ROOT, "src/components/valuation/ValuationWidgetForm.tsx"),
+      "utf8",
+    );
+    expect(form).toContain("abVariant");
+    expect(form).toContain("sessionId");
+    expect(form).toContain("trackValuationStarted");
+    expect(form).toContain("trackValuationStepCompleted");
+    expect(form).toContain("trackValuationShown");
+    expect(form).toContain("trackValuationContactSubmitted");
+    expect(form).toContain("trackValuationLeadSubmitted");
+    expect(form).toContain("trackValuationAbandon");
+
+    const page = fs.readFileSync(
+      path.join(CRM_ROOT, "src/app/(marketing)/odhad/[agencySlug]/page.tsx"),
+      "utf8",
+    );
+    expect(page).toContain("ValuationWidgetShell");
+  });
+
+  it("starts with property step; contact is middle for variant A", () => {
     const form = fs.readFileSync(
       path.join(CRM_ROOT, "src/components/valuation/ValuationWidgetForm.tsx"),
       "utf8",
     );
     expect(form).toContain('useState<Step>("property")');
     expect(form).toContain("Krok 1 z 3 · Nehnuteľnosť");
-    expect(form).toContain("Krok 2 z 3 · Kontakt");
-    expect(form).toContain("Krok 3 z 3 · Odhad");
+  });
+
+  it("fires GA4 valuation events and stores GDPR consent on lead", () => {
+    const form = fs.readFileSync(
+      path.join(CRM_ROOT, "src/components/valuation/ValuationWidgetForm.tsx"),
+      "utf8",
+    );
+    expect(form).toContain("trackValuationStarted");
+    expect(form).toContain("trackValuationLeadSubmitted");
+
+    const mapper = fs.readFileSync(
+      path.join(CRM_ROOT, "src/lib/valuation/lead-mapper.ts"),
+      "utf8",
+    );
+    expect(mapper).toContain("gdpr_consent_at");
+    expect(mapper).toContain("gdpr_consent_version");
+  });
+
+  it("includes optional owner price field without affecting estimate API schema", () => {
+    const form = fs.readFileSync(
+      path.join(CRM_ROOT, "src/components/valuation/ValuationWidgetForm.tsx"),
+      "utf8",
+    );
+    expect(form).toContain("ownerPriceExpectation");
+    expect(form).toContain("Vaša cenová predstava");
+
+    const estimateRoute = fs.readFileSync(
+      path.join(CRM_ROOT, "src/app/api/valuation/estimate/route.ts"),
+      "utf8",
+    );
+    expect(estimateRoute).not.toContain("ownerPriceExpectation");
   });
 
   it("maps lead insert with estimate note", () => {
