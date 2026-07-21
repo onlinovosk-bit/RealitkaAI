@@ -15,6 +15,8 @@ type Props = {
   tenant: ValuationPageContext;
 };
 
+type Step = "property" | "contact" | "result";
+
 type PropertyForm = {
   propertyType: ValuationPropertyType;
   city: string;
@@ -30,13 +32,13 @@ type PropertyForm = {
   hasParking: boolean;
   landSqm: string;
   heating: ValuationHeating | "";
+  sellTimeline: string;
 };
 
 type ContactForm = {
   name: string;
   phone: string;
   email: string;
-  sellTimeline: string;
   privacyAck: boolean;
   marketingOptIn: boolean;
 };
@@ -56,13 +58,13 @@ const INITIAL_PROPERTY: PropertyForm = {
   hasParking: false,
   landSqm: "",
   heating: "",
+  sellTimeline: "",
 };
 
 const INITIAL_CONTACT: ContactForm = {
   name: "",
   phone: "",
   email: "",
-  sellTimeline: "",
   privacyAck: false,
   marketingOptIn: false,
 };
@@ -76,7 +78,7 @@ function sellWithin12Months(timeline: string): boolean {
 }
 
 export function ValuationWidgetForm({ tenant }: Props) {
-  const [step, setStep] = useState<"contact" | "property" | "result">("contact");
+  const [step, setStep] = useState<Step>("property");
   const [property, setProperty] = useState<PropertyForm>(INITIAL_PROPERTY);
   const [contact, setContact] = useState<ContactForm>(INITIAL_CONTACT);
   const [estimate, setEstimate] = useState<ValuationEstimateResult | null>(null);
@@ -94,23 +96,25 @@ export function ValuationWidgetForm({ tenant }: Props) {
     setContact((prev) => ({ ...prev, [key]: value }));
   }
 
-  function handleContactContinue(e: React.FormEvent) {
+  function handlePropertyContinue(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setStep("contact");
+  }
+
+  async function handleContactSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+
     if (!contact.privacyAck) {
-      setError("Pred pokračovaním potvrďte informácie o ochrane údajov.");
+      setError("Pred zobrazením odhadu potvrďte informácie o ochrane údajov.");
       return;
     }
     if (contact.phone.trim().length < 6) {
       setError("Zadajte platné telefónne číslo.");
       return;
     }
-    setStep("property");
-  }
 
-  async function handlePropertySubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
     setLoading(true);
     const location = buildLocation(property.city, property.postalCode);
     try {
@@ -136,8 +140,8 @@ export function ValuationWidgetForm({ tenant }: Props) {
           name: contact.name,
           email: contact.email,
           phone: contact.phone,
-          sellTimeline: contact.sellTimeline || undefined,
-          sellWithin12Months: sellWithin12Months(contact.sellTimeline),
+          sellTimeline: property.sellTimeline || undefined,
+          sellWithin12Months: sellWithin12Months(property.sellTimeline),
           privacyAck: true,
           marketingOptIn: contact.marketingOptIn,
           hp,
@@ -178,6 +182,9 @@ export function ValuationWidgetForm({ tenant }: Props) {
       <div className="mx-auto max-w-lg space-y-5 rounded-3xl p-6 sm:p-8" style={cardStyle}>
         <div>
           <p className="text-xs font-bold uppercase tracking-widest" style={{ color: brand }}>
+            Krok 3 z 3 · Odhad
+          </p>
+          <p className="mt-2 text-xs font-bold uppercase tracking-widest" style={{ color: brand }}>
             Ďakujeme, {contact.name.split(" ")[0]}
           </p>
           <h2 className="mt-2 text-2xl font-bold" style={{ color: SLATE_HORIZON.ink }}>
@@ -221,151 +228,110 @@ export function ValuationWidgetForm({ tenant }: Props) {
     );
   }
 
-  if (step === "property") {
+  if (step === "contact") {
     return (
-      <form onSubmit={handlePropertySubmit} className="mx-auto max-w-lg space-y-5 rounded-3xl p-6 sm:p-8" style={cardStyle}>
+      <form onSubmit={handleContactSubmit} className="mx-auto max-w-lg space-y-5 rounded-3xl p-6 sm:p-8" style={cardStyle}>
         <input type="text" name="hp" value={hp} onChange={(e) => setHp(e.target.value)} className="hidden" tabIndex={-1} autoComplete="off" aria-hidden />
 
         <div>
           <p className="text-xs font-bold uppercase tracking-widest" style={{ color: brand }}>
-            Krok 2 z 2 · Nehnuteľnosť
+            Krok 2 z 3 · Kontakt
           </p>
-          <p className="mt-2 text-sm" style={{ color: SLATE_HORIZON.muted }}>
-            Doplňte parametre — odhad uvidíte hneď po odoslaní.
+          <p className="mt-2 text-sm leading-relaxed" style={{ color: SLATE_HORIZON.muted }}>
+            Pre zobrazenie orientačného odhadu zadajte kontakt — maklér vás potom osobne navštívi alebo zavolá.
           </p>
         </div>
 
         <div>
-          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>Typ nehnuteľnosti</label>
-          <select value={property.propertyType} onChange={(e) => updateProperty("propertyType", e.target.value as ValuationPropertyType)} className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle} required>
-            <option value="byt">Byt</option>
-            <option value="dom">Rodinný dom</option>
-          </select>
+          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>Meno a priezvisko</label>
+          <input type="text" value={contact.name} onChange={(e) => updateContact("name", e.target.value)} className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle} required maxLength={200} />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>Mesto / časť</label>
-            <input type="text" value={property.city} onChange={(e) => updateProperty("city", e.target.value)} placeholder="Prešov" className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle} required minLength={2} />
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>Telefón</label>
+            <input type="tel" value={contact.phone} onChange={(e) => updateContact("phone", e.target.value)} className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle} required minLength={6} maxLength={50} />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>PSČ</label>
-            <input type="text" value={property.postalCode} onChange={(e) => updateProperty("postalCode", e.target.value)} placeholder="08001" className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle} maxLength={12} />
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>E-mail</label>
+            <input type="email" value={contact.email} onChange={(e) => updateContact("email", e.target.value)} className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle} required maxLength={254} />
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>Úžitková plocha (m²)</label>
-            <input type="number" value={property.sqm} onChange={(e) => updateProperty("sqm", e.target.value)} className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle} required min={1} max={10000} />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>Počet izieb</label>
-            <input type="number" value={property.rooms} onChange={(e) => updateProperty("rooms", e.target.value)} className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle} min={1} max={20} />
-          </div>
-        </div>
+        <label className="flex items-start gap-3 text-sm leading-relaxed" style={{ color: SLATE_HORIZON.muted }}>
+          <input type="checkbox" checked={contact.privacyAck} onChange={(e) => updateContact("privacyAck", e.target.checked)} className="mt-1" required />
+          <span>
+            Beriem na vedomie{" "}
+            <Link href={tenant.privacyUrl} target="_blank" rel="noopener noreferrer" className="underline" style={{ color: brand }}>
+              informácie o ochrane osobných údajov
+            </Link>{" "}
+            ({tenant.brandName}).
+          </span>
+        </label>
 
-        {property.propertyType === "dom" && (
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>Pozemok (m²)</label>
-            <input type="number" value={property.landSqm} onChange={(e) => updateProperty("landSqm", e.target.value)} className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle} min={1} max={100000} />
-          </div>
-        )}
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>Stav</label>
-            <select value={property.condition} onChange={(e) => updateProperty("condition", e.target.value as ValuationCondition | "")} className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle}>
-              <option value="">Neuvedené</option>
-              <option value="povodny">Pôvodný stav</option>
-              <option value="ciastocna">Čiastočná rekonštrukcia</option>
-              <option value="kompletna">Kompletná rekonštrukcia</option>
-              <option value="novostavba">Novostavba</option>
-            </select>
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>Rok výstavby</label>
-            <input type="number" value={property.yearBuilt} onChange={(e) => updateProperty("yearBuilt", e.target.value)} className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle} min={1800} max={2035} placeholder="1990" />
-          </div>
-        </div>
-
-        {property.propertyType === "byt" && (
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>Poschodie</label>
-              <input type="number" value={property.floor} onChange={(e) => updateProperty("floor", e.target.value)} className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle} min={-2} max={60} />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>Poschodí spolu</label>
-              <input type="number" value={property.totalFloors} onChange={(e) => updateProperty("totalFloors", e.target.value)} className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle} min={1} max={60} />
-            </div>
-          </div>
-        )}
-
-        <div>
-          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>Kúrenie</label>
-          <select value={property.heating} onChange={(e) => updateProperty("heating", e.target.value as ValuationHeating | "")} className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle}>
-            <option value="">Neuvedené</option>
-            <option value="plyn">Plyn</option>
-            <option value="elektrina">Elektrina</option>
-            <option value="distancne">Centrálne / diaľkové</option>
-            <option value="tuhle">Tuhé palivo</option>
-            <option value="ine">Iné</option>
-          </select>
-        </div>
-
-        <div className="flex flex-wrap gap-4 text-sm" style={{ color: SLATE_HORIZON.muted }}>
-          {property.propertyType === "byt" && (
-            <label className="flex items-center gap-2"><input type="checkbox" checked={property.hasElevator} onChange={(e) => updateProperty("hasElevator", e.target.checked)} /> Výťah</label>
-          )}
-          <label className="flex items-center gap-2"><input type="checkbox" checked={property.hasBalcony} onChange={(e) => updateProperty("hasBalcony", e.target.checked)} /> Balkón / loggia</label>
-          <label className="flex items-center gap-2"><input type="checkbox" checked={property.hasParking} onChange={(e) => updateProperty("hasParking", e.target.checked)} /> Parkovanie</label>
-        </div>
+        <label className="flex items-start gap-3 text-sm" style={{ color: SLATE_HORIZON.muted }}>
+          <input type="checkbox" checked={contact.marketingOptIn} onChange={(e) => updateContact("marketingOptIn", e.target.checked)} className="mt-1" />
+          <span>Chcem dostávať novinky (nepovinné).</span>
+        </label>
 
         {error && <p className="rounded-xl px-4 py-3 text-sm" style={{ background: "rgba(239,68,68,0.1)", color: "#FCA5A5" }}>{error}</p>}
 
         <button type="submit" disabled={loading} className="w-full rounded-xl py-3.5 text-sm font-bold uppercase tracking-wide text-white disabled:opacity-60" style={{ background: brand }}>
           {loading ? "Počítam odhad…" : "Zobraziť môj odhad"}
         </button>
-        <button type="button" onClick={() => setStep("contact")} className="w-full text-sm underline" style={{ color: SLATE_HORIZON.muted }}>
-          Späť na kontakt
+        <button type="button" onClick={() => setStep("property")} className="w-full text-sm underline" style={{ color: SLATE_HORIZON.muted }}>
+          Späť na nehnuteľnosť
         </button>
       </form>
     );
   }
 
   return (
-    <form onSubmit={handleContactContinue} className="mx-auto max-w-lg space-y-5 rounded-3xl p-6 sm:p-8" style={cardStyle}>
+    <form onSubmit={handlePropertyContinue} className="mx-auto max-w-lg space-y-5 rounded-3xl p-6 sm:p-8" style={cardStyle}>
       <input type="text" name="hp" value={hp} onChange={(e) => setHp(e.target.value)} className="hidden" tabIndex={-1} autoComplete="off" aria-hidden />
 
       <div>
         <p className="text-xs font-bold uppercase tracking-widest" style={{ color: brand }}>
-          Krok 1 z 2 · Kontakt
+          Krok 1 z 3 · Nehnuteľnosť
         </p>
-        <p className="mt-2 text-sm leading-relaxed" style={{ color: SLATE_HORIZON.muted }}>
-          Najprv vás identifikujeme — orientačný odhad uvidíte až potom, spolu s kontaktom makléra.
+        <p className="mt-2 text-sm" style={{ color: SLATE_HORIZON.muted }}>
+          Najprv vyplňte údaje o nehnuteľnosti — orientačný odhad uvidíte v poslednom kroku po zadaní kontaktu.
         </p>
       </div>
 
       <div>
-        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>Meno a priezvisko</label>
-        <input type="text" value={contact.name} onChange={(e) => updateContact("name", e.target.value)} className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle} required maxLength={200} />
+        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>Typ nehnuteľnosti</label>
+        <select value={property.propertyType} onChange={(e) => updateProperty("propertyType", e.target.value as ValuationPropertyType)} className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle} required>
+          <option value="byt">Byt</option>
+          <option value="dom">Rodinný dom</option>
+        </select>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>Telefón</label>
-          <input type="tel" value={contact.phone} onChange={(e) => updateContact("phone", e.target.value)} className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle} required minLength={6} maxLength={50} />
+          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>Mesto / časť</label>
+          <input type="text" value={property.city} onChange={(e) => updateProperty("city", e.target.value)} placeholder="Prešov" className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle} required minLength={2} />
         </div>
         <div>
-          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>E-mail</label>
-          <input type="email" value={contact.email} onChange={(e) => updateContact("email", e.target.value)} className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle} required maxLength={254} />
+          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>PSČ</label>
+          <input type="text" value={property.postalCode} onChange={(e) => updateProperty("postalCode", e.target.value)} placeholder="08001" className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle} maxLength={12} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>Úžitková plocha (m²)</label>
+          <input type="number" value={property.sqm} onChange={(e) => updateProperty("sqm", e.target.value)} className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle} required min={1} max={10000} />
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>Počet izieb</label>
+          <input type="number" value={property.rooms} onChange={(e) => updateProperty("rooms", e.target.value)} className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle} min={1} max={20} />
         </div>
       </div>
 
       <div>
         <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>Kedy plánujete predávať?</label>
-        <select value={contact.sellTimeline} onChange={(e) => updateContact("sellTimeline", e.target.value)} className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle}>
+        <select value={property.sellTimeline} onChange={(e) => updateProperty("sellTimeline", e.target.value)} className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle}>
           <option value="">Neviem / zatiaľ nie</option>
           <option value="do 3 mesiacov">Do 3 mesiacov</option>
           <option value="do 6 mesiacov">Do 6 mesiacov</option>
@@ -374,26 +340,106 @@ export function ValuationWidgetForm({ tenant }: Props) {
         </select>
       </div>
 
-      <label className="flex items-start gap-3 text-sm leading-relaxed" style={{ color: SLATE_HORIZON.muted }}>
-        <input type="checkbox" checked={contact.privacyAck} onChange={(e) => updateContact("privacyAck", e.target.checked)} className="mt-1" required />
-        <span>
-          Beriem na vedomie{" "}
-          <Link href={tenant.privacyUrl} target="_blank" rel="noopener noreferrer" className="underline" style={{ color: brand }}>
-            informácie o ochrane osobných údajov
-          </Link>{" "}
-          ({tenant.brandName}).
-        </span>
-      </label>
+      {property.propertyType === "dom" && (
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>Pozemok (m²)</label>
+          <input type="number" value={property.landSqm} onChange={(e) => updateProperty("landSqm", e.target.value)} className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle} min={1} max={100000} />
+        </div>
+      )}
 
-      <label className="flex items-start gap-3 text-sm" style={{ color: SLATE_HORIZON.muted }}>
-        <input type="checkbox" checked={contact.marketingOptIn} onChange={(e) => updateContact("marketingOptIn", e.target.checked)} className="mt-1" />
-        <span>Chcem dostávať novinky (nepovinné).</span>
-      </label>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>Stav</label>
+          <select value={property.condition} onChange={(e) => updateProperty("condition", e.target.value as ValuationCondition | "")} className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle}>
+            <option value="">Neuvedené</option>
+            <option value="povodny">Pôvodný stav</option>
+            <option value="ciastocna">Čiastočná rekonštrukcia</option>
+            <option value="kompletna">Kompletná rekonštrukcia</option>
+            <option value="novostavba">Novostavba</option>
+          </select>
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>Rok výstavby</label>
+          <input type="number" value={property.yearBuilt} onChange={(e) => updateProperty("yearBuilt", e.target.value)} className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle} min={1800} max={2035} placeholder="1990" />
+        </div>
+      </div>
+
+      {property.propertyType === "byt" && (
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>Poschodie</label>
+            <input type="number" value={property.floor} onChange={(e) => updateProperty("floor", e.target.value)} className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle} min={-2} max={60} />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>Poschodí spolu</label>
+            <input type="number" value={property.totalFloors} onChange={(e) => updateProperty("totalFloors", e.target.value)} className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle} min={1} max={60} />
+          </div>
+        </div>
+      )}
+
+      <div>
+        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>Kúrenie</label>
+        <select value={property.heating} onChange={(e) => updateProperty("heating", e.target.value as ValuationHeating | "")} className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle}>
+          <option value="">Neuvedené</option>
+          <option value="plyn">Plyn</option>
+          <option value="elektrina">Elektrina</option>
+          <option value="distancne">Centrálne / diaľkové</option>
+          <option value="tuhle">Tuhé palivo</option>
+          <option value="ine">Iné</option>
+        </select>
+      </div>
+
+      <div className="flex flex-wrap gap-4 text-sm" style={{ color: SLATE_HORIZON.muted }}>
+        {property.propertyType === "byt" && (
+          <label className="flex items-center gap-2"><input type="checkbox" checked={property.hasElevator} onChange={(e) => updateProperty("hasElevator", e.target.checked)} /> Výťah</label>
+        )}
+        <label className="flex items-center gap-2"><input type="checkbox" checked={property.hasBalcony} onChange={(e) => updateProperty("hasBalcony", e.target.checked)} /> Balkón / loggia</label>
+        <label className="flex items-center gap-2"><input type="checkbox" checked={property.hasParking} onChange={(e) => updateProperty("hasParking", e.target.checked)} /> Parkovanie</label>
+      </div>
+
+      <hr style={{ borderColor: SLATE_HORIZON.softBorder }} />
+
+      <div>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>
+          Kontakt (nepovinné — môžete doplniť v ďalšom kroku)
+        </p>
+        <div className="space-y-4">
+          <input
+            type="text"
+            value={contact.name}
+            onChange={(e) => updateContact("name", e.target.value)}
+            placeholder="Meno a priezvisko"
+            className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+            style={inputStyle}
+            maxLength={200}
+          />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <input
+              type="tel"
+              value={contact.phone}
+              onChange={(e) => updateContact("phone", e.target.value)}
+              placeholder="Telefón"
+              className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+              style={inputStyle}
+              maxLength={50}
+            />
+            <input
+              type="email"
+              value={contact.email}
+              onChange={(e) => updateContact("email", e.target.value)}
+              placeholder="E-mail"
+              className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+              style={inputStyle}
+              maxLength={254}
+            />
+          </div>
+        </div>
+      </div>
 
       {error && <p className="rounded-xl px-4 py-3 text-sm" style={{ background: "rgba(239,68,68,0.1)", color: "#FCA5A5" }}>{error}</p>}
 
       <button type="submit" className="w-full rounded-xl py-3.5 text-sm font-bold uppercase tracking-wide text-white" style={{ background: brand }}>
-        Pokračovať na nehnuteľnosť
+        Pokračovať na kontakt
       </button>
     </form>
   );

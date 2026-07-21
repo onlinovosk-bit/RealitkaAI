@@ -40,13 +40,15 @@ describe("valuation widget", () => {
     expect(listValuationAgencySlugs()).toContain("reality-smolko");
   });
 
-  it("starts with contact step before showing estimate", () => {
+  it("starts with property step; contact is middle; estimate is last", () => {
     const form = fs.readFileSync(
       path.join(CRM_ROOT, "src/components/valuation/ValuationWidgetForm.tsx"),
       "utf8",
     );
-    expect(form).toContain('useState<"contact" | "property" | "result">("contact")');
-    expect(form).toContain("Krok 1 z 2 · Kontakt");
+    expect(form).toContain('useState<Step>("property")');
+    expect(form).toContain("Krok 1 z 3 · Nehnuteľnosť");
+    expect(form).toContain("Krok 2 z 3 · Kontakt");
+    expect(form).toContain("Krok 3 z 3 · Odhad");
   });
 
   it("maps lead insert with estimate note", () => {
