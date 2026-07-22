@@ -5,23 +5,25 @@
       "manual-approval-boundary",
       "workflow-automation"
     ],
-    "confidence": "low",
+    "confidence": "high",
     "createdAt": "2026-07-22",
     "dependencies": [
       "policy.cursor-rules"
     ],
     "evidence": [
       {
-        "commit": "uncommitted",
-        "note": "Source unavailable in the current workspace.",
+        "commit": "41d7517af47415179e32781d22f68b9a22f1156b",
+        "note": "Inventory contains 1 file(s); digest sha256:3135537f75171da226085828d82bbf76287246ac47bfc97026a91230a4e93d9b.",
         "path": "automation/n8n"
       }
     ],
     "id": "automation.n8n",
     "inventory": {
-      "digest": "unavailable",
-      "fileCount": 0,
-      "sample": []
+      "digest": "sha256:3135537f75171da226085828d82bbf76287246ac47bfc97026a91230a4e93d9b",
+      "fileCount": 1,
+      "sample": [
+        "automation/n8n/README.md"
+      ]
     },
     "lastVerifiedAt": "2026-07-22",
     "name": "n8n workflow source area",
@@ -31,10 +33,10 @@
     "sensitivity": "internal",
     "schemaVersion": 1,
     "source": {
-      "commit": "uncommitted",
+      "commit": "41d7517af47415179e32781d22f68b9a22f1156b",
       "path": "automation/n8n"
     },
-    "status": "unknown",
+    "status": "active",
     "type": "automation"
   },
   {
@@ -44,7 +46,7 @@
       "change-gates",
       "evidence-hierarchy"
     ],
-    "confidence": "low",
+    "confidence": "high",
     "createdAt": "2026-07-22",
     "dependencies": [
       "governance.architecture",
@@ -52,16 +54,18 @@
     ],
     "evidence": [
       {
-        "commit": "uncommitted",
-        "note": "Source unavailable in the current workspace.",
+        "commit": "101c7362335e1a694e28d94500d23e34cdcd881e",
+        "note": "Inventory contains 1 file(s); digest sha256:fbf8087d1eae95bb330eaa9c56fb657a6ff8ce2172ab2abdb7c25edd0e607efb.",
         "path": "brain/ENGINE.md"
       }
     ],
     "id": "brain.engine",
     "inventory": {
-      "digest": "unavailable",
-      "fileCount": 0,
-      "sample": []
+      "digest": "sha256:fbf8087d1eae95bb330eaa9c56fb657a6ff8ce2172ab2abdb7c25edd0e607efb",
+      "fileCount": 1,
+      "sample": [
+        "brain/ENGINE.md"
+      ]
     },
     "lastVerifiedAt": "2026-07-22",
     "name": "Revolis Brain OS Engine",
@@ -73,10 +77,10 @@
     "sensitivity": "internal",
     "schemaVersion": 1,
     "source": {
-      "commit": "uncommitted",
+      "commit": "101c7362335e1a694e28d94500d23e34cdcd881e",
       "path": "brain/ENGINE.md"
     },
-    "status": "unknown",
+    "status": "active",
     "type": "governance"
   },
   {
@@ -94,14 +98,14 @@
     ],
     "evidence": [
       {
-        "commit": "f5c05be6b9686274f4ffc5aa5b42f5f6efe34ee4",
-        "note": "Inventory contains 7 file(s); digest sha256:4a8d41a70e40d8a067d460c4ab1095066428441f25b63099e693757ccd45cbfd.",
+        "commit": "101c7362335e1a694e28d94500d23e34cdcd881e",
+        "note": "Inventory contains 7 file(s); digest sha256:4712aba234aa65a79655eddb9763e67459203abb7989d2233725f6fb7e119309.",
         "path": ".github/workflows"
       }
     ],
     "id": "ci.workflows",
     "inventory": {
-      "digest": "sha256:4a8d41a70e40d8a067d460c4ab1095066428441f25b63099e693757ccd45cbfd",
+      "digest": "sha256:4712aba234aa65a79655eddb9763e67459203abb7989d2233725f6fb7e119309",
       "fileCount": 7,
       "sample": [
         ".github/scripts/automerge-policy.mjs",
@@ -125,7 +129,7 @@
     "sensitivity": "internal",
     "schemaVersion": 1,
     "source": {
-      "commit": "f5c05be6b9686274f4ffc5aa5b42f5f6efe34ee4",
+      "commit": "101c7362335e1a694e28d94500d23e34cdcd881e",
       "path": ".github/workflows"
     },
     "status": "active",
@@ -146,7 +150,7 @@
     ],
     "evidence": [
       {
-        "commit": "f5c05be6b9686274f4ffc5aa5b42f5f6efe34ee4",
+        "commit": "414db135ea4988124f67ee18fb11ffed2d0e91fd",
         "note": "Inventory contains 220 file(s); digest sha256:daea707b8340223166a8d7841e1cafcb7c9728232c7cd2065066100872a17f89.",
         "path": "apps/crm/src/app/api"
       }
@@ -182,7 +186,7 @@
     "sensitivity": "internal",
     "schemaVersion": 1,
     "source": {
-      "commit": "f5c05be6b9686274f4ffc5aa5b42f5f6efe34ee4",
+      "commit": "414db135ea4988124f67ee18fb11ffed2d0e91fd",
       "path": "apps/crm/src/app/api"
     },
     "status": "active",
@@ -203,7 +207,7 @@
     ],
     "evidence": [
       {
-        "commit": "f5c05be6b9686274f4ffc5aa5b42f5f6efe34ee4",
+        "commit": "414db135ea4988124f67ee18fb11ffed2d0e91fd",
         "note": "Inventory contains 501 file(s); digest sha256:a009ec4a73cd26b5ced7a05c599f710861e166d17311144411290666fd90dc4d.",
         "path": "apps/crm/src/app"
       }
@@ -237,7 +241,7 @@
     "sensitivity": "internal",
     "schemaVersion": 1,
     "source": {
-      "commit": "f5c05be6b9686274f4ffc5aa5b42f5f6efe34ee4",
+      "commit": "414db135ea4988124f67ee18fb11ffed2d0e91fd",
       "path": "apps/crm/src/app"
     },
     "status": "active",
@@ -310,15 +314,15 @@
     "dependencies": [],
     "evidence": [
       {
-        "commit": "04203c772df7d0c50dd262cb3f09cbf1517838ac",
-        "note": "Inventory contains 14 file(s); digest sha256:55bff6017571e76eb434680b03acbb97df6c2002673ea3f587f43e05386577a1.",
+        "commit": "101c7362335e1a694e28d94500d23e34cdcd881e",
+        "note": "Inventory contains 15 file(s); digest sha256:813aed2763ee0a860d79b652dbb8190615a71b3bed23642db8f6f77cd0df5b43.",
         "path": "docs/architecture"
       }
     ],
     "id": "governance.architecture",
     "inventory": {
-      "digest": "sha256:55bff6017571e76eb434680b03acbb97df6c2002673ea3f587f43e05386577a1",
-      "fileCount": 14,
+      "digest": "sha256:813aed2763ee0a860d79b652dbb8190615a71b3bed23642db8f6f77cd0df5b43",
+      "fileCount": 15,
       "sample": [
         "docs/architecture/.phase0-probe-b/.gitkeep",
         "docs/architecture/antipatterns-log.md",
@@ -334,7 +338,7 @@
         "docs/architecture/north-star-2027-2030.md"
       ]
     },
-    "lastVerifiedAt": "2026-07-06",
+    "lastVerifiedAt": "2026-07-22",
     "name": "Architecture and governance corpus",
     "owner": "founder",
     "purpose": "Canonical and supporting architecture documents used to constrain product and engineering work.",
@@ -345,7 +349,7 @@
     "sensitivity": "internal",
     "schemaVersion": 1,
     "source": {
-      "commit": "04203c772df7d0c50dd262cb3f09cbf1517838ac",
+      "commit": "101c7362335e1a694e28d94500d23e34cdcd881e",
       "path": "docs/architecture"
     },
     "status": "active",
@@ -409,16 +413,17 @@
     ],
     "evidence": [
       {
-        "commit": "ffc065f6bf7edc600c6fd0ab8272b60f9ba2b265",
-        "note": "Inventory contains 8 file(s); digest sha256:0815875731d44450d9a31d97f6b14cd830f2aadc1b55dd61effb214ac3d48e2b.",
+        "commit": "41d7517af47415179e32781d22f68b9a22f1156b",
+        "note": "Inventory contains 9 file(s); digest sha256:abf70e3a65ecf0d8aaf0f38faa790b53020a48af7541580435a05ab4c344086c.",
         "path": ".cursor/rules"
       }
     ],
     "id": "policy.cursor-rules",
     "inventory": {
-      "digest": "sha256:0815875731d44450d9a31d97f6b14cd830f2aadc1b55dd61effb214ac3d48e2b",
-      "fileCount": 8,
+      "digest": "sha256:abf70e3a65ecf0d8aaf0f38faa790b53020a48af7541580435a05ab4c344086c",
+      "fileCount": 9,
       "sample": [
+        ".cursor/rules/architecture.mdc",
         ".cursor/rules/l99-agent-operating-standard.mdc",
         ".cursor/rules/l99-golden-rule.mdc",
         ".cursor/rules/l99-master-prompt-ref.mdc",
@@ -429,7 +434,7 @@
         ".cursor/rules/revolis-ui.mdc"
       ]
     },
-    "lastVerifiedAt": "2026-07-13",
+    "lastVerifiedAt": "2026-07-22",
     "name": "Cursor governance rules",
     "owner": "engineering",
     "purpose": "Operational rules referenced as policy evidence, never reclassified as historical decisions.",
@@ -440,7 +445,7 @@
     "sensitivity": "internal",
     "schemaVersion": 1,
     "source": {
-      "commit": "ffc065f6bf7edc600c6fd0ab8272b60f9ba2b265",
+      "commit": "41d7517af47415179e32781d22f68b9a22f1156b",
       "path": ".cursor/rules"
     },
     "status": "active",
@@ -459,14 +464,14 @@
     ],
     "evidence": [
       {
-        "commit": "c9a5980042e61b046f2df4b7522f13e717f8fb3b",
-        "note": "Inventory contains 39 file(s); digest sha256:ca7d60f338a21dc59d1dca26681f19c5f3e776aa0f2b60355ffc29fdb128472e.",
+        "commit": "101c7362335e1a694e28d94500d23e34cdcd881e",
+        "note": "Inventory contains 39 file(s); digest sha256:f8315d87b5a652287c8084e39619c238bc28b3bb89131c2397cfe99477a220da.",
         "path": "package.json"
       }
     ],
     "id": "repo.packages",
     "inventory": {
-      "digest": "sha256:ca7d60f338a21dc59d1dca26681f19c5f3e776aa0f2b60355ffc29fdb128472e",
+      "digest": "sha256:f8315d87b5a652287c8084e39619c238bc28b3bb89131c2397cfe99477a220da",
       "fileCount": 39,
       "sample": [
         "apps/crm/package.json",
@@ -483,7 +488,7 @@
         "packages/mcp-comm/Dockerfile"
       ]
     },
-    "lastVerifiedAt": "2026-06-11",
+    "lastVerifiedAt": "2026-07-22",
     "name": "Monorepo package manifests",
     "owner": "engineering",
     "purpose": "Workspace topology and direct dependency inventory without copying dependency source code.",
@@ -491,7 +496,7 @@
     "sensitivity": "internal",
     "schemaVersion": 1,
     "source": {
-      "commit": "c9a5980042e61b046f2df4b7522f13e717f8fb3b",
+      "commit": "101c7362335e1a694e28d94500d23e34cdcd881e",
       "path": "package.json"
     },
     "status": "active",

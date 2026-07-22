@@ -1,9 +1,15 @@
 {
   "auditDate": "2026-07-22",
   "delta": {
-    "added": [],
-    "comparedTo": "2026-07-22T21:10:00.180Z",
-    "resolved": [],
+    "added": [
+      "unused:automation.n8n"
+    ],
+    "comparedTo": "2026-07-22T21:18:55.628Z",
+    "resolved": [
+      "source-unavailable:automation.n8n",
+      "source-unavailable:brain.engine",
+      "stale:repo.packages"
+    ],
     "unchanged": [
       "decision-outcome:rme-dec-20260611-001",
       "decision-outcome:rme-dec-20260618-002",
@@ -13,10 +19,7 @@
       "decision-outcome:rme-dec-20260717-001",
       "decision-outcome:rme-dec-20260719-001",
       "decision-outcome:rme-dec-20260719-002",
-      "decision-outcome:rme-dec-20260722-001",
-      "source-unavailable:automation.n8n",
-      "source-unavailable:brain.engine",
-      "stale:repo.packages"
+      "decision-outcome:rme-dec-20260722-001"
     ]
   },
   "findings": [
@@ -201,52 +204,22 @@
       "title": "Decision outcome needs verification"
     },
     {
-      "category": "source-availability",
-      "confidence": "high",
-      "detail": "automation.n8n cannot act as a stable source until its owner approves and versions it.",
+      "category": "unused-asset",
+      "confidence": "low",
+      "detail": "automation.n8n has no incoming registry dependency or related decision. Usage telemetry is unavailable, so review manually.",
       "evidence": [
         {
-          "commit": "uncommitted",
-          "note": "Source unavailable in the current workspace.",
+          "commit": "41d7517af47415179e32781d22f68b9a22f1156b",
+          "note": "Inventory contains 1 file(s); digest sha256:3135537f75171da226085828d82bbf76287246ac47bfc97026a91230a4e93d9b.",
           "path": "automation/n8n"
         }
       ],
-      "key": "source-unavailable:automation.n8n",
-      "severity": "warning",
-      "title": "Registry source is not committed and verifiable"
-    },
-    {
-      "category": "source-availability",
-      "confidence": "high",
-      "detail": "brain.engine cannot act as a stable source until its owner approves and versions it.",
-      "evidence": [
-        {
-          "commit": "uncommitted",
-          "note": "Source unavailable in the current workspace.",
-          "path": "brain/ENGINE.md"
-        }
-      ],
-      "key": "source-unavailable:brain.engine",
-      "severity": "warning",
-      "title": "Registry source is not committed and verifiable"
-    },
-    {
-      "category": "staleness",
-      "confidence": "high",
-      "detail": "repo.packages was last verified on 2026-06-11.",
-      "evidence": [
-        {
-          "commit": "c9a5980042e61b046f2df4b7522f13e717f8fb3b",
-          "note": "Inventory contains 39 file(s); digest sha256:ca7d60f338a21dc59d1dca26681f19c5f3e776aa0f2b60355ffc29fdb128472e.",
-          "path": "package.json"
-        }
-      ],
-      "key": "stale:repo.packages",
+      "key": "unused:automation.n8n",
       "severity": "advisory",
-      "title": "Registry source has not been verified for more than 30 days"
+      "title": "Workflow or automation has no recorded consumer"
     }
   ],
-  "generatedAt": "2026-07-22T21:18:55.628Z",
+  "generatedAt": "2026-07-22T21:24:28.539Z",
   "scope": "repository-only",
   "schemaVersion": 1,
   "sourcePolicy": "tracked-files-only",
@@ -255,7 +228,7 @@
     "decisionRecords": 21,
     "errors": 0,
     "registryRecords": 10,
-    "warnings": 2
+    "warnings": 0
   },
   "unavailable": {
     "costOfWaitingBaselineMinutes": "unavailable - no measured time series exists for 2026-07-22",
