@@ -72,7 +72,7 @@ test.describe("Valuation widget — /odhad/demo sandbox", () => {
     const response = await page.goto("/odhad/demo");
     expect(response?.status()).toBe(200);
 
-    await expect(page.getByText(/Ukážková verzia/i)).toBeVisible();
+    await expect(page.getByText(/Ukážková verzia/i).first()).toBeVisible();
     await expect(page.getByText(/Krok 1 z 3 · Nehnuteľnosť/i)).toBeVisible();
   });
 
