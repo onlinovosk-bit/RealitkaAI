@@ -19,7 +19,7 @@
         "test": "vitest run",
         "test:watch": "vitest",
         "test:smoke": "playwright test --project=smoke --project=universal-import-smoke",
-        "test:smoke:ci": "playwright test --project=smoke --project=universal-import-smoke --reporter=line",
+        "test:smoke:ci": "playwright test --project=smoke --project=universal-import-smoke --project=valuation-widget --reporter=line",
         "test:nightly:ci": "playwright test --project=smoke --project=universal-import-smoke --project=chromium-public --reporter=line",
         "cleanup:smoke": "npx tsx ../../scripts/cleanup-smoke-profiles.ts",
         "cleanup:smoke:dry": "npx tsx ../../scripts/cleanup-smoke-profiles.ts --dry-run",

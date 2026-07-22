@@ -76,6 +76,14 @@ export default defineConfig({
       timeout: 60_000,
       use: { ...devices['Desktop Chrome'] },
     },
+    // Valuation widget GDPR/sandbox acceptance — ephemeral DB + service role
+    {
+      name: 'valuation-widget',
+      testMatch: /valuation-widget\.spec\.ts/,
+      workers: 1,
+      timeout: 120_000,
+      use: { ...devices['Desktop Chrome'] },
+    },
     // Vercel Preview deploy smoke — public routes, no CRON / prod DB guard
     {
       name: 'preview-smoke',
