@@ -1,0 +1,38 @@
+---
+description: Architecture conventions — tenancy, RLS, data, migrations
+globs: ["src/**", "supabase/**", "data/**"]
+alwaysApply: false
+---
+
+# Architecture Rules
+
+## Stack
+Next.js + TypeScript (strict) + Tailwind + Supabase (Postgres/RLS/Auth)
++ Stripe + Vercel. Pred písaním kódu: prečítaj relevantné súbory, hľadaj
+existujúce implementácie, znovupoužívaj existujúce abstrakcie.
+
+## Multi-tenancy (posvätný vzor)
+- Tenant lookup: slug → `agency_id` (vzory: `inbound_mailboxes`,
+  `valuation_tenants`). Nový tenant = SQL riadok + config, NIKDY nový kód.
+- Každá tabuľka so zákazníckymi dátami má RLS. Anon prístup len cez
+  security definer funkcie na presne vymedzené stĺpce (branding), nikdy
+  priamo na `agencies`/`leads`.
+- Sandbox tenant (`is_sandbox=true`): NIKDY nezapisuje do `leads`,
+  nevolá triage, neposiela notifikácie; osobné údaje sa pred zápisom
+  do `sandbox_submissions` zahadzujú.
+
+## Valuation engine
+- Cenové pásmo počíta ČISTÁ deterministická funkcia z verziovaného
+  `data/regional-prices.json`. Rovnaký vstup = rovnaký výstup.
+- LLM NIKDY nevytvára ani neupravuje čísla — smie len komentovať hotový
+  výsledok. Hodnoty s `verified: false` sa NIKDY neservírujú (fallback
+  `no_estimate`). Cenová predstava majiteľa nevstupuje do výpočtu.
+
+## Migrácie
+- Jedna migrácia = jeden PR, žiadne paralelné migrácie v jednej vlne.
+- Aditívne zmeny preferované pred ALTER existujúcich stĺpcov.
+- Consent dáta (`lead_consents`) sa zapisujú v rovnakej transakcii ako lead.
+
+## Lead pipeline
+Nový zdroj leadov sa VŽDY napája na existujúcu acquire/triage cestu —
+logiku sa volá, nekopíruje.

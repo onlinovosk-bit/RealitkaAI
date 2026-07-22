@@ -21,6 +21,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Guard - n8n workflow exports contain no secrets
+        run: |
+          set -e
+          shopt -s nullglob
+          files=(automation/n8n/*.json)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No n8n JSON exports yet — guard OK (nothing to scan)"
+            exit 0
+          fi
+          if grep -qiE 'apiKey|password|Bearer|client_secret' automation/n8n/*.json; then
+            echo "::error::n8n workflow JSON must not contain secrets — use n8n credential store"
+            exit 1
+          fi
+          echo "n8n secrets guard OK (${#files[@]} file(s))"
+
       - name: Guard - stealth lead-gen legal hold (AP-011)
         run: |
           set -e
