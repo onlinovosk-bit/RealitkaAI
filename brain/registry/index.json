@@ -1,0 +1,500 @@
+[
+  {
+    "canonical": false,
+    "capabilities": [
+      "manual-approval-boundary",
+      "workflow-automation"
+    ],
+    "confidence": "low",
+    "createdAt": "2026-07-22",
+    "dependencies": [
+      "policy.cursor-rules"
+    ],
+    "evidence": [
+      {
+        "commit": "uncommitted",
+        "note": "Source unavailable in the current workspace.",
+        "path": "automation/n8n"
+      }
+    ],
+    "id": "automation.n8n",
+    "inventory": {
+      "digest": "unavailable",
+      "fileCount": 0,
+      "sample": []
+    },
+    "lastVerifiedAt": "2026-07-22",
+    "name": "n8n workflow source area",
+    "owner": "founder",
+    "purpose": "Inventory only. Credentials, execution payloads, and customer data are excluded from Brain records.",
+    "relatedDecisions": [],
+    "sensitivity": "internal",
+    "schemaVersion": 1,
+    "source": {
+      "commit": "uncommitted",
+      "path": "automation/n8n"
+    },
+    "status": "unknown",
+    "type": "automation"
+  },
+  {
+    "canonical": false,
+    "capabilities": [
+      "brain-governance",
+      "change-gates",
+      "evidence-hierarchy"
+    ],
+    "confidence": "low",
+    "createdAt": "2026-07-22",
+    "dependencies": [
+      "governance.architecture",
+      "memory.decisions"
+    ],
+    "evidence": [
+      {
+        "commit": "uncommitted",
+        "note": "Source unavailable in the current workspace.",
+        "path": "brain/ENGINE.md"
+      }
+    ],
+    "id": "brain.engine",
+    "inventory": {
+      "digest": "unavailable",
+      "fileCount": 0,
+      "sample": []
+    },
+    "lastVerifiedAt": "2026-07-22",
+    "name": "Revolis Brain OS Engine",
+    "owner": "founder",
+    "purpose": "Governance, evidence hierarchy, update protocol, and founder gates for company memory.",
+    "relatedDecisions": [
+      "rme-dec-20260522-004"
+    ],
+    "sensitivity": "internal",
+    "schemaVersion": 1,
+    "source": {
+      "commit": "uncommitted",
+      "path": "brain/ENGINE.md"
+    },
+    "status": "unknown",
+    "type": "governance"
+  },
+  {
+    "canonical": false,
+    "capabilities": [
+      "continuous-integration",
+      "merge-policy",
+      "schema-governance"
+    ],
+    "confidence": "high",
+    "createdAt": "2026-03-25",
+    "dependencies": [
+      "policy.cursor-rules",
+      "repo.packages"
+    ],
+    "evidence": [
+      {
+        "commit": "f5c05be6b9686274f4ffc5aa5b42f5f6efe34ee4",
+        "note": "Inventory contains 7 file(s); digest sha256:4a8d41a70e40d8a067d460c4ab1095066428441f25b63099e693757ccd45cbfd.",
+        "path": ".github/workflows"
+      }
+    ],
+    "id": "ci.workflows",
+    "inventory": {
+      "digest": "sha256:4a8d41a70e40d8a067d460c4ab1095066428441f25b63099e693757ccd45cbfd",
+      "fileCount": 7,
+      "sample": [
+        ".github/scripts/automerge-policy.mjs",
+        ".github/workflows/auto-merge-policy.yml",
+        ".github/workflows/memory-engine-report.yml",
+        ".github/workflows/nightly-playwright.yml",
+        ".github/workflows/preview-playwright-smoke.yml",
+        ".github/workflows/saas-grade-pipeline.yml",
+        ".github/workflows/schema-governance-guard.yml"
+      ]
+    },
+    "lastVerifiedAt": "2026-07-22",
+    "name": "GitHub Actions workflows",
+    "owner": "engineering",
+    "purpose": "CI and governance workflow inventory; remote branch protection is not inferred from files.",
+    "relatedDecisions": [
+      "rme-dec-20260611-001",
+      "rme-dec-20260618-001",
+      "rme-dec-20260618-002"
+    ],
+    "sensitivity": "internal",
+    "schemaVersion": 1,
+    "source": {
+      "commit": "f5c05be6b9686274f4ffc5aa5b42f5f6efe34ee4",
+      "path": ".github/workflows"
+    },
+    "status": "active",
+    "type": "workflow"
+  },
+  {
+    "canonical": false,
+    "capabilities": [
+      "http-api",
+      "integration-contracts",
+      "lead-intake"
+    ],
+    "confidence": "high",
+    "createdAt": "2026-03-25",
+    "dependencies": [
+      "database.migrations",
+      "repo.packages"
+    ],
+    "evidence": [
+      {
+        "commit": "f5c05be6b9686274f4ffc5aa5b42f5f6efe34ee4",
+        "note": "Inventory contains 220 file(s); digest sha256:daea707b8340223166a8d7841e1cafcb7c9728232c7cd2065066100872a17f89.",
+        "path": "apps/crm/src/app/api"
+      }
+    ],
+    "id": "crm.api",
+    "inventory": {
+      "digest": "sha256:daea707b8340223166a8d7841e1cafcb7c9728232c7cd2065066100872a17f89",
+      "fileCount": 220,
+      "sample": [
+        "apps/crm/src/app/api/acquire/email/route.ts",
+        "apps/crm/src/app/api/activities/route.ts",
+        "apps/crm/src/app/api/agents/cleaner/route.ts",
+        "apps/crm/src/app/api/agents/competitor-watch/route.ts",
+        "apps/crm/src/app/api/agents/deal-trigger/route.ts",
+        "apps/crm/src/app/api/agents/social-scout/route.ts",
+        "apps/crm/src/app/api/ai/autopilot/run/route.ts",
+        "apps/crm/src/app/api/ai/bri-stream/route.ts",
+        "apps/crm/src/app/api/ai/call-coach/stream/route.ts",
+        "apps/crm/src/app/api/ai/call/analyze/route.ts",
+        "apps/crm/src/app/api/ai/call/transcribe/route.ts",
+        "apps/crm/src/app/api/ai/closing-window/recompute/route.ts"
+      ]
+    },
+    "lastVerifiedAt": "2026-07-22",
+    "name": "CRM route handlers",
+    "owner": "engineering",
+    "purpose": "Inventory of API route handlers used to verify documented endpoint paths.",
+    "relatedDecisions": [
+      "rme-dec-20260522-001",
+      "rme-dec-20260706-001",
+      "rme-dec-20260719-001"
+    ],
+    "sensitivity": "internal",
+    "schemaVersion": 1,
+    "source": {
+      "commit": "f5c05be6b9686274f4ffc5aa5b42f5f6efe34ee4",
+      "path": "apps/crm/src/app/api"
+    },
+    "status": "active",
+    "type": "api"
+  },
+  {
+    "canonical": false,
+    "capabilities": [
+      "authenticated-workdesk",
+      "crm-ui",
+      "public-pages"
+    ],
+    "confidence": "high",
+    "createdAt": "2026-03-25",
+    "dependencies": [
+      "database.migrations",
+      "repo.packages"
+    ],
+    "evidence": [
+      {
+        "commit": "f5c05be6b9686274f4ffc5aa5b42f5f6efe34ee4",
+        "note": "Inventory contains 501 file(s); digest sha256:a009ec4a73cd26b5ced7a05c599f710861e166d17311144411290666fd90dc4d.",
+        "path": "apps/crm/src/app"
+      }
+    ],
+    "id": "crm.application",
+    "inventory": {
+      "digest": "sha256:a009ec4a73cd26b5ced7a05c599f710861e166d17311144411290666fd90dc4d",
+      "fileCount": 501,
+      "sample": [
+        "apps/crm/src/app/_actions/l99-licensing.ts",
+        "apps/crm/src/app/_actions/licensing.ts",
+        "apps/crm/src/app/(dashboard)/activities/error.tsx",
+        "apps/crm/src/app/(dashboard)/activities/loading.tsx",
+        "apps/crm/src/app/(dashboard)/activities/page.tsx",
+        "apps/crm/src/app/(dashboard)/akvizieia/klonovanie-kupujucich/error.tsx",
+        "apps/crm/src/app/(dashboard)/akvizieia/klonovanie-kupujucich/loading.tsx",
+        "apps/crm/src/app/(dashboard)/akvizieia/klonovanie-kupujucich/page.tsx",
+        "apps/crm/src/app/(dashboard)/akvizieia/kupujuci-predajca/error.tsx",
+        "apps/crm/src/app/(dashboard)/akvizieia/kupujuci-predajca/loading.tsx",
+        "apps/crm/src/app/(dashboard)/akvizieia/kupujuci-predajca/page.tsx",
+        "apps/crm/src/app/(dashboard)/akvizieia/listy-z-katastra/error.tsx"
+      ]
+    },
+    "lastVerifiedAt": "2026-07-22",
+    "name": "CRM application surface",
+    "owner": "engineering",
+    "purpose": "Inventory of CRM pages, layouts, and application code used for documentation drift checks.",
+    "relatedDecisions": [
+      "rme-dec-20260717-001"
+    ],
+    "sensitivity": "internal",
+    "schemaVersion": 1,
+    "source": {
+      "commit": "f5c05be6b9686274f4ffc5aa5b42f5f6efe34ee4",
+      "path": "apps/crm/src/app"
+    },
+    "status": "active",
+    "type": "application"
+  },
+  {
+    "canonical": false,
+    "capabilities": [
+      "consent-storage",
+      "database-schema",
+      "tenant-isolation"
+    ],
+    "confidence": "high",
+    "createdAt": "2026-03-25",
+    "dependencies": [
+      "policy.cursor-rules"
+    ],
+    "evidence": [
+      {
+        "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
+        "note": "Inventory contains 87 file(s); digest sha256:1971ba622b5a288b3779bf4ef439befea0407f71554c85978059d344df66a8d3.",
+        "path": "apps/crm/supabase/migrations"
+      }
+    ],
+    "id": "database.migrations",
+    "inventory": {
+      "digest": "sha256:1971ba622b5a288b3779bf4ef439befea0407f71554c85978059d344df66a8d3",
+      "fileCount": 87,
+      "sample": [
+        "apps/crm/supabase/migrations/2026_genome_layer2.sql",
+        "apps/crm/supabase/migrations/20260310_baseline_core_schema.sql",
+        "apps/crm/supabase/migrations/20260320_rls.sql",
+        "apps/crm/supabase/migrations/20260411_performance_fee.sql",
+        "apps/crm/supabase/migrations/20260412_activity_stream_view.sql",
+        "apps/crm/supabase/migrations/20260413_ai_insight_alias.sql",
+        "apps/crm/supabase/migrations/20260418_enterprise_ai_intelligence.sql",
+        "apps/crm/supabase/migrations/20260419_enterprise_rls_profile_link.sql",
+        "apps/crm/supabase/migrations/20260424_google_calendar_oauth.sql",
+        "apps/crm/supabase/migrations/20260425231407_event_pipeline.sql",
+        "apps/crm/supabase/migrations/20260425231426_bri_live_score.sql",
+        "apps/crm/supabase/migrations/20260426114846_morning_brief.sql"
+      ]
+    },
+    "lastVerifiedAt": "2026-07-21",
+    "name": "Supabase migrations",
+    "owner": "engineering",
+    "purpose": "Versioned database structure used as code-side evidence; production state remains independently verified.",
+    "relatedDecisions": [
+      "rme-dec-20260624-002",
+      "rme-dec-20260722-001"
+    ],
+    "sensitivity": "internal",
+    "schemaVersion": 1,
+    "source": {
+      "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
+      "path": "apps/crm/supabase/migrations"
+    },
+    "status": "active",
+    "type": "database"
+  },
+  {
+    "canonical": false,
+    "capabilities": [
+      "antipattern-governance",
+      "architecture-guidance",
+      "data-sourcing"
+    ],
+    "confidence": "high",
+    "createdAt": "2026-05-04",
+    "dependencies": [],
+    "evidence": [
+      {
+        "commit": "04203c772df7d0c50dd262cb3f09cbf1517838ac",
+        "note": "Inventory contains 14 file(s); digest sha256:55bff6017571e76eb434680b03acbb97df6c2002673ea3f587f43e05386577a1.",
+        "path": "docs/architecture"
+      }
+    ],
+    "id": "governance.architecture",
+    "inventory": {
+      "digest": "sha256:55bff6017571e76eb434680b03acbb97df6c2002673ea3f587f43e05386577a1",
+      "fileCount": 14,
+      "sample": [
+        "docs/architecture/.phase0-probe-b/.gitkeep",
+        "docs/architecture/antipatterns-log.md",
+        "docs/architecture/clay-positioning-reframe.md",
+        "docs/architecture/engineering-os-revolis-rightsized.md",
+        "docs/architecture/inputs/memory-engine-sources-2026-07.md",
+        "docs/architecture/L99_ARCHITECTURE_AUDIT.md",
+        "docs/architecture/l99-parked-concepts.md",
+        "docs/architecture/L99-real-estate-vertical-pack-prompt.md",
+        "docs/architecture/master-data-sourcing-map.md",
+        "docs/architecture/memory-engine-canonical-model.md",
+        "docs/architecture/memory-engine-runbook.md",
+        "docs/architecture/north-star-2027-2030.md"
+      ]
+    },
+    "lastVerifiedAt": "2026-07-06",
+    "name": "Architecture and governance corpus",
+    "owner": "founder",
+    "purpose": "Canonical and supporting architecture documents used to constrain product and engineering work.",
+    "relatedDecisions": [
+      "rme-dec-20260623-002",
+      "rme-dec-20260624-001"
+    ],
+    "sensitivity": "internal",
+    "schemaVersion": 1,
+    "source": {
+      "commit": "04203c772df7d0c50dd262cb3f09cbf1517838ac",
+      "path": "docs/architecture"
+    },
+    "status": "active",
+    "type": "documentation"
+  },
+  {
+    "canonical": false,
+    "capabilities": [
+      "decision-history",
+      "outcome-tracking",
+      "rationale-memory"
+    ],
+    "confidence": "high",
+    "createdAt": "2026-04-29",
+    "dependencies": [
+      "governance.architecture"
+    ],
+    "evidence": [
+      {
+        "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
+        "note": "Inventory contains 2 file(s); digest sha256:bb6198634c9b512352f4b8f4769e436eccd0137029ff0471bc44d09fc5974545.",
+        "path": "memory/decisions.md"
+      }
+    ],
+    "id": "memory.decisions",
+    "inventory": {
+      "digest": "sha256:bb6198634c9b512352f4b8f4769e436eccd0137029ff0471bc44d09fc5974545",
+      "fileCount": 2,
+      "sample": [
+        "decisions.md",
+        "memory/decisions.md"
+      ]
+    },
+    "lastVerifiedAt": "2026-07-21",
+    "name": "Critical decisions log",
+    "owner": "founder",
+    "purpose": "Canonical historical decision source; generated Brain records remain pointers to this log.",
+    "relatedDecisions": [
+      "rme-dec-20260522-004"
+    ],
+    "sensitivity": "internal",
+    "schemaVersion": 1,
+    "source": {
+      "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
+      "path": "memory/decisions.md"
+    },
+    "status": "active",
+    "type": "decision-log"
+  },
+  {
+    "canonical": false,
+    "capabilities": [
+      "coding-policy",
+      "database-policy",
+      "security-policy"
+    ],
+    "confidence": "high",
+    "createdAt": "2026-04-28",
+    "dependencies": [
+      "governance.architecture"
+    ],
+    "evidence": [
+      {
+        "commit": "ffc065f6bf7edc600c6fd0ab8272b60f9ba2b265",
+        "note": "Inventory contains 8 file(s); digest sha256:0815875731d44450d9a31d97f6b14cd830f2aadc1b55dd61effb214ac3d48e2b.",
+        "path": ".cursor/rules"
+      }
+    ],
+    "id": "policy.cursor-rules",
+    "inventory": {
+      "digest": "sha256:0815875731d44450d9a31d97f6b14cd830f2aadc1b55dd61effb214ac3d48e2b",
+      "fileCount": 8,
+      "sample": [
+        ".cursor/rules/l99-agent-operating-standard.mdc",
+        ".cursor/rules/l99-golden-rule.mdc",
+        ".cursor/rules/l99-master-prompt-ref.mdc",
+        ".cursor/rules/l99-prime-directive.mdc",
+        ".cursor/rules/l99-role-and-quality-standard.mdc",
+        ".cursor/rules/revolis-api.mdc",
+        ".cursor/rules/revolis-db.mdc",
+        ".cursor/rules/revolis-ui.mdc"
+      ]
+    },
+    "lastVerifiedAt": "2026-07-13",
+    "name": "Cursor governance rules",
+    "owner": "engineering",
+    "purpose": "Operational rules referenced as policy evidence, never reclassified as historical decisions.",
+    "relatedDecisions": [
+      "rme-dec-20260611-001",
+      "rme-dec-20260618-001"
+    ],
+    "sensitivity": "internal",
+    "schemaVersion": 1,
+    "source": {
+      "commit": "ffc065f6bf7edc600c6fd0ab8272b60f9ba2b265",
+      "path": ".cursor/rules"
+    },
+    "status": "active",
+    "type": "policy"
+  },
+  {
+    "canonical": false,
+    "capabilities": [
+      "dependency-inventory",
+      "workspace-topology"
+    ],
+    "confidence": "high",
+    "createdAt": "2026-04-16",
+    "dependencies": [
+      "policy.cursor-rules"
+    ],
+    "evidence": [
+      {
+        "commit": "c9a5980042e61b046f2df4b7522f13e717f8fb3b",
+        "note": "Inventory contains 39 file(s); digest sha256:ca7d60f338a21dc59d1dca26681f19c5f3e776aa0f2b60355ffc29fdb128472e.",
+        "path": "package.json"
+      }
+    ],
+    "id": "repo.packages",
+    "inventory": {
+      "digest": "sha256:ca7d60f338a21dc59d1dca26681f19c5f3e776aa0f2b60355ffc29fdb128472e",
+      "fileCount": 39,
+      "sample": [
+        "apps/crm/package.json",
+        "apps/marketing/package.json",
+        "package.json",
+        "packages/.env.example",
+        "packages/docker-compose.yml",
+        "packages/mcp-calendar/Dockerfile",
+        "packages/mcp-calendar/package.json",
+        "packages/mcp-calendar/src/server.ts",
+        "packages/mcp-calendar/src/tools/create-event.ts",
+        "packages/mcp-calendar/src/tools/find-available-slots.ts",
+        "packages/mcp-calendar/tsconfig.json",
+        "packages/mcp-comm/Dockerfile"
+      ]
+    },
+    "lastVerifiedAt": "2026-06-11",
+    "name": "Monorepo package manifests",
+    "owner": "engineering",
+    "purpose": "Workspace topology and direct dependency inventory without copying dependency source code.",
+    "relatedDecisions": [],
+    "sensitivity": "internal",
+    "schemaVersion": 1,
+    "source": {
+      "commit": "c9a5980042e61b046f2df4b7522f13e717f8fb3b",
+      "path": "package.json"
+    },
+    "status": "active",
+    "type": "package"
+  }
+]
