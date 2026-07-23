@@ -16,6 +16,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # brain:check compares committed indexes to ingest output; default PR merge
+          # checkout changes git log metadata and causes false drift on merge commits.
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Set up Node
         uses: actions/setup-node@v4
