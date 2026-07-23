@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { buildDecisions, buildRegistry } from "./catalog.js";
 import { loadBrain } from "./loader.js";
-import { argString, parseCliArgs, stableJson, writeIfChanged } from "./repo.js";
+import { argString, normalizeNewlines, parseCliArgs, stableJson, writeIfChanged } from "./repo.js";
 
 export interface IngestResult {
   registryCount: number;
@@ -13,7 +13,7 @@ export interface IngestResult {
 }
 
 function checkContent(path: string, expected: string): boolean {
-  return existsSync(path) && readFileSync(path, "utf8") === expected;
+  return existsSync(path) && normalizeNewlines(readFileSync(path, "utf8")) === expected;
 }
 
 export function runIngest(options: {

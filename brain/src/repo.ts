@@ -18,6 +18,15 @@ export function slash(value: string): string {
   return value.replace(/\\/g, "/");
 }
 
+const LOCALE_COMPARE_OPTIONS: Intl.CollatorOptions = {
+  sensitivity: "base",
+  numeric: true,
+};
+
+export function compareAscii(left: string, right: string): number {
+  return left.localeCompare(right, "en", LOCALE_COMPARE_OPTIONS);
+}
+
 export function isoDate(value = new Date()): string {
   return value.toISOString().slice(0, 10);
 }
@@ -60,7 +69,7 @@ export function listFiles(repoRoot: string, inputs: string[]): string[] {
       .filter(Boolean)
       .map(slash)
       .filter((file) => !file.split("/").some((segment) => IGNORED_SEGMENTS.has(segment)))
-      .sort((left, right) => left.localeCompare(right));
+      .sort(compareAscii);
   }
 
   if (isGitRepository(repoRoot)) {
@@ -87,10 +96,10 @@ export function listFiles(repoRoot: string, inputs: string[]): string[] {
   }
 
   for (const input of inputs) walk(resolve(repoRoot, input));
-  return [...files].sort((left, right) => left.localeCompare(right));
+  return [...files].sort(compareAscii);
 }
 
-function normalizeNewlines(content: string): string {
+export function normalizeNewlines(content: string): string {
   return content.replace(/\r\n/g, "\n");
 }
 
@@ -147,7 +156,7 @@ function stableValue(value: unknown): unknown {
   if (value && typeof value === "object") {
     return Object.fromEntries(
       Object.entries(value as Record<string, unknown>)
-        .sort(([left], [right]) => left.localeCompare(right))
+        .sort(([left], [right]) => compareAscii(left, right))
         .map(([key, child]) => [key, stableValue(child)]),
     );
   }

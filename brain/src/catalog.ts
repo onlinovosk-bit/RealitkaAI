@@ -1,6 +1,6 @@
 import type { DecisionRecord, RegistryRecord } from "./schema.js";
 import { SCHEMA_VERSION } from "./schema.js";
-import { digestFiles, gitMetadata, listFiles } from "./repo.js";
+import { compareAscii, digestFiles, gitMetadata, listFiles } from "./repo.js";
 
 interface RegistrySpec {
   id: string;
@@ -574,7 +574,7 @@ export function buildRegistry(repoRoot: string): RegistryRecord[] {
       },
       canonical: false,
     } satisfies RegistryRecord;
-  }).sort((left, right) => left.id.localeCompare(right.id));
+  }).sort((left, right) => compareAscii(left.id, right.id));
 }
 
 export function buildDecisions(repoRoot: string): DecisionRecord[] {
@@ -606,5 +606,5 @@ export function buildDecisions(repoRoot: string): DecisionRecord[] {
       sensitivity: "internal",
       canonical: false,
     } satisfies DecisionRecord;
-  }).sort((left, right) => left.id.localeCompare(right.id));
+  }).sort((left, right) => compareAscii(left.id, right.id));
 }

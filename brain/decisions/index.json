@@ -4,6 +4,7 @@
       "unavailable"
     ],
     "canonical": false,
+    "choice": "Return a result and message envelope from every Realvia-facing endpoint.",
     "confidence": "high",
     "date": "2026-05-22",
     "evidence": [
@@ -21,7 +22,6 @@
       }
     ],
     "expectedOutcome": "A stable external response contract for webhook and import calls.",
-    "choice": "Return a result and message envelope from every Realvia-facing endpoint.",
     "id": "rme-dec-20260522-001",
     "observedOutcome": "Implementation is present in the repository; an external partner retest is unavailable.",
     "owner": "founder",
@@ -31,8 +31,8 @@
       "crm.api"
     ],
     "reviewAt": "2026-08-22",
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
       "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
       "path": "memory/decisions.md"
@@ -46,6 +46,7 @@
       "unavailable"
     ],
     "canonical": false,
+    "choice": "Recognize action delete and map archiveType to the resulting property status.",
     "confidence": "high",
     "date": "2026-05-22",
     "evidence": [
@@ -63,7 +64,6 @@
       }
     ],
     "expectedOutcome": "Correct archival behavior for sold, rented, and cancelled listings.",
-    "choice": "Recognize action delete and map archiveType to the resulting property status.",
     "id": "rme-dec-20260522-002",
     "observedOutcome": "The parser implementation is present in the repository.",
     "owner": "founder",
@@ -73,8 +73,8 @@
       "crm.api"
     ],
     "reviewAt": "2027-05-22",
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
       "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
       "path": "memory/decisions.md"
@@ -88,6 +88,7 @@
       "unavailable"
     ],
     "canonical": false,
+    "choice": "Return Invalid authentication for every external authentication failure.",
     "confidence": "high",
     "date": "2026-05-22",
     "evidence": [
@@ -105,7 +106,6 @@
       }
     ],
     "expectedOutcome": "Consistent and less revealing authentication errors.",
-    "choice": "Return Invalid authentication for every external authentication failure.",
     "id": "rme-dec-20260522-003",
     "observedOutcome": "The shared error constant is present in the repository.",
     "owner": "founder",
@@ -115,8 +115,8 @@
       "crm.api"
     ],
     "reviewAt": "2027-05-22",
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
       "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
       "path": "memory/decisions.md"
@@ -130,6 +130,7 @@
       "unavailable"
     ],
     "canonical": false,
+    "choice": "Use the repository memory directory instead of adding Notion or CrewAI.",
     "confidence": "high",
     "date": "2026-05-22",
     "evidence": [
@@ -141,7 +142,6 @@
       }
     ],
     "expectedOutcome": "Traceable handoffs with less repeated reconstruction.",
-    "choice": "Use the repository memory directory instead of adding Notion or CrewAI.",
     "id": "rme-dec-20260522-004",
     "observedOutcome": "The repository contains and actively updates the memory directory.",
     "owner": "founder",
@@ -152,8 +152,8 @@
       "memory.decisions"
     ],
     "reviewAt": "2026-11-22",
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
       "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
       "path": "memory/decisions.md"
@@ -167,6 +167,7 @@
       "unavailable"
     ],
     "canonical": false,
+    "choice": "Require branches to be current and require the Lint, test, build check.",
     "confidence": "high",
     "date": "2026-06-11",
     "evidence": [
@@ -184,7 +185,6 @@
       }
     ],
     "expectedOutcome": "Fewer regressions caused by stale verification artifacts.",
-    "choice": "Require branches to be current and require the Lint, test, build check.",
     "id": "rme-dec-20260611-001",
     "observedOutcome": "The rule is documented locally; remote branch-protection state is unavailable.",
     "owner": "founder",
@@ -195,8 +195,8 @@
       "policy.cursor-rules"
     ],
     "reviewAt": "2026-07-29",
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
       "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
       "path": "memory/decisions.md"
@@ -210,6 +210,7 @@
       "unavailable"
     ],
     "canonical": false,
+    "choice": "Guard the forbidden behavior family with a name pattern.",
     "confidence": "high",
     "date": "2026-06-18",
     "evidence": [
@@ -227,7 +228,6 @@
       }
     ],
     "expectedOutcome": "CI catches renamed variants of the prohibited feature family.",
-    "choice": "Guard the forbidden behavior family with a name pattern.",
     "id": "rme-dec-20260618-001",
     "observedOutcome": "The pattern is present in repository merge-policy automation.",
     "owner": "founder",
@@ -238,8 +238,8 @@
       "governance.architecture"
     ],
     "reviewAt": "2026-12-18",
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
       "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
       "path": "memory/decisions.md"
@@ -253,6 +253,7 @@
       "unavailable"
     ],
     "canonical": false,
+    "choice": "Disable the schedule and retain manual workflow dispatch.",
     "confidence": "high",
     "date": "2026-06-18",
     "evidence": [
@@ -270,7 +271,6 @@
       }
     ],
     "expectedOutcome": "No recurring false alarms while manual verification remains available.",
-    "choice": "Disable the schedule and retain manual workflow dispatch.",
     "id": "rme-dec-20260618-002",
     "observedOutcome": "The schedule remains absent from the workflow; remote secret state is unavailable.",
     "owner": "founder",
@@ -280,8 +280,8 @@
       "ci.workflows"
     ],
     "reviewAt": "2026-07-29",
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
       "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
       "path": "memory/decisions.md"
@@ -295,6 +295,7 @@
       "unavailable"
     ],
     "canonical": false,
+    "choice": "Show missing qualification instead of fabricating a backfill.",
     "confidence": "high",
     "date": "2026-06-19",
     "evidence": [
@@ -306,7 +307,6 @@
       }
     ],
     "expectedOutcome": "Trustworthy UI that does not present invented qualification.",
-    "choice": "Show missing qualification instead of fabricating a backfill.",
     "id": "rme-dec-20260619-001",
     "observedOutcome": "A current production UI verification is unavailable.",
     "owner": "founder",
@@ -317,8 +317,8 @@
       "governance.architecture"
     ],
     "reviewAt": "2026-07-29",
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
       "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
       "path": "memory/decisions.md"
@@ -332,6 +332,7 @@
       "unavailable"
     ],
     "canonical": false,
+    "choice": "Inspect a first-party demand export instead of enriching empty fields.",
     "confidence": "high",
     "date": "2026-06-19",
     "evidence": [
@@ -349,7 +350,6 @@
       }
     ],
     "expectedOutcome": "Determine whether a legal bulk qualification source exists.",
-    "choice": "Inspect a first-party demand export instead of enriching empty fields.",
     "id": "rme-dec-20260619-002",
     "observedOutcome": "The later audit found that the bulk qualification export was unavailable.",
     "owner": "founder",
@@ -359,8 +359,8 @@
       "governance.architecture"
     ],
     "reviewAt": "2026-06-23",
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
       "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
       "path": "memory/decisions.md"
@@ -374,6 +374,7 @@
       "unavailable"
     ],
     "canonical": false,
+    "choice": "Compare every square-metre value against the structured and source-description area set.",
     "confidence": "high",
     "date": "2026-06-22",
     "evidence": [
@@ -391,7 +392,6 @@
       }
     ],
     "expectedOutcome": "Fewer false flags without weakening area validation.",
-    "choice": "Compare every square-metre value against the structured and source-description area set.",
     "id": "rme-dec-20260622-001",
     "observedOutcome": "The decision log records a six-of-six production capability smoke result.",
     "owner": "founder",
@@ -401,8 +401,8 @@
       "crm.application"
     ],
     "reviewAt": "2026-12-22",
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
       "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
       "path": "memory/decisions.md"
@@ -416,6 +416,7 @@
       "unavailable"
     ],
     "canonical": false,
+    "choice": "Do not perform a production write for the marginal broker-assignment field.",
     "confidence": "high",
     "date": "2026-06-23",
     "evidence": [
@@ -427,7 +428,6 @@
       }
     ],
     "expectedOutcome": "Avoid a risky bulk mutation with little customer value.",
-    "choice": "Do not perform a production write for the marginal broker-assignment field.",
     "id": "rme-dec-20260623-001",
     "observedOutcome": "The veto is recorded; no separate implementation was required.",
     "owner": "founder",
@@ -437,8 +437,8 @@
       "database.migrations"
     ],
     "reviewAt": "2027-06-23",
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
       "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
       "path": "memory/decisions.md"
@@ -452,6 +452,7 @@
       "unavailable"
     ],
     "canonical": false,
+    "choice": "Remove the documents and require line-level review for docs and chore commits.",
     "confidence": "high",
     "date": "2026-06-23",
     "evidence": [
@@ -463,7 +464,6 @@
       }
     ],
     "expectedOutcome": "Less documentation contamination and clearer ownership.",
-    "choice": "Remove the documents and require line-level review for docs and chore commits.",
     "id": "rme-dec-20260623-002",
     "observedOutcome": "The decision log records the cleanup PR.",
     "owner": "founder",
@@ -474,8 +474,8 @@
       "policy.cursor-rules"
     ],
     "reviewAt": "2026-12-23",
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
       "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
       "path": "memory/decisions.md"
@@ -489,6 +489,7 @@
       "unavailable"
     ],
     "canonical": false,
+    "choice": "Use the Revenue, Learning, Network, and Evolution loops as the North Star.",
     "confidence": "high",
     "date": "2026-06-24",
     "evidence": [
@@ -506,7 +507,6 @@
       }
     ],
     "expectedOutcome": "A durable prioritization frame tied to measurable customer learning.",
-    "choice": "Use the Revenue, Learning, Network, and Evolution loops as the North Star.",
     "id": "rme-dec-20260624-001",
     "observedOutcome": "The canonical North Star document exists; later-loop outcomes remain unavailable.",
     "owner": "founder",
@@ -516,8 +516,8 @@
       "governance.architecture"
     ],
     "reviewAt": "2026-09-24",
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
       "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
       "path": "memory/decisions.md"
@@ -531,6 +531,7 @@
       "unavailable"
     ],
     "canonical": false,
+    "choice": "Use decisions and exclusivity outcomes as the Loop 2 substrate, without automatic sending.",
     "confidence": "high",
     "date": "2026-06-24",
     "evidence": [
@@ -548,7 +549,6 @@
       }
     ],
     "expectedOutcome": "A traceable foundation for future decision-to-outcome evaluation.",
-    "choice": "Use decisions and exclusivity outcomes as the Loop 2 substrate, without automatic sending.",
     "id": "rme-dec-20260624-002",
     "observedOutcome": "Migration and writer code exist; current production and policy state require verification.",
     "owner": "founder",
@@ -559,8 +559,8 @@
       "database.migrations"
     ],
     "reviewAt": "2026-07-29",
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
       "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
       "path": "memory/decisions.md"
@@ -574,6 +574,7 @@
       "unavailable"
     ],
     "canonical": false,
+    "choice": "Keep auto-deploy parked and retain human approval.",
     "confidence": "high",
     "date": "2026-06-24",
     "evidence": [
@@ -591,7 +592,6 @@
       }
     ],
     "expectedOutcome": "No unapproved automatic production action.",
-    "choice": "Keep auto-deploy parked and retain human approval.",
     "id": "rme-dec-20260624-003",
     "observedOutcome": "The concept remains listed as parked; no unpark decision is recorded.",
     "owner": "founder",
@@ -601,8 +601,8 @@
       "governance.architecture"
     ],
     "reviewAt": "2026-09-24",
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
       "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
       "path": "memory/decisions.md"
@@ -616,6 +616,7 @@
       "unavailable"
     ],
     "canonical": false,
+    "choice": "Close directional architecture and continue with draft-only follow-up execution.",
     "confidence": "high",
     "date": "2026-06-24",
     "evidence": [
@@ -627,7 +628,6 @@
       }
     ],
     "expectedOutcome": "More execution against Loop 1 and less speculative architecture work.",
-    "choice": "Close directional architecture and continue with draft-only follow-up execution.",
     "id": "rme-dec-20260624-004",
     "observedOutcome": "A measured outcome for the process decision is unavailable.",
     "owner": "founder",
@@ -637,8 +637,8 @@
       "governance.architecture"
     ],
     "reviewAt": "2026-07-29",
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
       "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
       "path": "memory/decisions.md"
@@ -652,6 +652,7 @@
       "unavailable"
     ],
     "canonical": false,
+    "choice": "Reuse the existing SaaS lead store and shared lead creation function.",
     "confidence": "high",
     "date": "2026-07-06",
     "evidence": [
@@ -669,7 +670,6 @@
       }
     ],
     "expectedOutcome": "A public proof route with honest copy and no new database object.",
-    "choice": "Reuse the existing SaaS lead store and shared lead creation function.",
     "id": "rme-dec-20260706-001",
     "observedOutcome": "The decision log records a merged route and production smoke.",
     "owner": "founder",
@@ -680,8 +680,8 @@
       "crm.application"
     ],
     "reviewAt": "2026-10-06",
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
       "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
       "path": "memory/decisions.md"
@@ -695,6 +695,7 @@
       "unavailable"
     ],
     "canonical": false,
+    "choice": "Use a short first audit, one primary action, and existing signals.",
     "confidence": "high",
     "date": "2026-07-17",
     "evidence": [
@@ -712,7 +713,6 @@
       }
     ],
     "expectedOutcome": "Faster first value with no fabricated KPI fallback.",
-    "choice": "Use a short first audit, one primary action, and existing signals.",
     "id": "rme-dec-20260717-001",
     "observedOutcome": "Implementation and verification files exist, but the decision log merge state is stale.",
     "owner": "founder",
@@ -722,8 +722,8 @@
       "crm.application"
     ],
     "reviewAt": "2026-07-29",
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
       "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
       "path": "memory/decisions.md"
@@ -737,6 +737,7 @@
       "unavailable"
     ],
     "canonical": false,
+    "choice": "Use a multi-tenant valuation route and prohibit model-generated price ranges without a reproducible source.",
     "confidence": "high",
     "date": "2026-07-19",
     "evidence": [
@@ -754,7 +755,6 @@
       }
     ],
     "expectedOutcome": "A reusable tenant route without fictitious valuation output.",
-    "choice": "Use a multi-tenant valuation route and prohibit model-generated price ranges without a reproducible source.",
     "id": "rme-dec-20260719-001",
     "observedOutcome": "The route and deterministic engine exist; current data-license and production gates require verification.",
     "owner": "founder",
@@ -766,8 +766,8 @@
       "database.migrations"
     ],
     "reviewAt": "2026-07-29",
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
       "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
       "path": "memory/decisions.md"
@@ -781,6 +781,7 @@
       "unavailable"
     ],
     "canonical": false,
+    "choice": "Include the widget in the Revolis package instead of charging a separate fee.",
     "confidence": "high",
     "date": "2026-07-19",
     "evidence": [
@@ -792,7 +793,6 @@
       }
     ],
     "expectedOutcome": "Commercial validation through an additional paying agency.",
-    "choice": "Include the widget in the Revolis package instead of charging a separate fee.",
     "id": "rme-dec-20260719-002",
     "observedOutcome": "Commercial validation is unavailable in repository evidence.",
     "owner": "founder",
@@ -802,8 +802,8 @@
       "crm.application"
     ],
     "reviewAt": "2026-08-19",
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
       "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
       "path": "memory/decisions.md"
@@ -817,6 +817,7 @@
       "unavailable"
     ],
     "canonical": false,
+    "choice": "Use a sandbox tenant and a separate lead consent relation.",
     "confidence": "high",
     "date": "2026-07-22",
     "evidence": [
@@ -834,7 +835,6 @@
       }
     ],
     "expectedOutcome": "Demo submissions remain isolated while consent evidence is versioned.",
-    "choice": "Use a sandbox tenant and a separate lead consent relation.",
     "id": "rme-dec-20260722-001",
     "observedOutcome": "Repository code and migration exist; production application and founder smoke are unavailable.",
     "owner": "founder",
@@ -845,8 +845,8 @@
       "database.migrations"
     ],
     "reviewAt": "2026-07-29",
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
       "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
       "path": "memory/decisions.md"
