@@ -1,0 +1,84 @@
+{
+  "name": "W3 — Odpoveď-detektor (Revolis)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "field": "hours", "hoursInterval": 1 }
+          ]
+        }
+      },
+      "id": "c1000000-0000-0000-0000-000000000001",
+      "name": "Každú hodinu",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Emaily prospektov z trackera — sync s W1 datasetom (vlna 23.07.2026)\nconst emaily=[\n 'info@alphareality.sk','info@dovi.sk','info@flegrareality.sk',\n 'maria.polancikova@fancyhome.sk','laginreality@laginreality.sk',\n 'marekbarna@maxtadreal.sk','hornakova@realityroznava.sk',\n 'info@realitnesluzby.sk','iveta.kondasova@gmail.com',\n 'jana.lunio@refistavtrade.sk','office@realityhouse.sk',\n 'info@snamibyvas.sk','staviamebyvanie@gmail.com',\n 'kontakt@toprealkosice.sk','zara@zara-reality.sk','mihalrado@gmail.com',\n 'kosice@adomis.sk','info@konex-reality.sk','ponuky@garantreal.sk',\n 'klein@realitytatry.sk','marek.ferko@kontaktreality.sk',\n 'info@realityke.sk','info@kosickadrazobna.sk','euroreal@euroreal.biz',\n 'info@realityzemplin.sk','info@almondreality.sk',\n 'kancelaria@mahut-reality.sk','jan.ragan@diamondreality.sk',\n 'info@rokos.sk','msubjakova@chello.sk','kruzelova@zilinareal.com'\n];\n// KAMZÍK vynechaný — už ODPOVEDAL.\nconst q='in:inbox newer_than:2h from:('+emaily.join(' OR ')+')';\nreturn [{json:{q}}];"
+      },
+      "id": "c1000000-0000-0000-0000-000000000002",
+      "name": "Zostav Gmail query",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 0]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "getAll",
+        "limit": 20,
+        "filters": {
+          "q": "={{ $json.q }}"
+        }
+      },
+      "id": "c1000000-0000-0000-0000-000000000003",
+      "name": "Hľadaj odpovede",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [440, 0],
+      "alwaysOutputData": true,
+      "credentials": {
+        "gmailOAuth2": { "id": "PLACEHOLDER_PO_IMPORTE", "name": "Gmail Revolis" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items=$input.all().filter(i=>i.json && (i.json.id||i.json.From));\nif(items.length===0){return [];}\nconst r=items.map(i=>{\n const j=i.json;\n const od=j.From||j.from||'(neznámy)';\n const pred=j.Subject||j.subject||'(bez predmetu)';\n const sn=(j.snippet||'').slice(0,120);\n return `• OD: ${od}\\n  Predmet: ${pred}\\n  \"${sn}...\"`;\n}).join('\\n\\n');\nreturn [{json:{count:items.length, prehlad:r}}];"
+      },
+      "id": "c1000000-0000-0000-0000-000000000004",
+      "name": "Filtruj + zhrň",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 0]
+    },
+    {
+      "parameters": {
+        "sendTo": "andrej@revolis.ai",
+        "subject": "=🟢 ODPOVEĎ PROSPEKTA! ({{ $json.count }})",
+        "emailType": "text",
+        "message": "=Niekto z trackera odpovedal:\n\n{{ $json.prehlad }}\n\nAkcia: prečítaj odpoveď, zavolaj/odpíš, a povedz Claudovi nech zapíše do trackera Stav=Odpovedal.\n\n— W3 Odpoveď-detektor",
+        "options": {}
+      },
+      "id": "c1000000-0000-0000-0000-000000000005",
+      "name": "Notifikácia tebe",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [880, 0],
+      "credentials": {
+        "gmailOAuth2": { "id": "PLACEHOLDER_PO_IMPORTE", "name": "Gmail Revolis" }
+      }
+    }
+  ],
+  "connections": {
+    "Každú hodinu": { "main": [[{ "node": "Zostav Gmail query", "type": "main", "index": 0 }]] },
+    "Zostav Gmail query": { "main": [[{ "node": "Hľadaj odpovede", "type": "main", "index": 0 }]] },
+    "Hľadaj odpovede": { "main": [[{ "node": "Filtruj + zhrň", "type": "main", "index": 0 }]] },
+    "Filtruj + zhrň": { "main": [[{ "node": "Notifikácia tebe", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Europe/Bratislava" },
+  "pinData": {},
+  "meta": { "instanceId": "revolis-w3-detektor" }
+}
