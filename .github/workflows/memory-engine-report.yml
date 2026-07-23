@@ -32,6 +32,9 @@ jobs:
       - name: Test Memory Engine
         run: npm run brain:test
 
+      - name: Verify committed Brain views match repository
+        run: npm run brain:check
+
       - name: Generate temporary Brain views
         run: npm run brain:ingest -- --brain-root "${{ runner.temp }}/brain"
 

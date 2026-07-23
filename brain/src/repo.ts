@@ -48,6 +48,10 @@ export function argString(args: Map<string, string | true>, key: string): string
   return typeof value === "string" ? value : undefined;
 }
 
+function isGitRepository(repoRoot: string): boolean {
+  return existsSync(resolve(repoRoot, ".git"));
+}
+
 export function listFiles(repoRoot: string, inputs: string[]): string[] {
   const tracked = git(repoRoot, ["ls-files", "-z", "--", ...inputs]);
   if (tracked !== undefined) {
@@ -57,6 +61,10 @@ export function listFiles(repoRoot: string, inputs: string[]): string[] {
       .map(slash)
       .filter((file) => !file.split("/").some((segment) => IGNORED_SEGMENTS.has(segment)))
       .sort((left, right) => left.localeCompare(right));
+  }
+
+  if (isGitRepository(repoRoot)) {
+    throw new Error(`git ls-files failed for repository root: ${repoRoot}`);
   }
 
   // Fixture roots are not Git repositories; this fallback stays within the

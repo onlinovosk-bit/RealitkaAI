@@ -12,20 +12,23 @@
     ],
     "evidence": [
       {
-        "commit": "41d7517af47415179e32781d22f68b9a22f1156b",
-        "note": "Inventory contains 1 file(s); digest sha256:3135537f75171da226085828d82bbf76287246ac47bfc97026a91230a4e93d9b.",
+        "commit": "5c14090b8b62f1134e16154fd89b18d38a5435ea",
+        "note": "Inventory contains 4 file(s); digest sha256:9f9290a008dd70b4674f3e42e6008f639acae2ebe3174560f146950fa7557d76.",
         "path": "automation/n8n"
       }
     ],
     "id": "automation.n8n",
     "inventory": {
-      "digest": "sha256:3135537f75171da226085828d82bbf76287246ac47bfc97026a91230a4e93d9b",
-      "fileCount": 1,
+      "digest": "sha256:9f9290a008dd70b4674f3e42e6008f639acae2ebe3174560f146950fa7557d76",
+      "fileCount": 4,
       "sample": [
-        "automation/n8n/README.md"
+        "automation/n8n/README.md",
+        "automation/n8n/w1-follow-up-strazca.json",
+        "automation/n8n/w2-heartbeat-watchdog.json",
+        "automation/n8n/w3-odpoved-detektor.json"
       ]
     },
-    "lastVerifiedAt": "2026-07-22",
+    "lastVerifiedAt": "2026-07-23",
     "name": "n8n workflow source area",
     "owner": "founder",
     "purpose": "Inventory only. Credentials, execution payloads, and customer data are excluded from Brain records.",
@@ -33,7 +36,7 @@
     "sensitivity": "internal",
     "schemaVersion": 1,
     "source": {
-      "commit": "41d7517af47415179e32781d22f68b9a22f1156b",
+      "commit": "5c14090b8b62f1134e16154fd89b18d38a5435ea",
       "path": "automation/n8n"
     },
     "status": "active",
@@ -99,13 +102,13 @@
     "evidence": [
       {
         "commit": "c4143545f24496a8cdea575375c6ffc3aa523533",
-        "note": "Inventory contains 7 file(s); digest sha256:4712aba234aa65a79655eddb9763e67459203abb7989d2233725f6fb7e119309.",
+        "note": "Inventory contains 7 file(s); digest sha256:f0803f11071f510cc7186eaab3203cdb85cc9df8f1d1c79f1c24ec334b8c5978.",
         "path": ".github/workflows"
       }
     ],
     "id": "ci.workflows",
     "inventory": {
-      "digest": "sha256:4712aba234aa65a79655eddb9763e67459203abb7989d2233725f6fb7e119309",
+      "digest": "sha256:f0803f11071f510cc7186eaab3203cdb85cc9df8f1d1c79f1c24ec334b8c5978",
       "fileCount": 7,
       "sample": [
         ".github/scripts/automerge-policy.mjs",

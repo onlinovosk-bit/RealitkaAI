@@ -151,6 +151,106 @@ function documentedRoutes(repoRoot: string): AuditFinding[] {
   return findings;
 }
 
+function extractSupabaseTableRefs(repoRoot: string, roots: string[]): Set<string> {
+  const tables = new Set<string>();
+  const fromPattern = /\.from\s*\(\s*["'`]([a-z_][a-z0-9_]*)["'`]\s*\)/g;
+  for (const file of listFiles(repoRoot, roots)) {
+    const content = readText(repoRoot, file);
+    if (!content) continue;
+    let match: RegExpExecArray | null;
+    while ((match = fromPattern.exec(content)) !== null) {
+      tables.add(match[1]);
+    }
+  }
+  return tables;
+}
+
+function extractMigrationTables(repoRoot: string): Set<string> {
+  const tables = new Set<string>();
+  const createPattern = /create\s+table\s+(?:if\s+not\s+exists\s+)?(?:public\.)?([a-z_][a-z0-9_]*)/gi;
+  for (const file of listFiles(repoRoot, ["apps/crm/supabase/migrations", "apps/crm/supabase"])) {
+    const content = readText(repoRoot, file);
+    if (!content) continue;
+    let match: RegExpExecArray | null;
+    while ((match = createPattern.exec(content)) !== null) {
+      tables.add(match[1].toLowerCase());
+    }
+  }
+  return tables;
+}
+
+const DEPRECATED_TABLES: Record<string, string> = {
+  revolis_leads:
+    "Legacy lead table with zero application runtime usage (founder confirmed 2026-07-23). Do not use in new code.",
+};
+
+const LEAD_TABLE_AUTHORITY: Record<string, string> = {
+  leads: "CRM production leads — valuation widget, inbound, workdesk, Realvia import.",
+  saas_leads: "SaaS funnel — /proof, demo booking, sales-funnel store.",
+};
+
+function parallelTableFindings(repoRoot: string): AuditFinding[] {
+  const findings: AuditFinding[] = [];
+  const appTables = extractSupabaseTableRefs(repoRoot, ["apps/crm/src"]);
+  const scriptTables = extractSupabaseTableRefs(repoRoot, ["apps/crm/scripts"]);
+  const migrationTables = extractMigrationTables(repoRoot);
+
+  for (const [table, detail] of Object.entries(DEPRECATED_TABLES)) {
+    if (appTables.has(table)) {
+      findings.push({
+        key: `deprecated-table-in-app:${table}`,
+        category: "docs-code-conflict",
+        severity: "warning",
+        title: "Deprecated table is still referenced by application code",
+        detail: `${table} is deprecated but appears in apps/crm/src. ${detail}`,
+        evidence: [evidence("docs/architecture/inputs/lead-tables-authority-2026-07.md", detail)],
+        confidence: "high",
+      });
+      continue;
+    }
+    findings.push({
+      key: `deprecated-table:${table}`,
+      category: "unused-asset",
+      severity: "advisory",
+      title: "Deprecated database table remains outside application runtime",
+      detail: `${table} has no apps/crm/src usage${scriptTables.has(table) ? " (legacy scripts/allowlist only)" : ""}. ${detail}`,
+      evidence: [
+        evidence("apps/crm/config/public-schema-allowlist.json", "Schema allowlist may still reference legacy tables."),
+        evidence("docs/architecture/inputs/lead-tables-authority-2026-07.md", "Canonical lead-table authority card."),
+      ],
+      confidence: "high",
+    });
+  }
+
+  for (const [table, authority] of Object.entries(LEAD_TABLE_AUTHORITY)) {
+    const inMigrations = migrationTables.has(table);
+    const inApp = appTables.has(table);
+    if (inMigrations && !inApp) {
+      findings.push({
+        key: `migration-without-app:${table}`,
+        category: "docs-code-conflict",
+        severity: "warning",
+        title: "Migrated table has no application references",
+        detail: `${table} exists in Supabase migrations but has no .from() usage under apps/crm/src. Expected authority: ${authority}`,
+        evidence: [evidence("apps/crm/supabase/migrations", `Migration inventory includes ${table}.`)],
+        confidence: "high",
+      });
+    } else if (!inMigrations && inApp) {
+      findings.push({
+        key: `app-without-migration:${table}`,
+        category: "docs-code-conflict",
+        severity: "advisory",
+        title: "Application references a table missing from tracked migrations",
+        detail: `${table} is referenced in application code but was not found in tracked migration SQL. ${authority}`,
+        evidence: [evidence("apps/crm/src", `Runtime references ${table}.`)],
+        confidence: "medium",
+      });
+    }
+  }
+
+  return findings;
+}
+
 export function collectFindings(options: {
   repoRoot: string;
   brain: LoadedBrain;
@@ -254,6 +354,7 @@ export function collectFindings(options: {
 
   findings.push(...localMarkdownLinks(repoRoot));
   findings.push(...documentedRoutes(repoRoot));
+  findings.push(...parallelTableFindings(repoRoot));
 
   return [...new Map(findings.map((finding) => [finding.key, finding])).values()]
     .sort((left, right) => left.key.localeCompare(right.key));
