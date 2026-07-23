@@ -47,14 +47,14 @@
       "evidence-hierarchy"
     ],
     "confidence": "high",
-    "createdAt": "2026-07-22",
+    "createdAt": "2026-07-23",
     "dependencies": [
       "governance.architecture",
       "memory.decisions"
     ],
     "evidence": [
       {
-        "commit": "101c7362335e1a694e28d94500d23e34cdcd881e",
+        "commit": "c4143545f24496a8cdea575375c6ffc3aa523533",
         "note": "Inventory contains 1 file(s); digest sha256:fbf8087d1eae95bb330eaa9c56fb657a6ff8ce2172ab2abdb7c25edd0e607efb.",
         "path": "brain/ENGINE.md"
       }
@@ -67,7 +67,7 @@
         "brain/ENGINE.md"
       ]
     },
-    "lastVerifiedAt": "2026-07-22",
+    "lastVerifiedAt": "2026-07-23",
     "name": "Revolis Brain OS Engine",
     "owner": "founder",
     "purpose": "Governance, evidence hierarchy, update protocol, and founder gates for company memory.",
@@ -77,7 +77,7 @@
     "sensitivity": "internal",
     "schemaVersion": 1,
     "source": {
-      "commit": "101c7362335e1a694e28d94500d23e34cdcd881e",
+      "commit": "c4143545f24496a8cdea575375c6ffc3aa523533",
       "path": "brain/ENGINE.md"
     },
     "status": "active",
@@ -98,7 +98,7 @@
     ],
     "evidence": [
       {
-        "commit": "101c7362335e1a694e28d94500d23e34cdcd881e",
+        "commit": "c4143545f24496a8cdea575375c6ffc3aa523533",
         "note": "Inventory contains 7 file(s); digest sha256:4712aba234aa65a79655eddb9763e67459203abb7989d2233725f6fb7e119309.",
         "path": ".github/workflows"
       }
@@ -117,7 +117,7 @@
         ".github/workflows/schema-governance-guard.yml"
       ]
     },
-    "lastVerifiedAt": "2026-07-22",
+    "lastVerifiedAt": "2026-07-23",
     "name": "GitHub Actions workflows",
     "owner": "engineering",
     "purpose": "CI and governance workflow inventory; remote branch protection is not inferred from files.",
@@ -129,7 +129,7 @@
     "sensitivity": "internal",
     "schemaVersion": 1,
     "source": {
-      "commit": "101c7362335e1a694e28d94500d23e34cdcd881e",
+      "commit": "c4143545f24496a8cdea575375c6ffc3aa523533",
       "path": ".github/workflows"
     },
     "status": "active",
@@ -314,7 +314,7 @@
     "dependencies": [],
     "evidence": [
       {
-        "commit": "101c7362335e1a694e28d94500d23e34cdcd881e",
+        "commit": "c4143545f24496a8cdea575375c6ffc3aa523533",
         "note": "Inventory contains 15 file(s); digest sha256:813aed2763ee0a860d79b652dbb8190615a71b3bed23642db8f6f77cd0df5b43.",
         "path": "docs/architecture"
       }
@@ -338,7 +338,7 @@
         "docs/architecture/north-star-2027-2030.md"
       ]
     },
-    "lastVerifiedAt": "2026-07-22",
+    "lastVerifiedAt": "2026-07-23",
     "name": "Architecture and governance corpus",
     "owner": "founder",
     "purpose": "Canonical and supporting architecture documents used to constrain product and engineering work.",
@@ -349,7 +349,7 @@
     "sensitivity": "internal",
     "schemaVersion": 1,
     "source": {
-      "commit": "101c7362335e1a694e28d94500d23e34cdcd881e",
+      "commit": "c4143545f24496a8cdea575375c6ffc3aa523533",
       "path": "docs/architecture"
     },
     "status": "active",
@@ -464,7 +464,7 @@
     ],
     "evidence": [
       {
-        "commit": "101c7362335e1a694e28d94500d23e34cdcd881e",
+        "commit": "c4143545f24496a8cdea575375c6ffc3aa523533",
         "note": "Inventory contains 39 file(s); digest sha256:f8315d87b5a652287c8084e39619c238bc28b3bb89131c2397cfe99477a220da.",
         "path": "package.json"
       }
@@ -488,7 +488,7 @@
         "packages/mcp-comm/Dockerfile"
       ]
     },
-    "lastVerifiedAt": "2026-07-22",
+    "lastVerifiedAt": "2026-07-23",
     "name": "Monorepo package manifests",
     "owner": "engineering",
     "purpose": "Workspace topology and direct dependency inventory without copying dependency source code.",
@@ -496,7 +496,7 @@
     "sensitivity": "internal",
     "schemaVersion": 1,
     "source": {
-      "commit": "101c7362335e1a694e28d94500d23e34cdcd881e",
+      "commit": "c4143545f24496a8cdea575375c6ffc3aa523533",
       "path": "package.json"
     },
     "status": "active",
