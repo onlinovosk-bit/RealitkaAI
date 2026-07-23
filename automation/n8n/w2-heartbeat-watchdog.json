@@ -1,0 +1,186 @@
+{
+  "name": "W2 — Heartbeat Watchdog (Revolis)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
+      },
+      "id": "c3362781-d2f0-4971-b150-105e058e9b3e",
+      "name": "Každých 30 min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -880,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://app.revolis.ai/odhad/reality-smolko",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "855cfee2-dbff-43e0-a7e9-47ba78b87696",
+      "name": "Check Smolko widget",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -656,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://app.revolis.ai/odhad/demo",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "948dcc62-fcff-4c81-8a6d-c57f2aa7ddfd",
+      "name": "Check demo sandbox",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -448,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $('Check Smolko widget').item.json.statusCode }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "notEquals"
+              }
+            },
+            {
+              "leftValue": "={{ $('Check demo sandbox').item.json.statusCode }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "441a0bbe-6f78-4492-8dfb-1c3f8de3be17",
+      "name": "Niečo nie je 200?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -224,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "andrej@revolis.ai",
+        "subject": "🔴 REVOLIS WATCHDOG: widget/demo nevracia 200",
+        "emailType": "text",
+        "message": "=Heartbeat watchdog zachytil problém ({{ $now.format('dd.MM.yyyy HH:mm') }}):\n\n/odhad/reality-smolko → HTTP {{ $('Check Smolko widget').item.json.statusCode }}\n/odhad/demo → HTTP {{ $('Check demo sandbox').item.json.statusCode }}\n\nOver okamžite:\n1. https://app.revolis.ai/odhad/reality-smolko\n2. Vercel deploy log\n3. Supabase status\n\nPravidlo z incidentu 22.07: kód nikdy pred migráciou.",
+        "options": {}
+      },
+      "id": "7da22e77-89df-4a0c-9647-d78fa6159567",
+      "name": "Email founderovi",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PLACEHOLDER_PO_IMPORTE",
+          "name": "Gmail Revolis"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Každých 30 min": {
+      "main": [
+        [
+          {
+            "node": "Check Smolko widget",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Smolko widget": {
+      "main": [
+        [
+          {
+            "node": "Check demo sandbox",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check demo sandbox": {
+      "main": [
+        [
+          {
+            "node": "Niečo nie je 200?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Niečo nie je 200?": {
+      "main": [
+        [
+          {
+            "node": "Email founderovi",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Bratislava"
+  },
+  "meta": {
+    "instanceId": "revolis-w2-heartbeat"
+  }
+}
