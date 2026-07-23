@@ -13,13 +13,13 @@
     "evidence": [
       {
         "commit": "5c14090b8b62f1134e16154fd89b18d38a5435ea",
-        "note": "Inventory contains 4 file(s); digest sha256:9f9290a008dd70b4674f3e42e6008f639acae2ebe3174560f146950fa7557d76.",
+        "note": "Inventory contains 4 file(s); digest sha256:1ae5a41be37143db69060a41efc865decf83987dd786fc3a1df07ead30e194b4.",
         "path": "automation/n8n"
       }
     ],
     "id": "automation.n8n",
     "inventory": {
-      "digest": "sha256:9f9290a008dd70b4674f3e42e6008f639acae2ebe3174560f146950fa7557d76",
+      "digest": "sha256:1ae5a41be37143db69060a41efc865decf83987dd786fc3a1df07ead30e194b4",
       "fileCount": 4,
       "sample": [
         "automation/n8n/README.md",
@@ -58,13 +58,13 @@
     "evidence": [
       {
         "commit": "c4143545f24496a8cdea575375c6ffc3aa523533",
-        "note": "Inventory contains 1 file(s); digest sha256:fbf8087d1eae95bb330eaa9c56fb657a6ff8ce2172ab2abdb7c25edd0e607efb.",
+        "note": "Inventory contains 1 file(s); digest sha256:4966da9737e6e542f9af5c2b6fd920274f6f4519dd94599d9a815def171e936d.",
         "path": "brain/ENGINE.md"
       }
     ],
     "id": "brain.engine",
     "inventory": {
-      "digest": "sha256:fbf8087d1eae95bb330eaa9c56fb657a6ff8ce2172ab2abdb7c25edd0e607efb",
+      "digest": "sha256:4966da9737e6e542f9af5c2b6fd920274f6f4519dd94599d9a815def171e936d",
       "fileCount": 1,
       "sample": [
         "brain/ENGINE.md"
@@ -102,13 +102,13 @@
     "evidence": [
       {
         "commit": "d27ca2b860bf385d3b4fb5b47f50071a0c305bb3",
-        "note": "Inventory contains 7 file(s); digest sha256:f0803f11071f510cc7186eaab3203cdb85cc9df8f1d1c79f1c24ec334b8c5978.",
+        "note": "Inventory contains 7 file(s); digest sha256:70f15118ac705d28f5921f9324160a8471dab5c0fd3873d471a375fa59260f33.",
         "path": ".github/workflows"
       }
     ],
     "id": "ci.workflows",
     "inventory": {
-      "digest": "sha256:f0803f11071f510cc7186eaab3203cdb85cc9df8f1d1c79f1c24ec334b8c5978",
+      "digest": "sha256:70f15118ac705d28f5921f9324160a8471dab5c0fd3873d471a375fa59260f33",
       "fileCount": 7,
       "sample": [
         ".github/scripts/automerge-policy.mjs",
@@ -154,13 +154,13 @@
     "evidence": [
       {
         "commit": "414db135ea4988124f67ee18fb11ffed2d0e91fd",
-        "note": "Inventory contains 220 file(s); digest sha256:daea707b8340223166a8d7841e1cafcb7c9728232c7cd2065066100872a17f89.",
+        "note": "Inventory contains 220 file(s); digest sha256:dff491aca3265bf621cad18ad4c46e363e9f5c2a28cbcb8e4febe91b31615771.",
         "path": "apps/crm/src/app/api"
       }
     ],
     "id": "crm.api",
     "inventory": {
-      "digest": "sha256:daea707b8340223166a8d7841e1cafcb7c9728232c7cd2065066100872a17f89",
+      "digest": "sha256:dff491aca3265bf621cad18ad4c46e363e9f5c2a28cbcb8e4febe91b31615771",
       "fileCount": 220,
       "sample": [
         "apps/crm/src/app/api/acquire/email/route.ts",
@@ -211,13 +211,13 @@
     "evidence": [
       {
         "commit": "414db135ea4988124f67ee18fb11ffed2d0e91fd",
-        "note": "Inventory contains 501 file(s); digest sha256:a009ec4a73cd26b5ced7a05c599f710861e166d17311144411290666fd90dc4d.",
+        "note": "Inventory contains 501 file(s); digest sha256:58c422763b7d6c042e54a3067979017e8b6f7e3ba509a0d5e0c9bb4dd67e2186.",
         "path": "apps/crm/src/app"
       }
     ],
     "id": "crm.application",
     "inventory": {
-      "digest": "sha256:a009ec4a73cd26b5ced7a05c599f710861e166d17311144411290666fd90dc4d",
+      "digest": "sha256:58c422763b7d6c042e54a3067979017e8b6f7e3ba509a0d5e0c9bb4dd67e2186",
       "fileCount": 501,
       "sample": [
         "apps/crm/src/app/_actions/l99-licensing.ts",
@@ -265,13 +265,13 @@
     "evidence": [
       {
         "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
-        "note": "Inventory contains 87 file(s); digest sha256:1971ba622b5a288b3779bf4ef439befea0407f71554c85978059d344df66a8d3.",
+        "note": "Inventory contains 87 file(s); digest sha256:93295621c907f77f49cca9ecba8bc6624f493f51f3a39ea61840716fb791a7d3.",
         "path": "apps/crm/supabase/migrations"
       }
     ],
     "id": "database.migrations",
     "inventory": {
-      "digest": "sha256:1971ba622b5a288b3779bf4ef439befea0407f71554c85978059d344df66a8d3",
+      "digest": "sha256:93295621c907f77f49cca9ecba8bc6624f493f51f3a39ea61840716fb791a7d3",
       "fileCount": 87,
       "sample": [
         "apps/crm/supabase/migrations/2026_genome_layer2.sql",
@@ -318,13 +318,13 @@
     "evidence": [
       {
         "commit": "d27ca2b860bf385d3b4fb5b47f50071a0c305bb3",
-        "note": "Inventory contains 16 file(s); digest sha256:71fcab398cce3057af4fbe2e6a91b11e68b2ddaeeeba9dfae0aa090e315cd0de.",
+        "note": "Inventory contains 16 file(s); digest sha256:c6fe34eed9419940a80ddce8124ebfd263739c960620798113b13d560b570068.",
         "path": "docs/architecture"
       }
     ],
     "id": "governance.architecture",
     "inventory": {
-      "digest": "sha256:71fcab398cce3057af4fbe2e6a91b11e68b2ddaeeeba9dfae0aa090e315cd0de",
+      "digest": "sha256:c6fe34eed9419940a80ddce8124ebfd263739c960620798113b13d560b570068",
       "fileCount": 16,
       "sample": [
         "docs/architecture/.phase0-probe-b/.gitkeep",
@@ -373,13 +373,13 @@
     "evidence": [
       {
         "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
-        "note": "Inventory contains 2 file(s); digest sha256:bb6198634c9b512352f4b8f4769e436eccd0137029ff0471bc44d09fc5974545.",
+        "note": "Inventory contains 2 file(s); digest sha256:3e3068d6e5a4954efeb5276da18b7bce8dffbccb17f2b81d2969834f7f3296b0.",
         "path": "memory/decisions.md"
       }
     ],
     "id": "memory.decisions",
     "inventory": {
-      "digest": "sha256:bb6198634c9b512352f4b8f4769e436eccd0137029ff0471bc44d09fc5974545",
+      "digest": "sha256:3e3068d6e5a4954efeb5276da18b7bce8dffbccb17f2b81d2969834f7f3296b0",
       "fileCount": 2,
       "sample": [
         "decisions.md",
@@ -417,13 +417,13 @@
     "evidence": [
       {
         "commit": "41d7517af47415179e32781d22f68b9a22f1156b",
-        "note": "Inventory contains 9 file(s); digest sha256:abf70e3a65ecf0d8aaf0f38faa790b53020a48af7541580435a05ab4c344086c.",
+        "note": "Inventory contains 9 file(s); digest sha256:e1279767d7808fa55e31ee51b175fb5a06aceafc832e094231cc69988c63acfb.",
         "path": ".cursor/rules"
       }
     ],
     "id": "policy.cursor-rules",
     "inventory": {
-      "digest": "sha256:abf70e3a65ecf0d8aaf0f38faa790b53020a48af7541580435a05ab4c344086c",
+      "digest": "sha256:e1279767d7808fa55e31ee51b175fb5a06aceafc832e094231cc69988c63acfb",
       "fileCount": 9,
       "sample": [
         ".cursor/rules/architecture.mdc",
@@ -549,13 +549,13 @@
     "evidence": [
       {
         "commit": "c4143545f24496a8cdea575375c6ffc3aa523533",
-        "note": "Inventory contains 39 file(s); digest sha256:f8315d87b5a652287c8084e39619c238bc28b3bb89131c2397cfe99477a220da.",
+        "note": "Inventory contains 39 file(s); digest sha256:cb6e72d007651fef4eb2b6a1261594bc1fe8d6798a9f89767f9b268e7637c0f1.",
         "path": "package.json"
       }
     ],
     "id": "repo.packages",
     "inventory": {
-      "digest": "sha256:f8315d87b5a652287c8084e39619c238bc28b3bb89131c2397cfe99477a220da",
+      "digest": "sha256:cb6e72d007651fef4eb2b6a1261594bc1fe8d6798a9f89767f9b268e7637c0f1",
       "fileCount": 39,
       "sample": [
         "apps/crm/package.json",

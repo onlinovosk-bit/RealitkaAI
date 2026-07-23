@@ -90,12 +90,16 @@ export function listFiles(repoRoot: string, inputs: string[]): string[] {
   return [...files].sort((left, right) => left.localeCompare(right));
 }
 
+function normalizeNewlines(content: string): string {
+  return content.replace(/\r\n/g, "\n");
+}
+
 export function digestFiles(repoRoot: string, files: string[]): string {
   const hash = createHash("sha256");
   for (const file of files) {
     hash.update(file);
     hash.update("\0");
-    hash.update(readFileSync(resolve(repoRoot, file)));
+    hash.update(normalizeNewlines(readFileSync(resolve(repoRoot, file), "utf8")));
     hash.update("\0");
   }
   return `sha256:${hash.digest("hex")}`;
