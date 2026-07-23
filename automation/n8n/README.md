@@ -15,7 +15,7 @@ Exportované n8n workflow JSON súbory pre Revolis orchestráciu.
 | Súbor | Workflow | Popis |
 |-------|----------|--------|
 | *(zatiaľ prázdne)* | W1 Follow-up strážca | Gmail drafty, nie odosielanie |
-| *(zatiaľ prázdne)* | W2 Heartbeat watchdog | Widget + `/api/health` |
+| *(zatiaľ prázdne)* | W2 Heartbeat watchdog | Widget + `/api/healthz` |
 | *(zatiaľ prázdne)* | W3 Odpoveď-detektor | Gmail read-only detekcia |
 
 Workflowy vzniknú v n8n Cloud a exportnú sa sem po founder OAuth bráne.

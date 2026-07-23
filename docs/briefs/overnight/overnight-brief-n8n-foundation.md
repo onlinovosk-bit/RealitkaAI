@@ -32,7 +32,7 @@ notifikáciu "dnes máš X follow-upov v konceptoch + Y telefonátov".
 
 ### W2 — Heartbeat watchdog
 Trigger: každých 15 min. `GET https://app.revolis.ai/odhad/reality-smolko`
-+ `GET /api/health` (existujúci heartbeat) → ak status != 200 dvakrát po
++ `GET /api/healthz` (existujúci heartbeat) → ak status != 200 dvakrát po
 sebe → okamžitá notifikácia founderovi (email + push cez n8n app).
 Dôvod: dnešný incident (500 na widgete platiaceho zákazníka) by bol
 odhalený o hodiny skôr strojom, nie náhodou.
