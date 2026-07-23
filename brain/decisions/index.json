@@ -860,18 +860,18 @@
       "unavailable"
     ],
     "canonical": false,
+    "choice": "Require filled premortem mitigations, D-1 tracking tests, geo cap, spend kill signals, and Smolko SLA confirmation before GO.",
     "confidence": "high",
     "date": "2026-07-23",
     "evidence": [
       {
-        "commit": "uncommitted",
+        "commit": "a7e662f4b4a33cd1922c8c3bd648f79494be1755",
         "line": 1,
         "note": "Filled premortem with P×Z matrix and mitigations.",
         "path": "docs/premortems/2026-07-23-ads-smolko-ab.md"
       }
     ],
     "expectedOutcome": "Campaign starts only after conditional GO criteria are met; outcome reviewed after campaign window.",
-    "choice": "Require filled premortem mitigations, D-1 tracking tests, geo cap, spend kill signals, and Smolko SLA confirmation before GO.",
     "id": "rme-dec-20260723-001",
     "observedOutcome": "Premortem filled; Smolko SLA question and D-1 tests pending before GO.",
     "owner": "founder",
@@ -881,10 +881,10 @@
       "premortem.ads-smolko-ab"
     ],
     "reviewAt": "2026-09-07",
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
-      "commit": "uncommitted",
+      "commit": "a7e662f4b4a33cd1922c8c3bd648f79494be1755",
       "path": "docs/premortems/2026-07-23-ads-smolko-ab.md"
     },
     "status": "active",

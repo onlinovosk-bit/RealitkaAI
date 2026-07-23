@@ -101,7 +101,7 @@
     ],
     "evidence": [
       {
-        "commit": "26b7693634c297f7aa98cdbff695277456c5ad24",
+        "commit": "bc254b1be5aedf4281645e34c5590fc09a197240",
         "note": "Inventory contains 7 file(s); digest sha256:70f15118ac705d28f5921f9324160a8471dab5c0fd3873d471a375fa59260f33.",
         "path": ".github/workflows"
       }
@@ -132,7 +132,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "26b7693634c297f7aa98cdbff695277456c5ad24",
+      "commit": "bc254b1be5aedf4281645e34c5590fc09a197240",
       "path": ".github/workflows"
     },
     "status": "active",
@@ -317,7 +317,7 @@
     "dependencies": [],
     "evidence": [
       {
-        "commit": "d27ca2b860bf385d3b4fb5b47f50071a0c305bb3",
+        "commit": "2f04343edbd3ca7f36f0e3ea5f66820ea601fb50",
         "note": "Inventory contains 16 file(s); digest sha256:c6fe34eed9419940a80ddce8124ebfd263739c960620798113b13d560b570068.",
         "path": "docs/architecture"
       }
@@ -352,7 +352,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "d27ca2b860bf385d3b4fb5b47f50071a0c305bb3",
+      "commit": "2f04343edbd3ca7f36f0e3ea5f66820ea601fb50",
       "path": "docs/architecture"
     },
     "status": "active",
@@ -416,15 +416,15 @@
     ],
     "evidence": [
       {
-        "commit": "41d7517af47415179e32781d22f68b9a22f1156b",
-        "note": "Inventory contains 9 file(s); digest sha256:e1279767d7808fa55e31ee51b175fb5a06aceafc832e094231cc69988c63acfb.",
+        "commit": "a7e662f4b4a33cd1922c8c3bd648f79494be1755",
+        "note": "Inventory contains 10 file(s); digest sha256:e4a58e83401b986d201092b1475a0d11bdf3ed0a79ec40d84b7b36d7a34852dd.",
         "path": ".cursor/rules"
       }
     ],
     "id": "policy.cursor-rules",
     "inventory": {
-      "digest": "sha256:e1279767d7808fa55e31ee51b175fb5a06aceafc832e094231cc69988c63acfb",
-      "fileCount": 9,
+      "digest": "sha256:e4a58e83401b986d201092b1475a0d11bdf3ed0a79ec40d84b7b36d7a34852dd",
+      "fileCount": 10,
       "sample": [
         ".cursor/rules/architecture.mdc",
         ".cursor/rules/l99-agent-operating-standard.mdc",
@@ -434,10 +434,11 @@
         ".cursor/rules/l99-role-and-quality-standard.mdc",
         ".cursor/rules/revolis-api.mdc",
         ".cursor/rules/revolis-db.mdc",
-        ".cursor/rules/revolis-ui.mdc"
+        ".cursor/rules/revolis-ui.mdc",
+        ".cursor/rules/workflow.mdc"
       ]
     },
-    "lastVerifiedAt": "2026-07-22",
+    "lastVerifiedAt": "2026-07-23",
     "name": "Cursor governance rules",
     "owner": "engineering",
     "purpose": "Operational rules referenced as policy evidence, never reclassified as historical decisions.",
@@ -448,7 +449,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "41d7517af47415179e32781d22f68b9a22f1156b",
+      "commit": "a7e662f4b4a33cd1922c8c3bd648f79494be1755",
       "path": ".cursor/rules"
     },
     "status": "active",
@@ -461,23 +462,25 @@
       "premortem",
       "risk-governance"
     ],
-    "confidence": "low",
+    "confidence": "high",
     "createdAt": "2026-07-23",
     "dependencies": [
       "process.premortem-template"
     ],
     "evidence": [
       {
-        "commit": "uncommitted",
-        "note": "Source unavailable in the current workspace.",
+        "commit": "a7e662f4b4a33cd1922c8c3bd648f79494be1755",
+        "note": "Inventory contains 1 file(s); digest sha256:61ecb9c928964b8590b936d8acfcb7e00fa1b0ce0f1f632c88243860cea508e6.",
         "path": "docs/premortems/2026-07-23-ads-smolko-ab.md"
       }
     ],
     "id": "premortem.ads-smolko-ab",
     "inventory": {
-      "digest": "unavailable",
-      "fileCount": 0,
-      "sample": []
+      "digest": "sha256:61ecb9c928964b8590b936d8acfcb7e00fa1b0ce0f1f632c88243860cea508e6",
+      "fileCount": 1,
+      "sample": [
+        "docs/premortems/2026-07-23-ads-smolko-ab.md"
+      ]
     },
     "lastVerifiedAt": "2026-07-23",
     "name": "Premortem: Google Ads A/B Smolko",
@@ -486,13 +489,13 @@
     "relatedDecisions": [
       "rme-dec-20260723-001"
     ],
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
-      "commit": "uncommitted",
+      "commit": "a7e662f4b4a33cd1922c8c3bd648f79494be1755",
       "path": "docs/premortems/2026-07-23-ads-smolko-ab.md"
     },
-    "status": "unknown",
+    "status": "active",
     "type": "documentation"
   },
   {
@@ -502,7 +505,7 @@
       "process-standard",
       "risk-governance"
     ],
-    "confidence": "low",
+    "confidence": "high",
     "createdAt": "2026-07-23",
     "dependencies": [
       "governance.architecture",
@@ -510,29 +513,31 @@
     ],
     "evidence": [
       {
-        "commit": "uncommitted",
-        "note": "Source unavailable in the current workspace.",
+        "commit": "a7e662f4b4a33cd1922c8c3bd648f79494be1755",
+        "note": "Inventory contains 1 file(s); digest sha256:eb4d333f5a94c137af61ea223bf9ec032a05d811dfad970450fc752f6391f842.",
         "path": "docs/templates/premortem.md"
       }
     ],
     "id": "process.premortem-template",
     "inventory": {
-      "digest": "unavailable",
-      "fileCount": 0,
-      "sample": []
+      "digest": "sha256:eb4d333f5a94c137af61ea223bf9ec032a05d811dfad970450fc752f6391f842",
+      "fileCount": 1,
+      "sample": [
+        "docs/templates/premortem.md"
+      ]
     },
     "lastVerifiedAt": "2026-07-23",
     "name": "Premortem process template",
     "owner": "founder",
     "purpose": "Standard premortem workflow for Strategic Bet and Core Platform initiatives before first commit.",
     "relatedDecisions": [],
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
-      "commit": "uncommitted",
+      "commit": "a7e662f4b4a33cd1922c8c3bd648f79494be1755",
       "path": "docs/templates/premortem.md"
     },
-    "status": "unknown",
+    "status": "active",
     "type": "documentation"
   },
   {
