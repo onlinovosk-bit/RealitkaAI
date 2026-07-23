@@ -154,6 +154,30 @@ const REGISTRY_SPECS: RegistrySpec[] = [
     relatedDecisions: [],
     capabilities: ["workflow-automation", "manual-approval-boundary"],
   },
+  {
+    id: "process.premortem-template",
+    type: "documentation",
+    name: "Premortem process template",
+    purpose: "Standard premortem workflow for Strategic Bet and Core Platform initiatives before first commit.",
+    owner: "founder",
+    sourcePath: "docs/templates/premortem.md",
+    roots: ["docs/templates/premortem.md"],
+    dependencies: ["governance.architecture", "policy.cursor-rules"],
+    relatedDecisions: [],
+    capabilities: ["process-standard", "premortem", "risk-governance"],
+  },
+  {
+    id: "premortem.ads-smolko-ab",
+    type: "documentation",
+    name: "Premortem: Google Ads A/B Smolko",
+    purpose: "Filled premortem for the Smolko Google Ads A/B campaign; outcome review scheduled 2026-09-07.",
+    owner: "founder",
+    sourcePath: "docs/premortems/2026-07-23-ads-smolko-ab.md",
+    roots: ["docs/premortems/2026-07-23-ads-smolko-ab.md"],
+    dependencies: ["process.premortem-template"],
+    relatedDecisions: ["rme-dec-20260723-001"],
+    capabilities: ["premortem", "ads-campaign", "risk-governance"],
+  },
 ];
 
 const DECISION_SPECS: DecisionSpec[] = [
@@ -494,6 +518,22 @@ const DECISION_SPECS: DecisionSpec[] = [
     evidence: [
       { path: "memory/decisions.md", line: 172, note: "Canonical decision and founder gate." },
       { path: "apps/crm/supabase/migrations/20260722120000_sandbox_gdpr_consent.sql", line: 108, note: "Repository migration evidence only." },
+    ],
+  },
+  {
+    id: "rme-dec-20260723-001",
+    title: "Premortem gate for Google Ads A/B Smolko campaign",
+    date: "2026-07-23",
+    status: "active",
+    problem: "A paid Ads A/B test could burn budget without measurable outcomes or customer SLA capacity.",
+    choice: "Require filled premortem mitigations, D-1 tracking tests, geo cap, spend kill signals, and Smolko SLA confirmation before GO.",
+    rationale: "Seven risks scored ≥6; mitigations change the plan rather than relying on attention alone.",
+    expectedOutcome: "Campaign starts only after conditional GO criteria are met; outcome reviewed after campaign window.",
+    observedOutcome: "Premortem filled; Smolko SLA question and D-1 tests pending before GO.",
+    reviewAt: "2026-09-07",
+    relatedAssets: ["premortem.ads-smolko-ab"],
+    evidence: [
+      { path: "docs/premortems/2026-07-23-ads-smolko-ab.md", line: 1, note: "Filled premortem with P×Z matrix and mitigations." },
     ],
   },
 ];
