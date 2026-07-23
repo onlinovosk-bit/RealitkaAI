@@ -1,0 +1,84 @@
+{
+  "name": "W1 — Follow-up strážca (Revolis)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "field": "cronExpression", "expression": "30 7 * * *" }
+          ]
+        }
+      },
+      "id": "b1000000-0000-0000-0000-000000000001",
+      "name": "Denne 07:30",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "// === STATICKÝ DATASET z trackera (vlna 22.07.2026) ===\n// Regeneruje Claude pri každej novej vlne. Sheets verzia = Vlna 2.\nconst prospekti = [\n  {email:'info@alphareality.sk', firma:'Alpha Reality', oslovenie:'', datum:'2026-07-22'},\n  {email:'info@dovi.sk', firma:'DOVI.sk', oslovenie:'', datum:'2026-07-22'},\n  {email:'info@flegrareality.sk', firma:'FLEGRA Comfort Reality', oslovenie:'', datum:'2026-07-22'},\n  {email:'maria.polancikova@fancyhome.sk', firma:'Fancy HOME', oslovenie:' pani Polančíková', datum:'2026-07-22'},\n  {email:'laginreality@laginreality.sk', firma:'LAGIN reality', oslovenie:'', datum:'2026-07-22'},\n  {email:'marekbarna@maxtadreal.sk', firma:'MaxTad-Real', oslovenie:' pán Barna', datum:'2026-07-22'},\n  {email:'hornakova@realityroznava.sk', firma:'RealityRožňava', oslovenie:' pani Horňáková', datum:'2026-07-22'},\n  {email:'info@realitnesluzby.sk', firma:'REALITNÉ SLUŽBY', oslovenie:'', datum:'2026-07-22'},\n  {email:'iveta.kondasova@gmail.com', firma:'Reality Kondásová', oslovenie:' pani Kondásová', datum:'2026-07-22'},\n  {email:'jana.lunio@refistavtrade.sk', firma:'REFISTAV-TRADE', oslovenie:' pani Lunio', datum:'2026-07-22'},\n  {email:'office@realityhouse.sk', firma:'REALITY HOUSE', oslovenie:'', datum:'2026-07-22'},\n  {email:'info@snamibyvas.sk', firma:'S nami bývaš', oslovenie:'', datum:'2026-07-22'},\n  {email:'staviamebyvanie@gmail.com', firma:'Staviame Bývanie Prešov', oslovenie:'', datum:'2026-07-22'},\n  {email:'kontakt@toprealkosice.sk', firma:'TOP Real Košice', oslovenie:'', datum:'2026-07-22'},\n  {email:'zara@zara-reality.sk', firma:'ZARA REALITY', oslovenie:'', datum:'2026-07-22'},\n  {email:'mihalrado@gmail.com', firma:'Simi Real', oslovenie:'', datum:'2026-07-22'},\n  {email:'kosice@adomis.sk', firma:'ADOMIS', oslovenie:'', datum:'2026-07-22'},\n  {email:'info@konex-reality.sk', firma:'KONEX REALITY', oslovenie:'', datum:'2026-07-22'},\n  {email:'ponuky@garantreal.sk', firma:'GARANT REAL', oslovenie:' pán Krajňák', datum:'2026-07-22'},\n  {email:'klein@realitytatry.sk', firma:'REALITY TATRY', oslovenie:' pán Klein', datum:'2026-07-22'},\n  {email:'marek.ferko@kontaktreality.sk', firma:'Kontakt reality', oslovenie:'', datum:'2026-07-22'},\n  {email:'info@realityke.sk', firma:'DJL Real', oslovenie:'', datum:'2026-07-22'},\n  {email:'info@kosickadrazobna.sk', firma:'1.KD reality', oslovenie:'', datum:'2026-07-22'},\n  {email:'euroreal@euroreal.biz', firma:'Euro Real', oslovenie:'', datum:'2026-07-22'},\n  {email:'info@realityzemplin.sk', firma:'Reality Zemplín', oslovenie:'', datum:'2026-07-22'},\n  {email:'info@almondreality.sk', firma:'Almond Reality', oslovenie:'', datum:'2026-07-22'},\n  {email:'kancelaria@mahut-reality.sk', firma:'Mahut Reality', oslovenie:'', datum:'2026-07-22'},\n  {email:'jan.ragan@diamondreality.sk', firma:'Diamond Reality Trebišov', oslovenie:' pán Ragán', datum:'2026-07-22'},\n  {email:'info@rokos.sk', firma:'RoKoS reality', oslovenie:'', datum:'2026-07-22'},\n  {email:'msubjakova@chello.sk', firma:'Sympatia Real', oslovenie:' pani Šubjaková', datum:'2026-07-23'},\n  {email:'kruzelova@zilinareal.com', firma:'ŽILINAREAL', oslovenie:' pani Kruželová', datum:'2026-07-23'}\n];\n// KAMZÍK vynechaný zámerne — už ODPOVEDAL (Vitko línia).\n\nconst DEMO='https://app.revolis.ai/odhad/demo?utm_source=email&utm_medium=followup&utm_campaign=demo-widget';\nconst dnes = new Date(new Date().toLocaleString('en-US',{timeZone:'Europe/Bratislava'}));\nconst out=[];\nfor (const p of prospekti){\n  const d0=new Date(p.datum+'T00:00:00');\n  const diff=Math.floor((dnes-d0)/86400000);\n  if (diff===4){\n    out.push({json:{\n      email:p.email, firma:p.firma,\n      subject:`Re: Nové zákazky pre ${p.firma} — majitelia so záujmom predať`,\n      body:`Dobrý deň${p.oslovenie},\\n\\nminulý týždeň som vám písal ohľadom kalkulačky, ktorá kancelárii privádza majiteľov so záujmom predať. Krátko sa pripomínam — ukážku si môžete pozrieť sami tu: ${DEMO}\\n\\nAk to dáva zmysel, stačí odpovedať alebo zavolať na 0948 444 014 a dohodneme krátky videohovor (20 minút).\\n\\nS pozdravom\\nAndrej Ondruš\\nRevolis.AI | ONLINOVO s.r.o.\\n\\nP.S. Ak si podobné ponuky neprajete, odpíšte „neposielať\" a viac sa neozvem.`\n    }});\n  }\n}\nreturn out;"
+      },
+      "id": "b1000000-0000-0000-0000-000000000002",
+      "name": "Dataset + filter D+4",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 0]
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.body }}",
+        "options": {
+          "sendTo": "={{ $json.email }}"
+        }
+      },
+      "id": "b1000000-0000-0000-0000-000000000003",
+      "name": "Vytvor DRAFT (nie send!)",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [440, 0],
+      "credentials": {
+        "gmailOAuth2": { "id": "PLACEHOLDER_PO_IMPORTE", "name": "Gmail Revolis" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items=$input.all();\nconst firmy=items.map(i=>`• ${i.json.firma} (${i.json.options?.sendTo||i.json.email||''})`).join('\\n');\nreturn [{json:{count:items.length, zoznam:firmy}}];"
+      },
+      "id": "b1000000-0000-0000-0000-000000000004",
+      "name": "Súhrn",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 0]
+    },
+    {
+      "parameters": {
+        "sendTo": "andrej@revolis.ai",
+        "subject": "=📋 W1: {{ $json.count }} follow-up draftov pripravených v Konceptoch",
+        "emailType": "text",
+        "message": "=Dnes dozreli na D+4 tieto firmy — drafty čakajú v Gmail Konceptoch (NIČ nebolo odoslané):\n\n{{ $json.zoznam }}\n\nPostup: najprv telefonát podľa call-list-2026-07-w30.md. Draft pošli LEN tomu, koho sa nedovoláš 2×. Ostatné drafty zmaž.\n\n— W1 Follow-up strážca",
+        "options": {}
+      },
+      "id": "b1000000-0000-0000-0000-000000000005",
+      "name": "Súhrnný email tebe",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [880, 0],
+      "credentials": {
+        "gmailOAuth2": { "id": "PLACEHOLDER_PO_IMPORTE", "name": "Gmail Revolis" }
+      }
+    }
+  ],
+  "connections": {
+    "Denne 07:30": { "main": [[{ "node": "Dataset + filter D+4", "type": "main", "index": 0 }]] },
+    "Dataset + filter D+4": { "main": [[{ "node": "Vytvor DRAFT (nie send!)", "type": "main", "index": 0 }]] },
+    "Vytvor DRAFT (nie send!)": { "main": [[{ "node": "Súhrn", "type": "main", "index": 0 }]] },
+    "Súhrn": { "main": [[{ "node": "Súhrnný email tebe", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Europe/Bratislava" },
+  "pinData": {},
+  "meta": { "instanceId": "revolis-w1-followup" }
+}

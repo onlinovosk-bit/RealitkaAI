@@ -1,17 +1,21 @@
-## Session 2026-07-22 (overnight handoff)
+## Session 2026-07-23
 
 ### Dokončené
-- **PR #311 MERGED** → `main` @ `17181d6d6` — sandbox `/odhad/demo` + `lead_consents`
-- CI opravené (3 iterácie): RPC DROP, `lead_id text`, RLS test
-- Apply script: `apps/crm/scripts/apply-sandbox-gdpr-prod.mjs`
-- GA4 widget funkčné (`G-R1GZQFV42V`)
+- **PR #314 MERGED** → `main` @ `c4143545f` — Memory Engine V1 (registry, decisions, audit CLI, tests, runbook)
+- **Prvý audit na main** — `12df2dd51` pushnutý; `brain/audits/2026-07-23.*` (0 errors, 10 advisory, delta +0/-0/=10)
+- **Verifikácia dnes:** `brain:check` OK, `brain:test` 7/7, CI main zelené (run 29987585340)
+- **PROD HTTP:** `/odhad/demo` 200, `/odhad/reality-smolko` 200, `/api/healthz` 200
 
-### Ráno u foundera (3 kroky)
-1. **PROD migrácia** — Supabase SQL alebo `POSTGRES_URL_NON_POOLING=... node apps/crm/scripts/apply-sandbox-gdpr-prod.mjs`
-2. **Po Vercel deploy** — mobile smoke `/odhad/demo`: submit → `sandbox_submissions` +1, `leads` +0
-3. **Poslať e-mail Smolkovi** (Novák vs Webex) — draft v chate 21.7.
+### Rozpracované / Pending (founder brány)
+1. **Mobile smoke** `/odhad/demo` → submit → Supabase: `sandbox_submissions` +1, `leads` +0
+2. **Demo link** neposielať verejne pred krokom 1
+3. **Novák A/B Ads** 50/50 — `realitysmolko.sk/ponuka-dopyt` vs `app.revolis.ai/odhad/reality-smolko`
+4. **n8n W2 Heartbeat** import do Cloud (lokálny draft: `automation/n8n/w2-heartbeat-watchdog.json`, necommitnutý)
+5. **Brain advisory review** pred 2026-07-29 (9× decision-outcome, 1× unused n8n)
 
-### Neblokované
-- Smolko A/B Ads čaká len na Smolkovu odpoveď
-- Demo link **neposielať** verejne pred krokom 2
-- Cleanup smoke leadov v CRM (voliteľné)
+### Kľúčové súbory zmenené
+- `brain/audits/2026-07-23.json|.md` — prvý produkčný audit baseline
+- `brain/registry/index.json` — refresh po merge #314
+
+### Ďalší krok
+Founder mobile smoke + Supabase check (odomkne demo link a zavrie `rme-dec-20260722-001` advisory).
