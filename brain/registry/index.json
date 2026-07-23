@@ -101,7 +101,7 @@
     ],
     "evidence": [
       {
-        "commit": "c4143545f24496a8cdea575375c6ffc3aa523533",
+        "commit": "84b343c1d1bd764d1ce85eb5c3a266c5df54c622",
         "note": "Inventory contains 7 file(s); digest sha256:f0803f11071f510cc7186eaab3203cdb85cc9df8f1d1c79f1c24ec334b8c5978.",
         "path": ".github/workflows"
       }
@@ -132,7 +132,7 @@
     "sensitivity": "internal",
     "schemaVersion": 1,
     "source": {
-      "commit": "c4143545f24496a8cdea575375c6ffc3aa523533",
+      "commit": "84b343c1d1bd764d1ce85eb5c3a266c5df54c622",
       "path": ".github/workflows"
     },
     "status": "active",
@@ -317,28 +317,28 @@
     "dependencies": [],
     "evidence": [
       {
-        "commit": "c4143545f24496a8cdea575375c6ffc3aa523533",
-        "note": "Inventory contains 15 file(s); digest sha256:813aed2763ee0a860d79b652dbb8190615a71b3bed23642db8f6f77cd0df5b43.",
+        "commit": "84b343c1d1bd764d1ce85eb5c3a266c5df54c622",
+        "note": "Inventory contains 16 file(s); digest sha256:71fcab398cce3057af4fbe2e6a91b11e68b2ddaeeeba9dfae0aa090e315cd0de.",
         "path": "docs/architecture"
       }
     ],
     "id": "governance.architecture",
     "inventory": {
-      "digest": "sha256:813aed2763ee0a860d79b652dbb8190615a71b3bed23642db8f6f77cd0df5b43",
-      "fileCount": 15,
+      "digest": "sha256:71fcab398cce3057af4fbe2e6a91b11e68b2ddaeeeba9dfae0aa090e315cd0de",
+      "fileCount": 16,
       "sample": [
         "docs/architecture/.phase0-probe-b/.gitkeep",
         "docs/architecture/antipatterns-log.md",
         "docs/architecture/clay-positioning-reframe.md",
         "docs/architecture/engineering-os-revolis-rightsized.md",
+        "docs/architecture/inputs/lead-tables-authority-2026-07.md",
         "docs/architecture/inputs/memory-engine-sources-2026-07.md",
         "docs/architecture/L99_ARCHITECTURE_AUDIT.md",
         "docs/architecture/l99-parked-concepts.md",
         "docs/architecture/L99-real-estate-vertical-pack-prompt.md",
         "docs/architecture/master-data-sourcing-map.md",
         "docs/architecture/memory-engine-canonical-model.md",
-        "docs/architecture/memory-engine-runbook.md",
-        "docs/architecture/north-star-2027-2030.md"
+        "docs/architecture/memory-engine-runbook.md"
       ]
     },
     "lastVerifiedAt": "2026-07-23",
@@ -352,7 +352,7 @@
     "sensitivity": "internal",
     "schemaVersion": 1,
     "source": {
-      "commit": "c4143545f24496a8cdea575375c6ffc3aa523533",
+      "commit": "84b343c1d1bd764d1ce85eb5c3a266c5df54c622",
       "path": "docs/architecture"
     },
     "status": "active",
