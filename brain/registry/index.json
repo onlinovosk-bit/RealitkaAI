@@ -454,6 +454,87 @@
   {
     "canonical": false,
     "capabilities": [
+      "ads-campaign",
+      "premortem",
+      "risk-governance"
+    ],
+    "confidence": "low",
+    "createdAt": "2026-07-23",
+    "dependencies": [
+      "process.premortem-template"
+    ],
+    "evidence": [
+      {
+        "commit": "uncommitted",
+        "note": "Source unavailable in the current workspace.",
+        "path": "docs/premortems/2026-07-23-ads-smolko-ab.md"
+      }
+    ],
+    "id": "premortem.ads-smolko-ab",
+    "inventory": {
+      "digest": "unavailable",
+      "fileCount": 0,
+      "sample": []
+    },
+    "lastVerifiedAt": "2026-07-23",
+    "name": "Premortem: Google Ads A/B Smolko",
+    "owner": "founder",
+    "purpose": "Filled premortem for the Smolko Google Ads A/B campaign; outcome review scheduled 2026-09-07.",
+    "relatedDecisions": [
+      "rme-dec-20260723-001"
+    ],
+    "sensitivity": "internal",
+    "schemaVersion": 1,
+    "source": {
+      "commit": "uncommitted",
+      "path": "docs/premortems/2026-07-23-ads-smolko-ab.md"
+    },
+    "status": "unknown",
+    "type": "documentation"
+  },
+  {
+    "canonical": false,
+    "capabilities": [
+      "premortem",
+      "process-standard",
+      "risk-governance"
+    ],
+    "confidence": "low",
+    "createdAt": "2026-07-23",
+    "dependencies": [
+      "governance.architecture",
+      "policy.cursor-rules"
+    ],
+    "evidence": [
+      {
+        "commit": "uncommitted",
+        "note": "Source unavailable in the current workspace.",
+        "path": "docs/templates/premortem.md"
+      }
+    ],
+    "id": "process.premortem-template",
+    "inventory": {
+      "digest": "unavailable",
+      "fileCount": 0,
+      "sample": []
+    },
+    "lastVerifiedAt": "2026-07-23",
+    "name": "Premortem process template",
+    "owner": "founder",
+    "purpose": "Standard premortem workflow for Strategic Bet and Core Platform initiatives before first commit.",
+    "relatedDecisions": [],
+    "sensitivity": "internal",
+    "schemaVersion": 1,
+    "source": {
+      "commit": "uncommitted",
+      "path": "docs/templates/premortem.md"
+    },
+    "status": "unknown",
+    "type": "documentation"
+  },
+  {
+    "canonical": false,
+    "capabilities": [
       "dependency-inventory",
       "workspace-topology"
     ],

@@ -1,0 +1,27 @@
+---
+description: Initiative and delivery workflow — briefs, premortems, PR gates
+alwaysApply: false
+---
+
+# Workflow Rules
+
+## Brief a iniciatívy
+
+- Brief musí obsahovať kategóriu (Strategic Bet / Core Platform / …), cieľ,
+  metriku úspechu a scope pred prvým commitom.
+- Strategic Bet a Core Platform briefy sa riadia Ústavou
+  (`docs/architecture/revolis-constitution-v2.md`) — timing veto platí vždy.
+
+## Premortem
+
+Každý brief kategórie Strategic Bet alebo Core Platform musí pred prvým
+commitom obsahovať vyplnený premortem podľa `docs/templates/premortem.md` —
+uložený v `docs/premortems/`, s maticou P×Z a mitigáciou+kill signálom
+pre každé riziko so skóre ≥6. PR bez linku na premortem pri týchto
+kategóriách CI neblokuje, ale review checklist ho vyžaduje.
+
+## PR kontrolný zoznam
+
+- Brief kategória je uvedená v PR popise.
+- Strategic Bet / Core Platform: link na vyplnený premortem v `docs/premortems/`.
+- Top riziká (skóre ≥6) sú zapísané v brain/registry s review dátumom.
