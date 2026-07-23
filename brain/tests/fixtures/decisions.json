@@ -1,0 +1,38 @@
+[
+  {
+    "schemaVersion": 1,
+    "id": "fixture-decision",
+    "title": "Fixture decision",
+    "date": "2026-01-01",
+    "owner": "founder",
+    "status": "verification_required",
+    "problem": "The fixture needs a decision with a due outcome.",
+    "choice": "Keep a deterministic decision record.",
+    "rationale": "It exercises audit and delta behavior.",
+    "alternatives": [
+      "unavailable"
+    ],
+    "expectedOutcome": "A deterministic test result.",
+    "observedOutcome": "unavailable - fixture outcome was not supplied",
+    "reviewAt": "2026-02-01",
+    "relatedAssets": [
+      "fixture.source"
+    ],
+    "supersedes": [],
+    "source": {
+      "path": "fixture/source.md",
+      "commit": "fixture"
+    },
+    "evidence": [
+      {
+        "path": "fixture/source.md",
+        "line": 1,
+        "commit": "fixture",
+        "note": "Fixture decision evidence"
+      }
+    ],
+    "confidence": "high",
+    "sensitivity": "internal",
+    "canonical": false
+  }
+]

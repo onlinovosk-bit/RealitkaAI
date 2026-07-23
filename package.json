@@ -12,6 +12,12 @@
   ],
   "scripts": {
     "prospect:enrich": "npx tsx scripts/prospecting/enrich.ts",
+    "brain:ingest": "tsx brain/src/ingest.ts",
+    "brain:check": "tsx brain/src/ingest.ts --check",
+    "brain:audit": "tsx brain/src/audit.ts",
+    "brain:weekly": "tsx brain/src/weekly.ts",
+    "brain:test": "tsx --test brain/tests/*.test.ts",
+    "brain:typecheck": "tsc -p brain/tsconfig.json --noEmit",
     "prospect:score": "npx tsx scripts/prospecting/score.ts",
     "prospect:export": "npx tsx scripts/prospecting/export.ts",
     "prospect:test": "npm run test --prefix apps/crm -- --config ../../scripts/prospecting/vitest.config.ts"
@@ -19,5 +25,10 @@
   "dependencies": {
     "cheerio": "^1.2.0",
     "dotenv": "^17.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   }
 }
