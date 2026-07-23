@@ -101,7 +101,7 @@
     ],
     "evidence": [
       {
-        "commit": "84b343c1d1bd764d1ce85eb5c3a266c5df54c622",
+        "commit": "d27ca2b860bf385d3b4fb5b47f50071a0c305bb3",
         "note": "Inventory contains 7 file(s); digest sha256:f0803f11071f510cc7186eaab3203cdb85cc9df8f1d1c79f1c24ec334b8c5978.",
         "path": ".github/workflows"
       }
@@ -132,7 +132,7 @@
     "sensitivity": "internal",
     "schemaVersion": 1,
     "source": {
-      "commit": "84b343c1d1bd764d1ce85eb5c3a266c5df54c622",
+      "commit": "d27ca2b860bf385d3b4fb5b47f50071a0c305bb3",
       "path": ".github/workflows"
     },
     "status": "active",
@@ -317,7 +317,7 @@
     "dependencies": [],
     "evidence": [
       {
-        "commit": "84b343c1d1bd764d1ce85eb5c3a266c5df54c622",
+        "commit": "d27ca2b860bf385d3b4fb5b47f50071a0c305bb3",
         "note": "Inventory contains 16 file(s); digest sha256:71fcab398cce3057af4fbe2e6a91b11e68b2ddaeeeba9dfae0aa090e315cd0de.",
         "path": "docs/architecture"
       }
@@ -352,7 +352,7 @@
     "sensitivity": "internal",
     "schemaVersion": 1,
     "source": {
-      "commit": "84b343c1d1bd764d1ce85eb5c3a266c5df54c622",
+      "commit": "d27ca2b860bf385d3b4fb5b47f50071a0c305bb3",
       "path": "docs/architecture"
     },
     "status": "active",
