@@ -45,4 +45,15 @@ describe("Password recovery auth confirm guard", () => {
     const source = readFileSync(join(CRM_ROOT, "src/app/login/page.tsx"), "utf8");
     expect(source).toContain('href="/forgot-password"');
   });
+
+  it("forgot-password redirects recovery via /auth/callback", () => {
+    const source = readFileSync(join(CRM_ROOT, "src/app/forgot-password/page.tsx"), "utf8");
+    expect(source).toContain("getPasswordRecoveryRedirectUrl");
+  });
+
+  it("reset-password forwards ?code= to /auth/callback (server exchange)", () => {
+    const source = readFileSync(join(CRM_ROOT, "src/app/reset-password/page.tsx"), "utf8");
+    expect(source).toContain("/auth/callback?code=");
+    expect(source).not.toContain("exchangeCodeForSession(code)");
+  });
 });

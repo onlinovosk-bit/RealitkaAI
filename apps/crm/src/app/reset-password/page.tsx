@@ -34,8 +34,11 @@ async function establishRecoverySession(): Promise<{ ok: boolean; detail?: strin
 
   const code = params.get("code");
   if (code) {
-    const { error } = await supabaseClient.auth.exchangeCodeForSession(code);
-    if (error) return { ok: false, detail: error.message };
+    const next = encodeURIComponent("/reset-password");
+    window.location.replace(
+      `/auth/callback?code=${encodeURIComponent(code)}&next=${next}`,
+    );
+    return { ok: false, detail: "redirect" };
   }
 
   // Give SSR client a moment to ingest hash tokens / cookies.

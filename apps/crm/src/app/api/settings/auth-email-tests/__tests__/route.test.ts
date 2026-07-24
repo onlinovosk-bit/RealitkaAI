@@ -70,7 +70,7 @@ describe("/api/settings/auth-email-tests", () => {
 
     expect(response.status).toBe(200);
     expect(mocks.resetPasswordForEmail).toHaveBeenCalledWith("agent@example.com", {
-      redirectTo: "https://app.revolis.ai/reset-password",
+      redirectTo: "https://app.revolis.ai/auth/callback?next=/reset-password",
     });
   });
 
@@ -91,7 +91,7 @@ describe("/api/settings/auth-email-tests", () => {
 
     expect(response.status).toBe(200);
     expect(mocks.resetPasswordForEmail).toHaveBeenCalledWith("other@example.com", {
-      redirectTo: "https://app.revolis.ai/reset-password",
+      redirectTo: "https://app.revolis.ai/auth/callback?next=/reset-password",
     });
   });
 });
