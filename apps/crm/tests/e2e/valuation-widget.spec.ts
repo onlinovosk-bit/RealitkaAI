@@ -12,9 +12,13 @@ test.describe("Valuation widget — /odhad/reality-smolko", () => {
     const response = await page.goto("/odhad/reality-smolko");
     expect(response?.status()).toBe(200);
 
+    await expect(page.getByText(/Načítavam formulár/i)).toBeHidden({ timeout: 15_000 });
     await expect(page.getByText(/Krok 1 z 3 · Nehnuteľnosť/i)).toBeVisible();
-    await expect(page.getByRole("button", { name: /Pokračovať na kontakt/i })).toBeVisible();
-    await expect(page.getByText(/Krok 2 z 3/i)).not.toBeVisible();
+    // Variant A → "Pokračovať na kontakt"; variant B → "Zobraziť môj odhad" (same property step)
+    await expect(
+      page.getByRole("button", { name: /Pokračovať na kontakt|Zobraziť môj odhad/i }),
+    ).toBeVisible();
+    await expect(page.getByText(/Krok 2 z 3/i)).toHaveCount(0);
   });
 
   test("estimate API allows variant B preview without contact", async ({ request }) => {
@@ -77,6 +81,10 @@ test.describe("Valuation widget — /odhad/demo sandbox", () => {
   });
 
   test("sandbox submit returns ok with sandbox flag", async ({ request }) => {
+    const admin = getAdminClient();
+    const sandboxBefore = await countRows(admin, "sandbox_submissions");
+    const leadsBefore = await countRows(admin, "leads", { source: "valuation_widget" });
+
     const res = await request.post("/api/valuation/submit", {
       data: demoSubmitPayload(String(Date.now())),
     });
@@ -84,6 +92,9 @@ test.describe("Valuation widget — /odhad/demo sandbox", () => {
     const body = (await res.json()) as { ok?: boolean; sandbox?: boolean };
     expect(body.ok).toBe(true);
     expect(body.sandbox).toBe(true);
+
+    expect(await countRows(admin, "sandbox_submissions")).toBe(sandboxBefore + 1);
+    expect(await countRows(admin, "leads", { source: "valuation_widget" })).toBe(leadsBefore);
   });
 });
 
