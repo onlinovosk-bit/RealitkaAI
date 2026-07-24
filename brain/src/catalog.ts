@@ -178,6 +178,32 @@ const REGISTRY_SPECS: RegistrySpec[] = [
     relatedDecisions: ["rme-dec-20260723-001"],
     capabilities: ["premortem", "ads-campaign", "risk-governance"],
   },
+  {
+    id: "process.veos-voice-compiler",
+    type: "documentation",
+    name: "VEOS Voice Compiler standard",
+    purpose:
+      "Conversational standard for compiling founder voice dictation into engineering bundles; check brain/registry before proposing NEW modules.",
+    owner: "founder+Claude",
+    sourcePath: "docs/prompts/veos-voice-compiler.md",
+    roots: ["docs/prompts/veos-voice-compiler.md"],
+    dependencies: ["brain.engine", "governance.architecture", "policy.cursor-rules"],
+    relatedDecisions: [],
+    capabilities: ["process-standard", "veos", "voice-compiler"],
+  },
+  {
+    id: "process.veos-integration",
+    type: "documentation",
+    name: "VEOS architecture integration",
+    purpose:
+      "Maps the 12-module VEOS proposal to existing Revolis owners; conversational layer only, no new runtime modules.",
+    owner: "founder+Claude",
+    sourcePath: "docs/architecture/veos-integration.md",
+    roots: ["docs/architecture/veos-integration.md"],
+    dependencies: ["process.veos-voice-compiler", "governance.architecture"],
+    relatedDecisions: [],
+    capabilities: ["process-standard", "veos", "architecture-guidance"],
+  },
 ];
 
 const DECISION_SPECS: DecisionSpec[] = [

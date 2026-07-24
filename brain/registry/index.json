@@ -417,13 +417,13 @@
     "evidence": [
       {
         "commit": "a7e662f4b4a33cd1922c8c3bd648f79494be1755",
-        "note": "Inventory contains 10 file(s); digest sha256:e4a58e83401b986d201092b1475a0d11bdf3ed0a79ec40d84b7b36d7a34852dd.",
+        "note": "Inventory contains 10 file(s); digest sha256:8956f1fa78f788bb0c1849354ca149825f3a04a1f6a8720caeaf06a87bf7005d.",
         "path": ".cursor/rules"
       }
     ],
     "id": "policy.cursor-rules",
     "inventory": {
-      "digest": "sha256:e4a58e83401b986d201092b1475a0d11bdf3ed0a79ec40d84b7b36d7a34852dd",
+      "digest": "sha256:8956f1fa78f788bb0c1849354ca149825f3a04a1f6a8720caeaf06a87bf7005d",
       "fileCount": 10,
       "sample": [
         ".cursor/rules/architecture.mdc",
@@ -470,13 +470,13 @@
     "evidence": [
       {
         "commit": "a7e662f4b4a33cd1922c8c3bd648f79494be1755",
-        "note": "Inventory contains 1 file(s); digest sha256:61ecb9c928964b8590b936d8acfcb7e00fa1b0ce0f1f632c88243860cea508e6.",
+        "note": "Inventory contains 1 file(s); digest sha256:6db60559064ea9e2fa01cb9c95fd520403e6c435af37c6ec675193538e20dddb.",
         "path": "docs/premortems/2026-07-23-ads-smolko-ab.md"
       }
     ],
     "id": "premortem.ads-smolko-ab",
     "inventory": {
-      "digest": "sha256:61ecb9c928964b8590b936d8acfcb7e00fa1b0ce0f1f632c88243860cea508e6",
+      "digest": "sha256:6db60559064ea9e2fa01cb9c95fd520403e6c435af37c6ec675193538e20dddb",
       "fileCount": 1,
       "sample": [
         "docs/premortems/2026-07-23-ads-smolko-ab.md"
@@ -538,6 +538,87 @@
       "path": "docs/templates/premortem.md"
     },
     "status": "active",
+    "type": "documentation"
+  },
+  {
+    "canonical": false,
+    "capabilities": [
+      "architecture-guidance",
+      "process-standard",
+      "veos"
+    ],
+    "confidence": "low",
+    "createdAt": "2026-07-24",
+    "dependencies": [
+      "governance.architecture",
+      "process.veos-voice-compiler"
+    ],
+    "evidence": [
+      {
+        "commit": "uncommitted",
+        "note": "Source unavailable in the current workspace.",
+        "path": "docs/architecture/veos-integration.md"
+      }
+    ],
+    "id": "process.veos-integration",
+    "inventory": {
+      "digest": "unavailable",
+      "fileCount": 0,
+      "sample": []
+    },
+    "lastVerifiedAt": "2026-07-24",
+    "name": "VEOS architecture integration",
+    "owner": "founder+Claude",
+    "purpose": "Maps the 12-module VEOS proposal to existing Revolis owners; conversational layer only, no new runtime modules.",
+    "relatedDecisions": [],
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "uncommitted",
+      "path": "docs/architecture/veos-integration.md"
+    },
+    "status": "unknown",
+    "type": "documentation"
+  },
+  {
+    "canonical": false,
+    "capabilities": [
+      "process-standard",
+      "veos",
+      "voice-compiler"
+    ],
+    "confidence": "low",
+    "createdAt": "2026-07-24",
+    "dependencies": [
+      "brain.engine",
+      "governance.architecture",
+      "policy.cursor-rules"
+    ],
+    "evidence": [
+      {
+        "commit": "uncommitted",
+        "note": "Source unavailable in the current workspace.",
+        "path": "docs/prompts/veos-voice-compiler.md"
+      }
+    ],
+    "id": "process.veos-voice-compiler",
+    "inventory": {
+      "digest": "unavailable",
+      "fileCount": 0,
+      "sample": []
+    },
+    "lastVerifiedAt": "2026-07-24",
+    "name": "VEOS Voice Compiler standard",
+    "owner": "founder+Claude",
+    "purpose": "Conversational standard for compiling founder voice dictation into engineering bundles; check brain/registry before proposing NEW modules.",
+    "relatedDecisions": [],
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "uncommitted",
+      "path": "docs/prompts/veos-voice-compiler.md"
+    },
+    "status": "unknown",
     "type": "documentation"
   },
   {
