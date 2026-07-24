@@ -88,6 +88,15 @@ export function loadBrain(brainRoot: string): LoadedBrain {
     }
   }
   for (const decision of decisions) {
+    for (const asset of decision.relatedAssets) {
+      if (!registryIds.has(asset)) {
+        issues.push({
+          code: "missing_related_asset",
+          path: decision.id,
+          message: `Unknown related asset: ${asset}`,
+        });
+      }
+    }
     for (const superseded of decision.supersedes) {
       if (!decisionIds.has(superseded)) issues.push({ code: "missing_superseded", path: decision.id, message: `Unknown superseded decision: ${superseded}` });
     }

@@ -5,9 +5,11 @@ import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import test from "node:test";
 import { calculateDelta, runAudit, type AuditReport } from "../src/audit.js";
+import { collectFindings } from "../src/audit-core.js";
 import { buildRegistry } from "../src/catalog.js";
 import { runIngest } from "../src/ingest.js";
 import { loadBrain } from "../src/loader.js";
+import { listFiles } from "../src/repo.js";
 import { validateDecisionRecord, validateRegistryRecord } from "../src/schema.js";
 import { generateWeekly } from "../src/weekly.js";
 
@@ -154,6 +156,43 @@ test("weekly report emits no more than five evidenced recommendations", () => {
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+test("loader rejects unknown relatedAssets", () => {
+  const root = temporaryRoot();
+  try {
+    const { brainRoot } = installFixtures(root);
+    const decisionsPath = resolve(brainRoot, "decisions", "index.json");
+    const decisions = JSON.parse(readFileSync(decisionsPath, "utf8"));
+    decisions[0].relatedAssets = ["missing.asset.id"];
+    writeFileSync(decisionsPath, `${JSON.stringify(decisions, null, 2)}\n`, "utf8");
+    const loaded = loadBrain(brainRoot);
+    assert.ok(loaded.issues.some((issue) => issue.code === "missing_related_asset"));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("listFiles uses walk fallback for non-git fixture roots", () => {
+  const root = temporaryRoot();
+  try {
+    mkdirSync(resolve(root, "fixture"), { recursive: true });
+    writeFileSync(resolve(root, "fixture", "note.md"), "# fixture\n", "utf8");
+    assert.deepEqual(listFiles(root, ["fixture"]), ["fixture/note.md"]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("audit flags deprecated revolis_leads with no application usage", () => {
+  const brainRoot = resolve(repoRoot, "brain");
+  const brain = loadBrain(brainRoot);
+  const findings = collectFindings({
+    repoRoot,
+    brain,
+    auditDate: "2026-07-23",
+  });
+  assert.ok(findings.some((finding) => finding.key === "deprecated-table:revolis_leads"));
 });
 
 test("repository inventory includes only files known to Git", () => {

@@ -18,6 +18,15 @@ export function slash(value: string): string {
   return value.replace(/\\/g, "/");
 }
 
+const LOCALE_COMPARE_OPTIONS: Intl.CollatorOptions = {
+  sensitivity: "base",
+  numeric: true,
+};
+
+export function compareAscii(left: string, right: string): number {
+  return left.localeCompare(right, "en", LOCALE_COMPARE_OPTIONS);
+}
+
 export function isoDate(value = new Date()): string {
   return value.toISOString().slice(0, 10);
 }
@@ -48,6 +57,10 @@ export function argString(args: Map<string, string | true>, key: string): string
   return typeof value === "string" ? value : undefined;
 }
 
+function isGitRepository(repoRoot: string): boolean {
+  return existsSync(resolve(repoRoot, ".git"));
+}
+
 export function listFiles(repoRoot: string, inputs: string[]): string[] {
   const tracked = git(repoRoot, ["ls-files", "-z", "--", ...inputs]);
   if (tracked !== undefined) {
@@ -56,7 +69,11 @@ export function listFiles(repoRoot: string, inputs: string[]): string[] {
       .filter(Boolean)
       .map(slash)
       .filter((file) => !file.split("/").some((segment) => IGNORED_SEGMENTS.has(segment)))
-      .sort((left, right) => left.localeCompare(right));
+      .sort(compareAscii);
+  }
+
+  if (isGitRepository(repoRoot)) {
+    throw new Error(`git ls-files failed for repository root: ${repoRoot}`);
   }
 
   // Fixture roots are not Git repositories; this fallback stays within the
@@ -79,7 +96,11 @@ export function listFiles(repoRoot: string, inputs: string[]): string[] {
   }
 
   for (const input of inputs) walk(resolve(repoRoot, input));
-  return [...files].sort((left, right) => left.localeCompare(right));
+  return [...files].sort(compareAscii);
+}
+
+export function normalizeNewlines(content: string): string {
+  return content.replace(/\r\n/g, "\n");
 }
 
 export function digestFiles(repoRoot: string, files: string[]): string {
@@ -87,7 +108,7 @@ export function digestFiles(repoRoot: string, files: string[]): string {
   for (const file of files) {
     hash.update(file);
     hash.update("\0");
-    hash.update(readFileSync(resolve(repoRoot, file)));
+    hash.update(normalizeNewlines(readFileSync(resolve(repoRoot, file), "utf8")));
     hash.update("\0");
   }
   return `sha256:${hash.digest("hex")}`;
@@ -135,7 +156,7 @@ function stableValue(value: unknown): unknown {
   if (value && typeof value === "object") {
     return Object.fromEntries(
       Object.entries(value as Record<string, unknown>)
-        .sort(([left], [right]) => left.localeCompare(right))
+        .sort(([left], [right]) => compareAscii(left, right))
         .map(([key, child]) => [key, stableValue(child)]),
     );
   }

@@ -12,28 +12,31 @@
     ],
     "evidence": [
       {
-        "commit": "41d7517af47415179e32781d22f68b9a22f1156b",
-        "note": "Inventory contains 1 file(s); digest sha256:3135537f75171da226085828d82bbf76287246ac47bfc97026a91230a4e93d9b.",
+        "commit": "5c14090b8b62f1134e16154fd89b18d38a5435ea",
+        "note": "Inventory contains 4 file(s); digest sha256:1ae5a41be37143db69060a41efc865decf83987dd786fc3a1df07ead30e194b4.",
         "path": "automation/n8n"
       }
     ],
     "id": "automation.n8n",
     "inventory": {
-      "digest": "sha256:3135537f75171da226085828d82bbf76287246ac47bfc97026a91230a4e93d9b",
-      "fileCount": 1,
+      "digest": "sha256:1ae5a41be37143db69060a41efc865decf83987dd786fc3a1df07ead30e194b4",
+      "fileCount": 4,
       "sample": [
-        "automation/n8n/README.md"
+        "automation/n8n/README.md",
+        "automation/n8n/w1-follow-up-strazca.json",
+        "automation/n8n/w2-heartbeat-watchdog.json",
+        "automation/n8n/w3-odpoved-detektor.json"
       ]
     },
-    "lastVerifiedAt": "2026-07-22",
+    "lastVerifiedAt": "2026-07-23",
     "name": "n8n workflow source area",
     "owner": "founder",
     "purpose": "Inventory only. Credentials, execution payloads, and customer data are excluded from Brain records.",
     "relatedDecisions": [],
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
-      "commit": "41d7517af47415179e32781d22f68b9a22f1156b",
+      "commit": "5c14090b8b62f1134e16154fd89b18d38a5435ea",
       "path": "automation/n8n"
     },
     "status": "active",
@@ -55,13 +58,13 @@
     "evidence": [
       {
         "commit": "c4143545f24496a8cdea575375c6ffc3aa523533",
-        "note": "Inventory contains 1 file(s); digest sha256:fbf8087d1eae95bb330eaa9c56fb657a6ff8ce2172ab2abdb7c25edd0e607efb.",
+        "note": "Inventory contains 1 file(s); digest sha256:4966da9737e6e542f9af5c2b6fd920274f6f4519dd94599d9a815def171e936d.",
         "path": "brain/ENGINE.md"
       }
     ],
     "id": "brain.engine",
     "inventory": {
-      "digest": "sha256:fbf8087d1eae95bb330eaa9c56fb657a6ff8ce2172ab2abdb7c25edd0e607efb",
+      "digest": "sha256:4966da9737e6e542f9af5c2b6fd920274f6f4519dd94599d9a815def171e936d",
       "fileCount": 1,
       "sample": [
         "brain/ENGINE.md"
@@ -74,8 +77,8 @@
     "relatedDecisions": [
       "rme-dec-20260522-004"
     ],
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
       "commit": "c4143545f24496a8cdea575375c6ffc3aa523533",
       "path": "brain/ENGINE.md"
@@ -98,14 +101,14 @@
     ],
     "evidence": [
       {
-        "commit": "c4143545f24496a8cdea575375c6ffc3aa523533",
-        "note": "Inventory contains 7 file(s); digest sha256:4712aba234aa65a79655eddb9763e67459203abb7989d2233725f6fb7e119309.",
+        "commit": "bc254b1be5aedf4281645e34c5590fc09a197240",
+        "note": "Inventory contains 7 file(s); digest sha256:70f15118ac705d28f5921f9324160a8471dab5c0fd3873d471a375fa59260f33.",
         "path": ".github/workflows"
       }
     ],
     "id": "ci.workflows",
     "inventory": {
-      "digest": "sha256:4712aba234aa65a79655eddb9763e67459203abb7989d2233725f6fb7e119309",
+      "digest": "sha256:70f15118ac705d28f5921f9324160a8471dab5c0fd3873d471a375fa59260f33",
       "fileCount": 7,
       "sample": [
         ".github/scripts/automerge-policy.mjs",
@@ -126,10 +129,10 @@
       "rme-dec-20260618-001",
       "rme-dec-20260618-002"
     ],
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
-      "commit": "c4143545f24496a8cdea575375c6ffc3aa523533",
+      "commit": "bc254b1be5aedf4281645e34c5590fc09a197240",
       "path": ".github/workflows"
     },
     "status": "active",
@@ -151,13 +154,13 @@
     "evidence": [
       {
         "commit": "414db135ea4988124f67ee18fb11ffed2d0e91fd",
-        "note": "Inventory contains 220 file(s); digest sha256:daea707b8340223166a8d7841e1cafcb7c9728232c7cd2065066100872a17f89.",
+        "note": "Inventory contains 220 file(s); digest sha256:df4fa25535b6a11c13373df8b334dad89546af69344f7d9719c4077d4460d9df.",
         "path": "apps/crm/src/app/api"
       }
     ],
     "id": "crm.api",
     "inventory": {
-      "digest": "sha256:daea707b8340223166a8d7841e1cafcb7c9728232c7cd2065066100872a17f89",
+      "digest": "sha256:df4fa25535b6a11c13373df8b334dad89546af69344f7d9719c4077d4460d9df",
       "fileCount": 220,
       "sample": [
         "apps/crm/src/app/api/acquire/email/route.ts",
@@ -183,8 +186,8 @@
       "rme-dec-20260706-001",
       "rme-dec-20260719-001"
     ],
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
       "commit": "414db135ea4988124f67ee18fb11ffed2d0e91fd",
       "path": "apps/crm/src/app/api"
@@ -208,13 +211,13 @@
     "evidence": [
       {
         "commit": "414db135ea4988124f67ee18fb11ffed2d0e91fd",
-        "note": "Inventory contains 501 file(s); digest sha256:a009ec4a73cd26b5ced7a05c599f710861e166d17311144411290666fd90dc4d.",
+        "note": "Inventory contains 501 file(s); digest sha256:4339e10be7a68e855fad14a8715f2777d49b697ab6cac91c6a54ee30b233f0d9.",
         "path": "apps/crm/src/app"
       }
     ],
     "id": "crm.application",
     "inventory": {
-      "digest": "sha256:a009ec4a73cd26b5ced7a05c599f710861e166d17311144411290666fd90dc4d",
+      "digest": "sha256:4339e10be7a68e855fad14a8715f2777d49b697ab6cac91c6a54ee30b233f0d9",
       "fileCount": 501,
       "sample": [
         "apps/crm/src/app/_actions/l99-licensing.ts",
@@ -238,8 +241,8 @@
     "relatedDecisions": [
       "rme-dec-20260717-001"
     ],
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
       "commit": "414db135ea4988124f67ee18fb11ffed2d0e91fd",
       "path": "apps/crm/src/app"
@@ -262,13 +265,13 @@
     "evidence": [
       {
         "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
-        "note": "Inventory contains 87 file(s); digest sha256:1971ba622b5a288b3779bf4ef439befea0407f71554c85978059d344df66a8d3.",
+        "note": "Inventory contains 87 file(s); digest sha256:3b7409572b0434bba766505dc8c5a21e9e8a14f977882590ab901ba65a0ad1c5.",
         "path": "apps/crm/supabase/migrations"
       }
     ],
     "id": "database.migrations",
     "inventory": {
-      "digest": "sha256:1971ba622b5a288b3779bf4ef439befea0407f71554c85978059d344df66a8d3",
+      "digest": "sha256:3b7409572b0434bba766505dc8c5a21e9e8a14f977882590ab901ba65a0ad1c5",
       "fileCount": 87,
       "sample": [
         "apps/crm/supabase/migrations/2026_genome_layer2.sql",
@@ -280,9 +283,9 @@
         "apps/crm/supabase/migrations/20260418_enterprise_ai_intelligence.sql",
         "apps/crm/supabase/migrations/20260419_enterprise_rls_profile_link.sql",
         "apps/crm/supabase/migrations/20260424_google_calendar_oauth.sql",
-        "apps/crm/supabase/migrations/20260425231407_event_pipeline.sql",
-        "apps/crm/supabase/migrations/20260425231426_bri_live_score.sql",
-        "apps/crm/supabase/migrations/20260426114846_morning_brief.sql"
+        "apps/crm/supabase/migrations/20260602_agency_billing_and_credits.sql",
+        "apps/crm/supabase/migrations/20260603_dashboard_insights_cache.sql",
+        "apps/crm/supabase/migrations/20260425231407_event_pipeline.sql"
       ]
     },
     "lastVerifiedAt": "2026-07-21",
@@ -293,8 +296,8 @@
       "rme-dec-20260624-002",
       "rme-dec-20260722-001"
     ],
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
       "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
       "path": "apps/crm/supabase/migrations"
@@ -314,28 +317,28 @@
     "dependencies": [],
     "evidence": [
       {
-        "commit": "c4143545f24496a8cdea575375c6ffc3aa523533",
-        "note": "Inventory contains 15 file(s); digest sha256:813aed2763ee0a860d79b652dbb8190615a71b3bed23642db8f6f77cd0df5b43.",
+        "commit": "2f04343edbd3ca7f36f0e3ea5f66820ea601fb50",
+        "note": "Inventory contains 16 file(s); digest sha256:c6fe34eed9419940a80ddce8124ebfd263739c960620798113b13d560b570068.",
         "path": "docs/architecture"
       }
     ],
     "id": "governance.architecture",
     "inventory": {
-      "digest": "sha256:813aed2763ee0a860d79b652dbb8190615a71b3bed23642db8f6f77cd0df5b43",
-      "fileCount": 15,
+      "digest": "sha256:c6fe34eed9419940a80ddce8124ebfd263739c960620798113b13d560b570068",
+      "fileCount": 16,
       "sample": [
         "docs/architecture/.phase0-probe-b/.gitkeep",
         "docs/architecture/antipatterns-log.md",
         "docs/architecture/clay-positioning-reframe.md",
         "docs/architecture/engineering-os-revolis-rightsized.md",
+        "docs/architecture/inputs/lead-tables-authority-2026-07.md",
         "docs/architecture/inputs/memory-engine-sources-2026-07.md",
         "docs/architecture/L99_ARCHITECTURE_AUDIT.md",
         "docs/architecture/l99-parked-concepts.md",
         "docs/architecture/L99-real-estate-vertical-pack-prompt.md",
         "docs/architecture/master-data-sourcing-map.md",
         "docs/architecture/memory-engine-canonical-model.md",
-        "docs/architecture/memory-engine-runbook.md",
-        "docs/architecture/north-star-2027-2030.md"
+        "docs/architecture/memory-engine-runbook.md"
       ]
     },
     "lastVerifiedAt": "2026-07-23",
@@ -346,10 +349,10 @@
       "rme-dec-20260623-002",
       "rme-dec-20260624-001"
     ],
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
-      "commit": "c4143545f24496a8cdea575375c6ffc3aa523533",
+      "commit": "2f04343edbd3ca7f36f0e3ea5f66820ea601fb50",
       "path": "docs/architecture"
     },
     "status": "active",
@@ -370,13 +373,13 @@
     "evidence": [
       {
         "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
-        "note": "Inventory contains 2 file(s); digest sha256:bb6198634c9b512352f4b8f4769e436eccd0137029ff0471bc44d09fc5974545.",
+        "note": "Inventory contains 2 file(s); digest sha256:3e3068d6e5a4954efeb5276da18b7bce8dffbccb17f2b81d2969834f7f3296b0.",
         "path": "memory/decisions.md"
       }
     ],
     "id": "memory.decisions",
     "inventory": {
-      "digest": "sha256:bb6198634c9b512352f4b8f4769e436eccd0137029ff0471bc44d09fc5974545",
+      "digest": "sha256:3e3068d6e5a4954efeb5276da18b7bce8dffbccb17f2b81d2969834f7f3296b0",
       "fileCount": 2,
       "sample": [
         "decisions.md",
@@ -390,8 +393,8 @@
     "relatedDecisions": [
       "rme-dec-20260522-004"
     ],
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
       "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
       "path": "memory/decisions.md"
@@ -413,15 +416,15 @@
     ],
     "evidence": [
       {
-        "commit": "41d7517af47415179e32781d22f68b9a22f1156b",
-        "note": "Inventory contains 9 file(s); digest sha256:abf70e3a65ecf0d8aaf0f38faa790b53020a48af7541580435a05ab4c344086c.",
+        "commit": "a7e662f4b4a33cd1922c8c3bd648f79494be1755",
+        "note": "Inventory contains 10 file(s); digest sha256:e4a58e83401b986d201092b1475a0d11bdf3ed0a79ec40d84b7b36d7a34852dd.",
         "path": ".cursor/rules"
       }
     ],
     "id": "policy.cursor-rules",
     "inventory": {
-      "digest": "sha256:abf70e3a65ecf0d8aaf0f38faa790b53020a48af7541580435a05ab4c344086c",
-      "fileCount": 9,
+      "digest": "sha256:e4a58e83401b986d201092b1475a0d11bdf3ed0a79ec40d84b7b36d7a34852dd",
+      "fileCount": 10,
       "sample": [
         ".cursor/rules/architecture.mdc",
         ".cursor/rules/l99-agent-operating-standard.mdc",
@@ -431,10 +434,11 @@
         ".cursor/rules/l99-role-and-quality-standard.mdc",
         ".cursor/rules/revolis-api.mdc",
         ".cursor/rules/revolis-db.mdc",
-        ".cursor/rules/revolis-ui.mdc"
+        ".cursor/rules/revolis-ui.mdc",
+        ".cursor/rules/workflow.mdc"
       ]
     },
-    "lastVerifiedAt": "2026-07-22",
+    "lastVerifiedAt": "2026-07-23",
     "name": "Cursor governance rules",
     "owner": "engineering",
     "purpose": "Operational rules referenced as policy evidence, never reclassified as historical decisions.",
@@ -442,10 +446,10 @@
       "rme-dec-20260611-001",
       "rme-dec-20260618-001"
     ],
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
-      "commit": "41d7517af47415179e32781d22f68b9a22f1156b",
+      "commit": "a7e662f4b4a33cd1922c8c3bd648f79494be1755",
       "path": ".cursor/rules"
     },
     "status": "active",
@@ -458,23 +462,25 @@
       "premortem",
       "risk-governance"
     ],
-    "confidence": "low",
+    "confidence": "high",
     "createdAt": "2026-07-23",
     "dependencies": [
       "process.premortem-template"
     ],
     "evidence": [
       {
-        "commit": "uncommitted",
-        "note": "Source unavailable in the current workspace.",
+        "commit": "a7e662f4b4a33cd1922c8c3bd648f79494be1755",
+        "note": "Inventory contains 1 file(s); digest sha256:61ecb9c928964b8590b936d8acfcb7e00fa1b0ce0f1f632c88243860cea508e6.",
         "path": "docs/premortems/2026-07-23-ads-smolko-ab.md"
       }
     ],
     "id": "premortem.ads-smolko-ab",
     "inventory": {
-      "digest": "unavailable",
-      "fileCount": 0,
-      "sample": []
+      "digest": "sha256:61ecb9c928964b8590b936d8acfcb7e00fa1b0ce0f1f632c88243860cea508e6",
+      "fileCount": 1,
+      "sample": [
+        "docs/premortems/2026-07-23-ads-smolko-ab.md"
+      ]
     },
     "lastVerifiedAt": "2026-07-23",
     "name": "Premortem: Google Ads A/B Smolko",
@@ -483,13 +489,13 @@
     "relatedDecisions": [
       "rme-dec-20260723-001"
     ],
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
-      "commit": "uncommitted",
+      "commit": "a7e662f4b4a33cd1922c8c3bd648f79494be1755",
       "path": "docs/premortems/2026-07-23-ads-smolko-ab.md"
     },
-    "status": "unknown",
+    "status": "active",
     "type": "documentation"
   },
   {
@@ -499,7 +505,7 @@
       "process-standard",
       "risk-governance"
     ],
-    "confidence": "low",
+    "confidence": "high",
     "createdAt": "2026-07-23",
     "dependencies": [
       "governance.architecture",
@@ -507,29 +513,31 @@
     ],
     "evidence": [
       {
-        "commit": "uncommitted",
-        "note": "Source unavailable in the current workspace.",
+        "commit": "a7e662f4b4a33cd1922c8c3bd648f79494be1755",
+        "note": "Inventory contains 1 file(s); digest sha256:eb4d333f5a94c137af61ea223bf9ec032a05d811dfad970450fc752f6391f842.",
         "path": "docs/templates/premortem.md"
       }
     ],
     "id": "process.premortem-template",
     "inventory": {
-      "digest": "unavailable",
-      "fileCount": 0,
-      "sample": []
+      "digest": "sha256:eb4d333f5a94c137af61ea223bf9ec032a05d811dfad970450fc752f6391f842",
+      "fileCount": 1,
+      "sample": [
+        "docs/templates/premortem.md"
+      ]
     },
     "lastVerifiedAt": "2026-07-23",
     "name": "Premortem process template",
     "owner": "founder",
     "purpose": "Standard premortem workflow for Strategic Bet and Core Platform initiatives before first commit.",
     "relatedDecisions": [],
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
-      "commit": "uncommitted",
+      "commit": "a7e662f4b4a33cd1922c8c3bd648f79494be1755",
       "path": "docs/templates/premortem.md"
     },
-    "status": "unknown",
+    "status": "active",
     "type": "documentation"
   },
   {
@@ -546,13 +554,13 @@
     "evidence": [
       {
         "commit": "c4143545f24496a8cdea575375c6ffc3aa523533",
-        "note": "Inventory contains 39 file(s); digest sha256:f8315d87b5a652287c8084e39619c238bc28b3bb89131c2397cfe99477a220da.",
+        "note": "Inventory contains 39 file(s); digest sha256:cb6e72d007651fef4eb2b6a1261594bc1fe8d6798a9f89767f9b268e7637c0f1.",
         "path": "package.json"
       }
     ],
     "id": "repo.packages",
     "inventory": {
-      "digest": "sha256:f8315d87b5a652287c8084e39619c238bc28b3bb89131c2397cfe99477a220da",
+      "digest": "sha256:cb6e72d007651fef4eb2b6a1261594bc1fe8d6798a9f89767f9b268e7637c0f1",
       "fileCount": 39,
       "sample": [
         "apps/crm/package.json",
@@ -574,8 +582,8 @@
     "owner": "engineering",
     "purpose": "Workspace topology and direct dependency inventory without copying dependency source code.",
     "relatedDecisions": [],
-    "sensitivity": "internal",
     "schemaVersion": 1,
+    "sensitivity": "internal",
     "source": {
       "commit": "c4143545f24496a8cdea575375c6ffc3aa523533",
       "path": "package.json"
