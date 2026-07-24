@@ -372,7 +372,7 @@
     ],
     "evidence": [
       {
-        "commit": "3749729a66722ac70b2a0e1da2a3c36b76b95108",
+        "commit": "9d079b6e2bbabdb1b6fb2ea893fca4a2e115b1f5",
         "note": "Inventory contains 1 file(s); digest sha256:243bca049f85fd518fb6ab041ccf1cdede7e7d45a77af413204345357d06019a.",
         "path": "brain/identity/COMPANY.md"
       }
@@ -393,7 +393,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "3749729a66722ac70b2a0e1da2a3c36b76b95108",
+      "commit": "9d079b6e2bbabdb1b6fb2ea893fca4a2e115b1f5",
       "path": "brain/identity/COMPANY.md"
     },
     "status": "active",
@@ -412,7 +412,7 @@
     ],
     "evidence": [
       {
-        "commit": "3749729a66722ac70b2a0e1da2a3c36b76b95108",
+        "commit": "9d079b6e2bbabdb1b6fb2ea893fca4a2e115b1f5",
         "note": "Inventory contains 1 file(s); digest sha256:9d8f113badf0a5f2e8eec0b3910b11d285b767396aaabee2bae9e7e97331f544.",
         "path": "brain/identity/FOUNDER.md"
       }
@@ -433,7 +433,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "3749729a66722ac70b2a0e1da2a3c36b76b95108",
+      "commit": "9d079b6e2bbabdb1b6fb2ea893fca4a2e115b1f5",
       "path": "brain/identity/FOUNDER.md"
     },
     "status": "active",
@@ -497,7 +497,7 @@
     ],
     "evidence": [
       {
-        "commit": "3749729a66722ac70b2a0e1da2a3c36b76b95108",
+        "commit": "9d079b6e2bbabdb1b6fb2ea893fca4a2e115b1f5",
         "note": "Inventory contains 4 file(s); digest sha256:744e5921c214c5322c6c11c96b1a3df5ad739b69f88fff3ccc5fb0bccde2d04c.",
         "path": "brain/lessons"
       }
@@ -521,7 +521,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "3749729a66722ac70b2a0e1da2a3c36b76b95108",
+      "commit": "9d079b6e2bbabdb1b6fb2ea893fca4a2e115b1f5",
       "path": "brain/lessons"
     },
     "status": "active",
