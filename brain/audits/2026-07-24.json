@@ -1,0 +1,276 @@
+{
+  "auditDate": "2026-07-24",
+  "delta": {
+    "added": [
+      "deprecated-table:revolis_leads",
+      "duplicate:premortem.ads-smolko-ab:process.premortem-template"
+    ],
+    "comparedTo": "2026-07-23T06:37:55.075Z",
+    "resolved": [],
+    "unchanged": [
+      "decision-outcome:rme-dec-20260611-001",
+      "decision-outcome:rme-dec-20260618-002",
+      "decision-outcome:rme-dec-20260619-001",
+      "decision-outcome:rme-dec-20260624-002",
+      "decision-outcome:rme-dec-20260624-004",
+      "decision-outcome:rme-dec-20260717-001",
+      "decision-outcome:rme-dec-20260719-001",
+      "decision-outcome:rme-dec-20260719-002",
+      "decision-outcome:rme-dec-20260722-001",
+      "unused:automation.n8n"
+    ]
+  },
+  "findings": [
+    {
+      "category": "decision-outcome",
+      "confidence": "high",
+      "detail": "rme-dec-20260611-001 has review date 2026-07-29; recorded outcome: The rule is documented locally; remote branch-protection state is unavailable.",
+      "evidence": [
+        {
+          "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
+          "line": 110,
+          "note": "Canonical decision and incident count.",
+          "path": "memory/decisions.md"
+        },
+        {
+          "commit": "c614d282c9e588758376aab3961c27c7717c400c",
+          "line": 10,
+          "note": "Operational policy reference, not a second decision source.",
+          "path": ".cursor/rules/l99-golden-rule.mdc"
+        }
+      ],
+      "key": "decision-outcome:rme-dec-20260611-001",
+      "severity": "advisory",
+      "title": "Decision outcome needs verification"
+    },
+    {
+      "category": "decision-outcome",
+      "confidence": "high",
+      "detail": "rme-dec-20260618-002 has review date 2026-07-29; recorded outcome: The schedule remains absent from the workflow; remote secret state is unavailable.",
+      "evidence": [
+        {
+          "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
+          "line": 133,
+          "note": "Canonical decision and re-enable condition.",
+          "path": "memory/decisions.md"
+        },
+        {
+          "commit": "ddadb0b95c9176d1e6b1dbc671ac52f914aecf7d",
+          "line": 3,
+          "note": "Current workflow trigger evidence.",
+          "path": ".github/workflows/schema-governance-guard.yml"
+        }
+      ],
+      "key": "decision-outcome:rme-dec-20260618-002",
+      "severity": "advisory",
+      "title": "Decision outcome needs verification"
+    },
+    {
+      "category": "decision-outcome",
+      "confidence": "high",
+      "detail": "rme-dec-20260619-001 has review date 2026-07-29; recorded outcome: A current production UI verification is unavailable.",
+      "evidence": [
+        {
+          "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
+          "line": 140,
+          "note": "Canonical fact, veto, and decision.",
+          "path": "memory/decisions.md"
+        }
+      ],
+      "key": "decision-outcome:rme-dec-20260619-001",
+      "severity": "advisory",
+      "title": "Decision outcome needs verification"
+    },
+    {
+      "category": "decision-outcome",
+      "confidence": "high",
+      "detail": "rme-dec-20260624-002 has review date 2026-07-29; recorded outcome: Migration and writer code exist; current production and policy state require verification.",
+      "evidence": [
+        {
+          "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
+          "line": 224,
+          "note": "Canonical decision and safety rule.",
+          "path": "memory/decisions.md"
+        },
+        {
+          "commit": "b8b4e7181d0184c1d5c51712a920d07067ae433b",
+          "line": 4,
+          "note": "Repository migration evidence only.",
+          "path": "apps/crm/supabase/migrations/2026_genome_layer2.sql"
+        }
+      ],
+      "key": "decision-outcome:rme-dec-20260624-002",
+      "severity": "advisory",
+      "title": "Decision outcome needs verification"
+    },
+    {
+      "category": "decision-outcome",
+      "confidence": "high",
+      "detail": "rme-dec-20260624-004 has review date 2026-07-29; recorded outcome: A measured outcome for the process decision is unavailable.",
+      "evidence": [
+        {
+          "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
+          "line": 235,
+          "note": "Canonical process decision and merge boundary.",
+          "path": "memory/decisions.md"
+        }
+      ],
+      "key": "decision-outcome:rme-dec-20260624-004",
+      "severity": "advisory",
+      "title": "Decision outcome needs verification"
+    },
+    {
+      "category": "decision-outcome",
+      "confidence": "high",
+      "detail": "rme-dec-20260717-001 has review date 2026-07-29; recorded outcome: Implementation and verification files exist, but the decision log merge state is stale.",
+      "evidence": [
+        {
+          "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
+          "line": 253,
+          "note": "Canonical decision and documented verification.",
+          "path": "memory/decisions.md"
+        },
+        {
+          "commit": "4ccd5c51a93ec0bc82d72ef66818b98ce11a1e13",
+          "line": 90,
+          "note": "Current first-audit implementation.",
+          "path": "apps/crm/src/lib/workdesk/first-audit.ts"
+        }
+      ],
+      "key": "decision-outcome:rme-dec-20260717-001",
+      "severity": "advisory",
+      "title": "Decision outcome needs verification"
+    },
+    {
+      "category": "decision-outcome",
+      "confidence": "high",
+      "detail": "rme-dec-20260719-001 has review date 2026-07-29; recorded outcome: The route and deterministic engine exist; current data-license and production gates require verification.",
+      "evidence": [
+        {
+          "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
+          "line": 241,
+          "note": "Canonical scope and gates.",
+          "path": "memory/decisions.md"
+        },
+        {
+          "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
+          "line": 103,
+          "note": "Current submission implementation.",
+          "path": "apps/crm/src/app/api/valuation/submit/route.ts"
+        }
+      ],
+      "key": "decision-outcome:rme-dec-20260719-001",
+      "severity": "advisory",
+      "title": "Decision outcome needs verification"
+    },
+    {
+      "category": "decision-outcome",
+      "confidence": "high",
+      "detail": "rme-dec-20260719-002 has review date 2026-08-19; recorded outcome: Commercial validation is unavailable in repository evidence.",
+      "evidence": [
+        {
+          "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
+          "line": 251,
+          "note": "Canonical pricing decision and validation condition.",
+          "path": "memory/decisions.md"
+        }
+      ],
+      "key": "decision-outcome:rme-dec-20260719-002",
+      "severity": "advisory",
+      "title": "Decision outcome needs verification"
+    },
+    {
+      "category": "decision-outcome",
+      "confidence": "high",
+      "detail": "rme-dec-20260722-001 has review date 2026-07-29; recorded outcome: Repository code and migration exist; production application and founder smoke are unavailable.",
+      "evidence": [
+        {
+          "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
+          "line": 172,
+          "note": "Canonical decision and founder gate.",
+          "path": "memory/decisions.md"
+        },
+        {
+          "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
+          "line": 108,
+          "note": "Repository migration evidence only.",
+          "path": "apps/crm/supabase/migrations/20260722120000_sandbox_gdpr_consent.sql"
+        }
+      ],
+      "key": "decision-outcome:rme-dec-20260722-001",
+      "severity": "advisory",
+      "title": "Decision outcome needs verification"
+    },
+    {
+      "category": "unused-asset",
+      "confidence": "high",
+      "detail": "revolis_leads has no apps/crm/src usage (legacy scripts/allowlist only). Legacy lead table with zero application runtime usage (founder confirmed 2026-07-23). Do not use in new code.",
+      "evidence": [
+        {
+          "commit": "working-tree",
+          "note": "Schema allowlist may still reference legacy tables.",
+          "path": "apps/crm/config/public-schema-allowlist.json"
+        },
+        {
+          "commit": "working-tree",
+          "note": "Canonical lead-table authority card.",
+          "path": "docs/architecture/inputs/lead-tables-authority-2026-07.md"
+        }
+      ],
+      "key": "deprecated-table:revolis_leads",
+      "severity": "advisory",
+      "title": "Deprecated database table remains outside application runtime"
+    },
+    {
+      "category": "duplicate-behavior",
+      "confidence": "medium",
+      "detail": "premortem.ads-smolko-ab and process.premortem-template overlap; this is a review signal, not an automatic duplicate verdict.",
+      "evidence": [
+        {
+          "commit": "a7e662f4b4a33cd1922c8c3bd648f79494be1755",
+          "note": "Inventory contains 1 file(s); digest sha256:61ecb9c928964b8590b936d8acfcb7e00fa1b0ce0f1f632c88243860cea508e6.",
+          "path": "docs/premortems/2026-07-23-ads-smolko-ab.md"
+        },
+        {
+          "commit": "a7e662f4b4a33cd1922c8c3bd648f79494be1755",
+          "note": "Inventory contains 1 file(s); digest sha256:eb4d333f5a94c137af61ea223bf9ec032a05d811dfad970450fc752f6391f842.",
+          "path": "docs/templates/premortem.md"
+        }
+      ],
+      "key": "duplicate:premortem.ads-smolko-ab:process.premortem-template",
+      "severity": "advisory",
+      "title": "Possible duplicate capability ownership"
+    },
+    {
+      "category": "unused-asset",
+      "confidence": "low",
+      "detail": "automation.n8n has no incoming registry dependency or related decision. Usage telemetry is unavailable, so review manually.",
+      "evidence": [
+        {
+          "commit": "5c14090b8b62f1134e16154fd89b18d38a5435ea",
+          "note": "Inventory contains 4 file(s); digest sha256:1ae5a41be37143db69060a41efc865decf83987dd786fc3a1df07ead30e194b4.",
+          "path": "automation/n8n"
+        }
+      ],
+      "key": "unused:automation.n8n",
+      "severity": "advisory",
+      "title": "Workflow or automation has no recorded consumer"
+    }
+  ],
+  "generatedAt": "2026-07-24T05:41:35.331Z",
+  "schemaVersion": 1,
+  "scope": "repository-only",
+  "sourcePolicy": "tracked-files-only",
+  "summary": {
+    "advisory": 12,
+    "decisionRecords": 22,
+    "errors": 0,
+    "registryRecords": 12,
+    "warnings": 0
+  },
+  "unavailable": {
+    "costOfWaitingBaselineMinutes": "unavailable - no measured time series exists for 2026-07-22",
+    "customerMetrics": "unavailable - no privacy-approved repository source",
+    "marketingMetrics": "unavailable - no connected repository source"
+  }
+}

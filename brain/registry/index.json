@@ -101,7 +101,7 @@
     ],
     "evidence": [
       {
-        "commit": "bc254b1be5aedf4281645e34c5590fc09a197240",
+        "commit": "8a95e5d32cb7ede3755f3728ce8423da98e69094",
         "note": "Inventory contains 7 file(s); digest sha256:70f15118ac705d28f5921f9324160a8471dab5c0fd3873d471a375fa59260f33.",
         "path": ".github/workflows"
       }
@@ -120,7 +120,7 @@
         ".github/workflows/schema-governance-guard.yml"
       ]
     },
-    "lastVerifiedAt": "2026-07-23",
+    "lastVerifiedAt": "2026-07-24",
     "name": "GitHub Actions workflows",
     "owner": "engineering",
     "purpose": "CI and governance workflow inventory; remote branch protection is not inferred from files.",
@@ -132,7 +132,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "bc254b1be5aedf4281645e34c5590fc09a197240",
+      "commit": "8a95e5d32cb7ede3755f3728ce8423da98e69094",
       "path": ".github/workflows"
     },
     "status": "active",
@@ -317,7 +317,7 @@
     "dependencies": [],
     "evidence": [
       {
-        "commit": "2f04343edbd3ca7f36f0e3ea5f66820ea601fb50",
+        "commit": "8a95e5d32cb7ede3755f3728ce8423da98e69094",
         "note": "Inventory contains 16 file(s); digest sha256:c6fe34eed9419940a80ddce8124ebfd263739c960620798113b13d560b570068.",
         "path": "docs/architecture"
       }
@@ -341,7 +341,7 @@
         "docs/architecture/memory-engine-runbook.md"
       ]
     },
-    "lastVerifiedAt": "2026-07-23",
+    "lastVerifiedAt": "2026-07-24",
     "name": "Architecture and governance corpus",
     "owner": "founder",
     "purpose": "Canonical and supporting architecture documents used to constrain product and engineering work.",
@@ -352,7 +352,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "2f04343edbd3ca7f36f0e3ea5f66820ea601fb50",
+      "commit": "8a95e5d32cb7ede3755f3728ce8423da98e69094",
       "path": "docs/architecture"
     },
     "status": "active",
