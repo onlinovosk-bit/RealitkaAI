@@ -114,8 +114,9 @@ text v poznámke. Umožňuje neskôr odpovedať na žiadosť dotknutej osoby
 1. Demo happy path: `/odhad/demo` → formulár → odhad → submit → success
    screen s "Ukážková verzia" → DB assert (sandbox_submissions +1,
    leads +0).
-2. Smolko happy path (regres): lead +1, lead_consents +1, notifikácia mock
-   volaná.
+2. Smolko happy path (regres): lead +1, lead_consents +1 (e2e DB assert v
+   `valuation-widget.spec.ts`). Notifikácia/triage mock: Vitest integration
+   `src/app/api/valuation/submit/__tests__/route.integration.test.ts` (nie e2e).
 3. Smolko bez GDPR checkboxu → 4xx, leads +0, lead_consents +0.
 4. Rate limit sandbox: 6. submit z rovnakej IP → 429.
 
