@@ -195,6 +195,19 @@ test("audit flags deprecated revolis_leads with no application usage", () => {
   assert.ok(findings.some((finding) => finding.key === "deprecated-table:revolis_leads"));
 });
 
+test("audit flags lessons with unverified prevention older than 30 days", () => {
+  const brainRoot = resolve(repoRoot, "brain");
+  const brain = loadBrain(brainRoot);
+  const findings = collectFindings({
+    repoRoot,
+    brain,
+    auditDate: "2026-08-23",
+  });
+  assert.ok(findings.some((finding) => finding.key === "lesson-unverified:rme-les-20260722-002"));
+  assert.ok(findings.some((finding) => finding.key === "lesson-unverified:rme-les-20260722-003"));
+  assert.ok(!findings.some((finding) => finding.key === "lesson-unverified:rme-les-20260722-001"));
+});
+
 test("repository inventory includes only files known to Git", () => {
   const expected = execFileSync("git", ["ls-files", "-z", "--", "automation/n8n"], {
     cwd: repoRoot,

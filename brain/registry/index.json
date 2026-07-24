@@ -317,7 +317,7 @@
     "dependencies": [],
     "evidence": [
       {
-        "commit": "a7201aea031cf11f6661ed81716dbedafb686701",
+        "commit": "aba1e888ee386d0880dbf9d348db406116fda88e",
         "note": "Inventory contains 17 file(s); digest sha256:9b3e398a620fb6bb67aed661d565c04ebdb9eed482fb1989b0abb2dd4cfef76c.",
         "path": "docs/architecture"
       }
@@ -352,8 +352,89 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "a7201aea031cf11f6661ed81716dbedafb686701",
+      "commit": "aba1e888ee386d0880dbf9d348db406116fda88e",
       "path": "docs/architecture"
+    },
+    "status": "active",
+    "type": "documentation"
+  },
+  {
+    "canonical": false,
+    "capabilities": [
+      "company",
+      "identity"
+    ],
+    "confidence": "high",
+    "createdAt": "2026-07-24",
+    "dependencies": [
+      "brain.engine",
+      "identity.founder"
+    ],
+    "evidence": [
+      {
+        "commit": "3749729a66722ac70b2a0e1da2a3c36b76b95108",
+        "note": "Inventory contains 1 file(s); digest sha256:243bca049f85fd518fb6ab041ccf1cdede7e7d45a77af413204345357d06019a.",
+        "path": "brain/identity/COMPANY.md"
+      }
+    ],
+    "id": "identity.company",
+    "inventory": {
+      "digest": "sha256:243bca049f85fd518fb6ab041ccf1cdede7e7d45a77af413204345357d06019a",
+      "fileCount": 1,
+      "sample": [
+        "brain/identity/COMPANY.md"
+      ]
+    },
+    "lastVerifiedAt": "2026-07-24",
+    "name": "Company identity brief",
+    "owner": "founder",
+    "purpose": "What Revolis is, for whom, pricing direction, and North Star constraints for AI assistants.",
+    "relatedDecisions": [],
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "3749729a66722ac70b2a0e1da2a3c36b76b95108",
+      "path": "brain/identity/COMPANY.md"
+    },
+    "status": "active",
+    "type": "documentation"
+  },
+  {
+    "canonical": false,
+    "capabilities": [
+      "founder",
+      "identity"
+    ],
+    "confidence": "high",
+    "createdAt": "2026-07-24",
+    "dependencies": [
+      "brain.engine"
+    ],
+    "evidence": [
+      {
+        "commit": "3749729a66722ac70b2a0e1da2a3c36b76b95108",
+        "note": "Inventory contains 1 file(s); digest sha256:9d8f113badf0a5f2e8eec0b3910b11d285b767396aaabee2bae9e7e97331f544.",
+        "path": "brain/identity/FOUNDER.md"
+      }
+    ],
+    "id": "identity.founder",
+    "inventory": {
+      "digest": "sha256:9d8f113badf0a5f2e8eec0b3910b11d285b767396aaabee2bae9e7e97331f544",
+      "fileCount": 1,
+      "sample": [
+        "brain/identity/FOUNDER.md"
+      ]
+    },
+    "lastVerifiedAt": "2026-07-24",
+    "name": "Founder identity brief",
+    "owner": "founder",
+    "purpose": "Model-independent brief for how AI tools should work with the founder before any task.",
+    "relatedDecisions": [],
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "3749729a66722ac70b2a0e1da2a3c36b76b95108",
+      "path": "brain/identity/FOUNDER.md"
     },
     "status": "active",
     "type": "documentation"
@@ -405,6 +486,50 @@
   {
     "canonical": false,
     "capabilities": [
+      "lesson",
+      "lessons-register"
+    ],
+    "confidence": "high",
+    "createdAt": "2026-07-24",
+    "dependencies": [
+      "brain.engine",
+      "memory.decisions"
+    ],
+    "evidence": [
+      {
+        "commit": "3749729a66722ac70b2a0e1da2a3c36b76b95108",
+        "note": "Inventory contains 4 file(s); digest sha256:744e5921c214c5322c6c11c96b1a3df5ad739b69f88fff3ccc5fb0bccde2d04c.",
+        "path": "brain/lessons"
+      }
+    ],
+    "id": "memory.lessons",
+    "inventory": {
+      "digest": "sha256:744e5921c214c5322c6c11c96b1a3df5ad739b69f88fff3ccc5fb0bccde2d04c",
+      "fileCount": 4,
+      "sample": [
+        "brain/lessons/2026-07-22-duplicitne-emaily.md",
+        "brain/lessons/2026-07-22-kod-pred-migraciou.md",
+        "brain/lessons/2026-07-22-osobny-ucet-nastroj.md",
+        "brain/lessons/README.md"
+      ]
+    },
+    "lastVerifiedAt": "2026-07-24",
+    "name": "Operational lessons register",
+    "owner": "founder",
+    "purpose": "Documented incidents and prevention rules; complements the decision log with verified learnings.",
+    "relatedDecisions": [],
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "3749729a66722ac70b2a0e1da2a3c36b76b95108",
+      "path": "brain/lessons"
+    },
+    "status": "active",
+    "type": "documentation"
+  },
+  {
+    "canonical": false,
+    "capabilities": [
       "coding-policy",
       "database-policy",
       "security-policy"
@@ -416,7 +541,7 @@
     ],
     "evidence": [
       {
-        "commit": "a7201aea031cf11f6661ed81716dbedafb686701",
+        "commit": "aba1e888ee386d0880dbf9d348db406116fda88e",
         "note": "Inventory contains 10 file(s); digest sha256:8956f1fa78f788bb0c1849354ca149825f3a04a1f6a8720caeaf06a87bf7005d.",
         "path": ".cursor/rules"
       }
@@ -449,7 +574,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "a7201aea031cf11f6661ed81716dbedafb686701",
+      "commit": "aba1e888ee386d0880dbf9d348db406116fda88e",
       "path": ".cursor/rules"
     },
     "status": "active",
@@ -469,7 +594,7 @@
     ],
     "evidence": [
       {
-        "commit": "a7201aea031cf11f6661ed81716dbedafb686701",
+        "commit": "aba1e888ee386d0880dbf9d348db406116fda88e",
         "note": "Inventory contains 1 file(s); digest sha256:6db60559064ea9e2fa01cb9c95fd520403e6c435af37c6ec675193538e20dddb.",
         "path": "docs/premortems/2026-07-23-ads-smolko-ab.md"
       }
@@ -492,7 +617,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "a7201aea031cf11f6661ed81716dbedafb686701",
+      "commit": "aba1e888ee386d0880dbf9d348db406116fda88e",
       "path": "docs/premortems/2026-07-23-ads-smolko-ab.md"
     },
     "status": "active",
@@ -555,7 +680,7 @@
     ],
     "evidence": [
       {
-        "commit": "a7201aea031cf11f6661ed81716dbedafb686701",
+        "commit": "aba1e888ee386d0880dbf9d348db406116fda88e",
         "note": "Inventory contains 1 file(s); digest sha256:4f30ae2677b9c4bf47e41151bbb8480e00ae5be23a0a85870d5b091fbf1db3d4.",
         "path": "docs/architecture/veos-integration.md"
       }
@@ -576,7 +701,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "a7201aea031cf11f6661ed81716dbedafb686701",
+      "commit": "aba1e888ee386d0880dbf9d348db406116fda88e",
       "path": "docs/architecture/veos-integration.md"
     },
     "status": "active",
@@ -598,7 +723,7 @@
     ],
     "evidence": [
       {
-        "commit": "a7201aea031cf11f6661ed81716dbedafb686701",
+        "commit": "aba1e888ee386d0880dbf9d348db406116fda88e",
         "note": "Inventory contains 1 file(s); digest sha256:df1086a02e818562bd900dcc921c3d35520e40fb6419c011d398a024668652a1.",
         "path": "docs/prompts/veos-voice-compiler.md"
       }
@@ -619,7 +744,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "a7201aea031cf11f6661ed81716dbedafb686701",
+      "commit": "aba1e888ee386d0880dbf9d348db406116fda88e",
       "path": "docs/prompts/veos-voice-compiler.md"
     },
     "status": "active",

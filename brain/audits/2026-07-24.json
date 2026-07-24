@@ -1,12 +1,13 @@
 {
   "auditDate": "2026-07-24",
   "delta": {
-    "added": [
-      "deprecated-table:revolis_leads",
-      "duplicate:premortem.ads-smolko-ab:process.premortem-template"
+    "added": [],
+    "comparedTo": "2026-07-24T19:56:50.861Z",
+    "resolved": [
+      "source-unavailable:identity.company",
+      "source-unavailable:identity.founder",
+      "source-unavailable:memory.lessons"
     ],
-    "comparedTo": "2026-07-23T06:37:55.075Z",
-    "resolved": [],
     "unchanged": [
       "decision-outcome:rme-dec-20260611-001",
       "decision-outcome:rme-dec-20260618-002",
@@ -17,6 +18,9 @@
       "decision-outcome:rme-dec-20260719-001",
       "decision-outcome:rme-dec-20260719-002",
       "decision-outcome:rme-dec-20260722-001",
+      "deprecated-table:revolis_leads",
+      "duplicate:premortem.ads-smolko-ab:process.premortem-template",
+      "duplicate:process.veos-integration:process.veos-voice-compiler",
       "unused:automation.n8n"
     ]
   },
@@ -227,8 +231,8 @@
       "detail": "premortem.ads-smolko-ab and process.premortem-template overlap; this is a review signal, not an automatic duplicate verdict.",
       "evidence": [
         {
-          "commit": "a7e662f4b4a33cd1922c8c3bd648f79494be1755",
-          "note": "Inventory contains 1 file(s); digest sha256:61ecb9c928964b8590b936d8acfcb7e00fa1b0ce0f1f632c88243860cea508e6.",
+          "commit": "aba1e888ee386d0880dbf9d348db406116fda88e",
+          "note": "Inventory contains 1 file(s); digest sha256:6db60559064ea9e2fa01cb9c95fd520403e6c435af37c6ec675193538e20dddb.",
           "path": "docs/premortems/2026-07-23-ads-smolko-ab.md"
         },
         {
@@ -238,6 +242,26 @@
         }
       ],
       "key": "duplicate:premortem.ads-smolko-ab:process.premortem-template",
+      "severity": "advisory",
+      "title": "Possible duplicate capability ownership"
+    },
+    {
+      "category": "duplicate-behavior",
+      "confidence": "medium",
+      "detail": "process.veos-integration and process.veos-voice-compiler overlap; this is a review signal, not an automatic duplicate verdict.",
+      "evidence": [
+        {
+          "commit": "aba1e888ee386d0880dbf9d348db406116fda88e",
+          "note": "Inventory contains 1 file(s); digest sha256:4f30ae2677b9c4bf47e41151bbb8480e00ae5be23a0a85870d5b091fbf1db3d4.",
+          "path": "docs/architecture/veos-integration.md"
+        },
+        {
+          "commit": "aba1e888ee386d0880dbf9d348db406116fda88e",
+          "note": "Inventory contains 1 file(s); digest sha256:df1086a02e818562bd900dcc921c3d35520e40fb6419c011d398a024668652a1.",
+          "path": "docs/prompts/veos-voice-compiler.md"
+        }
+      ],
+      "key": "duplicate:process.veos-integration:process.veos-voice-compiler",
       "severity": "advisory",
       "title": "Possible duplicate capability ownership"
     },
@@ -257,15 +281,15 @@
       "title": "Workflow or automation has no recorded consumer"
     }
   ],
-  "generatedAt": "2026-07-24T05:41:35.331Z",
+  "generatedAt": "2026-07-24T19:58:21.032Z",
   "schemaVersion": 1,
   "scope": "repository-only",
   "sourcePolicy": "tracked-files-only",
   "summary": {
-    "advisory": 12,
+    "advisory": 13,
     "decisionRecords": 22,
     "errors": 0,
-    "registryRecords": 12,
+    "registryRecords": 17,
     "warnings": 0
   },
   "unavailable": {
