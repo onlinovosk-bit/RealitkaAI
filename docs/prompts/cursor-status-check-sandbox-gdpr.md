@@ -36,6 +36,18 @@ bod po bode, bez sebachvály:
    presne čo a prečo — nepíš len "hotovo", kým to fakt nie je overené
    krokom 4 a 6.
 
-Formát odpovede: číslovaný zoznam 1–8 vyšie, každý bod max 2-3 vety,
+Formát odpovede: číslovaný zoznam 1–8 vyššie, každý bod max 2-3 vety,
 s konkrétnym dôkazom (link na PR, výstup príkazu, screenshot popis) —
 nie len tvrdenie.
+
+## NAMERANÝ STAV (over a vysvetli)
+`app.revolis.ai/odhad/demo` aktuálne vracia **404 — Stránka nenájdená**.
+Zaujímavé: text 404 stránky referuje úplne inú adresu
+(`app.revolis.ai/team/permissions`), nie `/odhad/demo` — teda buď ide o
+generický/cachovaný 404 page bez správnej URL, alebo o routing bug.
+Zisti a nahláš:
+- Je `/odhad/demo` vôbec zmergovaná a nasadená na produkciu (viď bod 1)?
+- Prečo 404 stránka ukazuje nesúvisiacu adresu `team/permissions` —
+  je to hardcoded fallback, cache, alebo chyba v Next.js routing/middleware?
+- Priebežný build/deploy log z Vercelu pre posledný commit dotýkajúci sa
+  `/odhad/[agencySlug]` alebo `/odhad/demo` cesty.
