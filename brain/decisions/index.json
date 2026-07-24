@@ -865,7 +865,7 @@
     "date": "2026-07-23",
     "evidence": [
       {
-        "commit": "a7e662f4b4a33cd1922c8c3bd648f79494be1755",
+        "commit": "a7201aea031cf11f6661ed81716dbedafb686701",
         "line": 1,
         "note": "Filled premortem with P×Z matrix and mitigations.",
         "path": "docs/premortems/2026-07-23-ads-smolko-ab.md"
@@ -884,7 +884,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "a7e662f4b4a33cd1922c8c3bd648f79494be1755",
+      "commit": "a7201aea031cf11f6661ed81716dbedafb686701",
       "path": "docs/premortems/2026-07-23-ads-smolko-ab.md"
     },
     "status": "active",
