@@ -14,7 +14,7 @@ Exportované n8n workflow JSON súbory pre Revolis orchestráciu.
 
 | Súbor | Workflow | Popis |
 |-------|----------|--------|
-| `w1-follow-up-strazca.json` | W1 Follow-up strážca | D+4 Gmail **drafty** (31 firiem, statický dataset), nikdy send |
+| `w1-follow-up-strazca.json` | W1 Follow-up strážca | D+4 Gmail **drafty** (32 firiem, statický dataset vlna 24.07.2026), nikdy send |
 | `w2-heartbeat-watchdog.json` | W2 Heartbeat watchdog | Widget-only: `/odhad/reality-smolko` + `/odhad/demo` (HTTP 200) |
 | `w3-odpoved-detektor.json` | W3 Odpoveď-detektor | Gmail read-only detekcia odpovedí z trackera |
 
@@ -37,3 +37,11 @@ Exportované n8n workflow JSON súbory pre Revolis orchestráciu.
 | W3 | Odpoveď z testovacieho účtu v trackeri | Notifikácia < 1 h |
 
 Tracker: `docs/sales/revolis-sales-tracker.xlsx`
+
+## Stav importov (n8n Cloud)
+
+| Workflow | Export v repe | Import v Cloud (ops) |
+|----------|---------------|----------------------|
+| W1 | áno — 32 firiem | founder: re-import po merge |
+| W2 | áno | founder: priraď URL + credential |
+| W3 | áno | founder: Gmail read-only credential |
