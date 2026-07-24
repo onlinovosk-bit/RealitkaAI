@@ -36,3 +36,8 @@ existujúce implementácie, znovupoužívaj existujúce abstrakcie.
 ## Lead pipeline
 Nový zdroj leadov sa VŽDY napája na existujúcu acquire/triage cestu —
 logiku sa volá, nekopíruje.
+
+## Dokumentácia
+Hlasové diktáty foundera sa spracúvajú podľa
+`docs/prompts/veos-voice-compiler.md` — pred návrhom nového modulu over
+brain/registry (REUSE/EXTEND pred NEW).

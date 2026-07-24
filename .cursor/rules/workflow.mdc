@@ -15,10 +15,9 @@ alwaysApply: false
 ## Premortem
 
 Každý brief kategórie Strategic Bet alebo Core Platform musí pred prvým
-commitom obsahovať vyplnený premortem podľa `docs/templates/premortem.md` —
-uložený v `docs/premortems/`, s maticou P×Z a mitigáciou+kill signálom
-pre každé riziko so skóre ≥6. PR bez linku na premortem pri týchto
-kategóriách CI neblokuje, ale review checklist ho vyžaduje.
+commitom obsahovať vyplnený premortem podľa `docs/templates/premortem.md`,
+uložený v `docs/premortems/`, s maticou P×Z a mitigáciou + kill signálom
+pre každé riziko so skóre ≥6. CI to neblokuje, review checklist to vyžaduje.
 
 ## PR kontrolný zoznam
 

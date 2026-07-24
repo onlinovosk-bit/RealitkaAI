@@ -64,12 +64,12 @@ Founder potvrdí/upraví pred GO — bez toho kampaň neštartovať.
 
 - [x] Plán zmenený: SLA veta Smolkovi, geo obmedzenie, cap+kill pravidlá,
   D-1 testy — všetko podmienky GO.
-- [ ] Zápis do brain/registry (Cursor, spolu s blokom nižšie).
+- [x] Zápis do brain/registry (process.premortem-template, premortem.ads-smolko-ab, rme-dec-20260723-001).
 
 ## Kvalitatívna brána
 ☐→✓ 4 hlasy (1 reálny PODMIENEČNE — 2 otázky odoslať) · ✓ 10 príčin,
 5 kategórií · ✓ matica · ✓ mitigácie+kill+check-in pre všetkých 7 rizík ≥6
-· ✓ plán zmenený · ⏳ brain zápis · ✓ timebox
+· ✓ plán zmenený · ✓ brain zápis · ✓ timebox
 
 ## VÝSLEDOK PRE GO ROZHODNUTIE
 Ads GO je bezpečné až po: (1) Smolkova odpoveď na SLA otázku,

@@ -317,15 +317,15 @@
     "dependencies": [],
     "evidence": [
       {
-        "commit": "8a95e5d32cb7ede3755f3728ce8423da98e69094",
-        "note": "Inventory contains 16 file(s); digest sha256:c6fe34eed9419940a80ddce8124ebfd263739c960620798113b13d560b570068.",
+        "commit": "a7201aea031cf11f6661ed81716dbedafb686701",
+        "note": "Inventory contains 17 file(s); digest sha256:9b3e398a620fb6bb67aed661d565c04ebdb9eed482fb1989b0abb2dd4cfef76c.",
         "path": "docs/architecture"
       }
     ],
     "id": "governance.architecture",
     "inventory": {
-      "digest": "sha256:c6fe34eed9419940a80ddce8124ebfd263739c960620798113b13d560b570068",
-      "fileCount": 16,
+      "digest": "sha256:9b3e398a620fb6bb67aed661d565c04ebdb9eed482fb1989b0abb2dd4cfef76c",
+      "fileCount": 17,
       "sample": [
         "docs/architecture/.phase0-probe-b/.gitkeep",
         "docs/architecture/antipatterns-log.md",
@@ -352,7 +352,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "8a95e5d32cb7ede3755f3728ce8423da98e69094",
+      "commit": "a7201aea031cf11f6661ed81716dbedafb686701",
       "path": "docs/architecture"
     },
     "status": "active",
@@ -416,14 +416,14 @@
     ],
     "evidence": [
       {
-        "commit": "a7e662f4b4a33cd1922c8c3bd648f79494be1755",
-        "note": "Inventory contains 10 file(s); digest sha256:e4a58e83401b986d201092b1475a0d11bdf3ed0a79ec40d84b7b36d7a34852dd.",
+        "commit": "a7201aea031cf11f6661ed81716dbedafb686701",
+        "note": "Inventory contains 10 file(s); digest sha256:8956f1fa78f788bb0c1849354ca149825f3a04a1f6a8720caeaf06a87bf7005d.",
         "path": ".cursor/rules"
       }
     ],
     "id": "policy.cursor-rules",
     "inventory": {
-      "digest": "sha256:e4a58e83401b986d201092b1475a0d11bdf3ed0a79ec40d84b7b36d7a34852dd",
+      "digest": "sha256:8956f1fa78f788bb0c1849354ca149825f3a04a1f6a8720caeaf06a87bf7005d",
       "fileCount": 10,
       "sample": [
         ".cursor/rules/architecture.mdc",
@@ -438,7 +438,7 @@
         ".cursor/rules/workflow.mdc"
       ]
     },
-    "lastVerifiedAt": "2026-07-23",
+    "lastVerifiedAt": "2026-07-24",
     "name": "Cursor governance rules",
     "owner": "engineering",
     "purpose": "Operational rules referenced as policy evidence, never reclassified as historical decisions.",
@@ -449,7 +449,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "a7e662f4b4a33cd1922c8c3bd648f79494be1755",
+      "commit": "a7201aea031cf11f6661ed81716dbedafb686701",
       "path": ".cursor/rules"
     },
     "status": "active",
@@ -469,20 +469,20 @@
     ],
     "evidence": [
       {
-        "commit": "a7e662f4b4a33cd1922c8c3bd648f79494be1755",
-        "note": "Inventory contains 1 file(s); digest sha256:61ecb9c928964b8590b936d8acfcb7e00fa1b0ce0f1f632c88243860cea508e6.",
+        "commit": "a7201aea031cf11f6661ed81716dbedafb686701",
+        "note": "Inventory contains 1 file(s); digest sha256:6db60559064ea9e2fa01cb9c95fd520403e6c435af37c6ec675193538e20dddb.",
         "path": "docs/premortems/2026-07-23-ads-smolko-ab.md"
       }
     ],
     "id": "premortem.ads-smolko-ab",
     "inventory": {
-      "digest": "sha256:61ecb9c928964b8590b936d8acfcb7e00fa1b0ce0f1f632c88243860cea508e6",
+      "digest": "sha256:6db60559064ea9e2fa01cb9c95fd520403e6c435af37c6ec675193538e20dddb",
       "fileCount": 1,
       "sample": [
         "docs/premortems/2026-07-23-ads-smolko-ab.md"
       ]
     },
-    "lastVerifiedAt": "2026-07-23",
+    "lastVerifiedAt": "2026-07-24",
     "name": "Premortem: Google Ads A/B Smolko",
     "owner": "founder",
     "purpose": "Filled premortem for the Smolko Google Ads A/B campaign; outcome review scheduled 2026-09-07.",
@@ -492,7 +492,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "a7e662f4b4a33cd1922c8c3bd648f79494be1755",
+      "commit": "a7201aea031cf11f6661ed81716dbedafb686701",
       "path": "docs/premortems/2026-07-23-ads-smolko-ab.md"
     },
     "status": "active",
@@ -536,6 +536,91 @@
     "source": {
       "commit": "a7e662f4b4a33cd1922c8c3bd648f79494be1755",
       "path": "docs/templates/premortem.md"
+    },
+    "status": "active",
+    "type": "documentation"
+  },
+  {
+    "canonical": false,
+    "capabilities": [
+      "architecture-guidance",
+      "process-standard",
+      "veos"
+    ],
+    "confidence": "high",
+    "createdAt": "2026-07-24",
+    "dependencies": [
+      "governance.architecture",
+      "process.veos-voice-compiler"
+    ],
+    "evidence": [
+      {
+        "commit": "a7201aea031cf11f6661ed81716dbedafb686701",
+        "note": "Inventory contains 1 file(s); digest sha256:4f30ae2677b9c4bf47e41151bbb8480e00ae5be23a0a85870d5b091fbf1db3d4.",
+        "path": "docs/architecture/veos-integration.md"
+      }
+    ],
+    "id": "process.veos-integration",
+    "inventory": {
+      "digest": "sha256:4f30ae2677b9c4bf47e41151bbb8480e00ae5be23a0a85870d5b091fbf1db3d4",
+      "fileCount": 1,
+      "sample": [
+        "docs/architecture/veos-integration.md"
+      ]
+    },
+    "lastVerifiedAt": "2026-07-24",
+    "name": "VEOS architecture integration",
+    "owner": "founder+Claude",
+    "purpose": "Maps the 12-module VEOS proposal to existing Revolis owners; conversational layer only, no new runtime modules.",
+    "relatedDecisions": [],
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "a7201aea031cf11f6661ed81716dbedafb686701",
+      "path": "docs/architecture/veos-integration.md"
+    },
+    "status": "active",
+    "type": "documentation"
+  },
+  {
+    "canonical": false,
+    "capabilities": [
+      "process-standard",
+      "veos",
+      "voice-compiler"
+    ],
+    "confidence": "high",
+    "createdAt": "2026-07-24",
+    "dependencies": [
+      "brain.engine",
+      "governance.architecture",
+      "policy.cursor-rules"
+    ],
+    "evidence": [
+      {
+        "commit": "a7201aea031cf11f6661ed81716dbedafb686701",
+        "note": "Inventory contains 1 file(s); digest sha256:df1086a02e818562bd900dcc921c3d35520e40fb6419c011d398a024668652a1.",
+        "path": "docs/prompts/veos-voice-compiler.md"
+      }
+    ],
+    "id": "process.veos-voice-compiler",
+    "inventory": {
+      "digest": "sha256:df1086a02e818562bd900dcc921c3d35520e40fb6419c011d398a024668652a1",
+      "fileCount": 1,
+      "sample": [
+        "docs/prompts/veos-voice-compiler.md"
+      ]
+    },
+    "lastVerifiedAt": "2026-07-24",
+    "name": "VEOS Voice Compiler standard",
+    "owner": "founder+Claude",
+    "purpose": "Conversational standard for compiling founder voice dictation into engineering bundles; check brain/registry before proposing NEW modules.",
+    "relatedDecisions": [],
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "a7201aea031cf11f6661ed81716dbedafb686701",
+      "path": "docs/prompts/veos-voice-compiler.md"
     },
     "status": "active",
     "type": "documentation"
