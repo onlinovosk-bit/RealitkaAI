@@ -147,15 +147,19 @@
     "evidence": [
       {
         "commit": "c4e2e8c481e0bb720fb435378210df226d7ff745",
-        "note": "Inventory contains 2 file(s); digest sha256:4d38c2196d5ff870e8a5a5a41938633ceb2f0901c275c98675607ef2da38a6ac.",
+        "note": "Inventory contains 6 file(s); digest sha256:08b14439c9908f26553a5ee10433307fd19511213fc329383d850dc217275af5.",
         "path": "docs/briefs/overnight/overnight-brief-guardian-v1.md"
       }
     ],
     "id": "build-package.guardian-v1",
     "inventory": {
-      "digest": "sha256:4d38c2196d5ff870e8a5a5a41938633ceb2f0901c275c98675607ef2da38a6ac",
-      "fileCount": 2,
+      "digest": "sha256:08b14439c9908f26553a5ee10433307fd19511213fc329383d850dc217275af5",
+      "fileCount": 6,
       "sample": [
+        "apps/crm/src/app/api/cron/guardian-run/route.ts",
+        "apps/crm/src/lib/guardian/runner.ts",
+        "apps/crm/supabase/migrations/20260727120000_guardian_v1_blok_c.sql",
+        "docs/briefs/build-package-guardian-v1-blok-c.md",
         "docs/briefs/overnight/overnight-brief-guardian-v1.md",
         "docs/premortems/2026-07-27-guardian-v1.md"
       ]
@@ -286,15 +290,15 @@
     ],
     "evidence": [
       {
-        "commit": "296b258bd0a2bcee4221527c59075590ff373b9a",
-        "note": "Inventory contains 220 file(s); digest sha256:16b177490fd3f6eb25b5187212ce8583946e83faab43be07b0d4e770c6851405.",
+        "commit": "4af9f56239bf8df586060fdf461fe27d0c1c200a",
+        "note": "Inventory contains 224 file(s); digest sha256:502324f6e28850f0fa7d721a964ff49a27c78a62d156f1f028068847b24211ee.",
         "path": "apps/crm/src/app/api"
       }
     ],
     "id": "crm.api",
     "inventory": {
-      "digest": "sha256:16b177490fd3f6eb25b5187212ce8583946e83faab43be07b0d4e770c6851405",
-      "fileCount": 220,
+      "digest": "sha256:502324f6e28850f0fa7d721a964ff49a27c78a62d156f1f028068847b24211ee",
+      "fileCount": 224,
       "sample": [
         "apps/crm/src/app/api/acquire/email/route.ts",
         "apps/crm/src/app/api/activities/route.ts",
@@ -322,7 +326,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "296b258bd0a2bcee4221527c59075590ff373b9a",
+      "commit": "4af9f56239bf8df586060fdf461fe27d0c1c200a",
       "path": "apps/crm/src/app/api"
     },
     "status": "active",
@@ -343,15 +347,15 @@
     ],
     "evidence": [
       {
-        "commit": "296b258bd0a2bcee4221527c59075590ff373b9a",
-        "note": "Inventory contains 501 file(s); digest sha256:032059e15c51c740919d71d4409b4d547e8d8c5b58ff08313510f8da68a2cd18.",
+        "commit": "4af9f56239bf8df586060fdf461fe27d0c1c200a",
+        "note": "Inventory contains 505 file(s); digest sha256:0ba145b58845320aa450e8fa0ea3edd6ee5c0469e8311eaf053513fa37b88f98.",
         "path": "apps/crm/src/app"
       }
     ],
     "id": "crm.application",
     "inventory": {
-      "digest": "sha256:032059e15c51c740919d71d4409b4d547e8d8c5b58ff08313510f8da68a2cd18",
-      "fileCount": 501,
+      "digest": "sha256:0ba145b58845320aa450e8fa0ea3edd6ee5c0469e8311eaf053513fa37b88f98",
+      "fileCount": 505,
       "sample": [
         "apps/crm/src/app/_actions/l99-licensing.ts",
         "apps/crm/src/app/_actions/licensing.ts",
@@ -377,7 +381,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "296b258bd0a2bcee4221527c59075590ff373b9a",
+      "commit": "4af9f56239bf8df586060fdf461fe27d0c1c200a",
       "path": "apps/crm/src/app"
     },
     "status": "active",
@@ -397,15 +401,15 @@
     ],
     "evidence": [
       {
-        "commit": "4057d02dc80a1a71600f81e0950e089ec250471a",
-        "note": "Inventory contains 88 file(s); digest sha256:bc0390f57784eae9882dc21efc30212e96c74a9492182a758b1e01fb82ee6d5f.",
+        "commit": "4af9f56239bf8df586060fdf461fe27d0c1c200a",
+        "note": "Inventory contains 89 file(s); digest sha256:073880cfc7d50bf8a11f4d35f40b7498f9439339088b5419f688358a108e95da.",
         "path": "apps/crm/supabase/migrations"
       }
     ],
     "id": "database.migrations",
     "inventory": {
-      "digest": "sha256:bc0390f57784eae9882dc21efc30212e96c74a9492182a758b1e01fb82ee6d5f",
-      "fileCount": 88,
+      "digest": "sha256:073880cfc7d50bf8a11f4d35f40b7498f9439339088b5419f688358a108e95da",
+      "fileCount": 89,
       "sample": [
         "apps/crm/supabase/migrations/2026_genome_layer2.sql",
         "apps/crm/supabase/migrations/20260310_baseline_core_schema.sql",
@@ -432,7 +436,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "4057d02dc80a1a71600f81e0950e089ec250471a",
+      "commit": "4af9f56239bf8df586060fdf461fe27d0c1c200a",
       "path": "apps/crm/supabase/migrations"
     },
     "status": "active",
