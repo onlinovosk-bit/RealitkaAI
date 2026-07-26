@@ -2,6 +2,50 @@
   {
     "canonical": false,
     "capabilities": [
+      "architecture-decision",
+      "architecture-guidance",
+      "product-roadmap"
+    ],
+    "confidence": "high",
+    "createdAt": "2026-07-26",
+    "dependencies": [
+      "governance.architecture",
+      "process.veos-integration"
+    ],
+    "evidence": [
+      {
+        "commit": "d7e522653f600a200d38ed98799ae7d206c51197",
+        "note": "Inventory contains 1 file(s); digest sha256:c0af3a928c156c64a35d8509f72978f3a0595473622e9157ba39f4bfb9776b66.",
+        "path": "docs/architecture/product-roadmap-mapping-2026-07.md"
+      }
+    ],
+    "id": "architecture.product-roadmap-mapping-202607",
+    "inventory": {
+      "digest": "sha256:c0af3a928c156c64a35d8509f72978f3a0595473622e9157ba39f4bfb9776b66",
+      "fileCount": 1,
+      "sample": [
+        "docs/architecture/product-roadmap-mapping-2026-07.md"
+      ]
+    },
+    "lastVerifiedAt": "2026-07-26",
+    "name": "Product roadmap mapping 2026-07",
+    "owner": "founder",
+    "purpose": "Binding map of sixteen proposed modules to existing Revolis owners; Capture-now/Learn-later moat strategy.",
+    "relatedDecisions": [
+      "rme-dec-20260726-001"
+    ],
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "d7e522653f600a200d38ed98799ae7d206c51197",
+      "path": "docs/architecture/product-roadmap-mapping-2026-07.md"
+    },
+    "status": "active",
+    "type": "documentation"
+  },
+  {
+    "canonical": false,
+    "capabilities": [
       "manual-approval-boundary",
       "workflow-automation"
     ],
@@ -85,6 +129,93 @@
     },
     "status": "active",
     "type": "governance"
+  },
+  {
+    "canonical": false,
+    "capabilities": [
+      "build-package",
+      "core-platform",
+      "guardian"
+    ],
+    "confidence": "high",
+    "createdAt": "2026-07-26",
+    "dependencies": [
+      "architecture.product-roadmap-mapping-202607",
+      "build-package.moat-capture",
+      "process.build-package-template"
+    ],
+    "evidence": [
+      {
+        "commit": "d7e522653f600a200d38ed98799ae7d206c51197",
+        "note": "Inventory contains 2 file(s); digest sha256:4d38c2196d5ff870e8a5a5a41938633ceb2f0901c275c98675607ef2da38a6ac.",
+        "path": "docs/briefs/overnight/overnight-brief-guardian-v1.md"
+      }
+    ],
+    "id": "build-package.guardian-v1",
+    "inventory": {
+      "digest": "sha256:4d38c2196d5ff870e8a5a5a41938633ceb2f0901c275c98675607ef2da38a6ac",
+      "fileCount": 2,
+      "sample": [
+        "docs/briefs/overnight/overnight-brief-guardian-v1.md",
+        "docs/premortems/2026-07-27-guardian-v1.md"
+      ]
+    },
+    "lastVerifiedAt": "2026-07-26",
+    "name": "Build Package: Guardian v1",
+    "owner": "founder",
+    "purpose": "Core Platform brief for guardian_findings hourly checks and daily digest; runs after moat-capture merge.",
+    "relatedDecisions": [],
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "d7e522653f600a200d38ed98799ae7d206c51197",
+      "path": "docs/briefs/overnight/overnight-brief-guardian-v1.md"
+    },
+    "status": "active",
+    "type": "documentation"
+  },
+  {
+    "canonical": false,
+    "capabilities": [
+      "build-package",
+      "core-platform",
+      "data-capture"
+    ],
+    "confidence": "high",
+    "createdAt": "2026-07-26",
+    "dependencies": [
+      "architecture.product-roadmap-mapping-202607",
+      "process.build-package-template"
+    ],
+    "evidence": [
+      {
+        "commit": "d7e522653f600a200d38ed98799ae7d206c51197",
+        "note": "Inventory contains 2 file(s); digest sha256:d5b34b72972f1188b022e5a9db74e5157aa155e9918dd8d29ccccca4d9235ae9.",
+        "path": "docs/briefs/overnight/overnight-brief-moat-capture.md"
+      }
+    ],
+    "id": "build-package.moat-capture",
+    "inventory": {
+      "digest": "sha256:d5b34b72972f1188b022e5a9db74e5157aa155e9918dd8d29ccccca4d9235ae9",
+      "fileCount": 2,
+      "sample": [
+        "docs/briefs/overnight/overnight-brief-moat-capture.md",
+        "docs/premortems/2026-07-26-moat-capture.md"
+      ]
+    },
+    "lastVerifiedAt": "2026-07-26",
+    "name": "Build Package: Moat Capture layer",
+    "owner": "founder",
+    "purpose": "Core Platform brief for deal_outcomes and ai_recommendations capture-only layer; implementation pending founder GO.",
+    "relatedDecisions": [],
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "d7e522653f600a200d38ed98799ae7d206c51197",
+      "path": "docs/briefs/overnight/overnight-brief-moat-capture.md"
+    },
+    "status": "active",
+    "type": "documentation"
   },
   {
     "canonical": false,
@@ -317,15 +448,15 @@
     "dependencies": [],
     "evidence": [
       {
-        "commit": "5795155fbdb714a033ae50ebcaf91622cf7140d6",
-        "note": "Inventory contains 18 file(s); digest sha256:1e178f4b87652d388a15cba97ea85d1990a15c80be20ceb8f7d4b327eff8e3c0.",
+        "commit": "d7e522653f600a200d38ed98799ae7d206c51197",
+        "note": "Inventory contains 19 file(s); digest sha256:0d2d2dee097b8b8d850b73fd998428234784276b5d9cfdc64ee9c21a223267b8.",
         "path": "docs/architecture"
       }
     ],
     "id": "governance.architecture",
     "inventory": {
-      "digest": "sha256:1e178f4b87652d388a15cba97ea85d1990a15c80be20ceb8f7d4b327eff8e3c0",
-      "fileCount": 18,
+      "digest": "sha256:0d2d2dee097b8b8d850b73fd998428234784276b5d9cfdc64ee9c21a223267b8",
+      "fileCount": 19,
       "sample": [
         "docs/architecture/.phase0-probe-b/.gitkeep",
         "docs/architecture/antipatterns-log.md",
@@ -341,7 +472,7 @@
         "docs/architecture/memory-engine-canonical-model.md"
       ]
     },
-    "lastVerifiedAt": "2026-07-24",
+    "lastVerifiedAt": "2026-07-26",
     "name": "Architecture and governance corpus",
     "owner": "founder",
     "purpose": "Canonical and supporting architecture documents used to constrain product and engineering work.",
@@ -352,7 +483,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "5795155fbdb714a033ae50ebcaf91622cf7140d6",
+      "commit": "d7e522653f600a200d38ed98799ae7d206c51197",
       "path": "docs/architecture"
     },
     "status": "active",
@@ -365,14 +496,14 @@
       "identity"
     ],
     "confidence": "high",
-    "createdAt": "2026-07-24",
+    "createdAt": "2026-07-26",
     "dependencies": [
       "brain.engine",
       "identity.founder"
     ],
     "evidence": [
       {
-        "commit": "03479c7b19577e5bed301c8309619c3ccb5f3eee",
+        "commit": "db82c9f1200d966c114f1308bfd348ab7f8c5065",
         "note": "Inventory contains 1 file(s); digest sha256:243bca049f85fd518fb6ab041ccf1cdede7e7d45a77af413204345357d06019a.",
         "path": "brain/identity/COMPANY.md"
       }
@@ -385,7 +516,7 @@
         "brain/identity/COMPANY.md"
       ]
     },
-    "lastVerifiedAt": "2026-07-24",
+    "lastVerifiedAt": "2026-07-26",
     "name": "Company identity brief",
     "owner": "founder",
     "purpose": "What Revolis is, for whom, pricing direction, and North Star constraints for AI assistants.",
@@ -393,7 +524,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "03479c7b19577e5bed301c8309619c3ccb5f3eee",
+      "commit": "db82c9f1200d966c114f1308bfd348ab7f8c5065",
       "path": "brain/identity/COMPANY.md"
     },
     "status": "active",
@@ -406,13 +537,13 @@
       "identity"
     ],
     "confidence": "high",
-    "createdAt": "2026-07-24",
+    "createdAt": "2026-07-26",
     "dependencies": [
       "brain.engine"
     ],
     "evidence": [
       {
-        "commit": "03479c7b19577e5bed301c8309619c3ccb5f3eee",
+        "commit": "db82c9f1200d966c114f1308bfd348ab7f8c5065",
         "note": "Inventory contains 1 file(s); digest sha256:9d8f113badf0a5f2e8eec0b3910b11d285b767396aaabee2bae9e7e97331f544.",
         "path": "brain/identity/FOUNDER.md"
       }
@@ -425,7 +556,7 @@
         "brain/identity/FOUNDER.md"
       ]
     },
-    "lastVerifiedAt": "2026-07-24",
+    "lastVerifiedAt": "2026-07-26",
     "name": "Founder identity brief",
     "owner": "founder",
     "purpose": "Model-independent brief for how AI tools should work with the founder before any task.",
@@ -433,7 +564,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "03479c7b19577e5bed301c8309619c3ccb5f3eee",
+      "commit": "db82c9f1200d966c114f1308bfd348ab7f8c5065",
       "path": "brain/identity/FOUNDER.md"
     },
     "status": "active",
@@ -490,14 +621,14 @@
       "lessons-register"
     ],
     "confidence": "high",
-    "createdAt": "2026-07-24",
+    "createdAt": "2026-07-26",
     "dependencies": [
       "brain.engine",
       "memory.decisions"
     ],
     "evidence": [
       {
-        "commit": "03479c7b19577e5bed301c8309619c3ccb5f3eee",
+        "commit": "db82c9f1200d966c114f1308bfd348ab7f8c5065",
         "note": "Inventory contains 4 file(s); digest sha256:744e5921c214c5322c6c11c96b1a3df5ad739b69f88fff3ccc5fb0bccde2d04c.",
         "path": "brain/lessons"
       }
@@ -513,7 +644,7 @@
         "brain/lessons/README.md"
       ]
     },
-    "lastVerifiedAt": "2026-07-24",
+    "lastVerifiedAt": "2026-07-26",
     "name": "Operational lessons register",
     "owner": "founder",
     "purpose": "Documented incidents and prevention rules; complements the decision log with verified learnings.",
@@ -521,7 +652,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "03479c7b19577e5bed301c8309619c3ccb5f3eee",
+      "commit": "db82c9f1200d966c114f1308bfd348ab7f8c5065",
       "path": "brain/lessons"
     },
     "status": "active",
@@ -541,14 +672,14 @@
     ],
     "evidence": [
       {
-        "commit": "aba1e888ee386d0880dbf9d348db406116fda88e",
-        "note": "Inventory contains 10 file(s); digest sha256:8956f1fa78f788bb0c1849354ca149825f3a04a1f6a8720caeaf06a87bf7005d.",
+        "commit": "d7e522653f600a200d38ed98799ae7d206c51197",
+        "note": "Inventory contains 10 file(s); digest sha256:044953f54b81a0d56993e9da7c444a8b960253e28e8bc752fa5c4a41643854a8.",
         "path": ".cursor/rules"
       }
     ],
     "id": "policy.cursor-rules",
     "inventory": {
-      "digest": "sha256:8956f1fa78f788bb0c1849354ca149825f3a04a1f6a8720caeaf06a87bf7005d",
+      "digest": "sha256:044953f54b81a0d56993e9da7c444a8b960253e28e8bc752fa5c4a41643854a8",
       "fileCount": 10,
       "sample": [
         ".cursor/rules/architecture.mdc",
@@ -563,7 +694,7 @@
         ".cursor/rules/workflow.mdc"
       ]
     },
-    "lastVerifiedAt": "2026-07-24",
+    "lastVerifiedAt": "2026-07-26",
     "name": "Cursor governance rules",
     "owner": "engineering",
     "purpose": "Operational rules referenced as policy evidence, never reclassified as historical decisions.",
@@ -574,7 +705,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "aba1e888ee386d0880dbf9d348db406116fda88e",
+      "commit": "d7e522653f600a200d38ed98799ae7d206c51197",
       "path": ".cursor/rules"
     },
     "status": "active",
@@ -619,6 +750,48 @@
     "source": {
       "commit": "e88da3375cb223b09b5f08ea77fd4a897558d09a",
       "path": "docs/premortems/2026-07-23-ads-smolko-ab.md"
+    },
+    "status": "active",
+    "type": "documentation"
+  },
+  {
+    "canonical": false,
+    "capabilities": [
+      "build-package",
+      "process-standard"
+    ],
+    "confidence": "high",
+    "createdAt": "2026-07-26",
+    "dependencies": [
+      "governance.architecture",
+      "policy.cursor-rules",
+      "process.premortem-template"
+    ],
+    "evidence": [
+      {
+        "commit": "d7e522653f600a200d38ed98799ae7d206c51197",
+        "note": "Inventory contains 1 file(s); digest sha256:9db11f72e42373c21e4ed087406f9f001cb2572e360edb3061265cf58699bf91.",
+        "path": "docs/templates/build-package.md"
+      }
+    ],
+    "id": "process.build-package-template",
+    "inventory": {
+      "digest": "sha256:9db11f72e42373c21e4ed087406f9f001cb2572e360edb3061265cf58699bf91",
+      "fileCount": 1,
+      "sample": [
+        "docs/templates/build-package.md"
+      ]
+    },
+    "lastVerifiedAt": "2026-07-26",
+    "name": "Build Package delivery standard",
+    "owner": "founder",
+    "purpose": "Single-file delivery standard for Core Platform, Strategic Bet, migrations, and new capabilities before Cursor implementation.",
+    "relatedDecisions": [],
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "d7e522653f600a200d38ed98799ae7d206c51197",
+      "path": "docs/templates/build-package.md"
     },
     "status": "active",
     "type": "documentation"
