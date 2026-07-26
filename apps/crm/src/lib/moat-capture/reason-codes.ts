@@ -19,7 +19,7 @@ export const LOST_REASON_CODES = [
 export type WonReasonCode = (typeof WON_REASON_CODES)[number];
 export type LostReasonCode = (typeof LOST_REASON_CODES)[number];
 
-/** Fallback until PR-B2 win/lost modal ships. */
+/** Fallback when deal close reason was not supplied (non-UI paths). */
 export const UNSPECIFIED_REASON_CODE = "unspecified" as const;
 
 export type DealOutcomeKind = "won" | "lost";

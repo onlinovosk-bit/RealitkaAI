@@ -10,6 +10,16 @@ import {
   timelineOptions,
   type Lead,
 } from "@/lib/leads-store";
+import { DealOutcomeReasonModal } from "@/components/leads/deal-outcome-reason-modal";
+import {
+  dealOutcomeKindForTerminalStatus,
+  isDealOutcomeTerminalLeadStatus,
+  type DealOutcomeTerminalLeadStatus,
+} from "@/lib/moat-capture/deal-outcome-reason";
+import {
+  withDealOutcomePatchFields,
+  type DealOutcomePatchFields,
+} from "@/lib/leads/deal-outcome-patch";
 
 type ProfileOption = {
   id: string;
@@ -29,6 +39,11 @@ export default function LeadEditForm({ lead, onUpdate }: LeadEditFormProps) {
   const [profiles, setProfiles] = useState<ProfileOption[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [dealOutcomeModal, setDealOutcomeModal] = useState<{
+    open: boolean;
+    pendingStatus: DealOutcomeTerminalLeadStatus | null;
+  }>({ open: false, pendingStatus: null });
+  const [dealOutcomePatch, setDealOutcomePatch] = useState<DealOutcomePatchFields | null>(null);
 
   useEffect(() => {
     async function loadProfiles() {
@@ -45,6 +60,16 @@ export default function LeadEditForm({ lead, onUpdate }: LeadEditFormProps) {
   }, []);
 
   function updateField(name: string, value: string | number) {
+    if (
+      name === "status" &&
+      typeof value === "string" &&
+      isDealOutcomeTerminalLeadStatus(value) &&
+      value !== lead.status
+    ) {
+      setDealOutcomeModal({ open: true, pendingStatus: value });
+      return;
+    }
+
     setForm((current) => ({
       ...current,
       [name]: value,
@@ -76,12 +101,17 @@ export default function LeadEditForm({ lead, onUpdate }: LeadEditFormProps) {
     setMessage("");
 
     try {
+      const payload =
+        dealOutcomePatch != null
+          ? withDealOutcomePatchFields({ ...form }, dealOutcomePatch)
+          : form;
+
       const response = await fetch(`/api/leads/${lead.id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
@@ -92,6 +122,7 @@ export default function LeadEditForm({ lead, onUpdate }: LeadEditFormProps) {
 
       setMessage("Lead bol úspešne aktualizovaný.");
       onUpdate(data.lead);
+      setDealOutcomePatch(null);
       setTimeout(() => router.push(`/leads/${lead.id}`), 1000);
     } catch (error) {
       setMessage(
@@ -305,6 +336,20 @@ export default function LeadEditForm({ lead, onUpdate }: LeadEditFormProps) {
           </button>
         </div>
       </form>
+      {dealOutcomeModal.open && dealOutcomeModal.pendingStatus ? (
+        <DealOutcomeReasonModal
+          open
+          outcome={dealOutcomeKindForTerminalStatus(dealOutcomeModal.pendingStatus)}
+          leadName={lead.name}
+          onConfirm={(reasonCode, reasonText) => {
+            const pending = dealOutcomeModal.pendingStatus!;
+            setForm((current) => ({ ...current, status: pending }));
+            setDealOutcomePatch({ dealOutcomeReasonCode: reasonCode, dealOutcomeReasonText: reasonText });
+            setDealOutcomeModal({ open: false, pendingStatus: null });
+          }}
+          onCancel={() => setDealOutcomeModal({ open: false, pendingStatus: null })}
+        />
+      ) : null}
     </div>
   );
 }

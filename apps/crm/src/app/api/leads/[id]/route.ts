@@ -21,6 +21,7 @@ import {
   mapLeadStatusToDealOutcome,
   parseBudgetToPrice,
 } from "@/lib/moat-capture/log-deal-outcome";
+import { isReasonValidForDealOutcome } from "@/lib/moat-capture/deal-outcome-reason";
 
 export async function PATCH(
   request: Request,
@@ -52,7 +53,27 @@ export async function PATCH(
 
     const body = await request.json();
 
+    const dealOutcomeReasonCode =
+      typeof body.dealOutcomeReasonCode === "string" ? body.dealOutcomeReasonCode.trim() : "";
+    const dealOutcomeReasonText =
+      body.dealOutcomeReasonText === null || body.dealOutcomeReasonText === undefined
+        ? null
+        : String(body.dealOutcomeReasonText).slice(0, 2000);
+
     const oldLead = await getLead(id, supabase);
+
+    const nextStatus = typeof body.status === "string" ? body.status : oldLead?.status;
+    const nextDealOutcome =
+      nextStatus && oldLead?.status !== nextStatus
+        ? mapLeadStatusToDealOutcome(nextStatus)
+        : null;
+    if (
+      nextDealOutcome &&
+      dealOutcomeReasonCode &&
+      !isReasonValidForDealOutcome(nextDealOutcome, dealOutcomeReasonCode)
+    ) {
+      return errorResponse("Neplatný dôvod uzavretia obchodu.", 400);
+    }
 
     const lead = await updateLead(id, {
       name: body.name,
@@ -146,6 +167,8 @@ export async function PATCH(
             agencyId,
             leadId: id,
             outcome: dealOutcome,
+            reasonCode: dealOutcomeReasonCode || undefined,
+            reasonText: dealOutcomeReasonText,
             agentId: callerProfile?.id ?? lead.assignedProfileId ?? null,
             propertyType: lead.propertyType ?? null,
             location: lead.location ?? null,

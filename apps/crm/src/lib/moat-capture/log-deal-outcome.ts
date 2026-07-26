@@ -4,6 +4,7 @@ import {
   DEAL_OUTCOMES_TABLE,
   isMoatCaptureEnabled,
 } from "@/lib/moat-capture/capture-config";
+import { isReasonValidForDealOutcome } from "@/lib/moat-capture/deal-outcome-reason";
 import {
   type DealOutcomeKind,
   UNSPECIFIED_REASON_CODE,
@@ -27,6 +28,25 @@ export type LogDealOutcomeInput = {
 export type DealOutcomeSupabase = {
   from(table: typeof DEAL_OUTCOMES_TABLE): {
     insert(row: Record<string, unknown>): Promise<{ error: { message: string } | null }>;
+    select(cols: string): {
+      eq(col: string, val: string): {
+        eq(col: string, val: string): {
+          eq(col: string, val: string): {
+            eq(col: string, val: string): {
+              order(col: string, opts: { ascending: boolean }): {
+                limit(n: number): Promise<{
+                  data: { id: string }[] | null;
+                  error: { message: string } | null;
+                }>;
+              };
+            };
+          };
+        };
+      };
+    };
+    update(row: Record<string, unknown>): {
+      eq(col: string, val: string): Promise<{ error: { message: string } | null }>;
+    };
   };
 };
 
@@ -66,16 +86,77 @@ export async function insertDealOutcomeRow(
   }
 }
 
+/** Updates the latest unspecified row for this lead/outcome (PR-B2 backfill path). */
+export async function updateLatestUnspecifiedDealOutcome(
+  input: {
+    agencyId: string;
+    leadId: string;
+    outcome: DealOutcomeKind;
+    reasonCode: string;
+    reasonText?: string | null;
+  },
+  client?: DealOutcomeSupabase | null,
+): Promise<boolean> {
+  const supabase = client ?? (createServiceRoleClient() as DealOutcomeSupabase | null);
+  if (!supabase) return false;
+
+  const { data, error: selectError } = await supabase
+    .from(DEAL_OUTCOMES_TABLE)
+    .select("id")
+    .eq("agency_id", input.agencyId)
+    .eq("lead_id", input.leadId)
+    .eq("outcome", input.outcome)
+    .eq("reason_code", UNSPECIFIED_REASON_CODE)
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  if (selectError || !data?.[0]?.id) return false;
+
+  const { error: updateError } = await supabase
+    .from(DEAL_OUTCOMES_TABLE)
+    .update({
+      reason_code: input.reasonCode.slice(0, 64),
+      reason_text: input.reasonText ?? null,
+    })
+    .eq("id", data[0].id);
+
+  return !updateError;
+}
+
+export async function persistDealOutcome(
+  input: LogDealOutcomeInput,
+  client?: DealOutcomeSupabase | null,
+): Promise<void> {
+  const trimmed = input.reasonCode?.trim();
+  if (trimmed && isReasonValidForDealOutcome(input.outcome, trimmed)) {
+    const updated = await updateLatestUnspecifiedDealOutcome(
+      {
+        agencyId: input.agencyId,
+        leadId: input.leadId,
+        outcome: input.outcome,
+        reasonCode: trimmed,
+        reasonText: input.reasonText,
+      },
+      client,
+    );
+    if (!updated) {
+      await insertDealOutcomeRow({ ...input, reasonCode: trimmed }, client);
+    }
+    return;
+  }
+
+  await insertDealOutcomeRow(input, client);
+}
+
 /**
  * Fire-and-forget deal close capture.
- * TODO(PR-B2): replace UNSPECIFIED reason_code with modal-selected reason_code.
  */
 export function logDealOutcome(input: LogDealOutcomeInput): void {
   if (!isMoatCaptureEnabled()) return;
 
   void (async () => {
     try {
-      await insertDealOutcomeRow(input);
+      await persistDealOutcome(input);
     } catch (err) {
       logError("[moat-capture] logDealOutcome failed", {
         leadId: input.leadId,
