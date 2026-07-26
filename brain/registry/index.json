@@ -189,7 +189,7 @@
     ],
     "evidence": [
       {
-        "commit": "067d9b3b47183b5b3db6c755f4c02327cd29f997",
+        "commit": "4057d02dc80a1a71600f81e0950e089ec250471a",
         "note": "Inventory contains 4 file(s); digest sha256:22470b14272b3e25dbd467c3b9d4deb57eec26f52aa1fcb61da11c0d4d230bf0.",
         "path": "docs/briefs/build-package-moat-capture-blok-b.md"
       }
@@ -213,7 +213,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "067d9b3b47183b5b3db6c755f4c02327cd29f997",
+      "commit": "4057d02dc80a1a71600f81e0950e089ec250471a",
       "path": "docs/briefs/build-package-moat-capture-blok-b.md"
     },
     "status": "active",
@@ -286,7 +286,7 @@
     ],
     "evidence": [
       {
-        "commit": "067d9b3b47183b5b3db6c755f4c02327cd29f997",
+        "commit": "4057d02dc80a1a71600f81e0950e089ec250471a",
         "note": "Inventory contains 220 file(s); digest sha256:8ca0b173e93bee32d29dc54f62631b168e03cb8de9379a93c4ac1a3891fb095b.",
         "path": "apps/crm/src/app/api"
       }
@@ -322,7 +322,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "067d9b3b47183b5b3db6c755f4c02327cd29f997",
+      "commit": "4057d02dc80a1a71600f81e0950e089ec250471a",
       "path": "apps/crm/src/app/api"
     },
     "status": "active",
@@ -343,7 +343,7 @@
     ],
     "evidence": [
       {
-        "commit": "067d9b3b47183b5b3db6c755f4c02327cd29f997",
+        "commit": "4057d02dc80a1a71600f81e0950e089ec250471a",
         "note": "Inventory contains 501 file(s); digest sha256:a0b1e57e4665e25327a2d56d64f5fb3b037680c2246d8b99c8a405e4cd1933db.",
         "path": "apps/crm/src/app"
       }
@@ -377,7 +377,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "067d9b3b47183b5b3db6c755f4c02327cd29f997",
+      "commit": "4057d02dc80a1a71600f81e0950e089ec250471a",
       "path": "apps/crm/src/app"
     },
     "status": "active",
@@ -397,7 +397,7 @@
     ],
     "evidence": [
       {
-        "commit": "067d9b3b47183b5b3db6c755f4c02327cd29f997",
+        "commit": "4057d02dc80a1a71600f81e0950e089ec250471a",
         "note": "Inventory contains 88 file(s); digest sha256:bc0390f57784eae9882dc21efc30212e96c74a9492182a758b1e01fb82ee6d5f.",
         "path": "apps/crm/supabase/migrations"
       }
@@ -432,7 +432,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "067d9b3b47183b5b3db6c755f4c02327cd29f997",
+      "commit": "4057d02dc80a1a71600f81e0950e089ec250471a",
       "path": "apps/crm/supabase/migrations"
     },
     "status": "active",
