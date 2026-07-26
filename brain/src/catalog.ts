@@ -203,6 +203,68 @@ const REGISTRY_SPECS: RegistrySpec[] = [
     capabilities: ["process-standard", "premortem", "risk-governance"],
   },
   {
+    id: "process.build-package-template",
+    type: "documentation",
+    name: "Build Package delivery standard",
+    purpose:
+      "Single-file delivery standard for Core Platform, Strategic Bet, migrations, and new capabilities before Cursor implementation.",
+    owner: "founder",
+    sourcePath: "docs/templates/build-package.md",
+    roots: ["docs/templates/build-package.md"],
+    dependencies: ["governance.architecture", "policy.cursor-rules", "process.premortem-template"],
+    relatedDecisions: [],
+    capabilities: ["process-standard", "build-package"],
+  },
+  {
+    id: "architecture.product-roadmap-mapping-202607",
+    type: "documentation",
+    name: "Product roadmap mapping 2026-07",
+    purpose:
+      "Binding map of sixteen proposed modules to existing Revolis owners; Capture-now/Learn-later moat strategy.",
+    owner: "founder",
+    sourcePath: "docs/architecture/product-roadmap-mapping-2026-07.md",
+    roots: ["docs/architecture/product-roadmap-mapping-2026-07.md"],
+    dependencies: ["governance.architecture", "process.veos-integration"],
+    relatedDecisions: ["rme-dec-20260726-001"],
+    capabilities: ["architecture-decision", "architecture-guidance", "product-roadmap"],
+  },
+  {
+    id: "build-package.moat-capture",
+    type: "documentation",
+    name: "Build Package: Moat Capture layer",
+    purpose:
+      "Core Platform brief for deal_outcomes and ai_recommendations capture-only layer; implementation pending founder GO.",
+    owner: "founder",
+    sourcePath: "docs/briefs/overnight/overnight-brief-moat-capture.md",
+    roots: [
+      "docs/briefs/overnight/overnight-brief-moat-capture.md",
+      "docs/premortems/2026-07-26-moat-capture.md",
+    ],
+    dependencies: ["process.build-package-template", "architecture.product-roadmap-mapping-202607"],
+    relatedDecisions: [],
+    capabilities: ["build-package", "core-platform", "data-capture"],
+  },
+  {
+    id: "build-package.guardian-v1",
+    type: "documentation",
+    name: "Build Package: Guardian v1",
+    purpose:
+      "Core Platform brief for guardian_findings hourly checks and daily digest; runs after moat-capture merge.",
+    owner: "founder",
+    sourcePath: "docs/briefs/overnight/overnight-brief-guardian-v1.md",
+    roots: [
+      "docs/briefs/overnight/overnight-brief-guardian-v1.md",
+      "docs/premortems/2026-07-27-guardian-v1.md",
+    ],
+    dependencies: [
+      "process.build-package-template",
+      "architecture.product-roadmap-mapping-202607",
+      "build-package.moat-capture",
+    ],
+    relatedDecisions: [],
+    capabilities: ["build-package", "core-platform", "guardian"],
+  },
+  {
     id: "premortem.ads-smolko-ab",
     type: "documentation",
     name: "Premortem: Google Ads A/B Smolko",
@@ -596,6 +658,30 @@ const DECISION_SPECS: DecisionSpec[] = [
     relatedAssets: ["premortem.ads-smolko-ab"],
     evidence: [
       { path: "docs/premortems/2026-07-23-ads-smolko-ab.md", line: 1, note: "Filled premortem with P×Z matrix and mitigations." },
+    ],
+  },
+  {
+    id: "rme-dec-20260726-001",
+    title: "Product roadmap mapping 2026-07 — reuse before build",
+    date: "2026-07-26",
+    status: "active",
+    problem:
+      "Sixteen proposed product modules risk duplicating existing capabilities or delaying moat data capture until after the three-customer learning gate.",
+    choice:
+      "Adopt the binding mapping table: nine REUSE/EXTEND, three Capture-now moat modules, four DEFER; no new systems where an owner already exists.",
+    rationale:
+      "Principal panel verdict and North Star require historical outcome and recommendation data before learning features can succeed.",
+    expectedOutcome:
+      "Every new module proposal is checked against the mapping table; capture PRs precede learn-phase features.",
+    observedOutcome: "Mapping document registered; moat capture and Guardian v1 implementation pending separate founder GO PRs.",
+    reviewAt: "2026-10-26",
+    relatedAssets: ["architecture.product-roadmap-mapping-202607"],
+    evidence: [
+      {
+        path: "docs/architecture/product-roadmap-mapping-2026-07.md",
+        line: 8,
+        note: "Binding mapping table and Capture-now/Learn-later moat strategy.",
+      },
     ],
   },
 ];

@@ -890,5 +890,41 @@
     "status": "active",
     "supersedes": [],
     "title": "Premortem gate for Google Ads A/B Smolko campaign"
+  },
+  {
+    "alternatives": [
+      "unavailable"
+    ],
+    "canonical": false,
+    "choice": "Adopt the binding mapping table: nine REUSE/EXTEND, three Capture-now moat modules, four DEFER; no new systems where an owner already exists.",
+    "confidence": "high",
+    "date": "2026-07-26",
+    "evidence": [
+      {
+        "commit": "uncommitted",
+        "line": 8,
+        "note": "Binding mapping table and Capture-now/Learn-later moat strategy.",
+        "path": "docs/architecture/product-roadmap-mapping-2026-07.md"
+      }
+    ],
+    "expectedOutcome": "Every new module proposal is checked against the mapping table; capture PRs precede learn-phase features.",
+    "id": "rme-dec-20260726-001",
+    "observedOutcome": "Mapping document registered; moat capture and Guardian v1 implementation pending separate founder GO PRs.",
+    "owner": "founder",
+    "problem": "Sixteen proposed product modules risk duplicating existing capabilities or delaying moat data capture until after the three-customer learning gate.",
+    "rationale": "Principal panel verdict and North Star require historical outcome and recommendation data before learning features can succeed.",
+    "relatedAssets": [
+      "architecture.product-roadmap-mapping-202607"
+    ],
+    "reviewAt": "2026-10-26",
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "uncommitted",
+      "path": "docs/architecture/product-roadmap-mapping-2026-07.md"
+    },
+    "status": "active",
+    "supersedes": [],
+    "title": "Product roadmap mapping 2026-07 — reuse before build"
   }
 ]

@@ -19,6 +19,13 @@ commitom obsahovať vyplnený premortem podľa `docs/templates/premortem.md`,
 uložený v `docs/premortems/`, s maticou P×Z a mitigáciou + kill signálom
 pre každé riziko so skóre ≥6. CI to neblokuje, review checklist to vyžaduje.
 
+## Build Package
+
+Core Platform, Strategic Bet a každá zmena s migráciou alebo novou
+capability sa odovzdáva ako Build Package podľa
+`docs/templates/build-package.md` — chýbajúca povinná sekcia = balík nie je
+pripravený na implementáciu.
+
 ## PR kontrolný zoznam
 
 - Brief kategória je uvedená v PR popise.
