@@ -14,7 +14,7 @@
     ],
     "evidence": [
       {
-        "commit": "uncommitted",
+        "commit": "d7e522653f600a200d38ed98799ae7d206c51197",
         "note": "Inventory contains 1 file(s); digest sha256:c0af3a928c156c64a35d8509f72978f3a0595473622e9157ba39f4bfb9776b66.",
         "path": "docs/architecture/product-roadmap-mapping-2026-07.md"
       }
@@ -37,7 +37,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "uncommitted",
+      "commit": "d7e522653f600a200d38ed98799ae7d206c51197",
       "path": "docs/architecture/product-roadmap-mapping-2026-07.md"
     },
     "status": "active",
@@ -146,7 +146,7 @@
     ],
     "evidence": [
       {
-        "commit": "uncommitted",
+        "commit": "d7e522653f600a200d38ed98799ae7d206c51197",
         "note": "Inventory contains 2 file(s); digest sha256:4d38c2196d5ff870e8a5a5a41938633ceb2f0901c275c98675607ef2da38a6ac.",
         "path": "docs/briefs/overnight/overnight-brief-guardian-v1.md"
       }
@@ -168,7 +168,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "uncommitted",
+      "commit": "d7e522653f600a200d38ed98799ae7d206c51197",
       "path": "docs/briefs/overnight/overnight-brief-guardian-v1.md"
     },
     "status": "active",
@@ -189,7 +189,7 @@
     ],
     "evidence": [
       {
-        "commit": "uncommitted",
+        "commit": "d7e522653f600a200d38ed98799ae7d206c51197",
         "note": "Inventory contains 2 file(s); digest sha256:d5b34b72972f1188b022e5a9db74e5157aa155e9918dd8d29ccccca4d9235ae9.",
         "path": "docs/briefs/overnight/overnight-brief-moat-capture.md"
       }
@@ -211,7 +211,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "uncommitted",
+      "commit": "d7e522653f600a200d38ed98799ae7d206c51197",
       "path": "docs/briefs/overnight/overnight-brief-moat-capture.md"
     },
     "status": "active",
@@ -448,7 +448,7 @@
     "dependencies": [],
     "evidence": [
       {
-        "commit": "5795155fbdb714a033ae50ebcaf91622cf7140d6",
+        "commit": "d7e522653f600a200d38ed98799ae7d206c51197",
         "note": "Inventory contains 19 file(s); digest sha256:0d2d2dee097b8b8d850b73fd998428234784276b5d9cfdc64ee9c21a223267b8.",
         "path": "docs/architecture"
       }
@@ -472,7 +472,7 @@
         "docs/architecture/memory-engine-canonical-model.md"
       ]
     },
-    "lastVerifiedAt": "2026-07-24",
+    "lastVerifiedAt": "2026-07-26",
     "name": "Architecture and governance corpus",
     "owner": "founder",
     "purpose": "Canonical and supporting architecture documents used to constrain product and engineering work.",
@@ -483,7 +483,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "5795155fbdb714a033ae50ebcaf91622cf7140d6",
+      "commit": "d7e522653f600a200d38ed98799ae7d206c51197",
       "path": "docs/architecture"
     },
     "status": "active",
@@ -672,7 +672,7 @@
     ],
     "evidence": [
       {
-        "commit": "aba1e888ee386d0880dbf9d348db406116fda88e",
+        "commit": "d7e522653f600a200d38ed98799ae7d206c51197",
         "note": "Inventory contains 10 file(s); digest sha256:044953f54b81a0d56993e9da7c444a8b960253e28e8bc752fa5c4a41643854a8.",
         "path": ".cursor/rules"
       }
@@ -694,7 +694,7 @@
         ".cursor/rules/workflow.mdc"
       ]
     },
-    "lastVerifiedAt": "2026-07-24",
+    "lastVerifiedAt": "2026-07-26",
     "name": "Cursor governance rules",
     "owner": "engineering",
     "purpose": "Operational rules referenced as policy evidence, never reclassified as historical decisions.",
@@ -705,7 +705,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "aba1e888ee386d0880dbf9d348db406116fda88e",
+      "commit": "d7e522653f600a200d38ed98799ae7d206c51197",
       "path": ".cursor/rules"
     },
     "status": "active",
@@ -769,7 +769,7 @@
     ],
     "evidence": [
       {
-        "commit": "uncommitted",
+        "commit": "d7e522653f600a200d38ed98799ae7d206c51197",
         "note": "Inventory contains 1 file(s); digest sha256:9db11f72e42373c21e4ed087406f9f001cb2572e360edb3061265cf58699bf91.",
         "path": "docs/templates/build-package.md"
       }
@@ -790,7 +790,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "uncommitted",
+      "commit": "d7e522653f600a200d38ed98799ae7d206c51197",
       "path": "docs/templates/build-package.md"
     },
     "status": "active",

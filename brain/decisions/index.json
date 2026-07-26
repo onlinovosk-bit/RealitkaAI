@@ -901,7 +901,7 @@
     "date": "2026-07-26",
     "evidence": [
       {
-        "commit": "uncommitted",
+        "commit": "d7e522653f600a200d38ed98799ae7d206c51197",
         "line": 8,
         "note": "Binding mapping table and Capture-now/Learn-later moat strategy.",
         "path": "docs/architecture/product-roadmap-mapping-2026-07.md"
@@ -920,7 +920,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "uncommitted",
+      "commit": "d7e522653f600a200d38ed98799ae7d206c51197",
       "path": "docs/architecture/product-roadmap-mapping-2026-07.md"
     },
     "status": "active",
