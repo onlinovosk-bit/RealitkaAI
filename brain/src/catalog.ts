@@ -233,12 +233,14 @@ const REGISTRY_SPECS: RegistrySpec[] = [
     type: "documentation",
     name: "Build Package: Moat Capture layer",
     purpose:
-      "Core Platform brief for deal_outcomes and ai_recommendations capture-only layer; implementation pending founder GO.",
+      "Moat capture Blok B (deal_outcomes + moat_ai_recommendations); PROD migration pending founder GO.",
     owner: "founder",
-    sourcePath: "docs/briefs/overnight/overnight-brief-moat-capture.md",
+    sourcePath: "docs/briefs/build-package-moat-capture-blok-b.md",
     roots: [
       "docs/briefs/overnight/overnight-brief-moat-capture.md",
+      "docs/briefs/build-package-moat-capture-blok-b.md",
       "docs/premortems/2026-07-26-moat-capture.md",
+      "apps/crm/supabase/migrations/20260726120000_moat_capture_blok_b.sql",
     ],
     dependencies: ["process.build-package-template", "architecture.product-roadmap-mapping-202607"],
     relatedDecisions: [],

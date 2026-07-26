@@ -290,6 +290,15 @@ export async function seedRlsFixtures(admin: SupabaseClient): Promise<RlsFixture
     is_hot: false,
     trigger: "viewing",
   });
+  await seedAgencyScopedTable(admin, rows, "deal_outcomes", f.agencyA, f.agencyB, f.leadA, f.leadB, {
+    outcome: "won",
+    reason_code: "cena",
+  });
+  await seedAgencyScopedTable(admin, rows, "moat_ai_recommendations", f.agencyA, f.agencyB, f.leadA, f.leadB, {
+    source: "triage",
+    recommendation: "RLS fixture triage",
+    status: "shown",
+  });
   await seedAgencyScopedTable(admin, rows, "ai_actions", f.agencyA, f.agencyB, f.leadA, f.leadB, {
     action: "call",
     reason: "rls_test",
@@ -694,6 +703,8 @@ const LEAD_FK_TABLES = new Set([
   "client_dna",
   "deal_risk",
   "deal_moments",
+  "deal_outcomes",
+  "moat_ai_recommendations",
   "ai_actions",
   "lead_action_scores",
   "lead_closing_windows",

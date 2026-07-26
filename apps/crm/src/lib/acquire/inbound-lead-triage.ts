@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { triageLeadBatches, type TriageLeadInput } from "@/lib/ai/lead-triage-batch";
 import { createNotification, type NotificationPriority } from "@/lib/notifications/store";
+import { logAiRecommendation } from "@/lib/moat-capture/log-ai-recommendation";
 
 export const NEW_LEAD_REASON_MAX = 180;
 const OWNER_UI_ROLES = ["owner_vision", "owner_protocol"] as const;
@@ -119,6 +120,17 @@ export async function runInboundLeadTriageAndNotify(
     }
 
     const agencyId = String(lead.agency_id ?? candidate.agencyId);
+
+    logAiRecommendation({
+      agencyId,
+      leadId,
+      source: "triage",
+      recommendation: `${row.priority}: ${String(row.reason ?? "").slice(0, 500)}`,
+      reasoning: row.reason ?? null,
+      dedupeKey: `triage:${leadId}:${triagedAt}`,
+      modelVersion: "lead-triage-batch-v1",
+    });
+
     const ownerProfileId = await deps.resolveOwnerProfileId(supa, agencyId);
     const shortReason = String(row.reason ?? "").slice(0, NEW_LEAD_REASON_MAX);
     await deps.createNotification({

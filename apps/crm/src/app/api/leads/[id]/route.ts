@@ -15,6 +15,12 @@ import {
   resolveOpenDecisionsForLead,
 } from "@/lib/agents/followup/outcomeWriter";
 import { logError } from "@/lib/logger";
+import {
+  daysBetweenIso,
+  logDealOutcome,
+  mapLeadStatusToDealOutcome,
+  parseBudgetToPrice,
+} from "@/lib/moat-capture/log-deal-outcome";
 
 export async function PATCH(
   request: Request,
@@ -26,7 +32,7 @@ export async function PATCH(
     if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
     const { data: callerProfile } = await supabase
-      .from("profiles").select("agency_id").eq("auth_user_id", user.id).maybeSingle();
+      .from("profiles").select("agency_id, id").eq("auth_user_id", user.id).maybeSingle();
 
     const { id } = await params;
 
@@ -39,7 +45,7 @@ export async function PATCH(
     }
 
     const { data: leadRow } = await supabase
-      .from("leads").select("agency_id").eq("id", id).maybeSingle();
+      .from("leads").select("agency_id, created_at").eq("id", id).maybeSingle();
     if (callerProfile?.agency_id && leadRow?.agency_id !== callerProfile.agency_id) {
       return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
     }
@@ -133,6 +139,22 @@ export async function PATCH(
             error: outcomeError instanceof Error ? outcomeError.message : String(outcomeError),
           });
         }
+
+        const dealOutcome = mapLeadStatusToDealOutcome(lead.status);
+        if (dealOutcome) {
+          logDealOutcome({
+            agencyId,
+            leadId: id,
+            outcome: dealOutcome,
+            agentId: callerProfile?.id ?? lead.assignedProfileId ?? null,
+            propertyType: lead.propertyType ?? null,
+            location: lead.location ?? null,
+            price: parseBudgetToPrice(lead.budget),
+            timeToCloseDays: daysBetweenIso(
+              lead.createdAt ?? (leadRow?.created_at ? String(leadRow.created_at) : null),
+            ),
+          });
+        }
       }
     }
 
@@ -155,7 +177,7 @@ export async function DELETE(
     if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
     const { data: callerProfile } = await supabase
-      .from("profiles").select("agency_id").eq("auth_user_id", user.id).maybeSingle();
+      .from("profiles").select("agency_id, id").eq("auth_user_id", user.id).maybeSingle();
 
     const { id } = await params;
 
@@ -226,7 +248,7 @@ export async function GET(
     }
 
     const { data: callerProfile } = await supabase
-      .from("profiles").select("agency_id").eq("auth_user_id", user.id).maybeSingle();
+      .from("profiles").select("agency_id, id").eq("auth_user_id", user.id).maybeSingle();
     if (callerProfile?.agency_id) {
       const { data: leadRow } = await supabase
         .from("leads").select("agency_id").eq("id", id).maybeSingle();

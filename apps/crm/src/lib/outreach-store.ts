@@ -15,6 +15,7 @@ import {
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { incrementUsageMetric, SYSTEM_USAGE_AGENCY_ID } from "@/lib/usage-metrics";
 import { listLeads } from "@/lib/leads-store";
+import { logAiRecommendation, hashRecommendationDedupePart } from "@/lib/moat-capture/log-ai-recommendation";
 
 type OutreachConfig = {
   dailyLimit: number;
@@ -205,6 +206,16 @@ export async function sendAiOutreachEmail(leadId: string) {
 
     const variant = pickOutboundAbVariant();
     const generated = await generateOutreachEmail(lead, { variant });
+
+    logAiRecommendation({
+      agencyId,
+      leadId: lead.id,
+      source: "ai_email",
+      recommendation: generated.subject,
+      reasoning: generated.body.slice(0, 2000),
+      dedupeKey: `ai_email:${lead.id}:${hashRecommendationDedupePart(`${generated.subject}\n${generated.body}`)}`,
+      modelVersion: generated.provider,
+    });
 
     const model = generated.provider.replace(/^openai:/, "") || "gpt-4.1-mini";
     await logAiAction({

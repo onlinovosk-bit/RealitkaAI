@@ -39,6 +39,8 @@ export const TENANT_TABLES: TenantTableDef[] = [
   { table: "client_dna", scope: "agency_id", pk: "id", domain: "clients" },
   { table: "deal_risk", scope: "agency_id", pk: "id", domain: "deals" },
   { table: "deal_moments", scope: "agency_id", pk: "id", domain: "deals" },
+  { table: "deal_outcomes", scope: "agency_id", pk: "id", domain: "deals" },
+  { table: "moat_ai_recommendations", scope: "agency_id", pk: "id", domain: "deals" },
   { table: "ai_actions", scope: "agency_id", pk: "id", domain: "deals" },
   { table: "lead_action_scores", scope: "agency_id", pk: "id", domain: "deals" },
   { table: "lead_closing_windows", scope: "agency_id", pk: "id", domain: "deals" },

@@ -6,6 +6,8 @@ import {
   buildFirstAudit,
   type FirstAuditLeadInput,
 } from "@/lib/workdesk/first-audit";
+import { listLeads } from "@/lib/leads-store";
+import { logNbaRecommendationsForLeads } from "@/lib/moat-capture/log-nba-batch";
 
 /**
  * GET /api/workdesk/first-audit
@@ -19,6 +21,12 @@ export async function GET() {
 
   try {
     const supabase = await createClient();
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("agency_id")
+      .eq("auth_user_id", user.id)
+      .maybeSingle();
+
     const { data: rows, error } = await supabase
       .from("leads")
       .select(
@@ -44,6 +52,12 @@ export async function GET() {
     }));
 
     const audit = buildFirstAudit(leads);
+
+    if (profile?.agency_id) {
+      const tenantLeads = await listLeads(undefined, supabase);
+      logNbaRecommendationsForLeads(profile.agency_id, tenantLeads, 3);
+    }
+
     return okResponse({ audit });
   } catch {
     return errorResponse("Audit zlyhal.", 500);
