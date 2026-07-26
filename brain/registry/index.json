@@ -189,16 +189,18 @@
     ],
     "evidence": [
       {
-        "commit": "uncommitted",
-        "note": "Inventory contains 2 file(s); digest sha256:d5b34b72972f1188b022e5a9db74e5157aa155e9918dd8d29ccccca4d9235ae9.",
+        "commit": "067d9b3b47183b5b3db6c755f4c02327cd29f997",
+        "note": "Inventory contains 4 file(s); digest sha256:22470b14272b3e25dbd467c3b9d4deb57eec26f52aa1fcb61da11c0d4d230bf0.",
         "path": "docs/briefs/build-package-moat-capture-blok-b.md"
       }
     ],
     "id": "build-package.moat-capture",
     "inventory": {
-      "digest": "sha256:d5b34b72972f1188b022e5a9db74e5157aa155e9918dd8d29ccccca4d9235ae9",
-      "fileCount": 2,
+      "digest": "sha256:22470b14272b3e25dbd467c3b9d4deb57eec26f52aa1fcb61da11c0d4d230bf0",
+      "fileCount": 4,
       "sample": [
+        "apps/crm/supabase/migrations/20260726120000_moat_capture_blok_b.sql",
+        "docs/briefs/build-package-moat-capture-blok-b.md",
         "docs/briefs/overnight/overnight-brief-moat-capture.md",
         "docs/premortems/2026-07-26-moat-capture.md"
       ]
@@ -211,7 +213,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "uncommitted",
+      "commit": "067d9b3b47183b5b3db6c755f4c02327cd29f997",
       "path": "docs/briefs/build-package-moat-capture-blok-b.md"
     },
     "status": "active",
@@ -284,7 +286,7 @@
     ],
     "evidence": [
       {
-        "commit": "414db135ea4988124f67ee18fb11ffed2d0e91fd",
+        "commit": "067d9b3b47183b5b3db6c755f4c02327cd29f997",
         "note": "Inventory contains 220 file(s); digest sha256:8ca0b173e93bee32d29dc54f62631b168e03cb8de9379a93c4ac1a3891fb095b.",
         "path": "apps/crm/src/app/api"
       }
@@ -308,7 +310,7 @@
         "apps/crm/src/app/api/ai/closing-window/recompute/route.ts"
       ]
     },
-    "lastVerifiedAt": "2026-07-22",
+    "lastVerifiedAt": "2026-07-26",
     "name": "CRM route handlers",
     "owner": "engineering",
     "purpose": "Inventory of API route handlers used to verify documented endpoint paths.",
@@ -320,7 +322,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "414db135ea4988124f67ee18fb11ffed2d0e91fd",
+      "commit": "067d9b3b47183b5b3db6c755f4c02327cd29f997",
       "path": "apps/crm/src/app/api"
     },
     "status": "active",
@@ -341,7 +343,7 @@
     ],
     "evidence": [
       {
-        "commit": "414db135ea4988124f67ee18fb11ffed2d0e91fd",
+        "commit": "067d9b3b47183b5b3db6c755f4c02327cd29f997",
         "note": "Inventory contains 501 file(s); digest sha256:a0b1e57e4665e25327a2d56d64f5fb3b037680c2246d8b99c8a405e4cd1933db.",
         "path": "apps/crm/src/app"
       }
@@ -365,7 +367,7 @@
         "apps/crm/src/app/(dashboard)/akvizieia/listy-z-katastra/error.tsx"
       ]
     },
-    "lastVerifiedAt": "2026-07-22",
+    "lastVerifiedAt": "2026-07-26",
     "name": "CRM application surface",
     "owner": "engineering",
     "purpose": "Inventory of CRM pages, layouts, and application code used for documentation drift checks.",
@@ -375,7 +377,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "414db135ea4988124f67ee18fb11ffed2d0e91fd",
+      "commit": "067d9b3b47183b5b3db6c755f4c02327cd29f997",
       "path": "apps/crm/src/app"
     },
     "status": "active",
@@ -395,15 +397,15 @@
     ],
     "evidence": [
       {
-        "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
-        "note": "Inventory contains 87 file(s); digest sha256:3b7409572b0434bba766505dc8c5a21e9e8a14f977882590ab901ba65a0ad1c5.",
+        "commit": "067d9b3b47183b5b3db6c755f4c02327cd29f997",
+        "note": "Inventory contains 88 file(s); digest sha256:bc0390f57784eae9882dc21efc30212e96c74a9492182a758b1e01fb82ee6d5f.",
         "path": "apps/crm/supabase/migrations"
       }
     ],
     "id": "database.migrations",
     "inventory": {
-      "digest": "sha256:3b7409572b0434bba766505dc8c5a21e9e8a14f977882590ab901ba65a0ad1c5",
-      "fileCount": 87,
+      "digest": "sha256:bc0390f57784eae9882dc21efc30212e96c74a9492182a758b1e01fb82ee6d5f",
+      "fileCount": 88,
       "sample": [
         "apps/crm/supabase/migrations/2026_genome_layer2.sql",
         "apps/crm/supabase/migrations/20260310_baseline_core_schema.sql",
@@ -419,7 +421,7 @@
         "apps/crm/supabase/migrations/20260425231407_event_pipeline.sql"
       ]
     },
-    "lastVerifiedAt": "2026-07-21",
+    "lastVerifiedAt": "2026-07-26",
     "name": "Supabase migrations",
     "owner": "engineering",
     "purpose": "Versioned database structure used as code-side evidence; production state remains independently verified.",
@@ -430,7 +432,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
+      "commit": "067d9b3b47183b5b3db6c755f4c02327cd29f997",
       "path": "apps/crm/supabase/migrations"
     },
     "status": "active",
