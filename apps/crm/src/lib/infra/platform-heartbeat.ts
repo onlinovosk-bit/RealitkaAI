@@ -20,6 +20,10 @@ export type HeartbeatMetrics = {
   inboundMailboxCount: number;
   sellerRescueLastNotifAt: string | null;
   sellerRescueLastTaskAt: string | null;
+  moatCaptureTriage24h: number;
+  moatCaptureNba24h: number;
+  moatCaptureAiEmail24h: number;
+  moatDealOutcomes24h: number;
 };
 
 export type PlatformHeartbeatResult = {
@@ -165,7 +169,7 @@ export async function collectHeartbeatMetrics(
   const agencyFilter = (q: any) =>
     agencyId ? q.eq("agency_id", agencyId) : q;
 
-  const [untriagedLeads24h, untriagedLeads7d, maxAiTriageAt, realviaLastWebhookAt, realviaWebhookTotal, inboundMailboxCount, sellerRescueLastNotifAt, sellerRescueLastTaskAt] =
+  const [untriagedLeads24h, untriagedLeads7d, maxAiTriageAt, realviaLastWebhookAt, realviaWebhookTotal, inboundMailboxCount, sellerRescueLastNotifAt, sellerRescueLastTaskAt, moatCaptureTriage24h, moatCaptureNba24h, moatCaptureAiEmail24h, moatDealOutcomes24h] =
     await Promise.all([
       safeCount(supabase, "leads", (q) =>
         agencyFilter(q).is("ai_triage_at", null).gte("created_at", cutoff24h),
@@ -197,6 +201,18 @@ export async function collectHeartbeatMetrics(
       latestIso(supabase, "tasks", "created_at", (q) =>
         q.ilike("title", "Seller Rescue%"),
       ),
+      safeCount(supabase, "moat_ai_recommendations", (q) =>
+        agencyFilter(q).eq("source", "triage").gte("created_at", cutoff24h),
+      ),
+      safeCount(supabase, "moat_ai_recommendations", (q) =>
+        agencyFilter(q).eq("source", "nba").gte("created_at", cutoff24h),
+      ),
+      safeCount(supabase, "moat_ai_recommendations", (q) =>
+        agencyFilter(q).eq("source", "ai_email").gte("created_at", cutoff24h),
+      ),
+      safeCount(supabase, "deal_outcomes", (q) =>
+        agencyFilter(q).gte("closed_at", cutoff24h),
+      ),
     ]);
 
   return {
@@ -209,6 +225,10 @@ export async function collectHeartbeatMetrics(
     inboundMailboxCount,
     sellerRescueLastNotifAt,
     sellerRescueLastTaskAt,
+    moatCaptureTriage24h,
+    moatCaptureNba24h,
+    moatCaptureAiEmail24h,
+    moatDealOutcomes24h,
   };
 }
 

@@ -10,6 +10,10 @@ import {
 } from "@/lib/leads-store";
 import { sendOnboardingEmail } from "@/lib/send-onboarding-email";
 import { createClient } from "@/lib/supabase/server";
+import {
+  captureAiRecommendationReaction,
+  hashRecommendationDedupePart,
+} from "@/lib/moat-capture/log-ai-recommendation";
 
 function formatPriority(priority: string) {
   if (priority === "high") return "Vysoká";
@@ -71,6 +75,19 @@ export async function PATCH(
           ? "activated"
           : "deactivated"
         : "updated";
+
+    if (
+      callerProfile?.agency_id &&
+      previous?.status !== recommendation.status &&
+      (recommendation.status === "active" || recommendation.status === "inactive")
+    ) {
+      const actionHash = hashRecommendationDedupePart(recommendation.title);
+      captureAiRecommendationReaction({
+        agencyId: callerProfile.agency_id,
+        dedupeKey: `crm_rec:${recommendation.leadId}:${actionHash}`,
+        status: recommendation.status === "active" ? "accepted" : "rejected",
+      });
+    }
 
     const auditText =
       action === "activated"

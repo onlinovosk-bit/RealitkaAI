@@ -14,6 +14,10 @@ const baseMetrics = (): HeartbeatMetrics => ({
   inboundMailboxCount: 1,
   sellerRescueLastNotifAt: "2026-07-08T06:00:00.000Z",
   sellerRescueLastTaskAt: "2026-07-08T06:00:00.000Z",
+  moatCaptureTriage24h: 0,
+  moatCaptureNba24h: 0,
+  moatCaptureAiEmail24h: 0,
+  moatDealOutcomes24h: 0,
 });
 
 describe("evaluateHeartbeatSignals", () => {
