@@ -30,6 +30,7 @@
   "dashboard_insights_cache",
   "deal_moments",
   "deal_outcomes",
+  "guardian_findings",
   "deal_risk",
   "decisions",
   "events",
