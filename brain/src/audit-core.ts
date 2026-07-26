@@ -251,6 +251,34 @@ function parallelTableFindings(repoRoot: string): AuditFinding[] {
   return findings;
 }
 
+const LESSON_PATH_RE = /^brain\/lessons\/(\d{4}-\d{2}-\d{2})-[^/]+\.md$/i;
+
+function unverifiedLessonFindings(repoRoot: string, auditDate: string): AuditFinding[] {
+  const findings: AuditFinding[] = [];
+  for (const file of listFiles(repoRoot, ["brain/lessons"])) {
+    if (!LESSON_PATH_RE.test(file)) continue;
+    const lessonDate = file.match(LESSON_PATH_RE)?.[1];
+    if (!lessonDate) continue;
+    const content = readText(repoRoot, file);
+    if (!content) continue;
+    const prevenciaMatch = content.match(/\*\*prevenciaOverena:\*\*\s*(true|false)/i);
+    if (!prevenciaMatch || prevenciaMatch[1].toLowerCase() === "true") continue;
+    if (daysBetween(lessonDate, auditDate) <= 30) continue;
+    const idMatch = content.match(/^#\s+(rme-les-[^\s—]+)/m);
+    const lessonId = idMatch?.[1] ?? file;
+    findings.push({
+      key: `lesson-unverified:${lessonId}`,
+      category: "staleness",
+      severity: "advisory",
+      title: "Lesson prevention is not verified and is older than 30 days",
+      detail: `${lessonId} (${lessonDate}) still has prevenciaOverena: false; verify prevention or update the lesson.`,
+      evidence: [evidence(file, "Lesson with unverified prevention", undefined)],
+      confidence: "high",
+    });
+  }
+  return findings;
+}
+
 export function collectFindings(options: {
   repoRoot: string;
   brain: LoadedBrain;
@@ -355,6 +383,7 @@ export function collectFindings(options: {
   findings.push(...localMarkdownLinks(repoRoot));
   findings.push(...documentedRoutes(repoRoot));
   findings.push(...parallelTableFindings(repoRoot));
+  findings.push(...unverifiedLessonFindings(repoRoot, auditDate));
 
   return [...new Map(findings.map((finding) => [finding.key, finding])).values()]
     .sort((left, right) => left.key.localeCompare(right.key));
