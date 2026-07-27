@@ -147,13 +147,13 @@
     "evidence": [
       {
         "commit": "c4e2e8c481e0bb720fb435378210df226d7ff745",
-        "note": "Inventory contains 6 file(s); digest sha256:08b14439c9908f26553a5ee10433307fd19511213fc329383d850dc217275af5.",
+        "note": "Inventory contains 6 file(s); digest sha256:ab204e781c08953ccd82a5c876500aa2ed32f175ca4f21cbb686ccef6223c8e3.",
         "path": "docs/briefs/overnight/overnight-brief-guardian-v1.md"
       }
     ],
     "id": "build-package.guardian-v1",
     "inventory": {
-      "digest": "sha256:08b14439c9908f26553a5ee10433307fd19511213fc329383d850dc217275af5",
+      "digest": "sha256:ab204e781c08953ccd82a5c876500aa2ed32f175ca4f21cbb686ccef6223c8e3",
       "fileCount": 6,
       "sample": [
         "apps/crm/src/app/api/cron/guardian-run/route.ts",
@@ -290,14 +290,14 @@
     ],
     "evidence": [
       {
-        "commit": "4af9f56239bf8df586060fdf461fe27d0c1c200a",
-        "note": "Inventory contains 224 file(s); digest sha256:502324f6e28850f0fa7d721a964ff49a27c78a62d156f1f028068847b24211ee.",
+        "commit": "5c631470ada894b82f6453c458423f7c5d0a4bd4",
+        "note": "Inventory contains 224 file(s); digest sha256:6283fe338b409a92e065757bbfea43037d8412c82bb2d930a3a69403523ad92b.",
         "path": "apps/crm/src/app/api"
       }
     ],
     "id": "crm.api",
     "inventory": {
-      "digest": "sha256:502324f6e28850f0fa7d721a964ff49a27c78a62d156f1f028068847b24211ee",
+      "digest": "sha256:6283fe338b409a92e065757bbfea43037d8412c82bb2d930a3a69403523ad92b",
       "fileCount": 224,
       "sample": [
         "apps/crm/src/app/api/acquire/email/route.ts",
@@ -326,7 +326,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "4af9f56239bf8df586060fdf461fe27d0c1c200a",
+      "commit": "5c631470ada894b82f6453c458423f7c5d0a4bd4",
       "path": "apps/crm/src/app/api"
     },
     "status": "active",
@@ -347,14 +347,14 @@
     ],
     "evidence": [
       {
-        "commit": "4af9f56239bf8df586060fdf461fe27d0c1c200a",
-        "note": "Inventory contains 505 file(s); digest sha256:0ba145b58845320aa450e8fa0ea3edd6ee5c0469e8311eaf053513fa37b88f98.",
+        "commit": "5c631470ada894b82f6453c458423f7c5d0a4bd4",
+        "note": "Inventory contains 505 file(s); digest sha256:681a2c8ffd80d7601902973c2fcede4d0dec9fbca900c97d888da331441a9573.",
         "path": "apps/crm/src/app"
       }
     ],
     "id": "crm.application",
     "inventory": {
-      "digest": "sha256:0ba145b58845320aa450e8fa0ea3edd6ee5c0469e8311eaf053513fa37b88f98",
+      "digest": "sha256:681a2c8ffd80d7601902973c2fcede4d0dec9fbca900c97d888da331441a9573",
       "fileCount": 505,
       "sample": [
         "apps/crm/src/app/_actions/l99-licensing.ts",
@@ -381,7 +381,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "4af9f56239bf8df586060fdf461fe27d0c1c200a",
+      "commit": "5c631470ada894b82f6453c458423f7c5d0a4bd4",
       "path": "apps/crm/src/app"
     },
     "status": "active",
@@ -401,7 +401,7 @@
     ],
     "evidence": [
       {
-        "commit": "4af9f56239bf8df586060fdf461fe27d0c1c200a",
+        "commit": "641aefedd02ad86f28a81497304f17ce7c40b248",
         "note": "Inventory contains 89 file(s); digest sha256:073880cfc7d50bf8a11f4d35f40b7498f9439339088b5419f688358a108e95da.",
         "path": "apps/crm/supabase/migrations"
       }
@@ -425,7 +425,7 @@
         "apps/crm/supabase/migrations/20260425231407_event_pipeline.sql"
       ]
     },
-    "lastVerifiedAt": "2026-07-26",
+    "lastVerifiedAt": "2026-07-27",
     "name": "Supabase migrations",
     "owner": "engineering",
     "purpose": "Versioned database structure used as code-side evidence; production state remains independently verified.",
@@ -436,7 +436,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "4af9f56239bf8df586060fdf461fe27d0c1c200a",
+      "commit": "641aefedd02ad86f28a81497304f17ce7c40b248",
       "path": "apps/crm/supabase/migrations"
     },
     "status": "active",
