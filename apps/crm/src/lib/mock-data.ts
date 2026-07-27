@@ -3,7 +3,14 @@ import type { AiActivityFeedItem } from "@/lib/app-mode-types";
 import type { Property } from "@/lib/properties-store";
 import { getMatchingLeadsForProperty } from "@/lib/matching";
 
-export type LeadStatus = "Nový" | "Teplý" | "Horúci" | "Obhliadka" | "Ponuka";
+export type LeadStatus =
+  | "Nový"
+  | "Teplý"
+  | "Horúci"
+  | "Obhliadka"
+  | "Ponuka"
+  | "Uzavretý"
+  | "Stratený";
 
 export type Lead = {
   id: string;

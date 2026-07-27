@@ -33,6 +33,14 @@ import {
   WORKDESK_PANEL,
 } from "@/lib/slate-horizon-theme";
 import { AiPriorityBadge } from "@/components/leads/AiPriorityBadge";
+import { DealOutcomeReasonModal } from "@/components/leads/deal-outcome-reason-modal";
+import {
+  dealOutcomeKindForTerminalStatus,
+  isDealOutcomeTerminalLeadStatus,
+  type DealOutcomeTerminalLeadStatus,
+} from "@/lib/moat-capture/deal-outcome-reason";
+import { withDealOutcomePatchFields } from "@/lib/leads/deal-outcome-patch";
+import type { DealOutcomePatchFields } from "@/lib/leads/deal-outcome-patch";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -194,6 +202,11 @@ export default function LeadDetailPage() {
   // delete confirmation
   const [confirmDelete, setConfirmDelete] = useState(false);
 
+  const [dealOutcomeModal, setDealOutcomeModal] = useState<{
+    open: boolean;
+    pendingStatus: DealOutcomeTerminalLeadStatus | null;
+  }>({ open: false, pendingStatus: null });
+
   const { msg: toast, show: showToast } = useToast();
 
   const [scorePulse, setScorePulse] = useState(false);
@@ -269,7 +282,7 @@ export default function LeadDetailPage() {
   }, []);
 
   // ── patch lead ──
-  const patchLead = useCallback(async (fields: Partial<Lead>) => {
+  const patchLead = useCallback(async (fields: Partial<Lead> & Partial<DealOutcomePatchFields>) => {
     if (!lead) return;
     const optimistic = { ...lead, ...fields };
     setLead(optimistic);
@@ -290,6 +303,40 @@ export default function LeadDetailPage() {
       setIsSavingField(false);
     }
   }, [lead, id, showToast]);
+
+  const handleStatusSelectChange = useCallback(
+    (nextStatus: Lead["status"]) => {
+      if (!lead) return;
+      if (
+        isDealOutcomeTerminalLeadStatus(nextStatus) &&
+        nextStatus !== lead.status
+      ) {
+        setDealOutcomeModal({ open: true, pendingStatus: nextStatus });
+        return;
+      }
+      void patchLead({ status: nextStatus });
+    },
+    [lead, patchLead],
+  );
+
+  const confirmDealOutcome = useCallback(
+    async (reasonCode: string, reasonText: string) => {
+      if (!lead || !dealOutcomeModal.pendingStatus) return;
+      const pendingStatus = dealOutcomeModal.pendingStatus;
+      setDealOutcomeModal({ open: false, pendingStatus: null });
+      await patchLead(
+        withDealOutcomePatchFields(
+          { status: pendingStatus },
+          { dealOutcomeReasonCode: reasonCode, dealOutcomeReasonText: reasonText },
+        ),
+      );
+    },
+    [lead, dealOutcomeModal.pendingStatus, patchLead],
+  );
+
+  const cancelDealOutcomeModal = useCallback(() => {
+    setDealOutcomeModal({ open: false, pendingStatus: null });
+  }, []);
 
   // ── add activity ──
   async function addActivity(e: React.SyntheticEvent<HTMLFormElement>) {
@@ -643,7 +690,8 @@ export default function LeadDetailPage() {
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>Stav</p>
               <select
                 value={lead.status}
-                onChange={e => patchLead({ status: e.target.value as Lead["status"] })}
+                onChange={(e) => handleStatusSelectChange(e.target.value as Lead["status"])}
+                data-testid="lead-status-select"
                 className="w-full rounded-xl border px-3 py-2.5 text-sm font-semibold outline-none min-h-[44px]"
                 style={{
                   background: WORKDESK_INPUT.background,
@@ -1033,6 +1081,17 @@ export default function LeadDetailPage() {
           </div>
         </div>
       </div>
+      {lead && dealOutcomeModal.open && dealOutcomeModal.pendingStatus ? (
+        <DealOutcomeReasonModal
+          open
+          outcome={dealOutcomeKindForTerminalStatus(dealOutcomeModal.pendingStatus)}
+          leadName={lead.name}
+          onConfirm={(code, text) => {
+            void confirmDealOutcome(code, text);
+          }}
+          onCancel={cancelDealOutcomeModal}
+        />
+      ) : null}
     </main>
   );
 }

@@ -9,6 +9,8 @@ import {
   insertDealOutcomeRow,
   logDealOutcome,
   mapLeadStatusToDealOutcome,
+  persistDealOutcome,
+  updateLatestUnspecifiedDealOutcome,
   type DealOutcomeSupabase,
 } from "@/lib/moat-capture/log-deal-outcome";
 import { isMoatCaptureEnabled } from "@/lib/moat-capture/capture-config";
@@ -101,7 +103,7 @@ describe("moat-capture helpers", () => {
     ).not.toThrow();
   });
 
-  it("logDealOutcome uses unspecified reason until PR-B2 modal", async () => {
+  it("insertDealOutcomeRow uses unspecified when reason omitted", async () => {
     let captured: Record<string, unknown> | null = null;
     const client: DealOutcomeSupabase = {
       from: () => ({
@@ -109,6 +111,22 @@ describe("moat-capture helpers", () => {
           captured = row;
           return { error: null };
         },
+        select: () => ({
+          eq: () => ({
+            eq: () => ({
+              eq: () => ({
+                eq: () => ({
+                  order: () => ({
+                    limit: async () => ({ data: [], error: null }),
+                  }),
+                }),
+              }),
+            }),
+          }),
+        }),
+        update: () => ({
+          eq: async () => ({ error: null }),
+        }),
       }),
     };
 
@@ -122,6 +140,123 @@ describe("moat-capture helpers", () => {
     );
 
     expect(captured?.reason_code).toBe(UNSPECIFIED_REASON_CODE);
+  });
+
+  it("persistDealOutcome inserts known reason without unspecified", async () => {
+    let captured: Record<string, unknown> | null = null;
+    const client: DealOutcomeSupabase = {
+      from: () => ({
+        insert: async (row: Record<string, unknown>) => {
+          captured = row;
+          return { error: null };
+        },
+        select: () => ({
+          eq: () => ({
+            eq: () => ({
+              eq: () => ({
+                eq: () => ({
+                  order: () => ({
+                    limit: async () => ({ data: [], error: null }),
+                  }),
+                }),
+              }),
+            }),
+          }),
+        }),
+        update: () => ({
+          eq: async () => ({ error: null }),
+        }),
+      }),
+    };
+
+    await persistDealOutcome(
+      {
+        agencyId: "a1",
+        leadId: "l1",
+        outcome: "won",
+        reasonCode: "cena",
+        reasonText: "OK",
+      },
+      client,
+    );
+
+    expect(captured?.reason_code).toBe("cena");
+    expect(captured?.reason_text).toBe("OK");
+  });
+
+  it("persistDealOutcome updates latest unspecified row when present", async () => {
+    let updated: Record<string, unknown> | null = null;
+    const client: DealOutcomeSupabase = {
+      from: () => ({
+        insert: async () => ({ error: null }),
+        select: () => ({
+          eq: () => ({
+            eq: () => ({
+              eq: () => ({
+                eq: () => ({
+                  order: () => ({
+                    limit: async () => ({ data: [{ id: "row-1" }], error: null }),
+                  }),
+                }),
+              }),
+            }),
+          }),
+        }),
+        update: (row: Record<string, unknown>) => ({
+          eq: async () => {
+            updated = row;
+            return { error: null };
+          },
+        }),
+      }),
+    };
+
+    await persistDealOutcome(
+      {
+        agencyId: "a1",
+        leadId: "l1",
+        outcome: "lost",
+        reasonCode: "konkurencia",
+      },
+      client,
+    );
+
+    expect(updated?.reason_code).toBe("konkurencia");
+  });
+
+  it("updateLatestUnspecifiedDealOutcome returns false when no row", async () => {
+    const client: DealOutcomeSupabase = {
+      from: () => ({
+        insert: async () => ({ error: null }),
+        select: () => ({
+          eq: () => ({
+            eq: () => ({
+              eq: () => ({
+                eq: () => ({
+                  order: () => ({
+                    limit: async () => ({ data: [], error: null }),
+                  }),
+                }),
+              }),
+            }),
+          }),
+        }),
+        update: () => ({
+          eq: async () => ({ error: null }),
+        }),
+      }),
+    };
+
+    const ok = await updateLatestUnspecifiedDealOutcome(
+      {
+        agencyId: "a1",
+        leadId: "l1",
+        outcome: "won",
+        reasonCode: "cena",
+      },
+      client,
+    );
+    expect(ok).toBe(false);
   });
 
   it("logDealOutcome never throws when insert fails", () => {

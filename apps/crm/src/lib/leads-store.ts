@@ -69,6 +69,8 @@ export const leadStatusOptions: LeadStatus[] = [
   "Horúci",
   "Obhliadka",
   "Ponuka",
+  "Uzavretý",
+  "Stratený",
 ];
 
 export const propertyTypeOptions = ["Byt", "Dom", "Pozemok", "Komerčný priestor"];
