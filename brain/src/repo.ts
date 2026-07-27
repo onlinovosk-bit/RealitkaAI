@@ -58,7 +58,7 @@ function isGitRepository(repoRoot: string): boolean {
 }
 
 export function listFiles(repoRoot: string, inputs: string[]): string[] {
-  const tracked = git(repoRoot, ["ls-files", "-z", "--", ...inputs]);
+  const tracked = gitRaw(repoRoot, ["ls-files", "-z", "--", ...inputs]);
   if (tracked !== undefined) {
     return tracked
       .split("\0")
@@ -99,27 +99,82 @@ export function normalizeNewlines(content: string): string {
   return content.replace(/\r\n/g, "\n");
 }
 
+function gitRaw(repoRoot: string, args: string[]): string | undefined {
+  try {
+    return execFileSync("git", args, {
+      cwd: repoRoot,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+  } catch {
+    return undefined;
+  }
+}
+
+function gitTrimmed(repoRoot: string, args: string[]): string | undefined {
+  return gitRaw(repoRoot, args)?.trim();
+}
+
+function parseGitCatFileBatch(files: string[], stdout: Buffer): Map<string, string> {
+  const map = new Map<string, string>();
+  let offset = 0;
+  let fileIndex = 0;
+  while (offset < stdout.length && fileIndex < files.length) {
+    const lineEnd = stdout.indexOf(0x0a, offset);
+    if (lineEnd === -1) break;
+    const header = stdout.subarray(offset, lineEnd).toString("utf8");
+    offset = lineEnd + 1;
+    const parts = header.split(" ");
+    const file = files[fileIndex]!;
+    fileIndex += 1;
+    if (parts[1] !== "blob") continue;
+    const size = Number.parseInt(parts[2] ?? "", 10);
+    if (!Number.isFinite(size) || size < 0) continue;
+    const content = stdout.subarray(offset, offset + size).toString("utf8");
+    offset += size;
+    if (stdout[offset] === 0x0a) offset += 1;
+    map.set(file, content);
+  }
+  return map;
+}
+
+function readGitHeadPathsBatch(repoRoot: string, files: string[]): Map<string, string> {
+  if (files.length === 0) return new Map();
+  const stdin = files.map((file) => `HEAD:${file}\n`).join("");
+  try {
+    const stdout = execFileSync("git", ["cat-file", "--batch"], {
+      cwd: repoRoot,
+      input: stdin,
+      maxBuffer: 64 * 1024 * 1024,
+    });
+    return parseGitCatFileBatch(files, stdout);
+  } catch {
+    return new Map();
+  }
+}
+
+function readDigestUtf8(repoRoot: string, file: string, batch: Map<string, string>): string {
+  const fromBatch = batch.get(file);
+  if (fromBatch !== undefined) return normalizeNewlines(fromBatch);
+  const fromGit = gitRaw(repoRoot, ["show", `HEAD:${file}`]);
+  if (fromGit !== undefined) return normalizeNewlines(fromGit);
+  return normalizeNewlines(readFileSync(resolve(repoRoot, file), "utf8"));
+}
+
 export function digestFiles(repoRoot: string, files: string[]): string {
+  const batch = readGitHeadPathsBatch(repoRoot, files);
   const hash = createHash("sha256");
   for (const file of files) {
     hash.update(file);
     hash.update("\0");
-    hash.update(normalizeNewlines(readFileSync(resolve(repoRoot, file), "utf8")));
+    hash.update(readDigestUtf8(repoRoot, file, batch));
     hash.update("\0");
   }
   return `sha256:${hash.digest("hex")}`;
 }
 
 function git(repoRoot: string, args: string[]): string | undefined {
-  try {
-    return execFileSync("git", args, {
-      cwd: repoRoot,
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
-    }).trim();
-  } catch {
-    return undefined;
-  }
+  return gitTrimmed(repoRoot, args);
 }
 const gitMetadataCache = new Map<string, {
   commit: string;

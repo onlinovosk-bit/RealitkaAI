@@ -591,13 +591,13 @@
     "evidence": [
       {
         "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
-        "note": "Inventory contains 2 file(s); digest sha256:ce829fe2c66a38a1436c6dbe8daabffb4476b40aa416114254efd893577e1f86.",
+        "note": "Inventory contains 2 file(s); digest sha256:3e3068d6e5a4954efeb5276da18b7bce8dffbccb17f2b81d2969834f7f3296b0.",
         "path": "memory/decisions.md"
       }
     ],
     "id": "memory.decisions",
     "inventory": {
-      "digest": "sha256:ce829fe2c66a38a1436c6dbe8daabffb4476b40aa416114254efd893577e1f86",
+      "digest": "sha256:3e3068d6e5a4954efeb5276da18b7bce8dffbccb17f2b81d2969834f7f3296b0",
       "fileCount": 2,
       "sample": [
         "decisions.md",
