@@ -257,6 +257,10 @@ const REGISTRY_SPECS: RegistrySpec[] = [
     roots: [
       "docs/briefs/overnight/overnight-brief-guardian-v1.md",
       "docs/premortems/2026-07-27-guardian-v1.md",
+      "docs/briefs/build-package-guardian-v1-blok-c.md",
+      "apps/crm/supabase/migrations/20260727120000_guardian_v1_blok_c.sql",
+      "apps/crm/src/lib/guardian/runner.ts",
+      "apps/crm/src/app/api/cron/guardian-run/route.ts",
     ],
     dependencies: [
       "process.build-package-template",

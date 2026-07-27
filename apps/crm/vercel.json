@@ -52,6 +52,14 @@
     {
       "path": "/api/cron/heartbeat-check",
       "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/guardian-run",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/guardian-digest",
+      "schedule": "0 7 * * *"
     }
   ]
 }

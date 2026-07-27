@@ -1,4 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { GUARDIAN_RUNNER_NOTIFICATION_TYPE } from "@/lib/guardian/config";
+import { SYSTEM_USAGE_AGENCY_ID } from "@/lib/usage-metrics";
 
 export type HeartbeatSeverity = "ok" | "warning" | "critical";
 
@@ -24,6 +26,8 @@ export type HeartbeatMetrics = {
   moatCaptureNba24h: number;
   moatCaptureAiEmail24h: number;
   moatDealOutcomes24h: number;
+  guardianLastRunAt: string | null;
+  guardianOpenFindings: number;
 };
 
 export type PlatformHeartbeatResult = {
@@ -37,6 +41,7 @@ export type PlatformHeartbeatResult = {
 const MS_24H = 24 * 60 * 60 * 1000;
 const MS_7D = 7 * 24 * 60 * 60 * 1000;
 const MS_48H = 48 * 60 * 60 * 1000;
+const MS_2H = 2 * 60 * 60 * 1000;
 
 function isoHoursAgo(hours: number, now = Date.now()): string {
   return new Date(now - hours * 60 * 60 * 1000).toISOString();
@@ -108,7 +113,6 @@ export function evaluateHeartbeatSignals(
     (rescueTaskAge === null || rescueTaskAge > MS_48H);
 
   if (rescueSilent && metrics.untriagedLeads7d === 0) {
-    // Len ak triage beží — inak je seller-rescue sekundárny signál.
     signals.push({
       id: "seller_rescue_silent_48h",
       severity: "warning",
@@ -118,6 +122,21 @@ export function evaluateHeartbeatSignals(
       evidence: {
         sellerRescueLastNotifAt: metrics.sellerRescueLastNotifAt,
         sellerRescueLastTaskAt: metrics.sellerRescueLastTaskAt,
+      },
+    });
+  }
+
+  const guardianAge = ageMs(metrics.guardianLastRunAt, now);
+  if (guardianAge === null || guardianAge > MS_2H) {
+    signals.push({
+      id: "guardian_runner_stale_2h",
+      severity: "warning",
+      title: "Guardian: žiadny beh 2h+",
+      detail:
+        "Hodinový Guardian cron nezanechal stopu v platform heartbeat — over Vercel cron a CRON_SECRET.",
+      evidence: {
+        guardianLastRunAt: metrics.guardianLastRunAt,
+        guardianOpenFindings: metrics.guardianOpenFindings,
       },
     });
   }
@@ -169,7 +188,7 @@ export async function collectHeartbeatMetrics(
   const agencyFilter = (q: any) =>
     agencyId ? q.eq("agency_id", agencyId) : q;
 
-  const [untriagedLeads24h, untriagedLeads7d, maxAiTriageAt, realviaLastWebhookAt, realviaWebhookTotal, inboundMailboxCount, sellerRescueLastNotifAt, sellerRescueLastTaskAt, moatCaptureTriage24h, moatCaptureNba24h, moatCaptureAiEmail24h, moatDealOutcomes24h] =
+  const [untriagedLeads24h, untriagedLeads7d, maxAiTriageAt, realviaLastWebhookAt, realviaWebhookTotal, inboundMailboxCount, sellerRescueLastNotifAt, sellerRescueLastTaskAt, moatCaptureTriage24h, moatCaptureNba24h, moatCaptureAiEmail24h, moatDealOutcomes24h, guardianLastRunAt, guardianOpenFindings] =
     await Promise.all([
       safeCount(supabase, "leads", (q) =>
         agencyFilter(q).is("ai_triage_at", null).gte("created_at", cutoff24h),
@@ -213,6 +232,14 @@ export async function collectHeartbeatMetrics(
       safeCount(supabase, "deal_outcomes", (q) =>
         agencyFilter(q).gte("closed_at", cutoff24h),
       ),
+      latestIso(supabase, "routine_notifications", "created_at", (q) =>
+        q
+          .eq("type", GUARDIAN_RUNNER_NOTIFICATION_TYPE)
+          .eq("agency_id", SYSTEM_USAGE_AGENCY_ID),
+      ),
+      safeCount(supabase, "guardian_findings", (q) =>
+        agencyFilter(q).is("resolved_at", null),
+      ),
     ]);
 
   return {
@@ -229,6 +256,8 @@ export async function collectHeartbeatMetrics(
     moatCaptureNba24h,
     moatCaptureAiEmail24h,
     moatDealOutcomes24h,
+    guardianLastRunAt,
+    guardianOpenFindings,
   };
 }
 

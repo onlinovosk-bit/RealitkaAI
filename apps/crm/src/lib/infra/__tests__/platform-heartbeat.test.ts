@@ -18,6 +18,8 @@ const baseMetrics = (): HeartbeatMetrics => ({
   moatCaptureNba24h: 0,
   moatCaptureAiEmail24h: 0,
   moatDealOutcomes24h: 0,
+  guardianLastRunAt: "2026-07-08T11:00:00.000Z",
+  guardianOpenFindings: 0,
 });
 
 describe("evaluateHeartbeatSignals", () => {
