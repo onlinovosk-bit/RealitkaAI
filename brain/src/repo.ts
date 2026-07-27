@@ -18,13 +18,9 @@ export function slash(value: string): string {
   return value.replace(/\\/g, "/");
 }
 
-const LOCALE_COMPARE_OPTIONS: Intl.CollatorOptions = {
-  sensitivity: "base",
-  numeric: true,
-};
-
+/** UTF-16 code unit order — stable across Node/OS (CI uses Node 20, dev may use 24). */
 export function compareAscii(left: string, right: string): number {
-  return left.localeCompare(right, "en", LOCALE_COMPARE_OPTIONS);
+  return left < right ? -1 : left > right ? 1 : 0;
 }
 
 export function isoDate(value = new Date()): string {
