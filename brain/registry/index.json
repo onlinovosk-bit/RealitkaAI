@@ -147,13 +147,13 @@
     "evidence": [
       {
         "commit": "c4e2e8c481e0bb720fb435378210df226d7ff745",
-        "note": "Inventory contains 6 file(s); digest sha256:ab204e781c08953ccd82a5c876500aa2ed32f175ca4f21cbb686ccef6223c8e3.",
+        "note": "Inventory contains 6 file(s); digest sha256:841d00336cbeb141f668f44fcc8b4b565a6f960e5a3274831734fb50a19c24d2.",
         "path": "docs/briefs/overnight/overnight-brief-guardian-v1.md"
       }
     ],
     "id": "build-package.guardian-v1",
     "inventory": {
-      "digest": "sha256:ab204e781c08953ccd82a5c876500aa2ed32f175ca4f21cbb686ccef6223c8e3",
+      "digest": "sha256:841d00336cbeb141f668f44fcc8b4b565a6f960e5a3274831734fb50a19c24d2",
       "fileCount": 6,
       "sample": [
         "apps/crm/src/app/api/cron/guardian-run/route.ts",
@@ -290,14 +290,14 @@
     ],
     "evidence": [
       {
-        "commit": "5c631470ada894b82f6453c458423f7c5d0a4bd4",
-        "note": "Inventory contains 224 file(s); digest sha256:6283fe338b409a92e065757bbfea43037d8412c82bb2d930a3a69403523ad92b.",
+        "commit": "af815e363de9d11e602fe3f317764bcdf0941a09",
+        "note": "Inventory contains 224 file(s); digest sha256:1a48bacb1adb25089bba40078cf22e4982f9f105892d77b6d4a72b3213cd4ad5.",
         "path": "apps/crm/src/app/api"
       }
     ],
     "id": "crm.api",
     "inventory": {
-      "digest": "sha256:6283fe338b409a92e065757bbfea43037d8412c82bb2d930a3a69403523ad92b",
+      "digest": "sha256:1a48bacb1adb25089bba40078cf22e4982f9f105892d77b6d4a72b3213cd4ad5",
       "fileCount": 224,
       "sample": [
         "apps/crm/src/app/api/acquire/email/route.ts",
@@ -326,7 +326,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "5c631470ada894b82f6453c458423f7c5d0a4bd4",
+      "commit": "af815e363de9d11e602fe3f317764bcdf0941a09",
       "path": "apps/crm/src/app/api"
     },
     "status": "active",
@@ -347,18 +347,17 @@
     ],
     "evidence": [
       {
-        "commit": "5c631470ada894b82f6453c458423f7c5d0a4bd4",
-        "note": "Inventory contains 505 file(s); digest sha256:681a2c8ffd80d7601902973c2fcede4d0dec9fbca900c97d888da331441a9573.",
+        "commit": "af815e363de9d11e602fe3f317764bcdf0941a09",
+        "note": "Inventory contains 505 file(s); digest sha256:8cb45a7de6e72ef6cb3f285511370c0feb1c55c6c0f0e14a004e7953544771f3.",
         "path": "apps/crm/src/app"
       }
     ],
     "id": "crm.application",
     "inventory": {
-      "digest": "sha256:681a2c8ffd80d7601902973c2fcede4d0dec9fbca900c97d888da331441a9573",
+      "digest": "sha256:8cb45a7de6e72ef6cb3f285511370c0feb1c55c6c0f0e14a004e7953544771f3",
       "fileCount": 505,
       "sample": [
-        "apps/crm/src/app/_actions/l99-licensing.ts",
-        "apps/crm/src/app/_actions/licensing.ts",
+        "apps/crm/src/app/(dashboard)/DashboardClientShell.tsx",
         "apps/crm/src/app/(dashboard)/activities/error.tsx",
         "apps/crm/src/app/(dashboard)/activities/loading.tsx",
         "apps/crm/src/app/(dashboard)/activities/page.tsx",
@@ -368,7 +367,8 @@
         "apps/crm/src/app/(dashboard)/akvizieia/kupujuci-predajca/error.tsx",
         "apps/crm/src/app/(dashboard)/akvizieia/kupujuci-predajca/loading.tsx",
         "apps/crm/src/app/(dashboard)/akvizieia/kupujuci-predajca/page.tsx",
-        "apps/crm/src/app/(dashboard)/akvizieia/listy-z-katastra/error.tsx"
+        "apps/crm/src/app/(dashboard)/akvizieia/listy-z-katastra/error.tsx",
+        "apps/crm/src/app/(dashboard)/akvizieia/listy-z-katastra/loading.tsx"
       ]
     },
     "lastVerifiedAt": "2026-07-27",
@@ -381,7 +381,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "5c631470ada894b82f6453c458423f7c5d0a4bd4",
+      "commit": "af815e363de9d11e602fe3f317764bcdf0941a09",
       "path": "apps/crm/src/app"
     },
     "status": "active",
@@ -402,16 +402,15 @@
     "evidence": [
       {
         "commit": "641aefedd02ad86f28a81497304f17ce7c40b248",
-        "note": "Inventory contains 89 file(s); digest sha256:073880cfc7d50bf8a11f4d35f40b7498f9439339088b5419f688358a108e95da.",
+        "note": "Inventory contains 89 file(s); digest sha256:9a915a9d57324d44da8d8210aa47fb8998b7dfb3ed59e9e99f618ea9fa14ce71.",
         "path": "apps/crm/supabase/migrations"
       }
     ],
     "id": "database.migrations",
     "inventory": {
-      "digest": "sha256:073880cfc7d50bf8a11f4d35f40b7498f9439339088b5419f688358a108e95da",
+      "digest": "sha256:9a915a9d57324d44da8d8210aa47fb8998b7dfb3ed59e9e99f618ea9fa14ce71",
       "fileCount": 89,
       "sample": [
-        "apps/crm/supabase/migrations/2026_genome_layer2.sql",
         "apps/crm/supabase/migrations/20260310_baseline_core_schema.sql",
         "apps/crm/supabase/migrations/20260320_rls.sql",
         "apps/crm/supabase/migrations/20260411_performance_fee.sql",
@@ -420,9 +419,10 @@
         "apps/crm/supabase/migrations/20260418_enterprise_ai_intelligence.sql",
         "apps/crm/supabase/migrations/20260419_enterprise_rls_profile_link.sql",
         "apps/crm/supabase/migrations/20260424_google_calendar_oauth.sql",
-        "apps/crm/supabase/migrations/20260602_agency_billing_and_credits.sql",
-        "apps/crm/supabase/migrations/20260603_dashboard_insights_cache.sql",
-        "apps/crm/supabase/migrations/20260425231407_event_pipeline.sql"
+        "apps/crm/supabase/migrations/20260425231407_event_pipeline.sql",
+        "apps/crm/supabase/migrations/20260425231426_bri_live_score.sql",
+        "apps/crm/supabase/migrations/20260426114846_morning_brief.sql",
+        "apps/crm/supabase/migrations/20260426120111_arbitrage_engine.sql"
       ]
     },
     "lastVerifiedAt": "2026-07-27",
@@ -455,25 +455,25 @@
     "evidence": [
       {
         "commit": "c4e2e8c481e0bb720fb435378210df226d7ff745",
-        "note": "Inventory contains 19 file(s); digest sha256:0d2d2dee097b8b8d850b73fd998428234784276b5d9cfdc64ee9c21a223267b8.",
+        "note": "Inventory contains 19 file(s); digest sha256:f5407c8da40fdcfc6a47462e0ee48bbc3309eae7765b060087906e8e4f10d5bb.",
         "path": "docs/architecture"
       }
     ],
     "id": "governance.architecture",
     "inventory": {
-      "digest": "sha256:0d2d2dee097b8b8d850b73fd998428234784276b5d9cfdc64ee9c21a223267b8",
+      "digest": "sha256:f5407c8da40fdcfc6a47462e0ee48bbc3309eae7765b060087906e8e4f10d5bb",
       "fileCount": 19,
       "sample": [
         "docs/architecture/.phase0-probe-b/.gitkeep",
+        "docs/architecture/L99-real-estate-vertical-pack-prompt.md",
+        "docs/architecture/L99_ARCHITECTURE_AUDIT.md",
         "docs/architecture/antipatterns-log.md",
         "docs/architecture/clay-positioning-reframe.md",
         "docs/architecture/engineering-os-revolis-rightsized.md",
         "docs/architecture/graph-audit-2026-07.md",
         "docs/architecture/inputs/lead-tables-authority-2026-07.md",
         "docs/architecture/inputs/memory-engine-sources-2026-07.md",
-        "docs/architecture/L99_ARCHITECTURE_AUDIT.md",
         "docs/architecture/l99-parked-concepts.md",
-        "docs/architecture/L99-real-estate-vertical-pack-prompt.md",
         "docs/architecture/master-data-sourcing-map.md",
         "docs/architecture/memory-engine-canonical-model.md"
       ]
@@ -943,27 +943,27 @@
     "evidence": [
       {
         "commit": "c4143545f24496a8cdea575375c6ffc3aa523533",
-        "note": "Inventory contains 39 file(s); digest sha256:b8cf5b6118a73aecc985657d48146bb6b1881a63a0b41ecc123314d5bc5a507d.",
+        "note": "Inventory contains 39 file(s); digest sha256:a275474751b6b5473b76f7b61232d0fe104d789e3c2ceea73e2f9c4d836d96bc.",
         "path": "package.json"
       }
     ],
     "id": "repo.packages",
     "inventory": {
-      "digest": "sha256:b8cf5b6118a73aecc985657d48146bb6b1881a63a0b41ecc123314d5bc5a507d",
+      "digest": "sha256:a275474751b6b5473b76f7b61232d0fe104d789e3c2ceea73e2f9c4d836d96bc",
       "fileCount": 39,
       "sample": [
         "apps/crm/package.json",
         "apps/marketing/package.json",
         "package.json",
         "packages/.env.example",
+        "packages/README.md",
         "packages/docker-compose.yml",
         "packages/mcp-calendar/Dockerfile",
         "packages/mcp-calendar/package.json",
         "packages/mcp-calendar/src/server.ts",
         "packages/mcp-calendar/src/tools/create-event.ts",
         "packages/mcp-calendar/src/tools/find-available-slots.ts",
-        "packages/mcp-calendar/tsconfig.json",
-        "packages/mcp-comm/Dockerfile"
+        "packages/mcp-calendar/tsconfig.json"
       ]
     },
     "lastVerifiedAt": "2026-07-23",

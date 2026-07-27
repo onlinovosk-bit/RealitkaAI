@@ -14,6 +14,11 @@ import {
 } from "@/lib/guardian/digest";
 import type { GuardianLeadRow } from "@/lib/guardian/types";
 import { isGuardianDigestEnabled } from "@/lib/guardian/config";
+import {
+  filterAgenciesForGuardianRun,
+  isGuardianProductionRuntime,
+  parseGuardianAgencyAllowlist,
+} from "@/lib/guardian/config";
 import { evaluateHeartbeatSignals } from "@/lib/infra/platform-heartbeat";
 
 const CRM_ROOT = process.cwd();
@@ -44,13 +49,27 @@ describe("Guardian v1 rules", () => {
     }
   });
 
-  it("R1 STALE when no lead_events beyond threshold", () => {
+  it("R1 STALE v1.1: lead_events in 90d window but quiet 7d", () => {
     const row = lead({ id: "l1" });
-    const old = new Date(now - 8 * 86400000).toISOString();
-    expect(evaluateRuleForLead("STALE", row, old, now)).toBe(true);
+    const tenDaysAgo = new Date(now - 10 * 86400000).toISOString();
+    expect(evaluateRuleForLead("STALE", row, tenDaysAgo, now)).toBe(true);
     expect(evaluateRuleForLead("STALE", row, new Date(now - 1 * 86400000).toISOString(), now)).toBe(
       false,
     );
+  });
+
+  it("R1 STALE: imported lead without lead_events is not STALE", () => {
+    const row = lead({
+      id: "l1b",
+      created_at: new Date(now - 30 * 86400000).toISOString(),
+    });
+    expect(evaluateRuleForLead("STALE", row, null, now)).toBe(false);
+  });
+
+  it("R1 STALE: last activity older than 90d is not STALE", () => {
+    const row = lead({ id: "l1c" });
+    const hundredDaysAgo = new Date(now - 100 * 86400000).toISOString();
+    expect(evaluateRuleForLead("STALE", row, hundredDaysAgo, now)).toBe(false);
   });
 
   it("R2 NO_OWNER after 24h without assignee", () => {
@@ -92,6 +111,40 @@ describe("Guardian v1 rules", () => {
 
   it("covers all four rule codes", () => {
     expect(GUARDIAN_RULE_CODES).toHaveLength(4);
+  });
+});
+
+describe("Guardian agency allowlist", () => {
+  it("parseGuardianAgencyAllowlist distinguishes unset vs empty", () => {
+    vi.stubEnv("GUARDIAN_AGENCY_ALLOWLIST", undefined);
+    expect(parseGuardianAgencyAllowlist()).toBeNull();
+    vi.stubEnv("GUARDIAN_AGENCY_ALLOWLIST", "");
+    expect(parseGuardianAgencyAllowlist()).toEqual([]);
+    vi.stubEnv("GUARDIAN_AGENCY_ALLOWLIST", "a,b, c");
+    expect(parseGuardianAgencyAllowlist()).toEqual(["a", "b", "c"]);
+  });
+
+  it("production with unset allowlist runs no agencies", () => {
+    vi.stubEnv("GUARDIAN_AGENCY_ALLOWLIST", undefined);
+    vi.stubEnv("VERCEL_ENV", "production");
+    vi.stubEnv("NODE_ENV", "production");
+    expect(isGuardianProductionRuntime()).toBe(true);
+    const result = filterAgenciesForGuardianRun(["agency-1", "agency-2"]);
+    expect(result.ids).toEqual([]);
+    expect(result.skippedReason).toBe("allowlist_unset_prod");
+  });
+
+  it("non-production without allowlist passes all agencies", () => {
+    vi.stubEnv("GUARDIAN_AGENCY_ALLOWLIST", undefined);
+    vi.stubEnv("VERCEL_ENV", "development");
+    vi.stubEnv("NODE_ENV", "development");
+    expect(filterAgenciesForGuardianRun(["a", "b"]).ids).toEqual(["a", "b"]);
+  });
+
+  it("allowlist filters to listed UUIDs only", () => {
+    vi.stubEnv("GUARDIAN_AGENCY_ALLOWLIST", "uuid-1,uuid-2");
+    vi.stubEnv("VERCEL_ENV", "production");
+    expect(filterAgenciesForGuardianRun(["uuid-1", "uuid-3"]).ids).toEqual(["uuid-1"]);
   });
 });
 
@@ -138,6 +191,7 @@ describe("Guardian e2e simulation", () => {
     expect(evaluateRuleForLead("STALE", row, staleEvent, now)).toBe(true);
     const freshEvent = new Date(now - 3600000).toISOString();
     expect(evaluateRuleForLead("STALE", row, freshEvent, now)).toBe(false);
+    expect(evaluateRuleForLead("STALE", row, null, now)).toBe(false);
   });
 });
 

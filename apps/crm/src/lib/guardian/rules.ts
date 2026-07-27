@@ -39,9 +39,13 @@ export function evaluateRuleForLead(
 
   switch (rule) {
     case "STALE": {
-      const ref = lastEventAt ? Date.parse(lastEventAt) : Date.parse(lead.created_at);
-      if (Number.isNaN(ref)) return false;
-      return nowMs - ref > GUARDIAN_THRESHOLDS.R1_STALE_DAYS * MS_DAY;
+      if (!lastEventAt) return false;
+      const latest = Date.parse(lastEventAt);
+      if (Number.isNaN(latest)) return false;
+      const ageMs = nowMs - latest;
+      const quietMs = GUARDIAN_THRESHOLDS.R1_STALE_QUIET_DAYS * MS_DAY;
+      const windowMs = GUARDIAN_THRESHOLDS.R1_STALE_ACTIVITY_WINDOW_DAYS * MS_DAY;
+      return ageMs > quietMs && ageMs <= windowMs;
     }
     case "NO_OWNER": {
       const created = Date.parse(lead.created_at);

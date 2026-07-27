@@ -25,4 +25,16 @@ describe("Guardian v1 verification", () => {
     expect(source).toContain("GUARDIAN_DIGEST_ENABLED");
     expect(source).toContain("return false");
   });
+
+  it("v1.1 allowlist env documented in config", () => {
+    const source = readFileSync(join(CRM_ROOT, "src/lib/guardian/config.ts"), "utf8");
+    expect(source).toContain("GUARDIAN_AGENCY_ALLOWLIST");
+    expect(source).toContain("filterAgenciesForGuardianRun");
+  });
+
+  it("STALE v1.1 thresholds in config", () => {
+    const source = readFileSync(join(CRM_ROOT, "src/lib/guardian/config.ts"), "utf8");
+    expect(source).toContain("R1_STALE_ACTIVITY_WINDOW_DAYS: 90");
+    expect(source).toContain("R1_STALE_QUIET_DAYS: 7");
+  });
 });

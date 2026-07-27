@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { listActiveAgencyIds } from "@/lib/ai/dashboard-insights-cron";
-import { isGuardianRunnerEnabled } from "@/lib/guardian/config";
+import {
+  filterAgenciesForGuardianRun,
+  isGuardianRunnerEnabled,
+} from "@/lib/guardian/config";
 import {
   recordGuardianPlatformHeartbeat,
   runGuardianForAgency,
@@ -22,13 +25,15 @@ export async function GET(request: NextRequest) {
 
   const supabase = createAdminClient();
   const started = Date.now();
-  let agencyIds: string[] = [];
+  let allAgencyIds: string[] = [];
   try {
-    agencyIds = await listActiveAgencyIds(supabase);
+    allAgencyIds = await listActiveAgencyIds(supabase);
   } catch (err) {
     const message = err instanceof Error ? err.message : "agencies";
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
+
+  const { ids: agencyIds, skippedReason } = filterAgenciesForGuardianRun(allAgencyIds);
 
   const results = [];
   let inserted = 0;
@@ -53,6 +58,8 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     ok: true,
     agencies: agencyIds.length,
+    agenciesListed: allAgencyIds.length,
+    skippedReason: skippedReason ?? null,
     inserted,
     durationMs,
     results,
