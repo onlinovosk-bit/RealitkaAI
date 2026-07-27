@@ -926,5 +926,53 @@
     "status": "active",
     "supersedes": [],
     "title": "Product roadmap mapping 2026-07 — reuse before build"
+  },
+  {
+    "alternatives": [
+      "unavailable"
+    ],
+    "canonical": false,
+    "choice": "STALE only when latest lead_event is after 7d quiet and within 90d activity window; no created_at fallback. Production runner uses GUARDIAN_AGENCY_ALLOWLIST (unset/empty = no tenant runs). GUARDIAN_DIGEST_ENABLED stays default false; baseline kill >50 unchanged.",
+    "confidence": "high",
+    "date": "2026-07-27",
+    "evidence": [
+      {
+        "commit": "c4e2e8c481e0bb720fb435378210df226d7ff745",
+        "line": 15,
+        "note": "Baseline + digest env mitigations; >50 finding kill.",
+        "path": "docs/premortems/2026-07-27-guardian-v1.md"
+      },
+      {
+        "commit": "641aefedd02ad86f28a81497304f17ce7c40b248",
+        "line": 4,
+        "note": "v1.1 thresholds and GUARDIAN_AGENCY_ALLOWLIST filter.",
+        "path": "apps/crm/src/lib/guardian/config.ts"
+      },
+      {
+        "commit": "641aefedd02ad86f28a81497304f17ce7c40b248",
+        "line": 41,
+        "note": "STALE requires lead_events window 7d–90d.",
+        "path": "apps/crm/src/lib/guardian/rules.ts"
+      }
+    ],
+    "expectedOutcome": "After deploy + allowlist env + optional SQL cleanup, STALE reflects real engagement gaps only; paying tenant runs are explicit.",
+    "id": "rme-dec-20260727-002",
+    "observedOutcome": "Prod audit 2026-07-27: 473/473 open STALE invalid under v1.1 (no lead_events); implementation in feat/guardian-v1.1-thresholds.",
+    "owner": "founder",
+    "problem": "Guardian v1 STALE flagged imported Smolko contacts with no lead_events (473 open STALE on prod), risking baseline panic and false alerts.",
+    "rationale": "Premortem #1 (P×Z=9): digest off and founder-reviewed thresholds before customer email; allowlist prevents cron touching demo/sandbox tenants until IDs confirmed.",
+    "relatedAssets": [
+      "build-package.guardian-v1"
+    ],
+    "reviewAt": "2026-08-27",
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "c4e2e8c481e0bb720fb435378210df226d7ff745",
+      "path": "docs/premortems/2026-07-27-guardian-v1.md"
+    },
+    "status": "active",
+    "supersedes": [],
+    "title": "Guardian v1.1 — STALE 90d+7d and production agency allowlist"
   }
 ]

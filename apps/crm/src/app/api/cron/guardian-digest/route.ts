@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { listActiveAgencyIds } from "@/lib/ai/dashboard-insights-cron";
+import { filterAgenciesForGuardianRun } from "@/lib/guardian/config";
 import { runGuardianDigestForAgency } from "@/lib/guardian/digest";
 
 export const dynamic = "force-dynamic";
@@ -13,13 +14,15 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = createAdminClient();
-  let agencyIds: string[] = [];
+  let allAgencyIds: string[] = [];
   try {
-    agencyIds = await listActiveAgencyIds(supabase);
+    allAgencyIds = await listActiveAgencyIds(supabase);
   } catch (err) {
     const message = err instanceof Error ? err.message : "agencies";
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
+
+  const { ids: agencyIds } = filterAgenciesForGuardianRun(allAgencyIds);
 
   const outcomes = [];
   for (const agencyId of agencyIds) {

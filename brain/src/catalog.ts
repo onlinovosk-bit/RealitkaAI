@@ -690,6 +690,40 @@ const DECISION_SPECS: DecisionSpec[] = [
       },
     ],
   },
+  {
+    id: "rme-dec-20260727-002",
+    title: "Guardian v1.1 — STALE 90d+7d and production agency allowlist",
+    date: "2026-07-27",
+    status: "active",
+    problem:
+      "Guardian v1 STALE flagged imported Smolko contacts with no lead_events (473 open STALE on prod), risking baseline panic and false alerts.",
+    choice:
+      "STALE only when latest lead_event is after 7d quiet and within 90d activity window; no created_at fallback. Production runner uses GUARDIAN_AGENCY_ALLOWLIST (unset/empty = no tenant runs). GUARDIAN_DIGEST_ENABLED stays default false; baseline kill >50 unchanged.",
+    rationale:
+      "Premortem #1 (P×Z=9): digest off and founder-reviewed thresholds before customer email; allowlist prevents cron touching demo/sandbox tenants until IDs confirmed.",
+    expectedOutcome:
+      "After deploy + allowlist env + optional SQL cleanup, STALE reflects real engagement gaps only; paying tenant runs are explicit.",
+    observedOutcome: "Prod audit 2026-07-27: 473/473 open STALE invalid under v1.1 (no lead_events); implementation in feat/guardian-v1.1-thresholds.",
+    reviewAt: "2026-08-27",
+    relatedAssets: ["build-package.guardian-v1"],
+    evidence: [
+      {
+        path: "docs/premortems/2026-07-27-guardian-v1.md",
+        line: 15,
+        note: "Baseline + digest env mitigations; >50 finding kill.",
+      },
+      {
+        path: "apps/crm/src/lib/guardian/config.ts",
+        line: 4,
+        note: "v1.1 thresholds and GUARDIAN_AGENCY_ALLOWLIST filter.",
+      },
+      {
+        path: "apps/crm/src/lib/guardian/rules.ts",
+        line: 41,
+        note: "STALE requires lead_events window 7d–90d.",
+      },
+    ],
+  },
 ];
 
 export function buildRegistry(repoRoot: string): RegistryRecord[] {

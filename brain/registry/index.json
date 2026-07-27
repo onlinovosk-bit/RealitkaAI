@@ -147,13 +147,13 @@
     "evidence": [
       {
         "commit": "c4e2e8c481e0bb720fb435378210df226d7ff745",
-        "note": "Inventory contains 6 file(s); digest sha256:ab204e781c08953ccd82a5c876500aa2ed32f175ca4f21cbb686ccef6223c8e3.",
+        "note": "Inventory contains 6 file(s); digest sha256:841d00336cbeb141f668f44fcc8b4b565a6f960e5a3274831734fb50a19c24d2.",
         "path": "docs/briefs/overnight/overnight-brief-guardian-v1.md"
       }
     ],
     "id": "build-package.guardian-v1",
     "inventory": {
-      "digest": "sha256:ab204e781c08953ccd82a5c876500aa2ed32f175ca4f21cbb686ccef6223c8e3",
+      "digest": "sha256:841d00336cbeb141f668f44fcc8b4b565a6f960e5a3274831734fb50a19c24d2",
       "fileCount": 6,
       "sample": [
         "apps/crm/src/app/api/cron/guardian-run/route.ts",
@@ -291,13 +291,13 @@
     "evidence": [
       {
         "commit": "5c631470ada894b82f6453c458423f7c5d0a4bd4",
-        "note": "Inventory contains 224 file(s); digest sha256:6283fe338b409a92e065757bbfea43037d8412c82bb2d930a3a69403523ad92b.",
+        "note": "Inventory contains 224 file(s); digest sha256:1a48bacb1adb25089bba40078cf22e4982f9f105892d77b6d4a72b3213cd4ad5.",
         "path": "apps/crm/src/app/api"
       }
     ],
     "id": "crm.api",
     "inventory": {
-      "digest": "sha256:6283fe338b409a92e065757bbfea43037d8412c82bb2d930a3a69403523ad92b",
+      "digest": "sha256:1a48bacb1adb25089bba40078cf22e4982f9f105892d77b6d4a72b3213cd4ad5",
       "fileCount": 224,
       "sample": [
         "apps/crm/src/app/api/acquire/email/route.ts",
@@ -348,13 +348,13 @@
     "evidence": [
       {
         "commit": "5c631470ada894b82f6453c458423f7c5d0a4bd4",
-        "note": "Inventory contains 505 file(s); digest sha256:681a2c8ffd80d7601902973c2fcede4d0dec9fbca900c97d888da331441a9573.",
+        "note": "Inventory contains 505 file(s); digest sha256:9b6bcccb00d35c5b093b63e457fbf15bd4ce3eceb72bcea3e0430eddeb1fc33c.",
         "path": "apps/crm/src/app"
       }
     ],
     "id": "crm.application",
     "inventory": {
-      "digest": "sha256:681a2c8ffd80d7601902973c2fcede4d0dec9fbca900c97d888da331441a9573",
+      "digest": "sha256:9b6bcccb00d35c5b093b63e457fbf15bd4ce3eceb72bcea3e0430eddeb1fc33c",
       "fileCount": 505,
       "sample": [
         "apps/crm/src/app/_actions/l99-licensing.ts",
@@ -591,13 +591,13 @@
     "evidence": [
       {
         "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
-        "note": "Inventory contains 2 file(s); digest sha256:3e3068d6e5a4954efeb5276da18b7bce8dffbccb17f2b81d2969834f7f3296b0.",
+        "note": "Inventory contains 2 file(s); digest sha256:ce829fe2c66a38a1436c6dbe8daabffb4476b40aa416114254efd893577e1f86.",
         "path": "memory/decisions.md"
       }
     ],
     "id": "memory.decisions",
     "inventory": {
-      "digest": "sha256:3e3068d6e5a4954efeb5276da18b7bce8dffbccb17f2b81d2969834f7f3296b0",
+      "digest": "sha256:ce829fe2c66a38a1436c6dbe8daabffb4476b40aa416114254efd893577e1f86",
       "fileCount": 2,
       "sample": [
         "decisions.md",

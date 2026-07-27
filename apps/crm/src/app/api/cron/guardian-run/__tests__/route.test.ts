@@ -53,12 +53,27 @@ describe("Guardian cron auth", () => {
   });
 
   it("guardian-run processes agencies when authorized", async () => {
+    vi.stubEnv("VERCEL_ENV", "development");
+    vi.stubEnv("GUARDIAN_AGENCY_ALLOWLIST", undefined);
     const res = await guardianRunGet(req("/api/cron/guardian-run", "guardian-cron-secret"));
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.ok).toBe(true);
     expect(mockRunAgency).toHaveBeenCalledOnce();
     expect(mockRecordPlatform).toHaveBeenCalledOnce();
+  });
+
+  it("guardian-run skips tenants on production when allowlist unset", async () => {
+    vi.stubEnv("VERCEL_ENV", "production");
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("GUARDIAN_AGENCY_ALLOWLIST", undefined);
+    mockListAgencies.mockResolvedValue(["agency-1", "agency-2"]);
+    const res = await guardianRunGet(req("/api/cron/guardian-run", "guardian-cron-secret"));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.skippedReason).toBe("allowlist_unset_prod");
+    expect(body.agencies).toBe(0);
+    expect(mockRunAgency).not.toHaveBeenCalled();
   });
 
   it("guardian-digest returns 401 without auth", async () => {
