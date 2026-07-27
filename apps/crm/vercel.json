@@ -55,7 +55,7 @@
     },
     {
       "path": "/api/cron/guardian-run",
-      "schedule": "0 * * * *"
+      "schedule": "0 6 * * *"
     },
     {
       "path": "/api/cron/guardian-digest",

@@ -9,7 +9,7 @@ import {
 
 export const dynamic = "force-dynamic";
 
-/** GET /api/cron/guardian-run — hourly Guardian rules R1–R4 (Vercel cron). */
+/** GET /api/cron/guardian-run — daily Guardian rules R1–R4 (Vercel Hobby cron). */
 export async function GET(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret || request.headers.get("authorization") !== `Bearer ${cronSecret}`) {
