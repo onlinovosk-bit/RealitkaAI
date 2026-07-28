@@ -226,6 +226,53 @@
   {
     "canonical": false,
     "capabilities": [
+      "build-package",
+      "core-platform",
+      "operator-dashboard"
+    ],
+    "confidence": "high",
+    "createdAt": "2026-07-28",
+    "dependencies": [
+      "architecture.product-roadmap-mapping-202607",
+      "build-package.guardian-v1",
+      "process.build-package-template"
+    ],
+    "evidence": [
+      {
+        "commit": "def483062576cb51fb7bbdd0df8a7f2bfe6ac261",
+        "note": "Inventory contains 3 file(s); digest sha256:7052bdaafd49cbc65e65fc95c3b1b124e63c7f63db690c8402514299947c8ead.",
+        "path": "docs/briefs/overnight/build-package-operator-dashboard.md"
+      }
+    ],
+    "id": "build-package.operator-dashboard-v1",
+    "inventory": {
+      "digest": "sha256:7052bdaafd49cbc65e65fc95c3b1b124e63c7f63db690c8402514299947c8ead",
+      "fileCount": 3,
+      "sample": [
+        "docs/briefs/overnight/build-package-operator-dashboard.md",
+        "docs/premortems/2026-07-29-operator-dashboard.md",
+        "docs/prompts/cursor-kickoff-operator-dashboard-v1.md"
+      ]
+    },
+    "lastVerifiedAt": "2026-07-28",
+    "name": "Build Package: Operator Dashboard v1",
+    "owner": "founder",
+    "purpose": "Cross-tenant aggregate-first operator view (attention feed, agency table, platform health); platform-admin gate and no PII in aggregates.",
+    "relatedDecisions": [
+      "rme-dec-20260728-001"
+    ],
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "def483062576cb51fb7bbdd0df8a7f2bfe6ac261",
+      "path": "docs/briefs/overnight/build-package-operator-dashboard.md"
+    },
+    "status": "active",
+    "type": "documentation"
+  },
+  {
+    "canonical": false,
+    "capabilities": [
       "continuous-integration",
       "merge-policy",
       "schema-governance"

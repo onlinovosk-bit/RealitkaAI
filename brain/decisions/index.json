@@ -974,5 +974,53 @@
     "status": "active",
     "supersedes": [],
     "title": "Guardian v1.1 — STALE 90d+7d and production agency allowlist"
+  },
+  {
+    "alternatives": [
+      "unavailable"
+    ],
+    "canonical": false,
+    "choice": "Ship /operator under OPERATOR_DASHBOARD_ENABLED (default false) with profiles.is_platform_admin authz (404 not 403), aggregates only in v1, platform-admin separate from agency role; drill-down deferred to v1.1 with audit.",
+    "confidence": "high",
+    "date": "2026-07-28",
+    "evidence": [
+      {
+        "commit": "def483062576cb51fb7bbdd0df8a7f2bfe6ac261",
+        "line": 36,
+        "note": "NF1 aggregate-first; NF3 platform-admin only.",
+        "path": "docs/briefs/overnight/build-package-operator-dashboard.md"
+      },
+      {
+        "commit": "uncommitted",
+        "line": 1,
+        "note": "Forbidden PII keys on operator aggregate rows.",
+        "path": "apps/crm/src/lib/operator/aggregate-schema.ts"
+      },
+      {
+        "commit": "uncommitted",
+        "line": 1,
+        "note": "Platform-admin schema gate + founder UPDATE reminder.",
+        "path": "apps/crm/supabase/migrations/20260728140000_profiles_platform_admin.sql"
+      }
+    ],
+    "expectedOutcome": "Agency users always 404; platform admin sees counts per agency_id with sandbox excluded; prod flag stays off until founder SQL grant + smoke.",
+    "id": "rme-dec-20260728-001",
+    "observedOutcome": "v1 implementation on feat/operator-dashboard-v1; prod apply of migration pending founder.",
+    "owner": "founder",
+    "problem": "Founder manually checks each agency in SQL; first cross-tenant UI risks PII leakage and tenant mixing without strict gates.",
+    "rationale": "Build Package premortem: aggregate-first + explicit platform role; unavailable metrics must not display as zero.",
+    "relatedAssets": [
+      "build-package.operator-dashboard-v1"
+    ],
+    "reviewAt": "2026-10-28",
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "def483062576cb51fb7bbdd0df8a7f2bfe6ac261",
+      "path": "docs/briefs/overnight/build-package-operator-dashboard.md"
+    },
+    "status": "active",
+    "supersedes": [],
+    "title": "Operator dashboard = aggregate-first cross-tenant access"
   }
 ]
