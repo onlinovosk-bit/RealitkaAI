@@ -239,16 +239,19 @@
     ],
     "evidence": [
       {
-        "commit": "def483062576cb51fb7bbdd0df8a7f2bfe6ac261",
-        "note": "Inventory contains 3 file(s); digest sha256:7052bdaafd49cbc65e65fc95c3b1b124e63c7f63db690c8402514299947c8ead.",
+        "commit": "9ddf61f486f6c253695838b3f226d2a337099ff5",
+        "note": "Inventory contains 6 file(s); digest sha256:b218060be42c9ea45064067c64ac6af466fb8eafbb7652fbb3c5df873b0bf609.",
         "path": "docs/briefs/overnight/build-package-operator-dashboard.md"
       }
     ],
     "id": "build-package.operator-dashboard-v1",
     "inventory": {
-      "digest": "sha256:7052bdaafd49cbc65e65fc95c3b1b124e63c7f63db690c8402514299947c8ead",
-      "fileCount": 3,
+      "digest": "sha256:b218060be42c9ea45064067c64ac6af466fb8eafbb7652fbb3c5df873b0bf609",
+      "fileCount": 6,
       "sample": [
+        "apps/crm/src/app/operator/page.tsx",
+        "apps/crm/src/lib/operator/gather.ts",
+        "apps/crm/supabase/migrations/20260728140000_profiles_platform_admin.sql",
         "docs/briefs/overnight/build-package-operator-dashboard.md",
         "docs/premortems/2026-07-29-operator-dashboard.md",
         "docs/prompts/cursor-kickoff-operator-dashboard-v1.md"
@@ -264,7 +267,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "def483062576cb51fb7bbdd0df8a7f2bfe6ac261",
+      "commit": "9ddf61f486f6c253695838b3f226d2a337099ff5",
       "path": "docs/briefs/overnight/build-package-operator-dashboard.md"
     },
     "status": "active",
@@ -394,15 +397,15 @@
     ],
     "evidence": [
       {
-        "commit": "3c7ddd672a62ff4dbd486ddee03c36b7dfbf1adc",
-        "note": "Inventory contains 505 file(s); digest sha256:8cb45a7de6e72ef6cb3f285511370c0feb1c55c6c0f0e14a004e7953544771f3.",
+        "commit": "4543af9ec3273219438e98540029cbaf6236677e",
+        "note": "Inventory contains 506 file(s); digest sha256:3cb3440f3232be2a16611a058d474366793dd4aceb989c7beeb358ab405f121e.",
         "path": "apps/crm/src/app"
       }
     ],
     "id": "crm.application",
     "inventory": {
-      "digest": "sha256:8cb45a7de6e72ef6cb3f285511370c0feb1c55c6c0f0e14a004e7953544771f3",
-      "fileCount": 505,
+      "digest": "sha256:3cb3440f3232be2a16611a058d474366793dd4aceb989c7beeb358ab405f121e",
+      "fileCount": 506,
       "sample": [
         "apps/crm/src/app/(dashboard)/DashboardClientShell.tsx",
         "apps/crm/src/app/(dashboard)/activities/error.tsx",
@@ -418,7 +421,7 @@
         "apps/crm/src/app/(dashboard)/akvizieia/listy-z-katastra/loading.tsx"
       ]
     },
-    "lastVerifiedAt": "2026-07-27",
+    "lastVerifiedAt": "2026-07-28",
     "name": "CRM application surface",
     "owner": "engineering",
     "purpose": "Inventory of CRM pages, layouts, and application code used for documentation drift checks.",
@@ -428,7 +431,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "3c7ddd672a62ff4dbd486ddee03c36b7dfbf1adc",
+      "commit": "4543af9ec3273219438e98540029cbaf6236677e",
       "path": "apps/crm/src/app"
     },
     "status": "active",
@@ -448,15 +451,15 @@
     ],
     "evidence": [
       {
-        "commit": "641aefedd02ad86f28a81497304f17ce7c40b248",
-        "note": "Inventory contains 89 file(s); digest sha256:9a915a9d57324d44da8d8210aa47fb8998b7dfb3ed59e9e99f618ea9fa14ce71.",
+        "commit": "0a2db76ab7809b8981089c266ba1d947dbb9828c",
+        "note": "Inventory contains 90 file(s); digest sha256:8bf854cb07a5284e2c27126491a980e5b7a0caeab1aa85748eca37e49d62ed40.",
         "path": "apps/crm/supabase/migrations"
       }
     ],
     "id": "database.migrations",
     "inventory": {
-      "digest": "sha256:9a915a9d57324d44da8d8210aa47fb8998b7dfb3ed59e9e99f618ea9fa14ce71",
-      "fileCount": 89,
+      "digest": "sha256:8bf854cb07a5284e2c27126491a980e5b7a0caeab1aa85748eca37e49d62ed40",
+      "fileCount": 90,
       "sample": [
         "apps/crm/supabase/migrations/20260310_baseline_core_schema.sql",
         "apps/crm/supabase/migrations/20260320_rls.sql",
@@ -472,7 +475,7 @@
         "apps/crm/supabase/migrations/20260426120111_arbitrage_engine.sql"
       ]
     },
-    "lastVerifiedAt": "2026-07-27",
+    "lastVerifiedAt": "2026-07-28",
     "name": "Supabase migrations",
     "owner": "engineering",
     "purpose": "Versioned database structure used as code-side evidence; production state remains independently verified.",
@@ -483,7 +486,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "641aefedd02ad86f28a81497304f17ce7c40b248",
+      "commit": "0a2db76ab7809b8981089c266ba1d947dbb9828c",
       "path": "apps/crm/supabase/migrations"
     },
     "status": "active",
@@ -683,14 +686,14 @@
     ],
     "evidence": [
       {
-        "commit": "c693f27de4ef1a2bdefd62a44457823a60931e98",
-        "note": "Inventory contains 2 file(s); digest sha256:ce829fe2c66a38a1436c6dbe8daabffb4476b40aa416114254efd893577e1f86.",
+        "commit": "4543af9ec3273219438e98540029cbaf6236677e",
+        "note": "Inventory contains 2 file(s); digest sha256:a75af7a3e4276ff2742c5e72135257d282fc4847a1d8e4d0918c6cb060fc2c0e.",
         "path": "memory/decisions.md"
       }
     ],
     "id": "memory.decisions",
     "inventory": {
-      "digest": "sha256:ce829fe2c66a38a1436c6dbe8daabffb4476b40aa416114254efd893577e1f86",
+      "digest": "sha256:a75af7a3e4276ff2742c5e72135257d282fc4847a1d8e4d0918c6cb060fc2c0e",
       "fileCount": 2,
       "sample": [
         "decisions.md",
@@ -707,7 +710,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "c693f27de4ef1a2bdefd62a44457823a60931e98",
+      "commit": "4543af9ec3273219438e98540029cbaf6236677e",
       "path": "memory/decisions.md"
     },
     "status": "active",
