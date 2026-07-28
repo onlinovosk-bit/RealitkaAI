@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Revolis Operator — prehľad platformy</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#060A16; --surface:#0C1326; --surface2:#111A31; --line:#1C2743;
+  --ink:#E9EFFF; --muted:#8798BE; --dim:#5D6C91;
+  --violet:#7C4DFF; --violet-dim:#241B4D;
+  --amber:#FFB454; --red:#FF6B6B; --green:#5BE49B; --blue:#4DA3FF;
+  --mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,sans-serif;font-size:14px;line-height:1.5}
+.app{display:grid;grid-template-columns:216px 1fr;min-height:100vh}
+
+/* ---- SIDEBAR ---- */
+aside{background:var(--surface);border-right:1px solid var(--line);padding:22px 0;position:sticky;top:0;height:100vh;overflow:auto}
+.logo{font-family:'Sora';font-weight:700;font-size:17px;letter-spacing:.4px;padding:0 20px 4px;color:var(--violet)}
+.logo span{color:var(--dim);font-weight:400;font-size:11px;display:block;letter-spacing:.16em;text-transform:uppercase;margin-top:2px}
+nav{margin-top:26px}
+.nav-h{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);padding:16px 20px 7px}
+nav a{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 20px;color:var(--muted);text-decoration:none;border-left:2px solid transparent}
+nav a:hover{background:var(--surface2);color:var(--ink)}
+nav a.on{color:var(--ink);background:linear-gradient(90deg,var(--violet-dim),transparent);border-left-color:var(--violet)}
+nav a .badge{font-family:var(--mono);font-size:10.5px;background:var(--red);color:#180000;border-radius:99px;padding:1px 6px;font-weight:600}
+nav a .badge.q{background:var(--surface2);color:var(--dim)}
+
+/* ---- MAIN ---- */
+main{padding:0 0 60px}
+.health{display:flex;align-items:center;gap:22px;flex-wrap:wrap;padding:11px 30px;background:var(--surface);border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11.5px;color:var(--muted);position:sticky;top:0;z-index:5}
+.health i{font-style:normal;width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:6px}
+.ok i{background:var(--green);box-shadow:0 0 8px var(--green)}
+.warn i{background:var(--amber)}
+.health .right{margin-left:auto;color:var(--dim)}
+
+.head{padding:30px 30px 0}
+h1{font-family:'Sora';font-weight:700;font-size:25px;letter-spacing:-.2px}
+.head p{color:var(--muted);margin-top:4px}
+
+section{padding:0 30px;margin-top:34px}
+h2{font-family:'Sora';font-size:12px;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);margin-bottom:13px;display:flex;align-items:center;gap:10px}
+h2::after{content:'';flex:1;height:1px;background:var(--line)}
+
+/* ---- ATTENTION (signature) ---- */
+.att{display:grid;gap:9px}
+.att-row{display:grid;grid-template-columns:4px 1fr auto;gap:16px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:11px;overflow:hidden}
+.att-row .bar{align-self:stretch}
+.p1 .bar{background:var(--red)} .p2 .bar{background:var(--amber)} .p3 .bar{background:var(--blue)}
+.att-body{padding:13px 0}
+.att-body .who{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.att-body b{font-family:'Sora';font-size:15px;font-weight:600;display:block;margin:2px 0 3px}
+.att-body p{color:var(--muted);font-size:13px}
+.att-cta{padding-right:15px;display:flex;gap:8px;align-items:center}
+.btn{background:var(--violet);color:#fff;border:0;border-radius:8px;padding:7px 13px;font-family:'Inter';font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--muted)}
+.age{font-family:var(--mono);font-size:12px;color:var(--red)}
+
+/* ---- TABLE ---- */
+.tw{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:auto}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:900px}
+th{text-align:left;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);font-weight:600;padding:11px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:13px 14px;border-bottom:1px solid rgba(28,39,67,.55);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--surface2)}
+.ag{font-weight:600;font-family:'Sora'}
+.ag small{display:block;font-family:'Inter';font-weight:400;color:var(--dim);font-size:11.5px;margin-top:1px}
+.num{font-family:var(--mono);font-size:13.5px}
+.chip{font-size:10.5px;font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:99px;border:1px solid}
+.c-live{color:var(--green);border-color:rgba(91,228,155,.35);background:rgba(91,228,155,.08)}
+.c-onb{color:var(--amber);border-color:rgba(255,180,84,.35);background:rgba(255,180,84,.08)}
+.c-sys{color:var(--dim);border-color:var(--line)}
+.score{display:flex;align-items:center;gap:8px}
+.track{width:52px;height:5px;border-radius:99px;background:var(--surface2);overflow:hidden}
+.track div{height:100%;border-radius:99px}
+.risk{color:var(--red)} .good{color:var(--green)} .mid{color:var(--amber)}
+.spark{display:flex;gap:2px;align-items:flex-end;height:22px}
+.spark span{width:4px;background:var(--violet);border-radius:1px;opacity:.75}
+.na{color:var(--dim);font-family:var(--mono);font-size:12px}
+
+/* ---- CAMPAIGN ---- */
+.camp{display:grid;grid-template-columns:1.4fr 1fr;gap:14px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:17px}
+.panel h3{font-family:'Sora';font-size:14.5px;font-weight:600;margin-bottom:2px}
+.panel .meta{font-family:var(--mono);font-size:11px;color:var(--dim);margin-bottom:15px}
+.ab{display:grid;gap:10px}
+.ab-row{display:grid;grid-template-columns:120px 1fr 62px;gap:12px;align-items:center}
+.ab-row .lab{font-size:12.5px;color:var(--muted)}
+.ab-bar{height:26px;background:var(--surface2);border-radius:6px;overflow:hidden;position:relative}
+.ab-bar div{height:100%;display:flex;align-items:center;padding-left:9px;font-family:var(--mono);font-size:11.5px;color:#fff}
+.va div{background:linear-gradient(90deg,#3D5AFE,#4DA3FF)}
+.vb div{background:linear-gradient(90deg,var(--violet),#B388FF)}
+.ab-row .val{font-family:var(--mono);font-size:13px;text-align:right}
+.gauge{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px}
+.g{background:var(--surface2);border-radius:10px;padding:13px}
+.g .n{font-family:'Sora';font-size:22px;font-weight:700}
+.g .l{font-size:11.5px;color:var(--muted);margin-top:2px}
+.g .sub{font-family:var(--mono);font-size:10.5px;color:var(--dim);margin-top:5px}
+.limit{margin-top:14px;font-size:12.5px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
+.limit b{color:var(--amber)}
+footer{padding:26px 30px 0;color:var(--dim);font-family:var(--mono);font-size:11px;display:flex;gap:20px;flex-wrap:wrap}
+@media(max-width:900px){.app{grid-template-columns:1fr}aside{display:none}.camp{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+
+<aside>
+  <div class="logo">REVOLIS<span>Operator</span></div>
+  <nav>
+    <div class="nav-h">Prehľad</div>
+    <a href="#" class="on">Dnes <span class="badge">3</span></a>
+    <a href="#">Kancelárie <span class="badge q">2</span></a>
+    <a href="#">Kampane <span class="badge q">1</span></a>
+    <div class="nav-h">Výkon</div>
+    <a href="#">Leady a konverzia</a>
+    <a href="#">Rýchlosť reakcie</a>
+    <a href="#">Výsledky obchodov</a>
+    <a href="#">Presnosť odhadov <span class="badge q">—</span></a>
+    <div class="nav-h">Platforma</div>
+    <a href="#">Strážca <span class="badge q">19</span></a>
+    <a href="#">Systémové zdravie</a>
+    <a href="#">Fakturácia</a>
+    <div class="nav-h">Obchod</div>
+    <a href="#">Pipeline <span class="badge q">63</span></a>
+    <a href="#">Onboarding <span class="badge q">1</span></a>
+  </nav>
+</aside>
+
+<main>
+  <div class="health">
+    <span class="ok"><i></i>Widget Smolko 200</span>
+    <span class="ok"><i></i>Demo 200</span>
+    <span class="ok"><i></i>Strážca 06:30</span>
+    <span class="ok"><i></i>Watchdog 30 min</span>
+    <span class="warn"><i></i>Denný súhrn vypnutý</span>
+    <span class="right">dáta k 28.07.2026 09:12 · agregáty, bez osobných údajov</span>
+  </div>
+
+  <div class="head">
+    <h1>Dnes potrebuje pozornosť</h1>
+    <p>Zoradené podľa dopadu na obchod, nie podľa času vzniku.</p>
+  </div>
+
+  <section>
+    <div class="att">
+      <div class="att-row p1">
+        <div class="bar"></div>
+        <div class="att-body">
+          <div class="who">Reality Smolko</div>
+          <b>1 kontakt s vysokou prioritou bez reakcie</b>
+          <p>Strážca ho eviduje ako nekontaktovaný. Čím dlhšie čaká, tým menšia šanca na zákazku.</p>
+        </div>
+        <div class="att-cta"><span class="age">23 dní</span><button class="btn">Otvoriť</button></div>
+      </div>
+      <div class="att-row p2">
+        <div class="bar"></div>
+        <div class="att-body">
+          <div class="who">Reality Smolko · kampaň</div>
+          <b>Prvý deň platenej kampane — sleduj prvé kontakty</b>
+          <p>Poistka: 3 nezavolané kontakty spustia dennú pauzu. Zatiaľ 0 z 3.</p>
+        </div>
+        <div class="att-cta"><button class="btn ghost">Kampaň</button></div>
+      </div>
+      <div class="att-row p3">
+        <div class="bar"></div>
+        <div class="att-body">
+          <div class="who">Reality Kamzík</div>
+          <b>Onboarding neukončený — 4. deň po dohode</b>
+          <p>Kancelária ešte nemá spustenú kalkulačku, takže nezbiera žiadne kontakty.</p>
+        </div>
+        <div class="att-cta"><button class="btn ghost">Onboarding</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Kancelárie</h2>
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>Kancelária</th><th>Stav</th><th>Kontakty 7 d</th><th>Trend 14 d</th>
+          <th>Reakcia do 24 h</th><th>Bez reakcie</th><th>Obchody</th><th>Nálezy</th><th>Zdravie</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td class="ag">Reality Smolko<small>Market Vision · 199 € / mes.</small></td>
+            <td><span class="chip c-live">beží</span></td>
+            <td class="num">0 <span class="na">/ 446 celkom</span></td>
+            <td><div class="spark"><span style="height:3px"></span><span style="height:3px"></span><span style="height:5px"></span><span style="height:3px"></span><span style="height:8px"></span><span style="height:4px"></span><span style="height:3px"></span><span style="height:3px"></span><span style="height:11px"></span><span style="height:6px"></span><span style="height:3px"></span><span style="height:3px"></span><span style="height:3px"></span><span style="height:3px"></span></div></td>
+            <td class="num na">zatiaľ bez dát</td>
+            <td class="num risk">1</td>
+            <td class="num na">0 / 0</td>
+            <td class="num mid">19</td>
+            <td><div class="score"><div class="track"><div class="mid" style="width:58%;background:var(--amber)"></div></div><span class="num mid">58</span></div></td>
+          </tr>
+          <tr>
+            <td class="ag">Reality Kamzík<small>Founding Partner · 3 mes. 0 €</small></td>
+            <td><span class="chip c-onb">onboarding</span></td>
+            <td class="num">0</td>
+            <td><div class="spark"><span style="height:3px;opacity:.25"></span><span style="height:3px;opacity:.25"></span><span style="height:3px;opacity:.25"></span><span style="height:3px;opacity:.25"></span><span style="height:3px;opacity:.25"></span><span style="height:3px;opacity:.25"></span><span style="height:3px;opacity:.25"></span></div></td>
+            <td class="num na">—</td><td class="num">0</td><td class="num na">—</td><td class="num">0</td>
+            <td><div class="score"><div class="track"><div style="width:20%;background:var(--dim)"></div></div><span class="num na">—</span></div></td>
+          </tr>
+          <tr style="opacity:.55">
+            <td class="ag">Ukážková kancelária<small>systémový tenant · demo</small></td>
+            <td><span class="chip c-sys">systém</span></td>
+            <td class="num">0</td><td><span class="na">—</span></td><td class="na">—</td><td class="num">0</td><td class="na">—</td><td class="num">0</td>
+            <td><span class="na">mimo hodnotenia</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Kampane</h2>
+    <div class="camp">
+      <div class="panel">
+        <h3>Odhad ceny — A/B test</h3>
+        <div class="meta">Reality Smolko · Google Ads · deň 1 z 14 · 10 € / deň</div>
+        <div class="ab">
+          <div class="ab-row"><div class="lab">A — web formulár</div><div class="ab-bar va"><div style="width:0%;min-width:74px">0 kontaktov</div></div><div class="val na">—</div></div>
+          <div class="ab-row"><div class="lab">B — Revolis kalkulačka</div><div class="ab-bar vb"><div style="width:0%;min-width:74px">0 kontaktov</div></div><div class="val na">—</div></div>
+        </div>
+        <div class="limit"><b>Prah zastavenia:</b> po minutí 100 € pri menej než 4 kontaktoch sa kampaň pozastaví a prehodnotia sa kľúčové slová.</div>
+      </div>
+      <div class="panel">
+        <h3>Rozpočet a náklad</h3>
+        <div class="meta">priebeh dnešného dňa</div>
+        <div class="gauge">
+          <div class="g"><div class="n">0 €</div><div class="l">minuté dnes</div><div class="sub">z 10 € limitu</div></div>
+          <div class="g"><div class="n na" style="font-size:20px">—</div><div class="l">cena za kontakt</div><div class="sub">prah 25 €</div></div>
+          <div class="g"><div class="n">0</div><div class="l">kliknutia</div><div class="sub">GA4 · odhad-ab</div></div>
+          <div class="g"><div class="n">0 / 3</div><div class="l">nezavolané</div><div class="sub">poistka pauzy</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Zdroj: agregované dotazy · osobné údaje sa nezobrazujú</span>
+    <span>Otvorenie konkrétneho kontaktu sa zaznamenáva do auditu</span>
+    <span>Obnovené 09:12</span>
+  </footer>
+</main>
+</div>
+</body>
+</html>

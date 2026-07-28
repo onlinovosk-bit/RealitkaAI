@@ -450,7 +450,7 @@
       "governance-roles",
       "structured-brain"
     ],
-    "confidence": "low",
+    "confidence": "high",
     "createdAt": "2026-07-28",
     "dependencies": [
       "brain.engine",
@@ -459,16 +459,18 @@
     ],
     "evidence": [
       {
-        "commit": "uncommitted",
-        "note": "Source unavailable in the current workspace.",
+        "commit": "8abc7206726dc744d4427192cb160ae988bfc296",
+        "note": "Inventory contains 1 file(s); digest sha256:53d3aea5229e8a0f9eb20d77da2d95498ac6d33f4ca0f05d3015748a46ce154f.",
         "path": "brain/decisions/adr-2026-07-28-architecture-evolution.md"
       }
     ],
     "id": "decisions.adr-2026-07-28-architecture-evolution",
     "inventory": {
-      "digest": "unavailable",
-      "fileCount": 0,
-      "sample": []
+      "digest": "sha256:53d3aea5229e8a0f9eb20d77da2d95498ac6d33f4ca0f05d3015748a46ce154f",
+      "fileCount": 1,
+      "sample": [
+        "brain/decisions/adr-2026-07-28-architecture-evolution.md"
+      ]
     },
     "lastVerifiedAt": "2026-07-28",
     "name": "ADR 2026-07-28 architecture evolution",
@@ -480,10 +482,10 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "uncommitted",
+      "commit": "8abc7206726dc744d4427192cb160ae988bfc296",
       "path": "brain/decisions/adr-2026-07-28-architecture-evolution.md"
     },
-    "status": "unknown",
+    "status": "active",
     "type": "adr"
   },
   {
@@ -498,14 +500,14 @@
     "dependencies": [],
     "evidence": [
       {
-        "commit": "c4e2e8c481e0bb720fb435378210df226d7ff745",
-        "note": "Inventory contains 19 file(s); digest sha256:f5407c8da40fdcfc6a47462e0ee48bbc3309eae7765b060087906e8e4f10d5bb.",
+        "commit": "8abc7206726dc744d4427192cb160ae988bfc296",
+        "note": "Inventory contains 19 file(s); digest sha256:a44b4dcffa1dc8f108341d7a628a84afffa1534919a80d765e26c34f6bb9b15a.",
         "path": "docs/architecture"
       }
     ],
     "id": "governance.architecture",
     "inventory": {
-      "digest": "sha256:f5407c8da40fdcfc6a47462e0ee48bbc3309eae7765b060087906e8e4f10d5bb",
+      "digest": "sha256:a44b4dcffa1dc8f108341d7a628a84afffa1534919a80d765e26c34f6bb9b15a",
       "fileCount": 19,
       "sample": [
         "docs/architecture/.phase0-probe-b/.gitkeep",
@@ -522,7 +524,7 @@
         "docs/architecture/memory-engine-canonical-model.md"
       ]
     },
-    "lastVerifiedAt": "2026-07-26",
+    "lastVerifiedAt": "2026-07-28",
     "name": "Architecture and governance corpus",
     "owner": "founder",
     "purpose": "Canonical and supporting architecture documents used to constrain product and engineering work.",
@@ -533,7 +535,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "c4e2e8c481e0bb720fb435378210df226d7ff745",
+      "commit": "8abc7206726dc744d4427192cb160ae988bfc296",
       "path": "docs/architecture"
     },
     "status": "active",
