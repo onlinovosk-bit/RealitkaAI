@@ -273,3 +273,10 @@
 - **Rozhodnutie:** Každá nová `public` tabuľka musí ísť do `apps/crm/config/public-schema-allowlist.json` v tom istom PR ako migrácia (alebo pred prod apply). Inak Schema Guard mlčí o drift (prípad CEO Command / `routine_notifications`).
 - **Incident:** `routine_notifications` v repe, nie na PROD, mimo allowlistu → `/api/ceo-command` 500, Guard ticho.
 - **Fix:** allowlist + scoped fallback v PR; migrácia = samostatný prod apply (GO).
+
+## [2026-07-27] - Guardian v1.1 — STALE 90d+7d + production allowlist — BUILD
+
+- **Rozhodnutie:** STALE len ak existuje `lead_events` a posledná aktivita je staršia ako 7 dní ale mladšia ako 90 dní (žiadny fallback na `created_at`). Production cron beží len pre `GUARDIAN_AGENCY_ALLOWLIST` (unset/prázdne = žiadny tenant beh). `GUARDIAN_DIGEST_ENABLED` default false nezmenený; baseline kill >50 z premortem zostáva.
+- **Prod audit (2026-07-27):** 473 open STALE — všetky neplatné pod v1.1 (žiadne lead_events); ostatné open: NO_OWNER 9, NO_PHONE 10, HOT_IGNORED 8.
+- **Súbory:** `apps/crm/src/lib/guardian/{config,rules}.ts`, cron routes, `scripts/guardian-v11-cleanup-invalid-stale.sql`, brain `rme-dec-20260727-002`.
+- **Founder GO:** potvrdiť agency UUID v allowlist env pred prod cron; voliteľný DELETE script po merge.
