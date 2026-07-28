@@ -107,6 +107,19 @@ const REGISTRY_SPECS: RegistrySpec[] = [
     capabilities: ["decision-history", "rationale-memory", "outcome-tracking"],
   },
   {
+    id: "decisions.adr-2026-07-28-architecture-evolution",
+    type: "adr",
+    name: "ADR 2026-07-28 architecture evolution",
+    purpose:
+      "Accepted path for structured Brain (Knowledge Objects when a second machine consumer exists), single canonical home per concept, and Architecture Governor vs Implementation Engineer roles.",
+    owner: "founder",
+    sourcePath: "brain/decisions/adr-2026-07-28-architecture-evolution.md",
+    roots: ["brain/decisions/adr-2026-07-28-architecture-evolution.md"],
+    dependencies: ["brain.engine", "governance.architecture", "memory.decisions"],
+    relatedDecisions: ["rme-dec-20260522-004"],
+    capabilities: ["architecture-evolution", "structured-brain", "governance-roles", "concept-canonical-home"],
+  },
+  {
     id: "policy.cursor-rules",
     type: "policy",
     name: "Cursor governance rules",

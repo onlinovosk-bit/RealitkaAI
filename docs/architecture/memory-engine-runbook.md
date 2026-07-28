@@ -53,6 +53,11 @@ npm run brain:weekly -- --audit-dir C:\tmp\revolis-audit --output-dir C:\tmp\rev
 5. Update the canonical source, then regenerate derived views.
 6. Merge and production actions remain founder gates even when all checks pass.
 
+## Audit backlog
+
+Future advisory (per [ADR 2026-07-28](../../brain/decisions/adr-2026-07-28-architecture-evolution.md)):
+detect **duplicitná definícia konceptu mimo kanonického domova** — the same architectural or product concept defined in more than one canonical-style document instead of linking to a single home. No implementation in Memory Engine V1; track as backlog when extending `brain:audit`.
+
 ## Failure recovery
 
 | Symptom | Cause | Recovery |

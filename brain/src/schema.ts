@@ -39,7 +39,8 @@ export interface RegistryRecord {
     | "application"
     | "api"
     | "package"
-    | "automation";
+    | "automation"
+    | "adr";
   name: string;
   purpose: string;
   owner: string;
@@ -170,7 +171,7 @@ export function validateRegistryRecord(value: unknown, at = "record"): Validatio
   if (value.schemaVersion !== SCHEMA_VERSION) issues.push({ code: "schema_version", path: `${at}.schemaVersion`, message: "Unsupported schema version" });
   for (const key of ["id", "name", "purpose", "owner"] as const) requiredString(value, key, at, issues);
   if (typeof value.id === "string" && !ID_RE.test(value.id)) issues.push({ code: "id", path: `${at}.id`, message: "Invalid stable ID" });
-  enumValue(value, "type", ["governance", "documentation", "decision-log", "policy", "workflow", "database", "application", "api", "package", "automation"], at, issues);
+  enumValue(value, "type", ["governance", "documentation", "decision-log", "policy", "workflow", "database", "application", "api", "package", "automation", "adr"], at, issues);
   enumValue(value, "status", ["active", "planned", "deprecated", "unknown"], at, issues);
   enumValue(value, "confidence", ["high", "medium", "low"], at, issues);
   enumValue(value, "sensitivity", ["public", "internal", "restricted"], at, issues);

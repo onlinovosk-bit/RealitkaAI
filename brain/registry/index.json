@@ -290,7 +290,7 @@
     ],
     "evidence": [
       {
-        "commit": "af815e363de9d11e602fe3f317764bcdf0941a09",
+        "commit": "3c7ddd672a62ff4dbd486ddee03c36b7dfbf1adc",
         "note": "Inventory contains 224 file(s); digest sha256:1a48bacb1adb25089bba40078cf22e4982f9f105892d77b6d4a72b3213cd4ad5.",
         "path": "apps/crm/src/app/api"
       }
@@ -326,7 +326,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "af815e363de9d11e602fe3f317764bcdf0941a09",
+      "commit": "3c7ddd672a62ff4dbd486ddee03c36b7dfbf1adc",
       "path": "apps/crm/src/app/api"
     },
     "status": "active",
@@ -347,7 +347,7 @@
     ],
     "evidence": [
       {
-        "commit": "af815e363de9d11e602fe3f317764bcdf0941a09",
+        "commit": "3c7ddd672a62ff4dbd486ddee03c36b7dfbf1adc",
         "note": "Inventory contains 505 file(s); digest sha256:8cb45a7de6e72ef6cb3f285511370c0feb1c55c6c0f0e14a004e7953544771f3.",
         "path": "apps/crm/src/app"
       }
@@ -381,7 +381,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "af815e363de9d11e602fe3f317764bcdf0941a09",
+      "commit": "3c7ddd672a62ff4dbd486ddee03c36b7dfbf1adc",
       "path": "apps/crm/src/app"
     },
     "status": "active",
@@ -441,6 +441,50 @@
     },
     "status": "active",
     "type": "database"
+  },
+  {
+    "canonical": false,
+    "capabilities": [
+      "architecture-evolution",
+      "concept-canonical-home",
+      "governance-roles",
+      "structured-brain"
+    ],
+    "confidence": "low",
+    "createdAt": "2026-07-28",
+    "dependencies": [
+      "brain.engine",
+      "governance.architecture",
+      "memory.decisions"
+    ],
+    "evidence": [
+      {
+        "commit": "uncommitted",
+        "note": "Source unavailable in the current workspace.",
+        "path": "brain/decisions/adr-2026-07-28-architecture-evolution.md"
+      }
+    ],
+    "id": "decisions.adr-2026-07-28-architecture-evolution",
+    "inventory": {
+      "digest": "unavailable",
+      "fileCount": 0,
+      "sample": []
+    },
+    "lastVerifiedAt": "2026-07-28",
+    "name": "ADR 2026-07-28 architecture evolution",
+    "owner": "founder",
+    "purpose": "Accepted path for structured Brain (Knowledge Objects when a second machine consumer exists), single canonical home per concept, and Architecture Governor vs Implementation Engineer roles.",
+    "relatedDecisions": [
+      "rme-dec-20260522-004"
+    ],
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "uncommitted",
+      "path": "brain/decisions/adr-2026-07-28-architecture-evolution.md"
+    },
+    "status": "unknown",
+    "type": "adr"
   },
   {
     "canonical": false,
@@ -590,21 +634,21 @@
     ],
     "evidence": [
       {
-        "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
-        "note": "Inventory contains 2 file(s); digest sha256:3e3068d6e5a4954efeb5276da18b7bce8dffbccb17f2b81d2969834f7f3296b0.",
+        "commit": "c693f27de4ef1a2bdefd62a44457823a60931e98",
+        "note": "Inventory contains 2 file(s); digest sha256:ce829fe2c66a38a1436c6dbe8daabffb4476b40aa416114254efd893577e1f86.",
         "path": "memory/decisions.md"
       }
     ],
     "id": "memory.decisions",
     "inventory": {
-      "digest": "sha256:3e3068d6e5a4954efeb5276da18b7bce8dffbccb17f2b81d2969834f7f3296b0",
+      "digest": "sha256:ce829fe2c66a38a1436c6dbe8daabffb4476b40aa416114254efd893577e1f86",
       "fileCount": 2,
       "sample": [
         "decisions.md",
         "memory/decisions.md"
       ]
     },
-    "lastVerifiedAt": "2026-07-21",
+    "lastVerifiedAt": "2026-07-28",
     "name": "Critical decisions log",
     "owner": "founder",
     "purpose": "Canonical historical decision source; generated Brain records remain pointers to this log.",
@@ -614,7 +658,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
+      "commit": "c693f27de4ef1a2bdefd62a44457823a60931e98",
       "path": "memory/decisions.md"
     },
     "status": "active",
