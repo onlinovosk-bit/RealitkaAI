@@ -280,3 +280,9 @@
 - **Prod audit (2026-07-27):** 473 open STALE — všetky neplatné pod v1.1 (žiadne lead_events); ostatné open: NO_OWNER 9, NO_PHONE 10, HOT_IGNORED 8.
 - **Súbory:** `apps/crm/src/lib/guardian/{config,rules}.ts`, cron routes, `scripts/guardian-v11-cleanup-invalid-stale.sql`, brain `rme-dec-20260727-002`.
 - **Founder GO:** potvrdiť agency UUID v allowlist env pred prod cron; voliteľný DELETE script po merge.
+
+## [2026-07-28] - Operator Dashboard v1 — aggregate-first — BUILD (schema gate)
+
+- **Rozhodnutie:** `/operator` len pre `profiles.is_platform_admin` + `OPERATOR_DASHBOARD_ENABLED` (default false); agency user / anonym **404**; v1 bez PII v agregátoch, bez drill-down/kampaní; sandbox tenant vylúčený.
+- **Schéma:** `20260728140000_profiles_platform_admin.sql` — founder po prod apply: `UPDATE profiles SET is_platform_admin = true WHERE email = '…'`.
+- **Brain:** `build-package.operator-dashboard-v1`, `rme-dec-20260728-001`.

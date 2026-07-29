@@ -284,6 +284,30 @@ const REGISTRY_SPECS: RegistrySpec[] = [
     capabilities: ["build-package", "core-platform", "guardian"],
   },
   {
+    id: "build-package.operator-dashboard-v1",
+    type: "documentation",
+    name: "Build Package: Operator Dashboard v1",
+    purpose:
+      "Cross-tenant aggregate-first operator view (attention feed, agency table, platform health); platform-admin gate and no PII in aggregates.",
+    owner: "founder",
+    sourcePath: "docs/briefs/overnight/build-package-operator-dashboard.md",
+    roots: [
+      "docs/briefs/overnight/build-package-operator-dashboard.md",
+      "docs/premortems/2026-07-29-operator-dashboard.md",
+      "docs/prompts/cursor-kickoff-operator-dashboard-v1.md",
+      "apps/crm/supabase/migrations/20260728140000_profiles_platform_admin.sql",
+      "apps/crm/src/app/operator/page.tsx",
+      "apps/crm/src/lib/operator/gather.ts",
+    ],
+    dependencies: [
+      "process.build-package-template",
+      "build-package.guardian-v1",
+      "architecture.product-roadmap-mapping-202607",
+    ],
+    relatedDecisions: ["rme-dec-20260728-001"],
+    capabilities: ["build-package", "core-platform", "operator-dashboard"],
+  },
+  {
     id: "premortem.ads-smolko-ab",
     type: "documentation",
     name: "Premortem: Google Ads A/B Smolko",
@@ -700,6 +724,40 @@ const DECISION_SPECS: DecisionSpec[] = [
         path: "docs/architecture/product-roadmap-mapping-2026-07.md",
         line: 8,
         note: "Binding mapping table and Capture-now/Learn-later moat strategy.",
+      },
+    ],
+  },
+  {
+    id: "rme-dec-20260728-001",
+    title: "Operator dashboard = aggregate-first cross-tenant access",
+    date: "2026-07-28",
+    status: "active",
+    problem:
+      "Founder manually checks each agency in SQL; first cross-tenant UI risks PII leakage and tenant mixing without strict gates.",
+    choice:
+      "Ship /operator under OPERATOR_DASHBOARD_ENABLED (default false) with profiles.is_platform_admin authz (404 not 403), aggregates only in v1, platform-admin separate from agency role; drill-down deferred to v1.1 with audit.",
+    rationale:
+      "Build Package premortem: aggregate-first + explicit platform role; unavailable metrics must not display as zero.",
+    expectedOutcome:
+      "Agency users always 404; platform admin sees counts per agency_id with sandbox excluded; prod flag stays off until founder SQL grant + smoke.",
+    observedOutcome: "v1 implementation on feat/operator-dashboard-v1; prod apply of migration pending founder.",
+    reviewAt: "2026-10-28",
+    relatedAssets: ["build-package.operator-dashboard-v1"],
+    evidence: [
+      {
+        path: "docs/briefs/overnight/build-package-operator-dashboard.md",
+        line: 36,
+        note: "NF1 aggregate-first; NF3 platform-admin only.",
+      },
+      {
+        path: "apps/crm/src/lib/operator/aggregate-schema.ts",
+        line: 1,
+        note: "Forbidden PII keys on operator aggregate rows.",
+      },
+      {
+        path: "apps/crm/supabase/migrations/20260728140000_profiles_platform_admin.sql",
+        line: 1,
+        note: "Platform-admin schema gate + founder UPDATE reminder.",
       },
     ],
   },
