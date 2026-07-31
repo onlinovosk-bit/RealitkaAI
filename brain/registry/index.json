@@ -56,14 +56,14 @@
     ],
     "evidence": [
       {
-        "commit": "f6e918dee5cede6ca3007b418cebd3d5186d8f33",
-        "note": "Inventory contains 4 file(s); digest sha256:dbb3c564d8a3712b81c66252e49cf2ca74a7f25bb05cbd4cae047450debff0bb.",
+        "commit": "5d14febba280965511d14c67ae095306cf7a59aa",
+        "note": "Inventory contains 4 file(s); digest sha256:79a72a7c02429e8da64f6a3633b7ab4c3c3ea5d96fa5083672378bf7ff74fa2f.",
         "path": "automation/n8n"
       }
     ],
     "id": "automation.n8n",
     "inventory": {
-      "digest": "sha256:dbb3c564d8a3712b81c66252e49cf2ca74a7f25bb05cbd4cae047450debff0bb",
+      "digest": "sha256:79a72a7c02429e8da64f6a3633b7ab4c3c3ea5d96fa5083672378bf7ff74fa2f",
       "fileCount": 4,
       "sample": [
         "automation/n8n/README.md",
@@ -72,7 +72,7 @@
         "automation/n8n/w3-odpoved-detektor.json"
       ]
     },
-    "lastVerifiedAt": "2026-07-24",
+    "lastVerifiedAt": "2026-07-31",
     "name": "n8n workflow source area",
     "owner": "founder",
     "purpose": "Inventory only. Credentials, execution payloads, and customer data are excluded from Brain records.",
@@ -80,7 +80,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "f6e918dee5cede6ca3007b418cebd3d5186d8f33",
+      "commit": "5d14febba280965511d14c67ae095306cf7a59aa",
       "path": "automation/n8n"
     },
     "status": "active",
@@ -340,14 +340,14 @@
     ],
     "evidence": [
       {
-        "commit": "dfd902cabbb70a7ab93559fb7faf6df6b63bba4e",
-        "note": "Inventory contains 224 file(s); digest sha256:85de2eb26dc97ba5cad0f3abcbf586b23f4a861645cabdf815f322a7f4e9c14b.",
+        "commit": "cf1b4ef4efa2d33457b7b4d884d3b054832b23d2",
+        "note": "Inventory contains 224 file(s); digest sha256:87f91140d51842a8fc46dd97e45aac706ef4b3a290e69f3471af5ab08351a26c.",
         "path": "apps/crm/src/app/api"
       }
     ],
     "id": "crm.api",
     "inventory": {
-      "digest": "sha256:85de2eb26dc97ba5cad0f3abcbf586b23f4a861645cabdf815f322a7f4e9c14b",
+      "digest": "sha256:87f91140d51842a8fc46dd97e45aac706ef4b3a290e69f3471af5ab08351a26c",
       "fileCount": 224,
       "sample": [
         "apps/crm/src/app/api/acquire/email/route.ts",
@@ -376,7 +376,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "dfd902cabbb70a7ab93559fb7faf6df6b63bba4e",
+      "commit": "cf1b4ef4efa2d33457b7b4d884d3b054832b23d2",
       "path": "apps/crm/src/app/api"
     },
     "status": "active",
@@ -397,14 +397,14 @@
     ],
     "evidence": [
       {
-        "commit": "dfd902cabbb70a7ab93559fb7faf6df6b63bba4e",
-        "note": "Inventory contains 506 file(s); digest sha256:9d6e2bf49e210cc956397cbdfc00ea4a3781f0d0552353cbc921644208c1076a.",
+        "commit": "cf1b4ef4efa2d33457b7b4d884d3b054832b23d2",
+        "note": "Inventory contains 506 file(s); digest sha256:33fc76fdaad8261647c8d70e333928e1459250cefee4a30be0239f4cbaa99db2.",
         "path": "apps/crm/src/app"
       }
     ],
     "id": "crm.application",
     "inventory": {
-      "digest": "sha256:9d6e2bf49e210cc956397cbdfc00ea4a3781f0d0552353cbc921644208c1076a",
+      "digest": "sha256:33fc76fdaad8261647c8d70e333928e1459250cefee4a30be0239f4cbaa99db2",
       "fileCount": 506,
       "sample": [
         "apps/crm/src/app/(dashboard)/DashboardClientShell.tsx",
@@ -431,7 +431,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "dfd902cabbb70a7ab93559fb7faf6df6b63bba4e",
+      "commit": "cf1b4ef4efa2d33457b7b4d884d3b054832b23d2",
       "path": "apps/crm/src/app"
     },
     "status": "active",
@@ -451,15 +451,15 @@
     ],
     "evidence": [
       {
-        "commit": "d5d6e11719b61b75ea463ce2233f3d77cdbd1f2d",
-        "note": "Inventory contains 90 file(s); digest sha256:8bf854cb07a5284e2c27126491a980e5b7a0caeab1aa85748eca37e49d62ed40.",
+        "commit": "cf1b4ef4efa2d33457b7b4d884d3b054832b23d2",
+        "note": "Inventory contains 91 file(s); digest sha256:255e18b9a0487da36b544c6289ca0d459afcdb02d1414c2be8176dd859738b39.",
         "path": "apps/crm/supabase/migrations"
       }
     ],
     "id": "database.migrations",
     "inventory": {
-      "digest": "sha256:8bf854cb07a5284e2c27126491a980e5b7a0caeab1aa85748eca37e49d62ed40",
-      "fileCount": 90,
+      "digest": "sha256:255e18b9a0487da36b544c6289ca0d459afcdb02d1414c2be8176dd859738b39",
+      "fileCount": 91,
       "sample": [
         "apps/crm/supabase/migrations/20260310_baseline_core_schema.sql",
         "apps/crm/supabase/migrations/20260320_rls.sql",
@@ -475,7 +475,7 @@
         "apps/crm/supabase/migrations/20260426120111_arbitrage_engine.sql"
       ]
     },
-    "lastVerifiedAt": "2026-07-29",
+    "lastVerifiedAt": "2026-07-31",
     "name": "Supabase migrations",
     "owner": "engineering",
     "purpose": "Versioned database structure used as code-side evidence; production state remains independently verified.",
@@ -486,7 +486,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "d5d6e11719b61b75ea463ce2233f3d77cdbd1f2d",
+      "commit": "cf1b4ef4efa2d33457b7b4d884d3b054832b23d2",
       "path": "apps/crm/supabase/migrations"
     },
     "status": "active",
@@ -605,20 +605,20 @@
     ],
     "evidence": [
       {
-        "commit": "db82c9f1200d966c114f1308bfd348ab7f8c5065",
-        "note": "Inventory contains 1 file(s); digest sha256:243bca049f85fd518fb6ab041ccf1cdede7e7d45a77af413204345357d06019a.",
+        "commit": "adeab3ae8e4d1f3d6db0a11f8af8651ed74595ac",
+        "note": "Inventory contains 1 file(s); digest sha256:12b8cf9c9c33b5f06eb80412af917a129e1c38288785c281eecb150fea135217.",
         "path": "brain/identity/COMPANY.md"
       }
     ],
     "id": "identity.company",
     "inventory": {
-      "digest": "sha256:243bca049f85fd518fb6ab041ccf1cdede7e7d45a77af413204345357d06019a",
+      "digest": "sha256:12b8cf9c9c33b5f06eb80412af917a129e1c38288785c281eecb150fea135217",
       "fileCount": 1,
       "sample": [
         "brain/identity/COMPANY.md"
       ]
     },
-    "lastVerifiedAt": "2026-07-26",
+    "lastVerifiedAt": "2026-07-31",
     "name": "Company identity brief",
     "owner": "founder",
     "purpose": "What Revolis is, for whom, pricing direction, and North Star constraints for AI assistants.",
@@ -626,7 +626,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "db82c9f1200d966c114f1308bfd348ab7f8c5065",
+      "commit": "adeab3ae8e4d1f3d6db0a11f8af8651ed74595ac",
       "path": "brain/identity/COMPANY.md"
     },
     "status": "active",
