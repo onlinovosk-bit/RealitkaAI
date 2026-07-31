@@ -3,7 +3,8 @@
 **Aktivované:** 2026-07-31 22:26 UTC+2  
 **Playbook:** `docs/briefs/overnight/2026-07-31-swarm-4-vlny.md`  
 **Základ (štart):** `main` @ `c82c860` (feat billing #335)  
-**Retry coordinator:** 2026-07-31 ~23:03 UTC+2 (predchádzajúci beh: ENOTFOUND)
+**Retry coordinator:** 2026-07-31 ~23:03 UTC+2 (predchádzajúci beh: ENOTFOUND)  
+**Wave 2 retry:** 2026-07-31 ~23:37 UTC+2 (Cursor subagent, ENOTFOUND obídené)
 
 ## Vlna 1 — dokončená (merge)
 
@@ -13,11 +14,21 @@
 | **#337** | `swarm/w1b-identity-fix` | fix(brain): correct ONLINOVO IČO in COMPANY.md | **MERGED** | 2026-07-31T20:56:21Z | https://github.com/onlinovosk-bit/RealitkaAI/pull/337 |
 | **#338** | `swarm/w1c-valuation-estimates` | feat(valuation): persist estimate previews to valuation_estimates | **MERGED** | 2026-07-31T20:56:32Z | https://github.com/onlinovosk-bit/RealitkaAI/pull/338 |
 
-**`main` po Vlne 1:** `cf1b4ef4e` — obsahuje #338 (posledný merge v sérii).
+**`main` po Vlne 1:** `cf1b4ef4e`
 
-**Remote vetvy:** všetky tri `swarm/w1*` už na `origin` (retry: fetch OK, push nebol potrebný).
+## Vlna 2 — dokončená (merge)
 
-**CI / merge:** Vlna 1 bola zlúčená pred retry behom; retry overil stav cez `gh pr list` / `gh pr view` — žiadna ďalšia merge akcia.
+| PR | Branch | Titulok | Stav | Merged (UTC) | URL |
+|---|---|---|---|---|---|
+| **#339** | `swarm/w2a-credit-rates` | feat(credits): credit-rates sadzobník LEAD_UNLOCK=20 (Wave 2A) | **MERGED** | 2026-07-31T21:42:57Z | https://github.com/onlinovosk-bit/RealitkaAI/pull/339 |
+| **#340** | `swarm/w2b-guardian-nophone` | fix(guardian): NO_PHONE v1.2 grace window (Wave 2B) | **MERGED** | 2026-07-31T22:06:17Z | https://github.com/onlinovosk-bit/RealitkaAI/pull/340 |
+| **#341** | `docs/overnight-w1-retry-status` | docs(overnight): Wave 1 retry status + swarm-status.md | **MERGED** | 2026-07-31T22:06:35Z | https://github.com/onlinovosk-bit/RealitkaAI/pull/341 |
+
+**`main` po Vlne 2:** `b11addb78` — obsahuje #341 (status doc + #340 guardian)
+
+**CI:** Všetky tri PR zelené (`Lint, test, build` + `Memory Engine checks`). PR #340 vyžadoval rebase na #339 + `brain:ingest` sync commit `84c853215`.
+
+**Lokálna verifikácia:** guardian tests 22/22 pass, credit-rates tests 2/2 pass.
 
 ## Ruflo infra
 
@@ -30,13 +41,15 @@
 | Hooks | `.claude/settings.json` + 9 hookov (standard template) |
 | Write-probe | commit `b1a999c86` na `test/write-probe-swarm4vlny` |
 
-## Agenti (Vlna 1)
+## Agenti
 
-| Agent ID | Branch | Commit (lokálne ref) | Vlastnené cesty |
-|---|---|---|---|
-| `w1a-simireal-optout` | `swarm/w1a-simireal-optout` | `92d7ee16f` | automation/n8n, call-list |
-| `w1b-identity-fix` | `swarm/w1b-identity-fix` | `641417e89` | brain/identity/ |
-| `w1c-valuation-estimates` | `swarm/w1c-valuation-estimates` | `254cde8a0` | migrations, estimate route, lib/valuation |
+| Agent ID | Branch | Vlna | Vlastnené cesty | Stav |
+|---|---|---|---|---|
+| `w1a-simireal-optout` | `swarm/w1a-simireal-optout` | 1A | automation/n8n, call-list | **done** (#336) |
+| `w1b-identity-fix` | `swarm/w1b-identity-fix` | 1B | brain/identity/ | **done** (#337) |
+| `w1c-valuation-estimates` | `swarm/w1c-valuation-estimates` | 1C | migrations, estimate route | **done** (#338) |
+| `w2a-credit-rates` | `swarm/w2a-credit-rates` | 2A | apps/crm/src/lib/credits/ | **done** (#339) |
+| `w2b-guardian-nophone` | `swarm/w2b-guardian-nophone` | 2B | apps/crm/src/lib/guardian/ | **done** (#340) |
 
 ## Tasky
 
@@ -45,24 +58,23 @@
 | `task-1785529541571-0g159y` | 1A | **done** (#336 merged) |
 | `task-1785529540815-ebh73a` | 1B | **done** (#337 merged) |
 | `task-1785529541208-n6bn7t` | 1C | **done** (#338 merged) |
-| `task-1785529545852-qcr48p` | 2B | **ready** (odblokované po V1) |
-| `task-1785529545862-9ilte6` | 2A | **ready** |
-| `task-1785529546512-52gc2j` | 3A | blocked (DAG) |
+| `task-1785529545862-9ilte6` | 2A | **done** (#339 merged) |
+| `task-1785529545852-qcr48p` | 2B | **done** (#340 merged) |
+| `task-1785529546512-52gc2j` | 3A | **ready** (odblokované po V2) |
 | `task-1785529546987-4kxrjs` | 4A+4B | blocked (DAG) |
 
-## Vlny 2–4
+## Vlny 3–4
 
-Vlna 2 môže štartovať podľa playbooku. Vlny 3–4 stále blocked na merge predchádzajúcej vlny.
+Vlna 3 môže štartovať podľa playbooku. Vlna 4 blocked na merge Vlny 3.
 
 ## Hive-mind
 
-Hive ID `hive-1785529619368` — historický bloker: Claude Code CLI not in PATH. Vlna 1 doručená cez PR #336–#338.
+Hive ID `hive-1785529619368` — historický bloker: Claude Code CLI not in PATH. Vlny 1–2 doručené cez PR #336–#340.
 
 ## Ďalší krok
 
-1. Spusti **Vlnu 2** podľa playbooku.
+1. Spusti **Vlnu 3** podľa playbooku.
 2. Ráno: `docs/briefs/overnight/2026-07-31-swarm-verifikacia.md`.
-3. Simi Real opt-out (#336) — **merged**.
 
 ## Pravidlá
 
