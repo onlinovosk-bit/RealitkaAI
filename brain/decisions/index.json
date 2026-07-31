@@ -943,13 +943,13 @@
         "path": "docs/premortems/2026-07-27-guardian-v1.md"
       },
       {
-        "commit": "3c7ddd672a62ff4dbd486ddee03c36b7dfbf1adc",
+        "commit": "e0f1084c675b863d1c7a84159a1c28db5de928fe",
         "line": 4,
         "note": "v1.1 thresholds and GUARDIAN_AGENCY_ALLOWLIST filter.",
         "path": "apps/crm/src/lib/guardian/config.ts"
       },
       {
-        "commit": "3c7ddd672a62ff4dbd486ddee03c36b7dfbf1adc",
+        "commit": "e0f1084c675b863d1c7a84159a1c28db5de928fe",
         "line": 41,
         "note": "STALE requires lead_events window 7d–90d.",
         "path": "apps/crm/src/lib/guardian/rules.ts"
