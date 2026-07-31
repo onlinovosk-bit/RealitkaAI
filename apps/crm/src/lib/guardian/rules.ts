@@ -55,7 +55,19 @@ export function evaluateRuleForLead(
     }
     case "NO_PHONE": {
       if (!isContactRequiredStatus(lead.status)) return false;
-      return !hasUsablePhone(lead.phone);
+      if (hasUsablePhone(lead.phone)) return false;
+      const created = Date.parse(lead.created_at);
+      if (Number.isNaN(created)) return false;
+      const ageMs = nowMs - created;
+      if (ageMs <= GUARDIAN_THRESHOLDS.R3_NO_PHONE_GRACE_HOURS * MS_HOUR) return false;
+      // v1.2: imported/static leads without lead_events are not NO_PHONE (STALE v1.1 mirror).
+      if (!lastEventAt) return false;
+      const latest = Date.parse(lastEventAt);
+      if (Number.isNaN(latest)) return false;
+      const eventAgeMs = nowMs - latest;
+      const windowMs =
+        GUARDIAN_THRESHOLDS.R3_NO_PHONE_ACTIVITY_WINDOW_DAYS * MS_DAY;
+      return eventAgeMs <= windowMs;
     }
     case "HOT_IGNORED": {
       if ((lead.ai_priority ?? "").trim() !== "Vysoká") return false;
