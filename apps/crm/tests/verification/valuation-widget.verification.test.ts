@@ -167,4 +167,25 @@ describe("valuation widget", () => {
 
     expect(getValuationAgency("demo")?.displayName).toContain("Ukážková");
   });
+
+  it("persists valuation estimates without breaking widget response", () => {
+    const estimatesMigration = fs.readFileSync(
+      path.join(CRM_ROOT, "supabase/migrations/20260731210000_valuation_estimates.sql"),
+      "utf8",
+    );
+    expect(estimatesMigration).toContain("valuation_estimates");
+    expect(estimatesMigration).toContain("is_sandbox");
+    expect(estimatesMigration).toContain("profile_agencies_for_auth");
+
+    expect(fs.existsSync(path.join(CRM_ROOT, "src/lib/valuation/persist-estimate.ts"))).toBe(true);
+
+    const estimateRoute = fs.readFileSync(
+      path.join(CRM_ROOT, "src/app/api/valuation/estimate/route.ts"),
+      "utf8",
+    );
+    expect(estimateRoute).toContain("buildDeterministicEstimate");
+    expect(estimateRoute).toContain("persistValuationEstimate");
+    expect(estimateRoute).toContain("resolveAgencySlugFromReferer");
+    expect(estimateRoute).not.toContain("submit/route");
+  });
 });

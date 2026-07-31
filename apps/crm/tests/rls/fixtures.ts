@@ -299,6 +299,12 @@ export async function seedRlsFixtures(admin: SupabaseClient): Promise<RlsFixture
     recommendation: "RLS fixture triage",
     status: "shown",
   });
+  await seedAgencyScopedTable(admin, rows, "valuation_estimates", f.agencyA, f.agencyB, f.leadA, f.leadB, {
+    location: "RLS Test City",
+    sqm: 70,
+    property_type: "byt",
+    is_sandbox: false,
+  });
   await seedAgencyScopedTable(admin, rows, "guardian_findings", f.agencyA, f.agencyB, f.leadA, f.leadB, {
     rule_code: "STALE",
   });
