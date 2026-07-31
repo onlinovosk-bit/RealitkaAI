@@ -83,12 +83,51 @@ describe("Guardian v1 rules", () => {
   });
 
   it("R3 NO_PHONE for contact-required status only", () => {
+    const recentEvent = new Date(now - 2 * 86400000).toISOString();
     for (const status of CONTACT_REQUIRED_STATUSES) {
-      const row = lead({ id: `l3-${status}`, status, phone: "" });
-      expect(evaluateRuleForLead("NO_PHONE", row, null, now)).toBe(true);
+      const row = lead({
+        id: `l3-${status}`,
+        status,
+        phone: "",
+        created_at: new Date(now - 48 * 3600000).toISOString(),
+      });
+      expect(evaluateRuleForLead("NO_PHONE", row, recentEvent, now)).toBe(true);
     }
     const offer = lead({ id: "l3-offer", status: "Ponuka", phone: "" });
-    expect(evaluateRuleForLead("NO_PHONE", offer, null, now)).toBe(false);
+    expect(evaluateRuleForLead("NO_PHONE", offer, recentEvent, now)).toBe(false);
+  });
+
+  it("R3 NO_PHONE v1.2: grace window — no flag within 24h of creation", () => {
+    const row = lead({
+      id: "l3-grace",
+      status: "Nový",
+      phone: "",
+      created_at: new Date(now - 12 * 3600000).toISOString(),
+    });
+    expect(evaluateRuleForLead("NO_PHONE", row, new Date(now - 3600000).toISOString(), now)).toBe(
+      false,
+    );
+  });
+
+  it("R3 NO_PHONE v1.2: imported lead without lead_events is not flagged", () => {
+    const row = lead({
+      id: "l3-legacy",
+      status: "Teplý",
+      phone: "",
+      created_at: new Date(now - 120 * 86400000).toISOString(),
+    });
+    expect(evaluateRuleForLead("NO_PHONE", row, null, now)).toBe(false);
+  });
+
+  it("R3 NO_PHONE v1.2: last activity older than 90d is not flagged", () => {
+    const row = lead({
+      id: "l3-old-event",
+      status: "Teplý",
+      phone: "",
+      created_at: new Date(now - 120 * 86400000).toISOString(),
+    });
+    const hundredDaysAgo = new Date(now - 100 * 86400000).toISOString();
+    expect(evaluateRuleForLead("NO_PHONE", row, hundredDaysAgo, now)).toBe(false);
   });
 
   it("R4 HOT_IGNORED for Vysoká priority and idle activity", () => {

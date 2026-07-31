@@ -5,6 +5,10 @@ export const GUARDIAN_THRESHOLDS = {
   R1_STALE_ACTIVITY_WINDOW_DAYS: 90,
   R1_STALE_QUIET_DAYS: 7,
   R2_NO_OWNER_HOURS: 24,
+  /** v1.2 NO_PHONE: grace after creation before flagging (mirror NO_OWNER). */
+  R3_NO_PHONE_GRACE_HOURS: 24,
+  /** v1.2 NO_PHONE: only flag when last lead_event is within this window (mirror STALE cap). */
+  R3_NO_PHONE_ACTIVITY_WINDOW_DAYS: 90,
   R4_HOT_IGNORED_HOURS: 48,
 } as const;
 
