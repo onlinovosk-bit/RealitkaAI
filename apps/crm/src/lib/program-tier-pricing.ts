@@ -266,6 +266,18 @@ export function parseTopupPackageKey(value: string | null | undefined): TopupPac
   return null;
 }
 
+/** Stripe price IDs must be real `price_*` values — not env placeholders. */
+const STRIPE_PRICE_ID_PATTERN = /^price_[a-zA-Z0-9]{8,}$/;
+
+export function isValidStripePriceId(value: string | null | undefined): boolean {
+  const id = (value ?? "").trim();
+  if (!id) return false;
+  const lower = id.toLowerCase();
+  if (lower === "xxx" || lower === "price_xxx") return false;
+  if (lower.includes("xxx")) return false;
+  return STRIPE_PRICE_ID_PATTERN.test(id);
+}
+
 export function getSeatStripePriceId(tier: SeatTier): string {
   return process.env[SEAT_TIER_STRIPE_ENV[tier]] ?? "";
 }
@@ -279,7 +291,7 @@ export function getStarterPackStripePriceId(): string {
 }
 
 export function isStarterPackCheckoutAvailable(): boolean {
-  return getStarterPackStripePriceId().length > 0;
+  return isValidStripePriceId(getStarterPackStripePriceId());
 }
 
 export function getOwnerCockpitStripePriceId(opts?: {
@@ -295,12 +307,15 @@ export function getOwnerCockpitStripePriceId(opts?: {
 }
 
 export function areSeatCheckoutPricesConfigured(): boolean {
-  return SEAT_TIERS.every((tier) => getSeatStripePriceId(tier).length > 0);
+  return SEAT_TIERS.every((tier) => isValidStripePriceId(getSeatStripePriceId(tier)));
 }
 
 export function areTopupCheckoutPricesConfigured(): boolean {
-  return TOPUP_PACKAGE_KEYS.every((key) => getTopupStripePriceId(key).length > 0);
+  return TOPUP_PACKAGE_KEYS.every((key) => isValidStripePriceId(getTopupStripePriceId(key)));
 }
+
+/** Deep link pre doplnenie kreditov (402 modals, generátor). */
+export const BILLING_TOPUP_HREF = "/billing#topup";
 
 export function isCheckoutConfigured(): boolean {
   return areSeatCheckoutPricesConfigured() && areTopupCheckoutPricesConfigured();

@@ -4,6 +4,7 @@ import {
   manualPlanKeyToTier,
   resolveBillingPlanFromManualPlan,
 } from "@/lib/billing/resolve-agency-manual-plan";
+import { fetchAgencyCreditsSummary } from "@/lib/billing/fetch-agency-credits-summary";
 import {
   getCurrentPlanKey,
   getCurrentPlanTier,
@@ -17,6 +18,21 @@ export async function GET() {
   if (!user) return errorResponse("Unauthorized", 401);
 
   try {
+    const creditsSummary = await fetchAgencyCreditsSummary(supabase, user.id);
+    const creditsFields = creditsSummary
+      ? {
+          creditsBalance: creditsSummary.creditsBalance,
+          grantBalance: creditsSummary.grantBalance,
+          purchasedBalance: creditsSummary.purchasedBalance,
+          monthlyGrantCredits: creditsSummary.monthlyGrantCredits,
+        }
+      : {
+          creditsBalance: 0,
+          grantBalance: 0,
+          purchasedBalance: 0,
+          monthlyGrantCredits: 0,
+        };
+
     const manualPlan = await fetchAgencyManualPlan(supabase, user.id);
     const manualPlanKey = resolveBillingPlanFromManualPlan(manualPlan);
     if (manualPlanKey) {
@@ -27,6 +43,7 @@ export async function GET() {
         planKey: manualPlanKey,
         enterpriseSalesIntelligence,
         billingSource: "manual_invoice",
+        ...creditsFields,
       });
     }
 
@@ -39,6 +56,7 @@ export async function GET() {
       tier,
       planKey,
       enterpriseSalesIntelligence,
+      ...creditsFields,
     });
   } catch (error) {
     return errorResponse(
