@@ -23,9 +23,9 @@ describe("starter pack checkout gate", () => {
   });
 
   it("is available when env price is set", () => {
-    process.env.STRIPE_PRICE_STARTER_PACK = "price_starter_pack";
+    process.env.STRIPE_PRICE_STARTER_PACK = "price_1234567890";
     expect(isStarterPackCheckoutAvailable()).toBe(true);
-    expect(getStarterPackStripePriceId()).toBe("price_starter_pack");
+    expect(getStarterPackStripePriceId()).toBe("price_1234567890");
   });
 
   it("exposes fixed product metadata", () => {

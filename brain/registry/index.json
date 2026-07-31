@@ -340,14 +340,14 @@
     ],
     "evidence": [
       {
-        "commit": "3c7ddd672a62ff4dbd486ddee03c36b7dfbf1adc",
-        "note": "Inventory contains 224 file(s); digest sha256:1a48bacb1adb25089bba40078cf22e4982f9f105892d77b6d4a72b3213cd4ad5.",
+        "commit": "dfd902cabbb70a7ab93559fb7faf6df6b63bba4e",
+        "note": "Inventory contains 224 file(s); digest sha256:85de2eb26dc97ba5cad0f3abcbf586b23f4a861645cabdf815f322a7f4e9c14b.",
         "path": "apps/crm/src/app/api"
       }
     ],
     "id": "crm.api",
     "inventory": {
-      "digest": "sha256:1a48bacb1adb25089bba40078cf22e4982f9f105892d77b6d4a72b3213cd4ad5",
+      "digest": "sha256:85de2eb26dc97ba5cad0f3abcbf586b23f4a861645cabdf815f322a7f4e9c14b",
       "fileCount": 224,
       "sample": [
         "apps/crm/src/app/api/acquire/email/route.ts",
@@ -364,7 +364,7 @@
         "apps/crm/src/app/api/ai/closing-window/recompute/route.ts"
       ]
     },
-    "lastVerifiedAt": "2026-07-27",
+    "lastVerifiedAt": "2026-07-31",
     "name": "CRM route handlers",
     "owner": "engineering",
     "purpose": "Inventory of API route handlers used to verify documented endpoint paths.",
@@ -376,7 +376,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "3c7ddd672a62ff4dbd486ddee03c36b7dfbf1adc",
+      "commit": "dfd902cabbb70a7ab93559fb7faf6df6b63bba4e",
       "path": "apps/crm/src/app/api"
     },
     "status": "active",
@@ -397,14 +397,14 @@
     ],
     "evidence": [
       {
-        "commit": "4543af9ec3273219438e98540029cbaf6236677e",
-        "note": "Inventory contains 506 file(s); digest sha256:3cb3440f3232be2a16611a058d474366793dd4aceb989c7beeb358ab405f121e.",
+        "commit": "dfd902cabbb70a7ab93559fb7faf6df6b63bba4e",
+        "note": "Inventory contains 506 file(s); digest sha256:9d6e2bf49e210cc956397cbdfc00ea4a3781f0d0552353cbc921644208c1076a.",
         "path": "apps/crm/src/app"
       }
     ],
     "id": "crm.application",
     "inventory": {
-      "digest": "sha256:3cb3440f3232be2a16611a058d474366793dd4aceb989c7beeb358ab405f121e",
+      "digest": "sha256:9d6e2bf49e210cc956397cbdfc00ea4a3781f0d0552353cbc921644208c1076a",
       "fileCount": 506,
       "sample": [
         "apps/crm/src/app/(dashboard)/DashboardClientShell.tsx",
@@ -421,7 +421,7 @@
         "apps/crm/src/app/(dashboard)/akvizieia/listy-z-katastra/loading.tsx"
       ]
     },
-    "lastVerifiedAt": "2026-07-28",
+    "lastVerifiedAt": "2026-07-31",
     "name": "CRM application surface",
     "owner": "engineering",
     "purpose": "Inventory of CRM pages, layouts, and application code used for documentation drift checks.",
@@ -431,7 +431,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "4543af9ec3273219438e98540029cbaf6236677e",
+      "commit": "dfd902cabbb70a7ab93559fb7faf6df6b63bba4e",
       "path": "apps/crm/src/app"
     },
     "status": "active",
@@ -451,7 +451,7 @@
     ],
     "evidence": [
       {
-        "commit": "0a2db76ab7809b8981089c266ba1d947dbb9828c",
+        "commit": "d5d6e11719b61b75ea463ce2233f3d77cdbd1f2d",
         "note": "Inventory contains 90 file(s); digest sha256:8bf854cb07a5284e2c27126491a980e5b7a0caeab1aa85748eca37e49d62ed40.",
         "path": "apps/crm/supabase/migrations"
       }
@@ -475,7 +475,7 @@
         "apps/crm/supabase/migrations/20260426120111_arbitrage_engine.sql"
       ]
     },
-    "lastVerifiedAt": "2026-07-28",
+    "lastVerifiedAt": "2026-07-29",
     "name": "Supabase migrations",
     "owner": "engineering",
     "purpose": "Versioned database structure used as code-side evidence; production state remains independently verified.",
@@ -486,7 +486,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "0a2db76ab7809b8981089c266ba1d947dbb9828c",
+      "commit": "d5d6e11719b61b75ea463ce2233f3d77cdbd1f2d",
       "path": "apps/crm/supabase/migrations"
     },
     "status": "active",
@@ -686,7 +686,7 @@
     ],
     "evidence": [
       {
-        "commit": "4543af9ec3273219438e98540029cbaf6236677e",
+        "commit": "d5d6e11719b61b75ea463ce2233f3d77cdbd1f2d",
         "note": "Inventory contains 2 file(s); digest sha256:a75af7a3e4276ff2742c5e72135257d282fc4847a1d8e4d0918c6cb060fc2c0e.",
         "path": "memory/decisions.md"
       }
@@ -700,7 +700,7 @@
         "memory/decisions.md"
       ]
     },
-    "lastVerifiedAt": "2026-07-28",
+    "lastVerifiedAt": "2026-07-29",
     "name": "Critical decisions log",
     "owner": "founder",
     "purpose": "Canonical historical decision source; generated Brain records remain pointers to this log.",
@@ -710,7 +710,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "4543af9ec3273219438e98540029cbaf6236677e",
+      "commit": "d5d6e11719b61b75ea463ce2233f3d77cdbd1f2d",
       "path": "memory/decisions.md"
     },
     "status": "active",
