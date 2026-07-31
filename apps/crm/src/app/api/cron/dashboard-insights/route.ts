@@ -9,6 +9,7 @@ import {
   generateAndCacheAgencyInsights,
   listActiveAgencyIds,
 } from '@/lib/ai/dashboard-insights-cron'
+import { flushLangfuseTraces } from '@/lib/langfuse'
 
 const BATCH = 3
 
@@ -51,6 +52,8 @@ export async function GET(request: NextRequest) {
 
   const succeeded = results.filter(r => r.ok).length
   const failed = results.filter(r => !r.ok)
+
+  await flushLangfuseTraces()
 
   return NextResponse.json({
     ok: failed.length === 0,

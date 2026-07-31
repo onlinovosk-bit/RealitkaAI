@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { traceNext, traceResponse } from "@/lib/langfuse/middleware";
 import { isInvalidRefreshTokenError } from "@/lib/supabase/auth-session";
 
 // Public routes — no auth required
@@ -91,21 +92,22 @@ export async function proxy(request: NextRequest) {
 
   // Redirect legacy team/permissions URL
   if (pathname === "/team/permissions" || pathname.startsWith("/team/permissions/")) {
-    return NextResponse.redirect(new URL("/dashboard/reputation/integrity", request.url), 308);
+    return traceResponse(
+      request,
+      NextResponse.redirect(new URL("/dashboard/reputation/integrity", request.url), 308),
+    );
   }
 
-  if (isPublic(pathname)) return NextResponse.next();
-  if (isRealviaImportPath(pathname)) return NextResponse.next();
-  if (isUcExportImportPath(pathname)) return NextResponse.next();
-  if (isWebhookApiPath(pathname)) return NextResponse.next();
-  if (REMOVED_API_PATHS.has(pathname)) return NextResponse.next();
-  if (DEPRECATED_API_SHIMS.has(pathname)) return NextResponse.next();
-  if (isCronRoute(pathname)) return NextResponse.next();
-  if (pathname.startsWith(ONBOARDING_MVP_PREFIX)) return NextResponse.next();
+  if (isPublic(pathname)) return traceNext(request);
+  if (isRealviaImportPath(pathname)) return traceNext(request);
+  if (isUcExportImportPath(pathname)) return traceNext(request);
+  if (isWebhookApiPath(pathname)) return traceNext(request);
+  if (REMOVED_API_PATHS.has(pathname)) return traceNext(request);
+  if (DEPRECATED_API_SHIMS.has(pathname)) return traceNext(request);
+  if (isCronRoute(pathname)) return traceNext(request);
+  if (pathname.startsWith(ONBOARDING_MVP_PREFIX)) return traceNext(request);
 
-  let response = NextResponse.next({
-    request: { headers: request.headers },
-  });
+  let response = traceNext(request);
 
   const supabaseKey =
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
@@ -137,9 +139,9 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (!user && pathname.startsWith("/api/")) {
-    return NextResponse.json(
-      { ok: false, error: "Unauthorized" },
-      { status: 401 }
+    return traceResponse(
+      request,
+      NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 }),
     );
   }
 
@@ -152,10 +154,10 @@ export async function proxy(request: NextRequest) {
   ) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirectTo", pathname);
-    return NextResponse.redirect(loginUrl);
+    return traceResponse(request, NextResponse.redirect(loginUrl));
   }
 
-  return response;
+  return traceResponse(request, response);
 }
 
 export const config = {

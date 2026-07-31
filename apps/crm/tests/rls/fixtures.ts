@@ -329,6 +329,32 @@ export async function seedRlsFixtures(admin: SupabaseClient): Promise<RlsFixture
     channel: "email",
     profile_id: f.brokerA,
   });
+
+  const aiGenA = randomUUID();
+  const aiGenB = randomUUID();
+  await upsertRow(admin, "ai_generations", {
+    id: aiGenA,
+    agency_id: f.agencyA,
+    profile_id: f.brokerA,
+    workflow_type: "listing",
+    input_json: { property_type: "byt", city: "RLS City A" },
+    idempotency_key: `rls-ai-gen-a-${aiGenA}`,
+    generation_status: "generated",
+    schema_version: "listing_output_v1",
+  });
+  await upsertRow(admin, "ai_generations", {
+    id: aiGenB,
+    agency_id: f.agencyB,
+    profile_id: f.brokerB,
+    workflow_type: "listing",
+    input_json: { property_type: "dom", city: "RLS City B" },
+    idempotency_key: `rls-ai-gen-b-${aiGenB}`,
+    generation_status: "generated",
+    schema_version: "listing_output_v1",
+  });
+  rows.ai_generations_a = { id: aiGenA, agency_id: f.agencyA };
+  rows.ai_generations_b = { id: aiGenB, agency_id: f.agencyB };
+
   await seedAgencyScopedTable(admin, rows, "ai_sourced_deals", f.agencyA, f.agencyB, f.leadA, f.leadB, {
     deal_value: 250000,
     status: "pending",

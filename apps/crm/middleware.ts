@@ -1,6 +1,8 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 
+import { traceNext, traceResponse } from '@/lib/langfuse/middleware'
+
 // These prefixes bypass user-session validation — they handle auth themselves
 const BYPASS_PREFIXES = [
   '/api/auth/',               // Supabase OAuth callbacks
@@ -34,15 +36,15 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Only guard API routes
-  if (!pathname.startsWith('/api/')) return NextResponse.next()
+  if (!pathname.startsWith('/api/')) return traceNext(request)
 
   // PR-4: removed scrape route → 404; scoring 410 shim (prod uses src/proxy.ts too)
   if (pathname === '/api/scrape' || pathname === '/api/scoring' || pathname === '/api/segmentation') {
-    return NextResponse.next()
+    return traceNext(request)
   }
 
   // Explicit bypass paths
-  if (BYPASS_PREFIXES.some(p => pathname.startsWith(p))) return NextResponse.next()
+  if (BYPASS_PREFIXES.some(p => pathname.startsWith(p))) return traceNext(request)
 
   // HMAC bypass only for routes that call revolisGuard in-handler (never all /api/*).
   if (
@@ -50,7 +52,7 @@ export async function middleware(request: NextRequest) {
     request.headers.get('x-revolis-timestamp') &&
     request.headers.get('x-revolis-signature')
   ) {
-    return NextResponse.next()
+    return traceNext(request)
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -59,9 +61,9 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   // If env is not configured (local dev without Supabase), let requests through
-  if (!supabaseUrl || !supabaseKey) return NextResponse.next()
+  if (!supabaseUrl || !supabaseKey) return traceNext(request)
 
-  const response = NextResponse.next()
+  const response = traceNext(request)
 
   const supabase = createServerClient(supabaseUrl, supabaseKey, {
     cookies: {
@@ -75,10 +77,10 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return traceResponse(request, NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
   }
 
-  return response
+  return traceResponse(request, response)
 }
 
 export const config = {

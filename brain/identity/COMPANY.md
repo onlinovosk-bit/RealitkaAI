@@ -3,7 +3,7 @@
 **Cieľová cesta:** `brain/identity/COMPANY.md`
 **Účel:** Čo je Revolis, pre koho, za koľko a kam ide. Druhý dokument po
 FOUNDER.md, ktorý si prečíta akýkoľvek AI nástroj pred prácou.
-**Vlastník:** founder · **Posledné overenie:** 2026-07-24
+**Vlastník:** founder · **Posledné overenie:** 2026-07-31
 
 ## North Star
 > **Revolis nie je CRM s AI. Revolis je organizačná pamäť realitnej
@@ -14,7 +14,7 @@ rozhodnutí a výsledkov konkurencia nedobehne. Investuj do pamäte a učenia,
 nie do naháňania najnovšieho modelu.
 
 ## Firma a produkt
-- **ONLINOVO s.r.o.**, Prešov (IČO 54 539 251), zastúpená Andrejom Ondrušom.
+- **ONLINOVO s.r.o.**, Štúrova 130/25, 058 01 Poprad (IČO 54166942, IČ DPH SK2121592869), zastúpená Andrejom Ondrušom.
 - **Revolis.AI** — AI-first B2B CRM pre slovenské realitné kancelárie.
   Produkcia: `app.revolis.ai`. Repo: `github.com/onlinovosk-bit/RealitkaAI`
   (lokálne `C:\RealitkaAI`).

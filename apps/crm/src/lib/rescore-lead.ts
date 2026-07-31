@@ -13,6 +13,7 @@ import { callOpenAI } from "@/lib/ai/openai";
 import { logAiAction } from "@/lib/ai-action-audit";
 import { estimateOpenAiCostEur } from "@/lib/ai/llm-usage-cost";
 import { CREDIT_ACTION_COSTS } from "@/lib/program-tier-pricing";
+import { flushLangfuseTraces } from "@/lib/langfuse";
 
 type LeadRow = {
   id: string;
@@ -49,7 +50,13 @@ async function getOpenAiInsight(
     const { content, promptTokens, completionTokens } = await callOpenAI({
       model,
       max_tokens: 80,
-      tag:        "rescore-insight",
+      tag: "rescore-insight",
+      trace: {
+        feature: "rescore-insight",
+        workflowType: "lead_rescore",
+        agencyId: lead.agency_id ?? null,
+        extra: { lead_id: lead.id },
+      },
       messages: [
         {
           role:    "system",
@@ -153,6 +160,8 @@ export async function rescoreLead(leadId: string): Promise<void> {
     } else if (error) {
       await admin.from("leads").update({ score: scoreValue }).eq("id", leadId);
     }
+
+    await flushLangfuseTraces();
   } catch {
     /* fire-and-forget */
   }

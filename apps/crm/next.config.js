@@ -1,4 +1,5 @@
 const path = require("path");
+const webpack = require("webpack");
 
 /** @type {import('next').NextConfig} */
 // P0.5 — build-time guard: never ship with E2E auth bypass in production
@@ -16,6 +17,22 @@ const securityHeaders = [
 
 const nextConfig = {
 	outputFileTracingRoot: path.join(__dirname, "../.."),
+	serverExternalPackages: [
+		"@grpc/grpc-js",
+		"@grpc/proto-loader",
+		"@langfuse/otel",
+		"@langfuse/openai",
+		"@langfuse/tracing",
+		"@opentelemetry/api",
+		"@opentelemetry/core",
+		"@opentelemetry/otlp-grpc-exporter-base",
+		"@opentelemetry/otlp-exporter-base",
+		"@opentelemetry/resources",
+		"@opentelemetry/sdk-node",
+		"@opentelemetry/sdk-trace-base",
+		"@opentelemetry/sdk-trace-node",
+		"@opentelemetry/semantic-conventions",
+	],
 	async headers() {
 		return [
 			{
@@ -39,6 +56,17 @@ const nextConfig = {
 			{ source: "/team/permissions", destination: "/dashboard/reputation/integrity", permanent: true },
 			{ source: "/dashboard/revolis-ai", destination: "/revolis-ai", permanent: true },
 		];
+	},
+	webpack(config, { nextRuntime }) {
+		if (nextRuntime === "edge") {
+			config.plugins.push(
+				new webpack.NormalModuleReplacementPlugin(
+					/instrumentation-node$/,
+					path.join(__dirname, "src/instrumentation-node.stub.ts"),
+				),
+			);
+		}
+		return config;
 	},
 };
 

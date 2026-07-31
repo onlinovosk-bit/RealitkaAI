@@ -1,10 +1,11 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { Resend } from "resend";
 import { callOpenAI } from "@/lib/ai/openai";
 import { checkAiRateLimit } from "@/lib/ai/rate-guard";
 import { checkCapabilityAccess } from "@/lib/license/access";
 import { updateStealthProspectStatus } from "@/lib/stealth-recruiter/store";
+import { flushLangfuseTraces } from "@/lib/langfuse";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -128,6 +129,12 @@ Vráť IBA text správy (bez uvodzoviek). Tón: ľudský, nie korporátny.`;
       max_tokens: 400,
       temperature: 0.75,
       tag: "stealth-outreach",
+      trace: {
+        feature: "stealth-outreach",
+        workflowType: "stealth_recruiter",
+        agencyId,
+        userId: access.userId ?? null,
+      },
       messages: [
         { role: "system", content: "Si slovenský realitný expert. Píš prirodzene, bez floskúl." },
         { role: "user", content: prompt },
@@ -177,6 +184,10 @@ Vráť IBA text správy (bez uvodzoviek). Tón: ľudský, nie korporátny.`;
         });
       }
     }
+
+    after(async () => {
+      await flushLangfuseTraces();
+    });
 
     return NextResponse.json({
       ok: true,

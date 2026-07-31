@@ -1,10 +1,11 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { checkAiRateLimit } from "@/lib/ai/rate-guard";
 import { generateListingContent } from "@/lib/ai/listing-content";
 import type { PropertyInput, ListingPersona } from "@/lib/ai/listing-content";
 import { logAiAction } from "@/lib/ai-action-audit";
 import { CREDIT_ACTION_COSTS } from "@/lib/program-tier-pricing";
+import { flushLangfuseTraces } from "@/lib/langfuse";
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -28,12 +29,17 @@ export async function POST(req: Request) {
     );
   }
 
-  const { content, audit } = await generateListingContent(body.property, body.persona ?? "GENERAL");
   const { data: profile } = await supabase
     .from("profiles")
     .select("agency_id")
     .eq("auth_user_id", user.id)
     .maybeSingle();
+
+  const { content, audit } = await generateListingContent(
+    body.property,
+    body.persona ?? "GENERAL",
+    { agencyId: profile?.agency_id ?? null, userId: user.id },
+  );
 
   await logAiAction({
     action: "listing_description",
@@ -43,6 +49,10 @@ export async function POST(req: Request) {
     model: audit.model,
     latencyMs: audit.latencyMs,
     meta: { persona: body.persona ?? "GENERAL" },
+  });
+
+  after(async () => {
+    await flushLangfuseTraces();
   });
 
   return NextResponse.json({ ok: true, content });

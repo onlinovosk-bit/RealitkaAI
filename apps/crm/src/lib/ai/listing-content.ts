@@ -82,6 +82,7 @@ export type ListingContentAudit = {
 export async function generateListingContent(
   property: PropertyInput,
   persona: ListingPersona = "GENERAL",
+  trace?: { agencyId?: string | null; userId?: string | null },
 ): Promise<{ content: ListingContent; audit: ListingContentAudit }> {
   const userPrompt = buildListingUserPrompt(property, persona);
   const t0 = Date.now();
@@ -91,7 +92,13 @@ export async function generateListingContent(
     max_tokens: 2200,
     system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
     messages: [{ role: "user", content: userPrompt }],
-  }, "listing-content");
+  }, "listing-content", {
+    feature: "listing-content",
+    workflowType: "listing_content",
+    agencyId: trace?.agencyId,
+    userId: trace?.userId,
+    extra: { persona },
+  });
 
   const raw = response.content[0].type === "text" ? response.content[0].text : "{}";
   return {

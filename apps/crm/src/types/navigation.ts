@@ -28,7 +28,8 @@ export type NavIcon =
   | "team-pulse"  // Tímový pipeline
   | "shield"      // Leady kolegov
   | "lock"        // Permissions
-  | "upload";     // Import kontaktov
+  | "upload"      // Import kontaktov
+  | "file-text";  // Generátor inzerátov
 
 export type NavBadge = {
   label:   string;
@@ -284,6 +285,16 @@ export const ALL_NAV_ITEMS: NavItem[] = [
     sublabel: "Ghostwriter · Analýza hovorov",
     href: "/revolis-ai",
     icon: "ai",
+    section: "tools",
+    showFor: ["agent_solo", "agent_team"],
+  },
+  {
+    id: "listing-generator",
+    label: "Generátor inzerátov",
+    sublabel: "AI texty · Portál · Sociálne siete",
+    href: "/listings/generator",
+    icon: "file-text",
+    badge: { label: "AI", variant: "new" },
     section: "tools",
     showFor: ["agent_solo", "agent_team"],
   },

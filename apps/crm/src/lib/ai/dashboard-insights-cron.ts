@@ -76,6 +76,7 @@ export async function generateAndCacheAgencyInsights(
         summary,
         userName: displayName,
         properties,
+        agencyId,
       }),
       INSIGHTS_AI_TIMEOUT_MS,
       {

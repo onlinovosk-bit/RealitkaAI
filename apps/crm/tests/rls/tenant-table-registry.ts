@@ -48,6 +48,7 @@ export const TENANT_TABLES: TenantTableDef[] = [
   { table: "lead_rescue_runs", scope: "agency_id", pk: "id", domain: "deals" },
   { table: "lead_micro_actions", scope: "agency_id", pk: "id", domain: "deals" },
   { table: "ai_action_audit", scope: "agency_id", pk: "id", domain: "communications" },
+  { table: "ai_generations", scope: "agency_id", pk: "id", domain: "communications" },
   { table: "ai_sourced_deals", scope: "agency_id", pk: "id", domain: "deals" },
   { table: "scheduled_events", scope: "agency_id", pk: "id", domain: "deals" },
   { table: "routine_notifications", scope: "agency_id", pk: "id", domain: "communications" },

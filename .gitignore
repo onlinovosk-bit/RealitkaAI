@@ -50,3 +50,13 @@ apps/crm/supabase/.temp/
 apps/crm/tmp-*.json
 tmp-*.md
 apps/crm/design-handoff-zips/
+
+# Local clones / agent workspaces (do not commit)
+tools/langfuse/
+.worktrees/
+tmp/
+tmp-pr317-ci/
+output/
+markitdown/
+memory/ssh/
+.cursor/settings.json

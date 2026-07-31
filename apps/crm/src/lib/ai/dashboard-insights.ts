@@ -16,6 +16,7 @@ export type DashboardInsightsInput = {
   summary: DashboardSummaryResponse
   userName: string
   properties?: PropertySnapshot[]
+  agencyId?: string | null
 }
 
 export type DashboardInsightsAction = {
@@ -210,7 +211,11 @@ Vráť JSON:
   "notesForOwner": "Voliteľná 1 veta pre ownera — len ak má zmysel z dát, inak prázdny reťazec"
 }`,
     }],
-  }, 'dashboard-insights').then(resp => {
+  }, 'dashboard-insights', {
+    feature: 'dashboard-insights',
+    workflowType: 'dashboard_insights',
+    agencyId: input.agencyId,
+  }).then(resp => {
     const latencyMs = Date.now() - t0
     const raw = resp.content[0].type === 'text' ? resp.content[0].text : ''
     const parsed = extractJson<LlmInsightsPayload>(raw)
