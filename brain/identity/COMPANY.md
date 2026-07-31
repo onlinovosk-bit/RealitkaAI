@@ -14,7 +14,7 @@ rozhodnutí a výsledkov konkurencia nedobehne. Investuj do pamäte a učenia,
 nie do naháňania najnovšieho modelu.
 
 ## Firma a produkt
-- **ONLINOVO s.r.o.**, Prešov (IČO 54 539 251), zastúpená Andrejom Ondrušom.
+- **ONLINOVO s.r.o.**, Štúrova 130/25, 058 01 Poprad (IČO 54166942, IČ DPH SK2121592869), zastúpená Andrejom Ondrušom.
 - **Revolis.AI** — AI-first B2B CRM pre slovenské realitné kancelárie.
   Produkcia: `app.revolis.ai`. Repo: `github.com/onlinovosk-bit/RealitkaAI`
   (lokálne `C:\RealitkaAI`).
