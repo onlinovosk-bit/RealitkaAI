@@ -56,7 +56,6 @@ naživo, stačí 20 minút cez videohovor. Hodí sa vám [deň] alebo [deň]?"
 | REFISTAV-TRADE (p. Lunio) | 0902 558 881 | KE |
 | LAGIN reality | 0903 113 140 | KE |
 | S nami bývaš | 0949 883 099 | KE |
-| Simi Real (MI) | 0915 311 636 | MI, malá kancelária |
 | STAVIAME BÝVANIE (PO) | 0903 655 552 | ⚠ dostali email 2× — ak spomenú: „áno, aktualizovali sme text, systém poslal obe verzie, ospravedlňujem sa" |
 | TOP Real Košice | 0948 031 461 | ⚠ dtto 2× · veľký tím |
 | ZARA REALITY | 0907 134 687 | ⚠ dtto 2× (konateľka Z. Horváthová) |
