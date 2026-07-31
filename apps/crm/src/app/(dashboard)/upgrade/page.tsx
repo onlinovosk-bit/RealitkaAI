@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { SLATE_HORIZON, WORKDESK_CARD } from '@/lib/slate-horizon-theme';
+import { BILLING_TOPUP_HREF } from '@/lib/program-tier-pricing';
 import { RedeemStarterPackCode } from '@/components/billing/RedeemStarterPackCode';
 
 type SeatTierKey = 'solo' | 'team' | 'office';
@@ -295,56 +296,19 @@ export default function UpgradePage() {
             boxShadow: WORKDESK_CARD.boxShadow,
           }}
         >
-          <h2 className="text-xl font-semibold mb-4" style={{ color: SLATE_HORIZON.ink }}>
+          <h2 className="text-xl font-semibold mb-2" style={{ color: SLATE_HORIZON.ink }}>
             Doplniť kredity
           </h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {config.topupPackages.map((pkg) => (
-              <div
-                key={pkg.key}
-                className="rounded-lg border p-4 flex flex-col"
-                style={{
-                  borderColor: pkg.featured ? SLATE_HORIZON.brand : SLATE_HORIZON.line,
-                  background: pkg.featured ? SLATE_HORIZON.soft : '#fff',
-                }}
-              >
-                {pkg.featured && (
-                  <span
-                    className="text-xs font-semibold mb-1"
-                    style={{ color: SLATE_HORIZON.brandDeep }}
-                  >
-                    Odporúčané
-                  </span>
-                )}
-                <div className="font-semibold" style={{ color: SLATE_HORIZON.ink }}>
-                  {pkg.label}
-                </div>
-                <div className="text-lg font-bold" style={{ color: SLATE_HORIZON.ink }}>
-                  {pkg.credits} kr
-                </div>
-                <div className="text-sm mb-4" style={{ color: SLATE_HORIZON.muted }}>
-                  {pkg.priceEur} € jednorazovo
-                </div>
-                <button
-                  type="button"
-                  disabled={!!checkoutLoading}
-                  onClick={() =>
-                    startCheckout(
-                      { checkoutType: 'topup', topupPackage: pkg.key },
-                      `topup-${pkg.key}`,
-                    )
-                  }
-                  className="mt-auto w-full rounded-md py-2 text-sm font-semibold text-white"
-                  style={{
-                    background: SLATE_HORIZON.brand,
-                    opacity: checkoutLoading ? 0.6 : 1,
-                  }}
-                >
-                  {checkoutLoading === `topup-${pkg.key}` ? '…' : 'Kúpiť'}
-                </button>
-              </div>
-            ))}
-          </div>
+          <p className="text-sm mb-4" style={{ color: SLATE_HORIZON.muted }}>
+            Top-up balíčky kreditov sú na stránke fakturácie spolu so zostatkom a breakdownom grantu.
+          </p>
+          <Link
+            href={BILLING_TOPUP_HREF}
+            className="inline-flex rounded-md px-6 py-2.5 text-sm font-semibold text-white"
+            style={{ background: SLATE_HORIZON.brand }}
+          >
+            Doplniť kredity
+          </Link>
         </section>
       )}
     </div>
