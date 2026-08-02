@@ -1022,5 +1022,50 @@
     "status": "active",
     "supersedes": [],
     "title": "Operator dashboard = aggregate-first cross-tenant access"
+  },
+  {
+    "alternatives": [
+      "Separate JSON coding-decision log (rejected — duplicate graph)",
+      "CI-only enforcement without Decision Memory (rejected — no contradiction protocol)"
+    ],
+    "canonical": false,
+    "choice": "Adopt three-layer Engineering Constitution (Constitution / Policy / Enforcement); store justifications in memory/decisions.md with engineering-justification capability; Judge = Kontrolór with mandatory format check.",
+    "confidence": "high",
+    "date": "2026-08-02",
+    "evidence": [
+      {
+        "commit": "uncommitted",
+        "line": 1,
+        "note": "Canonical three-layer constitution and Decision Memory ingest protocol.",
+        "path": "docs/architecture/engineering-constitution.md"
+      },
+      {
+        "commit": "d5d6e11719b61b75ea463ce2233f3d77cdbd1f2d",
+        "line": 290,
+        "note": "Adoption entry in canonical decision log.",
+        "path": "memory/decisions.md"
+      }
+    ],
+    "expectedOutcome": "Every new file/component/dep either reuses or leaves a traceable justification in memory/decisions.md; brain:ingest projects curated entries.",
+    "id": "rme-dec-20260802-001",
+    "observedOutcome": "Constitution document and cursor rule merged; ingest pending first PR.",
+    "owner": "founder",
+    "problem": "Code changes lacked a consistent reuse-first policy and Builder justifications had no single ingest path into Organizational Memory.",
+    "rationale": "Extends existing Decision Memory and brain/registry without a parallel coding log; aligns with ADR 2026-07-28 single canonical home per concept.",
+    "relatedAssets": [
+      "governance.engineering-constitution",
+      "memory.decisions",
+      "policy.cursor-rules"
+    ],
+    "reviewAt": "2026-11-02",
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "uncommitted",
+      "path": "docs/architecture/engineering-constitution.md"
+    },
+    "status": "active",
+    "supersedes": [],
+    "title": "Adopt Engineering Constitution wired to Decision Memory"
   }
 ]

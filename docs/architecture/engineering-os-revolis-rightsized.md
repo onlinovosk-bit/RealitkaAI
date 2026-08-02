@@ -26,7 +26,7 @@ related:
 | **L0 Constitution** | ✅ MÁM | `revolis-constitution-v2.md`, `CLAUDE.md`, `.cursor/rules/l99-*` |
 | **L1 Knowledge Brain** | ✅ MÁM (light) | Obsidian vault = repo; `docs/architecture`, `docs/audit`, `docs/briefs`, `/memory`. Elaborátnu 15-priečinkovú taxonómiu NEROB — máš dosť. |
 | **L2 Agent Organization (40 agentov)** | ⛔ DEFER | Cargo cult pri 1 klientovi. Máš virtuálnu squad. Odomkne: keď objem práce vyžiada delenie rolí (reálne 5+ paralelných oblastí). |
-| **L3 Decision Engine (ADR)** | ✅ ADOPT NOW | Máš `decisions.md`; pridaj ľahkú ADR šablónu (nižšie). Lacné, reálna hodnota. |
+| **L3 Decision Engine (ADR)** | ✅ ADOPT NOW | Máš `decisions.md`; pridaj ľahkú ADR šablónu (nižšie). Kódové odôvodnenia: [`engineering-constitution.md`](engineering-constitution.md) → ten istý Decision Memory graf. |
 | **L4 Development Pipeline** | ✅ MÁM (light) | brief → build → test → PR → merge. 11-stupňový pipeline je ťažký; tvoj brief-flow je right-sized verzia. |
 | **L5 AI Pipeline** | ✅ MÁM (čiastočne) | Kontrolór = reviewer/security/QA gate; swarm = planner/architect/implementer. Nepreformalizuj. |
 | **L6 Quality Gates** | ✅ MÁM | merge gate (`l99-golden-rule`), CI, RLS testy, GUARD, Kontrolór. Pokrýva podstatu z 8 gateov. |

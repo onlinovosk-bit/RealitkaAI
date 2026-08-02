@@ -594,6 +594,49 @@
   {
     "canonical": false,
     "capabilities": [
+      "builder-judge-gate",
+      "engineering-justification",
+      "reuse-policy"
+    ],
+    "confidence": "low",
+    "createdAt": "2026-08-02",
+    "dependencies": [
+      "brain.engine",
+      "governance.architecture",
+      "memory.decisions"
+    ],
+    "evidence": [
+      {
+        "commit": "uncommitted",
+        "note": "Source unavailable in the current workspace.",
+        "path": "docs/architecture/engineering-constitution.md"
+      }
+    ],
+    "id": "governance.engineering-constitution",
+    "inventory": {
+      "digest": "unavailable",
+      "fileCount": 0,
+      "sample": []
+    },
+    "lastVerifiedAt": "2026-08-02",
+    "name": "Engineering Constitution",
+    "owner": "engineering",
+    "purpose": "Three-layer code governance (Constitution / Policy / Enforcement); Builder decision tree and Judge justification format wired to Decision Memory.",
+    "relatedDecisions": [
+      "rme-dec-20260802-001"
+    ],
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "uncommitted",
+      "path": "docs/architecture/engineering-constitution.md"
+    },
+    "status": "unknown",
+    "type": "governance"
+  },
+  {
+    "canonical": false,
+    "capabilities": [
       "company",
       "identity"
     ],

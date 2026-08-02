@@ -286,3 +286,14 @@
 - **Rozhodnutie:** `/operator` len pre `profiles.is_platform_admin` + `OPERATOR_DASHBOARD_ENABLED` (default false); agency user / anonym **404**; v1 bez PII v agregátoch, bez drill-down/kampaní; sandbox tenant vylúčený.
 - **Schéma:** `20260728140000_profiles_platform_admin.sql` — founder po prod apply: `UPDATE profiles SET is_platform_admin = true WHERE email = '…'`.
 - **Brain:** `build-package.operator-dashboard-v1`, `rme-dec-20260728-001`.
+
+## [2026-08-02] - Engineering justification: Engineering Constitution — BUILD
+
+- **Trigger:** new-governance-doc + cursor rule + brain registry wiring
+- **Decision path:** extend-existing — Decision Memory + brain/registry (žiadny paralelný coding log)
+- **Alternatives considered:** samostatný JSON log (zamietnuté — duplicitný graf); CI-only gate bez memory (zamietnuté — chýba contradiction protocol)
+- **Why not reuse:** Existujúca Ústava = biznis brána; chýbala technická vrstva Builder/Judge pre reuse a nové abstrakcie
+- **Expected outcome:** Každý nový súbor/komponent/dep má traceable justification v `memory/decisions.md`; Judge = Kontrolór; `npm run brain:ingest` projektuje kurátorované záznamy
+- **Related paths:** `docs/architecture/engineering-constitution.md`, `.cursor/rules/l99-engineering-constitution.mdc`, `brain/src/catalog.ts`, `rme-dec-20260802-001`
+- **Contradiction check:** none — dopĺňa `engineering-os-revolis-rightsized.md` L3 ADR, nekonflikuje s Revolis Constitution v2
+- **PR / vetva:** docs/engineering-constitution-decision-memory

@@ -44,10 +44,18 @@ Pre KAŽDÝ výrok/plán/odporúčanie prejdi týchto 10 bodov:
 10. **ARTEFAKT, NIE TEXT** — tvrdí agent/swarm "hotovo", ale existuje reálny
     dôkaz (commit, diff, vetva, zelené CI)? Text/plán bez artefaktu = NEspravené.
     → STOP, kým neexistuje overiteľný artefakt.
+11. **ENGINEERING CONSTITUTION (Judge)** — ak diff pridáva nový súbor, komponent,
+    npm závislosť alebo abstrakciu: má Builder blok **Engineering justification**
+    (`docs/architecture/engineering-constitution.md`)? Sú vyplnené Trigger, Decision
+    path, Alternatives, Why not reuse (ak path ≠ reuse), Contradiction check?
+    Path nesedí s diffom → **RETURN**. `Contradiction check: flag` bez founder
+    rozhodnutia → **STOP** (protokol `brain/ENGINE.md` §21, nie silent approve).
+    Odôvodnenie patrí do `memory/decisions.md` — nie do paralelného logu.
 
 ## VERDIKT (pre každú kontrolovanú vec)
 - **PASS** — overené, podložené dôkazom, prešlo bránami. Možno prijať.
 - **FLAG** — pokračuj s opatrnosťou, doplň chýbajúce, ale nie je to blokujúce.
+- **RETURN** — Engineering Constitution: chýba alebo neúplné justification; Builder doplní pred merge.
 - **STOP** — NEPRIJÍMAJ / NEMERGUJ, kým sa nevyrieši. Blokujúce.
 
 ## BLOKUJÚCE PRAVIDLO

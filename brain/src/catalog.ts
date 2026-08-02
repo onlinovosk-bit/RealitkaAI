@@ -95,6 +95,19 @@ const REGISTRY_SPECS: RegistrySpec[] = [
     capabilities: ["architecture-guidance", "antipattern-governance", "data-sourcing"],
   },
   {
+    id: "governance.engineering-constitution",
+    type: "governance",
+    name: "Engineering Constitution",
+    purpose:
+      "Three-layer code governance (Constitution / Policy / Enforcement); Builder decision tree and Judge justification format wired to Decision Memory.",
+    owner: "engineering",
+    sourcePath: "docs/architecture/engineering-constitution.md",
+    roots: ["docs/architecture/engineering-constitution.md", ".cursor/rules/l99-engineering-constitution.mdc"],
+    dependencies: ["brain.engine", "memory.decisions", "governance.architecture"],
+    relatedDecisions: ["rme-dec-20260802-001"],
+    capabilities: ["engineering-justification", "reuse-policy", "builder-judge-gate"],
+  },
+  {
     id: "memory.decisions",
     type: "decision-log",
     name: "Critical decisions log",
@@ -758,6 +771,39 @@ const DECISION_SPECS: DecisionSpec[] = [
         path: "apps/crm/supabase/migrations/20260728140000_profiles_platform_admin.sql",
         line: 1,
         note: "Platform-admin schema gate + founder UPDATE reminder.",
+      },
+    ],
+  },
+  {
+    id: "rme-dec-20260802-001",
+    title: "Adopt Engineering Constitution wired to Decision Memory",
+    date: "2026-08-02",
+    status: "active",
+    problem:
+      "Code changes lacked a consistent reuse-first policy and Builder justifications had no single ingest path into Organizational Memory.",
+    choice:
+      "Adopt three-layer Engineering Constitution (Constitution / Policy / Enforcement); store justifications in memory/decisions.md with engineering-justification capability; Judge = Kontrolór with mandatory format check.",
+    rationale:
+      "Extends existing Decision Memory and brain/registry without a parallel coding log; aligns with ADR 2026-07-28 single canonical home per concept.",
+    alternatives: [
+      "Separate JSON coding-decision log (rejected — duplicate graph)",
+      "CI-only enforcement without Decision Memory (rejected — no contradiction protocol)",
+    ],
+    expectedOutcome:
+      "Every new file/component/dep either reuses or leaves a traceable justification in memory/decisions.md; brain:ingest projects curated entries.",
+    observedOutcome: "Constitution document and cursor rule merged; ingest pending first PR.",
+    reviewAt: "2026-11-02",
+    relatedAssets: ["governance.engineering-constitution", "memory.decisions", "policy.cursor-rules"],
+    evidence: [
+      {
+        path: "docs/architecture/engineering-constitution.md",
+        line: 1,
+        note: "Canonical three-layer constitution and Decision Memory ingest protocol.",
+      },
+      {
+        path: "memory/decisions.md",
+        line: 290,
+        note: "Adoption entry in canonical decision log.",
       },
     ],
   },
