@@ -109,6 +109,8 @@ Celkom: 44 + 12 = 56 testov PASS
 
 ## 4B — Demo readiness (GARANT REAL, pondelok 8:45)
 
+**Prod host:** widgety bežia na `app.revolis.ai` (napr. https://app.revolis.ai/odhad/demo). Rovnaké cesty na `www.revolis.ai` vracajú **404** — smoke testuj len na app.
+
 **Kontext:** Demo stojí na widgete a zbere leadov, nie integrácii. Netestované cez Smolkov owner účet.
 
 ### Demo blockers (zoradené podľa trápnosti pred zákazníkom)
@@ -118,7 +120,7 @@ Celkom: 44 + 12 = 56 testov PASS
 | 1 | **Stredná** | Migrácie `20260731210000` + `20260731220000` **nie sú na prod** | Kód deployed, schéma nie | Founder apply pred/po deploy; bez `valuation_estimates` sa odhady neukladajú (widget funguje) |
 | 2 | **Nízka** | System agency row chýba → cron metriky `console.warn` | Tiché zlyhanie | Apply migráciu 3A; spusti audit SQL |
 | 3 | **Nízka** | `/operator` default OFF (`OPERATOR_DASHBOARD_ENABLED` false) | 404 | **Nie blocker pre GARANT REAL** — demo nevyžaduje operator dashboard |
-| 4 | **Info** | `/demo-odhad` → redirect `/demo` (UnifiedDemo), nie `/odhad/demo` | Marketing demo ≠ valuation sandbox | Pre widget demo používaj **`/odhad/demo`** |
+| 4 | **Info** | `/demo-odhad` → redirect `/demo` (UnifiedDemo), nie `/odhad/demo` | Marketing demo ≠ valuation sandbox | Pre widget demo používaj **`https://app.revolis.ai/odhad/demo`** |
 | 5 | **Info** | `lead_consents` non-transactional submit | Známy dlh (playbook) | **Zámerne odložené** — nekritické pre demo widgetu |
 | 6 | **Info** | Duplicitný credit pricing (`leadUnlock: 4` vs 20) | Žiadny spend wired | Founder rozhodnutie post-demo |
 
@@ -126,8 +128,8 @@ Celkom: 44 + 12 = 56 testov PASS
 
 | Cesta | Očakávanie | Výsledok |
 |---|---|---|
-| `/odhad/demo` | Sandbox widget, `is_sandbox=true`, `sandbox_submissions` | **PASS** — tenant resolution + submit vetva |
-| `/odhad/reality-smolko` | Produkčný widget, leads + consents | **PASS** — config v `agency-config.ts`, verification test |
+| `https://app.revolis.ai/odhad/demo` | Sandbox widget, `is_sandbox=true`, `sandbox_submissions` | **PASS** — tenant resolution + submit vetva |
+| `https://app.revolis.ai/odhad/reality-smolko` | Produkčný widget, leads + consents | **PASS** — config v `agency-config.ts`, verification test |
 | `/api/healthz` | 200 `{ ok: true }` | **PASS** — `route.ts` bez auth |
 | `/api/health` | 401 (neexistuje ako health) | **PASS** — netestované (playbook: netestuj) |
 | Widget estimate API | Best-effort persist, response vždy | **PASS** |
@@ -143,7 +145,7 @@ Celkom: 44 + 12 = 56 testov PASS
    - `20260731220000_system_usage_agency.sql` — system tenant row
 2. **Spusti audit SQL** (read-only): `apps/crm/docs/ops/system-usage-agency-audit.sql`  
    Prilož výstup — koľko systémových záznamov visí pod Smolkovým `agency_id`.
-3. **Smoke widgetu** na prod: `/odhad/demo` (sandbox) + `/odhad/reality-smolko` (1 test submit).
+3. **Smoke widgetu** na prod: `https://app.revolis.ai/odhad/demo` (sandbox) + `https://app.revolis.ai/odhad/reality-smolko` (1 test submit). **Demo sandbox submit:** overené **PASS** na app.revolis.ai (2026-08-02).
 
 ### Po demo / rozhodnutia
 
@@ -179,4 +181,4 @@ Celkom: 44 + 12 = 56 testov PASS
 ## Verdikt
 
 **Swarm 4-vlny kód: GO na produkčný deploy.**  
-**Demo GO s podmienkou:** founder aplikuje 2 migrácie + quick widget smoke na prod.
+**Demo GO s podmienkou:** founder aplikuje 2 migrácie + quick widget smoke na prod (https://app.revolis.ai/odhad/demo). Demo sandbox submit overené **PASS** na app.revolis.ai (2026-08-02).
