@@ -451,15 +451,15 @@
     ],
     "evidence": [
       {
-        "commit": "cf1b4ef4efa2d33457b7b4d884d3b054832b23d2",
-        "note": "Inventory contains 91 file(s); digest sha256:255e18b9a0487da36b544c6289ca0d459afcdb02d1414c2be8176dd859738b39.",
+        "commit": "3ad577e51bc3cc751c74fce460f067264625a58f",
+        "note": "Inventory contains 92 file(s); digest sha256:fc6acb3279bb7805263a77c39bf9ff7c6affebe09b0bf88aa3824d26132c32cd.",
         "path": "apps/crm/supabase/migrations"
       }
     ],
     "id": "database.migrations",
     "inventory": {
-      "digest": "sha256:255e18b9a0487da36b544c6289ca0d459afcdb02d1414c2be8176dd859738b39",
-      "fileCount": 91,
+      "digest": "sha256:fc6acb3279bb7805263a77c39bf9ff7c6affebe09b0bf88aa3824d26132c32cd",
+      "fileCount": 92,
       "sample": [
         "apps/crm/supabase/migrations/20260310_baseline_core_schema.sql",
         "apps/crm/supabase/migrations/20260320_rls.sql",
@@ -475,7 +475,7 @@
         "apps/crm/supabase/migrations/20260426120111_arbitrage_engine.sql"
       ]
     },
-    "lastVerifiedAt": "2026-07-31",
+    "lastVerifiedAt": "2026-08-02",
     "name": "Supabase migrations",
     "owner": "engineering",
     "purpose": "Versioned database structure used as code-side evidence; production state remains independently verified.",
@@ -486,7 +486,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "cf1b4ef4efa2d33457b7b4d884d3b054832b23d2",
+      "commit": "3ad577e51bc3cc751c74fce460f067264625a58f",
       "path": "apps/crm/supabase/migrations"
     },
     "status": "active",

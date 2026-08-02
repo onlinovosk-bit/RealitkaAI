@@ -43,3 +43,18 @@ SET
   primary_color = EXCLUDED.primary_color,
   enabled = EXCLUDED.enabled,
   is_sandbox = EXCLUDED.is_sandbox;
+
+INSERT INTO public.agencies (id, name, slug, city, plan, is_active)
+VALUES (
+  '00000000-0000-0000-0000-000000000001'::uuid,
+  'Revolis System',
+  'revolis-system',
+  '',
+  'Free',
+  false
+)
+ON CONFLICT (id) DO UPDATE
+SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  is_active = EXCLUDED.is_active;

@@ -1,3 +1,4 @@
+import { SYSTEM_USAGE_AGENCY_ID } from "@/lib/usage-metrics";
 import { SANDBOX_AGENCY_ID } from "@/lib/valuation/agency-config";
 
 /** Default false — route returns 404 until founder enables after authz verification. */
@@ -18,7 +19,7 @@ export function parseOperatorAgencyExcludeList(): string[] {
           .split(",")
           .map((part) => part.trim())
           .filter(Boolean);
-  const hardcoded = [SANDBOX_AGENCY_ID];
+  const hardcoded = [SANDBOX_AGENCY_ID, SYSTEM_USAGE_AGENCY_ID];
   return [...new Set([...hardcoded, ...fromEnv])];
 }
 
