@@ -5,7 +5,8 @@
 **Základ (štart):** `main` @ `c82c860` (feat billing #335)  
 **Retry coordinator:** 2026-07-31 ~23:03 UTC+2 (predchádzajúci beh: ENOTFOUND)  
 **Wave 2 retry:** 2026-07-31 ~23:37 UTC+2 (Cursor subagent, ENOTFOUND obídené)  
-**Wave 3:** 2026-08-02 ~15:00 UTC+2 — merged #343
+**Wave 3:** 2026-08-02 ~15:00 UTC+2 — merged #343  
+**Wave 4:** 2026-08-02 ~15:25 UTC+2 — verifikácia dokončená (#345)
 
 ## Vlna 1 — dokončená (merge)
 
@@ -32,6 +33,7 @@
 | PR | Branch | Titulok | Stav | Merged (UTC) | URL |
 |---|---|---|---|---|---|
 | **#343** | `swarm/w3a-system-agency` | refactor(usage): SYSTEM_USAGE_AGENCY_ID oddelené od Smolka (Wave 3A) | **MERGED** | 2026-08-02T13:20:11Z | https://github.com/onlinovosk-bit/RealitkaAI/pull/343 |
+| **#344** | `docs/swarm-w3-status-update` | docs(overnight): Wave 3 merged status | **MERGED** | 2026-08-02 | https://github.com/onlinovosk-bit/RealitkaAI/pull/344 |
 
 **`main` po Vlne 3:** `fa58a367d`
 
@@ -42,6 +44,17 @@
 - Operator dashboard vylučuje system agency
 
 **CI:** zelené (`Lint, test, build` + `Memory Engine checks`). Brain index sync commit `2ddaff721`.
+
+## Vlna 4 — dokončená (verifikácia)
+
+| Výstup | Stav | URL / cesta |
+|---|---|---|
+| Verifikácia 4A+4B | **DONE** | `docs/briefs/overnight/2026-07-31-swarm-verifikacia.md` |
+| PR docs (W4) | **OPEN** | https://github.com/onlinovosk-bit/RealitkaAI/pull/345 |
+
+**Verdikt:** PASS — kód bezpečný na deploy. Demo GO s podmienkou (2 migrácie + audit SQL founder).
+
+**Lokálna verifikácia:** 56 testov PASS (guardian, credit-rates, usage-metrics, persist-estimate, operator, valuation-widget verification).
 
 ## Ruflo infra
 
@@ -58,23 +71,22 @@
 | `w1a`–`w1c` | 1 | **done** (#336–#338) |
 | `w2a`–`w2b` | 2 | **done** (#339–#340) |
 | `w3a-system-agency` | 3A | **done** (#343) |
+| `w4a`–`w4b` | 4 | **done** (verifikácia) |
 
 ## Tasky
 
 | Task ID | Vlna | Stav |
 |---|---|---|
 | `task-1785529546512-52gc2j` | 3A | **done** (#343 merged) |
-| `task-1785529546987-4kxrjs` | 4A+4B | **ready** (odblokované po V3) |
+| `task-1785529546987-4kxrjs` | 4A+4B | **done** (verifikacia.md) |
 
-## Vlna 4
+## Ďalší krok (founder)
 
-Vlna 4 môže štartovať — read-only verifikácia (4A regresie + 4B demo readiness). Výstup: `docs/briefs/overnight/2026-07-31-swarm-verifikacia.md`.
-
-## Ďalší krok
-
-1. Spusti **Vlnu 4** podľa playbooku.
-2. Founder: aplikovať migráciu `20260731220000_system_usage_agency.sql` + audit SQL na prod.
-3. Ráno: prečítať `docs/briefs/overnight/2026-07-31-swarm-verifikacia.md`.
+1. Prečítať **`docs/briefs/overnight/2026-07-31-swarm-verifikacia.md`** — sekcia Demo blockers.
+2. Apply migrácie: `20260731210000_valuation_estimates.sql` + `20260731220000_system_usage_agency.sql`.
+3. Spustiť audit: `apps/crm/docs/ops/system-usage-agency-audit.sql` (read-only, priložiť výstup).
+4. Widget smoke na prod: `/odhad/demo` + `/odhad/reality-smolko`.
+5. Demo GARANT REAL pondelok 8:45.
 
 ## Pravidlá
 
