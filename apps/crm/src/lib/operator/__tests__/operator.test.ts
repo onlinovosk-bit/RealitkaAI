@@ -4,6 +4,7 @@ import { isOperatorDashboardEnabled, isOperatorExcludedAgency } from "@/lib/oper
 import { OPERATOR_HEALTH_WEIGHTS, computeOperatorHealthScore } from "@/lib/operator/health-score";
 import { assertOperatorAggregateNoPii, OPERATOR_FORBIDDEN_AGGREGATE_KEYS } from "@/lib/operator/aggregate-schema";
 import { SANDBOX_AGENCY_ID } from "@/lib/valuation/agency-config";
+import { DEFAULT_SYSTEM_USAGE_AGENCY_ID } from "@/lib/usage-metrics";
 
 describe("operator config", () => {
   it("OPERATOR_DASHBOARD_ENABLED defaults false", () => {
@@ -11,8 +12,9 @@ describe("operator config", () => {
     expect(isOperatorDashboardEnabled()).toBe(false);
   });
 
-  it("excludes sandbox agency id by default", () => {
+  it("excludes sandbox and system agency ids by default", () => {
     expect(isOperatorExcludedAgency(SANDBOX_AGENCY_ID)).toBe(true);
+    expect(isOperatorExcludedAgency(DEFAULT_SYSTEM_USAGE_AGENCY_ID)).toBe(true);
     expect(isOperatorExcludedAgency("11111111-1111-1111-1111-111111111111")).toBe(false);
   });
 });
