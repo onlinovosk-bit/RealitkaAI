@@ -15,9 +15,9 @@
 | **2** (2A–2B) | **PASS** | credit-rates sadzobník, Guardian NO_PHONE v1.2 |
 | **3** (3A) | **PASS** | SYSTEM_USAGE_AGENCY_ID oddelené od Smolka |
 | **4A** Regresie | **PASS** (s poznámkami) | Žiadny kódový regres widgetu; 2 founder-only riziká |
-| **4B** Demo readiness | **PASS** (s podmienkami) | Widget cesta bezpečná; migrácie na prod ešte founder |
+| **4B** Demo readiness | **PASS** (s podmienkami) | Widget cesta bezpečná; migrácie na prod ✅ 2026-08-02 ~15:42 UTC+2 |
 
-**Celkový verdikt:** Swarm zmeny sú **bezpečné na merge/deploy kódu**. Demo GARANT REAL (pondelok 8:45) stojí na widgete — **kód neblokuje**. Pred demom founder **aplikuje 2 migrácie** (moat + system agency) a spustí audit SQL.
+**Celkový verdikt:** Swarm zmeny sú **bezpečné na merge/deploy kódu**. Demo GARANT REAL (pondelok 8:45) stojí na widgete — **kód neblokuje**. Migrácie na prod ✅ (2026-08-02 ~15:42 UTC+2); audit SQL v logu nižšie; pred demom zostáva widget smoke.
 
 ---
 
@@ -44,7 +44,7 @@
 | `estimate/route.ts` zapisuje po `buildDeterministicEstimate` | **PASS** | `persistValuationEstimate()` volané riadky 91–100 |
 | Insert zlyhanie nezhodí widget | **PASS** | `persist-estimate.ts:77-88` best-effort; chyba len log |
 | Sandbox `/odhad/demo` → `is_sandbox=true` | **PASS** | `resolveTenantRecord` + tenant DB flag; verification test 12/12 |
-| Migrácia neaplikovaná na prod | **INFO** | Founder action — pozri Demo blockers #1 |
+| Migrácia na prod | **PASS** | Apply 2026-08-02 ~15:42 UTC+2 — pozri apply log |
 
 ### Vlna 2A — credit-rates (#339)
 
@@ -117,8 +117,8 @@ Celkom: 44 + 12 = 56 testov PASS
 
 | # | Závažnosť | Blocker | Stav | Akcia |
 |---|---|---|---|---|
-| 1 | **Stredná** | Migrácie `20260731210000` + `20260731220000` **nie sú na prod** | Kód deployed, schéma nie | Founder apply pred/po deploy; bez `valuation_estimates` sa odhady neukladajú (widget funguje) |
-| 2 | **Nízka** | System agency row chýba → cron metriky `console.warn` | Tiché zlyhanie | Apply migráciu 3A; spusti audit SQL |
+| 1 | ~~Stredná~~ **DONE** | Migrácie `20260731210000` + `20260731220000` na prod | ✅ 2026-08-02 ~15:42 UTC+2 (`ypgajkhqtbriqqmyawyv`) | Widget smoke ešte manuálne |
+| 2 | ~~Nízka~~ **DONE** | System agency row | ✅ `Revolis System` (`00000000-…0001`, `is_active=false`) | Audit SQL nižšie |
 | 3 | **Nízka** | `/operator` default OFF (`OPERATOR_DASHBOARD_ENABLED` false) | 404 | **Nie blocker pre GARANT REAL** — demo nevyžaduje operator dashboard |
 | 4 | **Info** | `/demo-odhad` → redirect `/demo` (UnifiedDemo), nie `/odhad/demo` | Marketing demo ≠ valuation sandbox | Pre widget demo používaj **`https://app.revolis.ai/odhad/demo`** |
 | 5 | **Info** | `lead_consents` non-transactional submit | Známy dlh (playbook) | **Zámerne odložené** — nekritické pre demo widgetu |
@@ -140,12 +140,9 @@ Celkom: 44 + 12 = 56 testov PASS
 
 ### Povinné pred demo (pondelok 8:45)
 
-1. **Apply migrácie na prod** (v poradí):
-   - `20260731210000_valuation_estimates.sql` — moat capture
-   - `20260731220000_system_usage_agency.sql` — system tenant row
-2. **Spusti audit SQL** (read-only): `apps/crm/docs/ops/system-usage-agency-audit.sql`  
-   Prilož výstup — koľko systémových záznamov visí pod Smolkovým `agency_id`.
-3. **Smoke widgetu** na prod: `https://app.revolis.ai/odhad/demo` (sandbox) + `https://app.revolis.ai/odhad/reality-smolko` (1 test submit). **Demo sandbox submit:** overené **PASS** na app.revolis.ai (2026-08-02).
+1. ~~**Apply migrácie na prod**~~ ✅ **2026-08-02 ~15:42 UTC+2** — aluation_estimates + Revolis System agency
+2. ~~**Spusti audit SQL**~~ ✅ výsledok nižšie (read-only, bez PII)
+3. **Smoke widgetu** na prod: https://app.revolis.ai/odhad/demo (sandbox) + https://app.revolis.ai/odhad/reality-smolko (1 test submit). **Demo sandbox submit:** overené **PASS** na app.revolis.ai (2026-08-02); Smolko submit ešte manuálne ak treba.
 
 ### Po demo / rozhodnutia
 
@@ -173,12 +170,37 @@ Celkom: 44 + 12 = 56 testov PASS
 | #340 | 2B | ✅ |
 | #341 | docs W1 | ✅ |
 | #343 | 3A | ✅ |
-| #344 | docs W3 status | pending merge |
-| TBD | docs W4 verifikácia | this report |
+| #344 | docs W3 status | ✅ |
+| #346 | docs W4 verifikácia URLs | ✅ |
 
 ---
 
 ## Verdikt
 
 **Swarm 4-vlny kód: GO na produkčný deploy.**  
-**Demo GO s podmienkou:** founder aplikuje 2 migrácie + quick widget smoke na prod (https://app.revolis.ai/odhad/demo). Demo sandbox submit overené **PASS** na app.revolis.ai (2026-08-02).
+**Demo GO s podmienkou:** migrácie ✅; demo sandbox submit **PASS** na app.revolis.ai (2026-08-02); zostáva quick smoke na https://app.revolis.ai/odhad/reality-smolko ak ešte nebol.
+
+---
+
+## Prod migrácie — apply log (2026-08-02 ~15:42 UTC+2)
+
+| Migrácia | Projekt | Výsledok |
+|---|---|---|
+| 20260731210000_valuation_estimates.sql | ypgajkhqtbriqqmyawyv | ✅ success |
+| 20260731220000_system_usage_agency.sql | ypgajkhqtbriqqmyawyv | ✅ success |
+
+### Audit SQL (po apply)
+
+| Metrika | Hodnota |
+|---|---|
+| usage_metrics_daily pod Smolkom | 1 riadok (embedding_tokens, total=3, 2026-05-19) |
+| 
+outine_notifications system typy pod Smolkom | 28 riadkov (guardian_runner 15, ceo_command 13) |
+| 
+outine_notifications tenant typy pod Smolkom | guardian_runner 15, seller_rescue 13, 
+ew_lead 5 |
+| System agency row | Revolis System / 
+evolis-system / is_active=false |
+| aluation_estimates riadkov | 0 (tabuľka pripravená) |
+
+**Poznámka:** Historické system záznamy stále pod Smolkovým gency_id — backfill vyžaduje explicitné founder GO (zakázané v tejto migrácii).
