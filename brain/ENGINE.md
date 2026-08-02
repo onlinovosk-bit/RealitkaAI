@@ -127,6 +127,7 @@ Kým nevznikne samostatný strojovo čitateľný register, platí táto tabuľka
 | Brain update pravidlá | brain/ENGINE.md | founder | 30 dní |
 | Agent initialization | CLAUDE.md | founder | pri zmene procesu |
 | Feature rozhodovanie | docs/architecture/revolis-constitution-v2.md | founder | štvrťročne |
+| Kódové odôvodnenia (reuse / nové abstrakcie) | docs/architecture/engineering-constitution.md | engineering | pri zmene policy |
 | Right-sized engineering | docs/architecture/engineering-os-revolis-rightsized.md | founder | štvrťročne |
 | Prijaté rozhodnutia | memory/decisions.md a docs/adr | founder | pri rozhodnutí |
 | Aktuálna session | memory/session-summary.md | aktívny agent | na konci session |
