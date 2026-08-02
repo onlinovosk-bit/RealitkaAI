@@ -101,20 +101,20 @@
     ],
     "evidence": [
       {
-        "commit": "c4143545f24496a8cdea575375c6ffc3aa523533",
-        "note": "Inventory contains 1 file(s); digest sha256:4966da9737e6e542f9af5c2b6fd920274f6f4519dd94599d9a815def171e936d.",
+        "commit": "46c70402d4f17b757c7532bc137b03c30e948a7d",
+        "note": "Inventory contains 1 file(s); digest sha256:921d4106b362065d05af05ca1b1e367c43c65b652126635d9ff00e314d18a23f.",
         "path": "brain/ENGINE.md"
       }
     ],
     "id": "brain.engine",
     "inventory": {
-      "digest": "sha256:4966da9737e6e542f9af5c2b6fd920274f6f4519dd94599d9a815def171e936d",
+      "digest": "sha256:921d4106b362065d05af05ca1b1e367c43c65b652126635d9ff00e314d18a23f",
       "fileCount": 1,
       "sample": [
         "brain/ENGINE.md"
       ]
     },
-    "lastVerifiedAt": "2026-07-23",
+    "lastVerifiedAt": "2026-08-02",
     "name": "Revolis Brain OS Engine",
     "owner": "founder",
     "purpose": "Governance, evidence hierarchy, update protocol, and founder gates for company memory.",
@@ -124,7 +124,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "c4143545f24496a8cdea575375c6ffc3aa523533",
+      "commit": "46c70402d4f17b757c7532bc137b03c30e948a7d",
       "path": "brain/ENGINE.md"
     },
     "status": "active",
@@ -550,31 +550,31 @@
     "dependencies": [],
     "evidence": [
       {
-        "commit": "8abc7206726dc744d4427192cb160ae988bfc296",
-        "note": "Inventory contains 19 file(s); digest sha256:a44b4dcffa1dc8f108341d7a628a84afffa1534919a80d765e26c34f6bb9b15a.",
+        "commit": "46c70402d4f17b757c7532bc137b03c30e948a7d",
+        "note": "Inventory contains 20 file(s); digest sha256:931e2024d63b11792b1ac146ad9f25bf9eacecc5955bae1996926eed008c8bbc.",
         "path": "docs/architecture"
       }
     ],
     "id": "governance.architecture",
     "inventory": {
-      "digest": "sha256:a44b4dcffa1dc8f108341d7a628a84afffa1534919a80d765e26c34f6bb9b15a",
-      "fileCount": 19,
+      "digest": "sha256:931e2024d63b11792b1ac146ad9f25bf9eacecc5955bae1996926eed008c8bbc",
+      "fileCount": 20,
       "sample": [
         "docs/architecture/.phase0-probe-b/.gitkeep",
         "docs/architecture/L99-real-estate-vertical-pack-prompt.md",
         "docs/architecture/L99_ARCHITECTURE_AUDIT.md",
         "docs/architecture/antipatterns-log.md",
         "docs/architecture/clay-positioning-reframe.md",
+        "docs/architecture/engineering-constitution.md",
         "docs/architecture/engineering-os-revolis-rightsized.md",
         "docs/architecture/graph-audit-2026-07.md",
         "docs/architecture/inputs/lead-tables-authority-2026-07.md",
         "docs/architecture/inputs/memory-engine-sources-2026-07.md",
         "docs/architecture/l99-parked-concepts.md",
-        "docs/architecture/master-data-sourcing-map.md",
-        "docs/architecture/memory-engine-canonical-model.md"
+        "docs/architecture/master-data-sourcing-map.md"
       ]
     },
-    "lastVerifiedAt": "2026-07-28",
+    "lastVerifiedAt": "2026-08-02",
     "name": "Architecture and governance corpus",
     "owner": "founder",
     "purpose": "Canonical and supporting architecture documents used to constrain product and engineering work.",
@@ -585,7 +585,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "8abc7206726dc744d4427192cb160ae988bfc296",
+      "commit": "46c70402d4f17b757c7532bc137b03c30e948a7d",
       "path": "docs/architecture"
     },
     "status": "active",
@@ -598,7 +598,7 @@
       "engineering-justification",
       "reuse-policy"
     ],
-    "confidence": "low",
+    "confidence": "high",
     "createdAt": "2026-08-02",
     "dependencies": [
       "brain.engine",
@@ -607,16 +607,19 @@
     ],
     "evidence": [
       {
-        "commit": "uncommitted",
-        "note": "Source unavailable in the current workspace.",
+        "commit": "46c70402d4f17b757c7532bc137b03c30e948a7d",
+        "note": "Inventory contains 2 file(s); digest sha256:49a42ad4bfad31a90789f3777135c87ca344fd9d05d3c412f13f28393f86c665.",
         "path": "docs/architecture/engineering-constitution.md"
       }
     ],
     "id": "governance.engineering-constitution",
     "inventory": {
-      "digest": "unavailable",
-      "fileCount": 0,
-      "sample": []
+      "digest": "sha256:49a42ad4bfad31a90789f3777135c87ca344fd9d05d3c412f13f28393f86c665",
+      "fileCount": 2,
+      "sample": [
+        ".cursor/rules/l99-engineering-constitution.mdc",
+        "docs/architecture/engineering-constitution.md"
+      ]
     },
     "lastVerifiedAt": "2026-08-02",
     "name": "Engineering Constitution",
@@ -628,10 +631,10 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "uncommitted",
+      "commit": "46c70402d4f17b757c7532bc137b03c30e948a7d",
       "path": "docs/architecture/engineering-constitution.md"
     },
-    "status": "unknown",
+    "status": "active",
     "type": "governance"
   },
   {
@@ -729,21 +732,21 @@
     ],
     "evidence": [
       {
-        "commit": "d5d6e11719b61b75ea463ce2233f3d77cdbd1f2d",
-        "note": "Inventory contains 2 file(s); digest sha256:a75af7a3e4276ff2742c5e72135257d282fc4847a1d8e4d0918c6cb060fc2c0e.",
+        "commit": "46c70402d4f17b757c7532bc137b03c30e948a7d",
+        "note": "Inventory contains 2 file(s); digest sha256:a247713c0166c895f32ae96fe8392b9ab48e0086183371f690fbd150ff6cdb07.",
         "path": "memory/decisions.md"
       }
     ],
     "id": "memory.decisions",
     "inventory": {
-      "digest": "sha256:a75af7a3e4276ff2742c5e72135257d282fc4847a1d8e4d0918c6cb060fc2c0e",
+      "digest": "sha256:a247713c0166c895f32ae96fe8392b9ab48e0086183371f690fbd150ff6cdb07",
       "fileCount": 2,
       "sample": [
         "decisions.md",
         "memory/decisions.md"
       ]
     },
-    "lastVerifiedAt": "2026-07-29",
+    "lastVerifiedAt": "2026-08-02",
     "name": "Critical decisions log",
     "owner": "founder",
     "purpose": "Canonical historical decision source; generated Brain records remain pointers to this log.",
@@ -753,7 +756,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "d5d6e11719b61b75ea463ce2233f3d77cdbd1f2d",
+      "commit": "46c70402d4f17b757c7532bc137b03c30e948a7d",
       "path": "memory/decisions.md"
     },
     "status": "active",
@@ -817,18 +820,19 @@
     ],
     "evidence": [
       {
-        "commit": "c4e2e8c481e0bb720fb435378210df226d7ff745",
-        "note": "Inventory contains 10 file(s); digest sha256:044953f54b81a0d56993e9da7c444a8b960253e28e8bc752fa5c4a41643854a8.",
+        "commit": "46c70402d4f17b757c7532bc137b03c30e948a7d",
+        "note": "Inventory contains 11 file(s); digest sha256:60aa755d5f1dede6a74091f06d3120f90ae493c274b8173037996c7ea3d6cc5a.",
         "path": ".cursor/rules"
       }
     ],
     "id": "policy.cursor-rules",
     "inventory": {
-      "digest": "sha256:044953f54b81a0d56993e9da7c444a8b960253e28e8bc752fa5c4a41643854a8",
-      "fileCount": 10,
+      "digest": "sha256:60aa755d5f1dede6a74091f06d3120f90ae493c274b8173037996c7ea3d6cc5a",
+      "fileCount": 11,
       "sample": [
         ".cursor/rules/architecture.mdc",
         ".cursor/rules/l99-agent-operating-standard.mdc",
+        ".cursor/rules/l99-engineering-constitution.mdc",
         ".cursor/rules/l99-golden-rule.mdc",
         ".cursor/rules/l99-master-prompt-ref.mdc",
         ".cursor/rules/l99-prime-directive.mdc",
@@ -839,7 +843,7 @@
         ".cursor/rules/workflow.mdc"
       ]
     },
-    "lastVerifiedAt": "2026-07-26",
+    "lastVerifiedAt": "2026-08-02",
     "name": "Cursor governance rules",
     "owner": "engineering",
     "purpose": "Operational rules referenced as policy evidence, never reclassified as historical decisions.",
@@ -850,7 +854,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "c4e2e8c481e0bb720fb435378210df226d7ff745",
+      "commit": "46c70402d4f17b757c7532bc137b03c30e948a7d",
       "path": ".cursor/rules"
     },
     "status": "active",
