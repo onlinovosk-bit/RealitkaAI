@@ -85,7 +85,7 @@
 1. Prečítať **`docs/briefs/overnight/2026-07-31-swarm-verifikacia.md`** — sekcia Demo blockers.
 2. Apply migrácie: `20260731210000_valuation_estimates.sql` + `20260731220000_system_usage_agency.sql`.
 3. Spustiť audit: `apps/crm/docs/ops/system-usage-agency-audit.sql` (read-only, priložiť výstup).
-4. Widget smoke na prod: `/odhad/demo` + `/odhad/reality-smolko`.
+4. Widget smoke na prod: `https://app.revolis.ai/odhad/demo` + `https://app.revolis.ai/odhad/reality-smolko` (nie `www.revolis.ai` — 404). Demo sandbox submit **PASS** (2026-08-02).
 5. Demo GARANT REAL pondelok 8:45.
 
 ## Pravidlá
