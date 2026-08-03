@@ -94,7 +94,32 @@ type ProspectRow = {
   verified_at?: string | null;
 };
 
+/**
+ * ZAKÁZANÁ AKCIA (brain/identity/FOUNDER.md).
+ *
+ * Stealth Recruiter je natrvalo vypnutý dvoma pravidlami zo ZAKÁZANÝCH AKCIÍ:
+ *   1) „Žiadne obnovenie stealth recruitera"
+ *   2) „Žiadne automatické odosielanie emailov prospektom bez ľudského
+ *      schválenia (drafty áno, send nikdy)"
+ *
+ * Route posielala studené e-maily majiteľom nehnuteľností z domény
+ * noreply@revolis.ai bez opt-out vety. Rovnaká doména doručuje notifikácie
+ * platiacim zákazníkom — sťažnosť by poškodila doručovanie celého produktu.
+ *
+ * Kód sa ponecháva pre históriu, ale handler končí na 410 Gone PRED
+ * akoukoľvek autentifikáciou, volaním OpenAI alebo odoslaním e-mailu.
+ * Zapnutie vyžaduje výslovné rozhodnutie foundera zapísané v memory/decisions.md.
+ *
+ * Audit: docs/audit/2026-08-02-profit-leak-audit.md · nález C1
+ */
+const STEALTH_RECRUITER_DISABLED = {
+  error: "Stealth Recruiter je natrvalo vypnutý (ZAKÁZANÁ AKCIA).",
+  reference: "brain/identity/FOUNDER.md — ZAKÁZANÉ AKCIE",
+} as const;
+
 export async function POST(request: Request) {
+  return NextResponse.json(STEALTH_RECRUITER_DISABLED, { status: 410 });
+  // eslint-disable-next-line no-unreachable
   const access = await checkCapabilityAccess("canUseStealthRecruiter");
   if (!access.allowed) {
     return capabilityErrorResponse(access);
