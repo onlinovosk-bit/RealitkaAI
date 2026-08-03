@@ -10,15 +10,25 @@
  */
 
 import { NextResponse } from "next/server";
+import { createHash } from "crypto";
 import { createClient } from "@/lib/supabase/server";
 import { getClaudeClient, CLAUDE_SONNET } from "@/lib/ai/claude";
 import { SYSTEM_PROMPT, buildListingUserPrompt } from "@/lib/ai/listing-content";
 import type { PropertyInput, ListingPersona } from "@/lib/ai/listing-content";
+import { checkAiRateLimit } from "@/lib/ai/rate-guard";
+import { spendForAction } from "@/lib/credits/spend-for-action";
+import { logAiAction } from "@/lib/ai-action-audit";
+import { CREDIT_ACTION_COSTS } from "@/lib/program-tier-pricing";
 
 export async function POST(req: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
+  // Rate limit — streamovacia route bola doteraz jediná AI cesta bez neho.
+  // Rovnaký limit ako POST varianta, inak sa dá obísť prepnutím endpointu.
+  const block = await checkAiRateLimit(user.id, "listing-content", 10);
+  if (block) return NextResponse.json(block, { status: 429 });
 
   let property: PropertyInput, persona: ListingPersona;
   try {
@@ -30,6 +40,37 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "property.type and property.location required" }, { status: 400 });
   }
 
+  // Kredity — profil sa načíta PRED volaním modelu, aby sa pri nepokrytom
+  // úkone zbytočne neminuli tokeny. Vynucovanie je predvolene vypnuté
+  // (CREDITS_ENFORCEMENT != "enforce"), vtedy len vráti cenu a pustí ďalej.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("agency_id")
+    .eq("auth_user_id", user.id)
+    .maybeSingle();
+
+  const spend = await spendForAction({
+    action: "listingDescription",
+    agencyId: profile?.agency_id ?? null,
+    idempotencyKey: `listing_description_stream:${user.id}:${createHash("sha256")
+      .update(JSON.stringify(property))
+      .digest("hex")
+      .slice(0, 32)}`,
+  });
+
+  if (!spend.allowed) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: `Nedostatok kreditov — popis inzerátu stojí ${spend.cost} kreditov.`,
+        creditsRequired: spend.cost,
+        upgradeUrl: "/billing",
+      },
+      { status: 402 },
+    );
+  }
+
+  const startedAt = Date.now();
   const encoder   = new TextEncoder();
   const userPrompt = buildListingUserPrompt(property, persona);
 
@@ -54,6 +95,18 @@ export async function POST(req: Request) {
         }
 
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+
+        // Audit až po dokončení streamu — dovtedy nepoznáme latenciu.
+        // Draft sa tu NEUKLADÁ: stream vracia surový text, nie parsovaný
+        // ListingContent. Ukladá ho klient cez POST /generations po parse.
+        await logAiAction({
+          action: "listing_description",
+          agencyId: profile?.agency_id ?? null,
+          creditsSpent: CREDIT_ACTION_COSTS.listingDescription,
+          model: CLAUDE_SONNET,
+          latencyMs: Date.now() - startedAt,
+          meta: { persona, transport: "stream", creditsCharged: spend.charged },
+        });
       } catch (err) {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: String(err) })}\n\n`));
       } finally {
