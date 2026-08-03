@@ -14,6 +14,9 @@ const editSchema = z.object({
     email_body: z.string().max(20000),
     seo_keywords: z.array(z.string().max(120)).max(20),
   }),
+  chosenVariants: z
+    .record(z.enum(["conversion", "facts", "story", "honest"]))
+    .optional(),
   status: z.enum(["draft", "edited", "published", "discarded"]).optional(),
 });
 
@@ -41,6 +44,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     id,
     agencyId,
     editedOutput: parsed.data.editedOutput,
+    chosenVariants: parsed.data.chosenVariants ?? null,
     status: parsed.data.status,
   });
 
