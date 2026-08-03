@@ -101,7 +101,7 @@
     ],
     "evidence": [
       {
-        "commit": "46c70402d4f17b757c7532bc137b03c30e948a7d",
+        "commit": "593972a73ceb98bb428525859f9f42d41ed9607b",
         "note": "Inventory contains 1 file(s); digest sha256:921d4106b362065d05af05ca1b1e367c43c65b652126635d9ff00e314d18a23f.",
         "path": "brain/ENGINE.md"
       }
@@ -124,7 +124,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "46c70402d4f17b757c7532bc137b03c30e948a7d",
+      "commit": "593972a73ceb98bb428525859f9f42d41ed9607b",
       "path": "brain/ENGINE.md"
     },
     "status": "active",
@@ -340,14 +340,14 @@
     ],
     "evidence": [
       {
-        "commit": "cf1b4ef4efa2d33457b7b4d884d3b054832b23d2",
-        "note": "Inventory contains 224 file(s); digest sha256:87f91140d51842a8fc46dd97e45aac706ef4b3a290e69f3471af5ab08351a26c.",
+        "commit": "e7d1bc5a0ca69c0609329a1d18b0921fe94f243d",
+        "note": "Inventory contains 224 file(s); digest sha256:81146e8da99a57274957f815962d34259c0890e96eb9709dbdfd41045441278e.",
         "path": "apps/crm/src/app/api"
       }
     ],
     "id": "crm.api",
     "inventory": {
-      "digest": "sha256:87f91140d51842a8fc46dd97e45aac706ef4b3a290e69f3471af5ab08351a26c",
+      "digest": "sha256:81146e8da99a57274957f815962d34259c0890e96eb9709dbdfd41045441278e",
       "fileCount": 224,
       "sample": [
         "apps/crm/src/app/api/acquire/email/route.ts",
@@ -364,7 +364,7 @@
         "apps/crm/src/app/api/ai/closing-window/recompute/route.ts"
       ]
     },
-    "lastVerifiedAt": "2026-07-31",
+    "lastVerifiedAt": "2026-08-03",
     "name": "CRM route handlers",
     "owner": "engineering",
     "purpose": "Inventory of API route handlers used to verify documented endpoint paths.",
@@ -376,7 +376,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "cf1b4ef4efa2d33457b7b4d884d3b054832b23d2",
+      "commit": "e7d1bc5a0ca69c0609329a1d18b0921fe94f243d",
       "path": "apps/crm/src/app/api"
     },
     "status": "active",
@@ -397,14 +397,14 @@
     ],
     "evidence": [
       {
-        "commit": "cf1b4ef4efa2d33457b7b4d884d3b054832b23d2",
-        "note": "Inventory contains 506 file(s); digest sha256:33fc76fdaad8261647c8d70e333928e1459250cefee4a30be0239f4cbaa99db2.",
+        "commit": "e7d1bc5a0ca69c0609329a1d18b0921fe94f243d",
+        "note": "Inventory contains 506 file(s); digest sha256:42b554423c8da01b892bc94ee15ddfacf75a291e2f3bc666760e3f9354d21e2e.",
         "path": "apps/crm/src/app"
       }
     ],
     "id": "crm.application",
     "inventory": {
-      "digest": "sha256:33fc76fdaad8261647c8d70e333928e1459250cefee4a30be0239f4cbaa99db2",
+      "digest": "sha256:42b554423c8da01b892bc94ee15ddfacf75a291e2f3bc666760e3f9354d21e2e",
       "fileCount": 506,
       "sample": [
         "apps/crm/src/app/(dashboard)/DashboardClientShell.tsx",
@@ -421,7 +421,7 @@
         "apps/crm/src/app/(dashboard)/akvizieia/listy-z-katastra/loading.tsx"
       ]
     },
-    "lastVerifiedAt": "2026-07-31",
+    "lastVerifiedAt": "2026-08-03",
     "name": "CRM application surface",
     "owner": "engineering",
     "purpose": "Inventory of CRM pages, layouts, and application code used for documentation drift checks.",
@@ -431,7 +431,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "cf1b4ef4efa2d33457b7b4d884d3b054832b23d2",
+      "commit": "e7d1bc5a0ca69c0609329a1d18b0921fe94f243d",
       "path": "apps/crm/src/app"
     },
     "status": "active",
@@ -550,7 +550,7 @@
     "dependencies": [],
     "evidence": [
       {
-        "commit": "46c70402d4f17b757c7532bc137b03c30e948a7d",
+        "commit": "593972a73ceb98bb428525859f9f42d41ed9607b",
         "note": "Inventory contains 20 file(s); digest sha256:931e2024d63b11792b1ac146ad9f25bf9eacecc5955bae1996926eed008c8bbc.",
         "path": "docs/architecture"
       }
@@ -585,7 +585,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "46c70402d4f17b757c7532bc137b03c30e948a7d",
+      "commit": "593972a73ceb98bb428525859f9f42d41ed9607b",
       "path": "docs/architecture"
     },
     "status": "active",
@@ -607,7 +607,7 @@
     ],
     "evidence": [
       {
-        "commit": "46c70402d4f17b757c7532bc137b03c30e948a7d",
+        "commit": "593972a73ceb98bb428525859f9f42d41ed9607b",
         "note": "Inventory contains 2 file(s); digest sha256:49a42ad4bfad31a90789f3777135c87ca344fd9d05d3c412f13f28393f86c665.",
         "path": "docs/architecture/engineering-constitution.md"
       }
@@ -631,7 +631,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "46c70402d4f17b757c7532bc137b03c30e948a7d",
+      "commit": "593972a73ceb98bb428525859f9f42d41ed9607b",
       "path": "docs/architecture/engineering-constitution.md"
     },
     "status": "active",
@@ -732,7 +732,7 @@
     ],
     "evidence": [
       {
-        "commit": "46c70402d4f17b757c7532bc137b03c30e948a7d",
+        "commit": "593972a73ceb98bb428525859f9f42d41ed9607b",
         "note": "Inventory contains 2 file(s); digest sha256:a247713c0166c895f32ae96fe8392b9ab48e0086183371f690fbd150ff6cdb07.",
         "path": "memory/decisions.md"
       }
@@ -756,7 +756,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "46c70402d4f17b757c7532bc137b03c30e948a7d",
+      "commit": "593972a73ceb98bb428525859f9f42d41ed9607b",
       "path": "memory/decisions.md"
     },
     "status": "active",
@@ -820,7 +820,7 @@
     ],
     "evidence": [
       {
-        "commit": "46c70402d4f17b757c7532bc137b03c30e948a7d",
+        "commit": "593972a73ceb98bb428525859f9f42d41ed9607b",
         "note": "Inventory contains 11 file(s); digest sha256:60aa755d5f1dede6a74091f06d3120f90ae493c274b8173037996c7ea3d6cc5a.",
         "path": ".cursor/rules"
       }
@@ -854,7 +854,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "46c70402d4f17b757c7532bc137b03c30e948a7d",
+      "commit": "593972a73ceb98bb428525859f9f42d41ed9607b",
       "path": ".cursor/rules"
     },
     "status": "active",
