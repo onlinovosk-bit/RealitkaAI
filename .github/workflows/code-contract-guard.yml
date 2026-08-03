@@ -1,0 +1,38 @@
+name: Code Contract Guard
+
+# Vynucuje pravidlá, ktoré už existujú v .cursor/rules/, ale nikto ich nekontroloval.
+# Audit 2026-08-02: revolis-api.mdc dodržiavalo 3-27 % routes; spendCredits() bol
+# kompletný, otestovaný a bez jediného call site (únik 9 100 EUR/rok).
+#
+# OBE kontroly sú ratchet — baseline drží existujúci dlh a job zlyhá LEN pri novom
+# porušení. Zámerne: schema-governance-guard.yml musel byť vypnutý, lebo trvalo
+# červený beh vytrénoval alarm fatigue. Táto kontrola je na zelenej od prvého dňa.
+#
+# Žiadne secrets, žiadne npm ci — čisté Node skripty bez závislostí.
+
+on:
+  pull_request:
+    paths:
+      - "apps/crm/src/**"
+      - "apps/crm/scripts/check-api-contract.mjs"
+      - "apps/crm/scripts/find-dead-exports.mjs"
+      - "apps/crm/scripts/*-baseline.json"
+  workflow_dispatch:
+
+jobs:
+  contract:
+    name: Zmluva kódu (ratchet)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: API route contract (revolis-api.mdc)
+        run: node apps/crm/scripts/check-api-contract.mjs --ci
+
+      - name: Mŕtve exporty (trieda chyby spendCredits)
+        run: node apps/crm/scripts/find-dead-exports.mjs --ci
