@@ -340,14 +340,14 @@
     ],
     "evidence": [
       {
-        "commit": "e7d1bc5a0ca69c0609329a1d18b0921fe94f243d",
-        "note": "Inventory contains 224 file(s); digest sha256:81146e8da99a57274957f815962d34259c0890e96eb9709dbdfd41045441278e.",
+        "commit": "ba03f0ab793e8e8531074cdb2f3a9013c68ecbc0",
+        "note": "Inventory contains 224 file(s); digest sha256:40a5f08a9f4f0a20939b33bf224b127a95a30ab782d4f82538770f29bff7a42f.",
         "path": "apps/crm/src/app/api"
       }
     ],
     "id": "crm.api",
     "inventory": {
-      "digest": "sha256:81146e8da99a57274957f815962d34259c0890e96eb9709dbdfd41045441278e",
+      "digest": "sha256:40a5f08a9f4f0a20939b33bf224b127a95a30ab782d4f82538770f29bff7a42f",
       "fileCount": 224,
       "sample": [
         "apps/crm/src/app/api/acquire/email/route.ts",
@@ -376,7 +376,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "e7d1bc5a0ca69c0609329a1d18b0921fe94f243d",
+      "commit": "ba03f0ab793e8e8531074cdb2f3a9013c68ecbc0",
       "path": "apps/crm/src/app/api"
     },
     "status": "active",
@@ -397,14 +397,14 @@
     ],
     "evidence": [
       {
-        "commit": "e7d1bc5a0ca69c0609329a1d18b0921fe94f243d",
-        "note": "Inventory contains 506 file(s); digest sha256:42b554423c8da01b892bc94ee15ddfacf75a291e2f3bc666760e3f9354d21e2e.",
+        "commit": "ba03f0ab793e8e8531074cdb2f3a9013c68ecbc0",
+        "note": "Inventory contains 506 file(s); digest sha256:107eacd3ecd1e9b60414aa29bf4a9b77a3dc8f4441b702c0e658eb0f1608d0ae.",
         "path": "apps/crm/src/app"
       }
     ],
     "id": "crm.application",
     "inventory": {
-      "digest": "sha256:42b554423c8da01b892bc94ee15ddfacf75a291e2f3bc666760e3f9354d21e2e",
+      "digest": "sha256:107eacd3ecd1e9b60414aa29bf4a9b77a3dc8f4441b702c0e658eb0f1608d0ae",
       "fileCount": 506,
       "sample": [
         "apps/crm/src/app/(dashboard)/DashboardClientShell.tsx",
@@ -431,7 +431,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "e7d1bc5a0ca69c0609329a1d18b0921fe94f243d",
+      "commit": "ba03f0ab793e8e8531074cdb2f3a9013c68ecbc0",
       "path": "apps/crm/src/app"
     },
     "status": "active",
