@@ -1,0 +1,44 @@
+﻿{
+  "content": {
+    "portal_text": "PORTAL_CONVERSION_TEXT",
+    "fb_ad_copy": "FB_CONVERSION",
+    "ig_caption": "IG_CONVERSION",
+    "email_subject": "EMAIL_SUBJ_CONVERSION",
+    "email_body": "EMAIL_BODY_CONVERSION",
+    "seo_keywords": ["presov", "byt", "3-izbovy", "balkon", "parkovanie", "investicia"]
+  },
+  "variants": {
+    "conversion": {
+      "portal_text": "PORTAL_CONVERSION_TEXT",
+      "fb_ad_copy": "FB_CONVERSION",
+      "ig_caption": "IG_CONVERSION",
+      "email_subject": "EMAIL_SUBJ_CONVERSION",
+      "email_body": "EMAIL_BODY_CONVERSION",
+      "seo_keywords": ["presov", "byt", "3-izbovy", "balkon", "parkovanie", "investicia"]
+    },
+    "facts": {
+      "portal_text": "PORTAL_FACTS_TEXT",
+      "fb_ad_copy": "FB_FACTS",
+      "ig_caption": "IG_FACTS",
+      "email_subject": "EMAIL_SUBJ_FACTS",
+      "email_body": "EMAIL_BODY_FACTS",
+      "seo_keywords": ["fakty", "byt", "presov", "72m2", "165000", "dispozicia"]
+    },
+    "story": {
+      "portal_text": "PORTAL_STORY_TEXT",
+      "fb_ad_copy": "FB_STORY",
+      "ig_caption": "IG_STORY",
+      "email_subject": "EMAIL_SUBJ_STORY",
+      "email_body": "EMAIL_BODY_STORY",
+      "seo_keywords": ["pribeh", "sidisko", "rodina", "byt", "presov", "balkon"]
+    },
+    "honest": {
+      "portal_text": "PORTAL_HONEST_TEXT",
+      "fb_ad_copy": "FB_HONEST",
+      "ig_caption": "IG_HONEST",
+      "email_subject": "EMAIL_SUBJ_HONEST",
+      "email_body": "EMAIL_BODY_HONEST",
+      "seo_keywords": ["cestny", "byt", "presov", "rekonstrukcia", "vytah", "pivnica"]
+    }
+  }
+}
