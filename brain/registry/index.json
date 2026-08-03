@@ -341,14 +341,14 @@
     "evidence": [
       {
         "commit": "ba03f0ab793e8e8531074cdb2f3a9013c68ecbc0",
-        "note": "Inventory contains 224 file(s); digest sha256:40a5f08a9f4f0a20939b33bf224b127a95a30ab782d4f82538770f29bff7a42f.",
+        "note": "Inventory contains 225 file(s); digest sha256:9546f9a2b91408ebe0b41347770b414dd34e9ada2a545ecde0d274d0ab1fddb2.",
         "path": "apps/crm/src/app/api"
       }
     ],
     "id": "crm.api",
     "inventory": {
-      "digest": "sha256:40a5f08a9f4f0a20939b33bf224b127a95a30ab782d4f82538770f29bff7a42f",
-      "fileCount": 224,
+      "digest": "sha256:9546f9a2b91408ebe0b41347770b414dd34e9ada2a545ecde0d274d0ab1fddb2",
+      "fileCount": 225,
       "sample": [
         "apps/crm/src/app/api/acquire/email/route.ts",
         "apps/crm/src/app/api/activities/route.ts",
@@ -398,14 +398,14 @@
     "evidence": [
       {
         "commit": "ba03f0ab793e8e8531074cdb2f3a9013c68ecbc0",
-        "note": "Inventory contains 506 file(s); digest sha256:107eacd3ecd1e9b60414aa29bf4a9b77a3dc8f4441b702c0e658eb0f1608d0ae.",
+        "note": "Inventory contains 507 file(s); digest sha256:0843ca9f11dda6f3c4d42fa65560a1f80400c2b8e0229689f6bec35db965bec5.",
         "path": "apps/crm/src/app"
       }
     ],
     "id": "crm.application",
     "inventory": {
-      "digest": "sha256:107eacd3ecd1e9b60414aa29bf4a9b77a3dc8f4441b702c0e658eb0f1608d0ae",
-      "fileCount": 506,
+      "digest": "sha256:0843ca9f11dda6f3c4d42fa65560a1f80400c2b8e0229689f6bec35db965bec5",
+      "fileCount": 507,
       "sample": [
         "apps/crm/src/app/(dashboard)/DashboardClientShell.tsx",
         "apps/crm/src/app/(dashboard)/activities/error.tsx",

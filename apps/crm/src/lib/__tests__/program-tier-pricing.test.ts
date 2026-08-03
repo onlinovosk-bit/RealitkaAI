@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { CREDIT_RATES } from "@/lib/credits/credit-rates";
 import {
   CREDIT_GRANTS,
   CREDIT_ACTION_COSTS,
@@ -49,11 +50,12 @@ describe("program-tier-pricing v1.0", () => {
   });
 
   describe("CREDIT_ACTION_COSTS", () => {
-    it("defines spotrebný cenník", () => {
-      expect(CREDIT_ACTION_COSTS.leadUnlock).toBe(4);
-      expect(CREDIT_ACTION_COSTS.leadAnalysis).toBe(1);
-      expect(CREDIT_ACTION_COSTS.aiEmail).toBe(1);
-      expect(CREDIT_ACTION_COSTS.listingDescription).toBe(2);
+    it("mirrors CREDIT_RATES SSOT (leadUnlock=20)", () => {
+      expect(CREDIT_ACTION_COSTS.leadUnlock).toBe(CREDIT_RATES.LEAD_UNLOCK);
+      expect(CREDIT_ACTION_COSTS.leadUnlock).toBe(20);
+      expect(CREDIT_ACTION_COSTS.leadAnalysis).toBe(CREDIT_RATES.AI_ANALYSIS);
+      expect(CREDIT_ACTION_COSTS.aiEmail).toBe(CREDIT_RATES.AI_EMAIL);
+      expect(CREDIT_ACTION_COSTS.listingDescription).toBe(CREDIT_RATES.LISTING_DESCRIPTION);
     });
   });
 

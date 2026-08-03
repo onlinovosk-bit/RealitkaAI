@@ -1,5 +1,6 @@
 import type { PlanKey } from "@/lib/billing-types";
 import { PLAN_KEYS } from "@/lib/billing-types";
+import { CREDIT_RATES } from "@/lib/credits/credit-rates";
 
 /**
  * L99 pricing stack v1.0 — jediný zdroj pravdy pre seat, cockpit, kredity, add-ony.
@@ -114,12 +115,16 @@ export const COCKPIT_PRODUCTS: Record<CockpitProductKey, CockpitProductConfig> =
   },
 };
 
-/** Spotrebný cenník kreditov (Vrstva 3). */
+/**
+ * Spotrebný cenník kreditov (Vrstva 3) — display/audit mirror of CREDIT_RATES.
+ * SSOT for amounts: @/lib/credits/credit-rates (PR #339 debt / Wave 6A).
+ * Does not wire spendCredits(); call-site spend = Wave 7 (founder list).
+ */
 export const CREDIT_ACTION_COSTS = {
-  leadUnlock: 4,
-  leadAnalysis: 1,
-  aiEmail: 1,
-  listingDescription: 2,
+  leadUnlock: CREDIT_RATES.LEAD_UNLOCK,
+  leadAnalysis: CREDIT_RATES.AI_ANALYSIS,
+  aiEmail: CREDIT_RATES.AI_EMAIL,
+  listingDescription: CREDIT_RATES.LISTING_DESCRIPTION,
 } as const;
 
 export type CreditActionKey = keyof typeof CREDIT_ACTION_COSTS;
