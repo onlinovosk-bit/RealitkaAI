@@ -27,4 +27,15 @@ describe("usage-metrics system agency", () => {
       expect(mod.SYSTEM_USAGE_AGENCY_ID).toBe("33333333-3333-3333-3333-333333333333");
     });
   });
+
+  it("logs error when USAGE_SYSTEM_AGENCY_ID points at Smolko (paying customer)", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.stubEnv("USAGE_SYSTEM_AGENCY_ID", SMOLKO_AGENCY_ID);
+    vi.resetModules();
+    await import("@/lib/usage-metrics");
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("SYSTEM_USAGE_AGENCY_ID ukazuje na agentúru platiaceho zákazníka"),
+    );
+    errorSpy.mockRestore();
+  });
 });
