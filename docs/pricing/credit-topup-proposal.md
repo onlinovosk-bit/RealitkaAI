@@ -80,7 +80,8 @@ Webhook: `POST /api/billing/webhook` · metadata `checkoutType=credit_topup`.
 
 ### 7. Triviálne fixy (1 PR)
 
-1. `ListingGeneratorForm` link `/billing` → `/upgrade` (dočasne) alebo `/billing#topup`
+1. `ListingGeneratorClient` (`components/listing-generator/`) — link `/billing` → `/upgrade` (dočasne) alebo `/billing#topup`.
+   *Pozn. 2026-08-03: pôvodný odkaz na `ListingGeneratorForm` bol na komponent, ktorý neexistoval.*
 2. `areTopupCheckoutPricesConfigured()` — odmietnuť `price_xxx` / neplatné ID
 3. `/api/billing/plan` — pridať `creditsBalance`, `grantBalance`, `purchasedBalance`
 

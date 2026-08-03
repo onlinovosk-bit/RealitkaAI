@@ -5,7 +5,7 @@ import { generateListingContent } from "@/lib/ai/listing-content";
 import type { PropertyInput, ListingPersona } from "@/lib/ai/listing-content";
 import { logAiAction } from "@/lib/ai-action-audit";
 import { CREDIT_ACTION_COSTS } from "@/lib/program-tier-pricing";
-import { spendForAction } from "@/lib/credits/spend-for-action";
+import { spendForAction, creditsEnforcementEnabled } from "@/lib/credits/spend-for-action";
 import { createHash } from "crypto";
 import { saveGeneration } from "@/lib/listings/generations-store";
 
@@ -89,5 +89,10 @@ export async function POST(req: Request) {
     creditsSpent: spend.charged ? spend.cost : 0,
   });
 
-  return NextResponse.json({ ok: true, content, generationId: saved.id ?? null });
+  return NextResponse.json({
+    ok: true,
+    content,
+    generationId: saved.id ?? null,
+    credits: { cost: spend.cost, charged: spend.charged, enforced: creditsEnforcementEnabled() },
+  });
 }
