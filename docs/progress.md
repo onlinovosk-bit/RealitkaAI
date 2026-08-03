@@ -12,6 +12,8 @@
 **Revolis.AI** je AI-first CRM platforma pre slovenské realitné kancelárie.  
 Vyvíja ju **ONLINOVO, s.r.o.** (Štúrova 130/25, 058 01 Poprad · IČO: 54166942).
 
+> **IČO anti-confusion:** ONLINOVO (dodávateľ) = **54166942**. Reality Smolko (1. klient, sekcia nižšie) = **54539251** (54 539 251). Tieto IČO **nezamieňať** — Wave 6B overenie 2026-08-03: atribúcie v tomto súbore sú správne; verifikácia, ktorá chcela prepísať riadok Smolko na 54166942, bola false positive.
+
 **Stack:** Next.js 15 · TypeScript strict · Tailwind CSS v3 · Supabase · Stripe · OpenAI · Resend · web-push  
 **Monorepo:** `apps/crm/` (CRM) · `apps/marketing/` (Marketing site) · Vercel Root Directory: `apps/crm`
 
