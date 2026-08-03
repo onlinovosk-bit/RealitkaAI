@@ -7,6 +7,14 @@ import {
 } from "@/lib/credits/grant-engine";
 
 /** Mesačný grant — 1. deň mesiaca (vercel.json). */
+/**
+ * @deprecated Od 2026-08-02 už nie je v vercel.json. Mesačný cyklus beží ako jeden
+ * atomický krok v /api/cron/credits-cycle (expirácia -> grant, deterministické poradie).
+ * Dôvod: Vercel Hobby má presnosť plánovania ±59 min, takže dva crony hodinu po sebe
+ * sa mohli vykonať v opačnom poradí a grant by bol okamžite expirovaný.
+ * Route je ponechaná ako ručný nástroj — je idempotentná cez credit_ledger.
+ * Audit: docs/audit/2026-08-02-profit-leak-audit.md — nález E1
+ */
 export async function GET(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret || request.headers.get("authorization") !== `Bearer ${cronSecret}`) {

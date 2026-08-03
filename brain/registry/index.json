@@ -340,15 +340,15 @@
     ],
     "evidence": [
       {
-        "commit": "bcf56b54f3b98f99d5f886cbdf9f3632698639d8",
-        "note": "Inventory contains 224 file(s); digest sha256:8ad7370e00a258dbf3cd8298cdde31b8c5d64aa26b4592ba9b7960520d059ee3.",
+        "commit": "563438b30b21b8809f3731a167daf196eb47a2b8",
+        "note": "Inventory contains 225 file(s); digest sha256:f62dfe994ef4919ae341fbb1b8bb4b9d6b96a88f7716bb24e5a2d78cae0afad9.",
         "path": "apps/crm/src/app/api"
       }
     ],
     "id": "crm.api",
     "inventory": {
-      "digest": "sha256:8ad7370e00a258dbf3cd8298cdde31b8c5d64aa26b4592ba9b7960520d059ee3",
-      "fileCount": 224,
+      "digest": "sha256:f62dfe994ef4919ae341fbb1b8bb4b9d6b96a88f7716bb24e5a2d78cae0afad9",
+      "fileCount": 225,
       "sample": [
         "apps/crm/src/app/api/acquire/email/route.ts",
         "apps/crm/src/app/api/activities/route.ts",
@@ -376,7 +376,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "bcf56b54f3b98f99d5f886cbdf9f3632698639d8",
+      "commit": "563438b30b21b8809f3731a167daf196eb47a2b8",
       "path": "apps/crm/src/app/api"
     },
     "status": "active",
@@ -397,15 +397,15 @@
     ],
     "evidence": [
       {
-        "commit": "bcf56b54f3b98f99d5f886cbdf9f3632698639d8",
-        "note": "Inventory contains 506 file(s); digest sha256:991ad16910c73e7752a481d01966ff15199858feff10d47101f6c44e362af88a.",
+        "commit": "563438b30b21b8809f3731a167daf196eb47a2b8",
+        "note": "Inventory contains 507 file(s); digest sha256:f424685d9459c6c04e458a72abe7f2379f81fc32510ccf3c268465382b86e18e.",
         "path": "apps/crm/src/app"
       }
     ],
     "id": "crm.application",
     "inventory": {
-      "digest": "sha256:991ad16910c73e7752a481d01966ff15199858feff10d47101f6c44e362af88a",
-      "fileCount": 506,
+      "digest": "sha256:f424685d9459c6c04e458a72abe7f2379f81fc32510ccf3c268465382b86e18e",
+      "fileCount": 507,
       "sample": [
         "apps/crm/src/app/(dashboard)/DashboardClientShell.tsx",
         "apps/crm/src/app/(dashboard)/activities/error.tsx",
@@ -431,7 +431,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "bcf56b54f3b98f99d5f886cbdf9f3632698639d8",
+      "commit": "563438b30b21b8809f3731a167daf196eb47a2b8",
       "path": "apps/crm/src/app"
     },
     "status": "active",
