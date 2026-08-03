@@ -16,7 +16,15 @@ import { normalizeRegion } from "@/lib/stealth-recruiter/scan-filters";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+/** ZAKÁZANÁ AKCIA — viď api/stealth-recruiter/outreach/route.ts. Vypnuté na 410. */
+const STEALTH_RECRUITER_DISABLED = {
+  error: "Stealth Recruiter je natrvalo vypnutý (ZAKÁZANÁ AKCIA).",
+  reference: "brain/identity/FOUNDER.md — ZAKÁZANÉ AKCIE",
+} as const;
+
 export async function GET(request: NextRequest) {
+  return NextResponse.json(STEALTH_RECRUITER_DISABLED, { status: 410 });
+  // eslint-disable-next-line no-unreachable
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret || request.headers.get("authorization") !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
