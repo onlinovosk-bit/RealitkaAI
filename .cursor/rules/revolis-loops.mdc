@@ -1,0 +1,82 @@
+---
+description: Pravidlá pre opakované pracovné slučky agentov (rozpočet, fázy, stop podmienky)
+alwaysApply: true
+---
+
+# Revolis — pracovné slučky
+
+Platí pre **každé** zadanie, ktoré sa má opakovať bez zásahu človeka: Ruflo Swarm,
+`/loop`, naplánované úlohy, agenti v CI. Nie pre jednorazový prompt.
+
+Doplnok k `revolis-incidents.mdc`. Tri veci nižšie sú jediné, ktoré Revolisu
+chýbali — dôkaz namiesto pocitu, oddelený kontrolór a ľudská brána už má
+v `.cursor/rules/workflow.mdc`, `revolis-api.mdc` a v ZAKÁZANÝCH AKCIÁCH.
+
+---
+
+## L-01 · Bez rozpočtu sa slučka nespúšťa
+
+Každé opakované zadanie musí mať **všetky tri** limity:
+
+| Limit | Príklad |
+|---|---|
+| Maximálny počet pokusov | `max 6 kôl` |
+| Maximálny čas alebo tokeny | `max 20 minút` |
+| Stop pri stagnácii | `zastav, ak dve kolá po sebe neprinesú zmenu` |
+
+Tretí limit je najdôležitejší a najčastejšie chýba. Bráni tomu, aby agent
+donekonečna prepisoval to isté a míňal tokeny bez pokroku.
+
+> **Zadanie bez rozpočtu = balík nie je pripravený.** Rovnaké pravidlo ako
+> pri chýbajúcej sekcii Build Package.
+
+## L-02 · Prvý beh je vždy iba čítanie
+
+Nová slučka prechádza troma fázami. Preskočiť sa nedá.
+
+| Fáza | Čo smie | Prechod ďalej |
+|---|---|---|
+| **1 · Iba čítanie** | nič nemení, len napíše, čo by urobila a aký dôkaz očakáva | founder prečíta a schváli |
+| **2 · Obmedzený zápis** | len vymenované cesty, len na branchi, nikdy prod | 3 behy bez prekvapenia |
+| **3 · Dôveryhodná slučka** | ohraničené zmeny automaticky, stále s limitom a reportom | — |
+
+Citlivé operácie zostávajú za ľudskou bránou vo **všetkých** fázach:
+migrácie · prod `DELETE`/`UPDATE` · odosielanie e-mailov · credentials ·
+publikovanie navonok.
+
+## L-03 · Dôkaz musí byť príkaz, nie zhrnutie
+
+Agent, ktorý zmenu vytvoril, nesmie byť jediným rozhodcom vlastnej práce.
+Úspech určuje **návratový kód alebo merateľný výstup**, nie odsek textu.
+
+Použiteľné dôkazy v tomto repe:
+
+```
+npx tsc --noEmit
+npm run test -- <oblasť>
+npx vitest run tests/rls/
+node apps/crm/scripts/check-api-contract.mjs --ci
+node apps/crm/scripts/find-dead-exports.mjs --ci
+gh pr checks --watch
+curl -fsS https://app.revolis.ai/api/healthz     # /api/health NEEXISTUJE, vracia 401
+```
+
+> Ak sa úspech nedá odmerať príkazom, **zúž úlohu**, kým sa dá.
+> „Skontroluj, či je to správne" nie je dôkaz.
+
+---
+
+## Povinná hlavička každého slučkového zadania
+
+```
+SPÚŠŤAČ:    čo začne nové kolo
+ROZSAH:     ktoré cesty smie meniť · čo je výslovne zakázané
+AKCIA:      konkrétne kroky v poradí
+DÔKAZ:      príkaz, ktorý rozhodne o úspechu
+ROZPOČET:   max N pokusov · max X minút · stop pri 2 kolách bez zmeny
+FÁZA:       1 iba čítanie / 2 obmedzený zápis / 3 dôveryhodná
+STOP+REPORT: čo sa zmenilo · ktoré kontroly prešli · čo stále nefunguje ·
+             čo potrebuje rozhodnutie človeka
+```
+
+Chýbajúci riadok = zadanie sa nespúšťa.
