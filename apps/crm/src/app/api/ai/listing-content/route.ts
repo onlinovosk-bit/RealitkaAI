@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { checkAiRateLimit } from "@/lib/ai/rate-guard";
 import { generateListingContent } from "@/lib/ai/listing-content";
+import { generateListingVariants } from "@/lib/ai/listing-variants";
 import type { PropertyInput, ListingPersona } from "@/lib/ai/listing-content";
 import { logAiAction } from "@/lib/ai-action-audit";
 import { CREDIT_ACTION_COSTS } from "@/lib/program-tier-pricing";
@@ -17,9 +18,9 @@ export async function POST(req: Request) {
   const block = await checkAiRateLimit(user.id, "listing-content", 10);
   if (block) return NextResponse.json(block, { status: 429 });
 
-  let body: { property: PropertyInput; persona?: ListingPersona; propertyId?: string };
+  let body: { property: PropertyInput; persona?: ListingPersona; propertyId?: string; variants?: boolean };
   try {
-    body = (await req.json()) as { property: PropertyInput; persona?: ListingPersona; propertyId?: string };
+    body = (await req.json()) as { property: PropertyInput; persona?: ListingPersona; propertyId?: string; variants?: boolean };
   } catch {
     return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
   }
@@ -62,7 +63,16 @@ export async function POST(req: Request) {
     );
   }
 
-  const { content, audit } = await generateListingContent(body.property, body.persona ?? "GENERAL");
+  // variants=true vygeneruje 4 štýlové varianty jedným volaním. Input sa
+  // neopakuje, násobí sa len output — 0,064 EUR oproti 0,0185 EUR za jeden.
+  const multi = body.variants === true;
+  const generated = multi
+    ? await generateListingVariants(body.property, body.persona ?? "GENERAL")
+    : await generateListingContent(body.property, body.persona ?? "GENERAL");
+
+  const variants = "variants" in generated ? generated.variants : null;
+  const content = "content" in generated ? generated.content : generated.variants.conversion;
+  const audit = generated.audit;
 
   await logAiAction({
     action: "listing_description",
@@ -83,6 +93,7 @@ export async function POST(req: Request) {
     persona: body.persona ?? "GENERAL",
     property: body.property,
     content,
+    variants,
     model: audit.model,
     latencyMs: audit.latencyMs,
     costEur: audit.costEur,
@@ -92,6 +103,7 @@ export async function POST(req: Request) {
   return NextResponse.json({
     ok: true,
     content,
+    variants,
     generationId: saved.id ?? null,
     credits: { cost: spend.cost, charged: spend.charged, enforced: creditsEnforcementEnabled() },
   });

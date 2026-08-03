@@ -2,6 +2,12 @@
 
 import { useState } from "react";
 import type { ListingContent, ListingPersona, PropertyInput } from "@/lib/ai/listing-content";
+import {
+  LISTING_VARIANTS,
+  LISTING_VARIANT_KEYS,
+  type ListingVariantKey,
+  type ListingVariants,
+} from "@/lib/ai/listing-variants";
 
 const PERSONAS: { value: ListingPersona; label: string; hint: string }[] = [
   { value: "GENERAL", label: "Všeobecný kupujúci", hint: "Vyvážený text, hlavné silné stránky" },
@@ -35,6 +41,11 @@ export default function ListingGeneratorClient() {
   const [persona, setPersona] = useState<ListingPersona>("GENERAL");
 
   const [content, setContent] = useState<ListingContent | null>(null);
+  const [variants, setVariants] = useState<ListingVariants | null>(null);
+  /** Z ktorého variantu pochádza ktoré pole — to je ten moat signál. */
+  const [chosen, setChosen] = useState<Partial<Record<keyof ListingContent, ListingVariantKey>>>({});
+  /** Polia, ktoré maklér ručne prepísal — nesmú sa prepnutím variantu stratiť bez varovania. */
+  const [touched, setTouched] = useState<Set<string>>(new Set());
   const [generationId, setGenerationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,6 +81,7 @@ export default function ListingGeneratorClient() {
               .filter(Boolean),
           },
           persona,
+          variants: true,
         }),
       });
       const data = await res.json();
@@ -82,8 +94,19 @@ export default function ListingGeneratorClient() {
         setError(data.error ?? "Generovanie zlyhalo. Skúste znova.");
         return;
       }
+      const vs = (data.variants ?? null) as ListingVariants | null;
+      setVariants(vs);
       setContent(data.content as ListingContent);
       setGenerationId(data.generationId ?? null);
+      // Východisko: všetko z konverzného variantu, maklér prepína po poliach.
+      setChosen(
+        vs
+          ? (Object.fromEntries(
+              CHANNELS.map((c) => [c.key, "conversion" as ListingVariantKey]),
+            ) as Partial<Record<keyof ListingContent, ListingVariantKey>>)
+          : {},
+      );
+      setTouched(new Set());
       setDirty(false);
     } catch {
       setError("Nepodarilo sa spojiť so serverom.");
@@ -94,6 +117,33 @@ export default function ListingGeneratorClient() {
 
   function editField(key: keyof ListingContent, value: string) {
     setContent((c) => (c ? { ...c, [key]: value } : c));
+    setTouched((t) => new Set(t).add(String(key)));
+    setDirty(true);
+    setSavedAt(null);
+  }
+
+  /**
+   * Prepnutie variantu pre JEDNO pole — takto sa varianty miešajú.
+   * Maklér môže mať portál z „Príbehu", Facebook z „Konverzného"
+   * a e-mail z „Faktov". Výber sa zapisuje do chosen a ukladá cez PATCH.
+   */
+  function pickVariant(key: keyof ListingContent, variant: ListingVariantKey) {
+    if (!variants) return;
+    if (touched.has(String(key))) {
+      const ok = window.confirm(
+        "Toto pole si ručne upravil. Prepnutím variantu sa úprava prepíše. Pokračovať?",
+      );
+      if (!ok) return;
+    }
+    const next = variants[variant]?.[key];
+    if (next === undefined) return;
+    setContent((c) => (c ? { ...c, [key]: next } : c));
+    setChosen((ch) => ({ ...ch, [key]: variant }));
+    setTouched((t) => {
+      const n = new Set(t);
+      n.delete(String(key));
+      return n;
+    });
     setDirty(true);
     setSavedAt(null);
   }
@@ -104,7 +154,7 @@ export default function ListingGeneratorClient() {
     const res = await fetch(`/api/ai/listing-content/generations/${generationId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ editedOutput: content, status: "edited" }),
+      body: JSON.stringify({ editedOutput: content, chosenVariants: chosen, status: "edited" }),
     });
     if (res.ok) {
       setDirty(false);
@@ -225,9 +275,17 @@ export default function ListingGeneratorClient() {
       {content && (
         <section className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400">
-              Vygenerované texty
-            </h2>
+            <div>
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400">
+                Vygenerované texty
+              </h2>
+              {variants && (
+                <p className="mt-1 text-xs text-slate-500">
+                  Ku každému kanálu máš štyri štýly. Vyber si pri každom zvlášť —
+                  portál môže byť z „Príbehu miesta", Facebook z „Konverzného".
+                </p>
+              )}
+            </div>
             <div className="flex items-center gap-3">
               {savedAt && <span className="text-xs text-emerald-400">Uložené o {savedAt}</span>}
               {dirty && generationId && (
@@ -256,6 +314,33 @@ export default function ListingGeneratorClient() {
                     </button>
                   </div>
                 </header>
+                {variants && (
+                  <div className="mb-3 flex flex-wrap gap-1.5">
+                    {LISTING_VARIANT_KEYS.map((vk) => {
+                      const meta = LISTING_VARIANTS[vk];
+                      const active = chosen[ch.key] === vk;
+                      return (
+                        <button
+                          key={vk}
+                          type="button"
+                          title={`${meta.hint} — ${meta.bestFor}`}
+                          onClick={() => pickVariant(ch.key, vk)}
+                          className={`rounded-full border px-2.5 py-1 text-xs transition ${
+                            active
+                              ? "border-violet-500 bg-violet-500/15 text-violet-200"
+                              : "border-slate-700 text-slate-400 hover:border-slate-500 hover:text-slate-200"
+                          }`}
+                        >
+                          {meta.label}
+                        </button>
+                      );
+                    })}
+                    {touched.has(String(ch.key)) && (
+                      <span className="self-center pl-1 text-xs text-amber-400">upravené ručne</span>
+                    )}
+                  </div>
+                )}
+
                 {ch.multiline ? (
                   <textarea rows={ch.key === "portal_text" ? 10 : 5} value={value}
                     onChange={(e) => editField(ch.key, e.target.value)}

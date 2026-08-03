@@ -1,5 +1,6 @@
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 import type { ListingContent, ListingPersona, PropertyInput } from "@/lib/ai/listing-content";
+import type { ListingVariantKey, ListingVariants } from "@/lib/ai/listing-variants";
 
 export type GenerationStatus = "draft" | "edited" | "published" | "discarded";
 
@@ -11,9 +12,29 @@ export type AiGeneration = {
   output: ListingContent | null;
   editedOutput: ListingContent | null;
   status: GenerationStatus;
+  variants: ListingVariants | null;
+  /** Mapa pole -> variant. Zaznamenáva, čo si maklér z ktorého variantu vybral. */
+  chosenVariants: Partial<Record<keyof ListingContent, ListingVariantKey>> | null;
+  primaryVariant: ListingVariantKey | null;
   createdAt: string;
   updatedAt: string;
 };
+
+/** Prevažujúci variant — na agregácie „ktorý štýl vyhráva v okrese X". */
+export function computePrimaryVariant(
+  chosen: Partial<Record<string, ListingVariantKey>> | null | undefined,
+): ListingVariantKey | null {
+  if (!chosen) return null;
+  const tally = new Map<ListingVariantKey, number>();
+  for (const v of Object.values(chosen)) {
+    if (!v) continue;
+    tally.set(v, (tally.get(v) ?? 0) + 1);
+  }
+  let best: ListingVariantKey | null = null;
+  let bestN = 0;
+  for (const [v, n] of tally) if (n > bestN) { best = v; bestN = n; }
+  return best;
+}
 
 function mapRow(r: Record<string, unknown>): AiGeneration {
   return {
@@ -24,6 +45,9 @@ function mapRow(r: Record<string, unknown>): AiGeneration {
     output: (r.output as ListingContent) ?? null,
     editedOutput: (r.edited_output as ListingContent) ?? null,
     status: (r.status as GenerationStatus) ?? "draft",
+    variants: (r.variants as ListingVariants) ?? null,
+    chosenVariants: (r.chosen_variants as AiGeneration["chosenVariants"]) ?? null,
+    primaryVariant: (r.primary_variant as ListingVariantKey) ?? null,
     createdAt: String(r.created_at),
     updatedAt: String(r.updated_at),
   };
@@ -42,6 +66,7 @@ export async function saveGeneration(input: {
   persona: ListingPersona;
   property: PropertyInput;
   content: ListingContent | null;
+  variants?: ListingVariants | null;
   model?: string | null;
   latencyMs?: number | null;
   costEur?: number | null;
@@ -62,6 +87,7 @@ export async function saveGeneration(input: {
         persona: input.persona,
         input: input.property,
         output: input.content,
+        variants: input.variants ?? null,
         model: input.model ?? null,
         latency_ms: input.latencyMs ?? null,
         cost_eur: input.costEur ?? null,
@@ -87,6 +113,7 @@ export async function updateGenerationEdit(input: {
   id: string;
   agencyId: string;
   editedOutput: ListingContent;
+  chosenVariants?: Partial<Record<keyof ListingContent, ListingVariantKey>> | null;
   status?: GenerationStatus;
 }): Promise<{ ok: boolean; error?: string }> {
   const supabase = createServiceRoleClient();
@@ -95,7 +122,12 @@ export async function updateGenerationEdit(input: {
   const { error, count } = await supabase
     .from("ai_generations")
     .update(
-      { edited_output: input.editedOutput, status: input.status ?? "edited" },
+      {
+        edited_output: input.editedOutput,
+        chosen_variants: input.chosenVariants ?? null,
+        primary_variant: computePrimaryVariant(input.chosenVariants),
+        status: input.status ?? "edited",
+      },
       { count: "exact" },
     )
     .eq("id", input.id)
