@@ -1,6 +1,6 @@
 import type { PlanKey } from "@/lib/billing-types";
 import { PLAN_KEYS } from "@/lib/billing-types";
-import { CREDIT_RATES } from "@/lib/credits/credit-rates";
+import { getCreditRate } from "@/lib/credits/credit-rates";
 
 /**
  * L99 pricing stack v1.0 — jediný zdroj pravdy pre seat, cockpit, kredity, add-ony.
@@ -121,10 +121,10 @@ export const COCKPIT_PRODUCTS: Record<CockpitProductKey, CockpitProductConfig> =
  * Does not wire spendCredits(); call-site spend = Wave 7 (founder list).
  */
 export const CREDIT_ACTION_COSTS = {
-  leadUnlock: CREDIT_RATES.LEAD_UNLOCK,
-  leadAnalysis: CREDIT_RATES.AI_ANALYSIS,
-  aiEmail: CREDIT_RATES.AI_EMAIL,
-  listingDescription: CREDIT_RATES.LISTING_DESCRIPTION,
+  leadUnlock: getCreditRate("LEAD_UNLOCK"),
+  leadAnalysis: getCreditRate("AI_ANALYSIS"),
+  aiEmail: getCreditRate("AI_EMAIL"),
+  listingDescription: getCreditRate("LISTING_DESCRIPTION"),
 } as const;
 
 export type CreditActionKey = keyof typeof CREDIT_ACTION_COSTS;

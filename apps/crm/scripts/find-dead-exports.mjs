@@ -62,14 +62,29 @@ for (const [p, t] of blobs) {
   tokens.set(p, new Set(t.match(/[A-Za-z_$][\w$]*/g) ?? []));
 }
 
-// 3. export bez použitia mimo vlastného súboru
+// 3. export bez JEDINÉHO použitia — ani v cudzom súbore, ani vo vlastnom
+//
+// Pozor na rozdiel: helper exportovaný kvôli testom, ktorý sa používa vnútri
+// svojho modulu, NIE je mŕtvy kód — je to normálny vnútorný pomocník.
+// spendCredits() bol iný prípad: nevolal ho nikto, vrátane vlastného súboru.
+// Preto sa počíta aj výskyt v definičnom súbore, ale bez samotnej deklarácie.
+const DECL = (n) => new RegExp(`export\\s+(?:async\\s+)?function\\s+${n}\\b`, "g");
 const dead = [];
 for (const [name, defPath] of exports) {
   if (FRAMEWORK.has(name)) continue;
+
   let used = false;
   for (const [p, toks] of tokens) {
     if (p !== defPath && toks.has(name)) { used = true; break; }
   }
+
+  if (!used) {
+    // Použitie vo vlastnom súbore mimo deklarácie sa počíta ako použitie.
+    const own = (blobs.get(defPath) ?? "").replace(DECL(name), "");
+    const hits = own.match(new RegExp(`\\b${name}\\b`, "g"));
+    if (hits && hits.length > 0) used = true;
+  }
+
   if (!used) dead.push(`${relative(ROOT, defPath).replace(/\\/g, "/")}#${name}`);
 }
 dead.sort();
