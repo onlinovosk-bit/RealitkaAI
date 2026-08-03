@@ -297,3 +297,33 @@
 - **Related paths:** `docs/architecture/engineering-constitution.md`, `.cursor/rules/l99-engineering-constitution.mdc`, `brain/src/catalog.ts`, `rme-dec-20260802-001`
 - **Contradiction check:** none â€” dopÄºÅˆa `engineering-os-revolis-rightsized.md` L3 ADR, nekonflikuje s Revolis Constitution v2
 - **PR / vetva:** docs/engineering-constitution-decision-memory
+
+## [2026-08-03] - Night Operations v0 (A1/A2/A3) ? Strategic Bet · BUILD (founder GO option C)
+
+- **Kategória:** Strategic Bet (klasifikácia v2) · timebox ~3 dni · promote / re-bet / kill
+- **SSOT:** `docs/architecture/2026-08-03-night-operations.md` · Center: `docs/architecture/2026-08-03-night-operations-center.md`
+- **Setup:** `docs/automations/2026-08-03-setup-karta.md`
+- **Uzly dnes:** A1 Architecture Guardian · A2 Strá?ca vetiev · A3 Ranný brief (Fáza 1 read-only)
+- **Zakázané:** portal scrape · auto-deploy · prod DELETE · CREDITS_ENFORCEMENT on · merge #356?#366 nie je sú?as?ou tohto balíka
+- **Review / kill dátum:** **2026-09-08** (ADR + 30d metriky); prvá kill kontrola **2026-08-08**
+
+### ADR-001 ? Orchestrátor a? pri piatom uzle
+Piaty uzol = orchestrátor. Do ?tyroch sa reporty ?ítajú jednotlivo. Ranný brief je reportovacia vrstva, nie ?tvrtý ?feature? uzol.
+
+### ADR-002 ? Vstupná brána
+Ka?dý uzol má vstupnú bránu. Uzol bez brány sa nestavia.
+
+### ADR-003 ? Vrstva 4: navrhova?, nestava?
+Vrstva 4 smie navrhova?, prioritizova?, odhadova? návratnos? a pripravi? PR. Nikdy commit, merge ani deploy bez ?loveka.
+
+### ADR-004 ? Dvojité odôvodnenie (východisko, nie zákon)
+Nový uzol vy?aduje technické **aj** obchodné odôvodnenie. Ani jedno samo nesta?í. Predvolené prahy (4. uzol: +10 oslovených; orchestrátor: 3. platiaci; Center: 5 platiacich) sú **východisko**; odchýlka je povolená so zapísaným dôvodom a dátumom revízie v tomto súbore. Neuznaný dôvod: ?bolo by to zaujímavé postavi?.?
+
+### ADR-005 ? ?ivotný cyklus uzla
+NÁVRH ? BE?Í ? VYHODNOTENIE (30/90 dní) ? PONECHA? | ZLÚ?I? | VYPNÚ?. Vypnutý uzol sa **nema?e** ? zostáva v repe s dátumom a dôvodom. Spú??a?e vypnutia: 30 dní bez verdiktu v `docs/audit/nodes-value.jsonl` · 30 dní bez akcie · trvalo ?ervený 14 dní · nahradený · prah splnený natrvalo.
+
+### Kill kritérium
+Ak 2026-08-08 nebude founder vedie? poveda?, ?e reporty ?ítal pä? rán po sebe, vypnú? v?etky tri a nestava? ?tvrtý.
+
+- **Verdikt schema:** `verdict ? { konal | vedel | zbyto?né }` ? append do `docs/audit/nodes-value.jsonl`
+- **PR / vetva:** docs/night-ops-2026-08-03

@@ -1,21 +1,26 @@
-## Session 2026-07-23
+﻿## Session 2026-08-03 (Night Operations evening · option C)
 
 ### Dokončené
-- **PR #314 MERGED** → `main` @ `c4143545f` — Memory Engine V1 (registry, decisions, audit CLI, tests, runbook)
-- **Prvý audit na main** — `12df2dd51` pushnutý; `brain/audits/2026-07-23.*` (0 errors, 10 advisory, delta +0/-0/=10)
-- **Verifikácia dnes:** `brain:check` OK, `brain:test` 7/7, CI main zelené (run 29987585340)
-- **PROD HTTP:** `/odhad/demo` 200, `/odhad/reality-smolko` 200, `/api/healthz` 200
+- Founder GO option C: Night Operations evening package
+- SSOT skopírované: `docs/architecture/2026-08-03-night-operations.md` + `...-center.md`
+- Setup karta + paste A1/A2/A3: `docs/automations/`
+- ADR-001…005 + kill/review 2026-09-08 append do `memory/decisions.md`
+- Audit stub: `docs/audit/nodes-value.jsonl` + `docs/audit/README.md`
+- Vetva/PR: `docs/night-ops-2026-08-03` (Automations Active = ručný klik foundera)
 
-### Rozpracované / Pending (founder brány)
-1. **Mobile smoke** `/odhad/demo` → submit → Supabase: `sandbox_submissions` +1, `leads` +0
-2. **Demo link** neposielať verejne pred krokom 1
-3. **Novák A/B Ads** 50/50 — `realitysmolko.sk/ponuka-dopyt` vs `app.revolis.ai/odhad/reality-smolko`
-4. **n8n W2 Heartbeat** import do Cloud (lokálny draft: `automation/n8n/w2-heartbeat-watchdog.json`, necommitnutý)
-5. **Brain advisory review** pred 2026-07-29 (9× decision-outcome, 1× unused n8n)
+### Rozpracované / Pending
+1. Founder: naklikať 3 Automations (paste z `docs/automations/a*.md`), cron CEST 02:00–03:00 / UTC 00:00–01:00
+2. Kill check 2026-08-08; review ADR 2026-09-08
+3. Merge #356–#366 mimo tohto balíka; CREDITS_ENFORCEMENT stays off
+4. Zajtra 08:45 GARANT REAL demo
 
 ### Kľúčové súbory zmenené
-- `brain/audits/2026-07-23.json|.md` — prvý produkčný audit baseline
-- `brain/registry/index.json` — refresh po merge #314
+- `docs/architecture/2026-08-03-night-operations.md`: v3 SSOT
+- `docs/architecture/2026-08-03-night-operations-center.md`: Center SSOT
+- `docs/automations/2026-08-03-setup-karta.md`: setup + cron map
+- `docs/automations/a1-architecture-guardian.md` / `a2-strazca-vetiev.md` / `a3-ranny-brief.md`: paste prompts
+- `memory/decisions.md`: ADR-001…005
+- `docs/audit/nodes-value.jsonl`: prázdny append-only start
 
 ### Ďalší krok
-Founder mobile smoke + Supabase check (odomkne demo link a zavrie `rme-dec-20260722-001` advisory).
+Founder: Cursor Automations → New ×3 → paste A1/A2/A3 → Enable; potom spať.
