@@ -32,6 +32,7 @@ export type UsageMetricName =
   | "ai_openai_tokens"
   | "embedding_tokens"
   | "cron_daily_match"
+  | "cron_credits_cycle"
   | "outreach_send";
 
 /**
