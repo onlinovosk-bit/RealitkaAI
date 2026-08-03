@@ -5,6 +5,8 @@ import { generateListingContent } from "@/lib/ai/listing-content";
 import type { PropertyInput, ListingPersona } from "@/lib/ai/listing-content";
 import { logAiAction } from "@/lib/ai-action-audit";
 import { CREDIT_ACTION_COSTS } from "@/lib/program-tier-pricing";
+import { spendForAction } from "@/lib/credits/spend-for-action";
+import { createHash } from "crypto";
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -28,12 +30,38 @@ export async function POST(req: Request) {
     );
   }
 
-  const { content, audit } = await generateListingContent(body.property, body.persona ?? "GENERAL");
+  // Profil sa načíta PRED generovaním — bez agency_id sa nedá účtovať
+  // a zbytočne by sme minuli tokeny na úkon, ktorý zákazník nemá pokrytý.
   const { data: profile } = await supabase
     .from("profiles")
     .select("agency_id")
     .eq("auth_user_id", user.id)
     .maybeSingle();
+
+  // Odpočet kreditov. Predvolene VYPNUTÝ (CREDITS_ENFORCEMENT != "enforce") —
+  // vtedy len vráti cenu a pustí ďalej. Audit: nález A1.
+  const spend = await spendForAction({
+    action: "listingDescription",
+    agencyId: profile?.agency_id ?? null,
+    idempotencyKey: `listing_description:${user.id}:${createHash("sha256")
+      .update(JSON.stringify(body.property))
+      .digest("hex")
+      .slice(0, 32)}`,
+  });
+
+  if (!spend.allowed) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: `Nedostatok kreditov — popis inzerátu stojí ${spend.cost} kreditov.`,
+        creditsRequired: spend.cost,
+        upgradeUrl: "/billing",
+      },
+      { status: 402 },
+    );
+  }
+
+  const { content, audit } = await generateListingContent(body.property, body.persona ?? "GENERAL");
 
   await logAiAction({
     action: "listing_description",
@@ -42,7 +70,7 @@ export async function POST(req: Request) {
     costEur: audit.costEur,
     model: audit.model,
     latencyMs: audit.latencyMs,
-    meta: { persona: body.persona ?? "GENERAL" },
+    meta: { persona: body.persona ?? "GENERAL", creditsCharged: spend.charged },
   });
 
   return NextResponse.json({ ok: true, content });
