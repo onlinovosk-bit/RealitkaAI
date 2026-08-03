@@ -298,32 +298,32 @@
 - **Contradiction check:** none â€” dopÄºÅˆa `engineering-os-revolis-rightsized.md` L3 ADR, nekonflikuje s Revolis Constitution v2
 - **PR / vetva:** docs/engineering-constitution-decision-memory
 
-## [2026-08-03] - Night Operations v0 (A1/A2/A3) ? Strategic Bet · BUILD (founder GO option C)
+## [2026-08-03] - Night Operations v0 (A1/A2/A3) â€” Strategic Bet Â· BUILD (founder GO option C)
 
-- **Kategória:** Strategic Bet (klasifikácia v2) · timebox ~3 dni · promote / re-bet / kill
-- **SSOT:** `docs/architecture/2026-08-03-night-operations.md` · Center: `docs/architecture/2026-08-03-night-operations-center.md`
+- **KategÃ³ria:** Strategic Bet (klasifikÃ¡cia v2) Â· timebox ~3 dni Â· promote / re-bet / kill
+- **SSOT:** `docs/architecture/2026-08-03-night-operations.md` Â· Center: `docs/architecture/2026-08-03-night-operations-center.md`
 - **Setup:** `docs/automations/2026-08-03-setup-karta.md`
-- **Uzly dnes:** A1 Architecture Guardian · A2 Strá?ca vetiev · A3 Rannı brief (Fáza 1 read-only)
-- **Zakázané:** portal scrape · auto-deploy · prod DELETE · CREDITS_ENFORCEMENT on · merge #356?#366 nie je sú?as?ou tohto balíka
-- **Review / kill dátum:** **2026-09-08** (ADR + 30d metriky); prvá kill kontrola **2026-08-08**
+- **Uzly dnes:** A1 Architecture Guardian Â· A2 StrÃ¡Å¾ca vetiev Â· A3 RannÃ½ brief (FÃ¡za 1 read-only)
+- **ZakÃ¡zanÃ©:** portal scrape Â· auto-deploy Â· prod DELETE Â· CREDITS_ENFORCEMENT on Â· merge #356â€“#366 nie je sÃºÄasÅ¥ou tohto balÃ­ka
+- **Review / kill dÃ¡tum:** **2026-09-08** (ADR + 30d metriky); prvÃ¡ kill kontrola **2026-08-08**
 
-### ADR-001 ? Orchestrátor a? pri piatom uzle
-Piaty uzol = orchestrátor. Do ?tyroch sa reporty ?ítajú jednotlivo. Rannı brief je reportovacia vrstva, nie ?tvrtı ?feature? uzol.
+### ADR-001 â€” OrchestrÃ¡tor aÅ¾ pri piatom uzle
+Piaty uzol = orchestrÃ¡tor. Do Å¡tyroch sa reporty ÄÃ­tajÃº jednotlivo. RannÃ½ brief je reportovacia vrstva, nie Å¡tvrtÃ½ "feature" uzol.
 
-### ADR-002 ? Vstupná brána
-Ka?dı uzol má vstupnú bránu. Uzol bez brány sa nestavia.
+### ADR-002 â€” VstupnÃ¡ brÃ¡na
+KaÅ¾dÃ½ uzol mÃ¡ vstupnÃº brÃ¡nu. Uzol bez brÃ¡ny sa nestavia.
 
-### ADR-003 ? Vrstva 4: navrhova?, nestava?
-Vrstva 4 smie navrhova?, prioritizova?, odhadova? návratnos? a pripravi? PR. Nikdy commit, merge ani deploy bez ?loveka.
+### ADR-003 â€” Vrstva 4: navrhovaÅ¥, nestavaÅ¥
+Vrstva 4 smie navrhovaÅ¥, prioritizovaÅ¥, odhadovaÅ¥ nÃ¡vratnosÅ¥ a pripraviÅ¥ PR. Nikdy commit, merge ani deploy bez Äloveka.
 
-### ADR-004 ? Dvojité odôvodnenie (vıchodisko, nie zákon)
-Novı uzol vy?aduje technické **aj** obchodné odôvodnenie. Ani jedno samo nesta?í. Predvolené prahy (4. uzol: +10 oslovenıch; orchestrátor: 3. platiaci; Center: 5 platiacich) sú **vıchodisko**; odchılka je povolená so zapísanım dôvodom a dátumom revízie v tomto súbore. Neuznanı dôvod: ?bolo by to zaujímavé postavi?.?
+### ADR-004 â€” DvojitÃ© odÃ´vodnenie (vÃ½chodisko, nie zÃ¡kon)
+NovÃ½ uzol vyÅ¾aduje technickÃ© **aj** obchodnÃ© odÃ´vodnenie. Ani jedno samo nestaÄÃ­. PredvolenÃ© prahy (4. uzol: +10 oslovenÃ½ch; orchestrÃ¡tor: 3. platiaci; Center: 5 platiacich) sÃº **vÃ½chodisko**; odchÃ½lka je povolenÃ¡ so zapÃ­sanÃ½m dÃ´vodom a dÃ¡tumom revÃ­zie v tomto sÃºbore. NeuznanÃ½ dÃ´vod: "bolo by to zaujÃ­mavÃ© postaviÅ¥."
 
-### ADR-005 ? ?ivotnı cyklus uzla
-NÁVRH ? BE?Í ? VYHODNOTENIE (30/90 dní) ? PONECHA? | ZLÚ?I? | VYPNÚ?. Vypnutı uzol sa **nema?e** ? zostáva v repe s dátumom a dôvodom. Spú??a?e vypnutia: 30 dní bez verdiktu v `docs/audit/nodes-value.jsonl` · 30 dní bez akcie · trvalo ?ervenı 14 dní · nahradenı · prah splnenı natrvalo.
+### ADR-005 â€” Å½ivotnÃ½ cyklus uzla
+NÃVRH â†’ BEÅ½Ã â†’ VYHODNOTENIE (30/90 dnÃ­) â†’ PONECHAÅ¤ | ZLÃšÄŒIÅ¤ | VYPNÃšÅ¤. VypnutÃ½ uzol sa **nemaÅ¾e** â€” zostÃ¡va v repe s dÃ¡tumom a dÃ´vodom. SpÃºÅ¡Å¥aÄe vypnutia: 30 dnÃ­ bez verdiktu v `docs/audit/nodes-value.jsonl` Â· 30 dnÃ­ bez akcie Â· trvalo ÄervenÃ½ 14 dnÃ­ Â· nahradenÃ½ Â· prah splnenÃ½ natrvalo.
 
-### Kill kritérium
-Ak 2026-08-08 nebude founder vedie? poveda?, ?e reporty ?ítal pä? rán po sebe, vypnú? v?etky tri a nestava? ?tvrtı.
+### Kill kritÃ©rium
+Ak 2026-08-08 nebude founder vedieÅ¥ povedaÅ¥, Å¾e reporty ÄÃ­tal pÃ¤Å¥ rÃ¡n po sebe, vypnÃºÅ¥ vÅ¡etky tri a nestavaÅ¥ Å¡tvrtÃ½.
 
-- **Verdikt schema:** `verdict ? { konal | vedel | zbyto?né }` ? append do `docs/audit/nodes-value.jsonl`
+- **Verdikt schema:** `verdict âˆˆ { konal | vedel | zbytoÄnÃ© }` â€” append do `docs/audit/nodes-value.jsonl`
 - **PR / vetva:** docs/night-ops-2026-08-03
