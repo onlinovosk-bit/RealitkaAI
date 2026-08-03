@@ -7,11 +7,11 @@ Full procedure: that folder’s `APPLY.md`.
 
 | Patch | Branch | Outcome |
 |---|---|---|
-| 01 stealth 410 | `fix/w1-stealth-recruiter-410` | **PR opened** — all three surfaces |
-| 02 credits-cycle | `fix/w1-credits-cron-merge` | **PR opened** |
+| 01 stealth 410 | `fix/w1-stealth-recruiter-410` | **[#352](https://github.com/onlinovosk-bit/RealitkaAI/pull/352)** — outreach + scan + cron ingest → 410 |
+| 02 credits-cycle | `fix/w1-credits-cron-merge` | **[#353](https://github.com/onlinovosk-bit/RealitkaAI/pull/353)** |
 | 03 valuation_estimates | — | **SKIP** — already on main via #338 |
-| 04 system usage agency | residual guard only | Core via #343; residual guard PR if opened |
-| 05 credit spend wiring | `feat/w2-credit-spend-wiring` | **PR opened** (leadUnlock already #350) |
+| 04 system usage agency | `fix/w2-system-usage-agency-guard` | Core via **#343**; residual guard **[#355](https://github.com/onlinovosk-bit/RealitkaAI/pull/355)** |
+| 05 credit spend wiring | `feat/w2-credit-spend-wiring` | **[#354](https://github.com/onlinovosk-bit/RealitkaAI/pull/354)** (leadUnlock already #350) |
 
 ## Merge order (from APPLY.md)
 
