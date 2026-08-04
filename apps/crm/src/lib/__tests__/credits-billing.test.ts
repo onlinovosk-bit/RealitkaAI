@@ -13,11 +13,16 @@ const mockSingle = vi.fn();
 const mockInsert = vi.fn();
 const mockUpdate = vi.fn();
 const mockEq = vi.fn();
+const applyCreditPurchaseMock = vi.fn();
 
 vi.mock("@/lib/supabase/admin", () => ({
   createServiceRoleClient: () => ({
     from: mockFrom,
   }),
+}));
+
+vi.mock("@/lib/credits/mutate-credits", () => ({
+  applyCreditPurchase: (...args: unknown[]) => applyCreditPurchaseMock(...args),
 }));
 
 vi.mock("@/lib/credits/grant-engine", () => ({
@@ -83,6 +88,7 @@ describe("credits-billing", () => {
       },
     });
     mockInsert.mockResolvedValue({ error: null });
+    applyCreditPurchaseMock.mockResolvedValue({ ok: true, credited: 150, skipped: false });
   });
 
   describe("buildSeatCheckoutSessionParams", () => {
@@ -159,7 +165,7 @@ describe("credits-billing", () => {
   });
 
   describe("applyTopupPurchase", () => {
-    it("writes purchase ledger idempotently", async () => {
+    it("credits via atomic purchase RPC idempotently", async () => {
       const first = await applyTopupPurchase({
         agencyId: "agency-1",
         packageKey: "rast",
@@ -167,17 +173,18 @@ describe("credits-billing", () => {
       });
 
       expect(first).toBe(true);
-      expect(mockInsert).toHaveBeenCalledWith(
+      expect(applyCreditPurchaseMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          agency_id: "agency-1",
-          delta: 150,
-          source: "purchase",
-          idempotency_key: "purchase:agency-1:cs_test_1",
+          agencyId: "agency-1",
+          amount: 150,
+          reason: "credit_topup",
+          idempotencyKey: "purchase:agency-1:cs_test_1",
+          ref: "rast",
         }),
       );
 
-      mockMaybeSingle.mockResolvedValueOnce({ data: { id: "existing" } });
-      mockInsert.mockClear();
+      applyCreditPurchaseMock.mockResolvedValueOnce({ ok: true, skipped: true, credited: 0 });
+      applyCreditPurchaseMock.mockClear();
 
       const second = await applyTopupPurchase({
         agencyId: "agency-1",
@@ -186,7 +193,7 @@ describe("credits-billing", () => {
       });
 
       expect(second).toBe(true);
-      expect(mockInsert).not.toHaveBeenCalled();
+      expect(applyCreditPurchaseMock).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -231,7 +238,13 @@ describe("credits-billing", () => {
       } as never);
 
       expect(handled).toBe(true);
-      expect(mockInsert).toHaveBeenCalled();
+      expect(applyCreditPurchaseMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          agencyId: "agency-1",
+          amount: 150,
+          idempotencyKey: "purchase:agency-1:cs_topup_1",
+        }),
+      );
     });
 
     it("ignores legacy checkout events", async () => {
