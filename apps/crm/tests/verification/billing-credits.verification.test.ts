@@ -52,6 +52,25 @@ describe("billing credits panel verification", () => {
     expect(upgrade).not.toContain("checkoutType: 'topup'");
   });
 
+  it("upgrade page reads flattened okResponse checkout-config + checkout URL", () => {
+    const upgrade = fs.readFileSync(
+      path.join(CRM_ROOT, "src/app/(dashboard)/upgrade/page.tsx"),
+      "utf8",
+    );
+    // Must match okResponse spread shape — NOT nested under `.data`
+    expect(upgrade).toContain("d.seatCheckoutAvailable");
+    expect(upgrade).not.toContain("d.data");
+    expect(upgrade).toContain("data.result?.url");
+    expect(upgrade).not.toContain("data.data?.result?.url");
+
+    const panel = fs.readFileSync(
+      path.join(CRM_ROOT, "src/components/billing/CreditsTopupPanel.tsx"),
+      "utf8",
+    );
+    expect(panel).toContain("configRes.topupCheckoutAvailable");
+    expect(panel).toContain("data.result?.url");
+  });
+
   it("stripe price validation rejects placeholders", () => {
     const pricing = fs.readFileSync(
       path.join(CRM_ROOT, "src/lib/program-tier-pricing.ts"),
