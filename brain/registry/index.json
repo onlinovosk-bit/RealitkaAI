@@ -288,18 +288,19 @@
     ],
     "evidence": [
       {
-        "commit": "8a95e5d32cb7ede3755f3728ce8423da98e69094",
-        "note": "Inventory contains 7 file(s); digest sha256:70f15118ac705d28f5921f9324160a8471dab5c0fd3873d471a375fa59260f33.",
+        "commit": "2144ecc2fd1b09e6babbb6835214205cac5d17a2",
+        "note": "Inventory contains 8 file(s); digest sha256:38fd27bacf3a6155d11536949bd716b3cb514adaf0ce12248ca69f9ce862e0e3.",
         "path": ".github/workflows"
       }
     ],
     "id": "ci.workflows",
     "inventory": {
-      "digest": "sha256:70f15118ac705d28f5921f9324160a8471dab5c0fd3873d471a375fa59260f33",
-      "fileCount": 7,
+      "digest": "sha256:38fd27bacf3a6155d11536949bd716b3cb514adaf0ce12248ca69f9ce862e0e3",
+      "fileCount": 8,
       "sample": [
         ".github/scripts/automerge-policy.mjs",
         ".github/workflows/auto-merge-policy.yml",
+        ".github/workflows/code-contract-guard.yml",
         ".github/workflows/memory-engine-report.yml",
         ".github/workflows/nightly-playwright.yml",
         ".github/workflows/preview-playwright-smoke.yml",
@@ -307,7 +308,7 @@
         ".github/workflows/schema-governance-guard.yml"
       ]
     },
-    "lastVerifiedAt": "2026-07-24",
+    "lastVerifiedAt": "2026-08-04",
     "name": "GitHub Actions workflows",
     "owner": "engineering",
     "purpose": "CI and governance workflow inventory; remote branch protection is not inferred from files.",
@@ -319,7 +320,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "8a95e5d32cb7ede3755f3728ce8423da98e69094",
+      "commit": "2144ecc2fd1b09e6babbb6835214205cac5d17a2",
       "path": ".github/workflows"
     },
     "status": "active",
@@ -340,14 +341,14 @@
     ],
     "evidence": [
       {
-        "commit": "2617f89e5398bbab2d6961fdd6d74163898a3762",
-        "note": "Inventory contains 225 file(s); digest sha256:6fcaa1a3fbad563ae0f6126b96015031ef5508daee043009be40f17a869f0a56.",
+        "commit": "2144ecc2fd1b09e6babbb6835214205cac5d17a2",
+        "note": "Inventory contains 225 file(s); digest sha256:a7b833a2200e3d26574d2850f40701c2bef2a951ceb3aa8cc68ed2d2deedef5e.",
         "path": "apps/crm/src/app/api"
       }
     ],
     "id": "crm.api",
     "inventory": {
-      "digest": "sha256:6fcaa1a3fbad563ae0f6126b96015031ef5508daee043009be40f17a869f0a56",
+      "digest": "sha256:a7b833a2200e3d26574d2850f40701c2bef2a951ceb3aa8cc68ed2d2deedef5e",
       "fileCount": 225,
       "sample": [
         "apps/crm/src/app/api/acquire/email/route.ts",
@@ -364,7 +365,7 @@
         "apps/crm/src/app/api/ai/closing-window/recompute/route.ts"
       ]
     },
-    "lastVerifiedAt": "2026-08-03",
+    "lastVerifiedAt": "2026-08-04",
     "name": "CRM route handlers",
     "owner": "engineering",
     "purpose": "Inventory of API route handlers used to verify documented endpoint paths.",
@@ -376,7 +377,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "2617f89e5398bbab2d6961fdd6d74163898a3762",
+      "commit": "2144ecc2fd1b09e6babbb6835214205cac5d17a2",
       "path": "apps/crm/src/app/api"
     },
     "status": "active",
@@ -397,14 +398,14 @@
     ],
     "evidence": [
       {
-        "commit": "2617f89e5398bbab2d6961fdd6d74163898a3762",
-        "note": "Inventory contains 507 file(s); digest sha256:3de69ade3e8a3e51965f0d0a9be86467c57274d1e14162a9c3137c3eee2afc34.",
+        "commit": "2144ecc2fd1b09e6babbb6835214205cac5d17a2",
+        "note": "Inventory contains 507 file(s); digest sha256:ee5c037a8a085bb2095f11109289dd422f4b5c8fa24277ece35cb755ed045edd.",
         "path": "apps/crm/src/app"
       }
     ],
     "id": "crm.application",
     "inventory": {
-      "digest": "sha256:3de69ade3e8a3e51965f0d0a9be86467c57274d1e14162a9c3137c3eee2afc34",
+      "digest": "sha256:ee5c037a8a085bb2095f11109289dd422f4b5c8fa24277ece35cb755ed045edd",
       "fileCount": 507,
       "sample": [
         "apps/crm/src/app/(dashboard)/DashboardClientShell.tsx",
@@ -421,7 +422,7 @@
         "apps/crm/src/app/(dashboard)/akvizieia/listy-z-katastra/loading.tsx"
       ]
     },
-    "lastVerifiedAt": "2026-08-03",
+    "lastVerifiedAt": "2026-08-04",
     "name": "CRM application surface",
     "owner": "engineering",
     "purpose": "Inventory of CRM pages, layouts, and application code used for documentation drift checks.",
@@ -431,7 +432,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "2617f89e5398bbab2d6961fdd6d74163898a3762",
+      "commit": "2144ecc2fd1b09e6babbb6835214205cac5d17a2",
       "path": "apps/crm/src/app"
     },
     "status": "active",
