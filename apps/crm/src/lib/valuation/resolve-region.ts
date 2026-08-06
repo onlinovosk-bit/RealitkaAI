@@ -51,8 +51,30 @@ export type ResolvedLocation = {
   matchKind: "city" | "region" | "national";
 };
 
+/** Kraj adjectives that contain a city stem (e.g. prešovský ⊃ prešov) — match before city anchors. */
+const REGION_PHRASE_TO_CODE: Array<{ needle: string; code: string }> = [
+  { needle: "presovsky", code: "PO" },
+  { needle: "kosicky", code: "KE" },
+  { needle: "bratislavsky", code: "BA" },
+  { needle: "trnavsky", code: "TT" },
+  { needle: "nitriansky", code: "NR" },
+  { needle: "trenciansky", code: "TN" },
+  { needle: "zilinsky", code: "ZA" },
+  { needle: "banskobystricky", code: "BB" },
+];
+
 export function resolveRegionFromLocation(location: string): ResolvedLocation {
   const folded = foldDiacritics(location);
+
+  for (const phrase of REGION_PHRASE_TO_CODE) {
+    if (folded.includes(phrase.needle)) {
+      return {
+        regionCode: phrase.code,
+        regionLabel: REGION_LABELS[phrase.code] ?? phrase.code,
+        matchKind: "region",
+      };
+    }
+  }
 
   for (const city of CITY_ANCHORS) {
     if (city.aliases.some((alias) => folded.includes(alias))) {

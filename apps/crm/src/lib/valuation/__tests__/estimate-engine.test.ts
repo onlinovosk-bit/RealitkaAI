@@ -106,6 +106,12 @@ describe("valuation estimate engine", () => {
     }
   });
 
+  it("Prešovský kraj maps to PO region, not city Presov stem", () => {
+    const resolved = resolveRegionFromLocation("Prešovský kraj");
+    expect(resolved.regionCode).toBe("PO");
+    expect(resolved.matchKind).toBe("region");
+  });
+
   it("unknown location Xyzabc is never city (national or none)", () => {
     const resolved = resolveRegionFromLocation("Xyzabc");
     expect(resolved.matchKind).not.toBe("city");
