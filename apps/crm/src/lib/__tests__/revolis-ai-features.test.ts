@@ -130,6 +130,20 @@ export const REVOLIS_AI_FEATURE_REGISTRY: AiFeatureSpec[] = [
     apiRoute: "/api/ai/listing-content/stream",
   },
   {
+    id: "listing-content-generations",
+    label: "AI listing content generations list",
+    category: "content",
+    paths: ["src/app/api/ai/listing-content/generations/route.ts"],
+    apiRoute: "/api/ai/listing-content/generations",
+  },
+  {
+    id: "listing-content-generations-id",
+    label: "AI listing content generation by id",
+    category: "content",
+    paths: ["src/app/api/ai/listing-content/generations/[id]/route.ts"],
+    apiRoute: "/api/ai/listing-content/generations/[id]",
+  },
+  {
     id: "micro-actions-schedule",
     label: "AI micro-actions schedule",
     category: "automation",
