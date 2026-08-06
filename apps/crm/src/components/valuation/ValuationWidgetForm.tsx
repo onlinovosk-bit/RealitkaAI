@@ -19,6 +19,7 @@ import type {
   ValuationPropertyType,
 } from "@/lib/valuation/types";
 import { SLATE_HORIZON, WORKDESK_CARD } from "@/lib/slate-horizon-theme";
+import { ValuationEstimatePresentation } from "@/components/valuation/estimate-presentation";
 
 type Props = {
   tenant: ValuationPageContext;
@@ -280,24 +281,7 @@ export function ValuationWidgetForm({ tenant, abVariant, sessionId }: Props) {
           <h2 className="mt-2 text-2xl font-bold" style={{ color: SLATE_HORIZON.ink }}>
             Váš orientačný odhad
           </h2>
-          {estimate.noEstimate ? (
-            <p className="mt-3 text-sm leading-relaxed" style={{ color: SLATE_HORIZON.muted }}>
-              {estimate.commentary}
-            </p>
-          ) : (
-            <>
-              <p className="mt-4 text-3xl font-black" style={{ color: SLATE_HORIZON.ink }}>
-                €{estimate.low?.toLocaleString("sk-SK")} – €{estimate.high?.toLocaleString("sk-SK")}
-              </p>
-              <p className="mt-3 text-sm leading-relaxed" style={{ color: SLATE_HORIZON.muted }}>
-                {estimate.commentary}
-              </p>
-            </>
-          )}
-          <p className="mt-4 text-xs leading-relaxed" style={{ color: SLATE_HORIZON.muted }}>
-            {estimate.disclaimer}
-            {estimate.sourceQuarter ? ` · Zdroj: NBS ${estimate.sourceQuarter}.` : ""}
-          </p>
+          <ValuationEstimatePresentation estimate={estimate} />
           <p className="mt-4 text-sm leading-relaxed" style={{ color: SLATE_HORIZON.muted }}>
             {tenant.isSandbox ? (
               <>
@@ -340,24 +324,7 @@ export function ValuationWidgetForm({ tenant, abVariant, sessionId }: Props) {
           <h2 className="mt-2 text-2xl font-bold" style={{ color: SLATE_HORIZON.ink }}>
             Váš orientačný odhad
           </h2>
-          {estimate.noEstimate ? (
-            <p className="mt-3 text-sm leading-relaxed" style={{ color: SLATE_HORIZON.muted }}>
-              {estimate.commentary}
-            </p>
-          ) : (
-            <>
-              <p className="mt-4 text-3xl font-black" style={{ color: SLATE_HORIZON.ink }}>
-                €{estimate.low?.toLocaleString("sk-SK")} – €{estimate.high?.toLocaleString("sk-SK")}
-              </p>
-              <p className="mt-3 text-sm leading-relaxed" style={{ color: SLATE_HORIZON.muted }}>
-                {estimate.commentary}
-              </p>
-            </>
-          )}
-          <p className="mt-4 text-xs leading-relaxed" style={{ color: SLATE_HORIZON.muted }}>
-            {estimate.disclaimer}
-            {estimate.sourceQuarter ? ` · Zdroj: NBS ${estimate.sourceQuarter}.` : ""}
-          </p>
+          <ValuationEstimatePresentation estimate={estimate} />
           <p className="mt-4 text-sm leading-relaxed" style={{ color: SLATE_HORIZON.muted }}>
             Pre odoslanie dopytu a kontakt makléra zadajte ešte kontaktné údaje v ďalšom kroku.
           </p>
