@@ -288,18 +288,19 @@
     ],
     "evidence": [
       {
-        "commit": "8a95e5d32cb7ede3755f3728ce8423da98e69094",
-        "note": "Inventory contains 7 file(s); digest sha256:70f15118ac705d28f5921f9324160a8471dab5c0fd3873d471a375fa59260f33.",
+        "commit": "1ed83c3f3d2193a078ffe5f768df9f8414630bef",
+        "note": "Inventory contains 8 file(s); digest sha256:263a3f079c03a8df2d33e3cbe9c2a31e663bd959d217789e9bc17e06cb1be2db.",
         "path": ".github/workflows"
       }
     ],
     "id": "ci.workflows",
     "inventory": {
-      "digest": "sha256:70f15118ac705d28f5921f9324160a8471dab5c0fd3873d471a375fa59260f33",
-      "fileCount": 7,
+      "digest": "sha256:263a3f079c03a8df2d33e3cbe9c2a31e663bd959d217789e9bc17e06cb1be2db",
+      "fileCount": 8,
       "sample": [
         ".github/scripts/automerge-policy.mjs",
         ".github/workflows/auto-merge-policy.yml",
+        ".github/workflows/code-contract-guard.yml",
         ".github/workflows/memory-engine-report.yml",
         ".github/workflows/nightly-playwright.yml",
         ".github/workflows/preview-playwright-smoke.yml",
@@ -307,7 +308,7 @@
         ".github/workflows/schema-governance-guard.yml"
       ]
     },
-    "lastVerifiedAt": "2026-07-24",
+    "lastVerifiedAt": "2026-08-06",
     "name": "GitHub Actions workflows",
     "owner": "engineering",
     "purpose": "CI and governance workflow inventory; remote branch protection is not inferred from files.",
@@ -319,7 +320,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "8a95e5d32cb7ede3755f3728ce8423da98e69094",
+      "commit": "1ed83c3f3d2193a078ffe5f768df9f8414630bef",
       "path": ".github/workflows"
     },
     "status": "active",
@@ -340,15 +341,15 @@
     ],
     "evidence": [
       {
-        "commit": "2617f89e5398bbab2d6961fdd6d74163898a3762",
-        "note": "Inventory contains 225 file(s); digest sha256:6fcaa1a3fbad563ae0f6126b96015031ef5508daee043009be40f17a869f0a56.",
+        "commit": "01d5dd7dcefa3f39a2d176bcb2ea2887dbba60d3",
+        "note": "Inventory contains 227 file(s); digest sha256:c8d8cf0abf9aa1c5379150d2a1fa79f6f22410d89a3ac9ab7574c43a4038d905.",
         "path": "apps/crm/src/app/api"
       }
     ],
     "id": "crm.api",
     "inventory": {
-      "digest": "sha256:6fcaa1a3fbad563ae0f6126b96015031ef5508daee043009be40f17a869f0a56",
-      "fileCount": 225,
+      "digest": "sha256:c8d8cf0abf9aa1c5379150d2a1fa79f6f22410d89a3ac9ab7574c43a4038d905",
+      "fileCount": 227,
       "sample": [
         "apps/crm/src/app/api/acquire/email/route.ts",
         "apps/crm/src/app/api/activities/route.ts",
@@ -364,7 +365,7 @@
         "apps/crm/src/app/api/ai/closing-window/recompute/route.ts"
       ]
     },
-    "lastVerifiedAt": "2026-08-03",
+    "lastVerifiedAt": "2026-08-06",
     "name": "CRM route handlers",
     "owner": "engineering",
     "purpose": "Inventory of API route handlers used to verify documented endpoint paths.",
@@ -376,7 +377,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "2617f89e5398bbab2d6961fdd6d74163898a3762",
+      "commit": "01d5dd7dcefa3f39a2d176bcb2ea2887dbba60d3",
       "path": "apps/crm/src/app/api"
     },
     "status": "active",
@@ -397,15 +398,15 @@
     ],
     "evidence": [
       {
-        "commit": "2617f89e5398bbab2d6961fdd6d74163898a3762",
-        "note": "Inventory contains 507 file(s); digest sha256:3de69ade3e8a3e51965f0d0a9be86467c57274d1e14162a9c3137c3eee2afc34.",
+        "commit": "01d5dd7dcefa3f39a2d176bcb2ea2887dbba60d3",
+        "note": "Inventory contains 509 file(s); digest sha256:6dd5c71b5c9f671706e4fbd0e43fcedba342900851c7fd3ea9da3f2c1dbe2e3a.",
         "path": "apps/crm/src/app"
       }
     ],
     "id": "crm.application",
     "inventory": {
-      "digest": "sha256:3de69ade3e8a3e51965f0d0a9be86467c57274d1e14162a9c3137c3eee2afc34",
-      "fileCount": 507,
+      "digest": "sha256:6dd5c71b5c9f671706e4fbd0e43fcedba342900851c7fd3ea9da3f2c1dbe2e3a",
+      "fileCount": 509,
       "sample": [
         "apps/crm/src/app/(dashboard)/DashboardClientShell.tsx",
         "apps/crm/src/app/(dashboard)/activities/error.tsx",
@@ -421,7 +422,7 @@
         "apps/crm/src/app/(dashboard)/akvizieia/listy-z-katastra/loading.tsx"
       ]
     },
-    "lastVerifiedAt": "2026-08-03",
+    "lastVerifiedAt": "2026-08-06",
     "name": "CRM application surface",
     "owner": "engineering",
     "purpose": "Inventory of CRM pages, layouts, and application code used for documentation drift checks.",
@@ -431,7 +432,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "2617f89e5398bbab2d6961fdd6d74163898a3762",
+      "commit": "01d5dd7dcefa3f39a2d176bcb2ea2887dbba60d3",
       "path": "apps/crm/src/app"
     },
     "status": "active",
@@ -451,15 +452,15 @@
     ],
     "evidence": [
       {
-        "commit": "3ad577e51bc3cc751c74fce460f067264625a58f",
-        "note": "Inventory contains 92 file(s); digest sha256:fc6acb3279bb7805263a77c39bf9ff7c6affebe09b0bf88aa3824d26132c32cd.",
+        "commit": "3777dbccce23f5118b7ac9e2ee0e01680fc37084",
+        "note": "Inventory contains 93 file(s); digest sha256:775f70e976858e88fa419d67ea265684756f59e4f3653438316de674d49d9dd4.",
         "path": "apps/crm/supabase/migrations"
       }
     ],
     "id": "database.migrations",
     "inventory": {
-      "digest": "sha256:fc6acb3279bb7805263a77c39bf9ff7c6affebe09b0bf88aa3824d26132c32cd",
-      "fileCount": 92,
+      "digest": "sha256:775f70e976858e88fa419d67ea265684756f59e4f3653438316de674d49d9dd4",
+      "fileCount": 93,
       "sample": [
         "apps/crm/supabase/migrations/20260310_baseline_core_schema.sql",
         "apps/crm/supabase/migrations/20260320_rls.sql",
@@ -475,7 +476,7 @@
         "apps/crm/supabase/migrations/20260426120111_arbitrage_engine.sql"
       ]
     },
-    "lastVerifiedAt": "2026-08-02",
+    "lastVerifiedAt": "2026-08-04",
     "name": "Supabase migrations",
     "owner": "engineering",
     "purpose": "Versioned database structure used as code-side evidence; production state remains independently verified.",
@@ -486,7 +487,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "3ad577e51bc3cc751c74fce460f067264625a58f",
+      "commit": "3777dbccce23f5118b7ac9e2ee0e01680fc37084",
       "path": "apps/crm/supabase/migrations"
     },
     "status": "active",
@@ -550,7 +551,7 @@
     "dependencies": [],
     "evidence": [
       {
-        "commit": "3f08417ce72ca0725959938400bb57691300acc2",
+        "commit": "14f6d56bf1b25f78afdb43edebc4372ee3e412a8",
         "note": "Inventory contains 22 file(s); digest sha256:433f3c04b391bc423974ff21a808be9499487609b0b0c86b27e300852030c90d.",
         "path": "docs/architecture"
       }
@@ -574,7 +575,7 @@
         "docs/architecture/inputs/memory-engine-sources-2026-07.md"
       ]
     },
-    "lastVerifiedAt": "2026-08-03",
+    "lastVerifiedAt": "2026-08-04",
     "name": "Architecture and governance corpus",
     "owner": "founder",
     "purpose": "Canonical and supporting architecture documents used to constrain product and engineering work.",
@@ -585,7 +586,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "3f08417ce72ca0725959938400bb57691300acc2",
+      "commit": "14f6d56bf1b25f78afdb43edebc4372ee3e412a8",
       "path": "docs/architecture"
     },
     "status": "active",
@@ -732,7 +733,7 @@
     ],
     "evidence": [
       {
-        "commit": "a1b89a9efaa0ccf0e515c907ce42d3a22db06b6f",
+        "commit": "14f6d56bf1b25f78afdb43edebc4372ee3e412a8",
         "note": "Inventory contains 2 file(s); digest sha256:6a5e515e6cc7f66a5b04209b1ebeba137b07ffba8b36edee671140a9dcd7cca2.",
         "path": "memory/decisions.md"
       }
@@ -746,7 +747,7 @@
         "memory/decisions.md"
       ]
     },
-    "lastVerifiedAt": "2026-08-03",
+    "lastVerifiedAt": "2026-08-04",
     "name": "Critical decisions log",
     "owner": "founder",
     "purpose": "Canonical historical decision source; generated Brain records remain pointers to this log.",
@@ -756,7 +757,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "a1b89a9efaa0ccf0e515c907ce42d3a22db06b6f",
+      "commit": "14f6d56bf1b25f78afdb43edebc4372ee3e412a8",
       "path": "memory/decisions.md"
     },
     "status": "active",

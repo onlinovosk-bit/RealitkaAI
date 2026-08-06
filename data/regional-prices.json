@@ -20,7 +20,7 @@
       "upper_pct": 9
     },
     "national_type_fallback": {
-      "lower_pct": 12,
+      "lower_pct": 18,
       "upper_pct": 8
     },
     "round_to_eur": 1000
@@ -186,6 +186,88 @@
         "value": null,
         "verified": false,
         "source_note": "dtto"
+      }
+    }
+  },
+  "cities": {
+    "poprad": {
+      "label": "Poprad",
+      "all": {
+        "value": null,
+        "verified": false
+      },
+      "byty": {
+        "value": 2361,
+        "verified": true,
+        "source": "Realitna unia SR - Realitny barometer",
+        "period": "2026-Q2",
+        "priceType": "ponukova",
+        "segment": "byty, staršie, 3-izbové",
+        "source_note": "Realitna unia SR - Realitny barometer · 2026-Q2 · byty, staršie, 3-izbové"
+      },
+      "domy": {
+        "value": null,
+        "verified": false
+      }
+    },
+    "presov": {
+      "label": "Prešov",
+      "all": {
+        "value": null,
+        "verified": false
+      },
+      "byty": {
+        "value": 2482,
+        "verified": true,
+        "source": "Realitna unia SR - Realitny barometer",
+        "period": "2026-Q2",
+        "priceType": "ponukova",
+        "segment": "byty, staršie, 3-izbové",
+        "source_note": "Realitna unia SR - Realitny barometer · 2026-Q2 · byty, staršie, 3-izbové"
+      },
+      "domy": {
+        "value": null,
+        "verified": false
+      }
+    },
+    "michalovce": {
+      "label": "Michalovce",
+      "all": {
+        "value": null,
+        "verified": false
+      },
+      "byty": {
+        "value": 1960,
+        "verified": true,
+        "source": "Realitna unia SR - Realitny barometer",
+        "period": "2026-Q2",
+        "priceType": "ponukova",
+        "segment": "byty, staršie, 3-izbové",
+        "source_note": "Realitna unia SR - Realitny barometer · 2026-Q2 · byty, staršie, 3-izbové"
+      },
+      "domy": {
+        "value": null,
+        "verified": false
+      }
+    },
+    "humenne": {
+      "label": "Humenné",
+      "all": {
+        "value": null,
+        "verified": false
+      },
+      "byty": {
+        "value": 1614,
+        "verified": true,
+        "source": "Realitna unia SR - Realitny barometer",
+        "period": "2026-Q2",
+        "priceType": "ponukova",
+        "segment": "byty, staršie, 3-izbové",
+        "source_note": "Realitna unia SR - Realitny barometer · 2026-Q2 · byty, staršie, 3-izbové"
+      },
+      "domy": {
+        "value": null,
+        "verified": false
       }
     }
   }

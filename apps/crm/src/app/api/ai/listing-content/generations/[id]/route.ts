@@ -1,6 +1,8 @@
-import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { validateBody } from "@/lib/api-validate";
+import { okResponse, errorResponse } from "@/lib/api-response";
+import { incrementUsageMetric } from "@/lib/usage-metrics";
 import { updateGenerationEdit } from "@/lib/listings/generations-store";
 
 const editSchema = z.object({
@@ -21,7 +23,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+  if (!user) return errorResponse("Unauthorized", 401);
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -29,30 +31,26 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     .eq("auth_user_id", user.id)
     .maybeSingle();
 
-  if (!profile?.agency_id) {
-    return NextResponse.json({ ok: false, error: "Chýba agency_id v profile." }, { status: 400 });
-  }
+  if (!profile?.agency_id) return errorResponse("Chýba agency_id v profile.", 400);
 
-  let parsed;
-  try {
-    parsed = editSchema.safeParse(await req.json());
-  } catch {
-    return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
-  }
-  if (!parsed.success) {
-    return NextResponse.json({ ok: false, error: "Neplatný tvar úpravy." }, { status: 400 });
-  }
+  const parsed = await validateBody(req, editSchema);
+  if (!parsed.ok) return parsed.response;
 
+  const agencyId = profile.agency_id as string;
   const result = await updateGenerationEdit({
     id,
-    agencyId: profile.agency_id as string,
+    agencyId,
     editedOutput: parsed.data.editedOutput,
     status: parsed.data.status,
   });
 
   if (!result.ok) {
-    const status = result.error === "not_found" ? 404 : 500;
-    return NextResponse.json({ ok: false, error: result.error }, { status });
+    return errorResponse(
+      result.error === "not_found" ? "Draft sa nenašiel." : "Úpravu sa nepodarilo uložiť.",
+      result.error === "not_found" ? 404 : 500,
+    );
   }
-  return NextResponse.json({ ok: true });
+
+  await incrementUsageMetric({ agencyId, metric: "ai_openai_tokens", delta: 0 });
+  return okResponse({ id });
 }
