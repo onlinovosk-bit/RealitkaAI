@@ -60,7 +60,7 @@ export function loadRegionalPrices(): RegionalPricesFile {
 }
 
 /** Test helper — clears module cache after fixture swaps. */
-export function clearRegionalPricesCache(): void {
+function clearRegionalPricesCache(): void {
   cached = null;
 }
 
