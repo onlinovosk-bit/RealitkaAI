@@ -1,25 +1,31 @@
-/** Map location text → NBS region code in regional-prices.json */
+/** Map location text → city anchor or NBS region code in regional-prices.json */
+
+/** Same NFD fold as apps/crm/src/lib/arbitrage/normalise.ts (normaliseStreet). */
+export function foldDiacritics(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+/** City anchors — matched before kraje / SK. Longer keys first for includes(). */
+const CITY_ANCHORS: Array<{ key: string; aliases: string[]; label: string }> = [
+  { key: "michalovce", aliases: ["michalovce"], label: "Michalovce" },
+  { key: "humenne", aliases: ["humenne"], label: "Humenné" },
+  { key: "presov", aliases: ["presov"], label: "Prešov" },
+  { key: "poprad", aliases: ["poprad"], label: "Poprad" },
+];
+
 const CITY_TO_REGION: Record<string, string> = {
   bratislava: "BA",
-  košice: "KE",
   kosice: "KE",
-  prešov: "PO",
-  presov: "PO",
-  poprad: "PO",
-  humenne: "PO",
-  humenné: "PO",
-  michalovce: "KE",
-  trebišov: "KE",
   trebisov: "KE",
   bardejov: "PO",
   snina: "PO",
   trnava: "TT",
   nitra: "NR",
-  žilina: "ZA",
   zilina: "ZA",
-  trenčín: "TN",
   trencin: "TN",
-  banská: "BB",
   banska: "BB",
   zvolen: "BB",
 };
@@ -36,15 +42,41 @@ const REGION_LABELS: Record<string, string> = {
   BB: "Banskobystrický kraj",
 };
 
-export function resolveRegionFromLocation(location: string): {
+export type PriceSource = "city" | "region" | "national" | "none";
+
+export type ResolvedLocation = {
   regionCode: string;
   regionLabel: string;
-} {
-  const lower = location.toLowerCase();
-  for (const [city, code] of Object.entries(CITY_TO_REGION)) {
-    if (lower.includes(city)) {
-      return { regionCode: code, regionLabel: REGION_LABELS[code] ?? code };
+  /** Hint from location parse; lookup may still downgrade region→national. */
+  matchKind: "city" | "region" | "national";
+};
+
+export function resolveRegionFromLocation(location: string): ResolvedLocation {
+  const folded = foldDiacritics(location);
+
+  for (const city of CITY_ANCHORS) {
+    if (city.aliases.some((alias) => folded.includes(alias))) {
+      return {
+        regionCode: city.key,
+        regionLabel: city.label,
+        matchKind: "city",
+      };
     }
   }
-  return { regionCode: "SK", regionLabel: REGION_LABELS.SK };
+
+  for (const [city, code] of Object.entries(CITY_TO_REGION)) {
+    if (folded.includes(city)) {
+      return {
+        regionCode: code,
+        regionLabel: REGION_LABELS[code] ?? code,
+        matchKind: "region",
+      };
+    }
+  }
+
+  return {
+    regionCode: "SK",
+    regionLabel: REGION_LABELS.SK,
+    matchKind: "national",
+  };
 }

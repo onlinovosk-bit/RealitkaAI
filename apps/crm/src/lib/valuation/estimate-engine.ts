@@ -1,9 +1,6 @@
 import { resolveRegionFromLocation } from "@/lib/valuation/resolve-region";
-import {
-  loadRegionalPrices,
-  lookupVerifiedPricePerSqm,
-  roundBand,
-} from "@/lib/valuation/regional-data";
+import type { PriceSource } from "@/lib/valuation/resolve-region";
+import * as regionalData from "@/lib/valuation/regional-data";
 import type {
   ValuationEstimateResult,
   ValuationPropertyInput,
@@ -16,24 +13,43 @@ export function buildDeterministicEstimate(
   input: ValuationPropertyInput,
 ): ValuationEstimateResult {
   const sqm = Math.max(1, Math.min(10_000, Math.round(input.sqm)));
-  const { regionCode } = resolveRegionFromLocation(input.location);
-  const lookup = lookupVerifiedPricePerSqm(regionCode, input.propertyType);
+  const resolved = resolveRegionFromLocation(input.location);
+  const lookup = regionalData.lookupVerifiedPricePerSqm(
+    resolved,
+    input.propertyType,
+  );
 
   if (!lookup) {
+    console.warn(
+      `[valuation] priceSource=none location=${JSON.stringify(input.location)}`,
+    );
     return {
       noEstimate: true,
       currency: "EUR",
+      priceSource: "none" satisfies PriceSource,
       commentary:
         "Na spoľahlivý online rozsah nemáme dostatok verifikovaných dát pre túto lokalitu; maklér pripraví osobný odhad.",
       disclaimer: DISCLAIMER,
     };
   }
 
-  const data = loadRegionalPrices();
+  if (lookup.priceSource === "national") {
+    console.warn(
+      `[valuation] priceSource=national location=${JSON.stringify(input.location)} regionCode=${resolved.regionCode}`,
+    );
+  }
+
+  const data = regionalData.loadRegionalPrices();
   const base = lookup.pricePerSqm * sqm;
   const roundTo = data.band_rules.round_to_eur ?? 1000;
-  const low = roundBand(base * (1 - lookup.bandLowerPct / 100), roundTo);
-  const high = roundBand(base * (1 + lookup.bandUpperPct / 100), roundTo);
+  const low = regionalData.roundBand(
+    base * (1 - lookup.bandLowerPct / 100),
+    roundTo,
+  );
+  const high = regionalData.roundBand(
+    base * (1 + lookup.bandUpperPct / 100),
+    roundTo,
+  );
 
   return {
     noEstimate: false,
@@ -41,11 +57,18 @@ export function buildDeterministicEstimate(
     high,
     currency: "EUR",
     pricePerSqm: lookup.pricePerSqm,
-    regionCode,
+    regionCode: resolved.regionCode,
     regionLabel: lookup.regionLabel,
     sourceQuarter: lookup.sourceQuarter,
     sourceNote: lookup.sourceNote,
-    commentary: buildFallbackCommentary(input, low, high, lookup.regionLabel, lookup.usedFallback),
+    priceSource: lookup.priceSource,
+    commentary: buildFallbackCommentary(
+      input,
+      low,
+      high,
+      lookup.regionLabel,
+      lookup.usedFallback,
+    ),
     disclaimer: DISCLAIMER,
   };
 }

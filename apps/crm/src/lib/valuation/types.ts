@@ -32,6 +32,8 @@ export type ValuationPropertyInput = {
   ownerPriceExpectation?: number;
 };
 
+export type ValuationPriceSource = "city" | "region" | "national" | "none";
+
 export type ValuationEstimateResult = {
   noEstimate: boolean;
   low?: number;
@@ -42,6 +44,8 @@ export type ValuationEstimateResult = {
   regionLabel?: string;
   sourceQuarter?: string;
   sourceNote?: string;
+  /** Which price ladder produced the estimate — ends silent national fallback. */
+  priceSource?: ValuationPriceSource;
   commentary: string;
   disclaimer: string;
 };
