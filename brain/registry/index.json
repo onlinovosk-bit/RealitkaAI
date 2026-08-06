@@ -288,14 +288,14 @@
     ],
     "evidence": [
       {
-        "commit": "2144ecc2fd1b09e6babbb6835214205cac5d17a2",
-        "note": "Inventory contains 8 file(s); digest sha256:38fd27bacf3a6155d11536949bd716b3cb514adaf0ce12248ca69f9ce862e0e3.",
+        "commit": "1ed83c3f3d2193a078ffe5f768df9f8414630bef",
+        "note": "Inventory contains 8 file(s); digest sha256:263a3f079c03a8df2d33e3cbe9c2a31e663bd959d217789e9bc17e06cb1be2db.",
         "path": ".github/workflows"
       }
     ],
     "id": "ci.workflows",
     "inventory": {
-      "digest": "sha256:38fd27bacf3a6155d11536949bd716b3cb514adaf0ce12248ca69f9ce862e0e3",
+      "digest": "sha256:263a3f079c03a8df2d33e3cbe9c2a31e663bd959d217789e9bc17e06cb1be2db",
       "fileCount": 8,
       "sample": [
         ".github/scripts/automerge-policy.mjs",
@@ -308,7 +308,7 @@
         ".github/workflows/schema-governance-guard.yml"
       ]
     },
-    "lastVerifiedAt": "2026-08-04",
+    "lastVerifiedAt": "2026-08-06",
     "name": "GitHub Actions workflows",
     "owner": "engineering",
     "purpose": "CI and governance workflow inventory; remote branch protection is not inferred from files.",
@@ -320,7 +320,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "2144ecc2fd1b09e6babbb6835214205cac5d17a2",
+      "commit": "1ed83c3f3d2193a078ffe5f768df9f8414630bef",
       "path": ".github/workflows"
     },
     "status": "active",
@@ -341,14 +341,14 @@
     ],
     "evidence": [
       {
-        "commit": "3777dbccce23f5118b7ac9e2ee0e01680fc37084",
-        "note": "Inventory contains 227 file(s); digest sha256:d36eb9667bb9c7e60645a8c71935ef994733a3da969a0445969ef78d5b610061.",
+        "commit": "01d5dd7dcefa3f39a2d176bcb2ea2887dbba60d3",
+        "note": "Inventory contains 227 file(s); digest sha256:c8d8cf0abf9aa1c5379150d2a1fa79f6f22410d89a3ac9ab7574c43a4038d905.",
         "path": "apps/crm/src/app/api"
       }
     ],
     "id": "crm.api",
     "inventory": {
-      "digest": "sha256:d36eb9667bb9c7e60645a8c71935ef994733a3da969a0445969ef78d5b610061",
+      "digest": "sha256:c8d8cf0abf9aa1c5379150d2a1fa79f6f22410d89a3ac9ab7574c43a4038d905",
       "fileCount": 227,
       "sample": [
         "apps/crm/src/app/api/acquire/email/route.ts",
@@ -365,7 +365,7 @@
         "apps/crm/src/app/api/ai/closing-window/recompute/route.ts"
       ]
     },
-    "lastVerifiedAt": "2026-08-04",
+    "lastVerifiedAt": "2026-08-06",
     "name": "CRM route handlers",
     "owner": "engineering",
     "purpose": "Inventory of API route handlers used to verify documented endpoint paths.",
@@ -377,7 +377,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "3777dbccce23f5118b7ac9e2ee0e01680fc37084",
+      "commit": "01d5dd7dcefa3f39a2d176bcb2ea2887dbba60d3",
       "path": "apps/crm/src/app/api"
     },
     "status": "active",
@@ -398,14 +398,14 @@
     ],
     "evidence": [
       {
-        "commit": "3777dbccce23f5118b7ac9e2ee0e01680fc37084",
-        "note": "Inventory contains 509 file(s); digest sha256:639fc86645892aaf5df4500649f93cbefc27a466dfe0efe4cc8e8f6ce6203f9f.",
+        "commit": "01d5dd7dcefa3f39a2d176bcb2ea2887dbba60d3",
+        "note": "Inventory contains 509 file(s); digest sha256:6dd5c71b5c9f671706e4fbd0e43fcedba342900851c7fd3ea9da3f2c1dbe2e3a.",
         "path": "apps/crm/src/app"
       }
     ],
     "id": "crm.application",
     "inventory": {
-      "digest": "sha256:639fc86645892aaf5df4500649f93cbefc27a466dfe0efe4cc8e8f6ce6203f9f",
+      "digest": "sha256:6dd5c71b5c9f671706e4fbd0e43fcedba342900851c7fd3ea9da3f2c1dbe2e3a",
       "fileCount": 509,
       "sample": [
         "apps/crm/src/app/(dashboard)/DashboardClientShell.tsx",
@@ -422,7 +422,7 @@
         "apps/crm/src/app/(dashboard)/akvizieia/listy-z-katastra/loading.tsx"
       ]
     },
-    "lastVerifiedAt": "2026-08-04",
+    "lastVerifiedAt": "2026-08-06",
     "name": "CRM application surface",
     "owner": "engineering",
     "purpose": "Inventory of CRM pages, layouts, and application code used for documentation drift checks.",
@@ -432,7 +432,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "3777dbccce23f5118b7ac9e2ee0e01680fc37084",
+      "commit": "01d5dd7dcefa3f39a2d176bcb2ea2887dbba60d3",
       "path": "apps/crm/src/app"
     },
     "status": "active",
