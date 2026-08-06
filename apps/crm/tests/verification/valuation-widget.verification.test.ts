@@ -188,4 +188,26 @@ describe("valuation widget", () => {
     expect(estimateRoute).toContain("resolveAgencySlugFromReferer");
     expect(estimateRoute).not.toContain("submit/route");
   });
+
+  it("admits the price band in UI (PR-2 copy + priceSource)", () => {
+    const form = fs.readFileSync(
+      path.join(CRM_ROOT, "src/components/valuation/ValuationWidgetForm.tsx"),
+      "utf8",
+    );
+    expect(form).toContain("ValuationEstimatePresentation");
+
+    const types = fs.readFileSync(path.join(CRM_ROOT, "src/lib/valuation/types.ts"), "utf8");
+    expect(types).toContain("priceSource");
+    expect(types).toContain("ValuationPriceSource");
+
+    const presentation = fs.readFileSync(
+      path.join(CRM_ROOT, "src/components/valuation/estimate-presentation.tsx"),
+      "utf8",
+    );
+    expect(presentation).toContain("Presnú cenu určí maklér po obhliadke");
+    expect(presentation).toContain("preto je rozpätie širšie");
+    expect(presentation).toContain("pripravíme odhad individuálne");
+    expect(presentation).toContain('priceSource === "national"');
+    expect(presentation).toContain('priceSource === "none"');
+  });
 });
