@@ -288,7 +288,7 @@
     ],
     "evidence": [
       {
-        "commit": "1ed83c3f3d2193a078ffe5f768df9f8414630bef",
+        "commit": "fc7cee5fc06f720e89405ff504c54c00516a8a40",
         "note": "Inventory contains 8 file(s); digest sha256:263a3f079c03a8df2d33e3cbe9c2a31e663bd959d217789e9bc17e06cb1be2db.",
         "path": ".github/workflows"
       }
@@ -320,7 +320,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "1ed83c3f3d2193a078ffe5f768df9f8414630bef",
+      "commit": "fc7cee5fc06f720e89405ff504c54c00516a8a40",
       "path": ".github/workflows"
     },
     "status": "active",
@@ -341,7 +341,7 @@
     ],
     "evidence": [
       {
-        "commit": "01d5dd7dcefa3f39a2d176bcb2ea2887dbba60d3",
+        "commit": "fc7cee5fc06f720e89405ff504c54c00516a8a40",
         "note": "Inventory contains 227 file(s); digest sha256:c8d8cf0abf9aa1c5379150d2a1fa79f6f22410d89a3ac9ab7574c43a4038d905.",
         "path": "apps/crm/src/app/api"
       }
@@ -377,7 +377,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "01d5dd7dcefa3f39a2d176bcb2ea2887dbba60d3",
+      "commit": "fc7cee5fc06f720e89405ff504c54c00516a8a40",
       "path": "apps/crm/src/app/api"
     },
     "status": "active",
@@ -398,7 +398,7 @@
     ],
     "evidence": [
       {
-        "commit": "01d5dd7dcefa3f39a2d176bcb2ea2887dbba60d3",
+        "commit": "fc7cee5fc06f720e89405ff504c54c00516a8a40",
         "note": "Inventory contains 509 file(s); digest sha256:6dd5c71b5c9f671706e4fbd0e43fcedba342900851c7fd3ea9da3f2c1dbe2e3a.",
         "path": "apps/crm/src/app"
       }
@@ -432,7 +432,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "01d5dd7dcefa3f39a2d176bcb2ea2887dbba60d3",
+      "commit": "fc7cee5fc06f720e89405ff504c54c00516a8a40",
       "path": "apps/crm/src/app"
     },
     "status": "active",
@@ -733,21 +733,21 @@
     ],
     "evidence": [
       {
-        "commit": "14f6d56bf1b25f78afdb43edebc4372ee3e412a8",
-        "note": "Inventory contains 2 file(s); digest sha256:6a5e515e6cc7f66a5b04209b1ebeba137b07ffba8b36edee671140a9dcd7cca2.",
+        "commit": "43b646218058151045d4d2d5689298b5de2d45f1",
+        "note": "Inventory contains 2 file(s); digest sha256:30513b566ae4a14d1b4d91a23b515a19c788dd0f590abec4e1462e30d2fef8c6.",
         "path": "memory/decisions.md"
       }
     ],
     "id": "memory.decisions",
     "inventory": {
-      "digest": "sha256:6a5e515e6cc7f66a5b04209b1ebeba137b07ffba8b36edee671140a9dcd7cca2",
+      "digest": "sha256:30513b566ae4a14d1b4d91a23b515a19c788dd0f590abec4e1462e30d2fef8c6",
       "fileCount": 2,
       "sample": [
         "decisions.md",
         "memory/decisions.md"
       ]
     },
-    "lastVerifiedAt": "2026-08-04",
+    "lastVerifiedAt": "2026-08-07",
     "name": "Critical decisions log",
     "owner": "founder",
     "purpose": "Canonical historical decision source; generated Brain records remain pointers to this log.",
@@ -757,7 +757,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "14f6d56bf1b25f78afdb43edebc4372ee3e412a8",
+      "commit": "43b646218058151045d4d2d5689298b5de2d45f1",
       "path": "memory/decisions.md"
     },
     "status": "active",
