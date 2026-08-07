@@ -6,6 +6,9 @@
 
 import { callClaude, CLAUDE_SONNET, extractJson } from "./claude";
 import { estimateClaudeCostEur } from "./llm-usage-cost";
+import { SYSTEM_PROMPT } from "./listing-content-system-prompt";
+
+export { SYSTEM_PROMPT };
 
 export interface PropertyInput {
   type: string;           // "3-izbový byt", "rodinný dom", ...
@@ -23,6 +26,12 @@ export interface PropertyInput {
 
 export type ListingPersona = "INVESTOR" | "FAMILY" | "DOWNSIZER" | "GENERAL";
 
+/**
+ * KF1 listing output — required keys match `generateListingContent` JSON.
+ * Optional fields (C4 / FINAL prompt) are additive: no mapper, same keys as prompt.
+ * - titles: 3 portal/social/alt title variants (K5 titles[])
+ * - missingData / recommendations / techniquesUsed: maklér-facing meta (not client copy)
+ */
 export interface ListingContent {
   portal_text:  string;
   fb_ad_copy:   string;
@@ -30,19 +39,21 @@ export interface ListingContent {
   email_subject: string;
   email_body:   string;
   seo_keywords: string[];
+  /** Optional: 3 title variants — [0] portals, [1] social, [2] alt angle */
+  titles?: string[];
+  /** Optional: missing facts that would strengthen copy ([DOPLNIŤ] mirror) */
+  missingData?: string[];
+  /** Optional: maklér tips (process / vocabulary / form fields) */
+  recommendations?: string[];
+  /** Optional: technique IDs 1–10 actually visible in client-facing copy */
+  techniquesUsed?: number[];
 }
 
-export const SYSTEM_PROMPT = `Si senior copywriter pre slovenský realitný trh s 15 rokmi skúseností. \
-Píšeš texty čo skutočne predávajú — konkrétne, emocionálne, bez generických klišé. \
-NIKDY nepoužívaj: "krásny byt", "ideálna poloha", "výnimočná príležitosť", "moderný", "priestranný". \
-Namiesto toho: fakty, čísla, konkrétne výhody, silné otváracie vety. \
-Výstup je VŽDY validný JSON bez komentárov a markdown.`;
-
 export const PERSONA_CONTEXT: Record<ListingPersona, string> = {
-  INVESTOR: "Cieľ: investor hľadajúci výnos. Zdôrazni: výnos z prenájmu (%), lokalitu, dopyty v okolí, potenciál rastu ceny, rýchlosť predaja.",
-  FAMILY:   "Cieľ: rodina s deťmi. Zdôrazni: bezpečnosť, školy a škôlky v pešej dostupnosti, priestor na hranie, tiché susedstvo, záhrada/balkón.",
-  DOWNSIZER:"Cieľ: ľudia zmenšujúci bývanie (50+). Zdôrazni: nízka údržba, výťah/bezbariérovosť, blízkosť lekárne a prírody, pohodlie.",
-  GENERAL:  "Cieľ: všeobecný kupujúci. Vyvážený text, zdôrazni hlavné silné stránky.",
+  INVESTOR: "Cieľ: investor hľadajúci výnos. Zdôrazni: lokalitu, dopyt v okolí, potenciál rastu ceny, rýchlosť predaja — bez sľubu investičného výnosu/rentability.",
+  FAMILY:   "Cieľ: rodina s deťmi. Zdôrazni: bezpečnosť, školy a škôlky v pešej dostupnosti (len ak vo vstupe), priestor na hranie, tiché susedstvo, záhrada/balkón — len fakty zo vstupu.",
+  DOWNSIZER:"Cieľ: ľudia zmenšujúci bývanie (50+). Zdôrazni: nízka údržba, výťah/bezbariérovosť, blízkosť lekárne a prírody, pohodlie — len fakty zo vstupu.",
+  GENERAL:  "Cieľ: všeobecný kupujúci. Vyvážený text, zdôrazni hlavné silné stránky zo vstupu.",
 };
 
 export function buildListingUserPrompt(property: PropertyInput, persona: ListingPersona = "GENERAL"): string {
@@ -50,27 +61,25 @@ export function buildListingUserPrompt(property: PropertyInput, persona: Listing
   const floorInfo = property.floor != null
     ? `${property.floor}. poschodie z ${property.total_floors ?? "?"}`
     : "neuvedené";
+  const pricePerM2 = property.size_m2 > 0
+    ? `${Math.round(property.price / property.size_m2).toLocaleString("sk-SK")} €/m²`
+    : "neuvedené";
   return `NEHNUTEĽNOSŤ NA PREDAJ:
 Typ: ${property.type}
 Lokalita: ${property.location}${property.district ? `, ${property.district}` : ""}
 Výmera: ${property.size_m2} m²  |  Izby: ${property.rooms ?? "neuvedené"}
 Podlažie: ${floorInfo}
-Cena: ${priceFormatted} €  (${Math.round(property.price / property.size_m2).toLocaleString("sk-SK")} €/m²)
+Cena: ${priceFormatted} €  (${pricePerM2})
 Stav: ${property.condition}
-Vybavenie: ${property.features.join(", ")}
+Vybavenie: ${property.features.join(", ") || "neuvedené"}
 ${property.agent_notes ? `Poznámky makléra: ${property.agent_notes.slice(0, 5_000)}` : ""}
 
 Stratégia pre kupujúceho: ${PERSONA_CONTEXT[persona]}
 
-Vygeneruj JSON:
-{
-  "portal_text": "Text pre nehnutelnosti.sk a topreality.sk — 260-320 slov. Prvá veta musí byť háčik. Konkrétne výhody, nie prídavné mená. Zakončiť silnou CTA.",
-  "fb_ad_copy": "Facebook/Instagram reklama — 65-80 slov. Hook, benefit, urgencia (napr. počet záujemcov/obmedzená ponuka), CTA tlačidlo text.",
-  "ig_caption": "Instagram caption — 2 krátke odstavce + 7 relevantných hashtagov v slovenčine.",
-  "email_subject": "Predmet emailu — max 52 znakov, bez emoji, zvedavosť + konkrétum.",
-  "email_body": "Telo emailu pre databázu klientov — 160-200 slov. Osobný tón, hlavné výhody, jasný ďalší krok.",
-  "seo_keywords": ["6 kľúčových slov pre portálové vyhľadávanie, konkrétne a hľadané"]
-}`;
+Vygeneruj IBA validný JSON podľa systémových pravidiel (produkčný ListingContent):
+povinné: portal_text, fb_ad_copy, ig_caption, email_subject, email_body, seo_keywords (6);
+voliteľné (vyplň ak vieš): titles (3), missingData, recommendations, techniquesUsed.
+Žiadny markdown, žiadny komentár okolo JSON.`;
 }
 
 export type ListingContentAudit = {
@@ -88,7 +97,7 @@ export async function generateListingContent(
 
   const response = await callClaude({
     model: CLAUDE_SONNET,
-    max_tokens: 2200,
+    max_tokens: 4096,
     system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
     messages: [{ role: "user", content: userPrompt }],
   }, "listing-content");
