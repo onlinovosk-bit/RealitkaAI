@@ -10,6 +10,28 @@ import { SYSTEM_PROMPT } from "./listing-content-system-prompt";
 
 export { SYSTEM_PROMPT };
 
+/**
+ * E1 — optional locality character (brief + FINAL).
+ * Without this field the model must not invent „povaha lokality“.
+ * Enum labels are Slovak (prompt + UI); free text supplements any kind.
+ */
+export const CHARAKTER_LOKALITY_KINDS = [
+  "malé mesto",
+  "sídlisko",
+  "vidiek",
+  "centrum",
+  "satelit",
+  "iné",
+] as const;
+
+export type CharakterLokalityKind = (typeof CHARAKTER_LOKALITY_KINDS)[number];
+
+export type CharakterLokalityInput = {
+  kind?: CharakterLokalityKind;
+  /** Soft municipal / local nuance (e.g. „Sabinov nie je Prešov“) */
+  text?: string;
+};
+
 export interface PropertyInput {
   type: string;           // "3-izbový byt", "rodinný dom", ...
   location: string;       // "Bratislava"
@@ -22,6 +44,8 @@ export interface PropertyInput {
   condition: string;      // "novostavba" | "po rekonštrukcii" | "pôvodný stav"
   features: string[];     // ["balkón", "parking", "pivnica"]
   agent_notes?: string;   // Surové poznámky makléra
+  /** E1: only source for locality character / soft municipal tone */
+  charakterLokality?: CharakterLokalityInput;
 }
 
 export type ListingPersona = "INVESTOR" | "FAMILY" | "DOWNSIZER" | "GENERAL";
@@ -56,6 +80,38 @@ export const PERSONA_CONTEXT: Record<ListingPersona, string> = {
   GENERAL:  "Cieľ: všeobecný kupujúci. Vyvážený text, zdôrazni hlavné silné stránky zo vstupu.",
 };
 
+/** E1: one prompt line, or null when empty (no locality-character sentence allowed). */
+export function formatCharakterLokalityLine(
+  value: CharakterLokalityInput | undefined,
+): string | null {
+  if (!value) return null;
+  const kind = value.kind?.trim() ?? "";
+  const text = value.text?.trim() ?? "";
+  if (!kind && !text) return null;
+  if (kind && text) return `Charakter lokality (E1): ${kind} — ${text}`;
+  if (kind) return `Charakter lokality (E1): ${kind}`;
+  return `Charakter lokality (E1): ${text}`;
+}
+
+/** Drop empty charakterLokality before API / persistence (optional field). */
+export function sanitizePropertyInput(property: PropertyInput): PropertyInput {
+  const line = formatCharakterLokalityLine(property.charakterLokality);
+  if (line) {
+    const kind = property.charakterLokality?.kind?.trim() as CharakterLokalityKind | undefined;
+    const text = property.charakterLokality?.text?.trim();
+    return {
+      ...property,
+      charakterLokality: {
+        ...(kind ? { kind } : {}),
+        ...(text ? { text } : {}),
+      },
+    };
+  }
+  if (!("charakterLokality" in property)) return property;
+  const { charakterLokality: _omit, ...rest } = property;
+  return rest;
+}
+
 export function buildListingUserPrompt(property: PropertyInput, persona: ListingPersona = "GENERAL"): string {
   const priceFormatted = property.price.toLocaleString("sk-SK");
   const floorInfo = property.floor != null
@@ -64,10 +120,11 @@ export function buildListingUserPrompt(property: PropertyInput, persona: Listing
   const pricePerM2 = property.size_m2 > 0
     ? `${Math.round(property.price / property.size_m2).toLocaleString("sk-SK")} €/m²`
     : "neuvedené";
+  const charakterLine = formatCharakterLokalityLine(property.charakterLokality);
   return `NEHNUTEĽNOSŤ NA PREDAJ:
 Typ: ${property.type}
 Lokalita: ${property.location}${property.district ? `, ${property.district}` : ""}
-Výmera: ${property.size_m2} m²  |  Izby: ${property.rooms ?? "neuvedené"}
+${charakterLine ? `${charakterLine}\n` : ""}Výmera: ${property.size_m2} m²  |  Izby: ${property.rooms ?? "neuvedené"}
 Podlažie: ${floorInfo}
 Cena: ${priceFormatted} €  (${pricePerM2})
 Stav: ${property.condition}
@@ -92,7 +149,7 @@ export async function generateListingContent(
   property: PropertyInput,
   persona: ListingPersona = "GENERAL",
 ): Promise<{ content: ListingContent; audit: ListingContentAudit }> {
-  const userPrompt = buildListingUserPrompt(property, persona);
+  const userPrompt = buildListingUserPrompt(sanitizePropertyInput(property), persona);
   const t0 = Date.now();
 
   const response = await callClaude({
