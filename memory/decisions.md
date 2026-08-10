@@ -328,11 +328,11 @@ Ak 2026-08-08 nebude founder vedieÅ¥ povedaÅ¥, Å¾e reporty ÄÃ­tal pÃ¤Å¥ rÃ¡n po
 - **Verdikt schema:** `verdict âˆˆ { konal | vedel | zbytoÄnÃ© }` â€” append do `docs/audit/nodes-value.jsonl`
 - **PR / vetva:** docs/night-ops-2026-08-03
 
-## [2026-08-06] — Listing generator prompt: K1 GO › K2+K3 STOP
-- **Rozhodnutie:** Founder schválil K1 (metóda 10 techník + vetvy). Dodané K2 draft systémového promptu + K3 eval (6 JSON). **STOP pred K4.**
-- **Súbory:** `docs/sales/listing-generator-system-prompt-DRAFT.md`, `docs/sales/listing-generator-K3-eval.md`
-- **Sabinov zdroj:** Word `PODKLADY K INZERCII REALITY SMOLKO.docx` (md demo v repo chıba).
-- **Ïalej:** founder GO › K4 oponenti (O1–O6 z metapromptu).
+## [2026-08-06] ï¿½ Listing generator prompt: K1 GO ï¿½ K2+K3 STOP
+- **Rozhodnutie:** Founder schvï¿½lil K1 (metï¿½da 10 technï¿½k + vetvy). Dodanï¿½ K2 draft systï¿½movï¿½ho promptu + K3 eval (6 JSON). **STOP pred K4.**
+- **Sï¿½bory:** `docs/sales/listing-generator-system-prompt-DRAFT.md`, `docs/sales/listing-generator-K3-eval.md`
+- **Sabinov zdroj:** Word `PODKLADY K INZERCII REALITY SMOLKO.docx` (md demo v repo chï¿½ba).
+- **ï¿½alej:** founder GO ï¿½ K4 oponenti (O1ï¿½O6 z metapromptu).
 
 ---
 
@@ -492,21 +492,35 @@ PÄ‚Â´vodnÄ‚Ë text nemaÄ¹Ä¾.
 - **BUILD:** `docs/sales/listing-generator-system-prompt-FINAL.md` + `docs/sales/listing-generator-K5-handoff.md`. K4 = superseded medzikrok. Status **K5 HOTOVÃ‰**.
 - **OstÃ¡va:** UI implementÃ¡cia `charakterLokality` + wire FINAL do generateListingContent (mimo K5).
 
-## [2026-08-07] — Listing generator C4: schema = ListingContent (CLOSED)
-- **C4 (FOUNDER, vykona TERAZ):** FINAL prompt emituje produkèné k¾úèe `ListingContent` — iadny mapper. `mainText`›`portal_text`; `socialText`›`fb_ad_copy`+`ig_caption`; optionals: `titles?`, `missingData?`, `recommendations?`, `techniquesUsed?`.
-- **BUILD:** typ rozšírenı aditívne; K3 T1–T6 regenerované; vitest 6/6 PASS (`listing-content-c4-schema.verification.test.ts`).
-- **NEROBI:** PR-A (wire FINAL do `generateListingContent`) — èaká GO + C2.
-- **Súbory:** FINAL, K5-handoff, K3-eval, inzerat-generator-tab, `listing-content.ts`.
+## [2026-08-07] ï¿½ Listing generator C4: schema = ListingContent (CLOSED)
+- **C4 (FOUNDER, vykonaï¿½ TERAZ):** FINAL prompt emituje produkï¿½nï¿½ kï¿½ï¿½ï¿½e `ListingContent` ï¿½ ï¿½iadny mapper. `mainText`ï¿½`portal_text`; `socialText`ï¿½`fb_ad_copy`+`ig_caption`; optionals: `titles?`, `missingData?`, `recommendations?`, `techniquesUsed?`.
+- **BUILD:** typ rozï¿½ï¿½renï¿½ aditï¿½vne; K3 T1ï¿½T6 regenerovanï¿½; vitest 6/6 PASS (`listing-content-c4-schema.verification.test.ts`).
+- **NEROBIï¿½:** PR-A (wire FINAL do `generateListingContent`) ï¿½ ï¿½akï¿½ GO + C2.
+- **Sï¿½bory:** FINAL, K5-handoff, K3-eval, inzerat-generator-tab, `listing-content.ts`.
 
-## [2026-08-07] — Listing generator: founder (b) stress feedback (nie C2 close)
-- **Fakt:** Founder oznaèil `fb_ad_copy` lead z K3 Test 5 (Prešov 72 m2, prázdny popis) ako „písal èlovek“.
-- **Pravda:** text = FINAL stress (nie golden / èlovek). Interpretácia: prompt oklamal foundera na riedkom vstupe › pozitívny stress/C3 signál.
-- **Nie:** C2 verdikt Teriakovce/¼ubotice; (b) C2 páry neuzatvára. PR-A stále èaká C2 protokol + GO.
-- **Súbory:** `docs/sales/listing-generator-C2-notes.md`, K3-eval Test 5, K5-handoff §5b.
+## [2026-08-07] ï¿½ Listing generator: founder (b) stress feedback (nie C2 close)
+- **Fakt:** Founder oznaï¿½il `fb_ad_copy` lead z K3 Test 5 (Preï¿½ov 72 m2, prï¿½zdny popis) ako ï¿½pï¿½sal ï¿½lovekï¿½.
+- **Pravda:** text = FINAL stress (nie golden / ï¿½lovek). Interpretï¿½cia: prompt oklamal foundera na riedkom vstupe ï¿½ pozitï¿½vny stress/C3 signï¿½l.
+- **Nie:** C2 verdikt Teriakovce/ï¿½ubotice; (b) C2 pï¿½ry neuzatvï¿½ra. PR-A stï¿½le ï¿½akï¿½ C2 protokol + GO.
+- **Sï¿½bory:** `docs/sales/listing-generator-C2-notes.md`, K3-eval Test 5, K5-handoff ï¿½5b.
 
-## [2026-08-07] — Listing generator PR-A: FINAL prompt wire (GO)
-- **GO (FOUNDER):** po C2 PASS + C4 CLOSED — wire FINAL do generateListingContent / SYSTEM_PROMPT.
-- **BUILD:** listing-content-system-prompt.ts (FINAL inline const); optionals na ListingContent; C4 fixtures + prompt-wire verification; docs listing-generator-* › docs/prompts/ (smolko golden ostáva v docs/sales/).
-- **Mimo scope:** PR-B UI charakterLokality; mapper iadny.
+## [2026-08-07] ï¿½ Listing generator PR-A: FINAL prompt wire (GO)
+- **GO (FOUNDER):** po C2 PASS + C4 CLOSED ï¿½ wire FINAL do generateListingContent / SYSTEM_PROMPT.
+- **BUILD:** listing-content-system-prompt.ts (FINAL inline const); optionals na ListingContent; C4 fixtures + prompt-wire verification; docs listing-generator-* ï¿½ docs/prompts/ (smolko golden ostï¿½va v docs/sales/).
+- **Mimo scope:** PR-B UI charakterLokality; mapper ï¿½iadny.
 - **Rollback:** revert PR.
-- **Merge:** founder pri klávesnici (agent NEmerguje).
+- **Merge:** founder pri klï¿½vesnici (agent NEmerguje).
+
+---
+
+## D-2026-08-09-01 â€” Acquisition OS v2.2: GO na Stage 0
+
+Rozhodnutie: Blueprint acquisition-os-v2.2-final-locked.md sa zamykÃ¡ a implementuje sa VÃHRADNE Stage 0 (read-only sync z Google Test MCC, tenant izolÃ¡cia, audit). Stage 1+ vyÅ¾aduje samostatnÃ© GO po Stage 0 PASS checklistĞµ s dÃ´kazmi.
+
+Hranice (neprerokovateÄ¾nÃ© v Stage 0): Å¾iadne reÃ¡lne peniaze, Å¾iadne mutÃ¡cie kampanÃ­/budgetov, Å¾iadne conversion uploĞ°Ğ´Ñ‹, Å¾iadny LLM, Å¾iadna Meta/Microsoft, webhook spracÃºva iba is_test.
+
+VzÅ¥ah k Memory Engine ADR: acquisition_events je domÃ©novÃ½ ledger udalostÃ­ externÃ½ch providerov (Google Ads), memory_events je CRM outbox. Nie je to duplicitnÃ½ event store â€” hranica: Äo sa stalo U PROVIDERA vs. Äo sa stalo V CRM. Ak Stage 1 ukÃ¡Å¾e prekryv, rieÅ¡i sa amendmentom ADR, nie ad-hoc v kÃ³de.
+
+Reverzibilita: Stage 0 je Äisto aditÃ­vny (novÃ© tabuÄ¾ky, novÃ© routes), rollback = revert PR bez dopadu na existujÃºci produkt.
+
+Kill kritÃ©rium Stage 0: ak do 14 pracovnÃ½ch dnÃ­ od PR-S0.1 neprejde kompletnÃ½ PASS checklist s dÃ´kazmi, Stage 0 sa zastavuje a reviduje sa rozsah â€” nie blueprint, ale tempo (founder je sÃ¡m na vÅ¡etko).
