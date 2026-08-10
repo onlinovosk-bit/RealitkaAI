@@ -15,9 +15,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          # Full history: ingest embeds git commit dates via git log; shallow clones
+          # produce different metadata and false "index drift" (VLNA2 PR-C1).
           fetch-depth: 0
-          # brain:check compares committed indexes to ingest output; default PR merge
-          # checkout changes git log metadata and causes false drift on merge commits.
+          # PR head SHA — default merge checkout rewrites git log metadata.
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Set up Node
@@ -35,9 +36,11 @@ jobs:
       - name: Test Memory Engine
         run: npm run brain:test
 
-      - name: Verify committed Brain views match repository
-        run: npm run brain:check
-
+      # VLNA2 PR-C1: do NOT compare committed indexes to a fresh ingest.
+      # That gate taught agents to commit regenerated indexes ("refresh indexes")
+      # even when sources were unchanged — GUARD_BYPASS. Instead regenerate into
+      # a temp brain root and run audit against that view. Ingest still fails the
+      # job when validationIssues > 0 (schema/load errors).
       - name: Generate temporary Brain views
         run: npm run brain:ingest -- --brain-root "${{ runner.temp }}/brain"
 
