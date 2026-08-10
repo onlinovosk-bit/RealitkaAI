@@ -341,14 +341,14 @@
     ],
     "evidence": [
       {
-        "commit": "fc7cee5fc06f720e89405ff504c54c00516a8a40",
-        "note": "Inventory contains 227 file(s); digest sha256:c8d8cf0abf9aa1c5379150d2a1fa79f6f22410d89a3ac9ab7574c43a4038d905.",
+        "commit": "6c1aca27ffa9770d02c95ab4822cec12ccfee71c",
+        "note": "Inventory contains 227 file(s); digest sha256:ffad75e64b90f78e73dad508a7a8e6ce3bae65492555d86f8315441cd10fa81b.",
         "path": "apps/crm/src/app/api"
       }
     ],
     "id": "crm.api",
     "inventory": {
-      "digest": "sha256:c8d8cf0abf9aa1c5379150d2a1fa79f6f22410d89a3ac9ab7574c43a4038d905",
+      "digest": "sha256:ffad75e64b90f78e73dad508a7a8e6ce3bae65492555d86f8315441cd10fa81b",
       "fileCount": 227,
       "sample": [
         "apps/crm/src/app/api/acquire/email/route.ts",
@@ -365,7 +365,7 @@
         "apps/crm/src/app/api/ai/closing-window/recompute/route.ts"
       ]
     },
-    "lastVerifiedAt": "2026-08-06",
+    "lastVerifiedAt": "2026-08-07",
     "name": "CRM route handlers",
     "owner": "engineering",
     "purpose": "Inventory of API route handlers used to verify documented endpoint paths.",
@@ -377,7 +377,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "fc7cee5fc06f720e89405ff504c54c00516a8a40",
+      "commit": "6c1aca27ffa9770d02c95ab4822cec12ccfee71c",
       "path": "apps/crm/src/app/api"
     },
     "status": "active",
@@ -398,15 +398,15 @@
     ],
     "evidence": [
       {
-        "commit": "fc7cee5fc06f720e89405ff504c54c00516a8a40",
-        "note": "Inventory contains 509 file(s); digest sha256:6dd5c71b5c9f671706e4fbd0e43fcedba342900851c7fd3ea9da3f2c1dbe2e3a.",
+        "commit": "6c1aca27ffa9770d02c95ab4822cec12ccfee71c",
+        "note": "Inventory contains 510 file(s); digest sha256:19e26b94b88e8d2c2f25a76c16779642217d650e83232d2098a28dd297da1a3c.",
         "path": "apps/crm/src/app"
       }
     ],
     "id": "crm.application",
     "inventory": {
-      "digest": "sha256:6dd5c71b5c9f671706e4fbd0e43fcedba342900851c7fd3ea9da3f2c1dbe2e3a",
-      "fileCount": 509,
+      "digest": "sha256:19e26b94b88e8d2c2f25a76c16779642217d650e83232d2098a28dd297da1a3c",
+      "fileCount": 510,
       "sample": [
         "apps/crm/src/app/(dashboard)/DashboardClientShell.tsx",
         "apps/crm/src/app/(dashboard)/activities/error.tsx",
@@ -422,7 +422,7 @@
         "apps/crm/src/app/(dashboard)/akvizieia/listy-z-katastra/loading.tsx"
       ]
     },
-    "lastVerifiedAt": "2026-08-06",
+    "lastVerifiedAt": "2026-08-07",
     "name": "CRM application surface",
     "owner": "engineering",
     "purpose": "Inventory of CRM pages, layouts, and application code used for documentation drift checks.",
@@ -432,7 +432,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "fc7cee5fc06f720e89405ff504c54c00516a8a40",
+      "commit": "6c1aca27ffa9770d02c95ab4822cec12ccfee71c",
       "path": "apps/crm/src/app"
     },
     "status": "active",
@@ -733,7 +733,7 @@
     ],
     "evidence": [
       {
-        "commit": "43b646218058151045d4d2d5689298b5de2d45f1",
+        "commit": "7d193e4df1c5e71d704677f25d64f0687edc115f",
         "note": "Inventory contains 2 file(s); digest sha256:30513b566ae4a14d1b4d91a23b515a19c788dd0f590abec4e1462e30d2fef8c6.",
         "path": "memory/decisions.md"
       }
@@ -757,7 +757,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "43b646218058151045d4d2d5689298b5de2d45f1",
+      "commit": "7d193e4df1c5e71d704677f25d64f0687edc115f",
       "path": "memory/decisions.md"
     },
     "status": "active",
