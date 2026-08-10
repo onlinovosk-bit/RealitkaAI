@@ -12,7 +12,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getClaudeClient, CLAUDE_SONNET } from "@/lib/ai/claude";
-import { SYSTEM_PROMPT, buildListingUserPrompt } from "@/lib/ai/listing-content";
+import { SYSTEM_PROMPT, buildListingUserPrompt, sanitizePropertyInput } from "@/lib/ai/listing-content";
 import type { PropertyInput, ListingPersona } from "@/lib/ai/listing-content";
 
 export async function POST(req: Request) {
@@ -23,7 +23,7 @@ export async function POST(req: Request) {
   let property: PropertyInput, persona: ListingPersona;
   try {
     const body = await req.json();
-    property = body.property;
+    property = sanitizePropertyInput(body.property as PropertyInput);
     persona  = body.persona ?? "GENERAL";
     if (!property?.type || !property?.location) throw new Error("missing fields");
   } catch {

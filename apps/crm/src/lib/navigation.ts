@@ -38,6 +38,13 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     visibleFor: ["agent", "owner"],
   },
   {
+    key: "inzerat-generator",
+    label: "Generátor inzerátu",
+    path: "/inzerat-generator",
+    emoji: "📝",
+    visibleFor: ["agent", "owner"],
+  },
+  {
     key: "followup",
     label: "Follow-up drafty",
     path: "/followup",
