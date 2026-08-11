@@ -7,6 +7,9 @@
 **Blueprint:** `docs/architecture/acquisition-os-v2.2-final-locked.md`  
 **Scope:** investigation only — no app code, no migrations applied, no deploy  
 
+
+> **Founder correction (L3 interpretation):** `leads` missing `UNIQUE(agency_id, id)` is **Odložené na Stage 2** — **not** a PR-S0.1 blocker. SA without Workspace DWD confirms blueprint path; **OAuth fallback not needed for Stage 0**.
+
 Every claim below cites `path:line` (or path range) from the repo at investigation time.
 
 ---
@@ -26,16 +29,16 @@ Core tables are defined in `apps/crm/supabase/migrations/20260310_baseline_core_
 | Other FKs | `team_id → teams(id)`, `assigned_profile_id → profiles(id)` | `20260310_baseline_core_schema.sql:150-151` |
 | **`UNIQUE(agency_id, id)`** | **DOES NOT EXIST** | Full-migrations scan: no `UNIQUE (agency_id, id)` on any table; leads only has non-unique `idx_leads_agency_id` (`20260507160000_rls_leads_activities.sql:22`) |
 
-**Implication for blueprint:** Stage 1+ tables require:
+**Interpretation (Stage 0 vs later):** Missing `UNIQUE(agency_id, id)` on `leads` is **NOT a PR-S0.1 blocker**.
 
-```sql
-FOREIGN KEY (agency_id, lead_id) REFERENCES leads(agency_id, id)
-```
+- That composite unique is required only for FKs like `FOREIGN KEY (agency_id, lead_id) REFERENCES leads(agency_id, id)` on **`acquisition_conversions`** (and similar) — those land in **Stage 2**, not Stage 0. Citations for the future FK: `docs/architecture/acquisition-os-v2.2-final-locked.md:234`, `:292`.
+- Stage 0 creates **new** tables only (`acquisition_accounts`, `acquisition_campaigns`, `acquisition_events`). Composite FKs stay **between those new tables**, where we add `UNIQUE(agency_id, id)` ourselves.
+- `acquisition_events.lead_id` is a **simple** FK (or nullable ref) to `leads(id)` — not a composite `(agency_id, lead_id)`.
+- Stage 0 hard boundary: **žiadna zmena existujúcich tabuliek** → do **not** alter `leads` in PR-S0.1.
 
-Cited at `docs/architecture/acquisition-os-v2.2-final-locked.md:234` and `:292`.  
-**Before those FKs can land**, an additive migration must add `UNIQUE (agency_id, id)` (or a partial unique index where `agency_id IS NOT NULL`).
+**Odložené na Stage 2:** additive `UNIQUE (agency_id, id)` (or partial unique where `agency_id IS NOT NULL`) on `public.leads` — only when conversions / composite lead FKs are built.
 
-**Additional type conflict (flag for PR-S0.1):** blueprint drafts `lead_id uuid REFERENCES leads(id)` (`acquisition-os-v2.2-final-locked.md:196`) but live `leads.id` is **`text`**, not `uuid` (`20260310_baseline_core_schema.sql:8`). Stage 0 `acquisition_events.lead_id` must use `text` (or stay nullable without FK).
+**Type note for PR-S0.1 (new tables only):** blueprint draft shows `lead_id uuid REFERENCES leads(id)` (`acquisition-os-v2.2-final-locked.md:196`) but live `leads.id` is **`text`** (`20260310_baseline_core_schema.sql:8`). On `acquisition_events`, use `text` to match live schema.
 
 ### `public.activities`
 
@@ -72,8 +75,11 @@ Cited at `docs/architecture/acquisition-os-v2.2-final-locked.md:234` and `:292`.
 ### Verdict (item 1)
 
 - Core PK/FK graph exists and is tenant-rooted at `agencies`.
-- **`leads` does NOT have `UNIQUE(agency_id, id)`** — additive unique index required before any composite FK to `(agency_id, id)`.
-- Blueprint `lead_id uuid` vs live `leads.id text` is a conflict to resolve in PR-S0.1 (prefer matching live type).
+- **`leads` does NOT have `UNIQUE(agency_id, id)`** — factual finding only.
+- **PR-S0.1 may proceed immediately** without touching `leads`. Composite tenant FKs in Stage 0 are among **new** `acquisition_*` tables (self-owned `UNIQUE(agency_id, id)`).
+- **Odložené na Stage 2:** unique index on `leads(agency_id, id)` for `acquisition_conversions` composite FK.
+- For Stage 0 `acquisition_events.lead_id`, match live type: **`text`**, simple FK to `leads(id)`.
+
 
 ---
 
@@ -228,13 +234,13 @@ Use **nearest existing equivalent**:
 
 1. **Execution-prompt claim that SA “requires domain-wide delegation via Google Workspace” is outdated/imprecise for Google Ads API.** Current Google Ads docs: grant the service-account email access in Google Ads UI (Admin → Access and security), scope `https://www.googleapis.com/auth/adwords`; DWD/`sub` impersonation is not required when SA is invited directly to the MCC.
 2. **For Stage 0 Test MCC:** SA is **feasible** without Workspace DWD — create SA in GCP, invite SA email to Test MCC (read-only), store JSON via Vercel env (item 4).
-3. **If founder cannot complete SA invite / JSON storage in Day 1–2:** use locked **OAuth fallback**. Repo already has OAuth plumbing; PR description may state: `service account deferred to Stage 1, reason: <ops/blocker>` — **not** a blueprint change.
+3. **Outcome for Stage 0:** SA without DWD is a clean win — **use SA**. OAuth remains a locked blueprint contingency only if SA invite/storage later becomes impossible; it is **not** the planned Stage 0 path.
 
 ### Stage 0 recommendation
 
-- **Prefer SA** for Test MCC headless sync (matches blueprint default).
-- **Keep OAuth path** as explicit fallback using existing `GOOGLE_CLIENT_*` patterns.
-- Do not block Stage 0 on Workspace domain-wide delegation setup.
+- **Service account path confirmed** — invite SA to Test MCC; **no Workspace domain-wide delegation needed**.
+- **OAuth fallback is not needed for Stage 0** (blueprint path is green). Keep Calendar OAuth infra as-is for its own product use; do not plan Ads OAuth unless SA ops later fail.
+- Proceed with SA + Vercel env storage of the JSON key (founder-held; never in chat/repo).
 
 ---
 
@@ -275,8 +281,8 @@ Execution prompt says copy `REVOKE UPDATE, DELETE FROM authenticated` “like me
 
 | # | Conflict | Files | Proposed resolution |
 |---|----------|-------|---------------------|
-| C1 | Missing `UNIQUE(agency_id, id)` on `leads` | Baseline + indexes; blueprint `:234` | Additive unique index before composite FKs that need it |
-| C2 | Blueprint `lead_id uuid` vs `leads.id text` | Blueprint `:196`; baseline `:8` | Use `text` for any lead FK in Stage 0 |
+| C1 | Missing `UNIQUE(agency_id, id)` on `leads` | Baseline + indexes; blueprint `:234` | **Odložené na Stage 2** — not a Stage 0 / PR-S0.1 blocker. Needed only for `acquisition_conversions` composite FK. |
+| C2 | Blueprint `lead_id uuid` vs `leads.id text` | Blueprint `:196`; baseline `:8` | On new `acquisition_events` only: use `text` simple FK. Do not alter `leads`. |
 | C3 | Blueprint KMS vs repo Vercel env | Blueprint `:877`; `.env.local.example:1-6` | Stage 0 = Vercel env + DB pointer; no new vault |
 | C4 | Queue Redis/Bull vs Vercel cron | Blueprint vs `vercel.json` | Stage 0 = cron + table; queue later |
 | C5 | `memory_events` REVOKE “precedent” not in migrations | ADR only | Implement REVOKE on `acquisition_events` directly |
@@ -285,16 +291,17 @@ Execution prompt says copy `REVOKE UPDATE, DELETE FROM authenticated` “like me
 
 ## Summary answers (executive)
 
-1. **UNIQUE(agency_id, id) on leads?** → **No.** PK is `id text` only; additive unique index required before composite lead FKs.
+1. **UNIQUE(agency_id, id) on leads?** → **No (factual).** **Not a Stage 0 blocker.** **Odložené na Stage 2** (for `acquisition_conversions`). PR-S0.1 can ship now without altering `leads`.
 2. **RLS / helper** → `leads_tenant` = agency_id ∈ `profile_agencies_for_auth()`; function returns `setof uuid`, `stable`, `security definer`.
 3. **Jobs** → **Vercel cron** (`apps/crm/vercel.json` + `/api/cron/*`); n8n secondary for outreach/watchdogs only.
 4. **Secrets** → **Vercel env vars** (+ Postgres token tables); no KMS/Vault product in use.
-5. **SA / DWD** → SA **feasible without Workspace DWD** (invite SA to Test MCC). OAuth fallback locked and already patterned in repo.
+5. **SA / DWD** → SA **confirmed without Workspace DWD**. **OAuth fallback not needed for Stage 0.**
 6. **`acquisition_` collisions** → **None** in schema/code; docs-only planned names.
 
 ---
 
 ## Next implementation gate (out of this lane)
 
-Human Day 1–2 credentials (Test MCC, developer token, SA JSON) from ČASŤ 1 of the execution prompt remain blockers for live API calls.  
-PR-S0.1 can proceed on schema/RLS/tests with mocks once founder GOs after this report.
+**PR-S0.1 is unblocked** on schema (additive cquisition_* only; no leads change).  
+Human Day 1–2 credentials (Test MCC, developer token, SA JSON) remain blockers only for **live** Google Ads calls (PR-S0.2+), not for the migration PR.
+
