@@ -115,8 +115,8 @@
 
 ## [2026-06-04] - Arbitrage analyze: `empty` vs `source` (PR-3)
 - **Poznámka (nie bug):** Prázdny scan vracia `empty: true` + `source: 'live'`, nie `source: 'empty'`. UI spolieha na `empty`, nie na literal `'empty'`. Ak niečo neskôr filtruje `source === 'empty'`, nenájde to — stealth-recruiter používa `'empty'` inak.
-- **Cron / copy:** Hobby Vercel = denné sloty v `apps/crm/vercel.json` (#96). UI copy v `ArbitrageDashboard` zosúladené na „raz denne“ (lokálne, čaká malý PR).
-- **Auto-deploy:** Po merge #96 production deploy `realitka-rcsem38y0` (~5 min) — Git hook funguje; predtým blokoval aj Hobby `*/6` validácia. Sledovať „Ignored Build Step“, ak sa znova canceluje preview/prod.
+- **Cron / copy:** Hobby Vercel = denné sloty v `apps/crm/vercel.json` (#96). UI copy v `ArbitrageDashboard` zosúladené na "raz denne" (lokálne, čaká malý PR).
+- **Auto-deploy:** Po merge #96 production deploy `realitka-rcsem38y0` (~5 min) — Git hook funguje; predtým blokoval aj Hobby `*/6` validácia. Sledovať "Ignored Build Step", ak sa znova canceluje preview/prod.
 
 ## [2026-06-04] - v1 scope + nav inventúra (post PR-3)
 - **v1 = CRM + AI jadro** (LIVE: leady, triáž, call analyzer, playbook, Realvia). Trhový feed (`portal_listings` bridge) → backlog **post-v1**, nie teraz. Arbitráž = úprimný prázdny modul.
@@ -141,7 +141,7 @@
 
 - **Fakt:** Realvia import = identita (meno+email), nie kvalifikácia. 439/439 prázdne `budget`/`timeline`/`financing`/`last_contact`; dáta nie sú v `payload_raw` ani inde.
 - **VETO backfill:** BRI sa **nedá** oživiť backfillom z Realvie — nemáme z čoho.
-- **Rozhodnutie A (BUILD teraz):** **Honest pending** — UI „Nekvalifikované / chýbajú údaje" (AP-001). BRI kód nemeníme; ožije pri reálnej práci makléra alebo kvalifikačnom formulári.
+- **Rozhodnutie A (BUILD teraz):** **Honest pending** — UI "Nekvalifikované / chýbajú údaje" (AP-001). BRI kód nemeníme; ožije pri reálnej práci makléra alebo kvalifikačnom formulári.
 - **Rozhodnutie B (VALIDATE):** Zdroj kvalifikácie = Smolko admin **Klienti/Dopyty** (Nehnuteľnosti) — preskúmať CSV export; nie enrichment engine na prázdnych poliach.
 - **Realvia:** Primárny zdroj nehnuteľností + identít leadov; UC direct handoff zrušený.
 - **Reconcile (B1, #222):** Spustiť `?reconcile_processed=1` **až po merge #222**; len párovanie cez `source_id` + existujúca property (AP-010), nie hromadný prepis. Kozmetika monitoringu, nie blocker.
@@ -152,7 +152,7 @@
 
 - **Route:** `https://app.revolis.ai/vertical-pack/13303557` · login **Reality Smolko** (Rastislav Smolko).
 - **Vlna 1 (#228/#229):** verified — completeness z reálneho PROD riadku **89% (8/9)**, chýba len cena; listing score + capabilities bežia na živých dátach (10 fotiek).
-- **Vlna 2 (#230):** verified — bannery PASS, decky + microsite vykreslené; **žiadny** žltý „DB riadok nenájdený".
+- **Vlna 2 (#230):** verified — bannery PASS, decky + microsite vykreslené; **žiadny** žltý "DB riadok nenájdený".
 - **Guardian FLAG** na listing/deck/microsite kvôli HTML v popise (`<br />`…) — očakávané správanie K1; fix **PR #231** (strip HTML + skip cena 0 v listing body).
 - **Poznámka:** 44% = len fixture fallback (iný účet); na Smolko PROD očakávaj **~89%**, nie 44%.
 - **A3 brána:** `processed=false` count = **2**; cleanup SQL nespustené autonómne (správne).
@@ -203,7 +203,7 @@
 ## [2026-06-23] - AP-012 nosič: vágny chore/docs commit (e7040db88) — VETO / cleanup
 
 - **Incident:** 4 L99 governance docs (`premortem-mitigations`, `gdpr-operational-checklist`, `tech-ownership`, `product-one-thing`) sa dostali na `main` cez `e7040db88` (`chore(crm): tier label tests, QA docs…`), nie cez schválený feature PR (#240 bol čistý kód).
-- **Vektor:** horší než „scope pri malom PR" — **vágna `chore`/`docs` nálepka**, ktorú nikto nečíta riadkovo.
+- **Vektor:** horší než "scope pri malom PR" — **vágna `chore`/`docs` nálepka**, ktorú nikto nečíta riadkovo.
 - **Rozhodnutie:** docs **vyhodené** z produkčného repa (PR #242); koncepty idú do Kit backlogu, nie do CRM pri oprave odkazu.
 - **Pravidlo:** `chore:` / `docs:` commit ≠ skip review; diff po riadkoch vždy. Zapísané aj v `.claude/anti-style.md`.
 - **Guardian PROD:** code-truth #240 OK; predajný argument až pri 5/5 PROD smoke.
@@ -217,7 +217,7 @@
 
 ## [2026-06-24] - AP-015 North Star r2→r4 — BUILD (docs)
 
-- **Rozhodnutie:** North Star preformulovaný: Revolis = Knowledge Monopoly systém (Loops Revenue → Learning → Network → Evolution), nie „AI pre realitky“.
+- **Rozhodnutie:** North Star preformulovaný: Revolis = Knowledge Monopoly systém (Loops Revenue → Learning → Network → Evolution), nie "AI pre realitky".
 - **Dokument:** `docs/architecture/north-star-2027-2030.md` (r4).
 - **Gate:** Genome Test — BUILD len ak 30-dňové KPI zákazníka A zapisuje do Loop 2.
 
@@ -241,7 +241,7 @@
 ## [2026-07-19] - Valuation Widget — VALIDATE (+ Wave 0 route)
 
 - **Signál:** Reality Smolko a AA Reality Molnár verbálne potvrdili záujem, ale bez potvrdeného distribučného kanála, SLA a ochoty platiť.
-- **Dôkaz dopytu (2026-07-19):** `realitysmolko.sk/ponuka-dopyt` už obsahuje položku „Ocenenie nehnuteľnosti“ a vedie naň platená Google Ads kampaň (gclid). Dopyt validovaný klientom samým; kanál č. 1 = táto stránka. Predajný rámec: upgrade platenej kampane (okamžitý výsledok = vyššia konverzia + leady do Revolis triage namiesto e-mailu), nasadenie vo fázach (paralelné tlačidlo → náhrada formulára).
+- **Dôkaz dopytu (2026-07-19):** `realitysmolko.sk/ponuka-dopyt` už obsahuje položku "Ocenenie nehnuteľnosti" a vedie naň platená Google Ads kampaň (gclid). Dopyt validovaný klientom samým; kanál č. 1 = táto stránka. Predajný rámec: upgrade platenej kampane (okamžitý výsledok = vyššia konverzia + leady do Revolis triage namiesto e-mailu), nasadenie vo fázach (paralelné tlačidlo → náhrada formulára).
 - **Webex bypass (2026-07-19):** Pilot Fáza 0 = Ads priamo na Revolis URL, bez Webexu. Seliga voliteľný až pre tlačidlo na webe. Stealth: Revolis neoslovuje Webex pred dôkazom. Brief: `docs/briefs/validation-valuation-widget.md` § Webex bypass stratégia.
 - **Wave 0 route:** `/odhad/[agencySlug]` + `POST /api/valuation/submit` → `leads` (`source=valuation_widget`). Pilot tenant: `reality-smolko`. Bez falošného cenového pásma (maklér kontaktuje s odhadom).
 - **VETO na plný BUILD:** chýba licencovaný, reprodukovateľný zdroj cenových dát; LLM nesmie vytvárať trhové cenové pásmo bez neho.
@@ -328,155 +328,155 @@ Ak 2026-08-08 nebude founder vedieť povedať, že reporty čítal päť rán po
 - **Verdikt schema:** `verdict ∈ { konal | vedel | zbytočné }` — append do `docs/audit/nodes-value.jsonl`
 - **PR / vetva:** docs/night-ops-2026-08-03
 
-## [2026-08-06] � Listing generator prompt: K1 GO � K2+K3 STOP
-- **Rozhodnutie:** Founder schv�lil K1 (met�da 10 techn�k + vetvy). Dodan� K2 draft syst�mov�ho promptu + K3 eval (6 JSON). **STOP pred K4.**
-- **S�bory:** `docs/sales/listing-generator-system-prompt-DRAFT.md`, `docs/sales/listing-generator-K3-eval.md`
-- **Sabinov zdroj:** Word `PODKLADY K INZERCII REALITY SMOLKO.docx` (md demo v repo ch�ba).
-- **�alej:** founder GO � K4 oponenti (O1�O6 z metapromptu).
+## [2026-08-06] — Listing generator prompt: K1 GO › K2+K3 STOP
+- **Rozhodnutie:** Founder schválil K1 (metóda 10 techník + vetvy). Dodané K2 draft systémového promptu + K3 eval (6 JSON). **STOP pred K4.**
+- **Súbory:** `docs/sales/listing-generator-system-prompt-DRAFT.md`, `docs/sales/listing-generator-K3-eval.md`
+- **Sabinov zdroj:** Word `PODKLADY K INZERCII REALITY SMOLKO.docx` (md demo v repo chýba).
+- **Ďalej:** founder GO › K4 oponenti (O1–O6 z metapromptu).
 
 ---
 
-## D-2026-08-06-01 â€” Nasadzuje sa celĂ˝ backlog, nie zĂşĹľenĂ˝ augustovĂ˝ rozsah
+## D-2026-08-06-01 — Nasadzuje sa celý backlog, nie zúžený augustový rozsah
 
-**NAHRĂDZA:** D-2026-08-05-01, D-2026-08-05-02, D-2026-08-05-04, D-2026-08-05-06
+**NAHRÁDZA:** D-2026-08-05-01, D-2026-08-05-02, D-2026-08-05-04, D-2026-08-05-06
 
 ### Rozhodnutie
 
-RuĹˇĂ­ sa zĂşĹľenie augustovĂ©ho rozsahu. Nasadzuje sa **celĂ˝ otvorenĂ˝ backlog**
-(poloĹľky A1â€“F6 podÄľa `REV-DEPLOY-PROGRAM-001.md`): produkt, dĂˇtovĂˇ vrstva,
-Memory Engine, Engineering OS moduly, L4 Governance, L5 Evolution a prevĂˇdzkovĂ©
-opravy. Odklad governance a infraĹˇtruktĂşry do 1.9.2026 sa ruĹˇĂ­. Zmrazenie
-implementĂˇcie L4/L5 sa ruĹˇĂ­ â€” moduly prechĂˇdzajĂş z evidovanĂ˝ch do
-implementovanĂ˝ch podÄľa vlnovĂ©ho plĂˇnu.
+Ruší sa zúženie augustového rozsahu. Nasadzuje sa **celý otvorený backlog**
+(položky A1–F6 podľa `REV-DEPLOY-PROGRAM-001.md`): produkt, dátová vrstva,
+Memory Engine, Engineering OS moduly, L4 Governance, L5 Evolution a prevádzkové
+opravy. Odklad governance a infraštruktúry do 1.9.2026 sa ruší. Zmrazenie
+implementácie L4/L5 sa ruší — moduly prechádzajú z evidovaných do
+implementovaných podľa vlnového plánu.
 
 ### DĂ´vod (argument foundera)
 
-Onboarding zĂˇkaznĂ­kov aj vĂ˝voj robĂ­ jeden ÄŤlovek. Keby uprednostnil onboarding,
-nemal by ÄŤo predĂˇvaĹĄ. Produkt nie je dotiahnutĂ˝ a chĂ˝ba mu zdroj leadov â€”
-Smolkova kampaĹ zatiaÄľ nepriniesla novĂ˝ch klientov. Tretie nezĂˇvislĂ© potvrdenie
-trhu (MolnĂˇr 7/2026, SuchĂ˝ 5.8.2026, pitch ARCHEUS) hovorĂ­, Ĺľe kancelĂˇrie
-odmietajĂş ponuky AI/CRM, lebo nikto im nedodĂˇ klientov, ktorĂ­ chcĂş predaĹĄ.
-Fokus na jednu vec predpokladĂˇ istotu, na ÄŤo sa sĂşstrediĹĄ; tĂş Revolis zatiaÄľ
-nemĂˇ. Preto sa stavia do ĹˇĂ­rky, kĂ˝m sa zdroj leadov nevyrieĹˇi.
+Onboarding zákazníkov aj vývoj robí jeden človek. Keby uprednostnil onboarding,
+nemal by čo predávať. Produkt nie je dotiahnutý a chýba mu zdroj leadov —
+Smolkova kampaň zatiaľ nepriniesla nových klientov. Tretie nezávislé potvrdenie
+trhu (Molnár 7/2026, Suchý 5.8.2026, pitch ARCHEUS) hovorí, že kancelárie
+odmietajú ponuky AI/CRM, lebo nikto im nedodá klientov, ktorí chcú predať.
+Fokus na jednu vec predpokladá istotu, na čo sa sústrediť; tú Revolis zatiaľ
+nemá. Preto sa stavia do šírky, kým sa zdroj leadov nevyrieši.
 
-### VyÄŤĂ­slenĂˇ cena rozhodnutia
+### Vyčíslená cena rozhodnutia
 
-Rozpad backlogu: **118 PR v 15 vlnĂˇch.** PoctivĂ˝ odhad pri jednom ÄŤloveku
-s AI nĂˇstrojmi popri obchode: **5â€“6 mesiacov, dokonÄŤenie koniec januĂˇra 2027.**
-PrvĂ˝ blok (rozpĂ¤tie vo widgete, oprava CI brain indexov, kalibrĂˇcia, vyprĂˇzdnenie
+Rozpad backlogu: **118 PR v 15 vlnách.** Poctivý odhad pri jednom človeku
+s AI nástrojmi popri obchode: **5–6 mesiacov, dokončenie koniec januára 2027.**
+Prvý blok (rozpätie vo widgete, oprava CI brain indexov, kalibrácia, vyprázdnenie
 fronty PR) je hotovĂ˝ do polovice augusta.
 
-### ZĂˇvĂ¤znĂ© podmienky pred spustenĂ­m
+### Záväzné podmienky pred spustením
 
-QA brĂˇna programu **nepreĹˇla** (15 poruĹˇenĂ­). NasledujĂşce podmienky platia
-bez ohÄľadu na rozsah a nie sĂş predmetom vyjednĂˇvania:
+QA brána programu **neprešla** (15 porušení). Nasledujúce podmienky platia
+bez ohľadu na rozsah a nie sú predmetom vyjednávania:
 
-1. **Krok 0 pred akĂ˝mkoÄľvek paralelizmom.** DĂ´kazy neprekrytia sa prepoÄŤĂ­tajĂş
-   proti skutoÄŤnĂ˝m cestĂˇm overenĂ˝m inventarizaÄŤnĂ˝m behom v repe, nie proti
+1. **Krok 0 pred akýmkoľvek paralelizmom.** Dôkazy neprekrytia sa prepočítajú
+   proti skutočným cestám overeným inventarizačným behom v repe, nie proti
    odhadom. Bez toho Ĺľiadny noÄŤnĂ˝ swarm.
-2. **W1 a W3 sa neaktivujĂş**, kĂ˝m nie je ÄŤierne na bielom doloĹľenĂ©, komu pĂ­Ĺˇu.
+2. **W1 a W3 sa neaktivujú**, kým nie je čierne na bielom doložené, komu píšu.
    PrĂ­tomnosĹĄ opt-out kontaktu (`mihalrado`, Simi Real) naznaÄŤuje, Ĺľe oslovujĂş
-   prospektov â€” ÄŤo je absolĂştny zĂˇkaz zo ZAKĂZANĂťCH AKCIĂŤ. Denylist nie je sĂşhlas.
-3. **Ĺ˝iadny zber identifikĂˇtorov nĂˇvĹˇtevnĂ­kov widgetu** (`visitor_hash`,
-   cookies, fingerprint) pred rozhodnutĂ­m prevĂˇdzkovateÄľ vs. sprostredkovateÄľ,
+   prospektov — čo je absolútny zákaz zo ZAKÁZANÝCH AKCIÍ. Denylist nie je súhlas.
+3. **Žiadny zber identifikátorov návštevníkov widgetu** (`visitor_hash`,
+   cookies, fingerprint) pred rozhodnutím prevádzkovateľ vs. sprostredkovateľ,
    pred zverejnenou privacy policy a pred consent mechanizmom. Riziko nesie
-   platiaci zĂˇkaznĂ­k, nie Revolis.
-4. **MestskĂ© kotvy kalibrĂˇcie s `productUse: false`** (barometer Realitnej Ăşnie)
-   sa nesmĂş dostaĹĄ do produkÄŤnĂ©ho vĂ˝poÄŤtu bez pĂ­somnĂ©ho povolenia Ăşnie.
-5. **MigrĂˇcia a kĂłd, ktorĂ˝ ju pouĹľĂ­va, nikdy v jednom PR** (Ăšstava ÄŚl. 7,
+   platiaci zákazník, nie Revolis.
+4. **Mestské kotvy kalibrácie s `productUse: false`** (barometer Realitnej únie)
+   sa nesmú dostať do produkčného výpočtu bez písomného povolenia únie.
+5. **Migrácia a kód, ktorý ju používa, nikdy v jednom PR** (Ústava Čl. 7,
    incident 22.07).
-6. **NoÄŤnĂ˝ beh sa nikdy nedotkne** PROD dĂˇt, platieb ani widgetu platiaceho
-   zĂˇkaznĂ­ka.
+6. **Nočný beh sa nikdy nedotkne** PROD dát, platieb ani widgetu platiaceho
+   zákazníka.
 
-### Kill kritĂ©riĂˇ (Strategic Bet podÄľa klasifikĂˇcie v2)
+### Kill kritériá (Strategic Bet podľa klasifikácie v2)
 
-Program sa zastavĂ­ a vyhodnotĂ­ (promote / re-bet / kill), ak nastane ktorĂ©koÄľvek:
+Program sa zastaví a vyhodnotí (promote / re-bet / kill), ak nastane ktorékoľvek:
 
-- PrvĂ˝ blok (rozpĂ¤tie, CI brain fix, kalibrĂˇcia, vyprĂˇzdnenie fronty PR) nie je
-  hotovĂ˝ do **20.8.2026** â€” znamenĂˇ to, Ĺľe odhad je fikcia a plĂˇn treba prepoÄŤĂ­taĹĄ.
-- KtorĂ˝koÄľvek incident na zĂˇkaznĂ­ckych dĂˇtach spĂ´sobenĂ˝ nasadzovanĂ­m.
-- ObchodnĂˇ aktivita klesne pod **1 obchodnĂş akciu denne** poÄŤas dvoch po sebe
-  idĂşcich tĂ˝ĹľdĹov.
-- Do **1.9.2026** nie je uzavretĂˇ kalibrĂˇcia so zelenĂ˝m golden setom
-  (D-2026-08-05-03 zostĂˇva nadradenĂ© v rĂˇmci produktovej lĂ­nie).
+- Prvý blok (rozpätie, CI brain fix, kalibrácia, vyprázdnenie fronty PR) nie je
+  hotový do **20.8.2026** — znamená to, že odhad je fikcia a plán treba prepočítať.
+- Ktorýkoľvek incident na zákazníckych dátach spôsobený nasadzovaním.
+- Obchodná aktivita klesne pod **1 obchodnú akciu denne** počas dvoch po sebe
+  idúcich týždňov.
+- Do **1.9.2026** nie je uzavretá kalibrácia so zeleným golden setom
+  (D-2026-08-05-03 zostáva nadradené v rámci produktovej línie).
 
-### Poradie hodnoty v rĂˇmci ĹˇirokĂ©ho rozsahu
+### Poradie hodnoty v rámci širokého rozsahu
 
-VzhÄľadom na trhovĂ˝ signĂˇl z troch nezĂˇvislĂ˝ch zdrojov majĂş v rĂˇmci backlogu
-prednosĹĄ poloĹľky vedĂşce k **dodaniu predĂˇvajĂşcich** (widget, kalibrĂˇcia,
-valuation_estimates, intent signĂˇly, zdroj leadov) pred poloĹľkami, ktorĂ©
-vylepĹˇujĂş CRM. Nie je to Ĺˇkrtanie rozsahu â€” je to poradie vnĂştri neho.
+Vzhľadom na trhový signál z troch nezávislých zdrojov majú v rámci backlogu
+prednosť položky vedúce k **dodaniu predávajúcich** (widget, kalibrácia,
+valuation_estimates, intent signály, zdroj leadov) pred položkami, ktoré
+vylepšujú CRM. Nie je to škrtanie rozsahu — je to poradie vnútri neho.
 
 ### Reverzibilita
 
-ZvratnĂ© s nĂˇkladom. Rozhodnutie sa dĂˇ kedykoÄľvek zĂşĹľiĹĄ spĂ¤ĹĄ; uĹľ zmergovanĂ© PR
-vĹˇak zostanĂş a ich ĂşdrĹľba tieĹľ.
+Zvratné s nákladom. Rozhodnutie sa dá kedykoľvek zúžiť späť; už zmergované PR
+však zostanú a ich údržba tiež.
 
-### NĂˇsledky pre ostatnĂ© dokumenty
+### Následky pre ostatné dokumenty
 
-- `docs/sales/realizacny-zoznam-do-11-8.md` â€” sekcia â€žOdloĹľenĂ© do 1.9."
-  prestĂˇva platiĹĄ. Zoznam dennĂ˝ch obchodnĂ˝ch priorĂ­t do 11.8. zostĂˇva.
-- `docs/architecture/engineering-os/README.md` â€” poznĂˇmka âť„ď¸Ź FREEZE sa ruĹˇĂ­;
-  moduly graph-engineering a hybrid-retrieval prechĂˇdzajĂş z Approved (impl.
-  Deferred) na Approved (impl. plĂˇnovanĂˇ, vlna podÄľa programu).
-- `CONSTITUTION.md` â€” ratifikĂˇcia textu vo v1.1 zostĂˇva; obmedzenie
-  â€žbez implementĂˇcie vynucovania do 1.9." sa ruĹˇĂ­, Constitution Engine je
-  sĂşÄŤasĹĄou programu.
+- `docs/sales/realizacny-zoznam-do-11-8.md` — sekcia "Odložené do 1.9."
+  prestáva platiť. Zoznam denných obchodných priorít do 11.8. zostáva.
+- `docs/architecture/engineering-os/README.md` — poznámka ❄️ FREEZE sa ruší;
+  moduly graph-engineering a hybrid-retrieval prechádzajú z Approved (impl.
+  Deferred) na Approved (impl. plánovaná, vlna podľa programu).
+- `CONSTITUTION.md` — ratifikácia textu vo v1.1 zostáva; obmedzenie
+  "bez implementácie vynucovania do 1.9." sa ruší, Constitution Engine je
+  súčasťou programu.
 
 
 ---
 
-## D-2026-08-06-02 â€” ADR Memory Engine: re-bet kill kritĂ©riĂ­
+## D-2026-08-06-02 — ADR Memory Engine: re-bet kill kritérií
 
-**TĂ˝ka sa:** `docs/architecture/adr-2026-07-28-memory-engine.md`, sekcia Â§5 Kill kritĂ©riĂˇ
+**Týka sa:** `docs/architecture/adr-2026-07-28-memory-engine.md`, sekcia §5 Kill kritériá
 
 ### Rozhodnutie
 
-Kill kritĂ©rium *â€žPR-1..PR-4 nie sĂş zmergovanĂ© do 6.8.2026"* **vyprĹˇalo dnes
-a nahrĂˇdza sa.** Bet sa nezabĂ­ja, prehodnocuje sa.
+Kill kritérium *"PR-1..PR-4 nie sú zmergované do 6.8.2026"* **vypršalo dnes
+a nahrádza sa.** Bet sa nezabíja, prehodnocuje sa.
 
 ### DĂ´vod
 
-KritĂ©rium bolo stanovenĂ© 28.7.2026 â€” pred objavenĂ­m chyby valuaÄŤnej kalkulaÄŤky
-(+40 %, poĹˇkodzuje znaÄŤku platiaceho zĂˇkaznĂ­ka), pred dvojdĹovou migrĂˇciou n8n
-na vlastnĂ˝ VPS a pred rozhodnutĂ­m D-2026-08-06-01 o rozĹˇĂ­renĂ­ augustovĂ©ho rozsahu.
-Meralo teda dodrĹľanie plĂˇnu, ktorĂ˝ bol medzitĂ˝m vedome nahradenĂ˝.
+Kritérium bolo stanovené 28.7.2026 — pred objavením chyby valuačnej kalkulačky
+(+40 %, poškodzuje značku platiaceho zákazníka), pred dvojdňovou migráciou n8n
+na vlastný VPS a pred rozhodnutím D-2026-08-06-01 o rozšírení augustového rozsahu.
+Meralo teda dodržanie plánu, ktorý bol medzitým vedome nahradený.
 
-ZĂˇroveĹ bolo zle postavenĂ©: dĂˇtum meria, ÄŤi sa stihlo commitnĂşĹĄ, nie to,
-ÄŤi mĂˇ bet zmysel. BlokĂˇtor B7 (`SYSTEM_USAGE_AGENCY_ID`) sa medzitĂ˝m ukĂˇzal
-ako **uĹľ vyrieĹˇenĂ˝** (migrĂˇcia `20260731220000_system_usage_agency.sql` vrĂˇtane
-guardu proti Smolkovmu UUID), takĹľe PR-1 nie je blokovanĂ© niÄŤĂ­m.
+Zároveň bolo zle postavené: dátum meria, či sa stihlo commitnúť, nie to,
+či má bet zmysel. Blokátor B7 (`SYSTEM_USAGE_AGENCY_ID`) sa medzitým ukázal
+ako **už vyriešený** (migrácia `20260731220000_system_usage_agency.sql` vrátane
+guardu proti Smolkovmu UUID), takže PR-1 nie je blokované ničím.
 
-### NovĂ© kill kritĂ©riĂˇ
+### Nové kill kritériá
 
-1. **PR-1 (migrĂˇcia `memory_events`, `memory_facts`, `entity_edges` + RLS +
-   indexy) zmergovanĂ˝ do 8.8.2026.** Je aditĂ­vny, bez produkÄŤnĂ©ho rizika,
-   nedotĂ˝ka sa existujĂşceho kĂłdu. Ak sa nestihne ani on, bet sa zabĂ­ja
-   bez ÄŹalĹˇej diskusie.
+1. **PR-1 (migrácia `memory_events`, `memory_facts`, `entity_edges` + RLS +
+   indexy) zmergovaný do 8.8.2026.** Je aditívny, bez produkčného rizika,
+   nedotýka sa existujúceho kódu. Ak sa nestihne ani on, bet sa zabíja
+   bez ďalšej diskusie.
 
-2. **PR-2 aĹľ PR-4 zmergovanĂ© do 10 pracovnĂ˝ch dnĂ­ od zelenĂ©ho golden setu
-   kalibrĂˇcie.** InfraĹˇtruktĂşra ide za produktom, nie pred nĂ­m.
+2. **PR-2 až PR-4 zmergované do 10 pracovných dní od zeleného golden setu
+   kalibrácie.** Infraštruktúra ide za produktom, nie pred ním.
 
-3. â­ **PouĹľitie namiesto termĂ­nu â€” nadradenĂ© kritĂ©riĂˇm 1 a 2:**
+3. ⭐ **Použitie namiesto termínu — nadradené kritériám 1 a 2:**
    ak 30 dnĂ­ po nasadenĂ­ PR-3 (outbox) obsahuje tabuÄľka `memory_events`
-   menej neĹľ **100 zĂˇznamov**, bet sa zabĂ­ja. Znamenalo by to, Ĺľe do pamĂ¤te
+   menej než **100 záznamov**, bet sa zabíja. Znamenalo by to, že do pamäte
    niÄŤ neteÄŤie a postavili sme sklad bez tovaru.
 
-**PoznĂˇmka k hierarchii:** termĂ­ny merajĂş disciplĂ­nu, pouĹľitie meria zmysel.
-Ak sa termĂ­ny nestihnĂş, ale dĂˇta teÄŤĂş, bet Ĺľije. Ak sa termĂ­ny stihnĂş a dĂˇta
-neteÄŤĂş, bet je mĹ•tvy bez ohÄľadu na to, koÄľko kĂłdu vzniklo.
+**Poznámka k hierarchii:** termíny merajú disciplínu, použitie meria zmysel.
+Ak sa termíny nestihnú, ale dáta tečú, bet žije. Ak sa termíny stihnú a dáta
+netečú, bet je mŕtvy bez ohľadu na to, koľko kódu vzniklo.
 
 ### Reverzibilita
 
-Ä˝ahko zvratnĂ© â€” kritĂ©riĂˇ sa dajĂş kedykoÄľvek prepĂ­saĹĄ ÄŹalĹˇĂ­m amendmentom
+Ľahko zvratné — kritériá sa dajú kedykoľvek prepísať ďalším amendmentom
 podÄľa CONSTITUTION.md ÄŚl. 8.
 
 ### ĂšdrĹľbovĂ˝ krok
 
-V `docs/architecture/adr-2026-07-28-memory-engine.md`, Â§5 Kill kritĂ©riĂˇ,
-doplĹ k pĂ´vodnĂ©mu bodu *â€žPR-1..PR-4 nie sĂş zmergovanĂ© do 6.8."* riadok:
+V `docs/architecture/adr-2026-07-28-memory-engine.md`, §5 Kill kritériá,
+doplň k pôvodnému bodu *"PR-1..PR-4 nie sú zmergované do 6.8."* riadok:
 
-> **STAV: NAHRADENĂ‰ rozhodnutĂ­m D-2026-08-06-02 (2026-08-06).**
+> **STAV: NAHRADENÉ rozhodnutím D-2026-08-06-02 (2026-08-06).**
 
 PĂ´vodnĂ˝ text nemaĹľ.
 
@@ -492,21 +492,74 @@ PĂ´vodnĂ˝ text nemaĹľ.
 - **BUILD:** `docs/sales/listing-generator-system-prompt-FINAL.md` + `docs/sales/listing-generator-K5-handoff.md`. K4 = superseded medzikrok. Status **K5 HOTOVÉ**.
 - **Ostáva:** UI implementácia `charakterLokality` + wire FINAL do generateListingContent (mimo K5).
 
-## [2026-08-07] � Listing generator C4: schema = ListingContent (CLOSED)
-- **C4 (FOUNDER, vykona� TERAZ):** FINAL prompt emituje produk�n� k���e `ListingContent` � �iadny mapper. `mainText`�`portal_text`; `socialText`�`fb_ad_copy`+`ig_caption`; optionals: `titles?`, `missingData?`, `recommendations?`, `techniquesUsed?`.
-- **BUILD:** typ roz��ren� adit�vne; K3 T1�T6 regenerovan�; vitest 6/6 PASS (`listing-content-c4-schema.verification.test.ts`).
-- **NEROBI�:** PR-A (wire FINAL do `generateListingContent`) � �ak� GO + C2.
-- **S�bory:** FINAL, K5-handoff, K3-eval, inzerat-generator-tab, `listing-content.ts`.
+## [2026-08-07] — Listing generator C4: schema = ListingContent (CLOSED)
+- **C4 (FOUNDER, vykonať TERAZ):** FINAL prompt emituje produkčné kľúče `ListingContent` — žiadny mapper. `mainText`›`portal_text`; `socialText`›`fb_ad_copy`+`ig_caption`; optionals: `titles?`, `missingData?`, `recommendations?`, `techniquesUsed?`.
+- **BUILD:** typ rozšírený aditívne; K3 T1–T6 regenerované; vitest 6/6 PASS (`listing-content-c4-schema.verification.test.ts`).
+- **NEROBIŤ:** PR-A (wire FINAL do `generateListingContent`) — čaká GO + C2.
+- **Súbory:** FINAL, K5-handoff, K3-eval, inzerat-generator-tab, `listing-content.ts`.
 
-## [2026-08-07] � Listing generator: founder (b) stress feedback (nie C2 close)
-- **Fakt:** Founder ozna�il `fb_ad_copy` lead z K3 Test 5 (Pre�ov 72 m2, pr�zdny popis) ako �p�sal �lovek�.
-- **Pravda:** text = FINAL stress (nie golden / �lovek). Interpret�cia: prompt oklamal foundera na riedkom vstupe � pozit�vny stress/C3 sign�l.
-- **Nie:** C2 verdikt Teriakovce/�ubotice; (b) C2 p�ry neuzatv�ra. PR-A st�le �ak� C2 protokol + GO.
-- **S�bory:** `docs/sales/listing-generator-C2-notes.md`, K3-eval Test 5, K5-handoff �5b.
+## [2026-08-07] — Listing generator: founder (b) stress feedback (nie C2 close)
+- **Fakt:** Founder označil `fb_ad_copy` lead z K3 Test 5 (Prešov 72 m2, prázdny popis) ako "písal človek".
+- **Pravda:** text = FINAL stress (nie golden / človek). Interpretácia: prompt oklamal foundera na riedkom vstupe › pozitívny stress/C3 signál.
+- **Nie:** C2 verdikt Teriakovce/Ľubotice; (b) C2 páry neuzatvára. PR-A stále čaká C2 protokol + GO.
+- **Súbory:** `docs/sales/listing-generator-C2-notes.md`, K3-eval Test 5, K5-handoff §5b.
 
-## [2026-08-07] � Listing generator PR-A: FINAL prompt wire (GO)
-- **GO (FOUNDER):** po C2 PASS + C4 CLOSED � wire FINAL do generateListingContent / SYSTEM_PROMPT.
-- **BUILD:** listing-content-system-prompt.ts (FINAL inline const); optionals na ListingContent; C4 fixtures + prompt-wire verification; docs listing-generator-* � docs/prompts/ (smolko golden ost�va v docs/sales/).
-- **Mimo scope:** PR-B UI charakterLokality; mapper �iadny.
+## [2026-08-07] — Listing generator PR-A: FINAL prompt wire (GO)
+- **GO (FOUNDER):** po C2 PASS + C4 CLOSED — wire FINAL do generateListingContent / SYSTEM_PROMPT.
+- **BUILD:** listing-content-system-prompt.ts (FINAL inline const); optionals na ListingContent; C4 fixtures + prompt-wire verification; docs listing-generator-* › docs/prompts/ (smolko golden ostáva v docs/sales/).
+- **Mimo scope:** PR-B UI charakterLokality; mapper žiadny.
 - **Rollback:** revert PR.
-- **Merge:** founder pri kl�vesnici (agent NEmerguje).
+- **Merge:** founder pri klávesnici (agent NEmerguje).
+
+---
+
+## D-2026-08-09-01 — Acquisition OS v2.2: GO na Stage 0
+
+**Rozhodnutie:** Blueprint `acquisition-os-v2.2-final-locked.md` sa zamyká
+a implementuje sa VÝHRADNE Stage 0 (read-only sync z Google Test MCC,
+tenant izolácia, audit). Stage 1+ vyžaduje samostatné GO po Stage 0 PASS
+checkliste s dôkazmi.
+
+**Hranice (neprerokovateľné v Stage 0):** žiadne reálne peniaze, žiadne
+mutácie kampaní/budgetov, žiadne conversion uploady, žiadny LLM, žiadna
+Meta/Microsoft, webhook spracúva iba is_test.
+
+**Vzťah k Memory Engine ADR:** `acquisition_events` je doménový ledger
+udalostí externých providerov (Google Ads), `memory_events` je CRM outbox.
+Nie je to duplicitný event store — hranica: čo sa stalo U PROVIDERA vs.
+čo sa stalo V CRM. Ak Stage 1 ukáže prekryv, rieši sa amendmentom ADR,
+nie ad-hoc v kóde.
+
+**Reverzibilita:** Stage 0 je čisto aditívny (nové tabuľky, nové routes),
+rollback = revert PR bez dopadu na existujúci produkt.
+
+**Kill kritérium Stage 0:** ak do 14 pracovných dní od PR-S0.1 neprejde
+kompletný PASS checklist s dôkazmi, Stage 0 sa zastavuje a reviduje sa
+rozsah — nie blueprint, ale tempo (founder je sám na všetko).
+
+---
+
+## D-2026-08-10-01 — Memory Engine: kill kritérium vykonané
+
+**Rozhodnutie:** Bet Memory Engine sa zabíja podľa D-2026-08-06-02 bod 1.
+Overené 10.8.2026 na origin/main: žiadna memory_engine migrácia neexistuje
+(93 migrácií, HEAD c32e841 = PR #377). PR-1 nebol zmergovaný do 8.8.
+Founder potvrdil kill 10.8.2026.
+
+**Čo to znamená:** ADR `adr-2026-07-28-memory-engine.md` zostáva v repe
+(do §5 doplnený stav BET KILLED), zadania PR-1..PR-4 idú do zásobníka
+bez termínu. Nič sa nemaže — zabíja sa záväzok, nie dokumentácia.
+
+**Prečo je to správne:** memory_events prehral súboj o founderov čas
+tri týždne po sebe — vždy s prácou, ktorá mala ťahajúceho zákazníka
+(valuačná kalkulačka, A3 generátor, Acquisition OS). Infra bez
+spotrebiteľa dát sa nestavia na disciplínu, stavia sa na dopyt.
+
+**Podmienka znovuotvorenia (jediná):** existuje konkrétna feature so
+zákazníkom, ktorá potrebuje čítať memory_facts / memory_events.
+Vtedy nový bet s novou premisou a novým amendmentom ADR —
+nie oživenie starého termínu.
+
+**Poznámka:** acquisition_events zo Stage 0 nie je náhrada memory_events
+(hranica: D-2026-08-09-01). Vzniká preto, lebo ho Stage 0 reálne
+potrebuje — presne ten dôkaz dopytu, ktorý memory_events nemal.
