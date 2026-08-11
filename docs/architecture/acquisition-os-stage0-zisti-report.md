@@ -285,11 +285,11 @@ Execution prompt says copy `REVOKE UPDATE, DELETE FROM authenticated` “like me
 
 ## Summary answers (executive)
 
-1. **UNIQUE(agency_id, id) on leads?** → **No.** PK is `id text` only; additive unique index required before composite lead FKs.
+1. **UNIQUE(agency_id, id) on leads?** → **No.** **Odložené na Stage 2** — not a PR-S0.1 blocker. Composite unique deferred until acquisition_conversions; Stage 0 uses simple lead_id text FK.
 2. **RLS / helper** → `leads_tenant` = agency_id ∈ `profile_agencies_for_auth()`; function returns `setof uuid`, `stable`, `security definer`.
 3. **Jobs** → **Vercel cron** (`apps/crm/vercel.json` + `/api/cron/*`); n8n secondary for outreach/watchdogs only.
 4. **Secrets** → **Vercel env vars** (+ Postgres token tables); no KMS/Vault product in use.
-5. **SA / DWD** → SA **feasible without Workspace DWD** (invite SA to Test MCC). OAuth fallback locked and already patterned in repo.
+5. **SA / DWD** → **Confirmed** without Workspace DWD (invite SA to Test MCC). **OAuth fallback is not needed for Stage 0.**
 6. **`acquisition_` collisions** → **None** in schema/code; docs-only planned names.
 
 ---
@@ -298,3 +298,26 @@ Execution prompt says copy `REVOKE UPDATE, DELETE FROM authenticated` “like me
 
 Human Day 1–2 credentials (Test MCC, developer token, SA JSON) from ČASŤ 1 of the execution prompt remain blockers for live API calls.  
 PR-S0.1 can proceed on schema/RLS/tests with mocks once founder GOs after this report.
+
+
+---
+
+## Odložené na Stage 2 (Vlna 2 / PR-S0.1 preamble)
+
+| Item | Status | Reason |
+|------|--------|--------|
+| UNIQUE(agency_id, id) on leads | **Odložené na Stage 2** | Existing-table boundary for Stage 0 (purely additive). **NOT a PR-S0.1 blocker.** Needed only when acquisition_conversions requires composite FK (agency_id, lead_id) REFERENCES leads(agency_id, id). |
+| Stage 0 acquisition_events.lead_id | Done in PR-S0.1 as text REFERENCES leads(id) (nullable) | Simple FK, not composite — matches live leads.id type. |
+
+Founder decision (Ruflo Vlna 2): do **not** alter leads in Stage 0.
+
+---
+
+## Service account path (closed for Stage 0)
+
+| Item | Decision |
+|------|----------|
+| Service account without Workspace DWD | **Confirmed** — invite SA email to Test MCC; DWD/sub impersonation not required for Google Ads API. |
+| OAuth fallback | **Not needed for Stage 0** — SA path is the Stage 0 auth path. OAuth remains a locked blueprint fallback if SA invite/ops block Day 1–2 (PR-S0.2+), but is not used in Stage 0 schema work. |
+
+Citation: section 5 feasibility assessment above; Vlna 2 preamble after L3 ZISTI (PR #381).
