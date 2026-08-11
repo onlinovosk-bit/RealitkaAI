@@ -19,6 +19,7 @@ import type {
   ValuationPropertyType,
 } from "@/lib/valuation/types";
 import { SLATE_HORIZON, WORKDESK_CARD } from "@/lib/slate-horizon-theme";
+import { NbsAttributionLine } from "@/components/valuation/NbsAttributionLine";
 
 type Props = {
   tenant: ValuationPageContext;
@@ -292,6 +293,7 @@ export function ValuationWidgetForm({ tenant, abVariant, sessionId }: Props) {
               <p className="mt-3 text-sm leading-relaxed" style={{ color: SLATE_HORIZON.muted }}>
                 {estimate.commentary}
               </p>
+              <NbsAttributionLine mutedColor={SLATE_HORIZON.muted} />
             </>
           )}
           <p className="mt-4 text-xs leading-relaxed" style={{ color: SLATE_HORIZON.muted }}>
@@ -352,6 +354,7 @@ export function ValuationWidgetForm({ tenant, abVariant, sessionId }: Props) {
               <p className="mt-3 text-sm leading-relaxed" style={{ color: SLATE_HORIZON.muted }}>
                 {estimate.commentary}
               </p>
+              <NbsAttributionLine mutedColor={SLATE_HORIZON.muted} />
             </>
           )}
           <p className="mt-4 text-xs leading-relaxed" style={{ color: SLATE_HORIZON.muted }}>
