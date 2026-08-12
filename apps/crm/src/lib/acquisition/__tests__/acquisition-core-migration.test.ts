@@ -97,10 +97,12 @@ describe("acquisition core schema presence (local Supabase)", () => {
 
       for (const table of tables) {
         const { error: probeErr } = await admin.from(table).select("id").limit(0);
-        // Missing relation → PostgREST schema cache / 42P01; presence → null or RLS empty.
-        expect(probeErr?.code === "42P01" || probeErr?.message?.includes("does not exist")).toBe(
-          false,
+        // Missing relation → PostgREST schema cache / 42P01; presence → probeErr null.
+        const missingRelation = (
+          probeErr?.code === "42P01" ||
+          probeErr?.message?.includes("does not exist") === true
         );
+        expect(missingRelation).toBe(false);
       }
     },
   );
