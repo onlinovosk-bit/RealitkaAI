@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { errorResponse, okResponse } from "@/lib/api-response";
+import { incrementUsageMetric } from "@/lib/usage-metrics";
 
 const ACCOUNT_SELECT =
   "id, agency_id, provider, customer_id, manager_customer_id, status, credential_type, billing_owner, created_at, connected_at, last_sync_at";
@@ -39,6 +40,12 @@ export async function GET() {
     }
 
     const agencyId = profile.agency_id as string;
+
+    await incrementUsageMetric({
+      agencyId,
+      metric: "ai_openai_tokens",
+      delta: 0,
+    });
 
     const { data: accounts, error: listError } = await supabase
       .from("acquisition_accounts")

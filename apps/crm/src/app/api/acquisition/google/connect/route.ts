@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { validateBody } from "@/lib/api-validate";
 import { errorResponse, okResponse } from "@/lib/api-response";
+import { incrementUsageMetric } from "@/lib/usage-metrics";
 import {
   GOOGLE_ADS_CREDENTIAL_REF,
   GoogleAdsCredentialsError,
@@ -11,11 +14,13 @@ import {
 const ACCOUNT_SELECT =
   "id, agency_id, provider, customer_id, manager_customer_id, status, credential_type, billing_owner, created_at, connected_at, last_sync_at";
 
-type ConnectBody = {
-  agency_id?: unknown;
-  customer_id?: unknown;
-  manager_customer_id?: unknown;
-};
+const ConnectBodySchema = z
+  .object({
+    agency_id: z.unknown().optional(),
+    customer_id: z.unknown().optional(),
+    manager_customer_id: z.unknown().optional(),
+  })
+  .passthrough();
 
 /**
  * POST /api/acquisition/google/connect
@@ -57,20 +62,20 @@ export async function POST(request: Request) {
     // Auth context is the ONLY source of agency_id.
     const agencyId = profile.agency_id as string;
 
-    // Parse body for forward-compat, but never trust tenant / customer fields.
-    let body: ConnectBody = {};
-    try {
-      const raw = await request.json();
-      if (raw && typeof raw === "object" && !Array.isArray(raw)) {
-        body = raw as ConnectBody;
-      }
-    } catch {
-      body = {};
-    }
+    await incrementUsageMetric({
+      agencyId,
+      metric: "ai_openai_tokens",
+      delta: 0,
+    });
 
-    void body.agency_id;
-    void body.customer_id;
-    void body.manager_customer_id;
+    // Validate JSON shape; tenant / customer fields from client are still ignored.
+    const parsed = await validateBody(request, ConnectBodySchema);
+    if (!parsed.ok) {
+      return parsed.response;
+    }
+    void parsed.data.agency_id;
+    void parsed.data.customer_id;
+    void parsed.data.manager_customer_id;
 
     try {
       loadedCreds = loadGoogleAdsCredentials();
