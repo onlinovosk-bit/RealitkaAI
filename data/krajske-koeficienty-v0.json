@@ -1,0 +1,212 @@
+{
+  "meta": {
+    "version": "v0",
+    "status": "blocked_unpaired",
+    "computed_at": "2026-08-12",
+    "purpose": "Krajský koeficient realizačná/ponuková pre Prešovský a Košický kraj (kalibrácia A1-C — tento artefakt NIE JE zapojený do estimate-engine).",
+    "regions_requested": [
+      {
+        "code": "SK041",
+        "label": "Prešovský kraj",
+        "nbs_region_key": "PO"
+      },
+      {
+        "code": "SK042",
+        "label": "Košický kraj",
+        "nbs_region_key": "KE"
+      }
+    ],
+    "pairing": {
+      "status": "blocked",
+      "common_quarters_for_ratio": [],
+      "reason": "NBS ponuková strana je v repe len ako jednorazový snapshot absolútnych €/m² (2026Q1) v data/regional-prices.json; ŠÚ SR sp3801qr poskytuje krajské realizačné INDEXY (YoY/QoQ, nie €/m²). Bez spoločného časového radu porovnateľných úrovní cien nie je možné spočítať pomer realizačná/ponuková ani odvodiť koeficient per kraj. Koeficienty sa nevymýšľajú.",
+      "unblock_requires": [
+        "Ingest NBS krajského časového radu absolútnych ponukových €/m² po štvrťrokoch (verejný CSV/export podľa docs/legal/nbs-povolenie-2026-08-10.md + atribúcia), min. posledných 8–12 spoločných kvartálov s PO+KE",
+        "ALEBO ingest ŠÚ SR / Eurostat abs. realizačných úrovní na krajskej úrovni v €/m² (sp3801qr dnes indexuje, nie úroveň)",
+        "Potom spárovať spoločné štvrťroky a spočítať ratio = realizačná_úroveň / ponuková_úroveň (alebo ekvivalent s explicitnou bázou)"
+      ]
+    },
+    "sources": {
+      "nbs_offer": {
+        "file": "data/regional-prices.json",
+        "kind": "offer_absolute_eur_m2_snapshot",
+        "period_in_repo": "2026Q1",
+        "time_series_in_repo": false,
+        "source_url": "https://nbs.sk/statisticke-udaje/vybrane-makroekonomicke-ukazovatele/ceny-nehnutelnosti-na-byvanie/ceny-nehnutelnosti-na-byvanie-podla-krajov/",
+        "license_doc": "docs/legal/nbs-povolenie-2026-08-10.md",
+        "attribution_required": "Spracované údaje Národnej banky Slovenska na základe údajov poskytovaných externými poskytovateľmi United Classifieds a NARKS."
+      },
+      "susr_realization": {
+        "file": "data/susr-sp3801qr.json",
+        "kind": "realization_index_quarterly",
+        "table": "sp3801qr",
+        "index_bases": [
+          "b_romr",
+          "b_predch_obd_f"
+        ],
+        "absolute_eur_m2": false,
+        "periods_in_repo_total_b_romr": {
+          "SK041": 16,
+          "SK042": 16,
+          "span": "2022Q2–2026Q1 (chýba 2022Q1 v non-null TOTAL)"
+        },
+        "license_doc": "docs/legal/susr-povolenie-2026-08-10.md",
+        "citation_required": "Zdroj: Štatistický úrad Slovenskej republiky"
+      },
+      "eurostat_national_coefficient": {
+        "available_as_computed_artifact_in_repo": false,
+        "notes": "docs/legal/nbs-povolenie-2026-08-10.md uvádza Eurostat HPI (prc_hpi_q) ako legálne použiteľný národný zdroj; v repe nie je JSON/CSV s vypočítaným národným koeficientom realizačná/ponuková. Heuristika v data/regional-prices.json meta.methodology_note („transakčné typicky 5–10 % nižšie“) NIE JE Eurostat koeficient."
+      }
+    },
+    "licenses": {
+      "nbs": "docs/legal/nbs-povolenie-2026-08-10.md",
+      "susr": "docs/legal/susr-povolenie-2026-08-10.md"
+    },
+    "material_difference_po_vs_ke": {
+      "assessable": false,
+      "threshold_percentage_points": 3,
+      "verdict": null,
+      "reason": "Bez spárovaného radu pomerov nie je možné posúdiť, či |koef_PO − koef_KE| > 3 p. b."
+    },
+    "estimate_engine": {
+      "wired": false,
+      "note": "Zapojenie je A1-C, sekvenčne s founderom — mimo scope tohto PR."
+    },
+    "report": "docs/architecture/kalibracia-krajske-koeficienty-v0.md"
+  },
+  "coefficients": {
+    "SK041": {
+      "label": "Prešovský kraj",
+      "coefficient_realization_over_offer": null,
+      "interval": null,
+      "method": null,
+      "status": "blocked_unpaired"
+    },
+    "SK042": {
+      "label": "Košický kraj",
+      "coefficient_realization_over_offer": null,
+      "interval": null,
+      "method": null,
+      "status": "blocked_unpaired"
+    }
+  },
+  "series": {
+    "ratio_realization_over_offer": {
+      "SK041": [],
+      "SK042": []
+    }
+  },
+  "inventory_not_a_coefficient": {
+    "nbs_offer_snapshot_2026Q1_eur_m2_all": {
+      "PO": 2411.77,
+      "KE": 2682.32,
+      "SK": 3005.25,
+      "unit": "EUR_per_m2",
+      "source": "data/regional-prices.json"
+    },
+    "susr_sp3801qr_total_b_romr_last_12_quarters": {
+      "note": "YoY index (rovnaké obdobie minulého roka = 100). Toto NIE JE pomer realizačná/ponuková a NIE JE použiteľné ako koeficient bez ponukovej úrovne/indexu v rovnakých jednotkách.",
+      "SK041_Presov": [
+        {
+          "period": "2023Q2",
+          "index_yoy": 106.4
+        },
+        {
+          "period": "2023Q3",
+          "index_yoy": 98.0
+        },
+        {
+          "period": "2023Q4",
+          "index_yoy": 98.0
+        },
+        {
+          "period": "2024Q1",
+          "index_yoy": 95.0
+        },
+        {
+          "period": "2024Q2",
+          "index_yoy": 95.3
+        },
+        {
+          "period": "2024Q3",
+          "index_yoy": 102.1
+        },
+        {
+          "period": "2024Q4",
+          "index_yoy": 106.4
+        },
+        {
+          "period": "2025Q1",
+          "index_yoy": 113.1
+        },
+        {
+          "period": "2025Q2",
+          "index_yoy": 116.0
+        },
+        {
+          "period": "2025Q3",
+          "index_yoy": 114.8
+        },
+        {
+          "period": "2025Q4",
+          "index_yoy": 112.2
+        },
+        {
+          "period": "2026Q1",
+          "index_yoy": 112.9
+        }
+      ],
+      "SK042_Kosice": [
+        {
+          "period": "2023Q2",
+          "index_yoy": 93.6
+        },
+        {
+          "period": "2023Q3",
+          "index_yoy": 93.3
+        },
+        {
+          "period": "2023Q4",
+          "index_yoy": 97.9
+        },
+        {
+          "period": "2024Q1",
+          "index_yoy": 101.4
+        },
+        {
+          "period": "2024Q2",
+          "index_yoy": 107.1
+        },
+        {
+          "period": "2024Q3",
+          "index_yoy": 108.6
+        },
+        {
+          "period": "2024Q4",
+          "index_yoy": 110.5
+        },
+        {
+          "period": "2025Q1",
+          "index_yoy": 108.4
+        },
+        {
+          "period": "2025Q2",
+          "index_yoy": 112.1
+        },
+        {
+          "period": "2025Q3",
+          "index_yoy": 112.3
+        },
+        {
+          "period": "2025Q4",
+          "index_yoy": 107.4
+        },
+        {
+          "period": "2026Q1",
+          "index_yoy": 111.0
+        }
+      ],
+      "source": "data/susr-sp3801qr.json"
+    }
+  }
+}
