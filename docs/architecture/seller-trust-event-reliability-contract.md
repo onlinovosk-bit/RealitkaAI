@@ -1,6 +1,6 @@
 ---
 id: seller-trust-event-reliability-contract
-title: "Seller Trust Factory — event reliability contract (P0)"
+title: "Seller Trust Factory — event reliability contract"
 type: contract
 status: proposed
 version: 0.1.0
@@ -8,7 +8,7 @@ owner: "Principal reliability / GM Seller Growth"
 lane: "STF-P0-TRUTH-BEFORE-TRAFFIC LANE 17"
 created_at: 2026-08-13
 updated_at: 2026-08-13
-review_by: 2026-08-27
+review_by: 2026-08-21
 confidentiality: internal
 canonical: false
 verified_against_sha: "5d6500106a67a864b049dc372ee0a2d6be793c6f"
@@ -20,883 +20,840 @@ sources:
   - apps/crm/src/lib/valuation/analytics.ts
   - apps/crm/src/lib/analytics/gtag.ts
   - apps/crm/src/lib/analytics/events.ts
+  - apps/crm/src/components/valuation/ValuationWidgetForm.tsx
   - apps/crm/src/lib/acquire/inbound-lead-triage.ts
   - apps/crm/src/lib/notifications/store.ts
   - apps/crm/src/app/api/acquisition/google/connect/route.ts
-  - apps/crm/src/components/valuation/ValuationWidgetForm.tsx
+  - apps/crm/src/lib/notify-new-lead.ts
   - apps/crm/supabase/migrations/20260722120000_sandbox_gdpr_consent.sql
+  - apps/realvia-ingestion/src/ingestion/outbox.ts
 depends_on:
   - docs/architecture/revolis-constitution-v2.md
-  - docs/architecture/master-data-sourcing-map.md
-related_unapproved_drafts:
+supersedes: []
+unapproved_drafts_read_not_sot:
   - docs/architecture/revolis-seller-trust-factory-l99.md
   - docs/architecture/revolis-seller-trust-factory-technical-addendum.md
   - memory/seller-trust-factory.md
-tags: [seller-trust, reliability, outbox, consent, events, P0]
 ---
 
-# Seller Trust Factory — event reliability contract (P0)
+# Seller Trust Factory — event reliability contract
 
-> **Status:** proposed contract. Not production fact. Not a runtime migration.
-> Implementation requires a separate GO. This document is the source of truth
-> for *what must be true* before paid traffic scales on `/odhad`.
->
-> **Unapproved drafts** (`revolis-seller-trust-factory-l99.md`, technical
-> addendum, `memory/seller-trust-factory.md`) were read as intent only. They
-> are **not** SoT. Claims below are verified against worktree code at
-> `5d6500106a67a864b049dc372ee0a2d6be793c6f`.
->
-> **Business KPI limits** (CAC, cost-per-consultation, conversion %, volume
-> targets): `UNKNOWN — HUMAN DECISION`. Founder has not specified them here.
+This document is the **source of truth for seller-journey event reliability**
+(state machine, atomic capture, outbox, permission gate, SLI/SLO, failure
+injection). It is not a product strategy, CAC target, or traffic plan.
+
+Unapproved drafts in frontmatter may be read. They are **not** SoT.
+Claims below are verified against this worktree at
+`5d6500106a67a864b049dc372ee0a2d6be793c6f`.
+
+Business KPI limits (CAC, conversion %, paid-consultation volume, kill
+thresholds) remain **UNKNOWN — HUMAN DECISION**. They are not specified by
+the founder in this worktree. This contract specifies **reliability** only.
 
 ---
 
 ## 0. Non-negotiables
 
-1. A **client event is never authority** for business conversion, consent,
-   routing, or Ads reconciliation.
-2. **GA4 is a destination**, not the ledger. Browser `gtag` may be lossy,
-   blocked, or optimistic. It must not mint `lead_captured`.
-3. **Broker notification is deterministic** and **independent of AI triage**.
-   Triage failure must not suppress the broker `new_lead` dispatch.
-4. **Permission / suppression snapshot** is checked **immediately before every
-   outbound dispatch** (email, SMS, phone queue, Ads offline ping, push).
-5. Event payload contains **no raw PII** (no name, email, phone, address line,
-   raw IP). Identifiers are `subject_id` / HMAC / tenant-scoped IDs.
-6. **No business-critical `void` side effects** on the conversion path.
-   Fire-and-forget is allowed only for non-authoritative telemetry.
-7. Failed submit **does not** create `lead_captured`.
-8. Unverified request **must not** be called warm or BAWSO.
-9. Rollback **preserves audit data**. Never `DROP TABLE`. Never delete
-   evidence. Compensating `DELETE` of a lead/consent row is forbidden.
-10. Cross-tenant transition or FK mismatch **fails closed**.
+1. **Client event is never authority for business conversion.** Browser
+   `gtag` / `lead_submitted` / `contact_submitted` must not create a lead,
+   mark a conversion, route a broker, or train ads as a closed outcome.
+2. **GA4 is a destination, not a ledger.** Server may forward a minimized,
+   permissioned confirmation **after** ledger commit. GA4 must not be
+   queried as SoT for capture, consent, routing, or ads reconciliation.
+3. **Broker notification is deterministic and independent of AI triage.**
+   Missing/failing AI must still notify. AI must not gate outbound.
+4. **Permission/suppression snapshot is checked immediately before every
+   dispatch.** Cached `marketing_opt_in` is not sufficient.
+5. **No business-critical `void` side effects** on capture (notify, send,
+   charge, route). Unused-binding `void parsed.data.agency_id` is not I/O
+   and is allowed.
+6. **Unverified request MUST NOT be called warm or BAWSO.**
+7. **Rollback preserves audit data.** Never `DROP TABLE` or delete evidence.
+8. Fill no dashboard with guessed business numbers. Unknowns stay
+   **UNKNOWN — HUMAN DECISION**.
 
 ---
 
 ## 1. Verified current truth (this worktree)
 
-These are defects relative to this contract, not accusations of intent.
-
 ### 1.1 Capture is not atomic
 
-`apps/crm/src/app/api/valuation/submit/route.ts`:
+`POST /api/valuation/submit`
+(`apps/crm/src/app/api/valuation/submit/route.ts`):
 
-1. `leads.insert(...)` then `.select(...).single()`.
-2. Separate `lead_consents.insert(...)`.
-3. On consent error: compensating `leads.delete().eq("id", inserted.id)` then
-   HTTP 500.
-4. On success: `void runInboundLeadTriageAndNotify(...)` then HTTP 200.
+1. Insert `leads` (~L141-145).
+2. Insert `lead_consents` (~L152-159) via
+   `buildLeadConsentInsert` (`apps/crm/src/lib/valuation/consent-mapper.ts`).
+3. On consent error: compensating `leads.delete()` (~L160-163).
+4. HTTP 200 only if both inserts succeed.
 
-A crash or timeout between (1) and (2) leaves a lead **without** consent
-receipt. A crash after (2) before (4) leaves a lead **without** durable
-notify/outbox. Compensating delete **destroys** the lead row; if consent had
-been inserted, `lead_consents.lead_id … ON DELETE CASCADE`
-(`apps/crm/supabase/migrations/20260722120000_sandbox_gdpr_consent.sql`)
-would also destroy consent evidence.
-
-There is **no** `capture_seller_opportunity` RPC. There is **no** submission
-idempotency key. Retry after a lost HTTP 200 creates a second lead:
-`buildValuationLeadInsert` assigns `id: crypto.randomUUID()`
-(`apps/crm/src/lib/valuation/lead-mapper.ts`) and `idx_leads_email` is a
-non-unique index, not a uniqueness constraint.
-
-Sandbox path inserts `sandbox_submissions` (no contact PII) and returns
-`leadId: crypto.randomUUID()` that is **not** a real lead. That random id
-must never be treated as `lead_captured`.
+`lead_consents.lead_id` references `leads(id) ON DELETE CASCADE`
+(`apps/crm/supabase/migrations/20260722120000_sandbox_gdpr_consent.sql`).
+Compensating delete **destroys evidence**. Crash between lead insert and
+consent insert leaves an orphan lead. Crash after consent and before HTTP
++ client retry can duplicate (no idempotency key). Honeypot `hp` returns
+`{ ok: true }` (~L70-72) with **no lead**. Sandbox returns `ok: true` plus
+a random `leadId` that is not a row (~L130).
 
 ### 1.2 Consent model is a boolean, not a receipt
 
-`apps/crm/src/lib/valuation/consent-mapper.ts` writes:
+Consent mapper stores `privacy_policy_version`, `acknowledged_at`,
+`marketing_opt_in` only. No purpose, channel, legal basis, wording hash,
+recipient, expiry, withdrawal, or suppression snapshot.
 
-- `lead_id`, `tenant_slug`, `privacy_policy_version`, `acknowledged_at`,
-  `marketing_opt_in`.
-
-Missing from the live row: purpose, channel, legal basis, wording hash,
-evidence hash, recipient, expiry, withdrawal, suppression pointer. Privacy
-ack and marketing opt-in share one insert; service-contact permission is
-**not** a distinct purpose.
+Lead mapper (`apps/crm/src/lib/valuation/lead-mapper.ts`) sets
+`score: payload.sellWithin12Months ? 70 : 60` -- placeholder, not a
+handoff gate in this contract.
 
 ### 1.3 Notification is coupled to AI triage (fire-and-forget)
 
-`apps/crm/src/lib/acquire/inbound-lead-triage.ts`:
+Submit after success:
 
-- Comment: "Best-effort post-insert triage + new_lead notification. Never throws."
-- Early return if `ai_triage_at` is set (skips **notification** too).
-- Early return if `triageLeadBatches` returns empty — **no notification**.
-- `createNotification` runs only after a successful triage update.
-- `logAiRecommendation(...)` is itself fire-and-forget
-  (`apps/crm/src/lib/moat-capture/log-ai-recommendation.ts`).
-- Call site: `void runInboundLeadTriageAndNotify(...)` in submit route.
+    void runInboundLeadTriageAndNotify(...)
 
-`apps/crm/src/lib/acquire/__tests__/inbound-lead-triage.test.ts` encodes the
-coupling: triage engine failure is swallowed; notification is asserted only
-on triage success. That is the opposite of this contract.
+(`apps/crm/src/app/api/valuation/submit/route.ts` ~L166).
 
-`apps/crm/src/lib/notifications/store.ts` inserts `routine_notifications`
-without an idempotency key. Two workers / two retries → two `new_lead` rows.
+`runInboundLeadTriageAndNotify`
+(`apps/crm/src/lib/acquire/inbound-lead-triage.ts`): best-effort, never
+throws; returns if `ai_triage_at` set; **calls AI first**; **returns
+without notifying** if triage batch is empty (`if (!row) return`);
+writes `new_lead` via `createNotification`
+(`apps/crm/src/lib/notifications/store.ts`) only after triage update;
+swallows errors.
+
+Inbound email (`apps/crm/src/app/api/acquire/email/route.ts`) awaits the
+same function -- still AI-gated, still not an outbox.
+
+`apps/crm/src/lib/notify-new-lead.ts` is a separate Resend fire-and-forget
+for buyer onboarding. Same anti-pattern class.
 
 ### 1.4 GA4 is client `gtag`, not a ledger
 
-Producer chain:
+`apps/crm/src/lib/analytics/gtag.ts` no-ops without `window.gtag`.
+Helpers: `apps/crm/src/lib/analytics/events.ts`,
+`apps/crm/src/lib/valuation/analytics.ts`.
+Fired from `apps/crm/src/components/valuation/ValuationWidgetForm.tsx`:
 
-- `ValuationWidgetForm.tsx` → `lib/valuation/analytics.ts` →
-  `lib/analytics/events.ts` → `lib/analytics/gtag.ts` → `window.gtag`.
-
-Facts:
-
-| Client event | When it fires | Authority? |
+| Client event | When | Authority? |
 |---|---|---|
-| `valuation_started` | widget mount | no |
-| `step_completed` | local step change | no |
-| `valuation_shown` | after estimate HTTP ok (variant B) or after submit ok (variant A) | no |
-| `contact_submitted` | **before** `fetch("/api/valuation/submit")` | **no** — fires even if submit later fails |
-| `lead_submitted` | after `res.ok && data.ok` | **still no** — destination only |
-| `abandon` | unload | no |
+| `valuation_started` | mount (~L109) | no |
+| `step_completed` | UI step | no |
+| `valuation_shown` | after estimate HTTP success (~L184) | no -- not `value_delivered` |
+| `contact_submitted` | **before** `fetch("/api/valuation/submit")` (~L213) | **no** -- fires even if submit fails |
+| `lead_submitted` | after `data.ok` (~L248) | **no** |
 
-`trackGaEvent` no-ops if `window.gtag` is missing. Ad blockers, SSR, and
-consent-mode denial silently drop events. **None of these names are the
-canonical business events in §3.**
+Honeypot/sandbox `ok: true` can still fire `lead_submitted`. Client
+conversion is not `lead_captured`.
 
 ### 1.5 Value persist is best-effort and not an event
 
-`apps/crm/src/app/api/valuation/estimate/route.ts` computes a deterministic
-estimate, then `persistValuationEstimate` which **must not fail the widget
-response** (`apps/crm/src/lib/valuation/persist-estimate.ts`). Persist error
-is logged; the client may still show a number. There is no
-`value_delivered` ledger row.
+`POST /api/valuation/estimate`
+(`apps/crm/src/app/api/valuation/estimate/route.ts` ~L88-113) persists
+`valuation_estimates` in try/catch and **still returns `ok: true`** if
+persist fails (`persistValuationEstimate`: callers must not fail the
+widget). That HTTP success is not `value_delivered`.
 
-Variant B preview does not require contact. Variant A gates estimate display
-behind contact submit. Neither path writes this contract's events.
+### 1.6 Acquisition connect: client tenant claim is ignored (keep)
 
-### 1.6 Acquisition connect: client tenant claim is ignored (correct pattern)
+`POST /api/acquisition/google/connect`
+(`apps/crm/src/app/api/acquisition/google/connect/route.ts`):
+`agency_id` / `customer_id` from the body are ignored; tenant is
+`profiles.agency_id`. `void parsed.data.agency_id` (~L76-78) is unused
+field discard, not a side-effecting promise. Not a seller conversion
+event. Must not emit `lead_captured`.
 
-`apps/crm/src/app/api/acquisition/google/connect/route.ts`:
+### 1.7 Existing outbox must not be reused
 
-- `agency_id` / `customer_id` from the client body are **ignored**.
-- "Auth context is the ONLY source of `agency_id`."
-- `void parsed.data.agency_id` (and sibling `void`s) discard unused fields.
-  That is **not** a business side effect.
-- No live Google Ads API. Inserts `acquisition_accounts` as `PENDING`.
-- Duplicate unique → HTTP 409.
-
-**Reuse this authority rule** for seller capture: tenant comes from server
-resolution (`resolveTenantRecord`), never from a client-supplied `agency_id`.
-Client `agencySlug` is an input to **lookup**, not an authority token.
-
-### 1.7 Other `void` / fail-open notes
-
-| Location | What | Contract |
-|---|---|---|
-| `submit/route.ts` `void runInboundLeadTriageAndNotify` | business-critical notify | **forbidden** |
-| `logAiRecommendation` `void (async () => …)` | telemetry | allowed only off conversion path |
-| `connect/route.ts` `void parsed.data.*` | unused binding | allowed |
-| `rate-limit.ts` DB error → `{ allowed: true }` | fail-open | capture path must **fail closed** once this contract is implemented |
+`apps/realvia-ingestion/src/ingestion/outbox.ts` selects unpublished rows
+**without claim/lease / FOR UPDATE SKIP LOCKED**. Concurrent workers can
+double-publish. NATS is a stub. **Do not copy as the seller-trust outbox.**
 
 ---
 
 ## 2. Precise terms: request vs warm vs BAWSO
 
-Draft L99 language is **not** SoT. This section is.
-
 ### 2.1 Unverified request (not warm, not BAWSO)
 
-A person submitted contact details (or a service-contact intent) and the
-server accepted an **unverified** `service_contact_requested` row.
+Subject submitted an explicit request for human follow-up. Identifiers
+exist but are **not** verified. Ledger name: `service_contact_requested`.
 
-Must **not** be labelled:
-
-- warm lead
-- warm opportunity
-- BAWSO
-- "hot"
-- broker call-queue ready
-
-Operational CRM status, if a row exists: `unverified_request`.
+**This MUST NOT be called warm, hot, BAWSO, or call-queue ready.**
 
 ### 2.2 Contact-verified permissioned request (still not BAWSO)
 
-`contact_verified` ∧ service-contact purpose granted ∧ not suppressed.
-
-Still **not** warm: value, expectation (who / why / channel / when), intent,
-and fit may be missing.
+`contact_verified` + permission receipt for the requested channel. Still
+not warm until value, expectation, and routing gates hold.
 
 ### 2.3 Warm seller opportunity (still not BAWSO)
 
-All six dimensions are proven **and** the opportunity is eligible for a
-broker queue. Broker has **not** yet accepted.
+All server facts true:
 
-| Dimension | Required proof (server rows, not GA4) |
-|---|---|
-| Value | `value_delivered` with `value_artifact_id` (estimate/plan persisted or honest no-data artifact) |
-| Trust | tenant/broker identity shown; methodology/limits attached to the artifact |
-| Intent | declared timeline/reason **or** an allow-listed behavioral action stored as a first-party event |
-| Expectation | stored channel, window, recipient, and reason the person asked for contact |
-| Permission | `consent_receipt` for `service_contact` on that channel; not withdrawn/expired; suppression miss |
-| Reachability + fit | `contact_verified` ∧ territory/property type in tenant coverage |
+1. `value_delivered` (durable `value_artifact` id)
+2. `service_contact_requested` (explicit, not a pageview)
+3. `contact_verified`
+4. `lead_captured` (atomic with permission receipt)
+5. Expectation contract: **who** (named broker or office), **why**,
+   **channel**, **time window**
+6. Permission snapshot allows that channel + recipient
+7. `routed` to a tenant-scoped broker/territory that can serve the property
 
-Missing **expectation** or **permission** → maximum `permissioned_nurture`.
-Must not enter a phone queue as "hot".
+Until `broker_accepted`, this is a **routed warm candidate**, not BAWSO.
 
 ### 2.4 BAWSO — Broker-Accepted Warm Seller Opportunity
 
-**BAWSO** ⇔ warm seller opportunity ∧ event `broker_accepted`.
+Warm seller opportunity **plus** `broker_accepted`. `broker_rejected` is
+not BAWSO.
 
-`broker_rejected` is a terminal branch for that broker assignment; it is
-not BAWSO. Re-route may create a new `routed` with a new assignment id.
+| Observed fact | Allowed label | Forbidden label |
+|---|---|---|
+| Client `lead_submitted` / `contact_submitted` | client funnel event | lead, conversion, BAWSO |
+| `service_contact_requested` without `contact_verified` | unverified request | warm, BAWSO, call-queue ready |
+| `lead_captured` without expectation + permission | captured request | warm / BAWSO |
+| `routed` without `broker_accepted` | routed candidate | BAWSO |
+| AI priority / score 60-70 | diagnostic, non-gating | handoff trigger |
+| Sandbox / honeypot `ok: true` | discarded traffic | `lead_captured` |
 
-AI score, form count, email open, and `lead_submitted` in GA4 are
-**forbidden** as BAWSO evidence.
+Today's widget has **no** channel/window/named broker and **no**
+`contact_verified`. Production paid traffic that treats widget submit as
+warm/BAWSO **violates** this section.
 
 ---
 
 ## 3. Canonical state machine
 
-Events below are the **only** conversion-grade names for this journey.
-They live in the server ledger (`seller_business_events`). Client/GA4 names
-map as destinations in §5, never as these rows.
+Server-authoritative lifecycle for one tenant-scoped seller opportunity.
+CRM status is a **projection** of the latest successful transition.
 
-```text
-(none)
-  → value_delivered
-  → service_contact_requested
-  → contact_verified
-  → lead_captured
-  → routed
-  → broker_accepted | broker_rejected
-  → appointment_proposed          (only from broker_accepted)
-  → appointment_confirmed
-  → appointment_held | no_show | cancelled
-  → mandate_signed | lost
-```
-
-Side events (not conversion, still ledgered): `consent_updated`,
-`suppression_honored`, `unsubscribe`, `complaint`, `identity_merge_requested`,
-`outbox_dead_lettered`. They do not advance the happy path.
+    value_delivered
+    service_contact_requested
+    contact_verified
+    lead_captured
+    routed
+    broker_accepted | broker_rejected
+    appointment_proposed
+    appointment_confirmed
+    appointment_held | no_show | cancelled
+    mandate_signed | lost
 
 ### 3.1 Allowed transitions
 
-| From (opportunity status) | Event | To | Notes |
-|---|---|---|---|
-| `none` / anonymous session | `value_delivered` | `value_shown` | Repeatable if artifact version changes; each delivery is a new event, status stays `value_shown` until request |
-| `value_shown` **or** `none` (variant A: value in same RPC as request) | `service_contact_requested` | `unverified_request` | Variant A may persist value artifact in the same transaction **before** this event |
-| `unverified_request` | `contact_verified` | `contact_verified` | OTP / magic-link / confirmed-reply. Format validation of email/phone is **not** this event |
-| `contact_verified` | `lead_captured` | `lead_captured` | Same transaction as verification is allowed; event order is strict |
-| `lead_captured` | `routed` | `routed` | Requires tenant-owned territory + capacity; FK must match `agency_id` |
-| `routed` | `broker_accepted` | `broker_accepted` | Actor = assigned broker or tenant owner |
-| `routed` | `broker_rejected` | `broker_rejected` | Reason code required. Not BAWSO |
-| `broker_accepted` | `appointment_proposed` | `appointment_proposed` | |
-| `appointment_proposed` | `appointment_confirmed` | `appointment_confirmed` | Subject or broker confirm |
-| `appointment_confirmed` | `appointment_held` | `appointment_held` | |
-| `appointment_confirmed` | `no_show` | `no_show` | |
-| `appointment_confirmed` **or** `appointment_proposed` | `cancelled` | `cancelled` | Who cancelled + reason |
-| `appointment_held` | `mandate_signed` | `mandate_signed` | |
-| any post-`lead_captured` except `mandate_signed` | `lost` | `lost` | Reason code required |
-| any | illegal transition | **reject** | Ledger unchanged; write `transition_rejected` operational log, not a fake conversion event |
+    value_delivered -> service_contact_requested | lost
+    service_contact_requested -> contact_verified | lost
+    contact_verified -> lead_captured | lost
+    lead_captured -> routed | lost
+    routed -> broker_accepted | broker_rejected | lost
+    broker_rejected -> routed (re-route, new routing_decision_id) | lost
+    broker_accepted -> appointment_proposed | lost
+    appointment_proposed -> appointment_confirmed | cancelled | lost
+    appointment_confirmed -> appointment_held | no_show | cancelled | lost
+    appointment_held -> mandate_signed | lost
+    no_show -> appointment_proposed | lost
+    cancelled -> appointment_proposed | lost
+    mandate_signed -> terminal success
+    lost -> terminal (reason required)
 
-Illegal examples: `broker_accepted` without `routed`; `lead_captured`
-without `contact_verified`; `mandate_signed` from `unverified_request`;
-`routed` with `agency_id` ≠ lead `agency_id`.
+Skip-ahead is forbidden. `lead_captured` without prior `value_delivered`
++ `service_contact_requested` + `contact_verified` on the same
+`opportunity_id` is a contract violation.
+
+Side events (do not move the lifecycle pointer alone):
+`consent_updated`, `permission_withdrawn`, `suppressed`, `complaint`,
+`identity_merge_requested`, `outbox_dead_lettered`.
+
+`permission_withdrawn` blocks dispatch. Whether it auto-closes the
+opportunity or only suppresses outbound:
+**UNKNOWN — HUMAN DECISION**.
 
 ### 3.2 Variant A vs B (ordering, not a second machine)
 
-- **B (value first):** estimate route may emit `value_delivered` (anonymous,
-  session-scoped). Submit later emits `service_contact_requested`.
-- **A (contact first):** submit RPC may insert value artifact then
-  `value_delivered` then `service_contact_requested` in **one** transaction.
-  Client must not see a conversion event until the RPC commits.
+Variant B may persist `value_delivered` at estimate time (before contact).
+Variant A may persist `value_delivered` on the submit path when that is
+the first durable delivery. Same machine; no skip of `contact_verified`.
+
+### 3.3 Happy path
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor Owner
+  participant Widget
+  participant API as Valuation API
+  participant RPC as capture_seller_opportunity
+  participant PG as Postgres
+  participant Worker as Outbox worker
+  participant Broker as Broker notify adapter
+  participant GA4 as GA4 MP destination
+
+  Owner->>Widget: Sees estimate value UI
+  Widget->>API: POST /api/valuation/estimate
+  API->>PG: persist value_artifact plus event value_delivered
+  API-->>Widget: 200 estimate
+
+  Owner->>Widget: Explicit contact request plus privacy ack
+  Widget->>API: POST /api/valuation/submit with Idempotency-Key
+  API->>RPC: BEGIN
+  RPC->>PG: lead plus permission receipt plus request plus events plus outbox
+  RPC-->>API: COMMIT
+  API-->>Widget: 200 leadId projection only
+  Widget->>Widget: optional gtag lead_submitted not ledger
+
+  Worker->>PG: CLAIM outbox FOR UPDATE SKIP LOCKED
+  Worker->>PG: permission snapshot fresh
+  Worker->>Broker: notify provider dedupe key equals outbox.id
+  Worker->>PG: ACK dispatched
+  Worker->>GA4: optional server confirmation not authority
+```
+
+### 3.4 Failure path
+
+```mermaid
+flowchart TD
+  A[Submit HTTP] --> B{Idempotency-Key seen?}
+  B -->|yes committed| R200[Return original leadId no new row]
+  B -->|no| C[RPC BEGIN]
+  C --> D[SQL lead]
+  D -->|error| X[ROLLBACK no lead_captured]
+  D --> E[SQL permission receipt]
+  E -->|error| X
+  E --> F[SQL service request]
+  F -->|error| X
+  F --> G[SQL events]
+  G -->|error| X
+  G --> H[SQL outbox]
+  H -->|error| X
+  H --> I[COMMIT]
+  I --> J[HTTP 200]
+  J --> K[Worker claim]
+  K --> L{Permission still granted?}
+  L -->|withdrawn or suppressed| M[Mark cancelled_suppressed zero outbound]
+  L -->|yes| N[Send with provider dedupe]
+  N -->|HTTP lost or 5xx| O[Release lease retry]
+  N -->|2xx or provider duplicate| P[ACK]
+  O --> Q{attempt at max?}
+  Q -->|no| K
+  Q -->|yes| DLQ[dead_letter plus alarm]
+  X --> R5[HTTP 5xx client may retry same key]
+```
 
 ---
 
 ## 4. Per-event contract
 
-PII class on the **event payload** is always `none` or `pseudonymous`.
-Contact PII lives in `leads` / person tables, never in the event JSON.
+Envelope (every ledger event):
 
-Retention for legal hold: `UNKNOWN — HUMAN DECISION`. Technical rule until
-that decision: **append-only, no delete, no DROP**. Archive = copy to cold
-storage + retain hash; original row stays or is moved with checksum, never
-erased.
+    event_id, event_name, schema_version,
+    occurred_at, received_at,
+    tenant_id, opportunity_id, subject_id,
+    value_artifact_id, consent_receipt_id,
+    idempotency_key,   -- unique (tenant_id, event_name, idempotency_key)
+    trace_id,
+    payload            -- NO raw PII (section 11)
 
-Idempotency key namespace is always `{agency_id}:{event_name}:{natural_key}`.
+PII classes: `none` | `indirect` (ids, hashed refs) | `direct_restricted`
+(person/lead tables only, never in `payload`).
 
-| Event | Producer | Authority | Idempotency key | Allowed from | Payload PII | Downstream | Failure policy |
-|---|---|---|---|---|---|---|---|
-| `value_delivered` | `POST /api/valuation/estimate` or capture RPC | Server estimate engine + persist **in the same transaction as the event** (today persist is best-effort — **gap**) | `{agency_id}:value_delivered:{session_id}:{artifact_version}` | `none`, `value_shown` | pseudonymous (`session_id`, `artifact_id`, band flags, `no_estimate`). No address line | ledger; optional GA4 MP `valuation_shown` destination | If artifact persist fails, **do not** emit the event; client may show honest error. No conversion |
-| `service_contact_requested` | capture RPC only | Capture RPC | `{agency_id}:service_contact_requested:{idempotency_key}` | `none`, `value_shown` | pseudonymous. Channel/window/recipient **ids**. No phone/email | ledger; verification outbox; **not** broker call queue | RPC abort → no row, no event, no outbox |
-| `contact_verified` | verify RPC (OTP/magic-link/inbound confirm) | Verify RPC | `{agency_id}:contact_verified:{subject_id}:{channel}` | `unverified_request` | pseudonymous | ledger; capture-confirm RPC may continue in same tx | Fail closed. Do not skip to `lead_captured` |
-| `lead_captured` | confirm RPC (same tx as `contact_verified` allowed) | Confirm RPC | `{agency_id}:lead_captured:{lead_id}` | `contact_verified` | pseudonymous (`lead_id`, `subject_id`) | ledger; **deterministic broker notify outbox**; routing outbox | If this insert fails, tx abort. **Never** emit because GA4 `lead_submitted` fired |
-| `routed` | routing worker / RPC | Router using tenant territory + capacity | `{agency_id}:routed:{lead_id}:{assignment_id}` | `lead_captured` | pseudonymous (`broker_id`, `assignment_id`) | ledger; broker inbox | Fail closed on FK/tenant mismatch. No silent default broker |
-| `broker_accepted` | broker/owner action API | Authenticated broker in **same** `agency_id` | `{agency_id}:broker_accepted:{assignment_id}` | `routed` | none beyond ids | ledger; appointment outbox; **not** an Ads conversion unless legal GO | Duplicate accept → same event id returned |
-| `broker_rejected` | broker/owner action API | same | `{agency_id}:broker_rejected:{assignment_id}` | `routed` | none + reason code | ledger; re-route outbox | Reason required. Not BAWSO |
-| `appointment_proposed` | broker or system calendar adapter | CRM after successful propose write | `{agency_id}:appointment_proposed:{assignment_id}:{slot_id}` | `broker_accepted` | none + slot id | ledger; subject notify outbox (**permission check**) | Adapter fail → outbox retry, no duplicate propose event |
-| `appointment_confirmed` | subject or broker confirm | CRM | `{agency_id}:appointment_confirmed:{appointment_id}` | `appointment_proposed` | none | ledger; reminder outbox | |
-| `appointment_held` | broker outcome API | CRM (human attested) | `{agency_id}:appointment_held:{appointment_id}` | `appointment_confirmed` | none | ledger; Ads offline **destination** (not authority) | Client "I think we met" is not authority |
-| `no_show` | broker outcome API | CRM | `{agency_id}:no_show:{appointment_id}` | `appointment_confirmed` | none | ledger | |
-| `cancelled` | subject or broker | CRM | `{agency_id}:cancelled:{appointment_id}` | `appointment_proposed`, `appointment_confirmed` | none + actor role | ledger; suppression if subject cancelled contact | |
-| `mandate_signed` | CRM mandate write | CRM document/mandate row | `{agency_id}:mandate_signed:{mandate_id}` | `appointment_held` | none | ledger; Ads offline destination | Highest-value conversion. Client event **cannot** mint this |
-| `lost` | CRM | CRM | `{agency_id}:lost:{lead_id}:{reason_code}` | any post-`lead_captured` except `mandate_signed` | none + reason | ledger | |
+Retention days: **UNKNOWN — HUMAN DECISION** (DPO). Ledger rows are not
+deleted on feature rollback (section 12).
 
-**Failed submit does not create `lead_captured`:** if capture RPC rolls
-back, zero events of this name exist. Client `contact_submitted` /
-`lead_submitted` are irrelevant.
+### 4.1 `value_delivered`
+
+| Field | Contract |
+|---|---|
+| Producer | Server estimate API (variant B) or submit path when that is first durable delivery (variant A). Producer is the API that persisted `value_artifact`. |
+| Authority | Ledger row + `value_artifact` (inputs, source, version, uncertainty, expiry). Client `valuation_shown` is not authority. |
+| Idempotency key | `{tenant_id}:value_delivered:{session_id}:{artifact_hash}` |
+| Allowed from | start |
+| PII class | `none` in payload. Location granularity **UNKNOWN — HUMAN DECISION**; default region code, not street. |
+| Retention | **UNKNOWN — HUMAN DECISION** |
+| Downstream | UI; later capture RPC must pass `value_artifact_id` |
+| Failure policy | If artifact persist fails, do **not** emit `value_delivered`. In-response estimate display is not a conversion. |
+
+### 4.2 `service_contact_requested`
+
+| Field | Contract |
+|---|---|
+| Producer | Capture/request RPC with explicit channel, window, recipient class. Today's widget lacks these fields -- they are **required before this event is legal in paid traffic**. |
+| Authority | RPC insert of `service_contact_request` |
+| Idempotency key | `{tenant_id}:service_contact_requested:{Idempotency-Key}` |
+| Allowed from | `value_delivered` |
+| PII class | `indirect` |
+| Retention | **UNKNOWN — HUMAN DECISION** |
+| Downstream | verification worker; **not** broker call queue |
+| Failure policy | Rolled back with RPC. Unverified request must not be labeled warm/BAWSO. |
+
+### 4.3 `contact_verified`
+
+| Field | Contract |
+|---|---|
+| Producer | Verification service. Method **UNKNOWN — HUMAN DECISION** (SMS OTP / email OTP / verified callback). |
+| Authority | Server verification record (`verified_at`, `method`, `subject_id`) |
+| Idempotency key | `{tenant_id}:contact_verified:{subject_id}:{method}` |
+| Allowed from | `service_contact_requested` |
+| PII class | `indirect` (no OTP codes in payload) |
+| Retention | **UNKNOWN — HUMAN DECISION** |
+| Downstream | same-tx capture or `promote_verified_opportunity()` |
+| Failure policy | Failed verification is not `lead_captured`. No broker notify. |
+
+### 4.4 `lead_captured`
+
+| Field | Contract |
+|---|---|
+| Producer | **Only** `capture_seller_opportunity()` COMMIT (or `promote_verified_opportunity()` if split). Never widget, GA4, or triage. |
+| Authority | Ledger + opportunity row in the same transaction |
+| Idempotency key | client `Idempotency-Key` header, unique per `(tenant_id, key)` |
+| Allowed from | `contact_verified` |
+| PII class | `indirect` |
+| Retention | **UNKNOWN — HUMAN DECISION** |
+| Downstream | outbox: required `broker_notify`; optional non-gating `ai_triage`; optional permissioned `ads_confirmation` |
+| Failure policy | Any SQL error -> ROLLBACK -> **no** `lead_captured`. Lost HTTP after COMMIT: retry returns same ids. |
+
+Honeypot and sandbox must not emit this event.
+
+### 4.5 `routed`
+
+| Field | Contract |
+|---|---|
+| Producer | Deterministic routing engine (territory, capacity, tenant). Not AI. |
+| Authority | `routing_decision` row |
+| Idempotency key | `{tenant_id}:routed:{opportunity_id}:{routing_decision_id}` |
+| Allowed from | `lead_captured` or `broker_rejected` (re-route) |
+| PII class | `indirect` |
+| Retention | **UNKNOWN — HUMAN DECISION** |
+| Downstream | outbox recipient may be patched only while status=`pending` |
+| Failure policy | No territory -> `lost` reason `out_of_area`. No silent drop. |
+
+### 4.6 `broker_accepted` / `broker_rejected`
+
+| Field | Contract |
+|---|---|
+| Producer | Authenticated broker action in CRM (human). |
+| Authority | CRM write + ledger; `profile.agency_id` must match opportunity tenant |
+| Idempotency key | `{tenant_id}:broker_{accepted\|rejected}:{opportunity_id}:{actor_id}:{decision_seq}` |
+| Allowed from | `routed` |
+| PII class | `indirect` (reason code enum) |
+| Retention | **UNKNOWN — HUMAN DECISION** |
+| Downstream | SLA clock on accept; reject -> re-route or `lost` |
+| Failure policy | Cross-tenant actor -> fail closed. |
+
+**Only `broker_accepted` may be called BAWSO**, and only if section 2 warm gates hold.
+
+### 4.7 `appointment_proposed`
+
+| Field | Contract |
+|---|---|
+| Producer | Broker or owner-confirmed slot writer |
+| Authority | calendar row in CRM |
+| Idempotency key | `{tenant_id}:appointment_proposed:{opportunity_id}:{slot_hash}` |
+| Allowed from | `broker_accepted` |
+| PII class | `indirect` |
+| Retention | **UNKNOWN — HUMAN DECISION** |
+| Downstream | owner confirmation outbox (permission-checked) |
+| Failure policy | Send only after fresh permission snapshot. |
+
+### 4.8 `appointment_confirmed`
+
+| Field | Contract |
+|---|---|
+| Producer | Owner confirmation or broker recording of owner confirmation (method logged) |
+| Authority | CRM appointment status |
+| Idempotency key | `{tenant_id}:appointment_confirmed:{appointment_id}` |
+| Allowed from | `appointment_proposed` |
+| PII class | `indirect` |
+| Retention | **UNKNOWN — HUMAN DECISION** |
+| Downstream | reminder outbox |
+| Failure policy | Dual confirm with same key is a no-op. |
+
+### 4.9 `appointment_held` / `no_show` / `cancelled`
+
+| Field | Contract |
+|---|---|
+| Producer | Broker outcome form (human). Calendar sync alone may not emit `appointment_held` unless **UNKNOWN — HUMAN DECISION** later authorizes it. |
+| Authority | CRM outcome row |
+| Idempotency key | `{tenant_id}:{event_name}:{appointment_id}` |
+| Allowed from | `appointment_confirmed` (`cancelled` also from `appointment_proposed`) |
+| PII class | `indirect` |
+| Retention | **UNKNOWN — HUMAN DECISION** |
+| Downstream | ads offline outcome only if permission + minimization allow; destination, not ledger |
+| Failure policy | Calendar webhook without human confirm is not `appointment_held`. |
+
+### 4.10 `mandate_signed` / `lost`
+
+| Field | Contract |
+|---|---|
+| Producer | Broker/ops recording of mandate or loss reason |
+| Authority | CRM + ledger |
+| Idempotency key | `{tenant_id}:{mandate_signed\|lost}:{opportunity_id}` |
+| Allowed from | section 3.1 |
+| PII class | `indirect` (`lost_reason` enum) |
+| Retention | **UNKNOWN — HUMAN DECISION** |
+| Downstream | closed-loop ads only as destination after permission check |
+| Failure policy | Client thank-you page is not `mandate_signed`. |
 
 ---
 
 ## 5. Authority model
 
-```text
-Consent / suppression  → authority for "may we send/call?"
-CRM operational row    → authority for assignment, appointment, mandate
-Event ledger           → authority for history, analytics, reconciliation
-GA4 / Meta / Google    → destinations (Measurement Protocol / CAPI / ECL)
-Browser gtag           → non-authoritative UX telemetry
-```
-
-Acquisition connect already ignores client `agency_id`. Seller capture must
-do the same: `agencySlug` is resolved server-side; a mismatched body field
-is ignored or the request is rejected. It is never written as tenant
-authority.
-
-**Ads / GA4 mapping (destination only):**
-
-| Ledger event | Allowed destination name | When |
+| Concern | Authority | Not authority |
 |---|---|---|
-| `value_delivered` | `valuation_shown` | after RPC/commit, via Measurement Protocol **or** client — client is optional duplicate |
-| `service_contact_requested` | `contact_submitted` | **server MP only** if used at all; today's pre-fetch gtag is not this |
-| `lead_captured` | `lead_submitted` / ECL "lead" | only after confirm RPC commit |
-| `appointment_held` | offline "qualified consultation" | only if legal basis exists — `UNKNOWN — HUMAN DECISION` |
-| `mandate_signed` | offline "mandate" | `UNKNOWN — HUMAN DECISION` whether to send |
+| Business conversion / opportunity state | Server CRM + append-only event ledger | Browser, `gtag`, client MP hit, ads pixel |
+| Permission to contact / suppress | Consent + suppression ledger, re-read immediately before every dispatch | Cached flag, AI triage, CRM note, marketing opt-in boolean alone |
+| History / analytics | Append-only `business_event` rows | GA4, Meta, Google Ads, client `dataLayer` |
+| Dispatch intent | Transactional outbox row committed with the business write | `void someAsyncSideEffect(...)` |
+| Tenant identity | Server auth / `profiles.agency_id` / RPC `p_tenant_id` | Client JSON `agency_id` |
 
-Destinations receive hashed identifiers per provider rules, never raw PII
-in our ledger payload. Provider accept/reject is outbox ack, not a new
-business event unless explicitly mapped.
+GA4 mapping (destination only, after commit):
+
+| Ledger event | Client analog (not SoT) | Allowed destination |
+|---|---|---|
+| `value_delivered` | `valuation_shown` | server MP after persist |
+| `service_contact_requested` | `contact_submitted` | do not use today's pre-fetch gtag |
+| `lead_captured` | `lead_submitted` | server MP after RPC commit only |
+| `appointment_held` | offline qualified consultation | **UNKNOWN — HUMAN DECISION** |
+| `mandate_signed` | offline mandate | **UNKNOWN — HUMAN DECISION** |
 
 ---
 
-## 6. Atomic RPC boundary
+## 6. Exact atomic RPC boundary
 
-Two RPCs. Both are **single Postgres transactions**. No compensating
-DELETE. No multi-statement client orchestration.
+**Name:** `capture_seller_opportunity`.
 
-### 6.1 `capture_seller_opportunity`
+**When:** after `value_delivered` + `service_contact_requested` +
+`contact_verified` facts are available (verified contact may be created
+inside this same transaction if verification is synchronous).
 
-**When:** authenticated-as-system submit after tenant resolve + fail-closed
-rate limit + schema validation.
+**Single Postgres transaction. No application-level compensating DELETE.**
 
-**Atomic set (all or nothing):**
+### 6.1 Arguments (minimum)
 
-1. Lead / opportunity row (`status = unverified_request`) + property facts
-2. Permission receipt(s) (privacy notice ack, `service_contact` purpose,
-   optional `nurture`/`marketing` as **separate** rows)
-3. Service-contact request (channel, window, recipient, reason)
-4. Business event(s): `value_delivered` if artifact written in this tx;
-   always `service_contact_requested` on success
-5. Outbox row(s): `verify_contact` (if unverified) and/or
-   `analytics_destination` — **not** `broker_call_queue`
+    p_tenant_id            uuid
+    p_idempotency_key      text
+    p_value_artifact_id    uuid
+    p_subject              -- ids + restricted columns, not event payload
+    p_request              -- channel, window, recipient, purpose
+    p_consent              -- purpose, channel, legal_basis, notice_version,
+                           -- wording_hash, evidence_hash, granted_at
+    p_trace_id             text
 
-**Not in this RPC:** `lead_captured`, `routed`, broker accept, AI triage
-result as a gate.
+Client `agency_id` is ignored. Tenant is `p_tenant_id` resolved server-side
+the same way connect ignores body `agency_id`
+(`apps/crm/src/app/api/acquisition/google/connect/route.ts`).
 
-#### Exact SQL step order (abort = full rollback)
+### 6.2 SQL steps (order is the test surface)
 
-```text
-BEGIN ISOLATION LEVEL READ COMMITTED
-  -- unique (agency_id, idempotency_key) is the retry fence
+| Step | Write | On error |
+|---|---|---|
+| 0 | SELECT existing capture by `(tenant_id, idempotency_key)` -- if committed, return existing ids | fail closed |
+| 1 | Insert/upsert lead / seller_opportunity (`tenant_id` CHECK) | ROLLBACK |
+| 2 | Insert permission receipt (`consent_receipt`) FK -> opportunity + tenant | ROLLBACK |
+| 3 | Insert service_contact_request FK -> opportunity + tenant | ROLLBACK |
+| 4 | Insert business_event rows including **`lead_captured`** | ROLLBACK |
+| 5 | Insert outbox rows: required `broker_notify`; optional `ai_triage`; optional `ads_confirmation` | ROLLBACK |
+| 6 | COMMIT | -- |
 
-  1. SELECT id FROM seller_captures
-       WHERE agency_id = :agency_id AND idempotency_key = :key
-     IF found → return existing capture_id, lead_id, event_ids, outbox_ids
-                (no new writes)
+There is **no step 7** outside the transaction required for `lead_captured`
+to exist.
 
-  2. VERIFY agency exists AND :agency_id = resolved tenant
-     (client agency_id ignored; slug lookup already done in app)
+FK rule: every child `tenant_id` equals parent `tenant_id`. Mismatch ->
+raise -> ROLLBACK.
 
-  3. INSERT value_artifact (optional, variant A or when estimate computed)
-     -- fail here → nothing else exists
+### 6.3 Forbidden inside this RPC
 
-  4. INSERT leads / seller_opportunities
-       agency_id, status='unverified_request', …
-     -- fail here → rollback artifact
+- `DELETE FROM leads` / consent tables as compensation
+- calling HTTP (AI, Resend, GA4, Ads)
+- `void` / fire-and-forget
+- writing `lead_captured` before steps 1-3 succeed
+- using client GA4 as a write trigger
 
-  5. INSERT consent_receipts (1..n)
-       FK lead_id, agency_id must match
-     -- fail here → rollback lead+artifact
-     -- ON DELETE CASCADE on receipts is FORBIDDEN in future DDL
+### 6.4 Split vs combined verification
 
-  6. INSERT service_contact_requests
-       FK lead_id, agency_id, channel, window, recipient_id
+If verification is asynchronous:
 
-  7. INSERT seller_business_events
-       value_delivered? then service_contact_requested
-       payload without raw PII
-       consent_snapshot_id from step 5
+1. `request_seller_contact()` -- request + `service_contact_requested` only
+   (no `lead_captured`, no `broker_notify`).
+2. `promote_verified_opportunity()` -- `contact_verified` + `lead_captured`
+   + outbox.
 
-  8. INSERT seller_outbox
-       one row per intended dispatch (verify_contact, optional MP)
-       status='pending', attempt=0, lease_until=NULL
-       permission_snapshot_id = step 5
-
-  9. INSERT seller_captures (agency_id, idempotency_key, lead_id, …)
-       UNIQUE (agency_id, idempotency_key)
-
-COMMIT
-```
-
-Error after **any** step → `ROLLBACK`. HTTP 5xx. **Zero** `lead_captured`.
-Client retry with the **same** idempotency key after a lost HTTP 200 hits
-step 1 and returns the original ids (one lead, one outbox set).
-
-App layer after COMMIT may return `{ ok: true, leadId, captureId, estimate }`.
-It must **not** `void` a notify function. Workers poll the outbox.
-
-### 6.2 `confirm_seller_contact`
-
-**Atomic set:**
-
-1. Verify challenge (OTP/token) bound to `agency_id` + `lead_id`
-2. Event `contact_verified`
-3. Event `lead_captured`
-4. Opportunity status → `lead_captured`
-5. Outbox: `broker_notify` (deterministic) **and** `route_opportunity`
-   **and** optional `ai_triage` as a **sibling**, never a parent
-
-Same all-or-nothing rule. Permission snapshot refreshed in this
-transaction. If withdrawn since capture → **no** `lead_captured`, outbox
-`broker_notify` is **not** inserted, event `suppression_honored` is.
-
-### 6.3 Tenant / FK fail-closed
-
-Every INSERT checks `agency_id` equality across lead, receipt, request,
-event, outbox. Trigger or RPC body:
-
-```text
-IF NEW.agency_id <> lead.agency_id THEN RAISE EXCEPTION 'cross_tenant_fk'
-```
-
-Cross-tenant → transaction fail. No partial row. No HTTP 200.
-
-### 6.4 What the live route must stop doing
-
-| Live behavior | Contract |
-|---|---|
-| Two-step insert + compensating delete | single RPC, rollback |
-| `void runInboundLeadTriageAndNotify` | outbox after commit |
-| New UUID per retry | client+tenant idempotency key |
-| Consent boolean only | receipt rows per purpose |
-| `ON DELETE CASCADE` from lead → consents | **forbidden** for evidence tables |
-| Rate-limit fail-open | fail-closed on capture |
+Unverified request still must not notify the broker call queue.
 
 ---
 
 ## 7. Outbox contract
 
-Table (logical): `seller_outbox`.
+Working name: `seller_event_outbox` (name may change; semantics may not).
 
-| Column | Role |
-|---|---|
-| `id` | stable dispatch id (also provider dedupe key) |
-| `agency_id` | tenant fence |
-| `capture_id` / `lead_id` | FK, same tenant |
-| `topic` | `verify_contact` \| `broker_notify` \| `route_opportunity` \| `ai_triage` \| `analytics_destination` \| `subject_message` |
-| `status` | `pending` \| `claimed` \| `succeeded` \| `cancelled` \| `dead_letter` |
-| `attempt` | int, starts 0 |
-| `max_attempts` | 8 |
-| `lease_until` | claim fence |
-| `claimed_by` | worker id |
-| `next_attempt_at` | backoff |
-| `permission_snapshot_id` | frozen at insert; **re-read live** before send |
-| `dedupe_key` | `{agency_id}:{topic}:{lead_id}` unique where topic in (`broker_notify`, `lead_captured` destinations) |
-| `payload` | no raw PII |
-| `last_error` | truncated, no PII |
-| `succeeded_at` / `acked_at` | provider ack time |
+    id, tenant_id, opportunity_id, event_id,
+    kind: broker_notify | ai_triage | ads_confirmation | owner_message,
+    status: pending | claimed | dispatched | cancelled_suppressed | dead_letter,
+    attempt, max_attempts,
+    claimed_by, claimed_at, lease_until,
+    payload_ref,
+    provider, provider_dedupe_key, provider_message_id,
+    last_error, next_attempt_at,
+    created_at, dispatched_at
 
 ### 7.1 Claim / lease
 
 ```sql
-UPDATE seller_outbox o
+UPDATE seller_event_outbox o
 SET status = 'claimed',
-    claimed_by = :worker_id,
+    claimed_by = $worker_id,
     claimed_at = now(),
     lease_until = now() + interval '30 seconds',
     attempt = o.attempt + 1
-WHERE o.id IN (
-  SELECT id FROM seller_outbox
+WHERE o.id = (
+  SELECT id FROM seller_event_outbox
   WHERE status IN ('pending', 'claimed')
-    AND (lease_until IS NULL OR lease_until < now())
-    AND next_attempt_at <= now()
+    AND (status = 'pending' OR lease_until < now())
     AND attempt < max_attempts
-    AND status <> 'dead_letter'
+    AND next_attempt_at <= now()
   ORDER BY created_at
   FOR UPDATE SKIP LOCKED
-  LIMIT :batch
+  LIMIT 1
 )
 RETURNING *;
 ```
 
-`FOR UPDATE SKIP LOCKED` ⇒ two concurrent workers ⇒ **one** dispatch.
+**Concurrency:** two workers cannot claim the same row (`SKIP LOCKED` +
+row lock). Test: two concurrent workers -> one dispatch.
 
-Lease expiry without ack ⇒ another worker may reclaim. That is recovery
-after crash-after-claim. Provider-side dedupe (§7.5) makes double HTTP
-safe.
+Lease default **30s**. Do not `SELECT ... WHERE published_at IS NULL`
+without locking (realvia-ingestion anti-pattern).
 
-### 7.2 Concurrency
+### 7.2 Retry / backoff / max attempts
 
-- Unique `(agency_id, topic, lead_id)` for `broker_notify`.
-- Claim uses skip locked, not `SELECT` then `UPDATE`.
-- In-process Maps / `EventBus` in memory are **not** the outbox
-  (see architecture audit wish-list; this contract requires Postgres).
-
-### 7.3 Retry / backoff / max attempts
-
-- Backoff: `min(10 minutes, 2 ^ attempt)` seconds after failure (1, 2, 4, …).
-- `max_attempts = 8`.
-- After 8 failures → `dead_letter`, event `outbox_dead_lettered`, **alarm**.
-- HTTP timeout / 5xx / unknown → retry.
-- HTTP 4xx from our own validation → dead letter immediately (no burn).
-- Provider 429 → retry with `Retry-After` if present.
-
-### 7.4 Dead letter / replay
-
-- Dead-letter rows **stay**. Never DELETE.
-- Replay = human-gated RPC `replay_seller_outbox(id)` that sets
-  `status='pending'`, `attempt=0`, `next_attempt_at=now()`, writes
-  `replayed_from` audit. Production replay: `UNKNOWN — HUMAN DECISION`
-  (who may press it).
-- Replay re-checks permission immediately before send.
-
-### 7.5 Provider dedupe
-
-Every outbound call carries:
-
-```text
-Idempotency-Key: {outbox.id}
-```
-
-or provider native equivalent. Internal notification insert uses
-`ON CONFLICT (agency_id, topic, lead_id) DO NOTHING` then ack success.
-
-Crash **after send / before ack**: worker dies after provider accepted but
-before `acked_at`. Reclaim → second HTTP with same idempotency key →
-provider returns original result → worker acks. **One** visible effect.
-
-Crash **before send**: reclaim → one send.
-
-### 7.6 Reconciliation
-
-Cron (period `UNKNOWN — HUMAN DECISION`; proposed 5 min, not a KPI):
-
-1. Ledger `lead_captured` count vs opportunities in `lead_captured+`
-   per tenant — mismatch alarm.
-2. Outbox `succeeded` vs destination receipts (GA4 MP debug / Ads).
-3. `broker_notify` succeeded vs `routine_notifications` (or successor table)
-   with same `dedupe_key`.
-4. Withdrawal timestamps vs later succeeded sends — **must be 0**.
-
-Mismatch is an alarm, not a silent repair that deletes rows.
-
-### 7.7 Alarms (minimum)
-
-| Alarm | SLI signal |
+| Parameter | Engineering default (this contract) |
 |---|---|
-| Outbox lag | oldest pending `now() - created_at` |
-| DLQ depth | count `dead_letter` |
-| Permission skip | dispatch cancelled by suppression (info) vs dispatch succeeded after withdraw (page) |
-| Duplicate capture | unique violation rate on idempotency (should be benign retries) |
-| Cross-tenant reject | count of `cross_tenant_fk` exceptions |
-| Claim stuck | `status=claimed` and `lease_until` in future for > N minutes (worker leak) |
+| max_attempts | 8 |
+| backoff | exponential 1s * 2^n, cap 5 minutes |
+| next_attempt_at | set on failed send before releasing lease |
+| jitter | 20 percent |
 
-Threshold numbers except zero-violation invariants:
-`UNKNOWN — HUMAN DECISION`.
+Business volume/SLA kill switches: **UNKNOWN — HUMAN DECISION**.
 
----
+### 7.3 Dead letter, replay, provider dedupe
 
-## 8. Permission snapshot before every dispatch
+- After `attempt >= max_attempts`: `status = dead_letter`, ledger
+  `outbox_dead_lettered`, alarm. **Do not delete.**
+- Replay: ops sets `status=pending`, `attempt=0`, `next_attempt_at=now()`,
+  **same** `provider_dedupe_key`.
+- `provider_dedupe_key = outbox.id::text`. Adapters send this to the
+  provider (Resend header, notification unique key, Ads `order_id`).
+- Provider 409 / duplicate-success -> ACK as dispatched.
 
-Before **any** send/call/Ads ping:
+### 7.4 Crash recovery
 
-1. Load live receipts + suppression for `(agency_id, subject_id, purpose, channel, recipient)`.
-2. If withdrawn / expired / denied / globally suppressed → set outbox
-   `cancelled`, write `suppression_honored`, **zero outbound**.
-3. Store `permission_checked_at` and `permission_snapshot_id` on the
-   attempt row.
-4. Only then call the provider.
+| Crash point | Recovery |
+|---|---|
+| After COMMIT, before claim | row `pending` -> later worker claims |
+| After claim, before send | lease expires -> another worker claims |
+| After send, before ACK | retry with same provider dedupe -> one user-visible notify |
+| After ACK | terminal `dispatched` |
 
-Withdrawal **after** capture and **before** dispatch: step 2 fires. This is
-the mandatory test "withdrawal before dispatch → zero outbound".
+Exactly-once **effect** = at-least-once delivery + provider idempotency.
+Exactly-once **ledger** = unique `(tenant_id, event_name, idempotency_key)`.
 
-AI, CRM UI, and brokers must not bypass this gate. A broker "I'll just
-call this number from my cell" is a **policy** problem outside the worker;
-the system must not place the number into an autodial outbox without the
-check.
+### 7.5 Reconciliation and alarms
 
-Purpose split (target receipts; live code has only `marketing_opt_in`):
+Every 5 minutes (cron, measurable SQL):
 
-```text
-privacy_notice_ack | requested_valuation | service_contact
-| nurture | analytics | advertising
-```
+    mismatch_count =
+      count(lead_captured without broker_notify outbox)
+    + count(outbox dispatched without provider_message_id)
+    + count(claimed AND lease_until < now() - interval '5 minutes')
 
-Channels: `web | email | sms | phone | messaging`.
-
----
-
-## 9. Broker notification vs AI triage
-
-Target:
-
-```text
-confirm_seller_contact
-  ├─ outbox topic=broker_notify     ← required, deterministic
-  ├─ outbox topic=route_opportunity ← required
-  └─ outbox topic=ai_triage         ← optional sibling
-```
-
-`broker_notify` payload: lead id, source, tenant, **fixed** priority
-`high` (or tenant default), **no** AI reason required. Body may say
-"AI summary pending".
-
-`ai_triage` worker may later update `ai_priority` / `ai_reason` and emit a
-**non-blocking** `triage_completed` operational event. It must not be the
-parent of `broker_notify`.
-
-Live coupling in `runInboundLeadTriageAndNotify` is a **P0 defect** against
-this section.
+| Alarm | Condition (server SoT = these queries) |
+|---|---|
+| Capture without notify intent | `lead_captured` minus `broker_notify` outbox > 0 |
+| DLQ | `dead_letter` inserted in 15m > 0 |
+| Lease stuck | claimed past lease+5m > 0 |
+| Lag | p95 `dispatched_at - outbox.created_at` > 60s over 15m |
+| Permission bypass | dispatched where suppression forbids channel > 0 (must be 0) |
 
 ---
 
-## 10. Diagrams
+## 8. Permission / suppression snapshot
 
-### 10.1 Happy path (variant B, then verify)
+**Immediately before every dispatch** (email, SMS, phone queue card,
+push, ads confirmation):
 
-```mermaid
-sequenceDiagram
-  autonumber
-  actor P as Person
-  participant UI as Widget
-  participant Est as estimate API
-  participant Sub as submit API
-  participant PG as Postgres RPC
-  participant W as Outbox worker
-  participant B as Broker inbox
-  participant GA as GA4 destination
+1. Read current `consent_receipt` + `suppression` for
+   `(tenant_id, subject_id, channel, purpose, recipient_id)`.
+2. If withdrawn, expired, denied, or globally suppressed -> set outbox
+   `cancelled_suppressed`, **zero outbound**, side-event
+   `permission_withdrawn` if missing.
+3. AI triage, CRM hot flags, and cached `marketing_opt_in` cannot override.
 
-  P->>UI: property facts
-  UI->>Est: POST /api/valuation/estimate
-  Est->>PG: persist artifact + value_delivered
-  PG-->>Est: commit
-  Est-->>UI: estimate
-  UI->>GA: valuation_shown (optional, not authority)
+Today's `marketing_opt_in` boolean is insufficient.
 
-  P->>UI: contact + privacy ack
-  UI->>Sub: POST submit + Idempotency-Key
-  Note over UI: client contact_submitted is NOT ledger
-  Sub->>PG: capture_seller_opportunity
-  PG-->>Sub: unverified_request + outbox verify_contact
-  Sub-->>UI: 200
-  UI->>GA: lead_submitted FORBIDDEN here
-  Note over UI: GA4 lead_submitted only after lead_captured
-
-  W->>PG: claim verify_contact
-  W->>W: permission snapshot
-  W->>P: verify challenge
-  P->>Sub: confirm token
-  Sub->>PG: confirm_seller_contact
-  PG-->>Sub: contact_verified + lead_captured + broker_notify + route + ai_triage
-  W->>PG: claim broker_notify
-  W->>W: permission snapshot
-  W->>B: one new_lead
-  W->>PG: ack
-  W->>GA: MP lead_captured destination
-```
-
-### 10.2 Failure path (lost HTTP, crash, withdrawal, FK)
-
-```mermaid
-flowchart TD
-  A[Submit attempt] --> B{RPC commit?}
-  B -->|no: error after any SQL step| C[ROLLBACK<br/>no lead / no event / no outbox<br/>HTTP 5xx]
-  C --> D[Client retry same idempotency key]
-  D --> A
-
-  B -->|yes: HTTP lost| E[Client retry same key]
-  E --> F[Step 1 SELECT existing capture]
-  F --> G[Return same lead_id + outbox ids<br/>one lead / one outbox effect]
-
-  G --> H[Worker claim SKIP LOCKED]
-  H --> I{Two workers?}
-  I -->|loser| J[0 rows claimed]
-  I -->|winner| K{Crash point}
-
-  K -->|after claim before send| L[Lease expires<br/>reclaim<br/>one send]
-  K -->|after send before ack| M[Reclaim<br/>same Idempotency-Key<br/>provider dedupe<br/>one effect]
-  K -->|ack written| N[Done]
-
-  H --> O{Live suppression?}
-  O -->|withdrawn| P[outbox cancelled<br/>suppression_honored<br/>zero outbound]
-  O -->|allowed| Q[Dispatch]
-
-  A --> R{agency_id / FK mismatch}
-  R -->|yes| C
-
-  C --> S[No lead_captured row]
-  S --> T[GA4 contact_submitted may exist<br/>ignored by ledger and Ads import]
-```
+Worker must re-read **after claim and before HTTP**. Test: withdrawal
+before dispatch -> zero outbound.
 
 ---
 
-## 11. SLI / SLO
+## 9. Broker notification independent of AI
 
-Business conversion KPIs (cost per BAWSO, cost per consultation, close
-rate, volume): **`UNKNOWN — HUMAN DECISION`**.
+Split today's `runInboundLeadTriageAndNotify`:
 
-Correctness SLOs below are **contract invariants**, not growth targets.
-Numerator and denominator are countable in Postgres. **Server is SoT.**
-GA4 is not an SLI source.
+| Stream | Outbox kind | Gates notify? | May fail |
+|---|---|---|---|
+| Broker/owner new_lead | `broker_notify` | **No AI.** Deterministic title/body from request + property facts + tenant. | Isolated; retry |
+| AI priority / reason | `ai_triage` | **Must not** gate `broker_notify`. Empty/timeout/error -> skip enrichment only. | Isolated |
 
-| SLI | Numerator | Denominator | Source | SLO |
-|---|---|---|---|---|
-| Atomic capture | captures where lead ∧ receipts ∧ request ∧ events ∧ outbox share `capture_id` and tx id | capture RPC attempts that passed validation | `seller_captures` joined to children; RPC logs | **100%** |
-| No `lead_captured` on failed submit | `lead_captured` events whose `capture_id` has committed capture | HTTP 5xx/abort submit attempts | ledger vs API logs | **0** such events |
-| Permission-before-dispatch | attempts with `permission_checked_at` ≥ `claimed_at` and result recorded | outbox send attempts | `seller_dispatch_attempts` | **100%** |
-| Send after withdrawal | succeeded dispatches with `acked_at` > `withdrawn_at` for same subject/purpose/channel | succeeded dispatches | receipts joined to outbox | **0** |
-| Cross-tenant | committed rows where child `agency_id` ≠ lead `agency_id` | committed child rows | DB constraint + probe | **0** |
-| Single dispatch | distinct provider accepts for `broker_notify` dedupe key | `broker_notify` outbox rows | outbox + provider | **= 1 per key** (retries allowed, effects = 1) |
-| Client-as-authority | conversions minted solely from gtag | conversions | ledger (must be 0) | **0** |
-| Duplicate capture | distinct `lead_id` per `(agency_id, idempotency_key)` | capture keys | unique constraint | **1** |
-| Value availability | estimate HTTP 200 with artifact **or** honest `no_estimate` | estimate HTTP attempts minus 4xx validation | API logs + `value_artifact` | threshold `UNKNOWN — HUMAN DECISION` |
-| Lead → route latency | `routed.occurred_at - lead_captured.occurred_at` | `lead_captured` in window | ledger | threshold `UNKNOWN — HUMAN DECISION` |
-| Withdrawal propagation | destinations acked cancelled/suppressed | withdrawals | outbox | threshold `UNKNOWN — HUMAN DECISION` |
-| Ledger ↔ CRM mismatch | opportunities whose status ≠ latest legal event | opportunities in scope | reconcile job | threshold `UNKNOWN — HUMAN DECISION` |
+`createNotification` may remain the adapter **behind** the outbox worker.
+It must not be invoked with `void` from the submit request.
 
-RPO/RTO: `UNKNOWN — HUMAN DECISION`. Restore drill must prove event +
-outbox + receipt tables survive; success is not "tables dropped and
-recreated".
+Existence of the notification is constant priority (e.g. `high`). AI may
+later update a non-authoritative enrichment field. Missing AI must still
+notify.
 
 ---
 
-## 12. Failure-injection matrix
+## 10. SLI / SLO (measurable, server SoT)
 
-| # | Injection | Expected |
+Business KPI numeric targets remain **UNKNOWN — HUMAN DECISION**.
+
+Reliability SLOs below are this contract's engineering defaults. Numerator
+and denominator are **SQL against Postgres** (event ledger + outbox), not
+GA4.
+
+| ID | SLI (numerator / denominator) | SLO | Source of truth |
+|---|---|---|---|
+| R1 | count(RPC commit with lead+receipt+request+event+outbox) / count(RPC attempts that passed validation) | 100% atomic (failed attempts have 0 committed fragments) | RPC + tables; staging probes |
+| R2 | count(dispatches with fresh permission grant) / count(dispatches) | 100% | outbox column `permission_snapshot_id` |
+| R3 | count(outbound after effective withdrawal) / count(withdrawals) | 0 | suppression vs provider send log |
+| R4 | count(cross-tenant visible rows) / count(all rows in seller tables) | 0 | RLS + RPC tenant check |
+| R5 | count(duplicate opportunities with same idempotency_key) / count(capture commits) | 0 | unique index |
+| R6 | count(broker_notify dispatched or in-retry or DLQ) / count(lead_captured) | 100% have notify intent | join event to outbox |
+| R7 | percentile(dispatched_at - lead_captured.occurred_at) | p95 < 60s | timestamps on ledger/outbox |
+| R8 | count(value_delivered) / count(successful artifact persists) | 100% | artifact + event |
+| R9 | abs(count(lead_captured) - count(CRM opportunities in captured+)) / count(lead_captured) | < 0.5% | reconciliation job |
+| R10 | count(event.payload keys intersect PII_BLOCKLIST) | 0 | payload linter + test |
+
+RPO/RTO for restore drills: **UNKNOWN — HUMAN DECISION** (cost vs risk).
+
+---
+
+## 11. Payload PII rules
+
+**Forbidden in `business_event.payload` and outbox adapter logs:**
+raw email, phone, name, street address, exact GPS, free-text notes that
+echo those fields, OTP codes, access tokens.
+
+**Allowed:** `tenant_id`, `opportunity_id`, `subject_id`, keyed HMAC
+identifiers (not raw SHA of email), property type, region code, artifact
+id, channel enum, boolean flags.
+
+Direct PII stays in RLS-protected person/lead columns.
+
+---
+
+## 12. Rollback and audit preservation
+
+- Allowed: stop workers; feature-flag RPC off; return submit to old path
+  only if old path remains in git history.
+- **Forbidden:** `DROP TABLE` of `business_event`, `consent_receipt`,
+  `seller_event_outbox`, `service_contact_request`, or opportunity tables
+  that contain production rows.
+- **Forbidden:** `DELETE` of ledger/outbox/consent rows to "clean" a failed
+  release.
+- Allowed: rename tables in place; add `retired_at`.
+- Today's compensating `DELETE FROM leads` (~L162 submit route) is
+  **incompatible** because of `ON DELETE CASCADE` on `lead_consents`.
+
+Failed RPC: `ROLLBACK` (no row). The attempt never existed. Optional
+append-only `rpc_attempt_log` outside the capture transaction:
+**UNKNOWN — HUMAN DECISION**.
+
+---
+
+## 13. Failure-injection matrix (mandatory tests)
+
+Design-required tests for the **implementation** PR. This docs PR does
+not add them.
+
+| ID | Injection | Expected |
 |---|---|---|
-| F1 | Error after SQL step 3..9 in capture | full rollback; HTTP 5xx; no lead; no `lead_captured`; no outbox |
-| F2 | Error after step 1 miss, before unique insert race | one winner; loser unique violation → read existing; one lead |
-| F3 | Kill connection after COMMIT, client sees timeout | retry same key → step 1 hit → same ids |
-| F4 | Two workers claim same `broker_notify` | one `RETURNING`; other 0 rows |
-| F5 | Crash after claim, before HTTP | lease expire; reclaim; one send |
-| F6 | Crash after HTTP 200 from provider, before ack | reclaim; same idempotency key; one effect |
-| F7 | Withdrawal committed before claim | cancelled; zero outbound; `suppression_honored` |
-| F8 | Withdrawal between claim and send | re-check fails; cancel; zero outbound |
-| F9 | Body `agency_id` of another tenant | ignored or 403; resolved tenant from slug/auth only |
-| F10 | Event/outbox `agency_id` ≠ lead | RPC exception; rollback |
-| F11 | Submit 500 after client already sent `contact_submitted` | ledger has no `lead_captured`; GA4 ignored |
-| F12 | Payload inspector: event JSON | no email/phone/name/raw IP |
-| F13 | `void` notify on submit path | **forbidden** in implementation review |
-| F14 | Triage provider 500 | `broker_notify` still delivered; `ai_triage` retries/DLQ |
-| F15 | Rate-limit store down | capture **fail closed** (429/503), not insert |
-| F16 | Sandbox submit | no `lead_captured`; no broker_notify to a real tenant queue |
+| T1 | Error after SQL step 1 (lead) | 0 rows in receipt/request/event/outbox; HTTP 5xx; no `lead_captured` |
+| T2 | Error after SQL step 2 (permission receipt) | all-or-nothing rollback |
+| T3 | Error after SQL step 3 (request) | all-or-nothing rollback |
+| T4 | Error after SQL step 4 (events) | all-or-nothing rollback |
+| T5 | Error after SQL step 5 (outbox) | all-or-nothing rollback; no `lead_captured` |
+| T6 | HTTP response lost after COMMIT; client retries same Idempotency-Key | one lead, one outbox `broker_notify`, same ids |
+| T7 | Two concurrent outbox workers | one dispatch (one provider dedupe key) |
+| T8 | Kill worker after claim, before send | lease expiry; second worker sends once |
+| T9 | Kill worker after send, before ACK | retry + provider dedupe -> one user-visible notify |
+| T10 | Withdrawal committed after outbox insert, before send | `cancelled_suppressed`; **zero outbound** |
+| T11 | Child `tenant_id` != parent / FK to other agency | RPC fail; no commit |
+| T12 | Validation fail, honeypot, sandbox, or 5xx before COMMIT | **no** `lead_captured`; client `lead_submitted` if any is ignored |
+| T13 | Event payload contains email/phone/name | reject at write; test fails |
+| T14 | `void runInboundLeadTriageAndNotify` (or any business-critical void promise) on capture path | forbidden; static/verification test |
+| T15 | AI triage timeout / empty batch | `broker_notify` still dispatched |
+| T16 | Cross-tenant broker accept | transition fail |
+
+`void parsed.data.agency_id` on the connect route is not T14 (no I/O).
 
 ---
 
-## 13. Mandatory test cases (design → future verification tests)
+## 14. void side-effect rule
 
-These must land in `apps/crm/tests/verification/` **in the same PR as the
-implementation**, not in this docs PR.
+Business-critical effects (capture, consent, notify, send, charge, route)
+must be awaited inside a durable boundary (RPC or outbox worker).
 
-1. **Error after each SQL step → all or nothing.** Abort after artifact,
-   lead, receipt, request, event, outbox, capture-index. Assert zero
-   leftover rows for that idempotency key.
-2. **Retry after lost HTTP → one lead / one outbox effect.** Commit, drop
-   response, replay same key. Same `lead_id`, same outbox ids, attempt
-   count on worker not doubled at insert time.
-3. **Two concurrent workers → one dispatch.** Two claim transactions;
-   one send; unique dest row.
-4. **Crash after claim / after send / before ack → safe recovery.** See
-   F5–F6. No duplicate broker inbox item with distinct ids.
-5. **Withdrawal before dispatch → zero outbound.** Capture, withdraw
-   service_contact, run worker, assert no provider call.
-6. **Cross-tenant transition / FK mismatch → fail.** Insert event with
-   foreign `agency_id`; expect exception and rollback.
-7. **Failed submit does not create `lead_captured`.** Force RPC error;
-   count events = 0; GA4 client event may exist in a stub and must not
-   be read by the assertion helper.
-8. **Event payload has no raw PII.** Schema allow-list; reject keys
-   `email`, `phone`, `name`, `ip`.
-9. **No business-critical `void` side effects.** Lint/review gate on
-   `submit/route.ts` (and successor): no `void runInboundLeadTriageAndNotify`
-   and no `void` of any function that writes notify/outbox/ledger.
-
----
-
-## 14. Rollback and audit preservation
-
-| Action | Allowed? |
+| Location today | Verdict |
 |---|---|
-| `ROLLBACK` of an open capture/confirm transaction | yes |
-| Feature flag off: stop writers, workers drain | yes |
-| `DELETE FROM seller_business_events` | **no** |
-| Compensating `DELETE FROM leads` after consent fail (today's route) | **no** |
-| `DROP TABLE seller_outbox` / events / receipts | **no** |
-| `ON DELETE CASCADE` from lead to receipts/events | **no** |
-| Status `superseded` / `cancelled` on outbox | yes |
-| Cold archive copy + checksum, rows retained | yes, after `UNKNOWN — HUMAN DECISION` on retention days |
-
-Rollback of this **document's future implementation** means: keep tables,
-disable writers, leave evidence. A bad deploy is not a reason to destroy
-the proof of what was sent or consented.
+| `void runInboundLeadTriageAndNotify` in submit route | **Forbidden** under this contract |
+| `void parsed.data.*` in Google connect | Allowed unused-binding discard |
+| `persistValuationEstimate` best-effort log-and-continue | Forbidden for emitting `value_delivered`; allowed only if no ledger event is written |
 
 ---
 
-## 15. Unknowns
+## 15. Implementation gap vs today (honest)
 
-All of the following are **`UNKNOWN — HUMAN DECISION`**:
-
-- Legal retention days per purpose (GDPR storage limitation).
-- Whether SMS/phone service-contact uses consent vs contract necessity
-  (§ 116 / 452/2021 and DPO balancing test).
-- OTP vs magic-link vs manual broker verify for `contact_verified` in the
-  concierge pilot.
-- Exact p95 targets for estimate, route, withdrawal fan-out.
-- Who may replay dead letters in production.
-- Whether `appointment_held` / `mandate_signed` are sent to Google/Meta
-  and under which legal basis.
-- Business KPI limits and kill thresholds for paid traffic.
-- Headcount / budget to operate the worker.
-- Replacement table vs extending `routine_notifications` for
-  `broker_notify`.
-
-Do not fill these with invented numbers in implementation PRs.
-
----
-
-## 16. Implementation sequence (docs-only; not this PR)
-
-1. DDL: captures, receipts (no CASCADE), events (append-only), outbox,
-   dispatch attempts — **additive**. No DROP.
-2. RPC `capture_seller_opportunity` + `confirm_seller_contact`.
-3. Submit route: replace multi-insert + compensating delete + `void`
-   triage with RPC; pass idempotency key; fail-closed rate limit.
-4. Worker: claim/lease, permission re-check, broker_notify independent of
-   triage.
-5. GA4: treat browser events as optional; server MP only after ledger
-   commit; never import `contact_submitted` as `lead_captured`.
-6. Verification tests from §13 in the **same** implementation PR.
-7. Reconcile cron + alarms.
-8. Backfill: existing `leads` from `valuation_widget` stay
-   `unverified_request` unless a verification proof exists. Do **not**
-   label them BAWSO.
-
-Merge of **this** docs PR does not change runtime behavior.
-
----
-
-## 17. Kontrolór close
-
-| Claim | Verdict |
+| Contract requirement | Today |
 |---|---|
-| Capture is atomic today | **false** — two inserts + delete |
-| Notify is durable today | **false** — `void` best-effort after AI |
-| GA4 is the funnel SoT | **false** — destination; `contact_submitted` is optimistic |
-| Client `agency_id` is tenant authority (Ads connect) | **false** — ignored; good pattern to copy |
-| Unverified widget submit is BAWSO | **false** — forbidden label |
-| Business KPI numbers in this file | **none** — `UNKNOWN — HUMAN DECISION` |
-| This file is executable DDL | **false** — contract only |
+| Atomic RPC | Two inserts + delete compensation |
+| Idempotency-Key | Absent on valuation submit |
+| Event ledger | Client GA4 only |
+| Outbox claim/lease | None for seller capture; ingestion outbox is unsafe to copy |
+| Permission snapshot before send | Boolean `marketing_opt_in` at insert time |
+| Notify independent of AI | Coupled; empty triage skips notify |
+| `contact_verified` | Absent |
+| Expectation (who/why/channel/when) | Absent on widget types |
+| Broker accept/reject / appointments / mandate | Not in this widget flow |
+| BAWSO measurement | Cannot be computed; do not fake it |
+
+---
+
+## 16. Acceptance checklist (this document)
+
+- [x] Canonical state machine including required names
+- [x] Per-event producer, authority, idempotency, transition, PII, retention, consumer, failure policy
+- [x] Client event is never conversion authority; GA4 is destination
+- [x] Exact RPC step boundary for lead + permission receipt + request + event + outbox
+- [x] Outbox claim/lease, concurrency, retry, max attempts, DLQ, replay, provider dedupe, reconciliation, alarms
+- [x] Permission snapshot immediately before dispatch
+- [x] Broker notify independent of AI triage
+- [x] SLO with numerator, denominator, server SoT
+- [x] Failure-injection matrix including all mandated cases
+- [x] Happy-path and failure-path diagrams
+- [x] BAWSO / warm / unverified request definitions
+- [x] Rollback preserves audit; no DROP TABLE / evidence delete
+- [x] Unknowns marked UNKNOWN — HUMAN DECISION
+
+---
+
+## 17. Open unknowns — HUMAN DECISION
+
+| ID | Unknown |
+|---|---|
+| U1 | Contact verification method (SMS OTP, email OTP, human callback) |
+| U2 | Retention days per PII class and per event |
+| U3 | Whether withdrawal auto-lost the opportunity or only suppresses outbound |
+| U4 | Whether calendar sync alone may emit `appointment_held` |
+| U5 | RPO/RTO numeric targets |
+| U6 | All business KPI limits (CAC, consult volume, kill thresholds) |
+| U7 | Legal basis / wording for service-contact vs marketing (DPO) |
+| U8 | Location granularity allowed in `value_delivered` payload |
+| U9 | Whether `rpc_attempt_log` is required outside the capture transaction |
+
+No unknown above may be filled with a guessed number in dashboards.
