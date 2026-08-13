@@ -764,3 +764,78 @@ Do not reuse `rate_limit_buckets.key` (unscoped text PK) as a bearer store.
 `lead_consents` / `lead_events` / `events` remain valid for their current jobs. STF capture RPC should **write new objects** (and may also insert a `lead_consents` row for the widget path) rather than overload one table as five.
 
 ---
+
+## 7. Integrator after G0 — ordered backlog (still no timestamps)
+
+1. **Proof C:** link (ops, not this PR) → `npx supabase migration list --linked` artifact. Until then every "is it on prod?" claim stays **UNKNOWN**.
+2. **Proof B:** `supabase db reset` on ephemeral CI (already in workflows) **plus** a recorded local reset on a developer machine. Attach `information_schema` for `acquisition_*`, `decisions`, `lead_consents`.
+3. Founder GO on genome variant (**G-RENAME** vs **G-ARCHIVE**). Integrator assigns the 14-digit name **then**, not now.
+4. Allowlist + `TENANT_TABLES` + schema-guard secrets **before** claiming acquisition is governed.
+5. `UNIQUE (agency_id, id)` on `leads` (Stage 2 in ZISTI) **before** any non-null `acquisition_events.lead_id` or STF `lead_id` FK.
+6. Provider CHECK / campaign uniqueness — only after **HUMAN DECISION** on N7/N8.
+7. STF new tables (§5) as **one logical migration PR** with negatives N-tests, no bundle with genome repair.
+
+---
+
+## 8. Unknowns — HUMAN DECISION
+
+| ID | Unknown | Why this lane cannot close it |
+|---|---|---|
+| U1 | Remote migration history contents | Linked CLI failed; no project-ref in this worktree |
+| U2 | Whether version `2026` exists on prod/staging history | Requires U1 |
+| U3 | Whether prod `decisions.agent` matches repo DDL | Requires live `\d` / `information_schema` |
+| U4 | Local reset apply order under CI Linux CLI `latest` | Reset not run here; CLI unpinned |
+| U5 | Who created `lead_triage_idempotency` and its columns | Not in repo migrations |
+| U6 | Whether `UNIQUE (provider, customer_id)` / `(provider, provider_campaign_id)` is correct for MCC child accounts | Product/ads ops |
+| U7 | Whether to enable schema-governance-guard on PRs | Secrets + allowlist dirt + acquisition drift would go red immediately |
+| U8 | Whether Wave A leak-closure (`leads_tenant` without `agency_id IS NULL`) is actually applied on prod | Snapshot 2026-06-26 is after `20260616124500_rls_wave_a_leak_closure.sql` in calendar time, yet still lists many P0s; prod drift **UNKNOWN** |
+| U9 | Runtime of follow-up writers vs current RLS (service_role-only on genome tables) | Code review out of scope; catalog out of scope |
+
+---
+
+## 9. Cite map (this worktree)
+
+| Topic | Path |
+|---|---|
+| Acquisition DDL | `apps/crm/supabase/migrations/20260811220000_acquisition_core.sql` |
+| Acquisition SQL assertions | `apps/crm/src/lib/acquisition/__tests__/acquisition-core-migration.test.ts` |
+| Acquisition RLS/FK tests | `apps/crm/src/lib/acquisition/__tests__/acquisition-core-rls.test.ts` |
+| Genome DDL | `apps/crm/supabase/migrations/2026_genome_layer2.sql` |
+| Prior genome audit (not this lane's GO) | `docs/architecture/genome-layer2-audit.md` |
+| Leads PK + nullable `agency_id` | `apps/crm/supabase/migrations/20260310_baseline_core_schema.sql` |
+| Tenant helper | `apps/crm/supabase/migrations/20260419_enterprise_rls_profile_link.sql` |
+| Leads tenant policy (Wave A leak close) | `apps/crm/supabase/migrations/20260616124500_rls_wave_a_leak_closure.sql` |
+| Wave A table list | `apps/crm/supabase/migrations/20260616123000_rls_wave_a_hardening.sql` |
+| `events` | `apps/crm/supabase/migrations/20260425231407_event_pipeline.sql` |
+| `lead_events` | `apps/crm/supabase/migrations/20260418_enterprise_ai_intelligence.sql` |
+| `lead_consents` | `apps/crm/supabase/migrations/20260722120000_sandbox_gdpr_consent.sql` |
+| `rate_limit_buckets` | `apps/crm/supabase/migrations/20260504100000_rate_limit_buckets.sql` |
+| `acquire_dedup_keys` | `apps/crm/supabase/migrations/20260629120000_acquire_dedup_keys.sql` |
+| `rls_audit_snapshot` | `apps/crm/supabase/migrations/20260613000001_rls_audit_snapshot_rpc.sql` |
+| Allowlist | `apps/crm/config/public-schema-allowlist.json` |
+| Guard script | `apps/crm/scripts/schema-governance-guard.mjs` |
+| Guard workflow (cron off) | `.github/workflows/schema-governance-guard.yml` |
+| Tenant registry | `apps/crm/tests/rls/tenant-table-registry.ts` |
+| Isolation suite | `apps/crm/tests/rls/rls-tenant-isolation.test.ts` |
+| Stale parity snapshot | `apps/crm/docs/audit/rls-schema-parity-matrix.json` |
+| Local CI config | `apps/crm/supabase/config.toml` |
+| Reset in CI | `.github/workflows/saas-grade-pipeline.yml`, `.github/workflows/nightly-playwright.yml` |
+| Naming house rule | `apps/crm/docs/migration-baseline-cleanup-plan.md` |
+| ZISTI lead unique deferral | `docs/architecture/acquisition-os-stage0-zisti-report.md` |
+
+---
+
+## 10. Blockers for merge of *this* docs PR
+
+This document's GitHub PR is still **GO REQUIRED** to merge to `main` (swarm rule), even though it contains no SQL.
+
+**Engineering blockers before any STF DDL PR:**
+
+1. Proof C missing (linked history).
+2. Proof B not produced in this lane.
+3. `acquisition_events.lead_id` non-null writes **FORBIDDEN**.
+4. Acquisition tables absent from allowlist and `TENANT_TABLES`.
+5. Genome filename still illegal; no timestamp assigned.
+6. `lead_triage_idempotency` has no repo DDL.
+
+**Next GO owner:** Founder (merge of this docs PR; genome variant). **DB integrator after G0** (linked list artifact, timestamp assignment, first DDL PR).
