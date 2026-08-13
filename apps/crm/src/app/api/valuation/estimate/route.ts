@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { rateLimit } from "@/lib/rate-limit";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
+import { sourcesForPriceSource } from "@/lib/valuation/attribution-sources";
 import { enrichEstimateCommentary } from "@/lib/valuation/commentary";
 import { buildDeterministicEstimate } from "@/lib/valuation/estimate-engine";
 import {
@@ -106,9 +107,11 @@ export async function POST(request: Request) {
       }
     }
 
+    const sources = sourcesForPriceSource(estimate.priceSource);
     return NextResponse.json({
       ok: true,
       estimate: { ...estimate, commentary },
+      ...(sources.length > 0 ? { sources } : {}),
     });
   } catch (error) {
     console.error("[POST /api/valuation/estimate]", error);

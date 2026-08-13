@@ -8,7 +8,9 @@
     "license_note": "Verejná štatistika NBS; atribúcia vo widget UI povinná; viď docs/architecture/valuation-data-source-card.md.",
     "methodology_note": "Ponukové ceny; transakčné typicky 5–10 % nižšie — kompenzované asymetrickým pásmom.",
     "next_update_due": "2026-08-15",
-    "unit": "EUR_per_m2"
+    "unit": "EUR_per_m2",
+    "attribution": "Spracované údaje Národnej banky Slovenska na základe údajov poskytovaných externými poskytovateľmi United Classifieds a NARKS.",
+    "attributionRequiredBy": "NBS email 2026-08-10, docs/legal/nbs-povolenie-2026-08-10.md"
   },
   "band_rules": {
     "type_specific": {
