@@ -1,20 +1,20 @@
-﻿## Session 2026-08-07 (Listing generator PR-A)
+﻿## Session 2026-08-14
 
 ### Dokončené
-- PR-A: FINAL system prompt wired into `SYSTEM_PROMPT` (`listing-content-system-prompt.ts`)
-- C4 optionals on `ListingContent` + fixtures/vitest 6/6 + PR-A prompt-wire verification
-- Docs: `docs/sales/listing-generator-*` → `docs/prompts/` (smolko golden zostáva v `docs/sales/`)
-- Branch/PR: `feat/listing-generator-pr-a-prompt-wire` (merge = founder)
+- Draft Strategic Bet: L99 Lead Factory Initiative (hranica Fáza 1 first-party, metrika C0/C1/C2 ako návrh)
+- Premortem `docs/premortems/2026-08-14-l99-lead-factory.md`
+- Decision D-2026-08-14-01 v `memory/decisions.md`
 
 ### Rozpracované / Pending
-- Founder merge PR-A pri klávesnici + Preview smoke
-- PR-B: UI pole `charakterLokality` (samostatný PR)
+- Founder GO na definíciu „predhriaty lead“ (brief §2)
+- Draft otázka Smolkovi (SLA kapacita) — premortem Krok 2, ešte neodoslaná
+- Merge tohto PR — len founder; agent NEmerguje
+- `gdpr-advisor` skill sľúbený v CLAUDE.md, súbor v `.claude/skills/` chýba (samostatný chore)
 
 ### Kľúčové súbory zmenené
-- `apps/crm/src/lib/ai/listing-content-system-prompt.ts`: FINAL prompt const
-- `apps/crm/src/lib/ai/listing-content.ts`: import SYSTEM_PROMPT, optionals, user prompt align
-- `apps/crm/tests/verification/listing-content-*.verification.test.ts` + fixtures
-- `docs/prompts/listing-generator-*`: prompt task docs
+- `docs/briefs/l99-lead-factory-initiative.md`: programový brief
+- `docs/premortems/2026-08-14-l99-lead-factory.md`: premortem P×Z
+- `memory/decisions.md`: D-2026-08-14-01
 
 ### Ďalší krok
-Founder: review + merge PR-A; potom GO na PR-B (`charakterLokality` UI).
+Founder: review draft PR + (a) prijať / (b) upraviť / (c) vrátiť definíciu C0/C1/C2. Žiadny merací kód pred GO.
