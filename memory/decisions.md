@@ -563,3 +563,60 @@ nie oživenie starého termínu.
 **Poznámka:** acquisition_events zo Stage 0 nie je náhrada memory_events
 (hranica: D-2026-08-09-01). Vzniká preto, lebo ho Stage 0 reálne
 potrebuje — presne ten dôkaz dopytu, ktorý memory_events nemal.
+
+---
+
+## D-2026-08-14-01 — L99 Lead Factory Initiative: VALIDATE + Fáza 1 hranica
+
+**Kategória:** Strategic Bet · **Verdikt Ústavy:** VALIDATE
+(otázka 1 pre plnú továreň = nie → strop VALIDATE; otázka 8 pre ML/personalizáciu
+= príliš skoro → Strategic Backlog)
+
+**Brief:** `docs/briefs/l99-lead-factory-initiative.md`
+**Premortem:** `docs/premortems/2026-08-14-l99-lead-factory.md`
+**PR / vetva:** `cursor/l99-lead-factory-brief-1782` (draft; merge = founder GO)
+
+### Hranica (FOUNDER GO 2026-08-14)
+
+Fáza 1 výhradne verejné / first-party zdroje. External lead providers a nákup
+databáz = zamknutá právna brána, default OFF. Odomknutie len po podpísanom
+balancing teste (čl. 6(1)(f)) + DPA.
+
+**Segment:** B2C predávajúci = zdroj leadu; B2B RK = platiaci klient; maklér
+spotrebúva lead.
+
+**Jurisdikcia:** SR vo Fáze 1. CZ/EÚ zdroje teraz neriešiť. Priestor v modeli:
+reuse `public.agencies.country` (default `'Slovensko'`), nie nový hardcoded SK
+predpoklad v GDPR logike.
+
+**Open dependency (nie blocker draftu):** zmluva ÚGKK (Zhluk 3) a partnerstvá
+s portálmi (Zhluk 5) — zatiaľ neznáme.
+
+### Čo sa NEstavia
+
+Lead Factory Council (desiatky tímov), tisíce strán knowledge base, ML,
+AI personalizácia, CRM Intelligence, Experimentation — data-blocked (Zhluk 1).
+Acquisition OS (D-2026-08-09-01) ostáva oddelený bet (Google Ads sync, nie B2C leady).
+
+### Prvý deliverable
+
+Definícia „predhriaty lead“ (C0 zachytený / C1 predhriaty / C2 kvalifikovaný
+rozhovor) je **návrh v briefe §2**, nie predpoklad. Ďalší kód (meranie na
+existujúcom valuation widgete) až po founder GO na túto definíciu.
+
+### Engineering justification (nové súbory)
+
+- **Trigger:** new-docs — Strategic Bet brief + premortem (workflow.mdc povinné pred commitom programu)
+- **Decision path:** reuse — mapuje existujúce povrchy (`/odhad`, `lead_consents`, AP-011, Kontrolór) namiesto nového acquisition stacku
+- **Alternatives considered:** (a) stavať továreň/councily hneď — zamietnuté, Feature Trap + timing veto; (b) len Slack/chat záznam bez artefaktu — zamietnuté, Kontrolór bod 10; (c) implementovať C1 meranie v tomto PR — zamietnuté, definícia ešte nemá GO
+- **Why not reuse only a chat:** program potrebuje kanonický brief + premortem v repe, inak ďalší agent znova vymyslí scope
+- **Contradiction check:** none — dopĺňa D-2026-08-06-01 (priorita dodania predávajúcich); nezamieňa Acquisition OS Stage 0; nezapína stealth (AP-011)
+- **Expected outcome:** Founder prijme/upraví §2; až potom samostatný merací BO. C1 sa nerenderuje ako live % bez timestampu kontaktu (AP-001)
+- **Related paths:** `docs/briefs/l99-lead-factory-initiative.md`, `docs/premortems/2026-08-14-l99-lead-factory.md`
+
+### Kill / stop
+
+- 3 first-party C0 bez pokusu o kontakt >24 h → PAUZA Ads na widget (až keď kampaň beží)
+- Akýkoľvek dashboard % „predhriatych“ bez dôkazu kontaktu → STOP merge
+- External ingest mimo allowlistu Fázy 1 → revert + legal
+- Review dátum: **2026-09-14**

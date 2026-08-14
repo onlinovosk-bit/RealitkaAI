@@ -13,6 +13,12 @@
 | BO-001 | [BO-001-proof-of-value.md](./BO-001-proof-of-value.md) | **SHIPPED** |
 | BO-onboard | [BO-onboard-agency.md](./BO-onboard-agency.md) | aktívny |
 
+## Strategic Bet (nie BO — programová brána)
+
+| Iniciatíva | Súbor | Premortem | Stav |
+|------------|-------|-----------|------|
+| L99 Lead Factory | [l99-lead-factory-initiative.md](./l99-lead-factory-initiative.md) | [2026-08-14-l99-lead-factory.md](../premortems/2026-08-14-l99-lead-factory.md) | **DRAFT** — VALIDATE; čaká GO na definíciu C0/C1/C2 |
+
 ## Overnight briefs (historické swarms)
 
 **Auto-merge politika (Tier 1/2/3):** [AUTOMERGE-POLICY.md](../AUTOMERGE-POLICY.md) · robot vykonáva, agent nikdy nemerguje.
