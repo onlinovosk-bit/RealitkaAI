@@ -276,14 +276,29 @@ export async function applyTopupPurchase(input: {
     return false;
   }
 
-  await supabase
+  // Balance write must succeed — otherwise Stripe would ACK a paid top-up
+  // while spendable balances stay unchanged. On failure, remove the ledger
+  // row so a webhook retry can re-run the full path (idempotency key would
+  // otherwise short-circuit forever with credits never applied).
+  const { data: updated, error: updateErr } = await supabase
     .from("agencies")
     .update({
       purchased_credits_balance: purchased,
       credits_balance: grant + purchased,
       billing_updated_at: new Date().toISOString(),
     })
-    .eq("id", input.agencyId);
+    .eq("id", input.agencyId)
+    .select("id")
+    .maybeSingle();
+
+  if (updateErr || !updated) {
+    console.warn(
+      "[credits-billing] topup balance:",
+      updateErr?.message ?? "agency_update_empty",
+    );
+    await supabase.from("credit_ledger").delete().eq("idempotency_key", idempotencyKey);
+    return false;
+  }
 
   return true;
 }
