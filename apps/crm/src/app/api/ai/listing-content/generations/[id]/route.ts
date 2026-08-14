@@ -5,17 +5,32 @@ import { okResponse, errorResponse } from "@/lib/api-response";
 import { incrementUsageMetric } from "@/lib/usage-metrics";
 import { updateGenerationEdit } from "@/lib/listings/generations-store";
 
+/**
+ * Must stay aligned with `ListingContent` (C4 / FINAL prompt).
+ * Zod strips unknown keys by default — omitting optional C4 fields here
+ * silently truncates titles / missingData / recommendations / techniquesUsed
+ * on every PATCH from ListingGeneratorClient (sends full `content`).
+ */
+const listingContentEditSchema = z.object({
+  portal_text: z.string().max(20000),
+  fb_ad_copy: z.string().max(5000),
+  ig_caption: z.string().max(5000),
+  email_subject: z.string().max(500),
+  email_body: z.string().max(20000),
+  seo_keywords: z.array(z.string().max(120)).max(20),
+  titles: z.array(z.string().max(500)).max(3).optional(),
+  missingData: z.array(z.string().max(1000)).max(50).optional(),
+  recommendations: z.array(z.string().max(2000)).max(50).optional(),
+  techniquesUsed: z.array(z.number().int().min(1).max(10)).max(10).optional(),
+});
+
 const editSchema = z.object({
-  editedOutput: z.object({
-    portal_text: z.string().max(20000),
-    fb_ad_copy: z.string().max(5000),
-    ig_caption: z.string().max(5000),
-    email_subject: z.string().max(500),
-    email_body: z.string().max(20000),
-    seo_keywords: z.array(z.string().max(120)).max(20),
-  }),
+  editedOutput: listingContentEditSchema,
   status: z.enum(["draft", "edited", "published", "discarded"]).optional(),
 });
+
+/** Exported for verification — schema is the live contract for draft edits. */
+export { listingContentEditSchema };
 
 /** PATCH — uloží ručnú úpravu textu. Pôvodný AI výstup sa NIKDY neprepisuje. */
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
