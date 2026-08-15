@@ -4,6 +4,7 @@ const mockQueryChain = {
   select: () => mockQueryChain,
   order:  () => mockQueryChain,
   limit:  () => ({ data: [], error: null }),
+  range:  () => ({ data: [], error: null }),
   eq:     () => ({ ...mockQueryChain, single: () => ({ data: null, error: null }), data: [], error: null }),
   single: () => ({ data: null, error: null }),
   data:   [],

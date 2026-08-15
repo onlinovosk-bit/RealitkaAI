@@ -1,5 +1,10 @@
 import { okResponse, errorResponse } from "@/lib/api-response";
-import { listLeads } from "@/lib/leads-store";
+import {
+  LEADS_LIST_SELECT,
+  LEADS_PAGE_SIZE,
+  listLeads,
+  resolveLeadListPage,
+} from "@/lib/leads-store";
 import { resolveLeadsWithServiceFallback } from "@/lib/leads/resolve-leads-inventory-fallback";
 import {
   linkProfileToAuthUser,
@@ -19,6 +24,12 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const view = searchParams.get("view");
   const isContactsView = view === "contacts";
+  const rawLimit = Number(searchParams.get("limit"));
+  const rawOffset = Number(searchParams.get("offset"));
+  const page = resolveLeadListPage({
+    limit: Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : LEADS_PAGE_SIZE,
+    offset: Number.isFinite(rawOffset) && rawOffset >= 0 ? rawOffset : 0,
+  });
   const supabase = await createClient();
   const {
     data: { user },
@@ -37,7 +48,7 @@ export async function GET(request: Request) {
   );
 
   const [leads, teams, profiles] = await Promise.all([
-    listLeads(undefined, supabase),
+    listLeads(undefined, supabase, page),
     listTeams(supabase),
     listProfiles(supabase),
   ]);
@@ -51,11 +62,11 @@ export async function GET(request: Request) {
       if (!service) return [];
       const { data } = await service
         .from("leads")
-        .select("*")
+        .select(LEADS_LIST_SELECT)
         .eq("agency_id", agencyId)
         .order("score", { ascending: false })
         .order("created_at", { ascending: false })
-        .limit(500);
+        .range(page.offset, page.offset + page.limit - 1);
       return Array.isArray(data) ? data : [];
     },
     fetchPropertyContacts: async (agencyId) => {
@@ -67,7 +78,7 @@ export async function GET(request: Request) {
         )
         .eq("agency_id", agencyId)
         .order("created_at", { ascending: false })
-        .limit(500);
+        .range(page.offset, page.offset + page.limit - 1);
       return Array.isArray(data) ? data : [];
     },
   });
@@ -75,6 +86,7 @@ export async function GET(request: Request) {
   return okResponse({
     inventory: {
       leads: safeLeads,
+      hasMore: safeLeads.length === page.limit,
       teams: teams.map((team) => ({ id: team.id, name: team.name })),
       profiles: profiles.map((profileRow) => ({
         id: profileRow.id,
