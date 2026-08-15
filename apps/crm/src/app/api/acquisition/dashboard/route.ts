@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { errorResponse, okResponse } from "@/lib/api-response";
+import { incrementUsageMetric } from "@/lib/usage-metrics";
 import { loadAcquisitionDashboard, type DashboardSupabase } from "@/lib/acquisition/load-dashboard";
 
 /**
@@ -37,6 +38,13 @@ export async function GET() {
     }
 
     const agencyId = profile.agency_id as string;
+
+    await incrementUsageMetric({
+      agencyId,
+      metric: "ai_openai_tokens",
+      delta: 0,
+    });
+
     const dashboard = await loadAcquisitionDashboard(
       supabase as unknown as DashboardSupabase,
       agencyId,
