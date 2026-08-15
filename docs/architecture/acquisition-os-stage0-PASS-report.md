@@ -7,18 +7,18 @@
 **Connect account:** `40a02a8e-7e31-439e-aecd-11aec040b2a2`
 **Pravidlo:** polozka bez dokazu = nesplnena. Ziadne secrets v tomto subore.
 
-Addendum 15.8. vecer: produktovy `GoogleAdsClient.search()` po merge #413 + production screenshoty. **T2 ~2 min (founder) — STOP, nie PASS.**
+Addendum 15.8. vecer: produktovy `GoogleAdsClient.search()` po #413 + production screenshoty. T2 pred #416 ~2 min — STOP. **Addendum po #416: Stage 0 PASS potvrdený 15.8.2026 — dôkazy: production screenshoty `/acquisition` + T1/T2 merania po #416.**
 
 ## Verdikt
 
-**Funkcny DoD drzi. Perfgate FAIL — Stage 0 PASS sa nerealizuje.** T1 aj T2 `/acquisition` ~2 min. Stage 1 sa nespusta.
+**Stage 0 PASS potvrdený 15.8.2026.** Dôkazy: production screenshoty `/acquisition` + T1/T2 merania po #416. Funkčný DoD drží. Perfgate PASS. Stage 1 sa nespúšťa.
 
 Otvorene (nie Stage 1, ale stale pravda):
 
 1. V CRM nie su tabulky pre ad groups / keywords / search terms / metrics. Workery su overene live + testami, nie persistenciou.
 2. `GOOGLE_ADS_*` credentials su Preview-only. Production webhook kluc bol po hosted 200 zmazany.
 3. HTTP/cron sync job neexistuje. Kampane v DB = display persist ziveho syncu, nie produktovy worker.
-4. **T1 ~2 min, T2 ~2 min** (founder). Nie je to jednorazovy cold start. Supabase: acquisition SELECT-y su 200 za <2 s; ~1-2 min medzera je pred nimi (dashboard layout / workdesk shell).
+4. Perfgate pred #416 FAIL (T1=T2 ~2 min, layout/prefetch). Po #416 production: `/acquisition` 4 s / 4 s, `/dashboard` 6 s / 6 s, `/leads` 4 s / 5 s. Skoršie T1 ~3 min na `/acquisition` = meranie počas deploy okna (artefakt).
 
 ## DoD checklist (blueprint §11)
 
@@ -44,7 +44,7 @@ Otvorene (nie Stage 1, ale stale pravda):
 | credentials nie su v logoch | PASS | `credentials.ts` + leak scan. Dashboard bez `credential_ref` / `metadata`. |
 | credentials nie su v LLM context | PASS | SA JSON sa neposiela do LLM. |
 | webhook `is_test=true` | PASS | Production 15.8.: 200 `LOGGED_TEST`, `lead_id=null`. Po smoku `vercel env rm GOOGLE_ADS_WEBHOOK_KEY production`. |
-| Dashboard: zobrazit syncnute data z testovacieho uctu | PASS (obsah) / FAIL (cas) | Production UI sedi. T1 ~2 min, T2 ~2 min. STOP pred PASS. |
+| Dashboard: zobrazit syncnute data z testovacieho uctu | PASS (obsah aj cas) | Production UI sedi. Po #416: `/acquisition` T1=4 s, T2=4 s. |
 
 ## Production `/acquisition` (15.8., Demo tenant)
 
@@ -67,8 +67,10 @@ Namerane na stranke (sedi s DB + webhook smoke):
 
 | Beh | Cas | Poznamka |
 |---|---|---|
-| T1 prve nacitanie | ~2 min | cold start po deployi #414 (founder) |
-| T2 druhe nacitanie | ~2 min (founder, 15.8. ~21:08 CEST) | **nie je rychle → STOP** |
+| T1 / T2 pred #416 | ~2 min | layout/prefetch; STOP |
+| T1 pocas deploy okna #416 | ~3 min | **artefakt merania**, nie regresia |
+| T1 po #416 | **4 s** | production, founder |
+| T2 po #416 | **4 s** | production, founder |
 
 ### Preco to trva ~2 min (15.8. dokaz, nie dojem)
 
@@ -101,10 +103,9 @@ Dokazovy report: `docs/reports/2026-08-15-acquisition-t2-perfgate.md`.
 ## Co toto NIE je
 
 - Stage 1 (realny RK, serving, conversion upload).
-- Merge `chore/stage0-smoke`.
+- Merge `chore/stage0-smoke` (#400 zatvorené bez merge; vetva zmazaná).
 - Navrat `GOOGLE_ADS_WEBHOOK_KEY` do Production.
 - Generic marketing dashboard so spend/ROI cislami.
-- Stage 0 PASS (T1=T2 ~2 min, perfgate FAIL).
 
 ## PRs
 
@@ -115,4 +116,7 @@ Dokazovy report: `docs/reports/2026-08-15-acquisition-t2-perfgate.md`.
 | #412 allowlist | merged | Production hosted 200 |
 | #413 search URL + date filter | merged | produktovy `googleAds:search` + date filter |
 | #414 dashboard + PASS report | merged | `/acquisition` + prvy PASS report |
-| toto (addendum) | tento PR | product-client dokaz + screenshoty + D-zapis |
+| #415 STOP evidencia | merged | T2 ~2 min, perfgate FAIL |
+| #416 layout perf | merged | profile memo + prefetch={false} |
+| toto (PASS addendum) | tento PR | T1/T2 po #416 + D-zapis Stage 0 PASS |
+| #400 chore/stage0-smoke | closed, not merged | Preview smoke; vetva zmazaná |

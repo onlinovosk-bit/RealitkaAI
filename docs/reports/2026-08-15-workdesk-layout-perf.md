@@ -1,7 +1,7 @@
 # Workdesk layout perf — customer-facing performance bug
 
 **Datum:** 2026-08-15
-**GO:** founder, samostatny maly PR. Merge = founder. Stage 0 PASS sa nevyhlasuje.
+**GO:** founder. #416 merged. Production T1/T2 15.8. vecer. **Perfgate PASS.**
 **Klasifikacia:** customer-facing performance bug (cele CRM workdesk, nie len `/acquisition`).
 
 ## 1. Baseline T2 pred fixom
@@ -41,16 +41,22 @@ Dalsi CRM session **18:06-18:08 UTC** (pred `/acquisition` T1): ~68 s opakoveho 
 - Vitest: profile memo + existujuce resolve/link testy + `workdesk-layout-perf.verification.test.ts`
 - `npm run build` v `apps/crm`
 
-## 4. T1/T2 po deployi (doplnit na preview / production)
+## 4. T1/T2 po #416 (production, founder wall-clock, 15.8.2026)
 
-| Stranka | T1 po | T2 po | Kto |
+Baseline pred fixom: `/acquisition` T1 aj T2 ~2 min (nie cold start).
+
+| Stranka | T1 | T2 | Poznamka |
 |---|---|---|---|
-| `/acquisition` | _po preview/prod deployi_ | _po preview/prod deployi_ | founder wall-clock + Vercel casy v tomto reporte |
-| `/dashboard` | _to iste_ | _to iste_ | founder |
-| `/leads` | _to iste_ | _to iste_ | founder |
+| `/acquisition` | **4 s** | **4 s** | skoršie T1 ~3 min bolo merané **počas deploy okna** — artefakt merania, nie regresia |
+| `/dashboard` | **6 s** | **6 s** | vlastný inventory ostáva na stránke |
+| `/leads` | **4 s** | **5 s** | vlastný 500-row load ostáva na stránke |
 
-Agent po otvoreni PR doplni preview URL. Production meranie az po founder merge.
+**Perfgate = splnená.** T2 je v sekundách, nie minútach. `/acquisition` a workdesk shell sú rýchle. Ďalšia paginácia `/dashboard` / `/leads` = samostatný PR, nie Stage 0.
 
 ## 5. Stage 0
 
-Tento PR **nie je** Stage 0 PASS. PASS az po zelenom T1/T2 na `/acquisition` + addendum s dokazmi. Deadline 31.8. drzi.
+Perfgate PASS po #416. Stage 0 PASS sa vyhlasuje docs addendum PR (screenshoty + tieto čísla). Stage 1 sa nespúšťa.
+
+## 6. #400 chore/stage0-smoke
+
+Zatvorene bez merge, vetva zmazana. Supabase development branches: ziadne. Vercel Preview gitBranch chore/stage0-smoke mal NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY + GOOGLE_ADS_WEBHOOK_KEY. **Neprescopovane** na vsetky Preview — unscoped Preview uz ma SUPABASE_URL + anon/publishable; service role na vsetky Preview by rozsirilo secret. Orphan env na zmazanej vetve je neaktivny.

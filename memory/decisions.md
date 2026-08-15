@@ -662,3 +662,21 @@ T2 `/acquisition` ~2 min nie je unikát tej stranky. Rovnaky `(dashboard)/layout
 Fix: request-scoped profile memo + `prefetch={false}` na nav Linkoch. Ziadna zmena RLS / auth rozhodnutia / zobrazovanych dat na `/dashboard` a `/leads` (tie stranky data stale tahaju same).
 
 Stage 0 PASS sa nevyhlasuje. Nie je to Stage 1.
+
+## D-2026-08-15-03 — Stage 0 PASS
+
+**Datum:** 2026-08-15
+**GO:** founder, docs-only addendum. Merge tohto PR = founder.
+
+Acquisition OS Stage 0 (sandbox: Test MCC `7024414113`, Demo agency) je **PASS**.
+
+Dokaz:
+1. Funkcny DoD z #414/#415 (connect, webhook is_test, produktovy search, production `/acquisition` screenshoty).
+2. Perfgate po #416 (production, founder): `/acquisition` 4 s / 4 s, `/dashboard` 6 s / 6 s, `/leads` 4 s / 5 s. Baseline pred fixom ~2 min. Skorsie T1 ~3 min = meranie pocas deploy okna (artefakt).
+3. Reporty: `docs/architecture/acquisition-os-stage0-PASS-report.md`, `docs/reports/2026-08-15-workdesk-layout-perf.md`.
+
+#400 `chore/stage0-smoke` zatvorene **bez merge**. Vetva zmazana. Supabase Preview env na tu vetvu sa **neprescopovava**: ziadny Supabase branch; Vercel unscoped Preview uz ma `SUPABASE_URL` + anon/publishable. Branch-scoped `SUPABASE_SERVICE_ROLE_KEY` / `NEXT_PUBLIC_SUPABASE_URL` ostavaju orphan na zmazanej vetve — kopirovat service role na vsetky Preview by rozsirilo secret.
+
+**Nie je to Stage 1.** Ziadny realny RK, serving, conversion upload, navrat webhook kluca do Production.
+
+**Kill deadline Stage 0:** 2026-08-31 (funkcia uzavreta; dalsi kod = vlastne GO).
