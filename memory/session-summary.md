@@ -1,25 +1,24 @@
-﻿# Session 2026-08-15 (Stage 0 smoke + inbound ZISTI)
+## Session 2026-08-15
 
-### Dokončené
-- Stage 0 Preview smoke PASS: POST /connect 200 PENDING, GET /accounts len Revolis Demo; Smolko payload ignorovaný.
-- SQL riadok `acquisition_accounts` `40a02a8e-7e31-439e-aecd-11aec040b2a2` status PENDING, customer_id 7024414113.
-- Migrácia `20260811220000_acquisition_core` aplikovaná na prod; tabuľka existuje.
-- `GOOGLE_ADS_*` na Verceli Preview-only (Production scope preč).
-- Supabase Preview env scoped na `chore/stage0-smoke`, nie plošne.
-- ZISTI: `smolko-a7f2@revolis.ai` → Reality Smolko cez Worker + `inbound_mailboxes`.
-- Pravidlo: chat ≠ SoT; výstup ide do `docs/reports/` + push.
+### Dokoncene
+- Hosted Production webhook `is_test=true` → 200 LOGGED_TEST, lead_id=null; potom `GOOGLE_ADS_WEBHOOK_KEY` prec z Production.
+- #413 merged: produktovy `googleAds:search` + search-terms date filter.
+- #414 merged: `/acquisition` + GET `/api/acquisition/dashboard` na Demo tenant.
+- Live read-only beh produktoveho `GoogleAdsClient.search()` 15.8. 18:57Z: kampane rovnake ID, search-terms HTTP 200 / 0 rows.
+- Production screenshoty `/acquisition` (ucty, 2 PAUSED kampane, 3 LOGGED_TEST eventy).
+- D-2026-08-15-01 Stage 0 PASS (podmienene T2).
 
-### Rozpracované / Pending
-- Vlna 3B L13/L14 (PR-S0.4 / S0.5) — žiadna vetva, žiadny PR.
-- Vlna 4 L15–L18 — STOP, chýba `docs/prompts/ruflo-swarm-vlna4-5-2026-08.md`.
-- Dummy kampane v test RK A/B (372-637-0609 / 227-278-1649) — founder v Test MCC.
-- Draft PR #400 `chore/stage0-smoke` — nemergovať.
+### Rozpracovane / Pending
+- T2 cas druheho nacitania `/acquisition` — founder doplni pred merge tohto addendum PR. Ak nie je rychle → STOP.
+- Playwright smoke na #413/#414 bol skipped (UI overene screenshotom, nie CI).
+- Desktop bridge `C:\RealitkaAI` neskusany.
+- Stage 1 nespustene.
 
-### Kľúčové súbory
-- `docs/reports/2026-08-17-stage0-smoke.md`
-- `docs/reports/2026-08-17-inbound-zisti.md`
-- `docs/reports/2026-08-17-vlna3b-vlna4-status.md`
-- `.cursor/rules/l99-repo-is-comms-channel.mdc`
+### Klucove subory zmenene
+- `docs/reports/2026-08-15-product-client-search.md`: live produktovy search dokaz
+- `docs/reports/assets/2026-08-15-acquisition-prod-top.png` / `-webhooks.png`
+- `docs/architecture/acquisition-os-stage0-PASS-report.md`: search-terms PASS, campaign ID match, screenshoty, T1/T2
+- `memory/decisions.md`: D-2026-08-15-01
 
-### Ďalší krok
-Founder: vložiť prompt Vlny 4 do repa, alebo GO na Vlnu 3B (L13+L14). Dummy kampane v RK A/B medzitým.
+### Dalsi krok
+Founder: zapisat T2; ak je rychle, merge docs addendum PR. Stage 1 len na explicitne GO.

@@ -1,76 +1,95 @@
 # Acquisition OS Stage 0 PASS report
 
-**Dátum:** 2026-08-15
-**Vetva tohto PR:** `feat/acquisition-s07-dashboard`
+**Datum:** 2026-08-15
 **Kill deadline Stage 0:** 2026-08-31
-**Test MCC:** `7024414113` (guard). Child účty: RK A `3726370609`, RK B `2272781649`.
+**Test MCC:** `7024414113` (guard). Child ucty: RK A `3726370609`, RK B `2272781649`.
 **Demo agency:** `b101361c-e250-4c43-b099-52c4febeb450`
 **Connect account:** `40a02a8e-7e31-439e-aecd-11aec040b2a2`
 **Pravidlo:** polozka bez dokazu = nesplnena. Ziadne secrets v tomto subore.
 
+Addendum 15.8. vecer: produktovy `GoogleAdsClient.search()` po merge #413 + production screenshoty `/acquisition`. Perfgate T2 (druhe nacitanie) v tomto commite **caka na founder** — ak T2 nie je rychle, STOP, tento report sa nerealizuje ako PASS.
+
 ## Verdikt
 
-**PASS s otvorenými závislosťami.** Sandbox loop (connect, tenant scope, webhook `is_test`, read-only live sync, dashboard) je dokázaný. Stage 1 sa nespúšťa.
+**PASS na funkcný DoD**, podmienene T2. Sandbox loop (connect, tenant scope, webhook `is_test`, read-only sync cez **produktovy** client, dashboard na produkcii) je dokazany. Stage 1 sa nespusta.
 
-Otvorene pred tvrdenim "Stage 0 zatvorený":
+Otvorene (nie Stage 1, ale stale pravda):
 
-1. Produktový `GoogleAdsClient.search()` na `main` stále volá `POST /v25/customers/{id}:search` (HTML 404). Oprava je **PR #413** (`googleAds:search` + date filter na search terms). Live sync 15.8.2026 isiel cez oficiálnu cestu v one-off runneri, nie cez produktový client.
-2. V CRM nie su tabulky pre ad groups / keywords / search terms / metrics. Tie workery su overene in-memory + testami, nie persistenciou.
-3. `GOOGLE_ADS_*` credentials su Preview-only. Production webhook kluc bol po hosted 200 zmazany. Dashboard na Production cita DB, nesaha na Google Ads API.
+1. V CRM nie su tabulky pre ad groups / keywords / search terms / metrics. Workery su overene live + testami, nie persistenciou.
+2. `GOOGLE_ADS_*` credentials su Preview-only. Production webhook kluc bol po hosted 200 zmazany.
+3. HTTP/cron sync job neexistuje. Kampane v DB = display persist ziveho syncu, nie produktovy worker.
+4. **T2 cas druheho nacitania `/acquisition` founder este nedodal.** T1 ~2 min (cold start po deployi #414).
 
 ## DoD checklist (blueprint §11)
 
-| Položka | Stav | Dokaz |
+| Polozka | Stav | Dokaz |
 |---|---|---|
 | OAuth connect funguje | PASS | `docs/reports/2026-08-17-stage0-smoke.md`: `POST /api/acquisition/google/connect` → 200, `PENDING`, Demo + `customer_id=7024414113`. Druhy connect → 409 unique. |
-| credential sa uloží encrypted | PASS s vyhradou | Stage 0 vault = Vercel env / `.env.local`, DB drzi len `credential_ref=env:GOOGLE_ADS_SA_KEY_JSON`. Nie KMS. Response connect/accounts/dashboard **neobsahuje** `credential_ref` ani SA JSON (`containsGoogleAdsSecret`, accounts test, dashboard test). |
-| test MCC sa identifikuje | PASS | Connect aj webhook lookup via `acquisition_accounts.customer_id=7024414113`. Seed guard `scripts/seed-test-campaigns.ts` pusti len tento MCC. |
-| customer_id sa nikdy neberie z client payload | PASS | Connect schema ignoruje `agency_id` / `customer_id` / `manager_customer_id`. Smoke payload mal zámerne cudzi UUID + `9998887777`; v DB ostal Demo + `7024414113`. Dashboard GET nema searchParams. |
-| sync campaign funguje | PASS | Library `syncGoogleCampaigns` + testy. Live 15.8.: RK A fetched 1 / upserted 1 (`24134657673` RKA-test-byty PAUSED); RK B fetched 1 / upserted 1 (`24134894838` RKB-test-domy PAUSED). Store vtedy in-memory. Display persist do `acquisition_campaigns` 15.8. (rovnake ID, nie Google write). |
-| sync ad group funguje | PASS (in-memory) | Live: 1 ad group na RK A aj RK B. Žiadna DB tabuľka. |
-| sync keyword funguje | PASS (in-memory) | Live: RK A 50 keyword riadkov (pre-existing kampaň), RK B 4. Žiadna DB tabuľka. |
-| sync search terms funguje | FAIL na `main` / PASS v #413 | Live 15.8. na produkte: HTTP 400 `EXPECTED_FILTERS_ON_DATE_RANGE`. Fix `WHERE segments.date DURING LAST_7_DAYS` je v PR #413, nemergnuty. |
-| metrics sync funguje | PASS (prázdne serving) | Live `LAST_7_DAYS`: 0 riadkov. Očakávané: test MCC neservuje, kampane PAUSED. |
-| agency A — iba A data | PASS | Live store: RK A neobsahuje `24134894838`. Dashboard API test: agency-a nevidi agency-b. RLS policy `acquisition_*_tenant`. |
-| agency B — iba B data | PASS | Live: RK B neobsahuje `24134657673`. Dashboard API test: tenant B len B riadky. |
-| cross-tenant attack — 403 / no data | PASS | Connect/accounts bez session → 401. RLS test `blocks cross-tenant reads` (local harness). Composite FK mismatch rejected. |
-| duplicate sync — idempotentny | PASS | Campaign upsert unique `(provider, provider_campaign_id)`. Webhook unique `(agency_id, provider, provider_event_id, event_type)` — rls test dedupes. |
-| failed API call — retry | PASS | `GoogleAdsClient.request` retry na 408/425/429/5xx, `computeBackoffMs`. Unit testy clienta. |
-| API rate limit — backoff | PASS | Rovnaky client: 429 retry + exponential backoff, `DEFAULT_INITIAL_BACKOFF_MS=200`. |
-| žiadny write do Google Ads | PASS | Client exponuje `request` + `search`, nie mutate. Seed zapisoval len do test MCC a vsetky kampane PAUSED (`docs/reports/2026-08-15-seed-test-campaigns.md`). Dashboard/API su read-only. |
-| audit log funguje | PASS | `GET /api/acquisition/audit-log` (session). Webhook eventy v `acquisition_events` (3× `LOGGED_TEST` 15.8.). |
-| credentials nie su v logoch | PASS | `credentials.ts`: never log secret values. Smoke leak scan: ziadny `BEGIN PRIVATE KEY` / developer token. Dashboard select list bez `credential_ref` a bez event `metadata`. |
-| credentials nie su v LLM context | PASS | SA JSON je private field; public meta ma len `hasServiceAccountKey` boolean. Ziadny Stage 0 kod neposiela `saKeyJson` do LLM. |
-| webhook `is_test=true` | PASS | Handler + hosted Production 15.8.: HTTP 200 `LOGGED_TEST`, `lead_id=null`, `leads.count` ostalo 480. Event `stage0-prod-1786811631390`. Zly kluc → 401. Allowlist #412. Po smoku `vercel env rm GOOGLE_ADS_WEBHOOK_KEY production`. |
-| Dashboard: zobraziť syncnuté data z testovacieho účtu | PASS v tomto PR | `GET /api/acquisition/dashboard` + page `/acquisition`. Ucet `7024414113`, kampane `RKA-test-byty` / `RKB-test-domy` (display persist z live sync). 3 test webhook eventy. Spend/CPL/ROI sa **nezobrazuju** (neboli namerane). |
+| credential sa ulozi encrypted | PASS s vyhradou | Stage 0 vault = Vercel env / `.env.local`, DB drzi len `credential_ref=env:GOOGLE_ADS_SA_KEY_JSON`. Nie KMS. Response connect/accounts/dashboard **neobsahuje** `credential_ref` ani SA JSON. |
+| test MCC sa identifikuje | PASS | Connect aj webhook lookup via `acquisition_accounts.customer_id=7024414113`. Seed guard pusti len tento MCC. |
+| customer_id sa nikdy neberie z client payload | PASS | Connect ignoruje `agency_id` / `customer_id` z payloadu. Smoke: cudzi UUID + `9998887777` → v DB Demo + `7024414113`. Dashboard GET nema searchParams. |
+| sync campaign funguje | PASS | Library + testy. Live 15.8. in-memory: RK A `24134657673` RKA-test-byty PAUSED; RK B `24134894838` RKB-test-domy PAUSED. **Overene produktovym klientom 15.8. 18:57Z, rovnake ID** (`docs/reports/2026-08-15-product-client-search.md`): HTTP 200 na `.../googleAds:search`. |
+| sync ad group funguje | PASS (in-memory) | Live: 1 ad group na RK A aj RK B. Ziadna DB tabulka. |
+| sync keyword funguje | PASS (in-memory) | Live: RK A 50 keyword riadkov, RK B 4. Ziadna DB tabulka. |
+| sync search terms funguje | PASS | Produktovy `GoogleAdsClient.search()` po #413, GAQL s `WHERE segments.date DURING LAST_7_DAYS`. RK A aj RK B: HTTP **200**, fetched 0 (PAUSED, bez serving). Predtým 400 `EXPECTED_FILTERS_ON_DATE_RANGE`. Dokaz: `docs/reports/2026-08-15-product-client-search.md`. |
+| metrics sync funguje | PASS (prazdne serving) | Live `LAST_7_DAYS`: 0 riadkov. Ocakavane: test MCC neservuje, kampane PAUSED. |
+| agency A — iba A data | PASS | Live store: RK A neobsahuje `24134894838`. Dashboard API test + RLS `acquisition_*_tenant`. |
+| agency B — iba B data | PASS | Live: RK B neobsahuje `24134657673`. |
+| cross-tenant attack — 403 / no data | PASS | Connect/accounts bez session → 401. RLS test `blocks cross-tenant reads`. |
+| duplicate sync — idempotentny | PASS | Campaign unique `(provider, provider_campaign_id)`. Webhook unique `(agency_id, provider, provider_event_id, event_type)`. |
+| failed API call — retry | PASS | `GoogleAdsClient.request` retry 408/425/429/5xx. |
+| API rate limit — backoff | PASS | 429 retry + exponential backoff. |
+| ziadny write do Google Ads | PASS | Client: `request` + `search`, nie mutate. Tento beh bol read-only search. |
+| audit log funguje | PASS | Webhook eventy v `acquisition_events` (3× `LOGGED_TEST` 15.8.). |
+| credentials nie su v logoch | PASS | `credentials.ts` + leak scan. Dashboard bez `credential_ref` / `metadata`. |
+| credentials nie su v LLM context | PASS | SA JSON sa neposiela do LLM. |
+| webhook `is_test=true` | PASS | Production 15.8.: 200 `LOGGED_TEST`, `lead_id=null`. Po smoku `vercel env rm GOOGLE_ADS_WEBHOOK_KEY production`. |
+| Dashboard: zobrazit syncnute data z testovacieho uctu | PASS (UI) / T2 OPEN | Production `https://app.revolis.ai/acquisition` 15.8., tenant Revolis Demo. Screenshoty nizsie. T1 ~2 min cold start. **T2 caka na founder.** |
+
+## Production `/acquisition` (15.8., Demo tenant)
+
+URL: `https://app.revolis.ai/acquisition`
+
+Namerane na stranke (sedi s DB + webhook smoke):
+
+- Ucet `customer_id=7024414113`, MCC `7024414113`, stav `PENDING`, posledny sync 15. 8. 2026 12:00
+- Kampane: `RKA-test-byty` `24134657673` PAUSED; `RKB-test-domy` `24134894838` PAUSED
+- Webhook eventy (3), vsetky `LOGGED_TEST`, `lead_id=null`:
+  - `stage0-prod-1786811631390` 15. 8. 2026 16:38
+  - `stage0-hosted-1786809368531` 15. 8. 2026 16:00
+  - `stage0-handler-1786807720186` 15. 8. 2026 15:32
+
+![Production /acquisition — ucty a kampane](../reports/assets/2026-08-15-acquisition-prod-top.png)
+
+![Production /acquisition — webhook eventy](../reports/assets/2026-08-15-acquisition-prod-webhooks.png)
+
+### Cas nacitania
+
+| Beh | Cas | Poznamka |
+|---|---|---|
+| T1 prve nacitanie | ~2 min | cold start po deployi #414 (founder) |
+| T2 druhe nacitanie | **DODA FOUNDER pred merge** | ak nie je rychle → STOP, nie PASS |
 
 ## Roadmap checkboxy (mimo DoD boxu)
 
-| Položka | Stav | Dokaz |
+| Polozka | Stav | Dokaz |
 |---|---|---|
 | Google Test MCC + test client accounts | PASS | Seed report; child ucty RK A/B. |
-| Service account flow + vault | PASS s vyhradou | SA env, nie user OAuth; pointer v DB. |
-| DB tabulky accounts / campaigns / events | PASS | Existuju v `ypgajkhqtbriqqmyawyv`. Composite FK `(agency_id, acquisition_account_id)`. |
-| Composite FKs | PASS | `acquisition_campaigns_agency_id_acquisition_account_id_fkey`. RLS test mismatch. |
-| Read-only sync campaign/ad group/keyword/search term/metrics | PARTIAL | Campaign + ad group + keyword + metrics live. Search terms FAIL na main (#413). |
+| Service account flow + vault | PASS s vyhradou | SA env, nie user OAuth. |
+| DB tabulky accounts / campaigns / events | PASS | Existuju. Composite FK. |
+| Composite FKs | PASS | `acquisition_campaigns_agency_id_acquisition_account_id_fkey`. |
+| Read-only sync campaign/ad group/keyword/search term/metrics | PASS s vyhradou tabuliek | Campaign + search-terms overene **produktovym** clientom. Ad group/keyword/metrics in-memory; search-terms 0 serving rows. |
 | Test webhook plumbing | PASS | #409 + #412 + Production 200. |
-| Supabase RLS tenant isolation | PASS | Policies `acquisition_accounts_tenant`, `acquisition_campaigns_tenant`, `acquisition_events_tenant` (`polcmd=*`). Test harness v `acquisition-core-rls.test.ts`. |
-| Audit log kazdy sync | PARTIAL | Webhook eventy ano. HTTP/cron sync job neexistuje, takze sync audit trail je live-sync report, nie `acquisition_events` per worker. |
-
-## Dashboard (tento PR)
-
-- API: `GET /api/acquisition/dashboard` — session `getUser`, `agency_id` z `profiles`, RLS.
-- UI: `/acquisition` (dashboard layout), nav **Google Ads (test)** pre owner.
-- Nie je v `PUBLIC_PATHS` / `BYPASS_PREFIXES` (verification test).
-- Display persist kampani: insert dvoch Google campaign ID z live sync do `acquisition_campaigns`. To **nie je** produktovy HTTP sync worker a **nie je** Google Ads write.
+| Supabase RLS tenant isolation | PASS | Policies `acquisition_*_tenant`. |
+| Audit log kazdy sync | PARTIAL | Webhook eventy ano. HTTP/cron sync job neexistuje. |
 
 ## Co toto NIE je
 
-- Stage 1 (reálny RK, serving, conversion upload).
-- Merge #413.
+- Stage 1 (realny RK, serving, conversion upload).
 - Merge `chore/stage0-smoke`.
-- Návrat `GOOGLE_ADS_WEBHOOK_KEY` do Production.
-- Generic marketing dashboard so spend/ROI číslami.
+- Navrat `GOOGLE_ADS_WEBHOOK_KEY` do Production.
+- Generic marketing dashboard so spend/ROI cislami.
+- Uzavrety perfgate bez T2.
 
 ## PRs
 
@@ -79,5 +98,6 @@ Otvorene pred tvrdenim "Stage 0 zatvorený":
 | #409 lead-webhook | merged | `is_test` plumbing |
 | #411 evidence docs | merged | seed / webhook / live-sync reporty |
 | #412 allowlist | merged | Production hosted 200 |
-| #413 search URL + date filter | OPEN | blokuje produktovy search() a search-terms |
-| toto (S0.7) | tento PR | dashboard + tento report |
+| #413 search URL + date filter | merged | produktovy `googleAds:search` + date filter |
+| #414 dashboard + PASS report | merged | `/acquisition` + prvy PASS report |
+| toto (addendum) | tento PR | product-client dokaz + screenshoty + D-zapis |
