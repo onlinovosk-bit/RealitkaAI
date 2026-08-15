@@ -1,25 +1,22 @@
-﻿# Session 2026-08-15 (Stage 0 smoke + inbound ZISTI)
+## Session 2026-08-15
 
-### Dokončené
-- Stage 0 Preview smoke PASS: POST /connect 200 PENDING, GET /accounts len Revolis Demo; Smolko payload ignorovaný.
-- SQL riadok `acquisition_accounts` `40a02a8e-7e31-439e-aecd-11aec040b2a2` status PENDING, customer_id 7024414113.
-- Migrácia `20260811220000_acquisition_core` aplikovaná na prod; tabuľka existuje.
-- `GOOGLE_ADS_*` na Verceli Preview-only (Production scope preč).
-- Supabase Preview env scoped na `chore/stage0-smoke`, nie plošne.
-- ZISTI: `smolko-a7f2@revolis.ai` → Reality Smolko cez Worker + `inbound_mailboxes`.
-- Pravidlo: chat ≠ SoT; výstup ide do `docs/reports/` + push.
+### Dokoncene
+- Hosted Production webhook is_test 200 LOGGED_TEST; webhook kluc prec z Production.
+- #413 / #414 merged.
+- Produktovy GoogleAdsClient.search() 200, rovnake campaign ID.
+- Production `/acquisition` screenshoty (Demo).
 
-### Rozpracované / Pending
-- Vlna 3B L13/L14 (PR-S0.4 / S0.5) — žiadna vetva, žiadny PR.
-- Vlna 4 L15–L18 — STOP, chýba `docs/prompts/ruflo-swarm-vlna4-5-2026-08.md`.
-- Dummy kampane v test RK A/B (372-637-0609 / 227-278-1649) — founder v Test MCC.
-- Draft PR #400 `chore/stage0-smoke` — nemergovať.
+### Rozpracovane / Pending
+- **Stage 0 PASS STOP.** T1 ~2 min, T2 ~2 min. Perfgate FAIL.
+- Pomalost: dashboard layout / workdesk shell (N+1 profiles, properties/leads limit 500), nie acquisition SELECT-y.
+- #415 docs addendum: doplneny T2 + STOP. Founder mergne ako evidenciu, nie ako PASS.
+- Stage 1 nespustene.
 
-### Kľúčové súbory
-- `docs/reports/2026-08-17-stage0-smoke.md`
-- `docs/reports/2026-08-17-inbound-zisti.md`
-- `docs/reports/2026-08-17-vlna3b-vlna4-status.md`
-- `.cursor/rules/l99-repo-is-comms-channel.mdc`
+### Klucove subory zmenene
+- `docs/architecture/acquisition-os-stage0-PASS-report.md`: T2 ~2 min, perfgate FAIL, logy
+- `memory/decisions.md`: D-2026-08-15-01 STOP
+- `docs/reports/2026-08-15-acquisition-t2-perfgate.md`: T2 ~2 min, layout N+1, nie GAQL
+- `docs/reports/2026-08-15-product-client-search.md`
 
-### Ďalší krok
-Founder: vložiť prompt Vlny 4 do repa, alebo GO na Vlnu 3B (L13+L14). Dummy kampane v RK A/B medzitým.
+### Dalsi krok
+Founder GO na samostatny perf PR (layout N+1 / 500-row hydrate), alebo merge #415 ako STOP-evidenciu. Stage 1 nie.

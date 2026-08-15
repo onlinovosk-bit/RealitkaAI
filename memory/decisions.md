@@ -634,3 +634,18 @@ existujúcom valuation widgete) až po founder GO na túto definíciu.
 STF P0 lane som zmergoval ja (founder) bez predchádzajúceho D-zápisu.
 GO sa dopĺňa retroaktívne. Rozsah STF a kill kritérium doplním
 samostatným zápisom do 7 dní — dovtedy pre ďalšie STF PR platí G0 STOP.
+
+## D-2026-08-15-01 — Stage 0 PASS zastaveny (perfgate)
+
+**Datum:** 2026-08-15
+**GO:** founder docs+evidence. T2 dodany: ~2 min. **STOP — nerealizuje sa ako PASS.**
+
+Funkcny sandbox DoD (connect, webhook is_test, produktovy search po #413, production `/acquisition` obsah) **drzi**.
+
+Perfgate **FAIL:** T1 ~2 min, T2 ~2 min. Nie jednorazovy cold start.
+
+Supabase (T2 19:06-19:08 UTC): desiatky `profiles` lookupov + `properties?limit=500` + `leads?select=*&limit=500` z dashboard layout/workdesk shellu. `acquisition_*` SELECT-y az o ~2 min neskor, potom HTTP 200 <2 s. Pomalost nie je GAQL ani dashboard query.
+
+Oprava layout/N+1/500-row hydrate = samostatny PR, vlastne GO. Tento D-zapis nie je Stage 0 PASS. Nie je to Stage 1.
+
+**Kill deadline Stage 0:** 2026-08-31.
