@@ -1,6 +1,6 @@
 # Open Tasks — Prioritized Queue
 
-> Posledná aktualizácia: 2026-06-24 | Task-loop sync
+> Posledná aktualizácia: 2026-08-14 | Task-loop sync
 
 ## P0 — Dokončiť rozbehnuté (vykonávacie)
 
@@ -11,6 +11,9 @@
 - [ ] **Externý cron** — agent: lokálny CRON_SECRET → PROD 401; overiť cron-job.org + Vercel Production secret (každých 5 min)
 
 ## P1 — Smolko / hodnota pre klienta
+
+- [ ] **L99 Lead Factory** — founder GO na definíciu C0/C1/C2 (`docs/briefs/l99-lead-factory-initiative.md` §2); merací BO až potom
+- [ ] **Smolko SLA otázka** — koľko nových dopytov na ocenenie stíha zavolať do 4 h (draft v premorteme 2026-08-14)
 
 - [ ] **Guardian PROD smoke 5/5** — agent: login blocked (TEST_USER ≠ Smolko); skript `apps/crm/scripts/prod-guardian-smoke-once.mjs` pripravený
 - [x] **PR #241** — merged (fixture-only disabled edit CTA)
