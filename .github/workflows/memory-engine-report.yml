@@ -36,6 +36,15 @@ jobs:
       - name: Test Memory Engine
         run: npm run brain:test
 
+      # D-2026-08-17-01 Variant A: memory/decisions.md is the only SoT.
+      # brain/decisions/decisions.md must not exist as a hand-maintained duplicate.
+      - name: Forbid hand-maintained brain/decisions/decisions.md
+        run: |
+          if [ -f brain/decisions/decisions.md ]; then
+            echo "brain/decisions/decisions.md must not exist. SoT is memory/decisions.md (D-2026-08-17-01 Variant A)."
+            exit 1
+          fi
+
       # VLNA2 PR-C1: do NOT compare committed indexes to a fresh ingest.
       # That gate taught agents to commit regenerated indexes ("refresh indexes")
       # even when sources were unchanged — GUARD_BYPASS. Instead regenerate into
