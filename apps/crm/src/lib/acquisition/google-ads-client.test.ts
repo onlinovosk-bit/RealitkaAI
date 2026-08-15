@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   computeBackoffMs,
   DEFAULT_GOOGLE_ADS_RATE_LIMIT_PER_TENANT,
+  GOOGLE_ADS_API_VERSION,
   GoogleAdsClient,
   GoogleAdsRateLimitError,
   GoogleAdsRequestError,
@@ -225,7 +226,7 @@ describe("google-ads-client", () => {
     expect(headers.get("Authorization")).toBe("Bearer injected-token");
     expect(headers.get("login-customer-id")).toBe("9998887777");
     expect(fetchImpl.mock.calls[0][0]).toContain(
-      "/v18/customers/1234567890:search",
+      `/${GOOGLE_ADS_API_VERSION}/customers/1234567890:search`,
     );
   });
 });

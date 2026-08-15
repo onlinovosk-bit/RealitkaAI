@@ -7,7 +7,8 @@
  */
 
 export const GOOGLE_ADS_API_BASE_URL = "https://googleads.googleapis.com";
-export const GOOGLE_ADS_API_VERSION = "v18";
+/** Current Google Ads REST version. v18 is sunset (HTML 404). Seed + client MUST import this. */
+export const GOOGLE_ADS_API_VERSION = "v25";
 
 /** Sensible Stage 0 default when GOOGLE_ADS_RATE_LIMIT_PER_TENANT is unset. */
 export const DEFAULT_GOOGLE_ADS_RATE_LIMIT_PER_TENANT = 60;
