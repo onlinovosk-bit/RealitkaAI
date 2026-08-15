@@ -4,6 +4,27 @@ import {
   entitlementRank,
   normalizeProfileEntitlements,
 } from "@/lib/profiles/normalize-profile-entitlements";
+import { getAuthProfileRequestMemo } from "@/lib/profiles/auth-profile-request-memo";
+
+const REQUEST_PROFILE_SELECT =
+  "id, agency_id, auth_user_id, email, role, ui_role, account_tier, full_name";
+
+export function widenProfileSelect(select: string): string {
+  const canonicalCols = new Set(
+    REQUEST_PROFILE_SELECT.split(",")
+      .map((part) => part.trim())
+      .filter(Boolean),
+  );
+  const requested = select
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (requested.length === 0) return REQUEST_PROFILE_SELECT;
+  if (requested.every((col) => canonicalCols.has(col))) {
+    return REQUEST_PROFILE_SELECT;
+  }
+  return select;
+}
 
 export type ResolvedAuthProfile = {
   id: string;
@@ -213,6 +234,27 @@ async function findProfileForAuthUser(
   email?: string | null,
   select = "id, agency_id, auth_user_id",
 ): Promise<ProfileLookupResult> {
+  const memo = getAuthProfileRequestMemo();
+  const resolvedSelect = widenProfileSelect(select);
+  const key = "find:" + userId + ":" + String(email ?? "").trim().toLowerCase() + ":" + resolvedSelect;
+  const hit = memo.get(key);
+  if (hit) return hit as Promise<ProfileLookupResult>;
+  const pending = findProfileForAuthUserUncached(
+    supabase,
+    userId,
+    email,
+    resolvedSelect,
+  );
+  memo.set(key, pending);
+  return pending;
+}
+
+async function findProfileForAuthUserUncached(
+  supabase: SupabaseClient,
+  userId: string,
+  email?: string | null,
+  select = "id, agency_id, auth_user_id",
+): Promise<ProfileLookupResult> {
   const byAuth = await supabase
     .from("profiles")
     .select(select)
@@ -261,6 +303,20 @@ async function findProfileForAuthUser(
  * inak nevráti agency_id (profil existuje len pod e-mailom / legacy id).
  */
 export async function linkProfileToAuthUser(
+  supabase: SupabaseClient,
+  userId: string,
+  email?: string | null,
+): Promise<ResolvedAuthProfile | null> {
+  const memo = getAuthProfileRequestMemo();
+  const key = "link:" + userId + ":" + String(email ?? "").trim().toLowerCase();
+  const hit = memo.get(key);
+  if (hit) return hit as Promise<ResolvedAuthProfile | null>;
+  const pending = linkProfileToAuthUserUncached(supabase, userId, email);
+  memo.set(key, pending);
+  return pending;
+}
+
+async function linkProfileToAuthUserUncached(
   supabase: SupabaseClient,
   userId: string,
   email?: string | null,

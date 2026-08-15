@@ -49,7 +49,7 @@ export function WorkdeskRail() {
         {WORKDESK_RAIL.map((item) => {
           const active = item.match(pathname);
           return (
-            <Link
+            <Link prefetch={false}
               key={item.id}
               href={item.href}
               style={{

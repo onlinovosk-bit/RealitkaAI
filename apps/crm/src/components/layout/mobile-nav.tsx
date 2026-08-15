@@ -62,7 +62,7 @@ export default function MobileNav({ role }: { role: UserRole }) {
               const isActive = pathname === item.path;
               return (
                 <li key={item.key}>
-                  <Link
+                  <Link prefetch={false}
                     href={item.path}
                     className={`flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium transition
                       ${isActive ? "bg-gray-900 text-white" : "text-gray-700 hover:bg-gray-100"}`}

@@ -97,7 +97,7 @@ export function WorkdeskTopbar({ userName }: WorkdeskTopbarProps) {
         />
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <Link
+        <Link prefetch={false}
           href="/porovnanie-programov"
           style={{
             border: "1px solid rgba(255,255,255,0.16)",
@@ -115,7 +115,7 @@ export function WorkdeskTopbar({ userName }: WorkdeskTopbarProps) {
         >
           Programy
         </Link>
-        <Link
+        <Link prefetch={false}
           href="/settings"
           style={{
             border: "1px solid rgba(255,255,255,0.1)",
@@ -133,7 +133,7 @@ export function WorkdeskTopbar({ userName }: WorkdeskTopbarProps) {
         >
           Nastavenia
         </Link>
-        <Link
+        <Link prefetch={false}
           href="/dashboard#actions"
           style={{
             border: 0,
@@ -153,7 +153,7 @@ export function WorkdeskTopbar({ userName }: WorkdeskTopbarProps) {
           Spustiť akcie
         </Link>
         {!userName ? (
-          <Link href="/login" style={pillNeutral}>
+          <Link prefetch={false} href="/login" style={pillNeutral}>
             Prihlásiť sa
           </Link>
         ) : null}

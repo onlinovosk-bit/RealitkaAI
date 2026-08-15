@@ -317,7 +317,7 @@ export function Sidebar({
                   (item.href !== '/dashboard' && pathname.startsWith(item.href)))
 
                 return (
-                  <Link
+                  <Link prefetch={false}
                     key={item.href}
                     href={isLocked ? '#' : item.href}
                     style={{ textDecoration: 'none', pointerEvents: isLocked ? 'none' : 'auto' }}
@@ -406,7 +406,7 @@ export function Sidebar({
       </nav>
 
       <div style={{ padding: '8px 12px 12px' }}>
-        <Link
+        <Link prefetch={false}
           href="/billing"
           style={{
             display: 'block',
