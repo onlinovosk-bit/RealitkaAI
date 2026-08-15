@@ -18,6 +18,7 @@ export const SEARCH_TERM_GAQL = [
   "  metrics.clicks,",
   "  metrics.cost_micros",
   "FROM search_term_view",
+  "WHERE segments.date DURING LAST_7_DAYS",
 ].join("\n");
 
 export type AcquisitionProvider = typeof ACQUISITION_PROVIDER_GOOGLE;
