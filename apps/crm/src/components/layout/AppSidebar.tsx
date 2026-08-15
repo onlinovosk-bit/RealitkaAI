@@ -130,7 +130,7 @@ function WorkdeskNavRow({
       : { background: SLATE_HORIZON.brand, color: "#fff" };
 
   return (
-    <Link
+    <Link prefetch={false}
       href={item.href}
       style={{
         display: "flex",
@@ -199,7 +199,7 @@ function NavItemRow({
   const subtitle  = getDemoSubtitle(demoProgram);
 
   return (
-    <Link
+    <Link prefetch={false}
       href={item.href}
       style={{
         display:         "flex",

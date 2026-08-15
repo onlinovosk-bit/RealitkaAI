@@ -1,8 +1,13 @@
-import { describe, it, expect, vi } from "vitest";
+import { beforeEach, describe, it, expect, vi } from "vitest";
 import {
   isSmolkoOwnerEmail,
   resolveProfileForAuthUser,
 } from "@/lib/profiles/resolve-profile-for-auth";
+import { resetAuthProfileRequestMemoForTests } from "@/lib/profiles/auth-profile-request-memo";
+
+beforeEach(() => {
+  resetAuthProfileRequestMemoForTests();
+});
 import { normalizeProfileEntitlements } from "@/lib/profiles/normalize-profile-entitlements";
 
 function buildSupabase(eqRows: Record<string, unknown | null>) {

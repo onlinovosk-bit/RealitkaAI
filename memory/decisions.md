@@ -649,3 +649,16 @@ Supabase (T2 19:06-19:08 UTC): desiatky `profiles` lookupov + `properties?limit=
 Oprava layout/N+1/500-row hydrate = samostatny PR, vlastne GO. Tento D-zapis nie je Stage 0 PASS. Nie je to Stage 1.
 
 **Kill deadline Stage 0:** 2026-08-31.
+
+## D-2026-08-15-02 — customer-facing performance bug (workdesk layout)
+
+**Datum:** 2026-08-15
+**GO:** founder, samostatny perf PR. Merge = founder.
+
+T2 `/acquisition` ~2 min nie je unikát tej stranky. Rovnaky `(dashboard)/layout.tsx` obaluje `/dashboard` a `/leads`. Vercel v T2 okne ukazuje `GET /leads` este pocas cakania na `/acquisition`; sidebar prefetch tahal `properties?limit=500` a `leads?select=*&limit=500`. Session 18:06 UTC: ~68 s `getUser` bez page-query.
+
+**Klasifikacia:** customer-facing performance bug. Constitution: retencia (pomalý workdesk), BUILD, maly PR.
+
+Fix: request-scoped profile memo + `prefetch={false}` na nav Linkoch. Ziadna zmena RLS / auth rozhodnutia / zobrazovanych dat na `/dashboard` a `/leads` (tie stranky data stale tahaju same).
+
+Stage 0 PASS sa nevyhlasuje. Nie je to Stage 1.

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { resolveProfileForAuthUser } from "@/lib/profiles/resolve-profile-for-auth";
+import { resetAuthProfileRequestMemoForTests } from "@/lib/profiles/auth-profile-request-memo";
 
 const serviceMaybeSingle = vi.fn();
 const serviceInResult = vi.fn().mockResolvedValue({ data: [] });
@@ -22,6 +23,10 @@ beforeEach(() => {
   serviceMaybeSingle.mockReset();
   serviceInResult.mockReset();
   serviceInResult.mockResolvedValue({ data: [] });
+});
+
+beforeEach(() => {
+  resetAuthProfileRequestMemoForTests();
 });
 
 describe("resolveProfileForAuthUser service fallback", () => {

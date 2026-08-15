@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { linkProfileToAuthUser } from "@/lib/profiles/resolve-profile-for-auth";
+import { resetAuthProfileRequestMemoForTests } from "@/lib/profiles/auth-profile-request-memo";
 
 const serviceUpdateEq = vi.fn().mockResolvedValue({ error: null });
 const serviceInResult = vi.fn().mockResolvedValue({ data: [] });
@@ -25,6 +26,7 @@ vi.mock("@/lib/supabase/admin", () => ({
 }));
 
 beforeEach(() => {
+  resetAuthProfileRequestMemoForTests();
   serviceUpdateEq.mockClear();
   serviceFrom.mockClear();
   serviceInResult.mockReset();

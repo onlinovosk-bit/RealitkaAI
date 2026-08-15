@@ -1,22 +1,20 @@
 ## Session 2026-08-15
 
 ### Dokoncene
-- Hosted Production webhook is_test 200 LOGGED_TEST; webhook kluc prec z Production.
-- #413 / #414 merged.
-- Produktovy GoogleAdsClient.search() 200, rovnake campaign ID.
-- Production `/acquisition` screenshoty (Demo).
+- #415 merged (STOP evidencia, nie Stage 0 PASS).
+- T2 meranie: pomale je cele CRM workdesk (prefetch `/dashboard`+`/leads`, N+1 profiles).
+- Perf PR `fix/crm-layout-perf`: request-scoped profile memo + prefetch={false}.
 
 ### Rozpracovane / Pending
-- **Stage 0 PASS STOP.** T1 ~2 min, T2 ~2 min. Perfgate FAIL.
-- Pomalost: dashboard layout / workdesk shell (N+1 profiles, properties/leads limit 500), nie acquisition SELECT-y.
-- #415 docs addendum: doplneny T2 + STOP. Founder mergne ako evidenciu, nie ako PASS.
-- Stage 1 nespustene.
+- Preview deploy + T1/T2 po fixu na `/acquisition`, `/dashboard`, `/leads`. Founder mergne.
+- Stage 0 PASS az po zelenom T1/T2 + addendum. Stage 1 nie.
 
 ### Klucove subory zmenene
-- `docs/architecture/acquisition-os-stage0-PASS-report.md`: T2 ~2 min, perfgate FAIL, logy
-- `memory/decisions.md`: D-2026-08-15-01 STOP
-- `docs/reports/2026-08-15-acquisition-t2-perfgate.md`: T2 ~2 min, layout N+1, nie GAQL
-- `docs/reports/2026-08-15-product-client-search.md`
+- `apps/crm/src/lib/profiles/auth-profile-request-memo.ts`
+- `apps/crm/src/lib/profiles/resolve-profile-for-auth.ts`
+- `apps/crm/src/components/layout/AppSidebar.tsx` (+ rail/mobile/topbar/sidebar prefetch)
+- `docs/reports/2026-08-15-workdesk-layout-perf.md`
+- `memory/decisions.md`: D-2026-08-15-02
 
 ### Dalsi krok
-Founder GO na samostatny perf PR (layout N+1 / 500-row hydrate), alebo merge #415 ako STOP-evidenciu. Stage 1 nie.
+Founder: preview smoke + merge perf PR. Potom cerstve T1/T2. Stage 0 PASS az potom.
