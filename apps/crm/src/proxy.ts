@@ -23,6 +23,7 @@ const PUBLIC_PATHS = new Set([
   "/api/webhooks/hubspot",
   "/api/leads/inbound",
   "/api/acquire/email",
+  "/api/acquisition/google/lead-webhook",
   "/api/valuation/submit",
   "/api/valuation/estimate",
 ]);
