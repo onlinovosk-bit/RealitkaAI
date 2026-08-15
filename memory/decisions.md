@@ -620,3 +620,17 @@ existujúcom valuation widgete) až po founder GO na túto definíciu.
 - Akýkoľvek dashboard % „predhriatych“ bez dôkazu kontaktu → STOP merge
 - External ingest mimo allowlistu Fázy 1 → revert + legal
 - Review dátum: **2026-09-14**
+
+
+## D-2026-08-17-01 — Tri drobné rozhodnutia z auditov
+1. Decisions dedup: Variant A — brain/decisions/decisions.md sa maže,
+   zdroj pravdy je memory/decisions.md, index.json zostáva generovaný pohľad.
+2. 2026_genome_layer2.sql: RENAME na časovaný názov + migration-history
+   repair pod explicitným GO (podľa genome-layer2-audit).
+3. Amendment k D-2026-08-13-01: CORE 4 pluginy (Supabase, Vercel, GitHub,
+   Browser) prešli T11 bránou — každý mal čakajúcu úlohu. Ostatné JIT.
+
+## D-2026-08-17-02 — STF #393–397: retroaktívne GO
+STF P0 lane som zmergoval ja (founder) bez predchádzajúceho D-zápisu.
+GO sa dopĺňa retroaktívne. Rozsah STF a kill kritérium doplním
+samostatným zápisom do 7 dní — dovtedy pre ďalšie STF PR platí G0 STOP.
