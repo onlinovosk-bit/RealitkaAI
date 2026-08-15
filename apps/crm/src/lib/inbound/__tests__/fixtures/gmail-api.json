@@ -1,0 +1,79 @@
+{
+  "token_readonly": {
+    "access_token": "ya29.fixture-access",
+    "expires_in": 3600,
+    "scope": "https://www.googleapis.com/auth/gmail.readonly",
+    "token_type": "Bearer"
+  },
+  "token_with_send": {
+    "access_token": "ya29.fixture-send",
+    "expires_in": 3600,
+    "scope": "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send",
+    "token_type": "Bearer"
+  },
+  "list_labeled": {
+    "messages": [
+      { "id": "msg-dmarc-reject", "threadId": "t-dmarc" },
+      { "id": "msg-plain-inquiry", "threadId": "t-plain" }
+    ],
+    "resultSizeEstimate": 2
+  },
+  "message_dmarc_reject": {
+    "id": "msg-dmarc-reject",
+    "threadId": "t-dmarc",
+    "labelIds": ["Label_Revolis"],
+    "internalDate": "1755165600000",
+    "payload": {
+      "mimeType": "multipart/alternative",
+      "headers": [
+        { "name": "From", "value": "Portal <noreply@nehnutelnosti.sk>" },
+        { "name": "To", "value": "makler@example.com" },
+        { "name": "Subject", "value": "Dopyt: 3-izbovy byt Bratislava" },
+        {
+          "name": "Authentication-Results",
+          "value": "mx.google.com; dkim=pass header.i=@nehnutelnosti.sk; spf=pass smtp.mailfrom=nehnutelnosti.sk; dmarc=fail (p=REJECT sp=REJECT) header.from=nehnutelnosti.sk"
+        }
+      ],
+      "parts": [
+        {
+          "mimeType": "text/plain",
+          "body": {
+            "data": "bmVobnV0ZWxub3N0aS5zawpNZW5vOiBKYW5hIFRlc3QKRS1tYWlsOiBqYW5hQGV4YW1wbGUuY29tClRlbGVmb246ICs0MjEgOTAwIDExMSAyMjIKU3ByYXZhOiBDaGNlbSBvYmhsaWFka3UgMy1pemJvdnkgYnl0"
+          }
+        },
+        {
+          "mimeType": "text/html",
+          "body": { "data": "PHA-bmVobnV0ZWxub3N0aS5zayBkb3B5dDwvcD4" }
+        }
+      ]
+    }
+  },
+  "message_plain_inquiry": {
+    "id": "msg-plain-inquiry",
+    "threadId": "t-plain",
+    "labelIds": ["Label_Revolis"],
+    "internalDate": "1755165660000",
+    "payload": {
+      "mimeType": "text/plain",
+      "headers": [
+        { "name": "From", "value": "Kupujuci <buyer@example.com>" },
+        { "name": "To", "value": "makler@example.com" },
+        { "name": "Subject", "value": "Zaujem o byt" }
+      ],
+      "body": {
+        "data": "bmVobnV0ZWxub3N0aS5zawpNZW5vOiBKYW5hIFRlc3QKRS1tYWlsOiBqYW5hQGV4YW1wbGUuY29tClRlbGVmb246ICs0MjEgOTAwIDExMSAyMjIKU3ByYXZhOiBDaGNlbSBvYmhsaWFka3UgMy1pemJvdnkgYnl0"
+      }
+    }
+  },
+  "message_unlabeled": {
+    "id": "msg-unlabeled",
+    "threadId": "t-other",
+    "labelIds": ["INBOX"],
+    "internalDate": "1755165700000",
+    "payload": {
+      "mimeType": "text/plain",
+      "headers": [{ "name": "Subject", "value": "Sukromny mail" }],
+      "body": { "data": "c3Vrcm9tbnk=" }
+    }
+  }
+}
