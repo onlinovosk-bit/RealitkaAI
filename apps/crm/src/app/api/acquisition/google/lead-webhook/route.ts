@@ -1,8 +1,24 @@
 import { createHash } from "crypto";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { errorResponse, okResponse } from "@/lib/api-response";
+import { validateBody } from "@/lib/api-validate";
+import { incrementUsageMetric } from "@/lib/usage-metrics";
+import { rateLimit } from "@/lib/rate-limit";
 import { safeCompare } from "./safe-compare";
+
+const LeadWebhookBodySchema = z
+  .object({
+    google_key: z.unknown().optional(),
+    is_test: z.unknown().optional(),
+    lead_id: z.unknown().optional(),
+    provider_event_id: z.unknown().optional(),
+    customer_id: z.unknown().optional(),
+    campaign_id: z.unknown().optional(),
+    form_id: z.unknown().optional(),
+  })
+  .passthrough();
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -131,24 +147,23 @@ function alreadyProcessedResponse() {
  */
 export async function POST(request: Request) {
   try {
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+    const { allowed } = await rateLimit(`acquisition-lead-webhook:${ip}`, 60, 60_000);
+    if (!allowed) {
+      return errorResponse("Too many requests", 429);
+    }
+
     const expected = process.env.GOOGLE_ADS_WEBHOOK_KEY?.trim();
     if (!expected) {
       return errorResponse("Unauthorized", 401);
     }
 
     const url = new URL(request.url);
-    let body: JsonObject | null = null;
-    const raw = await request.text();
-    if (raw.trim()) {
-      try {
-        body = asObject(JSON.parse(raw));
-        if (body === null) {
-          return errorResponse("invalid_json", 400);
-        }
-      } catch {
-        return errorResponse("invalid_json", 400);
-      }
+    const parsed = await validateBody(request, LeadWebhookBodySchema);
+    if (!parsed.ok) {
+      return parsed.response;
     }
+    const body: JsonObject = parsed.data as JsonObject;
 
     const providedKey = extractGoogleKey(url, request.headers.get("x-google-key"), body);
     if (!providedKey || !safeCompare(providedKey, expected)) {
@@ -171,6 +186,12 @@ export async function POST(request: Request) {
     if (!agencyId) {
       return errorResponse("Unable to resolve agency from customer_id / campaign", 422);
     }
+
+    await incrementUsageMetric({
+      agencyId,
+      metric: "ai_openai_tokens",
+      delta: 0,
+    });
 
     const isTest = extractIsTest(url, body);
     const processingStatus = isTest ? "LOGGED_TEST" : "LOGGED_STAGE0";

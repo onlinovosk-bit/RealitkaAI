@@ -11,6 +11,7 @@ const mockFrom = vi.fn();
 vi.mock("@/lib/supabase/admin", () => ({
   createServiceRoleClient: () => ({
     from: (...args: unknown[]) => mockFrom(...args),
+    rpc: async () => ({ data: 1, error: null }),
   }),
 }));
 
