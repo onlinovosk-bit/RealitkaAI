@@ -1,0 +1,29 @@
+﻿---
+description: Chat je pracovný priestor; repo je komunikačný kanál. Hodnotný výstup musí skončiť v docs/reports a na pushnutej vetve.
+alwaysApply: true
+---
+
+# Repo je komunikačný kanál
+
+Každý výstup s hodnotou (report, ZISTI, smoke, rozhodnutie) **neexistuje**, kým nie je v repe.
+
+## Vždy
+
+- Ukonči výstup súborom `docs/reports/YYYY-MM-DD-nazov.md`.
+- Commitni ho na feature vetvu a **pushni** vetvu.
+- Chat slúži na prácu, nie ako source of truth.
+
+## Nikdy
+
+- Nenechávaj smoke/ZISTI/rozhodnutie len v chate.
+- Nekopíruj celé thready medzi Cursor a Claude.ai — čítajú `docs/reports/` + `memory/session-summary.md`.
+
+## Príklad
+
+```text
+# zlé — PASS len v chate
+POST /connect → 200 PENDING
+
+# dobré — ten istý fakt v
+# docs/reports/2026-08-17-stage0-smoke.md + git push
+```
