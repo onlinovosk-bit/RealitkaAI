@@ -113,17 +113,25 @@ async function findSmolkoOwnerProfileViaServiceRole(
   return emailMatch ?? best;
 }
 
+/**
+ * Email equality must never pass raw user input to ILIKE: `_` and `%` are
+ * wildcards (`in_o@x.com` matches `info@x.com`). Use exact `eq` when the
+ * candidate contains those chars; otherwise `ilike` for legacy case-folding.
+ */
+export function emailLookupNeedsExactMatch(email: string): boolean {
+  return /[%_]/.test(email);
+}
+
 async function findProfileByEmailCandidates(
   client: SupabaseClient,
   loginEmail: string | null | undefined,
   select: string,
 ): Promise<ProfileLookupResult> {
   for (const candidate of smolkoProfileLookupEmails(loginEmail)) {
-    const { data } = await client
-      .from("profiles")
-      .select(select)
-      .ilike("email", candidate)
-      .maybeSingle();
+    const base = client.from("profiles").select(select);
+    const { data } = emailLookupNeedsExactMatch(candidate)
+      ? await base.eq("email", candidate).maybeSingle()
+      : await base.ilike("email", candidate).maybeSingle();
     if (data) {
       return { profile: data as unknown as ResolvedAuthProfile };
     }
