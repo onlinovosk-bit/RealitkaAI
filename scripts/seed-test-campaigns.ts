@@ -31,12 +31,14 @@ import { createSign } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { config as loadDotenv } from "dotenv";
+import {
+  GOOGLE_ADS_API_BASE_URL,
+  GOOGLE_ADS_API_VERSION,
+} from "../apps/crm/src/lib/acquisition/google-ads-client";
 
 /** Test MCC only. Not ROOT 1645629013. Not any production login. */
 const ALLOWED_LOGIN_CUSTOMER_ID = "7024414113";
 
-const GOOGLE_ADS_API_VERSION = "v18";
-const GOOGLE_ADS_API_BASE = "https://googleads.googleapis.com";
 const ADWORDS_SCOPE = "https://www.googleapis.com/auth/adwords";
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
 
@@ -182,7 +184,7 @@ async function adsMutate(opts: {
   path: string;
   body?: unknown;
 }): Promise<AdsResponse> {
-  const url = `${GOOGLE_ADS_API_BASE}/${GOOGLE_ADS_API_VERSION}/customers/${opts.customerId}/${opts.path}`;
+  const url = `${GOOGLE_ADS_API_BASE_URL}/${GOOGLE_ADS_API_VERSION}/customers/${opts.customerId}/${opts.path}`;
   const res = await fetch(url, {
     method: opts.method,
     headers: {
