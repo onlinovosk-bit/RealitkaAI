@@ -635,21 +635,17 @@ STF P0 lane som zmergoval ja (founder) bez predchádzajúceho D-zápisu.
 GO sa dopĺňa retroaktívne. Rozsah STF a kill kritérium doplním
 samostatným zápisom do 7 dní — dovtedy pre ďalšie STF PR platí G0 STOP.
 
-## D-2026-08-15-01 — Stage 0 PASS
+## D-2026-08-15-01 — Stage 0 PASS zastaveny (perfgate)
 
 **Datum:** 2026-08-15
-**GO:** founder, docs+evidence addendum (ziadny iny kod). Merge tohto PR = founder.
+**GO:** founder docs+evidence. T2 dodany: ~2 min. **STOP — nerealizuje sa ako PASS.**
 
-Acquisition OS Stage 0 (sandbox: Test MCC `7024414113`, Demo agency) je **funkcne PASS**.
+Funkcny sandbox DoD (connect, webhook is_test, produktovy search po #413, production `/acquisition` obsah) **drzi**.
 
-Dokaz, ktory tento D-zapis pridava voci reportu z #414:
+Perfgate **FAIL:** T1 ~2 min, T2 ~2 min. Nie jednorazovy cold start.
 
-1. Produktovy `GoogleAdsClient.search()` po merge #413: HTTP 200 na `POST /v25/customers/{id}/googleAds:search`. Kampane RK A `24134657673` / RK B `24134894838` PAUSED — **rovnake ID** ako live sync a production dashboard. Search-terms s `WHERE segments.date DURING LAST_7_DAYS` uz nie su 400. Report: `docs/reports/2026-08-15-product-client-search.md`.
-2. Production `/acquisition` (15.8., Revolis Demo): ucty, 2 PAUSED kampane, 3× `LOGGED_TEST` / `lead_id=null`. Screenshoty v `docs/reports/assets/2026-08-15-acquisition-prod-*.png`.
-3. T1 prve nacitanie `/acquisition` ~2 min (cold start po deployi #414).
+Supabase (T2 19:06-19:08 UTC): desiatky `profiles` lookupov + `properties?limit=500` + `leads?select=*&limit=500` z dashboard layout/workdesk shellu. `acquisition_*` SELECT-y az o ~2 min neskor, potom HTTP 200 <2 s. Pomalost nie je GAQL ani dashboard query.
 
-**Podmienka pred tym, ako founder mergne tento PR ako PASS:** doplnit T2 (cas druheho nacitania). Ak T2 nie je rychle → STOP, vysetrit, tento D-zapis sa nerealizuje ako PASS.
+Oprava layout/N+1/500-row hydrate = samostatny PR, vlastne GO. Tento D-zapis nie je Stage 0 PASS. Nie je to Stage 1.
 
-**Nie je to Stage 1.** Ziadny realny RK, ziadny serving, ziadny conversion upload, ziadny navrat webhook kluca do Production, ziadny HTTP/cron sync worker.
-
-**Kill deadline Stage 0:** 2026-08-31 (uz funkcia uzavreta; dalsi kod = vlastne GO).
+**Kill deadline Stage 0:** 2026-08-31.

@@ -7,18 +7,18 @@
 **Connect account:** `40a02a8e-7e31-439e-aecd-11aec040b2a2`
 **Pravidlo:** polozka bez dokazu = nesplnena. Ziadne secrets v tomto subore.
 
-Addendum 15.8. vecer: produktovy `GoogleAdsClient.search()` po merge #413 + production screenshoty `/acquisition`. Perfgate T2 (druhe nacitanie) v tomto commite **caka na founder** — ak T2 nie je rychle, STOP, tento report sa nerealizuje ako PASS.
+Addendum 15.8. vecer: produktovy `GoogleAdsClient.search()` po merge #413 + production screenshoty. **T2 ~2 min (founder) — STOP, nie PASS.**
 
 ## Verdikt
 
-**PASS na funkcný DoD**, podmienene T2. Sandbox loop (connect, tenant scope, webhook `is_test`, read-only sync cez **produktovy** client, dashboard na produkcii) je dokazany. Stage 1 sa nespusta.
+**Funkcny DoD drzi. Perfgate FAIL — Stage 0 PASS sa nerealizuje.** T1 aj T2 `/acquisition` ~2 min. Stage 1 sa nespusta.
 
 Otvorene (nie Stage 1, ale stale pravda):
 
 1. V CRM nie su tabulky pre ad groups / keywords / search terms / metrics. Workery su overene live + testami, nie persistenciou.
 2. `GOOGLE_ADS_*` credentials su Preview-only. Production webhook kluc bol po hosted 200 zmazany.
 3. HTTP/cron sync job neexistuje. Kampane v DB = display persist ziveho syncu, nie produktovy worker.
-4. **T2 cas druheho nacitania `/acquisition` founder este nedodal.** T1 ~2 min (cold start po deployi #414).
+4. **T1 ~2 min, T2 ~2 min** (founder). Nie je to jednorazovy cold start. Supabase: acquisition SELECT-y su 200 za <2 s; ~1-2 min medzera je pred nimi (dashboard layout / workdesk shell).
 
 ## DoD checklist (blueprint §11)
 
@@ -44,7 +44,7 @@ Otvorene (nie Stage 1, ale stale pravda):
 | credentials nie su v logoch | PASS | `credentials.ts` + leak scan. Dashboard bez `credential_ref` / `metadata`. |
 | credentials nie su v LLM context | PASS | SA JSON sa neposiela do LLM. |
 | webhook `is_test=true` | PASS | Production 15.8.: 200 `LOGGED_TEST`, `lead_id=null`. Po smoku `vercel env rm GOOGLE_ADS_WEBHOOK_KEY production`. |
-| Dashboard: zobrazit syncnute data z testovacieho uctu | PASS (UI) / T2 OPEN | Production `https://app.revolis.ai/acquisition` 15.8., tenant Revolis Demo. Screenshoty nizsie. T1 ~2 min cold start. **T2 caka na founder.** |
+| Dashboard: zobrazit syncnute data z testovacieho uctu | PASS (obsah) / FAIL (cas) | Production UI sedi. T1 ~2 min, T2 ~2 min. STOP pred PASS. |
 
 ## Production `/acquisition` (15.8., Demo tenant)
 
@@ -68,7 +68,22 @@ Namerane na stranke (sedi s DB + webhook smoke):
 | Beh | Cas | Poznamka |
 |---|---|---|
 | T1 prve nacitanie | ~2 min | cold start po deployi #414 (founder) |
-| T2 druhe nacitanie | **DODA FOUNDER pred merge** | ak nie je rychle → STOP, nie PASS |
+| T2 druhe nacitanie | ~2 min (founder, 15.8. ~21:08 CEST) | **nie je rychle → STOP** |
+
+### Preco to trva ~2 min (15.8. dokaz, nie dojem)
+
+Supabase edge logy, Demo tenant, T2 okno 19:06-19:08 UTC (founder reload ~21:08 CEST):
+
+1. `auth/v1/user` + desiatky duplicitnych `profiles` lookupov (auth_user_id, email ilike, id) — `(dashboard)/layout.tsx` vola `linkProfileToAuthUser` + `resolveProfileForAuthUser` na kazdom requeste. Workdesk shell navyse tahal `properties?limit=500` a `leads?select=*&limit=500`.
+2. Layout/agency dopyty koncia ~19:06:12 UTC.
+3. `acquisition_accounts` / `_campaigns` / `_events` idu az **19:08:15-17 UTC** (HTTP 200, <2 s spolu).
+
+Rovnaky vzor T1 (~18:45:43 auth → ~18:46:42 acquisition SELECT-y).
+
+Zaver: pomalost **nie je** GAQL ani 3 riadky dashboardu. Je to **dashboard layout / workdesk shell** (force-dynamic SSR + N+1 profil + tazky client hydrate) pred tym, nez sa spusti `loadAcquisitionDashboard`. Oprava patri do samostatneho PR, nie do Stage 0 PASS addendum.
+
+Dokazovy report: `docs/reports/2026-08-15-acquisition-t2-perfgate.md`.
+
 
 ## Roadmap checkboxy (mimo DoD boxu)
 
@@ -89,7 +104,7 @@ Namerane na stranke (sedi s DB + webhook smoke):
 - Merge `chore/stage0-smoke`.
 - Navrat `GOOGLE_ADS_WEBHOOK_KEY` do Production.
 - Generic marketing dashboard so spend/ROI cislami.
-- Uzavrety perfgate bez T2.
+- Stage 0 PASS (T1=T2 ~2 min, perfgate FAIL).
 
 ## PRs
 
