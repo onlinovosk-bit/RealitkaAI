@@ -4,7 +4,7 @@ title: "V4-B inbound OAuth pull (DMARC) — design only"
 type: design
 status: proposed
 version: 0.1.0
-owner: "Principal reliability / inbound leads"
+owner: "Production reliability / inbound acquire"
 lane: "Vlna 4 / V4-B"
 created_at: 2026-08-15
 updated_at: 2026-08-15
@@ -12,411 +12,517 @@ confidentiality: internal
 canonical: false
 implementation: STOP
 verified_against_sha: "9109a73e60b2eb7df453ad96a6c1f732ed0d708b"
-evidence_report: "docs/reports/2026-08-17-inbound-zisti.md (PR #402 / origin/docs/reports-2026-08-17 @ f073a03c5)"
-sources:
+evidence:
+  - docs/reports/2026-08-17-inbound-zisti.md
   - apps/crm/src/app/api/acquire/email/route.ts
-  - apps/crm/src/lib/acquire/email-adapter.ts
   - apps/crm/src/lib/acquire/send-inbound-auto-response.ts
-  - apps/crm/src/lib/acquire/inbound-lead-auto-response.ts
   - apps/crm/src/lib/acquire/agency-map.ts
   - apps/crm/src/app/api/integrations/google/auth/route.ts
-  - apps/crm/src/app/api/integrations/google/callback/route.ts
-  - apps/crm/src/lib/google-calendar-server.ts
   - apps/crm/supabase/migrations/20260424_google_calendar_oauth.sql
-  - apps/crm/tests/verification/acquire-email-gateway.verification.test.ts
 depends_on:
   - docs/architecture/revolis-constitution-v2.md
   - docs/architecture/master-data-sourcing-map.md
   - docs/architecture/clay-positioning-reframe.md
 ---
 
-# V4-B — Inbound OAuth pull (DMARC)
+# V4-B inbound OAuth pull — design only
 
-**Tento dokument je DESIGN ONLY. Žiadna implementácia. Žiadny merge do `main` bez samostatného GO foundera. GO na kód nedáva tento PR.**
+**Tento dokument je návrh. Žiadny aplikačný kód, migrácia, worker ani token
+sa v tomto PR nerealizuje. Implementácia začína až po explicitnom GO
+foundera.**
 
-Cieľ: nahradiť zákaznícky Gmail auto-forward (DMARC/alignment riziko) **pull modelom** — OAuth read-only + ingest job, ktorý volá **existujúci** `POST /api/acquire/email`. Druhý lead-ingest sa nevymýšľa.
+Cieľ: nahradiť zákaznícky Gmail auto-forward do Revolis inbound aliasu
+**pull modelom** (OAuth read-only + label), ktorý kŕmi **existujúci**
+`POST /api/acquire/email`. Druhý lead-ingest pipeline sa nestavia.
 
 ---
 
 ## 0. STOP
 
-| Položka | Stav |
+| Brána | Stav |
 |---|---|
-| Tento PR | Iba dokumentácia |
-| Application code (`apps/`, workers, migrácie, `lib/acquisition/sync/`) | **Nesiahnuť** |
-| Token storage / OAuth client / cron | **Nerealizovať** v tomto PR |
-| GO na implementáciu | **Len founder**, písomne, po prečítaní rizík (Google verification, GDPR, token vault) |
-| Cloudflare Email Routing → `email-gateway` | Ostáva **additive fallback**, nestrháva sa v dizajne |
+| Tento PR | DESIGN ONLY |
+| Aplikačný kód / workers / migrations / `lib/acquisition/sync/` | **NEMENÍ SA** |
+| Merge do `main` | **NIE** — founder review, nie implementácia |
+| Implementačný PR | **ZAKÁZANÝ**, kým founder nepovie **GO** |
 
-Ak founder nepovie GO, ostáva VALIDATE. Žiadny „začneme OAuth client v Google Cloud, lebo dizajn je hotový“.
+Ak niekto otvorí implementačný PR bez GO, zatvoriť ho. Tento dokument nie je
+objednávka práce.
 
 ---
 
-## 1. Problém (merané, nie vymyslené)
+## 1. Prečo toto existuje (merané, nie predpoklad)
 
-Zákaznícky workaround dnes: **Gmail auto-forward** do Revolis inbound aliasu. Forwardované správy často **neprežijú DMARC alignment** (From ostáva portál/záujemca, Return-Path je Gmail). Dopyty sa strácajú ešte pred Workerom.
-
-Meranie ZISTI 2026-08-15 (`docs/reports/2026-08-17-inbound-zisti.md`, PR #402):
+ZISTI 2026-08-15 (`docs/reports/2026-08-17-inbound-zisti.md`, commit
+`f073a03c5` / PR #402; na `origin/main` v čase tohto dokumentu **nie je**):
 
 | Fakt | Hodnota |
 |---|---|
 | Alias | `smolko-a7f2@revolis.ai` |
-| Tenant | Reality Smolko, `agency_id=11111111-1111-1111-1111-111111111111` |
+| Tenant | Reality Smolko `11111111-1111-1111-1111-111111111111` |
 | Cesta | Cloudflare Email Routing → Worker `email-gateway` → `inbound_mailboxes` → `POST /api/acquire/email` s `mailbox.agencyId` |
-| Prod `inbound_mailboxes.last_received_at` | **2026-07-14 20:53:09+00** (v čase merania ~1 mesiac ticho) |
-| Ďalšie aliasy (tá istá tabuľka) | `demo-3f7a@revolis.ai` → Revolis Demo; `aa-reality-kosice-s-r-o-6461@revolis.ai` → AA REALITY Košice |
-| CRM router na `origin/main` | `payload.mailbox.agencyId` — **nie** statická mapa |
-| `agency-map.ts` | mŕtvy kľúč `smolko@inbound.revolis.ai` — nie je live router |
-| `feat/inbound-triage-signal` @ `cb4559b98` | **žiadny PR**, **0 výskytov** `smolko-a7f2`; nerieši alias, DMARC ani `agency-map` |
+| Prod `last_received_at` | `2026-07-14 20:53:09+00` (v čase merania ~mesiac ticho) |
+| Ďalšie mailboxy | `demo-3f7a@revolis.ai` → Revolis Demo; `aa-reality-kosice-s-r-o-6461@revolis.ai` → AA REALITY Košice |
+| CRM route na `main` | berie `payload.mailbox.agencyId`, nie `agency-map.ts` |
+| `agency-map.ts` | mŕtvy kľúč `smolko@inbound.revolis.ai` — **nie je live router** |
+| `feat/inbound-triage-signal` @ `cb4559b98` | **žiadny PR**, 0 výskytov `smolko-a7f2`, nerieši alias/DMARC |
 
-Stealth: Reality Smolko je referenčný klient. Alias a `agency_id` sú **interný dôkaz**, nie marketing case study. Verejná kópia klienta nespomína.
+`smolko-a7f2@revolis.ai` je **interný dôkaz merania**. Nie je to public case
+study. Zákaznícky copy v §7 Reality Smolko **nemenovať**.
 
 ---
 
-## 2. Druhý DMARC landmine (auto-odpoveď)
+## 2. Problém, ktorý V4-B rieši
 
-Toto **nie je** ten istý bug ako Gmail forward, ale súvisí s From alignment pri outbound.
+### 2.1 Zákaznícky workaround (implikovaný meraním)
+
+Live ingest dnes predpokladá, že dopyt **príde na Revolis alias**. Bežný
+workaround u Gmail-first kancelárie: **Gmail auto-forward** portálových /
+klientskych správ na `<slug>-<4hex>@revolis.ai`.
+
+To je krehké:
+
+1. **DMARC / alignment.** Forward mení envelope; SPF/DKIM portálu sa na
+   Revolis MX nemusí zhodovať. Cloudflare routing + Worker vidí
+   preposlanú správu, nie originálny SMTP handshake.
+2. **Operatívna tma.** `last_received_at=2026-07-14` znamená, že push na
+   alias **nie je spoľahlivý heartbeat** — buď forward prestal, alebo
+   dopyty tam nechodia.
+3. **Onboarding copy to dnes prikazuje.** `docs/runbooks/onboard-new-agency.md`
+   stále hovorí „preposielajte dopyty na alias“. To je presne cesta, ktorú
+   treba vypnúť.
+
+### 2.2 DMARC pasca na odosielacej strane (súvis, nie ten istý bug)
 
 `resolveInboundFromEmail` (`apps/crm/src/lib/acquire/send-inbound-auto-response.ts`):
 
-- Ak je `replyTo` na `revolis.ai` alebo `*.revolis.ai`, stane sa **From**.
-- Inak overený outreach sender (`OUTREACH_FROM_EMAIL`) alebo `onboarding@mg.revolis.ai`.
+- ak je `replyTo` na `revolis.ai` alebo `*.revolis.ai`, použije ho ako
+  **From**;
+- inak overený outreach sender / `onboarding@mg.revolis.ai`.
 
-`resolveInboundAutoResponseContacts` berie `agencies.email`, fallback owner profil.
+ZISTI: `agencies.email` u meraného tenanta je **`null`** → fallback na
+owner/outreach. **Rozbije sa**, ak niekto nastaví `agencies.email` na
+inbound alias (`smolko-a7f2@revolis.ai`). Auto-odpoveď by šla From aliasu,
+ktorý nie je overený odosielateľ a koliduje s DMARC.
 
-ZISTI: `agencies.email` u Smolka je **teraz `null`** → fallback owner/outreach. **Rozbije sa**, keď niekto do `agencies.email` dá inbound alias (`smolko-a7f2@revolis.ai`): auto-odpoveď by šla **From = inbound alias**, čo nie je overený transactional From a láme DMARC/SPF.
+Toto **nie je** dôvod stavať druhý ingest. Je to dôvod:
 
-**Pravidlo (dizajn, ešte nie kód):** inbound alias **nikdy** nie je `agencies.email` ani From. Alias je len routing kľúč v `inbound_mailboxes`.
+- pullom **neposielať** originál cez Revolis MX;
+- v implementácii (až po GO) **zakázať** inbound alias ako `agencies.email`
+  / From (malý guard, samostatný PR, nie tento).
 
-Tento PR **neopravuje** `resolveInboundFromEmail`. Oprava From denylist je samostatná, malá zmena — až po GO, iný PR (1 PR = 1 logická zmena).
+### 2.3 Čo V4-B nerieši
+
+- `feat/inbound-triage-signal` (AI triáž + `new_lead`) — iná vetva, bez PR.
+- Oprava mŕtveho `agency-map.ts` — dead code, nie live router.
+- Google Ads OAuth (`/api/acquisition/google/connect`) — iný produkt.
+- Existujúci Calendar + `gmail.send` OAuth — **iné privilege**, nemiešať.
 
 ---
 
-## 3. Navrhovaný model: pull, nie forward
+## 3. Founder Reality Check (Ústava v2)
+
+Hodnotenie pre **tento návrh**, nie pre implementáciu. Strop bez GO =
+VALIDATE.
+
+| # | Otázka | Verdikt |
+|---|---|---|
+| 1 | Zaplatil by za to dnešný klient? | **Áno ako retenciu.** Inbound dopyty sú začiatok Lead → provízia. Stale mailbox = stratené dopyty. VETO neplatí. |
+| 2 | Zarobí klient viac do 90 dní? | Mechanizmus: portálový dopyt opäť pristane ako lead v CRM namiesto Gmailu, ktorý Revolis nevidí. |
+| 3 | Skráti Lead → telefonát → …? | Obnovuje **krok 0** (dopyt vôbec existuje v CRM). |
+| 4 | Moat? | Nie. Hygiene / deliverability. |
+| 5 | Flywheel? | Slabo. Obnovuje first-party lead inflow, netvorí nové dáta. |
+| 6 | Unikátne dáta? | Nie. Rovnaký `leads` insert ako dnes. |
+| 7 | ROI vs backlog? | Vysoký **ak** platiaci tenant reálne forwarduje a mailbox je ticho. Inak overiť 1 hovorom pred kódom. |
+| 8 | Timing? | **Správny čas na DESIGN.** Google restricted-scope verification môže byť „príliš skoro“ na plný prod rollout pred súhlasom Google — to je dôvod fáz, nie veto na dokument. |
+| 9 | MVP < 2 týždne? | Kód poll + mapovanie na existujúci route: áno. **Google verification / CASA: nie.** |
+| 10 | Founder trap? | Complexity Bias (OAuth vs „oprav forward“) a Technology Bias. Pull je zvolený, lebo forward je DMARC-krehký, nie lebo Gmail API je zaujímavé. |
+| 11 | Najlepšie využitie času foundera? | GO/NO-GO + 1 overovací hovor so zákazníkom („stále forwardujete?“). Nie kód. |
+| 12 | Jediná vec tento kvartál? | Nie. Je to **reliability lane**, nie kvartálny bet. |
+
+**Skóre:** ~8–9 → **VALIDATE**. Ústava: otázka 1 nie je NIE, timing nie je
+„príliš skoro“ na návrh. **BUILD kódu = len po GO.**
+
+---
+
+## 4. Navrhovaný model (pull, nie forward)
 
 ```
-[Portál / web formulár]
-        |  (bežný Gmail príjem u RK)
-        v
-[Zákaznícky Gmail]
-   filter → label napr. "Revolis / Dopyty"
+  Portál / klient
         |
-        |  OAuth gmail.readonly (+ gmail.labels)
         v
-[Revolis ingest job, tenant-scoped]
-   list messages with labelId
-   map → existujúci Worker payload v1
-        |
-        |  POST /api/acquire/email
-        |  header x-shared-secret = ACQUIRE_SHARED_SECRET
+  Zákaznícky Gmail
+  (filter → label napr. "Revolis")
+        |  OAuth gmail.readonly
         v
-[Existujúci pipeline]
-   parseEmail → dedup → leads insert
-   last_received_at na inbound_mailboxes
-   triage + auto-response (bezo zmeny)
+  Revolis ingest job (cron, tenant-scoped)
+        |  rovnaký JSON + x-shared-secret
+        v
+  POST /api/acquire/email
+        |  parseEmail / dedup / leads insert / triage / auto-response
+        v
+  existujúci acquire pipeline
 ```
 
-**Čo sa nemení:** parser, dedup, `leads` insert, triage, auto-response, shared-secret auth. Pull job je **ďalší producent** toho istého kontraktu, nie druhý ingest.
+**Push cez Cloudflare alias ostáva.** Pull je **additive**. Alias slúži ako:
 
-**Čo sa vypína u zákazníka:** Gmail auto-forward na `@revolis.ai`. Cloudflare cesta ostáva zapnutá ako fallback (iné zdroje, ručné forward, testy).
+- fallback počas cutoveru;
+- cesta pre tenantov, ktorí posielajú priamo na `@revolis.ai`;
+- `email.to` v payloade, aby `last_received_at` na `inbound_mailboxes`
+  ostalo pravdivé.
+
+Zákazník **vypne Gmail auto-forward** až keď pull 24–48 h preukáže leady.
 
 ---
 
-## 4. Kontrakt, ktorý sa musí zachovať
+## 5. Existujúce povrchy — reuse vs. zákaz miešania
 
-Z `apps/crm/src/app/api/acquire/email/route.ts` na `origin/main` @ `9109a73e6`:
+Overené na `main` @ `9109a73e6`.
 
-| Pole | Pravidlo |
+### 5.1 Jediný ingest (POVINNÉ reuse)
+
+`POST /api/acquire/email`:
+
+- auth: header `x-shared-secret` vs `ACQUIRE_SHARED_SECRET` (timing-safe);
+- `version === 1`;
+- `payload.mailbox.agencyId` (Worker / job už vyriešil tenanta);
+- `payload.email.{to,subject,text,html}` + `receivedAt`;
+- ďalej: `parseEmail` → `dedupKey` / `acquire_dedup_keys` → `leads` insert
+  → triage → auto-response;
+- update `inbound_mailboxes.last_received_at` podľa `agency_id` + `email.to`.
+
+Pull job **nesmie** insertovať do `leads` priamo. Volá túto route
+(alebo vyčlenený interný handler s **totožnou** biznis logikou — to je
+refaktor až v impl PR, nie nový pipeline).
+
+### 5.2 Čo sa NEmieša
+
+| Existujúce | Prečo nie pre V4-B |
 |---|---|
-| Auth | Header `x-shared-secret` timing-safe vs `ACQUIRE_SHARED_SECRET` |
-| `payload.version` | Presne `1` |
-| Tenant | **Len** `payload.mailbox.agencyId` — nikdy From/To z Gmailu, nikdy `agency-map.ts` |
-| Telo | Aspoň jedno z `email.subject` / `email.text` / `email.html` |
-| `email.to` | Musí byť **Revolis inbound alias** z `inbound_mailboxes.email` (nie zákaznícky Gmail), inak `last_received_at` update netrafí riadok |
-| `receivedAt` | ISO z Gmail internal date; route berie prvých 10 znakov ako dátum pre parser |
+| `/api/integrations/google/auth` scopes `calendar.events` + **`gmail.send`** | Iné privilege. Send ≠ read. Restricted Gmail read by nespúšťať „zadarmo“ cez calendar consent. |
+| `profile_google_calendar` | Tokeny Calendar/send, scoped na **profile**, nie agency inbound. |
+| `/api/integrations/gmail` IMAP (`gmail_imap` v `profile_integrations`) | Ukladá IMAP heslo. Nie label-scoped, nie OAuth, nie agency-level. **Nepoužiť.** |
+| `agencyForInbound` / `agency-map.ts` | Dead map. Live router je `inbound_mailboxes` + `mailbox.agencyId`. |
+| Google Ads connect | Iný OAuth client účel. |
 
-Gmail správa má `To:` = schránka RK. Job **nesmie** poslať ten To do pipeline. Mapovanie:
-
-```
-agencyId      <- agency_gmail_inbound.agency_id
-email.to      <- inbound_mailboxes.email  (alias @revolis.ai)
-email.subject <- Gmail payload.headers.Subject
-email.text    <- text/plain part
-email.html    <- text/html part
-receivedAt    <- Gmail internalDate
-```
-
-Dedup ostáva `dedupKey(parseEmail(...))` v `acquire_dedup_keys`. Doplnkovo (fáza 2) uložiť `gmail_message_id` v tenant tabuľke, aby sa nevolal acquire na už stiahnuté ID — ale **lead pravda** ostáva existujúci dedup, nie nová tabuľka leadov.
-
-Živá špecifikácia: `apps/crm/tests/verification/acquire-email-gateway.verification.test.ts` (shared secret, `mailbox.agencyId`). Po implementácii (iný PR) rozšíriť o pull-adapter — **nie v tomto PR**.
+Nový consent flow: **samostatný** OAuth purpose (`gmail.readonly` + label),
+tenant = `agency_id`.
 
 ---
 
-## 5. OAuth: least privilege, oddelené od Calendar/Send
+## 6. OAuth a least privilege
 
-Existujúci CRM Google connect (`/api/integrations/google/auth`) žiada:
+Google **nemá** scope „čítaj len tento label“. Least privilege je teda
+**kombinácia** OAuth scope + aplikačný filter.
 
-- `calendar.events`
-- **`gmail.send`**
-- `openid email profile`
+### 6.1 Scopes (návrh v1)
 
-Tokeny idú do `profile_google_calendar` (per **profile**, service-role).
+Povoliť:
 
-**Inbound pull tento grant NESMIE zdieľať.**
+- `https://www.googleapis.com/auth/gmail.readonly`
 
-| Dôvod | Detail |
-|---|---|
-| Scope | Inbound potrebuje **čítanie**, existujúci grant je **odosielanie** + kalendár |
-| Least privilege | Send token nesmie čítať mailbox; read token nesmie posielať |
-| Tenant vs profil | Inbound je **agency-scoped** (jeden mailbox pre RK). Calendar je per-maklér |
-| Revoke | Odpojenie kalendára nesmie zabiť lead ingest a naopak |
-| Google verification | `gmail.readonly` je **restricted**; miešanie so `gmail.send` zväčšuje audit plochu |
+Nepýtať v tomto lane:
 
-### Scope návrh (fáza 1, po GO)
+- `gmail.send` / `gmail.compose` / `mail.google.com`
+- `gmail.modify` (v1 stačí lokálny cursor `historyId` + Gmail message id;
+  „processed“ label by vyžadoval modify)
+- Calendar scopes
 
-Povolené:
+`openid email` len ak treba overiť, ktorý Gmail účet súhlasil (zobraziť
+v UI). Neskladovať profilové dáta Google naviac.
 
-- `https://www.googleapis.com/auth/gmail.readonly` — čítanie správ (Google iný "len tento label" scope **nemá**)
-- `https://www.googleapis.com/auth/gmail.labels` — vytvoriť/nájsť label `Revolis/Dopyty` (sensitive, nie restricted)
+### 6.2 Aplikačný filter
 
-Zakázané:
+- Zákazník (alebo Revolis pri onboardingu) vytvorí Gmail filter:
+  portály / dopyty → label napr. `Revolis` (názov voliteľný, uložený
+  `label_id`).
+- Job číta **iba** `labelIds={label_id}`.
+- Správy mimo labelu sa **nesťahujú, nelogujú, neparsujú**.
 
-- `gmail.send`, `gmail.compose`, `gmail.modify` (žiadny trash/archive v MVP)
-- `gmail` (full), IMAP, app passwords, n8n "Gmail Revolis" credential ako produkčný ingest
-- Domain-wide delegation / Workspace DWD
+### 6.3 Google verification (hlavný časový rizikový bod)
 
-**Úprimnosť voči súhlasu:** Google consent screen povie "čítanie Gmailu", nie "len jeden štítok". Produktová zmluva: Revolis **volá API len na správy s dohodnutým labelId**. To je operational least privilege, nie Google-enforced. Zákaznícka kópia to musí povedať nahlas — inak 6(1)(a) nie je informovaný súhlas.
+`gmail.readonly` je **restricted** Gmail scope. Prod app s externými
+používateľmi typicky potrebuje:
 
-Samostatný OAuth client v Google Cloud (názov placeholder: `revolis-gmail-inbound-readonly`). **Žiadne reálne client ID/secret v tomto dokumente ani v gite.**
+1. OAuth consent screen (External) + branding;
+2. Google verification;
+3. často CASA / security assessment pre Gmail restricted scopes.
+
+**Dôsledok pre fázy:** interný test (Google test users / Internal app na
+Workspace) môže ísť skôr. **Široký customer rollout až po verification.**
+To je GO podmienka fázy F, nie dôvod písať kód v tomto PR.
+
+Žiadne reálne `client_id` / secret v dokumente ani v gite.
 
 ---
 
-## 6. Token storage — náčrt (neaplikovať)
+## 7. Zákaznícky copy (SK) — outcome, nie „AI/OAuth“
 
-Neznovupoužiť `profile_google_calendar`. Nová tenant tabuľka, **service_role only**, RLS zapnuté, žiadne GRANT pre `authenticated`.
+Positioning: výsledok („dopyty z Gmailu sa objavia v Revolise bez
+preposielania“), nie technológia. Reality Smolko sa v UI **nemenovuje**.
+
+### 7.1 Nastavenia — pred súhlasom
+
+**Nadpis:** Dopyty z Gmailu do Revolisu
+
+**Telo:**
+
+> Portálové dopyty, ktoré vám chodia do Gmailu, viete poslať do Revolisu
+> bez automatického preposielania. Preposielanie z Gmailu na Revolis adresu
+> vypnite — kazí doručovanie a dopyt sa môže stratiť.
+>
+> Kliknite na súhlas. Google sa spýta, či Revolis smie **čítať iba správy
+> v označenom štítku** (napr. „Revolis“). Ostatné e-maily neotvárame a
+> neukladáme.
+>
+> Po súhlasu uvidíte v Revolise nové dopyty ako leady — rovnako ako doteraz.
+
+**CTA:** Pripojiť Gmail (iba označený štítok)
+
+**Sekundárne:** Ako nastaviť štítok v Gmaile (filter z portálu → štítok)
+
+### 7.2 Čo Revolis číta / čo nie (povinný blok súhlasu)
+
+**Čítame**
+
+- správy, ktoré máte označené zvoleným štítkom;
+- predmet, text a základné kontaktné údaje z dopytu, aby vznikol lead.
+
+**Nečítame / nerobíme**
+
+- ostatné e-maily, prílohy mimo dopytu, celú schránku;
+- odosielanie pošty z vášho Gmailu (tento súhlas nie je „odosielať ako vy“);
+- zmena alebo mazanie správ v Gmaile.
+
+**Odvolanie:** Nastavenia → Odpojiť Gmail. Revolis prestane sťahovať
+správy. Súhlas viete zrušiť aj v Google účte (Aplikácie s prístupom).
+
+### 7.3 Po cutovere (e-mail / in-app)
+
+**Predmet:** Vypnite preposielanie dopytov z Gmailu
+
+> Dopyty už berieme priamo z označeného štítka v Gmaile. Automatické
+> preposielanie na adresu `@revolis.ai` vypnite, aby dopyt neprišiel dvakrát
+> a aby sa nestratil kvôli doručovaniu.
+>
+> Alias `@revolis.ai` môžete nechať aktívny ako zálohu. Primárna cesta je
+> štítok + súhlas.
+
+Žiadne sľuby „AI agent číta váš Gmail“.
+
+---
+
+## 8. Token storage sketch (žiadne secret, žiadny apply)
+
+Návrh schémy. **Nemigrovať v tomto PR.** Service role only. RLS deny pre
+anon/authenticated. Nikdy nelogovať plaintext token, nikdy nedávať refresh
+token do klienta.
 
 ```sql
--- SKETCH ONLY. This PR does not add a migration.
+-- SKETCH ONLY. Do not apply.
 
-create table public.agency_gmail_inbound (
+create table public.agency_gmail_inbound_oauth (
   agency_id uuid primary key references public.agencies(id) on delete cascade,
-  gmail_address text not null,
-  label_id text not null,
-  label_name text not null default 'Revolis/Dopyty',
+  granted_by_profile_id uuid not null references public.profiles(id),
+  gmail_user_email text not null,
   refresh_token_ciphertext text not null,
   token_key_version text not null,
   scopes text[] not null,
-  granted_by_profile_id uuid not null references public.profiles(id),
-  consent_recorded_at timestamptz not null default now(),
-  last_history_id text,
+  label_id text not null,
+  label_name text not null,
+  history_id text,
   last_pulled_at timestamptz,
   last_error text,
+  status text not null check (status in ('pending', 'active', 'revoked', 'error')),
+  consent_recorded_at timestamptz not null,
   revoked_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
--- optional processed ids (bounded, not a second lead store)
--- agency_gmail_inbound_messages (agency_id, gmail_message_id pk, acquired_at)
-
-alter table public.agency_gmail_inbound enable row level security;
--- no policies for authenticated / anon
+create table public.agency_gmail_inbound_seen (
+  agency_id uuid not null references public.agencies(id) on delete cascade,
+  gmail_message_id text not null,
+  acquired_at timestamptz not null default now(),
+  primary key (agency_id, gmail_message_id)
+);
 ```
 
-Šifrovanie: application-level (AES-GCM) kľúčom z env placeholder `GMAIL_INBOUND_TOKEN_KEY` / KMS. **Nie** plaintext `refresh_token` ako dnes v `profile_google_calendar` — inbound je širší grant; vault má byť prísnejší. Calendar plaintext sa v tomto PR **nerobí**.
+Pravidlá:
 
-Logy: nikdy token, nikdy raw mail dump. Max `agency_id`, `gmail_message_id`, `lead_created`, `requestId`.
+- **1 riadok na agency** (inbound je tenant-level, ako `inbound_mailboxes`).
+- Envelope encryption (app key / KMS), `token_key_version` kvôli rotácii.
+- `scopes` musí obsahovať iba `gmail.readonly` (+ prípadne openid/email).
+  Ak callback vráti navyše `gmail.send`, **odmietnuť uloženie**.
+- Revoke: zmazať ciphertext, `status=revoked`, `revoked_at=now()`,
+  Google `token/revoke`, zmazať `agency_gmail_inbound_seen` voliteľne
+  (dedup v `acquire_dedup_keys` ostáva).
+- Neukladať do `profile_google_calendar` ani `profile_integrations.config`.
 
----
-
-## 7. Ingest job (fáza 2, po GO)
-
-- Trigger: Vercel cron (existujúci pattern `Authorization: Bearer CRON_SECRET`, pozri `apps/crm/src/app/api/cron/*`) **alebo** krátky Worker. Jedna cesta, nie obe.
-- Periodicita MVP: 1-5 min. Gmail push (`users.watch` + Pub/Sub) je **neskôr**, nie MVP.
-- Pre každý riadok `agency_gmail_inbound` kde `revoked_at is null`:
-  1. Refresh access token.
-  2. `users.messages.list?labelIds={label_id}` (+ `history.list` ak je `last_history_id`).
-  3. `users.messages.get(format=full)` len pre nové ID.
-  4. POST existujúceho acquire kontraktu (časť 4).
-  5. Update `last_history_id` / `last_pulled_at`. Pri 401/invalid_grant nastav `last_error`, **necykli** refresh donekonečna.
-- Idempotencia: Gmail ID set + existujúci `acquire_dedup_keys`.
-- Tenant isolation: job nikdy nepoužije token agentúry A na mailbox B. `agencyId` v payload = PK riadku, nie odhad z From.
-
-`lib/acquisition/sync/` sa **nepoužíva** (Google Ads sync, iný bounded context).
-
-Cloudflare `email-gateway` ostáva. Rovnaký `agencyId` + rovnaký dedup = dvojitý vstup (forward + pull) nesmie spraviť dva leady.
+Env (mená, nie hodnoty): `GOOGLE_GMAIL_INBOUND_CLIENT_ID`,
+`GOOGLE_GMAIL_INBOUND_CLIENT_SECRET`, existujúci `ACQUIRE_SHARED_SECRET`,
+`CRON_SECRET`. Oddelený OAuth client od Calendar/send, aj keby bol v tom
+istom Google Cloud projekte.
 
 ---
 
-## 8. Fázovaný plán (additive, až po GO)
+## 9. Ingest job (fáza po GO)
 
-### Fáza 0 — tento PR
+### 9.1 Spúšťač
 
-Dokument. STOP.
+Nový cron v duchu existujúcich (`vercel.json` + `Authorization: Bearer CRON_SECRET`),
+napr. `/api/cron/gmail-inbound-pull` každých 5 minút. Nie Worker
+`email-gateway`.
 
-### Fáza 1 — súhlas bez ingestu
+### 9.2 Algoritmus (náčrt)
 
-1. Google Cloud OAuth client (readonly) v testing mode; test users = founder + referenčný tenant.
-2. Migrácia `agency_gmail_inbound` + encrypt helper.
-3. Settings: "Pripojiť Gmail (dopyty)" / "Odpojiť".
-4. OAuth start/callback **oddelené** od `/api/integrations/google/*` (nové cesty, iný redirect URI, iný state bound na `agency_id` + `profile_id`).
-5. Po callback: overiť scopes, vytvoriť/nájsť label, uložiť ciphertext.
-6. Revoke path end-to-end (časť 10) **pred** pullom.
-7. Smoke: connect → DB riadok → revoke → token neplatný. **Žiadne čítanie mailov.**
+Pre každý riadok `status=active`:
 
-### Fáza 2 — pull do existujúceho pipeline
+1. Refresh access token (server-side).
+2. `history.list` od `history_id` filtrované na `labelId`; fallback
+   `messages.list` s `labelIds` ak history expirovala.
+3. Pre nové message id: preskoč ak je v `agency_gmail_inbound_seen`.
+4. `messages.get` (format=full) → subject + text/html.
+5. POST existujúcej route:
 
-1. Cron/job ako v časti 7.
-2. Jeden tenant (referenčný alias z ZISTI), shadow: najprv log `would_post`, potom ostrý POST.
-3. Overenie: nový `last_received_at`, lead v CRM, dedup pri opaku.
-4. Verification test na adapter (živá špecifikácia) **v tom istom implementačnom PR**.
+```http
+POST /api/acquire/email
+x-shared-secret: <ACQUIRE_SHARED_SECRET>
+x-revolis-request-id: gmail-pull:<agency_id>:<gmail_message_id>
 
-### Fáza 3 — cutover u zákazníka
+{
+  "version": 1,
+  "receivedAt": "<internalDate ISO>",
+  "mailbox": { "agencyId": "<agency_id>" },
+  "email": {
+    "to": "<inbound_mailboxes.email pre tento agency>",
+    "subject": "...",
+    "text": "...",
+    "html": "..."
+  }
+}
+```
 
-1. Kópia z časti 9.
-2. Zákazník vypne Gmail auto-forward.
-3. Filter: portálové dopyty → label.
-4. 48h dual-run (forward ešte zapnutý **alebo** ručný dohľad), potom forward OFF.
-5. Checklist: `agencies.email` **nie je** inbound alias.
+6. Pri `ok: true` (lead alebo `not_a_lead` / duplicate) zapíš seen + nový
+   `history_id`.
+7. Chyby: `status=error`, `last_error` **bez** tokenu / bez tela mailu;
+   neblokovať ostatné tenantov.
 
-### Fáza 4 — Google verification (ak treba ísť mimo test users)
+`email.to` = Revolis alias z `inbound_mailboxes`, nie Gmail adresa
+zákazníka — inak `last_received_at` update v route netrafí riadok.
 
-Restricted `gmail.readonly` → OAuth verification, security assessment (CASA) podľa aktuálnych Google pravidiel. **Nespúšťať** pred dôkazom, že Fáza 2 drží leady. Náklady/čas = founder rozhodnutie.
+### 9.3 Idempotencia
 
-### Mimochodom, nie V4-B kód v tomto PR
+Dvojitá:
 
-- Denylist inbound aliasov v `resolveInboundFromEmail` — samostatný malý PR po GO.
-- Mŕtvy `agency-map.ts` kľúč — nerieši live routing; upratanie nie je DMARC fix.
-- `feat/inbound-triage-signal` — netreba mergovať kvôli V4-B.
+- `agency_gmail_inbound_seen` (Gmail id);
+- existujúci `acquire_dedup_keys` (obsah dopytu).
 
----
-
-## 9. Zákaznícka kópia (SK)
-
-Outcome jazyk (Clay): nejde o "AI Gmail integráciu". Ide o to, **aby dopyty z portálov neskončili v spame a nestratili sa**.
-
-**Nadpis:** Dopyty z Gmailu do Revolisu — bez preposielania
-
-**Krátky text do Settings:**
-
-> Preposielanie z Gmailu na adresu Revolisu vie zablokovať ochrana pošty (DMARC). Preto Revolis dopyty **sťahuje** z jedného označeného štítku vo vašom Gmaile.
->
-> **Čo urobíte**
-> 1. V Gmaile vypnite automatické preposielanie na `*@revolis.ai`.
-> 2. Vytvorte štítok `Revolis / Dopyty` (alebo nechajte Revolis, aby ho vytvoril po súhlase).
-> 3. Nastavte filter: dopyty z portálov (Nehnuteľnosti.sk, Reality.sk, ...) → tento štítok.
-> 4. Kliknite **Pripojiť Gmail** a potvrďte súhlas.
->
-> **Čo Revolis číta**
-> Iba správy s týmto štítkom. Používa ich na založenie dopytu v CRM — meno, e-mail, telefón, text, inzerát.
->
-> **Čo Revolis nečíta a nerobí**
-> Neposiela poštu týmto súhlasom. Nemaže ani nearchivuje vaše správy. Nepoužíva Gmail na marketing. Ostatné vlákna (osobná pošta, iné kancelárske veci) do Revolisu neťaháme.
->
-> **Čo uvidíte na obrazovke Google**
-> Google žiada oprávnenie "čitať Gmail", lebo iný užší súhlas neponúka. Revolis aj tak sťahuje **len označený štítok**. Súhlas môžete kedykoľvek odobrať v Revolise (Odpojiť Gmail) aj v účte Google (Tretie strany).
-
-**Po odpojení:** ďalšie dopyty z Gmailu do CRM neprídu, kým znova nepripojíte (alebo kým nepoužijete záložný alias — to nie je odporúčaný bežný režim).
-
-Žiadne meno referenčného klienta v UI.
+Cutover window (forward ešte zapnutý): duplicita je **očakávaná** a
+existujúci dedup ju má zhltnúť. Preto forward vypínať až po dôkaze.
 
 ---
 
-## 10. Riziká a kontroly
+## 10. Fázovaný plán (additive, po GO)
 
-### Google OAuth verification
+| Fáza | Čo | Exit | NIE |
+|---|---|---|---|
+| **S** | Tento dokument + founder GO | Písomné GO | Kód |
+| **A** | Google Cloud: oddelený OAuth client, Internal/test users, consent copy | Test user vie consentnúť na staging | Prod verification, CRM kód v `main` |
+| **B** | Schema + encrypt + connect/revoke UI (1 tenant, staging) | Token v DB, revoke maže token, žiadny pull | Čítanie mailov |
+| **C** | Pull cron → `POST /api/acquire/email` | 1 test dopyt v `leads` cez pull, nie cez forward | Vypnutie aliasu |
+| **D** | Pilot 1 platiaci tenant: label + 48 h dual-run | `last_received_at` sa hýbe z pullu; 0 únikov mimo labelu | Hromadný rollout |
+| **E** | Zákazník vypne Gmail forward; onboarding runbook prepíše copy | Forward off; alias ostáva fallback | Drop Cloudflare routing |
+| **F** | Google restricted-scope verification | Externí zákazníci môžu consentnúť | Obchádzať verification test usermi v prode |
 
-- `gmail.readonly` = restricted. Production users mimo allowlistu zlyhajú, kým nie je app verified.
-- CASA / security questionnaire môže trvať týždne a stáť peniaze.
-- Mitigácia: Fáza 1-3 v testing mode na 1 tenanta. Fáza 4 len s founder GO.
+Každá fáza = **vlastný PR** (Zlaté pravidlo: 1 PR = 1 logická zmena +
+preview). Fáza S je tento PR.
 
-### Token storage
-
-- Refresh token = kľúč k schránke. Únik = čítanie pošty RK.
-- Mitigácia: ciphertext, service_role only, žiadny client bundle, rotácia `token_key_version`, audit `granted_by_profile_id` + `consent_recorded_at`.
-- Existujúci plaintext Calendar token **nenapodobňovať**.
-
-### GDPR
-
-| Otázka | Postoj tohto dizajnu |
-|---|---|
-| Právny základ prístupu k schránke | **Art. 6(1)(a)** — informovaný súhlas RK (OAuth + text v časti 9). Súhlas musí byť odvolateľný rovnako ľahko ako udelený. |
-| Spracovanie údajov v dopytoch (záujemcovia) | RK je prevádzkovateľ; Revolis **sprostredkovateľ** podľa existujúcej DPA. Nie je to nový scraping tretích strán. Zdroj = schránka zákazníka (first-party voči RK). |
-| 6(1)(f) | **Nepoužívať** ako základ pre čítanie Gmailu. Balancing test tu nesedí namiesto súhlasu. |
-| Minimalizácia | Len označený label; žiadne prílohy do object storage v MVP, kým parser nepotrebuje (dnes `parseEmail` berie subject/text/html). |
-| Účel | Založenie leadu v CRM. Nie model training, nie resale. |
-| Retencia | Lead podľa existujúcich CRM pravidiel; Gmail kópie v Revolise **nearchivovať** mimo `leads.note` / parser polí. |
-| Záznam | `consent_recorded_at`, scopes, `granted_by_profile_id`. |
-
-Pred implementáciou (iné PR): GDPR advisor skill vs `docs/architecture/master-data-sourcing-map.md`. Ak zdroj "Gmail zákazníka, označený label" v mape nie je, **doplniť mapu v tom istom implementačnom PR** — neskúšať hádať iný zdroj.
-
-### Least privilege
-
-Produkt číta len label. Google scope je širší — zdokumentované v časti 5. Žiadny send. Job beží so service role len na svoju tabuľku + volanie acquire (shared secret, nie user JWT).
-
-### Revoke path (musí existovať skôr ako pull)
-
-1. UI **Odpojiť Gmail** → `POST` revoke na `https://oauth2.googleapis.com/revoke` → `revoked_at=now()`, ciphertext overwrite/delete, stop job.
-2. Google Account → Tretie strany → odobrať Revolis inbound app.
-3. Ak refresh zlyhá `invalid_grant`: označiť disconnected, UI "Pripojenie vypršalo", **žiadny silent reconnect**.
-4. Cloudflare alias ostáva; forward sa **automaticky nezapína**.
-
-### Ďalšie
-
-| Riziko | Mitigácia |
-|---|---|
-| Zákazník nechá forward aj pull | Dedup v acquire |
-| Zákazník dá do `agencies.email` alias | Checklist Fáza 3 + neskôr denylist From (iný PR) |
-| Široký filter (celý inbox → label) | Onboarding: filter = portálové dopyty, nie `from:(*)` |
-| n8n Gmail credential | Nie je produkčný ingest; neriešiť v V4-B |
-| Worker `email-gateway` untracked | Fallback ostáva ops riziko; V4-B ho nenaťahuje do gitu v tomto PR |
+Paralelný mini-PR (až po GO, nie nutne v lane V4-B kóde): guard
+`resolveInboundFromEmail` / settings, aby inbound alias nikdy nebol From.
 
 ---
 
-## 11. Constitution (Founder Reality Check)
+## 11. GDPR a právny základ
 
-Skóre je **podklad pre founder GO**, nie oprávnenie stavať.
+Zdroj: zákaznícky Gmail, **nie** scraping portálu. Portálové fakty v tele
+mailu spracúva už dnešný acquire (first-party ingest po tom, čo dopyt
+prišiel kancelárii).
 
-| # | Otázka | Verdikt |
+| Spracovanie | Základ | Poznámka |
 |---|---|---|
-| 1 | Zaplatil by dnešný klient? | **Áno.** Lead ingest je to, za čo RK platí. `last_received_at=2026-07-14` = ticho na dopytoch. Strop VALIDATE sa tu **neuplatňuje**. |
-| 2 | Zarobí klient viac do 90 dní? | Mechanizmus: zachránené portálové dopyty → telefonát. Bez čísla konverzie — nefantazírovať EUR. |
-| 3 | Skráti Lead → Provízia? | Zachraňuje **vstup** reťaze, nie obhliadku. |
-| 4 | Moat? | Slabý moat (OAuth pull nie je unikát). Hodnota je **retencia**, nie ohrada. |
-| 5 | Flywheel? | Áno slabo: viac reálnych leadov v CRM → používanie. |
-| 6 | Nové unikátne dáta? | Nie. Tie isté dopyty, spoľahlivejší kanál. |
-| 7 | Vyššie ROI ako ostatný backlog? | **Neznáme — HUMAN.** Founder porovná vs iné Vlna 4 lane. |
-| 8 | Správny čas? | **Nie "príliš skoro".** Ide o živý kanál platiaceho tenanta. Veto timing sa **neuplatňuje**. Aj tak: implementácia až po GO (Google verification / súhlas). |
-| 9 | MVP < 2 týždne? | Fáza 1+2 na jednom tenante: možné. Fáza 4 verification: nie. |
-| 10 | Founder trap? | Pozor na "postavíme Gmail platformu". Scope = jeden label → existujúci acquire. |
-| 11 | Najlepší čas foundera? | GO/NO-GO a Google Cloud app verification — áno. Kód — nie, až po GO. |
-| 12 | Jediná vec v kvartáli? | **Nie nutne.** Je to oprava kanála, nie nový produkt. |
+| Čítanie schránky / labelu | **Art. 6(1)(a) súhlas** | Explicitný Google consent + in-app záznam `consent_recorded_at`, kto udelil (`granted_by_profile_id`). |
+| Lead v CRM po ingest | existujúci vzťah kancelária–dopyt (zmluva / 6(1)(b) na strane kancelárie ako prevádzkovateľa) | Revolis je spracovateľ; nemení sa model acquire. |
+| 6(1)(f) legitimate interest | **Nepoužiť** na čítanie Gmailu | Balancing test neospravedlní mailbox access. |
 
-Odhad **9/12 VALIDATE→BUILD po GO**. Veto 1 a 8 neblokujú. **Tento PR ostáva dokument.** BUILD začína až písomným GO.
+Povinnosti pred impl (gdpr-advisor na GO, nie teraz):
 
----
-
-## 12. Non-goals
-
-- Druhý lead ingest / nový parser / zmena `parseEmail`.
-- Gmail send, draft, auto-reply z Gmail API (auto-response ostáva Resend + `resolveInboundFromEmail`).
-- Čítanie celej schránky "pre istotu".
-- Microsoft 365 / IMAP v V4-B.
-- Marketing case study na referenčnom klientovi.
-- Merge `feat/inbound-triage-signal`.
-- Zmeny Vercel Build/Install/Output.
-- Úprava `lib/acquisition/sync/` (Ads).
+- DPA / záznam spracovania: nový účel „načítanie označených správ z Gmailu“.
+- Minimálne údaje: subject/body dopytu, nie celá schránka.
+- Retencia: lead podľa existujúcej CRM politiky; Gmail token kým je
+  `active`; po revoke okamžite zmazať ciphertext.
+- Právo odvolať súhlas: in-app + Google account.
+- Žiadne školenie modelu na tele mailu v tomto lane (ak nie je už
+  zdokumentované pri triage — nemeniť scope).
 
 ---
 
-## 13. GO brána
+## 12. Riziká a rollback
 
-Implementácia Fázy 1 **nesmie** začať, kým founder nepovie:
+| Riziko | Závažnosť | Mitigácia |
+|---|---|---|
+| Google verification / CASA oneskorenie | Vysoká | Fáza A interná; Fáza F blokuje multi-tenant prod. |
+| Token theft (refresh v DB) | Vysoká | Envelope encrypt, service role only, audit revoke, oddelený client od `gmail.send`. |
+| Scope creep (`gmail.send` v tom istom consent) | Vysoká | Samostatný OAuth client; reject ak scope ≠ readonly. |
+| Čítanie mimo labelu (bug) | Vysoká | Query výhradne `labelIds`; test na správe bez labelu = 0 GET body. |
+| GDPR: spracovanie bez súhlasu | Vysoká | 6(1)(a) + revoke path pred pilotom. |
+| Dual ingest (forward + pull) | Stredná | Existujúci dedup; copy na vypnutie forwardu. |
+| `agencies.email` = alias | Stredná | Samostatný From-guard PR. |
+| `last_received_at` ticho | Stredná | Heartbeat: alert ak `active` OAuth a 24 h bez pull success. |
+| IMAP leftover heslá | Nízka | V4-B ich nepoužíva; neskôr deprecate `gmail_imap`. |
+| Worker `email-gateway` untracked | Nízka pre pull | Pull nezávisí od workera; alias fallback áno — verziovať worker inde. |
 
-> **GO V4-B** — OAuth pull, Fáza 1 (súhlas + vault, bez čítania mailov).
+**Rollback fázy D/E:** vypnúť cron flag per-tenant (`status` ≠ `active`),
+obnoviť forward na alias, token revoke. Alias sa v tomto lane **nemaže**.
 
-Odporúčaný ďalší GO až po Fáze 1:
+---
 
-> **GO V4-B Fáza 2** — pull → `POST /api/acquire/email` na jednom tenante.
+## 13. Overenie (až implementačný PR, nie teraz)
 
-Bez týchto viet: **STOP**.
+Živá špecifikácia: `apps/crm/tests/verification/` — v impl PR doplniť
+napr. `gmail-inbound-pull.verification.test.ts`:
+
+- job volá `POST /api/acquire/email` (string contains), nie `from("leads").insert`;
+- OAuth URL neobsahuje `gmail.send` ani `mail.google.com`;
+- token table nie je `profile_google_calendar`;
+- cron auth = `CRON_SECRET`.
+
+Lokálne: žiadny `npm run build` v tomto docs PR ako podmienka merge
+implementácie — tu sa nič nestavia.
+
+---
+
+## 14. Otvorené otázky pre foundera (GO checklist)
+
+Zodpovedať **pred** fázou B:
+
+1. Potvrdil platiaci tenant, že dopyty idú Gmail auto-forwardom na alias?
+   (`last_received_at` 2026-07-14 to len implikuje.)
+2. Akceptujeme Google restricted-scope timeline (týždne–mesiace), alebo
+   hľadáme dočasný non-Gmail kanál (manuálny forward klientom, portálový
+   webhook)?
+3. Pilot: jeden tenant, staging najprv?
+4. Label názov default `Revolis` — OK?
+5. GO / NO-GO na fázu A (Google Cloud client, žiadny CRM kód).
+
+---
+
+## 15. Rozhodnutie
+
+| Položka | Hodnota |
+|---|---|
+| Lane | V4-B DMARC / inbound reliability |
+| Dokument | DESIGN ONLY |
+| Implementácia | **STOP — GO dá founder** |
+| Ingest | Iba existujúci `POST /api/acquire/email` |
+| Next | Founder GO na fázu A, alebo NO-GO + iný kanál |
