@@ -15,6 +15,7 @@ const BYPASS_PREFIXES = [
   '/api/demo/',               // public demo capture (custom token or public form)
   '/api/leads/inbound',       // public lead form B1 (token in body, not session)
   '/api/acquire/email',       // Resend inbound webhook (signature in handler)
+  '/api/acquisition/google/lead-webhook', // Google Ads lead form (google_key in handler)
   '/api/bsm-reforma/',        // public BSM lead intake form
   '/api/sales-funnel/',       // public demo request form
   '/api/proof',               // public Proof of Value funnel (rate-limited + zod-validated in handler)

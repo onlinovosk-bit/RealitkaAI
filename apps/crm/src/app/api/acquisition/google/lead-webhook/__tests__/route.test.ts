@@ -184,14 +184,16 @@ describe("POST /api/acquisition/google/lead-webhook", () => {
     expect(leadsInserts).toBe(0);
   });
 
-  it("returns 401 when google_key is wrong", async () => {
-    const res = await POST(
-      makeRequest({
-        headers: { "x-google-key": "wrong-key" },
-        body: { lead_id: GOOGLE_LEAD_ID, customer_id: CUSTOMER_ID, google_key: "also-wrong" },
-      }),
-    );
+  it("POST without session and a wrong key returns 401 from the handler", async () => {
+    const req = makeRequest({
+      headers: { "x-google-key": "wrong-key" },
+      body: { lead_id: GOOGLE_LEAD_ID, customer_id: CUSTOMER_ID, google_key: "also-wrong" },
+    });
+    expect(req.headers.get("cookie")).toBeNull();
+    const res = await POST(req);
     expect(res.status).toBe(401);
+    const body = await res.json();
+    expect(body).toEqual({ ok: false, error: "Unauthorized" });
     expect(eventInserts).toHaveLength(0);
     expect(leadsInserts).toBe(0);
   });
