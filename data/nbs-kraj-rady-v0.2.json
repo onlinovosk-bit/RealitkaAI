@@ -1,0 +1,1419 @@
+{
+  "meta": {
+    "artifact": "data/nbs-kraj-rady-v0.2.json",
+    "report": "docs/reports/2026-08-15-nbs-kraj-rady-v0.2.md",
+    "status": "blocked_unpaired",
+    "title": "NBS krajské ponukové ceny — štvrťročný rad v0.2",
+    "source": "Národná banka Slovenska — Ceny nehnuteľností na bývanie podľa krajov",
+    "source_page_url": "https://nbs.sk/statisticke-udaje/vybrane-makroekonomicke-ukazovatele/ceny-nehnutelnosti-na-byvanie/ceny-nehnutelnosti-na-byvanie-podla-krajov/",
+    "source_export_url": "https://nbs.sk/export/sk/real-estate-price-by-region/csv",
+    "source_filename": "real-estate-price-by-region.csv",
+    "file_format": "CSV",
+    "file_format_detail": "UTF-8 BOM; delimiter=semicolon; decimal comma; thousands space; mixed annual+quarterly rows",
+    "http_status": 200,
+    "content_type": "text/csv; charset=UTF-8",
+    "content_disposition": "attachment; filename=\"real-estate-price-by-region.csv\";",
+    "byte_length": 11885,
+    "sha256": "043e4e94742018326658fda7cf455cd84808c9d5888d58ed25457ee7142bb78c",
+    "retrieved_at": "2026-08-15T12:36:33+00:00",
+    "unit": "EUR_per_m2",
+    "price_type": "offer",
+    "geography_codes": {
+      "PO": "SK041",
+      "KE": "SK042",
+      "SK": "SK0"
+    },
+    "quarterly_observations": 86,
+    "period_start": "2005Q1",
+    "period_end": "2026Q2",
+    "annual_rows_in_source_csv": [
+      "2002",
+      "2003",
+      "2004",
+      "2005",
+      "2006",
+      "2007",
+      "2008",
+      "2009",
+      "2010",
+      "2011",
+      "2012",
+      "2013",
+      "2014",
+      "2015",
+      "2016",
+      "2017",
+      "2018",
+      "2019",
+      "2020",
+      "2021",
+      "2022",
+      "2023",
+      "2024",
+      "2025"
+    ],
+    "note_annual_rows": "CSV contains calendar-year averages alongside quarterly rows. Pairing uses quarterly rows only.",
+    "cross_check_2026Q1_vs_regional_prices_json": {
+      "PO": 2411.7708,
+      "KE": 2682.3243,
+      "SK": 3005.25,
+      "matches_repo_snapshot": true
+    },
+    "attribution": "Spracované údaje Národnej banky Slovenska na základe údajov poskytovaných externými poskytovateľmi United Classifieds a NARKS.",
+    "attribution_required_by": "NBS email 2026-08-10, docs/legal/nbs-povolenie-2026-08-10.md",
+    "disclaimer_url": "https://nbs.sk/disclaimer-sk/",
+    "wired_into_estimate_engine": false,
+    "pairing": {
+      "status": "blocked_unpaired",
+      "offer_source": "this artifact (NBS quarterly EUR/m2)",
+      "realization_source": "data/susr-sp3801qr.json",
+      "realization_table": "sp3801qr",
+      "realization_citation": "Zdroj: Štatistický úrad Slovenskej republiky",
+      "geography_pair": true,
+      "shared_quarters_exist": true,
+      "shared_quarters_non_null_susr_yoy_total": [
+        "2022Q2",
+        "2022Q3",
+        "2022Q4",
+        "2023Q1",
+        "2023Q2",
+        "2023Q3",
+        "2023Q4",
+        "2024Q1",
+        "2024Q2",
+        "2024Q3",
+        "2024Q4",
+        "2025Q1",
+        "2025Q2",
+        "2025Q3",
+        "2025Q4",
+        "2026Q1"
+      ],
+      "units_pair": false,
+      "offer_unit": "EUR_per_m2 (absolute offer level)",
+      "realization_unit": "index (b_romr: same quarter previous year = 100; b_predch_obd_f: previous quarter = 100). Not EUR/m2.",
+      "coefficient_formula": "coefficient_t = realization_price_t / offer_price_t",
+      "coefficient_computed": false,
+      "reason": "Shared geography and overlapping quarters exist, but units do not pair. NBS is absolute offer EUR/m2; ŠÚSR sp3801qr is YoY/QoQ realization indexes, not realization EUR/m2. Index / EUR/m2 is not the required coefficient. No realization level series was found in-repo. Coefficients left null; no improvisation."
+    }
+  },
+  "series": {
+    "SK": {
+      "label": "Slovensko (SR spolu)",
+      "nuts": "SK0",
+      "values": [
+        {
+          "period": "2005Q1",
+          "eur_m2": 829.8237,
+          "source_label": "1Q 2005"
+        },
+        {
+          "period": "2005Q2",
+          "eur_m2": 830.3673,
+          "source_label": "2Q 2005"
+        },
+        {
+          "period": "2005Q3",
+          "eur_m2": 871.8726,
+          "source_label": "3Q 2005"
+        },
+        {
+          "period": "2005Q4",
+          "eur_m2": 895.3475,
+          "source_label": "4Q 2005"
+        },
+        {
+          "period": "2006Q1",
+          "eur_m2": 944.6964,
+          "source_label": "1Q 2006"
+        },
+        {
+          "period": "2006Q2",
+          "eur_m2": 980.146,
+          "source_label": "2Q 2006"
+        },
+        {
+          "period": "2006Q3",
+          "eur_m2": 1025.5243,
+          "source_label": "3Q 2006"
+        },
+        {
+          "period": "2006Q4",
+          "eur_m2": 1049.7213,
+          "source_label": "4Q 2006"
+        },
+        {
+          "period": "2007Q1",
+          "eur_m2": 1097.0602,
+          "source_label": "1Q 2007"
+        },
+        {
+          "period": "2007Q2",
+          "eur_m2": 1180.1249,
+          "source_label": "2Q 2007"
+        },
+        {
+          "period": "2007Q3",
+          "eur_m2": 1285.5237,
+          "source_label": "3Q 2007"
+        },
+        {
+          "period": "2007Q4",
+          "eur_m2": 1390.5806,
+          "source_label": "4Q 2007"
+        },
+        {
+          "period": "2008Q1",
+          "eur_m2": 1475.898,
+          "source_label": "1Q 2008"
+        },
+        {
+          "period": "2008Q2",
+          "eur_m2": 1548.7612,
+          "source_label": "2Q 2008"
+        },
+        {
+          "period": "2008Q3",
+          "eur_m2": 1541.9529,
+          "source_label": "3Q 2008"
+        },
+        {
+          "period": "2008Q4",
+          "eur_m2": 1478.904,
+          "source_label": "4Q 2008"
+        },
+        {
+          "period": "2009Q1",
+          "eur_m2": 1413.2654,
+          "source_label": "1Q 2009"
+        },
+        {
+          "period": "2009Q2",
+          "eur_m2": 1341.953,
+          "source_label": "2Q 2009"
+        },
+        {
+          "period": "2009Q3",
+          "eur_m2": 1322.3217,
+          "source_label": "3Q 2009"
+        },
+        {
+          "period": "2009Q4",
+          "eur_m2": 1296.5721,
+          "source_label": "4Q 2009"
+        },
+        {
+          "period": "2010Q1",
+          "eur_m2": 1278.1761,
+          "source_label": "1Q 2010"
+        },
+        {
+          "period": "2010Q2",
+          "eur_m2": 1272.7604,
+          "source_label": "2Q 2010"
+        },
+        {
+          "period": "2010Q3",
+          "eur_m2": 1282.1031,
+          "source_label": "3Q 2010"
+        },
+        {
+          "period": "2010Q4",
+          "eur_m2": 1267.3411,
+          "source_label": "4Q 2010"
+        },
+        {
+          "period": "2011Q1",
+          "eur_m2": 1259.59,
+          "source_label": "1Q 2011"
+        },
+        {
+          "period": "2011Q2",
+          "eur_m2": 1251.16,
+          "source_label": "2Q 2011"
+        },
+        {
+          "period": "2011Q3",
+          "eur_m2": 1245.1255,
+          "source_label": "3Q 2011"
+        },
+        {
+          "period": "2011Q4",
+          "eur_m2": 1236.1726,
+          "source_label": "4Q 2011"
+        },
+        {
+          "period": "2012Q1",
+          "eur_m2": 1234.1339,
+          "source_label": "1Q 2012"
+        },
+        {
+          "period": "2012Q2",
+          "eur_m2": 1224.0759,
+          "source_label": "2Q 2012"
+        },
+        {
+          "period": "2012Q3",
+          "eur_m2": 1237.6549,
+          "source_label": "3Q 2012"
+        },
+        {
+          "period": "2012Q4",
+          "eur_m2": 1242.6065,
+          "source_label": "4Q 2012"
+        },
+        {
+          "period": "2013Q1",
+          "eur_m2": 1239.6116,
+          "source_label": "1Q 2013"
+        },
+        {
+          "period": "2013Q2",
+          "eur_m2": 1231.4507,
+          "source_label": "2Q 2013"
+        },
+        {
+          "period": "2013Q3",
+          "eur_m2": 1222.2374,
+          "source_label": "3Q 2013"
+        },
+        {
+          "period": "2013Q4",
+          "eur_m2": 1215.3322,
+          "source_label": "4Q 2013"
+        },
+        {
+          "period": "2014Q1",
+          "eur_m2": 1220.3597,
+          "source_label": "1Q 2014"
+        },
+        {
+          "period": "2014Q2",
+          "eur_m2": 1214.6982,
+          "source_label": "2Q 2014"
+        },
+        {
+          "period": "2014Q3",
+          "eur_m2": 1218.2051,
+          "source_label": "3Q 2014"
+        },
+        {
+          "period": "2014Q4",
+          "eur_m2": 1222.5134,
+          "source_label": "4Q 2014"
+        },
+        {
+          "period": "2015Q1",
+          "eur_m2": 1233.6926,
+          "source_label": "1Q 2015"
+        },
+        {
+          "period": "2015Q2",
+          "eur_m2": 1232.3645,
+          "source_label": "2Q 2015"
+        },
+        {
+          "period": "2015Q3",
+          "eur_m2": 1242.8397,
+          "source_label": "3Q 2015"
+        },
+        {
+          "period": "2015Q4",
+          "eur_m2": 1249.688,
+          "source_label": "4Q 2015"
+        },
+        {
+          "period": "2016Q1",
+          "eur_m2": 1258.6948,
+          "source_label": "1Q 2016"
+        },
+        {
+          "period": "2016Q2",
+          "eur_m2": 1296.5684,
+          "source_label": "2Q 2016"
+        },
+        {
+          "period": "2016Q3",
+          "eur_m2": 1316.4534,
+          "source_label": "3Q 2016"
+        },
+        {
+          "period": "2016Q4",
+          "eur_m2": 1331.342,
+          "source_label": "4Q 2016"
+        },
+        {
+          "period": "2017Q1",
+          "eur_m2": 1359.9955,
+          "source_label": "1Q 2017"
+        },
+        {
+          "period": "2017Q2",
+          "eur_m2": 1391.754,
+          "source_label": "2Q 2017"
+        },
+        {
+          "period": "2017Q3",
+          "eur_m2": 1403.1187,
+          "source_label": "3Q 2017"
+        },
+        {
+          "period": "2017Q4",
+          "eur_m2": 1395.4172,
+          "source_label": "4Q 2017"
+        },
+        {
+          "period": "2018Q1",
+          "eur_m2": 1430.7989,
+          "source_label": "1Q 2018"
+        },
+        {
+          "period": "2018Q2",
+          "eur_m2": 1462.8229,
+          "source_label": "2Q 2018"
+        },
+        {
+          "period": "2018Q3",
+          "eur_m2": 1460.8486,
+          "source_label": "3Q 2018"
+        },
+        {
+          "period": "2018Q4",
+          "eur_m2": 1501.6896,
+          "source_label": "4Q 2018"
+        },
+        {
+          "period": "2019Q1",
+          "eur_m2": 1539.3217,
+          "source_label": "1Q 2019"
+        },
+        {
+          "period": "2019Q2",
+          "eur_m2": 1556.3389,
+          "source_label": "2Q 2019"
+        },
+        {
+          "period": "2019Q3",
+          "eur_m2": 1602.9728,
+          "source_label": "3Q 2019"
+        },
+        {
+          "period": "2019Q4",
+          "eur_m2": 1597.101,
+          "source_label": "4Q 2019"
+        },
+        {
+          "period": "2020Q1",
+          "eur_m2": 1670.9917,
+          "source_label": "1Q 2020"
+        },
+        {
+          "period": "2020Q2",
+          "eur_m2": 1731.2816,
+          "source_label": "2Q 2020"
+        },
+        {
+          "period": "2020Q3",
+          "eur_m2": 1792.143,
+          "source_label": "3Q 2020"
+        },
+        {
+          "period": "2020Q4",
+          "eur_m2": 1852.5956,
+          "source_label": "4Q 2020"
+        },
+        {
+          "period": "2021Q1",
+          "eur_m2": 2035.3029,
+          "source_label": "1Q 2021"
+        },
+        {
+          "period": "2021Q2",
+          "eur_m2": 2128.3619,
+          "source_label": "2Q 2021"
+        },
+        {
+          "period": "2021Q3",
+          "eur_m2": 2225.2839,
+          "source_label": "3Q 2021"
+        },
+        {
+          "period": "2021Q4",
+          "eur_m2": 2314.3712,
+          "source_label": "4Q 2021"
+        },
+        {
+          "period": "2022Q1",
+          "eur_m2": 2510.0147,
+          "source_label": "1Q 2022"
+        },
+        {
+          "period": "2022Q2",
+          "eur_m2": 2671.2692,
+          "source_label": "2Q 2022"
+        },
+        {
+          "period": "2022Q3",
+          "eur_m2": 2713.6053,
+          "source_label": "3Q 2022"
+        },
+        {
+          "period": "2022Q4",
+          "eur_m2": 2660.8173,
+          "source_label": "4Q 2022"
+        },
+        {
+          "period": "2023Q1",
+          "eur_m2": 2556.0551,
+          "source_label": "1Q 2023"
+        },
+        {
+          "period": "2023Q2",
+          "eur_m2": 2493.7686,
+          "source_label": "2Q 2023"
+        },
+        {
+          "period": "2023Q3",
+          "eur_m2": 2438.0453,
+          "source_label": "3Q 2023"
+        },
+        {
+          "period": "2023Q4",
+          "eur_m2": 2432.9751,
+          "source_label": "4Q 2023"
+        },
+        {
+          "period": "2024Q1",
+          "eur_m2": 2422.9968,
+          "source_label": "1Q 2024"
+        },
+        {
+          "period": "2024Q2",
+          "eur_m2": 2461.5872,
+          "source_label": "2Q 2024"
+        },
+        {
+          "period": "2024Q3",
+          "eur_m2": 2520.3183,
+          "source_label": "3Q 2024"
+        },
+        {
+          "period": "2024Q4",
+          "eur_m2": 2596.0585,
+          "source_label": "4Q 2024"
+        },
+        {
+          "period": "2025Q1",
+          "eur_m2": 2699.9528,
+          "source_label": "1Q 2025"
+        },
+        {
+          "period": "2025Q2",
+          "eur_m2": 2777.3259,
+          "source_label": "2Q 2025"
+        },
+        {
+          "period": "2025Q3",
+          "eur_m2": 2814.0845,
+          "source_label": "3Q 2025"
+        },
+        {
+          "period": "2025Q4",
+          "eur_m2": 2906.3616,
+          "source_label": "4Q 2025"
+        },
+        {
+          "period": "2026Q1",
+          "eur_m2": 3005.25,
+          "source_label": "1Q 2026"
+        },
+        {
+          "period": "2026Q2",
+          "eur_m2": 3041.4123,
+          "source_label": "2Q 2026"
+        }
+      ]
+    },
+    "PO": {
+      "label": "Prešovský kraj",
+      "nuts": "SK041",
+      "values": [
+        {
+          "period": "2005Q1",
+          "eur_m2": 579.9477,
+          "source_label": "1Q 2005"
+        },
+        {
+          "period": "2005Q2",
+          "eur_m2": 631.979,
+          "source_label": "2Q 2005"
+        },
+        {
+          "period": "2005Q3",
+          "eur_m2": 569.4384,
+          "source_label": "3Q 2005"
+        },
+        {
+          "period": "2005Q4",
+          "eur_m2": 587.6408,
+          "source_label": "4Q 2005"
+        },
+        {
+          "period": "2006Q1",
+          "eur_m2": 624.655,
+          "source_label": "1Q 2006"
+        },
+        {
+          "period": "2006Q2",
+          "eur_m2": 610.3142,
+          "source_label": "2Q 2006"
+        },
+        {
+          "period": "2006Q3",
+          "eur_m2": 580.5172,
+          "source_label": "3Q 2006"
+        },
+        {
+          "period": "2006Q4",
+          "eur_m2": 630.8635,
+          "source_label": "4Q 2006"
+        },
+        {
+          "period": "2007Q1",
+          "eur_m2": 720.7669,
+          "source_label": "1Q 2007"
+        },
+        {
+          "period": "2007Q2",
+          "eur_m2": 680.846,
+          "source_label": "2Q 2007"
+        },
+        {
+          "period": "2007Q3",
+          "eur_m2": 754.8898,
+          "source_label": "3Q 2007"
+        },
+        {
+          "period": "2007Q4",
+          "eur_m2": 833.0082,
+          "source_label": "4Q 2007"
+        },
+        {
+          "period": "2008Q1",
+          "eur_m2": 959.8938,
+          "source_label": "1Q 2008"
+        },
+        {
+          "period": "2008Q2",
+          "eur_m2": 1053.6434,
+          "source_label": "2Q 2008"
+        },
+        {
+          "period": "2008Q3",
+          "eur_m2": 1157.3419,
+          "source_label": "3Q 2008"
+        },
+        {
+          "period": "2008Q4",
+          "eur_m2": 1031.4391,
+          "source_label": "4Q 2008"
+        },
+        {
+          "period": "2009Q1",
+          "eur_m2": 965.6514,
+          "source_label": "1Q 2009"
+        },
+        {
+          "period": "2009Q2",
+          "eur_m2": 926.418,
+          "source_label": "2Q 2009"
+        },
+        {
+          "period": "2009Q3",
+          "eur_m2": 870.9309,
+          "source_label": "3Q 2009"
+        },
+        {
+          "period": "2009Q4",
+          "eur_m2": 834.4918,
+          "source_label": "4Q 2009"
+        },
+        {
+          "period": "2010Q1",
+          "eur_m2": 849.77,
+          "source_label": "1Q 2010"
+        },
+        {
+          "period": "2010Q2",
+          "eur_m2": 815.255,
+          "source_label": "2Q 2010"
+        },
+        {
+          "period": "2010Q3",
+          "eur_m2": 809.3036,
+          "source_label": "3Q 2010"
+        },
+        {
+          "period": "2010Q4",
+          "eur_m2": 830.8605,
+          "source_label": "4Q 2010"
+        },
+        {
+          "period": "2011Q1",
+          "eur_m2": 837.4184,
+          "source_label": "1Q 2011"
+        },
+        {
+          "period": "2011Q2",
+          "eur_m2": 821.6085,
+          "source_label": "2Q 2011"
+        },
+        {
+          "period": "2011Q3",
+          "eur_m2": 809.0882,
+          "source_label": "3Q 2011"
+        },
+        {
+          "period": "2011Q4",
+          "eur_m2": 819.1251,
+          "source_label": "4Q 2011"
+        },
+        {
+          "period": "2012Q1",
+          "eur_m2": 796.9382,
+          "source_label": "1Q 2012"
+        },
+        {
+          "period": "2012Q2",
+          "eur_m2": 793.0223,
+          "source_label": "2Q 2012"
+        },
+        {
+          "period": "2012Q3",
+          "eur_m2": 805.06,
+          "source_label": "3Q 2012"
+        },
+        {
+          "period": "2012Q4",
+          "eur_m2": 817.5428,
+          "source_label": "4Q 2012"
+        },
+        {
+          "period": "2013Q1",
+          "eur_m2": 804.6397,
+          "source_label": "1Q 2013"
+        },
+        {
+          "period": "2013Q2",
+          "eur_m2": 787.2805,
+          "source_label": "2Q 2013"
+        },
+        {
+          "period": "2013Q3",
+          "eur_m2": 785.4581,
+          "source_label": "3Q 2013"
+        },
+        {
+          "period": "2013Q4",
+          "eur_m2": 769.182,
+          "source_label": "4Q 2013"
+        },
+        {
+          "period": "2014Q1",
+          "eur_m2": 776.551,
+          "source_label": "1Q 2014"
+        },
+        {
+          "period": "2014Q2",
+          "eur_m2": 766.8294,
+          "source_label": "2Q 2014"
+        },
+        {
+          "period": "2014Q3",
+          "eur_m2": 764.2366,
+          "source_label": "3Q 2014"
+        },
+        {
+          "period": "2014Q4",
+          "eur_m2": 752.7256,
+          "source_label": "4Q 2014"
+        },
+        {
+          "period": "2015Q1",
+          "eur_m2": 727.5476,
+          "source_label": "1Q 2015"
+        },
+        {
+          "period": "2015Q2",
+          "eur_m2": 737.8365,
+          "source_label": "2Q 2015"
+        },
+        {
+          "period": "2015Q3",
+          "eur_m2": 762.6753,
+          "source_label": "3Q 2015"
+        },
+        {
+          "period": "2015Q4",
+          "eur_m2": 752.4123,
+          "source_label": "4Q 2015"
+        },
+        {
+          "period": "2016Q1",
+          "eur_m2": 783.6176,
+          "source_label": "1Q 2016"
+        },
+        {
+          "period": "2016Q2",
+          "eur_m2": 760.2233,
+          "source_label": "2Q 2016"
+        },
+        {
+          "period": "2016Q3",
+          "eur_m2": 789.0445,
+          "source_label": "3Q 2016"
+        },
+        {
+          "period": "2016Q4",
+          "eur_m2": 803.4411,
+          "source_label": "4Q 2016"
+        },
+        {
+          "period": "2017Q1",
+          "eur_m2": 806.1767,
+          "source_label": "1Q 2017"
+        },
+        {
+          "period": "2017Q2",
+          "eur_m2": 838.3525,
+          "source_label": "2Q 2017"
+        },
+        {
+          "period": "2017Q3",
+          "eur_m2": 881.268,
+          "source_label": "3Q 2017"
+        },
+        {
+          "period": "2017Q4",
+          "eur_m2": 805.8735,
+          "source_label": "4Q 2017"
+        },
+        {
+          "period": "2018Q1",
+          "eur_m2": 830.3315,
+          "source_label": "1Q 2018"
+        },
+        {
+          "period": "2018Q2",
+          "eur_m2": 869.5647,
+          "source_label": "2Q 2018"
+        },
+        {
+          "period": "2018Q3",
+          "eur_m2": 873.0986,
+          "source_label": "3Q 2018"
+        },
+        {
+          "period": "2018Q4",
+          "eur_m2": 925.1988,
+          "source_label": "4Q 2018"
+        },
+        {
+          "period": "2019Q1",
+          "eur_m2": 988.3959,
+          "source_label": "1Q 2019"
+        },
+        {
+          "period": "2019Q2",
+          "eur_m2": 1024.5189,
+          "source_label": "2Q 2019"
+        },
+        {
+          "period": "2019Q3",
+          "eur_m2": 1045.7864,
+          "source_label": "3Q 2019"
+        },
+        {
+          "period": "2019Q4",
+          "eur_m2": 1085.0997,
+          "source_label": "4Q 2019"
+        },
+        {
+          "period": "2020Q1",
+          "eur_m2": 1049.612,
+          "source_label": "1Q 2020"
+        },
+        {
+          "period": "2020Q2",
+          "eur_m2": 1153.1447,
+          "source_label": "2Q 2020"
+        },
+        {
+          "period": "2020Q3",
+          "eur_m2": 1162.5171,
+          "source_label": "3Q 2020"
+        },
+        {
+          "period": "2020Q4",
+          "eur_m2": 1226.4099,
+          "source_label": "4Q 2020"
+        },
+        {
+          "period": "2021Q1",
+          "eur_m2": 1549.3934,
+          "source_label": "1Q 2021"
+        },
+        {
+          "period": "2021Q2",
+          "eur_m2": 1467.7607,
+          "source_label": "2Q 2021"
+        },
+        {
+          "period": "2021Q3",
+          "eur_m2": 1564.1694,
+          "source_label": "3Q 2021"
+        },
+        {
+          "period": "2021Q4",
+          "eur_m2": 1715.2439,
+          "source_label": "4Q 2021"
+        },
+        {
+          "period": "2022Q1",
+          "eur_m2": 1879.9941,
+          "source_label": "1Q 2022"
+        },
+        {
+          "period": "2022Q2",
+          "eur_m2": 2038.0644,
+          "source_label": "2Q 2022"
+        },
+        {
+          "period": "2022Q3",
+          "eur_m2": 2189.7808,
+          "source_label": "3Q 2022"
+        },
+        {
+          "period": "2022Q4",
+          "eur_m2": 2141.5268,
+          "source_label": "4Q 2022"
+        },
+        {
+          "period": "2023Q1",
+          "eur_m2": 2015.875,
+          "source_label": "1Q 2023"
+        },
+        {
+          "period": "2023Q2",
+          "eur_m2": 1886.9135,
+          "source_label": "2Q 2023"
+        },
+        {
+          "period": "2023Q3",
+          "eur_m2": 1794.7154,
+          "source_label": "3Q 2023"
+        },
+        {
+          "period": "2023Q4",
+          "eur_m2": 1785.8203,
+          "source_label": "4Q 2023"
+        },
+        {
+          "period": "2024Q1",
+          "eur_m2": 1767.1496,
+          "source_label": "1Q 2024"
+        },
+        {
+          "period": "2024Q2",
+          "eur_m2": 1817.934,
+          "source_label": "2Q 2024"
+        },
+        {
+          "period": "2024Q3",
+          "eur_m2": 1898.8263,
+          "source_label": "3Q 2024"
+        },
+        {
+          "period": "2024Q4",
+          "eur_m2": 1955.6184,
+          "source_label": "4Q 2024"
+        },
+        {
+          "period": "2025Q1",
+          "eur_m2": 1985.3942,
+          "source_label": "1Q 2025"
+        },
+        {
+          "period": "2025Q2",
+          "eur_m2": 2177.539,
+          "source_label": "2Q 2025"
+        },
+        {
+          "period": "2025Q3",
+          "eur_m2": 2179.3889,
+          "source_label": "3Q 2025"
+        },
+        {
+          "period": "2025Q4",
+          "eur_m2": 2171.8765,
+          "source_label": "4Q 2025"
+        },
+        {
+          "period": "2026Q1",
+          "eur_m2": 2411.7708,
+          "source_label": "1Q 2026"
+        },
+        {
+          "period": "2026Q2",
+          "eur_m2": 2309.795,
+          "source_label": "2Q 2026"
+        }
+      ]
+    },
+    "KE": {
+      "label": "Košický kraj",
+      "nuts": "SK042",
+      "values": [
+        {
+          "period": "2005Q1",
+          "eur_m2": 507.5782,
+          "source_label": "1Q 2005"
+        },
+        {
+          "period": "2005Q2",
+          "eur_m2": 514.1956,
+          "source_label": "2Q 2005"
+        },
+        {
+          "period": "2005Q3",
+          "eur_m2": 540.1245,
+          "source_label": "3Q 2005"
+        },
+        {
+          "period": "2005Q4",
+          "eur_m2": 529.8312,
+          "source_label": "4Q 2005"
+        },
+        {
+          "period": "2006Q1",
+          "eur_m2": 535.6031,
+          "source_label": "1Q 2006"
+        },
+        {
+          "period": "2006Q2",
+          "eur_m2": 580.3198,
+          "source_label": "2Q 2006"
+        },
+        {
+          "period": "2006Q3",
+          "eur_m2": 599.6053,
+          "source_label": "3Q 2006"
+        },
+        {
+          "period": "2006Q4",
+          "eur_m2": 606.5536,
+          "source_label": "4Q 2006"
+        },
+        {
+          "period": "2007Q1",
+          "eur_m2": 660.4393,
+          "source_label": "1Q 2007"
+        },
+        {
+          "period": "2007Q2",
+          "eur_m2": 747.7221,
+          "source_label": "2Q 2007"
+        },
+        {
+          "period": "2007Q3",
+          "eur_m2": 862.7072,
+          "source_label": "3Q 2007"
+        },
+        {
+          "period": "2007Q4",
+          "eur_m2": 978.4598,
+          "source_label": "4Q 2007"
+        },
+        {
+          "period": "2008Q1",
+          "eur_m2": 1093.3691,
+          "source_label": "1Q 2008"
+        },
+        {
+          "period": "2008Q2",
+          "eur_m2": 1186.074,
+          "source_label": "2Q 2008"
+        },
+        {
+          "period": "2008Q3",
+          "eur_m2": 1159.1279,
+          "source_label": "3Q 2008"
+        },
+        {
+          "period": "2008Q4",
+          "eur_m2": 1107.8119,
+          "source_label": "4Q 2008"
+        },
+        {
+          "period": "2009Q1",
+          "eur_m2": 959.9762,
+          "source_label": "1Q 2009"
+        },
+        {
+          "period": "2009Q2",
+          "eur_m2": 913.2916,
+          "source_label": "2Q 2009"
+        },
+        {
+          "period": "2009Q3",
+          "eur_m2": 896.7429,
+          "source_label": "3Q 2009"
+        },
+        {
+          "period": "2009Q4",
+          "eur_m2": 916.9457,
+          "source_label": "4Q 2009"
+        },
+        {
+          "period": "2010Q1",
+          "eur_m2": 919.2819,
+          "source_label": "1Q 2010"
+        },
+        {
+          "period": "2010Q2",
+          "eur_m2": 911.2239,
+          "source_label": "2Q 2010"
+        },
+        {
+          "period": "2010Q3",
+          "eur_m2": 941.669,
+          "source_label": "3Q 2010"
+        },
+        {
+          "period": "2010Q4",
+          "eur_m2": 992.7443,
+          "source_label": "4Q 2010"
+        },
+        {
+          "period": "2011Q1",
+          "eur_m2": 995.7718,
+          "source_label": "1Q 2011"
+        },
+        {
+          "period": "2011Q2",
+          "eur_m2": 978.0589,
+          "source_label": "2Q 2011"
+        },
+        {
+          "period": "2011Q3",
+          "eur_m2": 971.6528,
+          "source_label": "3Q 2011"
+        },
+        {
+          "period": "2011Q4",
+          "eur_m2": 954.4847,
+          "source_label": "4Q 2011"
+        },
+        {
+          "period": "2012Q1",
+          "eur_m2": 959.8872,
+          "source_label": "1Q 2012"
+        },
+        {
+          "period": "2012Q2",
+          "eur_m2": 953.7066,
+          "source_label": "2Q 2012"
+        },
+        {
+          "period": "2012Q3",
+          "eur_m2": 999.0529,
+          "source_label": "3Q 2012"
+        },
+        {
+          "period": "2012Q4",
+          "eur_m2": 973.0511,
+          "source_label": "4Q 2012"
+        },
+        {
+          "period": "2013Q1",
+          "eur_m2": 955.3088,
+          "source_label": "1Q 2013"
+        },
+        {
+          "period": "2013Q2",
+          "eur_m2": 945.1601,
+          "source_label": "2Q 2013"
+        },
+        {
+          "period": "2013Q3",
+          "eur_m2": 918.4718,
+          "source_label": "3Q 2013"
+        },
+        {
+          "period": "2013Q4",
+          "eur_m2": 894.0446,
+          "source_label": "4Q 2013"
+        },
+        {
+          "period": "2014Q1",
+          "eur_m2": 894.0874,
+          "source_label": "1Q 2014"
+        },
+        {
+          "period": "2014Q2",
+          "eur_m2": 923.9646,
+          "source_label": "2Q 2014"
+        },
+        {
+          "period": "2014Q3",
+          "eur_m2": 936.3761,
+          "source_label": "3Q 2014"
+        },
+        {
+          "period": "2014Q4",
+          "eur_m2": 924.8321,
+          "source_label": "4Q 2014"
+        },
+        {
+          "period": "2015Q1",
+          "eur_m2": 941.1803,
+          "source_label": "1Q 2015"
+        },
+        {
+          "period": "2015Q2",
+          "eur_m2": 951.3282,
+          "source_label": "2Q 2015"
+        },
+        {
+          "period": "2015Q3",
+          "eur_m2": 964.957,
+          "source_label": "3Q 2015"
+        },
+        {
+          "period": "2015Q4",
+          "eur_m2": 926.922,
+          "source_label": "4Q 2015"
+        },
+        {
+          "period": "2016Q1",
+          "eur_m2": 927.9685,
+          "source_label": "1Q 2016"
+        },
+        {
+          "period": "2016Q2",
+          "eur_m2": 922.3448,
+          "source_label": "2Q 2016"
+        },
+        {
+          "period": "2016Q3",
+          "eur_m2": 927.7213,
+          "source_label": "3Q 2016"
+        },
+        {
+          "period": "2016Q4",
+          "eur_m2": 951.234,
+          "source_label": "4Q 2016"
+        },
+        {
+          "period": "2017Q1",
+          "eur_m2": 952.8307,
+          "source_label": "1Q 2017"
+        },
+        {
+          "period": "2017Q2",
+          "eur_m2": 990.2156,
+          "source_label": "2Q 2017"
+        },
+        {
+          "period": "2017Q3",
+          "eur_m2": 1066.7168,
+          "source_label": "3Q 2017"
+        },
+        {
+          "period": "2017Q4",
+          "eur_m2": 1050.1002,
+          "source_label": "4Q 2017"
+        },
+        {
+          "period": "2018Q1",
+          "eur_m2": 1073.1881,
+          "source_label": "1Q 2018"
+        },
+        {
+          "period": "2018Q2",
+          "eur_m2": 1078.5346,
+          "source_label": "2Q 2018"
+        },
+        {
+          "period": "2018Q3",
+          "eur_m2": 1088.0441,
+          "source_label": "3Q 2018"
+        },
+        {
+          "period": "2018Q4",
+          "eur_m2": 1045.9225,
+          "source_label": "4Q 2018"
+        },
+        {
+          "period": "2019Q1",
+          "eur_m2": 1035.0641,
+          "source_label": "1Q 2019"
+        },
+        {
+          "period": "2019Q2",
+          "eur_m2": 1016.3045,
+          "source_label": "2Q 2019"
+        },
+        {
+          "period": "2019Q3",
+          "eur_m2": 1049.9546,
+          "source_label": "3Q 2019"
+        },
+        {
+          "period": "2019Q4",
+          "eur_m2": 1034.9968,
+          "source_label": "4Q 2019"
+        },
+        {
+          "period": "2020Q1",
+          "eur_m2": 1092.3929,
+          "source_label": "1Q 2020"
+        },
+        {
+          "period": "2020Q2",
+          "eur_m2": 1353.5441,
+          "source_label": "2Q 2020"
+        },
+        {
+          "period": "2020Q3",
+          "eur_m2": 1420.6151,
+          "source_label": "3Q 2020"
+        },
+        {
+          "period": "2020Q4",
+          "eur_m2": 1434.0379,
+          "source_label": "4Q 2020"
+        },
+        {
+          "period": "2021Q1",
+          "eur_m2": 1680.6199,
+          "source_label": "1Q 2021"
+        },
+        {
+          "period": "2021Q2",
+          "eur_m2": 1756.3045,
+          "source_label": "2Q 2021"
+        },
+        {
+          "period": "2021Q3",
+          "eur_m2": 1809.5828,
+          "source_label": "3Q 2021"
+        },
+        {
+          "period": "2021Q4",
+          "eur_m2": 1946.4491,
+          "source_label": "4Q 2021"
+        },
+        {
+          "period": "2022Q1",
+          "eur_m2": 2244.1105,
+          "source_label": "1Q 2022"
+        },
+        {
+          "period": "2022Q2",
+          "eur_m2": 2348.2949,
+          "source_label": "2Q 2022"
+        },
+        {
+          "period": "2022Q3",
+          "eur_m2": 2384.9152,
+          "source_label": "3Q 2022"
+        },
+        {
+          "period": "2022Q4",
+          "eur_m2": 2364.2164,
+          "source_label": "4Q 2022"
+        },
+        {
+          "period": "2023Q1",
+          "eur_m2": 2219.6265,
+          "source_label": "1Q 2023"
+        },
+        {
+          "period": "2023Q2",
+          "eur_m2": 2095.9547,
+          "source_label": "2Q 2023"
+        },
+        {
+          "period": "2023Q3",
+          "eur_m2": 2016.1288,
+          "source_label": "3Q 2023"
+        },
+        {
+          "period": "2023Q4",
+          "eur_m2": 2076.2923,
+          "source_label": "4Q 2023"
+        },
+        {
+          "period": "2024Q1",
+          "eur_m2": 2011.4425,
+          "source_label": "1Q 2024"
+        },
+        {
+          "period": "2024Q2",
+          "eur_m2": 2087.0147,
+          "source_label": "2Q 2024"
+        },
+        {
+          "period": "2024Q3",
+          "eur_m2": 2087.1201,
+          "source_label": "3Q 2024"
+        },
+        {
+          "period": "2024Q4",
+          "eur_m2": 2222.0876,
+          "source_label": "4Q 2024"
+        },
+        {
+          "period": "2025Q1",
+          "eur_m2": 2348.8622,
+          "source_label": "1Q 2025"
+        },
+        {
+          "period": "2025Q2",
+          "eur_m2": 2508.4764,
+          "source_label": "2Q 2025"
+        },
+        {
+          "period": "2025Q3",
+          "eur_m2": 2410.6321,
+          "source_label": "3Q 2025"
+        },
+        {
+          "period": "2025Q4",
+          "eur_m2": 2607.7836,
+          "source_label": "4Q 2025"
+        },
+        {
+          "period": "2026Q1",
+          "eur_m2": 2682.3243,
+          "source_label": "1Q 2026"
+        },
+        {
+          "period": "2026Q2",
+          "eur_m2": 2796.0716,
+          "source_label": "2Q 2026"
+        }
+      ]
+    }
+  },
+  "coefficients": {
+    "SK041": {
+      "coefficient_realization_over_offer": null
+    },
+    "SK042": {
+      "coefficient_realization_over_offer": null
+    },
+    "ratio_realization_over_offer": []
+  }
+}
