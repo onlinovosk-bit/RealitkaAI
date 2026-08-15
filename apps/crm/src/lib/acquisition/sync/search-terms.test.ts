@@ -112,8 +112,9 @@ describe("sync/search-terms", () => {
 
     expect(fetchImpl).toHaveBeenCalledTimes(2);
     const [url, init] = fetchImpl.mock.calls[0];
-    expect(String(url)).toContain("/customers/1234567890:search");
+    expect(String(url)).toContain("/customers/1234567890/googleAds:search");
     expect(JSON.parse(String(init.body)).query).toBe(SEARCH_TERM_GAQL);
+    expect(SEARCH_TERM_GAQL).toMatch(/segments\.date DURING LAST_7_DAYS/);
     expect(JSON.stringify(init)).not.toMatch(/developer-token|private_key/i);
   });
 });

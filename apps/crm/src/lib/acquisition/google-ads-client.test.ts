@@ -226,7 +226,18 @@ describe("google-ads-client", () => {
     expect(headers.get("Authorization")).toBe("Bearer injected-token");
     expect(headers.get("login-customer-id")).toBe("9998887777");
     expect(fetchImpl.mock.calls[0][0]).toContain(
-      `/${GOOGLE_ADS_API_VERSION}/customers/1234567890:search`,
+      `/${GOOGLE_ADS_API_VERSION}/customers/1234567890/googleAds:search`,
     );
   });
+  it("search() posts GAQL to /googleAds:search", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(mockResponse(200, { results: [] }));
+    const { client } = createClient({ fetchImpl });
+    await client.search("SELECT campaign.id FROM campaign");
+    const url = String(fetchImpl.mock.calls[0][0]);
+    expect(url).toContain("/googleAds:search");
+    expect(url).not.toMatch(/customers\/\d+:search(?:\?|$)/);
+  });
+
 });

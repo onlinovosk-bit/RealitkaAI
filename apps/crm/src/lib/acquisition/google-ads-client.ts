@@ -310,7 +310,7 @@ export class GoogleAdsClient {
 
   /** Convenience: Google Ads Search-style GAQL POST. */
   async search(query: string): Promise<unknown> {
-    const result = await this.request(":search", {
+    const result = await this.request("googleAds:search", {
       method: "POST",
       body: JSON.stringify({ query }),
     });

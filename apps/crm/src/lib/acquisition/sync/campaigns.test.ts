@@ -187,7 +187,7 @@ describe("syncGoogleCampaigns", () => {
     expect(searchSpy).toHaveBeenCalledWith(CAMPAIGN_SYNC_GAQL);
     expect(fetchImpl).toHaveBeenCalledTimes(1);
     const [url, init] = fetchImpl.mock.calls[0];
-    expect(String(url)).toBe(`https://ads.example.test/${GOOGLE_ADS_API_VERSION}/customers/1234567890:search`);
+    expect(String(url)).toBe(`https://ads.example.test/${GOOGLE_ADS_API_VERSION}/customers/1234567890/googleAds:search`);
     expect(init.method).toBe("POST");
     expect(JSON.parse(String(init.body))).toEqual({ query: CAMPAIGN_SYNC_GAQL });
   });
