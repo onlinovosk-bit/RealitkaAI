@@ -145,7 +145,7 @@ Zámerné non-akcie (anti-improvizácia):
 
 - nerátať `index_SUSR / EUR_NBS`
 - nerátať pomer dvoch YoY indexov a tváriť sa, že ide o haircut
-- nerekkonštruovať fiktívnu realizačnú €/m² z indexu bez zdokumentovanej bázy a founder sign-off
+- nerekonštruovať fiktívnu realizačnú €/m² z indexu bez zdokumentovanej bázy a founder sign-off
 - nepoužiť heuristiku 5–10 % z `regional-prices.json` methodology_note ako Eurostat/krajský koeficient
 
 ---
