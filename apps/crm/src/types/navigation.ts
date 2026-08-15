@@ -400,6 +400,15 @@ export const ALL_NAV_ITEMS: NavItem[] = [
     showFor: ["agent_solo", "agent_team", "owner_vision", "owner_protocol"],
   },
   {
+    id: "google-ads",
+    label: "Google Ads (test)",
+    sublabel: "Pripojený testovací účet a kampane",
+    href: "/acquisition",
+    icon: "radar",
+    section: "settings",
+    showFor: ["owner_vision", "owner_protocol"],
+  },
+  {
     id: "onboarding-monitor",
     label: "Automat onboardingu",
     sublabel: "Adopcia klientov · At-risk · Emaily",
