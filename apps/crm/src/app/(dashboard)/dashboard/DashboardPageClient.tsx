@@ -205,81 +205,89 @@ export default function DashboardPageClient({ initialPropertiesSummary }: Dashbo
         }
         setLeads(leadsData);
         setLeadsHasMore(leadsData.length === LEADS_PAGE_SIZE);
+        setIsLoading(false);
 
-        try {
-          const response = await fetch("/api/forecasting/summary");
-          if (response.ok) {
-            const payload = await response.json();
-            if (payload?.summary) setForecastingSummary(payload.summary as ForecastingSummary);
-            if (payload?.targets) {
-              setForecastTargets({
-                expectedClosedDeals: Number(payload.targets.expectedClosedDeals) || DEFAULT_FORECAST_TARGETS.expectedClosedDeals,
-                expectedPipelineValue: Number(payload.targets.expectedPipelineValue) || DEFAULT_FORECAST_TARGETS.expectedPipelineValue,
-                avgProbabilityPercent: Number(payload.targets.avgProbabilityPercent) || DEFAULT_FORECAST_TARGETS.avgProbabilityPercent,
-              });
+        await Promise.allSettled([
+          (async () => {
+            try {
+              const response = await fetch("/api/forecasting/summary", { signal: AbortSignal.timeout(10_000) });
+              if (response.ok) {
+                const payload = await response.json();
+                if (payload?.summary) setForecastingSummary(payload.summary as ForecastingSummary);
+                if (payload?.targets) {
+                  setForecastTargets({
+                    expectedClosedDeals: Number(payload.targets.expectedClosedDeals) || DEFAULT_FORECAST_TARGETS.expectedClosedDeals,
+                    expectedPipelineValue: Number(payload.targets.expectedPipelineValue) || DEFAULT_FORECAST_TARGETS.expectedPipelineValue,
+                    avgProbabilityPercent: Number(payload.targets.avgProbabilityPercent) || DEFAULT_FORECAST_TARGETS.avgProbabilityPercent,
+                  });
+                }
+              }
+            } catch { /* forecasting optional */ }
+          })(),
+          (async () => {
+            try {
+              const mf = await fetch("/api/ai/monthly-forecast", { signal: AbortSignal.timeout(10_000) });
+              const m = (await mf.json()) as MonthlyMoneyForecastPayload & { error?: string };
+              if (mf.ok && m?.ok && typeof m.totalExpectedEur === "number") {
+                setMonthlyMoney(m);
+                setMonthlyMoneyStatus("ok");
+              } else {
+                setMonthlyMoneyStatus("error");
+              }
+            } catch {
+              setMonthlyMoneyStatus("error");
             }
-          }
-        } catch { /* forecasting optional */ }
-
-        try {
-          const mf = await fetch("/api/ai/monthly-forecast");
-          const m = (await mf.json()) as MonthlyMoneyForecastPayload & { error?: string };
-          if (mf.ok && m?.ok && typeof m.totalExpectedEur === "number") {
-            setMonthlyMoney(m);
-            setMonthlyMoneyStatus("ok");
-          } else {
-            setMonthlyMoneyStatus("error");
-          }
-        } catch {
-          setMonthlyMoneyStatus("error");
-        }
-
-        try {
-          const { data: { user } } = await supabaseClient.auth.getUser();
-          if (user) {
-            const { data: profile } = await supabaseClient
-              .from("profiles")
-              .select("full_name, email")
-              .or(`auth_user_id.eq.${user.id},id.eq.${user.id}`)
-              .maybeSingle();
-            setUserName(profile?.full_name || profile?.email || user.email || undefined);
-          }
-        } catch { /* user name optional */ }
-
-        try {
-          const planRes = await fetch("/api/billing/plan");
-          if (planRes.ok) {
-            const planData = await planRes.json();
-            if (planData?.tier) setPlan(planData.tier as PlanTier);
-            if (planData?.planKey) setPlanKey(planData.planKey as string);
-            if (planData?.enterpriseSalesIntelligence) {
-              setEnterpriseSalesIntelligence(true);
+          })(),
+          (async () => {
+            try {
+              const { data: { user } } = await supabaseClient.auth.getUser();
+              if (user) {
+                const { data: profile } = await supabaseClient
+                  .from("profiles")
+                  .select("full_name, email")
+                  .or(`auth_user_id.eq.${user.id},id.eq.${user.id}`)
+                  .maybeSingle();
+                setUserName(profile?.full_name || profile?.email || user.email || undefined);
+              }
+            } catch { /* user name optional */ }
+          })(),
+          (async () => {
+            try {
+              const planRes = await fetch("/api/billing/plan", { signal: AbortSignal.timeout(10_000) });
+              if (planRes.ok) {
+                const planData = await planRes.json();
+                if (planData?.tier) setPlan(planData.tier as PlanTier);
+                if (planData?.planKey) setPlanKey(planData.planKey as string);
+                if (planData?.enterpriseSalesIntelligence) {
+                  setEnterpriseSalesIntelligence(true);
+                }
+              }
+            } catch { /* plan optional */ }
+          })(),
+          (async () => {
+            try {
+              const coachingRes = await fetch("/api/coaching/insight", { signal: AbortSignal.timeout(10_000) });
+              if (coachingRes.ok) {
+                const coachingData = (await coachingRes.json()) as { ok?: boolean } & CoachingInsightPayload;
+                if (coachingData?.ok) {
+                  setCoachingPayload({
+                    stats: coachingData.stats,
+                    insight: coachingData.insight,
+                    streakDays: coachingData.streakDays,
+                    followUpRankLabel: coachingData.followUpRankLabel,
+                    dealVelocityLabel: coachingData.dealVelocityLabel,
+                    dealVelocityDeltaLabel: coachingData.dealVelocityDeltaLabel,
+                  });
+                }
+              }
+            } catch {
+              // coaching panel is optional
             }
-          }
-        } catch { /* plan optional */ }
-
-        try {
-          const coachingRes = await fetch("/api/coaching/insight");
-          if (coachingRes.ok) {
-            const coachingData = (await coachingRes.json()) as { ok?: boolean } & CoachingInsightPayload;
-            if (coachingData?.ok) {
-              setCoachingPayload({
-                stats: coachingData.stats,
-                insight: coachingData.insight,
-                streakDays: coachingData.streakDays,
-                followUpRankLabel: coachingData.followUpRankLabel,
-                dealVelocityLabel: coachingData.dealVelocityLabel,
-                dealVelocityDeltaLabel: coachingData.dealVelocityDeltaLabel,
-              });
-            }
-          }
-        } catch {
-          // coaching panel is optional
-        }
+          })(),
+        ]);
       } catch (error) {
         console.error("Failed to load dashboard:", error);
         setLoadError("Nepodarilo sa načítať dáta pre prehľad. Skúste obnoviť stránku.");
-      } finally {
         setIsLoading(false);
       }
     }
