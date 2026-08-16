@@ -66,6 +66,22 @@ Schema drift (`sofia_insight`, `last_contact_at`, `is_active`) je samostatn? bac
 
 Zmera? T1/T2 na `/dashboard`, `/leads`, `/acquisition`. Cie?: T1 < 10 s v?ade. Ak `/acquisition` ostane pomal? po L30+L32, pr??ina je v DB pl?ne/RLS, nie v SSR waterfalle.
 
+
+## P1 PR-y (STOP, bez merge)
+
+Review poradie: **L30 ? L31 ? L33 ? L32 ? L34** (L35 = kontext).
+
+| Lane | PR | Vetva |
+|---|---|---|
+| L30 fetch timeout | https://github.com/onlinovosk-bit/RealitkaAI/pull/428 | `fix/supabase-fetch-timeout` |
+| L31 proxy fail-open | https://github.com/onlinovosk-bit/RealitkaAI/pull/429 | `fix/proxy-auth-timeout` |
+| L32 /acquisition path | https://github.com/onlinovosk-bit/RealitkaAI/pull/430 | `fix/acquisition-render-path` |
+| L33 dashboard client | https://github.com/onlinovosk-bit/RealitkaAI/pull/431 | `fix/dashboard-client-parallel` |
+| L34 profile throttle | https://github.com/onlinovosk-bit/RealitkaAI/pull/432 | `fix/profile-tier-update-throttle` |
+| L35 diagnostika | https://github.com/onlinovosk-bit/RealitkaAI/pull/433 | `docs/perf-hotfix-diagnostika` |
+
+Lok?lne vitest: L30 5/5, L31 21/21, L32 6/6, L33 1/1 + dashboard-data, L34 18/18. Lint/webpack = CI. Merge v?hradne founder GO.
+
 ## STOP
 
 Tento lane je docs-only. Merge rob? v?hradne founder.
