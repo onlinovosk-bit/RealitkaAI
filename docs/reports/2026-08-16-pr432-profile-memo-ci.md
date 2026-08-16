@@ -1,38 +1,51 @@
-# PR 432 profile memo CI fix
+# PR 432 — profile memo CI fix
 
+**Date:** 2026-08-16
 **PR:** https://github.com/onlinovosk-bit/RealitkaAI/pull/432
 **Branch:** `fix/profile-tier-update-throttle`
-**Date:** 2026-08-16
-**Mode:** branch + push + STOP. Founder merges.
+**Verdict:** FAIL root cause confirmed; fix landed on the PR branch. **STOP — no merge.**
 
 ## Symptom
 
-CI failed deterministically:
+CI `auth-profile-request-memo.test.ts` line 69:
 
-- File: `apps/crm/src/lib/profiles/__tests__/auth-profile-request-memo.test.ts`
-- Assertion: `expect(supabase.from.mock.calls.length).toBe(afterLink);`
-- Expected: `2`
-- Received: `4`
+```text
+expect(supabase.from.mock.calls.length).toBe(afterLink);
+expected 2, received 4
+```
 
-## Root cause
+`linkProfileToAuthUser` + two later `resolveProfileForAuthUser` calls with different selects must share one find. They did not.
 
-`linkProfileToAuthUser` finds with:
+## Root cause (inspected on the PR branch)
 
-`id, agency_id, auth_user_id, email, role, ui_role, account_tier, tier_updated_at`
+`linkProfileToAuthUserUncached` finds with:
 
-`widenProfileSelect` / `REQUEST_PROFILE_SELECT` did not treat `tier_updated_at` as canonical, so the link find kept a distinct memo key. Later `resolveProfileForAuthUser` calls widened to the old canonical select and issued two extra `from()` finds.
+```text
+id, agency_id, auth_user_id, email, role, ui_role, account_tier, tier_updated_at
+```
 
-Throttle behavior (`shouldPersistNormalizedTiers` + skip redundant UPDATE) is unchanged.
+`REQUEST_PROFILE_SELECT` / `widenProfileSelect` did **not** treat `tier_updated_at` as canonical:
 
-## Fix
+```text
+id, agency_id, auth_user_id, email, role, ui_role, account_tier, full_name
+```
 
-Added `tier_updated_at` to `REQUEST_PROFILE_SELECT` so link and resolve share one memo key.
+`widenProfileSelect` only rewrites to the canonical string when every requested column is in that set. `tier_updated_at` was extra, so the link find kept its own select string. `resolveProfileForAuthUser` widened subsets (`agency_id`, then the longer entitlement select) to the canonical string. Memo key is `find:${userId}:${email}:${resolvedSelect}` — two keys, two finds. `from()` went 2 → 4.
 
-Locked the contract in `widenProfileSelect` tests: the link select now widens (contains `full_name`) instead of being left as a non-canonical string.
+Throttle behavior (`shouldPersistNormalizedTiers` + skip redundant UPDATE) is independent and stays in place.
 
-Did **not** weaken the memo assertion (`from()` count after resolve must still equal `afterLink`).
+## Fix (1 logical change)
 
-## Verification
+Add `tier_updated_at` to `REQUEST_PROFILE_SELECT` so the link select is a subset of canonical and `widenProfileSelect` returns one memo key for link + resolve.
+
+Lock in `auth-profile-request-memo.test.ts`:
+
+- subset `agency_id` widens to include `tier_updated_at`
+- the exact link select widens to include `full_name` (canonical rewrite)
+
+Did **not** weaken `expect(from.mock.calls.length).toBe(afterLink)`. Extra finds were a bug, not intended.
+
+## Test evidence
 
 From `apps/crm`:
 
@@ -41,15 +54,19 @@ npx vitest run src/lib/profiles/__tests__/auth-profile-request-memo.test.ts src/
 Test Files  2 passed (2)
 Tests       8 passed (8)
 
-npx vitest run src/lib/profiles/__tests__
-Test Files  6 passed (6)
-Tests      24 passed (24)
+npx vitest run src/lib/profiles/__tests__/link-profile-to-auth.test.ts src/lib/profiles/__tests__/resolve-profile-for-auth.test.ts src/lib/profiles/__tests__/resolve-profile-service-fallback.test.ts
+Test Files  3 passed (3)
+Tests       13 passed (13)
 ```
 
-## Not done
+## Out of scope (not done)
 
 - No merge.
-- `memory/` not written.
-- Proxy API-401-on-timeout (#429) not mixed in.
-- Production secrets not restored.
-- Stage 1 not started.
+- No proxy API-401-on-timeout (#429 follow-up).
+- No `memory/` writes.
+- No Production secrets restore.
+- No Stage 1.
+
+## STOP
+
+Founder merges after green CI on PR 432.
