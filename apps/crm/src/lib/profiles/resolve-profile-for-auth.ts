@@ -7,7 +7,7 @@ import {
 import { getAuthProfileRequestMemo } from "@/lib/profiles/auth-profile-request-memo";
 
 const REQUEST_PROFILE_SELECT =
-  "id, agency_id, auth_user_id, email, role, ui_role, account_tier, full_name";
+  "id, agency_id, auth_user_id, email, role, ui_role, account_tier, full_name, tier_updated_at";
 
 export function widenProfileSelect(select: string): string {
   const canonicalCols = new Set(
