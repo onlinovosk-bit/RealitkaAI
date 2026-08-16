@@ -54,9 +54,9 @@ npx vitest run src/lib/profiles/__tests__/auth-profile-request-memo.test.ts src/
 Test Files  2 passed (2)
 Tests       8 passed (8)
 
-npx vitest run src/lib/profiles/__tests__/link-profile-to-auth.test.ts src/lib/profiles/__tests__/resolve-profile-for-auth.test.ts src/lib/profiles/__tests__/resolve-profile-service-fallback.test.ts
-Test Files  3 passed (3)
-Tests       13 passed (13)
+npx vitest run src/lib/profiles/__tests__
+Test Files  6 passed (6)
+Tests      24 passed (24)
 ```
 
 ## Out of scope (not done)
