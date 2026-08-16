@@ -7,7 +7,7 @@ import {
 import { getAuthProfileRequestMemo } from "@/lib/profiles/auth-profile-request-memo";
 
 const REQUEST_PROFILE_SELECT =
-  "id, agency_id, auth_user_id, email, role, ui_role, account_tier, full_name";
+  "id, agency_id, auth_user_id, email, role, ui_role, account_tier, full_name, tier_updated_at";
 
 export function widenProfileSelect(select: string): string {
   const canonicalCols = new Set(
@@ -35,6 +35,7 @@ export type ResolvedAuthProfile = {
   role?: string | null;
   ui_role?: string | null;
   account_tier?: string | null;
+  tier_updated_at?: string | null;
   team_license_id?: string | null;
   agency_name?: string | null;
 };
@@ -70,6 +71,25 @@ export function smolkoProfileLookupEmails(loginEmail: string | null | undefined)
     candidates.add("office@realitysmolko.sk");
   }
   return [...candidates];
+}
+
+const TIER_UPDATE_THROTTLE_MS = 60 * 60 * 1000;
+
+export function shouldPersistNormalizedTiers(
+  profile: ResolvedAuthProfile,
+  normalized: ResolvedAuthProfile,
+  nowMs = Date.now(),
+): boolean {
+  const valuesDiffer =
+    normalized.role !== profile.role ||
+    normalized.ui_role !== profile.ui_role ||
+    normalized.account_tier !== profile.account_tier;
+  if (!valuesDiffer) return false;
+  const updatedAt = profile.tier_updated_at;
+  if (!updatedAt) return true;
+  const ts = Date.parse(updatedAt);
+  if (Number.isNaN(ts)) return true;
+  return nowMs - ts >= TIER_UPDATE_THROTTLE_MS;
 }
 
 async function findSmolkoOwnerProfileViaServiceRole(
@@ -280,8 +300,10 @@ async function findProfileForAuthUserUncached(
   let preferred = pickPreferredProfile(authProfile, byEmail.profile);
 
   // RLS often hides the canonical email row while auth_user_id stub is visible — always merge via service role.
+  const alreadyLinked =
+    preferred?.auth_user_id === userId && Boolean(preferred.agency_id);
   const service = createServiceRoleClient();
-  if (service) {
+  if (service && (!alreadyLinked || isSmolkoOwnerEmail(email))) {
     preferred = await findProfileViaServiceRole(
       service,
       userId,
@@ -325,7 +347,7 @@ async function linkProfileToAuthUserUncached(
     supabase,
     userId,
     email,
-    "id, agency_id, auth_user_id, email, role, ui_role, account_tier",
+    "id, agency_id, auth_user_id, email, role, ui_role, account_tier, tier_updated_at",
   );
   let profile = lookup.profile;
 
@@ -335,7 +357,7 @@ async function linkProfileToAuthUserUncached(
       service,
       userId,
       email,
-      "id, agency_id, auth_user_id, email, role, ui_role, account_tier",
+      "id, agency_id, auth_user_id, email, role, ui_role, account_tier, tier_updated_at",
     );
     if (
       smolkoCanonical &&
@@ -349,12 +371,7 @@ async function linkProfileToAuthUserUncached(
 
   if (profile?.auth_user_id === userId && profile.agency_id) {
     const normalized = normalizeProfileEntitlements(profile);
-    if (
-      normalized &&
-      (normalized.role !== profile.role ||
-        normalized.ui_role !== profile.ui_role ||
-        normalized.account_tier !== profile.account_tier)
-    ) {
+    if (normalized && shouldPersistNormalizedTiers(profile, normalized)) {
       await supabase
         .from("profiles")
         .update({
@@ -374,7 +391,14 @@ async function linkProfileToAuthUserUncached(
       linkedOk ? { ...profile, auth_user_id: userId } : profile,
     );
 
-    if (linkedOk && linked && (linked.role || linked.ui_role || linked.account_tier)) {
+    if (
+      linkedOk &&
+      linked &&
+      shouldPersistNormalizedTiers(
+        linkedOk ? { ...profile, auth_user_id: userId } : profile,
+        linked,
+      )
+    ) {
       const tierPayload = {
         role: linked.role,
         ui_role: linked.ui_role,
