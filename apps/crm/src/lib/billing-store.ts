@@ -73,7 +73,10 @@ function getStripe() {
   }
 
   logInfo("Stripe client initialized", "getStripe");
-  return new Stripe(secretKey);
+  // Perf hotfix: bez explicitneho timeoutu drzi Stripe SDK request az 80s
+  // (a undici fetch az 300s), takze route vedela visiet minuty.
+  // 5s timeout + max 1 retry = najhorsi pripad ~10s namiesto minut.
+  return new Stripe(secretKey, { timeout: 5000, maxNetworkRetries: 1 });
 }
 
 function getAppUrl() {
@@ -86,8 +89,12 @@ function getAppUrl() {
   }
 }
 
-async function loadAuthHelpers() {
-  return import("@/lib/auth");
+// Zdielany promise — paralelne volania zdielaju jeden dynamic import
+// (dedupe; zaroven stabilna identita modulu pre memo aj testy).
+let authHelpersPromise: Promise<typeof import("@/lib/auth")> | null = null;
+function loadAuthHelpers() {
+  authHelpersPromise ??= import("@/lib/auth");
+  return authHelpersPromise;
 }
 
 export const BILLING_PLANS = [
@@ -325,39 +332,95 @@ export async function createCustomerPortalSession() {
   };
 }
 
-export async function getCurrentBillingStatus() {
+// ── Kratkodobe memo pre getCurrentBillingStatus ─────────────────────────────
+// Preco: /api/billing/plan (a dalsie miesta) volaju getCurrentPlanTier,
+// getCurrentPlanKey aj isEnterpriseSalesIntelligenceEnabled a KAZDA z nich
+// interne vola getCurrentBillingStatus — t.j. 3x ta ista sekvencia Stripe
+// requestov v jednom HTTP requeste. Modulove memo s kratkym TTL (5s) zaruci,
+// ze vsetci volajuci v ramci jedneho requestu zdielaju JEDEN promise.
+// V lambde je to bezpecne: kazda instancia ma vlastnu Map, TTL 5s znamena,
+// ze zmena predplatneho sa prejavi takmer okamzite a stary stav neprezije.
+const BILLING_STATUS_MEMO_TTL_MS = 5_000;
+const billingStatusMemo = new Map<
+  string,
+  { at: number; promise: Promise<CurrentBillingStatus> }
+>();
+
+/** Len pre testy — vycisti memo medzi test casemi. */
+export function __resetBillingStatusMemoForTests() {
+  billingStatusMemo.clear();
+}
+
+function emptyBillingStatus() {
+  return {
+    hasCustomer: false,
+    hasSubscription: false,
+    customer: null,
+    subscription: null,
+    invoices: [],
+  };
+}
+
+type CurrentBillingStatus =
+  | Awaited<ReturnType<typeof fetchCurrentBillingStatusUncached>>
+  | ReturnType<typeof emptyBillingStatus>;
+
+export async function getCurrentBillingStatus(): Promise<CurrentBillingStatus> {
   const stripe = getStripe();
   if (!stripe) {
-    return {
-      hasCustomer: false,
-      hasSubscription: false,
-      customer: null,
-      subscription: null,
-      invoices: [],
-    };
+    return emptyBillingStatus();
   }
+
+  const { getCurrentUser } = await loadAuthHelpers();
+  const user = await getCurrentUser().catch(() => null);
+  const memoKey = user?.id || user?.email || "anonymous";
+
+  const cached = billingStatusMemo.get(memoKey);
+  if (cached && Date.now() - cached.at < BILLING_STATUS_MEMO_TTL_MS) {
+    return cached.promise;
+  }
+  // Obcasne upratanie expirovanych zaznamov, aby Map nerastla donekonecna.
+  if (billingStatusMemo.size > 100) {
+    const now = Date.now();
+    for (const [key, entry] of billingStatusMemo) {
+      if (now - entry.at >= BILLING_STATUS_MEMO_TTL_MS) billingStatusMemo.delete(key);
+    }
+  }
+
+  const promise = fetchCurrentBillingStatusUncached(stripe).catch((error) => {
+    // Fail-open: pri Stripe chybe/timeoute vratime rovnaky fallback ako pri
+    // chybajucom billingu (default/free plan) a memo zahodime, aby dalsi
+    // request skusil Stripe znova.
+    billingStatusMemo.delete(memoKey);
+    console.warn(
+      "[billing] getCurrentBillingStatus zlyhal — fail-open na default plan:",
+      error
+    );
+    return emptyBillingStatus();
+  });
+  billingStatusMemo.set(memoKey, { at: Date.now(), promise });
+  return promise;
+}
+
+async function fetchCurrentBillingStatusUncached(stripe: Stripe) {
   const customer = await findStripeCustomerByCurrentUserEmail();
 
   if (!customer) {
-    return {
-      hasCustomer: false,
-      hasSubscription: false,
-      customer: null,
-      subscription: null,
-      invoices: [],
-    };
+    return emptyBillingStatus();
   }
 
-  const subscriptions = await stripe.subscriptions.list({
-    customer: customer.id,
-    status: "all",
-    limit: 10,
-  });
-
-  const invoices = await stripe.invoices.list({
-    customer: customer.id,
-    limit: 5,
-  });
+  // Paralelne — subscriptions a invoices su nezavisle (setri jedno RTT).
+  const [subscriptions, invoices] = await Promise.all([
+    stripe.subscriptions.list({
+      customer: customer.id,
+      status: "all",
+      limit: 10,
+    }),
+    stripe.invoices.list({
+      customer: customer.id,
+      limit: 5,
+    }),
+  ]);
 
   const activeSubscription =
     subscriptions.data.find((item) => item.status === "active") ||

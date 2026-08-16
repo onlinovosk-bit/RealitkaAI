@@ -60,7 +60,8 @@ export type PropertyFilters = {
 
 export const PROPERTIES_PAGE_SIZE = 50;
 export const PROPERTIES_LIST_MAX = 500;
-export const PROPERTIES_SELECT_SUMMARY = "id, status";
+// agency_id je nutné pre filterRowsByAgency — bez neho tenant-filter zahodí všetky riadky (summary = 0).
+export const PROPERTIES_SELECT_SUMMARY = "id, status, agency_id";
 
 export type PropertyListPage = {
   limit?: number;
