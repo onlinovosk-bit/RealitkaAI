@@ -13,7 +13,7 @@ export async function GET() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
-    const data    = await getForecastingData();
+    const data    = await getForecastingData(supabase);
     const targets = {
       expectedClosedDeals:    getEnvNumber("FORECAST_TARGET_EXPECTED_CLOSED_DEALS", 3),
       expectedPipelineValue:  getEnvNumber("FORECAST_TARGET_EXPECTED_PIPELINE_VALUE", 500000),
