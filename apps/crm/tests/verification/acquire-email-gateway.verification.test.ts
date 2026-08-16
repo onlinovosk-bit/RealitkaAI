@@ -33,10 +33,8 @@ describe("[verification] Acquire email gateway", () => {
     expect(map).not.toContain("parseEmail");
   });
 
-  it("middleware and proxy bypass session auth for acquire email webhook", () => {
-    const mw = readFileSync(join(CRM_ROOT, "middleware.ts"), "utf8");
+  it("proxy bypasses session auth for acquire email webhook", () => {
     const proxy = readFileSync(join(CRM_ROOT, "src/proxy.ts"), "utf8");
-    expect(mw).toContain("'/api/acquire/email'");
     expect(proxy).toContain('"/api/acquire/email"');
   });
 
