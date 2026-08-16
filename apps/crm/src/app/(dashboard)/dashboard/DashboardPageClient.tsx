@@ -3,7 +3,7 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
-import { getLeads, type Lead } from "@/lib/leads-store";
+import { LEADS_PAGE_SIZE, listLeads, type Lead } from "@/lib/leads-store";
 import PriorityLeads from "@/components/dashboard/priority-leads";
 import AiInsightsPanel from "@/components/dashboard/AiInsightsPanel";
 import { supabaseClient } from "@/lib/supabase/client";
@@ -124,6 +124,8 @@ export type DashboardPageClientProps = {
 export default function DashboardPageClient({ initialPropertiesSummary }: DashboardPageClientProps) {
   const [userName, setUserName] = useState<string | undefined>(undefined);
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [leadsHasMore, setLeadsHasMore] = useState(false);
+  const [leadsLoadingMore, setLeadsLoadingMore] = useState(false);
   const [plan, setPlan] = useState<PlanTier>("free");
   const [planKey, setPlanKey] = useState<string>("free");
   const [forecastingSummary, setForecastingSummary] = useState<ForecastingSummary | null>(null);
@@ -135,6 +137,23 @@ export default function DashboardPageClient({ initialPropertiesSummary }: Dashbo
   const [loadError, setLoadError] = useState<string | null>(null);
   const [enterpriseSalesIntelligence, setEnterpriseSalesIntelligence] = useState(false);
   const [coachingPayload, setCoachingPayload] = useState<CoachingInsightPayload | null>(null);
+
+  async function loadMoreLeads() {
+    if (leadsLoadingMore || !leadsHasMore) return;
+    setLeadsLoadingMore(true);
+    try {
+      const next = await listLeads(undefined, undefined, {
+        limit: LEADS_PAGE_SIZE,
+        offset: leads.length,
+      });
+      setLeads((prev) => [...prev, ...next]);
+      setLeadsHasMore(next.length === LEADS_PAGE_SIZE);
+    } catch (e) {
+      console.error("Failed to load more leads:", e);
+    } finally {
+      setLeadsLoadingMore(false);
+    }
+  }
 
   async function markLeadContacted(leadId: string) {
     const nowIso = new Date().toISOString();
@@ -180,11 +199,12 @@ export default function DashboardPageClient({ initialPropertiesSummary }: Dashbo
       try {
         let leadsData: Lead[] = [];
         try {
-          leadsData = await getLeads();
+          leadsData = await listLeads(undefined, undefined, { limit: LEADS_PAGE_SIZE, offset: 0 });
         } catch (e) {
           console.error("Failed to load leads:", e);
         }
         setLeads(leadsData);
+        setLeadsHasMore(leadsData.length === LEADS_PAGE_SIZE);
 
         try {
           const response = await fetch("/api/forecasting/summary");
@@ -467,6 +487,19 @@ export default function DashboardPageClient({ initialPropertiesSummary }: Dashbo
           <PriorityLeads leads={leads} plan={plan} />
           <AiInsightsPanel leads={leads} plan={plan} />
         </section>
+        {leadsHasMore ? (
+          <div className="mb-6 text-center">
+            <button
+              type="button"
+              onClick={() => void loadMoreLeads()}
+              disabled={leadsLoadingMore}
+              className="cursor-pointer rounded-xl px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+              style={{ background: SLATE_HORIZON.topbarGradient }}
+            >
+              {leadsLoadingMore ? "Načítavam…" : "Načítať ďalšie príležitosti"}
+            </button>
+          </div>
+        ) : null}
 
         {canShowEnterpriseSalesIntelligence && (
           <section className="mb-6">
