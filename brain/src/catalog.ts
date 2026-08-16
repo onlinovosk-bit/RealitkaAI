@@ -1,6 +1,25 @@
+import { existsSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import type { DecisionRecord, RegistryRecord } from "./schema.js";
 import { SCHEMA_VERSION } from "./schema.js";
 import { compareAscii, digestFiles, gitMetadata, listFiles } from "./repo.js";
+
+const GENOME_LAYER2_LEGACY_PATH = "apps/crm/supabase/migrations/2026_genome_layer2.sql";
+const GENOME_LAYER2_RENAMED_RE = /^\d{14}_rename_genome_layer2\.sql$/;
+
+/** Feature-detect Genome Layer 2 migration filename: 14-digit rename, else legacy 2026_*. */
+export function resolveGenomeLayer2EvidencePath(repoRoot: string, path: string): string {
+  if (!path.endsWith("genome_layer2.sql")) return path;
+  const dir = join(repoRoot, "apps/crm/supabase/migrations");
+  if (!existsSync(dir)) return path;
+  const files = readdirSync(dir);
+  const basename = path.split("/").pop() ?? "";
+  if (files.includes(basename)) return path;
+  const renamed = files.filter((file) => GENOME_LAYER2_RENAMED_RE.test(file)).sort();
+  if (renamed.length > 0) return `apps/crm/supabase/migrations/${renamed[renamed.length - 1]}`;
+  if (files.includes("2026_genome_layer2.sql")) return GENOME_LAYER2_LEGACY_PATH;
+  return path;
+}
 
 interface RegistrySpec {
   id: string;
@@ -584,7 +603,7 @@ const DECISION_SPECS: DecisionSpec[] = [
     relatedAssets: ["database.migrations", "crm.application"],
     evidence: [
       { path: "memory/decisions.md", line: 224, note: "Canonical decision and safety rule." },
-      { path: "apps/crm/supabase/migrations/2026_genome_layer2.sql", line: 4, note: "Repository migration evidence only." },
+      { path: "apps/crm/supabase/migrations/20260817120000_rename_genome_layer2.sql", line: 4, note: "14-digit rename of 2026_genome_layer2.sql; tolerate either filename until founder applies." },
     ],
   },
   {
@@ -904,8 +923,9 @@ export function buildDecisions(repoRoot: string): DecisionRecord[] {
       supersedes: [...(spec.supersedes ?? [])].sort(),
       source: { path: source, commit: sourceMeta.commit },
       evidence: spec.evidence.map((item) => {
-        const metadata = gitMetadata(repoRoot, item.path);
-        return { ...item, commit: metadata.commit };
+        const path = resolveGenomeLayer2EvidencePath(repoRoot, item.path);
+        const metadata = gitMetadata(repoRoot, path);
+        return { ...item, path, commit: metadata.commit };
       }),
       confidence: spec.confidence ?? "high",
       sensitivity: "internal",
