@@ -12,15 +12,11 @@ function read(rel: string): string {
 }
 
 describe("[verification] Acquisition Stage 0 dashboard", () => {
-  it("session gate does not public-allowlist the dashboard API or page", () => {
-    const mw = read("middleware.ts");
+  it("proxy session gate does not public-allowlist the dashboard API or page", () => {
     const proxy = read("src/proxy.ts");
 
-    expect(mw).toContain(`'${WEBHOOK_PATH}'`);
     expect(proxy).toContain(`"${WEBHOOK_PATH}"`);
 
-    expect(mw).not.toContain(`'${DASHBOARD_API}'`);
-    expect(mw).not.toContain(`'${DASHBOARD_PAGE}'`);
     expect(proxy).not.toContain(`"${DASHBOARD_API}"`);
     expect(proxy).not.toContain(`"${DASHBOARD_PAGE}"`);
   });

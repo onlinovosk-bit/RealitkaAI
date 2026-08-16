@@ -41,6 +41,23 @@ const WEBHOOK_API_SEGMENT = "/api/webhooks";
 /** Onboarding MVP APIs — service-role in route handlers; bypass session gate for SSR/cron callers. */
 const ONBOARDING_MVP_PREFIX = "/api/onboarding/mvp/";
 
+export const PROXY_AUTH_TIMEOUT_MS = 5_000;
+export const PROXY_AUTH_TIMEOUT_MARKER = "[proxy-auth-timeout]";
+
+export function createProxyFetch(timeoutMs = PROXY_AUTH_TIMEOUT_MS): typeof fetch {
+  return (input, init) => {
+    const timeoutSignal = AbortSignal.timeout(timeoutMs);
+    const signal = init?.signal
+      ? AbortSignal.any([init.signal, timeoutSignal])
+      : timeoutSignal;
+    return fetch(input, { ...init, signal });
+  };
+}
+
+export function isProxyAuthTimeoutError(err: unknown): boolean {
+  return err instanceof Error && (err.name === "AbortError" || err.name === "TimeoutError");
+}
+
 function isRealviaImportPath(pathname: string): boolean {
   return pathname === "/api/realvia/import" || pathname === "/api/realvia/import/";
 }
@@ -116,6 +133,7 @@ export async function proxy(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     supabaseKey,
     {
+      global: { fetch: createProxyFetch() },
       cookies: {
         getAll() {
           return request.cookies.getAll();
@@ -133,9 +151,19 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let user = null;
+  try {
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
+    user = authUser;
+  } catch (err) {
+    if (isProxyAuthTimeoutError(err)) {
+      console.error(PROXY_AUTH_TIMEOUT_MARKER, pathname);
+      return response;
+    }
+    throw err;
+  }
 
   if (!user && pathname.startsWith("/api/")) {
     return NextResponse.json(
