@@ -1,9 +1,13 @@
-﻿# Decision log — DEBT
+# Decision Memory projection
 
 **Source of truth:** [`memory/decisions.md`](../../memory/decisions.md)
 
-`brain/decisions/decisions.md` is currently a duplicate checkout for agent convenience.
-It must become a **generated mirror** (or be removed) — not a second editable source of truth.
-Until then: edit only `memory/decisions.md`, then regenerate/sync this path.
+This directory holds machine projections and first-class ADRs. It is **not** a second decisions log.
 
-Tracked as debt from doplnenie 2026-08-11 (dual decision logs = same class of drift as brain index mismatch).
+| Path | Role |
+|---|---|
+| `index.json` | Generated view (`npm run brain:ingest`). Do not hand-edit. |
+| `adr-*.md` | Hand-authored ADRs (catalog assets). |
+| `decisions.md` | **Removed** (D-2026-08-17-01 Variant A). Do not recreate. |
+
+`brain:ingest` reads `memory/decisions.md` only. T10: do not regenerate `index.json` when source files are unchanged.
