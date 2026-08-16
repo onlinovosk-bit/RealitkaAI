@@ -4,6 +4,8 @@
  * Agency comes from the authenticated profile only. Never from query/body.
  * Secret pointers stay out of this select list.
  */
+import { cache } from "react";
+import { createClient } from "@/lib/supabase/server";
 
 export const DASHBOARD_ACCOUNT_SELECT =
   "id, agency_id, provider, customer_id, manager_customer_id, status, credential_type, billing_owner, created_at, connected_at, last_sync_at";
@@ -133,41 +135,67 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
+export type AcquisitionSession = {
+  supabase: Awaited<ReturnType<typeof createClient>>;
+  user: { id: string } | null;
+  agencyId: string | null;
+};
+
+export async function loadAcquisitionSession(): Promise<AcquisitionSession> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { supabase, user: null, agencyId: null };
+  }
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("agency_id")
+    .eq("auth_user_id", user.id)
+    .maybeSingle();
+  const agencyId = profile?.agency_id ? String(profile.agency_id) : null;
+  return { supabase, user: { id: user.id }, agencyId };
+}
+
+/** Per-request memo so /acquisition does not repeat layout's auth round-trip when React cache hits. */
+export const getCachedAcquisitionSession = cache(loadAcquisitionSession);
+
 export async function loadAcquisitionDashboard(
   supabase: DashboardSupabase,
   agencyId: string,
 ): Promise<AcquisitionDashboard> {
-  const accountsRes = await supabase
-    .from("acquisition_accounts")
-    .select(DASHBOARD_ACCOUNT_SELECT)
-    .eq("agency_id", agencyId)
-    .eq("provider", "GOOGLE")
-    .order("created_at", { ascending: false })
-    .limit(50);
+  const [accountsRes, campaignsRes, eventsRes] = await Promise.all([
+    supabase
+      .from("acquisition_accounts")
+      .select(DASHBOARD_ACCOUNT_SELECT)
+      .eq("agency_id", agencyId)
+      .eq("provider", "GOOGLE")
+      .order("created_at", { ascending: false })
+      .limit(50),
+    supabase
+      .from("acquisition_campaigns")
+      .select(DASHBOARD_CAMPAIGN_SELECT)
+      .eq("agency_id", agencyId)
+      .eq("provider", "GOOGLE")
+      .order("last_synced_at", { ascending: false })
+      .limit(100),
+    supabase
+      .from("acquisition_events")
+      .select(DASHBOARD_EVENT_SELECT)
+      .eq("agency_id", agencyId)
+      .eq("provider", "GOOGLE")
+      .order("received_at", { ascending: false })
+      .limit(20),
+  ]);
 
   if (accountsRes.error) {
     throw new Error("Failed to list acquisition accounts");
   }
 
-  const campaignsRes = await supabase
-    .from("acquisition_campaigns")
-    .select(DASHBOARD_CAMPAIGN_SELECT)
-    .eq("agency_id", agencyId)
-    .eq("provider", "GOOGLE")
-    .order("last_synced_at", { ascending: false })
-    .limit(100);
-
   if (campaignsRes.error) {
     throw new Error("Failed to list acquisition campaigns");
   }
-
-  const eventsRes = await supabase
-    .from("acquisition_events")
-    .select(DASHBOARD_EVENT_SELECT)
-    .eq("agency_id", agencyId)
-    .eq("provider", "GOOGLE")
-    .order("received_at", { ascending: false })
-    .limit(20);
 
   if (eventsRes.error) {
     throw new Error("Failed to list acquisition events");
