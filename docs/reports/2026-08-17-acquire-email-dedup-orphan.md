@@ -33,6 +33,8 @@ npx vitest run src/app/api/acquire/email/__tests__/route.test.ts \
   tests/verification/acquire-email-gateway.verification.test.ts
 ```
 
+Result: **7/7 passed** (2026-08-17 cloud agent run).
+
 ## Skipped (already open PRs)
 
 #369, #370, #371, #374, #392, #401, #427, #438 — still open; not re-reported.
