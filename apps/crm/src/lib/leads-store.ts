@@ -1176,8 +1176,11 @@ export async function getRecommendations() {
   return ensureAiRecommendations(supabase);
 }
 
-export async function getLeadById(id: string): Promise<Lead | undefined> {
-  return getLead(id);
+export async function getLeadById(
+  id: string,
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+): Promise<Lead | undefined> {
+  return getLead(id, scoped);
 }
 
 export async function getActivitiesByLeadId(

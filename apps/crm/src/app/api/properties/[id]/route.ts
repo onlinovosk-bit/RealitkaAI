@@ -19,7 +19,7 @@ export async function PATCH(
     if (!UUID_RE.test(id)) return errorResponse("Invalid ID", 400);
     const body = await request.json();
     const [oldProperty, { data: callerProfile }] = await Promise.all([
-      getProperty(id),
+      getProperty(id, supabase),
       supabase.from("profiles").select("agency_id").eq("auth_user_id", user.id).maybeSingle(),
     ]);
 
@@ -39,7 +39,7 @@ export async function PATCH(
       ownerName:   body.ownerName,
       ownerPhone:  body.ownerPhone,
       // agencyId is intentionally NOT accepted from body — prevents cross-tenant reassignment
-    });
+    }, supabase);
 
     try {
       await createActivity({
@@ -77,7 +77,7 @@ export async function DELETE(
     const { id } = await params;
     if (!UUID_RE.test(id)) return errorResponse("Invalid ID", 400);
     const [oldProperty, { data: callerProfile }] = await Promise.all([
-      getProperty(id),
+      getProperty(id, supabase),
       supabase.from("profiles").select("agency_id").eq("auth_user_id", user.id).maybeSingle(),
     ]);
 
@@ -85,7 +85,7 @@ export async function DELETE(
       return errorResponse("Forbidden", 403);
     }
 
-    await deleteProperty(id);
+    await deleteProperty(id, supabase);
 
     try {
       await createActivity({
