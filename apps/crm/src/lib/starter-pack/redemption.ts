@@ -1,4 +1,5 @@
 import { createServiceRoleClient } from "@/lib/supabase/admin";
+import { applyCreditPurchase } from "@/lib/credits/mutate-credits";
 import { STARTER_PACK } from "@/lib/starter-pack/constants";
 
 export type RedeemStarterPackResult =
@@ -9,7 +10,7 @@ function normalizeCode(raw: string): string {
   return raw.trim().toUpperCase().replace(/\s+/g, "");
 }
 
-/** Uplatnenie kódu → purchased kredity (neexpirujú), idempotentné. */
+/** Uplatnenie kódu → purchased kredity (neexpirujú), idempotentné + atomické. */
 export async function redeemStarterPackCode(input: {
   code: string;
   agencyId: string;
@@ -41,54 +42,21 @@ export async function redeemStarterPackCode(input: {
 
   const creditValue = row.value ?? STARTER_PACK.creditValue;
   const idempotencyKey = `starter_pack_redeem:${row.id}:${input.agencyId}`;
-
-  const { data: existingLedger } = await supabase
-    .from("credit_ledger")
-    .select("id")
-    .eq("idempotency_key", idempotencyKey)
-    .maybeSingle();
-
-  if (existingLedger) {
-    return { ok: true, creditsGranted: creditValue, alreadyRedeemed: true };
-  }
-
-  const { data: agency } = await supabase
-    .from("agencies")
-    .select("purchased_credits_balance, grant_credits_balance, credits_balance")
-    .eq("id", input.agencyId)
-    .single();
-
-  if (!agency) return { ok: false, error: "agency_not_found" };
-
-  const purchased = (agency.purchased_credits_balance ?? 0) + creditValue;
-  const grant = agency.grant_credits_balance ?? 0;
   const redeemedAt = new Date().toISOString();
 
-  const { error: ledgerErr } = await supabase.from("credit_ledger").insert({
-    agency_id: input.agencyId,
-    delta: creditValue,
+  const creditResult = await applyCreditPurchase({
+    agencyId: input.agencyId,
+    amount: creditValue,
     reason: "starter_pack_redeem",
+    idempotencyKey,
     ref: code,
-    idempotency_key: idempotencyKey,
-    source: "purchase",
   });
 
-  if (ledgerErr) {
-    console.warn("[starter-pack] redeem ledger:", ledgerErr.message);
-    return { ok: false, error: "grant_failed" };
-  }
-
-  const { error: agencyErr } = await supabase
-    .from("agencies")
-    .update({
-      purchased_credits_balance: purchased,
-      credits_balance: grant + purchased,
-      billing_updated_at: redeemedAt,
-    })
-    .eq("id", input.agencyId);
-
-  if (agencyErr) {
-    console.warn("[starter-pack] redeem agency:", agencyErr.message);
+  if (!creditResult.ok) {
+    console.warn("[starter-pack] redeem credits:", creditResult.error);
+    if (creditResult.error === "agency_not_found") {
+      return { ok: false, error: "agency_not_found" };
+    }
     return { ok: false, error: "grant_failed" };
   }
 
@@ -105,5 +73,9 @@ export async function redeemStarterPackCode(input: {
     console.warn("[starter-pack] redeem code mark:", codeErr.message);
   }
 
-  return { ok: true, creditsGranted: creditValue, alreadyRedeemed: false };
+  return {
+    ok: true,
+    creditsGranted: creditValue,
+    alreadyRedeemed: creditResult.skipped === true,
+  };
 }

@@ -230,61 +230,29 @@ export async function triggerInitialGrantAfterSeatCheckout(
   return grantMonthlyCreditsForAgency(agency as AgencyCreditRow, currentPeriodKey());
 }
 
-/** Po úspešnom top-up webhook — pripíše kúpené kredity. */
+/** Po úspešnom top-up webhook — pripíše kúpené kredity (atomický RPC). */
 export async function applyTopupPurchase(input: {
   agencyId: string;
   packageKey: TopupPackageKey;
   stripeSessionId: string;
 }): Promise<boolean> {
-  const supabase = createServiceRoleClient();
-  if (!supabase) return false;
-
   const { TOPUP_PACKAGES } = await import("@/lib/program-tier-pricing");
+  const { applyCreditPurchase } = await import("@/lib/credits/mutate-credits");
   const pkg = TOPUP_PACKAGES[input.packageKey];
   const idempotencyKey = `purchase:${input.agencyId}:${input.stripeSessionId}`;
 
-  const { data: existing } = await supabase
-    .from("credit_ledger")
-    .select("id")
-    .eq("idempotency_key", idempotencyKey)
-    .maybeSingle();
-
-  if (existing) return true;
-
-  const { data: agency } = await supabase
-    .from("agencies")
-    .select("purchased_credits_balance, grant_credits_balance, credits_balance")
-    .eq("id", input.agencyId)
-    .single();
-
-  if (!agency) return false;
-
-  const purchased = (agency.purchased_credits_balance ?? 0) + pkg.credits;
-  const grant = agency.grant_credits_balance ?? 0;
-
-  const { error: ledgerErr } = await supabase.from("credit_ledger").insert({
-    agency_id: input.agencyId,
-    delta: pkg.credits,
+  const result = await applyCreditPurchase({
+    agencyId: input.agencyId,
+    amount: pkg.credits,
     reason: "credit_topup",
+    idempotencyKey,
     ref: input.packageKey,
-    idempotency_key: idempotencyKey,
-    source: "purchase",
   });
 
-  if (ledgerErr) {
-    console.warn("[credits-billing] topup ledger:", ledgerErr.message);
+  if (!result.ok) {
+    console.warn("[credits-billing] topup:", result.error);
     return false;
   }
-
-  await supabase
-    .from("agencies")
-    .update({
-      purchased_credits_balance: purchased,
-      credits_balance: grant + purchased,
-      billing_updated_at: new Date().toISOString(),
-    })
-    .eq("id", input.agencyId);
-
   return true;
 }
 
