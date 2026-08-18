@@ -489,8 +489,13 @@ export async function getProperty(
   };
 }
 
-export async function createProperty(input: PropertyInput) {
-  const supabase = await resolveTenantSupabase();
+export async function createProperty(
+  input: PropertyInput,
+  scopedSupabase?: SupabaseClient | null,
+) {
+  // Server (RSC / API): scoped klient je NUTNÝ — bez neho resolveTenantSupabase
+  // siahne na browser singleton bez session a insert zlyhá na RLS.
+  const supabase = await resolveTenantSupabase(scopedSupabase);
 
   if (!supabase) {
     return {
@@ -592,8 +597,14 @@ export async function createProperty(input: PropertyInput) {
   return result;
 }
 
-export async function updateProperty(id: string, input: Partial<PropertyInput>) {
-  const supabase = await resolveTenantSupabase();
+export async function updateProperty(
+  id: string,
+  input: Partial<PropertyInput>,
+  scopedSupabase?: SupabaseClient | null,
+) {
+  // Server (RSC / API): scoped klient je NUTNÝ — bez neho update ide cez browser
+  // singleton bez session → RLS 0 riadkov / chyba (rovnaká trieda ako forecasting #434).
+  const supabase = await resolveTenantSupabase(scopedSupabase);
 
   if (!supabase) {
     return {
@@ -691,8 +702,13 @@ export async function updateProperty(id: string, input: Partial<PropertyInput>) 
   };
 }
 
-export async function deleteProperty(id: string) {
-  const supabase = await resolveTenantSupabase();
+export async function deleteProperty(
+  id: string,
+  scopedSupabase?: SupabaseClient | null,
+) {
+  // Server (RSC / API): scoped klient je NUTNÝ — bez neho delete ide cez browser
+  // singleton bez session → RLS zablokuje mazanie.
+  const supabase = await resolveTenantSupabase(scopedSupabase);
 
   if (!supabase) {
     return { ok: true };

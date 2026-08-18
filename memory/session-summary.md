@@ -1,17 +1,17 @@
-## Session 2026-08-15
+## Session 2026-08-18
 
 ### Dokoncene
-- #415 STOP evidencia merged. #416 layout perf merged.
-- Production T1/T2 po #416: /acquisition 4s/4s, /dashboard 6s/6s, /leads 4s/5s. Perfgate PASS.
-- D-2026-08-15-03 Stage 0 PASS (docs addendum PR). #400 close without merge.
+- Critical-bug scan: properties inventory CRUD used browser singleton on server (same class as #434 forecasting). Fix on `cursor/critical-bug-management-d0db`.
+- Open tracked PRs still awaiting review: #369 #370 #371 #374 #392 #401 #427 #438 #439.
 
 ### Rozpracovane / Pending
-- Founder merge tohto docs PR. Stage 1 nespustene (vlastne GO).
+- Founder review of new properties scoped-client PR + existing open bugfix PRs.
 
 ### Klucove subory zmenene
-- docs/reports/2026-08-15-workdesk-layout-perf.md: production T1/T2
-- docs/architecture/acquisition-os-stage0-PASS-report.md: PASS potvrdeny 15.8.2026
-- memory/decisions.md: D-2026-08-15-03
+- apps/crm/src/lib/properties-store.ts: scoped client on create/update/delete
+- apps/crm/src/app/api/properties/[id]/route.ts: pass supabase into store
+- apps/crm/src/app/api/properties/route.ts: pass supabase + okResponse on POST
+- docs/reports/2026-08-18-properties-scoped-client.md: evidence
 
 ### Dalsi krok
-Founder merge docs PR. Stage 1 len na explicitne GO.
+Founder review/merge properties scoped-client PR. Do not re-open tracked bugs with open PRs.
