@@ -1,17 +1,17 @@
-## Session 2026-08-15
+## Session 2026-08-18
 
-### Dokoncene
-- #415 STOP evidencia merged. #416 layout perf merged.
-- Production T1/T2 po #416: /acquisition 4s/4s, /dashboard 6s/6s, /leads 4s/5s. Perfgate PASS.
-- D-2026-08-15-03 Stage 0 PASS (docs addendum PR). #400 close without merge.
+### Dokončené
+- ZISTI: GPT Sol ↔ Opus 5 autonomous communication searched in repo + Cursor Cloud scope.
+- Report: `docs/reports/2026-08-18-gpt-sol-opus5-comms-zisti.md`
+- Verdict: not found in repo SSOT; likely external Notebook/chat unless founder supplies artifact.
 
-### Rozpracovane / Pending
-- Founder merge tohto docs PR. Stage 1 nespustene (vlastne GO).
+### Rozpracované / Pending
+- If founder wants to continue: draft canonical contract `docs/architecture/gpt-sol-opus5-autonomous-communication.md`.
+- Do not implement autonomous model-to-model automation before contract + GO.
 
-### Klucove subory zmenene
-- docs/reports/2026-08-15-workdesk-layout-perf.md: production T1/T2
-- docs/architecture/acquisition-os-stage0-PASS-report.md: PASS potvrdeny 15.8.2026
-- memory/decisions.md: D-2026-08-15-03
+### Kľúčové súbory zmenené
+- `docs/reports/2026-08-18-gpt-sol-opus5-comms-zisti.md`: evidence + next safe gate.
+- `memory/session-summary.md`: current handoff.
 
-### Dalsi krok
-Founder merge docs PR. Stage 1 len na explicitne GO.
+### Ďalší krok
+Founder GO: create contract draft for GPT Sol ↔ Opus 5 roles, transport, state machine, safety, and audit trail.
