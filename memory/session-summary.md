@@ -1,17 +1,19 @@
-## Session 2026-08-15
+## Session 2026-08-18
 
-### Dokoncene
-- #415 STOP evidencia merged. #416 layout perf merged.
-- Production T1/T2 po #416: /acquisition 4s/4s, /dashboard 6s/6s, /leads 4s/5s. Perfgate PASS.
-- D-2026-08-15-03 Stage 0 PASS (docs addendum PR). #400 close without merge.
+### Dokončené
+- GPT Sol ↔ Opus 5 autonomous communication contract drafted.
+- Contract: `docs/architecture/gpt-sol-opus5-autonomous-communication.md`
+- Report: `docs/reports/2026-08-18-gpt-sol-opus5-contract.md`
+- Decision: D-2026-08-18-02 — contract before runtime automation.
 
-### Rozpracovane / Pending
-- Founder merge tohto docs PR. Stage 1 nespustene (vlastne GO).
+### Rozpracované / Pending
+- First manual Sol↔Opus trial only after founder GO.
+- Runtime/provider automation remains blocked until manual trial PASS.
 
-### Klucove subory zmenene
-- docs/reports/2026-08-15-workdesk-layout-perf.md: production T1/T2
-- docs/architecture/acquisition-os-stage0-PASS-report.md: PASS potvrdeny 15.8.2026
-- memory/decisions.md: D-2026-08-15-03
+### Kľúčové súbory zmenené
+- `docs/architecture/gpt-sol-opus5-autonomous-communication.md`: roles, transport, state machine, gates.
+- `docs/reports/2026-08-18-gpt-sol-opus5-contract.md`: handoff report.
+- `memory/decisions.md`: D-2026-08-18-02.
 
-### Dalsi krok
-Founder merge docs PR. Stage 1 len na explicitne GO.
+### Ďalší krok
+Founder GO: run first manual trial under `docs/ai-comms/2026-08-18-trial/`.

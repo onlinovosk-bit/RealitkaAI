@@ -680,3 +680,23 @@ Dokaz:
 **Nie je to Stage 1.** Ziadny realny RK, serving, conversion upload, navrat webhook kluca do Production.
 
 **Kill deadline Stage 0:** 2026-08-31 (funkcia uzavreta; dalsi kod = vlastne GO).
+
+## D-2026-08-18-02 — GPT Sol ↔ Opus 5 komunikácia: kontrakt pred runtime
+
+**Rozhodnutie:** Autonómna komunikácia medzi GPT Sol a Opus 5 sa nespúšťa ako
+runtime automatizácia. Najprv vzniká repo-mediated kontrakt:
+`docs/architecture/gpt-sol-opus5-autonomous-communication.md`.
+
+**Verdikt Ústavy:** VALIDATE / CONTRACT ONLY. Priamy model-to-model runtime je
+príliš skoro, kým neprebehne jeden manuálny Sol↔Opus trial s repo artefaktmi,
+bez scope driftu a bez neodobrených akcií.
+
+**Hranice:** žiadne PROD write, merge, secrets, externé odoslanie ani provider API
+loop bez samostatného founder GO. Max 3 model turns pred founder rozhodnutím.
+
+**Engineering justification:** Trigger: new-file. Decision path: reuse —
+kontrakt rozširuje existujúce vzory Ruflo orchestration, LLM Gateway routing,
+AI Security, task-loop a repo-as-communication-channel. Alternatives considered:
+direct model API loop (zamietnuté — hidden state/tool abuse), Ruflo runtime hneď
+(zamietnuté — bez trialu príliš skoro), chat-only memory (zamietnuté — nie je
+SSOT). Contradiction check: none; dokument zužuje, nie rozširuje oprávnenia.
