@@ -1,18 +1,19 @@
-## Session 2026-08-17
+## Session 2026-08-18
 
 ### Dokončené
-- Critical-bug audit: fixed acquire email dedup orphan (permanent inbound lead loss) — PR #439
-- Report: `docs/reports/2026-08-17-acquire-email-dedup-orphan.md`
-- Tests: acquire email route + verification 7/7 PASS
+- Kontrolor review PR #439: found remaining unknown-commit retry duplicate risk.
+- Follow-up branch `cursor/acquire-email-idempotency-dabc`: deterministic `leads.id` from acquire dedup key.
+- Report: `docs/reports/2026-08-18-acquire-email-idempotency-followup.md`
 
 ### Rozpracované / Pending
+- Verify/push/open PR for `cursor/acquire-email-idempotency-dabc`.
 - Open critical-bug PRs awaiting review: #369, #370, #371, #374, #392, #401, #427, #438, #439
 - Stage 1 acquisition — only on explicit founder GO
 
 ### Kľúčové súbory zmenené
-- `apps/crm/src/app/api/acquire/email/route.ts`: release dedup claim on lead insert failure; check 23505
-- `apps/crm/src/app/api/acquire/email/__tests__/route.test.ts`: compensate + race tests
-- `apps/crm/tests/verification/acquire-email-gateway.verification.test.ts`: live-spec for compensate path
+- `apps/crm/src/app/api/acquire/email/route.ts`: deterministic lead id + existing-lead response on primary-key retry.
+- `apps/crm/src/app/api/acquire/email/__tests__/route.test.ts`: unknown commit retry test.
+- `apps/crm/tests/verification/acquire-email-gateway.verification.test.ts`: live-spec for deterministic idempotency.
 
 ### Ďalší krok
-Merge/review PR #439 (acquire email dedup) — highest new lead-loss fix; then triage oldest open critical PRs (#369+).
+Run targeted tests, push branch, open draft PR. Do not merge #439 without idempotency follow-up.
