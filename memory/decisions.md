@@ -689,3 +689,12 @@ Dokaz:
 `findProfileByEmailCandidates` used `.ilike("email", login)` so `_`/`%` were SQL wildcards (`in_o@` → `info@`). Combined with service-role resolve + `/api/leads/inventory` service fallback → account takeover / cross-tenant lead dump.
 
 Fix: exact `.eq` when candidate contains `_`/`%`; keep `ilike` only for safe patterns. Report: `docs/reports/2026-08-15-critical-email-ilike-auth.md`.
+
+## D-2026-08-19-01 — Fix matching recalculate tenant wipe
+
+**Datum:** 2026-08-19
+**BUILD:** critical data-loss guard (PR #444 on `cursor/critical-bug-management-6a80`).
+
+`recalculateAllMatches` / property path used scoped client for DELETE but unscoped `listLeads`/`listProperties`/`getProperty` on server routes → empty reads → HTTP 200 with zero re-insert (full tenant match wipe). Post-delete insert timeouts were also swallowed as `{ inserted: 0 }`.
+
+Fix: scoped reads + thread scoped through matching hooks; fail-hard after delete. Report: `docs/reports/2026-08-19-critical-bug-hunt-matching-recalc.md`.
