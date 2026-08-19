@@ -119,7 +119,7 @@ export async function POST(request: Request) {
       /* best-effort */
     }
 
-    await autoRecalculateForLead(lead.id);
+    await autoRecalculateForLead(lead.id, supabaseAuth);
 
     globalEventBus.emit(createLeadCreatedEvent(lead.id, {
       name: lead.name,

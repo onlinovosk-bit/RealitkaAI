@@ -40,4 +40,46 @@ describe("[verification] Matching + recommendations scoped writes (R3 remediatio
     expect(salesFunnelStore).toMatch(/export async function createSaasLead\([\s\S]*scoped\?:/);
     expect(salesFunnelStore).toContain("resolveTenantSupabase(scoped)");
   });
+
+  it("recalculateAllMatches and property path pass scoped into list/get reads", () => {
+    const matchingStore = readFileSync(join(CRM_ROOT, "src/lib/matching-store.ts"), "utf8");
+
+    const allFn = matchingStore.slice(
+      matchingStore.indexOf("export async function recalculateAllMatches"),
+    );
+    const propertyFn = matchingStore.slice(
+      matchingStore.indexOf("export async function recalculateMatchesForProperty"),
+      matchingStore.indexOf("export async function recalculateAllMatches"),
+    );
+
+    expect(allFn).toContain("listLeads(undefined, scoped)");
+    expect(allFn).toContain("listProperties(undefined, scoped)");
+    expect(allFn).not.toMatch(/listLeads\(\)/);
+    expect(allFn).not.toMatch(/listProperties\(\)/);
+
+    expect(propertyFn).toContain("getProperty(propertyId, scoped)");
+    expect(propertyFn).toContain("listLeads(undefined, scoped)");
+    expect(propertyFn).not.toMatch(/getProperty\(propertyId\)/);
+    expect(propertyFn).not.toMatch(/listLeads\(\)/);
+  });
+
+  it("matching hooks and lead/property mutation routes thread scoped client", () => {
+    const hooks = readFileSync(join(CRM_ROOT, "src/lib/matching-hooks.ts"), "utf8");
+    const leadPatch = readFileSync(join(CRM_ROOT, "src/app/api/leads/[id]/route.ts"), "utf8");
+    const leadPost = readFileSync(join(CRM_ROOT, "src/app/api/leads/route.ts"), "utf8");
+    const propertyPatch = readFileSync(join(CRM_ROOT, "src/app/api/properties/[id]/route.ts"), "utf8");
+
+    expect(hooks).toContain("recalculateMatchesForLead(leadId, scoped)");
+    expect(hooks).toContain("recalculateMatchesForProperty(propertyId, scoped)");
+    expect(hooks).toContain("recalculateAllMatches(scoped)");
+    expect(leadPatch).toContain("autoRecalculateForLead(id, supabase)");
+    expect(leadPost).toContain("autoRecalculateForLead(lead.id, supabaseAuth)");
+    expect(propertyPatch).toContain("autoRecalculateForProperty(id, supabase)");
+  });
+
+  it("recalculate writers do not swallow post-delete timeouts as inserted:0", () => {
+    const matchingStore = readFileSync(join(CRM_ROOT, "src/lib/matching-store.ts"), "utf8");
+
+    expect(matchingStore).not.toContain("DB write timeout on recalculate — skipping persist");
+  });
 });
