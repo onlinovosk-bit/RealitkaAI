@@ -60,4 +60,25 @@ describe("billing credits panel verification", () => {
     expect(pricing).toContain("isValidStripePriceId");
     expect(pricing).toContain('lower.includes("xxx")');
   });
+
+  it("billing webhook fails closed when pricing fulfillment returns false", () => {
+    const webhookRoute = fs.readFileSync(
+      path.join(CRM_ROOT, "src/app/api/billing/webhook/route.ts"),
+      "utf8",
+    );
+    expect(webhookRoute).toContain("handlePricingCheckoutWebhook");
+    expect(webhookRoute).toContain("isPricingCheckoutSession");
+    expect(webhookRoute).toMatch(/status:\s*500/);
+    expect(webhookRoute).toContain("Pricing checkout fulfillment failed");
+  });
+
+  it("top-up purchase rolls back ledger when agency balance update fails", () => {
+    const billing = fs.readFileSync(
+      path.join(CRM_ROOT, "src/lib/credits-billing.ts"),
+      "utf8",
+    );
+    expect(billing).toContain("applyTopupPurchase");
+    expect(billing).toContain("topup balance:");
+    expect(billing).toContain('.delete().eq("idempotency_key", idempotencyKey)');
+  });
 });
