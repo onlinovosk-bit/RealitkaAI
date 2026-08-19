@@ -1,12 +1,12 @@
-## Session 2026-08-15
+## Session 2026-08-19
 ### Dokončené
-- Critical-bug hunt: profile email ILIKE wildcards → auth takeover / lead dump
-- Fix + unit/verification tests + report `docs/reports/2026-08-15-critical-email-ilike-auth.md`
+- Critical-bug hunt (post-#428–#434): 2 HIGH bugs in matching-store recalculate paths
+- Report: `docs/reports/2026-08-19-critical-bug-hunt-matching-recalc.md`
 ### Rozpracované / Pending
-- Merge guard PR after CI green
-- Open tracked billing PRs (#369–#401) still need founder merge
+- Fix Bug 1: pass scoped client to listLeads/listProperties in recalculateAllMatches + recalculateMatchesForProperty
+- Fix Bug 2: transactional replace or fail-hard after delete in matching recalculate
+- Tracked PRs #438–#443 still open
 ### Kľúčové súbory zmenené
-- apps/crm/src/lib/profiles/resolve-profile-for-auth.ts: exact email match when `_`/`%` present
-- apps/crm/tests/verification/auth-email-ilike-wildcard.verification.test.ts: live contract
+- docs/reports/2026-08-19-critical-bug-hunt-matching-recalc.md: hunt findings
 ### Ďalší krok
-Founder review/merge ILIKE auth guard PR; then continue critical-bug backlog or Stage 1 only on GO.
+GO-gated fix PR for matching recalculate data loss (Bug 1 + Bug 2, single logical change)
