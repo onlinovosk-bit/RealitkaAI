@@ -680,3 +680,27 @@ Dokaz:
 **Nie je to Stage 1.** Ziadny realny RK, serving, conversion upload, navrat webhook kluca do Production.
 
 **Kill deadline Stage 0:** 2026-08-31 (funkcia uzavreta; dalsi kod = vlastne GO).
+
+## D-2026-08-18-01 — Acquire email idempotency: deterministic lead id
+
+**Rozhodnutie:** Follow-up k #439 nepoužije novú tabuľku ani PROD migráciu. `POST /api/acquire/email`
+odvodzuje `leads.id` deterministicky z `acquire_dedup_keys.key`; retry po neznámom
+Supabase commit stave teda narazí na rovnaký primary key a vráti existujúci lead
+namiesto vytvorenia duplikátu.
+
+**Prečo:** Samotné zmazanie dedup claimu po `leads.insert` errore rieši permanentnú
+stratu pri skutočnom fail-e, ale pri HTTP timeoute/aborte nevie, či insert v DB
+nakoniec commitol. Deterministický primary key robí retry idempotentným bez schémy.
+
+**Engineering justification:** Trigger: critical bug follow-up. Decision path: reuse
+existujúci `leads.id text primary key` + `acquire_dedup_keys.key`; žiadna nová
+dependency, tabuľka ani RPC. Alternatives considered: nový inbound event stĺpec
+(zamietnuté — migrácia/PROD apply pre úzky hotfix), ponechať #439 rollback bez
+ďalšej brzdy (zamietnuté — duplikát pri unknown commit), transakčný RPC
+(zamietnuté — väčší DB surface). Contradiction check: none; dopĺňa #439 bez
+zmeny Stage 1/Acquisition scope.
+
+**Súbory:** `apps/crm/src/app/api/acquire/email/route.ts`,
+`apps/crm/src/app/api/acquire/email/__tests__/route.test.ts`,
+`apps/crm/tests/verification/acquire-email-gateway.verification.test.ts`,
+`docs/reports/2026-08-18-acquire-email-idempotency-followup.md`.

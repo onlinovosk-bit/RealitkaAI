@@ -1,11 +1,12 @@
 // REPO PATH: apps/crm/src/app/api/acquire/email/route.ts
-// Nahrádza CELÝ starý súbor. Business logika (parseEmail/toLeadCandidate/dedup/insert)
-// je 1:1 prevzatá zo starého, overeného kódu — mení sa LEN vstupná/auth vrstva:
+// Nahrádza CELÝ starý súbor. Parser a candidate mapping zostávajú prevzaté
+// zo starého overeného kódu; dedup/insert vrstva má následné idempotency hotfixy.
+// Pôvodná vstupná/auth zmena:
 // Resend webhook verify + receiving.get()  ->  shared secret + priamy Worker payload
 // agencyForInbound(toAddr)                  ->  payload.mailbox.agencyId (Worker to už vyriešil)
 
 import { NextRequest, NextResponse } from "next/server";
-import { timingSafeEqual } from "crypto";
+import { createHash, timingSafeEqual } from "crypto";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { dedupKey, parseEmail, toLeadCandidate } from "@/lib/acquire/email-adapter";
 import { runInboundLeadTriageAndNotify } from "@/lib/acquire/inbound-lead-triage";
@@ -38,6 +39,18 @@ function safeCompare(a: string, b: string): boolean {
     return false;
   }
   return timingSafeEqual(bufA, bufB);
+}
+
+function isUniqueConflict(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false;
+  return error.code === "23505" || /duplicate|unique/i.test(error.message ?? "");
+}
+
+function deterministicLeadId(key: string): string {
+  const hex = createHash("sha256").update(`acquire-email-lead:${key}`).digest("hex");
+  const version = `5${hex.slice(13, 16)}`;
+  const variant = ((Number.parseInt(hex[16], 16) & 0x3) | 0x8).toString(16);
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${version}-${variant}${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
 }
 
 export async function POST(req: NextRequest) {
@@ -103,16 +116,39 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    await supa.from("acquire_dedup_keys").insert({
+    // Claim dedup BEFORE lead insert so concurrent workers cannot double-insert.
+    // On lead failure we MUST delete the claim — otherwise retries see duplicate=true,
+    // toLeadCandidate returns null, and the inbound lead is permanently lost
+    // (amplified by 8s Supabase fetch abort: partial success leaves an orphan key).
+    const { error: dedupError } = await supa.from("acquire_dedup_keys").insert({
       key,
       event_id: ev.eventId,
       agency_id: agencyId,
     });
+    if (isUniqueConflict(dedupError)) {
+      console.log(JSON.stringify({
+        status: "NOT_A_LEAD", requestId, agencyId, event_id: ev.eventId,
+        reason: "duplicate",
+      }));
+      return NextResponse.json({
+        ok: true,
+        lead_created: false,
+        reason: "duplicate",
+        event_id: ev.eventId,
+      });
+    }
+    if (dedupError) {
+      console.error("[acquire.email] dedup claim error=", JSON.stringify(dedupError));
+      return NextResponse.json({ ok: false, error: dedupError.message }, { status: 500 });
+    }
+
+    const leadId = deterministicLeadId(key);
+    const leadSelect = "id,name,status,score,last_contact,note,source,agency_id,ai_triage_at";
 
     const { data: lead, error } = await supa
       .from("leads")
       .insert({
-        id: crypto.randomUUID(),
+        id: leadId,
         agency_id: candidate.agencyId,
         name: candidate.name.slice(0, 200),
         email: candidate.email.slice(0, 254),
@@ -131,11 +167,52 @@ export async function POST(req: NextRequest) {
         last_contact: "Práve vytvorený (email gateway)",
         note: candidate.note.slice(0, 5000),
       })
-      .select("id,name,status,score,last_contact,note,source,agency_id,ai_triage_at")
+      .select(leadSelect)
       .single();
 
     if (error) {
       console.error("[acquire.email] insert error=", JSON.stringify(error));
+      if (isUniqueConflict(error)) {
+        const { data: existingLead, error: existingLeadError } = await supa
+          .from("leads")
+          .select(leadSelect)
+          .eq("id", leadId)
+          .maybeSingle();
+        if (existingLead) {
+          console.log(JSON.stringify({
+            status: "LEAD_ALREADY_EXISTS",
+            requestId,
+            agencyId,
+            lead_id: existingLead.id,
+            event_id: ev.eventId,
+          }));
+          return NextResponse.json({
+            ok: true,
+            lead_created: false,
+            reason: "duplicate",
+            lead_id: existingLead.id,
+            event_id: ev.eventId,
+          });
+        }
+        if (existingLeadError) {
+          console.error(
+            "[acquire.email] failed to load existing deterministic lead=",
+            JSON.stringify(existingLeadError),
+          );
+        }
+        return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+      }
+
+      const { error: releaseError } = await supa
+        .from("acquire_dedup_keys")
+        .delete()
+        .eq("key", key);
+      if (releaseError) {
+        console.error(
+          "[acquire.email] failed to release dedup claim after lead insert error=",
+          JSON.stringify(releaseError),
+        );
+      }
       return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
     }
 

@@ -1,17 +1,19 @@
-## Session 2026-08-15
+## Session 2026-08-18
 
-### Dokoncene
-- #415 STOP evidencia merged. #416 layout perf merged.
-- Production T1/T2 po #416: /acquisition 4s/4s, /dashboard 6s/6s, /leads 4s/5s. Perfgate PASS.
-- D-2026-08-15-03 Stage 0 PASS (docs addendum PR). #400 close without merge.
+### Dokončené
+- Kontrolor review PR #439: found remaining unknown-commit retry duplicate risk.
+- Follow-up branch `cursor/acquire-email-idempotency-dabc`: deterministic `leads.id` from acquire dedup key.
+- Report: `docs/reports/2026-08-18-acquire-email-idempotency-followup.md`
 
-### Rozpracovane / Pending
-- Founder merge tohto docs PR. Stage 1 nespustene (vlastne GO).
+### Rozpracované / Pending
+- Verify/push/open PR for `cursor/acquire-email-idempotency-dabc`.
+- Open critical-bug PRs awaiting review: #369, #370, #371, #374, #392, #401, #427, #438, #439
+- Stage 1 acquisition — only on explicit founder GO
 
-### Klucove subory zmenene
-- docs/reports/2026-08-15-workdesk-layout-perf.md: production T1/T2
-- docs/architecture/acquisition-os-stage0-PASS-report.md: PASS potvrdeny 15.8.2026
-- memory/decisions.md: D-2026-08-15-03
+### Kľúčové súbory zmenené
+- `apps/crm/src/app/api/acquire/email/route.ts`: deterministic lead id + existing-lead response on primary-key retry.
+- `apps/crm/src/app/api/acquire/email/__tests__/route.test.ts`: unknown commit retry test.
+- `apps/crm/tests/verification/acquire-email-gateway.verification.test.ts`: live-spec for deterministic idempotency.
 
-### Dalsi krok
-Founder merge docs PR. Stage 1 len na explicitne GO.
+### Ďalší krok
+Run targeted tests, push branch, open draft PR. Do not merge #439 without idempotency follow-up.
