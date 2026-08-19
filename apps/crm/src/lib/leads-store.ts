@@ -85,6 +85,29 @@ export type LeadFilters = {
   minScore?: number;
 };
 
+/** Default page size for /dashboard and /leads. Other callers omit `page` and keep 500. */
+export const LEADS_PAGE_SIZE = 50;
+export const LEADS_LIST_MAX = 500;
+
+export type LeadListPage = {
+  limit?: number;
+  offset?: number;
+};
+
+export const LEADS_LIST_SELECT =
+  "id, agency_id, name, email, phone, location, budget, property_type, rooms, financing, timeline, source, status, score, assigned_agent, assigned_profile_id, last_contact, note, created_at, client_segment, buyer_readiness_score, ai_insight, sofia_insight, ai_engine, ai_priority, ai_reason, ai_triage_at, ai_priority_manual_at, last_ai_followup_at, ai_followup_count";
+
+export function resolveLeadListPage(page?: LeadListPage): { limit: number; offset: number } {
+  const limit = Math.min(Math.max(page?.limit ?? LEADS_LIST_MAX, 1), LEADS_LIST_MAX);
+  const offset = Math.max(page?.offset ?? 0, 0);
+  return { limit, offset };
+}
+
+function paginateLeadItems<T>(items: T[], page?: LeadListPage): T[] {
+  const { limit, offset } = resolveLeadListPage(page);
+  return items.slice(offset, offset + limit);
+}
+
 export type LeadInput = {
   agencyId: string;
   name: string;
@@ -764,16 +787,17 @@ export function getAvailableLocations(items: Lead[]) {
 export async function listLeads(
   filters?: LeadFilters,
   scopedSupabase?: import("@supabase/supabase-js").SupabaseClient | null,
+  page?: LeadListPage,
 ): Promise<Lead[]> {
   if (await readDemoModeFromCookie()) {
-    return applyFilters(getDemoShowcaseLeads(), filters);
+    return paginateLeadItems(applyFilters(getDemoShowcaseLeads(), filters), page);
   }
 
   const supabase = await resolveTenantSupabase(scopedSupabase);
 
   if (!supabase) {
     if (process.env.NODE_ENV === "production") return [];
-    return applyFilters(mockLeads, filters);
+    return paginateLeadItems(applyFilters(mockLeads, filters), page);
   }
 
   const { resolveSessionAgencyId } = await import("@/lib/tenant-scope");
@@ -783,13 +807,14 @@ export async function listLeads(
     return [];
   }
 
+  const { limit, offset } = resolveLeadListPage(page);
   let query = supabase
     .from("leads")
-    .select("*")
+    .select(LEADS_LIST_SELECT)
     .eq("agency_id", agencyId)
     .order("score", { ascending: false })
     .order("created_at", { ascending: false })
-    .limit(500);
+    .range(offset, offset + limit - 1);
 
   if (filters?.status) {
     query = query.eq("status", filters.status);
@@ -817,7 +842,7 @@ export async function listLeads(
     if (process.env.NODE_ENV === "production") {
       return [];
     }
-    return applyFilters(mockLeads, filters);
+    return paginateLeadItems(applyFilters(mockLeads, filters), page);
   }
 
   const rows = (data ?? []) as SupabaseLeadRow[];

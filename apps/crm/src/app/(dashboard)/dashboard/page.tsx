@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import {
-  loadPropertiesInventory,
+  buildPropertiesSummary,
+  listProperties,
   type PropertiesSummary,
 } from "@/lib/properties-store";
 import DashboardPageClient from "./DashboardPageClient";
@@ -15,8 +16,10 @@ export default async function DashboardRoutePage() {
       data: { user },
     } = await supabase.auth.getUser();
     if (user) {
-      const { summary } = await loadPropertiesInventory(supabase);
-      initialPropertiesSummary = summary;
+      const summaryRows = await listProperties(undefined, supabase, {
+        columns: "summary",
+      });
+      initialPropertiesSummary = buildPropertiesSummary(summaryRows);
     }
   } catch {
     initialPropertiesSummary = undefined;

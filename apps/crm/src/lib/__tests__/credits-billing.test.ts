@@ -12,7 +12,8 @@ const mockMaybeSingle = vi.fn();
 const mockSingle = vi.fn();
 const mockInsert = vi.fn();
 const mockUpdate = vi.fn();
-const mockEq = vi.fn();
+const mockDeleteEq = vi.fn();
+const mockAgencyUpdateResult = vi.fn();
 
 vi.mock("@/lib/supabase/admin", () => ({
   createServiceRoleClient: () => ({
@@ -40,6 +41,12 @@ describe("credits-billing", () => {
       STRIPE_PRICE_CREDITS_RAST: "price_rast",
     };
 
+    mockAgencyUpdateResult.mockResolvedValue({
+      data: { id: "agency-1" },
+      error: null,
+    });
+    mockDeleteEq.mockResolvedValue({ error: null });
+
     mockFrom.mockImplementation((table: string) => {
       if (table === "credit_ledger") {
         return {
@@ -47,6 +54,9 @@ describe("credits-billing", () => {
             eq: () => ({ maybeSingle: mockMaybeSingle }),
           }),
           insert: mockInsert,
+          delete: () => ({
+            eq: (...args: unknown[]) => mockDeleteEq(...args),
+          }),
         };
       }
       if (table === "agencies") {
@@ -57,7 +67,11 @@ describe("credits-billing", () => {
           update: (payload: unknown) => ({
             eq: (...args: unknown[]) => {
               mockUpdate(payload, ...args);
-              return { error: null };
+              return {
+                select: () => ({
+                  maybeSingle: mockAgencyUpdateResult,
+                }),
+              };
             },
           }),
         };
@@ -175,6 +189,14 @@ describe("credits-billing", () => {
           idempotency_key: "purchase:agency-1:cs_test_1",
         }),
       );
+      expect(mockUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          purchased_credits_balance: 150,
+          credits_balance: 200,
+        }),
+        "id",
+        "agency-1",
+      );
 
       mockMaybeSingle.mockResolvedValueOnce({ data: { id: "existing" } });
       mockInsert.mockClear();
@@ -187,6 +209,26 @@ describe("credits-billing", () => {
 
       expect(second).toBe(true);
       expect(mockInsert).not.toHaveBeenCalled();
+    });
+
+    it("rolls back ledger and returns false when balance update fails", async () => {
+      mockAgencyUpdateResult.mockResolvedValueOnce({
+        data: null,
+        error: { message: "update failed" },
+      });
+
+      const ok = await applyTopupPurchase({
+        agencyId: "agency-1",
+        packageKey: "rast",
+        stripeSessionId: "cs_fail_balance",
+      });
+
+      expect(ok).toBe(false);
+      expect(mockInsert).toHaveBeenCalled();
+      expect(mockDeleteEq).toHaveBeenCalledWith(
+        "idempotency_key",
+        "purchase:agency-1:cs_fail_balance",
+      );
     });
   });
 

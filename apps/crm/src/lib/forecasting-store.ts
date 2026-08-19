@@ -62,13 +62,17 @@ function matchBoost(bestMatchScore: number) {
   return 0.92;
 }
 
-export async function getForecastingData() {
+export async function getForecastingData(
+  scopedSupabase?: import("@supabase/supabase-js").SupabaseClient | null,
+) {
+  // Server (RSC / API): scoped klient je NUTNÝ — bez neho list* siahnu na browser
+  // singleton bez session a vrátia prázdne dáta (forecast = samé nuly).
   const [leads, tasks, matches, recommendations, scores] = await Promise.all([
-    listLeads(),
-    listTasks(),
-    listPersistedMatches(),
-    listRecommendations(),
-    calculateAllLeadScores(),
+    listLeads(undefined, scopedSupabase),
+    listTasks(scopedSupabase),
+    listPersistedMatches(scopedSupabase),
+    listRecommendations(scopedSupabase),
+    calculateAllLeadScores(scopedSupabase),
   ]);
 
   const scoreMap = new Map(scores.map((item) => [item.leadId, item]));

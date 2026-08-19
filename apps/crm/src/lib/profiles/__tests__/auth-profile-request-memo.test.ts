@@ -30,7 +30,13 @@ function buildSupabase(eqRows: Record<string, unknown | null>) {
 describe("widenProfileSelect", () => {
   it("widens subset columns to the request canonical select", () => {
     expect(widenProfileSelect("agency_id")).toContain("full_name");
+    expect(widenProfileSelect("agency_id")).toContain("tier_updated_at");
     expect(widenProfileSelect("id, agency_id, auth_user_id")).toContain("email");
+    expect(
+      widenProfileSelect(
+        "id, agency_id, auth_user_id, email, role, ui_role, account_tier, tier_updated_at",
+      ),
+    ).toContain("full_name");
   });
 
   it("does not rewrite unknown columns", () => {

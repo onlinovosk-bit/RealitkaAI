@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import { fetchWithTimeout } from "@/lib/supabase/fetch-timeout";
 
 function getKey() {
   return (
@@ -17,7 +18,10 @@ function getUrl() {
 export function createAdminClient() {
   const url = getUrl() || "https://placeholder-project.supabase.co";
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || getKey() || "placeholder-key";
-  return createSupabaseClient(url, serviceKey, { auth: { persistSession: false } });
+  return createSupabaseClient(url, serviceKey, {
+    auth: { persistSession: false },
+    global: { fetch: fetchWithTimeout },
+  });
 }
 
 export async function createClient() {
@@ -29,6 +33,7 @@ export async function createClient() {
     supabaseUrl,
     supabaseKey,
     {
+      global: { fetch: fetchWithTimeout },
       cookies: {
         getAll() {
           return cookieStore.getAll();

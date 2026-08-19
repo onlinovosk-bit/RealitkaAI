@@ -58,6 +58,32 @@ export type PropertyFilters = {
   type?: string;
 };
 
+export const PROPERTIES_PAGE_SIZE = 50;
+export const PROPERTIES_LIST_MAX = 500;
+// agency_id je nutné pre filterRowsByAgency — bez neho tenant-filter zahodí všetky riadky (summary = 0).
+export const PROPERTIES_SELECT_SUMMARY = "id, status, agency_id";
+
+export type PropertyListPage = {
+  limit?: number;
+  offset?: number;
+  columns?: "summary" | "list" | "full";
+};
+
+export function resolvePropertyListPage(page?: PropertyListPage): {
+  limit: number;
+  offset: number;
+  columns: NonNullable<PropertyListPage["columns"]>;
+} {
+  const limit = Math.min(Math.max(page?.limit ?? PROPERTIES_LIST_MAX, 1), PROPERTIES_LIST_MAX);
+  const offset = Math.max(page?.offset ?? 0, 0);
+  return { limit, offset, columns: page?.columns ?? "full" };
+}
+
+function paginatePropertyItems<T>(items: T[], page?: PropertyListPage): T[] {
+  const { limit, offset } = resolvePropertyListPage(page);
+  return items.slice(offset, offset + limit);
+}
+
 export type PropertiesSummary = {
   total: number;
   active: number;
@@ -317,16 +343,17 @@ export async function getPropertiesSummary(scopedSupabase?: SupabaseClient | nul
 export async function listProperties(
   filters?: PropertyFilters,
   scopedSupabase?: SupabaseClient | null,
+  page?: PropertyListPage,
 ): Promise<Property[]> {
   if (await readDemoModeFromCookie()) {
-    return applyPropertyFilters(getDemoShowcaseProperties(), filters);
+    return paginatePropertyItems(applyPropertyFilters(getDemoShowcaseProperties(), filters), page);
   }
 
   const supabase = await resolveTenantSupabase(scopedSupabase);
 
   if (!supabase) {
     if (process.env.NODE_ENV === "production") return [];
-    return applyPropertyFilters(getDemoShowcaseProperties(), filters);
+    return paginatePropertyItems(applyPropertyFilters(getDemoShowcaseProperties(), filters), page);
   }
 
   const { resolveSessionAgencyId } = await import("@/lib/tenant-scope");
@@ -340,13 +367,14 @@ export async function listProperties(
   const typeFilter = filters?.type?.trim();
   const locationFilter = filters?.location?.trim();
   const qTrimmed = filters?.q?.trim();
+  const { limit, offset, columns } = resolvePropertyListPage(page);
 
   const runSelect = async (selectColumns: string, includeDescriptionInOr: boolean) => {
     let query = supabase
       .from("properties")
       .select(selectColumns)
       .order("created_at", { ascending: false })
-      .limit(500);
+      .range(offset, offset + limit - 1);
 
     if (statusFilter) {
       query = query.eq("status", statusFilter);
@@ -367,9 +395,16 @@ export async function listProperties(
     return query;
   };
 
-  let { data, error } = await runSelect(PROPERTIES_SELECT_FULL, true);
+  const primarySelect =
+    columns === "summary"
+      ? PROPERTIES_SELECT_SUMMARY
+      : columns === "list"
+        ? PROPERTIES_SELECT_CORE
+        : PROPERTIES_SELECT_FULL;
+  let { data, error } = await runSelect(primarySelect, columns === "full");
 
   if (
+    columns === "full" &&
     (error || !data) &&
     isMissingOptionalPropertiesColumnError(error?.message)
   ) {

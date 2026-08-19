@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import test from "node:test";
 import { calculateDelta, runAudit, type AuditReport } from "../src/audit.js";
 import { collectFindings } from "../src/audit-core.js";
 import { buildRegistry } from "../src/catalog.js";
-import { runIngest } from "../src/ingest.js";
+import { assertDecisionsSourceOfTruth, DECISIONS_SOT, DECISIONS_TWIN, runIngest } from "../src/ingest.js";
 import { loadBrain } from "../src/loader.js";
 import { listFiles } from "../src/repo.js";
 import { validateDecisionRecord, validateRegistryRecord } from "../src/schema.js";
@@ -222,5 +222,43 @@ test("repository inventory includes only files known to Git", () => {
   assert.deepEqual(automation.inventory.sample, expected.slice(0, 12));
   if (expected.length === 0) {
     assert.equal(automation.inventory.digest, "unavailable");
+  }
+});
+
+
+test("decisions SoT is memory/decisions.md and the brain twin is gone", () => {
+  assert.equal(existsSync(resolve(repoRoot, DECISIONS_TWIN)), false);
+  const memory = buildRegistry(repoRoot).find((record) => record.id === "memory.decisions");
+  assert.ok(memory);
+  assert.equal(memory.source.path, DECISIONS_SOT);
+  assert.equal(memory.inventory.sample.includes(DECISIONS_TWIN), false);
+});
+
+test("ingest reads SoT and does not emit a brain decisions.md twin", () => {
+  const root = temporaryRoot();
+  try {
+    const brainRoot = resolve(root, "brain");
+    const result = runIngest({ repoRoot, brainRoot });
+    assert.equal(result.validationIssues, 0);
+    assert.equal(existsSync(resolve(brainRoot, "decisions", "decisions.md")), false);
+    assert.equal(existsSync(resolve(brainRoot, "decisions", "index.json")), true);
+    const decisions = JSON.parse(readFileSync(resolve(brainRoot, "decisions", "index.json"), "utf8"));
+    assert.ok(decisions.every((record: { source: { path: string } }) => record.source.path !== DECISIONS_TWIN));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("ingest rejects a missing SoT and a hand-maintained brain twin", () => {
+  const root = temporaryRoot();
+  try {
+    assert.throws(() => assertDecisionsSourceOfTruth(root), /memory\/decisions\.md/);
+    mkdirSync(resolve(root, "memory"), { recursive: true });
+    mkdirSync(resolve(root, "brain", "decisions"), { recursive: true });
+    writeFileSync(resolve(root, DECISIONS_SOT), "# SoT\n", "utf8");
+    writeFileSync(resolve(root, DECISIONS_TWIN), "# twin\n", "utf8");
+    assert.throws(() => assertDecisionsSourceOfTruth(root), /forbidden hand-maintained duplicate/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
   }
 });

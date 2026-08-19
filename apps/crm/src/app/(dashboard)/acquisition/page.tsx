@@ -1,7 +1,10 @@
 import { redirect } from "next/navigation";
 import ModuleShell from "@/components/shared/module-shell";
-import { createClient } from "@/lib/supabase/server";
-import { loadAcquisitionDashboard, type DashboardSupabase } from "@/lib/acquisition/load-dashboard";
+import {
+  getCachedAcquisitionSession,
+  loadAcquisitionDashboard,
+  type DashboardSupabase,
+} from "@/lib/acquisition/load-dashboard";
 import type {
   DashboardAccount,
   DashboardCampaign,
@@ -144,22 +147,13 @@ function EventsTable({ events }: { events: DashboardEvent[] }) {
 }
 
 export default async function AcquisitionDashboardPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user, agencyId } = await getCachedAcquisitionSession();
 
   if (!user) {
     redirect("/login");
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("agency_id")
-    .eq("auth_user_id", user.id)
-    .maybeSingle();
-
-  if (!profile?.agency_id) {
+  if (!agencyId) {
     return (
       <ModuleShell
         title="Google Ads (test)"
@@ -174,7 +168,7 @@ export default async function AcquisitionDashboardPage() {
 
   const dashboard = await loadAcquisitionDashboard(
     supabase as unknown as DashboardSupabase,
-    profile.agency_id,
+    agencyId,
   );
 
   return (

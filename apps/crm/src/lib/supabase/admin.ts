@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { fetchWithTimeout } from "@/lib/supabase/fetch-timeout";
 
 /**
  * Service role klient – len na serveri (cron, metriky, audit insert).
@@ -14,5 +15,6 @@ export function createServiceRoleClient() {
 
   return createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
+    global: { fetch: fetchWithTimeout },
   });
 }

@@ -12,15 +12,11 @@ function read(rel: string): string {
 }
 
 describe("[verification] Google Ads lead-webhook allowlist", () => {
-  it("session gate bypasses only the lead-webhook path (not accounts or audit-log)", () => {
-    const mw = read("middleware.ts");
+  it("proxy session gate bypasses only the lead-webhook path (not accounts or audit-log)", () => {
     const proxy = read("src/proxy.ts");
 
-    expect(mw).toContain(`'${WEBHOOK_PATH}'`);
     expect(proxy).toContain(`"${WEBHOOK_PATH}"`);
 
-    expect(mw).not.toContain(`'${ACCOUNTS_PATH}'`);
-    expect(mw).not.toContain(`'${AUDIT_LOG_PATH}'`);
     expect(proxy).not.toContain(`"${ACCOUNTS_PATH}"`);
     expect(proxy).not.toContain(`"${AUDIT_LOG_PATH}"`);
   });

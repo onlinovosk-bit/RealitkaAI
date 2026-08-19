@@ -1,4 +1,13 @@
--- Genome Layer 2 — Prediction Registry + exclusivity outcomes (idempotent, CI + prod parity)
+-- Rename of 2026_genome_layer2.sql -> 14-digit version 20260817120000 (D-2026-08-17-01).
+-- Illegal version token was '2026' (sorts first by version-id, last by ASCII filename).
+-- Idempotent: objects already live on prod (decisions, exclusivity_outcomes, genome_decision_open).
+-- DO NOT supabase db push. Founder apply = Dashboard SQL Editor (this file) + history INSERT.
+-- History INSERT (Dashboard only, after SQL succeeds; pattern from 20260811220000_acquisition_core):
+--   INSERT INTO supabase_migrations.schema_migrations (version, name, statements, created_by)
+--   VALUES ('20260817120000', 'rename_genome_layer2', ARRAY[]::text[], NULL);
+-- Do not INSERT version '2026'. Prod has no history row for '2026' (audit 2026-08-15).
+-- Do not delete 2026_genome_layer2.sql until the history INSERT is confirmed on prod.
+-- Genome Layer 2 - Prediction Registry + exclusivity outcomes (idempotent, CI + prod parity)
 -- Applied manually on PROD; this file keeps ephemeral CI DB aligned.
 
 CREATE TABLE IF NOT EXISTS public.decisions (

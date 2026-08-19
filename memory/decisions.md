@@ -680,3 +680,12 @@ Dokaz:
 **Nie je to Stage 1.** Ziadny realny RK, serving, conversion upload, navrat webhook kluca do Production.
 
 **Kill deadline Stage 0:** 2026-08-31 (funkcia uzavreta; dalsi kod = vlastne GO).
+
+## D-2026-08-15-04 — Fix profile email ILIKE wildcard auth takeover
+
+**Datum:** 2026-08-15
+**BUILD:** critical auth guard (PR on `cursor/critical-bug-management-2148`).
+
+`findProfileByEmailCandidates` used `.ilike("email", login)` so `_`/`%` were SQL wildcards (`in_o@` → `info@`). Combined with service-role resolve + `/api/leads/inventory` service fallback → account takeover / cross-tenant lead dump.
+
+Fix: exact `.eq` when candidate contains `_`/`%`; keep `ilike` only for safe patterns. Report: `docs/reports/2026-08-15-critical-email-ilike-auth.md`.

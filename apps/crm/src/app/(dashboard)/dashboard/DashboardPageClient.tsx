@@ -3,7 +3,7 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
-import { getLeads, type Lead } from "@/lib/leads-store";
+import { LEADS_PAGE_SIZE, listLeads, type Lead } from "@/lib/leads-store";
 import PriorityLeads from "@/components/dashboard/priority-leads";
 import AiInsightsPanel from "@/components/dashboard/AiInsightsPanel";
 import { supabaseClient } from "@/lib/supabase/client";
@@ -124,6 +124,8 @@ export type DashboardPageClientProps = {
 export default function DashboardPageClient({ initialPropertiesSummary }: DashboardPageClientProps) {
   const [userName, setUserName] = useState<string | undefined>(undefined);
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [leadsHasMore, setLeadsHasMore] = useState(false);
+  const [leadsLoadingMore, setLeadsLoadingMore] = useState(false);
   const [plan, setPlan] = useState<PlanTier>("free");
   const [planKey, setPlanKey] = useState<string>("free");
   const [forecastingSummary, setForecastingSummary] = useState<ForecastingSummary | null>(null);
@@ -135,6 +137,23 @@ export default function DashboardPageClient({ initialPropertiesSummary }: Dashbo
   const [loadError, setLoadError] = useState<string | null>(null);
   const [enterpriseSalesIntelligence, setEnterpriseSalesIntelligence] = useState(false);
   const [coachingPayload, setCoachingPayload] = useState<CoachingInsightPayload | null>(null);
+
+  async function loadMoreLeads() {
+    if (leadsLoadingMore || !leadsHasMore) return;
+    setLeadsLoadingMore(true);
+    try {
+      const next = await listLeads(undefined, undefined, {
+        limit: LEADS_PAGE_SIZE,
+        offset: leads.length,
+      });
+      setLeads((prev) => [...prev, ...next]);
+      setLeadsHasMore(next.length === LEADS_PAGE_SIZE);
+    } catch (e) {
+      console.error("Failed to load more leads:", e);
+    } finally {
+      setLeadsLoadingMore(false);
+    }
+  }
 
   async function markLeadContacted(leadId: string) {
     const nowIso = new Date().toISOString();
@@ -180,86 +199,95 @@ export default function DashboardPageClient({ initialPropertiesSummary }: Dashbo
       try {
         let leadsData: Lead[] = [];
         try {
-          leadsData = await getLeads();
+          leadsData = await listLeads(undefined, undefined, { limit: LEADS_PAGE_SIZE, offset: 0 });
         } catch (e) {
           console.error("Failed to load leads:", e);
         }
         setLeads(leadsData);
+        setLeadsHasMore(leadsData.length === LEADS_PAGE_SIZE);
+        setIsLoading(false);
 
-        try {
-          const response = await fetch("/api/forecasting/summary");
-          if (response.ok) {
-            const payload = await response.json();
-            if (payload?.summary) setForecastingSummary(payload.summary as ForecastingSummary);
-            if (payload?.targets) {
-              setForecastTargets({
-                expectedClosedDeals: Number(payload.targets.expectedClosedDeals) || DEFAULT_FORECAST_TARGETS.expectedClosedDeals,
-                expectedPipelineValue: Number(payload.targets.expectedPipelineValue) || DEFAULT_FORECAST_TARGETS.expectedPipelineValue,
-                avgProbabilityPercent: Number(payload.targets.avgProbabilityPercent) || DEFAULT_FORECAST_TARGETS.avgProbabilityPercent,
-              });
+        await Promise.allSettled([
+          (async () => {
+            try {
+              const response = await fetch("/api/forecasting/summary", { signal: AbortSignal.timeout(10_000) });
+              if (response.ok) {
+                const payload = await response.json();
+                if (payload?.summary) setForecastingSummary(payload.summary as ForecastingSummary);
+                if (payload?.targets) {
+                  setForecastTargets({
+                    expectedClosedDeals: Number(payload.targets.expectedClosedDeals) || DEFAULT_FORECAST_TARGETS.expectedClosedDeals,
+                    expectedPipelineValue: Number(payload.targets.expectedPipelineValue) || DEFAULT_FORECAST_TARGETS.expectedPipelineValue,
+                    avgProbabilityPercent: Number(payload.targets.avgProbabilityPercent) || DEFAULT_FORECAST_TARGETS.avgProbabilityPercent,
+                  });
+                }
+              }
+            } catch { /* forecasting optional */ }
+          })(),
+          (async () => {
+            try {
+              const mf = await fetch("/api/ai/monthly-forecast", { signal: AbortSignal.timeout(10_000) });
+              const m = (await mf.json()) as MonthlyMoneyForecastPayload & { error?: string };
+              if (mf.ok && m?.ok && typeof m.totalExpectedEur === "number") {
+                setMonthlyMoney(m);
+                setMonthlyMoneyStatus("ok");
+              } else {
+                setMonthlyMoneyStatus("error");
+              }
+            } catch {
+              setMonthlyMoneyStatus("error");
             }
-          }
-        } catch { /* forecasting optional */ }
-
-        try {
-          const mf = await fetch("/api/ai/monthly-forecast");
-          const m = (await mf.json()) as MonthlyMoneyForecastPayload & { error?: string };
-          if (mf.ok && m?.ok && typeof m.totalExpectedEur === "number") {
-            setMonthlyMoney(m);
-            setMonthlyMoneyStatus("ok");
-          } else {
-            setMonthlyMoneyStatus("error");
-          }
-        } catch {
-          setMonthlyMoneyStatus("error");
-        }
-
-        try {
-          const { data: { user } } = await supabaseClient.auth.getUser();
-          if (user) {
-            const { data: profile } = await supabaseClient
-              .from("profiles")
-              .select("full_name, email")
-              .or(`auth_user_id.eq.${user.id},id.eq.${user.id}`)
-              .maybeSingle();
-            setUserName(profile?.full_name || profile?.email || user.email || undefined);
-          }
-        } catch { /* user name optional */ }
-
-        try {
-          const planRes = await fetch("/api/billing/plan");
-          if (planRes.ok) {
-            const planData = await planRes.json();
-            if (planData?.tier) setPlan(planData.tier as PlanTier);
-            if (planData?.planKey) setPlanKey(planData.planKey as string);
-            if (planData?.enterpriseSalesIntelligence) {
-              setEnterpriseSalesIntelligence(true);
+          })(),
+          (async () => {
+            try {
+              const { data: { user } } = await supabaseClient.auth.getUser();
+              if (user) {
+                const { data: profile } = await supabaseClient
+                  .from("profiles")
+                  .select("full_name, email")
+                  .or(`auth_user_id.eq.${user.id},id.eq.${user.id}`)
+                  .maybeSingle();
+                setUserName(profile?.full_name || profile?.email || user.email || undefined);
+              }
+            } catch { /* user name optional */ }
+          })(),
+          (async () => {
+            try {
+              const planRes = await fetch("/api/billing/plan", { signal: AbortSignal.timeout(10_000) });
+              if (planRes.ok) {
+                const planData = await planRes.json();
+                if (planData?.tier) setPlan(planData.tier as PlanTier);
+                if (planData?.planKey) setPlanKey(planData.planKey as string);
+                if (planData?.enterpriseSalesIntelligence) {
+                  setEnterpriseSalesIntelligence(true);
+                }
+              }
+            } catch { /* plan optional */ }
+          })(),
+          (async () => {
+            try {
+              const coachingRes = await fetch("/api/coaching/insight", { signal: AbortSignal.timeout(10_000) });
+              if (coachingRes.ok) {
+                const coachingData = (await coachingRes.json()) as { ok?: boolean } & CoachingInsightPayload;
+                if (coachingData?.ok) {
+                  setCoachingPayload({
+                    stats: coachingData.stats,
+                    insight: coachingData.insight,
+                    streakDays: coachingData.streakDays,
+                    followUpRankLabel: coachingData.followUpRankLabel,
+                    dealVelocityLabel: coachingData.dealVelocityLabel,
+                    dealVelocityDeltaLabel: coachingData.dealVelocityDeltaLabel,
+                  });
+                }
+              }
+            } catch {
+              // coaching panel is optional
             }
-          }
-        } catch { /* plan optional */ }
-
-        try {
-          const coachingRes = await fetch("/api/coaching/insight");
-          if (coachingRes.ok) {
-            const coachingData = (await coachingRes.json()) as { ok?: boolean } & CoachingInsightPayload;
-            if (coachingData?.ok) {
-              setCoachingPayload({
-                stats: coachingData.stats,
-                insight: coachingData.insight,
-                streakDays: coachingData.streakDays,
-                followUpRankLabel: coachingData.followUpRankLabel,
-                dealVelocityLabel: coachingData.dealVelocityLabel,
-                dealVelocityDeltaLabel: coachingData.dealVelocityDeltaLabel,
-              });
-            }
-          }
-        } catch {
-          // coaching panel is optional
-        }
+          })(),
+        ]);
       } catch (error) {
         console.error("Failed to load dashboard:", error);
         setLoadError("Nepodarilo sa načítať dáta pre prehľad. Skúste obnoviť stránku.");
-      } finally {
         setIsLoading(false);
       }
     }
@@ -467,6 +495,19 @@ export default function DashboardPageClient({ initialPropertiesSummary }: Dashbo
           <PriorityLeads leads={leads} plan={plan} />
           <AiInsightsPanel leads={leads} plan={plan} />
         </section>
+        {leadsHasMore ? (
+          <div className="mb-6 text-center">
+            <button
+              type="button"
+              onClick={() => void loadMoreLeads()}
+              disabled={leadsLoadingMore}
+              className="cursor-pointer rounded-xl px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+              style={{ background: SLATE_HORIZON.topbarGradient }}
+            >
+              {leadsLoadingMore ? "Načítavam…" : "Načítať ďalšie príležitosti"}
+            </button>
+          </div>
+        ) : null}
 
         {canShowEnterpriseSalesIntelligence && (
           <section className="mb-6">
