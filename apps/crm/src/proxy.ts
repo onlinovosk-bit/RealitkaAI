@@ -160,6 +160,16 @@ export async function proxy(request: NextRequest) {
   } catch (err) {
     if (isProxyAuthTimeoutError(err)) {
       console.error(PROXY_AUTH_TIMEOUT_MARKER, pathname);
+      // Pages: fail-open so SSR/layout can re-check auth (avoids 300s hang).
+      // APIs: fail-closed — several handlers rely on this gate and use
+      // service-role clients without a second getUser() (e.g. import/test-xml
+      // when IMPORT_TEST_API_KEY is unset, neighborhood-watch).
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json(
+          { ok: false, error: "Unauthorized" },
+          { status: 401 }
+        );
+      }
       return response;
     }
     throw err;

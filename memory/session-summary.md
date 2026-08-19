@@ -1,17 +1,17 @@
-## Session 2026-08-15
+## Session 2026-08-16
 
-### Dokoncene
-- #415 STOP evidencia merged. #416 layout perf merged.
-- Production T1/T2 po #416: /acquisition 4s/4s, /dashboard 6s/6s, /leads 4s/5s. Perfgate PASS.
-- D-2026-08-15-03 Stage 0 PASS (docs addendum PR). #400 close without merge.
+### Dokončené
+- Critical-bug audit: #429 proxy auth timeout fail-open on `/api/*` → fail-closed 401
+- PR: https://github.com/onlinovosk-bit/RealitkaAI/pull/438
+- Report: `docs/reports/2026-08-16-proxy-api-auth-timeout-fail-closed.md`
 
-### Rozpracovane / Pending
-- Founder merge tohto docs PR. Stage 1 nespustene (vlastne GO).
+### Rozpracované / Pending
+- Open tracked bugfix PRs still awaiting review: #369 #370 #371 #374 #392 #401 #427 #438
+- Stage 1 / merge gates unchanged (founder GO)
 
-### Klucove subory zmenene
-- docs/reports/2026-08-15-workdesk-layout-perf.md: production T1/T2
-- docs/architecture/acquisition-os-stage0-PASS-report.md: PASS potvrdeny 15.8.2026
-- memory/decisions.md: D-2026-08-15-03
+### Kľúčové súbory zmenené
+- `apps/crm/src/proxy.ts`: API routes 401 on getUser timeout
+- `apps/crm/src/proxy-auth-timeout.test.ts` + verification: lock API fail-closed
 
-### Dalsi krok
-Founder merge docs PR. Stage 1 len na explicitne GO.
+### Ďalší krok
+Founder review/merge #438 (and backlog of open critical fixes starting with #427 ILIKE).
