@@ -5,6 +5,28 @@ import { PLAN_KEYS, PLAN_LIMITS, type PlanKey } from "@/lib/billing-types";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { logInfo } from "./logger";
 import { PROGRAM_BRAND_LABEL } from "@/lib/program-brand-names";
+import {
+  SEAT_TIERS,
+  SEAT_TIER_CONFIG,
+  SEAT_TIER_STRIPE_ENV,
+} from "@/lib/program-tier-pricing";
+
+/**
+ * Seat / credit top-up / starter-pack checkouts are fulfilled by
+ * `handlePricingCheckoutWebhook`. Legacy `syncAccountTier` must not run on
+ * those sessions — they have `authUserId` but no `planKey`, so the legacy
+ * path would resolve priceId=undefined → free and wipe the paid tier.
+ */
+export function isPricingCheckoutMetadata(
+  meta: Record<string, string> | null | undefined,
+): boolean {
+  const checkoutType = meta?.checkoutType;
+  return (
+    checkoutType === "seat" ||
+    checkoutType === "credit_topup" ||
+    checkoutType === "starter_pack"
+  );
+}
 
 // Mapovanie tier â†’ ui_role
 const TIER_TO_UI_ROLE: Record<string, string> = {
@@ -467,14 +489,19 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
 
   try {
     if (event.type === "checkout.session.completed") {
-      const priceId = object.metadata?.planKey
-        ? BILLING_PLANS.find((p) => p.key === object.metadata.planKey)?.priceId
-        : undefined;
-      const authUserId = object.metadata?.authUserId as string | undefined;
-      if (authUserId) {
-        await syncAccountTier(authUserId, priceId, { byAuthUserId: true, resetLock: true });
-      } else if (object.customer) {
-        await syncAccountTier(object.customer as string, priceId, { resetLock: true });
+      // Pricing checkouts (seat/top-up/starter-pack) are applied by
+      // handlePricingCheckoutWebhook in the same route. Skipping here prevents
+      // a free-tier overwrite when metadata has authUserId but no planKey.
+      if (!isPricingCheckoutMetadata(object.metadata)) {
+        const priceId = object.metadata?.planKey
+          ? BILLING_PLANS.find((p) => p.key === object.metadata.planKey)?.priceId
+          : undefined;
+        const authUserId = object.metadata?.authUserId as string | undefined;
+        if (authUserId) {
+          await syncAccountTier(authUserId, priceId, { byAuthUserId: true, resetLock: true });
+        } else if (object.customer) {
+          await syncAccountTier(object.customer as string, priceId, { resetLock: true });
+        }
       }
 
       await createActivity({
@@ -629,6 +656,16 @@ export function resolvePlanKeyFromStripePriceId(
   if (priceId === process.env.STRIPE_PRICE_ENTERPRISE)     return PLAN_KEYS.ENTERPRISE;
   if (priceId === process.env.STRIPE_PRICE_PRO)            return PLAN_KEYS.PRO;
   if (priceId === process.env.STRIPE_PRICE_STARTER)        return PLAN_KEYS.STARTER;
+
+  // Self-serve seat prices (PR-4). Without this, customer.subscription.*
+  // events after seat checkout resolve as unknown → free and wipe the tier
+  // that handlePricingCheckoutWebhook just wrote.
+  for (const tier of SEAT_TIERS) {
+    const seatPriceId = process.env[SEAT_TIER_STRIPE_ENV[tier]];
+    if (seatPriceId && priceId === seatPriceId) {
+      return SEAT_TIER_CONFIG[tier].planKey;
+    }
+  }
 
   const legacyAddon = resolveLegacyAddonPlanKey(priceId);
   if (legacyAddon) return legacyAddon;

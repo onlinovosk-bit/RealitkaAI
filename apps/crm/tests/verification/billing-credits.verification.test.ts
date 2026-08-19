@@ -60,4 +60,21 @@ describe("billing credits panel verification", () => {
     expect(pricing).toContain("isValidStripePriceId");
     expect(pricing).toContain('lower.includes("xxx")');
   });
+
+  it("legacy webhook skips pricing checkouts so paid tier is not wiped to free", () => {
+    const webhookRoute = fs.readFileSync(
+      path.join(CRM_ROOT, "src/app/api/billing/webhook/route.ts"),
+      "utf8",
+    );
+    expect(webhookRoute).toContain("handlePricingCheckoutWebhook");
+    expect(webhookRoute).toContain("handleStripeWebhookEvent");
+
+    const billingStore = fs.readFileSync(
+      path.join(CRM_ROOT, "src/lib/billing-store.ts"),
+      "utf8",
+    );
+    expect(billingStore).toContain("isPricingCheckoutMetadata");
+    expect(billingStore).toContain("SEAT_TIER_STRIPE_ENV");
+    expect(billingStore).toMatch(/if\s*\(\s*!isPricingCheckoutMetadata/);
+  });
 });
