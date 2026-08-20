@@ -31,6 +31,16 @@ describe("POST /api/inbound/gmail-pull", () => {
   it("returns 401 with the wrong secret", async () => {
     const res = await POST(req("wrong"));
     expect(res.status).toBe(401);
+    expect(mockPull).not.toHaveBeenCalled();
+  });
+
+  it("fails closed when CRON_SECRET is not configured", async () => {
+    vi.stubEnv("CRON_SECRET", "");
+
+    const res = await POST(req("fixture-cron"));
+
+    expect(res.status).toBe(401);
+    expect(mockPull).not.toHaveBeenCalled();
   });
 
   it("runs pull when authorized", async () => {

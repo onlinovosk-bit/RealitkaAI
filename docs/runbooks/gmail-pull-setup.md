@@ -64,10 +64,16 @@ Prázdny kontrakt: `apps/crm/.env.example`. Lokálne: tie isté kľúče v `.env
 Očakávaj `200` a `posted >= 1` na správe so štítkom. Lead ide cez
 `POST /api/acquire/email`, nie priamy insert do `leads`.
 
+## Ochrana endpointu
+
+- `/api/inbound/gmail-pull` nie je v `PUBLIC_PATHS`. Proxy ho prepustí iba ako
+  explicitnú service route v `CRON_AUTH_API_PATHS`; handler potom vyžaduje
+  presnú hlavičku `Authorization: Bearer $CRON_SECRET` a bez nej zlyhá s 401.
+- Ochranu oboch vrstiev kryje
+  `tests/verification/inbound-gmail-pull-auth.verification.test.ts` a route unit
+  testy vrátane chýbajúceho alebo nesprávneho secretu.
+
 ## STOP / follow-up (mimo tento PR)
 
-- `/api/inbound/*` nie je na session bypass. Live curl bez session dostane 401
-  z `middleware.ts` / `proxy.ts`, kým follow-up nepridá `BYPASS_PREFIXES` +
-  `CRON_AUTH_API_PATHS`. Unit testy volajú handler priamo.
 - Žiadny `vercel.json` cron. Žiadna token tabuľka / revoke UI (fáza B).
 - Restricted-scope verification = fáza F. Forward na alias tu nevypínaj.
