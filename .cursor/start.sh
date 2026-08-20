@@ -24,9 +24,23 @@ sudo chmod 666 /var/run/docker.sock 2>/dev/null || true
 
 echo "[start] Reconciling local Supabase stack..."
 cd "$CRM_DIR"
-if ! supabase status >/dev/null 2>&1; then
-  supabase start
-fi
+# Idempotent + race-tolerant: on a snapshot the containers may pre-exist but the
+# DB can still be in "starting" state, which makes an early `supabase status`
+# probe raise a transient error. Retry a few times before giving up.
+for attempt in 1 2 3 4 5; do
+  if supabase status >/dev/null 2>&1; then
+    echo "[start] Supabase already healthy (attempt ${attempt})."
+    break
+  fi
+  echo "[start] Supabase not ready yet — running 'supabase start' (attempt ${attempt})..."
+  supabase start >/dev/null 2>&1 || true
+  if supabase status >/dev/null 2>&1; then
+    echo "[start] Supabase healthy after start (attempt ${attempt})."
+    break
+  fi
+  [ "$attempt" -eq 5 ] && { echo "[start] ERROR: Supabase did not become ready"; supabase status || true; exit 1; }
+  sleep 10
+done
 
 echo "[start] Writing apps/crm/.env.local from local Supabase credentials..."
 sb_env="$(supabase status -o env 2>/dev/null | sed 's/"//g' | grep -E '^[A-Z0-9_]+=')"

@@ -46,3 +46,14 @@ Nový, verzovaný Cloud Agent development environment pre monorepo (primárna ap
 Reálna akcia: cez UI vytvorený účet `demo.agent@revolis.local`, redirect na
 `/onboarding/step-1-vitaj`, následne autentikovaný `/dashboard`. Zápis potvrdený
 priamo v DB (`select ... from auth.users`).
+
+## Build verifikácia (fresh Cloud Agent)
+
+- Snapshot VM → draft build `bld-20260820-65806a15` (install exit 0, `npm ci` 8 s,
+  Docker + Supabase CLI zapečené v snapshote).
+- Fresh agent bootnutý z buildu: `node v22.14.0`, `docker 29.1.3`, `supabase 2.115.0`;
+  supabase kontajnery healthy; `/api/healthz` → `{"ok":true}`; REST dotaz na seedované
+  `agencies` vrátil "Reality Smolko, s. r. o." → potvrdená DB konektivita.
+- `start.sh` sprísnený: retry + readiness poll okolo `supabase start` (odolné voči
+  tranzientnému `LegacyStatusDbNotReadyError`, keď DB kontajner ešte štartuje).
+  Overená konvergencia na 1 spustenie aj idempotencia pri opakovaní.
