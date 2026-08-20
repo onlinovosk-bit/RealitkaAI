@@ -689,3 +689,8 @@ Dokaz:
 `findProfileByEmailCandidates` used `.ilike("email", login)` so `_`/`%` were SQL wildcards (`in_o@` → `info@`). Combined with service-role resolve + `/api/leads/inventory` service fallback → account takeover / cross-tenant lead dump.
 
 Fix: exact `.eq` when candidate contains `_`/`%`; keep `ilike` only for safe patterns. Report: `docs/reports/2026-08-15-critical-email-ilike-auth.md`.
+
+## [2026-08-20] - Invite must stamp agency_id
+- **Rozhodnutie:** POST /api/invite upsertuje invitee profile s caller agency_id + auth_user_id; role allowlist agent|manager|admin.
+- **Prečo:** Bez agency_id invitee login = null tenant (prázdny inventár).
+- **Dôkaz:** docs/reports/2026-08-20-critical-bug-invite-agency-id.md

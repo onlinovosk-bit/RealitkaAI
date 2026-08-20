@@ -1,12 +1,13 @@
-## Session 2026-08-15
+## Session 2026-08-20
 ### Dokončené
-- Critical-bug hunt: profile email ILIKE wildcards → auth takeover / lead dump
-- Fix + unit/verification tests + report `docs/reports/2026-08-15-critical-email-ilike-auth.md`
+- Critical-bug hunt: POST /api/invite omitted agency_id on invitee profile
+- Fix + unit/verification tests + report `docs/reports/2026-08-20-critical-bug-invite-agency-id.md`
 ### Rozpracované / Pending
-- Merge guard PR after CI green
-- Open tracked billing PRs (#369–#401) still need founder merge
+- Open tracked critical PRs still awaiting founder merge (#369–#374, #438–#444)
+- Grant-engine ledger-orphan after failed balance write → covered by open #370 (atomic RPCs); not duplicated
 ### Kľúčové súbory zmenené
-- apps/crm/src/lib/profiles/resolve-profile-for-auth.ts: exact email match when `_`/`%` present
-- apps/crm/tests/verification/auth-email-ilike-wildcard.verification.test.ts: live contract
+- apps/crm/src/app/api/invite/route.ts: stamp agency_id + auth_user_id; role allowlist
+- apps/crm/src/app/api/invite/__tests__/route.test.ts: invite tenant contract
+- apps/crm/tests/verification/invite-agency-id.verification.test.ts: live spec
 ### Ďalší krok
-Founder review/merge ILIKE auth guard PR; then continue critical-bug backlog or Stage 1 only on GO.
+Founder review/merge invite agency_id PR; then continue critical-bug backlog or merge oldest open money/auth PRs on GO.
