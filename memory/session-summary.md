@@ -1,3 +1,20 @@
+## Session 2026-08-21
+### Dokončené
+- GO implementácia billing fixov: dva fresh PR z main (žiadny rebase #371/#374)
+- **#451** legacy unknown price → no-op + seat map (`cursor/fix-billing-legacy-unknown-tier-db1f`)
+- **Credits expire guard** PR (`cursor/fix-credits-expire-guard-db1f`) — error≠skipped, ok:false, refuse wipe current grant
+- Impact A1/B2 zapísané: `docs/reports/2026-08-21-billing-impact-a1-b2.md` + bus MSG-006
+### Rozpracované / Pending
+- Founder merge #451 + credits-expire PR (nemerge agent)
+- Close stale #371 / #374 po merge
+- A1 agency `11111111-…` — overiť sandbox vs real, potom remediácia tierov
+- Smolko Gmail OAuth dual-run; bridge-harness push z PC
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/billing-store.ts`: unknown + seat map + pricing checkout skip
+- `apps/crm/src/lib/credits/grant-engine.ts` + `monthly-cycle.ts`: expire error + wipe guard
+### Ďalší krok
+Founder merge #451 a credits-expire PR; potom A1 real-vs-sandbox check pred customer remediáciou.
+
 ## Session 2026-08-15
 ### Dokončené
 - Critical-bug hunt: profile email ILIKE wildcards → auth takeover / lead dump

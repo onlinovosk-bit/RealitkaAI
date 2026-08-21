@@ -689,3 +689,10 @@ Dokaz:
 `findProfileByEmailCandidates` used `.ilike("email", login)` so `_`/`%` were SQL wildcards (`in_o@` → `info@`). Combined with service-role resolve + `/api/leads/inventory` service fallback → account takeover / cross-tenant lead dump.
 
 Fix: exact `.eq` when candidate contains `_`/`%`; keep `ilike` only for safe patterns. Report: `docs/reports/2026-08-15-critical-email-ilike-auth.md`.
+
+## [2026-08-21] — Billing wipe fixes: implement without waiting on impact count
+
+- **Rozhodnutie:** GO na dva samostatné fix PR z dnešného mainu (#451 legacy unknown≠free; credits-expire guard). Počet zasiahnutých zákazníkov nerozhoduje o tom, či opraviť — len o remediácii.
+- **Prečo:** Bug potvrdený v kóde na main; každý deň čakania = ďalší deň rizika free-tier wipe / credit wipe.
+- **Dôsledok:** Impact SQL A1/B2 beží súbežne (read-only). A1: 1 riadok sandbox-looking UUID; B2: 0 riadkov. Remediácia až po overení reálneho klienta.
+- **Proces:** Open PR ≠ hotová práca (DMARC ~7d, billing ~15d). Ranný report má obsahovať vek najstaršieho otvoreného PR.

@@ -28,8 +28,10 @@ export type MonthlyCycleResult = {
  * na oboch stranách sa poradie mohlo obrátiť, grant by zbehol prvý a expirácia
  * by zmazala práve pridelené kredity. Zákazník by prvého v mesiaci videl nulu.
  *
- * Obe fázy sú idempotentné cez credit_ledger idempotency key, takže opakovaný
- * beh v ten istý deň nič nepokazí.
+ * Idempotencia: ledger keys bránia double-expire/double-grant. Retry po partial
+ * fail (expire error → grant OK) NESMIE znova expirovať — grant-engine odmietne
+ * expire, ak už existuje current-period grant. Agentúry s expire error sa v tom
+ * istom behu negrantujú; cyklus vráti ok:false aby cron retryoval.
  *
  * Audit: docs/audit/2026-08-02-profit-leak-audit.md — nález E1
  */
@@ -55,14 +57,23 @@ export async function runMonthlyCreditCycle(): Promise<MonthlyCycleResult> {
 
   let expiredTotal = 0;
   let expireSkipped = 0;
+  const expireFailedAgencyIds = new Set<string>();
   for (const row of (toExpire ?? []) as AgencyCreditRow[]) {
     const result = await expireGrantCreditsForAgency(row, expirePeriodKey);
-    if (result.skipped) expireSkipped += 1;
-    else expiredTotal += result.expired;
+    if (result.error) {
+      expireFailedAgencyIds.add(row.id);
+      expireSkipped += 1;
+    } else if (result.skipped) {
+      expireSkipped += 1;
+    } else {
+      expiredTotal += result.expired;
+    }
   }
 
   // ---- FÁZA 2: grant na aktuálny mesiac ------------------------------------
   // Agentúry sa načítavajú ZNOVA — fáza 1 im zmenila grant_credits_balance.
+  // Agentúry s hard expire error v tomto behu NEgrantujeme (inak retry expire
+  // po úspešnom grante môže zmazať nový grant — pozri grant-engine guard).
   const grantPeriodKey = currentPeriodKey();
   const { data: toGrant, error: grantErr } = await supabase
     .from("agencies")
@@ -86,24 +97,40 @@ export async function runMonthlyCreditCycle(): Promise<MonthlyCycleResult> {
   let grantedTotal = 0;
   let grantSkipped = 0;
   for (const row of (toGrant ?? []) as AgencyCreditRow[]) {
+    if (expireFailedAgencyIds.has(row.id)) {
+      grantSkipped += 1;
+      continue;
+    }
     const result = await grantMonthlyCreditsForAgency(row, grantPeriodKey);
     if (result.skipped) grantSkipped += 1;
     else grantedTotal += result.granted;
   }
 
+  const expireSummary = {
+    periodKey: expirePeriodKey,
+    agencies: toExpire?.length ?? 0,
+    expiredTotal,
+    skipped: expireSkipped,
+  };
+  const grantSummary = {
+    periodKey: grantPeriodKey,
+    agencies: toGrant?.length ?? 0,
+    grantedTotal,
+    skipped: grantSkipped,
+  };
+
+  if (expireFailedAgencyIds.size > 0) {
+    return {
+      ok: false,
+      error: `expire_failed:${expireFailedAgencyIds.size}`,
+      expire: expireSummary,
+      grant: grantSummary,
+    };
+  }
+
   return {
     ok: true,
-    expire: {
-      periodKey: expirePeriodKey,
-      agencies: toExpire?.length ?? 0,
-      expiredTotal,
-      skipped: expireSkipped,
-    },
-    grant: {
-      periodKey: grantPeriodKey,
-      agencies: toGrant?.length ?? 0,
-      grantedTotal,
-      skipped: grantSkipped,
-    },
+    expire: expireSummary,
+    grant: grantSummary,
   };
 }

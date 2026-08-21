@@ -1,6 +1,13 @@
 # Open Tasks — Prioritized Queue
 
-> Posledná aktualizácia: 2026-08-14 | Task-loop sync
+> Posledná aktualizácia: 2026-08-21 | Task-loop sync
+
+## P0 — Billing bleed (founder merge)
+
+- [ ] **Merge #451** — legacy unknown Stripe price must not map to free
+- [ ] **Merge credits-expire guard PR** — `cursor/fix-credits-expire-guard-db1f`
+- [ ] Close superseded #371 / #374 after merges
+- [ ] A1 remediation GO — only if agency `11111111-…` is a real customer (12 free profiles under market_vision)
 
 ## P0 — Dokončiť rozbehnuté (vykonávacie)
 
