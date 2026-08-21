@@ -1,3 +1,17 @@
+## Session 2026-08-21 (critical-bug cron)
+### Dokončené
+- Critical-bug hunt: **no new PR** — no untracked high-severity bug meeting confidence bar
+- MEMORIES cleanup: removed #371/#374 (fixed via merged #451/#452); pointed proxy/acquire to #457/#456
+- Report: `docs/reports/2026-08-21-critical-bug-hunt.md`
+### Rozpracované / Pending
+- Founder merge queue: #457 → #456 → #443 → #444 → #447 → #369/#370
+- Close stale #371/#374/#438/#439 after replays merge
+- A1 agency `11111111-…` sandbox vs real
+### Kľúčové súbory zmenené
+- `docs/reports/2026-08-21-critical-bug-hunt.md`: hunt verdict + merge priority
+### Ďalší krok
+Founder merge #457 (proxy fail-closed) then #456 (acquire dedup) — GO REQUIRED.
+
 ## Session 2026-08-21
 ### Dokončené
 - GO implementácia billing fixov: dva fresh PR z main (žiadny rebase #371/#374)
@@ -5,7 +19,7 @@
 - **Credits expire guard** PR (`cursor/fix-credits-expire-guard-db1f`) — error≠skipped, ok:false, refuse wipe current grant
 - Impact A1/B2 zapísané: `docs/reports/2026-08-21-billing-impact-a1-b2.md` + bus MSG-006
 ### Rozpracované / Pending
-- Founder merge #451 + credits-expire PR (nemerge agent)
+- Founder merge #451 + credits-expire PR (nemerge agent) — **both merged as #451/#452**
 - Close stale #371 / #374 po merge
 - A1 agency `11111111-…` — overiť sandbox vs real, potom remediácia tierov
 - Smolko Gmail OAuth dual-run; bridge-harness push z PC
