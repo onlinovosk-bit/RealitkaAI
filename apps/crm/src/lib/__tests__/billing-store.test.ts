@@ -85,11 +85,11 @@ describe('billing-store', () => {
     });
   });
 
-  describe('getCurrentPlanTiers', () => {
+  describe('getCurrentPlanTier', () => {
     it('returns "free" when no subscription exists', async () => {
       vi.stubEnv('STRIPE_SECRET_KEY', '');
-      const { getCurrentPlanTiers } = await import('@/lib/billing-store');
-      const tier = await getCurrentPlanTiers();
+      const { getCurrentPlanTier } = await import('@/lib/billing-store');
+      const tier = await getCurrentPlanTier();
       expect(tier).toBe('free');
     });
   });

@@ -690,12 +690,16 @@ export function resolvePlanKeyFromStripePriceId(
 export async function getCurrentPlanKey(): Promise<ResolvedBillingPlan> {
   const status = await getCurrentBillingStatus();
   const priceId = status.subscription?.items?.[0]?.priceId ?? null;
-  return resolvePlanKeyFromStripePriceId(priceId);
+  const key = resolvePlanKeyFromStripePriceId(priceId);
+  // Display / fail-open: no recognizable paid price → free for UI & gates.
+  // Webhook sync uses resolvePlanKeyFromStripePriceId + syncAccountTier no-op
+  // so unknown prices never overwrite a paid tier.
+  return key === "unknown" ? "free" : key;
 }
 
-export async function getCurrentPlanTiers(): Promise<"free" | "pro"> {
+export async function getCurrentPlanTier(): Promise<"free" | "pro"> {
   const key = await getCurrentPlanKey();
-  if (key === "free" || key === "unknown") return "free";
+  if (key === "free") return "free";
   return "pro";
 }
 
