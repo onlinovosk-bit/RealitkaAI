@@ -82,6 +82,20 @@ describe("billing credits panel verification", () => {
     expect(billing).toContain('.delete().eq("idempotency_key", idempotencyKey)');
   });
 
+  it("legacy webhook does not map unknown Stripe prices to free", () => {
+    const billingStore = fs.readFileSync(
+      path.join(CRM_ROOT, "src/lib/billing-store.ts"),
+      "utf8",
+    );
+    expect(billingStore).toContain('return "unknown"');
+    expect(billingStore).toContain("isPricingCheckoutMetadata");
+    expect(billingStore).toContain("SEAT_TIER_STRIPE_ENV");
+    expect(billingStore).toMatch(/if\s*\(\s*!isPricingCheckoutMetadata/);
+    expect(billingStore).not.toMatch(
+      /Unknown Stripe price id — defaulting tier to free/,
+    );
+  });
+
   it("credits expire surfaces DB errors and refuses wipe of current grant", () => {
     const grantEngine = fs.readFileSync(
       path.join(CRM_ROOT, "src/lib/credits/grant-engine.ts"),
