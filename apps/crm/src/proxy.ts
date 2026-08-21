@@ -31,7 +31,10 @@ const PUBLIC_PATHS = new Set([
 const CRON_PATH_PREFIX = "/api/agents";
 const CRON_API_PATH_PREFIX = "/api/cron/";
 /** Bearer CRON_SECRET routes outside /api/cron/ — bypass session gate like cron. */
-const CRON_AUTH_API_PATHS = new Set(["/api/followup"]);
+const CRON_AUTH_API_PATHS = new Set([
+  "/api/followup",
+  "/api/inbound/gmail-pull",
+]);
 const SCORING_CRON_PATHS = ["/api/scoring"];
 /** 410 Gone shims — bypass session gate so callers receive deprecated response. */
 const DEPRECATED_API_SHIMS = new Set(["/api/scoring", "/api/segmentation"]);
