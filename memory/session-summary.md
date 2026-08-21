@@ -1,12 +1,14 @@
-## Session 2026-08-15
+## Session 2026-08-19
 ### Dokončené
-- Critical-bug hunt: profile email ILIKE wildcards → auth takeover / lead dump
-- Fix + unit/verification tests + report `docs/reports/2026-08-15-critical-email-ilike-auth.md`
+- Critical-bug hunt + fix: matching recalculate tenant wipe (unscoped list reads + silent post-delete timeout)
+- Unit + verification tests; report updated
 ### Rozpracované / Pending
-- Merge guard PR after CI green
-- Open tracked billing PRs (#369–#401) still need founder merge
+- Merge matching fix PR after CI green
+- Tracked open: #369 #370 #371 #374 #438 #439 #443 (+ this matching PR)
 ### Kľúčové súbory zmenené
-- apps/crm/src/lib/profiles/resolve-profile-for-auth.ts: exact email match when `_`/`%` present
-- apps/crm/tests/verification/auth-email-ilike-wildcard.verification.test.ts: live contract
+- apps/crm/src/lib/matching-store.ts: scoped reads + fail-hard after delete
+- apps/crm/src/lib/matching-hooks.ts: thread scoped client
+- apps/crm/src/app/api/leads/** + properties/[id]: pass scoped into autoRecalculate*
+- docs/reports/2026-08-19-critical-bug-hunt-matching-recalc.md: fix report
 ### Ďalší krok
-Founder review/merge ILIKE auth guard PR; then continue critical-bug backlog or Stage 1 only on GO.
+Founder review/merge matching wipe fix; then merge remaining critical auth/billing PRs (#438 first).
