@@ -81,4 +81,21 @@ describe("billing credits panel verification", () => {
     expect(billing).toContain("topup balance:");
     expect(billing).toContain('.delete().eq("idempotency_key", idempotencyKey)');
   });
+
+  it("credits expire surfaces DB errors and refuses wipe of current grant", () => {
+    const grantEngine = fs.readFileSync(
+      path.join(CRM_ROOT, "src/lib/credits/grant-engine.ts"),
+      "utf8",
+    );
+    const monthlyCycle = fs.readFileSync(
+      path.join(CRM_ROOT, "src/lib/credits/monthly-cycle.ts"),
+      "utf8",
+    );
+    expect(grantEngine).toContain("ExpireGrantResult");
+    expect(grantEngine).toContain("refuse expire: current-period grant already applied");
+    expect(grantEngine).toMatch(/error:\s*ledgerErr\.message/);
+    expect(monthlyCycle).toContain("expireFailedAgencyIds");
+    expect(monthlyCycle).toContain("expire_failed:");
+    expect(monthlyCycle).toMatch(/ok:\s*false/);
+  });
 });
