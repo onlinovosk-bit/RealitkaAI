@@ -696,3 +696,10 @@ Fix: exact `.eq` when candidate contains `_`/`%`; keep `ilike` only for safe pat
 - **Prečo:** Bug potvrdený v kóde na main; každý deň čakania = ďalší deň rizika free-tier wipe / credit wipe.
 - **Dôsledok:** Impact SQL A1/B2 beží súbežne (read-only). A1: 1 riadok sandbox-looking UUID; B2: 0 riadkov. Remediácia až po overení reálneho klienta.
 - **Proces:** Open PR ≠ hotová práca (DMARC ~7d, billing ~15d). Ranný report má obsahovať vek najstaršieho otvoreného PR.
+
+## [2026-08-21] — Branch cleanup GO withdrawn → NEEDS-EVIDENCE
+
+- **Rozhodnutie:** Stiahnuť GO na zmazanie ~208 remote vetiev. Most verdikt NEEDS-EVIDENCE prijatý.
+- **Prečo:** Vzorka 4/208 (~2 %) nestačí; neoverený shallow clone pri Cursor analýze; tip SHA drift; chýbajú backup refs `refs/cleanup/2026-08-21/<branch>`.
+- **Dôsledok:** TASK-0003 evidence pack (full clone, N tip SHA, backup refs, full cherry, edge policy) pred akýmkoľvek delete GO. Smolko Gmail dual-run (#422 na main) je samostatná P0 — neblokovať cleanup evidence.
+- **Artefakty:** `.ai/bus/outbox/MSG-20260821-007-…`, `.ai/bus/tasks/TASK-0003.md`, `docs/reports/2026-08-21-branch-cleanup-needs-evidence.md`
