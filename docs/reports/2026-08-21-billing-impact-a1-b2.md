@@ -14,7 +14,7 @@ Code bugs on `main` are confirmed. Founder GO: implement fixes **now** as two in
 ## Fix PRs (fresh from today's main — no rebase)
 
 1. **#451** `cursor/fix-billing-legacy-unknown-tier-db1f` — unknown → no-op; seat map; skip pricing checkouts; `forceFree` only on delete.
-2. **Credits expire** (this session) — `error` not silent skip; cycle `ok:false`; refuse expire when current-period grant exists.
+2. **#452** `cursor/fix-credits-expire-guard-db1f` — `error` not silent skip; cycle `ok:false`; refuse expire when current-period grant exists.
 
 Founder merges. No prod DB writes from these PRs.
 

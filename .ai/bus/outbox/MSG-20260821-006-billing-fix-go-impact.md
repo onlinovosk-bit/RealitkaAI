@@ -18,7 +18,7 @@ next_action:
 
 - GO accepted: two fresh PRs from today's main (no rebase of #371/#374).
 - PR1 legacy unknown-tier: **#451** (`cursor/fix-billing-legacy-unknown-tier-db1f`).
-- PR2 credits expire guard: branch `cursor/fix-credits-expire-guard-db1f` (opened same session).
+- PR2 credits expire guard: **#452** (`cursor/fix-credits-expire-guard-db1f`).
 - Impact SQL recorded (founder): A1 one sandbox-looking row; B2 no wipe rows.
 
 ## A1 / B2 (read-only; founder ran)
