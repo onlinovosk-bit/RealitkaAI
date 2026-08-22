@@ -1,3 +1,18 @@
+## Session 2026-08-21 (evening)
+### Dokončené
+- Billing #451 + #452 merged na main
+- Env #445 merged (install/start scripts on main)
+- Founder most: branch cleanup GO withdrawn → NEEDS-EVIDENCE zapísané (TASK-0003)
+- Smolko Gmail dual-run next pack: `docs/reports/2026-08-21-smolko-gmail-dual-run-next.md` (draft email + checklist)
+### Rozpracované / Pending
+- TASK-0003 evidence pack (full clone / tip SHA / backup refs) — žiadny delete
+- Smolko: Preview OAuth secrets + curl smoke + odoslanie draftu (founder GO)
+### Kľúčové súbory zmenené
+- `.ai/bus/tasks/TASK-0003.md`, `MSG-20260821-007-…`, `docs/reports/2026-08-21-branch-cleanup-needs-evidence.md`
+- `docs/reports/2026-08-21-smolko-gmail-dual-run-next.md`
+### Ďalší krok
+Smolko Preview OAuth dual-run: founder vloží secrets podľa runbooku; agent má draft email pripravený na GO odoslanie.
+
 ## Session 2026-08-21
 ### Dokončené
 - GO implementácia billing fixov: dva fresh PR z main (žiadny rebase #371/#374)

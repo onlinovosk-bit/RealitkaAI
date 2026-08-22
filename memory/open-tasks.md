@@ -1,13 +1,23 @@
 # Open Tasks — Prioritized Queue
 
-> Posledná aktualizácia: 2026-08-21 | Task-loop sync
+> Posledná aktualizácia: 2026-08-21 (evening) | Task-loop sync
 
-## P0 — Billing bleed (founder merge)
+## P0 — Smolko (zákazník)
 
-- [ ] **Merge #451** — legacy unknown Stripe price must not map to free
-- [ ] **Merge credits-expire guard PR** — `cursor/fix-credits-expire-guard-db1f`
-- [ ] Close superseded #371 / #374 after merges
-- [ ] A1 remediation GO — only if agency `11111111-…` is a real customer (12 free profiles under market_vision)
+- [ ] **Gmail inbound dual-run** — #422 na main; Preview secrets + curl smoke (`docs/runbooks/gmail-pull-setup.md`); draft email v `docs/reports/2026-08-21-smolko-gmail-dual-run-next.md` — GO odoslať?
+- [ ] 24–48 h dual-run; forward nevypínať bez GO
+
+## P0 — Branch cleanup (NEEDS-EVIDENCE)
+
+- [ ] **TASK-0003 evidence pack** — full clone, tip SHA N=N, backup refs, full cherry, edge policy
+- [ ] Žiadny mass delete bez samostatného founder GO na pack
+
+## P0 — Billing (done on main)
+
+- [x] Merge #451 legacy unknown≠free
+- [x] Merge #452 credits expire guard
+- [ ] Close superseded #371 / #374 (ak ešte open)
+- [ ] A1 remediation — only if `11111111-…` is real customer
 
 ## P0 — Dokončiť rozbehnuté (vykonávacie)
 
