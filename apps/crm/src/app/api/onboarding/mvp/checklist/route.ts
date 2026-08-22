@@ -14,11 +14,13 @@ export async function GET(request: Request) {
     return errorResponse("Parametre company a email sú povinné.", 400);
   }
 
+  // Exact match only — ILIKE wildcards (%/_) would let unauthenticated callers
+  // probe/exfiltrate onboarding PII via the public checklist GET.
   const { data, error } = await supabase
     .from("client_onboarding_progress")
     .select("*")
-    .ilike("company", company)
-    .ilike("contact_email", email)
+    .eq("company", company)
+    .eq("contact_email", email)
     .maybeSingle();
 
   if (error) return errorResponse(error.message, 500);

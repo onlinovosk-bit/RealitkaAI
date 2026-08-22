@@ -1,8 +1,12 @@
 import { errorResponse, okResponse } from "@/lib/api-response";
 import { computeReadinessScore, getRiskLabel, normalizeChecklist } from "@/lib/onboarding-mvp";
+import { requireOnboardingOperator } from "@/lib/onboarding-mvp-auth";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 
 export async function GET() {
+  const gate = await requireOnboardingOperator();
+  if (!gate.ok) return gate.response;
+
   const supabase = createServiceRoleClient();
   if (!supabase) return errorResponse("Service role nie je nakonfigurovaný.", 500);
 
@@ -31,4 +35,3 @@ export async function GET() {
   const atRisk = enriched.filter((r) => r.risk !== "low");
   return okResponse({ total: enriched.length, atRisk: atRisk.length, clients: atRisk });
 }
-
