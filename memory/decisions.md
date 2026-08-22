@@ -883,3 +883,8 @@ blocked. Exact PC commands are in
 - **Prečo:** Vzorka 4/208 (~2 %) nestačí; neoverený shallow clone pri Cursor analýze; tip SHA drift; chýbajú backup refs `refs/cleanup/2026-08-21/<branch>`.
 - **Dôsledok:** TASK-0003 evidence pack (full clone, N tip SHA, backup refs, full cherry, edge policy) pred akýmkoľvek delete GO. Smolko Gmail dual-run (#422 na main) je samostatná P0 — neblokovať cleanup evidence.
 - **Artefakty:** `.ai/bus/outbox/MSG-20260821-007-…`, `.ai/bus/tasks/TASK-0003.md`, `docs/reports/2026-08-21-branch-cleanup-needs-evidence.md`
+
+## [2026-08-22] Critical: onboarding MVP unauth PII/dispatch
+- **Rozhodnutie:** Gate at-risk + dispatch (founder/platform_admin); narrow proxy allowlist to checklist/schedule; checklist GET eq not ilike.
+- **PR:** #459
+- **Dôvod:** service-role routes were internet-reachable via blanket `/api/onboarding/mvp/` bypass.

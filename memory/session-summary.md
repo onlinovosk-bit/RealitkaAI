@@ -1,3 +1,16 @@
+## Session 2026-08-22 (critical-bug automation)
+### Dokončené
+- CRITICAL: unauth `/api/onboarding/mvp/at-risk` + `messages/dispatch` — PR #459
+- MEMORIES cleanup: dropped merged #456/#457; added #459
+### Rozpracované / Pending
+- Merge #459; still-open prior fixes #369/#370/#443/#444/#447
+### Kľúčové súbory zmenené
+- `apps/crm/src/proxy.ts`: narrow MVP public allowlist
+- `apps/crm/src/lib/onboarding-mvp-auth.ts`: founder/platform-admin gate
+- `apps/crm/src/app/api/onboarding/mvp/{at-risk,messages/dispatch,checklist}/route.ts`
+### Ďalší krok
+Founder review/merge #459 (PII); then oldest open criticals (#369/#370).
+
 ## Session 2026-08-22
 ### Dokončené
 - Founder `GO IMPLEMENT V0` prijaté; pred prvým runtime editom **STOP** — Phase 0 baseline v tomto clone chýba

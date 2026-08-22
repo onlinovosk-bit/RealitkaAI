@@ -41,8 +41,15 @@ const DEPRECATED_API_SHIMS = new Set(["/api/scoring", "/api/segmentation"]);
 /** Removed routes — let Next return 404 (no session gate). PR-4 scrape removal. */
 const REMOVED_API_PATHS = new Set(["/api/scrape"]);
 const WEBHOOK_API_SEGMENT = "/api/webhooks";
-/** Onboarding MVP APIs — service-role in route handlers; bypass session gate for SSR/cron callers. */
-const ONBOARDING_MVP_PREFIX = "/api/onboarding/mvp/";
+/**
+ * Public onboarding wizard only (pre-login checklist + message schedule).
+ * Admin CSM routes (at-risk PII dump, email dispatch) MUST stay session-gated —
+ * they use service-role and previously leaked under the blanket /mvp/ bypass.
+ */
+const ONBOARDING_MVP_PUBLIC_PATHS = new Set([
+  "/api/onboarding/mvp/checklist",
+  "/api/onboarding/mvp/messages/schedule",
+]);
 
 export const PROXY_AUTH_TIMEOUT_MS = 5_000;
 export const PROXY_AUTH_TIMEOUT_MARKER = "[proxy-auth-timeout]";
@@ -122,7 +129,7 @@ export async function proxy(request: NextRequest) {
   if (REMOVED_API_PATHS.has(pathname)) return NextResponse.next();
   if (DEPRECATED_API_SHIMS.has(pathname)) return NextResponse.next();
   if (isCronRoute(pathname)) return NextResponse.next();
-  if (pathname.startsWith(ONBOARDING_MVP_PREFIX)) return NextResponse.next();
+  if (ONBOARDING_MVP_PUBLIC_PATHS.has(pathname)) return NextResponse.next();
 
   let response = NextResponse.next({
     request: { headers: request.headers },
