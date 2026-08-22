@@ -13,7 +13,7 @@
 - `docs/reports/2026-08-22-agent-os-v0-implementation-stop.md`: contradiction report
 - `memory/decisions.md`: Phase 0 + V0 amendment + STOP
 ### Ďalší krok
-Founder push `feat/bridge-harness` s 9 bridge súbormi; re-issue `GO IMPLEMENT V0`.
+Capture PC: paste PowerShell unlock from STOP report addendum; then `GO IMPLEMENT V0`.
 
 ## Session 2026-08-21
 ### Dokončené

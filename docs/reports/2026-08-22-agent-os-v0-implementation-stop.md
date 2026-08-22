@@ -92,6 +92,40 @@ Plus Decision Memory sync (`D-2026-08-18-01` + V0 amendment + this STOP).
 
 Until step 3 lands, V0 runtime implementation remains blocked.
 
+## Addendum 2026-08-22 — Founder `GO.` received, unlock still unmet
+
+Re-fetch after `GO.`:
+
+- `origin` still has no `feat/bridge-harness`
+- same 9 blob IDs still `MISSING`
+- `git log --all -- scripts/ruflo-model-bridge` still empty
+- no `ruflo-model-bridge` sources on this disk or in uploads
+
+`GO.` does not reconstruct Phase 0. Inventing those files remains rejected.
+
+Paste this on the **capture PC** (the machine that froze the manifest). Do not run it here.
+
+```powershell
+# 1) prove the frozen index is still here
+git checkout feat/bridge-harness
+git rev-parse HEAD
+# expect: 4a01a46a161cb68cdae50f4f58a9218aee71de56
+
+git ls-files --stage -- scripts/ruflo-model-bridge
+git diff --cached -- scripts/ruflo-model-bridge | git patch-id --stable
+# expect the 9 blob IDs + patch a414e018d6050df3c4de41b2e755dd21165ec8a4
+
+# 2) commit only the bridge slice, then push
+git add -- scripts/ruflo-model-bridge
+git status --short -- scripts/ruflo-model-bridge
+git commit -m "feat(bridge): Phase 0 ruflo model bridge (frozen V0 baseline)"
+git push -u origin feat/bridge-harness
+```
+
+If HEAD or any blob/patch ID differs, **stop and recapture** the manifest. Do not force-push a different tree as if it were the freeze.
+
+After `origin/feat/bridge-harness` exists, send `GO IMPLEMENT V0` again.
+
 ## Planned hunks (not executed)
 
 None. Plan §10 file list was not opened for edit.

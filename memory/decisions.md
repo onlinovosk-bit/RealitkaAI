@@ -870,6 +870,13 @@ IDs tu nie sú.
 **Unlock:** commit the nine staged bridge files on the capture PC, push
 `feat/bridge-harness`, re-issue `GO IMPLEMENT V0`.
 
+### Amendment 2026-08-22 — `GO.` does not lift the baseline STOP
+
+Founder sent `GO.` after D-2026-08-22-01. Re-fetch still shows no
+`feat/bridge-harness` and all 9 frozen blobs missing. Runtime V0 remains
+blocked. Exact PC commands are in
+`docs/reports/2026-08-22-agent-os-v0-implementation-stop.md` (addendum).
+
 ## [2026-08-21] — Branch cleanup GO withdrawn → NEEDS-EVIDENCE
 
 - **Rozhodnutie:** Stiahnuť GO na zmazanie ~208 remote vetiev. Most verdikt NEEDS-EVIDENCE prijatý.
