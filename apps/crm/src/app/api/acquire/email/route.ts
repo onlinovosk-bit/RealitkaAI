@@ -40,6 +40,11 @@ function safeCompare(a: string, b: string): boolean {
   return timingSafeEqual(bufA, bufB);
 }
 
+function isUniqueConflict(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false;
+  return error.code === "23505" || /duplicate|unique/i.test(error.message ?? "");
+}
+
 export async function POST(req: NextRequest) {
   try {
     // 1. auth — shared secret namiesto Resend webhook podpisu, konštantné porovnanie
@@ -103,11 +108,31 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    await supa.from("acquire_dedup_keys").insert({
+    // Claim dedup BEFORE lead insert so concurrent workers cannot double-insert.
+    // On lead failure we MUST delete the claim — otherwise retries see duplicate=true,
+    // toLeadCandidate returns null, and the inbound lead is permanently lost
+    // (amplified by 8s Supabase fetch abort: partial success leaves an orphan key).
+    const { error: dedupError } = await supa.from("acquire_dedup_keys").insert({
       key,
       event_id: ev.eventId,
       agency_id: agencyId,
     });
+    if (isUniqueConflict(dedupError)) {
+      console.log(JSON.stringify({
+        status: "NOT_A_LEAD", requestId, agencyId, event_id: ev.eventId,
+        reason: "duplicate",
+      }));
+      return NextResponse.json({
+        ok: true,
+        lead_created: false,
+        reason: "duplicate",
+        event_id: ev.eventId,
+      });
+    }
+    if (dedupError) {
+      console.error("[acquire.email] dedup claim error=", JSON.stringify(dedupError));
+      return NextResponse.json({ ok: false, error: dedupError.message }, { status: 500 });
+    }
 
     const { data: lead, error } = await supa
       .from("leads")
@@ -136,6 +161,16 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       console.error("[acquire.email] insert error=", JSON.stringify(error));
+      const { error: releaseError } = await supa
+        .from("acquire_dedup_keys")
+        .delete()
+        .eq("key", key);
+      if (releaseError) {
+        console.error(
+          "[acquire.email] failed to release dedup claim after lead insert error=",
+          JSON.stringify(releaseError),
+        );
+      }
       return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
     }
 
