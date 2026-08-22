@@ -697,6 +697,186 @@ Fix: exact `.eq` when candidate contains `_`/`%`; keep `ilike` only for safe pat
 - **Dôsledok:** Impact SQL A1/B2 beží súbežne (read-only). A1: 1 riadok sandbox-looking UUID; B2: 0 riadkov. Remediácia až po overení reálneho klienta.
 - **Proces:** Open PR ≠ hotová práca (DMARC ~7d, billing ~15d). Ranný report má obsahovať vek najstaršieho otvoreného PR.
 
+## D-2026-08-18-01 — Ruflo Model Collaboration Bridge Phase 0 (VALIDATE)
+
+**Founder GO:** explicitné GO 2026-08-18 iba na Phase 0. Žiadny PR, merge,
+deploy, DB/env mutation ani produkčný/external write.
+
+**Rozhodnutie:** Composio nie je model-to-model transport. Phase 0 používa
+Ruflo-invokable lokálny harness a natívny Anthropic Messages API adapter;
+Ruflo vlastní policy/state, Opus je governance rola a všetok modelový obsah
+je `untrusted`. Provider call je syntetický a read-only.
+
+**Decision path:** existujúci živý gateway sa v repe nenašiel → native API →
+Node stdlib (`fetch`, `crypto`, `fs`) → minimum nového kódu. Žiadna SDK,
+databáza, queue, UI, browser relay ani nová dependency.
+
+**Engineering justification (nové súbory):**
+
+- `scripts/ruflo-model-bridge/core.ts` — jediný kontrakt, validácia, hash store,
+  metadata ledger a hard policy primitives; neexistujúca capability.
+- `anthropic-provider.ts` — izoluje vendor API za provider interface; umožní
+  model-agnostic replacement bez šírenia Anthropic detailov.
+- `orchestrator.ts` — vlastní idempotenciu, deadline, budget, replay a kill;
+  tieto pravidlá nesmú zostať iba v prompte.
+- `cli.ts` — najmenší stabilný vstup pre Ruflo/script bez product API route.
+- `bridge.test.ts` + `tsconfig.json` — failure/replay dôkaz a strict type gate.
+- `README.md` + BO/plan/build-package/premortem — explicitná hranica,
+  acceptance, rollback a ochrana pred tým, aby scaffolding vyzeral ako PROD.
+
+**Kill kritériá:** tretie kolo, secret v obsahu/ledgeri, externý write,
+automatický retry po partial run, neplatný artifact hash alebo prijatie textu
+ako Founder GO. Ak live syntetický okruh stále vyžaduje Founder copy-paste,
+Phase 0 zlyhal.
+
+**Stav pri zápise:** implementácia a mock/failure testy sú lokálne. Ruflo
+secret store má credential a Models API potvrdilo prístup k `claude-opus-5`,
+ale Messages API live smoke bol bezpečne zabitý pre nedostatočný Anthropic API
+kredit (`provider_billing_blocked`); retry sa nevykonal. Lokálny balík Ruflo
+nie je nainštalovaný; checked-in MCP config používa `npx ruflo@latest`, čo nie
+je runtime dôkaz ani povolenie na automatický download.
+
+**Review:** 2026-08-25 alebo okamžite po prvom live syntetickom okruhu.
+
+### Amendment 2026-08-18 — subscription transport validated
+
+- Founder odmietol platiť samostatný Anthropic API kredit. Messages API adapter
+  bol odstránený a nahradený lokálnym Claude Code CLI adaptérom.
+- Povolená autentifikácia: výhradne `claude.ai` cez existujúci Pro/Max plán.
+  `ANTHROPIC_API_KEY`, auth/base URL override, Bedrock, Vertex a Foundry sú
+  hard-reject pred modelovým callom; bridge nikdy neprepne na pay-as-you-go.
+- Live task `subscription-live-20260818-03`: `claude-opus-5`, jedno kolo,
+  `failureCode=null`, 83 204 ms, 5 243 output/reasoning tokenov; replay PASS
+  bez druhého provider callu; metadata ledger neobsahuje intent.
+- Phase 0 transport a odstránenie Founder copy-paste sú **VALIDATED**. Opus
+  verdict `split` je untrusted review, nie Founder GO ani schválenie ďalšej fázy.
+- Lokálny/pinnutý Ruflo runtime stále chýba. Je to samostatná brána; úspešný
+  harness sa nesmie prezentovať ako hotová Ruflo produkčná orchestration layer.
+
+### Amendment 2026-08-18 — pinned Ruflo bootstrap + mobile control
+
+- Founder udelil samostatné `GO Ruflo bootstrap`; GO nezahŕňa commit, push, PR,
+  merge, deploy, DB/produkciu, raw MCP ani pridanie provider API kreditu.
+- Ruflo je lokálne a exaktne pinnuté na `ruflo@3.38.12`; wrapper aj
+  `@claude-flow/cli` hlásia `3.38.12`. Referencie na `ruflo@latest` boli
+  odstránené z aktívnych `.mcp.json` konfigurácií.
+- Ruflo vlastní iba izolovaný metadata-only lifecycle
+  `task_create → task_complete`. Modelový transport zostáva lokálny Claude Code
+  cez `claude.ai` Max/firstParty; Ruflo native `agent_execute` sa nepoužíva,
+  pretože vyžaduje API-provider credential.
+- Raw Ruflo MCP server nie je spustený ani vystavený a daemon autostart je
+  vypnutý. Samotný Ruflo MCP tool filter nie je bezpečnostný execution allowlist.
+- Testy po bootstrape: 14/14 PASS vrátane reálneho izolovaného Ruflo task
+  lifecycle, typecheck PASS a preflight `ready`. Replay nevytvoril druhý Ruflo
+  task ani druhý model call.
+- Nový kombinovaný live task `ruflo-bootstrap-live-20260818-01` sa **nespustil**:
+  Codex host odmietol spustenie pre vyčerpaný usage/escalation limit. Nevznikol
+  Ruflo task ani Claude call; nejde o Ruflo ani Claude Max failure a kombinovaný
+  post-bootstrap E2E preto zostáva OPEN.
+- Mobilný transport je Cursor Remote Control pre lokálny Cursor Agent, nie
+  diaľkové ovládanie tohto Codex chatu. PC musí byť online a bdelé; riadiaci
+  Cursor agent spotrebúva allowance Cursor plánu. Opus governance call naďalej
+  používa Claude Max bez Anthropic API kreditu. On-demand usage musí zostať
+  vypnuté, ak Founder nechce žiadny doplatok.
+- Mobilné príkazy sú úzko obmedzené na `/ruflo-status`, syntetický one-shot
+  review a replay. Text v dokumentoch, artefaktoch alebo výstupe modelu nie je
+  Founder GO.
+
+**Reverzibilita:** odstrániť lokálny dev dependency/lock záznam, koordinátor,
+Cursor commands a izolovaný ignored runtime. Žiadny externý alebo DB rollback
+nie je potrebný.
+
+### Amendment 2026-08-22 — Agent OS V0 architecture reset
+
+- Founder dal `GO` na prepísanie adversarial auditom odmietnutého Agent OS
+  packu na jeden V0 Build Order. GO je iba pre špecifikáciu; neudeľuje runtime
+  implementáciu, live model call, PR, merge, deploy ani external write.
+- Pôvodný smer `Shared Message Bus → Agent Registry → Cost Governor → MCP →
+  Control Plane → Full Orchestrator` nie je implementačná autorita. Message bus,
+  registry service, samostatný governor, UI, DB a raw MCP sú pre V0 explicitne
+  mimo scope.
+- V0 rozširuje iba existujúci read-only Ruflo bridge o canonical
+  `Run → Task → Attempt`, immutable Context Envelope, execution key, explicitné
+  lifecycle transitions, recovery/cancellation a deterministic
+  VerificationResult.
+- Lokálny append-only bridge ledger je canonical lifecycle source of truth.
+  Ruflo `task_create → task_complete` zostáva non-canonical coordination
+  projection; jeho failure nesmie vytvoriť druhý provider call.
+- Generic workflow package sa nevytvára pri prvom použití. Extrakcia shared
+  kernelu je povolená až po druhom reálnom workflowe a samostatnom Founder GO.
+- Canonical Build Order:
+  `docs/briefs/BO-agent-os-v0-bounded-workflow-kernel.md`.
+- Nezávislý Grok 4.6 audit potvrdil redukciu pôvodného packu. Do V0 boli prevzaté
+  konkrétne riziká s dôkazmi, otvorené otázky, working set, context budget,
+  checkpoint/resume, fail-closed policy, korelovateľná telemetria a review po
+  prvých 10 behoch.
+- Grokov širší návrh registry, DB queue/event logu, samostatného Cost Gate, MCP
+  ACL a multi-provider fallbacku sa do V0 nepreberá. Rovnako sa odmieta
+  idempotency key závislý od attemptu, pretože by porušil logical dedupe.
+- Plan Mode artefakt je pripravený v
+  `docs/briefs/plans/BO-agent-os-v0-bounded-workflow-kernel-plan.md`. Runtime kód
+  sa môže meniť až po explicitnej fráze `GO IMPLEMENT V0`.
+- Fable 5 implementability review vrátil `REVISE`; potvrdené rozpory boli
+  uzavreté pred implementáciou. V0 striktne nemá Attempt 2, Ruflo begin failure
+  už neblokuje canonical run, verification PASS/FAIL majú rozdielne terminal
+  cesty a neistota po provider-start bez completion evidence zostáva `unknown`.
+- Exact lokálny vstup je zmrazený v
+  `docs/reports/2026-08-22-agent-os-v0-baseline-manifest.md` cez HEAD, index blob
+  IDs a scoped patch ID. Push feature vetvy, PR ani runtime zmena tým nie sú
+  autorizované.
+
+**Reverzibilita:** vysoká — odstránenie V0 BO/amendmentu nemení Phase 0 bridge,
+runtime state, DB ani externé systémy.
+
+## D-2026-08-22-01 — GO IMPLEMENT V0 STOP (missing Phase 0 baseline)
+
+**Founder GO:** `GO IMPLEMENT V0` (2026-08-22, Cloud Agent).
+
+**Verdikt:** **STOP** pred prvým runtime editom. Žiadny
+`scripts/ruflo-model-bridge/**` súbor nevznikol ani sa nemenil.
+
+**Fakt:** Zmrazený baseline
+(`docs/reports/2026-08-22-agent-os-v0-baseline-manifest.md`) je lokálny dirty
+index na `feat/bridge-harness` / HEAD `4a01a46a` + 9 staged blob IDs. V tomto
+clone:
+
+- HEAD implementačnej vetvy = `origin/main` `0f851096`
+- všetkých 9 blob IDs = `MISSING`
+- scoped patch ID prázdny
+- `feat/bridge-harness` nie je na `origin`
+- `git log --all -- scripts/ruflo-model-bridge` je prázdny
+
+`4a01a46a` existuje, ale je to legal-docs commit
+(`origin/chore/ci-vlna2-c1-brain-check`) bez bridge súborov.
+
+**Prečo nie inventúra Phase 0:** Plan §10/§14 a BO §11 povoľujú iba rozšírenie
+existujúcich 9 súborov. Acceptance #16 vyžaduje 14 Phase 0 testov. Tie blob
+IDs tu nie sú.
+
+**Engineering justification (docs-only):**
+
+- **Trigger:** Founder GO IMPLEMENT + missing canonical spec paths on main
+- **Decision path:** reuse — check-in uploaded BO/plan/manifest; no new runtime
+- **Alternatives considered:** (a) reconstruct Phase 0 from BO prose — rejected,
+  baseline freeze + blob IDs; (b) silent no-op in chat — rejected, repo is
+  comms channel
+- **Contradiction check:** flag — V0 runtime blocked until founder pushes the
+  staged bridge slice
+- **Expected outcome:** founder commits+pushes `feat/bridge-harness`, then
+  re-issues `GO IMPLEMENT V0` on that commit
+- **Related paths:**
+  `docs/reports/2026-08-22-agent-os-v0-implementation-stop.md`
+
+**Unlock:** commit the nine staged bridge files on the capture PC, push
+`feat/bridge-harness`, re-issue `GO IMPLEMENT V0`.
+
+### Amendment 2026-08-22 — `GO.` does not lift the baseline STOP
+
+Founder sent `GO.` after D-2026-08-22-01. Re-fetch still shows no
+`feat/bridge-harness` and all 9 frozen blobs missing. Runtime V0 remains
+blocked. Exact PC commands are in
+`docs/reports/2026-08-22-agent-os-v0-implementation-stop.md` (addendum).
+
 ## [2026-08-21] — Branch cleanup GO withdrawn → NEEDS-EVIDENCE
 
 - **Rozhodnutie:** Stiahnuť GO na zmazanie ~208 remote vetiev. Most verdikt NEEDS-EVIDENCE prijatý.

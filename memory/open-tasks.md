@@ -1,6 +1,13 @@
 # Open Tasks — Prioritized Queue
 
-> Posledná aktualizácia: 2026-08-21 (evening) | Task-loop sync
+> Posledná aktualizácia: 2026-08-22 | Task-loop sync
+
+## P0 — Agent OS V0 blocked (baseline)
+
+- [ ] **Push `feat/bridge-harness`** — 9 staged Phase 0 blobs from
+      `docs/reports/2026-08-22-agent-os-v0-baseline-manifest.md`; then re-issue
+      `GO IMPLEMENT V0`. Evidence:
+      `docs/reports/2026-08-22-agent-os-v0-implementation-stop.md`
 
 ## P0 — Smolko (zákazník)
 
