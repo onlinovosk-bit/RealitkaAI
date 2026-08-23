@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { type Lead } from "@/lib/leads-store";
 import { isLeadHot } from "@/lib/leads/lead-display-score";
 import { isLeadHotOrWarm, isLeadScored } from "@/lib/leads/score-display";
@@ -31,7 +32,15 @@ export default function LeadFilters({
   profiles,
   onFilter,
 }: LeadFiltersProps) {
-  const [q, setQ] = useState("");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const urlQ = searchParams.get("q") ?? "";
+  const [q, setQ] = useState(urlQ);
+
+  useEffect(() => {
+    setQ(urlQ);
+  }, [urlQ]);
   const [status, setStatus] = useState("");
   const [location, setLocation] = useState("");
   const [minScore, setMinScore] = useState("");
@@ -126,6 +135,14 @@ export default function LeadFilters({
     onFilter(filtered);
   }, [leads, q, status, location, minScore, assignedProfileId, teamId, scoreView, activeProfiles, onFilter]);
 
+  function dropUrlQuery() {
+    if (!searchParams.has("q")) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("q");
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname);
+  }
+
   function clearFilters() {
     setQ("");
     setStatus("");
@@ -134,6 +151,7 @@ export default function LeadFilters({
     setAssignedProfileId("");
     setTeamId("");
     setScoreView("all");
+    dropUrlQuery();
   }
 
   const hotCount = leads.filter(isLeadHot).length;
@@ -146,6 +164,7 @@ export default function LeadFilters({
     setMinScore("");
     setAssignedProfileId("");
     setTeamId("");
+    dropUrlQuery();
   }
 
   const selectStyle = {
