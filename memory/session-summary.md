@@ -1,3 +1,16 @@
+## Session 2026-08-23
+### Dokončené
+- Critical bug hunt (areas A–F): report `docs/reports/2026-08-23-critical-bug-hunt.md`
+- Top 3: (1) CRITICAL auth-email-tests recovery-link cross-tenant takeover; (2) HIGH settings invite missing agency_id; (3) HIGH empty agencyId seat/topup checkout
+### Rozpracované / Pending
+- GO fix for recovery-link tenant scope (auth-sensitive)
+- Sibling stamp agency_id on settings invite (#447 parallel)
+- Founder merge queue: tracked PRs #369/#370/#443/#444/#447/#459 unchanged
+### Kľúčové súbory zmenené
+- `docs/reports/2026-08-23-critical-bug-hunt.md`: hunt findings
+### Ďalší krok
+GO: fix `auth-email-tests` recovery-link (agency-scope target + stop returning action_link).
+
 ## Session 2026-08-22
 ### Dokončené
 - Founder `GO IMPLEMENT V0` prijaté; pred prvým runtime editom **STOP** — Phase 0 baseline v tomto clone chýba
