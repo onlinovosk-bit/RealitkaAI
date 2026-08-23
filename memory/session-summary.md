@@ -1,3 +1,19 @@
+## Session 2026-08-23
+### Dokončené
+- Critical bug hunt + fix: `auth-email-tests` cross-tenant recovery-link takeover + invite agency_id stamp
+- PR https://github.com/onlinovosk-bit/RealitkaAI/pull/462 — unit + verification tests green (12)
+- Reports: `docs/reports/2026-08-23-critical-bug-hunt.md`, `docs/reports/2026-08-23-auth-email-tests-tenant-fix.md`
+### Rozpracované / Pending
+- Merge review for #462 (auth-sensitive)
+- Still open tracked bugs: #369 #370 #443 #444 #447 #459
+- Medium (not fixed): empty agencyId seat/topup checkout → forever 500 after pay
+### Kľúčové súbory zmenené
+- `apps/crm/src/app/api/settings/auth-email-tests/route.ts`: agency-scope recovery + invite agency_id
+- `apps/crm/tests/verification/auth-email-tests-tenant.verification.test.ts`: live spec
+### Ďalší krok
+Founder review/merge #462; then consider empty-agencyId checkout preflight (medium confidence).
+
+
 ## Session 2026-08-22
 ### Dokončené
 - Founder `GO IMPLEMENT V0` prijaté; pred prvým runtime editom **STOP** — Phase 0 baseline v tomto clone chýba
