@@ -1,15 +1,18 @@
 ## Session 2026-08-23
 ### Dokončené
-- Critical bug hunt (areas A–F): report `docs/reports/2026-08-23-critical-bug-hunt.md`
-- Top 3: (1) CRITICAL auth-email-tests recovery-link cross-tenant takeover; (2) HIGH settings invite missing agency_id; (3) HIGH empty agencyId seat/topup checkout
+- Critical bug hunt + fix: `auth-email-tests` cross-tenant recovery-link takeover + invite agency_id stamp
+- PR https://github.com/onlinovosk-bit/RealitkaAI/pull/462 — unit + verification tests green (12)
+- Reports: `docs/reports/2026-08-23-critical-bug-hunt.md`, `docs/reports/2026-08-23-auth-email-tests-tenant-fix.md`
 ### Rozpracované / Pending
-- GO fix for recovery-link tenant scope (auth-sensitive)
-- Sibling stamp agency_id on settings invite (#447 parallel)
-- Founder merge queue: tracked PRs #369/#370/#443/#444/#447/#459 unchanged
+- Merge review for #462 (auth-sensitive)
+- Still open tracked bugs: #369 #370 #443 #444 #447 #459
+- Medium (not fixed): empty agencyId seat/topup checkout → forever 500 after pay
 ### Kľúčové súbory zmenené
-- `docs/reports/2026-08-23-critical-bug-hunt.md`: hunt findings
+- `apps/crm/src/app/api/settings/auth-email-tests/route.ts`: agency-scope recovery + invite agency_id
+- `apps/crm/tests/verification/auth-email-tests-tenant.verification.test.ts`: live spec
 ### Ďalší krok
-GO: fix `auth-email-tests` recovery-link (agency-scope target + stop returning action_link).
+Founder review/merge #462; then consider empty-agencyId checkout preflight (medium confidence).
+
 
 ## Session 2026-08-22
 ### Dokončené
