@@ -224,12 +224,12 @@ export default function LeadFilters({
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         <div className="col-span-2 md:col-span-1 xl:col-span-1">
-          <label className="mb-1 block text-xs font-medium" style={labelStyle}>Hľadať</label>
+          <label className="mb-1 block text-xs font-medium" style={labelStyle}>Filtrovať zobrazené</label>
           <input
             type="text"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Meno, email..."
+            placeholder="Meno, email, lokalita…"
             className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
             style={inputStyle}
           />

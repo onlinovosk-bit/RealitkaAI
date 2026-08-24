@@ -1,3 +1,18 @@
+## Session 2026-08-24
+### Dokončené
+- #461 merged `47ec4852`
+- GO FÁZA A: copy filter vs hľadať; províziu von; paging nález v audite (bez API fixu)
+### Rozpracované / Pending
+- Merge #463 (audit + Fáza A copy) — **bez labelu automerge** (Tier 2, founder ručne)
+- `GO SEARCH-PAGING` = paging diera + `SEARCH-TOPBAR-GLOBAL-VS-LOCAL`
+- BO Action Center V0 + Pricing v2: spec v repe, **implementačný GO neudelený**
+### Kľúčové súbory zmenené
+- `WorkdeskTopbar.tsx` / `lead-filters.tsx` / `leads-module.tsx` / `SemanticSearchBar.tsx`
+- `docs/reports/2026-08-24-workdesk-search-architecture-audit.md`
+### Ďalší krok
+Founder merge PR; paging len po `GO SEARCH-PAGING`.
+
+
 ## Session 2026-08-23
 ### Dokončené
 - Topbar search: `readOnly` → form + Hľadať, `/leads?q=` + filter sync

@@ -71,7 +71,18 @@ export default function LeadsModule({
   return (
     <>
       <div className="mb-6 flex flex-col gap-4">
-        <SemanticSearchBar type="leads" className="w-full" />
+        <div>
+          <p
+            className="mb-1 text-xs font-semibold"
+            style={{ color: SLATE_HORIZON.ink }}
+          >
+            Hľadať
+          </p>
+          <p className="mb-2 text-[11px]" style={{ color: SLATE_HORIZON.muted }}>
+            V databáze príležitostí — nielen na tejto stránke.
+          </p>
+          <SemanticSearchBar type="leads" className="w-full" />
+        </div>
 
         <LeadFilters
           leads={leadItems}
