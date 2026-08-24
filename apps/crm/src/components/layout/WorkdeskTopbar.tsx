@@ -78,7 +78,6 @@ export function WorkdeskTopbar({ userName }: WorkdeskTopbarProps) {
     >
       <div style={{ width: 40 }} aria-hidden />
       <form
-        role="search"
         onSubmit={(e) => {
           e.preventDefault();
           const q = search.trim();
@@ -87,14 +86,14 @@ export function WorkdeskTopbar({ userName }: WorkdeskTopbarProps) {
         style={{ flex: 1, maxWidth: 520, margin: "0 auto", display: "flex", gap: 8 }}
       >
         <label htmlFor="workdesk-search" className="sr-only">
-          Hľadať lead, lokalitu, makléra, províziu
+          Filtrovať zobrazené leady — meno, lokalita, maklér
         </label>
         <input
           id="workdesk-search"
           name="q"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Hľadať lead, lokalitu, makléra, províziu…"
+          placeholder="Filtrovať zobrazené — meno, lokalita, maklér…"
           style={{
             flex: 1,
             minWidth: 0,
@@ -123,7 +122,7 @@ export function WorkdeskTopbar({ userName }: WorkdeskTopbarProps) {
             cursor: "pointer",
           }}
         >
-          Hľadať
+          Filtrovať
         </button>
       </form>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>

@@ -5,7 +5,8 @@
 ## P0 — Search / workdesk (post #461)
 
 - [x] Merge #461 topbar Hľadať (`47ec4852`)
-- [ ] **GO FÁZA A** — copy honesty topbar vs semantic (`docs/reports/2026-08-24-workdesk-search-architecture-audit.md`)
+- [x] **GO FÁZA A** copy na `cursor/search-architecture-audit-db1f` (#463) — čaká founder merge (súbor stále nie je na `origin/main`)
+- [ ] **GO SEARCH-PAGING** — client filter vidí len načítanú stránku (`LEADS_PAGE_SIZE=50`); neštartovať bez tejto frázy
 
 ## P0 — Agent OS V0 blocked (baseline)
 

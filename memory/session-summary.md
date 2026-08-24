@@ -1,14 +1,16 @@
 ## Session 2026-08-24
 ### Dokončené
-- #461 merged `47ec4852` (topbar Hľadať)
-- Read-only search/workdesk architecture audit (no runtime)
+- #461 merged `47ec4852`
+- GO FÁZA A: copy filter vs hľadať; províziu von; paging nález v audite (bez API fixu)
 ### Rozpracované / Pending
-- GO FÁZA A (copy honesty) — neimplementovať bez frázy
-- Agent OS V0 blocked; Smolko Gmail dual-run; close #371/#374
+- Merge tohto PR (audit + copy) — súbor na main až po merge
+- `GO SEARCH-PAGING` samostatne
 ### Kľúčové súbory zmenené
+- `WorkdeskTopbar.tsx` / `lead-filters.tsx` / `leads-module.tsx` / `SemanticSearchBar.tsx`
 - `docs/reports/2026-08-24-workdesk-search-architecture-audit.md`
 ### Ďalší krok
-Founder: `GO FÁZA A` alebo Gmail dual-run GO. Nie V0.
+Founder merge PR; paging len po `GO SEARCH-PAGING`.
+
 
 ## Session 2026-08-23
 ### Dokončené

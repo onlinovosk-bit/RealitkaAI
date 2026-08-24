@@ -877,6 +877,13 @@ Founder sent `GO.` after D-2026-08-22-01. Re-fetch still shows no
 blocked. Exact PC commands are in
 `docs/reports/2026-08-22-agent-os-v0-implementation-stop.md` (addendum).
 
+## [2026-08-24] — GO FÁZA A: filter vs hľadanie (copy), paging ako samostatný GO
+
+- **Rozhodnutie:** Topbar + LeadFilters pomenovať ako filter nad zobrazenými. Semantic box ostáva jediné „Hľadať“. Z placeholderu von „províziu“ (filter hľadá 8 polí, provízia medzi nimi nie je). Stránkovaciu dieru **neopravovať** v tejto fáze.
+- **Prečo:** Po #461 ožil klamlivý placeholder; client-side `q` nad stránkou 50 pri ~480 leadoch vráti „nenájdené“ pri existujúcom leade. Lepší text „Hľadať“ by dieru prekryl.
+- **Dôsledok:** #463 nesie audit + copy. Oprava inventory/`q` na serveri čaká `GO SEARCH-PAGING`.
+- **Artefakt:** `docs/reports/2026-08-24-workdesk-search-architecture-audit.md` (nález `SEARCH-PAGING-CLIENT-FILTER`)
+
 ## [2026-08-21] — Branch cleanup GO withdrawn → NEEDS-EVIDENCE
 
 - **Rozhodnutie:** Stiahnuť GO na zmazanie ~208 remote vetiev. Most verdikt NEEDS-EVIDENCE prijatý.

@@ -1,11 +1,9 @@
-# Architecture audit — workdesk search (read-only)
+# Architecture audit — workdesk search
 
 **Date:** 2026-08-24  
-**Trigger:** Founder pipeline (evidence → duplication → delta → plan → Kontrolór → GO fázy).  
-**Scope:** search/workdesk after #461. Not Agent OS V0, not billing, not Gmail.  
-**Runtime change:** none.
-
-`origin/main` at audit: `47ec4852` (`fix(ui): make topbar search functional, add Hľadať button (#461)`).
+**Trigger:** Founder pipeline + `GO FÁZA A` s dvoma povinnými bodmi.  
+**Scope:** search/workdesk after #461.  
+**Branch:** `cursor/search-architecture-audit-db1f` (súbor **nie je** na `origin/main` `47ec4852` kým sa tento PR nezmerguje).
 
 ---
 
@@ -13,62 +11,57 @@
 
 | Surface | Path | Mechanism | Live on `/leads`? |
 |---|---|---|---|
-| Workdesk topbar | `apps/crm/src/components/layout/WorkdeskTopbar.tsx` | Form submit → `router.push(/leads?q=)` | **Áno** — dashboard layout always mounts it |
-| Lead filter `q` | `apps/crm/src/components/leads/lead-filters.tsx` | Client substring over loaded `Lead[]` (`name/email/phone/location/…`) | **Áno** — hydratuje `?q=` |
-| Semantic bar | `apps/crm/src/components/search/SemanticSearchBar.tsx` | `POST /api/search/semantic` → dropdown, link `/leads/:id` | **Áno** — `leads-module.tsx` |
-| SlackLayout header | `apps/crm/src/components/navigation/SlackLayout.tsx` | Decorative `<span>` + fake ⌘K, **not an input** | **Nie** na workdesk: `isWorkdeskRoute` skips this header (`apps/crm/src/lib/workdesk-routes.ts`) |
-| Properties semantic | `properties-page-client.tsx` | Same SemanticSearchBar `type="properties"` | N/A (`/properties`) |
+| Workdesk topbar | `WorkdeskTopbar.tsx` | `router.push(/leads?q=)` → LeadFilters `q` | Áno |
+| Lead filter `q` | `lead-filters.tsx` | Client substring over **loaded** `Lead[]` | Áno |
+| Semantic bar | `SemanticSearchBar.tsx` | `POST /api/search/semantic` | Áno |
+| SlackLayout header | `SlackLayout.tsx` | Decorative ⌘K, not an input | Nie na workdesk |
 
-Dôkaz workdesk skip: `SlackLayout` `if (workdesk) return children-only shell` — žiadny druhý topbar na `/leads`.
+Filter fields (verbatim join in `lead-filters.tsx`):  
+`name, email, phone, location, budget, status, assignedAgent, source`.
 
-Dôkaz dual chrome na `/leads`: `(dashboard)/layout.tsx` renderuje `WorkdeskTopbar`; `leads-module.tsx` renderuje `SemanticSearchBar` + `LeadFilters`.
+`budget` = rozpočet klienta, **nie** provízia. Provízia v tom zozname nie je.
+
+Page size: `LEADS_PAGE_SIZE = 50` (`leads-store.ts`). `/leads` inventory: `limit=${LEADS_PAGE_SIZE}&offset=0` + load-more (`leads-page-client.tsx`). Legacy cap `LEADS_LIST_MAX = 500` ostáva defaultom, keď page nie je zadaná (`list-pagination.test.ts`).
 
 ---
 
 ## 2. Conflict / duplication map
 
-| Pair | Same thing? | Verdict |
+| Pair | Same mechanism? | Verdict |
 |---|---|---|
-| Topbar ↔ LeadFilters `q` | **Áno** — obe substring filter na zozname leadov | Duplikát **intentu**. Topbar je globálny vstup; filter je lokálny. Po #461 zdieľajú `?q=`. |
-| Topbar ↔ SemanticSearchBar | **Nie** — filter vs API lookup + similarity dropdown | Zámena pojmov, ak sa zlejú do jedného poľa |
-| SemanticSearchBar ↔ LeadFilters | **Nie** — entity jump vs tabuľkový filter | Koexistujú zámerne |
-| SlackLayout „search“ ↔ Topbar | Vizuálny cousin, iný strom | Na workdesk sa Slack header **nerenderuje**. Na `/admin` atď. ostáva mŕtvy ⌘K |
-
-**Konflikt po #461:** maklér na `/leads` vidí tri boxy, ktoré vyzerajú ako „hľadať“, ale robia dve mechaniky.
+| Topbar ↔ LeadFilters `q` | Áno — substring na načítaných riadkoch | Duplikát intentu, zdieľajú `?q=` |
+| Topbar ↔ SemanticSearchBar | Nie | Filter zobrazeného vs hľadanie v API |
+| SlackLayout ↔ Topbar | Nie na workdesk | Fake ⌘K len mimo workdesk prefixov; stále dekoratívne „Hľadať … províziu“ — mimo Fázy A |
 
 ---
 
-## 3. Architecture delta
+## 3. Nález PAGING (vlastné GO — **neopravovať vo fáze A**)
 
-**Teraz**
+**ID:** `SEARCH-PAGING-CLIENT-FILTER`  
+**Závažnosť:** vyššia než copy.
 
-```text
-WorkdeskTopbar ──push──► /leads?q= ──hydrate──► LeadFilters.q ──filter──► loaded rows
-LeadsModule ──type──► SemanticSearchBar ──POST /api/search/semantic──► /leads/:id
-SlackLayout fake search ──only non-workdesk prefixes──► no-op
-```
+Topbar aj LeadFilters filtrujú **len už načítané riadky**. Zoznam je stránkovaný po 50 (`LEADS_PAGE_SIZE`). Pri agentúre s ~480 leadmi meno mimo aktuálnej stránky vráti prázdny filter pri leade, ktorý v DB je.
 
-**Cieľ (návrh, nie BUILD)**
+To **nie je vyhľadávanie**. Je to filter zobrazeného. Jediné hľadanie na stránke je semantic box (`/api/search/semantic`).
 
-```text
-Jedno globálne pole (topbar) = „nájdi a skoč“ (semantic + fallback)
-Jedno page pole (filtre) = „zúž tabuľku“
-Žiadny dekoratívny ⌘K
-```
+**OUT pre fázu A:** server-side `q`, zväčšenie page size, zlučovanie do jedného inputu, API refactor.
 
-To **nie je** V0 Agent OS a **nie je** zlučovanie do jedného inputu v jednom PR.
+**Odomknutie:** samostatné `GO SEARCH-PAGING` (názov voľný; nie `GO FÁZA A`).
 
 ---
 
-## 4. Phased program
+## 4. Fáza A — GO prijaté (copy / rola)
 
-| Fáza | Čo | IN | OUT | Verdikt |
-|---|---|---|---|---|
-| **A** | UX honesty na `/leads` | Copy/placeholder: topbar = „Filtrovať leady…“; semantic = ostane AI lookup. Žiadne mazanie API. | Zlučovať mechaniky, SlackLayout | VALIDATE, 1 PR |
-| **B** | Topbar → semantic command (global jump) | reuse `SemanticSearchBar` / `/api/search/semantic` | Nový search engine | VALIDATE až po A + dôkaz, že Smolko semantic používa |
-| **C** | SlackLayout decorative header | odstrániť fake ⌘K na non-workdesk | Nový command palette | BACKLOG — nízka retencia |
+Founder GO 2026-08-24, dve povinné podmienky:
 
-Kill: ak A mení kontrakt `?q=` bez verification testu; ak B ticho zmení topbar z filtra na API bez fallbacku.
+1. Z placeholderu topbaru von **„províziu“** — overené poliami filtra.
+2. Copy rozlíši **ROLU**: topbar + filtre = filter nad zobrazenými; semantic = hľadanie. Nesmie prekryť paging dieru lepším textom „Hľadať“.
+
+Implementácia v tomto PR (copy only):
+
+- Topbar: „Filtrovať zobrazené — meno, lokalita, maklér…“, tlačidlo **Filtrovať**, bez `role="search"`.
+- LeadFilters label: **Filtrovať zobrazené**.
+- Semantic: viditeľný nadpis **Hľadať** + „V databáze príležitostí — nielen na tejto stránke.“
 
 ---
 
@@ -76,30 +69,18 @@ Kill: ak A mení kontrakt `?q=` bez verification testu; ak B ticho zmení topbar
 
 | Tvrdenie | Nálepka | Verdikt |
 |---|---|---|
-| #461 je na `main` `47ec4852` | FAKT (`gh pr view 461` mergedAt 2026-08-24T06:12:59Z) | PASS |
-| Na `/leads` sú 3 search UI | FAKT (layout + leads-module) | PASS |
-| Všetky tri robia to isté | PREDPOKLAD — vyvrátené kódom | FLAG / zámena pojmov |
-| SlackLayout search mätie workdesk | PREDPOKLAD — na workdesk sa nerenderuje | FAIL ako blocker; platí len mimo workdesk |
-| Klient dnes zaplatí za zjednotenie search | NEZNÁME | FLAG — max VALIDATE |
-| Semantic API je spoľahlivé na PROD | NEZNÁME (iba kód, žiadny PROD log) | STOP pre fázu B |
-| Tento audit nahrádza Agent OS V0 / Gmail dual-run | PREDPOKLAD | STOP — P0 zákazník ostáva Gmail; V0 ostáva blocked na `feat/bridge-harness` |
-
-**Verdikt:** PASS ako read-only mapa. **STOP implementácia** kým founder nepovie `GO FÁZA A` (alebo iná fáza).
+| Report nebol na `origin/main` `47ec4852` | FAKT | PASS — founder; súbor ide týmto PR |
+| Filter nehľadá províziu | FAKT | PASS — 8 polí v `lead-filters.tsx` |
+| `budget` ≠ provízia | FAKT | PASS |
+| Client filter vidí len načítanú stránku | FAKT | PASS — `LEADS_PAGE_SIZE=50` + inventory offset |
+| 480 leadov na Smolko PROD | PREDPOKLAD / founder | FLAG — diera platí aj pri >50 |
+| Fáza A opraví paging | zakázané | STOP ak by PR menil inventory query |
 
 ---
 
-## 6. Explicit GO — fáza A
+## 6. Ďalšie GO (nenahradené)
 
-**Navrhovaná A:** iba copy/aria, aby topbar a semantic neklamali že sú to isté pole. Žiadny API/layout refactor.
-
-**Nepúšťať A autonómne.** Čaká:
-
-```text
-GO FÁZA A
-```
-
-Iné GO, ktoré tento audit **nenahrádza**:
-
-- `GO IMPLEMENT V0` — stále blocked (chýba `feat/bridge-harness`)
-- Smolko Gmail dual-run — Preview secrets + send draft
-- Close #371 / #374 — superseded billing, stále OPEN
+- `GO SEARCH-PAGING` — server-side hľadanie / filter cez celý tenant
+- `GO IMPLEMENT V0` — blocked (`feat/bridge-harness`)
+- Smolko Gmail dual-run
+- Close #371 / #374
