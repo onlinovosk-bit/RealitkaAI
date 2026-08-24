@@ -2,10 +2,11 @@
 
 > Posledná aktualizácia: 2026-08-24 | Task-loop sync
 
-## P0 — Search workdesk
+## P0 — Search / workdesk (post #461)
 
-- [ ] Founder merge #463 — **bez labelu automerge** (Tier 2)
-- [ ] `GO SEARCH-PAGING` — paging + `SEARCH-TOPBAR-GLOBAL-VS-LOCAL` (až po merge auditu)
+- [x] Merge #461 topbar Hľadať (`47ec4852`)
+- [x] **GO FÁZA A** + audit — merged #463 (`1cf82d32`)
+- [ ] **GO SEARCH-PAGING** — (1) client filter vidí len načítanú stránku (`LEADS_PAGE_SIZE=50`); (2) globálna lišta pomenovaná ako lokálny filter (`SEARCH-TOPBAR-GLOBAL-VS-LOCAL`). Neštartovať bez tejto frázy. Preferencia: lišta = DB search, filter ostane na `/leads`.
 
 ## P0 — Action Center / Pricing (spec only)
 

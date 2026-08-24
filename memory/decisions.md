@@ -870,6 +870,13 @@ IDs tu nie sú.
 **Unlock:** commit the nine staged bridge files on the capture PC, push
 `feat/bridge-harness`, re-issue `GO IMPLEMENT V0`.
 
+### Amendment 2026-08-22 — `GO.` does not lift the baseline STOP
+
+Founder sent `GO.` after D-2026-08-22-01. Re-fetch still shows no
+`feat/bridge-harness` and all 9 frozen blobs missing. Runtime V0 remains
+blocked. Exact PC commands are in
+`docs/reports/2026-08-22-agent-os-v0-implementation-stop.md` (addendum).
+
 ## [2026-08-24] — Action Center V0 + Pricing v2: spec check-in, implementácia NIE
 
 - **Rozhodnutie:** Dva oddelené BO v repe. Runtime, Stripe, migrácia, merge produktového kódu **nezačínajú**. Autorizácia neskôr len frázami `GO IMPLEMENT ACTION CENTER V0` a `GO IMPLEMENT PRICING V2` (každá zvlášť).
@@ -878,12 +885,12 @@ IDs tu nie sú.
 - **Artefakty:** `docs/briefs/BO-action-center-v0.md`, `docs/briefs/BO-pricing-migration-v2.md`, `docs/reports/2026-08-24-bo-action-center-pricing-review.md`
 - **Veto:** `feat/bridge-harness` sa na túto prácu nepoužíva.
 
-### Amendment 2026-08-22 — `GO.` does not lift the baseline STOP
+## [2026-08-24] — GO FÁZA A: filter vs hľadanie (copy), paging ako samostatný GO
 
-Founder sent `GO.` after D-2026-08-22-01. Re-fetch still shows no
-`feat/bridge-harness` and all 9 frozen blobs missing. Runtime V0 remains
-blocked. Exact PC commands are in
-`docs/reports/2026-08-22-agent-os-v0-implementation-stop.md` (addendum).
+- **Rozhodnutie:** Topbar + LeadFilters pomenovať ako filter nad zobrazenými. Semantic box ostáva jediné „Hľadať“. Z placeholderu von „províziu“ (filter hľadá 8 polí, provízia medzi nimi nie je). Stránkovaciu dieru **neopravovať** v tejto fáze.
+- **Prečo:** Po #461 ožil klamlivý placeholder; client-side `q` nad stránkou 50 pri ~480 leadoch vráti „nenájdené“ pri existujúcom leade. Lepší text „Hľadať“ by dieru prekryl.
+- **Dôsledok:** #463 nesie audit + copy. Oprava inventory/`q` na serveri čaká `GO SEARCH-PAGING` (vrátane `SEARCH-TOPBAR-GLOBAL-VS-LOCAL`: globálna lišta pomenovaná ako lokálny filter).
+- **Artefakt:** `docs/reports/2026-08-24-workdesk-search-architecture-audit.md` (nálezy `SEARCH-PAGING-CLIENT-FILTER`, `SEARCH-TOPBAR-GLOBAL-VS-LOCAL`)
 
 ## [2026-08-21] — Branch cleanup GO withdrawn → NEEDS-EVIDENCE
 

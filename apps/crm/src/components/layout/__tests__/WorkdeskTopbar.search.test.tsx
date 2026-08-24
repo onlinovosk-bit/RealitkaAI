@@ -22,7 +22,7 @@ describe("WorkdeskTopbar search", () => {
   it("submits trimmed query to /leads?q=", async () => {
     const user = userEvent.setup();
     render(<WorkdeskTopbar userName="Test" />);
-    await user.type(screen.getByLabelText(/Hľadať lead/i), "  bratislava ");
+    await user.type(screen.getByLabelText(/Filtrovať zobrazené leady/i), "  bratislava ");
     await user.click(screen.getByTestId("workdesk-search-submit"));
     expect(push).toHaveBeenCalledWith("/leads?q=bratislava");
   });
