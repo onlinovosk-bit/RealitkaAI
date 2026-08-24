@@ -1,3 +1,15 @@
+## Session 2026-08-24
+### Dokončené
+- #461 merged `47ec4852` (topbar Hľadať)
+- Read-only search/workdesk architecture audit (no runtime)
+### Rozpracované / Pending
+- GO FÁZA A (copy honesty) — neimplementovať bez frázy
+- Agent OS V0 blocked; Smolko Gmail dual-run; close #371/#374
+### Kľúčové súbory zmenené
+- `docs/reports/2026-08-24-workdesk-search-architecture-audit.md`
+### Ďalší krok
+Founder: `GO FÁZA A` alebo Gmail dual-run GO. Nie V0.
+
 ## Session 2026-08-23
 ### Dokončené
 - Topbar search: `readOnly` → form + Hľadať, `/leads?q=` + filter sync

@@ -1,6 +1,13 @@
 # Open Tasks — Prioritized Queue
 
-> Posledná aktualizácia: 2026-08-22 | Task-loop sync
+> Posledná aktualizácia: 2026-08-24 | Task-loop sync
+
+## P0 — Search / workdesk (post #461)
+
+- [x] Merge #461 topbar Hľadať (`47ec4852`)
+- [ ] **GO FÁZA A** — copy honesty topbar vs semantic (`docs/reports/2026-08-24-workdesk-search-architecture-audit.md`)
+
+## P0 — Agent OS V0 blocked (baseline)
 
 ## P0 — Agent OS V0 blocked (baseline)
 
