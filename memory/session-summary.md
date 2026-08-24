@@ -1,17 +1,18 @@
 ## Session 2026-08-24
 ### Dokončené
 - #461 merged `47ec4852`
-- GO FÁZA A: copy filter vs hľadať; províziu von; paging nález v audite (bez API fixu)
+- GO FÁZA A + audit merged #463 (`1cf82d32`)
+- Spec check-in BO-A Action Center V0 + BO-B Pricing v2 (docs only)
+- Review: `docs/reports/2026-08-24-bo-action-center-pricing-review.md`
 ### Rozpracované / Pending
-- Merge #463 (audit + Fáza A copy) — **bez labelu automerge** (Tier 2, founder ručne)
+- Merge spec PR BO-A/BO-B — **žiadny runtime**
 - `GO SEARCH-PAGING` = paging diera + `SEARCH-TOPBAR-GLOBAL-VS-LOCAL`
-- BO Action Center V0 + Pricing v2: spec v repe, **implementačný GO neudelený**
+- `GO IMPLEMENT PRICING V2` / `GO IMPLEMENT ACTION CENTER V0` — **neudelené**
 ### Kľúčové súbory zmenené
-- `WorkdeskTopbar.tsx` / `lead-filters.tsx` / `leads-module.tsx` / `SemanticSearchBar.tsx`
-- `docs/reports/2026-08-24-workdesk-search-architecture-audit.md`
+- `docs/briefs/BO-action-center-v0.md`, `docs/briefs/BO-pricing-migration-v2.md`
+- `docs/reports/2026-08-24-workdesk-search-architecture-audit.md` (už na main cez #463)
 ### Ďalší krok
-Founder merge PR; paging len po `GO SEARCH-PAGING`.
-
+Founder merge spec PR; paging len po `GO SEARCH-PAGING`; AC/pricing runtime až po vlastných GO frázach.
 
 ## Session 2026-08-23
 ### Dokončené

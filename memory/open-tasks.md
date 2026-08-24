@@ -5,10 +5,14 @@
 ## P0 — Search / workdesk (post #461)
 
 - [x] Merge #461 topbar Hľadať (`47ec4852`)
-- [x] **GO FÁZA A** copy na `cursor/search-architecture-audit-db1f` (#463) — čaká founder merge (súbor stále nie je na `origin/main`)
+- [x] **GO FÁZA A** + audit — merged #463 (`1cf82d32`)
 - [ ] **GO SEARCH-PAGING** — (1) client filter vidí len načítanú stránku (`LEADS_PAGE_SIZE=50`); (2) globálna lišta pomenovaná ako lokálny filter (`SEARCH-TOPBAR-GLOBAL-VS-LOCAL`). Neštartovať bez tejto frázy. Preferencia: lišta = DB search, filter ostane na `/leads`.
 
-## P0 — Agent OS V0 blocked (baseline)
+## P0 — Action Center / Pricing (spec only)
+
+- [ ] Merge spec PR (BO-A + BO-B docs) — **žiadny runtime**
+- [ ] `GO IMPLEMENT PRICING V2` — neudelené; pred ním Stripe `tax_behavior` + volume discount zámer
+- [ ] `GO IMPLEMENT ACTION CENTER V0` — neudelené; nezávislé od pricing
 
 ## P0 — Agent OS V0 blocked (baseline)
 

@@ -877,6 +877,14 @@ Founder sent `GO.` after D-2026-08-22-01. Re-fetch still shows no
 blocked. Exact PC commands are in
 `docs/reports/2026-08-22-agent-os-v0-implementation-stop.md` (addendum).
 
+## [2026-08-24] — Action Center V0 + Pricing v2: spec check-in, implementácia NIE
+
+- **Rozhodnutie:** Dva oddelené BO v repe. Runtime, Stripe, migrácia, merge produktového kódu **nezačínajú**. Autorizácia neskôr len frázami `GO IMPLEMENT ACTION CENTER V0` a `GO IMPLEMENT PRICING V2` (každá zvlášť).
+- **Baseline:** `origin/main` `47ec485275166f00671945ed3fd928fac5271508` (fresh fetch pred zápisom). Zhodné s `platné_voči` v zdrojovom BO.
+- **Dôvod 349 € (draft do implementačného PR):** seat = používanie maklérom; Cockpit = riadenie firmy; jeden zachránený obchod > mesiace predplatného; oddelenie ARPA. Číslo v `pricing-v1.md:24` ostáva; tento odsek je zárodok decision recordu, nie zmena ceny.
+- **Artefakty:** `docs/briefs/BO-action-center-v0.md`, `docs/briefs/BO-pricing-migration-v2.md`, `docs/reports/2026-08-24-bo-action-center-pricing-review.md`
+- **Veto:** `feat/bridge-harness` sa na túto prácu nepoužíva.
+
 ## [2026-08-24] — GO FÁZA A: filter vs hľadanie (copy), paging ako samostatný GO
 
 - **Rozhodnutie:** Topbar + LeadFilters pomenovať ako filter nad zobrazenými. Semantic box ostáva jediné „Hľadať“. Z placeholderu von „províziu“ (filter hľadá 8 polí, provízia medzi nimi nie je). Stránkovaciu dieru **neopravovať** v tejto fáze.
