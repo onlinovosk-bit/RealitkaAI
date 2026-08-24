@@ -46,6 +46,7 @@ const pillNeutral: CSSProperties = {
 export function WorkdeskTopbar({ userName }: WorkdeskTopbarProps) {
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
+  const [search, setSearch] = useState("");
 
   async function handleSignOut() {
     setSigningOut(true);
@@ -76,16 +77,27 @@ export function WorkdeskTopbar({ userName }: WorkdeskTopbarProps) {
       }}
     >
       <div style={{ width: 40 }} aria-hidden />
-      <div style={{ flex: 1, maxWidth: 520, margin: "0 auto" }}>
+      <form
+        role="search"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const q = search.trim();
+          router.push(q ? `/leads?q=${encodeURIComponent(q)}` : "/leads");
+        }}
+        style={{ flex: 1, maxWidth: 520, margin: "0 auto", display: "flex", gap: 8 }}
+      >
         <label htmlFor="workdesk-search" className="sr-only">
           Hľadať lead, lokalitu, makléra, províziu
         </label>
         <input
           id="workdesk-search"
-          readOnly
+          name="q"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
           placeholder="Hľadať lead, lokalitu, makléra, províziu…"
           style={{
-            width: "100%",
+            flex: 1,
+            minWidth: 0,
             height: 40,
             border: "1px solid rgba(255,255,255,0.16)",
             background: "rgba(255,255,255,0.1)",
@@ -95,7 +107,25 @@ export function WorkdeskTopbar({ userName }: WorkdeskTopbarProps) {
             fontSize: 13,
           }}
         />
-      </div>
+        <button
+          type="submit"
+          data-testid="workdesk-search-submit"
+          style={{
+            height: 40,
+            padding: "0 18px",
+            borderRadius: 12,
+            border: "1px solid rgba(255,255,255,0.2)",
+            background: "rgba(255,255,255,0.16)",
+            color: "#fff",
+            fontSize: 13,
+            fontWeight: 700,
+            whiteSpace: "nowrap",
+            cursor: "pointer",
+          }}
+        >
+          Hľadať
+        </button>
+      </form>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <Link prefetch={false}
           href="/porovnanie-programov"

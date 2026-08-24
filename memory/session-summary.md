@@ -1,4 +1,16 @@
-## Session 2026-08-22
+## Session 2026-08-23
+### Dokončené
+- Topbar search: `readOnly` → form + Hľadať, `/leads?q=` + filter sync
+- Tests 7/7: workdesk-topbar-search verification + WorkdeskTopbar.search RTL
+### Rozpracované / Pending
+- Preview smoke of search behind login (TEST_USER)
+- Agent OS V0 stále blocked na capture PC Phase 0
+### Kľúčové súbory zmenené
+- `apps/crm/src/components/layout/WorkdeskTopbar.tsx`: search form + Hľadať
+- `apps/crm/src/components/leads/lead-filters.tsx`: hydrate/sync `?q=`
+### Ďalší krok
+Founder merge `fix/topbar-search` po CI; V0 stále čaká na push `feat/bridge-harness`.
+
 ### Dokončené
 - Founder `GO IMPLEMENT V0` prijaté; pred prvým runtime editom **STOP** — Phase 0 baseline v tomto clone chýba
 - Spec check-in: BO + plan + baseline manifest + STOP report
