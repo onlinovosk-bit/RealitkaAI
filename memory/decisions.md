@@ -881,8 +881,8 @@ blocked. Exact PC commands are in
 
 - **Rozhodnutie:** Topbar + LeadFilters pomenovať ako filter nad zobrazenými. Semantic box ostáva jediné „Hľadať“. Z placeholderu von „províziu“ (filter hľadá 8 polí, provízia medzi nimi nie je). Stránkovaciu dieru **neopravovať** v tejto fáze.
 - **Prečo:** Po #461 ožil klamlivý placeholder; client-side `q` nad stránkou 50 pri ~480 leadoch vráti „nenájdené“ pri existujúcom leade. Lepší text „Hľadať“ by dieru prekryl.
-- **Dôsledok:** #463 nesie audit + copy. Oprava inventory/`q` na serveri čaká `GO SEARCH-PAGING`.
-- **Artefakt:** `docs/reports/2026-08-24-workdesk-search-architecture-audit.md` (nález `SEARCH-PAGING-CLIENT-FILTER`)
+- **Dôsledok:** #463 nesie audit + copy. Oprava inventory/`q` na serveri čaká `GO SEARCH-PAGING` (vrátane `SEARCH-TOPBAR-GLOBAL-VS-LOCAL`: globálna lišta pomenovaná ako lokálny filter).
+- **Artefakt:** `docs/reports/2026-08-24-workdesk-search-architecture-audit.md` (nálezy `SEARCH-PAGING-CLIENT-FILTER`, `SEARCH-TOPBAR-GLOBAL-VS-LOCAL`)
 
 ## [2026-08-21] — Branch cleanup GO withdrawn → NEEDS-EVIDENCE
 

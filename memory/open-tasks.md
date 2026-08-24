@@ -6,7 +6,7 @@
 
 - [x] Merge #461 topbar Hľadať (`47ec4852`)
 - [x] **GO FÁZA A** copy na `cursor/search-architecture-audit-db1f` (#463) — čaká founder merge (súbor stále nie je na `origin/main`)
-- [ ] **GO SEARCH-PAGING** — client filter vidí len načítanú stránku (`LEADS_PAGE_SIZE=50`); neštartovať bez tejto frázy
+- [ ] **GO SEARCH-PAGING** — (1) client filter vidí len načítanú stránku (`LEADS_PAGE_SIZE=50`); (2) globálna lišta pomenovaná ako lokálny filter (`SEARCH-TOPBAR-GLOBAL-VS-LOCAL`). Neštartovať bez tejto frázy. Preferencia: lišta = DB search, filter ostane na `/leads`.
 
 ## P0 — Agent OS V0 blocked (baseline)
 

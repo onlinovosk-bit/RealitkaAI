@@ -51,6 +51,7 @@ describe("[verification] workdesk topbar search", () => {
       "utf8",
     );
     expect(audit).toContain("SEARCH-PAGING-CLIENT-FILTER");
+    expect(audit).toContain("SEARCH-TOPBAR-GLOBAL-VS-LOCAL");
     expect(audit).toContain("GO SEARCH-PAGING");
     expect(audit).toContain("neopravovať vo fáze A");
   });

@@ -50,6 +50,24 @@ To **nie je vyhľadávanie**. Je to filter zobrazeného. Jediné hľadanie na st
 
 ---
 
+## 3b. Nález TOPBAR GLOBAL (vlastné GO — **neopravovať vo fáze A**)
+
+**ID:** `SEARCH-TOPBAR-GLOBAL-VS-LOCAL`  
+**Závažnosť:** architektonická; copy Fázy A ju nespraví.
+
+`WorkdeskTopbar` je v `(dashboard)/layout.tsx` — globálna lišta nad celým workdeskom, nie len nad `/leads`. Rail má aj **Obrat** (`/forecast`) a ďalšie stránky bez leadového zoznamu. Copy „Filtrovať zobrazené“ je lokálny filter; submit aj tak robí `router.push(/leads?q=)`. Na stránke, kde nie je čo zobrazené filtrovať, je to globálny vstupný bod pomenovaný ako lokálny filter.
+
+Poctivé riešenie (rozhodnúť v `GO SEARCH-PAGING`, nie tu):
+
+1. **Preferované:** lišta = hľadanie v databáze (server-side `q` / semantic); klientsky filter ostane na stránke leadov pri ostatných filtroch. Lišta je miesto, kde maklér hľadá „nájdi mi Šimkovú“, nie „zúž zoznam“.
+2. **Alternatíva:** v lište ostane filter, ale renderuje sa len na stránkach, kde má čo filtrovať (`/leads` a prípadne ďalší paged list).
+
+**OUT pre fázu A:** presun inputu, podmienený render, zlučovanie so semantic boxom.
+
+**Odomknutie:** to isté `GO SEARCH-PAGING` — paging diera a globál vs lokál sa rozhodujú naraz, lebo obe stoja na serverovom `q`.
+
+---
+
 ## 4. Fáza A — GO prijaté (copy / rola)
 
 Founder GO 2026-08-24, dve povinné podmienky:
@@ -75,12 +93,14 @@ Implementácia v tomto PR (copy only):
 | Client filter vidí len načítanú stránku | FAKT | PASS — `LEADS_PAGE_SIZE=50` + inventory offset |
 | 480 leadov na Smolko PROD | PREDPOKLAD / founder | FLAG — diera platí aj pri >50 |
 | Fáza A opraví paging | zakázané | STOP ak by PR menil inventory query |
+| Topbar je globálny vstup pomenovaný ako lokálny filter | FAKT | PASS — `WorkdeskTopbar` v dashboard layoute; submit vždy `/leads?q=` |
+| Fáza A schová topbar mimo `/leads` | zakázané | STOP — patrí k `GO SEARCH-PAGING` |
 
 ---
 
 ## 6. Ďalšie GO (nenahradené)
 
-- `GO SEARCH-PAGING` — server-side hľadanie / filter cez celý tenant
+- `GO SEARCH-PAGING` — server-side `q` cez celý tenant **a** rozhodnutie globálna lišta vs lokálny filter (`SEARCH-PAGING-CLIENT-FILTER` + `SEARCH-TOPBAR-GLOBAL-VS-LOCAL`)
 - `GO IMPLEMENT V0` — blocked (`feat/bridge-harness`)
 - Smolko Gmail dual-run
 - Close #371 / #374
