@@ -34,6 +34,8 @@ Pri písaní Build Orderu mapuj akceptačné kritériá na súbory nižšie.
 | First audit / outcome workdesk | `first-audit.verification.test.ts` | — |
 | Platform heartbeat | `platform-heartbeat.verification.test.ts` | — |
 | Stealth recruiter (legal hold) | `stealth-recruiter.verification.test.ts` | `stealth-recruiter.smoke.spec.ts` |
+| Action Center V0 | `action-center-v0.verification.test.ts` (**ešte nie** — až implementačný PR) | existujúci outreach v `smoke.spec.ts` |
+| Pricing migration v2 | `billing-credits.verification.test.ts` (doplniť seat amount asserty v implementačnom PR) | `smoke.spec.ts` (billing/upgrade routes) |
 
 ## Playwright smoke projekty (CI gate)
 

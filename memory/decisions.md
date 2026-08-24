@@ -870,6 +870,14 @@ IDs tu nie sú.
 **Unlock:** commit the nine staged bridge files on the capture PC, push
 `feat/bridge-harness`, re-issue `GO IMPLEMENT V0`.
 
+## [2026-08-24] — Action Center V0 + Pricing v2: spec check-in, implementácia NIE
+
+- **Rozhodnutie:** Dva oddelené BO v repe. Runtime, Stripe, migrácia, merge produktového kódu **nezačínajú**. Autorizácia neskôr len frázami `GO IMPLEMENT ACTION CENTER V0` a `GO IMPLEMENT PRICING V2` (každá zvlášť).
+- **Baseline:** `origin/main` `47ec485275166f00671945ed3fd928fac5271508` (fresh fetch pred zápisom). Zhodné s `platné_voči` v zdrojovom BO.
+- **Dôvod 349 € (draft do implementačného PR):** seat = používanie maklérom; Cockpit = riadenie firmy; jeden zachránený obchod > mesiace predplatného; oddelenie ARPA. Číslo v `pricing-v1.md:24` ostáva; tento odsek je zárodok decision recordu, nie zmena ceny.
+- **Artefakty:** `docs/briefs/BO-action-center-v0.md`, `docs/briefs/BO-pricing-migration-v2.md`, `docs/reports/2026-08-24-bo-action-center-pricing-review.md`
+- **Veto:** `feat/bridge-harness` sa na túto prácu nepoužíva.
+
 ### Amendment 2026-08-22 — `GO.` does not lift the baseline STOP
 
 Founder sent `GO.` after D-2026-08-22-01. Re-fetch still shows no

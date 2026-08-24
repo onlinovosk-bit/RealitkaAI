@@ -1,3 +1,15 @@
+## Session 2026-08-24
+### Dokončené
+- Spec check-in BO-A Action Center V0 + BO-B Pricing v2 proti `origin/main` `47ec4852`
+- Review: `docs/reports/2026-08-24-bo-action-center-pricing-review.md`
+### Rozpracované / Pending
+- Merge #463 search Fáza A — founder, **bez automerge**
+- `GO IMPLEMENT PRICING V2` / `GO IMPLEMENT ACTION CENTER V0` — **neudelené**
+### Kľúčové súbory zmenené
+- `docs/briefs/BO-action-center-v0.md`, `docs/briefs/BO-pricing-migration-v2.md`
+### Ďalší krok
+Founder merge #463; pricing/AC runtime až po samostatných GO frázach.
+
 ## Session 2026-08-23
 ### Dokončené
 - Topbar search: `readOnly` → form + Hľadať, `/leads?q=` + filter sync

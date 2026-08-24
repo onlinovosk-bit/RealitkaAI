@@ -1,6 +1,17 @@
 # Open Tasks — Prioritized Queue
 
-> Posledná aktualizácia: 2026-08-22 | Task-loop sync
+> Posledná aktualizácia: 2026-08-24 | Task-loop sync
+
+## P0 — Search workdesk
+
+- [ ] Founder merge #463 — **bez labelu automerge** (Tier 2)
+- [ ] `GO SEARCH-PAGING` — paging + `SEARCH-TOPBAR-GLOBAL-VS-LOCAL` (až po merge auditu)
+
+## P0 — Action Center / Pricing (spec only)
+
+- [ ] Merge spec PR (BO-A + BO-B docs) — **žiadny runtime**
+- [ ] `GO IMPLEMENT PRICING V2` — neudelené; pred ním Stripe `tax_behavior` + volume discount zámer
+- [ ] `GO IMPLEMENT ACTION CENTER V0` — neudelené; nezávislé od pricing
 
 ## P0 — Agent OS V0 blocked (baseline)
 
