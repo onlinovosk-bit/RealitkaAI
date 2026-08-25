@@ -1,16 +1,17 @@
 ## Session 2026-08-25
 ### Dokončené
-- Critical bug hunt (no runtime fix): 4 HIGH/CRITICAL findings
-- Report: `docs/reports/2026-08-25-critical-bug-hunt.md`
+- Critical bug hunt (correctness): 4 HIGH/CRITICAL — `docs/reports/2026-08-25-critical-bug-hunt.md`
+- Critical AUTH hunt: 3 HIGH — HubSpot/analyze null-agency admin IDOR; cron `Bearer undefined` fail-open — `docs/reports/2026-08-25-critical-auth-bug-hunt.md`
 ### Rozpracované / Pending
+- `GO FIX-HUBSPOT-ANALYZE-TENANT-GATE` — require caller agency before admin sync/persist
+- `GO FIX-CRON-SECRET-FAIL-CLOSED` — `if (!cronSecret)` on fail-open cron/admin routes
 - `GO FIX-CHECKOUT-AGENCY-ID` — refuse seat/top-up when `agency_id` null
-- Grant ledger orphan after seat ACK (separate PR after GO)
-- Gmail pull maxResults=25 lost messages
-- Matching DELETE+500 truncation residual beyond #444
+- Grant ledger orphan / gmail 25-cap / matching 500-cap (sibling report)
 ### Kľúčové súbory zmenené
-- `docs/reports/2026-08-25-critical-bug-hunt.md`: hunt report
+- `docs/reports/2026-08-25-critical-auth-bug-hunt.md`: auth/tenant hunt
+- `docs/reports/2026-08-25-critical-bug-hunt.md`: correctness hunt (prior commit)
 ### Ďalší krok
-Founder `GO FIX-CHECKOUT-AGENCY-ID` (1 PR); do not bundle grant-orphan fix.
+Founder `GO FIX-HUBSPOT-ANALYZE-TENANT-GATE` (1 PR); do not bundle cron fail-closed.
 
 ## Session 2026-08-24
 ### Dokončené

@@ -2,6 +2,11 @@
 
 > Posledná aktualizácia: 2026-08-25 | Task-loop sync
 
+## P0 — Critical AUTH / tenant (2026-08-25 auth hunt)
+
+- [ ] **GO FIX-HUBSPOT-ANALYZE-TENANT-GATE** — require non-null caller `agency_id` + matching lead agency before admin HubSpot sync / call-analyze persist (`docs/reports/2026-08-25-critical-auth-bug-hunt.md` #1–2)
+- [ ] **GO FIX-CRON-SECRET-FAIL-CLOSED** — reject unset `CRON_SECRET` (`Bearer undefined`) on onboarding-dispatch / agency-scraping / related fail-open routes (#3); separate PR
+
 ## P0 — Critical correctness (2026-08-25 hunt)
 
 - [ ] **GO FIX-CHECKOUT-AGENCY-ID** — refuse seat/top-up Stripe session when `profiles.agency_id` is null (`docs/reports/2026-08-25-critical-bug-hunt.md` #1)
