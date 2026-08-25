@@ -34,6 +34,24 @@ async function loadAuthHelpers() {
   return import("@/lib/auth");
 }
 
+/**
+ * Seat/top-up Stripe metadata must carry a real agency UUID.
+ * Empty/null agency_id used to be written as "" → webhook fail-closed (#401)
+ * after the customer already paid (permanent stuck fulfillment).
+ */
+export function requireCheckoutAgencyId(
+  profile: { agency_id?: string | null } | null | undefined,
+): string {
+  const agencyId =
+    typeof profile?.agency_id === "string" ? profile.agency_id.trim() : "";
+  if (!agencyId) {
+    throw new Error(
+      "Chýba agency_id profilu — seat/top-up checkout nie je možné dokončiť.",
+    );
+  }
+  return agencyId;
+}
+
 export type SeatCheckoutInput = {
   seatTier: SeatTier;
   quantity: number;
@@ -87,6 +105,7 @@ export async function createSeatCheckoutSession(input: SeatCheckoutInput) {
   const user = await getCurrentUser();
   const profile = await getCurrentProfile();
   if (!user?.email) throw new Error("Používateľ nemá email.");
+  const agencyId = requireCheckoutAgencyId(profile);
 
   const { lineItems, metadata, quantity } = buildSeatCheckoutSessionParams(input);
   const appUrl = getAppUrl();
@@ -102,7 +121,7 @@ export async function createSeatCheckoutSession(input: SeatCheckoutInput) {
     metadata: {
       authUserId: user.id,
       profileId: profile?.id ?? "",
-      agencyId: String((profile as { agency_id?: string })?.agency_id ?? ""),
+      agencyId,
       ...metadata,
       seatQuantity: String(quantity),
     },
@@ -120,6 +139,7 @@ export async function createTopupCheckoutSession(packageKey: TopupPackageKey) {
   const user = await getCurrentUser();
   const profile = await getCurrentProfile();
   if (!user?.email) throw new Error("Používateľ nemá email.");
+  const agencyId = requireCheckoutAgencyId(profile);
 
   const priceId = getTopupStripePriceId(packageKey);
   if (!priceId) throw new Error("Top-up Stripe price nie je nakonfigurovaný.");
@@ -135,7 +155,7 @@ export async function createTopupCheckoutSession(packageKey: TopupPackageKey) {
     metadata: {
       authUserId: user.id,
       profileId: profile?.id ?? "",
-      agencyId: String((profile as { agency_id?: string })?.agency_id ?? ""),
+      agencyId,
       checkoutType: "credit_topup",
       topupPackage: packageKey,
     },
