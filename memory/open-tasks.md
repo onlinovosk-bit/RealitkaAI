@@ -1,6 +1,18 @@
 # Open Tasks — Prioritized Queue
 
-> Posledná aktualizácia: 2026-08-24 | Task-loop sync
+> Posledná aktualizácia: 2026-08-25 | Task-loop sync
+
+## P0 — Critical AUTH / tenant (2026-08-25 auth hunt)
+
+- [ ] **GO FIX-HUBSPOT-ANALYZE-TENANT-GATE** — require non-null caller `agency_id` + matching lead agency before admin HubSpot sync / call-analyze persist (`docs/reports/2026-08-25-critical-auth-bug-hunt.md` #1–2)
+- [ ] **GO FIX-CRON-SECRET-FAIL-CLOSED** — reject unset `CRON_SECRET` (`Bearer undefined`) on onboarding-dispatch / agency-scraping / related fail-open routes (#3); separate PR
+
+## P0 — Critical correctness (2026-08-25 hunt)
+
+- [ ] **GO FIX-CHECKOUT-AGENCY-ID** — refuse seat/top-up Stripe session when `profiles.agency_id` is null (`docs/reports/2026-08-25-critical-bug-hunt.md` #1)
+- [ ] **GO FIX-GRANT-LEDGER-ORPHAN** — roll back ledger + fail webhook/cycle when agency balance update fails after grant insert (#2); separate PR
+- [ ] **GO FIX-GMAIL-PULL-PAGING** — pageToken / persist seen ids; maxResults=25 loses older labeled mail (#3)
+- [ ] **GO FIX-MATCHING-LIST-CAP** — recalculate must not DELETE-all then rebuild from silent 500 cap (#4; beyond #444)
 
 ## P0 — Search / workdesk (post #461)
 
