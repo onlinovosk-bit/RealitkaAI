@@ -1,3 +1,20 @@
+## Session 2026-08-25
+### Dokončené
+- Founder override: ONL-MCP-001 **dnes v noci** (nie 26.→27. 8.)
+- Feasibility + verdikt BUILD gateway / DON'T BUY Premium-for-MCP
+- Artefakt: `docs/onlinovo/ONL-MCP-FEASIBILITY.md`
+- Report: `docs/reports/2026-08-25-onl-mcp-001-feasibility.md`
+- Bus: TASK-0005 done, MSG-20260825-010 result
+### Rozpracované / Pending
+- Founder tarif Premium vs standard
+- `GO ONL-MCP-002` neudelené — **STOP** na kód
+- Revolis nočná vlna PRs (iné vetvy) — mimo tejto práce
+### Kľúčové súbory zmenené
+- `docs/onlinovo/ONL-MCP-FEASIBILITY.md`: 20 sekcií, 4 cesty, TCO, verdikt
+- `.ai/bus/tasks/TASK-0005.md`: done + STOP
+### Ďalší krok
+Founder potvrdí Shoptet tarif; bez `GO ONL-MCP-002` žiadny gateway kód.
+
 ## Session 2026-08-24
 ### Dokončené
 - #461 merged `47ec4852`
