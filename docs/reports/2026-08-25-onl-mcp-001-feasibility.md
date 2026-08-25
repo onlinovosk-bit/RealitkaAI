@@ -2,6 +2,7 @@
 
 **Status:** DONE (dokument) + **STOP** (žiadna implementácia, žiadny merge)  
 **Vetva:** `cursor/onl-mcp-001-feasibility-db1f`  
+**PR:** https://github.com/onlinovosk-bit/RealitkaAI/pull/476  
 **Override:** founder „NIE! CHCEM ABY išla dnes v noci!“ — kalendár 26.→27. 8. sa nečakal.
 
 ## Čo sa stalo

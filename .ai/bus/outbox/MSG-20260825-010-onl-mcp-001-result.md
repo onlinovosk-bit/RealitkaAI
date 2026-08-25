@@ -18,6 +18,7 @@ evidence:
     - .ai/bus/tasks/TASK-0005.md
   urls:
     - https://podpora.shoptet.cz/shoptet-mcp/
+    - https://github.com/onlinovosk-bit/RealitkaAI/pull/476
 next_action:
   gate: STOP
   description: Founder review of feasibility verdict; no ONL-MCP-002.
