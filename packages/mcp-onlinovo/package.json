@@ -8,7 +8,8 @@
     "build": "tsc",
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
-    "test": "tsx --test src/policy.test.ts src/tools.test.ts src/resolve-adapter.test.ts"
+    "test": "tsx --test src/policy.test.ts src/tools.test.ts src/resolve-adapter.test.ts src/ruflo-config.test.ts",
+    "smoke": "tsx src/client-smoke.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",

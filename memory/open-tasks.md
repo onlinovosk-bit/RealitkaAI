@@ -1,6 +1,16 @@
 # Open Tasks — Prioritized Queue
 
-> Posledná aktualizácia: 2026-08-24 | Task-loop sync
+> Posledná aktualizácia: 2026-08-25 | Task-loop sync
+
+## P0 — Onlinovo MCP (tonight wave, merge founder)
+
+- [x] ONL-MCP-001 feasibility — #476
+- [x] ONL-MCP-002 impl plan — #477
+- [x] ONL-MCP-003 MVP `packages/mcp-onlinovo` — #478
+- [x] ONL-MCP-004 Ruflo/Cursor stdio config + smoke
+- [ ] Founder merge 476–478 + 004
+- [ ] Live Shoptet mapping — až tarif + token mimo git (`GO ONL-MCP-SHOP-LIVE`)
+
 
 ## P0 — Search / workdesk (post #461)
 
