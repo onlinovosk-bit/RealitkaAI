@@ -228,8 +228,8 @@ State projection is fixed, not inferred ad hoc:
 | `provider_invocation_started` | unchanged | unchanged | `provider_in_flight` | unchanged |
 | `provider_invocation_completed` | unchanged | unchanged | `provider_completed` | unchanged |
 | `verification_started` | `verifying` | `verifying` | `verifying` | unchanged |
-| `verification_completed` + PASS result | unchanged | `completed` | `completed` | unchanged |
-| `verification_completed` + FAIL result | unchanged | `failed` | `failed` | unchanged |
+| `verification_completed` (verdict=pass) | unchanged | `completed` | `completed` | unchanged |
+| `verification_completed` (verdict=fail) | unchanged | `failed`    | `failed`    | unchanged |
 | `ruflo_projection_requested` | unchanged | unchanged | unchanged | `pending`; operation required |
 | `ruflo_projection_reconciled` | unchanged | unchanged | unchanged | `reconciled` |
 | `ruflo_projection_failed` | unchanged | unchanged | unchanged | `failed` |
@@ -240,9 +240,11 @@ State projection is fixed, not inferred ad hoc:
 | `run_cancelled` after provider start without completion | `cancelled` | `unknown` | `unknown` | unchanged |
 
 `decision_packet_created` changes no lifecycle status. A provider-started
-attempt without completion evidence projects to `unknown` during inspection;
-`unknown` is an absence-derived conservative projection, not an event type.
-Later events cannot silently turn it into `failed` or start another invocation.
+attempt without completion evidence projects to `unknown` during inspection.
+`unknown` is a derived projection classification, not a state produced by an
+event. It never appears in the ledger as an event; it arises solely from the
+absence of terminal evidence for `provider_invocation_started`. Later events
+cannot silently turn it into `failed` or start another invocation.
 
 Projection requests carry `projectionOperation=begin|complete`. The reducer
 allows begin before provider invocation and complete only after deterministic
@@ -276,9 +278,10 @@ operation remains legal after a reconciled or failed `begin`.
 12. Append `attempt_started`.
 13. Append `ruflo_projection_requested` with `projectionOperation=begin`.
 14. Request Ruflo task projection.
-15. On Ruflo begin success append `ruflo_projection_reconciled`; on failure
-    append `ruflo_projection_failed` and continue. Non-canonical Ruflo is not an
-    availability dependency of the canonical run.
+15. On Ruflo begin success append `ruflo_projection_reconciled`. Pri zlyhaní
+    Ruflo begin zapíš `ruflo_projection_failed` a POKRAČUJ. Projection status
+    = `failed`; run nie je killed. Ruflo nesmie byť availability dependency
+    canonical lifecyclu.
 16. Append `provider_invocation_started` with `policyDecision=allow`.
 17. Invoke the subscription provider once with the combined timeout/caller
     AbortSignal.

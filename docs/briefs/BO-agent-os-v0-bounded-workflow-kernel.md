@@ -473,10 +473,12 @@ verifying → completed | failed
 
 Terminal stavy sa nemenia. Neplatný transition musí zlyhať pred side effectom.
 
-`unknown` je konzervatívna odvodená klasifikácia projekcie, nie event type.
-Vzniká iba vtedy, keď ledger obsahuje `provider_invocation_started` bez
-`provider_invocation_completed` alebo iného dôkazu o výsledku. Ledger nesmie
-syntetizovať `unknown` event ani túto absenciu preklasifikovať na `failed`.
+`unknown` je odvodená klasifikácia projekcie, nie stav produkovaný eventom.
+V ledgeri sa nikdy nevyskytuje ako event; vzniká výhradne z absencie terminal
+evidence pre `provider_invocation_started` (ledger obsahuje
+`provider_invocation_started` bez `provider_invocation_completed` alebo iného
+dôkazu o výsledku). Ledger nesmie syntetizovať `unknown` event ani túto
+absenciu preklasifikovať na `failed`.
 
 `ruflo_projection_requested` má povinné `projection_operation=begin|complete`.
 Reducer povoľuje `begin` request pred providerom a `complete` request až po
