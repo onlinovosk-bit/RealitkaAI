@@ -1,4 +1,15 @@
 # Critical Decisions Log
+
+## [2026-08-25] — Ruffo wave split: Revolis tonight, Onlinovo tomorrow
+
+- **Rozhodnutie:** ONL-MCP-001 (Onlinovo MCP feasibility) sa **nespúšťa** počas Revolis nočnej vlny 25.→26. 8. Ide do `.ai/bus` ako QUEUED na noc **26.→27. 8.** ONL-MCP-002/003/004 až po verdikte 001.
+- **Konflikt:** Revolis > Onlinovo pri compute/slot. Žiadny zápis do `apps/crm` z Onlinovo lane. Žiadny zásah do draft PR #469–#474.
+- **Pravda o scheduleri:** job nie je vo live Ruffo/Cursor Automations; durable queue = `TASK-0005` + inbox MSG.
+- **Dôsledok:** 25. 8. žiadny `ONL-MCP-FEASIBILITY.md` a žiadna implementácia gateway.
+- **Bus:** `DEC-20260825-001-onlinovo-revolis-lanes`, `docs/reports/2026-08-25-onl-mcp-001-queued.md`
+
+---
+
 - [2026-04-29] CI/CD: Vyriešený "Nuclear Option" pre artifacty (apps/crm/.next). Pipeline je ZELENÁ.
 - [2026-04-29] XML Feed: Zvolená Varianta 1 (Vlastný web) pre utajenie pred Webexom.
 - [2026-04-29] Outreach: Definované šablóny pre segmenty A (Hot), B (Warm), C (Cold).
