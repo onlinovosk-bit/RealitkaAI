@@ -1,0 +1,119 @@
+---
+description: Skutočné incidenty a triedy chýb, ktoré v Revolise reálne nastali
+alwaysApply: true
+---
+
+# Revolis — čo sa u nás naozaj pokazilo
+
+Toto nie sú všeobecné best practices. Toto je zoznam chýb, ktoré v tomto repe
+**reálne nastali**, aj s cestou k súboru. Model ich nemá odkiaľ vedieť.
+Pred návrhom riešenia si prejdi, či sa nechystáš zopakovať niektorú z nich.
+
+---
+
+## I-01 · Kompletný, otestovaný a mŕtvy kód
+**Kde:** `lib/credits/spend-credits.ts` · **Zistené:** 2026-08-02 · **Cena:** 9 100 €/rok
+
+`spendCredits()` mal SQL RPC, ledger, mesačné granty, expiráciu, top-up panel
+aj Stripe webhook. Nemal **ani jeden call site**. Akcie pritom svoju cenu poznali —
+posielali `CREDIT_ACTION_COSTS.*` do `logAiAction` ako pole `creditsSpent`, ktoré
+sa len **zalogovalo** do `ai_action_audit`. Zostatok sa nikdy nezmenil.
+
+> **Pravidlo:** keď pridávaš schopnosť, v tom istom PR pridaj aj jej **volajúceho**.
+> Kontrola: `node apps/crm/scripts/find-dead-exports.mjs` (295 ďalších takých).
+> „Zalogované" ≠ „vykonané". Ak funkcia niečo počíta a výsledok len loguješ,
+> napíš do PR popisu, kto to spotrebuje.
+
+## I-02 · Systémové ID ukazujúce na platiaceho zákazníka
+**Kde:** `lib/usage-metrics.ts` · **Zistené:** 2026-08-02
+
+`SYSTEM_USAGE_AGENCY_ID` mal fallback `11111111-1111-1111-1111-111111111111` —
+`agency_id` Reality Smolko. Systémová spotreba (crony, embeddings, matching engine,
+guardian, semantic search) sa 15+ miestami zapisovala pod platiaceho zákazníka.
+Po zapojení účtovania by sa mu za ňu začalo fakturovať.
+
+> **Pravidlo:** žiadna systémová konštanta nesmie mať ako default `agency_id`
+> reálneho zákazníka. Interné tenanty: `22222222…` sandbox, `33333333…` systém.
+
+## I-03 · Vypočítať a zahodiť
+**Kde:** `api/valuation/estimate/route.ts:65` · **Zistené:** 2026-08-02
+
+Route zavolala `buildDeterministicEstimate()` a výsledok vrátila do JSON
+**bez zápisu do DB**. Každý majiteľ, ktorý si odhad vyklikal a neodoslal formulár,
+bol nenávratne stratený aj s tým, čo o trhu prezradil. To je priamy únik z moatu,
+ktorý je podľa `COMPANY.md` jediné trvalé aktívum firmy.
+
+> **Pravidlo:** ak sa v produkte niečo počíta z používateľského vstupu,
+> **default je uložiť to.** Nezapísať je vedomé rozhodnutie s odôvodnením v PR.
+> Zápis moat dát je vždy best-effort — nikdy nesmie zhodiť odpoveď zákazníkovi.
+
+## I-04 · Deploy pred migráciou
+**Kde:** widget platiaceho zákazníka · **Nastalo:** 2026-07-22
+
+Kód nasadený skôr než migrácia zhodil `/odhad/reality-smolko` platiacemu zákazníkovi.
+
+> **Pravidlo:** migračný súbor ide do PR, **neaplikovaný**. Aplikuje ho človek
+> pred merge. Žiadny agent nespúšťa migráciu na prode. Viď `architecture.mdc`.
+
+## I-05 · Vercel Hobby má presnosť cronu ±59 minút
+**Kde:** `apps/crm/vercel.json` · **Zistené:** 2026-08-02
+
+`credits-expire` bežal `0 5 1 * *`, `credits-grant` `0 6 1 * *`. Pri jitteri ±59 min
+na oboch stranách sa poradie obráti: grant zbehne prvý a expirácia zmaže práve
+pridelené kredity. Zákazník otvorí appku prvého v mesiaci a má nulu.
+To isté hrozilo dvojici `guardian-run` (`0 6`) a `guardian-digest` (`0 7`).
+
+> **Pravidlo:** na Hobby **nikdy nespoliehaj na poradie dvoch cronov.**
+> Závislé kroky patria do jedného behu s deterministickým poradím vo vnútri.
+> Minimálny bezpečný odstup nezávislých úloh je 2 hodiny.
+
+## I-06 · Kompenzačný delete namiesto transakcie
+**Kde:** `api/valuation/submit/route.ts:159-162` · **Zistené:** 2026-08-02
+
+`architecture.mdc` hovorí: *„Consent dáta sa zapisujú v rovnakej transakcii ako lead."*
+Kód robí insert do `leads`, potom insert do `lead_consents`, a pri chybe
+kompenzačný `delete` leadu. Pri páde procesu medzi tými volaniami zostane
+osobný údaj bez právneho základu.
+
+> **Pravidlo:** „v jednej transakcii" znamená **jednu RPC funkciu v Postgrese**,
+> nie dve volania a `catch`. Toto je zároveň dôkaz, že pravidlo bez kontroly nič neznamená.
+
+## I-07 · Pravidlo bez kontroly je prianie
+**Zistené:** 2026-08-02
+
+`revolis-api.mdc` má sekciu „Povinné importy". Z 214 API routes chýbala
+validácia v 127, jednotné odpovede v 158, telemetria v 209 a rate-limit
+na 42 verejných endpointoch (vrátane `billing/checkout`, `billing/redeem-code`,
+`demo/capture-lead`).
+
+> **Pravidlo:** nové pravidlo sa pridáva **spolu s kontrolou**, ktorá ho vynúti.
+> Kontrola musí byť **ratchet** s baseline — trvalo červené CI sa vypne
+> (stalo sa: `schema-governance-guard.yml`, 17.06.2026).
+> Kontrola: `node apps/crm/scripts/check-api-contract.mjs`
+
+## I-08 · Poškodené koncovky riadkov
+**Kde:** `api/valuation/estimate/route.ts` · **Zistené:** 2026-08-02
+
+Jediný súbor v celom repe mal `\r\r\n` — dvojité CR na 76 riadkoch.
+Textové nástroje na ňom tichito zlyhávali.
+
+> **Pravidlo:** pri automatizovanej úprave súboru najprv normalizuj koncovky
+> a zachovaj pôvodnú konvenciu pri zápise. Repo je zmiešané LF/CRLF.
+
+## I-09 · Doména je zdieľané aktívum
+**Kde:** `api/stealth-recruiter/outreach/route.ts` · **Zistené:** 2026-08-02
+
+Route posielala studené e-maily majiteľom nehnuteľností z `noreply@revolis.ai`
+bez opt-out vety, s `.catch(console.warn)` a „best effort" logovaním.
+Z tej istej domény chodia notifikácie platiacim zákazníkom.
+
+> **Pravidlo:** akýkoľvek odchádzajúci e-mail neznámemu príjemcovi ohrozuje
+> doručovanie **celého produktu**. Drafty áno, send nikdy — bez ľudského schválenia
+> a bez opt-out vety. Viď ZAKÁZANÉ AKCIE v `brain/identity/FOUNDER.md`.
+
+## I-10 · Zdroje pravdy, ktoré sa pletú
+- `leads` — autoritatívna pre CRM · `saas_leads` — pre SaaS funnel ·
+  `revolis_leads` — **deprecated, 0 použití**
+- Health endpoint je **`/api/healthz`** (200). `/api/health` neexistuje a vracia 401.
+- Produkcia je **`app.revolis.ai`**. `revolis.ai` je marketingová appka
+  (`apps/marketing`) a route `/odhad/*` v nej **neexistuje** — vráti 404.
