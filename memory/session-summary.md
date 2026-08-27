@@ -1,3 +1,18 @@
+## Session 2026-08-25
+### Dokončené
+- ONL-MCP-001 feasibility BUILD/DON'T BUY (#476)
+- ONL-MCP-002 implementačný návrh (#477)
+- ONL-MCP-003 MVP `packages/mcp-onlinovo` — 15 handler tests
+- ONL-MCP-004 Ruflo/Cursor `onlinovo` stdio + client smoke PASS (17 tests)
+### Rozpracované / Pending
+- Founder merge; live Shoptet mapping blocked
+- Tarif Premium vs standard stále NEZNÁME
+### Kľúčové súbory zmenené
+- `packages/mcp-onlinovo/**`: stdio MCP fixture/unconnected/write-deny
+- `.mcp.json` / `.cursor/mcp.json`: server `onlinovo`
+### Ďalší krok
+Founder merge PRs; `GO ONL-MCP-SHOP-LIVE` až po tarife + tokene mimo git.
+
 ## Session 2026-08-24
 ### Dokončené
 - #461 merged `47ec4852`
