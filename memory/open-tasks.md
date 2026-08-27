@@ -2,6 +2,12 @@
 
 > Posledná aktualizácia: 2026-08-25 | Task-loop sync
 
+## P0 — Onlinovo MCP (docs done, code STOP)
+
+- [x] **ONL-MCP-001** feasibility tonight — `docs/onlinovo/ONL-MCP-FEASIBILITY.md`
+- [ ] Founder: potvrdiť Shoptet tarif (Premium áno/nie)
+- [ ] `GO ONL-MCP-002` — neudelené; žiadny gateway kód bez tejto frázy
+- [ ] ONL-MCP-003/004 — neotvárať
 ## P0 — Onlinovo MCP (tonight wave, merge founder)
 
 - [x] ONL-MCP-001 feasibility — #476

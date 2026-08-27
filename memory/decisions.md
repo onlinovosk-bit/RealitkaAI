@@ -1,11 +1,12 @@
 # Critical Decisions Log
 
-## [2026-08-25] — ONL-MCP wave tonight: 001 BUILD, 002 plan, 003 MVP, 004 Ruflo
+## [2026-08-25] — ONL-MCP-001: BUILD gateway, DON'T BUY Premium-for-MCP
 
-- **001:** BUILD vlastný gateway; DON'T BUY Premium kvôli MCP. Feasibility #476.
-- **002–004 founder GO tonight:** stdio `packages/mcp-onlinovo`, fixture default, write deny, Shoptet mapping blocked. Ruflo config pridá server `onlinovo`; daemon nespustený.
-- **Engineering justification:** reuse MCP SDK + mcp-shared; nový balík lebo shop ≠ CRM.
-- **STOP:** žiadny merge agentom, žiadny prod Shoptet write, žiadny secret v gite.
+- **Rozhodnutie (agent recommendation, founder ešte nepodpísal):** stavať vlastný vendor-neutral Onlinovo MCP Gateway; **nekupovať** Shoptet Premium výhradne kvôli oficiálnemu MCP (floor 12 000 Kč/měs.). Implementácia **STOP** do `GO ONL-MCP-002`.
+- **Timing:** founder override — audit **dnes v noci** 25. 8. 2026, nie 26.→27. 8.
+- **Fakty:** Onlinovo.sk = Shoptet (verejný fingerprint). Tarif Premium vs standard = **NEZNÁME**. REST API len cez marketplace addon; Shoptet nepíše cestu „API pre jeden e-shop“.
+- **Artefakt:** `docs/onlinovo/ONL-MCP-FEASIBILITY.md`, `docs/reports/2026-08-25-onl-mcp-001-feasibility.md`, TASK-0005 done.
+- **Mimo:** `apps/crm`, prod Shoptet write, ONL-MCP-002/003/004.
 
 ---
 
