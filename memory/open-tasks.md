@@ -1,6 +1,14 @@
 # Open Tasks — Prioritized Queue
 
-> Posledná aktualizácia: 2026-08-24 | Task-loop sync
+> Posledná aktualizácia: 2026-08-25 | Task-loop sync
+
+## P0 — Ruffo vlny (25. 8.)
+
+- [x] Revolis noc 25.→26. agent STOP — draft PR #469–#474; founder review ráno
+- [ ] **ONL-MCP-001 QUEUED** na noc 26.→27. — nespúšťať skôr; `TASK-0005`; žiadny gateway build
+- [ ] ONL-MCP-002/003/004 — **blocked** do verdiktu 001
+
+
 
 ## P0 — Search / workdesk (post #461)
 
