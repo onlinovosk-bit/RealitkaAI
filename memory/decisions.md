@@ -1,4 +1,14 @@
 # Critical Decisions Log
+
+## [2026-08-25] — ONL-MCP wave tonight: 001 BUILD, 002 plan, 003 MVP, 004 Ruflo
+
+- **001:** BUILD vlastný gateway; DON'T BUY Premium kvôli MCP. Feasibility #476.
+- **002–004 founder GO tonight:** stdio `packages/mcp-onlinovo`, fixture default, write deny, Shoptet mapping blocked. Ruflo config pridá server `onlinovo`; daemon nespustený.
+- **Engineering justification:** reuse MCP SDK + mcp-shared; nový balík lebo shop ≠ CRM.
+- **STOP:** žiadny merge agentom, žiadny prod Shoptet write, žiadny secret v gite.
+
+---
+
 - [2026-04-29] CI/CD: Vyriešený "Nuclear Option" pre artifacty (apps/crm/.next). Pipeline je ZELENÁ.
 - [2026-04-29] XML Feed: Zvolená Varianta 1 (Vlastný web) pre utajenie pred Webexom.
 - [2026-04-29] Outreach: Definované šablóny pre segmenty A (Hot), B (Warm), C (Cold).
