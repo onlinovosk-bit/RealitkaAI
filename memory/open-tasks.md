@@ -8,6 +8,14 @@
 - [ ] Founder: potvrdiť Shoptet tarif (Premium áno/nie)
 - [ ] `GO ONL-MCP-002` — neudelené; žiadny gateway kód bez tejto frázy
 - [ ] ONL-MCP-003/004 — neotvárať
+## P0 — Onlinovo MCP (tonight wave, merge founder)
+
+- [x] ONL-MCP-001 feasibility — #476
+- [x] ONL-MCP-002 impl plan — #477
+- [x] ONL-MCP-003 MVP `packages/mcp-onlinovo` — #478
+- [x] ONL-MCP-004 Ruflo/Cursor stdio config + smoke
+- [ ] Founder merge 476–478 + 004
+- [ ] Live Shoptet mapping — až tarif + token mimo git (`GO ONL-MCP-SHOP-LIVE`)
 
 
 ## P0 — Search / workdesk (post #461)
