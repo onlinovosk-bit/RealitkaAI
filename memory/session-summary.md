@@ -1,3 +1,16 @@
+## Session 2026-08-27
+### Dokončené
+- Critical bug hunt: assignment rules cross-tenant wipe → PR #490
+- Report: `docs/reports/2026-08-27-assignment-rules-tenant-gate.md`
+### Rozpracované / Pending
+- Founder merge #490 (+ older critical-bug PRs still open)
+- Ops backfill NULL agency_id on lead_assignment_rules after migrate
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/lead-automation-store.ts`: scoped client + agencyId
+- `apps/crm/supabase/migrations/20260827230000_lead_assignment_rules_tenant_rls.sql`: tenant RLS
+### Ďalší krok
+Founder merge #490 after CI green; apply migration on prod.
+
 ## Session 2026-08-25
 ### Dokončené
 - Founder override: ONL-MCP-001 **dnes v noci** (nie 26.→27. 8.)
