@@ -1,3 +1,17 @@
+## Session 2026-08-28
+### Dokončené
+- CRITICAL: follow-up preview fail-open → cross-tenant lead PII — PR #491
+- Report: `docs/reports/2026-08-28-followup-preview-tenant-gate.md`
+- Fix: `resolveFollowupAgencyId` null + GET `/api/followup` 403
+### Rozpracované / Pending
+- Merge #491 after CI
+- Remaining open critical PRs: #369 #370 #443 #444 #447 #459 #462 #481 #486 #490
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/agents/followup/preview.ts`: no DEMO fallback
+- `apps/crm/src/app/api/followup/route.ts`: 403 missing agency_id
+### Ďalší krok
+Founder merge #491; next hunt pass after merge.
+
 ## Session 2026-08-25
 ### Dokončené
 - Founder override: ONL-MCP-001 **dnes v noci** (nie 26.→27. 8.)
