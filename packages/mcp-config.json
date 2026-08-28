@@ -35,6 +35,13 @@
         "TWILIO_AUTH_TOKEN": "${TWILIO_AUTH_TOKEN}",
         "TWILIO_FROM_NUMBER": "${TWILIO_FROM_NUMBER}"
       }
+    },
+    "onlinovo": {
+      "command": "npx",
+      "args": ["tsx", "packages/mcp-onlinovo/src/server.ts"],
+      "env": {
+        "ONLINOVO_SHOP_ADAPTER": "fixture"
+      }
     }
   }
 }
