@@ -1,12 +1,26 @@
-import { listAssignmentRules, autoAssignLeads } from "@/lib/lead-automation-store";
+import AssignmentRulesPanel from "@/components/automation/assignment-rules-panel";
+import { listAssignmentRules } from "@/lib/lead-automation-store";
 import { listProfiles } from "@/lib/team-store";
 import { getRscSupabase } from "@/lib/supabase/rsc-client";
-import AssignmentRulesPanel from "@/components/automation/assignment-rules-panel";
 
 export default async function AutomationPage() {
   const supabase = await getRscSupabase();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data: profile } = user
+    ? await supabase
+        .from("profiles")
+        .select("agency_id")
+        .eq("auth_user_id", user.id)
+        .maybeSingle()
+    : { data: null };
+
+  const agencyId = profile?.agency_id ?? null;
+
   const [rules, profiles] = await Promise.all([
-    listAssignmentRules(),
+    agencyId ? listAssignmentRules(agencyId, supabase) : Promise.resolve([]),
     listProfiles(supabase),
   ]);
 
@@ -20,8 +34,8 @@ export default async function AutomationPage() {
           </p>
         </div>
 
-        <AssignmentRulesPanel 
-          initialRules={rules} 
+        <AssignmentRulesPanel
+          initialRules={rules}
           profiles={profiles.filter((p) => p.role === "agent" || p.role === "manager")}
         />
       </div>

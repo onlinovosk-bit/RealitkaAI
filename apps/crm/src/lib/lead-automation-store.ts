@@ -1,4 +1,5 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { resolveTenantSupabase } from "@/lib/supabase/resolve-client";
 
 type Lead = {
   id: string;
@@ -15,6 +16,7 @@ export type AssignmentRule = {
   ruleType: "location" | "budget" | "propertyType" | "roundRobin" | "leastLoaded";
   profileIds: string[];
   active: boolean;
+  agencyId?: string | null;
   criteria?: {
     locations?: string[];
     minBudget?: number;
@@ -24,25 +26,6 @@ export type AssignmentRule = {
   createdAt: string;
 };
 
-function getSupabaseClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey =
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !anonKey) {
-    return null;
-  }
-
-  if (!globalRulesStore.__realitkaLeadAutomationSupabase) {
-    globalRulesStore.__realitkaLeadAutomationSupabase = createClient(url, anonKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-  }
-
-  return globalRulesStore.__realitkaLeadAutomationSupabase;
-}
-
 const demoRules: AssignmentRule[] = [
   {
     id: "rule-1",
@@ -50,6 +33,7 @@ const demoRules: AssignmentRule[] = [
     ruleType: "location",
     profileIds: ["33333333-3333-3333-3333-333333333331"],
     active: true,
+    agencyId: "11111111-1111-1111-1111-111111111111",
     criteria: {
       locations: ["Bratislava"],
     },
@@ -59,7 +43,6 @@ const demoRules: AssignmentRule[] = [
 
 const globalRulesStore = globalThis as typeof globalThis & {
   __realitkaDemoAssignmentRules?: AssignmentRule[];
-  __realitkaLeadAutomationSupabase?: SupabaseClient;
 };
 
 function getDemoRulesStore() {
@@ -76,6 +59,28 @@ function isMissingAssignmentRulesTableError(message: string | undefined) {
     normalized.includes("lead_assignment_rules") &&
     (normalized.includes("schema cache") || normalized.includes("does not exist"))
   );
+}
+
+function mapRule(row: {
+  id: string;
+  name: string;
+  rule_type: AssignmentRule["ruleType"];
+  profile_ids?: string[] | null;
+  is_active: boolean;
+  agency_id?: string | null;
+  criteria?: AssignmentRule["criteria"];
+  created_at: string;
+}): AssignmentRule {
+  return {
+    id: row.id,
+    name: row.name,
+    ruleType: row.rule_type,
+    profileIds: row.profile_ids || [],
+    active: row.is_active,
+    agencyId: row.agency_id ?? null,
+    criteria: row.criteria,
+    createdAt: row.created_at,
+  };
 }
 
 // Assignment matching logic
@@ -166,14 +171,27 @@ export async function getAssignedProfileFromRule(rule: AssignmentRule): Promise<
   return rule.profileIds[0];
 }
 
-// Store/Database operations
-export async function listAssignmentRules(): Promise<AssignmentRule[]> {
-  const supabase = getSupabaseClient();
-  if (!supabase) return getDemoRulesStore();
+function requireAgencyId(agencyId: string | null | undefined): string {
+  const id = String(agencyId ?? "").trim();
+  if (!id) throw new Error("agency_id je povinné.");
+  return id;
+}
+
+// Store/Database operations — always scoped to caller agency + cookie-bearing client.
+export async function listAssignmentRules(
+  agencyId: string,
+  scoped?: SupabaseClient | null,
+): Promise<AssignmentRule[]> {
+  const tenantAgencyId = requireAgencyId(agencyId);
+  const supabase = await resolveTenantSupabase(scoped);
+  if (!supabase) {
+    return getDemoRulesStore().filter((r) => r.agencyId === tenantAgencyId);
+  }
 
   const { data, error } = await supabase
     .from("lead_assignment_rules")
     .select("*")
+    .eq("agency_id", tenantAgencyId)
     .order("created_at", { ascending: false });
 
   if (error || !data) {
@@ -181,35 +199,33 @@ export async function listAssignmentRules(): Promise<AssignmentRule[]> {
       console.error("listAssignmentRules error:", error?.message);
     }
 
-    return getDemoRulesStore();
+    return getDemoRulesStore().filter((r) => r.agencyId === tenantAgencyId);
   }
 
-  return (data as any[]).map((row) => ({
-    id: row.id,
-    name: row.name,
-    ruleType: row.rule_type,
-    profileIds: row.profile_ids || [],
-    active: row.is_active,
-    criteria: row.criteria,
-    createdAt: row.created_at,
-  }));
+  return (data as Parameters<typeof mapRule>[0][]).map(mapRule);
 }
 
-export async function createAssignmentRule(input: {
-  name: string;
-  ruleType: AssignmentRule["ruleType"];
-  profileIds: string[];
-  criteria?: AssignmentRule["criteria"];
-}): Promise<AssignmentRule> {
-  const supabase = getSupabaseClient();
+export async function createAssignmentRule(
+  input: {
+    agencyId: string;
+    name: string;
+    ruleType: AssignmentRule["ruleType"];
+    profileIds: string[];
+    criteria?: AssignmentRule["criteria"];
+  },
+  scoped?: SupabaseClient | null,
+): Promise<AssignmentRule> {
+  const tenantAgencyId = requireAgencyId(input.agencyId);
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
-    const createdRule = {
+    const createdRule: AssignmentRule = {
       id: crypto.randomUUID(),
       name: input.name,
       ruleType: input.ruleType,
       profileIds: input.profileIds,
       active: true,
+      agencyId: tenantAgencyId,
       criteria: input.criteria,
       createdAt: new Date().toISOString(),
     };
@@ -221,6 +237,7 @@ export async function createAssignmentRule(input: {
   const { data, error } = await supabase
     .from("lead_assignment_rules")
     .insert({
+      agency_id: tenantAgencyId,
       name: input.name,
       rule_type: input.ruleType,
       profile_ids: input.profileIds,
@@ -232,12 +249,13 @@ export async function createAssignmentRule(input: {
 
   if (error) {
     if (isMissingAssignmentRulesTableError(error.message)) {
-      const createdRule = {
+      const createdRule: AssignmentRule = {
         id: crypto.randomUUID(),
         name: input.name,
         ruleType: input.ruleType,
         profileIds: input.profileIds,
         active: true,
+        agencyId: tenantAgencyId,
         criteria: input.criteria,
         createdAt: new Date().toISOString(),
       };
@@ -249,31 +267,26 @@ export async function createAssignmentRule(input: {
     throw new Error(error.message);
   }
 
-  return {
-    id: data.id,
-    name: data.name,
-    ruleType: data.rule_type,
-    profileIds: data.profile_ids || [],
-    active: data.is_active,
-    criteria: data.criteria,
-    createdAt: data.created_at,
-  };
+  return mapRule(data as Parameters<typeof mapRule>[0]);
 }
 
 export async function updateAssignmentRule(
   id: string,
+  agencyId: string,
   input: Partial<{
     name: string;
     profileIds: string[];
     criteria: AssignmentRule["criteria"];
     active: boolean;
-  }>
+  }>,
+  scoped?: SupabaseClient | null,
 ): Promise<AssignmentRule> {
-  const supabase = getSupabaseClient();
+  const tenantAgencyId = requireAgencyId(agencyId);
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     const store = getDemoRulesStore();
-    const index = store.findIndex((rule) => rule.id === id);
+    const index = store.findIndex((rule) => rule.id === id && rule.agencyId === tenantAgencyId);
 
     if (index === -1) {
       throw new Error("Pravidlo sa nenašlo.");
@@ -291,7 +304,7 @@ export async function updateAssignmentRule(
     return updatedRule;
   }
 
-  const patch: any = {};
+  const patch: Record<string, unknown> = {};
   if (input.name !== undefined) patch.name = input.name;
   if (input.profileIds !== undefined) patch.profile_ids = input.profileIds;
   if (input.criteria !== undefined) patch.criteria = input.criteria;
@@ -301,13 +314,14 @@ export async function updateAssignmentRule(
     .from("lead_assignment_rules")
     .update(patch)
     .eq("id", id)
+    .eq("agency_id", tenantAgencyId)
     .select("*")
-    .single();
+    .maybeSingle();
 
   if (error) {
     if (isMissingAssignmentRulesTableError(error.message)) {
       const store = getDemoRulesStore();
-      const index = store.findIndex((rule) => rule.id === id);
+      const index = store.findIndex((rule) => rule.id === id && rule.agencyId === tenantAgencyId);
 
       if (index === -1) {
         throw new Error("Pravidlo sa nenašlo.");
@@ -328,23 +342,24 @@ export async function updateAssignmentRule(
     throw new Error(error.message);
   }
 
-  return {
-    id: data.id,
-    name: data.name,
-    ruleType: data.rule_type,
-    profileIds: data.profile_ids || [],
-    active: data.is_active,
-    criteria: data.criteria,
-    createdAt: data.created_at,
-  };
+  if (!data) {
+    throw new Error("Pravidlo sa nenašlo.");
+  }
+
+  return mapRule(data as Parameters<typeof mapRule>[0]);
 }
 
-export async function deleteAssignmentRule(id: string): Promise<void> {
-  const supabase = getSupabaseClient();
+export async function deleteAssignmentRule(
+  id: string,
+  agencyId: string,
+  scoped?: SupabaseClient | null,
+): Promise<void> {
+  const tenantAgencyId = requireAgencyId(agencyId);
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     const store = getDemoRulesStore();
-    const index = store.findIndex((rule) => rule.id === id);
+    const index = store.findIndex((rule) => rule.id === id && rule.agencyId === tenantAgencyId);
 
     if (index !== -1) {
       store.splice(index, 1);
@@ -353,12 +368,18 @@ export async function deleteAssignmentRule(id: string): Promise<void> {
     return;
   }
 
-  const { error } = await supabase.from("lead_assignment_rules").delete().eq("id", id);
+  const { data, error } = await supabase
+    .from("lead_assignment_rules")
+    .delete()
+    .eq("id", id)
+    .eq("agency_id", tenantAgencyId)
+    .select("id")
+    .maybeSingle();
 
   if (error) {
     if (isMissingAssignmentRulesTableError(error.message)) {
       const store = getDemoRulesStore();
-      const index = store.findIndex((rule) => rule.id === id);
+      const index = store.findIndex((rule) => rule.id === id && rule.agencyId === tenantAgencyId);
 
       if (index !== -1) {
         store.splice(index, 1);
@@ -369,22 +390,29 @@ export async function deleteAssignmentRule(id: string): Promise<void> {
 
     throw new Error(error.message);
   }
+
+  if (!data) {
+    throw new Error("Pravidlo sa nenašlo.");
+  }
 }
 
 // Auto-assign logic
-export async function autoAssignLeads(): Promise<{ leadId: string; assignedTo: string }[]> {
+export async function autoAssignLeads(
+  agencyId: string,
+  scoped?: SupabaseClient | null,
+): Promise<{ leadId: string; assignedTo: string }[]> {
+  const tenantAgencyId = requireAgencyId(agencyId);
   const [{ listLeads }, { listProfiles }] = await Promise.all([
     import("@/lib/leads-store"),
     import("@/lib/team-store"),
   ]);
 
   const [leads, profiles, rules] = await Promise.all([
-    listLeads(),
-    listProfiles(),
-    listAssignmentRules(),
+    listLeads(undefined, scoped),
+    listProfiles(scoped),
+    listAssignmentRules(tenantAgencyId, scoped),
   ]);
 
-  const profileMap = new Map(profiles.map((p) => [p.id, p.fullName]));
   const unassignedLeads = leads.filter((l) => !l.assignedProfileId || l.assignedAgent === "Nepriradený");
 
   const assignments: { leadId: string; assignedTo: string }[] = [];
@@ -395,8 +423,7 @@ export async function autoAssignLeads(): Promise<{ leadId: string; assignedTo: s
 
     const profileId = await getAssignedProfileFromRule(rule);
     if (!profileId) continue;
-
-    const profileName = profileMap.get(profileId) || "Priradený agent";
+    if (!profiles.some((p) => p.id === profileId)) continue;
 
     assignments.push({
       leadId: lead.id,
