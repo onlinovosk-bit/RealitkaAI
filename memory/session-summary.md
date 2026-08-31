@@ -1,3 +1,17 @@
+## Session 2026-08-31
+### Dokončené
+- Critical bug hunt: Enterprise onboard self-tier (#494)
+- Report: `docs/reports/2026-08-31-enterprise-onboard-self-tier.md`
+### Rozpracované / Pending
+- Merge #494 + apply migration `20260831233000_profiles_guard_account_tier_ui_role.sql`
+- 13 earlier critical fix PRs still open (#369–#493)
+### Kľúčové súbory zmenené
+- `apps/crm/src/app/api/enterprise/onboard-start/route.ts`: no account_tier write; paid-tier gate
+- `apps/crm/supabase/migrations/20260831233000_profiles_guard_account_tier_ui_role.sql`: trigger
+- `apps/crm/src/app/_actions/l99-licensing.ts`: upgradeToL99 disabled
+### Ďalší krok
+Founder review/merge #494 (and backlog of open critical PRs).
+
 ## Session 2026-08-25
 ### Dokončené
 - Founder override: ONL-MCP-001 **dnes v noci** (nie 26.→27. 8.)
