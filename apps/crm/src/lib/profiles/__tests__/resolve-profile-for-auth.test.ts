@@ -23,10 +23,16 @@ function buildSupabase(eqRows: Record<string, unknown | null>) {
 }
 
 describe("isSmolkoOwnerEmail", () => {
-  it("includes Reality Smolko Google login", () => {
+  it("includes Reality Smolko Google login and office alias only", () => {
     expect(isSmolkoOwnerEmail("rastislav.smolko@gmail.com")).toBe(true);
     expect(isSmolkoOwnerEmail("office@realitysmolko.sk")).toBe(true);
     expect(isSmolkoOwnerEmail("other@gmail.com")).toBe(false);
+  });
+
+  it("does not treat arbitrary @realitysmolko.sk addresses as owner", () => {
+    expect(isSmolkoOwnerEmail("broker@realitysmolko.sk")).toBe(false);
+    expect(isSmolkoOwnerEmail("info@realitysmolko.sk")).toBe(false);
+    expect(isSmolkoOwnerEmail("attacker@realitysmolko.sk")).toBe(false);
   });
 });
 
@@ -36,6 +42,12 @@ describe("smolkoProfileLookupEmails", () => {
     const emails = smolkoProfileLookupEmails("rastislav.smolko@gmail.com");
     expect(emails[0]).toBe("rastislav.smolko@gmail.com");
     expect(emails).toContain("office@realitysmolko.sk");
+  });
+
+  it("does not inject owner aliases for non-owner @realitysmolko.sk logins", async () => {
+    const { smolkoProfileLookupEmails } = await import("@/lib/profiles/resolve-profile-for-auth");
+    const emails = smolkoProfileLookupEmails("broker@realitysmolko.sk");
+    expect(emails).toEqual(["broker@realitysmolko.sk"]);
   });
 });
 
