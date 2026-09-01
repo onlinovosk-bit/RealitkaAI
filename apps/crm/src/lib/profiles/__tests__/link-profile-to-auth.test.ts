@@ -138,28 +138,44 @@ describe("linkProfileToAuthUser", () => {
     expect(linked?.agency_id).toBe("agency-smolko");
   });
 
-  it("prefers auth_user_id row when legacy duplicate exists", async () => {
-    const { supabase } = buildSupabaseWithEqLookups(
+  it("does not link unbound Smolko owner profile to non-owner domain login", async () => {
+    const { supabase, update } = buildSupabaseWithEqLookups(
       {
-        "auth_user_id:auth-smolko": {
-          id: "profile-auth",
-          agency_id: "agency-smolko",
-          auth_user_id: "auth-smolko",
-          email: "office@realitysmolko.sk",
+        "auth_user_id:auth-broker": {
+          id: "profile-broker",
+          agency_id: "11111111-1111-1111-1111-111111111111",
+          auth_user_id: "auth-broker",
+          email: "broker@realitysmolko.sk",
+          role: "agent",
         },
-        "id:auth-smolko": {
-          id: "profile-legacy",
-          agency_id: "agency-smolko",
-          auth_user_id: null,
-          email: "office@realitysmolko.sk",
-        },
+        "id:auth-broker": null,
       },
       null,
     );
 
-    const linked = await linkProfileToAuthUser(supabase, "auth-smolko", "office@realitysmolko.sk");
+    serviceInResult.mockResolvedValue({
+      data: [
+        {
+          id: "profile-owner",
+          agency_id: "11111111-1111-1111-1111-111111111111",
+          auth_user_id: null,
+          email: "rastislav.smolko@gmail.com",
+          role: "owner",
+          ui_role: "owner_vision",
+          account_tier: "market_vision",
+        },
+      ],
+    });
 
-    expect(linked?.id).toBe("profile-auth");
-    expect(linked?.auth_user_id).toBe("auth-smolko");
+    const linked = await linkProfileToAuthUser(
+      supabase,
+      "auth-broker",
+      "broker@realitysmolko.sk",
+    );
+
+    expect(update).not.toHaveBeenCalledWith({ auth_user_id: "auth-broker" });
+    expect(serviceUpdateEq).not.toHaveBeenCalled();
+    expect(linked?.id).toBe("profile-broker");
+    expect(linked?.role).toBe("agent");
   });
 });

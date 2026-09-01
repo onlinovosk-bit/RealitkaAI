@@ -12,6 +12,17 @@
 ### Ďalší krok
 Founder review/merge #494 (and backlog of open critical PRs).
 
+## Session 2026-08-29 (critical-bug automation)
+### Dokončené
+- CRITICAL fix: Smolko owner email allowlist — PR #492
+- Report: `docs/reports/2026-08-29-smolko-owner-email-allowlist.md`
+### Rozpracované / Pending
+- Merge #492; prior open critical PRs #369–#491 still awaiting review
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/profiles/resolve-profile-for-auth.ts`: exact owner emails + no best-owner fallback
+### Ďalší krok
+Review/merge #492; then oldest open critical PRs (#369/#370).
+
 ## Session 2026-08-25
 ### Dokončené
 - Founder override: ONL-MCP-001 **dnes v noci** (nie 26.→27. 8.)
