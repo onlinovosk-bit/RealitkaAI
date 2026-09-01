@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-01  
 **Severity:** CRITICAL (data loss + unauthenticated side-effects)  
-**PR:** (opened this run)
+**PR:** https://github.com/onlinovosk-bit/RealitkaAI/pull/495
 
 ## Bug
 
