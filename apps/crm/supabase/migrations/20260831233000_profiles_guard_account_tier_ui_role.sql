@@ -5,6 +5,12 @@
 -- invite/admin tooling). Client paths that normalize entitlements already
 -- fall back to service_role when the user-scoped update is rejected.
 
+-- Canonical columns for local/CI (prod had manual drift; agencies.account_tier
+-- is separate — billing writes profile-level entitlements here).
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS account_tier text,
+  ADD COLUMN IF NOT EXISTS ui_role text NOT NULL DEFAULT 'agent';
+
 CREATE OR REPLACE FUNCTION public.profiles_guard_account_tier_and_ui_role()
 RETURNS trigger
 LANGUAGE plpgsql
