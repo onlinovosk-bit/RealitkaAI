@@ -47,15 +47,22 @@ type ProfileLookupResult = {
 /** Reality Smolko tenant — canonical agency UUID (prod). */
 export const SMOLKO_AGENCY_ID = "11111111-1111-1111-1111-111111111111";
 
-/** Reality Smolko owner logins (prod + Google auth). */
+/**
+ * Reality Smolko owner logins (prod + Google auth).
+ * Exact allowlist ONLY — never the whole @realitysmolko.sk domain.
+ * Domain-wide matching pulled any broker/agent onto the owner profile via
+ * smolkoProfileLookupEmails + entitlementRank, and `emailMatch ?? best`
+ * could link auth_user_id onto the owner row when it was still null.
+ */
+const SMOLKO_OWNER_EMAILS = new Set([
+  "office@realitysmolko.sk",
+  "rastislav.smolko@gmail.com",
+]);
+
 export function isSmolkoOwnerEmail(email: string | null | undefined): boolean {
   const normalized = String(email ?? "").trim().toLowerCase();
   if (!normalized) return false;
-  return (
-    normalized === "office@realitysmolko.sk" ||
-    normalized === "rastislav.smolko@gmail.com" ||
-    normalized.endsWith("@realitysmolko.sk")
-  );
+  return SMOLKO_OWNER_EMAILS.has(normalized);
 }
 
 /**
@@ -120,17 +127,17 @@ async function findSmolkoOwnerProfileViaServiceRole(
   );
 
   let emailMatch: ResolvedAuthProfile | null = null;
-  let best: ResolvedAuthProfile | null = null;
   for (const row of owners) {
     const profile = row as unknown as ResolvedAuthProfile;
     const rowEmail = String(profile.email ?? "").trim().toLowerCase();
     if (loginCandidates.has(rowEmail)) {
       emailMatch = pickPreferredProfile(emailMatch, profile);
     }
-    best = pickPreferredProfile(best, profile);
   }
 
-  return emailMatch ?? best;
+  // Never fall back to an arbitrary owner/founder — that handed the Smolko
+  // owner profile (and a possible auth_user_id link) to any matching caller.
+  return emailMatch;
 }
 
 /**
