@@ -1,5 +1,5 @@
 import { errorResponse } from "@/lib/api-response";
-import { isPlatformAdmin } from "@/lib/operator/access";
+import { fetchProfilePlatformAdminFlag, isPlatformAdmin } from "@/lib/operator/access";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -16,13 +16,9 @@ export async function requirePlatformAdmin(): Promise<Response | null> {
     return errorResponse("unauthorized", 401);
   }
 
-  const { data: profile, error } = await supabase
-    .from("profiles")
-    .select("is_platform_admin")
-    .eq("id", user.id)
-    .maybeSingle();
+  const profile = await fetchProfilePlatformAdminFlag(supabase, user.id);
 
-  if (error || !isPlatformAdmin(profile)) {
+  if (!isPlatformAdmin(profile)) {
     return errorResponse("forbidden", 403);
   }
 

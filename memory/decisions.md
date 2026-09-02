@@ -1,5 +1,20 @@
 # Critical Decisions Log
 
+## [2026-09-02] — PROD `profiles` UPDATE: vždy service_role + RETURNING
+
+- **Kontext:** #496 review + nezávislý PROD audit. `profiles.id` ≠ `auth.uid()` (19/23 profilov má `auth_user_id` NULL; 4 odlišné; 0× `id = auth.uid()`). Platform-admin gate musí lookupovať cez `.or(auth_user_id.eq.{uid},id.eq.{uid})` — vzor z `/trh` (#469).
+- **Pravidlo:** Každý PROD `UPDATE public.profiles` (vrátane `is_platform_admin`, `role`, `account_tier`) rob v transakcii:
+  ```sql
+  BEGIN;
+  SET LOCAL request.jwt.claim.role = 'service_role';
+  UPDATE public.profiles SET … WHERE … RETURNING id, email, …;
+  COMMIT;
+  ```
+- **Overenie:** `RETURNING` musí ukázať očakávanú hodnotu. Ak trigger (`profiles_guard_*`) zasiahol, stĺpec sa ticho vráti — false v RETURNING = STOP, nie „asi OK“.
+- **Dotknuté:** `fetchProfilePlatformAdminFlag` (#496), `canAccessOperatorDashboard` (odblokuje `/operator` po stĺpci + grante).
+
+---
+
 ## [2026-08-25] — ONL-MCP-001: BUILD gateway, DON'T BUY Premium-for-MCP
 
 - **Rozhodnutie (agent recommendation, founder ešte nepodpísal):** stavať vlastný vendor-neutral Onlinovo MCP Gateway; **nekupovať** Shoptet Premium výhradne kvôli oficiálnemu MCP (floor 12 000 Kč/měs.). Implementácia **STOP** do `GO ONL-MCP-002`.

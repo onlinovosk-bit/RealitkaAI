@@ -16,6 +16,12 @@
 4. `/onboarding-monitor` keeps `credentials: "include"`; 403 shows platform-admin message (not empty-data state).
 5. Verification + unit tests for gate behavior.
 
+## Follow-up (2026-09-02) — profile lookup fix
+
+Initial gate used `.eq("id", user.id)` — fails on PROD where `profiles.id` ≠ `auth.uid()`.
+Shared helper `fetchProfilePlatformAdminFlag` now uses `.or(auth_user_id.eq.{uid},id.eq.{uid})`
+(same as `/trh`). Same fix in `canAccessOperatorDashboard` → unblocks `/operator` after column + grant.
+
 ## Dispatch decision
 
 **Deleted.** `api/cron/onboarding-dispatch/route.ts` already calls `runOnboardingDispatch()` behind cron secret. Keeping a second unauthenticated/browser path violated the "drafts áno, send nikdy" rule.
