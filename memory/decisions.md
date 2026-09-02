@@ -1,5 +1,21 @@
 # Critical Decisions Log
 
+## [2026-09-02] — PROD `profiles` UPDATE: vždy service_role + RETURNING
+
+- **Opakovaný incident (3×):** `profiles_guard_*` triggery (`role`/`agency_id`, `account_tier`/`ui_role`, `is_platform_admin`) **ticho vrátia** zmenu, ak UPDATE nebeží ako `service_role`. Dashboard SQL bez `SET LOCAL` vyzerá úspešne, ale `RETURNING` ukáže starú hodnotu — alebo sa zmena vôbec neprejaví.
+- **Pravidlo (povinné):** Každý PROD `UPDATE` na `public.profiles` sa robí v transakcii so `SET LOCAL request.jwt.claim.role = 'service_role'` a s `RETURNING`. Bez výnimky.
+  ```sql
+  BEGIN;
+  SET LOCAL request.jwt.claim.role = 'service_role';
+  UPDATE public.profiles SET … WHERE … RETURNING id, email, …;
+  COMMIT;
+  ```
+- **Overenie:** `RETURNING` musí ukázať očakávanú hodnotu. Ak nie — trigger zasiahol; STOP, nie „asi OK“.
+- **Kontext #496:** `profiles.id` ≠ `auth.uid()` na PROD → platform-admin gate musí lookupovať cez `.or(auth_user_id.eq.{uid},id.eq.{uid})` (vzor `/trh`, #469).
+- **Dotknuté:** `fetchProfilePlatformAdminFlag`, `canAccessOperatorDashboard`, grant `is_platform_admin` po migrácii `20260728140000`.
+
+---
+
 ## [2026-08-25] — ONL-MCP-001: BUILD gateway, DON'T BUY Premium-for-MCP
 
 - **Rozhodnutie (agent recommendation, founder ešte nepodpísal):** stavať vlastný vendor-neutral Onlinovo MCP Gateway; **nekupovať** Shoptet Premium výhradne kvôli oficiálnemu MCP (floor 12 000 Kč/měs.). Implementácia **STOP** do `GO ONL-MCP-002`.
