@@ -97,4 +97,4 @@ Každý auto-merge = PR komentár: verzia politiky (v1.0), tier, zoznam matchnut
 | Briefs index | [docs/briefs/README.md](./briefs/README.md) |
 | Robot implementácia | `.github/workflows/auto-merge-policy.yml`, `.github/scripts/automerge-policy.mjs` |
 | Vault rozhodnutie | `memory/decisions.md` — Brief 9.0 automerge v1 |
-| Agent prompting štandard | [AGENT_STANDARD.md](./AGENT_STANDARD.md) |
+| Agent prompting štandard | [AGENT_STANDARD.md](./archive/AGENT_STANDARD.md) |

@@ -1,4 +1,15 @@
 # Critical Decisions Log
+
+## [2026-08-25] — ONL-MCP-001: BUILD gateway, DON'T BUY Premium-for-MCP
+
+- **Rozhodnutie (agent recommendation, founder ešte nepodpísal):** stavať vlastný vendor-neutral Onlinovo MCP Gateway; **nekupovať** Shoptet Premium výhradne kvôli oficiálnemu MCP (floor 12 000 Kč/měs.). Implementácia **STOP** do `GO ONL-MCP-002`.
+- **Timing:** founder override — audit **dnes v noci** 25. 8. 2026, nie 26.→27. 8.
+- **Fakty:** Onlinovo.sk = Shoptet (verejný fingerprint). Tarif Premium vs standard = **NEZNÁME**. REST API len cez marketplace addon; Shoptet nepíše cestu „API pre jeden e-shop“.
+- **Artefakt:** `docs/onlinovo/ONL-MCP-FEASIBILITY.md`, `docs/reports/2026-08-25-onl-mcp-001-feasibility.md`, TASK-0005 done.
+- **Mimo:** `apps/crm`, prod Shoptet write, ONL-MCP-002/003/004.
+
+---
+
 - [2026-04-29] CI/CD: Vyriešený "Nuclear Option" pre artifacty (apps/crm/.next). Pipeline je ZELENÁ.
 - [2026-04-29] XML Feed: Zvolená Varianta 1 (Vlastný web) pre utajenie pred Webexom.
 - [2026-04-29] Outreach: Definované šablóny pre segmenty A (Hot), B (Warm), C (Cold).

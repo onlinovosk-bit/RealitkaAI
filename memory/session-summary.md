@@ -1,3 +1,71 @@
+## Session 2026-08-31
+### Dokončené
+- Critical bug hunt: Enterprise onboard self-tier (#494)
+- Report: `docs/reports/2026-08-31-enterprise-onboard-self-tier.md`
+### Rozpracované / Pending
+- Merge #494 + apply migration `20260831233000_profiles_guard_account_tier_ui_role.sql`
+- 13 earlier critical fix PRs still open (#369–#493)
+### Kľúčové súbory zmenené
+- `apps/crm/src/app/api/enterprise/onboard-start/route.ts`: no account_tier write; paid-tier gate
+- `apps/crm/supabase/migrations/20260831233000_profiles_guard_account_tier_ui_role.sql`: trigger
+- `apps/crm/src/app/_actions/l99-licensing.ts`: upgradeToL99 disabled
+### Ďalší krok
+Founder review/merge #494 (and backlog of open critical PRs).
+
+## Session 2026-08-29 (critical-bug automation)
+### Dokončené
+- CRITICAL fix: Smolko owner email allowlist — PR #492
+- Report: `docs/reports/2026-08-29-smolko-owner-email-allowlist.md`
+### Rozpracované / Pending
+- Merge #492; prior open critical PRs #369–#491 still awaiting review
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/profiles/resolve-profile-for-auth.ts`: exact owner emails + no best-owner fallback
+### Ďalší krok
+Review/merge #492; then oldest open critical PRs (#369/#370).
+
+## Session 2026-08-28
+### Dokončené
+- CRITICAL: follow-up preview fail-open → cross-tenant lead PII — PR #491
+- Report: `docs/reports/2026-08-28-followup-preview-tenant-gate.md`
+- Fix: `resolveFollowupAgencyId` null + GET `/api/followup` 403
+### Rozpracované / Pending
+- Merge #491 after CI
+- Remaining open critical PRs: #369 #370 #443 #444 #447 #459 #462 #481 #486 #490
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/agents/followup/preview.ts`: no DEMO fallback
+- `apps/crm/src/app/api/followup/route.ts`: 403 missing agency_id
+### Ďalší krok
+Founder merge #491; next hunt pass after merge.
+
+## Session 2026-08-25
+### Dokončené
+- Founder override: ONL-MCP-001 **dnes v noci** (nie 26.→27. 8.)
+- Feasibility + verdikt BUILD gateway / DON'T BUY Premium-for-MCP
+- Artefakt: `docs/onlinovo/ONL-MCP-FEASIBILITY.md`
+- Report: `docs/reports/2026-08-25-onl-mcp-001-feasibility.md`
+- Bus: TASK-0005 done, MSG-20260825-010 result
+### Rozpracované / Pending
+- Founder tarif Premium vs standard
+- `GO ONL-MCP-002` neudelené — **STOP** na kód
+- Revolis nočná vlna PRs (iné vetvy) — mimo tejto práce
+### Kľúčové súbory zmenené
+- `docs/onlinovo/ONL-MCP-FEASIBILITY.md`: 20 sekcií, 4 cesty, TCO, verdikt
+- `.ai/bus/tasks/TASK-0005.md`: done + STOP
+### Ďalší krok
+Founder potvrdí Shoptet tarif; bez `GO ONL-MCP-002` žiadny gateway kód.
+- ONL-MCP-001 feasibility BUILD/DON'T BUY (#476)
+- ONL-MCP-002 implementačný návrh (#477)
+- ONL-MCP-003 MVP `packages/mcp-onlinovo` — 15 handler tests
+- ONL-MCP-004 Ruflo/Cursor `onlinovo` stdio + client smoke PASS (17 tests)
+### Rozpracované / Pending
+- Founder merge; live Shoptet mapping blocked
+- Tarif Premium vs standard stále NEZNÁME
+### Kľúčové súbory zmenené
+- `packages/mcp-onlinovo/**`: stdio MCP fixture/unconnected/write-deny
+- `.mcp.json` / `.cursor/mcp.json`: server `onlinovo`
+### Ďalší krok
+Founder merge PRs; `GO ONL-MCP-SHOP-LIVE` až po tarife + tokene mimo git.
+
 ## Session 2026-08-24
 ### Dokončené
 - #461 merged `47ec4852`
