@@ -21,7 +21,7 @@ function mockUserSession(user: { id: string } | null, profile: { is_platform_adm
   mocks.maybeSingle.mockResolvedValue({ data: profile, error: null });
   mocks.from.mockImplementation(() => ({
     select: vi.fn().mockReturnValue({
-      eq: vi.fn().mockReturnValue({
+      or: vi.fn().mockReturnValue({
         maybeSingle: mocks.maybeSingle,
       }),
     }),

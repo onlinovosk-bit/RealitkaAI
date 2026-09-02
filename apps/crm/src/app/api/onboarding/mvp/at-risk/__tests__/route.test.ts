@@ -22,7 +22,7 @@ function mockUserSession(user: { id: string } | null, profile: { is_platform_adm
   mocks.maybeSingle.mockResolvedValue({ data: profile, error: null });
   mocks.from.mockImplementation(() => ({
     select: vi.fn().mockReturnValue({
-      eq: vi.fn().mockReturnValue({
+      or: vi.fn().mockReturnValue({
         maybeSingle: mocks.maybeSingle,
       }),
     }),
@@ -57,8 +57,9 @@ describe("GET /api/onboarding/mvp/at-risk", () => {
     expect(mocks.createServiceRoleClient).not.toHaveBeenCalled();
   });
 
-  it("loads at-risk clients for platform admin", async () => {
-    mockUserSession({ id: "admin-1" }, { is_platform_admin: true });
+  it("loads at-risk clients when profile id differs from auth.uid()", async () => {
+    const authUserId = "auth-uuid-1111";
+    mockUserSession({ id: authUserId }, { is_platform_admin: true });
     const order = vi.fn().mockReturnValue({
       limit: vi.fn().mockResolvedValue({ data: [], error: null }),
     });
