@@ -1,0 +1,254 @@
+.bp-page {
+  --bp-ink: #0f172a;
+  --bp-muted: #475569;
+  --bp-line: #e2e8f0;
+  --bp-bg: #f8fafc;
+  --bp-card: #ffffff;
+  --bp-brand: #0369a1;
+  --bp-brand-soft: #e0f2fe;
+  --bp-cta: #0f172a;
+  --bp-ok: #047857;
+  background: var(--bp-bg);
+  color: var(--bp-ink);
+  min-height: 100vh;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+}
+
+.bp-page a:focus-visible,
+.bp-page .bp-cta:focus-visible {
+  outline: 2px solid var(--bp-brand);
+  outline-offset: 3px;
+}
+
+.bp-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 20px;
+  background: rgba(248, 250, 252, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--bp-line);
+}
+
+.bp-logo {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--bp-ink);
+  text-decoration: none;
+}
+
+.bp-logo span {
+  color: var(--bp-brand);
+}
+
+.bp-header-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 10px;
+  background: var(--bp-cta);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.bp-wrap {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 0 20px 72px;
+}
+
+.bp-hero {
+  padding: 56px 0 40px;
+}
+
+.bp-kicker {
+  display: inline-block;
+  margin: 0 0 14px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bp-brand);
+}
+
+.bp-page h1.bp-title {
+  margin: 0 0 16px;
+  max-width: 18ch;
+  font-size: clamp(1.85rem, 4.6vw, 2.85rem);
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+  color: var(--bp-ink);
+}
+
+.bp-lead {
+  margin: 0 0 28px;
+  max-width: 54ch;
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: var(--bp-muted);
+}
+
+.bp-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.bp-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 24px;
+  border-radius: 12px;
+  background: var(--bp-cta);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.bp-cta:hover {
+  background: #1e293b;
+}
+
+.bp-note {
+  margin: 14px 0 0;
+  font-size: 13px;
+  color: var(--bp-muted);
+}
+
+.bp-sec {
+  padding: 40px 0;
+  border-top: 1px solid var(--bp-line);
+}
+
+.bp-page h2.bp-h2 {
+  margin: 0 0 20px;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--bp-ink);
+}
+
+.bp-grid {
+  display: grid;
+  gap: 14px;
+}
+
+@media (min-width: 720px) {
+  .bp-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.bp-card {
+  background: var(--bp-card);
+  border: 1px solid var(--bp-line);
+  border-radius: 16px;
+  padding: 22px 20px;
+}
+
+.bp-card h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.bp-card p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--bp-muted);
+}
+
+.bp-who {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bp-who li {
+  background: var(--bp-card);
+  border: 1px solid var(--bp-line);
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.bp-who li strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.bp-who .bp-no {
+  color: var(--bp-muted);
+}
+
+.bp-band {
+  margin-top: 8px;
+  padding: 36px 24px;
+  border-radius: 20px;
+  background: var(--bp-ink);
+  color: #fff;
+  text-align: center;
+}
+
+.bp-band h2 {
+  margin: 0 0 10px;
+  font-size: clamp(1.35rem, 3vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.bp-band p {
+  margin: 0 auto 22px;
+  max-width: 46ch;
+  font-size: 15px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.bp-band .bp-cta {
+  background: #fff;
+  color: var(--bp-ink);
+}
+
+.bp-band .bp-cta:hover {
+  background: var(--bp-brand-soft);
+}
+
+.bp-band .bp-note {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.bp-foot {
+  margin-top: 28px;
+  font-size: 13px;
+  color: var(--bp-muted);
+}
+
+.bp-foot a {
+  color: var(--bp-brand);
+  text-decoration: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bp-page * {
+    transition: none !important;
+  }
+}

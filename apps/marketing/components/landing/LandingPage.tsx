@@ -41,9 +41,14 @@ export default function LandingPage() {
           <a className="logo" href="#">
             REVOLIS<b>›_</b>
           </a>
-          <a className="btn" href={CALENDLY_DEMO_URL} target="_blank" rel="noopener noreferrer">
-            Rezervovať demo
-          </a>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <a href="/blueprint" className="btn btn-ghost">
+              Blueprint Kit
+            </a>
+            <a className="btn" href={CALENDLY_DEMO_URL} target="_blank" rel="noopener noreferrer">
+              Rezervovať demo
+            </a>
+          </div>
         </div>
       </header>
 
