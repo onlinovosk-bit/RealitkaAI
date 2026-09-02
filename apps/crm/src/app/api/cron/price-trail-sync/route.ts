@@ -5,12 +5,12 @@
 // 30 min after arbitrage scan (runs on the hour)
 // ================================================================
 import { NextRequest, NextResponse } from 'next/server'
+import { isAuthorizedCronBearer } from '@/lib/cron-auth'
 import { createClient }               from '@/lib/supabase/server'
 import { syncFromPortalListings }      from '@/lib/price-trail/engine'
 
 export async function GET(request: NextRequest) {
-  const auth = request.headers.get('authorization')
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!isAuthorizedCronBearer(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
