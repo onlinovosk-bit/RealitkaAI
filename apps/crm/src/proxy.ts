@@ -41,8 +41,6 @@ const DEPRECATED_API_SHIMS = new Set(["/api/scoring", "/api/segmentation"]);
 /** Removed routes — let Next return 404 (no session gate). PR-4 scrape removal. */
 const REMOVED_API_PATHS = new Set(["/api/scrape"]);
 const WEBHOOK_API_SEGMENT = "/api/webhooks";
-/** Onboarding MVP APIs — service-role in route handlers; bypass session gate for SSR/cron callers. */
-const ONBOARDING_MVP_PREFIX = "/api/onboarding/mvp/";
 
 export const PROXY_AUTH_TIMEOUT_MS = 5_000;
 export const PROXY_AUTH_TIMEOUT_MARKER = "[proxy-auth-timeout]";
@@ -122,7 +120,6 @@ export async function proxy(request: NextRequest) {
   if (REMOVED_API_PATHS.has(pathname)) return NextResponse.next();
   if (DEPRECATED_API_SHIMS.has(pathname)) return NextResponse.next();
   if (isCronRoute(pathname)) return NextResponse.next();
-  if (pathname.startsWith(ONBOARDING_MVP_PREFIX)) return NextResponse.next();
 
   let response = NextResponse.next({
     request: { headers: request.headers },
