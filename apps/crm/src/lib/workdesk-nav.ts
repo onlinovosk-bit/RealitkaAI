@@ -47,4 +47,20 @@ export const WORKDESK_RAIL: WorkdeskRailItem[] = [
       p.startsWith("/forecasting") ||
       p.startsWith("/performance"),
   },
+  {
+    id: "inflow",
+    label: "Prítok",
+    href: "/pritok",
+    icon: "upload",
+    match: (p) => p === "/pritok" || p.startsWith("/pritok/"),
+  },
+  {
+    id: "market",
+    label: "Trh",
+    href: "/trh",
+    icon: "radar",
+    match: (p) => p === "/trh" || p.startsWith("/trh/"),
+  },
 ];
+
+/** DOKUMENTY not in rail: no templates/contracts/handover route exists in repo. */
