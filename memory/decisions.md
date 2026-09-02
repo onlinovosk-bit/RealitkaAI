@@ -2,16 +2,17 @@
 
 ## [2026-09-02] — PROD `profiles` UPDATE: vždy service_role + RETURNING
 
-- **Kontext:** #496 review + nezávislý PROD audit. `profiles.id` ≠ `auth.uid()` (19/23 profilov má `auth_user_id` NULL; 4 odlišné; 0× `id = auth.uid()`). Platform-admin gate musí lookupovať cez `.or(auth_user_id.eq.{uid},id.eq.{uid})` — vzor z `/trh` (#469).
-- **Pravidlo:** Každý PROD `UPDATE public.profiles` (vrátane `is_platform_admin`, `role`, `account_tier`) rob v transakcii:
+- **Opakovaný incident (3×):** `profiles_guard_*` triggery (`role`/`agency_id`, `account_tier`/`ui_role`, `is_platform_admin`) **ticho vrátia** zmenu, ak UPDATE nebeží ako `service_role`. Dashboard SQL bez `SET LOCAL` vyzerá úspešne, ale `RETURNING` ukáže starú hodnotu — alebo sa zmena vôbec neprejaví.
+- **Pravidlo (povinné):** Každý PROD `UPDATE` na `public.profiles` sa robí v transakcii so `SET LOCAL request.jwt.claim.role = 'service_role'` a s `RETURNING`. Bez výnimky.
   ```sql
   BEGIN;
   SET LOCAL request.jwt.claim.role = 'service_role';
   UPDATE public.profiles SET … WHERE … RETURNING id, email, …;
   COMMIT;
   ```
-- **Overenie:** `RETURNING` musí ukázať očakávanú hodnotu. Ak trigger (`profiles_guard_*`) zasiahol, stĺpec sa ticho vráti — false v RETURNING = STOP, nie „asi OK“.
-- **Dotknuté:** `fetchProfilePlatformAdminFlag` (#496), `canAccessOperatorDashboard` (odblokuje `/operator` po stĺpci + grante).
+- **Overenie:** `RETURNING` musí ukázať očakávanú hodnotu. Ak nie — trigger zasiahol; STOP, nie „asi OK“.
+- **Kontext #496:** `profiles.id` ≠ `auth.uid()` na PROD → platform-admin gate musí lookupovať cez `.or(auth_user_id.eq.{uid},id.eq.{uid})` (vzor `/trh`, #469).
+- **Dotknuté:** `fetchProfilePlatformAdminFlag`, `canAccessOperatorDashboard`, grant `is_platform_admin` po migrácii `20260728140000`.
 
 ---
 
