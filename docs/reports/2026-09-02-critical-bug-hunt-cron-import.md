@@ -90,9 +90,14 @@ const DEFAULT_TEAM_ID = "22222222-2222-2222-2222-222222222222";
 npx vitest run src/lib/__tests__/cron-auth.test.ts \
   src/app/api/cron/onboarding-dispatch/__tests__/route.test.ts \
   src/app/api/import/test-xml/__tests__/route.test.ts
+# Test Files  3 passed | Tests  9 passed
 ```
+
+CI follow-up (`91258874`): API contract ratchet treated three routes as “public”
+after `CRON_SECRET` left the file body — heuristic now also accepts
+`isAuthorizedCronBearer` / `@/lib/cron-auth`. `check-api-contract.mjs --ci` → 0 new.
 
 ## Task-loop next
 
-**GO:** merge #499 (register Smolko) after CI; then apply this fail-closed secrets PR.  
+**GO:** merge #503 (this PR) after green CI; then #499 (register Smolko).  
 Without GO: no PROD merge.
