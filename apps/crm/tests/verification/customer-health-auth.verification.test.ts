@@ -15,7 +15,7 @@ describe("[verification] Customer health cron authentication", () => {
     expect(route).toContain("process.env.CRON_SECRET?.trim()");
     expect(route).toContain('req.headers.get("authorization")');
     expect(route).toContain("`Bearer ${expected}`");
-    expect(route).toMatch(/unauthorized|401/);
+    expect(route).toContain('errorResponse("unauthorized", 401)');
   });
 
   it("does not email customers — founder morningLines only", () => {

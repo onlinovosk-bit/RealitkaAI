@@ -1,4 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { errorResponse, okResponse } from "@/lib/api-response";
+import { incrementUsageMetric, SYSTEM_USAGE_AGENCY_ID } from "@/lib/usage-metrics";
 import { createAdminClient } from "@/lib/supabase/server";
 import {
   persistCustomerHealthDaily,
@@ -12,10 +14,10 @@ export const dynamic = "force-dynamic";
  * Schedule (founder): add to vercel.json → "0 7 * * *" (07:00 UTC ≈ morning report).
  * Emits alerts only when severity is orange/red — no "all clear" noise.
  */
-export async function GET(request: NextRequest) {
+export async function GET(req: NextRequest) {
   const expected = process.env.CRON_SECRET?.trim();
-  if (!expected || request.headers.get("authorization") !== `Bearer ${expected}`) {
-    return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+  if (!expected || req.headers.get("authorization") !== `Bearer ${expected}`) {
+    return errorResponse("unauthorized", 401);
   }
 
   const admin = createAdminClient();
@@ -34,8 +36,12 @@ export async function GET(request: NextRequest) {
               `${a.severity === "red" ? "🔴" : "🟠"} ${a.agencyName}${a.isPaying ? " (platiaci)" : ""}: ${a.signals.map((s) => s.detail).join("; ")}`,
           );
 
-    return NextResponse.json({
-      ok: true,
+    await incrementUsageMetric({
+      agencyId: SYSTEM_USAGE_AGENCY_ID,
+      metric: "cron_customer_health",
+    });
+
+    return okResponse({
       checkedAt: checkedAt.toISOString(),
       alertCount: alerts.length,
       persist,
@@ -44,6 +50,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "customer_health_failed";
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    return errorResponse(message, 500);
   }
 }
