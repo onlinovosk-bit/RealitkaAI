@@ -89,7 +89,6 @@ describe("property-launch-pack facts", () => {
       persona: "GENERAL",
       channels: mockChannels,
       guardian: { verdict: "pass", reasons: [], blockedPublish: false },
-      // @ts-expect-error intentional forbidden keys in test payload
       payload_raw: { secret: true },
       broker_phone: "+421",
     } as never);

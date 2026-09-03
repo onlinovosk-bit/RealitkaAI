@@ -90,6 +90,7 @@ export async function POST(req: Request) {
 
   if (body.sourceId) {
     const admin = createServiceRoleClient();
+    if (!admin) return errorResponse("Server misconfigured", 503);
     const { data, error } = await admin
       .from("properties")
       .select(
