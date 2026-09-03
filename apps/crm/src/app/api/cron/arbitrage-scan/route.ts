@@ -4,14 +4,14 @@
 // Runs: 00:00, 06:00, 12:00, 18:00 UTC
 // ================================================================
 import { NextRequest, NextResponse } from 'next/server'
+import { isAuthorizedCronBearer } from '@/lib/cron-auth'
 import { createClient }               from '@/lib/supabase/server'
 import { runArbitrageScan }           from '@/lib/arbitrage/scan'
 
 const MAX_PROFILES_PER_RUN = 100
 
 export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!isAuthorizedCronBearer(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
