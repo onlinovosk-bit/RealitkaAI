@@ -21,6 +21,12 @@ export {
   isDeletePayload,
   PROPERTY_STATUS,
 } from './types';
+export {
+  REALVIA_MAPPING_UNKNOWN,
+  isRealviaMappingUnknown,
+  mapCategory,
+  mapTransaction,
+} from './map-taxonomy';
 export type {
   RealviaWebhookPayload,
   RealviaDeletePayload,

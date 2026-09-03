@@ -26,6 +26,7 @@ import type {
   RealviaDeletePayload,
   RealviaProcessingResult,
 } from './types';
+import { mapCategory, mapTransaction } from '@/lib/realvia/map-taxonomy';
 
 /** Maximum jobs to process per invocation */
 const BATCH_SIZE = 10;
@@ -468,38 +469,6 @@ function buildLocationString(advert: RealviaWebhookPayload['advert']): string {
   if (advert.street) parts.push(advert.street);
   // Location IDs would need a lookup table for names — for now, store as-is
   return parts.join(', ') || '';
-}
-
-/**
- * Map Realvia category number to our property type.
- * TODO: Populate from Realvia číselníky documentation.
- */
-function mapCategory(category: number): string {
-  const categoryMap: Record<number, string> = {
-    11: 'Byt',
-    12: 'Byt',
-    13: 'Dom',
-    14: 'Dom',
-    15: 'Pozemok',
-    16: 'Pozemok',
-    17: 'Komerčná',
-    18: 'Komerčná',
-    19: 'Ostatné',
-    20: 'Ostatné',
-  };
-  return categoryMap[category] ?? 'Ostatné';
-}
-
-/**
- * Map Realvia transaction number to our transaction type.
- */
-function mapTransaction(transaction: number): string {
-  const transactionMap: Record<number, string> = {
-    123: 'Predaj',
-    124: 'Prenájom',
-    125: 'Dražba',
-  };
-  return transactionMap[transaction] ?? 'Predaj';
 }
 
 /**
