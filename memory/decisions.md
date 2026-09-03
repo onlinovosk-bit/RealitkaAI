@@ -1,5 +1,13 @@
 # Critical Decisions Log
 
+## [2026-09-03] — GO P0 HONEST UNKNOWN MAPPING
+
+- Neznámy Realvia kód → **`Neznáme`**, nie fog do `Ostatné` / `Predaj`.
+- Sporné známe: **13/14** a **123** → `Neznáme` (neodvodzovať Byt/Prenájom z titulov).
+- Guardian: `unverified_property_type` / `unverified_transaction_type` blokuje pass.
+- Backfill 132 = samostatné GO. Číselník od Realvie stále treba.
+- Dôkaz: `docs/reports/2026-09-03-realvia-honest-unknown-mapping.md`.
+
 ## [2026-09-03] — Property Launch Pack V0 = VALIDATE/spec (no code yet)
 
 - **Verdikt:** zjednotiť KF1 `listing-content` + Wave 1 `vertical-pack-demo` cez jeden kanonický vstup a jeden Quality Guardian gate; export bez publish; **bez novej DB**; bez chatbota.
@@ -10,6 +18,8 @@
 ## [2026-09-03] — Audit kódu nie je audit dát
 
 Ku každému tvrdeniu „toto už máme“ sa dokladá **počet riadkov v produkcii**, nie existencia súboru. Platí pre briefy, roadmapy aj Integration Reporty.
+
+**Doplnok:** počet riadkov ≠ správnosť. Mapped polia overovať proti nezávislému signálu (`title`). Neznámy kód → `Neznáme` (P0 honest unknown), nie fog do legitímnej kategórie.
 
 ## [2026-09-03] — customer-health PROD smoke PASS
 

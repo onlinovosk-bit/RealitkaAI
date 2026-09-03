@@ -3,7 +3,8 @@
 **Baseline:** `origin/main` @ `b746865427428a084fd505c5f59d0af9d540585e` (2026-09-03)  
 **Prod:** `ypgajkhqtbriqqmyawyv` · SELECT 3. 9. 2026  
 **Tenant:** Reality Smolko `11111111-1111-1111-1111-111111111111`  
-**Pravidlo:** audit kódu ≠ audit dát — každý „máme“ má počet riadkov.
+**Pravidlo:** audit kódu ≠ audit dát — každý „máme“ má počet riadkov.  
+**P0 (2026-09-03):** `GO P0 HONEST UNKNOWN MAPPING` — neznámy kód → `Neznáme` (nie fog do Ostatné/Predaj). Report: `docs/reports/2026-09-03-realvia-honest-unknown-mapping.md`. Backfill existujúcich riadkov = mimo.
 
 ---
 
@@ -53,27 +54,45 @@ Re-count ten istý deň: **86× Ostatné = 65 %**. V reportoch uvádzame obe; ro
 
 ---
 
-## Prečo ~63 % `type = 'Ostatné'`
+## Prečo ~65 % vyzeralo ako `Ostatné` — a čo robí P0 honest unknown
 
 **Nie** preto, že Realvia posiela prázdnu kategóriu.  
-**Áno** preto, že adapter `mapCategory` v `apps/crm/src/lib/realvia/processQueue.ts` (~489 LOC súboru) mapuje len kódy **11–20** a default je `'Ostatné'`.
+**Áno** preto, že starý `mapCategory` mapoval len 11–20 a **zahmlieval** neznáme do `'Ostatné'`. To isté `mapTransaction` → `'Predaj'`.
 
-```477:491:apps/crm/src/lib/realvia/processQueue.ts
-function mapCategory(category: number): string {
-  const categoryMap: Record<number, string> = {
-    11: 'Byt',
-    12: 'Byt',
-    13: 'Dom',
-    14: 'Dom',
-    // … 15–20 …
-  };
-  return categoryMap[category] ?? 'Ostatné';
-}
-```
+**Po `GO P0 HONEST UNKNOWN MAPPING`:** modul `apps/crm/src/lib/realvia/map-taxonomy.ts`
 
-Dôkaz z `payload_raw.advert.category` (prod group-by 3. 9.): najväčší unmapped bucket = **30** → Ostatné; kategória **20** je v mape **zámerne** Ostatné. Detaily: `docs/reports/2026-09-03-smolko-type-mapping-integration.md` (PR #510, ak ešte nie je na `main`).
+- Neznámy kód → **`Neznáme`** (nie Ostatné / Predaj)
+- 19/20 ostávajú legitímne `Ostatné`
+- 13/14 a 123 → `Neznáme` (sporné; nehádať z titulov)
+- Guardian: `unverified_property_type` / `unverified_transaction_type` → FLAG
+- **Backfill 132 riadkov mimo** — existujúce DB hodnoty sa nemenia, kým nie je samostatné GO
 
-**Launch Pack V0 tento adapter neopravuje** (samostatný P0 + GO). Pilot musí preferovať riadky s `Byt`/`Dom` **alebo** manuálny vstup typu z PDF/makléra — inak Guardian a copy dostanú „Ostatné“.
+### category (Smolko 132) — diagnostika + efekt na **nové** syncy
+
+| Realvia | ks | starý type | nový sync |
+|---:|---:|---|---|
+| 30 | 30 | Ostatné | Neznáme |
+| 12 | 21 | Byt | Byt |
+| 20 | 15 | Ostatné | Ostatné |
+| 13 | 14 | Dom | Neznáme |
+| 11 | 9 | Byt | Byt |
+| 47 | 8 | Ostatné | Neznáme |
+| 41 | 8 | Ostatné | Neznáme |
+| 46 | 6 | Ostatné | Neznáme |
+| 37 | 5 | Ostatné | Neznáme |
+| 9 | 3 | Ostatné | Neznáme |
+| 14 | 2 | Dom | Neznáme |
+| 34, 60, … | zvyšok | Ostatné | Neznáme |
+
+### transaction (mapTransaction — v pôvodnom #511 chýbal)
+
+| Realvia | ks | starý | nový sync | title ~ prenájom |
+|---:|---:|---|---|---:|
+| 127 | 68 | Predaj | Neznáme | 0 |
+| 123 | 53 | Predaj | Neznáme | 44 |
+| 122 | 11 | Predaj | Neznáme | 0 |
+
+Plný report: `docs/reports/2026-09-03-realvia-honest-unknown-mapping.md`.
 
 ---
 
