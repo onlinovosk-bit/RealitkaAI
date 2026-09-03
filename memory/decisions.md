@@ -1,5 +1,12 @@
 # Critical Decisions Log
 
+## [2026-09-03] — customer-health tabuľka na PROD + cron na main
+
+- **#507** merged `203829403` (Vercel cron `0 7 * * *` → `/api/cron/customer-health`).
+- **PROD** `ypgajkhqtbriqqmyawyv`: `public.customer_health_daily` už stála (RLS on, 0 policies, 0 rows). GO SQL = zapísaný `supabase_migrations.schema_migrations` `20260903070000` / `customer_health_daily`.
+- **Dôkaz:** `docs/reports/2026-09-03-customer-health-sql-applied.md`.
+- Live Bearer smoke (Smolko red) = ďalší GO.
+
 ## [2026-09-02] — PROD `profiles` UPDATE: vždy service_role + RETURNING
 
 - **Opakovaný incident (3×):** `profiles_guard_*` triggery (`role`/`agency_id`, `account_tier`/`ui_role`, `is_platform_admin`) **ticho vrátia** zmenu, ak UPDATE nebeží ako `service_role`. Dashboard SQL bez `SET LOCAL` vyzerá úspešne, ale `RETURNING` ukáže starú hodnotu — alebo sa zmena vôbec neprejaví.
