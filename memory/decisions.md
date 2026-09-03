@@ -1,5 +1,9 @@
 # Critical Decisions Log
 
+## [2026-09-03] — Audit kódu nie je audit dát
+
+Ku každému tvrdeniu „toto už máme“ sa dokladá **počet riadkov v produkcii**, nie existencia súboru. Platí pre briefy, roadmapy aj Integration Reporty.
+
 ## [2026-09-03] — customer-health PROD smoke PASS
 
 - `GET https://app.revolis.ai/api/cron/customer-health` + Production `CRON_SECRET`: 401 without/wrong bearer, 200 with secret.
