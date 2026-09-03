@@ -471,8 +471,6 @@ function buildLocationString(advert: RealviaWebhookPayload['advert']): string {
   return parts.join(', ') || '';
 }
 
-import { mapCategory, mapTransaction } from "@/lib/realvia/map-taxonomy";
-
 /**
  * Map Realvia currency number to currency code.
  */
