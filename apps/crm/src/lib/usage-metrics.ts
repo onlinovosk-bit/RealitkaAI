@@ -33,6 +33,7 @@ export type UsageMetricName =
   | "embedding_tokens"
   | "cron_daily_match"
   | "cron_credits_cycle"
+  | "cron_customer_health"
   | "outreach_send";
 
 /**
