@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * GET /api/cron/customer-health — daily silence watchdog for founders.
- * Schedule (founder): add to vercel.json → "0 7 * * *" (07:00 UTC ≈ morning report).
+ * vercel.json: {"path":"/api/cron/customer-health","schedule":"0 7 * * *"} (07:00 UTC).
  * Emits alerts only when severity is orange/red — no "all clear" noise.
  */
 export async function GET(req: NextRequest) {
