@@ -13,21 +13,17 @@
 
 ## Swarm runtime
 
-Ruflo MCP `user-ruflo` / `swarm_init` **unavailable** in this session (`MCP server does not exist: ruflo`).  
-Orchestrator substituted **5 Cursor Task agents** (A–E) with disjoint scopes — same DAG as brief.
+Ruflo MCP unavailable (`MCP server does not exist: ruflo`).  
+First dispatch used shared-worktree Task agents → **collision** (branch fights).  
+Re-dispatch: **5× best-of-n-runner** with isolated worktrees.
 
-| Vlna | Agent | Scope |
+| Vlna | Isolated agent | Branch |
 |---|---|---|
-| A | [docs](8410b486-6c34-45e9-bb32-187b35c271a9) | `docs/architecture/**` |
-| B | [realvia](0aad5907-e787-4b92-b5af-98b2122aed28) | `apps/crm/src/lib/realvia/**` (gap-fill on #513) |
-| C | [auto-response](6b985b0c-682f-41ca-9af1-31827c955787) | valuation/submit + leads/inbound |
-| D | [cookie](4ea3e114-cfed-4e65-a3a1-750626ad3e92) | analytics + marketing layout + sub-processors |
-| E | [cost audit](41697d90-e1be-4bd2-b689-7c2c4cf3dc4e) | ai/** + rescore + outreach + docs/audit |
+| A | [A](caea3e96-728a-40ab-a4c5-4c220e6222f1) | `docs/b16-growth-foundation` |
+| B | [B](e18a3aaf-80e3-4f80-b258-98001ea219f3) | `fix/b16-realvia-honest-mapping` |
+| C | [C](b906a485-ebf6-42da-972c-12a3e98106af) | `feat/b16-rychla-odpoved` |
+| D | [D](5bd46510-0739-4991-867c-0a72f2ed1d12) | `fix/b16-cookie-consent-gating` |
+| E | [E](422aa09a-1572-475d-867b-dd21de1e4998) | `chore/b16-ai-cost-truth` |
 
-## Ingest
-
-Branch `docs/b16-brief-ingest` — `docs/briefs/overnight-master-brief-16.md`
-
-## STOP / rules
-
-No merge to main by agents. Morning report due: `.ai/bus/outbox/MSG-20260904-090-orch-b16-result.md`
+Ingest PR: https://github.com/onlinovosk-bit/RealitkaAI/pull/516  
+Write-probe: `test/write-probe-b16` @ `d965ae4f3` (unmerged by design)
