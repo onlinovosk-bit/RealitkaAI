@@ -170,12 +170,22 @@ export async function processRealviaQueue(): Promise<{
 
 /**
  * Process a standard advert (create/update) payload.
- * Idempotent: uses source_id for upsert.
+ * Idempotent per tenant: unique key is (agency_id, source_system, source_id).
+ * Never look up / mutate by source_id alone — that rewrites another agency's row.
  */
-async function processAdvertPayload(
+export async function processAdvertPayload(
   payload: RealviaWebhookPayload,
-  agencyId: string | null,
+  agencyId: string,
 ): Promise<RealviaProcessingResult> {
+  const tenantAgencyId = String(agencyId ?? '').trim();
+  if (!tenantAgencyId) {
+    return {
+      success: false,
+      action: 'skipped',
+      error: REALVIA_PROCESSING_ERROR_AGENCY_RESOLUTION_FAILED,
+    };
+  }
+
   const sb = createServiceRoleClient();
   if (!sb) {
     return { success: false, action: 'skipped', error: 'DB client unavailable' };
@@ -186,10 +196,12 @@ async function processAdvertPayload(
   const brokerSourceId = String(broker.source_id);
 
   try {
-    // ── Check if property already exists (by source_id) ─────────
+    // ── Tenant-scoped existence check (matches idx_properties_tenant_source_unique)
     const { data: existing } = await sb
       .from('properties')
       .select('id, price, status')
+      .eq('agency_id', tenantAgencyId)
+      .eq('source_system', 'realvia')
       .eq('source_id', sourceId)
       .maybeSingle();
 
@@ -197,6 +209,7 @@ async function processAdvertPayload(
     const propertyData: Record<string, unknown> = {
       source_id: sourceId,
       source_system: 'realvia',
+      agency_id: tenantAgencyId,
       title: advert.title ?? '',
       description: advert.description ?? '',
       price: advert.price ?? 0,
@@ -227,10 +240,6 @@ async function processAdvertPayload(
       features: mapFeatures(advert),
     };
 
-    if (agencyId) {
-      propertyData.agency_id = agencyId;
-    }
-
     let priceChanged = false;
 
     if (existing) {
@@ -247,14 +256,15 @@ async function processAdvertPayload(
           oldPrice,
           newPrice,
           mapCurrency(advert.currency),
-          agencyId,
+          tenantAgencyId,
         );
       }
 
       const { error } = await sb
         .from('properties')
         .update(propertyData)
-        .eq('id', existing.id);
+        .eq('id', existing.id)
+        .eq('agency_id', tenantAgencyId);
 
       if (error) {
         return {
@@ -268,6 +278,7 @@ async function processAdvertPayload(
       logInfo('[realvia-worker] Property updated', {
         propertyId: existing.id,
         sourceId,
+        agencyId: tenantAgencyId,
         priceChanged,
       });
 
@@ -279,8 +290,7 @@ async function processAdvertPayload(
         priceChanged,
       };
     } else {
-      // ── CREATE new property ───────────────────────────────────
-      propertyData.id = sourceId; // Use source_id as property ID for simplicity
+      // ── CREATE new property (DB generates id — source_id is NOT a global PK)
       propertyData.created_at = new Date().toISOString();
 
       const { data: inserted, error } = await sb
@@ -306,13 +316,14 @@ async function processAdvertPayload(
           null,
           advert.price,
           mapCurrency(advert.currency),
-          agencyId,
+          tenantAgencyId,
         );
       }
 
       logInfo('[realvia-worker] Property created', {
         propertyId: inserted.id,
         sourceId,
+        agencyId: tenantAgencyId,
       });
 
       return {
@@ -326,6 +337,7 @@ async function processAdvertPayload(
     const message = err instanceof Error ? err.message : 'Unknown error';
     logError('[realvia-worker] processAdvertPayload failed', {
       sourceId,
+      agencyId: tenantAgencyId,
       error: message,
     });
     return {
@@ -340,12 +352,23 @@ async function processAdvertPayload(
 /**
  * Process a delete/cancellation payload.
  * NEVER hard-deletes — maps archiveType to property status.
+ * Must be agency-scoped: global source_id match can soft-delete another tenant.
  */
-async function processDeletePayload(
+export async function processDeletePayload(
   sourceId: string,
-  agencyId: string | null,
+  agencyId: string,
   archiveType?: RealviaDeletePayload['archiveType'],
 ): Promise<RealviaProcessingResult> {
+  const tenantAgencyId = String(agencyId ?? '').trim();
+  if (!tenantAgencyId) {
+    return {
+      success: false,
+      action: 'skipped',
+      sourceId,
+      error: REALVIA_PROCESSING_ERROR_AGENCY_RESOLUTION_FAILED,
+    };
+  }
+
   const sb = createServiceRoleClient();
   if (!sb) {
     return { success: false, action: 'skipped', error: 'DB client unavailable' };
@@ -357,11 +380,16 @@ async function processDeletePayload(
     const { data: existing } = await sb
       .from('properties')
       .select('id, status')
+      .eq('agency_id', tenantAgencyId)
+      .eq('source_system', 'realvia')
       .eq('source_id', sourceIdStr)
       .maybeSingle();
 
     if (!existing) {
-      logWarn('[realvia-worker] Delete for unknown property', { sourceId });
+      logWarn('[realvia-worker] Delete for unknown property', {
+        sourceId,
+        agencyId: tenantAgencyId,
+      });
       return {
         success: true,
         action: 'skipped',
@@ -384,7 +412,8 @@ async function processDeletePayload(
         updated_at: new Date().toISOString(),
         realvia_updated_at: new Date().toISOString(),
       })
-      .eq('id', existing.id);
+      .eq('id', existing.id)
+      .eq('agency_id', tenantAgencyId);
 
     if (error) {
       return {
@@ -399,6 +428,7 @@ async function processDeletePayload(
     logInfo('[realvia-worker] Property marked as deleted', {
       propertyId: existing.id,
       sourceId,
+      agencyId: tenantAgencyId,
       archiveType,
       status: newStatus,
     });
@@ -413,6 +443,7 @@ async function processDeletePayload(
     const message = err instanceof Error ? err.message : 'Unknown error';
     logError('[realvia-worker] processDeletePayload failed', {
       sourceId,
+      agencyId: tenantAgencyId,
       error: message,
     });
     return { success: false, action: 'skipped', sourceId, error: message };
