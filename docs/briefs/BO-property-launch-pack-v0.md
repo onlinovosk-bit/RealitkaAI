@@ -10,13 +10,13 @@
 **Plan:** `docs/briefs/plans/BO-property-launch-pack-v0-plan.md`  
 **Ingest:** `docs/prompts/task-property-launch-pack-v0.md`
 
-**Implementačný GO:** **NEUDELENÝ**  
+**Implementačný GO:** **NEUDELENÝ** — **blokované** do oficiálneho Realvia číselníka + P0 opravy `mapCategory` **a** `mapTransaction` (samostatné GO).  
 **Autorizačná fráza (budúca, nie teraz):** `GO IMPLEMENT PROPERTY LAUNCH PACK V0`  
 Táto fráza v tomto dokumente **nie je** udelené GO.
 
-**platné_voči:** `origin/main` = `b746865427428a084fd505c5f59d0af9d540585e` (2026-09-03)
+**platné_voči:** `origin/main` (po #511); IR amendment: `docs/reports/2026-09-03-realvia-mapper-depth-amendment.md`
 
-**Produkčné čísla:** berú sa z prílohy `task3opravyroadmap.md` + re-count v Integration Report — nie z „patch“ šablóny.
+**Produkčné čísla:** `task3opravyroadmap.md` + re-count + **mapper depth** (`nalezrealviamapovanie.md`).
 
 ---
 
@@ -29,8 +29,8 @@ Táto fráza v tomto dokumente **nie je** udelené GO.
 | Lead → Provízia? | Nepriamo: rýchlejší kvalitný listing → menej oneskoreného vyvesenia → vyššia šanca obchodu. |
 | Timing OK (nie „príliš skoro")? | Áno. Obe cesty už existujú; chýba zjednotenie a gate. |
 | Prečo nie existujúce primitíva samostatne? | D1–D5 v Integration Report — maklér dnes musí voliť medzi manuálnym KF1 a demo packom. |
-| Founder trap | Druhá DB, chatbot, auto-publish, oprava celého Realvia mapovania v tom istom PR. |
-| Verdikt | **BUILD — úzky rozsah §4**, až po `GO IMPLEMENT PROPERTY LAUNCH PACK V0`. Tento check-in = VALIDATE/spec. |
+| Founder trap | Druhá DB, chatbot, auto-publish, oprava mapperov **v tom istom PR** ako Launch Pack, generácia z neovereného `type`/`transaction_type`. |
+| Verdikt | **VALIDATE** do číselníka + mapper P0. Potom **BUILD** úzky §4 až po `GO IMPLEMENT PROPERTY LAUNCH PACK V0`. |
 
 Zapíš do `memory/decisions.md` po implementačnom GO.
 
@@ -38,9 +38,10 @@ Zapíš do `memory/decisions.md` po implementačnom GO.
 
 ## 1. Integration Report (povinné pred kódom)
 
-Plný report s **LOC + prod riadkami** + odpoveďou na **Ostatné 63–65 %**:
+Plný report + amendment (`mapTransaction`, zlé 13/14, PREDANÉ v title):
 
-→ `docs/reports/2026-09-03-property-launch-pack-integration.md`
+→ `docs/reports/2026-09-03-property-launch-pack-integration.md`  
+→ `docs/reports/2026-09-03-realvia-mapper-depth-amendment.md`
 
 **Súhrn:**
 
@@ -99,7 +100,8 @@ Súbory vzniknú v implementačnom PR.
 - Nová databázová tabuľka / nová migrácia navrhnutá v tomto BO.
 - Autonómne publikovanie na Reality.sk / FB / web.
 - Verejný chatbot / concierge.
-- Oprava `mapCategory` / backfill `type` (samostatný P0).
+- Oprava `mapCategory` / `mapTransaction` / backfill (samostatné P0 + číselník Realvia).
+- Generácia `type`/`transaction` z DB bez potvrdenia maklérom.
 - Price-trail, valuation, booking (`scheduled_events`).
 - Bulk 132 ponúk v jednom kliknutí.
 

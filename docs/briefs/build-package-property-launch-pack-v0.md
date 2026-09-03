@@ -7,7 +7,7 @@
 **Integration Report:** `docs/reports/2026-09-03-property-launch-pack-integration.md`  
 **Šablóna:** `docs/templates/build-package.md`  
 **Baseline:** `origin/main` @ `b746865427428a084fd505c5f59d0af9d540585e`  
-**GO:** vyžaduje `GO IMPLEMENT PROPERTY LAUNCH PACK V0` (zatiaľ **neudelené**)
+**GO:** vyžaduje oficiálny Realvia číselník + mapper P0 (`mapCategory` **a** `mapTransaction`), potom `GO IMPLEMENT PROPERTY LAUNCH PACK V0` (zatiaľ **neudelené**)
 
 ---
 
@@ -22,13 +22,14 @@ Maklér Reality Smolko potrebuje pri novej ponuke **jeden schválený balík tex
 1. Kanonický adapter: `RealviaPropertyRow | PropertyInput` → `PropertyLaunchFacts` (žiadne vymyslené polia).
 2. Generácia kanálov: reuse `generateListingContent` (povinné kľúče ListingContent).
 3. Pack artefakty: reuse `buildVerticalPackDemo` (alebo rovnaké capability volania) na Realvia nohe; na manuálnej nohe — kanály + completeness ak facts stačia, bez falošného Realvia `source_id`.
-4. Pred stavom `approved_for_export`: `reviewGeneratedListing` musí `ok` (alebo explicitný maklér override **s audit dôvodom** — default off v V0 = **žiadny override**).
+4. Pred stavom `approved_for_export`: `reviewGeneratedListing` musí `ok`; mapped DB `type`/`transaction_type` bez maklérskeho potvrdenia = **neoverený fakt** (blok / vyžaduj override).
 5. Export: JSON/ZIP allowlist; **zakázané** `payload_raw`, broker PII nad rámec verejného listing textu.
 6. Publish: žiadny write do `portal_listings`; microsite `publishBlocked`; `assertPublishAllowed` ostáva.
 7. Feature flag `PROPERTY_LAUNCH_PACK_V0` (názov finálny v implementačnom PR) default **false**.
 8. Pilot: 5 ponúk; metrika ≤20 min / schválený pack; evidence report.
 9. **Žiadna nová DB tabuľka.** Voliteľný apply existujúcej `ai_generations` = iný founder GO.
 10. **Žiadny verejný chatbot.**
+11. **Predpoklad:** sync mapper type/txn opravený (alebo V0 vždy vyžaduje manuálne potvrdenie type/txn).
 
 Nefunkčné: tenant izolácia agency_id; rate-limit ako pri listing-content; latency generácie meraná v audite.
 
@@ -132,18 +133,21 @@ Existujúce `/api/ai/listing-content` **nemaže** — V0 ho môže interne vola�
 
 ## 11. RELEASE CHECKLIST
 
-1. Founder `GO IMPLEMENT PROPERTY LAUNCH PACK V0`.  
-2. Implementačný PR (1 logická zmena) + Preview.  
-3. CI zelené + verification.  
-4. Founder merge.  
-5. Flag on len pre Smolko tenant (alebo manuálny enable).  
-6. Pilot 5 + report.  
-7. **Nespúšťať** `ai_generations` apply ani `mapCategory` fix v tom istom PR.
+1. Founder získal oficiálny číselník Realvia (kategória + transakcia).  
+2. Founder GO oprava mapperov + backfill (iné PR).  
+3. Founder `GO IMPLEMENT PROPERTY LAUNCH PACK V0`.  
+4. Implementačný PR (1 logická zmena) + Preview.  
+5. CI zelené + verification.  
+6. Founder merge.  
+7. Flag on len pre Smolko tenant (alebo manuálny enable).  
+8. Pilot 5 + report.  
+9. **Nespúšťať** `ai_generations` apply v tom istom PR ako Launch Pack.
 
 ---
 
 ## ODCHÝLKY / POZNÁMKY
 
-1. Brief 63 % Ostatné (83) vs re-count 65 % (86) — oba validné; koreň = adapter.  
-2. `human-approval` Map nie je CRM store — V0 schválenie = export gate, nie durable workflow (Action Center rieši iný BO).  
-3. Wave 1 listing-generator ostáva template; **kanály** idú z KF1 — zámerne, nie duplicitný LLM.
+1. Brief 63 % Ostatné (83) vs re-count **65,2 %** (86) — kanonické 65,2 %.  
+2. `human-approval` Map nie je CRM store — V0 schválenie = export gate.  
+3. Wave 1 listing-generator = template; **kanály** z KF1.  
+4. **Post-#511:** `mapTransaction` P0; tvrdenie „0 prenájmov“ zrušené — pozri mapper-depth amendment.

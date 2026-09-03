@@ -20,6 +20,7 @@
 
 ## Závislosti (paralelné, iné PR)
 
-- PR #510 docs overlay (ak ešte open) — type mapping report  
-- Voliteľné: apply `ai_generations` (samostatný GO)  
-- P0: Realvia category map (samostatný GO)
+- Oficiálny číselník Realvia (category + transaction) — **blocker** pred mapper fix
+- Mapper P0: `mapCategory` + `mapTransaction` + backfill — samostatné GO
+- Voliteľné: apply `ai_generations` (samostatný GO)
+
