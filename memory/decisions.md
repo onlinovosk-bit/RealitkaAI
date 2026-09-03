@@ -7,6 +7,10 @@
 - **Implementácia:** STOP do `GO IMPLEMENT PROPERTY LAUNCH PACK V0`.
 - **Artefakty:** `docs/briefs/BO-property-launch-pack-v0.md`, `docs/reports/2026-09-03-property-launch-pack-integration.md`.
 
+## [2026-09-03] — Audit kódu nie je audit dát
+
+Ku každému tvrdeniu „toto už máme“ sa dokladá **počet riadkov v produkcii**, nie existencia súboru. Platí pre briefy, roadmapy aj Integration Reporty.
+
 ## [2026-09-03] — customer-health PROD smoke PASS
 
 - `GET https://app.revolis.ai/api/cron/customer-health` + Production `CRON_SECRET`: 401 without/wrong bearer, 200 with secret.
