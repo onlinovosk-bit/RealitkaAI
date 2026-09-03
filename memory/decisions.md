@@ -1,5 +1,12 @@
 # Critical Decisions Log
 
+## [2026-09-03] — Property Launch Pack V0 = VALIDATE/spec (no code yet)
+
+- **Verdikt:** zjednotiť KF1 `listing-content` + Wave 1 `vertical-pack-demo` cez jeden kanonický vstup a jeden Quality Guardian gate; export bez publish; **bez novej DB**; bez chatbota.
+- **Prod limity v IR:** `properties` 132 Smolko; Ostatné 63–65 % = adapter `mapCategory` (nie prázdny payload); `ai_generations` na prod **chýba**.
+- **Implementácia:** STOP do `GO IMPLEMENT PROPERTY LAUNCH PACK V0`.
+- **Artefakty:** `docs/briefs/BO-property-launch-pack-v0.md`, `docs/reports/2026-09-03-property-launch-pack-integration.md`.
+
 ## [2026-09-03] — customer-health PROD smoke PASS
 
 - `GET https://app.revolis.ai/api/cron/customer-health` + Production `CRON_SECRET`: 401 without/wrong bearer, 200 with secret.
