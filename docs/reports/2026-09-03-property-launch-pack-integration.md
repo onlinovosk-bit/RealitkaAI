@@ -66,6 +66,8 @@ Re-count ten istý deň: **86× Ostatné = 65 %**. V reportoch uvádzame obe; ro
 - 13/14 a 123 → `Neznáme` (sporné; nehádať z titulov)
 - Guardian: `unverified_property_type` / `unverified_transaction_type` → FLAG
 - **Backfill 132 riadkov mimo** — existujúce DB hodnoty sa nemenia, kým nie je samostatné GO
+- **Launch Pack V0** pri čítaní riadku aplikuje `mapCategory`/`mapTransaction` na `payload_raw.advert` kódy (bez zápisu do DB, bez titulov) — preto Guardian na existujúcom inventory uvidí `Neznáme` aj pred backfillom
+
 
 ### category (Smolko 132) — diagnostika + efekt na **nové** syncy
 

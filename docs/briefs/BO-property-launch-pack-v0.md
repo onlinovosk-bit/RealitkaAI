@@ -1,6 +1,7 @@
 # Build Order — Property Launch Pack V0 (Reality Smolko)
 
-**Status:** INTEGRATION REPORT — specification only  
+**Status:** IN PROGRESS — implementácia po `GO IMPLEMENT PROPERTY LAUNCH PACK V0` (2026-09-03)  
+**Implementačný GO:** **UDELENÝ** 2026-09-03 (po `GO P0 HONEST UNKNOWN MAPPING`)
 **Kategória:** Workflow Capability / Client Retention (Smolko)  
 **Cieľ:** Maklér Reality Smolko zo **5 pilotných ponúk** dostane **schválený multi-channel launch pack** (portal + FB + IG + email + SEO + pack artefakty) **do 20 minút**, cez **jeden kanonický vstup** a **jeden Quality Guardian gate** — bez autonómneho publikovania.
 
@@ -10,11 +11,7 @@
 **Plan:** `docs/briefs/plans/BO-property-launch-pack-v0-plan.md`  
 **Ingest:** `docs/prompts/task-property-launch-pack-v0.md`
 
-**Implementačný GO:** **NEUDELENÝ**  
-**Autorizačná fráza (budúca, nie teraz):** `GO IMPLEMENT PROPERTY LAUNCH PACK V0`  
-Táto fráza v tomto dokumente **nie je** udelené GO.
-
-**platné_voči:** `origin/main` = `b746865427428a084fd505c5f59d0af9d540585e` (2026-09-03)
+**Implementačný GO:** **UDELENÝ** 2026-09-03 (`GO P0 HONEST UNKNOWN MAPPING` → `GO IMPLEMENT PROPERTY LAUNCH PACK V0`)
 
 **Produkčné čísla:** berú sa z prílohy `task3opravyroadmap.md` + re-count v Integration Report — nie z „patch“ šablóny.
 
