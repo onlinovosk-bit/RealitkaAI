@@ -1,14 +1,14 @@
-## Session 2026-09-02
+## Session 2026-09-03
 ### Dokončené
-- Critical bug hunt: confirmed #459 fixed by #496 on main
-- NEW: register→Smolko (tracked by #499); CRON Bearer undefined; import/test-xml fail-open
-- Fix: `isAuthorizedCronBearer` + import key fail-closed
-- Report: `docs/reports/2026-09-02-critical-bug-hunt-cron-import.md`
+- Customer-health: cron #507, SQL #508, PROD smoke #509 (Smolko red)
+- Docs package: Property Launch Pack V0 (BO + IR + premortem + Build Package) — žiadny kód
 ### Rozpracované / Pending
-- Merge this fail-closed secrets PR after CI
-- Merge #499 register Smolko
+- Merge docs PR Launch Pack V0 (VALIDATE)
+- Open #510 Smolko roadmap overlay (ak ešte open)
+- Pilot 5 source_id z founder Prešov dodávky pri implementačnom GO
 ### Kľúčové súbory zmenené
-- `apps/crm/src/lib/cron-auth.ts`: fail-closed Bearer helper
-- 9 cron/admin routes + `import/test-xml`: refuse unset secrets
+- `docs/briefs/BO-property-launch-pack-v0.md`: Build Order
+- `docs/reports/2026-09-03-property-launch-pack-integration.md`: LOC + prod counts + Ostatné
+- `docs/premortems/2026-09-03-property-launch-pack-v0.md` + `docs/briefs/build-package-property-launch-pack-v0.md`
 ### Ďalší krok
-Founder review/merge secrets fail-closed PR + #499.
+Founder review docs PR; implementácia až po `GO IMPLEMENT PROPERTY LAUNCH PACK V0`.
