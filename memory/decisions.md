@@ -1,15 +1,22 @@
 # Critical Decisions Log
 
+## [2026-09-03] — Mapped field correctness (za „riadky existujú“)
+
+- **Počet riadkov dokazuje existenciu, nie správnosť.** Pole z mapovania externého zdroja sa overuje proti **nezávislému signálu** z toho istého záznamu (tu: `title` vs `type` / `transaction_type`).
+- **P0:** `mapCategory` **a** `mapTransaction` v `processQueue.ts` — neúplné aj **nesprávne** (13/14→Dom na bytoch; 123→Predaj pri prenájme v titule). Oprava až po oficiálnom číselníku Realvia; nie z titulov do kódu.
+- **Zrušené:** „Smolko má 0 prenájmov“ / „0 predajov v realite“ ako biznis fakt z mapped stĺpcov. `status=Predaná` = 0, ale 11× `***PREDANÉ***` v title.
+- **Launch Pack:** `GO IMPLEMENT` až po číselníku + mapper P0. Dôkaz: `docs/reports/2026-09-03-realvia-mapper-depth-amendment.md`.
+
 ## [2026-09-03] — Property Launch Pack V0 = VALIDATE/spec (no code yet)
 
 - **Verdikt:** zjednotiť KF1 `listing-content` + Wave 1 `vertical-pack-demo` cez jeden kanonický vstup a jeden Quality Guardian gate; export bez publish; **bez novej DB**; bez chatbota.
-- **Prod limity v IR:** `properties` 132 Smolko; Ostatné 63–65 % = adapter `mapCategory` (nie prázdny payload); `ai_generations` na prod **chýba**.
-- **Implementácia:** STOP do `GO IMPLEMENT PROPERTY LAUNCH PACK V0`.
+- **Prod limity v IR:** `properties` 132 Smolko; Ostatné **65,2 %**; `ai_generations` na prod **chýba**; mapped type/txn **nespoľahlivé**.
+- **Implementácia:** STOP do číselníka Realvia + mapper P0, potom `GO IMPLEMENT PROPERTY LAUNCH PACK V0`.
 - **Artefakty:** `docs/briefs/BO-property-launch-pack-v0.md`, `docs/reports/2026-09-03-property-launch-pack-integration.md`.
 
 ## [2026-09-03] — Audit kódu nie je audit dát
 
-Ku každému tvrdeniu „toto už máme“ sa dokladá **počet riadkov v produkcii**, nie existencia súboru. Platí pre briefy, roadmapy aj Integration Reporty.
+Ku každému tvrdeniu „toto už máme“ sa dokladá **počet riadkov v produkcii**, nie existencia súboru. Platí pre briefy, roadmapy aj Integration Reporty. **Doplnok:** riadky ≠ správnosť mapped polí (pozri záznam Mapped field correctness vyššie).
 
 ## [2026-09-03] — customer-health PROD smoke PASS
 

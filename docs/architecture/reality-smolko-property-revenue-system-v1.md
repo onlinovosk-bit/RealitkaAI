@@ -28,7 +28,7 @@ Smolko `11111111-1111-1111-1111-111111111111`:
 | `status = Predaná` | **0** |
 | `type = Ostatné` | **86 (65 %)** |
 | `type = Byt` / `Dom` | 30 / 16 |
-| `transaction_type = Predaj` | **132** (prenájom **0**) |
+| `transaction_type = Predaj` | **132 v stĺpci** — **nie** „0 prenájmov v biznise“. Realvia `transaction` 123 = 53 ks (44 s prenájom v titule); mapper rozbitý. Pozri `docs/reports/2026-09-03-realvia-mapper-depth-amendment.md`. |
 | `price` null alebo 0 | 41 |
 | `usable_area = 0` | 50 |
 | `created_at` | 2026-05-25 → 2026-08-28 UTC = dátum **synchronizácie**, nie inzerovania |

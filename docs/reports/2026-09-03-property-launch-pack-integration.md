@@ -3,7 +3,9 @@
 **Baseline:** `origin/main` @ `b746865427428a084fd505c5f59d0af9d540585e` (2026-09-03)  
 **Prod:** `ypgajkhqtbriqqmyawyv` · SELECT 3. 9. 2026  
 **Tenant:** Reality Smolko `11111111-1111-1111-1111-111111111111`  
-**Pravidlo:** audit kódu ≠ audit dát — každý „máme“ má počet riadkov.
+**Pravidlo:** audit kódu ≠ audit dát — každý „máme“ má počet riadkov.  
+**Doplnok (hlbšie):** počet riadkov ≠ správnosť — mapped polia overovať proti nezávislému signálu (`title`).  
+**Amendment 2026-09-03 (post #511):** `docs/reports/2026-09-03-realvia-mapper-depth-amendment.md` + ingest `docs/prompts/task-realvia-mapper-depth-2026-09-03.md`.
 
 ---
 
@@ -44,19 +46,20 @@ Re-count ten istý deň: **86× Ostatné = 65 %**. V reportoch uvádzame obe; ro
 | `status = Aktívna` | 128 | 128 |
 | `status = Stiahnutá` | 4 | 4 |
 | `status = Predaná` | **0** | **0** |
-| `type = Ostatné` | **83 (63 %)** | **86 (65 %)** |
-| `type = Byt` / `Dom` | — | 30 / 16 |
+| `type = Ostatné` | **83 (63 %)** | **86 (65,2 %)** — kanonické |
+| `type = Byt` / `Dom` | — | 30 / 16 (**pozor:** časť `Dom` = zlé mapovanie 13/14) |
 | bez ceny | 41 (31 %) | 41 |
 | `usable_area = 0` | 50 (38 %) | 50 |
-| `transaction_type` | všetko Predaj | Predaj **132**, prenájom **0** |
+| `transaction_type` stĺpec | všetko Predaj / „0 prenájmov“ | Predaj **132** v stĺpci — **biznis tvrdenie ZRUŠENÉ** (pozri § mapTransaction) |
 | `created_at` | sync, nie inzerát | 2026-05-25 → 2026-08-28 UTC |
+| `***PREDANÉ***` v `title` | — | **11** pri `status=Aktívna` (nie `status=Predaná`) |
 
 ---
 
-## Prečo ~63 % `type = 'Ostatné'`
+## Prečo 65,2 % `type = 'Ostatné'` — a prečo to nie je celý príbeh
 
 **Nie** preto, že Realvia posiela prázdnu kategóriu.  
-**Áno** preto, že adapter `mapCategory` v `apps/crm/src/lib/realvia/processQueue.ts` (~489 LOC súboru) mapuje len kódy **11–20** a default je `'Ostatné'`.
+**Áno** preto, že adapter `mapCategory` v `apps/crm/src/lib/realvia/processQueue.ts` (~489 LOC) mapuje len kódy **11–20**, má TODO na číselník, a default je `'Ostatné'`.
 
 ```477:491:apps/crm/src/lib/realvia/processQueue.ts
 function mapCategory(category: number): string {
@@ -71,9 +74,63 @@ function mapCategory(category: number): string {
 }
 ```
 
-Dôkaz z `payload_raw.advert.category` (prod group-by 3. 9.): najväčší unmapped bucket = **30** → Ostatné; kategória **20** je v mape **zámerne** Ostatné. Detaily: `docs/reports/2026-09-03-smolko-type-mapping-integration.md` (PR #510, ak ešte nie je na `main`).
+### Neúplné (Ostatné)
 
-**Launch Pack V0 tento adapter neopravuje** (samostatný P0 + GO). Pilot musí preferovať riadky s `Byt`/`Dom` **alebo** manuálny vstup typu z PDF/makléra — inak Guardian a copy dostanú „Ostatné“.
+Najväčší unmapped bucket = **30** (30 ks). Kategória **20** je v mape zámerne `Ostatné`. Plná tabuľka: amendment + `docs/reports/2026-09-03-smolko-type-mapping-integration.md`.
+
+### Nesprávne a „vyzerá správne“ (horšie)
+
+| Realvia `category` | ks | náš `type` | Nezávislý signál (`title`) |
+|---:|---:|---|---|
+| **13** | **14** | **`Dom`** | byty (prenájom/predaj/dopyt) — **nie** domy |
+| **14** | **2** | **`Dom`** | 4i byty — **nie** domy |
+
+**16** riadkov má zlú kategóriu, ktorá prejde vizuálnou kontrolou. Pilot / porovnateľné / Launch Pack **nesmú** brať `type=Dom` ako overený fakt.
+
+**Oprava mappera:** až po oficiálnom číselníku od Realvie — **nie** z titulov do kódu. Samostatné GO.
+
+---
+
+## ⛔ `mapTransaction` — P0 (v pôvodnom #511 chýbal)
+
+```496:502:apps/crm/src/lib/realvia/processQueue.ts
+function mapTransaction(transaction: number): string {
+  const transactionMap: Record<number, string> = {
+    123: 'Predaj',
+    124: 'Prenájom',
+    125: 'Dražba',
+  };
+  return transactionMap[transaction] ?? 'Predaj';
+}
+```
+
+Prod `payload_raw->advert.transaction` (Smolko, overené 3. 9. 2026):
+
+| Realvia kód | ks | náš `transaction_type` | title ~ prenájom |
+|---:|---:|---|---:|
+| 127 | 68 | Predaj (`??` / nepoznaný) | 0 |
+| **123** | **53** | **Predaj** (explicitne v mape) | **44** |
+| 122 | 11 | Predaj (`??`) | 0 |
+
+**123 ≈ Prenájom podľa titulov** → **40 %** portfólia systém berie ako predaj.  
+Kódy **122 / 127** mapper nepozná. **124** (Prenájom v mape) Realvia v tomto sample **neposiela**.
+
+**Zrušené tvrdenie:** „Smolko nemá v systéme ani jeden prenájom.“ Bolo to čítanie rozbitého mappera ako faktu.
+
+---
+
+## Predané v realite vs `status`
+
+`status = Predaná` = **0**.  
+`title` obsahuje `***PREDANÉ***` = **11** (stále `Aktívna`). Signál existuje v zlom poli — **nepoužívať** na výpočty ani backfill bez samostatného GO.
+
+---
+
+## Brána pred `GO IMPLEMENT` Launch Pack
+
+1. Vyžiadať od Realvie **oficiálny číselník** kategórií **aj** transakcií.  
+2. Opraviť `mapCategory` + `mapTransaction` + backfill — každé so **samostatným GO**.  
+3. Do implementácie: Launch Pack / Guardian **nesmie** tvrdiť typ ani transakciu z DB bez potvrdenia maklérom (inak „Dom na predaj“ na byt na prenájom).
 
 ---
 
@@ -91,7 +148,7 @@ Dôkaz z `payload_raw.advert.category` (prod group-by 3. 9.): najväčší unmap
 | Presentation builder | Áno | `build.ts` **57** | 0 | Reuse owner/buyer deck |
 | Property microsite | Áno | `build.ts` **79** | 0; `publishBlocked` default | Reuse; **publish zostáva blocked** |
 | Listing score | Áno | `score.ts` **219** | 0 | Reuse completeness pred schválením |
-| Realvia process queue | Áno | `processQueue.ts` **489** | napĺňa `properties` | **Nemeniť** v tomto BO (`mapCategory` = iný PR) |
+| Realvia process queue | Áno | `processQueue.ts` **489** | napĺňa `properties` (mapped polia **nespoľahlivé**) | **Nemeniť** tu; P0 = `mapCategory` **+** `mapTransaction` (iné PR + číselník) |
 | Verejný chatbot | — | — | — | **OUT** |
 | Autonómny publish na portály | Nie (zámer) | — | `portal_listings` **0** | **OUT** |
 
@@ -106,8 +163,10 @@ Dôkaz z `payload_raw.advert.category` (prod group-by 3. 9.): najväčší unmap
 | D3 | Pack demo neobsahuje multi-channel KF1 | `buildVerticalPackDemo` → len Wave 1 `generateListingDraft` |
 | D4 | Persist generácií na prod nefunguje | `ai_generations` migrácia neaplikovaná |
 | D5 | Approval nie je durable | `human-approval.ts` Map; Action Center BO už označil ako D1 |
+| D6 | Mapped `type` / `transaction_type` nespoľahlivé | 65 % Ostatné; 13/14→Dom na bytoch; 123→Predaj pri prenájme v titule |
+| D7 | Predaj len v `title`, nie v `status` | 11× `***PREDANÉ***` + Aktívna |
 
-V0 mitigácia bez novej DB: kanonický adapter + Guardian na **obe** cesty; schválený pack = **stiahnuteľný artefakt** (JSON/ZIP) + voliteľný zápis do existujúceho `ai_action_audit` (30 riadkov dnes) ako audit udalosti; **žiadny** portal write.
+V0 mitigácia bez novej DB: kanonický adapter + Guardian na **obe** cesty; **maklér potvrdí type/transaction** pred generáciou z Realvia riadku; schválený pack = **stiahnuteľný artefakt**; **žiadny** portal write. **Implementácia až po číselníku + mapper P0.**
 
 ---
 
@@ -134,5 +193,5 @@ Kritériá výberu z CRM (kým nie sú ID): `Aktívna` + (`Byt`\|`Dom`) + `price
 | Stavať od nuly? | Nie |
 | Nová DB? | Nie |
 | Apply `ai_generations`? | **Samostatný GO** (existujúca migrácia, nie nová schéma) — V0 vie ísť aj bez nej cez export |
-| Opraviť `mapCategory`? | **Mimo** tohto BO |
-| Implementovať teraz? | Nie — čaká `GO IMPLEMENT PROPERTY LAUNCH PACK V0` |
+| Opraviť `mapCategory` / `mapTransaction`? | **Mimo** tohto BO — najprv oficiálny číselník Realvia |
+| Implementovať Launch Pack teraz? | **Nie** — najprv číselník + mapper P0; až potom `GO IMPLEMENT PROPERTY LAUNCH PACK V0` |
