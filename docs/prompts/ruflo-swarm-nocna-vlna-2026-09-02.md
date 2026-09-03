@@ -40,6 +40,7 @@ Na `origin/main` musí byť `bcf7fcb`. Ak nie → lane sa NESPÚŠŤA, zapíš r
 | **L2** strážca zákazníkov | `apps/crm/src/lib/customer-health/**` (NOVÝ) · `apps/crm/src/app/api/cron/customer-health/**` (NOVÝ) · migračný SÚBOR v `apps/crm/supabase/migrations/` | **nie — len súbor** |
 | **L3** audit Architecture Guardian | `docs/reports/2026-09-03-architecture-guardian-audit.md` (NOVÝ) | nie — **read-only** |
 | **L4** audit verejných preview stránok | `docs/reports/2026-09-03-public-preview-audit.md` (NOVÝ) | nie — **read-only** |
+| **L5** prieskum k modulu Dokumenty | `docs/reports/2026-09-03-dokumenty-prieskum.md` (NOVÝ) | nie — **read-only** |
 
 ---
 
@@ -139,6 +140,40 @@ Do reportu zisti pre každý z nich:
 Report zoraď podľa rizika, najrizikovejšie hore. **Mazanie vykoná founder
 sám po prečítaní.**
 
+## L5 — prieskum k modulu Dokumenty (READ-ONLY)
+
+Vetva `docs/dokumenty-prieskum`. **Nemeň ani jeden riadok kódu. Nič neinštaluj.**
+
+Founder dal GO na nový modul Dokumenty, fáza 1 = **odovzdávací protokol**.
+Kontext je v `brief-dokumenty-protokol.md`. V repe **neexistuje nič** —
+žiadny storage bucket, žiadna knižnica na `.docx` ani PDF, žiadne nahrávanie
+súborov v `apps/crm`. Overené.
+
+Zisti a zapíš do reportu:
+
+1. **Dáta, ktoré vieme predvyplniť.** Prejdi `properties`, `leads`,
+   `contacts_dossier`, `lead_property_matches` a vypíš **konkrétne stĺpce**,
+   ktoré patria do odovzdávacieho protokolu: adresa, výmera, podlažie, meno,
+   telefón, e-mail, dátum. Pri každom uveď tabuľku, stĺpec a typ.
+   Zvlášť vypíš **údaje, ktoré v CRM nie sú** a maklér ich bude musieť
+   vyplniť ručne (stavy meračov, počet kľúčov, závady).
+
+2. **Ako je riešená tenant izolácia pri súboroch inde v repe**, ak vôbec.
+   `apps/realvia-ingestion/src/storage/objectStore.ts` — pozri, čo robí
+   a či sa z toho dá čokoľvek prevziať, alebo je to nesúvisiace.
+
+3. **Návrh dvoch migračných súborov** — `document_templates` a `documents` —
+   ako **text v reporte**, nie ako súbor v `supabase/migrations/`.
+   Composite FK `(agency_id, …)`, RLS `*_tenant` podľa vzoru
+   `20260508180000_rls_properties`.
+
+4. **Knižnice.** Čo by bolo treba doinštalovať na generovanie PDF, s veľkosťou
+   balíka a licenciou. Uveď 2–3 možnosti a ich nevýhody. **Neinštaluj nič.**
+
+5. **Odhad rozsahu** fázy 1 v súboroch a riadkoch.
+
+Žiadny kód, žiadny `npm install`, žiadna migrácia. Iba report.
+
 ---
 
 ## ORCHESTRÁTOR — záver noci
@@ -147,7 +182,7 @@ Zapíš `docs/reports/2026-09-03-nocna-vlna-report.md`: tabuľka lane → vetva 
 PR # → stav → čo čaká na foundera, zoradené podľa poradia review.
 Vetva `docs/nocny-report-2026-09-03`, PR, STOP.
 
-**Poradie pri vyčerpaní kvóty (zabíjaj odzadu):** L4 → L3 → L2 → L1.
+**Poradie pri vyčerpaní kvóty (zabíjaj odzadu):** L5 → L4 → L3 → L2 → L1.
 **L1 je P0 a musí dobehnúť.**
 
 ---
@@ -163,13 +198,14 @@ Vetva `docs/nocny-report-2026-09-03`, PR, STOP.
 
 | # | Krok |
 |---|---|
-| 1 | Nočný report → review v poradí: **L1** → L2 → L4 → L3 |
+| 1 | Nočný report → review v poradí: **L1** → L2 → L4 → L3 → L5 |
 | 2 | **L1 merguj ako prvé.** Ak lane navrhol riešenie namiesto implementácie, rozhodni a zadaj znova |
 | 3 | Pošli Smolkovi runbook s doplneným Client ID (odkaz v kroku 4 bez neho nefunguje) |
 | 4 | **Prepni Audience na In production** pred hovorom |
 | 5 | **Hovor so Smolkom** — brief `brief-telefonat-smolko.md`. Začni e-mailami, dohodni termín zaškolenia tímu |
 | 6 | Po hovore: zápis do `memory/`, termín do kalendára |
 | 7 | L4: rozhodni o jedenástich `preview-*.html`, hlavne o tom citáte |
+| 8 | **Na hovore sa Smolka spýtaj, ako dnes robí odovzdávací protokol** a čo ho na tom najviac zdržiava — bez toho sa fáza 1 Dokumentov nezadáva |
 
 ## PRIPOMIENKY
 
