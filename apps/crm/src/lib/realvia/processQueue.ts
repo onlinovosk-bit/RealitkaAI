@@ -26,7 +26,11 @@ import type {
   RealviaDeletePayload,
   RealviaProcessingResult,
 } from './types';
-import { mapCategory, mapTransaction } from '@/lib/realvia/map-taxonomy';
+import {
+  isRealviaMappingUnknown,
+  mapCategory,
+  mapTransaction,
+} from '@/lib/realvia/map-taxonomy';
 
 /** Maximum jobs to process per invocation */
 const BATCH_SIZE = 10;
@@ -193,6 +197,27 @@ async function processAdvertPayload(
       .eq('source_id', sourceId)
       .maybeSingle();
 
+    // ── Taxonomy (honest unknown — never fog to Ostatné / Predaj) ─
+    const mappedType = mapCategory(advert.category);
+    const mappedTransaction = mapTransaction(advert.transaction);
+    // Creates use source_id as properties.id; updates keep existing.id.
+    const propertyId = existing?.id ?? sourceId;
+
+    if (isRealviaMappingUnknown(mappedType)) {
+      logWarn('[realvia-worker] Unknown Realvia category code', {
+        categoryCode: advert.category,
+        propertyId,
+        sourceId,
+      });
+    }
+    if (isRealviaMappingUnknown(mappedTransaction)) {
+      logWarn('[realvia-worker] Unknown Realvia transaction code', {
+        transactionCode: advert.transaction,
+        propertyId,
+        sourceId,
+      });
+    }
+
     // ── Build property record ───────────────────────────────────
     const propertyData: Record<string, unknown> = {
       source_id: sourceId,
@@ -201,8 +226,8 @@ async function processAdvertPayload(
       description: advert.description ?? '',
       price: advert.price ?? 0,
       currency: mapCurrency(advert.currency),
-      type: mapCategory(advert.category),
-      transaction_type: mapTransaction(advert.transaction),
+      type: mappedType,
+      transaction_type: mappedTransaction,
       status: PROPERTY_STATUS.ACTIVE,
       location: buildLocationString(advert),
       rooms: advert.rooms_count ? `${advert.rooms_count} izby` : '',
