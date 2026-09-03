@@ -46,6 +46,10 @@
       "schedule": "0 7 * * *"
     },
     {
+      "path": "/api/cron/customer-health",
+      "schedule": "0 7 * * *"
+    },
+    {
       "path": "/api/cron/guardian-run",
       "schedule": "0 6 * * *"
     },

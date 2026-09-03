@@ -27,4 +27,10 @@ describe("[verification] Customer health cron authentication", () => {
   it("cron path is under /api/cron/ (session gate bypass via cron prefix)", () => {
     expect(PATH.startsWith("/api/cron/")).toBe(true);
   });
+
+  it("registers customer-health cron in vercel.json", () => {
+    const vercel = read("vercel.json");
+    expect(vercel).toContain('"/api/cron/customer-health"');
+    expect(vercel).toContain('"0 7 * * *"');
+  });
 });
