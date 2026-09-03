@@ -1,5 +1,10 @@
 # Critical Decisions Log
 
+## [2026-09-03] — customer-health PROD smoke PASS
+
+- `GET https://app.revolis.ai/api/cron/customer-health` + Production `CRON_SECRET`: 401 without/wrong bearer, 200 with secret.
+- Smolko `11111111-…-111` **red**, paying, `LEAD_SILENCE` 37 dní + `NEVER_LOGGED_IN_SHARE` 92 %. Persist 4 rows. Dôkaz: `docs/reports/2026-09-03-customer-health-smoke.md`.
+
 ## [2026-09-03] — customer-health tabuľka na PROD + cron na main
 
 - **#507** merged `203829403` (Vercel cron `0 7 * * *` → `/api/cron/customer-health`).
