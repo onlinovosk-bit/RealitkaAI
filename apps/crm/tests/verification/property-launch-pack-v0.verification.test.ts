@@ -30,6 +30,14 @@ describe("[verification] Property Launch Pack V0", () => {
     expect(facts).toContain("EXPORT_FORBIDDEN_KEYS");
   });
 
+  it("read-time honest mapping uses payload codes not DB labels", () => {
+    const facts = read("src/lib/capabilities/property-launch-pack/facts.ts");
+    expect(facts).toContain("mapCategory");
+    expect(facts).toContain("mapTransaction");
+    expect(facts).toContain("advertCodesFromPayload");
+    expect(facts).not.toContain('transactionType: "Predaj"');
+  });
+
   it("does not mutate Realvia processQueue in this feature module", () => {
     const build = read("src/lib/capabilities/property-launch-pack/build.ts");
     expect(build).not.toContain("processQueue");

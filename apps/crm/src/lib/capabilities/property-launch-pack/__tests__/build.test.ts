@@ -34,6 +34,19 @@ describe("property-launch-pack facts", () => {
     });
     expect(facts.source).toBe("manual");
     expect(facts.type).toBe("Byt");
+    expect(facts.transactionType).toBe(REALVIA_MAPPING_UNKNOWN);
+  });
+
+  it("applies honest mapper to payload codes without using titles or DB fog", () => {
+    const row = {
+      ...REALVIA_SMOLKO_13303557,
+      type: "Ostatné",
+      transaction_type: "Predaj",
+      payload_raw: { advert: { category: 30, transaction: 123 } },
+    };
+    const facts = factsFromRealviaRow(row);
+    expect(facts.type).toBe(REALVIA_MAPPING_UNKNOWN);
+    expect(facts.transactionType).toBe(REALVIA_MAPPING_UNKNOWN);
   });
 
   it("maps Realvia row and preserves Neznáme taxonomy", () => {
@@ -61,6 +74,8 @@ describe("property-launch-pack facts", () => {
     const ok = resolveTaxonomy(facts, { type: "Dom", transactionType: "Predaj" });
     expect(ok.type).toBe("Dom");
     expect(ok.transactionType).toBe("Predaj");
+    expect(ok.needsTypeConfirm).toBe(false);
+    expect(ok.needsTxnConfirm).toBe(false);
   });
 
   it("export strips payload_raw / broker PII keys", () => {
@@ -105,6 +120,27 @@ describe("buildPropertyLaunchPack", () => {
     expect(result.exportAllowed).toBe(false);
     expect(result.guardian.reasons).toContain("unverified_property_type");
     expect(result.exportPayload).toBeNull();
+  });
+
+  it("does not call the generator when taxonomy is still Neznáme", async () => {
+    let called = false;
+    const facts = factsFromRealviaRow({
+      ...REALVIA_SMOLKO_13303557,
+      type: REALVIA_MAPPING_UNKNOWN,
+      transaction_type: REALVIA_MAPPING_UNKNOWN,
+    });
+    await buildPropertyLaunchPack({
+      agencyId: AGENCY,
+      facts,
+      generate: async () => {
+        called = true;
+        return {
+          content: mockChannels,
+          audit: { model: "test", costEur: 0, latencyMs: 1 },
+        };
+      },
+    });
+    expect(called).toBe(false);
   });
 
   it("allows export after maklér confirms taxonomy", async () => {

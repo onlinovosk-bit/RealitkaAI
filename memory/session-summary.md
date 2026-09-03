@@ -1,13 +1,14 @@
 ## Session 2026-09-03
 ### Dokončené
-- #510/#511 docs merged earlier
-- GO P0 HONEST UNKNOWN → PR #513 (`Neznáme`, Guardian block, no backfill)
-- GO IMPLEMENT Launch Pack V0 → PR #514 (flagged API)
-- #481 marked ready for review (billing agency_id hygiene)
+- #513 GO P0 HONEST UNKNOWN MAPPING merged (`Neznáme`)
+- #481 checkout agency_id merged
+- Launch Pack V0 na #514 (flag off) + gap fix: payload remap, skip LLM, no Predaj fog
 ### Rozpracované / Pending
-- Merge #513 then #514 after CI green
-- Merge #481 when Lint green
-- Founder: request Realvia číselník; backfill GO later
-- Enable `PROPERTY_LAUNCH_PACK_V0=1` on Preview for pilot
+- Merge #514 po CI
+- Oficiálny číselník od Realvie (`docs/reports/2026-09-03-realvia-ciselnik-request.md`)
+- Backfill 132 riadkov — samostatné GO
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/capabilities/property-launch-pack/*`
+- `apps/crm/src/app/api/ai/property-launch-pack/route.ts`
 ### Ďalší krok
-Merge #513 (honest unknown) when CI green; then #514; request číselník from Realvia.
+Founder merge #514; flag `PROPERTY_LAUNCH_PACK_V0=1` len pre Smolko preview/pilot.

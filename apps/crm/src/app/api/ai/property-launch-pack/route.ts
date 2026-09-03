@@ -14,7 +14,9 @@ import {
   factsFromPropertyInput,
   factsFromRealviaRow,
   isPropertyLaunchPackEnabled,
+  resolveTaxonomy,
 } from "@/lib/capabilities/property-launch-pack";
+import { isRealviaMappingUnknown } from "@/lib/realvia/map-taxonomy";
 import type { RealviaPropertyRow } from "@/lib/capabilities/_shared/realvia-property-row";
 
 export const runtime = "nodejs";
@@ -37,6 +39,7 @@ const BodySchema = z
         price: z.number(),
         size_m2: z.number().optional(),
         condition: z.string().optional(),
+        transactionType: z.string().min(1).optional(),
         features: z.array(z.string()).optional(),
         rooms: z.string().optional(),
         floor: z.number().optional(),
@@ -115,8 +118,33 @@ export async function POST(req: Request) {
         district: p.district,
         agent_notes: p.agent_notes,
       },
-      { propertyId: body.propertyId ?? null },
+      { propertyId: body.propertyId ?? null, transactionType: p.transactionType ?? null },
     );
+  }
+
+  const taxonomyPeek = resolveTaxonomy(facts, body.taxonomyConfirm);
+  const blockedOnTaxonomy =
+    isRealviaMappingUnknown(taxonomyPeek.type) ||
+    isRealviaMappingUnknown(taxonomyPeek.transactionType);
+
+  if (blockedOnTaxonomy) {
+    const result = await buildPropertyLaunchPack({
+      agencyId,
+      facts,
+      persona: body.persona ?? "GENERAL",
+      taxonomyConfirm: body.taxonomyConfirm,
+      propertyRow,
+    });
+    return okResponse({
+      exportAllowed: false,
+      needsTypeConfirm: result.needsTypeConfirm,
+      needsTxnConfirm: result.needsTxnConfirm,
+      taxonomy: result.taxonomy,
+      guardian: result.guardian,
+      channels: null,
+      exportPayload: null,
+      message: "Guardian FLAG — potvrď type/transaction (Neznáme), potom znova. Kredity sa nestrhli.",
+    });
   }
 
   const spend = await spendForAction({

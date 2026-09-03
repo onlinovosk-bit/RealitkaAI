@@ -81,6 +81,31 @@ export async function buildPropertyLaunchPack(
   };
 
   const propertyInput = factsToPropertyInput(input.facts, taxonomy);
+  const unknownTaxonomy =
+    isRealviaMappingUnknown(taxonomy.type) || isRealviaMappingUnknown(taxonomy.transactionType);
+
+  if (unknownTaxonomy) {
+    const reasons = [
+      ...(isRealviaMappingUnknown(taxonomy.type) ? ["unverified_property_type"] : []),
+      ...(isRealviaMappingUnknown(taxonomy.transactionType) ? ["unverified_transaction_type"] : []),
+    ];
+    const guardian: GuardianReviewResult = {
+      verdict: "flag",
+      reasons,
+      blockedPublish: true,
+    };
+    return {
+      exportAllowed: false,
+      taxonomy,
+      needsTypeConfirm: taxonomyResolved.needsTypeConfirm,
+      needsTxnConfirm: taxonomyResolved.needsTxnConfirm,
+      guardian,
+      channels: null,
+      audit: null,
+      exportPayload: null,
+    };
+  }
+
   const generate = input.generate ?? generateListingContent;
   const { content, audit } = await generate(propertyInput, persona);
 

@@ -3,6 +3,8 @@ import type { RealviaPropertyRow } from "@/lib/capabilities/_shared/realvia-prop
 import { realviaRowToUcListing } from "@/lib/capabilities/_shared/realvia-property-row";
 import {
   isRealviaMappingUnknown,
+  mapCategory,
+  mapTransaction,
   REALVIA_MAPPING_UNKNOWN,
 } from "@/lib/realvia/map-taxonomy";
 
@@ -39,10 +41,54 @@ export function isPropertyLaunchPackEnabled(): boolean {
   return process.env.PROPERTY_LAUNCH_PACK_V0 === "1";
 }
 
+function asRealviaCode(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() !== "") {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
+/** Numeric Realvia codes from stored payload — not titles, not invented labels. */
+export function advertCodesFromPayload(raw: unknown): {
+  category: number | null;
+  transaction: number | null;
+} {
+  if (!raw || typeof raw !== "object") {
+    return { category: null, transaction: null };
+  }
+  const advert = (raw as { advert?: unknown }).advert;
+  if (!advert || typeof advert !== "object") {
+    return { category: null, transaction: null };
+  }
+  const rec = advert as { category?: unknown; transaction?: unknown };
+  return {
+    category: asRealviaCode(rec.category),
+    transaction: asRealviaCode(rec.transaction),
+  };
+}
+
+function honestTypeFromRow(row: RealviaPropertyRow): string {
+  const { category } = advertCodesFromPayload(row.payload_raw);
+  if (category != null) return mapCategory(category);
+  const db = String(row.type ?? "").trim();
+  return db || REALVIA_MAPPING_UNKNOWN;
+}
+
+function honestTxnFromRow(row: RealviaPropertyRow): string {
+  const { transaction } = advertCodesFromPayload(row.payload_raw);
+  if (transaction != null) return mapTransaction(transaction);
+  const db = String(row.transaction_type ?? "").trim();
+  return db || REALVIA_MAPPING_UNKNOWN;
+}
+
 export function factsFromPropertyInput(
   property: PropertyInput,
-  opts?: { propertyId?: string | null },
+  opts?: { propertyId?: string | null; transactionType?: string | null },
 ): PropertyLaunchFacts {
+  const type = property.type.trim() || REALVIA_MAPPING_UNKNOWN;
+  const txn = String(opts?.transactionType ?? "").trim() || REALVIA_MAPPING_UNKNOWN;
   return {
     source: "manual",
     sourceId: null,
@@ -59,8 +105,8 @@ export function factsFromPropertyInput(
     condition: property.condition,
     features: property.features ?? [],
     agent_notes: property.agent_notes,
-    type: property.type,
-    transactionType: "Predaj",
+    type,
+    transactionType: txn,
   };
 }
 
@@ -87,8 +133,8 @@ export function factsFromRealviaRow(row: RealviaPropertyRow): PropertyLaunchFact
     condition: "neuvedené",
     features: [],
     agent_notes: listing.description.slice(0, 5_000) || undefined,
-    type: listing.type || REALVIA_MAPPING_UNKNOWN,
-    transactionType: listing.transactionType || REALVIA_MAPPING_UNKNOWN,
+    type: honestTypeFromRow(row),
+    transactionType: honestTxnFromRow(row),
   };
 }
 
@@ -102,15 +148,18 @@ export function resolveTaxonomy(
   const confirmedType = confirm?.type?.trim() ?? "";
   const confirmedTxn = confirm?.transactionType?.trim() ?? "";
 
+  const resolvedType = needsTypeConfirm
+    ? confirmedType || REALVIA_MAPPING_UNKNOWN
+    : facts.type;
+  const resolvedTxn = needsTxnConfirm
+    ? confirmedTxn || REALVIA_MAPPING_UNKNOWN
+    : facts.transactionType;
+
   return {
-    needsTypeConfirm,
-    needsTxnConfirm,
-    type: needsTypeConfirm
-      ? confirmedType || REALVIA_MAPPING_UNKNOWN
-      : facts.type,
-    transactionType: needsTxnConfirm
-      ? confirmedTxn || REALVIA_MAPPING_UNKNOWN
-      : facts.transactionType,
+    needsTypeConfirm: isRealviaMappingUnknown(resolvedType),
+    needsTxnConfirm: isRealviaMappingUnknown(resolvedTxn),
+    type: resolvedType,
+    transactionType: resolvedTxn,
   };
 }
 

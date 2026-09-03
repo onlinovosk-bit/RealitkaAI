@@ -24,3 +24,7 @@
 ## Pilot
 
 Fixture `13303557` + maklér confirm type/txn. Ďalšie 4 source_id z Prešov dodávky pri manuálnom smoke.
+
+Read-time: `payload_raw.advert.category/transaction` cez honest mapper (bez backfillu, bez titulov).  
+LLM sa nevolá, kým typ/transakcia ostávajú `Neznáme`. Manuálny vstup **nefoguje** `Predaj`.
+
