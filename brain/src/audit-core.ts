@@ -279,6 +279,33 @@ function unverifiedLessonFindings(repoRoot: string, auditDate: string): AuditFin
   return findings;
 }
 
+
+function engineReviewOverdueFindings(repoRoot: string, auditDate: string): AuditFinding[] {
+  const path = "brain/ENGINE.md";
+  const absolute = resolve(repoRoot, path);
+  if (!existsSync(absolute)) return [];
+  const text = readFileSync(absolute, "utf8");
+  const fm = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!fm) return [];
+  const status = fm[1].match(/^status:\s*(\S+)/m)?.[1];
+  const reviewBy = fm[1].match(/^review_by:\s*(\d{4}-\d{2}-\d{2})/m)?.[1];
+  if (!reviewBy || reviewBy >= auditDate) return [];
+  const alreadyStale = status === "stale";
+  return [
+    {
+      key: `engine-review-overdue:${reviewBy}`,
+      category: "staleness",
+      severity: alreadyStale ? "advisory" : "warning",
+      title: "ENGINE.md review_by is overdue",
+      detail: alreadyStale
+        ? `brain/ENGINE.md review_by ${reviewBy} is past ${auditDate}; status is already stale pending founder substantive review (do not invent a decision record).`
+        : `brain/ENGINE.md review_by ${reviewBy} is past ${auditDate}; status is ${status ?? "unknown"} — mark stale per ENGINE active->stale rule; founder review still required before moving review_by.`,
+      evidence: [evidence(path, `review_by=${reviewBy}; status=${status ?? "unavailable"}`)],
+      confidence: "high",
+    },
+  ];
+}
+
 export function collectFindings(options: {
   repoRoot: string;
   brain: LoadedBrain;
@@ -384,6 +411,7 @@ export function collectFindings(options: {
   findings.push(...documentedRoutes(repoRoot));
   findings.push(...parallelTableFindings(repoRoot));
   findings.push(...unverifiedLessonFindings(repoRoot, auditDate));
+  findings.push(...engineReviewOverdueFindings(repoRoot, auditDate));
 
   return [...new Map(findings.map((finding) => [finding.key, finding])).values()]
     .sort((left, right) => left.key.localeCompare(right.key));

@@ -232,6 +232,8 @@ test("decisions SoT is memory/decisions.md and the brain twin is gone", () => {
   assert.ok(memory);
   assert.equal(memory.source.path, DECISIONS_SOT);
   assert.equal(memory.inventory.sample.includes(DECISIONS_TWIN), false);
+  assert.ok(!memory.inventory.sample.includes("decisions.md"));
+  assert.ok(memory.inventory.sample.includes(DECISIONS_SOT) || memory.source.path === DECISIONS_SOT);
 });
 
 test("ingest reads SoT and does not emit a brain decisions.md twin", () => {

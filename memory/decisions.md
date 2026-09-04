@@ -1,5 +1,7 @@
 # Critical Decisions Log
 
+
+
 ## [2026-09-03] — GO P0 HONEST UNKNOWN MAPPING
 
 - Neznámy Realvia kód → **`Neznáme`**, nie fog do `Ostatné` / `Predaj`.
@@ -958,3 +960,9 @@ blocked. Exact PC commands are in
 - **Prečo:** Vzorka 4/208 (~2 %) nestačí; neoverený shallow clone pri Cursor analýze; tip SHA drift; chýbajú backup refs `refs/cleanup/2026-08-21/<branch>`.
 - **Dôsledok:** TASK-0003 evidence pack (full clone, N tip SHA, backup refs, full cherry, edge policy) pred akýmkoľvek delete GO. Smolko Gmail dual-run (#422 na main) je samostatná P0 — neblokovať cleanup evidence.
 - **Artefakty:** `.ai/bus/outbox/MSG-20260821-007-…`, `.ai/bus/tasks/TASK-0003.md`, `docs/reports/2026-08-21-branch-cleanup-needs-evidence.md`
+
+## [2026-06-27] — Smolko leads: verify, clean, capture (prenesené z decisions.md, 2026-09-04)
+
+- Context: Hotfix ensured lead write path now uses scoped Supabase client and server-derived `agency_id`.
+- Action taken: removed temporary diagnostic log from `apps/crm/src/app/api/leads/route.ts`, added SQL script `infra/sql/cleanup-test-leads.sql` to inspect/delete test leads, and recorded this decision.
+- Lesson / Scar: Always remove debug logging from hot-path before merge; prefer manual compile verification after merges and avoid automated merge tools without review.
