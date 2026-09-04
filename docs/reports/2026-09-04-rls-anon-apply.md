@@ -59,3 +59,7 @@ post-apply dotazom.
 - Prod schéma `agency_id` **nemá** → `42703`
 - Funkcia bola rozbitá **pred** DROP wave; deny to nezhoršil (0 riadkov)
 - Trackované v `TASK-RLS-ONBOARDING-SESSION` ako vstup pre Brief 17 drift — **nie** opravovať v onboarding PR
+
+## CI note (2026-09-04)
+
+CI local Supabase lacks tables created only via loose SQL outside `migrations/` (`integration_settings`, `pipeline_moves`, `lead_assignment_rules`). Migration `20260904150000` now guards DROP/CREATE for those relations with `to_regclass(...) IS NOT NULL` so fresh DBs skip missing tables — do not re-apply on production.
