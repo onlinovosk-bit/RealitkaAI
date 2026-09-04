@@ -1,5 +1,10 @@
 # TASK-RLS-ONBOARDING-SESSION — zatvoriť `Allow anon access`
 
+**Status:** PR open (Path B) — migration PREPARED, NOT applied  
+**PR:** (filled after gh pr create)  
+**Branch:** `security/rls-onboarding-session`  
+**Report:** `docs/reports/2026-09-04-rls-onboarding-session-api.md`
+
 **Priority:** P0 (posledná otvorená anon diera v `public` po DROP wave)  
 **Depends on:** `drop_open_anon_policies` applied (2026-09-04) — verified in prod  
 **Merge:** founder GO; **samostatný PR** od DROP wave  

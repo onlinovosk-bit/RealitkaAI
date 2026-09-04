@@ -81,5 +81,5 @@ COMMIT;
 
 ```
 
-Politika **nedotknutá** migráciou (`Allow anon access` na `onboarding_sessions`)
-rollback nepotrebuje.
+Follow-up onboarding anon ALL: pozri `docs/runbooks/rollback-onboarding-sessions-anon.md`
+(migrácia `20260904220000_drop_onboarding_sessions_anon_all.sql` — samostatný PR).
