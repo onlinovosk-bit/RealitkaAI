@@ -1,32 +1,22 @@
-# MSG-20260904 — RLS anon audit: otázky pred ďalším DROP
+# MSG-20260904 — RLS anon audit follow-ups (updated after apply)
 
-**From:** security/rls-anon-audit agent  
-**To:** founder  
-**Priority:** P0 follow-up  
-**Audit:** `docs/audit/2026-09-04-rls-anon-policies.md`
+**Status:** DROP wave applied + founder re-check PASS (2026-09-04)
 
-## NEJASNÉ — `lead_assignment_rules` demo_* (4 politiky)
+## Resolved
 
-Tabuľka má otvorené `demo_*` pre `anon` **aj** `authenticated` a sú to **jediné** RLS
-politiky. UI (`lead-automation-store.ts`) ich potrebuje po prihlásení.
+- `lead_assignment_rules` demo_* → **ZRUŠIŤ** and dropped (0 rows).
+- Founder confirmed: only remaining open anon in `public` = `onboarding_sessions`.
 
-Tabuľka **nemá `agency_id`** (iba `profile_ids uuid[]`). Bez schémy:
+## Open — onboarding
 
-- DROP bez náhrady → zlomí authenticated UI
-- `TO authenticated USING (true)` → stále cross-tenant medzi agentúrami
-- tenant via `profile_ids` ∩ `profiles.auth_user_id` → nepokryje admina, čo pravidlá spravuje
+See `.ai/bus/tasks/TASK-RLS-ONBOARDING-SESSION.md` (P0, not indefinite).
 
-**Otázka:** Pridať `agency_id` (+ backfill) a až potom NAHRADIŤ, alebo dočasne
-authenticated-only s vedomým cross-tenant rizikom?
+## Parked with Brief 17 — schema drift
 
-## PRESUNÚŤ NA SERVER — `onboarding_sessions` / `Allow anon access`
+`lead_assignment_rules`: code selects `agency_id` (`api/automation/rules/[id]/route.ts:19`)
+but column absent in prod → `42703`. Same class as silent `cost_eur` failures.
+**Do not fix inside onboarding PR** — migration drift wave.
 
-Browser (`useOnboarding.ts`, `OnboardingClient.tsx`) upsert/select cez anon kľúč.
-localStorage je SoT; sync toleruje zlyhanie.
+## Conscious deny
 
-**Otázka:** Môžeme DROP `Allow anon access` už teraz (sync ticho padne), alebo čakať
-na API endpoint so service role v samostatnom PR?
-
-## Nepublikovať
-
-Neposielať do chatu anon kľúč, connection string ani project ref.
+`integration_settings`: 0 policies, 0 code refs — intentional; not a mailbox-settings regression.

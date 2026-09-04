@@ -38,3 +38,24 @@
 
 - Voľné SQL mimo migrations/: 27
 - Aplikovaných v prod histórii pred touto vlnou: 48 / 100 súborov v repe
+
+## Founder re-check (2026-09-04 evening)
+
+Nezávislé overenie z produkcie: v celej `public` schéme ostáva **jediná** otvorená
+anon politika — `onboarding_sessions` / `Allow anon access`. Sedí s agentovým
+post-apply dotazom.
+
+### Vedomý stav — `integration_settings` plný deny
+
+- 0 politík po DROP; RLS zapnuté → deny pre anon/authenticated
+- **Žiadna referencia v aplikačnom kóde** — IMAP nikdy nebol zapojený
+- Plný deny neláme nič v bežiacej appke
+- **Nesmie sa interpretovať** ako regresia „nefunguje nastavenie schránky“ —
+  keď sa feature oživí, politiky + server path sú súčasťou toho PR
+
+### `lead_assignment_rules` — rozbitý kód vs schéma (nie regressia DROP)
+
+- Kód: `api/automation/rules/[id]/route.ts:19` selectuje `agency_id`
+- Prod schéma `agency_id` **nemá** → `42703`
+- Funkcia bola rozbitá **pred** DROP wave; deny to nezhoršil (0 riadkov)
+- Trackované v `TASK-RLS-ONBOARDING-SESSION` ako vstup pre Brief 17 drift — **nie** opravovať v onboarding PR
