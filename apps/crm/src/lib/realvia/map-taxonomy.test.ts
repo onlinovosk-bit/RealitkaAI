@@ -1,102 +1,123 @@
 import { describe, expect, it } from "vitest";
 import {
   REALVIA_MAPPING_UNKNOWN,
+  REALVIA_TRANSACTION_DEMAND,
+  isDemandTransaction,
   isRealviaMappingUnknown,
   mapCategory,
   mapTransaction,
+  roomsFromCategory,
 } from "@/lib/realvia/map-taxonomy";
 
-/** Category codes observed in production Realvia payloads (Brief 16). */
-const PROD_CATEGORY_CODES = [
-  9, 11, 12, 13, 14, 20, 27, 28, 30, 34, 35, 37, 41, 46, 47, 48, 57, 60, 61, 65,
-] as const;
-
-/** Expected outputs for each prod code — known table only; rest stay Neznáme. */
-const PROD_CATEGORY_EXPECTED: Readonly<Record<number, string>> = {
-  9: REALVIA_MAPPING_UNKNOWN,
+/** All 20 official category codes from číselník (2026-09-04). */
+const OFFICIAL_CATEGORY_EXPECTED: Readonly<Record<number, string>> = {
+  9: "Byt",
   11: "Byt",
   12: "Byt",
-  13: REALVIA_MAPPING_UNKNOWN, // disputed Dom → pending číselník
-  14: REALVIA_MAPPING_UNKNOWN, // disputed Dom → pending číselník
-  20: "Ostatné", // legitimate known mapping (not fog fallback)
-  27: REALVIA_MAPPING_UNKNOWN,
-  28: REALVIA_MAPPING_UNKNOWN,
-  30: REALVIA_MAPPING_UNKNOWN,
-  34: REALVIA_MAPPING_UNKNOWN,
-  35: REALVIA_MAPPING_UNKNOWN,
-  37: REALVIA_MAPPING_UNKNOWN,
-  41: REALVIA_MAPPING_UNKNOWN,
-  46: REALVIA_MAPPING_UNKNOWN,
-  47: REALVIA_MAPPING_UNKNOWN,
-  48: REALVIA_MAPPING_UNKNOWN,
-  57: REALVIA_MAPPING_UNKNOWN,
-  60: REALVIA_MAPPING_UNKNOWN,
-  61: REALVIA_MAPPING_UNKNOWN,
-  65: REALVIA_MAPPING_UNKNOWN,
+  13: "Byt",
+  14: "Byt",
+  20: "Dom",
+  27: "Chata",
+  28: "Záhradný domček",
+  30: "Pozemok",
+  34: "Pozemok",
+  35: "Pozemok",
+  37: "Pozemok",
+  41: "Pozemok",
+  46: "Komerčná",
+  47: "Komerčná",
+  48: "Komerčná",
+  57: "Komerčná",
+  60: "Komerčná",
+  61: "Komerčná",
+  65: "Komerčná",
 };
 
-describe("mapCategory — honest unknown", () => {
-  it("maps every production-observed category code to the expected label", () => {
-    for (const code of PROD_CATEGORY_CODES) {
-      expect(mapCategory(code), `category ${code}`).toBe(PROD_CATEGORY_EXPECTED[code]);
+describe("mapCategory — official číselník", () => {
+  it("maps all 20 official category codes to expected types", () => {
+    const codes = Object.keys(OFFICIAL_CATEGORY_EXPECTED).map(Number);
+    expect(codes).toHaveLength(20);
+    for (const code of codes) {
+      expect(mapCategory(code), `category ${code}`).toBe(OFFICIAL_CATEGORY_EXPECTED[code]);
     }
   });
 
-  it("keeps known mappings (incl. legitimate Ostatné 19/20)", () => {
-    expect(mapCategory(11)).toBe("Byt");
-    expect(mapCategory(12)).toBe("Byt");
-    expect(mapCategory(15)).toBe("Pozemok");
-    expect(mapCategory(16)).toBe("Pozemok");
-    expect(mapCategory(17)).toBe("Komerčná");
-    expect(mapCategory(18)).toBe("Komerčná");
-    expect(mapCategory(19)).toBe("Ostatné");
-    expect(mapCategory(20)).toBe("Ostatné");
+  it("maps removed estimate codes 15–19 to Neznáme", () => {
+    for (const code of [15, 16, 17, 18, 19]) {
+      expect(mapCategory(code), `category ${code}`).toBe(REALVIA_MAPPING_UNKNOWN);
+    }
   });
 
-  it("does not map disputed 13/14 to Dom (pending číselník)", () => {
-    expect(mapCategory(13)).toBe(REALVIA_MAPPING_UNKNOWN);
-    expect(mapCategory(14)).toBe(REALVIA_MAPPING_UNKNOWN);
+  it("keeps Chata and Záhradný domček as distinct types (not Dom)", () => {
+    expect(mapCategory(27)).toBe("Chata");
+    expect(mapCategory(28)).toBe("Záhradný domček");
+    expect(mapCategory(27)).not.toBe("Dom");
+    expect(mapCategory(28)).not.toBe("Dom");
   });
 
-  it("maps unknown codes to Neznáme — never Ostatné or Predaj", () => {
-    const unknownCodes = [
-      0, 1, 9, 13, 14, 21, 27, 28, 30, 34, 35, 37, 41, 46, 47, 48, 57, 60, 61, 65, 99, 999,
-    ];
-    for (const code of unknownCodes) {
+  it("unknown codes never return Ostatné, Predaj, or Dopyt", () => {
+    for (const code of [0, 1, 15, 19, 21, 99, 999]) {
       const mapped = mapCategory(code);
-      expect(mapped, `category ${code}`).toBe(REALVIA_MAPPING_UNKNOWN);
+      expect(mapped).toBe(REALVIA_MAPPING_UNKNOWN);
       expect(mapped).not.toBe("Ostatné");
       expect(mapped).not.toBe("Predaj");
+      expect(mapped).not.toBe(REALVIA_TRANSACTION_DEMAND);
     }
   });
 });
 
-describe("mapTransaction — honest unknown", () => {
-  it("keeps known Prenájom / Dražba", () => {
-    expect(mapTransaction(124)).toBe("Prenájom");
-    expect(mapTransaction(125)).toBe("Dražba");
+describe("mapTransaction — official číselník", () => {
+  it("maps all 5 official transaction codes", () => {
+    expect(mapTransaction(122)).toBe(REALVIA_TRANSACTION_DEMAND);
+    expect(mapTransaction(123)).toBe("Prenájom");
+    expect(mapTransaction(124)).toBe("Podnájom");
+    expect(mapTransaction(125)).toBe("Výmena");
+    expect(mapTransaction(127)).toBe("Predaj");
   });
 
-  it("does not map disputed 123 to Predaj (pending číselník)", () => {
-    expect(mapTransaction(123)).toBe(REALVIA_MAPPING_UNKNOWN);
+  it("fixes live errors: 124 Podnájom, 125 Výmena (not Prenájom/Dražba)", () => {
+    expect(mapTransaction(124)).not.toBe("Prenájom");
+    expect(mapTransaction(125)).not.toBe("Dražba");
   });
 
-  it("maps unknown codes to Neznáme — never Ostatné or Predaj", () => {
-    const unknownCodes = [0, 121, 122, 123, 126, 127, 128, 999];
-    for (const code of unknownCodes) {
+  it("unknown codes never return Ostatné, Predaj, or Dopyt", () => {
+    for (const code of [0, 121, 126, 128, 999]) {
       const mapped = mapTransaction(code);
-      expect(mapped, `transaction ${code}`).toBe(REALVIA_MAPPING_UNKNOWN);
+      expect(mapped).toBe(REALVIA_MAPPING_UNKNOWN);
       expect(mapped).not.toBe("Ostatné");
       expect(mapped).not.toBe("Predaj");
+      expect(mapped).not.toBe(REALVIA_TRANSACTION_DEMAND);
     }
   });
 });
 
-describe("isRealviaMappingUnknown", () => {
-  it("detects sentinel only", () => {
+describe("roomsFromCategory", () => {
+  it("returns room labels for flat categories 9/11–14", () => {
+    expect(roomsFromCategory(9)).toBe("garsónka");
+    expect(roomsFromCategory(11)).toBe("1 izba");
+    expect(roomsFromCategory(12)).toBe("2 izby");
+    expect(roomsFromCategory(13)).toBe("3 izby");
+    expect(roomsFromCategory(14)).toBe("4 izby");
+  });
+
+  it("returns null for non-flat categories", () => {
+    expect(roomsFromCategory(20)).toBeNull();
+    expect(roomsFromCategory(27)).toBeNull();
+    expect(roomsFromCategory(30)).toBeNull();
+    expect(roomsFromCategory(46)).toBeNull();
+  });
+});
+
+describe("isDemandTransaction / isRealviaMappingUnknown", () => {
+  it("detects Dopyt sentinel", () => {
+    expect(isDemandTransaction(REALVIA_TRANSACTION_DEMAND)).toBe(true);
+    expect(isDemandTransaction("Predaj")).toBe(false);
+    expect(isDemandTransaction("")).toBe(false);
+  });
+
+  it("detects Neznáme sentinel only", () => {
     expect(isRealviaMappingUnknown(REALVIA_MAPPING_UNKNOWN)).toBe(true);
     expect(isRealviaMappingUnknown("Ostatné")).toBe(false);
     expect(isRealviaMappingUnknown("Predaj")).toBe(false);
-    expect(isRealviaMappingUnknown("")).toBe(false);
   });
 });
