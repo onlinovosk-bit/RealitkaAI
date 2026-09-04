@@ -38,11 +38,39 @@ Dôvod je v sekcii 4.
 | GA4 komponent existuje | `apps/crm/src/components/analytics/GoogleAnalytics.tsx` |
 | Je zapojený **len** do `(marketing)/layout.tsx` | dashboard / public / onboarding layouty: 0 výskytov |
 | Valuation funnel je plne inštrumentovaný | `lib/valuation/analytics.ts` → `valuation_started`, `step_completed`, `valuation_shown`, `contact_submitted`, `lead_submitted`, `abandon`; volané z `components/valuation/ValuationWidgetForm.tsx` |
-| **Na revolis.ai nie je žiadny gtag** | fetch produkcie 3.9.2026: `googletagmanager.com/gtag/js` sa nenachádza |
-| Dôsledok | `GoogleAnalytics.tsx` má na 1. riadku `if (!GA_ID) return null;` → `NEXT_PUBLIC_GA_MEASUREMENT_ID` nie je nastavené v Production. Celý funnel strieľa do prázdna. |
+| **Na revolis.ai nie je žiadny gtag** | fetch produkcie 3.9.2026: `googletagmanager.com/gtag/js` sa nenachádza — ⚠️ OPRAVENÉ, viď Erratum nižšie |
+| Dôsledok | `GoogleAnalytics.tsx` má na 1. riadku `if (!GA_ID) return null;` → `NEXT_PUBLIC_GA_MEASUREMENT_ID` nie je nastavené v Production. Celý funnel strieľa do prázdna. — ⚠️ OPRAVENÉ, viď Erratum nižšie |
 
-**Overiť pred zápisom „APPLIED":** Vercel → projekt `realitka-ai` → Settings →
-Environment Variables → prítomnosť `NEXT_PUBLIC_GA_MEASUREMENT_ID` v Production.
+### Erratum — 2026-09-04
+
+Dva riadky vyššie sú **nesprávne** a opravujú sa tu, nie mazaním.
+
+**Čo bolo tvrdené:** `NEXT_PUBLIC_GA_MEASUREMENT_ID` nie je nastavené v produkcii
+a GA4 nezbiera nič.
+
+**Prečo to bolo nesprávne:** dôkaz bol fetch domény `revolis.ai`. Projekt
+`realitka-ai` však servíruje **`app.revolis.ai`** a `realitka-ai.vercel.app`.
+`revolis.ai` je iná stránka. Meralo sa nesprávne miesto.
+
+**Overený stav (2026-09-04):**
+
+| Zistenie | Dôkaz |
+|---|---|
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID` je nastavené | Vercel → `realitka-ai` → Environment Variables, pridané 2026-07-21 |
+| GA4 na `app.revolis.ai/odhad/reality-smolko` reálne meria | founder sa videl v GA4 Prehľadoch v reálnom čase, 2026-09-04 |
+| Consent gate funguje | GA sa načíta až po kliknutí „Súhlasím so všetkými" (PR #517) |
+| GA **nie je** v `(public)` ani `(dashboard)` layoute | `grep -rln GoogleAnalytics apps/crm/src/app/` → jediný výskyt `(marketing)/layout.tsx` |
+
+**Čo z pôvodnej sekcie platí ďalej:** cookie banner naozaj nebol nikde vykreslený
+(0 importov v repe — overené v kóde, nie fetchom), takže GA bežalo bez súhlasu.
+Vlna D (PR #517) bola správna oprava.
+
+**Poučenie (AP-005):** doména v prehliadači nie je doména projektu. Pred vyhlásením
+„nemeriame" treba overiť, ktorý projekt danú doménu servíruje.
+
+**Overené 2026-09-04:** `NEXT_PUBLIC_GA_MEASUREMENT_ID` je nastavené v Production
+a meranie na `app.revolis.ai` beží. Zostáva otvorené: GA chýba v `(public)`
+a `(dashboard)` layoutoch — rieši samostatné zadanie.
 
 ---
 
