@@ -1,4 +1,7 @@
-import { isRealviaMappingUnknown } from "@/lib/realvia/map-taxonomy";
+import {
+  isDemandTransaction,
+  isRealviaMappingUnknown,
+} from "@/lib/realvia/map-taxonomy";
 
 export type ListingTaxonomyFields = {
   id: string;
@@ -7,19 +10,39 @@ export type ListingTaxonomyFields = {
   price: number;
 };
 
+export type PublicListingsPartition<T> = {
+  matched: T[];
+  unknown: T[];
+  /** Seeker ads (transaction Dopyt) — not inventory; never render on /nehnutelnosti. */
+  demand: T[];
+};
+
+function matchesTypeFilter(
+  type: string,
+  typeFilter: string | string[] | undefined,
+): boolean {
+  if (typeFilter == null) return true;
+  if (Array.isArray(typeFilter)) {
+    if (typeFilter.length === 0) return true;
+    return typeFilter.includes(type);
+  }
+  const trimmed = typeFilter.trim();
+  if (!trimmed) return true;
+  return type === trimmed;
+}
+
 /**
- * Split public listings into exact filter matches vs honest-unknown taxonomy.
- * Unknowns never pretend to be Byt/Dom/Predaj — they go to a separate section.
+ * Split public listings into exact filter matches, honest-unknown taxonomy,
+ * and demand (Dopyt) seeker ads excluded from offer inventory.
  */
 export function partitionPublicListings<T extends ListingTaxonomyFields>(
   rows: T[],
   opts: {
-    typeFilter?: string;
+    typeFilter?: string | string[];
     budgetMin?: number;
     budgetMax?: number;
   },
-): { matched: T[]; unknown: T[] } {
-  const typeFilter = opts.typeFilter?.trim() ?? "";
+): PublicListingsPartition<T> {
   const budgetMin = opts.budgetMin ?? 0;
   const budgetMax = opts.budgetMax ?? 0;
 
@@ -32,21 +55,28 @@ export function partitionPublicListings<T extends ListingTaxonomyFields>(
   const isUnknown = (p: T) =>
     isRealviaMappingUnknown(p.type) || isRealviaMappingUnknown(p.transactionType);
 
+  const demand = rows.filter(
+    (p) => inBudget(p) && isDemandTransaction(p.transactionType),
+  );
+  const demandIds = new Set(demand.map((p) => p.id));
+
   const matched = rows.filter((p) => {
+    if (demandIds.has(p.id)) return false;
     if (!inBudget(p)) return false;
     if (isUnknown(p)) return false;
-    if (typeFilter && p.type !== typeFilter) return false;
+    if (!matchesTypeFilter(p.type, opts.typeFilter)) return false;
     return true;
   });
 
   const matchedIds = new Set(matched.map((p) => p.id));
   const unknown = rows.filter((p) => {
+    if (demandIds.has(p.id)) return false;
     if (!inBudget(p)) return false;
     if (!isUnknown(p)) return false;
     return !matchedIds.has(p.id);
   });
 
-  return { matched, unknown };
+  return { matched, unknown, demand };
 }
 
 /** Honest UI label — never fog Neznáme into a typed SK label. */

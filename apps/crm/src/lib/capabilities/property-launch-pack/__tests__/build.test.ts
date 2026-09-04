@@ -42,7 +42,8 @@ describe("property-launch-pack facts", () => {
       ...REALVIA_SMOLKO_13303557,
       type: "Ostatné",
       transaction_type: "Predaj",
-      payload_raw: { advert: { category: 30, transaction: 123 } },
+      // Codes outside official číselník — must stay Neznáme (not fog to DB labels).
+      payload_raw: { advert: { category: 99, transaction: 999 } },
     };
     const facts = factsFromRealviaRow(row);
     expect(facts.type).toBe(REALVIA_MAPPING_UNKNOWN);

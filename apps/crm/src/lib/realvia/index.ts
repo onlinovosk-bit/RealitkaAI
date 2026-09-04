@@ -23,9 +23,12 @@ export {
 } from './types';
 export {
   REALVIA_MAPPING_UNKNOWN,
+  REALVIA_TRANSACTION_DEMAND,
+  isDemandTransaction,
   isRealviaMappingUnknown,
   mapCategory,
   mapTransaction,
+  roomsFromCategory,
 } from './map-taxonomy';
 export type {
   RealviaWebhookPayload,

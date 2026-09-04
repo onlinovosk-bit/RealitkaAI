@@ -10,10 +10,11 @@ const DEAL_TYPES = [
 ];
 
 const PROPERTY_TYPES = [
-  { value: "flat",       label: "Byt" },
-  { value: "house",      label: "Dom" },
-  { value: "land",       label: "Pozemok" },
-  { value: "commercial", label: "Komerčný priestor" },
+  { value: "flat",          label: "Byt" },
+  { value: "house",         label: "Dom" },
+  { value: "land",          label: "Pozemok" },
+  { value: "commercial",    label: "Komerčný priestor" },
+  { value: "recreational",  label: "Chata a rekreačné" },
 ];
 
 const TIME_HORIZONS = [

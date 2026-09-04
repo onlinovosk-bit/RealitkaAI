@@ -11,13 +11,28 @@ import { ListingClickTracker } from "@/components/sprievodca/ListingClickTracker
 
 const SPRIEVODCA_AGENCY_SLUG = "reality-smolko";
 
-// ── map buyer propertyType (EN) → SK type stored in properties table ──────────
+// ── map buyer propertyType (EN) → SK type(s) stored in properties table ───────
 const PROPERTY_TYPE_LABEL: Record<PropertyType, string> = {
   flat: "Byt",
   house: "Dom",
   land: "Pozemok",
   commercial: "Komerčný priestor",
+  recreational: "Chata a rekreačné",
 };
+
+/** Filter values for partition — recreational matches two DB types. */
+function resolveTypeFilter(propType?: PropertyType): string | string[] | undefined {
+  if (!propType) return undefined;
+  if (propType === "recreational") return ["Chata", "Záhradný domček"];
+  return PROPERTY_TYPE_LABEL[propType];
+}
+
+function listingMatchesIntentType(listingType: string, intentType: PropertyType): boolean {
+  const filter = resolveTypeFilter(intentType);
+  if (!filter) return true;
+  if (Array.isArray(filter)) return filter.includes(listingType);
+  return listingType === filter;
+}
 
 const DEAL_TYPE_LABEL: Record<string, string> = {
   buy: "Kúpa",
@@ -211,7 +226,7 @@ export default async function NehnutelnostiPage({
   const budgetMax = params.budgetMax ? Number(params.budgetMax) : 0;
   const intentId = params.intentId;
 
-  const typeFilter = propType ? PROPERTY_TYPE_LABEL[propType] : "";
+  const typeFilter = resolveTypeFilter(propType);
   const agencyId = resolvePublicListingAgencyId();
 
   const listings = await listPublicAgencyListings({ agencyId, city });
@@ -220,6 +235,7 @@ export default async function NehnutelnostiPage({
     budgetMin,
     budgetMax,
   });
+  // `demand` (Dopyt) intentionally discarded — not rendered on /nehnutelnosti.
 
   const intent = intentId ? await fetchIntent(intentId) : null;
 
@@ -229,7 +245,7 @@ export default async function NehnutelnostiPage({
       !intent.primaryCity ||
       p.location.toLowerCase().includes(intent.primaryCity.toLowerCase());
     const typeMatch =
-      !intent.propertyType || p.type === PROPERTY_TYPE_LABEL[intent.propertyType];
+      !intent.propertyType || listingMatchesIntentType(p.type, intent.propertyType);
     const budgetMatch = intent.budgetMax === 0 || p.price <= intent.budgetMax;
     return cityMatch && typeMatch && budgetMatch;
   }

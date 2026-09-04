@@ -30,6 +30,7 @@ import {
   isRealviaMappingUnknown,
   mapCategory,
   mapTransaction,
+  roomsFromCategory,
 } from '@/lib/realvia/map-taxonomy';
 
 /** Maximum jobs to process per invocation */
@@ -243,7 +244,9 @@ export async function processAdvertPayload(
       transaction_type: mappedTransaction,
       status: PROPERTY_STATUS.ACTIVE,
       location: buildLocationString(advert),
-      rooms: advert.rooms_count ? `${advert.rooms_count} izby` : '',
+      rooms: advert.rooms_count
+        ? `${advert.rooms_count} izby`
+        : (roomsFromCategory(advert.category) ?? ""),
       rooms_count: advert.rooms_count ?? null,
       floor: advert.floor ?? null,
       usable_area: advert.usable_area ?? null,

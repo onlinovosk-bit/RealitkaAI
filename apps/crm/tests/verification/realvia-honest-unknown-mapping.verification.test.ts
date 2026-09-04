@@ -17,11 +17,21 @@ describe("[verification] Realvia honest unknown mapping", () => {
     expect(src).not.toMatch(/\?\?\s*['\"]Predaj['\"]/);
   });
 
-  it("disputed category 13/14 and transaction 123 are not known Dom/Predaj", () => {
+  it("disputed Dom inventing on 13/14 is gone — official číselník maps them to Byt", () => {
     const src = read("src/lib/realvia/map-taxonomy.ts");
     expect(src).not.toMatch(/\b13\s*:\s*['\"]Dom['\"]/);
     expect(src).not.toMatch(/\b14\s*:\s*['\"]Dom['\"]/);
+    expect(src).toMatch(/\b13\s*:\s*['\"]Byt['\"]/);
+    expect(src).toMatch(/\b14\s*:\s*['\"]Byt['\"]/);
+  });
+
+  it("transaction 123 is Prenájom (not invented Predaj); 124 Podnájom; 125 Výmena", () => {
+    const src = read("src/lib/realvia/map-taxonomy.ts");
     expect(src).not.toMatch(/\b123\s*:\s*['\"]Predaj['\"]/);
+    expect(src).toMatch(/\b123\s*:\s*['\"]Prenájom['\"]/);
+    expect(src).toMatch(/\b124\s*:\s*['\"]Podnájom['\"]/);
+    expect(src).toMatch(/\b125\s*:\s*['\"]Výmena['\"]/);
+    expect(src).not.toMatch(/\b125\s*:\s*['\"]Dražba['\"]/);
   });
 
   it("processQueue delegates to map-taxonomy (no local fog fallback)", () => {
