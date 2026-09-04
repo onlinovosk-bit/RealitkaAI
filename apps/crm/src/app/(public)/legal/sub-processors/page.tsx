@@ -15,7 +15,7 @@ const list = [
   {
     name: "Google Analytics",
     country: "USA",
-    purpose: "Anonymizovaná analytika webu",
+    purpose: "Analytika webu vrátane identifikátora relácie na priradenie dopytu",
     guarantee: "SCC",
   },
 ];
