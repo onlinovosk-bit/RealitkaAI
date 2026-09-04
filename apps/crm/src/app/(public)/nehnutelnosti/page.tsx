@@ -6,6 +6,10 @@ import {
   publicListingTypeLabel,
 } from "@/lib/public-listings-partition";
 import type { PropertySearchParams, BuyerIntent, PropertyType } from "@/lib/buyer-intent";
+import { NehnutelnostiAnalytics } from "@/components/sprievodca/NehnutelnostiAnalytics";
+import { ListingClickTracker } from "@/components/sprievodca/ListingClickTracker";
+
+const SPRIEVODCA_AGENCY_SLUG = "reality-smolko";
 
 // ── map buyer propertyType (EN) → SK type stored in properties table ──────────
 const PROPERTY_TYPE_LABEL: Record<PropertyType, string> = {
@@ -118,9 +122,13 @@ async function fetchIntent(intentId: string): Promise<BuyerIntent | null> {
 function PropertyCard({
   property,
   highlighted,
+  agencySlug,
+  listingPosition,
 }: {
   property: PublicListing;
   highlighted: boolean;
+  agencySlug: string;
+  listingPosition: number;
 }) {
   const typeLabel = publicListingTypeLabel(property.type);
   const roomsLabel = property.rooms.trim();
@@ -175,12 +183,14 @@ function PropertyCard({
             {property.status}
           </p>
         </div>
-        <Link
+        <ListingClickTracker
+          agencySlug={agencySlug}
+          listingPosition={listingPosition}
           href={`/properties/${property.id}`}
           className="rounded-xl bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors"
         >
           Detail →
-        </Link>
+        </ListingClickTracker>
       </div>
     </div>
   );
@@ -256,6 +266,13 @@ export default async function NehnutelnostiPage({
       </div>
 
       <div className="mx-auto max-w-5xl px-6 py-8">
+        <NehnutelnostiAnalytics
+          agencySlug={SPRIEVODCA_AGENCY_SLUG}
+          matchedCount={sortedMatched.length}
+          unknownCount={sortedUnknown.length}
+          dealType={dealType ?? ""}
+          propertyType={propType ?? ""}
+        />
         {intent && (
           <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1">
@@ -316,8 +333,14 @@ export default async function NehnutelnostiPage({
           <>
             {sortedMatched.length > 0 ? (
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {sortedMatched.map((p) => (
-                  <PropertyCard key={p.id} property={p} highlighted={isHighlighted(p)} />
+                {sortedMatched.map((p, index) => (
+                  <PropertyCard
+                    key={p.id}
+                    property={p}
+                    highlighted={isHighlighted(p)}
+                    agencySlug={SPRIEVODCA_AGENCY_SLUG}
+                    listingPosition={index}
+                  />
                 ))}
               </div>
             ) : (
@@ -337,8 +360,14 @@ export default async function NehnutelnostiPage({
                   Typ alebo druh transakcie ešte nie je potvrdený — nezahadzujeme ich z výpisu.
                 </p>
                 <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                  {sortedUnknown.map((p) => (
-                    <PropertyCard key={p.id} property={p} highlighted={false} />
+                  {sortedUnknown.map((p, index) => (
+                    <PropertyCard
+                      key={p.id}
+                      property={p}
+                      highlighted={false}
+                      agencySlug={SPRIEVODCA_AGENCY_SLUG}
+                      listingPosition={sortedMatched.length + index}
+                    />
                   ))}
                 </div>
               </section>
