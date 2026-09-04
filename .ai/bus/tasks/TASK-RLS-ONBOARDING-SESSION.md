@@ -1,7 +1,7 @@
 # TASK-RLS-ONBOARDING-SESSION — zatvoriť `Allow anon access`
 
 **Status:** PR open (Path B) — migration PREPARED, NOT applied  
-**PR:** (filled after gh pr create)  
+**PR:** https://github.com/onlinovosk-bit/RealitkaAI/pull/534  
 **Branch:** `security/rls-onboarding-session`  
 **Report:** `docs/reports/2026-09-04-rls-onboarding-session-api.md`
 

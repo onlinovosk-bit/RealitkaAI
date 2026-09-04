@@ -53,7 +53,7 @@ without breaking public onboarding progress sync.
 - [x] Rollback runbook exists
 - [x] Report in `docs/reports/`
 - [ ] Founder applies migration after GO
-- [ ] PR open (filled after create)
+- [x] PR open: https://github.com/onlinovosk-bit/RealitkaAI/pull/534
 
 ## Verification run (local)
 
