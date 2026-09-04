@@ -87,9 +87,27 @@ CREATE POLICY "pipeline_moves_tenant_write"
   );
 
 -- ═══════════════════════════════════════════════════════════════════════════
+-- 6. lead_assignment_rules — ZRUŠIŤ (audit #12–15; reclassified 2026-09-04)
+--    0 rows, no agency_id, feature not in production use. Close open demo_* now;
+--    tenant policies land later with agency_id schema when the feature is revived.
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- Audit #12 ZRUŠIŤ — demo_select_lead_assignment_rules
+DROP POLICY IF EXISTS "demo_select_lead_assignment_rules" ON public.lead_assignment_rules;
+
+-- Audit #13 ZRUŠIŤ — demo_insert_lead_assignment_rules
+DROP POLICY IF EXISTS "demo_insert_lead_assignment_rules" ON public.lead_assignment_rules;
+
+-- Audit #14 ZRUŠIŤ — demo_update_lead_assignment_rules
+DROP POLICY IF EXISTS "demo_update_lead_assignment_rules" ON public.lead_assignment_rules;
+
+-- Audit #15 ZRUŠIŤ — demo_delete_lead_assignment_rules
+DROP POLICY IF EXISTS "demo_delete_lead_assignment_rules" ON public.lead_assignment_rules;
+
+-- ═══════════════════════════════════════════════════════════════════════════
 -- NOT TOUCHED in this migration
--- - onboarding_sessions "Allow anon access" — PRESUNÚŤ NA SERVER (audit #8)
--- - lead_assignment_rules demo_* — NEJASNÉ, no agency_id (audit #12–15)
+-- - onboarding_sessions "Allow anon access" — needs session_id-scoped policy
+--   (separate task TASK-RLS-ONBOARDING-SESSION; not indefinite PRESUNÚŤ)
 -- ═══════════════════════════════════════════════════════════════════════════
 
 COMMIT;

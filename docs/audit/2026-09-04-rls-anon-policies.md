@@ -39,10 +39,10 @@
 | 9 | `matches_anon_legacy_all` | lead_property_matches | ALL | `migrations-archive/20260412_enterprise_realtime_audit_rls.sql:433` | Nie pre anon. Store po logine; existujú `lead_property_matches_agency` / `matches_*_agency` | `matching-store.ts` + `pg_policies` | **ZRUŠIŤ** |
 |10 | `demo_select_pipeline_moves` | pipeline_moves | SELECT | `supabase/03_pipeline_moves.sql:15` (voľný SQL) | Áno pre **authenticated** dashboard (jediné politiky na tabuľke sú demo_* aj pre anon) | `leads-store.ts:1361,1376`; `pg_policies` — žiadna tenant politika | **NAHRADIŤ** |
 |11 | `demo_insert_pipeline_moves` | pipeline_moves | INSERT | `03_pipeline_moves.sql:21` | Áno (rovnaké) | rovnaké | **NAHRADIŤ** |
-|12 | `demo_select_lead_assignment_rules` | lead_assignment_rules | SELECT | `supabase/13_add_lead_assignment_rules.sql:23` (voľný SQL) | Áno pre authenticated UI, ale tabuľka **nemá `agency_id`** | `lead-automation-store.ts:175+`; schema: `profile_ids[]` bez agency | **NEJASNÉ** |
-|13 | `demo_insert_lead_assignment_rules` | lead_assignment_rules | INSERT | `13_add_lead_assignment_rules.sql:26` | Áno / schema gap | rovnaké | **NEJASNÉ** |
-|14 | `demo_update_lead_assignment_rules` | lead_assignment_rules | UPDATE | `13_add_lead_assignment_rules.sql:29` | Áno / schema gap | rovnaké | **NEJASNÉ** |
-|15 | `demo_delete_lead_assignment_rules` | lead_assignment_rules | DELETE | `13_add_lead_assignment_rules.sql:32` | Áno / schema gap | rovnaké | **NEJASNÉ** |
+|12 | `demo_select_lead_assignment_rules` | lead_assignment_rules | SELECT | `supabase/13_add_lead_assignment_rules.sql:23` (voľný SQL) | Nie v prevádzke — 0 riadkov, bez `agency_id`; UI nemá čo zobraziť | `lead-automation-store.ts` existuje, ale tabuľka prázdna; tenant politika až so schémou | **ZRUŠIŤ** (reklasifikované 2026-09-04) |
+|13 | `demo_insert_lead_assignment_rules` | lead_assignment_rules | INSERT | `13_add_lead_assignment_rules.sql:26` | Nie v prevádzke (0 riadkov) | rovnaké | **ZRUŠIŤ** |
+|14 | `demo_update_lead_assignment_rules` | lead_assignment_rules | UPDATE | `13_add_lead_assignment_rules.sql:29` | Nie v prevádzke (0 riadkov) | rovnaké | **ZRUŠIŤ** |
+|15 | `demo_delete_lead_assignment_rules` | lead_assignment_rules | DELETE | `13_add_lead_assignment_rules.sql:32` | Nie v prevádzke (0 riadkov) | rovnaké | **ZRUŠIŤ** |
 
 ## Detail podľa závažnosti
 
@@ -82,11 +82,11 @@
 - Drop bez náhrady by zlomil `leads-store` zápis histórie statusov.
 - Náhrada: tenant SELECT/INSERT cez `lead_id → leads.agency_id` + `profile_agencies_for_auth()` (vzor `activities_tenant_*`).
 
-### 5c. lead_assignment_rules (NEJASNÉ ×4)
+### 5c. lead_assignment_rules (ZRUŠIŤ ×4 — reklasifikované)
 
-- Demo politiky sú jediné; UI ich potrebuje po logine.
-- Tabuľka **nemá `agency_id`** — nie je čistý tenant USING bez schémy alebo nebezpečného `authenticated USING (true)` (cross-tenant medzi agentúrami).
-- **Migrácia sa týchto 4 politík nedotýka.** Otázka v inboxe.
+- 0 riadkov, bez `agency_id`, feature nie je v prevádzke.
+- Zrušenie open demo_* nezlomí UI, ktoré nemá dáta; tenant politika sa píše až pri oživení so schémou `agency_id`.
+- Founder GO 2026-09-04: NEJASNÉ → ZRUŠIŤ.
 
 ## Governance: voľné `.sql` mimo `migrations/`
 
@@ -132,10 +132,10 @@ Politiky **bez akéhokoľvek zdroja v repe:** `properties_anon_insert`, `Allow a
 
 | Verdikt | Počet | V `*_drop_open_anon_policies.sql` |
 |---|---:|---|
-| ZRUŠIŤ | 9 | `DROP POLICY IF EXISTS` |
+| ZRUŠIŤ | 13 | `DROP POLICY IF EXISTS` (vrátane `lead_assignment_rules`) |
 | NAHRADIŤ | 2 | DROP demo + CREATE tenant SELECT/INSERT na `pipeline_moves` |
-| PRESUNÚŤ NA SERVER | 1 | **nedotýka sa** |
-| NEJASNÉ | 4 | **nedotýka sa** |
+| PRESUNÚŤ / follow-up | 1 | `onboarding_sessions` → `TASK-RLS-ONBOARDING-SESSION` |
+| NEJASNÉ | 0 | — |
 
 **Migrácia nie je a nesmie byť spustená týmto agentom.**
 

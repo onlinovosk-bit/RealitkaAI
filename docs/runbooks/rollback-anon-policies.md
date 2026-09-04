@@ -59,8 +59,27 @@ DROP POLICY IF EXISTS "demo_insert_pipeline_moves" ON public.pipeline_moves;
 CREATE POLICY "demo_insert_pipeline_moves"
   ON public.pipeline_moves FOR INSERT TO anon, authenticated WITH CHECK (true);
 
+
+-- lead_assignment_rules demo (restored if this wave also dropped them)
+DROP POLICY IF EXISTS "demo_select_lead_assignment_rules" ON public.lead_assignment_rules;
+CREATE POLICY "demo_select_lead_assignment_rules"
+  ON public.lead_assignment_rules FOR SELECT TO anon, authenticated USING (true);
+
+DROP POLICY IF EXISTS "demo_insert_lead_assignment_rules" ON public.lead_assignment_rules;
+CREATE POLICY "demo_insert_lead_assignment_rules"
+  ON public.lead_assignment_rules FOR INSERT TO anon, authenticated WITH CHECK (true);
+
+DROP POLICY IF EXISTS "demo_update_lead_assignment_rules" ON public.lead_assignment_rules;
+CREATE POLICY "demo_update_lead_assignment_rules"
+  ON public.lead_assignment_rules FOR UPDATE TO anon, authenticated USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "demo_delete_lead_assignment_rules" ON public.lead_assignment_rules;
+CREATE POLICY "demo_delete_lead_assignment_rules"
+  ON public.lead_assignment_rules FOR DELETE TO anon, authenticated USING (true);
+
 COMMIT;
+
 ```
 
-Politiky **nedotknuté** migráciou (`Allow anon access`, `demo_*_lead_assignment_rules`)
-rollback nepotrebujú.
+Politika **nedotknutá** migráciou (`Allow anon access` na `onboarding_sessions`)
+rollback nepotrebuje.
