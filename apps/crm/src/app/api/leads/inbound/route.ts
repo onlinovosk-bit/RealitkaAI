@@ -117,9 +117,10 @@ export async function POST(request: Request) {
         phone: input.phone.slice(0, 50),
         location: "",
         budget: "",
-        property_type: "Byt",
+        // Form does not ask — never invent (AP-001). Same pattern as Sprievodca rooms fix (#523).
+        property_type: "",
         rooms: "",
-        financing: "Hypotéka",
+        financing: "",
         timeline: "",
         source: "web_form",
         status: "Nový",
