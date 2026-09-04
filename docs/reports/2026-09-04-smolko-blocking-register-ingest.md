@@ -44,6 +44,16 @@ Teda opak varovania z registra: história tvrdí, že migrácia je zapísaná, o
 - SMO-B04: inventory 132 ≠ tenancy PASS; #522 pomáha CODE vrstve.
 - SMO-B07: tabuľka ABSENT + history drift → booking `BLOCKED`, migrácia nie je „hotová“.
 
+## Architecture ingest (follow-up)
+
+Full **Property Revenue System v1** (PROPOSED/VALIDATE) landed in:
+
+- `docs/architecture/reality-smolko-property-revenue-system-v1.md`
+- prior #510 row overlay preserved as `…-v1-data-overlay.md`
+- blockers alias: `docs/briefs/reality-smolko-production-blockers-2026-09-04.md`
+
+**Kontrolór amendment vs. draft §8.3:** draft tvrdil „migrácia nie je v produkčnej histórii“ — **nepravda**. História `20260527143000` je zapísaná; tabuľka ABSENT. Architektúra opravená na drift wording.
+
 ## Ďalší krok (návrh, BRÁNA)
 
 ĎALŠIA ÚLOHA: Founder/Product — držať poradie B01 → B04; Engineering — PROD negative test pre #522 (SMO-B04).  
