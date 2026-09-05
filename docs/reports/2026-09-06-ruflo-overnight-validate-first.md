@@ -22,3 +22,6 @@ W0 READY · W1 A/B/C PASS_WITH_CONDITIONS · W2 D/E PASS · W3 F/G PASS · W4 H/
 
 ## Founder next
 See `final/human-decisions.md`.
+
+## Post-close reconcile
+- W1 workers ([A](62cf1bdf-f8c2-4966-89c8-3e1709bcbfae)/[B](b801fc39-0846-42fe-b988-e585db6dca99)/[C](b8b31b4b-9d33-4249-bd1f-12ee501f4660)): see `output/overnight/2026-09-05T2308-CEST-research/amendments/w1-worker-reconcile.md`. Verdict unchanged VALIDATE_FIRST.

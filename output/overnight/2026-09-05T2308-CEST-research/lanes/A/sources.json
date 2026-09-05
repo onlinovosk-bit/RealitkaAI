@@ -2,7 +2,7 @@
   {
     "claim": "CRM has 102 SQL migration files",
     "path": "apps/crm/supabase/migrations",
-    "lines_or_note": "Get-ChildItem *.sql | Measure-Object → Count=102",
+    "lines_or_note": "Get-ChildItem *.sql Count=102",
     "evidence_type": "CODE_PRESENT"
   },
   {
@@ -12,19 +12,19 @@
     "evidence_type": "CODE_PRESENT"
   },
   {
-    "claim": "scheduled_events table supports viewing event_type with agency RLS",
+    "claim": "scheduled_events supports viewing with agency RLS",
     "path": "apps/crm/supabase/migrations/20260527143000_event_scheduler_phase1.sql",
-    "lines_or_note": "lines ~1-58: create scheduled_events; event_type viewing|meeting|call|reminder|other; policy scheduled_events_agency",
+    "lines_or_note": "create scheduled_events; event_type viewing|meeting|call|reminder|other; policy scheduled_events_agency",
     "evidence_type": "CODE_PRESENT"
   },
   {
-    "claim": "Agency billing columns + credit_ledger exist in migrations",
+    "claim": "Agency billing columns + credit_ledger in migrations",
     "path": "apps/crm/supabase/migrations/20260602_agency_billing_and_credits.sql",
     "lines_or_note": "ALTER agencies ADD account_tier; CREATE credit_ledger",
     "evidence_type": "CODE_PRESENT"
   },
   {
-    "claim": "Latest anon/RLS hardening migrations present by filename",
+    "claim": "Latest anon/RLS hardening migrations by filename",
     "path": "apps/crm/supabase/migrations/20260904150000_drop_open_anon_policies.sql",
     "lines_or_note": "also 20260904220000_drop_onboarding_sessions_anon_all.sql; 20260830231500_profiles_guard_role_agency.sql; 20260831233000_profiles_guard_account_tier_ui_role.sql",
     "evidence_type": "CODE_PRESENT"
@@ -32,115 +32,115 @@
   {
     "claim": "Auth/tenant resolution includes agency_id on CurrentProfile",
     "path": "apps/crm/src/lib/auth.ts",
-    "lines_or_note": "CurrentProfile.agency_id; resolveProfileForAuthUser; ~lines 58-164",
+    "lines_or_note": "CurrentProfile.agency_id; resolveProfileForAuthUser ~lines 58-164",
     "evidence_type": "CODE_PRESENT"
   },
   {
     "claim": "226 API route.ts handlers under apps/crm/src/app/api",
     "path": "apps/crm/src/app/api",
-    "lines_or_note": "recursive Get-ChildItem -Filter route.ts → 226; top-level dirs include auth, profiles, properties, leads, activities, billing, cron, realvia, scheduled-events",
+    "lines_or_note": "recursive route.ts count=226; dirs include auth, profiles, properties, leads, activities, billing, cron, realvia, scheduled-events",
     "evidence_type": "CODE_PRESENT"
   },
   {
-    "claim": "Leads API surface is multi-route (list, inventory, id, activities, deal-strategy, …)",
+    "claim": "Leads API surface is multi-route",
     "path": "apps/crm/src/app/api/leads",
-    "lines_or_note": "route trees: leads, inventory, [id], activities, deal-strategy, matches, assistant, sales-brain, sofia, bri-*",
+    "lines_or_note": "leads, inventory, [id], activities, deal-strategy, matches, assistant, sales-brain, sofia, bri-*",
     "evidence_type": "CODE_PRESENT"
   },
   {
     "claim": "Properties API reads/writes public.properties",
     "path": "apps/crm/src/app/api/properties/route.ts",
-    "lines_or_note": "lines ~78-89: supabase.from(\"properties\").update/delete",
+    "lines_or_note": "~78-89 supabase.from('properties').update/delete",
     "evidence_type": "CODE_PRESENT"
   },
   {
-    "claim": "Activities store uses public.activities table",
+    "claim": "Activities store uses public.activities",
     "path": "apps/crm/src/lib/activities-store.ts",
-    "lines_or_note": "lines ~59,142: .from(\"activities\")",
+    "lines_or_note": "~59,142 .from('activities')",
     "evidence_type": "CODE_PRESENT"
   },
   {
-    "claim": "Contacts are property-derived fallback, not dedicated contacts API",
+    "claim": "Contacts are property-derived fallback, not dedicated API",
     "path": "apps/crm/src/lib/leads/contacts-fallback.ts",
-    "lines_or_note": "PropertyContactRow broker/owner fields → contact key; no apps/crm/src/app/api/contacts tree found",
+    "lines_or_note": "PropertyContactRow broker/owner fields; no /api/contacts tree",
     "evidence_type": "CODE_PRESENT"
   },
   {
-    "claim": "Deals semantics via deal-trigger + lead statuses; ai_sourced_deals table exists",
+    "claim": "Deals via deal-trigger + lead statuses; ai_sourced_deals exists; no public.deals",
     "path": "apps/crm/src/lib/agents/deal-trigger.ts",
-    "lines_or_note": "OPEN_DEAL_STATUSES; activities insert; paired with migration 20260411_performance_fee.sql CREATE ai_sourced_deals; no public.deals CREATE found",
+    "lines_or_note": "OPEN_DEAL_STATUSES; paired migration 20260411_performance_fee.sql CREATE ai_sourced_deals",
     "evidence_type": "CODE_PRESENT"
   },
   {
-    "claim": "program-tier-pricing is CODE_PRESENT pricing source of truth",
+    "claim": "program-tier-pricing is pricing SoT",
     "path": "apps/crm/src/lib/program-tier-pricing.ts",
-    "lines_or_note": "exports PLAN_PRICES_EUR, SEAT_TIERS, COCKPIT_PRODUCTS, CREDIT_ACTION_COSTS, TOPUP_PACKAGES (~308 lines)",
+    "lines_or_note": "PLAN_PRICES_EUR, SEAT_TIERS, COCKPIT_PRODUCTS, CREDIT_ACTION_COSTS, TOPUP_PACKAGES",
     "evidence_type": "CODE_PRESENT"
   },
   {
-    "claim": "Billing APIs and credits verification exist",
+    "claim": "Billing APIs + credits verification exist",
     "path": "apps/crm/src/app/api/billing",
-    "lines_or_note": "checkout, checkout-config, credits/checkout, plan, portal, redeem-code, webhook; test apps/crm/tests/verification/billing-credits.verification.test.ts",
+    "lines_or_note": "checkout, plan, portal, webhook, credits; tests/verification/billing-credits.verification.test.ts",
     "evidence_type": "TEST_EVIDENCE"
   },
   {
-    "claim": "Phone/call audit path: analyze + persist to activities + first-audit",
+    "claim": "Phone/call audit path: analyze + persist + first-audit",
     "path": "apps/crm/src/lib/workflows/call-analysis-persist.ts",
-    "lines_or_note": "persistCallAnalysisToCrm inserts activities type Hovor source ai_call_analyze; APIs ai/call/analyze|transcribe; dashboard call-analyzer; workdesk first-audit",
+    "lines_or_note": "activities type Hovor source ai_call_analyze; APIs ai/call/analyze|transcribe; dashboard call-analyzer; workdesk first-audit",
     "evidence_type": "CODE_PRESENT"
   },
   {
-    "claim": "Call analyzer and first-audit have verification tests",
+    "claim": "Call analyzer and first-audit verification tests",
     "path": "apps/crm/tests/verification/call-analyzer.verification.test.ts",
-    "lines_or_note": "also first-audit.verification.test.ts; fixtures under tests/fixtures/call-transcripts",
+    "lines_or_note": "also first-audit.verification.test.ts; fixtures tests/fixtures/call-transcripts",
     "evidence_type": "TEST_EVIDENCE"
   },
   {
-    "claim": "Portal adapters: Realvia lib + Nehnutelnosti source + bazos/portal parsers",
+    "claim": "Portal adapters Realvia + Nehnutelnosti + bazos/portal parsers",
     "path": "apps/crm/src/lib/realvia",
-    "lines_or_note": "processQueue, resolveAgency, webhookStore; infra/scraping/PortalNehnutelnostiSource.ts; lib/arbitrage/parsers/{bazos,portal}-parser.ts; APIs realvia/import, webhooks/realvia, integrations/portal/import",
+    "lines_or_note": "processQueue, resolveAgency; PortalNehnutelnostiSource.ts; arbitrage parsers; APIs realvia/import, webhooks/realvia, integrations/portal/import",
     "evidence_type": "CODE_PRESENT"
   },
   {
-    "claim": "Realvia agency scoping has verification evidence",
+    "claim": "Realvia agency scoping verification",
     "path": "apps/crm/tests/verification/realvia-agency-scoped-source.verification.test.ts",
     "lines_or_note": "also realvia-honest-unknown-mapping.verification.test.ts",
     "evidence_type": "TEST_EVIDENCE"
   },
   {
-    "claim": "27 cron route handlers; 16 vercel.json cron schedules",
+    "claim": "27 cron handlers; 16 vercel.json schedules",
     "path": "apps/crm/vercel.json",
-    "lines_or_note": "crons paths: pulse, bri-snapshot, seller-rescue, morning-brief, lead-ai-triage, follow-up-sweep, dashboard-insights×2, arbitrage-scan, price-trail-sync, heartbeat-check, customer-health, guardian-run, guardian-digest, notification-digest, credits-cycle; handlers under src/app/api/cron = 27",
+    "lines_or_note": "16 cron paths listed; src/app/api/cron route.ts count=27",
     "evidence_type": "CODE_PRESENT"
   },
   {
-    "claim": "Profiles role/agency guard has verification test",
+    "claim": "Profiles role/agency guard verification",
     "path": "apps/crm/tests/verification/profiles-role-agency-guard.verification.test.ts",
-    "lines_or_note": "pairs with migrations profiles_guard_role_agency / account_tier_ui_role",
+    "lines_or_note": "pairs with profiles_guard_* migrations",
     "evidence_type": "TEST_EVIDENCE"
   },
   {
     "claim": "AGENTS.md references missing revolis-builder.mdc",
     "path": "apps/crm/AGENTS.md",
-    "lines_or_note": "Pred implementáciou step 2 → .cursor/rules/revolis-builder.mdc; Test-Path worktree and parent depth-5 search = False",
+    "lines_or_note": "step 2 -> .cursor/rules/revolis-builder.mdc; Test-Path False worktree+parent",
     "evidence_type": "DOCUMENTED_DRIFT"
   },
   {
-    "claim": "Worktree .cursor/rules lacks revolis-builder but has revolis-api/db/ui and l99-*",
+    "claim": "Worktree .cursor/rules lacks revolis-builder",
     "path": ".cursor/rules",
-    "lines_or_note": "present: architecture, l99-agent-operating-standard, l99-engineering-constitution, l99-golden-rule, l99-master-prompt-ref, l99-prime-directive, l99-repo-is-comms-channel, l99-role-and-quality-standard, revolis-api, revolis-db, revolis-ui, workflow",
+    "lines_or_note": "has architecture, l99-*, revolis-api/db/ui, workflow — not revolis-builder.mdc",
     "evidence_type": "DOCUMENTED_DRIFT"
   },
   {
-    "claim": "BASE_SHA cf360461 is ancestor of worktree HEAD 4ebb91fba",
+    "claim": "BASE_SHA is ancestor of worktree HEAD",
     "path": "git",
-    "lines_or_note": "git merge-base --is-ancestor cf360461… HEAD → exit 0; HEAD docs: prepare Ruflo overnight swarm handoff",
+    "lines_or_note": "merge-base --is-ancestor cf360461... HEAD exit 0; HEAD 4ebb91fba docs prep",
     "evidence_type": "CODE_PRESENT"
   },
   {
-    "claim": "Production apply/liveness of migrations, crons, Stripe, portals, call-analyzer is unproven in this lane",
+    "claim": "Production apply/liveness unproven this lane",
     "path": "N/A",
-    "lines_or_note": "No remote Supabase/Vercel/Stripe queries executed; all marked PROD_UNKNOWN by policy",
+    "lines_or_note": "No remote Supabase/Vercel/Stripe queries; PROD_UNKNOWN by policy",
     "evidence_type": "PROD_UNKNOWN"
   }
 ]
