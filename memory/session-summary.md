@@ -1,12 +1,14 @@
-## Session 2026-09-05 (PR #535 babysit — final)
+## Session 2026-09-05 (PR #535 fix-merge-conflicts)
 ### Dokončené
-- In-scope contract fix on notification-digest; pushed + CI Lint/test/build green
-- Report finalized: `docs/reports/2026-09-05-pr535-babysit-contract.md`
+- Merged `origin/main` into `feat/b18-notification-delivery` (clean; coordinated with concurrent babysitter merge `ec4c87af`)
+- Step 6: mandatory `api-validate` + `usage-metrics` imports on `onboarding/session` → ratchet NOVÉ=0
+- Report: `docs/reports/2026-09-05-pr535-fix-merge-conflicts.md`
+- Pushed `0c7a8bf8` — did not merge PR; notification-digest untouched
 ### Rozpracované / Pending
-- Out-of-scope: Code Contract Guard red on onboarding/session from #534/main
-- Founder: merge #535 vs follow-up onboarding contract PR; then PROD smoke digest
+- CI re-run on `0c7a8bf8` (ratchet + Lint/test/build)
+- Founder: merge #535 after green checks; PROD smoke digest
 ### Kľúčové súbory zmenené
-- `apps/crm/src/app/api/cron/notification-digest/route.ts`
-- `docs/reports/2026-09-05-pr535-babysit-contract.md`
+- `apps/crm/src/app/api/onboarding/session/route.ts`: contract imports only
+- `docs/reports/2026-09-05-pr535-fix-merge-conflicts.md`: conflict report
 ### Ďalší krok
-GO: follow-up PR fixing onboarding session api-validate + usage-metrics on main (unblocks ratchet for all PRs).
+GO: after CI green on `0c7a8bf8`, founder merges #535 (no agent merge).
