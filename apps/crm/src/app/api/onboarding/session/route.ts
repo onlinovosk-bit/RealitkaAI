@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { errorResponse, okResponse } from "@/lib/api-response";
+import { validateBody } from "@/lib/api-validate";
 import { isOnboardingSessionId } from "@/lib/onboarding/session-api";
 import { rateLimit } from "@/lib/rate-limit";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
+import { incrementUsageMetric } from "@/lib/usage-metrics";
 
 export const runtime = "nodejs";
 
