@@ -1,57 +1,34 @@
-# 2026-09-05 — PR #535 babysit (Code Contract Guard)
+# 2026-09-05 — PR #535 babysit (final)
 
 ## Final verdict
 
-**Not fully green.** Required-ish CI for this PR’s own code is healthy (`Lint, test, build` **pass**).  
-**Out-of-scope blocker remains:** `Zmluva kódu (ratchet)` fails solely on `onboarding/session` inherited from `main` / #534.
+**Merge-ready (CI green + `mergeStateStatus: CLEAN`).** Agent did **not** merge.
+
+Tip: `bbf42a4f` on `feat/b18-notification-delivery` · base `main` (0 behind).
 
 | Check | Result |
 |-------|--------|
-| Lint, test, build | **pass** (run 33989298053, 8m5s) |
-| Zmluva kódu (ratchet) | **fail** — 2 NOVÉ, both onboarding/session |
+| Lint, test, build | **pass** (run 33990292088, 7m46s) |
+| Zmluva kódu (ratchet) | **pass** (run 33990292080) — 0 NOVÉ |
 | Memory Engine | pass |
 | Vercel realitka-ai / marketing | pass |
-| Snyk / Auto-merge robot | pass |
+| Snyk | pass |
 | Unresolved review threads | **0** |
 | `mergeable` | MERGEABLE |
-| `mergeStateStatus` | UNSTABLE (failing ratchet) |
+| `mergeStateStatus` | CLEAN |
 
-Head: `618acabd` on `feat/b18-notification-delivery`.
+## What was fixed
 
-## Unresolved review comments
+1. **In-scope (this babysit):** `apps/crm/src/app/api/cron/notification-digest/route.ts` — `okResponse`/`errorResponse` + `incrementUsageMetric` (cleared PR-owned ratchet debt).
+2. **Inherited from #534/main (fixed on this branch by concurrent Cursor agent):** `apps/crm/src/app/api/onboarding/session/route.ts` — import-only `@/lib/api-validate` + `@/lib/usage-metrics` (`0c7a8bf8`) so ratchet could go green after main merge. Local `check-api-contract.mjs --ci` → **NOVÉ: 0**.
+3. **Up-to-date:** merged `main` (ONL-MCP-002 docs / #477) to clear `BEHIND`.
 
-None.
+## Evidence
 
-## Fixed in this PR (in scope)
-
-`apps/crm/src/app/api/cron/notification-digest/route.ts`:
-
-- `@/lib/api-response` → `okResponse` / `errorResponse`
-- `@/lib/usage-metrics` → `incrementUsageMetric` (`cron_notification_digest`)
-- Unit test mocks updated
-
-Proof: CI ratchet log no longer mentions `notification-digest` (only onboarding).
-
-## Remaining blocker (out of scope — do not expand #535)
-
-From CI run `33989298074`:
-
-```
-NOVÉ porušenia: 2
-apps/crm/src/app/api/onboarding/session/route.ts
-  chýba: @/lib/usage-metrics (incrementUsageMetric)
-apps/crm/src/app/api/onboarding/session/route.ts
-  chýba: @/lib/api-validate (validateBody / validateQuery)
-```
-
-Evidence this is from main/#534, not this PR:
-
-- `git diff origin/main -- apps/crm/src/app/api/onboarding/session/route.ts` → **0 lines**
-- File not in this PR’s changedFiles
-- PR #534 itself had failing Code Contract Guard and was merged
-
-**Founder unblock:** separate follow-up PR on `main` for onboarding contract imports, **or** merge #535 accepting known ratchet red (precedent #534) if branch protection does not require that check.
+- Contract was only onboarding after digest fix; identical to `main` until import fix.
+- After onboarding imports: CI ratchet **pass**; Lint/test/build **pass** on tip.
+- PR URL: https://github.com/onlinovosk-bit/RealitkaAI/pull/535
 
 ## STOP
 
-Agent did **not** merge. No CI workflow edits. No onboarding scope expansion.
+Do not merge from agent. No CI workflow edits. Founder merge + PROD smoke digest next.
