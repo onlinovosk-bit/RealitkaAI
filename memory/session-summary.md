@@ -1,14 +1,12 @@
-## Session 2026-09-05 (PR #535 babysit)
+## Session 2026-09-05 (PR #535 babysit — final)
 ### Dokončené
-- In-scope Code Contract fix: `notification-digest` uses api-response + usage-metrics (`c522ba1b`)
-- Report: `docs/reports/2026-09-05-pr535-babysit-contract.md`
-- Unresolved PR review threads: none
+- In-scope contract fix on notification-digest; pushed + CI Lint/test/build green
+- Report finalized: `docs/reports/2026-09-05-pr535-babysit-contract.md`
 ### Rozpracované / Pending
-- CI Lint/test/build on `c522ba1b` in progress
-- Code Contract Guard still red on `onboarding/session` inherited from #534/main (out of scope)
-- Founder merge decision + PROD smoke digest
+- Out-of-scope: Code Contract Guard red on onboarding/session from #534/main
+- Founder: merge #535 vs follow-up onboarding contract PR; then PROD smoke digest
 ### Kľúčové súbory zmenené
-- `apps/crm/src/app/api/cron/notification-digest/route.ts`: contract-compliant responses + telemetry
-- `docs/reports/2026-09-05-pr535-babysit-contract.md`: babysit verdict
+- `apps/crm/src/app/api/cron/notification-digest/route.ts`
+- `docs/reports/2026-09-05-pr535-babysit-contract.md`
 ### Ďalší krok
-Wait CI; if only onboarding ratchet red remains, founder follow-up PR or merge with known check (precedent #534).
+GO: follow-up PR fixing onboarding session api-validate + usage-metrics on main (unblocks ratchet for all PRs).

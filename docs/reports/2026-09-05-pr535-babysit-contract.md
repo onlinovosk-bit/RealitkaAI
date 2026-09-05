@@ -1,49 +1,57 @@
 # 2026-09-05 — PR #535 babysit (Code Contract Guard)
 
-## Verdict
+## Final verdict
 
-In-scope fix applied on `notification-digest`. **Remaining red:** Code Contract Guard still fails on `apps/crm/src/app/api/onboarding/session/route.ts` inherited from `main` / merged PR #534 — **out of this PR’s changedFiles**.
+**Not fully green.** Required-ish CI for this PR’s own code is healthy (`Lint, test, build` **pass**).  
+**Out-of-scope blocker remains:** `Zmluva kódu (ratchet)` fails solely on `onboarding/session` inherited from `main` / #534.
+
+| Check | Result |
+|-------|--------|
+| Lint, test, build | **pass** (run 33989298053, 8m5s) |
+| Zmluva kódu (ratchet) | **fail** — 2 NOVÉ, both onboarding/session |
+| Memory Engine | pass |
+| Vercel realitka-ai / marketing | pass |
+| Snyk / Auto-merge robot | pass |
+| Unresolved review threads | **0** |
+| `mergeable` | MERGEABLE |
+| `mergeStateStatus` | UNSTABLE (failing ratchet) |
+
+Head: `618acabd` on `feat/b18-notification-delivery`.
 
 ## Unresolved review comments
 
-None (no unresolved review threads on PR #535).
-
-## CI at start
-
-- `Zmluva kódu (ratchet)` **FAILURE** — 4 new violations
-- `Lint, test, build` in progress
-- Branch already contained latest `main` (incl. #534 merge); behind-count `0`
+None.
 
 ## Fixed in this PR (in scope)
 
 `apps/crm/src/app/api/cron/notification-digest/route.ts`:
 
-- `@/lib/api-response` → `okResponse` / `errorResponse` (aligned with `customer-health` / `credits-cycle`)
-- `@/lib/usage-metrics` → `incrementUsageMetric` + `SYSTEM_USAGE_AGENCY_ID` metric `cron_notification_digest`
-- try/catch → 500 via `errorResponse`
-- unit test mocks `usage-metrics`
+- `@/lib/api-response` → `okResponse` / `errorResponse`
+- `@/lib/usage-metrics` → `incrementUsageMetric` (`cron_notification_digest`)
+- Unit test mocks updated
 
-Local proof:
+Proof: CI ratchet log no longer mentions `notification-digest` (only onboarding).
 
-- `node apps/crm/scripts/check-api-contract.mjs --ci` → notification-digest **gone** from NOVÉ
-- `npx vitest run` notification-digest route + verification → **7 passed**
+## Remaining blocker (out of scope — do not expand #535)
 
-## Remaining blocker (not this PR)
+From CI run `33989298074`:
 
-After in-scope fix, ratchet still reports **2 NOVÉ**:
+```
+NOVÉ porušenia: 2
+apps/crm/src/app/api/onboarding/session/route.ts
+  chýba: @/lib/usage-metrics (incrementUsageMetric)
+apps/crm/src/app/api/onboarding/session/route.ts
+  chýba: @/lib/api-validate (validateBody / validateQuery)
+```
 
-1. `onboarding/session/route.ts` — missing `@/lib/usage-metrics`
-2. `onboarding/session/route.ts` — missing `@/lib/api-validate`
+Evidence this is from main/#534, not this PR:
 
-Same file landed via #534 (`security(rls): close onboarding_sessions anon ALL via session API`). PR #534 itself had **failing** Code Contract Guard and was still merged. This branch did not introduce that route.
+- `git diff origin/main -- apps/crm/src/app/api/onboarding/session/route.ts` → **0 lines**
+- File not in this PR’s changedFiles
+- PR #534 itself had failing Code Contract Guard and was merged
 
-**Do not** expand #535 into onboarding session API (1 PR = 1 logical change). Unblock options for founder:
+**Founder unblock:** separate follow-up PR on `main` for onboarding contract imports, **or** merge #535 accepting known ratchet red (precedent #534) if branch protection does not require that check.
 
-- follow-up PR on `main` adding validate + usage-metrics to onboarding session, **or**
-- accept that ratchet stays red until that follow-up (if branch protection does not require this check — #534 precedent)
+## STOP
 
-## Merge-ready status
-
-- This PR’s own contract debt: **cleared**
-- Full green CI: **blocked by inherited onboarding contract violations from main/#534**
-- Agent must **not** merge; founder decision on onboarding follow-up vs merge with known ratchet red
+Agent did **not** merge. No CI workflow edits. No onboarding scope expansion.
