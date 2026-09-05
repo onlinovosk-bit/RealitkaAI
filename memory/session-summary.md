@@ -1,18 +1,14 @@
-## Session 2026-09-05 (Strážca prítoku)
+## Session 2026-09-05 (PR #535 babysit)
 ### Dokončené
-- Founder GO „Strážca GO.“ → Brief 18 V2 notification delivery na `feat/b18-notification-delivery`
-- Realvia 48h warning / 7d critical; odstránená väzba na inboundMailboxCount
-- Cron `/api/cron/notification-digest` + critical e-mail na FOUNDER_EMAILS
-- Report: `docs/reports/2026-09-05-strazca-pritoku.md`
+- In-scope Code Contract fix: `notification-digest` uses api-response + usage-metrics (`c522ba1b`)
+- Report: `docs/reports/2026-09-05-pr535-babysit-contract.md`
+- Unresolved PR review threads: none
 ### Rozpracované / Pending
-- Merge PR (founder) + PROD smoke digest + FOUNDER_EMAILS/RESEND na Production
-- G1 správa referenčnému klientovi (webhook živý vs ticho)
-- Neaplikovať onboarding DROP z #534 bez samostatného GO
+- CI Lint/test/build on `c522ba1b` in progress
+- Code Contract Guard still red on `onboarding/session` inherited from #534/main (out of scope)
+- Founder merge decision + PROD smoke digest
 ### Kľúčové súbory zmenené
-- `apps/crm/src/lib/infra/platform-heartbeat.ts`: Realvia prahy + critical email hook
-- `apps/crm/src/lib/infra/notification-delivery.ts`: digest + critical mail
-- `apps/crm/src/app/api/cron/notification-digest/route.ts`: cron endpoint
-- `apps/crm/vercel.json`: schedule `15 7 * * *`
-- `docs/prompts/task-strazca-pritoku.md`: kanonický brief z B18 V2
+- `apps/crm/src/app/api/cron/notification-digest/route.ts`: contract-compliant responses + telemetry
+- `docs/reports/2026-09-05-pr535-babysit-contract.md`: babysit verdict
 ### Ďalší krok
-Founder: review/merge PR Strážca prítoku; potom PROD smoke digest (unread ↓).
+Wait CI; if only onboarding ratchet red remains, founder follow-up PR or merge with known check (precedent #534).
