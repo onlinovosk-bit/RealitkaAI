@@ -1,9 +1,14 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 const mockTriage = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+const mockAutoResponse = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 
 vi.mock("@/lib/acquire/inbound-lead-triage", () => ({
   runInboundLeadTriageAndNotify: (...args: unknown[]) => mockTriage(...args),
+}));
+
+vi.mock("@/lib/acquire/inbound-lead-auto-response", () => ({
+  runInboundLeadAutoResponse: (...args: unknown[]) => mockAutoResponse(...args),
 }));
 
 function requireLocalTestDb() {
@@ -19,6 +24,7 @@ function requireLocalTestDb() {
 describe("POST /api/valuation/submit (Smolko integration)", () => {
   beforeEach(() => {
     mockTriage.mockClear();
+    mockAutoResponse.mockClear();
   });
 
   it("invokes triage notify after lead and consent persist", async () => {
@@ -51,6 +57,7 @@ describe("POST /api/valuation/submit (Smolko integration)", () => {
     await vi.waitFor(
       () => {
         expect(mockTriage).toHaveBeenCalledTimes(1);
+        expect(mockAutoResponse).toHaveBeenCalledTimes(1);
       },
       { timeout: 5000, interval: 50 },
     );

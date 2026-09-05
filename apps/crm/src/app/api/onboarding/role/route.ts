@@ -1,38 +1,36 @@
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 
-export async function POST(req: Request) {
+/**
+ * Historically this route used the service-role admin client to upsert
+ * profiles.role (owner → manager) for any authenticated caller — privilege
+ * escalation. Role assignment belongs to invite/admin (service_role) paths
+ * only. Onboarding UI keeps role in client form state and does not call this.
+ */
+export async function POST(_req: Request) {
   try {
-    const { role } = await req.json();
-
-    if (!["agent", "owner"].includes(role)) {
-      return NextResponse.json({ ok: false, error: "Neplatná rola." }, { status: 400 });
-    }
-
-    // Zisti aktuálneho usera
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
       return NextResponse.json({ ok: false, error: "Nie si prihlásený." }, { status: 401 });
     }
 
-    // Mapuj "owner" → "manager" (existujúca DB hodnota), "agent" → "agent"
-    const dbRole = role === "owner" ? "manager" : "agent";
-
-    const admin = createAdminClient();
-
-    await admin
-      .from("profiles")
-      .upsert({ id: user.id, role: dbRole }, { onConflict: "id" });
-
-    return NextResponse.json({ ok: true });
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "Self-service zmena role je zakázaná. Rolu nastaví majiteľ cez pozvánku.",
+      },
+      { status: 403 },
+    );
   } catch (err) {
     return NextResponse.json(
       { ok: false, error: err instanceof Error ? err.message : "Chyba" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

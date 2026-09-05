@@ -1,4 +1,66 @@
 # Critical Decisions Log
+
+
+
+## [2026-09-03] — GO P0 HONEST UNKNOWN MAPPING
+
+- Neznámy Realvia kód → **`Neznáme`**, nie fog do `Ostatné` / `Predaj`.
+- Sporné známe: **13/14** a **123** → `Neznáme` (neodvodzovať Byt/Prenájom z titulov).
+- Guardian: `unverified_property_type` / `unverified_transaction_type` blokuje pass.
+- Backfill 132 = samostatné GO. Číselník od Realvie stále treba.
+- Dôkaz: `docs/reports/2026-09-03-realvia-honest-unknown-mapping.md`.
+
+## [2026-09-03] — Property Launch Pack V0 = VALIDATE/spec (no code yet)
+
+- **Verdikt:** zjednotiť KF1 `listing-content` + Wave 1 `vertical-pack-demo` cez jeden kanonický vstup a jeden Quality Guardian gate; export bez publish; **bez novej DB**; bez chatbota.
+- **Prod limity v IR:** `properties` 132 Smolko; Ostatné 63–65 % = adapter `mapCategory` (nie prázdny payload); `ai_generations` na prod **chýba**.
+- **Implementácia:** STOP do `GO IMPLEMENT PROPERTY LAUNCH PACK V0`.
+- **Artefakty:** `docs/briefs/BO-property-launch-pack-v0.md`, `docs/reports/2026-09-03-property-launch-pack-integration.md`.
+
+## [2026-09-03] — Audit kódu nie je audit dát
+
+Ku každému tvrdeniu „toto už máme“ sa dokladá **počet riadkov v produkcii**, nie existencia súboru. Platí pre briefy, roadmapy aj Integration Reporty.
+
+**Doplnok:** počet riadkov ≠ správnosť. Mapped polia overovať proti nezávislému signálu (`title`). Neznámy kód → `Neznáme` (P0 honest unknown), nie fog do legitímnej kategórie.
+
+## [2026-09-03] — customer-health PROD smoke PASS
+
+- `GET https://app.revolis.ai/api/cron/customer-health` + Production `CRON_SECRET`: 401 without/wrong bearer, 200 with secret.
+- Smolko `11111111-…-111` **red**, paying, `LEAD_SILENCE` 37 dní + `NEVER_LOGGED_IN_SHARE` 92 %. Persist 4 rows. Dôkaz: `docs/reports/2026-09-03-customer-health-smoke.md`.
+
+## [2026-09-03] — customer-health tabuľka na PROD + cron na main
+
+- **#507** merged `203829403` (Vercel cron `0 7 * * *` → `/api/cron/customer-health`).
+- **PROD** `ypgajkhqtbriqqmyawyv`: `public.customer_health_daily` už stála (RLS on, 0 policies, 0 rows). GO SQL = zapísaný `supabase_migrations.schema_migrations` `20260903070000` / `customer_health_daily`.
+- **Dôkaz:** `docs/reports/2026-09-03-customer-health-sql-applied.md`.
+- Live Bearer smoke (Smolko red) = ďalší GO.
+
+## [2026-09-02] — PROD `profiles` UPDATE: vždy service_role + RETURNING
+
+- **Opakovaný incident (3×):** `profiles_guard_*` triggery (`role`/`agency_id`, `account_tier`/`ui_role`, `is_platform_admin`) **ticho vrátia** zmenu, ak UPDATE nebeží ako `service_role`. Dashboard SQL bez `SET LOCAL` vyzerá úspešne, ale `RETURNING` ukáže starú hodnotu — alebo sa zmena vôbec neprejaví.
+- **Pravidlo (povinné):** Každý PROD `UPDATE` na `public.profiles` sa robí v transakcii so `SET LOCAL request.jwt.claim.role = 'service_role'` a s `RETURNING`. Bez výnimky.
+  ```sql
+  BEGIN;
+  SET LOCAL request.jwt.claim.role = 'service_role';
+  UPDATE public.profiles SET … WHERE … RETURNING id, email, …;
+  COMMIT;
+  ```
+- **Overenie:** `RETURNING` musí ukázať očakávanú hodnotu. Ak nie — trigger zasiahol; STOP, nie „asi OK“.
+- **Kontext #496:** `profiles.id` ≠ `auth.uid()` na PROD → platform-admin gate musí lookupovať cez `.or(auth_user_id.eq.{uid},id.eq.{uid})` (vzor `/trh`, #469).
+- **Dotknuté:** `fetchProfilePlatformAdminFlag`, `canAccessOperatorDashboard`, grant `is_platform_admin` po migrácii `20260728140000`.
+
+---
+
+## [2026-08-25] — ONL-MCP-001: BUILD gateway, DON'T BUY Premium-for-MCP
+
+- **Rozhodnutie (agent recommendation, founder ešte nepodpísal):** stavať vlastný vendor-neutral Onlinovo MCP Gateway; **nekupovať** Shoptet Premium výhradne kvôli oficiálnemu MCP (floor 12 000 Kč/měs.). Implementácia **STOP** do `GO ONL-MCP-002`.
+- **Timing:** founder override — audit **dnes v noci** 25. 8. 2026, nie 26.→27. 8.
+- **Fakty:** Onlinovo.sk = Shoptet (verejný fingerprint). Tarif Premium vs standard = **NEZNÁME**. REST API len cez marketplace addon; Shoptet nepíše cestu „API pre jeden e-shop“.
+- **Artefakt:** `docs/onlinovo/ONL-MCP-FEASIBILITY.md`, `docs/reports/2026-08-25-onl-mcp-001-feasibility.md`, TASK-0005 done.
+- **Mimo:** `apps/crm`, prod Shoptet write, ONL-MCP-002/003/004.
+
+---
+
 - [2026-04-29] CI/CD: Vyriešený "Nuclear Option" pre artifacty (apps/crm/.next). Pipeline je ZELENÁ.
 - [2026-04-29] XML Feed: Zvolená Varianta 1 (Vlastný web) pre utajenie pred Webexom.
 - [2026-04-29] Outreach: Definované šablóny pre segmenty A (Hot), B (Warm), C (Cold).
@@ -898,3 +960,9 @@ blocked. Exact PC commands are in
 - **Prečo:** Vzorka 4/208 (~2 %) nestačí; neoverený shallow clone pri Cursor analýze; tip SHA drift; chýbajú backup refs `refs/cleanup/2026-08-21/<branch>`.
 - **Dôsledok:** TASK-0003 evidence pack (full clone, N tip SHA, backup refs, full cherry, edge policy) pred akýmkoľvek delete GO. Smolko Gmail dual-run (#422 na main) je samostatná P0 — neblokovať cleanup evidence.
 - **Artefakty:** `.ai/bus/outbox/MSG-20260821-007-…`, `.ai/bus/tasks/TASK-0003.md`, `docs/reports/2026-08-21-branch-cleanup-needs-evidence.md`
+
+## [2026-06-27] — Smolko leads: verify, clean, capture (prenesené z decisions.md, 2026-09-04)
+
+- Context: Hotfix ensured lead write path now uses scoped Supabase client and server-derived `agency_id`.
+- Action taken: removed temporary diagnostic log from `apps/crm/src/app/api/leads/route.ts`, added SQL script `infra/sql/cleanup-test-leads.sql` to inspect/delete test leads, and recorded this decision.
+- Lesson / Scar: Always remove debug logging from hot-path before merge; prefer manual compile verification after merges and avoid automated merge tools without review.
