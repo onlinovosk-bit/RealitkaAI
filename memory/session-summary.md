@@ -1,14 +1,18 @@
-## Session 2026-09-03
+## Session 2026-09-05 (Strážca prítoku)
 ### Dokončené
-- #513 GO P0 HONEST UNKNOWN MAPPING merged (`Neznáme`)
-- #481 checkout agency_id merged
-- Launch Pack V0 na #514 (flag off) + gap fix: payload remap, skip LLM, no Predaj fog
+- Founder GO „Strážca GO.“ → Brief 18 V2 notification delivery na `feat/b18-notification-delivery`
+- Realvia 48h warning / 7d critical; odstránená väzba na inboundMailboxCount
+- Cron `/api/cron/notification-digest` + critical e-mail na FOUNDER_EMAILS
+- Report: `docs/reports/2026-09-05-strazca-pritoku.md`
 ### Rozpracované / Pending
-- Merge #514 po CI
-- Oficiálny číselník od Realvie (`docs/reports/2026-09-03-realvia-ciselnik-request.md`)
-- Backfill 132 riadkov — samostatné GO
+- Merge PR (founder) + PROD smoke digest + FOUNDER_EMAILS/RESEND na Production
+- G1 správa referenčnému klientovi (webhook živý vs ticho)
+- Neaplikovať onboarding DROP z #534 bez samostatného GO
 ### Kľúčové súbory zmenené
-- `apps/crm/src/lib/capabilities/property-launch-pack/*`
-- `apps/crm/src/app/api/ai/property-launch-pack/route.ts`
+- `apps/crm/src/lib/infra/platform-heartbeat.ts`: Realvia prahy + critical email hook
+- `apps/crm/src/lib/infra/notification-delivery.ts`: digest + critical mail
+- `apps/crm/src/app/api/cron/notification-digest/route.ts`: cron endpoint
+- `apps/crm/vercel.json`: schedule `15 7 * * *`
+- `docs/prompts/task-strazca-pritoku.md`: kanonický brief z B18 V2
 ### Ďalší krok
-Founder merge #514; flag `PROPERTY_LAUNCH_PACK_V0=1` len pre Smolko preview/pilot.
+Founder: review/merge PR Strážca prítoku; potom PROD smoke digest (unread ↓).

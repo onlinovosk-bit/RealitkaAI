@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { GUARDIAN_RUNNER_NOTIFICATION_TYPE } from "@/lib/guardian/config";
+import { sendCriticalHeartbeatEmail } from "@/lib/infra/notification-delivery";
 import { SYSTEM_USAGE_AGENCY_ID } from "@/lib/usage-metrics";
 
 export type HeartbeatSeverity = "ok" | "warning" | "critical";
@@ -85,20 +86,30 @@ export function evaluateHeartbeatSignals(
     });
   }
 
-  if (
-    metrics.inboundMailboxCount > 0 &&
-    metrics.realviaWebhookTotal > 0
-  ) {
+  // Realvia silence: independent of inbound mailbox count (Brief 18 V2 / Strážca prítoku).
+  // 48h → warning; 7d → critical. Only if this tenant has ever received webhooks.
+  if (metrics.realviaWebhookTotal > 0) {
     const webhookAge = ageMs(metrics.realviaLastWebhookAt, now);
     if (webhookAge === null || webhookAge > MS_7D) {
       signals.push({
         id: "realvia_webhook_stale_7d",
-        severity: "warning",
+        severity: "critical",
         title: "Realvia/webhook: žiadna stopa 7+ dní",
         detail:
-          "Aktívna inbound schránka existuje a webhooky už kedysi prišli, ale posledná stopa je staršia ako 7 dní.",
+          "Webhooky už kedysi prišli, ale posledná stopa je staršia ako 7 dní — prítok môže byť mŕtvy.",
         evidence: {
-          inboundMailboxCount: metrics.inboundMailboxCount,
+          realviaLastWebhookAt: metrics.realviaLastWebhookAt,
+          realviaWebhookTotal: metrics.realviaWebhookTotal,
+        },
+      });
+    } else if (webhookAge > MS_48H) {
+      signals.push({
+        id: "realvia_webhook_stale_48h",
+        severity: "warning",
+        title: "Realvia/webhook: žiadna stopa 48h+",
+        detail:
+          "Posledný Realvia webhook je starší ako 48 hodín — overiť sync pred eskaláciou na critical.",
+        evidence: {
           realviaLastWebhookAt: metrics.realviaLastWebhookAt,
           realviaWebhookTotal: metrics.realviaWebhookTotal,
         },
@@ -315,7 +326,17 @@ export async function runPlatformHeartbeat(input: {
           checkedAt,
         },
       });
-      if (!error) notificationsCreated += 1;
+      if (!error) {
+        notificationsCreated += 1;
+        // Critical → immediate founder email. Dedup = hasRecentHeartbeatAlert (24h, existing rows).
+        if (signal.severity === "critical") {
+          await sendCriticalHeartbeatEmail({
+            signalId: signal.id,
+            title: signal.title,
+            detail: signal.detail,
+          });
+        }
+      }
     }
   }
 

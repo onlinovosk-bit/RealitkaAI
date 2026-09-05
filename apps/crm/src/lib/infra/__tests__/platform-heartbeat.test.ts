@@ -49,17 +49,34 @@ describe("evaluateHeartbeatSignals", () => {
     expect(signals.some((s) => s.id === "triage_untriaged_24h")).toBe(false);
   });
 
-  it("flags stale realvia when mailbox active and webhooks went quiet", () => {
+  it("flags critical realvia when webhooks quiet 7d+ (no mailbox gate)", () => {
     const signals = evaluateHeartbeatSignals(
       {
         ...baseMetrics(),
         realviaLastWebhookAt: "2026-06-01T09:00:00.000Z",
         realviaWebhookTotal: 5,
-        inboundMailboxCount: 1,
+        inboundMailboxCount: 0,
       },
       now,
     );
-    expect(signals.some((s) => s.id === "realvia_webhook_stale_7d")).toBe(true);
+    const hit = signals.find((s) => s.id === "realvia_webhook_stale_7d");
+    expect(hit?.severity).toBe("critical");
+  });
+
+  it("flags warning realvia when quiet 48h but under 7d", () => {
+    const signals = evaluateHeartbeatSignals(
+      {
+        ...baseMetrics(),
+        realviaLastWebhookAt: "2026-07-05T12:00:00.000Z", // 3d before now
+        realviaWebhookTotal: 5,
+        inboundMailboxCount: 0,
+      },
+      now,
+    );
+    expect(signals.some((s) => s.id === "realvia_webhook_stale_48h" && s.severity === "warning")).toBe(
+      true,
+    );
+    expect(signals.some((s) => s.id === "realvia_webhook_stale_7d")).toBe(false);
   });
 
   it("skips realvia stale when no prior webhook history", () => {
@@ -72,7 +89,7 @@ describe("evaluateHeartbeatSignals", () => {
       },
       now,
     );
-    expect(signals.some((s) => s.id === "realvia_webhook_stale_7d")).toBe(false);
+    expect(signals.some((s) => s.id.startsWith("realvia_webhook_stale"))).toBe(false);
   });
 
   it("flags seller-rescue silence when triage healthy", () => {

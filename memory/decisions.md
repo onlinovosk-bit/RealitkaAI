@@ -2,6 +2,14 @@
 
 
 
+## [2026-09-05] — Strážca prítoku BUILD (Brief 18 V2)
+
+- **GO:** Founder „Strážca GO.“
+- **Scope:** doručenie unread `routine_notifications` + Realvia 48h/7d prahy (nie customer-health L2).
+- **Brief:** `task-strazca-pritoku.md` v Downloads chýbal → kanon = Brief 18 V2.
+- **Artefakt:** vetva `feat/b18-notification-delivery`, report `docs/reports/2026-09-05-strazca-pritoku.md`.
+- **STOP:** merge / PROD smoke / secrets = founder.
+
 ## [2026-09-03] — GO P0 HONEST UNKNOWN MAPPING
 
 - Neznámy Realvia kód → **`Neznáme`**, nie fog do `Ostatné` / `Predaj`.
