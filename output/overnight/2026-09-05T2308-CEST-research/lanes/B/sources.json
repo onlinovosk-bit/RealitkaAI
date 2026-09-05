@@ -1,0 +1,7 @@
+[
+  {"claim":"backOFFICE standard 95 EUR/year","title":"backOFFICE realitný softvér","publisher":"backoffice.sk","url":"https://www.backoffice.sk/realitny-software/","published_if_known":null,"accessed_at":"2026-09-05","evidence_type":"vendor_pricing","limit":"vendor marketing"},
+  {"claim":"ZRKS database/API fee on order page ~554 EUR/year path","title":"Objednávka backOFFICE","publisher":"backoffice.sk","url":"http://www.backoffice.sk/realitny-software/objednavka-web/","published_if_known":null,"accessed_at":"2026-09-05","evidence_type":"vendor_order_page","limit":"confirm with ZRKS invoice"},
+  {"claim":"Realman Absolvent 1278 CZK/mo","title":"Realman prices","publisher":"realman.cz","url":"https://www.realman.cz/","published_if_known":null,"accessed_at":"2026-09-05","evidence_type":"vendor_pricing","limit":"CZ market; SK UNKNOWN"},
+  {"claim":"Realsoft replaced by Nehnuteľnosti Admin","title":"Webidea Realsoft note","publisher":"webidea.sk","url":"https://www.webidea.sk/web-pre-realitnu-kancelariu/","published_if_known":"2025-2026","accessed_at":"2026-09-05","evidence_type":"integrator_secondary","limit":"not UC primary docs"},
+  {"claim":"Migration pain IDs/media","title":"Pixeler migration","publisher":"pixeler.sk","url":"https://pixeler.sk/migracia-realsoftu-na-nehnutelnosti-admin","published_if_known":"2025","accessed_at":"2026-09-05","evidence_type":"integrator_secondary","limit":"anecdotal"}
+]

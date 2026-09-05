@@ -1,0 +1,41 @@
+{
+  "run_id": "2026-09-05T2308-CEST-research",
+  "base_sha": "cf3604613cdbb6a7a279e175f2c792fb25591461",
+  "scope": "research_and_specs",
+  "verdict": "VALIDATE_FIRST",
+  "waves": {
+    "W0": "READY",
+    "W1": "PASS_WITH_CONDITIONS",
+    "W2": "PASS",
+    "W3": "PASS",
+    "W4": "PASS_WITH_CONDITIONS",
+    "W5": "PASS",
+    "W6": "COMPLETE"
+  },
+  "lane_status": {
+    "A": "PASS_WITH_CONDITIONS",
+    "B": "PASS_WITH_CONDITIONS",
+    "C": "PASS_WITH_CONDITIONS",
+    "D": "PASS",
+    "E": "PASS",
+    "F": "PASS",
+    "G": "PASS",
+    "H": "PASS_WITH_CONDITIONS",
+    "I": "PASS_WITH_CONDITIONS",
+    "J": "PASS_WITH_CONDITIONS",
+    "K": "PASS",
+    "O6": "COMPLETE"
+  },
+  "hard_stops": {
+    "product_code": false,
+    "migrations": false,
+    "deploy": false,
+    "outreach": false,
+    "fake_apis": false,
+    "canonical_memory_write": false,
+    "bridge_harness_reset": false,
+    "ruflo_bridge_v0": false
+  },
+  "spend": "subscription_only",
+  "completed_at_utc": "2026-09-05T21:12:56.8340931Z"
+}

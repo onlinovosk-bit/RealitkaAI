@@ -1,0 +1,68 @@
+{
+  "run_id": "20260905T2304-ruflo-overnight",
+  "lane_id": "I",
+  "accessed_at": "2026-09-05",
+  "base_sha": "cf3604613cdbb6a7a279e175f2c792fb25591461",
+  "sources": [
+    {
+      "claim": "Lane I is commercial opponent; may STOP; write_set lanes/I/ only; depends on F+G",
+      "name": "lanes.json lane I",
+      "publisher": "repo",
+      "url_or_path": "docs/overnight/2026-09-05-ruflo-swarm/lanes.json",
+      "published_at": "2026-09-05",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "control_manifest",
+      "limit": "Manifest only; not customer evidence"
+    },
+    {
+      "claim": "backOFFICE software floor ~95 EUR/year + ZRKS API; Excel+Admin control; EXP-B1 kill if no unpaid pain; WTP not web-provable",
+      "name": "Lane B competition report",
+      "publisher": "ruflo-overnight",
+      "url_or_path": "lanes/B/report.md",
+      "published_at": "2026-09-05",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "frozen_lane_output",
+      "limit": "Public vendor prices/marketing; no primary WTP"
+    },
+    {
+      "claim": "HYPOTHESIS 355 Teamx5+Lite; credit-to-subscription; outcome deferred; ~6.5x vs backOFFICE+ZRKS monthly floor at N=5",
+      "name": "Lane E pricing experiment",
+      "publisher": "ruflo-overnight",
+      "url_or_path": "lanes/E/report.md",
+      "published_at": "2026-09-05",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "frozen_lane_output",
+      "limit": "List math != proven WTP; Stripe PROD_UNKNOWN"
+    },
+    {
+      "claim": "8 design partners gradual cohorts; primary metric lead_first_attempt_latency_hours; SLA proposal only; kill after 3 paid with 0 convert discussions",
+      "name": "Lane F pilot acquisition",
+      "publisher": "ruflo-overnight",
+      "url_or_path": "lanes/F/report.md",
+      "published_at": "2026-09-05",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "frozen_lane_output",
+      "limit": "Plan only; nothing sent; prospect list unknown"
+    },
+    {
+      "claim": "VALIDATE_FIRST; Constitution Q1 ceiling VALIDATE; portal P5/P6 BLOCKED; cut-scope hygiene backlog",
+      "name": "Lane G implementation backlog specs",
+      "publisher": "ruflo-overnight",
+      "url_or_path": "lanes/G/report.md",
+      "published_at": "2026-09-05",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "frozen_lane_output",
+      "limit": "Specs only; no app code; prod apply UNKNOWN"
+    },
+    {
+      "claim": "Worker required Decision Contract sections + result status enum including PASS_WITH_CONDITIONS",
+      "name": "lanes.json worker_contract",
+      "publisher": "repo",
+      "url_or_path": "docs/overnight/2026-09-05-ruflo-swarm/lanes.json",
+      "published_at": "2026-09-05",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "control_manifest",
+      "limit": "Process contract"
+    }
+  ]
+}

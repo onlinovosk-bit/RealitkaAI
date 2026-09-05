@@ -1,0 +1,8 @@
+{
+  "run_id": "20260905T2304-ruflo-overnight",
+  "lane_id": "O0",
+  "base_sha": "cf3604613cdbb6a7a279e175f2c792fb25591461",
+  "status": "PASS",
+  "w0_status": "READY",
+  "next_action": "START_W1"
+}

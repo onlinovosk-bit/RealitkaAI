@@ -1,0 +1,120 @@
+{
+  "run_id": "20260905T2304-ruflo-overnight",
+  "lane_id": "K",
+  "base_sha": "cf3604613cdbb6a7a279e175f2c792fb25591461",
+  "input_hashes": {
+    "lanes/H/report.md": "a0702ed12119efa609c30bb65b26ed2a0a085146f90837db30ad7981b6a46717",
+    "lanes/H/result.json": "9ef31bb334900f84541a949a3c4c5f354b08903bdd21eba7e106a22bc3dc88be",
+    "lanes/H/sources.json": "c40c7da92071349f6b84804ff815872babbf040a371f65cee09c46d39b6d272d",
+    "lanes/I/report.md": "8a63d79c8dfabdb6fb8e2e563ae02bc7dbc4395e45794b255267ce101de5eae7",
+    "lanes/I/result.json": "91a6caf4d3eb7ed91e0311fddf4f29bb17dc1756d2773ce0c348e7fefbcfd7cb",
+    "lanes/I/sources.json": "69c9bc27b1dada8c07c940746bc12f7496a7c4ff193066494b22bb756c1c93d7",
+    "lanes/J/report.md": "2a00095ae757de5bfce6ce451b3276ddadc7f98e63d64e5fe1813a97cd34b8ae",
+    "lanes/J/result.json": "ad7a3914f695b269d45c4f4a1c0a182e949ef86f87baad4383cecb7f0f169a80",
+    "lanes/J/sources.json": "7f0b782ae1a0d2810e3ecae06765fd8751f7988d46e868cc64249ac02b87da0b",
+    "base_sha": "cf3604613cdbb6a7a279e175f2c792fb25591461"
+  },
+  "status": "PASS_WITH_CONDITIONS",
+  "verdict": "PASS_WITH_CONDITIONS",
+  "cycle": 1,
+  "max_cycles": 1,
+  "author_files_edited": false,
+  "produced_files": [
+    "lanes/K/report.md",
+    "lanes/K/sources.json",
+    "lanes/K/result.json",
+    "amendments/amendments.md",
+    "amendments/map.json",
+    "amendments/AMD-H1-phone-db-enforced.md",
+    "amendments/AMD-H2-tenant-leads-null.md",
+    "amendments/AMD-H3-export-vendor-blocked.md",
+    "amendments/AMD-I-commercial-gates.md",
+    "amendments/AMD-J-run-authority.md"
+  ],
+  "reads": [
+    "H",
+    "I",
+    "J"
+  ],
+  "amendments_map": "amendments/map.json",
+  "final_must": "NO_GO_IMPLEMENTATION",
+  "blocks_implementation_go": true,
+  "findings_disposition": [
+    {
+      "finding": "F-H1",
+      "severity": "CRITICAL",
+      "disposition": "AMEND_SPEC",
+      "amendment": "AMD-H1",
+      "code_repaired": false
+    },
+    {
+      "finding": "F-H2",
+      "severity": "HIGH",
+      "disposition": "AMEND_SPEC",
+      "amendment": "AMD-H2",
+      "code_repaired": false
+    },
+    {
+      "finding": "F-H3",
+      "severity": "HIGH",
+      "disposition": "BLOCKED",
+      "amendment": "AMD-H3",
+      "blocked_on": "vendor_UC_package"
+    },
+    {
+      "finding": "I-F1",
+      "severity": "HIGH",
+      "disposition": "AMEND_HANDOFF",
+      "amendment": "AMD-I"
+    },
+    {
+      "finding": "I-F2",
+      "severity": "HIGH",
+      "disposition": "AMEND_HANDOFF",
+      "amendment": "AMD-I"
+    },
+    {
+      "finding": "I-F3",
+      "severity": "HIGH",
+      "disposition": "AMEND_HANDOFF",
+      "amendment": "AMD-I"
+    },
+    {
+      "finding": "J-01",
+      "severity": "CRITICAL",
+      "disposition": "AMEND_PROVENANCE",
+      "amendment": "AMD-J"
+    },
+    {
+      "finding": "J-02",
+      "severity": "HIGH",
+      "disposition": "AMEND_PROVENANCE",
+      "amendment": "AMD-J"
+    }
+  ],
+  "conditions": [
+    "O6 final_must = NO_GO_IMPLEMENTATION while F-H1 code unrepaired",
+    "w0/input/local_draft is package SSOT; live docs overnight package NON-AUTHORITATIVE",
+    "P5/P6 remain BLOCKED pending UC vendor package",
+    "VALIDATE_FIRST; interviews>=6 + migration stopwatch before paid C1; paid cap 2",
+    "F8 learning KPI only; outcome fees DEFERRED; no list-price code change",
+    "Author A-J frozen; amendments supersede with explicit references only",
+    "Single cycle complete — no second repair loop"
+  ],
+  "residual_blockers": [
+    "phone_select_and_postgrest_bypass_still_in_code",
+    "agency_id_null_bypass_leads_and_properties_still_in_migrations",
+    "uc_vendor_package_absent_for_P5_P6",
+    "customer_interviews_and_wtp_unmeasured",
+    "founder_dual_run_morning_authority_choice"
+  ],
+  "unknowns": [
+    "prod_RLS_apply_and_NULL_row_residue",
+    "founder_phone_audit_required_before_cohort1",
+    "UC_full_file_vs_per_listing_publish_semantics",
+    "primary_wtp_at_355",
+    "which_RUN_founder_treats_as_morning_authoritative"
+  ],
+  "next_action": "Freeze K; O6 morning pack must carry NO_GO_IMPLEMENTATION + AMD-* conditions into final/human-decisions.md",
+  "written_at_utc": "2026-09-05T21:40:50Z"
+}

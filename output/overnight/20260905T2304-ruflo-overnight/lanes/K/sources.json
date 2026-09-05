@@ -1,0 +1,93 @@
+[
+  {
+    "claim": "H STOP; F-H1 CRITICAL phone audit bypass",
+    "path_or_url": "lanes/H/report.md",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "lane_opponent",
+    "limit": "design+CODE_PRESENT; K amends spec only"
+  },
+  {
+    "claim": "H F-H2 leads+properties NULL bypass",
+    "path_or_url": "lanes/H/report.md",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "lane_opponent",
+    "limit": "BO-P1 under-scope"
+  },
+  {
+    "claim": "H F-H3 export vs UC full-file; keep blocked",
+    "path_or_url": "lanes/H/report.md",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "lane_opponent",
+    "limit": "vendor gap"
+  },
+  {
+    "claim": "H structured findings + blocks_implementation_go",
+    "path_or_url": "lanes/H/result.json",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "lane_result",
+    "limit": null
+  },
+  {
+    "claim": "I PASS_WITH_CONDITIONS commercial gates",
+    "path_or_url": "lanes/I/report.md",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "lane_opponent",
+    "limit": "VALIDATE_FIRST"
+  },
+  {
+    "claim": "I findings I-F1..F3 HIGH",
+    "path_or_url": "lanes/I/result.json",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "lane_result",
+    "limit": null
+  },
+  {
+    "claim": "J PASS_WITH_CONDITIONS; J-01 CRITICAL INPUT_DRIFT",
+    "path_or_url": "lanes/J/report.md",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "lane_opponent",
+    "limit": "w0 SSOT required"
+  },
+  {
+    "claim": "J dual RUN + live launch-record",
+    "path_or_url": "lanes/J/result.json",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "lane_result",
+    "limit": "J-02"
+  },
+  {
+    "claim": "Phone columns in PROPERTIES_SELECT_CORE/FULL",
+    "path_or_url": "apps/crm/src/lib/properties-store.ts",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "code_reconfirm",
+    "limit": "workspace tree; H cited BASE_SHA"
+  },
+  {
+    "claim": "Inventory API selects owner_phone/broker_phone",
+    "path_or_url": "apps/crm/src/app/api/leads/inventory/route.ts",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "code_reconfirm",
+    "limit": null
+  },
+  {
+    "claim": "properties_tenant agency_id IS NULL",
+    "path_or_url": "apps/crm/supabase/migrations/20260508180000_rls_properties.sql",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "migration_reconfirm",
+    "limit": null
+  },
+  {
+    "claim": "leads_tenant agency_id IS NULL",
+    "path_or_url": "apps/crm/supabase/migrations/20260507160000_rls_leads_activities.sql",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "migration_reconfirm",
+    "limit": null
+  },
+  {
+    "claim": "Lane K write_set amendments/ + lanes/K/",
+    "path_or_url": "w0/input/local_draft/lanes.json",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "lane_contract",
+    "limit": "one repair cycle"
+  }
+]

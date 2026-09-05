@@ -1,14 +1,14 @@
-## Session 2026-09-05 (PR #535 fix-merge-conflicts — CI CLEAN)
+﻿## Session 2026-09-05 (Ruflo overnight PREPARED)
 ### Dokončené
-- origin/main merge (clean; 0 textual conflicts)
-- onboarding/session api-validate + usage-metrics imports → ratchet NOVÉ=0
-- CI green + mergeStateStatus CLEAN on tip `f74ada73` (agent did not merge)
-- Report: `docs/reports/2026-09-05-pr535-fix-merge-conflicts.md`
+- Materialized overnight handoff package at `docs/overnight/2026-09-05-ruflo-swarm/` (PREPARED / NOT STARTED)
+- Files: START-HERE.md, lanes.json, seed-evidence.md, launch-record.template.md
+- Report: `docs/reports/2026-09-05-ruflo-overnight-prepared.md`
+- Docs branch worktree: `docs/ruflo-overnight-prepared` from origin/main (bridge-harness untouched)
 ### Rozpracované / Pending
-- Founder merge #535
-- PROD smoke notification-digest
+- Founder confirm launch params (scope / runner / times+UTC offset / provider_policy / spend_cap / models) before W0
+- Do not start swarm until launch record is filled → LAUNCH_AUTHORIZED
 ### Kľúčové súbory zmenené
-- `apps/crm/src/app/api/onboarding/session/route.ts`: contract imports only
-- `docs/reports/2026-09-05-pr535-fix-merge-conflicts.md`
+- `docs/overnight/2026-09-05-ruflo-swarm/*`: overnight package
+- `docs/reports/2026-09-05-ruflo-overnight-prepared.md`: PREPARED confirmation
 ### Ďalší krok
-Founder GO: merge #535; then PROD digest smoke.
+Founder fills launch-record fields and hands package to runner; W0 only after confirmation.

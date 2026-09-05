@@ -1,0 +1,326 @@
+{
+  "$schema_note": "CONTROL MANIFEST ONLY — not a Ruflo-native import/CLI format. Do not invent a Ruflo CLI importer. Runner must apply ownership, dependencies, and limits manually.",
+  "package_id": "2026-09-05-ruflo-swarm",
+  "prepared_at": "2026-09-05",
+  "status": "PREPARED_NOT_STARTED",
+  "default_scope": "research_and_specs",
+  "output_root_template": "output/overnight/<RUN_ID>/",
+  "paths_relative_to": "output/overnight/<RUN_ID>/",
+  "concurrency": {
+    "max_orchestrators": 1,
+    "max_workers": 3,
+    "note": "At most 1 orchestrator + 3 workers simultaneously."
+  },
+  "orchestrator_write_sets": [
+    "control/",
+    "final/",
+    "w0/"
+  ],
+  "worker_contract": {
+    "required_files": [
+      "report.md",
+      "sources.json",
+      "result.json"
+    ],
+    "result_status_allowed": [
+      "PASS",
+      "PASS_WITH_CONDITIONS",
+      "BLOCKED",
+      "FAILED"
+    ],
+    "decision_contract_sections": [
+      "Decisions",
+      "Evidence",
+      "Assumptions",
+      "Unknowns",
+      "Experiments",
+      "Product Implications",
+      "Decision Memory Payload"
+    ]
+  },
+  "waves": [
+    {
+      "id": "W0",
+      "time_share_pct": 10,
+      "parallel_lanes": [
+        "O0"
+      ],
+      "requires_frozen": [
+        "confirmed_launch_parameters"
+      ],
+      "gate_after": "W0_PASS"
+    },
+    {
+      "id": "W1",
+      "time_share_pct": 25,
+      "parallel_lanes": [
+        "A",
+        "B",
+        "C"
+      ],
+      "requires_frozen": [
+        "W0"
+      ],
+      "gate_after": "W1_GATE"
+    },
+    {
+      "id": "W2",
+      "time_share_pct": 20,
+      "parallel_lanes": [
+        "D",
+        "E"
+      ],
+      "requires_frozen": [
+        "A",
+        "B",
+        "C",
+        "W1_GATE"
+      ],
+      "gate_after": "W2_GATE"
+    },
+    {
+      "id": "W3",
+      "time_share_pct": 15,
+      "parallel_lanes": [
+        "F",
+        "G"
+      ],
+      "requires_frozen": [
+        "D",
+        "E",
+        "W2_GATE"
+      ],
+      "gate_after": "W3_GATE"
+    },
+    {
+      "id": "W4",
+      "time_share_pct": 15,
+      "parallel_lanes": [
+        "H",
+        "I",
+        "J"
+      ],
+      "requires_frozen": [
+        "F",
+        "G",
+        "W3_GATE"
+      ],
+      "gate_after": "W4_COMPLETE"
+    },
+    {
+      "id": "W5",
+      "time_share_pct": 10,
+      "parallel_lanes": [
+        "K"
+      ],
+      "requires_frozen": [
+        "H",
+        "I",
+        "J"
+      ],
+      "gate_after": "K_COMPLETE_OR_NO_CHANGES_NEEDED"
+    },
+    {
+      "id": "W6",
+      "time_share_pct": 5,
+      "parallel_lanes": [
+        "O6"
+      ],
+      "requires_frozen": [
+        "K_OR_NO_CHANGES_NEEDED"
+      ],
+      "gate_after": "MORNING_HANDOFF"
+    }
+  ],
+  "lanes": [
+    {
+      "id": "O0",
+      "role": "orchestrator",
+      "wave": "W0",
+      "title": "Inputs, runtime, isolation baseline",
+      "write_set": [
+        "w0/",
+        "control/"
+      ],
+      "depends_on": [],
+      "notes": "Orchestrator only. No live model call as hidden preflight. Creates RUN_ID under output/overnight/<RUN_ID>/."
+    },
+    {
+      "id": "A",
+      "role": "worker",
+      "wave": "W1",
+      "title": "Repo truth / reuse",
+      "write_set": [
+        "lanes/A/"
+      ],
+      "depends_on": [
+        "O0"
+      ],
+      "notes": "Migrations end-state, capability matrix CODE_PRESENT/TEST_EVIDENCE/PROD_UNKNOWN."
+    },
+    {
+      "id": "B",
+      "role": "worker",
+      "wave": "W1",
+      "title": "Competition / reason to switch",
+      "write_set": [
+        "lanes/B/"
+      ],
+      "depends_on": [
+        "O0"
+      ],
+      "notes": "3-5 SK-relevant products; no invented references; at least one counter-evidence."
+    },
+    {
+      "id": "C",
+      "role": "worker",
+      "wave": "W1",
+      "title": "Portal contracts / access",
+      "write_set": [
+        "lanes/C/"
+      ],
+      "depends_on": [
+        "O0"
+      ],
+      "notes": "Nehnutelnosti.sk, Reality.sk, Topreality. No invented XSD/endpoints."
+    },
+    {
+      "id": "D",
+      "role": "worker",
+      "wave": "W2",
+      "title": "Architecture and data model",
+      "write_set": [
+        "lanes/D/"
+      ],
+      "depends_on": [
+        "A",
+        "B",
+        "C"
+      ],
+      "notes": "Evolve existing CRM; queue/FE/maps trade-offs; tenant+phone audit invariants."
+    },
+    {
+      "id": "E",
+      "role": "worker",
+      "wave": "W2",
+      "title": "Pricing experiment",
+      "write_set": [
+        "lanes/E/"
+      ],
+      "depends_on": [
+        "A",
+        "B",
+        "C"
+      ],
+      "notes": "Start from existing pricing files; mark pilot price HYPOTHESIS; no billing code changes."
+    },
+    {
+      "id": "F",
+      "role": "worker",
+      "wave": "W3",
+      "title": "Pilot and acquisition",
+      "write_set": [
+        "lanes/F/"
+      ],
+      "depends_on": [
+        "D",
+        "E"
+      ],
+      "notes": "5-10 design partners plan; no outbound sends."
+    },
+    {
+      "id": "G",
+      "role": "worker",
+      "wave": "W3",
+      "title": "Small implementation backlog / future waves",
+      "write_set": [
+        "lanes/G/"
+      ],
+      "depends_on": [
+        "D",
+        "E"
+      ],
+      "notes": "Propose waves only — do not execute code this night under default scope."
+    },
+    {
+      "id": "H",
+      "role": "worker",
+      "wave": "W4",
+      "title": "Technical review (opponent)",
+      "write_set": [
+        "lanes/H/"
+      ],
+      "depends_on": [
+        "F",
+        "G"
+      ],
+      "notes": "Independent opponent; may STOP; does not edit author files."
+    },
+    {
+      "id": "I",
+      "role": "worker",
+      "wave": "W4",
+      "title": "Commercial review (opponent)",
+      "write_set": [
+        "lanes/I/"
+      ],
+      "depends_on": [
+        "F",
+        "G"
+      ],
+      "notes": "Independent opponent; may STOP; does not edit author files."
+    },
+    {
+      "id": "J",
+      "role": "worker",
+      "wave": "W4",
+      "title": "Collisions / evidence review (opponent)",
+      "write_set": [
+        "lanes/J/"
+      ],
+      "depends_on": [
+        "F",
+        "G"
+      ],
+      "notes": "Provenance, write-sets, budget, runner capability."
+    },
+    {
+      "id": "K",
+      "role": "worker",
+      "wave": "W5",
+      "title": "Single amendment integrator",
+      "write_set": [
+        "amendments/",
+        "lanes/K/"
+      ],
+      "depends_on": [
+        "H",
+        "I",
+        "J"
+      ],
+      "notes": "One repair cycle only. Original reports stay frozen."
+    },
+    {
+      "id": "O6",
+      "role": "orchestrator",
+      "wave": "W6",
+      "title": "Final check and morning handoff",
+      "write_set": [
+        "final/",
+        "control/"
+      ],
+      "depends_on": [
+        "K"
+      ],
+      "notes": "Produces morning-report.md, decision-contract.md, implementation-backlog.md, human-decisions.md, verification.json."
+    }
+  ],
+  "hard_limits": {
+    "no_app_code_edits_default_scope": true,
+    "no_migrations_deploy_merge_push_pr": true,
+    "no_live_run_until_launch_record_filled": true,
+    "do_not_use_ruflo_model_bridge_as_research_runner": true,
+    "max_amendment_cycles": 1,
+    "max_transient_read_retries": 1
+  }
+}

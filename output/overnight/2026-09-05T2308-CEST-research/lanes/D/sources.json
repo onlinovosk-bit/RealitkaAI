@@ -1,0 +1,5 @@
+[
+  {"claim":"Reuse Next/Supabase","path":"lanes/A/report.md","lines_or_note":"decision 1","evidence_type":"prior_lane"},
+  {"claim":"MapLibre present","path":"apps/crm/package.json","lines_or_note":"maplibre-gl","evidence_type":"repo"},
+  {"claim":"Portal export blocked","path":"lanes/C/report.md","lines_or_note":"PASS_WITH_CONDITIONS","evidence_type":"prior_lane"}
+]
