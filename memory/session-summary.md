@@ -1,14 +1,13 @@
-## Session 2026-09-05 (PR #535 fix-merge-conflicts — CI CLEAN)
+## Session 2026-09-05 (critical-bug automation)
 ### Dokončené
-- origin/main merge (clean; 0 textual conflicts)
-- onboarding/session api-validate + usage-metrics imports → ratchet NOVÉ=0
-- CI green + mergeStateStatus CLEAN on tip `f74ada73` (agent did not merge)
-- Report: `docs/reports/2026-09-05-pr535-fix-merge-conflicts.md`
+- Found #535 digest bug: unscoped routine_notifications mark-read wiped customer unread + ignored Resend errors
+- Fix + tests + report → PR #537 `fix/notification-digest-tenant-scope`
+- MEMORIES: removed #534 (merged); added #537
 ### Rozpracované / Pending
-- Founder merge #535
-- PROD smoke notification-digest
+- Founder review/merge #537 (before next PROD digest cron)
+- Older open critical fixes still awaiting review (#369–#495)
 ### Kľúčové súbory zmenené
-- `apps/crm/src/app/api/onboarding/session/route.ts`: contract imports only
-- `docs/reports/2026-09-05-pr535-fix-merge-conflicts.md`
+- `apps/crm/src/lib/infra/notification-delivery.ts`: SYSTEM_USAGE_AGENCY_ID scope + Resend error check
+- `docs/reports/2026-09-05-notification-digest-tenant-wipe.md`
 ### Ďalší krok
-Founder GO: merge #535; then PROD digest smoke.
+Founder GO: merge #537 before 07:15 UTC digest cron runs on PROD.

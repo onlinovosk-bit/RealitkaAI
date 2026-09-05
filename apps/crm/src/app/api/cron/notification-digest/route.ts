@@ -8,7 +8,8 @@ export const dynamic = "force-dynamic";
 
 /**
  * GET /api/cron/notification-digest — Strážca prítoku daily delivery.
- * Unread routine_notifications → FOUNDER_EMAILS; mark read_at after send.
+ * Unread *platform* routine_notifications (SYSTEM_USAGE_AGENCY_ID) → FOUNDER_EMAILS;
+ * mark read_at after confirmed send. Never touches customer-tenant unread rows.
  */
 export async function GET(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
