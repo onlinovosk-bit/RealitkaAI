@@ -53,3 +53,9 @@ No behavior rewrite; notification-digest contract fix (`c522ba1b`) **untouched**
 ## Coordination note
 
 Another cloud agent pushed merge `ec4c87af` while this run prepared an equivalent merge. Resolution: discarded duplicate local merge; kept only onboarding import patch on top of their tip.
+
+## CI follow-up (system notification)
+
+Commit `bbf42a4f` (post-merge conflict resolution tip before later docs-only babysit commits): **all required checks SUCCESS** — including `Zmluva kódu (ratchet)` and `Lint, test, build`.
+
+Later docs-only tips from concurrent babysitter (`d8adbd76`, `10763b0f`) — no code conflict with this fix; `notification-digest` and onboarding imports unchanged. Agent did **not** merge the PR.
