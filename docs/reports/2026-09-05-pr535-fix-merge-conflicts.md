@@ -44,7 +44,9 @@ No behavior rewrite; notification-digest contract fix (`c522ba1b`) **untouched**
 ## Git
 
 - Base merge on remote: `ec4c87af` (babysitter-coordinated)
-- Contract commit: see push (this report + route imports)
+- Contract commit: `0c7a8bf8` (this report + route imports)
+- Session summary: `bd744b22` (branch HEAD)
+- Push: **OK** → `origin/feat/b18-notification-delivery`
 - **Did not** merge PR into main
 - **Did not** edit CI workflows
 
