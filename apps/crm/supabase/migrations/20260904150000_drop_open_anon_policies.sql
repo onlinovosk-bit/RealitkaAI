@@ -108,8 +108,8 @@ END $$;
 
 -- ============================================================================
 -- NOT TOUCHED in this migration
--- - onboarding_sessions "Allow anon access" — needs session_id-scoped policy
---   (separate task TASK-RLS-ONBOARDING-SESSION; not indefinite PRESUNÚŤ)
+-- - onboarding_sessions "Allow anon access" — deferred to
+--   20260904220000_drop_onboarding_sessions_anon_all.sql (TASK-RLS-ONBOARDING-SESSION Path B)
 -- ============================================================================
 
 COMMIT;
