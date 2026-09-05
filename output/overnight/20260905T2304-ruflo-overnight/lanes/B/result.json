@@ -1,0 +1,51 @@
+{
+  "run_id": "20260905T2304-ruflo-overnight",
+  "lane_id": "B",
+  "base_sha": "cf3604613cdbb6a7a279e175f2c792fb25591461",
+  "status": "PASS_WITH_CONDITIONS",
+  "produced_files": [
+    "lanes/B/report.md",
+    "lanes/B/sources.json",
+    "lanes/B/result.json"
+  ],
+  "competitor_set": [
+    "Nehnuteľnosti Admin (Realsoft successor, SK listing admin ≠ CRM)",
+    "backOFFICE + ZRKS (SK incumbent CRM)",
+    "Realman (CZ prices Kč — SK availability UNKNOWN)",
+    "AutoCRM (general CRM, od 129€/mo)",
+    "Realsys (SK distribution+CRM claims)",
+    "Control: Excel + export/Admin"
+  ],
+  "pricing_known": {
+    "backOFFICE_software_year": "95 EUR + VAT (116.85 incl) standard; 190 EUR + VAT (233.7 incl) webREAL",
+    "ZRKS_API_year": "554 EUR non-member; 415.50 EUR member",
+    "Realman_CZ_month_ex_VAT_CZK": "1278 / 2378 / 3478",
+    "AutoCRM_from_EUR_month": 129,
+    "Realsys_EUR_month": "10 / 210 / 270 / 349"
+  },
+  "pricing_unknown": [
+    "Nehnuteľnosti Admin software/CRM price (no public ceník found)",
+    "Commercial portal fee tables for Nehnutelnosti.sk / Reality.sk / Topreality.sk",
+    "Realman SK availability and SK portal fee impact",
+    "AutoCRM full tariff + VAT + realty connectors",
+    "Realsys VAT inclusivity",
+    "Willingness-to-pay for Revolis (not web-provable)"
+  ],
+  "against_thesis": "Public backOFFICE software floor (~95 EUR/year + mandatory ZRKS API) plus Admin-as-listing-tool undermines assumption that post-Realsoft agencies will pay CZ-style monthly SaaS without validation.",
+  "unknowns": [
+    "Independent market share / switching rates",
+    "Admin and major portal commercial fee schedules",
+    "Realman SK go-to-market",
+    "WTP for Revolis at any price",
+    "Migration effort hours between stacks"
+  ],
+  "conditions": [
+    "Vendor marketing not treated as performance proof",
+    "No invented prices; missing = UNKNOWN",
+    "WTP requires EXP-B2 interviews/price cards",
+    "Realman kept as CZ reference only"
+  ],
+  "next_action": "Hand competitor+public-price matrix to Lane E (pricing hypotheses) and Lane F (interview/pilot design); do not invent portal XSDs or fee tables.",
+  "accessed_at": "2026-09-05",
+  "written_at_utc": "2026-09-05T21:12:42Z"
+}

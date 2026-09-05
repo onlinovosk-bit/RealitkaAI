@@ -1,0 +1,102 @@
+[
+  {
+    "claim": "Nehnutelnosti.sk ended Realsoft and migrated clients to Nehnuteľnosti Admin; Realsoft operations ended.",
+    "title": "Obzretie sa za rokom 2025",
+    "publisher": "JM Support",
+    "url": "https://www.jmsupport.sk/obzretie-sa-za-rokom-2025/",
+    "published_date": "UNKNOWN",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "primary_vendor_adjacent_blog",
+    "limit": "Not Nehnutelnosti.sk official notice; independent web vendor recount of 2025 migration pain. Not independent market research."
+  },
+  {
+    "claim": "Nový Admin Nehnuteľnosti slúži len na správu inzercie, nie ako CRM pre realitné kancelárie; Realsoft ended.",
+    "title": "JM Support homepage",
+    "publisher": "JM Support / WebIdea",
+    "url": "https://www.jmsupport.sk/",
+    "published_date": "UNKNOWN",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "primary_vendor_adjacent_marketing",
+    "limit": "Competitor-to-portal vendor opinion; not a product spec from Nehnutelnosti.sk."
+  },
+  {
+    "claim": "Agency login path for Nehnuteľnosti Admin exists at admin.nehnutelnosti.sk (linked as Vstup pre realitné kancelárie).",
+    "title": "Prihlásenie | Nehnutelnosti.sk",
+    "publisher": "Nehnutelnosti.sk",
+    "url": "https://www.nehnutelnosti.sk/prihlasenie",
+    "published_date": "UNKNOWN",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "primary_portal",
+    "limit": "Confirms Admin entrypoint; does not publish CRM feature set or pricing."
+  },
+  {
+    "claim": "Firemné konto supports separate user accounts and rights (Administrátor / Maklér) for listing management.",
+    "title": "FAQ – samostatné používateľské účty",
+    "publisher": "Nehnutelnosti.sk magazín",
+    "url": "https://www.nehnutelnosti.sk/magazin-o-byvani/39289-faq-samostatne-pouzivatelske-ucty",
+    "published_date": "UNKNOWN",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "primary_portal_docs",
+    "limit": "User-admin FAQ only; not full Admin product documentation; no prices."
+  },
+  {
+    "claim": "backOFFICE standard 95 EUR/rok; web 95 EUR/rok; webREAL 190 EUR/rok; requires paid ZRKS database/API; exports to relevant SK portals; claims CRM+invoicing+AML.",
+    "title": "Realitný softvér backOFFICE",
+    "publisher": "backOFFICE.sk",
+    "url": "https://www.backoffice.sk/realitny-software/",
+    "published_date": "UNKNOWN",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "primary_vendor_marketing",
+    "limit": "Vendor marketing; 'najpoužívanejší' and '300+' claims unaudited; VAT clarified on order page not fully on this page."
+  },
+  {
+    "claim": "Order totals: backOFFICE 95EUR+DPH=116.85EUR or 190EUR+DPH=233.7EUR; ZRKS DB/API 554EUR/yr; VAT note: backOFFICE incl. VAT, ZRKS final/no VAT payer; member discount on ZRKS API 138.50EUR.",
+    "title": "Objednávka backOFFICE",
+    "publisher": "backOFFICE.sk",
+    "url": "https://www.backoffice.sk/realitny-software/objednavka/",
+    "published_date": "UNKNOWN",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "primary_vendor_pricing",
+    "limit": "Public order page at access date; commercial portal fees to Nehnutelnosti/Reality/Topreality not included."
+  },
+  {
+    "claim": "ZoznamRealit public annual fees: listing 346.25EUR; API+listing 554EUR; member listing 249.30EUR; member API+listing 415.50EUR; membership 83.10EUR/yr.",
+    "title": "Objednávka inzercie | Zoznam realít",
+    "publisher": "ZoznamRealit.sk / ZRKS",
+    "url": "https://www.zoznamrealit.sk/objednavka-inzercie",
+    "published_date": "UNKNOWN",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "primary_pricing",
+    "limit": "Page still mentions Realsoft import URL — may be legacy; does not prove Realsoft still live."
+  },
+  {
+    "claim": "Realman CZ SaaS tariffs: Absolvent 1278 CZK/mo, Master 2378, Senior 3478; prices without VAT; web 78 CZK/mo without VAT to license.",
+    "title": "Realman - realitní software",
+    "publisher": "Realman s.r.o.",
+    "url": "https://www.realman.cz/",
+    "published_date": "UNKNOWN",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "primary_vendor_pricing",
+    "limit": "CZ market only on this domain; SK availability not evidenced; portal fees separate UNKNOWN."
+  },
+  {
+    "claim": "AutoCRM marketed from SK URL; price from 129 EUR/month unlimited users; Czech support; not realty-vertical; used by freelancers/SZCO narrative.",
+    "title": "CRM pre SZCO, freelancerov a zivnostnikov | AutoCRM",
+    "publisher": "AutoCRM",
+    "url": "https://autocrm.sk/crm-pro-zivnostniky",
+    "published_date": "UNKNOWN",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "primary_vendor_marketing",
+    "limit": "General CRM; no SK realty portal export evidence; VAT UNKNOWN; 'od' price may omit tiers."
+  },
+  {
+    "claim": "Realsys SK public cenik: Trial 0/14d, Starter 10EUR/mo, Professional 210EUR/mo, Enterprise 270EUR/mo, Web Pro 349EUR/mo; major SK portals optional to contract.",
+    "title": "RealSys — Automatizacia distribucie nehnutelnosti",
+    "publisher": "Realsys",
+    "url": "https://www.realsys.sk/",
+    "published_date": "UNKNOWN",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "primary_vendor_pricing",
+    "limit": "VAT not stated; connector reliability unaudited; marketing claims of growth not proven."
+  }
+]

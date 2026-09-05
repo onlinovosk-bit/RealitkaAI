@@ -1,0 +1,119 @@
+{
+  "run_id": "20260905T2304-ruflo-overnight",
+  "lane_id": "H",
+  "base_sha": "cf3604613cdbb6a7a279e175f2c792fb25591461",
+  "accessed_at_utc": "2026-09-05T21:35:00Z",
+  "sources": [
+    {
+      "claim": "Lane F pilot plan and no outbound publish promise",
+      "name": "Lane F report/result",
+      "publisher": "ruflo-overnight worker F",
+      "path": "lanes/F/report.md",
+      "also": [
+        "lanes/F/result.json",
+        "lanes/F/sources.json"
+      ],
+      "evidence_type": "upstream_lane_artifact",
+      "limit": "Research plan only; no live partner list"
+    },
+    {
+      "claim": "Implementation BOs, DAG, P5/P6 blocked, P1 properties_tenant focus",
+      "name": "Lane G report/result",
+      "publisher": "ruflo-overnight worker G",
+      "path": "lanes/G/report.md",
+      "also": [
+        "lanes/G/result.json",
+        "lanes/G/sources.json"
+      ],
+      "evidence_type": "upstream_lane_artifact",
+      "limit": "Specs only; filenames deferred"
+    },
+    {
+      "claim": "Tenant/phone/export architecture decisions D5-D10",
+      "name": "Lane D report/result",
+      "publisher": "ruflo-overnight worker D",
+      "path": "lanes/D/report.md",
+      "also": [
+        "lanes/D/result.json",
+        "lanes/D/sources.json"
+      ],
+      "evidence_type": "upstream_lane_artifact",
+      "limit": "No prod DB verification"
+    },
+    {
+      "claim": "Capability matrix phone audit GAP; path inventory",
+      "name": "Lane A report",
+      "publisher": "ruflo-overnight worker A",
+      "path": "lanes/A/report.md",
+      "also": [
+        "lanes/A/result.json",
+        "lanes/A/sources.json"
+      ],
+      "evidence_type": "upstream_lane_artifact",
+      "limit": "PROD_UNKNOWN for live apply"
+    },
+    {
+      "claim": "UC Import cadence ~12h full inventory; delete semantics missing; no outbound CODE_PRESENT",
+      "name": "Lane C report",
+      "publisher": "ruflo-overnight worker C",
+      "path": "lanes/C/report.md",
+      "also": [
+        "lanes/C/result.json",
+        "lanes/C/sources.json"
+      ],
+      "evidence_type": "upstream_lane_artifact",
+      "limit": "Public docs + repo cite; vendor package absent"
+    },
+    {
+      "claim": "properties_tenant agency_id IS NULL bypass",
+      "name": "RLS properties migration",
+      "publisher": "repo BASE_SHA",
+      "path": "apps/crm/supabase/migrations/20260508180000_rls_properties.sql",
+      "evidence_type": "git_blob_at_base_sha",
+      "limit": "Migration text != live prod policies"
+    },
+    {
+      "claim": "leads_tenant agency_id IS NULL bypass",
+      "name": "RLS leads/activities migration",
+      "publisher": "repo BASE_SHA",
+      "path": "apps/crm/supabase/migrations/20260507160000_rls_leads_activities.sql",
+      "evidence_type": "git_blob_at_base_sha",
+      "limit": "Later anon drops exist; NULL bypass pattern still in tenant policies unless superseded"
+    },
+    {
+      "claim": "List selects return broker_phone/owner_phone",
+      "name": "properties-store select constants",
+      "publisher": "repo BASE_SHA",
+      "path": "apps/crm/src/lib/properties-store.ts",
+      "evidence_type": "git_blob_at_base_sha",
+      "limit": "Code path presence; not runtime HTTP capture this lane"
+    },
+    {
+      "claim": "Leads inventory API selects owner_phone/broker_phone",
+      "name": "leads inventory route",
+      "publisher": "repo BASE_SHA",
+      "path": "apps/crm/src/app/api/leads/inventory/route.ts",
+      "evidence_type": "git_blob_at_base_sha",
+      "limit": "Static select string evidence"
+    },
+    {
+      "claim": "activities_anon_insert dropped in late chain",
+      "name": "drop open anon policies",
+      "publisher": "repo BASE_SHA",
+      "path": "apps/crm/supabase/migrations/20260904150000_drop_open_anon_policies.sql",
+      "evidence_type": "git_blob_at_base_sha",
+      "limit": "Supports anti-false-alarm; does not remove leads NULL bypass"
+    },
+    {
+      "claim": "Lane H review mandate",
+      "name": "START-HERE / lanes.json",
+      "publisher": "swarm package",
+      "path": "docs/overnight/2026-09-05-ruflo-swarm/START-HERE.md",
+      "also": [
+        "docs/overnight/2026-09-05-ruflo-swarm/lanes.json"
+      ],
+      "evidence_type": "control_manifest",
+      "limit": "Process contract"
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "run_id": "20260905T2304-ruflo-overnight",
+  "lane_id": "C",
+  "base_sha": "cf3604613cdbb6a7a279e175f2c792fb25591461",
+  "input_hashes": {
+    "note": "orchestrator computes output hashes into control/; worker does not self-hash into write-set"
+  },
+  "status": "PASS_WITH_CONDITIONS",
+  "produced_files": [
+    "output/overnight/20260905T2304-ruflo-overnight/lanes/C/report.md",
+    "output/overnight/20260905T2304-ruflo-overnight/lanes/C/sources.json",
+    "output/overnight/20260905T2304-ruflo-overnight/lanes/C/result.json"
+  ],
+  "unknowns": [
+    "production CRM to UC Import auth scheme and credentials",
+    "authoritative downloadable OpenAPI/XSD package version",
+    "per-portal vs shared fan-out controls after one UC activation",
+    "image/listing/rate limits and publish confirmation channel",
+    "deactivate vs delete product semantics per portal",
+    "whether Reality.sk still has a non-UC feed path",
+    "Topreality ToS written consent for Revolis as allowed system",
+    "commercial pricing for UC import API activation"
+  ],
+  "next_action": "REQUEST_UC_VENDOR_PACKAGE_AND_PILOT_ACTIVATION; keep inbound /api/uc/import sample-gated; do not build outbound publish without schema+credentials",
+  "portal_summary": {
+    "nehnutelnosti.sk": {
+      "known": "UC-gated; public Import validation + Export callback docs; no open public API",
+      "blocked": "prod auth/schema/limits/confirm; outbound adapter missing"
+    },
+    "reality.sk": {
+      "known": "RealSoft 3rd-party import activation + info@reality.sk linking; UC trio claims",
+      "blocked": "brand-specific public API docs not found"
+    },
+    "topreality.sk": {
+      "known": "ToS requires Realsoft; unauthorized auto import/export forbidden",
+      "blocked": "consent + same vendor package unknowns"
+    }
+  },
+  "feasible_pilot_scope": [
+    "inbound UC Export into existing CRM receivers with real sample",
+    "single outbound UC Import generator only after vendor schema+activation",
+    "no scraping-based publish"
+  ],
+  "completed_at": "2026-09-05T21:14:00Z"
+}

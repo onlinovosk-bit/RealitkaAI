@@ -1,0 +1,84 @@
+{
+  "run_id": "20260905T2304-ruflo-overnight",
+  "lane_id": "H",
+  "base_sha": "cf3604613cdbb6a7a279e175f2c792fb25591461",
+  "input_hashes": {
+    "lanes/F/report.md": "9c3f79dca8f5b42ea3eb959b9bfea0bd0206dff3b43a22893ef6a38380412530",
+    "lanes/F/result.json": "d83e58c1aa2f808975bd4fdd177c9a3b4fc16ee836cca1d98b36af9eb7c16b6c",
+    "lanes/F/sources.json": "dca69123923c7a1f4bd4404fd7f2ccf939286bdcfc30aee6283ec514b394c818",
+    "lanes/G/report.md": "0f5ab509884ed89020420705cddd8ac4b2a80bd76c458a755c3782f439b0070e",
+    "lanes/G/result.json": "5743d33c5627cdeda74e087a893b76a2883fa28d022c6a1cddefb4c34c50a090",
+    "lanes/G/sources.json": "4823be0e5c29bff98c3ec71fdc92a9f6ea1c76ac5ad92628047bf6842a9ad481",
+    "lanes/D/report.md": "deffec4f1b48a27f043da202b035e5c33cff53736dad91686c8ab3b660e7f1df",
+    "lanes/D/result.json": "0cc39455b022abcd30f20f5b02771946f631748c6319136f4d71046bdec4c474",
+    "lanes/D/sources.json": "307d0e05f2e0133c0d4e63a6d100382ed5fdfc7251330126ed38743d5cac0357",
+    "lanes/A/report.md": "f3fbc2102e3b150670a26a6f2ffdc27bdfa87c3876fbf8d2ffe9f9b4ce658321",
+    "lanes/A/result.json": "a4f315c5012066ec0d518272052d8fac943728258fd829409dbf1858cac2a6ed",
+    "lanes/A/sources.json": "4c5805fa4f09f91827bf71a1ae43531eb8d9b2462071cb3069f945e40322cda9",
+    "lanes/C/report.md": "01d9b73fa9ec6e7ce9c9c667eb15da21bb6463947fe30eca3a1a7e58ba370d2d",
+    "lanes/C/result.json": "a28715fd65e57441572d0ffbeec56049db56bc2cecf9d10fa0bffcb7726b05b8",
+    "lanes/C/sources.json": "dc0f29fb5e1d166ceaecf2707847ec1dc62fb3839d44c33baa7d5de1d748f69b"
+  },
+  "status": "STOP",
+  "verdict": "STOP",
+  "produced_files": [
+    "lanes/H/report.md",
+    "lanes/H/sources.json",
+    "lanes/H/result.json"
+  ],
+  "reviewed_lanes": [
+    "F",
+    "G",
+    "D",
+    "A",
+    "C"
+  ],
+  "findings": [
+    {
+      "id": "F-H1",
+      "severity": "CRITICAL",
+      "theme": "phone_audit_bypass",
+      "title": "App-route audit does not close PostgREST/select; phones already in list selects"
+    },
+    {
+      "id": "F-H2",
+      "severity": "HIGH",
+      "theme": "tenant_leaks",
+      "title": "agency_id IS NULL on leads+properties; BO-P1 under-scopes leads"
+    },
+    {
+      "id": "F-H3",
+      "severity": "HIGH",
+      "theme": "export_delete_retry_ordering",
+      "title": "Outbox model vs UC full-file cadence/delete unknowns; mitigated by P5/P6 BLOCKED"
+    },
+    {
+      "id": "F-H4",
+      "severity": "MEDIUM",
+      "theme": "schedule_feasibility",
+      "title": "Cut-scope F/G feasible only after CRITICAL clear; attempt-logging BO thin"
+    },
+    {
+      "id": "F-H5",
+      "severity": "LOW",
+      "theme": "storage_isolation",
+      "title": "Storage tenant prefix specified without BO"
+    }
+  ],
+  "critical_count": 1,
+  "blocks_implementation_go": true,
+  "conditions_if_reopened": [
+    "K amends D8/BO-P2: strip selects + DB-enforced reveal-only + fail-closed tests including direct client SELECT denial",
+    "K amends BO-P1 to explicitly cover leads_tenant (+ dependents) NULL bypass removal after backfill",
+    "Keep P5/P6 BLOCKED until UC package confirms cadence and delete/deactivate semantics",
+    "Name attempt-logging owner for F8 metric before Cohort 1 multi-agency"
+  ],
+  "unknowns": [
+    "prod_RLS_apply_and_NULL_row_residue",
+    "founder_phone_audit_required_before_cohort1",
+    "UC_full_file_vs_per_listing_publish_semantics",
+    "attempt_logging_field_sufficiency_for_F8"
+  ],
+  "next_action": "Freeze H STOP for W4; Lane K must map F-H1/F-H2 into amendments before any security-complete claim; do not write amendments from H",
+  "written_at_utc": "2026-09-05T21:33:35Z"
+}

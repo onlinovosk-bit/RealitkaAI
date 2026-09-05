@@ -1,0 +1,75 @@
+[
+  {
+    "path": "apps/crm/package.json",
+    "status": "TRACKED_AT_BASE",
+    "sha256": "6dd8b4516612535437e13920026daac3d69e3697568af0cb40ef228a9847bd2e",
+    "bytes": 3659
+  },
+  {
+    "path": "apps/crm/src/lib/program-tier-pricing.ts",
+    "status": "TRACKED_AT_BASE",
+    "sha256": "4811250c9d3e4b0b99d101aa6645ab9625fbec81c5da0652662d2291265f851a",
+    "bytes": 10711
+  },
+  {
+    "path": "apps/crm/docs/pricing-v1.md",
+    "status": "TRACKED_AT_BASE",
+    "sha256": "bef4bb9988554c2fe554419724705be9c1f4f7104a3207072a24a9fd02148961",
+    "bytes": 5534
+  },
+  {
+    "path": "docs/briefs/reality-smolko-production-blockers-2026-09-04.md",
+    "status": "TRACKED_AT_BASE",
+    "sha256": "e049b3523b985ca4ac7e88c9325e35903416ace8e586799171b4afd5ad2f1d2c",
+    "bytes": 271
+  },
+  {
+    "path": "docs/architecture/revolis-constitution-v2.md",
+    "status": "TRACKED_AT_BASE",
+    "sha256": "e7a26ca621fbc7414a95cd0055ca7a5b91e9512c4d643d980e992b094d37f58f",
+    "bytes": 5912
+  },
+  {
+    "path": "docs/architecture/master-data-sourcing-map.md",
+    "status": "TRACKED_AT_BASE",
+    "sha256": "0f16cb0edfe07bf277e841e83a686ad92b5e9616d132d57dc89a81ca96331070",
+    "bytes": 8294
+  },
+  {
+    "path": "apps/crm/AGENTS.md",
+    "status": "TRACKED_AT_BASE",
+    "sha256": "8affa2a3d1160b2033d07dcf8c4d5fa6017eafca52354f22c2e63354c6d57a93",
+    "bytes": 1165
+  },
+  {
+    "path": ".cursor/rules/l99-engineering-constitution.mdc",
+    "status": "TRACKED_AT_BASE",
+    "sha256": "0990f76b310a372c92304700d2a8d4cc82e04b09f5332c44c9f3207f3dfde921",
+    "bytes": 1142
+  },
+  {
+    "path": "docs/overnight/2026-09-05-ruflo-swarm/START-HERE.md",
+    "status": "LOCAL_DRAFT",
+    "sha256": "73df8d96a2cc72c2f9d4a49573b8c0b403956a52a55569b49ab92ee2e00ed2b6"
+  },
+  {
+    "path": "docs/overnight/2026-09-05-ruflo-swarm/lanes.json",
+    "status": "LOCAL_DRAFT",
+    "sha256": "a82e061777205604470d73a701309380d9170aaec9def786733f366220037845"
+  },
+  {
+    "path": "docs/overnight/2026-09-05-ruflo-swarm/launch-record.md",
+    "status": "LOCAL_DRAFT",
+    "sha256": "bf12a32b66f769604ba6753e786df65f059fce11c19bd09f7d05ada130d396b9"
+  },
+  {
+    "path": "docs/overnight/2026-09-05-ruflo-swarm/launch-record.template.md",
+    "status": "LOCAL_DRAFT",
+    "sha256": "9ba80fd3a387fe21ebb39e209b6e9ecafa5bec9b92b14ecdb057ed0382df5aaa"
+  },
+  {
+    "path": "docs/overnight/2026-09-05-ruflo-swarm/seed-evidence.md",
+    "status": "LOCAL_DRAFT",
+    "sha256": "4e570b3ca38fe91a459688d185ca3e679662ff49dc3f56b8cc93ea749517c731"
+  }
+]

@@ -1,0 +1,108 @@
+{
+  "run_id": "20260905T2304-ruflo-overnight",
+  "lane_id": "J",
+  "base_sha": "cf3604613cdbb6a7a279e175f2c792fb25591461",
+  "input_hashes": {
+    "lanes/A/report.md": "f3fbc2102e3b150670a26a6f2ffdc27bdfa87c3876fbf8d2ffe9f9b4ce658321",
+    "lanes/A/result.json": "a4f315c5012066ec0d518272052d8fac943728258fd829409dbf1858cac2a6ed",
+    "lanes/A/sources.json": "4c5805fa4f09f91827bf71a1ae43531eb8d9b2462071cb3069f945e40322cda9",
+    "lanes/B/report.md": "307e38610715d7f121f375e65895d3fd9e10e61d6b0a206ba05953a758e41b24",
+    "lanes/B/result.json": "3856f373f07154958b54557b114e2ca5e2eac292a6dc331752babc097c631dee",
+    "lanes/B/sources.json": "8d7f257f34e79633f9a6354c422d6478a6a6158a04f12ee633f60b4f315a8fc7",
+    "lanes/C/report.md": "01d9b73fa9ec6e7ce9c9c667eb15da21bb6463947fe30eca3a1a7e58ba370d2d",
+    "lanes/C/result.json": "a28715fd65e57441572d0ffbeec56049db56bc2cecf9d10fa0bffcb7726b05b8",
+    "lanes/C/sources.json": "dc0f29fb5e1d166ceaecf2707847ec1dc62fb3839d44c33baa7d5de1d748f69b",
+    "lanes/D/report.md": "deffec4f1b48a27f043da202b035e5c33cff53736dad91686c8ab3b660e7f1df",
+    "lanes/D/result.json": "0cc39455b022abcd30f20f5b02771946f631748c6319136f4d71046bdec4c474",
+    "lanes/D/sources.json": "307d0e05f2e0133c0d4e63a6d100382ed5fdfc7251330126ed38743d5cac0357",
+    "lanes/E/report.md": "9d604f87095642d954227f0343f0fdc8dd21666ebe44b25bfd6a98d03c50b574",
+    "lanes/E/result.json": "c1def3429bafd6f6726f5cf459f9f82594770be241c034c7cd4cb95bc86172a4",
+    "lanes/E/sources.json": "84a5f58910384209ad09d6a8bc20e8ca504471f8e749d789f9f81301beba67ac",
+    "lanes/F/report.md": "9c3f79dca8f5b42ea3eb959b9bfea0bd0206dff3b43a22893ef6a38380412530",
+    "lanes/F/result.json": "d83e58c1aa2f808975bd4fdd177c9a3b4fc16ee836cca1d98b36af9eb7c16b6c",
+    "lanes/F/sources.json": "dca69123923c7a1f4bd4404fd7f2ccf939286bdcfc30aee6283ec514b394c818",
+    "lanes/G/report.md": "0f5ab509884ed89020420705cddd8ac4b2a80bd76c458a755c3782f439b0070e",
+    "lanes/G/result.json": "5743d33c5627cdeda74e087a893b76a2883fa28d022c6a1cddefb4c34c50a090",
+    "lanes/G/sources.json": "4823be0e5c29bff98c3ec71fdc92a9f6ea1c76ac5ad92628047bf6842a9ad481",
+    "control/w1-output-hashes.json": "4010de34671bb31ba15e588169a1a2277245fc747c90d61fc72ced9391d412a0",
+    "control/w2-output-hashes.json": "7b27d1df300b2d4d1af7ba458a57925341fe7a3895c4623703db369fa1eefb5e",
+    "control/w3-output-hashes.json": "efbfc2dc92a0112b82291794d3b9acb5e4607ce5329f562536b4b33a49137e1b",
+    "control/status.json": "569ec95fa831813eefb2018a1bc018f1c821e5fdf0469cb40ce92cd123b78856",
+    "w0/report.md": "f974faf0f07e8a0e4b5835fc1ad063d5887d8f2796301b33d970afdff12d8354",
+    "w0/input/local_draft/START-HERE.md": "73df8d96a2cc72c2f9d4a49573b8c0b403956a52a55569b49ab92ee2e00ed2b6",
+    "w0/input/local_draft/lanes.json": "a82e061777205604470d73a701309380d9170aaec9def786733f366220037845",
+    "w0/input/local_draft/launch-record.md": "bf12a32b66f769604ba6753e786df65f059fce11c19bd09f7d05ada130d396b9",
+    "w0/input/local_draft/seed-evidence.md": "4e570b3ca38fe91a459688d185ca3e679662ff49dc3f56b8cc93ea749517c731",
+    "LIVE_NONAUTH/docs/overnight/2026-09-05-ruflo-swarm/START-HERE.md": "a062cedae73fdb04719c04b7f00e330ecbed4ecac521530fd05e44b4fa7b652b",
+    "LIVE_NONAUTH/docs/overnight/2026-09-05-ruflo-swarm/lanes.json": "d60edc89ba6e310f0d9635a1e4543f62125c1b13c1e2f4af16911785ff20faef",
+    "LIVE_NONAUTH/docs/overnight/2026-09-05-ruflo-swarm/launch-record.md": "05854369264cfee591a2c1a7ed0fbba6ae7c8a315c46c98c6a5ce579e9c44896"
+  },
+  "status": "PASS_WITH_CONDITIONS",
+  "verdict": "PASS_WITH_CONDITIONS",
+  "produced_files": [
+    "lanes/J/report.md",
+    "lanes/J/sources.json",
+    "lanes/J/result.json",
+    "lanes/J/verify_provenance.py",
+    "lanes/J/recheck.ps1",
+    "lanes/J/verify-out.json"
+  ],
+  "findings": [
+    {
+      "id": "J-01",
+      "severity": "CRITICAL",
+      "code": "PACKAGE_INPUT_DRIFT"
+    },
+    {
+      "id": "J-02",
+      "severity": "HIGH",
+      "code": "DUAL_RUN_LAUNCH_RECORD"
+    },
+    {
+      "id": "J-03",
+      "severity": "MEDIUM",
+      "code": "MUTABLE_CONTROL_HASHED"
+    },
+    {
+      "id": "J-04",
+      "severity": "MEDIUM",
+      "code": "SOURCES_SCHEMA_SPLIT"
+    },
+    {
+      "id": "J-05",
+      "severity": "MEDIUM",
+      "code": "PARTIAL_INPUT_HASHES"
+    },
+    {
+      "id": "J-06",
+      "severity": "LOW",
+      "code": "D_SCRATCH"
+    },
+    {
+      "id": "J-07",
+      "severity": "LOW",
+      "code": "ASSUMED_BUDGET"
+    }
+  ],
+  "conditions": [
+    "w0/input/local_draft is package SSOT for this RUN; live docs/overnight package is NON-AUTHORITATIVE",
+    "K must amend J-01/J-02 before O6 may treat live launch-record as binding",
+    "Output hash manifests W1-W3 remain freeze evidence for A-G",
+    "No implementation / merge / spend escalation from this review",
+    "Unamended CRITICAL provenance → prefer NO_GO_IMPLEMENTATION at O6"
+  ],
+  "unknowns": [
+    "which RUN founder treats as morning-authoritative (2304 vs 2308)",
+    "intent behind live package mutation during overnight",
+    "session spend metering absent from control/",
+    "Stripe/prod DB still PROD_UNKNOWN (inherited)"
+  ],
+  "next_action": "Freeze Lane J; K amendments for J-01/J-02; O6 pin authoritative RUN root",
+  "written_at_utc": "2026-09-05T21:33:13Z",
+  "tooling": {
+    "verify_script": "lanes/J/verify_provenance.py",
+    "verify_out": "lanes/J/verify-out.json",
+    "script_suggested_verdict": "STOP",
+    "human_override_reason": "Package drift is status-metadata-only on equal line counts; output integrity intact; STOP if K fails to pin RUN authority"
+  }
+}

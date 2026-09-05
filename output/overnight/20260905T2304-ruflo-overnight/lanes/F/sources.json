@@ -1,0 +1,88 @@
+{
+  "run_id": "20260905T2304-ruflo-overnight",
+  "lane_id": "F",
+  "accessed_at": "2026-09-05",
+  "base_sha": "cf3604613cdbb6a7a279e175f2c792fb25591461",
+  "sources": [
+    {
+      "claim": "Lane F requires 5-10 design partners, gradual onboarding, one outcome metric, no outbound sends, plain states not C1, SLA as proposal",
+      "name": "START-HERE Lane F brief",
+      "publisher": "repo",
+      "url_or_path": "docs/overnight/2026-09-05-ruflo-swarm/START-HERE.md",
+      "published_at": "2026-09-05",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "package_brief",
+      "limit": "Control prose; not customer evidence"
+    },
+    {
+      "claim": "Lane F write_set lanes/F/; depends on D+E; no outbound sends",
+      "name": "lanes.json lane F",
+      "publisher": "repo",
+      "url_or_path": "docs/overnight/2026-09-05-ruflo-swarm/lanes.json",
+      "published_at": "2026-09-05",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "control_manifest",
+      "limit": "Not a Ruflo-native CLI format"
+    },
+    {
+      "claim": "Keep Next/Supabase CRM; Contact=leads; Viewing=scheduled_events; outbound portal outbox later; phone audit additive",
+      "name": "Lane D report",
+      "publisher": "ruflo-overnight",
+      "url_or_path": "lanes/D/report.md",
+      "published_at": "2026-09-05",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "frozen_lane_output",
+      "limit": "PASS_WITH_CONDITIONS; no live prod DB"
+    },
+    {
+      "claim": "Pilot HYPOTHESIS Team x5 + Lite = 355 EUR/mo with credit-to-subscription; weekday support; no outbound UC; 4-week stop",
+      "name": "Lane E report + result",
+      "publisher": "ruflo-overnight",
+      "url_or_path": "lanes/E/report.md",
+      "published_at": "2026-09-05",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "frozen_lane_output",
+      "limit": "List math != proven WTP; Stripe PROD_UNKNOWN"
+    },
+    {
+      "claim": "backOFFICE+ZRKS undercuts SaaS floor; Excel+Admin control; EXP-B1 interview kill if no unpaid pain",
+      "name": "Lane B report",
+      "publisher": "ruflo-overnight",
+      "url_or_path": "lanes/B/report.md",
+      "published_at": "2026-09-05",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "frozen_lane_output",
+      "limit": "Public prices/marketing; WTP unproven from web"
+    },
+    {
+      "claim": "UC Import outbound blocked/vendor-gated; third-party export may need portal consent (Topreality ToS)",
+      "name": "Lane C report",
+      "publisher": "ruflo-overnight",
+      "url_or_path": "lanes/C/report.md",
+      "published_at": "2026-09-05",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "frozen_lane_output",
+      "limit": "No invented XSD/endpoints"
+    },
+    {
+      "claim": "C0/C1/C2 and SLA only draft in lead-factory brief awaiting founder GO; phone audit GAP",
+      "name": "Lane A report",
+      "publisher": "ruflo-overnight",
+      "url_or_path": "lanes/A/report.md",
+      "published_at": "2026-09-05",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "frozen_lane_output",
+      "limit": "Draft definitions != shipped metrics"
+    },
+    {
+      "claim": "ICP 5-20 brokers is planning hypothesis",
+      "name": "seed-evidence / START-HERE",
+      "publisher": "repo",
+      "url_or_path": "docs/overnight/2026-09-05-ruflo-swarm/seed-evidence.md",
+      "published_at": "2026-09-05",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "package_brief",
+      "limit": "Not measured TAM"
+    }
+  ]
+}
