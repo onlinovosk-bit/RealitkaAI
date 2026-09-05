@@ -13,6 +13,11 @@ vi.mock("@/lib/infra/notification-delivery", () => ({
   })),
 }));
 
+vi.mock("@/lib/usage-metrics", () => ({
+  SYSTEM_USAGE_AGENCY_ID: "00000000-0000-4000-8000-000000000000",
+  incrementUsageMetric: vi.fn(async () => undefined),
+}));
+
 import { GET } from "@/app/api/cron/notification-digest/route";
 
 function req(auth: string | null) {

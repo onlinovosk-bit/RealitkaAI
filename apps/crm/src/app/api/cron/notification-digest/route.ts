@@ -1,6 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { errorResponse, okResponse } from "@/lib/api-response";
 import { runUnreadNotificationDigest } from "@/lib/infra/notification-delivery";
 import { createAdminClient } from "@/lib/supabase/server";
+import { incrementUsageMetric, SYSTEM_USAGE_AGENCY_ID } from "@/lib/usage-metrics";
 
 export const dynamic = "force-dynamic";
 
@@ -11,15 +13,24 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret || request.headers.get("authorization") !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    return errorResponse("Unauthorized", 401);
   }
 
-  const supabase = createAdminClient();
-  const result = await runUnreadNotificationDigest(supabase);
+  try {
+    const supabase = createAdminClient();
+    const result = await runUnreadNotificationDigest(supabase);
 
-  return NextResponse.json({
-    ok: true,
-    ...result,
-    generated_at: new Date().toISOString(),
-  });
+    await incrementUsageMetric({
+      agencyId: SYSTEM_USAGE_AGENCY_ID,
+      metric: "cron_notification_digest",
+    });
+
+    return okResponse({
+      ...result,
+      generated_at: new Date().toISOString(),
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "notification_digest_failed";
+    return errorResponse(message, 500);
+  }
 }
