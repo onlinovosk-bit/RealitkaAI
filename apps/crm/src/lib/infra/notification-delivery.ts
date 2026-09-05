@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { parseFounderEmails } from "@/lib/metrics/access";
+import { SYSTEM_USAGE_AGENCY_ID } from "@/lib/usage-metrics";
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.revolis.ai";
 
@@ -127,13 +128,20 @@ async function sendViaResend(input: {
   const resend = new Resend(resendKey);
   const from = process.env.RESEND_FROM_EMAIL ?? "Revolis <onboarding@resend.dev>";
   for (const to of input.to) {
-    await resend.emails.send({
+    const result = await resend.emails.send({
       from,
       to,
       subject: input.subject,
       html: input.html,
       text: input.text,
     });
+    // Resend returns { data, error } and does not throw on API failures.
+    if (result.error) {
+      return {
+        ok: false,
+        reason: result.error.message ?? "resend_send_failed",
+      };
+    }
   }
   return { ok: true };
 }
@@ -158,21 +166,25 @@ export async function sendCriticalHeartbeatEmail(input: {
 }
 
 /**
- * Daily digest of unread routine_notifications → FOUNDER_EMAILS.
- * Marks delivered rows read_at so unread count drops (no new column).
+ * Daily digest of unread *platform* routine_notifications → FOUNDER_EMAILS.
+ * Scoped to SYSTEM_USAGE_AGENCY_ID only — never customer-tenant rows
+ * (seller_rescue / new_lead / deal_risk would otherwise lose unread state).
+ * Marks delivered rows read_at only after Resend confirms send (no new column).
  */
 export async function runUnreadNotificationDigest(
   supabase: SupabaseClient,
-  options?: { limit?: number },
+  options?: { limit?: number; agencyId?: string },
 ): Promise<DigestSendResult> {
   if (!isNotificationDigestEnabled()) {
     return { sent: false, reason: "digest_disabled", unreadCount: 0, markedRead: 0 };
   }
 
+  const agencyId = options?.agencyId ?? SYSTEM_USAGE_AGENCY_ID;
   const limit = options?.limit ?? 200;
   const { data, error } = await supabase
     .from("routine_notifications")
     .select("id, priority, title, type, created_at")
+    .eq("agency_id", agencyId)
     .is("read_at", null)
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -212,6 +224,7 @@ export async function runUnreadNotificationDigest(
   const { error: updateError } = await supabase
     .from("routine_notifications")
     .update({ read_at: now })
+    .eq("agency_id", agencyId)
     .in("id", ids)
     .is("read_at", null);
 
