@@ -32,7 +32,7 @@
   only then automate. Real Handoff #1 is the next intended use, but it requires
   a concrete engineering task; Phase 2 remains explicitly blocked.
 
-## [2026-09-06] — Smolko chatbot: internal CRM assistant BUILD, public Concierge still gated
+## [2026-09-06] — SUPERSEDED: Smolko chatbot: internal CRM assistant BUILD, public Concierge still gated
 
 - **GO:** Founder "Go Chatbot pre Smolka."
 - **Decision:** Build only a safe internal CRM assistant slice in `/revolis-ai`,
@@ -54,6 +54,16 @@
   Contract telemetry uses `usage_metrics_daily` metric `ai_chatbot_queries`.
   Contradiction check: none; public chatbot remains explicitly blocked.
 - **Artifact:** `docs/reports/2026-09-06-smolko-crm-chatbot-mvp.md`.
+
+> Tento záznam je historický a nahrádza ho nasledujúce rozhodnutie po spresnení zákazníka. Uvedený report bol odstránený; jeho obsah zostáva dostupný v Git histórii.
+
+## [2026-09-06] — Reality Smolko chatbot: internal CRM panel REVERT, Voiceflow guide BUILD
+
+- **Trigger:** zákazník výslovne opravil zadanie: chatbot patrí na verejný web Reality Smolko a má sa pýtať na druh nehnuteľnosti, zámer a lokalitu.
+- **Evidence:** `https://www.realitysmolko.sk/` už má vložený Voiceflow projekt s launcherom „Poraďte sa!“; Creator v aktuálnom prostredí vyžaduje prihlásenie.
+- **Decision:** odstrániť interný `/revolis-ai` panel, API a CRM engine. Použiť existujúci Voiceflow projekt, nie nový Revolis chatbot. Prvý tok je bez PII, CRM zápisu, bookingu a neovereného filtračného endpointu.
+- **Artifact:** `docs/briefs/BO-smolko-voiceflow-correction.md`, `docs/voiceflow/reality-smolko-property-guide-v1.md`, `docs/reports/2026-09-06-smolko-voiceflow-audit.md`.
+- **External gate:** zmenu canvasu a publikovanie vykoná vlastník po sprístupnení Voiceflow projektu; skript na webe sa nemení.
 
 
 
