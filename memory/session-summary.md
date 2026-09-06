@@ -1,3 +1,20 @@
+## Session 2026-09-06 (Reality Smolko Voiceflow correction)
+### Dokončené
+- Verejný audit potvrdil, že `realitysmolko.sk` už hostuje Voiceflow widget „Poraďte sa!“; nejde o Revolis dashboard surface.
+- Odstránený chybný interný CRM chatbot z `/revolis-ai` vrátane endpointu, engine, metriky, registry a jeho testov.
+- Pripravený presný trojkrokový Voiceflow canvas bez zberu kontaktu: typ nehnuteľnosti → kúpa/prenájom/predaj → lokalita.
+- Targeted registry test 12/12 a lint prešli. Full suite: 280 pass, 5 RLS/integration testov blokujú chýbajúce `TEST_SUPABASE_*`; build blokuje existujúci import chýbajúceho balíka `uuid` v onboarding.
+### Rozpracované / Pending
+- Zmena Voiceflow canvasu čaká na prihlásenie/invite vlastníka existujúceho projektu. Nevytvárať nový účet ani druhý chatbot.
+### Kľúčové súbory zmenené
+- `docs/voiceflow/reality-smolko-property-guide-v1.md`: kopírovateľný konverzačný tok.
+- `docs/reports/2026-09-06-smolko-voiceflow-audit.md`: dôkaz umiestnenia a overenie.
+- `apps/crm/src/app/(dashboard)/revolis-ai/RevolisAIClient.tsx`: odstránený nesprávny panel.
+### Ďalší krok
+Po sprístupnení Voiceflow projektu vložiť canvas z `docs/voiceflow/reality-smolko-property-guide-v1.md`, otestovať tri vetvy na `realitysmolko.sk` a až potom publikovať.
+
+---
+
 ## Session 2026-09-06 (Inter-Agent Bus v1.0)
 ### Dokončené
 - REVOLIS Inter-Agent Bus v1.0 vytvorený ako Phase 1 copy-paste protocol pre GPT/SOL ↔ Claude Code.

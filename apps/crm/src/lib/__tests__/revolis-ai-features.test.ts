@@ -113,18 +113,6 @@ export const REVOLIS_AI_FEATURE_REGISTRY: AiFeatureSpec[] = [
     apiRoute: "/api/ai/insights",
   },
   {
-    id: "smolko-crm-chatbot",
-    label: "Smolko CRM chatbot",
-    category: "hub",
-    paths: [
-      "src/lib/smolko-chatbot.ts",
-      "src/app/api/ai/smolko-chat/route.ts",
-      "src/components/revolis/SmolkoChatbotPanel.tsx",
-    ],
-    uiRoute: "/revolis-ai",
-    apiRoute: "/api/ai/smolko-chat",
-  },
-  {
     id: "listing-content",
     label: "AI listing content",
     category: "content",

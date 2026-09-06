@@ -7,7 +7,6 @@ import DemandHeatmap from "@/components/analytics/DemandHeatmap";
 import { AIActivityFeed } from "@/components/revolis/AIActivityFeed";
 import { BriLivePulse } from "@/components/revolis/BriLivePulse";
 import { MarketHeatmap } from "@/components/revolis/MarketHeatmap";
-import SmolkoChatbotPanel from "@/components/revolis/SmolkoChatbotPanel";
 import type { MarketHotspot } from "@/lib/analytics/market-density";
 import type { AiActivityFeedItem } from "@/lib/app-mode-types";
 import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
@@ -135,10 +134,6 @@ export default function RevolisAIClient({
           <div className="lg:col-span-2">
             <AIActivityFeed items={feedSeed} />
           </div>
-        </div>
-
-        <div className="mt-8">
-          <SmolkoChatbotPanel />
         </div>
 
         <div className="mt-8">
