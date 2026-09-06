@@ -737,3 +737,23 @@ kontrakt (`docs/architecture/gpt-sol-opus5-autonomous-communication.md`).
 Alternatives considered: runtime automation (zamietnuté — STOP), chat-only
 prompt (zamietnuté — nie je repo SSOT), nový validator script (odložené —
 zatiaľ stačí manuálna štruktúra). Contradiction check: none.
+
+## D-2026-09-06-03 — Sol↔Opus real PR review: #537 RETURN, protocol PASS
+
+**Rozhodnutie:** Manuálny Sol↔Opus protokol bol použitý na reálny high-risk PR
+#537 (`notification-digest` tenant unread wipe). Protokol ako review formát je
+PASS; samotný PR #537 je RETURN pre merge readiness.
+
+**Dôkaz:** `docs/ai-comms/2026-09-06-pr537-review/` obsahuje brief, Sol draft,
+Opus review, Sol revision a final verdict. Report:
+`docs/reports/2026-09-06-sol-opus-pr537-review.md`.
+
+**Prečo RETURN:** GitHub metadata pre #537 hlási `mergeable: CONFLICTING`, takže
+reviewovaný patch nemusí byť finálny po conflict resolution. Opus zároveň
+flagol `runUnreadNotificationDigest(options.agencyId)` ako tenant-isolation
+escape hatch vo funkcii, ktorej invariant má byť platform-only.
+
+**Hranice:** Tento review neautorizuje merge, PROD cron, secrets, externé
+odoslanie ani runtime/provider automation. Ďalší krok bez GO: pripraviť
+conflict-aware návrh alebo review comment pre #537; merge/PROD ostáva GO
+REQUIRED.
