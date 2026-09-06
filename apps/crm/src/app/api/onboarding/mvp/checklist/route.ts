@@ -1,8 +1,12 @@
 import { errorResponse, okResponse } from "@/lib/api-response";
+import { requirePlatformAdmin } from "@/lib/onboarding-mvp/require-platform-admin";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { computeReadinessScore, DEFAULT_CHECKLIST, normalizeChecklist } from "@/lib/onboarding-mvp";
 
 export async function GET(request: Request) {
+  const denied = await requirePlatformAdmin();
+  if (denied) return denied;
+
   const supabase = createServiceRoleClient();
   if (!supabase) return errorResponse("Service role nie je nakonfigurovaný.", 500);
 
@@ -49,6 +53,9 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const denied = await requirePlatformAdmin();
+  if (denied) return denied;
+
   const supabase = createServiceRoleClient();
   if (!supabase) return errorResponse("Service role nie je nakonfigurovaný.", 500);
 
@@ -93,4 +100,3 @@ export async function POST(request: Request) {
 
   return okResponse({ progress: data });
 }
-

@@ -30,9 +30,11 @@ if (RESERVED_CUSTOMER_AGENCY_IDS.has(SYSTEM_USAGE_AGENCY_ID)) {
 
 export type UsageMetricName =
   | "ai_openai_tokens"
+  | "ai_chatbot_queries"
   | "embedding_tokens"
   | "cron_daily_match"
   | "cron_credits_cycle"
+  | "cron_customer_health"
   | "outreach_send";
 
 /**

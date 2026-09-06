@@ -51,7 +51,7 @@ type AtRiskResponse = {
   clients: Client[];
 };
 
-type LoadState = "loading" | "ready" | "empty" | "error";
+type LoadState = "loading" | "ready" | "empty" | "error" | "forbidden";
 
 export default function OnboardingMonitorClient() {
   const [state, setState] = useState<LoadState>("loading");
@@ -65,6 +65,10 @@ export default function OnboardingMonitorClient() {
         if (cancelled) return;
         if (res.status === 401) {
           setState("error");
+          return;
+        }
+        if (res.status === 403) {
+          setState("forbidden");
           return;
         }
         if (!res.ok) {
@@ -115,6 +119,12 @@ export default function OnboardingMonitorClient() {
             <Link href="/login" className="text-xs underline mt-2 inline-block" style={{ color: SLATE_HORIZON.brand }}>
               Prihlásiť sa znova
             </Link>
+          </div>
+        ) : null}
+
+        {state === "forbidden" ? (
+          <div className="text-center py-12 text-sm" style={{ color: SLATE_HORIZON.muted }}>
+            Tento prehľad je dostupný len správcovi platformy.
           </div>
         ) : null}
 

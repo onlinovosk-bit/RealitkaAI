@@ -6,6 +6,7 @@ import {
 } from "@/lib/capabilities/quality-guardian";
 import type { UcListingMapped } from "@/lib/uc/mapper-listing";
 import { propertyFactsFromUcListing } from "@/lib/capabilities/quality-guardian/types";
+import { isRealviaMappingUnknown } from "@/lib/realvia/map-taxonomy";
 
 export type ListingGeneratorInput = {
   agencyId: string;
@@ -36,7 +37,13 @@ function pickLangDescription(listing: UcListingMapped): string {
 
 function buildKeywords(listing: UcListingMapped): string[] {
   const parts = [listing.type, listing.rooms, listing.location].filter(Boolean);
-  return [...new Set(parts.map((p) => p.trim()).filter((p) => p.length > 0))];
+  return [
+    ...new Set(
+      parts
+        .map((p) => p.trim())
+        .filter((p) => p.length > 0 && !isRealviaMappingUnknown(p)),
+    ),
+  ];
 }
 
 /**

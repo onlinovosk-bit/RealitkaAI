@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
+import { isAuthorizedCronBearer } from "@/lib/cron-auth";
 import { createAdminClient } from "@/lib/supabase/server";
 
 const ONBOARDING_TABLE = "AI AGENT AUTOMAT ONBOARDING no.2.01";
 
 export async function GET(request: Request) {
-  const auth = request.headers.get("authorization");
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!isAuthorizedCronBearer(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

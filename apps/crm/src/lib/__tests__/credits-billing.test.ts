@@ -4,6 +4,7 @@ import {
   applySeatCheckoutEntitlements,
   applyTopupPurchase,
   parseCheckoutBody,
+  requireCheckoutAgencyId,
 } from "@/lib/credits-billing";
 import { handlePricingCheckoutWebhook } from "@/lib/credits-billing-webhook";
 
@@ -141,6 +142,20 @@ describe("credits-billing", () => {
       expect(
         parseCheckoutBody({ checkoutType: "topup", topupPackage: "mega" }),
       ).toMatchObject({ type: "topup", topupPackage: "mega" });
+    });
+  });
+
+  describe("requireCheckoutAgencyId", () => {
+    it("returns trimmed agency id", () => {
+      expect(requireCheckoutAgencyId({ agency_id: "  agency-1  " })).toBe("agency-1");
+    });
+
+    it("throws when agency_id is null, empty, or whitespace", () => {
+      expect(() => requireCheckoutAgencyId({ agency_id: null })).toThrow(/agency_id/);
+      expect(() => requireCheckoutAgencyId({ agency_id: "" })).toThrow(/agency_id/);
+      expect(() => requireCheckoutAgencyId({ agency_id: "   " })).toThrow(/agency_id/);
+      expect(() => requireCheckoutAgencyId(null)).toThrow(/agency_id/);
+      expect(() => requireCheckoutAgencyId(undefined)).toThrow(/agency_id/);
     });
   });
 
@@ -288,6 +303,40 @@ describe("credits-billing", () => {
       } as never);
 
       expect(handled).toBe(false);
+    });
+
+    it("returns false for seat/topup with empty agencyId (do not ACK)", async () => {
+      const seat = await handlePricingCheckoutWebhook({
+        type: "checkout.session.completed",
+        data: {
+          object: {
+            id: "cs_seat_no_agency",
+            metadata: {
+              checkoutType: "seat",
+              agencyId: "",
+              seatTier: "team",
+              seatQuantity: "3",
+            },
+          },
+        },
+      } as never);
+      expect(seat).toBe(false);
+
+      const topup = await handlePricingCheckoutWebhook({
+        type: "checkout.session.completed",
+        data: {
+          object: {
+            id: "cs_topup_no_agency",
+            metadata: {
+              checkoutType: "credit_topup",
+              agencyId: "",
+              topupPackage: "rast",
+            },
+          },
+        },
+      } as never);
+      expect(topup).toBe(false);
+      expect(mockInsert).not.toHaveBeenCalled();
     });
   });
 });

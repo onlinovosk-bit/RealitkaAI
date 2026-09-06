@@ -12,7 +12,8 @@ export const dynamic = "force-dynamic";
 
 function authorize(request: Request): boolean {
   const expected = process.env.IMPORT_TEST_API_KEY?.trim();
-  if (!expected) return true;
+  // Fail-closed: without a configured key this service-role route must not run.
+  if (!expected) return false;
   return request.headers.get("x-revolis-import-key") === expected;
 }
 
@@ -20,7 +21,8 @@ function authorize(request: Request): boolean {
  * POST /api/import/test-xml
  * Body JSON: { "xml": "<root>...</root>", "agencyId": "optional-uuid" }
  * Alebo raw `text/xml` / `application/xml` s telom XML.
- * Voliteľná ochrana: hlavička `x-revolis-import-key` = IMPORT_TEST_API_KEY
+ * Povinná ochrana: hlavička `x-revolis-import-key` = IMPORT_TEST_API_KEY
+ * (ak env chýba → 401, žiadny service-role insert).
  */
 export async function POST(request: Request) {
   if (!authorize(request)) {

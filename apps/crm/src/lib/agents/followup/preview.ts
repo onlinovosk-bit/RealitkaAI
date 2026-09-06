@@ -1,6 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import {
-  FOLLOWUP_AGENCY_ID,
   OPEN_LEAD_STATUSES,
   STALE_CONTACT_DAYS,
 } from "@/lib/agents/followup/constants";
@@ -76,7 +75,14 @@ export async function buildFollowupPreview(agencyId: string): Promise<
   };
 }
 
-/** Default Loop 1 tenant when profile has no agency_id (Smolko reference). */
-export function resolveFollowupAgencyId(profileAgencyId?: string | null): string {
-  return profileAgencyId?.trim() || FOLLOWUP_AGENCY_ID;
+/**
+ * Tenant for Loop 1 preview GET. Fail-closed: never fall back to DEMO/FOLLOWUP
+ * agency — that leaked reference-tenant lead PII (email/phone) via admin client
+ * to any authenticated user with null/empty agency_id (e.g. invite without stamp).
+ */
+export function resolveFollowupAgencyId(
+  profileAgencyId?: string | null,
+): string | null {
+  const trimmed = profileAgencyId?.trim();
+  return trimmed ? trimmed : null;
 }

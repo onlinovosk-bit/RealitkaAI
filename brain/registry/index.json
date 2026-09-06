@@ -89,6 +89,53 @@
   {
     "canonical": false,
     "capabilities": [
+      "audit-history",
+      "retrieval",
+      "weekly-learning-input"
+    ],
+    "confidence": "high",
+    "createdAt": "2026-07-23",
+    "dependencies": [
+      "brain.engine",
+      "ci.workflows"
+    ],
+    "evidence": [
+      {
+        "commit": "db82c9f1200d966c114f1308bfd348ab7f8c5065",
+        "note": "Inventory contains 6 file(s); digest sha256:d8e75c0a5b944d9c9c61c9bee58f5e3d8e7160c02fbb6ed86964433d568dfaba.",
+        "path": "brain/audits"
+      }
+    ],
+    "id": "brain.audits",
+    "inventory": {
+      "digest": "sha256:d8e75c0a5b944d9c9c61c9bee58f5e3d8e7160c02fbb6ed86964433d568dfaba",
+      "fileCount": 6,
+      "sample": [
+        "brain/audits/2026-07-22.json",
+        "brain/audits/2026-07-22.md",
+        "brain/audits/2026-07-23.json",
+        "brain/audits/2026-07-23.md",
+        "brain/audits/2026-07-24.json",
+        "brain/audits/2026-07-24.md"
+      ]
+    },
+    "lastVerifiedAt": "2026-07-26",
+    "name": "Committed Brain OS audit history",
+    "owner": "engineering",
+    "purpose": "Dated MD+JSON audit pairs under brain/audits/; weekly learning reads these (brain:weekly does not create audits).",
+    "relatedDecisions": [],
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "db82c9f1200d966c114f1308bfd348ab7f8c5065",
+      "path": "brain/audits"
+    },
+    "status": "active",
+    "type": "documentation"
+  },
+  {
+    "canonical": false,
+    "capabilities": [
       "brain-governance",
       "change-gates",
       "evidence-hierarchy"
@@ -129,6 +176,48 @@
     },
     "status": "active",
     "type": "governance"
+  },
+  {
+    "canonical": false,
+    "capabilities": [
+      "discoverability",
+      "registry-governance",
+      "retrieval"
+    ],
+    "confidence": "low",
+    "createdAt": "2026-09-04",
+    "dependencies": [
+      "brain.engine",
+      "governance.architecture"
+    ],
+    "evidence": [
+      {
+        "commit": "uncommitted",
+        "note": "Source unavailable in the current workspace.",
+        "path": "docs/architecture/brain-retrieval-contract.md"
+      }
+    ],
+    "id": "brain.retrieval-contract",
+    "inventory": {
+      "digest": "unavailable",
+      "fileCount": 0,
+      "sample": []
+    },
+    "lastVerifiedAt": "2026-09-04",
+    "name": "Brain retrieval and discoverability contract",
+    "owner": "founder",
+    "purpose": "Defines how semantic registry records map to inventory coverage; forbids indexing ephemeral reports/briefs/prompts wholesale.",
+    "relatedDecisions": [
+      "rme-dec-20260522-004"
+    ],
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "uncommitted",
+      "path": "docs/architecture/brain-retrieval-contract.md"
+    },
+    "status": "unknown",
+    "type": "documentation"
   },
   {
     "canonical": false,
@@ -288,14 +377,14 @@
     ],
     "evidence": [
       {
-        "commit": "fc7cee5fc06f720e89405ff504c54c00516a8a40",
-        "note": "Inventory contains 8 file(s); digest sha256:263a3f079c03a8df2d33e3cbe9c2a31e663bd959d217789e9bc17e06cb1be2db.",
+        "commit": "be9c236205304ef696036cf60c3422ad67bba84e",
+        "note": "Inventory contains 8 file(s); digest sha256:6f2ab3908c0a732b541e09f3c054261b9cc9fb0b30550622cb6eb520326bba3b.",
         "path": ".github/workflows"
       }
     ],
     "id": "ci.workflows",
     "inventory": {
-      "digest": "sha256:263a3f079c03a8df2d33e3cbe9c2a31e663bd959d217789e9bc17e06cb1be2db",
+      "digest": "sha256:6f2ab3908c0a732b541e09f3c054261b9cc9fb0b30550622cb6eb520326bba3b",
       "fileCount": 8,
       "sample": [
         ".github/scripts/automerge-policy.mjs",
@@ -308,7 +397,7 @@
         ".github/workflows/schema-governance-guard.yml"
       ]
     },
-    "lastVerifiedAt": "2026-08-06",
+    "lastVerifiedAt": "2026-08-16",
     "name": "GitHub Actions workflows",
     "owner": "engineering",
     "purpose": "CI and governance workflow inventory; remote branch protection is not inferred from files.",
@@ -320,7 +409,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "fc7cee5fc06f720e89405ff504c54c00516a8a40",
+      "commit": "be9c236205304ef696036cf60c3422ad67bba84e",
       "path": ".github/workflows"
     },
     "status": "active",
@@ -341,31 +430,31 @@
     ],
     "evidence": [
       {
-        "commit": "fc7cee5fc06f720e89405ff504c54c00516a8a40",
-        "note": "Inventory contains 227 file(s); digest sha256:c8d8cf0abf9aa1c5379150d2a1fa79f6f22410d89a3ac9ab7574c43a4038d905.",
+        "commit": "0ca52d19e9ce0044ca9d501bfbfed475a30a93f8",
+        "note": "Inventory contains 255 file(s); digest sha256:5edfd69d7b6459d7cdf87ed380d54694f5aa351152fbca525bc3bf794c38a0e3.",
         "path": "apps/crm/src/app/api"
       }
     ],
     "id": "crm.api",
     "inventory": {
-      "digest": "sha256:c8d8cf0abf9aa1c5379150d2a1fa79f6f22410d89a3ac9ab7574c43a4038d905",
-      "fileCount": 227,
+      "digest": "sha256:5edfd69d7b6459d7cdf87ed380d54694f5aa351152fbca525bc3bf794c38a0e3",
+      "fileCount": 255,
       "sample": [
+        "apps/crm/src/app/api/acquire/email/__tests__/route.test.ts",
         "apps/crm/src/app/api/acquire/email/route.ts",
-        "apps/crm/src/app/api/activities/route.ts",
-        "apps/crm/src/app/api/agents/cleaner/route.ts",
-        "apps/crm/src/app/api/agents/competitor-watch/route.ts",
-        "apps/crm/src/app/api/agents/deal-trigger/route.ts",
-        "apps/crm/src/app/api/agents/social-scout/route.ts",
-        "apps/crm/src/app/api/ai/autopilot/run/route.ts",
-        "apps/crm/src/app/api/ai/bri-stream/route.ts",
-        "apps/crm/src/app/api/ai/call-coach/stream/route.ts",
-        "apps/crm/src/app/api/ai/call/analyze/route.ts",
-        "apps/crm/src/app/api/ai/call/transcribe/route.ts",
-        "apps/crm/src/app/api/ai/closing-window/recompute/route.ts"
+        "apps/crm/src/app/api/acquisition/audit-log/__tests__/route.test.ts",
+        "apps/crm/src/app/api/acquisition/audit-log/route.ts",
+        "apps/crm/src/app/api/acquisition/dashboard/__tests__/route.test.ts",
+        "apps/crm/src/app/api/acquisition/dashboard/route.ts",
+        "apps/crm/src/app/api/acquisition/google/accounts/__tests__/route.test.ts",
+        "apps/crm/src/app/api/acquisition/google/accounts/route.ts",
+        "apps/crm/src/app/api/acquisition/google/connect/__tests__/route.test.ts",
+        "apps/crm/src/app/api/acquisition/google/connect/route.ts",
+        "apps/crm/src/app/api/acquisition/google/lead-webhook/__tests__/route.test.ts",
+        "apps/crm/src/app/api/acquisition/google/lead-webhook/route.ts"
       ]
     },
-    "lastVerifiedAt": "2026-08-06",
+    "lastVerifiedAt": "2026-09-04",
     "name": "CRM route handlers",
     "owner": "engineering",
     "purpose": "Inventory of API route handlers used to verify documented endpoint paths.",
@@ -377,7 +466,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "fc7cee5fc06f720e89405ff504c54c00516a8a40",
+      "commit": "0ca52d19e9ce0044ca9d501bfbfed475a30a93f8",
       "path": "apps/crm/src/app/api"
     },
     "status": "active",
@@ -398,17 +487,20 @@
     ],
     "evidence": [
       {
-        "commit": "fc7cee5fc06f720e89405ff504c54c00516a8a40",
-        "note": "Inventory contains 509 file(s); digest sha256:6dd5c71b5c9f671706e4fbd0e43fcedba342900851c7fd3ea9da3f2c1dbe2e3a.",
+        "commit": "0ca52d19e9ce0044ca9d501bfbfed475a30a93f8",
+        "note": "Inventory contains 552 file(s); digest sha256:39238cf58a0c9d986a51b17957e61b134c7e6a1e8ea6078dcc95c727675b8171.",
         "path": "apps/crm/src/app"
       }
     ],
     "id": "crm.application",
     "inventory": {
-      "digest": "sha256:6dd5c71b5c9f671706e4fbd0e43fcedba342900851c7fd3ea9da3f2c1dbe2e3a",
-      "fileCount": 509,
+      "digest": "sha256:39238cf58a0c9d986a51b17957e61b134c7e6a1e8ea6078dcc95c727675b8171",
+      "fileCount": 552,
       "sample": [
         "apps/crm/src/app/(dashboard)/DashboardClientShell.tsx",
+        "apps/crm/src/app/(dashboard)/acquisition/error.tsx",
+        "apps/crm/src/app/(dashboard)/acquisition/loading.tsx",
+        "apps/crm/src/app/(dashboard)/acquisition/page.tsx",
         "apps/crm/src/app/(dashboard)/activities/error.tsx",
         "apps/crm/src/app/(dashboard)/activities/loading.tsx",
         "apps/crm/src/app/(dashboard)/activities/page.tsx",
@@ -416,13 +508,10 @@
         "apps/crm/src/app/(dashboard)/akvizieia/klonovanie-kupujucich/loading.tsx",
         "apps/crm/src/app/(dashboard)/akvizieia/klonovanie-kupujucich/page.tsx",
         "apps/crm/src/app/(dashboard)/akvizieia/kupujuci-predajca/error.tsx",
-        "apps/crm/src/app/(dashboard)/akvizieia/kupujuci-predajca/loading.tsx",
-        "apps/crm/src/app/(dashboard)/akvizieia/kupujuci-predajca/page.tsx",
-        "apps/crm/src/app/(dashboard)/akvizieia/listy-z-katastra/error.tsx",
-        "apps/crm/src/app/(dashboard)/akvizieia/listy-z-katastra/loading.tsx"
+        "apps/crm/src/app/(dashboard)/akvizieia/kupujuci-predajca/loading.tsx"
       ]
     },
-    "lastVerifiedAt": "2026-08-06",
+    "lastVerifiedAt": "2026-09-04",
     "name": "CRM application surface",
     "owner": "engineering",
     "purpose": "Inventory of CRM pages, layouts, and application code used for documentation drift checks.",
@@ -432,7 +521,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "fc7cee5fc06f720e89405ff504c54c00516a8a40",
+      "commit": "0ca52d19e9ce0044ca9d501bfbfed475a30a93f8",
       "path": "apps/crm/src/app"
     },
     "status": "active",
@@ -452,15 +541,15 @@
     ],
     "evidence": [
       {
-        "commit": "3777dbccce23f5118b7ac9e2ee0e01680fc37084",
-        "note": "Inventory contains 93 file(s); digest sha256:775f70e976858e88fa419d67ea265684756f59e4f3653438316de674d49d9dd4.",
+        "commit": "86a6ba3c60072718cb026f6fe3e5d72402bb3ad5",
+        "note": "Inventory contains 100 file(s); digest sha256:3370cbfa7088c38ac37f86bf3e3fdbe24c2cf1e3acd84699e7a704b138c2d75b.",
         "path": "apps/crm/supabase/migrations"
       }
     ],
     "id": "database.migrations",
     "inventory": {
-      "digest": "sha256:775f70e976858e88fa419d67ea265684756f59e4f3653438316de674d49d9dd4",
-      "fileCount": 93,
+      "digest": "sha256:3370cbfa7088c38ac37f86bf3e3fdbe24c2cf1e3acd84699e7a704b138c2d75b",
+      "fileCount": 100,
       "sample": [
         "apps/crm/supabase/migrations/20260310_baseline_core_schema.sql",
         "apps/crm/supabase/migrations/20260320_rls.sql",
@@ -476,7 +565,7 @@
         "apps/crm/supabase/migrations/20260426120111_arbitrage_engine.sql"
       ]
     },
-    "lastVerifiedAt": "2026-08-04",
+    "lastVerifiedAt": "2026-09-03",
     "name": "Supabase migrations",
     "owner": "engineering",
     "purpose": "Versioned database structure used as code-side evidence; production state remains independently verified.",
@@ -487,7 +576,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "3777dbccce23f5118b7ac9e2ee0e01680fc37084",
+      "commit": "86a6ba3c60072718cb026f6fe3e5d72402bb3ad5",
       "path": "apps/crm/supabase/migrations"
     },
     "status": "active",
@@ -542,6 +631,55 @@
   {
     "canonical": false,
     "capabilities": [
+      "audit-corpus",
+      "governance-evidence",
+      "retrieval"
+    ],
+    "confidence": "high",
+    "createdAt": "2026-06-19",
+    "dependencies": [
+      "brain.engine",
+      "governance.architecture"
+    ],
+    "evidence": [
+      {
+        "commit": "8869c7872f7311d84c53f44f1413450a6715b62b",
+        "note": "Inventory contains 8 file(s); digest sha256:623ab7a2970c83c2aa072df8e0f89b63f43ab025e1f17b99793e2637ee1d49fb.",
+        "path": "docs/audit"
+      }
+    ],
+    "id": "docs.audit-corpus",
+    "inventory": {
+      "digest": "sha256:623ab7a2970c83c2aa072df8e0f89b63f43ab025e1f17b99793e2637ee1d49fb",
+      "fileCount": 8,
+      "sample": [
+        "docs/audit/2026-09-04-ai-cost-telemetry.md",
+        "docs/audit/README.md",
+        "docs/audit/bri-diagnostic.md",
+        "docs/audit/d5-akvizicia-2026-07-09.md",
+        "docs/audit/nodes-value.jsonl",
+        "docs/audit/overnight-report-231.md",
+        "docs/audit/prod-verification-2026-06-24.md",
+        "docs/audit/rls-schema-parity-audit-brief.md"
+      ]
+    },
+    "lastVerifiedAt": "2026-09-04",
+    "name": "Repository audit corpus",
+    "owner": "engineering",
+    "purpose": "Durable docs/audit/** findings used for governance discovery; not ephemeral reports/briefs/prompts.",
+    "relatedDecisions": [],
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "8869c7872f7311d84c53f44f1413450a6715b62b",
+      "path": "docs/audit"
+    },
+    "status": "active",
+    "type": "documentation"
+  },
+  {
+    "canonical": false,
+    "capabilities": [
       "antipattern-governance",
       "architecture-guidance",
       "data-sourcing"
@@ -551,31 +689,31 @@
     "dependencies": [],
     "evidence": [
       {
-        "commit": "14f6d56bf1b25f78afdb43edebc4372ee3e412a8",
-        "note": "Inventory contains 22 file(s); digest sha256:433f3c04b391bc423974ff21a808be9499487609b0b0c86b27e300852030c90d.",
+        "commit": "5088200c8f0a633cbc109d7299106eb87d66a205",
+        "note": "Inventory contains 37 file(s); digest sha256:0f47daa3ca7ccd1436400f1d1d55c531da6e192b68336d280e3112f5838a21c8.",
         "path": "docs/architecture"
       }
     ],
     "id": "governance.architecture",
     "inventory": {
-      "digest": "sha256:433f3c04b391bc423974ff21a808be9499487609b0b0c86b27e300852030c90d",
-      "fileCount": 22,
+      "digest": "sha256:0f47daa3ca7ccd1436400f1d1d55c531da6e192b68336d280e3112f5838a21c8",
+      "fileCount": 37,
       "sample": [
         "docs/architecture/.phase0-probe-b/.gitkeep",
         "docs/architecture/2026-08-03-night-operations-center.md",
         "docs/architecture/2026-08-03-night-operations.md",
         "docs/architecture/L99-real-estate-vertical-pack-prompt.md",
         "docs/architecture/L99_ARCHITECTURE_AUDIT.md",
+        "docs/architecture/acquisition-os-stage0-PASS-report.md",
+        "docs/architecture/acquisition-os-stage0-zisti-report.md",
+        "docs/architecture/acquisition-os-v2.2-final-locked.md",
+        "docs/architecture/adr-2026-07-28-memory-engine.md",
+        "docs/architecture/adr-2026-09-03-growth-intelligence-principles.md",
         "docs/architecture/antipatterns-log.md",
-        "docs/architecture/clay-positioning-reframe.md",
-        "docs/architecture/engineering-constitution.md",
-        "docs/architecture/engineering-os-revolis-rightsized.md",
-        "docs/architecture/graph-audit-2026-07.md",
-        "docs/architecture/inputs/lead-tables-authority-2026-07.md",
-        "docs/architecture/inputs/memory-engine-sources-2026-07.md"
+        "docs/architecture/clay-positioning-reframe.md"
       ]
     },
-    "lastVerifiedAt": "2026-08-04",
+    "lastVerifiedAt": "2026-09-04",
     "name": "Architecture and governance corpus",
     "owner": "founder",
     "purpose": "Canonical and supporting architecture documents used to constrain product and engineering work.",
@@ -586,7 +724,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "14f6d56bf1b25f78afdb43edebc4372ee3e412a8",
+      "commit": "5088200c8f0a633cbc109d7299106eb87d66a205",
       "path": "docs/architecture"
     },
     "status": "active",
@@ -733,21 +871,20 @@
     ],
     "evidence": [
       {
-        "commit": "43b646218058151045d4d2d5689298b5de2d45f1",
-        "note": "Inventory contains 2 file(s); digest sha256:30513b566ae4a14d1b4d91a23b515a19c788dd0f590abec4e1462e30d2fef8c6.",
+        "commit": "55135350c872d60cce03a704a9fa4f5f69731a9d",
+        "note": "Inventory contains 1 file(s); digest sha256:e8650076603283d985176b5326424604e86e892c7daf0b913c16a523f524a1ef.",
         "path": "memory/decisions.md"
       }
     ],
     "id": "memory.decisions",
     "inventory": {
-      "digest": "sha256:30513b566ae4a14d1b4d91a23b515a19c788dd0f590abec4e1462e30d2fef8c6",
-      "fileCount": 2,
+      "digest": "sha256:e8650076603283d985176b5326424604e86e892c7daf0b913c16a523f524a1ef",
+      "fileCount": 1,
       "sample": [
-        "decisions.md",
         "memory/decisions.md"
       ]
     },
-    "lastVerifiedAt": "2026-08-07",
+    "lastVerifiedAt": "2026-09-03",
     "name": "Critical decisions log",
     "owner": "founder",
     "purpose": "Canonical historical decision source; generated Brain records remain pointers to this log.",
@@ -757,7 +894,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "43b646218058151045d4d2d5689298b5de2d45f1",
+      "commit": "55135350c872d60cce03a704a9fa4f5f69731a9d",
       "path": "memory/decisions.md"
     },
     "status": "active",
@@ -810,6 +947,60 @@
   {
     "canonical": false,
     "capabilities": [
+      "operational-memory",
+      "retrieval",
+      "session-memory"
+    ],
+    "confidence": "high",
+    "createdAt": "2026-04-29",
+    "dependencies": [
+      "brain.engine",
+      "memory.decisions"
+    ],
+    "evidence": [
+      {
+        "commit": "61f94761572bb9f94f263062430baacd02114b7a",
+        "note": "Inventory contains 11 file(s); digest sha256:cadd9b9f290c89523352aa025012ac65415417e0f4d9cb3303c80e7495662797.",
+        "path": "memory"
+      }
+    ],
+    "id": "memory.workspace",
+    "inventory": {
+      "digest": "sha256:cadd9b9f290c89523352aa025012ac65415417e0f4d9cb3303c80e7495662797",
+      "fileCount": 11,
+      "sample": [
+        "memory/decisions.md",
+        "memory/hourly-summary.ps1",
+        "memory/integrations.md",
+        "memory/offer.md",
+        "memory/open-tasks.md",
+        "memory/people.md",
+        "memory/personality.md",
+        "memory/preferences.md",
+        "memory/session-summary.md",
+        "memory/skills.md",
+        "memory/user.md"
+      ]
+    },
+    "lastVerifiedAt": "2026-09-03",
+    "name": "Session and operational memory corpus",
+    "owner": "founder",
+    "purpose": "Curated memory/*.md surfaces (session summary, open tasks, people) for retrieval; excludes ephemeral chat. Decisions remain memory.decisions only.",
+    "relatedDecisions": [
+      "rme-dec-20260522-004"
+    ],
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "61f94761572bb9f94f263062430baacd02114b7a",
+      "path": "memory"
+    },
+    "status": "active",
+    "type": "documentation"
+  },
+  {
+    "canonical": false,
+    "capabilities": [
       "coding-policy",
       "database-policy",
       "security-policy"
@@ -821,15 +1012,15 @@
     ],
     "evidence": [
       {
-        "commit": "593972a73ceb98bb428525859f9f42d41ed9607b",
-        "note": "Inventory contains 11 file(s); digest sha256:60aa755d5f1dede6a74091f06d3120f90ae493c274b8173037996c7ea3d6cc5a.",
+        "commit": "2ae3b0561d1645ecd639359f9356ac929666bf9b",
+        "note": "Inventory contains 12 file(s); digest sha256:10039dd17d69e2233393fdba87e54fe716dad80713c1fcbd13758d49863e8880.",
         "path": ".cursor/rules"
       }
     ],
     "id": "policy.cursor-rules",
     "inventory": {
-      "digest": "sha256:60aa755d5f1dede6a74091f06d3120f90ae493c274b8173037996c7ea3d6cc5a",
-      "fileCount": 11,
+      "digest": "sha256:10039dd17d69e2233393fdba87e54fe716dad80713c1fcbd13758d49863e8880",
+      "fileCount": 12,
       "sample": [
         ".cursor/rules/architecture.mdc",
         ".cursor/rules/l99-agent-operating-standard.mdc",
@@ -837,6 +1028,7 @@
         ".cursor/rules/l99-golden-rule.mdc",
         ".cursor/rules/l99-master-prompt-ref.mdc",
         ".cursor/rules/l99-prime-directive.mdc",
+        ".cursor/rules/l99-repo-is-comms-channel.mdc",
         ".cursor/rules/l99-role-and-quality-standard.mdc",
         ".cursor/rules/revolis-api.mdc",
         ".cursor/rules/revolis-db.mdc",
@@ -844,7 +1036,7 @@
         ".cursor/rules/workflow.mdc"
       ]
     },
-    "lastVerifiedAt": "2026-08-02",
+    "lastVerifiedAt": "2026-08-15",
     "name": "Cursor governance rules",
     "owner": "engineering",
     "purpose": "Operational rules referenced as policy evidence, never reclassified as historical decisions.",
@@ -855,7 +1047,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "593972a73ceb98bb428525859f9f42d41ed9607b",
+      "commit": "2ae3b0561d1645ecd639359f9356ac929666bf9b",
       "path": ".cursor/rules"
     },
     "status": "active",
@@ -1086,15 +1278,15 @@
     ],
     "evidence": [
       {
-        "commit": "c4143545f24496a8cdea575375c6ffc3aa523533",
-        "note": "Inventory contains 39 file(s); digest sha256:a275474751b6b5473b76f7b61232d0fe104d789e3c2ceea73e2f9c4d836d96bc.",
+        "commit": "e35f5e38855d4015b4121d50ad6b38c64a429f9c",
+        "note": "Inventory contains 60 file(s); digest sha256:4719540484e32d6b930e18f58b64fc4caabec7846323787591979d6be995b043.",
         "path": "package.json"
       }
     ],
     "id": "repo.packages",
     "inventory": {
-      "digest": "sha256:a275474751b6b5473b76f7b61232d0fe104d789e3c2ceea73e2f9c4d836d96bc",
-      "fileCount": 39,
+      "digest": "sha256:4719540484e32d6b930e18f58b64fc4caabec7846323787591979d6be995b043",
+      "fileCount": 60,
       "sample": [
         "apps/crm/package.json",
         "apps/marketing/package.json",
@@ -1110,7 +1302,7 @@
         "packages/mcp-calendar/tsconfig.json"
       ]
     },
-    "lastVerifiedAt": "2026-07-23",
+    "lastVerifiedAt": "2026-08-25",
     "name": "Monorepo package manifests",
     "owner": "engineering",
     "purpose": "Workspace topology and direct dependency inventory without copying dependency source code.",
@@ -1118,7 +1310,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "c4143545f24496a8cdea575375c6ffc3aa523533",
+      "commit": "e35f5e38855d4015b4121d50ad6b38c64a429f9c",
       "path": "package.json"
     },
     "status": "active",

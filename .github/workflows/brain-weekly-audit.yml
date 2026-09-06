@@ -1,0 +1,108 @@
+name: Brain weekly audit and learning
+
+# Creates a dated audit pair (MD+JSON), then weekly learning, then opens a PR.
+# Never pushes to main. brain:weekly only reads brain/audits/ and writes brain/learning/.
+# New automatic trigger = GO REQUIRED per brain/ENGINE.md — this workflow is the approved form.
+
+on:
+  schedule:
+    # Monday 05:00 UTC
+    - cron: "0 5 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: brain-weekly-audit-learning
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  weekly-audit-learning:
+    name: Audit → learning → PR
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install workspace dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Deterministic audit date (UTC)
+        id: meta
+        run: |
+          DATE="$(date -u +%F)"
+          echo "date=${DATE}" >> "$GITHUB_OUTPUT"
+          echo "branch=chore/brain-weekly-${DATE}" >> "$GITHUB_OUTPUT"
+
+      - name: Skip if open PR already exists for this date
+        id: gate
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          EXISTING="$(gh pr list --head "${{ steps.meta.outputs.branch }}" --state open --json number --jq 'length')"
+          if [ "${EXISTING}" != "0" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Open PR already exists for ${{ steps.meta.outputs.branch }}; skipping."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create dated audit pair in brain/audits
+        if: steps.gate.outputs.skip != 'true'
+        run: npm run brain:audit -- --date "${{ steps.meta.outputs.date }}" --output-dir brain/audits
+
+      - name: Create weekly learning report
+        if: steps.gate.outputs.skip != 'true'
+        run: npm run brain:weekly -- --date "${{ steps.meta.outputs.date }}" --audit-dir brain/audits --output-dir brain/learning
+
+      - name: Detect changes
+        id: changes
+        if: steps.gate.outputs.skip != 'true'
+        run: |
+          if git diff --quiet -- brain/audits brain/learning && [ -z "$(git ls-files --others --exclude-standard -- brain/audits brain/learning)" ]; then
+            echo "empty=true" >> "$GITHUB_OUTPUT"
+            echo "No audit/learning changes; will not open an empty PR."
+          else
+            echo "empty=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open PR (never commit to main)
+        if: steps.gate.outputs.skip != 'true' && steps.changes.outputs.empty != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DATE="${{ steps.meta.outputs.date }}"
+          BRANCH="${{ steps.meta.outputs.branch }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "${BRANCH}"
+          git add brain/audits brain/learning
+          git commit -m "chore(brain): weekly audit ${DATE}"
+          git push -u origin "${BRANCH}"
+          cat > /tmp/brain-weekly-pr-body.md <<EOF
+          ## Summary
+          - Deterministic audit pair: \`brain/audits/${DATE}.md\` + \`.json\`
+          - Weekly learning via \`brain:weekly\` (reads audits only; writes \`brain/learning/\`)
+          - Permissions: \`contents: write\`, \`pull-requests: write\`
+          - Concurrency group: \`brain-weekly-audit-learning\`
+          - Does **not** write to \`main\`
+
+          ## Notes
+          - PR Memory Engine job remains advisory (\`continue-on-error: true\`) with 14-day artifacts.
+          - Merge is founder-only.
+          EOF
+          # Trim leading spaces from heredoc indentation for readability in gh
+          sed -i 's/^          //' /tmp/brain-weekly-pr-body.md
+          gh pr create --base main --head "${BRANCH}" --title "chore(brain): weekly audit ${DATE}" --body-file /tmp/brain-weekly-pr-body.md

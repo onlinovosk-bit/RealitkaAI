@@ -113,6 +113,18 @@ export const REVOLIS_AI_FEATURE_REGISTRY: AiFeatureSpec[] = [
     apiRoute: "/api/ai/insights",
   },
   {
+    id: "smolko-crm-chatbot",
+    label: "Smolko CRM chatbot",
+    category: "hub",
+    paths: [
+      "src/lib/smolko-chatbot.ts",
+      "src/app/api/ai/smolko-chat/route.ts",
+      "src/components/revolis/SmolkoChatbotPanel.tsx",
+    ],
+    uiRoute: "/revolis-ai",
+    apiRoute: "/api/ai/smolko-chat",
+  },
+  {
     id: "listing-content",
     label: "AI listing content",
     category: "content",
@@ -142,6 +154,16 @@ export const REVOLIS_AI_FEATURE_REGISTRY: AiFeatureSpec[] = [
     category: "content",
     paths: ["src/app/api/ai/listing-content/generations/[id]/route.ts"],
     apiRoute: "/api/ai/listing-content/generations/[id]",
+  },
+  {
+    id: "property-launch-pack",
+    label: "Property Launch Pack V0",
+    category: "content",
+    paths: [
+      "src/lib/capabilities/property-launch-pack/build.ts",
+      "src/app/api/ai/property-launch-pack/route.ts",
+    ],
+    apiRoute: "/api/ai/property-launch-pack",
   },
   {
     id: "micro-actions-schedule",

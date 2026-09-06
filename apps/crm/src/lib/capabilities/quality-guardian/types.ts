@@ -12,6 +12,9 @@ export type PropertyFacts = {
   location: string;
   currency: string;
   rooms: string;
+  /** From DB / Realvia map — may be REALVIA_MAPPING_UNKNOWN. */
+  type: string;
+  transactionType: string;
 };
 
 export type GeneratedListingDraft = {
@@ -57,5 +60,7 @@ export function propertyFactsFromUcListing(mapped: UcListingMapped): PropertyFac
     location: mapped.location,
     currency: mapped.currency,
     rooms: mapped.rooms,
+    type: mapped.type,
+    transactionType: mapped.transactionType,
   };
 }
