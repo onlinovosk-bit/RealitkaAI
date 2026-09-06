@@ -1,5 +1,9 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { canAccessOperatorDashboard, isPlatformAdmin } from "@/lib/operator/access";
+import {
+  canAccessOperatorDashboard,
+  fetchProfilePlatformAdminFlag,
+  isPlatformAdmin,
+} from "@/lib/operator/access";
 import { isOperatorDashboardEnabled, isOperatorExcludedAgency } from "@/lib/operator/config";
 import { OPERATOR_HEALTH_WEIGHTS, computeOperatorHealthScore } from "@/lib/operator/health-score";
 import { assertOperatorAggregateNoPii, OPERATOR_FORBIDDEN_AGGREGATE_KEYS } from "@/lib/operator/aggregate-schema";
@@ -43,13 +47,33 @@ describe("operator access", () => {
       data: { is_platform_admin: true },
       error: null,
     });
-    const eq = vi.fn().mockReturnValue({ maybeSingle });
-    const select = vi.fn().mockReturnValue({ eq });
+    const or = vi.fn().mockReturnValue({ maybeSingle });
+    const select = vi.fn().mockReturnValue({ or });
     const supabase = {
       from: vi.fn().mockReturnValue({ select }),
     } as unknown as import("@supabase/supabase-js").SupabaseClient;
 
     await expect(canAccessOperatorDashboard(supabase, "user-1")).resolves.toBe(true);
+    expect(or).toHaveBeenCalledWith("auth_user_id.eq.user-1,id.eq.user-1");
+  });
+
+  it("fetchProfilePlatformAdminFlag matches auth_user_id when profile id differs", async () => {
+    const authUserId = "auth-uuid-1111";
+    const profileRowId = "profile-uuid-2222";
+    const maybeSingle = vi.fn().mockResolvedValue({
+      data: { is_platform_admin: true, id: profileRowId, auth_user_id: authUserId },
+      error: null,
+    });
+    const or = vi.fn().mockReturnValue({ maybeSingle });
+    const select = vi.fn().mockReturnValue({ or });
+    const supabase = {
+      from: vi.fn().mockReturnValue({ select }),
+    } as unknown as import("@supabase/supabase-js").SupabaseClient;
+
+    const profile = await fetchProfilePlatformAdminFlag(supabase, authUserId);
+
+    expect(or).toHaveBeenCalledWith(`auth_user_id.eq.${authUserId},id.eq.${authUserId}`);
+    expect(isPlatformAdmin(profile)).toBe(true);
   });
 });
 

@@ -1,4 +1,5 @@
 import { appendCapabilityAudit } from "@/lib/capabilities/_shared/audit-log";
+import { isRealviaMappingUnknown } from "@/lib/realvia/map-taxonomy";
 import type {
   BrandKit,
   GeneratedListingDraft,
@@ -96,6 +97,18 @@ function validateRequiredCopy(draft: GeneratedListingDraft): string[] {
   return reasons;
 }
 
+/** Mapped Realvia fog must not pass as verified category / deal type. */
+function validateMappedTaxonomy(source: PropertyFacts): string[] {
+  const reasons: string[] = [];
+  if (isRealviaMappingUnknown(source.type)) {
+    reasons.push("unverified_property_type");
+  }
+  if (isRealviaMappingUnknown(source.transactionType)) {
+    reasons.push("unverified_transaction_type");
+  }
+  return reasons;
+}
+
 /**
  * Quality/Brand Guardian — PASS only when draft claims ⊆ source facts.
  * FLAG blocks publish until human fixes or regenerates.
@@ -104,6 +117,7 @@ export function reviewGeneratedListing(input: GuardianReviewInput): GuardianRevi
   const reasons: string[] = [
     ...validateRequiredCopy(input.draft),
     ...validateBrandKit(input.brandKit, input.draft),
+    ...validateMappedTaxonomy(input.source),
   ];
 
   const claimed = input.draft.claimedFacts ?? {};

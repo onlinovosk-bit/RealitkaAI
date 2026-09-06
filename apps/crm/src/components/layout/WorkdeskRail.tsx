@@ -71,7 +71,7 @@ export function WorkdeskRail() {
               }}
             >
               <NavIconGlyph name={item.icon} size={20} color="#fff" />
-              <span>{item.label}</span>
+              <span title={item.label}>{item.label}</span>
             </Link>
           );
         })}

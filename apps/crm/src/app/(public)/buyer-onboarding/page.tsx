@@ -1,4 +1,7 @@
 import { submitBuyerOnboarding } from "./actions";
+import { SprievodcaFormAnalytics } from "@/components/sprievodca/SprievodcaFormAnalytics";
+
+const SPRIEVODCA_AGENCY_SLUG = "reality-smolko";
 
 const DEAL_TYPES = [
   { value: "buy",  label: "Kúpa" },
@@ -7,10 +10,11 @@ const DEAL_TYPES = [
 ];
 
 const PROPERTY_TYPES = [
-  { value: "flat",       label: "Byt" },
-  { value: "house",      label: "Dom" },
-  { value: "land",       label: "Pozemok" },
-  { value: "commercial", label: "Komerčný priestor" },
+  { value: "flat",          label: "Byt" },
+  { value: "house",         label: "Dom" },
+  { value: "land",          label: "Pozemok" },
+  { value: "commercial",    label: "Komerčný priestor" },
+  { value: "recreational",  label: "Chata a rekreačné" },
 ];
 
 const TIME_HORIZONS = [
@@ -44,7 +48,8 @@ export default async function BuyerOnboardingPage({
           </div>
         )}
 
-        <form
+        <SprievodcaFormAnalytics
+          agencySlug={SPRIEVODCA_AGENCY_SLUG}
           action={submitBuyerOnboarding}
           className="rounded-3xl border border-gray-200 bg-white p-8 shadow-sm space-y-6"
         >
@@ -220,7 +225,7 @@ export default async function BuyerOnboardingPage({
           >
             Zobraziť nehnuteľnosti →
           </button>
-        </form>
+        </SprievodcaFormAnalytics>
       </div>
     </main>
   );

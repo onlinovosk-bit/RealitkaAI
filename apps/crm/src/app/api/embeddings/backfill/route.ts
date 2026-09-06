@@ -11,6 +11,7 @@
 
 import { createAdminClient } from "@/lib/supabase/server";
 import { okResponse, errorResponse } from "@/lib/api-response";
+import { isAuthorizedCronBearer } from "@/lib/cron-auth";
 import {
   generateEmbedding,
   buildLeadEmbeddingText,
@@ -30,8 +31,7 @@ function sleep(ms: number) {
 }
 
 export async function POST(req: Request) {
-  const auth = req.headers.get("authorization");
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!isAuthorizedCronBearer(req)) {
     return errorResponse("Unauthorized", 401);
   }
 

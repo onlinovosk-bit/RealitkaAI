@@ -34,6 +34,13 @@ export async function GET() {
 
   const profile = await getCurrentProfile();
   const agencyId = resolveFollowupAgencyId(profile?.agency_id);
+  if (!agencyId) {
+    return NextResponse.json(
+      { error: "Forbidden: missing agency_id" },
+      { status: 403 },
+    );
+  }
+
   const result = await buildFollowupPreview(agencyId);
 
   if (!result.ok) {

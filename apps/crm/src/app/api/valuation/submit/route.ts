@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { runInboundLeadAutoResponse } from "@/lib/acquire/inbound-lead-auto-response";
 import { runInboundLeadTriageAndNotify } from "@/lib/acquire/inbound-lead-triage";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/rate-limit";
@@ -174,6 +175,13 @@ export async function POST(request: Request) {
         source: "valuation_widget",
       },
     );
+
+    // Non-sandbox only — sandbox returns earlier and must never send email.
+    void runInboundLeadAutoResponse(supabase, inserted, {
+      agencyId: tenant.agencyId,
+      name: payload.name,
+      email: payload.email,
+    });
 
     return NextResponse.json({ ok: true, leadId: inserted.id, estimate });
   } catch (error) {

@@ -1,61 +1,32 @@
-## Session 2026-08-24
+## Session 2026-09-06
 ### Dokončené
-- #461 merged `47ec4852`
-- GO FÁZA A + audit merged #463 (`1cf82d32`)
-- Spec check-in BO-A Action Center V0 + BO-B Pricing v2 (docs only)
-- Review: `docs/reports/2026-08-24-bo-action-center-pricing-review.md`
+- Zodpovedaný stav požiadavky p. Smolka na chatbota: verejný chatbot / Website Concierge je zachytený, ale blokovaný cez SMO-B04 až SMO-B09.
+- Overené `npx vitest run tests/verification/property-launch-pack-v0.verification.test.ts` — 5/5 PASS pre najbližší Smolko Launch Pack povrch.
+- Report: `docs/reports/2026-09-06-smolko-chatbot-status.md`
 ### Rozpracované / Pending
-- Merge spec PR BO-A/BO-B — **žiadny runtime**
-- `GO SEARCH-PAGING` = paging diera + `SEARCH-TOPBAR-GLOBAL-VS-LOCAL`
-- `GO IMPLEMENT PRICING V2` / `GO IMPLEMENT ACTION CENTER V0` — **neudelené**
+- `SMO-B04`: PROD cross-tenant negative test + active/freshness contract pred Concierge preview.
+- `SMO-B05`: AI disclosure, privacy/retention text, schválené FAQ a human fallback.
+- `SMO-B06`: routing matrix + 10 E2E callbackov.
+- `SMO-B07`–`SMO-B09`: booking storage drift RCA, Google Calendar OAuth/free-busy, idempotency/notifikácie.
 ### Kľúčové súbory zmenené
-- `docs/briefs/BO-action-center-v0.md`, `docs/briefs/BO-pricing-migration-v2.md`
-- `docs/reports/2026-08-24-workdesk-search-architecture-audit.md` (už na main cez #463)
+- `docs/reports/2026-09-06-smolko-chatbot-status.md`: stav chatbot požiadavky a blokátorov.
+- `memory/session-summary.md`: aktuálny handoff.
 ### Ďalší krok
-Founder merge spec PR; paging len po `GO SEARCH-PAGING`; AC/pricing runtime až po vlastných GO frázach.
+Founder/Product GO na `SMO-B04` PROD negative test; bez DB/OAuth/chat endpoint mutácií.
 
-## Session 2026-08-23
-### Dokončené
-- Topbar search: `readOnly` → form + Hľadať, `/leads?q=` + filter sync
-- Tests 7/7: workdesk-topbar-search verification + WorkdeskTopbar.search RTL
-### Rozpracované / Pending
-- Preview smoke of search behind login (TEST_USER)
-- Agent OS V0 stále blocked na capture PC Phase 0
-### Kľúčové súbory zmenené
-- `apps/crm/src/components/layout/WorkdeskTopbar.tsx`: search form + Hľadať
-- `apps/crm/src/components/leads/lead-filters.tsx`: hydrate/sync `?q=`
-### Ďalší krok
-Founder merge `fix/topbar-search` po CI; V0 stále čaká na push `feat/bridge-harness`.
+---
 
+## Session 2026-09-05 (PR #535 fix-merge-conflicts — CI CLEAN)
 ### Dokončené
-- Founder `GO IMPLEMENT V0` prijaté; pred prvým runtime editom **STOP** — Phase 0 baseline v tomto clone chýba
-- Spec check-in: BO + plan + baseline manifest + STOP report
-- Decision Memory: `D-2026-08-18-01` + V0 amendment + `D-2026-08-22-01` STOP
+- origin/main merge (clean; 0 textual conflicts)
+- onboarding/session api-validate + usage-metrics imports → ratchet NOVÉ=0
+- CI green + mergeStateStatus CLEAN on tip `f74ada73` (agent did not merge)
+- Report: `docs/reports/2026-09-05-pr535-fix-merge-conflicts.md`
 ### Rozpracované / Pending
-- Founder musí commit+push `feat/bridge-harness` (9 staged blob IDs z manifestu)
-- Až potom nové `GO IMPLEMENT V0` na tom commite
-- Runtime `scripts/ruflo-model-bridge/**` sa v tomto clone **nemenil** (neexistuje)
+- Founder merge #535
+- PROD smoke notification-digest
 ### Kľúčové súbory zmenené
-- `docs/briefs/BO-agent-os-v0-bounded-workflow-kernel.md`: canonical V0 BO
-- `docs/briefs/plans/BO-agent-os-v0-bounded-workflow-kernel-plan.md`: implementation plan
-- `docs/reports/2026-08-22-agent-os-v0-implementation-stop.md`: contradiction report
-- `memory/decisions.md`: Phase 0 + V0 amendment + STOP
+- `apps/crm/src/app/api/onboarding/session/route.ts`: contract imports only
+- `docs/reports/2026-09-05-pr535-fix-merge-conflicts.md`
 ### Ďalší krok
-Capture PC: paste PowerShell unlock from STOP report addendum; then `GO IMPLEMENT V0`.
-
-## Session 2026-08-21
-### Dokončené
-- GO implementácia billing fixov: dva fresh PR z main (žiadny rebase #371/#374)
-- **#451** legacy unknown price → no-op + seat map (`cursor/fix-billing-legacy-unknown-tier-db1f`)
-- **Credits expire guard** PR (`cursor/fix-credits-expire-guard-db1f`) — error≠skipped, ok:false, refuse wipe current grant
-- Impact A1/B2 zapísané: `docs/reports/2026-08-21-billing-impact-a1-b2.md` + bus MSG-006
-### Rozpracované / Pending
-- Founder merge #451 + credits-expire PR (nemerge agent)
-- Close stale #371 / #374 po merge
-- A1 agency `11111111-…` — overiť sandbox vs real, potom remediácia tierov
-- Smolko Gmail OAuth dual-run; bridge-harness push z PC
-### Kľúčové súbory zmenené
-- `apps/crm/src/lib/billing-store.ts`: unknown + seat map + pricing checkout skip
-- `apps/crm/src/lib/credits/grant-engine.ts` + `monthly-cycle.ts`: expire error + wipe guard
-### Ďalší krok
-Founder merge #451 a credits-expire PR; potom A1 real-vs-sandbox check pred customer remediáciou.
+Founder GO: merge #535; then PROD digest smoke.
