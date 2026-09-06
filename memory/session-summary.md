@@ -4,19 +4,23 @@
 - Overené `npx vitest run tests/verification/property-launch-pack-v0.verification.test.ts` — 5/5 PASS pre najbližší Smolko Launch Pack povrch.
 - Po Founder `GO!` pripravený SMO-B04 report: CODE agency-scope PASS, PROD negative test nespustený pre chýbajúci autentifikovaný Supabase MCP / PROD env.
 - Overené `npx vitest run tests/verification/realvia-agency-scoped-source.verification.test.ts src/lib/realvia/processQueue.agency-scope.test.ts` — 6/6 PASS.
+- Supabase MCP auth pokus: namespace `Supabase` = `needsAuth`; endpoint `https://mcp.supabase.com/mcp` vracia očakávané `401`; auth vyžaduje používateľský OAuth krok.
 - Report: `docs/reports/2026-09-06-smolko-chatbot-status.md`
 - Report: `docs/reports/2026-09-06-smo-b04-realvia-tenant-negative-test.md`
+- Report: `docs/reports/2026-09-06-supabase-mcp-auth-blocker.md`
 ### Rozpracované / Pending
 - `SMO-B04`: PROD cross-tenant negative test ostáva blocked-by-access; SQL/checklist pripravený v reporte.
+- Supabase MCP: čaká používateľská OAuth autentifikácia v Cursor integráciách; neposielať token do chatu/repa.
 - `SMO-B05`: AI disclosure, privacy/retention text, schválené FAQ a human fallback.
 - `SMO-B06`: routing matrix + 10 E2E callbackov.
 - `SMO-B07`–`SMO-B09`: booking storage drift RCA, Google Calendar OAuth/free-busy, idempotency/notifikácie.
 ### Kľúčové súbory zmenené
 - `docs/reports/2026-09-06-smolko-chatbot-status.md`: stav chatbot požiadavky a blokátorov.
 - `docs/reports/2026-09-06-smo-b04-realvia-tenant-negative-test.md`: SMO-B04 evidence, prepared PROD SQL, freshness contract.
+- `docs/reports/2026-09-06-supabase-mcp-auth-blocker.md`: Supabase MCP auth stav a unblock postup.
 - `memory/session-summary.md`: aktuálny handoff.
 ### Ďalší krok
-Autentifikovať Supabase MCP alebo spustiť read-only SQL z `docs/reports/2026-09-06-smo-b04-realvia-tenant-negative-test.md` §4 v produkčnom Supabase Dashboarde `ypgajkhqtbriqqmyawyv`; potom zapísať výsledok do reportu.
+Používateľ autentifikuje Supabase MCP cez Cursor OAuth flow; potom agent znovu spustí `GetDynamicTools(namespace="Supabase")` a vykoná read-only SQL z `docs/reports/2026-09-06-smo-b04-realvia-tenant-negative-test.md` §4.
 
 ---
 
