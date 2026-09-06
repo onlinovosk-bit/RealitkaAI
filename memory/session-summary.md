@@ -4,11 +4,11 @@
 - Merge `origin/main` (`4d14b198`) do `cursor/dodane-od-10-08-db1f`; unique diff ostáva jeden report
 - Report: `docs/reports/2026-09-06-pr471-ci-fix.md`
 ### Rozpracované / Pending
-- Po pushi potvrdiť zelený `Lint, test, build` na #471
+- Founder merge #471 — agent nemerguje
 ### Kľúčové súbory zmenené
-- `docs/reports/2026-09-06-pr471-ci-fix.md`: koreň 42501 + merge main
+- `docs/reports/2026-09-06-pr471-ci-fix.md`: koreň 42501 + merge main + CI PASS
 ### Ďalší krok
-Push + počkať na CI #471.
+Founder merge #471 po zelenom CI.
 
 ---
 
