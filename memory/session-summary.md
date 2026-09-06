@@ -1,3 +1,17 @@
+## Session 2026-09-06 (PR #471 CI)
+### Dokončené
+- CI `Lint, test, build` na #471: FAIL v `valuation-tenants-rls.test.ts` (42501 vs null) — docs PR, oprava už na main `#489`/`a4f58ff1`
+- Merge `origin/main` (`4d14b198`) do `cursor/dodane-od-10-08-db1f`; unique diff ostáva jeden report
+- Report: `docs/reports/2026-09-06-pr471-ci-fix.md`
+### Rozpracované / Pending
+- Po pushi potvrdiť zelený `Lint, test, build` na #471
+### Kľúčové súbory zmenené
+- `docs/reports/2026-09-06-pr471-ci-fix.md`: koreň 42501 + merge main
+### Ďalší krok
+Push + počkať na CI #471.
+
+---
+
 ## Session 2026-09-06
 ### Dokončené
 - Zodpovedaný stav požiadavky p. Smolka na chatbota: verejný chatbot / Website Concierge je zachytený, ale blokovaný cez SMO-B04 až SMO-B09.
