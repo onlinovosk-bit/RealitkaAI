@@ -39,6 +39,7 @@ const ROUTES = [
   { path: "/team/permissions", name: "Team Permissions" },
   { path: "/billing", name: "Billing" },
   { path: "/settings", name: "Settings" },
+  { path: "/integrations/realvia", name: "Integrations Realvia" },
 ];
 
 async function isOnLogin(page: import("@playwright/test").Page) {
@@ -124,4 +125,11 @@ test("API GET /api/leads responds (not 500)", async ({ request }) => {
   const resp = await request.get("/api/leads");
   const body = await resp.text();
   expect(resp.status(), `GET /api/leads failed: ${body.slice(0, 300)}`).not.toBe(500);
+});
+
+test("/admin/integrations/realvia redirects to /integrations/realvia", async ({ request }) => {
+  const resp = await request.get("/admin/integrations/realvia", { maxRedirects: 0 });
+  expect([301, 302, 307, 308]).toContain(resp.status());
+  const loc = resp.headers()["location"] ?? "";
+  expect(loc).toContain("/integrations/realvia");
 });
