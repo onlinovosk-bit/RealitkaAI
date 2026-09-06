@@ -1,5 +1,30 @@
 # Critical Decisions Log
 
+## [2026-09-06] — REVOLIS Inter-Agent Bus v1.0: Phase 1 copy-paste protocol BUILD
+
+- **Decision:** Create a manual GPT/SOL <-> Claude Code protocol as a docs-only
+  Phase 1 bus, not an automated agent/orchestrator system.
+- **Why:** The immediate value is reducing handoff ambiguity, context drift and
+  "done" without verification. Automation before a proven manual protocol would
+  make chaos faster, not better.
+- **Scope:** STACK 0 Constitution, STACK 2 Task Contract, STACK 3 Context Packet,
+  STACK 4 Inter-Agent Message, STACK 7 Quality Gate, plus Execution Result and
+  Decision Artifact templates.
+- **Rejected now:** shared message store, MCP layer, cost governor, full
+  orchestrator, registry service, DB schema, UI.
+- **Engineering justification:** Trigger: new-governance-doc / prompt standard.
+  Decision path: extend-existing `docs/prompts/` copy-paste prompt surface and
+  `memory/decisions.md` Decision Memory; no runtime code, dependency, database or
+  app route. Alternatives considered: (a) one super-prompt — rejected because it
+  hides boundaries; (b) build automated autonomous agents now — rejected as
+  premature and higher-risk; (c) leave protocol only in chat — rejected because
+  repo is the communication channel. Contradiction check: none; this complements
+  the killed/blocked Agent OS V0 path by staying manual and docs-only.
+- **Artifact:** `docs/prompts/revolis-inter-agent-bus-v1.md`,
+  `docs/reports/2026-09-06-revolis-inter-agent-bus-v1.md`.
+- **Revisit:** after the next 3 real GPT -> Claude Code handoffs; automate only
+  fields that repeatedly survive manual use without confusion.
+
 ## [2026-09-06] — Smolko chatbot: internal CRM assistant BUILD, public Concierge still gated
 
 - **GO:** Founder "Go Chatbot pre Smolka."
