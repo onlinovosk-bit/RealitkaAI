@@ -25,6 +25,12 @@ BUILD ako procesny/docs artefakt:
 - vytvorit `REVOLIS INTER-AGENT BUS v1.0` ako manualny copy-paste bus,
 - pouzit iba STACK 0, 2, 3, 4, 7,
 - doplnit Execution Result a Decision Artifact, aby handoff nekoncil slovom "done",
+- explicitne oddelit role: Founder = human authority, SOL/GPT = strategic
+  architect/context governor/handoff designer/reviewer, Claude Code =
+  engineering execution environment,
+- pridat Evolution Rule: build -> real use -> observe friction -> fix protocol
+  -> repeat -> only then automate,
+- pridat friction log pre Real Handoff #1 az #3,
 - nezacinat Phase 2+ automatizaciu.
 
 ## Files changed
@@ -56,6 +62,8 @@ Executed verification:
 - The protocol can become shelfware if it is not used on the next real GPT -> Claude Code handoff.
 - If future work jumps directly to shared message store/MCP/orchestrator, it can recreate faster chaos.
 - IDs are convention-based only in Phase 1; no machine validation exists yet.
+- SOL/GPT and Claude Code responsibilities can blur unless the role boundary in
+  `docs/prompts/revolis-inter-agent-bus-v1.md` remains explicit.
 
 ## Non-goals
 

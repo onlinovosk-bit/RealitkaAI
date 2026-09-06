@@ -17,6 +17,53 @@ Kazdy hodnotny vystup musi byt pouzitelny bez povodneho chatu:
 2. dalsi agent ho vie vykonat alebo odmietnut,
 3. buduci orchestrator ho vie validovat.
 
+### 0.1 Authority and role boundary
+
+```text
+Founder
+  -> Human Authority
+SOL / GPT
+  -> Strategic Architect
+  -> Context Governor
+  -> Handoff Designer
+  -> Reviewer
+INTER-AGENT BUS
+  -> Structured Protocol
+Claude Code
+  -> Repository Analysis
+  -> Engineering Execution Environment
+  -> Tests and Evidence
+RESULT / EVIDENCE
+  -> Structured return to SOL
+SOL / GPT
+  -> Quality Gate
+  -> Architecture Review
+  -> Decision Artifact when meaningful
+Founder
+  -> Final authority for product direction, merge, production, secrets, budget
+```
+
+**SOL/GPT is not merely a prompt generator for Claude Code.** SOL owns strategic
+architecture, context compression, task design, handoff quality and review.
+
+**Claude Code is not the strategic owner.** Claude Code owns repository analysis,
+implementation, verification and evidence inside the exact approved scope.
+
+### 0.2 Inter-Agent Bus Evolution Rule
+
+```text
+BUILD
+  -> USE IN REAL WORK
+  -> OBSERVE FRICTION
+  -> FIX PROTOCOL
+  -> REPEAT
+  -> ONLY THEN AUTOMATE
+```
+
+Phase 2 automation is blocked until at least 3 real handoffs use this protocol
+and the friction log shows which fields are stable, missing, duplicated or too
+expensive.
+
 ---
 
 ## 1. MASTER PROMPT pre SOL / GPT
@@ -29,7 +76,9 @@ Skopiruj tento prompt do strategickeho agenta, ked pripravuje task pre Claude Co
 You are SOL-01, Strategic AI Architect for REVOLIS.
 
 Your job is not to implement code.
-Your job is to prepare a precise, executable, verifiable task packet for Claude Code.
+Your job is not merely to generate prompts.
+Your job is to act as Strategic Architect, Context Governor, Handoff Designer and Reviewer.
+You prepare a precise, executable, verifiable task packet for Claude Code.
 
 CORE OPERATING RULES:
 - Prefer business value, reliability, and minimum viable complexity.
@@ -432,3 +481,53 @@ Claude Code executes:
 ```
 
 **Phase 1 rule:** If this manual protocol creates confusion, do not automate it. Fix the protocol first.
+
+---
+
+## 10. Real Handoff friction log
+
+Fill this after each real GPT/SOL -> Claude Code handoff. After 3 handoffs,
+use the entries as input for v1.1 Protocol Review.
+
+```text
+# REVOLIS INTER-AGENT BUS FRICTION LOG
+
+HANDOFF_ID:
+{{HANDOFF_ID}}
+
+TASK_ID:
+{{TASK_ID}}
+
+DATE:
+{{DATE}}
+
+FOUNDING OBJECTIVE WAS CLEAR:
+YES / NO
+
+WHAT CLAUDE CODE DID NOT UNDERSTAND:
+{{CONFUSION}}
+
+CONTEXT THAT WAS MISSING:
+{{MISSING_CONTEXT}}
+
+CONTEXT THAT WAS UNNECESSARY:
+{{UNNECESSARY_CONTEXT}}
+
+TASK CONTRACT VS CONTEXT PACKET DUPLICATION:
+{{DUPLICATION_NOTES}}
+
+EVIDENCE QUALITY:
+ENOUGH / TOO THIN / TOO VERBOSE
+
+OUTPUT LENGTH:
+TOO SHORT / RIGHT / TOO LONG
+
+WERE IDS USEFUL:
+YES / NO / UNKNOWN
+
+WHAT SHOULD THE NEXT AGENT KNOW:
+{{NEXT_AGENT_CONTEXT}}
+
+PROTOCOL CHANGE RECOMMENDED:
+{{CHANGE_OR_NONE}}
+```

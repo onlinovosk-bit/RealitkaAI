@@ -24,6 +24,13 @@
   `docs/reports/2026-09-06-revolis-inter-agent-bus-v1.md`.
 - **Revisit:** after the next 3 real GPT -> Claude Code handoffs; automate only
   fields that repeatedly survive manual use without confusion.
+- **Founder review amendment (2026-09-06):** GO 9/10 accepted for Phase 1.
+  Added official role boundary: Founder = human authority; SOL/GPT = Strategic
+  Architect + Context Governor + Handoff Designer + Reviewer; Claude Code =
+  Engineering Execution Environment. Added Inter-Agent Bus Evolution Rule:
+  build -> use in real work -> observe friction -> fix protocol -> repeat ->
+  only then automate. Real Handoff #1 is the next intended use, but it requires
+  a concrete engineering task; Phase 2 remains explicitly blocked.
 
 ## [2026-09-06] — Smolko chatbot: internal CRM assistant BUILD, public Concierge still gated
 
