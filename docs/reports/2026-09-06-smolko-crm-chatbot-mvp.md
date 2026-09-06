@@ -39,6 +39,8 @@ remains blocked by the existing gates in
 - No `scheduled_events` writes.
 - No `portal_listings` writes.
 - No booking or Google Calendar integration.
+- The endpoint writes only contract telemetry (`usage_metrics_daily` via
+  `incrementUsageMetric`, metric `ai_chatbot_queries`) after a successful answer.
 - Answers are generated from tenant-scoped `listLeads` and `listTasks` data.
 - Unknown/out-of-scope questions return a bounded fallback instead of a guessed
   answer.
@@ -65,6 +67,32 @@ npm run lint
 
 npm run build
 → passed
+```
+
+## CI follow-up
+
+PR CI initially failed because the new API route missed two repo contracts:
+
+1. `check-api-contract.mjs --ci` required `@/lib/api-validate` and
+   `@/lib/usage-metrics`.
+2. `revolis-ai-features.test.ts` required every `/api/ai/*` route to be listed
+   in `REVOLIS_AI_FEATURE_REGISTRY`.
+
+Fix:
+
+- `POST /api/ai/smolko-chat` now uses `validateBody(zod)` and
+  `incrementUsageMetric({ metric: "ai_chatbot_queries" })`.
+- `ai_chatbot_queries` was added to `UsageMetricName`.
+- `/api/ai/smolko-chat` was added to `REVOLIS_AI_FEATURE_REGISTRY`.
+
+Local CI-targeted verification:
+
+```text
+node apps/crm/scripts/check-api-contract.mjs --ci
+→ NOVÉ porušenia: 0
+
+npm run test -- src/lib/__tests__/revolis-ai-features.test.ts src/lib/__tests__/smolko-chatbot.test.ts tests/verification/smolko-chatbot.verification.test.ts
+→ 3 files / 18 tests passed
 ```
 
 ## Remaining risk

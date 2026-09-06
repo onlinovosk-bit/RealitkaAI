@@ -28,6 +28,8 @@ describe("[verification] Smolko CRM chatbot MVP", () => {
     expect(route).toContain("listTasks(supabase)");
     expect(route).not.toContain("scheduled_events");
     expect(route).not.toContain("portal_listings");
+    expect(route).toContain("incrementUsageMetric");
+    expect(route).toContain("ai_chatbot_queries");
     expect(component).toContain("Bez externého LLM");
   });
 

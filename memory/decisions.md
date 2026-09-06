@@ -15,9 +15,11 @@
   needs SMO-B05 before launch.
 - **Engineering justification:** Trigger: new API route, component, lib and
   tests. Decision path: reuse — existing `/revolis-ai` surface, `listLeads`,
-  `listTasks`, `api-response`, `createClient`, Slate Horizon tokens. Alternatives
-  considered: public Concierge now (rejected — SMO-B04–B09 blocked), LLM chat over
-  CRM PII (rejected — GDPR/provider gate), new DB tables (rejected — not needed).
+  `listTasks`, `api-response`, `api-validate`, `incrementUsageMetric`,
+  `createClient`, Slate Horizon tokens. Alternatives considered: public
+  Concierge now (rejected — SMO-B04–B09 blocked), LLM chat over CRM PII
+  (rejected — GDPR/provider gate), new DB tables (rejected — not needed).
+  Contract telemetry uses `usage_metrics_daily` metric `ai_chatbot_queries`.
   Contradiction check: none; public chatbot remains explicitly blocked.
 - **Artifact:** `docs/reports/2026-09-06-smolko-crm-chatbot-mvp.md`.
 

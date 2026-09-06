@@ -2,8 +2,12 @@
 ### Dokončené
 - Interný Smolko CRM chatbot MVP pridaný do `/revolis-ai`: tenant-scoped otázky
   "komu volať", "čo zachrániť", "čo vybaviť" bez externého LLM.
-- API: `POST /api/ai/smolko-chat` používa existujúce `listLeads` + `listTasks`.
-- Overené: chatbot unit + verification testy 6/6, `npm run lint`, `npm run build`.
+- API: `POST /api/ai/smolko-chat` používa existujúce `listLeads` + `listTasks`,
+  `validateBody` a telemetry `ai_chatbot_queries`.
+- CI fix: API contract ratchet NOVÉ=0; `/api/ai/smolko-chat` doplnený do
+  `REVOLIS_AI_FEATURE_REGISTRY`.
+- Overené: targeted chatbot/registry tests 18/18, chatbot unit + verification
+  6/6, `npm run lint`, `npm run build`.
 - Report: `docs/reports/2026-09-06-smolko-crm-chatbot-mvp.md`
 - Zodpovedaný stav požiadavky p. Smolka na chatbota: verejný chatbot / Website Concierge je zachytený, ale blokovaný cez SMO-B04 až SMO-B09.
 - Overené `npx vitest run tests/verification/property-launch-pack-v0.verification.test.ts` — 5/5 PASS pre najbližší Smolko Launch Pack povrch.
@@ -19,6 +23,8 @@
 - `apps/crm/src/app/api/ai/smolko-chat/route.ts`: authenticated tenant-scoped chat endpoint.
 - `apps/crm/src/components/revolis/SmolkoChatbotPanel.tsx`: dashboard chat UI.
 - `apps/crm/src/app/(dashboard)/revolis-ai/RevolisAIClient.tsx`: embeds chat panel.
+- `apps/crm/src/lib/usage-metrics.ts`: adds `ai_chatbot_queries` usage metric type.
+- `apps/crm/src/lib/__tests__/revolis-ai-features.test.ts`: registers `/api/ai/smolko-chat`.
 - `apps/crm/src/lib/__tests__/smolko-chatbot.test.ts`: unit coverage.
 - `apps/crm/tests/verification/smolko-chatbot.verification.test.ts`: live spec guard.
 - `docs/reports/2026-09-06-smolko-crm-chatbot-mvp.md`: implementation report.
