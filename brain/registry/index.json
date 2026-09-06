@@ -875,14 +875,14 @@
     ],
     "evidence": [
       {
-        "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
-        "note": "Inventory contains 1 file(s); digest sha256:8c62adc0c09aecc4dba94f708f0666d39b9b9065b116bef54e147c57c38a55c0.",
+        "commit": "0e66826e1bbeaa6ba3be473660d0aff2ab380323",
+        "note": "Inventory contains 1 file(s); digest sha256:ca99ec686e487e6c6dd8a2c63421b5a5a96286b7cf2a3e7f479418082b811271.",
         "path": "memory/decisions.md"
       }
     ],
     "id": "memory.decisions",
     "inventory": {
-      "digest": "sha256:8c62adc0c09aecc4dba94f708f0666d39b9b9065b116bef54e147c57c38a55c0",
+      "digest": "sha256:ca99ec686e487e6c6dd8a2c63421b5a5a96286b7cf2a3e7f479418082b811271",
       "fileCount": 1,
       "sample": [
         "memory/decisions.md"
@@ -898,7 +898,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+      "commit": "0e66826e1bbeaa6ba3be473660d0aff2ab380323",
       "path": "memory/decisions.md"
     },
     "status": "active",
@@ -963,14 +963,14 @@
     ],
     "evidence": [
       {
-        "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
-        "note": "Inventory contains 11 file(s); digest sha256:dc99be43146d10ee3563409abdbd167202b83c2bd6a48871d7239241aee5dbf0.",
+        "commit": "0e66826e1bbeaa6ba3be473660d0aff2ab380323",
+        "note": "Inventory contains 11 file(s); digest sha256:90fe495cc1d984bcca83b14406096d2cd5ad7b47320fca889472b7910422f082.",
         "path": "memory"
       }
     ],
     "id": "memory.workspace",
     "inventory": {
-      "digest": "sha256:dc99be43146d10ee3563409abdbd167202b83c2bd6a48871d7239241aee5dbf0",
+      "digest": "sha256:90fe495cc1d984bcca83b14406096d2cd5ad7b47320fca889472b7910422f082",
       "fileCount": 11,
       "sample": [
         "memory/decisions.md",
@@ -996,7 +996,7 @@
     "schemaVersion": 1,
     "sensitivity": "internal",
     "source": {
-      "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+      "commit": "0e66826e1bbeaa6ba3be473660d0aff2ab380323",
       "path": "memory"
     },
     "status": "active",
