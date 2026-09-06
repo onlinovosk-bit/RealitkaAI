@@ -36,11 +36,20 @@ BUILD ako procesny/docs artefakt:
 
 ## Verification
 
-Planned verification:
+Executed verification:
 
-1. Markdown/protocol section grep for required Phase 1 sections.
-2. Git diff review to confirm docs-only scope.
-3. Kontrolor pass against scope, evidence, and Engineering Constitution justification.
+1. `rg` found all required protocol sections in
+   `docs/prompts/revolis-inter-agent-bus-v1.md`:
+   master prompt for SOL/GPT, master prompt for Claude Code, Task Contract,
+   Context Packet, Inter-Agent Message, Execution Result, Quality Gate and
+   Decision Artifact.
+2. `git diff --name-only origin/main...HEAD` confirmed the scoped files:
+   docs prompt, docs report, memory decision/session files and generated Brain
+   indexes only.
+3. `npm run brain:ingest` passed with `valid: true`, `validationIssues: 0`,
+   `decisionCount: 26`, `registryCount: 28`.
+4. Kontrolor review: PASS with one known limitation — Phase 1 IDs are
+   convention-based only and intentionally not machine-validated yet.
 
 ## Known risks
 
