@@ -718,3 +718,22 @@ copy/code zmeny.
 
 **Neznáme:** Pôvodný externý Notebook nebol obnovený; trial vytvára repo-native
 náhradu, nie import pôvodnej diskusie.
+
+## D-2026-09-06-02 — Sol↔Opus templates: reuse before automation
+
+**Rozhodnutie:** Po PASS manuálneho formátu vznikajú iba reusable docs templates
+v `docs/ai-comms/_template/`. Runtime/provider automation ostáva STOP.
+
+**Prečo:** Trial ukázal, že hodnota je v auditovateľnom review loop-e. Šablóny
+znižujú drift bez nových secrets, provider API, scheduleru alebo tool-bearing
+agentov.
+
+**Hranica použitia:** Templates použiť len pre high-risk rozhodnutia a PR review.
+Rutinné statusy, malé copy/code zmeny a bežné odpovede nejdú cez Sol↔Opus.
+
+**Engineering justification:** Trigger: new-file. Decision path: reuse —
+šablóny formalizujú existujúci trial (`docs/ai-comms/2026-09-06-trial/`) a
+kontrakt (`docs/architecture/gpt-sol-opus5-autonomous-communication.md`).
+Alternatives considered: runtime automation (zamietnuté — STOP), chat-only
+prompt (zamietnuté — nie je repo SSOT), nový validator script (odložené —
+zatiaľ stačí manuálna štruktúra). Contradiction check: none.
