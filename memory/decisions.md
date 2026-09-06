@@ -700,3 +700,21 @@ AI Security, task-loop a repo-as-communication-channel. Alternatives considered:
 direct model API loop (zamietnuté — hidden state/tool abuse), Ruflo runtime hneď
 (zamietnuté — bez trialu príliš skoro), chat-only memory (zamietnuté — nie je
 SSOT). Contradiction check: none; dokument zužuje, nie rozširuje oprávnenia.
+
+## D-2026-09-06-01 — GPT Sol ↔ Opus 5 trial: manuálny formát PASS, runtime STOP
+
+**Rozhodnutie:** Prvý manuálny Sol↔Opus trial prešiel iba ako formát
+repo-mediated komunikácie. Runtime/provider-to-provider automation zostáva STOP.
+
+**Dôkaz:** `docs/ai-comms/2026-09-06-trial/` obsahuje brief, Sol draft, Opus
+review, Sol revision a final verdict. Opus našiel konkrétne FLAGy; Sol scope
+zúžil; verdict drží merge/PROD/secrets/external send/runtime automation za
+founder GO.
+
+**Hranica použitia:** Sol↔Opus manuálny protokol používať len pre high-risk
+architecture, implementation planning, PR review, security/auth/billing/RLS,
+migrations a data/legal source gates. Nepoužívať na rutinný status alebo malé
+copy/code zmeny.
+
+**Neznáme:** Pôvodný externý Notebook nebol obnovený; trial vytvára repo-native
+náhradu, nie import pôvodnej diskusie.
