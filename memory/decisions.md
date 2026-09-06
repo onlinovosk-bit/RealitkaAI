@@ -1,5 +1,26 @@
 # Critical Decisions Log
 
+## [2026-09-06] — Smolko chatbot: internal CRM assistant BUILD, public Concierge still gated
+
+- **GO:** Founder "Go Chatbot pre Smolka."
+- **Decision:** Build only a safe internal CRM assistant slice in `/revolis-ai`,
+  not the public Website Concierge.
+- **Why:** Constitution value exists if it answers "komu volať a čo zachrániť
+  dnes" from own CRM data. Public chatbot still has existing blockers SMO-B04
+  through SMO-B09 in `docs/reports/2026-09-06-smolko-chatbot-status.md`.
+- **Data source:** Master Data Sourcing Map Zhluk 1 — own CRM data (`leads`,
+  `tasks`). No new external source.
+- **GDPR boundary:** No OpenAI/Claude/embedding call for chat questions; no new
+  external processor for Smolko CRM content in this slice. Public Concierge still
+  needs SMO-B05 before launch.
+- **Engineering justification:** Trigger: new API route, component, lib and
+  tests. Decision path: reuse — existing `/revolis-ai` surface, `listLeads`,
+  `listTasks`, `api-response`, `createClient`, Slate Horizon tokens. Alternatives
+  considered: public Concierge now (rejected — SMO-B04–B09 blocked), LLM chat over
+  CRM PII (rejected — GDPR/provider gate), new DB tables (rejected — not needed).
+  Contradiction check: none; public chatbot remains explicitly blocked.
+- **Artifact:** `docs/reports/2026-09-06-smolko-crm-chatbot-mvp.md`.
+
 
 
 ## [2026-09-05] — Strážca prítoku BUILD (Brief 18 V2)

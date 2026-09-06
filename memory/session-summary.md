@@ -1,18 +1,32 @@
 ## Session 2026-09-06
 ### Dokončené
+- Interný Smolko CRM chatbot MVP pridaný do `/revolis-ai`: tenant-scoped otázky
+  "komu volať", "čo zachrániť", "čo vybaviť" bez externého LLM.
+- API: `POST /api/ai/smolko-chat` používa existujúce `listLeads` + `listTasks`.
+- Overené: chatbot unit + verification testy 6/6, `npm run lint`, `npm run build`.
+- Report: `docs/reports/2026-09-06-smolko-crm-chatbot-mvp.md`
 - Zodpovedaný stav požiadavky p. Smolka na chatbota: verejný chatbot / Website Concierge je zachytený, ale blokovaný cez SMO-B04 až SMO-B09.
 - Overené `npx vitest run tests/verification/property-launch-pack-v0.verification.test.ts` — 5/5 PASS pre najbližší Smolko Launch Pack povrch.
 - Report: `docs/reports/2026-09-06-smolko-chatbot-status.md`
 ### Rozpracované / Pending
+- Verejný Website Concierge stále nie je povolený: SMO-B04–B09 ostávajú brány.
 - `SMO-B04`: PROD cross-tenant negative test + active/freshness contract pred Concierge preview.
 - `SMO-B05`: AI disclosure, privacy/retention text, schválené FAQ a human fallback.
 - `SMO-B06`: routing matrix + 10 E2E callbackov.
 - `SMO-B07`–`SMO-B09`: booking storage drift RCA, Google Calendar OAuth/free-busy, idempotency/notifikácie.
 ### Kľúčové súbory zmenené
+- `apps/crm/src/lib/smolko-chatbot.ts`: deterministic CRM assistant engine.
+- `apps/crm/src/app/api/ai/smolko-chat/route.ts`: authenticated tenant-scoped chat endpoint.
+- `apps/crm/src/components/revolis/SmolkoChatbotPanel.tsx`: dashboard chat UI.
+- `apps/crm/src/app/(dashboard)/revolis-ai/RevolisAIClient.tsx`: embeds chat panel.
+- `apps/crm/src/lib/__tests__/smolko-chatbot.test.ts`: unit coverage.
+- `apps/crm/tests/verification/smolko-chatbot.verification.test.ts`: live spec guard.
+- `docs/reports/2026-09-06-smolko-crm-chatbot-mvp.md`: implementation report.
 - `docs/reports/2026-09-06-smolko-chatbot-status.md`: stav chatbot požiadavky a blokátorov.
 - `memory/session-summary.md`: aktuálny handoff.
 ### Ďalší krok
-Founder/Product GO na `SMO-B04` PROD negative test; bez DB/OAuth/chat endpoint mutácií.
+Founder/Product GO na `SMO-B04` PROD negative test pre verejný Website Concierge;
+bez DB/OAuth/booking mutácií.
 
 ---
 
