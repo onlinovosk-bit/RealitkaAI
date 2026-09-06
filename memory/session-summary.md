@@ -2,17 +2,21 @@
 ### Dokončené
 - Zodpovedaný stav požiadavky p. Smolka na chatbota: verejný chatbot / Website Concierge je zachytený, ale blokovaný cez SMO-B04 až SMO-B09.
 - Overené `npx vitest run tests/verification/property-launch-pack-v0.verification.test.ts` — 5/5 PASS pre najbližší Smolko Launch Pack povrch.
+- Po Founder `GO!` pripravený SMO-B04 report: CODE agency-scope PASS, PROD negative test nespustený pre chýbajúci autentifikovaný Supabase MCP / PROD env.
+- Overené `npx vitest run tests/verification/realvia-agency-scoped-source.verification.test.ts src/lib/realvia/processQueue.agency-scope.test.ts` — 6/6 PASS.
 - Report: `docs/reports/2026-09-06-smolko-chatbot-status.md`
+- Report: `docs/reports/2026-09-06-smo-b04-realvia-tenant-negative-test.md`
 ### Rozpracované / Pending
-- `SMO-B04`: PROD cross-tenant negative test + active/freshness contract pred Concierge preview.
+- `SMO-B04`: PROD cross-tenant negative test ostáva blocked-by-access; SQL/checklist pripravený v reporte.
 - `SMO-B05`: AI disclosure, privacy/retention text, schválené FAQ a human fallback.
 - `SMO-B06`: routing matrix + 10 E2E callbackov.
 - `SMO-B07`–`SMO-B09`: booking storage drift RCA, Google Calendar OAuth/free-busy, idempotency/notifikácie.
 ### Kľúčové súbory zmenené
 - `docs/reports/2026-09-06-smolko-chatbot-status.md`: stav chatbot požiadavky a blokátorov.
+- `docs/reports/2026-09-06-smo-b04-realvia-tenant-negative-test.md`: SMO-B04 evidence, prepared PROD SQL, freshness contract.
 - `memory/session-summary.md`: aktuálny handoff.
 ### Ďalší krok
-Founder/Product GO na `SMO-B04` PROD negative test; bez DB/OAuth/chat endpoint mutácií.
+Autentifikovať Supabase MCP alebo spustiť read-only SQL z `docs/reports/2026-09-06-smo-b04-realvia-tenant-negative-test.md` §4 v produkčnom Supabase Dashboarde `ypgajkhqtbriqqmyawyv`; potom zapísať výsledok do reportu.
 
 ---
 
