@@ -1,19 +1,22 @@
-## Session 2026-08-18
+## Session 2026-09-06
 
 ### Dokončené
-- GPT Sol ↔ Opus 5 autonomous communication contract drafted.
-- Contract: `docs/architecture/gpt-sol-opus5-autonomous-communication.md`
-- Report: `docs/reports/2026-08-18-gpt-sol-opus5-contract.md`
-- Decision: D-2026-08-18-02 — contract before runtime automation.
+- First manual GPT Sol ↔ Opus 5 protocol trial completed.
+- Trial: `docs/ai-comms/2026-09-06-trial/`
+- Report: `docs/reports/2026-09-06-gpt-sol-opus5-manual-trial.md`
+- Decision: D-2026-09-06-01 — manual format PASS, runtime automation STOP.
 
 ### Rozpracované / Pending
-- First manual Sol↔Opus trial only after founder GO.
-- Runtime/provider automation remains blocked until manual trial PASS.
+- Contract branch `cursor/gpt-sol-opus5-contract-dabc` is still stacked/open relative to main.
+- Runtime/provider automation remains blocked.
+- Optional next: add reusable templates or apply Sol↔Opus to one real high-risk PR review.
 
 ### Kľúčové súbory zmenené
-- `docs/architecture/gpt-sol-opus5-autonomous-communication.md`: roles, transport, state machine, gates.
-- `docs/reports/2026-08-18-gpt-sol-opus5-contract.md`: handoff report.
-- `memory/decisions.md`: D-2026-08-18-02.
+- `docs/ai-comms/2026-09-06-trial/00-brief.md`: trial brief.
+- `docs/ai-comms/2026-09-06-trial/01-sol-draft.md`: Sol draft.
+- `docs/ai-comms/2026-09-06-trial/02-opus-review.md`: Opus review.
+- `docs/ai-comms/2026-09-06-trial/03-sol-revision.md`: Sol revision.
+- `docs/ai-comms/2026-09-06-trial/04-verdict.md`: PASS/STOP verdict.
 
 ### Ďalší krok
-Founder GO: run first manual trial under `docs/ai-comms/2026-08-18-trial/`.
+Founder GO: add reusable `docs/ai-comms/_template/` files, or use the protocol on one real high-risk PR review.
