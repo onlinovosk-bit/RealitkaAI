@@ -1,14 +1,28 @@
+## Session 2026-09-06 (PR #473 CI)
+### Dokončené
+- #471 MERGED. Rovnaký 42501 fail na #473 (docs operator audit, stale main)
+- Merge `origin/main` (`a8929c9a`) do `cursor/operator-dashboard-audit-db1f`
+- Report: `docs/reports/2026-09-06-pr473-ci-fix.md`
+### Rozpracované / Pending
+- Founder merge #473 — agent nemerguje
+### Kľúčové súbory zmenené
+- `docs/reports/2026-09-06-pr473-ci-fix.md`: 42501 + merge main + CI PASS
+### Ďalší krok
+Founder merge #473.
+
+---
+
 ## Session 2026-09-06 (PR #471 CI)
 ### Dokončené
 - CI `Lint, test, build` na #471: FAIL v `valuation-tenants-rls.test.ts` (42501 vs null) — docs PR, oprava už na main `#489`/`a4f58ff1`
-- Merge `origin/main` (`4d14b198`) do `cursor/dodane-od-10-08-db1f`; unique diff ostáva jeden report
+- Merge `origin/main` do vetvy; neskôr **MERGED** ako #471
 - Report: `docs/reports/2026-09-06-pr471-ci-fix.md`
 ### Rozpracované / Pending
-- Founder merge #471 — agent nemerguje
+- nič
 ### Kľúčové súbory zmenené
 - `docs/reports/2026-09-06-pr471-ci-fix.md`: koreň 42501 + merge main + CI PASS
 ### Ďalší krok
-Founder merge #471 po zelenom CI.
+#473 CI.
 
 ---
 
