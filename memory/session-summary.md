@@ -3,15 +3,16 @@
 - REVOLIS Inter-Agent Bus v1.0 vytvorený ako Phase 1 copy-paste protocol pre GPT/SOL ↔ Claude Code.
 - Scope zámerne docs-only: STACK 0/2/3/4/7 + Execution Result + Decision Artifact; bez message store/MCP/orchestratora.
 - Founder review GO 9/10 zapracovaný: role boundary Founder → SOL/GPT → Bus → Claude Code → Result/Evidence → SOL → Founder, Evolution Rule a friction log.
+- Founder GO: Bus v1.0 je pripravený na Real Handoff #1; výber úlohy musí spĺňať real problem, medium complexity, repo context, jasné DoD a reverzibilitu.
 - Report: `docs/reports/2026-09-06-revolis-inter-agent-bus-v1.md`
 ### Rozpracované / Pending
-- Real Handoff #1 čaká na konkrétnu engineering úlohu; Phase 2 automatizácia ostáva blokovaná pred 3 reálnymi použitiami.
+- Real Handoff #1 čaká na konkrétnu engineering úlohu; merať Context Efficiency, Task Clarity, Role Boundaries, Result Quality, Context Continuity, Resource Efficiency. Phase 2 automatizácia ostáva blokovaná pred 3 reálnymi použitiami.
 ### Kľúčové súbory zmenené
 - `docs/prompts/revolis-inter-agent-bus-v1.md`: copy-paste-ready master prompt pre SOL/GPT a Claude Code + šablóny.
 - `docs/reports/2026-09-06-revolis-inter-agent-bus-v1.md`: rozhodnutie, scope, overenie, riziká.
 - `memory/decisions.md`: decision memory + Engineering justification pre nový governance prompt.
 ### Ďalší krok
-Použiť `docs/prompts/revolis-inter-agent-bus-v1.md` ako povinný formát pri najbližšom konkrétnom engineering handoffe a vyplniť friction log; neautomatizovať Phase 2 pred 3 reálnymi použitiami.
+Použiť `docs/prompts/revolis-inter-agent-bus-v1.md` ako povinný formát pri najbližšom konkrétnom engineering handoffe a vyplniť friction log so 6 metrikami; neautomatizovať Phase 2 pred 3 reálnymi použitiami.
 
 ---
 

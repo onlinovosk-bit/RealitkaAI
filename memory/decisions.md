@@ -31,6 +31,13 @@
   build -> use in real work -> observe friction -> fix protocol -> repeat ->
   only then automate. Real Handoff #1 is the next intended use, but it requires
   a concrete engineering task; Phase 2 remains explicitly blocked.
+- **Real Handoff #1 readiness amendment (2026-09-06):** Founder GO accepted:
+  Bus v1.0 is ready for the first real handoff. Selection criteria: real
+  Revolis problem, medium complexity, repository context, clear Definition of
+  Done, reversible. Friction metrics: Context Efficiency, Task Clarity, Role
+  Boundaries, Result Quality, Context Continuity, Resource Efficiency. This GO
+  authorizes using the protocol on the next suitable task; it does not authorize
+  Phase 2, MCP, n8n, message broker, agent DB, new agent or automation.
 
 ## [2026-09-06] — Smolko chatbot: internal CRM assistant BUILD, public Concierge still gated
 

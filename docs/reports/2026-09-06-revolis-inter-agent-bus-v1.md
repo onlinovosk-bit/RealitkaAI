@@ -31,6 +31,10 @@ BUILD ako procesny/docs artefakt:
 - pridat Evolution Rule: build -> real use -> observe friction -> fix protocol
   -> repeat -> only then automate,
 - pridat friction log pre Real Handoff #1 az #3,
+- uzamknut Real Handoff #1 task criteria: realny problem, stredna
+  komplexita, repo kontext, jasne DoD, reverzibilita,
+- merat 6 friction metrics: Context Efficiency, Task Clarity, Role Boundaries,
+  Result Quality, Context Continuity, Resource Efficiency,
 - nezacinat Phase 2+ automatizaciu.
 
 ## Files changed
@@ -64,6 +68,8 @@ Executed verification:
 - IDs are convention-based only in Phase 1; no machine validation exists yet.
 - SOL/GPT and Claude Code responsibilities can blur unless the role boundary in
   `docs/prompts/revolis-inter-agent-bus-v1.md` remains explicit.
+- Real Handoff #1 still requires a concrete engineering task; the GO approves
+  the protocol test, not arbitrary new product scope.
 
 ## Non-goals
 

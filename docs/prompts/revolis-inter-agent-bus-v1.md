@@ -484,7 +484,48 @@ Claude Code executes:
 
 ---
 
-## 10. Real Handoff friction log
+## 10. Real Handoff #1 task criteria
+
+Do not use the first real handoff on a toy task. Do not use it on a high-risk
+architecture rewrite either.
+
+Pick a task that is:
+
+1. **Real** — solves an actual Revolis problem.
+2. **Medium complexity** — more than a rename, less than a CRM architecture rewrite.
+3. **Repository-contextual** — requires reading existing code/docs/memory.
+4. **Definition-of-Done clear** — success criteria are measurable.
+5. **Reversible** — a protocol failure cannot damage production or customer data.
+
+Real Handoff #1 measures the bus, not only whether Claude Code completes the
+task.
+
+### Friction metrics
+
+1. **Context Efficiency**
+   - Did Claude Code have enough context?
+   - Did SOL/GPT send unnecessary context?
+   - What information was missing?
+2. **Task Clarity**
+   - Did Claude Code understand the objective immediately?
+   - Was clarification needed?
+   - Were success criteria measurable?
+3. **Role Boundaries**
+   - Did SOL/GPT accidentally micromanage engineering?
+   - Did Claude Code make strategic decisions outside its authority?
+4. **Result Quality**
+   - Was the Execution Result sufficient?
+   - Could SOL/GPT review it without reconstructing the task?
+5. **Context Continuity**
+   - Could a third agent continue from artifacts alone?
+6. **Resource Efficiency**
+   - How much conversation was required?
+   - How much duplicated context occurred?
+   - Where did unnecessary work happen?
+
+---
+
+## 11. Real Handoff friction log
 
 Fill this after each real GPT/SOL -> Claude Code handoff. After 3 handoffs,
 use the entries as input for v1.1 Protocol Review.
@@ -524,6 +565,25 @@ TOO SHORT / RIGHT / TOO LONG
 
 WERE IDS USEFUL:
 YES / NO / UNKNOWN
+
+FRICTION METRICS:
+Context Efficiency:
+{{CONTEXT_EFFICIENCY}}
+
+Task Clarity:
+{{TASK_CLARITY}}
+
+Role Boundaries:
+{{ROLE_BOUNDARIES}}
+
+Result Quality:
+{{RESULT_QUALITY}}
+
+Context Continuity:
+{{CONTEXT_CONTINUITY}}
+
+Resource Efficiency:
+{{RESOURCE_EFFICIENCY}}
 
 WHAT SHOULD THE NEXT AGENT KNOW:
 {{NEXT_AGENT_CONTEXT}}
