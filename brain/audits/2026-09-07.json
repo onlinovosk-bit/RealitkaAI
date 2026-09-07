@@ -1,0 +1,704 @@
+{
+  "auditDate": "2026-09-07",
+  "delta": {
+    "added": [
+      "decision-outcome:rme-dec-20260522-001",
+      "duplicate:build-package.guardian-v1:build-package.moat-capture",
+      "duplicate:build-package.guardian-v1:build-package.operator-dashboard-v1",
+      "duplicate:build-package.moat-capture:build-package.operator-dashboard-v1",
+      "engine-review-overdue:2026-08-19",
+      "lesson-unverified:rme-les-20260722-002",
+      "lesson-unverified:rme-les-20260722-003",
+      "missing-route:docs/architecture/inbound-oauth-pull-design.md:374:/api/cron/gmail-inbound-pull",
+      "stale:architecture.product-roadmap-mapping-202607",
+      "stale:automation.n8n",
+      "stale:brain.audits",
+      "stale:build-package.guardian-v1",
+      "stale:build-package.moat-capture",
+      "stale:build-package.operator-dashboard-v1",
+      "stale:decisions.adr-2026-07-28-architecture-evolution",
+      "stale:governance.engineering-constitution",
+      "stale:identity.company",
+      "stale:identity.founder",
+      "stale:memory.lessons",
+      "stale:premortem.ads-smolko-ab",
+      "stale:process.build-package-template",
+      "stale:process.premortem-template",
+      "stale:process.veos-integration",
+      "stale:process.veos-voice-compiler"
+    ],
+    "comparedTo": "2026-07-24T19:58:21.032Z",
+    "resolved": [],
+    "unchanged": [
+      "decision-outcome:rme-dec-20260611-001",
+      "decision-outcome:rme-dec-20260618-002",
+      "decision-outcome:rme-dec-20260619-001",
+      "decision-outcome:rme-dec-20260624-002",
+      "decision-outcome:rme-dec-20260624-004",
+      "decision-outcome:rme-dec-20260717-001",
+      "decision-outcome:rme-dec-20260719-001",
+      "decision-outcome:rme-dec-20260719-002",
+      "decision-outcome:rme-dec-20260722-001",
+      "deprecated-table:revolis_leads",
+      "duplicate:premortem.ads-smolko-ab:process.premortem-template",
+      "duplicate:process.veos-integration:process.veos-voice-compiler",
+      "unused:automation.n8n"
+    ]
+  },
+  "findings": [
+    {
+      "category": "decision-outcome",
+      "confidence": "high",
+      "detail": "rme-dec-20260522-001 has review date 2026-08-22; recorded outcome: Implementation is present in the repository; an external partner retest is unavailable.",
+      "evidence": [
+        {
+          "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+          "line": 90,
+          "note": "Canonical decision entry and rationale.",
+          "path": "memory/decisions.md"
+        },
+        {
+          "commit": "3ded37864f32351e3a0e05f0929c70a44ee2c4a1",
+          "line": 3,
+          "note": "Current response helper implementation.",
+          "path": "apps/crm/src/lib/realvia/responses.ts"
+        }
+      ],
+      "key": "decision-outcome:rme-dec-20260522-001",
+      "severity": "warning",
+      "title": "Decision outcome needs verification"
+    },
+    {
+      "category": "decision-outcome",
+      "confidence": "high",
+      "detail": "rme-dec-20260611-001 has review date 2026-07-29; recorded outcome: The rule is documented locally; remote branch-protection state is unavailable.",
+      "evidence": [
+        {
+          "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+          "line": 110,
+          "note": "Canonical decision and incident count.",
+          "path": "memory/decisions.md"
+        },
+        {
+          "commit": "c614d282c9e588758376aab3961c27c7717c400c",
+          "line": 10,
+          "note": "Operational policy reference, not a second decision source.",
+          "path": ".cursor/rules/l99-golden-rule.mdc"
+        }
+      ],
+      "key": "decision-outcome:rme-dec-20260611-001",
+      "severity": "warning",
+      "title": "Decision outcome needs verification"
+    },
+    {
+      "category": "decision-outcome",
+      "confidence": "high",
+      "detail": "rme-dec-20260618-002 has review date 2026-07-29; recorded outcome: The schedule remains absent from the workflow; remote secret state is unavailable.",
+      "evidence": [
+        {
+          "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+          "line": 133,
+          "note": "Canonical decision and re-enable condition.",
+          "path": "memory/decisions.md"
+        },
+        {
+          "commit": "ddadb0b95c9176d1e6b1dbc671ac52f914aecf7d",
+          "line": 3,
+          "note": "Current workflow trigger evidence.",
+          "path": ".github/workflows/schema-governance-guard.yml"
+        }
+      ],
+      "key": "decision-outcome:rme-dec-20260618-002",
+      "severity": "warning",
+      "title": "Decision outcome needs verification"
+    },
+    {
+      "category": "decision-outcome",
+      "confidence": "high",
+      "detail": "rme-dec-20260619-001 has review date 2026-07-29; recorded outcome: A current production UI verification is unavailable.",
+      "evidence": [
+        {
+          "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+          "line": 140,
+          "note": "Canonical fact, veto, and decision.",
+          "path": "memory/decisions.md"
+        }
+      ],
+      "key": "decision-outcome:rme-dec-20260619-001",
+      "severity": "warning",
+      "title": "Decision outcome needs verification"
+    },
+    {
+      "category": "decision-outcome",
+      "confidence": "high",
+      "detail": "rme-dec-20260624-002 has review date 2026-07-29; recorded outcome: Migration and writer code exist; current production and policy state require verification.",
+      "evidence": [
+        {
+          "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+          "line": 224,
+          "note": "Canonical decision and safety rule.",
+          "path": "memory/decisions.md"
+        },
+        {
+          "commit": "12abc8302d8112878fcf054ccd88bfbe2157fb33",
+          "line": 4,
+          "note": "14-digit rename of 2026_genome_layer2.sql; tolerate either filename until founder applies.",
+          "path": "apps/crm/supabase/migrations/20260817120000_rename_genome_layer2.sql"
+        }
+      ],
+      "key": "decision-outcome:rme-dec-20260624-002",
+      "severity": "warning",
+      "title": "Decision outcome needs verification"
+    },
+    {
+      "category": "decision-outcome",
+      "confidence": "high",
+      "detail": "rme-dec-20260624-004 has review date 2026-07-29; recorded outcome: A measured outcome for the process decision is unavailable.",
+      "evidence": [
+        {
+          "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+          "line": 235,
+          "note": "Canonical process decision and merge boundary.",
+          "path": "memory/decisions.md"
+        }
+      ],
+      "key": "decision-outcome:rme-dec-20260624-004",
+      "severity": "warning",
+      "title": "Decision outcome needs verification"
+    },
+    {
+      "category": "decision-outcome",
+      "confidence": "high",
+      "detail": "rme-dec-20260717-001 has review date 2026-07-29; recorded outcome: Implementation and verification files exist, but the decision log merge state is stale.",
+      "evidence": [
+        {
+          "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+          "line": 253,
+          "note": "Canonical decision and documented verification.",
+          "path": "memory/decisions.md"
+        },
+        {
+          "commit": "4ccd5c51a93ec0bc82d72ef66818b98ce11a1e13",
+          "line": 90,
+          "note": "Current first-audit implementation.",
+          "path": "apps/crm/src/lib/workdesk/first-audit.ts"
+        }
+      ],
+      "key": "decision-outcome:rme-dec-20260717-001",
+      "severity": "warning",
+      "title": "Decision outcome needs verification"
+    },
+    {
+      "category": "decision-outcome",
+      "confidence": "high",
+      "detail": "rme-dec-20260719-001 has review date 2026-07-29; recorded outcome: The route and deterministic engine exist; current data-license and production gates require verification.",
+      "evidence": [
+        {
+          "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+          "line": 241,
+          "note": "Canonical scope and gates.",
+          "path": "memory/decisions.md"
+        },
+        {
+          "commit": "eeba38af1025a8264ea7f324f259717d3921c11e",
+          "line": 103,
+          "note": "Current submission implementation.",
+          "path": "apps/crm/src/app/api/valuation/submit/route.ts"
+        }
+      ],
+      "key": "decision-outcome:rme-dec-20260719-001",
+      "severity": "warning",
+      "title": "Decision outcome needs verification"
+    },
+    {
+      "category": "decision-outcome",
+      "confidence": "high",
+      "detail": "rme-dec-20260719-002 has review date 2026-08-19; recorded outcome: Commercial validation is unavailable in repository evidence.",
+      "evidence": [
+        {
+          "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+          "line": 251,
+          "note": "Canonical pricing decision and validation condition.",
+          "path": "memory/decisions.md"
+        }
+      ],
+      "key": "decision-outcome:rme-dec-20260719-002",
+      "severity": "warning",
+      "title": "Decision outcome needs verification"
+    },
+    {
+      "category": "decision-outcome",
+      "confidence": "high",
+      "detail": "rme-dec-20260722-001 has review date 2026-07-29; recorded outcome: Repository code and migration exist; production application and founder smoke are unavailable.",
+      "evidence": [
+        {
+          "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+          "line": 172,
+          "note": "Canonical decision and founder gate.",
+          "path": "memory/decisions.md"
+        },
+        {
+          "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
+          "line": 108,
+          "note": "Repository migration evidence only.",
+          "path": "apps/crm/supabase/migrations/20260722120000_sandbox_gdpr_consent.sql"
+        }
+      ],
+      "key": "decision-outcome:rme-dec-20260722-001",
+      "severity": "warning",
+      "title": "Decision outcome needs verification"
+    },
+    {
+      "category": "unused-asset",
+      "confidence": "high",
+      "detail": "revolis_leads has no apps/crm/src usage (legacy scripts/allowlist only). Legacy lead table with zero application runtime usage (founder confirmed 2026-07-23). Do not use in new code.",
+      "evidence": [
+        {
+          "commit": "working-tree",
+          "note": "Schema allowlist may still reference legacy tables.",
+          "path": "apps/crm/config/public-schema-allowlist.json"
+        },
+        {
+          "commit": "working-tree",
+          "note": "Canonical lead-table authority card.",
+          "path": "docs/architecture/inputs/lead-tables-authority-2026-07.md"
+        }
+      ],
+      "key": "deprecated-table:revolis_leads",
+      "severity": "advisory",
+      "title": "Deprecated database table remains outside application runtime"
+    },
+    {
+      "category": "duplicate-behavior",
+      "confidence": "medium",
+      "detail": "build-package.guardian-v1 and build-package.moat-capture overlap; this is a review signal, not an automatic duplicate verdict.",
+      "evidence": [
+        {
+          "commit": "c4e2e8c481e0bb720fb435378210df226d7ff745",
+          "note": "Inventory contains 6 file(s); digest sha256:841d00336cbeb141f668f44fcc8b4b565a6f960e5a3274831734fb50a19c24d2.",
+          "path": "docs/briefs/overnight/overnight-brief-guardian-v1.md"
+        },
+        {
+          "commit": "4057d02dc80a1a71600f81e0950e089ec250471a",
+          "note": "Inventory contains 4 file(s); digest sha256:22470b14272b3e25dbd467c3b9d4deb57eec26f52aa1fcb61da11c0d4d230bf0.",
+          "path": "docs/briefs/build-package-moat-capture-blok-b.md"
+        }
+      ],
+      "key": "duplicate:build-package.guardian-v1:build-package.moat-capture",
+      "severity": "advisory",
+      "title": "Possible duplicate capability ownership"
+    },
+    {
+      "category": "duplicate-behavior",
+      "confidence": "medium",
+      "detail": "build-package.guardian-v1 and build-package.operator-dashboard-v1 overlap; this is a review signal, not an automatic duplicate verdict.",
+      "evidence": [
+        {
+          "commit": "c4e2e8c481e0bb720fb435378210df226d7ff745",
+          "note": "Inventory contains 6 file(s); digest sha256:841d00336cbeb141f668f44fcc8b4b565a6f960e5a3274831734fb50a19c24d2.",
+          "path": "docs/briefs/overnight/overnight-brief-guardian-v1.md"
+        },
+        {
+          "commit": "9ddf61f486f6c253695838b3f226d2a337099ff5",
+          "note": "Inventory contains 6 file(s); digest sha256:b218060be42c9ea45064067c64ac6af466fb8eafbb7652fbb3c5df873b0bf609.",
+          "path": "docs/briefs/overnight/build-package-operator-dashboard.md"
+        }
+      ],
+      "key": "duplicate:build-package.guardian-v1:build-package.operator-dashboard-v1",
+      "severity": "advisory",
+      "title": "Possible duplicate capability ownership"
+    },
+    {
+      "category": "duplicate-behavior",
+      "confidence": "medium",
+      "detail": "build-package.moat-capture and build-package.operator-dashboard-v1 overlap; this is a review signal, not an automatic duplicate verdict.",
+      "evidence": [
+        {
+          "commit": "4057d02dc80a1a71600f81e0950e089ec250471a",
+          "note": "Inventory contains 4 file(s); digest sha256:22470b14272b3e25dbd467c3b9d4deb57eec26f52aa1fcb61da11c0d4d230bf0.",
+          "path": "docs/briefs/build-package-moat-capture-blok-b.md"
+        },
+        {
+          "commit": "9ddf61f486f6c253695838b3f226d2a337099ff5",
+          "note": "Inventory contains 6 file(s); digest sha256:b218060be42c9ea45064067c64ac6af466fb8eafbb7652fbb3c5df873b0bf609.",
+          "path": "docs/briefs/overnight/build-package-operator-dashboard.md"
+        }
+      ],
+      "key": "duplicate:build-package.moat-capture:build-package.operator-dashboard-v1",
+      "severity": "advisory",
+      "title": "Possible duplicate capability ownership"
+    },
+    {
+      "category": "duplicate-behavior",
+      "confidence": "medium",
+      "detail": "premortem.ads-smolko-ab and process.premortem-template overlap; this is a review signal, not an automatic duplicate verdict.",
+      "evidence": [
+        {
+          "commit": "e88da3375cb223b09b5f08ea77fd4a897558d09a",
+          "note": "Inventory contains 1 file(s); digest sha256:61ecb9c928964b8590b936d8acfcb7e00fa1b0ce0f1f632c88243860cea508e6.",
+          "path": "docs/premortems/2026-07-23-ads-smolko-ab.md"
+        },
+        {
+          "commit": "a7e662f4b4a33cd1922c8c3bd648f79494be1755",
+          "note": "Inventory contains 1 file(s); digest sha256:eb4d333f5a94c137af61ea223bf9ec032a05d811dfad970450fc752f6391f842.",
+          "path": "docs/templates/premortem.md"
+        }
+      ],
+      "key": "duplicate:premortem.ads-smolko-ab:process.premortem-template",
+      "severity": "advisory",
+      "title": "Possible duplicate capability ownership"
+    },
+    {
+      "category": "duplicate-behavior",
+      "confidence": "medium",
+      "detail": "process.veos-integration and process.veos-voice-compiler overlap; this is a review signal, not an automatic duplicate verdict.",
+      "evidence": [
+        {
+          "commit": "aba1e888ee386d0880dbf9d348db406116fda88e",
+          "note": "Inventory contains 1 file(s); digest sha256:4f30ae2677b9c4bf47e41151bbb8480e00ae5be23a0a85870d5b091fbf1db3d4.",
+          "path": "docs/architecture/veos-integration.md"
+        },
+        {
+          "commit": "aba1e888ee386d0880dbf9d348db406116fda88e",
+          "note": "Inventory contains 1 file(s); digest sha256:df1086a02e818562bd900dcc921c3d35520e40fb6419c011d398a024668652a1.",
+          "path": "docs/prompts/veos-voice-compiler.md"
+        }
+      ],
+      "key": "duplicate:process.veos-integration:process.veos-voice-compiler",
+      "severity": "advisory",
+      "title": "Possible duplicate capability ownership"
+    },
+    {
+      "category": "staleness",
+      "confidence": "high",
+      "detail": "brain/ENGINE.md review_by 2026-08-19 is past 2026-09-07; status is already stale pending founder substantive review (do not invent a decision record).",
+      "evidence": [
+        {
+          "commit": "working-tree",
+          "note": "review_by=2026-08-19; status=stale",
+          "path": "brain/ENGINE.md"
+        }
+      ],
+      "key": "engine-review-overdue:2026-08-19",
+      "severity": "advisory",
+      "title": "ENGINE.md review_by is overdue"
+    },
+    {
+      "category": "staleness",
+      "confidence": "high",
+      "detail": "rme-les-20260722-002 (2026-07-22) still has prevenciaOverena: false; verify prevention or update the lesson.",
+      "evidence": [
+        {
+          "commit": "working-tree",
+          "note": "Lesson with unverified prevention",
+          "path": "brain/lessons/2026-07-22-duplicitne-emaily.md"
+        }
+      ],
+      "key": "lesson-unverified:rme-les-20260722-002",
+      "severity": "advisory",
+      "title": "Lesson prevention is not verified and is older than 30 days"
+    },
+    {
+      "category": "staleness",
+      "confidence": "high",
+      "detail": "rme-les-20260722-003 (2026-07-22) still has prevenciaOverena: false; verify prevention or update the lesson.",
+      "evidence": [
+        {
+          "commit": "working-tree",
+          "note": "Lesson with unverified prevention",
+          "path": "brain/lessons/2026-07-22-osobny-ucet-nastroj.md"
+        }
+      ],
+      "key": "lesson-unverified:rme-les-20260722-003",
+      "severity": "advisory",
+      "title": "Lesson prevention is not verified and is older than 30 days"
+    },
+    {
+      "category": "docs-code-conflict",
+      "confidence": "medium",
+      "detail": "/api/cron/gmail-inbound-pull has no matching route handler. Dynamic or intentionally removed routes require human review.",
+      "evidence": [
+        {
+          "commit": "working-tree",
+          "line": 374,
+          "note": "Documented route: /api/cron/gmail-inbound-pull",
+          "path": "docs/architecture/inbound-oauth-pull-design.md"
+        }
+      ],
+      "key": "missing-route:docs/architecture/inbound-oauth-pull-design.md:374:/api/cron/gmail-inbound-pull",
+      "severity": "advisory",
+      "title": "Documented API route was not found"
+    },
+    {
+      "category": "staleness",
+      "confidence": "high",
+      "detail": "architecture.product-roadmap-mapping-202607 was last verified on 2026-07-26.",
+      "evidence": [
+        {
+          "commit": "c4e2e8c481e0bb720fb435378210df226d7ff745",
+          "note": "Inventory contains 1 file(s); digest sha256:c0af3a928c156c64a35d8509f72978f3a0595473622e9157ba39f4bfb9776b66.",
+          "path": "docs/architecture/product-roadmap-mapping-2026-07.md"
+        }
+      ],
+      "key": "stale:architecture.product-roadmap-mapping-202607",
+      "severity": "advisory",
+      "title": "Registry source has not been verified for more than 30 days"
+    },
+    {
+      "category": "staleness",
+      "confidence": "high",
+      "detail": "automation.n8n was last verified on 2026-07-31.",
+      "evidence": [
+        {
+          "commit": "5d14febba280965511d14c67ae095306cf7a59aa",
+          "note": "Inventory contains 4 file(s); digest sha256:79a72a7c02429e8da64f6a3633b7ab4c3c3ea5d96fa5083672378bf7ff74fa2f.",
+          "path": "automation/n8n"
+        }
+      ],
+      "key": "stale:automation.n8n",
+      "severity": "advisory",
+      "title": "Registry source has not been verified for more than 30 days"
+    },
+    {
+      "category": "staleness",
+      "confidence": "high",
+      "detail": "brain.audits was last verified on 2026-07-26.",
+      "evidence": [
+        {
+          "commit": "db82c9f1200d966c114f1308bfd348ab7f8c5065",
+          "note": "Inventory contains 6 file(s); digest sha256:d8e75c0a5b944d9c9c61c9bee58f5e3d8e7160c02fbb6ed86964433d568dfaba.",
+          "path": "brain/audits"
+        }
+      ],
+      "key": "stale:brain.audits",
+      "severity": "advisory",
+      "title": "Registry source has not been verified for more than 30 days"
+    },
+    {
+      "category": "staleness",
+      "confidence": "high",
+      "detail": "build-package.guardian-v1 was last verified on 2026-07-26.",
+      "evidence": [
+        {
+          "commit": "c4e2e8c481e0bb720fb435378210df226d7ff745",
+          "note": "Inventory contains 6 file(s); digest sha256:841d00336cbeb141f668f44fcc8b4b565a6f960e5a3274831734fb50a19c24d2.",
+          "path": "docs/briefs/overnight/overnight-brief-guardian-v1.md"
+        }
+      ],
+      "key": "stale:build-package.guardian-v1",
+      "severity": "advisory",
+      "title": "Registry source has not been verified for more than 30 days"
+    },
+    {
+      "category": "staleness",
+      "confidence": "high",
+      "detail": "build-package.moat-capture was last verified on 2026-07-26.",
+      "evidence": [
+        {
+          "commit": "4057d02dc80a1a71600f81e0950e089ec250471a",
+          "note": "Inventory contains 4 file(s); digest sha256:22470b14272b3e25dbd467c3b9d4deb57eec26f52aa1fcb61da11c0d4d230bf0.",
+          "path": "docs/briefs/build-package-moat-capture-blok-b.md"
+        }
+      ],
+      "key": "stale:build-package.moat-capture",
+      "severity": "advisory",
+      "title": "Registry source has not been verified for more than 30 days"
+    },
+    {
+      "category": "staleness",
+      "confidence": "high",
+      "detail": "build-package.operator-dashboard-v1 was last verified on 2026-07-28.",
+      "evidence": [
+        {
+          "commit": "9ddf61f486f6c253695838b3f226d2a337099ff5",
+          "note": "Inventory contains 6 file(s); digest sha256:b218060be42c9ea45064067c64ac6af466fb8eafbb7652fbb3c5df873b0bf609.",
+          "path": "docs/briefs/overnight/build-package-operator-dashboard.md"
+        }
+      ],
+      "key": "stale:build-package.operator-dashboard-v1",
+      "severity": "advisory",
+      "title": "Registry source has not been verified for more than 30 days"
+    },
+    {
+      "category": "staleness",
+      "confidence": "high",
+      "detail": "decisions.adr-2026-07-28-architecture-evolution was last verified on 2026-07-28.",
+      "evidence": [
+        {
+          "commit": "8abc7206726dc744d4427192cb160ae988bfc296",
+          "note": "Inventory contains 1 file(s); digest sha256:53d3aea5229e8a0f9eb20d77da2d95498ac6d33f4ca0f05d3015748a46ce154f.",
+          "path": "brain/decisions/adr-2026-07-28-architecture-evolution.md"
+        }
+      ],
+      "key": "stale:decisions.adr-2026-07-28-architecture-evolution",
+      "severity": "advisory",
+      "title": "Registry source has not been verified for more than 30 days"
+    },
+    {
+      "category": "staleness",
+      "confidence": "high",
+      "detail": "governance.engineering-constitution was last verified on 2026-08-02.",
+      "evidence": [
+        {
+          "commit": "593972a73ceb98bb428525859f9f42d41ed9607b",
+          "note": "Inventory contains 2 file(s); digest sha256:49a42ad4bfad31a90789f3777135c87ca344fd9d05d3c412f13f28393f86c665.",
+          "path": "docs/architecture/engineering-constitution.md"
+        }
+      ],
+      "key": "stale:governance.engineering-constitution",
+      "severity": "advisory",
+      "title": "Registry source has not been verified for more than 30 days"
+    },
+    {
+      "category": "staleness",
+      "confidence": "high",
+      "detail": "identity.company was last verified on 2026-07-31.",
+      "evidence": [
+        {
+          "commit": "adeab3ae8e4d1f3d6db0a11f8af8651ed74595ac",
+          "note": "Inventory contains 1 file(s); digest sha256:12b8cf9c9c33b5f06eb80412af917a129e1c38288785c281eecb150fea135217.",
+          "path": "brain/identity/COMPANY.md"
+        }
+      ],
+      "key": "stale:identity.company",
+      "severity": "advisory",
+      "title": "Registry source has not been verified for more than 30 days"
+    },
+    {
+      "category": "staleness",
+      "confidence": "high",
+      "detail": "identity.founder was last verified on 2026-07-26.",
+      "evidence": [
+        {
+          "commit": "db82c9f1200d966c114f1308bfd348ab7f8c5065",
+          "note": "Inventory contains 1 file(s); digest sha256:9d8f113badf0a5f2e8eec0b3910b11d285b767396aaabee2bae9e7e97331f544.",
+          "path": "brain/identity/FOUNDER.md"
+        }
+      ],
+      "key": "stale:identity.founder",
+      "severity": "advisory",
+      "title": "Registry source has not been verified for more than 30 days"
+    },
+    {
+      "category": "staleness",
+      "confidence": "high",
+      "detail": "memory.lessons was last verified on 2026-07-26.",
+      "evidence": [
+        {
+          "commit": "db82c9f1200d966c114f1308bfd348ab7f8c5065",
+          "note": "Inventory contains 4 file(s); digest sha256:744e5921c214c5322c6c11c96b1a3df5ad739b69f88fff3ccc5fb0bccde2d04c.",
+          "path": "brain/lessons"
+        }
+      ],
+      "key": "stale:memory.lessons",
+      "severity": "advisory",
+      "title": "Registry source has not been verified for more than 30 days"
+    },
+    {
+      "category": "staleness",
+      "confidence": "high",
+      "detail": "premortem.ads-smolko-ab was last verified on 2026-07-24.",
+      "evidence": [
+        {
+          "commit": "e88da3375cb223b09b5f08ea77fd4a897558d09a",
+          "note": "Inventory contains 1 file(s); digest sha256:61ecb9c928964b8590b936d8acfcb7e00fa1b0ce0f1f632c88243860cea508e6.",
+          "path": "docs/premortems/2026-07-23-ads-smolko-ab.md"
+        }
+      ],
+      "key": "stale:premortem.ads-smolko-ab",
+      "severity": "advisory",
+      "title": "Registry source has not been verified for more than 30 days"
+    },
+    {
+      "category": "staleness",
+      "confidence": "high",
+      "detail": "process.build-package-template was last verified on 2026-07-26.",
+      "evidence": [
+        {
+          "commit": "c4e2e8c481e0bb720fb435378210df226d7ff745",
+          "note": "Inventory contains 1 file(s); digest sha256:9db11f72e42373c21e4ed087406f9f001cb2572e360edb3061265cf58699bf91.",
+          "path": "docs/templates/build-package.md"
+        }
+      ],
+      "key": "stale:process.build-package-template",
+      "severity": "advisory",
+      "title": "Registry source has not been verified for more than 30 days"
+    },
+    {
+      "category": "staleness",
+      "confidence": "high",
+      "detail": "process.premortem-template was last verified on 2026-07-23.",
+      "evidence": [
+        {
+          "commit": "a7e662f4b4a33cd1922c8c3bd648f79494be1755",
+          "note": "Inventory contains 1 file(s); digest sha256:eb4d333f5a94c137af61ea223bf9ec032a05d811dfad970450fc752f6391f842.",
+          "path": "docs/templates/premortem.md"
+        }
+      ],
+      "key": "stale:process.premortem-template",
+      "severity": "advisory",
+      "title": "Registry source has not been verified for more than 30 days"
+    },
+    {
+      "category": "staleness",
+      "confidence": "high",
+      "detail": "process.veos-integration was last verified on 2026-07-24.",
+      "evidence": [
+        {
+          "commit": "aba1e888ee386d0880dbf9d348db406116fda88e",
+          "note": "Inventory contains 1 file(s); digest sha256:4f30ae2677b9c4bf47e41151bbb8480e00ae5be23a0a85870d5b091fbf1db3d4.",
+          "path": "docs/architecture/veos-integration.md"
+        }
+      ],
+      "key": "stale:process.veos-integration",
+      "severity": "advisory",
+      "title": "Registry source has not been verified for more than 30 days"
+    },
+    {
+      "category": "staleness",
+      "confidence": "high",
+      "detail": "process.veos-voice-compiler was last verified on 2026-07-24.",
+      "evidence": [
+        {
+          "commit": "aba1e888ee386d0880dbf9d348db406116fda88e",
+          "note": "Inventory contains 1 file(s); digest sha256:df1086a02e818562bd900dcc921c3d35520e40fb6419c011d398a024668652a1.",
+          "path": "docs/prompts/veos-voice-compiler.md"
+        }
+      ],
+      "key": "stale:process.veos-voice-compiler",
+      "severity": "advisory",
+      "title": "Registry source has not been verified for more than 30 days"
+    },
+    {
+      "category": "unused-asset",
+      "confidence": "low",
+      "detail": "automation.n8n has no incoming registry dependency or related decision. Usage telemetry is unavailable, so review manually.",
+      "evidence": [
+        {
+          "commit": "5d14febba280965511d14c67ae095306cf7a59aa",
+          "note": "Inventory contains 4 file(s); digest sha256:79a72a7c02429e8da64f6a3633b7ab4c3c3ea5d96fa5083672378bf7ff74fa2f.",
+          "path": "automation/n8n"
+        }
+      ],
+      "key": "unused:automation.n8n",
+      "severity": "advisory",
+      "title": "Workflow or automation has no recorded consumer"
+    }
+  ],
+  "generatedAt": "2026-09-07T09:58:11.179Z",
+  "schemaVersion": 1,
+  "scope": "repository-only",
+  "sourcePolicy": "tracked-files-only",
+  "summary": {
+    "advisory": 27,
+    "decisionRecords": 26,
+    "errors": 0,
+    "registryRecords": 28,
+    "warnings": 10
+  },
+  "unavailable": {
+    "costOfWaitingBaselineMinutes": "unavailable - no measured time series exists for 2026-07-22",
+    "customerMetrics": "unavailable - no privacy-approved repository source",
+    "marketingMetrics": "unavailable - no connected repository source"
+  }
+}
