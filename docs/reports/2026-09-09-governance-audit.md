@@ -1,8 +1,8 @@
 # S1-B: Governance Audit
 
-**Repository:** `RealitkaAI`  
-**Branch:** `docs/b19-s1-evidence-audit`  
-**Mode:** read-only static audit  
+**Repository:** `RealitkaAI`
+**Branch:** `docs/b19-s1-evidence-audit`
+**Mode:** read-only static audit
 **Production DB and cloud n8n access:** not performed
 
 ## Najprv som hľadal
