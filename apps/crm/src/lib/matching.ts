@@ -4,12 +4,14 @@ import type { Property } from "@/lib/properties-store";
 export type PropertyMatchResult = {
   propertyId: string;
   matchScore: number;
+  comparedCriteria: number;
   reasons: string[];
 };
 
 export type LeadMatchResult = {
   leadId: string;
   matchScore: number;
+  comparedCriteria: number;
   reasons: string[];
 };
 
@@ -55,12 +57,18 @@ function scoreBudget(leadBudget: number, propertyPrice: number) {
 
 export function calculateLeadPropertyMatch(lead: Lead, property: Property) {
   let score = 0;
+  let comparedCriteria = 0;
   const reasons: string[] = [];
 
   const leadBudget = extractBudget(lead.budget);
   const leadNote = normalize(lead.note);
+  const leadPropertyType = normalize(lead.propertyType);
+  const propertyType = normalize(property.type);
 
-  if (normalize(lead.propertyType) === normalize(property.type)) {
+  if (leadPropertyType && propertyType) {
+    comparedCriteria += 1;
+  }
+  if (leadPropertyType && propertyType && leadPropertyType === propertyType) {
     score += 25;
     reasons.push("typ nehnuteľnosti sedí");
   }
@@ -69,16 +77,30 @@ export function calculateLeadPropertyMatch(lead: Lead, property: Property) {
     score += 30;
     reasons.push("lokalita sedí");
   }
+  if (normalize(lead.location) && normalize(property.location)) {
+    comparedCriteria += 1;
+  }
 
-  if (normalize(lead.rooms) === normalize(property.rooms)) {
+  const leadRooms = normalize(lead.rooms);
+  const propertyRooms = normalize(property.rooms);
+  if (leadRooms && propertyRooms) {
+    comparedCriteria += 1;
+  }
+  if (leadRooms && propertyRooms && leadRooms === propertyRooms) {
     score += 20;
     reasons.push("počet izieb sedí");
   }
 
+  if (leadBudget && property.price) {
+    comparedCriteria += 1;
+  }
   const budget = scoreBudget(leadBudget, property.price);
   score += budget.score;
   if (budget.reason) reasons.push(budget.reason);
 
+  if (leadNote && property.features?.length) {
+    comparedCriteria += 1;
+  }
   const featureMatches = (property.features || []).filter((feature) =>
     leadNote.includes(normalize(feature))
   );
@@ -89,17 +111,20 @@ export function calculateLeadPropertyMatch(lead: Lead, property: Property) {
   }
 
   if (normalize(lead.timeline).includes("ihneď")) {
+    comparedCriteria += 1;
     score += 5;
     reasons.push("rýchly čas kúpy");
   }
 
   if (normalize(lead.financing).includes("hotovosť")) {
+    comparedCriteria += 1;
     score += 5;
     reasons.push("hotovostný klient");
   }
 
   return {
     score: Math.min(100, score),
+    comparedCriteria,
     reasons,
   };
 }
@@ -116,6 +141,7 @@ export function getMatchingPropertiesForLead(
       return {
         propertyId: property.id,
         matchScore: result.score,
+        comparedCriteria: result.comparedCriteria,
         reasons: result.reasons,
       };
     })
@@ -135,6 +161,7 @@ export function getMatchingLeadsForProperty(
       return {
         leadId: lead.id,
         matchScore: result.score,
+        comparedCriteria: result.comparedCriteria,
         reasons: result.reasons,
       };
     })
