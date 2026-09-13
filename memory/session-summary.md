@@ -95,3 +95,17 @@ bez DB/OAuth/booking mutácií.
 - `docs/reports/2026-09-05-pr535-fix-merge-conflicts.md`
 ### Ďalší krok
 Founder GO: merge #535; then PROD digest smoke.
+
+---
+
+## Session 2026-09-13 (Critical bug hunt)
+### Dokončené
+- Thorough hunt in `apps/crm` high-blast paths; skipped tracked #369–#545.
+- NEW HIGH: demo/request silent SaaS lead+task drop; outreach unscoped listLeads; playbook confirm-viewing unscoped getLead; profiles PATCH without scoped.
+- Report: `docs/reports/2026-09-13-critical-bug-hunt.md` pushed on `cursor/critical-bug-management-ecf5`.
+### Rozpracované / Pending
+- Fix PRs not opened (hunt-only); Slack MCP `send_slack_message` unavailable this run.
+### Kľúčové súbory zmenené
+- `docs/reports/2026-09-13-critical-bug-hunt.md`: hunt findings
+### Ďalší krok
+GO: fix `POST /api/demo/request` service-role + no fake UUID on createSaasLead error.
