@@ -1,88 +1,22 @@
 # Critical Decisions Log
 
-## [2026-09-06] — REVOLIS Inter-Agent Bus v1.0: Phase 1 copy-paste protocol BUILD
+## [2026-09-03] — Mapped field correctness (za „riadky existujú“)
 
-- **Decision:** Create a manual GPT/SOL <-> Claude Code protocol as a docs-only
-  Phase 1 bus, not an automated agent/orchestrator system.
-- **Why:** The immediate value is reducing handoff ambiguity, context drift and
-  "done" without verification. Automation before a proven manual protocol would
-  make chaos faster, not better.
-- **Scope:** STACK 0 Constitution, STACK 2 Task Contract, STACK 3 Context Packet,
-  STACK 4 Inter-Agent Message, STACK 7 Quality Gate, plus Execution Result and
-  Decision Artifact templates.
-- **Rejected now:** shared message store, MCP layer, cost governor, full
-  orchestrator, registry service, DB schema, UI.
-- **Engineering justification:** Trigger: new-governance-doc / prompt standard.
-  Decision path: extend-existing `docs/prompts/` copy-paste prompt surface and
-  `memory/decisions.md` Decision Memory; no runtime code, dependency, database or
-  app route. Alternatives considered: (a) one super-prompt — rejected because it
-  hides boundaries; (b) build automated autonomous agents now — rejected as
-  premature and higher-risk; (c) leave protocol only in chat — rejected because
-  repo is the communication channel. Contradiction check: none; this complements
-  the killed/blocked Agent OS V0 path by staying manual and docs-only.
-- **Artifact:** `docs/prompts/revolis-inter-agent-bus-v1.md`,
-  `docs/reports/2026-09-06-revolis-inter-agent-bus-v1.md`.
-- **Revisit:** after the next 3 real GPT -> Claude Code handoffs; automate only
-  fields that repeatedly survive manual use without confusion.
-- **Founder review amendment (2026-09-06):** GO 9/10 accepted for Phase 1.
-  Added official role boundary: Founder = human authority; SOL/GPT = Strategic
-  Architect + Context Governor + Handoff Designer + Reviewer; Claude Code =
-  Engineering Execution Environment. Added Inter-Agent Bus Evolution Rule:
-  build -> use in real work -> observe friction -> fix protocol -> repeat ->
-  only then automate. Real Handoff #1 is the next intended use, but it requires
-  a concrete engineering task; Phase 2 remains explicitly blocked.
-
-## [2026-09-06] — Smolko chatbot: internal CRM assistant BUILD, public Concierge still gated
-
-- **GO:** Founder "Go Chatbot pre Smolka."
-- **Decision:** Build only a safe internal CRM assistant slice in `/revolis-ai`,
-  not the public Website Concierge.
-- **Why:** Constitution value exists if it answers "komu volať a čo zachrániť
-  dnes" from own CRM data. Public chatbot still has existing blockers SMO-B04
-  through SMO-B09 in `docs/reports/2026-09-06-smolko-chatbot-status.md`.
-- **Data source:** Master Data Sourcing Map Zhluk 1 — own CRM data (`leads`,
-  `tasks`). No new external source.
-- **GDPR boundary:** No OpenAI/Claude/embedding call for chat questions; no new
-  external processor for Smolko CRM content in this slice. Public Concierge still
-  needs SMO-B05 before launch.
-- **Engineering justification:** Trigger: new API route, component, lib and
-  tests. Decision path: reuse — existing `/revolis-ai` surface, `listLeads`,
-  `listTasks`, `api-response`, `api-validate`, `incrementUsageMetric`,
-  `createClient`, Slate Horizon tokens. Alternatives considered: public
-  Concierge now (rejected — SMO-B04–B09 blocked), LLM chat over CRM PII
-  (rejected — GDPR/provider gate), new DB tables (rejected — not needed).
-  Contract telemetry uses `usage_metrics_daily` metric `ai_chatbot_queries`.
-  Contradiction check: none; public chatbot remains explicitly blocked.
-- **Artifact:** `docs/reports/2026-09-06-smolko-crm-chatbot-mvp.md`.
-
-
-
-## [2026-09-05] — Strážca prítoku BUILD (Brief 18 V2)
-
-- **GO:** Founder „Strážca GO.“
-- **Scope:** doručenie unread `routine_notifications` + Realvia 48h/7d prahy (nie customer-health L2).
-- **Brief:** `task-strazca-pritoku.md` v Downloads chýbal → kanon = Brief 18 V2.
-- **Artefakt:** vetva `feat/b18-notification-delivery`, report `docs/reports/2026-09-05-strazca-pritoku.md`.
-- **STOP:** merge / PROD smoke / secrets = founder.
-
-## [2026-09-03] — GO P0 HONEST UNKNOWN MAPPING
-
-- Neznámy Realvia kód → **`Neznáme`**, nie fog do `Ostatné` / `Predaj`.
-- Sporné známe: **13/14** a **123** → `Neznáme` (neodvodzovať Byt/Prenájom z titulov).
-- Guardian: `unverified_property_type` / `unverified_transaction_type` blokuje pass.
-- Backfill 132 = samostatné GO. Číselník od Realvie stále treba.
-- Dôkaz: `docs/reports/2026-09-03-realvia-honest-unknown-mapping.md`.
+- **Počet riadkov dokazuje existenciu, nie správnosť.** Pole z mapovania externého zdroja sa overuje proti **nezávislému signálu** z toho istého záznamu (tu: `title` vs `type` / `transaction_type`).
+- **P0:** `mapCategory` **a** `mapTransaction` v `processQueue.ts` — neúplné aj **nesprávne** (13/14→Dom na bytoch; 123→Predaj pri prenájme v titule). Oprava až po oficiálnom číselníku Realvia; nie z titulov do kódu.
+- **Zrušené:** „Smolko má 0 prenájmov“ / „0 predajov v realite“ ako biznis fakt z mapped stĺpcov. `status=Predaná` = 0, ale 11× `***PREDANÉ***` v title.
+- **Launch Pack:** `GO IMPLEMENT` až po číselníku + mapper P0. Dôkaz: `docs/reports/2026-09-03-realvia-mapper-depth-amendment.md`.
 
 ## [2026-09-03] — Property Launch Pack V0 = VALIDATE/spec (no code yet)
 
 - **Verdikt:** zjednotiť KF1 `listing-content` + Wave 1 `vertical-pack-demo` cez jeden kanonický vstup a jeden Quality Guardian gate; export bez publish; **bez novej DB**; bez chatbota.
-- **Prod limity v IR:** `properties` 132 Smolko; Ostatné 63–65 % = adapter `mapCategory` (nie prázdny payload); `ai_generations` na prod **chýba**.
-- **Implementácia:** STOP do `GO IMPLEMENT PROPERTY LAUNCH PACK V0`.
+- **Prod limity v IR:** `properties` 132 Smolko; Ostatné **65,2 %**; `ai_generations` na prod **chýba**; mapped type/txn **nespoľahlivé**.
+- **Implementácia:** STOP do číselníka Realvia + mapper P0, potom `GO IMPLEMENT PROPERTY LAUNCH PACK V0`.
 - **Artefakty:** `docs/briefs/BO-property-launch-pack-v0.md`, `docs/reports/2026-09-03-property-launch-pack-integration.md`.
 
 ## [2026-09-03] — Audit kódu nie je audit dát
 
-Ku každému tvrdeniu „toto už máme“ sa dokladá **počet riadkov v produkcii**, nie existencia súboru. Platí pre briefy, roadmapy aj Integration Reporty.
+Ku každému tvrdeniu „toto už máme“ sa dokladá **počet riadkov v produkcii**, nie existencia súboru. Platí pre briefy, roadmapy aj Integration Reporty. **Doplnok:** riadky ≠ správnosť mapped polí (pozri záznam Mapped field correctness vyššie).
 
 **Doplnok:** počet riadkov ≠ správnosť. Mapped polia overovať proti nezávislému signálu (`title`). Neznámy kód → `Neznáme` (P0 honest unknown), nie fog do legitímnej kategórie.
 
