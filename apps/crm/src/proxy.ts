@@ -113,6 +113,11 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard/reputation/integrity", request.url), 308);
   }
 
+  // Canonical Realvia integrations URL (legacy admin path)
+  if (pathname === "/admin/integrations/realvia" || pathname.startsWith("/admin/integrations/realvia/")) {
+    return NextResponse.redirect(new URL("/integrations/realvia", request.url), 308);
+  }
+
   if (isPublic(pathname)) return NextResponse.next();
   if (isRealviaImportPath(pathname)) return NextResponse.next();
   if (isUcExportImportPath(pathname)) return NextResponse.next();
