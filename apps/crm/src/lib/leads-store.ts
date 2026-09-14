@@ -860,7 +860,12 @@ export async function getLead(
 
   const supabase = await resolveTenantSupabase(scoped);
 
+  // Fixture fallback is a local-development convenience only. In production it
+  // hands the caller a demo lead (demo name, demo email, demo phone) for a real
+  // lead id, which downstream senders then treat as a real contact.
+  // `listLeads` already guards this the same way.
   if (!supabase) {
+    if (process.env.NODE_ENV === "production") return undefined;
     return mockLeads.find((lead) => lead.id === id);
   }
 
@@ -871,6 +876,7 @@ export async function getLead(
     .single();
 
   if (error || !data) {
+    if (process.env.NODE_ENV === "production") return undefined;
     return mockLeads.find((lead) => lead.id === id);
   }
 
