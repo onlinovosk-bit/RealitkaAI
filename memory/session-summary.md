@@ -1,3 +1,19 @@
+## Session 2026-09-14 (critical bug hunt cron)
+### Dokončené
+- Critical bug hunt: no new fix PR (confidence bar)
+- MEMORIES cleanup: dropped merged #546; tracked open #548
+- Re-verified #369 still live on main (`okResponse` flatten vs nested client reads)
+- Report: `docs/reports/2026-09-14-critical-bug-hunt.md`
+### Rozpracované / Pending
+- Open fix queue still awaiting review/merge: #369 #545 #548 #537 (+ older tracked)
+- GitHub Actions billing lock may still block CI on those PRs
+### Kľúčové súbory zmenené
+- `docs/reports/2026-09-14-critical-bug-hunt.md`: hunt verdict
+### Ďalší krok
+Merge or reject #369 (upgrade Stripe checkout) — still broken on main.
+
+---
+
 ## Session 2026-09-14 (CI billing local evidence)
 ### Dokončené
 - Lokálny náhradný dôkaz za zablokované GitHub Actions (billing lock) pre #548/#549/#550
