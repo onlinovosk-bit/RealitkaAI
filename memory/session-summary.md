@@ -1,3 +1,19 @@
+## Session 2026-09-05 (Ruflo overnight — branch docs/ruflo-overnight-prepared)
+### Dokončené
+- Overnight package + research run on this branch: PREPARED → run 20260905T2304 → **VALIDATE_FIRST / NO_GO_IMPLEMENTATION**
+- Package: docs/overnight/2026-09-05-ruflo-swarm/
+- Reports under docs/reports/ and output/overnight/ artifacts on this branch
+### Rozpracované / Pending
+- Founder review of overnight handoff / PR #536 after rebase onto current main
+- No implementation from overnight recommendations without separate GO
+### Kľúčové súbory zmenené
+- docs/overnight/2026-09-05-ruflo-swarm/*
+- overnight reports / amendments on this docs branch
+### Ďalší krok
+Founder review PR #536; do not treat research as implementation authorization.
+
+---
+
 ## Session 2026-09-06 (Inter-Agent Bus v1.0)
 ### Dokončené
 - REVOLIS Inter-Agent Bus v1.0 vytvorený ako Phase 1 copy-paste protocol pre GPT/SOL ↔ Claude Code.
