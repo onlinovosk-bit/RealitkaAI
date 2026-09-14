@@ -95,3 +95,19 @@ bez DB/OAuth/booking mutácií.
 - `docs/reports/2026-09-05-pr535-fix-merge-conflicts.md`
 ### Ďalší krok
 Founder GO: merge #535; then PROD digest smoke.
+
+---
+
+## Session 2026-09-13 (critical-bug automation)
+### Dokončené
+- Found + fixed silent demo CRM task drop (`createDemoBookingTask` / sales-funnel demo-request)
+- PR: https://github.com/onlinovosk-bit/RealitkaAI/pull/546
+- Report: `docs/reports/2026-09-13-demo-booking-task-service-role.md`
+### Rozpracované / Pending
+- Prior open critical fixes still awaiting review: #369 #370 #443 #444 #447 #462 #486 #490 #495 #537 #545 #546
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/demo-booking-store.ts`: service-role for orphan task insert
+- `apps/crm/src/app/api/sales-funnel/demo-request/route.ts`: pass service + fail if task fails
+- `apps/crm/src/lib/sales-funnel-store.ts`: throw on saas_leads insert error
+### Ďalší krok
+Founder review/merge #546 (and backlog of open critical fix PRs).

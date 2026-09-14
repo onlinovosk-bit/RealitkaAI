@@ -25,22 +25,30 @@ export async function POST(request: Request) {
       return errorResponse("Počet agentov musí byť väčší ako 0.", 400);
     }
 
-    const lead = await createSaasLead({
-      name,
-      email,
-      phone: String(body?.phone ?? "").trim(),
-      company,
-      agentsCount,
-      city: String(body?.city ?? "").trim(),
-      note: String(body?.note ?? "").trim(),
-      source: String(body?.source ?? "Demo page").trim(),
-    });
+    // Public funnel — no tenant session; same service-role pattern as /api/proof.
+    const service = createServiceRoleClient();
+    if (!service) {
+      return errorResponse("Služba nie je dostupná.", 503);
+    }
+
+    const lead = await createSaasLead(
+      {
+        name,
+        email,
+        phone: String(body?.phone ?? "").trim(),
+        company,
+        agentsCount,
+        city: String(body?.city ?? "").trim(),
+        note: String(body?.note ?? "").trim(),
+        source: String(body?.source ?? "Demo page").trim(),
+      },
+      service,
+    );
 
     // MVP onboarding pipeline bootstrap:
     // 1) create/update onboarding checklist baseline
     // 2) schedule D1/D3/D7 messages for this client
-    const service = createServiceRoleClient();
-    if (service) {
+    {
       const readinessScore = computeReadinessScore(DEFAULT_CHECKLIST);
       const { data: progress } = await service
         .from("client_onboarding_progress")
