@@ -1,4 +1,4 @@
-## Session 2026-09-03
+## Session 2026-09-06 (Inter-Agent Bus v1.0)
 ### Dokončené
 - #510 / #511 merged (roadmap overlay + Launch Pack V0 docs)
 - Mapper-depth amendment: `mapTransaction` P0, zlé 13/14, PREDANÉ v title, governance riadky≠správnosť

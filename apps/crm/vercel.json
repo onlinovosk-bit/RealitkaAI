@@ -58,6 +58,10 @@
       "schedule": "0 9 * * *"
     },
     {
+      "path": "/api/cron/notification-digest",
+      "schedule": "15 7 * * *"
+    },
+    {
       "path": "/api/cron/credits-cycle",
       "schedule": "0 5 1 * *"
     }

@@ -161,9 +161,10 @@ export async function createSaasLead(
     .single();
 
   if (error) {
-    console.error("[sales-funnel] createSaasLead fallback:", error.message);
-    await logSaasLeadActivity(fallbackLead, scoped);
-    return fallbackLead;
+    // Fail closed — never return a fake UUID that makes callers report ok:true
+    // while saas_leads has no durable row (public demo funnel silent drop).
+    console.error("[sales-funnel] createSaasLead insert failed:", error.message);
+    throw new Error(error.message);
   }
 
   const result: SaaSLead = {

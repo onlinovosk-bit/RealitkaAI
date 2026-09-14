@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import { supabaseClient } from "@/lib/supabase/client";
 import { v4 as uuidv4 } from "uuid";
+import { getOnboardingSession, upsertOnboardingSession } from "@/lib/onboarding/session-api";
 import { AI_ASSISTANT_NAME } from "@/lib/ai-brand";
 
 // --- UI Kit Components ---
@@ -122,16 +122,12 @@ export default function OnboardingClient() {
     if (savedId) {
       (async () => {
         try {
-          const { data } = await supabaseClient
-            .from("onboarding_sessions")
-            .select("step, form_data")
-            .eq("session_id", savedId)
-            .maybeSingle();
+          const data = await getOnboardingSession(savedId);
           if (data && data.step > (savedStep ? Number(savedStep) : 1)) {
             setStep(data.step);
-            if (data.form_data) setFormData(prev => ({ ...prev, ...data.form_data }));
+            if (data.form_data) setFormData(prev => ({ ...prev, ...(data.form_data as object) }));
           }
-        } catch { /* Supabase nedostupný — localStorage postačuje */ }
+        } catch { /* API sync nedostupný — localStorage postačuje */ }
       })();
     }
   }, []);
@@ -146,13 +142,16 @@ export default function OnboardingClient() {
     // Persist to localStorage always (works offline / without DB table)
     localStorage.setItem("onboarding_step", String(nextStep));
     localStorage.setItem("onboarding_data", JSON.stringify(nextFormData));
-    // Try Supabase sync — silently skip if table doesn't exist or RLS blocks
+    // API sync (service role) — soft-fail; localStorage is source of truth
     try {
-      await supabaseClient
-        .from("onboarding_sessions")
-        .upsert({ session_id: sessionId, step: nextStep, form_data: nextFormData, updated_at: new Date().toISOString() });
+      await upsertOnboardingSession({
+        session_id: sessionId,
+        step: nextStep,
+        form_data: nextFormData,
+        updated_at: new Date().toISOString(),
+      });
     } catch {
-      // Supabase sync unavailable — localStorage is source of truth
+      // API sync unavailable — localStorage is source of truth
     }
   };
 

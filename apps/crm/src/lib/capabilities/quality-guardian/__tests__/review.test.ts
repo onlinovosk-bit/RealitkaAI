@@ -91,6 +91,8 @@ describe("quality-guardian reviewGeneratedListing", () => {
       location: "Modrá nad Cirochou",
       currency: "EUR",
       rooms: "",
+      type: "Dom",
+      transactionType: "Predaj",
     };
 
     const result = reviewGeneratedListing({
@@ -147,5 +149,51 @@ describe("quality-guardian reviewGeneratedListing", () => {
 
     expect(result.verdict).toBe("flag");
     expect(result.reasons).toContain("missing_headline");
+  });
+
+  it("FLAG when property type is Realvia mapping unknown (Neznáme)", () => {
+    const mapped = mapUcListingPayload({ ...UC_DOC_LISTING_SAMPLE });
+    const source = {
+      ...propertyFactsFromUcListing(mapped),
+      type: "Neznáme",
+      transactionType: "Predaj",
+    };
+
+    const result = reviewGeneratedListing({
+      agencyId: AGENCY,
+      source,
+      draft: {
+        draftId: "draft-unknown-type",
+        headline: mapped.title,
+        body: mapped.description || "Popis.",
+      },
+    });
+
+    expect(result.verdict).toBe("flag");
+    expect(result.reasons).toContain("unverified_property_type");
+    expect(result.blockedPublish).toBe(true);
+  });
+
+  it("FLAG when transaction type is Realvia mapping unknown (Neznáme)", () => {
+    const mapped = mapUcListingPayload({ ...UC_DOC_LISTING_SAMPLE });
+    const source = {
+      ...propertyFactsFromUcListing(mapped),
+      type: "Byt",
+      transactionType: "Neznáme",
+    };
+
+    const result = reviewGeneratedListing({
+      agencyId: AGENCY,
+      source,
+      draft: {
+        draftId: "draft-unknown-txn",
+        headline: mapped.title,
+        body: mapped.description || "Popis.",
+      },
+    });
+
+    expect(result.verdict).toBe("flag");
+    expect(result.reasons).toContain("unverified_transaction_type");
+    expect(result.blockedPublish).toBe(true);
   });
 });
