@@ -1495,3 +1495,58 @@ export async function getAiRecommendationMetricsLast7Days(): Promise<AiRecommend
 
   return Array.from(metricsMap.values());
 }
+
+/**
+ * System (service-role) lead reads for cron / background jobs.
+ *
+ * `listLeads()` and `getLead()` resolve the tenant through the request session.
+ * On a server route with no session they fall back to the browser singleton,
+ * `resolveSessionAgencyId` returns null and the caller silently gets an empty
+ * set — a false-green cron. Background jobs must therefore pass an explicit
+ * service-role client and use these readers instead.
+ *
+ * These bypass RLS by design: only call them from a trusted server context
+ * (cron handlers), never from a user-facing route.
+ */
+export async function getLeadAsService(
+  serviceClient: import("@supabase/supabase-js").SupabaseClient,
+  id: string,
+): Promise<Lead | undefined> {
+  const { data, error } = await serviceClient
+    .from("leads")
+    .select(LEADS_LIST_SELECT)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`getLeadAsService: ${error.message}`);
+  }
+  if (!data) return undefined;
+
+  return mapRowToLead(data as SupabaseLeadRow);
+}
+
+export async function listLeadsAsService(
+  serviceClient: import("@supabase/supabase-js").SupabaseClient,
+  options?: { limit?: number; withEmailOnly?: boolean },
+): Promise<Lead[]> {
+  const limit = Math.min(Math.max(options?.limit ?? LEADS_LIST_MAX, 1), LEADS_LIST_MAX);
+
+  let query = serviceClient
+    .from("leads")
+    .select(LEADS_LIST_SELECT)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (options?.withEmailOnly !== false) {
+    query = query.not("email", "is", null).neq("email", "");
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    throw new Error(`listLeadsAsService: ${error.message}`);
+  }
+
+  return ((data ?? []) as SupabaseLeadRow[]).map((row) => mapRowToLead(row));
+}
