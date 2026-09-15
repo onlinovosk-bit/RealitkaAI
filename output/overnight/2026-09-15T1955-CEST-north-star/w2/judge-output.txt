@@ -1,0 +1,4 @@
+command: "Set-Location C:\\RealitkaAI-run\\lane-A\n# Remove .gitkeep conflict if metrics now have files\ngit add .ai/bus/metrics/north-star-2026-08.jsonl .ai/bus/metrics/north-star-2026-09.jsonl `\n  docs/reports/2026-09-15-north-star-backfill.md `\n  output/overnight/2026-09-15T1955-CEST-north-star/control/results.json `\n  .ai/bus/tasks/TASK-NS-001.md\ngit status --short\ngit commit --trailer \"Co-authored-by: Cursor <cursoragent@cursor.com>\" -m \"docs(metrics): north-star 31-day backfill + W2 report (founder_batch)\"\n# Judge\nnode apps\\crm\\scripts\\judge.mjs --task .ai\\bus\\tasks\\TASK-NS-001.md --base origin/main 2>&1 | Tee-Object output\\overnight\\2026-09-15T1955-CEST-north-star\\w2\\judge-output.txt\nWrite-Host \"JUDGE_EXIT=$LASTEXITCODE\"\n"
+\w2\judge-output.txt'.
++ node apps\crm\scripts\judge.mjs --task .ai\bus\tasks\TASK-NS-001.md - ...
+JUDGE_EXIT=0
