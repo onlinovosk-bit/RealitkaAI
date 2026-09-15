@@ -1,4 +1,18 @@
-﻿## Session 2026-09-15 (typecheck paydown package PREPARED)
+﻿## Session 2026-09-15 (north-star W2 COMPLETE)
+### Dokončené
+- LOOP+W2: 31 dní metrics (2026-08-17..09-16), founder_batch results
+- Judge ACCEPT TASK-NS-001 `RUN-20260915185203-TASK-NS-001`
+- PR #558 docs/metrics north-star backfill (NEMERGE bez founder GO)
+- QUALIFICATION/INTENT/OUTREACH/VIEWINGS/CLOSED_WON = nula každý deň (dôkaz v report)
+### Rozpracované / Pending
+- Founder merge #558
+- Typecheck paydown loop stále NOT_LAUNCHED (oddelený balík)
+### Kľúčové súbory
+- `.ai/bus/metrics/north-star-2026-0{8,9}.jsonl`
+- `docs/reports/2026-09-15-north-star-backfill.md`
+### Ďalší krok
+Founder: merge #558; potom rozhodnúť o typecheck paydown launch.
+## Session 2026-09-15 (typecheck paydown package PREPARED)
 ### Dokončené
 - Balík `docs/overnight/2026-09-16-typecheck-paydown-loop/` nainštalovaný; PR #556
 - Hard gate: #554+#555 merged on main; launch-record NOT_LAUNCHED
@@ -150,4 +164,5 @@ Founder GO: merge #535; then PROD digest smoke.
 - `apps/crm/src/lib/sales-funnel-store.ts`: throw on saas_leads insert error
 ### ÄŽalĹˇĂ­ krok
 Founder review/merge #546 (and backlog of open critical fix PRs).
+
 
