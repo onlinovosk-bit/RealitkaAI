@@ -45,3 +45,30 @@ Each non-empty bus artifact should include:
 - `next_action`
 
 See `message.schema.md` for the canonical template.
+
+## Envelope v1 (required for new messages)
+
+New bus artifacts SHOULD include the full envelope from message.schema.md:
+
+- 	race_id — stable across the whole task message chain
+- parent_task_id — set when decomposed; otherwise 
+ull
+- context_refs / memory_refs — references only, never content copies
+- constraints, udget, deadline, 
+equired_capabilities
+- pproval_required — must be 	rue when 
+isk is high or critical
+- idempotency_key — stable hash of task_id + scope + acceptance
+
+## Lifecycle states
+
+Canonical happy path:
+
+CREATED → PLANNED → ASSIGNED → IN_PROGRESS → WAITING → RESULT_READY → VERIFYING → VERIFIED → CLOSED
+
+Failure branch:
+
+IN_PROGRESS → BLOCKED → RETRY | NEEDS_INPUT | ESCALATED
+
+Legacy values done / locked / open remain readable for existing tasks; new work should use the canonical set. Enforced by pps/crm/scripts/bus-validate.mjs.
+

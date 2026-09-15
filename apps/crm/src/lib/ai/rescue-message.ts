@@ -1,4 +1,4 @@
-/**
+﻿/**
  * KF6 — Real Rescue Messages
  * Predtým: "Ahoj {name}, mám pre teba novú možnosť, ktorá rieši tvoju hlavnú námietku."
  * Teraz: Claude generuje personalizovanú správu na základe historky leadu.
@@ -8,6 +8,7 @@
 
 import { getClaudeClient, CLAUDE_HAIKU, extractJson } from "./claude";
 import { withAiTimeout } from "./fallback";
+import { sanitizeFreeText } from "./prompt-guard";
 
 export type RescueChannel = "call" | "sms" | "email" | "whatsapp";
 
@@ -55,7 +56,7 @@ export async function generateRescuePlan(
     : null;
 
   const userPrompt = `Lead na rescue:
-Meno: ${context.leadName}
+Meno: ${sanitizeFreeText(context.leadName)}
 Score: ${context.score}/100
 Dni bez kontaktu: ${daysSinceContact ?? "neznámo"}
 Status: ${context.status ?? "neznámy"}
@@ -63,7 +64,7 @@ Rozpočet: ${context.budget ?? "neznámy"}
 Typ nehnuteľnosti: ${context.propertyType ?? "neznámy"}
 Lokalita: ${context.location ?? "neznáma"}
 Trigger: ${context.triggerType ?? "risk_signal"}
-Posledná poznámka: ${context.lastNote ?? "žiadna"}
+Posledná poznámka: ${context.lastNote != null && context.lastNote !== "" ? sanitizeFreeText(context.lastNote) : "žiadna"}
 
 Kanál: ${channel}
 Inštrukcie pre kanál: ${channelInstructions[channel]}
