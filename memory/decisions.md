@@ -1,5 +1,18 @@
 # Critical Decisions Log
 
+## [2026-09-15] — North-star: split leads real/seed + config_changes attribution BUILD
+
+- **GO:** Founder `north-star-backfill-nalezy.md` (install + amend measurement design).
+- **Decision:** Treat `portal:*` as real inbound; non-portal (incl. null) as seed.
+  Add human `docs/ops/config-changelog.md` as source of `config_changes_that_day`
+  (Vercel env invisible to `merged_prs_that_day`). Do not invent per-day source
+  counts beyond founder aggregate (24 seed / 4 real in 2026-08-17..09-16).
+- **Why:** +28 leads looked like growth; 24 were seed in 23–30 Aug window. Only
+  measurable prod effect in window was FOUNDER_EMAILS (unread 165→1) — no PR.
+- **Artifact:** `docs/reports/2026-09-15-north-star-backfill-nalezy.md`, SQL split,
+  config-changelog, START-HERE schema. PR #558.
+- **Revisit:** after founder re-batch of `queries-to-run.sql` fills jsonl columns.
+
 ## [2026-09-06] — REVOLIS Inter-Agent Bus v1.0: Phase 1 copy-paste protocol BUILD
 
 - **Decision:** Create a manual GPT/SOL <-> Claude Code protocol as a docs-only
