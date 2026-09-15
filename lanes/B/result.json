@@ -1,0 +1,65 @@
+{
+  "task_id": "TASK-0101",
+  "lane": "B",
+  "verdict": "ACCEPT",
+  "reason": "5 kontrol PASS, risk=medium",
+  "run_id": "RUN-20260915125804-TASK-0101",
+  "acceptance": [
+    {
+      "id": "B1",
+      "cmd": "node apps/crm/scripts/bus-validate.mjs --ci",
+      "exit_code": 0,
+      "pass": true
+    },
+    {
+      "id": "B2",
+      "cmd": "npm --prefix apps/crm test -- prompt-guard",
+      "exit_code": 0,
+      "pass": true
+    },
+    {
+      "id": "B3",
+      "cmd": "node apps/crm/scripts/typecheck-baseline.mjs",
+      "exit_code": 0,
+      "pass": true
+    },
+    {
+      "id": "B4",
+      "cmd": "node apps/crm/scripts/check-api-contract.mjs --ci",
+      "exit_code": 0,
+      "pass": true
+    },
+    {
+      "id": "B5",
+      "cmd": "git diff --name-only origin/chore/w0-engineering-gate...HEAD",
+      "exit_code": 0,
+      "pass": true
+    }
+  ],
+  "changed_files": [
+    ".ai/bus/AGENT_PROTOCOL.md",
+    ".ai/bus/ledger/2026-09.jsonl",
+    ".ai/bus/message.schema.md",
+    ".ai/bus/tasks/TASK-0101.md",
+    "apps/crm/scripts/bus-validate-baseline.json",
+    "apps/crm/scripts/bus-validate.mjs",
+    "apps/crm/scripts/ledger-report.mjs",
+    "apps/crm/src/lib/ai/__tests__/prompt-guard.test.ts",
+    "apps/crm/src/lib/ai/prompt-guard.ts",
+    "apps/crm/src/lib/ai/rescue-message.ts",
+    "lanes/B/report.md"
+  ],
+  "production_effect": null,
+  "evidence_refs": [
+    ".ai/bus/ledger/2026-09.jsonl#RUN-20260915125804-TASK-0101",
+    "lanes/B/judge-output.txt",
+    "lanes/B/report.md"
+  ],
+  "remaining_risks": [
+    "prompt-guard is heuristic regex, not a model classifier",
+    "wired only into rescue-message leadName/lastNote",
+    "legacy bus tasks remain in baseline without full envelope",
+    "PR must target chore/w0-engineering-gate, not main"
+  ],
+  "amendment": "prompt-guard.ts + rescue-message.ts (one write-set amendment)"
+}
