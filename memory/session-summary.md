@@ -1,4 +1,20 @@
-﻿## Session 2026-09-15 (Lane B TASK-0101)
+﻿## Session 2026-09-15 (W3 CLOSE — top-tier-gate)
+### Dokončené
+- Beh `2026-09-14-top-tier-gate` uzavretý: A/B/C = ARTEFAKT, 0 BLOCKED/REJECT, 0 mimo scope
+- Brána „3 real handoffs pass end-to-end" SPLNENÁ
+- Kontrolný prod dotaz: 3 pohyby (leads +2, neprecitane 2→1, webhook dátum) atribúcia PRED behom — scope držal
+- Scorecard main nezmenený (0G/5A/5R); na vetvách G3 GREEN-kandidát, G9 AMBER+
+- Report: `docs/reports/2026-09-15-w3-top-tier-gate-final.md`
+### Rozpracované / Pending
+- Founder merge poradie: #554 (A) → #555 (B) → #553 (C)
+- Po merge A: overiť Actions krok `Typecheck (baseline gate)` zelený
+- Business loop stále červený od 3. kroku (ďalšia úloha, nie táto)
+### Kľúčové súbory zmenené
+- `docs/reports/2026-09-15-w3-top-tier-gate-final.md`: W3 záverečný report + scorecard
+### Ďalší krok
+Founder: merge #554, potom over CI Typecheck gate na Actions.
+
+## Session 2026-09-15 (Lane B TASK-0101)
 ### Dokončené
 - Lane B ACCEPT: bus envelope v1, bus-validate ratchet, ledger-report, prompt-guard wired into rescue-message
 - Judge ACCEPT RUN-20260915125804-TASK-0101 (base origin/chore/w0-engineering-gate)
@@ -158,4 +174,5 @@ Founder GO: merge #535; then PROD digest smoke.
 - `apps/crm/src/lib/sales-funnel-store.ts`: throw on saas_leads insert error
 ### ÄŽalĹˇĂ­ krok
 Founder review/merge #546 (and backlog of open critical fix PRs).
+
 
