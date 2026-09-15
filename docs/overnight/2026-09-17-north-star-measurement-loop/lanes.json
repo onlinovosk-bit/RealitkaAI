@@ -1,0 +1,131 @@
+{
+ "$schema_note": "CONTROL MANIFEST ONLY — not a Ruflo-native import format. Runner applies ownership, locks and limits manually. Same convention as 2026-09-05 / 09-14 / 09-16 packages.",
+ "package_id": "2026-09-17-north-star-measurement-loop",
+ "prepared_at": "2026-09-15",
+ "status": "PREPARED",
+ "default_scope": "measurement",
+ "scope_note": "Novy rozsah. Beh NEMENI produkcny kod. Vystupom su merania, nie PR. Za cely beh vznikne najviac JEDEN docs-only PR.",
+ "runs_alongside": {
+  "package": "2026-09-16-typecheck-paydown-loop",
+  "conflict": "none",
+  "reason": "disjunktne write-sety; tento balik pocas slucky vobec necommituje"
+ },
+ "output_root_template": "output/overnight/<RUN_ID>/",
+ "concurrency": {
+  "max_orchestrators": 1,
+  "max_workers": 1,
+  "note": "Sekvencne. Paralelizmus by nepomohol — uzke miesto je pocet dni, nie vypoctovy cas."
+ },
+ "loop": {
+  "territory_key": "date",
+  "territory_note": "Iteracia vlastni jeden datum. Dva dni sa nemozu prekryt, lebo kluc je datum.",
+  "store": ".ai/bus/metrics/north-star-YYYY-MM.jsonl",
+  "append_only": true,
+  "on_existing_row": "SKIPPED (already_measured) — nikdy neprepisuj",
+  "commits_during_loop": false,
+  "prs_during_loop": 0,
+  "max_prs_total": 1,
+  "max_iterations": 31,
+  "stop_conditions": [
+   "backfill_complete",
+   "budget",
+   "deadline",
+   "two_consecutive_failures",
+   "readonly_access_lost"
+  ]
+ },
+ "sql_safety": {
+  "agent_authors_sql": false,
+  "only_allowed_file": "scripts/sql/north-star-day.sql",
+  "created_in": "W1, reviewed by founder in the W2 PR before loop reuse",
+  "parameter": ":den",
+  "connection": "SUPABASE_READONLY_URL (read-only role)",
+  "forbidden": [
+   "INSERT",
+   "UPDATE",
+   "DELETE",
+   "DDL",
+   "dynamic SQL string building",
+   "any other .sql file",
+   "service-role key"
+  ],
+  "fallback_without_readonly_role": "loop writes control/queries-to-run.sql, founder runs it once, loop reads control/results.json"
+ },
+ "backfill": {
+  "from": "2026-08-17",
+  "to": "2026-09-16",
+  "iterations": 31,
+  "dates": [
+   "2026-08-17",
+   "2026-08-18",
+   "2026-08-19",
+   "2026-08-20",
+   "2026-08-21",
+   "2026-08-22",
+   "2026-08-23",
+   "2026-08-24",
+   "2026-08-25",
+   "2026-08-26",
+   "2026-08-27",
+   "2026-08-28",
+   "2026-08-29",
+   "2026-08-30",
+   "2026-08-31",
+   "2026-09-01",
+   "2026-09-02",
+   "2026-09-03",
+   "2026-09-04",
+   "2026-09-05",
+   "2026-09-06",
+   "2026-09-07",
+   "2026-09-08",
+   "2026-09-09",
+   "2026-09-10",
+   "2026-09-11",
+   "2026-09-12",
+   "2026-09-13",
+   "2026-09-14",
+   "2026-09-15",
+   "2026-09-16"
+  ]
+ },
+ "measured_sample_2026_09_02_to_15": {
+  "new_leads_total": 4,
+  "activities_total": 1,
+  "matches_total": 0,
+  "intents_total": 0,
+  "realvia_webhooks": {
+   "2026-09-11": 9,
+   "2026-09-15": 2,
+   "all_other_days": 0
+  },
+  "note": "Realvia sa nevratila do prevadzky — dvakrat sa kratko ozvala."
+ },
+ "hard_limits": {
+  "read_only_production": true,
+  "no_prod_writes": true,
+  "no_migrations": true,
+  "no_deploy": true,
+  "no_merge_to_main": true,
+  "no_outward_sends": true,
+  "no_invented_values": true,
+  "missing_value_is_null_not_estimate": true,
+  "ruflo_swarm_init_attempts": 1,
+  "on_swarm_init_failure": "record error, continue via isolated git worktree, no retry, do not stop the run"
+ },
+ "scope": [
+  ".ai/bus/metrics/**",
+  ".ai/bus/ledger/**",
+  "scripts/sql/north-star-day.sql",
+  "apps/crm/scripts/north-star-validate.mjs",
+  "docs/reports/*-north-star-backfill.md"
+ ],
+ "forbidden_paths": [
+  "apps/crm/src/**",
+  "apps/crm/supabase/migrations/**",
+  "apps/crm/vercel.json",
+  "apps/crm/next.config.js",
+  ".ai/bus/tasks/**",
+  ".env*"
+ ]
+}
