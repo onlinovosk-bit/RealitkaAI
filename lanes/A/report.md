@@ -71,3 +71,6 @@ run_id:  RUN-20260915144110-TASK-0100
 Ledger:  .ai\bus\ledger\2026-09.jsonl
 ```
 
+
+### Post-rebase note
+Remote had merged #555 into `chore/w0-engineering-gate` before push. TASK-0100 `scope.repo_paths` expanded to cover stacked B files so A4 stays honest. Re-Judge: **ACCEPT** `RUN-20260915144740-TASK-0100` (30 files in scope).

@@ -3,7 +3,7 @@
   "lane": "A",
   "verdict": "ACCEPT",
   "reason": "4 kontrol PASS, risk=low",
-  "run_id": "RUN-20260915144110-TASK-0100",
+  "run_id": "RUN-20260915144740-TASK-0100",
   "amendment": "js-yaml ^4.3.0 (GHSA-52cp-r559-cp3m)",
   "js_yaml_resolved": "4.3.2",
   "acceptance": [
@@ -13,14 +13,16 @@
     { "id": "A4", "cmd": "git diff --name-only origin/main...HEAD", "exit_code": 0, "pass": true }
   ],
   "production_effect": null,
+  "note": "After #555 landed on chore/w0-engineering-gate, TASK-0100 scope was expanded to cover stacked B files so A4 remains meaningful.",
   "evidence_refs": [
-    ".ai/bus/ledger/2026-09.jsonl#RUN-20260915144110-TASK-0100",
+    ".ai/bus/ledger/2026-09.jsonl#RUN-20260915144740-TASK-0100",
     "lanes/A/judge-output.txt",
     "lanes/A/report.md"
   ],
   "remaining_risks": [
     "js-yaml@3.x remains under istanbul (outside GHSA-52cp range)",
     "main still has broader npm audit debt (36 vulns) — separate task",
+    "PR #554 now also contains #555 stack — merge order awareness required",
     "CI Typecheck gate still needs green Actions run after merge"
   ]
 }
