@@ -1,56 +1,26 @@
-{
-    "acceptance":  [
-                       {
-                           "cmd":  "node apps/crm/scripts/typecheck-baseline.mjs",
-                           "pass":  true,
-                           "id":  "A1",
-                           "exit_code":  0
-                       },
-                       {
-                           "cmd":  "node apps/crm/scripts/check-api-contract.mjs --ci",
-                           "pass":  true,
-                           "id":  "A2",
-                           "exit_code":  0
-                       },
-                       {
-                           "cmd":  "npm --prefix apps/crm run lint",
-                           "pass":  true,
-                           "id":  "A3",
-                           "exit_code":  0
-                       },
-                       {
-                           "cmd":  "git diff --name-only origin/main...HEAD",
-                           "pass":  true,
-                           "id":  "A4",
-                           "exit_code":  0
-                       }
-                   ],
-    "changed_files":  [
-                          "apps/crm/scripts/judge.mjs",
-                          "apps/crm/scripts/typecheck-baseline.mjs",
-                          "apps/crm/scripts/typecheck-baseline.json",
-                          "apps/crm/package.json",
-                          "apps/crm/package-lock.json",
-                          ".ai/bus/tasks/TASK-TEMPLATE.md",
-                          ".ai/bus/tasks/TASK-0100.md",
-                          ".ai/bus/ledger/2026-09.jsonl",
-                          ".github/workflows/saas-grade-pipeline.yml",
-                          "lanes/A/report.md",
-                          "lanes/A/judge-output.txt",
-                          "lanes/A/result.json"
-                      ],
-    "verdict":  "ACCEPT",
-    "production_effect":  null,
-    "remaining_risks":  [
-                            "ignoreBuildErrors remains true by design",
-                            "CI cwd vs baseline path relies on DEFAULT_BASELINE fallback if relative path misses"
-                        ],
-    "evidence_refs":  [
-                          ".ai/bus/ledger/2026-09.jsonl#RUN-20260915112141-TASK-0100",
-                          "lanes/A/judge-output.txt",
-                          "apps/crm/scripts/typecheck-baseline.json"
-                      ],
-    "task_id":  "TASK-0100",
-    "typecheck_baseline_count":  69,
-    "lane":  "A"
+﻿{
+  "task_id": "TASK-0100",
+  "lane": "A",
+  "verdict": "ACCEPT",
+  "reason": "4 kontrol PASS, risk=low",
+  "run_id": "RUN-20260915144110-TASK-0100",
+  "amendment": "js-yaml ^4.3.0 (GHSA-52cp-r559-cp3m)",
+  "js_yaml_resolved": "4.3.2",
+  "acceptance": [
+    { "id": "A1", "cmd": "node apps/crm/scripts/typecheck-baseline.mjs", "exit_code": 0, "pass": true },
+    { "id": "A2", "cmd": "node apps/crm/scripts/check-api-contract.mjs --ci", "exit_code": 0, "pass": true },
+    { "id": "A3", "cmd": "npm --prefix apps/crm run lint", "exit_code": 0, "pass": true },
+    { "id": "A4", "cmd": "git diff --name-only origin/main...HEAD", "exit_code": 0, "pass": true }
+  ],
+  "production_effect": null,
+  "evidence_refs": [
+    ".ai/bus/ledger/2026-09.jsonl#RUN-20260915144110-TASK-0100",
+    "lanes/A/judge-output.txt",
+    "lanes/A/report.md"
+  ],
+  "remaining_risks": [
+    "js-yaml@3.x remains under istanbul (outside GHSA-52cp range)",
+    "main still has broader npm audit debt (36 vulns) — separate task",
+    "CI Typecheck gate still needs green Actions run after merge"
+  ]
 }
