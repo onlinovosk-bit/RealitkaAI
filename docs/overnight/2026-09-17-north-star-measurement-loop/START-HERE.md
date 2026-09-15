@@ -113,7 +113,7 @@ Je to pomalšie, ale nevyžaduje žiadne nové credentials.
   "date": "2026-09-03",
   "measured_at": "2026-09-17T08:00:00+02:00",
   "signal":       { "realvia_webhooks": 0, "portal_leads": 0 },
-  "lead":         { "new": 0, "total": 506 },
+  "lead":         { "new": 0, "new_real": 0, "new_seed": 0, "total": 506 },
   "intent":       { "new": 0, "total": 3 },
   "qualification":{ "new_matches": 0, "total": 0 },
   "warming":      { "not_implemented": true },
@@ -123,13 +123,21 @@ Je to pomalšie, ale nevyžaduje žiadne nové credentials.
   "mandate":      { "closed_won": 0 },
   "ops":          { "notifications_created": 3, "unread_at_eod": null },
   "merged_prs_that_day": ["#549", "#550"],
+  "config_changes_that_day": [],
   "source": "scripts/sql/north-star-day.sql",
   "run_id": "RUN-..."
 }
 ```
 
-`merged_prs_that_day` je to, čo z tohto robí **atribúciu**, nie len štatistiku.
-Berie sa z `git log origin/main --merges --since --until`, nie z domnienky.
+`lead.new` = všetky nové leady daný deň. **`new_real`** = `source LIKE 'portal:%'`.
+**`new_seed`** = ostatné (vrátane `source IS NULL`). Bez tohto rozdelenia seed dataset
+znečistí rast (founder GO 2026-09-15: z +28 leadov boli 24 seed / 4 real).
+
+`merged_prs_that_day` je git atribúcia (`git log origin/main --merges …`).
+**`config_changes_that_day`** je atribúcia mimo gitu — načítava sa z
+`docs/ops/config-changelog.md` podľa dátumu (Vercel env a pod.). Bez changelogu
+je jediná merateľná produkčná zmena v okne (FOUNDER_EMAILS → unread 165→1)
+pre atribúciu neviditeľná.
 
 ---
 
@@ -166,10 +174,11 @@ o mesiac. To je ten rozdiel oproti tomu, že to raz za čas zmeriam ja.
 4. vyber najstarší chýbajúci deň
 5. spusti scripts/sql/north-star-day.sql s :den  (read-only)
 6. git log origin/main --merges --since <den> --until <den+1>  → merged_prs_that_day
-7. zostav riadok, APPEND do jsonl
-8. ak je deň starší než 7 dní A existuje ledger riadok s merged_at v tom dni:
+7. načítaj docs/ops/config-changelog.md → config_changes_that_day (riadky s date = den)
+8. zostav riadok (vrátane lead.new_real / lead.new_seed), APPEND do jsonl
+9. ak je deň starší než 7 dní A existuje ledger riadok s merged_at v tom dni:
      doplň mu production_effect (odkaz na tento riadok merania)
-9. ďalšia iterácia
+10. ďalšia iterácia
 ```
 
 **Stop podmienky:** `backfill_complete` · `budget` · `deadline` ·
@@ -241,6 +250,7 @@ ZAKÁZANÉ CESTY:
 .ai/bus/ledger/**                       (iba doplnenie production_effect)
 scripts/sql/north-star-day.sql          (nový, vzniká vo W1)
 apps/crm/scripts/north-star-validate.mjs (nový, vzniká vo W1)
+docs/ops/config-changelog.md            (zdroj config_changes_that_day)
 docs/reports/<dátum>-north-star-backfill.md
 ```
 

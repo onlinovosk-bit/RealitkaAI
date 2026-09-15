@@ -2,6 +2,8 @@
 -- Balík: 2026-09-17-north-star-measurement-loop
 -- Pravidlo: agent tento súbor počas slučky NEMENÍ. Iba spúšťa s parametrom :den.
 -- Povolené: SELECT. Zakázané: INSERT/UPDATE/DELETE/DDL.
+-- Amendment 2026-09-15 (founder GO): leads_new_real / leads_new_seed + config attribution
+--   žije mimo SQL (docs/ops/config-changelog.md).
 --
 -- Parameter :den = kalendárny deň 'YYYY-MM-DD' (Europe/Bratislava).
 -- Rozsah = [den 00:00, den+1 00:00) v danej zóne.
@@ -26,6 +28,20 @@ lead_new AS (
   SELECT count(*)::int AS n
   FROM leads, bounds
   WHERE created_at >= bounds.t0 AND created_at < bounds.t1
+),
+-- Real inbound = source prefix portal:* (see founder GO 2026-09-15 nalezy).
+-- Seed / demo = everything else including null source. Do not fold seed into growth.
+lead_new_real AS (
+  SELECT count(*)::int AS n
+  FROM leads, bounds
+  WHERE created_at >= bounds.t0 AND created_at < bounds.t1
+    AND source LIKE 'portal:%'
+),
+lead_new_seed AS (
+  SELECT count(*)::int AS n
+  FROM leads, bounds
+  WHERE created_at >= bounds.t0 AND created_at < bounds.t1
+    AND (source NOT LIKE 'portal:%' OR source IS NULL)
 ),
 lead_total AS (
   SELECT count(*)::int AS n
@@ -95,6 +111,8 @@ SELECT
   (SELECT n FROM signal_realvia) AS realvia_webhooks,
   (SELECT n FROM signal_portal) AS portal_leads,
   (SELECT n FROM lead_new) AS leads_new,
+  (SELECT n FROM lead_new_real) AS leads_new_real,
+  (SELECT n FROM lead_new_seed) AS leads_new_seed,
   (SELECT n FROM lead_total) AS leads_total,
   (SELECT n FROM intent_new) AS intents_new,
   (SELECT n FROM intent_total) AS intents_total,
