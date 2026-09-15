@@ -1,4 +1,20 @@
-﻿## Session 2026-09-15 (north-star W2 COMPLETE)
+﻿## Session 2026-09-15 (north-star W2 measurement amendments)
+### Dokončené
+- Founder GO `north-star-backfill-nalezy.md` → `docs/reports/2026-09-15-north-star-backfill-nalezy.md`
+- SQL: `leads_new_real` / `leads_new_seed` v `scripts/sql/north-star-day.sql` + founder_batch `queries-to-run.sql`
+- `docs/ops/config-changelog.md` (FOUNDER_EMAILS ~2026-09-10); schéma + atribúcia v START-HERE
+- Historické jsonl neprepisované (append-only); agregát 24 seed / 4 real v reporte; re-batch dokumentovaný
+- Push na otvorené PR #558
+### Rozpracované / Pending
+- Founder re-batch `queries-to-run.sql` → nový `results.json` → jsonl s new_real/new_seed
+- Founder merge #558 (NEMERGE agentom)
+### Kľúčové súbory
+- `docs/reports/2026-09-15-north-star-backfill-nalezy.md`
+- `docs/ops/config-changelog.md`
+- `scripts/sql/north-star-day.sql`
+### Ďalší krok
+Founder: spustiť aktualizovaný founder_batch SQL (SELECT) a uložiť results; potom GO na rebuild jsonl.
+## Session 2026-09-15 (north-star W2 COMPLETE)
 ### Dokončené
 - LOOP+W2: 31 dní metrics (2026-08-17..09-16), founder_batch results
 - Judge ACCEPT TASK-NS-001 `RUN-20260915185203-TASK-NS-001`

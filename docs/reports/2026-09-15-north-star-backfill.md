@@ -70,3 +70,14 @@ Pravidlo balíka: doplniť `production_effect` len ak `merged_at` existuje a de�
 ## 5. Stop
 
 `backfill_complete` · max PR = 1 (tento).
+
+---
+
+## 6. Amendment (founder GO 2026-09-15) — pozri nálezy
+
+Interpretácia + meracie opravy: **`docs/reports/2026-09-15-north-star-backfill-nalezy.md`**.
+
+Stručne: z +28 leadov sú **24 seed / 4 real (`portal:`)**; SQL teraz delí
+`leads_new_real` / `leads_new_seed` (re-batch potrebný pre historické jsonl);
+`config_changes_that_day` zo `docs/ops/config-changelog.md` (FOUNDER_EMAILS ~10. 9.);
+nuly ≠ broken product; Realvia = dávky; PR atribúcia nevidí Vercel env.

@@ -26,6 +26,13 @@ SELECT
       AND coalesce(l.source, '') LIKE 'portal:%') AS portal_leads,
   (SELECT count(*)::int FROM leads l
     WHERE l.created_at >= b.t0 AND l.created_at < b.t1) AS leads_new,
+  -- Real inbound = portal:* ; seed/demo = not portal:* (incl. null). Founder GO 2026-09-15.
+  (SELECT count(*)::int FROM leads l
+    WHERE l.created_at >= b.t0 AND l.created_at < b.t1
+      AND l.source LIKE 'portal:%') AS leads_new_real,
+  (SELECT count(*)::int FROM leads l
+    WHERE l.created_at >= b.t0 AND l.created_at < b.t1
+      AND (l.source NOT LIKE 'portal:%' OR l.source IS NULL)) AS leads_new_seed,
   (SELECT count(*)::int FROM leads l
     WHERE l.created_at < b.t1) AS leads_total,
   (SELECT count(*)::int FROM buyer_intents i
