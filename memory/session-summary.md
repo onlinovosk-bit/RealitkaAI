@@ -1,4 +1,16 @@
-﻿## Session 2026-09-15 (north-star W2 measurement amendments)
+﻿## Session 2026-09-15 (critical bug hunt)
+### Dokončené
+- Hunt report: `docs/reports/2026-09-15-critical-bug-hunt.md` na `cursor/critical-bug-hunt-2026-09-15`
+- Top 3 NEW: match-status PATCH unscoped; team/users createProfile no INSERT RLS; management SSR cookie-less
+- Tracked open list unchanged (#369…#548); #545 stále unmerged
+### Rozpracované / Pending
+- Founder GO na fix PR #1 (match status scoped) — report-only tento beh
+### Kľúčové súbory
+- `docs/reports/2026-09-15-critical-bug-hunt.md`
+### Ďalší krok
+GO: fix `updateLeadPropertyMatchStatus` + match route scoped client (1 PR).
+
+## Session 2026-09-15 (north-star W2 measurement amendments)
 ### Dokončené
 - Founder GO `north-star-backfill-nalezy.md` → `docs/reports/2026-09-15-north-star-backfill-nalezy.md`
 - SQL: `leads_new_real` / `leads_new_seed` v `scripts/sql/north-star-day.sql` + founder_batch `queries-to-run.sql`
