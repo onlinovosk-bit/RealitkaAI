@@ -24,7 +24,9 @@ Jeden povolený amendment: `prompt-guard.ts` + `rescue-message.ts` (+ test). Dis
 
 - `node apps/crm/scripts/bus-validate.mjs --ci` → exit 0
 - `npm --prefix apps/crm test -- prompt-guard` → 6/6 PASS
-- Judge: pozri `lanes/B/judge-output.txt` (base `origin/chore/w0-engineering-gate`)
+- Judge (`--base origin/chore/w0-engineering-gate`): **ACCEPT** — 5 kontrol PASS, risk=medium
+- run_id: `RUN-20260915125804-TASK-0101`
+- surový výstup: `lanes/B/judge-output.txt`
 
 ## Zostávajúce riziká
 
