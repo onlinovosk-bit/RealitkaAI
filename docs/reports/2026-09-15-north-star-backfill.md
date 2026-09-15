@@ -73,11 +73,11 @@ Pravidlo balíka: doplniť `production_effect` len ak `merged_at` existuje a de�
 
 ---
 
-## 6. Amendment (founder GO 2026-09-15) — pozri nálezy
+## 6. Amendment 2026-09-15 — founder nalezy (dizajn merania)
 
-Interpretácia + meracie opravy: **`docs/reports/2026-09-15-north-star-backfill-nalezy.md`**.
+Plná interpretácia + honesty: **`docs/reports/2026-09-15-north-star-backfill-nalezy.md`**.
 
-Stručne: z +28 leadov sú **24 seed / 4 real (`portal:`)**; SQL teraz delí
-`leads_new_real` / `leads_new_seed` (re-batch potrebný pre historické jsonl);
-`config_changes_that_day` zo `docs/ops/config-changelog.md` (FOUNDER_EMAILS ~10. 9.);
-nuly ≠ broken product; Realvia = dávky; PR atribúcia nevidí Vercel env.
+- Z +28 leadov: **24 seed / 4 real (`portal:`)** (founder aggregate; per-day až po re-batch).
+- SQL: `leads_new_real` / `leads_new_seed` v `scripts/sql/north-star-day.sql` + `queries-to-run.sql`.
+- `config_changes_that_day` ← `docs/ops/config-changelog.md` (FOUNDER_EMAILS ~2026-09-10; unread 165→1).
+- Nuly na 5 krokoch loopu ≠ produkt broken; Realvia = dávky (4 dni); `merged_prs` slepé voči Vercel env.

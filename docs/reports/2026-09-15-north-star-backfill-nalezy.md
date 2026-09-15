@@ -1,9 +1,9 @@
 # North-star backfill — čo 31 dní ukázalo
 
-**Repo install:** 2026-09-15 · **PR:** #558 (`docs/2026-09-17-north-star-w2`)  
 **Rozsah:** 2026-08-17 → 2026-09-16 · **Zdroj:** backfill z produkcie  
 **Doplnené overenie:** rozpad `leads.source` za ten istý rozsah (spustené 15. 9.)  
-**Founder GO / originál:** `north-star-backfill-nalezy.md` (inštalované do tohto reportu)
+**Inštalácia do repa:** founder GO + interpretačný dokument (verbatim / lightly adapted) · PR #558  
+**Súvisiaci W2 report:** `docs/reports/2026-09-15-north-star-backfill.md`
 
 ---
 
@@ -48,20 +48,22 @@ count(*) filter (where source not like 'portal:%'
 
 Bez toho je každé ďalšie meranie znečistené a trend sa nedá čítať.
 
-### Stav implementácie (2026-09-15)
+**Stav v repe (tento PR):** definície sú v `scripts/sql/north-star-day.sql` a
+`output/overnight/2026-09-15T1955-CEST-north-star/control/queries-to-run.sql`.
+Historické `.ai/bus/metrics/north-star-*.jsonl` riadky **ešte nemajú**
+`lead.new_real` / `lead.new_seed` — **nevymýšľame per-day split**. Aggregate
+z foundera (24 seed / 4 real) je vyššie; per-day vyžaduje re-batch.
 
-- SQL definície doplnené v `scripts/sql/north-star-day.sql` a
-  `output/overnight/2026-09-15T1955-CEST-north-star/control/queries-to-run.sql`
-  (`leads_new` zostáva total; pribudli `leads_new_real` / `leads_new_seed`).
-- Historické jsonl riadky **neprepisujeme** (append-only) a **nevymýšľame**
-  per-day seed/real split podľa zdrojov — founder dodal agregát, nie denný
-  rozpad po šiestich seed zdrojoch.
-- Agregát za okno (founder, nie inventované): **seed = 24**, **real (`portal:`) = 4**,
-  total new = 28.
-- **Re-batch:** founder spustí aktualizovaný `control/queries-to-run.sql` v
-  Supabase SQL editore (SELECT only), uloží nový `control/results.json`, potom
-  agent (alebo W1) znovu zostaví jsonl s `lead.new_real` / `lead.new_seed`.
-  Bez tohto re-batchu historické riadky majú len `lead.new` + `signal.portal_leads`.
+### Ako re-spustiť founder_batch (bez service-role)
+
+1. V Supabase SQL editori (SELECT / read-only) spusti
+   `output/overnight/2026-09-15T1955-CEST-north-star/control/queries-to-run.sql`.
+2. Výstup ulož ako
+   `output/overnight/2026-09-15T1955-CEST-north-star/control/results.json`
+   (`{ "rows": [ ... ] }` so stĺpcami vrátane `leads_new_real`, `leads_new_seed`).
+3. Prepíš metrics jsonl z nového `results.json` + `config_changes_that_day`
+   z `docs/ops/config-changelog.md`.
+4. Over: `node apps/crm/scripts/north-star-validate.mjs --range 2026-08-17,2026-09-16 --ci`.
 
 ---
 
@@ -126,14 +128,9 @@ Zdroj sa nedá vytiahnuť z gitu — musí ho zapisovať človek alebo Vercel AP
 Minimálne verzia: `docs/ops/config-changelog.md`, jeden riadok na zmenu,
 a slučka ho číta. Bez dátumu a kľúča je atribúcia dohad.
 
-### Stav implementácie (2026-09-15)
-
-- Vytvorené `docs/ops/config-changelog.md` s riadkom FOUNDER_EMAILS ~2026-09-10T20:00+02
-  (unread 165→1 po prvom digeste 11. 9.).
-- Schéma denného riadku v `START-HERE.md` rozšírená o `config_changes_that_day`
-  + krok iterácie číta changelog.
-- Historické jsonl **neprepisované** (append-only). Atribúcia pre 10./11. 9. žije
-  v changelogu + v tomto reporte; po re-batchi / ďalšom dennom meraní pôjde do jsonl.
+**Stav v repe:** changelog založený; schema v `START-HERE.md` rozšírená.
+Na 2026-09-10 v metrics jsonl doplnené `config_changes_that_day` (jeden známy
+zásah). Ostatné dni bez inventovaných config riadkov.
 
 ---
 
@@ -165,7 +162,7 @@ alebo v dávkach? A je štvordňový rozstup normálny?*
 | pridať `leads_by_source` ako mapu | „Portál" vs `portal:Reality.sk` sú dva rôzne svety |
 | `intents_total` a `matches_total` sledovať ako **dni na nule** | plochá nula sa v dennej tabuľke stráca; počítadlo „N dní bez pohybu" je čitateľnejšie |
 
-Prvé dve sú podstatné. Ostatné dve sú pohodlie. *(Implementované v tomto PR: prvé dve.)*
+Prvé dve sú podstatné. Ostatné dve sú pohodlie.
 
 ---
 
@@ -180,14 +177,13 @@ Prvé dve sú podstatné. Ostatné dve sú pohodlie. *(Implementované v tomto P
 
 ---
 
-## 7. Report honesty (W2 amendment checklist)
+## 7. Report honesty (W2 attribution limits)
 
-| tvrdenie | dôkaz |
+| fakt | dôsledok pre čítanie metrík |
 |---|---|
-| 5 loop steps flat zero 31 dní | INTENT new / QUALIFICATION / OUTREACH / APPOINTMENT / MANDATE = 0 každý deň (`docs/reports/2026-09-15-north-star-backfill.md`) |
-| activities = 3 / mesiac | 2× 23. 8. + 1× 6. 9. |
-| Realvia 19 webhookov na 4 dňoch | 7+1+9+2; ostatných 27 dní 0 — dávky, nie tok |
-| nuly ≠ produkt broken | matching / auto-response nikdy neboli zapnuté (sekcia 6) |
-| `merged_prs` slepé voči Vercel env | FOUNDER_EMAILS 10. 9. → unread drop; žiadny PR v atribúcii |
+| 5 loop krokov flat zero 31 dní | nuly ≠ produkt broken; matching / auto-response nikdy neboli enabled |
+| `activities` = 3 / mesiac | 88 merged PRs ≠ provozná aktivita |
+| Realvia 19 webhookov na **4 dňoch** | dávky, nie obnovený tok |
+| `merged_prs_that_day` | slepé voči Vercel env / cron konfigurácii — treba `config_changes_that_day` |
 
-Predchádzajúci W2 report: `docs/reports/2026-09-15-north-star-backfill.md`.
+**Stop:** Nemerge #558 bez founder GO. Žiadny service-role. Žiadne vymyslené per-day source counts nad rámec founderovej agregácie (24 seed / 4 real).

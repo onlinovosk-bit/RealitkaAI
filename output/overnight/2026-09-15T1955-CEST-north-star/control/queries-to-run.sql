@@ -5,6 +5,10 @@
 --
 -- Jedna dávka = 31 dní: 2026-08-17 .. 2026-09-16.
 -- Logika zodpovedá scripts/sql/north-star-day.sql (bez :den — dátumy sú v generate_series).
+--
+-- AMENDMENT 2026-09-15 (founder GO / nalezy): stĺpce leads_new_real + leads_new_seed.
+-- Re-batch: spusti tento SELECT → nahraď control/results.json → prepíš metrics jsonl.
+-- Historické riadky bez new_real/new_seed NEVYMÝŠĽAŤ — až po novom founder_batch.
 
 WITH days AS (
   SELECT d::date AS den
