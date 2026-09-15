@@ -36,7 +36,7 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 vi.mock("next/navigation", () => ({
-  redirect: (...args: unknown[]) => mockRedirect(...args),
+  redirect: (url: string) => mockRedirect(url),
 }));
 
 const AGENCY_ID = "11111111-1111-1111-1111-111111111111";
