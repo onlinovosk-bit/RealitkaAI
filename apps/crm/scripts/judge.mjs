@@ -10,6 +10,8 @@
  * hodnota v auditnom artefakte musí pochádzať z príkazu.
  *
  * Judge NEVOLÁ MODEL. Nemá názor. Iba spúšťa a porovnáva.
+ * Acceptance so `expect: runs_on_pull_request|runs_on_ci|external` nespúšťa —
+ * overí cieľ (napr. CI workflow) a zaznamená EXTERNAL. Telo .md je próza.
  * ADR: docs/architecture/adr-2026-09-11b-software-factory-v1-minimum.md
  *
  * Použitie:
@@ -50,8 +52,9 @@ if (!existsSync(taskPath)) {
 }
 
 /* -- 1. nacitaj Task Contract (YAML frontmatter v .md) -------------------- */
-const raw = readFileSync(taskPath, "utf8").replace(/^﻿/, "");
-const fm = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+/* Telo .md je proza. Judge z neho NIKDY necita data — iba front matter. */
+const raw = readFileSync(taskPath, "utf8").replace(/^\uFEFF/, "");
+const fm = raw.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
 if (!fm) fail("BLOCKED", "Task Contract nema YAML frontmatter medzi `---`.");
 
 let task;
@@ -60,6 +63,9 @@ try {
 } catch (e) {
   fail("BLOCKED", `YAML sa neda nacitat: ${e.message}`);
 }
+if (!task || typeof task !== "object") {
+  fail("BLOCKED", "Front matter nie je YAML objekt.");
+}
 
 const runId = `RUN-${new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14)}-${task.id ?? "NOID"}`;
 const startedAt = new Date().toISOString();
@@ -67,12 +73,19 @@ const rows = [];
 let verdict = null;
 let reason = "";
 
-/* -- 2. verdict blok musi byt prazdny ------------------------------------ */
-if (task.verdict && task.verdict.result) {
-  fail(
-    "BLOCKED",
-    `Blok verdict je predvyplneny (result=${task.verdict.result}). Verdikt smie zapisat iba Judge.`,
-  );
+/* -- 2. verdict blok musi byt prazdny (IBA front-matter verdict.result) -- */
+/* Dokumentacny odsek v tele s textom "result: REJECT" nie je verdikt. */
+{
+  const prior = task.verdict && typeof task.verdict === "object" ? task.verdict.result : undefined;
+  const filled =
+    prior != null &&
+    !(typeof prior === "string" && prior.trim() === "");
+  if (filled) {
+    fail(
+      "BLOCKED",
+      `Blok verdict je predvyplneny (result=${JSON.stringify(prior)}). Verdikt smie zapisat iba Judge.`,
+    );
+  }
 }
 
 /* -- 3. acceptance ------------------------------------------------------- */
@@ -82,6 +95,8 @@ if (acceptance.length === 0) {
 }
 
 const scope = task.scope ?? {};
+/** expect: runs_on_pull_request | runs_on_ci | external — Judge nespusta, iba eviduje. */
+const EXTERNAL_EXPECT = /^(runs_on_pull_request|runs_on_ci|external)\b/i;
 
 for (const a of acceptance) {
   const id = a.id ?? "?";
@@ -98,6 +113,10 @@ for (const a of acceptance) {
   }
   if (expect.startsWith("all_paths_in")) {
     rows.push({ id, cmd, ...checkScope() });
+    continue;
+  }
+  if (EXTERNAL_EXPECT.test(expect)) {
+    rows.push({ id, cmd, ...checkExternal(cmd, expect) });
     continue;
   }
 
@@ -170,7 +189,12 @@ if (blocked.length) {
   reason = `vsetky kontroly PASS, ale risk=${risk} vyzaduje cloveka`;
 } else {
   verdict = "ACCEPT";
-  reason = `${rows.length} kontrol PASS, risk=${risk}`;
+  const nPass = rows.filter((r) => r.status === "PASS").length;
+  const nExt = rows.filter((r) => r.status === "EXTERNAL").length;
+  reason =
+    nExt > 0
+      ? `${nPass} kontrol PASS, ${nExt} EXTERNAL (CI), risk=${risk}`
+      : `${rows.length} kontrol PASS, risk=${risk}`;
 }
 
 /* -- 7. vystup + zapis --------------------------------------------------- */
@@ -198,6 +222,42 @@ function checkScope() {
   const bad = changed.filter((f) => !allow.some((p) => matches(f, p)));
   if (bad.length) return { status: "FAIL", detail: `mimo scope: ${bad.join(", ")}` };
   return { status: "PASS", detail: `${changed.length} suborov, vsetky v scope` };
+}
+
+/**
+ * Tretia kategoria: kontrola bezi mimo Judge (CI / PR check).
+ * Judge ju nespusta — overi, ze ciel existuje, a zaznamena EXTERNAL.
+ * Chybajuci workflow = FAIL (presunuta kontrola nesmie byt ticha diera).
+ *
+ * cmd formy:
+ *   .github/workflows/saas-grade-pipeline.yml
+ *   github-actions:saas-grade-pipeline.yml
+ */
+function resolveWorkflowPath(cmd) {
+  const ga = /^github-actions:(.+)$/i.exec(cmd);
+  if (ga) {
+    return join(".github", "workflows", ga[1].replace(/^workflows\//i, "").trim());
+  }
+  const normalized = String(cmd).replace(/\\/g, "/").replace(/^\.\//, "");
+  if (normalized.startsWith(".github/workflows/")) {
+    return join(...normalized.split("/"));
+  }
+  return null;
+}
+
+function checkExternal(cmd, expect) {
+  const wf = resolveWorkflowPath(cmd);
+  if (!wf) {
+    return { status: "BLOCKED", detail: `neznamy typ externej kontroly: ${cmd}` };
+  }
+  if (!existsSync(wf)) {
+    return { status: "FAIL", detail: `CI workflow neexistuje: ${wf}` };
+  }
+  const text = readFileSync(wf, "utf8");
+  if (/pull_request/i.test(expect) && !/pull_request/.test(text)) {
+    return { status: "FAIL", detail: `${wf} nema on: pull_request` };
+  }
+  return { status: "EXTERNAL", detail: `evidovane v CI: ${wf}` };
 }
 
 function matches(file, pattern) {
@@ -268,7 +328,8 @@ function writeLedger() {
       id: r.id,
       cmd: r.cmd,
       exit_code: r.exit_code ?? null,
-      pass: r.status === "PASS",
+      pass: r.status === "PASS" || r.status === "EXTERNAL",
+      status: r.status,
     })),
     verdict,
     reason,
