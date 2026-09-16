@@ -1,0 +1,91 @@
+{
+  "agent": "A2-repo",
+  "generated_at": "2026-09-16T11:45:00+02:00",
+  "commands_run": [
+    { "cmd": "Test-Path docs/prompts/runner/RUNNER.md; Get-ChildItem docs/prompts/runner", "exit_code": 0 },
+    { "cmd": "Test-Path apps/crm/scripts/{judge,tc-orchestrator,typecheck-baseline,check-api-contract}.mjs", "exit_code": 0 },
+    { "cmd": "Test-Path apps/crm/node_modules; Select-String js-yaml apps/crm/package.json", "exit_code": 0 },
+    { "cmd": "Test-Path docs/overnight/2026-09-16-typecheck-paydown-loop/launch-record.md", "exit_code": 0 },
+    { "cmd": "Get-Content docs/overnight/2026-09-16-typecheck-paydown-loop/launch-record.md -TotalCount 30", "exit_code": 0 },
+    { "cmd": "Test-Path apps/crm/docs/RUFLO-ORCHESTRATION.md; Get-Content .cursor/mcp.json", "exit_code": 0 },
+    { "cmd": "Test-Path packages/mcp-onlinovo", "exit_code": 0 }
+  ],
+  "findings": [
+    {
+      "id": "runner:contract-present",
+      "title": "Runner contract v1.0 present: RUNNER.md + layers 00-12",
+      "kind": "hotove_nezapnute",
+      "state": "READY",
+      "evidence": "14 files under docs/prompts/runner/ including 00-system.md .. 12-loop.md; HEAD 7318e6159 #561",
+      "evidence_cmd": "Get-ChildItem docs/prompts/runner; git log -1 --oneline -- docs/prompts/runner/RUNNER.md",
+      "age_days": 0,
+      "impact": "high",
+      "effort": "S",
+      "write_territory": [],
+      "next_action": "AUDIT MODE complete → wait founder GO for EXECUTION; do not treat contract alone as launch",
+      "blocked_by": "preflight:judge_and_orchestrator"
+    },
+    {
+      "id": "orch:tc-orchestrator-missing-on-main",
+      "title": "Documented orchestrator script missing from tree/main",
+      "kind": "zdokumentovane_neplatne",
+      "state": "READY",
+      "evidence": "RUNNER.md L35 cites apps/crm/scripts/tc-orchestrator.mjs; Test-Path False; absent on origin/main; present on chore/tc-orchestrator",
+      "evidence_cmd": "Test-Path apps/crm/scripts/tc-orchestrator.mjs; git cat-file -e origin/main:apps/crm/scripts/tc-orchestrator.mjs",
+      "age_days": 1,
+      "impact": "high",
+      "effort": "M",
+      "write_territory": ["apps/crm/scripts/tc-orchestrator.mjs"],
+      "next_action": "PR to land orchestrator from chore/tc-orchestrator after deps install; until then execution substrate = BLOCKED",
+      "blocked_by": null
+    },
+    {
+      "id": "runtime:crm-node-modules-absent",
+      "title": "apps/crm/node_modules absent; Judge cannot load js-yaml",
+      "kind": "zacate_nedotiahnute",
+      "state": "BLOCKED",
+      "evidence": "Test-Path apps/crm/node_modules=False; node judge.mjs → ERR_MODULE_NOT_FOUND js-yaml; js-yaml listed in package.json",
+      "evidence_cmd": "Test-Path apps/crm/node_modules; node apps/crm/scripts/judge.mjs --help",
+      "age_days": null,
+      "impact": "high",
+      "effort": "S",
+      "write_territory": [],
+      "next_action": "Founder/operator: npm ci in apps/crm (environment, not a wave merge task)",
+      "blocked_by": null
+    },
+    {
+      "id": "pkg:typecheck-paydown-not-launched",
+      "title": "Typecheck paydown package installed but launch-record NOT_LAUNCHED",
+      "kind": "hotove_nezapnute",
+      "state": "BLOCKED",
+      "evidence": "launch-record.md Status NOT_LAUNCHED; start_at/deadline_at/runner/authorized_by empty",
+      "evidence_cmd": "Get-Content docs/overnight/2026-09-16-typecheck-paydown-loop/launch-record.md -TotalCount 27",
+      "age_days": 1,
+      "impact": "high",
+      "effort": "S",
+      "write_territory": ["docs/overnight/2026-09-16-typecheck-paydown-loop/launch-record.md"],
+      "next_action": "Founder fill + sign launch-record → LAUNCH_AUTHORIZED",
+      "blocked_by": "founder_signature"
+    },
+    {
+      "id": "docs:ruflo-latest-pin",
+      "title": "MCP starts ruflo@latest; contract forbids unpinned latest",
+      "kind": "zdokumentovane_neplatne",
+      "state": "BLOCKED",
+      "evidence": ".cursor/mcp.json args include ruflo@latest; 06-dispatch.md requires pinned version in ledger",
+      "evidence_cmd": "Get-Content .cursor/mcp.json",
+      "age_days": null,
+      "impact": "medium",
+      "effort": "S",
+      "write_territory": [".cursor/mcp.json"],
+      "next_action": "Pin version only after runtime verified; until then ruflo_runtime_unverified",
+      "blocked_by": "ruflo_runtime_unverified"
+    }
+  ],
+  "not_determinable": [
+    {
+      "question": "Does chore/tc-orchestrator tip pass hermetic tests?",
+      "why": "Audit forbids npm test/tsc; node_modules absent"
+    }
+  ]
+}
