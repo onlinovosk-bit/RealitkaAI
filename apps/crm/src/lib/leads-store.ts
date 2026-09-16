@@ -732,9 +732,14 @@ export async function addLeadActivity(
   leadId: string,
   text: string,
   type: ActivityType = "Telefonat",
-  meta?: ActivityMeta
+  meta?: ActivityMeta,
+  /**
+   * Request-scoped client. Server callers SHOULD pass it so activity inserts
+   * use the authenticated session instead of the cookie-less browser singleton.
+   */
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
 ) {
-  await appendActivity(leadId, text, type, meta);
+  await appendActivity(leadId, text, type, meta, scoped);
 }
 
 function applyFilters(items: Lead[], filters?: LeadFilters) {

@@ -1,3 +1,18 @@
+## Session 2026-09-15 (critical bug hunt — match status scoped)
+### Dokončené
+- HIGH: match status PATCH cookie-less write drop → fix + tests + PR
+- Report: `docs/reports/2026-09-15-match-status-scoped-client.md`
+### Rozpracované / Pending
+- Founder merge fix/match-status-scoped-client
+- Noted (not fixed): team/users INSERT RLS hole; /management SSR unscoped lists
+- Tracked open bug PRs still awaiting review (#369 #370 #443 #444 #447 #462 #486 #490 #495 #537 #545 #548)
+### Kľúčové súbory
+- `apps/crm/src/lib/matching-store.ts`: scoped arg on updateLeadPropertyMatchStatus
+- `apps/crm/src/app/api/leads/[id]/matches/[matchId]/route.ts`: thread client + fail-closed agency
+- `apps/crm/src/lib/leads-store.ts`: addLeadActivity scoped forward
+### Ďalší krok
+Founder: review/merge match-status PR; next candidate team/users INSERT path (GO).
+
 ﻿## Session 2026-09-15 (north-star W2 measurement amendments)
 ### Dokončené
 - Founder GO `north-star-backfill-nalezy.md` → `docs/reports/2026-09-15-north-star-backfill-nalezy.md`
