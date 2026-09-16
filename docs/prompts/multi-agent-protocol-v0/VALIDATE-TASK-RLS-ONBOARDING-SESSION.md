@@ -2,10 +2,13 @@
 id: HANDOFF-20260916-001-rls-onboarding-validate
 protocol: multi-agent-protocol-v0
 type: handoff
-status: blocked
+status: done
 from: cursor-track-b
 to: founder
 created_at: 2026-09-16T20:30:00+02:00
+updated_at: 2026-09-16T22:30:00+02:00
+closed_by: "GO CONFIRM-APPLIED"
+decision_ref: .ai/bus/decisions/DEC-20260916-001-rls-onboarding-confirm-applied.md
 task_ref: .ai/bus/tasks/TASK-RLS-ONBOARDING-SESSION.md
 artifact_refs:
   - path: .ai/bus/tasks/TASK-RLS-ONBOARDING-SESSION.md
@@ -30,11 +33,9 @@ out_of_scope:
   - integration_settings policies
   - Multi-Agent OS / MCP / Learning Router
 next_action:
-  gate: GO REQUIRED
-  description: >-
-    Confirm whether prod migration 20260904220000 is applied; then authorize
-    bus card status reconcile (done vs waiting-prod) without re-pasting report body.
-  owner: founder
+  gate: AUTO-SAFE
+  description: none — founder closed gate with GO CONFIRM-APPLIED; task done
+  owner: none
 ---
 
 # VALIDATE — TASK-RLS-ONBOARDING-SESSION under protocol v0
@@ -67,17 +68,11 @@ C. Always: add YAML front matter on next bus touch (separate micro-task) so Trac
 Grok **may** challenge: “MERGED ≠ prod applied” (agreed — already FINDING 4).  
 Grok **must not** decide to apply SQL or close the task.
 
-## DECISION needed (Human Decision Gate)
+## DECISION (closed)
 
-**Question:** Is `20260904220000_drop_onboarding_sessions_anon_all` applied on production?
-
-| Option | Meaning |
-|---|---|
-| `GO CONFIRM-APPLIED` | Treat acceptance as code+PR done; authorize TASK status → done |
-| `GO APPLY-PROD` | Authorize founder/ops apply via runbook; task stays open until EVIDENCE of apply |
-| `NO-GO` | Leave card stale; accept protocol FINDING only |
-
-**Default if none:** `STOP` — do not invent prod state.
+**Founder:** `GO CONFIRM-APPLIED` (2026-09-16)  
+**Effect:** TASK → `done`; DEC-20260916-001 recorded.  
+**Not selected:** `GO APPLY-PROD` (no prod SQL from this gate).
 
 ## Independent-first self-check
 

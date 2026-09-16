@@ -1,72 +1,53 @@
+---
+id: TASK-RLS-ONBOARDING-SESSION
+type: task
+status: done
+owner: founder
+created_at: 2026-09-04T12:00:00Z
+updated_at: 2026-09-16T22:30:00+02:00
+scope:
+  repo_paths:
+    - apps/crm/src/app/api/onboarding/session/**
+    - apps/crm/src/lib/onboarding/**
+    - apps/crm/supabase/migrations/20260904220000_drop_onboarding_sessions_anon_all.sql
+    - docs/runbooks/rollback-onboarding-sessions-anon.md
+    - docs/reports/2026-09-04-rls-onboarding-session-api.md
+  forbidden_paths:
+    - apps/crm/src/app/api/automation/rules/**
+verdict:
+  result: ACCEPT
+  reason: "Founder GO CONFIRM-APPLIED 2026-09-16 — prod OK; PR #534 merged; task closed"
+  checked_at: 2026-09-16T22:30:00+02:00
+  ledger_run_id: null
+founder_approval:
+  verdict_run_id: null
+  approved_by: "Andrej Ondrus"
+  approved_at: "2026-09-16T22:30:00+02:00"
+  reason: "GO CONFIRM-APPLIED — production migration/state OK; mark task done"
+---
+
 # TASK-RLS-ONBOARDING-SESSION — zatvoriť `Allow anon access`
 
-**Status:** PR open (Path B) — migration PREPARED, NOT applied  
-**PR:** https://github.com/onlinovosk-bit/RealitkaAI/pull/534  
+**Status:** `done` (Founder `GO CONFIRM-APPLIED` 2026-09-16)  
+**PR:** https://github.com/onlinovosk-bit/RealitkaAI/pull/534 — **MERGED** 2026-09-05 (`3aed4fcf7`)  
 **Branch:** `security/rls-onboarding-session`  
-**Report:** `docs/reports/2026-09-04-rls-onboarding-session-api.md`
+**Report:** `docs/reports/2026-09-04-rls-onboarding-session-api.md`  
+**Decision:** `.ai/bus/decisions/DEC-20260916-001-rls-onboarding-confirm-applied.md`
 
-**Priority:** P0 (posledná otvorená anon diera v `public` po DROP wave)  
-**Depends on:** `drop_open_anon_policies` applied (2026-09-04) — verified in prod  
-**Merge:** founder GO; **samostatný PR** od DROP wave  
+## Acceptance (closed)
 
-## Problem
+- [x] Code Path B on `main` (session API + DROP migration file)
+- [x] PR #534 merged
+- [x] Founder confirms production OK (`GO CONFIRM-APPLIED`)
+- [x] Rollback runbook remains available if needed
 
-`onboarding_sessions` má politiku `Allow anon access` (`FOR ALL TO anon USING (true)`).
-Dnes 5 riadkov `form_data` — ktokoľvek s anon kľúčom ich vie čítať aj mazať.
+## Out of scope (unchanged)
 
-Browser sync (`useOnboarding.ts`, `OnboardingClient.tsx`) posiela `session_id` a robí
-upsert/select. localStorage je SoT; sync toleruje zlyhanie — ale to **nie je** dôvod
-nechať ALL otvorené na neurčito.
+- `lead_assignment_rules` / `agency_id` drift → Brief 17
+- `integration_settings` conscious deny
 
-## Cieľ
+## Historical problem statement
 
-1. Nahradiť `Allow anon access` politikou viazanou na `session_id` **alebo**
-   PRESUNÚŤ sync na server endpoint so service role.
-2. Preferovaná cesta (rozhodnutie foundera):
-   - **A:** `TO anon` scoped na `session_id` (krehké; treba dôveryhodný viazací token)
-   - **B (odporúčané):** API route `POST/GET /api/onboarding/session` so service role;
-     DROP anon ALL; klient volá len API
-3. Test: anon nemôže `SELECT *` / `DELETE` cudzie session; vlastný sync funguje.
-
-## Acceptance
-
-- [ ] `Allow anon access` neexistuje
-- [ ] 5 existujúcich sessions nie sú verejne listovateľné anon kľúčom
-- [ ] Onboarding progress sync stále funguje (API alebo scoped policy)
-- [ ] Rollback SQL v tom istom PR
-
-## Out of scope (tento PR)
-
-- Refaktor celého onboarding UX
-- Oprava `lead_assignment_rules` / pridanie `agency_id` — **nie tu** (viď nižšie)
-
----
-
-## Nález navyše (nezapadnúť) — `lead_assignment_rules` vs schéma
-
-**Riešiť s migračným driftom (Brief 17 vlna 1), nie v onboarding PR.**
-
-Po DROP wave je tabuľka v plnom RLS deny (0 politík) — to je OK (0 riadkov).
-Predtým však kód už bol **rozbitý proti produkčnej schéme**:
-
-- Dôkaz: `apps/crm/src/app/api/automation/rules/[id]/route.ts:19`
-  `.from("lead_assignment_rules").select("agency_id")`
-- Produkčná schéma stĺpcov: `id · name · rule_type · profile_ids · criteria · is_active · created_at`
-- **`agency_id` neexistuje** → Postgres `42703` (undefined_column)
-- Rovnaká trieda tichého zlyhania ako `cost_eur` v `ai_action_audit`
-- Plný deny po DROP **nezlomil** túto funkciu — bola zlomená skôr, lebo migrácia
-  „add agency_id to lead_assignment_rules“ (ak existuje v 52 neaplikovaných) nikdy nebežala
-
-**Vstup pre Brief 17 / migračný drift:** kód vs 48 aplikovaných / ~100 v repe / 27 voľných SQL.
-
----
-
-## Súvisiaci vedomý stav — `integration_settings`
-
-Po DROP: RLS enable + **0 politík** = plný deny pre anon/authenticated.
-
-- Repo: **žiadna referencia** na `integration_settings` v aplikačnom kóde
-- IMAP / nastavenie schránky **nikdy nebolo zapojené** — tabuľka bola otvorená, prázdna, nepoužívaná
-- Plný deny **neláme** existujúcu funkciu
-- Toto je **vedomý stav**, nie bug „nefunguje nastavenie schránky“ — keď sa IMAP oživí,
-  treba tenant/profile-scoped politiky (+ server path) v samostatnom PR
+`onboarding_sessions` had `Allow anon access` (`FOR ALL TO anon USING (true)`).
+Path B: API `POST/GET /api/onboarding/session` (service role) + DROP anon ALL.
+See report for implementation detail — do not re-paste here.

@@ -53,4 +53,5 @@ Prod apply of migration = **NOT DETERMINABLE** from repo → gate asks Founder f
 
 ## Next (Founder)
 
-Answer the Decision Gate in the VALIDATE handoff. After that, a 5-line bus status amend is enough to close the fixture.
+**Closed 2026-09-16:** Founder `GO CONFIRM-APPLIED` → task `done`, DEC-20260916-001.  
+`GO APPLY-PROD` was not selected (no prod SQL from this gate).
