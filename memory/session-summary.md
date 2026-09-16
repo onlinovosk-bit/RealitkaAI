@@ -1,3 +1,18 @@
+## Session 2026-09-16 (critical bug hunt — sales-funnel admin gate)
+### Dokončené
+- HIGH: sales-funnel update-status + page lacked platform-admin gate → fix + tests + report
+- MEMORIES: removed merged #559; remaining open tracked PRs unchanged
+### Rozpracované / Pending
+- Founder merge sales-funnel platform-admin PR
+- Residual: saas_leads RLS still open at DB layer
+- Noted (not fixed): team/users INSERT RLS hole; management SSR unscoped lists
+### Kľúčové súbory zmenené
+- `apps/crm/src/app/api/sales-funnel/update-status/route.ts`: requirePlatformAdmin
+- `apps/crm/src/app/(dashboard)/sales-funnel/page.tsx`: notFound for non-admins
+- `apps/crm/src/lib/sales-funnel-store.ts`: scoped listSaasLeads/getSalesFunnelData
+### Ďalší krok
+Founder: review/merge sales-funnel admin gate; next candidate team/users INSERT or saas_leads RLS (GO).
+
 ## Session 2026-09-15 (critical bug hunt — match status scoped)
 ### Dokončené
 - HIGH: match status PATCH cookie-less write drop → fix + tests + PR
