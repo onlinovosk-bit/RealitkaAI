@@ -33,6 +33,8 @@ const LOCKS = ".ai/bus/state/typecheck-loop-locks.json";
 const WORKROOT = process.env.TC_WORKROOT || "C:/RealitkaAI-run/tc";
 const MAX_OPEN_PRS = 3;
 const DONE_MARKER = ".tc-worker-done.json";
+// POISTKA: verdikt dávky smie vydať iba Judge z origin/main (po #562 cost_usd: null).
+const JUDGE = "apps/crm/scripts/judge.mjs";
 
 const [, , cmd, ...rest] = process.argv;
 const arg = (n, d = null) => {
@@ -66,7 +68,7 @@ switch (cmd) {
 /* ════════════════════════════════════════════════════════════════════════ */
 
 function plan() {
-  preflight();
+  const judgeBlob = preflight();
 
   const locks = readLocks();
   const open = locks.locks.filter((l) => l.status === "OPEN").length;
@@ -108,6 +110,7 @@ function plan() {
     workers: created.map((c) => ({ branch: c.branch, dir: c.dir, file: c.file })),
     status: "PENDING",
     base_sha: base,
+    judge_blob: judgeBlob,
     locked_at: new Date().toISOString(),
     pr: null,
   });
@@ -161,6 +164,16 @@ function collect() {
     console.error(`  node apps/crm/scripts/tc-orchestrator.mjs finish --batch ${batchNo}`);
     console.error(`\nAk ju chceš zostaviť nanovo, najprv vráť zámok na PENDING`);
     console.error(`a worktree workerov na ich vlastné vetvy.\n`);
+    process.exit(STOP);
+  }
+
+  // POISTKA: integracna vetva vznika z base_sha. Ak sa Judge na main zmenil
+  // po plan, verdikt by vydal stary Judge (napr. pred #562 s cost_usd: 0).
+  fetchOrDie();
+  const jc = judgeGuardRev(lock.base_sha);
+  if (!jc.ok) {
+    console.error(`\nSTOP: judge_not_main — ${jc.detail}`);
+    console.error("Dávku zostav nanovo z aktuálneho origin/main (vráť zámok, plan znova).\n");
     process.exit(STOP);
   }
 
@@ -232,6 +245,16 @@ function finish() {
   // Judge musel dobehnut a zapisat verdikt do kontraktu.
   const intDir = lock.integration_dir;
   if (!intDir) die("Zámok nemá integration_dir. Spusti collect.");
+  // POISTKA: verdikt v kontrakte musel vydat Judge z origin/main.
+  // Kontroluje sa obsah suboru, nie iba commit — lokalne upraveny Judge
+  // v worktree je presne ten pripad, ktory tool_hashes (runner/11) chytaju.
+  fetchOrDie();
+  const jf = judgeGuardFile(intDir);
+  if (!jf.ok) {
+    console.error(`\nSTOP: judge_not_main — ${jf.detail}`);
+    console.error("PR sa neotvára. Spusti Judge z origin/main a finish znova.\n");
+    process.exit(STOP);
+  }
   const contract = join(intDir, taskFile);
   if (!existsSync(contract)) die(`Task Contract neexistuje: ${contract}. Spusti collect.`);
   const txt = readFileSync(contract, "utf8");
@@ -271,7 +294,13 @@ function preflight() {
     .map((l) => l.trim()).filter(Boolean)
     .filter((l) => !OWN.some((o) => l.includes(o)));
   if (dirty.length) problems.push("pracovny strom nie je cisty:\n  " + dirty.slice(0, 5).join("\n  "));
-  try { sh("git fetch origin"); } catch { problems.push("git fetch origin zlyhal"); }
+  let judgeBlob = null;
+  try {
+    sh("git fetch origin");
+    const j = judgeGuardFile(".");
+    if (j.ok) judgeBlob = j.mainBlob;
+    else problems.push("poistka Judge: " + j.detail);
+  } catch { problems.push("git fetch origin zlyhal"); }
 
   if (problems.length) {
     console.error("\nPRE-FLIGHT NEPREŠIEL:");
@@ -279,7 +308,50 @@ function preflight() {
     console.error("");
     process.exit(STOP);
   }
-  console.log("pre-flight OK");
+  console.log(`pre-flight OK  (judge.mjs = origin/main ${judgeBlob.slice(0, 9)})`);
+  return judgeBlob;
+}
+
+function fetchOrDie() {
+  try { sh("git fetch origin"); }
+  catch { die("git fetch origin zlyhal — poistku Judge sa nedá overiť, beh sa zastavuje."); }
+}
+
+/** Blob Judge na origin/main. Chýba = STOP, bez Judge sa nesmie nič zlučovať. */
+function mainJudgeBlob() {
+  const r = spawnSync("git", ["rev-parse", "--verify", "--quiet", `origin/main:${JUDGE}`], { encoding: "utf8" });
+  if (r.status !== 0) die(`origin/main nemá ${JUDGE}`);
+  return r.stdout.trim();
+}
+
+/** Poistka nad revíziou: Judge v `rev` má byť ten istý blob ako na origin/main. */
+function judgeGuardRev(rev) {
+  const mainBlob = mainJudgeBlob();
+  const r = spawnSync("git", ["rev-parse", "--verify", "--quiet", `${rev}:${JUDGE}`], { encoding: "utf8" });
+  const revBlob = r.status === 0 ? r.stdout.trim() : null;
+  const ok = revBlob === mainBlob;
+  return {
+    ok, mainBlob,
+    detail: ok
+      ? `judge.mjs @ ${String(rev).slice(0, 9)} = origin/main (${mainBlob.slice(0, 9)})`
+      : `judge.mjs @ ${String(rev).slice(0, 9)} = ${revBlob ? revBlob.slice(0, 9) : "chýba"}, origin/main = ${mainBlob.slice(0, 9)}`,
+  };
+}
+
+/** Poistka nad súborom: obsah Judge v `dir` (CRLF-tolerantne) = origin/main. */
+function judgeGuardFile(dir) {
+  const mainBlob = mainJudgeBlob();
+  const local = join(dir, JUDGE);
+  if (!existsSync(local)) return { ok: false, mainBlob, detail: `${local} neexistuje` };
+  const norm = (t) => t.replace(/^\uFEFF/, "").replace(/\r\n/g, "\n");
+  const mainText = execSync(`git cat-file blob ${mainBlob}`, { encoding: "utf8", maxBuffer: 16 * 1024 * 1024 });
+  const ok = norm(readFileSync(local, "utf8")) === norm(mainText);
+  return {
+    ok, mainBlob,
+    detail: ok
+      ? `${local} = origin/main (${mainBlob.slice(0, 9)})`
+      : `${local} sa líši od origin/main:${JUDGE} (${mainBlob.slice(0, 9)})`,
+  };
 }
 
 function excludeScaffolding(dir) {
