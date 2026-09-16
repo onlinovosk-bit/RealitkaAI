@@ -138,6 +138,17 @@ Founder-as-BUS vo vnútri behu zmizol. Zostal na dvoch hranách: vstup od iných
 
 Rozhodnutie stačí jednou vetou v chate. Orchestrator ho prepíše ako `DECISION` so `source` (§4).
 
+## PC landing (Cursor, po doručení mbox)
+
+| položka | hodnota |
+|---|---|
+| Vetva | `docs/agent-contract-v0.1` z `c9f0dd515` |
+| Import | `git am` z `Downloads/agent-contract-v0.1-gate0.mbox` (4 commity) |
+| Tip po am | `430121299` |
+| Cloud `base.ref` v tele reportu | `2ca212ef` (experimentálne SHA behu; po am je kontrakt na `f80388d8d`) |
+| `g0_validate.py` | **nie v repe** — ostáva v `Downloads/` dokým founder nerozhodne P1/kodifikáciu |
+| Track B na `audit/2026-09-16` | medzitým Founder `GO CONFIRM-APPLIED` uzavrel `TASK-RLS-ONBOARDING-SESSION` (DEC na audit vetve). To **nie je** odpoveď na P3a/P3b tohto Gate 0 behu — proxy 401 + apply vs read-only ostávajú otvorené tu. |
+
 ## Príloha — validátor (reprodukcia E1/E2)
 
 Nie je to nový nástroj v repe. O kodifikácii rozhodne founder po Gate 0.
