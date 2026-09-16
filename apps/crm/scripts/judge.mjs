@@ -28,6 +28,10 @@ import yaml from "js-yaml";
 
 const EXIT = { ACCEPT: 0, REJECT: 1, BLOCKED: 2, HUMAN: 3 };
 const LEDGER_DIR = ".ai/bus/ledger";
+// Cena behu sa meria iba ak ju dodá volajúci; inak ledger zapíše null.
+const costRaw = process.env.JUDGE_RUN_COST_USD;
+const costMeasured =
+  costRaw != null && costRaw.trim() !== "" && Number.isFinite(Number(costRaw));
 const HIGH_RISK = new Set(["high", "critical"]);
 // Judge si sam zapisuje ledger — agent za to nesmie dostat REJECT.
 const IMPLICIT_ALLOW = [".ai/bus/ledger/**"];
@@ -323,7 +327,10 @@ function writeLedger() {
     started_at: startedAt,
     finished_at: new Date().toISOString(),
     iterations: spent.runs + 1,
-    cost_usd: Number(process.env.JUDGE_RUN_COST_USD ?? 0),
+    // Buď to meria, alebo tam to číslo nie je (runner/11-ledger-memory.md).
+    // Bez JUDGE_RUN_COST_USD sa cena nemeria -> null, nikdy 0.
+    cost_usd: costMeasured ? Number(process.env.JUDGE_RUN_COST_USD) : null,
+    cost_measured: costMeasured,
     acceptance: rows.map((r) => ({
       id: r.id,
       cmd: r.cmd,
