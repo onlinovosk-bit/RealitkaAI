@@ -73,6 +73,7 @@ Grok **must not** decide to apply SQL or close the task.
 **Founder:** `GO CONFIRM-APPLIED` (2026-09-16)  
 **Effect:** TASK → `done`; DEC-20260916-001 recorded.  
 **Not selected:** `GO APPLY-PROD` (no prod SQL from this gate).
+**Amendment:** `DEC-20260916-002` — `done` = engineering; produkčná migrácia **UNKNOWN** (nie CONFIRMED).
 
 ## Independent-first self-check
 

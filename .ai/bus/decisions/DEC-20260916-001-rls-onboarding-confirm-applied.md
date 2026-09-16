@@ -1,7 +1,8 @@
 ---
 id: DEC-20260916-001-rls-onboarding-confirm-applied
 type: decision
-status: done
+status: superseded_in_part
+superseded_in_part_by: DEC-20260916-002-rls-prod-state-unknown
 owner: founder
 created_at: 2026-09-16T22:30:00+02:00
 updated_at: 2026-09-16T22:30:00+02:00
@@ -29,7 +30,9 @@ next_action:
 
 Founder token: **`GO CONFIRM-APPLIED`**
 
-Production state for closing `onboarding_sessions` anon ALL is **OK**.  
+> **Amendment 2026-09-16 (DEC-20260916-002):** veta nižšie o produkcii je nahradená — produkčný stav = **UNKNOWN**, evidence tohto DEC dokazuje iba merge #534.
+
+~~Production state for closing `onboarding_sessions` anon ALL is **OK**.~~  
 `TASK-RLS-ONBOARDING-SESSION` → **`done`**.
 
 ## Context (refs only)
