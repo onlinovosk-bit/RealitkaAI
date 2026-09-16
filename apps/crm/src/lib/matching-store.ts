@@ -158,9 +158,15 @@ export async function listLeadPropertyMatchesByLeadId(
 export async function updateLeadPropertyMatchStatus(
   leadId: string,
   matchId: string,
-  status: string
+  status: string,
+  /**
+   * Request-scoped client. Server callers MUST pass it: without it this falls
+   * back to the cookie-less browser singleton, RLS rejects the write (after
+   * matches_anon_legacy_all drop) and match status never persists.
+   */
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
 ): Promise<{ match: LeadPropertyMatchListItem; previousStatus: string | null }> {
-  const supabase = await resolveTenantSupabase();
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     throw new Error("Supabase nie je nastavený. Matching sa nedá aktualizovať.");
@@ -195,7 +201,7 @@ export async function updateLeadPropertyMatchStatus(
     throw new Error(updateError.message);
   }
 
-  const property = await getProperty(updated.property_id);
+  const property = await getProperty(updated.property_id, scoped);
 
   return {
     previousStatus,

@@ -5,6 +5,10 @@
 --
 -- Jedna dávka = 31 dní: 2026-08-17 .. 2026-09-16.
 -- Logika zodpovedá scripts/sql/north-star-day.sql (bez :den — dátumy sú v generate_series).
+--
+-- AMENDMENT 2026-09-15 (founder GO / nalezy): stĺpce leads_new_real + leads_new_seed.
+-- Re-batch: spusti tento SELECT → nahraď control/results.json → prepíš metrics jsonl.
+-- Historické riadky bez new_real/new_seed NEVYMÝŠĽAŤ — až po novom founder_batch.
 
 WITH days AS (
   SELECT d::date AS den
@@ -26,6 +30,13 @@ SELECT
       AND coalesce(l.source, '') LIKE 'portal:%') AS portal_leads,
   (SELECT count(*)::int FROM leads l
     WHERE l.created_at >= b.t0 AND l.created_at < b.t1) AS leads_new,
+  -- Real inbound = portal:* ; seed/demo = not portal:* (incl. null). Founder GO 2026-09-15.
+  (SELECT count(*)::int FROM leads l
+    WHERE l.created_at >= b.t0 AND l.created_at < b.t1
+      AND l.source LIKE 'portal:%') AS leads_new_real,
+  (SELECT count(*)::int FROM leads l
+    WHERE l.created_at >= b.t0 AND l.created_at < b.t1
+      AND (l.source NOT LIKE 'portal:%' OR l.source IS NULL)) AS leads_new_seed,
   (SELECT count(*)::int FROM leads l
     WHERE l.created_at < b.t1) AS leads_total,
   (SELECT count(*)::int FROM buyer_intents i
