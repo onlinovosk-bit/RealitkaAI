@@ -1,0 +1,10 @@
+﻿JUDGE  TASK-NS-001  |  .ai\bus\tasks\TASK-NS-001.md
+------------------------------------------------------------------------------------------------
+ID      PRIKAZ                                          STAV     DETAIL
+N1      node apps/crm/scripts/north-star-validate.mjs   PASS     exit 0, ocakavane 0
+N2      node apps/crm/scripts/typecheck-baseline.mjs    PASS     exit 0, ocakavane 0
+N3      git diff --name-only origin/main...HEAD         PASS     7 suborov, vsetky v scope
+------------------------------------------------------------------------------------------------
+VERDIKT: ACCEPT  --  3 kontrol PASS, risk=low
+run_id:  RUN-20260915185203-TASK-NS-001
+Ledger:  .ai\bus\ledger\2026-09.jsonl
