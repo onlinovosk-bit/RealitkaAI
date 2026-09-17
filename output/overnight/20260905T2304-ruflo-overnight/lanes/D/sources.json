@@ -1,0 +1,138 @@
+{
+  "run_id": "20260905T2304-ruflo-overnight",
+  "lane_id": "D",
+  "accessed_at": "2026-09-05",
+  "base_sha": "cf3604613cdbb6a7a279e175f2c792fb25591461",
+  "sources": [
+    {
+      "claim": "CRM stack at BASE_SHA is Next.js + Supabase + MapLibre + Zod; no Nest/BullMQ/TanStack/shadcn",
+      "name": "apps/crm/package.json",
+      "publisher": "repo",
+      "url_or_path": "git:cf3604613cdbb6a7a279e175f2c792fb25591461:apps/crm/package.json",
+      "published_at": null,
+      "accessed_at": "2026-09-05",
+      "evidence_type": "repo_snapshot",
+      "limit": "Dependency list only; not runtime health"
+    },
+    {
+      "claim": "Tenant core agencies/teams/profiles with role on profiles",
+      "name": "baseline_core_schema",
+      "publisher": "repo",
+      "url_or_path": "git:cf3604613cdbb6a7a279e175f2c792fb25591461:apps/crm/supabase/migrations/20260310_baseline_core_schema.sql",
+      "published_at": "2026-03-10",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "migration_ddl",
+      "limit": "Baseline may predate later columns; prod apply unknown"
+    },
+    {
+      "claim": "properties RLS uses USING and WITH CHECK on agency_id; NULL agency still allowed",
+      "name": "rls_properties",
+      "publisher": "repo",
+      "url_or_path": "git:cf3604613cdbb6a7a279e175f2c792fb25591461:apps/crm/supabase/migrations/20260508180000_rls_properties.sql",
+      "published_at": "2026-05-08",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "migration_ddl",
+      "limit": "Policy text at BASE_SHA; live policies PROD_UNKNOWN"
+    },
+    {
+      "claim": "UC mapper added property source/geo/area/images/description columns and unique (agency_id, source_system, source_id)",
+      "name": "uc_export_mapper migration",
+      "publisher": "repo",
+      "url_or_path": "git:cf3604613cdbb6a7a279e175f2c792fb25591461:apps/crm/supabase/migrations/20260617120000_uc_export_mapper.sql",
+      "published_at": "2026-06-17",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "migration_ddl",
+      "limit": "Inbound UC mapping oriented; not outbound publish job tables"
+    },
+    {
+      "claim": "import_jobs provides existing per-agency job state machine for imports",
+      "name": "universal_crm_import",
+      "publisher": "repo",
+      "url_or_path": "git:cf3604613cdbb6a7a279e175f2c792fb25591461:apps/crm/supabase/migrations/20260608120000_universal_crm_import.sql",
+      "published_at": "2026-06-08",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "migration_ddl",
+      "limit": "Import-oriented statuses/sources; not portal publish outbox"
+    },
+    {
+      "claim": "Viewings modeled as scheduled_events with event_type viewing",
+      "name": "event_scheduler_phase1",
+      "publisher": "repo",
+      "url_or_path": "git:cf3604613cdbb6a7a279e175f2c792fb25591461:apps/crm/supabase/migrations/20260527143000_event_scheduler_phase1.sql",
+      "published_at": "2026-05-27",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "migration_ddl",
+      "limit": "Usage volume PROD_UNKNOWN"
+    },
+    {
+      "claim": "lead_events provides append-only pipeline/activity history hooks",
+      "name": "enterprise_ai_intelligence",
+      "publisher": "repo",
+      "url_or_path": "git:cf3604613cdbb6a7a279e175f2c792fb25591461:apps/crm/supabase/migrations/20260418_enterprise_ai_intelligence.sql",
+      "published_at": "2026-04-18",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "migration_ddl",
+      "limit": "pipeline_moves may exist only via loose prod SQL"
+    },
+    {
+      "claim": "MapLibre used in product maps; Mapbox token env deprecated",
+      "name": "MapLibre components + env",
+      "publisher": "repo",
+      "url_or_path": "git:cf3604613cdbb6a7a279e175f2c792fb25591461:apps/crm/src/components/l99/CadastreMapView.tsx; apps/crm/src/config/env.ts",
+      "published_at": null,
+      "accessed_at": "2026-09-05",
+      "evidence_type": "repo_snapshot",
+      "limit": "Does not prove map tile SLA or OpenFreeMap ToS review"
+    },
+    {
+      "claim": "Profile role/agency/ui_role not client-mutable",
+      "name": "profiles guards",
+      "publisher": "repo",
+      "url_or_path": "git:cf3604613cdbb6a7a279e175f2c792fb25591461:apps/crm/supabase/migrations/20260830231500_profiles_guard_role_agency.sql",
+      "published_at": "2026-08-30",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "migration_ddl",
+      "limit": "service_role paths must stay reviewed"
+    },
+    {
+      "claim": "Lane A: reuse agencies/leads/properties/scheduled_events/import_jobs; phone audit GAP; no contacts/deals tables",
+      "name": "Lane A report",
+      "publisher": "ruflo-overnight",
+      "url_or_path": "lanes/A/report.md",
+      "published_at": "2026-09-05",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "frozen_lane_output",
+      "limit": "PASS_WITH_CONDITIONS; no live prod DB"
+    },
+    {
+      "claim": "Lane B: SK CRM switching context; Nehnutelnosti Admin is listing admin not CRM; backOFFICE+ZRKS incumbent",
+      "name": "Lane B report",
+      "publisher": "ruflo-overnight",
+      "url_or_path": "lanes/B/report.md",
+      "published_at": "2026-09-05",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "frozen_lane_output",
+      "limit": "Public prices/marketing; WTP unproven"
+    },
+    {
+      "claim": "Lane C: UC Import=outbound publish; UC Export=inbound; outbound adapter not production-ready; no invented XSD",
+      "name": "Lane C report",
+      "publisher": "ruflo-overnight",
+      "url_or_path": "lanes/C/report.md",
+      "published_at": "2026-09-05",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "frozen_lane_output",
+      "limit": "Vendor-gated credentials/schema"
+    },
+    {
+      "claim": "UC Export/Import documentation exists under United Classifieds Realsoft paths",
+      "name": "UC Realsoft export intro",
+      "publisher": "United Classifieds",
+      "url_or_path": "https://plt.unitedclassifieds.sk/import/docs/v1/realsoft/docs/export/intro",
+      "published_at": null,
+      "accessed_at": "2026-09-05",
+      "evidence_type": "primary_vendor_docs_via_lane_C",
+      "limit": "Cited via Lane C; not re-fetched in lane D; marketing pages are not performance proof"
+    }
+  ]
+}

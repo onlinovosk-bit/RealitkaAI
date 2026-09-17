@@ -1,0 +1,72 @@
+[
+  {
+    "claim": "PLAN_PRICES_EUR solo 79 / team 71 / office 63; CREDIT_GRANTS 30/25/20; Cockpit Lite 0; Owner Cockpit 349 (founder 249); top-ups 49/129/379/999; landing pack 355 = 5*71",
+    "title": "program-tier-pricing.ts",
+    "publisher": "repo",
+    "url": "apps/crm/src/lib/program-tier-pricing.ts",
+    "published_date": "UNKNOWN",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "repo_ssot",
+    "limit": "List/config SSOT; Stripe env may be empty in PROD; not WTP proof"
+  },
+  {
+    "claim": "Pricing stack v1.0 documents seat/cockpit/credit layers; Smolko market_vision 199 grandfather; cost view retail ~0.86 EUR/credit; Andy Stripe create steps not verified live",
+    "title": "pricing-v1.md",
+    "publisher": "repo",
+    "url": "apps/crm/docs/pricing-v1.md",
+    "published_date": "UNKNOWN",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "repo_docs",
+    "limit": "Cost accounting ≠ market-proven price; PROD Stripe unverified"
+  },
+  {
+    "claim": "Control copy of pricing module for overnight isolation",
+    "title": "note-pricing-src.txt",
+    "publisher": "orchestrator control",
+    "url": "output/overnight/20260905T2304-ruflo-overnight/control/note-pricing-src.txt",
+    "published_date": "2026-09-05",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "run_control_mirror",
+    "limit": "Mirror of BASE_SHA module"
+  },
+  {
+    "claim": "Control copy of pricing-v1.md",
+    "title": "note-pricing-docs.txt",
+    "publisher": "orchestrator control",
+    "url": "output/overnight/20260905T2304-ruflo-overnight/control/note-pricing-docs.txt",
+    "published_date": "2026-09-05",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "run_control_mirror",
+    "limit": "Mirror of BASE_SHA docs"
+  },
+  {
+    "claim": "Billing reuse present in code; Stripe live state PROD_UNKNOWN",
+    "title": "Lane A report",
+    "publisher": "lane A",
+    "url": "output/overnight/20260905T2304-ruflo-overnight/lanes/A/report.md",
+    "published_date": "2026-09-05",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "upstream_lane",
+    "limit": "No live Stripe Dashboard verification in overnight scope"
+  },
+  {
+    "claim": "backOFFICE 95 EUR/yr (+VAT); ZRKS API 415.50–554 EUR/yr; Realsys 10/210/270/349 EUR/mo; AutoCRM from 129; Realman CZ Kč tariffs; WTP not web-provable",
+    "title": "Lane B report",
+    "publisher": "lane B",
+    "url": "output/overnight/20260905T2304-ruflo-overnight/lanes/B/report.md",
+    "published_date": "2026-09-05",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "upstream_lane",
+    "limit": "Vendor marketing; portal commercial fees UNKNOWN; WTP requires interviews"
+  },
+  {
+    "claim": "UC commercial pricing UNKNOWN; outbound publish blocked without vendor package — blocks outcome pricing",
+    "title": "Lane C report",
+    "publisher": "lane C",
+    "url": "output/overnight/20260905T2304-ruflo-overnight/lanes/C/report.md",
+    "published_date": "2026-09-05",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "upstream_lane",
+    "limit": "No invented portal fee tables"
+  }
+]
