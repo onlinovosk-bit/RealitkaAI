@@ -25,55 +25,57 @@ const STEP_LABELS: Record<string, string> = {
 export default function CsmOnboardingPage() {
   const [clients, setClients] = useState<AtRiskClient[]>([]);
   const [loading, setLoading] = useState(true);
-  const [dispatchStatus, setDispatchStatus] = useState<string>("");
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const res = await fetch("/api/onboarding/mvp/at-risk");
-      const data = (await res.json()) as { clients?: AtRiskClient[] };
-      setClients(data.clients ?? []);
+      setLoadError(null);
+      const res = await fetch("/api/onboarding/mvp/at-risk", { credentials: "include" });
+      if (res.status === 401) {
+        setClients([]);
+        setLoadError("Nepodarilo sa načítať onboarding dáta (401).");
+        setLoading(false);
+        return;
+      }
+      if (res.status === 403) {
+        setClients([]);
+        setLoadError("Tento prehľad je dostupný len správcovi platformy.");
+        setLoading(false);
+        return;
+      }
+      if (!res.ok) {
+        setClients([]);
+        setLoadError("Onboarding dáta ešte nie sú k dispozícii.");
+        setLoading(false);
+        return;
+      }
+      const data = (await res.json()) as { clients?: AtRiskClient[]; data?: { clients?: AtRiskClient[] } };
+      const clientsPayload = data.data?.clients ?? data.clients ?? [];
+      setClients(clientsPayload);
       setLoading(false);
     }
     void load();
   }, []);
 
-  async function runDispatchNow() {
-    setDispatchStatus("Odosielam D1/D3/D7 správy...");
-    const res = await fetch("/api/onboarding/mvp/messages/dispatch", { method: "POST" });
-    const data = (await res.json()) as { processed?: number; sent?: number; failed?: number; error?: string };
-    if (!res.ok) {
-      setDispatchStatus(`Dispatch zlyhal: ${data.error ?? "unknown_error"}`);
-      return;
-    }
-    setDispatchStatus(`Dispatch hotový. Processed: ${data.processed ?? 0}, sent: ${data.sent ?? 0}, failed: ${data.failed ?? 0}.`);
-  }
-
   return (
     <main className="p-6">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">CSM Dashboard — At-risk klienti</h1>
-            <p className="text-sm text-gray-500">MVP pre onboarding riziká + D1/D3/D7 message dispatch.</p>
-          </div>
-          <button
-            type="button"
-            onClick={runDispatchNow}
-            className="rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-2 text-sm font-semibold text-cyan-700"
-          >
-            Spustiť dispatch správ
-          </button>
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">CSM Dashboard — At-risk klienti</h1>
+          <p className="text-sm text-gray-500">
+            MVP pre onboarding riziká. Email dispatch beží cez cron
+            {" "}
+            <code className="text-xs">/api/cron/onboarding-dispatch</code>
+            {" "}
+            (Bearer CRON_SECRET) — bez manuálneho send z UI.
+          </p>
         </div>
-
-        {dispatchStatus ? (
-          <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-            {dispatchStatus}
-          </div>
-        ) : null}
 
         {loading ? (
           <div className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-500">Načítavam at-risk klientov...</div>
+        ) : loadError ? (
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-700">{loadError}</div>
         ) : clients.length === 0 ? (
           <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 text-sm text-emerald-700">
             Žiadni at-risk klienti. Všetko je zelené.
@@ -121,4 +123,3 @@ export default function CsmOnboardingPage() {
     </main>
   );
 }
-

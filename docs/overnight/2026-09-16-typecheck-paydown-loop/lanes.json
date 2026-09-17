@@ -1,0 +1,283 @@
+{
+ "$schema_note": "CONTROL MANIFEST ONLY — not a Ruflo-native import format. Runner applies ownership, locks and limits manually. Same convention as 2026-09-05 and 2026-09-14 packages.",
+ "package_id": "2026-09-16-typecheck-paydown-loop",
+ "prepared_at": "2026-09-15",
+ "status": "PREPARED",
+ "default_scope": "implementation",
+ "requires_merged": [
+  "PR #554 chore/w0-engineering-gate"
+ ],
+ "optional_merged": [
+  "PR #555 feat/w1-bus-envelope-v1 — bez neho vynechaj acceptance T4"
+ ],
+ "output_root_template": "output/overnight/<RUN_ID>/",
+ "concurrency": {
+  "max_orchestrators": 1,
+  "max_workers": 1,
+  "note": "Slucka je zamerne SEKVENCNA. Paralelizmus by si vyzadoval viac otvorenych PR, co je presne to, co MAX_OPEN_PRS obmedzuje."
+ },
+ "loop": {
+  "max_open_prs": 3,
+  "max_iterations": 17,
+  "stop_conditions": [
+   "queue_empty",
+   "max_open_prs",
+   "budget",
+   "deadline",
+   "two_consecutive_failures",
+   "judge_blocked"
+  ],
+  "lock_file": ".ai/bus/state/typecheck-loop-locks.json",
+  "lock_states": [
+   "PENDING",
+   "OPEN",
+   "MERGED",
+   "FAILED"
+  ],
+  "baseline_write_during_loop": false,
+  "baseline_write_note": "typecheck-baseline.json sa pocas slucky NEMENI — inak by kazdy PR menil ten isty subor a vsetky by konfliktovali."
+ },
+ "measured_baseline": {
+  "at_sha": "c8d24b407c6ea1fa4cc2de98da534713317901c1",
+  "date": "2026-09-15",
+  "total_errors": 69,
+  "files": 21,
+  "loopable_errors": 44,
+  "loopable_files": 17,
+  "target_baseline_after_loop": 25
+ },
+ "queue": [
+  {
+   "seq": 1,
+   "slug": "persist-sync",
+   "territory": [
+    "apps/crm/src/lib/acquisition/sync/persist/__tests__/persist-sync.test.ts"
+   ],
+   "errors_before": 16,
+   "tier": "T1-tests",
+   "branch": "fix/tc-persist-sync"
+  },
+  {
+   "seq": 2,
+   "slug": "moat-capture",
+   "territory": [
+    "apps/crm/src/lib/moat-capture/__tests__/moat-capture.test.ts"
+   ],
+   "errors_before": 4,
+   "tier": "T1-tests",
+   "branch": "fix/tc-moat-capture"
+  },
+  {
+   "seq": 3,
+   "slug": "actions",
+   "territory": [
+    "apps/crm/src/app/(public)/buyer-onboarding/__tests__/actions.test.ts"
+   ],
+   "errors_before": 1,
+   "tier": "T1-tests",
+   "branch": "fix/tc-actions"
+  },
+  {
+   "seq": 4,
+   "slug": "audit-log-route",
+   "territory": [
+    "apps/crm/src/app/api/acquisition/audit-log/__tests__/route.test.ts"
+   ],
+   "errors_before": 1,
+   "tier": "T1-tests",
+   "branch": "fix/tc-audit-log-route"
+  },
+  {
+   "seq": 5,
+   "slug": "onboarding-session-route",
+   "territory": [
+    "apps/crm/src/app/api/onboarding/session/__tests__/route.test.ts"
+   ],
+   "errors_before": 1,
+   "tier": "T1-tests",
+   "branch": "fix/tc-onboarding-session-route"
+  },
+  {
+   "seq": 6,
+   "slug": "billing-store",
+   "territory": [
+    "apps/crm/src/lib/__tests__/billing-store.test.ts"
+   ],
+   "errors_before": 1,
+   "tier": "T1-tests",
+   "branch": "fix/tc-billing-store"
+  },
+  {
+   "seq": 7,
+   "slug": "credentials",
+   "territory": [
+    "apps/crm/src/lib/acquisition/credentials.test.ts"
+   ],
+   "errors_before": 1,
+   "tier": "T1-tests",
+   "branch": "fix/tc-credentials"
+  },
+  {
+   "seq": 8,
+   "slug": "keywords",
+   "territory": [
+    "apps/crm/src/lib/acquisition/sync/keywords.test.ts"
+   ],
+   "errors_before": 1,
+   "tier": "T1-tests",
+   "branch": "fix/tc-keywords"
+  },
+  {
+   "seq": 9,
+   "slug": "metrics",
+   "territory": [
+    "apps/crm/src/lib/acquisition/sync/metrics.test.ts"
+   ],
+   "errors_before": 1,
+   "tier": "T1-tests",
+   "branch": "fix/tc-metrics"
+  },
+  {
+   "seq": 10,
+   "slug": "search-terms",
+   "territory": [
+    "apps/crm/src/lib/acquisition/sync/search-terms.test.ts"
+   ],
+   "errors_before": 1,
+   "tier": "T1-tests",
+   "branch": "fix/tc-search-terms"
+  },
+  {
+   "seq": 11,
+   "slug": "gmail-pull",
+   "territory": [
+    "apps/crm/src/lib/inbound/__tests__/gmail-pull.test.ts"
+   ],
+   "errors_before": 1,
+   "tier": "T1-tests",
+   "branch": "fix/tc-gmail-pull"
+  },
+  {
+   "seq": 12,
+   "slug": "processqueue-agency-scope",
+   "territory": [
+    "apps/crm/src/lib/realvia/processQueue.agency-scope.test.ts"
+   ],
+   "errors_before": 1,
+   "tier": "T1-tests",
+   "branch": "fix/tc-processqueue-agency-scope"
+  },
+  {
+   "seq": 13,
+   "slug": "inbound-auto-response-smoke-v1",
+   "territory": [
+    "apps/crm/scripts/inbound-auto-response-smoke-v1.ts"
+   ],
+   "errors_before": 10,
+   "tier": "T2-scripts",
+   "branch": "fix/tc-inbound-auto-response-smoke-v1"
+  },
+  {
+   "seq": 14,
+   "slug": "billing-plan-route",
+   "territory": [
+    "apps/crm/src/app/api/billing/plan/route.ts"
+   ],
+   "errors_before": 1,
+   "tier": "T3-src",
+   "branch": "fix/tc-billing-plan-route"
+  },
+  {
+   "seq": 15,
+   "slug": "guardian-open-summary",
+   "territory": [
+    "apps/crm/src/app/api/guardian/open-summary/route.ts"
+   ],
+   "errors_before": 1,
+   "tier": "T3-src",
+   "branch": "fix/tc-guardian-open-summary"
+  },
+  {
+   "seq": 16,
+   "slug": "smolkochatbotpanel",
+   "territory": [
+    "apps/crm/src/components/revolis/SmolkoChatbotPanel.tsx"
+   ],
+   "errors_before": 1,
+   "tier": "T3-src",
+   "branch": "fix/tc-smolkochatbotpanel"
+  },
+  {
+   "seq": 17,
+   "slug": "synthetic-leads",
+   "territory": [
+    "apps/crm/src/lib/demo/synthetic-leads.ts"
+   ],
+   "errors_before": 1,
+   "tier": "T3-src",
+   "branch": "fix/tc-synthetic-leads"
+  }
+ ],
+ "excluded": [
+  {
+   "file": "src/app/api/cron/notification-digest/route.ts",
+   "errors": 1,
+   "tier": "DEFERRED"
+  },
+  {
+   "file": "src/app/api/cron/stealth-recruiter-ingest/route.ts",
+   "errors": 13,
+   "tier": "FROZEN"
+  },
+  {
+   "file": "src/app/api/stealth-recruiter/outreach/route.ts",
+   "errors": 10,
+   "tier": "FROZEN"
+  },
+  {
+   "file": "src/app/api/stealth-recruiter/scan/route.ts",
+   "errors": 1,
+   "tier": "FROZEN"
+  }
+ ],
+ "hard_limits": {
+  "no_merge_to_main": true,
+  "push_feature_branch_allowed": true,
+  "open_pr_allowed": true,
+  "no_migrations": true,
+  "no_prod_db_writes": true,
+  "no_deploy": true,
+  "no_outward_sends": true,
+  "no_type_suppression": true,
+  "forbidden_type_fixes": [
+   "as any",
+   "as unknown as",
+   "@ts-ignore",
+   "@ts-expect-error",
+   "it.skip",
+   "describe.skip"
+  ],
+  "no_tsconfig_change": true,
+  "no_next_config_change": true,
+  "ruflo_swarm_init_attempts": 1,
+  "on_swarm_init_failure": "record error, continue via isolated git worktree, no retry, no workaround, do not stop the run"
+ },
+ "forbidden_paths": [
+  "apps/crm/src/app/api/stealth-recruiter/**",
+  "apps/crm/src/app/api/cron/stealth-recruiter-ingest/**",
+  "apps/crm/src/app/api/cron/notification-digest/**",
+  "apps/crm/src/lib/infra/**",
+  "apps/crm/vercel.json",
+  "apps/crm/supabase/migrations/**",
+  "apps/crm/next.config.js",
+  "apps/crm/tsconfig.json",
+  "apps/crm/scripts/judge.mjs",
+  "apps/crm/scripts/typecheck-baseline.mjs",
+  ".mcp.json",
+  ".env*"
+ ],
+ "control_query": {
+  "sql": "select (select max(received_at)::date from realvia_webhook_logs) as posledny_webhook, (select count(*) filter (where read_at is null) from routine_notifications) as neprecitane, (select count(*) from leads where auto_response_sent_at is not null) as odpovedane, (select count(*) from lead_property_matches) as zhody;",
+  "expected_after": "unchanged — typovy dlh nie je produktova zmena"
+ }
+}

@@ -4,6 +4,7 @@ import {
   applySeatCheckoutEntitlements,
   applyTopupPurchase,
   parseCheckoutBody,
+  requireCheckoutAgencyId,
 } from "@/lib/credits-billing";
 import { handlePricingCheckoutWebhook } from "@/lib/credits-billing-webhook";
 
@@ -12,7 +13,8 @@ const mockMaybeSingle = vi.fn();
 const mockSingle = vi.fn();
 const mockInsert = vi.fn();
 const mockUpdate = vi.fn();
-const mockEq = vi.fn();
+const mockDeleteEq = vi.fn();
+const mockAgencyUpdateResult = vi.fn();
 
 vi.mock("@/lib/supabase/admin", () => ({
   createServiceRoleClient: () => ({
@@ -40,6 +42,12 @@ describe("credits-billing", () => {
       STRIPE_PRICE_CREDITS_RAST: "price_rast",
     };
 
+    mockAgencyUpdateResult.mockResolvedValue({
+      data: { id: "agency-1" },
+      error: null,
+    });
+    mockDeleteEq.mockResolvedValue({ error: null });
+
     mockFrom.mockImplementation((table: string) => {
       if (table === "credit_ledger") {
         return {
@@ -47,6 +55,9 @@ describe("credits-billing", () => {
             eq: () => ({ maybeSingle: mockMaybeSingle }),
           }),
           insert: mockInsert,
+          delete: () => ({
+            eq: (...args: unknown[]) => mockDeleteEq(...args),
+          }),
         };
       }
       if (table === "agencies") {
@@ -57,7 +68,11 @@ describe("credits-billing", () => {
           update: (payload: unknown) => ({
             eq: (...args: unknown[]) => {
               mockUpdate(payload, ...args);
-              return { error: null };
+              return {
+                select: () => ({
+                  maybeSingle: mockAgencyUpdateResult,
+                }),
+              };
             },
           }),
         };
@@ -130,6 +145,20 @@ describe("credits-billing", () => {
     });
   });
 
+  describe("requireCheckoutAgencyId", () => {
+    it("returns trimmed agency id", () => {
+      expect(requireCheckoutAgencyId({ agency_id: "  agency-1  " })).toBe("agency-1");
+    });
+
+    it("throws when agency_id is null, empty, or whitespace", () => {
+      expect(() => requireCheckoutAgencyId({ agency_id: null })).toThrow(/agency_id/);
+      expect(() => requireCheckoutAgencyId({ agency_id: "" })).toThrow(/agency_id/);
+      expect(() => requireCheckoutAgencyId({ agency_id: "   " })).toThrow(/agency_id/);
+      expect(() => requireCheckoutAgencyId(null)).toThrow(/agency_id/);
+      expect(() => requireCheckoutAgencyId(undefined)).toThrow(/agency_id/);
+    });
+  });
+
   describe("applySeatCheckoutEntitlements", () => {
     it("writes agency tier, seats, and cockpit", async () => {
       const ok = await applySeatCheckoutEntitlements({
@@ -175,6 +204,14 @@ describe("credits-billing", () => {
           idempotency_key: "purchase:agency-1:cs_test_1",
         }),
       );
+      expect(mockUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          purchased_credits_balance: 150,
+          credits_balance: 200,
+        }),
+        "id",
+        "agency-1",
+      );
 
       mockMaybeSingle.mockResolvedValueOnce({ data: { id: "existing" } });
       mockInsert.mockClear();
@@ -187,6 +224,26 @@ describe("credits-billing", () => {
 
       expect(second).toBe(true);
       expect(mockInsert).not.toHaveBeenCalled();
+    });
+
+    it("rolls back ledger and returns false when balance update fails", async () => {
+      mockAgencyUpdateResult.mockResolvedValueOnce({
+        data: null,
+        error: { message: "update failed" },
+      });
+
+      const ok = await applyTopupPurchase({
+        agencyId: "agency-1",
+        packageKey: "rast",
+        stripeSessionId: "cs_fail_balance",
+      });
+
+      expect(ok).toBe(false);
+      expect(mockInsert).toHaveBeenCalled();
+      expect(mockDeleteEq).toHaveBeenCalledWith(
+        "idempotency_key",
+        "purchase:agency-1:cs_fail_balance",
+      );
     });
   });
 
@@ -246,6 +303,40 @@ describe("credits-billing", () => {
       } as never);
 
       expect(handled).toBe(false);
+    });
+
+    it("returns false for seat/topup with empty agencyId (do not ACK)", async () => {
+      const seat = await handlePricingCheckoutWebhook({
+        type: "checkout.session.completed",
+        data: {
+          object: {
+            id: "cs_seat_no_agency",
+            metadata: {
+              checkoutType: "seat",
+              agencyId: "",
+              seatTier: "team",
+              seatQuantity: "3",
+            },
+          },
+        },
+      } as never);
+      expect(seat).toBe(false);
+
+      const topup = await handlePricingCheckoutWebhook({
+        type: "checkout.session.completed",
+        data: {
+          object: {
+            id: "cs_topup_no_agency",
+            metadata: {
+              checkoutType: "credit_topup",
+              agencyId: "",
+              topupPackage: "rast",
+            },
+          },
+        },
+      } as never);
+      expect(topup).toBe(false);
+      expect(mockInsert).not.toHaveBeenCalled();
     });
   });
 });

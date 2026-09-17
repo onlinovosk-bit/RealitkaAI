@@ -5,6 +5,28 @@ import { PLAN_KEYS, PLAN_LIMITS, type PlanKey } from "@/lib/billing-types";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { logInfo } from "./logger";
 import { PROGRAM_BRAND_LABEL } from "@/lib/program-brand-names";
+import {
+  SEAT_TIERS,
+  SEAT_TIER_CONFIG,
+  SEAT_TIER_STRIPE_ENV,
+} from "@/lib/program-tier-pricing";
+
+/**
+ * Seat / credit top-up / starter-pack checkouts are fulfilled by
+ * `handlePricingCheckoutWebhook`. Legacy `syncAccountTier` must not run on
+ * those sessions — they have `authUserId` but no `planKey`, so the legacy
+ * path would previously resolve priceId=undefined → free and wipe the paid tier.
+ */
+export function isPricingCheckoutMetadata(
+  meta: Record<string, string> | null | undefined,
+): boolean {
+  const checkoutType = meta?.checkoutType;
+  return (
+    checkoutType === "seat" ||
+    checkoutType === "credit_topup" ||
+    checkoutType === "starter_pack"
+  );
+}
 
 // Mapovanie tier â†’ ui_role
 const TIER_TO_UI_ROLE: Record<string, string> = {
@@ -22,12 +44,21 @@ const TIER_TO_UI_ROLE: Record<string, string> = {
 async function syncAccountTier(
   stripeCustomerIdOrAuthUserId: string,
   priceId: string | null | undefined,
-  opts?: { lockDowngrade?: boolean; resetLock?: boolean; byAuthUserId?: boolean }
+  opts?: {
+    lockDowngrade?: boolean;
+    resetLock?: boolean;
+    byAuthUserId?: boolean;
+    /** Explicit free downgrade (e.g. subscription.deleted). */
+    forceFree?: boolean;
+  }
 ): Promise<void> {
   const supabase = createServiceRoleClient();
   if (!supabase) return;
 
-  const tier    = resolvePlanKeyFromStripePriceId(priceId);
+  const tier = opts?.forceFree ? "free" : resolvePlanKeyFromStripePriceId(priceId);
+  // Unknown Stripe prices must not mutate a paid profile to free.
+  if (tier === "unknown") return;
+
   const uiRole  = TIER_TO_UI_ROLE[tier] ?? "agent";
   const update: Record<string, string | null | boolean> = {
     account_tier:    tier,
@@ -467,14 +498,19 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
 
   try {
     if (event.type === "checkout.session.completed") {
-      const priceId = object.metadata?.planKey
-        ? BILLING_PLANS.find((p) => p.key === object.metadata.planKey)?.priceId
-        : undefined;
-      const authUserId = object.metadata?.authUserId as string | undefined;
-      if (authUserId) {
-        await syncAccountTier(authUserId, priceId, { byAuthUserId: true, resetLock: true });
-      } else if (object.customer) {
-        await syncAccountTier(object.customer as string, priceId, { resetLock: true });
+      // Pricing checkouts (seat/top-up/starter-pack) are applied by
+      // handlePricingCheckoutWebhook in the same route. Skipping here prevents
+      // a free-tier overwrite when metadata has authUserId but no planKey.
+      if (!isPricingCheckoutMetadata(object.metadata)) {
+        const priceId = object.metadata?.planKey
+          ? BILLING_PLANS.find((p) => p.key === object.metadata.planKey)?.priceId
+          : undefined;
+        const authUserId = object.metadata?.authUserId as string | undefined;
+        if (authUserId) {
+          await syncAccountTier(authUserId, priceId, { byAuthUserId: true, resetLock: true });
+        } else if (object.customer) {
+          await syncAccountTier(object.customer as string, priceId, { resetLock: true });
+        }
       }
 
       await createActivity({
@@ -542,7 +578,7 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
     }
 
     if (event.type === "customer.subscription.deleted") {
-      await syncAccountTier(object.customer as string, null);
+      await syncAccountTier(object.customer as string, null, { forceFree: true });
 
       await createActivity({
         leadId: null,
@@ -603,7 +639,7 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
   return { ok: true };
 }
 
-export type ResolvedBillingPlan = PlanKey | "free";
+export type ResolvedBillingPlan = PlanKey | "free" | "unknown";
 
 /** Legacy add-on Stripe price IDs — keep in env for existing subscriptions; archive products in Stripe dashboard. */
 function resolveLegacyAddonPlanKey(priceId: string): ResolvedBillingPlan | null {
@@ -623,27 +659,42 @@ function resolveLegacyAddonPlanKey(priceId: string): ResolvedBillingPlan | null 
 export function resolvePlanKeyFromStripePriceId(
   priceId: string | null | undefined
 ): ResolvedBillingPlan {
-  if (!priceId) return "free";
+  // Missing / blank price is unknown — never invent a free downgrade here.
+  // Explicit free writes go through syncAccountTier({ forceFree: true }).
+  if (!priceId) return "unknown";
   if (priceId === process.env.STRIPE_PRICE_PROTOCOL_AUTH)  return PLAN_KEYS.COMMAND;
   if (priceId === process.env.STRIPE_PRICE_MARKET_VISION)  return PLAN_KEYS.ENTERPRISE;
   if (priceId === process.env.STRIPE_PRICE_ENTERPRISE)     return PLAN_KEYS.ENTERPRISE;
   if (priceId === process.env.STRIPE_PRICE_PRO)            return PLAN_KEYS.PRO;
   if (priceId === process.env.STRIPE_PRICE_STARTER)        return PLAN_KEYS.STARTER;
 
+  // Self-serve seat prices (PR-4). Without this, customer.subscription.*
+  // events after seat checkout resolve as unknown and previously wiped to free.
+  for (const tier of SEAT_TIERS) {
+    const seatPriceId = process.env[SEAT_TIER_STRIPE_ENV[tier]];
+    if (seatPriceId && priceId === seatPriceId) {
+      return SEAT_TIER_CONFIG[tier].planKey;
+    }
+  }
+
   const legacyAddon = resolveLegacyAddonPlanKey(priceId);
   if (legacyAddon) return legacyAddon;
 
-  const message = `Unknown Stripe price id — defaulting tier to free: ${priceId}`;
+  const message = `Unknown Stripe price id — leaving tier unchanged: ${priceId}`;
   logInfo(message, "resolvePlanKeyFromStripePriceId");
   console.warn(`[billing] ${message}`);
   void autoErrorCapture(new Error(message), `billing:resolvePlanKeyFromStripePriceId:${priceId}`);
-  return "free";
+  return "unknown";
 }
 
 export async function getCurrentPlanKey(): Promise<ResolvedBillingPlan> {
   const status = await getCurrentBillingStatus();
   const priceId = status.subscription?.items?.[0]?.priceId ?? null;
-  return resolvePlanKeyFromStripePriceId(priceId);
+  const key = resolvePlanKeyFromStripePriceId(priceId);
+  // Display / fail-open: no recognizable paid price → free for UI & gates.
+  // Webhook sync uses resolvePlanKeyFromStripePriceId + syncAccountTier no-op
+  // so unknown prices never overwrite a paid tier.
+  return key === "unknown" ? "free" : key;
 }
 
 export async function getCurrentPlanTier(): Promise<"free" | "pro"> {

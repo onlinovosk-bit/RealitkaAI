@@ -12,7 +12,8 @@ import {
  * atomický krok v /api/cron/credits-cycle (expirácia -> grant, deterministické poradie).
  * Dôvod: Vercel Hobby má presnosť plánovania ±59 min, takže dva crony hodinu po sebe
  * sa mohli vykonať v opačnom poradí a grant by bol okamžite expirovaný.
- * Route je ponechaná ako ručný nástroj — je idempotentná cez credit_ledger.
+ * Route je ponechaná ako ručný nástroj. Expire odmietne beh, ak už existuje
+ * current-period grant bez prior expiry (ochrana pred wipe nového grantu).
  * Audit: docs/audit/2026-08-02-profit-leak-audit.md — nález E1
  */
 export async function GET(request: NextRequest) {
@@ -41,18 +42,26 @@ export async function GET(request: NextRequest) {
 
   let expiredTotal = 0;
   let skipped = 0;
+  let errors = 0;
 
   for (const row of (agencies ?? []) as AgencyCreditRow[]) {
     const result = await expireGrantCreditsForAgency(row, periodKey);
-    if (result.skipped) skipped += 1;
-    else expiredTotal += result.expired;
+    if (result.error) {
+      errors += 1;
+      skipped += 1;
+    } else if (result.skipped) {
+      skipped += 1;
+    } else {
+      expiredTotal += result.expired;
+    }
   }
 
   return NextResponse.json({
-    ok: true,
+    ok: errors === 0,
     periodKey,
     agencies: agencies?.length ?? 0,
     expiredTotal,
     skipped,
-  });
+    errors,
+  }, { status: errors === 0 ? 200 : 500 });
 }

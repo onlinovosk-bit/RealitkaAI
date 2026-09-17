@@ -366,9 +366,15 @@ export async function updateProfile(
     role?: string;
     teamId?: string | null;
     isActive?: boolean;
-  }
+  },
+  /**
+   * Request-scoped client. Server callers MUST pass it: without it this falls
+   * back to the cookie-less browser singleton, `profiles_self_update` rejects
+   * the write and the edit silently no-ops or 500s.
+   */
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
 ): Promise<Profile> {
-  const supabase = await resolveTenantSupabase();
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     const profiles = getDemoProfilesStore();
