@@ -2,7 +2,7 @@
 
 export type DealType = "buy" | "rent" | "sell";
 
-export type PropertyType = "flat" | "house" | "land" | "commercial";
+export type PropertyType = "flat" | "house" | "land" | "commercial" | "recreational";
 
 export type TimeHorizon =
   | "0-3"   // ihneď / do 3 mesiacov
@@ -166,6 +166,7 @@ export const INTENT_TO_SK_PROPERTY_TYPE: Record<PropertyType, string> = {
   house: "Dom",
   land: "Pozemok",
   commercial: "Komerčný priestor",
+  recreational: "Chata a rekreačné",
 };
 
 const SK_PROPERTY_TYPE_ALIASES: Record<string, PropertyType> = {
@@ -176,6 +177,12 @@ const SK_PROPERTY_TYPE_ALIASES: Record<string, PropertyType> = {
   komercny: "commercial",
   "komerčný priestor": "commercial",
   "komerčné priestory": "commercial",
+  chata: "recreational",
+  "záhradný domček": "recreational",
+  "zahradny domcek": "recreational",
+  "chata a rekreačné": "recreational",
+  "chata a rekreatne": "recreational",
+  recreational: "recreational",
   flat: "flat",
   house: "house",
   land: "land",

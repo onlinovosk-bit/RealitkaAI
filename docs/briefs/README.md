@@ -12,6 +12,8 @@
 |----|-------|------|
 | BO-001 | [BO-001-proof-of-value.md](./BO-001-proof-of-value.md) | **SHIPPED** |
 | BO-onboard | [BO-onboard-agency.md](./BO-onboard-agency.md) | aktívny |
+| BO-action-center-v0 | [BO-action-center-v0.md](./BO-action-center-v0.md) | **SPEC** — čaká `GO IMPLEMENT ACTION CENTER V0` |
+| BO-pricing-v2 | [BO-pricing-migration-v2.md](./BO-pricing-migration-v2.md) | **SPEC** — čaká `GO IMPLEMENT PRICING V2` |
 
 ## Strategic Bet (nie BO — programová brána)
 

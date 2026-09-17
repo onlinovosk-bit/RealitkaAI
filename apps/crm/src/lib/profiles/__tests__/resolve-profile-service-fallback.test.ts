@@ -199,4 +199,56 @@ describe("resolveProfileForAuthUser service fallback", () => {
     expect(result.profile?.ui_role).toBe("owner_vision");
     expect(result.profile?.role).toBe("owner");
   });
+
+  it("does not hand Smolko owner profile to non-owner @realitysmolko.sk login", async () => {
+    const userMaybeSingle = vi.fn();
+    userMaybeSingle
+      .mockResolvedValueOnce({
+        data: {
+          id: "profile-broker",
+          agency_id: "11111111-1111-1111-1111-111111111111",
+          auth_user_id: "auth-broker",
+          email: "broker@realitysmolko.sk",
+          role: "agent",
+          ui_role: "agent",
+          account_tier: "pro",
+        },
+      })
+      .mockResolvedValueOnce({ data: null })
+      .mockResolvedValue({ data: null });
+
+    const select = vi.fn(() => ({
+      eq: () => ({ maybeSingle: userMaybeSingle }),
+      ilike: () => ({ maybeSingle: vi.fn().mockResolvedValue({ data: null }) }),
+    }));
+    const from = vi.fn().mockReturnValue({ select });
+    const supabase = { from } as unknown as import("@supabase/supabase-js").SupabaseClient;
+
+    // Owner rows exist in tenant — must NOT be selected for broker login.
+    serviceInResult.mockResolvedValue({
+      data: [
+        {
+          id: "profile-owner",
+          agency_id: "11111111-1111-1111-1111-111111111111",
+          auth_user_id: null,
+          email: "rastislav.smolko@gmail.com",
+          role: "owner",
+          ui_role: "owner_vision",
+          account_tier: "market_vision",
+        },
+      ],
+    });
+    serviceMaybeSingle.mockResolvedValue({ data: null });
+
+    const result = await resolveProfileForAuthUser(
+      supabase,
+      "auth-broker",
+      "id, agency_id, auth_user_id, email, role, ui_role, account_tier",
+      "broker@realitysmolko.sk",
+    );
+
+    expect(result.profile?.id).toBe("profile-broker");
+    expect(result.profile?.role).toBe("agent");
+    expect(result.profile?.email).toBe("broker@realitysmolko.sk");
+  });
 });

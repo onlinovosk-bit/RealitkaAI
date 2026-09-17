@@ -10,10 +10,14 @@ describe("[verification] Next 16 proxy session gate", () => {
     expect(existsSync(join(CRM_ROOT, "src/proxy.ts"))).toBe(true);
   });
 
-  it("fail-opens proxy auth on timeout instead of hanging", () => {
+  it("times out hung proxy auth instead of hanging; API fail-closed, pages fail-open", () => {
     const proxy = readFileSync(join(CRM_ROOT, "src/proxy.ts"), "utf8");
     expect(proxy).toContain("PROXY_AUTH_TIMEOUT_MARKER");
     expect(proxy).toContain("[proxy-auth-timeout]");
     expect(proxy).toContain("createProxyFetch");
+    // API routes must 401 on auth timeout (not NextResponse.next).
+    expect(proxy).toMatch(
+      /isProxyAuthTimeoutError[\s\S]*pathname\.startsWith\("\/api\/"\)[\s\S]*status:\s*401/,
+    );
   });
 });

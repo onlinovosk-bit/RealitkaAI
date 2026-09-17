@@ -1,0 +1,1 @@
+[{"claim":"Reuse paths from A","path":"lanes/A/report.md","lines_or_note":"matrix","evidence_type":"prior_lane"},{"claim":"Export blocked","path":"lanes/C/result.json","lines_or_note":"PASS_WITH_CONDITIONS","evidence_type":"prior_lane"}]
