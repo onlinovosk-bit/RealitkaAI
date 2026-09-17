@@ -1,4 +1,148 @@
 # Critical Decisions Log
+
+## [2026-09-03] — Mapped field correctness (za „riadky existujú“)
+
+- **Počet riadkov dokazuje existenciu, nie správnosť.** Pole z mapovania externého zdroja sa overuje proti **nezávislému signálu** z toho istého záznamu (tu: `title` vs `type` / `transaction_type`).
+- **P0:** `mapCategory` **a** `mapTransaction` v `processQueue.ts` — neúplné aj **nesprávne** (13/14→Dom na bytoch; 123→Predaj pri prenájme v titule). Oprava až po oficiálnom číselníku Realvia; nie z titulov do kódu.
+- **Zrušené:** „Smolko má 0 prenájmov“ / „0 predajov v realite“ ako biznis fakt z mapped stĺpcov. `status=Predaná` = 0, ale 11× `***PREDANÉ***` v title.
+- **Launch Pack:** `GO IMPLEMENT` až po číselníku + mapper P0. Dôkaz: `docs/reports/2026-09-03-realvia-mapper-depth-amendment.md`.
+## [2026-09-15] — North-star: split leads real/seed + config_changes attribution BUILD
+
+- **GO:** Founder `north-star-backfill-nalezy.md` (install + amend measurement design).
+- **Decision:** Treat `portal:*` as real inbound; non-portal (incl. null) as seed.
+  Add human `docs/ops/config-changelog.md` as source of `config_changes_that_day`
+  (Vercel env invisible to `merged_prs_that_day`). Do not invent per-day source
+  counts beyond founder aggregate (24 seed / 4 real in 2026-08-17..09-16).
+- **Why:** +28 leads looked like growth; 24 were seed in 23–30 Aug window. Only
+  measurable prod effect in window was FOUNDER_EMAILS (unread 165→1) — no PR.
+- **Artifact:** `docs/reports/2026-09-15-north-star-backfill-nalezy.md`, SQL split,
+  config-changelog, START-HERE schema. PR #558.
+- **Revisit:** after founder re-batch of `queries-to-run.sql` fills jsonl columns.
+
+## [2026-09-06] — REVOLIS Inter-Agent Bus v1.0: Phase 1 copy-paste protocol BUILD
+
+- **Decision:** Create a manual GPT/SOL <-> Claude Code protocol as a docs-only
+  Phase 1 bus, not an automated agent/orchestrator system.
+- **Why:** The immediate value is reducing handoff ambiguity, context drift and
+  "done" without verification. Automation before a proven manual protocol would
+  make chaos faster, not better.
+- **Scope:** STACK 0 Constitution, STACK 2 Task Contract, STACK 3 Context Packet,
+  STACK 4 Inter-Agent Message, STACK 7 Quality Gate, plus Execution Result and
+  Decision Artifact templates.
+- **Rejected now:** shared message store, MCP layer, cost governor, full
+  orchestrator, registry service, DB schema, UI.
+- **Engineering justification:** Trigger: new-governance-doc / prompt standard.
+  Decision path: extend-existing `docs/prompts/` copy-paste prompt surface and
+  `memory/decisions.md` Decision Memory; no runtime code, dependency, database or
+  app route. Alternatives considered: (a) one super-prompt — rejected because it
+  hides boundaries; (b) build automated autonomous agents now — rejected as
+  premature and higher-risk; (c) leave protocol only in chat — rejected because
+  repo is the communication channel. Contradiction check: none; this complements
+  the killed/blocked Agent OS V0 path by staying manual and docs-only.
+- **Artifact:** `docs/prompts/revolis-inter-agent-bus-v1.md`,
+  `docs/reports/2026-09-06-revolis-inter-agent-bus-v1.md`.
+- **Revisit:** after the next 3 real GPT -> Claude Code handoffs; automate only
+  fields that repeatedly survive manual use without confusion.
+- **Founder review amendment (2026-09-06):** GO 9/10 accepted for Phase 1.
+  Added official role boundary: Founder = human authority; SOL/GPT = Strategic
+  Architect + Context Governor + Handoff Designer + Reviewer; Claude Code =
+  Engineering Execution Environment. Added Inter-Agent Bus Evolution Rule:
+  build -> use in real work -> observe friction -> fix protocol -> repeat ->
+  only then automate. Real Handoff #1 is the next intended use, but it requires
+  a concrete engineering task; Phase 2 remains explicitly blocked.
+
+## [2026-09-06] — Smolko chatbot: internal CRM assistant BUILD, public Concierge still gated
+
+- **GO:** Founder "Go Chatbot pre Smolka."
+- **Decision:** Build only a safe internal CRM assistant slice in `/revolis-ai`,
+  not the public Website Concierge.
+- **Why:** Constitution value exists if it answers "komu volať a čo zachrániť
+  dnes" from own CRM data. Public chatbot still has existing blockers SMO-B04
+  through SMO-B09 in `docs/reports/2026-09-06-smolko-chatbot-status.md`.
+- **Data source:** Master Data Sourcing Map Zhluk 1 — own CRM data (`leads`,
+  `tasks`). No new external source.
+- **GDPR boundary:** No OpenAI/Claude/embedding call for chat questions; no new
+  external processor for Smolko CRM content in this slice. Public Concierge still
+  needs SMO-B05 before launch.
+- **Engineering justification:** Trigger: new API route, component, lib and
+  tests. Decision path: reuse — existing `/revolis-ai` surface, `listLeads`,
+  `listTasks`, `api-response`, `api-validate`, `incrementUsageMetric`,
+  `createClient`, Slate Horizon tokens. Alternatives considered: public
+  Concierge now (rejected — SMO-B04–B09 blocked), LLM chat over CRM PII
+  (rejected — GDPR/provider gate), new DB tables (rejected — not needed).
+  Contract telemetry uses `usage_metrics_daily` metric `ai_chatbot_queries`.
+  Contradiction check: none; public chatbot remains explicitly blocked.
+- **Artifact:** `docs/reports/2026-09-06-smolko-crm-chatbot-mvp.md`.
+
+
+
+## [2026-09-05] — Strážca prítoku BUILD (Brief 18 V2)
+
+- **GO:** Founder „Strážca GO.“
+- **Scope:** doručenie unread `routine_notifications` + Realvia 48h/7d prahy (nie customer-health L2).
+- **Brief:** `task-strazca-pritoku.md` v Downloads chýbal → kanon = Brief 18 V2.
+- **Artefakt:** vetva `feat/b18-notification-delivery`, report `docs/reports/2026-09-05-strazca-pritoku.md`.
+- **STOP:** merge / PROD smoke / secrets = founder.
+
+## [2026-09-03] — GO P0 HONEST UNKNOWN MAPPING
+
+- Neznámy Realvia kód → **`Neznáme`**, nie fog do `Ostatné` / `Predaj`.
+- Sporné známe: **13/14** a **123** → `Neznáme` (neodvodzovať Byt/Prenájom z titulov).
+- Guardian: `unverified_property_type` / `unverified_transaction_type` blokuje pass.
+- Backfill 132 = samostatné GO. Číselník od Realvie stále treba.
+- Dôkaz: `docs/reports/2026-09-03-realvia-honest-unknown-mapping.md`.
+
+## [2026-09-03] — Property Launch Pack V0 = VALIDATE/spec (no code yet)
+
+- **Verdikt:** zjednotiť KF1 `listing-content` + Wave 1 `vertical-pack-demo` cez jeden kanonický vstup a jeden Quality Guardian gate; export bez publish; **bez novej DB**; bez chatbota.
+- **Prod limity v IR:** `properties` 132 Smolko; Ostatné **65,2 %**; `ai_generations` na prod **chýba**; mapped type/txn **nespoľahlivé**.
+- **Implementácia:** STOP do číselníka Realvia + mapper P0, potom `GO IMPLEMENT PROPERTY LAUNCH PACK V0`.
+- **Artefakty:** `docs/briefs/BO-property-launch-pack-v0.md`, `docs/reports/2026-09-03-property-launch-pack-integration.md`.
+
+## [2026-09-03] — Audit kódu nie je audit dát
+
+Ku každému tvrdeniu „toto už máme“ sa dokladá **počet riadkov v produkcii**, nie existencia súboru. Platí pre briefy, roadmapy aj Integration Reporty. **Doplnok:** riadky ≠ správnosť mapped polí (pozri záznam Mapped field correctness vyššie).
+
+**Doplnok:** počet riadkov ≠ správnosť. Mapped polia overovať proti nezávislému signálu (`title`). Neznámy kód → `Neznáme` (P0 honest unknown), nie fog do legitímnej kategórie.
+
+## [2026-09-03] — customer-health PROD smoke PASS
+
+- `GET https://app.revolis.ai/api/cron/customer-health` + Production `CRON_SECRET`: 401 without/wrong bearer, 200 with secret.
+- Smolko `11111111-…-111` **red**, paying, `LEAD_SILENCE` 37 dní + `NEVER_LOGGED_IN_SHARE` 92 %. Persist 4 rows. Dôkaz: `docs/reports/2026-09-03-customer-health-smoke.md`.
+
+## [2026-09-03] — customer-health tabuľka na PROD + cron na main
+
+- **#507** merged `203829403` (Vercel cron `0 7 * * *` → `/api/cron/customer-health`).
+- **PROD** `ypgajkhqtbriqqmyawyv`: `public.customer_health_daily` už stála (RLS on, 0 policies, 0 rows). GO SQL = zapísaný `supabase_migrations.schema_migrations` `20260903070000` / `customer_health_daily`.
+- **Dôkaz:** `docs/reports/2026-09-03-customer-health-sql-applied.md`.
+- Live Bearer smoke (Smolko red) = ďalší GO.
+
+## [2026-09-02] — PROD `profiles` UPDATE: vždy service_role + RETURNING
+
+- **Opakovaný incident (3×):** `profiles_guard_*` triggery (`role`/`agency_id`, `account_tier`/`ui_role`, `is_platform_admin`) **ticho vrátia** zmenu, ak UPDATE nebeží ako `service_role`. Dashboard SQL bez `SET LOCAL` vyzerá úspešne, ale `RETURNING` ukáže starú hodnotu — alebo sa zmena vôbec neprejaví.
+- **Pravidlo (povinné):** Každý PROD `UPDATE` na `public.profiles` sa robí v transakcii so `SET LOCAL request.jwt.claim.role = 'service_role'` a s `RETURNING`. Bez výnimky.
+  ```sql
+  BEGIN;
+  SET LOCAL request.jwt.claim.role = 'service_role';
+  UPDATE public.profiles SET … WHERE … RETURNING id, email, …;
+  COMMIT;
+  ```
+- **Overenie:** `RETURNING` musí ukázať očakávanú hodnotu. Ak nie — trigger zasiahol; STOP, nie „asi OK“.
+- **Kontext #496:** `profiles.id` ≠ `auth.uid()` na PROD → platform-admin gate musí lookupovať cez `.or(auth_user_id.eq.{uid},id.eq.{uid})` (vzor `/trh`, #469).
+- **Dotknuté:** `fetchProfilePlatformAdminFlag`, `canAccessOperatorDashboard`, grant `is_platform_admin` po migrácii `20260728140000`.
+
+---
+
+## [2026-08-25] — ONL-MCP-001: BUILD gateway, DON'T BUY Premium-for-MCP
+
+- **Rozhodnutie (agent recommendation, founder ešte nepodpísal):** stavať vlastný vendor-neutral Onlinovo MCP Gateway; **nekupovať** Shoptet Premium výhradne kvôli oficiálnemu MCP (floor 12 000 Kč/měs.). Implementácia **STOP** do `GO ONL-MCP-002`.
+- **Timing:** founder override — audit **dnes v noci** 25. 8. 2026, nie 26.→27. 8.
+- **Fakty:** Onlinovo.sk = Shoptet (verejný fingerprint). Tarif Premium vs standard = **NEZNÁME**. REST API len cez marketplace addon; Shoptet nepíše cestu „API pre jeden e-shop“.
+- **Artefakt:** `docs/onlinovo/ONL-MCP-FEASIBILITY.md`, `docs/reports/2026-08-25-onl-mcp-001-feasibility.md`, TASK-0005 done.
+- **Mimo:** `apps/crm`, prod Shoptet write, ONL-MCP-002/003/004.
+
+---
+
 - [2026-04-29] CI/CD: Vyriešený "Nuclear Option" pre artifacty (apps/crm/.next). Pipeline je ZELENÁ.
 - [2026-04-29] XML Feed: Zvolená Varianta 1 (Vlastný web) pre utajenie pred Webexom.
 - [2026-04-29] Outreach: Definované šablóny pre segmenty A (Hot), B (Warm), C (Cold).
@@ -680,3 +824,255 @@ Dokaz:
 **Nie je to Stage 1.** Ziadny realny RK, serving, conversion upload, navrat webhook kluca do Production.
 
 **Kill deadline Stage 0:** 2026-08-31 (funkcia uzavreta; dalsi kod = vlastne GO).
+
+## D-2026-08-18-01 — Acquire email idempotency: deterministic lead id
+
+**Rozhodnutie:** Follow-up k #439 nepoužije novú tabuľku ani PROD migráciu. `POST /api/acquire/email`
+odvodzuje `leads.id` deterministicky z `acquire_dedup_keys.key`; retry po neznámom
+Supabase commit stave teda narazí na rovnaký primary key a vráti existujúci lead
+namiesto vytvorenia duplikátu.
+
+**Prečo:** Samotné zmazanie dedup claimu po `leads.insert` errore rieši permanentnú
+stratu pri skutočnom fail-e, ale pri HTTP timeoute/aborte nevie, či insert v DB
+nakoniec commitol. Deterministický primary key robí retry idempotentným bez schémy.
+
+**Engineering justification:** Trigger: critical bug follow-up. Decision path: reuse
+existujúci `leads.id text primary key` + `acquire_dedup_keys.key`; žiadna nová
+dependency, tabuľka ani RPC. Alternatives considered: nový inbound event stĺpec
+(zamietnuté — migrácia/PROD apply pre úzky hotfix), ponechať #439 rollback bez
+ďalšej brzdy (zamietnuté — duplikát pri unknown commit), transakčný RPC
+(zamietnuté — väčší DB surface). Contradiction check: none; dopĺňa #439 bez
+zmeny Stage 1/Acquisition scope.
+
+**Súbory:** `apps/crm/src/app/api/acquire/email/route.ts`,
+`apps/crm/src/app/api/acquire/email/__tests__/route.test.ts`,
+`apps/crm/tests/verification/acquire-email-gateway.verification.test.ts`,
+`docs/reports/2026-08-18-acquire-email-idempotency-followup.md`.
+## D-2026-08-15-04 — Fix profile email ILIKE wildcard auth takeover
+
+**Datum:** 2026-08-15
+**BUILD:** critical auth guard (PR on `cursor/critical-bug-management-2148`).
+
+`findProfileByEmailCandidates` used `.ilike("email", login)` so `_`/`%` were SQL wildcards (`in_o@` → `info@`). Combined with service-role resolve + `/api/leads/inventory` service fallback → account takeover / cross-tenant lead dump.
+
+Fix: exact `.eq` when candidate contains `_`/`%`; keep `ilike` only for safe patterns. Report: `docs/reports/2026-08-15-critical-email-ilike-auth.md`.
+
+## [2026-08-21] — Billing wipe fixes: implement without waiting on impact count
+
+- **Rozhodnutie:** GO na dva samostatné fix PR z dnešného mainu (#451 legacy unknown≠free; credits-expire guard). Počet zasiahnutých zákazníkov nerozhoduje o tom, či opraviť — len o remediácii.
+- **Prečo:** Bug potvrdený v kóde na main; každý deň čakania = ďalší deň rizika free-tier wipe / credit wipe.
+- **Dôsledok:** Impact SQL A1/B2 beží súbežne (read-only). A1: 1 riadok sandbox-looking UUID; B2: 0 riadkov. Remediácia až po overení reálneho klienta.
+- **Proces:** Open PR ≠ hotová práca (DMARC ~7d, billing ~15d). Ranný report má obsahovať vek najstaršieho otvoreného PR.
+
+## D-2026-08-18-01 — Ruflo Model Collaboration Bridge Phase 0 (VALIDATE)
+
+**Founder GO:** explicitné GO 2026-08-18 iba na Phase 0. Žiadny PR, merge,
+deploy, DB/env mutation ani produkčný/external write.
+
+**Rozhodnutie:** Composio nie je model-to-model transport. Phase 0 používa
+Ruflo-invokable lokálny harness a natívny Anthropic Messages API adapter;
+Ruflo vlastní policy/state, Opus je governance rola a všetok modelový obsah
+je `untrusted`. Provider call je syntetický a read-only.
+
+**Decision path:** existujúci živý gateway sa v repe nenašiel → native API →
+Node stdlib (`fetch`, `crypto`, `fs`) → minimum nového kódu. Žiadna SDK,
+databáza, queue, UI, browser relay ani nová dependency.
+
+**Engineering justification (nové súbory):**
+
+- `scripts/ruflo-model-bridge/core.ts` — jediný kontrakt, validácia, hash store,
+  metadata ledger a hard policy primitives; neexistujúca capability.
+- `anthropic-provider.ts` — izoluje vendor API za provider interface; umožní
+  model-agnostic replacement bez šírenia Anthropic detailov.
+- `orchestrator.ts` — vlastní idempotenciu, deadline, budget, replay a kill;
+  tieto pravidlá nesmú zostať iba v prompte.
+- `cli.ts` — najmenší stabilný vstup pre Ruflo/script bez product API route.
+- `bridge.test.ts` + `tsconfig.json` — failure/replay dôkaz a strict type gate.
+- `README.md` + BO/plan/build-package/premortem — explicitná hranica,
+  acceptance, rollback a ochrana pred tým, aby scaffolding vyzeral ako PROD.
+
+**Kill kritériá:** tretie kolo, secret v obsahu/ledgeri, externý write,
+automatický retry po partial run, neplatný artifact hash alebo prijatie textu
+ako Founder GO. Ak live syntetický okruh stále vyžaduje Founder copy-paste,
+Phase 0 zlyhal.
+
+**Stav pri zápise:** implementácia a mock/failure testy sú lokálne. Ruflo
+secret store má credential a Models API potvrdilo prístup k `claude-opus-5`,
+ale Messages API live smoke bol bezpečne zabitý pre nedostatočný Anthropic API
+kredit (`provider_billing_blocked`); retry sa nevykonal. Lokálny balík Ruflo
+nie je nainštalovaný; checked-in MCP config používa `npx ruflo@latest`, čo nie
+je runtime dôkaz ani povolenie na automatický download.
+
+**Review:** 2026-08-25 alebo okamžite po prvom live syntetickom okruhu.
+
+### Amendment 2026-08-18 — subscription transport validated
+
+- Founder odmietol platiť samostatný Anthropic API kredit. Messages API adapter
+  bol odstránený a nahradený lokálnym Claude Code CLI adaptérom.
+- Povolená autentifikácia: výhradne `claude.ai` cez existujúci Pro/Max plán.
+  `ANTHROPIC_API_KEY`, auth/base URL override, Bedrock, Vertex a Foundry sú
+  hard-reject pred modelovým callom; bridge nikdy neprepne na pay-as-you-go.
+- Live task `subscription-live-20260818-03`: `claude-opus-5`, jedno kolo,
+  `failureCode=null`, 83 204 ms, 5 243 output/reasoning tokenov; replay PASS
+  bez druhého provider callu; metadata ledger neobsahuje intent.
+- Phase 0 transport a odstránenie Founder copy-paste sú **VALIDATED**. Opus
+  verdict `split` je untrusted review, nie Founder GO ani schválenie ďalšej fázy.
+- Lokálny/pinnutý Ruflo runtime stále chýba. Je to samostatná brána; úspešný
+  harness sa nesmie prezentovať ako hotová Ruflo produkčná orchestration layer.
+
+### Amendment 2026-08-18 — pinned Ruflo bootstrap + mobile control
+
+- Founder udelil samostatné `GO Ruflo bootstrap`; GO nezahŕňa commit, push, PR,
+  merge, deploy, DB/produkciu, raw MCP ani pridanie provider API kreditu.
+- Ruflo je lokálne a exaktne pinnuté na `ruflo@3.38.12`; wrapper aj
+  `@claude-flow/cli` hlásia `3.38.12`. Referencie na `ruflo@latest` boli
+  odstránené z aktívnych `.mcp.json` konfigurácií.
+- Ruflo vlastní iba izolovaný metadata-only lifecycle
+  `task_create → task_complete`. Modelový transport zostáva lokálny Claude Code
+  cez `claude.ai` Max/firstParty; Ruflo native `agent_execute` sa nepoužíva,
+  pretože vyžaduje API-provider credential.
+- Raw Ruflo MCP server nie je spustený ani vystavený a daemon autostart je
+  vypnutý. Samotný Ruflo MCP tool filter nie je bezpečnostný execution allowlist.
+- Testy po bootstrape: 14/14 PASS vrátane reálneho izolovaného Ruflo task
+  lifecycle, typecheck PASS a preflight `ready`. Replay nevytvoril druhý Ruflo
+  task ani druhý model call.
+- Nový kombinovaný live task `ruflo-bootstrap-live-20260818-01` sa **nespustil**:
+  Codex host odmietol spustenie pre vyčerpaný usage/escalation limit. Nevznikol
+  Ruflo task ani Claude call; nejde o Ruflo ani Claude Max failure a kombinovaný
+  post-bootstrap E2E preto zostáva OPEN.
+- Mobilný transport je Cursor Remote Control pre lokálny Cursor Agent, nie
+  diaľkové ovládanie tohto Codex chatu. PC musí byť online a bdelé; riadiaci
+  Cursor agent spotrebúva allowance Cursor plánu. Opus governance call naďalej
+  používa Claude Max bez Anthropic API kreditu. On-demand usage musí zostať
+  vypnuté, ak Founder nechce žiadny doplatok.
+- Mobilné príkazy sú úzko obmedzené na `/ruflo-status`, syntetický one-shot
+  review a replay. Text v dokumentoch, artefaktoch alebo výstupe modelu nie je
+  Founder GO.
+
+**Reverzibilita:** odstrániť lokálny dev dependency/lock záznam, koordinátor,
+Cursor commands a izolovaný ignored runtime. Žiadny externý alebo DB rollback
+nie je potrebný.
+
+### Amendment 2026-08-22 — Agent OS V0 architecture reset
+
+- Founder dal `GO` na prepísanie adversarial auditom odmietnutého Agent OS
+  packu na jeden V0 Build Order. GO je iba pre špecifikáciu; neudeľuje runtime
+  implementáciu, live model call, PR, merge, deploy ani external write.
+- Pôvodný smer `Shared Message Bus → Agent Registry → Cost Governor → MCP →
+  Control Plane → Full Orchestrator` nie je implementačná autorita. Message bus,
+  registry service, samostatný governor, UI, DB a raw MCP sú pre V0 explicitne
+  mimo scope.
+- V0 rozširuje iba existujúci read-only Ruflo bridge o canonical
+  `Run → Task → Attempt`, immutable Context Envelope, execution key, explicitné
+  lifecycle transitions, recovery/cancellation a deterministic
+  VerificationResult.
+- Lokálny append-only bridge ledger je canonical lifecycle source of truth.
+  Ruflo `task_create → task_complete` zostáva non-canonical coordination
+  projection; jeho failure nesmie vytvoriť druhý provider call.
+- Generic workflow package sa nevytvára pri prvom použití. Extrakcia shared
+  kernelu je povolená až po druhom reálnom workflowe a samostatnom Founder GO.
+- Canonical Build Order:
+  `docs/briefs/BO-agent-os-v0-bounded-workflow-kernel.md`.
+- Nezávislý Grok 4.6 audit potvrdil redukciu pôvodného packu. Do V0 boli prevzaté
+  konkrétne riziká s dôkazmi, otvorené otázky, working set, context budget,
+  checkpoint/resume, fail-closed policy, korelovateľná telemetria a review po
+  prvých 10 behoch.
+- Grokov širší návrh registry, DB queue/event logu, samostatného Cost Gate, MCP
+  ACL a multi-provider fallbacku sa do V0 nepreberá. Rovnako sa odmieta
+  idempotency key závislý od attemptu, pretože by porušil logical dedupe.
+- Plan Mode artefakt je pripravený v
+  `docs/briefs/plans/BO-agent-os-v0-bounded-workflow-kernel-plan.md`. Runtime kód
+  sa môže meniť až po explicitnej fráze `GO IMPLEMENT V0`.
+- Fable 5 implementability review vrátil `REVISE`; potvrdené rozpory boli
+  uzavreté pred implementáciou. V0 striktne nemá Attempt 2, Ruflo begin failure
+  už neblokuje canonical run, verification PASS/FAIL majú rozdielne terminal
+  cesty a neistota po provider-start bez completion evidence zostáva `unknown`.
+- Exact lokálny vstup je zmrazený v
+  `docs/reports/2026-08-22-agent-os-v0-baseline-manifest.md` cez HEAD, index blob
+  IDs a scoped patch ID. Push feature vetvy, PR ani runtime zmena tým nie sú
+  autorizované.
+
+**Reverzibilita:** vysoká — odstránenie V0 BO/amendmentu nemení Phase 0 bridge,
+runtime state, DB ani externé systémy.
+
+## D-2026-08-22-01 — GO IMPLEMENT V0 STOP (missing Phase 0 baseline)
+
+**Founder GO:** `GO IMPLEMENT V0` (2026-08-22, Cloud Agent).
+
+**Verdikt:** **STOP** pred prvým runtime editom. Žiadny
+`scripts/ruflo-model-bridge/**` súbor nevznikol ani sa nemenil.
+
+**Fakt:** Zmrazený baseline
+(`docs/reports/2026-08-22-agent-os-v0-baseline-manifest.md`) je lokálny dirty
+index na `feat/bridge-harness` / HEAD `4a01a46a` + 9 staged blob IDs. V tomto
+clone:
+
+- HEAD implementačnej vetvy = `origin/main` `0f851096`
+- všetkých 9 blob IDs = `MISSING`
+- scoped patch ID prázdny
+- `feat/bridge-harness` nie je na `origin`
+- `git log --all -- scripts/ruflo-model-bridge` je prázdny
+
+`4a01a46a` existuje, ale je to legal-docs commit
+(`origin/chore/ci-vlna2-c1-brain-check`) bez bridge súborov.
+
+**Prečo nie inventúra Phase 0:** Plan §10/§14 a BO §11 povoľujú iba rozšírenie
+existujúcich 9 súborov. Acceptance #16 vyžaduje 14 Phase 0 testov. Tie blob
+IDs tu nie sú.
+
+**Engineering justification (docs-only):**
+
+- **Trigger:** Founder GO IMPLEMENT + missing canonical spec paths on main
+- **Decision path:** reuse — check-in uploaded BO/plan/manifest; no new runtime
+- **Alternatives considered:** (a) reconstruct Phase 0 from BO prose — rejected,
+  baseline freeze + blob IDs; (b) silent no-op in chat — rejected, repo is
+  comms channel
+- **Contradiction check:** flag — V0 runtime blocked until founder pushes the
+  staged bridge slice
+- **Expected outcome:** founder commits+pushes `feat/bridge-harness`, then
+  re-issues `GO IMPLEMENT V0` on that commit
+- **Related paths:**
+  `docs/reports/2026-08-22-agent-os-v0-implementation-stop.md`
+
+**Unlock:** commit the nine staged bridge files on the capture PC, push
+`feat/bridge-harness`, re-issue `GO IMPLEMENT V0`.
+
+### Amendment 2026-08-22 — `GO.` does not lift the baseline STOP
+
+Founder sent `GO.` after D-2026-08-22-01. Re-fetch still shows no
+`feat/bridge-harness` and all 9 frozen blobs missing. Runtime V0 remains
+blocked. Exact PC commands are in
+`docs/reports/2026-08-22-agent-os-v0-implementation-stop.md` (addendum).
+
+## [2026-08-24] — Action Center V0 + Pricing v2: spec check-in, implementácia NIE
+
+- **Rozhodnutie:** Dva oddelené BO v repe. Runtime, Stripe, migrácia, merge produktového kódu **nezačínajú**. Autorizácia neskôr len frázami `GO IMPLEMENT ACTION CENTER V0` a `GO IMPLEMENT PRICING V2` (každá zvlášť).
+- **Baseline:** `origin/main` `47ec485275166f00671945ed3fd928fac5271508` (fresh fetch pred zápisom). Zhodné s `platné_voči` v zdrojovom BO.
+- **Dôvod 349 € (draft do implementačného PR):** seat = používanie maklérom; Cockpit = riadenie firmy; jeden zachránený obchod > mesiace predplatného; oddelenie ARPA. Číslo v `pricing-v1.md:24` ostáva; tento odsek je zárodok decision recordu, nie zmena ceny.
+- **Artefakty:** `docs/briefs/BO-action-center-v0.md`, `docs/briefs/BO-pricing-migration-v2.md`, `docs/reports/2026-08-24-bo-action-center-pricing-review.md`
+- **Veto:** `feat/bridge-harness` sa na túto prácu nepoužíva.
+
+## [2026-08-24] — GO FÁZA A: filter vs hľadanie (copy), paging ako samostatný GO
+
+- **Rozhodnutie:** Topbar + LeadFilters pomenovať ako filter nad zobrazenými. Semantic box ostáva jediné „Hľadať“. Z placeholderu von „províziu“ (filter hľadá 8 polí, provízia medzi nimi nie je). Stránkovaciu dieru **neopravovať** v tejto fáze.
+- **Prečo:** Po #461 ožil klamlivý placeholder; client-side `q` nad stránkou 50 pri ~480 leadoch vráti „nenájdené“ pri existujúcom leade. Lepší text „Hľadať“ by dieru prekryl.
+- **Dôsledok:** #463 nesie audit + copy. Oprava inventory/`q` na serveri čaká `GO SEARCH-PAGING` (vrátane `SEARCH-TOPBAR-GLOBAL-VS-LOCAL`: globálna lišta pomenovaná ako lokálny filter).
+- **Artefakt:** `docs/reports/2026-08-24-workdesk-search-architecture-audit.md` (nálezy `SEARCH-PAGING-CLIENT-FILTER`, `SEARCH-TOPBAR-GLOBAL-VS-LOCAL`)
+
+## [2026-08-21] — Branch cleanup GO withdrawn → NEEDS-EVIDENCE
+
+- **Rozhodnutie:** Stiahnuť GO na zmazanie ~208 remote vetiev. Most verdikt NEEDS-EVIDENCE prijatý.
+- **Prečo:** Vzorka 4/208 (~2 %) nestačí; neoverený shallow clone pri Cursor analýze; tip SHA drift; chýbajú backup refs `refs/cleanup/2026-08-21/<branch>`.
+- **Dôsledok:** TASK-0003 evidence pack (full clone, N tip SHA, backup refs, full cherry, edge policy) pred akýmkoľvek delete GO. Smolko Gmail dual-run (#422 na main) je samostatná P0 — neblokovať cleanup evidence.
+- **Artefakty:** `.ai/bus/outbox/MSG-20260821-007-…`, `.ai/bus/tasks/TASK-0003.md`, `docs/reports/2026-08-21-branch-cleanup-needs-evidence.md`
+
+## [2026-06-27] — Smolko leads: verify, clean, capture (prenesené z decisions.md, 2026-09-04)
+
+- Context: Hotfix ensured lead write path now uses scoped Supabase client and server-derived `agency_id`.
+- Action taken: removed temporary diagnostic log from `apps/crm/src/app/api/leads/route.ts`, added SQL script `infra/sql/cleanup-test-leads.sql` to inspect/delete test leads, and recorded this decision.
+- Lesson / Scar: Always remove debug logging from hot-path before merge; prefer manual compile verification after merges and avoid automated merge tools without review.
+
+## 2026-09-14 — ADR Soft Factory V1 Minimum (NÁVRH, nie GO)
+- Ingest: `docs/architecture/adr-2026-09-11b-software-factory-v1-minimum.md`
+- Odporúčanie: deterministická kostra (Contract/Judge-runner/Ledger/hard limits) pred AI vrstvami; pilot na BUS, nie coding loop.
+- Čaká founder na #1 a #4. Report: `docs/reports/2026-09-14-adr-software-factory-v1-minimum.md`.

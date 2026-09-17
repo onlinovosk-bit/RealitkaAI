@@ -204,6 +204,11 @@ export default function SemanticSearchBar({
           onChange={handleChange}
           onBlur={handleBlur}
           placeholder={placeholder ?? defaultPlaceholder}
+          aria-label={
+            type === "leads"
+              ? "Hľadať v databáze príležitostí"
+              : "Hľadať v databáze nehnuteľností"
+          }
           className="w-full rounded-xl py-2.5 pl-9 pr-4 text-sm outline-none transition-all text-slate-900"
           style={{
             background: WORKDESK_INPUT.background,
