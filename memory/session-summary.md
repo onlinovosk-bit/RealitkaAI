@@ -19,6 +19,17 @@
 Run targeted tests, push branch, open draft PR. Do not merge #439 without idempotency follow-up.
 ## Session 2026-09-15 (critical bug hunt — match status scoped)
 ### Dokončené
+- #510 / #511 merged (roadmap overlay + Launch Pack V0 docs)
+- Mapper-depth amendment: `mapTransaction` P0, zlé 13/14, PREDANÉ v title, governance riadky≠správnosť
+### Rozpracované / Pending
+- Founder: vyžiadať Realvia číselník (category + transaction)
+- Mapper P0 + backfill — samostatné GO (nie teraz)
+- Launch Pack implement — až po mapper P0 + `GO IMPLEMENT…`
+### Kľúčové súbory zmenené
+- `docs/reports/2026-09-03-realvia-mapper-depth-amendment.md`
+- `docs/reports/2026-09-03-property-launch-pack-integration.md` (doplnené)
+### Ďalší krok
+Oficiálny číselník od Realvie; žiadny GO IMPLEMENT Launch Pack.
 - HIGH: match status PATCH cookie-less write drop → fix + tests + PR
 - Report: `docs/reports/2026-09-15-match-status-scoped-client.md`
 ### Rozpracované / Pending
