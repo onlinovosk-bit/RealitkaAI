@@ -113,6 +113,11 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard/reputation/integrity", request.url), 308);
   }
 
+  // Canonical Realvia integrations URL (legacy admin path)
+  if (pathname === "/admin/integrations/realvia" || pathname.startsWith("/admin/integrations/realvia/")) {
+    return NextResponse.redirect(new URL("/integrations/realvia", request.url), 308);
+  }
+
   if (isPublic(pathname)) return NextResponse.next();
   if (isRealviaImportPath(pathname)) return NextResponse.next();
   if (isUcExportImportPath(pathname)) return NextResponse.next();
@@ -162,8 +167,8 @@ export async function proxy(request: NextRequest) {
       console.error(PROXY_AUTH_TIMEOUT_MARKER, pathname);
       // Pages: fail-open so SSR/layout can re-check auth (avoids 300s hang).
       // APIs: fail-closed — several handlers rely on this gate and use
-      // service-role clients without a second getUser() (e.g. import/test-xml
-      // when IMPORT_TEST_API_KEY is unset, neighborhood-watch).
+      // service-role clients without a second getUser() (e.g. neighborhood-watch;
+      // import/test-xml additionally requires IMPORT_TEST_API_KEY).
       if (pathname.startsWith("/api/")) {
         return NextResponse.json(
           { ok: false, error: "Unauthorized" },

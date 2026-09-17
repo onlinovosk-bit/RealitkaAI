@@ -39,6 +39,7 @@ describe("[verification] Onboarding MVP auth gate", () => {
     ).toBe(false);
     const cron = read("src/app/api/cron/onboarding-dispatch/route.ts");
     expect(cron).toContain("runOnboardingDispatch");
-    expect(cron).toContain("CRON_SECRET");
+    // Fail-closed helper (refuses when CRON_SECRET unset — no Bearer undefined).
+    expect(cron).toContain("isAuthorizedCronBearer");
   });
 });

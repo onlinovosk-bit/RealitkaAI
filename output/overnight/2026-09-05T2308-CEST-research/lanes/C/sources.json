@@ -1,0 +1,6 @@
+[
+  {"claim":"UC API needed for nehnutelnosti/reality/topreality export from backOFFICE narrative","title":"Exporty backOFFICE","publisher":"backoffice.sk","url":"https://www.backoffice.sk/realitny-software/exporty/","published_if_known":null,"accessed_at":"2026-09-05","evidence_type":"vendor_secondary","limit":"not UC primary"},
+  {"claim":"Import via approved real-estate software; contact sales","title":"Podmienky inzercie","publisher":"Nehnutelnosti/UC via DocPlayer","url":"https://docplayer.cz/amp/72387745-Podmienky-inzercie-na-nehnutelnosti-sk.html","published_if_known":null,"accessed_at":"2026-09-05","evidence_type":"terms_secondary","limit":"PDF mirror age unknown"},
+  {"claim":"UC realsoft intro docs 404","title":"UC import docs intro","publisher":"unitedclassifieds.sk","url":"https://plt.unitedclassifieds.sk/import/docs/v1/realsoft/docs/intro","published_if_known":null,"accessed_at":"2026-09-05","evidence_type":"primary_fetch","limit":"404 — need partner access"},
+  {"claim":"Realvia code present in Revolis","title":"repo realvia","publisher":"repo","url":"apps/crm/src/lib/realvia","published_if_known":null,"accessed_at":"2026-09-05","evidence_type":"repo","limit":"import path not UC export"}
+]

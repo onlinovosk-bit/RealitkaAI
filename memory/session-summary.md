@@ -1,129 +1,220 @@
-## Session 2026-08-31
+## Session 2026-09-15 (critical bug hunt — match status scoped)
 ### Dokončené
-- Critical bug hunt: Enterprise onboard self-tier (#494)
-- Report: `docs/reports/2026-08-31-enterprise-onboard-self-tier.md`
+- HIGH: match status PATCH cookie-less write drop → fix + tests + PR
+- Report: `docs/reports/2026-09-15-match-status-scoped-client.md`
 ### Rozpracované / Pending
-- Merge #494 + apply migration `20260831233000_profiles_guard_account_tier_ui_role.sql`
-- 13 earlier critical fix PRs still open (#369–#493)
-### Kľúčové súbory zmenené
-- `apps/crm/src/app/api/enterprise/onboard-start/route.ts`: no account_tier write; paid-tier gate
-- `apps/crm/supabase/migrations/20260831233000_profiles_guard_account_tier_ui_role.sql`: trigger
-- `apps/crm/src/app/_actions/l99-licensing.ts`: upgradeToL99 disabled
+- Founder merge fix/match-status-scoped-client
+- Noted (not fixed): team/users INSERT RLS hole; /management SSR unscoped lists
+- Tracked open bug PRs still awaiting review (#369 #370 #443 #444 #447 #462 #486 #490 #495 #537 #545 #548)
+### Kľúčové súbory
+- `apps/crm/src/lib/matching-store.ts`: scoped arg on updateLeadPropertyMatchStatus
+- `apps/crm/src/app/api/leads/[id]/matches/[matchId]/route.ts`: thread client + fail-closed agency
+- `apps/crm/src/lib/leads-store.ts`: addLeadActivity scoped forward
 ### Ďalší krok
-Founder review/merge #494 (and backlog of open critical PRs).
+Founder: review/merge match-status PR; next candidate team/users INSERT path (GO).
 
-## Session 2026-08-29 (critical-bug automation)
+﻿## Session 2026-09-15 (north-star W2 measurement amendments)
 ### Dokončené
-- CRITICAL fix: Smolko owner email allowlist — PR #492
-- Report: `docs/reports/2026-08-29-smolko-owner-email-allowlist.md`
+- Founder GO `north-star-backfill-nalezy.md` → `docs/reports/2026-09-15-north-star-backfill-nalezy.md`
+- SQL: `leads_new_real` / `leads_new_seed` v `scripts/sql/north-star-day.sql` + founder_batch `queries-to-run.sql`
+- `docs/ops/config-changelog.md` (FOUNDER_EMAILS ~2026-09-10); schéma + atribúcia v START-HERE
+- Metrics jsonl: `config_changes_that_day` na 2026-09-10; `lead_split=pending_founder_batch_re_run` (bez vymyslených per-day real/seed)
+- Push na otvorené PR #558
 ### Rozpracované / Pending
-- Merge #492; prior open critical PRs #369–#491 still awaiting review
-### Kľúčové súbory zmenené
-- `apps/crm/src/lib/profiles/resolve-profile-for-auth.ts`: exact owner emails + no best-owner fallback
+- Founder re-batch `queries-to-run.sql` → nový `results.json` → jsonl s `lead.new_real` / `new_seed`
+- Founder merge #558 (NEMERGE agentom)
+### Kľúčové súbory
+- `docs/reports/2026-09-15-north-star-backfill-nalezy.md`
+- `docs/ops/config-changelog.md`
+- `scripts/sql/north-star-day.sql`
+- `.ai/bus/metrics/north-star-2026-0{8,9}.jsonl`
 ### Ďalší krok
-Review/merge #492; then oldest open critical PRs (#369/#370).
+Founder: spustiť aktualizovaný founder_batch SQL (SELECT) a uložiť results; potom GO na rebuild jsonl.
+## Session 2026-09-15 (north-star W2 COMPLETE)
+### Dokončené
+- LOOP+W2: 31 dní metrics (2026-08-17..09-16), founder_batch results
+- Judge ACCEPT TASK-NS-001 `RUN-20260915185203-TASK-NS-001`
+- PR #558 docs/metrics north-star backfill (NEMERGE bez founder GO)
+- QUALIFICATION/INTENT/OUTREACH/VIEWINGS/CLOSED_WON = nula každý deň (dôkaz v report)
+### Rozpracované / Pending
+- Founder merge #558
+- Typecheck paydown loop stále NOT_LAUNCHED (oddelený balík)
+### Kľúčové súbory
+- `.ai/bus/metrics/north-star-2026-0{8,9}.jsonl`
+- `docs/reports/2026-09-15-north-star-backfill.md`
+### Ďalší krok
+Founder: merge #558; potom rozhodnúť o typecheck paydown launch.
+## Session 2026-09-15 (typecheck paydown package PREPARED)
+### Dokončené
+- Balík `docs/overnight/2026-09-16-typecheck-paydown-loop/` nainštalovaný; PR #556
+- Hard gate: #554+#555 merged on main; launch-record NOT_LAUNCHED
+### Rozpracované / Pending
+- Founder podpis launch-record → LAUNCH_AUTHORIZED → W0
+### Ďalší krok
+Founder: vyplň start_at/deadline_at/runner + podpis; potom GO na W0.
+## Session 2026-09-14 (CI billing local evidence)
+### DokonÄŤenĂ©
+- LokĂˇlny nĂˇhradnĂ˝ dĂ´kaz za zablokovanĂ© GitHub Actions (billing lock) pre #548/#549/#550
+- Report: `docs/reports/2026-09-14-ci-billing-local-evidence.md`
+- Code Contract + Memory Engine PASS lokĂˇlne; Lint/test/build ÄŤiastoÄŤne (RLS/build neoverenĂ© v sandboxe)
+### RozpracovanĂ© / Pending
+- Org owner: odomknĂşĹĄ GitHub billing, potom re-run CI
+- Merge #548/#549/#550 aĹľ po zelenom CI alebo explicitnom GO s tĂ˝mto dĂ´kazom
+### KÄľĂşÄŤovĂ© sĂşbory zmenenĂ©
+- `docs/reports/2026-09-14-ci-billing-local-evidence.md`: nĂˇhradnĂ˝ dĂ´kaz
+### ÄŽalĹˇĂ­ krok
+Founder: fix GitHub billing â†’ re-run CI â†’ merge HIGH fix PR.
 
-## Session 2026-08-28
-### Dokončené
-- CRITICAL: follow-up preview fail-open → cross-tenant lead PII — PR #491
-- Report: `docs/reports/2026-08-28-followup-preview-tenant-gate.md`
-- Fix: `resolveFollowupAgencyId` null + GET `/api/followup` 403
-### Rozpracované / Pending
-- Merge #491 after CI
-- Remaining open critical PRs: #369 #370 #443 #444 #447 #459 #462 #481 #486 #490
-### Kľúčové súbory zmenené
-- `apps/crm/src/lib/agents/followup/preview.ts`: no DEMO fallback
-- `apps/crm/src/app/api/followup/route.ts`: 403 missing agency_id
-### Ďalší krok
-Founder merge #491; next hunt pass after merge.
+---
 
-## Session 2026-08-25
-### Dokončené
-- Founder override: ONL-MCP-001 **dnes v noci** (nie 26.→27. 8.)
-- Feasibility + verdikt BUILD gateway / DON'T BUY Premium-for-MCP
-- Artefakt: `docs/onlinovo/ONL-MCP-FEASIBILITY.md`
-- Report: `docs/reports/2026-08-25-onl-mcp-001-feasibility.md`
-- Bus: TASK-0005 done, MSG-20260825-010 result
-### Rozpracované / Pending
-- Founder tarif Premium vs standard
-- `GO ONL-MCP-002` neudelené — **STOP** na kód
-- Revolis nočná vlna PRs (iné vetvy) — mimo tejto práce
-### Kľúčové súbory zmenené
-- `docs/onlinovo/ONL-MCP-FEASIBILITY.md`: 20 sekcií, 4 cesty, TCO, verdikt
-- `.ai/bus/tasks/TASK-0005.md`: done + STOP
-### Ďalší krok
-Founder potvrdí Shoptet tarif; bez `GO ONL-MCP-002` žiadny gateway kód.
-- ONL-MCP-001 feasibility BUILD/DON'T BUY (#476)
-- ONL-MCP-002 implementačný návrh (#477)
-- ONL-MCP-003 MVP `packages/mcp-onlinovo` — 15 handler tests
-- ONL-MCP-004 Ruflo/Cursor `onlinovo` stdio + client smoke PASS (17 tests)
-### Rozpracované / Pending
-- Founder merge; live Shoptet mapping blocked
-- Tarif Premium vs standard stále NEZNÁME
-### Kľúčové súbory zmenené
-- `packages/mcp-onlinovo/**`: stdio MCP fixture/unconnected/write-deny
-- `.mcp.json` / `.cursor/mcp.json`: server `onlinovo`
-### Ďalší krok
-Founder merge PRs; `GO ONL-MCP-SHOP-LIVE` až po tarife + tokene mimo git.
+## Session 2026-09-05 (Ruflo overnight â€” branch docs/ruflo-overnight-prepared)
+### DokonÄŤenĂ©
+- Overnight package + research run on this branch: PREPARED â†’ run 20260905T2304 â†’ **VALIDATE_FIRST / NO_GO_IMPLEMENTATION**
+- Package: docs/overnight/2026-09-05-ruflo-swarm/
+- Reports under docs/reports/ and output/overnight/ artifacts on this branch
+### RozpracovanĂ© / Pending
+- Founder review of overnight handoff / PR #536 after rebase onto current main
+- No implementation from overnight recommendations without separate GO
+### KÄľĂşÄŤovĂ© sĂşbory zmenenĂ©
+- docs/overnight/2026-09-05-ruflo-swarm/*
+- overnight reports / amendments on this docs branch
+### ÄŽalĹˇĂ­ krok
+Founder review PR #536; do not treat research as implementation authorization.
 
-## Session 2026-08-24
-### Dokončené
-- #461 merged `47ec4852`
-- GO FÁZA A + audit merged #463 (`1cf82d32`)
-- Spec check-in BO-A Action Center V0 + BO-B Pricing v2 (docs only)
-- Review: `docs/reports/2026-08-24-bo-action-center-pricing-review.md`
-### Rozpracované / Pending
-- Merge spec PR BO-A/BO-B — **žiadny runtime**
-- `GO SEARCH-PAGING` = paging diera + `SEARCH-TOPBAR-GLOBAL-VS-LOCAL`
-- `GO IMPLEMENT PRICING V2` / `GO IMPLEMENT ACTION CENTER V0` — **neudelené**
-### Kľúčové súbory zmenené
-- `docs/briefs/BO-action-center-v0.md`, `docs/briefs/BO-pricing-migration-v2.md`
-- `docs/reports/2026-08-24-workdesk-search-architecture-audit.md` (už na main cez #463)
-### Ďalší krok
-Founder merge spec PR; paging len po `GO SEARCH-PAGING`; AC/pricing runtime až po vlastných GO frázach.
+---
 
-## Session 2026-08-23
-### Dokončené
-- Topbar search: `readOnly` → form + Hľadať, `/leads?q=` + filter sync
-- Tests 7/7: workdesk-topbar-search verification + WorkdeskTopbar.search RTL
-### Rozpracované / Pending
-- Preview smoke of search behind login (TEST_USER)
-- Agent OS V0 stále blocked na capture PC Phase 0
-### Kľúčové súbory zmenené
-- `apps/crm/src/components/layout/WorkdeskTopbar.tsx`: search form + Hľadať
-- `apps/crm/src/components/leads/lead-filters.tsx`: hydrate/sync `?q=`
-### Ďalší krok
-Founder merge `fix/topbar-search` po CI; V0 stále čaká na push `feat/bridge-harness`.
+## Session 2026-09-06 (Inter-Agent Bus v1.0)
+### DokonÄŤenĂ©
+- REVOLIS Inter-Agent Bus v1.0 vytvorenĂ˝ ako Phase 1 copy-paste protocol pre GPT/SOL â†” Claude Code.
+- Scope zĂˇmerne docs-only: STACK 0/2/3/4/7 + Execution Result + Decision Artifact; bez message store/MCP/orchestratora.
+- Founder review GO 9/10 zapracovanĂ˝: role boundary Founder â†’ SOL/GPT â†’ Bus â†’ Claude Code â†’ Result/Evidence â†’ SOL â†’ Founder, Evolution Rule a friction log.
+- Report: `docs/reports/2026-09-06-revolis-inter-agent-bus-v1.md`
+### RozpracovanĂ© / Pending
+- Real Handoff #1 ÄŤakĂˇ na konkrĂ©tnu engineering Ăşlohu; Phase 2 automatizĂˇcia ostĂˇva blokovanĂˇ pred 3 reĂˇlnymi pouĹľitiami.
+### KÄľĂşÄŤovĂ© sĂşbory zmenenĂ©
+- `docs/prompts/revolis-inter-agent-bus-v1.md`: copy-paste-ready master prompt pre SOL/GPT a Claude Code + ĹˇablĂłny.
+- `docs/reports/2026-09-06-revolis-inter-agent-bus-v1.md`: rozhodnutie, scope, overenie, rizikĂˇ.
+- `memory/decisions.md`: decision memory + Engineering justification pre novĂ˝ governance prompt.
+### ÄŽalĹˇĂ­ krok
+PouĹľiĹĄ `docs/prompts/revolis-inter-agent-bus-v1.md` ako povinnĂ˝ formĂˇt pri najbliĹľĹˇom konkrĂ©tnom engineering handoffe a vyplniĹĄ friction log; neautomatizovaĹĄ Phase 2 pred 3 reĂˇlnymi pouĹľitiami.
 
-### Dokončené
-- Founder `GO IMPLEMENT V0` prijaté; pred prvým runtime editom **STOP** — Phase 0 baseline v tomto clone chýba
-- Spec check-in: BO + plan + baseline manifest + STOP report
-- Decision Memory: `D-2026-08-18-01` + V0 amendment + `D-2026-08-22-01` STOP
-### Rozpracované / Pending
-- Founder musí commit+push `feat/bridge-harness` (9 staged blob IDs z manifestu)
-- Až potom nové `GO IMPLEMENT V0` na tom commite
-- Runtime `scripts/ruflo-model-bridge/**` sa v tomto clone **nemenil** (neexistuje)
-### Kľúčové súbory zmenené
-- `docs/briefs/BO-agent-os-v0-bounded-workflow-kernel.md`: canonical V0 BO
-- `docs/briefs/plans/BO-agent-os-v0-bounded-workflow-kernel-plan.md`: implementation plan
-- `docs/reports/2026-08-22-agent-os-v0-implementation-stop.md`: contradiction report
-- `memory/decisions.md`: Phase 0 + V0 amendment + STOP
-### Ďalší krok
-Capture PC: paste PowerShell unlock from STOP report addendum; then `GO IMPLEMENT V0`.
+---
 
-## Session 2026-08-21
-### Dokončené
-- GO implementácia billing fixov: dva fresh PR z main (žiadny rebase #371/#374)
-- **#451** legacy unknown price → no-op + seat map (`cursor/fix-billing-legacy-unknown-tier-db1f`)
-- **Credits expire guard** PR (`cursor/fix-credits-expire-guard-db1f`) — error≠skipped, ok:false, refuse wipe current grant
-- Impact A1/B2 zapísané: `docs/reports/2026-08-21-billing-impact-a1-b2.md` + bus MSG-006
-### Rozpracované / Pending
-- Founder merge #451 + credits-expire PR (nemerge agent)
-- Close stale #371 / #374 po merge
-- A1 agency `11111111-…` — overiť sandbox vs real, potom remediácia tierov
-- Smolko Gmail OAuth dual-run; bridge-harness push z PC
-### Kľúčové súbory zmenené
-- `apps/crm/src/lib/billing-store.ts`: unknown + seat map + pricing checkout skip
-- `apps/crm/src/lib/credits/grant-engine.ts` + `monthly-cycle.ts`: expire error + wipe guard
-### Ďalší krok
-Founder merge #451 a credits-expire PR; potom A1 real-vs-sandbox check pred customer remediáciou.
+## Session 2026-09-06 (PR #473 CI)
+### DokonÄŤenĂ©
+- #471 MERGED. RovnakĂ˝ 42501 fail na #473 (docs operator audit, stale main)
+- Merge `origin/main` (`a8929c9a`) do `cursor/operator-dashboard-audit-db1f`
+- Report: `docs/reports/2026-09-06-pr473-ci-fix.md`
+### RozpracovanĂ© / Pending
+- Founder merge #473 â€” agent nemerguje
+### KÄľĂşÄŤovĂ© sĂşbory zmenenĂ©
+- `docs/reports/2026-09-06-pr473-ci-fix.md`: 42501 + merge main + CI PASS
+### ÄŽalĹˇĂ­ krok
+Founder merge #473.
+
+---
+
+## Session 2026-09-06 (PR #471 CI)
+### DokonÄŤenĂ©
+- CI `Lint, test, build` na #471: FAIL v `valuation-tenants-rls.test.ts` (42501 vs null) â€” docs PR, oprava uĹľ na main `#489`/`a4f58ff1`
+- Merge `origin/main` do vetvy; neskĂ´r **MERGED** ako #471
+- Report: `docs/reports/2026-09-06-pr471-ci-fix.md`
+### RozpracovanĂ© / Pending
+- niÄŤ
+### KÄľĂşÄŤovĂ© sĂşbory zmenenĂ©
+- `docs/reports/2026-09-06-pr471-ci-fix.md`: koreĹ 42501 + merge main + CI PASS
+### ÄŽalĹˇĂ­ krok
+#473 CI.
+
+---
+
+## Session 2026-09-06
+### DokonÄŤenĂ©
+- InternĂ˝ Smolko CRM chatbot MVP pridanĂ˝ do `/revolis-ai`: tenant-scoped otĂˇzky
+  "komu volaĹĄ", "ÄŤo zachrĂˇniĹĄ", "ÄŤo vybaviĹĄ" bez externĂ©ho LLM.
+- API: `POST /api/ai/smolko-chat` pouĹľĂ­va existujĂşce `listLeads` + `listTasks`,
+  `validateBody` a telemetry `ai_chatbot_queries`.
+- CI fix: API contract ratchet NOVĂ‰=0; `/api/ai/smolko-chat` doplnenĂ˝ do
+  `REVOLIS_AI_FEATURE_REGISTRY`.
+- OverenĂ©: targeted chatbot/registry tests 18/18, chatbot unit + verification
+  6/6, `npm run lint`, `npm run build`.
+- Report: `docs/reports/2026-09-06-smolko-crm-chatbot-mvp.md`
+- ZodpovedanĂ˝ stav poĹľiadavky p. Smolka na chatbota: verejnĂ˝ chatbot / Website Concierge je zachytenĂ˝, ale blokovanĂ˝ cez SMO-B04 aĹľ SMO-B09.
+- OverenĂ© `npx vitest run tests/verification/property-launch-pack-v0.verification.test.ts` â€” 5/5 PASS pre najbliĹľĹˇĂ­ Smolko Launch Pack povrch.
+- Report: `docs/reports/2026-09-06-smolko-chatbot-status.md`
+### RozpracovanĂ© / Pending
+- VerejnĂ˝ Website Concierge stĂˇle nie je povolenĂ˝: SMO-B04â€“B09 ostĂˇvajĂş brĂˇny.
+- `SMO-B04`: PROD cross-tenant negative test + active/freshness contract pred Concierge preview.
+- `SMO-B05`: AI disclosure, privacy/retention text, schvĂˇlenĂ© FAQ a human fallback.
+- `SMO-B06`: routing matrix + 10 E2E callbackov.
+- `SMO-B07`â€“`SMO-B09`: booking storage drift RCA, Google Calendar OAuth/free-busy, idempotency/notifikĂˇcie.
+### KÄľĂşÄŤovĂ© sĂşbory zmenenĂ©
+- `apps/crm/src/lib/smolko-chatbot.ts`: deterministic CRM assistant engine.
+- `apps/crm/src/app/api/ai/smolko-chat/route.ts`: authenticated tenant-scoped chat endpoint.
+- `apps/crm/src/components/revolis/SmolkoChatbotPanel.tsx`: dashboard chat UI.
+- `apps/crm/src/app/(dashboard)/revolis-ai/RevolisAIClient.tsx`: embeds chat panel.
+- `apps/crm/src/lib/usage-metrics.ts`: adds `ai_chatbot_queries` usage metric type.
+- `apps/crm/src/lib/__tests__/revolis-ai-features.test.ts`: registers `/api/ai/smolko-chat`.
+- `apps/crm/src/lib/__tests__/smolko-chatbot.test.ts`: unit coverage.
+- `apps/crm/tests/verification/smolko-chatbot.verification.test.ts`: live spec guard.
+- `docs/reports/2026-09-06-smolko-crm-chatbot-mvp.md`: implementation report.
+- `docs/reports/2026-09-06-smolko-chatbot-status.md`: stav chatbot poĹľiadavky a blokĂˇtorov.
+- `memory/session-summary.md`: aktuĂˇlny handoff.
+### ÄŽalĹˇĂ­ krok
+Founder/Product GO na `SMO-B04` PROD negative test pre verejnĂ˝ Website Concierge;
+bez DB/OAuth/booking mutĂˇciĂ­.
+
+---
+
+## Session 2026-09-05 (PR #535 fix-merge-conflicts â€” CI CLEAN)
+### DokonÄŤenĂ©
+- origin/main merge (clean; 0 textual conflicts)
+- onboarding/session api-validate + usage-metrics imports â†’ ratchet NOVĂ‰=0
+- CI green + mergeStateStatus CLEAN on tip `f74ada73` (agent did not merge)
+- Report: `docs/reports/2026-09-05-pr535-fix-merge-conflicts.md`
+### RozpracovanĂ© / Pending
+- Founder merge #535
+- PROD smoke notification-digest
+### KÄľĂşÄŤovĂ© sĂşbory zmenenĂ©
+- `apps/crm/src/app/api/onboarding/session/route.ts`: contract imports only
+- `docs/reports/2026-09-05-pr535-fix-merge-conflicts.md`
+### ÄŽalĹˇĂ­ krok
+Founder GO: merge #535; then PROD digest smoke.
+
+---
+
+## Session 2026-09-13 (critical-bug automation)
+### DokonÄŤenĂ©
+- Found + fixed silent demo CRM task drop (`createDemoBookingTask` / sales-funnel demo-request)
+- PR: https://github.com/onlinovosk-bit/RealitkaAI/pull/546
+- Report: `docs/reports/2026-09-13-demo-booking-task-service-role.md`
+### RozpracovanĂ© / Pending
+- Prior open critical fixes still awaiting review: #369 #370 #443 #444 #447 #462 #486 #490 #495 #537 #545 #546
+### KÄľĂşÄŤovĂ© sĂşbory zmenenĂ©
+- `apps/crm/src/lib/demo-booking-store.ts`: service-role for orphan task insert
+- `apps/crm/src/app/api/sales-funnel/demo-request/route.ts`: pass service + fail if task fails
+- `apps/crm/src/lib/sales-funnel-store.ts`: throw on saas_leads insert error
+### ÄŽalĹˇĂ­ krok
+Founder review/merge #546 (and backlog of open critical fix PRs).
+
+
+
+## Session 2026-09-17 (operating mode B — prvy task, A3 onboarding 401)
+### Dokoncene
+- Setup rezimu B: push overeny (dry-run OK), patch uz bol na `origin/audit/2026-09-16` (`56e2359`, `git am --3way` -> "already applied"), vetva `docs/operating-mode-b` pushnuta
+- PR audit/2026-09-16 -> main uz existoval: #565 — founder ho mergol 2026-09-17 (main -> 1291ae5); protokol 00-06 a DEC-* su teraz na main
+- Prvy task v rezime B: handoff (01) + 2 nezavisli reviewri v izolovanych worktrees z origin/main, kluc dokazy re-overene executorom
+- FINDING + PROPOSAL k A3 -> PR #566 (draft)
+- Founder GO na V1 -> DEC-20260917-003; implementovane: novy proxy-level test drzi 401 ako zamer (mutacne overeny), opravene nepravdive tvrdenia v reporte 2026-09-04 a v rollback runbooku, A3 vyhodnotene fail + deviation accepted_by_founder (desc/verdict nedotknute)
+### Rozpracovane / Pending
+- Founder: read-only SELECT stavu RLS `onboarding_sessions` v prode (runbook :38-41) — A1/A2 zostavaju unknown
+- Founder: Supabase Auth "Confirm email" v prod projekte — rozhoduje, ci 401 zasiahne aj registracnu cestu
+### Kluc subory zmenene
+- `.ai/bus/handoffs/HANDOFF-20260917-001-a3-onboarding-401.md`: novy handoff packet
+- `docs/reports/2026-09-17-a3-onboarding-session-401-finding.md`: FINDING F1-F8 + PROPOSAL V1-V5 + vysledok V1
+- `.ai/bus/decisions/DEC-20260917-003-a3-onboarding-401-intended.md`: founderov GO na V1
+- `apps/crm/src/proxy-onboarding-session-gate.test.ts`: novy test, 401 = zamer
+- `docs/reports/2026-09-04-rls-onboarding-session-api.md`, `docs/runbooks/rollback-onboarding-sessions-anon.md`: korekcie
+- `.ai/bus/tasks/TASK-RLS-ONBOARDING-SESSION.md`: A3 vyhodnotene
+### Dalsi krok
+Founder: merge #566, potom SAMOSTATNE rozhodnutie o migracii 20260904220000 (stale PREPARED ONLY) — najprv read-only SELECT stavu RLS v prode podla runbooku :38-41.
