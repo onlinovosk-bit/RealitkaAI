@@ -1,3 +1,16 @@
+## Session 2026-08-26
+### Dokončené
+- Critical bug hunt: HubSpot sync + AI call analyze admin IDOR (fail-open when `agency_id` null)
+- Fix on `cursor/fix-hubspot-analyze-tenant-gate` + report `docs/reports/2026-08-26-hubspot-analyze-tenant-gate.md`
+- Vitest 11/11: hubspot + analyze route tests + verification gate
+### Rozpracované / Pending
+- Open tracked critical PRs still awaiting review (#369 #370 #443 #444 #447 #459 #462 #481)
+- Next: cron `Bearer undefined` fail-closed (`GO FIX-CRON-SECRET-FAIL-CLOSED`)
+### Kľúčové súbory zmenené
+- `apps/crm/src/app/api/integrations/hubspot/sync/route.ts`: fail-closed agency match
+- `apps/crm/src/app/api/ai/call/analyze/route.ts`: fail-closed before admin persist
+### Ďalší krok
+Founder review/merge tenant-gate PR; then `GO FIX-CRON-SECRET-FAIL-CLOSED` (separate PR).
 ## Session 2026-09-14 (ADR Soft Factory V1 Minimum)
 ### Dokončené
 - Ingest founder ADR z Downloads → `docs/architecture/adr-2026-09-11b-software-factory-v1-minimum.md`

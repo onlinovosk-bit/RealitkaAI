@@ -43,7 +43,9 @@ export async function POST(request: Request) {
     )
   }
 
-  if (callerProfile?.agency_id && lead.agency_id !== callerProfile.agency_id) {
+  // Fail closed: admin client bypasses RLS, so a missing agency_id must not
+  // allow syncing arbitrary tenant leads (cross-tenant PII to HubSpot).
+  if (!callerProfile?.agency_id || lead.agency_id !== callerProfile.agency_id) {
     return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 })
   }
 

@@ -31,7 +31,9 @@ export async function POST(req: Request) {
     const { data: callerProfile } = await supabase.from("profiles").select("agency_id").eq("auth_user_id", user.id).maybeSingle();
 
     const { data: leadRow } = await supabase.from("leads").select("agency_id").eq("id", lead_id).maybeSingle();
-    if (callerProfile?.agency_id && leadRow?.agency_id !== callerProfile.agency_id) {
+    // Fail closed: persist uses service-role admin. Missing caller agency_id
+    // must not allow writing activities/tasks onto another tenant's lead.
+    if (!callerProfile?.agency_id || !leadRow || leadRow.agency_id !== callerProfile.agency_id) {
       return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
     }
 
