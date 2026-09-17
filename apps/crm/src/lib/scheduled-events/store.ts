@@ -112,19 +112,159 @@ export async function getScheduledEventById(
   return mapRow(data as ScheduledEventRow);
 }
 
+/** Statusy, ktoré obsadzujú slot v kalendári (blokujú free/busy). */
+export const ACTIVE_SCHEDULED_EVENT_STATUSES = [
+  "scheduled",
+  "confirmed",
+] as const;
+
+/** Kľúč v `meta`, pod ktorým žije idempotency key. Žiadna nová DB schéma. */
+export const SCHEDULED_EVENT_IDEMPOTENCY_META_KEY = "idempotency_key";
+
+/** Free/busy konflikt — route ho mapuje na 409, nie na „termín potvrdený“. */
+export class ScheduledEventConflictError extends Error {
+  readonly code = "scheduled_event_conflict";
+  readonly conflicts: ScheduledEvent[];
+
+  constructor(conflicts: ScheduledEvent[]) {
+    super("Termín koliduje s inou udalosťou v kalendári.");
+    this.name = "ScheduledEventConflictError";
+    this.conflicts = conflicts;
+  }
+}
+
+/**
+ * Idempotency key. Klient môže poslať vlastný v `meta.idempotency_key`
+ * (alebo `meta.idempotencyKey`); inak sa odvodí z (agency, lead, property,
+ * typ, slot) — presne dedup podľa SMO-B09.
+ */
+export function buildScheduledEventIdempotencyKey(
+  agencyId: string,
+  input: ScheduledEventInput,
+): string {
+  const meta = input.meta ?? {};
+  const explicit =
+    meta[SCHEDULED_EVENT_IDEMPOTENCY_META_KEY] ?? meta.idempotencyKey;
+
+  if (typeof explicit === "string" && explicit.trim().length > 0) {
+    return explicit.trim();
+  }
+
+  return [
+    agencyId,
+    input.leadId ?? "-",
+    input.propertyId ?? "-",
+    input.eventType ?? "viewing",
+    input.startsAt,
+    input.endsAt,
+  ].join("|");
+}
+
+/** Existujúca aktívna udalosť s rovnakým idempotency key (ak je). */
+export async function findScheduledEventByIdempotencyKey(
+  agencyId: string,
+  idempotencyKey: string,
+  scoped?: SupabaseClient | null,
+): Promise<ScheduledEvent | null> {
+  const supabase = await getClient(scoped);
+  if (!supabase) return null;
+
+  const { data, error } = await supabase
+    .from("scheduled_events")
+    .select("*")
+    .eq("agency_id", agencyId)
+    .eq(`meta->>${SCHEDULED_EVENT_IDEMPOTENCY_META_KEY}`, idempotencyKey)
+    .in("status", [...ACTIVE_SCHEDULED_EVENT_STATUSES])
+    .limit(1);
+
+  if (error || !data || data.length === 0) {
+    if (error) console.error("findScheduledEventByIdempotencyKey:", error.message);
+    return null;
+  }
+
+  return mapRow(data[0] as ScheduledEventRow);
+}
+
+/**
+ * Free/busy: aktívne udalosti toho istého makléra, ktoré sa prekrývajú
+ * s [startsAt, endsAt). Prekryv = starts_at < endsAt AND ends_at > startsAt.
+ */
+export async function findConflictingScheduledEvents(
+  agencyId: string,
+  profileId: string,
+  startsAt: string,
+  endsAt: string,
+  scoped?: SupabaseClient | null,
+  ignoreEventId?: string,
+): Promise<ScheduledEvent[]> {
+  const supabase = await getClient(scoped);
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("scheduled_events")
+    .select("*")
+    .eq("agency_id", agencyId)
+    .eq("profile_id", profileId)
+    .in("status", [...ACTIVE_SCHEDULED_EVENT_STATUSES])
+    .lt("starts_at", endsAt)
+    .gt("ends_at", startsAt);
+
+  if (error || !data) {
+    if (error) console.error("findConflictingScheduledEvents:", error.message);
+    return [];
+  }
+
+  return (data as ScheduledEventRow[])
+    .filter((row) => (ignoreEventId ? row.id !== ignoreEventId : true))
+    .map(mapRow);
+}
+
+export type CreateScheduledEventResult = {
+  event: ScheduledEvent;
+  /** true = request bol opakovaný, vrátila sa pôvodná udalosť (žiadny druhý event). */
+  deduplicated: boolean;
+  idempotencyKey: string;
+};
+
 export async function createScheduledEvent(
   agencyId: string,
   profileId: string,
   input: ScheduledEventInput,
   scoped?: SupabaseClient | null,
-): Promise<ScheduledEvent> {
+): Promise<CreateScheduledEventResult> {
   const supabase = await getClient(scoped);
   if (!supabase) {
     throw new Error("Databáza nie je dostupná.");
   }
 
+  const idempotencyKey = buildScheduledEventIdempotencyKey(agencyId, input);
+
+  // 1) Idempotencia — opakovaný request nesmie vytvoriť druhý event.
+  const existing = await findScheduledEventByIdempotencyKey(
+    agencyId,
+    idempotencyKey,
+    supabase,
+  );
+  if (existing) {
+    return { event: existing, deduplicated: true, idempotencyKey };
+  }
+
   const now = new Date().toISOString();
   const status = input.status ?? "scheduled";
+
+  // 2) Free/busy — kolidujúci termín sa odmietne, nepotvrdí.
+  if ((ACTIVE_SCHEDULED_EVENT_STATUSES as readonly string[]).includes(status)) {
+    const conflicts = await findConflictingScheduledEvents(
+      agencyId,
+      profileId,
+      input.startsAt,
+      input.endsAt,
+      supabase,
+    );
+    if (conflicts.length > 0) {
+      throw new ScheduledEventConflictError(conflicts);
+    }
+  }
 
   const { data, error } = await supabase
     .from("scheduled_events")
@@ -142,7 +282,10 @@ export async function createScheduledEvent(
       ends_at: input.endsAt,
       timezone: input.timezone ?? "Europe/Bratislava",
       reminder_minutes: input.reminderMinutes ?? null,
-      meta: input.meta ?? {},
+      meta: {
+        ...(input.meta ?? {}),
+        [SCHEDULED_EVENT_IDEMPOTENCY_META_KEY]: idempotencyKey,
+      },
       cancelled_at: status === "cancelled" ? now : null,
       updated_at: now,
     })
@@ -153,7 +296,11 @@ export async function createScheduledEvent(
     throw new Error(error?.message ?? "Nepodarilo sa vytvoriť udalosť.");
   }
 
-  return mapRow(data as ScheduledEventRow);
+  return {
+    event: mapRow(data as ScheduledEventRow),
+    deduplicated: false,
+    idempotencyKey,
+  };
 }
 
 export async function updateScheduledEvent(
