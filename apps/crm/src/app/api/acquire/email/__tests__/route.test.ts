@@ -53,8 +53,6 @@ describe("POST /api/acquire/email dedup claim", () => {
   let leadInserts: number;
   let leadShouldFail: boolean;
   let leadCommitsDespiteError: boolean;
-  let leadInserts: number;
-  let leadShouldFail: boolean;
   /** When true, SELECT pretends the key is absent (race: another worker claimed after our read). */
   let hideExistingOnSelect: boolean;
 
@@ -67,8 +65,6 @@ describe("POST /api/acquire/email dedup claim", () => {
     leadInserts = 0;
     leadShouldFail = false;
     leadCommitsDespiteError = false;
-    leadInserts = 0;
-    leadShouldFail = false;
     hideExistingOnSelect = false;
 
     mockFrom.mockImplementation((table: string) => {
@@ -138,11 +134,6 @@ describe("POST /api/acquire/email dedup claim", () => {
                   if (leadCommitsDespiteError) {
                     leadRows.set(String(payload.id), row);
                   }
-          insert: () => ({
-            select: () => ({
-              single: async () => {
-                leadInserts += 1;
-                if (leadShouldFail) {
                   return {
                     data: null,
                     error: { message: "insert aborted", code: "57014" },
@@ -159,23 +150,6 @@ describe("POST /api/acquire/email dedup claim", () => {
                 data: leadRows.get(id) ?? null,
                 error: null,
               }),
-            }),
-          }),
-                return {
-                  data: {
-                    id: "lead-1",
-                    name: "Jan Novak",
-                    status: "Nový",
-                    score: 50,
-                    last_contact: "Práve vytvorený (email gateway)",
-                    note: "n",
-                    source: "portal:Nehnuteľnosti.sk",
-                    agency_id: AGENCY_ID,
-                    ai_triage_at: null,
-                  },
-                  error: null,
-                };
-              },
             }),
           }),
         };
