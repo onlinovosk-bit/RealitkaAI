@@ -426,6 +426,19 @@ export async function listProperties(
   return tenantScoped.map((item) => mapPropertyRow(item as Record<string, unknown>));
 }
 
+/**
+ * SMO-B04: každý lookup/update/delete nad `properties` musí byť viazaný na `agency_id`.
+ * Fail-closed — bez rozpoznanej agentúry mutácia neprebehne vôbec.
+ */
+async function requireSessionAgencyId(supabase: SupabaseClient): Promise<string> {
+  const { resolveSessionAgencyId } = await import("@/lib/tenant-scope");
+  const agencyId = await resolveSessionAgencyId(supabase);
+  if (!agencyId) {
+    throw new Error("Chýba tenant profil pre nehnuteľnosti.");
+  }
+  return agencyId;
+}
+
 async function scopePropertyRowsToProfileAgency(
   supabase: SupabaseClient,
   rows: Record<string, unknown>[],
@@ -592,8 +605,12 @@ export async function createProperty(input: PropertyInput) {
   return result;
 }
 
-export async function updateProperty(id: string, input: Partial<PropertyInput>) {
-  const supabase = await resolveTenantSupabase();
+export async function updateProperty(
+  id: string,
+  input: Partial<PropertyInput>,
+  scopedSupabase?: SupabaseClient | null,
+) {
+  const supabase = await resolveTenantSupabase(scopedSupabase);
 
   if (!supabase) {
     return {
@@ -612,6 +629,8 @@ export async function updateProperty(id: string, input: Partial<PropertyInput>) 
     };
   }
 
+  const agencyId = await requireSessionAgencyId(supabase);
+
   const payload: any = {};
 
   if (typeof input.title !== "undefined") payload.title = input.title;
@@ -629,6 +648,7 @@ export async function updateProperty(id: string, input: Partial<PropertyInput>) 
     .from("properties")
     .update(payload)
     .eq("id", id)
+    .eq("agency_id", agencyId)
     .select("*")
     .single();
 
@@ -643,6 +663,7 @@ export async function updateProperty(id: string, input: Partial<PropertyInput>) 
         .from("properties")
         .update(fallbackPayload)
         .eq("id", id)
+        .eq("agency_id", agencyId)
         .select("*")
         .single();
 
@@ -691,17 +712,23 @@ export async function updateProperty(id: string, input: Partial<PropertyInput>) 
   };
 }
 
-export async function deleteProperty(id: string) {
-  const supabase = await resolveTenantSupabase();
+export async function deleteProperty(
+  id: string,
+  scopedSupabase?: SupabaseClient | null,
+) {
+  const supabase = await resolveTenantSupabase(scopedSupabase);
 
   if (!supabase) {
     return { ok: true };
   }
 
+  const agencyId = await requireSessionAgencyId(supabase);
+
   const { error } = await supabase
     .from("properties")
     .delete()
-    .eq("id", id);
+    .eq("id", id)
+    .eq("agency_id", agencyId);
 
   if (error) {
     throw new Error(error.message);

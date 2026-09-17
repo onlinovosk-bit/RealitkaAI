@@ -3,6 +3,12 @@
 This protocol defines how agents coordinate through `.ai/bus` without relying on
 chat history as the source of truth.
 
+## Multi-Agent Protocol v0 (Track B)
+
+Authority, typing, independent-first, Human Decision Gate, and Grok boundaries:
+`docs/prompts/multi-agent-protocol-v0/`. Use that pack for cross-agent handoffs.
+This file remains the bus folder map; v0 does not add infrastructure.
+
 ## Operating principles
 
 - Repo first: durable findings and decisions must land in files.
