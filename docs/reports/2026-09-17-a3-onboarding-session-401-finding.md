@@ -132,14 +132,17 @@ kým sa neaplikuje, `Allow anon access` v prode zostáva otvorená a A1/A2 zost�
 | Stav RLS politiky `Allow anon access` v produkcii | rozhoduje, či je P0 otvorený; mení urgenciu celého tasku | read-only SELECT pripravený v `docs/runbooks/rollback-onboarding-sessions-anon.md:38-41` — spúšťa **founder** |
 | Supabase Auth → „Confirm email" v produkčnom projekte | rozhoduje, či 401 zasiahne aj registračnú cestu, alebo len klik z welcome e-mailu | Supabase Dashboard → Authentication → Providers → Email (v repe len lokálny `config.toml:53 enable_confirmations = false`) |
 
-## Protokolový nález (režim B)
+## Protokolový nález (režim B) — ZAVRETÝ
 
-Protokolové súbory `docs/prompts/multi-agent-protocol-v0/00–06` a všetky `DEC-202609{16,17}-*`
-existujú **iba** na `audit/2026-09-16`, na `main` nie sú. Obaja reviewri spustení z `main` ich
-preto nenašli a oprávnene to uviedli v `context_requests`. Je to presne stav, ktorý `06` popisuje
-ako chybu („stav na audit vetve a nie na `main`"). Zavrie sa mergom PR #565.
+V čase behu reviewrov existovali protokolové súbory `docs/prompts/multi-agent-protocol-v0/00–06`
+a všetky `DEC-202609{16,17}-*` **iba** na `audit/2026-09-16`, na `main` nie. Obaja reviewri spustení
+z `main` ich preto nenašli a oprávnene to uviedli v `context_requests`. Bol to presne stav, ktorý `06`
+popisuje ako chybu („stav na audit vetve a nie na `main`").
 
-**EVIDENCE:** `git ls-tree -r --name-only origin/main | grep -E "^docs/prompts/multi-agent-protocol-v0/|^\.ai/bus/decisions/"` → iba `.gitkeep` a `DEC-20260825-002`.
+**Zavreté:** PR #565 bol mergnutý 2026-09-17 (`origin/main` → `1291ae5`). Protokol aj DEC záznamy
+sú odvtedy na `main` a ďalší beh subagentov z `main` ich už nájde.
+
+**EVIDENCE:** pred mergom `git ls-tree -r --name-only origin/main | grep -E "^docs/prompts/multi-agent-protocol-v0/|^\.ai/bus/decisions/"` → iba `.gitkeep` a `DEC-20260825-002`; po mergu tie isté cesty na `main` existujú.
 
 ## Výsledok tasku
 

@@ -202,14 +202,13 @@ Founder review/merge #546 (and backlog of open critical fix PRs).
 ## Session 2026-09-17 (operating mode B — prvy task, A3 onboarding 401)
 ### Dokoncene
 - Setup rezimu B: push overeny (dry-run OK), patch uz bol na `origin/audit/2026-09-16` (`56e2359`, `git am --3way` -> "already applied"), vetva `docs/operating-mode-b` pushnuta
-- PR audit/2026-09-16 -> main uz existoval: #565 (CI zelene, caka na founder merge)
+- PR audit/2026-09-16 -> main uz existoval: #565 — founder ho mergol 2026-09-17 (main -> 1291ae5); protokol 00-06 a DEC-* su teraz na main
 - Prvy task v rezime B: handoff (01) + 2 nezavisli reviewri v izolovanych worktrees z origin/main, kluc dokazy re-overene executorom
 - FINDING + PROPOSAL k A3 -> PR #566 (draft, docs-only, bez zmeny kodu a acceptance)
 ### Rozpracovane / Pending
 - Founder: rozhodnut V1-V5 k A3 (ma onboarding fungovat bez prihlasenia?)
 - Founder: read-only SELECT stavu RLS `onboarding_sessions` v prode (runbook :38-41) — A1/A2 zostavaju unknown
 - Founder: Supabase Auth "Confirm email" v prod projekte — rozhoduje, ci 401 zasiahne aj registracnu cestu
-- Founder: merge #565 (protokol 00-06 a DEC-* su stale iba na audit vetve, nie na main)
 ### Kluc subory zmenene
 - `.ai/bus/handoffs/HANDOFF-20260917-001-a3-onboarding-401.md`: novy handoff packet
 - `docs/reports/2026-09-17-a3-onboarding-session-401-finding.md`: FINDING F1-F8 + PROPOSAL V1-V5
