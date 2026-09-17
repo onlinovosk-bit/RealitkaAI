@@ -1,9 +1,11 @@
 # Founder Alert Adapter v0.1 — Telegram ako výstupná siréna
 
-**Stav:** `STRATEGIC BACKLOG` — nie BUILD.
+**Stav:** `BUILD` — v0.1 implementovaná 2026-09-17.
 **Dátum:** 2026-09-17
-**Zdroj:** founderov návrh v chate 2026-09-17, vrátane vety *„toto by som určite neimplementoval ako ďalší veľký projekt teraz. Najprv dokončiť aktuálny Cowork/executor setup."*
-**Constitution gate:** VETO `too early` (timing) → Strategic Backlog bez ohľadu na skóre. Zapísané podľa `CLAUDE.md` §7.
+**Zdroj:** founderov návrh v chate 2026-09-17. Pôvodne odložený („neimplementoval by som to ako ďalší veľký projekt teraz"), o niekoľko minút neskôr founder rozhodnutie **opravil**: *„opravujem, chcem telegram nasadiť hneď teraz."*
+**Constitution gate:** pôvodné VETO `too early` **zrušené founderom**. Rozsah držaný malý (5 súborov, žiadna migrácia, žiadny nový cron) presne preto, aby to nebol „ďalší veľký projekt".
+**Setup runbook:** `docs/runbooks/telegram-alert-setup.md`
+**Kód:** `apps/crm/src/lib/alerts/`
 
 ## Princíp, na ktorom sa zhodujeme
 
@@ -64,27 +66,33 @@ Takí monitori dnes **neexistujú**:
 Reálne periodické zdroje eventov sú teda dnes **dva** (`nightly-playwright`, `brain-weekly-audit`),
 z toho jeden bez akéhokoľvek odberateľa výsledku.
 
-**Dôsledok:** Alert Adapter postavený dnes by mal takmer prázdny vstup. Jeho hodnota rastie až
-s runnerom — čo je presne dôvod, prečo je founderovo poradie („najprv executor setup") správne.
+**Dôsledok:** adaptér je hotový skôr než monitory, ktoré ho majú kŕmiť. To nie je chyba — kanál
+musí existovať prv, než doň niekto začne písať — ale znamená to, že **v0.1 sama od seba nič
+nepošle**. Prvý reálny prevádzkový alert príde až keď na Router napojíme existujúcich päť volaní
+(bod 7 nižšie) alebo keď sa vráti runner.
 
-## Otvorené otázky, ktoré treba zavrieť pred BUILD
+## Otvorené otázky — stav po v0.1
 
 1. **Slack alebo Telegram, alebo oba?** Ak oba, Router musí mať fan-out a jednotný event formát.
    Ak Telegram nahrádza Slack, je to migrácia piatich call sites, nie nový komponent.
 2. **Kde žije Router a čo ho spúšťa?** Vercel cron má dnes otvorený problém: lokálny `CRON_SECRET`
    vracia v PROD `401` (`memory/open-tasks.md:63`). Bez vyriešenia tohto nemá Router spoľahlivý beh.
-3. **Dedup a cooldown.** V návrhu chýbajú. Monitor bežiaci každých 5 minút pri hodinovom incidente
-   pošle 12 správ a siréna sa stane šumom. Potrebný je kľúč incidentu + tichý interval + správa
-   „vyriešené".
+3. ~~**Dedup a cooldown.**~~ **VYRIEŠENÉ v v0.1** — `dedupKey` + tiché okno podľa severity
+   + `resolved` správa, ktorá incident uzavrie. Obmedzenie: dedup drží v pamäti procesu, takže
+   v serverless behu je per-inštancia. Spoľahlivý dedup naprieč inštanciami potrebuje zdieľané
+   úložisko, teda migráciu — mimo rozsahu v0.1.
 4. **Kde je uložený token.** GitHub Actions secrets, Vercel env, alebo oboje. Kto ho rotuje.
    Kto má bota môže bota ovládať — token je credential, nie konfigurácia.
-5. **Obsah alertu podlieha stealth pravidlu.** Podľa `CLAUDE.md` §2 a §4 do alertu **nesmie** ísť
-   meno referenčného klienta, jeho interné dáta ani PII. Alert nesie identifikátory
-   (`task_id`, `PR #`, `commit`), nie obsah. Toto musí byť v policy, nie v hlave odosielateľa.
+5. ~~**Obsah alertu podlieha stealth pravidlu.**~~ **VYRIEŠENÉ v v0.1** — text správy sa **skladá**
+   z whitelistovaných polí (`alerts/format.ts`), nepreberá sa hotový reťazec od volajúceho.
+   Sanitizácia cudzieho textu je hra, ktorú obranca prehráva; skladanie z polí je hranica,
+   ktorú nemožno obísť omylom. Dôkaz ide cez `evidenceRef` ako cesta alebo URL, nikdy ako obsah.
 6. **Duplicita s GitHubom.** GitHub už notifikuje o CI a review. Prínos Telegramu je vo **filtri
    podľa severity**, nie v samotnom kanáli — inak vznikne tretí neprečítaný zdroj notifikácií.
 
 ## Event formát (founderov návrh, zachovaný ako východisko)
+
+Founderov návrh:
 
 ```yaml
 event:
@@ -96,22 +104,40 @@ event:
   action_required: true
 ```
 
-Doplniť pred BUILD: `dedup_key`, `resolved: bool`, `evidence_ref` (cesta alebo URL namiesto
-vloženého obsahu — viď otázka 5).
+Implementované ako `AlertEvent` (`alerts/types.ts`), doplnené o `dedupKey`, `resolved`,
+`fields` a `evidenceRef`. `task_id` a `gate` sa nesú vo `fields` — tým zostáva typ stabilný
+a doménové kľúče voľné.
 
-## Rozsah v0.1, keď na to príde rad
+## Rozsah v0.1 — čo je hotové
 
-Malý adapter, nie projekt:
+| # | čo | stav | súbor |
+|---|---|---|---|
+| 1 | `AlertEvent` typ + severity + `dedupKey` + `resolved` + `evidenceRef` | **hotové** | `alerts/types.ts` |
+| 2 | Policy: severity → kanály, prah `ALERTS_MIN_SEVERITY`, tiché okná | **hotové** | `alerts/policy.ts` |
+| 3 | Skladanie správy z whitelistovaných polí + HTML escape | **hotové** | `alerts/format.ts` |
+| 4 | Telegram Bot API výstup, fail-safe | **hotové** | `alerts/telegram.ts` |
+| 5 | Router s fan-out na Slack + Telegram, dedup | **hotové** | `alerts/router.ts` |
+| 6 | Testy (22), mutačne overené | **hotové** | `alerts/__tests__/alerts.test.ts` |
+| 7 | Prepojiť existujúcich **päť** call sites na Router | **NEUROBENÉ** | viď nižšie |
+| 8 | Nové monitory | **NEUROBENÉ** — závisí od runnera | — |
 
-1. Jednotný `AlertEvent` typ + `dedup_key`.
-2. Router s policy tabuľkou severity → kanál.
-3. Dva výstupy za jedným rozhraním (existujúci Slack, nový Telegram).
-4. Prepojiť **existujúcich** päť call sites na Router namiesto priameho `fetch`.
-5. Až potom nové monitory — a len tie, ktoré majú skutočný periodický beh.
+Router má fan-out zámerne: pokrýva všetky tri možné odpovede na otázku 1 nižšie bez prepisovania.
+Telegram-only sa nastaví policy, nie zmenou kódu.
 
-Body 1–4 majú hodnotu aj bez Telegramu. Bod 5 závisí od runnera.
+### Prečo bod 7 nie je v v0.1
+
+Päť existujúcich volaní (`competitor-watch`, `social-scout`, `night-watch`, `outreach`,
+`revolis-guard.ts:87-89`) posiela dnes voľný text priamo na webhook. Prepojiť ich na Router
+znamená pre každé vymyslieť `severity`, `dedupKey` a rozložiť text na `fields` — to je zmena
+správania piatich existujúcich ciest, nie adaptér. Patrí do v0.2 a do samostatného PR.
+
+**Dôsledok, ktorý treba vedieť:** kým bod 7 nie je hotový, tých päť ciest **obchádza Router** —
+nemá severity, dedup ani stealth hranicu. Nový kód má používať `routeAlert`, nie `sendSlackMessage`.
 
 ## Ďalší krok
 
-`GO REQUIRED`. Nič sa nestavia, kým founder nezavrie otázku 1 (Slack vs. Telegram vs. oba)
-a kým nie je dokončený Cowork/executor setup.
+1. **Founder:** vytvoriť bota a doplniť `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` do Vercelu
+   podľa `docs/runbooks/telegram-alert-setup.md`. Bez nich adaptér ticho neposiela.
+2. **Founder rozhodne otázku 1** (Slack aj Telegram, alebo migrácia na Telegram). Kód je na oboje
+   pripravený; mení sa len policy tabuľka v `alerts/policy.ts`.
+3. **v0.2 (`GO REQUIRED`):** prepojiť päť existujúcich call sites na Router.
