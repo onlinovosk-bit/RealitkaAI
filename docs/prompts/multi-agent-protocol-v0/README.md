@@ -14,6 +14,7 @@
 | 03 | `03-human-decision-gate.md` | Explicit human authority |
 | 04 | `04-independent-first.md` | Resolve from artifacts, no chat SoT |
 | 05 | `05-grok-permission-boundary.md` | Grok may challenge, not decide |
+| 06 | `06-operating-mode-b.md` | **Operating mode B** (2026-09-17): one executor (Claude Cowork) + subagent reviewers; advisors via founder decision only |
 
 ## Relationship to existing bus
 
