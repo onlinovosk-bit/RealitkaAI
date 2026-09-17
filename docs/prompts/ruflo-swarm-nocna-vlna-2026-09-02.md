@@ -182,6 +182,7 @@ Zapíš `docs/reports/2026-09-03-nocna-vlna-report.md`: tabuľka lane → vetva 
 PR # → stav → čo čaká na foundera, zoradené podľa poradia review.
 Vetva `docs/nocny-report-2026-09-03`, PR, STOP.
 
+**Poradie pri vyčerpaní kvóty (zabíjaj odzadu):** L4 → L3 → L2 → L1.
 **Poradie pri vyčerpaní kvóty (zabíjaj odzadu):** L5 → L4 → L3 → L2 → L1.
 **L1 je P0 a musí dobehnúť.**
 
@@ -198,6 +199,7 @@ Vetva `docs/nocny-report-2026-09-03`, PR, STOP.
 
 | # | Krok |
 |---|---|
+| 1 | Nočný report → review v poradí: **L1** → L2 → L4 → L3 |
 | 1 | Nočný report → review v poradí: **L1** → L2 → L4 → L3 → L5 |
 | 2 | **L1 merguj ako prvé.** Ak lane navrhol riešenie namiesto implementácie, rozhodni a zadaj znova |
 | 3 | Pošli Smolkovi runbook s doplneným Client ID (odkaz v kroku 4 bez neho nefunguje) |
