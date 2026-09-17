@@ -1,0 +1,144 @@
+{
+  "generated_at": "2026-09-16T11:45:00+02:00",
+  "base_sha": "7318e61599a379a75155ddb9a2688e8d338380b4",
+  "preflight_blocking": true,
+  "nodes": [
+    {
+      "task_id": "orch:land-tc-orchestrator",
+      "source_finding": "orch:tc-orchestrator-missing-on-main",
+      "owner": "agent",
+      "write_territory": ["apps/crm/scripts/tc-orchestrator.mjs"],
+      "read_dependencies": ["apps/crm/scripts/judge.mjs", ".ai/bus/tasks/**", ".ai/bus/ledger/**"],
+      "write_dependencies": [],
+      "acceptance": [
+        {
+          "id": "O1",
+          "cmd": "Test-Path apps/crm/scripts/tc-orchestrator.mjs",
+          "expect": "True / exit 0"
+        },
+        {
+          "id": "O2",
+          "cmd": "node apps/crm/scripts/tc-orchestrator.mjs --help",
+          "expect": "exit_code == 0"
+        }
+      ],
+      "negative_case": null,
+      "negative_case_note": "NOT DETERMINABLE in this audit: no failing fixture command exists in-repo for orchestrator CLI without inventing one. Layer 03: node that adds/changes a control needs negative_case — this node lands a runner script; treat negative_case as required before EXECUTION GO.",
+      "risk": "high",
+      "repeat_mode": "ONE-SHOT",
+      "expected_output": "tc-orchestrator.mjs present on integration branch and --help runs after npm ci",
+      "dag_eligibility": "HELD — risk high → HUMAN; negative_case incomplete; preflight BLOCK"
+    },
+    {
+      "task_id": "gate:scope-guard-b7",
+      "source_finding": "workflow:scope-guard-b7-missing",
+      "owner": "agent",
+      "write_territory": [".github/workflows/scope-guard.yml"],
+      "read_dependencies": [".ai/bus/tasks/**", "docs/prompts/runner/10-integration.md"],
+      "write_dependencies": [],
+      "acceptance": [
+        {
+          "id": "S1",
+          "cmd": "Test-Path .github/workflows/scope-guard.yml",
+          "expect": "True"
+        },
+        {
+          "id": "S2",
+          "cmd": "Select-String -Path .github/workflows/scope-guard.yml -Pattern 'synchronize' -Quiet",
+          "expect": "True"
+        }
+      ],
+      "negative_case": {
+        "cmd": "NOT DETERMINABLE",
+        "expect_fail": true,
+        "why": "B7 negative case requires a PR diff with a file outside repo_paths evaluated by the workflow. No local runnable command exists in this checkout that executes the GitHub Action job. Inventing a stub would violate 00-system (do not invent missing tooling)."
+      },
+      "risk": "high",
+      "repeat_mode": "ONE-SHOT",
+      "expected_output": "scope-guard.yml with pull_request types including synchronize",
+      "dag_eligibility": "EXCLUDED_FROM_EXECUTABLE_DAG — negative_case not expressible as runnable command; node would be BLOCKED under layer 03"
+    },
+    {
+      "task_id": "gate:cost_usd_null_when_unmeasured",
+      "source_finding": "gate:cost_usd_unmeasured",
+      "owner": "agent",
+      "write_territory": ["apps/crm/scripts/judge.mjs"],
+      "read_dependencies": [".ai/bus/ledger/**", "docs/prompts/runner/11-ledger-memory.md"],
+      "write_dependencies": [],
+      "acceptance": [
+        {
+          "id": "C1",
+          "cmd": "node apps/crm/scripts/judge.mjs --help",
+          "expect": "exit_code == 0"
+        },
+        {
+          "id": "C2",
+          "cmd": "rg \"cost_measured\" apps/crm/scripts/judge.mjs",
+          "expect": "match present"
+        }
+      ],
+      "negative_case": {
+        "cmd": "NOT DETERMINABLE without a documented selftest harness invocation that asserts cost_usd===0 is rejected",
+        "expect_fail": true,
+        "why": "Ledger selftests EXTERNAL-OK/FAIL exist historically in ledger but no checked-in command string for cost_usd honesty was found during audit without reading/implementing new tests (implementation forbidden)."
+      },
+      "risk": "medium",
+      "repeat_mode": "ONE-SHOT",
+      "expected_output": "unmeasured runs write cost_usd:null and cost_measured:false",
+      "dag_eligibility": "EXCLUDED — acceptance C1 currently fails (no node_modules); negative_case incomplete"
+    },
+    {
+      "task_id": "bus:reconcile-TASK-NS-001",
+      "source_finding": "task:TASK-NS-001-stale-status",
+      "owner": "agent",
+      "write_territory": [".ai/bus/tasks/TASK-NS-001.md"],
+      "read_dependencies": [".ai/bus/ledger/2026-09.jsonl"],
+      "write_dependencies": [],
+      "acceptance": [
+        {
+          "id": "N1",
+          "cmd": "Select-String -Path .ai/bus/tasks/TASK-NS-001.md -Pattern '(?m)^status:\\s*done' -Quiet",
+          "expect": "True"
+        }
+      ],
+      "negative_case": null,
+      "negative_case_note": "Not a new control — status reconcile only. Layer 09: verdict.result must be written only by Judge/reopen — so this node must NOT hand-set verdict.result; only status field if policy allows, else BLOCKED.",
+      "risk": "medium",
+      "repeat_mode": "ONE-SHOT",
+      "expected_output": "task status aligned without illegal verdict hand-edit",
+      "dag_eligibility": "EXCLUDED — amending verdict requires Judge reopen protocol; Judge currently BLOCK"
+    },
+    {
+      "task_id": "bus:close-TASK-0100",
+      "source_finding": "task:TASK-0100-obsolete-vs-main",
+      "owner": "founder",
+      "write_territory": [".ai/bus/tasks/TASK-0100.md"],
+      "read_dependencies": ["apps/crm/scripts/judge.mjs"],
+      "write_dependencies": [],
+      "acceptance": [
+        {
+          "id": "T1",
+          "cmd": "Select-String -Path .ai/bus/tasks/TASK-0100.md -Pattern '(?m)^status:\\s*done' -Quiet",
+          "expect": "True"
+        }
+      ],
+      "negative_case": null,
+      "risk": "low",
+      "repeat_mode": "ONE-SHOT",
+      "expected_output": "TASK-0100 marked done with reference to #554",
+      "dag_eligibility": "READY_CANDIDATE — owner founder; no new control; write territory disjoint"
+    }
+  ],
+  "edges": [
+    {
+      "from": "orch:land-tc-orchestrator",
+      "to": "gate:cost_usd_null_when_unmeasured",
+      "type": "write→read",
+      "note": "optional sequencing only if orchestrator imports judge; not hard-coded without reading chore branch (held)"
+    }
+  ],
+  "cycles": [],
+  "executable_ready_nodes": ["bus:close-TASK-0100"],
+  "nodes_with_complete_acceptance": ["bus:close-TASK-0100", "bus:reconcile-TASK-NS-001"],
+  "nodes_with_runnable_negative_case": []
+}

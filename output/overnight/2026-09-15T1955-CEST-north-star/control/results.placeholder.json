@@ -1,0 +1,5 @@
+{
+  "schema_note": "Paste SQL editor result rows here. Agent will not invent values.",
+  "rows": null,
+  "instructions": "Replace null with array of 31 objects matching queries-to-run.sql columns."
+}

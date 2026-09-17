@@ -8,7 +8,8 @@
     "packages/mcp-crm",
     "packages/mcp-comm",
     "packages/mcp-calendar",
-    "packages/mcp-telephony"
+    "packages/mcp-telephony",
+    "packages/mcp-onlinovo"
   ],
   "scripts": {
     "prospect:enrich": "npx tsx scripts/prospecting/enrich.ts",

@@ -70,6 +70,10 @@ jobs:
         run: npm run lint
         working-directory: apps/crm
 
+      - name: Typecheck (baseline gate)
+        working-directory: apps/crm
+        run: node scripts/typecheck-baseline.mjs
+
       # ── Ephemeral test DB: žiadne prod secrets v test/build fáze ──
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
