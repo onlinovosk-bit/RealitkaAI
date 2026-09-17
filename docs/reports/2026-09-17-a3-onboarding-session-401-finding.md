@@ -4,7 +4,8 @@
 **Režim:** operating mode B (`docs/prompts/multi-agent-protocol-v0/06-operating-mode-b.md`, vetva `audit/2026-09-16` / PR #565)
 **Task:** `.ai/bus/tasks/TASK-RLS-ONBOARDING-SESSION.md`, acceptance **A3**
 **Handoff:** `.ai/bus/handoffs/HANDOFF-20260917-001-a3-onboarding-401.md`
-**Gate:** `GO REQUIRED` — tento dokument **nemení kód ani acceptance**. Je to podklad pre founderovo rozhodnutie.
+**Gate:** ~~`GO REQUIRED`~~ → **ROZHODNUTÉ 2026-09-17: V1** (`DEC-20260917-003-a3-onboarding-401-intended`).
+Founderov token: *GO na V1*. Implementácia V1 je v tomto PR; **migrácia zostáva samostatným rozhodnutím a nie je autorizovaná**.
 
 Metóda podľa 06: jeden handoff → dvaja nezávislí reviewri (rola *executor*, rola *challenger*)
 v izolovaných worktrees z `origin/main`, bez obsahu task karty v prompte → executor zopakoval
@@ -110,7 +111,7 @@ Naopak: sprístupnenie **neotvára späť pôvodnú dieru.** `Allow anon access`
 
 | # | Variant | Bezpečnostný dopad | Cena |
 |---|---|---|---|
-| **V1** | **Nechať 401**, opraviť nepravdivé tvrdenia v reporte/migrácii/runbooku a pridať test, ktorý 401 fixuje ako **zamýšľané** | žiadny — najbezpečnejší realistický stav | serverová telemetria lievika neexistuje (dnes ju nikto nečíta — F4); A3 treba preformulovať, nie odškrtnúť |
+| **V1** ✅ **ZVOLENÉ** | **Nechať 401**, opraviť nepravdivé tvrdenia v reporte/migrácii/runbooku a pridať test, ktorý 401 fixuje ako **zamýšľané** | žiadny — najbezpečnejší realistický stav | serverová telemetria lievika neexistuje (dnes ju nikto nečíta — F4); A3 treba preformulovať, nie odškrtnúť |
 | **V2** | **Zrušiť serverový sync úplne** — localStorage-only, zmazať route + mŕtvy `OnboardingClient.tsx` + `TestDbClient.tsx`, tabuľku odstaviť po exporte | najnižšia možná plocha — žiadny anon prístup, žiadny service-role endpoint, žiadne PII v tabuľke | telemetria natrvalo; A3 sa škrtá, nie plní |
 | **V3** | **Verejný endpoint s viazaným tokenom** — `POST /api/onboarding/session/start` vydá HttpOnly+SameSite cookie, `GET`/`POST` ju overia **pred** `createServiceRoleClient()`; do `PUBLIC_PATHS` ide len táto dvojica (presná zhoda cesty, nikdy prefix) | stredný, ohraničený — cudzie UUID samo nestačí; vyžaduje fail-**closed** rate limit, väzbu limitu na `session_id` a GDPR analýzu | najväčší objem práce + rozšírenie testovej matice o proxy-level testy |
 | **V4** | **Holý `PUBLIC_PATHS` allowlist** bez ďalších opatrení | **vysoký, neprijateľný** — anonymne dosiahnuteľný service-role endpoint nad PII, UUID ako bearer, cudzí `POST` prepíše cudzí riadok (F8) | uvedené pre úplnosť; **obaja reviewri ho odmietli** |
@@ -121,9 +122,48 @@ Naopak: sprístupnenie **neotvára späť pôvodnú dieru.** `Allow anon access`
 - `apps/crm/tests/verification/onboarding-sessions-api.verification.test.ts:41-52` drží nažive mŕtvy `OnboardingClient.tsx` — pri čistení treba upraviť test spolu s kódom, inak CI spadne na mŕtvom kóde.
 - `route.ts:3,7` — `validateBody` a `incrementUsageMetric` sú importované a nepoužité, hoci `docs/reports/2026-09-05-pr535-babysit-contract.md:22` ich uvádza ako „debt cleared".
 
-**Odporúčanie executora (nie DECISION):** **V1 teraz**, a poradie krokov obrátiť — F5 hovorí, že
-skutočný P0 nie je A3, ale neaplikovaná migrácia. Rozhodnúť o V1–V5 **pred** aplikovaním migrácie;
-kým sa neaplikuje, `Allow anon access` v prode zostáva otvorená a A1/A2 zostávajú `unknown`.
+**Odporúčanie executora bolo V1; founder ho prijal** (`DEC-20260917-003`).
+
+---
+
+## Čo V1 skutočne zmenilo
+
+Bezpečnostný model sa **nemení**. Nezmenil sa `proxy.ts`, `route.ts`, `session-api.ts`, klient
+ani žiadny SQL súbor. Zmenil sa len súlad správanie → dokumentácia → test.
+
+| súbor | zmena |
+|---|---|
+| `apps/crm/src/proxy-onboarding-session-gate.test.ts` | **nový** — proxy-level test, ktorý 401 fixuje ako zámer |
+| `docs/reports/2026-09-04-rls-onboarding-session-api.md` | korekčná hlavička + 4 nepravdivé vety prepísané |
+| `docs/runbooks/rollback-onboarding-sessions-anon.md` | premisa opravená — rollback nie je liek na 401 |
+| `.ai/bus/tasks/TASK-RLS-ONBOARDING-SESSION.md` | A3 vyhodnotené `fail` + `deviation: accepted_by_founder`; **`desc` nedotknutý**, `verdict` nedotknutý |
+| `.ai/bus/decisions/DEC-20260917-003-...md` | **nový** — founderova veta doslovne |
+
+**Dôkaz, že test drží bránu (nie iba že prechádza):**
+
+```text
+npx vitest run src/proxy-onboarding-session-gate.test.ts
+  Test Files  1 passed (1)   Tests  5 passed (5)
+
+mutačný test — dočasne pridané "/api/onboarding/session" do PUBLIC_PATHS:
+  Tests  2 failed | 3 passed   (anonymný GET aj POST)
+proxy.ts následne obnovený; git diff proxy.ts prázdny
+```
+
+**Ďalšie overenie pred pushom:**
+
+```text
+npx vitest run <6 súvisiacich súborov>  -> Test Files 6 passed (6), Tests 26 passed (26)
+npx eslint --quiet src/proxy-onboarding-session-gate.test.ts  -> exit 0
+npm run typecheck  -> Typovych chyb: 48, Baseline: 69 (pod stropom); žiadna v novom teste
+```
+
+### Čo V1 zámerne NEurobilo
+
+`apps/crm/supabase/migrations/20260904220000_drop_onboarding_sessions_anon_all.sql:10` obsahuje
+rovnaké nepravdivé tvrdenie o „public wizard". **Neopravené zámerne:** je to migračný súbor a jeho
+zmena mení checksum súboru, ktorý ešte nebol aplikovaný. Oprava tohto komentára patrí k rozhodnutiu
+o migrácii, nie sem. Zostáva ako otvorený bod.
 
 ## Otvorené neznáme (nedajú sa zavrieť z repa)
 
@@ -146,5 +186,5 @@ sú odvtedy na `main` a ďalší beh subagentov z `main` ich už nájde.
 
 ## Výsledok tasku
 
-- `founder_relays`: **1** — tento prompt + priložený `operating-mode-b.patch` za setup. V samotnom tasku 0.
+- `founder_relays`: **1** — prvý prompt + priložený `operating-mode-b.patch` za setup. V samotnom tasku (analýza aj implementácia V1) **0** — founder preniesol iba vlastné rozhodnutie, čo sa do metriky nepočíta.
 - Poznámka k patchu: obsah bol už na `origin/audit/2026-09-16` (`56e2359`); `git am --3way` vrátil „No changes -- Patch already applied." Vetva `docs/operating-mode-b` ukazuje na ten commit, duplicitný commit nevznikol.
