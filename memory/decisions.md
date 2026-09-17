@@ -857,6 +857,10 @@ zmeny Stage 1/Acquisition scope.
 
 Fix: exact `.eq` when candidate contains `_`/`%`; keep `ilike` only for safe patterns. Report: `docs/reports/2026-08-15-critical-email-ilike-auth.md`.
 
+## [2026-08-20] - Invite must stamp agency_id
+- **Rozhodnutie:** POST /api/invite upsertuje invitee profile s caller agency_id + auth_user_id; role allowlist agent|manager|admin.
+- **Prečo:** Bez agency_id invitee login = null tenant (prázdny inventár).
+- **Dôkaz:** docs/reports/2026-08-20-critical-bug-invite-agency-id.md
 ## [2026-08-21] — Billing wipe fixes: implement without waiting on impact count
 
 - **Rozhodnutie:** GO na dva samostatné fix PR z dnešného mainu (#451 legacy unknown≠free; credits-expire guard). Počet zasiahnutých zákazníkov nerozhoduje o tom, či opraviť — len o remediácii.
