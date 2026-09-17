@@ -1,10 +1,23 @@
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
-import { resolveProfileForAuthUser } from "@/lib/profiles/resolve-profile-for-auth";
+import {
+  emailLookupNeedsExactMatch,
+  resolveProfileForAuthUser,
+} from "@/lib/profiles/resolve-profile-for-auth";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 
 const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? "https://app.revolis.ai").replace(/\/$/, "");
+
+type CallerProfile = {
+  id?: string;
+  agency_id?: string | null;
+  auth_user_id?: string | null;
+  email?: string | null;
+  role?: string | null;
+  ui_role?: string | null;
+  account_tier?: string | null;
+};
 
 async function getAuthenticatedUser() {
   const supabase = await createClient();
@@ -16,6 +29,7 @@ async function getAuthenticatedUser() {
     return {
       supabase,
       user: null,
+      profile: null as CallerProfile | null,
       canManageUsers: false,
       error: NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 }),
     };
@@ -33,7 +47,52 @@ async function getAuthenticatedUser() {
     profile?.ui_role === "owner_vision" ||
     profile?.ui_role === "owner_protocol";
 
-  return { supabase, user, canManageUsers, error: null };
+  return { supabase, user, profile: (profile as CallerProfile | null) ?? null, canManageUsers, error: null };
+}
+
+/**
+ * Owners may only reset passwords for users in their own agency.
+ * Cross-tenant recovery (especially recovery-link returning action_link) is
+ * account takeover.
+ */
+async function assertSameAgencyTarget(
+  callerAgencyId: string | null | undefined,
+  targetEmail: string,
+): Promise<{ ok: true } | { ok: false; response: NextResponse }> {
+  if (!callerAgencyId) {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { ok: false, error: "Chýba agentúra v profile — reset iného účtu nie je povolený." },
+        { status: 403 },
+      ),
+    };
+  }
+
+  const admin = createAdminClient();
+  const base = admin.from("profiles").select("id, agency_id, email");
+  const { data: target, error } = emailLookupNeedsExactMatch(targetEmail)
+    ? await base.eq("email", targetEmail).maybeSingle()
+    : await base.ilike("email", targetEmail).maybeSingle();
+
+  if (error) {
+    return {
+      ok: false,
+      response: NextResponse.json({ ok: false, error: error.message }, { status: 500 }),
+    };
+  }
+
+  if (!target?.agency_id || target.agency_id !== callerAgencyId) {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { ok: false, error: "Používateľ nie je v tvojej agentúre." },
+        { status: 403 },
+      ),
+    };
+  }
+
+  return { ok: true };
 }
 
 export async function GET() {
@@ -48,7 +107,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const { supabase, user, canManageUsers, error } = await getAuthenticatedUser();
+  const { supabase, user, profile, canManageUsers, error } = await getAuthenticatedUser();
   if (error) return error;
   if (!user?.email) {
     return NextResponse.json({ ok: false, error: "User email missing." }, { status: 400 });
@@ -73,6 +132,14 @@ export async function POST(request: Request) {
         { ok: false, error: "Reset hesla iného používateľa môže vykonať iba vlastník účtu." },
         { status: 403 },
       );
+    }
+
+    if (
+      (action === "recovery" || action === "recovery-link") &&
+      requestedEmail !== ownEmail
+    ) {
+      const scope = await assertSameAgencyTarget(profile?.agency_id, requestedEmail);
+      if (!scope.ok) return scope.response;
     }
 
     if (action === "recovery") {
@@ -122,6 +189,13 @@ export async function POST(request: Request) {
         );
       }
 
+      if (!profile?.agency_id) {
+        return NextResponse.json(
+          { ok: false, error: "Chýba agentúra v profile pozývajúceho." },
+          { status: 403 },
+        );
+      }
+
       const testEmail = String(body?.email ?? "").trim().toLowerCase();
       const fullName = String(body?.fullName ?? "").trim() || "Testovací používateľ";
 
@@ -131,7 +205,7 @@ export async function POST(request: Request) {
 
       const admin = createAdminClient();
       const { data, error: inviteError } = await admin.auth.admin.inviteUserByEmail(testEmail, {
-        data: { full_name: fullName, role: "agent" },
+        data: { full_name: fullName, role: "agent", agency_id: profile.agency_id },
         redirectTo: `${APP_URL}/dashboard`,
       });
 
@@ -139,17 +213,28 @@ export async function POST(request: Request) {
         return NextResponse.json({ ok: false, error: inviteError.message }, { status: 400 });
       }
 
-      if (data.user?.id) {
-        await admin.from("profiles").upsert(
-          {
-            id: data.user.id,
-            full_name: fullName,
-            email: testEmail,
-            role: "agent",
-            is_active: true,
-          },
-          { onConflict: "id" },
+      if (!data.user?.id) {
+        return NextResponse.json(
+          { ok: false, error: "Pozvánka nevrátila používateľské ID." },
+          { status: 500 },
         );
+      }
+
+      const { error: profileError } = await admin.from("profiles").upsert(
+        {
+          id: data.user.id,
+          auth_user_id: data.user.id,
+          agency_id: profile.agency_id,
+          full_name: fullName,
+          email: testEmail,
+          role: "agent",
+          is_active: true,
+        },
+        { onConflict: "id" },
+      );
+
+      if (profileError) {
+        return NextResponse.json({ ok: false, error: profileError.message }, { status: 500 });
       }
 
       return NextResponse.json({
