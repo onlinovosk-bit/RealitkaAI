@@ -49,8 +49,10 @@ function makeRequest(body: unknown = INQUIRY_BODY): NextRequest {
 describe("POST /api/acquire/email dedup claim", () => {
   let claimedKeys: Set<string>;
   let deletedKeys: string[];
+  let leadRows: Map<string, Record<string, unknown>>;
   let leadInserts: number;
   let leadShouldFail: boolean;
+  let leadCommitsDespiteError: boolean;
   /** When true, SELECT pretends the key is absent (race: another worker claimed after our read). */
   let hideExistingOnSelect: boolean;
 
@@ -59,8 +61,10 @@ describe("POST /api/acquire/email dedup claim", () => {
     vi.stubEnv("ACQUIRE_SHARED_SECRET", SECRET);
     claimedKeys = new Set();
     deletedKeys = [];
+    leadRows = new Map();
     leadInserts = 0;
     leadShouldFail = false;
+    leadCommitsDespiteError = false;
     hideExistingOnSelect = false;
 
     mockFrom.mockImplementation((table: string) => {
@@ -102,31 +106,50 @@ describe("POST /api/acquire/email dedup claim", () => {
 
       if (table === "leads") {
         return {
-          insert: () => ({
+          insert: (payload: Record<string, unknown>) => ({
             select: () => ({
               single: async () => {
                 leadInserts += 1;
+                if (leadRows.has(String(payload.id))) {
+                  return {
+                    data: null,
+                    error: {
+                      code: "23505",
+                      message: "duplicate key value violates unique constraint",
+                    },
+                  };
+                }
+                const row = {
+                  id: payload.id,
+                  name: payload.name,
+                  status: payload.status,
+                  score: payload.score,
+                  last_contact: payload.last_contact,
+                  note: payload.note,
+                  source: payload.source,
+                  agency_id: payload.agency_id,
+                  ai_triage_at: null,
+                };
                 if (leadShouldFail) {
+                  if (leadCommitsDespiteError) {
+                    leadRows.set(String(payload.id), row);
+                  }
                   return {
                     data: null,
                     error: { message: "insert aborted", code: "57014" },
                   };
                 }
-                return {
-                  data: {
-                    id: "lead-1",
-                    name: "Jan Novak",
-                    status: "Nový",
-                    score: 50,
-                    last_contact: "Práve vytvorený (email gateway)",
-                    note: "n",
-                    source: "portal:Nehnuteľnosti.sk",
-                    agency_id: AGENCY_ID,
-                    ai_triage_at: null,
-                  },
-                  error: null,
-                };
+                leadRows.set(String(payload.id), row);
+                return { data: row, error: null };
               },
+            }),
+          }),
+          select: () => ({
+            eq: (_col: string, id: string) => ({
+              maybeSingle: async () => ({
+                data: leadRows.get(id) ?? null,
+                error: null,
+              }),
             }),
           }),
         };
@@ -165,6 +188,31 @@ describe("POST /api/acquire/email dedup claim", () => {
     const body = await retry.json();
     expect(body.lead_created).toBe(true);
     expect(leadInserts).toBe(2);
+  });
+
+  it("uses a deterministic lead id so retry after an unknown commit cannot duplicate the lead", async () => {
+    leadShouldFail = true;
+    leadCommitsDespiteError = true;
+    const { POST } = await import("../route");
+
+    const first = await POST(makeRequest());
+    expect(first.status).toBe(500);
+    expect(leadInserts).toBe(1);
+    expect(claimedKeys.size).toBe(0);
+    expect(deletedKeys).toHaveLength(1);
+    expect(leadRows.size).toBe(1);
+    const [committedLeadId] = [...leadRows.keys()];
+
+    leadShouldFail = false;
+    leadCommitsDespiteError = false;
+    const retry = await POST(makeRequest());
+    expect(retry.status).toBe(200);
+    const body = await retry.json();
+    expect(body.lead_created).toBe(false);
+    expect(body.reason).toBe("duplicate");
+    expect(body.lead_id).toBe(committedLeadId);
+    expect(leadInserts).toBe(2);
+    expect(leadRows.size).toBe(1);
   });
 
   it("treats concurrent unique dedup conflict as already processed (no second lead)", async () => {

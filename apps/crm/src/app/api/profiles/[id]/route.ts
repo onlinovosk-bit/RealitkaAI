@@ -144,7 +144,11 @@ export async function PATCH(
       });
     }
 
-    const updated = await updateProfile(id, safePatch);
+    // Self-service fields (name/email/phone/team) go through RLS, so the
+    // request-scoped client must be threaded in. Without it the store falls
+    // back to the browser singleton and `profiles_self_update` rejects the
+    // write — the same class as the properties routes in #443.
+    const updated = await updateProfile(id, safePatch, supabase);
     return NextResponse.json({ ok: true, profile: updated });
   } catch (err) {
     return NextResponse.json(

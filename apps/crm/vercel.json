@@ -46,12 +46,20 @@
       "schedule": "0 7 * * *"
     },
     {
+      "path": "/api/cron/customer-health",
+      "schedule": "0 7 * * *"
+    },
+    {
       "path": "/api/cron/guardian-run",
       "schedule": "0 6 * * *"
     },
     {
       "path": "/api/cron/guardian-digest",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/notification-digest",
+      "schedule": "15 7 * * *"
     },
     {
       "path": "/api/cron/credits-cycle",

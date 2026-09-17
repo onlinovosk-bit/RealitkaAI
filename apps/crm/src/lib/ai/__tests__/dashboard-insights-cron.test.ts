@@ -17,8 +17,8 @@ import {
   overdueFollowupCutoffIso,
 } from '../dashboard-insights-gather'
 
-const { logAiActionMock } = vi.hoisted(() => ({
-  logAiActionMock: vi.fn().mockResolvedValue(undefined),
+const { persistAiCostTelemetryMock } = vi.hoisted(() => ({
+  persistAiCostTelemetryMock: vi.fn().mockResolvedValue({ ok: true, mode: 'full' }),
 }))
 
 const emptySummary: DashboardSummaryResponse = {
@@ -212,9 +212,8 @@ vi.mock('@/lib/ai/dashboard-insights', async importOriginal => {
   }
 })
 
-vi.mock('@/lib/ai-action-audit', () => ({
-  logAiAction: logAiActionMock,
-  logAiActionAudit: vi.fn().mockResolvedValue(undefined),
+vi.mock('@/lib/ai/persist-cost-telemetry', () => ({
+  persistAiCostTelemetry: (...args: unknown[]) => persistAiCostTelemetryMock(...args),
 }))
 
 describe('dashboard-insights generator (cron path)', () => {
@@ -301,12 +300,12 @@ describe('dashboard-insights-cron cache writer', () => {
     expect(upsert.mock.calls[0][0].payload.actions).toHaveLength(0)
   })
 
-  it('generateAndCacheAgencyInsights logs via logAiAction', async () => {
+  it('generateAndCacheAgencyInsights persists cost via persistAiCostTelemetry', async () => {
     const { from } = mockAdminForCache({ summary: smolkoSummary })
     await generateAndCacheAgencyInsights({ from } as never, AGENCY_ID)
-    expect(logAiActionMock).toHaveBeenCalledWith(
+    expect(persistAiCostTelemetryMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        action: 'dashboard_insights',
+        feature: 'dashboard_insights',
         agencyId: AGENCY_ID,
       }),
     )
