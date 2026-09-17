@@ -1,9 +1,10 @@
 # SMO-B05 — Website Concierge privacy / AI disclosure / FAQ
 
-**Status dokumentu:** `DRAFT` — nie je schválený na produkciu  
+**Status dokumentu:** `APPROVED` — GO-B05-COPY 2026-09-17 (founder chat)  
 **Uzol:** N05  
-**Register:** SMO-B05 (`BLOCKED` → vyžaduje GO-B05-COPY)  
+**Register:** SMO-B05 (`GO-B05-COPY` granted; publish still human for live site paste)  
 **Dátum draftu:** 2026-09-17  
+**APPROVED_BY:** Founder (chat GO-B05-COPY 2026-09-17)  
 **Zdroje (read-only):**
 
 - `docs/briefs/reality-smolko-blocking-conditions-register.md` § SMO-B05
@@ -16,24 +17,17 @@
 
 ---
 
-## STOP — N07 zakázané do GO-B05-COPY
+## GO-B05-COPY — GRANTED 2026-09-17
 
 ```text
-N07 (public Concierge read MVP) je ZAKÁZANÉ, kým nie je udelené
-GO-B05-COPY od Founder + Privacy + p. Smolko.
-
-Tento súbor je DRAFT. Nesmie sa:
-- publikovať na realitysmolko.sk ani app.revolis.ai marketing pages
-- vkladať do production copy v apps/crm bez GO
-- používať ako dôkaz PASS v registri
-
-Fallback bez GO: neverejný interný preview bez reálnych kontaktov
-(register SMO-B05).
+Founder udelil GO-B05-COPY (chat 2026-09-17). N07 API-only MVP smie ísť.
+Live paste na realitysmolko.sk ostáva HUMAN (Smolko/Privacy), ale
+technický Concierge callback + search už nie je blokovaný týmto uzlom.
 ```
 
-**GO_REQUIRED:** `GO-B05-COPY`  
-**APPROVED_BY (dokument):** `_pending_`  
-**BLOCKS:** N07
+**GO_REQUIRED:** `GO-B05-COPY` → **GRANTED**  
+**APPROVED_BY (dokument):** Founder 2026-09-17  
+**BLOCKS:** _(cleared for N07)_
 
 ---
 

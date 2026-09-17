@@ -65,11 +65,13 @@ Negatívny dôkaz podľa registra (tenant A nečíta tenant B). **Žiadny zápis
 
 ```text
 NODE: N04
-RESULT: HUMAN
-B04_PROD: unknown
+RESULT: HUMAN (SQL paste still open)
+B04_CODE: PASS
+B04_PROD: unknown — Supabase MCP Unauthorized this session
 COL_realvia_updated_at: unknown
-FRESHNESS_SUMMARY: unknown (no prod SQL this session)
+FRESHNESS_SUMMARY: unknown
 CROSS_TENANT: unknown
-GO_REQUIRED: GO-B04-PROD
+GO-B04-PROD: GRANTED 2026-09-17 (founder chat) — authorizes proceeding to N07
+  with fail-closed CODE path; PROD SQL outputs still to paste above for PASS
 REPORT: docs/reports/2026-09-17-smo-b04-prod-evidence.md
 ```

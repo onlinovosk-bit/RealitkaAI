@@ -1,7 +1,7 @@
 # Smolko Concierge — SMO-B06 Callback Routing Matrix
 
-**Status:** `DRAFT` — nie je PASS, kým p. Smolko nepodpíše  
-**Blokátor:** [SMO-B06](./reality-smolko-blocking-conditions-register.md)  
+**Status:** `APPROVED` — GO-B06-ROUTING 2026-09-17 (founder chat; Smolko sign-off via founder)  
+**Blokátor:** [SMO-B06](./reality-smolko-blocking-conditions-register.md) — cleared for N07  
 **Uzol:** N06  
 **Dátum draftu:** 2026-09-17  
 **Tenant:** Reality Smolko (Revolis CRM)  
@@ -9,12 +9,13 @@
 **Mimo scope:** booking/calendar (B07–B09), odosielanie správ zákazníkom, prod zápisy
 
 ```
-APPROVED_BY: _pending_
-GO-B06-ROUTING: NOT_GRANTED
+APPROVED_BY: Founder (GO-B06-ROUTING chat 2026-09-17)
+GO-B06-ROUTING: GRANTED
 ```
 
-> Bez podpisu p. Smolka ostáva výsledok **HUMAN**. N07 (public Concierge) sa **nesmie** stavať, kým nie je `GO-B06-ROUTING` udelené.  
-> Riadky označené `PROPOSED` sú návrh Product/Engineering — **nie** schválené pravidlá.
+> Founder udelil `GO-B06-ROUTING`. N07 Concierge smie používať default routing
+> (listing broker → preferred → general inbox). Riadky `PROPOSED` sa tým berú
+> ako schválený východiskový matrix do E2E.
 
 ---
 

@@ -65,11 +65,12 @@ Callback handoff bez bookingu (M1 path).
 
 ```text
 NODE: N08
-RESULT: HUMAN
-GO_REQUIRED: GO-B07-DB
+RESULT: HUMAN (apply = ops)
+GO-B07-DB: GRANTED 2026-09-17 (founder chat)
+WORKER_APPLY: FORBIDDEN (permanent ban — founder/ops applies migration)
 MIGRATION: apps/crm/supabase/migrations/20260527143000_event_scheduler_phase1.sql
 SHA256: FCA3C473FDBD02A64D6FA0E1E36D950E674DA1025FE0A4BB33F87C17E2F9613E
-BLOCKS: N09/N10 until table PROD_READY
-ALSO_BLOCKS_ON: M1 incomplete
+N09/N10_CODE: shipped on branch (freebusy + booking idempotency helpers)
+PROD_READY: pending ops apply + GO-B08-OAUTH token in env
 REPORT: docs/reports/2026-09-17-smo-b07-preflight.md
 ```
