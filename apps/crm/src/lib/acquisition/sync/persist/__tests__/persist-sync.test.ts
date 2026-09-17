@@ -35,6 +35,12 @@ function createMockDb() {
   return { db, upserts };
 }
 
+function stubEnv(
+  overrides: Record<string, string | undefined> = {},
+): NodeJS.ProcessEnv {
+  return { NODE_ENV: "test", ...overrides };
+}
+
 const tenant = {
   agency_id: "agency-a",
   acquisition_account_id: "acct-1",
@@ -44,24 +50,24 @@ const tenant = {
 
 describe("ACQUISITION_PERSIST_SYNC flag", () => {
   it("defaults to false when unset, empty, or not the string true", () => {
-    expect(isAcquisitionPersistSyncEnabled({})).toBe(false);
-    expect(isAcquisitionPersistSyncEnabled({ [ACQUISITION_PERSIST_SYNC_ENV]: "" })).toBe(false);
-    expect(isAcquisitionPersistSyncEnabled({ [ACQUISITION_PERSIST_SYNC_ENV]: "false" })).toBe(false);
-    expect(isAcquisitionPersistSyncEnabled({ [ACQUISITION_PERSIST_SYNC_ENV]: "1" })).toBe(false);
-    expect(isAcquisitionPersistSyncEnabled({ [ACQUISITION_PERSIST_SYNC_ENV]: "TRUE" })).toBe(false);
+    expect(isAcquisitionPersistSyncEnabled(stubEnv())).toBe(false);
+    expect(isAcquisitionPersistSyncEnabled(stubEnv({ [ACQUISITION_PERSIST_SYNC_ENV]: "" }))).toBe(false);
+    expect(isAcquisitionPersistSyncEnabled(stubEnv({ [ACQUISITION_PERSIST_SYNC_ENV]: "false" }))).toBe(false);
+    expect(isAcquisitionPersistSyncEnabled(stubEnv({ [ACQUISITION_PERSIST_SYNC_ENV]: "1" }))).toBe(false);
+    expect(isAcquisitionPersistSyncEnabled(stubEnv({ [ACQUISITION_PERSIST_SYNC_ENV]: "TRUE" }))).toBe(false);
   });
 
   it("enables only for the exact string true", () => {
     expect(
-      isAcquisitionPersistSyncEnabled({ [ACQUISITION_PERSIST_SYNC_ENV]: "true" }),
+      isAcquisitionPersistSyncEnabled(stubEnv({ [ACQUISITION_PERSIST_SYNC_ENV]: "true" })),
     ).toBe(true);
   });
 
   it("createAcquisitionPersistWriter returns null when flag is off", () => {
     const { db } = createMockDb();
-    expect(createAcquisitionPersistWriter(db, {})).toBeNull();
+    expect(createAcquisitionPersistWriter(db, stubEnv())).toBeNull();
     expect(
-      createAcquisitionPersistWriter(db, { [ACQUISITION_PERSIST_SYNC_ENV]: "false" }),
+      createAcquisitionPersistWriter(db, stubEnv({ [ACQUISITION_PERSIST_SYNC_ENV]: "false" })),
     ).toBeNull();
   });
 });
@@ -69,7 +75,7 @@ describe("ACQUISITION_PERSIST_SYNC flag", () => {
 describe("persist upserts against mock DB", () => {
   it("does not touch the mock DB when the flag is off", async () => {
     const { db, upserts } = createMockDb();
-    const off = { [ACQUISITION_PERSIST_SYNC_ENV]: "false" };
+    const off = stubEnv({ [ACQUISITION_PERSIST_SYNC_ENV]: "false" });
 
     const results = await Promise.all([
       persistAdGroup(db, { ...tenant, provider_ad_group_id: "ag-1" }, off),
@@ -114,7 +120,7 @@ describe("persist upserts against mock DB", () => {
 
   it("upserts all four tables on unique provider IDs when flag is true", async () => {
     const { db, upserts } = createMockDb();
-    const on = { [ACQUISITION_PERSIST_SYNC_ENV]: "true" };
+    const on = stubEnv({ [ACQUISITION_PERSIST_SYNC_ENV]: "true" });
     const writer = createAcquisitionPersistWriter(db, on);
     expect(writer).not.toBeNull();
 
@@ -170,7 +176,7 @@ describe("persist upserts against mock DB", () => {
 
   it("synthesizes keyword provider id when criterion id is missing", async () => {
     const { db, upserts } = createMockDb();
-    const on = { [ACQUISITION_PERSIST_SYNC_ENV]: "true" };
+    const on = stubEnv({ [ACQUISITION_PERSIST_SYNC_ENV]: "true" });
     await persistKeyword(
       db,
       {
@@ -187,7 +193,7 @@ describe("persist upserts against mock DB", () => {
 
   it("repeats the same provider key as a second upsert (idempotent)", async () => {
     const { db, upserts } = createMockDb();
-    const on = { [ACQUISITION_PERSIST_SYNC_ENV]: "true" };
+    const on = stubEnv({ [ACQUISITION_PERSIST_SYNC_ENV]: "true" });
     const row = { ...tenant, provider_ad_group_id: "ag-dup", name: "first" };
     await persistAdGroup(db, row, on);
     await persistAdGroup(db, { ...row, name: "second" }, on);

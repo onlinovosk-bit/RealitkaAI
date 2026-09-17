@@ -13,6 +13,21 @@
 - [ ] **GO FIX-GRANT-LEDGER-ORPHAN** — roll back ledger + fail webhook/cycle when agency balance update fails after grant insert (#2); separate PR
 - [ ] **GO FIX-GMAIL-PULL-PAGING** — pageToken / persist seen ids; maxResults=25 loses older labeled mail (#3)
 - [ ] **GO FIX-MATCHING-LIST-CAP** — recalculate must not DELETE-all then rebuild from silent 500 cap (#4; beyond #444)
+## P0 — Onlinovo MCP (docs done, code STOP)
+
+- [x] **ONL-MCP-001** feasibility tonight — `docs/onlinovo/ONL-MCP-FEASIBILITY.md`
+- [ ] Founder: potvrdiť Shoptet tarif (Premium áno/nie)
+- [ ] `GO ONL-MCP-002` — neudelené; žiadny gateway kód bez tejto frázy
+- [ ] ONL-MCP-003/004 — neotvárať
+## P0 — Onlinovo MCP (tonight wave, merge founder)
+
+- [x] ONL-MCP-001 feasibility — #476
+- [x] ONL-MCP-002 impl plan — #477
+- [x] ONL-MCP-003 MVP `packages/mcp-onlinovo` — #478
+- [x] ONL-MCP-004 Ruflo/Cursor stdio config + smoke
+- [ ] Founder merge 476–478 + 004
+- [ ] Live Shoptet mapping — až tarif + token mimo git (`GO ONL-MCP-SHOP-LIVE`)
+
 
 ## P0 — Search / workdesk (post #461)
 
