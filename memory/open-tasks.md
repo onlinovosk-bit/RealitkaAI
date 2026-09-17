@@ -1,6 +1,34 @@
 # Open Tasks — Prioritized Queue
 
-> Posledná aktualizácia: 2026-08-22 | Task-loop sync
+> Posledná aktualizácia: 2026-08-25 | Task-loop sync
+
+## P0 — Onlinovo MCP (docs done, code STOP)
+
+- [x] **ONL-MCP-001** feasibility tonight — `docs/onlinovo/ONL-MCP-FEASIBILITY.md`
+- [ ] Founder: potvrdiť Shoptet tarif (Premium áno/nie)
+- [ ] `GO ONL-MCP-002` — neudelené; žiadny gateway kód bez tejto frázy
+- [ ] ONL-MCP-003/004 — neotvárať
+## P0 — Onlinovo MCP (tonight wave, merge founder)
+
+- [x] ONL-MCP-001 feasibility — #476
+- [x] ONL-MCP-002 impl plan — #477
+- [x] ONL-MCP-003 MVP `packages/mcp-onlinovo` — #478
+- [x] ONL-MCP-004 Ruflo/Cursor stdio config + smoke
+- [ ] Founder merge 476–478 + 004
+- [ ] Live Shoptet mapping — až tarif + token mimo git (`GO ONL-MCP-SHOP-LIVE`)
+
+
+## P0 — Search / workdesk (post #461)
+
+- [x] Merge #461 topbar Hľadať (`47ec4852`)
+- [x] **GO FÁZA A** + audit — merged #463 (`1cf82d32`)
+- [ ] **GO SEARCH-PAGING** — (1) client filter vidí len načítanú stránku (`LEADS_PAGE_SIZE=50`); (2) globálna lišta pomenovaná ako lokálny filter (`SEARCH-TOPBAR-GLOBAL-VS-LOCAL`). Neštartovať bez tejto frázy. Preferencia: lišta = DB search, filter ostane na `/leads`.
+
+## P0 — Action Center / Pricing (spec only)
+
+- [ ] Merge spec PR (BO-A + BO-B docs) — **žiadny runtime**
+- [ ] `GO IMPLEMENT PRICING V2` — neudelené; pred ním Stripe `tax_behavior` + volume discount zámer
+- [ ] `GO IMPLEMENT ACTION CENTER V0` — neudelené; nezávislé od pricing
 
 ## P0 — Agent OS V0 blocked (baseline)
 

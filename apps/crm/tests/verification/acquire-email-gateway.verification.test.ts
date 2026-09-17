@@ -36,6 +36,13 @@ describe("[verification] Acquire email gateway", () => {
     expect(route).toMatch(
       /insert error[\s\S]*acquire_dedup_keys[\s\S]*\.delete\(\)[\s\S]*\.eq\("key", key\)/,
     );
+    // Retry after an unknown commit must not create a second lead.
+    expect(route).toContain("deterministicLeadId");
+    expect(route).toContain("acquire-email-lead:");
+    expect(route).toContain("LEAD_ALREADY_EXISTS");
+    expect(route).toMatch(
+      /isUniqueConflict\(error\)[\s\S]*from\("leads"\)[\s\S]*\.eq\("id", leadId\)/,
+    );
   });
 
   it("agency_id comes from inbound address map, not parsed email", () => {

@@ -21,3 +21,5 @@ Implementačné plány z Cursor Plan Mode (Shift+Tab) pre Build Orders.
 | BO | Plan | Stav |
 |----|------|------|
 | [BO-agent-os-v0-bounded-workflow-kernel](../BO-agent-os-v0-bounded-workflow-kernel.md) | [BO-agent-os-v0-bounded-workflow-kernel-plan](BO-agent-os-v0-bounded-workflow-kernel-plan.md) | STOP — Phase 0 baseline missing (`docs/reports/2026-08-22-agent-os-v0-implementation-stop.md`) |
+| [BO-action-center-v0](../BO-action-center-v0.md) | [BO-action-center-v0-plan](BO-action-center-v0-plan.md) | SPEC — runtime GO not granted |
+| [BO-pricing-migration-v2](../BO-pricing-migration-v2.md) | [BO-pricing-migration-v2-plan](BO-pricing-migration-v2-plan.md) | SPEC — runtime / Stripe env GO not granted |

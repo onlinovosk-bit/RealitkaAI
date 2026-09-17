@@ -78,3 +78,20 @@ git status --short -- scripts/ruflo-model-bridge package.json package-lock.json 
 Expected before implementation edits: the HEAD, nine blob IDs and patch ID
 above match; the last bridge command emits no unstaged paths. Any mismatch is a
 STOP and requires a fresh baseline review.
+
+## Revalidation note 2026-08-22
+
+Revalidation against the capture-PC index (not a new baseline, not a GO):
+
+- Nine blob IDs re-checked; **all match** the table above.
+- Patch-id on the capture PC recomputed to
+  `b08ee977beecfc44612ba8cd6b3f4273ab8cefd8`
+  (this manifest originally recorded `a414e018d6050df3c4de41b2e755dd21165ec8a4`).
+  Cause: `core.autocrlf = true`, i.e. a diff-render difference, **not content
+  drift** — evidence is the blob-id match on all nine files.
+- The claim *„no unstaged delta"* **no longer holds**: at revalidation time
+  `core.ts` had an unstaged change +656/−66 (V0 Step A), captured in a separate
+  commit `wip(bridge): V0 Step A contracts written before GO IMPLEMENT V0`.
+
+This note does not authorize `GO IMPLEMENT V0`. The feature branch still must
+exist on `origin` before any implementation agent edits `scripts/`.
