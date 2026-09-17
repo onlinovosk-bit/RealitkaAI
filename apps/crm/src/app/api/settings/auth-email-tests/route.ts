@@ -2,9 +2,11 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import { resolveProfileForAuthUser } from "@/lib/profiles/resolve-profile-for-auth";
+import { getPasswordRecoveryRedirectUrl } from "@/lib/supabase/recovery-redirect";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 
 const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? "https://app.revolis.ai").replace(/\/$/, "");
+const RECOVERY_REDIRECT = getPasswordRecoveryRedirectUrl(APP_URL);
 
 async function getAuthenticatedUser() {
   const supabase = await createClient();
@@ -77,7 +79,7 @@ export async function POST(request: Request) {
 
     if (action === "recovery") {
       const { error: recoveryError } = await supabase.auth.resetPasswordForEmail(requestedEmail, {
-        redirectTo: `${APP_URL}/reset-password`,
+        redirectTo: RECOVERY_REDIRECT,
       });
 
       if (recoveryError) {
@@ -95,7 +97,7 @@ export async function POST(request: Request) {
       const { data, error: linkError } = await admin.auth.admin.generateLink({
         type: "recovery",
         email: requestedEmail,
-        options: { redirectTo: `${APP_URL}/reset-password` },
+        options: { redirectTo: RECOVERY_REDIRECT },
       });
 
       if (linkError) {
