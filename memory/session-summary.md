@@ -11,8 +11,38 @@
 - `docs/reports/2026-09-14-adr-software-factory-v1-minimum.md`: ingest + verification
 ### Ďalší krok
 Founder: rozhodni #1 a #4 (V1 Minimum + Judge-as-runner). Bez GO neimplementovať.
+## Session 2026-08-18
+
+### Dokončené
+- Kontrolor review PR #439: found remaining unknown-commit retry duplicate risk.
+- Follow-up branch `cursor/acquire-email-idempotency-dabc`: deterministic `leads.id` from acquire dedup key.
+- Report: `docs/reports/2026-08-18-acquire-email-idempotency-followup.md`
+
+### Rozpracované / Pending
+- Verify/push/open PR for `cursor/acquire-email-idempotency-dabc`.
+- Open critical-bug PRs awaiting review: #369, #370, #371, #374, #392, #401, #427, #438, #439
+- Stage 1 acquisition — only on explicit founder GO
+
+### Kľúčové súbory zmenené
+- `apps/crm/src/app/api/acquire/email/route.ts`: deterministic lead id + existing-lead response on primary-key retry.
+- `apps/crm/src/app/api/acquire/email/__tests__/route.test.ts`: unknown commit retry test.
+- `apps/crm/tests/verification/acquire-email-gateway.verification.test.ts`: live-spec for deterministic idempotency.
+
+### Ďalší krok
+Run targeted tests, push branch, open draft PR. Do not merge #439 without idempotency follow-up.
 ## Session 2026-09-15 (critical bug hunt — match status scoped)
 ### Dokončené
+- #510 / #511 merged (roadmap overlay + Launch Pack V0 docs)
+- Mapper-depth amendment: `mapTransaction` P0, zlé 13/14, PREDANÉ v title, governance riadky≠správnosť
+### Rozpracované / Pending
+- Founder: vyžiadať Realvia číselník (category + transaction)
+- Mapper P0 + backfill — samostatné GO (nie teraz)
+- Launch Pack implement — až po mapper P0 + `GO IMPLEMENT…`
+### Kľúčové súbory zmenené
+- `docs/reports/2026-09-03-realvia-mapper-depth-amendment.md`
+- `docs/reports/2026-09-03-property-launch-pack-integration.md` (doplnené)
+### Ďalší krok
+Oficiálny číselník od Realvie; žiadny GO IMPLEMENT Launch Pack.
 - HIGH: match status PATCH cookie-less write drop → fix + tests + PR
 - Report: `docs/reports/2026-09-15-match-status-scoped-client.md`
 ### Rozpracované / Pending

@@ -290,53 +290,15 @@ Produkčný DB audit (re-check 2026-09-04, projekt `ypgajkhqtbriqqmyawyv`) potvr
 
 | Kontrola | Výsledok |
 |---|---|
-| `to_regclass('public.scheduled_events')` | **null** — tabuľka v produkcii **neexistuje** |
-| `schema_migrations` version `20260527143000` (`event_scheduler_phase1`) | **záznam existuje** |
-
-Teda **migračný drift**: história tvrdí aplikovanie, objekt chýba. Booking stále nemá kam bezpečne zapísať CRM udalosť. Nesmie sa označiť Gate D / SMO-B07 ako `DONE` len podľa histórie.
-
-**Blokujúca podmienka Fázy 5:** pred booking preview vyriešiť drift (RCA + Founder DB `GO`), potom aplikovať alebo znovu overiť DDL z `20260527143000_event_scheduler_phase1` cez Supabase Dashboard pre projekt `ypgajkhqtbriqqmyawyv`, dokázať existenciu tabuľky, RLS, policy, indexov, nulový cross-tenant prístup a zosúladenú evidenciu. Aplikovanie DB migrácie vyžaduje samostatné founder DB `GO`; tento dokument ho neudeľuje. Detail: register SMO-B07 + `docs/reports/2026-09-04-smolko-blocking-register-ingest.md`.
-
-Najrýchlejší bezpečný variant po splnení tejto podmienky nepoužíva nový koncept dočasných holdov:
-
-1. načíta voľné okná cez úzko oprávnené Google Calendar free/busy,
-2. ukáže odvodené sloty podľa pracovných hodín, dĺžky a bufferov,
-3. pri potvrdení znovu načíta free/busy,
-4. zapíše tenant-scoped `scheduled_events`,
-5. vytvorí Google event idempotentným serverovým volaním,
-6. uloží externé ID/link a odošle potvrdenie,
-7. pri čiastočnom zlyhaní ukáže callback fallback a incident zachytí na retry.
-
-Ak sa v reálnom pilote preukáže konflikt súbežných rezervácií, až potom sa navrhne perzistentný hold/locking model so samostatným DB schválením.
-
-## 9. Povrch D — Weekly Portfolio Review
-
-Porada nemá byť ďalšia generatívna funkcia. Má deterministicky zoradiť výnimky:
-
-- nové alebo zmenené ponuky bez hotového Launch Packu,
-- ponuky s chýbajúcimi kritickými faktmi,
-- Guardian blokery,
-- ceny mimo odporúčaného pásma alebo bez čerstvého dôkazu,
-- ponuky bez aktivity podľa schváleného časového prahu,
-- nové dopyty bez odpovede,
-- obhliadky na nasledujúci týždeň a neuzavreté follow-upy.
-
-V0 je read-only pohľad/export nad existujúcimi údajmi. Žiadny nový task engine ani organizačný AI OS nie je potrebný.
-
-## 10. Dáta, bezpečnosť a tenancy
-
-### 10.1 Zdroj pravdy
-
-- Realvia/`properties`: stav a fakty ponuky.
-- Maklér: citlivé alebo subjektívne vlastnosti, úpravy porovnaní, odporúčaná cena a finálne schválenie.
-- Licencovaný provider/export: externý porovnateľný dôkaz.
-- Google Calendar: reálna dostupnosť a externá udalosť.
-- `scheduled_events`: Revolis evidencia CRM udalosti.
-- Lead acquisition pipeline: kontakt a routing.
-
-### 10.2 Blokujúci audit pred verejným concierge
-
-Realvia worker musí mať všetky lookup/update operácie viazané na `agency_id`. Globálny match podľa `source_id` bez tenantu blokuje verejný concierge.
+| `status = Aktívna` | 128 |
+| `status = Stiahnutá` | 4 |
+| `status = Predaná` | **0** |
+| `type = Ostatné` | **86 (65 %)** |
+| `type = Byt` / `Dom` | 30 / 16 |
+| `transaction_type = Predaj` | **132 v stĺpci** — **nie** „0 prenájmov v biznise“. Realvia `transaction` 123 = 53 ks (44 s prenájom v titule); mapper rozbitý. Pozri `docs/reports/2026-09-03-realvia-mapper-depth-amendment.md`. |
+| `price` null alebo 0 | 41 |
+| `usable_area = 0` | 50 |
+| `created_at` | 2026-05-25 → 2026-08-28 UTC = dátum **synchronizácie**, nie inzerovania |
 
 **CODE (2026-09-04):** [PR #522](https://github.com/onlinovosk-bit/RealitkaAI/pull/522) merged (`e574cbede`) — scoped upsert/delete podľa `agency_id` + `source_system` + `source_id`. To je `CODE_PRESENT`, **nie** `PROD_READY` / SMO-B04 PASS.
 

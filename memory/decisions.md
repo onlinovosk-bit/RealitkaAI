@@ -1,5 +1,11 @@
 # Critical Decisions Log
 
+## [2026-09-03] — Mapped field correctness (za „riadky existujú“)
+
+- **Počet riadkov dokazuje existenciu, nie správnosť.** Pole z mapovania externého zdroja sa overuje proti **nezávislému signálu** z toho istého záznamu (tu: `title` vs `type` / `transaction_type`).
+- **P0:** `mapCategory` **a** `mapTransaction` v `processQueue.ts` — neúplné aj **nesprávne** (13/14→Dom na bytoch; 123→Predaj pri prenájme v titule). Oprava až po oficiálnom číselníku Realvia; nie z titulov do kódu.
+- **Zrušené:** „Smolko má 0 prenájmov“ / „0 predajov v realite“ ako biznis fakt z mapped stĺpcov. `status=Predaná` = 0, ale 11× `***PREDANÉ***` v title.
+- **Launch Pack:** `GO IMPLEMENT` až po číselníku + mapper P0. Dôkaz: `docs/reports/2026-09-03-realvia-mapper-depth-amendment.md`.
 ## [2026-09-15] — North-star: split leads real/seed + config_changes attribution BUILD
 
 - **GO:** Founder `north-star-backfill-nalezy.md` (install + amend measurement design).
@@ -89,13 +95,13 @@
 ## [2026-09-03] — Property Launch Pack V0 = VALIDATE/spec (no code yet)
 
 - **Verdikt:** zjednotiť KF1 `listing-content` + Wave 1 `vertical-pack-demo` cez jeden kanonický vstup a jeden Quality Guardian gate; export bez publish; **bez novej DB**; bez chatbota.
-- **Prod limity v IR:** `properties` 132 Smolko; Ostatné 63–65 % = adapter `mapCategory` (nie prázdny payload); `ai_generations` na prod **chýba**.
-- **Implementácia:** STOP do `GO IMPLEMENT PROPERTY LAUNCH PACK V0`.
+- **Prod limity v IR:** `properties` 132 Smolko; Ostatné **65,2 %**; `ai_generations` na prod **chýba**; mapped type/txn **nespoľahlivé**.
+- **Implementácia:** STOP do číselníka Realvia + mapper P0, potom `GO IMPLEMENT PROPERTY LAUNCH PACK V0`.
 - **Artefakty:** `docs/briefs/BO-property-launch-pack-v0.md`, `docs/reports/2026-09-03-property-launch-pack-integration.md`.
 
 ## [2026-09-03] — Audit kódu nie je audit dát
 
-Ku každému tvrdeniu „toto už máme“ sa dokladá **počet riadkov v produkcii**, nie existencia súboru. Platí pre briefy, roadmapy aj Integration Reporty.
+Ku každému tvrdeniu „toto už máme“ sa dokladá **počet riadkov v produkcii**, nie existencia súboru. Platí pre briefy, roadmapy aj Integration Reporty. **Doplnok:** riadky ≠ správnosť mapped polí (pozri záznam Mapped field correctness vyššie).
 
 **Doplnok:** počet riadkov ≠ správnosť. Mapped polia overovať proti nezávislému signálu (`title`). Neznámy kód → `Neznáme` (P0 honest unknown), nie fog do legitímnej kategórie.
 
@@ -819,6 +825,29 @@ Dokaz:
 
 **Kill deadline Stage 0:** 2026-08-31 (funkcia uzavreta; dalsi kod = vlastne GO).
 
+## D-2026-08-18-01 — Acquire email idempotency: deterministic lead id
+
+**Rozhodnutie:** Follow-up k #439 nepoužije novú tabuľku ani PROD migráciu. `POST /api/acquire/email`
+odvodzuje `leads.id` deterministicky z `acquire_dedup_keys.key`; retry po neznámom
+Supabase commit stave teda narazí na rovnaký primary key a vráti existujúci lead
+namiesto vytvorenia duplikátu.
+
+**Prečo:** Samotné zmazanie dedup claimu po `leads.insert` errore rieši permanentnú
+stratu pri skutočnom fail-e, ale pri HTTP timeoute/aborte nevie, či insert v DB
+nakoniec commitol. Deterministický primary key robí retry idempotentným bez schémy.
+
+**Engineering justification:** Trigger: critical bug follow-up. Decision path: reuse
+existujúci `leads.id text primary key` + `acquire_dedup_keys.key`; žiadna nová
+dependency, tabuľka ani RPC. Alternatives considered: nový inbound event stĺpec
+(zamietnuté — migrácia/PROD apply pre úzky hotfix), ponechať #439 rollback bez
+ďalšej brzdy (zamietnuté — duplikát pri unknown commit), transakčný RPC
+(zamietnuté — väčší DB surface). Contradiction check: none; dopĺňa #439 bez
+zmeny Stage 1/Acquisition scope.
+
+**Súbory:** `apps/crm/src/app/api/acquire/email/route.ts`,
+`apps/crm/src/app/api/acquire/email/__tests__/route.test.ts`,
+`apps/crm/tests/verification/acquire-email-gateway.verification.test.ts`,
+`docs/reports/2026-08-18-acquire-email-idempotency-followup.md`.
 ## D-2026-08-15-04 — Fix profile email ILIKE wildcard auth takeover
 
 **Datum:** 2026-08-15
