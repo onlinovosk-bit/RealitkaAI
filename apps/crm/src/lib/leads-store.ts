@@ -732,9 +732,14 @@ export async function addLeadActivity(
   leadId: string,
   text: string,
   type: ActivityType = "Telefonat",
-  meta?: ActivityMeta
+  meta?: ActivityMeta,
+  /**
+   * Request-scoped client. Server callers SHOULD pass it so activity inserts
+   * use the authenticated session instead of the cookie-less browser singleton.
+   */
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
 ) {
-  await appendActivity(leadId, text, type, meta);
+  await appendActivity(leadId, text, type, meta, scoped);
 }
 
 function applyFilters(items: Lead[], filters?: LeadFilters) {
@@ -860,7 +865,12 @@ export async function getLead(
 
   const supabase = await resolveTenantSupabase(scoped);
 
+  // Fixture fallback is a local-development convenience only. In production it
+  // hands the caller a demo lead (demo name, demo email, demo phone) for a real
+  // lead id, which downstream senders then treat as a real contact.
+  // `listLeads` already guards this the same way.
   if (!supabase) {
+    if (process.env.NODE_ENV === "production") return undefined;
     return mockLeads.find((lead) => lead.id === id);
   }
 
@@ -871,6 +881,7 @@ export async function getLead(
     .single();
 
   if (error || !data) {
+    if (process.env.NODE_ENV === "production") return undefined;
     return mockLeads.find((lead) => lead.id === id);
   }
 
