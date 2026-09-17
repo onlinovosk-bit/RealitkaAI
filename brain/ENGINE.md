@@ -2,7 +2,7 @@
 id: brain.engine
 title: Revolis Brain OS Engine
 type: governance
-status: active
+status: stale
 version: 1.0.0
 owner: founder
 created_at: 2026-07-19

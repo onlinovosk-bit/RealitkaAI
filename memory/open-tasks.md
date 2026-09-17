@@ -8,6 +8,20 @@
 - [ ] **ONL-MCP-001 QUEUED** na noc 26.→27. — nespúšťať skôr; `TASK-0005`; žiadny gateway build
 - [ ] ONL-MCP-002/003/004 — **blocked** do verdiktu 001
 
+## P0 — Onlinovo MCP (docs done, code STOP)
+
+- [x] **ONL-MCP-001** feasibility tonight — `docs/onlinovo/ONL-MCP-FEASIBILITY.md`
+- [ ] Founder: potvrdiť Shoptet tarif (Premium áno/nie)
+- [ ] `GO ONL-MCP-002` — neudelené; žiadny gateway kód bez tejto frázy
+- [ ] ONL-MCP-003/004 — neotvárať
+## P0 — Onlinovo MCP (tonight wave, merge founder)
+
+- [x] ONL-MCP-001 feasibility — #476
+- [x] ONL-MCP-002 impl plan — #477
+- [x] ONL-MCP-003 MVP `packages/mcp-onlinovo` — #478
+- [x] ONL-MCP-004 Ruflo/Cursor stdio config + smoke
+- [ ] Founder merge 476–478 + 004
+- [ ] Live Shoptet mapping — až tarif + token mimo git (`GO ONL-MCP-SHOP-LIVE`)
 
 
 ## P0 — Search / workdesk (post #461)
