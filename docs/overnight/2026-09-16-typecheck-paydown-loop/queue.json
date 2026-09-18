@@ -1,0 +1,107 @@
+[
+ {
+  "file": "src/lib/acquisition/sync/persist/__tests__/persist-sync.test.ts",
+  "errors": 16,
+  "tier": "T1-tests"
+ },
+ {
+  "file": "src/lib/moat-capture/__tests__/moat-capture.test.ts",
+  "errors": 4,
+  "tier": "T1-tests"
+ },
+ {
+  "file": "src/app/(public)/buyer-onboarding/__tests__/actions.test.ts",
+  "errors": 1,
+  "tier": "T1-tests"
+ },
+ {
+  "file": "src/app/api/acquisition/audit-log/__tests__/route.test.ts",
+  "errors": 1,
+  "tier": "T1-tests"
+ },
+ {
+  "file": "src/app/api/onboarding/session/__tests__/route.test.ts",
+  "errors": 1,
+  "tier": "T1-tests"
+ },
+ {
+  "file": "src/lib/__tests__/billing-store.test.ts",
+  "errors": 1,
+  "tier": "T1-tests"
+ },
+ {
+  "file": "src/lib/acquisition/credentials.test.ts",
+  "errors": 1,
+  "tier": "T1-tests"
+ },
+ {
+  "file": "src/lib/acquisition/sync/keywords.test.ts",
+  "errors": 1,
+  "tier": "T1-tests"
+ },
+ {
+  "file": "src/lib/acquisition/sync/metrics.test.ts",
+  "errors": 1,
+  "tier": "T1-tests"
+ },
+ {
+  "file": "src/lib/acquisition/sync/search-terms.test.ts",
+  "errors": 1,
+  "tier": "T1-tests"
+ },
+ {
+  "file": "src/lib/inbound/__tests__/gmail-pull.test.ts",
+  "errors": 1,
+  "tier": "T1-tests"
+ },
+ {
+  "file": "src/lib/realvia/processQueue.agency-scope.test.ts",
+  "errors": 1,
+  "tier": "T1-tests"
+ },
+ {
+  "file": "scripts/inbound-auto-response-smoke-v1.ts",
+  "errors": 10,
+  "tier": "T2-scripts"
+ },
+ {
+  "file": "src/app/api/billing/plan/route.ts",
+  "errors": 1,
+  "tier": "T3-src"
+ },
+ {
+  "file": "src/app/api/guardian/open-summary/route.ts",
+  "errors": 1,
+  "tier": "T3-src"
+ },
+ {
+  "file": "src/components/revolis/SmolkoChatbotPanel.tsx",
+  "errors": 1,
+  "tier": "T3-src"
+ },
+ {
+  "file": "src/lib/demo/synthetic-leads.ts",
+  "errors": 1,
+  "tier": "T3-src"
+ },
+ {
+  "file": "src/app/api/cron/notification-digest/route.ts",
+  "errors": 1,
+  "tier": "DEFERRED"
+ },
+ {
+  "file": "src/app/api/cron/stealth-recruiter-ingest/route.ts",
+  "errors": 13,
+  "tier": "FROZEN"
+ },
+ {
+  "file": "src/app/api/stealth-recruiter/outreach/route.ts",
+  "errors": 10,
+  "tier": "FROZEN"
+ },
+ {
+  "file": "src/app/api/stealth-recruiter/scan/route.ts",
+  "errors": 1,
+  "tier": "FROZEN"
+ }
+]

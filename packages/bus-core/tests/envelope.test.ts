@@ -1,0 +1,99 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {
+  buildMessageId,
+  envelopeFromJson,
+  findLikelySecrets,
+  parseBusDocument,
+  serializeEnvelope,
+  validateEnvelope,
+} from "../src/envelope.ts";
+import type { BusEnvelope } from "../src/types.ts";
+
+const sample: BusEnvelope = {
+  v: 1,
+  id: "MSG-20260918-001-branch-audit",
+  type: "result",
+  status: "done",
+  from: "claude-code",
+  to: "sol-gpt",
+  created_at: "2026-09-18T09:00:00Z",
+  task_id: "TASK-347-BRANCH-AUDIT",
+  mode: "READ_ONLY",
+  stop_after_report: true,
+  summary: "347 branches classified against origin/main",
+  counters: { safe_to_delete: 281, open_pr: 31, superseded: 18, unique_work: 11, uncertain: 6 },
+  decisions_required: [
+    { id: "D1", question: "Delete the 281 merged branches?", gate: "GO REQUIRED", recommendation: "yes, batched" },
+  ],
+  evidence: { commands: ["git for-each-ref"], files: ["docs/reports/branch-audit.md"] },
+  next_action: { gate: "GO REQUIRED", description: "Founder approves batch deletion of 281 merged branches" },
+  body: "## Summary\n\nFull classification table in the linked report.",
+};
+
+test("serialize -> parse round trip preserves every field", () => {
+  const parsed = parseBusDocument(serializeEnvelope(sample));
+  assert.deepEqual(parsed.errors, []);
+  assert.deepEqual(parsed.envelope, sample);
+});
+
+test("a file without frontmatter is kept as legacy, never invented into an envelope", () => {
+  const parsed = parseBusDocument("# REVOLIS EXECUTION RESULT\n\nMESSAGE_ID:\nMSG-20260916-090\n", "outbox/legacy.md");
+  assert.equal(parsed.envelope, undefined);
+  assert.equal(parsed.legacy?.legacy, true);
+  assert.equal(parsed.legacy?.id, "REVOLIS EXECUTION RESULT");
+  assert.deepEqual(parsed.errors, []);
+});
+
+test("validation rejects unknown agents, bad gates and multi-line summaries", () => {
+  const errors = validateEnvelope({
+    ...sample,
+    to: "grok" as never,
+    summary: "line one\nline two",
+    next_action: { gate: "MAYBE" as never, description: "" },
+  });
+  const fields = errors.map((error) => error.field);
+  assert.ok(fields.includes("to"));
+  assert.ok(fields.includes("summary"));
+  assert.ok(fields.includes("next_action.gate"));
+  assert.ok(fields.includes("next_action.description"));
+});
+
+test("validation rejects a malformed id", () => {
+  const errors = validateEnvelope({ ...sample, id: "random-note" });
+  assert.ok(errors.some((error) => error.field === "id"));
+});
+
+test("secrets are blocked at the envelope boundary", () => {
+  const errors = validateEnvelope({ ...sample, body: `token: ghp_${"a".repeat(36)}` });
+  assert.ok(errors.some((error) => error.message.includes("github token")));
+  assert.deepEqual(findLikelySecrets("postgres://user:hunter2@db.host/postgres"), ["postgres url with password"]);
+  assert.deepEqual(findLikelySecrets("nothing to see"), []);
+});
+
+test("buildMessageId produces stable, slugified ids", () => {
+  const id = buildMessageId("result", new Date("2026-09-18T10:00:00Z"), 3, "Šialené  Vetvy / Audit!");
+  assert.equal(id, "MSG-20260918-003-sialene-vetvy-audit");
+  assert.equal(buildMessageId("task", new Date("2026-09-18T10:00:00Z"), 12, "x"), "TASK-20260918-012-x");
+});
+
+test("envelopeFromJson fills created_at and validates", () => {
+  const result = envelopeFromJson(
+    {
+      id: "MSG-20260918-002-plan",
+      type: "task",
+      status: "open",
+      from: "sol-gpt",
+      to: "claude-code",
+      summary: "Classify branches",
+      body: "",
+    },
+    () => new Date("2026-09-18T11:22:33Z"),
+  );
+  assert.deepEqual(result.errors, []);
+  assert.equal(result.envelope?.created_at, "2026-09-18T11:22:33.000Z");
+});
+
+test("envelopeFromJson rejects non-objects", () => {
+  assert.equal(envelopeFromJson("nope").envelope, undefined);
+});

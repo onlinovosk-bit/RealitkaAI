@@ -51,10 +51,12 @@ export default function NotFound() {
           {/* Quick links */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}>
             {[
-              { href: '/dashboard',         label: 'Dashboard — Kde sú peniaze dnes' },
-              { href: '/team',              label: 'Tím výkonnosť' },
-              { href: '/team/permissions',  label: 'Oprávnenia tímu' },
-              { href: '/billing',           label: 'Predplatné a licencie' },
+              { href: '/dashboard',              label: 'Dashboard — Kde sú peniaze dnes' },
+              { href: '/team',                   label: 'Tím výkonnosť' },
+              { href: '/team/permissions',       label: 'Oprávnenia tímu' },
+              { href: '/billing',                label: 'Predplatné a licencie' },
+              { href: '/integrations',           label: 'Integrations' },
+              { href: '/integrations/realvia',   label: 'Realvia ingest' },
             ].map(link => (
               <Link key={link.href} href={link.href} style={{
                 padding: '9px 14px', background: '#F2F6FA',

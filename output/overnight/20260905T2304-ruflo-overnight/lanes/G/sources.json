@@ -1,0 +1,158 @@
+{
+  "run_id": "20260905T2304-ruflo-overnight",
+  "lane_id": "G",
+  "accessed_at": "2026-09-05",
+  "base_sha": "cf3604613cdbb6a7a279e175f2c792fb25591461",
+  "sources": [
+    {
+      "claim": "Lane D architecture decisions D1-D10 (Next/Supabase, outbox, phone_value_releases, property specs)",
+      "name": "Lane D report",
+      "publisher": "overnight-swarm",
+      "url_or_path": "output/overnight/20260905T2304-ruflo-overnight/lanes/D/report.md",
+      "published_at": "2026-09-05",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "frozen_lane_artifact",
+      "limit": "PASS_WITH_CONDITIONS; not implemented code"
+    },
+    {
+      "claim": "Lane E pilot HYPOTHESIS 355 EUR Team×5; no billing code changes; outcome deferred",
+      "name": "Lane E report",
+      "publisher": "overnight-swarm",
+      "url_or_path": "output/overnight/20260905T2304-ruflo-overnight/lanes/E/report.md",
+      "published_at": "2026-09-05",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "frozen_lane_artifact",
+      "limit": "WTP unproven; Stripe PROD_UNKNOWN"
+    },
+    {
+      "claim": "Lane A reuse matrix and evidence paths for tenant/properties/leads/billing/jobs/phone GAP/portals",
+      "name": "Lane A report",
+      "publisher": "overnight-swarm",
+      "url_or_path": "output/overnight/20260905T2304-ruflo-overnight/lanes/A/report.md",
+      "published_at": "2026-09-05",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "frozen_lane_artifact",
+      "limit": "No live prod DB"
+    },
+    {
+      "claim": "Outbound UC Import blocked; inbound receivers present; scrape is not publish contract",
+      "name": "Lane C report",
+      "publisher": "overnight-swarm",
+      "url_or_path": "output/overnight/20260905T2304-ruflo-overnight/lanes/C/report.md",
+      "published_at": "2026-09-05",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "frozen_lane_artifact",
+      "limit": "Vendor package UNKNOWN"
+    },
+    {
+      "claim": "Lane G requires 2-3wk backlog, Constitution 12Q, DAG, collision matrix; no code tonight",
+      "name": "START-HERE Lane G",
+      "publisher": "repo LOCAL_DRAFT/swarm pack",
+      "url_or_path": "docs/overnight/2026-09-05-ruflo-swarm/START-HERE.md",
+      "published_at": "2026-09-05",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "swarm_brief",
+      "limit": "Process contract"
+    },
+    {
+      "claim": "Constitution 12Q scoring with Q1 VALIDATE ceiling and Q8 too-early BACKLOG veto",
+      "name": "revolis-constitution-v2",
+      "publisher": "repo",
+      "url_or_path": "git:cf3604613cdbb6a7a279e175f2c792fb25591461:docs/architecture/revolis-constitution-v2.md",
+      "published_at": null,
+      "accessed_at": "2026-09-05",
+      "evidence_type": "repo_snapshot",
+      "limit": "Scoring guidance; not automatic GO"
+    },
+    {
+      "claim": "Engineering Constitution fallback for Integration Report (revolis-builder missing)",
+      "name": "l99-engineering-constitution",
+      "publisher": "repo",
+      "url_or_path": "git:cf3604613cdbb6a7a279e175f2c792fb25591461:.cursor/rules/l99-engineering-constitution.mdc",
+      "published_at": null,
+      "accessed_at": "2026-09-05",
+      "evidence_type": "repo_snapshot",
+      "limit": null
+    },
+    {
+      "claim": "properties RLS USING+WITH CHECK; agency_id NULL bypass debt",
+      "name": "rls_properties",
+      "publisher": "repo",
+      "url_or_path": "git:cf3604613cdbb6a7a279e175f2c792fb25591461:apps/crm/supabase/migrations/20260508180000_rls_properties.sql",
+      "published_at": "2026-05-08",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "migration_ddl",
+      "limit": "Live policies PROD_UNKNOWN"
+    },
+    {
+      "claim": "UC mapper property columns exist",
+      "name": "uc_export_mapper",
+      "publisher": "repo",
+      "url_or_path": "git:cf3604613cdbb6a7a279e175f2c792fb25591461:apps/crm/supabase/migrations/20260617120000_uc_export_mapper.sql",
+      "published_at": "2026-06-17",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "migration_ddl",
+      "limit": "Inbound-oriented; not outbound outbox"
+    },
+    {
+      "claim": "import_jobs pattern for jobs; not outbound publish",
+      "name": "universal_crm_import",
+      "publisher": "repo",
+      "url_or_path": "git:cf3604613cdbb6a7a279e175f2c792fb25591461:apps/crm/supabase/migrations/20260608120000_universal_crm_import.sql",
+      "published_at": "2026-06-08",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "migration_ddl",
+      "limit": null
+    },
+    {
+      "claim": "ai_action_audit is not phone value-release audit",
+      "name": "ai_action_audit",
+      "publisher": "repo",
+      "url_or_path": "git:cf3604613cdbb6a7a279e175f2c792fb25591461:apps/crm/supabase/migrations/20260610000001_ai_action_audit.sql",
+      "published_at": "2026-06-10",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "migration_ddl",
+      "limit": "Negative evidence for P2"
+    },
+    {
+      "claim": "Onboarding API/UI surfaces exist for P4 reuse",
+      "name": "onboarding paths",
+      "publisher": "repo",
+      "url_or_path": "git:cf3604613cdbb6a7a279e175f2c792fb25591461:apps/crm/src/app/api/onboarding/goals/route.ts",
+      "published_at": null,
+      "accessed_at": "2026-09-05",
+      "evidence_type": "code_at_base",
+      "limit": "Also enterprise/onboard-start, csm-onboarding page"
+    },
+    {
+      "claim": "Pricing SSOT for P9 ops verify; do not edit in pilot eng BOs",
+      "name": "program-tier-pricing",
+      "publisher": "repo",
+      "url_or_path": "git:cf3604613cdbb6a7a279e175f2c792fb25591461:apps/crm/src/lib/program-tier-pricing.ts",
+      "published_at": null,
+      "accessed_at": "2026-09-05",
+      "evidence_type": "code_at_base",
+      "limit": "Stripe dashboard not verified"
+    },
+    {
+      "claim": "properties-store and properties API for P3 honesty work",
+      "name": "properties-store + API",
+      "publisher": "repo",
+      "url_or_path": "git:cf3604613cdbb6a7a279e175f2c792fb25591461:apps/crm/src/lib/properties-store.ts",
+      "published_at": null,
+      "accessed_at": "2026-09-05",
+      "evidence_type": "code_at_base",
+      "limit": "Also apps/crm/src/app/api/properties/route.ts"
+    },
+    {
+      "claim": "Scrape source is not export contract",
+      "name": "PortalNehnutelnostiSource",
+      "publisher": "repo",
+      "url_or_path": "git:cf3604613cdbb6a7a279e175f2c792fb25591461:apps/crm/src/infra/scraping/PortalNehnutelnostiSource.ts",
+      "published_at": null,
+      "accessed_at": "2026-09-05",
+      "evidence_type": "code_at_base",
+      "limit": "Negative for P6"
+    }
+  ]
+}

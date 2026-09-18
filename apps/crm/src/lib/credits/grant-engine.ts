@@ -98,25 +98,98 @@ export async function grantMonthlyCreditsForAgency(
   return { granted: amount, skipped: false };
 }
 
-/** Sweep nevyčerpaných grant kreditov na konci mesiaca. */
+export type ExpireGrantResult = {
+  expired: number;
+  skipped: boolean;
+  /** Hard failure — caller must not grant this agency in the same cycle. */
+  error?: string;
+};
+
+type ServiceRoleClient = NonNullable<ReturnType<typeof createServiceRoleClient>>;
+
+async function ledgerHasIdempotencyKey(
+  supabase: ServiceRoleClient,
+  key: string,
+): Promise<{ exists: boolean; error?: string }> {
+  const { data, error } = await supabase
+    .from("credit_ledger")
+    .select("id")
+    .eq("idempotency_key", key)
+    .maybeSingle();
+  if (error) return { exists: false, error: error.message };
+  return { exists: Boolean(data) };
+}
+
+/**
+ * Sweep nevyčerpaných grant kreditov za `periodKey` (zvyčajne previousPeriodKey).
+ *
+ * Safety: ak už existuje mesačný grant pre *aktuálny* period a expirácia za
+ * `periodKey` ešte nie je v ledgeri, odmietneme expire. Inak by retry po
+ * partial fail (expire error → grant OK → re-run) vynuloval práve pridelený
+ * grant pod zámienkou "exspirácie minulého mesiaca".
+ */
 export async function expireGrantCreditsForAgency(
   agency: AgencyCreditRow,
   periodKey: string,
-): Promise<{ expired: number; skipped: boolean }> {
+  now = new Date(),
+): Promise<ExpireGrantResult> {
   const supabase = createServiceRoleClient();
-  if (!supabase) return { expired: 0, skipped: true };
+  if (!supabase) {
+    return { expired: 0, skipped: true, error: "service_unavailable" };
+  }
 
   const toExpire = agency.grant_credits_balance;
   if (toExpire <= 0) return { expired: 0, skipped: true };
 
   const idempotencyKey = grantExpiryIdempotencyKey(agency.id, periodKey);
-  const { data: existing } = await supabase
-    .from("credit_ledger")
-    .select("id")
-    .eq("idempotency_key", idempotencyKey)
-    .maybeSingle();
+  const existing = await ledgerHasIdempotencyKey(supabase, idempotencyKey);
+  if (existing.error) {
+    console.warn("[grant-engine] expiry ledger lookup:", existing.error);
+    return { expired: 0, skipped: true, error: existing.error };
+  }
 
-  if (existing) return { expired: 0, skipped: true };
+  const currentGrantKey = monthlyGrantIdempotencyKey(
+    agency.id,
+    currentPeriodKey(now),
+  );
+  const currentGrant = await ledgerHasIdempotencyKey(supabase, currentGrantKey);
+  if (currentGrant.error) {
+    console.warn("[grant-engine] current grant lookup:", currentGrant.error);
+    return { expired: 0, skipped: true, error: currentGrant.error };
+  }
+
+  if (existing.exists) {
+    // Ledger už má expiry, ale balance ešte nie je 0 → dokonči clear len ak
+    // aktuálny grant ešte nebol aplikovaný (inak by sme zmazali nový grant).
+    if (toExpire > 0 && !currentGrant.exists) {
+      const newTotal = agency.purchased_credits_balance;
+      const { error: agencyErr } = await supabase
+        .from("agencies")
+        .update({
+          grant_credits_balance: 0,
+          credits_balance: newTotal,
+          billing_updated_at: new Date().toISOString(),
+        })
+        .eq("id", agency.id);
+      if (agencyErr) {
+        console.warn("[grant-engine] expiry repair agency:", agencyErr.message);
+        return { expired: 0, skipped: true, error: agencyErr.message };
+      }
+      return { expired: toExpire, skipped: false };
+    }
+    return { expired: 0, skipped: true };
+  }
+
+  if (currentGrant.exists) {
+    // Safe no-op (not a hard error): wiping now would delete the new monthly grant.
+    // Previous-month leftovers stay until a future ops repair — better than zeroing
+    // the customer's current pool. Do NOT mark error or credits-cycle would stay red.
+    console.error(
+      "[grant-engine] refuse expire: current-period grant already applied",
+      { agencyId: agency.id, periodKey, currentGrantKey },
+    );
+    return { expired: 0, skipped: true };
+  }
 
   const newTotal = agency.purchased_credits_balance;
 
@@ -131,7 +204,7 @@ export async function expireGrantCreditsForAgency(
 
   if (ledgerErr) {
     console.warn("[grant-engine] expiry ledger:", ledgerErr.message);
-    return { expired: 0, skipped: true };
+    return { expired: 0, skipped: true, error: ledgerErr.message };
   }
 
   const { error: agencyErr } = await supabase
@@ -145,7 +218,7 @@ export async function expireGrantCreditsForAgency(
 
   if (agencyErr) {
     console.warn("[grant-engine] expiry agency:", agencyErr.message);
-    return { expired: 0, skipped: true };
+    return { expired: 0, skipped: true, error: agencyErr.message };
   }
 
   return { expired: toExpire, skipped: false };

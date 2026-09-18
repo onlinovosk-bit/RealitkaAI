@@ -18,6 +18,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createHmac, timingSafeEqual } from "crypto";
+import { routeAlert } from "./alerts/router";
 
 const CLOCK_SKEW_S = 300; // 5 minút
 
@@ -84,17 +85,21 @@ export async function revolisGuard(
     const msg = error instanceof Error ? error.message : String(error);
     console.error(`[revolisGuard] Chyba v ${taskName}:`, msg);
 
-    const slackUrl = process.env.SLACK_WEBHOOK_URL;
-    if (slackUrl) {
-      await fetch(slackUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: `*ERROR: Revolis Engine*\n*Úloha:* ${taskName}\n*Chyba:* ${msg}`,
-          username: "Revolis Guard",
-        }),
-      }).catch(() => undefined); // nechceme kaskádovú chybu
-    }
+    // Text chyby ide IBA do server logu vyššie. Do alertu ide typ chyby, nie jej
+    // telo — `msg` môže niesť riadky z DB, e-maily alebo PII (CLAUDE.md §2/§4).
+    await routeAlert({
+      type: "AGENT_ERROR",
+      severity: "CRITICAL",
+      title: `Zlyhala úloha: ${taskName}`,
+      agent: "revolis-guard",
+      dedupKey: `agent-error:${taskName}`,
+      actionRequired: true,
+      fields: {
+        uloha: taskName,
+        typChyby: error instanceof Error ? error.name : typeof error,
+      },
+      evidenceRef: `server log: [revolisGuard] Chyba v ${taskName}`,
+    });
 
     return NextResponse.json({ error: "Server Error", msg }, { status: 500 });
   }

@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 import { supabaseClient } from "@/lib/supabase/client";
+import { upsertOnboardingSession } from "@/lib/onboarding/session-api";
 import { AI_ASSISTANT_NAME } from "@/lib/ai-brand";
 import { getNextSlug, getPrevSlug, getStepBySlug } from "./config";
 import type { OnboardingPathMode } from "./config";
@@ -104,18 +105,12 @@ export function useOnboarding(currentSlug: string) {
     localStorage.setItem("onboarding_data", JSON.stringify(data));
     localStorage.setItem("onboarding_step", currentSlug);
     const step = getStepBySlug(currentSlug);
-    void supabaseClient
-      .from("onboarding_sessions")
-      .upsert({
-        session_id: sessionId,
-        step: step?.index ?? 1,
-        form_data: data,
-        updated_at: new Date().toISOString(),
-      })
-      .then(
-        () => {},
-        () => {}
-      );
+    void upsertOnboardingSession({
+      session_id: sessionId,
+      step: step?.index ?? 1,
+      form_data: data,
+      updated_at: new Date().toISOString(),
+    }).catch(() => {}); // soft-fail — localStorage is SoT
   };
 
   const update = (fields: Partial<OnboardingData>) =>
