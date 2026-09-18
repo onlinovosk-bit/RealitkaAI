@@ -21,7 +21,8 @@
 
 ```text
 node assert: PASS flattened okResponse contract
-# vitest: po npm install v worktree (node_modules chýbal)
+vitest billing-credits.verification.test.ts: 10/10 PASS
+PR #369: MERGEABLE @ d9cf2681f (rebased on 9c6fc4dd0)
 ```
 
 ## Merge
