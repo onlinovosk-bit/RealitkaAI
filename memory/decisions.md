@@ -1199,3 +1199,24 @@ blocked. Exact PC commands are in
   **Founder-free agent-to-agent komunikácia = ešte nedokázaná.** Až handshake proti živému
   endpointu je prvý skutočný dôkaz, že founder už neprenáša správy medzi SOL a Claudom —
   a je to významnejší míľnik než samotný merge.
+
+## [2026-09-18] — Ekonomika majiteľa RK → akvizičný systém (master prompt deliverable)
+
+- **Artefakt:** `docs/sales/owner-economics-acquisition-system-2026-09-18.md` — ekonomický model
+  majiteľa, strachy, spúšťače nákupu, mapa námietok, cenová psychológia, štruktúra pilotu,
+  rebrík dôkazov, experimenty E1–E6. Zámerne NEopakuje 80/20, 8 stratégií ani 30-dňový OS (#588).
+- **Kľúčový rozklad (§1.2):** Revolis siaha len na páku (A) objem dopytov a (B) miera dovolania sa
+  včas. Na (C) exkluzivitu, (D) schopnosť predať a (E) províznu sadzbu **nesiaha**. Sľubovať ich
+  = nevymáhateľná záruka a stratený zákazník v 90. deň.
+- **Dôsledok pre pilot:** pilot sa **nemeria počtom uzavretých obchodov**, ale časom do prvého
+  kontaktu, počtom dopytov z kalkulačky a % kontaktovaných v SLA. Záruka ohraničená cenou pilotu.
+- **Nový cieľový segment T5:** RK, ktorá platí Ads na „ocenenie nehnuteľnosti" a nestíha reagovať —
+  jediný spúšťač detekovateľný z verejných zdrojov; najlepší dnes zostaviteľný zoznam.
+- **Uzatváracie námietky O3 („makléri to nebudú používať") a O7 („čie sú naše dáta")** — bez
+  pripravenej písomnej odpovede sa stráca obchod, ktorý už bol vyhraný.
+- **Korekcia founderovho vstupu:** #588 **nie je merged** (GitHub API: `state=open, merged=false`;
+  žiadny zo 6 dokumentov nie je na `main`). Merged bol **#437** — migrácia
+  `20260817220000_p0_schema_alters_leads_profiles.sql` s `last_contact_at`.
+- **Brána G4 čiastočne zavretá:** migrácia je na `main`, ale **aplikácia v PROD neoverená**
+  (pravidlo „audit kódu nie je audit dát"). Ranný zoznam ostáva blokovaný do PROD overenia.
+- **349 € Cockpit** označené ako DRAFT, nie cena — nepoužívať ako fakt do podpisu.

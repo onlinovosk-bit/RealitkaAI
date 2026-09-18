@@ -361,3 +361,20 @@ Founder: spustit E0 (zoznam 40 RK segment A + split vety) alebo odpovedat na G3/
 - `docs/reports/2026-09-17-open-pr-stack-repro.md`: dôkazová tabuľka
 ### Ďalší krok
 Founder GO: rebase+merge #537/#486/#447 (tenant HIGH); close #374/#480.
+
+## Session 2026-09-18d (ekonomika majitela RK -> akvizicny system)
+### Dokoncene
+- `docs/sales/owner-economics-acquisition-system-2026-09-18.md` (291 riadkov): retaz penazi a kde Revolis realne siaha (A,B) vs nesiaha (C,D,E); tuzby/strachy/uzke hrdla; 7 spustacov nakupu vratane detekovatelneho T5; mapa 10 namietok s odpovedami; cenova psychologia a 4-vrstvova architektura ponuky; struktura pilotu (Shadow 14 dni -> plateny 60-90 dni); rebrik dokazov 1-6; experimenty E1-E6 s kill kriteriom
+- Merge origin/main do vetvy (#437 pritiahnuty)
+### Korekcia
+- **#588 NIE je merged** — GitHub API `state=open, merged=false`, ziadny zo 6 dokumentov nie je na main. Founder pravdepodobne zamenil cislo.
+- Merged bol **#437** (migracia `20260817220000` s `last_contact_at`) -> G4 ciastocne zavreta, ale PROD aplikacia NEOVERENA
+### Rozpracovane / Pending
+- Founder: merge #588 (stale otvoreny, draft, zeleny)
+- Brany: G1 GDPR B2B outreach, G2 GDPR pristup k ich datam (blokuje Shadow), G3 S2 rozsah, G4 PROD overenie migracie, G5 suhlas s menovanim
+- E0 stale nespusteny — prva uloha 30-dnoveho OS
+### Kluc subory zmenene
+- `docs/sales/owner-economics-acquisition-system-2026-09-18.md`
+- `memory/decisions.md`: decision record 2026-09-18 (ekonomicky model + korekcia o #588/#437)
+### Dalsi krok
+Founder: (1) merge #588, (2) read-only SELECT ci je migracia 20260817220000 aplikovana v PROD, (3) spustit E0.
