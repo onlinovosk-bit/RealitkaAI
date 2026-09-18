@@ -1077,6 +1077,51 @@ blocked. Exact PC commands are in
 - Odporúčanie: deterministická kostra (Contract/Judge-runner/Ledger/hard limits) pred AI vrstvami; pilot na BUS, nie coding loop.
 - Čaká founder na #1 a #4. Report: `docs/reports/2026-09-14-adr-software-factory-v1-minimum.md`.
 
+## [2026-09-18] — GTM Playbook: reframe z „CRM/AI" na „zdroj predávajúcich" — NÁVRH
+
+- **Artefakt:** `docs/sales/gtm-playbook-2026-09-18.md` (8 stratégií + 80/20 majiteľa RK + 8 akvizičných nápadov + 30/60/90).
+- **Kľúčový dôkaz (už v repe, nie nový výskum):** trh trikrát nezávisle odmietol AI/CRM ponuku,
+  lebo *„nikto im nedodá klientov, ktorí chcú predať"* (`decisions.md:501`, Molnár 7/2026,
+  Suchý 5.8.2026, ARCHEUS). Zákazník sám pomenoval wedge: „CRM nie, vyhľadávanie predávajúcich áno".
+- **Cenová kotva trhu:** 300 €/tip (REALITY KAMZÍK, `docs/sales/call-list-2026-07-w30.md`) —
+  jediná overená kotva v repe; silnejšia referencia než interná úvaha o 349 €/mes.
+- **Stav loopu:** 31 dní `matches=intents=outreach=viewings=closed_won=0`, `activities=3`
+  (`docs/reports/2026-09-15-north-star-backfill.md`). Diagnóza: problém NIE je akvizícia leadov,
+  ale **packaging → dôkaz → aktivácia → distribúcia** v tomto poradí.
+- **Revízia predpokladu (dôležité):** VETO na valuačný widget z 2026-07-19 znelo „chýba licencovaný
+  reprodukovateľný zdroj cenových dát". **Tento predpoklad už neplatí v pôvodnom rozsahu** — NBS dalo
+  písomné povolenie 2026-08-10 na komerčné použitie verejných krajských radov €/m² s povinnou
+  atribúciou (`docs/legal/nbs-povolenie-2026-08-10.md`). Chýba už len koeficient realizačná/ponuková
+  (`blocked_unpaired`, `docs/reports/2026-08-15-nbs-kraj-rady-v0.2.md`) = **presnosť, nie legalita**.
+- **Rozhodnutie:** žiadne. Dokument je NÁVRH. Ďalší krok = founder GO na rozsah tvrdenia widgetu (S2).
+- **Explicitne NEodporúčané:** nový acquisition stack, kúpené databázy, scraping vlastníkov/osobných
+  údajov, akadémia/komunita/certifikácie (cargo cult pri 1 zákazníkovi), claim „layer nad všetkými CRM"
+  (zaslúžený je dnes iba voči Realvii).
+- **GDPR gate otvorený:** A1 (RPO outreach zoznam) a S4 (audit cudzieho exportu) vyžadujú beh
+  `gdpr-advisor` + balancing test 6(1)(f) + čl. 14 pred prvým reálnym použitím.
+
+## [2026-09-18] — Founder GO: S1, S3, S8, A4, A8 (0 € engineering) + S2 s rozporom
+
+- **GO udelený** na paralelný beh úloh bez engineeringu. Artefakty:
+  - S1 → `docs/sales/positioning-v1-zdroj-predavajucich.md` (kategória „zdroj predávajúcich", zakázaný slovník, smieme/nesmieme tvrdiť)
+  - S3 + A8 → `docs/sales/segmentacia-a-b-c-outreach.md` (segment podľa CRM: A=Realvia, B=iný, C=Excel; poradie A→C→B; tracker polia riešia D5-7; sezónne okno)
+  - S8 → `docs/ops/founder-time-protocol.md` (triage 54 otvorených PR)
+  - A4 → `docs/sales/realitna-unia-druhy-kontakt-draft.md` (NEODOSLANÉ)
+- **Oprava vlastného odporúčania (S8):** auto-merge lane NEtreba definovať — `docs/AUTOMERGE-POLICY.md`
+  v1.0 + workflow + script už existujú a Tier 1 pokrýva `docs/**`. Moje pôvodné znenie bolo nepresné.
+- **Nález S8-A:** 24 z 54 otvorených PR (44 %) je **draft** → nedajú sa zmergovať z definície.
+  12 z 18 PR v kope „blokuje zákazníka" je draft. Diagnóza nie je „nestíham merge", ale „nikto neklikol Ready".
+- **Nález S8-B:** `#189/#191/#192` nesú label `automerge` od 2026-06-11 a sú stále otvorené.
+  Príčina NEOVERENÁ (robot / stale s main / červené CI) — netvrdí sa ktorá.
+- **Nález S8-C:** `#437` (`leads.last_contact_at`) blokuje S6 (ranný zoznam) aj Zhluk 1. Tier 3 (migrácia).
+- **S2 — ROZPOR, neimplementuje sa:** founder odpovedal „GO S2", ale na Q1 („zobrazuje widget ponukovú
+  úroveň NBS s explicitným označením?") odpovedal **nie**, pričom Q3 (schváliť znenie atribúcie NBS)
+  odpovedal **áno**. Q1=nie a Q3=áno sú nezlučiteľné — bez zobrazenej NBS úrovne nie je čo atribuovať.
+  **Žiadny kód sa nepíše, kým sa Q1 neujasní.** Dôvod prísnosti: precedens +40 % chyby kalkulačky
+  (`decisions.md:584`) — publikovanie cenového údaja bez explicitného zámeru foundera je AP-001 riziko.
+- **Q2 potvrdené:** koeficient realizačná/ponuková ostáva `null` a nepublikovaný, kým sa nespáruje jednotka.
+- **Poznámka k tooling:** `gdpr-advisor` skill, ktorý CLAUDE.md vyžaduje pre A1/S4, **nie je v tejto
+  session dostupný** (nie je v zozname skills). GDPR brána pre A1/S4 preto ostáva formálne nesplnená.
 ## [2026-09-18] — Inter-Agent Bus: transportná vrstva v1 BUILD (deploy = samostatný GO)
 
 - **Rozhodnutie:** BUILD. Bus prestáva byť len protokol/governance vrstva a dostáva
@@ -1100,6 +1145,32 @@ blocked. Exact PC commands are in
 - **Artefakty:** `docs/architecture/adr-2026-09-18-inter-agent-bus-transport-v1.md`,
   `docs/prompts/revolis-bus-openapi.yaml`, `.ai/bus/outbox/MSG-20260918-001-bus-transport-v1.md`
 
+## [2026-09-18] — Founder Acquisition Research Loop: rámec prijatý, tri nálezy ho menia
+
+- **Prijaté:** founderov rámec `Pain → Diagnostic → Proof → Pilot → Outcome → Subscription`
+  nahrádza trojdelenie (problém / owner / akvizícia). Artefakt: `docs/sales/founder-acquisition-loop-2026-09-18.md`.
+- **Nález 1 (najdôležitejší):** „Revenue Leakage Audit" / product-led diagnostic **už existuje** —
+  `/proof` je SHIPPED od 2026-07-06 (#275) vrátane leak enginu `apps/crm/src/lib/proof/`
+  (`responsePenalty`, `lostShare`, `avgRevenuePerDeal`). Za 3 mesiace **0 reálnych prospectov**
+  (`saas_leads`=14, z toho 11× `source=proof`, všetko smoke/test — D5-1/D5-6).
+  **Úzke hrdlo nie je nástroj, ale návštevnosť.** 30-dňový plán váži 80 % úsilia na dopravu.
+- **Nález 2:** citované NAR čísla (CRM 23 % vs. social 39 %; 66 % čas; 64 % CX; 63 % obava o presnosť AI)
+  sú **US trh**, z tejto session neoverené → PREDPOKLAD, nie dôkaz o SK majiteľovi RK.
+  Navyše CRM 23 % < social 39 % argumentuje *proti* vedeniu komunikácie cez CRM.
+  Pri konflikte s 3 priamymi SK rozhovormi (`decisions.md:501`) vyhráva lokálny dôkaz.
+- **Nález 3:** Founder Dashboard je **data-blocked** — `activities`=3/31 dní, `matches_new`=0,
+  `leads.last_contact_at` visí v nezmergovanom `#437`. Postaviť ho dnes = nuly alebo AP-001.
+  Q8 „príliš skoro"; odomkne sa po S6 (ranný zoznam).
+- **Ústredný konflikt zaznamenaný:** H1 „nedostatok predávajúcich" (priamy SK dôkaz) vs.
+  H2 „únik na existujúcich leadoch" (founder rámec + US prieskum). Nezlučiteľné v jednej prvej vete.
+  **Experiment E0** (split otváracej vety, 20/20, rozhodovacie pravidlo stanovené vopred) je prvá úloha.
+- **Stratégia C „Shadow CRM" (14 dní, read-only)** vyhodnotená ako najsilnejší nový prvok —
+  jediná ponuka, ktorá od majiteľa nechce žiadnu zmenu správania. BUILD po GDPR bráne.
+- **Stratégia E (benchmark)** → Strategic Backlog, timing veto (1 zákazník). Odomkne sa pri ≥ 8 RK s 30 dňami dát.
+- **Engine 3 (founder-to-founder, „hľadám 5 RK")** sa zhoduje s nezávisle odvodeným S7 →
+  dve nezávislé odvodenia, priorita. Engine 4 (case study) blokovaný chýbajúcim súhlasom s menovaním.
+- **Otvorené brány:** G1 GDPR B2B outreach · G2 GDPR cudzí export · G3 S2 rozsah (nezodpovedané) ·
+  G4 `#437` do PROD · G5 súhlas s menovaním.
 ## [2026-09-18] — D1 = GO: Cloudflare Tunnel ako dogfood transport BUS (nie produkčná infra)
 
 - **Rozhodnutie:** D1 = **GO**. Prvý dogfood ChatGPT ↔ Claude ide cez Cloudflare Tunnel.
@@ -1128,3 +1199,24 @@ blocked. Exact PC commands are in
   **Founder-free agent-to-agent komunikácia = ešte nedokázaná.** Až handshake proti živému
   endpointu je prvý skutočný dôkaz, že founder už neprenáša správy medzi SOL a Claudom —
   a je to významnejší míľnik než samotný merge.
+
+## [2026-09-18] — Ekonomika majiteľa RK → akvizičný systém (master prompt deliverable)
+
+- **Artefakt:** `docs/sales/owner-economics-acquisition-system-2026-09-18.md` — ekonomický model
+  majiteľa, strachy, spúšťače nákupu, mapa námietok, cenová psychológia, štruktúra pilotu,
+  rebrík dôkazov, experimenty E1–E6. Zámerne NEopakuje 80/20, 8 stratégií ani 30-dňový OS (#588).
+- **Kľúčový rozklad (§1.2):** Revolis siaha len na páku (A) objem dopytov a (B) miera dovolania sa
+  včas. Na (C) exkluzivitu, (D) schopnosť predať a (E) províznu sadzbu **nesiaha**. Sľubovať ich
+  = nevymáhateľná záruka a stratený zákazník v 90. deň.
+- **Dôsledok pre pilot:** pilot sa **nemeria počtom uzavretých obchodov**, ale časom do prvého
+  kontaktu, počtom dopytov z kalkulačky a % kontaktovaných v SLA. Záruka ohraničená cenou pilotu.
+- **Nový cieľový segment T5:** RK, ktorá platí Ads na „ocenenie nehnuteľnosti" a nestíha reagovať —
+  jediný spúšťač detekovateľný z verejných zdrojov; najlepší dnes zostaviteľný zoznam.
+- **Uzatváracie námietky O3 („makléri to nebudú používať") a O7 („čie sú naše dáta")** — bez
+  pripravenej písomnej odpovede sa stráca obchod, ktorý už bol vyhraný.
+- **Korekcia founderovho vstupu:** #588 **nie je merged** (GitHub API: `state=open, merged=false`;
+  žiadny zo 6 dokumentov nie je na `main`). Merged bol **#437** — migrácia
+  `20260817220000_p0_schema_alters_leads_profiles.sql` s `last_contact_at`.
+- **Brána G4 čiastočne zavretá:** migrácia je na `main`, ale **aplikácia v PROD neoverená**
+  (pravidlo „audit kódu nie je audit dát"). Ranný zoznam ostáva blokovaný do PROD overenia.
+- **349 € Cockpit** označené ako DRAFT, nie cena — nepoužívať ako fakt do podpisu.
