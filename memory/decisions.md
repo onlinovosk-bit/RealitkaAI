@@ -1099,3 +1099,26 @@ blocked. Exact PC commands are in
   (zaslúžený je dnes iba voči Realvii).
 - **GDPR gate otvorený:** A1 (RPO outreach zoznam) a S4 (audit cudzieho exportu) vyžadujú beh
   `gdpr-advisor` + balancing test 6(1)(f) + čl. 14 pred prvým reálnym použitím.
+
+## [2026-09-18] — Founder GO: S1, S3, S8, A4, A8 (0 € engineering) + S2 s rozporom
+
+- **GO udelený** na paralelný beh úloh bez engineeringu. Artefakty:
+  - S1 → `docs/sales/positioning-v1-zdroj-predavajucich.md` (kategória „zdroj predávajúcich", zakázaný slovník, smieme/nesmieme tvrdiť)
+  - S3 + A8 → `docs/sales/segmentacia-a-b-c-outreach.md` (segment podľa CRM: A=Realvia, B=iný, C=Excel; poradie A→C→B; tracker polia riešia D5-7; sezónne okno)
+  - S8 → `docs/ops/founder-time-protocol.md` (triage 54 otvorených PR)
+  - A4 → `docs/sales/realitna-unia-druhy-kontakt-draft.md` (NEODOSLANÉ)
+- **Oprava vlastného odporúčania (S8):** auto-merge lane NEtreba definovať — `docs/AUTOMERGE-POLICY.md`
+  v1.0 + workflow + script už existujú a Tier 1 pokrýva `docs/**`. Moje pôvodné znenie bolo nepresné.
+- **Nález S8-A:** 24 z 54 otvorených PR (44 %) je **draft** → nedajú sa zmergovať z definície.
+  12 z 18 PR v kope „blokuje zákazníka" je draft. Diagnóza nie je „nestíham merge", ale „nikto neklikol Ready".
+- **Nález S8-B:** `#189/#191/#192` nesú label `automerge` od 2026-06-11 a sú stále otvorené.
+  Príčina NEOVERENÁ (robot / stale s main / červené CI) — netvrdí sa ktorá.
+- **Nález S8-C:** `#437` (`leads.last_contact_at`) blokuje S6 (ranný zoznam) aj Zhluk 1. Tier 3 (migrácia).
+- **S2 — ROZPOR, neimplementuje sa:** founder odpovedal „GO S2", ale na Q1 („zobrazuje widget ponukovú
+  úroveň NBS s explicitným označením?") odpovedal **nie**, pričom Q3 (schváliť znenie atribúcie NBS)
+  odpovedal **áno**. Q1=nie a Q3=áno sú nezlučiteľné — bez zobrazenej NBS úrovne nie je čo atribuovať.
+  **Žiadny kód sa nepíše, kým sa Q1 neujasní.** Dôvod prísnosti: precedens +40 % chyby kalkulačky
+  (`decisions.md:584`) — publikovanie cenového údaja bez explicitného zámeru foundera je AP-001 riziko.
+- **Q2 potvrdené:** koeficient realizačná/ponuková ostáva `null` a nepublikovaný, kým sa nespáruje jednotka.
+- **Poznámka k tooling:** `gdpr-advisor` skill, ktorý CLAUDE.md vyžaduje pre A1/S4, **nie je v tejto
+  session dostupný** (nie je v zozname skills). GDPR brána pre A1/S4 preto ostáva formálne nesplnená.
