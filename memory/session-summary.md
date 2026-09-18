@@ -317,3 +317,21 @@ Bez `GO S2` žiadny kód.
 - `memory/decisions.md`: decision record 2026-09-18 (GO + rozpor S2)
 ### Dalsi krok
 Founder: ujasnit Q1 pre S2 (zobrazuje widget NBS uroven alebo nie?) + 4 rozhodnutia z founder-time-protocol §6.
+
+## Session 2026-09-18c (Founder Acquisition Research Loop — zjednotenie)
+### Dokoncene
+- `docs/sales/founder-acquisition-loop-2026-09-18.md` — founderov ramec prijaty, konfrontovany s repo dokazmi
+- Nalez 1: /proof + leak engine SHIPPED od 2026-07-06, 0 realnych prospectov za 3 mesiace -> hrdlo je navstevnost, nie nastroj
+- Nalez 2: NAR cisla su US trh + neoverene -> PREDPOKLAD; lokalny SK dokaz (3 rozhovory) ma prednost
+- Nalez 3: Founder Dashboard data-blocked (activities=3/31d, #437 nezmergovany)
+- Experiment E0 navrhnuty: split otaracej vety H1 vs H2, rozhodovacie pravidlo vopred
+- 30-dnovy Founder-led Acquisition OS po tyzdnoch s metrikami a failure signalmi
+### Rozpracovane / Pending
+- **E0 je prva uloha** — bez neho je prva veta outreachu hadanie
+- Brany: G1 GDPR B2B outreach, G2 GDPR cudzi export, G3 S2 rozsah (stale nezodpovedane), G4 #437 do PROD, G5 suhlas s menovanim
+- Founder dismissol obe otazky (S2 rozsah + prehodenie 12 draftov) — cakaju na dalsi pokyn
+### Kluc subory zmenene
+- `docs/sales/founder-acquisition-loop-2026-09-18.md`: zjednoteny loop + 30-dnovy OS
+- `memory/decisions.md`: decision record 2026-09-18 (ramec prijaty, 3 nalezy, E0)
+### Dalsi krok
+Founder: spustit E0 (zoznam 40 RK segment A + split vety) alebo odpovedat na G3/G4.

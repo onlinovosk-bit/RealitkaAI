@@ -1144,3 +1144,30 @@ blocked. Exact PC commands are in
 - **Dôkaz:** `npm run bus:test` 61/61; `npm run bus:validate` 41 súborov, 0 errors.
 - **Artefakty:** `docs/architecture/adr-2026-09-18-inter-agent-bus-transport-v1.md`,
   `docs/prompts/revolis-bus-openapi.yaml`, `.ai/bus/outbox/MSG-20260918-001-bus-transport-v1.md`
+
+## [2026-09-18] — Founder Acquisition Research Loop: rámec prijatý, tri nálezy ho menia
+
+- **Prijaté:** founderov rámec `Pain → Diagnostic → Proof → Pilot → Outcome → Subscription`
+  nahrádza trojdelenie (problém / owner / akvizícia). Artefakt: `docs/sales/founder-acquisition-loop-2026-09-18.md`.
+- **Nález 1 (najdôležitejší):** „Revenue Leakage Audit" / product-led diagnostic **už existuje** —
+  `/proof` je SHIPPED od 2026-07-06 (#275) vrátane leak enginu `apps/crm/src/lib/proof/`
+  (`responsePenalty`, `lostShare`, `avgRevenuePerDeal`). Za 3 mesiace **0 reálnych prospectov**
+  (`saas_leads`=14, z toho 11× `source=proof`, všetko smoke/test — D5-1/D5-6).
+  **Úzke hrdlo nie je nástroj, ale návštevnosť.** 30-dňový plán váži 80 % úsilia na dopravu.
+- **Nález 2:** citované NAR čísla (CRM 23 % vs. social 39 %; 66 % čas; 64 % CX; 63 % obava o presnosť AI)
+  sú **US trh**, z tejto session neoverené → PREDPOKLAD, nie dôkaz o SK majiteľovi RK.
+  Navyše CRM 23 % < social 39 % argumentuje *proti* vedeniu komunikácie cez CRM.
+  Pri konflikte s 3 priamymi SK rozhovormi (`decisions.md:501`) vyhráva lokálny dôkaz.
+- **Nález 3:** Founder Dashboard je **data-blocked** — `activities`=3/31 dní, `matches_new`=0,
+  `leads.last_contact_at` visí v nezmergovanom `#437`. Postaviť ho dnes = nuly alebo AP-001.
+  Q8 „príliš skoro"; odomkne sa po S6 (ranný zoznam).
+- **Ústredný konflikt zaznamenaný:** H1 „nedostatok predávajúcich" (priamy SK dôkaz) vs.
+  H2 „únik na existujúcich leadoch" (founder rámec + US prieskum). Nezlučiteľné v jednej prvej vete.
+  **Experiment E0** (split otváracej vety, 20/20, rozhodovacie pravidlo stanovené vopred) je prvá úloha.
+- **Stratégia C „Shadow CRM" (14 dní, read-only)** vyhodnotená ako najsilnejší nový prvok —
+  jediná ponuka, ktorá od majiteľa nechce žiadnu zmenu správania. BUILD po GDPR bráne.
+- **Stratégia E (benchmark)** → Strategic Backlog, timing veto (1 zákazník). Odomkne sa pri ≥ 8 RK s 30 dňami dát.
+- **Engine 3 (founder-to-founder, „hľadám 5 RK")** sa zhoduje s nezávisle odvodeným S7 →
+  dve nezávislé odvodenia, priorita. Engine 4 (case study) blokovaný chýbajúcim súhlasom s menovaním.
+- **Otvorené brány:** G1 GDPR B2B outreach · G2 GDPR cudzí export · G3 S2 rozsah (nezodpovedané) ·
+  G4 `#437` do PROD · G5 súhlas s menovaním.
