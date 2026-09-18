@@ -65,7 +65,7 @@ Ak niektorá z prvých troch tabuliek neexistuje, jednotlivý vnorený `count(*)
 | SMO-B01 | Launch Studio pilot | 5 reálnych ponúk + brand/screenshots | `OPEN` | p. Smolko | sample pack prijatý a anonymizovaný |
 | SMO-B02 | Pricing automation | zdroj porovnaní, histórie a days-on-market | `BLOCKED` | Founder + Product | schválený zdroj, licencia, mapovanie, nenulový ingest alebo manual-only decision |
 | SMO-B03 | Provider adapter | právo použiť RealityMap/Valuo/Realitná únia dáta | `BLOCKED` | Founder + vendor | zmluva/API/export scope a retention |
-| SMO-B04 | Concierge public preview | Realvia tenant scope + freshness | `BLOCKED` | Engineering | cross-tenant negative test + active/freshness contract |
+| SMO-B04 | Concierge public preview | Realvia tenant scope + freshness | `BLOCKED` | Engineering | kód hotový (#569 + #573); zostáva PROD dôkaz — viď nižšie |
 | SMO-B05 | Verejný chatbot | AI disclosure, privacy a schválené FAQ | `BLOCKED` | Founder + Privacy + Smolko | schválené texty a human fallback |
 | SMO-B06 | Callback handoff | broker routing a minimálny PII kontrakt | `OPEN` | p. Smolko + Product | routing matrix + 10 E2E testov |
 | SMO-B07 | Booking preview/produkcia | `scheduled_events` nie je v produkcii | `BLOCKED` | Founder + DB operator | DB GO + migrácia + RLS/index/history evidence |
@@ -150,6 +150,31 @@ Ak niektorá z prvých troch tabuliek neexistuje, jednotlivý vnorený `count(*)
 
 **PASS:** každý lookup/update je viazaný na `agency_id`; negatívny test nedokáže čítať ani meniť cudziu property; aktívny stav a freshness majú kontrakt.  
 **Fallback:** interné preview alebo callback bez zobrazenia neoverenej ponuky.
+
+#### Stav k 2026-09-17 — tri kritériá zvlášť
+
+| kritérium | vrstva kód | vrstva PROD |
+|---|---|---|
+| lookup/update viazaný na `agency_id` | ✅ `properties-store.ts`, #569 | `unknown` |
+| negatívny test na cudziu property | ✅ `properties-store-cross-tenant.test.ts`, 6 testov, #569 | `unknown` |
+| aktívny stav a freshness majú kontrakt | ✅ `lib/properties/public-visibility.ts`, 25 testov, #573 | `unknown` |
+
+Kód teda spĺňa všetky tri. **Status zostáva `BLOCKED` zámerne** — register požaduje dôkaz
+voči produkcii a ten zatiaľ neexistuje. Prepísať `BLOCKED` na `PASS` na základe zelených
+unit testov by bol presne ten nepodložený stavový výrok, ktorý má chytať `EC-001`.
+
+**Čo PROD dôkaz vyžaduje (read-only, bez zápisu):**
+
+1. `SELECT count(*) FROM information_schema.columns WHERE table_name='properties' AND column_name='realvia_updated_at'`
+   — stĺpec je definovaný v `apps/crm/supabase/22_realvia_webhook_infrastructure.sql:110`
+   (`ADD COLUMN IF NOT EXISTS`), ale **nie je v `supabase/migrations/`**, takže jeho
+   prítomnosť v produkcii je nepotvrdená. Ak chýba, kontrakt fail-closed **skryje každú
+   ponuku** — bezpečné zlyhanie, ale treba o ňom vedieť vopred.
+2. Rozdelenie `realvia_updated_at` podľa veku (koľko riadkov je starších než 7 dní) —
+   ukáže, či je default okno realistické, alebo by vyprázdnilo výpis.
+3. Negatívny cross-tenant dotaz pod rolou inej agentúry.
+
+Bod 1 a 2 sú `SELECT`, žiadna migrácia a žiadny zápis.
 
 ### SMO-B05 — Verejná AI, privacy a FAQ
 

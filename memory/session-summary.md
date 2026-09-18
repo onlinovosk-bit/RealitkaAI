@@ -13,6 +13,19 @@
 ### Ďalší krok
 Founder: review/merge sales-funnel admin gate; next candidate team/users INSERT or saas_leads RLS (GO).
 
+## Session 2026-09-14 (ADR Soft Factory V1 Minimum)
+### Dokončené
+- Ingest founder ADR z Downloads → `docs/architecture/adr-2026-09-11b-software-factory-v1-minimum.md`
+- Kontrolór check vs `origin/main` @ `97655763b`: TASK-0008 schema gap overený; expectedFileHash/BUS-004 hash dôkaz na tip main neoverený
+- Report: `docs/reports/2026-09-14-adr-software-factory-v1-minimum.md`
+### Rozpracované / Pending
+- Founder GO na rozhodnutia #1 (V1 Minimum) a #4 (Judge = spúšťač kontrol); potom schema `acceptance`+`budget` + runner + ledger
+- Dohľadať artefakt BUS-004 / expectedFileHash hardening (nie na tip main)
+### Kľúčové súbory zmenené
+- `docs/architecture/adr-2026-09-11b-software-factory-v1-minimum.md`: NÁVRH V1 Minimum
+- `docs/reports/2026-09-14-adr-software-factory-v1-minimum.md`: ingest + verification
+### Ďalší krok
+Founder: rozhodni #1 a #4 (V1 Minimum + Judge-as-runner). Bez GO neimplementovať.
 ## Session 2026-08-18
 
 ### Dokončené
@@ -34,6 +47,17 @@ Founder: review/merge sales-funnel admin gate; next candidate team/users INSERT 
 Run targeted tests, push branch, open draft PR. Do not merge #439 without idempotency follow-up.
 ## Session 2026-09-15 (critical bug hunt — match status scoped)
 ### Dokončené
+- #510 / #511 merged (roadmap overlay + Launch Pack V0 docs)
+- Mapper-depth amendment: `mapTransaction` P0, zlé 13/14, PREDANÉ v title, governance riadky≠správnosť
+### Rozpracované / Pending
+- Founder: vyžiadať Realvia číselník (category + transaction)
+- Mapper P0 + backfill — samostatné GO (nie teraz)
+- Launch Pack implement — až po mapper P0 + `GO IMPLEMENT…`
+### Kľúčové súbory zmenené
+- `docs/reports/2026-09-03-realvia-mapper-depth-amendment.md`
+- `docs/reports/2026-09-03-property-launch-pack-integration.md` (doplnené)
+### Ďalší krok
+Oficiálny číselník od Realvie; žiadny GO IMPLEMENT Launch Pack.
 - HIGH: match status PATCH cookie-less write drop → fix + tests + PR
 - Report: `docs/reports/2026-09-15-match-status-scoped-client.md`
 ### Rozpracované / Pending

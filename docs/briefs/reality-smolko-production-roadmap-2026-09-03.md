@@ -31,7 +31,7 @@ Rozdiel ~60 neaplikovaných súborov. **Nesmie sa aplikovať naslepo.** Najprv p
 | V0 | Len `PricingEvidenceInput` (manuál / licencia). Vlastné dáta krivku nedajú. |
 | Použiť | 128 aktívnych ponúk ako „v ponuke minimálne X dní“, nie presné dni. |
 | Blokuje porovnateľné | `type = Ostatné` 86/132. Fix adaptera = iný PR. |
-| Prenájom | 0 v `transaction_type`. Otázka na hovor. |
+| Prenájom | Stĺpec `transaction_type` = 0× Prenájom — **nespoľahlivé**. Realvia kód **123** (53 ks) ≈ prenájom podľa titulov. Mapper P0. |
 
 **Nie V0 (backlog):** denný snapshot ceny + stavu každej ponuky do **existujúcej** `property_price_trail`. Bez zberu dnes nebude krivka o pol roka.
 
