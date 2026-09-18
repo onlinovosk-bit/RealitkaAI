@@ -70,8 +70,8 @@ items:
     evidence: [E1]
   - id: P1
     kind: PROPOSAL
-    proposal: "v0.2 kontraktu (4 opravy z behu): (a) §5 vs §6.2 — rozsah vstupu = refs + citované súbory + repo pri base.ref (challenger F13); (b) handoff.base.ref = parent commit handoffu, explicitne (executor F15); (c) výstupná schéma: povinné `base.ref` (challenger použil `base_ref`); (d) §4.3 — premenovať/označiť existujúce `decisions/` súbory bez founder source."
-    based_on: [F1]
+    proposal: "v0.2 kontraktu (4 opravy z behu 2026-09-16 + 3 doplnené 2026-09-18): (a) §5 vs §6.2 — rozsah vstupu = refs + citované súbory + repo pri base.ref (challenger F13); (b) handoff.base.ref = parent commit handoffu, explicitne (executor F15); (c) výstupná schéma: povinné `base.ref` (challenger použil `base_ref`); (d) §4.3 — premenovať/označiť existujúce `decisions/` súbory bez founder source; (e) actor/model/role/capabilities os v envelope — rola nie je to isté čo oprávnenie; (f) `valid_for` + `on_state_change` v `DECISION` — väzba rozhodnutia na stav, nad ktorým vzniklo, cez VŠETKY state dependencies, nie len mutovaný ref; (g) explicitné pravidlo expirácie GO pri zmene stavu. Detail k (e)(f)(g): sekcia 'Amendment 2026-09-18' nižšie."
+    based_on: [F1, A1, A2, A3]
     gate: GO REQUIRED
     requires_decision: true
   - id: P2
@@ -86,6 +86,35 @@ items:
     based_on: [F6, F7]
     gate: GO REQUIRED
     requires_decision: true
+
+  # --- Amendment 2026-09-18 (orchestrator) -------------------------------
+  # Doplnené položky k P1. Pôvodné položky E1–E7, F1–F7, P1–P3 z behu
+  # 2026-09-16 sú NEZMENENÉ; mení sa iba `proposal` a `based_on` v P1.
+  # Zdroj: .ai/bus/outbox/MSG-20260918-030-orchestrator-lessons-cleanup-permission-boundary.md
+  - id: AE1
+    kind: EVIDENCE
+    cmd: "git push origin claude/brave-bohr-arikv2-bus-result · git push origin backup/claude-brave-bohr-arikv2-20260918 · curl \"$HTTPS_PROXY/__agentproxy/status\""
+    result: "branch push OK · tag push HTTP 403 · diagnostický endpoint proxy nedostupný (permission denied). Príčina 403 = UNKNOWN, nedá sa odlíšiť push policy od egress policy."
+  - id: AE2
+    kind: EVIDENCE
+    cmd: "git ls-remote origin refs/heads/main (pred auditom vs. po vydaní GO)"
+    result: "9c6fc4dd08126ae10bd3ac5c857fdc1ff9ec2161 → ed45d51884dc94e6adb062b570cb27d8831cade8 (#369 30a1ba90, #586 ed45d518). Proposed new HEAD z auditu tým prestal platiť; cleanup zastavený."
+  - id: AE3
+    kind: EVIDENCE
+    cmd: "git grep -c -E 'valid_for|on_state_change|state_binding' -- '.ai/bus/**' 'docs/architecture/REVOLIS_AGENT_CONTRACT_v0.1.md' · git grep -n -i -E 'capabilit|permission' -- kontrakt"
+    result: "0 výskytov v oboch prípadoch. Ani väzba rozhodnutia na stav, ani os oprávnení v protokole neexistujú."
+  - id: A1
+    kind: FINDING
+    claim: "ACTOR / ROLE / CAPABILITY: envelope nerozlišuje aktéra od jeho oprávnení. Cloud session aj founderov stroj vystupujú ako `orchestrator`, ale majú rôzne capability (branch push áno / tag push nie), takže krok sa dá adresovať aktérovi, ktorý ho vykonať nemôže. Rozširuje existujúcu medzeru 'rola vs. model' o tretiu os."
+    evidence: [AE1, AE3]
+  - id: A2
+    kind: FINDING
+    claim: "PERMISSION BOUNDARY. OBSERVATION: branch push succeeded; tag push returned HTTP 403. CAUSE: UNKNOWN. HYPOTHESIS: remote/proxy policy may distinguish ref types; NOT VERIFIED. Hypotéza sa nezapisuje ako fakt."
+    evidence: [AE1]
+  - id: A3
+    kind: FINDING
+    claim: "DECISION VALIDITY / STATE BINDING: GO vydané nad `main = 9c6fc4dd` malo byť vykonané, keď už platilo `main = ed45d518`. Protokol nemá pole viažuce rozhodnutie na stav ani sémantiku pre zmenu stavu; mutáciu zastavila ad-hoc kontrola v pláne, nie protokol. Guard na mutovaný ref nestačí — menil sa `target_state`, nie `mutation_target`."
+    evidence: [AE2, AE3]
 ---
 
 # Gate 0 — validácia protokolu na TASK-RLS-ONBOARDING-SESSION
@@ -156,3 +185,110 @@ Spustenie: `python3 g0_validate.py <repo> <base_ref> <handoff> <výstup>...` (Py
 Pravidlá: G0-2 `resolution` + cesty pri base.ref + `context_requests` · G0-3 `kind` ∈ 5 ·
 §1 povolené druhy pre rolu · §4 `DECISION` iba founder + source · §3 `FINDING` → `EVIDENCE` s cmd/file ·
 G0-5 external/production `ACTION` → `authorized_by` · §6 `inputs_read` bez výstupov iných rolí.
+
+---
+
+# Amendment 2026-09-18 — P1 body (e), (f), (g)
+
+Doplnok k `P1`. **Výsledok Gate 0 sa týmto nemení** — `PASS` pre G0-2…G0-5,
+`beh PASS / slučka FAIL` pre G0-1 zostávajú tak, ako boli zapísané 2026-09-16.
+Pôvodné položky `E1–E7`, `F1–F7`, `P2`, `P3` sú nedotknuté; v `P1` sa mení iba
+`proposal` a `based_on`. Nové položky nesú prefix `A`.
+
+Zdroj a plný kontext: `.ai/bus/outbox/MSG-20260918-030-orchestrator-lessons-cleanup-permission-boundary.md`
+
+**Ako vznikli:** pri pokuse o cleanup vetvy `claude/brave-bohr-arikv2`. Cleanup
+**nebol vykonaný** (founder `NO GO`). Nálezy sú vedľajším produktom, ktorý prežil.
+
+## Epistemické úrovne
+
+Aby sa nezamieňalo pozorovanie s vysvetlením:
+
+| úroveň | definícia |
+|---|---|
+| OBSERVATION | namerané, reprodukovateľné |
+| VERIFIED FACT | overené nezávislým príkazom |
+| HYPOTHESIS | možné vysvetlenie, **neoverené** |
+| PROTOCOL REQUIREMENT | návrh pravidla, čaká na founder `DECISION` |
+
+## (e) actor / model / role / capabilities — A1
+
+Kontrakt §1 pozná rolu, nepozná oprávnenia (`AE3`: 0 výskytov `capabilit|permission`).
+Rola hovorí, **čo agent robí**; capability hovorí, **čo dokáže vykonať**. Dnes sa to
+zlieva a plán sa preto dá adresovať aktérovi, ktorý krok vykonať nemôže.
+
+```yaml
+actor:
+  id: cloud-session-01KTMm…        # inštancia, nie trieda
+  model: claude-opus-5
+  role: orchestrator
+  capabilities:
+    git.push.branch: ["claude/*"]
+    git.push.tag: false
+    git.push.force: false
+    prod.write: false
+```
+
+## (f) valid_for + on_state_change — A3, A2
+
+**PROTOCOL REQUIREMENT.** `DECISION` sa viaže na stav, nad ktorým vzniklo:
+
+```yaml
+valid_for:
+  base:
+    ref: refs/heads/main
+    sha: 9c6fc4dd08126ae10bd3ac5c857fdc1ff9ec2161
+  depends_on:                       # VŠETKY refy, na ktorých audit stál
+    - ref: refs/heads/claude/brave-bohr-arikv2
+      sha: 348d3f5993d247f67ef178178fb8c8c44c2ea5e9
+      role: mutation_target
+    - ref: refs/heads/main
+      sha: 9c6fc4dd08126ae10bd3ac5c857fdc1ff9ec2161
+      role: target_state
+  on_state_change: abort
+```
+
+`valid_for` **nesmie pokrývať iba mutovaný ref.** V tomto behu bol `mutation_target`
+nezmenený a posunul sa `target_state` — presne ten, ktorý by `--force-with-lease`
+nechránil.
+
+| `on_state_change` | správanie | kedy |
+|---|---|---|
+| `abort` | zastaviť, nahlásiť, nevykonať nič | nevratné: force-push, delete, prod write |
+| `re-audit` | zastaviť mutáciu, zopakovať audit, vyžiadať nové GO | audit je lacný, zámer platí ďalej |
+| `proceed` | vykonať napriek zmene | len ak je operácia preukázateľne nezávislá od zmeneného refu; **vyžaduje `rationale`** |
+
+Default pri chýbajúcom poli: **`abort`**. Absencia pravidla nesmie znamenať povolenie.
+
+## (g) expirácia GO
+
+> **GO je platné iba pre auditovaný stav.** Ak sa ktorýkoľvek ref z
+> `valid_for.depends_on` zmení, pôvodné GO **automaticky expiruje**. Nové vykonanie
+> vyžaduje nový audit nad aktuálnym stavom a nové GO. Pokračovanie zo starého
+> auditu je porušenie protokolu.
+
+Kandidát na jadrový invariant (formulácia foundera, chat 2026-09-18):
+
+> *No mutation may execute against a state different from the state on which its
+> authorization was granted, unless the protocol explicitly permits
+> re-audit/re-authorization.*
+
+## Audit trail — prečo bol cleanup odmietnutý
+
+| fáza | stav |
+|---|---|
+| audit | `main = 9c6fc4dd` · `branch = 348d3f59` · proposed new HEAD `9c6fc4dd` |
+| medzitým | zmergované #369 (`30a1ba90`), #586 (`ed45d518`) |
+| pri vykonaní | `main = ed45d518` → proposed new HEAD **neplatný** |
+| výsledok | cleanup zastavený; pôvodný audit označený za **expirovaný**, nie pozastavený |
+
+Sekundárne blokoval aj chýbajúci remote backup tag (`A2`) — plán mal pri tom kroku
+podmienku „bez tohto to nerobiť". Obe brány zabrali nezávisle.
+
+## Rozsah tohto doplnku
+
+- **Bez runtime enforcement.** P1 je špecifikácia kontraktu. Validátor, hook ani CI
+  kontrola nie sú jeho súčasťou — o kodifikácii `g0_validate.py` sa rozhoduje samostatne.
+- **Bez `DECISION`.** (e), (f), (g) sú `GO REQUIRED` a čakajú na foundera (§4).
+- **Bez zmeny výsledku Gate 0** a bez zásahu do vetvy `claude/brave-bohr-arikv2`
+  (`348d3f59`, force-push nevykonaný, remote backup tag neexistuje).
