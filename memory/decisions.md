@@ -1076,3 +1076,26 @@ blocked. Exact PC commands are in
 - Ingest: `docs/architecture/adr-2026-09-11b-software-factory-v1-minimum.md`
 - Odporúčanie: deterministická kostra (Contract/Judge-runner/Ledger/hard limits) pred AI vrstvami; pilot na BUS, nie coding loop.
 - Čaká founder na #1 a #4. Report: `docs/reports/2026-09-14-adr-software-factory-v1-minimum.md`.
+
+## [2026-09-18] — Inter-Agent Bus: transportná vrstva v1 BUILD (deploy = samostatný GO)
+
+- **Rozhodnutie:** BUILD. Bus prestáva byť len protokol/governance vrstva a dostáva
+  skutočný transport: `packages/bus-core` (v1 envelope, validácia, digest, file +
+  GitHub store, HTTP handler), `scripts/bus/cli.ts`, `scripts/bus/serve.ts`,
+  OpenAPI schéma pre ChatGPT Custom GPT Action. Nula nových runtime závislostí.
+- **Prečo:** Founder bol API medzi ChatGPT a Claude Code. Náklad: latencia na každom
+  handoffe, strata kompresie (3 000 slov namiesto 15-riadkového digestu) a správy,
+  ktoré nikdy nedopadli do repa. Constitution otázka 1 = NIE (nikto za to nezaplatí),
+  ale 7/8/9/11 = ÁNO — berie sa ako execution leverage, nie feature; preto sa drží
+  malý (žiadna DB, žiadne UI, žiadny orchestrátor).
+- **Dôsledok:** Git zostáva single source of truth — správa = commitnutý súbor.
+  `v: 1` správy sú validované a blokujú `bus:validate`; 35 pre-v1 správ sa
+  **neprepisuje**, hlásia sa ako warning. Gate sa nemení: bus prenáša, nevykonáva
+  a neschvaľuje; `GO REQUIRED`/`STOP` naďalej patria founderovi.
+- **Otvorené (founder GO):** D1 kde beží HTTP transport (tunel / samostatný host /
+  mount v `apps/crm` — odporúčam tunel, potom samostatný host) + vydanie
+  `REVOLIS_BUS_TOKEN`; D2 `bus:validate` ako CI krok; D3 migrácia pre-v1 správ
+  (odporúčam nie). Bez D1 ChatGPT na bus nedosiahne a copy-paste trvá ďalej.
+- **Dôkaz:** `npm run bus:test` 61/61; `npm run bus:validate` 41 súborov, 0 errors.
+- **Artefakty:** `docs/architecture/adr-2026-09-18-inter-agent-bus-transport-v1.md`,
+  `docs/prompts/revolis-bus-openapi.yaml`, `.ai/bus/outbox/MSG-20260918-001-bus-transport-v1.md`
