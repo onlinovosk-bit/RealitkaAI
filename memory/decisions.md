@@ -1154,3 +1154,36 @@ blocked. Exact PC commands are in
 - **Tri nové neznáme, neprikryté návrhom:** **U-J (P0)** či `resend@^6.12.2` a `twilio@^5.13.1` podporujú idempotency kľúč — bez toho hrozí dvojitý e-mail klientovi; overiť z dokumentácie, **nie z pamäte** (AP-005). **U-K (P0)** či T1 reálne prejde ako jedna transakcia cez RPC idióm — ak nie, fail-closed padá a s ním I-004/I-005. **U-L (P1)** zdroj `reversible` príznaku pre `resolveAuthority`.
 - **Nové otvorené rozhodnutia:** OD-9 (nezvratnosť ako podlaha) a OD-10 (per-tenant override `externallyVisible`). Implementácia môže začať s bezpečnými defaultmi — CP-P0-4 tým nie je zablokované.
 - **Ďalší krok:** founder rozhodnutie o OD-1..OD-10 a o rozdelení brány CP-P0-1. **Nie kód.**
+
+## [2026-09-18] — Founder verdikty OD-1..OD-10 + rozdelenie CP-P0-1 na A/B/C
+
+- **CP-SPEC v1.1:** ACCEPT ako hardened draft.
+- **OD-1 Data truth:** ACCEPT — doménové systémy zostávajú autoritatívne pre entity; `platform_events` je historická/eventová vrstva, **nie druhá databáza pravdy**.
+- **OD-2 Research scope:** ACCEPT — internal + external evidence, ale tvrdá hranica: **external evidence ≠ system truth**; výskum tvorí hypotézu, nemení produkciu automaticky.
+- **OD-3 Authority:** ACCEPT — capability (OBSERVE/ANALYZE/RECOMMEND) × authority (AUTONOMOUS/APPROVAL_REQUIRED/FORBIDDEN), dynamicky z kontextu.
+- **OD-4 Tenant boundary:** ACCEPT — `scope='tenant'` ⇒ `agency_id` REQUIRED, `scope='platform'` ⇒ NULL. **Žiadny sentinel tenant.**
+- **OD-5 Trigger capture:** ACCEPT, ale **samostatná brána až po** GDPR/RLS verifikácii.
+- **OD-6 `lead_events`:** ACCEPT deprecation — read-compatible počas migrácie, žiadna nová business logika, retirement samostatným rozhodnutím. **Nie okamžitý DROP** (6 konzumentov).
+- **OD-7 Cost→Outcome:** **DEFER** — reťaz cost → lead_id → conversion → deal nie je dôveryhodná; najprv `CP-P0-3a` inštrumentácia.
+- **OD-8 Prvý migrovaný agent:** ACCEPT ako Definition of Done pre Control Contract. `lib/agents/followup` je kandidát, **nie definitívny** — implementačná úloha musí urobiť read-only suitability check.
+- **OD-9 Nezvratnosť:** ACCEPT — `irreversible` → **minimum authority floor = APPROVAL_REQUIRED**; `FORBIDDEN` je výhradne explicitný deny-list. Ruší paradox „founder schváli e-mail → engine ho zakáže".
+- **OD-10:** **CONDITIONAL** na U-J/U-K/U-L.
+- **CP-P0-1 rozdelené na tri architektonicky nezávislé brány:**
+  - **CP-P0-1A Safe Spine Foundation** — A1 kanonická v2 schéma · A2 `scope` diskriminátor · A3 tenant isolation model · A4 correlation/causation/run sémantika · A5 idempotency model · A6 schema versioning · A7 invariant enforcement model · A8 migration/version-control ownership. **Žiadny produkčný PII backfill.**
+  - **CP-P0-1B Event Production** — DB trigger → kanonický emitter → reaction-event producers → event contracts. Vyžaduje GDPR, retenciu, PII minimization, RLS, producer ownership.
+  - **CP-P0-1C Historical / Legacy Migration** — kompatibilita, migrácia, PII treatment, legacy konzumenti, retirement. Sem patrí `PII-SCRUB-BACKFILL` ako samostatná brána.
+- **NO-GO (potvrdené):** oprava `lead_events` · reaction event producers pred kontraktom · PII scrub · Cost→Outcome · Founder UI · hromadná oprava 240 decisions (samostatný outcome-recovery problém).
+- **Poradie:** U-J/U-K/U-L → CP-P0-4 → CP-P0-2 → CP-P0-1A. GDPR evidence gate paralelne, bez implementácie PII časti.
+- **PR #585:** nechať ako architecture evidence record; `behind` ≠ konflikt, žiadny commit len kvôli tomu; nemiešať architektúru + research + implementáciu do jedného PR.
+
+## [2026-09-18] — U-J / U-K / U-L evidence: dve uzavreté, jedna čiastočne
+
+- **Brány:** `GO PROVIDER-IDEMPOTENCY-EVIDENCE` · `GO RPC-TRANSACTION-EVIDENCE` · `GO REVERSIBILITY-EVIDENCE`. Read-only, 10:05–10:50 UTC.
+- **Report:** `docs/reports/2026-09-18-U-JKL-evidence-report.md`
+- **Obmedzenie prostredia (FAKT):** egress proxy blokuje `resend.com`, `www.twilio.com`, `cdn.jsdelivr.net`, `docs.postgrest.org`. Fungovalo iba vyhľadávanie. `node_modules` nie je nainštalované. Preto pri U-J **nevyhlasujem RESOLVED** — AP-005 rozlišuje „vyhľadávač cituje dokumentáciu" od „prečítal som dokumentáciu".
+- **U-J Resend — PROBABLE:** hlavička `Idempotency-Key`, ≤256 znakov, **retencia 24 h**, `POST /emails` aj `/emails/batch`, chyby 400 `invalid_idempotency_key` / 409 `invalid_idempotent_request` / 409 `concurrent_idempotent_requests`. **Nový architektonický vstup:** 24 h retencia je **kratšia** než životnosť nášho deterministického `idempotencyKey` → retry po 24 h nebude u providera deduplikovaný; chytí to len platformová idempotencia (I-009) + reconciler.
+- **U-J Twilio — UNKNOWN:** `Idempotency-Key` je doložená pre Conversations Orchestrator a Monitor Alarms, **nie pre Messages create**, ktoré Revolis reálne volá (`client.messages.create` v `multi-channel-sender.ts:75,:97`, `l99/alert-dispatch.ts:35`). Netvrdím, že to Twilio nemá — tvrdím, že to **nie je doložené**. Dovtedy SMS/WhatsApp = **at-least-once**.
+- **U-K — RESOLVED produkčným precedensom:** `public.spend_credits` (plpgsql, SECURITY DEFINER, volaná cez `supabase.rpc()`) robí v jednom volaní EXISTS-idempotency check → `SELECT ... FOR UPDATE` → 2× INSERT do `credit_ledger` → UPDATE `agencies`. **Spravuje peniaze**; keby nebola atomická, účtovanie by systematicky nesedelo. Ďalšie precedensy: `compute_bri_score_v2` (3× INSERT, 2× UPDATE), `compute_motivation_score`, `rate_limit_increment`, `increment_usage_metric`. **Navrhované T1 nie je nový vzor — je to vzor, na ktorom už stojí účtovanie kreditov.** Bonus: `FOR UPDATE` je hotová odpoveď na adversariálne testy #4 a #23. Zvyšok: empirický rollback test si vyžaduje zápis → samostatná mikro-brána (P2).
+- **U-L — RESOLVED ako neexistujúci:** grep na `reversible|irreversible|nezvratn|undoable|can_undo` naprieč `apps/crm/src` = **0 zásahov v kóde**; 5 zásahov len v prozaických vetách v docs. Najbližší action registry je `AiCreditAction` (12 akcií, čisto auditový) a `CREDIT_RATE_CODES` (4 kódy, cost metadata). **`resolveAuthority` nemá odkiaľ zobrať `reversible` → podlaha z OD-9 sa dnes nedá aplikovať.** Návrh: `ActionMetadata` registry v `packages/control-contract` s poľami `capability`, `reversible`, `externallyVisible`, `risk`, `externalProvider`, `providerIdempotency`, `denied`; akcia bez metadát sa nesmie vykonať. Pole `providerIdempotency` je miesto, kam sa zapíše výsledok U-J — **neznáma sa tým stane vynútiteľným pravidlom, nie poznámkou**.
+- **Dopad na GO:** `CP-P0-4` **GO možné, potvrdené** (U-K resolved, U-L resolved a `ActionMetadata` je jeho súčasťou). `CP-P0-2` GO možné. `CP-P0-1A` GO možné. **OD-10 zostáva CONDITIONAL** — U-J Twilio UNKNOWN blokuje len override cestu, nie default `APPROVAL_REQUIRED`.
+- **Zostáva:** U-J1 Resend primárny zdroj (P1) · U-J2 Twilio Messages (P1) · U-K1 empirický rollback (P2) · U-A/U-B/U-C/U-D GDPR+RLS (P0, blokujú CP-P0-1B, nie CP-P0-4).
