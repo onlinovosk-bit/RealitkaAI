@@ -1076,3 +1076,17 @@ blocked. Exact PC commands are in
 - Ingest: `docs/architecture/adr-2026-09-11b-software-factory-v1-minimum.md`
 - Odporúčanie: deterministická kostra (Contract/Judge-runner/Ledger/hard limits) pred AI vrstvami; pilot na BUS, nie coding loop.
 - Čaká founder na #1 a #4. Report: `docs/reports/2026-09-14-adr-software-factory-v1-minimum.md`.
+
+## [2026-09-18] — Founder Control Plane: substrát BUILD / plocha BACKLOG
+
+- **Vstup:** founder téza „FOUNDER CONTROL CENTER / BUSINESS CONTROL PLANE — Architecture Discovery & North Star v1.0" (§0–§29).
+- **Ústava (2 verdikty, nie 1):**
+  - Control Plane ako **produktová plocha** (§21 navigácia, 6 fáz): **4/12 + veto Q8 (príliš skoro) + veto Q1 (klient nezaplatí) → STRATEGIC BACKLOG.** Odomkne: 5 platiacich zákazníkov podľa ADR-004 (`decisions.md`, 2026-08-03). Dnes 1 (Smolko).
+  - Control Plane **substrát** (§3 events, §5 decisions, §6 authority, §12 cost): **BUILD**, 4 rezané kusy (P0-CP-1..4), každý ≤2 týždne a samostatne užitočný.
+- **Dôvod rozdelenia:** `brain/ENGINE.md` §2 má „vytvoriť founder dashboard" v zozname toho, čo GO neznamená; §3 varuje pred customer avoidance. Substrát však nie je Center — je to dlh blokujúci už postavený `/operator`.
+- **Päť nálezov z konfrontácie:** (1) osem event tabuliek, `public.events` bez `agency_id`/`correlation_id` → cross-tenant agregácia nemožná; (2) decision memory rozseknutá founder-markdown vs `public.decisions`; (3) `lib/capabilities/_shared/human-approval.ts` drží approvals v in-memory `Map` — na serverless nedurable; (4) cost→outcome je jeden view, nie fáza (`ai_action_audit.lead_id` už existuje); (5) kontrakt §27 je jediný komponent, čo sa nedá dorobiť neskôr bez refaktoru agentov.
+- **Zámena pojmov (AP-006):** `lib/research-agent/` = lead dossier builder, NIE Research Engine zo §14. Premenovať pred spec.
+- **GDPR brána:** `events` nesie `ip_hash`/`user_agent`; cross-tenant čítanie founderom vyžaduje `gdpr-advisor` + 6(1)(f) balancing test pred P0-CP-1.
+- **Súbory:** `docs/architecture/founder-control-plane-v1-repo-confrontation.md`
+- **GO brány:** `GO CP-EVIDENCE` (read-only PROD meranie) · `GO CP-SPEC` (spec len pre 4 kusy) · `GO CP-P0-1..4` · `GO CP-FULL-SPEC` (v rozpore s ADR-004, vyžaduje zapísanú odchýlku).
+- **Otvorená otázka na foundera:** platí prah „Center: 5 platiacich", alebo sa prepisuje? ADR-004 odchýlku povoľuje so zapísaným dôvodom a dátumom revízie.
