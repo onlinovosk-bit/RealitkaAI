@@ -1106,3 +1106,18 @@ blocked. Exact PC commands are in
 - **Dopad na poradie:** CP-P0-4 (Contract) GO možné — zatvára presne tú dieru. CP-P0-1 (Spine) GO možné, ale **rozsah sa presúva z `events` na `platform_events`**, čistý DDL bez backfillu. CP-P0-2 (Approvals) GO možné, žiadne dáta na migráciu. **CP-P0-3 (Cost→Outcome) ZASTAVENÉ** — nahradiť `CP-P0-3a` (inštrumentácia cost cesty), view až po ~30 dňoch zberu.
 - **Zostáva NEZNÁME:** prečo sa `lead_events` nezapisuje (U1); retention policy (U2); GDPR základ pre `platform_events.payload` (U6) — `gdpr-advisor` musí bežať pred CP-P0-1.
 - **Nevykonané:** CP-SPEC neotvorený, P0-CP neimplementované, žiadny merge, žiadny deployment.
+
+## [2026-09-18] — U1: root cause `lead_events` = 0 — PROVEN (nenapojená write path)
+
+- **Brána:** `GO U1`. Read-only (repo read + grep + PROD SELECT), PROD `ypgajkhqtbriqqmyawyv`, 09:12–09:20 UTC.
+- **Report:** `docs/reports/2026-09-18-U1-lead-events-write-path-report.md`
+- **PROVEN ROOT CAUSE:** `lead_events` má v celej aplikácii **jedinú** write path — `POST /api/ai/lead-events` (`route.ts:65`). Tá má **0 volajúcich** a zároveň je za `isEnterpriseSalesIntelligenceEnabled()` → 403. **Žiadna zo 6 agentúr na PROD nemá plán `enterprise`.** Nie je to chyba, je to nenapojená funkcia.
+- **Vylúčené ako príčina (každá samostatným meraním):** RLS (`lead_events_tenant`, `with_check` insert povoľuje) · schema (PROD stĺpce == migrácia `20260418`, žiadny drift) · tiché zlyhanie (route vracia 400/403, nič nepotláča) · zápis inam.
+- **Nezávislé potvrdenie:** celý Enterprise klaster prázdny — `lead_events`, `lead_scores`, `client_dna`, `deal_moments`, `ai_recommendations` = **0 riadkov** každá.
+- **Skutočný event path je DB trigger mimo repa:** `trg_leads_platform_events` (AFTER INSERT OR UPDATE na `public.leads`, SECURITY DEFINER) → `emit_platform_event()` → `platform_events`. **Nie je v žiadnej migrácii** — repo to priznáva v `20260509000000_rls_lead_scores.sql:9`. `emitPlatformEventServer()` volá aplikácia jediný raz (`matching-engine.ts:35`); zvyšok z 1 417 riadkov robí databáza.
+- **GDPR — mení predchádzajúci záver:** trigger zapisuje do payloadu `'name', new.name`. **`platform_events.payload` obsahuje osobné údaje.** `gdpr-advisor` pred CP-P0-1 je nutnosť, nie formalita.
+- **Dopad:** `/operator` — `hasGlobalLeadEvents=false` → `reaction24hPct` null pre všetkých + systematických −4 na health score. Guardian — `guardian_findings` má **0 STALE** riadkov (NO_OWNER 15, NO_PHONE 10/0 open, HOT_IGNORED 8); STALE sa nespustí, kým je tabuľka prázdna. `NO_PHONE` v1.2 má rovnakú závislosť → 0 otvorených od 27. 7.
+- **Dopad na CP-P0-1:** potvrdzuje presun spine na `platform_events`; spine musí navyše pokryť triedu „reakcia makléra" (`call`/`reply`/`email_open`), ktorá dnes nie je nikde — bez nej nebudú mať vstup reaction24h, STALE ani cost/qualified lead.
+- **UNKNOWN:** zámer autorov (žiadny ADR k `lead_events`); ktorá z 3 enterprise migrácií chýba v `schema_migrations`.
+- **Ďalšie brány (neudelené):** `GO CP-SPEC` · `GO EVT-TRIGGER-CAPTURE` (zachytiť trigger do migrácie — dnes jediný funkčný event path žije len na PROD) · `GO OPERATOR-HONESTY`. **Neodporúčam** opraviť write path samostatne — bola by to implementácia pred kontraktom.
+- **Nevykonané:** žiadna oprava, CP-SPEC neotvorený, žiadny merge, žiadny deployment.
