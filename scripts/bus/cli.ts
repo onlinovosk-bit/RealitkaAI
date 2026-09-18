@@ -19,6 +19,7 @@ import {
   BusStoreError,
   FileBusStore,
   isBusBox,
+  LOST_TEXT_FIELD,
   parseBusDocument,
   renderDigest,
   renderQueueDigest,
@@ -102,6 +103,15 @@ async function commandSend(args: Args): Promise<void> {
   const parsed = parseBusDocument(raw, file);
   if (!parsed.envelope) {
     fail(`Draft ${file} has no YAML frontmatter — see .ai/bus/message.schema.md`);
+  }
+
+  // Refuse at write time: a message whose text YAML ate is worse than no message.
+  const lostText = (parsed.warnings ?? []).filter((warning) => warning.field === LOST_TEXT_FIELD);
+  if (lostText.length > 0) {
+    fail(
+      `Draft ${file} would lose text to YAML comments:\n` +
+        `${lostText.map((warning) => `  - ${warning.message}`).join("\n")}`,
+    );
   }
 
   const draft = parsed.envelope;
