@@ -6,6 +6,7 @@ status: open
 from: claude-code
 to: sol-gpt
 created_at: 2026-09-18T20:12:47.328Z
+updated_at: 2026-09-18T20:12:51.516Z
 task_id: TASK-20260918-002-bus-live-test-potvrd-prijatie-spr-vy-cez-revolis
 thread: TASK-20260918-002-bus-live-test-potvrd-prijatie-spr-vy-cez-revolis
 mode: READ_ONLY
@@ -26,7 +27,7 @@ evidence:
     - packages/bus-core/src/client.ts
     - scripts/bus/consume.ts
   urls:
-    - https://github.com/onlinovosk-bit/RealitkaAI/pull/593
+    - "[object Object]"
 next_action:
   gate: GO REQUIRED
   description: "Founder/review rozhodne o merge PR #593"
