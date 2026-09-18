@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { revolisGuard } from '@/lib/revolis-guard';
-import { sendSlackMessage } from '@/lib/slack';
+import { routeAlert } from '@/lib/alerts/router';
 import { createClient } from '@/lib/supabase/server';
 
 export async function GET(req: NextRequest) {
@@ -22,14 +22,28 @@ export async function GET(req: NextRequest) {
       drafts: leads?.filter(l => l.status === 'SMS_DRAFTED').length || 0,
     };
 
-    const report = `*🌙 Revolis NightWatch: Bilancia dňa*\n\n` +
-      `✅ *Nové príležitosti:* ${stats.total}\n` +
-      `📱 *Social Scout úlovky:* ${stats.social}\n` +
-      `✉️ *Pripravené SMS na exkluzivitu:* ${stats.drafts}\n\n` +
-      `*Verdikt:* Dnes sme rozpracovali príležitosti v hodnote tisícov eur. \n` +
-      `_Dobrá práca, šéfe. Systém beží ďalej, kým spíte._`;
+    // Severity EVENT, nie WARNING: denná bilancia nie je incident. Pri
+    // štandardnom prahu (ALERTS_MIN_SEVERITY=WARNING) sa preto NEDORUČÍ —
+    // zapína ju `ALERTS_MIN_SEVERITY=EVENT`. Je to vedomá zmena oproti
+    // starému správaniu, kde sa súhrn posielal vždy.
+    //
+    // Pôvodný text obsahoval vetu „príležitosti v hodnote tisícov eur“.
+    // Žiadny výpočet za ňou nestál, takže je preč (CLAUDE.md §4 — nikdy
+    // vymyslené číslo). Zostávajú tri počty, ktoré sú naozaj spočítané.
+    await routeAlert({
+      type: "NIGHT_WATCH_SUMMARY",
+      severity: "EVENT",
+      title: "NightWatch — bilancia dňa",
+      agent: "night-watch",
+      dedupKey: `night-watch:${today.toISOString().slice(0, 10)}`,
+      fields: {
+        novePrilezitosti: String(stats.total),
+        zoSocialnychSieti: String(stats.social),
+        pripraveneSms: String(stats.drafts),
+      },
+      evidenceRef: "/dashboard/leads",
+    });
 
-    await sendSlackMessage(report);
     return NextResponse.json({ success: true });
   });
 }
