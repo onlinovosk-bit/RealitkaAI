@@ -1,3 +1,17 @@
+## Session 2026-09-18c (critical bug hunt — assign-lead agency)
+### Dokončené
+- HIGH: assignLeadToProfile cross-tenant profileId stamp → fix + tests + PR #596
+- MEMORIES cleanup: deleted merged #369 #537; recorded #596
+- Report: `docs/reports/2026-09-18-assign-lead-cross-tenant.md`
+### Rozpracované / Pending
+- Review/merge #596; open stack still awaiting: #370 #443 #444 #447 #462 #486 #490 #495 #545 #563 #582
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/team-store.ts`: same-agency gate on assignLeadToProfile
+- `apps/crm/src/lib/__tests__/assign-lead-same-agency.test.ts`: unit coverage
+- `apps/crm/tests/verification/assign-lead-same-agency.verification.test.ts`: live-spec
+### Ďalší krok
+Founder: review/merge #596; next candidate matching recalculate wipe (#444) or HubSpot fail-open (#486).
+
 ## Session 2026-09-18b (D1 = GO — dogfood transport rozhodnutý)
 ### Dokončené
 - #589 merged: bus-core (v1 envelope, digest, file + GitHub store, HTTP handler) + CLI + `serve.ts` + OpenAPI
