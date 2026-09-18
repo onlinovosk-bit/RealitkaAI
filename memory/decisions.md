@@ -1240,3 +1240,7 @@ blocked. Exact PC commands are in
 - **Dopad na GO:** `CP-P0-4` **GO možné, potvrdené** (U-K resolved, U-L resolved a `ActionMetadata` je jeho súčasťou). `CP-P0-2` GO možné. `CP-P0-1A` GO možné. **OD-10 zostáva CONDITIONAL** — U-J Twilio UNKNOWN blokuje len override cestu, nie default `APPROVAL_REQUIRED`.
 - **Zostáva:** U-J1 Resend primárny zdroj (P1) · U-J2 Twilio Messages (P1) · U-K1 empirický rollback (P2) · U-A/U-B/U-C/U-D GDPR+RLS (P0, blokujú CP-P0-1B, nie CP-P0-4).
 
+## 2026-09-18 — assign-lead same-agency gate (critical-bug automation)
+- BUILD: `assignLeadToProfile` must verify target profile `agency_id` and scope lead UPDATE; no fake ok without client.
+- PR: https://github.com/onlinovosk-bit/RealitkaAI/pull/596
+- Evidence: vitest 10/10; report `docs/reports/2026-09-18-assign-lead-cross-tenant.md`
