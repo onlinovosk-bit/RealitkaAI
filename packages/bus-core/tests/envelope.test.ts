@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   buildMessageId,
+  LOST_TEXT_FIELD,
   envelopeFromJson,
   findLikelySecrets,
   parseBusDocument,
@@ -96,4 +97,37 @@ test("envelopeFromJson fills created_at and validates", () => {
 
 test("envelopeFromJson rejects non-objects", () => {
   assert.equal(envelopeFromJson("nope").envelope, undefined);
+});
+
+test("an unquoted value containing # is warned about, not silently halved", () => {
+  const raw = ["---", "v: 1", ...Object.entries({
+    id: "MSG-20260918-003-pr-593-open",
+    type: "state",
+    status: "open",
+    from: "claude-code",
+    to: "sol-gpt",
+    created_at: "2026-09-18T09:00:00Z",
+  }).map(([key, value]) => `${key}: ${value}`), "summary: PR #593 is open", "---", "", "body"].join("\n");
+
+  const parsed = parseBusDocument(raw);
+  assert.equal(parsed.envelope?.summary, "PR", "YAML keeps only the text before the #");
+  assert.deepEqual(parsed.errors, [], "a halved summary is still a valid envelope — that is why it needs a warning");
+
+  const lost = (parsed.warnings ?? []).filter((warning) => warning.field === LOST_TEXT_FIELD);
+  assert.equal(lost.length, 1);
+  assert.match(lost[0]!.message, /line 9: "#593 is open" was read as a YAML comment and dropped/);
+  assert.match(lost[0]!.message, /wrap the value in quotes/);
+});
+
+test("quoting the value keeps the text and raises no warning", () => {
+  const parsed = parseBusDocument(serializeEnvelope({ ...sample, summary: "PR #593 is open" }));
+  assert.equal(parsed.envelope?.summary, "PR #593 is open");
+  assert.deepEqual(parsed.warnings ?? [], []);
+});
+
+test("a deliberate comment is not reported as lost text", () => {
+  const raw = serializeEnvelope(sample).replace("status: done", "status: done   # closed on main");
+  const parsed = parseBusDocument(raw);
+  assert.equal(parsed.envelope?.status, "done");
+  assert.deepEqual((parsed.warnings ?? []).filter((warning) => warning.field === LOST_TEXT_FIELD), []);
 });
