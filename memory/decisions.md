@@ -1,5 +1,12 @@
 # Critical Decisions Log
 
+## [2026-09-18] — /upgrade checkout: fix consumer, not okResponse
+
+- **Bug:** `okResponse` spreads payload (`{ ok, result }`); `/upgrade` čítal `data.data?.result?.url` → Stripe redirect nikdy.
+- **Fix (#369 → main `30a1ba906`):** oprav konzumenta; **ne**meniť `okResponse` (kontrakt ~všetkých routov).
+- **Residual:** E2E Stripe click = HUMAN (prod session). Anon 307 `/login` nie je dôkaz PASS.
+- **Evidence:** `docs/reports/2026-09-18-upgrade-checkout-okresponse-fix.md`, `…-upgrade-prod-smoke.md` (#586).
+
 ## [2026-09-03] — Mapped field correctness (za „riadky existujú“)
 
 - **Počet riadkov dokazuje existenciu, nie správnosť.** Pole z mapovania externého zdroja sa overuje proti **nezávislému signálu** z toho istého záznamu (tu: `title` vs `type` / `transaction_type`).
