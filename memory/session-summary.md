@@ -297,3 +297,14 @@ Founder review/merge #546 (and backlog of open critical fix PRs).
 - `.ai/bus/tasks/TASK-RLS-ONBOARDING-SESSION.md`: A3 vyhodnotene
 ### Dalsi krok
 Founder: merge #566, potom SAMOSTATNE rozhodnutie o migracii 20260904220000 (stale PREPARED ONLY) — najprv read-only SELECT stavu RLS v prode podla runbooku :38-41.
+
+## Session 2026-09-17 (open PR stack repro)
+### Dokončené
+- Reprodukcia 11 otvorených PR na origin/main `6f6381ca0`
+- Report: `docs/reports/2026-09-17-open-pr-stack-repro.md`
+### Rozpracované / Pending
+- Founder: close #374 #480; merge stack MERGNÚŤ po rebase kde treba
+### Kľúčové súbory zmenené
+- `docs/reports/2026-09-17-open-pr-stack-repro.md`: dôkazová tabuľka
+### Ďalší krok
+Founder GO: rebase+merge #537/#486/#447 (tenant HIGH); close #374/#480.
