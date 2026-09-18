@@ -1090,3 +1090,19 @@ blocked. Exact PC commands are in
 - **Súbory:** `docs/architecture/founder-control-plane-v1-repo-confrontation.md`
 - **GO brány:** `GO CP-EVIDENCE` (read-only PROD meranie) · `GO CP-SPEC` (spec len pre 4 kusy) · `GO CP-P0-1..4` · `GO CP-FULL-SPEC` (v rozpore s ADR-004, vyžaduje zapísanú odchýlku).
 - **Otvorená otázka na foundera:** platí prah „Center: 5 platiacich", alebo sa prepisuje? ADR-004 odchýlku povoľuje so zapísaným dôvodom a dátumom revízie.
+
+## [2026-09-18] — CP-EVIDENCE: PROD audit vyvrátil tri tvrdenia konfrontácie
+
+- **Brána:** `GO CP-EVIDENCE` (founder). Read-only, iba SELECT, PROD `ypgajkhqtbriqqmyawyv`, merané 08:58–09:05 UTC.
+- **Report:** `docs/reports/2026-09-18-CP-EVIDENCE-REPORT.md`
+- **Opravy predchádzajúceho dokumentu (FAKT):**
+  1. `ai_action_audit` **nemá** `cost_eur`/`model`/`latency_ms`/`credits_spent` na PROD — tvrdenie bolo z kódu, nie zo schémy.
+  2. cost→outcome **nie je jeden view**: 0/146 riadkov má cost, 0/146 má `lead_id` (`persist-cost-telemetry.ts:66` píše `null` natvrdo), `lead_conversions` na PROD neexistuje, `deal_outcomes` = 1 riadok.
+  3. `public.events` = **0 riadkov** — nikdy nezapísala. Reálny spine je `platform_events`: 1 417 riadkov, 2026-04-12→2026-09-15, **100 % s `agency_id`**.
+- **Najzávažnejší nález:** `lead_events` = 0 riadkov → `/operator` `reaction24hPct` bude `unavailable` pre všetkých; Guardian v1.1 STALE pravidlo sa nikdy nespustí (závisí od `lead_events`).
+- **Uzatvorené P0 zo 17. 8.:** `leads.last_contact_at` **NEEXISTUJE** — na PROD len `last_contact` (text, NOT NULL). `lib/operator/gather.ts` ho číta → 42703 → Kontakty 7 d + Trend 14 d spadnú. Zapnutie `OPERATOR_DASHBOARD_ENABLED` nie je pripravené, a blokér nie je flag.
+- **Migrácia `20260728140000`:** history row **chýba**, ale `profiles.is_platform_admin` **existuje** a **1 profil má grant**. `schema_migrations` = 49 vs 102 súborov v repe (15. 8. bolo 47 vs 94 — medzera rastie). Ďalšie drifty: `scheduled_events`, `lead_conversions`, `ai_generations` na PROD neexistujú.
+- **Slučka učenia nikdy neuzavretá:** `decisions` = 240 riadkov, všetky `status='open'`, všetky `followup_agent`, najnovší 2026-06-25; `exclusivity_outcomes` = 0. Expected outcome zapísaný 240×, actual outcome 0×.
+- **Dopad na poradie:** CP-P0-4 (Contract) GO možné — zatvára presne tú dieru. CP-P0-1 (Spine) GO možné, ale **rozsah sa presúva z `events` na `platform_events`**, čistý DDL bez backfillu. CP-P0-2 (Approvals) GO možné, žiadne dáta na migráciu. **CP-P0-3 (Cost→Outcome) ZASTAVENÉ** — nahradiť `CP-P0-3a` (inštrumentácia cost cesty), view až po ~30 dňoch zberu.
+- **Zostáva NEZNÁME:** prečo sa `lead_events` nezapisuje (U1); retention policy (U2); GDPR základ pre `platform_events.payload` (U6) — `gdpr-advisor` musí bežať pred CP-P0-1.
+- **Nevykonané:** CP-SPEC neotvorený, P0-CP neimplementované, žiadny merge, žiadny deployment.
