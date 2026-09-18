@@ -1,3 +1,19 @@
+## Session 2026-08-25
+### Dokončené
+- Critical bug hunt (correctness): 4 HIGH/CRITICAL — `docs/reports/2026-08-25-critical-bug-hunt.md`
+- Critical AUTH hunt: 3 HIGH — HubSpot/analyze null-agency admin IDOR; cron `Bearer undefined` fail-open — `docs/reports/2026-08-25-critical-auth-bug-hunt.md`
+### Rozpracované / Pending
+- `GO FIX-HUBSPOT-ANALYZE-TENANT-GATE` — require caller agency before admin sync/persist
+- `GO FIX-CRON-SECRET-FAIL-CLOSED` — `if (!cronSecret)` on fail-open cron/admin routes
+- `GO FIX-CHECKOUT-AGENCY-ID` — refuse seat/top-up when `agency_id` null
+- Grant ledger orphan / gmail 25-cap / matching 500-cap (sibling report)
+### Kľúčové súbory zmenené
+- `docs/reports/2026-08-25-critical-auth-bug-hunt.md`: auth/tenant hunt
+- `docs/reports/2026-08-25-critical-bug-hunt.md`: correctness hunt (prior commit)
+### Ďalší krok
+Founder `GO FIX-HUBSPOT-ANALYZE-TENANT-GATE` (1 PR); do not bundle cron fail-closed.
+
+## Session 2026-08-24
 ## Session 2026-09-18b (D1 = GO — dogfood transport rozhodnutý)
 ### Dokončené
 - #589 merged: bus-core (v1 envelope, digest, file + GitHub store, HTTP handler) + CLI + `serve.ts` + OpenAPI
@@ -46,6 +62,7 @@ Founder rozhodne D1 a vydá `REVOLIS_BUS_TOKEN` — dovtedy bus funguje len lok�
 - `docs/architecture/adr-2026-09-11b-software-factory-v1-minimum.md`: NÁVRH V1 Minimum
 - `docs/reports/2026-09-14-adr-software-factory-v1-minimum.md`: ingest + verification
 ### Ďalší krok
+Founder merge spec PR; paging len po `GO SEARCH-PAGING`; AC/pricing runtime až po vlastných GO frázach.
 Founder: rozhodni #1 a #4 (V1 Minimum + Judge-as-runner). Bez GO neimplementovať.
 ## Session 2026-08-18
 
