@@ -1077,6 +1077,58 @@ blocked. Exact PC commands are in
 - Odporúčanie: deterministická kostra (Contract/Judge-runner/Ledger/hard limits) pred AI vrstvami; pilot na BUS, nie coding loop.
 - Čaká founder na #1 a #4. Report: `docs/reports/2026-09-14-adr-software-factory-v1-minimum.md`.
 
+## [2026-09-18] — Inter-Agent Bus: transportná vrstva v1 BUILD (deploy = samostatný GO)
+
+- **Rozhodnutie:** BUILD. Bus prestáva byť len protokol/governance vrstva a dostáva
+  skutočný transport: `packages/bus-core` (v1 envelope, validácia, digest, file +
+  GitHub store, HTTP handler), `scripts/bus/cli.ts`, `scripts/bus/serve.ts`,
+  OpenAPI schéma pre ChatGPT Custom GPT Action. Nula nových runtime závislostí.
+- **Prečo:** Founder bol API medzi ChatGPT a Claude Code. Náklad: latencia na každom
+  handoffe, strata kompresie (3 000 slov namiesto 15-riadkového digestu) a správy,
+  ktoré nikdy nedopadli do repa. Constitution otázka 1 = NIE (nikto za to nezaplatí),
+  ale 7/8/9/11 = ÁNO — berie sa ako execution leverage, nie feature; preto sa drží
+  malý (žiadna DB, žiadne UI, žiadny orchestrátor).
+- **Dôsledok:** Git zostáva single source of truth — správa = commitnutý súbor.
+  `v: 1` správy sú validované a blokujú `bus:validate`; 35 pre-v1 správ sa
+  **neprepisuje**, hlásia sa ako warning. Gate sa nemení: bus prenáša, nevykonáva
+  a neschvaľuje; `GO REQUIRED`/`STOP` naďalej patria founderovi.
+- **Otvorené (founder GO):** D1 kde beží HTTP transport (tunel / samostatný host /
+  mount v `apps/crm` — odporúčam tunel, potom samostatný host) + vydanie
+  `REVOLIS_BUS_TOKEN`; D2 `bus:validate` ako CI krok; D3 migrácia pre-v1 správ
+  (odporúčam nie). Bez D1 ChatGPT na bus nedosiahne a copy-paste trvá ďalej.
+- **Dôkaz:** `npm run bus:test` 61/61; `npm run bus:validate` 41 súborov, 0 errors.
+- **Artefakty:** `docs/architecture/adr-2026-09-18-inter-agent-bus-transport-v1.md`,
+  `docs/prompts/revolis-bus-openapi.yaml`, `.ai/bus/outbox/MSG-20260918-001-bus-transport-v1.md`
+
+## [2026-09-18] — D1 = GO: Cloudflare Tunnel ako dogfood transport BUS (nie produkčná infra)
+
+- **Rozhodnutie:** D1 = **GO**. Prvý dogfood ChatGPT ↔ Claude ide cez Cloudflare Tunnel.
+  Tunel je **výslovne validačný/dogfood transport, nie finálna produkčná infraštruktúra
+  BUS.** Jeho úloha je zodpovedať jednu otázku za 30 minút: funguje
+  `ChatGPT → BUS → Claude → BUS → ChatGPT` bez foundera? Permanentný endpoint
+  (stabilný host/VPS) a robustnejšia vrstva (observability, MCP, cost governor,
+  orchestrator) sú samostatné rozhodnutia — dnes sa neriešia.
+- **Backend nie je detail:** slučku `ChatGPT → BUS → Claude` zatvára **len github backend**
+  (`REVOLIS_BUS_GITHUB_TOKEN` + `REVOLIS_BUS_REPO` + vetva `bus/main`). Pri default
+  **file** backende skončia správy v lokálnom checkoute a founder ich musí `commit && push` —
+  handshake by „prešiel", ale poštár by zostal, len s viac krokmi.
+- **Otvorený risk:** `GitHubBusStore` je **neoverený proti reálnemu GitHub API**
+  (unit testy bežia proti fake fetchu). Pokus o živé overenie z cloud kontajnera vrátil `401`;
+  **401 nie je dôkaz funkčnosti ani chyby** — token v tom prostredí nie je GitHub API
+  credential a príčinu sa nepodarilo doložiť. Prvý reálny POST je zároveň prvým testom
+  tejto cesty; zlyhá hlasno (`GitHub write failed (4xx)`).
+- **Bezpečnosť:** `REVOLIS_BUS_TOKEN` (ani PAT) sa **nikdy** neposiela cez chat, nekomituje
+  do repa, nedáva do `.md`, do OpenAPI YAML, do GitHub issue/PR, do promptu pre agenta
+  ani do BUS správy. Výhradne environment variable. OpenAPI popisuje mechanizmus
+  autentifikácie, nikdy tajomstvo.
+- **Ďalší krok:** founder-side runbook (`docs/ops/bus-handshake-runbook.md`), kroky 1–7:
+  token → PAT → `bus/main` → `bus:serve` → overiť `store: github` → `cloudflared` →
+  `npm run bus:handshake -- --url <tunel>`.
+- **Stav míľnika — bez prikrášlenia:** BUS transport + harness = hotové (#589, #590 na `main`).
+  **Founder-free agent-to-agent komunikácia = ešte nedokázaná.** Až handshake proti živému
+  endpointu je prvý skutočný dôkaz, že founder už neprenáša správy medzi SOL a Claudom —
+  a je to významnejší míľnik než samotný merge.
+
 ## [2026-09-18] — Founder Control Plane: substrát BUILD / plocha BACKLOG
 
 - **Vstup:** founder téza „FOUNDER CONTROL CENTER / BUSINESS CONTROL PLANE — Architecture Discovery & North Star v1.0" (§0–§29).
@@ -1187,3 +1239,4 @@ blocked. Exact PC commands are in
 - **U-L — RESOLVED ako neexistujúci:** grep na `reversible|irreversible|nezvratn|undoable|can_undo` naprieč `apps/crm/src` = **0 zásahov v kóde**; 5 zásahov len v prozaických vetách v docs. Najbližší action registry je `AiCreditAction` (12 akcií, čisto auditový) a `CREDIT_RATE_CODES` (4 kódy, cost metadata). **`resolveAuthority` nemá odkiaľ zobrať `reversible` → podlaha z OD-9 sa dnes nedá aplikovať.** Návrh: `ActionMetadata` registry v `packages/control-contract` s poľami `capability`, `reversible`, `externallyVisible`, `risk`, `externalProvider`, `providerIdempotency`, `denied`; akcia bez metadát sa nesmie vykonať. Pole `providerIdempotency` je miesto, kam sa zapíše výsledok U-J — **neznáma sa tým stane vynútiteľným pravidlom, nie poznámkou**.
 - **Dopad na GO:** `CP-P0-4` **GO možné, potvrdené** (U-K resolved, U-L resolved a `ActionMetadata` je jeho súčasťou). `CP-P0-2` GO možné. `CP-P0-1A` GO možné. **OD-10 zostáva CONDITIONAL** — U-J Twilio UNKNOWN blokuje len override cestu, nie default `APPROVAL_REQUIRED`.
 - **Zostáva:** U-J1 Resend primárny zdroj (P1) · U-J2 Twilio Messages (P1) · U-K1 empirický rollback (P2) · U-A/U-B/U-C/U-D GDPR+RLS (P0, blokujú CP-P0-1B, nie CP-P0-4).
+

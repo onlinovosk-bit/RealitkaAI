@@ -1,3 +1,39 @@
+## Session 2026-09-18b (D1 = GO — dogfood transport rozhodnutý)
+### Dokončené
+- #589 merged: bus-core (v1 envelope, digest, file + GitHub store, HTTP handler) + CLI + `serve.ts` + OpenAPI
+- #590 merged: `scripts/bus/handshake.ts` (BUS-001 transport / BUS-002 return path / BUS-003 founder gate) + `docs/ops/bus-handshake-runbook.md`
+- Founder D1 = **GO**: Cloudflare Tunnel ako dogfood/validation transport, **nie** produkčná infra; A/B/C (tunel → stabilný host → robustnejšia infra) — C sa dnes nerozhoduje
+- BUS-003 adversariálne: `GO REQUIRED` prežije `ack` (vrátane pokusu prepašovať `gate: AUTO-SAFE` v ack tele); žiadna approve/execute/merge route neexistuje
+### Rozpracované / Pending
+- **Founder-side runbook (kroky 1–7)** — token, PAT, `bus/main`, `bus:serve` (over `store: github`), `cloudflared`, `bus:handshake --url`
+- `GitHubBusStore` neoverený proti reálnemu GitHub API — 401 z cloud kontajnera nie je dôkaz ani jedným smerom
+- Custom GPT Action až po tom, ako prejde `BUS → GitHub`
+- D2 (`bus:validate` ako CI krok) a D3 (migrácia pre-v1 správ, odporúčanie: nie) stále otvorené
+### Kľúčové súbory zmenené
+- `memory/decisions.md`: zápis D1 = GO + otvorený risk GitHubBusStore + token pravidlá
+### Ďalší krok
+Founder spustí runbook na svojom stroji. Ak `GitHub write failed` → konkrétny technický problém na opravu. Ak prejde → Custom GPT Action. Founder-free komunikácia zatiaľ **nedokázaná**.
+
+## Session 2026-09-18 (Inter-Agent Bus — transportná vrstva v1)
+### Dokončené
+- `packages/bus-core/` — v1 envelope + YAML podmnožina + validácia (vrátane detekcie credentials), digest, FileBusStore, GitHubBusStore, HTTP handler. 0 runtime závislostí, beží na natívnom Node type-strippingu.
+- `scripts/bus/cli.ts` — `npm run bus -- send|pull|read|digest|ack|validate`; dogfood: výsledok tejto session je v `.ai/bus/outbox/MSG-20260918-001-bus-transport-v1.md`
+- `scripts/bus/serve.ts` — standalone HTTP server (node:http), fail-closed bez `REVOLIS_BUS_TOKEN`
+- `docs/prompts/revolis-bus-openapi.yaml` — schéma pre ChatGPT Custom GPT Action
+- ADR + decisions.md zápis; `.ai/bus/README.md` a `message.schema.md` povýšené na v1
+- Testy: `npm run bus:test` 61/61 (vrátane regresie nad reálnymi `.ai/bus` súbormi a reálneho HTTP round-tripu); `npm run bus:validate` 0 errors
+### Rozpracované / Pending
+- **D1 (blokuje odstránenie copy-paste):** kde beží HTTP transport — tunel / samostatný host / mount v `apps/crm`; + vydať `REVOLIS_BUS_TOKEN`
+- D2: `bus:validate` ako povinný CI krok na PR
+- D3: migrácia 35 pre-v1 správ (odporúčanie: nie)
+### Kľúčové súbory zmenené
+- `packages/bus-core/src/{types,yaml,envelope,digest,store,github-store,http}.ts`: nový transport
+- `scripts/bus/{cli,serve}.ts`: CLI + HTTP entrypoint
+- `docs/architecture/adr-2026-09-18-inter-agent-bus-transport-v1.md`: rozhodnutie, scope, bezpečnostný model, meranie
+- `package.json`: `bus`, `bus:serve`, `bus:validate`, `bus:test`
+### Ďalší krok
+Founder rozhodne D1 a vydá `REVOLIS_BUS_TOKEN` — dovtedy bus funguje len lokálne (CLI) a ChatGPT sa naň nedostane.
+
 ## Session 2026-09-14 (ADR Soft Factory V1 Minimum)
 ### Dokončené
 - Ingest founder ADR z Downloads → `docs/architecture/adr-2026-09-11b-software-factory-v1-minimum.md`
@@ -261,3 +297,14 @@ Founder review/merge #546 (and backlog of open critical fix PRs).
 - `.ai/bus/tasks/TASK-RLS-ONBOARDING-SESSION.md`: A3 vyhodnotene
 ### Dalsi krok
 Founder: merge #566, potom SAMOSTATNE rozhodnutie o migracii 20260904220000 (stale PREPARED ONLY) — najprv read-only SELECT stavu RLS v prode podla runbooku :38-41.
+
+## Session 2026-09-17 (open PR stack repro)
+### Dokončené
+- Reprodukcia 11 otvorených PR na origin/main `6f6381ca0`
+- Report: `docs/reports/2026-09-17-open-pr-stack-repro.md`
+### Rozpracované / Pending
+- Founder: close #374 #480; merge stack MERGNÚŤ po rebase kde treba
+### Kľúčové súbory zmenené
+- `docs/reports/2026-09-17-open-pr-stack-repro.md`: dôkazová tabuľka
+### Ďalší krok
+Founder GO: rebase+merge #537/#486/#447 (tenant HIGH); close #374/#480.
