@@ -39,6 +39,7 @@
 
 ## P0 — Smolko (zákazník)
 
+- [ ] **Voiceflow sprievodca na webe Reality Smolko** — získať prístup vlastníka do existujúceho Voiceflow projektu, vložiť canvas `docs/voiceflow/reality-smolko-property-guide-v1.md`, manuálne prejsť tri vetvy a publikovať. Nezakladať nový projekt ani CRM chatbot.
 - [ ] **Gmail inbound dual-run** — #422 na main; Preview secrets + curl smoke (`docs/runbooks/gmail-pull-setup.md`); draft email v `docs/reports/2026-08-21-smolko-gmail-dual-run-next.md` — GO odoslať?
 - [ ] 24–48 h dual-run; forward nevypínať bez GO
 
