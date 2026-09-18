@@ -351,3 +351,13 @@ Founder: ujasnit Q1 pre S2 (zobrazuje widget NBS uroven alebo nie?) + 4 rozhodnu
 - `memory/decisions.md`: decision record 2026-09-18 (ramec prijaty, 3 nalezy, E0)
 ### Dalsi krok
 Founder: spustit E0 (zoznam 40 RK segment A + split vety) alebo odpovedat na G3/G4.
+## Session 2026-09-17 (open PR stack repro)
+### Dokončené
+- Reprodukcia 11 otvorených PR na origin/main `6f6381ca0`
+- Report: `docs/reports/2026-09-17-open-pr-stack-repro.md`
+### Rozpracované / Pending
+- Founder: close #374 #480; merge stack MERGNÚŤ po rebase kde treba
+### Kľúčové súbory zmenené
+- `docs/reports/2026-09-17-open-pr-stack-repro.md`: dôkazová tabuľka
+### Ďalší krok
+Founder GO: rebase+merge #537/#486/#447 (tenant HIGH); close #374/#480.
