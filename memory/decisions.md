@@ -1076,3 +1076,26 @@ blocked. Exact PC commands are in
 - Ingest: `docs/architecture/adr-2026-09-11b-software-factory-v1-minimum.md`
 - Odporúčanie: deterministická kostra (Contract/Judge-runner/Ledger/hard limits) pred AI vrstvami; pilot na BUS, nie coding loop.
 - Čaká founder na #1 a #4. Report: `docs/reports/2026-09-14-adr-software-factory-v1-minimum.md`.
+
+## [2026-09-18] — GTM Playbook: reframe z „CRM/AI" na „zdroj predávajúcich" — NÁVRH
+
+- **Artefakt:** `docs/sales/gtm-playbook-2026-09-18.md` (8 stratégií + 80/20 majiteľa RK + 8 akvizičných nápadov + 30/60/90).
+- **Kľúčový dôkaz (už v repe, nie nový výskum):** trh trikrát nezávisle odmietol AI/CRM ponuku,
+  lebo *„nikto im nedodá klientov, ktorí chcú predať"* (`decisions.md:501`, Molnár 7/2026,
+  Suchý 5.8.2026, ARCHEUS). Zákazník sám pomenoval wedge: „CRM nie, vyhľadávanie predávajúcich áno".
+- **Cenová kotva trhu:** 300 €/tip (REALITY KAMZÍK, `docs/sales/call-list-2026-07-w30.md`) —
+  jediná overená kotva v repe; silnejšia referencia než interná úvaha o 349 €/mes.
+- **Stav loopu:** 31 dní `matches=intents=outreach=viewings=closed_won=0`, `activities=3`
+  (`docs/reports/2026-09-15-north-star-backfill.md`). Diagnóza: problém NIE je akvizícia leadov,
+  ale **packaging → dôkaz → aktivácia → distribúcia** v tomto poradí.
+- **Revízia predpokladu (dôležité):** VETO na valuačný widget z 2026-07-19 znelo „chýba licencovaný
+  reprodukovateľný zdroj cenových dát". **Tento predpoklad už neplatí v pôvodnom rozsahu** — NBS dalo
+  písomné povolenie 2026-08-10 na komerčné použitie verejných krajských radov €/m² s povinnou
+  atribúciou (`docs/legal/nbs-povolenie-2026-08-10.md`). Chýba už len koeficient realizačná/ponuková
+  (`blocked_unpaired`, `docs/reports/2026-08-15-nbs-kraj-rady-v0.2.md`) = **presnosť, nie legalita**.
+- **Rozhodnutie:** žiadne. Dokument je NÁVRH. Ďalší krok = founder GO na rozsah tvrdenia widgetu (S2).
+- **Explicitne NEodporúčané:** nový acquisition stack, kúpené databázy, scraping vlastníkov/osobných
+  údajov, akadémia/komunita/certifikácie (cargo cult pri 1 zákazníkovi), claim „layer nad všetkými CRM"
+  (zaslúžený je dnes iba voči Realvii).
+- **GDPR gate otvorený:** A1 (RPO outreach zoznam) a S4 (audit cudzieho exportu) vyžadujú beh
+  `gdpr-advisor` + balancing test 6(1)(f) + čl. 14 pred prvým reálnym použitím.
