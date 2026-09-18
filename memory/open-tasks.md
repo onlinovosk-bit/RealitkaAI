@@ -1,6 +1,12 @@
 # Open Tasks — Prioritized Queue
 
-> Posledná aktualizácia: 2026-08-25 | Task-loop sync
+> Posledná aktualizácia: 2026-09-18 | Task-loop sync (/upgrade #369)
+
+## P0 — Billing /upgrade Stripe (revenue)
+
+- [x] Merge #369 okResponse consumer fix → `30a1ba906`
+- [x] Docs #586 prod smoke (deploy + anon gate) → `ed45d5188`
+- [ ] **HUMAN 30s:** prihlásený `/upgrade` → redirect `checkout.stripe.com` (nie tichý no-op) — potom PASS v `docs/reports/2026-09-18-upgrade-prod-smoke.md`
 
 ## P0 — Onlinovo MCP (docs done, code STOP)
 
