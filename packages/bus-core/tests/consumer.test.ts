@@ -1,11 +1,16 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  AUTHORITY_KEYS,
   BUS_ALIVE_CAPABILITY,
+  lostAuthorityText,
+  LOST_TEXT_FIELD,
+  parseBusDocument,
   buildBlockerEnvelope,
   buildResultEnvelope,
   evaluateTask,
   handledTaskIds,
+  serializeEnvelope,
   validateOutgoing,
   type BusEnvelope,
   type ClaudeRunReport,
@@ -154,4 +159,94 @@ test("a summary stays a single line under the envelope limit", () => {
   assert.ok(!result.summary.includes("\n"));
   assert.ok(result.summary.length <= 280);
   assert.deepEqual(validateOutgoing(result), []);
+});
+
+/** A task file as an author writes it, with an unquoted `#` on one line. */
+function draft(line: string): string {
+  return [
+    "---",
+    "v: 1",
+    "id: TASK-20260918-098-lost-text-probe",
+    "type: task",
+    "status: open",
+    "from: sol-gpt",
+    "to: claude-code",
+    "created_at: 2026-09-18T20:30:00.000Z",
+    "mode: READ_ONLY",
+    "summary: BUS LIVE TEST",
+    "next_action:",
+    "  gate: AUTO-SAFE",
+    "  description: Odpovedz BUS ALIVE",
+    "---",
+    "",
+  ]
+    .map((entry) => (entry.trim().startsWith(`${line.trim().split(":")[0]!}:`) ? line : entry))
+    .join("\n");
+}
+
+test("a qualifier eaten from mode or gate is refused, not executed", () => {
+  for (const [line, key] of [
+    ["mode: READ_ONLY #neskor IMPLEMENT", "mode"],
+    ["  gate: AUTO-SAFE #len po review od foundera", "gate"],
+    ["to: claude-code #iba ak je founder online", "to"],
+    ["status: open #zatial nespustat", "status"],
+  ] as const) {
+    const parsed = parseBusDocument(draft(line), "<probe>");
+    const damaged = lostAuthorityText(parsed.warnings);
+    assert.equal(damaged.length, 1, `${key} should be reported as damaged`);
+    assert.equal(damaged[0]!.key, key);
+
+    const decision = evaluateTask(parsed.envelope!, { warnings: parsed.warnings });
+    assert.equal(decision.execute, false, `${key} must not execute`);
+    assert.equal(decision.execute === false && decision.code, "lost_text_in_authority_field");
+    assert.equal(decision.execute === false && decision.reportable, true);
+  }
+});
+
+test("the same task without the eaten qualifier still executes", () => {
+  const parsed = parseBusDocument(draft("mode: READ_ONLY"), "<probe>");
+  assert.deepEqual(lostAuthorityText(parsed.warnings), []);
+  assert.equal(evaluateTask(parsed.envelope!, { warnings: parsed.warnings }).execute, true);
+});
+
+test("text eaten from a field the gate does not read still executes", () => {
+  // `description` is prose. It is worth a warning, but it carries no authority,
+  // and refusing on it would make every `#593` reference unanswerable.
+  const parsed = parseBusDocument(draft("  description: Odpovedz BUS ALIVE #593"), "<probe>");
+  assert.equal((parsed.warnings ?? []).some((warning) => warning.field === LOST_TEXT_FIELD), true);
+  assert.deepEqual(lostAuthorityText(parsed.warnings), []);
+  assert.equal(evaluateTask(parsed.envelope!, { warnings: parsed.warnings }).execute, true);
+});
+
+test("a deliberate comment is not treated as damage", () => {
+  const parsed = parseBusDocument(draft("mode: READ_ONLY # zamerny komentar"), "<probe>");
+  assert.deepEqual(lostAuthorityText(parsed.warnings), []);
+  assert.equal(evaluateTask(parsed.envelope!, { warnings: parsed.warnings }).execute, true);
+});
+
+test("the damaged check runs before the gate trusts any authority value", () => {
+  // `to` is itself an authority key: checking identity first would mean
+  // trusting a value the parser already knows is incomplete.
+  const parsed = parseBusDocument(draft("to: claude-code #iba po GO"), "<probe>");
+  const decision = evaluateTask(parsed.envelope!, { warnings: parsed.warnings });
+  assert.equal(decision.execute === false && decision.code, "lost_text_in_authority_field");
+});
+
+test("AUTHORITY_KEYS covers exactly the fields the gate reads", () => {
+  assert.deepEqual([...AUTHORITY_KEYS].sort(), ["gate", "mode", "status", "to", "type"]);
+});
+
+test("a JSON-posted envelope round-trips through YAML without losing text", () => {
+  // Messages from a remote agent arrive as JSON and are serialized to YAML by
+  // the bus. Serialization must quote whatever the parser would later eat.
+  const posted = buildResultEnvelope({
+    task: task({ next_action: { gate: "AUTO-SAFE", description: "Odpovedz BUS ALIVE #593 a nic nemen" } }),
+    capability: BUS_ALIVE_CAPABILITY,
+    run,
+  });
+  posted.id = "MSG-20260918-099-roundtrip";
+  const reparsed = parseBusDocument(serializeEnvelope(posted), "<roundtrip>");
+  assert.deepEqual(lostAuthorityText(reparsed.warnings), []);
+  assert.equal(reparsed.envelope!.next_action?.gate, "GO REQUIRED");
+  assert.equal(reparsed.envelope!.mode, "READ_ONLY");
 });

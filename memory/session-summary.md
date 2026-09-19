@@ -11,6 +11,68 @@
 - `apps/crm/tests/verification/assign-lead-same-agency.verification.test.ts`: live-spec
 ### Ďalší krok
 Founder: review/merge #596; next candidate matching recalculate wipe (#444) or HubSpot fail-open (#486).
+## Session 2026-09-18c (Founder Control Plane — päť read-only brán, PR #585 merged)
+
+### Dokončené
+- **Brána 1 — konfrontácia tézy s repom.** `docs/architecture/founder-control-plane-v1-repo-confrontation.md`. Ústava dala **dva verdikty, nie jeden**: Control Plane ako produktová plocha = 4/12 + veto Q8 (príliš skoro) + veto Q1 (klient nezaplatí) → **STRATEGIC BACKLOG** (ADR-004 prah „Center: 5 platiacich"; dnes 1). Control Plane substrát → **BUILD**, rezaný na 4 kusy.
+- **Brána 2 — `GO CP-EVIDENCE`.** `docs/reports/2026-09-18-CP-EVIDENCE-REPORT.md`. Read-only PROD audit (`ypgajkhqtbriqqmyawyv`, 08:58–09:05 UTC). Uzavrel P0 otvorené od 17. 8.: **`leads.last_contact_at` na PROD NEEXISTUJE** (len `last_contact` text) → `lib/operator/gather.ts` dá 42703. Ďalej: `lead_events` = 0 riadkov · `decisions` 240 / `exclusivity_outcomes` 0 · migrácia `20260728140000` nie je v `schema_migrations` (49 history riadkov vs 102 súborov v repe).
+- **Brána 3 — `GO U1`.** `docs/reports/2026-09-18-U1-lead-events-write-path-report.md`. Root cause **PROVEN** (nižšie).
+- **Brána 4 — `GO CP-SPEC` + `GO CP-SPEC-HARDEN`.** `docs/architecture/founder-control-plane-cp-spec-v1.md`, v1.1, `status: hardened-draft`, 1 299 riadkov. Desať rozhodnutí D-01..D-10, FINAL INVARIANT REGISTER I-001..I-015, 27 adversariálnych testov, dvojosová GO matica.
+- **Brána 5 — `GO PROVIDER-IDEMPOTENCY-EVIDENCE` + `RPC-TRANSACTION-EVIDENCE` + `REVERSIBILITY-EVIDENCE`.** `docs/reports/2026-09-18-U-JKL-evidence-report.md`.
+- **PR [#585](https://github.com/onlinovosk-bit/RealitkaAI/pull/585) zmergovaný** foundrom. Po ceste: merge konflikt v `memory/decisions.md` (append-only log, zachované obe strany), jeden CI beh spadol na externý GitHub API rate limit pri `supabase/setup-cli@v1` `version: latest` (re-run na tom istom commite prešiel), jeden push nedostal `pull_request` event a CI sa spustilo ručne cez `workflow_dispatch`.
+
+### Tri vyvrátené / korigované tvrdenia (CP-EVIDENCE vs konfrontácia)
+1. **`ai_action_audit` nemá cost stĺpce.** Tvrdenie pochádzalo z kódu (`lib/ai-action-audit.ts:83`), nie zo schémy. Na PROD `cost_eur`, `credits_spent`, `model`, `latency_ms` neexistujú.
+2. **cost → outcome nie je „jeden view".** 0/146 riadkov má cost (ani v stĺpci, ani v `meta`), 0/146 má `lead_id` (`lib/ai/persist-cost-telemetry.ts:66` píše `null` natvrdo), `lead_conversions` na PROD neexistuje, `deal_outcomes` = 1 riadok.
+3. **`public.events` = 0 riadkov.** Reálny produkčný spine je `platform_events` — 1 417 riadkov, 2026-04-12 → 2026-09-15, **100 % vyplnené `agency_id`**.
+
+*(Štvrtá korekcia prišla až v U1 a týka sa CP-EVIDENCE: `platform_events.payload` **obsahuje osobné údaje** — trigger zapisuje `'name', new.name`. Predchádzajúci záver „PII neobsahuje" bol nesprávny.)*
+
+### PROVEN root cause — `lead_events` = 0
+`lead_events` sa v produkcii nezapisuje, pretože v `apps/crm/src` **neexistuje produkčný caller/writer** pre `POST /api/ai/lead-events` a endpoint je navyše **Enterprise-gated** (`isEnterpriseSalesIntelligenceEnabled()` → 403; žiadna zo 6 agentúr na PROD nemá plán `enterprise`). Produkčné eventy namiesto toho vznikajú **cez DB trigger** `trg_leads_platform_events` → `emit_platform_event()` → `platform_events`.
+
+Vylúčené samostatným meraním: RLS (`with_check` insert povoľuje) · schema (PROD == migrácia `20260418`, žiadny drift) · tiché zlyhanie (route vracia 400/403) · zápis inam. Nezávislé potvrdenie: celý Enterprise klaster prázdny (`lead_events`, `lead_scores`, `client_dna`, `deal_moments`, `ai_recommendations` = 0 riadkov každá).
+
+Vedľajší nález: trigger ani `emit_platform_event` **nie sú v žiadnej repo migrácii** — repo to priznáva v `20260509000000_rls_lead_scores.sql:9`.
+
+### Dve opravené chyby v CP-SPEC (hardening v1.0 → v1.1)
+1. **Nezvratnosť ≠ `FORBIDDEN`.** v1.0 mapovalo `risk = irreversible` na `FORBIDDEN`, čo podľa I-007 znamená „ani s ľudským schválením" — agent by teda nikdy nesmel odoslať e-mail. Oprava: nezvratnosť je **minimálna podlaha autority = `APPROVAL_REQUIRED`**, ktorú policy nesmie znížiť; `FORBIDDEN` je výhradne explicitný DENY_LIST. Zapísané ako **OD-9**.
+2. **Kanonický počet stĺpcov.** v1.0 uvádzalo „ADD COLUMN × 8" proti 11 stĺpcom v cieľovej schéme. Opravené novou kanonickou tabuľkou §4.2.1: **v1 = 5 + v2 = 12 → spolu 17**.
+
+### Tri neznáme otvorené hardeningom a ich stav po evidence reporte
+Prevzaté presne z `docs/reports/2026-09-18-U-JKL-evidence-report.md`.
+
+| Neznáma | Priorita pri otvorení (CP-SPEC §14) | Stav po evidence reporte |
+|---|---|---|
+| **U-J** Resend idempotency | P0 | **PROBABLE — nie RESOLVED** (primárny zdroj nedostupný) |
+| **U-J** Twilio idempotency | P0 | **UNKNOWN — REQUIRES VERIFICATION** |
+| **U-K** RPC transakčná atomicita | P0 | **RESOLVED** — dokázané produkčným precedensom |
+| **U-L** zdroj `reversible` | **P1** (nie P0) | **RESOLVED ako neexistujúci** — registry treba vytvoriť |
+
+- **U-J:** egress proxy blokovala `resend.com`, `www.twilio.com`, `cdn.jsdelivr.net` aj `docs.postgrest.org`; `node_modules` nebolo nainštalované. Podľa AP-005 preto nevyhlásené RESOLVED. Twilio `Idempotency-Key` je doložená pre Conversations Orchestrator a Monitor Alarms, **nie pre Messages create**, ktoré repo reálne volá → SMS/WhatsApp = **at-least-once**. Resend drží kľúč **24 h**, čo je kratšie než životnosť nášho deterministického `idempotencyKey`.
+- **U-K:** `public.spend_credits` (plpgsql, SECURITY DEFINER, cez `supabase.rpc()`) robí v jednom volaní idempotency check → `SELECT ... FOR UPDATE` → 2× INSERT do `credit_ledger` → UPDATE `agencies`. Spravuje peniaze; navrhované `T1` teda nie je nový vzor.
+- **U-L:** grep na `reversible|irreversible|nezvratn|undoable|can_undo` naprieč `apps/crm/src` = **0 zásahov v kóde**. Návrh: `ActionMetadata` registry v `packages/control-contract`.
+
+### Rozpracované / Pending
+- **`CP-P0-4` Control Contract** — GO možné, čaká na explicitný founder GO. Súčasťou je `ActionMetadata` registry (U-L).
+- **`CP-P0-2` Durable Approvals** — GO možné; rieši dnes porušený I-008.
+- **`CP-P0-1` rozdelené na A/B/C** (OD-4 + founder rozhodnutie): **A** Safe Spine Foundation (GO možné) · **B** Event Production (blokované U-A/U-B/U-C/U-D) · **C** Historical/Legacy Migration vrátane `PII-SCRUB-BACKFILL` (nezvratné, NO-GO).
+- **OD-10 CONDITIONAL** na U-J/U-K/U-L — blokuje len override cestu, nie default `APPROVAL_REQUIRED`.
+- **Tri invarianty sú dnes porušené:** I-006 (240 decisions / 0 outcomes) · I-008 (approvals v `new Map()`) · I-011 (1 417 riadkov s menami v payloade).
+- **Migrácia `20260817220000`** (#437, PREP ONLY) pridáva `leads.last_contact_at`, `bri_score`, `dossier`, `profiles.is_platform_admin`. Merané 20:51 UTC: **na PROD stále neaplikovaná**, history row chýba, `schema_migrations` = 49. Founder ju aplikuje cez Dashboard SQL Editor.
+- **Vercel deployment rate limit** (`api-deployments-free-per-day`, >100/deň) — preview deploymenty nefungujú ~24 h od 18. 9. 20:11 UTC. Nesúvisí s kódom.
+- **`GO CI-PIN-SUPABASE`** — patch na pripnutie verzie `supabase/setup-cli` navrhnutý, nepushnutý; samostatný PR.
+
+### Kľúčové súbory zmenené
+- `docs/architecture/founder-control-plane-v1-repo-confrontation.md`: nový — konfrontácia tézy s repom, [EXISTING]/[DESIGNED]/[TARGET]
+- `docs/reports/2026-09-18-CP-EVIDENCE-REPORT.md`: nový — read-only PROD audit, tri opravy konfrontácie
+- `docs/reports/2026-09-18-U1-lead-events-write-path-report.md`: nový — PROVEN root cause `lead_events` = 0
+- `docs/architecture/founder-control-plane-cp-spec-v1.md`: nový — CP-SPEC v1.1 hardened-draft
+- `docs/reports/2026-09-18-U-JKL-evidence-report.md`: nový — U-J/U-K/U-L evidence
+- `memory/decisions.md`: +6 záznamov vrátane OD-1..OD-10 a rozdelenia CP-P0-1 na A/B/C
+
+### Ďalší krok
+**`GO CP-P0-4`** — Control Contract. Poradie v rámci brány: `ActionMetadata` registry → `resolveAuthority` + testy → typy kontraktu → read-only suitability check na `lib/agents/followup` → migrovaný agent ako dôkaz uzavretej slučky (Definition of Done, OD-8).
 
 ## Session 2026-09-18b (D1 = GO — dogfood transport rozhodnutý)
 ### Dokončené

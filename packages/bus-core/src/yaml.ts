@@ -36,6 +36,11 @@ export interface YamlStrippedComment {
   /** Everything from `#` onwards, which YAML discards. */
   dropped: string;
   /**
+   * Mapping key on the line, when there is one. Lets a caller tell a comment
+   * eaten from `gate: AUTO-SAFE` apart from one eaten from a prose field.
+   */
+  key?: string;
+  /**
    * True when the comment looks accidental rather than deliberate: a real
    * comment is written `# like this`, while `#593` or `#tag` is prose that the
    * author expected to keep.
@@ -72,6 +77,11 @@ function stripComment(raw: string): { content: string; dropped?: string } {
   return { content: raw };
 }
 
+/** `  gate: AUTO-SAFE` -> `gate`. A line that is not a mapping entry has none. */
+function mappingKey(kept: string): string | undefined {
+  return /^-?\s*([A-Za-z_][A-Za-z0-9_-]*)\s*:/.exec(kept)?.[1];
+}
+
 function toLines(source: string, options: ParseYamlOptions): Line[] {
   const out: Line[] = [];
   source.split(/\r?\n/).forEach((raw, index) => {
@@ -82,6 +92,7 @@ function toLines(source: string, options: ParseYamlOptions): Line[] {
         lineNo: index + 1,
         kept,
         dropped,
+        key: mappingKey(kept),
         // `# note` is a comment; `#593` is prose the author expected to keep.
         suspicious: /^#\S/.test(dropped),
       });

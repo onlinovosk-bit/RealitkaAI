@@ -157,6 +157,7 @@ export function parseBusDocument(raw: string, path = "<memory>"): ParseResult {
     const fileLine = comment.lineNo + 1;
     lostText.push({
       field: LOST_TEXT_FIELD,
+      key: comment.key,
       message:
         `line ${fileLine}: "${dropped}" was read as a YAML comment and dropped ` +
         `(the value kept is "${comment.kept}") — wrap the value in quotes to keep it`,
