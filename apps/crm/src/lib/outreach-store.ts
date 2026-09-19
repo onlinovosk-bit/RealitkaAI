@@ -14,7 +14,8 @@ import {
 } from "@/lib/outbound-orchestrator";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { incrementUsageMetric, SYSTEM_USAGE_AGENCY_ID } from "@/lib/usage-metrics";
-import { listLeads } from "@/lib/leads-store";
+import { getLead, getLeadAsService, type Lead } from "@/lib/leads-store";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { logAiRecommendation, hashRecommendationDedupePart } from "@/lib/moat-capture/log-ai-recommendation";
 
 type OutreachConfig = {
@@ -139,7 +140,40 @@ export async function listOutreachMessages() {
   }));
 }
 
-export async function sendAiOutreachEmail(leadId: string) {
+/**
+ * Resolve the outreach lead with an explicit client.
+ *
+ * Never fall back to `listLeads()` here: on a server route without a session it
+ * resolves to the browser singleton, `resolveSessionAgencyId` returns null and
+ * every lead lookup silently misses ("Lead nebol nájdený" for valid leads, and
+ * a cron that loops over zero rows while reporting success).
+ *
+ * - user-triggered send → caller passes the request-scoped client (RLS applies)
+ * - cron / background   → explicit service-role client, fail-closed when the
+ *   service-role key is missing
+ */
+export async function resolveOutreachLead(
+  leadId: string,
+  scopedSupabase?: SupabaseClient | null,
+): Promise<Lead | undefined> {
+  if (scopedSupabase) {
+    return getLead(leadId, scopedSupabase);
+  }
+
+  const serviceClient = createServiceRoleClient();
+  if (!serviceClient) {
+    throw new Error(
+      "Outreach bez používateľskej session vyžaduje SUPABASE_SERVICE_ROLE_KEY — bez neho by lead nikdy nebol nájdený.",
+    );
+  }
+
+  return getLeadAsService(serviceClient, leadId);
+}
+
+export async function sendAiOutreachEmail(
+  leadId: string,
+  scopedSupabase?: SupabaseClient | null,
+) {
   const resend = getResendClient();
   const supabase = createServiceRoleClient() ?? getSupabaseClient();
   const from = process.env.OUTREACH_FROM_EMAIL;
@@ -156,8 +190,7 @@ export async function sendAiOutreachEmail(leadId: string) {
       throw new Error("Chýba OUTREACH_FROM_EMAIL.");
     }
 
-    const leads = await listLeads();
-    const lead = leads.find((item) => item.id === leadId);
+    const lead = await resolveOutreachLead(leadId, scopedSupabase);
 
     if (!lead) {
       throw new Error("Lead nebol nájdený.");

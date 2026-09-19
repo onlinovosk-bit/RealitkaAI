@@ -52,6 +52,25 @@ describe("billing credits panel verification", () => {
     expect(upgrade).not.toContain("checkoutType: 'topup'");
   });
 
+  it("upgrade page reads flattened okResponse checkout-config + checkout URL", () => {
+    const upgrade = fs.readFileSync(
+      path.join(CRM_ROOT, "src/app/(dashboard)/upgrade/page.tsx"),
+      "utf8",
+    );
+    // Must match okResponse spread shape — NOT nested under `.data`
+    expect(upgrade).toContain("d.seatCheckoutAvailable");
+    expect(upgrade).not.toContain("d.data");
+    expect(upgrade).toContain("data.result?.url");
+    expect(upgrade).not.toContain("data.data?.result?.url");
+
+    const panel = fs.readFileSync(
+      path.join(CRM_ROOT, "src/components/billing/CreditsTopupPanel.tsx"),
+      "utf8",
+    );
+    expect(panel).toContain("configRes.topupCheckoutAvailable");
+    expect(panel).toContain("data.result?.url");
+  });
+
   it("stripe price validation rejects placeholders", () => {
     const pricing = fs.readFileSync(
       path.join(CRM_ROOT, "src/lib/program-tier-pricing.ts"),
@@ -80,5 +99,36 @@ describe("billing credits panel verification", () => {
     expect(billing).toContain("applyTopupPurchase");
     expect(billing).toContain("topup balance:");
     expect(billing).toContain('.delete().eq("idempotency_key", idempotencyKey)');
+  });
+
+  it("legacy webhook does not map unknown Stripe prices to free", () => {
+    const billingStore = fs.readFileSync(
+      path.join(CRM_ROOT, "src/lib/billing-store.ts"),
+      "utf8",
+    );
+    expect(billingStore).toContain('return "unknown"');
+    expect(billingStore).toContain("isPricingCheckoutMetadata");
+    expect(billingStore).toContain("SEAT_TIER_STRIPE_ENV");
+    expect(billingStore).toMatch(/if\s*\(\s*!isPricingCheckoutMetadata/);
+    expect(billingStore).not.toMatch(
+      /Unknown Stripe price id — defaulting tier to free/,
+    );
+  });
+
+  it("credits expire surfaces DB errors and refuses wipe of current grant", () => {
+    const grantEngine = fs.readFileSync(
+      path.join(CRM_ROOT, "src/lib/credits/grant-engine.ts"),
+      "utf8",
+    );
+    const monthlyCycle = fs.readFileSync(
+      path.join(CRM_ROOT, "src/lib/credits/monthly-cycle.ts"),
+      "utf8",
+    );
+    expect(grantEngine).toContain("ExpireGrantResult");
+    expect(grantEngine).toContain("refuse expire: current-period grant already applied");
+    expect(grantEngine).toMatch(/error:\s*ledgerErr\.message/);
+    expect(monthlyCycle).toContain("expireFailedAgencyIds");
+    expect(monthlyCycle).toContain("expire_failed:");
+    expect(monthlyCycle).toMatch(/ok:\s*false/);
   });
 });
