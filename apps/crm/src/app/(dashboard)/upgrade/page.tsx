@@ -50,7 +50,11 @@ export default function UpgradePage() {
     fetch('/api/billing/checkout-config')
       .then((r) => r.json())
       .then((d) => {
-        if (d.ok && d.data) setConfig(d.data);
+        // okResponse spreads payload at the top level ({ ok, seatCheckoutAvailable, ... }),
+        // not under `.data` — same contract as CreditsTopupPanel.
+        if (d.ok && typeof d.seatCheckoutAvailable === 'boolean') {
+          setConfig(d as CheckoutConfig);
+        }
       })
       .catch(() => setConfig(null))
       .finally(() => setLoading(false));
@@ -88,8 +92,9 @@ export default function UpgradePage() {
           body: JSON.stringify(body),
         });
         const data = await res.json();
-        if (data.ok && data.data?.result?.url) {
-          window.location.href = data.data.result.url;
+        // okResponse({ result }) → { ok: true, result: { url } }
+        if (data.ok && data.result?.url) {
+          window.location.href = data.result.url;
           return;
         }
         setError(data.error ?? 'Checkout nie je dostupný.');
