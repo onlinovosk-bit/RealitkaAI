@@ -28,7 +28,9 @@
     "prospect:score": "npx tsx scripts/prospecting/score.ts",
     "prospect:export": "npx tsx scripts/prospecting/export.ts",
     "prospect:test": "npm run test --prefix apps/crm -- --config ../../scripts/prospecting/vitest.config.ts",
-    "seed:test-campaigns": "npx tsx scripts/seed-test-campaigns.ts"
+    "seed:test-campaigns": "npx tsx scripts/seed-test-campaigns.ts",
+    "control-contract:test": "node --test packages/control-contract/tests/*.test.ts",
+    "control-contract:typecheck": "tsc -p packages/control-contract/tsconfig.json --noEmit"
   },
   "dependencies": {
     "cheerio": "^1.2.0",
