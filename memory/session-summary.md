@@ -1,3 +1,22 @@
+## Session 2026-09-18 (/upgrade Stripe revenue-blocker)
+
+### Dokončené
+- #369 rebasnuté na main + squash merge → `30a1ba906` (`data.result?.url` + `d.seatCheckoutAvailable`)
+- #586 docs prod-smoke evidence → `ed45d5188` na main
+- Vercel `realitka-ai` Ready pre merge SHA; anon `GET /upgrade` → 307 `/login` (očakávané)
+
+### Rozpracované / Pending
+- **Jediné otvorené:** human 30s — prihlásený klik `/upgrade` → `checkout.stripe.com` (agent nemá prod session)
+- Ak PASS → uzavrieť `docs/reports/2026-09-18-upgrade-prod-smoke.md` ako PASS; ak FAIL → druhý nález pod tým istým CTA
+
+### Kľúčové súbory
+- `apps/crm/src/app/(dashboard)/upgrade/page.tsx` — okResponse consumer fix
+- `apps/crm/tests/verification/billing-credits.verification.test.ts` — flattened contract lock
+- `docs/reports/2026-09-18-upgrade-checkout-okresponse-fix.md`
+- `docs/reports/2026-09-18-upgrade-prod-smoke.md`
+
+### Ďalší krok
+Founder: prihlás sa na app.revolis.ai → `/upgrade` → „Pokračovať do Stripe“.
 ## Session 2026-09-18c (critical bug hunt — assign-lead agency)
 ### Dokončené
 - HIGH: assignLeadToProfile cross-tenant profileId stamp → fix + tests + PR #596
