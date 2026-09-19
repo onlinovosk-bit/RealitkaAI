@@ -1,10 +1,27 @@
+import { notFound } from "next/navigation";
 import { getSalesFunnelData } from "@/lib/sales-funnel-store";
 import SaasLeadsTable from "@/components/sales-funnel/saas-leads-table";
+import { fetchProfilePlatformAdminFlag, isPlatformAdmin } from "@/lib/operator/access";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Sales Funnel | Realitka AI" };
 
+export const dynamic = "force-dynamic";
+
 export default async function SalesFunnelPage() {
-  const { kpis, leads } = await getSalesFunnelData();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) notFound();
+
+  const profile = await fetchProfilePlatformAdminFlag(supabase, user.id);
+  if (!isPlatformAdmin(profile)) {
+    notFound();
+  }
+
+  const { kpis, leads } = await getSalesFunnelData(supabase);
 
   return (
     <div className="p-6">

@@ -1079,6 +1079,12 @@ blocked. Exact PC commands are in
 - Action taken: removed temporary diagnostic log from `apps/crm/src/app/api/leads/route.ts`, added SQL script `infra/sql/cleanup-test-leads.sql` to inspect/delete test leads, and recorded this decision.
 - Lesson / Scar: Always remove debug logging from hot-path before merge; prefer manual compile verification after merges and avoid automated merge tools without review.
 
+## [2026-09-16] — Sales funnel platform-admin gate BUILD
+
+- **Decision:** Gate `/sales-funnel` + `POST /api/sales-funnel/update-status` to `is_platform_admin`.
+- **Why:** HIGH — any tenant session could mutate/view Revolis SaaS prospect pipeline (open saas_leads RLS + no app gate).
+- **Artifact:** `docs/reports/2026-09-16-critical-bug-sales-funnel-platform-admin.md`
+- **Revisit:** RLS migration to deny non-admin on saas_leads (residual DB path).
 ## 2026-09-14 — ADR Soft Factory V1 Minimum (NÁVRH, nie GO)
 - Ingest: `docs/architecture/adr-2026-09-11b-software-factory-v1-minimum.md`
 - Odporúčanie: deterministická kostra (Contract/Judge-runner/Ledger/hard limits) pred AI vrstvami; pilot na BUS, nie coding loop.

@@ -1,5 +1,4 @@
-﻿import { getSupabaseClient } from "@/lib/supabase/client";
-import { resolveTenantSupabase } from "@/lib/supabase/resolve-client";
+﻿import { resolveTenantSupabase } from "@/lib/supabase/resolve-client";
 import { createActivity } from "@/lib/activities-store";
 
 export type SaaSLead = {
@@ -79,8 +78,10 @@ async function logSaasLeadActivity(
   }
 }
 
-export async function listSaasLeads(): Promise<SaaSLead[]> {
-  const supabase = await resolveTenantSupabase();
+export async function listSaasLeads(
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+): Promise<SaaSLead[]> {
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     return demoSaasLeads;
@@ -185,8 +186,10 @@ export async function createSaasLead(
   return result;
 }
 
-export async function getSalesFunnelData() {
-  const leads = await listSaasLeads();
+export async function getSalesFunnelData(
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+) {
+  const leads = await listSaasLeads(scoped);
 
   const kpis = {
     total: leads.length,
