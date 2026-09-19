@@ -51,6 +51,11 @@ next_action:
   as the value `PR` plus a comment, and the rest of the sentence is gone. `bus send`
   refuses such a draft; `bus validate --warnings` reports existing ones. A deliberate
   comment (`status: done   # closed on main`, with a space after `#`) is left alone.
+- On `to`, `type`, `status`, `mode` and `gate` this is not a style issue. The
+  execution agent reads those to decide whether it may act, so `mode: READ_ONLY
+  #len docasne` reaches it as a clean `READ_ONLY` and the condition is gone. The
+  consumer refuses any task whose frontmatter lost text on one of those keys and
+  answers with a blocker instead of executing. Quote the value and resend.
 
 ## Body template
 
