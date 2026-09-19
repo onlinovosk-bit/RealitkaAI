@@ -39,10 +39,12 @@ import {
   evaluateTask,
   handledTaskIds,
   isBusBox,
+  LOST_TEXT_FIELD,
   validateOutgoing,
   type BusBox,
   type BusCapability,
   type BusEnvelope,
+  type BusValidationError,
   type ClaudeRunReport,
 } from "../../packages/bus-core/src/index.ts";
 
@@ -281,11 +283,43 @@ export async function runConsumer(options: ConsumeOptions): Promise<ConsumeOutco
 
   const outcomes: ConsumeOutcome[] = [];
   for (const task of queue) {
+    // `list` carries envelopes only. Warnings live on the single-message route,
+    // and without them the gate cannot tell a clean `READ_ONLY` from one that
+    // lost a qualifier to a YAML comment.
+    const warnings = await readWarnings(options.client, inbox, task.id, log);
     outcomes.push(
-      await processTask(task, { ...options, inbox, ackBox, log, now, postBlockers, answered, capabilities: options.capabilities }),
+      await processTask(task, {
+        ...options,
+        inbox,
+        ackBox,
+        log,
+        now,
+        postBlockers,
+        answered,
+        capabilities: options.capabilities,
+        warnings,
+      }),
     );
   }
   return outcomes;
+}
+
+/**
+ * A message whose warnings cannot be read is treated as damaged, not as clean.
+ * Failing open here would undo the gate this function exists to feed.
+ */
+async function readWarnings(
+  client: BusHttpClient,
+  box: BusBox,
+  id: string,
+  log: (line: string) => void,
+): Promise<BusValidationError[]> {
+  try {
+    return (await client.read(box, id)).warnings ?? [];
+  } catch (error) {
+    log(`WARN  ${id}: could not read parse warnings (${error instanceof Error ? error.message : String(error)})`);
+    return [{ field: LOST_TEXT_FIELD, key: "mode", message: "parse warnings unavailable — treating the message as damaged" }];
+  }
 }
 
 interface ProcessContext extends ConsumeOptions {
@@ -295,10 +329,15 @@ interface ProcessContext extends ConsumeOptions {
   now: () => Date;
   postBlockers: boolean;
   answered: ReadonlySet<string>;
+  warnings: readonly BusValidationError[];
 }
 
 async function processTask(task: BusEnvelope, ctx: ProcessContext): Promise<ConsumeOutcome> {
-  const decision = evaluateTask(task, { handled: ctx.answered, capabilities: ctx.capabilities });
+  const decision = evaluateTask(task, {
+    handled: ctx.answered,
+    capabilities: ctx.capabilities,
+    warnings: ctx.warnings,
+  });
 
   if (!decision.execute) {
     if (!decision.reportable) {

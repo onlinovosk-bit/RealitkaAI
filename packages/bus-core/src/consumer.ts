@@ -11,10 +11,25 @@
  * and matches a capability that is explicitly on the allowlist.
  */
 
-import { validateEnvelope } from "./envelope.ts";
+import { LOST_TEXT_FIELD, validateEnvelope } from "./envelope.ts";
 import type { BusAgent, BusEnvelope, BusValidationError } from "./types.ts";
 
 export const CONSUMER_AGENT: BusAgent = "claude-code";
+
+/**
+ * Frontmatter keys the gate actually reads. If YAML silently ate text from one
+ * of these, the sender wrote a condition the gate never saw — `mode: READ_ONLY
+ * #neskor IMPLEMENT` parses to a clean `READ_ONLY`. The value looks valid, so
+ * no amount of validating it can recover the qualifier. Refuse instead.
+ */
+export const AUTHORITY_KEYS: readonly string[] = ["to", "type", "status", "mode", "gate"];
+
+/** lost_text warnings that landed on a key the gate depends on. */
+export function lostAuthorityText(warnings: readonly BusValidationError[] = []): BusValidationError[] {
+  return warnings.filter(
+    (warning) => warning.field === LOST_TEXT_FIELD && warning.key !== undefined && AUTHORITY_KEYS.includes(warning.key),
+  );
+}
 
 /** One thing the consumer knows how to do. Anything unmatched is refused. */
 export interface BusCapability {
@@ -63,7 +78,8 @@ export type ConsumerRefusalCode =
   | "gate_not_auto_safe"
   | "founder_decision_pending"
   | "no_capability"
-  | "already_handled";
+  | "already_handled"
+  | "lost_text_in_authority_field";
 
 /** Refusals worth telling the sender about. The rest are silent no-ops. */
 const REPORTABLE: ReadonlySet<ConsumerRefusalCode> = new Set<ConsumerRefusalCode>([
@@ -71,6 +87,7 @@ const REPORTABLE: ReadonlySet<ConsumerRefusalCode> = new Set<ConsumerRefusalCode
   "gate_not_auto_safe",
   "founder_decision_pending",
   "no_capability",
+  "lost_text_in_authority_field",
 ]);
 
 export type ConsumerDecision =
@@ -87,6 +104,11 @@ export interface EvaluateOptions {
   capabilities?: BusCapability[];
   /** Task ids this agent has already answered on the bus. */
   handled?: ReadonlySet<string>;
+  /**
+   * Parse warnings for this task's own file. Without them the gate cannot tell
+   * a clean `READ_ONLY` from one that lost a qualifier to a YAML comment.
+   */
+  warnings?: readonly BusValidationError[];
 }
 
 /**
@@ -95,6 +117,15 @@ export interface EvaluateOptions {
  */
 export function evaluateTask(task: BusEnvelope, options: EvaluateOptions = {}): ConsumerDecision {
   const capabilities = options.capabilities ?? DEFAULT_CAPABILITIES;
+
+  const damaged = lostAuthorityText(options.warnings);
+  if (damaged.length > 0) {
+    return refuse(
+      "lost_text_in_authority_field",
+      `frontmatter lost text on ${damaged.map((warning) => warning.key).join(", ")} — ` +
+        `the gate would read a value the sender did not write (${damaged[0]!.message})`,
+    );
+  }
 
   if (task.to !== CONSUMER_AGENT) return refuse("not_addressed", `addressed to ${task.to}`);
   if (task.type !== "task") return refuse("not_a_task", `type is ${task.type}`);
