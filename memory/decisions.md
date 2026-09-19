@@ -1,5 +1,12 @@
 # Critical Decisions Log
 
+## [2026-09-18] — /upgrade checkout: fix consumer, not okResponse
+
+- **Bug:** `okResponse` spreads payload (`{ ok, result }`); `/upgrade` čítal `data.data?.result?.url` → Stripe redirect nikdy.
+- **Fix (#369 → main `30a1ba906`):** oprav konzumenta; **ne**meniť `okResponse` (kontrakt ~všetkých routov).
+- **Residual:** E2E Stripe click = HUMAN (prod session). Anon 307 `/login` nie je dôkaz PASS.
+- **Evidence:** `docs/reports/2026-09-18-upgrade-checkout-okresponse-fix.md`, `…-upgrade-prod-smoke.md` (#586).
+
 ## [2026-09-03] — Mapped field correctness (za „riadky existujú“)
 
 - **Počet riadkov dokazuje existenciu, nie správnosť.** Pole z mapovania externého zdroja sa overuje proti **nezávislému signálu** z toho istého záznamu (tu: `title` vs `type` / `transaction_type`).
@@ -1072,6 +1079,12 @@ blocked. Exact PC commands are in
 - Action taken: removed temporary diagnostic log from `apps/crm/src/app/api/leads/route.ts`, added SQL script `infra/sql/cleanup-test-leads.sql` to inspect/delete test leads, and recorded this decision.
 - Lesson / Scar: Always remove debug logging from hot-path before merge; prefer manual compile verification after merges and avoid automated merge tools without review.
 
+## [2026-09-16] — Sales funnel platform-admin gate BUILD
+
+- **Decision:** Gate `/sales-funnel` + `POST /api/sales-funnel/update-status` to `is_platform_admin`.
+- **Why:** HIGH — any tenant session could mutate/view Revolis SaaS prospect pipeline (open saas_leads RLS + no app gate).
+- **Artifact:** `docs/reports/2026-09-16-critical-bug-sales-funnel-platform-admin.md`
+- **Revisit:** RLS migration to deny non-admin on saas_leads (residual DB path).
 ## 2026-09-14 — ADR Soft Factory V1 Minimum (NÁVRH, nie GO)
 - Ingest: `docs/architecture/adr-2026-09-11b-software-factory-v1-minimum.md`
 - Odporúčanie: deterministická kostra (Contract/Judge-runner/Ledger/hard limits) pred AI vrstvami; pilot na BUS, nie coding loop.
@@ -1240,3 +1253,7 @@ blocked. Exact PC commands are in
 - **Dopad na GO:** `CP-P0-4` **GO možné, potvrdené** (U-K resolved, U-L resolved a `ActionMetadata` je jeho súčasťou). `CP-P0-2` GO možné. `CP-P0-1A` GO možné. **OD-10 zostáva CONDITIONAL** — U-J Twilio UNKNOWN blokuje len override cestu, nie default `APPROVAL_REQUIRED`.
 - **Zostáva:** U-J1 Resend primárny zdroj (P1) · U-J2 Twilio Messages (P1) · U-K1 empirický rollback (P2) · U-A/U-B/U-C/U-D GDPR+RLS (P0, blokujú CP-P0-1B, nie CP-P0-4).
 
+## 2026-09-18 — assign-lead same-agency gate (critical-bug automation)
+- BUILD: `assignLeadToProfile` must verify target profile `agency_id` and scope lead UPDATE; no fake ok without client.
+- PR: https://github.com/onlinovosk-bit/RealitkaAI/pull/596
+- Evidence: vitest 10/10; report `docs/reports/2026-09-18-assign-lead-cross-tenant.md`

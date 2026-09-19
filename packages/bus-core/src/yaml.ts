@@ -22,6 +22,37 @@ interface Line {
   lineNo: number;
 }
 
+/**
+ * A `#` comment that was stripped from a line which also carried a value.
+ *
+ * `summary: PR #593 is open` is, per the YAML spec, the value `PR` plus a
+ * comment — so the rest of the sentence is silently lost. Reporting these lets
+ * callers catch text that an author never meant to throw away.
+ */
+export interface YamlStrippedComment {
+  lineNo: number;
+  /** The value text kept before the `#`. */
+  kept: string;
+  /** Everything from `#` onwards, which YAML discards. */
+  dropped: string;
+  /**
+   * Mapping key on the line, when there is one. Lets a caller tell a comment
+   * eaten from `gate: AUTO-SAFE` apart from one eaten from a prose field.
+   */
+  key?: string;
+  /**
+   * True when the comment looks accidental rather than deliberate: a real
+   * comment is written `# like this`, while `#593` or `#tag` is prose that the
+   * author expected to keep.
+   */
+  suspicious: boolean;
+}
+
+export interface ParseYamlOptions {
+  /** Called for every comment stripped from a line that also had a value. */
+  onComment?: (comment: YamlStrippedComment) => void;
+}
+
 export class YamlParseError extends Error {
   readonly lineNo: number;
 
@@ -32,7 +63,7 @@ export class YamlParseError extends Error {
   }
 }
 
-function stripComment(raw: string): string {
+function stripComment(raw: string): { content: string; dropped?: string } {
   let inSingle = false;
   let inDouble = false;
   for (let i = 0; i < raw.length; i += 1) {
@@ -40,19 +71,34 @@ function stripComment(raw: string): string {
     if (ch === "'" && !inDouble) inSingle = !inSingle;
     else if (ch === '"' && !inSingle) inDouble = !inDouble;
     else if (ch === "#" && !inSingle && !inDouble) {
-      if (i === 0 || /\s/.test(raw[i - 1]!)) return raw.slice(0, i);
+      if (i === 0 || /\s/.test(raw[i - 1]!)) return { content: raw.slice(0, i), dropped: raw.slice(i) };
     }
   }
-  return raw;
+  return { content: raw };
 }
 
-function toLines(source: string): Line[] {
+/** `  gate: AUTO-SAFE` -> `gate`. A line that is not a mapping entry has none. */
+function mappingKey(kept: string): string | undefined {
+  return /^-?\s*([A-Za-z_][A-Za-z0-9_-]*)\s*:/.exec(kept)?.[1];
+}
+
+function toLines(source: string, options: ParseYamlOptions): Line[] {
   const out: Line[] = [];
   source.split(/\r?\n/).forEach((raw, index) => {
-    const withoutComment = stripComment(raw);
-    if (withoutComment.trim() === "") return;
-    const indent = withoutComment.length - withoutComment.trimStart().length;
-    out.push({ indent, content: withoutComment.trim(), lineNo: index + 1 });
+    const { content, dropped } = stripComment(raw);
+    const kept = content.trim();
+    if (dropped !== undefined && kept !== "" && options.onComment) {
+      options.onComment({
+        lineNo: index + 1,
+        kept,
+        dropped,
+        key: mappingKey(kept),
+        // `# note` is a comment; `#593` is prose the author expected to keep.
+        suspicious: /^#\S/.test(dropped),
+      });
+    }
+    if (kept === "") return;
+    out.push({ indent: content.length - content.trimStart().length, content: kept, lineNo: index + 1 });
   });
   return out;
 }
@@ -175,8 +221,8 @@ function parseMapping(lines: Line[], start: number, indent: number): [Record<str
   return [map, index];
 }
 
-export function parseYaml(source: string): Record<string, YamlValue> {
-  const lines = toLines(source);
+export function parseYaml(source: string, options: ParseYamlOptions = {}): Record<string, YamlValue> {
+  const lines = toLines(source, options);
   if (lines.length === 0) return {};
   const [value, consumed] = parseMapping(lines, 0, lines[0]!.indent);
   if (consumed !== lines.length) {

@@ -12,7 +12,7 @@
 
 import type { FetchLike } from "./github-store.ts";
 import type { BusListFilter } from "./store.ts";
-import type { BusBox, BusEnvelope } from "./types.ts";
+import type { BusBox, BusEnvelope, BusValidationError } from "./types.ts";
 
 export interface BusClientOptions {
   baseUrl: string;
@@ -43,6 +43,13 @@ export interface BusAckResult {
   from_box: BusBox;
   to_box: BusBox;
   status: string;
+}
+
+export interface BusReadResult {
+  box: BusBox;
+  message: BusEnvelope;
+  pre_v1?: boolean;
+  warnings?: BusValidationError[];
 }
 
 export class BusHttpClient {
@@ -98,6 +105,15 @@ export class BusHttpClient {
     const response = await this.call("GET", `/bus/messages?${query.toString()}`);
     const payload = await this.expectJson<{ messages?: BusEnvelope[] }>(response, `list ${box}`);
     return payload.messages ?? [];
+  }
+
+  /**
+   * Read one message with its parse warnings. `list` returns envelopes only, so
+   * a caller that must know whether the file lost text has to ask per message.
+   */
+  async read(box: BusBox, id: string): Promise<BusReadResult> {
+    const response = await this.call("GET", `/bus/messages/${encodeURIComponent(id)}?box=${box}`);
+    return this.expectJson<BusReadResult>(response, `read ${id}`);
   }
 
   async post(box: BusBox, envelope: BusEnvelope): Promise<BusPostResult> {

@@ -9,7 +9,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer, type Server } from "node:http";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import {
@@ -40,7 +40,19 @@ interface Harness {
   client: BusHttpClient;
   ledger: FileClaimLedger;
   store: FileBusStore;
+  busRoot: string;
   close(): Promise<void>;
+}
+
+/**
+ * Write a bus file byte for byte, the way a human author does. The store only
+ * ever writes serialized envelopes, which quote anything YAML would eat — so a
+ * damaged file cannot be produced through it.
+ */
+async function seedRawFile(bus: Harness, box: string, id: string, lines: string[]): Promise<string> {
+  await mkdir(path.join(bus.busRoot, box), { recursive: true });
+  await writeFile(path.join(bus.busRoot, box, `${id}.md`), lines.join("\n"), "utf8");
+  return id;
 }
 
 async function harness(): Promise<Harness> {
@@ -56,6 +68,7 @@ async function harness(): Promise<Harness> {
     client: new BusHttpClient({ baseUrl: `http://127.0.0.1:${port}`, token: TOKEN }),
     ledger: new FileClaimLedger(stateDir),
     store,
+    busRoot,
     close: async () => {
       await new Promise<void>((resolve) => server.close(() => resolve()));
       await rm(busRoot, { recursive: true, force: true });
@@ -250,6 +263,80 @@ test("a concurrent claim stops a second process mid-flight", async (t) => {
   const outcomes = await runConsumer({ client: bus.client, executor: stubExecutor("BUS ALIVE", calls), ledger: bus.ledger });
   assert.equal(calls.length, 0);
   assert.equal(outcomes[0]!.action === "skipped" && outcomes[0]!.code, "already_claimed");
+});
+
+test("a task whose gate lost text to YAML is refused end to end", async (t) => {
+  const bus = await harness();
+  t.after(() => bus.close());
+
+  // Written straight to the store the way an author writes a file: a bare `#`
+  // on the mode line. Over HTTP this task looks perfectly clean.
+  const id = "TASK-20260918-097-eaten-qualifier";
+  await seedRawFile(bus, "inbox", id, [
+      "---",
+      "v: 1",
+      `id: ${id}`,
+      "type: task",
+      "status: open",
+      "from: sol-gpt",
+      "to: claude-code",
+      "created_at: 2026-09-18T20:30:00.000Z",
+      "mode: READ_ONLY #len do casu kym founder nepovie inak",
+      "summary: BUS LIVE TEST",
+      "next_action:",
+      "  gate: AUTO-SAFE",
+      "  description: Odpovedz BUS ALIVE",
+    "---",
+    "",
+  ]);
+
+  // The list route hands over a clean-looking envelope...
+  const listed = await bus.client.list("inbox", { to: "claude-code", status: "open" });
+  assert.equal(listed[0]!.mode, "READ_ONLY", "the eaten qualifier is invisible here");
+
+  // ...so the consumer must fetch the warnings itself before trusting it.
+  const calls: string[] = [];
+  const outcomes = await runConsumer({ client: bus.client, executor: stubExecutor("BUS ALIVE", calls), ledger: bus.ledger });
+
+  assert.equal(calls.length, 0, "a damaged task must not reach Claude");
+  assert.equal(outcomes[0]!.action, "blocked");
+  assert.equal(outcomes[0]!.action === "blocked" && outcomes[0]!.code, "lost_text_in_authority_field");
+
+  const blockers = await bus.client.list("outbox", { from: "claude-code", type: "blocker" });
+  assert.equal(blockers.length, 1);
+  assert.match(blockers[0]!.summary, /mode/);
+
+  // The task stays open: the sender has to requote the value.
+  assert.equal((await bus.client.list("inbox", { to: "claude-code", status: "open" }))[0]!.id, id);
+});
+
+test("a task carrying a `#` only in prose still executes", async (t) => {
+  const bus = await harness();
+  t.after(() => bus.close());
+
+  const id = "TASK-20260918-096-hash-in-prose";
+  await seedRawFile(bus, "inbox", id, [
+      "---",
+      "v: 1",
+      `id: ${id}`,
+      "type: task",
+      "status: open",
+      "from: sol-gpt",
+      "to: claude-code",
+      "created_at: 2026-09-18T20:30:00.000Z",
+      "mode: READ_ONLY",
+      "summary: BUS LIVE TEST",
+      "next_action:",
+      "  gate: AUTO-SAFE",
+      "  description: Odpovedz BUS ALIVE po merge #593",
+    "---",
+    "",
+  ]);
+
+  const calls: string[] = [];
+  const outcomes = await runConsumer({ client: bus.client, executor: stubExecutor("BUS ALIVE", calls), ledger: bus.ledger });
+  assert.equal(calls.length, 1, "prose damage must not block an otherwise valid task");
+  assert.equal(outcomes[0]!.action, "executed");
 });
 
 test("the Claude binary is explicitly resolvable and never silently guessed", () => {

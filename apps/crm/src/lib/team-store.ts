@@ -428,24 +428,51 @@ export async function assignLeadToProfile(
 ) {
   const supabase = await resolveTenantSupabase(scoped);
 
+  // Fail-closed: never pretend the assignment succeeded when we cannot write.
   if (!supabase) {
-    return { ok: true };
+    throw new Error("Supabase nie je nastavený. Lead sa nedá priradiť.");
   }
 
-  const profiles = await listProfiles();
-  const profile = profiles.find((item) => item.id === profileId);
+  const { resolveSessionAgencyId } = await import("@/lib/tenant-scope");
+  const agencyId = await resolveSessionAgencyId(supabase);
+  if (!agencyId) {
+    throw new Error("Chýba agentúra v profile. Lead sa nedá priradiť.");
+  }
 
-  const { error } = await supabase
+  // Target agent must belong to the caller's agency — otherwise a forged
+  // profileId stamps a foreign UUID onto the lead and downstream notify/push
+  // paths can leak the lead name to another tenant.
+  const { data: targetProfile, error: profileError } = await supabase
+    .from("profiles")
+    .select("id, full_name, agency_id")
+    .eq("id", profileId)
+    .eq("agency_id", agencyId)
+    .maybeSingle();
+
+  if (profileError) {
+    throw new Error(profileError.message);
+  }
+  if (!targetProfile) {
+    throw new Error("Agent nepatrí do vašej agentúry.");
+  }
+
+  const { data: updated, error } = await supabase
     .from("leads")
     .update({
       assigned_profile_id: profileId,
-      assigned_agent: profile?.fullName ?? "Priradený agent",
+      assigned_agent: targetProfile.full_name ?? "Priradený agent",
       last_contact: "Priradené agentovi práve teraz",
       updated_at: new Date().toISOString(),
     })
-    .eq("id", leadId);
+    .eq("id", leadId)
+    .eq("agency_id", agencyId)
+    .select("id")
+    .maybeSingle();
 
   if (error) throw new Error(error.message);
+  if (!updated) {
+    throw new Error("Lead nebol nájdený alebo nepatrí do vašej agentúry.");
+  }
 
   return { ok: true };
 }
