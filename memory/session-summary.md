@@ -1,3 +1,33 @@
+## Session 2026-08-25
+### Dokončené
+- Critical bug hunt (correctness): 4 HIGH/CRITICAL — `docs/reports/2026-08-25-critical-bug-hunt.md`
+- Critical AUTH hunt: 3 HIGH — HubSpot/analyze null-agency admin IDOR; cron `Bearer undefined` fail-open — `docs/reports/2026-08-25-critical-auth-bug-hunt.md`
+### Rozpracované / Pending
+- `GO FIX-HUBSPOT-ANALYZE-TENANT-GATE` — require caller agency before admin sync/persist
+- `GO FIX-CRON-SECRET-FAIL-CLOSED` — `if (!cronSecret)` on fail-open cron/admin routes
+- `GO FIX-CHECKOUT-AGENCY-ID` — refuse seat/top-up when `agency_id` null
+- Grant ledger orphan / gmail 25-cap / matching 500-cap (sibling report)
+### Kľúčové súbory zmenené
+- `docs/reports/2026-08-25-critical-auth-bug-hunt.md`: auth/tenant hunt
+- `docs/reports/2026-08-25-critical-bug-hunt.md`: correctness hunt (prior commit)
+### Ďalší krok
+Founder `GO FIX-HUBSPOT-ANALYZE-TENANT-GATE` (1 PR); do not bundle cron fail-closed.
+
+## Session 2026-08-24
+## Session 2026-09-16 (critical bug hunt — sales-funnel admin gate)
+### Dokončené
+- HIGH: sales-funnel update-status + page lacked platform-admin gate → fix + tests + report
+- MEMORIES: removed merged #559; remaining open tracked PRs unchanged
+### Rozpracované / Pending
+- Founder merge sales-funnel platform-admin PR
+- Residual: saas_leads RLS still open at DB layer
+- Noted (not fixed): team/users INSERT RLS hole; management SSR unscoped lists
+### Kľúčové súbory zmenené
+- `apps/crm/src/app/api/sales-funnel/update-status/route.ts`: requirePlatformAdmin
+- `apps/crm/src/app/(dashboard)/sales-funnel/page.tsx`: notFound for non-admins
+- `apps/crm/src/lib/sales-funnel-store.ts`: scoped listSaasLeads/getSalesFunnelData
+### Ďalší krok
+Founder: review/merge sales-funnel admin gate; next candidate team/users INSERT or saas_leads RLS (GO).
 ## Session 2026-09-18 (/upgrade Stripe revenue-blocker)
 
 ### Dokončené
@@ -141,6 +171,7 @@ Founder rozhodne D1 a vydá `REVOLIS_BUS_TOKEN` — dovtedy bus funguje len lok�
 - `docs/architecture/adr-2026-09-11b-software-factory-v1-minimum.md`: NÁVRH V1 Minimum
 - `docs/reports/2026-09-14-adr-software-factory-v1-minimum.md`: ingest + verification
 ### Ďalší krok
+Founder merge spec PR; paging len po `GO SEARCH-PAGING`; AC/pricing runtime až po vlastných GO frázach.
 Founder: rozhodni #1 a #4 (V1 Minimum + Judge-as-runner). Bez GO neimplementovať.
 ## Session 2026-08-18
 
