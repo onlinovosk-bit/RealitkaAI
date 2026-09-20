@@ -86,7 +86,9 @@ export async function POST(req: NextRequest) {
     // 3. presne rovnaký vstup pre parser ako predtým: combined raw string + dátum
     const raw = [email.subject ?? "", email.text ?? "", email.html ?? ""].join("\n");
     const receivedAt = (payload.receivedAt ?? new Date().toISOString()).slice(0, 10);
-    const ev = parseEmail(raw, receivedAt);
+    // recipient: parser podľa nej vylúči adresu samotnej RK / ingest schránky
+    // z výberu kontaktu (inak vznikol lead s e-mailom office@realitysmolko.sk)
+    const ev = parseEmail(raw, receivedAt, { recipient: email.to ?? null });
     const key = dedupKey(ev);
 
     const supa = createServiceRoleClient();
