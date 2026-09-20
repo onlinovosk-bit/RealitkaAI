@@ -504,3 +504,24 @@ Founder GO: rebase+merge #537/#486/#447 (tenant HIGH); close #374/#480.
 - `memory/decisions.md`: decision record 2026-09-18 (ekonomicky model + korekcia o #588/#437)
 ### Dalsi krok
 Founder: (1) merge #588, (2) read-only SELECT ci je migracia 20260817220000 aplikovana v PROD, (3) spustit E0.
+
+## Session 2026-09-20 (PR #588 MERGED — akvizicny system na main)
+### Dokoncene
+- **#588 merged** do main ako `aa6e07f`. 7 dokumentov, 1679 riadkov, bez kodu a migracii.
+  `founder-acquisition-loop`, `owner-economics-acquisition-system`, `gtm-playbook`,
+  `positioning-v1-zdroj-predavajucich`, `segmentacia-a-b-c-outreach`,
+  `founder-time-protocol`, `realitna-unia-druhy-kontakt-draft`
+- Vetva restartovana z origin/main (merged historia sa uz nepouziva)
+- Opraveny popis PR: tvrdil #437 nezmergovany, co uz neplatilo
+### Overene fakty (proti primarnym zdrojom)
+- #437 merged -> migracia `20260817220000` (`last_contact_at`) je na main; **PROD aplikacia NEOVERENA**
+- #537 a #563 medzitym tiez merged (boli v kope "blokuje zakaznika")
+- Vercel `ignoreCommand` (#578) NEchrani pred dennou kvotou `api-deployments-free-per-day` —
+  kvota sa mini pri vytvoreni deploymentu, nie pri builde; setri build minuty, nie pocet deploymentov
+### Rozpracovane / Pending
+- **E0 nespusteny** — split otvaracej vety H1 vs H2, prva uloha 30-dnoveho OS
+- Brany: G1 GDPR B2B outreach (blokuje tyzden 1), G2 GDPR pristup k ich datam (blokuje Shadow CRM),
+  G3 S2 rozsah (NBS na maklerskej strane?), G4 PROD overenie migracie, G5 suhlas s menovanim
+- `gdpr-advisor` skill nie je v tejto session dostupny -> G1/G2 formalne nesplnene
+### Dalsi krok
+Founder: read-only SELECT ci je `20260817220000` aplikovana v PROD (G4). Bez toho ranny zoznam nestoji.
