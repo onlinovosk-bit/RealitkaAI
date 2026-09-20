@@ -1,0 +1,15 @@
+{
+  "name": "@revolis/control-contract",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Revolis Control Plane — CP-P0-4 Control Contract. OBSERVE → DECIDE → AUTHORIZE → ACT → REPORT OUTCOME → LEARN.",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  }
+}
