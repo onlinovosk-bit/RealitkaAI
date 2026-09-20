@@ -29,6 +29,16 @@ describe("notification-digest auth + wiring", () => {
     expect(source).toContain('severity === "critical"');
   });
 
+  it("digest scopes to SYSTEM_USAGE_AGENCY_ID and checks Resend errors", () => {
+    const source = readFileSync(
+      join(CRM_ROOT, "src/lib/infra/notification-delivery.ts"),
+      "utf8",
+    );
+    expect(source).toContain("SYSTEM_USAGE_AGENCY_ID");
+    expect(source).toContain('.eq("agency_id", agencyId)');
+    expect(source).toContain("result.error");
+  });
+
   it("realvia thresholds are 48h warning / 7d critical without mailbox gate", () => {
     const source = readFileSync(
       join(CRM_ROOT, "src/lib/infra/platform-heartbeat.ts"),

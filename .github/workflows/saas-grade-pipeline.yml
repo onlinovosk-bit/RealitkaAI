@@ -222,3 +222,44 @@ jobs:
             apps/crm/test-results/
           retention-days: 7
           if-no-files-found: ignore
+
+  # ── CP-P0-4 Control Contract ──────────────────────────────────────────────
+  # Runs standalone: the package has zero runtime dependencies, so this job needs
+  # no npm install and no ephemeral DB. It gates the authority engine on its own,
+  # independently of whether the CRM job can start Supabase.
+  control-contract:
+    name: Control Contract (authority + closed loop)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Guard - the contract has no runtime dependencies
+        run: |
+          set -e
+          if grep -RnP '^\s*import .* from "(?!\./|\.\./|node:)' packages/control-contract/src; then
+            echo "::error::packages/control-contract must import only relative paths and node: builtins"
+            exit 1
+          fi
+          if node -e "const p=require('./packages/control-contract/package.json');process.exit(p.dependencies?1:0)"; then
+            echo "dependency guard OK"
+          else
+            echo "::error::packages/control-contract must declare no runtime dependencies"
+            exit 1
+          fi
+
+      - name: Install typecheck tooling (dev only, nothing at runtime)
+        run: npm install --no-save --no-package-lock --no-audit --no-fund typescript@5.9.3 @types/node@22
+        working-directory: packages/control-contract
+
+      - name: Typecheck
+        run: npx tsc -p tsconfig.json --noEmit
+        working-directory: packages/control-contract
+
+      - name: Test
+        run: node --test packages/control-contract/tests/*.test.ts

@@ -16,6 +16,7 @@
     "bus:serve": "node scripts/bus/serve.ts",
     "bus:validate": "node scripts/bus/cli.ts validate",
     "bus:handshake": "node scripts/bus/handshake.ts",
+    "bus:consume": "node scripts/bus/consume.ts",
     "bus:test": "node --test packages/bus-core/tests/*.test.ts scripts/bus/__tests__/*.test.ts",
     "prospect:enrich": "npx tsx scripts/prospecting/enrich.ts",
     "brain:ingest": "tsx brain/src/ingest.ts",
@@ -27,7 +28,9 @@
     "prospect:score": "npx tsx scripts/prospecting/score.ts",
     "prospect:export": "npx tsx scripts/prospecting/export.ts",
     "prospect:test": "npm run test --prefix apps/crm -- --config ../../scripts/prospecting/vitest.config.ts",
-    "seed:test-campaigns": "npx tsx scripts/seed-test-campaigns.ts"
+    "seed:test-campaigns": "npx tsx scripts/seed-test-campaigns.ts",
+    "control-contract:test": "node --test packages/control-contract/tests/*.test.ts",
+    "control-contract:typecheck": "tsc -p packages/control-contract/tsconfig.json --noEmit"
   },
   "dependencies": {
     "cheerio": "^1.2.0",

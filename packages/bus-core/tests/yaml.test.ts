@@ -78,3 +78,34 @@ test("supports chomping indicators on block scalars", () => {
   assert.equal(parsed.description, "first line second line");
   assert.equal(parsed.gate, "GO REQUIRED");
 });
+
+test("reports text that YAML drops as a comment, and grades how suspicious it is", () => {
+  const seen: Array<{ lineNo: number; kept: string; dropped: string; suspicious: boolean }> = [];
+  const parsed = parseYaml(
+    [
+      "# a whole-line comment is not a loss",
+      "summary: PR #593 is open",
+      "status: done   # deliverables landed on main",
+      'quoted: "issue #347 stays"',
+      "plain: nothing to drop",
+    ].join("\n"),
+    { onComment: (comment) => seen.push(comment) },
+  );
+
+  assert.equal(parsed.summary, "PR", "YAML keeps only the text before the #");
+  assert.equal(parsed.status, "done");
+  assert.equal(parsed.quoted, "issue #347 stays");
+
+  assert.deepEqual(
+    seen.map(({ lineNo, kept, suspicious }) => ({ lineNo, kept, suspicious })),
+    [
+      { lineNo: 2, kept: "summary: PR", suspicious: true },
+      { lineNo: 3, kept: "status: done", suspicious: false },
+    ],
+  );
+  assert.equal(seen[0]!.dropped, "#593 is open");
+});
+
+test("parsing without a comment collector still works", () => {
+  assert.deepEqual(parseYaml("a: 1 # note"), { a: 1 });
+});

@@ -1,5 +1,12 @@
 # Critical Decisions Log
 
+## [2026-09-18] — /upgrade checkout: fix consumer, not okResponse
+
+- **Bug:** `okResponse` spreads payload (`{ ok, result }`); `/upgrade` čítal `data.data?.result?.url` → Stripe redirect nikdy.
+- **Fix (#369 → main `30a1ba906`):** oprav konzumenta; **ne**meniť `okResponse` (kontrakt ~všetkých routov).
+- **Residual:** E2E Stripe click = HUMAN (prod session). Anon 307 `/login` nie je dôkaz PASS.
+- **Evidence:** `docs/reports/2026-09-18-upgrade-checkout-okresponse-fix.md`, `…-upgrade-prod-smoke.md` (#586).
+
 ## [2026-09-03] — Mapped field correctness (za „riadky existujú“)
 
 - **Počet riadkov dokazuje existenciu, nie správnosť.** Pole z mapovania externého zdroja sa overuje proti **nezávislému signálu** z toho istého záznamu (tu: `title` vs `type` / `transaction_type`).
@@ -1072,6 +1079,12 @@ blocked. Exact PC commands are in
 - Action taken: removed temporary diagnostic log from `apps/crm/src/app/api/leads/route.ts`, added SQL script `infra/sql/cleanup-test-leads.sql` to inspect/delete test leads, and recorded this decision.
 - Lesson / Scar: Always remove debug logging from hot-path before merge; prefer manual compile verification after merges and avoid automated merge tools without review.
 
+## [2026-09-16] — Sales funnel platform-admin gate BUILD
+
+- **Decision:** Gate `/sales-funnel` + `POST /api/sales-funnel/update-status` to `is_platform_admin`.
+- **Why:** HIGH — any tenant session could mutate/view Revolis SaaS prospect pipeline (open saas_leads RLS + no app gate).
+- **Artifact:** `docs/reports/2026-09-16-critical-bug-sales-funnel-platform-admin.md`
+- **Revisit:** RLS migration to deny non-admin on saas_leads (residual DB path).
 ## 2026-09-14 — ADR Soft Factory V1 Minimum (NÁVRH, nie GO)
 - Ingest: `docs/architecture/adr-2026-09-11b-software-factory-v1-minimum.md`
 - Odporúčanie: deterministická kostra (Contract/Judge-runner/Ledger/hard limits) pred AI vrstvami; pilot na BUS, nie coding loop.
@@ -1220,3 +1233,138 @@ blocked. Exact PC commands are in
 - **Brána G4 čiastočne zavretá:** migrácia je na `main`, ale **aplikácia v PROD neoverená**
   (pravidlo „audit kódu nie je audit dát"). Ranný zoznam ostáva blokovaný do PROD overenia.
 - **349 € Cockpit** označené ako DRAFT, nie cena — nepoužívať ako fakt do podpisu.
+## [2026-09-18] — Founder Control Plane: substrát BUILD / plocha BACKLOG
+
+- **Vstup:** founder téza „FOUNDER CONTROL CENTER / BUSINESS CONTROL PLANE — Architecture Discovery & North Star v1.0" (§0–§29).
+- **Ústava (2 verdikty, nie 1):**
+  - Control Plane ako **produktová plocha** (§21 navigácia, 6 fáz): **4/12 + veto Q8 (príliš skoro) + veto Q1 (klient nezaplatí) → STRATEGIC BACKLOG.** Odomkne: 5 platiacich zákazníkov podľa ADR-004 (`decisions.md`, 2026-08-03). Dnes 1 (Smolko).
+  - Control Plane **substrát** (§3 events, §5 decisions, §6 authority, §12 cost): **BUILD**, 4 rezané kusy (P0-CP-1..4), každý ≤2 týždne a samostatne užitočný.
+- **Dôvod rozdelenia:** `brain/ENGINE.md` §2 má „vytvoriť founder dashboard" v zozname toho, čo GO neznamená; §3 varuje pred customer avoidance. Substrát však nie je Center — je to dlh blokujúci už postavený `/operator`.
+- **Päť nálezov z konfrontácie:** (1) osem event tabuliek, `public.events` bez `agency_id`/`correlation_id` → cross-tenant agregácia nemožná; (2) decision memory rozseknutá founder-markdown vs `public.decisions`; (3) `lib/capabilities/_shared/human-approval.ts` drží approvals v in-memory `Map` — na serverless nedurable; (4) cost→outcome je jeden view, nie fáza (`ai_action_audit.lead_id` už existuje); (5) kontrakt §27 je jediný komponent, čo sa nedá dorobiť neskôr bez refaktoru agentov.
+- **Zámena pojmov (AP-006):** `lib/research-agent/` = lead dossier builder, NIE Research Engine zo §14. Premenovať pred spec.
+- **GDPR brána:** `events` nesie `ip_hash`/`user_agent`; cross-tenant čítanie founderom vyžaduje `gdpr-advisor` + 6(1)(f) balancing test pred P0-CP-1.
+- **Súbory:** `docs/architecture/founder-control-plane-v1-repo-confrontation.md`
+- **GO brány:** `GO CP-EVIDENCE` (read-only PROD meranie) · `GO CP-SPEC` (spec len pre 4 kusy) · `GO CP-P0-1..4` · `GO CP-FULL-SPEC` (v rozpore s ADR-004, vyžaduje zapísanú odchýlku).
+- **Otvorená otázka na foundera:** platí prah „Center: 5 platiacich", alebo sa prepisuje? ADR-004 odchýlku povoľuje so zapísaným dôvodom a dátumom revízie.
+
+## [2026-09-18] — CP-EVIDENCE: PROD audit vyvrátil tri tvrdenia konfrontácie
+
+- **Brána:** `GO CP-EVIDENCE` (founder). Read-only, iba SELECT, PROD `ypgajkhqtbriqqmyawyv`, merané 08:58–09:05 UTC.
+- **Report:** `docs/reports/2026-09-18-CP-EVIDENCE-REPORT.md`
+- **Opravy predchádzajúceho dokumentu (FAKT):**
+  1. `ai_action_audit` **nemá** `cost_eur`/`model`/`latency_ms`/`credits_spent` na PROD — tvrdenie bolo z kódu, nie zo schémy.
+  2. cost→outcome **nie je jeden view**: 0/146 riadkov má cost, 0/146 má `lead_id` (`persist-cost-telemetry.ts:66` píše `null` natvrdo), `lead_conversions` na PROD neexistuje, `deal_outcomes` = 1 riadok.
+  3. `public.events` = **0 riadkov** — nikdy nezapísala. Reálny spine je `platform_events`: 1 417 riadkov, 2026-04-12→2026-09-15, **100 % s `agency_id`**.
+- **Najzávažnejší nález:** `lead_events` = 0 riadkov → `/operator` `reaction24hPct` bude `unavailable` pre všetkých; Guardian v1.1 STALE pravidlo sa nikdy nespustí (závisí od `lead_events`).
+- **Uzatvorené P0 zo 17. 8.:** `leads.last_contact_at` **NEEXISTUJE** — na PROD len `last_contact` (text, NOT NULL). `lib/operator/gather.ts` ho číta → 42703 → Kontakty 7 d + Trend 14 d spadnú. Zapnutie `OPERATOR_DASHBOARD_ENABLED` nie je pripravené, a blokér nie je flag.
+- **Migrácia `20260728140000`:** history row **chýba**, ale `profiles.is_platform_admin` **existuje** a **1 profil má grant**. `schema_migrations` = 49 vs 102 súborov v repe (15. 8. bolo 47 vs 94 — medzera rastie). Ďalšie drifty: `scheduled_events`, `lead_conversions`, `ai_generations` na PROD neexistujú.
+- **Slučka učenia nikdy neuzavretá:** `decisions` = 240 riadkov, všetky `status='open'`, všetky `followup_agent`, najnovší 2026-06-25; `exclusivity_outcomes` = 0. Expected outcome zapísaný 240×, actual outcome 0×.
+- **Dopad na poradie:** CP-P0-4 (Contract) GO možné — zatvára presne tú dieru. CP-P0-1 (Spine) GO možné, ale **rozsah sa presúva z `events` na `platform_events`**, čistý DDL bez backfillu. CP-P0-2 (Approvals) GO možné, žiadne dáta na migráciu. **CP-P0-3 (Cost→Outcome) ZASTAVENÉ** — nahradiť `CP-P0-3a` (inštrumentácia cost cesty), view až po ~30 dňoch zberu.
+- **Zostáva NEZNÁME:** prečo sa `lead_events` nezapisuje (U1); retention policy (U2); GDPR základ pre `platform_events.payload` (U6) — `gdpr-advisor` musí bežať pred CP-P0-1.
+- **Nevykonané:** CP-SPEC neotvorený, P0-CP neimplementované, žiadny merge, žiadny deployment.
+
+## [2026-09-18] — U1: root cause `lead_events` = 0 — PROVEN (nenapojená write path)
+
+- **Brána:** `GO U1`. Read-only (repo read + grep + PROD SELECT), PROD `ypgajkhqtbriqqmyawyv`, 09:12–09:20 UTC.
+- **Report:** `docs/reports/2026-09-18-U1-lead-events-write-path-report.md`
+- **PROVEN ROOT CAUSE:** `lead_events` má v celej aplikácii **jedinú** write path — `POST /api/ai/lead-events` (`route.ts:65`). Tá má **0 volajúcich** a zároveň je za `isEnterpriseSalesIntelligenceEnabled()` → 403. **Žiadna zo 6 agentúr na PROD nemá plán `enterprise`.** Nie je to chyba, je to nenapojená funkcia.
+- **Vylúčené ako príčina (každá samostatným meraním):** RLS (`lead_events_tenant`, `with_check` insert povoľuje) · schema (PROD stĺpce == migrácia `20260418`, žiadny drift) · tiché zlyhanie (route vracia 400/403, nič nepotláča) · zápis inam.
+- **Nezávislé potvrdenie:** celý Enterprise klaster prázdny — `lead_events`, `lead_scores`, `client_dna`, `deal_moments`, `ai_recommendations` = **0 riadkov** každá.
+- **Skutočný event path je DB trigger mimo repa:** `trg_leads_platform_events` (AFTER INSERT OR UPDATE na `public.leads`, SECURITY DEFINER) → `emit_platform_event()` → `platform_events`. **Nie je v žiadnej migrácii** — repo to priznáva v `20260509000000_rls_lead_scores.sql:9`. `emitPlatformEventServer()` volá aplikácia jediný raz (`matching-engine.ts:35`); zvyšok z 1 417 riadkov robí databáza.
+- **GDPR — mení predchádzajúci záver:** trigger zapisuje do payloadu `'name', new.name`. **`platform_events.payload` obsahuje osobné údaje.** `gdpr-advisor` pred CP-P0-1 je nutnosť, nie formalita.
+- **Dopad:** `/operator` — `hasGlobalLeadEvents=false` → `reaction24hPct` null pre všetkých + systematických −4 na health score. Guardian — `guardian_findings` má **0 STALE** riadkov (NO_OWNER 15, NO_PHONE 10/0 open, HOT_IGNORED 8); STALE sa nespustí, kým je tabuľka prázdna. `NO_PHONE` v1.2 má rovnakú závislosť → 0 otvorených od 27. 7.
+- **Dopad na CP-P0-1:** potvrdzuje presun spine na `platform_events`; spine musí navyše pokryť triedu „reakcia makléra" (`call`/`reply`/`email_open`), ktorá dnes nie je nikde — bez nej nebudú mať vstup reaction24h, STALE ani cost/qualified lead.
+- **UNKNOWN:** zámer autorov (žiadny ADR k `lead_events`); ktorá z 3 enterprise migrácií chýba v `schema_migrations`.
+- **Ďalšie brány (neudelené):** `GO CP-SPEC` · `GO EVT-TRIGGER-CAPTURE` (zachytiť trigger do migrácie — dnes jediný funkčný event path žije len na PROD) · `GO OPERATOR-HONESTY`. **Neodporúčam** opraviť write path samostatne — bola by to implementácia pred kontraktom.
+- **Nevykonané:** žiadna oprava, CP-SPEC neotvorený, žiadny merge, žiadny deployment.
+
+## [2026-09-18] — CP-SPEC v1: Control Contract + Events Spine v2 (ŠPECIFIKÁCIA, nie GO na implementáciu)
+
+- **Brána:** `GO CP-SPEC`, scope LOCK na `CP-P0-4` + `CP-P0-1`. Žiadna implementácia, migrácia, oprava `lead_events`, UI.
+- **Dokument:** `docs/architecture/founder-control-plane-cp-spec-v1.md` (1023 r.)
+- **Doplnené PROD merania (09:32–09:38 UTC, read-only):** `platform_events` má len 5 stĺpcov (`id, agency_id NULLABLE, event_type, payload, created_at`) — chýba 7 z 13 polí kontraktu · RLS má **jedinú SELECT policy** s vetvou `agency_id IS NULL` (dnes 0 takých riadkov = latentná cross-tenant diera) a používa inline resolver namiesto `profile_agencies_for_auth()` · `activities` má 186/188 riadkov bez `lead_id`, 188/188 bez `profile_id`, **nemá `agency_id`** a má 4 policy vrátane dvoch prekrývajúcich sa párov (AP-002).
+- **Kľúčové rozhodnutia (D-01..D-10):** spine = **rozšírené `platform_events` in-place**, aditívne, žiadna nová tabuľka (D-01) · `occurred_at` oddelené od `created_at` (D-02) · dvojúrovňová taxonómia `category` uzavretá / `event_type` otvorená — neopakovať CHECK chybu `public.events` (D-03) · **reaction events (`call`/`reply`/`email_open`/`click`/`note`) sú prvotriedne eventy na spine, nie tretia tabuľka; `lead_events` deprecated, nie zmazané** (D-04) · `correlation_id` generuje producent (D-05) · `agency_id` → NOT NULL v dvoch krokoch so sentinelom namiesto NULL (D-06) · RLS cez `profile_agencies_for_auth()` (D-07) · founder cross-tenant výhradne cez `service_role` za gate + `SECURITY_EVENT` audit, **nie** cez rozšírenú policy (D-08) · **payload nesie odkazy, nie obsah — trigger prestane emitovať `name`** (D-09) · zachytenie triggera **až po** spec, v cieľovom v2 tvare, plus drift-detection CI (D-10).
+- **Kontrakt:** `OBSERVE → DECIDE → AUTHORIZE → ACT → REPORT OUTCOME → LEARN`; authority je čistá funkcia nad kontextom, nie vlastnosť agenta; `FORBIDDEN` nie je prekonateľné approvalom; `act()` implementuje platforma, nie agent. Navrhované umiestnenie `packages/control-contract`.
+- **Lead→Value trasa čestne:** z 15 článkov 5 `[EXISTING]`, 3 `[UNKNOWN]`, 7 `[TARGET]`; **reťaz prerušená na článkoch 10–12** (RESPONSE, APPOINTMENT, OPPORTUNITY).
+- **27 adversariálnych testov.** Tri aktívne riziká „vysoké": #14 PII v 1 417 historických riadkoch · #20 in-memory approvals · #26 neuzavretá slučka (dnešných 240/0).
+- **GO/NO-GO:** `CP-P0-4` **GO možné** · `CP-P0-1` **NO-GO** (blokujú P0 neznáme U-A GDPR základ, U-B retencia, U-C RLS resolver; kroky 1–3 sa dajú oddeliť) · `EVT-TRIGGER-CAPTURE` **NO-GO teraz** (D-10) · `CP-P0-2 Durable Approvals` **GO možné** · `COST→OUTCOME` **NO-GO**, predchodca `CP-P0-3a` GO možné · `PII-SCRUB-BACKFILL` **NO-GO** (nezvratné) · Strategic Backlog **NO-GO** (ADR-004).
+- **8 otvorených rozhodnutí pre foundera (OD-1..OD-8)** a **9 UNKNOWN (U-A..U-I)**, z toho tri P0.
+- **Ďalší krok:** adversariálny architektonický review tohto dokumentu. **Nie kód.**
+
+## [2026-09-18] — CP-SPEC-HARDEN: v1.1, dve chyby v1 opravené, tri nové neznáme
+
+- **Brána:** `GO CP-SPEC-HARDEN`. Scope nezmenený, žiadna implementácia/migrácia/DB/UI/GDPR rozhodnutie.
+- **Dokument:** `docs/architecture/founder-control-plane-cp-spec-v1.md` v1.0.0 → **v1.1.0** (`status: hardened-draft`), 1023 → 1299 riadkov. Changelog v §0.
+- **Zachované podľa zadania:** D-01, D-04, D-09, kontrakt OBSERVE→…→LEARN, dynamický authority model, durable approval, anti-halucinačné nálepky, explicitné UNKNOWN, migrovaný agent ako dôkaz.
+- **Dve reálne chyby v1 opravené:**
+  1. **P0-4 / OD-9:** pravidlo `irreversible → FORBIDDEN` **zabíjalo produkt** — `FORBIDDEN` znamená „ani so schválením", odoslanie e-mailu je nezvratné ⇒ agent by nikdy nesmel odoslať e-mail, čo ruší RÝCHLY KONTAKT aj RADAR MAKLÉRA. Oprava: nezvratnosť je **podlaha** (`APPROVAL_REQUIRED`, policy ju nesmie znížiť), `FORBIDDEN` je len explicitný DENY_LIST. Príčina chyby: zlúčenie *nezvratnosti* (vlastnosť akcie) s *neprípustnosťou* (rozhodnutie vlastníka).
+  2. **P0-2:** spec tvrdil „ADD COLUMN × 8", cieľová schéma mala 11 stĺpcov. Nová **§4.2.1 kanonická schéma** — jediný záväzný zoznam: v1 = 5, v2 pridáva **12** (11 + `scope`), spolu 17. `provenance` prestáva byť stĺpec, je to `payload._provenance`.
+- **D-06 prepísané (P0-3):** sentinel agentúra **zrušená** — je zameniteľná so zákazníckym tenantom a odlišuje ju len `parseOperatorAgencyExcludeList()`; jedna chyba v exclusion liste a platformové eventy sa počítajú ako zákaznícke. Nahradené `scope` diskriminátorom + CHECK (`tenant` ⇒ `agency_id NOT NULL`, `platform` ⇒ NULL). RLS vetva `agency_id IS NULL` zaniká aj s latentnou dierou.
+- **Nová §3.8 transakčná hranica (P0-1, P0-5, P1-3):** štyri vrstvy T1 → externý efekt → T2 → T3. **Fail-closed je vynútiteľné len vnútri jednej DB transakcie; za sieťovou hranicou neexistuje.** Exactly-once externý side effect vyhlásený za **nedosiahnuteľný**, najlepšie možné je effectively-once. Overené v repe (nie predpokladané): atomický multi-row zápis ide cez `supabase.rpc()` + plpgsql — 12+ call sites, 27 migrácií; Supabase JS klient multi-statement transakciu neposkytuje. Idempotency precedens už existuje: `credit_ledger.idempotency_key` s unique-violation-ako-úspech (`starter-pack/redemption.ts:148`).
+- **P0-6:** `OutcomeStatus` rozšírené na 7 hodnôt (`success|failure|partial|cancelled|rejected|expired|unknown`) + `reason`. Bez `rejected`/`expired`/`cancelled` by slučka po zamietnutom approvale ostala navždy otvorená.
+- **P0-7:** pridaný `run_id` (retry = nový run, rovnaká korelácia — bez neho sa nedá odlíšiť „skúsil 3×" od „spravil 3×"). **`workflow_id` zámerne vynechaný** — neexistuje orchestrátor, ktorý by ho vydával (ADR-001: orchestrátor až pri 5. uzle); stĺpec by bol 100 % NULL, presne vzor `lead_events`.
+- **P0-8 / §11.5:** „koexistujú natrvalo" nahradené politikou: A čitateľnosť histórie (trvalá) · B v2 je jediný kanonický kontrakt od cutoveru · C horizont konzumenta. Vynútenie detekčným dotazom (I-014), nie CHECK-om. Historické riadky **nedostanú** dopočítané `correlation_id`/`actor` — bola by to fabrikácia (AP-001).
+- **§9.1 FINAL INVARIANT REGISTER I-001..I-015** s OWNER/ENFORCEMENT/DETECTION/TEST/FAILURE MODE. **Tri invarianty sú dnes porušené:** I-006 (240 decisions / 0 outcomes), I-008 (approvals v `new Map()`), I-011 (1 417 riadkov s menami). I-003 (korelácia cez tenantov) nie je porušený, ale **nie je ani vynútený**.
+- **§15.1 dvojosová GO matica (P1-2, P1-6):** ARCHITECTURALLY READY vs IMPLEMENTATION READY. **GO možné dnes:** `CP-P0-4`, `CP-P0-2`, `CP-P0-3a`, `CP-P0-1 kroky 1–3` (ak sa brána rozdelí), I-003 guard. **BLOCKED:** `CP-P0-1 kroky 4–6`, `EVT-TRIGGER-CAPTURE`, `PII-SCRUB-BACKFILL`, `COST→OUTCOME`.
+- **P1-1:** tvrdenie o `activities` zmiernené na rozsah dôkazu („nie je použiteľné ako kanonický zdroj reaction events pri nameranej schéme a dátach").
+- **Tri nové neznáme, neprikryté návrhom:** **U-J (P0)** či `resend@^6.12.2` a `twilio@^5.13.1` podporujú idempotency kľúč — bez toho hrozí dvojitý e-mail klientovi; overiť z dokumentácie, **nie z pamäte** (AP-005). **U-K (P0)** či T1 reálne prejde ako jedna transakcia cez RPC idióm — ak nie, fail-closed padá a s ním I-004/I-005. **U-L (P1)** zdroj `reversible` príznaku pre `resolveAuthority`.
+- **Nové otvorené rozhodnutia:** OD-9 (nezvratnosť ako podlaha) a OD-10 (per-tenant override `externallyVisible`). Implementácia môže začať s bezpečnými defaultmi — CP-P0-4 tým nie je zablokované.
+- **Ďalší krok:** founder rozhodnutie o OD-1..OD-10 a o rozdelení brány CP-P0-1. **Nie kód.**
+
+## [2026-09-18] — Founder verdikty OD-1..OD-10 + rozdelenie CP-P0-1 na A/B/C
+
+- **CP-SPEC v1.1:** ACCEPT ako hardened draft.
+- **OD-1 Data truth:** ACCEPT — doménové systémy zostávajú autoritatívne pre entity; `platform_events` je historická/eventová vrstva, **nie druhá databáza pravdy**.
+- **OD-2 Research scope:** ACCEPT — internal + external evidence, ale tvrdá hranica: **external evidence ≠ system truth**; výskum tvorí hypotézu, nemení produkciu automaticky.
+- **OD-3 Authority:** ACCEPT — capability (OBSERVE/ANALYZE/RECOMMEND) × authority (AUTONOMOUS/APPROVAL_REQUIRED/FORBIDDEN), dynamicky z kontextu.
+- **OD-4 Tenant boundary:** ACCEPT — `scope='tenant'` ⇒ `agency_id` REQUIRED, `scope='platform'` ⇒ NULL. **Žiadny sentinel tenant.**
+- **OD-5 Trigger capture:** ACCEPT, ale **samostatná brána až po** GDPR/RLS verifikácii.
+- **OD-6 `lead_events`:** ACCEPT deprecation — read-compatible počas migrácie, žiadna nová business logika, retirement samostatným rozhodnutím. **Nie okamžitý DROP** (6 konzumentov).
+- **OD-7 Cost→Outcome:** **DEFER** — reťaz cost → lead_id → conversion → deal nie je dôveryhodná; najprv `CP-P0-3a` inštrumentácia.
+- **OD-8 Prvý migrovaný agent:** ACCEPT ako Definition of Done pre Control Contract. `lib/agents/followup` je kandidát, **nie definitívny** — implementačná úloha musí urobiť read-only suitability check.
+- **OD-9 Nezvratnosť:** ACCEPT — `irreversible` → **minimum authority floor = APPROVAL_REQUIRED**; `FORBIDDEN` je výhradne explicitný deny-list. Ruší paradox „founder schváli e-mail → engine ho zakáže".
+- **OD-10:** **CONDITIONAL** na U-J/U-K/U-L.
+- **CP-P0-1 rozdelené na tri architektonicky nezávislé brány:**
+  - **CP-P0-1A Safe Spine Foundation** — A1 kanonická v2 schéma · A2 `scope` diskriminátor · A3 tenant isolation model · A4 correlation/causation/run sémantika · A5 idempotency model · A6 schema versioning · A7 invariant enforcement model · A8 migration/version-control ownership. **Žiadny produkčný PII backfill.**
+  - **CP-P0-1B Event Production** — DB trigger → kanonický emitter → reaction-event producers → event contracts. Vyžaduje GDPR, retenciu, PII minimization, RLS, producer ownership.
+  - **CP-P0-1C Historical / Legacy Migration** — kompatibilita, migrácia, PII treatment, legacy konzumenti, retirement. Sem patrí `PII-SCRUB-BACKFILL` ako samostatná brána.
+- **NO-GO (potvrdené):** oprava `lead_events` · reaction event producers pred kontraktom · PII scrub · Cost→Outcome · Founder UI · hromadná oprava 240 decisions (samostatný outcome-recovery problém).
+- **Poradie:** U-J/U-K/U-L → CP-P0-4 → CP-P0-2 → CP-P0-1A. GDPR evidence gate paralelne, bez implementácie PII časti.
+- **PR #585:** nechať ako architecture evidence record; `behind` ≠ konflikt, žiadny commit len kvôli tomu; nemiešať architektúru + research + implementáciu do jedného PR.
+
+## [2026-09-18] — U-J / U-K / U-L evidence: dve uzavreté, jedna čiastočne
+
+- **Brány:** `GO PROVIDER-IDEMPOTENCY-EVIDENCE` · `GO RPC-TRANSACTION-EVIDENCE` · `GO REVERSIBILITY-EVIDENCE`. Read-only, 10:05–10:50 UTC.
+- **Report:** `docs/reports/2026-09-18-U-JKL-evidence-report.md`
+- **Obmedzenie prostredia (FAKT):** egress proxy blokuje `resend.com`, `www.twilio.com`, `cdn.jsdelivr.net`, `docs.postgrest.org`. Fungovalo iba vyhľadávanie. `node_modules` nie je nainštalované. Preto pri U-J **nevyhlasujem RESOLVED** — AP-005 rozlišuje „vyhľadávač cituje dokumentáciu" od „prečítal som dokumentáciu".
+- **U-J Resend — PROBABLE:** hlavička `Idempotency-Key`, ≤256 znakov, **retencia 24 h**, `POST /emails` aj `/emails/batch`, chyby 400 `invalid_idempotency_key` / 409 `invalid_idempotent_request` / 409 `concurrent_idempotent_requests`. **Nový architektonický vstup:** 24 h retencia je **kratšia** než životnosť nášho deterministického `idempotencyKey` → retry po 24 h nebude u providera deduplikovaný; chytí to len platformová idempotencia (I-009) + reconciler.
+- **U-J Twilio — UNKNOWN:** `Idempotency-Key` je doložená pre Conversations Orchestrator a Monitor Alarms, **nie pre Messages create**, ktoré Revolis reálne volá (`client.messages.create` v `multi-channel-sender.ts:75,:97`, `l99/alert-dispatch.ts:35`). Netvrdím, že to Twilio nemá — tvrdím, že to **nie je doložené**. Dovtedy SMS/WhatsApp = **at-least-once**.
+- **U-K — RESOLVED produkčným precedensom:** `public.spend_credits` (plpgsql, SECURITY DEFINER, volaná cez `supabase.rpc()`) robí v jednom volaní EXISTS-idempotency check → `SELECT ... FOR UPDATE` → 2× INSERT do `credit_ledger` → UPDATE `agencies`. **Spravuje peniaze**; keby nebola atomická, účtovanie by systematicky nesedelo. Ďalšie precedensy: `compute_bri_score_v2` (3× INSERT, 2× UPDATE), `compute_motivation_score`, `rate_limit_increment`, `increment_usage_metric`. **Navrhované T1 nie je nový vzor — je to vzor, na ktorom už stojí účtovanie kreditov.** Bonus: `FOR UPDATE` je hotová odpoveď na adversariálne testy #4 a #23. Zvyšok: empirický rollback test si vyžaduje zápis → samostatná mikro-brána (P2).
+- **U-L — RESOLVED ako neexistujúci:** grep na `reversible|irreversible|nezvratn|undoable|can_undo` naprieč `apps/crm/src` = **0 zásahov v kóde**; 5 zásahov len v prozaických vetách v docs. Najbližší action registry je `AiCreditAction` (12 akcií, čisto auditový) a `CREDIT_RATE_CODES` (4 kódy, cost metadata). **`resolveAuthority` nemá odkiaľ zobrať `reversible` → podlaha z OD-9 sa dnes nedá aplikovať.** Návrh: `ActionMetadata` registry v `packages/control-contract` s poľami `capability`, `reversible`, `externallyVisible`, `risk`, `externalProvider`, `providerIdempotency`, `denied`; akcia bez metadát sa nesmie vykonať. Pole `providerIdempotency` je miesto, kam sa zapíše výsledok U-J — **neznáma sa tým stane vynútiteľným pravidlom, nie poznámkou**.
+- **Dopad na GO:** `CP-P0-4` **GO možné, potvrdené** (U-K resolved, U-L resolved a `ActionMetadata` je jeho súčasťou). `CP-P0-2` GO možné. `CP-P0-1A` GO možné. **OD-10 zostáva CONDITIONAL** — U-J Twilio UNKNOWN blokuje len override cestu, nie default `APPROVAL_REQUIRED`.
+- **Zostáva:** U-J1 Resend primárny zdroj (P1) · U-J2 Twilio Messages (P1) · U-K1 empirický rollback (P2) · U-A/U-B/U-C/U-D GDPR+RLS (P0, blokujú CP-P0-1B, nie CP-P0-4).
+
+## 2026-09-18 — assign-lead same-agency gate (critical-bug automation)
+- BUILD: `assignLeadToProfile` must verify target profile `agency_id` and scope lead UPDATE; no fake ok without client.
+- PR: https://github.com/onlinovosk-bit/RealitkaAI/pull/596
+- Evidence: vitest 10/10; report `docs/reports/2026-09-18-assign-lead-cross-tenant.md`
+
+## [2026-09-19] — CP-P0-4 Control Contract: implementované, prvý agent migrovaný
+
+- **Brána:** `GO CP-P0-4`. Prvá implementačná brána Control Plane. Žiadna migrácia, žiadny zápis do PROD, žiadna zmena správania existujúcich agentov.
+- **Nový balík `packages/control-contract`** (13 súborov, 0 dependencies, vynútené CI guardom). Mimo `apps/crm` zámerne — cron, `.ai/bus` a budúce služby musia vedieť importovať kontrakt bez CRM.
+- **`ActionMetadata` registry — U-L uzavreté.** 9 akcií. Dve pravidlá z neho robia nosný prvok, nie dokumentáciu: (1) akcia bez záznamu sa **nedá** autorizovať (fail-closed → `FORBIDDEN`), (2) **registry, nie volajúci, je pravda** pre `capability/reversible/externallyVisible/risk`. Nezhoda kontextu s registry = `FORBIDDEN` (`context_registry_mismatch`). Bez tohto by agent mohol nezvratný send vyhlásiť za zvratný a prejsť popod OD-9 podlahu — to bola reálna diera v pôvodnom návrhu §3.4.
+- **U-J zapísané ako vynútiteľné pole, nie poznámka:** `followup.email.send` → Resend `probable` + `retentionHours: 24`; `followup.sms.send` → Twilio `unknown` ⇒ `deliveryGuarantee = at_least_once`. `probable` **nie je** to isté ako `supported` (AP-005).
+- **OD-9 implementované ako podlaha:** `irreversible` → `APPROVAL_REQUIRED`, nikdy `FORBIDDEN`. Test dokazuje, že founder approval nezvratný e-mail odomkne — paradox v1.0 je preč. Test tiež dokazuje, že policy podlahu **nevie znížiť**.
+- **OD-10 CONDITIONAL rešpektované:** `externallyVisibleOverride` existuje ako typ (§3.4.2 to žiada ako návrhovú požiadavku), ale cesta nie je implementovaná — pri `enabled: true` engine ponechá `APPROVAL_REQUIRED` a zapíše `od10_override_requested_but_not_implemented`. Žiadne tiché uvoľnenie.
+- **I-007 vynútené dvakrát:** `applyApproval` na `FORBIDDEN` verdikt nič nemení; a runner **znovu vyhodnotí autoritu tesne pred ACT** — kill switch prepnutý medzi AUTHORIZE a ACT stále zastaví side effect (test).
+- **I-006 vynútené štrukturálne:** runner má 5 terminálnych stavov a každý okrem `no_observations`/`no_decision` vyrobí `OutcomeRecord`. `FORBIDDEN` → `cancelled`. `APPROVAL_REQUIRED` → `approval.requested` + `unknown{too_early}` + `recheckAfter`. Slučka sa nedá nechať ticho otvorenú.
+- **Read-only suitability check (OD-8):** `docs/reports/2026-09-19-CP-P0-4-followup-suitability.md`. Verdikt **SUITABLE so štyrmi podmienkami**.
+- **Root cause 240/0 dokázaný (1 SELECT na PROD):** 240 decisions / **48 distinct leads** = presne **5 na lead**; **0** z tých 48 leadov nikdy nedosiahlo terminálny status. `resolveOpenDecisionsForLead` sa volá jedine z `PATCH /api/leads/[id]:150` a jedine pri terminálnom statuse. **Outcome writer nie je pokazený — nikdy nebol dosiahnuteľný.** Dva štrukturálne nálezy: agent nemá vlastný terminálny stav (F-1) a nemá idempotenciu (F-2, 5 duplicitných rozhodnutí na lead).
+- **Ďalšie nálezy zo suitability checku:** F-3 `estimatePrediction` vracia literály (0.22/0.18, 420/310, 0.62/0.55) — prenesené **nezmenené** s provenance, nie vylepšené. F-4 `POST /api/followup` je jednotenantný konštantou (`FOLLOWUP_AGENCY_ID = DEMO_AGENCY_ID`). F-5 `buildDraftBody` má meno referenčného klienta natvrdo v každom drafte pre každého tenanta (multi-tenancy bug + Stealth Mode). F-6 `capabilities/_shared/audit-log.ts` je druhá in-memory diera po I-008.
+- **Migrovaný agent:** `apps/crm/src/lib/agents/followup/controlled.ts` — `RECOMMEND`, jediná akcia `followup.draft`, **nikdy neposiela**. Existujúca cesta `POST /api/followup` je **nedotknutá**. Record ids sa odvodzujú z `correlationId`, nie z `runId` ⇒ retry prepočíta rovnaký idempotency key.
+- **Testy:** 56 v balíku (`node --test`, bez inštalácie) + 11 vitest pre migrovaného agenta. Lint ✅, typecheck baseline 48/69 ✅ (0 chýb v novom kóde), `src/lib/agents` + `src/lib/capabilities` 90/90 ✅. Celý `src` suite: 1 zlyhanie (`valuation/submit` integration) — **overené ako pre-existing na čistom `main`**, nie z tejto zmeny.
+- **Nová CI job `Control Contract (authority + closed loop)`** — Node 22, bez ephemeral DB, s guardom na nulové dependencies. Autoritný engine je zelený nezávisle od toho, či CRM job vie naštartovať Supabase.
+- **Acceptance:** #1 ✅ #2 ✅ #3 ✅ #6 ✅ · **#4 a #5 ⚠️ čiastočne** — uzavretá slučka je dokázaná v procese a v testoch (9 eventov, jeden `correlation_id`), **nie je perzistovaná**. Spine v2 stĺpce na PROD neexistujú (CP-P0-1A). Zápis control eventov do dnešného `platform_events` bez v2 stĺpcov by vyrobil presne ten tichý-v1 stav, na ktorý existuje I-014.
+- **Nové UNKNOWN:** U-M (prečo cron spravil presne 5 behov a 25.6. prestal — treba Vercel cron históriu), U-N (či tých 48 leadov malo dosiahnuť terminálny status — interpretácia klientskych dát, mimo architektonickej kontroly).
+- **Ďalší krok:** `GO CP-P0-1A` (Safe Spine Foundation) — bez neho sa acceptance #4/#5 nedajú dokončiť. Alternatívne `GO CP-P0-2` (durable approvals), ktoré rieši I-008 a odomkne `APPROVAL_REQUIRED` cestu.
