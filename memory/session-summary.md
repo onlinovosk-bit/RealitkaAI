@@ -525,3 +525,34 @@ Founder: (1) merge #588, (2) read-only SELECT ci je migracia 20260817220000 apli
 - `gdpr-advisor` skill nie je v tejto session dostupny -> G1/G2 formalne nesplnene
 ### Dalsi krok
 Founder: read-only SELECT ci je `20260817220000` aplikovana v PROD (G4). Bez toho ranny zoznam nestoji.
+
+## Session 2026-09-19…21 (Smolko ingest audit, P1 v0.2, parser fix)
+
+### Dokončené
+- **Reality Smolko — mailová slučka uzavretá.** 18. 9. 10:10 odoslaný e-mail „Rozšírenie Revolisu o dopyty a prístupy Vašich maklérov"; p. Smolko odpovedal ten istý deň 14:42 a vyplnil všetkých 5 bodov (zoznam maklérov + adresy, súhlas s napojením, Websupport IMAP/SMTP parametre cez webex, admin = iba on). **9 maklérov** na zapojenie vrátane konateľa; **4 účty žiadal deaktivovať**.
+- **Produkčná zmena:** 4 profily deaktivované v `public.profiles` (`is_active → false`, `role` nedotknutá, vratné). Pred zápisom overené, že nedržia nič: 0 leadov, 0 úloh, 0 aktivít, 0 eventov. Agentúra `1111…1111` = 9 aktívnych / 4 neaktívni. Bod „admin iba ja" bol už splnený — konateľ má `role: owner`.
+- **#584 — `.ai/bus/artifacts/TASK-RLS-ONBOARDING-SESSION/RESULT.md` zmergovaný do main** (`9c6fc4dd`, blob `311f3212`). Odvodený záznam Experimentu 01. Výsledok **`PARTIAL PASS / LOOP-LEVEL FAIL`** zachovaný nezmenený — G0-2…G0-5 PASS (83/83 typovaných položiek), G0-1 PASS vo vnútri behu / FAIL na úrovni slučky.
+- **#591 — P1 kontrakt v0.2 rozšírený** o tri body, zmergované do `docs/agent-contract-v0.1` (`066ded51`):
+  - **(e) actor / model / role / capabilities** — envelope nerozlišuje aktéra od jeho oprávnení (overené: `git grep 'capabilit|permission'` v kontrakte = 0).
+  - **(f) `valid_for` + `on_state_change`** — väzba `DECISION` na stav, nad ktorým vzniklo, cez **všetky** state dependencies, nie len mutovaný ref. `on_state_change` ∈ `abort | re-audit | proceed`, default pri chýbajúcom poli = **`abort`**.
+  - **(g) expirácia GO** — ak sa zmení ktorýkoľvek ref z `valid_for.depends_on`, pôvodné GO **automaticky expiruje**.
+  - **Permission boundary zapísaná epistemicky presne:** `OBSERVATION:` branch push OK, tag push HTTP 403 · `CAUSE: UNKNOWN` · `HYPOTHESIS:` policy môže rozlišovať druhy refov — **NOT VERIFIED** (diagnostický endpoint proxy nebol dostupný).
+- **#599 — oprava acquire parsera zmergovaná do main** (`2a510ba3`, `PARSER_VERSION` 1.2 → 1.3). Koreňová príčina: route skladá `raw = subject + text + html`, takže regexy nad poľami bežali aj nad HTML markupom. Opravené: `htmlToText()`, `cleanName()`, `pickContactEmail()` + parameter `recipient` z `email.to`, `cleanEmail()`. **Idempotencia zámerne nedotknutá** — `rawHash`/`eventId` sa naďalej počítajú z pôvodného `raw`. +7 regresných testov, fixtúry syntetické (PII klientov do repa nepatrí).
+
+### Rozpracované / Pending
+- **Atribúcia leadu na makléra — BLOCKED.** Nie je to len nedorobok: dnes **všetky** dopyty prichádzajú na `office@realitysmolko.sk`, takže neexistuje objektívny signál, podľa ktorého priradiť konkrétneho makléra. `inbound_mailboxes` je per agentúra (`smolko-a7f2@revolis.ai`), nie per maklér. Odblokuje sa až napojením individuálnych schránok. Stav dnes: **0 zo 7** živých portálových leadov má `assigned_profile_id`.
+- **Napojenie schránok maklérov — odložené.** Čaká na zmeranie objemu: 21. 9. odoslaný e-mail p. Smolkovi s otázkou, koľko dopytov dostali traja menovaní makléri minulý týždeň priamo na svoju adresu. Bez toho čísla nevieme, či sa 8 preposielacích pravidiel + GDPR proces oplatí.
+- **RAW STORAGE — nevyriešená technická medzera, bez GO.** Viď decisions.md.
+- **Tri otvorené founder `DECISION`:** P1 (a–g), P2 (transport), P3a/P3b (RLS).
+
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/acquire/email-adapter.ts` — HTML normalizácia, výber kontaktnej adresy, čistenie mena (#599)
+- `apps/crm/src/lib/acquire/__tests__/email-adapter.test.ts` — +7 regresných testov zo skutočných produkčných zlyhaní, syntetické fixtúry (#599)
+- `apps/crm/src/app/api/acquire/email/route.ts` — `parseEmail(raw, receivedAt, { recipient: email.to })` (#599)
+- `.ai/bus/artifacts/TASK-RLS-ONBOARDING-SESSION/RESULT.md` — odvodený záznam Gate 0 (#584)
+- `docs/reports/2026-09-16-gate0-protocol-validation.md` — sekcia „Amendment 2026-09-18", položky `AE1–AE3`, `A1–A3` (#591)
+- `.ai/bus/outbox/MSG-20260918-030-orchestrator-lessons-cleanup-permission-boundary.md` — lessons (#591)
+- `public.profiles` (PROD) — 4× `is_active → false`
+
+### Ďalší krok
+Čakať na odpoveď p. Smolka s počtom dopytov u troch maklérov. To číslo rozhodne, či má napojenie schránok zmysel, alebo je problém v objeme dopytov a nie v ich zbere.
