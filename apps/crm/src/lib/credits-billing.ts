@@ -9,6 +9,7 @@ import {
   getSeatStripePriceId,
   getTopupStripePriceId,
   isFounderKancelariaEligible,
+  isValidStripePriceId,
   parseSeatTier,
   parseTopupPackageKey,
   type SeatTier,
@@ -74,11 +75,23 @@ export function buildSeatCheckoutSessionParams(input: SeatCheckoutInput): {
   ];
 
   const founderEligible = isFounderKancelariaEligible();
-  if (input.includeOwnerCockpit && qty >= COCKPIT_PRODUCTS.owner.minSeats) {
+  // Cockpit is billed only when it is both requested and eligible. This flag —
+  // not the raw request — drives the metadata below, because the webhook turns
+  // `ownerCockpit: "true"` into `owner_cockpit_active` (applySeatCheckoutEntitlements).
+  // Reading it off the request granted a 349 €/mo product on a session that
+  // never charged for it: a sub-minimum seat count dropped the line item and
+  // kept the claim.
+  const cockpitEligible =
+    input.includeOwnerCockpit === true && qty >= COCKPIT_PRODUCTS.owner.minSeats;
+  if (cockpitEligible) {
     const cockpitPrice = getOwnerCockpitStripePriceId({ founderEligible });
-    if (cockpitPrice) {
-      lineItems.push({ price: cockpitPrice, quantity: 1 });
+    // Fail closed. The seat price throws a few lines up; the cockpit used to be
+    // skipped silently, so a missing price sold the cockpit for free instead of
+    // refusing the sale.
+    if (!isValidStripePriceId(cockpitPrice)) {
+      throw new Error("Owner Cockpit Stripe price nie je nakonfigurovaný.");
     }
+    lineItems.push({ price: cockpitPrice, quantity: 1 });
   }
 
   return {
@@ -88,7 +101,9 @@ export function buildSeatCheckoutSessionParams(input: SeatCheckoutInput): {
       checkoutType: "seat",
       seatTier: input.seatTier,
       seatQuantity: String(qty),
-      ownerCockpit: input.includeOwnerCockpit ? "true" : "false",
+      // Safe to use the eligibility flag directly: the throw above means an
+      // eligible cockpit always has a line item by the time we get here.
+      ownerCockpit: cockpitEligible ? "true" : "false",
       founderCockpit: founderEligible ? "true" : "false",
     },
   };
