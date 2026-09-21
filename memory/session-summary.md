@@ -22,6 +22,22 @@
 - `packages/bus-core/tests/envelope.test.ts`: dátumovo nezávislé guardy
 ### Ďalší krok
 Founder: GitHub App pre RealitkaAI → push 2 commitov → PR → merge → až potom deploy BUS.
+## Session 2026-09-21 (hranica autonómie zmeraná)
+### Dokončené
+- Overené proti GitHub API: #593 merged (`ab67567`, 2026-09-18 20:35:43Z), #594 merged (`afc6145`, 20:45:32Z) — krok „stabilizovať a mergnúť Consumer V1" je hotový
+- Správa na BUS o merge #594: `bus/main` `0a2cbb6` → `17f30d4`, `.ai/bus/outbox/MSG-20260919-001-pr-594-merged.md`
+- Zmeraná a zapísaná hranica autonómie (`memory/decisions.md`): obe strany vedia písať aj čítať, ani jedna sa nezobudí sama
+- Rozhodnutie: hodinový monitor **nezapínať** — workaround, nie architektúra
+### Rozpracované / Pending
+- D1 (review #593) na SOL — post-merge review; nálezy patria do follow-up PR, nič neblokuje
+- `TASK-20260918-001` visí v `.ai/bus/inbox` ako `open`, hoci consumer to vlákno už zodpovedal (`already_handled`) — neodpovedať znova, len hygiena fronty
+- Pozorovanie bez overenia: `evidence.urls: "[object Object]"` v `MSG-20260918-001-d1-znovu-otvorene-...` — niekde `String(obj)` namiesto URL; zdroj nezistený
+- Krok 2 (persistentný runner / poll loop) a krok 3 (SOL agent mimo ChatGPT) — obidva GO REQUIRED, neotvárať naraz
+### Kľúčové súbory zmenené
+- `memory/decisions.md`: zápis hranice autonómie + poradie ďalších krokov
+### Ďalší krok
+Bez GO nič. Krok 2 je ďalší v poradí, ale vyžaduje samostatné founder GO.
+
 ## Session 2026-09-19 → 2026-09-21 (Control Plane — CP-P0-4 merged, migrácia 20260817220000 overená)
 
 ### Dokončené

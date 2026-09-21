@@ -1420,3 +1420,43 @@ blocked. Exact PC commands are in
   overenie migrácie `20260817220000`. G3 a G5 nezmenené.
 - **Ďalší krok (task-loop):** PROD overenie G4 — read-only SELECT. Bez neho nestojí ranný zoznam (S6),
   ktorý je jediná úloha fixujúca `activities=3/31 dní`.
+
+## [2026-09-21] — Zmeraná hranica autonómie BUS-u (notifikácia ≠ autonómia)
+
+- **Kontext:** #589 (transport), #590 (handshake harness), #593 (consumer v1), #594
+  (YAML lost-text warning) sú na `main`. Živý dogfood prebehol proti `bus/main` cez
+  cloudflared tunel a GitHub backend. Otázka znela, či tým už founder prestal byť
+  medzičlánkom medzi SOL a Claudom.
+- **Odpoveď: nie, a vieme presne prečo.** Meranie, nie odhad:
+
+  | Smer | Stav |
+  |---|---|
+  | `sol-gpt → BUS` | ✅ reálne |
+  | `BUS → claude-code` | ✅ PASS — správa je dostupná v BUS; spracovanie nastane iba počas spusteného consumer behu |
+  | `claude-code → REAL Claude Code` | ✅ reálne (session `108a442a`, reply `BUS ALIVE`) |
+  | `Claude Code → BUS` | ✅ reálne |
+  | `BUS → sol-gpt` | ✅ PASS **len po explicitnom vyvolaní ChatGPT** — nie autonómny push |
+  | `claude-code` automaticky reaguje na nové tasky | ❌ nie |
+  | Founder-free celý loop | ❌ nie |
+
+- **Kde presne je hranica:** obe strany vedia na BUS písať aj z neho čítať, ale **ani
+  jedna sa nezobudí sama**. ChatGPT nemá bežiaci proces — Custom GPT Action sa zavolá
+  len keď founder otvorí ten chat. Consumer v1 je jednorazový beh, bez poll loopu
+  (zámerne, viď #593 „Známe medzery" bod 1).
+- **Čo sa reálne zmenilo:** founder prestal **prenášať obsah**. Správy sú v gite,
+  štruktúrované, s digestom namiesto 3 000 slov. Z poštára sa stal **spúšťač**. To je
+  skutočný posun, ale nie autonómia.
+- **Rozhodnutie: hodinový monitor sa NEZAPÍNA.** Scheduled check, ktorý upozorní
+  foundera na správu pre `sol-gpt`, je operatívny workaround, nie architektúra —
+  vyrobil by metriku „autonómie", ktorá je v skutočnosti `cron → ping founder →
+  founder otvorí ChatGPT`. Monitor strážiaci správy pre `claude-code` by mal zmysel,
+  ale patrí do kroku 2, nie do ad-hoc budíka.
+- **Poradie ďalších krokov (žiadny nezačať bez samostatného GO):**
+  1. ~~Stabilizovať a mergnúť Consumer V1~~ — hotové, #593 merged 2026-09-18 20:35:43Z (`ab67567`).
+  2. Persistentný Claude BUS runner / poll loop. **GO REQUIRED.**
+  3. Čo má byť „SOL agent" mimo interaktívneho ChatGPT. Presun strategickej vrstvy na
+     API s vlastným cyklom odstráni človeka z tej strany slučky úplne — **governance
+     rozhodnutie, nie technické.** Neotvárať spolu s krokom 2.
+- **Pravidlo, ktoré z toho plynie:** „live dogfood PASS" neznamená autonómnu slučku.
+  Kto číta tento záznam neskôr: PASS riadky vyššie platia s uvedenými podmienkami,
+  nie bez nich.
