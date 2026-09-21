@@ -34,6 +34,12 @@ export function lostAuthorityText(warnings: readonly BusValidationError[] = []):
 /** One thing the consumer knows how to do. Anything unmatched is refused. */
 export interface BusCapability {
   id: string;
+  /**
+   * May this capability be run a second time when the runner cannot prove the
+   * first run did not happen? Only a capability with no observable effect can
+   * answer true. Absent means false: silence is not proof.
+   */
+  idempotent: boolean;
   /** Does this capability answer the task? */
   matches(task: BusEnvelope): boolean;
   /** The prompt handed to the real Claude Code process. */
@@ -52,6 +58,9 @@ function taskText(task: BusEnvelope): string {
  */
 export const BUS_ALIVE_CAPABILITY: BusCapability = {
   id: "bus-alive",
+  // Two fixed words and no tools: running it twice is indistinguishable from
+  // running it once.
+  idempotent: true,
   matches: (task) => /\bBUS\s+ALIVE\b/i.test(taskText(task)),
   prompt: (task) =>
     [
@@ -79,7 +88,12 @@ export type ConsumerRefusalCode =
   | "founder_decision_pending"
   | "no_capability"
   | "already_handled"
-  | "lost_text_in_authority_field";
+  | "lost_text_in_authority_field"
+  // Raised by the runner's durable state rather than by the gates: a run whose
+  // outcome cannot be established, so it is parked instead of repeated.
+  | "execution_unknown"
+  | "unprovable_first_run"
+  | "capability_gone";
 
 /** Refusals worth telling the sender about. The rest are silent no-ops. */
 const REPORTABLE: ReadonlySet<ConsumerRefusalCode> = new Set<ConsumerRefusalCode>([

@@ -25,9 +25,10 @@
  */
 
 import { execFile as execFileCallback, spawn } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
-import { mkdir, mkdtemp, rm, writeFile, unlink } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { mkdir, mkdtemp, readFile, rename, rm, writeFile, unlink } from "node:fs/promises";
+import { hostname, tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
@@ -35,17 +36,24 @@ import {
   BusHttpClient,
   buildBlockerEnvelope,
   buildResultEnvelope,
+  CLAUDE_RUN_TIMEOUT_MS,
   CONSUMER_AGENT,
+  DEFAULT_CAPABILITIES,
   evaluateTask,
   handledTaskIds,
+  HEARTBEAT_INTERVAL_MS,
   isBusBox,
+  leaseUntil,
   LOST_TEXT_FIELD,
+  persistenceExhausted,
+  planFor,
   validateOutgoing,
   type BusBox,
   type BusCapability,
   type BusEnvelope,
   type BusValidationError,
   type ClaudeRunReport,
+  type ExecutionRecord,
 } from "../../packages/bus-core/src/index.ts";
 
 const execFile = promisify(execFileCallback);
@@ -53,26 +61,43 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../
 
 const DEFAULT_URL = "http://127.0.0.1:8787";
 const DEFAULT_MODEL = "sonnet";
-const DEFAULT_TIMEOUT_MS = 180_000;
+const DEFAULT_TIMEOUT_MS = CLAUDE_RUN_TIMEOUT_MS;
 
-/* ------------------------------------------------------------------ claims */
+/* ------------------------------------------------------------------ state */
 
 /**
- * Local claim file. The bus is the authoritative duplicate guard; this only
- * closes the window between "started" and "result visible on the bus", and it
- * lives outside the repository so a run never dirties the checkout.
+ * Durable execution state, one file per task, outside the repository.
+ *
+ * The bus remains the authority on what is done; this records the phase a run
+ * reached, and — from EXECUTED onwards — the reply itself, so that a failed
+ * write is resumed rather than re-executed.
  */
-export interface ClaimLedger {
-  claim(taskId: string): Promise<boolean>;
-  release(taskId: string): Promise<void>;
-  complete(taskId: string, resultId: string): Promise<void>;
+export interface ExecutionLedger {
+  read(taskId: string): Promise<ExecutionRecord | undefined>;
+  write(record: ExecutionRecord): Promise<void>;
+  clear(taskId: string): Promise<void>;
 }
 
 export function defaultStateDir(env: NodeJS.ProcessEnv = process.env): string {
   return env.REVOLIS_BUS_CONSUMER_STATE ?? path.join(tmpdir(), "revolis-bus-consumer");
 }
 
-export class FileClaimLedger implements ClaimLedger {
+/**
+ * Identity of this runner instance. A restart must never look like the same
+ * holder, or a crashed run would keep its own lease alive.
+ */
+let processOwner: string | undefined;
+
+export function runnerOwner(env: NodeJS.ProcessEnv = process.env): string {
+  if (env.REVOLIS_BUS_RUNNER_ID) return env.REVOLIS_BUS_RUNNER_ID;
+  // Memoized: the owner identifies this process, so two passes of the same
+  // runner see their own lease rather than mistaking it for a rival's. A
+  // restart mints a new identity, which is exactly what a lease needs.
+  processOwner ??= `runner@${hostname()}/${randomUUID().slice(0, 8)}/${process.pid}`;
+  return processOwner;
+}
+
+export class FileExecutionLedger implements ExecutionLedger {
   private readonly dir: string;
 
   constructor(dir: string) {
@@ -84,28 +109,74 @@ export class FileClaimLedger implements ClaimLedger {
     return path.join(this.dir, `${taskId}.json`);
   }
 
-  async claim(taskId: string): Promise<boolean> {
-    await mkdir(this.dir, { recursive: true });
+  async read(taskId: string): Promise<ExecutionRecord | undefined> {
+    let raw: string;
     try {
-      // `wx` fails if the file exists: an atomic claim, no read-then-write race.
-      await writeFile(this.file(taskId), JSON.stringify({ claimed_at: new Date().toISOString(), pid: process.pid }), {
-        encoding: "utf8",
-        flag: "wx",
-      });
-      return true;
+      raw = await readFile(this.file(taskId), "utf8");
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === "EEXIST") return false;
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined;
       throw error;
+    }
+    try {
+      return JSON.parse(raw) as ExecutionRecord;
+    } catch {
+      // Unreadable state is not absent state. Failing loudly beats treating a
+      // corrupt record as "never ran" and executing a second time.
+      throw new Error(`execution state for ${taskId} is corrupt — resolve it by hand before running again`);
     }
   }
 
-  async release(taskId: string): Promise<void> {
-    await unlink(this.file(taskId)).catch(() => {});
+  async write(record: ExecutionRecord): Promise<void> {
+    await mkdir(this.dir, { recursive: true });
+    const file = this.file(record.task_id);
+    // Write-then-rename: a torn file would read as corrupt and stop the runner.
+    const temp = `${file}.tmp-${process.pid}`;
+    await writeFile(temp, JSON.stringify(record, null, 2), "utf8");
+    await rename(temp, file);
   }
 
-  async complete(taskId: string, resultId: string): Promise<void> {
-    await writeFile(this.file(taskId), JSON.stringify({ completed_at: new Date().toISOString(), result_id: resultId }), "utf8");
+  async clear(taskId: string): Promise<void> {
+    await unlink(this.file(taskId)).catch(() => {});
   }
+}
+
+/**
+ * Keeps the lease alive while Claude runs, so a long run is not stolen.
+ *
+ * `stop()` awaits the write in flight. Without that, a beat issued just before
+ * the run ends could land after EXECUTED was written and put the record back to
+ * EXECUTING — losing the stored reply, which is the one thing this phase exists
+ * to protect.
+ */
+function startHeartbeat(
+  ledger: ExecutionLedger,
+  holder: { record: ExecutionRecord },
+  now: () => Date,
+  log: (line: string) => void,
+  intervalMs: number = HEARTBEAT_INTERVAL_MS,
+): { stop: () => Promise<void> } {
+  let stopped = false;
+  let inFlight: Promise<void> = Promise.resolve();
+
+  const timer = setInterval(() => {
+    if (stopped) return;
+    const extended = { ...holder.record, lease_expires_at: leaseUntil(now()), updated_at: now().toISOString() };
+    holder.record = extended;
+    inFlight = ledger.write(extended).catch((error: unknown) => {
+      // The run continues; the lease may lapse and another runner could take
+      // over — which is why exactly one runner instance is supported.
+      log(`WARN  ${extended.task_id}: heartbeat failed (${error instanceof Error ? error.message : String(error)})`);
+    });
+  }, intervalMs);
+  timer.unref?.();
+
+  return {
+    stop: async () => {
+      stopped = true;
+      clearInterval(timer);
+      await inFlight;
+    },
+  };
 }
 
 /* ---------------------------------------------------------------- executor */
@@ -152,6 +223,18 @@ export function resolveClaudeBinary(env: NodeJS.ProcessEnv = process.env): strin
   throw new Error("claude.exe not found on PATH — set REVOLIS_BUS_CLAUDE_BIN to the Claude Code binary");
 }
 
+/**
+ * A run that outlived its timeout. The process was killed, so whether Claude
+ * finished its work is unknowable — the one failure that must not be retried
+ * blindly.
+ */
+export class ClaudeTimeoutError extends Error {
+  constructor(timeoutMs: number) {
+    super(`claude timed out after ${timeoutMs}ms`);
+    this.name = "ClaudeTimeoutError";
+  }
+}
+
 /** The real thing: a child Claude Code process, run headless and tool-less. */
 export function realClaudeExecutor(options: ClaudeExecutorOptions = {}): ClaudeExecutor {
   const model = options.model ?? DEFAULT_MODEL;
@@ -186,7 +269,7 @@ export function realClaudeExecutor(options: ClaudeExecutorOptions = {}): ClaudeE
         let stderr = "";
         const timer = setTimeout(() => {
           child.kill();
-          reject(new Error(`claude timed out after ${timeoutMs}ms`));
+          reject(new ClaudeTimeoutError(timeoutMs));
         }, timeoutMs);
 
         child.stdout.on("data", (chunk: Buffer) => {
@@ -244,7 +327,9 @@ export type ConsumeOutcome =
 export interface ConsumeOptions {
   client: BusHttpClient;
   executor: ClaudeExecutor;
-  ledger: ClaimLedger;
+  ledger: ExecutionLedger;
+  /** This runner instance. Defaults to a fresh identity per process. */
+  owner?: string;
   capabilities?: BusCapability[];
   /** Process only this task id. */
   taskId?: string;
@@ -333,6 +418,34 @@ interface ProcessContext extends ConsumeOptions {
 }
 
 async function processTask(task: BusEnvelope, ctx: ProcessContext): Promise<ConsumeOutcome> {
+  // Durable state is consulted before the gates. Once this runner has posted
+  // anything on the thread — a result or a blocker — `already_handled` would
+  // answer every later pass, hiding both the task that still needs acking and
+  // the one parked for the founder behind the same generic skip.
+  const prior = await ctx.ledger.read(task.id);
+  if (prior && !ctx.dryRun) {
+    const owner = ctx.owner ?? runnerOwner();
+    const plan = planFor(prior, { now: ctx.now(), owner, idempotent: prior.idempotent });
+
+    if (plan.action === "skip") {
+      ctx.log(`SKIP  ${task.id}: ${plan.code} — ${plan.reason}`);
+      return { taskId: task.id, action: "skipped", code: plan.code, reason: plan.reason };
+    }
+    if (plan.action === "needs_founder") {
+      return needsFounder(task, ctx, owner, plan.code, plan.reason);
+    }
+    if (plan.action === "resume_persistence") {
+      const capability = (ctx.capabilities ?? DEFAULT_CAPABILITIES).find((entry) => entry.id === prior.capability_id);
+      if (!capability) {
+        return needsFounder(task, ctx, owner, "capability_gone", `capability ${prior.capability_id} is no longer registered`);
+      }
+      ctx.log(`RESUME ${task.id}: ${prior.state} — writing the stored reply, not re-running Claude`);
+      return persistResult(task, ctx, capability, prior, owner);
+    }
+    // `execute`: the claim lapsed before anything ran, so fall through to the
+    // gates exactly as a fresh task would.
+  }
+
   const decision = evaluateTask(task, {
     handled: ctx.answered,
     capabilities: ctx.capabilities,
@@ -362,48 +475,202 @@ async function processTask(task: BusEnvelope, ctx: ProcessContext): Promise<Cons
     return { taskId: task.id, action: "skipped", code: "dry_run", reason: `capability ${decision.capability.id}` };
   }
 
-  const claimed = await ctx.ledger.claim(task.id);
-  if (!claimed) {
-    ctx.log(`SKIP  ${task.id}: already claimed by another consumer run`);
-    return { taskId: task.id, action: "skipped", code: "already_claimed", reason: "local claim file exists" };
+  const owner = ctx.owner ?? runnerOwner();
+  const plan = planFor(await ctx.ledger.read(task.id), {
+    now: ctx.now(),
+    owner,
+    idempotent: decision.capability.idempotent,
+  });
+
+  if (plan.action === "skip") {
+    ctx.log(`SKIP  ${task.id}: ${plan.code} — ${plan.reason}`);
+    return { taskId: task.id, action: "skipped", code: plan.code, reason: plan.reason };
+  }
+  if (plan.action === "needs_founder") {
+    return needsFounder(task, ctx, owner, plan.code, plan.reason);
+  }
+  if (plan.action === "resume_persistence") {
+    const stored = (await ctx.ledger.read(task.id))!;
+    ctx.log(`RESUME ${task.id}: ${stored.state} — writing the stored reply, not re-running Claude`);
+    return persistResult(task, ctx, decision.capability, stored, owner);
   }
 
+  const startedAt = ctx.now();
+  const claimed: ExecutionRecord = {
+    task_id: task.id,
+    state: "CLAIMED",
+    owner,
+    lease_expires_at: leaseUntil(startedAt),
+    capability_id: decision.capability.id,
+    idempotent: decision.capability.idempotent,
+    persistence_attempts: 0,
+    updated_at: startedAt.toISOString(),
+  };
+  await ctx.ledger.write(claimed);
+
+  // EXECUTING is written BEFORE the process starts. A crash from here on is
+  // indistinguishable from a completed run, and must be treated as such.
+  const holder = {
+    record: { ...claimed, state: "EXECUTING" as const, lease_expires_at: leaseUntil(ctx.now()), updated_at: ctx.now().toISOString() },
+  };
+  await ctx.ledger.write(holder.record);
+  const heartbeat = startHeartbeat(ctx.ledger, holder, ctx.now, ctx.log);
+
+  let run: ClaudeRunReport;
   try {
     ctx.log(`RUN   ${task.id}: capability ${decision.capability.id} -> real Claude Code`);
-    const run = await ctx.executor(decision.capability.prompt(task), { taskId: task.id });
+    run = await ctx.executor(decision.capability.prompt(task), { taskId: task.id });
 
     const contractError = decision.capability.verify(run.reply);
     if (contractError) throw new Error(`capability ${decision.capability.id} contract failed: ${contractError}`);
-
-    const result = buildResultEnvelope({
-      task,
-      capability: decision.capability,
-      run,
-      now: ctx.now(),
-      repoCommit: ctx.repoCommit,
-    });
-    const problems = validateOutgoing(result);
-    if (problems.length > 0) {
-      throw new Error(`result envelope rejected: ${problems.map((p) => `${p.field}: ${p.message}`).join("; ")}`);
-    }
-
-    // Remote agents may only write to inbox; ack is what moves a finished
-    // message into outbox. Same two steps the CLI performs.
-    const posted = await ctx.client.post(ctx.inbox, result);
-    await ctx.client.ack(ctx.inbox, posted.id, { status: "done", toBox: "outbox" });
-    ctx.log(`RESULT ${posted.id} posted for ${task.id}`);
-
-    const acked = await ctx.client.ack(ctx.inbox, task.id, { status: "done", toBox: ctx.ackBox });
-    ctx.log(`ACK   ${task.id}: open -> ${acked.status} (${acked.from_box} -> ${acked.to_box})`);
-
-    await ctx.ledger.complete(task.id, posted.id);
-    return { taskId: task.id, action: "executed", resultId: posted.id, reply: run.reply.trim(), run };
   } catch (error) {
-    // Release the claim so a fixed run can retry; never fabricate a result.
-    await ctx.ledger.release(task.id);
+    await heartbeat.stop();
     const reason = error instanceof Error ? error.message : String(error);
+
+    if (error instanceof ClaudeTimeoutError && !decision.capability.idempotent) {
+      return needsFounder(task, ctx, owner, "execution_unknown", reason);
+    }
+    // Everything else either never started or came back reporting failure: no
+    // reply exists, so clearing the state leaves the task cleanly retryable.
+    await ctx.ledger.clear(task.id);
     ctx.log(`FAIL  ${task.id}: ${reason}`);
     return { taskId: task.id, action: "failed", reason };
+  }
+  await heartbeat.stop();
+
+  // The durability anchor: the reply is on disk before any network call.
+  const executed: ExecutionRecord = {
+    ...holder.record,
+    state: "EXECUTED",
+    reply: run.reply,
+    run: { sessionId: run.sessionId, model: run.model, numTurns: run.numTurns, durationMs: run.durationMs, costUsd: run.costUsd, command: run.command },
+    lease_expires_at: leaseUntil(ctx.now()),
+    updated_at: ctx.now().toISOString(),
+  };
+  await ctx.ledger.write(executed);
+
+  return persistResult(task, ctx, decision.capability, executed, owner, run);
+}
+
+/** Park a task for the founder: recorded locally and reported on the bus. */
+async function needsFounder(
+  task: BusEnvelope,
+  ctx: ProcessContext,
+  owner: string,
+  code: string,
+  reason: string,
+): Promise<ConsumeOutcome> {
+  const existing = await ctx.ledger.read(task.id);
+  await ctx.ledger.write({
+    task_id: task.id,
+    state: "NEEDS_FOUNDER",
+    owner,
+    lease_expires_at: leaseUntil(ctx.now()),
+    persistence_attempts: existing?.persistence_attempts ?? 0,
+    capability_id: existing?.capability_id,
+    idempotent: existing?.idempotent,
+    reply: existing?.reply,
+    run: existing?.run,
+    result_id: existing?.result_id,
+    failure: `${code}: ${reason}`,
+    updated_at: ctx.now().toISOString(),
+  });
+  ctx.log(`STOP  ${task.id}: ${code} — ${reason}`);
+
+  if (!ctx.postBlockers) return { taskId: task.id, action: "blocked", code, reason };
+  const blocker = buildBlockerEnvelope(task, { execute: false, reportable: true, code, reason }, ctx.now());
+  const problems = validateOutgoing(blocker);
+  if (problems.length > 0) throw new Error(`blocker envelope rejected: ${problems.map((p) => p.field).join(", ")}`);
+  const posted = await ctx.client.post(ctx.inbox, blocker);
+  await ctx.client.ack(ctx.inbox, posted.id, { status: "blocked", toBox: "outbox" });
+  // The task stays open: only the founder closes it.
+  return { taskId: task.id, action: "blocked", code, reason, blockerId: posted.id };
+}
+
+/**
+ * Write a reply that already exists. Never calls Claude — by the time this runs
+ * the answer is on disk, and re-asking would be a second real execution.
+ */
+async function persistResult(
+  task: BusEnvelope,
+  ctx: ProcessContext,
+  capability: BusCapability,
+  stored: ExecutionRecord,
+  owner: string,
+  run?: ClaudeRunReport,
+): Promise<ConsumeOutcome> {
+  if (persistenceExhausted(stored)) {
+    const reason = stored.failure ?? "persistence budget spent";
+    ctx.log(`SKIP  ${task.id}: failed_persistent — ${reason}`);
+    return { taskId: task.id, action: "skipped", code: "failed_persistent", reason };
+  }
+
+  let current: ExecutionRecord = {
+    ...stored,
+    owner,
+    persistence_attempts: stored.persistence_attempts + 1,
+    lease_expires_at: leaseUntil(ctx.now()),
+    updated_at: ctx.now().toISOString(),
+  };
+  await ctx.ledger.write(current);
+
+  const report: ClaudeRunReport = run ?? {
+    reply: stored.reply ?? "",
+    sessionId: stored.run?.sessionId,
+    model: stored.run?.model,
+    numTurns: stored.run?.numTurns,
+    durationMs: stored.run?.durationMs,
+    costUsd: stored.run?.costUsd ?? null,
+    command: stored.run?.command ?? "resumed from durable state",
+  };
+
+  try {
+    if (current.state === "EXECUTED") {
+      const result = buildResultEnvelope({ task, capability, run: report, now: ctx.now(), repoCommit: ctx.repoCommit });
+      const problems = validateOutgoing(result);
+      if (problems.length > 0) {
+        throw new Error(`result envelope rejected: ${problems.map((p) => `${p.field}: ${p.message}`).join("; ")}`);
+      }
+      const posted = await ctx.client.post(ctx.inbox, result);
+      current = { ...current, state: "RESULT_POSTED", result_id: posted.id, updated_at: ctx.now().toISOString() };
+      await ctx.ledger.write(current);
+      ctx.log(`RESULT ${posted.id} posted for ${task.id}`);
+    }
+
+    // Both acks tolerate an already-moved message: on a resumed run the first
+    // one may have landed before the crash.
+    if (!current.result_id) throw new Error("result was posted but its id was not recorded");
+    await ackIfPresent(ctx, current.result_id, { status: "done", toBox: "outbox" });
+    const acked = await ackIfPresent(ctx, task.id, { status: "done", toBox: ctx.ackBox });
+    if (acked) ctx.log(`ACK   ${task.id}: open -> ${acked.status} (${acked.from_box} -> ${acked.to_box})`);
+
+    current = { ...current, state: "DONE", updated_at: ctx.now().toISOString() };
+    await ctx.ledger.write(current);
+    return { taskId: task.id, action: "executed", resultId: current.result_id, reply: report.reply.trim(), run: report };
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    if (persistenceExhausted(current)) {
+      await ctx.ledger.write({ ...current, state: "FAILED_PERSISTENT", failure: reason, updated_at: ctx.now().toISOString() });
+      ctx.log(`FAIL  ${task.id}: persistence gave up after ${current.persistence_attempts} attempts — ${reason}`);
+      return { taskId: task.id, action: "failed", reason: `persistence gave up after ${current.persistence_attempts} attempts: ${reason}` };
+    }
+    // The reply stays on disk in EXECUTED/RESULT_POSTED; the next run resumes.
+    ctx.log(`FAIL  ${task.id}: persistence attempt ${current.persistence_attempts} — ${reason}`);
+    return { taskId: task.id, action: "failed", reason };
+  }
+}
+
+/** `not_found` means the message already moved, which is the desired end state. */
+async function ackIfPresent(
+  ctx: ProcessContext,
+  id: string,
+  options: { status: BusEnvelope["status"]; toBox: BusBox },
+): Promise<{ status: string; from_box: string; to_box: string } | undefined> {
+  try {
+    return await ctx.client.ack(ctx.inbox, id, options);
+  } catch (error) {
+    if ((error as { status?: number }).status === 404) return undefined;
+    throw error;
   }
 }
 
@@ -488,7 +755,7 @@ async function main(): Promise<void> {
       model: flagString(args, "model") ?? process.env.REVOLIS_BUS_CONSUMER_MODEL ?? DEFAULT_MODEL,
       timeoutMs: Number.isFinite(timeout) ? timeout : DEFAULT_TIMEOUT_MS,
     }),
-    ledger: new FileClaimLedger(defaultStateDir()),
+    ledger: new FileExecutionLedger(defaultStateDir()),
     taskId: flagString(args, "task"),
     inboxBox: boxRaw,
     ackBox: ackRaw,
