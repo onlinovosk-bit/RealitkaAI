@@ -7,6 +7,10 @@ backups/
 
 # dependencies
 /node_modules
+# Nested installs too: the control-contract and bus typecheck CI jobs install
+# their tooling into packages/*/node_modules, and so does anyone reproducing
+# those steps locally. The anchored rule above does not cover them.
+node_modules/
 /.pnp
 .pnp.js
 
