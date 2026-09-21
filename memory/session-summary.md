@@ -449,6 +449,59 @@ Founder review/merge #546 (and backlog of open critical fix PRs).
 ### Dalsi krok
 Founder: merge #566, potom SAMOSTATNE rozhodnutie o migracii 20260904220000 (stale PREPARED ONLY) — najprv read-only SELECT stavu RLS v prode podla runbooku :38-41.
 
+## Session 2026-09-18 (GTM playbook — predaj RK, 80/20 majiteľa, akvizícia)
+### Dokončené
+- Syntéza GTM stratégie z dôkazov v repe → `docs/sales/gtm-playbook-2026-09-18.md`
+- Nájdený rozpor: VETO na valuačný widget (2026-07-19, „chýba licencovaný zdroj cien") je
+  prekonaný písomným povolením NBS (2026-08-10); zostáva len nespárovaná jednotka realizačná/ponuková
+- Zdokumentované: 3× nezávislé odmietnutie AI/CRM trhom + kotva 300 €/tip + loop 31 dní na nule
+- `memory/decisions.md` doplnený o decision record 2026-09-18
+### Rozpracované / Pending
+- **Founder GO S2** — rozsah tvrdenia widgetu na NBS dátach (3 otázky v §9 playbooku)
+- GDPR gate pre A1 (RPO outreach zoznam) a S4 (audit cudzieho exportu) — `gdpr-advisor` nespustený
+- Úlohy s 0 € engineeringom (S1 packaging, S3 segmentácia A/B/C, S8 procesná daň, A4 Únia, A8 sezónnosť) — GO nepotrebujú
+### Kľúčové súbory zmenené
+- `docs/sales/gtm-playbook-2026-09-18.md`: nový GTM playbook (stratégie, 80/20, akvizícia, 30/60/90)
+- `memory/decisions.md`: decision record 2026-09-18 + revízia predpokladu VETO
+### Ďalší krok
+Founder: rozhodnúť S2 (ponuková úroveň NBS v UI? koeficient ostáva null? znenie atribúcie?).
+Bez `GO S2` žiadny kód.
+
+## Session 2026-09-18b (GO S1/S3/S8/A4/A8 — exekucne artefakty; S2 blokovane rozporom)
+### Dokoncene
+- `docs/sales/positioning-v1-zdroj-predavajucich.md` — S1 packaging (kategoria, hierarchia spravy, zakazany slovnik, smieme/nesmieme tvrdit)
+- `docs/sales/segmentacia-a-b-c-outreach.md` — S3 segmenty podla CRM (A=Realvia, B=iny, C=Excel), skripty, kvalifikacia, tracker polia (riesi D5-7), A8 sezonnost
+- `docs/ops/founder-time-protocol.md` — S8 triage 54 otvorenych PR do 3 kop + 2 nalezy
+- `docs/sales/realitna-unia-druhy-kontakt-draft.md` — A4, NEODOSLANE
+- Oprava vlastneho odporucania: auto-merge lane uz existuje (AUTOMERGE-POLICY v1.0 + workflow)
+### Rozpracovane / Pending
+- **S2 BLOKOVANE:** founder dal "GO S2" ale Q1=nie a Q3=ano su nezlucitelne. Ziadny kod kym sa Q1 neujasni.
+- Founder rozhodnutia zo `founder-time-protocol.md` §6: zatvorit kopu 3 (29 PR)? prehodit 12 draftov kopy 1 na ready? overit robota na #189/#191/#192? stav migracie #437?
+- `gdpr-advisor` skill nie je v tejto session dostupny — GDPR brana pre A1/S4 formalne nesplnena
+### Kluc subory zmenene
+- `docs/sales/positioning-v1-zdroj-predavajucich.md`, `docs/sales/segmentacia-a-b-c-outreach.md`
+- `docs/ops/founder-time-protocol.md`, `docs/sales/realitna-unia-druhy-kontakt-draft.md`
+- `memory/decisions.md`: decision record 2026-09-18 (GO + rozpor S2)
+### Dalsi krok
+Founder: ujasnit Q1 pre S2 (zobrazuje widget NBS uroven alebo nie?) + 4 rozhodnutia z founder-time-protocol §6.
+
+## Session 2026-09-18c (Founder Acquisition Research Loop — zjednotenie)
+### Dokoncene
+- `docs/sales/founder-acquisition-loop-2026-09-18.md` — founderov ramec prijaty, konfrontovany s repo dokazmi
+- Nalez 1: /proof + leak engine SHIPPED od 2026-07-06, 0 realnych prospectov za 3 mesiace -> hrdlo je navstevnost, nie nastroj
+- Nalez 2: NAR cisla su US trh + neoverene -> PREDPOKLAD; lokalny SK dokaz (3 rozhovory) ma prednost
+- Nalez 3: Founder Dashboard data-blocked (activities=3/31d, #437 nezmergovany)
+- Experiment E0 navrhnuty: split otaracej vety H1 vs H2, rozhodovacie pravidlo vopred
+- 30-dnovy Founder-led Acquisition OS po tyzdnoch s metrikami a failure signalmi
+### Rozpracovane / Pending
+- **E0 je prva uloha** — bez neho je prva veta outreachu hadanie
+- Brany: G1 GDPR B2B outreach, G2 GDPR cudzi export, G3 S2 rozsah (stale nezodpovedane), G4 #437 do PROD, G5 suhlas s menovanim
+- Founder dismissol obe otazky (S2 rozsah + prehodenie 12 draftov) — cakaju na dalsi pokyn
+### Kluc subory zmenene
+- `docs/sales/founder-acquisition-loop-2026-09-18.md`: zjednoteny loop + 30-dnovy OS
+- `memory/decisions.md`: decision record 2026-09-18 (ramec prijaty, 3 nalezy, E0)
+### Dalsi krok
+Founder: spustit E0 (zoznam 40 RK segment A + split vety) alebo odpovedat na G3/G4.
 ## Session 2026-09-17 (open PR stack repro)
 ### Dokončené
 - Reprodukcia 11 otvorených PR na origin/main `6f6381ca0`
@@ -459,3 +512,41 @@ Founder: merge #566, potom SAMOSTATNE rozhodnutie o migracii 20260904220000 (sta
 - `docs/reports/2026-09-17-open-pr-stack-repro.md`: dôkazová tabuľka
 ### Ďalší krok
 Founder GO: rebase+merge #537/#486/#447 (tenant HIGH); close #374/#480.
+
+## Session 2026-09-18d (ekonomika majitela RK -> akvizicny system)
+### Dokoncene
+- `docs/sales/owner-economics-acquisition-system-2026-09-18.md` (291 riadkov): retaz penazi a kde Revolis realne siaha (A,B) vs nesiaha (C,D,E); tuzby/strachy/uzke hrdla; 7 spustacov nakupu vratane detekovatelneho T5; mapa 10 namietok s odpovedami; cenova psychologia a 4-vrstvova architektura ponuky; struktura pilotu (Shadow 14 dni -> plateny 60-90 dni); rebrik dokazov 1-6; experimenty E1-E6 s kill kriteriom
+- Merge origin/main do vetvy (#437 pritiahnuty)
+### Korekcia
+- **#588 NIE je merged** — GitHub API `state=open, merged=false`, ziadny zo 6 dokumentov nie je na main. Founder pravdepodobne zamenil cislo.
+- Merged bol **#437** (migracia `20260817220000` s `last_contact_at`) -> G4 ciastocne zavreta, ale PROD aplikacia NEOVERENA
+### Rozpracovane / Pending
+- Founder: merge #588 (stale otvoreny, draft, zeleny)
+- Brany: G1 GDPR B2B outreach, G2 GDPR pristup k ich datam (blokuje Shadow), G3 S2 rozsah, G4 PROD overenie migracie, G5 suhlas s menovanim
+- E0 stale nespusteny — prva uloha 30-dnoveho OS
+### Kluc subory zmenene
+- `docs/sales/owner-economics-acquisition-system-2026-09-18.md`
+- `memory/decisions.md`: decision record 2026-09-18 (ekonomicky model + korekcia o #588/#437)
+### Dalsi krok
+Founder: (1) merge #588, (2) read-only SELECT ci je migracia 20260817220000 aplikovana v PROD, (3) spustit E0.
+
+## Session 2026-09-20 (PR #588 MERGED — akvizicny system na main)
+### Dokoncene
+- **#588 merged** do main ako `aa6e07f`. 7 dokumentov, 1679 riadkov, bez kodu a migracii.
+  `founder-acquisition-loop`, `owner-economics-acquisition-system`, `gtm-playbook`,
+  `positioning-v1-zdroj-predavajucich`, `segmentacia-a-b-c-outreach`,
+  `founder-time-protocol`, `realitna-unia-druhy-kontakt-draft`
+- Vetva restartovana z origin/main (merged historia sa uz nepouziva)
+- Opraveny popis PR: tvrdil #437 nezmergovany, co uz neplatilo
+### Overene fakty (proti primarnym zdrojom)
+- #437 merged -> migracia `20260817220000` (`last_contact_at`) je na main; **PROD aplikacia NEOVERENA**
+- #537 a #563 medzitym tiez merged (boli v kope "blokuje zakaznika")
+- Vercel `ignoreCommand` (#578) NEchrani pred dennou kvotou `api-deployments-free-per-day` —
+  kvota sa mini pri vytvoreni deploymentu, nie pri builde; setri build minuty, nie pocet deploymentov
+### Rozpracovane / Pending
+- **E0 nespusteny** — split otvaracej vety H1 vs H2, prva uloha 30-dnoveho OS
+- Brany: G1 GDPR B2B outreach (blokuje tyzden 1), G2 GDPR pristup k ich datam (blokuje Shadow CRM),
+  G3 S2 rozsah (NBS na maklerskej strane?), G4 PROD overenie migracie, G5 suhlas s menovanim
+- `gdpr-advisor` skill nie je v tejto session dostupny -> G1/G2 formalne nesplnene
+### Dalsi krok
+Founder: read-only SELECT ci je `20260817220000` aplikovana v PROD (G4). Bez toho ranny zoznam nestoji.
