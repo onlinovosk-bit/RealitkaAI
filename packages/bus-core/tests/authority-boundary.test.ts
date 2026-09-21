@@ -122,9 +122,11 @@ test("a message id cannot walk out of its box", async () => {
   assert.deepEqual(await footprint(root), before, "a rejected message still wrote something");
 });
 
-test("HTTP callers cannot write to the outbox", async () => {
-  // outbox is what the execution agents produce locally; a remote caller writing
-  // there could forge a message as if it came from this side.
+test("a direct POST to the outbox is refused", async () => {
+  // NOTE: this is a convention, not a security boundary. The execution agent
+  // (scripts/bus/consume.ts) also reaches the bus over HTTP and legitimately acks
+  // into the outbox, using the same single shared token. Nothing at the transport
+  // layer can currently tell the two callers apart — see the ack test below.
   const { root, handle } = await newHandler();
   const before = await footprint(root);
 
@@ -146,4 +148,37 @@ test("HTTP callers cannot write to the outbox", async () => {
 
   assert.equal(response?.status, 403);
   assert.deepEqual(await footprint(root), before);
+});
+
+test("an ack cannot reach into a box the caller may not write", async () => {
+  // An ack rewrites the message with overwrite: true, so it is a write and has to
+  // pass the same gate as a POST. Before this gate existed, `?box=outbox` let a
+  // caller rewrite a message the execution agents had already produced.
+  const { root, handle } = await newHandler();
+
+  const created = await handle(
+    post({
+      type: "result",
+      status: "done",
+      from: "claude-code",
+      to: "sol-gpt",
+      task_id: "TASK-ACK-PROBE",
+      summary: "a message in a writable box",
+      body: "x",
+    }),
+  );
+  assert.equal(created?.status, 201);
+  const { id } = await created!.json();
+  const before = await footprint(root);
+
+  const response = await handle(
+    new Request(`https://bus.test/bus/messages/${id}/ack?box=outbox`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${TOKEN}`, "content-type": "application/json" },
+      body: JSON.stringify({ status: "done" }),
+    }),
+  );
+
+  assert.equal(response?.status, 403, "ack reached into a box the caller may not write");
+  assert.deepEqual(await footprint(root), before, "a refused ack still changed something");
 });

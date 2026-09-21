@@ -183,6 +183,10 @@ export function createBusHandler(options: BusHttpOptions): (request: Request) =>
   async function handleAck(request: Request, url: URL, id: string): Promise<Response> {
     const box = boxParam(url.searchParams, "inbox");
     if (!box) return json({ error: "unknown_box" }, 400);
+    // An ack rewrites the message with overwrite: true, so the source box has to
+    // pass the same gate as a POST. Without this a caller could reach into the
+    // outbox and rewrite a message the execution agents had already produced.
+    if (!writable.includes(box)) return json({ error: "box_not_writable", writable }, 403);
 
     const body = await request.text();
     let payload: { status?: string; to_box?: string } = {};
