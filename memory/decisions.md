@@ -1,5 +1,41 @@
 # Critical Decisions Log
 
+## [2026-09-21] — BUS: id date bug + authority boundary as an executable invariant
+
+- **Bug (not a fixture):** `scripts/bus/cli.ts` built the message id from `new Date()`
+  while the envelope kept the draft's `created_at` → a message stored as
+  `MSG-20260921-*` whose body said 2026-09-18. In a git-backed store the filename is
+  the primary index, so id ≠ content is an integrity defect. `http.ts` had the same
+  divergence. Both now use `idDateFor(created_at, fallback)` — one rule, one place.
+- **The failing test was right.** It asserted `MSG-20260918-*` for a draft declaring
+  that date; it was not touched and now passes. It had been red since 2026-09-18
+  because it only fails on days other than the one it was written on.
+- **Authority boundary is now a test, not a runbook sentence:**
+  *the entire effect of any bus message is one file under its box directory.*
+  Stronger than a blacklist of forbidden actions, which can always miss one.
+  Response shape pinned to `{ok, box, id, path, digest}` so it cannot grow a field
+  that reads as a grant.
+- **Learned from the test, not from design:** `outbox` is write-protected over HTTP.
+  A remote caller writing there could forge a message as if it came from this side.
+- **107/107 bus tests.** Commits `cb1e7d8`, `47b243d`.
+- **NOT deployed.** Canonical GitHub PR, production endpoint, ChatGPT Action and the
+  synthetic handshake are all still open. `BUS-DEPLOY-L1` = VERIFIED LOCALLY, not DONE.
+- **Blocker:** Claude GitHub App is not installed on `onlinovosk-bit/RealitkaAI`;
+  push returns 403. Both commits exist only in an ephemeral container + as patches.
+
+## [2026-09-21] — Bus was designed twice: P1 violation caught by reading the repo
+
+- An architecture round proposed building an inter-agent bus. It already existed:
+  `adr-2026-09-18-inter-agent-bus-transport-v1.md`, status IMPLEMENTED / NOT DEPLOYED,
+  with the identical diagnosis and diagram, waiting three days on a founder GO.
+- **Cost finding for the day:** 2757 lines produced in `uptm-runner`, of which 1488 were
+  documents and 507 production code. Every design change that mattered came from
+  `git clone`, `grep` and CI logs — none from relaying text between two models.
+  Two LLMs agreeing is one model run twice.
+- **Adopted:** standing authorization for docs/tests/new-file PRs that leave
+  `rules.json` byte-identical; GO reserved for CP semantics, LIVE, credentials,
+  foreign repos.
+
 ## [2026-09-18] — /upgrade checkout: fix consumer, not okResponse
 
 - **Bug:** `okResponse` spreads payload (`{ ok, result }`); `/upgrade` čítal `data.data?.result?.url` → Stripe redirect nikdy.

@@ -8,7 +8,7 @@
  */
 
 import { timingSafeEqual } from "node:crypto";
-import { buildMessageId, envelopeFromJson, findLikelySecrets } from "./envelope.ts";
+import { buildMessageId, envelopeFromJson, findLikelySecrets, idDateFor } from "./envelope.ts";
 import { renderDigest, renderQueueDigest } from "./digest.ts";
 import { BusStoreError, isBusBox, type BusStore } from "./store.ts";
 import type { BusBox, BusEnvelope, BusMessageType } from "./types.ts";
@@ -164,8 +164,9 @@ export function createBusHandler(options: BusHttpOptions): (request: Request) =>
     const idWasSupplied = envelope.id.length > 0;
     if (!envelope.id) {
       const type = (envelope.type ?? "result") as BusMessageType;
-      const sequence = await options.store.nextSequence(box, type, now());
-      envelope.id = buildMessageId(type, now(), sequence, envelope.summary || "message");
+      const idDate = idDateFor(envelope.created_at, now());
+      const sequence = await options.store.nextSequence(box, type, idDate);
+      envelope.id = buildMessageId(type, idDate, sequence, envelope.summary || "message");
     }
 
     const secrets = findLikelySecrets(raw);
@@ -182,6 +183,10 @@ export function createBusHandler(options: BusHttpOptions): (request: Request) =>
   async function handleAck(request: Request, url: URL, id: string): Promise<Response> {
     const box = boxParam(url.searchParams, "inbox");
     if (!box) return json({ error: "unknown_box" }, 400);
+    // An ack rewrites the message with overwrite: true, so the source box has to
+    // pass the same gate as a POST. Without this a caller could reach into the
+    // outbox and rewrite a message the execution agents had already produced.
+    if (!writable.includes(box)) return json({ error: "box_not_writable", writable }, 403);
 
     const body = await request.text();
     let payload: { status?: string; to_box?: string } = {};

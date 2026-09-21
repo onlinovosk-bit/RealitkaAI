@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   buildMessageId,
+  idDateFor,
+  formatIdDate,
   LOST_TEXT_FIELD,
   envelopeFromJson,
   findLikelySecrets,
@@ -130,4 +132,27 @@ test("a deliberate comment is not reported as lost text", () => {
   const parsed = parseBusDocument(raw);
   assert.equal(parsed.envelope?.status, "done");
   assert.deepEqual((parsed.warnings ?? []).filter((warning) => warning.field === LOST_TEXT_FIELD), []);
+});
+
+test("the id date follows created_at, not the wall clock", () => {
+  // Date-independent on purpose: the previous regression only showed up on days
+  // other than the one the test was written on, so it sat red for three days.
+  const created = "2026-09-18T09:00:00Z";
+  const today = new Date();
+  const idDate = idDateFor(created, today);
+
+  assert.equal(formatIdDate(idDate), "20260918");
+  assert.notEqual(
+    formatIdDate(idDate),
+    formatIdDate(today),
+    "created_at is in the past, so the id must not carry today's date",
+  );
+  assert.equal(buildMessageId("result", idDate, 1, "pr-593"), "MSG-20260918-001-pr-593");
+});
+
+test("an absent or unparseable created_at falls back to the supplied clock", () => {
+  const fallback = new Date("2026-01-02T03:04:05Z");
+  assert.equal(formatIdDate(idDateFor(undefined, fallback)), "20260102");
+  assert.equal(formatIdDate(idDateFor("", fallback)), "20260102");
+  assert.equal(formatIdDate(idDateFor("not a date", fallback)), "20260102");
 });

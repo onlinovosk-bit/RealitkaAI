@@ -1,3 +1,27 @@
+## Session 2026-09-21 (UPTM governance chain + BUS fix)
+### Dokončené
+- `uptm-runner` main `c9ae2aa`, 134 testov: PR #3 ústava CP+CC (P1–P14), #4 preregistrácia
+  fabrication kritérií, #5 canonical `PASS/FAIL/UNKNOWN` resolver, #6 detektor (13 kontrol,
+  34 acceptance cases), #7 zapojenie detektora do gate cesty
+- `fabricated_market_data` / `fabricated_pnl`: `DECLARATIVE` → `PARTIAL` s dvoma zapísanými
+  limitmi (`omission_bypass`, `local_consistency_only`); strop `PARTIAL`, nikdy `ENFORCED`
+- Dve vlastné nadsadenia znížené po čítaní kódu: P5 a P11 `ENFORCED` → `PARTIAL`
+- BUS: id/`created_at` integrity bug opravený, authority boundary ako executable invariant,
+  107/107 testov (`cb1e7d8`, `47b243d`) — **nepushnuté, 403**
+- Audit evidence #1: `SyntaxError` v `onlinovosk-bit-uptm` `uptm/risk.py:77` — 4 test moduly
+  sa nenazbierali, teda `UNKNOWN`, nie `FAIL`
+### Rozpracované / Pending
+- **HUMAN:** doinštalovať Claude GitHub App pre `onlinovosk-bit/RealitkaAI` → push + PR
+- **HUMAN:** BUS deploy podľa `docs/ops/bus-handshake-runbook.md` → synthetic handshake
+- **HUMAN 30s:** Revolis P0 — prihlásený `/upgrade` → `checkout.stripe.com`
+- Bez GO: `UPTM-002d` (omission bypass), `UPTM-002b` (CP failure reclassification), `UPTM-AUDIT`
+### Kľúčové súbory zmenené
+- `packages/bus-core/src/envelope.ts`: `idDateFor()` — id dátum z `created_at`, nie z hodín
+- `packages/bus-core/src/http.ts`, `scripts/bus/cli.ts`: obe cesty používajú `idDateFor`
+- `packages/bus-core/tests/authority-boundary.test.ts`: nový — invariant „správa je len súbor"
+- `packages/bus-core/tests/envelope.test.ts`: dátumovo nezávislé guardy
+### Ďalší krok
+Founder: GitHub App pre RealitkaAI → push 2 commitov → PR → merge → až potom deploy BUS.
 ## Session 2026-09-21 (hranica autonómie zmeraná)
 ### Dokončené
 - Overené proti GitHub API: #593 merged (`ab67567`, 2026-09-18 20:35:43Z), #594 merged (`afc6145`, 20:45:32Z) — krok „stabilizovať a mergnúť Consumer V1" je hotový
