@@ -74,11 +74,19 @@ export function buildSeatCheckoutSessionParams(input: SeatCheckoutInput): {
   ];
 
   const founderEligible = isFounderKancelariaEligible();
-  if (input.includeOwnerCockpit && qty >= COCKPIT_PRODUCTS.owner.minSeats) {
-    const cockpitPrice = getOwnerCockpitStripePriceId({ founderEligible });
-    if (cockpitPrice) {
-      lineItems.push({ price: cockpitPrice, quantity: 1 });
-    }
+  const cockpitRequested = input.includeOwnerCockpit && qty >= COCKPIT_PRODUCTS.owner.minSeats;
+  const cockpitPrice = cockpitRequested ? getOwnerCockpitStripePriceId({ founderEligible }) : "";
+
+  // Fail closed. The customer saw a total that includes the cockpit; charging
+  // them a different one is not an acceptable degradation. The checkbox is
+  // gated on `isOwnerCockpitPurchasable`, so reaching here means the config
+  // changed between page load and submit — rare, and worth an error rather
+  // than a silent mismatch.
+  if (cockpitRequested && !cockpitPrice) {
+    throw new Error("Owner Cockpit Stripe price nie je nakonfigurovaný.");
+  }
+  if (cockpitPrice) {
+    lineItems.push({ price: cockpitPrice, quantity: 1 });
   }
 
   return {
@@ -88,8 +96,10 @@ export function buildSeatCheckoutSessionParams(input: SeatCheckoutInput): {
       checkoutType: "seat",
       seatTier: input.seatTier,
       seatQuantity: String(qty),
-      ownerCockpit: input.includeOwnerCockpit ? "true" : "false",
-      founderCockpit: founderEligible ? "true" : "false",
+      ownerCockpit: cockpitPrice ? "true" : "false",
+      // What was actually charged, not what the caller was eligible for. These
+      // diverge when the cockpit was not purchased at all.
+      founderCockpit: cockpitPrice && founderEligible ? "true" : "false",
     },
   };
 }

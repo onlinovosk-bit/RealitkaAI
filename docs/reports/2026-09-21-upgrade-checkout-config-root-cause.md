@@ -101,14 +101,31 @@ a production payment configuration ostáva pod Founder GO.
 Nie „pozri, či tam niečo je". Price objekt musí sedieť s kontraktom v kóde,
 inak checkout spadne alebo bude účtovať inú sumu, než UI ukazuje.
 
-| env premenná | tier | `unit_amount` | `currency` | `recurring.interval` | min. množstvo |
-|---|---|---|---|---|---|
-| `STRIPE_PRICE_SOLO_SEAT` | solo | `7900` | `eur` | `month` | 1 |
-| `STRIPE_PRICE_TEAM_SEAT` | team | `7100` | `eur` | `month` | 3 |
-| `STRIPE_PRICE_OFFICE_SEAT` | office | `6300` | `eur` | `month` | 10 |
+> **Oprava 2026-09-21 (neskôr v ten deň).** Pôvodné znenie žiadalo overiť tri
+> price objekty, sekcia `CHECKOUT-ENV-02` nižšie potom päť. Oboje je málo.
+> Čítaním kódu je ich **deväť** — a tá pôvodná pätica menovala nesprávny
+> cockpit kľúč. Detail a dôkaz v `§ Oprava rozsahu VERIFY` na konci reportu.
 
-Zdroj čísel: `program-tier-pricing.ts` `PLAN_PRICES_EUR` (79/71/63) a
-`SEAT_TIER_CONFIG.minSeats`.
+| env premenná | vrstva | `unit_amount` | `currency` | `recurring.interval` | min. množstvo |
+|---|---|---|---|---|---|
+| `STRIPE_PRICE_SOLO_SEAT` | seat | `7900` | `eur` | `month` | 1 |
+| `STRIPE_PRICE_TEAM_SEAT` | seat | `7100` | `eur` | `month` | 3 |
+| `STRIPE_PRICE_OFFICE_SEAT` | seat | `6300` | `eur` | `month` | 10 |
+| `STRIPE_PRICE_OWNER_COCKPIT` | cockpit | `34900` | `eur` | `month` | 1 |
+| `STRIPE_PRICE_OWNER_COCKPIT_FOUNDER` | cockpit | `24900` | `eur` | `month` | 1 |
+| `STRIPE_PRICE_CREDITS_START` | top-up | `4900` | `eur` | — (one-time) | 1 |
+| `STRIPE_PRICE_CREDITS_RAST` | top-up | `12900` | `eur` | — (one-time) | 1 |
+| `STRIPE_PRICE_CREDITS_PRO` | top-up | `37900` | `eur` | — (one-time) | 1 |
+| `STRIPE_PRICE_CREDITS_MEGA` | top-up | `99900` | `eur` | — (one-time) | 1 |
+
+Zdroj čísel: `program-tier-pricing.ts` — `PLAN_PRICES_EUR` (79/71/63),
+`SEAT_TIER_CONFIG.minSeats`, `COCKPIT_PRODUCTS.owner` (`priceEur: 349`,
+`founderPriceEur: 249`), `TOPUP_PACKAGES` (49/129/379/999).
+
+**Nepatrí sem:** `STRIPE_PRICE_OWNER_COCKPIT_PRO` (`COCKPIT_PRODUCTS.ownerPro`
+má `enabled: false`, na self-serve checkout ceste nie je) a
+`STRIPE_PRICE_STARTER_PACK` (iný povrch — `/balik`, vlastná brána
+`isStarterPackCheckoutAvailable`). Ani jeden neblokuje `/upgrade`.
 
 Ďalšie tvrdé podmienky:
 
@@ -126,25 +143,27 @@ recurring interval · active/inactive · test/live.
 
 ### Príkaz na VERIFY (spúšťa founder — kľúč nedávať agentovi)
 
-Read-only `GET`, nič nevytvára. Beží s **live** secret key:
+Read-only `GET /v1/prices`, nič nevytvára. Beží s **live** secret key:
 
 ```bash
-curl -s https://api.stripe.com/v1/prices \
-  -u "sk_live_…:" \
-  -d active=true -d limit=100 -G \
-  -d "expand[]=data.product" \
-| python3 -c "
-import json,sys
-for p in json.load(sys.stdin)['data']:
-    r=p.get('recurring') or {}
-    prod=p.get('product') or {}
-    print(f\"{p['id']:32s} {str(p.get('unit_amount')):>7s} {p.get('currency')} \"
-          f\"{r.get('interval','ONE-TIME'):>8s} active={p.get('active')} \"
-          f\"live={p.get('livemode')} :: {prod.get('name') if isinstance(prod,dict) else prod}\")
-"
+export STRIPE_SECRET_KEY=sk_live_…
+bash scripts/ops/stripe-verify-prices.sh
 ```
 
-Hľadáme tri riadky s `7900 eur month`, `7100 eur month`, `6300 eur month`.
+Kľúč ide cez premennú prostredia, **nie ako argument** — argument by skončil
+v histórii shellu a v zozname procesov. Skript ho číta z `STRIPE_SECRET_KEY`
+a bez nej odmietne bežať.
+
+Vypíše `OK` / `MISSING` / `AMBIG` pre každý z deviatich očakávaných kľúčov,
+zhrnie `N/9 resolved` a riadky `OK` sú rovno v tvare `KĽÚČ=price_…`, pripravené
+na krok B. `AMBIG` = viac cien sedí na tú istú sumu aj interval; vtedy správnu
+vyberá founder, agent nehádže.
+
+Overené na mockovaných dátach pred odovzdaním: odmieta `livemode:false`, hlási
+duplicity ako `AMBIG` a varuje pri `has_more=true` — nad 100 aktívnych cien je
+výpis neúplný a treba stránkovať cez `starting_after`.
+
+Späť sa posiela **iba výstup**. Price ID nie sú tajomstvo, secret key áno.
 
 ### Ak existujú → env patch (krok B)
 
@@ -154,7 +173,15 @@ Hodnoty dopĺňa founder zo Stripe, agent ich nehádže ani negeneruje:
 STRIPE_PRICE_SOLO_SEAT=price_…
 STRIPE_PRICE_TEAM_SEAT=price_…
 STRIPE_PRICE_OFFICE_SEAT=price_…
+STRIPE_PRICE_OWNER_COCKPIT=price_…
+STRIPE_PRICE_OWNER_COCKPIT_FOUNDER=price_…
+STRIPE_PRICE_CREDITS_START=price_…
+STRIPE_PRICE_CREDITS_RAST=price_…
+STRIPE_PRICE_CREDITS_PRO=price_…
+STRIPE_PRICE_CREDITS_MEGA=price_…
 ```
+
+**Čiastočný patch je horší než žiadny.** Dôvody v `§ Oprava rozsahu VERIFY`.
 
 Target: `production` (pre preview smoke aj `preview`). Po zápise redeploy —
 `process.env` sa číta pri builde/runtime funkcie, existujúci deploy sa sám
@@ -176,13 +203,68 @@ pripočítava ho do zobrazenej sumy (`:80`). `buildSeatCheckoutSessionParams`
 `getOwnerCockpitStripePriceId()` vráti neprázdnu hodnotu — inak ho ticho
 vynechá, bez chyby a bez varovania.
 
-`STRIPE_PRICE_OWNER_COCKPIT` a `STRIPE_PRICE_OWNER_COCKPIT_PRO` sú v produkcii
-**MISSING**.
+`STRIPE_PRICE_OWNER_COCKPIT` a `STRIPE_PRICE_OWNER_COCKPIT_FOUNDER` sú
+v produkcii **MISSING**.
+
+> **Oprava.** Pôvodne tu stálo `STRIPE_PRICE_OWNER_COCKPIT_PRO`. To je iný
+> produkt (`COCKPIT_PRODUCTS.ownerPro`, `enabled: false`) a na checkout ceste
+> nie je. Dvojica, medzi ktorou `getOwnerCockpitStripePriceId()` reálne vyberá,
+> je `OWNER_COCKPIT` a `OWNER_COCKPIT_FOUNDER` — podľa
+> `isFounderKancelariaEligible()` (`program-tier-pricing.ts:302-312`).
 
 Dnes je to neviditeľné, lebo sa nikto nedostane ani k seat checkoutu. Ale vo
 chvíli, keď sa nastavia len tri seat premenné, zákazník zaškrtne Owner Cockpit,
-uvidí vyššiu sumu a zaplatí iba seaty. Preto pri kroku A overiť **päť** price
-objektov (seat ×3 + cockpit ×2), alebo pred krokom D skryť cockpit checkbox.
+uvidí vyššiu sumu a zaplatí iba seaty. Preto pri kroku A overiť **deväť** price
+objektov (seat ×3 + cockpit ×2 + top-up ×4), alebo pred krokom D skryť cockpit
+checkbox.
 
 Fail-closed oprava (`if (!cockpitPrice) throw`) je samostatný code fix, nie
 súčasť env patchu.
+
+## Oprava rozsahu VERIFY (2026-09-21, neskôr v ten deň)
+
+**Metóda:** read-only čítanie `origin/main` (`aea1dd2`) + Vercel
+`filter_project_envs` bez `decrypt`. Žiadny zápis, žiadny Stripe call.
+
+### Produkčný env prečítaný znova
+
+85 premenných, z toho päť `STRIPE_PRICE_*`: `STARTER`, `PRO`, `MARKET_VISION`,
+`PROTOCOL_AUTH`, `ONBOARDING`. Zmienka o seat, cockpit alebo top-up kľúčoch:
+**nula**. Oproti rannému čítaniu **bez zmeny** — `CHECKOUT-ENV-01` stále otvorený.
+
+### Prečo deväť a nie tri
+
+| # | Brána v kóde | Vyžaduje | Miesto |
+|---|---|---|---|
+| 1 | `areSeatCheckoutPricesConfigured()` | **všetky 3** seat ceny | `program-tier-pricing.ts:314` |
+| 2 | `areTopupCheckoutPricesConfigured()` | **všetky 4** top-up ceny | `:318` |
+| 3 | `getOwnerCockpitStripePriceId()` | `OWNER_COCKPIT` **aj** `_FOUNDER` | `:302-312` |
+
+Tri dôsledky, ktoré pôvodný plán nepokrýval:
+
+**a) `checkoutAvailable` je OR, nie AND.**
+`checkout-config/route.ts:22` → `seatCheckoutAvailable || topupCheckoutAvailable`.
+Banner teda zmizne už po nastavení troch seat cien. Lenže sekcia top-upov sa
+rendruje pod vlastným flagom (`upgrade/page.tsx:295`), takže **ticho zmizne** a
+kredity si nikto nekúpi. Vyzerá to opravené a nie je.
+
+**b) Cockpit sa predá zadarmo.**
+`credits-billing.ts:79` → `if (cockpitPrice) lineItems.push(...)`. Seat cena pri
+absencii hodí výnimku (`:70`), cockpit sa **ticho preskočí**. Zákazník zaškrtne
+Owner Cockpit, v UI vidí +349 €, zaplatí iba seaty.
+
+**c) Typ ceny musí sedieť, nielen suma.**
+Seat session je `mode: "subscription"` (`:114`), top-up `mode: "payment"`
+(`:149`). Cockpit ide do **tej istej** session ako seaty → musí byť
+`recurring.interval = month`. Jednorazová cockpit cena by celú seat session
+zhodila. Obrátene pre top-upy: recurring cena v `mode: "payment"` je chyba.
+
+### Dôsledok pre poradie krokov
+
+Krok B (env patch) má zmysel iba ako **jeden zápis všetkých deviatich**.
+Čiastočný patch neopraví `/upgrade`, iba vymení viditeľné zlyhanie
+(„Checkout momentálne nedostupný“ — pravdivé) za tiché
+(chýbajúce top-upy, nefakturovaný cockpit — nepravdivé a drahšie).
+
+Hranica sa nemení: agent diagnostikuje a pripravuje, price ID zapisuje founder,
+vytvorenie ceny je samostatné GO.

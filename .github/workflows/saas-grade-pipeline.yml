@@ -282,6 +282,15 @@ jobs:
       - name: Test
         run: npm run bus:test
 
+      # Envelopes are data, and the tests do not read them: a malformed `v: 1`
+      # message reaches main through a green Test step. `bus:validate` exits 1 on
+      # an error, so this is a gate rather than a report. Pre-v1 messages stay
+      # warnings by the standing decision not to rewrite them, and warnings do
+      # not fail — only errors do. Runs before the tooling install for the same
+      # bare-checkout reason as the suite above.
+      - name: Validate envelopes
+        run: npm run bus:validate
+
       # The suite runs under Node's type-stripping, which discards types rather
       # than checking them — #612 shipped three type errors straight through a
       # green Test step. #617 added the tsconfig and the `bus:typecheck` script
