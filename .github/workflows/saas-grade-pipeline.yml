@@ -276,32 +276,26 @@ jobs:
         with:
           node-version: 22
 
-      # No install step: the bus imports nothing but node builtins, so the suite
-      # runs on a bare checkout. If that ever stops being true this job fails on
-      # the import, which is the honest signal. The typecheck needs tooling, so
-      # it lives in its own job below rather than adding an install here.
+      # No install step for the suite: the bus imports nothing but node builtins,
+      # so it runs on a bare checkout. If that ever stops being true this job
+      # fails on the import, which is the honest signal.
       - name: Test
         run: npm run bus:test
 
-  bus-typecheck:
-    name: BUS (types)
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      # `npm run bus:test` runs on stripped types, so it cannot fail on a type
-      # error — that is how three of them reached main in #612 and #617. This is
-      # the job that would have caught them.
+      # The suite runs under Node's type-stripping, which discards types rather
+      # than checking them — #612 shipped three type errors straight through a
+      # green Test step. #617 added the tsconfig and the `bus:typecheck` script
+      # but nothing invoked them, so the guard was declarative. This runs it.
+      #
+      # Tooling is installed here, dev-only, mirroring the control-contract job:
+      # the bus has no runtime dependencies and a root `npm install` would tie
+      # this job to the whole monorepo's dependency tree for no gain.
       - name: Install typecheck tooling (dev only, nothing at runtime)
         run: npm install --no-save --no-package-lock --no-audit --no-fund typescript@5.9.3 @types/node@22
         working-directory: packages/bus-core
 
+      # Same tsconfig and same tsc version as the root `npm run bus:typecheck`,
+      # invoked from the package because that is where the tooling lives.
       - name: Typecheck
         run: npx tsc -p tsconfig.json --noEmit
         working-directory: packages/bus-core
