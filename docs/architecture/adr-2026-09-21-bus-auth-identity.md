@@ -163,6 +163,12 @@ Declared here so no later report can imply otherwise:
 - Messages already in the repository were written under the shared credential. Their
   `from` is **unverified** and stays that way; history is not rewritten.
 - `LIVE_TRADING` is untouched. This ADR changes who may write which box, nothing else.
+- The **git write authority** of a future always-on runner is a different layer and is
+  not covered here. `adr-2026-09-21-bus-runner-v2.md` carries it as an open question
+  (§10.3) and as a risk (§11): a fine-grained PAT cannot be scoped to one branch, so
+  `contents: write` reaches the whole repository. Binding an HTTP caller to an agent
+  does not constrain what the runner's PAT can push. Both layers need identity; this
+  ADR closes only the transport one.
 
 ## 6. Definition of Done
 
