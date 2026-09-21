@@ -150,7 +150,7 @@ test("8. sol-gpt cannot ack a message into outbox — the #601 gap", async () =>
   const { id } = await seedInbox(handle, SOL_SECRET, "sol-gpt", "claude-code");
   const response = await handle(ack("inbox", id, SOL_SECRET, { status: "done", to_box: "outbox" }));
   assert.equal(response?.status, 403);
-  assert.equal(((await response!.json()) as { error: string }).error, "ack_target_not_writable");
+  assert.equal((await response!.json()).error, "ack_target_not_writable");
 });
 
 test("9. claude-code acking inbox -> outbox still works — the legitimate path", async () => {
