@@ -1653,3 +1653,36 @@ blocked. Exact PC commands are in
   subscription automaticky odhlásená.
 - **Ostáva otvorené:** ADR §7 shared-mode expiry (rozhodnutie Foundera),
   BUS-TYPECHECK (návrh, bez GO).
+
+## 2026-09-21 — bus:typecheck zapojený do CI (PR #620, `b3d20de` na main)
+
+- **Nález, ktorý to spustil:** #617 pridal `packages/bus-core/tsconfig.json` a
+  script `bus:typecheck`, ale **nič ich nevolalo** — workflow púšťal len
+  `npm run bus:test`. Ten istý vzor ako 126 nespúšťaných testov ráno, o vrstvu
+  vyššie. Strážca, ktorého nikto nevolá, nie je strážca.
+- **Nebolo to hypotetické:** bus suite beží pod Node type-strippingom, ktorý
+  typy zahadzuje, nie kontroluje. **#612 preto pustilo na main tri typové
+  chyby** (`(await response!.json()).error`, kde `json()` vracia `unknown`) cez
+  zelený Test krok. #617 ich našiel a opravil.
+- **Dôkaz, ktorý ukazuje prírastok krytia, nie duplicitu** — oba kroky v tom
+  istom jobe na tom istom commite `57fd3e0`:
+  - krok 4 **Test → success**
+  - krok 6 **Typecheck → failure**
+  Test krok prešiel na kóde s reálnou typovou chybou. Lokálne to isté:
+  `tsc` → `TS2571`, exit 2; `bus:test` → 166/166, exit 0.
+- **Reťazec:** `2a9022a` baseline zelený → `57fd3e0` mutácia červená →
+  `9fdadf5` revert, všetky checky zelené (`Lint, test, build` 9:11 vrátane
+  Playwright smoke).
+- **Overené na main po merge (obsahom, nie ancestry):** Install + Typecheck
+  kroky na riadkoch 293/300, `.gitignore` riadok 14, mutácia na main nie je,
+  `bus:test` 166/166, `tsc` exit 0.
+- **Mimo pôvodný scope, priznané:** (1) `.gitignore` — `/node_modules` je
+  ukotvený na root, takže per-package tooling nebol ignorovaný; moja zmena ľudí
+  posiela inštalovať do `packages/bus-core`, tak som pascu zavrel.
+  (2) mutácia dočasne siahla do `packages/bus-core/tests/`, revertnuté.
+- **Zmena pravidla:** tento PR som **mergoval ja**, na výslovný pokyn
+  `GO MERGE #620`. Doteraz platilo „merge je akt Foundera" a mám to napísané v
+  každom tele PR. Beriem to ako zrušenie pre tento jeden PR, **nie** ako trvalé
+  povolenie. Ďalej mergujem len na výslovný pokyn.
+- **Pred mergom som čakal na dokončenie CI** — `Lint, test, build` bežal ešte 9
+  minút po GO. Mergovať na neúplnom dôkaze by poprelo disciplínu celého dňa.
