@@ -1,5 +1,41 @@
 # Critical Decisions Log
 
+## [2026-09-21] — BUS: id date bug + authority boundary as an executable invariant
+
+- **Bug (not a fixture):** `scripts/bus/cli.ts` built the message id from `new Date()`
+  while the envelope kept the draft's `created_at` → a message stored as
+  `MSG-20260921-*` whose body said 2026-09-18. In a git-backed store the filename is
+  the primary index, so id ≠ content is an integrity defect. `http.ts` had the same
+  divergence. Both now use `idDateFor(created_at, fallback)` — one rule, one place.
+- **The failing test was right.** It asserted `MSG-20260918-*` for a draft declaring
+  that date; it was not touched and now passes. It had been red since 2026-09-18
+  because it only fails on days other than the one it was written on.
+- **Authority boundary is now a test, not a runbook sentence:**
+  *the entire effect of any bus message is one file under its box directory.*
+  Stronger than a blacklist of forbidden actions, which can always miss one.
+  Response shape pinned to `{ok, box, id, path, digest}` so it cannot grow a field
+  that reads as a grant.
+- **Learned from the test, not from design:** `outbox` is write-protected over HTTP.
+  A remote caller writing there could forge a message as if it came from this side.
+- **107/107 bus tests.** Commits `cb1e7d8`, `47b243d`.
+- **NOT deployed.** Canonical GitHub PR, production endpoint, ChatGPT Action and the
+  synthetic handshake are all still open. `BUS-DEPLOY-L1` = VERIFIED LOCALLY, not DONE.
+- **Blocker:** Claude GitHub App is not installed on `onlinovosk-bit/RealitkaAI`;
+  push returns 403. Both commits exist only in an ephemeral container + as patches.
+
+## [2026-09-21] — Bus was designed twice: P1 violation caught by reading the repo
+
+- An architecture round proposed building an inter-agent bus. It already existed:
+  `adr-2026-09-18-inter-agent-bus-transport-v1.md`, status IMPLEMENTED / NOT DEPLOYED,
+  with the identical diagnosis and diagram, waiting three days on a founder GO.
+- **Cost finding for the day:** 2757 lines produced in `uptm-runner`, of which 1488 were
+  documents and 507 production code. Every design change that mattered came from
+  `git clone`, `grep` and CI logs — none from relaying text between two models.
+  Two LLMs agreeing is one model run twice.
+- **Adopted:** standing authorization for docs/tests/new-file PRs that leave
+  `rules.json` byte-identical; GO reserved for CP semantics, LIVE, credentials,
+  foreign repos.
+
 ## [2026-09-18] — /upgrade checkout: fix consumer, not okResponse
 
 - **Bug:** `okResponse` spreads payload (`{ ok, result }`); `/upgrade` čítal `data.data?.result?.url` → Stripe redirect nikdy.
@@ -1409,3 +1445,211 @@ blocked. Exact PC commands are in
   2. **`origin/main` sa medzi auditom a GO posunul** `9c6fc4dd → ed45d518` (#369, #586). Tým prestal platiť `proposed new HEAD` z auditu.
 - **Pôvodný cleanup audit je EXPIRED, nie pozastavený.** Keď sa vetva stane relevantnou, urobí sa **nový** read-only audit od vtedajšieho `origin/main`; pokračovanie zo starého auditu je porušenie protokolu (viď P1 v0.2 bod g).
 - **Nemeniť GitHub oprávnenia kvôli tomuto** — hranica funguje správne, jednorazovú operáciu vykoná človek.
+## [2026-09-21] — Zmeraná hranica autonómie BUS-u (notifikácia ≠ autonómia)
+
+- **Kontext:** #589 (transport), #590 (handshake harness), #593 (consumer v1), #594
+  (YAML lost-text warning) sú na `main`. Živý dogfood prebehol proti `bus/main` cez
+  cloudflared tunel a GitHub backend. Otázka znela, či tým už founder prestal byť
+  medzičlánkom medzi SOL a Claudom.
+- **Odpoveď: nie, a vieme presne prečo.** Meranie, nie odhad:
+
+  | Smer | Stav |
+  |---|---|
+  | `sol-gpt → BUS` | ✅ reálne |
+  | `BUS → claude-code` | ✅ PASS — správa je dostupná v BUS; spracovanie nastane iba počas spusteného consumer behu |
+  | `claude-code → REAL Claude Code` | ✅ reálne (session `108a442a`, reply `BUS ALIVE`) |
+  | `Claude Code → BUS` | ✅ reálne |
+  | `BUS → sol-gpt` | ✅ PASS **len po explicitnom vyvolaní ChatGPT** — nie autonómny push |
+  | `claude-code` automaticky reaguje na nové tasky | ❌ nie |
+  | Founder-free celý loop | ❌ nie |
+
+- **Kde presne je hranica:** obe strany vedia na BUS písať aj z neho čítať, ale **ani
+  jedna sa nezobudí sama**. ChatGPT nemá bežiaci proces — Custom GPT Action sa zavolá
+  len keď founder otvorí ten chat. Consumer v1 je jednorazový beh, bez poll loopu
+  (zámerne, viď #593 „Známe medzery" bod 1).
+- **Čo sa reálne zmenilo:** founder prestal **prenášať obsah**. Správy sú v gite,
+  štruktúrované, s digestom namiesto 3 000 slov. Z poštára sa stal **spúšťač**. To je
+  skutočný posun, ale nie autonómia.
+- **Rozhodnutie: hodinový monitor sa NEZAPÍNA.** Scheduled check, ktorý upozorní
+  foundera na správu pre `sol-gpt`, je operatívny workaround, nie architektúra —
+  vyrobil by metriku „autonómie", ktorá je v skutočnosti `cron → ping founder →
+  founder otvorí ChatGPT`. Monitor strážiaci správy pre `claude-code` by mal zmysel,
+  ale patrí do kroku 2, nie do ad-hoc budíka.
+- **Poradie ďalších krokov (žiadny nezačať bez samostatného GO):**
+  1. ~~Stabilizovať a mergnúť Consumer V1~~ — hotové, #593 merged 2026-09-18 20:35:43Z (`ab67567`).
+  2. Persistentný Claude BUS runner / poll loop. **GO REQUIRED.**
+  3. Čo má byť „SOL agent" mimo interaktívneho ChatGPT. Presun strategickej vrstvy na
+     API s vlastným cyklom odstráni človeka z tej strany slučky úplne — **governance
+     rozhodnutie, nie technické.** Neotvárať spolu s krokom 2.
+- **Pravidlo, ktoré z toho plynie:** „live dogfood PASS" neznamená autonómnu slučku.
+  Kto číta tento záznam neskôr: PASS riadky vyššie platia s uvedenými podmienkami,
+  nie bez nich.
+
+## [2026-09-21] DEC-20260921-001 — Kanonický pricing model = SEAT
+
+- **Rozhodnutie:** Core Revolis je **seat-based subscription** (79 / 71 / 63 €
+  na makléra za mesiac). Programy 49 / 99 / 199 / 449 € (Market Vision, Protocol
+  Authority a spol.) sú **nadstavby/moduly**, nie alternatívny základný checkout.
+- **Prečo teraz:** prihlásený prod smoke `/upgrade` (2026-09-21) = FAIL. Root
+  cause: `STRIPE_PRICE_{SOLO,TEAM,OFFICE}_SEAT` v produkcii neexistujú, zatiaľ
+  čo prítomné sú `STARTER`/`PRO`/`MARKET_VISION`/`PROTOCOL_AUTH` — produkčný
+  Stripe stojí na program modeli, kód na seat modeli. Bez rozhodnutia o modeli
+  by „oprava env" potichu zabetónovala ten nesprávny.
+- **Poradie vykonania:** A) Stripe VERIFY read-only → B) env patch s reálnymi ID
+  → C) ak ceny neexistujú, STOP a samostatné GO na ich vytvorenie → D) deploy +
+  prihlásený smoke → E) `/porovnanie-programov` cleanup ako **samostatná** úloha.
+- **Veto:** žiadny agent nevytvára Stripe Products/Prices. Vytvorenie ceny =
+  vytvorenie obchodného kontraktu, nie oprava konfigurácie. Hodnoty price ID
+  pochádzajú zo Stripe live mode a zapisuje ich founder.
+- **Hranica (potvrdená):** AI diagnostikuje, pripravuje a overuje. Finálny
+  obchodný kontrakt a production payment configuration ostáva pod Founder GO.
+- **Artefakty:** `docs/reports/2026-09-21-upgrade-checkout-config-root-cause.md`,
+  `memory/open-tasks.md` (`CHECKOUT-ENV-01`, `CHECKOUT-ENV-02`,
+  `FUNNEL-PRICING-01`), PR #606.
+- **Odvodený nález:** `CHECKOUT-ENV-02` — Owner Cockpit checkbox pripočítava
+  cenu v UI, ale line item sa ticho vynechá, ak cockpit price ID chýba (v
+  produkcii chýba). Overiť päť price objektov, nie tri.
+
+## [2026-09-21] DEC-20260921-002 — BUS Runner V2, KROK 2D: always-on runner s tvrdým stropom
+
+- **Rozhodnutie:** Runner prechádza z jednorazového behu na dlhobežiaci poll
+  loop (60 s) nad GitHub-backed BUS. Tri founder parametre: denný strop
+  **100 automatických vykonaní / 24 h rolling window**, blocker deduplikácia
+  **bez zatvárania tasku**, samostatný always-on host s vlastnou strojovou
+  identitou (PAT nie je osobný credential foundera).
+- **Hranica sa nemení.** 2D nepridáva ani jednu capability. Žiadny write,
+  žiadny external side effect, žiadna deployment ani merge automation, žiadny
+  verejný endpoint, žiadna závislosť na Cloudflare. Policy B sa nerozširuje.
+- **Strop je tvrdý:** po 100 vykonaniach runner odmieta s `daily_cap_reached`
+  a **nepokračuje** v automatickom vykonávaní. Task ostáva OPEN.
+- **Blocker nikdy nezatvára task.** Zatvára ho iba founder. Zmena oproti
+  doterajšiemu stavu: `handledTaskIds()` už nezapočítava blockery, takže raz
+  odmietnutý task dostane druhú šancu, keď príčina pominie. Proti dvojitému
+  vykonaniu naďalej stojí result envelope + durable execution state z 2C.
+- **Otvorené pre foundera:** task zaparkovaný stropom ostáva `NEEDS_FOUNDER`
+  aj po uvoľnení 24 h okna — implementované doslovne podľa zadania.
+  Alternatíva (odmietnutie len na daný cyklus) je pripravená, ak ju zvolí.
+- **Dôkaz:** `npm run bus:test` 148/148; `npm run bus:validate` 43 súborov,
+  0 errors.
+- **Artefakty:** `packages/bus-core/src/execution-cap.ts`,
+  `packages/bus-core/src/consumer.ts`, `scripts/bus/consume.ts`, PR #617.
+  Architektonický referenčný dokument:
+  `docs/architecture/adr-2026-09-21-bus-runner-v2.md`.
+- **Nezačaté:** 2E (read-only analytické capabilities pod Policy B) — vlastná
+  GO brána. ADR §10 otvorené otázky (identita hosta/tokenu, alerting na
+  vyčerpaný retry budget) tiež neriešené.
+## 2026-09-21 — BUS-AUTH-IDENTITY: špecifikácia identity volajúceho v transporte (PR #612)
+
+- **Rozhodnutie:** BUS dostane per-agent credentials. `token: string` →
+  `credentials: BusCredential[] { id, secret, agent }`. Bearer sa rozlúšti na
+  identitu, identita určuje zapisovateľné boxy. **Zatiaľ len ADR, žiadny kód.**
+- **Meraný problém (nie predpokladaný), čítané z kódu na `9d933ea`:**
+  `http.ts:51` porovnáva iba bearer; `http.ts:26` `DEFAULT_WRITABLE` je globálne,
+  nie per caller; **`envelope.from` sa v `http.ts` nekontroluje vôbec** —
+  je self-declared. `scripts/bus/consume.ts` používa rovnaký endpoint a rovnaký
+  token ako ChatGPT.
+- **Dôsledok, ktorý nie je teoretický:** `consume.ts:274` stavia duplicate guard
+  z `list("outbox", { from: CONSUMER_AGENT })`. Podvrhnuté `from: claude-code`
+  presvedčí consumera, že úloha už bola zodpovedaná → **zápis sa stáva odoprením
+  vykonania.** Nie únik dát, ale tiché nevykonanie reálnej úlohy.
+- **Jadro ADR:** `envelope.from === identity.agent`, inak 403. Bez tejto väzby
+  by per-box pravidlá boli divadlo — kto smie písať do `inbox`, otrávi guard.
+- **Degradovaný režim je viditeľný, nie tichý:** zdieľaný token ďalej funguje,
+  ale `/health` hlási `auth_mode`, `from_binding: false`,
+  `outbox_provenance: "unverified"`. Nasadenie sa dá *opýtať*, či hranica platí.
+  (GOVERNANCE C3: ticho nie je povolenie.)
+- **Čo ADR výslovne NERIEŠI:** ukradnutý secret stále hovorí ako svoj agent;
+  historické `from` ostávajú neoverené (história sa neprepisuje);
+  `LIVE_TRADING` a safety envelope sa nedotýka; **git PAT runnera je iná
+  vrstva** (`adr-2026-09-21-bus-runner-v2.md` §10.3/§11 — fine-grained PAT sa
+  nedá obmedziť na jednu vetvu).
+- **Otvorená otázka pre Foundera (ADR §7):** má `shared` režim expirovať?
+  Aplikácia P7 („capability, ktorá neexpiruje, je default") na transport.
+  **Nerozhodnuté.**
+- **Brána:** implementácia = samostatné GO. Merge je akt Foundera.
+- **Artefakty:** `docs/architecture/adr-2026-09-21-bus-auth-identity.md`, PR #612.
+
+## 2026-09-21 — BUS-AUTH-IDENTITY implementovaný (PR #612, commit f0a3436)
+
+- **Stav:** DECLARATIVE → **ENFORCED** na transporte. Nie preto, že to hovorí
+  ADR, ale preto, že tri mutácie zhasnú presne ten test, ktorý ich pomenúva.
+- **Mechanizmus:** `BusCredential { id, secret, agent, writableBoxes?,
+  execution? }`. POST vyžaduje `envelope.from === identity.agent`, inak 403.
+  `outbox` píše len exekučná identita — POST aj ack. Nejednoznačná konfigurácia
+  (dva rovnaké secrety, prázdny secret, oba režimy naraz, žiadny credential)
+  odmietne postaviť handler.
+- **Zatvorená #601 medzera:** `ack(inbox → outbox)` sa nedala zavrieť globálne,
+  lebo consumer ju legitímne používa. Rozlíšiteľná je až identitou.
+- **Dôkaz, nie zelené testy:** 126/126 (predtým 108). Mutácie: vypnutá `from`
+  väzba → padnú testy 7 a 13; vypnutá ack-target brána → padne test 8; ack
+  source spojený späť s POST setom → padne test 7b.
+- **Spresnenia oproti schválenej špecifikácii (ADR §6a, nie potichu):**
+  (1) `from` väzba platí na vytvorenie správy, nie na ack — `consume.ts:396`
+  acknowleduje task, ktorý napísal `sol-gpt`; (2) ack source ≠ POST set, inak by
+  právo písať do `outbox` znamenalo aj právo prepisovať to, čo tam už je;
+  (3) revokácia = odobratie zo zoznamu, účinná pri reštarte, živý revocation
+  list neexistuje; (4) `shared` režim ostáva presne ako bol — spevnený DEGRADED
+  by vyzeral ako hranica bez toho, aby ňou bol.
+- **Nález mimo scope (BLOKUJÚCI pre ďalší krok):** `packages/bus-core` ani
+  `scripts/bus` nebeží v žiadnom CI workflowe. `saas-grade-pipeline.yml:265`
+  púšťa `packages/control-contract`, bus nikde. **126 testov dnes nestráži nič** —
+  vrátane authority-boundary testu z #601. Mechanizmus, ktorý nikto nespúšťa,
+  nie je enforcement.
+- **Nespustené, nepredstierané:** typecheck. TypeScript v tomto checkoute nie je
+  nainštalovaný a bus nemá typecheck script ani CI krok. Node type-stripping
+  znamená, že typová chyba by nepadla ani v testoch.
+- **Otvorené (Founder):** ADR §7 — má `shared` režim expirovať? Neimplementované,
+  lebo nerozhodnuté. Pridať expiráciu bez zadania = zhasnúť bežiaci tunel k
+  dátumu, ktorý nikto nezvolil.
+
+## 2026-09-21 — BUS-CI-WIRE: bus testy sú v CI a je to dokázané, nie tvrdené
+
+- **Rozhodnutie:** nový job `BUS (transport authority boundary)` v
+  `saas-grade-pipeline.yml`, vedľa `control-contract`. Beží `npm run bus:test`.
+  Bez `npm install` — bus importuje výhradne node builtins (overené grepom cez
+  `packages/bus-core` a `scripts/bus`: žiadny non-relatívny import okrem `node:`).
+- **Prečo:** 126 testov, ktoré CI nikdy nespúšťa, nie je enforcement. Platilo to
+  aj pre authority-boundary test z #601 — bol v repe od 3 dní a nestrážil nič.
+- **Dôkaz (nie „zelené testy"), štyri kroky:**
+  1. `c2ff3b5` — BUS job **zelený**: `152 tests, 152 pass, 0 fail`, 1.93 s.
+     Log overený, nie no-op. 152 a nie 126, lebo CI checkoutuje merge ref, teda
+     aj 26 testov z KROK 2C.
+  2. `f9e63b6` — dočasná mutácia `from` brány → BUS job **červený**:
+     `152 tests, 150 pass, 2 fail`, exit 1. Počet aj pozícia sedia s lokálnou
+     reprodukciou (testy 7 a 13).
+  3. `33835ba` — mutácia odstránená; `packages/bus-core` a `scripts/bus` sú
+     byte-identické s `c2ff3b5` (overené `git diff --stat`, prázdny výstup).
+  4. Finálny HEAD musí byť zelený.
+- **Nález pri príprave:** main sa medzitým posunul o 5 commitov a KROK 2C zmenil
+  `consume.ts` (+377 riadkov). Textovo sa merguje čisto, ale to nič nehovorí o
+  sémantike. Overené v izolovanom worktree: **152/152 na zlúčenom stave** —
+  identity brány sú kompatibilné s lease/crash recovery.
+- **Dôsledok pre PR #612:** CI, ktoré na `75d9835` zosvietilo zeleno, bežalo
+  proti merge refu s novým main. `mergeable_state` bol `behind`, nie
+  `conflicting`. Main som do vetvy **nemergoval** — pravidlo Foundera zakazuje
+  merge main do feature branch len kvôli čerstvému CI.
+- **Nezmenené (scope BUS-CI-WIRE):** auth model, `outbox` boundary, ACK
+  semantics, shared-mode expiry, `packages/bus-core`, `scripts/bus`.
+- **Typecheck ostáva UNKNOWN.** TypeScript v checkoute nie je. `control-contract`
+  si ho v CI doinštaluje ad hoc (`npm install --no-save typescript@5.9.3`) —
+  rovnaký vzor by sa dal použiť pre bus, ale to je nové rozhodnutie, nie CI
+  wiring. Návrh, nie vykonané.
+
+## 2026-09-21 — PR #612 zmergovaný Founderom (`45989e8` na main)
+
+- **Overené obsahom, nie ancestry** (squash merge robí `git merge-base` nespoľahlivým,
+  rovnaká pasca ako pri #601):
+  - `from_not_authorized` / `ackSourceBoxes` / `BusCredential` — 8 výskytov v
+    `packages/bus-core/src/http.ts` na `origin/main`.
+  - CI job `BUS (transport authority boundary)` + `npm run bus:test` na riadkoch
+    268 a 283 v `saas-grade-pipeline.yml` na `origin/main`.
+  - Dočasná mutácia (`false && identity.agent`) na main **nie je** — explicitne
+    overené grepom, nie predpokladom.
+  - `npm run bus:test` na zmergovanom main: **152/152**.
+- **Stav BUS transportu:** identity hranica je ENFORCED a od teraz ju stráži CI
+  na každom PR. Prvýkrát platí, že rozbitie `from` väzby zosvieti červenú bez
+  toho, aby to niekto musel ručne spustiť.
+- **Check-in trigger** `trig_0168hPjxvcQANHq1BD7Q4Bwb` zrušený — PR je uzavretý,
+  subscription automaticky odhlásená.
+- **Ostáva otvorené:** ADR §7 shared-mode expiry (rozhodnutie Foundera),
+  BUS-TYPECHECK (návrh, bez GO).

@@ -18,6 +18,7 @@
     "bus:handshake": "node scripts/bus/handshake.ts",
     "bus:consume": "node scripts/bus/consume.ts",
     "bus:test": "node --test packages/bus-core/tests/*.test.ts scripts/bus/__tests__/*.test.ts",
+    "bus:typecheck": "tsc -p packages/bus-core/tsconfig.json --noEmit",
     "prospect:enrich": "npx tsx scripts/prospecting/enrich.ts",
     "brain:ingest": "tsx brain/src/ingest.ts",
     "brain:check": "tsx brain/src/ingest.ts --check",

@@ -263,3 +263,21 @@ jobs:
 
       - name: Test
         run: node --test packages/control-contract/tests/*.test.ts
+
+  bus:
+    name: BUS (transport authority boundary)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # No install step: the bus imports nothing but node builtins, so the suite
+      # runs on a bare checkout. If that ever stops being true this job fails on
+      # the import, which is the honest signal.
+      - name: Test
+        run: npm run bus:test
