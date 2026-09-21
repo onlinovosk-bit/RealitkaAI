@@ -51,6 +51,11 @@ export class GitHubBusStore implements BusStore {
     return `${this.apiBase}/repos/${this.options.owner}/${this.options.repo}/contents/${repoPath}${search}`;
   }
 
+  /** Git Data API — trees, commits and refs, as opposed to the contents API. */
+  private gitUrl(suffix: string): string {
+    return `${this.apiBase}/repos/${this.options.owner}/${this.options.repo}/git/${suffix}`;
+  }
+
   private headers(): Record<string, string> {
     return {
       Authorization: `Bearer ${this.options.token}`,
@@ -139,35 +144,119 @@ export class GitHubBusStore implements BusStore {
     return { box, id: envelope.id, path: repoPath };
   }
 
+  /**
+   * Move a message as a single commit.
+   *
+   * The contents API has no rename: a PUT followed by a DELETE is two commits
+   * with a window between them, and a crash in that window leaves the message
+   * in both boxes. The Git Data API can express both changes in one tree, so
+   * the move either happens or it does not.
+   *
+   * The source blob is reused by sha — the content is already in the object
+   * store, so nothing is uploaded and the bytes cannot drift in transit.
+   */
   async move(from: BusBox, id: string, to: BusBox): Promise<BusRef> {
     const sourcePath = this.filePath(from, id);
-    const file = await this.getFile(sourcePath);
-    if (!file) throw new BusStoreError(`Message ${id} not found in ${from}`, "not_found");
     const targetPath = this.filePath(to, id);
 
-    const put = await this.request(this.url(targetPath), {
-      method: "PUT",
-      body: JSON.stringify({
-        message: `bus(move): ${id} ${from} -> ${to}`,
-        content: Buffer.from(file.raw, "utf8").toString("base64"),
-        branch: this.options.branch,
-        committer: this.options.committer,
-      }),
-    });
-    if (!put.ok) throw new BusStoreError(`GitHub move (write) failed (${put.status})`, "invalid");
+    // Same box: the tree would carry one path twice, once with a blob and once
+    // with `sha: null`, and the outcome would depend on entry order. No caller
+    // does this today; make it a no-op rather than leave the trap armed.
+    if (sourcePath === targetPath) {
+      const existing = await this.getFile(sourcePath);
+      if (!existing) throw new BusStoreError(`Message ${id} not found in ${from}`, "not_found");
+      return { box: to, id, path: targetPath };
+    }
 
-    const del = await this.request(this.url(sourcePath), {
-      method: "DELETE",
-      body: JSON.stringify({
-        message: `bus(move): remove ${id} from ${from}`,
-        sha: file.sha,
-        branch: this.options.branch,
-        committer: this.options.committer,
-      }),
-    });
-    if (!del.ok) throw new BusStoreError(`GitHub move (delete) failed (${del.status})`, "invalid");
+    // A concurrent writer can move the branch between reading the head and
+    // updating the ref. That is a real collision, not a transport error, so it
+    // is retried exactly once from a fresh read.
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const conflict = await this.attemptMove({ id, from, to, sourcePath, targetPath });
+      if (!conflict) return { box: to, id, path: targetPath };
+      if (attempt === 1) {
+        throw new BusStoreError(`GitHub move failed: branch ${this.options.branch} moved during the move`, "conflict");
+      }
+    }
+    /* c8 ignore next */
+    throw new BusStoreError("unreachable", "invalid");
+  }
 
-    return { box: to, id, path: targetPath };
+  /** Returns true when the ref moved under us and the move should be retried. */
+  private async attemptMove(move: {
+    id: string;
+    from: BusBox;
+    to: BusBox;
+    sourcePath: string;
+    targetPath: string;
+  }): Promise<boolean> {
+    const source = await this.getFile(move.sourcePath);
+    if (!source) throw new BusStoreError(`Message ${move.id} not found in ${move.from}`, "not_found");
+
+    const head = await this.json<{ object: { sha: string } }>(
+      this.gitUrl(`ref/heads/${this.options.branch}`),
+      undefined,
+      "read branch head",
+    );
+    const commit = await this.json<{ tree: { sha: string } }>(
+      this.gitUrl(`commits/${head.object.sha}`),
+      undefined,
+      "read head commit",
+    );
+
+    const tree = await this.json<{ sha: string }>(
+      this.gitUrl("trees"),
+      {
+        method: "POST",
+        body: JSON.stringify({
+          base_tree: commit.tree.sha,
+          tree: [
+            // The existing blob, put at the new path...
+            { path: move.targetPath, mode: "100644", type: "blob", sha: source.sha },
+            // ...and the old path removed. `sha: null` is how a tree deletes.
+            { path: move.sourcePath, mode: "100644", type: "blob", sha: null },
+          ],
+        }),
+      },
+      "build tree",
+    );
+
+    const created = await this.json<{ sha: string }>(
+      this.gitUrl("commits"),
+      {
+        method: "POST",
+        body: JSON.stringify({
+          message: `bus(move): ${move.id} ${move.from} -> ${move.to}`,
+          tree: tree.sha,
+          parents: [head.object.sha],
+          author: this.options.committer,
+          committer: this.options.committer,
+        }),
+      },
+      "create commit",
+    );
+
+    // No `force`: a non-fast-forward must fail loudly rather than overwrite
+    // someone else's commit.
+    const updated = await this.request(this.gitUrl(`refs/heads/${this.options.branch}`), {
+      method: "PATCH",
+      body: JSON.stringify({ sha: created.sha }),
+    });
+    if (updated.ok) return false;
+    if (updated.status === 422) return true; // ref moved — caller retries once
+    throw new BusStoreError(`GitHub move failed to update ref (${updated.status})`, "invalid");
+  }
+
+  /** Request + JSON parse with a uniform, stage-named error. */
+  private async json<T>(url: string, init: RequestInit | undefined, stage: string): Promise<T> {
+    const response = await this.request(url, init);
+    if (!response.ok) {
+      throw new BusStoreError(
+        `GitHub move failed to ${stage} (${response.status})`,
+        response.status === 409 ? "conflict" : "invalid",
+      );
+    }
+    return (await response.json()) as T;
   }
 
   async nextSequence(box: BusBox, type: BusMessageType, date: Date): Promise<number> {
