@@ -78,7 +78,7 @@ for (const demand of AUTHORITY_DEMANDS) {
     );
 
     assert.equal(response?.status, 201, "the message is accepted as a message");
-    const payload = await response!.json();
+    const payload = (await response!.json()) as Record<string, unknown>;
 
     // The response contract may not quietly grow a field that reads as a grant.
     assert.deepEqual(
@@ -168,7 +168,7 @@ test("an ack cannot reach into a box the caller may not write", async () => {
     }),
   );
   assert.equal(created?.status, 201);
-  const { id } = await created!.json();
+  const { id } = (await created!.json()) as { id: string };
   const before = await footprint(root);
 
   const response = await handle(

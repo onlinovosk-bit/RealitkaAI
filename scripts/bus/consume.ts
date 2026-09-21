@@ -57,6 +57,7 @@ import {
   type BusEnvelope,
   type BusValidationError,
   type ClaudeRunReport,
+  type ConsumerRefusalCode,
   type ExecutionRecord,
 } from "../../packages/bus-core/src/index.ts";
 
@@ -357,7 +358,7 @@ export function realClaudeExecutor(options: ClaudeExecutorOptions = {}): ClaudeE
 
 export type ConsumeOutcome =
   | { taskId: string; action: "executed"; resultId: string; reply: string; run: ClaudeRunReport }
-  | { taskId: string; action: "blocked"; code: string; reason: string; blockerId?: string }
+  | { taskId: string; action: "blocked"; code: ConsumerRefusalCode; reason: string; blockerId?: string }
   | { taskId: string; action: "skipped"; code: string; reason: string }
   | { taskId: string; action: "failed"; reason: string };
 
@@ -628,7 +629,7 @@ async function needsFounder(
   task: BusEnvelope,
   ctx: ProcessContext,
   owner: string,
-  code: string,
+  code: ConsumerRefusalCode,
   reason: string,
 ): Promise<ConsumeOutcome> {
   const existing = await ctx.ledger.read(task.id);
@@ -710,14 +711,15 @@ async function persistResult(
 
     // Both acks tolerate an already-moved message: on a resumed run the first
     // one may have landed before the crash.
-    if (!current.result_id) throw new Error("result was posted but its id was not recorded");
-    await ackIfPresent(ctx, current.result_id, { status: "done", toBox: "outbox" });
+    const resultId = current.result_id;
+    if (!resultId) throw new Error("result was posted but its id was not recorded");
+    await ackIfPresent(ctx, resultId, { status: "done", toBox: "outbox" });
     const acked = await ackIfPresent(ctx, task.id, { status: "done", toBox: ctx.ackBox });
     if (acked) ctx.log(`ACK   ${task.id}: open -> ${acked.status} (${acked.from_box} -> ${acked.to_box})`);
 
     current = { ...current, state: "DONE", updated_at: ctx.now().toISOString() };
     await ctx.ledger.write(current);
-    return { taskId: task.id, action: "executed", resultId: current.result_id, reply: report.reply.trim(), run: report };
+    return { taskId: task.id, action: "executed", resultId, reply: report.reply.trim(), run: report };
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
     if (persistenceExhausted(current)) {
