@@ -72,11 +72,26 @@ export function leaseUntil(now: Date, ttlMs: number = LEASE_TTL_MS): string {
   return new Date(now.getTime() + ttlMs).toISOString();
 }
 
+/**
+ * Why a task is parked for the founder. Both members are also
+ * `ConsumerRefusalCode`s, because a parked task is reported on the bus as a
+ * blocker — keeping this union closed is what makes that assignment checkable
+ * instead of a `string` that happens to line up.
+ */
+export type ExecutionFounderCode = "unprovable_first_run" | "execution_unknown";
+
+/** Why a task is passed over. Logged and returned, never put in an envelope. */
+export type ExecutionSkipCode =
+  | "already_done"
+  | "needs_founder"
+  | "failed_persistent"
+  | "lease_held";
+
 export type ExecutionPlan =
   | { action: "execute"; reason: string }
   | { action: "resume_persistence"; reason: string }
-  | { action: "skip"; code: string; reason: string }
-  | { action: "needs_founder"; code: string; reason: string };
+  | { action: "skip"; code: ExecutionSkipCode; reason: string }
+  | { action: "needs_founder"; code: ExecutionFounderCode; reason: string };
 
 export interface PlanOptions {
   now: Date;

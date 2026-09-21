@@ -9,7 +9,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer, type Server } from "node:http";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import {
@@ -20,7 +20,15 @@ import {
   type ClaudeRunReport,
 } from "../../../packages/bus-core/src/index.ts";
 import { nodeAdapter } from "../serve.ts";
-import { ClaudeTimeoutError, FileExecutionLedger, resolveClaudeBinary, runConsumer, type ClaudeExecutor } from "../consume.ts";
+import {
+  ClaudeTimeoutError,
+  FileExecutionCounter,
+  FileExecutionLedger,
+  resolveClaudeBinary,
+  runConsumer,
+  runWatch,
+  type ClaudeExecutor,
+} from "../consume.ts";
 import {
   BUS_ALIVE_CAPABILITY,
   CLAUDE_RUN_TIMEOUT_MS,
@@ -587,4 +595,200 @@ test("a timed-out run of an idempotent capability may simply be retried", async 
 
   const retried = await runConsumer({ client: bus.client, executor: stubExecutor("BUS ALIVE"), ledger: bus.ledger });
   assert.equal(retried[0]!.action, "executed");
+});
+
+/* ----------------------------------------------- always-on runner (2D) */
+
+const REFUSED_TASK = { next_action: { gate: "GO REQUIRED", description: "Odpovedz BUS ALIVE" } };
+
+test("a refused task is explained once, not every cycle, and stays open", async (t) => {
+  const bus = await harness();
+  t.after(() => bus.close());
+
+  const taskId = await seedTask(bus.client, REFUSED_TASK);
+  const codes: string[] = [];
+  for (let cycle = 0; cycle < 3; cycle += 1) {
+    const outcomes = await runConsumer({ client: bus.client, executor: forbiddenExecutor, ledger: bus.ledger });
+    codes.push(`${outcomes[0]!.action}:${(outcomes[0] as { code?: string }).code ?? ""}`);
+  }
+
+  assert.deepEqual(codes, ["blocked:gate_not_auto_safe", "skipped:blocker_deduped", "skipped:blocker_deduped"]);
+  assert.equal((await bus.client.list("outbox", { from: "claude-code" })).length, 1, "exactly one blocker");
+  // The founder closes a blocked task, never the runner.
+  assert.equal((await bus.client.list("inbox", { to: "claude-code", status: "open" })).length, 1);
+  assert.equal(taskId.startsWith("TASK-"), true);
+});
+
+test("a task the founder fixes after a blocker becomes runnable again", async (t) => {
+  const bus = await harness();
+  t.after(() => bus.close());
+
+  const taskId = await seedTask(bus.client, REFUSED_TASK);
+  const blocked = await runConsumer({ client: bus.client, executor: forbiddenExecutor, ledger: bus.ledger });
+  assert.equal(blocked[0]!.action, "blocked");
+
+  // The founder edits the gate the blocker complained about.
+  const doc = await bus.store.read("inbox", taskId);
+  await bus.store.write(
+    "inbox",
+    { ...doc.envelope!, next_action: { gate: "AUTO-SAFE", description: "Odpovedz BUS ALIVE" } },
+    { overwrite: true },
+  );
+
+  const fixed = await runConsumer({ client: bus.client, executor: stubExecutor("BUS ALIVE"), ledger: bus.ledger });
+  assert.equal(fixed[0]!.action, "executed", "a blocker must not gag a task forever");
+});
+
+test("the daily cap is a hard ceiling: at the limit nothing is executed", async (t) => {
+  const bus = await harness();
+  t.after(() => bus.close());
+
+  const stateDir = await mkdtemp(path.join(tmpdir(), "bus-cap-"));
+  t.after(() => rm(stateDir, { recursive: true, force: true }));
+  const counter = new FileExecutionCounter(stateDir);
+  await counter.record(new Date());
+
+  await seedTask(bus.client);
+  const outcomes = await runConsumer({
+    client: bus.client,
+    executor: forbiddenExecutor,
+    ledger: bus.ledger,
+    counter,
+    dailyCap: 1,
+  });
+
+  assert.equal(outcomes[0]!.action === "blocked" && outcomes[0]!.code, "daily_cap_reached");
+  assert.match(outcomes[0]!.action === "blocked" ? outcomes[0]!.reason : "", /1\/1 executions used/);
+  assert.equal((await bus.client.list("outbox", { from: "claude-code", type: "blocker" })).length, 1);
+});
+
+test("an execution spends the budget even when it then fails", async (t) => {
+  const bus = await harness();
+  t.after(() => bus.close());
+
+  const stateDir = await mkdtemp(path.join(tmpdir(), "bus-cap-"));
+  t.after(() => rm(stateDir, { recursive: true, force: true }));
+  const counter = new FileExecutionCounter(stateDir);
+
+  await seedTask(bus.client);
+  const failing: ClaudeExecutor = async () => {
+    throw new Error("claude exited 1");
+  };
+  await runConsumer({ client: bus.client, executor: failing, ledger: bus.ledger, counter, dailyCap: 10 });
+
+  assert.equal((await counter.stamps()).length, 1, "the invocation consumed the resource the cap bounds");
+});
+
+test("the watch loop runs bounded cycles and reports what it did", async (t) => {
+  const bus = await harness();
+  t.after(() => bus.close());
+
+  await seedTask(bus.client);
+  const report = await runWatch({
+    client: bus.client,
+    executor: stubExecutor("BUS ALIVE"),
+    ledger: bus.ledger,
+    intervalMs: 1,
+    maxCycles: 2,
+  });
+
+  assert.equal(report.cycles, 2);
+  assert.equal(report.executed, 1, "the second cycle finds nothing left to do");
+  assert.equal(report.errors, 0);
+});
+
+test("an aborted watch stops without starting another cycle", async (t) => {
+  const bus = await harness();
+  t.after(() => bus.close());
+
+  const controller = new AbortController();
+  const cycles: string[] = [];
+  const report = await runWatch({
+    client: bus.client,
+    executor: forbiddenExecutor,
+    ledger: bus.ledger,
+    intervalMs: 50,
+    log: (line) => {
+      if (line.startsWith("QUEUE")) {
+        cycles.push(line);
+        controller.abort();
+      }
+    },
+    signal: controller.signal,
+  });
+
+  assert.equal(report.cycles, 1);
+  assert.equal(cycles.length, 1);
+});
+
+test("a cycle that throws backs off instead of ending the loop", async (t) => {
+  const bus = await harness();
+  t.after(() => bus.close());
+
+  const broken = { ...bus.client, health: async () => ({ ok: false }) } as unknown as BusHttpClient;
+  const lines: string[] = [];
+  const report = await runWatch({
+    client: broken,
+    executor: forbiddenExecutor,
+    ledger: bus.ledger,
+    intervalMs: 1,
+    maxCycles: 2,
+    log: (line) => lines.push(line),
+  });
+
+  assert.equal(report.errors, 2, "both cycles failed and neither killed the loop");
+  assert.match(lines.join("\n"), /retrying in \d+s/);
+});
+
+test("the watch loop stamps liveness so quiet can be told from dead", async (t) => {
+  const bus = await harness();
+  t.after(() => bus.close());
+
+  const stateDir = await mkdtemp(path.join(tmpdir(), "bus-live-"));
+  t.after(() => rm(stateDir, { recursive: true, force: true }));
+  const livenessFile = path.join(stateDir, "liveness.json");
+
+  await runWatch({
+    client: bus.client,
+    executor: forbiddenExecutor,
+    ledger: bus.ledger,
+    intervalMs: 1,
+    maxCycles: 1,
+    livenessFile,
+  });
+
+  const stamped = JSON.parse(await readFile(livenessFile, "utf8")) as { at: string; cycles: number };
+  assert.equal(stamped.cycles, 1);
+  assert.ok(!Number.isNaN(Date.parse(stamped.at)));
+});
+
+test("a task parked by the cap stays parked after the window frees — the founder unparks it", async (t) => {
+  const bus = await harness();
+  t.after(() => bus.close());
+
+  const stateDir = await mkdtemp(path.join(tmpdir(), "bus-cap-"));
+  t.after(() => rm(stateDir, { recursive: true, force: true }));
+  const counter = new FileExecutionCounter(stateDir);
+  await counter.record(new Date());
+
+  await seedTask(bus.client);
+  const capped = await runConsumer({
+    client: bus.client,
+    executor: forbiddenExecutor,
+    ledger: bus.ledger,
+    counter,
+    dailyCap: 1,
+  });
+  assert.equal(capped[0]!.action === "blocked" && capped[0]!.code, "daily_cap_reached");
+
+  // Budget restored — but the task was parked as NEEDS_FOUNDER, and that state
+  // is cleared by a person, not by a clock. Documented, not assumed.
+  const later = await runConsumer({
+    client: bus.client,
+    executor: forbiddenExecutor,
+    ledger: bus.ledger,
+    counter,
+    dailyCap: 100,
+  });
+  assert.equal(later[0]!.action === "skipped" && later[0]!.code, "needs_founder");
 });

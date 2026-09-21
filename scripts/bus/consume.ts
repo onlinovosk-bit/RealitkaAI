@@ -37,7 +37,9 @@ import {
   buildBlockerEnvelope,
   buildResultEnvelope,
   CLAUDE_RUN_TIMEOUT_MS,
+  capState,
   CONSUMER_AGENT,
+  DAILY_EXECUTION_CAP,
   DEFAULT_CAPABILITIES,
   evaluateTask,
   handledTaskIds,
@@ -47,12 +49,15 @@ import {
   LOST_TEXT_FIELD,
   persistenceExhausted,
   planFor,
+  reportedRefusals,
   validateOutgoing,
+  withinWindow,
   type BusBox,
   type BusCapability,
   type BusEnvelope,
   type BusValidationError,
   type ClaudeRunReport,
+  type ConsumerRefusalCode,
   type ExecutionRecord,
 } from "../../packages/bus-core/src/index.ts";
 
@@ -137,6 +142,39 @@ export class FileExecutionLedger implements ExecutionLedger {
 
   async clear(taskId: string): Promise<void> {
     await unlink(this.file(taskId)).catch(() => {});
+  }
+}
+
+/**
+ * Durable count of executions inside the rolling window.
+ *
+ * A budget, not an audit log: stamps outside the window are dropped on write,
+ * so the file cannot grow without bound.
+ */
+export class FileExecutionCounter {
+  private readonly file: string;
+
+  constructor(dir: string) {
+    this.file = path.join(dir, "executions.json");
+  }
+
+  async stamps(): Promise<string[]> {
+    try {
+      const parsed = JSON.parse(await readFile(this.file, "utf8")) as unknown;
+      return Array.isArray(parsed) ? parsed.filter((entry): entry is string => typeof entry === "string") : [];
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
+      // A corrupt budget must not read as "nothing spent".
+      throw new Error(`execution counter at ${this.file} is unreadable — resolve it by hand before running again`);
+    }
+  }
+
+  async record(now: Date): Promise<void> {
+    const kept = withinWindow([...(await this.stamps()), now.toISOString()], now);
+    await mkdir(path.dirname(this.file), { recursive: true });
+    const temp = `${this.file}.tmp-${process.pid}`;
+    await writeFile(temp, JSON.stringify(kept), "utf8");
+    await rename(temp, this.file);
   }
 }
 
@@ -320,7 +358,7 @@ export function realClaudeExecutor(options: ClaudeExecutorOptions = {}): ClaudeE
 
 export type ConsumeOutcome =
   | { taskId: string; action: "executed"; resultId: string; reply: string; run: ClaudeRunReport }
-  | { taskId: string; action: "blocked"; code: string; reason: string; blockerId?: string }
+  | { taskId: string; action: "blocked"; code: ConsumerRefusalCode; reason: string; blockerId?: string }
   | { taskId: string; action: "skipped"; code: string; reason: string }
   | { taskId: string; action: "failed"; reason: string };
 
@@ -328,6 +366,10 @@ export interface ConsumeOptions {
   client: BusHttpClient;
   executor: ClaudeExecutor;
   ledger: ExecutionLedger;
+  /** Durable execution budget. Omitted means the cap is not enforced. */
+  counter?: FileExecutionCounter;
+  /** Hard ceiling inside the rolling 24 h window. */
+  dailyCap?: number;
   /** This runner instance. Defaults to a fresh identity per process. */
   owner?: string;
   capabilities?: BusCapability[];
@@ -354,11 +396,14 @@ export async function runConsumer(options: ConsumeOptions): Promise<ConsumeOutco
   if (!health.ok) throw new Error("bus health check failed");
 
   const open = await options.client.list(inbox, { to: CONSUMER_AGENT, status: "open", type: "task", limit: 100 });
-  // Answered threads are the authoritative duplicate guard, across machines.
-  const answered = handledTaskIds([
+  const mine = [
     ...(await options.client.list("outbox", { from: CONSUMER_AGENT, limit: 100 })),
     ...(await options.client.list(inbox, { from: CONSUMER_AGENT, limit: 100 })),
-  ]);
+  ];
+  // Answered threads are the authoritative duplicate guard, across machines.
+  const answered = handledTaskIds(mine);
+  // Refusals already explained, so a task is not re-explained every minute.
+  const reported = reportedRefusals(mine);
 
   const queue = options.taskId ? open.filter((task) => task.id === options.taskId) : open;
   if (options.taskId && queue.length === 0) {
@@ -381,6 +426,7 @@ export async function runConsumer(options: ConsumeOptions): Promise<ConsumeOutco
         now,
         postBlockers,
         answered,
+        reported,
         capabilities: options.capabilities,
         warnings,
       }),
@@ -414,6 +460,7 @@ interface ProcessContext extends ConsumeOptions {
   now: () => Date;
   postBlockers: boolean;
   answered: ReadonlySet<string>;
+  reported: ReadonlyMap<string, Set<string>>;
   warnings: readonly BusValidationError[];
 }
 
@@ -457,6 +504,13 @@ async function processTask(task: BusEnvelope, ctx: ProcessContext): Promise<Cons
       ctx.log(`SKIP  ${task.id}: ${decision.code} — ${decision.reason}`);
       return { taskId: task.id, action: "skipped", code: decision.code, reason: decision.reason };
     }
+    // Already explained on the bus: stay silent rather than post the same
+    // blocker every cycle. The task is left OPEN — closing it is the founder's.
+    if (ctx.reported.get(task.id)?.has(decision.code)) {
+      ctx.log(`SKIP  ${task.id}: ${decision.code} already reported — no second blocker`);
+      return { taskId: task.id, action: "skipped", code: "blocker_deduped", reason: decision.reason };
+    }
+
     ctx.log(`BLOCK ${task.id}: ${decision.code} — ${decision.reason}`);
     if (ctx.dryRun || !ctx.postBlockers) {
       return { taskId: task.id, action: "blocked", code: decision.code, reason: decision.reason };
@@ -495,6 +549,20 @@ async function processTask(task: BusEnvelope, ctx: ProcessContext): Promise<Cons
     return persistResult(task, ctx, decision.capability, stored, owner);
   }
 
+  if (ctx.counter) {
+    const cap = ctx.dailyCap ?? DAILY_EXECUTION_CAP;
+    const state = capState(await ctx.counter.stamps(), ctx.now(), cap);
+    if (state.remaining === 0) {
+      return needsFounder(
+        task,
+        ctx,
+        owner,
+        "daily_cap_reached",
+        `${state.used}/${cap} executions used in the last 24 h; the next slot frees at ${state.resetsAt ?? "unknown"}`,
+      );
+    }
+  }
+
   const startedAt = ctx.now();
   const claimed: ExecutionRecord = {
     task_id: task.id,
@@ -515,6 +583,10 @@ async function processTask(task: BusEnvelope, ctx: ProcessContext): Promise<Cons
   };
   await ctx.ledger.write(holder.record);
   const heartbeat = startHeartbeat(ctx.ledger, holder, ctx.now, ctx.log);
+
+  // The budget is spent when Claude is invoked. A run that then fails still
+  // consumed the resource the cap exists to bound.
+  await ctx.counter?.record(ctx.now());
 
   let run: ClaudeRunReport;
   try {
@@ -557,7 +629,7 @@ async function needsFounder(
   task: BusEnvelope,
   ctx: ProcessContext,
   owner: string,
-  code: string,
+  code: ConsumerRefusalCode,
   reason: string,
 ): Promise<ConsumeOutcome> {
   const existing = await ctx.ledger.read(task.id);
@@ -639,14 +711,15 @@ async function persistResult(
 
     // Both acks tolerate an already-moved message: on a resumed run the first
     // one may have landed before the crash.
-    if (!current.result_id) throw new Error("result was posted but its id was not recorded");
-    await ackIfPresent(ctx, current.result_id, { status: "done", toBox: "outbox" });
+    const resultId = current.result_id;
+    if (!resultId) throw new Error("result was posted but its id was not recorded");
+    await ackIfPresent(ctx, resultId, { status: "done", toBox: "outbox" });
     const acked = await ackIfPresent(ctx, task.id, { status: "done", toBox: ctx.ackBox });
     if (acked) ctx.log(`ACK   ${task.id}: open -> ${acked.status} (${acked.from_box} -> ${acked.to_box})`);
 
     current = { ...current, state: "DONE", updated_at: ctx.now().toISOString() };
     await ctx.ledger.write(current);
-    return { taskId: task.id, action: "executed", resultId: current.result_id, reply: report.reply.trim(), run: report };
+    return { taskId: task.id, action: "executed", resultId, reply: report.reply.trim(), run: report };
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
     if (persistenceExhausted(current)) {
@@ -672,6 +745,101 @@ async function ackIfPresent(
     if ((error as { status?: number }).status === 404) return undefined;
     throw error;
   }
+}
+
+/* ------------------------------------------------------------------ watch */
+
+export const DEFAULT_POLL_INTERVAL_MS = 60_000;
+const MAX_BACKOFF_MS = 10 * 60_000;
+
+export interface WatchOptions extends ConsumeOptions {
+  intervalMs?: number;
+  /** Aborting finishes the cycle in flight, then stops. */
+  signal?: AbortSignal;
+  /** Stamped after every cycle so "quiet" can be told from "dead". */
+  livenessFile?: string;
+  /** Bounded runs, for tests and one-off sweeps. */
+  maxCycles?: number;
+}
+
+export interface WatchReport {
+  cycles: number;
+  executed: number;
+  failed: number;
+  errors: number;
+}
+
+function sleep(ms: number, signal?: AbortSignal): Promise<void> {
+  if (signal?.aborted) return Promise.resolve();
+  return new Promise<void>((resolve) => {
+    const timer = setTimeout(resolve, ms);
+    timer.unref?.();
+    signal?.addEventListener(
+      "abort",
+      () => {
+        clearTimeout(timer);
+        resolve();
+      },
+      { once: true },
+    );
+  });
+}
+
+/**
+ * The always-on loop: one `runConsumer` cycle every interval, forever.
+ *
+ * It owns no policy of its own. Everything that decides whether work happens —
+ * the gates, the lease, the durable state, the daily ceiling — lives below it,
+ * so the loop can be stopped or restarted without changing what a task does.
+ *
+ * A cycle that throws does not end the loop: the bus or GitHub being briefly
+ * unreachable is an outage to wait out, not a reason to stop consuming. Repeated
+ * failures back off so an outage is not hammered.
+ */
+export async function runWatch(options: WatchOptions): Promise<WatchReport> {
+  const interval = options.intervalMs ?? DEFAULT_POLL_INTERVAL_MS;
+  const log = options.log ?? (() => {});
+  const now = options.now ?? (() => new Date());
+  const report: WatchReport = { cycles: 0, executed: 0, failed: 0, errors: 0 };
+  let consecutiveErrors = 0;
+
+  log(`WATCH start: every ${Math.round(interval / 1000)}s, stop with SIGINT`);
+
+  while (!options.signal?.aborted && (options.maxCycles === undefined || report.cycles < options.maxCycles)) {
+    let delay = interval;
+    try {
+      const outcomes = await runConsumer(options);
+      report.executed += outcomes.filter((outcome) => outcome.action === "executed").length;
+      report.failed += outcomes.filter((outcome) => outcome.action === "failed").length;
+      consecutiveErrors = 0;
+    } catch (error) {
+      report.errors += 1;
+      consecutiveErrors += 1;
+      delay = Math.min(interval * 2 ** consecutiveErrors, MAX_BACKOFF_MS);
+      log(
+        `ERROR cycle ${report.cycles + 1}: ${error instanceof Error ? error.message : String(error)} ` +
+          `— retrying in ${Math.round(delay / 1000)}s`,
+      );
+    }
+    report.cycles += 1;
+
+    if (options.livenessFile) {
+      // Silence is not health: an external check needs to tell a quiet bus from
+      // a dead runner.
+      await writeFile(
+        options.livenessFile,
+        JSON.stringify({ at: now().toISOString(), ...report, consecutive_errors: consecutiveErrors }),
+        "utf8",
+      ).catch(() => {});
+    }
+
+    if (options.signal?.aborted) break;
+    if (options.maxCycles !== undefined && report.cycles >= options.maxCycles) break;
+    await sleep(delay, options.signal);
+  }
+
+  log(`WATCH stop: ${report.cycles} cycle(s), ${report.executed} executed, ${report.failed} failed, ${report.errors} error(s)`);
+  return report;
 }
 
 /* -------------------------------------------------------------------- cli */
@@ -749,13 +917,17 @@ async function main(): Promise<void> {
   const baseUrl = flagString(args, "url") ?? process.env.REVOLIS_BUS_URL ?? DEFAULT_URL;
   const timeout = Number.parseInt(flagString(args, "timeout") ?? String(DEFAULT_TIMEOUT_MS), 10);
 
-  const outcomes = await runConsumer({
+  const stateDir = defaultStateDir();
+  const capRaw = Number.parseInt(flagString(args, "daily-cap") ?? String(DAILY_EXECUTION_CAP), 10);
+  const options: ConsumeOptions = {
     client: new BusHttpClient({ baseUrl, token }),
     executor: realClaudeExecutor({
       model: flagString(args, "model") ?? process.env.REVOLIS_BUS_CONSUMER_MODEL ?? DEFAULT_MODEL,
       timeoutMs: Number.isFinite(timeout) ? timeout : DEFAULT_TIMEOUT_MS,
     }),
-    ledger: new FileExecutionLedger(defaultStateDir()),
+    ledger: new FileExecutionLedger(stateDir),
+    counter: new FileExecutionCounter(stateDir),
+    dailyCap: Number.isFinite(capRaw) ? capRaw : DAILY_EXECUTION_CAP,
     taskId: flagString(args, "task"),
     inboxBox: boxRaw,
     ackBox: ackRaw,
@@ -763,8 +935,27 @@ async function main(): Promise<void> {
     postBlockers: args.flags["no-blockers"] !== true,
     repoCommit: await currentCommit(),
     log: (line) => process.stdout.write(`${line}\n`),
-  });
+  };
 
+  if (args.flags.watch === true) {
+    const controller = new AbortController();
+    for (const signal of ["SIGINT", "SIGTERM"] as const) {
+      process.on(signal, () => {
+        process.stdout.write(`\n${signal} — finishing the cycle in flight, then stopping\n`);
+        controller.abort();
+      });
+    }
+    const intervalRaw = Number.parseInt(flagString(args, "interval") ?? String(DEFAULT_POLL_INTERVAL_MS), 10);
+    await runWatch({
+      ...options,
+      intervalMs: Number.isFinite(intervalRaw) ? intervalRaw : DEFAULT_POLL_INTERVAL_MS,
+      signal: controller.signal,
+      livenessFile: path.join(stateDir, "liveness.json"),
+    });
+    return;
+  }
+
+  const outcomes = await runConsumer(options);
   const executed = outcomes.filter((outcome) => outcome.action === "executed").length;
   const failed = outcomes.filter((outcome) => outcome.action === "failed").length;
   process.stdout.write(`\nCONSUMER: ${outcomes.length} task(s), ${executed} executed, ${failed} failed\n`);

@@ -1421,6 +1421,30 @@ blocked. Exact PC commands are in
 - **Ďalší krok (task-loop):** PROD overenie G4 — read-only SELECT. Bez neho nestojí ranný zoznam (S6),
   ktorý je jediná úloha fixujúca `activities=3/31 dní`.
 
+## [2026-09-21] — Smolko ingest: atribúcia BLOCKED, schránky odložené, parser opravený
+
+- **Atribúcia leadu na makléra = BLOCKED, nie TODO.** Dnes všetky dopyty prichádzajú na `office@realitysmolko.sk`; neexistuje signál, z ktorého určiť konkrétneho makléra. `inbound_mailboxes` je per agentúra, nie per maklér. Odblokuje sa **až** napojením individuálnych schránok. Dôkaz: `0/7` živých portálových leadov má `assigned_profile_id`.
+- **Napojenie 8 maklérskych schránok: odložené do zmerania objemu.** Dôvod (PRIME DIRECTIVE): od júla prišlo **7 portálových dopytov**, z nich **jeden čisto sparsovaný**. Stavať webex pipeline + GDPR proces na taký objem je neúmerné, **pokiaľ** makléri nedostávajú násobne viac na vlastné adresy. To nikto nezmeral. 21. 9. odoslaný e-mail p. Smolkovi s otázkou na tri konkrétne mená za jeden týždeň.
+- **Ak sa k schránkam raz pristúpi: preposielanie, nie IMAP.** IMAP by znamenal uložiť 9 hesiel k celým schránkam vrátane súkromnej pošty maklérov — neobhájiteľné pri čl. 5(1)(c). **Bez allowlistu odosielateľov** — ticho by zahadzoval priame klientske dopyty, čo je u tohto klienta najcitlivejšia možná chyba.
+- **Oprava záznamu (dôležité pre interpretáciu metrík):** `Igor Kališ` (5. 7., `igorkaliis21@gmail.com`) **NIE JE testovací lead** — je to jediný reálny čisto sparsovaný produkčný dopyt. Testovací záznam je `demo.zaujemca@example.com` (10. 7.). Všetkých 7 záznamov zdroja `valuation_widget` sú naše smoke testy, ani jeden reálny.
+- **Parser (#599, main `2a510ba3`):** HTML v `raw` rozbíjal extrakciu polí. Opravené meno, výber adresy záujemcu, koncová interpunkcia, vylúčenie `noreply`/domény príjemcu. Idempotencia zámerne nedotknutá (`rawHash` z pôvodného `raw`). **Neriešené:** vzory pre `Správa:` u portálov a brána „je to vôbec dopyt?" (`eventKind` je dnes `inquiry` pre všetko okrem unsubscribe).
+
+## [2026-09-21] — RAW STORAGE: identifikovaná medzera, PROPOSAL, bez GO
+
+- **Medzera (FAKT):** `acquire_dedup_keys` drží iba hash. Hash povie „túto správu sme videli", nepovie „takto vyzerala správa, ktorú sme parsovali". Dôsledok doložený pri #599: oprava parsera bola overená na **rekonštruovaných fixtúrach**, nie na pôvodných správach. Chýbajúce vzory pre `Správa:` sa bez originálov napísať nedajú.
+- **Návrh 30-dňovej retencie je PROPOSAL, nie rozhodnutie.**
+- **Právny základ 6(1)(f) je UNVERIFIED** — vyžaduje samostatné právne posúdenie. Telo e-mailu obsahuje osobné údaje záujemcov; pracovná hypotéza „6(1)(f) + balancing test" **nie je** schválený právny základ.
+- **NO GO: žiadne produkčné raw maily sa zatiaľ neukladajú.** Implementácia až po samostatnom GO, a to v poradí právny/retention kontrakt → implementácia.
+- **Návrh tvaru (ak GO príde):** `tenant_id + message_id/dedup_key + received_at + retention_until + raw_body`, s tvrdým oddelením **ingest evidence vs. CRM business data**. Raw mail nie je ďalšia CRM tabuľka — je to forenzný zdroj pravdy pre ingest/parser pipeline.
+
+## [2026-09-21] — Branch cleanup `claude/brave-bohr-arikv2`: NO GO, audit EXPIRED
+
+- **Stav:** vetva zostáva na `348d3f59`, nedotknutá. Nesie 2 duplicitné commity (`42f9f432`, `7dbb94e8` — Founder Alert Adapter v0.1), ktorých obsah je už v main cez #572. Force-push **nevykonaný**.
+- **Prečo sa cleanup zastavil — dve nezávislé brány, obe zabrali:**
+  1. **Remote backup tag sa z Claude session vytvoriť nedal** — `git push origin backup/…` → HTTP 403, zatiaľ čo push branchu prešiel. Plán mal pri tom kroku podmienku „bez tohto to nerobiť". Príčina 403 = **UNKNOWN** (diagnostický endpoint proxy nedostupný), hypotéza „policy rozlišuje druhy refov" je **NOT VERIFIED**.
+  2. **`origin/main` sa medzi auditom a GO posunul** `9c6fc4dd → ed45d518` (#369, #586). Tým prestal platiť `proposed new HEAD` z auditu.
+- **Pôvodný cleanup audit je EXPIRED, nie pozastavený.** Keď sa vetva stane relevantnou, urobí sa **nový** read-only audit od vtedajšieho `origin/main`; pokračovanie zo starého auditu je porušenie protokolu (viď P1 v0.2 bod g).
+- **Nemeniť GitHub oprávnenia kvôli tomuto** — hranica funguje správne, jednorazovú operáciu vykoná človek.
 ## [2026-09-21] — Zmeraná hranica autonómie BUS-u (notifikácia ≠ autonómia)
 
 - **Kontext:** #589 (transport), #590 (handshake harness), #593 (consumer v1), #594
@@ -1486,6 +1510,34 @@ blocked. Exact PC commands are in
   cenu v UI, ale line item sa ticho vynechá, ak cockpit price ID chýba (v
   produkcii chýba). Overiť päť price objektov, nie tri.
 
+## [2026-09-21] DEC-20260921-002 — BUS Runner V2, KROK 2D: always-on runner s tvrdým stropom
+
+- **Rozhodnutie:** Runner prechádza z jednorazového behu na dlhobežiaci poll
+  loop (60 s) nad GitHub-backed BUS. Tri founder parametre: denný strop
+  **100 automatických vykonaní / 24 h rolling window**, blocker deduplikácia
+  **bez zatvárania tasku**, samostatný always-on host s vlastnou strojovou
+  identitou (PAT nie je osobný credential foundera).
+- **Hranica sa nemení.** 2D nepridáva ani jednu capability. Žiadny write,
+  žiadny external side effect, žiadna deployment ani merge automation, žiadny
+  verejný endpoint, žiadna závislosť na Cloudflare. Policy B sa nerozširuje.
+- **Strop je tvrdý:** po 100 vykonaniach runner odmieta s `daily_cap_reached`
+  a **nepokračuje** v automatickom vykonávaní. Task ostáva OPEN.
+- **Blocker nikdy nezatvára task.** Zatvára ho iba founder. Zmena oproti
+  doterajšiemu stavu: `handledTaskIds()` už nezapočítava blockery, takže raz
+  odmietnutý task dostane druhú šancu, keď príčina pominie. Proti dvojitému
+  vykonaniu naďalej stojí result envelope + durable execution state z 2C.
+- **Otvorené pre foundera:** task zaparkovaný stropom ostáva `NEEDS_FOUNDER`
+  aj po uvoľnení 24 h okna — implementované doslovne podľa zadania.
+  Alternatíva (odmietnutie len na daný cyklus) je pripravená, ak ju zvolí.
+- **Dôkaz:** `npm run bus:test` 148/148; `npm run bus:validate` 43 súborov,
+  0 errors.
+- **Artefakty:** `packages/bus-core/src/execution-cap.ts`,
+  `packages/bus-core/src/consumer.ts`, `scripts/bus/consume.ts`, PR #617.
+  Architektonický referenčný dokument:
+  `docs/architecture/adr-2026-09-21-bus-runner-v2.md`.
+- **Nezačaté:** 2E (read-only analytické capabilities pod Policy B) — vlastná
+  GO brána. ADR §10 otvorené otázky (identita hosta/tokenu, alerting na
+  vyčerpaný retry budget) tiež neriešené.
 ## 2026-09-21 — BUS-AUTH-IDENTITY: špecifikácia identity volajúceho v transporte (PR #612)
 
 - **Rozhodnutie:** BUS dostane per-agent credentials. `token: string` →
@@ -1582,3 +1634,22 @@ blocked. Exact PC commands are in
   si ho v CI doinštaluje ad hoc (`npm install --no-save typescript@5.9.3`) —
   rovnaký vzor by sa dal použiť pre bus, ale to je nové rozhodnutie, nie CI
   wiring. Návrh, nie vykonané.
+
+## 2026-09-21 — PR #612 zmergovaný Founderom (`45989e8` na main)
+
+- **Overené obsahom, nie ancestry** (squash merge robí `git merge-base` nespoľahlivým,
+  rovnaká pasca ako pri #601):
+  - `from_not_authorized` / `ackSourceBoxes` / `BusCredential` — 8 výskytov v
+    `packages/bus-core/src/http.ts` na `origin/main`.
+  - CI job `BUS (transport authority boundary)` + `npm run bus:test` na riadkoch
+    268 a 283 v `saas-grade-pipeline.yml` na `origin/main`.
+  - Dočasná mutácia (`false && identity.agent`) na main **nie je** — explicitne
+    overené grepom, nie predpokladom.
+  - `npm run bus:test` na zmergovanom main: **152/152**.
+- **Stav BUS transportu:** identity hranica je ENFORCED a od teraz ju stráži CI
+  na každom PR. Prvýkrát platí, že rozbitie `from` väzby zosvieti červenú bez
+  toho, aby to niekto musel ručne spustiť.
+- **Check-in trigger** `trig_0168hPjxvcQANHq1BD7Q4Bwb` zrušený — PR je uzavretý,
+  subscription automaticky odhlásená.
+- **Ostáva otvorené:** ADR §7 shared-mode expiry (rozhodnutie Foundera),
+  BUS-TYPECHECK (návrh, bez GO).
