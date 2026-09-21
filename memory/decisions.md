@@ -1582,3 +1582,22 @@ blocked. Exact PC commands are in
   si ho v CI doinštaluje ad hoc (`npm install --no-save typescript@5.9.3`) —
   rovnaký vzor by sa dal použiť pre bus, ale to je nové rozhodnutie, nie CI
   wiring. Návrh, nie vykonané.
+
+## 2026-09-21 — PR #612 zmergovaný Founderom (`45989e8` na main)
+
+- **Overené obsahom, nie ancestry** (squash merge robí `git merge-base` nespoľahlivým,
+  rovnaká pasca ako pri #601):
+  - `from_not_authorized` / `ackSourceBoxes` / `BusCredential` — 8 výskytov v
+    `packages/bus-core/src/http.ts` na `origin/main`.
+  - CI job `BUS (transport authority boundary)` + `npm run bus:test` na riadkoch
+    268 a 283 v `saas-grade-pipeline.yml` na `origin/main`.
+  - Dočasná mutácia (`false && identity.agent`) na main **nie je** — explicitne
+    overené grepom, nie predpokladom.
+  - `npm run bus:test` na zmergovanom main: **152/152**.
+- **Stav BUS transportu:** identity hranica je ENFORCED a od teraz ju stráži CI
+  na každom PR. Prvýkrát platí, že rozbitie `from` väzby zosvieti červenú bez
+  toho, aby to niekto musel ručne spustiť.
+- **Check-in trigger** `trig_0168hPjxvcQANHq1BD7Q4Bwb` zrušený — PR je uzavretý,
+  subscription automaticky odhlásená.
+- **Ostáva otvorené:** ADR §7 shared-mode expiry (rozhodnutie Foundera),
+  BUS-TYPECHECK (návrh, bez GO).
