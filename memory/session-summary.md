@@ -1,3 +1,33 @@
+## Session 2026-09-21 (revenue blocker /upgrade — root cause + DEC seat model)
+### Dokoncene
+- Prod smoke `/upgrade` na prihlasenej session: **FAIL** — "Checkout momentalne nedostupny"
+- Root cause overeny read-only: `STRIPE_PRICE_{SOLO,TEAM,OFFICE}_SEAT` a
+  `STRIPE_PRICE_CREDITS_*` **neexistuju** vo Vercel `realitka-ai` (85 env, citane bez decrypt).
+  Pritomne su STARTER/PRO/MARKET_VISION/PROTOCOL_AUTH = stary program model.
+- Zistene, ze prod Stripe stoji na program modeli a kod na seat modeli — `CHECKOUT-ENV-01`
+  a `FUNNEL-PRICING-01` su dva symptomy tej istej nedokoncenej migracie
+- Novy nalez `CHECKOUT-ENV-02`: Owner Cockpit checkbox pripocitava cenu v UI
+  (`upgrade/page.tsx:225-234`), ale line item sa ticho vynecha ak price ID chyba
+  (`credits-billing.ts:77-82`) — vybuchlo by hned po nastaveni len troch seat premennych
+- Founder GO: `DEC-20260921-001` — kanonicky je **seat model** 79/71/63 EUR na maklera
+- PR #606 **MERGED** (`46a5769`), CI zelene
+### Rozpracovane / Pending
+- **Krok A (founder): Stripe VERIFY** — read-only curl pripraveny v reporte §VERIFY;
+  overit **pat** price objektov (seat x3 + cockpit x2) proti akceptacnym kriteriam
+  (7900/7100/6300 eur, recurring month, per-seat, active, live mode)
+- Krok B env patch / krok C STOP+GO na vytvorenie cien — podla vysledku A
+- Krok D deploy + prihlaseny smoke; krok E `/porovnanie-programov` cleanup (samostatne)
+- `#369` nie je prod-verified ani v jednom smere (symptom identicky pred aj po)
+- Cursor zamerne bez ulohy; `#537` (notification digest cross-tenant) drzany do zavretia revenue blockera
+### Kluc subory zmenene
+- `docs/reports/2026-09-21-upgrade-checkout-config-root-cause.md`: root cause + VERIFY kriteria + CHECKOUT-ENV-02
+- `docs/reports/2026-09-18-upgrade-prod-smoke.md`: doplneny skutocny vysledok founder checku (FAIL)
+- `memory/open-tasks.md`: CHECKOUT-ENV-01, CHECKOUT-ENV-02, FUNNEL-PRICING-01 + kroky A-E
+- `memory/decisions.md`: DEC-20260921-001 (seat model kanonicky, VERIFY pred CREATE)
+### Dalsi krok
+Founder: spustit VERIFY curl s live Stripe klucom, poslat vystup. Podla neho krok B alebo C.
+Ziadny agent nevytvara Stripe Products/Prices.
+
 ## Session 2026-09-21 (UPTM governance chain + BUS fix)
 ### Dokončené
 - `uptm-runner` main `c9ae2aa`, 134 testov: PR #3 ústava CP+CC (P1–P14), #4 preregistrácia
