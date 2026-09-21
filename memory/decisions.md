@@ -1460,3 +1460,28 @@ blocked. Exact PC commands are in
 - **Pravidlo, ktoré z toho plynie:** „live dogfood PASS" neznamená autonómnu slučku.
   Kto číta tento záznam neskôr: PASS riadky vyššie platia s uvedenými podmienkami,
   nie bez nich.
+
+## [2026-09-21] DEC-20260921-001 — Kanonický pricing model = SEAT
+
+- **Rozhodnutie:** Core Revolis je **seat-based subscription** (79 / 71 / 63 €
+  na makléra za mesiac). Programy 49 / 99 / 199 / 449 € (Market Vision, Protocol
+  Authority a spol.) sú **nadstavby/moduly**, nie alternatívny základný checkout.
+- **Prečo teraz:** prihlásený prod smoke `/upgrade` (2026-09-21) = FAIL. Root
+  cause: `STRIPE_PRICE_{SOLO,TEAM,OFFICE}_SEAT` v produkcii neexistujú, zatiaľ
+  čo prítomné sú `STARTER`/`PRO`/`MARKET_VISION`/`PROTOCOL_AUTH` — produkčný
+  Stripe stojí na program modeli, kód na seat modeli. Bez rozhodnutia o modeli
+  by „oprava env" potichu zabetónovala ten nesprávny.
+- **Poradie vykonania:** A) Stripe VERIFY read-only → B) env patch s reálnymi ID
+  → C) ak ceny neexistujú, STOP a samostatné GO na ich vytvorenie → D) deploy +
+  prihlásený smoke → E) `/porovnanie-programov` cleanup ako **samostatná** úloha.
+- **Veto:** žiadny agent nevytvára Stripe Products/Prices. Vytvorenie ceny =
+  vytvorenie obchodného kontraktu, nie oprava konfigurácie. Hodnoty price ID
+  pochádzajú zo Stripe live mode a zapisuje ich founder.
+- **Hranica (potvrdená):** AI diagnostikuje, pripravuje a overuje. Finálny
+  obchodný kontrakt a production payment configuration ostáva pod Founder GO.
+- **Artefakty:** `docs/reports/2026-09-21-upgrade-checkout-config-root-cause.md`,
+  `memory/open-tasks.md` (`CHECKOUT-ENV-01`, `CHECKOUT-ENV-02`,
+  `FUNNEL-PRICING-01`), PR #606.
+- **Odvodený nález:** `CHECKOUT-ENV-02` — Owner Cockpit checkbox pripočítava
+  cenu v UI, ale line item sa ticho vynechá, ak cockpit price ID chýba (v
+  produkcii chýba). Overiť päť price objektov, nie tri.
