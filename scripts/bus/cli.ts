@@ -16,6 +16,7 @@ import { fileURLToPath } from "node:url";
 import {
   BUS_BOXES,
   buildMessageId,
+  idDateFor,
   BusStoreError,
   FileBusStore,
   isBusBox,
@@ -126,8 +127,9 @@ async function commandSend(args: Args): Promise<void> {
 
   if (!envelope.id || flagString(args, "slug")) {
     const slug = flagString(args, "slug") ?? envelope.summary ?? "message";
-    const sequence = await store.nextSequence(box, type, now);
-    envelope.id = buildMessageId(type, now, sequence, slug);
+    const idDate = idDateFor(envelope.created_at, now);
+    const sequence = await store.nextSequence(box, type, idDate);
+    envelope.id = buildMessageId(type, idDate, sequence, slug);
   }
 
   const errors = validateEnvelope(envelope);
