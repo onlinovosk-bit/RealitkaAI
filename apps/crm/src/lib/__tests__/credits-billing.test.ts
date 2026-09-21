@@ -114,6 +114,53 @@ describe("credits-billing", () => {
       expect(result.metadata.ownerCockpit).toBe("false");
     });
 
+    it("never charges the standard price against a displayed founder price", () => {
+      // Founder places remain, so the UI renders 249 EUR. With the founder
+      // price unset, falling back to STRIPE_PRICE_OWNER_COCKPIT would charge
+      // 349 EUR against that displayed 249 — a silent overcharge. Refusing is
+      // the correct outcome; the checkbox is gated so this is unreachable from
+      // a freshly loaded page.
+      delete process.env.STRIPE_PRICE_OWNER_COCKPIT_FOUNDER;
+
+      expect(() =>
+        buildSeatCheckoutSessionParams({
+          seatTier: "team",
+          quantity: 5,
+          includeOwnerCockpit: true,
+        }),
+      ).toThrow(/Owner Cockpit/);
+    });
+
+    it("refuses rather than silently dropping the cockpit the customer paid for", () => {
+      // Pre-fix this returned a seat-only session: the customer saw the cockpit
+      // in the total and was charged without it. Lost revenue and a price the
+      // customer never agreed to, with no error anywhere.
+      delete process.env.STRIPE_PRICE_OWNER_COCKPIT_FOUNDER;
+      delete process.env.STRIPE_PRICE_OWNER_COCKPIT;
+
+      expect(() =>
+        buildSeatCheckoutSessionParams({
+          seatTier: "team",
+          quantity: 5,
+          includeOwnerCockpit: true,
+        }),
+      ).toThrow(/Owner Cockpit/);
+    });
+
+    it("records founderCockpit against what was charged, not what was eligible", () => {
+      // Below minSeats the cockpit is not added at all. The metadata must not
+      // claim founder pricing was applied to a purchase that never happened.
+      const result = buildSeatCheckoutSessionParams({
+        seatTier: "solo",
+        quantity: 1,
+        includeOwnerCockpit: true,
+      });
+
+      expect(result.lineItems).toHaveLength(1);
+      expect(result.metadata.ownerCockpit).toBe("false");
+      expect(result.metadata.founderCockpit).toBe("false");
+    });
+
     it("adds cockpit line item at 3+ seats with founder metadata", () => {
       const result = buildSeatCheckoutSessionParams({
         seatTier: "team",

@@ -36,9 +36,12 @@ IDs. Musia existovať v Stripe účte a byť overené proti nemu.
 
 **Poradie krokov (founder, 2026-09-21):**
 
-- [ ] **A. Stripe VERIFY** — read-only: existujú tri aktívne recurring Price
-      objekty v **live** mode? Akceptačné kritériá a hotový príkaz:
-      `docs/reports/2026-09-21-upgrade-checkout-config-root-cause.md` §VERIFY
+- [ ] **A. Stripe VERIFY** — read-only. Kompletný kit s vyplňovacími tabuľkami,
+      rozhodovacím stromom a presnými sumami zo zdroja:
+      `docs/ops/2026-09-21-stripe-verify-kit.md`.
+      **Objektov je 9, nie 3 a nie 5** (seat ×3 blokujú /upgrade; cockpit ×2
+      neblokujú nič a preto sú nebezpečné; top-up ×4 sú samostatná brána).
+      `_OWNER_COCKPIT_PRO` sa neoveruje — `enabled: false`.
 - [ ] **B. Ak existujú** → env patch s reálnymi `price_…` ID (founder zapisuje)
 - [ ] **C. Ak neexistujú** → STOP, samostatné GO na vytvorenie Stripe Products/Prices
 - [ ] **D.** Vercel production env → deploy → prihlásený `/upgrade` smoke → Stripe Checkout
@@ -92,10 +95,17 @@ Tichý výpadok tržby plus rozpor ceny v momente platby.
 
 **Status:** OPEN — nezávisí od `FUNNEL-PRICING-01`.
 
-**Founder gate:** GO REQUIRED. Pri kroku A overiť **päť** price objektov, nie
-tri (seat ×3 + cockpit ×2), alebo pred krokom D skryť cockpit checkbox, kým
-jeho cena nie je nakonfigurovaná. Fail-closed oprava (`if (!cockpitPrice) throw`)
+**Founder gate:** GO REQUIRED. Fail-closed oprava (`if (!cockpitPrice) throw`)
 je samostatný code fix, nie súčasť env patchu.
+
+**Upresnené 2026-09-21 (VERIFY kit §3) — horší variant než tichý výpadok.**
+`isFounderKancelariaEligible()` je dnes `true` (7/20 voľných), takže UI zobrazí
+founder cenu **249 €**, ale `getOwnerCockpitStripePriceId` spadne pri chýbajúcom
+`STRIPE_PRICE_OWNER_COCKPIT_FOUNDER` späť na `STRIPE_PRICE_OWNER_COCKPIT`
+(349 €). Nastaviť **len** non-founder cenu znamená, že zákazník uvidí 249 € a
+zaplatí 349 €. Navyše `metadata.founderCockpit` sa zapíše `"true"`, takže audit
+stopa klame. Nie je to výpadok našej tržby, je to **preplatok zákazníka** —
+prísnejší problém. `_OWNER_COCKPIT_PRO` sa neoveruje (`enabled: false`).
 
 ## P0 — Critical AUTH / tenant (2026-08-25 auth hunt)
 
