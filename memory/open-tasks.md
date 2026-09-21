@@ -1,12 +1,60 @@
 # Open Tasks — Prioritized Queue
 
-> Posledná aktualizácia: 2026-09-18 | Task-loop sync (/upgrade #369)
+> Posledná aktualizácia: 2026-09-21 | Task-loop sync (/upgrade prod smoke FAIL → root cause)
 
 ## P0 — Billing /upgrade Stripe (revenue)
 
 - [x] Merge #369 okResponse consumer fix → `30a1ba906`
 - [x] Docs #586 prod smoke (deploy + anon gate) → `ed45d5188`
-- [ ] **HUMAN 30s:** prihlásený `/upgrade` → redirect `checkout.stripe.com` (nie tichý no-op) — potom PASS v `docs/reports/2026-09-18-upgrade-prod-smoke.md`
+- [x] **HUMAN 30s smoke vykonaný 2026-09-21 — FAIL.** Prihlásený `/upgrade` zobrazuje
+      „Checkout momentálne nedostupný" / „Stripe ceny pre seat alebo top-up balíčky nie sú
+      nakonfigurované v tomto prostredí." Tlačidlo „Pokračovať do Stripe" sa nevykreslí.
+
+### CHECKOUT-ENV-01 — seat/top-up Stripe price IDs chýbajú v produkcii
+
+**Root cause (overený, nie hypotéza).** `/api/billing/checkout-config` vracia
+`seatCheckoutAvailable=false`, lebo `areSeatCheckoutPricesConfigured()`
+(`apps/crm/src/lib/program-tier-pricing.ts:314`) vyžaduje **všetky tri**
+`STRIPE_PRICE_SOLO_SEAT` / `STRIPE_PRICE_TEAM_SEAT` / `STRIPE_PRICE_OFFICE_SEAT`.
+Ani jedna z nich v projekte `realitka-ai` neexistuje (Vercel env dump 2026-09-21,
+85 premenných, len názvy — hodnoty nedešifrované). To isté pre top-up:
+`STRIPE_PRICE_CREDITS_{START,RAST,PRO,MEGA}` = MISSING.
+
+Vercel produkcia má namiesto nich staré program-model price IDs:
+`STRIPE_PRICE_STARTER`, `STRIPE_PRICE_PRO`, `STRIPE_PRICE_MARKET_VISION`,
+`STRIPE_PRICE_PROTOCOL_AUTH`, `STRIPE_PRICE_ONBOARDING`.
+
+**Status:** OPEN — nie je to bug v kóde. `#369` opravil reálnu chybu (consumer
+contract), ale symptóm v UI je identický pred aj po ňom, takže `#369` sa cez
+produkčné UI nedá potvrdiť ani vyvrátiť, kým nie sú nastavené price IDs.
+
+**Do not fix autonomously:** žiadny agent nesmie vytvárať ani hádať Stripe price
+IDs. Musia existovať v Stripe účte a byť overené proti nemu.
+
+**Founder gate:** GO REQUIRED — závisí od rozhodnutia vo `FUNNEL-PRICING-01`
+(ktorý model je kanonický). Nastavenie env premenných pred tým rozhodnutím by
+zabetónovalo model, ktorý ešte nie je vybraný.
+
+### FUNNEL-PRICING-01 — `/porovnanie-programov` vs. seat checkout pricing
+
+`/porovnanie-programov` prezentuje programy 49 / 99 / 199 / 449 €/mes. a CTA
+„Vybrať/Aktivovať", ale CTA vedie cez `/billing` k self-service seat checkoutu
+79 / 71 / 63 € za makléra (`ProgramComparison.tsx:227,241,306`).
+
+**Status:** OPEN — product/funnel decision required.
+
+**Risk:** zákazník môže očakávať nákup zvoleného programu, ale dostane iný
+pricing/product model.
+
+**Nie je to len copy nekonzistencia.** Produkčná Stripe konfigurácia stojí na
+program modeli (`STARTER`/`PRO`/`MARKET_VISION`/`PROTOCOL_AUTH` = presne tie
+49/99/199/449 tiery), zatiaľ čo kód `program-tier-pricing.ts` stojí na seat
+modeli. `CHECKOUT-ENV-01` a `FUNNEL-PRICING-01` majú spoločný koreň: dva
+obchodné modely, produkcia na jednom, kód na druhom.
+
+**Do not fix autonomously:** treba rozhodnúť, ktorý pricing model je kanonický.
+
+**Founder gate:** GO REQUIRED pred zmenou pricingu alebo checkout funnelu.
 
 ## P0 — Critical AUTH / tenant (2026-08-25 auth hunt)
 
