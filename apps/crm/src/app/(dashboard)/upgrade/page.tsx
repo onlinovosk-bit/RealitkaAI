@@ -25,6 +25,9 @@ type CheckoutConfig = {
   }>;
   cockpit: {
     liteMinSeats: number;
+    /** Optional: older deployments of the API do not send it. Absence is
+     *  treated as purchasable, so this never hides the add-on by accident. */
+    ownerPurchasable?: boolean;
     ownerPriceEur: number;
     ownerFounderPriceEur: number;
   };
@@ -69,7 +72,13 @@ export default function UpgradePage() {
     if (tierMeta) setSeatCount(tierMeta.defaultSeats);
   }, [tierMeta?.key]);
 
-  const cockpitEligible = (tierMeta?.minSeats ?? 3) <= seatCount && seatCount >= 3;
+  // Two independent conditions. Seat count is about the customer's plan;
+  // `ownerPurchasable` is about whether the price the UI is about to display
+  // actually exists in Stripe. Offering the add-on without the second one lets
+  // the customer agree to a total that checkout cannot charge.
+  const cockpitPurchasable = config?.cockpit.ownerPurchasable !== false;
+  const cockpitEligible =
+    (tierMeta?.minSeats ?? 3) <= seatCount && seatCount >= 3 && cockpitPurchasable;
   const cockpitPrice = config?.founderCockpitEligible
     ? config.cockpit.ownerFounderPriceEur
     : config?.cockpit.ownerPriceEur ?? 349;
