@@ -1,3 +1,54 @@
+## Session 2026-09-19 → 2026-09-21 (Control Plane — CP-P0-4 merged, migrácia 20260817220000 overená)
+
+### Dokončené
+- **`GO CP-P0-4` — Control Contract. PR [#598](https://github.com/onlinovosk-bit/RealitkaAI/pull/598) zmergovaný** foundrom 2026-09-20 14:08 UTC (`09bdb74`, 28 súborov, +3 205 / −1). Prvá **implementačná** brána Control Plane; predtým boli všetky brány read-only alebo spec-only.
+- **`packages/control-contract`** — nový balík, 19 sledovaných súborov (11 src modulov + 4 testovacie), **0 dependencies**, vynútené CI guardom. Mimo `apps/crm` zámerne: cron, `.ai/bus` a budúce služby musia vedieť importovať kontrakt bez CRM.
+- **`ActionMetadata` registry — U-L uzavreté ako zdroj `reversible`.** 9 akcií. Dve pravidlá z neho robia nosný prvok, nie dokumentáciu: (1) akcia bez záznamu sa **nedá** autorizovať (fail-closed → `FORBIDDEN`), (2) **registry, nie volajúci, je pravda** pre `capability/reversible/externallyVisible/risk`. U-J je v ňom zapísané ako vynútiteľné pole: Resend `probable` + `retentionHours: 24`, Twilio Messages `unknown` ⇒ `deliveryGuarantee = at_least_once`.
+- **`resolveAuthority` s OD-9 authority floor.** Čistá funkcia, policy ako dáta. `irreversible` → `APPROVAL_REQUIRED`, **nikdy** `FORBIDDEN`; test dokazuje, že founder approval nezvratný e-mail odomkne, a že policy podlahu nevie znížiť. OD-10 zostáva CONDITIONAL — `externallyVisibleOverride` existuje ako typ, cesta nie je implementovaná.
+- **Runner so 6 fázami** (`OBSERVE → DECIDE → AUTHORIZE → ACT → REPORT OUTCOME → LEARN`). Päť terminálnych stavov; každý okrem `no_observations`/`no_decision` vyrobí `OutcomeRecord` — I-006 vynútené štrukturálne. I-007 vynútené dvakrát: `applyApproval` nezmení `FORBIDDEN`, a runner **znovu vyhodnotí autoritu tesne pred ACT**.
+- **Migrovaný `followup` agent** — `apps/crm/src/lib/agents/followup/controlled.ts`, `RECOMMEND`, jediná akcia `followup.draft`, nikdy neposiela. `POST /api/followup` **nedotknuté**. Record ids sa odvodzujú z `correlationId`, nie z `runId` ⇒ retry prepočíta rovnaký idempotency key.
+- **Nová CI job `Control Contract (authority + closed loop)`** — Node 22, bez ephemeral DB, s guardom na nulové dependencies. Autoritný engine je zelený nezávisle od toho, či CRM job vie naštartovať Supabase. Testy: 56 v balíku (`node --test`, bez inštalácie) + 11 vitest.
+- **Suitability report (OD-8)** — `docs/reports/2026-09-19-CP-P0-4-followup-suitability.md`. Verdikt **SUITABLE so štyrmi podmienkami**.
+- **`GO MIGRATION-VERIFY`** (2026-09-19) — read-only kontrola migrácie `20260817220000`. Zistené: **aplikovaná len spolovice** — `profiles.is_platform_admin` + index áno, `leads.last_contact_at` / `bri_score` / `dossier` nie, riadok v histórii chýbal, `schema_migrations` = 49.
+- **`GO MIGRATION-VERIFY-2`** (2026-09-21) — po ručnom dobehnutí cez Dashboard. Výsledok nižšie.
+
+### Opravené / korigované
+1. **„Registry je pravda, nie volajúci."** §3.4 CP-SPEC bral `reversible` z `AuthorityContext`, teda **od volajúceho**. Agent, ktorý by svoj nezvratný send vyhlásil za zvratný, by prešiel popod OD-9 podlahu — celý authority engine by bol dekorácia. Oprava: `resolveAuthority` znovu prečíta registry a pri nezhode vráti `FORBIDDEN` (`context_registry_mismatch`). Pokryté testami.
+2. **Root cause 240 decisions / 0 outcomes.** Doterajší zápis viedol I-006 ako porušený invariant bez príčiny. Jeden read-only SELECT na PROD ju dokázal: **240 decisions cez 48 distinct leadov = presne 5 na lead**, a **0** z tých 48 leadov nikdy nedosiahlo terminálny status. `resolveOpenDecisionsForLead` sa volá jedine z `PATCH /api/leads/[id]:150` a jedine pri terminálnom statuse. **Outcome writer nie je pokazený — nikdy nebol dosiahnuteľný.** Dva štrukturálne nálezy: agent nemá vlastný terminálny stav (F-1) a nemá idempotenciu (F-2).
+
+### MIGRATION-VERIFY-2 — výsledok (read-only, PROD `ypgajkhqtbriqqmyawyv`)
+- Migrácia **`20260817220000` je na PROD kompletná**: všetky 3 stĺpce `leads` + `profiles.is_platform_admin` + oba indexy, definície sedia. `leads.last_contact` (text, NOT NULL) nedotknuté.
+- **`schema_migrations` = 50**, riadok `20260817220000` prítomný s menom `p0_schema_alters_leads_profiles`. **Táto migrácia je overená.**
+- **Drift sa tým NEZATVÁRA: 50 migration rows vs 103 migration files v repe.** Táto migrácia pokryla jednu položku, nie ten rozdiel.
+- 509 leadov: `last_contact_at` populated = **0**, `bri_score != 0` = **0**, `dossier` populated = **0**. Stĺpce existujú, dáta v nich nie sú.
+- **Riziko `42703` je odstránené** — `lib/operator/gather.ts` už nemá na čom spadnúť.
+- **Význam NULL výsledku v Operator konzumentovi je stále UNKNOWN.** `gather.ts:116` robí `.gte("last_contact_at", cutoff14d)`, čo na samých NULL vráti prázdno. Či sa to prejaví ako poctivé „unavailable" alebo ako číslo `0` (teda tvrdenie „žiadny kontakt" namiesto „nevieme"), **nebolo overené**. Nesmie byť prezentované ako potvrdený bug.
+- Vedľajší efekt: týmto je zodpovedaná brána **G4** zo session wrap-upu 2026-09-20 (#600), ktorá žiadala presne toto read-only overenie.
+
+### Rozpracované / Pending
+- **CP-P0-4 acceptance #4 a #5 — persistence.** Uzavretá slučka je dokázaná v procese a v testoch (9 eventov, jeden `correlation_id`), **nie je perzistovaná**. Spine v2 stĺpce na PROD neexistujú. Zápis control eventov do dnešného `platform_events` bez v2 stĺpcov by vyrobil ten tichý-v1 stav, na ktorý existuje I-014.
+- **U-J — Twilio idempotency.** Otvorené. `Idempotency-Key` je doložená pre Conversations Orchestrator a Monitor Alarms, **nie pre Messages create**, ktoré Revolis reálne volá. Dovtedy SMS/WhatsApp = at-least-once. *(U-K je RESOLVED produkčným precedensom `public.spend_credits`. U-L je RESOLVED a vedené ako **P1**, nie otvorený P0.)*
+- **U-M** — prečo follow-up cron spravil presne 5 behov a 25. 6. prestal. Vyžaduje Vercel cron históriu, nedostupnú z agentskej session.
+- **U-N** — či tých 48 leadov malo dosiahnuť terminálny status. Interpretácia klientskych dát, mimo architektonickej kontroly.
+- **Migration drift 50 / 103.** Schéma sa mení mimo histórie, takže `schema_migrations` nie je spoľahlivý zdroj pravdy o PROD schéme.
+- **F-3 až F-6 zo suitability reportu.** F-3 `estimatePrediction` vracia literály (0.22/0.18, 420/310, 0.62/0.55) — prenesené nezmenené s provenance, nie vylepšené. F-4 `POST /api/followup` je jednotenantný konštantou (`FOLLOWUP_AGENCY_ID = DEMO_AGENCY_ID`). F-5 `buildDraftBody` má meno referenčného klienta natvrdo v každom drafte pre každého tenanta (multi-tenancy bug + Stealth Mode). F-6 `capabilities/_shared/audit-log.ts` je druhá in-memory diera po I-008.
+- **`last_contact_at` zostáva prázdny** (0 / 509).
+- **Interpretácia prázdneho `last_contact_at` v Operatore = UNKNOWN**, viď vyššie.
+
+### Kľúčové súbory zmenené
+- `packages/control-contract/**`: nový balík — kontrakt, registry, authority engine, runner, 4 testovacie súbory
+- `apps/crm/src/lib/agents/followup/controlled.ts`: migrovaný agent (RECOMMEND, `followup.draft`)
+- `apps/crm/src/lib/control-plane/run-context.ts`: platformová továreň na `RunContext` (agent si ju nesmie vyrobiť sám)
+- `apps/crm/src/lib/agents/followup/__tests__/controlled.test.ts`: dôkaz uzavretej slučky, I-011/I-012/I-009
+- `.github/workflows/saas-grade-pipeline.yml`: nová job `Control Contract (authority + closed loop)`
+- `apps/crm/tsconfig.json`, `apps/crm/vitest.config.js`: alias `@revolis/control-contract`
+- `docs/reports/2026-09-19-CP-P0-4-followup-suitability.md`: read-only suitability check + root cause 240/0
+- `memory/decisions.md`: záznam CP-P0-4
+
+### Ďalší krok
+**`GO CP-P0-1A`** (Safe Spine Foundation) — primárna ďalšia brána. Bez nej sa acceptance #4/#5 nedajú dokončiť. Pred implementáciou treba presne vyriešiť, čo durable persistence znamená, lebo práve to blokuje event-spine A. Rozsah: A1 kanonická v2 schéma · A2 `scope` diskriminátor · A3 tenant isolation · A4 correlation/causation/run sémantika · A5 idempotency · A6 versioning · A7 invariant enforcement · A8 migration ownership. **Žiadny produkčný PII backfill** — to je CP-P0-1C.
+`CP-P0-2` (durable approvals) zostáva ako **alternatívny následný** gate — nie je vykonaný ani aktuálny a neotvára sa súbežne, aby nevznikli dve meniace sa P0 osi naraz.
+
 ## Session 2026-08-25
 ### Dokončené
 - Critical bug hunt (correctness): 4 HIGH/CRITICAL — `docs/reports/2026-08-25-critical-bug-hunt.md`
