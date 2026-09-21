@@ -7,6 +7,11 @@ backups/
 
 # dependencies
 /node_modules
+# `/node_modules` is root-anchored, so the dev-only tooling that the
+# control-contract and bus CI jobs install per package was not ignored. Anyone
+# running those typechecks locally would otherwise be one `git add -A` away
+# from committing it.
+packages/*/node_modules/
 /.pnp
 .pnp.js
 
