@@ -79,3 +79,110 @@ v jednom smere, kým platí `CHECKOUT-ENV-01`.
    najprv vytvoriť?
 3. Ak je kanonický seat model: `/porovnanie-programov` komunikuje neplatný cenník
    — stiahnuť, prepísať, alebo označiť ako roadmapu?
+
+---
+
+## Founder rozhodnutie 2026-09-21 (`DEC-20260921-001`)
+
+1. **Kanonický model = SEAT.** 79 / 71 / 63 € na makléra za mesiac. Programy
+   Market Vision / Protocol Authority sú nadstavby, nie alternatívny základný
+   checkout. 49/99/199/449 € nie je paralelný programový checkout.
+2. **Stripe: najprv VERIFY, až potom prípadné CREATE.** Nikto nedostáva GO na
+   vytváranie nových Stripe cien. Vytvorenie ceny = vytvorenie obchodného
+   kontraktu, to nie je „oprava env".
+3. **`/porovnanie-programov`** sa nesmie miešať do opravy checkoutu — samostatná
+   úloha.
+
+Hranica: AI diagnostikuje, pripravuje a overuje. Finálny obchodný kontrakt
+a production payment configuration ostáva pod Founder GO.
+
+## VERIFY — akceptačné kritériá (krok A)
+
+Nie „pozri, či tam niečo je". Price objekt musí sedieť s kontraktom v kóde,
+inak checkout spadne alebo bude účtovať inú sumu, než UI ukazuje.
+
+| env premenná | tier | `unit_amount` | `currency` | `recurring.interval` | min. množstvo |
+|---|---|---|---|---|---|
+| `STRIPE_PRICE_SOLO_SEAT` | solo | `7900` | `eur` | `month` | 1 |
+| `STRIPE_PRICE_TEAM_SEAT` | team | `7100` | `eur` | `month` | 3 |
+| `STRIPE_PRICE_OFFICE_SEAT` | office | `6300` | `eur` | `month` | 10 |
+
+Zdroj čísel: `program-tier-pricing.ts` `PLAN_PRICES_EUR` (79/71/63) a
+`SEAT_TIER_CONFIG.minSeats`.
+
+Ďalšie tvrdé podmienky:
+
+- **`recurring` je povinné.** Session sa tvorí s `mode: "subscription"`
+  (`credits-billing.ts:114`). One-time price tam Stripe odmietne.
+- **Cena je per-seat, nie balík.** Line item je `{ price, quantity: qty }`
+  (`:72-74`), kde `qty` = počet maklérov. Price musí byť za **jedného** makléra.
+- **`active: true`.**
+- **live mode**, nie test — prod používa `STRIPE_SECRET_KEY` z produkčného targetu.
+- **Formát ID** musí sedieť `^price_[a-zA-Z0-9]{8,}$` (`:275`), inak ho
+  `isValidStripePriceId` odmietne aj keď je správne nastavené.
+
+Pri každom nájdenom price zdokumentovať: Price ID · Product · amount · currency ·
+recurring interval · active/inactive · test/live.
+
+### Príkaz na VERIFY (spúšťa founder — kľúč nedávať agentovi)
+
+Read-only `GET`, nič nevytvára. Beží s **live** secret key:
+
+```bash
+curl -s https://api.stripe.com/v1/prices \
+  -u "sk_live_…:" \
+  -d active=true -d limit=100 -G \
+  -d "expand[]=data.product" \
+| python3 -c "
+import json,sys
+for p in json.load(sys.stdin)['data']:
+    r=p.get('recurring') or {}
+    prod=p.get('product') or {}
+    print(f\"{p['id']:32s} {str(p.get('unit_amount')):>7s} {p.get('currency')} \"
+          f\"{r.get('interval','ONE-TIME'):>8s} active={p.get('active')} \"
+          f\"live={p.get('livemode')} :: {prod.get('name') if isinstance(prod,dict) else prod}\")
+"
+```
+
+Hľadáme tri riadky s `7900 eur month`, `7100 eur month`, `6300 eur month`.
+
+### Ak existujú → env patch (krok B)
+
+Hodnoty dopĺňa founder zo Stripe, agent ich nehádže ani negeneruje:
+
+```
+STRIPE_PRICE_SOLO_SEAT=price_…
+STRIPE_PRICE_TEAM_SEAT=price_…
+STRIPE_PRICE_OFFICE_SEAT=price_…
+```
+
+Target: `production` (pre preview smoke aj `preview`). Po zápise redeploy —
+`process.env` sa číta pri builde/runtime funkcie, existujúci deploy sa sám
+neaktualizuje.
+
+### Ak neexistujú → STOP (krok C)
+
+Samostatné GO na vytvorenie Products/Prices. Do tej doby `/upgrade` ostáva
+korektne fail-closed — ukazuje „Checkout momentálne nedostupný", čo je pravda,
+nie chyba.
+
+## Nález pri príprave VERIFY: `CHECKOUT-ENV-02`
+
+Krok A sa **nesmie** obmedziť na tri seat premenné.
+
+`upgrade/page.tsx:225-234` ponúka checkbox „Owner Cockpit (+X €/mes)" a
+pripočítava ho do zobrazenej sumy (`:80`). `buildSeatCheckoutSessionParams`
+(`credits-billing.ts:77-82`) ale pridá cockpit line item **len ak**
+`getOwnerCockpitStripePriceId()` vráti neprázdnu hodnotu — inak ho ticho
+vynechá, bez chyby a bez varovania.
+
+`STRIPE_PRICE_OWNER_COCKPIT` a `STRIPE_PRICE_OWNER_COCKPIT_PRO` sú v produkcii
+**MISSING**.
+
+Dnes je to neviditeľné, lebo sa nikto nedostane ani k seat checkoutu. Ale vo
+chvíli, keď sa nastavia len tri seat premenné, zákazník zaškrtne Owner Cockpit,
+uvidí vyššiu sumu a zaplatí iba seaty. Preto pri kroku A overiť **päť** price
+objektov (seat ×3 + cockpit ×2), alebo pred krokom D skryť cockpit checkbox.
+
+Fail-closed oprava (`if (!cockpitPrice) throw`) je samostatný code fix, nie
+súčasť env patchu.
