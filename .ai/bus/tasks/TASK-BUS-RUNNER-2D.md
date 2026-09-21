@@ -7,7 +7,7 @@ created_at: 2026-09-21T00:00:00Z
 
 scope:
   repo_paths:
-    - docs/architecture/runner-contract-2d.md
+    - docs/architecture/runner-audit-2d.md
     - docs/reports/2026-09-2*-bus-runner-2d-*.md
     - .ai/bus/tasks/TASK-BUS-RUNNER-2D.md
   forbidden_paths:
@@ -35,13 +35,13 @@ acceptance:
       if(ids.length!==1||ids[0]!=='BUS_ALIVE_CAPABILITY'){console.error('capability surface changed:',ids);process.exit(1)}"
     expect: exit_code == 0
   - id: A4
-    desc: "kontrakt odpoveda na vsetky styri otvorene otazky, ktore 2D blokuju"
-    cmd: "grep -c 'OQ-2\\|OQ-3\\|OQ-5\\|OQ-6' docs/architecture/runner-contract-2d.md"
-    expect: "kazde OQ-2, OQ-3, OQ-5, OQ-6 ma vlastnu sekciu s rozhodnutim alebo explicitnym BLOCKED"
+    desc: "audit ma zaver pre OQ-2, OQ-3 (navrh/BLOCKED) a OQ-5, OQ-6 (naozaj zavrete?)"
+    cmd: "grep -c 'OQ-2\\|OQ-3\\|OQ-5\\|OQ-6' docs/architecture/runner-audit-2d.md"
+    expect: "kazde OQ ma vlastnu sekciu; OQ-2/OQ-3 s navrhom alebo BLOCKED, OQ-5/OQ-6 s verdiktom"
   - id: A5
-    desc: "adversarialny audit ma zaver pre kazdu triedu z policy B"
-    cmd: "grep -c 'repo write\\|git write\\|merge\\|deploy\\|external side effect\\|credentials' docs/architecture/runner-contract-2d.md"
-    expect: "kazda z siestich tried ma vlastny riadok s dokazom, nie suhrnne tvrdenie"
+    desc: "adversarialny audit ma zaver pre kazdu triedu z policy B, s riadkom kodu"
+    cmd: "grep -c 'repo write\\|git write\\|merge\\|deploy\\|external side effect\\|credentials' docs/architecture/runner-audit-2d.md"
+    expect: "kazda z siestich tried ma vlastny riadok s cestou a cislom riadku, nie suhrnne tvrdenie"
 
 budget:
   max_iterations: 6
@@ -66,97 +66,83 @@ verdict:
   ledger_run_id: null
 ---
 
-# TASK-BUS-RUNNER-2D — runner contract + adversariálny audit (NIE implementácia)
+# TASK-BUS-RUNNER-2D — adversariálny audit **už nasadeného** runnera
 
-Krok 2D z `docs/architecture/adr-2026-09-21-bus-runner-v2.md` §9 je „Always-on runner
-na hoste". Táto karta **nie je GO na jeho implementáciu**. Je to prvá polovica: preložiť
-tri founderove rozhodnutia (§1.1–1.3) do konkrétneho runner kontraktu a **adversariálne
-overiť, že nevzniká nová cesta k `AUTO-SAFE` write alebo external side effect**.
+> **Oprava 2026-09-21, po merge #617.** Pôvodná verzia tejto karty tvrdila, že
+> 2D runner neexistuje, a žiadala návrh kontraktu *pred* implementáciou. To bolo
+> nesprávne: kód 2D je na `main` od `e6a2ddc` (#617, 14:18), teda skôr, než karta
+> vznikla. Pôvodná kontrola bežala proti zastaranému `origin/main`.
+>
+> Zadanie sa tým **nezrušilo, ale obrátilo**: audit sa nerobí pred kódom, ale nad
+> kódom, ktorý už existuje — a **pred tým, než runner dostane hosta a token**.
 
-Implementácia runnera je samostatné GO po prijatí tohto kontraktu.
+Runner je dnes **kód bez hosta**: `scripts/bus/consume.ts:752,789` má
+`DEFAULT_POLL_INTERVAL_MS = 60_000` a always-on slučku, ale pre jeho beh neexistuje
+runbook ani identita tokenu. To je jediná vec, ktorá dnes drží dosah chyby nízko.
 
-## Najprv som hľadal — stav prerekvizít (overené v kóde, nie z ADR)
+## Stav overený v kóde (nie z ADR)
 
-| krok | stav | dôkaz |
+| položka | stav | dôkaz |
 |---|---|---|
 | 2A ADR | ✅ | `fb59e23` (#607) |
-| 2B atomický `move()` | ✅ | `0341c45` (#611), `github-store.ts:158` — jeden tree, retry raz z čerstvého readu |
-| 2C lease + stavový model | ✅ | `b71f8dc` (#615), `packages/bus-core/src/execution-state.ts` |
-| 2D always-on runner | ❌ | `scripts/bus/` nemá poll slučku; `consume.ts` je jednorazový beh |
-| 2E read-only capabilities | ❌ | `consumer.ts:80` — `DEFAULT_CAPABILITIES = [BUS_ALIVE_CAPABILITY]` |
+| 2B atomický `move()` | ✅ | `0341c45` (#611), `github-store.ts:158` |
+| 2C lease + stavový model | ✅ | `b71f8dc` (#615), `execution-state.ts` |
+| 2D always-on slučka | ✅ **shipped** | `e6a2ddc` (#617), `consume.ts:752,789` |
+| OQ-1 TTL / heartbeat / timeout | ✅ ratifikované v kóde | `execution-state.ts:17-19` |
+| OQ-5 denný strop | ✅ **shipped** | `execution-cap.ts`, `DAILY_EXECUTION_CAP = 100` |
+| OQ-6 blocker dedup | ✅ **shipped** | `consume.ts:511` `blocker_deduped` |
+| OQ-2 eskalácia mimo BUS | ❌ **otvorené** | `FAILED_PERSISTENT` sa zapíše do ledgeru (`consume.ts:726`); žiadny kanál k človeku |
+| OQ-3 hosting + identita tokenu | ❌ **otvorené** | žiadny runbook v `docs/runbooks/`; v kóde sa riešiť nedá |
+| `sideEffects` na capability | ❌ **chýba** | `consumer.ts:35-49` — polia sú `id`, `idempotent`, `matches`, `prompt`, `verify` |
+| capability povrch | 1 | `consumer.ts:80` — len `BUS_ALIVE_CAPABILITY` |
 
-2D teda **smie začať** — 2B aj 2C sú hotové. Blokujú ho otvorené otázky, nie poradie.
+## Úloha
 
-## Čo z §10 ešte blokuje 2D
+### 1. Adversariálny audit šiestich tried policy B
 
-`OQ-1` (TTL / heartbeat / timeout) je **už zodpovedaná v kóde**:
-`execution-state.ts:17-19` — `CLAUDE_RUN_TIMEOUT_MS = 10 min`, `LEASE_TTL_MS = 2 min`,
-`HEARTBEAT_INTERVAL_MS = 30 s`, komentár „Founder decisions, 2026-09-21". Kontrakt to
-má potvrdiť ako ratifikované, nie znovu otvárať.
+Pre **každú** triedu z `ADR §1.1` (repo write, git write, merge, deploy,
+external side effect, credentials/secrets) doložiť samostatným riadkom:
 
-Zvyšné štyri musí kontrakt vyriešiť **pred** implementáciou:
+1. ktorý konkrétny mechanizmus bráni tomu, aby sa tam **bežiaci** runner dostal bez GO
+2. kde je to v kóde vynútené — cesta + riadok, nie odkaz na ADR
+3. čo by muselo zlyhať, aby sa bariéra obišla
 
-- **OQ-2 — retry budget.** `MAX_PERSISTENCE_ATTEMPTS = 2` existuje, ale ADR pýta aj
-  *ako sa founder o `FAILED_PERSISTENT` dozvie mimo BUS-u*. Kanál dnes neexistuje.
-- **OQ-3 — hosting a identita tokenu.** Fine-grained PAT sa nedá obmedziť na vetvu;
-  `contents: write` platí na celý repozitár. Kto token drží, či dedikovaný machine
-  account, a čo bráni runnerovi písať mimo `bus/`.
-- **OQ-5 — denný strop vykonaní.** Dnes neexistuje žiadny. Pri poll á 60 s je to jediná
-  poistka proti neohraničenému nákladu.
-- **OQ-6 — opakované blockery. Toto je pre 2D najvážnejšie.** `consume.ts` nechá
-  odmietnutý task zámerne otvorený („only the founder closes a blocked task"). Pri
-  jednorazovom behu správne. Pri poll á 60 s ten istý task vyrobí blocker **každú
-  minútu** — 1440 blockerov denne do vlákna, ktoré má niesť rozhodnutia. Bez riešenia
-  OQ-6 runner nesmie bežať.
+Súhrnné „policy B to zakazuje" = odmietnutie karty. ADR §1.1 sám hovorí, že formálna
+pečiatka vo `verify()` je porušením; to isté platí pre tento audit.
 
-## Adversariálny audit — povinná časť
+**Povinne pomenovať:** ADR §11 uvádza `sideEffects: "none"` ako podmienku pre
+`AUTO-SAFE`, ale to pole na `BusCapability` **neexistuje**. Mitigácia z ADR sa proti
+dnešnému rozhraniu nedá vynútiť. Navrhnúť, či sa doplní a v ktorom kroku.
 
-Pre **každú** zo šiestich tried z policy B (`ADR §1.1`: repo write, git write, merge,
-deploy, external side effect, credentials/secrets) doložiť samostatným riadkom:
+### 2. Overiť, že OQ-5 a OQ-6 sú naozaj zavreté
 
-1. ktorý konkrétny mechanizmus bráni tomu, aby sa tam runner dostal bez GO
-2. kde je to v kóde vynútené (cesta + riadok), nie kde je to napísané v ADR
-3. čo by muselo zlyhať, aby sa tá bariéra obišla
+Nie „commit to tvrdí". Doložiť testom alebo čítaním kódu:
 
-Súhrnné „policy B to zakazuje" je **odmietnutie karty**. ADR §1.1 hovorí, že formálna
-pečiatka (`return null` vo `verify()`) je porušením — to isté platí pre tento audit.
+- **OQ-5:** čo presne sa stane pri dosiahnutí `DAILY_EXECUTION_CAP`. Zastaví sa
+  automatické vykonávanie, alebo sa len zaloguje? ADR žiada zastavenie.
+- **OQ-6:** za akých podmienok `blocker_deduped` **prestane** platiť. ADR §10 pýta,
+  čo je podnet na prehodnotenie — zmena tasku? zmena allowlistu? Ak dedup nikdy
+  nevyprší, odmietnutý task zostane ticho navždy.
 
-**Známa diera, ktorú audit musí pomenovať:** `BusCapability`
-(`packages/bus-core/src/consumer.ts:35-49`) má polia `id`, `idempotent`, `matches`,
-`prompt`, `verify`. **Pole `sideEffects` neexistuje.** ADR §11 pritom uvádza
-`sideEffects: "none"` ako podmienku pre `AUTO-SAFE`. Mitigácia z ADR sa teda proti
-dnešnému rozhraniu nedá vynútiť. Kontrakt má navrhnúť, či sa pole doplní (a v ktorom
-kroku), alebo čím sa nahradí.
+### 3. Zavrieť OQ-2 a OQ-3 — návrhom, nie rozhodnutím
 
-## Čo má kontrakt obsahovať
-
-`docs/architecture/runner-contract-2d.md`:
-
-1. **Proces** — čo runner spúšťa, v akom cykle, ako sa zastaví. Poll 60 s (§1.2),
-   žiadny verejný endpoint, žiadny webhook.
-2. **Identita a oprávnenia** — odpoveď na OQ-3 vrátane toho, čo runner **nesmie**
-   a ako je to vynútené mimo dobrej vôle (branch protection, machine account).
-3. **Strop** — odpoveď na OQ-5: konkrétne číslo a čo sa stane pri jeho dosiahnutí.
-4. **Potlačenie opakovaných blockerov** — odpoveď na OQ-6 vrátane toho, čo je podnet
-   na prehodnotenie (zmena tasku? zmena allowlistu?).
-5. **Eskalácia mimo BUS** — odpoveď na OQ-2.
-6. **Observability** — JSONL run log + heartbeat súbor podľa §8. Žiadne periodické
-   „som živý" správy na BUS.
-7. **Adversariálny audit** — šesť tried, viď vyššie.
-8. **Čo kontrakt nerozhoduje** — explicitne, v duchu ADR §12.
+- **OQ-2:** `FAILED_PERSISTENT` dnes končí zápisom do ledgeru. Navrhnúť kanál
+  k človeku mimo BUS-u. **Nezriaďovať ho.**
+- **OQ-3:** hosting a identita tokenu. Fine-grained PAT sa nedá obmedziť na vetvu —
+  `contents: write` platí na celý repozitár. Navrhnúť, čo bráni runnerovi písať mimo
+  `bus/`. **Token negenerovať, hosting nenastavovať.** Toto je founderovo rozhodnutie;
+  zapísať ako `BLOCKED — vyžaduje founder GO` s variantmi.
 
 ## STOP podmienky
 
-- **Žiadny runtime kód.** `packages/bus-core/src/**` a `scripts/bus/**` sú zakázané.
+- **Žiadny runtime kód.** `packages/bus-core/**` a `scripts/bus/**` sú zakázané.
 - Žiadna nová capability, žiadna zmena `DEFAULT_CAPABILITIES`.
-- Žiadna zmena ADR — kontrakt je nový dokument, ADR ostáva ako prijaté rozhodnutie.
-- Žiadny token, PAT, secret ani hosting sa nenastavuje. Kontrakt ich **popisuje**,
-  nezriaďuje.
-- Žiadny webhook, žiadny Cloudflare tunel, žiadny multi-runner (ADR §12).
-- Ak niektorá otvorená otázka nemá odpoveď bez founderovho rozhodnutia, zapísať ju ako
-  `BLOCKED — vyžaduje founder GO` s návrhom. Nevypĺňať ju odhadom.
+- Žiadna zmena ADR — audit je nový dokument.
+- **Runner sa nespúšťa.** Žiadny token, secret, hosting, cron, systemd unit.
+- Žiadny webhook, žiadny multi-runner (ADR §12).
+- Ak otázka nemá odpoveď bez foundera, `BLOCKED` + návrh. Nevypĺňať odhadom.
 
 ## Report
 
-`BUS-RUNNER-2D-CONTRACT PASS/FAIL` + odpovede na OQ-2/3/5/6 + audit šiestich tried +
-zoznam toho, čo ostáva `BLOCKED`.
+`BUS-RUNNER-2D-AUDIT PASS/FAIL` + audit šiestich tried s riadkami kódu + verdikt
+k OQ-5 a OQ-6 (naozaj zavreté?) + návrhy k OQ-2 a OQ-3 + zoznam `BLOCKED`.
