@@ -1486,6 +1486,34 @@ blocked. Exact PC commands are in
   cenu v UI, ale line item sa ticho vynechá, ak cockpit price ID chýba (v
   produkcii chýba). Overiť päť price objektov, nie tri.
 
+## [2026-09-21] DEC-20260921-002 — BUS Runner V2, KROK 2D: always-on runner s tvrdým stropom
+
+- **Rozhodnutie:** Runner prechádza z jednorazového behu na dlhobežiaci poll
+  loop (60 s) nad GitHub-backed BUS. Tri founder parametre: denný strop
+  **100 automatických vykonaní / 24 h rolling window**, blocker deduplikácia
+  **bez zatvárania tasku**, samostatný always-on host s vlastnou strojovou
+  identitou (PAT nie je osobný credential foundera).
+- **Hranica sa nemení.** 2D nepridáva ani jednu capability. Žiadny write,
+  žiadny external side effect, žiadna deployment ani merge automation, žiadny
+  verejný endpoint, žiadna závislosť na Cloudflare. Policy B sa nerozširuje.
+- **Strop je tvrdý:** po 100 vykonaniach runner odmieta s `daily_cap_reached`
+  a **nepokračuje** v automatickom vykonávaní. Task ostáva OPEN.
+- **Blocker nikdy nezatvára task.** Zatvára ho iba founder. Zmena oproti
+  doterajšiemu stavu: `handledTaskIds()` už nezapočítava blockery, takže raz
+  odmietnutý task dostane druhú šancu, keď príčina pominie. Proti dvojitému
+  vykonaniu naďalej stojí result envelope + durable execution state z 2C.
+- **Otvorené pre foundera:** task zaparkovaný stropom ostáva `NEEDS_FOUNDER`
+  aj po uvoľnení 24 h okna — implementované doslovne podľa zadania.
+  Alternatíva (odmietnutie len na daný cyklus) je pripravená, ak ju zvolí.
+- **Dôkaz:** `npm run bus:test` 148/148; `npm run bus:validate` 43 súborov,
+  0 errors.
+- **Artefakty:** `packages/bus-core/src/execution-cap.ts`,
+  `packages/bus-core/src/consumer.ts`, `scripts/bus/consume.ts`, PR #617.
+  Architektonický referenčný dokument:
+  `docs/architecture/adr-2026-09-21-bus-runner-v2.md`.
+- **Nezačaté:** 2E (read-only analytické capabilities pod Policy B) — vlastná
+  GO brána. ADR §10 otvorené otázky (identita hosta/tokenu, alerting na
+  vyčerpaný retry budget) tiež neriešené.
 ## 2026-09-21 — BUS-AUTH-IDENTITY: špecifikácia identity volajúceho v transporte (PR #612)
 
 - **Rozhodnutie:** BUS dostane per-agent credentials. `token: string` →

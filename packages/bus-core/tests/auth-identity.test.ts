@@ -75,7 +75,7 @@ test("1. sol-gpt may not write outbox", async () => {
   const { handle } = await newHandler();
   const response = await handle(post("outbox", SOL_SECRET, envelope("sol-gpt", "claude-code")));
   assert.equal(response?.status, 403);
-  assert.equal((await response!.json()).error, "box_not_writable");
+  assert.equal(((await response!.json()) as { error: string }).error, "box_not_writable");
 });
 
 test("2. sol-gpt may write inbox, tasks, context and decisions", async () => {
@@ -142,7 +142,7 @@ test("7b. writing outbox does not become a licence to rewrite what is in outbox"
 
   const response = await handle(ack("outbox", id, CLAUDE_SECRET, { status: "archived", to_box: "archive" }));
   assert.equal(response?.status, 403);
-  assert.equal((await response!.json()).error, "box_not_writable");
+  assert.equal(((await response!.json()) as { error: string }).error, "box_not_writable");
 });
 
 test("8. sol-gpt cannot ack a message into outbox — the #601 gap", async () => {
@@ -150,7 +150,7 @@ test("8. sol-gpt cannot ack a message into outbox — the #601 gap", async () =>
   const { id } = await seedInbox(handle, SOL_SECRET, "sol-gpt", "claude-code");
   const response = await handle(ack("inbox", id, SOL_SECRET, { status: "done", to_box: "outbox" }));
   assert.equal(response?.status, 403);
-  assert.equal((await response!.json()).error, "ack_target_not_writable");
+  assert.equal(((await response!.json()) as { error: string }).error, "ack_target_not_writable");
 });
 
 test("9. claude-code acking inbox -> outbox still works — the legitimate path", async () => {
