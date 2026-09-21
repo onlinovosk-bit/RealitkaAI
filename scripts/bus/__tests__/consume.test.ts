@@ -20,7 +20,13 @@ import {
   type ClaudeRunReport,
 } from "../../../packages/bus-core/src/index.ts";
 import { nodeAdapter } from "../serve.ts";
-import { FileClaimLedger, resolveClaudeBinary, runConsumer, type ClaudeExecutor } from "../consume.ts";
+import { ClaudeTimeoutError, FileExecutionLedger, resolveClaudeBinary, runConsumer, type ClaudeExecutor } from "../consume.ts";
+import {
+  BUS_ALIVE_CAPABILITY,
+  CLAUDE_RUN_TIMEOUT_MS,
+  leaseUntil,
+  type BusCapability,
+} from "../../../packages/bus-core/src/index.ts";
 
 const TOKEN = "test-token";
 
@@ -38,7 +44,7 @@ const LIVE_TASK = {
 
 interface Harness {
   client: BusHttpClient;
-  ledger: FileClaimLedger;
+  ledger: FileExecutionLedger;
   store: FileBusStore;
   busRoot: string;
   close(): Promise<void>;
@@ -66,7 +72,7 @@ async function harness(): Promise<Harness> {
 
   return {
     client: new BusHttpClient({ baseUrl: `http://127.0.0.1:${port}`, token: TOKEN }),
-    ledger: new FileClaimLedger(stateDir),
+    ledger: new FileExecutionLedger(stateDir),
     store,
     busRoot,
     close: async () => {
@@ -160,6 +166,9 @@ test("a re-opened task that already has an answer is refused by the bus-side gua
   // Someone re-opens the task in inbox after it was answered.
   const doc = await bus.store.read("outbox", taskId);
   await bus.store.write("inbox", { ...doc.envelope!, status: "open" }, { overwrite: true });
+  // Drop the local record: this test is about the guard that works across
+  // machines, where the second runner has never seen this task before.
+  await bus.ledger.clear(taskId);
 
   const outcomes = await runConsumer({ client: bus.client, executor: stubExecutor("BUS ALIVE", calls), ledger: bus.ledger });
   assert.equal(calls.length, 1, "Claude must still have been invoked exactly once");
@@ -252,17 +261,48 @@ test("--task scopes the run to exactly one message", async (t) => {
   assert.equal((await bus.client.list("inbox", { to: "claude-code", status: "open" })).length, 1);
 });
 
-test("a concurrent claim stops a second process mid-flight", async (t) => {
+test("a live lease held by another runner stops a second process mid-flight", async (t) => {
   const bus = await harness();
   t.after(() => bus.close());
 
   const taskId = await seedTask(bus.client);
-  assert.equal(await bus.ledger.claim(taskId), true);
+  await bus.ledger.write({
+    task_id: taskId,
+    state: "EXECUTING",
+    owner: "runner@other-host/boot-9/999",
+    lease_expires_at: leaseUntil(new Date()),
+    capability_id: "bus-alive",
+    idempotent: true,
+    persistence_attempts: 0,
+    updated_at: new Date().toISOString(),
+  });
 
   const calls: string[] = [];
   const outcomes = await runConsumer({ client: bus.client, executor: stubExecutor("BUS ALIVE", calls), ledger: bus.ledger });
-  assert.equal(calls.length, 0);
-  assert.equal(outcomes[0]!.action === "skipped" && outcomes[0]!.code, "already_claimed");
+  assert.equal(calls.length, 0, "Claude must not be invoked while someone else holds the lease");
+  assert.equal(outcomes[0]!.action === "skipped" && outcomes[0]!.code, "lease_held");
+});
+
+test("an expired lease from a dead runner is reclaimed", async (t) => {
+  const bus = await harness();
+  t.after(() => bus.close());
+
+  const taskId = await seedTask(bus.client);
+  await bus.ledger.write({
+    task_id: taskId,
+    state: "CLAIMED",
+    owner: "runner@dead-host/boot-1/1",
+    lease_expires_at: new Date(Date.now() - 1).toISOString(),
+    capability_id: "bus-alive",
+    idempotent: true,
+    persistence_attempts: 0,
+    updated_at: new Date().toISOString(),
+  });
+
+  const calls: string[] = [];
+  const outcomes = await runConsumer({ client: bus.client, executor: stubExecutor("BUS ALIVE", calls), ledger: bus.ledger });
+  assert.equal(outcomes[0]!.action, "executed", "nothing had run, so the task is free to take");
+  assert.equal(calls.length, 1);
 });
 
 test("a task whose gate lost text to YAML is refused end to end", async (t) => {
@@ -348,4 +388,203 @@ test("the Claude binary is explicitly resolvable and never silently guessed", ()
   } else {
     assert.equal(resolveClaudeBinary({}), "claude");
   }
+});
+
+/* ------------------------------------------- durable execution (KROK 2C) */
+
+/** A client that fails chosen calls, so persistence can break on demand. */
+function flakyClient(real: BusHttpClient, plan: { postFailures?: number; ackFailures?: number }): BusHttpClient {
+  let posts = plan.postFailures ?? 0;
+  let acks = plan.ackFailures ?? 0;
+  return {
+    health: () => real.health(),
+    list: (box: never, query: never) => real.list(box, query),
+    read: (box: never, id: never) => real.read(box, id),
+    post: async (box: never, envelope: never) => {
+      if (posts > 0) {
+        posts -= 1;
+        throw new Error("github 500 (simulated)");
+      }
+      return real.post(box, envelope);
+    },
+    ack: async (box: never, id: never, options: never) => {
+      if (acks > 0) {
+        acks -= 1;
+        throw new Error("github 502 (simulated)");
+      }
+      return real.ack(box, id, options);
+    },
+  } as unknown as BusHttpClient;
+}
+
+/** Blows up if invoked — proof that a resumed run never re-asks Claude. */
+const forbiddenExecutor: ClaudeExecutor = async () => {
+  throw new Error("Claude was invoked again after EXECUTED — invariant I1 broken");
+};
+
+test("a reply that cannot be written is stored, then resumed without re-running Claude", async (t) => {
+  const bus = await harness();
+  t.after(() => bus.close());
+
+  const taskId = await seedTask(bus.client);
+  const calls: string[] = [];
+
+  const failed = await runConsumer({
+    client: flakyClient(bus.client, { postFailures: 1 }),
+    executor: stubExecutor("BUS ALIVE", calls),
+    ledger: bus.ledger,
+  });
+  assert.equal(failed[0]!.action, "failed");
+  assert.equal(calls.length, 1, "Claude ran exactly once");
+
+  // The durability anchor: the reply is on disk before any network call.
+  const stored = await bus.ledger.read(taskId);
+  assert.equal(stored?.state, "EXECUTED");
+  assert.equal(stored?.reply, "BUS ALIVE");
+  assert.equal(stored?.persistence_attempts, 1);
+  assert.equal((await bus.client.list("outbox", { from: "claude-code" })).length, 0);
+
+  const resumed = await runConsumer({ client: bus.client, executor: forbiddenExecutor, ledger: bus.ledger });
+  assert.equal(resumed[0]!.action, "executed");
+  assert.equal((await bus.ledger.read(taskId))?.state, "DONE");
+  assert.equal((await bus.client.list("outbox", { from: "claude-code" })).length, 1);
+  assert.deepEqual(await bus.client.list("inbox", { to: "claude-code", status: "open" }), []);
+});
+
+test("the persistence budget is two attempts, then the runner stops instead of looping", async (t) => {
+  const bus = await harness();
+  t.after(() => bus.close());
+
+  const taskId = await seedTask(bus.client);
+  const broken = flakyClient(bus.client, { postFailures: 99 });
+
+  const first = await runConsumer({ client: broken, executor: stubExecutor("BUS ALIVE"), ledger: bus.ledger });
+  assert.equal(first[0]!.action, "failed");
+  const second = await runConsumer({ client: broken, executor: forbiddenExecutor, ledger: bus.ledger });
+  assert.equal(second[0]!.action, "failed");
+  assert.equal((await bus.ledger.read(taskId))?.state, "FAILED_PERSISTENT");
+
+  // Third pass: no further attempt, and above all no second execution.
+  const third = await runConsumer({ client: broken, executor: forbiddenExecutor, ledger: bus.ledger });
+  assert.equal(third[0]!.action === "skipped" && third[0]!.code, "failed_persistent");
+});
+
+test("a crash after the result was posted still closes the task", async (t) => {
+  const bus = await harness();
+  t.after(() => bus.close());
+
+  const taskId = await seedTask(bus.client);
+  // Post lands, every ack fails: the state the `already_handled` gate used to
+  // strand — result on the bus, task still open, forever.
+  const failed = await runConsumer({
+    client: flakyClient(bus.client, { ackFailures: 99 }),
+    executor: stubExecutor("BUS ALIVE"),
+    ledger: bus.ledger,
+  });
+  assert.equal(failed[0]!.action, "failed");
+  assert.equal((await bus.ledger.read(taskId))?.state, "RESULT_POSTED");
+  assert.equal((await bus.client.list("inbox", { to: "claude-code", status: "open" })).length, 1);
+
+  const resumed = await runConsumer({ client: bus.client, executor: forbiddenExecutor, ledger: bus.ledger });
+  assert.equal(resumed[0]!.action, "executed");
+  assert.deepEqual(await bus.client.list("inbox", { to: "claude-code", status: "open" }), []);
+  assert.equal((await bus.ledger.read(taskId))?.state, "DONE");
+});
+
+test("a non-idempotent capability is never auto-executed, not even the first time", async (t) => {
+  const bus = await harness();
+  t.after(() => bus.close());
+
+  const taskId = await seedTask(bus.client);
+  const risky: BusCapability = { ...BUS_ALIVE_CAPABILITY, id: "risky", idempotent: false };
+  const calls: string[] = [];
+
+  const stopped = await runConsumer({
+    client: bus.client,
+    executor: stubExecutor("BUS ALIVE", calls),
+    ledger: bus.ledger,
+    capabilities: [risky],
+  });
+
+  // Absent state is indistinguishable from lost state, so a first run cannot be
+  // told apart from a repeat. Under capability policy B this is unreachable —
+  // anything non-idempotent has side effects and never reaches AUTO-SAFE.
+  assert.equal(stopped[0]!.action === "blocked" && stopped[0]!.code, "unprovable_first_run");
+  assert.equal(calls.length, 0, "Claude must not be invoked");
+  assert.equal((await bus.ledger.read(taskId))?.state, "NEEDS_FOUNDER");
+  assert.equal((await bus.client.list("inbox", { to: "claude-code", status: "open" })).length, 1);
+});
+
+test("an interrupted run of a non-idempotent capability waits for the founder", async (t) => {
+  const bus = await harness();
+  t.after(() => bus.close());
+
+  const taskId = await seedTask(bus.client);
+  const risky: BusCapability = { ...BUS_ALIVE_CAPABILITY, id: "risky", idempotent: false };
+  // A process that died mid-run: EXECUTING, lease long gone, no reply.
+  await bus.ledger.write({
+    task_id: taskId,
+    state: "EXECUTING",
+    owner: "runner@dead-host/boot-1/1",
+    lease_expires_at: new Date(Date.now() - 1).toISOString(),
+    capability_id: "risky",
+    idempotent: false,
+    persistence_attempts: 0,
+    updated_at: new Date().toISOString(),
+  });
+
+  const stopped = await runConsumer({
+    client: bus.client,
+    executor: forbiddenExecutor,
+    ledger: bus.ledger,
+    capabilities: [risky],
+  });
+  assert.equal(stopped[0]!.action === "blocked" && stopped[0]!.code, "execution_unknown");
+  assert.equal((await bus.ledger.read(taskId))?.state, "NEEDS_FOUNDER");
+  // The task stays open; only the founder closes it.
+  assert.equal((await bus.client.list("inbox", { to: "claude-code", status: "open" })).length, 1);
+
+  const again = await runConsumer({
+    client: bus.client,
+    executor: forbiddenExecutor,
+    ledger: bus.ledger,
+    capabilities: [risky],
+  });
+  assert.equal(again[0]!.action === "skipped" && again[0]!.code, "needs_founder");
+});
+
+test("an interrupted run of an idempotent capability is simply retried", async (t) => {
+  const bus = await harness();
+  t.after(() => bus.close());
+
+  const taskId = await seedTask(bus.client);
+  await bus.ledger.write({
+    task_id: taskId,
+    state: "EXECUTING",
+    owner: "runner@dead-host/boot-1/1",
+    lease_expires_at: new Date(Date.now() - 1).toISOString(),
+    capability_id: "bus-alive",
+    idempotent: true,
+    persistence_attempts: 0,
+    updated_at: new Date().toISOString(),
+  });
+
+  const outcomes = await runConsumer({ client: bus.client, executor: stubExecutor("BUS ALIVE"), ledger: bus.ledger });
+  assert.equal(outcomes[0]!.action, "executed");
+});
+
+test("a timed-out run of an idempotent capability may simply be retried", async (t) => {
+  const bus = await harness();
+  t.after(() => bus.close());
+
+  await seedTask(bus.client);
+  const timingOut: ClaudeExecutor = async () => {
+    throw new ClaudeTimeoutError(CLAUDE_RUN_TIMEOUT_MS);
+  };
+
+  const failed = await runConsumer({ client: bus.client, executor: timingOut, ledger: bus.ledger });
+  assert.equal(failed[0]!.action, "failed");
+
+  const retried = await runConsumer({ client: bus.client, executor: stubExecutor("BUS ALIVE"), ledger: bus.ledger });
+  assert.equal(retried[0]!.action, "executed");
 });
