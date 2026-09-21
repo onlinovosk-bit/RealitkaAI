@@ -1516,3 +1516,36 @@ blocked. Exact PC commands are in
   **Nerozhodnuté.**
 - **Brána:** implementácia = samostatné GO. Merge je akt Foundera.
 - **Artefakty:** `docs/architecture/adr-2026-09-21-bus-auth-identity.md`, PR #612.
+
+## 2026-09-21 — BUS-AUTH-IDENTITY implementovaný (PR #612, commit f0a3436)
+
+- **Stav:** DECLARATIVE → **ENFORCED** na transporte. Nie preto, že to hovorí
+  ADR, ale preto, že tri mutácie zhasnú presne ten test, ktorý ich pomenúva.
+- **Mechanizmus:** `BusCredential { id, secret, agent, writableBoxes?,
+  execution? }`. POST vyžaduje `envelope.from === identity.agent`, inak 403.
+  `outbox` píše len exekučná identita — POST aj ack. Nejednoznačná konfigurácia
+  (dva rovnaké secrety, prázdny secret, oba režimy naraz, žiadny credential)
+  odmietne postaviť handler.
+- **Zatvorená #601 medzera:** `ack(inbox → outbox)` sa nedala zavrieť globálne,
+  lebo consumer ju legitímne používa. Rozlíšiteľná je až identitou.
+- **Dôkaz, nie zelené testy:** 126/126 (predtým 108). Mutácie: vypnutá `from`
+  väzba → padnú testy 7 a 13; vypnutá ack-target brána → padne test 8; ack
+  source spojený späť s POST setom → padne test 7b.
+- **Spresnenia oproti schválenej špecifikácii (ADR §6a, nie potichu):**
+  (1) `from` väzba platí na vytvorenie správy, nie na ack — `consume.ts:396`
+  acknowleduje task, ktorý napísal `sol-gpt`; (2) ack source ≠ POST set, inak by
+  právo písať do `outbox` znamenalo aj právo prepisovať to, čo tam už je;
+  (3) revokácia = odobratie zo zoznamu, účinná pri reštarte, živý revocation
+  list neexistuje; (4) `shared` režim ostáva presne ako bol — spevnený DEGRADED
+  by vyzeral ako hranica bez toho, aby ňou bol.
+- **Nález mimo scope (BLOKUJÚCI pre ďalší krok):** `packages/bus-core` ani
+  `scripts/bus` nebeží v žiadnom CI workflowe. `saas-grade-pipeline.yml:265`
+  púšťa `packages/control-contract`, bus nikde. **126 testov dnes nestráži nič** —
+  vrátane authority-boundary testu z #601. Mechanizmus, ktorý nikto nespúšťa,
+  nie je enforcement.
+- **Nespustené, nepredstierané:** typecheck. TypeScript v tomto checkoute nie je
+  nainštalovaný a bus nemá typecheck script ani CI krok. Node type-stripping
+  znamená, že typová chyba by nepadla ani v testoch.
+- **Otvorené (Founder):** ADR §7 — má `shared` režim expirovať? Neimplementované,
+  lebo nerozhodnuté. Pridať expiráciu bez zadania = zhasnúť bežiaci tunel k
+  dátumu, ktorý nikto nezvolil.
