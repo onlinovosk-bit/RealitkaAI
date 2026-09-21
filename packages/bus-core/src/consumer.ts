@@ -93,7 +93,8 @@ export type ConsumerRefusalCode =
   // outcome cannot be established, so it is parked instead of repeated.
   | "execution_unknown"
   | "unprovable_first_run"
-  | "capability_gone";
+  | "capability_gone"
+  | "daily_cap_reached";
 
 /** Refusals worth telling the sender about. The rest are silent no-ops. */
 const REPORTABLE: ReadonlySet<ConsumerRefusalCode> = new Set<ConsumerRefusalCode>([
@@ -169,18 +170,47 @@ export function evaluateTask(task: BusEnvelope, options: EvaluateOptions = {}): 
 }
 
 /**
- * Task ids this agent has already answered. Derived from the bus itself rather
- * than local state, so a second machine (or a restarted consumer) cannot run
- * the same task twice.
+ * Task ids this agent has already **answered** — that is, produced a result for.
+ * Derived from the bus itself rather than local state, so a second machine (or a
+ * restarted consumer) cannot run the same task twice.
+ *
+ * Blockers deliberately do not count. A blocker says "I did not run this", and
+ * treating it as an answer gagged the task forever: once refused, a task could
+ * never run again even after the founder fixed the very thing that refused it.
+ * Under a one-shot runner that was invisible; under a runner polling every
+ * minute it is a trap. Duplicate execution stays guarded by results, and by the
+ * durable execution state on the runner itself.
  */
 export function handledTaskIds(envelopes: BusEnvelope[]): Set<string> {
   const handled = new Set<string>();
   for (const envelope of envelopes) {
     if (envelope.from !== CONSUMER_AGENT) continue;
+    if (envelope.type === "blocker") continue;
     if (envelope.thread) handled.add(envelope.thread);
     if (envelope.task_id) handled.add(envelope.task_id);
   }
   return handled;
+}
+
+/**
+ * The refusal already reported for each task, so the runner can stay silent
+ * about a refusal it has already explained — without ever closing the task.
+ * Keyed by task, valued by the refusal code carried in the blocker body.
+ */
+export function reportedRefusals(envelopes: BusEnvelope[]): Map<string, Set<string>> {
+  const reported = new Map<string, Set<string>>();
+  for (const envelope of envelopes) {
+    if (envelope.from !== CONSUMER_AGENT || envelope.type !== "blocker") continue;
+    const code = /^code:\s*(\S+)$/m.exec(envelope.body)?.[1];
+    if (!code) continue;
+    for (const key of [envelope.thread, envelope.task_id]) {
+      if (!key) continue;
+      const codes = reported.get(key) ?? new Set<string>();
+      codes.add(code);
+      reported.set(key, codes);
+    }
+  }
+  return reported;
 }
 
 /** Facts about the real Claude Code run, carried into the result as evidence. */
