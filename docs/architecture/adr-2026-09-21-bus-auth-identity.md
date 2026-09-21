@@ -179,6 +179,34 @@ Declared here so no later report can imply otherwise:
 - `docs/ops/bus-handshake-runbook.md` updated for two secrets.
 - No change to `LIVE_TRADING`, the safety envelope, or any capability status.
 
+## 6a. Where the implementation refined this spec
+
+Written after the code, from what reading `consume.ts` forced. Recorded rather
+than folded in silently, because a spec that quietly becomes whatever was built
+stops being a spec.
+
+1. **The `from` binding is a rule about creating a message, not about acking
+   one.** §2.3 says "every write". An ack is a write — it rewrites the message
+   with `overwrite: true` — but it changes `status` and `updated_at` and never
+   `from`. `consume.ts:396` acks the *task*, which `sol-gpt` wrote. Requiring
+   `from === identity.agent` there would forbid the one path the execution agent
+   exists for. Acks are governed by the box capability alone.
+
+2. **Acking out of a box is a separate capability from writing into it.** §2.2
+   gives `claude-code` `outbox`. Deriving the ack *source* set from the same list
+   would hand it the right to rewrite results already published in `outbox` —
+   exactly what #601's gate was added to prevent. The two sets are kept apart:
+   `writableBoxes` for POST, `ackSourceBoxes` for the box an ack reads from.
+
+3. **Revocation is removal from the credential list, and takes effect on
+   restart.** There is no live revocation list, and this ADR does not add one.
+   Test 6 asserts the real mechanism, not a wished-for one.
+
+4. **`shared` mode keeps today's behaviour exactly**, including an unrestricted
+   ack target. It is not a weaker version of the boundary; it is the absence of
+   one, reported as such. Hardening it would make DEGRADED look like a boundary
+   without being one.
+
 ## 7. Open question for the Founder
 
 Should `shared` mode be permitted **indefinitely**, or expire?
