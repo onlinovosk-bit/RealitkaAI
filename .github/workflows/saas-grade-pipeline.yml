@@ -276,8 +276,26 @@ jobs:
         with:
           node-version: 22
 
-      # No install step: the bus imports nothing but node builtins, so the suite
-      # runs on a bare checkout. If that ever stops being true this job fails on
-      # the import, which is the honest signal.
+      # No install step for the suite: the bus imports nothing but node builtins,
+      # so it runs on a bare checkout. If that ever stops being true this job
+      # fails on the import, which is the honest signal.
       - name: Test
         run: npm run bus:test
+
+      # The suite runs under Node's type-stripping, which discards types rather
+      # than checking them — #612 shipped three type errors straight through a
+      # green Test step. #617 added the tsconfig and the `bus:typecheck` script
+      # but nothing invoked them, so the guard was declarative. This runs it.
+      #
+      # Tooling is installed here, dev-only, mirroring the control-contract job:
+      # the bus has no runtime dependencies and a root `npm install` would tie
+      # this job to the whole monorepo's dependency tree for no gain.
+      - name: Install typecheck tooling (dev only, nothing at runtime)
+        run: npm install --no-save --no-package-lock --no-audit --no-fund typescript@5.9.3 @types/node@22
+        working-directory: packages/bus-core
+
+      # Same tsconfig and same tsc version as the root `npm run bus:typecheck`,
+      # invoked from the package because that is where the tooling lives.
+      - name: Typecheck
+        run: npx tsc -p tsconfig.json --noEmit
+        working-directory: packages/bus-core
