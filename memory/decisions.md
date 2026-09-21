@@ -1549,3 +1549,36 @@ blocked. Exact PC commands are in
 - **Otvorené (Founder):** ADR §7 — má `shared` režim expirovať? Neimplementované,
   lebo nerozhodnuté. Pridať expiráciu bez zadania = zhasnúť bežiaci tunel k
   dátumu, ktorý nikto nezvolil.
+
+## 2026-09-21 — BUS-CI-WIRE: bus testy sú v CI a je to dokázané, nie tvrdené
+
+- **Rozhodnutie:** nový job `BUS (transport authority boundary)` v
+  `saas-grade-pipeline.yml`, vedľa `control-contract`. Beží `npm run bus:test`.
+  Bez `npm install` — bus importuje výhradne node builtins (overené grepom cez
+  `packages/bus-core` a `scripts/bus`: žiadny non-relatívny import okrem `node:`).
+- **Prečo:** 126 testov, ktoré CI nikdy nespúšťa, nie je enforcement. Platilo to
+  aj pre authority-boundary test z #601 — bol v repe od 3 dní a nestrážil nič.
+- **Dôkaz (nie „zelené testy"), štyri kroky:**
+  1. `c2ff3b5` — BUS job **zelený**: `152 tests, 152 pass, 0 fail`, 1.93 s.
+     Log overený, nie no-op. 152 a nie 126, lebo CI checkoutuje merge ref, teda
+     aj 26 testov z KROK 2C.
+  2. `f9e63b6` — dočasná mutácia `from` brány → BUS job **červený**:
+     `152 tests, 150 pass, 2 fail`, exit 1. Počet aj pozícia sedia s lokálnou
+     reprodukciou (testy 7 a 13).
+  3. `33835ba` — mutácia odstránená; `packages/bus-core` a `scripts/bus` sú
+     byte-identické s `c2ff3b5` (overené `git diff --stat`, prázdny výstup).
+  4. Finálny HEAD musí byť zelený.
+- **Nález pri príprave:** main sa medzitým posunul o 5 commitov a KROK 2C zmenil
+  `consume.ts` (+377 riadkov). Textovo sa merguje čisto, ale to nič nehovorí o
+  sémantike. Overené v izolovanom worktree: **152/152 na zlúčenom stave** —
+  identity brány sú kompatibilné s lease/crash recovery.
+- **Dôsledok pre PR #612:** CI, ktoré na `75d9835` zosvietilo zeleno, bežalo
+  proti merge refu s novým main. `mergeable_state` bol `behind`, nie
+  `conflicting`. Main som do vetvy **nemergoval** — pravidlo Foundera zakazuje
+  merge main do feature branch len kvôli čerstvému CI.
+- **Nezmenené (scope BUS-CI-WIRE):** auth model, `outbox` boundary, ACK
+  semantics, shared-mode expiry, `packages/bus-core`, `scripts/bus`.
+- **Typecheck ostáva UNKNOWN.** TypeScript v checkoute nie je. `control-contract`
+  si ho v CI doinštaluje ad hoc (`npm install --no-save typescript@5.9.3`) —
+  rovnaký vzor by sa dal použiť pre bus, ale to je nové rozhodnutie, nie CI
+  wiring. Návrh, nie vykonané.
