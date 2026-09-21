@@ -1485,3 +1485,34 @@ blocked. Exact PC commands are in
 - **Odvodený nález:** `CHECKOUT-ENV-02` — Owner Cockpit checkbox pripočítava
   cenu v UI, ale line item sa ticho vynechá, ak cockpit price ID chýba (v
   produkcii chýba). Overiť päť price objektov, nie tri.
+
+## 2026-09-21 — BUS-AUTH-IDENTITY: špecifikácia identity volajúceho v transporte (PR #612)
+
+- **Rozhodnutie:** BUS dostane per-agent credentials. `token: string` →
+  `credentials: BusCredential[] { id, secret, agent }`. Bearer sa rozlúšti na
+  identitu, identita určuje zapisovateľné boxy. **Zatiaľ len ADR, žiadny kód.**
+- **Meraný problém (nie predpokladaný), čítané z kódu na `9d933ea`:**
+  `http.ts:51` porovnáva iba bearer; `http.ts:26` `DEFAULT_WRITABLE` je globálne,
+  nie per caller; **`envelope.from` sa v `http.ts` nekontroluje vôbec** —
+  je self-declared. `scripts/bus/consume.ts` používa rovnaký endpoint a rovnaký
+  token ako ChatGPT.
+- **Dôsledok, ktorý nie je teoretický:** `consume.ts:274` stavia duplicate guard
+  z `list("outbox", { from: CONSUMER_AGENT })`. Podvrhnuté `from: claude-code`
+  presvedčí consumera, že úloha už bola zodpovedaná → **zápis sa stáva odoprením
+  vykonania.** Nie únik dát, ale tiché nevykonanie reálnej úlohy.
+- **Jadro ADR:** `envelope.from === identity.agent`, inak 403. Bez tejto väzby
+  by per-box pravidlá boli divadlo — kto smie písať do `inbox`, otrávi guard.
+- **Degradovaný režim je viditeľný, nie tichý:** zdieľaný token ďalej funguje,
+  ale `/health` hlási `auth_mode`, `from_binding: false`,
+  `outbox_provenance: "unverified"`. Nasadenie sa dá *opýtať*, či hranica platí.
+  (GOVERNANCE C3: ticho nie je povolenie.)
+- **Čo ADR výslovne NERIEŠI:** ukradnutý secret stále hovorí ako svoj agent;
+  historické `from` ostávajú neoverené (história sa neprepisuje);
+  `LIVE_TRADING` a safety envelope sa nedotýka; **git PAT runnera je iná
+  vrstva** (`adr-2026-09-21-bus-runner-v2.md` §10.3/§11 — fine-grained PAT sa
+  nedá obmedziť na jednu vetvu).
+- **Otvorená otázka pre Foundera (ADR §7):** má `shared` režim expirovať?
+  Aplikácia P7 („capability, ktorá neexpiruje, je default") na transport.
+  **Nerozhodnuté.**
+- **Brána:** implementácia = samostatné GO. Merge je akt Foundera.
+- **Artefakty:** `docs/architecture/adr-2026-09-21-bus-auth-identity.md`, PR #612.
