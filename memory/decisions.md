@@ -1368,3 +1368,19 @@ blocked. Exact PC commands are in
 - **Acceptance:** #1 ✅ #2 ✅ #3 ✅ #6 ✅ · **#4 a #5 ⚠️ čiastočne** — uzavretá slučka je dokázaná v procese a v testoch (9 eventov, jeden `correlation_id`), **nie je perzistovaná**. Spine v2 stĺpce na PROD neexistujú (CP-P0-1A). Zápis control eventov do dnešného `platform_events` bez v2 stĺpcov by vyrobil presne ten tichý-v1 stav, na ktorý existuje I-014.
 - **Nové UNKNOWN:** U-M (prečo cron spravil presne 5 behov a 25.6. prestal — treba Vercel cron históriu), U-N (či tých 48 leadov malo dosiahnuť terminálny status — interpretácia klientskych dát, mimo architektonickej kontroly).
 - **Ďalší krok:** `GO CP-P0-1A` (Safe Spine Foundation) — bez neho sa acceptance #4/#5 nedajú dokončiť. Alternatívne `GO CP-P0-2` (durable approvals), ktoré rieši I-008 a odomkne `APPROVAL_REQUIRED` cestu.
+
+## [2026-09-20] — Akvizičný systém zmergovaný do main (#588 → `aa6e07f`)
+
+- **Stav:** 7 dokumentov na `main`, žiadny kód ani migrácia. Akvizičná stratégia je od teraz
+  kanonická, nie návrh.
+- **Overenie voči primárnym zdrojom (kontrolór):** founderov výrok „588 je merged" bol 2026-09-18
+  nepresný — vtedy bol merged **#437**, nie #588. #588 sa mergol až 2026-09-20. Zaznamenané,
+  lebo na tom stálo rozhodnutie, či reštartovať vetvu.
+- **Technický nález:** Vercel `ignoreCommand` (#578) **nechráni** pred dennou kvótou
+  `api-deployments-free-per-day` — kvóta sa míňa pri vytvorení deploymentu, nie pri builde.
+  Šetrí build minúty, nie počet deploymentov. Moje skoršie tvrdenie o opaku bolo nesprávne.
+- **Brány po merge:** G1 (GDPR B2B outreach) a G2 (GDPR prístup k dátam klienta) blokujú
+  prvú vlnu aj Shadow CRM; `gdpr-advisor` skill nie je v session dostupný. G4 čaká na PROD
+  overenie migrácie `20260817220000`. G3 a G5 nezmenené.
+- **Ďalší krok (task-loop):** PROD overenie G4 — read-only SELECT. Bez neho nestojí ranný zoznam (S6),
+  ktorý je jediná úloha fixujúca `activities=3/31 dní`.
