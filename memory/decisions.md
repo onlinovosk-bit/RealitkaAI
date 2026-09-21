@@ -1421,6 +1421,30 @@ blocked. Exact PC commands are in
 - **Ďalší krok (task-loop):** PROD overenie G4 — read-only SELECT. Bez neho nestojí ranný zoznam (S6),
   ktorý je jediná úloha fixujúca `activities=3/31 dní`.
 
+## [2026-09-21] — Smolko ingest: atribúcia BLOCKED, schránky odložené, parser opravený
+
+- **Atribúcia leadu na makléra = BLOCKED, nie TODO.** Dnes všetky dopyty prichádzajú na `office@realitysmolko.sk`; neexistuje signál, z ktorého určiť konkrétneho makléra. `inbound_mailboxes` je per agentúra, nie per maklér. Odblokuje sa **až** napojením individuálnych schránok. Dôkaz: `0/7` živých portálových leadov má `assigned_profile_id`.
+- **Napojenie 8 maklérskych schránok: odložené do zmerania objemu.** Dôvod (PRIME DIRECTIVE): od júla prišlo **7 portálových dopytov**, z nich **jeden čisto sparsovaný**. Stavať webex pipeline + GDPR proces na taký objem je neúmerné, **pokiaľ** makléri nedostávajú násobne viac na vlastné adresy. To nikto nezmeral. 21. 9. odoslaný e-mail p. Smolkovi s otázkou na tri konkrétne mená za jeden týždeň.
+- **Ak sa k schránkam raz pristúpi: preposielanie, nie IMAP.** IMAP by znamenal uložiť 9 hesiel k celým schránkam vrátane súkromnej pošty maklérov — neobhájiteľné pri čl. 5(1)(c). **Bez allowlistu odosielateľov** — ticho by zahadzoval priame klientske dopyty, čo je u tohto klienta najcitlivejšia možná chyba.
+- **Oprava záznamu (dôležité pre interpretáciu metrík):** `Igor Kališ` (5. 7., `igorkaliis21@gmail.com`) **NIE JE testovací lead** — je to jediný reálny čisto sparsovaný produkčný dopyt. Testovací záznam je `demo.zaujemca@example.com` (10. 7.). Všetkých 7 záznamov zdroja `valuation_widget` sú naše smoke testy, ani jeden reálny.
+- **Parser (#599, main `2a510ba3`):** HTML v `raw` rozbíjal extrakciu polí. Opravené meno, výber adresy záujemcu, koncová interpunkcia, vylúčenie `noreply`/domény príjemcu. Idempotencia zámerne nedotknutá (`rawHash` z pôvodného `raw`). **Neriešené:** vzory pre `Správa:` u portálov a brána „je to vôbec dopyt?" (`eventKind` je dnes `inquiry` pre všetko okrem unsubscribe).
+
+## [2026-09-21] — RAW STORAGE: identifikovaná medzera, PROPOSAL, bez GO
+
+- **Medzera (FAKT):** `acquire_dedup_keys` drží iba hash. Hash povie „túto správu sme videli", nepovie „takto vyzerala správa, ktorú sme parsovali". Dôsledok doložený pri #599: oprava parsera bola overená na **rekonštruovaných fixtúrach**, nie na pôvodných správach. Chýbajúce vzory pre `Správa:` sa bez originálov napísať nedajú.
+- **Návrh 30-dňovej retencie je PROPOSAL, nie rozhodnutie.**
+- **Právny základ 6(1)(f) je UNVERIFIED** — vyžaduje samostatné právne posúdenie. Telo e-mailu obsahuje osobné údaje záujemcov; pracovná hypotéza „6(1)(f) + balancing test" **nie je** schválený právny základ.
+- **NO GO: žiadne produkčné raw maily sa zatiaľ neukladajú.** Implementácia až po samostatnom GO, a to v poradí právny/retention kontrakt → implementácia.
+- **Návrh tvaru (ak GO príde):** `tenant_id + message_id/dedup_key + received_at + retention_until + raw_body`, s tvrdým oddelením **ingest evidence vs. CRM business data**. Raw mail nie je ďalšia CRM tabuľka — je to forenzný zdroj pravdy pre ingest/parser pipeline.
+
+## [2026-09-21] — Branch cleanup `claude/brave-bohr-arikv2`: NO GO, audit EXPIRED
+
+- **Stav:** vetva zostáva na `348d3f59`, nedotknutá. Nesie 2 duplicitné commity (`42f9f432`, `7dbb94e8` — Founder Alert Adapter v0.1), ktorých obsah je už v main cez #572. Force-push **nevykonaný**.
+- **Prečo sa cleanup zastavil — dve nezávislé brány, obe zabrali:**
+  1. **Remote backup tag sa z Claude session vytvoriť nedal** — `git push origin backup/…` → HTTP 403, zatiaľ čo push branchu prešiel. Plán mal pri tom kroku podmienku „bez tohto to nerobiť". Príčina 403 = **UNKNOWN** (diagnostický endpoint proxy nedostupný), hypotéza „policy rozlišuje druhy refov" je **NOT VERIFIED**.
+  2. **`origin/main` sa medzi auditom a GO posunul** `9c6fc4dd → ed45d518` (#369, #586). Tým prestal platiť `proposed new HEAD` z auditu.
+- **Pôvodný cleanup audit je EXPIRED, nie pozastavený.** Keď sa vetva stane relevantnou, urobí sa **nový** read-only audit od vtedajšieho `origin/main`; pokračovanie zo starého auditu je porušenie protokolu (viď P1 v0.2 bod g).
+- **Nemeniť GitHub oprávnenia kvôli tomuto** — hranica funguje správne, jednorazovú operáciu vykoná človek.
 ## [2026-09-21] — Zmeraná hranica autonómie BUS-u (notifikácia ≠ autonómia)
 
 - **Kontext:** #589 (transport), #590 (handshake harness), #593 (consumer v1), #594
@@ -1678,3 +1702,35 @@ blocked. Exact PC commands are in
 - **Čo to neodomyká.** Gate C ostáva zablokovaný: `bus/main` je stále na
   `17f30d4` (2026-09-19), žiadny remote C-0 nebežal. Toto odstraňuje prekážku
   v kroku §4, nespúšťa ho.
+## 2026-09-21 — bus:typecheck zapojený do CI (PR #620, `b3d20de` na main)
+
+- **Nález, ktorý to spustil:** #617 pridal `packages/bus-core/tsconfig.json` a
+  script `bus:typecheck`, ale **nič ich nevolalo** — workflow púšťal len
+  `npm run bus:test`. Ten istý vzor ako 126 nespúšťaných testov ráno, o vrstvu
+  vyššie. Strážca, ktorého nikto nevolá, nie je strážca.
+- **Nebolo to hypotetické:** bus suite beží pod Node type-strippingom, ktorý
+  typy zahadzuje, nie kontroluje. **#612 preto pustilo na main tri typové
+  chyby** (`(await response!.json()).error`, kde `json()` vracia `unknown`) cez
+  zelený Test krok. #617 ich našiel a opravil.
+- **Dôkaz, ktorý ukazuje prírastok krytia, nie duplicitu** — oba kroky v tom
+  istom jobe na tom istom commite `57fd3e0`:
+  - krok 4 **Test → success**
+  - krok 6 **Typecheck → failure**
+  Test krok prešiel na kóde s reálnou typovou chybou. Lokálne to isté:
+  `tsc` → `TS2571`, exit 2; `bus:test` → 166/166, exit 0.
+- **Reťazec:** `2a9022a` baseline zelený → `57fd3e0` mutácia červená →
+  `9fdadf5` revert, všetky checky zelené (`Lint, test, build` 9:11 vrátane
+  Playwright smoke).
+- **Overené na main po merge (obsahom, nie ancestry):** Install + Typecheck
+  kroky na riadkoch 293/300, `.gitignore` riadok 14, mutácia na main nie je,
+  `bus:test` 166/166, `tsc` exit 0.
+- **Mimo pôvodný scope, priznané:** (1) `.gitignore` — `/node_modules` je
+  ukotvený na root, takže per-package tooling nebol ignorovaný; moja zmena ľudí
+  posiela inštalovať do `packages/bus-core`, tak som pascu zavrel.
+  (2) mutácia dočasne siahla do `packages/bus-core/tests/`, revertnuté.
+- **Zmena pravidla:** tento PR som **mergoval ja**, na výslovný pokyn
+  `GO MERGE #620`. Doteraz platilo „merge je akt Foundera" a mám to napísané v
+  každom tele PR. Beriem to ako zrušenie pre tento jeden PR, **nie** ako trvalé
+  povolenie. Ďalej mergujem len na výslovný pokyn.
+- **Pred mergom som čakal na dokončenie CI** — `Lint, test, build` bežal ešte 9
+  minút po GO. Mergovať na neúplnom dôkaze by poprelo disciplínu celého dňa.
