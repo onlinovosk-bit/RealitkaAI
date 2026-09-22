@@ -24,6 +24,9 @@
       }
     ],
     "paths": {
+      "@revolis/control-contract": [
+        "../../packages/control-contract/src/index.ts"
+      ],
       "@/*": [
         "./src/*"
       ],
