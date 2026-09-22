@@ -37,8 +37,10 @@ describe("credits-billing", () => {
       STRIPE_PRICE_SOLO_SEAT: "price_solo",
       STRIPE_PRICE_TEAM_SEAT: "price_team",
       STRIPE_PRICE_OFFICE_SEAT: "price_office",
-      STRIPE_PRICE_OWNER_COCKPIT: "price_cockpit",
-      STRIPE_PRICE_OWNER_COCKPIT_FOUNDER: "price_cockpit_founder",
+      // Shaped like real Stripe ids: the cockpit path validates against
+      // STRIPE_PRICE_ID_PATTERN, which rejects underscores and short suffixes.
+      STRIPE_PRICE_OWNER_COCKPIT: "price_1CockpitOwner000",
+      STRIPE_PRICE_OWNER_COCKPIT_FOUNDER: "price_1CockpitFounder0",
       STRIPE_PRICE_CREDITS_RAST: "price_rast",
     };
 
@@ -114,6 +116,53 @@ describe("credits-billing", () => {
       expect(result.metadata.ownerCockpit).toBe("false");
     });
 
+    it("never charges the standard price against a displayed founder price", () => {
+      // Founder places remain, so the UI renders 249 EUR. With the founder
+      // price unset, falling back to STRIPE_PRICE_OWNER_COCKPIT would charge
+      // 349 EUR against that displayed 249 — a silent overcharge. Refusing is
+      // the correct outcome; the checkbox is gated so this is unreachable from
+      // a freshly loaded page.
+      delete process.env.STRIPE_PRICE_OWNER_COCKPIT_FOUNDER;
+
+      expect(() =>
+        buildSeatCheckoutSessionParams({
+          seatTier: "team",
+          quantity: 5,
+          includeOwnerCockpit: true,
+        }),
+      ).toThrow(/Owner Cockpit/);
+    });
+
+    it("refuses rather than silently dropping the cockpit the customer paid for", () => {
+      // Pre-fix this returned a seat-only session: the customer saw the cockpit
+      // in the total and was charged without it. Lost revenue and a price the
+      // customer never agreed to, with no error anywhere.
+      delete process.env.STRIPE_PRICE_OWNER_COCKPIT_FOUNDER;
+      delete process.env.STRIPE_PRICE_OWNER_COCKPIT;
+
+      expect(() =>
+        buildSeatCheckoutSessionParams({
+          seatTier: "team",
+          quantity: 5,
+          includeOwnerCockpit: true,
+        }),
+      ).toThrow(/Owner Cockpit/);
+    });
+
+    it("records founderCockpit against what was charged, not what was eligible", () => {
+      // Below minSeats the cockpit is not added at all. The metadata must not
+      // claim founder pricing was applied to a purchase that never happened.
+      const result = buildSeatCheckoutSessionParams({
+        seatTier: "solo",
+        quantity: 1,
+        includeOwnerCockpit: true,
+      });
+
+      expect(result.lineItems).toHaveLength(1);
+      expect(result.metadata.ownerCockpit).toBe("false");
+      expect(result.metadata.founderCockpit).toBe("false");
+    });
+
     it("adds cockpit line item at 3+ seats with founder metadata", () => {
       const result = buildSeatCheckoutSessionParams({
         seatTier: "team",
@@ -122,9 +171,39 @@ describe("credits-billing", () => {
       });
 
       expect(result.lineItems).toHaveLength(2);
-      expect(result.lineItems[1]).toEqual({ price: "price_cockpit_founder", quantity: 1 });
+      expect(result.lineItems[1]).toEqual({ price: "price_1CockpitFounder0", quantity: 1 });
       expect(result.metadata.ownerCockpit).toBe("true");
       expect(result.metadata.founderCockpit).toBe("true");
+    });
+
+    it("refuses a placeholder cockpit price the same way as a missing one", () => {
+      // The checkbox gate (`isOwnerCockpitPurchasable`) rejects placeholders,
+      // so a truthiness guard here would let one reach Stripe while the UI had
+      // already hidden the add-on — the two disagreeing with no config change.
+      process.env.STRIPE_PRICE_OWNER_COCKPIT = "price_xxx";
+      process.env.STRIPE_PRICE_OWNER_COCKPIT_FOUNDER = "price_xxx";
+
+      expect(() =>
+        buildSeatCheckoutSessionParams({
+          seatTier: "team",
+          quantity: 5,
+          includeOwnerCockpit: true,
+        }),
+      ).toThrow("Owner Cockpit Stripe price nie je nakonfigurovaný.");
+    });
+
+    it("leaves the seat sale alone when the cockpit is not requested", () => {
+      delete process.env.STRIPE_PRICE_OWNER_COCKPIT;
+      delete process.env.STRIPE_PRICE_OWNER_COCKPIT_FOUNDER;
+
+      const result = buildSeatCheckoutSessionParams({
+        seatTier: "team",
+        quantity: 3,
+        includeOwnerCockpit: false,
+      });
+
+      expect(result.lineItems).toEqual([{ price: "price_team", quantity: 3 }]);
+      expect(result.metadata.ownerCockpit).toBe("false");
     });
   });
 
