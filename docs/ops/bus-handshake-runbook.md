@@ -21,7 +21,14 @@ cost governor, žiadna migrácia pre-v1 správ.
 **Pre dogfood použi github backend.** File backend použi len na overenie, že server
 vôbec beží.
 
-> ⚠️ Nezamlčím riziko: `GitHubBusStore` je pokrytý unit testami proti fake fetchu,
+> ⚠️ **Korekcia 2026-09-21:** tvrdenie nižšie je neaktuálne. `GitHubBusStore`
+> proti reálnemu GitHub API bežal 2026-09-18 — na `bus/main` sú commity od
+> `revolis-bus <bus@revolis.local>`. Ten dôkaz však pokrýva kód, ktorý už
+> neexistuje (move prepísaný v #611, auth v #601/#612), takže pre dnešný HEAD
+> platí naďalej „neoverené". Detaily:
+> `docs/ops/2026-09-21-gate-c0-remote-execution-evidence.md` §5.
+
+> ⚠️ Pôvodné znenie: `GitHubBusStore` je pokrytý unit testami proti fake fetchu,
 > ale **nikdy nebežal proti reálnemu GitHub API**. Pokus o živé overenie z tejto
 > session skončil `401` a príčinu (token vs. kód) sa mi nepodarilo doložiť —
 > token v cloud kontajneri nie je GitHub API credential. Prvý reálny beh je teda
@@ -139,6 +146,19 @@ ale BUS-004 sa preskočí — nie je čo viazať — a záver znie
 
 Ak tento krok neprejde, **nepokračuj na ChatGPT** — chyba je v transporte,
 nie v Actione.
+
+> ⚠️ **Per-agent tokeny: OPRAVENÉ v #626 (`fb2280d5`), tento krok sa zmenil.**
+> Harness dovtedy používal pre obe identity jeden `REVOLIS_BUS_TOKEN` a proti
+> serveru s per-agent auth padal na `403` (sol token na BUS-002, claude token
+> na BUS-001) — prejsť mohol len v degradovanom režime, teda s vypnutou
+> identitou. Po #626 berie `REVOLIS_BUS_TOKEN_SOL` aj `REVOLIS_BUS_TOKEN_CLAUDE`
+> a posiela každú správu pod vlastnou identitou. Popis toho stavu pred opravou:
+> `docs/ops/2026-09-21-gate-c0-remote-execution-evidence.md` §3.
+>
+> ⚠️ **Toto opravené NIE JE:** `MODE: remote` stále nie je dôkaz remote behu.
+> Rozhoduje oň iba prítomnosť flagu `--url` (`handshake.ts`), takže ho vypíše aj
+> beh proti `http://127.0.0.1` s file skladom — overené aj na `main` po #626.
+> Viď §2 toho istého dokumentu.
 
 ## 5. ChatGPT Custom GPT Action
 

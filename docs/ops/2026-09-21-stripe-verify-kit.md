@@ -26,6 +26,24 @@ kódu je zoznam iný v oboch smeroch:
 
 ## 1. Ako sa VERIFY spúšťa
 
+**Použi hotový skript z #622** — kóduje presne tých istých deväť očakávaní ako
+tento dokument a výstup dáva rovno v tvare `KĽÚČ=price_…`:
+
+```bash
+export STRIPE_SECRET_KEY=sk_live_…      # kľúč nikdy do chatu ani do repa
+bash scripts/ops/stripe-verify-prices.sh
+```
+
+Vypíše `N/9 resolved`. Riadky `OK` sa dajú priamo použiť v kroku B.
+
+Späť posielaj **iba výstup**. Price ID nie sú tajomstvo, secret key áno.
+
+Zvyšok tohto dokumentu hovorí, **čo ten výstup znamená** a čo urobiť pri každom
+z možných výsledkov.
+
+<details>
+<summary>Ručná alternatíva, ak skript nie je po ruke</summary>
+
 Read-only `GET`. Vypíše všetky aktívne ceny na účte:
 
 ```bash
@@ -46,8 +64,10 @@ for p in sorted(rows, key=lambda x: (x.get('unit_amount') or 0)):
 "
 ```
 
-Ak `curl` nie je po ruke: Stripe Dashboard → **Product catalog** → prepnúť na
-**live mode** (vpravo hore) → každý produkt → sekcia Pricing. Rovnaké údaje.
+Alebo Stripe Dashboard → **Product catalog** → prepnúť na **live mode**
+(vpravo hore) → každý produkt → sekcia Pricing. Rovnaké údaje.
+
+</details>
 
 ---
 
@@ -82,31 +102,39 @@ Zdroj: `PLAN_PRICES_EUR` (`:9-13`), `SEAT_TIER_CONFIG.minSeats` (`:45,53,61`),
 
 ---
 
-## 3. Owner Cockpit — nič neblokuje, a práve preto je to nebezpečné
-
-Cockpit nemá bránu. Ak cena chýba, line item sa **ticho vynechá**
-(`credits-billing.ts:77-81`) — bez chyby, bez varovania.
-
-### Trap, ktorý predošlé zadanie nepokrývalo
+## 3. Owner Cockpit — ktorú z dvoch cien vlastne potrebuješ
 
 `isFounderKancelariaEligible()` je **dnes `true`** — 20 miest celkovo, 13
-zabraných, **7 voľných** (`program-tier-pricing.ts:200-208`).
+zabraných, **7 voľných** (`program-tier-pricing.ts:200-208`). UI preto renderuje
+**249 €**, nie 349 (`upgrade/page.tsx` → `ownerFounderPriceEur`).
 
-Preto:
-- UI zobrazí **249 €** (`upgrade/page.tsx:73-75` → `ownerFounderPriceEur`)
-- checkout volá `getOwnerCockpitStripePriceId({ founderEligible: true })`
-  (`credits-billing.ts:75-78`), ktorý skúsi `_FOUNDER`, a **ak nie je nastavený,
-  spadne späť na `STRIPE_PRICE_OWNER_COCKPIT`** (`:302-309`)
+**Prakticky to znamená: dnes je relevantný `_OWNER_COCKPIT_FOUNDER`.** Nastaviť
+len `_OWNER_COCKPIT` cockpit nepredá — a to je zámer, nie chyba (viď nižšie).
+`_OWNER_COCKPIT` má zmysel nastaviť súčasne, aby predaj nespadol vo chvíli, keď
+sa founder miesta vyčerpajú.
 
-**Ak nastavíš len `STRIPE_PRICE_OWNER_COCKPIT` (349 €), zákazník uvidí 249 € a
-zaplatí 349 €.** Preplatok 100 €/mes., ticho, v momente platby.
+### Ako sa systém správa, keď cena chýba (stav po #627, `2936c56`)
 
-Navyše `metadata.founderCockpit` sa zapíše ako `"true"`
-(`credits-billing.ts:91`), takže audit stopa bude tvrdiť, že sa uplatnila
-founder cena — pri účtovaných 349 €.
+Pôvodne tu bola pasca: resolver pri nenastavenom `_FOUNDER` spadol späť na
+`_OWNER_COCKPIT`, takže zákazník videl 249 € a zaplatil 349 €. A ak nebola ani
+jedna cena, line item sa **ticho vynechal** — zákazník videl cockpit v sume a
+zaplatil bez neho.
 
-To je horšie než tichý výpadok tržby z `CHECKOUT-ENV-02`: tam prichádzame o
-peniaze my, tu preplatí zákazník.
+Oboje je zavreté:
+
+- **žiadny fallback** medzi founder a štandardnou cenou — každá sa resolvuje
+  len sama na seba; nenastavená znamená „nepredajné", nikdy „účtuj tú druhú"
+- **`cockpit.ownerPurchasable`** z `/api/billing/checkout-config` sa počíta z
+  **tej istej ceny, ktorú sa UI chystá zobraziť**, a `/upgrade` podľa neho
+  checkbox vôbec nezobrazí
+- **fail-closed** v `buildSeatCheckoutSessionParams`, ak by sa konfigurácia
+  zmenila medzi načítaním stránky a odoslaním
+- **`metadata.founderCockpit`** sa zapisuje podľa toho, čo sa naúčtovalo, nie
+  podľa eligibility
+
+**Pre VERIFY to nič nemení.** Cockpit ceny stále treba overiť, ak ho chceš
+predávať. Mení to len to, čo sa stane, keď chýbajú: zákazník dostane funkčný
+seat-only checkout namiesto nesprávnej sumy.
 
 | env premenná | `unit_amount` | `currency` | `recurring.interval` | poznámka |
 |---|---|---|---|---|
@@ -178,12 +206,14 @@ Existujú všetky 3 seat ceny, recurring, eur, month, správne sumy?
           Agent ceny nevytvára — vytvorenie ceny je obchodný kontrakt.
 
 Existuje STRIPE_PRICE_OWNER_COCKPIT_FOUNDER (24900)?
-├─ ÁNO  → zapíš ho spolu so seat cenami
+├─ ÁNO  → zapíš ho spolu so seat cenami (a _OWNER_COCKPIT tiež, ak existuje,
+│          aby predaj nespadol po vyčerpaní founder miest)
 ├─ NIE, ale _OWNER_COCKPIT (34900) existuje
-│        → NEZAPISUJ ho sám. Buď vytvor founder cenu (samostatné GO),
-│          alebo pred krokom D skry cockpit checkbox. Inak preplatok 100 €.
+│        → zapísať ho môžeš, cockpit sa jednoducho nebude ponúkať, kým sú
+│          voľné founder miesta. Preplatok už nehrozí (#627). Ak ho chceš
+│          predávať teraz, treba founder cenu vytvoriť — samostatné GO.
 └─ NEEXISTUJE ani jeden
-         → cockpit checkbox skryť pred krokom D, inak tichý výpadok tržby.
+         → cockpit sa neponúkne, seat checkout funguje normálne. Bez akcie.
 
 Existujú všetky 4 top-up ceny, one-time?
 ├─ ÁNO  → môžu ísť do toho istého env patchu

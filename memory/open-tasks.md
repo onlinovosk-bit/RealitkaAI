@@ -36,9 +36,14 @@ IDs. Musia existovať v Stripe účte a byť overené proti nemu.
 
 **Poradie krokov (founder, 2026-09-21):**
 
-- [ ] **A. Stripe VERIFY** — read-only. Kompletný kit s vyplňovacími tabuľkami,
-      rozhodovacím stromom a presnými sumami zo zdroja:
-      `docs/ops/2026-09-21-stripe-verify-kit.md`.
+- [ ] **A. Stripe VERIFY** — read-only. **Spusti:**
+      `STRIPE_SECRET_KEY=sk_live_… bash scripts/ops/stripe-verify-prices.sh`
+      (#622 — vypíše `N/9 resolved` a riadky `KĽÚČ=price_…` pripravené na env).
+      **Ako čítať výsledok** a čo robiť pri každom výstupe:
+      `docs/ops/2026-09-21-stripe-verify-kit.md` (#627 — rozhodovací strom,
+      vyplňovacie tabuľky, pasca s founder cenou).
+      Dva dokumenty vznikli paralelne v dvoch sessionoch a **nezávisle došli k
+      tým istým deviatim objektom** — skript je nástroj, kit je sprievodca.
       **Objektov je 9, nie 3 a nie 5** (seat ×3 blokujú /upgrade; cockpit ×2
       neblokujú nič a preto sú nebezpečné; top-up ×4 sú samostatná brána).
       `_OWNER_COCKPIT_PRO` sa neoveruje — `enabled: false`.
@@ -79,7 +84,17 @@ skončiť v inom cenovom modeli. Veľký redesign sa nevyžaduje.
 
 ### CHECKOUT-ENV-02 — Owner Cockpit sa zaplatí v UI, ale nie v Stripe
 
-**Nájdené pri VERIFY príprave, zatiaľ latentné.** `upgrade/page.tsx:225-234`
+**Status: VYRIEŠENÉ kódom v #627 (`2936c56`).** Zostáva len env časť, ktorá je
+súčasťou kroku A/B vyššie — cockpit ceny treba overiť a zapísať, ak ho chceš
+predávať. Popis nižšie je pôvodný nález; správanie, ktoré opisuje, už neplatí.
+
+**Čo sa zmenilo:** žiadny fallback medzi founder a štandardnou cenou (predtým
+zákazník videl 249 € a zaplatil 349 €); `cockpit.ownerPurchasable` z
+`/api/billing/checkout-config` gejtuje checkbox v `/upgrade`; fail-closed throw
+v `buildSeatCheckoutSessionParams`; `metadata.founderCockpit` odráža účtovanie,
+nie eligibility. Dôkaz: tri mutácie, každá zhasne svoj test.
+
+**Pôvodný nález (historický):** `upgrade/page.tsx:225-234`
 ponúka checkbox „Owner Cockpit (+X €/mes)" a pripočíta ho do zobrazenej sumy
 (`:80`). Ale `buildSeatCheckoutSessionParams` (`credits-billing.ts:77-82`) pridá
 cockpit line item **len ak** `getOwnerCockpitStripePriceId()` vráti neprázdnu
@@ -93,10 +108,8 @@ checkoutu. Vo chvíli, keď sa nastavia **len** tri seat premenné a cockpit nie
 zákazník zaškrtne Owner Cockpit, uvidí vyššiu sumu a zaplatí **iba seaty**.
 Tichý výpadok tržby plus rozpor ceny v momente platby.
 
-**Status:** OPEN — nezávisí od `FUNNEL-PRICING-01`.
-
-**Founder gate:** GO REQUIRED. Fail-closed oprava (`if (!cockpitPrice) throw`)
-je samostatný code fix, nie súčasť env patchu.
+**Founder gate:** GO REQUIRED na env zápis (spolu s krokom B). Code fix je
+hotový.
 
 **Upresnené 2026-09-21 (VERIFY kit §3) — horší variant než tichý výpadok.**
 `isFounderKancelariaEligible()` je dnes `true` (7/20 voľných), takže UI zobrazí
