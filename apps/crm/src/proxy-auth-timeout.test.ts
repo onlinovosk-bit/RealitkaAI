@@ -43,7 +43,7 @@ describe("proxy auth timeout", () => {
     errorSpy.mockClear();
   });
 
-  it("fail-opens and logs the marker when getUser times out", async () => {
+  it("fail-opens dashboard pages and logs the marker when getUser times out", async () => {
     const timeout = new Error("The operation was aborted due to timeout");
     timeout.name = "TimeoutError";
     getUser.mockRejectedValue(timeout);
@@ -52,6 +52,19 @@ describe("proxy auth timeout", () => {
 
     expect(res.status).toBe(200);
     expect(res.headers.get("location")).toBeNull();
+    expect(errorSpy).toHaveBeenCalled();
+    const logged = errorSpy.mock.calls.map((call) => call.map(String).join(" ")).join(" ");
+    expect(logged).toContain(PROXY_AUTH_TIMEOUT_MARKER);
+  });
+
+  it("fail-closes API routes with 401 when getUser times out", async () => {
+    const timeout = new Error("The operation was aborted due to timeout");
+    timeout.name = "TimeoutError";
+    getUser.mockRejectedValue(timeout);
+
+    const res = await proxy(request("/api/leads"));
+
+    expect(res.status).toBe(401);
     expect(errorSpy).toHaveBeenCalled();
     const logged = errorSpy.mock.calls.map((call) => call.map(String).join(" ")).join(" ");
     expect(logged).toContain(PROXY_AUTH_TIMEOUT_MARKER);

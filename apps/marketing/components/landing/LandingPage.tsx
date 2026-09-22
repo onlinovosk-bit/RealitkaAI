@@ -5,19 +5,19 @@ import { CALENDLY_DEMO_URL } from '../../lib/calendly'
 const FAQ = [
   {
     q: 'Nemáme čas na zavádzanie nového systému.',
-    a: 'Začíname s minimálnou konfiguráciou — prvé výsledky vidíš po zapnutí denného plánu a pripravených odpovedí. Tím nemusí meniť celý proces naraz.',
+    a: 'Začíname s minimálnou konfiguráciou — prvé výsledky uvidíte po zapnutí denného plánu a pripravených odpovedí. Tím nemusí meniť celý proces naraz.',
   },
   {
     q: 'Funguje to s portálmi, ktoré používame?',
-    a: 'Dopyty z hlavných slovenských portálov a e-mailu sa zbiehajú do jedného prehľadu. Na deme ti ukážeme presne tie, ktoré používa tvoja kancelária.',
+    a: 'Dopyty z hlavných slovenských portálov a e-mailu sa zbiehajú do jedného prehľadu. Na deme Vám ukážeme presne tie, ktoré používa Vaša kancelária.',
   },
   {
     q: 'Čo ak systém pošle klientovi nezmysel?',
-    a: 'Nepošle nič bez teba. Každá správa čaká na tvoje schválenie — ty rozhoduješ, systém pripravuje. Plná kontrola ostáva u makléra.',
+    a: 'Nepošle nič bez Vás. Každá správa čaká na Vaše schválenie — rozhodujete Vy, systém pripravuje. Plná kontrola ostáva u makléra.',
   },
   {
     q: 'Nie som technický typ, zvládnem to?',
-    a: 'Nepotrebuješ žiadne technické znalosti. Všetko nastavíme spolu a vysvetlíme na príkladoch z tvojho bežného dňa — obhliadky, inzeráty, klienti.',
+    a: 'Nepotrebujete žiadne technické znalosti. Všetko nastavíme spolu a vysvetlíme na príkladoch z Vášho bežného dňa — obhliadky, inzeráty, klienti.',
   },
   {
     q: 'Je to pre jednotlivca alebo celú kanceláriu?',
@@ -25,7 +25,7 @@ const FAQ = [
   },
   {
     q: 'Čo s našimi dátami a GDPR?',
-    a: 'Dáta sú uložené v EÚ a nikdy ich nezdieľame na marketingové účely. Spracúvajú ich výhradne naši zmluvní subdodávatelia viazaní GDPR. Kedykoľvek si ich vieš vyžiadať alebo nechať vymazať.',
+    a: 'Dáta sú uložené v EÚ a nikdy ich nezdieľame na marketingové účely. Spracúvajú ich výhradne naši zmluvní subdodávatelia viazaní GDPR. Kedykoľvek si ich viete vyžiadať alebo nechať vymazať.',
   },
   {
     q: 'Koľko to stojí a čo ak to nebude fungovať?',
@@ -41,9 +41,14 @@ export default function LandingPage() {
           <a className="logo" href="#">
             REVOLIS<b>›_</b>
           </a>
-          <a className="btn" href={CALENDLY_DEMO_URL} target="_blank" rel="noopener noreferrer">
-            Rezervovať demo
-          </a>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <a href="/blueprint" className="btn btn-ghost">
+              Blueprint Kit
+            </a>
+            <a className="btn" href={CALENDLY_DEMO_URL} target="_blank" rel="noopener noreferrer">
+              Rezervovať demo
+            </a>
+          </div>
         </div>
       </header>
 
@@ -51,10 +56,10 @@ export default function LandingPage() {
         <div className="wrap">
           <p className="eyebrow">Pre realitných maklérov a majiteľov RK na Slovensku</p>
           <h1>
-            Získaj viac klientov. Uzatváraj viac obchodov. <em>Bez chaosu.</em>
+            Získajte viac klientov. Uzatvárajte viac obchodov. <em>Bez chaosu.</em>
           </h1>
           <p className="lead">
-            Revolis každé ráno vyberie najdôležitejšie príležitosti, zoradí záujemcov podľa pripravenosti kúpiť a povie tvojmu tímu,{' '}
+            Revolis každé ráno vyberie najdôležitejšie príležitosti, zoradí záujemcov podľa pripravenosti kúpiť a povie Vášmu tímu,{' '}
             <strong>komu volať ako prvému</strong> — ešte pred prvou kávou.
           </p>
           <div className="hero-cta">
@@ -75,7 +80,7 @@ export default function LandingPage() {
       <section id="produkt">
         <div className="wrap">
           <p className="eyebrow">Toto je Revolis</p>
-          <h2>Tvoja kancelária na jednej obrazovke.</h2>
+          <h2>Vaša kancelária na jednej obrazovke.</h2>
           <p className="sub">Žiadne sľuby naslepo — takto vyzerá pracovné ráno v Revolise.</p>
           <ProductMock />
         </div>
@@ -83,8 +88,8 @@ export default function LandingPage() {
 
       <section id="pains">
         <div className="wrap">
-          <p className="eyebrow">Poznáš to?</p>
-          <h2>Strácaš klientov, lebo nemáš prehľad.</h2>
+          <p className="eyebrow">Poznáte to?</p>
+          <h2>Strácate klientov, lebo nemáte prehľad.</h2>
           <p className="sub">
             Nové dopyty pribúdajú, času je menej — a najdôležitejší klient ostane zakopaný v tabuľke, kým neodíde ku konkurencii.
           </p>
@@ -96,8 +101,8 @@ export default function LandingPage() {
             </div>
             <div className="pain">
               <span className="pk">02 / PRIORITY</span>
-              <h3>Nevieš, komu volať ako prvému</h3>
-              <p>Máš kontakty, ale nevieš, kto je pripravený kúpiť — a s kým len strácaš hodiny.</p>
+              <h3>Neviete, komu volať ako prvému</h3>
+              <p>Máte kontakty, ale neviete, kto je pripravený kúpiť — a s kým len strácate hodiny.</p>
             </div>
             <div className="pain">
               <span className="pk">03 / ČAS</span>
@@ -115,9 +120,9 @@ export default function LandingPage() {
 
       <section id="kalkulacka">
         <div className="wrap">
-          <p className="eyebrow">Spočítaj si to sám</p>
-          <h2>Koľko ťa mesačne stojí pomalá odpoveď?</h2>
-          <p className="sub">Posuň hodnoty podľa svojej kancelárie. Čísla sa prepočítajú okamžite.</p>
+          <p className="eyebrow">Spočítajte si to</p>
+          <h2>Koľko Vás mesačne stojí pomalá odpoveď?</h2>
+          <p className="sub">Posuňte hodnoty podľa svojej kancelárie. Čísla sa prepočítajú okamžite.</p>
           <LossCalculator />
         </div>
       </section>
@@ -138,14 +143,14 @@ export default function LandingPage() {
               <span className="n">02</span>
               <h3>Systém zoradí a pripraví</h3>
               <p>
-                Každý záujemca dostane <b>skóre pripravenosti kúpy</b>. Odpovede a následné správy sú pripravené — ty ich len schváliš.
+                Každý záujemca dostane <b>skóre pripravenosti kúpy</b>. Odpovede a následné správy sú pripravené — Vy ich len schválite.
               </p>
             </div>
             <div className="step">
               <span className="n">03</span>
-              <h3>Ty uzatváraš obchody</h3>
+              <h3>Vy uzatvárate obchody</h3>
               <p>
-                Deň začínaš zoznamom priorít, nie triedením e-mailov. <b>Viac uzavretí, menej stresu.</b>
+                Deň začínate zoznamom priorít, nie triedením e-mailov. <b>Viac uzavretí, menej stresu.</b>
               </p>
             </div>
           </div>
@@ -174,8 +179,8 @@ export default function LandingPage() {
       <section id="goals">
         <div className="wrap">
           <p className="eyebrow">Personalizácia</p>
-          <h2>Čo chceš dosiahnuť?</h2>
-          <p className="sub">Vyber jeden alebo viac cieľov — demo ti pripravíme presne na ne.</p>
+          <h2>Čo chcete dosiahnuť?</h2>
+          <p className="sub">Vyberte jeden alebo viac cieľov — demo Vám pripravíme presne na ne.</p>
           <GoalsPicker />
         </div>
       </section>
@@ -201,9 +206,9 @@ export default function LandingPage() {
             <p className="eyebrow" style={{ justifyContent: 'center' }}>
               Ďalší krok
             </p>
-            <h2>15–20 minút, ktoré ti môžu vrátiť hodiny každý týždeň.</h2>
+            <h2>15–20 minút, ktoré Vám môžu vrátiť hodiny každý týždeň.</h2>
             <p className="sub">
-              Demo vedie zakladateľ — uvidíš systém na príkladoch z tvojej praxe a odídeš s konkrétnymi krokmi. S nami alebo aj bez nás.
+              Demo vedie zakladateľ — uvidíte systém na príkladoch z Vašej praxe a odídete s konkrétnymi krokmi. S nami alebo aj bez nás.
             </p>
             <div className="cta-row-split">
               <a className="btn btn-lg" href={CALENDLY_DEMO_URL} target="_blank" rel="noopener noreferrer">

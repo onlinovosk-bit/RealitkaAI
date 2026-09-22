@@ -4,6 +4,10 @@ import { resolve } from 'path';
 export default defineConfig({
   resolve: {
     alias: {
+      '@revolis/control-contract': resolve(
+        __dirname,
+        '../../packages/control-contract/src/index.ts',
+      ),
       '@': resolve(__dirname, './src'),
       '@/lib': resolve(__dirname, './src/lib'),
     },

@@ -1,0 +1,19 @@
+=== rev-parse HEAD ===
+0f85109671c8c9d31886a715861eb9d23571a297
+=== ls-files --stage scripts/ruflo-model-bridge ===
+=== patch-id ===
+=== unstaged bridge ===
+=== scoped status ===
+=== blob existence ===
+6f06023060ac383a628e8fab375d8cc2bf0cb622 MISSING
+1518f0f019e2c1164b7d4508fe454632356f7741 MISSING
+b34c619e2ce7669af7ae3c7f81af8d434229b806 MISSING
+a3ec5b2f9937cdfb9630043c04f193a55b22326b MISSING
+0c30f8a16875da11b5d9bc9f97fe443a32890163 MISSING
+e2000e4bffe821a457bce40c404e1a719c4e4c2c MISSING
+3aaa7cd537f5c7f564d72aa21a38fc509a4c1228 MISSING
+997660c0621db3ae29a9cfbed1cc75a87aa1d51c MISSING
+76852b1cc2cd2b407e81bac19a25ab8a71f77858 MISSING
+=== feat/bridge-harness on origin ===
+=== tree search ===
+no bridge paths on origin/main

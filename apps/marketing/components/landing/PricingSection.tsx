@@ -96,18 +96,57 @@ export default function PricingSection() {
           <p className="eyebrow" style={{ marginBottom: 10 }}>
             Cockpit pre majiteľa
           </p>
-          <p style={{ color: 'var(--muted)', fontSize: 15, marginBottom: 12 }}>
-            <strong style={{ color: 'var(--text)' }}>Cockpit Lite</strong> — zadarmo od {COCKPIT_LITE_MIN_SEATS} seatov.
-            {' '}
-            <strong style={{ color: 'var(--text)' }}>Owner Cockpit</strong> — {ownerPrice} € / mes
-            {founderEligible && ownerPrice < ownerStandard && (
-              <span style={{ color: 'var(--violet-soft)' }}>
-                {' '}
-                (founder {ownerStandard} € → {ownerPrice} €, zostáva {founderKancelarieRemaining()})
-              </span>
-            )}
-            , grant {COCKPIT_PRODUCTS.owner.grantCredits} kreditov mesačne.
+          <p className="cockpit-intro">
+            Cockpit je prehľad pre majiteľa kancelárie nad rámec seatov. Odomyká sa od{' '}
+            {COCKPIT_LITE_MIN_SEATS} seatov a existuje v dvoch úrovniach.
           </p>
+
+          <div className="cockpit-compare">
+            <div className="cockpit-col">
+              <h4>Cockpit Lite</h4>
+              <div className="cockpit-price">
+                zdarma
+                <small> od {COCKPIT_LITE_MIN_SEATS} seatov</small>
+              </div>
+              <ul>
+                <li>Prehľad majiteľa nad celou kanceláriou</li>
+                <li>Bez mesačného poplatku</li>
+                <li>Bez grantu kreditov navyše</li>
+              </ul>
+            </div>
+
+            <div className="cockpit-col cockpit-col--owner">
+              <h4>Owner Cockpit</h4>
+              <div className="cockpit-price">
+                {ownerPrice}
+                <small> € / mes</small>
+                {founderEligible && ownerPrice < ownerStandard && (
+                  <span className="was">{ownerStandard} €</span>
+                )}
+              </div>
+              <ul>
+                <li>Všetko z Cockpit Lite</li>
+                <li>
+                  <strong>+ {COCKPIT_PRODUCTS.owner.grantCredits} kreditov</strong> mesačne pre
+                  kanceláriu
+                </li>
+                <li>Odomyká sa od {COCKPIT_PRODUCTS.owner.minSeats} seatov</li>
+              </ul>
+              {founderEligible && ownerPrice < ownerStandard && (
+                <p className="cockpit-founder">
+                  Cena pre zakladajúce kancelárie — zostáva {founderKancelarieRemaining()} miest.
+                  Potom {ownerStandard} € / mes.
+                </p>
+              )}
+            </div>
+          </div>
+
+          <p className="cockpit-delta">
+            <strong>Rozdiel v skratke:</strong> Cockpit Lite dostanete k seatom zdarma. Owner Cockpit
+            k nemu pridáva mesačný grant {COCKPIT_PRODUCTS.owner.grantCredits} kreditov pre celú
+            kanceláriu.
+          </p>
+
           <PricingCta
             checkoutAvailable={checkoutAvailable}
             label={checkoutAvailable ? 'Owner Cockpit — demo alebo checkout' : 'Rezervovať demo →'}

@@ -12,6 +12,15 @@
       "env": {
         "CLAUDE_FLOW_CWD": "C:/RealitkaAI"
       }
+    },
+    "onlinovo": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["tsx", "packages/mcp-onlinovo/src/server.ts"],
+      "env": {
+        "ONLINOVO_SHOP_ADAPTER": "fixture",
+        "CLAUDE_FLOW_CWD": "C:/RealitkaAI"
+      }
     }
   }
 }
