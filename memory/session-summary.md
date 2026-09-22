@@ -1,3 +1,87 @@
+## Session 2026-09-22 (broker ingest atribúcia + čitateľnosť landing page + WBEP v0.1)
+
+### Dokončené
+- **WBEP v0.1** (#613 → `fe24b871`): `docs/prompts/multi-agent-protocol-v0/07-work-block-execution-protocol.md`,
+  19 sekcií. Hlavička hovorí **NÁVRH v0.1 — NIE JE V PLATNOSTI**: je na `main`, ale záväzný
+  nie je, kým to founder nepovie. Kľúčový nález v ňom zapísaný: **per-step GO režim nikdy
+  nebol v protokole.** `03-human-decision-gate.md` má šesť stop-triggerov; commit na vlastnú
+  vetvu, push na vlastnú vetvu, draft PR, test, lint ani read-only dopyt medzi nimi nie sú.
+- **Broker ingest — atribúcia leadov maklérovi** (#633 → `1723969a`).
+  `apps/crm/src/app/api/acquire/email/route.ts`: `normalizeMailbox` → `resolveMailboxOwner`
+  (`inbound_mailboxes` → `profiles`, obe filtrované na `agency_id`) → insert s reálnym
+  `assigned_profile_id` / `assigned_agent` namiesto natvrdo `null` / „Nepriradený".
+  `backfillLeadOwner` dopĺňa vlastníka aj keď dedup zahodí kópiu, ktorá niesla signál —
+  bez toho by preteky dvoch doručení ticho zožrali priradenie. `markMailboxReceived`
+  beží pri každom doručení, nie len pri vzniku leadu, takže `last_received_at` je heartbeat
+  prijímacej adresy, nie dátum prvého leadu.
+- **9 prijímacích adries zapísaných do produkcie** (GO TEST-ROW → GO INGEST-ROWS),
+  z toho **8 namapovaných na profil makléra**, 1 bez profilu (ostáva nepriradená, nie falošne
+  priradená). Bez mien a bez adries — v repozitári sú len počty.
+- **Legalizačná migrácia `inbound_mailboxes`**
+  (`apps/crm/supabase/migrations/20260921195500_legalize_inbound_mailboxes.sql`) —
+  tabuľka existovala len v produkcii, CI na čistej DB padalo na
+  `relation "public.inbound_mailboxes" does not exist`. Migrácia reprodukuje **nameranú**
+  produkčnú podobu; RLS zapnuté bez politík (deny-all, prísnejšie než prod).
+  Druhá migrácia premenovaná na `20260921200851_inbound_mailboxes_profile_id.sql`, aby
+  sedela s verziou zapísanou v produkcii a nekolidovala timestampom.
+- **Overené v produkcii, nie odvodené:** `owner_backfilled` v logoch = nový kód je živý;
+  heartbeat sa aktualizuje aj pri `NOT_A_LEAD`; `Reset DB` v behu 1970 prešiel.
+- **#636** (otvorený draft): `noticeGradient` do `slate-horizon-theme.ts` — žltý warning panel
+  na `/upgrade` nahradený modrým gradientom z pracovného menu. Test na kontrast pridaný:
+  každý stop gradientu drží 4.5:1 proti `brandDeep`.
+- **#635** (otvorený draft): čitateľnosť landing page — 44 cielených zväčšení fontu,
+  base 17px → 18px, hero na jeden riadok, cockpit sekcia prepísaná na dvojstĺpcové
+  porovnanie **bez jediného literálneho čísla** (všetko z `COCKPIT_PRODUCTS`,
+  `COCKPIT_LITE_MIN_SEATS`, `ownerCockpitPriceEur()`), vykanie.
+- **E-mail pre Smolka — dva varianty, pripravené, NEODOSLANÉ.** Founder ho skontroluje
+  a odošle sám. Obsahuje self-service postup pre maklérov aj plný rozpis toho, čo obnáša
+  cesta cez dodávateľa webu (vrátane toho, že si zaň môže vypýtať odmenu).
+
+### Opravy vlastných chýb v tejto session (zapísané, lebo sa opakujú)
+- **„všetko chodí na office@" bola nesprávna premisa.** Na túto adresu chodia len dopyty
+  jedného makléra. Porovnanie 3 : 1, ktoré som z toho postavil, bolo neplatné; skutočná
+  miera záchytu je niekde medzi 50 % a 16 % a **nie je nameraná**.
+- **Zovšeobecnenie z 3 maklérov na 9.** Pýtal som si čísla od troch a robil závery za
+  celú kanceláriu. Oprava nie je „lepší odhad", ale opýtať sa všetkých deviatich —
+  preformulované na overenie po zapojení.
+- **Nekryté číslo vo WBEP §15** („~200 vzdialeným vetvám", v skutočnosti 517) —
+  odstránené úplne, nie opravené na iné nekryté číslo.
+- **Takmer som sľúbil atribúciu, ktorá neexistovala.** `assigned_profile_id` bol v tom
+  čase natvrdo `null`. Poradie otočené: najprv kód, potom e-mail.
+- **Nadhodnotená GDPR námietka** proti preposielaniu — filter na zdroji rieši minimalizáciu.
+  Námietku som výslovne stiahol.
+
+### Rozpracované / Pending
+- **#635 a #636 sú zelené drafty, čakajú na merge founderom.** Watch check-in beží.
+- **E-mail pre Smolka nie je odoslaný.** Pred odoslaním treba raz preklikať 8 krokov
+  self-service postupu — sú napísané z dokumentácie poskytovateľa, nie z vlastnej obrazovky.
+- **`email.to` = envelope recipient je predpoklad, nie dôkaz.** Pre skutočne preposlanú
+  poštu neoverené. Ak by to bola hlavička a nie obálka, atribúcia sa tichým spôsobom
+  posunie na pôvodného príjemcu.
+- **RLS politiky na `inbound_mailboxes` v produkcii nikdy nenamerané.** Migrácia je
+  prísnejšia než prod, čiže CI nepovie, keď je prod voľnejší.
+- **Parser #599 stále neoverený v produkcii.**
+- Otvorené founder rozhodnutia: či sa WBEP v0.1 stane záväzným; čo Owner Cockpit ponúka
+  nad rámec grantu 100 kreditov; či pripnúť verziu `supabase/setup-cli` a vypnúť
+  `cancel-in-progress` na `main` (oboje `.github/workflows` = tvrdá hranica, bez GO nie).
+- Vercel narazil na denný strop deploymentov.
+
+### Kľúčové súbory zmenené
+- `apps/crm/src/app/api/acquire/email/route.ts`: `resolveMailboxOwner`, `backfillLeadOwner`,
+  `markMailboxReceived` pri každom doručení; insert s reálnym vlastníkom
+- `apps/crm/supabase/migrations/20260921195500_legalize_inbound_mailboxes.sql`: nová legalizácia
+- `apps/crm/supabase/migrations/20260921200851_inbound_mailboxes_profile_id.sql`: premenovaná
+- `apps/crm/src/lib/slate-horizon-theme.ts`: `noticeGradient` (+ test na kontrast každého stopu)
+- `apps/marketing/app/landing-v2.css`: typografia, scope media query na `.landing-v2`,
+  `.landing-v2 h1..h4 { color: var(--text) }`, hero `em` na jeden riadok
+- `apps/marketing/components/landing/PricingSection.tsx`: cockpit porovnanie z kanonického zdroja
+- `docs/prompts/multi-agent-protocol-v0/07-work-block-execution-protocol.md`: WBEP v0.1
+
+### Ďalší krok
+Founder: prečítať a odoslať e-mail Smolkovi (dva varianty), a rozhodnúť o merge #635/#636.
+Až po zapojení ďalších maklérov sa dá zmerať skutočná miera záchytu dopytov — dovtedy
+je akékoľvek číslo o „koľko leadov nám uniká" odhad, nie meranie.
+
 ## Session 2026-09-21/22 (BUS runner 2D + bus do CI + cockpit price integrity)
 
 ### Dokončené
