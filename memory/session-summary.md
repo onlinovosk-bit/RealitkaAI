@@ -26,10 +26,10 @@
   sedela s verziou zapísanou v produkcii a nekolidovala timestampom.
 - **Overené v produkcii, nie odvodené:** `owner_backfilled` v logoch = nový kód je živý;
   heartbeat sa aktualizuje aj pri `NOT_A_LEAD`; `Reset DB` v behu 1970 prešiel.
-- **#636** (otvorený draft): `noticeGradient` do `slate-horizon-theme.ts` — žltý warning panel
+- **#636** (zmergovaný, `d575990c`): `noticeGradient` do `slate-horizon-theme.ts` — žltý warning panel
   na `/upgrade` nahradený modrým gradientom z pracovného menu. Test na kontrast pridaný:
   každý stop gradientu drží 4.5:1 proti `brandDeep`.
-- **#635** (otvorený draft): čitateľnosť landing page — 44 cielených zväčšení fontu,
+- **#635** (stále otvorený draft, medzitým `behind` main): čitateľnosť landing page — 44 cielených zväčšení fontu,
   base 17px → 18px, hero na jeden riadok, cockpit sekcia prepísaná na dvojstĺpcové
   porovnanie **bez jediného literálneho čísla** (všetko z `COCKPIT_PRODUCTS`,
   `COCKPIT_LITE_MIN_SEATS`, `ownerCockpitPriceEur()`), vykanie.
@@ -52,9 +52,12 @@
   Námietku som výslovne stiahol.
 
 ### Rozpracované / Pending
-- **#635 a #636 sú zelené drafty, čakajú na merge founderom.** Watch check-in beží.
-- **E-mail pre Smolka nie je odoslaný.** Pred odoslaním treba raz preklikať 8 krokov
-  self-service postupu — sú napísané z dokumentácie poskytovateľa, nie z vlastnej obrazovky.
+- **#636 zmergovaný** (`d575990c`). **#635 ostáva otvorený** a je za `main` — pred merge
+  potrebuje zlúčiť bázu. Watch check-in beží.
+- **E-mail pre Smolka founder odoslal 2026-09-22.** 8 krokov self-service postupu v ňom
+  je napísaných z dokumentácie poskytovateľa, nie z vlastnej obrazovky — neboli preklikané.
+  Tým sa rozhodujúci test atribúcie (`TASK-INGEST-VERIFY-ENVELOPE`) stáva časovo tlačeným:
+  prvá preposlaná správa je zároveň odpoveďou. Detaily a dva nové nálezy: #639.
 - **`email.to` = envelope recipient je predpoklad, nie dôkaz.** Pre skutočne preposlanú
   poštu neoverené. Ak by to bola hlavička a nie obálka, atribúcia sa tichým spôsobom
   posunie na pôvodného príjemcu.
@@ -78,7 +81,7 @@
 - `docs/prompts/multi-agent-protocol-v0/07-work-block-execution-protocol.md`: WBEP v0.1
 
 ### Ďalší krok
-Founder: prečítať a odoslať e-mail Smolkovi (dva varianty), a rozhodnúť o merge #635/#636.
+Founder: rozhodnúť o merge #635 a o GO na `TASK-CONTACT-GUARD-FIX` (#639, nálezy A a B).
 Až po zapojení ďalších maklérov sa dá zmerať skutočná miera záchytu dopytov — dovtedy
 je akékoľvek číslo o „koľko leadov nám uniká" odhad, nie meranie.
 
