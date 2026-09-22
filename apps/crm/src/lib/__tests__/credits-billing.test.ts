@@ -37,8 +37,10 @@ describe("credits-billing", () => {
       STRIPE_PRICE_SOLO_SEAT: "price_solo",
       STRIPE_PRICE_TEAM_SEAT: "price_team",
       STRIPE_PRICE_OFFICE_SEAT: "price_office",
-      STRIPE_PRICE_OWNER_COCKPIT: "price_cockpit",
-      STRIPE_PRICE_OWNER_COCKPIT_FOUNDER: "price_cockpit_founder",
+      // Shaped like real Stripe ids: the cockpit path validates against
+      // STRIPE_PRICE_ID_PATTERN, which rejects underscores and short suffixes.
+      STRIPE_PRICE_OWNER_COCKPIT: "price_1CockpitOwner000",
+      STRIPE_PRICE_OWNER_COCKPIT_FOUNDER: "price_1CockpitFounder0",
       STRIPE_PRICE_CREDITS_RAST: "price_rast",
     };
 
@@ -169,9 +171,39 @@ describe("credits-billing", () => {
       });
 
       expect(result.lineItems).toHaveLength(2);
-      expect(result.lineItems[1]).toEqual({ price: "price_cockpit_founder", quantity: 1 });
+      expect(result.lineItems[1]).toEqual({ price: "price_1CockpitFounder0", quantity: 1 });
       expect(result.metadata.ownerCockpit).toBe("true");
       expect(result.metadata.founderCockpit).toBe("true");
+    });
+
+    it("refuses a placeholder cockpit price the same way as a missing one", () => {
+      // The checkbox gate (`isOwnerCockpitPurchasable`) rejects placeholders,
+      // so a truthiness guard here would let one reach Stripe while the UI had
+      // already hidden the add-on — the two disagreeing with no config change.
+      process.env.STRIPE_PRICE_OWNER_COCKPIT = "price_xxx";
+      process.env.STRIPE_PRICE_OWNER_COCKPIT_FOUNDER = "price_xxx";
+
+      expect(() =>
+        buildSeatCheckoutSessionParams({
+          seatTier: "team",
+          quantity: 5,
+          includeOwnerCockpit: true,
+        }),
+      ).toThrow("Owner Cockpit Stripe price nie je nakonfigurovaný.");
+    });
+
+    it("leaves the seat sale alone when the cockpit is not requested", () => {
+      delete process.env.STRIPE_PRICE_OWNER_COCKPIT;
+      delete process.env.STRIPE_PRICE_OWNER_COCKPIT_FOUNDER;
+
+      const result = buildSeatCheckoutSessionParams({
+        seatTier: "team",
+        quantity: 3,
+        includeOwnerCockpit: false,
+      });
+
+      expect(result.lineItems).toEqual([{ price: "price_team", quantity: 3 }]);
+      expect(result.metadata.ownerCockpit).toBe("false");
     });
   });
 

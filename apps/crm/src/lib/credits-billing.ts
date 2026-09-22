@@ -9,6 +9,7 @@ import {
   getSeatStripePriceId,
   getTopupStripePriceId,
   isFounderKancelariaEligible,
+  isOwnerCockpitPurchasable,
   parseSeatTier,
   parseTopupPackageKey,
   type SeatTier,
@@ -82,7 +83,12 @@ export function buildSeatCheckoutSessionParams(input: SeatCheckoutInput): {
   // gated on `isOwnerCockpitPurchasable`, so reaching here means the config
   // changed between page load and submit — rare, and worth an error rather
   // than a silent mismatch.
-  if (cockpitRequested && !cockpitPrice) {
+  //
+  // Same predicate as that gate, deliberately. A truthiness check here would
+  // let a placeholder like `price_xxx` through the guard while the gate hid the
+  // checkbox, so the two could disagree with no config change at all — and the
+  // placeholder would reach Stripe.
+  if (cockpitRequested && !isOwnerCockpitPurchasable({ founderEligible })) {
     throw new Error("Owner Cockpit Stripe price nie je nakonfigurovaný.");
   }
   if (cockpitPrice) {
