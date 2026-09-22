@@ -992,6 +992,14 @@ zmeny Stage 1/Acquisition scope.
 
 Fix: exact `.eq` when candidate contains `_`/`%`; keep `ilike` only for safe patterns. Report: `docs/reports/2026-08-15-critical-email-ilike-auth.md`.
 
+## D-2026-08-19-01 — Fix matching recalculate tenant wipe
+
+**Datum:** 2026-08-19
+**BUILD:** critical data-loss guard (PR #444 on `cursor/critical-bug-management-6a80`).
+
+`recalculateAllMatches` / property path used scoped client for DELETE but unscoped `listLeads`/`listProperties`/`getProperty` on server routes → empty reads → HTTP 200 with zero re-insert (full tenant match wipe). Post-delete insert timeouts were also swallowed as `{ inserted: 0 }`.
+
+Fix: scoped reads + thread scoped through matching hooks; fail-hard after delete. Report: `docs/reports/2026-08-19-critical-bug-hunt-matching-recalc.md`.
 ## [2026-08-21] — Billing wipe fixes: implement without waiting on impact count
 
 - **Rozhodnutie:** GO na dva samostatné fix PR z dnešného mainu (#451 legacy unknown≠free; credits-expire guard). Počet zasiahnutých zákazníkov nerozhoduje o tom, či opraviť — len o remediácii.
