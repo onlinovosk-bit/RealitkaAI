@@ -100,9 +100,17 @@ Ale znamená to:
 > Jediná konfigurácia, v ktorej sa dá vyrobiť artefakt `HANDSHAKE: PASS` cez
 > `--url`, je tá, v ktorej je autorizačná hranica vypnutá.
 
-C-0 v zadanom tvare je teda nesplniteľné aj na tvojom stroji, s tunelom aj
+C-0 v zadanom tvare bolo teda nesplniteľné aj na tvojom stroji, s tunelom aj
 s PAT-om — pokiaľ by sa nespustilo v degradovanom režime, čím by sa poprelo
-Gate A/B. Handshake **neopravujem**, je to mimo rozsahu tohto GO. Hlásim.
+Gate A/B. Handshake som **neopravoval**, bolo to mimo rozsahu tohto GO. Hlásil.
+
+> **Dodatok (overené po napísaní tohto reportu):** paralelná session to medzitým
+> opravila — **#626 (`fb2280d5`)** je na `main` a handshake už berie
+> `REVOLIS_BUS_TOKEN_SOL` aj `REVOLIS_BUS_TOKEN_CLAUDE` a posiela každú správu
+> pod vlastnou identitou. Tento odsek preto popisuje stav **pred** #626.
+> **§2 tým dotknuté nie je** — `MODE: remote` stále rozhoduje iba flag `--url`,
+> overené na `main` po #626. Táto kolízia je sama o sebe dôkaz, prečo dve session
+> nemajú pracovať nad tým istým súborom bez toho, aby o sebe vedeli.
 
 ---
 
