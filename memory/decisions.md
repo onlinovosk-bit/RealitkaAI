@@ -1,5 +1,27 @@
 # Critical Decisions Log
 
+## [2026-09-22] — Working agreement: whole walls, not screws
+
+Founder, verbatim: *„Posielaj mi na schválenie celé steny a nie skrutky."*
+Originál bol prirovnanie k montovanému domu — stena sa montuje celá, nie po
+jednej skrutke. Dnes požiadal, aby to bolo uložené do pamäte, nie len dodržiavané
+v jednej session.
+
+**Čo to znamená prakticky.** Jeden hotový blok na jedno GO. Žiadne desiatky
+mikro-updatov („beží ~7 min", „Vercel, bez akcie"). Keď je blok hotový, príde
+naraz aj s dôkazom. Keď treba rozhodnutie, príde raz — s možnosťami a
+odporúčaním — nie ako séria priebežných otázok uprostred úlohy.
+
+**Prečo to vzniklo.** Predchádzajúce session rozsypávali stav do desiatok správ a
+founder musel z nich skladať obraz sám. To je presne opak toho, načo je agent.
+
+**Kam to bolo zapísané.**
+- `CLAUDE.md` Core Directives, položka 0 — číta sa pri štarte každej session.
+- `uptm-runner/CLAUDE.md` — ten repozitár nemal žiadny `CLAUDE.md` ani `memory/`,
+  takže session štartujúca tam nečítala žiadne direktívy. Rovnaké pravidlo je
+  tam prvé.
+
+
 ## [2026-09-21] — BUS: id date bug + authority boundary as an executable invariant
 
 - **Bug (not a fixture):** `scripts/bus/cli.ts` built the message id from `new Date()`

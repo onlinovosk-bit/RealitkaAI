@@ -160,19 +160,6 @@ nie v Actione.
 > beh proti `http://127.0.0.1` s file skladom — overené aj na `main` po #626.
 > Viď §2 toho istého dokumentu.
 
-> ⚠️ **Per-agent tokeny: OPRAVENÉ v #626 (`fb2280d5`), tento krok sa zmenil.**
-> Harness dovtedy používal pre obe identity jeden `REVOLIS_BUS_TOKEN` a proti
-> serveru s per-agent auth padal na `403` (sol token na BUS-002, claude token
-> na BUS-001) — prejsť mohol len v degradovanom režime, teda s vypnutou
-> identitou. Po #626 berie `REVOLIS_BUS_TOKEN_SOL` aj `REVOLIS_BUS_TOKEN_CLAUDE`
-> a posiela každú správu pod vlastnou identitou. Popis toho stavu pred opravou:
-> `docs/ops/2026-09-21-gate-c0-remote-execution-evidence.md` §3.
->
-> ⚠️ **Toto opravené NIE JE:** `MODE: remote` stále nie je dôkaz remote behu.
-> Rozhoduje oň iba prítomnosť flagu `--url` (`handshake.ts`), takže ho vypíše aj
-> beh proti `http://127.0.0.1` s file skladom — overené aj na `main` po #626.
-> Viď §2 toho istého dokumentu.
-
 ## 5. ChatGPT Custom GPT Action
 
 1. Create a GPT → Configure → Actions → Import from file
