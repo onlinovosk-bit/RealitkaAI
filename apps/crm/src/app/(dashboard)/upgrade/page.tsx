@@ -140,9 +140,9 @@ export default function UpgradePage() {
         <div
           className="mb-8 rounded-xl border p-6"
           style={{
-            background: '#FEF3C7',
-            borderColor: '#FCD34D',
-            color: '#92400E',
+            background: SLATE_HORIZON.noticeGradient,
+            borderColor: SLATE_HORIZON.softBorder,
+            color: SLATE_HORIZON.brandDeep,
           }}
         >
           <h2 className="text-lg font-semibold mb-2">Checkout momentálne nedostupný</h2>
@@ -319,7 +319,7 @@ export default function UpgradePage() {
           <Link
             href={BILLING_TOPUP_HREF}
             className="inline-flex rounded-md px-6 py-2.5 text-sm font-semibold text-white"
-            style={{ background: SLATE_HORIZON.brand }}
+            style={{ background: SLATE_HORIZON.topbarGradient }}
           >
             Doplniť kredity
           </Link>
