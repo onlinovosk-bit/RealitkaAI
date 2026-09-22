@@ -1,5 +1,76 @@
 # Critical Decisions Log
 
+## [2026-09-22] — Broker ingest: atribúcia musí existovať skôr, než ju sľúbim
+
+- **Reverzia vlastného NO-GO.** Odporučil som ustúpiť od preposielania dopytov z
+  maklérskych schránok; founder to odmietol s tým, že to klient navrhol sám a sľub už
+  padol. Zadanie sa zmenilo z „má sa to robiť?" na „ako to spraviť tak, aby to fungovalo".
+  Riešenie: **filter na zdroji** — preposiela sa len to, čo vyzerá ako dopyt z portálu,
+  nie celá schránka. To zároveň ruší moju GDPR námietku o minimalizácii, ktorú som stiahol.
+- **Chyba, ktorá to takmer zabila:** v čase písania e-mailu bol `assigned_profile_id`
+  v `/api/acquire/email` natvrdo `null`. Mailom by sme deviatim ľuďom sľúbili priradenie,
+  ktoré kód nevedel splniť. **Pravidlo:** funkcia sa komunikuje až keď existuje v kóde
+  a je overená v produkcii, nie keď je naplánovaná.
+- **Dedup je kontrolný bod atribúcie, nie len úspory.** Kľúč je
+  `sha1(listingPortalId | contactEmail-or-phone | receivedAt)`. Keď dve doručenia toho
+  istého dopytu prídu cez rôzne schránky, prehrávajúca kópia si so sebou berie signál
+  vlastníctva. Preto `backfillLeadOwner` dopĺňa vlastníka aj do už existujúceho leadu —
+  ale len ak je `assigned_profile_id` NULL, takže ručné priradenie nikdy neprepíše.
+- **`last_received_at` je heartbeat, nie dátum prvého leadu.** Pôvodne sa zapisoval len
+  pri vzniku leadu — ticho mŕtva schránka a ticho funkčná schránka vyzerali rovnako.
+  Teraz sa zapisuje pri každom doručení vrátane `NOT_A_LEAD`.
+- **Zostáva neoverené:** `email.to` predpokladáme ako envelope recipient. Pre skutočne
+  preposlanú poštu to nikto nepreukázal. Ak je to hlavička, atribúcia sa ticho posunie.
+- Dôkaz: #633 → `1723969a`, `owner_backfilled` v produkčných logoch, 8 z 9 adries namapovaných.
+
+## [2026-09-22] — Čistá DB z migrácií ≠ produkčná DB (štvrtá legalizácia za jeden deň)
+
+- CI padla na `relation "public.inbound_mailboxes" does not exist`. Tabuľka existovala
+  **len v produkcii** — vznikla mimo migračnej sady. Rovnaký vzor ako `platform_events`
+  (#619, #625), `ai_jobs` (#619) a `leads.agency_id` (#628): **štyri legalizácie za deň.**
+- **Systémový záver, nie štyri incidenty.** `supabase db reset` z `apps/crm/supabase/migrations/`
+  nestavia produkciu — stavia *inú* databázu, ktorá sa na ňu podobá. Každý test, ktorý
+  na tom stojí, meria túto inú databázu. Zelená CI preto nehovorí nič o schéme v prode.
+- **Legalizácia sa píše z nameraného stavu, nie z toho, ako mala tabuľka vyzerať.**
+  `agency_id NOT NULL` **bez** FK na `agencies`, lebo tak to v produkcii je. Kde sa
+  nedalo merať (RLS politiky), migrácia je **prísnejšia** než prod (RLS zapnuté, nula
+  politík = deny-all) — rozdiel v tomto smere CI nerozbije, opačný by ju uspal.
+- **Čo z toho ešte nie je vyriešené:** neexistuje stráž, ktorá by drift zachytila skôr
+  než náhodné CI zlyhanie. Štyrikrát za deň sme sa to dozvedeli od červenej, nie od kontroly.
+
+## [2026-09-22] — `main` je z veľkej časti neoverený: 8 z 12 posledných CI behov bolo zrušených
+
+- Namerané: z dvanástich posledných behov `Lint, test, build` na `main` bolo **osem
+  cancelled**. Príčina je `concurrency: cancel-in-progress: true` skópované na
+  `workflow + ref` — na `main` každý ďalší merge zabije beh predchádzajúceho.
+- **Dôsledok:** „na main je zelená CI" je pri väčšine commitov neoveriteľné tvrdenie.
+  Zrušený beh nie je zlyhanie, ale ani dôkaz.
+- **Navrhnutá, NEIMPLEMENTOVANÁ oprava:**
+  `cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}` — na vetvách šetrí minúty,
+  na `main` nechá každý commit dobehnúť. `.github/workflows` je tvrdá hranica: **bez GO nie.**
+- Druhý kandidát na to isté GO: pripnúť verziu `supabase/setup-cli` — beh na #635 padol na
+  `Failed to resolve latest Supabase CLI release: rate limit exceeded`. Že to bolo
+  infraštruktúrne a nie naše, dokázal #636, ktorý o štyri minúty neskôr prešiel.
+
+## [2026-09-22] — Landing page: dve chyby, ktoré čítanie kódu nenašlo
+
+- **H1 bol neviditeľný** — `globals.css:66` má holý selektor `h1{color:var(--dark)}`;
+  špecificita (0,0,1) bije dedenie, takže nadpis dostal tmavú farbu na tmavom pozadí.
+- **Mobilná media query sa nikdy neaplikovala** — pravidlá vnútri boli neskópované
+  (`.pains`, 0,1,0), zatiaľ čo mimo nej platí `.landing-v2 .pains` (0,2,0). Výsledok:
+  623 px obsahu v 390 px viewporte. Obe chyby boli v repozitári **pred** týmto blokom.
+- **Nenašiel ich review, našlo ich vyrenderovanie stránky** (Playwright,
+  `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`) a zmeranie šírky. Pre vizuálne
+  zmeny je „prečítal som diff" slabší dôkaz než screenshot a nameraná hodnota.
+- **Ceny v marketingovej kópii nesmú byť literály.** Zmätok, ktorý founder hlásil pri
+  cockpite, nevznikol zo zlého čísla, ale z toho, že kanonický zdroj cockpitu
+  **nedefinuje žiadne features** a čitateľ si zobral odrážky seat tieru nad ním.
+  Prepis berie každé číslo z `COCKPIT_PRODUCTS` / `COCKPIT_LITE_MIN_SEATS` /
+  `ownerCockpitPriceEur()` — v diffe nie je ani jedno napísané číslo.
+- Farebný token pre upozornenia (`noticeGradient`) doplnený do kontraktu témy vrátane
+  testu, ktorý drží 4.5:1 na každom stope. Padajúci test na zozname kľúčov bol správny —
+  je to zámerná stráž kontraktu, nie prekážka, ktorú treba obísť.
+
 ## [2026-09-21] — BUS: id date bug + authority boundary as an executable invariant
 
 - **Bug (not a fixture):** `scripts/bus/cli.ts` built the message id from `new Date()`
