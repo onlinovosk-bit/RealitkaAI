@@ -814,3 +814,30 @@ Founder: read-only SELECT ci je `20260817220000` aplikovana v PROD (G4). Bez toh
 
 ### Ďalší krok
 Čakať na odpoveď p. Smolka s počtom dopytov u troch maklérov. To číslo rozhodne, či má napojenie schránok zmysel, alebo je problém v objeme dopytov a nie v ich zbere.
+
+## Session 2026-09-21 (substrate parity — tri legalizačné brány, CP-P0-1A odblokované)
+
+### Dokončené
+- **#619 `777149e` — `platform_events` + `ai_jobs` legalizované** do active migration setu. Obe existovali v PROD, ale `CREATE TABLE` nemali v žiadnej aktívnej migrácii (`platform_events` len v `migrations-archive/`, `ai_jobs` nikde). Migrácia reprodukuje presne nameraný PROD tvar: stĺpce a poradie, typy, defaulty, PK/FK/CHECK, indexy (vrátane partiálneho `ai_jobs_runner_poll ... WHERE status='pending'`), RLS, `platform_events_select_tenant` policy a členstvo v `supabase_realtime`. Dôkaz: **104/104 applied**, fingerprint `3c7b4d60e3a49441aaeff389ade3a5f2` (31 riadkov) zhodný s PROD, idempotencia 3×, zachovanie dát overené.
+- **#625 `ee8a361` — producent legalizovaný**: `emit_platform_event()`, `trg_leads_platform_events`, `trg_activities_platform_events`. Bez nich mala CI tabuľky bez toho, kto do nich píše. Dôkaz: **105/105 applied**, fingerprint `329e2f587007c97ff05efd760d1fddbb` (5 riadkov) zhodný s PROD, a **funkčný test v CI** — insert lead → `lead.created`, update status → `lead.status_changed`, insert activity → `integration.activity`, všetky s nenulovým `agency_id`.
+- **#628 `1f6ba69` — `leads.agency_id NOT NULL` legalizované.** V PROD platilo, po `db reset` nie; vzniklo mimo migrácií (žiadna zo 106 ho nedoťahuje). Dôkaz: **106/106 applied**, `notnull=true` po CI resete, fingerprint `81bcd45e805f84990b1bbed1be216bcd` (10 riadkov, 9 stĺpcov + definícia FK) zhodný s PROD.
+- **Metóda dôkazu naprieč všetkými tromi:** lokálny PostgreSQL 16, čistý cluster, Supabase-like scaffolding, prehratý celý aktívny migration set, potom md5 fingerprint nad `pg_catalog` proti živej PROD DB. Nie tvrdenie, ale porovnanie.
+- **Oprava vlastného omylu:** `BUS-TYPECHECK` som opakovane viedol ako `UNKNOWN`; prevzaté z tela #612, ktoré vzniklo pred #620. Overené: `bus:typecheck` beží v `saas-grade-pipeline.yml:308` (`b3d20de` na main). **Položka je uzavretá.**
+
+### Rozpracované / Pending
+- **`CP-P0-1A` (event spine v2) — odblokovaná po stránke parity, blokujú ju už len `P-2` a `P-3`.** A3 čaká na P-2, A7 na P-3. Substrátový dôvod, kvôli ktorému bola zastavená, zanikol.
+- **`LEADS-AGENCY-FK-CONTRADICTION` — nové, nerozhodnuté.** `leads.agency_id` je `NOT NULL`, ale `leads_agency_id_fkey` je `ON DELETE SET NULL`. **Zmazanie agentúry s leadmi dnes v PROD zlyhá.** Reprodukované v CI po #628. Tri možné odpovede (`CASCADE` / `RESTRICT` / zrušiť `NOT NULL`) majú rôzne dôsledky na dáta → rozhodnutie Foundera.
+- **`EMIT-EVENT-PUBLIC-EXECUTE` — nové, security.** `emit_platform_event` je `SECURITY DEFINER` s `EXECUTE` pre PUBLIC (`anon` aj `authenticated`). Ktokoľvek vie zapísať podvrhnutý event do streamu ľubovoľného tenanta; RLS to nezastaví.
+- **`PLATFORM-EVENT-NULL-WRITER` — backlog.** `matching-engine.ts:36` posiela `agencyId: null`, writer chybu iba `console.warn`-ne. PROD má 0 NULL riadkov → vetva nikdy úspešne nezbehla.
+- **Dizajnový dôsledok pre A2:** `CHECK (agency_id IS NOT NULL)` na `platform_events` by kolidoval s vlastným FK `ON DELETE SET NULL`. A2 treba navrhnúť inak, než pôvodne znelo.
+- **Tri otvorené founder `DECISION`:** P1 (a–g), **P2 (transport)**, **P3a/P3b (RLS)** — nezmenené.
+
+### Kľúčové súbory zmenené
+- `apps/crm/supabase/migrations/20260921000000_legalize_platform_events_ai_jobs.sql` — tabuľky, indexy, RLS, policy, realtime publikácia (#619)
+- `apps/crm/supabase/migrations/20260921190000_legalize_platform_event_triggers.sql` — tri funkcie + oba triggery, triggery guardované na neexistenciu (#625)
+- `apps/crm/supabase/migrations/20260921200000_legalize_leads_agency_id_not_null.sql` — guardovaný `SET NOT NULL`, bez backfillu (#628)
+- `memory/decisions.md` — záznam brány vrátane princípu „legalizuj substrate as-is" a piatich nálezov
+- `memory/session-summary.md` — tento záznam
+
+### Ďalší krok
+Uzavrieť **P-2** a **P-3**. Sú to jediné dve veci medzi aktuálnym stavom a `CP-P0-1A`; A3 a A7 sa bez nich nedajú navrhnúť. Tri otvorené nálezy (FK rozpor, PUBLIC EXECUTE, NULL writer) sú reálne, ale spine neblokujú — riešiť ich až po P-2/P-3, každý vlastnou bránou.
