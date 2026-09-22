@@ -960,6 +960,10 @@ Dokaz:
 
 **Kill deadline Stage 0:** 2026-08-31 (funkcia uzavreta; dalsi kod = vlastne GO).
 
+## D-2026-08-18-01 — Properties mutations must use scoped Supabase client
+- **Problem:** `/api/properties` POST and `/api/properties/[id]` PATCH/DELETE authenticated with `createClient()` but called store helpers without the scoped client → browser singleton → RLS blocks inventory writes (same class as forecasting #434).
+- **Decision:** Thread request-scoped client into `createProperty` / `updateProperty` / `deleteProperty`; POST returns `okResponse({ property })` for create-form `data.ok` contract.
+- **Evidence:** `docs/reports/2026-08-18-properties-scoped-client.md`; vitest 6/6 green.
 ## D-2026-08-18-01 — Acquire email idempotency: deterministic lead id
 
 **Rozhodnutie:** Follow-up k #439 nepoužije novú tabuľku ani PROD migráciu. `POST /api/acquire/email`

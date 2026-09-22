@@ -27,6 +27,19 @@ export async function PATCH(
       return errorResponse("Forbidden", 403);
     }
 
+    const property = await updateProperty(id, {
+      title:       body.title,
+      location:    body.location,
+      price:       typeof body.price === "number" ? body.price : undefined,
+      type:        body.type,
+      rooms:       body.rooms,
+      features:    Array.isArray(body.features) ? body.features : undefined,
+      status:      body.status,
+      description: body.description,
+      ownerName:   body.ownerName,
+      ownerPhone:  body.ownerPhone,
+      // agencyId is intentionally NOT accepted from body — prevents cross-tenant reassignment
+    }, supabase);
     const property = await updateProperty(
       id,
       {

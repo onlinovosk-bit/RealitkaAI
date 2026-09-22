@@ -22,8 +22,8 @@ export async function POST(request: Request) {
     }
 
     const [property, lead] = await Promise.all([
-      getProperty(propertyId),
-      getLeadById(leadId),
+      getProperty(propertyId, supabase),
+      getLeadById(leadId, supabase),
     ]);
 
     if (!property) {

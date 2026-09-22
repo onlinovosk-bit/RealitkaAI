@@ -1,3 +1,4 @@
+## Session 2026-08-18
 ## Session 2026-09-22 (broker ingest atribúcia + čitateľnosť landing page + WBEP v0.1)
 
 ### Dokončené
@@ -664,6 +665,8 @@ Founder review/merge #546 (and backlog of open critical fix PRs).
 
 ## Session 2026-09-17 (operating mode B — prvy task, A3 onboarding 401)
 ### Dokoncene
+- Critical-bug scan: properties inventory CRUD used browser singleton on server (same class as #434 forecasting). Fix on `cursor/critical-bug-management-d0db`.
+- Open tracked PRs still awaiting review: #369 #370 #371 #374 #392 #401 #427 #438 #439.
 - Setup rezimu B: push overeny (dry-run OK), patch uz bol na `origin/audit/2026-09-16` (`56e2359`, `git am --3way` -> "already applied"), vetva `docs/operating-mode-b` pushnuta
 - PR audit/2026-09-16 -> main uz existoval: #565 — founder ho mergol 2026-09-17 (main -> 1291ae5); protokol 00-06 a DEC-* su teraz na main
 - Prvy task v rezime B: handoff (01) + 2 nezavisli reviewri v izolovanych worktrees z origin/main, kluc dokazy re-overene executorom
@@ -708,6 +711,13 @@ Bez `GO S2` žiadny kód.
 - `docs/sales/realitna-unia-druhy-kontakt-draft.md` — A4, NEODOSLANE
 - Oprava vlastneho odporucania: auto-merge lane uz existuje (AUTOMERGE-POLICY v1.0 + workflow)
 ### Rozpracovane / Pending
+- Founder review of new properties scoped-client PR + existing open bugfix PRs.
+
+### Klucove subory zmenene
+- apps/crm/src/lib/properties-store.ts: scoped client on create/update/delete
+- apps/crm/src/app/api/properties/[id]/route.ts: pass supabase into store
+- apps/crm/src/app/api/properties/route.ts: pass supabase + okResponse on POST
+- docs/reports/2026-08-18-properties-scoped-client.md: evidence
 - **S2 BLOKOVANE:** founder dal "GO S2" ale Q1=nie a Q3=ano su nezlucitelne. Ziadny kod kym sa Q1 neujasni.
 - Founder rozhodnutia zo `founder-time-protocol.md` §6: zatvorit kopu 3 (29 PR)? prehodit 12 draftov kopy 1 na ready? overit robota na #189/#191/#192? stav migracie #437?
 - `gdpr-advisor` skill nie je v tejto session dostupny — GDPR brana pre A1/S4 formalne nesplnena
@@ -782,6 +792,7 @@ Founder: (1) merge #588, (2) read-only SELECT ci je migracia 20260817220000 apli
   G3 S2 rozsah (NBS na maklerskej strane?), G4 PROD overenie migracie, G5 suhlas s menovanim
 - `gdpr-advisor` skill nie je v tejto session dostupny -> G1/G2 formalne nesplnene
 ### Dalsi krok
+Founder review/merge properties scoped-client PR. Do not re-open tracked bugs with open PRs.
 Founder: read-only SELECT ci je `20260817220000` aplikovana v PROD (G4). Bez toho ranny zoznam nestoji.
 
 ## Session 2026-09-19…21 (Smolko ingest audit, P1 v0.2, parser fix)
