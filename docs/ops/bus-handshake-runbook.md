@@ -88,7 +88,7 @@ a v zozname procesov.
 ## 2. Server
 
 ```bash
-npm run bus:serve          # bez REVOLIS_BUS_TOKEN odmietne naštartovať
+npm run bus:serve          # bez akéhokoľvek credentialu odmietne naštartovať
 # -> revolis-bus listening on :8787 (store: github)
 ```
 
@@ -109,19 +109,36 @@ prepísať. Pre dogfood to stačí — na to je.
 ## 4. Overenie round-tripu (pred tým, než sa dotkneš ChatGPT)
 
 ```bash
+# oba tokeny z kroku 1 musia byť v prostredí TOHTO shellu
 npm run bus:handshake -- --url https://<tunel>.trycloudflare.com
 ```
 
-Spustí tie isté tri testy, aké robí harness lokálne, ale cez živý endpoint —
+Spustí tie isté štyri testy, aké robí harness lokálne, ale cez živý endpoint —
 presne tie volania, aké pošle ChatGPT Action:
 
 - **BUS-001** transport: `sol-gpt → BUS → claude-code`
 - **BUS-002** return path: `claude-code → BUS → sol-gpt`
 - **BUS-003** gate: `GO REQUIRED` prežije `ack`; neexistuje žiadna
   approve/execute/merge route
+- **BUS-004** identita: `sol-gpt` dostane 403 na `outbox` (`box_not_writable`)
+  aj na podvrhnuté `from` (`from_not_authorized`)
 
-Token si berie z `REVOLIS_BUS_TOKEN` v prostredí. Ak tento krok neprejde,
-**nepokračuj na ChatGPT** — chyba je v transporte, nie v Actione.
+**Harness potrebuje oba tokeny z kroku 1**, nie jeden. Odkedy server viaže
+bearer na agenta, jeden token nevie hovoriť za obe strany: BUS-001 posiela
+`sol-gpt`, BUS-002 `claude-code`. Preto ich musíš mať v prostredí toho shellu,
+z ktorého spúšťaš handshake — nie iba v prostredí servera.
+
+Ak tam necháš len starý zdieľaný `REVOLIS_BUS_TOKEN`, BUS-001 ešte prejde
+a **BUS-002 spadne na `403`** — bearer je platný, ale `from: claude-code`
+k nemu nesedí. Harness to zachytí skôr: porovná `/health` so svojou vlastnou
+konfiguráciou a povie, ktorá strana je zle nastavená.
+
+Degradovaný režim (server aj harness na jednom `REVOLIS_BUS_TOKEN`) stále beží,
+ale BUS-004 sa preskočí — nie je čo viazať — a záver znie
+`HANDSHAKE: PASS (DEGRADED — identity boundary untested)`.
+
+Ak tento krok neprejde, **nepokračuj na ChatGPT** — chyba je v transporte,
+nie v Actione.
 
 ## 5. ChatGPT Custom GPT Action
 
@@ -182,6 +199,9 @@ a ChatGPT si výsledok vytiahne cez `listBusMessages` s `format=digest`.
 | Príznak | Príčina | Riešenie |
 |---|---|---|
 | `REVOLIS_BUS_TOKEN is required` | token nie je v prostredí | krok 1 |
+| handshake: BUS-001 PASS, **BUS-002 `403`** | harness má jeden token, server beží per-agent | exportuj oba `*_TOKEN_SOL` / `*_TOKEN_CLAUDE` do shellu handshake (krok 4) |
+| handshake: `harness holds per-agent tokens but the server reports DEGRADED` | tokeny sú v klientovi, nie v serveri | exportuj ich pred `bus:serve` (krok 1) |
+| handshake: `REVOLIS_BUS_TOKEN_SOL is set but ... is not` | polovičná migrácia | harness chce oba, alebo ani jeden + zdieľaný |
 | `401` z handshake harness | iný token v serveri než v klientovi | jeden shell, jeden export |
 | `GitHub write failed (401/403)` | PAT bez `Contents: write` alebo zlý repo | krok 1 |
 | `GitHub write failed (404)` | `REVOLIS_BUS_BRANCH` neexistuje | `git push origin main:refs/heads/bus/main` |
