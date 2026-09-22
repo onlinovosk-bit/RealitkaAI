@@ -58,6 +58,20 @@ export function formatIdDate(date: Date): string {
   return date.toISOString().slice(0, 10).replace(/-/g, "");
 }
 
+/**
+ * The date a generated id must carry.
+ *
+ * The id and the envelope have to agree about when the message was created, so
+ * the id date comes from `created_at` and not from the wall clock. A draft that
+ * declares an older `created_at` keeps that day in its id; only an unparseable
+ * or absent value falls back to the supplied clock.
+ */
+export function idDateFor(createdAt: string | undefined, fallback: Date): Date {
+  if (!createdAt) return fallback;
+  const parsed = new Date(createdAt);
+  return Number.isNaN(parsed.getTime()) ? fallback : parsed;
+}
+
 /** `MSG-20260918-003-branch-audit` */
 export function buildMessageId(type: BusMessageType, date: Date, sequence: number, slug: string): string {
   const normalized = slug

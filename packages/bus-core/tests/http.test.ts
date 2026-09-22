@@ -41,11 +41,20 @@ function get(url: string, token = TOKEN): Request {
   return new Request(url, { headers: { authorization: `Bearer ${token}` } });
 }
 
-test("health needs no token and does not expose data", async () => {
+test("health needs no token, exposes no data, and states the auth posture", async () => {
   const { handle } = await newHandler();
   const response = await handle(new Request("https://bus.test/health"));
   assert.equal(response?.status, 200);
-  assert.deepEqual(await response!.json(), { ok: true, service: "revolis-bus", version: 1 });
+  // The posture fields are about the server, never about bus contents. A
+  // deployment running on a shared secret has to be able to say so.
+  assert.deepEqual(await response!.json(), {
+    ok: true,
+    service: "revolis-bus",
+    version: 1,
+    auth_mode: "shared",
+    from_binding: false,
+    outbox_provenance: "unverified",
+  });
 });
 
 test("unknown paths fall through so a host app keeps its own routing", async () => {
