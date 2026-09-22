@@ -1,3 +1,54 @@
+## Session 2026-09-21/22 (BUS runner 2D + bus do CI + cockpit price integrity)
+
+### Dokončené
+- **KROK 2D** (#617, merged `e6a2ddc`): always-on runner, 60 s poll loop s backoffom do 10 min,
+  graceful shutdown, denný strop 100 vykonaní / 24 h rolling window
+  (`packages/bus-core/src/execution-cap.ts`), blocker dedup bez zatvárania tasku.
+  `handledTaskIds()` už nezapočítava blockery — raz odmietnutý task dostane druhú šancu.
+- **Bus do CI**: `bus:typecheck` ako kroky v BUS jobe (#620, cudzia session),
+  `bus:validate` ako krok (#622, `0cd66f3`). BUS job má teraz tri nezávislé stráže:
+  runtime (testy), dáta (envelopes), typy. Každá overená zavedenou chybou, nie argumentom.
+- `packages/bus-core/tsconfig.json` + `npm run bus:typecheck` (#617/#622).
+- **Oprava rozsahu Stripe VERIFY** (#622): tri → **deväť** price objektov.
+- `scripts/ops/stripe-verify-prices.sh` — kľúč z `STRIPE_SECRET_KEY`, nie z argumentu.
+- Cockpit price integrity (#627, cudzia session) + zjednotenie stráže a gate na
+  `isOwnerCockpitPurchasable` (#630, otvorené).
+
+### Opravy predchádzajúcich záznamov v tomto súbore
+- **„overit pät price objektov (seat x3 + cockpit x2)"** (blok 2026-09-21 revenue blocker)
+  je **nesprávne v oboch smeroch**. Správne je **deväť**: seat ×3 + cockpit ×2
+  (`OWNER_COCKPIT` + `OWNER_COCKPIT_FOUNDER`, **nie** `_PRO` — ten má `enabled: false`)
+  + top-up ×4 (`areTopupCheckoutPricesConfigured` je samostatná brána).
+  Dôvod, prečo na tom záleží: `checkoutAvailable` je **OR**, nie AND — po nastavení len
+  troch seat cien banner zmizne, ale sekcia top-upov sa ticho nevykreslí.
+- **„D2 (`bus:validate` ako CI krok) … stále otvorené"** už neplatí — zmergované v #622.
+
+### Rozpracované / Pending
+- **Stripe VERIFY ostáva na founderovi** — `bash scripts/ops/stripe-verify-prices.sh`
+  s `STRIPE_SECRET_KEY`. 9/9 → krok B (env patch), akýkoľvek MISSING → krok C (STOP + GO).
+- Produkčný env prečítaný znova 2026-09-21 večer: 85 premenných, päť `STRIPE_PRICE_*`,
+  všetky zo starého program modelu. Seat/cockpit/top-up kľúče: **nula**. Bez zmeny.
+- **Dve rozhodnutia z 2D** (`DEC-20260921-002`) čakajú: (a) blocker už task neumlčí natrvalo —
+  zmena správania, nie prídavok; (b) task zaparkovaný stropom ostáva `NEEDS_FOUNDER`
+  aj po uvoľnení 24 h okna, odparkuje ho founder.
+- PR #630 otvorený, CI celá zelená vrátane Vercel preview.
+- `bus:typecheck` v CI **nekontroluje** `.ai/bus` envelopes a `bus:validate` **nekontroluje** typy —
+  sú to tri oddelené stráže, nie jedna.
+- `typecheck-baseline` hlási 48 chýb oproti stropu 69; CI samo pýta zníženie stropu.
+- 2E (read-only capabilities pod Policy B) nezačaté — vlastná GO brána.
+- `TASK-BUS-RUNNER-2D` (#621) je adversariálny audit runnera, owner **cursor**, nie ja.
+
+### Kľúčové súbory zmenené
+- `packages/bus-core/src/execution-cap.ts`: nová policy vrstva denného stropu (bez fs/siete)
+- `packages/bus-core/src/consumer.ts`: `handledTaskIds` ignoruje blockery, `reportedRefusals`
+- `scripts/bus/consume.ts`: `runWatch`, `FileExecutionCounter`, SIGINT/SIGTERM
+- `.github/workflows/saas-grade-pipeline.yml`: BUS job = Test + Validate envelopes + Typecheck
+- `docs/reports/2026-09-21-upgrade-checkout-config-root-cause.md`: §VERIFY opravená na deväť
+- `apps/crm/src/lib/credits-billing.ts`: cockpit stráž = rovnaký predikát ako UI gate
+
+### Ďalší krok
+Founder: Stripe VERIFY (deväť cien, nie päť). Bez toho sa `/upgrade` nepohne.
+
 ## Session 2026-09-21 (revenue blocker /upgrade — root cause + DEC seat model)
 ### Dokoncene
 - Prod smoke `/upgrade` na prihlasenej session: **FAIL** — "Checkout momentalne nedostupny"

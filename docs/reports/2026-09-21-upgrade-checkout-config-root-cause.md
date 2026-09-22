@@ -248,10 +248,27 @@ Banner teda zmizne už po nastavení troch seat cien. Lenže sekcia top-upov sa
 rendruje pod vlastným flagom (`upgrade/page.tsx:295`), takže **ticho zmizne** a
 kredity si nikto nekúpi. Vyzerá to opravené a nie je.
 
-**b) Cockpit sa predá zadarmo.**
-`credits-billing.ts:79` → `if (cockpitPrice) lineItems.push(...)`. Seat cena pri
-absencii hodí výnimku (`:70`), cockpit sa **ticho preskočí**. Zákazník zaškrtne
-Owner Cockpit, v UI vidí +349 €, zaplatí iba seaty.
+**b) Cockpit sa predá zadarmo.** — **OPRAVENÉ v #627 (`2936c56`).**
+Pôvodný nález: `credits-billing.ts` → `if (cockpitPrice) lineItems.push(...)`.
+Seat cena pri absencii hodila výnimku, cockpit sa **ticho preskočil** — zákazník
+zaškrtol Owner Cockpit, videl ho v sume a zaplatil iba seaty.
+
+Dva dodatky k pôvodnému popisu:
+
+- Suma v UI **nie je +349 €**, kým sú voľné founder miesta.
+  `isFounderKancelariaEligible()` je dnes `true` (7/20), takže
+  `upgrade/page.tsx` renderuje **249 €**. Pôvodný resolver pritom pri
+  nenastavenom `_OWNER_COCKPIT_FOUNDER` spadol späť na `_OWNER_COCKPIT` a
+  naúčtoval 349 €. To nebol výpadok našej tržby, ale **preplatok zákazníka**.
+- Oboje je zavreté: fallback medzi founder a štandardnou cenou je odstránený,
+  `buildSeatCheckoutSessionParams` pri chýbajúcej cene **fail-closed hodí**, a
+  `/api/billing/checkout-config` vracia `cockpit.ownerPurchasable`, podľa
+  ktorého `/upgrade` checkbox vôbec nezobrazí. Zákazník s nastavenými seat
+  cenami a chýbajúcimi cockpit cenami teda dostane funkčný seat-only checkout,
+  nie chybu.
+
+**Pre VERIFY to nič nemení** — cockpit ceny treba stále overiť, ak ich chceš
+predávať. Mení to len to, čo sa stane, keď chýbajú.
 
 **c) Typ ceny musí sedieť, nielen suma.**
 Seat session je `mode: "subscription"` (`:114`), top-up `mode: "payment"`

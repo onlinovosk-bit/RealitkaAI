@@ -1802,3 +1802,56 @@ zmena kontraktu a patrí do vlastnej brány. Zámerne neopravené:
 - **Detekcia mergu:** pole `merged` z `list_pull_requests` je v tomto repe
   nespoľahlivé — vracia `false` aj pre preukázateľne zmergované PR. Používať
   `state == "closed"` alebo priamo `git log origin/main`.
+
+## 2026-09-21 — BUS-HANDSHAKE-IDENTITY: harness dorovnaný na per-agent auth
+
+- **Nález.** #612 zaviedlo per-agent credentials do `serve.ts` a `http.ts`, ale
+  `scripts/bus/handshake.ts` sa nedotklo — čítalo ďalej iba `REVOLIS_BUS_TOKEN`.
+  Runbook pritom v §1 hovorí starý zdieľaný token *„rotuj preč"*, zatiaľ čo §4
+  z neho stále čítal. Krok §4 (overenie round-tripu pred ChatGPT) teda po
+  zapnutí per-agent režimu **nemohol prejsť** — a je to posledný krok pred
+  Gate C.
+- **Reprodukované proti živému serveru** (loopback, filesystem store, bez tunela
+  a bez zápisu do repa), nie odvodené z kódu:
+  - server `AUTH MODE: per-agent`, harness z `origin/main` s jedným tokenom →
+    `BUS-001 PASS`, potom `HANDSHAKE: FAIL — POST result returned 403`.
+    Bearer je platný, ale `from: claude-code` k nemu nesedí.
+  - ten istý harness po rotácii zdieľaného tokenu →
+    `REVOLIS_BUS_TOKEN must be set`, exit 1.
+- **Korekcia vlastného skoršieho tvrdenia.** Predpovedal som „401 na každom
+  volaní". Nesprávne: SOL token sa autentifikuje, takže BUS-001 prejde a padne
+  až BUS-002 na `403 from_not_authorized`. Záver (remote C-0 na main neprejde)
+  platí, ale mechanizmus je iný, než som napísal.
+- **Zmena.** `handshakeAuthFromEnv()` číta oba `REVOLIS_BUS_TOKEN_SOL` /
+  `_CLAUDE`; BUS-001 posiela ako `sol-gpt`, BUS-002 a `ack` ako `claude-code`.
+  Lokálny režim beží po novom tiež per-agent, takže hranicu testuje aj bez
+  tunela. Zdieľaný `REVOLIS_BUS_TOKEN` ostáva ako DEGRADED fallback.
+- **Nové BUS-004** — identita ako **asserted** výsledok, nie predpoklad:
+  `sol-gpt` → `outbox` musí byť `403 box_not_writable` a `sol-gpt` s
+  `from: claude-code` musí byť `403 from_not_authorized`. Kontroluje sa aj kód
+  chyby, nie len status: 403 zo zlého dôvodu by prešiel status testom a hranicu
+  nechal nezmeranú. V DEGRADED režime sa **SKIPne** a záver znie
+  `PASS (DEGRADED — identity boundary untested)` — mlčanie nie je povolenie.
+- **Polovičná migrácia fail-closed.** `serve.ts` znesie nastavený len jeden z
+  dvoch (chýbajúca strana je proste zamknutá). Harness nie: autentifikoval by
+  jednu nohu a druhú 401, a čitateľ by hádal, ktorý test zlyhal. Odmietne bežať.
+- **`from_binding` cross-check.** Harness načíta `/health` a porovná posture
+  servera s vlastnou konfiguráciou. Nesúlad v ktoromkoľvek smere povie, ktorá
+  strana je zle nastavená, namiesto neprehľadného 401 o tri volania neskôr.
+- **Overené, štyri kombinácie, všetky proti bežiacemu serveru:**
+  per-agent/per-agent → `PASS` 4/4 · shared/shared → `PASS (DEGRADED)`, BUS-004
+  SKIP · per-agent server + shared harness → FAIL s presnou diagnostikou ·
+  shared server + per-agent harness → FAIL s opačnou diagnostikou.
+- **Testy:** 173/173 (166 pred zmenou + 7 nových pre `handshakeAuthFromEnv`).
+  `tsc --strict` nad `packages/bus-core` aj `scripts/bus`: 0 chýb.
+- **Korekcia po merge `b3d20de`.** Pôvodne som sem napísal, že BUS-TYPECHECK
+  ostáva otvorený a typy som si doinštaloval ad hoc. Medzitým pristálo #620,
+  ktoré typecheck zapojilo do CI — a BUS job na tomto PR (`e1c42b6`) bežal proti
+  merge refu s novým workflowom, takže `npx tsc -p tsconfig.json --noEmit`
+  s `typescript@5.9.3` a `@types/node@22` prešiel **v CI**, nie len u mňa.
+  Dôkaz je silnejší, než aký som pri odosielaní tvrdil.
+- **Nezmenené:** `serve.ts`, `http.ts`, `consumer.ts`, `consume.ts`, auth model,
+  `outbox` boundary, ACK sémantika. Zmena je v harnesse a v runbooku.
+- **Čo to neodomyká.** Gate C ostáva zablokovaný: `bus/main` je stále na
+  `17f30d4` (2026-09-19), žiadny remote C-0 nebežal. Toto odstraňuje prekážku
+  v kroku §4, nespúšťa ho.
