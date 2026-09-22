@@ -25,6 +25,26 @@ záznam podľa CLAUDE.md §7. Obálky: `docs/briefs/2026-09-22-wall-queue-w1-w2.
 Obe steny majú zakázané: merge, push do `main`, zápis do produkčnej DB, zmenu
 `.github/workflows` a akýkoľvek zásah do Cloudflare Workera — ten je mimo repozitára,
 takže ak oprava patrí tam, stena končí nálezom, nie zásahom.
+## [2026-09-22] — Working agreement: whole walls, not screws
+
+Founder, verbatim: *„Posielaj mi na schválenie celé steny a nie skrutky."*
+Originál bol prirovnanie k montovanému domu — stena sa montuje celá, nie po
+jednej skrutke. Dnes požiadal, aby to bolo uložené do pamäte, nie len dodržiavané
+v jednej session.
+
+**Čo to znamená prakticky.** Jeden hotový blok na jedno GO. Žiadne desiatky
+mikro-updatov („beží ~7 min", „Vercel, bez akcie"). Keď je blok hotový, príde
+naraz aj s dôkazom. Keď treba rozhodnutie, príde raz — s možnosťami a
+odporúčaním — nie ako séria priebežných otázok uprostred úlohy.
+
+**Prečo to vzniklo.** Predchádzajúce session rozsypávali stav do desiatok správ a
+founder musel z nich skladať obraz sám. To je presne opak toho, načo je agent.
+
+**Kam to bolo zapísané.**
+- `CLAUDE.md` Core Directives, položka 0 — číta sa pri štarte každej session.
+- `uptm-runner/CLAUDE.md` — ten repozitár nemal žiadny `CLAUDE.md` ani `memory/`,
+  takže session štartujúca tam nečítala žiadne direktívy. Rovnaké pravidlo je
+  tam prvé.
 
 ## [2026-09-22] — Broker ingest: atribúcia musí existovať skôr, než ju sľúbim
 
@@ -1784,6 +1804,121 @@ blocked. Exact PC commands are in
 - **Pred mergom som čakal na dokončenie CI** — `Lint, test, build` bežal ešte 9
   minút po GO. Mergovať na neúplnom dôkaze by poprelo disciplínu celého dňa.
 
+## 2026-09-21 — Substrate parity: `platform_events`, `ai_jobs` a ich producent legalizované (PR #619, #625, #628)
+
+- **Čo to spustilo:** brána `GO CP-P0-1A` (event spine v2). Pri overovaní
+  predpokladov sa ukázalo, že sa nedá splniť bez porušenia práve toho kritéria,
+  ktoré rozhodlo P-1 — *„bez porušenia repo/PROD parity"*.
+- **Nález:** `platform_events` **nemá `CREATE TABLE` v žiadnej aktívnej
+  migrácii** (len v `migrations-archive/`, ktorá sa neaplikuje), `ai_jobs`
+  **nikde**. CI stavia ephemeral DB cez `supabase db reset` z `migrations/`,
+  takže obe tabuľky v CI chýbali. Aktívna migrácia to sama dokumentuje —
+  `20260509000000_rls_lead_scores.sql:9`: *„platform_events — table does not
+  exist in any migration"*.
+- **Prečo to bol blocker, nie detail:** migrácia A1/A2 by v CI buď spadla
+  (`relation does not exist`), alebo by sa musela guardovať cez `IF EXISTS`
+  a tým sa stala **falošne zelenou**. To je ten istý vzor ako 126 nespúšťaných
+  testov a nevolaný `bus:typecheck` — strážca, ktorý nič nestráži.
+- **Rozhodnutie Foundera:** `GO CP-P0-1A-LEGALIZE-FIRST` — najprv legalizovať
+  substrát v presnom nameranom PROD tvare, až potom A1–A8. Odmietnutá
+  alternatíva `CP-P0-1A-PROD-ONLY` (guardované `IF EXISTS`), lebo robí zelené
+  CI nepravdivým.
+
+### Tri brány, každá samostatná PR
+
+| PR | čo legalizuje | fingerprint CI == PROD |
+|---|---|---|
+| #619 `777149e` | `platform_events` + `ai_jobs` (tabuľky, constrainty, indexy, RLS, policy, realtime) | `3c7b4d60e3a49441aaeff389ade3a5f2` · 31 riadkov |
+| #625 `ee8a361` | `emit_platform_event()` + `trg_leads_platform_events` + `trg_activities_platform_events` | `329e2f587007c97ff05efd760d1fddbb` · 5 riadkov |
+| #628 `1f6ba69` | `leads.agency_id NOT NULL` | `81bcd45e805f84990b1bbed1be216bcd` · 10 riadkov |
+
+- **Metóda dôkazu:** lokálny PostgreSQL 16, čistý cluster, Supabase-like
+  scaffolding (`auth.uid()`, roly, `supabase_realtime`, pgcrypto v `extensions`).
+  Prehratý **celý aktívny migration set**: 104/104 → 105/105 → 106/106,
+  0 failed. Potom md5 fingerprint nad `pg_catalog` na oboch stranách.
+- **Funkčný dôkaz (#625), nie len tvarový:** v CI insert lead → `lead.created`,
+  update status → `lead.status_changed`, insert activity → `integration.activity`,
+  všetky s nenulovým `agency_id`. Bez toho by CI mala tabuľky bez producenta.
+- **Idempotencia:** každá migrácia aplikovaná 3×, fingerprint nezmenený.
+  Zachovanie dát overené re-aplikovaním nad naplnenými tabuľkami.
+
+### Princíp, ktorý sa držal celý deň: legalizuj substrate *as-is*
+
+Reprodukovali sme PROD vrátane jeho chýb. Oprava ktorejkoľvek z nich by bola
+zmena kontraktu a patrí do vlastnej brány. Zámerne neopravené:
+
+- `platform_events.agency_id` zostáva `NULLABLE` — vyplýva z FK
+  `ON DELETE SET NULL`. **Mení to dizajn A2:** `CHECK (agency_id IS NOT NULL)`
+  by kolidoval s vlastným FK pri zmazaní agentúry.
+- policy `platform_events_select_tenant` si ponecháva vetvu `agency_id IS NULL`
+  → osirené eventy vidí každý prihlásený používateľ.
+- `ai_jobs`: RLS zapnuté, **0 policies** = deny-all mimo `service_role`.
+
+### Rozhodnutia o dopade na PROD
+
+- **Triggery (#625) sa vytvárajú iba ak chýbajú.** V PROD existujú, takže
+  žiadny `DROP`/`CREATE` nad živým write-path na `leads`/`activities` a žiadny
+  zámok na horúcich tabuľkách. Cena, priznaná: migrácia tvrdí prítomnosť, nie
+  presný tvar — tvar bol overený meraním, nie vynútený migráciou.
+- **Funkcie idú cez `CREATE OR REPLACE`.** Jediný rozdiel oproti PROD je koniec
+  riadku: PROD nesie CRLF zdedené z archívneho súboru, repo má LF. Preto sa
+  fingerprint počíta nad `prosrc` s normalizovaným CR — porovnáva sa obsah,
+  nie artefakt.
+- **`SET NOT NULL` (#628) guardované** — v PROD už platí, takže no-op bez
+  zámku. **Žiadny backfill:** keby NULL riadky existovali, migrácia má spadnúť
+  nahlas, nie ticho prepisovať dáta.
+
+### Nálezy, ktoré vznikli meraním, nie čítaním dokumentácie
+
+1. **`LEADS-AGENCY-FK-CONTRADICTION`** — `leads.agency_id` je `NOT NULL`,
+   ale `leads_agency_id_fkey` je `ON DELETE SET NULL`. Protirečí si to:
+   **zmazanie agentúry, ktorá má leady, dnes v PROD zlyhá.** Dormantné len
+   preto, že sa to nerobí. Overené v CI po #628:
+   `ERROR: null value in column "agency_id" ... CONTEXT: UPDATE ONLY
+   "public"."leads" SET "agency_id" = NULL`.
+   Riešenia (`CASCADE` / `RESTRICT` / zrušiť `NOT NULL`) majú rôzne dôsledky na
+   dáta → rozhodnutie Foundera.
+2. **`EMIT-EVENT-PUBLIC-EXECUTE`** — `emit_platform_event` je
+   `SECURITY DEFINER` s `EXECUTE` pre **PUBLIC** (`=X/postgres`, plus `anon`,
+   `authenticated`, `service_role`). Ktokoľvek ju vie zavolať s ľubovoľným
+   `agency_id` a payloadom a zapísať podvrhnutý event do streamu ľubovoľného
+   tenanta. RLS to nezastaví — `SECURITY DEFINER` ju obchádza.
+3. **`leads.agency_id NOT NULL` vzniklo v PROD mimo migrácií.** Žiadna zo 106
+   migrácií ho nedoťahuje. Founder si to dal explicitne overiť a tušil správne.
+4. **`PLATFORM-EVENT-NULL-WRITER`** — `apps/crm/src/lib/ai/matching-engine.ts:36`
+   volá `emitPlatformEventServer({ agencyId: null, … })`, writer chybu iba
+   `console.warn`-ne. PROD má **0 NULL riadkov** → tá vetva nikdy úspešne
+   nezbehla. Rovnaký vzor ako 11 mŕtvych `logAiAction` call sites.
+5. **Bezpečnostný dôkaz, ktorý prežil:** `trg_activities_platform_events`
+   odvodzuje agency cez `SELECT … INTO`; pri neexistujúcom `lead_id` by
+   `v_agency` zostalo NULL. Oba triggery sú **AFTER** a FK
+   `activities_lead_id_fkey` je validated → vetva je v PROD nedosiahnuteľná.
+   **Ale:** kým `leads.agency_id` nebolo NOT NULL aj v CI, v CI dosiahnuteľná
+   bola. To bol vecný dôvod pre #628, nie kozmetika.
+
+### Oprava vlastného omylu
+
+- **`BUS-TYPECHECK` som opakovane viedol ako `UNKNOWN`.** Bolo to prevzaté
+  z tela #612, ktoré vzniklo **pred** #620. Overené v repo: `bus:typecheck`
+  beží v `saas-grade-pipeline.yml:308`, commit `b3d20de` na main.
+  **Položka je uzavretá**, nie otvorená.
+
+### Procesné
+
+- **`BUS-CI-WIRE` sa nevykonal ako samostatná brána** — #612 si CI job priniesla
+  so sebou, lebo mutation evidence sa dala vyrobiť len na vetve, kde `from` gate
+  existoval. Overené nepriamo: job `BUS (transport authority boundary)` bežal
+  a bol zelený na #619, ktorá mení jeden SQL súbor.
+- **Jedna brána = jedna PR.** Keď bol commit `a58d8b3` hotový, ale #625 ešte
+  otvorená, Founder zvolil **počkať na merge** namiesto stackovania. Commit
+  držaný lokálne pod tagom `pending/leads-agency-notnull`, doručený až po merge.
+- **Vercel deployment padal na všetkých troch PR** na kvóte účtu
+  (`api-deployments-free-per-day`, 100/deň, free plán). Nie je to chyba diffu;
+  okomentované raz na každej PR, re-run nespúšťaný. Merge to nezablokovalo →
+  Vercel nie je medzi required checks.
+- **Detekcia mergu:** pole `merged` z `list_pull_requests` je v tomto repe
+  nespoľahlivé — vracia `false` aj pre preukázateľne zmergované PR. Používať
+  `state == "closed"` alebo priamo `git log origin/main`.
 
 ## 2026-09-21 — BUS-HANDSHAKE-IDENTITY: harness dorovnaný na per-agent auth
 

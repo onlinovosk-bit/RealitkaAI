@@ -26,10 +26,10 @@
   sedela s verziou zapísanou v produkcii a nekolidovala timestampom.
 - **Overené v produkcii, nie odvodené:** `owner_backfilled` v logoch = nový kód je živý;
   heartbeat sa aktualizuje aj pri `NOT_A_LEAD`; `Reset DB` v behu 1970 prešiel.
-- **#636** (otvorený draft): `noticeGradient` do `slate-horizon-theme.ts` — žltý warning panel
+- **#636** (zmergovaný, `d575990c`): `noticeGradient` do `slate-horizon-theme.ts` — žltý warning panel
   na `/upgrade` nahradený modrým gradientom z pracovného menu. Test na kontrast pridaný:
   každý stop gradientu drží 4.5:1 proti `brandDeep`.
-- **#635** (otvorený draft): čitateľnosť landing page — 44 cielených zväčšení fontu,
+- **#635** (zmergovaný 2026-09-22): čitateľnosť landing page — 44 cielených zväčšení fontu,
   base 17px → 18px, hero na jeden riadok, cockpit sekcia prepísaná na dvojstĺpcové
   porovnanie **bez jediného literálneho čísla** (všetko z `COCKPIT_PRODUCTS`,
   `COCKPIT_LITE_MIN_SEATS`, `ownerCockpitPriceEur()`), vykanie.
@@ -52,9 +52,11 @@
   Námietku som výslovne stiahol.
 
 ### Rozpracované / Pending
-- **#635 a #636 sú zelené drafty, čakajú na merge founderom.** Watch check-in beží.
-- **E-mail pre Smolka nie je odoslaný.** Pred odoslaním treba raz preklikať 8 krokov
-  self-service postupu — sú napísané z dokumentácie poskytovateľa, nie z vlastnej obrazovky.
+- **#635, #636 aj #638 zmergované** 2026-09-22. Otvorené ostávajú #639 a #640.
+- **E-mail pre Smolka founder odoslal 2026-09-22.** 8 krokov self-service postupu v ňom
+  je napísaných z dokumentácie poskytovateľa, nie z vlastnej obrazovky — neboli preklikané.
+  Tým sa rozhodujúci test atribúcie (`TASK-INGEST-VERIFY-ENVELOPE`) stáva časovo tlačeným:
+  prvá preposlaná správa je zároveň odpoveďou. Detaily a dva nové nálezy: #639.
 - **`email.to` = envelope recipient je predpoklad, nie dôkaz.** Pre skutočne preposlanú
   poštu neoverené. Ak by to bola hlavička a nie obálka, atribúcia sa tichým spôsobom
   posunie na pôvodného príjemcu.
@@ -78,7 +80,7 @@
 - `docs/prompts/multi-agent-protocol-v0/07-work-block-execution-protocol.md`: WBEP v0.1
 
 ### Ďalší krok
-Founder: prečítať a odoslať e-mail Smolkovi (dva varianty), a rozhodnúť o merge #635/#636.
+Founder: rozhodnúť o merge #635 a o GO na `TASK-CONTACT-GUARD-FIX` (#639, nálezy A a B).
 Až po zapojení ďalších maklérov sa dá zmerať skutočná miera záchytu dopytov — dovtedy
 je akékoľvek číslo o „koľko leadov nám uniká" odhad, nie meranie.
 
@@ -812,3 +814,30 @@ Founder: read-only SELECT ci je `20260817220000` aplikovana v PROD (G4). Bez toh
 
 ### Ďalší krok
 Čakať na odpoveď p. Smolka s počtom dopytov u troch maklérov. To číslo rozhodne, či má napojenie schránok zmysel, alebo je problém v objeme dopytov a nie v ich zbere.
+
+## Session 2026-09-21 (substrate parity — tri legalizačné brány, CP-P0-1A odblokované)
+
+### Dokončené
+- **#619 `777149e` — `platform_events` + `ai_jobs` legalizované** do active migration setu. Obe existovali v PROD, ale `CREATE TABLE` nemali v žiadnej aktívnej migrácii (`platform_events` len v `migrations-archive/`, `ai_jobs` nikde). Migrácia reprodukuje presne nameraný PROD tvar: stĺpce a poradie, typy, defaulty, PK/FK/CHECK, indexy (vrátane partiálneho `ai_jobs_runner_poll ... WHERE status='pending'`), RLS, `platform_events_select_tenant` policy a členstvo v `supabase_realtime`. Dôkaz: **104/104 applied**, fingerprint `3c7b4d60e3a49441aaeff389ade3a5f2` (31 riadkov) zhodný s PROD, idempotencia 3×, zachovanie dát overené.
+- **#625 `ee8a361` — producent legalizovaný**: `emit_platform_event()`, `trg_leads_platform_events`, `trg_activities_platform_events`. Bez nich mala CI tabuľky bez toho, kto do nich píše. Dôkaz: **105/105 applied**, fingerprint `329e2f587007c97ff05efd760d1fddbb` (5 riadkov) zhodný s PROD, a **funkčný test v CI** — insert lead → `lead.created`, update status → `lead.status_changed`, insert activity → `integration.activity`, všetky s nenulovým `agency_id`.
+- **#628 `1f6ba69` — `leads.agency_id NOT NULL` legalizované.** V PROD platilo, po `db reset` nie; vzniklo mimo migrácií (žiadna zo 106 ho nedoťahuje). Dôkaz: **106/106 applied**, `notnull=true` po CI resete, fingerprint `81bcd45e805f84990b1bbed1be216bcd` (10 riadkov, 9 stĺpcov + definícia FK) zhodný s PROD.
+- **Metóda dôkazu naprieč všetkými tromi:** lokálny PostgreSQL 16, čistý cluster, Supabase-like scaffolding, prehratý celý aktívny migration set, potom md5 fingerprint nad `pg_catalog` proti živej PROD DB. Nie tvrdenie, ale porovnanie.
+- **Oprava vlastného omylu:** `BUS-TYPECHECK` som opakovane viedol ako `UNKNOWN`; prevzaté z tela #612, ktoré vzniklo pred #620. Overené: `bus:typecheck` beží v `saas-grade-pipeline.yml:308` (`b3d20de` na main). **Položka je uzavretá.**
+
+### Rozpracované / Pending
+- **`CP-P0-1A` (event spine v2) — odblokovaná po stránke parity, blokujú ju už len `P-2` a `P-3`.** A3 čaká na P-2, A7 na P-3. Substrátový dôvod, kvôli ktorému bola zastavená, zanikol.
+- **`LEADS-AGENCY-FK-CONTRADICTION` — nové, nerozhodnuté.** `leads.agency_id` je `NOT NULL`, ale `leads_agency_id_fkey` je `ON DELETE SET NULL`. **Zmazanie agentúry s leadmi dnes v PROD zlyhá.** Reprodukované v CI po #628. Tri možné odpovede (`CASCADE` / `RESTRICT` / zrušiť `NOT NULL`) majú rôzne dôsledky na dáta → rozhodnutie Foundera.
+- **`EMIT-EVENT-PUBLIC-EXECUTE` — nové, security.** `emit_platform_event` je `SECURITY DEFINER` s `EXECUTE` pre PUBLIC (`anon` aj `authenticated`). Ktokoľvek vie zapísať podvrhnutý event do streamu ľubovoľného tenanta; RLS to nezastaví.
+- **`PLATFORM-EVENT-NULL-WRITER` — backlog.** `matching-engine.ts:36` posiela `agencyId: null`, writer chybu iba `console.warn`-ne. PROD má 0 NULL riadkov → vetva nikdy úspešne nezbehla.
+- **Dizajnový dôsledok pre A2:** `CHECK (agency_id IS NOT NULL)` na `platform_events` by kolidoval s vlastným FK `ON DELETE SET NULL`. A2 treba navrhnúť inak, než pôvodne znelo.
+- **Tri otvorené founder `DECISION`:** P1 (a–g), **P2 (transport)**, **P3a/P3b (RLS)** — nezmenené.
+
+### Kľúčové súbory zmenené
+- `apps/crm/supabase/migrations/20260921000000_legalize_platform_events_ai_jobs.sql` — tabuľky, indexy, RLS, policy, realtime publikácia (#619)
+- `apps/crm/supabase/migrations/20260921190000_legalize_platform_event_triggers.sql` — tri funkcie + oba triggery, triggery guardované na neexistenciu (#625)
+- `apps/crm/supabase/migrations/20260921200000_legalize_leads_agency_id_not_null.sql` — guardovaný `SET NOT NULL`, bez backfillu (#628)
+- `memory/decisions.md` — záznam brány vrátane princípu „legalizuj substrate as-is" a piatich nálezov
+- `memory/session-summary.md` — tento záznam
+
+### Ďalší krok
+Uzavrieť **P-2** a **P-3**. Sú to jediné dve veci medzi aktuálnym stavom a `CP-P0-1A`; A3 a A7 sa bez nich nedajú navrhnúť. Tri otvorené nálezy (FK rozpor, PUBLIC EXECUTE, NULL writer) sú reálne, ale spine neblokujú — riešiť ich až po P-2/P-3, každý vlastnou bránou.
