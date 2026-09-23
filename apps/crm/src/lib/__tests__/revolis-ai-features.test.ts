@@ -144,6 +144,16 @@ export const REVOLIS_AI_FEATURE_REGISTRY: AiFeatureSpec[] = [
     apiRoute: "/api/ai/listing-content/generations/[id]",
   },
   {
+    id: "property-launch-pack",
+    label: "Property Launch Pack V0",
+    category: "content",
+    paths: [
+      "src/lib/capabilities/property-launch-pack/build.ts",
+      "src/app/api/ai/property-launch-pack/route.ts",
+    ],
+    apiRoute: "/api/ai/property-launch-pack",
+  },
+  {
     id: "micro-actions-schedule",
     label: "AI micro-actions schedule",
     category: "automation",

@@ -1,0 +1,69 @@
+{
+  "run_id": "20260905T2304-ruflo-overnight",
+  "lane_id": "D",
+  "base_sha": "cf3604613cdbb6a7a279e175f2c792fb25591461",
+  "input_hashes": {
+    "apps/crm/package.json": "6dd8b4516612535437e13920026daac3d69e3697568af0cb40ef228a9847bd2e",
+    "apps/crm/src/lib/program-tier-pricing.ts": "4811250c9d3e4b0b99d101aa6645ab9625fbec81c5da0652662d2291265f851a",
+    "apps/crm/docs/pricing-v1.md": "bef4bb9988554c2fe554419724705be9c1f4f7104a3207072a24a9fd02148961",
+    "docs/briefs/reality-smolko-production-blockers-2026-09-04.md": "e049b3523b985ca4ac7e88c9325e35903416ace8e586799171b4afd5ad2f1d2c",
+    "docs/architecture/revolis-constitution-v2.md": "e7a26ca621fbc7414a95cd0055ca7a5b91e9512c4d643d980e992b094d37f58f",
+    "docs/architecture/master-data-sourcing-map.md": "0f16cb0edfe07bf277e841e83a686ad92b5e9616d132d57dc89a81ca96331070",
+    "apps/crm/AGENTS.md": "8affa2a3d1160b2033d07dcf8c4d5fa6017eafca52354f22c2e63354c6d57a93",
+    ".cursor/rules/l99-engineering-constitution.mdc": "0990f76b310a372c92304700d2a8d4cc82e04b09f5332c44c9f3207f3dfde921",
+    "docs/overnight/2026-09-05-ruflo-swarm/START-HERE.md": "73df8d96a2cc72c2f9d4a49573b8c0b403956a52a55569b49ab92ee2e00ed2b6",
+    "docs/overnight/2026-09-05-ruflo-swarm/lanes.json": "a82e061777205604470d73a701309380d9170aaec9def786733f366220037845",
+    "docs/overnight/2026-09-05-ruflo-swarm/launch-record.md": "bf12a32b66f769604ba6753e786df65f059fce11c19bd09f7d05ada130d396b9",
+    "docs/overnight/2026-09-05-ruflo-swarm/launch-record.template.md": "9ba80fd3a387fe21ebb39e209b6e9ecafa5bec9b92b14ecdb057ed0382df5aaa",
+    "docs/overnight/2026-09-05-ruflo-swarm/seed-evidence.md": "4e570b3ca38fe91a459688d185ca3e679662ff49dc3f56b8cc93ea749517c731",
+    "lanes/A/report.md": "f3fbc2102e3b150670a26a6f2ffdc27bdfa87c3876fbf8d2ffe9f9b4ce658321",
+    "lanes/A/result.json": "a4f315c5012066ec0d518272052d8fac943728258fd829409dbf1858cac2a6ed",
+    "lanes/A/sources.json": "4c5805fa4f09f91827bf71a1ae43531eb8d9b2462071cb3069f945e40322cda9",
+    "lanes/B/report.md": "307e38610715d7f121f375e65895d3fd9e10e61d6b0a206ba05953a758e41b24",
+    "lanes/B/result.json": "3856f373f07154958b54557b114e2ca5e2eac292a6dc331752babc097c631dee",
+    "lanes/B/sources.json": "8d7f257f34e79633f9a6354c422d6478a6a6158a04f12ee633f60b4f315a8fc7",
+    "lanes/C/report.md": "01d9b73fa9ec6e7ce9c9c667eb15da21bb6463947fe30eca3a1a7e58ba370d2d",
+    "lanes/C/result.json": "a28715fd65e57441572d0ffbeec56049db56bc2cecf9d10fa0bffcb7726b05b8",
+    "lanes/C/sources.json": "dc0f29fb5e1d166ceaecf2707847ec1dc62fb3839d44c33baa7d5de1d748f69b",
+    "control/note-pricing-src.txt": "4811250c9d3e4b0b99d101aa6645ab9625fbec81c5da0652662d2291265f851a",
+    "control/status.json": "b64819779cc61eaa35efb34ffad26c2bfb1ba4ff3298abc830d7072bfab626e5"
+  },
+  "status": "PASS_WITH_CONDITIONS",
+  "produced_files": [
+    "lanes/D/report.md",
+    "lanes/D/sources.json",
+    "lanes/D/result.json"
+  ],
+  "unknowns": [
+    "PROD migration apply completeness / live RLS residual",
+    "UC Import activation credentials and schema artifacts for outbound publish",
+    "phone CDR vs value-release audit requirement for pilot",
+    "scheduled_events production usage",
+    "pipeline_moves vs lead_events as history SSOT",
+    "whether cron/serverless limits force thin worker extraction"
+  ],
+  "next_action": "Freeze lane D for W2 gate with lane E; backlog G should sequence property specs Zod, phone_value_releases, portal outbox after vendor unlock — no Nest/BullMQ/Mapbox/shadcn by default",
+  "conditions": [
+    "No live prod DB verification",
+    "Outbound portal publish still vendor-gated (Lane C)",
+    "Phone audit and portal outbox specified but not CODE_PRESENT",
+    "properties_tenant allows agency_id IS NULL; pipeline_moves migration drift",
+    "Phase-2 kataster/transcription/bots interfaces only"
+  ],
+  "decisions_summary": {
+    "stack": "keep_next_supabase",
+    "reject": [
+      "nestjs_rewrite",
+      "bullmq_phase1",
+      "mapbox_default",
+      "shadcn_tanstack_wholesale"
+    ],
+    "queue": "import_jobs_then_pg_outbox",
+    "maps": "maplibre",
+    "contact": "leads",
+    "deal": "lead_pipeline_not_ai_satellites",
+    "viewing": "scheduled_events",
+    "phone_audit": "phone_value_releases_fail_closed",
+    "portal": "snapshots_publications_outbox_accepted_vs_published"
+  }
+}

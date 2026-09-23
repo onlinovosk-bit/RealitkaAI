@@ -1,4 +1,5 @@
 import { errorResponse, okResponse } from "@/lib/api-response";
+import { requirePlatformAdmin } from "@/lib/onboarding-mvp/require-platform-admin";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 
 function plusDays(base: Date, days: number) {
@@ -8,6 +9,9 @@ function plusDays(base: Date, days: number) {
 }
 
 export async function POST(request: Request) {
+  const denied = await requirePlatformAdmin();
+  if (denied) return denied;
+
   const supabase = createServiceRoleClient();
   if (!supabase) return errorResponse("Service role nie je nakonfigurovaný.", 500);
 
@@ -31,4 +35,3 @@ export async function POST(request: Request) {
   if (error) return errorResponse(error.message, 500);
   return okResponse({ scheduled: data?.length ?? 0, messages: data ?? [] });
 }
-

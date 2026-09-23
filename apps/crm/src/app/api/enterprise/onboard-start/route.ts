@@ -1,42 +1,58 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { requireUser } from "@/lib/auth";
 import { scanDormantLeads } from "@/lib/l99/shadow-inventory";
+
+const ENTERPRISE_TIERS = new Set([
+  "enterprise",
+  "market_vision",
+  "protocol_authority",
+]);
 
 /**
  * POST /api/enterprise/onboard-start
  *
- * White-glove Enterprise onboarding:
- * 1. Nastaví account_tier na 'enterprise'
- * 2. Uloží professional_tone preference pre AI Asistenta
- * 3. Spustí Initial Shadow Inventory Scan
+ * White-glove Enterprise onboarding helper for accounts that already hold a
+ * paid Enterprise / Market Vision / Protocol tier.
+ *
+ * Never writes account_tier / ui_role — those are billing/service_role only.
+ * A previous version self-assigned account_tier=enterprise for any authenticated
+ * caller, which normalizeProfileEntitlements then promoted to owner_vision.
  */
 export async function POST() {
-  const user = await requireUser();
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  // 1. Upgrade na Enterprise tier
-  const { error: tierError } = await supabase
-    .from("profiles")
-    .update({
-      account_tier: "enterprise",
-      ai_tone: "professional",
-      enterprise_onboarded_at: new Date().toISOString(),
-    })
-    .eq("auth_user_id", user.id);
-
-  if (tierError) {
-    return NextResponse.json({ ok: false, error: tierError.message }, { status: 500 });
+  if (!user) {
+    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  // 2. Načítaj agency_id pre shadow inventory scan
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("agency_id")
+    .select("agency_id, account_tier")
     .eq("auth_user_id", user.id)
-    .single();
+    .maybeSingle();
 
-  // 3. Spusti Initial Shadow Inventory Scan
+  if (profileError) {
+    return NextResponse.json({ ok: false, error: profileError.message }, { status: 500 });
+  }
+
+  const tier = String(profile?.account_tier ?? "")
+    .trim()
+    .toLowerCase();
+
+  if (!ENTERPRISE_TIERS.has(tier)) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error:
+          "Enterprise onboarding vyžaduje aktívny Enterprise / Market Vision plán (billing).",
+      },
+      { status: 403 },
+    );
+  }
+
   let shadowSignals: Awaited<ReturnType<typeof scanDormantLeads>> = [];
   if (profile?.agency_id) {
     try {
@@ -48,9 +64,8 @@ export async function POST() {
 
   return NextResponse.json({
     ok: true,
-    tier: "enterprise",
-    aiTone: "professional",
+    tier,
     shadowSignalsFound: shadowSignals.length,
-    message: `Enterprise aktivovaný. Nájdených ${shadowSignals.length} dormantných príležitostí.`,
+    message: `Enterprise onboarding. Nájdených ${shadowSignals.length} dormantných príležitostí.`,
   });
 }

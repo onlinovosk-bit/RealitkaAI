@@ -26,6 +26,14 @@ const PUBLIC_PATHS = new Set([
   "/api/acquisition/google/lead-webhook",
   "/api/valuation/submit",
   "/api/valuation/estimate",
+  // Public onboarding wizard sync (Path B API). Founder GO 2026-09-17: sync
+  // must work without login. Route still validates session_id + rate-limits.
+  "/api/onboarding/session",
+  // Website Concierge (Smolko). GO-W3-SHIP 2026-09-17. Routes rate-limit +
+  // optional CONCIERGE_SHARED_SECRET; agency locked to Smolko.
+  "/api/concierge/properties",
+  "/api/concierge/callback",
+  "/api/concierge/freebusy",
 ]);
 
 const CRON_PATH_PREFIX = "/api/agents";
@@ -41,8 +49,6 @@ const DEPRECATED_API_SHIMS = new Set(["/api/scoring", "/api/segmentation"]);
 /** Removed routes — let Next return 404 (no session gate). PR-4 scrape removal. */
 const REMOVED_API_PATHS = new Set(["/api/scrape"]);
 const WEBHOOK_API_SEGMENT = "/api/webhooks";
-/** Onboarding MVP APIs — service-role in route handlers; bypass session gate for SSR/cron callers. */
-const ONBOARDING_MVP_PREFIX = "/api/onboarding/mvp/";
 
 export const PROXY_AUTH_TIMEOUT_MS = 5_000;
 export const PROXY_AUTH_TIMEOUT_MARKER = "[proxy-auth-timeout]";
@@ -115,6 +121,11 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard/reputation/integrity", request.url), 308);
   }
 
+  // Canonical Realvia integrations URL (legacy admin path)
+  if (pathname === "/admin/integrations/realvia" || pathname.startsWith("/admin/integrations/realvia/")) {
+    return NextResponse.redirect(new URL("/integrations/realvia", request.url), 308);
+  }
+
   if (isPublic(pathname)) return NextResponse.next();
   if (isRealviaImportPath(pathname)) return NextResponse.next();
   if (isUcExportImportPath(pathname)) return NextResponse.next();
@@ -122,7 +133,6 @@ export async function proxy(request: NextRequest) {
   if (REMOVED_API_PATHS.has(pathname)) return NextResponse.next();
   if (DEPRECATED_API_SHIMS.has(pathname)) return NextResponse.next();
   if (isCronRoute(pathname)) return NextResponse.next();
-  if (pathname.startsWith(ONBOARDING_MVP_PREFIX)) return NextResponse.next();
 
   let response = NextResponse.next({
     request: { headers: request.headers },
@@ -165,8 +175,8 @@ export async function proxy(request: NextRequest) {
       console.error(PROXY_AUTH_TIMEOUT_MARKER, pathname);
       // Pages: fail-open so SSR/layout can re-check auth (avoids 300s hang).
       // APIs: fail-closed — several handlers rely on this gate and use
-      // service-role clients without a second getUser() (e.g. import/test-xml
-      // when IMPORT_TEST_API_KEY is unset, neighborhood-watch).
+      // service-role clients without a second getUser() (e.g. neighborhood-watch;
+      // import/test-xml additionally requires IMPORT_TEST_API_KEY).
       if (pathname.startsWith("/api/")) {
         return NextResponse.json(
           { ok: false, error: "Unauthorized" },

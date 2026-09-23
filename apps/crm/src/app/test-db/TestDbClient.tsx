@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import { supabaseClient } from "@/lib/supabase/client";
+import { getOnboardingSession, upsertOnboardingSession } from "@/lib/onboarding/session-api";
 import { v4 as uuidv4 } from "uuid";
 import { AI_ASSISTANT_NAME } from "@/lib/ai-brand";
 
@@ -107,14 +107,10 @@ export default function TestDbClient() {
       const sessionId = savedId ?? "";
       if (!sessionId) { setLoading(false); return; }
       sessionIdRef.current = sessionId;
-      const { data } = await supabaseClient
-        .from("onboarding_sessions")
-        .select("step, form_data")
-        .eq("session_id", sessionId)
-        .maybeSingle();
+      const data = await getOnboardingSession(sessionId);
       if (data) {
         setStep(data.step || 1);
-        if (data.form_data) setFormData(prev => ({ ...prev, ...data.form_data }));
+        if (data.form_data) setFormData(prev => ({ ...prev, ...(data.form_data as object) }));
       }
       setLoading(false);
     };
@@ -133,11 +129,14 @@ export default function TestDbClient() {
     localStorage.setItem("onboarding_data", JSON.stringify(nextFormData));
     // Try Supabase sync — silently skip if table doesn't exist or RLS blocks
     try {
-      await supabaseClient
-        .from("onboarding_sessions")
-        .upsert({ session_id: sessionId, step: nextStep, form_data: nextFormData, updated_at: new Date().toISOString() });
+      await upsertOnboardingSession({
+        session_id: sessionId,
+        step: nextStep,
+        form_data: nextFormData,
+        updated_at: new Date().toISOString(),
+      });
     } catch {
-      // Supabase sync unavailable — localStorage is source of truth
+      // API sync unavailable — localStorage is source of truth
     }
   };
 

@@ -9,6 +9,7 @@ import {
   getSeatStripePriceId,
   getTopupStripePriceId,
   isFounderKancelariaEligible,
+  isOwnerCockpitPurchasable,
   parseSeatTier,
   parseTopupPackageKey,
   type SeatTier,
@@ -34,6 +35,24 @@ async function loadAuthHelpers() {
   return import("@/lib/auth");
 }
 
+/**
+ * Seat/top-up Stripe metadata must carry a real agency UUID.
+ * Empty/null agency_id used to be written as "" → webhook fail-closed (#401)
+ * after the customer already paid (permanent stuck fulfillment).
+ */
+export function requireCheckoutAgencyId(
+  profile: { agency_id?: string | null } | null | undefined,
+): string {
+  const agencyId =
+    typeof profile?.agency_id === "string" ? profile.agency_id.trim() : "";
+  if (!agencyId) {
+    throw new Error(
+      "Chýba agency_id profilu — seat/top-up checkout nie je možné dokončiť.",
+    );
+  }
+  return agencyId;
+}
+
 export type SeatCheckoutInput = {
   seatTier: SeatTier;
   quantity: number;
@@ -56,11 +75,24 @@ export function buildSeatCheckoutSessionParams(input: SeatCheckoutInput): {
   ];
 
   const founderEligible = isFounderKancelariaEligible();
-  if (input.includeOwnerCockpit && qty >= COCKPIT_PRODUCTS.owner.minSeats) {
-    const cockpitPrice = getOwnerCockpitStripePriceId({ founderEligible });
-    if (cockpitPrice) {
-      lineItems.push({ price: cockpitPrice, quantity: 1 });
-    }
+  const cockpitRequested = input.includeOwnerCockpit && qty >= COCKPIT_PRODUCTS.owner.minSeats;
+  const cockpitPrice = cockpitRequested ? getOwnerCockpitStripePriceId({ founderEligible }) : "";
+
+  // Fail closed. The customer saw a total that includes the cockpit; charging
+  // them a different one is not an acceptable degradation. The checkbox is
+  // gated on `isOwnerCockpitPurchasable`, so reaching here means the config
+  // changed between page load and submit — rare, and worth an error rather
+  // than a silent mismatch.
+  //
+  // Same predicate as that gate, deliberately. A truthiness check here would
+  // let a placeholder like `price_xxx` through the guard while the gate hid the
+  // checkbox, so the two could disagree with no config change at all — and the
+  // placeholder would reach Stripe.
+  if (cockpitRequested && !isOwnerCockpitPurchasable({ founderEligible })) {
+    throw new Error("Owner Cockpit Stripe price nie je nakonfigurovaný.");
+  }
+  if (cockpitPrice) {
+    lineItems.push({ price: cockpitPrice, quantity: 1 });
   }
 
   return {
@@ -70,8 +102,10 @@ export function buildSeatCheckoutSessionParams(input: SeatCheckoutInput): {
       checkoutType: "seat",
       seatTier: input.seatTier,
       seatQuantity: String(qty),
-      ownerCockpit: input.includeOwnerCockpit ? "true" : "false",
-      founderCockpit: founderEligible ? "true" : "false",
+      ownerCockpit: cockpitPrice ? "true" : "false",
+      // What was actually charged, not what the caller was eligible for. These
+      // diverge when the cockpit was not purchased at all.
+      founderCockpit: cockpitPrice && founderEligible ? "true" : "false",
     },
   };
 }
@@ -87,6 +121,7 @@ export async function createSeatCheckoutSession(input: SeatCheckoutInput) {
   const user = await getCurrentUser();
   const profile = await getCurrentProfile();
   if (!user?.email) throw new Error("Používateľ nemá email.");
+  const agencyId = requireCheckoutAgencyId(profile);
 
   const { lineItems, metadata, quantity } = buildSeatCheckoutSessionParams(input);
   const appUrl = getAppUrl();
@@ -102,7 +137,7 @@ export async function createSeatCheckoutSession(input: SeatCheckoutInput) {
     metadata: {
       authUserId: user.id,
       profileId: profile?.id ?? "",
-      agencyId: String((profile as { agency_id?: string })?.agency_id ?? ""),
+      agencyId,
       ...metadata,
       seatQuantity: String(quantity),
     },
@@ -120,6 +155,7 @@ export async function createTopupCheckoutSession(packageKey: TopupPackageKey) {
   const user = await getCurrentUser();
   const profile = await getCurrentProfile();
   if (!user?.email) throw new Error("Používateľ nemá email.");
+  const agencyId = requireCheckoutAgencyId(profile);
 
   const priceId = getTopupStripePriceId(packageKey);
   if (!priceId) throw new Error("Top-up Stripe price nie je nakonfigurovaný.");
@@ -135,7 +171,7 @@ export async function createTopupCheckoutSession(packageKey: TopupPackageKey) {
     metadata: {
       authUserId: user.id,
       profileId: profile?.id ?? "",
-      agencyId: String((profile as { agency_id?: string })?.agency_id ?? ""),
+      agencyId,
       checkoutType: "credit_topup",
       topupPackage: packageKey,
     },
