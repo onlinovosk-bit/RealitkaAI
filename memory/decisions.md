@@ -2196,13 +2196,17 @@ zmena kontraktu a patrí do vlastnej brány. Zámerne neopravené:
   Overené po merge #645: všetky tri policies majú v PROD stále vetvu
   `(agency_id IS NULL) OR …`. Repo je uzavreté, PROD nie.
 - **`BUS` CI blocker — diagnostikovaný, opravený iným PR.** `bus:validate` padal
-  na `Unsupported YAML line: --- (line 1)` kvôli UTF-8 BOM (`EF BB BF`) v
-  `.ai/bus/tasks/TASK-BUS-RUNNER-2D.md`, zavedenému commitom `36ff454` (#624);
-  červené bolo aj na `main`, teda na každom PR v repe. Diagnóza s dôkazom
-  reprodukcie na base vetve je v komentári na #644. Opravené cez #647/#648,
-  `bus:validate` je zelený (0 errors). **Root cause ale ostáva otvorený:**
-  `packages/bus-core/src/yaml.ts` BOM stále netoleruje — ďalší súbor uložený
-  s BOM zhodí pipeline znova.
+  na `Unsupported YAML line: --- (line 1)` v `.ai/bus/tasks/TASK-BUS-RUNNER-2D.md`;
+  červené bolo aj na `main`, teda na každom PR v repe. Opravené cez #647/#648,
+  `bus:validate` je zelený (0 errors).
+  > ⚠️ **PRÍČINU SOM URČIL NESPRÁVNE.** Napísal som sem aj do komentára na #644,
+  > že za to môže **UTF-8 BOM**, a odporučil BOM-tolerantný parser. Nie je to tak:
+  > `parseBusDocument` strihá vedúci BOM odjakživa (`envelope.ts:151`,
+  > `raw.replace(/^\uFEFF/, "")` s doslovným znakom — preto ho môj grep na
+  > „BOM"/„FEFF" nenašiel). Skutočnou príčinou bol **zdvojený `---`**. BOM v tom
+  > súbore síce bol, ale bol neškodný. Plná korekcia s reprodukciou je nižšie
+  > v sekcii „Korekcia: ‚BOM zhadzuje parser' bolo nesprávne (#653)".
+  > **Položka `BUS-YAML-BOM-TOLERANCE` je tým zrušená — nebolo čo opraviť.**
 
 ## 2026-09-23 — `ignoreCommand` bol 6 dní pod mŕtvym kľúčom (nahrádza #578)
 
