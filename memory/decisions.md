@@ -70,6 +70,17 @@ nebeží vôbec. Dlh teda neplatí ten, kto ho vyrobil; zaplatí ho prvý ďalš
 Dnes 9 nových porušení z #581 a #579 sedí na `main`. Detail, tranžovanie a STOP
 podmienky: `memory/open-tasks.md` → `RATCHET-API-CONTRACT-01`.
 
+**Tranža 1 splatená ešte v ten deň (#660, `GO RATCHET-TRANCHE-1`): 9 → 6.** Tri
+`concierge/*` routy prešli na `okResponse`/`errorResponse`, 16 zo 17 call site-ov;
+sedemnásty ostal ručný, lebo `freebusy` vracia `{ok:false, reason, detail?}` bez kľúča
+`error` a `errorResponse()` by ho pridal — to je verejný kontrakt widgetu na cudzom webe,
+nie kozmetika. Tvar odpovedí je pripnutý testom `api-response-wire.test.ts`.
+
+Dve korekcie k tomu, čo som predtým tvrdil. Triedu `api-response` som odhadol na
+5 porušení — v skutočnosti sú **3**; číslo ukázalo až spustenie po prepise, nie odhad.
+A napísal som, že tranža 1 „odblokuje ďalší CRM PR" — **neodblokuje**: kontrola je
+binárna (padá pri akomkoľvek novom porušení), takže je červená až do nuly.
+
 Kľúčový nález: tranža `usage-metrics` (4 z 9) sa **nedá opraviť bez rozhodnutia
 o billingu**. `UsageMetricName` je uzavretý union šiestich hodnôt a ani jedna nesedí
 na concierge ani onboarding. Splniť ratchet tam znamená pridať nové názvy metrík do

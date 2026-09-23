@@ -939,8 +939,11 @@ Uzavrieť **P-2** a **P-3**. Sú to jediné dve veci medzi aktuálnym stavom a `
   empiricky inertný. Žiadna zmena `vercel.json` naslepo.
 - **OQ-3** — machine account, PAT, branch protection, `REVOLIS_BUS_BRANCH=bus/main`.
   Founder-only. `scripts/bus/serve.ts:50` má default `"main"`, čo koliduje s ADR §7.
-- **GO RATCHET-TRANCHE-1** — neudelené. 3 súbory `concierge/*`, 17× `NextResponse.json`
-  → `okResponse`/`errorResponse`, ratchet 9 → 4.
+- **GO RATCHET-TRANCHE-1** — udelené a vykonané v **#660**: 3 routy `concierge/*`,
+  16 zo 17 `NextResponse.json` → `okResponse`/`errorResponse` + wire test.
+  Ratchet **9 → 6** (nie 9 → 4 — trieda `api-response` sú 3 porušenia, nie 5).
+  Kontrola je binárna, takže zelená to nie je; zostáva 6: 4× `usage-metrics`,
+  2× `api-validate`, oboje čaká na founderovo rozhodnutie.
 - **Founder rozhodnutie o `UsageMetricName`** — bez rozšírenia unionu tranža 2 nejde.
   Na `onboarding/session` je to navyše GDPR otázka (`DEC-20260917-005`).
 - **Nevysvetlené:** prečo #621 prešlo CI zelené s rozbitým BUS frontmatterom.

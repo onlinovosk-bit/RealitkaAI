@@ -154,15 +154,28 @@ Deväť porušení sú **tri rôzne triedy rizika**, nie jeden balík:
 
 | # | trieda | routy | riziko |
 |---|---|---|---|
-| 5 | `@/lib/api-response` | concierge `callback`, `freebusy`, `properties` | mechanické, bez zmeny wire formátu |
+| 3 | `@/lib/api-response` | concierge `callback`, `freebusy`, `properties` | mechanické, bez zmeny wire formátu — **VYRIEŠENÉ #660** |
 | 4 | `@/lib/usage-metrics` | všetky štyri | **blokované rozhodnutím o billingu** |
 | 2 | `@/lib/api-validate` | concierge `callback`, `onboarding/session` | reálna práca, vlastný PR |
 
-**Tranža 1 je dokázateľne bezpečná.** `errorResponse(msg, status)` emituje presne
-`{ ok: false, error: msg }` (`api-response.ts:13-22`); `okResponse(data)` emituje
-`{ ok: true, ...data }` — spread, nie nesting (`:3-11`). Všetkých 17 call site-ov
-v tých troch routách má presne tento tvar, takže náhrada je byte-identická na
-drôte. Dôležité, lebo `concierge/*` konzumuje **widget na cudzom webe**.
+**Tranža 1 — hotová, #660 (`GO RATCHET-TRANCHE-1`, 2026-09-23).** Ratchet **9 → 6**.
+`errorResponse(msg, status)` emituje presne `{ ok: false, error: msg }`
+(`api-response.ts:13-22`); `okResponse(data)` emituje `{ ok: true, ...data }` — spread,
+nie nesting (`:3-11`). Prepísaných **16 zo 17** call site-ov; tvar odpovede sa nezmenil
+a je pripnutý testom `apps/crm/src/lib/__tests__/api-response-wire.test.ts` (7 prípadov).
+
+Sedemnásty ostal zámerne ručný: `freebusy` vracia pri chybe
+`{ ok:false, reason, detail? }` — **bez kľúča `error`**. `errorResponse()` by `error`
+pridal, teda zmenil verejný kontrakt, na ktorom stojí widget na cudzom webe. Ratchet je
+splnený importom, nie počtom volaní.
+
+**Korekcia čísel.** Pôvodne tu stálo, že trieda `api-response` je 5 porušení a tranža 1
+dá 9 → 4. Správne je **3** a **9 → 6**. Číslo bolo odhadnuté, nie odmerané; skutočnosť
+ukázalo až spustenie `check-api-contract.mjs --ci` po prepise.
+
+**Pozor na binárnosť kontroly.** Ratchet padá pri `NOVÉ porušenia > 0`, nie pri
+prekročení stropu. 9 → 6 ho teda **nezazelení** a neodblokuje ďalší CRM PR — to som
+pri návrhu tranže napísal zle. Zelená príde až pri nule.
 
 **Tranža 2 je skutočný blocker.** `UsageMetricName` je uzavretý union šiestich
 hodnôt (`usage-metrics.ts:31-38`) — `ai_openai_tokens`, `embedding_tokens`, tri
@@ -180,14 +193,16 @@ capability-URL routa hardened pod `DEC-20260917-005` (`Referrer-Policy: no-refer
 Priradiť jej agency-keyed telemetriu znamená rozhodnúť, či sa anonymný prístup má
 dať spätne spojiť s tenantom.
 
-- [ ] **GO RATCHET-TRANCHE-1** — 3 súbory `concierge/*`, 17× `NextResponse.json`
-      → `okResponse`/`errorResponse`. Ratchet 9 → 4. Neudelené.
+- [x] **GO RATCHET-TRANCHE-1** — udelené 2026-09-23, vykonané v **#660**.
+      3 routy `concierge/*`, 16 zo 17 `NextResponse.json` → `okResponse`/`errorResponse`,
+      plus nový wire test. Ratchet **9 → 6**. Zostáva 6: 4× `usage-metrics`,
+      2× `api-validate`.
 - [ ] **Founder rozhodnutie** — rozšíriť `UsageMetricName` o metriky pre concierge
       a onboarding? Bez toho tranža 2 nejde.
 - [ ] **GDPR gate** pre `onboarding/session` telemetriu (`gdpr-advisor`).
 
-**STOP: nikdy nespúšťať `--write-baseline`.** Vyzerá to ako oprava, ale tých 9
-porušení iba pohltí do tolerovaného dlhu — vrátane tých dvoch, ktoré sa medzitým
+**STOP: nikdy nespúšťať `--write-baseline`.** Vyzerá to ako oprava, ale tie zostávajúce
+porušenia iba pohltí do tolerovaného dlhu — vrátane tých dvoch, ktoré sa medzitým
 opravili (`Opravené od baseline: 2`). Stratili by sme jediný dôkaz, že ratchet funguje.
 
 ## P0 — Critical AUTH / tenant (2026-08-25 auth hunt)
