@@ -1,9 +1,13 @@
 ---
 id: TASK-BILLING-DOWNGRADE-GUARD
 type: task
-status: open
-owner: cursor
+status: done
+owner: claude
 created_at: 2026-09-22T00:00:00Z
+closed_at: 2026-09-23T00:00:00Z
+reassigned_from: cursor
+reassignment_reason: "cursor never picked the card up — it ran WALL 2 (UPTM-004) in uptm-runner instead; founder reassigned on 2026-09-23"
+
 
 scope:
   repo_paths:
