@@ -971,7 +971,7 @@ Je to jediná vec, ktorá dnes blokuje príjem; všetko ostatné je naň naviaza
 
 ### Rozpracované / Pending
 - **🔴 PROD dieru merge NEZATVORIL.** Obe migrácie sú v aktívnom sete, ale **neaplikované na PROD**. Overené po merge #645: všetky tri policies majú v PROD stále `(agency_id IS NULL) OR …`. **Kým nepríde deploy, hole je v PROD otvorená.** Deploy = samostatná brána, čaká na GO.
-- **`BUS-YAML-BOM-TOLERANCE` — root cause otvorený.** `packages/bus-core/src/yaml.ts` netoleruje vedúci BOM. Opravil sa symptóm (dáta), nie príčina — ďalší súbor uložený s BOM zhodí `bus:validate` znova.
+- **`BUS-YAML-BOM-TOLERANCE` — ZRUŠENÉ, nebolo čo opraviť.** Túto položku som otvoril na základe nesprávnej diagnózy: tvrdil som, že parser netoleruje vedúci BOM. Netolerancia neexistuje — `parseBusDocument` BOM strihá odjakživa (`envelope.ts:151`). `bus:validate` zhodil **zdvojený `---`**, nie BOM; overené reprodukciou proti parseru (samotný BOM → 0 errors; samotný zdvojený `---` bez BOM → tá istá chyba). Dátovú polovicu opravilo #648, parserovú #653 (hláška pomenuje príčinu + 3 regresné testy).
 - **`CP-P0-1A` — P-2 aj P-3 hotové v repe, A3 a A7 sa už dajú navrhnúť.** Substrátové aj policy blokátory zanikli (modulo deploy).
 - **CI/PROD divergencia na `ai_action_audit`** — v CI jedna `ai_action_audit_tenant` (`FOR ALL`), v PROD dve menované policies. Dôsledok 60 neaplikovaných migrácií; staršie než P-3, nie je ňou riešené.
 - **Nezmenené z minulej session:** `LEADS-AGENCY-FK-CONTRADICTION`, `EMIT-EVENT-PUBLIC-EXECUTE`, `PLATFORM-EVENT-NULL-WRITER`, RLS-suite unseeded-skip, 60 neaplikovaných migrácií.

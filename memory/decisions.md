@@ -2196,13 +2196,17 @@ zmena kontraktu a patrí do vlastnej brány. Zámerne neopravené:
   Overené po merge #645: všetky tri policies majú v PROD stále vetvu
   `(agency_id IS NULL) OR …`. Repo je uzavreté, PROD nie.
 - **`BUS` CI blocker — diagnostikovaný, opravený iným PR.** `bus:validate` padal
-  na `Unsupported YAML line: --- (line 1)` kvôli UTF-8 BOM (`EF BB BF`) v
-  `.ai/bus/tasks/TASK-BUS-RUNNER-2D.md`, zavedenému commitom `36ff454` (#624);
-  červené bolo aj na `main`, teda na každom PR v repe. Diagnóza s dôkazom
-  reprodukcie na base vetve je v komentári na #644. Opravené cez #647/#648,
-  `bus:validate` je zelený (0 errors). **Root cause ale ostáva otvorený:**
-  `packages/bus-core/src/yaml.ts` BOM stále netoleruje — ďalší súbor uložený
-  s BOM zhodí pipeline znova.
+  na `Unsupported YAML line: --- (line 1)` v `.ai/bus/tasks/TASK-BUS-RUNNER-2D.md`;
+  červené bolo aj na `main`, teda na každom PR v repe. Opravené cez #647/#648,
+  `bus:validate` je zelený (0 errors).
+  > ⚠️ **PRÍČINU SOM URČIL NESPRÁVNE.** Napísal som sem aj do komentára na #644,
+  > že za to môže **UTF-8 BOM**, a odporučil BOM-tolerantný parser. Nie je to tak:
+  > `parseBusDocument` strihá vedúci BOM odjakživa (`envelope.ts:151`,
+  > `raw.replace(/^\uFEFF/, "")` s doslovným znakom — preto ho môj grep na
+  > „BOM"/„FEFF" nenašiel). Skutočnou príčinou bol **zdvojený `---`**. BOM v tom
+  > súbore síce bol, ale bol neškodný. Plná korekcia s reprodukciou je nižšie
+  > v sekcii „Korekcia: ‚BOM zhadzuje parser' bolo nesprávne (#653)".
+  > **Položka `BUS-YAML-BOM-TOLERANCE` je tým zrušená — nebolo čo opraviť.**
 
 ## 2026-09-23 — `ignoreCommand` bol 6 dní pod mŕtvym kľúčom (nahrádza #578)
 
@@ -2336,3 +2340,34 @@ zmena kontraktu a patrí do vlastnej brány. Zámerne neopravené:
   je na tomto Supabase pláne dostupný **branching** (F2 bez neho je hádanie),
   a je zapnuté **PITR** s akým oknom (F3 inak nemá rollback).
 - Dokument: `docs/reports/2026-09-23-prod-deploy-plan.md`.
+
+## 2026-09-23 — F1: 63 neaplikovaných migrácií je idempotentných (`GO MIGRATIONS-IDEMPOTENT-F1`)
+
+- **Výsledok:** opakovaný beh neaplikovanej dávky prešiel z **58/63** na **63/63**.
+  `supabase db push` už nespadne na DDL, ktoré vytvára objekt existujúci v PROD.
+- **DVE KOREKCIE VLASTNÉHO AUDITU z tej istej session** — obe našiel až beh, nie čítanie:
+  1. `20260722120000_sandbox_gdpr_consent.sql` som viedol ako `CREATE FUNCTION` bez
+     guardu. **Neplatí** — má pred sebou `DROP FUNCTION IF EXISTS ...(text)` a PROD
+     podpis (`requested_slug text`) mu presne sedí. Nebolo čo opravovať.
+  2. Naopak **pribudli dva súbory, ktoré statický sken nemohol nájsť**, lebo chyba
+     nie je v tvare príkazu, ale v stave po prvom behu:
+     - `20260618120000_realsoft_import_logs_upsert_constraint.sql` — `DROP INDEX
+       IF EXISTS` na indexe, ktorý po prvom behu **vlastní constraint** → `2BP01`.
+       Opravené poradím: najprv `DROP CONSTRAINT`, index zmizne s ním.
+     - `20260720193000_valuation_tenants.sql` — `CREATE OR REPLACE FUNCTION` nevie
+       zmeniť návratový typ (`42P13`), a neskoršia `20260722120000` ju pretvára
+       s iným `RETURNS TABLE`. Opravené `DROP FUNCTION IF EXISTS` pred ňou.
+  **Bilancia: nie 15 príkazov v 3 súboroch, ale 17 v 5.** Regex vidí tvar, nie stav —
+  dvojitý replay je jediný spôsob, ako túto triedu chýb nájsť.
+- **Zmeny:** 9× `CREATE INDEX IF NOT EXISTS`, 5× `DROP POLICY IF EXISTS` pred
+  `CREATE POLICY`, 1× `DROP TRIGGER IF EXISTS`, 1× preradenie `DROP CONSTRAINT`,
+  1× `DROP FUNCTION IF EXISTS`. Žiadna zmena správania — len guardy a poradie.
+- **Dôkaz:** pred zmenou beh2 = 58/63 (5 súborov padá, menovite zaznamenané);
+  po zmene beh1 (čistá DB) 111/111, beh2 63/63, beh3 63/63.
+- **Mimo rozsahu, zaznamenané:** replay celého setu druhýkrát padá na **14 už
+  aplikovaných** migráciách (policies bez guardu v `20260411`, `20260425231426`,
+  `20260507*`, `20260508*` …). `db push` ich nikdy nepustí znova, takže deploy
+  neblokujú — ale `supabase db reset` na ne narazí, ak by sa niekedy púšťal 2×.
+  Samostatná brána, ak vôbec.
+- **Ďalej:** F2 (nácvik na Supabase branch) a F3 (push) naďalej čakajú na odpovede,
+  či je dostupný branching a či je zapnuté PITR.
