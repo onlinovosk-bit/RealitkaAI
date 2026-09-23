@@ -1,5 +1,67 @@
 # Critical Decisions Log
 
+## [2026-09-23] — FUNNEL-PRICING-01 vykonaný: `/porovnanie-programov` už nesľubuje nákup programu
+
+`DEC-20260921-001` rozhodol, že kanonický je **seat model** (79 / 71 / 63 € na makléra)
+a že programy 49/99/199/449 € nesmú ostať aktívnym predajným funnelom. Rozhodnutie
+stálo dva dni bez vykonania. #647 (`fc381004`) ho vykonalo v UI.
+
+**Stav pred:** štyri CTA „Vybrať" / „★ Aktivovať" viedli na `/billing`, teda k seat
+checkoutu. Zákazník klikol na jeden cenník a skončil v druhom — pričom **vlastný banner
+stránky** (`:167`) už hovoril, že tie moduly sú na roadmape a nie v self-serve checkoute.
+Stránka si teda protirečila sama so sebou, nielen s cenníkom.
+
+**Zvolená cesta:** z dvoch schválených možností (stiahnuť stránku **alebo** prerobiť na
+informačnú) padla voľba na druhú. Menej deštruktívna a cenník ostáva ako čestná informácia
+o roadmape, nie ako predajný sľub.
+
+- Štyri plan-CTA prestali byť odkazmi → statický badge **„Na roadmape"**, zhodný
+  s bannerom. V kóde je komentár s dôvodom, aby to niekto nevrátil ako „chýbajúce CTA".
+- Spodné CTA mieri na `/upgrade`: **„Kúpiť seaty — 79 / 71 / 63 € na makléra →"**.
+- **Nedotknuté zámerne:** cenník ako roadmapa, banner `:167`, veta o garancii a
+  onboardingu — to je copy/legal rozhodnutie, nie funnel.
+
+**Overené na mergnutom `main`, nie na vetve:** `href="/billing"` má v súbore nula
+výskytov; „Na roadmape" je `:237` (vnútri mapy cez všetky štyri plány); `/upgrade` CTA
+je `:302-306`; `git diff d57eac1c origin/main` na tomto súbore je prázdny.
+
+**Čo to NEODOMYKÁ.** `/upgrade` stále nevedie do Stripe. `CHECKOUT-ENV-01` je
+nedotknutý — seat `price_…` ID v produkcii chýbajú a Krok A (Stripe VERIFY,
+`sk_live_…`, founder lokálne) sa zatiaľ nespustil. Toto odstránilo **falošný sľub**,
+nie blokádu príjmu. Kto dnes klikne na „Kúpiť seaty", dostane sa na `/upgrade`, kde
+`seatCheckoutAvailable` je `false`.
+
+---
+
+### Sprievodné nálezy z tej istej session
+
+**1. Ratchet `Zmluva kódu` je štrukturálne deravý.** `code-contract-guard.yml:14-18`
+beží **iba na `pull_request`** s path filtrom `apps/crm/src/**` — na push do `main`
+nebeží vôbec. Dlh teda neplatí ten, kto ho vyrobil; zaplatí ho prvý ďalší CRM PR.
+Dnes 9 nových porušení z #581 a #579 sedí na `main`. Detail, tranžovanie a STOP
+podmienky: `memory/open-tasks.md` → `RATCHET-API-CONTRACT-01`.
+
+Kľúčový nález: tranža `usage-metrics` (4 z 9) sa **nedá opraviť bez rozhodnutia
+o billingu**. `UsageMetricName` je uzavretý union šiestich hodnôt a ani jedna nesedí
+na concierge ani onboarding. Splniť ratchet tam znamená pridať nové názvy metrík do
+`increment_usage_metric` RPC — tabuľky, z ktorej sa odvodzuje spotreba a reporting.
+Lint si teda pýta zmenu obchodného modelu.
+
+**2. Moja chyba z #621 stála dva PR-y.** Skript pri prepise `TASK-BUS-RUNNER-2D.md`
+zapísal `head + '\n---\n' + body`, kde `head` už na `---` končil. Výsledok:
+`EF BB BF 2D 2D 2D 0A 2D 2D 2D 0A` — BOM plus zdvojený otvárací oddeľovač. `bus:validate`
+padal na `main`, nie len na PR. Opravili to **dvaja agenti paralelne**: #648 (`988edf6b`)
+a #647 (`fc381004`). Výsledné súbory sú byte-identické, takže `main` je v poriadku a nič
+sa nestratilo — ale jedna moja chyba minula dva review cykly a dva Vercel deploye
+na vyčerpanej hobby kvóte. Samostatne otvorené a nevysvetlené: **prečo #621 prešlo CI
+zelené s rozbitým frontmatterom.**
+
+**3. Vercel burn je merateľný.** Pri jednej kontrole boli v queue tri deploye z troch
+rôznych agentných vetiev (`cursor/fix-assignment-rules-tenant-gate`,
+`claude/zealous-albattani-2h32y5`, `codex/smolko-public-chatbot`) plus dva z tejto
+práce. `ignoreCommand` v oboch `vercel.json` je empiricky inertný. Ignored Build Step
+v dashboarde ostáva neprečítaný — founder-only krok.
+
 ## [2026-09-23] — /blueprint zrušený: predával sme metodiku nesprávnemu kupcovi
 
 Founder sa spýtal, čo tou stránkou hovoríme, a navrhol ju zrušiť. Po prečítaní kódu

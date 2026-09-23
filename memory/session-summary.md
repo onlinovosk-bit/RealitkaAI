@@ -863,3 +863,51 @@ Founder: read-only SELECT ci je `20260817220000` aplikovana v PROD (G4). Bez toh
 
 ### Ďalší krok
 Uzavrieť **P-2** a **P-3**. Sú to jediné dve veci medzi aktuálnym stavom a `CP-P0-1A`; A3 a A7 sa bez nich nedajú navrhnúť. Tri otvorené nálezy (FK rozpor, PUBLIC EXECUTE, NULL writer) sú reálne, ale spine neblokujú — riešiť ich až po P-2/P-3, každý vlastnou bránou.
+
+## Session 2026-09-23 (FUNNEL-PRICING-01 vykonaný + ratchet dlh zmapovaný)
+
+### Dokončené
+- **FUNNEL-PRICING-01** (#647 → `fc381004`): `apps/crm/src/components/billing/ProgramComparison.tsx`.
+  Štyri plan-CTA už nie sú odkazy na `/billing` → statický badge „Na roadmape" (`:237`,
+  vnútri mapy cez všetky štyri plány). Spodné CTA mieri na `/upgrade` s textom
+  „Kúpiť seaty — 79 / 71 / 63 € na makléra →" (`:302-306`). `href="/billing"` má
+  v súbore **nula** výskytov. Vykonanie `DEC-20260921-001` v UI.
+- **BOM fix** (`.ai/bus/tasks/TASK-BUS-RUNNER-2D.md`): strip `EF BB BF` + zmazanie
+  zdvojeného `---`. `bus:validate` 1 error → 0 errors, exit 0. Bola to moja chyba
+  z #621; `main` bol kvôli nej červený. Paralelne to opravil aj #648 (`988edf6b`) —
+  výsledné súbory sú byte-identické.
+- **`RATCHET-API-CONTRACT-01` zmapovaný a zapísaný** do `memory/open-tasks.md`:
+  9 nových porušení (540 / 531 baseline), tri tranže s rôznym rizikom, dva komentáre
+  na #647 s dôkazmi.
+- **Overenie na mergnutom `main`**, nie na vetve: `git diff d57eac1c origin/main`
+  na oboch súboroch je prázdny.
+
+### Rozpracované / Pending
+- **Krok A — Stripe VERIFY** (founder-only, `sk_live_…` lokálne):
+  `STRIPE_SECRET_KEY=sk_live_… bash scripts/ops/stripe-verify-prices.sh`.
+  `9/9` → Krok B env patch. `MISSING` / `AMBIG` / `has_more=true` → STOP.
+  Bez tohto `/upgrade` nevedie do Stripe; `seatCheckoutAvailable` je `false`.
+- **Vercel Ignored Build Step** — founder musí prečítať hodnotu v dashboarde pre
+  `realitka-ai` aj `revolis-marketing`. `ignoreCommand` v oboch `vercel.json` je
+  empiricky inertný. Žiadna zmena `vercel.json` naslepo.
+- **OQ-3** — machine account, PAT, branch protection, `REVOLIS_BUS_BRANCH=bus/main`.
+  Founder-only. `scripts/bus/serve.ts:50` má default `"main"`, čo koliduje s ADR §7.
+- **GO RATCHET-TRANCHE-1** — neudelené. 3 súbory `concierge/*`, 17× `NextResponse.json`
+  → `okResponse`/`errorResponse`, ratchet 9 → 4.
+- **Founder rozhodnutie o `UsageMetricName`** — bez rozšírenia unionu tranža 2 nejde.
+  Na `onboarding/session` je to navyše GDPR otázka (`DEC-20260917-005`).
+- **Nevysvetlené:** prečo #621 prešlo CI zelené s rozbitým BUS frontmatterom.
+- **Nezmenené:** `memory/people.md` — v tejto session sa zloženie tímu ani
+  stakeholderov nezmenilo, takže som tam nič nevymýšľal.
+
+### Kľúčové súbory zmenené
+- `apps/crm/src/components/billing/ProgramComparison.tsx`: plan-CTA → „Na roadmape",
+  spodné CTA → `/upgrade` seat pricing.
+- `.ai/bus/tasks/TASK-BUS-RUNNER-2D.md`: strip BOM + zdvojený `---`.
+- `memory/open-tasks.md`: FUNNEL-PRICING-01 → VYRIEŠENÉ; nová sekcia
+  `RATCHET-API-CONTRACT-01`.
+- `memory/decisions.md`: nový záznam `[2026-09-23]` + tri sprievodné nálezy.
+
+### Ďalší krok
+Founder spustí **Krok A — Stripe VERIFY** lokálne v live mode a nahlási len `N/9`.
+Je to jediná vec, ktorá dnes blokuje príjem; všetko ostatné je naň naviazané.
