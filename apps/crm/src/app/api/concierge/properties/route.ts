@@ -1,4 +1,5 @@
 import { errorResponse, okResponse } from "@/lib/api-response";
+import { incrementUsageMetric } from "@/lib/usage-metrics";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/rate-limit";
 import {
@@ -40,6 +41,8 @@ export async function GET(request: Request) {
   const limit = Number.parseInt(url.searchParams.get("limit") ?? "20", 10);
 
   const agencyId = resolveConciergeAgencyId();
+  await incrementUsageMetric({ agencyId, metric: "concierge_properties" });
+
   const supabase = createServiceRoleClient();
   if (!supabase) {
     return errorResponse("Service unavailable.", 503);
@@ -67,5 +70,10 @@ export async function GET(request: Request) {
     limit: Number.isFinite(limit) ? limit : 20,
   });
 
+  return okResponse({
+    agencyId,
+    count: properties.length,
+    properties,
+  });
   return okResponse({ agencyId, count: properties.length, properties });
 }

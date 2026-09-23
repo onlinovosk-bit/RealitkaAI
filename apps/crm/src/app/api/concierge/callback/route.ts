@@ -1,3 +1,7 @@
+import { z } from "zod";
+import { errorResponse, okResponse } from "@/lib/api-response";
+import { validateBody } from "@/lib/api-validate";
+import { incrementUsageMetric } from "@/lib/usage-metrics";
 import { errorResponse, okResponse } from "@/lib/api-response";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/rate-limit";
@@ -11,6 +15,17 @@ import {
 } from "@/lib/concierge/callback";
 
 const IDEMP_PREFIX = "concierge-idemp:";
+
+/**
+ * Deliberately permissive: the business rules (consent, honeypot, phone-or-email,
+ * the sk/camelCase field aliases) live in validateConciergeCallback and stay
+ * there — a zod rewrite of them would be a regression dressed as compliance.
+ * This schema only does what the route used to do inline and did badly:
+ * reject a body that is not a JSON object. Before, a malformed payload was
+ * swallowed into `{}` and came back as "consent required", which told the
+ * caller nothing true.
+ */
+const CallbackBodySchema = z.record(z.string(), z.unknown());
 
 /**
  * Website Concierge — callback / soft lead (N07 / M1).
@@ -29,8 +44,10 @@ export async function POST(request: Request) {
     return errorResponse("Unauthorized.", 401);
   }
 
-  const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
-  const validated = validateConciergeCallback(body);
+  const parsed = await validateBody(request, CallbackBodySchema);
+  if (!parsed.ok) return parsed.response;
+
+  const validated = validateConciergeCallback(parsed.data);
   if (!validated.ok) {
     return errorResponse(validated.error, validated.status);
   }
@@ -40,6 +57,8 @@ export async function POST(request: Request) {
   }
 
   const agencyId = resolveConciergeAgencyId();
+  await incrementUsageMetric({ agencyId, metric: "concierge_callback" });
+
   const supabase = createServiceRoleClient();
   if (!supabase) {
     return errorResponse("Service unavailable.", 503);

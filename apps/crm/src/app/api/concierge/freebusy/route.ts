@@ -1,3 +1,5 @@
+import { errorResponse, okResponse } from "@/lib/api-response";
+import { incrementUsageMetric } from "@/lib/usage-metrics";
 import { NextResponse } from "next/server";
 import { okResponse, errorResponse } from "@/lib/api-response";
 import { rateLimit } from "@/lib/rate-limit";
@@ -31,8 +33,11 @@ export async function GET(request: Request) {
     process.env.CONCIERGE_GOOGLE_CALENDAR_ID?.trim() ||
     "primary";
 
+  const agencyId = resolveConciergeAgencyId();
+  await incrementUsageMetric({ agencyId, metric: "concierge_freebusy" });
+
   const result = await fetchConciergeFreeBusy({
-    agencyId: resolveConciergeAgencyId(),
+    agencyId,
     calendarId,
     timeMin,
     timeMax,
@@ -46,6 +51,18 @@ export async function GET(request: Request) {
         : result.reason === "invalid_window"
           ? 400
           : 502;
+    // `reason` and `detail` stay exactly where the website widget reads them;
+    // errorResponse only adds the `error` key the rest of the API already uses.
+    return errorResponse(result.detail ?? result.reason, status, {
+      reason: result.reason,
+      detail: result.detail,
+    });
+  }
+
+  return okResponse({
+    calendarId: result.calendarId,
+    busy: result.busy,
+  });
     // Zámerne NIE errorResponse. Táto odpoveď nemá kľúč `error` — nesie
     // `reason` (+ voliteľný `detail`), na ktorých stojí widget na cudzom webe.
     // errorResponse() by pridal `error`, teda zmenil tvar odpovede. Túto routu
