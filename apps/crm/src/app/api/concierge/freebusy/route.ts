@@ -1,7 +1,5 @@
 import { errorResponse, okResponse } from "@/lib/api-response";
 import { incrementUsageMetric } from "@/lib/usage-metrics";
-import { NextResponse } from "next/server";
-import { okResponse, errorResponse } from "@/lib/api-response";
 import { rateLimit } from "@/lib/rate-limit";
 import {
   conciergeSecretOk,
@@ -16,7 +14,9 @@ import { fetchConciergeFreeBusy } from "@/lib/concierge/freebusy";
 export async function GET(request: Request) {
   const ip =
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+
   const { allowed } = await rateLimit(`concierge-fb:${ip}`, 20, 60_000);
+
   if (!allowed) {
     return errorResponse("Too many requests.", 429);
   }
@@ -28,13 +28,18 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const timeMin = url.searchParams.get("timeMin") ?? "";
   const timeMax = url.searchParams.get("timeMax") ?? "";
+
   const calendarId =
     url.searchParams.get("calendarId")?.trim() ||
     process.env.CONCIERGE_GOOGLE_CALENDAR_ID?.trim() ||
     "primary";
 
   const agencyId = resolveConciergeAgencyId();
-  await incrementUsageMetric({ agencyId, metric: "concierge_freebusy" });
+
+  await incrementUsageMetric({
+    agencyId,
+    metric: "concierge_freebusy",
+  });
 
   const result = await fetchConciergeFreeBusy({
     agencyId,
@@ -51,8 +56,9 @@ export async function GET(request: Request) {
         : result.reason === "invalid_window"
           ? 400
           : 502;
-    // `reason` and `detail` stay exactly where the website widget reads them;
-    // errorResponse only adds the `error` key the rest of the API already uses.
+
+    // `reason` a `detail` ostávajú presne tam, kde ich číta widget na cudzom
+    // webe; errorResponse pridáva len kľúč `error`, ktorý používa zvyšok API.
     return errorResponse(result.detail ?? result.reason, status, {
       reason: result.reason,
       detail: result.detail,
@@ -63,15 +69,4 @@ export async function GET(request: Request) {
     calendarId: result.calendarId,
     busy: result.busy,
   });
-    // Zámerne NIE errorResponse. Táto odpoveď nemá kľúč `error` — nesie
-    // `reason` (+ voliteľný `detail`), na ktorých stojí widget na cudzom webe.
-    // errorResponse() by pridal `error`, teda zmenil tvar odpovede. Túto routu
-    // prepisujeme kvôli importnej zmluve, nie kvôli zmene kontraktu.
-    return NextResponse.json(
-      { ok: false, reason: result.reason, detail: result.detail },
-      { status },
-    );
-  }
-
-  return okResponse({ calendarId: result.calendarId, busy: result.busy });
 }
