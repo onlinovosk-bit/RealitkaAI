@@ -15,6 +15,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
+    # Viď saas-grade-pipeline.yml — `contents: read` musí ostať, inak padne
+    # checkout; `packages: read` je pre pull z ghcr.io.
+    permissions:
+      contents: read
+      packages: read
+
     steps:
       - uses: actions/checkout@v4
 
@@ -32,6 +38,21 @@ jobs:
         uses: supabase/setup-cli@v1
         with:
           version: latest
+
+      # `supabase start` sťahuje šesť images z ghcr.io. Anonymný pull má nízky
+      # limit na zdieľanú IP GitHub runnerov a 2026-09-23 oň CI opakovane
+      # zaseklo: najprv zlyhal jeden image, o dve minúty neskôr všetkých šesť
+      # (`toomanyrequests`). Tento krok je v poradí 10 z 22, takže keď padne,
+      # Test aj Build sa preskočia — CI vtedy o kóde nepovie nič a červená
+      # farba nesúvisí s diffom.
+      #
+      # Prihlásenie zdvihne limit z anonymného na per-account. Token je
+      # ephemerálny GITHUB_TOKEN daného behu, nie uložený secret, a ide cez
+      # env + --password-stdin, aby sa neobjavil v príkazovom riadku ani v logu.
+      - name: Authenticate to ghcr.io (raise pull rate limit)
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
       - name: Start local Supabase
         run: supabase start
