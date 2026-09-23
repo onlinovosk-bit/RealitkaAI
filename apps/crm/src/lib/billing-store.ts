@@ -41,6 +41,19 @@ const TIER_TO_UI_ROLE: Record<string, string> = {
 
 // PomocnĂˇ funkcia â€“ zapĂ­Ĺˇe account_tier + ui_role do profiles
 // Preferuje authUserId z metadĂˇt, fallback na stripe_customer_id
+/**
+ * True only when we actually know the price AND it is one of the Enterprise
+ * prices. The `!priceId` guard is the whole fix: without it an undefined price
+ * equals an unset env var and silently answers "yes, this was Enterprise".
+ */
+function isEnterprisePriceId(priceId: string | null | undefined): boolean {
+  if (!priceId) return false;
+  return (
+    priceId === process.env.STRIPE_PRICE_ENTERPRISE ||
+    priceId === process.env.STRIPE_PRICE_MARKET_VISION
+  );
+}
+
 async function syncAccountTier(
   stripeCustomerIdOrAuthUserId: string,
   priceId: string | null | undefined,
@@ -548,13 +561,18 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
     if (event.type === "customer.subscription.updated") {
       const subscription = object as Stripe.Subscription;
       const newPriceId = subscription.items.data[0]?.price.id;
-      const previousPriceId = (event.data.previous_attributes as any)?.items?.data?.[0]?.price?.id;
-      const wasEnterprise =
-        previousPriceId === process.env.STRIPE_PRICE_ENTERPRISE ||
-        previousPriceId === process.env.STRIPE_PRICE_MARKET_VISION;
-      const isEnterprise =
-        newPriceId === process.env.STRIPE_PRICE_ENTERPRISE ||
-        newPriceId === process.env.STRIPE_PRICE_MARKET_VISION;
+      // Stripe fills `previous_attributes` only with the fields that changed, so
+      // an absent `items` means the price did not move at all — a renewal, a
+      // payment-method swap, a cancel_at_period_end flip. The old code compared
+      // that `undefined` straight against the env vars, and production has no
+      // STRIPE_PRICE_ENTERPRISE, so `undefined === undefined` made every such
+      // event look like a downgrade out of Enterprise. Anyone not on
+      // MARKET_VISION got tier_locked_at stamped on the next renewal and was
+      // told to "restore the Enterprise plan" they had never bought.
+      const previousPriceId: string | undefined = (event.data.previous_attributes as any)?.items
+        ?.data?.[0]?.price?.id;
+      const wasEnterprise = isEnterprisePriceId(previousPriceId);
+      const isEnterprise = isEnterprisePriceId(newPriceId);
       const isDowngradeFromEnterprise = wasEnterprise && !isEnterprise;
 
       await syncAccountTier(

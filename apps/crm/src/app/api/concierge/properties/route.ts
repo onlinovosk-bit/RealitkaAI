@@ -75,4 +75,5 @@ export async function GET(request: Request) {
     count: properties.length,
     properties,
   });
+  return okResponse({ agencyId, count: properties.length, properties });
 }

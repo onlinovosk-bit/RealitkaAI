@@ -1,5 +1,7 @@
 import { errorResponse, okResponse } from "@/lib/api-response";
 import { incrementUsageMetric } from "@/lib/usage-metrics";
+import { NextResponse } from "next/server";
+import { okResponse, errorResponse } from "@/lib/api-response";
 import { rateLimit } from "@/lib/rate-limit";
 import {
   conciergeSecretOk,
@@ -61,4 +63,15 @@ export async function GET(request: Request) {
     calendarId: result.calendarId,
     busy: result.busy,
   });
+    // Zámerne NIE errorResponse. Táto odpoveď nemá kľúč `error` — nesie
+    // `reason` (+ voliteľný `detail`), na ktorých stojí widget na cudzom webe.
+    // errorResponse() by pridal `error`, teda zmenil tvar odpovede. Túto routu
+    // prepisujeme kvôli importnej zmluve, nie kvôli zmene kontraktu.
+    return NextResponse.json(
+      { ok: false, reason: result.reason, detail: result.detail },
+      { status },
+    );
+  }
+
+  return okResponse({ calendarId: result.calendarId, busy: result.busy });
 }
