@@ -98,6 +98,59 @@ export function htmlToText(raw: string): string {
 const NON_LEAD_LOCALPART =
   /^(?:no-?reply|donotreply|do-not-reply|mailer-daemon|postmaster|bounces?|notifications?)$/i;
 
+/**
+ * Verejní poskytovatelia pošty. Doména agentúry sa z nich NIKDY neodvodzuje:
+ * maklér s osobným gmailom by inak zahodil každého záujemcu z gmailu.
+ * Jeho konkrétna adresa sa aj tak vylúči cez `agencyAddresses` (presná zhoda).
+ */
+const PUBLIC_EMAIL_DOMAINS = new Set([
+  "gmail.com",
+  "googlemail.com",
+  "outlook.com",
+  "hotmail.com",
+  "live.com",
+  "msn.com",
+  "yahoo.com",
+  "yahoo.co.uk",
+  "icloud.com",
+  "me.com",
+  "proton.me",
+  "protonmail.com",
+  "zoznam.sk",
+  "azet.sk",
+  "centrum.sk",
+  "post.sk",
+  "pobox.sk",
+  "inmail.sk",
+  "atlas.sk",
+  "seznam.cz",
+  "email.cz",
+  "centrum.cz",
+]);
+
+/** Adresy a domény, ktoré patria kancelárii — nie záujemcovi. */
+export type AgencyIdentity = {
+  /** Presné adresy: profily maklérov, adresa agentúry, prijímacie schránky. */
+  addresses?: readonly string[] | null;
+  /** Domény odvodené z tých adries, po odfiltrovaní verejných poskytovateľov. */
+  domains?: readonly string[] | null;
+};
+
+/**
+ * Z adries kancelárie vyrobí zoznam jej vlastných domén. Verejné domény vypadnú —
+ * inak by sa `gmail.com` jedného makléra stal filtrom na všetkých záujemcov.
+ */
+export function agencyDomainsFrom(addresses: readonly (string | null | undefined)[]): string[] {
+  const out = new Set<string>();
+  for (const addr of addresses) {
+    const domain = addr?.trim().toLowerCase().split("@")[1];
+    if (!domain) continue;
+    if (PUBLIC_EMAIL_DOMAINS.has(domain)) continue;
+    out.add(domain);
+  }
+  return [...out];
+}
+
 /** Odstráni obaľujúcu interpunkciu (`<a@b.sk>`, `a@b.sk.`) a overí tvar. */
 export function cleanEmail(value: string | null | undefined): string | null {
   if (!value) return null;
@@ -105,26 +158,52 @@ export function cleanEmail(value: string | null | undefined): string | null {
   return /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(s) ? s : null;
 }
 
-function isNonLeadAddress(addr: string, recipient?: string | null): boolean {
+/**
+ * Doménová stráž stála na tom, že sa doména adresy rovná doméne PRÍJEMCU. Kým ingest
+ * bežal na doméne kancelárie, fungovalo to. Odkedy beží na `revolis.ai`, je doména
+ * príjemcu vždy `revolis.ai` a doména kancelárie sa s ňou nikdy nezhoduje — stráž teda
+ * prestala vylučovať vlastné adresy klienta. Preto sa identita kancelárie odovzdáva
+ * zvonku (`agencyAddresses` / `agencyDomains`) a nedopočítava sa z príjemcu.
+ */
+function isNonLeadAddress(addr: string, ctx?: ContactContext): boolean {
   const lower = addr.toLowerCase();
   const [local, domain] = lower.split("@");
   if (NON_LEAD_LOCALPART.test(local)) return true;
   if (domain === "revolis.ai") return true; // naša ingest schránka
-  const r = recipient?.trim().toLowerCase();
+
+  // Presná adresa kancelárie alebo makléra — platí aj na verejnej doméne.
+  if (ctx?.agencyAddresses?.has(lower)) return true;
+  // Vlastná doména kancelárie (verejní poskytovatelia sú z nej odfiltrovaní).
+  if (domain && ctx?.agencyDomains?.has(domain)) return true;
+
+  const r = ctx?.recipient?.trim().toLowerCase();
   if (!r) return false;
   if (lower === r) return true; // presne adresa príjemcu
   const recipientDomain = r.split("@")[1];
-  return Boolean(recipientDomain) && domain === recipientDomain; // vlastná doména RK
+  return Boolean(recipientDomain) && domain === recipientDomain;
 }
 
-function pickContactEmail(text: string, recipient?: string | null): string | null {
+type ContactContext = {
+  recipient?: string | null;
+  agencyAddresses?: ReadonlySet<string>;
+  agencyDomains?: ReadonlySet<string>;
+};
+
+/**
+ * `hasPhone` rozhoduje o poslednom kroku. Keď žiadny kandidát neprejde strážou,
+ * pôvodný kód aj tak vrátil `labelled` — teda adresu, ktorú stráž práve zamietla.
+ * Pri leade, ktorý MÁ telefón, je to zlá výmena: prázdny e-mail je čitateľný stav,
+ * kdežto cudzia adresa vyzerá ako platný kontakt a odíde na ňu automatická odpoveď.
+ * Bez telefónu by lead ostal bez akéhokoľvek kontaktu, preto tam fallback ostáva.
+ */
+function pickContactEmail(text: string, ctx: ContactContext, hasPhone: boolean): string | null {
   const labelled = cleanEmail(text.match(L.email)?.[1]);
-  if (labelled && !isNonLeadAddress(labelled, recipient)) return labelled;
+  if (labelled && !isNonLeadAddress(labelled, ctx)) return labelled;
   for (const candidate of text.match(new RegExp(EMAIL_RE.source, "g")) ?? []) {
     const cleaned = cleanEmail(candidate);
-    if (cleaned && !isNonLeadAddress(cleaned, recipient)) return cleaned;
+    if (cleaned && !isNonLeadAddress(cleaned, ctx)) return cleaned;
   }
-  return labelled; // radšej adresa príjemcu než žiadny kontakt
+  return hasPhone ? null : labelled;
 }
 
 /** Zvyškový markup a oddeľovače v mene (napr. `</b> Meno Priezvisko<br/>`). */
@@ -157,17 +236,26 @@ function classifyIntent(text: string): [string, string] {
 export function parseEmail(
   raw: string,
   receivedAt?: string,
-  opts?: { recipient?: string | null },
+  opts?: { recipient?: string | null } & AgencyIdentity,
 ): AcquireEvent {
   // Polia sa čítajú z normalizovaného textu, hash ostáva nad pôvodným `raw`.
   const text = htmlToText(raw);
   const [sourceType, source] = detectSource(text);
   const nameM = text.match(L.name);
   const phoneM = text.match(L.phone);
-  const contactEmail = pickContactEmail(text, opts?.recipient);
+  // Telefón sa musí poznať PRED výberom e-mailu — rozhoduje o poslednom fallbacku.
   const contactPhone = phoneM
     ? phoneM[1].replace(/\s+/g, "")
     : (text.match(PHONE_RE)?.[0]?.replace(/\s+/g, "") ?? null);
+  const contactEmail = pickContactEmail(
+    text,
+    {
+      recipient: opts?.recipient,
+      agencyAddresses: new Set((opts?.addresses ?? []).map((a) => a.trim().toLowerCase())),
+      agencyDomains: new Set((opts?.domains ?? []).map((d) => d.trim().toLowerCase())),
+    },
+    Boolean(contactPhone),
+  );
   const msgM = text.match(L.msg);
   let inquiryText = msgM ? msgM[1].replace(/\s+/g, " ").trim() : null;
   if (inquiryText) {

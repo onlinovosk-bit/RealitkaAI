@@ -1,5 +1,34 @@
 # Critical Decisions Log
 
+## [2026-09-23] — W1 hotová: identita kancelárie sa odovzdáva, nedopočítava
+
+**Zmena správania, nie oprava kozmetiky:** automatická odpoveď už neodíde na adresu
+klienta. Doteraz mohla — lead z 2026-09-22 05:47 má ako kontaktný e-mail adresu
+jedného z maklérov (overené: presná zhoda s `profiles.email`).
+
+- **Stráž nestojí na doméne príjemcu.** Stará podmienka `domain === recipientDomain`
+  fungovala, kým ingest bežal na doméne kancelárie. Odkedy beží na `revolis.ai`, je
+  doména príjemcu vždy `revolis.ai` a doména klienta sa s ňou nikdy nezhoduje.
+  Identita kancelárie sa teraz načíta v route a odovzdá parseru.
+- **Zdroj je nameraný, nie vymyslený:** `profiles.email` (12 riadkov na doméne klienta),
+  `agencies.email` (v produkcii prázdne) a `inbound_mailboxes.email`. Žiadny nový stĺpec,
+  žiadna migrácia, žiadny zápis do produkčnej DB — eskalácia D sa nekonala.
+- **Verejné domény sa z identity vyhadzujú.** Medzi profilmi sú aj gmail adresy. Bez
+  tohto filtra by maklér s osobným gmailom zahodil každého záujemcu z gmailu. Jeho
+  konkrétna adresa sa aj tak vylúči presnou zhodou — presnosť bez vedľajších škôd.
+- **Fallback na vylúčenú adresu padá, len keď lead má telefón.** Bez telefónu by lead
+  ostal úplne bez kontaktu, čo je horšie. **Zostávajúca diera:** lead bez telefónu, kde
+  jediná adresa je adresa klienta, stále dostane tú adresu. Vedomé, nie prehliadnuté.
+- **Dopyt na identitu je fail-soft.** Keby zhodil request, stratili by sme dopyt kvôli
+  oprave, ktorá ho má chrániť. Pri chybe sa vráti prázdna identita a parser sa správa
+  ako predtým.
+- **`to_missing` vs `to_unmatched`.** Dva úplne odlišné dôvody nepriradenia vyzerali
+  v dátach rovnako (žiadny heartbeat). Teraz sa dajú rozlíšiť — a to je rozdiel medzi
+  „oprav Worker" a „domapuj adresu".
+
+Dôkaz: 55/55 testov v acquire oblasti, z toho dvojica, kde ten istý vstup bez identity
+vráti adresu makléra (reprodukcia produkčnej chyby) a s identitou `null`. `tsc` 51 chýb
+pred aj po (nula pridaných), `next build` čistý.
 ## [2026-09-23] — FUNNEL-PRICING-01 vykonaný: `/porovnanie-programov` už nesľubuje nákup programu
 
 `DEC-20260921-001` rozhodol, že kanonický je **seat model** (79 / 71 / 63 € na makléra)
