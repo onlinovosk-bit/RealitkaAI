@@ -1,6 +1,7 @@
 # Revolis.AI — Agent Directory & Group Architecture
 
-> Posledná aktualizácia: 2026-05-07 — všetky konflikty vyriešené duplikáciou, Head of Data + CRO doplnené
+> Posledná aktualizácia: 2026-09-22 — stakeholders: Reality Smolko ako kancelária (9 maklérov)
+> Predchádzajúca: 2026-05-07 — všetky konflikty vyriešené duplikáciou, Head of Data + CRO doplnené
 > Celkový počet agentov: ~100 (Virtual Squad + Dream Team + nové roly)
 > Orchestrátor systém: 7 skupín, každá má Group Lead + C-level nadriadeného
 
@@ -12,6 +13,17 @@
 |---|---|---|
 | **p. Smolko** | Reality Smolko — Kľúčový partner, operácia "Trójsky kôň" s XML feedom | Aktívny |
 | **Lýdia Bereczová** | Realvia / Webex — integračný kontakt pre export v2 | Aktívna (Export ID 1423691836) |
+
+> **2026-09-22 — Reality Smolko, rozsah kontaktu sa zmenil z jedného človeka na kanceláriu.**
+> Kancelária má **9 maklérov**. Do produkcie je zapísaných **9 prijímacích adries**,
+> z toho **8 je namapovaných na profil makléra**; jedna ostáva bez profilu, takže lead
+> z nej príde nepriradený namiesto falošne priradeného.
+> Mená maklérov ani e-mailové adresy sa do repozitára **nezapisujú** — v pamäti sú len počty.
+> Dopyty zatiaľ merateľne chodia len z jednej adresy; skutočná miera záchytu za celú
+> kanceláriu nie je nameraná a nesmie sa odhadovať z podmnožiny (chyba z 2026-09-22:
+> závery z 3 maklérov z 9).
+> Druhá strana rovnakej integrácie je **dodávateľ webu klienta** — ak preposielanie nastaví
+> on a nie makléri sami, môže si zaň vypýtať odmenu. Toto je náklad klienta, nie náš.
 
 ---
 

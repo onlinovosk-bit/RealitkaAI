@@ -1,0 +1,30 @@
+---
+description: Engineering Constitution — reuse tree, Builder justification, Judge gate
+alwaysApply: false
+---
+
+# L99 Engineering Constitution
+
+Kanonický zdroj: `docs/architecture/engineering-constitution.md`
+
+## Builder (pred/d počas implementácie)
+
+1. Reuse → native API → stdlib → existing dep → až potom nový kód/dep.
+2. Nový súbor, komponent, závislosť alebo abstrakcia = povinný **Engineering
+   justification** blok (formát v kanonickom dokumente).
+3. Odôvodnenia ukladaj do **Decision Memory** (`memory/decisions.md`) — nie do
+   paralelného logu. Capability: `engineering-justification`.
+
+## Judge (Kontrolór po úlohe)
+
+- Over formát justification + konzistenciu `decision path` s diffom.
+- Chýbajúce odôvodnenie → **RETURN** Builderovi.
+- `Contradiction check: flag` → STOP, protokol `brain/ENGINE.md` §21 (žiadny
+  silent overwrite).
+
+## Brain ingest
+
+Po zázname v `memory/decisions.md` (a voliteľne `brain/src/catalog.ts` pre
+trvalé rozhodnutia): `npm run brain:ingest` → `brain/decisions/index.json`.
+
+Biznis brána ostáva v `revolis-constitution-v2.md` a `l99-prime-directive.mdc`.

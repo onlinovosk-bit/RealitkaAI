@@ -1,0 +1,131 @@
+{
+  "run_id": "20260905T2304-ruflo-overnight",
+  "lane_id": "C",
+  "base_sha": "cf3604613cdbb6a7a279e175f2c792fb25591461",
+  "accessed_at": "2026-09-05",
+  "sources": [
+    {
+      "id": "uc-import-intro",
+      "claim": "UC Realsoft Import API validates listings via POST validation URL; full inventory import every 12h; responses 200/422; Office/User/Advertisement hierarchy with source_id and images.",
+      "title": "Import API Documentation (Import intro)",
+      "publisher": "United Classifieds / plt.unitedclassifieds.sk",
+      "url": "https://plt.unitedclassifieds.sk/import/docs/v1/realsoft/docs/import/intro",
+      "published_date": null,
+      "accessed_at": "2026-09-05",
+      "evidence_type": "vendor_public_docs",
+      "limit": "Labeled Realsoft; production auth and downloadable schema.json not reliably available; test-only caution in docs."
+    },
+    {
+      "id": "uc-export-intro",
+      "claim": "UC Realsoft Export API POSTs action 1 or 2 JSON to integrator URL; ack codes 1-4 and 10-13; import_id/user_id stable IDs; deleted flag; images url+changed.",
+      "title": "Import API Documentation (Export intro)",
+      "publisher": "United Classifieds / plt.unitedclassifieds.sk",
+      "url": "https://plt.unitedclassifieds.sk/import/docs/v1/realsoft/docs/export/intro",
+      "published_date": null,
+      "accessed_at": "2026-09-05",
+      "evidence_type": "vendor_public_docs",
+      "limit": "Documents integrator callback (import-into-CRM/web), not CRM publish pull credentials."
+    },
+    {
+      "id": "uc-docs-home",
+      "claim": "Public landing for Import and Export documentation under Realsoft path.",
+      "title": "Import / Export API Documentation home",
+      "publisher": "United Classifieds",
+      "url": "https://plt.unitedclassifieds.sk/import/docs/v1/realsoft/",
+      "published_date": null,
+      "accessed_at": "2026-09-05",
+      "evidence_type": "vendor_public_docs",
+      "limit": "Hub page only; does not prove per-portal distinct APIs."
+    },
+    {
+      "id": "backoffice-exporty",
+      "claim": "Automated publish to nehnutelnosti.sk, reality.sk, topreality.sk requires UC-activated import-via-API ordered by the agency; third-party CRM is not party to UC pricing.",
+      "title": "Export ponuk na nehnutelnosti.sk, topreality.sk, reality.sk",
+      "publisher": "backOFFICE.sk",
+      "url": "https://www.backoffice.sk/realitny-software/exporty/",
+      "published_date": null,
+      "accessed_at": "2026-09-05",
+      "evidence_type": "integrator_marketing",
+      "limit": "Competitor/vendor marketing; not independent performance proof; not a substitute for UC contract."
+    },
+    {
+      "id": "reality-realsoft-export",
+      "claim": "Reality.sk supports RealSoft listing management after activating Import zo softveru 3. stran and requesting portal linking via info@reality.sk.",
+      "title": "Reality.sk export inzercie z RealSoftu",
+      "publisher": "Reality.sk / United Classifieds ecosystem",
+      "url": "https://www.reality.sk/realitysk-export-inzercie-z-realsoftu/",
+      "published_date": "2013-04",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "portal_page",
+      "limit": "Page may be dated (2013 launch note); confirms activation path, not full current API schema."
+    },
+    {
+      "id": "topreality-tos",
+      "claim": "Business users manage Topreality listings via Realsoft; unauthorized import/export via third-party systems without prior consent is prohibited.",
+      "title": "Vseobecne obchodne podmienky (Topreality)",
+      "publisher": "United Classifieds / Topreality",
+      "url": "https://beta.topreality.sk/tos/podmienky_inzercie.pdf?20250628=",
+      "published_date": "2025-06-28",
+      "accessed_at": "2026-09-05",
+      "evidence_type": "legal_tos",
+      "limit": "Legal conditions, not technical schema; PDF querystring date hint only."
+    },
+    {
+      "id": "apify-nehnutelnosti",
+      "claim": "Third-party scraper asserts Nehnutelnosti.sk has no public API and no bulk export.",
+      "title": "Nehnutelnosti Scraper (Apify)",
+      "publisher": "Apify / studio-amba",
+      "url": "https://apify.com/studio-amba/nehnutelnosti-scraper",
+      "published_date": null,
+      "accessed_at": "2026-09-05",
+      "evidence_type": "third_party_tooling",
+      "limit": "Not vendor documentation; useful only as negative public-API signal."
+    },
+    {
+      "id": "datastorm-xml-api-blog",
+      "claim": "Agency/web integrators commonly use XML feeds or APIs under contractual portal specs; access requires portal relationship.",
+      "title": "Export nehnutelnosti na Sreality a nehnutelnosti.sk: XML feedy a API v praxi",
+      "publisher": "DataStorm Blog",
+      "url": "https://www.datastorm.sk/blog/export-nehnutelnosti-sreality-xml-api",
+      "published_date": null,
+      "accessed_at": "2026-09-05",
+      "evidence_type": "industry_blog",
+      "limit": "Mentions XML generically; does not publish UC XSD; mixes CZ Sreality context."
+    },
+    {
+      "id": "jmsupport-realsoft-export-check",
+      "claim": "Realsoft export-to-web uses login errors matching UC export ack codes; images/status behavior described for website destinations.",
+      "title": "Ako si skontrolovat export na vlastny web v Realsofte",
+      "publisher": "JM Support",
+      "url": "https://www.jmsupport.sk/kontrola-exportu-realitky-z-realsoftu/",
+      "published_date": null,
+      "accessed_at": "2026-09-05",
+      "evidence_type": "integrator_docs",
+      "limit": "Describes website ingest, not portal publish confirmation."
+    },
+    {
+      "id": "repo-realsoft-uc-adapters",
+      "claim": "Revolis CRM contains inbound Realsoft/UC import routes, auth/mapper modules, migrations, and RLS tests; PortalNehnutelnostiSource is scraping not publish.",
+      "title": "apps/crm Realsoft/UC/portal paths",
+      "publisher": "Revolis repo (local)",
+      "url": "file://apps/crm/src/app/api/realsoft/import/route.ts",
+      "paths": [
+        "apps/crm/src/app/api/realsoft/import/route.ts",
+        "apps/crm/src/app/api/uc/import/route.ts",
+        "apps/crm/src/app/api/integrations/portal/import/route.ts",
+        "apps/crm/src/lib/realsoft/auth.ts",
+        "apps/crm/src/lib/realsoft/mapper.ts",
+        "apps/crm/src/lib/importers/realsoft-parser.ts",
+        "apps/crm/src/infra/scraping/PortalNehnutelnostiSource.ts",
+        "apps/crm/supabase/migrations/20260616070500_realsoft_import_adapter.sql",
+        "scripts/prospecting/lib/denylist.ts",
+        "docs/briefs/overnight/overnight-master-brief-10.md",
+        "docs/briefs/overnight/overnight-master-brief-14-uc-mapper.md"
+      ],
+      "published_date": null,
+      "accessed_at": "2026-09-05",
+      "evidence_type": "repo_path_existence",
+      "limit": "Path existence verified; production deployment status PROD_UNKNOWN."
+    }
+  ]
+}

@@ -9,6 +9,7 @@ const REQUIRED_CHECK = "Lint, test, build";
 const TIER2_MIN_HOURS = 6;
 
 const DENYLIST = [
+    /^\.ai\//,
   /^\.github\//,
   /(^|\/)vercel\.json$/,
   /^apps\/crm\/supabase\/migrations\//,

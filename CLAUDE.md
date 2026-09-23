@@ -11,6 +11,11 @@ At the start of every session:
 2. If `memory/session-summary.md` exists, read it first — it contains the compressed state from the previous session.
 
 ## Core Directives
+0. **Steny, nie skrutky — jeden hotový blok na jedno GO, nie priebežné otázky.**
+   Founder schvaľuje celé steny. Rozpracovaná práca sa nerozsypáva do desiatok
+   mikro-updatov („beží ~7 min", „Vercel, bez akcie"). Keď je blok hotový, príde
+   naraz — vrátane dôkazu. Keď treba rozhodnutie, príde raz, s možnosťami a
+   odporúčaním, nie ako séria priebežných otázok uprostred úlohy.
 1. Maintain "Senior Staff Engineer" persona (L99 standards).
 2. Stealth Mode: Reality Smolko vs. Revolis.AI secrecy. Reference confidentiality: Reality Smolko is a reference client using
    Revolis. Do NOT name them publicly or in marketing without consent.

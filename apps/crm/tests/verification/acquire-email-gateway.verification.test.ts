@@ -22,6 +22,29 @@ describe("[verification] Acquire email gateway", () => {
     expect(route).toContain("createServiceRoleClient");
   });
 
+  it("releases acquire_dedup_keys claim when lead insert fails (no permanent lead loss)", () => {
+    const route = readFileSync(
+      join(CRM_ROOT, "src/app/api/acquire/email/route.ts"),
+      "utf8",
+    );
+
+    // Dedup claim must be checked (unique conflict → duplicate) and rolled back on lead failure.
+    expect(route).toContain('from("acquire_dedup_keys").insert');
+    expect(route).toContain("isUniqueConflict");
+    expect(route).toContain(".delete()");
+    expect(route).toContain('.eq("key", key)');
+    expect(route).toMatch(
+      /insert error[\s\S]*acquire_dedup_keys[\s\S]*\.delete\(\)[\s\S]*\.eq\("key", key\)/,
+    );
+    // Retry after an unknown commit must not create a second lead.
+    expect(route).toContain("deterministicLeadId");
+    expect(route).toContain("acquire-email-lead:");
+    expect(route).toContain("LEAD_ALREADY_EXISTS");
+    expect(route).toMatch(
+      /isUniqueConflict\(error\)[\s\S]*from\("leads"\)[\s\S]*\.eq\("id", leadId\)/,
+    );
+  });
+
   it("agency_id comes from inbound address map, not parsed email", () => {
     const map = readFileSync(
       join(CRM_ROOT, "src/lib/acquire/agency-map.ts"),
