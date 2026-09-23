@@ -55,6 +55,8 @@ import {
   type BusBox,
   type BusCapability,
   type BusEnvelope,
+  type BusFactId,
+  type BusFacts,
   type BusValidationError,
   type ClaudeRunReport,
   type ConsumerRefusalCode,
@@ -354,6 +356,35 @@ export function realClaudeExecutor(options: ClaudeExecutorOptions = {}): ClaudeE
   };
 }
 
+/* ------------------------------------------------------------------ facts */
+
+/**
+ * How the runner obtains each declared fact. This map is the whole reach a
+ * capability has into the machine: adding a fact means adding a source here,
+ * under review, rather than a capability naming a command of its own.
+ *
+ * Every source is read-only and must stay so. The executing Claude Code process
+ * still runs with no tools — it is handed these values, it does not fetch them.
+ */
+const FACT_SOURCES: Record<BusFactId, () => Promise<string | undefined>> = {
+  repo_head: currentCommit,
+};
+
+/**
+ * Gather what a capability declared, or throw. A capability never runs on a
+ * partial set: a missing fact would leave its contract with nothing to check
+ * the reply against, which is worse than not running at all.
+ */
+async function gatherFacts(capability: BusCapability): Promise<BusFacts> {
+  const facts: BusFacts = {};
+  for (const id of capability.facts ?? []) {
+    const value = await FACT_SOURCES[id]();
+    if (value === undefined) throw new Error(`capability ${capability.id}: fact ${id} could not be read`);
+    facts[id] = value;
+  }
+  return facts;
+}
+
 /* ------------------------------------------------------------------- run */
 
 export type ConsumeOutcome =
@@ -373,6 +404,13 @@ export interface ConsumeOptions {
   /** This runner instance. Defaults to a fresh identity per process. */
   owner?: string;
   capabilities?: BusCapability[];
+  /**
+   * How a capability's declared facts are gathered. Defaults to the real,
+   * read-only sources; a test substitutes it to exercise a machine that cannot
+   * answer, which is otherwise unreachable because `git rev-parse` always works
+   * inside the repository.
+   */
+  gatherFacts?: (capability: BusCapability) => Promise<BusFacts>;
   /** Process only this task id. */
   taskId?: string;
   inboxBox?: BusBox;
@@ -549,6 +587,18 @@ async function processTask(task: BusEnvelope, ctx: ProcessContext): Promise<Cons
     return persistResult(task, ctx, decision.capability, stored, owner);
   }
 
+  // Before the budget is touched: a fact the machine cannot produce is an
+  // environment problem, not a founder decision and not a spent execution slot.
+  // Leaving the task open lets the next cycle retry once the machine recovers.
+  let facts: BusFacts;
+  try {
+    facts = await (ctx.gatherFacts ?? gatherFacts)(decision.capability);
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    ctx.log(`FAIL  ${task.id}: ${reason}`);
+    return { taskId: task.id, action: "failed", reason };
+  }
+
   if (ctx.counter) {
     const cap = ctx.dailyCap ?? DAILY_EXECUTION_CAP;
     const state = capState(await ctx.counter.stamps(), ctx.now(), cap);
@@ -591,9 +641,9 @@ async function processTask(task: BusEnvelope, ctx: ProcessContext): Promise<Cons
   let run: ClaudeRunReport;
   try {
     ctx.log(`RUN   ${task.id}: capability ${decision.capability.id} -> real Claude Code`);
-    run = await ctx.executor(decision.capability.prompt(task), { taskId: task.id });
+    run = await ctx.executor(decision.capability.prompt(task, facts), { taskId: task.id });
 
-    const contractError = decision.capability.verify(run.reply);
+    const contractError = decision.capability.verify(run.reply, facts);
     if (contractError) throw new Error(`capability ${decision.capability.id} contract failed: ${contractError}`);
   } catch (error) {
     await heartbeat.stop();

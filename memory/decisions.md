@@ -2097,3 +2097,59 @@ zmena kontraktu a patrí do vlastnej brány. Zámerne neopravené:
 - **Čo to neodomyká.** Gate C ostáva zablokovaný: `bus/main` je stále na
   `17f30d4` (2026-09-19), žiadny remote C-0 nebežal. Toto odstraňuje prekážku
   v kroku §4, nespúšťa ho.
+
+## 2026-09-23 — P-2 + P-3: RLS model loop tabuliek uzavretý v repe (#644, #645)
+
+- **P-2 (#644 `5b2e915`) — rozdelenie 2/3, bez zmeny schémy.** Päť loop tabuliek
+  dostalo explicitný RLS model. Dve infra (`ai_jobs`, `lead_triage_idempotency`)
+  ostávajú `RLS ON, 0 policies` — ale už **ako zámer, nie ako opomenutie**:
+  obe majú `COMMENT ON TABLE 'intentional infra deny-all'`, lebo nemajú tenantný
+  kľúč a prístup k nim ide výlučne cez `service_role` (`rolbypassrls`). Tri
+  tenantné (`credit_ledger`, `decisions`, `exclusivity_outcomes`) dostali
+  SELECT + INSERT pre `authenticated` scopované na `agency_id`.
+- **Prečo DROP+CREATE a nie guard na neexistenciu.** `credit_ledger` už tenantné
+  policies mal — z `20260613000000`, ktorá však v PROD nikdy nebežala.
+  `DROP POLICY IF EXISTS` + `CREATE` je jediný tvar, ktorý **konverguje obe
+  strany na rovnaký výsledok** bez ohľadu na to, čo na danej inštancii je.
+- **Odchýlka od zadania, hlásená pred implementáciou.** Zadanie znelo
+  `USING (agency_id = current_agency_id())`. Tá funkcia v repe **neexistuje**.
+  Použitý je zavedený helper `public.profile_agencies_for_auth()` (`SETOF uuid`,
+  `SECURITY DEFINER`, `STABLE`, 26 migrácií). Sémanticky ekvivalent pre
+  používateľa s jednou agentúrou, korektný aj pre viac.
+- **P-3 (#645 `6ae75ba`) — vetva `agency_id IS NULL` zatvorená natrvalo.**
+  Tri policies (`platform_events_select_tenant`, `ai_action_audit_select_tenant`,
+  `ai_action_audit_insert_tenant`) sprístupňovali každému prihlásenému riadky
+  s `agency_id IS NULL`. Podmienka na uzavretie bola count = 0; meranie proti
+  živému PROD tesne pred zmenou: `platform_events` **1420 / 0 NULL**,
+  `ai_action_audit` **186 / 0 NULL**. (Skoršie meranie ukazovalo 178 — tabuľka
+  je živá, číslo narástlo; `NULL = 0` platí v oboch.)
+- **Zvyšok výrazu ostal bajt na bajt.** Nemenil sa `cmd`, `roles` ani tvar
+  poddotazu, a **zámerne** sa nepresúval na `profile_agencies_for_auth()`, hoci
+  je to inde v repe zavedený helper. Brána odstraňuje vetvu, nič iné.
+- **Nález, ktorý zmenil tvar P-3 migrácie: `ai_action_audit` nemá rovnaký tvar
+  v CI a v PROD.** Repo migrácia `20260616123000_rls_wave_a_hardening.sql` obe
+  menované policies dropuje a nahrádza jedinou `ai_action_audit_tenant`
+  (`FOR ALL`, `profile_agencies_for_auth`) — ale v PROD nikdy nebežala, je jednou
+  zo 60 neaplikovaných. Bezpodmienečný `CREATE` by teda v CI **pridal** policies,
+  ktoré tamojší model nemá; a permisívne RLS policies sa **OR-ujú**, teda by
+  prístup **rozšíril**, nie zúžil. Preto sú zmeny na `ai_action_audit` guardované
+  na existenciu policy: v CI no-op, v PROD prepis. Testované obe vetvy zvlášť.
+- **Dôkaz behaviorálny, nie len tvarový.** Ako rola `authenticated`
+  (`begin; set local role authenticated; set local "request.jwt.claim.sub" = …`),
+  fixtures 1 vlastný + 1 osirený riadok:
+  `platform_events` SELECT — so starou policy osirený viditeľný **1**, po P-3 **0**;
+  `ai_action_audit` INSERT `agency_id → NULL` — so starou policy `INSERT 0 1`,
+  po P-3 `ERROR: new row violates row-level security policy`.
+  Replay celého setu `APPLIED_OK=111 FAILED=0`, migrácia aplikovaná 3× — idempotentná.
+- **DÔLEŽITÉ — merge do `main` nezatvoril dieru v PROD.** Obe migrácie sú
+  v aktívnom sete, ale **neaplikované na PROD**; deploy je samostatná brána.
+  Overené po merge #645: všetky tri policies majú v PROD stále vetvu
+  `(agency_id IS NULL) OR …`. Repo je uzavreté, PROD nie.
+- **`BUS` CI blocker — diagnostikovaný, opravený iným PR.** `bus:validate` padal
+  na `Unsupported YAML line: --- (line 1)` kvôli UTF-8 BOM (`EF BB BF`) v
+  `.ai/bus/tasks/TASK-BUS-RUNNER-2D.md`, zavedenému commitom `36ff454` (#624);
+  červené bolo aj na `main`, teda na každom PR v repe. Diagnóza s dôkazom
+  reprodukcie na base vetve je v komentári na #644. Opravené cez #647/#648,
+  `bus:validate` je zelený (0 errors). **Root cause ale ostáva otvorený:**
+  `packages/bus-core/src/yaml.ts` BOM stále netoleruje — ďalší súbor uložený
+  s BOM zhodí pipeline znova.
