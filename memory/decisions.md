@@ -1,5 +1,31 @@
 # Critical Decisions Log
 
+## [2026-09-23] — /blueprint zrušený: predával sme metodiku nesprávnemu kupcovi
+
+Founder sa spýtal, čo tou stránkou hovoríme, a navrhol ju zrušiť. Po prečítaní kódu
+a zdrojových dokumentov som so zrušením súhlasil. Tri dôvody, všetky overiteľné:
+
+- **Cieľová skupina si protirečí s vlastným zdrojom.** `docs/blueprint-kit/ARTIFACT-SCOREBOARD.md`
+  o tom istom triu artefaktov píše „Toto trio môže **AI founder** začať používať hneď."
+  Stránka to predávala majiteľovi realitnej kancelárie. Iný človek, iný problém.
+- **Argumentovala proti nášmu vlastnému predaju.** Titulok znel „Majiteľ kancelárie
+  potrebuje brzdu. Nie ďalší systém." Revolis je ďalší systém — a odkaz na stránku sedel
+  v hlavnej navigácii landing page, teda si bral pozornosť tam, kde predávame Revolis.
+- **Lievik končil v prázdne.** Všetky tri CTA viedli na `https://revolis.lemonsqueezy.com`,
+  teda na holý storefront **bez cesty ku konkrétnemu produktu**. Či produkt v obchode je,
+  som neoveril (odchádzajúci `curl` bol v tomto prostredí zamietnutý) a netvrdím to.
+
+Proti PRIME DIRECTIVE: nezvyšovala pravdepodobnosť ďalšieho platiaceho klienta Revolisu
+ani retenciu existujúceho. Confidence artefaktu je navyše „Medium — 1 projekt (Revolis)",
+čiže sme odvetviu predávali metodiku, ktorá v tom odvetví overená nebola.
+
+**Čo NIE je zrušené:** obsah. `docs/blueprint-kit/` ostáva nedotknutý — je to naša interná
+metodika a používame ju. Zrušená je len jeho **platená verejná stránka**.
+
+**Otvorené, zámerne nestavané:** šesť veto otázok ako **bezplatný** lead magnet napojený na
+Segment A/B/C outreach je reálna možnosť. Je to však nová stena s vlastnou bránou, nie
+záchrana tejto stránky — a dnes by brala čas atribúcii leadov, ktorá má sľub u klienta.
+
 ## [2026-09-22] — Wall queue W1/W2: dve steny BUILD, drift schémy BACKLOG
 
 Rozhodovacia brána podľa `revolis-constitution-v2.md` (12-otázkový Reality Check),
@@ -985,6 +1011,43 @@ Dokaz:
 
 **Kill deadline Stage 0:** 2026-08-31 (funkcia uzavreta; dalsi kod = vlastne GO).
 
+## D-2026-08-18-02 — GPT Sol ↔ Opus 5 komunikácia: kontrakt pred runtime
+
+**Rozhodnutie:** Autonómna komunikácia medzi GPT Sol a Opus 5 sa nespúšťa ako
+runtime automatizácia. Najprv vzniká repo-mediated kontrakt:
+`docs/architecture/gpt-sol-opus5-autonomous-communication.md`.
+
+**Verdikt Ústavy:** VALIDATE / CONTRACT ONLY. Priamy model-to-model runtime je
+príliš skoro, kým neprebehne jeden manuálny Sol↔Opus trial s repo artefaktmi,
+bez scope driftu a bez neodobrených akcií.
+
+**Hranice:** žiadne PROD write, merge, secrets, externé odoslanie ani provider API
+loop bez samostatného founder GO. Max 3 model turns pred founder rozhodnutím.
+
+**Engineering justification:** Trigger: new-file. Decision path: reuse —
+kontrakt rozširuje existujúce vzory Ruflo orchestration, LLM Gateway routing,
+AI Security, task-loop a repo-as-communication-channel. Alternatives considered:
+direct model API loop (zamietnuté — hidden state/tool abuse), Ruflo runtime hneď
+(zamietnuté — bez trialu príliš skoro), chat-only memory (zamietnuté — nie je
+SSOT). Contradiction check: none; dokument zužuje, nie rozširuje oprávnenia.
+
+## D-2026-09-06-01 — GPT Sol ↔ Opus 5 trial: manuálny formát PASS, runtime STOP
+
+**Rozhodnutie:** Prvý manuálny Sol↔Opus trial prešiel iba ako formát
+repo-mediated komunikácie. Runtime/provider-to-provider automation zostáva STOP.
+
+**Dôkaz:** `docs/ai-comms/2026-09-06-trial/` obsahuje brief, Sol draft, Opus
+review, Sol revision a final verdict. Opus našiel konkrétne FLAGy; Sol scope
+zúžil; verdict drží merge/PROD/secrets/external send/runtime automation za
+founder GO.
+
+**Hranica použitia:** Sol↔Opus manuálny protokol používať len pre high-risk
+architecture, implementation planning, PR review, security/auth/billing/RLS,
+migrations a data/legal source gates. Nepoužívať na rutinný status alebo malé
+copy/code zmeny.
+
+**Neznáme:** Pôvodný externý Notebook nebol obnovený; trial vytvára repo-native
+náhradu, nie import pôvodnej diskusie.
 ## D-2026-08-18-01 — Acquire email idempotency: deterministic lead id
 
 **Rozhodnutie:** Follow-up k #439 nepoužije novú tabuľku ani PROD migráciu. `POST /api/acquire/email`
