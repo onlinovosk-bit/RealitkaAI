@@ -299,16 +299,42 @@ export function isStarterPackCheckoutAvailable(): boolean {
   return isValidStripePriceId(getStarterPackStripePriceId());
 }
 
+/**
+ * Resolves the Owner Cockpit price for the price the caller is being SHOWN.
+ *
+ * There is deliberately no fallback between the founder and the standard
+ * price. `ownerCockpitPriceEur()` returns 249 € while founder places remain and
+ * 349 € afterwards, and the UI renders exactly that number. Falling back from an
+ * unset founder key to the standard price would charge 349 € against a
+ * displayed 249 € — a silent overcharge at the moment of payment, which is worse
+ * than not selling the add-on at all.
+ *
+ * Returns "" when the applicable price is not configured. Callers must treat
+ * that as "not purchasable" rather than "charge the other one".
+ */
 export function getOwnerCockpitStripePriceId(opts?: {
   founderEligible?: boolean;
 }): string {
   const owner = COCKPIT_PRODUCTS.owner;
-  if (opts?.founderEligible && owner.founderStripeEnvKey) {
-    const founderId = process.env[owner.founderStripeEnvKey] ?? "";
-    if (founderId) return founderId;
-  }
-  const envKey = owner.stripeEnvKey;
+  const envKey =
+    opts?.founderEligible && owner.founderStripeEnvKey
+      ? owner.founderStripeEnvKey
+      : owner.stripeEnvKey;
   return envKey ? (process.env[envKey] ?? "") : "";
+}
+
+/**
+ * Is the Owner Cockpit actually purchasable at the price the UI displays?
+ *
+ * Gates the checkbox. Without it the customer can tick an add-on whose price
+ * is not configured, see it in the total, and pay without it
+ * (`buildSeatCheckoutSessionParams` drops the line item) — a silent revenue
+ * loss and a price the customer never agreed to.
+ */
+export function isOwnerCockpitPurchasable(opts?: {
+  founderEligible?: boolean;
+}): boolean {
+  return isValidStripePriceId(getOwnerCockpitStripePriceId(opts));
 }
 
 export function areSeatCheckoutPricesConfigured(): boolean {
