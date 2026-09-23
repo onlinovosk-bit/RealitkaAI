@@ -31,6 +31,19 @@ export function lostAuthorityText(warnings: readonly BusValidationError[] = []):
   );
 }
 
+/**
+ * A read-only fact the runner reads from the machine on a capability's behalf.
+ *
+ * Deliberately a closed union rather than a command string: a capability names
+ * what it needs, and the runner alone decides how — and whether — to obtain it.
+ * A capability therefore cannot widen its own reach by asking for something new,
+ * which is the whole reason the executing process can keep running with no tools.
+ */
+export type BusFactId = "repo_head";
+
+/** Facts gathered for one execution. Missing means the runner could not read it. */
+export type BusFacts = Partial<Record<BusFactId, string>>;
+
 /** One thing the consumer knows how to do. Anything unmatched is refused. */
 export interface BusCapability {
   id: string;
@@ -40,12 +53,17 @@ export interface BusCapability {
    * answer true. Absent means false: silence is not proof.
    */
   idempotent: boolean;
+  /**
+   * Read-only facts the runner must gather before this capability runs. Absent
+   * means none, and a capability that declares a fact does not run without it.
+   */
+  facts?: readonly BusFactId[];
   /** Does this capability answer the task? */
   matches(task: BusEnvelope): boolean;
   /** The prompt handed to the real Claude Code process. */
-  prompt(task: BusEnvelope): string;
+  prompt(task: BusEnvelope, facts: BusFacts): string;
   /** Contract check on the reply. Returns a reason when the reply is wrong. */
-  verify(reply: string): string | null;
+  verify(reply: string, facts: BusFacts): string | null;
 }
 
 function taskText(task: BusEnvelope): string {
@@ -77,7 +95,52 @@ export const BUS_ALIVE_CAPABILITY: BusCapability = {
       : `expected "BUS ALIVE", got ${JSON.stringify(reply.trim().slice(0, 80))}`,
 };
 
-export const DEFAULT_CAPABILITIES: BusCapability[] = [BUS_ALIVE_CAPABILITY];
+const COMMIT_SHA = /^[0-9a-f]{40}$/;
+
+/**
+ * v1 capability: report the commit the runner is standing on.
+ *
+ * The first capability whose answer is not a constant. `BUS ALIVE` proves the
+ * loop turns; this proves the answer travelling through it came from the
+ * machine, because the contract compares the reply against the sha the runner
+ * read before the process started.
+ *
+ * What it does NOT prove, and must not be read as proving: that the executing
+ * model read anything. It still runs with `--tools ""` and cannot. The runner
+ * reads, the model relays, and the check catches a model that invents a sha
+ * instead of relaying the one it was handed. Giving the model its own read
+ * access is a separate decision with a separate gate.
+ */
+export const REPO_HEAD_CAPABILITY: BusCapability = {
+  id: "repo-head",
+  // Reporting a value back changes nothing on the machine, so a second run is
+  // indistinguishable from the first.
+  idempotent: true,
+  facts: ["repo_head"],
+  matches: (task) => /\bREPO\s+HEAD\b/i.test(taskText(task)),
+  prompt: (task, facts) =>
+    [
+      `Revolis BUS task ${task.id}, from ${task.from} to ${CONSUMER_AGENT}.`,
+      `MODE: ${task.mode ?? "READ_ONLY"} — repository changes are forbidden and you have no tools.`,
+      `Requested action: ${task.next_action?.description ?? task.summary}`,
+      "",
+      `The runner read the repository head for you: ${facts.repo_head ?? "(unavailable)"}`,
+      "",
+      "Reply with exactly that commit sha: 40 lowercase hexadecimal characters.",
+      "Do not shorten it, do not guess one, no explanation, nothing else.",
+    ].join("\n"),
+  verify: (reply, facts) => {
+    const expected = facts.repo_head;
+    // A capability that declares a fact never reaches its own contract without
+    // it. If it somehow did, the reply is unverifiable, which is a failure.
+    if (!expected) return "repo_head was not gathered — the reply cannot be checked against anything";
+    const got = reply.trim();
+    if (!COMMIT_SHA.test(got)) return `expected a 40-character commit sha, got ${JSON.stringify(got.slice(0, 80))}`;
+    return got === expected ? null : `reply ${got} is not the repository head ${expected}`;
+  },
+};
+
+export const DEFAULT_CAPABILITIES: BusCapability[] = [BUS_ALIVE_CAPABILITY, REPO_HEAD_CAPABILITY];
 
 export type ConsumerRefusalCode =
   | "not_addressed"
