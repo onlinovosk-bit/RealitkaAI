@@ -63,6 +63,10 @@ describe("POST /api/acquire/email dedup claim", () => {
   let profileRow: { full_name: string | null } | null;
   let mailboxReceivedUpdates: number;
   let ownerBackfills: Array<Record<string, unknown>>;
+  /** Identita kancelárie pre stráž kontaktu (W1): adresy maklérov, agentúry, schránok. */
+  let agencyProfileEmails: Array<{ email: string | null }>;
+  let agencyEmail: string | null;
+  let agencyMailboxEmails: Array<{ email: string | null }>;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -78,6 +82,9 @@ describe("POST /api/acquire/email dedup claim", () => {
     profileRow = null;
     mailboxReceivedUpdates = 0;
     ownerBackfills = [];
+    agencyProfileEmails = [];
+    agencyEmail = null;
+    agencyMailboxEmails = [];
 
     mockFrom.mockImplementation((table: string) => {
       if (table === "acquire_dedup_keys") {
@@ -139,6 +146,7 @@ describe("POST /api/acquire/email dedup claim", () => {
                   last_contact: payload.last_contact,
                   note: payload.note,
                   source: payload.source,
+                  email: payload.email,
                   agency_id: payload.agency_id,
                   ai_triage_at: null,
                   assigned_profile_id: payload.assigned_profile_id ?? null,
@@ -194,16 +202,21 @@ describe("POST /api/acquire/email dedup claim", () => {
 
       if (table === "inbound_mailboxes") {
         return {
-          select: () => ({
-            eq: () => ({
-              eq: () => ({
-                maybeSingle: async () => ({
-                  data: { profile_id: mailboxProfileId },
-                  error: null,
-                }),
-              }),
-            }),
-          }),
+          // resolveMailboxOwner: .select("profile_id").eq().eq().maybeSingle()
+          // loadAgencyIdentity:  .select("email").eq("agency_id", …)  ← awaituje sa priamo
+          select: (cols: string) =>
+            cols === "email"
+              ? { eq: async () => ({ data: agencyMailboxEmails, error: null }) }
+              : {
+                  eq: () => ({
+                    eq: () => ({
+                      maybeSingle: async () => ({
+                        data: { profile_id: mailboxProfileId },
+                        error: null,
+                      }),
+                    }),
+                  }),
+                },
           update: () => ({
             eq: () => ({
               eq: async () => {
@@ -215,15 +228,30 @@ describe("POST /api/acquire/email dedup claim", () => {
         };
       }
 
-      if (table === "profiles") {
+      if (table === "agencies") {
         return {
           select: () => ({
             eq: () => ({
-              eq: () => ({
-                maybeSingle: async () => ({ data: profileRow, error: null }),
-              }),
+              maybeSingle: async () => ({ data: { email: agencyEmail }, error: null }),
             }),
           }),
+        };
+      }
+
+      if (table === "profiles") {
+        return {
+          // resolveMailboxOwner: .select("full_name").eq().eq().maybeSingle()
+          // loadAgencyIdentity:  .select("email").eq("agency_id", …)
+          select: (cols: string) =>
+            cols === "email"
+              ? { eq: async () => ({ data: agencyProfileEmails, error: null }) }
+              : {
+                  eq: () => ({
+                    eq: () => ({
+                      maybeSingle: async () => ({ data: profileRow, error: null }),
+                    }),
+                  }),
+                },
         };
       }
 
@@ -391,5 +419,45 @@ describe("POST /api/acquire/email dedup claim", () => {
     // The heartbeat is what tells a broken forwarding rule apart from a quiet week.
     expect(mailboxReceivedUpdates).toBe(1);
     expect(leadInserts).toBe(0);
+  });
+
+  // W1: stráž kontaktu musí fungovať CEZ route, nielen v parseri samostatne.
+  // Produkčný prípad: lead z 2026-09-22 05:47 má ako kontakt adresu makléra.
+  it("neuloží adresu makléra ako kontakt záujemcu", async () => {
+    const brokerAddress = "makler@realitysmolko.sk";
+    agencyProfileEmails = [{ email: brokerAddress }];
+
+    const { POST } = await import("../route");
+    const res = await POST(
+      makeRequest({
+        ...INQUIRY_BODY,
+        email: {
+          ...INQUIRY_BODY.email,
+          text: `Meno: Jan Novak
+E-mail: ${brokerAddress}
+Telefon: +421 912 345 678
+Sprava: Chcem obhliadku
+PO99999X`,
+        },
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    const lead = [...leadRows.values()][0];
+    expect(lead).toBeDefined();
+    // Prázdny e-mail je čitateľný stav. Cudzia adresa by spustila auto-odpoveď
+    // smerom na klienta namiesto záujemcu.
+    expect(lead.email).toBe("");
+  });
+
+  it("adresu skutočného záujemcu uloží aj keď identita agentúry je načítaná", async () => {
+    agencyProfileEmails = [{ email: "makler@realitysmolko.sk" }];
+
+    const { POST } = await import("../route");
+    const res = await POST(makeRequest());
+
+    expect(res.status).toBe(200);
+    const lead = [...leadRows.values()][0];
+    expect(lead.email).toBe("jan@example.com");
   });
 });
