@@ -2091,3 +2091,75 @@ zmena kontraktu a patrí do vlastnej brány. Zámerne neopravené:
   `bus:validate` je zelený (0 errors). **Root cause ale ostáva otvorený:**
   `packages/bus-core/src/yaml.ts` BOM stále netoleruje — ďalší súbor uložený
   s BOM zhodí pipeline znova.
+
+## 2026-09-23 — Gate A/B zavreté, Gate C stále bez dôkazu (#649, #653)
+
+- **Gate B zmergovaný ako `ee3d9f3` (#649): capability `repo-head`.** Prvá
+  capability, ktorej odpoveď nie je konštanta. `BUS ALIVE` dokazuje, že sa
+  slučka točí, ale jeho dve pevné slová by vyzerali rovnako z procesu, ktorý
+  tento stroj nikdy nevidel. `repo-head` odpovedá commitom, na ktorom runner
+  stojí, a kontrakt porovnáva odpoveď proti sha prečítanej **pred** spustením
+  procesu — vymyslená, dobre tvarovaná sha kontrakt neprejde.
+- **Hranica sa nepohla a nesmie sa tak čítať.** Exekútor ďalej beží s
+  `--tools ""`, `--safe-mode`, `--permission-mode manual` a v zahadzovacom cwd,
+  bajt na bajt. **Model nedostal prístup na čítanie.** Číta runner, model
+  relayuje, kontrakt chytí model, ktorý nerelayuje. Dať modelu vlastné nástroje
+  je samostatné rozhodnutie za samostatnou bránou — bez GO sa neotvára.
+- **Mechanizmus rozšírenia dosahu je zámerne úzky.** Capability deklaruje
+  `facts` — uzavretú úniu (dnes jediný `repo_head`), ktorú runner zbiera cez
+  mapu `FACT_SOURCES` v `consume.ts`. Capability **pomenuje, čo potrebuje,
+  nie príkaz.** Pridať dosah znamená pridať zdroj pod review, nie nový reťazec.
+- **Fakty sa zbierajú pred rozpočtom.** Stroj, ktorý nevie odpovedať na
+  `git rev-parse HEAD`, je problém prostredia: beh zlyhá, task ostane otvorený,
+  slot sa neminie, blocker sa nepošle. Ďalší cyklus to skúsi znova.
+- **Jeden test púšťa skutočný `FACT_SOURCES.repo_head` bez injekcie** a pripína
+  ho na `git rev-parse HEAD`. Bez neho by jediný kus dotýkajúci sa stroja
+  zostal brána existujúca len na papieri — presne to, čo riešilo #620.
+
+### Korekcia: „BOM zhadzuje parser" bolo nesprávne (#653)
+
+- `bus:validate` bol červený na maine a ja som príčinu určil ako **UTF-8 BOM**
+  v `TASK-BUS-RUNNER-2D.md` a na tom základe odporučil BOM-tolerantný parser.
+  **Nesprávne.** Reprodukované priamo proti parseru:
+
+  | vstup | výsledok |
+  |---|---|
+  | `---` | parsed |
+  | `BOM + ---` | **parsed** — samotný BOM je neškodný |
+  | `BOM + --- potom ---` | ERROR |
+  | `--- potom ---` (bez BOM) | ERROR — tá istá chyba, BOM netreba |
+
+- Príčinou bol **zdvojený `---`**. `parseBusDocument` strihá vedúci BOM
+  odjakživa (`envelope.ts:151`), takže parser BOM-tolerantný **už bol** — len to
+  nikto nepripol testom, čiže tolerancia bola náhodná.
+- Dátovú polovicu opravilo #648 (zmazaný riadok bol presne `﻿---`).
+  Parserová polovica je #653 (`6f6e367`): hláška pomenuje príčinu
+  (`duplicated frontmatter delimiter`) namiesto symptómu
+  (`Unsupported YAML line: ---`), plus tri regresné testy — BOM sa parsuje,
+  zdvojený delimiter je odmietnutý v oboch podobách, a nepodporovaný riadok,
+  ktorý delimiter nie je, si drží generickú hlášku.
+
+### Druhá korekcia z tej istej línie
+
+- Pri #626 som napísal, že starý handshake dostane „401 na každom volaní".
+  Skutočné zlyhanie bolo **`403` na BUS-002**: SOL token sa autentifikuje, takže
+  BUS-001 prejde a padne až výsledok s `from: claude-code` pod SOL bearerom.
+  Záver (remote C-0 na maine neprejde) platil, mechanizmus nie.
+
+### Stav brán
+
+| Brána | Stav |
+|---|---|
+| Gate A | ✅ `45989e8` (#612) — per-agent identita, `from` viazané na bearer |
+| Gate B | ✅ `ee3d9f3` (#649) — `repo-head`, hranica `--tools ""` nedotknutá |
+| Gate C | 🔴 **BLOCKED** — `bus/main` stále `17f30d425971fe86a78e213c70d67cce8241403d`, remote C-0 nebežal |
+
+- **Gate C je founder-side a nedá sa obísť odo mňa.** Runbook aj handshake sú
+  na `main` pripravené; potrebný je server s `AUTH MODE: per-agent` a
+  `store: github`, tunel, a **oba** tokeny v prostredí shellu, z ktorého sa
+  handshake spúšťa. Dôkaz = päť riadkov výstupu (`MODE:`, `SERVER AUTH:`,
+  `store:`, štyri `BUS-00x`, `COPY_PASTE_REQUIRED:`) plus `before`/`after` TIP
+  vetvy `bus/main`. Tokeny sa neposielajú do chatu.
+- **Nezapísané zámerne:** `memory/session-summary.md` sa nedotýkam — drží stav
+  paralelne bežiacej session (revenue blocker `/upgrade`) a prepis by ho zahodil.
+  Founder rozhodol „len decisions".
