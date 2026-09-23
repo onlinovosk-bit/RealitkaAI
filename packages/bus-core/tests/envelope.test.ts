@@ -156,3 +156,34 @@ test("an absent or unparseable created_at falls back to the supplied clock", () 
   assert.equal(formatIdDate(idDateFor("", fallback)), "20260102");
   assert.equal(formatIdDate(idDateFor("not a date", fallback)), "20260102");
 });
+
+const FRONT = "id: TASK-X\ntype: task\nstatus: open\nfrom: sol-gpt\nto: claude-code\n";
+
+test("a leading UTF-8 BOM is tolerated — editors emit one and it is not a defect", () => {
+  // The strip exists in parseBusDocument but nothing pinned it, so it was
+  // tolerance by accident. TASK-BUS-RUNNER-2D arrived with a BOM and the BOM
+  // was blamed for the CI failure it did not cause; this makes the real
+  // behaviour a fact instead of an inference.
+  const parsed = parseBusDocument(`﻿---\n${FRONT}---\n\n# body\n`, "bom.md");
+  assert.equal(parsed.errors.length, 0);
+  assert.equal(parsed.envelope?.id, "TASK-X");
+});
+
+test("a duplicated frontmatter delimiter is refused, and the message names the cause", () => {
+  // This, not the BOM, is what broke TASK-BUS-RUNNER-2D: a second `---`
+  // directly under the first. It fails identically with and without a BOM, so
+  // both shapes are pinned.
+  for (const raw of [`---\n---\n${FRONT}---\n\n# body\n`, `﻿---\n---\n${FRONT}---\n\n# body\n`]) {
+    const parsed = parseBusDocument(raw, "duplicate.md");
+    assert.equal(parsed.errors.length, 1);
+    assert.equal(parsed.errors[0]!.field, "frontmatter");
+    assert.match(parsed.errors[0]!.message, /duplicated frontmatter delimiter/);
+  }
+});
+
+test("an unsupported line that is not a delimiter keeps the generic message", () => {
+  // The new branch must not swallow every parse error into one explanation.
+  const parsed = parseBusDocument(`---\nid: TASK-X\nnot a mapping line\n---\n\n# body\n`, "junk.md");
+  assert.equal(parsed.errors.length, 1);
+  assert.match(parsed.errors[0]!.message, /Unsupported YAML line: not a mapping line/);
+});

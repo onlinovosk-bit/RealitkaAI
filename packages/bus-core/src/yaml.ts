@@ -187,7 +187,20 @@ function parseMapping(lines: Line[], start: number, indent: number): [Record<str
   while (index < lines.length && lines[index]!.indent === indent) {
     const line = lines[index]!;
     const match = /^([^:\s][^:]*):\s*(.*)$/.exec(line.content);
-    if (!match) throw new YamlParseError(`Unsupported YAML line: ${line.content}`, line.lineNo);
+    if (!match) {
+      // A bare `---` reaching the mapping parser means the caller handed over a
+      // block that still contains a delimiter — in practice a bus file whose
+      // frontmatter fence is duplicated. The generic message named the symptom
+      // ("Unsupported YAML line: ---") and cost real time to trace back to it,
+      // so it names the cause instead.
+      if (line.content.trim() === "---") {
+        throw new YamlParseError(
+          "Unexpected `---` inside a YAML block — a duplicated frontmatter delimiter is the usual cause",
+          line.lineNo,
+        );
+      }
+      throw new YamlParseError(`Unsupported YAML line: ${line.content}`, line.lineNo);
+    }
     const key = match[1]!.trim();
     const inline = match[2]!.trim();
     index += 1;
