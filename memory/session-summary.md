@@ -16,6 +16,23 @@ Po sprístupnení Voiceflow projektu vložiť canvas z `docs/voiceflow/reality-s
 ---
 
 ## Session 2026-09-06 (Inter-Agent Bus v1.0)
+## Session 2026-08-18
+
+### Dokončené
+- ZISTI: GPT Sol ↔ Opus 5 autonomous communication searched in repo + Cursor Cloud scope.
+- Report: `docs/reports/2026-08-18-gpt-sol-opus5-comms-zisti.md`
+- Verdict: not found in repo SSOT; likely external Notebook/chat unless founder supplies artifact.
+
+### Rozpracované / Pending
+- If founder wants to continue: draft canonical contract `docs/architecture/gpt-sol-opus5-autonomous-communication.md`.
+- Do not implement autonomous model-to-model automation before contract + GO.
+
+### Kľúčové súbory zmenené
+- `docs/reports/2026-08-18-gpt-sol-opus5-comms-zisti.md`: evidence + next safe gate.
+- `memory/session-summary.md`: current handoff.
+
+### Ďalší krok
+Founder GO: create contract draft for GPT Sol ↔ Opus 5 roles, transport, state machine, safety, and audit trail.
 ## Session 2026-09-06
 
 ### Dokončené
@@ -686,6 +703,18 @@ Founder GO: merge #535; then PROD digest smoke.
 
 ---
 
+## Session 2026-09-12 (critical-bug automation)
+### Dokončené
+- HIGH: buyer-onboarding `createTask` silent RLS drop — fix + PR #545
+- Report: `docs/reports/2026-09-12-buyer-onboarding-create-task-rls.md`
+### Rozpracované / Pending
+- Founder review/merge #545
+- Prior critical fixes still open: #369 #370 #443 #444 #447 #462 #486 #490 #495 #537
+### Kľúčové súbory zmenené
+- `apps/crm/src/app/(public)/buyer-onboarding/actions.ts`: pass admin into createTask
+- `apps/crm/src/app/(public)/buyer-onboarding/__tests__/actions.test.ts`: assert scoped client
+### Ďalší krok
+Founder GO: merge #545; then review backlog of open critical fix PRs (start with #537 tenant unread wipe — live on main).
 ## Session 2026-09-13 (critical-bug automation)
 ### DokonÄŤenĂ©
 - Found + fixed silent demo CRM task drop (`createDemoBookingTask` / sales-funnel demo-request)
@@ -881,3 +910,74 @@ Founder: read-only SELECT ci je `20260817220000` aplikovana v PROD (G4). Bez toh
 
 ### Ďalší krok
 Uzavrieť **P-2** a **P-3**. Sú to jediné dve veci medzi aktuálnym stavom a `CP-P0-1A`; A3 a A7 sa bez nich nedajú navrhnúť. Tri otvorené nálezy (FK rozpor, PUBLIC EXECUTE, NULL writer) sú reálne, ale spine neblokujú — riešiť ich až po P-2/P-3, každý vlastnou bránou.
+
+## Session 2026-09-23 (FUNNEL-PRICING-01 vykonaný + ratchet dlh zmapovaný)
+
+### Dokončené
+- **FUNNEL-PRICING-01** (#647 → `fc381004`): `apps/crm/src/components/billing/ProgramComparison.tsx`.
+  Štyri plan-CTA už nie sú odkazy na `/billing` → statický badge „Na roadmape" (`:237`,
+  vnútri mapy cez všetky štyri plány). Spodné CTA mieri na `/upgrade` s textom
+  „Kúpiť seaty — 79 / 71 / 63 € na makléra →" (`:302-306`). `href="/billing"` má
+  v súbore **nula** výskytov. Vykonanie `DEC-20260921-001` v UI.
+- **BOM fix** (`.ai/bus/tasks/TASK-BUS-RUNNER-2D.md`): strip `EF BB BF` + zmazanie
+  zdvojeného `---`. `bus:validate` 1 error → 0 errors, exit 0. Bola to moja chyba
+  z #621; `main` bol kvôli nej červený. Paralelne to opravil aj #648 (`988edf6b`) —
+  výsledné súbory sú byte-identické.
+- **`RATCHET-API-CONTRACT-01` zmapovaný a zapísaný** do `memory/open-tasks.md`:
+  9 nových porušení (540 / 531 baseline), tri tranže s rôznym rizikom, dva komentáre
+  na #647 s dôkazmi.
+- **Overenie na mergnutom `main`**, nie na vetve: `git diff d57eac1c origin/main`
+  na oboch súboroch je prázdny.
+
+### Rozpracované / Pending
+- **Krok A — Stripe VERIFY** (founder-only, `sk_live_…` lokálne):
+  `STRIPE_SECRET_KEY=sk_live_… bash scripts/ops/stripe-verify-prices.sh`.
+  `9/9` → Krok B env patch. `MISSING` / `AMBIG` / `has_more=true` → STOP.
+  Bez tohto `/upgrade` nevedie do Stripe; `seatCheckoutAvailable` je `false`.
+- **Vercel Ignored Build Step** — founder musí prečítať hodnotu v dashboarde pre
+  `realitka-ai` aj `revolis-marketing`. `ignoreCommand` v oboch `vercel.json` je
+  empiricky inertný. Žiadna zmena `vercel.json` naslepo.
+- **OQ-3** — machine account, PAT, branch protection, `REVOLIS_BUS_BRANCH=bus/main`.
+  Founder-only. `scripts/bus/serve.ts:50` má default `"main"`, čo koliduje s ADR §7.
+- **GO RATCHET-TRANCHE-1** — neudelené. 3 súbory `concierge/*`, 17× `NextResponse.json`
+  → `okResponse`/`errorResponse`, ratchet 9 → 4.
+- **Founder rozhodnutie o `UsageMetricName`** — bez rozšírenia unionu tranža 2 nejde.
+  Na `onboarding/session` je to navyše GDPR otázka (`DEC-20260917-005`).
+- **Nevysvetlené:** prečo #621 prešlo CI zelené s rozbitým BUS frontmatterom.
+- **Nezmenené:** `memory/people.md` — v tejto session sa zloženie tímu ani
+  stakeholderov nezmenilo, takže som tam nič nevymýšľal.
+
+### Kľúčové súbory zmenené
+- `apps/crm/src/components/billing/ProgramComparison.tsx`: plan-CTA → „Na roadmape",
+  spodné CTA → `/upgrade` seat pricing.
+- `.ai/bus/tasks/TASK-BUS-RUNNER-2D.md`: strip BOM + zdvojený `---`.
+- `memory/open-tasks.md`: FUNNEL-PRICING-01 → VYRIEŠENÉ; nová sekcia
+  `RATCHET-API-CONTRACT-01`.
+- `memory/decisions.md`: nový záznam `[2026-09-23]` + tri sprievodné nálezy.
+
+### Ďalší krok
+Founder spustí **Krok A — Stripe VERIFY** lokálne v live mode a nahlási len `N/9`.
+Je to jediná vec, ktorá dnes blokuje príjem; všetko ostatné je naň naviazané.
+## Session 2026-09-23 (P-2 + P-3 — RLS model loop tabuliek uzavretý v repe)
+
+### Dokončené
+- **#644 `5b2e915` — P-2 konvergencia RLS modelu pre 5 loop tabuliek.** Rozdelenie 2/3 bez zmeny schémy: infra deny-all (`ai_jobs`, `lead_triage_idempotency`) dostalo `COMMENT ON TABLE 'intentional infra deny-all'`, aby `RLS ON, 0 policies` čítal budúci človek ako zámer; tenantné (`credit_ledger`, `decisions`, `exclusivity_outcomes`) dostali SELECT + INSERT pre `authenticated` cez `agency_id`. `DROP POLICY IF EXISTS` + `CREATE`, lebo `credit_ledger` už policies mal z `20260613000000`, ktorá v PROD nikdy nebežala. Dôkaz: replay **110/110**, negatívny INSERT cudzej agentúry zablokovaný na všetkých troch, pozitívny prešiel, SELECT izolácia `vlastné=1 / cudzie=0`.
+- **#645 `6ae75ba` — P-3, vetva `agency_id IS NULL` zatvorená natrvalo** v `platform_events_select_tenant`, `ai_action_audit_select_tenant`, `ai_action_audit_insert_tenant`. Podmienka splnená meraním proti živému PROD tesne pred zmenou: `platform_events` **1420 / 0 NULL**, `ai_action_audit` **186 / 0 NULL**. Dôkaz behaviorálny, nie tvarový: so starou policy bol osirený riadok viditeľný (1) a INSERT s `agency_id → NULL` prešiel (`INSERT 0 1`); po P-3 je 0, resp. `ERROR: new row violates row-level security policy`. Replay **111/111**, idempotentná 3×.
+- **Odchýlka od zadania, hlásená pred implementáciou:** `current_agency_id()` v repe neexistuje; použitý zavedený `public.profile_agencies_for_auth()`.
+- **`BUS` CI blocker diagnostikovaný** — UTF-8 BOM v `.ai/bus/tasks/TASK-BUS-RUNNER-2D.md` z `36ff454` (#624); červené aj na `main`, teda na každom PR. Reprodukované na base vetve, komentár s dôkazom na #644. Opravené iným PR (#647/#648), `bus:validate` zelený.
+
+### Rozpracované / Pending
+- **🔴 PROD dieru merge NEZATVORIL.** Obe migrácie sú v aktívnom sete, ale **neaplikované na PROD**. Overené po merge #645: všetky tri policies majú v PROD stále `(agency_id IS NULL) OR …`. **Kým nepríde deploy, hole je v PROD otvorená.** Deploy = samostatná brána, čaká na GO.
+- **`BUS-YAML-BOM-TOLERANCE` — root cause otvorený.** `packages/bus-core/src/yaml.ts` netoleruje vedúci BOM. Opravil sa symptóm (dáta), nie príčina — ďalší súbor uložený s BOM zhodí `bus:validate` znova.
+- **`CP-P0-1A` — P-2 aj P-3 hotové v repe, A3 a A7 sa už dajú navrhnúť.** Substrátové aj policy blokátory zanikli (modulo deploy).
+- **CI/PROD divergencia na `ai_action_audit`** — v CI jedna `ai_action_audit_tenant` (`FOR ALL`), v PROD dve menované policies. Dôsledok 60 neaplikovaných migrácií; staršie než P-3, nie je ňou riešené.
+- **Nezmenené z minulej session:** `LEADS-AGENCY-FK-CONTRADICTION`, `EMIT-EVENT-PUBLIC-EXECUTE`, `PLATFORM-EVENT-NULL-WRITER`, RLS-suite unseeded-skip, 60 neaplikovaných migrácií.
+
+### Kľúčové súbory zmenené
+- `apps/crm/supabase/migrations/20260922190000_p2_loop_tables_rls_model.sql` — infra deny-all komentáre + 3× tenantné SELECT/INSERT policies (#644)
+- `apps/crm/supabase/migrations/20260923070000_p3_drop_null_agency_branch.sql` — odstránenie `agency_id IS NULL` vetvy; `ai_action_audit` guardovaný na existenciu policy (#645)
+- `memory/decisions.md` — záznam oboch brán vrátane nálezu o CI/PROD divergencii `ai_action_audit`
+- `memory/session-summary.md` — tento záznam
+
+### Ďalší krok
+Rozhodnúť o **deploy migrácií na PROD**. Kým nepríde, P-2 aj P-3 sú uzavreté len v repe a diera `agency_id IS NULL` je v PROD stále otvorená. Pozor: `supabase db push` aplikuje **všetkých 60+ neaplikovaných migrácií naraz**, nielen tieto dve — preto to nie je rutinný deploy a potrebuje vlastnú bránu s plánom.

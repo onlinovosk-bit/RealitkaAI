@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHash, timingSafeEqual } from "crypto";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
-import { dedupKey, parseEmail, toLeadCandidate } from "@/lib/acquire/email-adapter";
+import { agencyDomainsFrom, dedupKey, parseEmail, toLeadCandidate } from "@/lib/acquire/email-adapter";
 import { runInboundLeadTriageAndNotify } from "@/lib/acquire/inbound-lead-triage";
 import { runInboundLeadAutoResponse } from "@/lib/acquire/inbound-lead-auto-response";
 
@@ -94,6 +94,68 @@ async function resolveMailboxOwner(
   if (!profile) return null;
 
   return { profileId, agentName: profile.full_name ?? "Priradený agent" };
+}
+
+/**
+ * Adresy, ktoré patria kancelárii, nie záujemcovi: profily maklérov, adresa agentúry
+ * a prijímacie schránky. Parser podľa nich vylúči kontakt, ktorý je v skutočnosti
+ * niekto od klienta — presne prípad leadu z 2026-09-22 05:47, kde sa ako kontaktný
+ * e-mail uložila adresa jedného z maklérov.
+ *
+ * Zlyhanie dopytu NIE JE fatálne: vráti sa prázdna identita a parser sa správa ako
+ * predtým. Lepšie slabšia stráž než zahodený lead.
+ */
+async function loadAgencyIdentity(
+  supa: NonNullable<SupabaseAdmin>,
+  agencyId: string,
+): Promise<{ addresses: string[]; domains: string[] }> {
+  try {
+    return await readAgencyIdentity(supa, agencyId);
+  } catch (error) {
+    // Stráž je ochrana kvality kontaktu, nie podmienka prijatia leadu. Keby tento
+    // dopyt zhodil request, stratili by sme dopyt kvôli oprave, ktorá ho má chrániť.
+    console.error(
+      "[acquire.email] agency identity lookup threw=",
+      error instanceof Error ? error.message : String(error),
+    );
+    return { addresses: [], domains: [] };
+  }
+}
+
+async function readAgencyIdentity(
+  supa: NonNullable<SupabaseAdmin>,
+  agencyId: string,
+): Promise<{ addresses: string[]; domains: string[] }> {
+  const addresses = new Set<string>();
+
+  const [profiles, agency, mailboxes] = await Promise.all([
+    supa.from("profiles").select("email").eq("agency_id", agencyId),
+    supa.from("agencies").select("email").eq("id", agencyId).maybeSingle(),
+    supa.from("inbound_mailboxes").select("email").eq("agency_id", agencyId),
+  ]);
+
+  if (profiles.error) {
+    console.error("[acquire.email] agency profiles lookup error=", JSON.stringify(profiles.error));
+  }
+  if (agency.error) {
+    console.error("[acquire.email] agency lookup error=", JSON.stringify(agency.error));
+  }
+  if (mailboxes.error) {
+    console.error("[acquire.email] agency mailboxes lookup error=", JSON.stringify(mailboxes.error));
+  }
+
+  for (const row of profiles.data ?? []) {
+    const v = row.email?.trim().toLowerCase();
+    if (v) addresses.add(v);
+  }
+  const agencyEmail = agency.data?.email?.trim().toLowerCase();
+  if (agencyEmail) addresses.add(agencyEmail);
+  for (const row of mailboxes.data ?? []) {
+    const v = row.email?.trim().toLowerCase();
+    if (v) addresses.add(v);
+  }
+
+  return { addresses: [...addresses], domains: agencyDomainsFrom([...addresses]) };
 }
 
 /**
@@ -185,21 +247,35 @@ export async function POST(req: NextRequest) {
     // 3. presne rovnaký vstup pre parser ako predtým: combined raw string + dátum
     const raw = [email.subject ?? "", email.text ?? "", email.html ?? ""].join("\n");
     const receivedAt = (payload.receivedAt ?? new Date().toISOString()).slice(0, 10);
-    // recipient: parser podľa nej vylúči adresu samotnej RK / ingest schránky
-    // z výberu kontaktu (inak vznikol lead s e-mailom office@realitysmolko.sk)
-    const ev = parseEmail(raw, receivedAt, { recipient: email.to ?? null });
-    const key = dedupKey(ev);
 
     const supa = createServiceRoleClient();
     if (!supa) {
       return NextResponse.json({ ok: false, error: "db_unavailable" }, { status: 503 });
     }
 
+    // Identita kancelárie sa musí načítať PRED parsovaním — parser podľa nej vylúči
+    // z výberu kontaktu adresy, ktoré patria klientovi, nie záujemcovi.
+    const identity = await loadAgencyIdentity(supa, agencyId);
+    const ev = parseEmail(raw, receivedAt, {
+      recipient: email.to ?? null,
+      addresses: identity.addresses,
+      domains: identity.domains,
+    });
+    const key = dedupKey(ev);
+
     // 3b. komu adresa patrí + heartbeat doručenia. Oboje pred dedupom, aby sa
     // zaznamenal aj mail, z ktorého lead nevznikne (duplicita, not_a_lead).
     const mailbox = normalizeMailbox(email.to);
     const owner = await resolveMailboxOwner(supa, agencyId, mailbox);
     await markMailboxReceived(supa, agencyId, mailbox);
+    // Dva rôzne dôvody nepriradenia vyzerali v dátach rovnako (žiadny heartbeat).
+    // Bez tohto rozlíšenia sa nedá povedať, či Worker neposlal `to`, alebo poslal
+    // adresu, ktorú nemáme namapovanú — a to sú dve úplne odlišné opravy.
+    if (!mailbox) {
+      console.warn(`[acquire.email] to_missing requestId=${requestId}`);
+    } else if (!owner) {
+      console.warn(`[acquire.email] to_unmatched requestId=${requestId}`);
+    }
 
     // 4. dedup check — SELECT najprv (presne ako pôvodne), duplicate flag ide do toLeadCandidate
     const { data: existing } = await supa

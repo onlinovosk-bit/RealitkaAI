@@ -50,7 +50,8 @@ IDs. Musia existovať v Stripe účte a byť overené proti nemu.
 - [ ] **B. Ak existujú** → env patch s reálnymi `price_…` ID (founder zapisuje)
 - [ ] **C. Ak neexistujú** → STOP, samostatné GO na vytvorenie Stripe Products/Prices
 - [ ] **D.** Vercel production env → deploy → prihlásený `/upgrade` smoke → Stripe Checkout
-- [ ] **E.** `/porovnanie-programov` cleanup = samostatná úloha, nemieša sa do D
+- [x] **E.** `/porovnanie-programov` cleanup — hotové 2026-09-23 (#647 → `fc381004`),
+      viď `FUNNEL-PRICING-01` nižšie. Nemiešalo sa do D, ako bolo určené.
 
 ### FUNNEL-PRICING-01 — `/porovnanie-programov` vs. seat checkout pricing
 
@@ -58,7 +59,9 @@ IDs. Musia existovať v Stripe účte a byť overené proti nemu.
 „Vybrať/Aktivovať", ale CTA vedie cez `/billing` k self-service seat checkoutu
 79 / 71 / 63 € za makléra (`ProgramComparison.tsx:227,241,306`).
 
-**Status:** OPEN — product/funnel decision required.
+**Status: VYRIEŠENÉ 2026-09-23** (#647 → `fc381004`). Rozhodnutie padlo 2026-09-21
+(`DEC-20260921-001`), vykonanie 2026-09-23. Popis nižšie je pôvodný nález; správanie,
+ktoré opisuje, už neplatí.
 
 **Risk:** zákazník môže očakávať nákup zvoleného programu, ale dostane iný
 pricing/product model.
@@ -74,13 +77,24 @@ obchodné modely, produkcia na jednom, kód na druhom.
 **nadstavby**, nie alternatívny základný checkout. 49/99/199/449 € nesmie ostať
 ako aktívny predajný funnel.
 
-**Zostáva otvorené (vykonanie):** stiahnuť stránku z aktívneho funnelu **alebo**
-prerobiť na informačnú s jasným oddelením „Revolis CRM — seat pricing" od
-„Doplnkové moduly / roadmapa". Zákazník nesmie kliknúť „Aktivovať 449 €" a
-skončiť v inom cenovom modeli. Veľký redesign sa nevyžaduje.
+**Vykonané (`ProgramComparison.tsx`, #647):** zvolená bola druhá z dvoch schválených
+ciest — informačná stránka, nie stiahnutie. Menej deštruktívne a cenník ostáva ako
+informácia o roadmape.
 
-**Founder gate:** GO REQUIRED pred zmenou pricingu alebo checkout funnelu.
-**Nemieša sa** do opravy checkoutu (krok E, nie D).
+- Štyri plan-CTA („Vybrať" / „★ Aktivovať") prestali byť odkazmi → statický badge
+  **„Na roadmape"**, zhodný s vlastným bannerom stránky (`:167`). V kóde je komentár
+  s dôvodom, aby to niekto nevrátil ako „chýbajúce CTA".
+- Spodné CTA „Aktivovať program →" mierilo tiež na `/billing`. Teraz mieri na
+  `/upgrade`: **„Kúpiť seaty — 79 / 71 / 63 € na makléra →"**.
+
+**Overené na mergnutom `main`, nie na vetve:** `href="/billing"` má v súbore **nula**
+výskytov; „Na roadmape" je `:237` (vnútri mapy cez všetky štyri plány); `/upgrade`
+CTA je `:302-306`; `git diff d57eac1c origin/main` na tomto súbore je prázdny.
+
+**Nedotknuté zámerne:** cenník 49/99/199/449 € ako roadmapa, banner `:167`, veta
+o garancii a onboardingu (copy/legal rozhodnutie).
+
+**Founder gate:** splnený — GO udelené 2026-09-22, merge foundera 2026-09-23.
 
 ### CHECKOUT-ENV-02 — Owner Cockpit sa zaplatí v UI, ale nie v Stripe
 
@@ -119,6 +133,62 @@ founder cenu **249 €**, ale `getOwnerCockpitStripePriceId` spadne pri chýbaj�
 zaplatí 349 €. Navyše `metadata.founderCockpit` sa zapíše `"true"`, takže audit
 stopa klame. Nie je to výpadok našej tržby, je to **preplatok zákazníka** —
 prísnejší problém. `_OWNER_COCKPIT_PRO` sa neoveruje (`enabled: false`).
+
+### RATCHET-API-CONTRACT-01 — 9 nových porušení zmluvy API routes je na `main`
+
+**Status: OPEN.** Nájdené 2026-09-23 pri #647. Nie je to chyba #647 — je to dlh,
+ktorý pristál cez #581 (concierge) a #579 (onboarding) a teraz sedí na `main`.
+
+```
+Porušení spolu:             540
+V baseline (tolerované):    531
+NOVÉ porušenia:             9
+```
+
+**Štrukturálna príčina, nie zábudlivosť.** `code-contract-guard.yml:14-18` beží
+**iba na `pull_request`** s path filtrom `apps/crm/src/**`. Na push do `main`
+nebeží vôbec. Dlh teda **neplatí ten, kto ho vyrobil** — zaplatí ho prvý ďalší
+CRM PR. To bude pravdepodobne práve ten Stripe/`upgrade` PR po `CHECKOUT-ENV-01`.
+
+Deväť porušení sú **tri rôzne triedy rizika**, nie jeden balík:
+
+| # | trieda | routy | riziko |
+|---|---|---|---|
+| 5 | `@/lib/api-response` | concierge `callback`, `freebusy`, `properties` | mechanické, bez zmeny wire formátu |
+| 4 | `@/lib/usage-metrics` | všetky štyri | **blokované rozhodnutím o billingu** |
+| 2 | `@/lib/api-validate` | concierge `callback`, `onboarding/session` | reálna práca, vlastný PR |
+
+**Tranža 1 je dokázateľne bezpečná.** `errorResponse(msg, status)` emituje presne
+`{ ok: false, error: msg }` (`api-response.ts:13-22`); `okResponse(data)` emituje
+`{ ok: true, ...data }` — spread, nie nesting (`:3-11`). Všetkých 17 call site-ov
+v tých troch routách má presne tento tvar, takže náhrada je byte-identická na
+drôte. Dôležité, lebo `concierge/*` konzumuje **widget na cudzom webe**.
+
+**Tranža 2 je skutočný blocker.** `UsageMetricName` je uzavretý union šiestich
+hodnôt (`usage-metrics.ts:31-38`) — `ai_openai_tokens`, `embedding_tokens`, tri
+crony, `outreach_send`. Ani jedna nesedí na „prišiel concierge callback". Splniť
+ratchet tam znamená **rozšíriť union**, čiže pridať nové názvy metrík do
+`increment_usage_metric` RPC — tabuľky, z ktorej sa odvodzuje spotreba a reporting.
+To je zmena billing modelu, nie refaktor.
+
+Otázka *ktorá agentúra* má naopak odpoveď: `SYSTEM_USAGE_AGENCY_ID` (`:15-16`)
+existuje presne pre spotrebu bez tenant kontextu a `RESERVED_CUSTOMER_AGENCY_IDS`
+(`:19-21`) aktívne odmieta, aby ukazoval na platiaceho zákazníka.
+
+Na `onboarding/session` je to navyše **GDPR otázka**: je to zámerne anonymná
+capability-URL routa hardened pod `DEC-20260917-005` (`Referrer-Policy: no-referrer`).
+Priradiť jej agency-keyed telemetriu znamená rozhodnúť, či sa anonymný prístup má
+dať spätne spojiť s tenantom.
+
+- [ ] **GO RATCHET-TRANCHE-1** — 3 súbory `concierge/*`, 17× `NextResponse.json`
+      → `okResponse`/`errorResponse`. Ratchet 9 → 4. Neudelené.
+- [ ] **Founder rozhodnutie** — rozšíriť `UsageMetricName` o metriky pre concierge
+      a onboarding? Bez toho tranža 2 nejde.
+- [ ] **GDPR gate** pre `onboarding/session` telemetriu (`gdpr-advisor`).
+
+**STOP: nikdy nespúšťať `--write-baseline`.** Vyzerá to ako oprava, ale tých 9
+porušení iba pohltí do tolerovaného dlhu — vrátane tých dvoch, ktoré sa medzitým
+opravili (`Opravené od baseline: 2`). Stratili by sme jediný dôkaz, že ratchet funguje.
 
 ## P0 — Critical AUTH / tenant (2026-08-25 auth hunt)
 
