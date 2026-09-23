@@ -184,21 +184,29 @@ export async function submitBuyerOnboarding(formData: FormData) {
         ? `${budgetMin > 0 ? `${budgetMin.toLocaleString("sk-SK")} – ` : "do "}${budgetMax.toLocaleString("sk-SK")} €`
         : "neurčený";
 
-      await createTask({
-        leadId,
-        assignedProfileId: null,
-        title: `Nový buyer lead: ${name} (${SEGMENT_LABEL[segment] ?? segment})`,
-        description: [
-          `Segment: ${SEGMENT_LABEL[segment] ?? segment}`,
-          `Skóre pripravenosti: ${readinessScore}/100`,
-          `Hľadá: ${propType}${city ? ` v ${city}` : ""}, rozpočet: ${budgetStr}`,
-          focusText ? `Fokus: "${focusText}"` : "",
-          `Ponuky: ${listingUrl}`,
-        ].filter(Boolean).join("\n"),
-        status: "open",
-        priority: readinessScore >= 60 ? "high" : readinessScore >= 30 ? "medium" : "low",
-        dueAt: null,
-      });
+      // Must pass service-role client: public form has no auth cookies; browser
+      // singleton + tasks_agency RLS (profile_agencies_for_auth) rejects the insert
+      // and the catch below silently drops the agent follow-up task.
+      await createTask(
+        {
+          leadId,
+          assignedProfileId: null,
+          title: `Nový buyer lead: ${name} (${SEGMENT_LABEL[segment] ?? segment})`,
+          description: [
+            `Segment: ${SEGMENT_LABEL[segment] ?? segment}`,
+            `Skóre pripravenosti: ${readinessScore}/100`,
+            `Hľadá: ${propType}${city ? ` v ${city}` : ""}, rozpočet: ${budgetStr}`,
+            focusText ? `Fokus: "${focusText}"` : "",
+            `Ponuky: ${listingUrl}`,
+          ]
+            .filter(Boolean)
+            .join("\n"),
+          status: "open",
+          priority: readinessScore >= 60 ? "high" : readinessScore >= 30 ? "medium" : "low",
+          dueAt: null,
+        },
+        admin,
+      );
     } catch (taskError) {
       autoErrorCapture(taskError, "buyer-onboarding:crm_task");
     }
