@@ -1,5 +1,31 @@
 # Critical Decisions Log
 
+## [2026-09-23] — /blueprint zrušený: predával sme metodiku nesprávnemu kupcovi
+
+Founder sa spýtal, čo tou stránkou hovoríme, a navrhol ju zrušiť. Po prečítaní kódu
+a zdrojových dokumentov som so zrušením súhlasil. Tri dôvody, všetky overiteľné:
+
+- **Cieľová skupina si protirečí s vlastným zdrojom.** `docs/blueprint-kit/ARTIFACT-SCOREBOARD.md`
+  o tom istom triu artefaktov píše „Toto trio môže **AI founder** začať používať hneď."
+  Stránka to predávala majiteľovi realitnej kancelárie. Iný človek, iný problém.
+- **Argumentovala proti nášmu vlastnému predaju.** Titulok znel „Majiteľ kancelárie
+  potrebuje brzdu. Nie ďalší systém." Revolis je ďalší systém — a odkaz na stránku sedel
+  v hlavnej navigácii landing page, teda si bral pozornosť tam, kde predávame Revolis.
+- **Lievik končil v prázdne.** Všetky tri CTA viedli na `https://revolis.lemonsqueezy.com`,
+  teda na holý storefront **bez cesty ku konkrétnemu produktu**. Či produkt v obchode je,
+  som neoveril (odchádzajúci `curl` bol v tomto prostredí zamietnutý) a netvrdím to.
+
+Proti PRIME DIRECTIVE: nezvyšovala pravdepodobnosť ďalšieho platiaceho klienta Revolisu
+ani retenciu existujúceho. Confidence artefaktu je navyše „Medium — 1 projekt (Revolis)",
+čiže sme odvetviu predávali metodiku, ktorá v tom odvetví overená nebola.
+
+**Čo NIE je zrušené:** obsah. `docs/blueprint-kit/` ostáva nedotknutý — je to naša interná
+metodika a používame ju. Zrušená je len jeho **platená verejná stránka**.
+
+**Otvorené, zámerne nestavané:** šesť veto otázok ako **bezplatný** lead magnet napojený na
+Segment A/B/C outreach je reálna možnosť. Je to však nová stena s vlastnou bránou, nie
+záchrana tejto stránky — a dnes by brala čas atribúcii leadov, ktorá má sľub u klienta.
+
 ## [2026-09-22] — Wall queue W1/W2: dve steny BUILD, drift schémy BACKLOG
 
 Rozhodovacia brána podľa `revolis-constitution-v2.md` (12-otázkový Reality Check),
