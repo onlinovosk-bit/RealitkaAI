@@ -20,8 +20,22 @@ export type OnboardingSessionRow = {
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+/** Capability URL lifetime without a DB expires_at column (no migration). */
+export const ONBOARDING_SESSION_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+
 export function isOnboardingSessionId(value: unknown): value is string {
   return typeof value === "string" && UUID_RE.test(value.trim());
+}
+
+/** True when updated_at is present and within the max-age window. */
+export function isOnboardingSessionWithinMaxAge(
+  updatedAt: string | null | undefined,
+  nowMs: number = Date.now(),
+): boolean {
+  if (typeof updatedAt !== "string" || !updatedAt.trim()) return false;
+  const t = Date.parse(updatedAt);
+  if (!Number.isFinite(t)) return false;
+  return nowMs - t <= ONBOARDING_SESSION_MAX_AGE_MS;
 }
 
 export async function getOnboardingSession(
