@@ -102,7 +102,7 @@ export function ProductMock() {
             <p dangerouslySetInnerHTML={{ __html: NBA_TEXTS[selected] ?? NBA_TEXTS.peter }} />
           </div>
           <div className="ai-box">
-            <span className="lbl">Návrh inzerátu — pripravený na tvoje schválenie</span>
+            <span className="lbl">Návrh inzerátu — pripravený na Vaše schválenie</span>
             {typed}
           </div>
         </div>
@@ -132,7 +132,7 @@ export function LossCalculator() {
   return (
     <div className="calc">
       <div className="calc-in">
-        <h3>Tvoja kancelária dnes</h3>
+        <h3>Vaša kancelária dnes</h3>
         <div className="ctl">
           <label htmlFor="rDop">
             Nové dopyty mesačne <output>{dop}</output>
@@ -162,7 +162,7 @@ export function LossCalculator() {
         {fast ? (
           <div>
             <p>
-              <strong>Reaguješ rýchlo 👍</strong> Revolis ti ušetrí čas pri inzerátoch a follow-upoch.
+              <strong>Reagujete rýchlo 👍</strong> Revolis Vám ušetrí čas pri inzerátoch a follow-upoch.
             </p>
             <a
               className="btn"
@@ -205,7 +205,7 @@ export function LossCalculator() {
         )}
       </div>
       <div className="calc-note">
-        Ilustračný model: vychádza z predpokladu, že so stúpajúcim časom odpovede klesá šanca, že sa záujemca ešte ozve. Nie je to garancia výsledku — presný dopad ti ukážeme na tvojich dátach na deme.
+        Ilustračný model: vychádza z predpokladu, že so stúpajúcim časom odpovede klesá šanca, že sa záujemca ešte ozve. Nie je to garancia výsledku — presný dopad Vám ukážeme na Vašich dátach na deme.
       </div>
     </div>
   )

@@ -54,7 +54,7 @@ export function RedeemStarterPackCode({ compact = false }: { compact?: boolean }
           disabled={loading || !code.trim()}
           className="rounded-md px-4 py-2 text-sm font-semibold text-white shrink-0"
           style={{
-            background: SLATE_HORIZON.brand,
+            background: SLATE_HORIZON.topbarGradient,
             opacity: loading || !code.trim() ? 0.6 : 1,
           }}
         >
