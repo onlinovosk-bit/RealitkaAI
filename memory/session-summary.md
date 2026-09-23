@@ -685,6 +685,18 @@ Founder GO: merge #535; then PROD digest smoke.
 
 ---
 
+## Session 2026-09-12 (critical-bug automation)
+### Dokončené
+- HIGH: buyer-onboarding `createTask` silent RLS drop — fix + PR #545
+- Report: `docs/reports/2026-09-12-buyer-onboarding-create-task-rls.md`
+### Rozpracované / Pending
+- Founder review/merge #545
+- Prior critical fixes still open: #369 #370 #443 #444 #447 #462 #486 #490 #495 #537
+### Kľúčové súbory zmenené
+- `apps/crm/src/app/(public)/buyer-onboarding/actions.ts`: pass admin into createTask
+- `apps/crm/src/app/(public)/buyer-onboarding/__tests__/actions.test.ts`: assert scoped client
+### Ďalší krok
+Founder GO: merge #545; then review backlog of open critical fix PRs (start with #537 tenant unread wipe — live on main).
 ## Session 2026-09-13 (critical-bug automation)
 ### DokonÄŤenĂ©
 - Found + fixed silent demo CRM task drop (`createDemoBookingTask` / sales-funnel demo-request)
