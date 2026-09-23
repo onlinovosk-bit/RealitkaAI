@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { errorResponse, okResponse } from "@/lib/api-response";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/rate-limit";
 import {
@@ -22,33 +22,27 @@ export async function POST(request: Request) {
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   const { allowed } = await rateLimit(`concierge-cb:${ip}`, 10, 60_000);
   if (!allowed) {
-    return NextResponse.json({ ok: false, error: "Too many requests." }, { status: 429 });
+    return errorResponse("Too many requests.", 429);
   }
 
   if (!conciergeSecretOk(request.headers.get("x-concierge-secret"))) {
-    return NextResponse.json({ ok: false, error: "Unauthorized." }, { status: 401 });
+    return errorResponse("Unauthorized.", 401);
   }
 
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
   const validated = validateConciergeCallback(body);
   if (!validated.ok) {
-    return NextResponse.json(
-      { ok: false, error: validated.error },
-      { status: validated.status },
-    );
+    return errorResponse(validated.error, validated.status);
   }
 
   if (validated.input.honeypot) {
-    return NextResponse.json({ ok: true });
+    return okResponse({});
   }
 
   const agencyId = resolveConciergeAgencyId();
   const supabase = createServiceRoleClient();
   if (!supabase) {
-    return NextResponse.json(
-      { ok: false, error: "Service unavailable." },
-      { status: 503 },
-    );
+    return errorResponse("Service unavailable.", 503);
   }
 
   const idem = buildCallbackIdempotencyKey(agencyId, validated.input);
@@ -64,11 +58,7 @@ export async function POST(request: Request) {
 
   const existing = existingRows?.[0];
   if (existing?.id) {
-    return NextResponse.json({
-      ok: true,
-      leadId: existing.id,
-      duplicate: true,
-    });
+    return okResponse({ leadId: existing.id, duplicate: true });
   }
 
   const noteParts = [
@@ -105,11 +95,8 @@ export async function POST(request: Request) {
 
   if (error) {
     console.error("[concierge/callback]", error.message);
-    return NextResponse.json(
-      { ok: false, error: "Could not save callback." },
-      { status: 500 },
-    );
+    return errorResponse("Could not save callback.", 500);
   }
 
-  return NextResponse.json({ ok: true, leadId, duplicate: false });
+  return okResponse({ leadId, duplicate: false });
 }
