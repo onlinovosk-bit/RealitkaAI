@@ -2304,3 +2304,35 @@ zmena kontraktu a patrí do vlastnej brány. Zámerne neopravené:
 - **Nezapísané zámerne:** `memory/session-summary.md` sa nedotýkam — drží stav
   paralelne bežiacej session (revenue blocker `/upgrade`) a prepis by ho zahodil.
   Founder rozhodol „len decisions".
+
+## 2026-09-23 — PROD deploy audit: `db push` dnes neprejde (READ ONLY)
+
+- **Hlavný záver:** `supabase db push` spadne na **druhej** neaplikovanej migrácii.
+  Nie na dátach — na DDL, ktoré vytvára objekt existujúci v PROD. Riziko teda nie je
+  strata dát, ale **čiastočná aplikácia**: Supabase migruje po jednej v transakcii
+  a pri prvej chybe skončí; predchádzajúce ostanú zapísané v `schema_migrations`.
+  Vznikne stav, čo nezodpovedá ani repu, ani dnešnému PROD.
+- **Stav:** repo 111 migrácií, `schema_migrations` 51, **63 neaplikovaných**.
+  Plus **3 „duchovia"** — v `schema_migrations` sú, v repe nie
+  (`20260802134100`, `20260802134104`, `20260904184236`). PROD nesie zmeny bez zdroja.
+- **16 bodov zlyhania v 4 súboroch**, každý overený proti `pg_class`/`pg_policies`/
+  `pg_trigger`/`pg_proc` — objekt v PROD existuje:
+  `20260527120000` 1 policy (prvé zlyhanie, riadok 31) ·
+  `20260608120000` 9 indexov + 3 policies + 1 trigger ·
+  `20260629120000` 1 policy · `20260722120000` 1 funkcia bez `OR REPLACE`.
+- **KOREKCIA priebežného zistenia:** 5× `ADD CONSTRAINT` som najprv označil za riziko.
+  Po prečítaní súborov to neplatí — každý má pred sebou `DROP CONSTRAINT IF EXISTS`,
+  sú idempotentné. Regex na `IF NOT EXISTS` nestačil, rozhodlo až čítanie.
+- **Čo riziko nie je:** 44× `CREATE TABLE`, všetky `IF NOT EXISTS`, ani jeden
+  neguardovaný. 0 neguardovaných `ADD COLUMN`, 0 `CREATE TYPE`.
+- **Jediná deštruktívna operácia je no-op:** `DROP COLUMN realsoft_export_pass`
+  (`20260616103500`) je `ALTER TABLE IF EXISTS` + `DROP COLUMN IF EXISTS` a v PROD
+  je ten stĺpec už dávno zhodený (`information_schema.columns` = 0, hash stĺpec
+  existuje, pgcrypto nainštalované). Žiadna strata dát v celej dávke.
+- **Poradie:** F1 spraviť tých 16 príkazov idempotentnými (1 PR, 4 súbory,
+  overenie dvojitým replayom) → F2 nácvik na Supabase branch → F3 push na PROD →
+  F4 md5 parity fingerprint CI vs PROD.
+- **Dve otvorené otázky pre vlastníka, bez ktorých sa F3 nedá naplánovať:**
+  je na tomto Supabase pláne dostupný **branching** (F2 bez neho je hádanie),
+  a je zapnuté **PITR** s akým oknom (F3 inak nemá rollback).
+- Dokument: `docs/reports/2026-09-23-prod-deploy-plan.md`.
