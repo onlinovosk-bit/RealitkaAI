@@ -77,6 +77,11 @@ jobs:
         run: npm run lint
         working-directory: apps/crm
 
+      # The retry that guards `supabase start` is itself guarded: a wrapper that
+      # silently stopped retrying, or looped forever, would be worse than none.
+      - name: Test CI helper scripts
+        run: ./scripts/ci/__tests__/supabase-start.test.sh
+
       - name: Typecheck (baseline gate)
         working-directory: apps/crm
         run: node scripts/typecheck-baseline.mjs
@@ -102,8 +107,13 @@ jobs:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
+      # Logging in is necessary but not sufficient: on 2026-09-23 the pull still
+      # failed on every one of the CLI's internal attempts, microseconds apart,
+      # inside one burst of a shared limiter. `scripts/ci/supabase-start.sh`
+      # retries with real backoff so the attempts land in different bursts; it
+      # carries the full diagnosis and is covered by scripts/ci/__tests__.
       - name: Start local Supabase
-        run: supabase start
+        run: ../../scripts/ci/supabase-start.sh
         working-directory: apps/crm
 
       - name: Export local credentials
