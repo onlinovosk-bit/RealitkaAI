@@ -2204,6 +2204,35 @@ zmena kontraktu a patrí do vlastnej brány. Zámerne neopravené:
   `packages/bus-core/src/yaml.ts` BOM stále netoleruje — ďalší súbor uložený
   s BOM zhodí pipeline znova.
 
+## 2026-09-23 — `ignoreCommand` bol 6 dní pod mŕtvym kľúčom (nahrádza #578)
+
+- **Nález:** `#578` uložil príkaz pod `"git": { "ignoreCommand": ... }`. Vercel ten kľúč
+  **nečíta** — `ignoreCommand` je top-level vlastnosť `vercel.json`, objekt `git` prijíma
+  `deploymentEnabled`. Ignored Build Step sa od 2026-09-17 ani raz nespustil; oba projekty
+  buildovali každý commit vrátane docs-only a migration-only.
+- **Dôkaz, nie dedukcia:** build log `dpl_8pgg5NkEQQPs1a942q86FeaiDLqP` (commit `472ca758`,
+  0 súborov pod `apps/crm`) ide z „Cloning completed" rovno na „Running vercel build" —
+  medzi tým nie je žiadny ignore krok.
+- **Prečo to vyzeralo funkčné:** 12 `CANCELED` deploymentov pôsobilo ako preskočené buildy.
+  Po spárovaní podľa commitov vyšiel nezmysel — `b32aa132` (1 súbor pod `apps/crm`) mal
+  `realitka-ai`=CANCELED a `revolis-marketing`=READY, teda presne naopak. Tie `CANCELED` sú
+  `autoJobCancelation` pri rýchlych mergoch na `main`, nie ignoreCommand.
+- **Prečo to harness nechytil:** `scripts/vercel-ignore-command.test.mjs` mal príkaz natvrdo
+  v konštante a `vercel.json` vôbec nečítal. Testoval logiku shellu, nie to, či Vercel kľúč
+  prečíta. 4/4 zelené nad mŕtvym kľúčom. **Kópia driftuje, čítanie nie** — harness teraz
+  načítava príkaz zo súboru a zlyhá (exit 1), ak sa `ignoreCommand` opäť ocitne pod `git`.
+- **Oprava príkazu:** základ `VERCEL_GIT_PREVIOUS_SHA` (Vercel ho vystavuje práve len keď je
+  Ignored Build Step nastavený) s fallbackom `HEAD^`; `git cat-file -e` overí dostupnosť
+  v shallow klone a pri pochybnosti **buildne** (fail-open); `apps/crm` vylučuje
+  `supabase/migrations`, lebo migrácie aplikuje `supabase db push`, nie Next.js build.
+- **KOREKCIA VLASTNÉHO TVRDENIA:** túto bránu som navrhol s odôvodnením, že „vráti zhruba
+  polovicu denného limitu". **To bolo nesprávne** a `memory/decisions.md` (2026-09-20) to už
+  raz zaznamenal: kvóta `api-deployments-free-per-day` sa míňa pri **vytvorení** deploymentu,
+  ignoreCommand beží až potom. Šetrí build minúty a CI čas, nie počet deploymentov.
+  Nekonzultoval som memory pred návrhom a zopakoval som chybu, ktorú projekt už mal opravenú.
+- **Na počet deploymentov je páka inde:** `git.deploymentEnabled` (per vetva alebo úplne),
+  prípadne vypnutie preview deploymentov v nastavení projektu. Produktové rozhodnutie —
+  stratia sa preview URL — samostatná brána, bez GO sa nerobí.
 ## 2026-09-23 — Gate A/B zavreté, Gate C stále bez dôkazu (#649, #653)
 
 - **Gate B zmergovaný ako `ee3d9f3` (#649): capability `repo-head`.** Prvá
