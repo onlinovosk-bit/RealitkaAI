@@ -124,8 +124,30 @@ jobs:
           # Overené pred zmenou, nie po nej: všetkých šesť images z padnutého logu
           # existuje na public.ecr.aws s presne tými tagmi (HTTP 200 na manifest).
           SUPABASE_INTERNAL_IMAGE_REGISTRY: public.ecr.aws
-        run: supabase start
         working-directory: apps/crm
+        # ECR limituje počet pullov za sekundu, nie celkový objem. `supabase start`
+        # ťahá ~10 images naraz a do limitu narazí, aj keď predtým niekoľko stiahol
+        # celých. Docker si stiahnuté vrstvy drží, takže každý ďalší pokus má menej
+        # práce a séria konverguje — prvý beh na ECR stihol 2 images vrátane
+        # postgres, čo je ten najväčší.
+        #
+        # Preto opakovanie s odstupom, nie jeden pokus. `supabase stop` medzi
+        # pokusmi upratuje polovične nabehnuté kontajnery; images v cache ostávajú.
+        run: |
+          set -u
+          for attempt in 1 2 3; do
+            if supabase start; then
+              echo "supabase start OK (pokus $attempt)"
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              echo "::warning::supabase start zlyhal (pokus $attempt/3) — upratujem a skúšam znova"
+              supabase stop --no-backup >/dev/null 2>&1 || true
+              sleep $(( attempt * 20 ))
+            fi
+          done
+          echo "::error::supabase start zlyhal po 3 pokusoch"
+          exit 1
 
       - name: Export local credentials
         run: supabase status -o env | sed 's/"//g' >> "$GITHUB_ENV"
