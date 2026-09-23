@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import {
   AUTHORITY_KEYS,
   BUS_ALIVE_CAPABILITY,
+  DEFAULT_CAPABILITIES,
+  REPO_HEAD_CAPABILITY,
   lostAuthorityText,
   LOST_TEXT_FIELD,
   parseBusDocument,
@@ -97,9 +99,10 @@ test("handledTaskIds ignores messages this agent did not send", () => {
 });
 
 test("the bus-alive capability rejects a reply that is not the contract", () => {
-  assert.equal(BUS_ALIVE_CAPABILITY.verify("BUS ALIVE"), null);
-  assert.equal(BUS_ALIVE_CAPABILITY.verify("  bus alive \n"), null);
-  assert.match(BUS_ALIVE_CAPABILITY.verify("Sure! The bus is alive.") ?? "", /expected "BUS ALIVE"/);
+  // It declares no facts, so an empty set is what the runner hands it.
+  assert.equal(BUS_ALIVE_CAPABILITY.verify("BUS ALIVE", {}), null);
+  assert.equal(BUS_ALIVE_CAPABILITY.verify("  bus alive \n", {}), null);
+  assert.match(BUS_ALIVE_CAPABILITY.verify("Sure! The bus is alive.", {}) ?? "", /expected "BUS ALIVE"/);
 });
 
 test("the result envelope is a valid v1 result threaded to the task", () => {
@@ -249,4 +252,58 @@ test("a JSON-posted envelope round-trips through YAML without losing text", () =
   assert.deepEqual(lostAuthorityText(reparsed.warnings), []);
   assert.equal(reparsed.envelope!.next_action?.gate, "GO REQUIRED");
   assert.equal(reparsed.envelope!.mode, "READ_ONLY");
+});
+
+const HEAD = "5b2e9153b70a6dbad0bd8f1573b23f301e6ee612";
+
+test("repo-head is registered and declares the one fact it needs", () => {
+  assert.ok(DEFAULT_CAPABILITIES.includes(REPO_HEAD_CAPABILITY));
+  assert.deepEqual(REPO_HEAD_CAPABILITY.facts, ["repo_head"]);
+  // A read changes nothing, so a second run is indistinguishable from the first.
+  assert.equal(REPO_HEAD_CAPABILITY.idempotent, true);
+});
+
+test("repo-head matches the phrase and nothing else", () => {
+  assert.equal(REPO_HEAD_CAPABILITY.matches(task({ summary: "report the REPO HEAD" })), true);
+  assert.equal(REPO_HEAD_CAPABILITY.matches(task({ summary: "repo head, lowercase" })), true);
+  assert.equal(REPO_HEAD_CAPABILITY.matches(task({ summary: "BUS ALIVE" })), false);
+  // "repository head" is not the phrase: matching loosely would let an
+  // unrelated task pull a capability it never asked for.
+  assert.equal(REPO_HEAD_CAPABILITY.matches(task({ summary: "give me the repository head" })), false);
+});
+
+test("the repo-head prompt carries the sha the runner read", () => {
+  const prompt = REPO_HEAD_CAPABILITY.prompt(task(), { repo_head: HEAD });
+  assert.match(prompt, new RegExp(HEAD));
+  // The tool posture is restated in the prompt, not only in the process flags.
+  assert.match(prompt, /you have no tools/);
+});
+
+test("repo-head accepts only the sha it handed over", () => {
+  assert.equal(REPO_HEAD_CAPABILITY.verify(HEAD, { repo_head: HEAD }), null);
+  assert.equal(REPO_HEAD_CAPABILITY.verify(`  ${HEAD}\n`, { repo_head: HEAD }), null);
+});
+
+test("repo-head rejects a well-formed sha that is not the head — the invention case", () => {
+  // This is the assertion the capability exists for. A model that answers with
+  // a plausible sha instead of the one it was given must fail the contract,
+  // otherwise the reply proves nothing about the machine.
+  const invented = "0123456789abcdef0123456789abcdef01234567";
+  assert.match(REPO_HEAD_CAPABILITY.verify(invented, { repo_head: HEAD }) ?? "", /is not the repository head/);
+});
+
+test("repo-head rejects a reply that is not a sha at all", () => {
+  assert.match(
+    REPO_HEAD_CAPABILITY.verify("The head is 5b2e915.", { repo_head: HEAD }) ?? "",
+    /expected a 40-character commit sha/,
+  );
+  // An abbreviated sha is still wrong: the contract is the full value.
+  assert.match(REPO_HEAD_CAPABILITY.verify("5b2e915", { repo_head: HEAD }) ?? "", /expected a 40-character commit sha/);
+  assert.match(REPO_HEAD_CAPABILITY.verify(HEAD.toUpperCase(), { repo_head: HEAD }) ?? "", /expected a 40-character commit sha/);
+});
+
+test("repo-head fails closed when the fact never arrived", () => {
+  // The runner does not call a contract without the facts it declared. If that
+  // ever changed, an unverifiable reply must not pass for a verified one.
+  assert.match(REPO_HEAD_CAPABILITY.verify(HEAD, {}) ?? "", /repo_head was not gathered/);
 });
