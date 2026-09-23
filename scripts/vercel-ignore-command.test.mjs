@@ -26,9 +26,65 @@ import { join, dirname } from "node:path";
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 import { spawnSync } from "node:child_process";
 
+/**
+ * JSON.parse silently keeps the LAST of duplicate keys. A botched merge on
+ * 2026-09-23 left two `ignoreCommand` keys in apps/crm/vercel.json — valid
+ * JSON, parsed clean, and the intended command silently discarded. Vercel
+ * rejected the sibling file outright ("Invalid vercel.json file provided").
+ * Both classes are caught here, before a deployment finds them.
+ *
+ * A JSON.parse reviver cannot see duplicates (they are already collapsed by
+ * the time it runs), so the raw text is scanned for repeated keys in the
+ * top-level object — where every vercel.json setting lives.
+ */
+function duplicateTopLevelKey(raw) {
+  const seen = new Set();
+  let depth = 0;
+  let inStr = false;
+  let esc = false;
+  let cur = null;
+  for (let i = 0; i < raw.length; i++) {
+    const c = raw[i];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (c === "\\") esc = true;
+      else if (c === '"') {
+        inStr = false;
+        if (depth === 1 && cur !== null) {
+          // a string that closes at depth 1 is a key only if ':' follows
+          const rest = raw.slice(i + 1).match(/^\s*:/);
+          if (rest) {
+            if (seen.has(cur)) return cur;
+            seen.add(cur);
+          }
+        }
+        cur = null;
+      } else if (depth === 1) cur = (cur ?? "") + c;
+      continue;
+    }
+    if (c === '"') { inStr = true; cur = depth === 1 ? "" : null; }
+    else if (c === "{" || c === "[") depth++;
+    else if (c === "}" || c === "]") depth--;
+  }
+  return null;
+}
+
 /** Read the command from the file Vercel actually reads — no hardcoded copy. */
 function loadIgnoreCommand(relPath) {
-  const cfg = JSON.parse(readFileSync(join(REPO_ROOT, relPath), "utf8"));
+  const raw = readFileSync(join(REPO_ROOT, relPath), "utf8");
+  let cfg;
+  try {
+    cfg = JSON.parse(raw);
+  } catch (err) {
+    throw new Error(`${relPath}: invalid JSON — Vercel rejects the whole file. ${err.message}`);
+  }
+  const dup = duplicateTopLevelKey(raw);
+  if (dup) {
+    throw new Error(
+      `${relPath}: duplicate top-level key "${dup}" — JSON.parse keeps only the last one, ` +
+        `so the other value is silently discarded.`,
+    );
+  }
   if (cfg.git && "ignoreCommand" in cfg.git) {
     throw new Error(
       `${relPath}: ignoreCommand sits under "git". Vercel does not read that key ` +
