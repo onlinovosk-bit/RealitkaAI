@@ -96,8 +96,25 @@ a v zozname procesov.
 
 ```bash
 npm run bus:serve          # bez akéhokoľvek credentialu odmietne naštartovať
+# -> AUTH MODE: per-agent (sol-gpt, claude-code)
+# -> GitHub preflight: onlinovosk-bit/RealitkaAI@bus/main reachable and writable
 # -> revolis-bus listening on :8787 (store: github)
 ```
+
+**Server sa sám odmietne spustiť, ak by bol beh zbytočný.** Pred `listen()` urobí
+dva read-only GET-y (repozitár a vetva) a zlyhá s príčinou, nie so status kódom:
+
+| Čo je zle | Čo povie |
+|---|---|
+| polovične nastavený github backend | `the GitHub backend is configured but REVOLIS_BUS_REPO is missing` |
+| neplatný / expirovaný PAT | `REVOLIS_BUS_GITHUB_TOKEN was refused (401)` |
+| PAT bez práv alebo bez SSO | `the token is valid but forbidden ... grant it "Contents: Read and write"` |
+| zlý `REVOLIS_BUS_REPO` | `... not found (404) — either REVOLIS_BUS_REPO is wrong, or the token has no access` |
+| PAT iba na čítanie | `the token can read ... but not write to it` |
+| vetva neexistuje | `branch "bus/main" does not exist ... git push origin main:refs/heads/bus/main` |
+
+Preflight nikdy nezapisuje — zápis by bol vedľajší efekt na presne tej vetve,
+ktorú beh ide merať.
 
 Riadok `store:` musí sedieť s tým, čo si zvolil v kroku 0. Nad ním musí byť
 `AUTH MODE: per-agent (sol-gpt, claude-code)`. Ak tam je `DEGRADED`, server beží
@@ -223,15 +240,13 @@ a ChatGPT si výsledok vytiahne cez `listBusMessages` s `format=digest`.
 | handshake: `harness holds per-agent tokens but the server reports DEGRADED` | tokeny sú v klientovi, nie v serveri | exportuj ich pred `bus:serve` (krok 1) |
 | handshake: `REVOLIS_BUS_TOKEN_SOL is set but ... is not` | polovičná migrácia | harness chce oba, alebo ani jeden + zdieľaný |
 | `401` z handshake harness | iný token v serveri než v klientovi | jeden shell, jeden export |
-| `GitHub write failed (401/403)` | PAT bez `Contents: write` alebo zlý repo | krok 1 |
-| `GitHub write failed (404)` | `REVOLIS_BUS_BRANCH` neexistuje | `git push origin main:refs/heads/bus/main` |
 | `413 payload_too_large` | do správy sa lepí log | odkáž na súbor v repe |
 | `403 box_not_writable` | zápis do boxu, ktorý táto identita nesmie | odpoveď vypíše `writable` pre daný credential |
 | `403 from_not_authorized` | `envelope.from` nesedí s agentom credentialu | posielaj pod vlastnou identitou, nie cudzou |
 | `403 ack_target_not_writable` | ack do `outbox` neexekučnou identitou | `outbox` píše len exekučný agent |
 | `two credentials share a secret` | oba exporty majú rovnakú hodnotu | vygeneruj dva rôzne secrety (krok 1) |
 | `from_binding: false` na `/health` | beží degradovaný režim | nastav oba `*_TOKEN_SOL` / `*_TOKEN_CLAUDE` |
-| správa je na serveri, Claude ju nevidí | beží **file** backend | krok 0 |
+| server sa nespustí, hlási `GitHub preflight failed` | zlý token, repo, práva alebo vetva | hláška menuje príčinu aj nápravu — krok 2 |
 
 ## 9. Po handshake
 
