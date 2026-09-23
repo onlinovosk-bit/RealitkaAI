@@ -75,6 +75,20 @@ jobs:
         run: node scripts/typecheck-baseline.mjs
 
       # ── Ephemeral test DB: žiadne prod secrets v test/build fáze ──
+      # `supabase start` ťahá šesť images z ghcr.io naraz. Anonymné pully sa
+      # rátajú do nízkeho spoločného limitu, ktorý zdieľajú všetky runnery na
+      # tej istej infraštruktúre — preto padalo `toomanyrequests` aj vtedy, keď
+      # v repozitári bežal jediný job. Prihlásený pull sa ráta na účet.
+      #
+      # `GITHUB_TOKEN` na to stačí: images sú verejné, ide len o autentifikáciu
+      # kvôli limitu. Token ide cez env a `--password-stdin`, takže sa neobjaví
+      # v argv ani v logu.
+      - name: Log in to ghcr.io (raise image pull rate limit)
+        env:
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
