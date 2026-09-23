@@ -6,20 +6,46 @@
  * Project Root Directory is apps/crm | apps/marketing, so the command runs
  * with cwd = that folder and watches `.` (not apps/crm/).
  *
- * Canonical command (must match apps/crm and apps/marketing vercel.json):
- *   git diff --quiet HEAD^ HEAD -- . && exit 0 || exit 1
+ * The command under test is READ FROM apps/crm/vercel.json, never hardcoded.
+ * #578 hardcoded it here and the harness stayed green while the real file
+ * carried the command under `git.ignoreCommand` — a key Vercel does not read,
+ * so nothing ever ran in a build. A copy here can drift; a read cannot.
+ *
+ * The key is also asserted: `ignoreCommand` is a TOP-LEVEL vercel.json property.
+ * The `git` object only accepts `deploymentEnabled`.
  *
  * Run: node scripts/vercel-ignore-command.test.mjs
  * Mutation (V2): node scripts/vercel-ignore-command.test.mjs --mutate-bad-grep
  *   → same expects; mixed case must FAIL (inverted grep skips build).
  */
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
+
+const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 import { spawnSync } from "node:child_process";
 
-const GOOD =
-  "git diff --quiet HEAD^ HEAD -- . && exit 0 || exit 1";
+/** Read the command from the file Vercel actually reads — no hardcoded copy. */
+function loadIgnoreCommand(relPath) {
+  const cfg = JSON.parse(readFileSync(join(REPO_ROOT, relPath), "utf8"));
+  if (cfg.git && "ignoreCommand" in cfg.git) {
+    throw new Error(
+      `${relPath}: ignoreCommand sits under "git". Vercel does not read that key ` +
+        `(the git object only accepts deploymentEnabled) — move it to top level.`,
+    );
+  }
+  if (typeof cfg.ignoreCommand !== "string" || !cfg.ignoreCommand.trim()) {
+    throw new Error(`${relPath}: missing top-level "ignoreCommand" string.`);
+  }
+  return cfg.ignoreCommand;
+}
+
+const GOOD = loadIgnoreCommand("apps/crm/vercel.json");
+
+// marketing carries the same command minus the migrations exclusion; assert it
+// is present and well-formed so the second project cannot silently drift.
+loadIgnoreCommand("apps/marketing/vercel.json");
 /** PR #155 inverted logic — wrongly SKIPs when any path is outside apps/crm. */
 const BAD =
   "git diff HEAD^ HEAD --name-only | grep -qvE '^apps/crm/' && exit 0 || exit 1";
