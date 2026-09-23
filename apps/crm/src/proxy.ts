@@ -26,6 +26,14 @@ const PUBLIC_PATHS = new Set([
   "/api/acquisition/google/lead-webhook",
   "/api/valuation/submit",
   "/api/valuation/estimate",
+  // Public onboarding wizard sync (Path B API). Founder GO 2026-09-17: sync
+  // must work without login. Route still validates session_id + rate-limits.
+  "/api/onboarding/session",
+  // Website Concierge (Smolko). GO-W3-SHIP 2026-09-17. Routes rate-limit +
+  // optional CONCIERGE_SHARED_SECRET; agency locked to Smolko.
+  "/api/concierge/properties",
+  "/api/concierge/callback",
+  "/api/concierge/freebusy",
 ]);
 
 const CRON_PATH_PREFIX = "/api/agents";

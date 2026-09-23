@@ -48,15 +48,15 @@ Je **3. 10. 2026**. Property Launch Pack V0 zlyhal. Stalo sa toto:
 | # | Riziko | P | Z | Sk | Mitigácia / Kill |
 |---|---|---|---|---|---|
 | 1 | Export bez Guardian | 3 | 3 | **9** | Hard gate v orchestrátore; verification test. Kill: ak existuje code path bez `guardian.ok` → merge stop |
-| 2 | Zlé facts / Ostatné | 3 | 2 | **6** | Pilot len Byt/Dom alebo manuálny type z PDF; mapCategory mimo BO. Kill: >2/5 pilotov Ostatné bez manuálneho override → STOP pilot |
-| 3 | >20 min | 2 | 3 | **6** | Meranie stopiek; UI max 1 obrazovka facts→generate→approve→export. Kill: medián >25 min na 5 → redesign, nie viac features |
-| 4 | Scope creep mapCategory | 2 | 3 | **6** | Explicit OUT v BO. Kill: diff obsahuje `processQueue.ts` mapCategory → reject PR |
-| 5 | PII v ZIP | 2 | 3 | **6** | Allowlist polí v exporte; žiadny raw payload. Kill: `payload_raw` v exporte → fail test |
-| 6 | Falošný persist | 3 | 2 | **6** | V0 = download-first; žiadny sľub „uložené“ kým `ai_generations` nie je na prod |
-| 7 | Publish | 1 | 3 | **3** | Žiadny write do portal; `publishBlocked`; assertPublishAllowed |
-| 8 | Chatbot creep | 1 | 2 | **2** | OUT v BO |
+| 2 | Pilot na Ostatné / Dom-na-byte / Predaj-na-prenájme | 3 | 3 | **9** | Číselník + mapper P0 pred GO IMPLEMENT; maklér potvrdí type/txn. Kill: generácia bez potvrdenia mapped polí |
+| 3 | >20 min | 2 | 3 | **6** | Meranie stopiek; UI max 1 obrazovka. Kill: medián >25 min |
+| 4 | Scope creep mapCategory+txn v Launch Pack PR | 2 | 3 | **6** | Explicit OUT. Kill: diff `processQueue` map* → reject |
+| 5 | PII v ZIP | 2 | 3 | **6** | Allowlist; Kill: `payload_raw` v exporte |
+| 6 | Falošný persist | 3 | 2 | **6** | Download-first |
+| 7 | Publish | 1 | 3 | **3** | Žiadny portal write |
+| 8 | Chatbot creep | 1 | 2 | **2** | OUT |
 
-**≥6 pred implementačným GO:** #1–#6 musia mať mitigáciu v pláne (Build Package §).
+**≥6 pred implementačným GO:** #1–#6; **#2 zvýšené na 9** po mapper-depth náleze (2026-09-03).
 
 ## KROK 6 — Revízia
 

@@ -25,6 +25,9 @@ type CheckoutConfig = {
   }>;
   cockpit: {
     liteMinSeats: number;
+    /** Optional: older deployments of the API do not send it. Absence is
+     *  treated as purchasable, so this never hides the add-on by accident. */
+    ownerPurchasable?: boolean;
     ownerPriceEur: number;
     ownerFounderPriceEur: number;
   };
@@ -50,7 +53,11 @@ export default function UpgradePage() {
     fetch('/api/billing/checkout-config')
       .then((r) => r.json())
       .then((d) => {
-        if (d.ok && d.data) setConfig(d.data);
+        // okResponse spreads payload at the top level ({ ok, seatCheckoutAvailable, ... }),
+        // not under `.data` — same contract as CreditsTopupPanel.
+        if (d.ok && typeof d.seatCheckoutAvailable === 'boolean') {
+          setConfig(d as CheckoutConfig);
+        }
       })
       .catch(() => setConfig(null))
       .finally(() => setLoading(false));
@@ -65,7 +72,13 @@ export default function UpgradePage() {
     if (tierMeta) setSeatCount(tierMeta.defaultSeats);
   }, [tierMeta?.key]);
 
-  const cockpitEligible = (tierMeta?.minSeats ?? 3) <= seatCount && seatCount >= 3;
+  // Two independent conditions. Seat count is about the customer's plan;
+  // `ownerPurchasable` is about whether the price the UI is about to display
+  // actually exists in Stripe. Offering the add-on without the second one lets
+  // the customer agree to a total that checkout cannot charge.
+  const cockpitPurchasable = config?.cockpit.ownerPurchasable !== false;
+  const cockpitEligible =
+    (tierMeta?.minSeats ?? 3) <= seatCount && seatCount >= 3 && cockpitPurchasable;
   const cockpitPrice = config?.founderCockpitEligible
     ? config.cockpit.ownerFounderPriceEur
     : config?.cockpit.ownerPriceEur ?? 349;
@@ -88,8 +101,9 @@ export default function UpgradePage() {
           body: JSON.stringify(body),
         });
         const data = await res.json();
-        if (data.ok && data.data?.result?.url) {
-          window.location.href = data.data.result.url;
+        // okResponse({ result }) → { ok: true, result: { url } }
+        if (data.ok && data.result?.url) {
+          window.location.href = data.result.url;
           return;
         }
         setError(data.error ?? 'Checkout nie je dostupný.');
@@ -126,9 +140,9 @@ export default function UpgradePage() {
         <div
           className="mb-8 rounded-xl border p-6"
           style={{
-            background: '#FEF3C7',
-            borderColor: '#FCD34D',
-            color: '#92400E',
+            background: SLATE_HORIZON.noticeGradient,
+            borderColor: SLATE_HORIZON.softBorder,
+            color: SLATE_HORIZON.brandDeep,
           }}
         >
           <h2 className="text-lg font-semibold mb-2">Checkout momentálne nedostupný</h2>
@@ -305,7 +319,7 @@ export default function UpgradePage() {
           <Link
             href={BILLING_TOPUP_HREF}
             className="inline-flex rounded-md px-6 py-2.5 text-sm font-semibold text-white"
-            style={{ background: SLATE_HORIZON.brand }}
+            style={{ background: SLATE_HORIZON.topbarGradient }}
           >
             Doplniť kredity
           </Link>

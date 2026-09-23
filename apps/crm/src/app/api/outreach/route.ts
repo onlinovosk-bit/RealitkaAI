@@ -1,7 +1,7 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { revolisGuard } from '@/lib/revolis-guard';
 import { createClient } from '@/lib/supabase/server';
-import { sendSlackMessage } from '@/lib/slack';
+import { routeAlert } from '@/lib/alerts/router';
 
 export async function GET(req: NextRequest) {
   return revolisGuard(req, 'Outreach Engine', async () => {
@@ -14,9 +14,25 @@ export async function GET(req: NextRequest) {
     if (error) throw error;
     if (!leads?.length) return NextResponse.json({ message: "No hot leads for Slack" });
 
-    await Promise.all(leads.map((lead) =>
-      sendSlackMessage(`🔥 *Nový HOT Lead (A-Segment)!*\n*Mesto:* ${lead.region}\n*Cena:* ${lead.price}€\n*Kontakt:* ${lead.phone}\n_Pripravené na kontaktovanie._`)
-    ));
+    // Jeden agregovaný alert, nie jedna správa na lead: pri 20 horúcich leadoch
+    // poslal starý kód 20 správ a siréna sa zmenila na šum.
+    //
+    // Telefón, meno ani adresa sa do alertu NEDOSTANÚ. Sú to osobné údaje
+    // (CLAUDE.md §4) a alert je externý kanál. Founder dostane počet a odkaz
+    // do CRM; kto to je, si pozrie tam, za autentifikáciou.
+    await routeAlert({
+      type: "HOT_LEADS",
+      severity: "WARNING",
+      title: `Nové horúce leady (A-segment): ${leads.length}`,
+      agent: "outreach",
+      dedupKey: "outreach:hot-leads",
+      actionRequired: true,
+      fields: {
+        pocet: String(leads.length),
+        segment: "A",
+      },
+      evidenceRef: "/dashboard/leads?segment=A&status=OUTREACH_DONE",
+    });
 
     const updated = leads.map((l) => ({ ...l, status: 'OUTREACH_DONE' }));
     // Use 'id' (UUID) as conflict key — never 'phone', which can collide across tenants.

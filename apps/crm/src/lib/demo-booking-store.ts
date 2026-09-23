@@ -1,7 +1,8 @@
-﻿import { supabaseClient, getSupabaseClient } from "@/lib/supabase/client";
+﻿import type { SupabaseClient } from "@supabase/supabase-js";
 import { autoErrorCapture } from "./auto-error-capture";
 import { Resend } from "resend";
 import { createActivity } from "@/lib/activities-store";
+import { createServiceRoleClient } from "@/lib/supabase/admin";
 
 type SaaSLeadInput = {
   id: string;
@@ -16,16 +17,12 @@ type SaaSLeadInput = {
   status?: string;
 };
 
-
-  autoErrorCapture("Supabase client initialized", "getSupabaseClient");
-
 function getResendClient() {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     autoErrorCapture("RESEND_API_KEY is missing", "getResendClient");
     return null;
   }
-  autoErrorCapture("Resend client initialized", "getResendClient");
   return new Resend(apiKey);
 }
 
@@ -85,8 +82,10 @@ export function generateDemoSlots() {
 export async function createDemoBookingTask(input: {
   saasLead: SaaSLeadInput;
   slots: Array<{ iso: string; label: string }>;
+  /** Public funnel has no tenant session — pass service-role (bypasses tasks_agency). */
+  scoped?: SupabaseClient | null;
 }) {
-  const supabase = getSupabaseClient();
+  const supabase = input.scoped ?? createServiceRoleClient();
 
   const title = `Naplánovať demo pre ${input.saasLead.company}`;
   const description =
@@ -97,13 +96,15 @@ export async function createDemoBookingTask(input: {
 
   if (!supabase) {
     return {
-      ok: true,
-      mode: "fallback",
+      ok: false,
+      mode: "service_role_missing",
       title,
     };
   }
 
   try {
+    // lead_id is null (SaaS prospect, not CRM lead). tasks_agency WITH CHECK requires
+    // lead_id ∈ tenant leads — only service_role can insert this follow-up row.
     const { error } = await supabase.from("tasks").insert({
       lead_id: null,
       title,
@@ -196,37 +197,44 @@ Tím Realitka AI`;
   }
 }
 
-export async function runDemoBookingAutomation(saasLead: SaaSLeadInput) {
+export async function runDemoBookingAutomation(
+  saasLead: SaaSLeadInput,
+  scoped?: SupabaseClient | null,
+) {
   const slots = generateDemoSlots();
+  const admin = scoped ?? createServiceRoleClient();
 
   const [taskResult, emailResult] = await Promise.all([
-    createDemoBookingTask({ saasLead, slots }),
+    createDemoBookingTask({ saasLead, slots, scoped: admin }),
     sendDemoConfirmationEmail({ saasLead, slots }),
   ]);
 
   try {
-    await createActivity({
-      leadId: null,
-      type: "Sales Funnel",
-      title: "Spustená demo booking automatizácia",
-      text: `Pre firmu ${saasLead.company} sa spustila automatizácia plánovania dema.`,
-      entityType: "saas_lead",
-      entityId: saasLead.id,
-      actorName: saasLead.name,
-      source: "sales",
-      severity: "success",
-      meta: {
-        slots,
-        taskResult,
-        emailResult,
+    await createActivity(
+      {
+        leadId: null,
+        type: "Sales Funnel",
+        title: "Spustená demo booking automatizácia",
+        text: `Pre firmu ${saasLead.company} sa spustila automatizácia plánovania dema.`,
+        entityType: "saas_lead",
+        entityId: saasLead.id,
+        actorName: saasLead.name,
+        source: "sales",
+        severity: "success",
+        meta: {
+          slots,
+          taskResult,
+          emailResult,
+        },
       },
-    });
+      admin,
+    );
   } catch (error) {
     console.error("[demo-booking] activity log error:", error);
   }
 
   return {
-    ok: true,
+    ok: Boolean(taskResult.ok),
     slots,
     taskResult,
     emailResult,
