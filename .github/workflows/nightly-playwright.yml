@@ -39,22 +39,43 @@ jobs:
         with:
           version: latest
 
-      # `supabase start` sťahuje šesť images z ghcr.io. Anonymný pull má nízky
-      # limit na zdieľanú IP GitHub runnerov a 2026-09-23 oň CI opakovane
-      # zaseklo: najprv zlyhal jeden image, o dve minúty neskôr všetkých šesť
-      # (`toomanyrequests`). Tento krok je v poradí 10 z 22, takže keď padne,
-      # Test aj Build sa preskočia — CI vtedy o kóde nepovie nič a červená
-      # farba nesúvisí s diffom.
+      # DORMANTNÝ, ZÁMERNE PONECHANÝ. Po prepnutí registry (krok nižšie) sa
+      # z ghcr.io neťahá nič, takže toto prihlásenie práve teraz nič nerobí.
+      # Ostáva ako poistka: keby niekto override registry odstránil, pull
+      # spadne späť na ghcr.io a pôjde prihlásený, nie anonymne.
       #
-      # Prihlásenie zdvihne limit z anonymného na per-account. Token je
-      # ephemerálny GITHUB_TOKEN daného behu, nie uložený secret, a ide cez
-      # env + --password-stdin, aby sa neobjavil v príkazovom riadku ani v logu.
+      # Prečo samo nestačilo (#667): prihlásenie zdvihne limit z anonymného na
+      # per-account, lenže 2026-09-23 vracalo ghcr.io `toomanyrequests ...
+      # allowed: 44000/minute` — zdieľaný strop na strane registry, nie naša
+      # kvóta. Krok prešiel, pull aj tak padol.
+      #
+      # Token je ephemerálny GITHUB_TOKEN daného behu, nie uložený secret, a ide
+      # cez env + --password-stdin, aby sa neobjavil v príkazovom riadku ani v logu.
       - name: Authenticate to ghcr.io (raise pull rate limit)
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
       - name: Start local Supabase
+        env:
+          # `supabase/setup-cli` exportuje SUPABASE_INTERNAL_IMAGE_REGISTRY=ghcr.io
+          # do job env cez $GITHUB_ENV. Step-level `env` má vyššiu prioritu, takže
+          # toto nad ním vyhrá — preto to je tu a nie na jobe.
+          #
+          # Dôvod prepnutia: 2026-09-23 ghcr.io opakovane odmietalo pull s
+          # `toomanyrequests ... allowed: 44000/minute`. To NIE je náš anonymný
+          # strop — 44000/min je zdieľaný strop na strane registry, takže ani
+          # prihlásenie (#667) to neobišlo: krok `Authenticate to ghcr.io` prešiel
+          # a pull aj tak padol.
+          #
+          # `public.ecr.aws` je vlastný default Supabase CLI, čiže najlepšie
+          # podporovaná cesta. `docker.io` zámerne NIE: anonymný limit Docker Hubu
+          # je 100 pullov / 6 h na IP a `supabase start` ťahá ~10 images — na
+          # zdieľaných runneroch by to bolo horšie než to, čo opravujeme.
+          #
+          # Overené pred zmenou, nie po nej: všetkých šesť images z padnutého logu
+          # existuje na public.ecr.aws s presne tými tagmi (HTTP 200 na manifest).
+          SUPABASE_INTERNAL_IMAGE_REGISTRY: public.ecr.aws
         run: supabase start
         working-directory: apps/crm
 
