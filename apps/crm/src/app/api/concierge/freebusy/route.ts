@@ -7,10 +7,13 @@ import {
   resolveConciergeAgencyId,
 } from "@/lib/concierge/agency";
 import { fetchConciergeFreeBusy } from "@/lib/concierge/freebusy";
+import { resolveConciergeAccessToken } from "@/lib/concierge/calendar-auth";
+import { getGoogleCalendarAccessToken } from "@/lib/google-calendar-server";
 
 /**
- * N09 free/busy — honest fail-closed without GO-B08 OAuth token in env.
- * Set CONCIERGE_GOOGLE_ACCESS_TOKEN (+ calendar id) after OAuth ship.
+ * N09 free/busy — fail-closed. Prístup do kalendára ide cez refresh-token
+ * infraštruktúru (`profile_google_calendar`), viazanú cez
+ * `CONCIERGE_GOOGLE_PROFILE_ID`. Krátkodobý access token v env sa už nepoužíva.
  */
 export async function GET(request: Request) {
   const ip =
@@ -35,12 +38,25 @@ export async function GET(request: Request) {
   const agencyId = resolveConciergeAgencyId();
   await incrementUsageMetric({ agencyId, metric: "concierge_freebusy" });
 
+  const token = await resolveConciergeAccessToken({
+    profileId: process.env.CONCIERGE_GOOGLE_PROFILE_ID,
+    getAccessToken: getGoogleCalendarAccessToken,
+  });
+  if (!token.ok) {
+    // Rovnaký tvar odpovede ako ostatné chybové vetvy tejto routy: bez kľúča
+    // `error`, s `reason` a `detail`, na ktorých stojí widget na cudzom webe.
+    return NextResponse.json(
+      { ok: false, reason: token.reason, detail: token.detail },
+      { status: 503 },
+    );
+  }
+
   const result = await fetchConciergeFreeBusy({
     agencyId,
     calendarId,
     timeMin,
     timeMax,
-    accessToken: process.env.CONCIERGE_GOOGLE_ACCESS_TOKEN ?? null,
+    accessToken: token.accessToken,
   });
 
   if (!result.ok) {
