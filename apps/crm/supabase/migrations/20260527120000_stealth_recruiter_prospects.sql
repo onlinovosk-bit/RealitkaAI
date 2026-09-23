@@ -28,6 +28,9 @@ CREATE INDEX IF NOT EXISTS idx_stealth_recruiter_prospects_address
 
 ALTER TABLE public.stealth_recruiter_prospects ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "stealth_recruiter_prospects_tenant"
+  ON public.stealth_recruiter_prospects;
+
 CREATE POLICY "stealth_recruiter_prospects_tenant"
   ON public.stealth_recruiter_prospects
   FOR ALL
