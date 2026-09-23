@@ -34,7 +34,14 @@ export type UsageMetricName =
   | "cron_daily_match"
   | "cron_credits_cycle"
   | "cron_customer_health"
-  | "outreach_send";
+  | "outreach_send"
+  // Public endpoints (website concierge widget, onboarding capability URLs).
+  // They had no usage visibility at all, which is why the API contract ratchet
+  // counted them as violations rather than as an accepted exception.
+  | "concierge_callback"
+  | "concierge_freebusy"
+  | "concierge_properties"
+  | "onboarding_session";
 
 /**
  * Inkrementuje denný počítadlo cez RPC (service role).
@@ -50,13 +57,22 @@ export async function incrementUsageMetric(input: {
   }
 
   const delta = input.delta ?? 1;
-  const { error } = await supabase.rpc("increment_usage_metric", {
-    p_agency: input.agencyId,
-    p_metric: input.metric,
-    p_delta: Math.max(0, Math.floor(delta)),
-  });
+  // A counter must never decide whether a request succeeds. The returned
+  // `error` was already swallowed, but a throw was not — and these routes call
+  // this inside their try/catch, so a bad client or a missing RPC would have
+  // turned a good 200 into a 500 on a public endpoint. Caught here, once, for
+  // every caller rather than at each call site.
+  try {
+    const { error } = await supabase.rpc("increment_usage_metric", {
+      p_agency: input.agencyId,
+      p_metric: input.metric,
+      p_delta: Math.max(0, Math.floor(delta)),
+    });
 
-  if (error) {
-    console.warn("[usage-metrics] increment_usage_metric:", error.message);
+    if (error) {
+      console.warn("[usage-metrics] increment_usage_metric:", error.message);
+    }
+  } catch (err) {
+    console.warn("[usage-metrics] increment_usage_metric threw:", err);
   }
 }

@@ -1,9 +1,17 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "next build",
   "outputDirectory": ".next",
   "framework": "nextjs",
   "installCommand": "npm install",
+  "ignoreCommand": "BASE=\"${VERCEL_GIT_PREVIOUS_SHA:-HEAD^}\"; git cat-file -e \"$BASE^{commit}\" 2>/dev/null || exit 1; git diff --quiet \"$BASE\" HEAD -- . && exit 0 || exit 1",
   "git": {
-    "ignoreCommand": "git diff --quiet HEAD^ HEAD -- . && exit 0 || exit 1"
+    "deploymentEnabled": {
+      "claude/*": false,
+      "cursor/*": false,
+      "docs/*": false,
+      "chore/*": false,
+      "audit/*": false
+    }
   }
 }

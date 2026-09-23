@@ -1,5 +1,107 @@
 # Critical Decisions Log
 
+## [2026-09-23] — W1 hotová: identita kancelárie sa odovzdáva, nedopočítava
+
+**Zmena správania, nie oprava kozmetiky:** automatická odpoveď už neodíde na adresu
+klienta. Doteraz mohla — lead z 2026-09-22 05:47 má ako kontaktný e-mail adresu
+jedného z maklérov (overené: presná zhoda s `profiles.email`).
+
+- **Stráž nestojí na doméne príjemcu.** Stará podmienka `domain === recipientDomain`
+  fungovala, kým ingest bežal na doméne kancelárie. Odkedy beží na `revolis.ai`, je
+  doména príjemcu vždy `revolis.ai` a doména klienta sa s ňou nikdy nezhoduje.
+  Identita kancelárie sa teraz načíta v route a odovzdá parseru.
+- **Zdroj je nameraný, nie vymyslený:** `profiles.email` (12 riadkov na doméne klienta),
+  `agencies.email` (v produkcii prázdne) a `inbound_mailboxes.email`. Žiadny nový stĺpec,
+  žiadna migrácia, žiadny zápis do produkčnej DB — eskalácia D sa nekonala.
+- **Verejné domény sa z identity vyhadzujú.** Medzi profilmi sú aj gmail adresy. Bez
+  tohto filtra by maklér s osobným gmailom zahodil každého záujemcu z gmailu. Jeho
+  konkrétna adresa sa aj tak vylúči presnou zhodou — presnosť bez vedľajších škôd.
+- **Fallback na vylúčenú adresu padá, len keď lead má telefón.** Bez telefónu by lead
+  ostal úplne bez kontaktu, čo je horšie. **Zostávajúca diera:** lead bez telefónu, kde
+  jediná adresa je adresa klienta, stále dostane tú adresu. Vedomé, nie prehliadnuté.
+- **Dopyt na identitu je fail-soft.** Keby zhodil request, stratili by sme dopyt kvôli
+  oprave, ktorá ho má chrániť. Pri chybe sa vráti prázdna identita a parser sa správa
+  ako predtým.
+- **`to_missing` vs `to_unmatched`.** Dva úplne odlišné dôvody nepriradenia vyzerali
+  v dátach rovnako (žiadny heartbeat). Teraz sa dajú rozlíšiť — a to je rozdiel medzi
+  „oprav Worker" a „domapuj adresu".
+
+Dôkaz: 55/55 testov v acquire oblasti, z toho dvojica, kde ten istý vstup bez identity
+vráti adresu makléra (reprodukcia produkčnej chyby) a s identitou `null`. `tsc` 51 chýb
+pred aj po (nula pridaných), `next build` čistý.
+## [2026-09-23] — FUNNEL-PRICING-01 vykonaný: `/porovnanie-programov` už nesľubuje nákup programu
+
+`DEC-20260921-001` rozhodol, že kanonický je **seat model** (79 / 71 / 63 € na makléra)
+a že programy 49/99/199/449 € nesmú ostať aktívnym predajným funnelom. Rozhodnutie
+stálo dva dni bez vykonania. #647 (`fc381004`) ho vykonalo v UI.
+
+**Stav pred:** štyri CTA „Vybrať" / „★ Aktivovať" viedli na `/billing`, teda k seat
+checkoutu. Zákazník klikol na jeden cenník a skončil v druhom — pričom **vlastný banner
+stránky** (`:167`) už hovoril, že tie moduly sú na roadmape a nie v self-serve checkoute.
+Stránka si teda protirečila sama so sebou, nielen s cenníkom.
+
+**Zvolená cesta:** z dvoch schválených možností (stiahnuť stránku **alebo** prerobiť na
+informačnú) padla voľba na druhú. Menej deštruktívna a cenník ostáva ako čestná informácia
+o roadmape, nie ako predajný sľub.
+
+- Štyri plan-CTA prestali byť odkazmi → statický badge **„Na roadmape"**, zhodný
+  s bannerom. V kóde je komentár s dôvodom, aby to niekto nevrátil ako „chýbajúce CTA".
+- Spodné CTA mieri na `/upgrade`: **„Kúpiť seaty — 79 / 71 / 63 € na makléra →"**.
+- **Nedotknuté zámerne:** cenník ako roadmapa, banner `:167`, veta o garancii a
+  onboardingu — to je copy/legal rozhodnutie, nie funnel.
+
+**Overené na mergnutom `main`, nie na vetve:** `href="/billing"` má v súbore nula
+výskytov; „Na roadmape" je `:237` (vnútri mapy cez všetky štyri plány); `/upgrade` CTA
+je `:302-306`; `git diff d57eac1c origin/main` na tomto súbore je prázdny.
+
+**Čo to NEODOMYKÁ.** `/upgrade` stále nevedie do Stripe. `CHECKOUT-ENV-01` je
+nedotknutý — seat `price_…` ID v produkcii chýbajú a Krok A (Stripe VERIFY,
+`sk_live_…`, founder lokálne) sa zatiaľ nespustil. Toto odstránilo **falošný sľub**,
+nie blokádu príjmu. Kto dnes klikne na „Kúpiť seaty", dostane sa na `/upgrade`, kde
+`seatCheckoutAvailable` je `false`.
+
+---
+
+### Sprievodné nálezy z tej istej session
+
+**1. Ratchet `Zmluva kódu` je štrukturálne deravý.** `code-contract-guard.yml:14-18`
+beží **iba na `pull_request`** s path filtrom `apps/crm/src/**` — na push do `main`
+nebeží vôbec. Dlh teda neplatí ten, kto ho vyrobil; zaplatí ho prvý ďalší CRM PR.
+Dnes 9 nových porušení z #581 a #579 sedí na `main`. Detail, tranžovanie a STOP
+podmienky: `memory/open-tasks.md` → `RATCHET-API-CONTRACT-01`.
+
+**Tranža 1 splatená ešte v ten deň (#660, `GO RATCHET-TRANCHE-1`): 9 → 6.** Tri
+`concierge/*` routy prešli na `okResponse`/`errorResponse`, 16 zo 17 call site-ov;
+sedemnásty ostal ručný, lebo `freebusy` vracia `{ok:false, reason, detail?}` bez kľúča
+`error` a `errorResponse()` by ho pridal — to je verejný kontrakt widgetu na cudzom webe,
+nie kozmetika. Tvar odpovedí je pripnutý testom `api-response-wire.test.ts`.
+
+Dve korekcie k tomu, čo som predtým tvrdil. Triedu `api-response` som odhadol na
+5 porušení — v skutočnosti sú **3**; číslo ukázalo až spustenie po prepise, nie odhad.
+A napísal som, že tranža 1 „odblokuje ďalší CRM PR" — **neodblokuje**: kontrola je
+binárna (padá pri akomkoľvek novom porušení), takže je červená až do nuly.
+
+Kľúčový nález: tranža `usage-metrics` (4 z 9) sa **nedá opraviť bez rozhodnutia
+o billingu**. `UsageMetricName` je uzavretý union šiestich hodnôt a ani jedna nesedí
+na concierge ani onboarding. Splniť ratchet tam znamená pridať nové názvy metrík do
+`increment_usage_metric` RPC — tabuľky, z ktorej sa odvodzuje spotreba a reporting.
+Lint si teda pýta zmenu obchodného modelu.
+
+**2. Moja chyba z #621 stála dva PR-y.** Skript pri prepise `TASK-BUS-RUNNER-2D.md`
+zapísal `head + '\n---\n' + body`, kde `head` už na `---` končil. Výsledok:
+`EF BB BF 2D 2D 2D 0A 2D 2D 2D 0A` — BOM plus zdvojený otvárací oddeľovač. `bus:validate`
+padal na `main`, nie len na PR. Opravili to **dvaja agenti paralelne**: #648 (`988edf6b`)
+a #647 (`fc381004`). Výsledné súbory sú byte-identické, takže `main` je v poriadku a nič
+sa nestratilo — ale jedna moja chyba minula dva review cykly a dva Vercel deploye
+na vyčerpanej hobby kvóte. Samostatne otvorené a nevysvetlené: **prečo #621 prešlo CI
+zelené s rozbitým frontmatterom.**
+
+**3. Vercel burn je merateľný.** Pri jednej kontrole boli v queue tri deploye z troch
+rôznych agentných vetiev (`cursor/fix-assignment-rules-tenant-gate`,
+`claude/zealous-albattani-2h32y5`, `codex/smolko-public-chatbot`) plus dva z tejto
+práce. `ignoreCommand` v oboch `vercel.json` je empiricky inertný. Ignored Build Step
+v dashboarde ostáva neprečítaný — founder-only krok.
+
 ## [2026-09-23] — /blueprint zrušený: predával sme metodiku nesprávnemu kupcovi
 
 Founder sa spýtal, čo tou stránkou hovoríme, a navrhol ju zrušiť. Po prečítaní kódu
@@ -237,7 +339,7 @@ founder musel z nich skladať obraz sám. To je presne opak toho, načo je agent
   only then automate. Real Handoff #1 is the next intended use, but it requires
   a concrete engineering task; Phase 2 remains explicitly blocked.
 
-## [2026-09-06] — Smolko chatbot: internal CRM assistant BUILD, public Concierge still gated
+## [2026-09-06] — SUPERSEDED: Smolko chatbot: internal CRM assistant BUILD, public Concierge still gated
 
 - **GO:** Founder "Go Chatbot pre Smolka."
 - **Decision:** Build only a safe internal CRM assistant slice in `/revolis-ai`,
@@ -259,6 +361,16 @@ founder musel z nich skladať obraz sám. To je presne opak toho, načo je agent
   Contract telemetry uses `usage_metrics_daily` metric `ai_chatbot_queries`.
   Contradiction check: none; public chatbot remains explicitly blocked.
 - **Artifact:** `docs/reports/2026-09-06-smolko-crm-chatbot-mvp.md`.
+
+> Tento záznam je historický a nahrádza ho nasledujúce rozhodnutie po spresnení zákazníka. Uvedený report bol odstránený; jeho obsah zostáva dostupný v Git histórii.
+
+## [2026-09-06] — Reality Smolko chatbot: internal CRM panel REVERT, Voiceflow guide BUILD
+
+- **Trigger:** zákazník výslovne opravil zadanie: chatbot patrí na verejný web Reality Smolko a má sa pýtať na druh nehnuteľnosti, zámer a lokalitu.
+- **Evidence:** `https://www.realitysmolko.sk/` už má vložený Voiceflow projekt s launcherom „Poraďte sa!“; Creator v aktuálnom prostredí vyžaduje prihlásenie.
+- **Decision:** odstrániť interný `/revolis-ai` panel, API a CRM engine. Použiť existujúci Voiceflow projekt, nie nový Revolis chatbot. Prvý tok je bez PII, CRM zápisu, bookingu a neovereného filtračného endpointu.
+- **Artifact:** `docs/briefs/BO-smolko-voiceflow-correction.md`, `docs/voiceflow/reality-smolko-property-guide-v1.md`, `docs/reports/2026-09-06-smolko-voiceflow-audit.md`.
+- **External gate:** zmenu canvasu a publikovanie vykoná vlastník po sprístupnení Voiceflow projektu; skript na webe sa nemení.
 
 
 
@@ -2035,3 +2147,160 @@ zmena kontraktu a patrí do vlastnej brány. Zámerne neopravené:
 - **Čo to neodomyká.** Gate C ostáva zablokovaný: `bus/main` je stále na
   `17f30d4` (2026-09-19), žiadny remote C-0 nebežal. Toto odstraňuje prekážku
   v kroku §4, nespúšťa ho.
+
+## 2026-09-23 — P-2 + P-3: RLS model loop tabuliek uzavretý v repe (#644, #645)
+
+- **P-2 (#644 `5b2e915`) — rozdelenie 2/3, bez zmeny schémy.** Päť loop tabuliek
+  dostalo explicitný RLS model. Dve infra (`ai_jobs`, `lead_triage_idempotency`)
+  ostávajú `RLS ON, 0 policies` — ale už **ako zámer, nie ako opomenutie**:
+  obe majú `COMMENT ON TABLE 'intentional infra deny-all'`, lebo nemajú tenantný
+  kľúč a prístup k nim ide výlučne cez `service_role` (`rolbypassrls`). Tri
+  tenantné (`credit_ledger`, `decisions`, `exclusivity_outcomes`) dostali
+  SELECT + INSERT pre `authenticated` scopované na `agency_id`.
+- **Prečo DROP+CREATE a nie guard na neexistenciu.** `credit_ledger` už tenantné
+  policies mal — z `20260613000000`, ktorá však v PROD nikdy nebežala.
+  `DROP POLICY IF EXISTS` + `CREATE` je jediný tvar, ktorý **konverguje obe
+  strany na rovnaký výsledok** bez ohľadu na to, čo na danej inštancii je.
+- **Odchýlka od zadania, hlásená pred implementáciou.** Zadanie znelo
+  `USING (agency_id = current_agency_id())`. Tá funkcia v repe **neexistuje**.
+  Použitý je zavedený helper `public.profile_agencies_for_auth()` (`SETOF uuid`,
+  `SECURITY DEFINER`, `STABLE`, 26 migrácií). Sémanticky ekvivalent pre
+  používateľa s jednou agentúrou, korektný aj pre viac.
+- **P-3 (#645 `6ae75ba`) — vetva `agency_id IS NULL` zatvorená natrvalo.**
+  Tri policies (`platform_events_select_tenant`, `ai_action_audit_select_tenant`,
+  `ai_action_audit_insert_tenant`) sprístupňovali každému prihlásenému riadky
+  s `agency_id IS NULL`. Podmienka na uzavretie bola count = 0; meranie proti
+  živému PROD tesne pred zmenou: `platform_events` **1420 / 0 NULL**,
+  `ai_action_audit` **186 / 0 NULL**. (Skoršie meranie ukazovalo 178 — tabuľka
+  je živá, číslo narástlo; `NULL = 0` platí v oboch.)
+- **Zvyšok výrazu ostal bajt na bajt.** Nemenil sa `cmd`, `roles` ani tvar
+  poddotazu, a **zámerne** sa nepresúval na `profile_agencies_for_auth()`, hoci
+  je to inde v repe zavedený helper. Brána odstraňuje vetvu, nič iné.
+- **Nález, ktorý zmenil tvar P-3 migrácie: `ai_action_audit` nemá rovnaký tvar
+  v CI a v PROD.** Repo migrácia `20260616123000_rls_wave_a_hardening.sql` obe
+  menované policies dropuje a nahrádza jedinou `ai_action_audit_tenant`
+  (`FOR ALL`, `profile_agencies_for_auth`) — ale v PROD nikdy nebežala, je jednou
+  zo 60 neaplikovaných. Bezpodmienečný `CREATE` by teda v CI **pridal** policies,
+  ktoré tamojší model nemá; a permisívne RLS policies sa **OR-ujú**, teda by
+  prístup **rozšíril**, nie zúžil. Preto sú zmeny na `ai_action_audit` guardované
+  na existenciu policy: v CI no-op, v PROD prepis. Testované obe vetvy zvlášť.
+- **Dôkaz behaviorálny, nie len tvarový.** Ako rola `authenticated`
+  (`begin; set local role authenticated; set local "request.jwt.claim.sub" = …`),
+  fixtures 1 vlastný + 1 osirený riadok:
+  `platform_events` SELECT — so starou policy osirený viditeľný **1**, po P-3 **0**;
+  `ai_action_audit` INSERT `agency_id → NULL` — so starou policy `INSERT 0 1`,
+  po P-3 `ERROR: new row violates row-level security policy`.
+  Replay celého setu `APPLIED_OK=111 FAILED=0`, migrácia aplikovaná 3× — idempotentná.
+- **DÔLEŽITÉ — merge do `main` nezatvoril dieru v PROD.** Obe migrácie sú
+  v aktívnom sete, ale **neaplikované na PROD**; deploy je samostatná brána.
+  Overené po merge #645: všetky tri policies majú v PROD stále vetvu
+  `(agency_id IS NULL) OR …`. Repo je uzavreté, PROD nie.
+- **`BUS` CI blocker — diagnostikovaný, opravený iným PR.** `bus:validate` padal
+  na `Unsupported YAML line: --- (line 1)` kvôli UTF-8 BOM (`EF BB BF`) v
+  `.ai/bus/tasks/TASK-BUS-RUNNER-2D.md`, zavedenému commitom `36ff454` (#624);
+  červené bolo aj na `main`, teda na každom PR v repe. Diagnóza s dôkazom
+  reprodukcie na base vetve je v komentári na #644. Opravené cez #647/#648,
+  `bus:validate` je zelený (0 errors). **Root cause ale ostáva otvorený:**
+  `packages/bus-core/src/yaml.ts` BOM stále netoleruje — ďalší súbor uložený
+  s BOM zhodí pipeline znova.
+
+## 2026-09-23 — `ignoreCommand` bol 6 dní pod mŕtvym kľúčom (nahrádza #578)
+
+- **Nález:** `#578` uložil príkaz pod `"git": { "ignoreCommand": ... }`. Vercel ten kľúč
+  **nečíta** — `ignoreCommand` je top-level vlastnosť `vercel.json`, objekt `git` prijíma
+  `deploymentEnabled`. Ignored Build Step sa od 2026-09-17 ani raz nespustil; oba projekty
+  buildovali každý commit vrátane docs-only a migration-only.
+- **Dôkaz, nie dedukcia:** build log `dpl_8pgg5NkEQQPs1a942q86FeaiDLqP` (commit `472ca758`,
+  0 súborov pod `apps/crm`) ide z „Cloning completed" rovno na „Running vercel build" —
+  medzi tým nie je žiadny ignore krok.
+- **Prečo to vyzeralo funkčné:** 12 `CANCELED` deploymentov pôsobilo ako preskočené buildy.
+  Po spárovaní podľa commitov vyšiel nezmysel — `b32aa132` (1 súbor pod `apps/crm`) mal
+  `realitka-ai`=CANCELED a `revolis-marketing`=READY, teda presne naopak. Tie `CANCELED` sú
+  `autoJobCancelation` pri rýchlych mergoch na `main`, nie ignoreCommand.
+- **Prečo to harness nechytil:** `scripts/vercel-ignore-command.test.mjs` mal príkaz natvrdo
+  v konštante a `vercel.json` vôbec nečítal. Testoval logiku shellu, nie to, či Vercel kľúč
+  prečíta. 4/4 zelené nad mŕtvym kľúčom. **Kópia driftuje, čítanie nie** — harness teraz
+  načítava príkaz zo súboru a zlyhá (exit 1), ak sa `ignoreCommand` opäť ocitne pod `git`.
+- **Oprava príkazu:** základ `VERCEL_GIT_PREVIOUS_SHA` (Vercel ho vystavuje práve len keď je
+  Ignored Build Step nastavený) s fallbackom `HEAD^`; `git cat-file -e` overí dostupnosť
+  v shallow klone a pri pochybnosti **buildne** (fail-open); `apps/crm` vylučuje
+  `supabase/migrations`, lebo migrácie aplikuje `supabase db push`, nie Next.js build.
+- **KOREKCIA VLASTNÉHO TVRDENIA:** túto bránu som navrhol s odôvodnením, že „vráti zhruba
+  polovicu denného limitu". **To bolo nesprávne** a `memory/decisions.md` (2026-09-20) to už
+  raz zaznamenal: kvóta `api-deployments-free-per-day` sa míňa pri **vytvorení** deploymentu,
+  ignoreCommand beží až potom. Šetrí build minúty a CI čas, nie počet deploymentov.
+  Nekonzultoval som memory pred návrhom a zopakoval som chybu, ktorú projekt už mal opravenú.
+- **Na počet deploymentov je páka inde:** `git.deploymentEnabled` (per vetva alebo úplne),
+  prípadne vypnutie preview deploymentov v nastavení projektu. Produktové rozhodnutie —
+  stratia sa preview URL — samostatná brána, bez GO sa nerobí.
+## 2026-09-23 — Gate A/B zavreté, Gate C stále bez dôkazu (#649, #653)
+
+- **Gate B zmergovaný ako `ee3d9f3` (#649): capability `repo-head`.** Prvá
+  capability, ktorej odpoveď nie je konštanta. `BUS ALIVE` dokazuje, že sa
+  slučka točí, ale jeho dve pevné slová by vyzerali rovnako z procesu, ktorý
+  tento stroj nikdy nevidel. `repo-head` odpovedá commitom, na ktorom runner
+  stojí, a kontrakt porovnáva odpoveď proti sha prečítanej **pred** spustením
+  procesu — vymyslená, dobre tvarovaná sha kontrakt neprejde.
+- **Hranica sa nepohla a nesmie sa tak čítať.** Exekútor ďalej beží s
+  `--tools ""`, `--safe-mode`, `--permission-mode manual` a v zahadzovacom cwd,
+  bajt na bajt. **Model nedostal prístup na čítanie.** Číta runner, model
+  relayuje, kontrakt chytí model, ktorý nerelayuje. Dať modelu vlastné nástroje
+  je samostatné rozhodnutie za samostatnou bránou — bez GO sa neotvára.
+- **Mechanizmus rozšírenia dosahu je zámerne úzky.** Capability deklaruje
+  `facts` — uzavretú úniu (dnes jediný `repo_head`), ktorú runner zbiera cez
+  mapu `FACT_SOURCES` v `consume.ts`. Capability **pomenuje, čo potrebuje,
+  nie príkaz.** Pridať dosah znamená pridať zdroj pod review, nie nový reťazec.
+- **Fakty sa zbierajú pred rozpočtom.** Stroj, ktorý nevie odpovedať na
+  `git rev-parse HEAD`, je problém prostredia: beh zlyhá, task ostane otvorený,
+  slot sa neminie, blocker sa nepošle. Ďalší cyklus to skúsi znova.
+- **Jeden test púšťa skutočný `FACT_SOURCES.repo_head` bez injekcie** a pripína
+  ho na `git rev-parse HEAD`. Bez neho by jediný kus dotýkajúci sa stroja
+  zostal brána existujúca len na papieri — presne to, čo riešilo #620.
+
+### Korekcia: „BOM zhadzuje parser" bolo nesprávne (#653)
+
+- `bus:validate` bol červený na maine a ja som príčinu určil ako **UTF-8 BOM**
+  v `TASK-BUS-RUNNER-2D.md` a na tom základe odporučil BOM-tolerantný parser.
+  **Nesprávne.** Reprodukované priamo proti parseru:
+
+  | vstup | výsledok |
+  |---|---|
+  | `---` | parsed |
+  | `BOM + ---` | **parsed** — samotný BOM je neškodný |
+  | `BOM + --- potom ---` | ERROR |
+  | `--- potom ---` (bez BOM) | ERROR — tá istá chyba, BOM netreba |
+
+- Príčinou bol **zdvojený `---`**. `parseBusDocument` strihá vedúci BOM
+  odjakživa (`envelope.ts:151`), takže parser BOM-tolerantný **už bol** — len to
+  nikto nepripol testom, čiže tolerancia bola náhodná.
+- Dátovú polovicu opravilo #648 (zmazaný riadok bol presne `﻿---`).
+  Parserová polovica je #653 (`6f6e367`): hláška pomenuje príčinu
+  (`duplicated frontmatter delimiter`) namiesto symptómu
+  (`Unsupported YAML line: ---`), plus tri regresné testy — BOM sa parsuje,
+  zdvojený delimiter je odmietnutý v oboch podobách, a nepodporovaný riadok,
+  ktorý delimiter nie je, si drží generickú hlášku.
+
+### Druhá korekcia z tej istej línie
+
+- Pri #626 som napísal, že starý handshake dostane „401 na každom volaní".
+  Skutočné zlyhanie bolo **`403` na BUS-002**: SOL token sa autentifikuje, takže
+  BUS-001 prejde a padne až výsledok s `from: claude-code` pod SOL bearerom.
+  Záver (remote C-0 na maine neprejde) platil, mechanizmus nie.
+
+### Stav brán
+
+| Brána | Stav |
+|---|---|
+| Gate A | ✅ `45989e8` (#612) — per-agent identita, `from` viazané na bearer |
+| Gate B | ✅ `ee3d9f3` (#649) — `repo-head`, hranica `--tools ""` nedotknutá |
+| Gate C | 🔴 **BLOCKED** — `bus/main` stále `17f30d425971fe86a78e213c70d67cce8241403d`, remote C-0 nebežal |
+
+- **Gate C je founder-side a nedá sa obísť odo mňa.** Runbook aj handshake sú
+  na `main` pripravené; potrebný je server s `AUTH MODE: per-agent` a
+  `store: github`, tunel, a **oba** tokeny v prostredí shellu, z ktorého sa
+  handshake spúšťa. Dôkaz = päť riadkov výstupu (`MODE:`, `SERVER AUTH:`,
+  `store:`, štyri `BUS-00x`, `COPY_PASTE_REQUIRED:`) plus `before`/`after` TIP
+  vetvy `bus/main`. Tokeny sa neposielajú do chatu.
+- **Nezapísané zámerne:** `memory/session-summary.md` sa nedotýkam — drží stav
+  paralelne bežiacej session (revenue blocker `/upgrade`) a prepis by ho zahodil.
+  Founder rozhodol „len decisions".
