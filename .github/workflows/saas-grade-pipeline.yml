@@ -92,87 +92,38 @@ jobs:
         with:
           version: latest
 
-      # DORMANTNÝ, ZÁMERNE PONECHANÝ. Po prepnutí registry (krok nižšie) sa
-      # z ghcr.io neťahá nič, takže toto prihlásenie práve teraz nič nerobí.
-      # Ostáva ako poistka: keby niekto override registry odstránil, pull
-      # spadne späť na ghcr.io a pôjde prihlásený, nie anonymne.
+      # `supabase start` sťahuje šesť images z ghcr.io. Anonymný pull má nízky
+      # limit na zdieľanú IP GitHub runnerov a 2026-09-23 oň CI opakovane
+      # zaseklo: najprv zlyhal jeden image, o dve minúty neskôr všetkých šesť
+      # (`toomanyrequests`). Tento krok je v poradí 10 z 22, takže keď padne,
+      # Test aj Build sa preskočia — CI vtedy o kóde nepovie nič a červená
+      # farba nesúvisí s diffom.
       #
-      # Prečo samo nestačilo (#667): prihlásenie zdvihne limit z anonymného na
-      # per-account, lenže 2026-09-23 vracalo ghcr.io `toomanyrequests ...
-      # allowed: 44000/minute` — zdieľaný strop na strane registry, nie naša
-      # kvóta. Krok prešiel, pull aj tak padol.
-      #
-      # Token je ephemerálny GITHUB_TOKEN daného behu, nie uložený secret, a ide
-      # cez env + --password-stdin, aby sa neobjavil v príkazovom riadku ani v logu.
+      # Prihlásenie zdvihne limit z anonymného na per-account. Token je
+      # ephemerálny GITHUB_TOKEN daného behu, nie uložený secret, a ide cez
+      # env + --password-stdin, aby sa neobjavil v príkazovom riadku ani v logu.
       - name: Authenticate to ghcr.io (raise pull rate limit)
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
-      # Logging in is necessary but not sufficient, and neither is waiting: a
-      # first version of the wrapper retried ghcr.io three times with 45s and
-      # 90s of backoff, ran for 3m44s, and still failed. So
-      # `scripts/ci/supabase-start.sh` moves registry instead — Supabase
-      # publishes the same images to Docker Hub, which is limited separately.
-      # It carries the full diagnosis and is covered by scripts/ci/__tests__.
+      # Prihlásenie vyššie je nutné, ale nestačí, a čakanie tiež nie: prvá verzia
+      # wrappera skúšala ghcr.io trikrát s 45s a 90s backoffom, bežala 3m44s a
+      # aj tak spadla. Preto `scripts/ci/supabase-start.sh` mení registry, nie
+      # čas — nesie celú diagnózu a kryje ho `scripts/ci/__tests__`.
+      #
+      # Registry vyberá skript, nie tento krok: nastavuje
+      # SUPABASE_INTERNAL_IMAGE_REGISTRY pre každý pokus zvlášť, takže akékoľvek
+      # step-level `env` by aj tak prebil. Hodnota tu by teda nič nerobila a
+      # budúci čitateľ by podľa nej hádal zle — preto tu žiadna nie je.
+      #
+      # Poznámka k `Authenticate to ghcr.io` vyššie: odkedy default zoznam vedie
+      # `public.ecr.aws` a ghcr.io v ňom nie je, ten krok je dormantný. Ostáva
+      # ako poistka pre prípad, že `SUPABASE_START_REGISTRIES` ghcr.io vráti —
+      # vtedy pôjde pull prihlásený, nie anonymne.
       - name: Start local Supabase
-        env:
-          # `supabase/setup-cli` exportuje SUPABASE_INTERNAL_IMAGE_REGISTRY=ghcr.io
-          # do job env cez $GITHUB_ENV. Step-level `env` má vyššiu prioritu, takže
-          # toto nad ním vyhrá — preto to je tu a nie na jobe.
-          #
-          # Dôvod prepnutia: 2026-09-23 ghcr.io opakovane odmietalo pull s
-          # `toomanyrequests ... allowed: 44000/minute`. To NIE je náš anonymný
-          # strop — 44000/min je zdieľaný strop na strane registry, takže ani
-          # prihlásenie (#667) to neobišlo: krok `Authenticate to ghcr.io` prešiel
-          # a pull aj tak padol.
-          #
-          # `public.ecr.aws` je vlastný default Supabase CLI, čiže najlepšie
-          # podporovaná cesta. `docker.io` zámerne NIE: anonymný limit Docker Hubu
-          # je 100 pullov / 6 h na IP a `supabase start` ťahá ~10 images — na
-          # zdieľaných runneroch by to bolo horšie než to, čo opravujeme.
-          #
-          # Overené pred zmenou, nie po nej: všetkých šesť images z padnutého logu
-          # existuje na public.ecr.aws s presne tými tagmi (HTTP 200 na manifest).
-          SUPABASE_INTERNAL_IMAGE_REGISTRY: public.ecr.aws
-        working-directory: apps/crm
-        # ECR limituje počet pullov za sekundu, nie celkový objem. `supabase start`
-        # ťahá ~10 images naraz a do limitu narazí, aj keď predtým niekoľko stiahol
-        # celých. Docker si stiahnuté vrstvy drží, takže každý ďalší pokus má menej
-        # práce a séria konverguje — prvý beh na ECR stihol 2 images vrátane
-        # postgres, čo je ten najväčší.
-        #
-        # Preto opakovanie s odstupom, nie jeden pokus. `supabase stop` medzi
-        # pokusmi upratuje polovične nabehnuté kontajnery; images v cache ostávajú.
-        run: |
-          set -u
-          for attempt in 1 2 3; do
-            if supabase start; then
-              echo "supabase start OK (pokus $attempt)"
-              exit 0
-            fi
-            if [ "$attempt" -lt 3 ]; then
-              echo "::warning::supabase start zlyhal (pokus $attempt/3) — upratujem a skúšam znova"
-              supabase stop --no-backup >/dev/null 2>&1 || true
-              sleep $(( attempt * 20 ))
-            fi
-          done
-          echo "::error::supabase start zlyhal po 3 pokusoch"
-          exit 1
         run: ../../scripts/ci/supabase-start.sh
         working-directory: apps/crm
-        env:
-          # `supabase/setup-cli` nastavuje SUPABASE_INTERNAL_IMAGE_REGISTRY=ghcr.io
-          # (v našom repozitári to nikde nie je — exportuje to tá akcia). Malo to
-          # obísť limity Docker Hubu, lenže teraz škrtí ghcr.io: `toomanyrequests,
-          # allowed: 44000/minute` aj pri PRIHLÁSENOM pulle. Overené na behu
-          # a41f6d57, kde obe `docker login` vetvy prešli a `supabase start` aj
-          # tak padol — autentifikácia ten limit neobchádza.
-          #
-          # Prebíjame to na úrovni kroku zámerne: job-level `env` by nestačil,
-          # keby akcia premennú exportovala cez $GITHUB_ENV. Step-level `env` má
-          # prednosť a platí len tam, kde sa images naozaj sťahujú.
-          SUPABASE_INTERNAL_IMAGE_REGISTRY: docker.io
 
       - name: Export local credentials
         run: supabase status -o env | sed 's/"//g' >> "$GITHUB_ENV"

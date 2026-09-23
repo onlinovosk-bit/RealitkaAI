@@ -27,6 +27,30 @@
 # Docker Hub has its own limit, so this is not a guarantee — it is a second,
 # independently limited path, which three tries against one limiter never was.
 #
+# The list now LEADS with public.ecr.aws, and that order is measured rather than
+# preferred. Run 35908421737 took the full job green through ECR — Test, Build
+# and the Playwright smoke ran for the first time that day, having been skipped
+# in every earlier run. Two things came out of it:
+#
+#   1. ECR fails differently. ghcr.io answers `allowed: 44000/minute`, a shared
+#      volume ceiling that outlasts any backoff worth putting in CI. ECR answers
+#      a bare `Rate exceeded` on pulls per second:
+#
+#        19:21:32  Downloaded public.ecr.aws/supabase/postgres:15.8.1.085
+#        19:21:33  public.ecr.aws/supabase/kong:2.8.1 -> toomanyrequests
+#        19:22:30  succeeded on the next attempt, 36s later
+#
+#      A per-second limiter is exactly what a retry converges against, because
+#      Docker keeps the layers it already has. A shared volume ceiling is not.
+#
+#   2. It is the CLI's own default registry, so tag parity is Supabase's problem
+#      rather than ours — the reason `supabase start` reaches ECR unaided when
+#      `setup-cli` has not pointed it at ghcr.io.
+#
+# ghcr.io is dropped from the default list, not from the repo: the workflow still
+# logs in to it, so putting it back is one env var away. It is out of the default
+# because three CI runs measured it saturated, including while authenticated.
+#
 # The step is 12th of 25, so when it fails Test and Build are skipped and the
 # job goes red having said nothing about the code. That is the cost being
 # avoided here. On a first-attempt success the behaviour is identical to calling
@@ -36,7 +60,7 @@ set -uo pipefail
 # Attempted in order. A registry already tried in this run is only retried after
 # a wait; a fresh one is tried immediately, because a different limiter has no
 # reason to be waited out.
-read -ra REGISTRIES <<< "${SUPABASE_START_REGISTRIES:-ghcr.io docker.io ghcr.io}"
+read -ra REGISTRIES <<< "${SUPABASE_START_REGISTRIES:-public.ecr.aws docker.io public.ecr.aws}"
 BACKOFF="${SUPABASE_START_BACKOFF_SECONDS:-60}"
 
 total=${#REGISTRIES[@]}

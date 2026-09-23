@@ -5,9 +5,9 @@
 # attempt uses, what the exit code is, that a first-attempt success costs
 # nothing, and that a permanent failure still terminates.
 #
-# What it cannot prove: anything about ghcr.io or Docker Hub. The registries are
-# exactly the part no test can hold still, which is why the script treats a
-# second registry as a second chance rather than a guarantee.
+# What it cannot prove: anything about public.ecr.aws, ghcr.io or Docker Hub.
+# The registries are exactly the part no test can hold still, which is why the
+# script treats a second registry as a second chance rather than a guarantee.
 set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -54,15 +54,22 @@ check() { # name, succeed_on, want_exit, want_registries (space separated)
 
 # A healthy run must be indistinguishable from calling the CLI directly: one
 # call, no retries, no added latency.
-check "a first-attempt success calls the CLI once, on the default registry" 1 0 "ghcr.io"
+#
+# The registry it lands on is public.ecr.aws and that is asserted on purpose:
+# the order is a measured claim (run 35908421737 went green through ECR, the
+# same day three runs measured ghcr.io saturated even while authenticated), so
+# a silent reordering should fail here rather than in CI an hour later.
+check "a first-attempt success calls the CLI once, on the default registry" 1 0 "public.ecr.aws"
 
 # The point of the change: the second attempt must land on a DIFFERENT limiter.
-# Retrying ghcr.io here would repeat the failure that was measured in CI.
-check "a ghcr.io failure falls back to Docker Hub" 2 0 "ghcr.io docker.io"
+# Retrying the same registry here would repeat the failure that was measured.
+check "an ECR failure falls back to Docker Hub" 2 0 "public.ecr.aws docker.io"
 
-# Docker Hub is limited too, so the last attempt comes back to ghcr.io — by then
-# a minute has passed, which is the only case where waiting is worth anything.
-check "both registries failing still ends, after trying each" 99 1 "ghcr.io docker.io ghcr.io"
+# Docker Hub is limited too, so the last attempt comes back to ECR — by then a
+# minute has passed, which is the only case where waiting is worth anything.
+# It is also the case actually seen in CI: ECR refused kong:2.8.1 on pulls per
+# second and the very next attempt succeeded, because Docker kept the layers.
+check "both registries failing still ends, after trying each" 99 1 "public.ecr.aws docker.io public.ecr.aws"
 
 # The list is data, not structure: a deployment that wants a mirror should not
 # need to edit the loop.
