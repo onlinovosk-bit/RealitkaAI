@@ -3,13 +3,23 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const mockProfileUpdateEq = vi.fn().mockResolvedValue({ error: null });
 const mockProfileUpdate = vi.fn(() => ({ eq: mockProfileUpdateEq }));
 
+// Shared seams for the subscription.updated tests below. The defaults reproduce
+// what the module-level mocks did before they existed — customers.retrieve
+// resolving to undefined, no admin auth — so every test written against the old
+// mocks keeps the behaviour it was written for. Only the downgrade-lock block
+// gives them real implementations.
+const { mockCustomersRetrieve, mockListUsers } = vi.hoisted(() => ({
+  mockCustomersRetrieve: vi.fn(),
+  mockListUsers: vi.fn(async () => ({ data: { users: [] } })),
+}));
+
 /** Avoid loading the real Stripe SDK in Vitest — cold import can exceed default test timeout on Windows */
 vi.mock('stripe', () => ({
   default: vi.fn(function StripePlaceholder(this: Record<string, unknown>) {
     this.billingPortal = { sessions: { create: vi.fn() } };
     this.customers = {
       list: vi.fn(async () => ({ data: [] })),
-      retrieve: vi.fn(),
+      retrieve: mockCustomersRetrieve,
     };
     return undefined;
   }),
@@ -26,6 +36,7 @@ vi.mock('@/lib/supabase/client', () => ({
 
 vi.mock('@/lib/supabase/admin', () => ({
   createServiceRoleClient: () => ({
+    auth: { admin: { listUsers: mockListUsers } },
     from: (table: string) => {
       if (table === 'profiles') {
         return { update: mockProfileUpdate };
@@ -244,6 +255,112 @@ describe('billing-store', () => {
       // fire. Assert resolver stays unknown for null (delete uses forceFree).
       const { resolvePlanKeyFromStripePriceId } = await import('@/lib/billing-store');
       expect(resolvePlanKeyFromStripePriceId(null)).toBe('unknown');
+    });
+  });
+  describe('customer.subscription.updated — downgrade lock', () => {
+    const MARKET_VISION = 'price_market_vision_live';
+    const PRO = 'price_pro_live';
+    const BROKER = 'broker@example.com';
+
+    /**
+     * Drives the real webhook handler through the customer-lookup path that
+     * production uses (no authUserId on subscription events), and hands back
+     * whatever was written to `profiles`.
+     */
+    async function fireSubscriptionUpdated(opts: {
+      previousAttributes: Record<string, unknown>;
+      newPriceId: string;
+      enterprisePriceEnv?: string;
+    }) {
+      vi.resetModules();
+      vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_downgrade_guard');
+      vi.stubEnv('STRIPE_PRICE_MARKET_VISION', MARKET_VISION);
+      vi.stubEnv('STRIPE_PRICE_PRO', PRO);
+      // Production has no STRIPE_PRICE_ENTERPRISE at all. That is not the same
+      // as an empty one: `undefined === ''` is false, so stubbing it blank
+      // would quietly hide the very bug these tests exist to catch. Passing
+      // undefined deletes the key, which is what the Vercel env really looks like.
+      vi.stubEnv(
+        'STRIPE_PRICE_ENTERPRISE',
+        opts.enterprisePriceEnv as unknown as string,
+      );
+
+      mockCustomersRetrieve.mockResolvedValue({
+        id: 'cus_guard',
+        email: BROKER,
+        deleted: false,
+      });
+      mockListUsers.mockResolvedValue({
+        data: { users: [{ id: 'user-guard', email: BROKER }] },
+      });
+
+      const { handleStripeWebhookEvent } = await import('@/lib/billing-store');
+      await handleStripeWebhookEvent({
+        type: 'customer.subscription.updated',
+        data: {
+          object: {
+            id: 'sub_guard',
+            customer: 'cus_guard',
+            status: 'active',
+            items: { data: [{ price: { id: opts.newPriceId } }] },
+          },
+          previous_attributes: opts.previousAttributes,
+        },
+      } as never);
+
+      expect(mockProfileUpdate).toHaveBeenCalled();
+      return mockProfileUpdate.mock.calls[0][0] as Record<string, unknown>;
+    }
+
+    it('does not lock when the subscription item never changed', async () => {
+      // Stripe fills `previous_attributes` only with fields that actually
+      // changed. A renewal, a payment-method swap or a cancel_at_period_end
+      // flip leaves `items` out entirely — that is not a downgrade.
+      const update = await fireSubscriptionUpdated({
+        previousAttributes: { status: 'active' },
+        newPriceId: PRO,
+      });
+
+      expect(update.account_tier).toBe('pro');
+      expect(update.tier_locked_at).toBeUndefined();
+      expect(update.tier_downgraded_from).toBeUndefined();
+    });
+
+    it('does not lock on an unchanged item even when STRIPE_PRICE_ENTERPRISE is set', async () => {
+      // Control for the test above: with the env var present the old code
+      // happened to behave, which is why the bug only ever bit production.
+      const update = await fireSubscriptionUpdated({
+        previousAttributes: { status: 'active' },
+        newPriceId: PRO,
+        enterprisePriceEnv: 'price_enterprise_legacy',
+      });
+
+      expect(update.account_tier).toBe('pro');
+      expect(update.tier_locked_at).toBeUndefined();
+      expect(update.tier_downgraded_from).toBeUndefined();
+    });
+
+    it('still locks a real Enterprise -> PRO downgrade', async () => {
+      // A6: the fix must not buy its way out by never locking at all.
+      const update = await fireSubscriptionUpdated({
+        previousAttributes: { items: { data: [{ price: { id: MARKET_VISION } }] } },
+        newPriceId: PRO,
+      });
+
+      expect(update.account_tier).toBe('pro');
+      expect(update.tier_locked_at).toEqual(expect.any(String));
+      expect(update.tier_downgraded_from).toBe('enterprise');
+    });
+
+    it('clears an existing lock on a PRO -> Enterprise upgrade', async () => {
+      const update = await fireSubscriptionUpdated({
+        previousAttributes: { items: { data: [{ price: { id: PRO } }] } },
+        newPriceId: MARKET_VISION,
+      });
+
+      expect(update.account_tier).toBe('enterprise');
+      expect(update.tier_locked_at).toBeNull();
+      expect(update.tier_downgraded_from).toBeNull();
     });
   });
 });
