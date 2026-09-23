@@ -1,49 +1,74 @@
 #!/usr/bin/env bash
-# Start the local Supabase stack, riding out a rate-limited image registry.
+# Start the local Supabase stack, surviving a rate-limited image registry.
 #
-# `supabase start` pulls six images from ghcr.io. On 2026-09-23 CI hit
-# `toomanyrequests` twice in a row, on every attempt the CLI makes internally:
+# `supabase start` pulls six images. The CLI defaults to ghcr.io, and on
+# 2026-09-23 CI lost three jobs in a row to it:
 #
 #   ghcr.io/supabase/studio        attempt 1,2,3 -> toomanyrequests
 #   ghcr.io/supabase/edge-runtime  attempt 1,2,3 -> toomanyrequests
 #     retry-after: 353.157µs, allowed: 44000/minute
 #
-# Authenticating does not fix it — the workflow already logs in to ghcr.io on
-# the step before, and the failure persisted. An allowance of 44000/minute is
-# not a per-account budget, so the limiter is shared and bursty: the CLI's own
-# three attempts all land inside the same burst, microseconds apart, and all
-# lose. What it needs is distance in time, not more attempts.
+# Authenticating is not the lever: the workflow logs in to ghcr.io on the step
+# before and the pull failed anyway. An allowance of 44000/minute is not a
+# per-account budget, so the limiter is shared across the runner pool.
 #
-# This step is 11th of 24, so when it fails Test and Build are skipped and the
+# Waiting is not enough either, and that is measured rather than assumed: a
+# first version of this script retried the same registry three times with 45s
+# and 90s of backoff. The step ran for 3m44s and still failed — the limit
+# outlasts any backoff worth putting in a CI job.
+#
+# So the retries move registry instead. Supabase publishes the same images to
+# Docker Hub under the same tags, verified against its API for the exact two the
+# run needed:
+#
+#   supabase/studio:2026.08.24-sha-8ec45b2   last_updated 2026-08-24
+#   supabase/edge-runtime:v1.74.3            last_updated 2026-07-31
+#
+# Docker Hub has its own limit, so this is not a guarantee — it is a second,
+# independently limited path, which three tries against one limiter never was.
+#
+# The step is 12th of 25, so when it fails Test and Build are skipped and the
 # job goes red having said nothing about the code. That is the cost being
-# avoided here.
-#
-# On a first-attempt success the behaviour is identical to calling the CLI
-# directly. Retries only ever happen on a failure that would have been fatal.
+# avoided here. On a first-attempt success the behaviour is identical to calling
+# the CLI directly.
 set -uo pipefail
 
-ATTEMPTS="${SUPABASE_START_ATTEMPTS:-3}"
-# Overridable so the test suite does not sleep for minutes.
-BACKOFF="${SUPABASE_START_BACKOFF_SECONDS:-45}"
+# Attempted in order. A registry already tried in this run is only retried after
+# a wait; a fresh one is tried immediately, because a different limiter has no
+# reason to be waited out.
+read -ra REGISTRIES <<< "${SUPABASE_START_REGISTRIES:-ghcr.io docker.io ghcr.io}"
+BACKOFF="${SUPABASE_START_BACKOFF_SECONDS:-60}"
 
-for attempt in $(seq 1 "$ATTEMPTS"); do
-  if supabase start; then
-    [ "$attempt" -gt 1 ] && echo "supabase start succeeded on attempt ${attempt}/${ATTEMPTS}"
+total=${#REGISTRIES[@]}
+tried=""
+
+for index in "${!REGISTRIES[@]}"; do
+  registry="${REGISTRIES[$index]}"
+  attempt=$((index + 1))
+
+  echo "supabase start: attempt ${attempt}/${total} via ${registry}"
+  if SUPABASE_INTERNAL_IMAGE_REGISTRY="$registry" supabase start; then
+    [ "$attempt" -gt 1 ] && echo "supabase start succeeded on attempt ${attempt}/${total} via ${registry}"
     exit 0
   fi
 
   # A partial start leaves containers holding ports, which would make the next
-  # attempt fail for a reason that has nothing to do with the registry.
+  # attempt fail for a reason that has nothing to do with any registry.
   supabase stop --no-backup >/dev/null 2>&1 || true
 
-  if [ "$attempt" -lt "$ATTEMPTS" ]; then
-    delay=$((attempt * BACKOFF))
-    echo "::warning::supabase start failed (attempt ${attempt}/${ATTEMPTS}) — retrying in ${delay}s"
-    sleep "$delay"
+  [ "$attempt" -ge "$total" ] && break
+
+  next="${REGISTRIES[$((index + 1))]}"
+  if [[ " $tried $registry " == *" $next "* ]]; then
+    echo "::warning::${registry} failed; next attempt reuses ${next}, waiting ${BACKOFF}s first"
+    sleep "$BACKOFF"
+  else
+    echo "::warning::${registry} failed; trying ${next} immediately — a different limiter"
   fi
+  tried="$tried $registry"
 done
 
-echo "::error::supabase start failed ${ATTEMPTS} times — see the log above for the cause"
-echo "If every attempt says 'toomanyrequests', the image registry is rate limiting" >&2
-echo "the shared runner pool. That is not a fault in the diff under test." >&2
+echo "::error::supabase start failed on every registry: ${REGISTRIES[*]}"
+echo "If each attempt says 'toomanyrequests', both registries are limiting the" >&2
+echo "shared runner pool. That is not a fault in the diff under test." >&2
 exit 1

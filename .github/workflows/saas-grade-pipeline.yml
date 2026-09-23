@@ -107,11 +107,12 @@ jobs:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
-      # Logging in is necessary but not sufficient: on 2026-09-23 the pull still
-      # failed on every one of the CLI's internal attempts, microseconds apart,
-      # inside one burst of a shared limiter. `scripts/ci/supabase-start.sh`
-      # retries with real backoff so the attempts land in different bursts; it
-      # carries the full diagnosis and is covered by scripts/ci/__tests__.
+      # Logging in is necessary but not sufficient, and neither is waiting: a
+      # first version of the wrapper retried ghcr.io three times with 45s and
+      # 90s of backoff, ran for 3m44s, and still failed. So
+      # `scripts/ci/supabase-start.sh` moves registry instead — Supabase
+      # publishes the same images to Docker Hub, which is limited separately.
+      # It carries the full diagnosis and is covered by scripts/ci/__tests__.
       - name: Start local Supabase
         run: ../../scripts/ci/supabase-start.sh
         working-directory: apps/crm
