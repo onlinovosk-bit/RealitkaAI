@@ -11,14 +11,35 @@
  * and matches a capability that is explicitly on the allowlist.
  */
 
-import { validateEnvelope } from "./envelope.ts";
+import { LOST_TEXT_FIELD, validateEnvelope } from "./envelope.ts";
 import type { BusAgent, BusEnvelope, BusValidationError } from "./types.ts";
 
 export const CONSUMER_AGENT: BusAgent = "claude-code";
 
+/**
+ * Frontmatter keys the gate actually reads. If YAML silently ate text from one
+ * of these, the sender wrote a condition the gate never saw — `mode: READ_ONLY
+ * #neskor IMPLEMENT` parses to a clean `READ_ONLY`. The value looks valid, so
+ * no amount of validating it can recover the qualifier. Refuse instead.
+ */
+export const AUTHORITY_KEYS: readonly string[] = ["to", "type", "status", "mode", "gate"];
+
+/** lost_text warnings that landed on a key the gate depends on. */
+export function lostAuthorityText(warnings: readonly BusValidationError[] = []): BusValidationError[] {
+  return warnings.filter(
+    (warning) => warning.field === LOST_TEXT_FIELD && warning.key !== undefined && AUTHORITY_KEYS.includes(warning.key),
+  );
+}
+
 /** One thing the consumer knows how to do. Anything unmatched is refused. */
 export interface BusCapability {
   id: string;
+  /**
+   * May this capability be run a second time when the runner cannot prove the
+   * first run did not happen? Only a capability with no observable effect can
+   * answer true. Absent means false: silence is not proof.
+   */
+  idempotent: boolean;
   /** Does this capability answer the task? */
   matches(task: BusEnvelope): boolean;
   /** The prompt handed to the real Claude Code process. */
@@ -37,6 +58,9 @@ function taskText(task: BusEnvelope): string {
  */
 export const BUS_ALIVE_CAPABILITY: BusCapability = {
   id: "bus-alive",
+  // Two fixed words and no tools: running it twice is indistinguishable from
+  // running it once.
+  idempotent: true,
   matches: (task) => /\bBUS\s+ALIVE\b/i.test(taskText(task)),
   prompt: (task) =>
     [
@@ -63,7 +87,14 @@ export type ConsumerRefusalCode =
   | "gate_not_auto_safe"
   | "founder_decision_pending"
   | "no_capability"
-  | "already_handled";
+  | "already_handled"
+  | "lost_text_in_authority_field"
+  // Raised by the runner's durable state rather than by the gates: a run whose
+  // outcome cannot be established, so it is parked instead of repeated.
+  | "execution_unknown"
+  | "unprovable_first_run"
+  | "capability_gone"
+  | "daily_cap_reached";
 
 /** Refusals worth telling the sender about. The rest are silent no-ops. */
 const REPORTABLE: ReadonlySet<ConsumerRefusalCode> = new Set<ConsumerRefusalCode>([
@@ -71,6 +102,7 @@ const REPORTABLE: ReadonlySet<ConsumerRefusalCode> = new Set<ConsumerRefusalCode
   "gate_not_auto_safe",
   "founder_decision_pending",
   "no_capability",
+  "lost_text_in_authority_field",
 ]);
 
 export type ConsumerDecision =
@@ -87,6 +119,11 @@ export interface EvaluateOptions {
   capabilities?: BusCapability[];
   /** Task ids this agent has already answered on the bus. */
   handled?: ReadonlySet<string>;
+  /**
+   * Parse warnings for this task's own file. Without them the gate cannot tell
+   * a clean `READ_ONLY` from one that lost a qualifier to a YAML comment.
+   */
+  warnings?: readonly BusValidationError[];
 }
 
 /**
@@ -95,6 +132,15 @@ export interface EvaluateOptions {
  */
 export function evaluateTask(task: BusEnvelope, options: EvaluateOptions = {}): ConsumerDecision {
   const capabilities = options.capabilities ?? DEFAULT_CAPABILITIES;
+
+  const damaged = lostAuthorityText(options.warnings);
+  if (damaged.length > 0) {
+    return refuse(
+      "lost_text_in_authority_field",
+      `frontmatter lost text on ${damaged.map((warning) => warning.key).join(", ")} — ` +
+        `the gate would read a value the sender did not write (${damaged[0]!.message})`,
+    );
+  }
 
   if (task.to !== CONSUMER_AGENT) return refuse("not_addressed", `addressed to ${task.to}`);
   if (task.type !== "task") return refuse("not_a_task", `type is ${task.type}`);
@@ -124,18 +170,47 @@ export function evaluateTask(task: BusEnvelope, options: EvaluateOptions = {}): 
 }
 
 /**
- * Task ids this agent has already answered. Derived from the bus itself rather
- * than local state, so a second machine (or a restarted consumer) cannot run
- * the same task twice.
+ * Task ids this agent has already **answered** — that is, produced a result for.
+ * Derived from the bus itself rather than local state, so a second machine (or a
+ * restarted consumer) cannot run the same task twice.
+ *
+ * Blockers deliberately do not count. A blocker says "I did not run this", and
+ * treating it as an answer gagged the task forever: once refused, a task could
+ * never run again even after the founder fixed the very thing that refused it.
+ * Under a one-shot runner that was invisible; under a runner polling every
+ * minute it is a trap. Duplicate execution stays guarded by results, and by the
+ * durable execution state on the runner itself.
  */
 export function handledTaskIds(envelopes: BusEnvelope[]): Set<string> {
   const handled = new Set<string>();
   for (const envelope of envelopes) {
     if (envelope.from !== CONSUMER_AGENT) continue;
+    if (envelope.type === "blocker") continue;
     if (envelope.thread) handled.add(envelope.thread);
     if (envelope.task_id) handled.add(envelope.task_id);
   }
   return handled;
+}
+
+/**
+ * The refusal already reported for each task, so the runner can stay silent
+ * about a refusal it has already explained — without ever closing the task.
+ * Keyed by task, valued by the refusal code carried in the blocker body.
+ */
+export function reportedRefusals(envelopes: BusEnvelope[]): Map<string, Set<string>> {
+  const reported = new Map<string, Set<string>>();
+  for (const envelope of envelopes) {
+    if (envelope.from !== CONSUMER_AGENT || envelope.type !== "blocker") continue;
+    const code = /^code:\s*(\S+)$/m.exec(envelope.body)?.[1];
+    if (!code) continue;
+    for (const key of [envelope.thread, envelope.task_id]) {
+      if (!key) continue;
+      const codes = reported.get(key) ?? new Set<string>();
+      codes.add(code);
+      reported.set(key, codes);
+    }
+  }
+  return reported;
 }
 
 /** Facts about the real Claude Code run, carried into the result as evidence. */

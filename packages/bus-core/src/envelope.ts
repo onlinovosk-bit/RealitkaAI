@@ -16,7 +16,14 @@ import {
   type BusStatus,
   type BusValidationError,
 } from "./types.ts";
-import { parseYaml, stringifyYaml, type YamlValue } from "./yaml.ts";
+import { parseYaml, stringifyYaml, type YamlStrippedComment, type YamlValue } from "./yaml.ts";
+
+/**
+ * Field used for warnings about frontmatter text YAML dropped as a comment.
+ * Callers that write messages (the CLI) refuse on these rather than storing a
+ * message whose text was silently cut in half.
+ */
+export const LOST_TEXT_FIELD = "frontmatter.lost_text";
 
 const ID_PREFIX: Record<BusMessageType, string> = {
   task: "TASK",
@@ -49,6 +56,20 @@ export function idPrefixFor(type: BusMessageType): string {
 
 export function formatIdDate(date: Date): string {
   return date.toISOString().slice(0, 10).replace(/-/g, "");
+}
+
+/**
+ * The date a generated id must carry.
+ *
+ * The id and the envelope have to agree about when the message was created, so
+ * the id date comes from `created_at` and not from the wall clock. A draft that
+ * declares an older `created_at` keeps that day in its id; only an unparseable
+ * or absent value falls back to the supplied clock.
+ */
+export function idDateFor(createdAt: string | undefined, fallback: Date): Date {
+  if (!createdAt) return fallback;
+  const parsed = new Date(createdAt);
+  return Number.isNaN(parsed.getTime()) ? fallback : parsed;
 }
 
 /** `MSG-20260918-003-branch-audit` */
@@ -141,9 +162,25 @@ export function parseBusDocument(raw: string, path = "<memory>"): ParseResult {
     };
   }
 
+  const lostText: BusValidationError[] = [];
+  const onComment = (comment: YamlStrippedComment) => {
+    if (!comment.suspicious) return; // `# note` is a real comment; `#593` is prose
+    const dropped = comment.dropped.length > 60 ? `${comment.dropped.slice(0, 57)}...` : comment.dropped;
+    // The parser counts lines inside the frontmatter block; the author opens
+    // the file, where the opening `---` takes line 1.
+    const fileLine = comment.lineNo + 1;
+    lostText.push({
+      field: LOST_TEXT_FIELD,
+      key: comment.key,
+      message:
+        `line ${fileLine}: "${dropped}" was read as a YAML comment and dropped ` +
+        `(the value kept is "${comment.kept}") — wrap the value in quotes to keep it`,
+    });
+  };
+
   let front: Record<string, YamlValue>;
   try {
-    front = parseYaml(match[1]!);
+    front = parseYaml(match[1]!, { onComment });
   } catch (error) {
     return {
       errors: [{ field: "frontmatter", message: error instanceof Error ? error.message : String(error) }],
@@ -201,12 +238,16 @@ export function parseBusDocument(raw: string, path = "<memory>"): ParseResult {
 
   const cleaned = stripUndefined(envelope);
   const problems = validateEnvelope(cleaned);
-  const preV1 = front.v !== BUS_ENVELOPE_VERSION;
   // Pre-v1 messages predate this contract. They stay readable and are never
   // rewritten; their gaps are reported as warnings so CI can still gate v1.
-  return preV1
-    ? { envelope: cleaned, preV1: true, errors: [], warnings: problems }
-    : { envelope: cleaned, errors: problems };
+  const preV1 = front.v !== BUS_ENVELOPE_VERSION;
+  const warnings = [...lostText, ...(preV1 ? problems : [])];
+  return {
+    envelope: cleaned,
+    preV1,
+    errors: preV1 ? [] : problems,
+    ...(warnings.length > 0 ? { warnings } : {}),
+  };
 }
 
 export function validateEnvelope(envelope: Partial<BusEnvelope>): BusValidationError[] {

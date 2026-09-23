@@ -16,9 +16,11 @@ import { fileURLToPath } from "node:url";
 import {
   BUS_BOXES,
   buildMessageId,
+  idDateFor,
   BusStoreError,
   FileBusStore,
   isBusBox,
+  LOST_TEXT_FIELD,
   parseBusDocument,
   renderDigest,
   renderQueueDigest,
@@ -104,6 +106,15 @@ async function commandSend(args: Args): Promise<void> {
     fail(`Draft ${file} has no YAML frontmatter — see .ai/bus/message.schema.md`);
   }
 
+  // Refuse at write time: a message whose text YAML ate is worse than no message.
+  const lostText = (parsed.warnings ?? []).filter((warning) => warning.field === LOST_TEXT_FIELD);
+  if (lostText.length > 0) {
+    fail(
+      `Draft ${file} would lose text to YAML comments:\n` +
+        `${lostText.map((warning) => `  - ${warning.message}`).join("\n")}`,
+    );
+  }
+
   const draft = parsed.envelope;
   const now = new Date();
   const type = (flagString(args, "type") ?? draft.type) as BusMessageType;
@@ -116,8 +127,9 @@ async function commandSend(args: Args): Promise<void> {
 
   if (!envelope.id || flagString(args, "slug")) {
     const slug = flagString(args, "slug") ?? envelope.summary ?? "message";
-    const sequence = await store.nextSequence(box, type, now);
-    envelope.id = buildMessageId(type, now, sequence, slug);
+    const idDate = idDateFor(envelope.created_at, now);
+    const sequence = await store.nextSequence(box, type, idDate);
+    envelope.id = buildMessageId(type, idDate, sequence, slug);
   }
 
   const errors = validateEnvelope(envelope);

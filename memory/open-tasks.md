@@ -1,7 +1,136 @@
 # Open Tasks — Prioritized Queue
 
-> Posledná aktualizácia: 2026-08-25 | Task-loop sync
+> Posledná aktualizácia: 2026-09-21 | Task-loop sync (/upgrade prod smoke FAIL → root cause)
 
+## P0 — Billing /upgrade Stripe (revenue)
+
+- [x] Merge #369 okResponse consumer fix → `30a1ba906`
+- [x] Docs #586 prod smoke (deploy + anon gate) → `ed45d5188`
+- [x] **HUMAN 30s smoke vykonaný 2026-09-21 — FAIL.** Prihlásený `/upgrade` zobrazuje
+      „Checkout momentálne nedostupný" / „Stripe ceny pre seat alebo top-up balíčky nie sú
+      nakonfigurované v tomto prostredí." Tlačidlo „Pokračovať do Stripe" sa nevykreslí.
+
+### CHECKOUT-ENV-01 — seat/top-up Stripe price IDs chýbajú v produkcii
+
+**Root cause (overený, nie hypotéza).** `/api/billing/checkout-config` vracia
+`seatCheckoutAvailable=false`, lebo `areSeatCheckoutPricesConfigured()`
+(`apps/crm/src/lib/program-tier-pricing.ts:314`) vyžaduje **všetky tri**
+`STRIPE_PRICE_SOLO_SEAT` / `STRIPE_PRICE_TEAM_SEAT` / `STRIPE_PRICE_OFFICE_SEAT`.
+Ani jedna z nich v projekte `realitka-ai` neexistuje (Vercel env dump 2026-09-21,
+85 premenných, len názvy — hodnoty nedešifrované). To isté pre top-up:
+`STRIPE_PRICE_CREDITS_{START,RAST,PRO,MEGA}` = MISSING.
+
+Vercel produkcia má namiesto nich staré program-model price IDs:
+`STRIPE_PRICE_STARTER`, `STRIPE_PRICE_PRO`, `STRIPE_PRICE_MARKET_VISION`,
+`STRIPE_PRICE_PROTOCOL_AUTH`, `STRIPE_PRICE_ONBOARDING`.
+
+**Status:** OPEN — nie je to bug v kóde. `#369` opravil reálnu chybu (consumer
+contract), ale symptóm v UI je identický pred aj po ňom, takže `#369` sa cez
+produkčné UI nedá potvrdiť ani vyvrátiť, kým nie sú nastavené price IDs.
+
+**Do not fix autonomously:** žiadny agent nesmie vytvárať ani hádať Stripe price
+IDs. Musia existovať v Stripe účte a byť overené proti nemu.
+
+**Founder gate:** GO REQUIRED na zápis env; rozhodnutie o modeli je uzavreté
+(`DEC-20260921-001`, seat = kanonický).
+
+**Poradie krokov (founder, 2026-09-21):**
+
+- [ ] **A. Stripe VERIFY** — read-only. **Spusti:**
+      `STRIPE_SECRET_KEY=sk_live_… bash scripts/ops/stripe-verify-prices.sh`
+      (#622 — vypíše `N/9 resolved` a riadky `KĽÚČ=price_…` pripravené na env).
+      **Ako čítať výsledok** a čo robiť pri každom výstupe:
+      `docs/ops/2026-09-21-stripe-verify-kit.md` (#627 — rozhodovací strom,
+      vyplňovacie tabuľky, pasca s founder cenou).
+      Dva dokumenty vznikli paralelne v dvoch sessionoch a **nezávisle došli k
+      tým istým deviatim objektom** — skript je nástroj, kit je sprievodca.
+      **Objektov je 9, nie 3 a nie 5** (seat ×3 blokujú /upgrade; cockpit ×2
+      neblokujú nič a preto sú nebezpečné; top-up ×4 sú samostatná brána).
+      `_OWNER_COCKPIT_PRO` sa neoveruje — `enabled: false`.
+- [ ] **B. Ak existujú** → env patch s reálnymi `price_…` ID (founder zapisuje)
+- [ ] **C. Ak neexistujú** → STOP, samostatné GO na vytvorenie Stripe Products/Prices
+- [ ] **D.** Vercel production env → deploy → prihlásený `/upgrade` smoke → Stripe Checkout
+- [ ] **E.** `/porovnanie-programov` cleanup = samostatná úloha, nemieša sa do D
+
+### FUNNEL-PRICING-01 — `/porovnanie-programov` vs. seat checkout pricing
+
+`/porovnanie-programov` prezentuje programy 49 / 99 / 199 / 449 €/mes. a CTA
+„Vybrať/Aktivovať", ale CTA vedie cez `/billing` k self-service seat checkoutu
+79 / 71 / 63 € za makléra (`ProgramComparison.tsx:227,241,306`).
+
+**Status:** OPEN — product/funnel decision required.
+
+**Risk:** zákazník môže očakávať nákup zvoleného programu, ale dostane iný
+pricing/product model.
+
+**Nie je to len copy nekonzistencia.** Produkčná Stripe konfigurácia stojí na
+program modeli (`STARTER`/`PRO`/`MARKET_VISION`/`PROTOCOL_AUTH` = presne tie
+49/99/199/449 tiery), zatiaľ čo kód `program-tier-pricing.ts` stojí na seat
+modeli. `CHECKOUT-ENV-01` a `FUNNEL-PRICING-01` majú spoločný koreň: dva
+obchodné modely, produkcia na jednom, kód na druhom.
+
+**Rozhodnuté 2026-09-21 (`DEC-20260921-001`):** kanonický je **seat model**
+(79 / 71 / 63 € na makléra). Programy typu Market Vision / Protocol Authority sú
+**nadstavby**, nie alternatívny základný checkout. 49/99/199/449 € nesmie ostať
+ako aktívny predajný funnel.
+
+**Zostáva otvorené (vykonanie):** stiahnuť stránku z aktívneho funnelu **alebo**
+prerobiť na informačnú s jasným oddelením „Revolis CRM — seat pricing" od
+„Doplnkové moduly / roadmapa". Zákazník nesmie kliknúť „Aktivovať 449 €" a
+skončiť v inom cenovom modeli. Veľký redesign sa nevyžaduje.
+
+**Founder gate:** GO REQUIRED pred zmenou pricingu alebo checkout funnelu.
+**Nemieša sa** do opravy checkoutu (krok E, nie D).
+
+### CHECKOUT-ENV-02 — Owner Cockpit sa zaplatí v UI, ale nie v Stripe
+
+**Status: VYRIEŠENÉ kódom v #627 (`2936c56`).** Zostáva len env časť, ktorá je
+súčasťou kroku A/B vyššie — cockpit ceny treba overiť a zapísať, ak ho chceš
+predávať. Popis nižšie je pôvodný nález; správanie, ktoré opisuje, už neplatí.
+
+**Čo sa zmenilo:** žiadny fallback medzi founder a štandardnou cenou (predtým
+zákazník videl 249 € a zaplatil 349 €); `cockpit.ownerPurchasable` z
+`/api/billing/checkout-config` gejtuje checkbox v `/upgrade`; fail-closed throw
+v `buildSeatCheckoutSessionParams`; `metadata.founderCockpit` odráža účtovanie,
+nie eligibility. Dôkaz: tri mutácie, každá zhasne svoj test.
+
+**Pôvodný nález (historický):** `upgrade/page.tsx:225-234`
+ponúka checkbox „Owner Cockpit (+X €/mes)" a pripočíta ho do zobrazenej sumy
+(`:80`). Ale `buildSeatCheckoutSessionParams` (`credits-billing.ts:77-82`) pridá
+cockpit line item **len ak** `getOwnerCockpitStripePriceId()` vráti neprázdnu
+hodnotu — inak ho ticho vynechá, bez chyby.
+
+`STRIPE_PRICE_OWNER_COCKPIT` aj `STRIPE_PRICE_OWNER_COCKPIT_PRO` sú v produkcii
+**MISSING** (rovnaký env dump ako `CHECKOUT-ENV-01`).
+
+**Prečo teraz:** dnes je to neviditeľné, lebo sa nikto nedostane ani k seat
+checkoutu. Vo chvíli, keď sa nastavia **len** tri seat premenné a cockpit nie,
+zákazník zaškrtne Owner Cockpit, uvidí vyššiu sumu a zaplatí **iba seaty**.
+Tichý výpadok tržby plus rozpor ceny v momente platby.
+
+**Founder gate:** GO REQUIRED na env zápis (spolu s krokom B). Code fix je
+hotový.
+
+**Upresnené 2026-09-21 (VERIFY kit §3) — horší variant než tichý výpadok.**
+`isFounderKancelariaEligible()` je dnes `true` (7/20 voľných), takže UI zobrazí
+founder cenu **249 €**, ale `getOwnerCockpitStripePriceId` spadne pri chýbajúcom
+`STRIPE_PRICE_OWNER_COCKPIT_FOUNDER` späť na `STRIPE_PRICE_OWNER_COCKPIT`
+(349 €). Nastaviť **len** non-founder cenu znamená, že zákazník uvidí 249 € a
+zaplatí 349 €. Navyše `metadata.founderCockpit` sa zapíše `"true"`, takže audit
+stopa klame. Nie je to výpadok našej tržby, je to **preplatok zákazníka** —
+prísnejší problém. `_OWNER_COCKPIT_PRO` sa neoveruje (`enabled: false`).
+
+## P0 — Critical AUTH / tenant (2026-08-25 auth hunt)
+
+- [ ] **GO FIX-HUBSPOT-ANALYZE-TENANT-GATE** — require non-null caller `agency_id` + matching lead agency before admin HubSpot sync / call-analyze persist (`docs/reports/2026-08-25-critical-auth-bug-hunt.md` #1–2)
+- [ ] **GO FIX-CRON-SECRET-FAIL-CLOSED** — reject unset `CRON_SECRET` (`Bearer undefined`) on onboarding-dispatch / agency-scraping / related fail-open routes (#3); separate PR
+
+## P0 — Critical correctness (2026-08-25 hunt)
+
+- [ ] **GO FIX-CHECKOUT-AGENCY-ID** — refuse seat/top-up Stripe session when `profiles.agency_id` is null (`docs/reports/2026-08-25-critical-bug-hunt.md` #1)
+- [ ] **GO FIX-GRANT-LEDGER-ORPHAN** — roll back ledger + fail webhook/cycle when agency balance update fails after grant insert (#2); separate PR
+- [ ] **GO FIX-GMAIL-PULL-PAGING** — pageToken / persist seen ids; maxResults=25 loses older labeled mail (#3)
+- [ ] **GO FIX-MATCHING-LIST-CAP** — recalculate must not DELETE-all then rebuild from silent 500 cap (#4; beyond #444)
 ## P0 — Onlinovo MCP (docs done, code STOP)
 
 - [x] **ONL-MCP-001** feasibility tonight — `docs/onlinovo/ONL-MCP-FEASIBILITY.md`

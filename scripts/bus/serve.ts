@@ -22,6 +22,7 @@ import {
   GitHubBusStore,
   isBusBox,
   type BusBox,
+  type BusCredential,
   type BusStore,
 } from "../../packages/bus-core/src/index.ts";
 
@@ -66,6 +67,35 @@ export function writableBoxesFromEnv(env: NodeJS.ProcessEnv = process.env): BusB
   return boxes as BusBox[];
 }
 
+/**
+ * Per-agent credentials, when the deployment has them. Returns `undefined` when
+ * neither is set, which leaves the caller to fall back to the shared secret —
+ * loudly, never silently.
+ *
+ * A half-migration (only one of the two set) is allowed on purpose: the missing
+ * side is locked out immediately and visibly, which is safer than quietly
+ * dropping back to a credential that carries no identity.
+ */
+export function credentialsFromEnv(env: NodeJS.ProcessEnv = process.env): BusCredential[] | undefined {
+  const writableBoxes = writableBoxesFromEnv(env);
+  const credentials: BusCredential[] = [];
+
+  if (env.REVOLIS_BUS_TOKEN_SOL) {
+    credentials.push({ id: "sol-gpt", secret: env.REVOLIS_BUS_TOKEN_SOL, agent: "sol-gpt", writableBoxes });
+  }
+  if (env.REVOLIS_BUS_TOKEN_CLAUDE) {
+    credentials.push({
+      id: "claude-code",
+      secret: env.REVOLIS_BUS_TOKEN_CLAUDE,
+      agent: "claude-code",
+      writableBoxes,
+      execution: true,
+    });
+  }
+
+  return credentials.length > 0 ? credentials : undefined;
+}
+
 /** Bridge node:http onto the Web `Request`/`Response` handler. */
 export function nodeAdapter(handle: (request: Request) => Promise<Response | null>) {
   return async function onRequest(incoming: IncomingMessage, outgoing: ServerResponse): Promise<void> {
@@ -88,9 +118,23 @@ export function nodeAdapter(handle: (request: Request) => Promise<Response | nul
 }
 
 function main(): void {
-  const token = requiredEnv("REVOLIS_BUS_TOKEN");
+  const credentials = credentialsFromEnv();
+  if (!credentials) {
+    // Fail closed, exactly as before: no shared secret either means no bus.
+    requiredEnv("REVOLIS_BUS_TOKEN");
+    process.stderr.write(
+      "AUTH MODE: DEGRADED — single shared credential, no caller identity. " +
+        "Set REVOLIS_BUS_TOKEN_SOL and REVOLIS_BUS_TOKEN_CLAUDE to bind `from` to the bearer.\n",
+    );
+  } else {
+    process.stderr.write(`AUTH MODE: per-agent (${credentials.map((c) => c.agent).join(", ")})\n`);
+  }
+
   const port = Number.parseInt(process.env.PORT ?? "8787", 10);
-  const handle = createBusHandler({ store: storeFromEnv(), token, writableBoxes: writableBoxesFromEnv() });
+  const handle = createBusHandler({
+    store: storeFromEnv(),
+    ...(credentials ? { credentials } : { token: process.env.REVOLIS_BUS_TOKEN, writableBoxes: writableBoxesFromEnv() }),
+  });
   const onRequest = nodeAdapter(handle);
 
   createServer((incoming, outgoing) => {

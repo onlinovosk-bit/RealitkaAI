@@ -53,6 +53,7 @@ describe("SLATE_HORIZON Admiral tokens", () => {
       "railWidth",
       "sidebarWidth",
       "ctaGradient",
+      "noticeGradient",
       "focusRing",
     ]);
   });
@@ -64,6 +65,16 @@ describe("SLATE_HORIZON Admiral tokens", () => {
     expect(contrastRatio(SLATE_HORIZON.ink, SLATE_HORIZON.bg)).toBeGreaterThanOrEqual(4.5);
     expect(contrastRatio(SLATE_HORIZON.muted, SLATE_HORIZON.bg)).toBeGreaterThanOrEqual(4.5);
     expect(contrastRatio(SLATE_HORIZON.navText, "#FFFFFF")).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("notice gradient stays readable with brandDeep text at every stop", () => {
+    // noticeGradient je svetly variant topbarGradient pre informacne panely.
+    // Text na nom je brandDeep, takze kazdy stop musi drzat 4.5:1 — nielen prvy.
+    const stops = SLATE_HORIZON.noticeGradient.match(/#[0-9A-Fa-f]{6}/g) ?? [];
+    expect(stops.length).toBeGreaterThanOrEqual(2);
+    for (const stop of stops) {
+      expect(contrastRatio(SLATE_HORIZON.brandDeep, stop)).toBeGreaterThanOrEqual(4.5);
+    }
   });
 
   it("keeps green / amber / red distinguishable", () => {

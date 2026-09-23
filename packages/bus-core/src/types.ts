@@ -125,4 +125,6 @@ export interface BusRef {
 export interface BusValidationError {
   field: string;
   message: string;
+  /** Frontmatter key the problem came from, when the parser could name one. */
+  key?: string;
 }

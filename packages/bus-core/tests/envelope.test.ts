@@ -2,6 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   buildMessageId,
+  idDateFor,
+  formatIdDate,
+  LOST_TEXT_FIELD,
   envelopeFromJson,
   findLikelySecrets,
   parseBusDocument,
@@ -96,4 +99,60 @@ test("envelopeFromJson fills created_at and validates", () => {
 
 test("envelopeFromJson rejects non-objects", () => {
   assert.equal(envelopeFromJson("nope").envelope, undefined);
+});
+
+test("an unquoted value containing # is warned about, not silently halved", () => {
+  const raw = ["---", "v: 1", ...Object.entries({
+    id: "MSG-20260918-003-pr-593-open",
+    type: "state",
+    status: "open",
+    from: "claude-code",
+    to: "sol-gpt",
+    created_at: "2026-09-18T09:00:00Z",
+  }).map(([key, value]) => `${key}: ${value}`), "summary: PR #593 is open", "---", "", "body"].join("\n");
+
+  const parsed = parseBusDocument(raw);
+  assert.equal(parsed.envelope?.summary, "PR", "YAML keeps only the text before the #");
+  assert.deepEqual(parsed.errors, [], "a halved summary is still a valid envelope — that is why it needs a warning");
+
+  const lost = (parsed.warnings ?? []).filter((warning) => warning.field === LOST_TEXT_FIELD);
+  assert.equal(lost.length, 1);
+  assert.match(lost[0]!.message, /line 9: "#593 is open" was read as a YAML comment and dropped/);
+  assert.match(lost[0]!.message, /wrap the value in quotes/);
+});
+
+test("quoting the value keeps the text and raises no warning", () => {
+  const parsed = parseBusDocument(serializeEnvelope({ ...sample, summary: "PR #593 is open" }));
+  assert.equal(parsed.envelope?.summary, "PR #593 is open");
+  assert.deepEqual(parsed.warnings ?? [], []);
+});
+
+test("a deliberate comment is not reported as lost text", () => {
+  const raw = serializeEnvelope(sample).replace("status: done", "status: done   # closed on main");
+  const parsed = parseBusDocument(raw);
+  assert.equal(parsed.envelope?.status, "done");
+  assert.deepEqual((parsed.warnings ?? []).filter((warning) => warning.field === LOST_TEXT_FIELD), []);
+});
+
+test("the id date follows created_at, not the wall clock", () => {
+  // Date-independent on purpose: the previous regression only showed up on days
+  // other than the one the test was written on, so it sat red for three days.
+  const created = "2026-09-18T09:00:00Z";
+  const today = new Date();
+  const idDate = idDateFor(created, today);
+
+  assert.equal(formatIdDate(idDate), "20260918");
+  assert.notEqual(
+    formatIdDate(idDate),
+    formatIdDate(today),
+    "created_at is in the past, so the id must not carry today's date",
+  );
+  assert.equal(buildMessageId("result", idDate, 1, "pr-593"), "MSG-20260918-001-pr-593");
+});
+
+test("an absent or unparseable created_at falls back to the supplied clock", () => {
+  const fallback = new Date("2026-01-02T03:04:05Z");
+  assert.equal(formatIdDate(idDateFor(undefined, fallback)), "20260102");
+  assert.equal(formatIdDate(idDateFor("", fallback)), "20260102");
+  assert.equal(formatIdDate(idDateFor("not a date", fallback)), "20260102");
 });
