@@ -152,9 +152,10 @@ function AuditModal({ onClose }: { onClose: () => void }) {
   const [phone, setPhone] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
 
-  const PURPLE = '#A855F7'
-  const PURPLE_DIM = 'rgba(168,85,247,.15)'
-  const PURPLE_BORDER = 'rgba(168,85,247,.3)'
+  // Modrá rodina zo slate-horizon-theme.ts — rovnaká ako na landingu.
+  const PURPLE = '#3D6BA5'
+  const PURPLE_DIM = 'rgba(27,79,138,.18)'
+  const PURPLE_BORDER = 'rgba(61,107,165,.35)'
 
   const inputBase: React.CSSProperties = {
     width: '100%', padding: '14px 16px',
@@ -231,7 +232,7 @@ function AuditModal({ onClose }: { onClose: () => void }) {
             width: '100%', padding: '16px',
             borderRadius: 12, border: 'none',
             cursor: 'pointer',
-            background: `linear-gradient(135deg,${PURPLE},#7C3AED)`,
+            background: `linear-gradient(135deg,${PURPLE},#143A6B)`,
             color: '#fff', fontSize: 16, fontWeight: 800,
             fontFamily: 'inherit',
           }}
@@ -305,7 +306,7 @@ function AuditModal({ onClose }: { onClose: () => void }) {
         style={{
           width: '100%', padding: '16px',
           borderRadius: 12, border: 'none', cursor: 'pointer',
-          background: `linear-gradient(135deg,${PURPLE},#7C3AED)`,
+          background: `linear-gradient(135deg,${PURPLE},#143A6B)`,
           color: '#fff', fontSize: 16, fontWeight: 800,
           fontFamily: 'inherit', marginTop: 4,
         }}
@@ -489,7 +490,7 @@ export default function LeadCaptureModal({ source, onClose }: Props) {
     >
       <div style={{
         background: '#0A0F1E',
-        border: `1px solid ${isAudit ? 'rgba(168,85,247,.3)' : isPricing ? 'rgba(14,165,233,.3)' : 'rgba(14,165,233,.25)'}`,
+        border: `1px solid ${isAudit ? 'rgba(61,107,165,.35)' : isPricing ? 'rgba(14,165,233,.3)' : 'rgba(14,165,233,.25)'}`,
         borderRadius: 20,
         padding: '40px 36px',
         maxWidth: 460, width: '100%',
