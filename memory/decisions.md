@@ -1,5 +1,30 @@
 # Critical Decisions Log
 
+## [2026-09-22] — Wall queue W1/W2: dve steny BUILD, drift schémy BACKLOG
+
+Rozhodovacia brána podľa `revolis-constitution-v2.md` (12-otázkový Reality Check),
+záznam podľa CLAUDE.md §7. Obálky: `docs/briefs/2026-09-22-wall-queue-w1-w2.md`.
+
+- **W1 — INGEST-CONTACT-INTEGRITY: 10/12 → BUILD.** Mechanizmus zárobku je konkrétny:
+  lead, ktorého kontaktný e-mail je adresa samotného klienta, sa nedá kontaktovať
+  e-mailom a automatická odpoveď odíde nesprávnemu človeku. Každý taký lead je
+  zahodená provízia. Timing je vynútený zvonka — e-mail deviatim maklérom odišiel dnes.
+  Moat nepridáva (otázka 4 = NIE) a nové unikátne dáta neprináša (otázka 6 = NIE);
+  to skóre neťahá hore a netvárim sa, že áno.
+- **W2 — INGEST-LIVENESS: 9/12 → BUILD, ale viazané na stav.** Hodnota je retencia:
+  ticho v integrácii je nerozlíšiteľné od funkčného ticha a klient stratí dôveru skôr,
+  než my stratíme dáta. **Nezačína, kým nepadne envelope test.** Ak Worker posiela
+  hlavičku `To:`, heartbeat pri preposlanej pošte nikdy nenaskočí a pohľad by ukazoval
+  deviatich mŕtvych maklérov, hoci dopyty chodia — falošný poplach, ktorý sa tvári ako
+  meranie, je horší než žiadny pohľad. `on_state_change: abort`.
+- **Stráž nad driftom schémy: 7/12 → BACKLOG.** Štyri legalizácie za jeden deň sú reálny
+  systémový problém a stráž neexistuje. Ale na otázku 1 (zaplatil by za to dnešný klient)
+  je odpoveď NIE a na otázku 3 (skracuje Lead → Provízia) tiež NIE. Chráni nás, nezískava
+  ani neudržuje klienta. Parkujem to vedome, nie zabudnutím.
+
+Obe steny majú zakázané: merge, push do `main`, zápis do produkčnej DB, zmenu
+`.github/workflows` a akýkoľvek zásah do Cloudflare Workera — ten je mimo repozitára,
+takže ak oprava patrí tam, stena končí nálezom, nie zásahom.
 ## [2026-09-22] — Working agreement: whole walls, not screws
 
 Founder, verbatim: *„Posielaj mi na schválenie celé steny a nie skrutky."*
