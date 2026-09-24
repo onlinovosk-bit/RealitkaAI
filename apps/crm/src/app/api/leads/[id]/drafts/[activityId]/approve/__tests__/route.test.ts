@@ -6,7 +6,8 @@ const mockRate = vi.hoisted(() => vi.fn());
 const mockAdmin = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/auth", () => ({ getCurrentProfile: () => mockProfile() }));
-vi.mock("@/lib/ai/rate-guard", () => ({ checkAiRateLimit: (...a: unknown[]) => mockRate(...a) }));
+vi.mock("@/lib/rate-limit", () => ({ rateLimit: (...a: unknown[]) => mockRate(...a) }));
+vi.mock("@/lib/usage-metrics", () => ({ incrementUsageMetric: vi.fn().mockResolvedValue(undefined) }));
 vi.mock("@/lib/supabase/admin", () => ({ createServiceRoleClient: () => mockAdmin() }));
 vi.mock("@/lib/inbound/approve-draft", () => ({
   approveAndSendInboundDraft: (...a: unknown[]) => mockApprove(...a),
@@ -23,7 +24,7 @@ describe("POST /api/leads/:id/drafts/:activityId/approve", () => {
     mockProfile.mockResolvedValue({
       id: "p-1", agency_id: "agency-A", auth_user_id: "u-1", email: "makler@rk.sk", full_name: "M",
     });
-    mockRate.mockResolvedValue(null);
+    mockRate.mockResolvedValue({ allowed: true, remaining: 9 });
     mockAdmin.mockReturnValue({});
     mockApprove.mockResolvedValue({ ok: true, messageId: "m-1" });
   });
@@ -36,7 +37,7 @@ describe("POST /api/leads/:id/drafts/:activityId/approve", () => {
   });
 
   it("is rate limited", async () => {
-    mockRate.mockResolvedValue({ ok: false, error: "limit" });
+    mockRate.mockResolvedValue({ allowed: false, remaining: 0 });
     const res = await call();
     expect(res.status).toBe(429);
     expect(mockApprove).not.toHaveBeenCalled();
