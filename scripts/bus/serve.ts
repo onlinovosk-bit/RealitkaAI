@@ -17,6 +17,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  assertUsableBearer,
   createBusHandler,
   FileBusStore,
   GitHubBusStore,
@@ -108,9 +109,13 @@ export function credentialsFromEnv(env: NodeJS.ProcessEnv = process.env): BusCre
   const credentials: BusCredential[] = [];
 
   if (env.REVOLIS_BUS_TOKEN_SOL) {
+    // A secret no client can put in a header authenticates nobody: the server
+    // would start, listen, and 401 every call with nothing to point at.
+    assertUsableBearer(env.REVOLIS_BUS_TOKEN_SOL, "REVOLIS_BUS_TOKEN_SOL");
     credentials.push({ id: "sol-gpt", secret: env.REVOLIS_BUS_TOKEN_SOL, agent: "sol-gpt", writableBoxes });
   }
   if (env.REVOLIS_BUS_TOKEN_CLAUDE) {
+    assertUsableBearer(env.REVOLIS_BUS_TOKEN_CLAUDE, "REVOLIS_BUS_TOKEN_CLAUDE");
     credentials.push({
       id: "claude-code",
       secret: env.REVOLIS_BUS_TOKEN_CLAUDE,
@@ -161,6 +166,10 @@ export async function preflightGitHub(
   target: { owner: string; repo: string; branch: string; token: string; apiBase?: string },
   fetchImpl: FetchLike = (url, init) => fetch(url, init),
 ): Promise<void> {
+  // Before the header is assembled, not after `fetch` rejects it: the error
+  // from there is reported against `Bearer <token>`, a string nobody typed.
+  assertUsableBearer(target.token, "REVOLIS_BUS_GITHUB_TOKEN");
+
   const base = (target.apiBase ?? "https://api.github.com").replace(/\/+$/, "");
   const headers = {
     authorization: `Bearer ${target.token}`,
@@ -214,10 +223,17 @@ export async function preflightGitHub(
 }
 
 async function main(): Promise<void> {
-  const credentials = credentialsFromEnv();
+  let credentials: BusCredential[] | undefined;
+  try {
+    credentials = credentialsFromEnv();
+  } catch (error) {
+    process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+    process.exit(1);
+  }
+
   if (!credentials) {
     // Fail closed, exactly as before: no shared secret either means no bus.
-    requiredEnv("REVOLIS_BUS_TOKEN");
+    assertUsableBearer(requiredEnv("REVOLIS_BUS_TOKEN"), "REVOLIS_BUS_TOKEN");
     process.stderr.write(
       "AUTH MODE: DEGRADED — single shared credential, no caller identity. " +
         "Set REVOLIS_BUS_TOKEN_SOL and REVOLIS_BUS_TOKEN_CLAUDE to bind `from` to the bearer.\n",
