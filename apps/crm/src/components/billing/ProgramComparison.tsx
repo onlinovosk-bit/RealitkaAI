@@ -223,23 +223,19 @@ export default function ProgramComparison() {
                           </div>
                         )}
 
-                        <Link
-                          href="/billing"
-                          className="mt-3 block w-full rounded-xl py-2 text-[9px] font-black uppercase tracking-widest transition-all hover:opacity-90"
-                          style={
-                            plan.key === "protocol"
-                              ? {
-                                  background: "linear-gradient(135deg, #F59E0B, #D97706)",
-                                  color: SLATE_HORIZON.inkDeep,
-                                }
-                              : {
-                                  background: SLATE_HORIZON.brandDeep,
-                                  color: "#FFFFFF",
-                                }
-                          }
+                        {/* Zámerne NIE odkaz. Tieto programy nie sú v self-serve
+                            checkoute — kanonický model je seat (DEC-20260921-001).
+                            CTA by sľúbilo nákup, ktorý skončí v inom cenníku. */}
+                        <div
+                          className="mt-3 block w-full rounded-xl py-2 text-[9px] font-black uppercase tracking-widest"
+                          style={{
+                            background: SLATE_HORIZON.soft,
+                            color: SLATE_HORIZON.muted,
+                            border: `1px solid ${SLATE_HORIZON.softBorder}`,
+                          }}
                         >
-                          {plan.key === "protocol" ? "★ Aktivovať →" : "Vybrať →"}
-                        </Link>
+                          Na roadmape
+                        </div>
                       </div>
                     </th>
                   );
@@ -303,11 +299,11 @@ export default function ProgramComparison() {
             Všetky plány obsahujú 30-dňovú garanciu vrátenia. Cena za jednorazový onboarding je 99 € s DPH.
           </p>
           <Link
-            href="/billing"
+            href="/upgrade"
             className="inline-block rounded-xl px-8 py-3.5 text-[10px] font-black uppercase tracking-widest text-white transition-opacity hover:opacity-95"
             style={{ background: SLATE_HORIZON.brandDeep }}
           >
-            Aktivovať program →
+            Kúpiť seaty — 79 / 71 / 63 € na makléra →
           </Link>
         </div>
       </div>

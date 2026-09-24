@@ -20,8 +20,21 @@
  */
 import { execSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const BASELINE_FILE = "apps/crm/scripts/typecheck-baseline.json";
+// Resolved from this file, not from the cwd. The path used to be the literal
+// "apps/crm/scripts/typecheck-baseline.json", which only resolves when the
+// script is run from the repo root — and CI runs it with
+// `working-directory: apps/crm`. So in CI the committed baseline was never
+// read at all and the gate silently fell back to DEFAULT_BASELINE, while
+// `--write-baseline` would have created a nested apps/crm/apps/crm/... file.
+const BASELINE_FILE = join(dirname(fileURLToPath(import.meta.url)), "typecheck-baseline.json");
+
+// Only used if the file above is missing. It is deliberately the ORIGINAL 69
+// rather than the current number: if the baseline file ever disappears, the
+// gate should fail open to the historical ceiling instead of silently
+// tightening to a value nobody committed.
 const DEFAULT_BASELINE = 69; // 2026-09-10, origin/main @ 97655763
 
 const args = process.argv.slice(2);

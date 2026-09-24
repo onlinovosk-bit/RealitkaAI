@@ -18,6 +18,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
 
+    # Pridanie `permissions` token OBMEDZÍ presne na vymenované práva, takže
+    # `contents: read` tu musí byť — bez neho prestane fungovať checkout.
+    # `packages: read` je to, čo potrebuje pull z ghcr.io.
+    permissions:
+      contents: read
+      packages: read
+
     steps:
       - uses: actions/checkout@v4
 
@@ -70,6 +77,11 @@ jobs:
         run: npm run lint
         working-directory: apps/crm
 
+      # The retry that guards `supabase start` is itself guarded: a wrapper that
+      # silently stopped retrying, or looped forever, would be worse than none.
+      - name: Test CI helper scripts
+        run: ./scripts/ci/__tests__/supabase-start.test.sh
+
       - name: Typecheck (baseline gate)
         working-directory: apps/crm
         run: node scripts/typecheck-baseline.mjs
@@ -78,10 +90,58 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Pinned, not `latest`. With `latest` the action asks the GitHub API
+          # for the newest release on every job, unauthenticated, and on
+          # 2026-09-24 that query is what took the pipeline down:
+          #
+          #   ##[error] Failed to resolve latest Supabase CLI release: rate limit exceeded
+          #
+          # Lint, the CI helper tests and the typecheck gate had all passed by
+          # then; the job died in setup, before `supabase start` was reached.
+          # A fixed version needs no such lookup.
+          #
+          # It also makes the toolchain deterministic: with `latest`, two runs of
+          # the same commit could install different CLIs. 2.117.0 is the version
+          # `latest` already resolved to (published 2026-09-07), so pinning it
+          # changes nothing about what CI installs today.
+          #
+          # To bump: pick a version published to npm as `supabase`, change it in
+          # BOTH workflows, and let CI prove `supabase start` still works — the
+          # repo's config.toml still uses the deprecated [inbucket] section, so
+          # a CLI jump is not automatically safe.
+          version: 2.117.0
 
+      # `supabase start` sťahuje šesť images z ghcr.io. Anonymný pull má nízky
+      # limit na zdieľanú IP GitHub runnerov a 2026-09-23 oň CI opakovane
+      # zaseklo: najprv zlyhal jeden image, o dve minúty neskôr všetkých šesť
+      # (`toomanyrequests`). Tento krok je v poradí 10 z 22, takže keď padne,
+      # Test aj Build sa preskočia — CI vtedy o kóde nepovie nič a červená
+      # farba nesúvisí s diffom.
+      #
+      # Prihlásenie zdvihne limit z anonymného na per-account. Token je
+      # ephemerálny GITHUB_TOKEN daného behu, nie uložený secret, a ide cez
+      # env + --password-stdin, aby sa neobjavil v príkazovom riadku ani v logu.
+      - name: Authenticate to ghcr.io (raise pull rate limit)
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+
+      # Prihlásenie vyššie je nutné, ale nestačí, a čakanie tiež nie: prvá verzia
+      # wrappera skúšala ghcr.io trikrát s 45s a 90s backoffom, bežala 3m44s a
+      # aj tak spadla. Preto `scripts/ci/supabase-start.sh` mení registry, nie
+      # čas — nesie celú diagnózu a kryje ho `scripts/ci/__tests__`.
+      #
+      # Registry vyberá skript, nie tento krok: nastavuje
+      # SUPABASE_INTERNAL_IMAGE_REGISTRY pre každý pokus zvlášť, takže akékoľvek
+      # step-level `env` by aj tak prebil. Hodnota tu by teda nič nerobila a
+      # budúci čitateľ by podľa nej hádal zle — preto tu žiadna nie je.
+      #
+      # Poznámka k `Authenticate to ghcr.io` vyššie: odkedy default zoznam vedie
+      # `public.ecr.aws` a ghcr.io v ňom nie je, ten krok je dormantný. Ostáva
+      # ako poistka pre prípad, že `SUPABASE_START_REGISTRIES` ghcr.io vráti —
+      # vtedy pôjde pull prihlásený, nie anonymne.
       - name: Start local Supabase
-        run: supabase start
+        run: ../../scripts/ci/supabase-start.sh
         working-directory: apps/crm
 
       - name: Export local credentials
