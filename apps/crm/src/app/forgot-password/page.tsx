@@ -3,9 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { supabaseClient } from "@/lib/supabase/client";
+import { getPasswordRecoveryRedirectUrl } from "@/lib/supabase/recovery-redirect";
 import { LANDING_FOCUS_RING, LANDING_INPUT_FOCUS } from "@/lib/landing-a11y";
 
-const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? "https://app.revolis.ai").replace(/\/$/, "");
+const RECOVERY_REDIRECT = getPasswordRecoveryRedirectUrl();
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -19,7 +20,7 @@ export default function ForgotPasswordPage() {
     setLoading(true);
     try {
       const { error: resetError } = await supabaseClient.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${APP_URL}/reset-password`,
+        redirectTo: RECOVERY_REDIRECT,
       });
       if (resetError) throw resetError;
       setDone(true);
