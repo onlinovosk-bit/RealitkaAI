@@ -159,33 +159,55 @@ export function computeCreditRevenuePct(
   return Math.round((purchaseRevenueEur / total) * 1000) / 10;
 }
 
+/**
+ * AI náklad za obdobie a marža voči MRR.
+ *
+ * Tržbu NEPOČÍTA z `ai_cost_daily` — ten pohľad nesie len skutočný náklad.
+ * Marža vychádza z `computeMrrBreakdown()`, aby cenník žil na jednom mieste.
+ * Okno je to isté mesačné okno ako pri kreditoch, aby sa mesačné MRR
+ * porovnávalo s mesačným nákladom, nie s 62-dňovým.
+ */
 export function computeAiCostSummary(
   rows: AiCostDailyRow[],
   available: boolean,
+  mrrTotalEur: number,
+  periodStart: Date,
+  periodEnd: Date,
 ): AiCostSummary {
   if (!available) {
     return {
       available: false,
       days: 0,
-      creditsSpent: 0,
+      actionCount: 0,
       costEur: 0,
-      revenueEurRetail: 0,
-      marginEur: 0,
+      mrrEur: mrrTotalEur,
+      marginEur: null,
+      costGap: false,
     };
   }
 
-  const creditsSpent = rows.reduce((s, r) => s + (r.credits_spent ?? 0), 0);
-  const costEur = rows.reduce((s, r) => s + Number(r.cost_eur ?? 0), 0);
-  const revenueEurRetail = rows.reduce((s, r) => s + Number(r.revenue_eur_retail ?? 0), 0);
-  const marginEur = rows.reduce((s, r) => s + Number(r.margin_eur ?? 0), 0);
+  const inPeriod = rows.filter((row) => {
+    const day = new Date(`${row.day_utc}T00:00:00.000Z`);
+    return day >= periodStart && day < periodEnd;
+  });
+
+  const costEur =
+    Math.round(inPeriod.reduce((s, r) => s + Number(r.cost_eur ?? 0), 0) * 100) / 100;
+
+  const actionCount = inPeriod.reduce((s, r) => s + Number(r.action_count ?? 0), 0);
+
+  // Akcie prebehli, ale ani jedna nemá zapísaný náklad. Marža MRR − 0 by
+  // tvrdila, že AI nič nestojí; to je nepravda, nie meranie.
+  const costGap = actionCount > 0 && costEur === 0;
 
   return {
     available: true,
-    days: rows.length,
-    creditsSpent,
-    costEur: Math.round(costEur * 100) / 100,
-    revenueEurRetail: Math.round(revenueEurRetail * 100) / 100,
-    marginEur: Math.round(marginEur * 100) / 100,
+    days: new Set(inPeriod.map((r) => r.day_utc)).size,
+    actionCount,
+    costEur,
+    mrrEur: mrrTotalEur,
+    marginEur: costGap ? null : Math.round((mrrTotalEur - costEur) * 100) / 100,
+    costGap,
   };
 }
 
@@ -211,7 +233,13 @@ export function computeFounderMetrics(input: {
   const cockpit = computeCockpitAttach(input.agencies);
   const credits = computeCreditActivity(input.ledger, start, end);
   const creditRevenuePctOfTotal = computeCreditRevenuePct(mrr.totalEur, credits.purchaseRevenueEur);
-  const aiCost = computeAiCostSummary(input.aiCostDaily, input.aiCostDailyAvailable);
+  const aiCost = computeAiCostSummary(
+    input.aiCostDaily,
+    input.aiCostDailyAvailable,
+    mrr.totalEur,
+    start,
+    end,
+  );
 
   const activeAgencyCount = input.agencies.filter(isAgencyActive).length;
 

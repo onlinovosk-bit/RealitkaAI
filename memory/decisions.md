@@ -1,5 +1,77 @@
 # Critical Decisions Log
 
+## [2026-09-24] DEC-20260924-001 — Cenník: 199 € / kancelária / mesiac, bez kreditov
+
+**NAHRÁDZA `DEC-20260921-001` (seat model 79 / 71 / 63 €).** Seat cenník je
+archivovaný, nie zrušený — ostáva v `program-tier-pricing.ts` a v Stripe VERIFY kite
+`docs/ops/2026-09-21-stripe-verify-kit.md` pre budúce použitie.
+
+- **Rozhodnutie foundera:** 199 € za kanceláriu mesačne s DPH, **onboarding 0 €**,
+  **AI bez kreditov**. Hlavný experiment už nie je cena, ale pozicionovanie okolo
+  Lead Factory.
+- **Dôvod pivotu:** najčastejšia požiadavka z rozhovorov bola „vyrobte lead factory,
+  ktorá nám bude nosiť nové leady". Agregácia existujúcich leadov nie je Lead Factory.
+- **Stav v kóde:** `computeMrrBreakdown()` stále počíta seat/program model;
+  `SMOLKO_MANUAL_PLAN_MRR_EUR = 199` je zatiaľ **špeciálny prípad** pre
+  `manual_plan = 'market_vision'`, nie univerzálna cena. Migrácia toho výpočtu na
+  plochých 199 € je samostatné rozhodnutie s dopadom na vykazovaný MRR
+  (dnes 278 € → 597 € pri 3 aktívnych kanceláriách) — **PRICING-MODEL-01, nezačaté**.
+- **Zmluva:** Stripe Products/Prices sa nevytvárajú. `sk_live_…` nikdy neopúšťa
+  founderove ruky. Žiadne price ID sa nevymýšľa.
+
+## [2026-09-24] DEC-20260924-002 — AI nákladová telemetria: merať tam, kde sa míňa
+
+**Kontext:** `ai_openai_tokens` mal za celú históriu súčet **11** a posledný záznam
+z 2026-08-15. Deväť z desiatich zapisovacích miest posielalo `delta: 0` s komentárom
+„Contract import must be live; delta 0 avoids skewing AI token counters" — import tam
+nebol kvôli meraniu, ale aby prešla `Zmluva kódu (ratchet)`, ktorá hľadá prítomnosť
+importu, nie či sa niečo počíta.
+
+- **Dosadiť tam skutočné tokeny nešlo** — tie routy žiadne neminú (GET čítania, cron
+  gate, OAuth). Nula je tam správne číslo; chyba je, že sa dotýkajú počítadla AI tokenov.
+- **Meria sa v `callOpenAI()`** (#682) — jeden chokepoint pre všetkých 11 volajúcich.
+  Skutočné čísla tam už boli, len sa logovali do `stderr` a zahadzovali.
+- **`agencyId` dotiahnutý na všetkých 11** (#686): 6 bez dotazu navyše, 2 presunom
+  poradia (`ghostwriter`, `valuation/estimate`), 2 jedným lookupom na AI ceste
+  (`action-executor`, `bri-engine`) s nemým zlyhaním.
+- **AP-010 uzavreté** (#688): `logAiActionAudit()` zapisoval `cost_eur`,
+  `credits_spent`, `model`, `latency_ms` do stĺpcov, ktoré v produkcii neexistovali.
+  Migrácie `20260611000002` a `20260611000004` boli v repe, ale neboli aplikované.
+  Insert padal do `console.warn`. Aplikované ako `20260924183806`.
+
+## [2026-09-24] DEC-20260924-003 — Marža sa nepočíta v SQL a nevypĺňa sa nulou
+
+`ai_cost_daily` (migrácia `20260924200000`) nesie **výhradne skutočný náklad**:
+`agency_id, day_utc, action_count, cost_eur`. Tržba a marža sa počítajú v TypeScripte
+z `computeMrrBreakdown()`.
+
+- **Prečo nie v SQL:** pôvodná migrácia počítala `revenue_eur_retail =
+  credits_spent * 0,86` podľa archivovaného kreditového cenníka. Pri 199 €/kancelária
+  bez kreditov je `credits_spent` vždy NULL → pohľad by vykazoval retail 0 € a maržu
+  −cost_eur. `FounderMetricsDashboard` ten pohľad číta, takže by poctivý prázdny stav
+  nahradil nepravdivým číslom.
+- **Prečo nie duplikovať `isAgencyActive` v SQL:** cenník a definícia aktívnej
+  kancelárie by žili na dvoch miestach a raz by sa rozišli.
+- **`costGap`:** keď za obdobie prebehli akcie, ale zapísaný náklad je 0 €, marža je
+  `null` a dlaždica ukáže „—" s dôvodom. Marža `MRR − 0` by tvrdila, že AI nič nestojí.
+  To je dnes reálny stav: 168 z 198 riadkov má `meta.costEur`, **všetky null**.
+  Niet čo backfillovať — náklad sa nikdy nevypočítal.
+- **`security_invoker = true`** na pohľade — rešpektuje RLS `ai_action_audit_select_tenant`.
+  Pôvodná migrácia to nemala.
+
+## [2026-09-24] AP-021 — Migračný ledger a produkcia si neodpovedajú
+
+Repo má **113** migračných súborov, `supabase_migrations.schema_migrations` registruje
+**53**. 65 prefixov z repa v registri chýba, 5 registrovaných nemá v repe súbor.
+
+**Netvrdím, že 65 migrácií nebehlo** — `ai_action_audit` v produkcii existovala, hoci
+`20260610000001` registrovaná nie je, takže časť sa aplikovala mimo ledgeru.
+**Registrácia sa nerovná aplikácii.** Merateľné je len to, že si ledger a produkcia
+neodpovedajú. AP-010 je prvý prípad, kde to stálo funkčnosť; nález z 2026-09-23
+(`20260817220000` / `last_contact_at`, čítaná na 59 miestach) je druhý.
+Zosúladenie = samostatná úloha, nezačatá.
+
+
 ## [2026-09-23] — W1 hotová: identita kancelárie sa odovzdáva, nedopočítava
 
 **Zmena správania, nie oprava kozmetiky:** automatická odpoveď už neodíde na adresu

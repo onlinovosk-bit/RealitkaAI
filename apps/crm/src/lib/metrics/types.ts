@@ -21,11 +21,10 @@ export type CreditLedgerRow = {
 };
 
 export type AiCostDailyRow = {
+  agency_id: string | null;
   day_utc: string;
-  credits_spent: number;
-  cost_eur: number;
-  revenue_eur_retail: number;
-  margin_eur: number;
+  action_count: number | null;
+  cost_eur: number | null;
 };
 
 export type MrrBreakdown = {
@@ -45,11 +44,22 @@ export type CreditActivity = {
 
 export type AiCostSummary = {
   available: boolean;
+  /** Počet dní v okne, ktoré majú aspoň jednu AI akciu. */
   days: number;
-  creditsSpent: number;
+  actionCount: number;
   costEur: number;
-  revenueEurRetail: number;
-  marginEur: number;
+  /** MRR z computeMrrBreakdown — jediný zdroj pravdy o cenníku. */
+  mrrEur: number;
+  /**
+   * null keď sa marža nedá vypočítať poctivo — pohľad nie je dostupný, alebo
+   * AI akcie prebehli, ale ani jedna nemá zapísaný náklad (`costGap`).
+   */
+  marginEur: number | null;
+  /**
+   * Akcie za obdobie existujú, ale zapísaný náklad je 0 €. Nie „AI je zadarmo",
+   * ale medzera v telemetrii: `logAiAction` dostal `costEur: null`.
+   */
+  costGap: boolean;
 };
 
 export type GuardrailSnapshot = {
