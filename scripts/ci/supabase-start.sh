@@ -27,29 +27,38 @@
 # Docker Hub has its own limit, so this is not a guarantee — it is a second,
 # independently limited path, which three tries against one limiter never was.
 #
-# The list now LEADS with public.ecr.aws, and that order is measured rather than
-# preferred. Run 35908421737 took the full job green through ECR — Test, Build
-# and the Playwright smoke ran for the first time that day, having been skipped
-# in every earlier run. Two things came out of it:
+# The list LEADS with docker.io, and that order is measured rather than preferred.
+# Every registry here has now been watched in CI, and the tally is one-sided:
 #
-#   1. ECR fails differently. ghcr.io answers `allowed: 44000/minute`, a shared
-#      volume ceiling that outlasts any backoff worth putting in CI. ECR answers
-#      a bare `Rate exceeded` on pulls per second:
+#   registry          first attempt            as a later attempt
+#   ghcr.io           0 for 3, authenticated   never reached
+#   public.ecr.aws    0 for 3                  1 for 1
+#   docker.io         never tried first        2 for 2
 #
-#        19:21:32  Downloaded public.ecr.aws/supabase/postgres:15.8.1.085
-#        19:21:33  public.ecr.aws/supabase/kong:2.8.1 -> toomanyrequests
-#        19:22:30  succeeded on the next attempt, 36s later
+# public.ecr.aws led the list first, on the reasoning that it is the CLI's own
+# default and so tag parity is Supabase's problem rather than ours. That part
+# still holds, and it is why ECR stays in the list. What did not hold is that
+# it should go first: it has never once carried `supabase start` on the first
+# attempt. Its failure mode is a bare `Rate exceeded` on pulls per second,
 #
-#      A per-second limiter is exactly what a retry converges against, because
-#      Docker keeps the layers it already has. A shared volume ceiling is not.
+#   20:15:32  attempt 1/3 via public.ecr.aws   (9 of 10 images pulled)
+#   20:16:56  public.ecr.aws/supabase/edge-runtime:v1.74.3 -> toomanyrequests
+#   20:17:36  succeeded on attempt 2/3 via docker.io
 #
-#   2. It is the CLI's own default registry, so tag parity is Supabase's problem
-#      rather than ours — the reason `supabase start` reaches ECR unaided when
-#      `setup-cli` has not pointed it at ghcr.io.
+# which a retry does converge against — but paying ~85s for a first attempt that
+# has never succeeded is a worse trade than starting on the registry that has.
+#
+# One thing ECR-first was assumed to buy, and does not: it does NOT spend less of
+# Docker Hub's anonymous allowance. The attempt above re-pulled all ten images
+# from Docker Hub, because `public.ecr.aws/supabase/postgres` and
+# `supabase/postgres` are different repositories to Docker and the manifest is
+# fetched again. Only the layers are reused, which buys time (37s instead of 84s)
+# and no quota at all.
 #
 # ghcr.io is dropped from the default list, not from the repo: the workflow still
 # logs in to it, so putting it back is one env var away. It is out of the default
-# because three CI runs measured it saturated, including while authenticated.
+# because three CI runs measured it saturated, including while authenticated, and
+# because backoff does not outlast a shared volume ceiling.
 #
 # The step is 12th of 25, so when it fails Test and Build are skipped and the
 # job goes red having said nothing about the code. That is the cost being
@@ -60,7 +69,7 @@ set -uo pipefail
 # Attempted in order. A registry already tried in this run is only retried after
 # a wait; a fresh one is tried immediately, because a different limiter has no
 # reason to be waited out.
-read -ra REGISTRIES <<< "${SUPABASE_START_REGISTRIES:-public.ecr.aws docker.io public.ecr.aws}"
+read -ra REGISTRIES <<< "${SUPABASE_START_REGISTRIES:-docker.io public.ecr.aws docker.io}"
 BACKOFF="${SUPABASE_START_BACKOFF_SECONDS:-60}"
 
 total=${#REGISTRIES[@]}
