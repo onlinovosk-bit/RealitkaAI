@@ -1041,3 +1041,66 @@ Je to jediná vec, ktorá dnes blokuje príjem; všetko ostatné je naň naviaza
 
 ### Ďalší krok
 Rozhodnúť o **deploy migrácií na PROD**. Kým nepríde, P-2 aj P-3 sú uzavreté len v repe a diera `agency_id IS NULL` je v PROD stále otvorená. Pozor: `supabase db push` aplikuje **všetkých 60+ neaplikovaných migrácií naraz**, nielen tieto dve — preto to nie je rutinný deploy a potrebuje vlastnú bránu s plánom.
+
+## Session 2026-09-23 (CI unblock — Supabase images)
+
+### Dokončené
+- **Cesta B zmeraná a zelená.** Beh `35908421737`: `SUPABASE_INTERNAL_IMAGE_REGISTRY:
+  public.ecr.aws` + 3-pokusový retry prešiel 5/5. **`Test` a `Build` bežali prvý raz** —
+  v každom predošlom behu boli `skipped`, lebo pipeline zomrel na `Start local Supabase`.
+- **Dôkaz, že prepnutie registry samo nestačí.** `19:21:32` postgres stiahnutý,
+  `19:21:33` `public.ecr.aws/supabase/kong:2.8.1` → `toomanyrequests: Rate exceeded`,
+  `pokus 1/3` padol; `19:22:30` **`supabase start OK (pokus 2)`**. Retry bol nosný prvok.
+- **Dve triedy zlyhania oddelené:** ghcr.io `allowed: 44000/minute` = zdieľaný objemový
+  strop registry, auth ani 3m44s backoff nepomôžu. ECR `Rate exceeded` = pully za sekundu,
+  retry proti nemu konverguje, lebo Docker drží stiahnuté vrstvy.
+- **Oprava rozbitého merge (`2655f74`).** Niekto zmergoval `main` do
+  `claude/upbeat-davinci-t8zjo8` (`8d0fe73`) a krok `Start local Supabase` dostal
+  **duplicitné kľúče** `run`/`env`/`working-directory` — moja inline slučka vedľa volania
+  wrappera z #670. YAML to ticho zje, posledný kľúč vyhrá, takže reálne bežal `docker.io`
+  a retry bola mŕtvy kód. Tretí prípad tichého rozbitia po #660/#662.
+- **Konvergencia namiesto súboja:** wrapper `scripts/ci/supabase-start.sh` (#670) je lepšia
+  štruktúra než inline slučka — má testy, zoznam registry je dáta. #671 teda berie wrapper
+  a prispieva doň: default `ghcr.io docker.io ghcr.io` → `public.ecr.aws docker.io
+  public.ecr.aws`; `nightly-playwright.yml` naň napojený (doteraz volal `supabase start`
+  priamo, bez jediného retry); mŕtve step-level `SUPABASE_INTERNAL_IMAGE_REGISTRY` preč.
+- **Mutation proof:** po zmene skriptu spadli 3/4 testy na presnom zozname registry,
+  štvrtý (konfigurovateľnosť) ostal zelený. Až potom upravený test → 4/4.
+
+- **#671 zmergovaný** 2026-09-24 05:31 → `959b251`. Overené na `main`: default registry
+  `public.ecr.aws docker.io public.ecr.aws`, oba workflowy volajú
+  `../../scripts/ci/supabase-start.sh`, žiadne step-level `SUPABASE_INTERNAL_IMAGE_REGISTRY`,
+  žiadne duplicitné YAML kľúče.
+- **Posledný beh pred merge je dôležitejší než ten prvý.** Na `2655f74` pokus 1 cez
+  `public.ecr.aws` stiahol 9 z 10 images a padol na `edge-runtime:v1.74.3`; pokus 2 cez
+  `docker.io` prešiel. Čo CI drží zelené je teda **druhý, nezávisle limitovaný registry**,
+  nie poradie. Poradie je zvolené preto, že `ghcr.io` má tri behy a nula úspechov,
+  `public.ecr.aws` dva behy a oba nakoniec zelené, `docker.io` jeden dátový bod a ten ako
+  druhý pokus s teplými vrstvami.
+- **Opravený vlastný omyl:** ECR-first NEšetrí kvótu Docker Hubu. Pokus 2 stiahol z Docker
+  Hubu všetkých desať, lebo `public.ecr.aws/supabase/postgres` a `supabase/postgres` sú pre
+  Docker rôzne repozitáre — manifest sa ťahá znova. Ušetria sa len vrstvy, teda čas
+  (37 s namiesto 84 s), nie limit.
+
+### Rozpracované / Pending
+- **Optimálne poradie registry nie je zmerané** a jeden beh na registry nie je vzorka.
+  Zoznam je dáta — `SUPABASE_START_REGISTRIES` ho prehodí bez PR.
+- **Caveat:** závislosť na cudzom registry sa **presunula, neodstránila**. Ak sa saturujú
+  oba, ďalšia páka = cachovanie images v CI, vlastné GO.
+- **Delenie vlastníctva s paralelnými sessionmi je reálny problém** — #671/#673 riešili ten
+  istý blocker v tých istých dvoch súboroch a do mojej vetvy zasiahol cudzí merge, ktorý ju
+  ticho rozbil. Návrh: CI/workflow súbory vlastní naraz jedna session.
+- Nezmenené: CHECKOUT-ENV-01 krok A (Stripe VERIFY, founder-side), deploy 60+ migrácií na
+  PROD, `BUS-YAML-BOM-TOLERANCE`.
+
+### Kľúčové súbory zmenené
+- `scripts/ci/supabase-start.sh` — default registry list vedie `public.ecr.aws`, doplnená diagnóza
+- `scripts/ci/__tests__/supabase-start.test.sh` — asercie na nový default + prečo je to meranie
+- `.github/workflows/saas-grade-pipeline.yml` — mŕtve step env preč, komentár zaktualizovaný
+- `.github/workflows/nightly-playwright.yml` — napojený na wrapper
+- `memory/session-summary.md` — tento záznam
+
+### Ďalší krok
+CI blocker je uzavretý. Najvyššiu hodnotu má opäť **CHECKOUT-ENV-01 krok A** — read-only
+Stripe VERIFY, ktorý spúšťa founder (ja kľúč nemám a mať nebudem). Je to jediná vec, ktorá
+dnes blokuje príjem.
