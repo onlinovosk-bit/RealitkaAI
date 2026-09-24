@@ -66,18 +66,6 @@ export async function GET(request: Request) {
         : result.reason === "invalid_window"
           ? 400
           : 502;
-    // `reason` and `detail` stay exactly where the website widget reads them;
-    // errorResponse only adds the `error` key the rest of the API already uses.
-    return errorResponse(result.detail ?? result.reason, status, {
-      reason: result.reason,
-      detail: result.detail,
-    });
-  }
-
-  return okResponse({
-    calendarId: result.calendarId,
-    busy: result.busy,
-  });
     // Zámerne NIE errorResponse. Táto odpoveď nemá kľúč `error` — nesie
     // `reason` (+ voliteľný `detail`), na ktorých stojí widget na cudzom webe.
     // errorResponse() by pridal `error`, teda zmenil tvar odpovede. Túto routu
