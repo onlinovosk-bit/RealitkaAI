@@ -50,6 +50,7 @@ async function getOpenAiInsight(
       model,
       max_tokens: 80,
       tag:        "rescore-insight",
+      agencyId:   lead.agency_id ?? undefined,
       messages: [
         {
           role:    "system",

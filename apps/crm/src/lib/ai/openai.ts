@@ -6,6 +6,7 @@
  */
 import OpenAI from "openai";
 import { sanitizeMessages, rehydrate, type Vault } from "./sanitize";
+import { incrementUsageMetric, SYSTEM_USAGE_AGENCY_ID } from "@/lib/usage-metrics";
 
 let _client: OpenAI | null = null;
 
@@ -32,6 +33,11 @@ export async function callOpenAI(params: {
   max_tokens?: number;
   response_format?: { type: "json_object" | "text" };
   tag?: string;
+  /**
+   * Agentúra, ktorej sa spotreba účtuje. Bez nej spadne na systémový tenant —
+   * merateľné to ostane, len neprisúditeľné konkrétnej kancelárii.
+   */
+  agencyId?: string;
 }): Promise<CallOpenAIResult> {
   const client = getOpenAIClient();
   if (!client) throw new Error("OPENAI_API_KEY nie je nastavený");
@@ -56,6 +62,20 @@ export async function callOpenAI(params: {
   process.stderr.write(
     `[ai:${params.tag ?? params.model}] ${ms}ms | in:${res.usage?.prompt_tokens} out:${res.usage?.completion_tokens} | masked:${vaultSize}\n`
   );
+
+  // Toto je jediné miesto, kde Revolis míňa OpenAI tokeny, a doteraz sa tu
+  // len logovali do stderr. `usage` je skutočný počet z odpovede, nie odhad.
+  // incrementUsageMetric je fail-soft (vlastný try/catch), takže výpadok
+  // počítadla nikdy nezhodí samotné AI volanie.
+  const totalTokens =
+    (res.usage?.prompt_tokens ?? 0) + (res.usage?.completion_tokens ?? 0);
+  if (totalTokens > 0) {
+    await incrementUsageMetric({
+      agencyId: params.agencyId ?? SYSTEM_USAGE_AGENCY_ID,
+      metric: "ai_openai_tokens",
+      delta: totalTokens,
+    });
+  }
 
   return {
     content,
