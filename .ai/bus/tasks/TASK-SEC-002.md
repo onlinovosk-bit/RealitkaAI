@@ -73,7 +73,7 @@ Founder GO → fail-closed secret + service-role insert + throw on failure
 
 ## Resolution (2026-09-24, founder GO „Tier-3 brána pre inbound auto-reply")
 
-Fix je na vetve `claude/keen-lovelace-ih8ej3`, PR #689. Na `main` ešte nie je.
+Fix je na vetve `claude/keen-lovelace-ih8ej3`, PR #690 (#689 sa zmergovala pred pushom fixu, niesla len docs). Na `main` ešte nie je.
 Status sa zmení na `done` až po merge a po overení obsahu na `main`.
 
 - **Secret je povinný.** Bez `INBOUND_WEBHOOK_SECRET` vráti endpoint 503 (fail-closed).

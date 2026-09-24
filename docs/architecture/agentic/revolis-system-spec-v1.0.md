@@ -223,7 +223,7 @@ PR + founder merge (RRA pravidlo 3, AP-008).
 | 2 Material | zmena stavu leadu/pipeline, `outreach_log` queued, kalendárny návrh | podľa policy |
 | 3 Irreversible | **akákoľvek správa mimo tenanta** (e-mail, SMS, WhatsApp, Telegram klientovi), publikovanie inzerátu, delete, billing, PROD config | **povinné ľudské schválenie** |
 
-**Stav 2026-09-24:** porušenie 1 je opravené na vetve PR #689 (draft + audit,
+**Stav 2026-09-24:** porušenie 1 je opravené v PR #690 (draft + audit,
 povinný secret, testy zakázaného správania). Na `main` až po merge.
 
 **Porušenia dnes (merané na `main` @ 22bad1d):**

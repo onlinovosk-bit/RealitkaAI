@@ -5,10 +5,10 @@
 - Revolis System Spec v1.0, vyplnený z kódu so stavmi LIVE/DEFINED/MISSING:
   `docs/architecture/agentic/revolis-system-spec-v1.0.md`
 - Rozhodnutie zapísané v `memory/decisions.md`; odkazy v `docs/architecture/MAPA.md`
-- PR #689 (draft, iba dokumentácia)
+- PR #689 zmergovaná (squash, 0d01c8a): iba dokumentácia
 
 ### Rozpracované / Pending
-- **Tier-3 brána (GO 2026-09-24) je hotová na vetve, PR #689; čaká na merge.**
+- **Tier-3 brána (GO 2026-09-24) je v PR #690 a čaká na merge. #689 sa zmergovala o 19:39 UTC, teda pred pushom fixu, takže fix na `main` NIE JE (overené diffom obsahu).**
   Pred merge treba overiť, že `INBOUND_WEBHOOK_SECRET` je nastavený na PROD.
   Bez neho endpoint po merge vracia 503.
 - `TASK-SEC-002` je v stave `running`. Na `done` ho prepni po overení obsahu na `main`.
@@ -28,7 +28,7 @@
 - `.ai/bus/tasks/TASK-SEC-002.md`: pridaná sekcia Resolution
 
 ### Ďalší krok
-Overiť `INBOUND_WEBHOOK_SECRET` na PROD, potom merge PR #689. Ďalšia stena
+Overiť `INBOUND_WEBHOOK_SECRET` na PROD, potom merge PR #690. Ďalšia stena
 (čaká na GO): jednoklikové „schváliť a odoslať draft", aby Tier-3 brána nebola len
 copy-paste.
 
