@@ -202,4 +202,33 @@ describe("approveAndSendInboundDraft", () => {
     expect(res).toMatchObject({ ok: false, status: 502 });
     expect(metaWrites[1]).toMatchObject({ approval_state: "send_failed" });
   });
+
+  it("kill switch blocks the send even after the broker approves — no claim, no send", async () => {
+    const { admin, metaWrites } = fakeAdmin({});
+    const res = await approveAndSendInboundDraft({
+      admin, leadId: LEAD, activityId: ACT, approver, send,
+      systemState: { degraded: false, killSwitch: true },
+    });
+    expect(res).toMatchObject({ ok: false, status: 503 });
+    expect(send).not.toHaveBeenCalled();
+    expect(metaWrites).toHaveLength(0);
+    expect(mockLogAiAction).not.toHaveBeenCalled();
+  });
+
+  it("records the Control Contract verdict on the draft and in the audit", async () => {
+    const { admin, metaWrites } = fakeAdmin({});
+    await approveAndSendInboundDraft({
+      admin, leadId: LEAD, activityId: ACT, approver, send,
+      systemState: { degraded: false, killSwitch: false },
+    });
+    const rules = (metaWrites[0] as { authority_rules: string[] }).authority_rules;
+    expect(rules).toEqual(
+      expect.arrayContaining(["irreversible_floor", "externally_visible_floor", "approval_granted"]),
+    );
+    expect(metaWrites[0]).toHaveProperty("authority_policy");
+    expect(mockLogAiAction.mock.calls[0][0].meta).toMatchObject({
+      action: "inbound.reply.email.send",
+      authority_rules: rules,
+    });
+  });
 });

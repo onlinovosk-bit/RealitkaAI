@@ -94,6 +94,24 @@ const ENTRIES: readonly ActionMetadata[] = [
       "Send a follow-up SMS. Twilio Messages create idempotency is UNDOCUMENTED — at-least-once.",
   },
   {
+    action: "inbound.reply.email.send",
+    capability: "EXECUTE",
+    reversible: false,
+    externallyVisible: true,
+    risk: "irreversible",
+    externalProvider: "resend",
+    providerIdempotency: {
+      status: "probable",
+      mechanism: "Idempotency-Key header on POST /emails",
+      retentionHours: 24,
+      evidenceRef: UJKL,
+    },
+    denied: false,
+    deniedReason: null,
+    description:
+      "Send the broker-approved inbound AI reply draft to the lead (REVOLIS-INBOUND-AUTOREPLY).",
+  },
+  {
     action: "lead.score.recompute",
     capability: "ANALYZE",
     reversible: true,

@@ -16,6 +16,11 @@
   treba overiť, či PostgREST filter `.or('meta->>approval_state.is.null,…')`
   funguje na živej DB.
 - `TASK-SEC-002` je `done`: obsah je na `main` a overený.
+- **Control Contract je v živej ceste (PR #692):** registrovaná akcia
+  `inbound.reply.email.send`, autorita v `approve-draft.ts`, kill switch
+  `AGENT_KILL_SWITCH`. Čaká na merge.
+- PROD, read-only kontrola (20:15Z): `ebb55b1` beží na produkcii (READY). Runtime
+  logy za 7 dní obsahujú len 12 riadkov, takže prevádzku webhooku z nich nevyčítam.
 - PR #495 (pôvodný nález) nechaj otvorený, kým founder neprijme kartu.
 
 ### Kľúčové súbory zmenené

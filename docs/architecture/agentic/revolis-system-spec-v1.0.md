@@ -39,7 +39,7 @@ related:
 | Memory | DEFINED (repo), MISSING (produkt) | Memory Engine ADR zaparkovaný (gate: 3 platiaci) |
 | Orchestration | LIVE (Vercel cron) | Terminácia implicitná (cron = 1 beh), OK pre dnes |
 | Events | ČIASTOČNE | `platform_events` live; correlation/causation (Spine v2) nemigrované |
-| Governance | **DEFINED, nie LIVE** | `packages/control-contract` existuje, kill switch hardcoded `false` |
+| Governance | **ČIASTOČNE LIVE** (po #692) | Kontrakt stráži len inbound send. Kill switch cez env, ale vyžaduje redeploy |
 | Human Approval | ČIASTOČNE | **Inbound auto-reply posiela AI e-mail bez schválenia (Tier 3)** |
 | Evals | ČIASTOČNE | Golden test s mockom; žiadny behavior/adversarial eval v CI |
 | Red Team | MISSING (produkt) | Len control-contract + bus-core majú adversariálne testy |
@@ -202,6 +202,18 @@ identity. Testy vrátane adversariálnych.
 `lib/agents/followup/controlled.ts`, volaný len z testov;
 `lib/control-plane/run-context.ts:51` má `killSwitch: false` natvrdo.
 
+**Aktualizácia 2026-09-24 (po merge PR #692):** prvá živá cesta je za kontraktom.
+`lib/inbound/approve-draft.ts` pred odoslaním volá `resolveAuthority` a
+`applyApproval` pre akciu `inbound.reply.email.send`. Akcia je v registri ako
+irreversible a externally visible, takže padá na APPROVAL_REQUIRED a ako
+schválenie sa započíta klik makléra.
+Kill switch má skutočný zdroj, `AGENT_KILL_SWITCH`
+(`lib/control-plane/system-state.ts`), a platí aj pre `run-context.ts`.
+Zapnutý kill switch zablokuje odoslanie aj po schválení (I-007).
+Verdikt (`policyRef`, `appliedRules`) sa zapisuje na návrh aj do auditu.
+**Stále chýba:** kill switch bez redeployu. Zmena env na Vercel si redeploy
+vyžaduje. Ostatné AI call-sites za kontraktom nie sú.
+
 **LIVE mechanizmy mimo kontraktu:** feature flags (`lib/ai/decision-flags.ts`,
 default OFF), plan gating (`lib/enterprise-sales-intelligence-gate.ts`,
 `lib/feature-gating.ts`), rate guard, kontaktná garda W1
@@ -326,7 +338,7 @@ Rollback = Vercel redeploy predošlého buildu; pre agentov navyše env flag
 | Skills defined | ➖ zámerne BACKLOG |
 | Tools permissioned | ⚠️ register existuje, nie je v ceste |
 | Memory policy | ⚠️ ADR, zaparkované |
-| Governance | ⚠️ DEFINED, nie LIVE |
+| Governance | ⚠️ 1 živá cesta (inbound send), zvyšok DEFINED |
 | Approval boundaries | ❌ Tier 3 porušenie (§13.1) |
 | Evals | ⚠️ |
 | Red team | ❌ |

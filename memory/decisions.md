@@ -1,5 +1,24 @@
 # Critical Decisions Log
 
+## [2026-09-24] — Control Contract stráži prvú živú cestu (inbound send) a kill switch má zdroj
+
+Founder povedal „pokračuj" na návrh z task-loopu. Toto je druhý BUILD bod zo System
+Spec: kontrakt je už postavený, ale nemal živého konzumenta (AP-007).
+
+- **Nová akcia v registri:** `inbound.reply.email.send` — EXECUTE, irreversible,
+  externally visible, resend/probable. Nevolá sa ako `followup.email.send`, lebo ide
+  o iného agenta a iný audit trail.
+- **`approve-draft.ts` sa pýta kontraktu pred zamknutím návrhu.** Postup je
+  `resolveAuthority` → `applyApproval` (approvalId = id aktivity) → `mayAct`.
+  Pri FORBIDDEN vráti 503; návrh sa nezamkne a nič sa neodošle.
+- **Kill switch:** `AGENT_KILL_SWITCH=1|true` v env, načítava ho
+  `lib/control-plane/system-state.ts`. Rovnaký zdroj teraz používa aj
+  `run-context.ts`, kde bol natvrdo `false`.
+  **Obmedzenie:** zmena env na Vercel si vyžaduje redeploy. Nie je to okamžitá
+  brzda — zapísané ako otvorená medzera v Spec §12.
+- **Čo zámerne NIE je súčasťou:** ostatné AI call-sites (follow-up sweep, dead-lead
+  kampaň, outreach). Každá z nich je vlastná stena.
+
 ## [2026-09-24] — Tier-3 brána: inbound AI odpoveď je draft, nie e-mail (founder GO)
 
 **Zmena správania na PROD po merge:** `/api/webhooks/inbound-lead` už leadovi nepošle
