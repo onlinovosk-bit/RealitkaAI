@@ -1,5 +1,21 @@
 # Critical Decisions Log
 
+## [2026-09-24] — Tier-3 brána: inbound AI odpoveď je draft, nie e-mail (founder GO)
+
+**Zmena správania na PROD po merge:** `/api/webhooks/inbound-lead` už leadovi nepošle
+AI e-mail ani WhatsApp. AI text sa uloží ako draft do `activities` a zapíše sa do
+`ai_action_audit` so stavom `ai_suggested` / `pending_human`. Odoslanie robí maklér.
+
+- **Webhook je fail-closed.** Bez `INBOUND_WEBHOOK_SECRET` vracia 503. Ak integrácia
+  posiela požiadavky bez Bearer tokenu, po merge prestane fungovať — to je zámer.
+- Uzatvára aj **TASK-SEC-002**: service-role insert s `agency_id` a chyba insertu
+  zhodí request (AP-010).
+- **Prvý agent so stopou `agent_id` a `prompt_version`:** `REVOLIS-INBOUND-AUTOREPLY`
+  s promptom `inbound-autoreply-v1`.
+- **Čo zámerne NIE je súčasťou:** tlačidlo „odoslať tento draft". `api/outreach/approve`
+  generuje vlastný text, draft nepoužije. Jednoklikové schválenie draftu je ďalšia stena.
+  Dnes maklér draft skopíruje alebo pošle cez existujúci outreach.
+
 ## [2026-09-24] — Agentic System Blueprint v1.0 prijatý ako kontrakt, nie ako stavebný plán
 
 Founder dal GO na `AGENTIC-SYSTEM-BLUEPRINT-v1.0`. Uložený doslovne v

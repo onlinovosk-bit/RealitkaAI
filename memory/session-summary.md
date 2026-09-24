@@ -8,21 +8,29 @@
 - PR #689 (draft, iba dokumentácia)
 
 ### Rozpracované / Pending
-- **P0 Tier-3:** inbound auto-reply posiela AI e-mail bez schválenia a webhook má
-  voliteľnú autentifikáciu. Návrh opravy čaká na GO.
-- Nie je overené, či je `INBOUND_WEBHOOK_SECRET` nastavený na PROD. Treba to overiť
-  vo Vercel dashboarde; skontroluje founder.
+- **Tier-3 brána (GO 2026-09-24) je hotová na vetve, PR #689; čaká na merge.**
+  Pred merge treba overiť, že `INBOUND_WEBHOOK_SECRET` je nastavený na PROD.
+  Bez neho endpoint po merge vracia 503.
+- `TASK-SEC-002` je v stave `running`. Na `done` ho prepni po overení obsahu na `main`.
+- PR #495 (pôvodný nález) nechaj otvorený, kým founder neprijme kartu.
 
 ### Kľúčové súbory zmenené
 - `docs/architecture/agentic/*`: nové, Blueprint a System Spec
 - `memory/decisions.md`: záznam o prijatí Blueprintu a verdikt Ústavy
 - `docs/architecture/MAPA.md`: pridané dva odkazy
+- `apps/crm/src/app/api/webhooks/inbound-lead/route.ts`: povinný secret (503/401),
+  porovnanie v konštantnom čase
+- `apps/crm/src/lib/inbound/process-lead.ts`: service-role klient, `agency_id`,
+  AP-010, iba draft a audit, žiadny send
+- `apps/crm/src/lib/inbound/auto-reply.ts`: `AUTO_REPLY_PROMPT_VERSION`
+- nové testy v `apps/crm/src/lib/inbound/__tests__/` a
+  `apps/crm/src/app/api/webhooks/inbound-lead/__tests__/` (16 testov)
+- `.ai/bus/tasks/TASK-SEC-002.md`: pridaná sekcia Resolution
 
 ### Ďalší krok
-GO na Tier-3 bránu pre `REVOLIS-INBOUND-AUTOREPLY`:
-1. Webhook fail-closed bez secretu.
-2. AI odpoveď → draft a `ai_action_audit` `ai_suggested`, odoslanie cez existujúci `api/outreach/approve`.
-3. Test zakázaného správania.
+Overiť `INBOUND_WEBHOOK_SECRET` na PROD, potom merge PR #689. Ďalšia stena
+(čaká na GO): jednoklikové „schváliť a odoslať draft", aby Tier-3 brána nebola len
+copy-paste.
 
 ---
 

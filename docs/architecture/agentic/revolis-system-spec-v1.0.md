@@ -223,7 +223,10 @@ PR + founder merge (RRA pravidlo 3, AP-008).
 | 2 Material | zmena stavu leadu/pipeline, `outreach_log` queued, kalendárny návrh | podľa policy |
 | 3 Irreversible | **akákoľvek správa mimo tenanta** (e-mail, SMS, WhatsApp, Telegram klientovi), publikovanie inzerátu, delete, billing, PROD config | **povinné ľudské schválenie** |
 
-**Porušenia dnes (merané):**
+**Stav 2026-09-24:** porušenie 1 je opravené na vetve PR #689 (draft + audit,
+povinný secret, testy zakázaného správania). Na `main` až po merge.
+
+**Porušenia dnes (merané na `main` @ 22bad1d):**
 1. **`REVOLIS-INBOUND-AUTOREPLY`** — `lib/inbound/process-lead.ts:102-135`
    pošle AI e-mail cez Resend a WhatsApp **bez schválenia**. Obsah je
    čiastočne riadený vstupom `payload.message` (prompt injection → text

@@ -1,10 +1,10 @@
 ---
 id: TASK-SEC-002
 type: task
-status: open
-owner: unassigned
+status: running
+owner: claude/keen-lovelace-ih8ej3
 created_at: 2026-09-17T19:10:00Z
-updated_at: 2026-09-17T19:10:00Z
+updated_at: 2026-09-24T19:45:00Z
 source: "PR #495 https://github.com/onlinovosk-bit/RealitkaAI/pull/495 — conflict-PR security finding transfer 2026-09-17"
 target: "founder-review → executor after GO (fix only; do not close #495 until card accepted)"
 scope:
@@ -70,3 +70,22 @@ rg -n "createClient\(\)|from\('leads'\)\.insert" apps/crm/src/lib/inbound/proces
 
 Founder GO → fail-closed secret + service-role insert + throw on failure
 (podľa #495); potom update karty.
+
+## Resolution (2026-09-24, founder GO „Tier-3 brána pre inbound auto-reply")
+
+Fix je na vetve `claude/keen-lovelace-ih8ej3`, PR #689. Na `main` ešte nie je.
+Status sa zmení na `done` až po merge a po overení obsahu na `main`.
+
+- **Secret je povinný.** Bez `INBOUND_WEBHOOK_SECRET` vráti endpoint 503 (fail-closed).
+  Bearer sa porovnáva v konštantnom čase.
+- **Service-role klient namiesto cookie/anon.** Lead sa zapíše s `agency_id` profilu.
+  Neznámy profil alebo profil bez agentúry vráti 422.
+- **Chyba pri inserte leadu zhodí request (AP-010).** Handler už nevracia `ok` bez riadku.
+- **Rozšírenie nad rámec karty: Tier 3.** AI odpoveď sa už neposiela cez Resend ani WhatsApp.
+  Uloží sa ako draft do `activities` (`meta.draft`, `meta.requires_approval`) a do
+  `ai_action_audit` so stavom `ai_suggested` / `pending_human`. Odoslanie robí maklér.
+- **Testy:** `lib/inbound/__tests__/process-lead.test.ts` (10) a
+  `app/api/webhooks/inbound-lead/__tests__/route.test.ts` (6). Proti starému kódu
+  13 zo 16 testov padne.
+
+Acceptance A1 a A2 vyššie sú *dôkazy existencie chyby*. Po fixe majú vrátiť exit 1.
