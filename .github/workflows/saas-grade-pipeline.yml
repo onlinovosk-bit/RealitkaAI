@@ -90,7 +90,26 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Pinned, not `latest`. With `latest` the action asks the GitHub API
+          # for the newest release on every job, unauthenticated, and on
+          # 2026-09-24 that query is what took the pipeline down:
+          #
+          #   ##[error] Failed to resolve latest Supabase CLI release: rate limit exceeded
+          #
+          # Lint, the CI helper tests and the typecheck gate had all passed by
+          # then; the job died in setup, before `supabase start` was reached.
+          # A fixed version needs no such lookup.
+          #
+          # It also makes the toolchain deterministic: with `latest`, two runs of
+          # the same commit could install different CLIs. 2.117.0 is the version
+          # `latest` already resolved to (published 2026-09-07), so pinning it
+          # changes nothing about what CI installs today.
+          #
+          # To bump: pick a version published to npm as `supabase`, change it in
+          # BOTH workflows, and let CI prove `supabase start` still works — the
+          # repo's config.toml still uses the deprecated [inbucket] section, so
+          # a CLI jump is not automatically safe.
+          version: 2.117.0
 
       # `supabase start` sťahuje šesť images z ghcr.io. Anonymný pull má nízky
       # limit na zdieľanú IP GitHub runnerov a 2026-09-23 oň CI opakovane
@@ -107,27 +126,23 @@ jobs:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
-      # Logging in is necessary but not sufficient, and neither is waiting: a
-      # first version of the wrapper retried ghcr.io three times with 45s and
-      # 90s of backoff, ran for 3m44s, and still failed. So
-      # `scripts/ci/supabase-start.sh` moves registry instead — Supabase
-      # publishes the same images to Docker Hub, which is limited separately.
-      # It carries the full diagnosis and is covered by scripts/ci/__tests__.
+      # Prihlásenie vyššie je nutné, ale nestačí, a čakanie tiež nie: prvá verzia
+      # wrappera skúšala ghcr.io trikrát s 45s a 90s backoffom, bežala 3m44s a
+      # aj tak spadla. Preto `scripts/ci/supabase-start.sh` mení registry, nie
+      # čas — nesie celú diagnózu a kryje ho `scripts/ci/__tests__`.
+      #
+      # Registry vyberá skript, nie tento krok: nastavuje
+      # SUPABASE_INTERNAL_IMAGE_REGISTRY pre každý pokus zvlášť, takže akékoľvek
+      # step-level `env` by aj tak prebil. Hodnota tu by teda nič nerobila a
+      # budúci čitateľ by podľa nej hádal zle — preto tu žiadna nie je.
+      #
+      # Poznámka k `Authenticate to ghcr.io` vyššie: odkedy default zoznam vedie
+      # `public.ecr.aws` a ghcr.io v ňom nie je, ten krok je dormantný. Ostáva
+      # ako poistka pre prípad, že `SUPABASE_START_REGISTRIES` ghcr.io vráti —
+      # vtedy pôjde pull prihlásený, nie anonymne.
       - name: Start local Supabase
         run: ../../scripts/ci/supabase-start.sh
         working-directory: apps/crm
-        env:
-          # `supabase/setup-cli` nastavuje SUPABASE_INTERNAL_IMAGE_REGISTRY=ghcr.io
-          # (v našom repozitári to nikde nie je — exportuje to tá akcia). Malo to
-          # obísť limity Docker Hubu, lenže teraz škrtí ghcr.io: `toomanyrequests,
-          # allowed: 44000/minute` aj pri PRIHLÁSENOM pulle. Overené na behu
-          # a41f6d57, kde obe `docker login` vetvy prešli a `supabase start` aj
-          # tak padol — autentifikácia ten limit neobchádza.
-          #
-          # Prebíjame to na úrovni kroku zámerne: job-level `env` by nestačil,
-          # keby akcia premennú exportovala cez $GITHUB_ENV. Step-level `env` má
-          # prednosť a platí len tam, kde sa images naozaj sťahujú.
-          SUPABASE_INTERNAL_IMAGE_REGISTRY: docker.io
 
       - name: Export local credentials
         run: supabase status -o env | sed 's/"//g' >> "$GITHUB_ENV"

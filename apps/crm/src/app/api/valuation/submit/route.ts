@@ -105,7 +105,7 @@ export async function POST(request: Request) {
     const baseEstimate = buildDeterministicEstimate(propertyInput);
     const estimate = {
       ...baseEstimate,
-      commentary: await enrichEstimateCommentary(propertyInput, baseEstimate),
+      commentary: await enrichEstimateCommentary(propertyInput, baseEstimate, tenant.agencyId),
     };
 
     if (tenant.isSandbox) {

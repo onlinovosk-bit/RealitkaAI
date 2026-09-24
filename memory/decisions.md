@@ -2341,6 +2341,73 @@ zmena kontraktu a patrí do vlastnej brány. Zámerne neopravené:
   a je zapnuté **PITR** s akým oknom (F3 inak nemá rollback).
 - Dokument: `docs/reports/2026-09-23-prod-deploy-plan.md`.
 
+## 2026-09-23 — W1 kontaktná garda, B08 Concierge kalendár, odblokovanie CI
+
+- **W1 (#659) — lead nedostane ako kontakt adresu agentúry.** Ingest e-mailov bral
+  prvú adresu v texte, čo pri preposlanom dopyte znamenalo adresu makléra alebo
+  `@realitysmolko.sk`. Overené na produkčnom leade z 05:47: kontaktný e-mail bol
+  **presná zhoda** s `profiles.email`. Garda filtruje adresy agentúry, jej doménu,
+  `revolis.ai` a role-adresy (`info@`, `noreply@`…).
+  **Rozhodnutie, ktoré zadanie nepýtalo:** verejní poskytovatelia (gmail, zoznam,
+  seznam, centrum…) sa z odvodených domén agentúry VYLUČUJÚ. Bez toho by osobný
+  gmail makléra zablokoval každého gmail kupca — garda by zabíjala leady.
+  **Lookup agentúry je fail-soft** (try/catch): stratiť lead kvôli chybe lookupu je
+  horšie než pustiť slabší kontakt. Telefón sa počíta PRED e-mailom, aby sa dalo
+  rozhodnúť, či sa oplatí vrátiť sporný e-mail vôbec.
+  **Zvyšková diera, vedome ponechaná:** lead bez telefónu, ktorého jediná adresa je
+  adresa klienta, ju stále dostane. Alternatíva je zahodiť lead — horšia.
+
+- **B08 (#668) — Concierge freebusy na refresh-token flow.** Väzba je na PROFIL
+  (`CONCIERGE_GOOGLE_PROFILE_ID`), nie na access token v env, ktorý expiruje
+  v hodine a nikto ho ručne neobnovuje. Token ide cez existujúcu
+  `getGoogleCalendarAccessToken(profileId)`. **Refresh token nikdy nejde do env.**
+  - **Scope:** `freebusy.query` NIE JE pokrytý scope-om `calendar.events`, na ktorom
+    OAuth flow dovtedy stál. Nehádal som to: `developers.google.com` je z tohto
+    prostredia blokovaný egress politikou, tak rozhodol **discovery dokument**
+    Calendar API v3. Z povolených štyroch pridaný najužší — `calendar.events.freebusy`.
+    `calendar` a `calendar.readonly` by dali čítanie OBSAHU udalostí, ktoré
+    Concierge na zistenie voľných termínov nepotrebuje.
+  - **Dôvody zlyhania sú konštanty typu, nie prepošlané OAuth hlášky.** Text ako
+    `invalid_grant` alebo `revoked` sa nedostane do odpovede ani do logu.
+  - **Upstream zlyhanie nevracia pole `busy`.** Prázdne `busy: []` by sa dalo čítať
+    ako „celý deň voľný" a Concierge by ponúkol termín, ktorý neexistuje. Test to drží.
+  - **Kontrakt odpovede ponechaný** (`reason`/`detail`, bez kľúča `error`): verzia
+    z #660. Meniť tvar odpovede verejného endpointu kvôli lint pravidlu je zmena
+    kontraktu, ktorú si nikto neobjednal.
+  - **STOP:** bez Google OAuth consentu pre nový scope vracia `freebusy.query` 403
+    aj s platným tokenom. Consent je ľudský klik — HUMAN_ACTION_REQUIRED.
+
+- **CI odblokované (#673).** `supabase/setup-cli` exportuje
+  `SUPABASE_INTERNAL_IMAGE_REGISTRY=ghcr.io` (v repe to nikde nie je —
+  `git log -S ... --all` = 0 výskytov, exportuje to tá akcia). ghcr.io teraz škrtí
+  pull `toomanyrequests, allowed: 44000/minute` **aj prihlásený**.
+  - **Vyvrátená hypotéza:** myslel som si, že `docker login` ten limit zdvihne.
+    Beh `a41f6d57` to vyvrátil — obe login vetvy prešli, `supabase start` padol.
+    Autentifikácia ten limit neobchádza. PR s login krokom (#672) som zavrel,
+    špekulatívny druhý pokus som nespúšťal.
+  - **Riešenie:** step-level `env: SUPABASE_INTERNAL_IMAGE_REGISTRY: docker.io`.
+    Job-level by nestačil, keby akcia premennú exportovala cez `$GITHUB_ENV` —
+    step-level `env` má prednosť a platí len tam, kde sa images naozaj sťahujú.
+    Premennú nemažeme (nie je naša), prebíjame ju.
+  - **Dôkaz:** všetkých šesť images stiahnutých z `docker.io`, nula `toomanyrequests`.
+  - **Jednorazová kolízia:** prvý beh po oprave padol na `bind host port 54322:
+    address already in use` — infra chyba pred spustením akéhokoľvek testu.
+    Jeden re-run prešiel zelený. Nie je to systémový problém; keby sa zopakoval,
+    treba diagnostiku (`ss -lntp` pred `supabase start`), nie ďalší zásah naslepo.
+  - **NADRADENÉ #671 (`959b251a`), ešte v ten istý večer.** Krok už nemá žiadne
+    step-level `env`; volá `scripts/ci/supabase-start.sh`, ktorý skúša registry
+    po sebe a **vedie `public.ecr.aws`**, nie `docker.io`. Dôvod je odmeraný,
+    nie preferenčný: ECR odmieta bare `Rate exceeded` na pull-y za sekundu,
+    proti čomu retry konverguje, kým ghcr.io odmieta `allowed: 44000/minute`,
+    čo je zdieľaný objemový strop a ten retry nepremôže (prvá verzia skriptu
+    skúšala ten istý registry 3× s 45 s a 90 s backoffom — 3m44s a aj tak červená).
+    `docker.io` ostáva v zozname ako druhá, nezávisle limitovaná cesta.
+    Platí teda: **jednorazová oprava z #673 bola správna diagnóza, ale nie
+    konečné riešenie.** Kto číta tento záznam, nech sa riadi skriptom.
+
+- **Zrušený `/blueprint` (#665).** Stránka nepovedala, čo Revolis robí ani pre koho.
+  Prvý pokus o opravu (#664) padol, lebo merge `/blueprint` do vetvy súbor znova
+  rozbil; zavrel som ho ako superseded namiesto opakovania sporu #660 vs #662.
 ## 2026-09-23 — F1: 63 neaplikovaných migrácií je idempotentných (`GO MIGRATIONS-IDEMPOTENT-F1`)
 
 - **Výsledok:** opakovaný beh neaplikovanej dávky prešiel z **58/63** na **63/63**.
@@ -2404,3 +2471,65 @@ zmena kontraktu a patrí do vlastnej brány. Zámerne neopravené:
 - **Pred F3 zostáva:** stav PITR add-onu (cez dostupné nástroje nečitateľný;
   `archive_mode=on` je nutná, nie postačujúca podmienka) a rozhodnutie o klone.
 - Dokument: `docs/reports/2026-09-24-f2b-prod-shape-rehearsal.md`.
+## 2026-09-24 — Lead Revenue Engine: WALL 0 postavený, engine kontrakt zapísaný
+
+**Rozhodnutie: BUILD** (substrát merania) + **BACKLOG** (dve vrstvy, timing veto).
+
+### Ústavná brána — verdikt po vrstvách
+- **Lead Generation** ako „nájdi nových predajcov zvonku" → **BACKLOG, timing veto (Q8).**
+  Zhluk 3 mapy zdrojov hovorí pri vlastníkoch z katastra doslova NEROBIŤ bez zmluvy
+  s ÚGKK; Zhluk 5 (portály) zakazuje osobné údaje predajcu. Zároveň platí
+  `PHASE_1_REQUIRES_UGKK = FALSE` — MVP musí fungovať bez ÚGKK, nie naň čakať.
+- **Lead Acquisition / Intelligence / Qualification / Sales-Ready** → **BUILD.**
+  Bežia na Zhluku 1 (vlastné CRM dáta) + Zhluku 8 (Realvia), nula externých závislostí.
+- **Market Intelligence, signály z portálov, Bod zlomu** → BACKLOG, ten istý timing veto.
+
+### Korekcia taxonómie (dôležitejšia než kód)
+Pôvodný návrh označoval inbound za „Lead Generation, len inbound". **To bolo zle.**
+Realvia ani portálový e-mail nevytvárajú dopyt — doručujú ho. Hranica je
+`zdroj dopytu → záchyt → nový lead`, a rozlišovacím znakom je **atribúcia**: lead,
+ktorý vie ukázať na vlastnú kampaň/UTM, je generovaný; lead z cudzej rúry je
+akvirovaný. `UNKNOWN` sa nikdy ticho nemení na `GENERATED_BY_REVOLIS`.
+Bez tejto hranice by sa o pár týždňov dalo tvrdiť, že Lead Factory generuje leady,
+hoci len dobre spracúva cudzie.
+
+### Druhá korekcia: LLM nie je rozhodca obchodnej pravdy
+Prvý návrh dával BRI skóre aj kvalifikáciu priamo modelu. Opravené: LLM extrahuje
+signály a vysvetľuje, **skóre a kvalifikácia sú deterministické** a verzované
+(`ruleset_version`). Ten istý lead musí dať ten istý výsledok aj zajtra po zmene
+modelu. Extrahované signály sa ukladajú oddelene s `extraction_version`, aby sa
+dalo pre-skórovať bez novej extrakcie — inak by sa drift len posunul o krok vyššie.
+
+### Tretia korekcia: stiahnuté nepodložené tvrdenia
+- „Pipeline stojí centy, kredity netreba" — **stiahnuté.** Ekonomický záver bez
+  merania v EUR. Nákladová telemetria je teraz deliverable (§10), nie predpoklad.
+- „Prvý kontakt do 15 minút" — **vymyslené číslo, stiahnuté.** Žiadne SLA nie je
+  potvrdené; brief vedie 4 pracovné hodiny ako predpoklad. `EXTERNAL_SLA = NONE`,
+  interné radenie podľa veku leadu je povolené, nazvať to SLA nie.
+
+### Postavené (PR #680, `fe1a6a5`)
+Typovaný substrát kontaktného pokusu. Reuse `lead_events` (aditívne stĺpce), nie
+nová tabuľka — presne ako brief §2.4 predpísal (AP-019). `activities` zamietnuté,
+nemá `agency_id`. Resolver vracia tri stavy: `none` / `unknown` / `known`;
+`created_at` sa nikdy nedosadí za `occurred_at`. Brány: lint čistý, typecheck
+54/54 (tých 6 navyše lokálne boli `.next/types` artefakty, presne ako to zapísalo
+#678), build zelený, vitest 1499 + 16 nových.
+
+### Zapísané
+- `docs/architecture/lead-revenue-engine-v1.md` — inžiniersky kontrakt (taxonómia,
+  atribúcia, A1–A8, verzovanie, dve fronty, cost telemetry, rebrík dôkazov,
+  právne triedy). **Nenahrádza** brief; slovník C0/C1/C2 ostáva v briefe.
+- `docs/briefs/l99-lead-factory-initiative.md` §2.4 — amendment, diera zatvorená.
+
+### Nálezy mimo rozsahu, nezasiahnuté
+1. RLS na `lead_events`: policy `agency_id is null OR ...` → riadok bez `agency_id`
+   je čitateľný naprieč tenantmi. Samostatný PR.
+2. `/api/ai/lead-events` je Enterprise-gated → C1 by bolo merateľné len pre
+   Enterprise. Rozhodne sa pri napojení ľudskej akcie.
+3. Migrácia `20260817220000` (`last_contact_at`) podľa vlastnej hlavičky nie je na
+   PROD, ale kód ju číta na 59 miestach. Živý nesúlad.
+
+### Ďalej
+`GO_CONTACT_EVENT_PROD_MIGRATION` — bez aplikovania `20260924060000` substrát
+existuje len v kóde a C1 ostáva `pending`. Potom extrakcia signálov (úzky rozsah:
+seller_intent, property_type, locality, timeframe) a deterministický rule engine.

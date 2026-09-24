@@ -126,6 +126,28 @@ Dnes sa „lead“ mieša s **identitou z Realvie** (439 riadkov, budget/timelin
 - Guardian v1.1 STALE vyžaduje `lead_events`; na PROD ich importované kontakty nemali (473 neplatných STALE, 2026-07-27).
 - Bez záznamu času prvého kontaktu **C1 sa nedá čestne spočítať**. Ďalší implementačný krok po GO na definíciu: reuse `lead_events` / `last_contact_at` — **nie** nová tabuľka, kým Integration Report neukáže, že existujúca nestačí (AP-019).
 
+> **AMENDMENT 2026-09-24 — diera je zatvorená (PR #680, `fe1a6a5`).**
+> Integration Report prebehol a potvrdil, že existujúca tabuľka stačí, presne
+> ako tento odsek predpísal. `public.lead_events` bola rozšírená aditívne o
+> `occurred_at`, `actor_profile_id`, `channel`, `outcome`, `source`, `note`
+> (migrácia `20260924060000`). `public.activities` bola zamietnutá — nemá
+> `agency_id`, takže sa nedá tenant-izolovať. Nová tabuľka nevznikla.
+>
+> Kanonická udalosť: `lead_events.type = 'contact_attempted'`.
+> Resolver `getFirstContactAttemptAt` vracia **tri** stavy — `none` /
+> `unknown` / `known`. Lead, ktorého pokusy predchádzajú tejto zmene, je
+> `unknown` a **do C1 sa nepočíta**; `created_at` sa nikdy nedosadí za
+> `occurred_at`.
+>
+> `leads.last_contact` ostáva nedotknutý, žiadny backfill neprebehol.
+>
+> **Stále otvorené:** migrácia je `PREP ONLY` a čaká na
+> `GO_CONTACT_EVENT_PROD_MIGRATION`. Do jej aplikácie substrát existuje len v
+> kóde a C1 ostáva `pending` podľa premortemu (AP-001).
+>
+> Inžiniersky kontrakt celého enginu: [`docs/architecture/lead-revenue-engine-v1.md`](../architecture/lead-revenue-engine-v1.md).
+> Ten dokument **nenahrádza** tento brief — slovník C0/C1/C2 ostáva tu.
+
 ### 2.5 Allowlist `source` pre C0 (Fáza 1, návrh)
 
 | `leads.source` | Povrch | Stav v repe |

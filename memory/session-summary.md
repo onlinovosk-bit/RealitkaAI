@@ -1,3 +1,177 @@
+## Session 2026-09-24 (UPTM governance — uptm-runner)
+
+> **PRVÁ VEC PRE NOVÚ SESSION:** `uptm-runner` PR #22 je otvorená a čaká na
+> founderov merge. Bez nej **Evidence Rule A nie je na `main`**, hoci PR #21 je
+> na GitHube označená ako merged. Detail nižšie v „Riziká".
+
+### Dokončené
+
+- **UPTM-006 / PS-R1, PS-R2** — enforcement cesty pre strážcu APS-001
+  (`runner/enforcement.py`). Zmergované (PR #19 → #18 → `main`).
+- **`NON_PRINCIPLE_GUARDS`** — nové stojace pravidlo: každá skupina ciest mimo
+  `ENFORCED` princípov musí byť deklarovaná s napísaným dôvodom, inak padne
+  coverage test. Zmergované.
+- **`REDUNDANT_GUARDS`** — zápis vyvrátenej predpovede o PS-R1 (drží ho
+  required-field list *aj* binding validátor, každý samostatne). Zmergované.
+- **DEC-UPTM-APS** — `docs/decisions.md`: APS-001 je *guard*, nie princíp.
+  Zmergované (PR #20 → `main` = `7aa25b9`).
+- **Evidence Rule A** (`runner/provenance.py`, `docs/evidence-rule-a.md`,
+  `tests/test_evidence_rule_a.py`, `.github/workflows/pytest.yml`,
+  DEC-UPTM-RULEA, oprava `governance-map.md`) — hotové, otestované, CI zelená.
+  **ALE NIE JE NA `main`** — viď Riziká.
+
+### Rozpracované / Pending
+
+- **PR #22** `dec-uptm-aps → main` — draft, zelená, clean. Merge je founderov
+  akt. Toto je jediná otvorená PR.
+- **Otvorené founderove rozhodnutia:**
+  - `evidence_expiry_days` — nenastavené, drží **P12 na `PARTIAL`**.
+    `expires_at` je `null` a manifest čestne píše prečo.
+  - Štyri zvyšné governance otázky z `docs/architecture/governance-map.md`
+    (otázka 4 = Rule A je odteraz zodpovedaná): či wave gate musí spĺňať
+    kapitálovú ústavu; ktorého repa verdikt vyhráva pri nezhode; ako súvisí
+    €700 a €750; ktorý wave slovník je kanonický.
+- **W8** — špecifikácia prijatá s dodatkami P2/P13 (`onlinovosk-bit-uptm#28`,
+  zmergované). **Implementácia naďalej odmietnutá**: P2 nie je nikde vynútené,
+  takže harness postavený teraz opisuje cestu, ktorú reálny beh neprejde.
+
+### Riziká — prečítaj pred akoukoľvek prácou
+
+**„Merged" sa nerovná „na `main`".** PR #21 (Rule A) bola vetvená z
+`dec-uptm-aps`. O 07:37:35Z sa `dec-uptm-aps` zmergovala do `main` (#20),
+a o 07:37:55Z sa #21 zmergovala do `dec-uptm-aps` — teda do vetvy, ktorú už
+nikto nemergoval. GitHub ukazuje #21 ako merged; `main` z nej nemá nič:
+
+```
+git merge-base --is-ancestor 193f17d origin/main   -> NIE
+git ls-tree -r main | grep provenance.py           -> nič
+```
+
+Stranded commity: `ff9d261`, `193f17d`, `5967fec`. PR #22 ich dostane na `main`.
+Stackovanie vetiev bola moja voľba, takže aj táto medzera.
+
+**Oprava tohto pravidla, 12:10Z — pôvodne tu stálo „vždy over
+`merge-base --is-ancestor`, nie farbu na GitHube". To je nesprávne.** Overil som
+ním merge tejto PR (#679) a vyhlásil „NIE — nie je na main", hoci obsah na `main`
+bol. Dôvod: #679 sa zlúčila **squashom**, takže head commit vetvy nie je predkom
+`main`, ale jej zmeny áno. `--is-ancestor` dá falošný poplach pri každom squash
+a rebase merge — a to je v tomto repozitári bežný režim.
+
+Správne pravidlo: **over OBSAH, nie rodokmeň.** Diffni dotknuté súbory proti
+`origin/main`, alebo nájdi squash commit (`git log origin/main --oneline | grep '(#679)'`).
+`--is-ancestor` použi len ako doplnok — jeho „NIE" znamená „preveruj ďalej",
+nie „nepristálo".
+
+Zmerané na #679: `merge-base --is-ancestor 1a13ac4 origin/main` → NIE,
+`ff59d14 memory: session summary … (#679)` na `main`, 46 sekcií, súbor
+byte-identický s vetvou. Obsah pristál; rodokmeň nie.
+
+**Paralelné session bez zdieľaného nároku na prácu** (`DEC-UPTM-DUP`) sa dnes
+prejavili už tretíkrát — raz ako duplicita (UPTM-003 postavené dvakrát), raz ako
+opomenutie (APS-001 strážca hodinu bez cesty). Problém je stále otvorený.
+
+**Tri moje tvrdenia za dva dni vyvrátilo meranie:** P10-R2 conditional guard,
+PS-R1 predpoveď, a „manifest si vie dosvedčiť vlastnú čerstvosť" v governance
+mape. Vzorec je zakaždým rovnaký — vierohodná úvaha, vyslovená s istotou, nikdy
+nespustená proti tomu, čo opisovala. Všetky tri zostávajú zapísané v kóde a
+v mape, nie potichu opravené.
+
+### Kľúčové súbory zmenené
+
+- `runner/provenance.py`: nový — `read_head()` číta evaluated head z repa,
+  `--expect-head` je krížová kontrola, nie zdroj; špinavý strom / žiadne repo =
+  `null` s uvedeným dôvodom, nikdy vierohodný default.
+- `runner/enforcement.py`: `manifest()` berie `HeadProvenance` namiesto
+  `commit`; pribudli `NON_PRINCIPLE_GUARDS`, `REDUNDANT_GUARDS`, PS-R1, PS-R2.
+- `runner/cli.py`: `--commit` odstránený, `--expect-head` pridaný; `ok` je
+  `false` pri akomkoľvek probléme s provenienciou.
+- `.github/workflows/pytest.yml`: krok enforcement-evidence už neodovzdáva
+  commit — CI nemôže artefaktu povedať, čo dokazuje.
+- `docs/evidence-rule-a.md`: nový — ktorá polovica Rule A platí a prečo tá druhá
+  nie (podmienečne, s testom ako poistkou). Vrátane nameraného faktu, že na PR
+  builde je `evaluated_head` pominuteľný merge commit.
+- `docs/architecture/governance-map.md`: otázka 4 zodpovedaná; presilené tvrdenie
+  opravené **na mieste, s pôvodným znením ponechaným viditeľne**.
+- `docs/decisions.md`: DEC-UPTM-APS, DEC-UPTM-RULEA.
+- `tests/test_evidence_rule_a.py`: nový, 9 testov.
+
+### Stav systému (zmerané, nie predpokladané)
+
+```
+uptm-runner main = 7aa25b9      343 passed (po merge #22)
+enforcement-evidence  ok: true, tree_clean: true
+                      routes_reaching_pass: [], unproven_claims: []
+P8  ENFORCED    P10 ENFORCED    P12 PARTIAL (chýba evidence_expiry_days)
+LIVE_TRADING = false            CONSTITUTION-CAPITAL.md v1.0 LOCKED
+19 enforcement routes, APS-001 deklarovaný v NON_PRINCIPLE_GUARDS
+```
+
+### Ďalší krok
+
+Zmergovať **PR #22** (`dec-uptm-aps → main`), aby Evidence Rule A reálne
+pristála. Potom: founder nastaví `evidence_expiry_days` → P12 sa dá posunúť na
+`ENFORCED` rovnakou cestou ako P8 a P10 (preregistrované kritériá, potom
+meranie). Žiadna implementácia bez explicitného GO.
+
+---
+
+## Session 2026-09-23 (WALL W1 kontaktná garda + WALL B / B08 Concierge kalendár + odblokovanie CI)
+
+### Dokončené
+- **W1 — kontaktná garda v ingeste (#659).** Lead z e-mailu už nedostane ako
+  kontakt adresu samotnej agentúry. `apps/crm/src/lib/acquire/email-adapter.ts`
+  filtruje adresy makléra, doménu agentúry a `revolis.ai`; verejní poskytovatelia
+  (gmail, zoznam, seznam…) sa z odvodených domén agentúry vylučujú, inak by
+  osobný gmail makléra zablokoval každého gmail kupca. Overené proti produkčnému
+  leadu z 05:47, kde kontaktný e-mail bol presná zhoda s `profiles.email`.
+  Lookup agentúry je fail-soft: stratiť lead kvôli chybe lookupu je horšie
+  než pustiť slabší kontakt.
+- **Zrušený `/blueprint` (#665).** Stránka nehovorila, čo Revolis robí ani pre koho.
+- **B08 — Concierge freebusy cez refresh-token flow (#668, na `main` ako `3b03bfc6`).**
+  Nový `apps/crm/src/lib/concierge/calendar-auth.ts`: väzba na PROFIL
+  (`CONCIERGE_GOOGLE_PROFILE_ID`), nie na krátkodobý token v env. Refresh token
+  nikdy nejde do env. Dôvody zlyhania sú konštanty typu, nie prepošlané OAuth
+  hlášky — `invalid_grant` sa nedostane do odpovede ani do logu. Upstream
+  zlyhanie nevracia pole `busy`, aby sa prázdne `busy: []` nedalo čítať ako
+  „celý deň voľný". Pridaný scope `calendar.events.freebusy` (najužší, ktorý
+  `freebusy.query` pokrýva — `calendar.events` ho NEpokrýva; zdroj je discovery
+  dokument Calendar API v3, dokumentácia Google je z tohto prostredia blokovaná).
+  22/22 testov, `next build --webpack` OK.
+- **Odblokované CI (#673, `015e7e85`).** `supabase/setup-cli` exportuje
+  `SUPABASE_INTERNAL_IMAGE_REGISTRY=ghcr.io` a ghcr.io teraz škrtí pull
+  (`toomanyrequests, allowed: 44000/minute`) aj PRIHLÁSENÝ. Prihlásenie ten
+  limit neobchádza — overené na behu `a41f6d57`, kde `docker login` prešiel
+  a `supabase start` aj tak padol. Riešenie: step-level `env` s `docker.io`
+  (job-level by nestačil, keby akcia premennú exportovala cez `$GITHUB_ENV`).
+  Dôkaz: všetkých šesť images sa stiahlo z docker.io, nula `toomanyrequests`.
+  **Platný stav je ale #671 (`959b251a`), nie toto:** krok už volá
+  `scripts/ci/supabase-start.sh`, ktorý strieda registry a vedie `public.ecr.aws`.
+  Step-level `env` je preč. Detail a odôvodnenie sú v `decisions.md`.
+
+### Rozpracované / Pending
+- **HUMAN_ACTION_REQUIRED (B08):** Google OAuth consent pre nový scope
+  `calendar.events.freebusy` + nastaviť `CONCIERGE_GOOGLE_PROFILE_ID`.
+  Bez toho freebusy vracia `oauth_missing` / 503 — čestne, nie vymyslený slot.
+- **Zvyšková diera W1:** lead bez telefónu, ktorého jediná adresa je adresa
+  klienta, ju stále dostane. Vedomé rozhodnutie — alternatíva je zahodiť lead.
+- Mojibake v `TASK-BUS-RUNNER-2D` (čistá verzia na `bafd47eb`).
+- `main` používa `NextResponse.json` tam, kde zadanie hovorilo `errorResponse` —
+  ponechané zámerne (#660 → #665), lebo tvar odpovede je verejný kontrakt widgetu.
+
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/acquire/email-adapter.ts`: kontaktná garda + `agencyDomainsFrom`.
+- `apps/crm/src/lib/concierge/calendar-auth.ts`: NOVÝ — `resolveConciergeAccessToken`.
+- `apps/crm/src/app/api/concierge/freebusy/route.ts`: token z profilu, nie z env.
+- `apps/crm/src/app/api/integrations/google/auth/route.ts`: +1 scope.
+- `.github/workflows/saas-grade-pipeline.yml`, `nightly-playwright.yml`:
+  `SUPABASE_INTERNAL_IMAGE_REGISTRY: docker.io` na úrovni kroku — **už neplatí**,
+  #671 to nahradilo skriptom `scripts/ci/supabase-start.sh` (vedie `public.ecr.aws`).
+
+### Ďalší krok
+Google OAuth consent + `CONCIERGE_GOOGLE_PROFILE_ID`. Až potom má B08 čo overovať.
+
+---
+
 ## Session 2026-09-06 (Reality Smolko Voiceflow correction)
 ### Dokončené
 - Verejný audit potvrdil, že `realitysmolko.sk` už hostuje Voiceflow widget „Poraďte sa!“; nejde o Revolis dashboard surface.
@@ -984,3 +1158,66 @@ Je to jediná vec, ktorá dnes blokuje príjem; všetko ostatné je naň naviaza
 
 ### Ďalší krok
 Rozhodnúť o **deploy migrácií na PROD**. Kým nepríde, P-2 aj P-3 sú uzavreté len v repe a diera `agency_id IS NULL` je v PROD stále otvorená. Pozor: `supabase db push` aplikuje **všetkých 60+ neaplikovaných migrácií naraz**, nielen tieto dve — preto to nie je rutinný deploy a potrebuje vlastnú bránu s plánom.
+
+## Session 2026-09-23 (CI unblock — Supabase images)
+
+### Dokončené
+- **Cesta B zmeraná a zelená.** Beh `35908421737`: `SUPABASE_INTERNAL_IMAGE_REGISTRY:
+  public.ecr.aws` + 3-pokusový retry prešiel 5/5. **`Test` a `Build` bežali prvý raz** —
+  v každom predošlom behu boli `skipped`, lebo pipeline zomrel na `Start local Supabase`.
+- **Dôkaz, že prepnutie registry samo nestačí.** `19:21:32` postgres stiahnutý,
+  `19:21:33` `public.ecr.aws/supabase/kong:2.8.1` → `toomanyrequests: Rate exceeded`,
+  `pokus 1/3` padol; `19:22:30` **`supabase start OK (pokus 2)`**. Retry bol nosný prvok.
+- **Dve triedy zlyhania oddelené:** ghcr.io `allowed: 44000/minute` = zdieľaný objemový
+  strop registry, auth ani 3m44s backoff nepomôžu. ECR `Rate exceeded` = pully za sekundu,
+  retry proti nemu konverguje, lebo Docker drží stiahnuté vrstvy.
+- **Oprava rozbitého merge (`2655f74`).** Niekto zmergoval `main` do
+  `claude/upbeat-davinci-t8zjo8` (`8d0fe73`) a krok `Start local Supabase` dostal
+  **duplicitné kľúče** `run`/`env`/`working-directory` — moja inline slučka vedľa volania
+  wrappera z #670. YAML to ticho zje, posledný kľúč vyhrá, takže reálne bežal `docker.io`
+  a retry bola mŕtvy kód. Tretí prípad tichého rozbitia po #660/#662.
+- **Konvergencia namiesto súboja:** wrapper `scripts/ci/supabase-start.sh` (#670) je lepšia
+  štruktúra než inline slučka — má testy, zoznam registry je dáta. #671 teda berie wrapper
+  a prispieva doň: default `ghcr.io docker.io ghcr.io` → `public.ecr.aws docker.io
+  public.ecr.aws`; `nightly-playwright.yml` naň napojený (doteraz volal `supabase start`
+  priamo, bez jediného retry); mŕtve step-level `SUPABASE_INTERNAL_IMAGE_REGISTRY` preč.
+- **Mutation proof:** po zmene skriptu spadli 3/4 testy na presnom zozname registry,
+  štvrtý (konfigurovateľnosť) ostal zelený. Až potom upravený test → 4/4.
+
+- **#671 zmergovaný** 2026-09-24 05:31 → `959b251`. Overené na `main`: default registry
+  `public.ecr.aws docker.io public.ecr.aws`, oba workflowy volajú
+  `../../scripts/ci/supabase-start.sh`, žiadne step-level `SUPABASE_INTERNAL_IMAGE_REGISTRY`,
+  žiadne duplicitné YAML kľúče.
+- **Posledný beh pred merge je dôležitejší než ten prvý.** Na `2655f74` pokus 1 cez
+  `public.ecr.aws` stiahol 9 z 10 images a padol na `edge-runtime:v1.74.3`; pokus 2 cez
+  `docker.io` prešiel. Čo CI drží zelené je teda **druhý, nezávisle limitovaný registry**,
+  nie poradie. Poradie je zvolené preto, že `ghcr.io` má tri behy a nula úspechov,
+  `public.ecr.aws` dva behy a oba nakoniec zelené, `docker.io` jeden dátový bod a ten ako
+  druhý pokus s teplými vrstvami.
+- **Opravený vlastný omyl:** ECR-first NEšetrí kvótu Docker Hubu. Pokus 2 stiahol z Docker
+  Hubu všetkých desať, lebo `public.ecr.aws/supabase/postgres` a `supabase/postgres` sú pre
+  Docker rôzne repozitáre — manifest sa ťahá znova. Ušetria sa len vrstvy, teda čas
+  (37 s namiesto 84 s), nie limit.
+
+### Rozpracované / Pending
+- **Optimálne poradie registry nie je zmerané** a jeden beh na registry nie je vzorka.
+  Zoznam je dáta — `SUPABASE_START_REGISTRIES` ho prehodí bez PR.
+- **Caveat:** závislosť na cudzom registry sa **presunula, neodstránila**. Ak sa saturujú
+  oba, ďalšia páka = cachovanie images v CI, vlastné GO.
+- **Delenie vlastníctva s paralelnými sessionmi je reálny problém** — #671/#673 riešili ten
+  istý blocker v tých istých dvoch súboroch a do mojej vetvy zasiahol cudzí merge, ktorý ju
+  ticho rozbil. Návrh: CI/workflow súbory vlastní naraz jedna session.
+- Nezmenené: CHECKOUT-ENV-01 krok A (Stripe VERIFY, founder-side), deploy 60+ migrácií na
+  PROD, `BUS-YAML-BOM-TOLERANCE`.
+
+### Kľúčové súbory zmenené
+- `scripts/ci/supabase-start.sh` — default registry list vedie `public.ecr.aws`, doplnená diagnóza
+- `scripts/ci/__tests__/supabase-start.test.sh` — asercie na nový default + prečo je to meranie
+- `.github/workflows/saas-grade-pipeline.yml` — mŕtve step env preč, komentár zaktualizovaný
+- `.github/workflows/nightly-playwright.yml` — napojený na wrapper
+- `memory/session-summary.md` — tento záznam
+
+### Ďalší krok
+CI blocker je uzavretý. Najvyššiu hodnotu má opäť **CHECKOUT-ENV-01 krok A** — read-only
+Stripe VERIFY, ktorý spúšťa founder (ja kľúč nemám a mať nebudem). Je to jediná vec, ktorá
+dnes blokuje príjem.
