@@ -17,7 +17,8 @@
       "Bash(npx:*)",
       "Read",
       "Edit",
-      "Write"
+      "Write",
+      "mcp__Supabase__execute_sql"
     ],
     "deny": [
       "Bash(rm -rf:*)",

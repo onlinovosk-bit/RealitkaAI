@@ -27,7 +27,7 @@ export async function fetchFounderMetrics(): Promise<FounderMetricsSnapshot | nu
       .gte("created_at", since.toISOString()),
     supabase
       .from("ai_cost_daily")
-      .select("day_utc, credits_spent, cost_eur, revenue_eur_retail, margin_eur")
+      .select("agency_id, day_utc, action_count, cost_eur")
       .gte("day_utc", since.toISOString().slice(0, 10))
       .order("day_utc", { ascending: false }),
   ]);

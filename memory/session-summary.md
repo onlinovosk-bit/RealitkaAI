@@ -1,3 +1,70 @@
+## Session 2026-09-24 (COST-BASELINE → AI nákladová telemetria end-to-end)
+
+> **PRVÁ VEC PRE NOVÚ SESSION:** cenový pivot na 199 €/kancelária je zapísaný
+> (`DEC-20260924-001`), ale **kód ho ešte nepozná** — `computeMrrBreakdown()` stále
+> počíta seat/program model. Otvorená úloha `PRICING-MODEL-01`.
+
+### Dokončené
+
+- **#682** — `callOpenAI()` zapisuje skutočné `prompt_tokens + completion_tokens` do
+  `usage_metrics_daily`. Jeden chokepoint pokryl všetkých 11 volajúcich namiesto
+  deviatich falošných `delta: 0`.
+- **#686** — `agencyId` dotiahnutý na zvyšných 9 volajúcich. 6 bez dotazu navyše,
+  2 presunom poradia, 2 jedným lookupom na AI ceste s nemým zlyhaním.
+- **#688 / AP-010** — `ai_action_audit` dostalo `cost_eur`, `credits_spent`, `model`,
+  `latency_ms`. Migrácie na ne existovali od júna, neboli aplikované; insert padal do
+  `console.warn`. Registrované ako `20260924183806`. Dôkaz: insert so všetkými štyrmi
+  prešiel v transakcii s rollback, 0 testovacích riadkov zostalo.
+- **MARGIN-VIEW-01** — `ai_cost_daily` prepísaný na skutočný náklad; marža sa počíta
+  z `computeMrrBreakdown()`; `costGap` drží dlaždicu na „—", keď akcie prebehli bez
+  zapísaného nákladu. `security_invoker = true`.
+- **Owner Dashboard neexistoval ako otvorená otázka** — plocha už bola nadrôtovaná
+  (`FounderMetricsDashboard` + `lib/metrics/fetch.ts`), chýbal jej len pravdivý vzorec.
+
+### Opravené vlastné omyly
+
+- Navrhol som „A) migrácia — dolepiť 4 stĺpce" bez toho, aby som najprv pozrel, či
+  migrácie existujú. **Existovali.** Skutočná príčina bola neaplikovanie, nie chýbajúci
+  súbor. A ani nález nebol môj — `persist-cost-telemetry.ts` to má v docstringu.
+- Pri BRANCH-CLEANUP som tvrdil, že mŕtve vetvy stoja Vercel deploye. Nestoja — Vercel
+  deployuje na push, nie na existenciu vetvy.
+- „main je červený na typecheck-baseline" — moje zlé meranie: gate počíta aj
+  `.next/types/**` a ja som ho púšťal po `next build`. Bez nich presne 54.
+
+### Rozpracované / Pending
+
+- **`PRICING-MODEL-01`** — migrovať `computeMrrBreakdown()` na plochých 199 €/kancelária.
+  Dopad na vykazovaný MRR: 278 € → 597 € pri 3 aktívnych kanceláriách. Founder GO.
+- **`UGKK-QUERY`** — CRZ ukazuje zmluvy ÚGKK s komerčnými subjektmi (napr. U.S. Steel)
+  a VÚGK publikuje licenčné podmienky. **Protirečí to
+  `master-data-sourcing-map.md` ZHLUK 3**, ktorý tvrdí „pre komerčné subjekty neexistuje
+  oprávnený záujem ani API". Treba doriešiť aj to, či sa vlastnícke dáta smú použiť na
+  marketingový outreach (GDPR nad rámec zmluvy). Nedokončené.
+- **`AP-021`** — migračný drift **vedie F2B (#687)**, nie táto session. Môj údaj
+  113/53 bol neskorší a hrubší než jeho 111/48; neuvádzam ho ako konkurenčný.
+  AP-010 doň prispieva len ako prvý prípad, kde drift stál funkčnosť.
+- **Osirelý commit `9eff0b29`** na vetve `fix-usage-telemetry` (obsah je v #686).
+  Upratať lokálne: `git push --force-with-lease origin 272810f8:fix-usage-telemetry`
+  — harness mi force-push zamietol.
+- Nezmenené: CHECKOUT-ENV-01 krok A (Stripe VERIFY, founder-side),
+  `BUS-YAML-BOM-TOLERANCE`, `branch-cleanup.sh` (111 vetiev, founder spúšťa lokálne).
+
+### Kľúčové súbory zmenené
+
+- `apps/crm/src/lib/ai/openai.ts` — `agencyId` param, zápis skutočných tokenov
+- 11 volajúcich `callOpenAI()` — `agencyId` dotiahnutý (#686)
+- `apps/crm/supabase/migrations/20260924183806_ai_action_audit_cost_columns.sql` — AP-010
+- `apps/crm/supabase/migrations/20260924200000_ai_cost_daily_view.sql` — pohľad bez fikcie
+- `apps/crm/src/lib/metrics/{types,compute,fetch}.ts` — marža z MRR, `costGap`
+- `apps/crm/src/components/metrics/FounderMetricsDashboard.tsx` — dlaždice bez kreditov
+- `.claude/settings.json` — `mcp__Supabase__execute_sql` v allow-liste
+
+### Ďalší krok
+
+`PRICING-MODEL-01` — bez neho dashboard ukazuje maržu proti seat MRR, hoci cenník je
+199 €/kancelária. Je to jediná vec, ktorá dnes drží Owner Dashboard v nesúlade
+s rozhodnutím foundera.
+
 ## Session 2026-09-24 (Agentic System Blueprint v1.0 → Revolis System Spec v1.0)
 
 ### Dokončené
