@@ -48,8 +48,23 @@ git ls-tree -r main | grep provenance.py           -> nič
 ```
 
 Stranded commity: `ff9d261`, `193f17d`, `5967fec`. PR #22 ich dostane na `main`.
-Stackovanie vetiev bola moja voľba, takže aj táto medzera. **Pri stackovaných PR
-vždy over `merge-base --is-ancestor`, nie farbu na GitHube.**
+Stackovanie vetiev bola moja voľba, takže aj táto medzera.
+
+**Oprava tohto pravidla, 12:10Z — pôvodne tu stálo „vždy over
+`merge-base --is-ancestor`, nie farbu na GitHube". To je nesprávne.** Overil som
+ním merge tejto PR (#679) a vyhlásil „NIE — nie je na main", hoci obsah na `main`
+bol. Dôvod: #679 sa zlúčila **squashom**, takže head commit vetvy nie je predkom
+`main`, ale jej zmeny áno. `--is-ancestor` dá falošný poplach pri každom squash
+a rebase merge — a to je v tomto repozitári bežný režim.
+
+Správne pravidlo: **over OBSAH, nie rodokmeň.** Diffni dotknuté súbory proti
+`origin/main`, alebo nájdi squash commit (`git log origin/main --oneline | grep '(#679)'`).
+`--is-ancestor` použi len ako doplnok — jeho „NIE" znamená „preveruj ďalej",
+nie „nepristálo".
+
+Zmerané na #679: `merge-base --is-ancestor 1a13ac4 origin/main` → NIE,
+`ff59d14 memory: session summary … (#679)` na `main`, 46 sekcií, súbor
+byte-identický s vetvou. Obsah pristál; rodokmeň nie.
 
 **Paralelné session bez zdieľaného nároku na prácu** (`DEC-UPTM-DUP`) sa dnes
 prejavili už tretíkrát — raz ako duplicita (UPTM-003 postavené dvakrát), raz ako
