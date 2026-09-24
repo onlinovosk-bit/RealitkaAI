@@ -54,21 +54,13 @@ jobs:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
+      # Ten istý wrapper ako v `saas-grade-pipeline.yml`. Nightly ho doteraz
+      # nemal — volal `supabase start` priamo, takže prvé odmietnutie z registry
+      # zhodilo celý beh bez jediného pokusu navyše. Registry vyberá skript,
+      # preto tu nie je žiadne `env`.
       - name: Start local Supabase
-        run: supabase start
+        run: ../../scripts/ci/supabase-start.sh
         working-directory: apps/crm
-        env:
-          # `supabase/setup-cli` nastavuje SUPABASE_INTERNAL_IMAGE_REGISTRY=ghcr.io
-          # (v našom repozitári to nikde nie je — exportuje to tá akcia). Malo to
-          # obísť limity Docker Hubu, lenže teraz škrtí ghcr.io: `toomanyrequests,
-          # allowed: 44000/minute` aj pri PRIHLÁSENOM pulle. Overené na behu
-          # a41f6d57, kde obe `docker login` vetvy prešli a `supabase start` aj
-          # tak padol — autentifikácia ten limit neobchádza.
-          #
-          # Prebíjame to na úrovni kroku zámerne: job-level `env` by nestačil,
-          # keby akcia premennú exportovala cez $GITHUB_ENV. Step-level `env` má
-          # prednosť a platí len tam, kde sa images naozaj sťahujú.
-          SUPABASE_INTERNAL_IMAGE_REGISTRY: docker.io
 
       - name: Export local credentials
         run: supabase status -o env | sed 's/"//g' >> "$GITHUB_ENV"
