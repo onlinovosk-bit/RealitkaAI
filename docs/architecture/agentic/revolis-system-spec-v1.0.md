@@ -224,7 +224,10 @@ PR + founder merge (RRA pravidlo 3, AP-008).
 | 3 Irreversible | **akákoľvek správa mimo tenanta** (e-mail, SMS, WhatsApp, Telegram klientovi), publikovanie inzerátu, delete, billing, PROD config | **povinné ľudské schválenie** |
 
 **Stav 2026-09-24:** porušenie 1 je opravené v PR #690 (draft + audit,
-povinný secret, testy zakázaného správania). Na `main` až po merge.
+povinný secret, testy zakázaného správania). Schválenie je jednoklikové
+(`POST /api/leads/:id/drafts/:activityId/approve`). Odošle presne text, ktorý
+maklér videl, najviac raz, a zapíše audit `human_approved` → `sent`. Na `main`
+až po merge.
 
 **Porušenia dnes (merané na `main` @ 22bad1d):**
 1. **`REVOLIS-INBOUND-AUTOREPLY`** — `lib/inbound/process-lead.ts:102-135`

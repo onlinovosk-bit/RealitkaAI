@@ -13,7 +13,9 @@ import { logEvent }          from '@/lib/events/log-event'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { AUTO_REPLY_PROMPT_VERSION, generateAutoReply } from './auto-reply'
 
-export const INBOUND_AUTOREPLY_AGENT_ID = 'REVOLIS-INBOUND-AUTOREPLY'
+import { INBOUND_AUTOREPLY_AGENT_ID } from './draft-view'
+
+export { INBOUND_AUTOREPLY_AGENT_ID }
 const BRI_REPLY_THRESHOLD = 40   // minimum score to draft a reply
 
 export interface InboundLeadPayload {
@@ -138,6 +140,9 @@ export async function processInboundLead(
       requires_approval: true,
       channel:           'email',
       subject:           reply.subject,
+      // Exactly what the broker approves is exactly what gets sent.
+      body:              reply.body,
+      recipient:         payload.email,
       agent_id:          INBOUND_AUTOREPLY_AGENT_ID,
       prompt_version:    AUTO_REPLY_PROMPT_VERSION,
     },

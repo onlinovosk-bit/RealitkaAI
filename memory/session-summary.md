@@ -11,6 +11,10 @@
 - **Tier-3 brána (GO 2026-09-24) je v PR #690 a čaká na merge. #689 sa zmergovala o 19:39 UTC, teda pred pushom fixu, takže fix na `main` NIE JE (overené diffom obsahu).**
   Pred merge treba overiť, že `INBOUND_WEBHOOK_SECRET` je nastavený na PROD.
   Bez neho endpoint po merge vracia 503.
+- **„Schváliť a odoslať" (GO)** je v tej istej PR #690: route, `approve-draft.ts`,
+  `draft-view.ts`, tlačidlo v časovej osi leadu a 31 nových testov. Na preview
+  treba overiť, či PostgREST filter `.or('meta->>approval_state.is.null,…')`
+  funguje na živej DB.
 - `TASK-SEC-002` je v stave `running`. Na `done` ho prepni po overení obsahu na `main`.
 - PR #495 (pôvodný nález) nechaj otvorený, kým founder neprijme kartu.
 
@@ -28,9 +32,9 @@
 - `.ai/bus/tasks/TASK-SEC-002.md`: pridaná sekcia Resolution
 
 ### Ďalší krok
-Overiť `INBOUND_WEBHOOK_SECRET` na PROD, potom merge PR #690. Ďalšia stena
-(čaká na GO): jednoklikové „schváliť a odoslať draft", aby Tier-3 brána nebola len
-copy-paste.
+1. Overiť `INBOUND_WEBHOOK_SECRET` a `OUTREACH_FROM_EMAIL` na PROD.
+2. Na preview poslať testovací lead, potom kliknúť „Schváliť a odoslať".
+3. Merge PR #690.
 
 ---
 

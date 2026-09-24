@@ -131,6 +131,10 @@ describe("processInboundLead — Tier-3 gate", () => {
       requires_approval: true,
       agent_id: "REVOLIS-INBOUND-AUTOREPLY",
       prompt_version: "inbound-autoreply-v1",
+      // Stored verbatim so the approve path sends exactly what the broker saw.
+      subject: "Ďakujeme",
+      body: "Dobrý deň, ozveme sa.",
+      recipient: "jan@example.com",
     });
     expect(draft.text).toContain("Neodoslané");
   });
