@@ -59,18 +59,58 @@ z `computeMrrBreakdown()`.
 - **`security_invoker = true`** na pohľade — rešpektuje RLS `ai_action_audit_select_tenant`.
   Pôvodná migrácia to nemala.
 
-## [2026-09-24] AP-021 — Migračný ledger a produkcia si neodpovedajú
+## [2026-09-24] AP-021 — AP-010 je konkrétna cena migračného driftu
 
-Repo má **113** migračných súborov, `supabase_migrations.schema_migrations` registruje
-**53**. 65 prefixov z repa v registri chýba, 5 registrovaných nemá v repe súbor.
+**Tento záznam NIE JE samostatný nález.** Pri AUDIT-SCHEMA-01 som nameral 113 súborov
+proti 53 registrovaným a chcel to zapísať ako nový nález. **F2B (#687, `4ec5f48f`) ten
+istý drift zmeral o 12 minút skôr, hlbšie a presnejšie** —
+`docs/reports/2026-09-24-f2b-prod-shape-rehearsal.md` je autoritatívny zdroj, nie tento
+odsek. Moje čísla (113/53) sa s jeho (111/48) rozchádzajú o okamih merania a o to, že
+#688 medzitým jednu registráciu pridal; **neuvádzam ich ako konkurenčný údaj.**
 
-**Netvrdím, že 65 migrácií nebehlo** — `ai_action_audit` v produkcii existovala, hoci
-`20260610000001` registrovaná nie je, takže časť sa aplikovala mimo ledgeru.
-**Registrácia sa nerovná aplikácii.** Merateľné je len to, že si ledger a produkcia
-neodpovedajú. AP-010 je prvý prípad, kde to stálo funkčnosť; nález z 2026-09-23
-(`20260817220000` / `last_contact_at`, čítaná na 59 miestach) je druhý.
-Zosúladenie = samostatná úloha, nezačatá.
+F2B ukázal viac, než som mal: replay **iba zo zapísaných** migrácií dáva `OK=16,
+FAILED=32`, čiže **aplikovaná časť je sama o sebe nekoherentná** — táto databáza sa zo
+`schema_migrations` postaviť nedá. Príčina má meno: `20260310_baseline_core_schema.sql`
+a `20260921195500_legalize_inbound_mailboxes.sql` sú v neaplikovanej dávke, hoci ich
+objekty v PROD existujú. Po ich doplnení `OK=50, FAILED=0`.
 
+**Čo k tomu pridáva AP-010:** prvý doložený prípad, keď ten drift **stál funkčnosť**, nie
+len koherenciu. `logAiActionAudit()` zapisoval do štyroch stĺpcov, ktoré v PROD
+neexistovali, insert padal do `console.warn` a eurová cena AI sa nikdy nikam neuložila.
+Druhý prípad z 2026-09-23: `20260817220000` / `last_contact_at`, čítaná na 59 miestach.
+
+Zosúladenie vedie F2B, nie táto úloha.
+
+## [2026-09-24] — Agentic System Blueprint v1.0 prijatý ako kontrakt, nie ako stavebný plán
+
+Founder dal GO na `AGENTIC-SYSTEM-BLUEPRINT-v1.0`. Uložený doslovne v
+`docs/architecture/agentic/agentic-system-blueprint-v1.0.md`. Jeho §21 predpisuje ako ďalší
+krok REVOLIS SYSTEM SPEC v1.0, ktorý je v `docs/architecture/agentic/revolis-system-spec-v1.0.md`
+a je vyplnený z reálneho kódu, nie z predstavy.
+
+**Hlavný nález:** Revolis má väčšinu stavebných blokov Blueprintu. Governance vrstva
+(`packages/control-contract`) je však **DEFINED, nie LIVE**, pretože jej jediný konzument
+beží len v testoch. Rovnaká akcia „AI text odchádza ku klientovi" má dnes štyri režimy:
+draft, ľudské schválenie, `dry_run` a žiadnu bránu.
+
+**P0 porušenie Tier 3:** `lib/inbound/process-lead.ts:102-135` posiela AI-generovaný
+e-mail a WhatsApp bez schválenia. Obsah je čiastočne riadený vstupom `payload.message`.
+Webhook `/api/webhooks/inbound-lead` overuje Bearer iba vtedy, ak je
+`INBOUND_WEBHOOK_SECRET` nastavený. Či je nastavený na PROD, je UNVERIFIED, lebo výpis
+mien z Vercelu bol orezaný. Šablónová auto-odpoveď v `lib/acquire/*` porušením **nie je**:
+text je pevný a kancelária ju zapína cez opt-in.
+
+**Ústava v2 na Blueprint §21:**
+- **BUILD:**
+  - Tier-3 brána na inbound auto-reply, spolu s prohibited-behavior testami.
+  - Zapojenie control-contractu do jednej živej Tier-3 cesty.
+  - `agent_id` a `prompt_version` do `ai_action_audit.meta`.
+- **BACKLOG (timing veto Q8):**
+  - Agent Factory. Odomkne sa pri 3. agentovi za control-contractom (ADR 2026-09-11b,
+    Engineering Constitution princíp 4).
+  - Managed Agents runtime. Odomkne sa pri prvom multi-step tool-use loope.
+  - Produktové skills. Odomknú sa pri druhom použití.
+- **MIMO REPO:** špecifikácie Onlinovo, MIA Vellar a Phone Operator.
 
 ## [2026-09-23] — W1 hotová: identita kancelárie sa odovzdáva, nedopočítava
 
@@ -2511,6 +2551,38 @@ zmena kontraktu a patrí do vlastnej brány. Zámerne neopravené:
 - **Ďalej:** F2 (nácvik na Supabase branch) a F3 (push) naďalej čakajú na odpovede,
   či je dostupný branching a či je zapnuté PITR.
 
+## 2026-09-24 — F2B: nácvik proti PROD tvaru; `schema_migrations` nie je zostaviteľná
+
+- **Supabase branch (pôvodná F2) zrušený pred vytvorením.** Docs: preview branch je
+  *„built by replaying the migration history against a fresh database"*, teda
+  *„equivalent to `supabase db reset`"*. Nereprodukoval by PROD, kde objekty vznikli
+  mimo migrácií — a to je presne riziko, ktoré mal merať. Platený resource za dôkaz,
+  ktorý už máme dvakrát. Branch som nevytvoril.
+- **NOVÝ NÁLEZ — aplikovaná časť histórie je nekoherentná.** Postaviť schému len
+  z 48 migrácií zapísaných v `schema_migrations`: **OK=16, FAILED=32**. Padá na
+  `leads`, `profiles`, `agencies`, `activities`, `properties`, `tasks`,
+  `portal_listings`, `lead_scores`, `lead_property_matches`, `inbound_mailboxes`
+  a na `profile_agencies_for_auth()`. Baseline `20260310` a
+  `20260921195500_legalize_inbound_mailboxes` sú v NEAPLIKOVANEJ dávke, hoci ich
+  objekty v PROD existujú. **Z `schema_migrations` sa táto DB postaviť nedá.**
+  Po doplnení oboch: OK=50, FAILED=0.
+- **Rozsah odchýlky:** z objektov, ktoré 63 migrácií vytvára, v migračne
+  postavenom základe chýba 32/42 tabuliek, 66/69 indexov, 70/80 policies,
+  8/8 triggerov, 13/13 funkcií.
+- **Obe „neviditeľné" opravy z F1 overené proti skutočnému PROD tvaru:**
+  - `uq_realsoft_import_logs_dedupe` je v PROD index **vlastnený constraintom**
+    → pred F1 `cannot drop index … constraint … requires it`; po F1 bez chyby.
+  - `get_valuation_tenant` má v PROD **6-stĺpcový** `RETURNS TABLE` (s `is_sandbox`),
+    zatiaľ čo `20260720193000` deklaruje 5 → pred F1 `cannot change return type
+    of existing function` (Postgres sám radí `Use DROP FUNCTION … first`);
+    po F1 bez chyby. PROD teda nesie tvar z neskoršej `20260722120000`.
+- **Čo NIE JE overené:** tvary 80 policies a stĺpce 32 tabuliek. Fixture v plnom
+  PROD tvare som nestaval — rekonštrukcia 32 tabuliek zo `information_schema` je
+  sama zdrojom chýb. Uzavrie to len skutočný klon (*Restore to a new project*),
+  ktorý je platený a bez samostatného GO ho nerobím.
+- **Pred F3 zostáva:** stav PITR add-onu (cez dostupné nástroje nečitateľný;
+  `archive_mode=on` je nutná, nie postačujúca podmienka) a rozhodnutie o klone.
+- Dokument: `docs/reports/2026-09-24-f2b-prod-shape-rehearsal.md`.
 ## 2026-09-24 — Lead Revenue Engine: WALL 0 postavený, engine kontrakt zapísaný
 
 **Rozhodnutie: BUILD** (substrát merania) + **BACKLOG** (dve vrstvy, timing veto).

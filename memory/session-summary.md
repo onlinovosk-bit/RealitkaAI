@@ -40,7 +40,9 @@
   `master-data-sourcing-map.md` ZHLUK 3**, ktorý tvrdí „pre komerčné subjekty neexistuje
   oprávnený záujem ani API". Treba doriešiť aj to, či sa vlastnícke dáta smú použiť na
   marketingový outreach (GDPR nad rámec zmluvy). Nedokončené.
-- **`AP-021`** — ledger vs. produkcia (113 vs. 53). Samostatná úloha.
+- **`AP-021`** — migračný drift **vedie F2B (#687)**, nie táto session. Môj údaj
+  113/53 bol neskorší a hrubší než jeho 111/48; neuvádzam ho ako konkurenčný.
+  AP-010 doň prispieva len ako prvý prípad, kde drift stál funkčnosť.
 - **Osirelý commit `9eff0b29`** na vetve `fix-usage-telemetry` (obsah je v #686).
   Upratať lokálne: `git push --force-with-lease origin 272810f8:fix-usage-telemetry`
   — harness mi force-push zamietol.
@@ -62,6 +64,34 @@
 `PRICING-MODEL-01` — bez neho dashboard ukazuje maržu proti seat MRR, hoci cenník je
 199 €/kancelária. Je to jediná vec, ktorá dnes drží Owner Dashboard v nesúlade
 s rozhodnutím foundera.
+
+## Session 2026-09-24 (Agentic System Blueprint v1.0 → Revolis System Spec v1.0)
+
+### Dokončené
+- Blueprint v1.0 uložený doslovne: `docs/architecture/agentic/agentic-system-blueprint-v1.0.md`
+- Revolis System Spec v1.0, vyplnený z kódu so stavmi LIVE/DEFINED/MISSING:
+  `docs/architecture/agentic/revolis-system-spec-v1.0.md`
+- Rozhodnutie zapísané v `memory/decisions.md`; odkazy v `docs/architecture/MAPA.md`
+- PR #689 (draft, iba dokumentácia)
+
+### Rozpracované / Pending
+- **P0 Tier-3:** inbound auto-reply posiela AI e-mail bez schválenia a webhook má
+  voliteľnú autentifikáciu. Návrh opravy čaká na GO.
+- Nie je overené, či je `INBOUND_WEBHOOK_SECRET` nastavený na PROD. Treba to overiť
+  vo Vercel dashboarde; skontroluje founder.
+
+### Kľúčové súbory zmenené
+- `docs/architecture/agentic/*`: nové, Blueprint a System Spec
+- `memory/decisions.md`: záznam o prijatí Blueprintu a verdikt Ústavy
+- `docs/architecture/MAPA.md`: pridané dva odkazy
+
+### Ďalší krok
+GO na Tier-3 bránu pre `REVOLIS-INBOUND-AUTOREPLY`:
+1. Webhook fail-closed bez secretu.
+2. AI odpoveď → draft a `ai_action_audit` `ai_suggested`, odoslanie cez existujúci `api/outreach/approve`.
+3. Test zakázaného správania.
+
+---
 
 ## Session 2026-09-24 (UPTM governance — uptm-runner)
 
