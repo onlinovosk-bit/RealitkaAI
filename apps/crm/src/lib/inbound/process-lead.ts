@@ -1,15 +1,22 @@
 // ================================================================
 // Revolis.AI — Inbound Lead Processor
-// insert → BRI → logEvent → auto-reply (email + WhatsApp)
+// insert → BRI → logEvent → AI reply DRAFT (never sent from here)
+//
+// Tier 3 (Agentic System Blueprint §8, Revolis System Spec §13): a message
+// to a person outside the tenant needs human approval. This processor only
+// stores the AI text as a draft activity + `ai_suggested` audit row. The
+// broker sends it — nothing in this module talks to Resend or WhatsApp.
 // ================================================================
-import { createClient }      from '@/lib/supabase/server'
+import { logAiAction }       from '@/lib/ai-action-audit'
 import { computeBRI }        from '@/lib/bri/engine'
 import { logEvent }          from '@/lib/events/log-event'
-import { generateAutoReply } from './auto-reply'
-import { Resend }            from 'resend'
+import { createServiceRoleClient } from '@/lib/supabase/admin'
+import { AUTO_REPLY_PROMPT_VERSION, generateAutoReply } from './auto-reply'
 
-const FROM               = process.env.OUTREACH_FROM_EMAIL ?? 'noreply@revolis.ai'
-const BRI_REPLY_THRESHOLD = 40   // minimum score to trigger auto-reply
+import { INBOUND_AUTOREPLY_AGENT_ID } from './draft-view'
+
+export { INBOUND_AUTOREPLY_AGENT_ID }
+const BRI_REPLY_THRESHOLD = 40   // minimum score to draft a reply
 
 export interface InboundLeadPayload {
   name:          string
@@ -24,21 +31,49 @@ export interface InboundLeadPayload {
 }
 
 export interface ProcessLeadResult {
-  leadId:        string
-  briScore:      number
-  replySent:     boolean
-  replyChannels: string[]
+  leadId:       string
+  briScore:     number
+  draftCreated: boolean
+  /** Always false: sending is a human action (Tier 3). Kept for API compatibility. */
+  replySent:    false
+}
+
+/** Caller-facing failure with an HTTP status; message is safe to return. */
+export class InboundLeadError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message)
+    this.name = 'InboundLeadError'
+  }
 }
 
 export async function processInboundLead(
   payload: InboundLeadPayload
 ): Promise<ProcessLeadResult> {
-  const supabase = await createClient()
+  const admin = createServiceRoleClient()
+  if (!admin) {
+    throw new InboundLeadError('Služba nie je dostupná.', 503)
+  }
 
-  // 1. Insert lead
+  // 1. Resolve the owning profile first — the lead must land in its agency.
+  const { data: profile, error: profileErr } = await admin
+    .from('profiles')
+    .select('id, full_name, agency_id')
+    .eq('id', payload.profileId)
+    .maybeSingle()
+
+  if (profileErr) {
+    throw new Error(`profile lookup failed: ${profileErr.message}`)
+  }
+  if (!profile || !profile.agency_id) {
+    throw new InboundLeadError('Neznámy profileId.', 422)
+  }
+  const agencyId = profile.agency_id as string
+
+  // 2. Insert lead — a failed insert fails the request (AP-010).
   const leadId = crypto.randomUUID()
-  await supabase.from('leads').insert({
+  const { error: insertErr } = await admin.from('leads').insert({
     id:              leadId,
+    agency_id:       agencyId,
     name:            payload.name,
     email:           payload.email ?? '',
     phone:           payload.phone ?? '',
@@ -52,12 +87,15 @@ export async function processInboundLead(
     assigned_agent:  'Nepriradený',
     last_contact:    'Práve importovaný',
   })
+  if (insertErr) {
+    throw new Error(`lead insert failed: ${insertErr.message}`)
+  }
 
-  // 2. Compute BRI
+  // 3. Compute BRI
   const bri      = await computeBRI(leadId, payload.profileId, 'lead_created')
   const briScore = bri?.new_score ?? 50
 
-  // 3. Audit event
+  // 4. Audit event
   await logEvent({
     profileId:  payload.profileId,
     entityType: 'lead',
@@ -71,24 +109,12 @@ export async function processInboundLead(
     },
   })
 
-  const replyChannels: string[] = []
-
   if (briScore < BRI_REPLY_THRESHOLD || !payload.email) {
-    return { leadId, briScore, replySent: false, replyChannels }
+    return { leadId, briScore, draftCreated: false, replySent: false }
   }
 
-  // 4. Generate AI reply
-  const { data: profile, error: profileErr } = await supabase
-    .from('profiles')
-    .select('full_name')
-    .eq('id', payload.profileId)
-    .single()
-
-  if (profileErr || !profile) {
-    console.error('[processInboundLead] profile not found:', payload.profileId)
-    return { leadId, briScore, replySent: false, replyChannels }
-  }
-
+  // 5. AI reply → draft only. Input is untrusted (payload.message), so the
+  //    text must pass a human before it reaches anyone.
   const reply = await generateAutoReply({
     leadName:     payload.name,
     source:       payload.source ?? 'web',
@@ -96,78 +122,52 @@ export async function processInboundLead(
     propertyType: payload.propertyType,
     location:     payload.location,
     budget:       payload.budget,
-    agentName:    profile?.full_name ?? undefined,
+    agentName:    profile.full_name ?? undefined,
   })
 
-  // 5. Email via Resend
-  try {
-    const resendKey = process.env.RESEND_API_KEY
-    if (!resendKey) throw new Error('RESEND_API_KEY is not configured')
-    const resend = new Resend(resendKey)
-    await resend.emails.send({
-      from:    FROM,
-      to:      payload.email,
-      subject: reply.subject,
-      text:    reply.body,
-    })
-    replyChannels.push('email')
-    logEvent({
-      profileId:  payload.profileId,
-      entityType: 'lead',
-      entityId:   leadId,
-      eventType:  'message_sent',
-      payload:    { channel: 'email', subject: reply.subject, auto_reply: true },
-    }).catch(e => console.error('[processInboundLead] logEvent email:', e))
-  } catch (err: any) {
-    console.error('[processInboundLead] email failed:', err.message)
+  const { error: draftErr } = await admin.from('activities').insert({
+    lead_id:     leadId,
+    type:        'AI návrh odpovede',
+    title:       `Návrh odpovede (AI) — ${reply.subject}`,
+    text:        `${reply.body}\n\nKanál: email\nPríjemca: ${payload.email}\nNeodoslané — vyžaduje schválenie makléra.`,
+    entity_type: 'lead',
+    entity_id:   leadId,
+    actor_name:  'AI inbound auto-reply',
+    source:      'webhook_inbound_lead',
+    severity:    'info',
+    meta: {
+      draft:             true,
+      requires_approval: true,
+      channel:           'email',
+      subject:           reply.subject,
+      // Exactly what the broker approves is exactly what gets sent.
+      body:              reply.body,
+      recipient:         payload.email,
+      agent_id:          INBOUND_AUTOREPLY_AGENT_ID,
+      prompt_version:    AUTO_REPLY_PROMPT_VERSION,
+    },
+  })
+  if (draftErr) {
+    // The lead exists; losing the draft is recoverable, so report, don't fail.
+    console.error('[processInboundLead] draft insert failed:', draftErr.message)
+    return { leadId, briScore, draftCreated: false, replySent: false }
   }
 
-  // 6. WhatsApp (no-op if env vars not set)
-  if (payload.phone && process.env.WHATSAPP_TOKEN && process.env.WHATSAPP_PHONE_ID) {
-    try {
-      await sendWhatsApp(payload.phone, reply.body)
-      replyChannels.push('whatsapp')
-      logEvent({
-        profileId:  payload.profileId,
-        entityType: 'lead',
-        entityId:   leadId,
-        eventType:  'message_sent',
-        payload:    { channel: 'whatsapp', auto_reply: true },
-      }).catch(e => console.error('[processInboundLead] logEvent whatsapp:', e))
-    } catch (err: any) {
-      console.error('[processInboundLead] WhatsApp failed:', err.message)
-    }
-  }
+  await logAiAction({
+    action:         'ai_email',
+    agencyId,
+    leadId,
+    profileId:      payload.profileId,
+    actionKind:     'ai_suggested',
+    channel:        'email',
+    subjectPreview: reply.subject,
+    bodyText:       reply.body,
+    meta: {
+      agent_id:       INBOUND_AUTOREPLY_AGENT_ID,
+      prompt_version: AUTO_REPLY_PROMPT_VERSION,
+      approval_state: 'pending_human',
+    },
+  }).catch(e => console.error('[processInboundLead] audit failed:', e))
 
-  return { leadId, briScore, replySent: replyChannels.length > 0, replyChannels }
-}
-
-async function sendWhatsApp(phone: string, message: string): Promise<void> {
-  const token = process.env.WHATSAPP_TOKEN
-  if (!token) throw new Error('WHATSAPP_TOKEN is not configured')
-  const phoneId = process.env.WHATSAPP_PHONE_ID
-  if (!phoneId) throw new Error('WHATSAPP_PHONE_ID is not configured')
-  // Ensure E.164 — default to SK prefix if no country code
-  const to = phone.startsWith('+')
-    ? phone.replace(/\s/g, '')
-    : `+421${phone.replace(/\D/g, '')}`
-
-  const res = await fetch(
-    `https://graph.facebook.com/v19.0/${phoneId}/messages`,
-    {
-      method:  'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        messaging_product: 'whatsapp',
-        to,
-        type: 'text',
-        text: { body: message },
-      }),
-    }
-  )
-
-  if (!res.ok) {
-    const detail = await res.text()
-    throw new Error(`WhatsApp API ${res.status}: ${detail}`)
-  }
+  return { leadId, briScore, draftCreated: true, replySent: false }
 }
