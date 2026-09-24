@@ -2470,6 +2470,38 @@ zmena kontraktu a patrí do vlastnej brány. Zámerne neopravené:
 - **Ďalej:** F2 (nácvik na Supabase branch) a F3 (push) naďalej čakajú na odpovede,
   či je dostupný branching a či je zapnuté PITR.
 
+## 2026-09-24 — F2B: nácvik proti PROD tvaru; `schema_migrations` nie je zostaviteľná
+
+- **Supabase branch (pôvodná F2) zrušený pred vytvorením.** Docs: preview branch je
+  *„built by replaying the migration history against a fresh database"*, teda
+  *„equivalent to `supabase db reset`"*. Nereprodukoval by PROD, kde objekty vznikli
+  mimo migrácií — a to je presne riziko, ktoré mal merať. Platený resource za dôkaz,
+  ktorý už máme dvakrát. Branch som nevytvoril.
+- **NOVÝ NÁLEZ — aplikovaná časť histórie je nekoherentná.** Postaviť schému len
+  z 48 migrácií zapísaných v `schema_migrations`: **OK=16, FAILED=32**. Padá na
+  `leads`, `profiles`, `agencies`, `activities`, `properties`, `tasks`,
+  `portal_listings`, `lead_scores`, `lead_property_matches`, `inbound_mailboxes`
+  a na `profile_agencies_for_auth()`. Baseline `20260310` a
+  `20260921195500_legalize_inbound_mailboxes` sú v NEAPLIKOVANEJ dávke, hoci ich
+  objekty v PROD existujú. **Z `schema_migrations` sa táto DB postaviť nedá.**
+  Po doplnení oboch: OK=50, FAILED=0.
+- **Rozsah odchýlky:** z objektov, ktoré 63 migrácií vytvára, v migračne
+  postavenom základe chýba 32/42 tabuliek, 66/69 indexov, 70/80 policies,
+  8/8 triggerov, 13/13 funkcií.
+- **Obe „neviditeľné" opravy z F1 overené proti skutočnému PROD tvaru:**
+  - `uq_realsoft_import_logs_dedupe` je v PROD index **vlastnený constraintom**
+    → pred F1 `cannot drop index … constraint … requires it`; po F1 bez chyby.
+  - `get_valuation_tenant` má v PROD **6-stĺpcový** `RETURNS TABLE` (s `is_sandbox`),
+    zatiaľ čo `20260720193000` deklaruje 5 → pred F1 `cannot change return type
+    of existing function` (Postgres sám radí `Use DROP FUNCTION … first`);
+    po F1 bez chyby. PROD teda nesie tvar z neskoršej `20260722120000`.
+- **Čo NIE JE overené:** tvary 80 policies a stĺpce 32 tabuliek. Fixture v plnom
+  PROD tvare som nestaval — rekonštrukcia 32 tabuliek zo `information_schema` je
+  sama zdrojom chýb. Uzavrie to len skutočný klon (*Restore to a new project*),
+  ktorý je platený a bez samostatného GO ho nerobím.
+- **Pred F3 zostáva:** stav PITR add-onu (cez dostupné nástroje nečitateľný;
+  `archive_mode=on` je nutná, nie postačujúca podmienka) a rozhodnutie o klone.
+- Dokument: `docs/reports/2026-09-24-f2b-prod-shape-rehearsal.md`.
 ## 2026-09-24 — Lead Revenue Engine: WALL 0 postavený, engine kontrakt zapísaný
 
 **Rozhodnutie: BUILD** (substrát merania) + **BACKLOG** (dve vrstvy, timing veto).
