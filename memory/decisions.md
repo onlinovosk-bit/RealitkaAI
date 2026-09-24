@@ -2341,6 +2341,63 @@ zmena kontraktu a patrí do vlastnej brány. Zámerne neopravené:
   a je zapnuté **PITR** s akým oknom (F3 inak nemá rollback).
 - Dokument: `docs/reports/2026-09-23-prod-deploy-plan.md`.
 
+## 2026-09-23 — W1 kontaktná garda, B08 Concierge kalendár, odblokovanie CI
+
+- **W1 (#659) — lead nedostane ako kontakt adresu agentúry.** Ingest e-mailov bral
+  prvú adresu v texte, čo pri preposlanom dopyte znamenalo adresu makléra alebo
+  `@realitysmolko.sk`. Overené na produkčnom leade z 05:47: kontaktný e-mail bol
+  **presná zhoda** s `profiles.email`. Garda filtruje adresy agentúry, jej doménu,
+  `revolis.ai` a role-adresy (`info@`, `noreply@`…).
+  **Rozhodnutie, ktoré zadanie nepýtalo:** verejní poskytovatelia (gmail, zoznam,
+  seznam, centrum…) sa z odvodených domén agentúry VYLUČUJÚ. Bez toho by osobný
+  gmail makléra zablokoval každého gmail kupca — garda by zabíjala leady.
+  **Lookup agentúry je fail-soft** (try/catch): stratiť lead kvôli chybe lookupu je
+  horšie než pustiť slabší kontakt. Telefón sa počíta PRED e-mailom, aby sa dalo
+  rozhodnúť, či sa oplatí vrátiť sporný e-mail vôbec.
+  **Zvyšková diera, vedome ponechaná:** lead bez telefónu, ktorého jediná adresa je
+  adresa klienta, ju stále dostane. Alternatíva je zahodiť lead — horšia.
+
+- **B08 (#668) — Concierge freebusy na refresh-token flow.** Väzba je na PROFIL
+  (`CONCIERGE_GOOGLE_PROFILE_ID`), nie na access token v env, ktorý expiruje
+  v hodine a nikto ho ručne neobnovuje. Token ide cez existujúcu
+  `getGoogleCalendarAccessToken(profileId)`. **Refresh token nikdy nejde do env.**
+  - **Scope:** `freebusy.query` NIE JE pokrytý scope-om `calendar.events`, na ktorom
+    OAuth flow dovtedy stál. Nehádal som to: `developers.google.com` je z tohto
+    prostredia blokovaný egress politikou, tak rozhodol **discovery dokument**
+    Calendar API v3. Z povolených štyroch pridaný najužší — `calendar.events.freebusy`.
+    `calendar` a `calendar.readonly` by dali čítanie OBSAHU udalostí, ktoré
+    Concierge na zistenie voľných termínov nepotrebuje.
+  - **Dôvody zlyhania sú konštanty typu, nie prepošlané OAuth hlášky.** Text ako
+    `invalid_grant` alebo `revoked` sa nedostane do odpovede ani do logu.
+  - **Upstream zlyhanie nevracia pole `busy`.** Prázdne `busy: []` by sa dalo čítať
+    ako „celý deň voľný" a Concierge by ponúkol termín, ktorý neexistuje. Test to drží.
+  - **Kontrakt odpovede ponechaný** (`reason`/`detail`, bez kľúča `error`): verzia
+    z #660. Meniť tvar odpovede verejného endpointu kvôli lint pravidlu je zmena
+    kontraktu, ktorú si nikto neobjednal.
+  - **STOP:** bez Google OAuth consentu pre nový scope vracia `freebusy.query` 403
+    aj s platným tokenom. Consent je ľudský klik — HUMAN_ACTION_REQUIRED.
+
+- **CI odblokované (#673).** `supabase/setup-cli` exportuje
+  `SUPABASE_INTERNAL_IMAGE_REGISTRY=ghcr.io` (v repe to nikde nie je —
+  `git log -S ... --all` = 0 výskytov, exportuje to tá akcia). ghcr.io teraz škrtí
+  pull `toomanyrequests, allowed: 44000/minute` **aj prihlásený**.
+  - **Vyvrátená hypotéza:** myslel som si, že `docker login` ten limit zdvihne.
+    Beh `a41f6d57` to vyvrátil — obe login vetvy prešli, `supabase start` padol.
+    Autentifikácia ten limit neobchádza. PR s login krokom (#672) som zavrel,
+    špekulatívny druhý pokus som nespúšťal.
+  - **Riešenie:** step-level `env: SUPABASE_INTERNAL_IMAGE_REGISTRY: docker.io`.
+    Job-level by nestačil, keby akcia premennú exportovala cez `$GITHUB_ENV` —
+    step-level `env` má prednosť a platí len tam, kde sa images naozaj sťahujú.
+    Premennú nemažeme (nie je naša), prebíjame ju.
+  - **Dôkaz:** všetkých šesť images stiahnutých z `docker.io`, nula `toomanyrequests`.
+  - **Jednorazová kolízia:** prvý beh po oprave padol na `bind host port 54322:
+    address already in use` — infra chyba pred spustením akéhokoľvek testu.
+    Jeden re-run prešiel zelený. Nie je to systémový problém; keby sa zopakoval,
+    treba diagnostiku (`ss -lntp` pred `supabase start`), nie ďalší zásah naslepo.
+
+- **Zrušený `/blueprint` (#665).** Stránka nepovedala, čo Revolis robí ani pre koho.
+  Prvý pokus o opravu (#664) padol, lebo merge `/blueprint` do vetvy súbor znova
+  rozbil; zavrel som ho ako superseded namiesto opakovania sporu #660 vs #662.
 ## 2026-09-23 — F1: 63 neaplikovaných migrácií je idempotentných (`GO MIGRATIONS-IDEMPOTENT-F1`)
 
 - **Výsledok:** opakovaný beh neaplikovanej dávky prešiel z **58/63** na **63/63**.

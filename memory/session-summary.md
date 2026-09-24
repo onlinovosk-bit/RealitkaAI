@@ -1,3 +1,56 @@
+## Session 2026-09-23 (WALL W1 kontaktná garda + WALL B / B08 Concierge kalendár + odblokovanie CI)
+
+### Dokončené
+- **W1 — kontaktná garda v ingeste (#659).** Lead z e-mailu už nedostane ako
+  kontakt adresu samotnej agentúry. `apps/crm/src/lib/acquire/email-adapter.ts`
+  filtruje adresy makléra, doménu agentúry a `revolis.ai`; verejní poskytovatelia
+  (gmail, zoznam, seznam…) sa z odvodených domén agentúry vylučujú, inak by
+  osobný gmail makléra zablokoval každého gmail kupca. Overené proti produkčnému
+  leadu z 05:47, kde kontaktný e-mail bol presná zhoda s `profiles.email`.
+  Lookup agentúry je fail-soft: stratiť lead kvôli chybe lookupu je horšie
+  než pustiť slabší kontakt.
+- **Zrušený `/blueprint` (#665).** Stránka nehovorila, čo Revolis robí ani pre koho.
+- **B08 — Concierge freebusy cez refresh-token flow (#668, na `main` ako `3b03bfc6`).**
+  Nový `apps/crm/src/lib/concierge/calendar-auth.ts`: väzba na PROFIL
+  (`CONCIERGE_GOOGLE_PROFILE_ID`), nie na krátkodobý token v env. Refresh token
+  nikdy nejde do env. Dôvody zlyhania sú konštanty typu, nie prepošlané OAuth
+  hlášky — `invalid_grant` sa nedostane do odpovede ani do logu. Upstream
+  zlyhanie nevracia pole `busy`, aby sa prázdne `busy: []` nedalo čítať ako
+  „celý deň voľný". Pridaný scope `calendar.events.freebusy` (najužší, ktorý
+  `freebusy.query` pokrýva — `calendar.events` ho NEpokrýva; zdroj je discovery
+  dokument Calendar API v3, dokumentácia Google je z tohto prostredia blokovaná).
+  22/22 testov, `next build --webpack` OK.
+- **Odblokované CI (#673, `015e7e85`).** `supabase/setup-cli` exportuje
+  `SUPABASE_INTERNAL_IMAGE_REGISTRY=ghcr.io` a ghcr.io teraz škrtí pull
+  (`toomanyrequests, allowed: 44000/minute`) aj PRIHLÁSENÝ. Prihlásenie ten
+  limit neobchádza — overené na behu `a41f6d57`, kde `docker login` prešiel
+  a `supabase start` aj tak padol. Riešenie: step-level `env` s `docker.io`
+  (job-level by nestačil, keby akcia premennú exportovala cez `$GITHUB_ENV`).
+  Dôkaz: všetkých šesť images sa stiahlo z docker.io, nula `toomanyrequests`.
+
+### Rozpracované / Pending
+- **HUMAN_ACTION_REQUIRED (B08):** Google OAuth consent pre nový scope
+  `calendar.events.freebusy` + nastaviť `CONCIERGE_GOOGLE_PROFILE_ID`.
+  Bez toho freebusy vracia `oauth_missing` / 503 — čestne, nie vymyslený slot.
+- **Zvyšková diera W1:** lead bez telefónu, ktorého jediná adresa je adresa
+  klienta, ju stále dostane. Vedomé rozhodnutie — alternatíva je zahodiť lead.
+- Mojibake v `TASK-BUS-RUNNER-2D` (čistá verzia na `bafd47eb`).
+- `main` používa `NextResponse.json` tam, kde zadanie hovorilo `errorResponse` —
+  ponechané zámerne (#660 → #665), lebo tvar odpovede je verejný kontrakt widgetu.
+
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/acquire/email-adapter.ts`: kontaktná garda + `agencyDomainsFrom`.
+- `apps/crm/src/lib/concierge/calendar-auth.ts`: NOVÝ — `resolveConciergeAccessToken`.
+- `apps/crm/src/app/api/concierge/freebusy/route.ts`: token z profilu, nie z env.
+- `apps/crm/src/app/api/integrations/google/auth/route.ts`: +1 scope.
+- `.github/workflows/saas-grade-pipeline.yml`, `nightly-playwright.yml`:
+  `SUPABASE_INTERNAL_IMAGE_REGISTRY: docker.io` na úrovni kroku.
+
+### Ďalší krok
+Google OAuth consent + `CONCIERGE_GOOGLE_PROFILE_ID`. Až potom má B08 čo overovať.
+
+---
+
 ## Session 2026-09-06 (Reality Smolko Voiceflow correction)
 ### Dokončené
 - Verejný audit potvrdil, že `realitysmolko.sk` už hostuje Voiceflow widget „Poraďte sa!“; nejde o Revolis dashboard surface.
