@@ -8,14 +8,14 @@
 - PR #689 zmergovaná (squash, 0d01c8a): iba dokumentácia
 
 ### Rozpracované / Pending
-- **Tier-3 brána (GO 2026-09-24) je v PR #690 a čaká na merge. #689 sa zmergovala o 19:39 UTC, teda pred pushom fixu, takže fix na `main` NIE JE (overené diffom obsahu).**
+- **Tier-3 brána + „Schváliť a odoslať“ sú na `main`** (squash `ebb55b1`, PR #690, 20:07Z; obsah overený diffom). Na PROD ešte treba overiť `INBOUND_WEBHOOK_SECRET` a `OUTREACH_FROM_EMAIL`. Či prebehol test na preview, nie je známe.
   Pred merge treba overiť, že `INBOUND_WEBHOOK_SECRET` je nastavený na PROD.
   Bez neho endpoint po merge vracia 503.
 - **„Schváliť a odoslať" (GO)** je v tej istej PR #690: route, `approve-draft.ts`,
   `draft-view.ts`, tlačidlo v časovej osi leadu a 24 nových testov (commit f302a63 chybne uvádza 31). Na preview
   treba overiť, či PostgREST filter `.or('meta->>approval_state.is.null,…')`
   funguje na živej DB.
-- `TASK-SEC-002` je v stave `running`. Na `done` ho prepni po overení obsahu na `main`.
+- `TASK-SEC-002` je `done`: obsah je na `main` a overený.
 - PR #495 (pôvodný nález) nechaj otvorený, kým founder neprijme kartu.
 
 ### Kľúčové súbory zmenené

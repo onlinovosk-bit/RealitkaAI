@@ -1,10 +1,10 @@
 ---
 id: TASK-SEC-002
 type: task
-status: running
+status: done
 owner: claude/keen-lovelace-ih8ej3
 created_at: 2026-09-17T19:10:00Z
-updated_at: 2026-09-24T19:45:00Z
+updated_at: 2026-09-24T20:10:00Z
 source: "PR #495 https://github.com/onlinovosk-bit/RealitkaAI/pull/495 — conflict-PR security finding transfer 2026-09-17"
 target: "founder-review → executor after GO (fix only; do not close #495 until card accepted)"
 scope:
@@ -73,8 +73,9 @@ Founder GO → fail-closed secret + service-role insert + throw on failure
 
 ## Resolution (2026-09-24, founder GO „Tier-3 brána pre inbound auto-reply")
 
-Fix je na vetve `claude/keen-lovelace-ih8ej3`, PR #690 (#689 sa zmergovala pred pushom fixu, niesla len docs). Na `main` ešte nie je.
-Status sa zmení na `done` až po merge a po overení obsahu na `main`.
+**Na `main` od 2026-09-24 20:07Z** (squash `ebb55b1`, PR #690). Overené obsahom:
+`git diff HEAD origin/main` na dotknutých cestách je prázdny. #689 sa zmergovala
+pred pushom fixu a niesla len docs.
 
 - **Secret je povinný.** Bez `INBOUND_WEBHOOK_SECRET` vráti endpoint 503 (fail-closed).
   Bearer sa porovnáva v konštantnom čase.
