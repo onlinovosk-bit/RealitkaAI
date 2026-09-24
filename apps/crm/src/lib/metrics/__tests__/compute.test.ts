@@ -56,13 +56,10 @@ describe("founder metrics compute", () => {
       agencies: METRICS_FIXTURE_AGENCIES,
       ledger: METRICS_FIXTURE_LEDGER,
       aiCostDaily: [
-        {
-          day_utc: "2026-06-10",
-          credits_spent: 20,
-          cost_eur: 4.5,
-          revenue_eur_retail: 17.2,
-          margin_eur: 12.7,
-        },
+        { agency_id: "a1", day_utc: "2026-06-10", action_count: 12, cost_eur: 4.5 },
+        { agency_id: "a2", day_utc: "2026-06-10", action_count: 8, cost_eur: 1.5 },
+        // mimo mesačného okna — nesmie sa započítať
+        { agency_id: "a1", day_utc: "2026-05-31", action_count: 99, cost_eur: 50 },
       ],
       aiCostDailyAvailable: true,
       asOf: new Date("2026-06-15T12:00:00.000Z"),
@@ -72,7 +69,45 @@ describe("founder metrics compute", () => {
     expect(snapshot.guardrails.cockpitAttachBand).toBe("pass");
     expect(snapshot.guardrails.nrrBand).toBe("unavailable");
     expect(snapshot.aiCost.available).toBe(true);
-    expect(snapshot.aiCost.creditsSpent).toBe(20);
+    // dva riadky, jeden deň
+    expect(snapshot.aiCost.days).toBe(1);
+    expect(snapshot.aiCost.actionCount).toBe(20);
+    expect(snapshot.aiCost.costEur).toBe(6);
+    // marža stojí na MRR, nie na kreditovom retaile
+    expect(snapshot.aiCost.mrrEur).toBe(snapshot.mrr.totalEur);
+    expect(snapshot.aiCost.marginEur).toBe(snapshot.mrr.totalEur - 6);
+    expect(snapshot.aiCost.costGap).toBe(false);
+  });
+
+  it("marža je null keď akcie prebehli, ale náklad sa nezapísal", () => {
+    const snapshot = computeFounderMetrics({
+      agencies: METRICS_FIXTURE_AGENCIES,
+      ledger: METRICS_FIXTURE_LEDGER,
+      aiCostDaily: [
+        { agency_id: "a1", day_utc: "2026-06-10", action_count: 42, cost_eur: 0 },
+      ],
+      aiCostDailyAvailable: true,
+      asOf: new Date("2026-06-15T12:00:00.000Z"),
+    });
+
+    expect(snapshot.aiCost.actionCount).toBe(42);
+    expect(snapshot.aiCost.costEur).toBe(0);
+    expect(snapshot.aiCost.costGap).toBe(true);
+    expect(snapshot.aiCost.marginEur).toBeNull();
+  });
+
+  it("marža je null keď pohľad ai_cost_daily nie je dostupný", () => {
+    const snapshot = computeFounderMetrics({
+      agencies: METRICS_FIXTURE_AGENCIES,
+      ledger: METRICS_FIXTURE_LEDGER,
+      aiCostDaily: [],
+      aiCostDailyAvailable: false,
+      asOf: new Date("2026-06-15T12:00:00.000Z"),
+    });
+
+    expect(snapshot.aiCost.available).toBe(false);
+    expect(snapshot.aiCost.marginEur).toBeNull();
+    expect(snapshot.aiCost.costEur).toBe(0);
   });
 
   it("fails cockpit attach guardrail below 40 %", () => {
