@@ -80,6 +80,37 @@ neexistovali, insert padal do `console.warn` a eurová cena AI sa nikdy nikam ne
 Druhý prípad z 2026-09-23: `20260817220000` / `last_contact_at`, čítaná na 59 miestach.
 
 Zosúladenie vedie F2B, nie táto úloha.
+## [2026-09-24] — Tier-3 brána: inbound AI odpoveď je draft, nie e-mail (founder GO)
+
+**Zmena správania na PROD po merge:** `/api/webhooks/inbound-lead` už leadovi nepošle
+AI e-mail ani WhatsApp. AI text sa uloží ako draft do `activities` a zapíše sa do
+`ai_action_audit` so stavom `ai_suggested` / `pending_human`. Odoslanie robí maklér.
+
+- **Webhook je fail-closed.** Bez `INBOUND_WEBHOOK_SECRET` vracia 503. Ak integrácia
+  posiela požiadavky bez Bearer tokenu, po merge prestane fungovať — to je zámer.
+- Uzatvára aj **TASK-SEC-002**: service-role insert s `agency_id` a chyba insertu
+  zhodí request (AP-010).
+- **Prvý agent so stopou `agent_id` a `prompt_version`:** `REVOLIS-INBOUND-AUTOREPLY`
+  s promptom `inbound-autoreply-v1`.
+- **„Schváliť a odoslať" (founder GO, tá istá PR #690).** Tlačidlo je na návrhu
+  v časovej osi leadu. Cesta: `POST /api/leads/:id/drafts/:activityId/approve` →
+  `lib/inbound/approve-draft.ts`.
+  - Odošle **presne** uložený `subject`/`body` na uložený `recipient`. Text sa
+    negeneruje nanovo. Preto návrh odteraz ukladá text do `meta`. Starší návrh
+    bez uloženého textu sa odoslať nedá (422) a maklér odpovie ručne.
+  - Schváliť smie len maklér kancelárie, ktorej patrí lead. Iná kancelária
+    dostane 404, aby sa nedalo zistiť, že návrh existuje.
+  - Najviac jedno odoslanie: riadok sa pred odoslaním zamkne podmieneným
+    UPDATE (`approval_state` null/`send_failed` → `sending`). Dvojklik alebo
+    druhá karta dostane 409.
+  - Audit: `human_approved` → send → `sent` / `send_failed`. Po `send_failed`
+    sa dá odoslanie zopakovať.
+  - **Neoverené proti živej DB:** syntax PostgREST filtra
+    `meta->>approval_state.is.null` v `.or()`. Ak je zlá, zámok vráti chybu a
+    nič sa neodošle. Zlyhá to bezpečným smerom, ale tlačidlo potom nebude
+    fungovať. Overiť na preview.
+  - `sendMessage` pre e-mail vyžaduje `OUTREACH_FROM_EMAIL`. Ak chýba,
+    odoslanie skončí ako viditeľný `send_failed`, nie ticho.
 
 ## [2026-09-24] — Agentic System Blueprint v1.0 prijatý ako kontrakt, nie ako stavebný plán
 

@@ -10,6 +10,7 @@ import {
   type Lead,
   type LeadActivity,
 } from "@/lib/leads-store";
+import { InboundDraftApprove } from "@/components/leads/inbound-draft-approve";
 import { buildGoogleCalendarTemplateUrl, openGoogleCalendarUrl } from "@/lib/google-calendar-url";
 import {
   AI_ASSISTANT_CHAT_CTA,
@@ -667,7 +668,10 @@ export default function LeadDetailPage() {
                         <span className="text-xs font-semibold text-gray-700">{act.type}</span>
                         <span className="text-xs text-gray-400">{act.date}</span>
                       </div>
-                      <p className="text-sm text-gray-600">{act.text}</p>
+                      <p className="text-sm text-gray-600 whitespace-pre-line">{act.text}</p>
+                      {act.inboundDraft && (
+                        <InboundDraftApprove leadId={id} activityId={act.id} draft={act.inboundDraft} />
+                      )}
                     </div>
                   </div>
                 ))}

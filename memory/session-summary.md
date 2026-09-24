@@ -72,24 +72,36 @@ s rozhodnutím foundera.
 - Revolis System Spec v1.0, vyplnený z kódu so stavmi LIVE/DEFINED/MISSING:
   `docs/architecture/agentic/revolis-system-spec-v1.0.md`
 - Rozhodnutie zapísané v `memory/decisions.md`; odkazy v `docs/architecture/MAPA.md`
-- PR #689 (draft, iba dokumentácia)
+- PR #689 zmergovaná (squash, 0d01c8a): iba dokumentácia
 
 ### Rozpracované / Pending
-- **P0 Tier-3:** inbound auto-reply posiela AI e-mail bez schválenia a webhook má
-  voliteľnú autentifikáciu. Návrh opravy čaká na GO.
-- Nie je overené, či je `INBOUND_WEBHOOK_SECRET` nastavený na PROD. Treba to overiť
-  vo Vercel dashboarde; skontroluje founder.
+- **Tier-3 brána (GO 2026-09-24) je v PR #690 a čaká na merge. #689 sa zmergovala o 19:39 UTC, teda pred pushom fixu, takže fix na `main` NIE JE (overené diffom obsahu).**
+  Pred merge treba overiť, že `INBOUND_WEBHOOK_SECRET` je nastavený na PROD.
+  Bez neho endpoint po merge vracia 503.
+- **„Schváliť a odoslať" (GO)** je v tej istej PR #690: route, `approve-draft.ts`,
+  `draft-view.ts`, tlačidlo v časovej osi leadu a 24 nových testov (commit f302a63 chybne uvádza 31). Na preview
+  treba overiť, či PostgREST filter `.or('meta->>approval_state.is.null,…')`
+  funguje na živej DB.
+- `TASK-SEC-002` je v stave `running`. Na `done` ho prepni po overení obsahu na `main`.
+- PR #495 (pôvodný nález) nechaj otvorený, kým founder neprijme kartu.
 
 ### Kľúčové súbory zmenené
 - `docs/architecture/agentic/*`: nové, Blueprint a System Spec
 - `memory/decisions.md`: záznam o prijatí Blueprintu a verdikt Ústavy
 - `docs/architecture/MAPA.md`: pridané dva odkazy
+- `apps/crm/src/app/api/webhooks/inbound-lead/route.ts`: povinný secret (503/401),
+  porovnanie v konštantnom čase
+- `apps/crm/src/lib/inbound/process-lead.ts`: service-role klient, `agency_id`,
+  AP-010, iba draft a audit, žiadny send
+- `apps/crm/src/lib/inbound/auto-reply.ts`: `AUTO_REPLY_PROMPT_VERSION`
+- nové testy v `apps/crm/src/lib/inbound/__tests__/` a
+  `apps/crm/src/app/api/webhooks/inbound-lead/__tests__/` (16 testov)
+- `.ai/bus/tasks/TASK-SEC-002.md`: pridaná sekcia Resolution
 
 ### Ďalší krok
-GO na Tier-3 bránu pre `REVOLIS-INBOUND-AUTOREPLY`:
-1. Webhook fail-closed bez secretu.
-2. AI odpoveď → draft a `ai_action_audit` `ai_suggested`, odoslanie cez existujúci `api/outreach/approve`.
-3. Test zakázaného správania.
+1. Overiť `INBOUND_WEBHOOK_SECRET` a `OUTREACH_FROM_EMAIL` na PROD.
+2. Na preview poslať testovací lead, potom kliknúť „Schváliť a odoslať".
+3. Merge PR #690.
 
 ---
 

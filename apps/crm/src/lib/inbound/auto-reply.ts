@@ -5,6 +5,13 @@
 import { callClaude, CLAUDE_HAIKU, extractJson } from '@/lib/ai/claude'
 import { withAiTimeout }                          from '@/lib/ai/fallback'
 
+/**
+ * Bump whenever SYSTEM or the user template below changes. Stamped on every
+ * draft and its `ai_action_audit` row so a draft can be traced to its prompt
+ * (Agentic System Blueprint §11).
+ */
+export const AUTO_REPLY_PROMPT_VERSION = 'inbound-autoreply-v1'
+
 export interface AutoReplyInput {
   leadName:     string
   source:       string
