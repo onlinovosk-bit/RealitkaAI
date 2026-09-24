@@ -2596,3 +2596,70 @@ nemá `agency_id`. Resolver vracia tri stavy: `none` / `unknown` / `known`;
 `GO_CONTACT_EVENT_PROD_MIGRATION` — bez aplikovania `20260924060000` substrát
 existuje len v kóde a C1 ostáva `pending`. Potom extrakcia signálov (úzky rozsah:
 seller_intent, property_type, locality, timeframe) a deterministický rule engine.
+
+---
+
+## 2026-09-24 — GHOST-MIGRATIONS-RECONCILE: duch nie je ten, kto nemá meno, ale ten, kto nemá md5
+
+Brána `GO GHOST-MIGRATIONS-RECONCILE`. Bez zápisu do PROD. Report:
+`docs/reports/2026-09-24-ghost-migrations-reconcile.md`.
+
+### Oprava vlastného tvrdenia
+Bránu som navrhol s tým, že v PROD je **5 duchov bez súboru v repe** a treba
+ich zrekonštruovať ako 5 migrácií. **Nevytvoril som ani jednu** — meranie md5
+uloženého SQL ukázalo, že by boli duplicitné. Predchádzajúce číslo vzniklo
+porovnaním reťazcov verzií, nie obsahu. Tretíkrát v tejto session záver
+z textového porovnania, ktorý beh vyvrátil (`ADD CONSTRAINT`, BOM, teraz toto).
+Pravidlo pre mňa: pri migráciách je dôkaz md5 alebo spustenie, nikdy meno.
+
+### Namerané (2026-09-24 ~19:40 UTC)
+- 114 súborov v repe, 57 verzií registrovaných v PROD.
+- **4 z 6 nepriradených verzií sú ALIAS** — bajt na bajt ten istý súbor pod iným
+  razítkom: `20260802134100`→`20260731210000_valuation_estimates.sql`,
+  `20260802134104`→`20260731220000_system_usage_agency.sql`,
+  `20260923113535` a `20260923120358` → oba `20260527143000_event_scheduler_phase1.sql`
+  (ten istý súbor spustený dvakrát, raz s a raz bez koncového newline; pridal 0 objektov).
+- `20260904184236` = nechránený variant `20260904150000`; priradené ručne, md5 nesedí.
+- **Jediné skutočne chýbajúce DDL: `20260924193624 ai_cost_daily_view`**, aplikované
+  do PROD 19:36 UTC bez súboru v repe.
+- Skutočný rozsah `db push`: **61 spustení, ~58 s novým obsahom** — nie 63.
+  F2B aj plán nasadenia to číslo nadhodnocujú.
+
+### 🔴 Blokant F3
+`20260611000004_ai_cost_daily.sql` je v neaplikovanej dávke a jeho
+`CREATE OR REPLACE VIEW` má na 3. mieste `credits_spent`, kým PROD má
+`action_count`. Odsimulované proti nameranému PROD tvaru:
+`ERROR: cannot change name of view column "action_count" to "credits_spent"`,
+psql exit 3 → **`db push` sa zastaví uprostred dávky**. Proti základu
+postavenému z migrácií ten istý súbor prejde na 0 aj pri dvojitom replaye —
+preto to F1 ani CI nemohli vidieť. Prvý doložený prípad diery, ktorú F2B
+pomenovala. Nový pohľad v PROD je pritom vecne lepší (len skutočný náklad,
+`security_invoker = true`); repo je pozadu, oprava patrí do migrácie.
+
+### Pravidlo (platí od teraz)
+Každý zápis do PROD musí mať v repe súbor s **tým istým razítkom a tým istým
+SQL**, v tom istom PR. Spustiť existujúci súbor pod novým razítkom je tiež
+porušenie — vznikne alias, ktorý `db push` zopakuje a ktorý pokazí každé
+počítanie odchýlky. Prepísať v PROD objekt, ktorý vytvára neaplikovaná
+migrácia, bez opravy tej migrácie, je najhorší prípad.
+
+### Postavené
+- `scripts/db/migration-ledger-audit.mjs` — bez závislostí, klasifikuje
+  MATCH/ALIAS/GHOST, exit 1 na GHOST. Reprodukuje ručné meranie presne.
+- `scripts/db/migration-ledger-audit.test.mjs` — 12/12. Mutačne overené:
+  odstránenie tvaru bez koncového newline zhodí 5 testov, md5 zhoda pri
+  `stmts > 1` zhodí 1.
+- `scripts/db/fixtures/prod-ledger-2026-09-24.json` — nameraný ledger ako dôkaz.
+
+**Hranica nástroja:** md5 je dôkaz len pri `stmts = 1`. Viacpríkazové migrácie
+má Supabase rozsekané, 5 záznamov má `stmts = 0` úplne bez textu. GHOST je
+podnet na ručné dohľadanie, nie rozsudok.
+
+### Backlog (nezasiahnuté)
+- `pipeline_moves_tenant_select/write` nesú v PROD vetvu `leads.agency_id IS NULL OR …`
+  — tú istú, ktorú P-3 zavrela inde.
+
+### Ďalej
+`GO AI-COST-DAILY-MIGRATION-FIX` — prepísať `20260611000004` na PROD tvar
+(`action_count`, `security_invoker = true`, bez `revenue_eur_retail`/`margin_eur`),
+inak F3 spadne. Pred F3 stále chýbajú dve rozhodnutia: **PITR add-on** a **klon áno/nie**.
