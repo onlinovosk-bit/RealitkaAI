@@ -2438,3 +2438,66 @@ zmena kontraktu a patrí do vlastnej brány. Zámerne neopravené:
   Samostatná brána, ak vôbec.
 - **Ďalej:** F2 (nácvik na Supabase branch) a F3 (push) naďalej čakajú na odpovede,
   či je dostupný branching a či je zapnuté PITR.
+
+## 2026-09-24 — Lead Revenue Engine: WALL 0 postavený, engine kontrakt zapísaný
+
+**Rozhodnutie: BUILD** (substrát merania) + **BACKLOG** (dve vrstvy, timing veto).
+
+### Ústavná brána — verdikt po vrstvách
+- **Lead Generation** ako „nájdi nových predajcov zvonku" → **BACKLOG, timing veto (Q8).**
+  Zhluk 3 mapy zdrojov hovorí pri vlastníkoch z katastra doslova NEROBIŤ bez zmluvy
+  s ÚGKK; Zhluk 5 (portály) zakazuje osobné údaje predajcu. Zároveň platí
+  `PHASE_1_REQUIRES_UGKK = FALSE` — MVP musí fungovať bez ÚGKK, nie naň čakať.
+- **Lead Acquisition / Intelligence / Qualification / Sales-Ready** → **BUILD.**
+  Bežia na Zhluku 1 (vlastné CRM dáta) + Zhluku 8 (Realvia), nula externých závislostí.
+- **Market Intelligence, signály z portálov, Bod zlomu** → BACKLOG, ten istý timing veto.
+
+### Korekcia taxonómie (dôležitejšia než kód)
+Pôvodný návrh označoval inbound za „Lead Generation, len inbound". **To bolo zle.**
+Realvia ani portálový e-mail nevytvárajú dopyt — doručujú ho. Hranica je
+`zdroj dopytu → záchyt → nový lead`, a rozlišovacím znakom je **atribúcia**: lead,
+ktorý vie ukázať na vlastnú kampaň/UTM, je generovaný; lead z cudzej rúry je
+akvirovaný. `UNKNOWN` sa nikdy ticho nemení na `GENERATED_BY_REVOLIS`.
+Bez tejto hranice by sa o pár týždňov dalo tvrdiť, že Lead Factory generuje leady,
+hoci len dobre spracúva cudzie.
+
+### Druhá korekcia: LLM nie je rozhodca obchodnej pravdy
+Prvý návrh dával BRI skóre aj kvalifikáciu priamo modelu. Opravené: LLM extrahuje
+signály a vysvetľuje, **skóre a kvalifikácia sú deterministické** a verzované
+(`ruleset_version`). Ten istý lead musí dať ten istý výsledok aj zajtra po zmene
+modelu. Extrahované signály sa ukladajú oddelene s `extraction_version`, aby sa
+dalo pre-skórovať bez novej extrakcie — inak by sa drift len posunul o krok vyššie.
+
+### Tretia korekcia: stiahnuté nepodložené tvrdenia
+- „Pipeline stojí centy, kredity netreba" — **stiahnuté.** Ekonomický záver bez
+  merania v EUR. Nákladová telemetria je teraz deliverable (§10), nie predpoklad.
+- „Prvý kontakt do 15 minút" — **vymyslené číslo, stiahnuté.** Žiadne SLA nie je
+  potvrdené; brief vedie 4 pracovné hodiny ako predpoklad. `EXTERNAL_SLA = NONE`,
+  interné radenie podľa veku leadu je povolené, nazvať to SLA nie.
+
+### Postavené (PR #680, `fe1a6a5`)
+Typovaný substrát kontaktného pokusu. Reuse `lead_events` (aditívne stĺpce), nie
+nová tabuľka — presne ako brief §2.4 predpísal (AP-019). `activities` zamietnuté,
+nemá `agency_id`. Resolver vracia tri stavy: `none` / `unknown` / `known`;
+`created_at` sa nikdy nedosadí za `occurred_at`. Brány: lint čistý, typecheck
+54/54 (tých 6 navyše lokálne boli `.next/types` artefakty, presne ako to zapísalo
+#678), build zelený, vitest 1499 + 16 nových.
+
+### Zapísané
+- `docs/architecture/lead-revenue-engine-v1.md` — inžiniersky kontrakt (taxonómia,
+  atribúcia, A1–A8, verzovanie, dve fronty, cost telemetry, rebrík dôkazov,
+  právne triedy). **Nenahrádza** brief; slovník C0/C1/C2 ostáva v briefe.
+- `docs/briefs/l99-lead-factory-initiative.md` §2.4 — amendment, diera zatvorená.
+
+### Nálezy mimo rozsahu, nezasiahnuté
+1. RLS na `lead_events`: policy `agency_id is null OR ...` → riadok bez `agency_id`
+   je čitateľný naprieč tenantmi. Samostatný PR.
+2. `/api/ai/lead-events` je Enterprise-gated → C1 by bolo merateľné len pre
+   Enterprise. Rozhodne sa pri napojení ľudskej akcie.
+3. Migrácia `20260817220000` (`last_contact_at`) podľa vlastnej hlavičky nie je na
+   PROD, ale kód ju číta na 59 miestach. Živý nesúlad.
+
+### Ďalej
+`GO_CONTACT_EVENT_PROD_MIGRATION` — bez aplikovania `20260924060000` substrát
+existuje len v kóde a C1 ostáva `pending`. Potom extrakcia signálov (úzky rozsah:
+seller_intent, property_type, locality, timeframe) a deterministický rule engine.
