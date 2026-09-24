@@ -62,7 +62,8 @@ function buildReasoningFactors(components: BriComponents): ReasoningFactor[] {
 async function generateReasoningString(
   components: BriComponents,
   score: number,
-  leadContext: { name: string; lastActivity: string }
+  leadContext: { name: string; lastActivity: string },
+  agencyId?: string
 ): Promise<string> {
   try {
     const { content } = await callOpenAI({
@@ -70,6 +71,7 @@ async function generateReasoningString(
       max_tokens:  150,
       temperature: 0.2,
       tag:         "bri-reasoning",
+      agencyId,
       messages: [{
         role: "user",
         content: `Vygeneruj stručný, transparentný vysvetľovací text (max 2 vety, slovensky) prečo
@@ -99,10 +101,25 @@ export async function computeEnterpriseBri(
 ): Promise<BriResult> {
   await requireEnterprise();
 
+  const supabase = await createClient();
+
+  // Tenant príležitosti sa číta PRED AI volaním, aby sa spotreba tokenov
+  // účtovala kancelárii, nie systémovému tenantovi.
+  const { data: leadRow } = await supabase
+    .from("leads")
+    .select("agency_id")
+    .eq("id", leadId)
+    .maybeSingle();
+
   const score = calculateBriScore(components);
   const alertLevel = getBriAlertLevel(score);
   const reasoningFactors = buildReasoningFactors(components);
-  const reasoningString = await generateReasoningString(components, score, leadContext);
+  const reasoningString = await generateReasoningString(
+    components,
+    score,
+    leadContext,
+    leadRow?.agency_id ?? undefined
+  );
 
   const result: BriResult = {
     score,
@@ -113,7 +130,6 @@ export async function computeEnterpriseBri(
     calculatedAt: new Date().toISOString(),
   };
 
-  const supabase = await createClient();
   await supabase.from("bri_history").insert({
     lead_id: leadId,
     bri_score: score,

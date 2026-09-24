@@ -22,7 +22,7 @@ export async function scanDormantLeads(agencyId: string): Promise<ShadowInventor
   const signals: ShadowInventorySignal[] = [];
 
   for (const lead of dormantLeads) {
-    const reasoning = await generateDormantReasoning(lead);
+    const reasoning = await generateDormantReasoning(lead, agencyId);
     const confidenceScore = calculateDormantConfidence(lead);
 
     const { data: signal } = await supabase
@@ -65,17 +65,17 @@ function calculateDormantConfidence(lead: { score: number; last_contact_at: stri
   return Math.min(100, Math.round(baseScore + recencyBonus));
 }
 
-async function generateDormantReasoning(lead: {
-  name: string;
-  score: number;
-  last_contact_at: string;
-}): Promise<string> {
+async function generateDormantReasoning(
+  lead: { name: string; score: number; last_contact_at: string },
+  agencyId: string,
+): Promise<string> {
   try {
     const { content } = await callOpenAI({
       model:       "gpt-4o",
       max_tokens:  80,
       temperature: 0.3,
       tag:         "shadow-inventory",
+      agencyId,
       messages: [{
         role: "user",
         content: `Vygeneruj 1 krátku vetu (slovensky) prečo sa oplatí znovu kontaktovať
