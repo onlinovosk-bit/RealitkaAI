@@ -12,7 +12,7 @@
   Pred merge treba overiť, že `INBOUND_WEBHOOK_SECRET` je nastavený na PROD.
   Bez neho endpoint po merge vracia 503.
 - **„Schváliť a odoslať" (GO)** je v tej istej PR #690: route, `approve-draft.ts`,
-  `draft-view.ts`, tlačidlo v časovej osi leadu a 31 nových testov. Na preview
+  `draft-view.ts`, tlačidlo v časovej osi leadu a 24 nových testov (commit f302a63 chybne uvádza 31). Na preview
   treba overiť, či PostgREST filter `.or('meta->>approval_state.is.null,…')`
   funguje na živej DB.
 - `TASK-SEC-002` je v stave `running`. Na `done` ho prepni po overení obsahu na `main`.
