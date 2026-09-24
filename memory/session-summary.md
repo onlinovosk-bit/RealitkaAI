@@ -1,3 +1,31 @@
+## Session 2026-09-24 (Agentic System Blueprint v1.0 → Revolis System Spec v1.0)
+
+### Dokončené
+- Blueprint v1.0 uložený doslovne: `docs/architecture/agentic/agentic-system-blueprint-v1.0.md`
+- Revolis System Spec v1.0, vyplnený z kódu so stavmi LIVE/DEFINED/MISSING:
+  `docs/architecture/agentic/revolis-system-spec-v1.0.md`
+- Rozhodnutie zapísané v `memory/decisions.md`; odkazy v `docs/architecture/MAPA.md`
+- PR #689 (draft, iba dokumentácia)
+
+### Rozpracované / Pending
+- **P0 Tier-3:** inbound auto-reply posiela AI e-mail bez schválenia a webhook má
+  voliteľnú autentifikáciu. Návrh opravy čaká na GO.
+- Nie je overené, či je `INBOUND_WEBHOOK_SECRET` nastavený na PROD. Treba to overiť
+  vo Vercel dashboarde; skontroluje founder.
+
+### Kľúčové súbory zmenené
+- `docs/architecture/agentic/*`: nové, Blueprint a System Spec
+- `memory/decisions.md`: záznam o prijatí Blueprintu a verdikt Ústavy
+- `docs/architecture/MAPA.md`: pridané dva odkazy
+
+### Ďalší krok
+GO na Tier-3 bránu pre `REVOLIS-INBOUND-AUTOREPLY`:
+1. Webhook fail-closed bez secretu.
+2. AI odpoveď → draft a `ai_action_audit` `ai_suggested`, odoslanie cez existujúci `api/outreach/approve`.
+3. Test zakázaného správania.
+
+---
+
 ## Session 2026-09-24 (UPTM governance — uptm-runner)
 
 > **PRVÁ VEC PRE NOVÚ SESSION:** `uptm-runner` PR #22 je otvorená a čaká na

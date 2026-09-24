@@ -1,5 +1,36 @@
 # Critical Decisions Log
 
+## [2026-09-24] — Agentic System Blueprint v1.0 prijatý ako kontrakt, nie ako stavebný plán
+
+Founder dal GO na `AGENTIC-SYSTEM-BLUEPRINT-v1.0`. Uložený doslovne v
+`docs/architecture/agentic/agentic-system-blueprint-v1.0.md`. Jeho §21 predpisuje ako ďalší
+krok REVOLIS SYSTEM SPEC v1.0, ktorý je v `docs/architecture/agentic/revolis-system-spec-v1.0.md`
+a je vyplnený z reálneho kódu, nie z predstavy.
+
+**Hlavný nález:** Revolis má väčšinu stavebných blokov Blueprintu. Governance vrstva
+(`packages/control-contract`) je však **DEFINED, nie LIVE**, pretože jej jediný konzument
+beží len v testoch. Rovnaká akcia „AI text odchádza ku klientovi" má dnes štyri režimy:
+draft, ľudské schválenie, `dry_run` a žiadnu bránu.
+
+**P0 porušenie Tier 3:** `lib/inbound/process-lead.ts:102-135` posiela AI-generovaný
+e-mail a WhatsApp bez schválenia. Obsah je čiastočne riadený vstupom `payload.message`.
+Webhook `/api/webhooks/inbound-lead` overuje Bearer iba vtedy, ak je
+`INBOUND_WEBHOOK_SECRET` nastavený. Či je nastavený na PROD, je UNVERIFIED, lebo výpis
+mien z Vercelu bol orezaný. Šablónová auto-odpoveď v `lib/acquire/*` porušením **nie je**:
+text je pevný a kancelária ju zapína cez opt-in.
+
+**Ústava v2 na Blueprint §21:**
+- **BUILD:**
+  - Tier-3 brána na inbound auto-reply, spolu s prohibited-behavior testami.
+  - Zapojenie control-contractu do jednej živej Tier-3 cesty.
+  - `agent_id` a `prompt_version` do `ai_action_audit.meta`.
+- **BACKLOG (timing veto Q8):**
+  - Agent Factory. Odomkne sa pri 3. agentovi za control-contractom (ADR 2026-09-11b,
+    Engineering Constitution princíp 4).
+  - Managed Agents runtime. Odomkne sa pri prvom multi-step tool-use loope.
+  - Produktové skills. Odomknú sa pri druhom použití.
+- **MIMO REPO:** špecifikácie Onlinovo, MIA Vellar a Phone Operator.
+
 ## [2026-09-23] — W1 hotová: identita kancelárie sa odovzdáva, nedopočítava
 
 **Zmena správania, nie oprava kozmetiky:** automatická odpoveď už neodíde na adresu
