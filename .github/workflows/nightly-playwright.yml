@@ -37,7 +37,26 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Pinned, not `latest`. With `latest` the action asks the GitHub API
+          # for the newest release on every job, unauthenticated, and on
+          # 2026-09-24 that query is what took the pipeline down:
+          #
+          #   ##[error] Failed to resolve latest Supabase CLI release: rate limit exceeded
+          #
+          # Lint, the CI helper tests and the typecheck gate had all passed by
+          # then; the job died in setup, before `supabase start` was reached.
+          # A fixed version needs no such lookup.
+          #
+          # It also makes the toolchain deterministic: with `latest`, two runs of
+          # the same commit could install different CLIs. 2.117.0 is the version
+          # `latest` already resolved to (published 2026-09-07), so pinning it
+          # changes nothing about what CI installs today.
+          #
+          # To bump: pick a version published to npm as `supabase`, change it in
+          # BOTH workflows, and let CI prove `supabase start` still works — the
+          # repo's config.toml still uses the deprecated [inbucket] section, so
+          # a CLI jump is not automatically safe.
+          version: 2.117.0
 
       # `supabase start` sťahuje šesť images z ghcr.io. Anonymný pull má nízky
       # limit na zdieľanú IP GitHub runnerov a 2026-09-23 oň CI opakovane
