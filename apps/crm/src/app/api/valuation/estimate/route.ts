@@ -78,32 +78,40 @@ export async function POST(request: Request) {
 
     const input = preview.success ? preview.data : contactGated.data!;
     const estimate = buildDeterministicEstimate(input);
-    const commentary = await enrichEstimateCommentary(input, estimate);
 
     const agencySlug =
       input.agencySlug ??
       resolveAgencySlugFromReferer(request.headers.get("referer"));
-    if (agencySlug) {
-      const supabase = createServiceRoleClient();
-      if (supabase) {
-        try {
-          const tenant = await resolveTenantRecord(supabase, agencySlug);
-          if (tenant) {
-            const row = buildValuationEstimateInsert({
-              agencyId: tenant.agencyId,
-              isSandbox: tenant.isSandbox,
-              sessionId: "sessionId" in input ? input.sessionId : undefined,
-              property: input,
-              estimate,
-            });
-            const persisted = await persistValuationEstimate(supabase, row);
-            if (!persisted.ok) {
-              console.error("[POST /api/valuation/estimate] persist", persisted.error);
-            }
-          }
-        } catch (persistError) {
-          console.error("[POST /api/valuation/estimate] persist", persistError);
+
+    // Tenant sa rozlišuje PRED AI komentárom — inak sa spotreba tokenov
+    // nedá pripísať kancelárii a spadne na systémového tenanta.
+    const supabase = agencySlug ? createServiceRoleClient() : null;
+    let tenant: Awaited<ReturnType<typeof resolveTenantRecord>> | null = null;
+    if (supabase && agencySlug) {
+      try {
+        tenant = await resolveTenantRecord(supabase, agencySlug);
+      } catch (tenantError) {
+        console.error("[POST /api/valuation/estimate] tenant", tenantError);
+      }
+    }
+
+    const commentary = await enrichEstimateCommentary(input, estimate, tenant?.agencyId);
+
+    if (supabase && tenant) {
+      try {
+        const row = buildValuationEstimateInsert({
+          agencyId: tenant.agencyId,
+          isSandbox: tenant.isSandbox,
+          sessionId: "sessionId" in input ? input.sessionId : undefined,
+          property: input,
+          estimate,
+        });
+        const persisted = await persistValuationEstimate(supabase, row);
+        if (!persisted.ok) {
+          console.error("[POST /api/valuation/estimate] persist", persisted.error);
         }
+      } catch (persistError) {
+        console.error("[POST /api/valuation/estimate] persist", persistError);
       }
     }
 

@@ -22,7 +22,7 @@ export async function getAssistantAnswer(
 
   const { data: lead } = await admin
     .from("leads")
-    .select("name,status,budget,location,property_type,rooms,financing,timeline,note,source,score,assigned_agent")
+    .select("name,status,budget,location,property_type,rooms,financing,timeline,note,source,score,assigned_agent,agency_id")
     .eq("id", leadId)
     .single();
 
@@ -49,6 +49,7 @@ export async function getAssistantAnswer(
       model:      "gpt-4o-mini",
       max_tokens: 200,
       tag:        "assistant-chat",
+      agencyId:   lead.agency_id ?? undefined,
       messages: [
         {
           role:    "system",

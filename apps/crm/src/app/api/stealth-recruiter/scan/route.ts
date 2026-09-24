@@ -38,7 +38,10 @@ function capabilityErrorResponse(access: Awaited<ReturnType<typeof checkCapabili
   );
 }
 
-async function enrichWithAiComments(prospects: StealthProspect[]): Promise<StealthProspect[]> {
+async function enrichWithAiComments(
+  prospects: StealthProspect[],
+  agencyId: string,
+): Promise<StealthProspect[]> {
   const scoredPrompt = `Pre každého zo ${prospects.length} samopredajcov vygeneruj krátky (1 veta) diagnostický komentár v slovenčine vysvetľujúci prečo je vhodný kandidát pre makléra. Odpovedaj ako JSON array: [{"id":"...","comment":"..."},...].
 
 Kandidáti:
@@ -54,6 +57,7 @@ ${prospects
     max_tokens: 400,
     temperature: 0.5,
     tag: "stealth-scan",
+    agencyId,
     response_format: { type: "json_object" },
     messages: [
       { role: "system", content: "Odpovedaj VŽDY validným JSON." },
@@ -159,7 +163,7 @@ export async function POST(request: Request) {
       const filtered = prospects.filter((p) => p.score >= minScore);
       if (body.generateNew) {
         try {
-          const enriched = await enrichWithAiComments(filtered);
+          const enriched = await enrichWithAiComments(filtered, agencyId);
           return NextResponse.json({
             prospects: enriched,
             total: enriched.length,
@@ -195,7 +199,7 @@ export async function POST(request: Request) {
 
     if (body.generateNew && result.length > 0) {
       try {
-        result = await enrichWithAiComments(result);
+        result = await enrichWithAiComments(result, agencyId);
       } catch (aiErr) {
         console.warn("[stealth-recruiter/scan] AI enrich failed:", aiErr);
       }

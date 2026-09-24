@@ -47,11 +47,27 @@ export async function executeAction(p: ActionPayload): Promise<{ ok: boolean; de
 }
 
 async function generateTaskText(leadId: string): Promise<string> {
+  // Tenant príležitosti sa číta kvôli účtovaniu AI spotreby. Zlyhanie je nemé —
+  // meranie spadne na systémového tenanta, text úlohy sa tým nemení.
+  let agencyId: string | undefined;
+  try {
+    const supabase = await createClient();
+    const { data: lead } = await supabase
+      .from("leads")
+      .select("agency_id")
+      .eq("id", leadId)
+      .maybeSingle();
+    agencyId = lead?.agency_id ?? undefined;
+  } catch {
+    agencyId = undefined;
+  }
+
   try {
     const { content } = await callOpenAI({
       model:      "gpt-4o-mini",
       max_tokens: 30,
       tag:        "autopilot-task",
+      agencyId,
       messages: [{
         role:    "user",
         content: `Vygeneruj krátky (max 8 slov, slovensky) názov úlohy pre makléra ohľadom príležitosti ID ${leadId}. Iba text, žiadne úvodzovky.`,

@@ -7,6 +7,8 @@ import type {
 export async function enrichEstimateCommentary(
   input: ValuationPropertyInput,
   estimate: ValuationEstimateResult,
+  /** Kancelária, ktorej sa spotreba účtuje. Bez nej padne na systémového tenanta. */
+  agencyId?: string,
 ): Promise<string> {
   if (estimate.noEstimate || estimate.low == null || estimate.high == null) {
     return estimate.commentary;
@@ -22,6 +24,7 @@ export async function enrichEstimateCommentary(
       temperature: 0.4,
       max_tokens: 180,
       tag: "valuation-commentary",
+      agencyId,
       messages: [
         {
           role: "system",
