@@ -215,3 +215,43 @@ test("absent permissions are unknown, not denied", async () => {
   });
   await preflightGitHub(TARGET, impl);
 });
+
+test("the preflight refuses an unfilled token without spending a request", async () => {
+  // The run that prompted this: the credentials file was loaded before the
+  // placeholder was replaced. Previously the value reached `fetch`, which
+  // answered about index 15 of `Bearer <sem vlož PAT>` — an offset into a string
+  // the operator never wrote. Now it never gets that far.
+  let calls = 0;
+  const countingFetch = async () => {
+    calls += 1;
+    return new Response("{}", { status: 200 });
+  };
+
+  await assert.rejects(
+    () =>
+      preflightGitHub(
+        { owner: "onlinovosk-bit", repo: "RealitkaAI", branch: "bus/main", token: "<sem vlož PAT>" },
+        countingFetch,
+      ),
+    /REVOLIS_BUS_GITHUB_TOKEN still looks like an unfilled placeholder/,
+  );
+  // The point is not only the better message: a credential that cannot be sent
+  // is not worth a round trip to GitHub either.
+  assert.equal(calls, 0);
+});
+
+test("a bus secret that no client could put in a header is refused at startup", () => {
+  // The server never sends these — it compares them against what arrives. A
+  // secret no client can encode authenticates nobody, so the server would
+  // listen happily and 401 every call with nothing to point at.
+  assert.throws(
+    () => credentialsFromEnv({ REVOLIS_BUS_TOKEN_SOL: "<A>", REVOLIS_BUS_TOKEN_CLAUDE: "b" }),
+    /REVOLIS_BUS_TOKEN_SOL still looks like an unfilled placeholder/,
+  );
+  assert.throws(
+    () => credentialsFromEnv({ REVOLIS_BUS_TOKEN_SOL: "a", REVOLIS_BUS_TOKEN_CLAUDE: "b\n" }),
+    /REVOLIS_BUS_TOKEN_CLAUDE has leading or trailing whitespace/,
+  );
+  // Well-formed secrets are untouched by the check.
+  assert.equal(credentialsFromEnv({ REVOLIS_BUS_TOKEN_SOL: "a", REVOLIS_BUS_TOKEN_CLAUDE: "b" })!.length, 2);
+});

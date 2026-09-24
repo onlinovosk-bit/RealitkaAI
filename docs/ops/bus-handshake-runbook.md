@@ -112,6 +112,8 @@ dva read-only GET-y (repozitár a vetva) a zlyhá s príčinou, nie so status k�
 | zlý `REVOLIS_BUS_REPO` | `... not found (404) — either REVOLIS_BUS_REPO is wrong, or the token has no access` |
 | PAT iba na čítanie | `the token can read ... but not write to it` |
 | vetva neexistuje | `branch "bus/main" does not exist ... git push origin main:refs/heads/bus/main` |
+| PAT sa neuložil, ostal placeholder | `REVOLIS_BUS_GITHUB_TOKEN still looks like an unfilled placeholder` |
+| token s newline z copy-paste | `REVOLIS_BUS_GITHUB_TOKEN has leading or trailing whitespace` |
 
 Preflight nikdy nezapisuje — zápis by bol vedľajší efekt na presne tej vetve,
 ktorú beh ide merať.
@@ -247,6 +249,9 @@ a ChatGPT si výsledok vytiahne cez `listBusMessages` s `format=digest`.
 | `two credentials share a secret` | oba exporty majú rovnakú hodnotu | vygeneruj dva rôzne secrety (krok 1) |
 | `from_binding: false` na `/health` | beží degradovaný režim | nastav oba `*_TOKEN_SOL` / `*_TOKEN_CLAUDE` |
 | server sa nespustí, hlási `GitHub preflight failed` | zlý token, repo, práva alebo vetva | hláška menuje príčinu aj nápravu — krok 2 |
+| `Cannot convert argument to a ByteString ... greater than 255` | **historické (do #677)** — nevyplnený token sa dostal až do `fetch` | aktualizuj checkout; dnes hlásenie menuje premennú |
+| `... still looks like an unfilled placeholder` | súbor s premennými sa načítal skôr, než sa doň uložil PAT | ulož súbor a **znova** ho načítaj v tom istom shelli |
+| `... has leading or trailing whitespace` | do hodnoty sa skopíroval newline | premaž hodnotu, vlož bez konca riadka |
 
 ## 9. Po handshake
 
