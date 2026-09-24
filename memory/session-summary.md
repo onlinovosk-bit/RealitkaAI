@@ -27,6 +27,9 @@
   a `supabase start` aj tak padol. Riešenie: step-level `env` s `docker.io`
   (job-level by nestačil, keby akcia premennú exportovala cez `$GITHUB_ENV`).
   Dôkaz: všetkých šesť images sa stiahlo z docker.io, nula `toomanyrequests`.
+  **Platný stav je ale #671 (`959b251a`), nie toto:** krok už volá
+  `scripts/ci/supabase-start.sh`, ktorý strieda registry a vedie `public.ecr.aws`.
+  Step-level `env` je preč. Detail a odôvodnenie sú v `decisions.md`.
 
 ### Rozpracované / Pending
 - **HUMAN_ACTION_REQUIRED (B08):** Google OAuth consent pre nový scope
@@ -44,7 +47,8 @@
 - `apps/crm/src/app/api/concierge/freebusy/route.ts`: token z profilu, nie z env.
 - `apps/crm/src/app/api/integrations/google/auth/route.ts`: +1 scope.
 - `.github/workflows/saas-grade-pipeline.yml`, `nightly-playwright.yml`:
-  `SUPABASE_INTERNAL_IMAGE_REGISTRY: docker.io` na úrovni kroku.
+  `SUPABASE_INTERNAL_IMAGE_REGISTRY: docker.io` na úrovni kroku — **už neplatí**,
+  #671 to nahradilo skriptom `scripts/ci/supabase-start.sh` (vedie `public.ecr.aws`).
 
 ### Ďalší krok
 Google OAuth consent + `CONCIERGE_GOOGLE_PROFILE_ID`. Až potom má B08 čo overovať.

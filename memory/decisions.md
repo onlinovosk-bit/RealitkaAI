@@ -2394,6 +2394,16 @@ zmena kontraktu a patrí do vlastnej brány. Zámerne neopravené:
     address already in use` — infra chyba pred spustením akéhokoľvek testu.
     Jeden re-run prešiel zelený. Nie je to systémový problém; keby sa zopakoval,
     treba diagnostiku (`ss -lntp` pred `supabase start`), nie ďalší zásah naslepo.
+  - **NADRADENÉ #671 (`959b251a`), ešte v ten istý večer.** Krok už nemá žiadne
+    step-level `env`; volá `scripts/ci/supabase-start.sh`, ktorý skúša registry
+    po sebe a **vedie `public.ecr.aws`**, nie `docker.io`. Dôvod je odmeraný,
+    nie preferenčný: ECR odmieta bare `Rate exceeded` na pull-y za sekundu,
+    proti čomu retry konverguje, kým ghcr.io odmieta `allowed: 44000/minute`,
+    čo je zdieľaný objemový strop a ten retry nepremôže (prvá verzia skriptu
+    skúšala ten istý registry 3× s 45 s a 90 s backoffom — 3m44s a aj tak červená).
+    `docker.io` ostáva v zozname ako druhá, nezávisle limitovaná cesta.
+    Platí teda: **jednorazová oprava z #673 bola správna diagnóza, ale nie
+    konečné riešenie.** Kto číta tento záznam, nech sa riadi skriptom.
 
 - **Zrušený `/blueprint` (#665).** Stránka nepovedala, čo Revolis robí ani pre koho.
   Prvý pokus o opravu (#664) padol, lebo merge `/blueprint` do vetvy súbor znova
