@@ -47,7 +47,12 @@ export async function POST(request: Request) {
     // Human-approved send: thread the request-scoped client so the lead is
     // resolved under the caller's tenant instead of the browser singleton.
     const supabase = await createClient();
-    const result = await sendAiOutreachEmail(leadId, supabase);
+    const approvedBy = user.email ?? user.id;
+    const result = await sendAiOutreachEmail(leadId, supabase, {
+      approvalId: `outreach_approve:${leadId}:${Date.now()}`,
+      approvedBy,
+      approvedAt: new Date().toISOString(),
+    });
     return okResponse({ result, approved: true });
   } catch (error) {
     const result = autoErrorCapture(error, "POST /api/outreach/approve");

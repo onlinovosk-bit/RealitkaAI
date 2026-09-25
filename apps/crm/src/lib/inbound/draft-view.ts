@@ -3,11 +3,13 @@
 
 export const INBOUND_AUTOREPLY_AGENT_ID = 'REVOLIS-INBOUND-AUTOREPLY'
 export const FOLLOWUP_SWEEP_AGENT_ID = 'REVOLIS-FOLLOWUP-SWEEP'
+export const DEAD_LEAD_AGENT_ID = 'REVOLIS-DEAD-LEAD-CAMPAIGN'
 
 /** Agents whose drafts a broker may approve and send. */
 export const APPROVABLE_DRAFT_AGENTS: readonly string[] = [
   INBOUND_AUTOREPLY_AGENT_ID,
   FOLLOWUP_SWEEP_AGENT_ID,
+  DEAD_LEAD_AGENT_ID,
 ]
 
 /** Channels the approve path can send on. WhatsApp/LinkedIn drafts stay manual. */

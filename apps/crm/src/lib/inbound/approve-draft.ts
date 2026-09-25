@@ -1,8 +1,8 @@
 // ================================================================
 // Revolis.AI — Approve & send an AI draft to a lead (Tier 3)
 //
-// The only path by which REVOLIS-INBOUND-AUTOREPLY or REVOLIS-FOLLOWUP-SWEEP
-// text reaches a lead (see SEND_ACTIONS).
+// The only path by which AI-drafted text (inbound auto-reply, follow-up sweep,
+// dead-lead campaign) reaches a lead — see SEND_ACTIONS.
 // Invariants:
 //   - sends exactly meta.subject / meta.body to meta.recipient — the text the
 //     broker saw, never a regenerated one;
@@ -16,18 +16,12 @@
 //   - human_approved is audited before the send, sent / send_failed after.
 // ================================================================
 import type { SupabaseClient } from '@supabase/supabase-js'
-import {
-  applyApproval,
-  buildAuthorityContext,
-  mayAct,
-  resolveAuthority,
-  type SystemState,
-} from '@revolis/control-contract'
+import type { SystemState } from '@revolis/control-contract'
 import { logAiAction } from '@/lib/ai-action-audit'
-import { readSystemState } from '@/lib/control-plane/system-state'
+import { authorizeSend, authorityMeta } from '@/lib/control-plane/authorize-send'
 import { sendMessage, type SendMessageResult } from '@/lib/multi-channel-sender'
 import { AUTO_REPLY_PROMPT_VERSION } from './auto-reply'
-import { FOLLOWUP_SWEEP_AGENT_ID, INBOUND_AUTOREPLY_AGENT_ID } from './draft-view'
+import { DEAD_LEAD_AGENT_ID, FOLLOWUP_SWEEP_AGENT_ID, INBOUND_AUTOREPLY_AGENT_ID } from './draft-view'
 
 export type ApprovalState = 'sending' | 'sent' | 'send_failed'
 
@@ -51,9 +45,10 @@ export const INBOUND_SEND_ACTION = 'inbound.reply.email.send'
  * not listed is not approvable here (422). The registry, not this map, decides
  * how risky the action is.
  */
-const SEND_ACTIONS: Readonly<Record<string, Partial<Record<'email' | 'sms', string>>>> = {
+export const SEND_ACTIONS: Readonly<Record<string, Partial<Record<'email' | 'sms', string>>>> = {
   [INBOUND_AUTOREPLY_AGENT_ID]: { email: INBOUND_SEND_ACTION },
   [FOLLOWUP_SWEEP_AGENT_ID]:    { email: 'followup.email.send', sms: 'followup.sms.send' },
+  [DEAD_LEAD_AGENT_ID]:         { email: 'deadlead.email.send', sms: 'deadlead.sms.send' },
 }
 
 export function sendActionFor(agentId: unknown, channel: unknown): string | null {
@@ -85,7 +80,6 @@ export async function approveAndSendInboundDraft(
   const { admin, leadId, activityId, approver } = input
   const send = input.send ?? sendMessage
   const now  = input.now ?? (() => new Date())
-  const systemState = input.systemState ?? readSystemState()
 
   if (!approver.agencyId) return fail(403, 'Profil nemá priradenú kanceláriu.')
 
@@ -134,28 +128,16 @@ export async function approveAndSendInboundDraft(
   // so it floors at APPROVAL_REQUIRED; this click is the approval. The kill
   // switch makes it FORBIDDEN, and no approval overrides that (I-007).
   const approvedAt = now().toISOString()
-  const authorityCtx = buildAuthorityContext(action, {
+  const authz = authorizeSend({
+    action,
     agentId,
-    tenantId:   approver.agencyId,
-    actorRole:  'broker',
-    confidence: 1,
-    systemState,
+    tenantId: approver.agencyId,
+    approval: { approvalId: activityId, approvedBy: approver.label, approvedAt },
+    systemState: input.systemState,
+    now,
   })
-  if (!authorityCtx) return fail(500, 'Akcia nie je v registri — odoslanie zablokované.')
-  const verdict = applyApproval(resolveAuthority(authorityCtx, { now }), {
-    approvalId: activityId,
-    approvedBy: approver.label,
-    approvedAt,
-  })
-  if (!mayAct(verdict)) {
-    return verdict.authority === 'FORBIDDEN'
-      ? fail(503, 'Odosielanie je dočasne zastavené (kill switch).')
-      : fail(403, 'Odoslanie nie je autorizované.')
-  }
-  const authorityMeta = {
-    authority_policy: verdict.policyRef,
-    authority_rules:  verdict.appliedRules,
-  }
+  if (!authz.ok) return fail(authz.status, authz.reason)
+  const authorityFields = authorityMeta(authz.verdict)
 
   // Claim: only one caller can move the row out of {pending, send_failed}.
   const claimedMeta: DraftMeta = {
@@ -164,7 +146,7 @@ export async function approveAndSendInboundDraft(
     approved_by:    approver.label,
     approved_by_profile_id: approver.profileId,
     approved_at:    approvedAt,
-    ...authorityMeta,
+    ...authorityFields,
   }
   const { data: claimed, error: claimErr } = await admin
     .from('activities')
@@ -190,9 +172,11 @@ export async function approveAndSendInboundDraft(
       (meta.prompt_version as string | undefined) ??
       (agentId === INBOUND_AUTOREPLY_AGENT_ID ? AUTO_REPLY_PROMPT_VERSION : null),
     activity_id:    activityId,
+    // Drafts created before correlation ids existed fall back to the activity id.
+    correlation_id: (meta.correlation_id as string | undefined) ?? activityId,
     approved_by:    approver.label,
     action,
-    ...authorityMeta,
+    ...authorityFields,
   }
 
   await logAiAction({
@@ -210,7 +194,7 @@ export async function approveAndSendInboundDraft(
       subject:     meta.subject,
       body:        meta.body,
       aiGenerated: true,
-      meta:        { activity_id: activityId, agent_id: agentId },
+      meta:        { activity_id: activityId, agent_id: agentId, correlation_id: auditMeta.correlation_id },
     })
   } catch (e) {
     result = {

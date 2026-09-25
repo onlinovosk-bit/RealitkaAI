@@ -258,6 +258,26 @@ až po merge.
    (`followup.email.send` / `followup.sms.send`). WhatsApp návrhy
    zostávajú ručné.
 3. `REVOLIS-DEAD-LEAD-CAMPAIGN` — `dry_run` je voliteľný parameter, nie brána.
+   **Stav 2026-09-25:** opravené v PR (dead-lead + outreach). POST píše iba návrhy
+   a posiela sa cez approve path (`deadlead.email.send` / `deadlead.sms.send`).
+   Opravené sú aj dve staré chyby: POST po náhľade generoval nový text a posielal
+   na `phone ?? email` bez ohľadu na kanál.
+
+**Stav celej triedy „AI text klientovi" (2026-09-25):** všetky 4 cesty sú za
+ľudským schválením **a** za Control Contractom, cez jednu autoritu
+`lib/control-plane/authorize-send.ts`.
+
+| Cesta | Akcia v registri | Schválenie |
+|---|---|---|
+| inbound auto-reply | `inbound.reply.email.send` | návrh → klik |
+| follow-up sweep | `followup.{email,sms}.send` | návrh → klik |
+| dead-lead kampaň | `deadlead.{email,sms}.send` | návrh → klik |
+| outreach | `outreach.email.send` | klik na send/approve; cron/skript odmietnutý |
+
+Každý návrh aj každé odoslanie nesie `correlation_id` v `ai_action_audit.meta`.
+Agent spec pre všetky 4 agenty je v `apps/crm/src/lib/agents/agent-specs.ts`
+a test pri drifte zlyhá. **Stále neoverené na PROD** (runbook B/C).
+Mimo tejto triedy zostáva `api/stealth-recruiter/*` (grandfathered, AP-011).
 
 **Nie je porušenie (rozlíšenie, AP-006):** `lib/acquire/inbound-lead-auto-response.ts`
 (valuation/submit, acquire/email) posiela **deterministickú SK šablónu**
@@ -266,8 +286,10 @@ až po merge.
 *politiku* — to je Tier 3 schválené policy, nie agentom. Rozdiel voči §13.1:
 tam text píše model zo vstupu útočníka.
 
-**Vzorová brána, ktorá už funguje:** `api/outreach/approve` → `human_approved`
-v `ai_action_audit` → send. Toto je referencia pre všetky Tier 3.
+**Vzorová brána:** `authorizeSend` (Control Contract + kill switch) +
+`approve-draft` (návrh → klik → odoslanie presne schváleného textu, najviac raz).
+Nový agent do nej pribudne ako 1 záznam v `SEND_ACTIONS`, 1 akcia v registri
+a 1 `AgentSpec`.
 
 ## 14. SECURITY
 
