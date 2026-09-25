@@ -7,11 +7,11 @@
 // stores the AI text as a draft activity + `ai_suggested` audit row. The
 // broker sends it — nothing in this module talks to Resend or WhatsApp.
 // ================================================================
-import { logAiAction }       from '@/lib/ai-action-audit'
 import { computeBRI }        from '@/lib/bri/engine'
 import { logEvent }          from '@/lib/events/log-event'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { AUTO_REPLY_PROMPT_VERSION, generateAutoReply } from './auto-reply'
+import { insertAgentDraft } from './insert-agent-draft'
 
 import { INBOUND_AUTOREPLY_AGENT_ID } from './draft-view'
 
@@ -125,49 +125,31 @@ export async function processInboundLead(
     agentName:    profile.full_name ?? undefined,
   })
 
-  const { error: draftErr } = await admin.from('activities').insert({
-    lead_id:     leadId,
-    type:        'AI návrh odpovede',
-    title:       `Návrh odpovede (AI) — ${reply.subject}`,
-    text:        `${reply.body}\n\nKanál: email\nPríjemca: ${payload.email}\nNeodoslané — vyžaduje schválenie makléra.`,
-    entity_type: 'lead',
-    entity_id:   leadId,
-    actor_name:  'AI inbound auto-reply',
-    source:      'webhook_inbound_lead',
-    severity:    'info',
-    meta: {
-      draft:             true,
-      requires_approval: true,
-      channel:           'email',
-      subject:           reply.subject,
-      // Exactly what the broker approves is exactly what gets sent.
-      body:              reply.body,
-      recipient:         payload.email,
-      agent_id:          INBOUND_AUTOREPLY_AGENT_ID,
-      prompt_version:    AUTO_REPLY_PROMPT_VERSION,
+  const draft = await insertAgentDraft({
+    admin,
+    leadId,
+    agencyId,
+    profileId:     payload.profileId,
+    agentId:       INBOUND_AUTOREPLY_AGENT_ID,
+    promptVersion: AUTO_REPLY_PROMPT_VERSION,
+    channel:       'email',
+    subject:       reply.subject,
+    body:          reply.body,
+    recipient:     payload.email,
+    activity: {
+      type:      'AI návrh odpovede',
+      title:     `Návrh odpovede (AI) — ${reply.subject}`,
+      actorName: 'AI inbound auto-reply',
+      source:    'webhook_inbound_lead',
+      notes:     ['Kanál: email', `Príjemca: ${payload.email}`],
     },
+    auditAction: 'ai_email',
   })
-  if (draftErr) {
+  if (!draft.ok) {
     // The lead exists; losing the draft is recoverable, so report, don't fail.
-    console.error('[processInboundLead] draft insert failed:', draftErr.message)
+    console.error('[processInboundLead] draft insert failed:', draft.error)
     return { leadId, briScore, draftCreated: false, replySent: false }
   }
-
-  await logAiAction({
-    action:         'ai_email',
-    agencyId,
-    leadId,
-    profileId:      payload.profileId,
-    actionKind:     'ai_suggested',
-    channel:        'email',
-    subjectPreview: reply.subject,
-    bodyText:       reply.body,
-    meta: {
-      agent_id:       INBOUND_AUTOREPLY_AGENT_ID,
-      prompt_version: AUTO_REPLY_PROMPT_VERSION,
-      approval_state: 'pending_human',
-    },
-  }).catch(e => console.error('[processInboundLead] audit failed:', e))
 
   return { leadId, briScore, draftCreated: true, replySent: false }
 }

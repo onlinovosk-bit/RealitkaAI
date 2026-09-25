@@ -103,6 +103,11 @@ dát a má prednosť pred baseline dumpom aj pred CI gate.
   `.next/types/**` a ja som ho púšťal po `next build`. Bez nich presne 54.
 
 ### Rozpracované / Pending
+- **Dead-lead + outreach za kontraktom, correlation_id, agent spec pre 4 agentov (GO ×3):**
+  PR na vetve `claude/keen-lovelace-ih8ej3`, čaká na merge. Po merge sú všetky 4 cesty
+  AI → klient za schválením aj kontraktom.
+- **PROD overenie (runbook B/C) stále chýba.** Implementované sú 4 cesty, overených
+  naživo 0.
 - **Follow-up sweep → iba návrhy (GO 2026-09-25):** PR na vetve `claude/keen-lovelace-ih8ej3`.
   Cron neodosiela; maklér schvaľuje e-mail/SMS cez spoločný approve path a kontrakt.
   Pred merge treba vedieť: ak mal PROD `FOLLOWUP_MODE=send`, automatické follow-upy

@@ -205,4 +205,12 @@ describe("processInboundLead — Tier-3 gate", () => {
     expect(result.draftCreated).toBe(false);
     expect(mockLogAiAction).not.toHaveBeenCalled();
   });
+
+  it("stamps one correlation_id on the draft and its ai_suggested audit row", async () => {
+    const inserts = wireDb({});
+    await processInboundLead(payload());
+    const draftCorr = (inserts.activities[0] as { meta: { correlation_id: string } }).meta.correlation_id;
+    expect(draftCorr).toMatch(/^[0-9a-f-]{36}$/);
+    expect(mockLogAiAction.mock.calls[0][0].meta).toMatchObject({ correlation_id: draftCorr });
+  });
 });

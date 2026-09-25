@@ -1,8 +1,10 @@
+import { randomUUID } from "crypto";
 import { Resend } from "resend";
 import { autoErrorCapture } from "./auto-error-capture";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { logAiAction } from "@/lib/ai-action-audit";
-import { generateOutreachEmail } from "@/lib/ai-outreach";
+import { authorizeSend, authorityMeta, type SendApproval } from "@/lib/control-plane/authorize-send";
+import { OUTREACH_PROMPT_VERSION, generateOutreachEmail } from "@/lib/ai-outreach";
 import { estimateOpenAiCostFromTotalTokens } from "@/lib/ai/llm-usage-cost";
 import { CREDIT_ACTION_COSTS } from "@/lib/program-tier-pricing";
 import { createActivity } from "@/lib/activities-store";
@@ -170,14 +172,26 @@ export async function resolveOutreachLead(
   return getLeadAsService(serviceClient, leadId);
 }
 
+export const OUTREACH_AGENT_ID = "REVOLIS-OUTREACH";
+export const OUTREACH_SEND_ACTION = "outreach.email.send";
+
+/**
+ * Sends one AI outreach e-mail. Tier 3: the Control Contract requires a human
+ * `approval` (the broker's click in /api/outreach/{approve,send}). Callers
+ * without one — the scheduled-outreach cron, the automation script — are
+ * refused before any text is generated, whatever SCHEDULED_OUTREACH_ENABLED says.
+ */
 export async function sendAiOutreachEmail(
   leadId: string,
   scopedSupabase?: SupabaseClient | null,
+  approval: SendApproval | null = null,
 ) {
   const resend = getResendClient();
   const supabase = createServiceRoleClient() ?? getSupabaseClient();
   const from = process.env.OUTREACH_FROM_EMAIL;
   const config = getOutreachConfig();
+  // One id for this send attempt across every audit row (Blueprint §11).
+  const correlationId = randomUUID();
 
   let leadForError: { id: string; name: string; email: string } | null = null;
 
@@ -227,7 +241,7 @@ export async function sendAiOutreachEmail(
         leadId: lead.id,
         actionKind: "frequency_blocked",
         channel: "email",
-        meta: {
+        meta: { correlation_id: correlationId, agent_id: OUTREACH_AGENT_ID,
           hoursSinceLast: sinceH,
           cooldownHours: cooldownH,
         },
@@ -235,6 +249,28 @@ export async function sendAiOutreachEmail(
       throw new Error(
         `Frekvenčný limit: posledný AI email pred ${sinceH.toFixed(1)} h. Min. odstup ${cooldownH} h.`
       );
+    }
+
+    const authz = authorizeSend({
+      action: OUTREACH_SEND_ACTION,
+      agentId: OUTREACH_AGENT_ID,
+      tenantId: agencyId,
+      approval,
+    });
+    if (!authz.ok) {
+      await logAiAction({
+        action: "outreach_send",
+        agencyId,
+        leadId: lead.id,
+        actionKind: "send_failed",
+        channel: "email",
+        meta: { correlation_id: correlationId, agent_id: OUTREACH_AGENT_ID,
+          action: OUTREACH_SEND_ACTION,
+          blocked: true,
+          ...authorityMeta(authz.verdict),
+        },
+      });
+      throw new Error(authz.reason);
     }
 
     const variant = pickOutboundAbVariant();
@@ -263,7 +299,8 @@ export async function sendAiOutreachEmail(
       creditsSpent: CREDIT_ACTION_COSTS.aiEmail,
       costEur: estimateOpenAiCostFromTotalTokens(model, generated.totalTokens ?? 0),
       model,
-      meta: {
+      meta: { correlation_id: correlationId, agent_id: OUTREACH_AGENT_ID,
+        prompt_version: OUTREACH_PROMPT_VERSION,
         provider: generated.provider,
         totalTokens: generated.totalTokens ?? null,
       },
@@ -290,7 +327,7 @@ export async function sendAiOutreachEmail(
         variant,
         subjectPreview: generated.subject,
         bodyText: generated.body,
-        meta: { provider: "resend", error: resendMsg },
+        meta: { correlation_id: correlationId, agent_id: OUTREACH_AGENT_ID, provider: "resend", error: resendMsg },
       });
 
       if (normalized.includes("api key") || normalized.includes("invalid")) {
@@ -343,14 +380,14 @@ export async function sendAiOutreachEmail(
     await createActivity({
       leadId: lead.id,
       type: "Outreach",
-      title: "AI email bol automaticky odoslaný",
+      title: "AI email odoslaný (schválil maklér)",
       text: `Leadovi ${lead.name} bol odoslaný AI email na adresu ${lead.email}.`,
       entityType: "lead",
       entityId: lead.id,
       actorName: "AI systém",
       source: "outreach",
       severity: "success",
-      meta: {
+      meta: { correlation_id: correlationId, agent_id: OUTREACH_AGENT_ID,
         channel: "email",
         subject: generated.subject,
         provider: generated.provider,
@@ -369,7 +406,7 @@ export async function sendAiOutreachEmail(
       variant,
       subjectPreview: generated.subject,
       bodyText: generated.body,
-      meta: {
+      meta: { correlation_id: correlationId, agent_id: OUTREACH_AGENT_ID,
         provider: generated.provider,
         conversationId,
         resendOk: true,
@@ -413,7 +450,7 @@ export async function sendAiOutreachEmail(
       actorName: "AI systém",
       source: "outreach",
       severity: "error",
-      meta: {
+      meta: { correlation_id: correlationId, agent_id: OUTREACH_AGENT_ID,
         leadId,
         errorMessage: message,
       },

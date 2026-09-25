@@ -21,7 +21,13 @@ export async function POST(request: Request) {
 
     // Pass the request-scoped client: without it the store falls back to the
     // browser singleton and every real lead resolves to "Lead nebol nájdený".
-    const result = await sendAiOutreachEmail(leadId, supabase);
+    // A signed-in broker's explicit click is the human approval the
+    // Control Contract requires (outreach.email.send floors at APPROVAL_REQUIRED).
+    const result = await sendAiOutreachEmail(leadId, supabase, {
+      approvalId: `outreach_send:${leadId}:${Date.now()}`,
+      approvedBy: user.email ?? user.id,
+      approvedAt: new Date().toISOString(),
+    });
     return okResponse({ result });
   } catch (error) {
     const result = autoErrorCapture(error, "POST /api/outreach/send");
