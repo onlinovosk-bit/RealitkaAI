@@ -2795,3 +2795,63 @@ podnet na ručné dohľadanie, nie rozsudok.
 `GO AI-COST-DAILY-MIGRATION-FIX` — prepísať `20260611000004` na PROD tvar
 (`action_count`, `security_invoker = true`, bez `revenue_eur_retail`/`margin_eur`),
 inak F3 spadne. Pred F3 stále chýbajú dve rozhodnutia: **PITR add-on** a **klon áno/nie**.
+
+---
+
+## 2026-09-25 — PROD-SHAPE-DIFF: P0 v RLS, a migrácia, ktorá je registrovaná a nikdy nebežala
+
+Brána `GO PROD-SHAPE-DIFF`. Bez zápisu do PROD. Report:
+`docs/reports/2026-09-25-prod-shape-diff.md`.
+
+### 🔴🔴 P0 — `tasks` a `saas_leads` sú otvorené pre `anon`
+Overené správaním (`set local role anon`, v transakcii s rollback):
+**227 úloh naprieč 41 leadmi a 14 SaaS leadov vidí neprihlásený volajúci.**
+Plus `onboarding_sessions` 5 riadkov.
+
+Príčina: policies `USING (true)` pre rolu `public` na `tasks`
+(select/insert/update/delete), `saas_leads` (všetky štyri),
+`lead_property_scores`, `lead_property_events`, `onboarding_sessions`,
+`competition_radar`. RLS policies sa OR-ujú → korektná `tasks_agency` nemá
+účinok. `anon` má na `tasks`/`properties`/`activities` plné tabuľkové granty.
+
+Opravu v repe má iba `onboarding_sessions`
+(`20260904220000_drop_onboarding_sessions_anon_all.sql`, v neaplikovanej dávke).
+Pre `tasks`, `saas_leads`, `lead_property_scores`, `lead_property_events`
+oprava **neexistuje**. Zápis a mazanie cez anon som zámerne neskúšal.
+
+### 🔴 `20260429111000_decision_intelligence_core.sql` — registrovaná, nikdy nebežala
+V PROD z nej neexistuje **0 z 11** objektov (4 tabuľky, 6 stĺpcov na `leads`,
+3 indexy). `db push` ju nikdy nespustí, lebo je v `schema_migrations`.
+
+### 🔴 16 tabuliek, ktoré aplikovaná časť histórie vytvára a v PROD nie sú
+11 z nich má živé volanie v kóde. Najhoršie:
+`app/api/ai/decision/score-lead/route.ts:69` robí
+`await supabase.from("lead_action_scores").insert({...})` **bez čítania `error`**
+→ endpoint vráti `{ok:true}` a nezapíše nič. Tiché zahadzovanie dát v produkcii.
+
+### Metóda (nahrádza platený klon)
+Dva lokálne základy: `BASE` = všetkých 114 migrácií (OK=114 FAILED=0),
+`APPLIED_BASE` = 53 súborov aplikovanej časti (OK=52 FAILED=1). Rozdiel
+`APPLIED_BASE` − `PROD` je presne to, čo `db push` nedoplní. Prepisy PROD
+výpisov overené checksumom (`9f77b581…` 94 bucketov, `f8f6e5b5…` 120 riadkov
+kindu `col`) — žiadny záver nestojí na neoverenom prepise.
+
+### Ďalšie namerané
+- Stĺpce: 18 objektov s iným tvarom. Spiace (kód ich nečíta): `agencies` 5
+  stĺpcov, `leads` 7 stĺpcov, `ai_sourced_deals.lead_id/property_id` `text` vs
+  `uuid`. Prvý dojem z grepu tvrdil opak; beh ho vyvrátil.
+- Funkcie: **žiadna kolízia**, 37 v PROD, každá spoločná má zhodný návratový typ,
+  secdef aj volatility. Hranica: kľúč sa orezáva na 63 znakov (typ `name`).
+- Policies: 10 tabuliek sa líši, **všetky smerom k väčšej otvorenosti**. Policies
+  sa OR-ujú, takže push pridá tenant policy navrch a otvorenosť nezmenší.
+- Vetva `agency_id IS NULL OR …` žije v PROD ďalej na `activities`,
+  `lead_property_matches`, `properties`, `outreach_logs`, `pipeline_moves`.
+
+### Neoverené
+Dátové constrainty (CHECK/FK/NOT NULL vs existujúce riadky) — jediná trieda,
+kde je skutočný klon stále lepší. Zápis/mazanie cez `anon` odvodené, nie merané.
+
+### Ďalej
+`GO RLS-ANON-LOCKDOWN` — zavrieť `USING (true)` policies na `tasks`,
+`saas_leads`, `lead_property_scores`, `lead_property_events` migráciou
+v repe + aplikovať. Predbieha F3 aj `AI-COST-DAILY-MIGRATION-FIX`.
