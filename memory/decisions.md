@@ -1,5 +1,39 @@
 # Critical Decisions Log
 
+## [2026-09-25] — Všetky 4 cesty „AI text → klient" sú za schválením aj kontraktom; agent spec je zaťažený testom (founder GO ×3)
+
+- **Dead-lead kampaň** (`REVOLIS-DEAD-LEAD-CAMPAIGN`): POST už nič neodosiela. Z každého
+  plánu vznikne návrh; maklér ho pošle cez approve path (`deadlead.email.send` /
+  `deadlead.sms.send`).
+  - Opravené sú dve staré chyby. POST po schválenom náhľade z GET vygeneroval **iný**
+    text. Adresát bol `phone ?? email` bez ohľadu na kanál.
+- **Outreach** (`REVOLIS-OUTREACH`): `sendAiOutreachEmail` sa **pred generovaním** pýta
+  kontraktu na `outreach.email.send`.
+  - Klik v `/api/outreach/{send,approve}` je schválenie.
+  - Cron `/api/scheduled-outreach` a automatizačný skript schválenie nemajú, takže sú
+    **štrukturálne odmietnuté**, aj keď je `SCHEDULED_OUTREACH_ENABLED=true`. Pravidlo
+    „nikdy automatický send prospektom" už nedrží flag, ale kontrakt.
+  - `/send` nemá náhľad textu: maklér schvaľuje akciu, nie konkrétny text. Je to
+    zapísaná slabina, nie oprava.
+- **Jedna autorita:** `lib/control-plane/authorize-send.ts` a jeden zapisovač návrhov
+  `lib/inbound/insert-agent-draft.ts`. Používajú ich všetci štyria agenti, inbound
+  aj follow-up boli prerobené.
+- **`correlation_id`:**
+  - Vzniká pri návrhu (alebo pri štarte outreach sendu).
+  - Nesie ho každý riadok `ai_action_audit` (`ai_suggested` → `human_approved` →
+    `sent` / `send_failed`) aj aktivita.
+  - Staré návrhy použijú ako náhradu id aktivity.
+- **Agent spec:** `apps/crm/src/lib/agents/agent-specs.ts`, polia podľa Blueprint L1
+  pre 4 agentov.
+  - `agent-specs.test.ts` zlyhá, keď akcia nie je v registri, keď sa `SEND_ACTIONS`
+    líši od spec-u, keď prompt nie je verzovaný alebo keď chýba súbor evalu či kódu.
+    Spec je tak zaťažený, nie dekoratívny.
+- **Prah Ústavy (3 agenti za kontraktom) je prekročený — 4.** Agent Factory ide na
+  **posúdenie** Ústavou, nie na automatický BUILD. Dnešný vzor pridá agenta ako
+  1 záznam v mape + 1 akciu + 1 spec, takže duplicita, ktorú by Factory riešila,
+  zatiaľ nie je preukázaná.
+- **Stále neoverené na PROD:** zámok proti dvojitému odoslaniu a kill switch (runbook B/C).
+
 ## [2026-09-25] AP-022 — Migrácia, ktorá prejde lokálne a zabije CI (CI-UNBLOCK-01)
 
 `20260925110000_rls_anon_lockdown.sql` (#697) zhodila `Lint, test, build` na `main`

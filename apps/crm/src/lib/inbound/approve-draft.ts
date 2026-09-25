@@ -45,7 +45,7 @@ export const INBOUND_SEND_ACTION = 'inbound.reply.email.send'
  * not listed is not approvable here (422). The registry, not this map, decides
  * how risky the action is.
  */
-const SEND_ACTIONS: Readonly<Record<string, Partial<Record<'email' | 'sms', string>>>> = {
+export const SEND_ACTIONS: Readonly<Record<string, Partial<Record<'email' | 'sms', string>>>> = {
   [INBOUND_AUTOREPLY_AGENT_ID]: { email: INBOUND_SEND_ACTION },
   [FOLLOWUP_SWEEP_AGENT_ID]:    { email: 'followup.email.send', sms: 'followup.sms.send' },
   [DEAD_LEAD_AGENT_ID]:         { email: 'deadlead.email.send', sms: 'deadlead.sms.send' },
@@ -172,6 +172,8 @@ export async function approveAndSendInboundDraft(
       (meta.prompt_version as string | undefined) ??
       (agentId === INBOUND_AUTOREPLY_AGENT_ID ? AUTO_REPLY_PROMPT_VERSION : null),
     activity_id:    activityId,
+    // Drafts created before correlation ids existed fall back to the activity id.
+    correlation_id: (meta.correlation_id as string | undefined) ?? activityId,
     approved_by:    approver.label,
     action,
     ...authorityFields,
@@ -192,7 +194,7 @@ export async function approveAndSendInboundDraft(
       subject:     meta.subject,
       body:        meta.body,
       aiGenerated: true,
-      meta:        { activity_id: activityId, agent_id: agentId },
+      meta:        { activity_id: activityId, agent_id: agentId, correlation_id: auditMeta.correlation_id },
     })
   } catch (e) {
     result = {

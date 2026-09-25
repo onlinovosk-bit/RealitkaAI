@@ -297,4 +297,18 @@ describe("approveAndSendInboundDraft", () => {
     expect(send.mock.calls[0][0]).toMatchObject({ channel: "sms", to: "+421900000000" });
     expect(mockLogAiAction.mock.calls[0][0].meta).toMatchObject({ action: "deadlead.sms.send" });
   });
+
+  it("carries the draft's correlation_id through human_approved and sent", async () => {
+    const { admin } = fakeAdmin({ activity: { id: ACT, lead_id: LEAD, meta: draftMeta({ correlation_id: "corr-1" }) } });
+    await approveAndSendInboundDraft({ admin, leadId: LEAD, activityId: ACT, approver, send });
+    const ids = mockLogAiAction.mock.calls.map((c) => (c[0] as { meta: { correlation_id: string } }).meta.correlation_id);
+    expect(ids).toEqual(["corr-1", "corr-1"]);
+    expect(send.mock.calls[0][0].meta).toMatchObject({ correlation_id: "corr-1" });
+  });
+
+  it("falls back to the activity id as correlation_id for legacy drafts", async () => {
+    const { admin } = fakeAdmin({});
+    await approveAndSendInboundDraft({ admin, leadId: LEAD, activityId: ACT, approver, send });
+    expect(mockLogAiAction.mock.calls[0][0].meta).toMatchObject({ correlation_id: ACT });
+  });
 });

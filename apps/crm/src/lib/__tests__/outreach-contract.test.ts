@@ -15,7 +15,10 @@ vi.mock("resend", () => ({
     emails = { send: mockResendSend };
   },
 }));
-vi.mock("@/lib/ai-outreach", () => ({ generateOutreachEmail: (...a: unknown[]) => mockGenerate(...a) }));
+vi.mock("@/lib/ai-outreach", () => ({
+  OUTREACH_PROMPT_VERSION: "outreach-v1",
+  generateOutreachEmail: (...a: unknown[]) => mockGenerate(...a),
+}));
 vi.mock("@/lib/ai-action-audit", () => ({ logAiAction: (...a: unknown[]) => mockLogAiAction(...a) }));
 vi.mock("@/lib/supabase/admin", () => ({ createServiceRoleClient: () => null }));
 vi.mock("@/lib/moat-capture/log-ai-recommendation", () => ({
