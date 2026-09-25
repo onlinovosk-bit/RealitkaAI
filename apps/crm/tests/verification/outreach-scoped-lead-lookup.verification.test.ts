@@ -28,10 +28,17 @@ describe("[verification] Outreach never reads leads through the browser singleto
     expect(store).toMatch(/export async function listLeadsAsService\(/);
   });
 
-  it("every outreach send route threads a scoped client and a human approval", () => {
-    // Tier 3: the broker's click is passed as the Control Contract approval.
+  it("the preview route resolves the lead with the request-scoped client", () => {
+    expect(read("src/app/api/outreach/preview/route.ts")).toMatch(/scopedSupabase: supabase/);
+  });
+
+  it("every outreach send route sends only an approved draft, never generate-and-send", () => {
+    // Tier 3: the broker approves the exact text from /api/outreach/preview.
     for (const route of ["src/app/api/outreach/send/route.ts", "src/app/api/outreach/approve/route.ts"]) {
-      expect(read(route)).toMatch(/sendAiOutreachEmail\(leadId, supabase, \{[\s\S]*?approvedBy/);
+      const text = read(route);
+      expect(text).toContain("approveAndSendInboundDraft(");
+      expect(text).toContain("expectAgentId: OUTREACH_AGENT_ID");
+      expect(text).not.toContain("sendAiOutreachEmail");
     }
   });
 

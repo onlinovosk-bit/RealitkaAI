@@ -1,61 +1,66 @@
-import { okResponse, errorResponse } from "@/lib/api-response";
-import { autoErrorCapture } from "@/lib/auto-error-capture";
-import { logAiAction } from "@/lib/ai-action-audit";
-import { getCurrentProfile, getCurrentUser } from "@/lib/auth";
-import { fetchLeadAgencyId } from "@/lib/outbound-orchestrator";
+import { z } from "zod";
+import { validateBody } from "@/lib/api-validate";
+import { errorResponse, okResponse } from "@/lib/api-response";
+import { getCurrentProfile } from "@/lib/auth";
 import { requireFeature } from "@/lib/feature-gating";
-import { sendAiOutreachEmail } from "@/lib/outreach-store";
-import { createClient } from "@/lib/supabase/server";
-import { SYSTEM_USAGE_AGENCY_ID } from "@/lib/usage-metrics";
+import { approveAndSendInboundDraft } from "@/lib/inbound/approve-draft";
+import { OUTREACH_AGENT_ID } from "@/lib/inbound/draft-view";
+import { rateLimit } from "@/lib/rate-limit";
+import { createServiceRoleClient } from "@/lib/supabase/admin";
+import { incrementUsageMetric } from "@/lib/usage-metrics";
+
+export const dynamic = "force-dynamic";
+
+const BodySchema = z.object({
+  leadId: z.string().min(1).max(64),
+  activityId: z.string().min(1).max(64).optional(),
+});
 
 /**
  * POST /api/outreach/approve
- * Explicitné schválenie odoslania (audit „human_approved“) + rovnaký send pipeline.
+ * Step 2 of outreach: the broker approves a draft from /api/outreach/preview
+ * and exactly that text is sent (shared approve path, Control Contract,
+ * kill switch, send-once claim). No draft id → nothing is generated or sent.
  */
 export async function POST(request: Request) {
+  const profile = await getCurrentProfile();
+  if (!profile) return errorResponse("Unauthorized", 401);
+
   try {
     await requireFeature("outreach");
-
-    const user = await getCurrentUser();
-    if (!user) {
-      return errorResponse("Neautorizovaný prístup.", 401);
-    }
-
-    const profile = await getCurrentProfile();
-    const body = await request.json();
-    const leadId = body?.leadId as string | undefined;
-
-    if (!leadId) {
-      return errorResponse("Chýba leadId.", 400);
-    }
-
-    const agencyId =
-      (await fetchLeadAgencyId(leadId)) ??
-      profile?.agency_id ??
-      SYSTEM_USAGE_AGENCY_ID;
-
-    await logAiAction({
-      action: "outreach_approve",
-      agencyId,
-      leadId,
-      profileId: profile?.id ?? null,
-      actionKind: "human_approved",
-      channel: "email",
-      meta: { approvedBy: user.email ?? user.id },
-    });
-
-    // Human-approved send: thread the request-scoped client so the lead is
-    // resolved under the caller's tenant instead of the browser singleton.
-    const supabase = await createClient();
-    const approvedBy = user.email ?? user.id;
-    const result = await sendAiOutreachEmail(leadId, supabase, {
-      approvalId: `outreach_approve:${leadId}:${Date.now()}`,
-      approvedBy,
-      approvedAt: new Date().toISOString(),
-    });
-    return okResponse({ result, approved: true });
-  } catch (error) {
-    const result = autoErrorCapture(error, "POST /api/outreach/approve");
-    return errorResponse(result.error, 400);
+  } catch (e) {
+    return errorResponse(e instanceof Error ? e.message : "Funkcia outreach nie je dostupná.", 403);
   }
+
+  const { allowed } = await rateLimit(`outreach-approve:${profile.auth_user_id ?? profile.id}`, 10, 60_000);
+  if (!allowed) return errorResponse("Príliš veľa požiadaviek. Skúste znova o chvíľu.", 429);
+
+  const parsed = await validateBody(request, BodySchema);
+  if (!parsed.ok) return parsed.response;
+  if (!parsed.data.activityId) {
+    return errorResponse("Najprv vygenerujte návrh a skontrolujte text — outreach sa bez náhľadu neodosiela.", 400);
+  }
+
+  const admin = createServiceRoleClient();
+  if (!admin) return errorResponse("Služba nie je dostupná.", 503);
+
+  const result = await approveAndSendInboundDraft({
+    admin,
+    leadId: parsed.data.leadId,
+    activityId: parsed.data.activityId,
+    expectAgentId: OUTREACH_AGENT_ID,
+    approver: {
+      profileId: profile.id,
+      agencyId: profile.agency_id,
+      label: profile.email ?? profile.full_name ?? profile.id,
+    },
+  });
+  if (!result.ok) return errorResponse(result.error, result.status);
+
+  if (profile.agency_id) {
+    await incrementUsageMetric({ agencyId: profile.agency_id, metric: "outreach_send" }).catch(
+      (e) => console.error("[outreach-approve] usage metric:", e),
+    );
+  }
+  return okResponse({ messageId: result.messageId, approved: true });
 }

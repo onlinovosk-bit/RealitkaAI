@@ -1,3 +1,19 @@
+## Session 2026-09-25 (Outreach náhľad textu)
+### Dokončené
+- Outreach dvojkrok: `apps/crm/src/app/api/outreach/preview/route.ts` (nový), `send`/`approve`
+  cez `lib/inbound/approve-draft.ts`, `lib/outreach-store.ts` (`prepareOutreachDraft`,
+  `sendApprovedOutreach`, `sendAiOutreachEmail` vždy odmietne), UI panel s náhľadom.
+### Rozpracované / Pending
+- PROD runbook B/C (founder): schválenie + kill switch test; teraz aj outreach náhľad → odoslanie.
+- Agent Factory cez Ústavu — čaká na GO (odporúčanie BACKLOG).
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/outreach-store.ts`: draft + approved sender, žiadny generate-and-send
+- `apps/crm/src/lib/inbound/approve-draft.ts`: outreach v SEND_ACTIONS, `expectAgentId`, lazy outreach sender
+- `apps/crm/src/lib/inbound/insert-agent-draft.ts`: vracia `activityId`, `auditExtras`
+- `apps/crm/src/components/outreach/outreach-send-panel.tsx`: náhľad → schválenie
+### Ďalší krok
+Founder spustí PROD runbook B/C (vrátane outreach náhľadu) a pošle výsledok.
+
 ## Session 2026-09-25
 
 ### Dokončené

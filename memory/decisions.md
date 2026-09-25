@@ -1,5 +1,22 @@
 # Critical Decisions Log
 
+## [2026-09-25] — Outreach: maklér vidí presný text pred odoslaním (founder GO „Outreach náhľad textu")
+
+- **Predtým:** „Vygenerovať a odoslať" = jeden klik, text maklér uvidel až po odoslaní.
+- **Teraz dva kroky:**
+  - `POST /api/outreach/preview` → `prepareOutreachDraft` skontroluje stav, denný limit
+    a cooldown, vygeneruje text a uloží ho ako návrh (`insertAgentDraft`). Nič neodíde.
+  - `POST /api/outreach/{send,approve}` vyžaduje `activityId` návrhu (bez neho 400) a ide
+    cez spoločný `approve-draft.ts` (`expectAgentId: REVOLIS-OUTREACH`, kill switch, claim
+    lock, audit). Odosiela `sendApprovedOutreach`: doslovne schválený text, znova overí
+    limit a cooldown, zapíše conversation + messages.
+- `sendAiOutreachEmail` (skript/cron) je vždy odmietnutý pred generovaním.
+- UI `outreach-send-panel.tsx`: „Vygenerovať návrh" → náhľad → „Schváliť a odoslať".
+- Všetky 4 cesty „AI text → klient" majú teraz jeden vzor: návrh → klik → doslovné odoslanie.
+- **Neoverené na PROD** (runbook B/C stále čaká na foundera).
+- Ústava: BUILD — priamo odstraňuje riziko, že klient dostane text, ktorý maklér nevidel
+  (retencia + dôvera referenčného klienta).
+
 ## [2026-09-25] — Všetky 4 cesty „AI text → klient" sú za schválením aj kontraktom; agent spec je zaťažený testom (founder GO ×3)
 
 - **Dead-lead kampaň** (`REVOLIS-DEAD-LEAD-CAMPAIGN`): POST už nič neodosiela. Z každého
