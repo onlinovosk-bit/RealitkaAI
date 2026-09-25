@@ -32,6 +32,10 @@
   `.next/types/**` a ja som ho púšťal po `next build`. Bez nich presne 54.
 
 ### Rozpracované / Pending
+- **Follow-up sweep → iba návrhy (GO 2026-09-25):** PR na vetve `claude/keen-lovelace-ih8ej3`.
+  Cron neodosiela; maklér schvaľuje e-mail/SMS cez spoločný approve path a kontrakt.
+  Pred merge treba vedieť: ak mal PROD `FOLLOWUP_MODE=send`, automatické follow-upy
+  po merge prestanú a zostanú len návrhy (zámer).
 
 - **`PRICING-MODEL-01`** — migrovať `computeMrrBreakdown()` na plochých 199 €/kancelária.
   Dopad na vykazovaný MRR: 278 € → 597 € pri 3 aktívnych kanceláriách. Founder GO.

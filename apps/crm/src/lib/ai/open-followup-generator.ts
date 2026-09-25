@@ -30,6 +30,9 @@ export type OpenFollowUpPlan = {
   reason_sk: string;
 };
 
+/** Bump whenever SYSTEM or the batch template changes; stamped on every draft. */
+export const FOLLOWUP_PROMPT_VERSION = "open-followup-v1";
+
 const SYSTEM = `Si slovenský realitný obchodný asistent.
 Pre každého leada rozhodni: má zmysel dnes (alebo zajtra ráno) poslať jemný follow-up?
 Vygeneruj krátku, ľudskú správu PO SLOVENSKY — žiadny spam, max 3 krátke vety.

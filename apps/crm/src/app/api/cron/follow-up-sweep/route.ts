@@ -1,10 +1,16 @@
 /**
- * W2 — nightly sweep stagnujúcich **otvorených** leadov; draft alebo odoslanie (env).
+ * W2 — nightly sweep stagnujúcich **otvorených** leadov → iba NÁVRHY.
+ *
+ * Tier 3 (Revolis System Spec §13): správa klientovi potrebuje ľudské schválenie.
+ * Cron nič neodosiela — ani pri FOLLOWUP_MODE=send (tá hodnota sa už ignoruje
+ * a hlási v odpovedi). Maklér návrh odošle cez „Schváliť a odoslať"
+ * (POST /api/leads/:id/drafts/:activityId/approve).
  */
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
-import { generateOpenFollowUpsBatch } from "@/lib/ai/open-followup-generator";
-import { sendMessage } from "@/lib/multi-channel-sender";
+import { FOLLOWUP_PROMPT_VERSION, generateOpenFollowUpsBatch } from "@/lib/ai/open-followup-generator";
+import { FOLLOWUP_SWEEP_AGENT_ID } from "@/lib/inbound/draft-view";
+import { logAiAction } from "@/lib/ai-action-audit";
 import type { StaleLeadInput } from "@/lib/ai/open-followup-generator";
 import { scoreFollowUp } from "@/lib/cron/follow-up-scoring";
 
@@ -34,7 +40,9 @@ export async function GET(request: NextRequest) {
 
   const staleDays = Math.max(1, Number(process.env.FOLLOWUP_STALE_DAYS ?? "5"));
   const maxCandidates = Math.min(Number(process.env.FOLLOWUP_SWEEP_LIMIT ?? "24"), 60);
-  const mode = String(process.env.FOLLOWUP_MODE ?? "draft").toLowerCase();
+  // Kept only to report a stale config; it no longer changes behaviour.
+  const requestedMode = String(process.env.FOLLOWUP_MODE ?? "draft").toLowerCase();
+  const mode = "draft";
   const maxLifetime = Math.max(1, Number(process.env.FOLLOWUP_MAX_AI_PER_LEAD ?? "12"));
   const cooldownMs =
     Math.max(1, Number(process.env.FOLLOWUP_COOLDOWN_DAYS ?? "7")) * 86_400_000;
@@ -46,7 +54,7 @@ export async function GET(request: NextRequest) {
   const { data: rows, error } = await admin
     .from("leads")
     .select(
-      "id,name,email,phone,status,budget,location,last_contact,note,score,updated_at,last_ai_followup_at,ai_followup_count,ai_priority"
+      "id,agency_id,name,email,phone,status,budget,location,last_contact,note,score,updated_at,last_ai_followup_at,ai_followup_count,ai_priority"
     )
     .in("status", OPEN_STATUSES)
     .lt("updated_at", cutoff)
@@ -90,14 +98,21 @@ export async function GET(request: NextRequest) {
     score: Number(r.score ?? 50),
   }));
 
+  const agencyByLead = new Map<string, string | null>(
+    eligible.map((r: Record<string, unknown>) => [
+      String(r.id),
+      r.agency_id ? String(r.agency_id) : null,
+    ]),
+  );
+
   let drafted = 0;
-  let sent = 0;
   const failures: string[] = [];
 
   if (!inputs.length) {
     return NextResponse.json({
       ok: true,
       mode,
+      requested_mode: requestedMode,
       eligible: 0,
       drafted: 0,
       sent: 0,
@@ -111,66 +126,61 @@ export async function GET(request: NextRequest) {
     if (!plan.should_contact || !plan.message.trim()) continue;
 
     const leadIn = inputs.find((i) => i.id === plan.lead_id);
-
     const addr =
       plan.channel === "email"
         ? leadIn?.email?.trim()
         : leadIn?.phone?.trim();
+    const subject = plan.subject || "Krátky follow-up";
+    const body = plan.message.trim();
 
-    const bodyText = [
-      plan.message,
-      plan.broker_cc_needed ? "\n\n[Poznámka: odporúčané zaradiť makléra (CC).]" : "",
-    ]
-      .join("")
-      .trim();
-
-    if (mode === "draft" || plan.broker_cc_needed || !addr) {
-      const { error: actErr } = await admin.from("activities").insert({
-        lead_id: plan.lead_id,
-        type: "AI follow-up",
-        title: "Návrh follow-upu (AI)",
-        text: `${bodyText}\n\nDôvod: ${plan.reason_sk}\nKanál: ${plan.channel}`,
-        entity_type: "lead",
-        entity_id: plan.lead_id,
-        actor_name: "AI follow-up sweep",
-        source: "cron_follow_up_sweep",
-        severity: "info",
-        meta: { channel: plan.channel, draft: true, broker_cc: plan.broker_cc_needed },
-      });
-      if (!actErr) drafted += 1;
-      else failures.push(`${plan.lead_id}: ${actErr.message}`);
-
-      await bumpFollowupMeta(admin, plan.lead_id, now);
+    const { error: actErr } = await admin.from("activities").insert({
+      lead_id: plan.lead_id,
+      type: "AI follow-up",
+      title: "Návrh follow-upu (AI)",
+      text:
+        `${body}\n\nDôvod: ${plan.reason_sk}\nKanál: ${plan.channel}` +
+        (plan.broker_cc_needed ? "\n[Poznámka: odporúčané zaradiť makléra (CC).]" : "") +
+        "\nNeodoslané — vyžaduje schválenie makléra.",
+      entity_type: "lead",
+      entity_id: plan.lead_id,
+      actor_name: "AI follow-up sweep",
+      source: "cron_follow_up_sweep",
+      severity: "info",
+      meta: {
+        draft: true,
+        requires_approval: true,
+        agent_id: FOLLOWUP_SWEEP_AGENT_ID,
+        prompt_version: FOLLOWUP_PROMPT_VERSION,
+        channel: plan.channel,
+        broker_cc: plan.broker_cc_needed,
+        // Exactly what the broker approves is exactly what gets sent.
+        // No address → no recipient → the draft cannot be one-click sent.
+        subject,
+        body,
+        ...(addr ? { recipient: addr } : {}),
+      },
+    });
+    if (actErr) {
+      failures.push(`${plan.lead_id}: ${actErr.message}`);
       continue;
     }
+    drafted += 1;
 
-    const result = await sendMessage({
+    await logAiAction({
+      action: "followup_sweep_draft",
+      agencyId: agencyByLead.get(plan.lead_id) ?? null,
       leadId: plan.lead_id,
-      to: addr,
-      channel: plan.channel,
-      subject: plan.subject || "Krátky follow-up",
-      body: bodyText,
-      aiGenerated: true,
-      meta: { cron: "follow-up-sweep" },
-    });
-
-    if (result.ok) {
-      sent += 1;
-      await admin.from("activities").insert({
-        lead_id: plan.lead_id,
-        type: "AI follow-up odoslaný",
-        title: `Odoslané (${plan.channel})`,
-        text: bodyText.slice(0, 4000),
-        entity_type: "lead",
-        entity_id: plan.lead_id,
-        actor_name: "AI follow-up sweep",
-        source: "cron_follow_up_sweep",
-        severity: "info",
-        meta: { channel: plan.channel, message_id: result.messageId },
-      });
-    } else {
-      failures.push(`${plan.lead_id}: ${result.error ?? "send failed"}`);
-    }
+      actionKind: "ai_suggested",
+      channel: plan.channel === "sms" ? "sms" : "email",
+      subjectPreview: subject,
+      bodyText: body,
+      meta: {
+        agent_id: FOLLOWUP_SWEEP_AGENT_ID,
+        prompt_version: FOLLOWUP_PROMPT_VERSION,
+        approval_state: "pending_human",
+        planned_channel: plan.channel,
+      },
+    }).catch((e) => console.error("[follow-up-sweep] audit:", e));
 
     await bumpFollowupMeta(admin, plan.lead_id, now);
   }
@@ -178,9 +188,10 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     ok: true,
     mode,
+    requested_mode: requestedMode,
     evaluated: inputs.length,
     drafted,
-    sent,
+    sent: 0,
     failures,
   });
 }

@@ -252,6 +252,11 @@ až po merge.
    z Vercelu bol orezaný, premenná v zobrazenej časti nebola.
 2. `REVOLIS-FOLLOWUP-SWEEP` — Tier 3 za env prepínačom, nie za schválením.
    Default `draft` je bezpečný; prepnutie env = odstránenie brány bez PR.
+   **Stav 2026-09-25:** opravené v PR (follow-up gate). Cron už iba zapisuje
+   návrhy, `FOLLOWUP_MODE=send` sa ignoruje a v odpovedi sa hlási.
+   Odosielanie ide cez ten istý approve path a kontrakt
+   (`followup.email.send` / `followup.sms.send`). WhatsApp návrhy
+   zostávajú ručné.
 3. `REVOLIS-DEAD-LEAD-CAMPAIGN` — `dry_run` je voliteľný parameter, nie brána.
 
 **Nie je porušenie (rozlíšenie, AP-006):** `lib/acquire/inbound-lead-auto-response.ts`

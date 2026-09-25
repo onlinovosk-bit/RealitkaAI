@@ -2,10 +2,21 @@
 // the lead detail page renders it).
 
 export const INBOUND_AUTOREPLY_AGENT_ID = 'REVOLIS-INBOUND-AUTOREPLY'
+export const FOLLOWUP_SWEEP_AGENT_ID = 'REVOLIS-FOLLOWUP-SWEEP'
+
+/** Agents whose drafts a broker may approve and send. */
+export const APPROVABLE_DRAFT_AGENTS: readonly string[] = [
+  INBOUND_AUTOREPLY_AGENT_ID,
+  FOLLOWUP_SWEEP_AGENT_ID,
+]
+
+/** Channels the approve path can send on. WhatsApp/LinkedIn drafts stay manual. */
+export const APPROVABLE_CHANNELS: readonly string[] = ['email', 'sms']
 
 export type InboundDraftState = 'pending' | 'sending' | 'sent' | 'send_failed'
 
 export interface InboundDraftView {
+  channel:   string
   recipient: string
   subject:   string
   state:     InboundDraftState
@@ -18,14 +29,26 @@ export interface InboundDraftView {
 export function toInboundDraftView(meta: unknown): InboundDraftView | null {
   if (!meta || typeof meta !== 'object') return null
   const m = meta as Record<string, unknown>
-  if (m.agent_id !== INBOUND_AUTOREPLY_AGENT_ID || m.draft !== true || m.requires_approval !== true) {
+  if (
+    typeof m.agent_id !== 'string' ||
+    !APPROVABLE_DRAFT_AGENTS.includes(m.agent_id) ||
+    m.draft !== true ||
+    m.requires_approval !== true
+  ) {
     return null
   }
   const raw = m.approval_state
   const state: InboundDraftState =
     raw === 'sending' || raw === 'sent' || raw === 'send_failed' ? raw : 'pending'
-  const sendable = typeof m.body === 'string' && typeof m.recipient === 'string' && typeof m.subject === 'string'
+  // Legacy inbound drafts carry no channel; they were always e-mail.
+  const channel = typeof m.channel === 'string' ? m.channel : 'email'
+  const sendable =
+    typeof m.body === 'string' &&
+    typeof m.recipient === 'string' &&
+    typeof m.subject === 'string' &&
+    APPROVABLE_CHANNELS.includes(channel)
   return {
+    channel,
     recipient:  typeof m.recipient === 'string' ? m.recipient : '',
     subject:    typeof m.subject === 'string' ? m.subject : '',
     state,

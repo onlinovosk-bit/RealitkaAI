@@ -167,7 +167,7 @@ describe("approveAndSendInboundDraft", () => {
   });
 
   it.each([
-    ["not an inbound draft", { agent_id: "REVOLIS-FOLLOWUP-SWEEP" }],
+    ["from an agent without an approve path", { agent_id: "REVOLIS-DEAD-LEAD-CAMPAIGN" }],
     ["not flagged as draft", { draft: false }],
     ["no approval requirement", { requires_approval: false }],
   ])("refuses an activity that is %s (422)", async (_label, override) => {
@@ -229,6 +229,62 @@ describe("approveAndSendInboundDraft", () => {
     expect(mockLogAiAction.mock.calls[0][0].meta).toMatchObject({
       action: "inbound.reply.email.send",
       authority_rules: rules,
+    });
+  });
+
+  describe("REVOLIS-FOLLOWUP-SWEEP drafts", () => {
+    const followup = (overrides: Record<string, unknown> = {}) =>
+      draftMeta({
+        agent_id: "REVOLIS-FOLLOWUP-SWEEP",
+        prompt_version: "open-followup-v1",
+        ...overrides,
+      });
+
+    it("sends an e-mail follow-up under the followup.email.send action", async () => {
+      const { admin } = fakeAdmin({ activity: { id: ACT, lead_id: LEAD, meta: followup({ channel: "email" }) } });
+      const res = await approveAndSendInboundDraft({ admin, leadId: LEAD, activityId: ACT, approver, send });
+      expect(res.ok).toBe(true);
+      expect(send.mock.calls[0][0]).toMatchObject({ channel: "email", to: "jan@example.com" });
+      expect(mockLogAiAction.mock.calls[0][0].meta).toMatchObject({
+        action: "followup.email.send",
+        agent_id: "REVOLIS-FOLLOWUP-SWEEP",
+        prompt_version: "open-followup-v1",
+      });
+    });
+
+    it("sends an SMS follow-up on the sms channel under followup.sms.send", async () => {
+      const { admin } = fakeAdmin({
+        activity: { id: ACT, lead_id: LEAD, meta: followup({ channel: "sms", recipient: "+421900000000" }) },
+      });
+      const res = await approveAndSendInboundDraft({ admin, leadId: LEAD, activityId: ACT, approver, send });
+      expect(res.ok).toBe(true);
+      expect(send.mock.calls[0][0]).toMatchObject({ channel: "sms", to: "+421900000000" });
+      expect(mockLogAiAction.mock.calls[0][0]).toMatchObject({ channel: "sms" });
+      expect(mockLogAiAction.mock.calls[0][0].meta).toMatchObject({ action: "followup.sms.send" });
+    });
+
+    it("refuses a WhatsApp follow-up draft (422) — no send path is registered for it", async () => {
+      const { admin } = fakeAdmin({ activity: { id: ACT, lead_id: LEAD, meta: followup({ channel: "whatsapp" }) } });
+      const res = await approveAndSendInboundDraft({ admin, leadId: LEAD, activityId: ACT, approver, send });
+      expect(res).toMatchObject({ ok: false, status: 422 });
+      expect(send).not.toHaveBeenCalled();
+    });
+
+    it("kill switch blocks follow-up sends too", async () => {
+      const { admin } = fakeAdmin({ activity: { id: ACT, lead_id: LEAD, meta: followup({ channel: "email" }) } });
+      const res = await approveAndSendInboundDraft({
+        admin, leadId: LEAD, activityId: ACT, approver, send,
+        systemState: { degraded: false, killSwitch: true },
+      });
+      expect(res).toMatchObject({ ok: false, status: 503 });
+      expect(send).not.toHaveBeenCalled();
+    });
+
+    it("refuses an unknown agent id (422)", async () => {
+      const { admin } = fakeAdmin({ activity: { id: ACT, lead_id: LEAD, meta: followup({ agent_id: "SOMETHING-ELSE" }) } });
+      const res = await approveAndSendInboundDraft({ admin, leadId: LEAD, activityId: ACT, approver, send });
+      expect(res).toMatchObject({ ok: false, status: 422 });
+      expect(send).not.toHaveBeenCalled();
     });
   });
 });

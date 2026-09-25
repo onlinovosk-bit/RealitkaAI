@@ -32,4 +32,23 @@ describe("toInboundDraftView", () => {
     const { body: _b, ...legacy } = base;
     expect(toInboundDraftView(legacy)).toMatchObject({ state: "pending", canApprove: false });
   });
+
+  it("recognises follow-up sweep drafts and their channel", () => {
+    const v = toInboundDraftView({ ...base, agent_id: "REVOLIS-FOLLOWUP-SWEEP", channel: "sms" });
+    expect(v).toMatchObject({ channel: "sms", canApprove: true });
+  });
+
+  it("a WhatsApp draft is shown but not one-click approvable", () => {
+    const v = toInboundDraftView({ ...base, agent_id: "REVOLIS-FOLLOWUP-SWEEP", channel: "whatsapp" });
+    expect(v).toMatchObject({ channel: "whatsapp", canApprove: false });
+  });
+
+  it("a draft without a recipient is not approvable", () => {
+    const { recipient: _r, ...noAddr } = base;
+    expect(toInboundDraftView({ ...noAddr, agent_id: "REVOLIS-FOLLOWUP-SWEEP" })).toMatchObject({ canApprove: false });
+  });
+
+  it("legacy follow-up drafts (no agent_id) are not treated as approvable drafts", () => {
+    expect(toInboundDraftView({ channel: "email", draft: true, broker_cc: false })).toBeNull();
+  });
 });

@@ -1,5 +1,22 @@
 # Critical Decisions Log
 
+## [2026-09-25] — Follow-up sweep je iba návrhár; odosiela maklér cez ten istý kontrakt (founder GO)
+
+Druhé porušenie Tier 3 zo System Spec §13 je uzavreté. Nočný cron
+`/api/cron/follow-up-sweep` už **nikdy nič neodošle**. `FOLLOWUP_MODE=send` sa ignoruje
+a v odpovedi sa hlási ako `requested_mode`. Tichá zmena správania to nie je.
+
+- **Návrh nesie presne ten text, ktorý maklér schvaľuje.** V `meta` sú `subject`, `body`,
+  `channel`, `recipient`, `agent_id=REVOLIS-FOLLOWUP-SWEEP` a
+  `prompt_version=open-followup-v1`. Audit zapíše `ai_suggested` s `agency_id` leadu.
+- **Approve path je spoločný pre oboch agentov.** Mapa `agent + kanál → akcia registra`:
+  follow-up e-mail → `followup.email.send`, SMS → `followup.sms.send`. Obe akcie už
+  v registri boli. Kontrakt a kill switch platia rovnako ako pri inbound.
+- **WhatsApp návrhy zostávajú ručné.** Pre ne neexistuje registrovaná akcia, takže
+  route vráti 422. Návrh bez kontaktu pre daný kanál sa jedným klikom odoslať nedá.
+- **Staré follow-up drafty (bez `agent_id`) tlačidlo nedostanú.** Nemajú uložený text.
+- **Merané:** voči starej route padnú 3 z 5 nových testov vrátane „nikdy neodošle".
+
 ## [2026-09-24] — Control Contract stráži prvú živú cestu (inbound send) a kill switch má zdroj
 
 Founder povedal „pokračuj" na návrh z task-loopu. Toto je druhý BUILD bod zo System

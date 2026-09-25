@@ -29,12 +29,20 @@ export function InboundDraftApprove({ leadId, activityId, draft }: Props) {
     return <p className="mt-1 text-xs text-gray-500">Odosiela sa…</p>;
   }
   if (!draft.canApprove) {
-    return <p className="mt-1 text-xs text-gray-500">Návrh nemá uložený text — odpovedzte ručne.</p>;
+    return (
+      <p className="mt-1 text-xs text-gray-500">
+        {draft.recipient
+          ? "Tento návrh sa nedá odoslať jedným klikom — pošlite ho ručne."
+          : "Lead nemá kontakt pre tento kanál — pošlite ho ručne."}
+      </p>
+    );
   }
 
   async function approve() {
+    const what = draft.channel === "sms" ? "túto SMS" : "tento e-mail";
+    const subjectLine = draft.channel === "sms" ? "" : `\nPredmet: ${draft.subject}`;
     const ok = window.confirm(
-      `Odoslať tento e-mail?\n\nKomu: ${draft.recipient}\nPredmet: ${draft.subject}\n\nText sa odošle presne tak, ako je zobrazený.`,
+      `Odoslať ${what}?\n\nKomu: ${draft.recipient}${subjectLine}\n\nText sa odošle presne tak, ako je zobrazený.`,
     );
     if (!ok) return;
     setBusy(true);
@@ -63,7 +71,8 @@ export function InboundDraftApprove({ leadId, activityId, draft }: Props) {
   return (
     <div className="mt-2 flex flex-wrap items-center gap-2">
       <span className="text-xs text-amber-700">
-        Neodoslané · komu: <span className="font-medium">{draft.recipient}</span>
+        Neodoslané · {draft.channel === "sms" ? "SMS" : "e-mail"} · komu:{" "}
+        <span className="font-medium">{draft.recipient}</span>
       </span>
       <button
         type="button"

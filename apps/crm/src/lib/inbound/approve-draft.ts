@@ -1,7 +1,8 @@
 // ================================================================
-// Revolis.AI — Approve & send an inbound AI reply draft (Tier 3)
+// Revolis.AI — Approve & send an AI draft to a lead (Tier 3)
 //
-// The only path by which REVOLIS-INBOUND-AUTOREPLY text reaches a lead.
+// The only path by which REVOLIS-INBOUND-AUTOREPLY or REVOLIS-FOLLOWUP-SWEEP
+// text reaches a lead (see SEND_ACTIONS).
 // Invariants:
 //   - sends exactly meta.subject / meta.body to meta.recipient — the text the
 //     broker saw, never a regenerated one;
@@ -26,7 +27,7 @@ import { logAiAction } from '@/lib/ai-action-audit'
 import { readSystemState } from '@/lib/control-plane/system-state'
 import { sendMessage, type SendMessageResult } from '@/lib/multi-channel-sender'
 import { AUTO_REPLY_PROMPT_VERSION } from './auto-reply'
-import { INBOUND_AUTOREPLY_AGENT_ID } from './draft-view'
+import { FOLLOWUP_SWEEP_AGENT_ID, INBOUND_AUTOREPLY_AGENT_ID } from './draft-view'
 
 export type ApprovalState = 'sending' | 'sent' | 'send_failed'
 
@@ -44,6 +45,21 @@ export interface ApproveDraftInput {
 
 /** Registered in packages/control-contract/src/actions.ts (irreversible, externally visible). */
 export const INBOUND_SEND_ACTION = 'inbound.reply.email.send'
+
+/**
+ * Which registry action a draft's send is. Agent + channel -> action; anything
+ * not listed is not approvable here (422). The registry, not this map, decides
+ * how risky the action is.
+ */
+const SEND_ACTIONS: Readonly<Record<string, Partial<Record<'email' | 'sms', string>>>> = {
+  [INBOUND_AUTOREPLY_AGENT_ID]: { email: INBOUND_SEND_ACTION },
+  [FOLLOWUP_SWEEP_AGENT_ID]:    { email: 'followup.email.send', sms: 'followup.sms.send' },
+}
+
+export function sendActionFor(agentId: unknown, channel: unknown): string | null {
+  if (typeof agentId !== 'string' || (channel !== 'email' && channel !== 'sms')) return null
+  return SEND_ACTIONS[agentId]?.[channel] ?? null
+}
 
 export type ApproveDraftResult =
   | { ok: true; messageId: string | null }
@@ -92,7 +108,8 @@ export async function approveAndSendInboundDraft(
 
   const meta = (activity.meta ?? {}) as DraftMeta
   if (
-    meta.agent_id !== INBOUND_AUTOREPLY_AGENT_ID ||
+    typeof meta.agent_id !== 'string' ||
+    !(meta.agent_id in SEND_ACTIONS) ||
     meta.draft !== true ||
     meta.requires_approval !== true
   ) {
@@ -102,6 +119,14 @@ export async function approveAndSendInboundDraft(
     // Drafts created before the body was stored cannot be sent verbatim.
     return fail(422, 'Návrh nemá uložený text na odoslanie. Pošlite odpoveď ručne.')
   }
+  // Legacy inbound drafts have no channel field; they were always e-mail.
+  const rawChannel = typeof meta.channel === 'string' ? meta.channel : 'email'
+  const action = sendActionFor(meta.agent_id, rawChannel)
+  if (!action || (rawChannel !== 'email' && rawChannel !== 'sms')) {
+    return fail(422, `Kanál „${rawChannel}" sa nedá odoslať odtiaľto. Pošlite správu ručne.`)
+  }
+  const channel: 'email' | 'sms' = rawChannel
+  const agentId = meta.agent_id as string
   if (meta.approval_state === 'sent')    return fail(409, 'Návrh už bol odoslaný.')
   if (meta.approval_state === 'sending') return fail(409, 'Návrh sa práve odosiela.')
 
@@ -109,8 +134,8 @@ export async function approveAndSendInboundDraft(
   // so it floors at APPROVAL_REQUIRED; this click is the approval. The kill
   // switch makes it FORBIDDEN, and no approval overrides that (I-007).
   const approvedAt = now().toISOString()
-  const authorityCtx = buildAuthorityContext(INBOUND_SEND_ACTION, {
-    agentId:    INBOUND_AUTOREPLY_AGENT_ID,
+  const authorityCtx = buildAuthorityContext(action, {
+    agentId,
     tenantId:   approver.agencyId,
     actorRole:  'broker',
     confidence: 1,
@@ -151,20 +176,22 @@ export async function approveAndSendInboundDraft(
   if (!claimed || claimed.length === 0) return fail(409, 'Návrh už spracúva niekto iný.')
 
   const auditBase = {
-    action:         'inbound_autoreply_approve',
+    action:         `${agentId}:approve`,
     agencyId:       approver.agencyId,
     leadId,
     profileId:      approver.profileId,
-    channel:        'email' as const,
+    channel,
     subjectPreview: meta.subject,
     bodyText:       meta.body,
   }
   const auditMeta = {
-    agent_id:       INBOUND_AUTOREPLY_AGENT_ID,
-    prompt_version: (meta.prompt_version as string | undefined) ?? AUTO_REPLY_PROMPT_VERSION,
+    agent_id:       agentId,
+    prompt_version:
+      (meta.prompt_version as string | undefined) ??
+      (agentId === INBOUND_AUTOREPLY_AGENT_ID ? AUTO_REPLY_PROMPT_VERSION : null),
     activity_id:    activityId,
     approved_by:    approver.label,
-    action:         INBOUND_SEND_ACTION,
+    action,
     ...authorityMeta,
   }
 
@@ -179,15 +206,15 @@ export async function approveAndSendInboundDraft(
     result = await send({
       leadId,
       to:          meta.recipient,
-      channel:     'email',
+      channel,
       subject:     meta.subject,
       body:        meta.body,
       aiGenerated: true,
-      meta:        { activity_id: activityId, agent_id: INBOUND_AUTOREPLY_AGENT_ID },
+      meta:        { activity_id: activityId, agent_id: agentId },
     })
   } catch (e) {
     result = {
-      ok: false, channel: 'email', to: meta.recipient,
+      ok: false, channel, to: meta.recipient,
       error: e instanceof Error ? e.message : 'send failed',
     }
   }
