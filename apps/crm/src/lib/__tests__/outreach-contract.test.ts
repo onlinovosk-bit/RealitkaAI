@@ -21,6 +21,14 @@ vi.mock("@/lib/ai-outreach", () => ({
 }));
 vi.mock("@/lib/ai-action-audit", () => ({ logAiAction: (...a: unknown[]) => mockLogAiAction(...a) }));
 vi.mock("@/lib/supabase/admin", () => ({ createServiceRoleClient: () => null }));
+// Hermetic: CI runs a local Supabase, and the store's error path writes an
+// activity — a real write there fails on RLS and masks the error under test.
+const mockCreateActivity = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/activities-store", () => ({ createActivity: (...a: unknown[]) => mockCreateActivity(...a) }));
+vi.mock("@/lib/usage-metrics", () => ({
+  incrementUsageMetric: vi.fn().mockResolvedValue(undefined),
+  SYSTEM_USAGE_AGENCY_ID: "system",
+}));
 vi.mock("@/lib/moat-capture/log-ai-recommendation", () => ({
   logAiRecommendation: vi.fn(),
   hashRecommendationDedupePart: () => "h",
@@ -45,6 +53,9 @@ describe("sendAiOutreachEmail — Control Contract", () => {
     vi.stubEnv("OUTREACH_FROM_EMAIL", "rk@example.com");
     vi.stubEnv("AGENT_KILL_SWITCH", "");
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "");
+    mockCreateActivity.mockResolvedValue(undefined);
     mockLogAiAction.mockResolvedValue(undefined);
   });
 
