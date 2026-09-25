@@ -33,6 +33,37 @@
   1 záznam v mape + 1 akciu + 1 spec, takže duplicita, ktorú by Factory riešila,
   zatiaľ nie je preukázaná.
 - **Stále neoverené na PROD:** zámok proti dvojitému odoslaniu a kill switch (runbook B/C).
+## [2026-09-25] AP-023 — Migrácie popisujú 81 zo 111 tabuliek (SCHEMA-DRIFT-INVENTORY)
+
+Inventúra po AP-022. Plný report: `docs/reports/2026-09-25-schema-drift-inventory.md`.
+
+| | |
+|---|---|
+| Tabuliek v PROD | **111** |
+| Zakladá migrácia | **105** |
+| **V PROD bez migrácie** | **30** (17 má živého volajúceho) |
+| **V migrácii, nie v PROD** | **24** (14 má volajúceho → tie volania padajú) |
+
+**Smer B je vážnejší.** Aplikácia volá 14 tabuliek, ktoré v PROD neexistujú. Overené
+`to_regclass(...) IS NOT NULL` = false, nie odvodené. Najviac exponované:
+`credit_redemption_codes` (6 volaní, starter-pack), `demo_bookings` (5, Calendly webhook).
+
+**Rozlíšené živé vs. mŕtve, nie zhrnuté do paniky:** `/api/cron/demo-brief` a
+`demo-recap` **nie sú** medzi 16 cronmi vo `vercel.json` — sú mŕtve. Žiadny naplánovaný
+cron nepadá na chýbajúcej tabuľke (dotrasované: `notification-digest` →
+`routine_notifications`, `credits-cycle` → `agencies`, oba existujú). Očakával som opak.
+Živá je `/api/webhooks/calendly` — vracia 500 a stráca atribúciu dema, **ak** je webhook
+v Calendly nastavený. To z repa overiť neviem → founder check.
+
+**Vedľajší nález (C):** 30 riadkov osobných údajov (`full_name`, `email`, `phone`,
+`behavioral_notes`, `source_portal`) v 5 tabuľkách, ktoré nezakladá migrácia a nečíta
+žiadny kód. Obsah riadkov som **neotvoril** — len `information_schema.columns` a
+`count(*)`. Dve tabuľky majú názvy stĺpcov z copy-paste výstupu AI nástroja
+(`<img src=...perplexity.ai...`). Neodporúčam zmazať: pôvod a právny základ nie sú
+ustálené, to je Direktíva 4/5, teda founder rozhodnutie.
+
+**Korekcia vlastného čísla:** v priebehu práce som uviedol 113 tabuliek; `count(*)` dal
+111. Zle som prerátal výpis. Preto samotné porovnanie robí SQL, nie ručný prepis.
 
 ## [2026-09-25] AP-022 — Migrácia, ktorá prejde lokálne a zabije CI (CI-UNBLOCK-01)
 

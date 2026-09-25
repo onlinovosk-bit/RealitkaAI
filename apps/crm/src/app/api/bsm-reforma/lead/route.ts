@@ -21,16 +21,25 @@ export async function POST(req: Request) {
 
   if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
-  let profileId: string | null = null;
   const { data: profile } = await supabase
     .from("profiles")
     .select("id")
     .eq("auth_user_id", user.id)
     .maybeSingle();
-  profileId = profile?.id ?? null;
+
+  // RLS on bsm_reforma_leads requires the row to carry the caller's own
+  // profile_id (20260925140000), so a lead we cannot attribute can no longer be
+  // written at all. Say that, rather than letting the policy denial surface as
+  // a generic "Interná chyba servera".
+  if (!profile?.id) {
+    return NextResponse.json(
+      { ok: false, error: "K vášmu kontu sa nenašiel profil. Odhláste sa a prihláste znova." },
+      { status: 409 }
+    );
+  }
 
   const { error } = await supabase.from("bsm_reforma_leads").insert({
-    profile_id: profileId,
+    profile_id: profile.id,
     full_name: body.fullName?.trim() || null,
     email: body.email?.trim() || null,
     phone: body.phone?.trim() || null,
