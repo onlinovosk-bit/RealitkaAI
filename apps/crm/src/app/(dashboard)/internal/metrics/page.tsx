@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import FounderMetricsDashboard from "@/components/metrics/FounderMetricsDashboard";
-import { isFounderMetricsViewer } from "@/lib/metrics/access";
+import { canViewFounderMetrics } from "@/lib/metrics/access";
 import { fetchFounderMetrics } from "@/lib/metrics/fetch";
 import { METRICS_GUARDRAILS } from "@/lib/metrics/guardrails";
 import { createClient } from "@/lib/supabase/server";
@@ -13,7 +13,21 @@ export default async function FounderMetricsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!isFounderMetricsViewer(user?.email)) {
+  const { data: profile } = user
+    ? await supabase
+        .from("profiles")
+        .select("is_platform_admin")
+        .eq("auth_user_id", user.id)
+        .maybeSingle()
+    : { data: null };
+
+  if (!canViewFounderMetrics({
+    email: user?.email,
+    isPlatformAdmin: profile?.is_platform_admin,
+  })) {
+    // Zámerne notFound(), nie „nemáš prístup" — neoprávnenému používateľovi sa
+    // existencia internej stránky neprezrádza. Že to doteraz vyzeralo ako pád,
+    // spôsobovala rozbitá not-found stránka, nie táto brána.
     notFound();
   }
 

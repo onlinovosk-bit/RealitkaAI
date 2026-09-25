@@ -1,13 +1,16 @@
 import Link from 'next/link'
 
 export default function NotFound() {
+  // POZOR: ziadne <html>/<body>. V App Routeri sa not-found renderuje DOVNUTRA
+  // root layoutu (app/layout.tsx), ktory uz svoje <html><body> ma. Vnorene tagy
+  // prehliadac zahodi a React na neplatnom vnoreni vyrenderuje prazdnu stranku —
+  // presne to robilo z kazdej 404 bielu plochu namiesto tejto karty.
   return (
-    <html lang="sk">
-      <body style={{
-        margin: 0, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-        background: '#F2F6FA', minHeight: '100vh',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
+    <div style={{
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+      background: '#F2F6FA', minHeight: '100vh',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
         <div style={{
           background: '#fff', border: '0.5px solid #D6E2EF',
           borderRadius: 10, padding: '48px 40px', maxWidth: 440,
@@ -79,7 +82,6 @@ export default function NotFound() {
             Ísť na Dashboard
           </Link>
         </div>
-      </body>
-    </html>
+    </div>
   )
 }

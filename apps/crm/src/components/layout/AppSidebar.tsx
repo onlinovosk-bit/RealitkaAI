@@ -113,6 +113,8 @@ interface AppSidebarProps {
   agencyName?:  string;
   agencyManualPlan?: string | null;
   userName?:    string;
+  /** `profiles.is_platform_admin` — odomyká položky s `platformAdminOnly`. */
+  isPlatformAdmin?: boolean;
 }
 
 // ─── Workdesk kompaktná položka (secondary sidebar) ───────────────────────
@@ -547,6 +549,7 @@ export default function AppSidebar({
   agencyName,
   agencyManualPlan,
   userName,
+  isPlatformAdmin,
 }: AppSidebarProps) {
   const pathname = usePathname();
   const router   = useRouter();
@@ -713,8 +716,11 @@ export default function AppSidebar({
   const navItems = applyLeadsNavBadges(
     applyImportNavBadges(
       isFounderDemo
-        ? filterItemsByDemoProgram(getNavItems(renderVariant, permissions, navTier), demoProgram)
-        : getNavItems(renderVariant, permissions, navTier),
+        ? filterItemsByDemoProgram(
+            getNavItems(renderVariant, permissions, navTier, { isPlatformAdmin }),
+            demoProgram,
+          )
+        : getNavItems(renderVariant, permissions, navTier, { isPlatformAdmin }),
       leadsCount,
     ),
     newStatusLeadCount,

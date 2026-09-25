@@ -1,5 +1,40 @@
 # Critical Decisions Log
 
+## [2026-09-25] AP-022 — Migrácia, ktorá prejde lokálne a zabije CI (CI-UNBLOCK-01)
+
+`20260925110000_rls_anon_lockdown.sql` (#697) zhodila `Lint, test, build` na `main`
+aj na každom otvorenom PR. `supabase start` prehráva migrácie na čistú DB a padol:
+
+    ERROR: relation "public.lead_property_scores" does not exist (SQLSTATE 42P01)
+    At statement: 4
+
+**Príčina je hlbšia než jedna migrácia.** `lead_property_scores` ani `saas_leads`
+**nezakladá žiadna migrácia** v `apps/crm/supabase/migrations/`. Existujú len v PROD,
+založené mimo migračnej histórie. Migračný adresár teda **nie je** replikovateľný popis
+produkčnej schémy — to je presne AP z [2026-09-22] „Čistá DB z migrácií ≠ produkčná DB",
+len tentokrát sa prejavil ako výpadok CI, nie ako drift.
+
+**Prečo to nikto nechytil:** vlastný CI beh #697 bol **cancelled** (superseded pushom
+#698). Nadväzuje na AP z [2026-09-22] o zrušených behoch na `main`.
+
+**Meranie, nie odhad** — správanie závisí od verzie Postgresu a rozdiel je poučný:
+
+| | čistá DB |
+|---|---|
+| PG 15 (`major_version = 15`, čo CI bootuje) | ERROR 42P01 na prvom `DROP POLICY` |
+| PG 16 (lokálne, ten istý súbor) | `DROP POLICY IF EXISTS` len NOTICE, ale súbor padne nižšie na `CREATE POLICY ... ON public.saas_leads` |
+
+Súbor sa teda na prázdnu DB nedá prehrať ani na jednej verzii — len padne inde.
+
+**Oprava:** oba bloky obalené do `DO $$ ... IF to_regclass(...) IS NULL THEN RETURN`.
+Na PROD sa nemení nič (tabuľky existujú → vykoná sa to isté), na čistej DB sa blok
+preskočí. Overené na lokálnom PG16 v dvoch scenároch: čistá DB (exit 0) aj PROD-tvar
+(15 policies → 2, `anon` vidí 0 riadkov, service role vidí dáta).
+
+**Poučenie do ďalších migrácií:** komentár vo vnútri `DO $$` nesmie obsahovať `$$`
+ani apostrof — ukončí dollar-quote a rozbije súbor. Chytil to až lokálny beh, nie
+čítanie kódu.
+
 ## [2026-09-25] — Follow-up sweep je iba návrhár; odosiela maklér cez ten istý kontrakt (founder GO)
 
 Druhé porušenie Tier 3 zo System Spec §13 je uzavreté. Nočný cron
