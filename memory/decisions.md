@@ -43,6 +43,63 @@ sa zahodí (pinnuté testom).
 **Otvorené, nahlásené, neopravené:** `properties` nesie tie isté `agency_id IS NULL`
 escapy pre `authenticated` vedľa správnej `properties_tenant`. Dnes 0 riadkov s NULL →
 latentné. Patrí mu vlastná brána.
+## [2026-09-25] AP-026 — 404-PATH-01 na druhý pokus: `usePathname()` na 404 klame
+
+Overenie na produkcii po merge #706 ukázalo, že môj fix z #705 bol polovičný.
+Žiadal som `/overujem-404-path-fix-abc123`, stránka vypísala:
+
+    Adresa app.revolis.ai/_not-found, ktorú hľadáte, nebola nájdená.
+
+`usePathname()` na 404 vracia **interný názov routy** (`_not-found`), nie
+požadovanú URL. Next.js nastaví segment path routera na `_not-found` a
+`app/not-found.tsx` je server komponent prerenderovaný ako `/404` — ani server
+render, ani router požadovanú adresu nepozná.
+
+**Zadrôtovanú `/team/permissions` som teda nahradil inou nepravdivou adresou.**
+Menej zavádzajúcou (`_not-found` je zjavne interné), ale stále nepravdivou.
+A hlavne som v #705 tvrdil, že to zobrazí reálnu cestu — netvrdil som to
+overene, tvrdil som to z návrhu.
+
+**Oprava:** `window.location.pathname` v `useEffect`. Je to jediné miesto, kde
+požadovaná URL existuje, a je čitateľné až po mount. Do vtedy veta adresu
+nepomenuje vôbec (`Stránka, ktorú hľadáte, nebola nájdená.`) — mlčať je lepšie
+než pomenovať zlú stránku.
+
+**Poučenie k metóde, tretíkrát dnes:** build prešiel aj pri zlej verzii, lebo
+build nevie, čo `usePathname()` v runtime vráti. Jediné, čo to odhalilo, bol
+fetch reálnej produkcie. Pri čomkoľvek, čo závisí na runtime hodnote, je
+„skompilovalo sa" nula dôkazu.
+
+## [2026-09-25] AP-025 — Štvrtý rozmer driftu: stĺpce. A chyba v mojom overovaní.
+
+CI na #705 zhodila moju vlastnú baseline migráciu:
+
+    ERROR: column profiles.tier_locked_at does not exist (SQLSTATE 42703)
+    At statement: 140
+    CREATE POLICY "Locked BRI read-only" ON public.bri_history ... profiles.tier_locked_at ...
+
+`profiles` **zakladá** `20260310_baseline_core_schema.sql`. Ale `tier_locked_at`
+**nepridáva žiadna migrácia** — existuje len v PROD. AP-023 porovnával názvy
+tabuliek; stĺpce na migráciami vytvorených tabuľkách nikto nemeral. Rozsah
+merania: z 8 stĺpcov, ktoré moje policies čítajú, chýba presne 1.
+
+**Prečo to lokálne prešlo — a to je tá horšia časť nálezu.** Lokálny fixture som
+napísal ručne podľa toho, čo moje policies potrebujú, takže `tier_locked_at` v
+ňom bol. **Testoval som SQL proti fixture, ktorú som postavil podľa toho SQL** —
+test potvrdil môj predpoklad namiesto toho, aby ho napadol. 7/7 md5 zhoda bola
+pravdivá a zároveň bezcenná ako dôkaz replayovateľnosti.
+
+Oprava overovania: fixture sa stavia z toho, **čo migrácie vytvárajú**, nie z
+toho, čo testovaný súbor potrebuje. Znovu overené na oboch tvaroch:
+čistý (bez stĺpca) → exit 0 + NOTICE, policy preskočená;
+PROD-tvar (so stĺpcom) → exit 0, policy vytvorená, 7/7 md5 zhoda drží.
+
+**Oprava kódu:** guard na `information_schema.columns`, nie pridanie stĺpca.
+Pridať stĺpec do `profiles` je zmena schémy mimo rozsahu tohto súboru a hlavne
+by nález schovala namiesto toho, aby ho zaznamenala.
+
+**Inventúra stĺpcov naprieč schémou urobená NEBOLA.** Vieme o jednom, lebo naň
+CI spadla. Koľko ich je celkovo, nikto nemeral.
 
 ## [2026-09-25] — PROD runbook B/C: čo som overil sám, a nález „limit na neexistujúcej tabuľke" (founder GO)
 

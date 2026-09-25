@@ -47,10 +47,10 @@ export default function NotFound() {
             Táto stránka neexistuje
           </h1>
           <p style={{ fontSize: 13, color: '#7A8BA8', lineHeight: 1.6, marginBottom: 28 }}>
-            Adresa <NotFoundPath style={{
+            <NotFoundPath codeStyle={{
               background: '#F2F6FA', padding: '2px 6px',
               borderRadius: 4, fontSize: 11, color: '#1B3A5C',
-            }} />, ktorú hľadáte, nebola nájdená.
+            }} />
           </p>
 
           {/* Quick links */}

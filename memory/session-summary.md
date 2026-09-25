@@ -76,6 +76,8 @@ potom spustí runbook B/C a pošle výsledok.
 - **Calendly webhook** — stále neoverený. 14 tabuliek, ktoré kód volá a v PROD
   nie sú (smer B z AP-023), baseline NERIEŠI.
 - **Inventúra funkcií** — tretí rozmer driftu, nezmeraný.
+- **Inventúra stĺpcov** — štvrtý rozmer (AP-025), nezmeraný. Vieme o
+  `profiles.tier_locked_at`, lebo naň spadla CI.
 - **UGKK-QUERY** — nedokončené.
 
 ### Kľúčové súbory zmenené

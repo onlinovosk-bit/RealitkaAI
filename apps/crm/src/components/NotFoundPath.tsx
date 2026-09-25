@@ -1,24 +1,42 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 /**
- * Renders the address the visitor actually asked for on the 404 card.
+ * The "…, ktorú hľadáte, nebola nájdená." sentence on the 404 card, naming the
+ * address the visitor actually asked for.
  *
- * `app/not-found.tsx` is a server component and Next.js gives it no access to
- * the requested path — it is rendered while `notFound()` unwinds, and the root
- * 404 is prerendered at build time. So the path has to be read on the client.
+ * Two earlier attempts got this wrong, both by naming an address that was not
+ * the requested one:
  *
- * Before this existed the card had `app.revolis.ai/team/permissions` hardcoded
- * and told every visitor that was the address they were looking for, whatever
- * they had actually typed.
+ *   1. The path was hardcoded as `app.revolis.ai/team/permissions`, so every
+ *      visitor was told that was what they had looked for.
+ *   2. It was read with `usePathname()`. On a 404 that returns the INTERNAL
+ *      route name — production rendered `app.revolis.ai/_not-found` for a
+ *      request to /overujem-404-path-fix-abc123. Next.js sets the router's
+ *      segment path to `_not-found`, and `app/not-found.tsx` is a server
+ *      component prerendered as /404, so neither the server render nor the
+ *      router knows the requested URL.
+ *
+ * `window.location.pathname` is the only thing that does know it, and it is
+ * readable only after mount. Until then the sentence simply does not name an
+ * address, which is the point: saying nothing beats naming the wrong page.
  */
-export function NotFoundPath({ style }: { style?: React.CSSProperties }) {
-  const pathname = usePathname();
+export function NotFoundPath({ codeStyle }: { codeStyle?: React.CSSProperties }) {
+  const [pathname, setPathname] = useState<string | null>(null);
 
-  // Server render and the first paint have no pathname; say nothing specific
-  // rather than name the wrong address.
-  if (!pathname) return <>Stránka</>;
+  useEffect(() => {
+    setPathname(window.location.pathname);
+  }, []);
 
-  return <code style={style}>app.revolis.ai{pathname}</code>;
+  if (!pathname) {
+    return <>Stránka, ktorú hľadáte, nebola nájdená.</>;
+  }
+
+  return (
+    <>
+      Adresa <code style={codeStyle}>app.revolis.ai{pathname}</code>, ktorú
+      hľadáte, nebola nájdená.
+    </>
+  );
 }
