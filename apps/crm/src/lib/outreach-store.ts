@@ -10,7 +10,6 @@ import { CREDIT_ACTION_COSTS } from "@/lib/program-tier-pricing";
 import { createActivity } from "@/lib/activities-store";
 import {
   fetchLeadAgencyId,
-  getHoursSinceLastAiEmailToLead,
   outreachLeadCooldownHours,
   pickOutboundAbVariant,
 } from "@/lib/outbound-orchestrator";
@@ -90,28 +89,43 @@ function startOfDayIso() {
   return now.toISOString();
 }
 
-function isOutreachMessage(item: any) {
-  return item?.direction === "outbound" && item?.channel === "email" && Boolean(item?.ai_generated);
+/**
+ * Outreach sends recorded by the approve path (ai_action_audit `sent`, written
+ * by approve-draft.ts). The audit log is the record: `messages` does not exist
+ * on PROD, and reading it returned 0, which silently disabled the limit.
+ * Returns null when the count cannot be read — callers fail closed.
+ */
+async function countOutreachSentToday(agencyId: string): Promise<number | null> {
+  const supabase = createServiceRoleClient();
+  if (!supabase) return null;
+  const { count, error } = await supabase
+    .from("ai_action_audit")
+    .select("id", { count: "exact", head: true })
+    .eq("agency_id", agencyId)
+    .eq("action_kind", "sent")
+    .eq("channel", "email")
+    .eq("meta->>agent_id", OUTREACH_AGENT_ID)
+    .gte("created_at", startOfDayIso());
+  if (error) return null;
+  return count ?? 0;
 }
 
-async function getTodayOutreachCount() {
-  const supabase = createServiceRoleClient() ?? getSupabaseClient();
-  const startIso = startOfDayIso();
-
-  if (!supabase) {
-    return 0;
-  }
-
+/** Hours since any AI e-mail was sent to this lead; null = never; undefined = unknown. */
+async function hoursSinceLastAiEmailSent(leadId: string): Promise<number | null | undefined> {
+  const supabase = createServiceRoleClient();
+  if (!supabase) return undefined;
   const { data, error } = await supabase
-    .from("messages")
-    .select("id,direction,channel,ai_generated,created_at")
-    .gte("created_at", startIso);
-
-  if (error || !data) {
-    return 0;
-  }
-
-  return data.filter((item: any) => isOutreachMessage(item)).length;
+    .from("ai_action_audit")
+    .select("created_at")
+    .eq("lead_id", leadId)
+    .eq("action_kind", "sent")
+    .eq("channel", "email")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) return undefined;
+  if (!data?.created_at) return null;
+  return (Date.now() - new Date(data.created_at).getTime()) / 3_600_000;
 }
 
 export async function listOutreachMessages() {
@@ -231,13 +245,19 @@ async function checkOutreachQuota(
   correlationId: string,
 ): Promise<OutreachFail | null> {
   const config = getOutreachConfig();
-  const sentToday = await getTodayOutreachCount();
+  const sentToday = await countOutreachSentToday(agencyId);
+  if (sentToday === null) {
+    return { ok: false, status: 503, error: "Denný limit outreach sa nedá overiť — nič sa neodoslalo." };
+  }
   if (sentToday >= config.dailyLimit) {
     return { ok: false, status: 429, error: `Denný limit outreach bol dosiahnutý (${config.dailyLimit}).` };
   }
 
   const cooldownH = outreachLeadCooldownHours();
-  const sinceH = await getHoursSinceLastAiEmailToLead(leadId);
+  const sinceH = await hoursSinceLastAiEmailSent(leadId);
+  if (sinceH === undefined) {
+    return { ok: false, status: 503, error: "Odstup od posledného emailu sa nedá overiť — nič sa neodoslalo." };
+  }
   if (sinceH != null && sinceH < cooldownH) {
     await logAiAction({
       action: "ai_email",
@@ -373,7 +393,8 @@ function describeResendError(resendMsg: string, from: string): string {
  * Step 2 of outreach: the sender approve-draft.ts uses for REVOLIS-OUTREACH
  * drafts. It runs only after the broker approved the stored text and the
  * Control Contract allowed the send; it sends exactly `subject` / `body`.
- * The ai_suggested / human_approved / sent audit rows are approve-draft's job.
+ * The ai_suggested / human_approved / sent audit rows are approve-draft's job;
+ * that `sent` row is also what the daily limit and cooldown count.
  */
 export async function sendApprovedOutreach(input: SendMessageInput): Promise<SendMessageResult> {
   const fail = (error: string): SendMessageResult => ({ ok: false, channel: "email", to: input.to, error });
@@ -413,29 +434,6 @@ export async function sendApprovedOutreach(input: SendMessageInput): Promise<Sen
       meta: { correlation_id: correlationId, agent_id: OUTREACH_AGENT_ID, errorMessage: message },
     }).catch((e) => console.error("[sendApprovedOutreach] error activity:", e));
     return fail(message);
-  }
-
-  // The conversation log feeds the daily limit and the per-lead cooldown.
-  const supabase = createServiceRoleClient() ?? getSupabaseClient();
-  if (supabase) {
-    const conversationInsert = await supabase
-      .from("conversations")
-      .insert({ lead_id: input.leadId, channel: "email", subject, status: "open" })
-      .select("id")
-      .single();
-    const conversationId = !conversationInsert.error && conversationInsert.data ? conversationInsert.data.id : null;
-
-    const { error: msgErr } = await supabase.from("messages").insert({
-      conversation_id: conversationId,
-      lead_id: input.leadId,
-      direction: "outbound",
-      channel: "email",
-      sender_name: "Realitka AI",
-      sender_email: from,
-      content: input.body,
-      ai_generated: true,
-    });
-    if (msgErr) console.error("[sendApprovedOutreach] messages insert:", msgErr.message);
   }
 
   const messageId = (sendResult as { data?: { id?: string } | null }).data?.id;

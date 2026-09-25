@@ -11,8 +11,11 @@
 - `apps/crm/src/lib/inbound/approve-draft.ts`: outreach v SEND_ACTIONS, `expectAgentId`, lazy outreach sender
 - `apps/crm/src/lib/inbound/insert-agent-draft.ts`: vracia `activityId`, `auditExtras`
 - `apps/crm/src/components/outreach/outreach-send-panel.tsx`: náhľad → schválenie
+- PROD runbook B/C, read-only časť: 0 návrhov v PROD; `messages` v PROD neexistuje, takže
+  outreach limit prešiel na `ai_action_audit` s fail-closed (#704).
 ### Ďalší krok
-Founder spustí PROD runbook B/C (vrátane outreach náhľadu) a pošle výsledok.
+Founder overí Shared env (RESEND_API_KEY, OUTREACH_FROM_EMAIL, INBOUND_WEBHOOK_SECRET),
+potom spustí runbook B/C a pošle výsledok.
 
 ## Session 2026-09-25
 

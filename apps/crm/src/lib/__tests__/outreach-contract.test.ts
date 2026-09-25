@@ -23,7 +23,35 @@ vi.mock("@/lib/ai-outreach", () => ({
   generateOutreachEmail: (...a: unknown[]) => mockGenerate(...a),
 }));
 vi.mock("@/lib/ai-action-audit", () => ({ logAiAction: (...a: unknown[]) => mockLogAiAction(...a) }));
-vi.mock("@/lib/supabase/admin", () => ({ createServiceRoleClient: () => null }));
+// ai_action_audit is where the daily limit and cooldown read sends from.
+const audit = vi.hoisted(() => ({
+  available: true,
+  sentToday: 0 as number,
+  lastSentAt: null as string | null,
+  error: null as { message: string } | null,
+}));
+vi.mock("@/lib/supabase/admin", () => ({
+  createServiceRoleClient: () => {
+    if (!audit.available) return null;
+    const chain: Record<string, unknown> = {};
+    const self = () => chain;
+    for (const m of ["from", "eq", "gte", "order", "limit"]) chain[m] = self;
+    chain.select = (_cols: string, opts?: { head?: boolean }) => {
+      if (opts?.head) {
+        const q: Record<string, unknown> = {};
+        for (const m of ["eq", "gte"]) q[m] = () => q;
+        q.then = (res: (v: unknown) => void) => res({ count: audit.sentToday, error: audit.error });
+        return q;
+      }
+      return chain;
+    };
+    chain.maybeSingle = async () => ({
+      data: audit.lastSentAt ? { created_at: audit.lastSentAt } : null,
+      error: audit.error,
+    });
+    return chain;
+  },
+}));
 // Hermetic: CI runs a local Supabase, and the store's error path writes an
 // activity — a real write there fails on RLS and masks the error under test.
 const mockCreateActivity = vi.hoisted(() => vi.fn());
@@ -36,10 +64,8 @@ vi.mock("@/lib/moat-capture/log-ai-recommendation", () => ({
   logAiRecommendation: vi.fn(),
   hashRecommendationDedupePart: () => "h",
 }));
-const mockHoursSince = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/outbound-orchestrator", () => ({
   fetchLeadAgencyId: async () => "agency-A",
-  getHoursSinceLastAiEmailToLead: (...a: unknown[]) => mockHoursSince(...a),
   outreachLeadCooldownHours: () => 48,
   pickOutboundAbVariant: () => "A",
 }));
@@ -73,7 +99,7 @@ beforeEach(() => {
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "");
   mockCreateActivity.mockResolvedValue(undefined);
   mockLogAiAction.mockResolvedValue(undefined);
-  mockHoursSince.mockResolvedValue(null);
+  Object.assign(audit, { available: true, sentToday: 0, lastSentAt: null, error: null });
   mockGenerate.mockResolvedValue({ subject: "S", body: "B", provider: "openai:gpt-4.1-mini", totalTokens: 10 });
   mockResendSend.mockResolvedValue({ data: { id: "re-1" }, error: null });
 });
@@ -128,12 +154,28 @@ describe("prepareOutreachDraft — step 1, nothing is sent", () => {
   });
 
   it("per-lead cooldown stops it before any text is generated", async () => {
-    mockHoursSince.mockResolvedValue(2);
+    audit.lastSentAt = new Date(Date.now() - 2 * 3_600_000).toISOString();
     const { admin, inserts } = fakeAdmin();
     const res = await prepareOutreachDraft({ leadId: "lead-1", scopedSupabase: {} as never, admin });
     expect(res).toMatchObject({ ok: false, status: 429 });
     expect(mockGenerate).not.toHaveBeenCalled();
     expect(inserts).toHaveLength(0);
+  });
+
+  it("daily limit (counted from ai_action_audit sends) stops it before generation", async () => {
+    audit.sentToday = 20;
+    const { admin } = fakeAdmin();
+    const res = await prepareOutreachDraft({ leadId: "lead-1", scopedSupabase: {} as never, admin });
+    expect(res).toMatchObject({ ok: false, status: 429 });
+    expect(mockGenerate).not.toHaveBeenCalled();
+  });
+
+  it("fails closed when the send history cannot be read (no silent 0)", async () => {
+    audit.error = { message: 'relation "ai_action_audit" does not exist' };
+    const { admin } = fakeAdmin();
+    const res = await prepareOutreachDraft({ leadId: "lead-1", scopedSupabase: {} as never, admin });
+    expect(res).toMatchObject({ ok: false, status: 503 });
+    expect(mockGenerate).not.toHaveBeenCalled();
   });
 
   it("refuses without a sender address instead of drafting an e-mail that cannot go out", async () => {
@@ -168,7 +210,14 @@ describe("sendApprovedOutreach — step 2, sends the approved text verbatim", ()
   });
 
   it("re-checks the cooldown at send time (another e-mail went out meanwhile)", async () => {
-    mockHoursSince.mockResolvedValue(1);
+    audit.lastSentAt = new Date(Date.now() - 1 * 3_600_000).toISOString();
+    const res = await sendApprovedOutreach(approved);
+    expect(res).toMatchObject({ ok: false });
+    expect(mockResendSend).not.toHaveBeenCalled();
+  });
+
+  it("fails closed at send time without a service-role client", async () => {
+    audit.available = false;
     const res = await sendApprovedOutreach(approved);
     expect(res).toMatchObject({ ok: false });
     expect(mockResendSend).not.toHaveBeenCalled();

@@ -1,5 +1,26 @@
 # Critical Decisions Log
 
+## [2026-09-25] — PROD runbook B/C: čo som overil sám, a nález „limit na neexistujúcej tabuľke" (founder GO)
+
+- **Overené (read-only):**
+  - PROD beží `9808807` (#703), stav READY.
+  - `activities.id` = uuid → návrhy z #704 sa dajú vložiť.
+  - V PROD je **0 návrhov** (`meta.draft=true`) → runbook B ešte nikdy neprebehol.
+  - Service-role kľúč na PROD runtime **funguje**: cron `dashboard-insights` o 13:35 UTC
+    zapísal do `ai_action_audit`. V projektových env je `SUPABASE_SERVICE_ROLE_KEY` iba
+    pre Preview, takže produkčná hodnota ide asi z tímových (shared) premenných.
+- **Nález:** `messages`, `conversations` ani `outreach_log` v PROD **neexistujú**.
+  - Denný limit aj cooldown outreachu čítali `messages`; chybu prehltli, vrátili 0
+    a limit tak na PROD ticho nefungoval.
+  - Opravené v #704: obe kontroly počítajú `sent` riadky v `ai_action_audit`
+    (zapisuje ich approve-draft) a pri nečitateľnej histórii **fail-closed** (503).
+  - Denný limit sa počíta per kancelária, nie globálne.
+- **Neoverené, founder:** `RESEND_API_KEY`, `OUTREACH_FROM_EMAIL` a `INBOUND_WEBHOOK_SECRET`
+  nie sú v projektových env pre Production. Treba ich overiť v Team → Shared Environment
+  Variables. Runtime logy (retencia < 3 dni) to nerozhodli.
+- Samotné kroky B a C (webhook s tajným kľúčom, klik prihláseného makléra, redeploy
+  s `AGENT_KILL_SWITCH`) z tohto prostredia spraviť neviem.
+
 ## [2026-09-25] — Outreach: maklér vidí presný text pred odoslaním (founder GO „Outreach náhľad textu")
 
 - **Predtým:** „Vygenerovať a odoslať" = jeden klik, text maklér uvidel až po odoslaní.
