@@ -1,5 +1,41 @@
 # Critical Decisions Log
 
+## [2026-09-25] DEC-20260925-001 — MRR = 199 € × platiace kancelárie (PRICING-MODEL-01)
+
+Vykonanie `DEC-20260924-001` v kóde. `computeMrrBreakdown()` už nepočíta seaty ani
+Owner Cockpit — v modeli 199 €/kancelária neexistujú ako samostatné tržbové položky.
+`computeActiveSeats` a `computeCockpitAttach` ostávajú ako **prevádzkové** metriky.
+
+**Násobiteľ je `isPayingAgency`, nie `isAgencyActive`.** Nie je to to isté: prvý
+znamená „platí nám", druhý „nie je vypnutá". Na dnešných dátach sa zhodujú na tých
+istých troch kanceláriách, ale zhodovať sa nemusia a tržbu smie určovať len prvý.
+Predikát som nevymyslel — `lib/customer-health/paid.ts` ho má od skôr.
+
+**Produkcia (2026-09-25), MRR = 597 €:**
+
+| kancelária | na čom stojí, že platí |
+|---|---|
+| Reality Smolko s.r.o. | `manual_plan=market_vision` |
+| Reality Monopol | `manual_plan=protocol_authority` |
+| AA REALITY Košice s.r.o. | `plan=solo` |
+
+`Revolis Demo / Sandbox / System` majú `plan='Free'` → vynechané.
+
+**NÁLEZ: `isPayingAgency` nekontroluje zrušenie.** Vráti `true` aj pre kanceláriu so
+`subscription_status='canceled'`, ak jej ostal nenulový `plan` alebo `account_tier`.
+Pre zdravotný scan neškodné, pre tržbu nie — každá odídená kancelária s dožívajúcim
+názvom balíka by pridala 199 € mesačne. `payingBasis()` sa preto pýta na zrušenie ako
+na prvé a **zámerne sa v tomto jednom bode rozchádza** s `isPayingAgency`; oba testy to
+pomenúvajú. Na dnešných dátach nemá `canceled` ani jedna kancelária, takže číslo sa tým
+nemení — je to poistka, nie oprava dnešného stavu. **Samotný `isPayingAgency` nemením**,
+to je zásah do `customer-health` a patrí do vlastného rozhodnutia.
+
+**Slabý dôkaz, ktorý treba vidieť:** AA REALITY sa počíta na základe `plan='solo'` —
+teda názvu balíka, nie záznamu o predplatnom. Žiadna kancelária nemá
+`stripe_subscription_id`. Preto dlaždica MRR nesie tabuľku „na čom stojí, že platí" —
+founder má vidieť rozdiel medzi predplatným a štítkom, nie ich súčet.
+
+
 ## [2026-09-24] DEC-20260924-001 — Cenník: 199 € / kancelária / mesiac, bez kreditov
 
 **NAHRÁDZA `DEC-20260921-001` (seat model 79 / 71 / 63 €).** Seat cenník je
@@ -11,11 +47,9 @@ archivovaný, nie zrušený — ostáva v `program-tier-pricing.ts` a v Stripe V
   Lead Factory.
 - **Dôvod pivotu:** najčastejšia požiadavka z rozhovorov bola „vyrobte lead factory,
   ktorá nám bude nosiť nové leady". Agregácia existujúcich leadov nie je Lead Factory.
-- **Stav v kóde:** `computeMrrBreakdown()` stále počíta seat/program model;
-  `SMOLKO_MANUAL_PLAN_MRR_EUR = 199` je zatiaľ **špeciálny prípad** pre
-  `manual_plan = 'market_vision'`, nie univerzálna cena. Migrácia toho výpočtu na
-  plochých 199 € je samostatné rozhodnutie s dopadom na vykazovaný MRR
-  (dnes 278 € → 597 € pri 3 aktívnych kanceláriách) — **PRICING-MODEL-01, nezačaté**.
+- **Stav v kóde: HOTOVÉ (PRICING-MODEL-01).** `computeMrrBreakdown()` počíta
+  `OFFICE_MONTHLY_EUR = 199` × počet platiacich kancelárií. Seaty a Owner Cockpit
+  sa do MRR nepočítajú. Vykazovaný MRR 278 € → **597 €** (3 platiace kancelárie).
 - **Zmluva:** Stripe Products/Prices sa nevytvárajú. `sk_live_…` nikdy neopúšťa
   founderove ruky. Žiadne price ID sa nevymýšľa.
 
