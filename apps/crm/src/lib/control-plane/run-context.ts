@@ -21,6 +21,8 @@ import {
   type SystemState,
 } from "@revolis/control-contract";
 
+import { readSystemState } from "./system-state";
+
 export type CreateRunContextParams = {
   tenantId: string;
   /** The business thread. One lead, one OBSERVE→LEARN loop. */
@@ -48,7 +50,7 @@ export function createControlRunContext(params: CreateRunContextParams): RunCont
     emit: params.sink.emit,
     resolveAuthority: (authorityContext) =>
       resolveAuthority(authorityContext, { policy: params.policy, now }),
-    systemState: params.systemState ?? { degraded: false, killSwitch: false },
+    systemState: params.systemState ?? readSystemState(),
     actorRole: params.actorRole ?? "agent",
   };
 }

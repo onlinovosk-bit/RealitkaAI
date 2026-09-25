@@ -9,10 +9,21 @@
 //   - a draft is sent at most once: the row is claimed (approval_state =
 //     'sending') by a conditional update before any send, so a double click
 //     or a second tab gets 409, not a second e-mail;
+//   - the send is authorized by the Control Contract (resolveAuthority +
+//     applyApproval); the kill switch (AGENT_KILL_SWITCH) blocks it even
+//     after approval;
 //   - human_approved is audited before the send, sent / send_failed after.
 // ================================================================
 import type { SupabaseClient } from '@supabase/supabase-js'
+import {
+  applyApproval,
+  buildAuthorityContext,
+  mayAct,
+  resolveAuthority,
+  type SystemState,
+} from '@revolis/control-contract'
 import { logAiAction } from '@/lib/ai-action-audit'
+import { readSystemState } from '@/lib/control-plane/system-state'
 import { sendMessage, type SendMessageResult } from '@/lib/multi-channel-sender'
 import { AUTO_REPLY_PROMPT_VERSION } from './auto-reply'
 import { INBOUND_AUTOREPLY_AGENT_ID } from './draft-view'
@@ -27,7 +38,12 @@ export interface ApproveDraftInput {
   /** Injected for tests; defaults to the shared multi-channel sender. */
   send?:      typeof sendMessage
   now?:       () => Date
+  /** Injected for tests; defaults to the platform kill switch (AGENT_KILL_SWITCH). */
+  systemState?: SystemState
 }
+
+/** Registered in packages/control-contract/src/actions.ts (irreversible, externally visible). */
+export const INBOUND_SEND_ACTION = 'inbound.reply.email.send'
 
 export type ApproveDraftResult =
   | { ok: true; messageId: string | null }
@@ -53,6 +69,7 @@ export async function approveAndSendInboundDraft(
   const { admin, leadId, activityId, approver } = input
   const send = input.send ?? sendMessage
   const now  = input.now ?? (() => new Date())
+  const systemState = input.systemState ?? readSystemState()
 
   if (!approver.agencyId) return fail(403, 'Profil nemá priradenú kanceláriu.')
 
@@ -88,14 +105,41 @@ export async function approveAndSendInboundDraft(
   if (meta.approval_state === 'sent')    return fail(409, 'Návrh už bol odoslaný.')
   if (meta.approval_state === 'sending') return fail(409, 'Návrh sa práve odosiela.')
 
-  // Claim: only one caller can move the row out of {pending, send_failed}.
+  // Authority (Control Contract): the send is irreversible + externally visible,
+  // so it floors at APPROVAL_REQUIRED; this click is the approval. The kill
+  // switch makes it FORBIDDEN, and no approval overrides that (I-007).
   const approvedAt = now().toISOString()
+  const authorityCtx = buildAuthorityContext(INBOUND_SEND_ACTION, {
+    agentId:    INBOUND_AUTOREPLY_AGENT_ID,
+    tenantId:   approver.agencyId,
+    actorRole:  'broker',
+    confidence: 1,
+    systemState,
+  })
+  if (!authorityCtx) return fail(500, 'Akcia nie je v registri — odoslanie zablokované.')
+  const verdict = applyApproval(resolveAuthority(authorityCtx, { now }), {
+    approvalId: activityId,
+    approvedBy: approver.label,
+    approvedAt,
+  })
+  if (!mayAct(verdict)) {
+    return verdict.authority === 'FORBIDDEN'
+      ? fail(503, 'Odosielanie je dočasne zastavené (kill switch).')
+      : fail(403, 'Odoslanie nie je autorizované.')
+  }
+  const authorityMeta = {
+    authority_policy: verdict.policyRef,
+    authority_rules:  verdict.appliedRules,
+  }
+
+  // Claim: only one caller can move the row out of {pending, send_failed}.
   const claimedMeta: DraftMeta = {
     ...meta,
     approval_state: 'sending',
     approved_by:    approver.label,
     approved_by_profile_id: approver.profileId,
     approved_at:    approvedAt,
+    ...authorityMeta,
   }
   const { data: claimed, error: claimErr } = await admin
     .from('activities')
@@ -120,6 +164,8 @@ export async function approveAndSendInboundDraft(
     prompt_version: (meta.prompt_version as string | undefined) ?? AUTO_REPLY_PROMPT_VERSION,
     activity_id:    activityId,
     approved_by:    approver.label,
+    action:         INBOUND_SEND_ACTION,
+    ...authorityMeta,
   }
 
   await logAiAction({
