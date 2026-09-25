@@ -1,5 +1,7 @@
 import Link from 'next/link'
 
+import { NotFoundPath } from '@/components/NotFoundPath'
+
 export default function NotFound() {
   // POZOR: ziadne <html>/<body>. V App Routeri sa not-found renderuje DOVNUTRA
   // root layoutu (app/layout.tsx), ktory uz svoje <html><body> ma. Vnorene tagy
@@ -45,10 +47,10 @@ export default function NotFound() {
             Táto stránka neexistuje
           </h1>
           <p style={{ fontSize: 13, color: '#7A8BA8', lineHeight: 1.6, marginBottom: 28 }}>
-            Adresa <code style={{
+            Adresa <NotFoundPath style={{
               background: '#F2F6FA', padding: '2px 6px',
               borderRadius: 4, fontSize: 11, color: '#1B3A5C',
-            }}>app.revolis.ai/team/permissions</code> alebo iná stránka, ktorú hľadáte, nebola nájdená.
+            }} />, ktorú hľadáte, nebola nájdená.
           </p>
 
           {/* Quick links */}
