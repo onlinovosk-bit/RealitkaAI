@@ -1,5 +1,32 @@
 # Critical Decisions Log
 
+## [2026-09-25] AP-026 — 404-PATH-01 na druhý pokus: `usePathname()` na 404 klame
+
+Overenie na produkcii po merge #706 ukázalo, že môj fix z #705 bol polovičný.
+Žiadal som `/overujem-404-path-fix-abc123`, stránka vypísala:
+
+    Adresa app.revolis.ai/_not-found, ktorú hľadáte, nebola nájdená.
+
+`usePathname()` na 404 vracia **interný názov routy** (`_not-found`), nie
+požadovanú URL. Next.js nastaví segment path routera na `_not-found` a
+`app/not-found.tsx` je server komponent prerenderovaný ako `/404` — ani server
+render, ani router požadovanú adresu nepozná.
+
+**Zadrôtovanú `/team/permissions` som teda nahradil inou nepravdivou adresou.**
+Menej zavádzajúcou (`_not-found` je zjavne interné), ale stále nepravdivou.
+A hlavne som v #705 tvrdil, že to zobrazí reálnu cestu — netvrdil som to
+overene, tvrdil som to z návrhu.
+
+**Oprava:** `window.location.pathname` v `useEffect`. Je to jediné miesto, kde
+požadovaná URL existuje, a je čitateľné až po mount. Do vtedy veta adresu
+nepomenuje vôbec (`Stránka, ktorú hľadáte, nebola nájdená.`) — mlčať je lepšie
+než pomenovať zlú stránku.
+
+**Poučenie k metóde, tretíkrát dnes:** build prešiel aj pri zlej verzii, lebo
+build nevie, čo `usePathname()` v runtime vráti. Jediné, čo to odhalilo, bol
+fetch reálnej produkcie. Pri čomkoľvek, čo závisí na runtime hodnote, je
+„skompilovalo sa" nula dôkazu.
+
 ## [2026-09-25] AP-025 — Štvrtý rozmer driftu: stĺpce. A chyba v mojom overovaní.
 
 CI na #705 zhodila moju vlastnú baseline migráciu:
