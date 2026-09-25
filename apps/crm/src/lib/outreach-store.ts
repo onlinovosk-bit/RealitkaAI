@@ -2,6 +2,7 @@ import { Resend } from "resend";
 import { autoErrorCapture } from "./auto-error-capture";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { logAiAction } from "@/lib/ai-action-audit";
+import { authorizeSend, authorityMeta, type SendApproval } from "@/lib/control-plane/authorize-send";
 import { generateOutreachEmail } from "@/lib/ai-outreach";
 import { estimateOpenAiCostFromTotalTokens } from "@/lib/ai/llm-usage-cost";
 import { CREDIT_ACTION_COSTS } from "@/lib/program-tier-pricing";
@@ -170,9 +171,19 @@ export async function resolveOutreachLead(
   return getLeadAsService(serviceClient, leadId);
 }
 
+export const OUTREACH_AGENT_ID = "REVOLIS-OUTREACH";
+export const OUTREACH_SEND_ACTION = "outreach.email.send";
+
+/**
+ * Sends one AI outreach e-mail. Tier 3: the Control Contract requires a human
+ * `approval` (the broker's click in /api/outreach/{approve,send}). Callers
+ * without one — the scheduled-outreach cron, the automation script — are
+ * refused before any text is generated, whatever SCHEDULED_OUTREACH_ENABLED says.
+ */
 export async function sendAiOutreachEmail(
   leadId: string,
   scopedSupabase?: SupabaseClient | null,
+  approval: SendApproval | null = null,
 ) {
   const resend = getResendClient();
   const supabase = createServiceRoleClient() ?? getSupabaseClient();
@@ -235,6 +246,29 @@ export async function sendAiOutreachEmail(
       throw new Error(
         `Frekvenčný limit: posledný AI email pred ${sinceH.toFixed(1)} h. Min. odstup ${cooldownH} h.`
       );
+    }
+
+    const authz = authorizeSend({
+      action: OUTREACH_SEND_ACTION,
+      agentId: OUTREACH_AGENT_ID,
+      tenantId: agencyId,
+      approval,
+    });
+    if (!authz.ok) {
+      await logAiAction({
+        action: "outreach_send",
+        agencyId,
+        leadId: lead.id,
+        actionKind: "send_failed",
+        channel: "email",
+        meta: {
+          agent_id: OUTREACH_AGENT_ID,
+          action: OUTREACH_SEND_ACTION,
+          blocked: true,
+          ...authorityMeta(authz.verdict),
+        },
+      });
+      throw new Error(authz.reason);
     }
 
     const variant = pickOutboundAbVariant();

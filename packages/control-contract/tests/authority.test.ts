@@ -260,3 +260,23 @@ describe("inbound.reply.email.send — live Tier-3 path (apps/crm approve-draft)
     assert.equal(mayAct(approved), false);
   });
 });
+
+describe("dead-lead + outreach sends — every AI→client action floors at APPROVAL_REQUIRED", () => {
+  for (const action of ["deadlead.email.send", "deadlead.sms.send", "outreach.email.send"]) {
+    it(`${action} needs a human approval and is FORBIDDEN under the kill switch`, () => {
+      const base = {
+        agentId: "test-agent",
+        tenantId: "agency-A",
+        actorRole: "broker",
+        confidence: 1,
+      };
+      const open = buildAuthorityContext(action, { ...base, systemState: { degraded: false, killSwitch: false } });
+      assert.ok(open);
+      assert.equal(resolveAuthority(open, { now: NOW }).authority, "APPROVAL_REQUIRED");
+
+      const stopped = buildAuthorityContext(action, { ...base, systemState: { degraded: false, killSwitch: true } });
+      assert.ok(stopped);
+      assert.equal(resolveAuthority(stopped, { now: NOW }).authority, "FORBIDDEN");
+    });
+  }
+});

@@ -10,7 +10,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { FOLLOWUP_PROMPT_VERSION, generateOpenFollowUpsBatch } from "@/lib/ai/open-followup-generator";
 import { FOLLOWUP_SWEEP_AGENT_ID } from "@/lib/inbound/draft-view";
-import { logAiAction } from "@/lib/ai-action-audit";
+import { insertAgentDraft, recipientFor } from "@/lib/inbound/insert-agent-draft";
 import type { StaleLeadInput } from "@/lib/ai/open-followup-generator";
 import { scoreFollowUp } from "@/lib/cron/follow-up-scoring";
 
@@ -126,61 +126,35 @@ export async function GET(request: NextRequest) {
     if (!plan.should_contact || !plan.message.trim()) continue;
 
     const leadIn = inputs.find((i) => i.id === plan.lead_id);
-    const addr =
-      plan.channel === "email"
-        ? leadIn?.email?.trim()
-        : leadIn?.phone?.trim();
-    const subject = plan.subject || "Krátky follow-up";
-    const body = plan.message.trim();
-
-    const { error: actErr } = await admin.from("activities").insert({
-      lead_id: plan.lead_id,
-      type: "AI follow-up",
-      title: "Návrh follow-upu (AI)",
-      text:
-        `${body}\n\nDôvod: ${plan.reason_sk}\nKanál: ${plan.channel}` +
-        (plan.broker_cc_needed ? "\n[Poznámka: odporúčané zaradiť makléra (CC).]" : "") +
-        "\nNeodoslané — vyžaduje schválenie makléra.",
-      entity_type: "lead",
-      entity_id: plan.lead_id,
-      actor_name: "AI follow-up sweep",
-      source: "cron_follow_up_sweep",
-      severity: "info",
-      meta: {
-        draft: true,
-        requires_approval: true,
-        agent_id: FOLLOWUP_SWEEP_AGENT_ID,
-        prompt_version: FOLLOWUP_PROMPT_VERSION,
-        channel: plan.channel,
-        broker_cc: plan.broker_cc_needed,
-        // Exactly what the broker approves is exactly what gets sent.
-        // No address → no recipient → the draft cannot be one-click sent.
-        subject,
-        body,
-        ...(addr ? { recipient: addr } : {}),
+    const res = await insertAgentDraft({
+      admin,
+      leadId: plan.lead_id,
+      agencyId: agencyByLead.get(plan.lead_id) ?? null,
+      agentId: FOLLOWUP_SWEEP_AGENT_ID,
+      promptVersion: FOLLOWUP_PROMPT_VERSION,
+      channel: plan.channel,
+      subject: plan.subject || "Krátky follow-up",
+      body: plan.message.trim(),
+      recipient: leadIn ? recipientFor(plan.channel, leadIn) : null,
+      activity: {
+        type: "AI follow-up",
+        title: "Návrh follow-upu (AI)",
+        actorName: "AI follow-up sweep",
+        source: "cron_follow_up_sweep",
+        notes: [
+          `Dôvod: ${plan.reason_sk}`,
+          `Kanál: ${plan.channel}`,
+          ...(plan.broker_cc_needed ? ["[Poznámka: odporúčané zaradiť makléra (CC).]"] : []),
+        ],
       },
+      extraMeta: { broker_cc: plan.broker_cc_needed },
+      auditAction: "followup_sweep_draft",
     });
-    if (actErr) {
-      failures.push(`${plan.lead_id}: ${actErr.message}`);
+    if (!res.ok) {
+      failures.push(`${plan.lead_id}: ${res.error}`);
       continue;
     }
     drafted += 1;
-
-    await logAiAction({
-      action: "followup_sweep_draft",
-      agencyId: agencyByLead.get(plan.lead_id) ?? null,
-      leadId: plan.lead_id,
-      actionKind: "ai_suggested",
-      channel: plan.channel === "sms" ? "sms" : "email",
-      subjectPreview: subject,
-      bodyText: body,
-      meta: {
-        agent_id: FOLLOWUP_SWEEP_AGENT_ID,
-        prompt_version: FOLLOWUP_PROMPT_VERSION,
-        approval_state: "pending_human",
-        planned_channel: plan.channel,
-      },
-    }).catch((e) => console.error("[follow-up-sweep] audit:", e));
 
     await bumpFollowupMeta(admin, plan.lead_id, now);
   }

@@ -28,13 +28,11 @@ describe("[verification] Outreach never reads leads through the browser singleto
     expect(store).toMatch(/export async function listLeadsAsService\(/);
   });
 
-  it("every outreach send route threads a scoped client", () => {
-    expect(read("src/app/api/outreach/send/route.ts")).toContain(
-      "sendAiOutreachEmail(leadId, supabase)",
-    );
-    expect(read("src/app/api/outreach/approve/route.ts")).toContain(
-      "sendAiOutreachEmail(leadId, supabase)",
-    );
+  it("every outreach send route threads a scoped client and a human approval", () => {
+    // Tier 3: the broker's click is passed as the Control Contract approval.
+    for (const route of ["src/app/api/outreach/send/route.ts", "src/app/api/outreach/approve/route.ts"]) {
+      expect(read(route)).toMatch(/sendAiOutreachEmail\(leadId, supabase, \{[\s\S]*?approvedBy/);
+    }
   });
 
   it("the outreach sequence threads the client down to every send", () => {
