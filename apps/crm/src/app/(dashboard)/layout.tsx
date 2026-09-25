@@ -25,7 +25,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   // Only columns on `profiles` — invalid fields (e.g. agency_name, team_license_id) break the whole select.
   const SIDEBAR_PROFILE_SELECT =
-    "id, ui_role, account_tier, full_name, agency_id, role, email";
+    "id, ui_role, account_tier, full_name, agency_id, role, email, is_platform_admin";
   const { profile: rawProfile } = await resolveProfileForAuthUser(
     supabase,
     user.id,
@@ -62,6 +62,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         appRole={profile?.role ?? undefined}
         agencyName={agencyName}
         userName={profile?.full_name ?? user.email ?? undefined}
+        isPlatformAdmin={profile?.is_platform_admin === true}
       />
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <WorkdeskTopbar userName={profile?.full_name ?? user.email ?? undefined} />

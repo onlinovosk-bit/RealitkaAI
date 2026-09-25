@@ -45,6 +45,11 @@ export type NavItem = {
   section:        NavSection;
   showFor:        MenuVariant[];
   permissionKey?: keyof TeamMemberPermissions;
+  /**
+   * Položka sa zobrazí len používateľovi s `profiles.is_platform_admin = true`.
+   * `showFor` na to nestačí — to je licenčný program, nie oprávnenie.
+   */
+  platformAdminOnly?: boolean;
 };
 
 export type TeamMemberPermissions = {
@@ -391,6 +396,17 @@ export const ALL_NAV_ITEMS: NavItem[] = [
     showFor: ["owner_vision", "owner_protocol"],
   },
   {
+    id: "internal-metrics",
+    label: "Metriky zakladateľa",
+    sublabel: "MRR · Platiace kancelárie · AI náklad",
+    href: "/internal/metrics",
+    icon: "chart-up",
+    badge: { label: "owner", variant: "owner" },
+    section: "settings",
+    showFor: ["agent_solo", "agent_team", "owner_vision", "owner_protocol"],
+    platformAdminOnly: true,
+  },
+  {
     id: "settings",
     label: "Nastavenia a integrácie",
     sublabel: "Portály · GDPR · API · Notifikácie",
@@ -440,11 +456,18 @@ export function getNavItems(
   variant:     MenuVariant,
   permissions?: Partial<TeamMemberPermissions>,
   accountTier?: string | null,
+  /**
+   * Bez tohto príznaku sa položky s `platformAdminOnly` nezobrazia vôbec —
+   * predvolene teda nikomu. Existujúce volania sa tým nemenia.
+   */
+  options?: { isPlatformAdmin?: boolean },
 ): NavItem[] {
   const perms = { ...DEFAULT_TEAM_PERMISSIONS, ...permissions };
   const tier = normalizeModuleTier(accountTier ?? fallbackTierFromVariant(variant));
+  const isPlatformAdmin = options?.isPlatformAdmin === true;
 
   return ALL_NAV_ITEMS.filter((item) => {
+    if (item.platformAdminOnly && !isPlatformAdmin) return false;
     if (!item.showFor.includes(variant)) return false;
     if (item.permissionKey) return perms[item.permissionKey] === true;
     const moduleKey = NAV_MODULE_KEYS[item.id];
