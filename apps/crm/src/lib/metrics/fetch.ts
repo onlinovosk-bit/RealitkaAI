@@ -8,7 +8,7 @@ import type {
 } from "@/lib/metrics/types";
 
 const AGENCY_SELECT =
-  "id, name, seats, account_tier, manual_plan, owner_cockpit_active, cockpit_tier, subscription_status, billing_source";
+  "id, name, seats, plan, account_tier, manual_plan, owner_cockpit_active, cockpit_tier, subscription_status, billing_source";
 
 const LEDGER_LOOKBACK_DAYS = 62;
 
