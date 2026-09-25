@@ -884,10 +884,38 @@ CREATE POLICY "Enterprise BRI access" ON public.bri_history AS PERMISSIVE FOR AL
    FROM profiles
   WHERE ((profiles.auth_user_id = auth.uid()) AND (profiles.account_tier = 'enterprise'::text)))));
 
-DROP POLICY IF EXISTS "Locked BRI read-only" ON public.bri_history;
-CREATE POLICY "Locked BRI read-only" ON public.bri_history AS PERMISSIVE FOR SELECT TO public USING ((EXISTS ( SELECT 1
-   FROM profiles
-  WHERE ((profiles.auth_user_id = auth.uid()) AND (profiles.tier_locked_at IS NOT NULL)))));
+-- This policy reads `profiles.tier_locked_at`, and that column is a FOURTH kind
+-- of drift AP-023 did not measure: a column on a table migrations DO create.
+-- `profiles` is created by 20260310_baseline_core_schema.sql, but no migration
+-- ever adds `tier_locked_at` -- it exists only in production. CI caught this by
+-- failing on exactly this statement:
+--
+--   ERROR: column profiles.tier_locked_at does not exist (SQLSTATE 42703)
+--   At statement: 140
+--
+-- Guarded on the column rather than adding it: adding a column to a
+-- migration-created table is a schema change to something outside this file's
+-- scope, and it would hide the finding instead of recording it. On production
+-- the column is there and the policy is created exactly as before.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'profiles'
+      AND column_name = 'tier_locked_at'
+  ) THEN
+    RAISE NOTICE 'profiles.tier_locked_at absent here - skipping "Locked BRI read-only" (column is PROD-only drift, see AP-025)';
+    RETURN;
+  END IF;
+
+  EXECUTE 'DROP POLICY IF EXISTS "Locked BRI read-only" ON public.bri_history';
+  EXECUTE '
+    CREATE POLICY "Locked BRI read-only" ON public.bri_history
+      AS PERMISSIVE FOR SELECT TO public
+      USING ((EXISTS ( SELECT 1
+         FROM profiles
+        WHERE ((profiles.auth_user_id = auth.uid()) AND (profiles.tier_locked_at IS NOT NULL)))))';
+END $$;
 
 DROP POLICY IF EXISTS bri_history_tenant ON public.bri_history;
 CREATE POLICY bri_history_tenant ON public.bri_history AS PERMISSIVE FOR ALL TO authenticated USING (((agency_id IS NULL) OR (agency_id IN ( SELECT profile_agencies_for_auth() AS profile_agencies_for_auth)))) WITH CHECK (((agency_id IS NULL) OR (agency_id IN ( SELECT profile_agencies_for_auth() AS profile_agencies_for_auth))));

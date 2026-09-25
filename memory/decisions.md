@@ -1,5 +1,36 @@
 # Critical Decisions Log
 
+## [2026-09-25] AP-025 — Štvrtý rozmer driftu: stĺpce. A chyba v mojom overovaní.
+
+CI na #705 zhodila moju vlastnú baseline migráciu:
+
+    ERROR: column profiles.tier_locked_at does not exist (SQLSTATE 42703)
+    At statement: 140
+    CREATE POLICY "Locked BRI read-only" ON public.bri_history ... profiles.tier_locked_at ...
+
+`profiles` **zakladá** `20260310_baseline_core_schema.sql`. Ale `tier_locked_at`
+**nepridáva žiadna migrácia** — existuje len v PROD. AP-023 porovnával názvy
+tabuliek; stĺpce na migráciami vytvorených tabuľkách nikto nemeral. Rozsah
+merania: z 8 stĺpcov, ktoré moje policies čítajú, chýba presne 1.
+
+**Prečo to lokálne prešlo — a to je tá horšia časť nálezu.** Lokálny fixture som
+napísal ručne podľa toho, čo moje policies potrebujú, takže `tier_locked_at` v
+ňom bol. **Testoval som SQL proti fixture, ktorú som postavil podľa toho SQL** —
+test potvrdil môj predpoklad namiesto toho, aby ho napadol. 7/7 md5 zhoda bola
+pravdivá a zároveň bezcenná ako dôkaz replayovateľnosti.
+
+Oprava overovania: fixture sa stavia z toho, **čo migrácie vytvárajú**, nie z
+toho, čo testovaný súbor potrebuje. Znovu overené na oboch tvaroch:
+čistý (bez stĺpca) → exit 0 + NOTICE, policy preskočená;
+PROD-tvar (so stĺpcom) → exit 0, policy vytvorená, 7/7 md5 zhoda drží.
+
+**Oprava kódu:** guard na `information_schema.columns`, nie pridanie stĺpca.
+Pridať stĺpec do `profiles` je zmena schémy mimo rozsahu tohto súboru a hlavne
+by nález schovala namiesto toho, aby ho zaznamenala.
+
+**Inventúra stĺpcov naprieč schémou urobená NEBOLA.** Vieme o jednom, lebo naň
+CI spadla. Koľko ich je celkovo, nikto nemeral.
+
 ## [2026-09-25] — PROD runbook B/C: čo som overil sám, a nález „limit na neexistujúcej tabuľke" (founder GO)
 
 - **Overené (read-only):**
