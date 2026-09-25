@@ -64,6 +64,23 @@
 # job goes red having said nothing about the code. That is the cost being
 # avoided here. On a first-attempt success the behaviour is identical to calling
 # the CLI directly.
+#
+# NOT every `supabase start` failure is a registry failure, and a first version
+# of this script assumed otherwise. On 2026-09-25 a migration raised
+#
+#   ERROR: relation "public.lead_property_scores" does not exist (SQLSTATE 42P01)
+#
+# and this script retried the whole start on two more registries — re-applying
+# the migrations and failing on the same statement each time — then closed with
+# "That is not a fault in the diff under test." It was. The message cost ~5
+# minutes of runner time and very nearly cost the diagnosis: the reader who
+# believes it goes looking at the runner pool instead of at the SQL.
+#
+# So the failure is now classified before anything is retried. A pull or
+# registry signal in the output means a second registry is worth trying. Anything
+# else — a migration that will not apply, a port already held, a full disk — will
+# fail identically on every registry, so it is reported once, as itself, and the
+# retries are skipped.
 set -uo pipefail
 
 # Attempted in order. A registry already tried in this run is only retried after
@@ -71,6 +88,15 @@ set -uo pipefail
 # reason to be waited out.
 read -ra REGISTRIES <<< "${SUPABASE_START_REGISTRIES:-docker.io public.ecr.aws docker.io}"
 BACKOFF="${SUPABASE_START_BACKOFF_SECONDS:-60}"
+
+# What makes a failure a REGISTRY failure, and so worth a different registry.
+# Deliberately narrow: every pattern here is about fetching an image. A failure
+# that is not about fetching an image cannot be fixed by fetching it elsewhere.
+REGISTRY_SIGNALS='toomanyrequests|rate exceeded|rate limit|error pulling image|failed to pull|pull access denied|manifest unknown|manifest for .* not found|unauthorized: authentication required|tls handshake timeout|no such host'
+
+is_registry_failure() { # log file
+  grep -qiE "$REGISTRY_SIGNALS" "$1"
+}
 
 total=${#REGISTRIES[@]}
 tried=""
@@ -80,7 +106,15 @@ for index in "${!REGISTRIES[@]}"; do
   attempt=$((index + 1))
 
   echo "supabase start: attempt ${attempt}/${total} via ${registry}"
-  if SUPABASE_INTERNAL_IMAGE_REGISTRY="$registry" supabase start; then
+  log="$(mktemp)"
+  # stderr is folded into stdout so the classifier sees the whole story; tee
+  # keeps the job log streaming exactly as before. PIPESTATUS, not $?, because
+  # the pipeline's status is tee's.
+  SUPABASE_INTERNAL_IMAGE_REGISTRY="$registry" supabase start 2>&1 | tee "$log"
+  status="${PIPESTATUS[0]}"
+
+  if [ "$status" -eq 0 ]; then
+    rm -f "$log"
     [ "$attempt" -gt 1 ] && echo "supabase start succeeded on attempt ${attempt}/${total} via ${registry}"
     exit 0
   fi
@@ -88,6 +122,18 @@ for index in "${!REGISTRIES[@]}"; do
   # A partial start leaves containers holding ports, which would make the next
   # attempt fail for a reason that has nothing to do with any registry.
   supabase stop --no-backup >/dev/null 2>&1 || true
+
+  if ! is_registry_failure "$log"; then
+    echo "::error::supabase start failed for a reason that is not a registry limit — not retrying"
+    echo "No pull or registry signal in the output, so another registry would fail" >&2
+    echo "the same way. This is a fault in the run itself: the most likely causes are" >&2
+    echo "a migration that will not apply to a clean database, a port already held, or" >&2
+    echo "no disk left. The CLI output above is the error; start there, not with the" >&2
+    echo "runner pool." >&2
+    rm -f "$log"
+    exit 1
+  fi
+  rm -f "$log"
 
   [ "$attempt" -ge "$total" ] && break
 
@@ -101,7 +147,11 @@ for index in "${!REGISTRIES[@]}"; do
   tried="$tried $registry"
 done
 
+# Reached only when every attempt carried a registry signal, so the claim below
+# is established rather than assumed.
 echo "::error::supabase start failed on every registry: ${REGISTRIES[*]}"
-echo "If each attempt says 'toomanyrequests', both registries are limiting the" >&2
-echo "shared runner pool. That is not a fault in the diff under test." >&2
+echo "Every attempt failed with a pull or registry signal, so both limiters are" >&2
+echo "saturated for this runner pool. That part is not a fault in the diff under" >&2
+echo "test — but read the output above before concluding it, because only the" >&2
+echo "registry classification is automatic, not the diagnosis." >&2
 exit 1
