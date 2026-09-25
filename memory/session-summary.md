@@ -1,3 +1,43 @@
+## Session 2026-09-25 (RLS vlna dokončená, CI attribution, PR-6, BSM retired)
+### Dokončené
+- **RLS-OUTREACH-LOGS** — `apps/crm/supabase/migrations/20260925230000_outreach_logs_tenant_parity.sql`.
+  Nález nie je nová diera, ale drift: `20260616124500_rls_wave_a_leak_closure.sql` túto
+  policy definuje od júna, v histórii PROD nie je a jej efekt tiež nie. Merané ako `anon`
+  na zasadenom nepriraditeľnom riadku: PRED SELECT 1/1, INSERT ALLOWED, **DELETE ALLOWED**
+  (dal sa mazať outreach audit log); PO 0/1, 42501, 0 riadkov. Aplikované na PROD.
+- **RLS-LATENT-3** (#702, merged) — `20260925140000_rls_latent_anon_writes.sql`:
+  `lead_property_events`, `leads_demo`, `bsm_reforma_leads`.
+- **CI attribution** — `scripts/ci/supabase-start.sh` už neobviňuje registry zo zlyhaní,
+  ktoré registry nespôsobil. 9/9 testov v `scripts/ci/__tests__/supabase-start.test.sh`.
+- **PR-6** — `apps/crm/src/app/api/leads/[id]/contact-attempt/route.ts` (nový, 12 testov)
+  + napojenie tlačidiel Zavolať/Email v lead detaile. Enterprise bránu som **nepoužil**,
+  nie obišiel: nová negated routa, lebo C1 nesmie byť vlastnosť cenníka.
+- **BSM funnel retired** — zmazaná `(public)/bsm-reforma/page.tsx` a `api/bsm-reforma/lead`.
+- **HOURLY-TRIGGER-UNTRACK** — `memory/hourly-summary.ps1` píše do gitignorovaného
+  `memory/hourly-trigger.local.md`, cesta z `$PSScriptRoot`.
+### Rozpracované / Pending
+- **`properties` má rovnaké `agency_id IS NULL` escapy** pre `authenticated`
+  (`properties_select_agency`, `_update_agency`, `_delete_agency`) vedľa správnej
+  `properties_tenant`. Dnes 0 riadkov s NULL → latentné, nie živé. Mimo brány, neopravené.
+- **Migračná história PROD je nespoľahlivá:** 118 migrácií v repe, 59 v histórii, 65 chýba,
+  6 „ghost" (v histórii, nie v repe). Absencia v histórii ≠ absencia efektu — overené oba
+  prípady v jeden deň (`profiles_platform_admin` chýba a funguje; `rls_wave_a_leak_closure`
+  chýba a nefunguje). Jediná cesta je merať per objekt.
+- Nič ešte **nečíta** contact attempts do funnel čísla. Zámerne — počet príde, keď bude čo počítať.
+- Founder: pricing (mesačne + kredity vs bez kreditov, onboarding 99 → 49 €), Stripe KYB.
+### Kľúčové súbory zmenené
+- `apps/crm/supabase/migrations/20260925230000_outreach_logs_tenant_parity.sql`: telo policy verbatim z Wave A
+- `scripts/ci/supabase-start.sh`: klasifikácia zlyhania pred retry, PIPESTATUS namiesto $?
+- `scripts/ci/__tests__/supabase-start.test.sh`: stub berie FAIL_MESSAGE, +5 prípadov
+- `apps/crm/src/app/api/leads/[id]/contact-attempt/route.ts`: negated zápis pokusu o kontakt
+- `apps/crm/src/app/(dashboard)/leads/[id]/page.tsx`: `logContactAttempt`, keepalive fetch
+- `memory/hourly-summary.ps1` + `.gitignore`: nudge už nešpiní trackovaný súbor
+- `docs/runbooks/workspace-audit-handover.md`: riadok o hardcoded ceste preškrtnutý
+### Ďalší krok
+Rozhodnúť o `properties` escapoch (GO RLS-PROPERTIES-ESCAPES) — posledný známy `IS NULL`
+escape na tenant tabuľke, dnes latentný. Potom zvážiť RLS-ANON-GUARD-TEST ako ratchet,
+aby sa celá trieda nevracala po jednom.
+
 ## Session 2026-09-25 (Outreach náhľad textu)
 ### Dokončené
 - Outreach dvojkrok: `apps/crm/src/app/api/outreach/preview/route.ts` (nový), `send`/`approve`

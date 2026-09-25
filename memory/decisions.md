@@ -1,5 +1,49 @@
 # Critical Decisions Log
 
+## [2026-09-25] — RLS vlna: čo bola diera a čo bol drift (founder GO ×6)
+
+**Rozhodnutie o `outreach_logs`: BUILD, ale ako parity, nie ako nový návrh.**
+Pri práci sa ukázalo, že správnu policy repo definuje od 16. 6. v
+`20260616124500_rls_wave_a_leak_closure.sql`. Tá migrácia **nie je v histórii PROD a jej
+efekt tam tiež nie je**. Nová migrácia `20260925230000` preto kopíruje jej telo verbatim
+(porovnané, normalizované na case/whitespace: identické) — aby sa dva súbory nemohli
+rozísť. Merané ako `anon`: PRED sa dal outreach audit log **mazať**, PO nie.
+
+**Prečo CI tú dieru nikdy nenahlásilo.** Izolačný RLS test beží proti čistej databáze
+zloženej z migrácií, kde Wave A aplikovaná JE. PROD je iný organizmus. Z toho vyplýva
+pravidlo, ktoré platí nad rámec tohto nálezu: **„prechádza CI" nie je dôkaz „funguje na
+PROD"**, kým sa história nezrovná.
+
+**Stav histórie (merané):** 118 migrácií v repe, 59 v histórii PROD, **65 chýba**, 6 je
+v histórii a nie v repe. Absencia v histórii ≠ absencia efektu — v jeden deň sme videli
+oba prípady: `20260728140000_profiles_platform_admin` v histórii nie je a stĺpec funguje;
+`20260616124500` v histórii nie je a policy nefunguje. Nedá sa z toho robiť sumárny
+výrok, iba merať per objekt.
+
+**Rozhodnutie o BSM funneli: RETIRE (nie service-role prepojenie).** Ústava:
+- Q1 (zaplatil by dnešný klient?) — **NIE**, 0 leadov za 5 mesiacov → strop VALIDATE.
+- Q8 (správny čas?) — **VETO**. Kampaň stojí na pravidlách „platných od 1.1.2026"
+  a otázke „predať teraz alebo počkať". Termín prešiel pred 9 mesiacmi. Nie je to
+  priskoro, je to pozde.
+- Technicky to nebola skrutka: `bsm_reforma_leads` má `profile_id` a žiadne `agency_id`,
+  takže verejný zber nemá vlastníka, ktorého schéma vie zapísať → verejná verzia by
+  vyžadovala zmenu schémy. Navyše `consent_marketing BOOLEAN NOT NULL DEFAULT TRUE`,
+  a súhlas s defaultom TRUE nie je súhlas (GDPR brána z CLAUDE.md).
+- Zmazaná len stránka a routa. Tabuľky, migrácie, config riadok a edge funkcia zostali →
+  revival je revert + GDPR prechod. Ak bude treba verejný zber, správny tvar už existuje:
+  `saas_leads` cez `api/sales-funnel/demo-request` na service role.
+
+**Rozhodnutie o PR-6: BUILD, s vlastnou negated routou.** Enterprise brána na
+`/api/ai/lead-events` sa neobišla — nepoužila sa. C1 nesmie byť vlastnosť cenníka, inak
+je konverzný pomer výrokom o pláne, nie o práci. Nová routa nič netvrdí nad rámec
+„človek stlačil Zavolať/Email v tomto čase na tomto kanáli"; `outcome` zostáva nenastavený,
+takže tretí stav (unknown) si drží význam. `occurred_at` je zo servera, klientský timestamp
+sa zahodí (pinnuté testom).
+
+**Otvorené, nahlásené, neopravené:** `properties` nesie tie isté `agency_id IS NULL`
+escapy pre `authenticated` vedľa správnej `properties_tenant`. Dnes 0 riadkov s NULL →
+latentné. Patrí mu vlastná brána.
+
 ## [2026-09-25] — PROD runbook B/C: čo som overil sám, a nález „limit na neexistujúcej tabuľke" (founder GO)
 
 - **Overené (read-only):**
