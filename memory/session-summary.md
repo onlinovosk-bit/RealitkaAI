@@ -1,3 +1,35 @@
+## Session 2026-09-25 (pokračovanie — baseline, GDPR, drobnosti)
+
+### Dokončené
+- **SCHEMA-BASELINE-01**: `20260925210000_baseline_prod_only_tables.sql` (996 r.)
+  — 30 PROD-only tabuliek + 27 FK + 42 indexov + 30× RLS + 29 policies + 2 triggery
+  + 2 chýbajúce funkcie. Vernosť dokázaná zhodou 7/7 md5 hashov s PROD.
+- **GDPR posúdenie** časti C: `docs/reports/2026-09-25-gdpr-orphan-tables.md`.
+  AP-024 — `gdpr-advisor` skill neexistuje, Direktíva 5 je nevykonateľná.
+- **404-PATH-01**: `NotFoundPath.tsx` (client) číta reálnu cestu cez `usePathname`.
+  Predtým každý návštevník videl natvrdo `app.revolis.ai/team/permissions`.
+- **CLAUDE.md**: `session-summary.md` je PREPEND, nie replace — rozpor, ktorý
+  ma dnes zviedol k zmazaniu 1339 riadkov histórie.
+
+### Rozpracované / Pending
+- **`onboarding_sessions` anon diera** — `TO anon USING(true) WITH CHECK(true)`.
+  Nový nález z baseline. Nepokryli ju #697 ani #702. Vlastná brána.
+- **Pôvod 6 riadkov v `revolis_zaujemcovia`** — founder check, minúty.
+- **Calendly webhook** — stále neoverený. 14 tabuliek, ktoré kód volá a v PROD
+  nie sú (smer B z AP-023), baseline NERIEŠI.
+- **Inventúra funkcií** — tretí rozmer driftu, nezmeraný.
+- **UGKK-QUERY** — nedokončené.
+
+### Kľúčové súbory zmenené
+- `apps/crm/supabase/migrations/20260925210000_baseline_prod_only_tables.sql`: nový
+- `docs/reports/2026-09-25-gdpr-orphan-tables.md`: nový
+- `apps/crm/src/components/NotFoundPath.tsx`: nový
+- `apps/crm/src/app/not-found.tsx`: reálna cesta namiesto zadrôtovanej
+- `CLAUDE.md`: prepend pravidlo pre session-summary
+
+### Ďalší krok
+Zatvoriť `onboarding_sessions` anon dieru a overiť pôvod `revolis_zaujemcovia`.
+
 ## Session 2026-09-25
 
 ### Dokončené
