@@ -1,16 +1,26 @@
+import { z } from "zod";
 import { errorResponse, okResponse } from "@/lib/api-response";
+import { validateBody } from "@/lib/api-validate";
 import { getCurrentProfile } from "@/lib/auth";
-import {
-  CONTACT_CHANNELS,
-  CONTACT_OUTCOMES,
-  ContactEventValidationError,
-  type ContactChannel,
-  type ContactOutcome,
-} from "@/lib/lead-contact-events/types";
+import { ContactEventValidationError, CONTACT_CHANNELS, CONTACT_OUTCOMES } from "@/lib/lead-contact-events/types";
 import { recordContactAttempt } from "@/lib/lead-contact-events/store";
 import { createClient } from "@/lib/supabase/server";
+import { incrementUsageMetric } from "@/lib/usage-metrics";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * The closed vocabularies live in the substrate; this schema points at them
+ * rather than restating them, so adding a channel cannot leave the API and the
+ * store disagreeing about what a channel is.
+ *
+ * `outcome` is optional on purpose — see below.
+ */
+const ContactAttemptBody = z.object({
+  channel: z.enum(CONTACT_CHANNELS),
+  outcome: z.enum(CONTACT_OUTCOMES).optional(),
+  note: z.string().trim().min(1).max(2000).optional(),
+});
 
 /**
  * POST — record that a human tried to reach this lead.
@@ -48,7 +58,7 @@ export async function POST(
     if (!profile.agency_id) {
       // A profile with no agency has no tenant to attribute the attempt to,
       // and the substrate would have to invent one.
-      return errorResponse("Profil nemá agentúru, k ktorej by sa pokus priradil.", 403);
+      return errorResponse("Profil nemá agentúru, ku ktorej by sa pokus priradil.", 403);
     }
 
     const { id: leadId } = await context.params;
@@ -56,27 +66,8 @@ export async function POST(
       return errorResponse("Chýba leadId.", 400);
     }
 
-    const body = (await req.json().catch(() => ({}))) as {
-      channel?: string;
-      outcome?: string;
-      note?: string;
-    };
-
-    const channel = body.channel?.trim();
-    if (!channel || !CONTACT_CHANNELS.includes(channel as ContactChannel)) {
-      return errorResponse(
-        `Neplatný channel. Povolené: ${CONTACT_CHANNELS.join(", ")}.`,
-        400,
-      );
-    }
-
-    const outcome = body.outcome?.trim();
-    if (outcome && !CONTACT_OUTCOMES.includes(outcome as ContactOutcome)) {
-      return errorResponse(
-        `Neplatný outcome. Povolené: ${CONTACT_OUTCOMES.join(", ")}.`,
-        400,
-      );
-    }
+    const parsed = await validateBody(req, ContactAttemptBody);
+    if (!parsed.ok) return parsed.response;
 
     const supabase = await createClient();
     const { id } = await recordContactAttempt(supabase, {
@@ -84,10 +75,18 @@ export async function POST(
       leadId: leadId.trim(),
       actorProfileId: profile.id,
       occurredAt: new Date(),
-      channel: channel as ContactChannel,
-      outcome: outcome ? (outcome as ContactOutcome) : undefined,
+      channel: parsed.data.channel,
+      outcome: parsed.data.outcome,
       source: "manual",
-      note: body.note?.trim() || undefined,
+      note: parsed.data.note,
+    });
+
+    // After the write, never before: a counter must not be able to report an
+    // attempt that was not recorded. It swallows its own failures internally,
+    // so it cannot turn a recorded attempt into a 500 either.
+    await incrementUsageMetric({
+      agencyId: profile.agency_id,
+      metric: "lead_contact_attempt",
     });
 
     return okResponse({ eventId: id });

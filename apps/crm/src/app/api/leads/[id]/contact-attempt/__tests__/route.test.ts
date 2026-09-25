@@ -3,6 +3,7 @@ import { ContactEventValidationError } from "@/lib/lead-contact-events/types";
 
 const mockGetCurrentProfile = vi.fn();
 const mockRecordContactAttempt = vi.fn();
+const mockIncrementUsageMetric = vi.fn();
 
 vi.mock("@/lib/auth", () => ({
   getCurrentProfile: () => mockGetCurrentProfile(),
@@ -14,6 +15,10 @@ vi.mock("@/lib/supabase/server", () => ({
 
 vi.mock("@/lib/lead-contact-events/store", () => ({
   recordContactAttempt: (...args: unknown[]) => mockRecordContactAttempt(...args),
+}));
+
+vi.mock("@/lib/usage-metrics", () => ({
+  incrementUsageMetric: (...args: unknown[]) => mockIncrementUsageMetric(...args),
 }));
 
 const { POST } = await import("../route");
@@ -34,6 +39,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockGetCurrentProfile.mockResolvedValue(PROFILE);
   mockRecordContactAttempt.mockResolvedValue({ id: "event-1" });
+  mockIncrementUsageMetric.mockResolvedValue(undefined);
 });
 
 describe("POST /api/leads/[id]/contact-attempt — what it records", () => {
@@ -139,5 +145,23 @@ describe("POST /api/leads/[id]/contact-attempt — guards", () => {
     mockRecordContactAttempt.mockRejectedValue(new Error("db down"));
     const res = await post({ channel: "call" });
     expect(res.status).toBe(500);
+  });
+});
+
+describe("POST /api/leads/[id]/contact-attempt — telemetry", () => {
+  it("counts the attempt against the caller's agency", async () => {
+    await post({ channel: "call" });
+    expect(mockIncrementUsageMetric).toHaveBeenCalledWith({
+      agencyId: "agency-a",
+      metric: "lead_contact_attempt",
+    });
+  });
+
+  it("never counts an attempt that was not recorded", async () => {
+    // A counter that runs ahead of the write would report contact the CRM has
+    // no event for — usage saying one thing and lead_events another.
+    mockRecordContactAttempt.mockRejectedValue(new Error("db down"));
+    await post({ channel: "call" });
+    expect(mockIncrementUsageMetric).not.toHaveBeenCalled();
   });
 });
