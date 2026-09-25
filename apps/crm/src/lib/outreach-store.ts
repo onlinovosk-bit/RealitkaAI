@@ -3,20 +3,22 @@ import { Resend } from "resend";
 import { autoErrorCapture } from "./auto-error-capture";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { logAiAction } from "@/lib/ai-action-audit";
-import { authorizeSend, authorityMeta, type SendApproval } from "@/lib/control-plane/authorize-send";
+import { authorizeSend, authorityMeta } from "@/lib/control-plane/authorize-send";
 import { OUTREACH_PROMPT_VERSION, generateOutreachEmail } from "@/lib/ai-outreach";
 import { estimateOpenAiCostFromTotalTokens } from "@/lib/ai/llm-usage-cost";
 import { CREDIT_ACTION_COSTS } from "@/lib/program-tier-pricing";
 import { createActivity } from "@/lib/activities-store";
 import {
   fetchLeadAgencyId,
-  getHoursSinceLastAiEmailToLead,
   outreachLeadCooldownHours,
   pickOutboundAbVariant,
 } from "@/lib/outbound-orchestrator";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
-import { incrementUsageMetric, SYSTEM_USAGE_AGENCY_ID } from "@/lib/usage-metrics";
+import { SYSTEM_USAGE_AGENCY_ID } from "@/lib/usage-metrics";
 import { getLead, getLeadAsService, type Lead } from "@/lib/leads-store";
+import { insertAgentDraft } from "@/lib/inbound/insert-agent-draft";
+import { OUTREACH_AGENT_ID } from "@/lib/inbound/draft-view";
+import type { SendMessageInput, SendMessageResult } from "@/lib/multi-channel-sender";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { logAiRecommendation, hashRecommendationDedupePart } from "@/lib/moat-capture/log-ai-recommendation";
 
@@ -87,28 +89,43 @@ function startOfDayIso() {
   return now.toISOString();
 }
 
-function isOutreachMessage(item: any) {
-  return item?.direction === "outbound" && item?.channel === "email" && Boolean(item?.ai_generated);
+/**
+ * Outreach sends recorded by the approve path (ai_action_audit `sent`, written
+ * by approve-draft.ts). The audit log is the record: `messages` does not exist
+ * on PROD, and reading it returned 0, which silently disabled the limit.
+ * Returns null when the count cannot be read — callers fail closed.
+ */
+async function countOutreachSentToday(agencyId: string): Promise<number | null> {
+  const supabase = createServiceRoleClient();
+  if (!supabase) return null;
+  const { count, error } = await supabase
+    .from("ai_action_audit")
+    .select("id", { count: "exact", head: true })
+    .eq("agency_id", agencyId)
+    .eq("action_kind", "sent")
+    .eq("channel", "email")
+    .eq("meta->>agent_id", OUTREACH_AGENT_ID)
+    .gte("created_at", startOfDayIso());
+  if (error) return null;
+  return count ?? 0;
 }
 
-async function getTodayOutreachCount() {
-  const supabase = createServiceRoleClient() ?? getSupabaseClient();
-  const startIso = startOfDayIso();
-
-  if (!supabase) {
-    return 0;
-  }
-
+/** Hours since any AI e-mail was sent to this lead; null = never; undefined = unknown. */
+async function hoursSinceLastAiEmailSent(leadId: string): Promise<number | null | undefined> {
+  const supabase = createServiceRoleClient();
+  if (!supabase) return undefined;
   const { data, error } = await supabase
-    .from("messages")
-    .select("id,direction,channel,ai_generated,created_at")
-    .gte("created_at", startIso);
-
-  if (error || !data) {
-    return 0;
-  }
-
-  return data.filter((item: any) => isOutreachMessage(item)).length;
+    .from("ai_action_audit")
+    .select("created_at")
+    .eq("lead_id", leadId)
+    .eq("action_kind", "sent")
+    .eq("channel", "email")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) return undefined;
+  if (!data?.created_at) return null;
+  return (Date.now() - new Date(data.created_at).getTime()) / 3_600_000;
 }
 
 export async function listOutreachMessages() {
@@ -172,292 +189,255 @@ export async function resolveOutreachLead(
   return getLeadAsService(serviceClient, leadId);
 }
 
-export const OUTREACH_AGENT_ID = "REVOLIS-OUTREACH";
+export { OUTREACH_AGENT_ID };
 export const OUTREACH_SEND_ACTION = "outreach.email.send";
 
 /**
- * Sends one AI outreach e-mail. Tier 3: the Control Contract requires a human
- * `approval` (the broker's click in /api/outreach/{approve,send}). Callers
- * without one — the scheduled-outreach cron, the automation script — are
- * refused before any text is generated, whatever SCHEDULED_OUTREACH_ENABLED says.
+ * Legacy entry point of the automation script. Outreach is now two steps —
+ * prepareOutreachDraft (the broker sees the exact text) and the shared approve
+ * path (approve-draft.ts → sendApprovedOutreach) — so a caller that wants to
+ * generate and send in one go is always refused, before any text is generated.
+ * The refusal goes through the Control Contract so it is audited like any
+ * other blocked send.
  */
 export async function sendAiOutreachEmail(
   leadId: string,
   scopedSupabase?: SupabaseClient | null,
-  approval: SendApproval | null = null,
-) {
-  const resend = getResendClient();
-  const supabase = createServiceRoleClient() ?? getSupabaseClient();
-  const from = process.env.OUTREACH_FROM_EMAIL;
-  const config = getOutreachConfig();
-  // One id for this send attempt across every audit row (Blueprint §11).
+): Promise<never> {
   const correlationId = randomUUID();
+  const lead = await resolveOutreachLead(leadId, scopedSupabase);
+  if (!lead) throw new Error("Lead nebol nájdený.");
+  const agencyId = (await fetchLeadAgencyId(lead.id)) ?? SYSTEM_USAGE_AGENCY_ID;
 
-  let leadForError: { id: string; name: string; email: string } | null = null;
-
-  try {
-    if (!resend) {
-      throw new Error("Chýba RESEND_API_KEY.");
-    }
-
-    if (!from) {
-      throw new Error("Chýba OUTREACH_FROM_EMAIL.");
-    }
-
-    const lead = await resolveOutreachLead(leadId, scopedSupabase);
-
-    if (!lead) {
-      throw new Error("Lead nebol nájdený.");
-    }
-
-    leadForError = {
-      id: lead.id,
-      name: lead.name,
-      email: lead.email,
-    };
-
-    if (!lead.email) {
-      throw new Error("Lead nemá email.");
-    }
-
-    if (config.allowedStatuses.length > 0 && !config.allowedStatuses.includes(lead.status)) {
-      throw new Error(`Lead má nepodporovaný stav pre outreach (${lead.status}).`);
-    }
-
-    const sentToday = await getTodayOutreachCount();
-    if (sentToday >= config.dailyLimit) {
-      throw new Error(`Denný limit outreach bol dosiahnutý (${config.dailyLimit}).`);
-    }
-
-    const agencyId =
-      (await fetchLeadAgencyId(lead.id)) ?? SYSTEM_USAGE_AGENCY_ID;
-
-    const cooldownH = outreachLeadCooldownHours();
-    const sinceH = await getHoursSinceLastAiEmailToLead(lead.id);
-    if (sinceH != null && sinceH < cooldownH) {
-      await logAiAction({
-        action: "ai_email",
-        agencyId,
-        leadId: lead.id,
-        actionKind: "frequency_blocked",
-        channel: "email",
-        meta: { correlation_id: correlationId, agent_id: OUTREACH_AGENT_ID,
-          hoursSinceLast: sinceH,
-          cooldownHours: cooldownH,
-        },
-      });
-      throw new Error(
-        `Frekvenčný limit: posledný AI email pred ${sinceH.toFixed(1)} h. Min. odstup ${cooldownH} h.`
-      );
-    }
-
-    const authz = authorizeSend({
+  const authz = authorizeSend({
+    action: OUTREACH_SEND_ACTION,
+    agentId: OUTREACH_AGENT_ID,
+    tenantId: agencyId,
+    approval: null,
+  });
+  const reason = authz.ok
+    ? "Outreach sa odosiela len po schválení náhľadu maklérom."
+    : authz.reason;
+  await logAiAction({
+    action: "outreach_send",
+    agencyId,
+    leadId: lead.id,
+    actionKind: "send_failed",
+    channel: "email",
+    meta: { correlation_id: correlationId, agent_id: OUTREACH_AGENT_ID,
       action: OUTREACH_SEND_ACTION,
-      agentId: OUTREACH_AGENT_ID,
-      tenantId: agencyId,
-      approval,
-    });
-    if (!authz.ok) {
-      await logAiAction({
-        action: "outreach_send",
-        agencyId,
-        leadId: lead.id,
-        actionKind: "send_failed",
-        channel: "email",
-        meta: { correlation_id: correlationId, agent_id: OUTREACH_AGENT_ID,
-          action: OUTREACH_SEND_ACTION,
-          blocked: true,
-          ...authorityMeta(authz.verdict),
-        },
-      });
-      throw new Error(authz.reason);
-    }
+      blocked: true,
+      ...(authz.ok ? {} : authorityMeta(authz.verdict)),
+    },
+  });
+  throw new Error(reason);
+}
 
-    const variant = pickOutboundAbVariant();
-    const generated = await generateOutreachEmail(lead, { variant });
+type OutreachFail = { ok: false; status: number; error: string };
 
-    logAiRecommendation({
-      agencyId,
-      leadId: lead.id,
-      source: "ai_email",
-      recommendation: generated.subject,
-      reasoning: generated.body.slice(0, 2000),
-      dedupeKey: `ai_email:${lead.id}:${hashRecommendationDedupePart(`${generated.subject}\n${generated.body}`)}`,
-      modelVersion: generated.provider,
-    });
+/**
+ * Daily limit + per-lead cooldown. Checked when the draft is written and again
+ * right before the approved send (another e-mail may have gone out meanwhile).
+ */
+async function checkOutreachQuota(
+  leadId: string,
+  agencyId: string,
+  correlationId: string,
+): Promise<OutreachFail | null> {
+  const config = getOutreachConfig();
+  const sentToday = await countOutreachSentToday(agencyId);
+  if (sentToday === null) {
+    return { ok: false, status: 503, error: "Denný limit outreach sa nedá overiť — nič sa neodoslalo." };
+  }
+  if (sentToday >= config.dailyLimit) {
+    return { ok: false, status: 429, error: `Denný limit outreach bol dosiahnutý (${config.dailyLimit}).` };
+  }
 
-    const model = generated.provider.replace(/^openai:/, "") || "gpt-4.1-mini";
+  const cooldownH = outreachLeadCooldownHours();
+  const sinceH = await hoursSinceLastAiEmailSent(leadId);
+  if (sinceH === undefined) {
+    return { ok: false, status: 503, error: "Odstup od posledného emailu sa nedá overiť — nič sa neodoslalo." };
+  }
+  if (sinceH != null && sinceH < cooldownH) {
     await logAiAction({
       action: "ai_email",
       agencyId,
-      leadId: lead.id,
-      actionKind: "ai_suggested",
+      leadId,
+      actionKind: "frequency_blocked",
       channel: "email",
-      variant,
-      subjectPreview: generated.subject,
-      bodyText: generated.body,
-      creditsSpent: CREDIT_ACTION_COSTS.aiEmail,
-      costEur: estimateOpenAiCostFromTotalTokens(model, generated.totalTokens ?? 0),
-      model,
       meta: { correlation_id: correlationId, agent_id: OUTREACH_AGENT_ID,
-        prompt_version: OUTREACH_PROMPT_VERSION,
-        provider: generated.provider,
-        totalTokens: generated.totalTokens ?? null,
+        hoursSinceLast: sinceH,
+        cooldownHours: cooldownH,
       },
     });
+    return {
+      ok: false,
+      status: 429,
+      error: `Frekvenčný limit: posledný AI email pred ${sinceH.toFixed(1)} h. Min. odstup ${cooldownH} h.`,
+    };
+  }
+  return null;
+}
 
-    const sendResult = await resend.emails.send({
-      from,
-      to: lead.email,
-      subject: generated.subject,
-      text: generated.body,
-      tags: [{ name: "lead_id", value: lead.id }],
-    });
-
-    if ((sendResult as any).error) {
-      const resendMsg: string = (sendResult as any).error.message || "";
-      const normalized = resendMsg.toLowerCase();
-
-      await logAiAction({
-        action: "outreach_send",
-        agencyId,
-        leadId: lead.id,
-        actionKind: "send_failed",
-        channel: "email",
-        variant,
-        subjectPreview: generated.subject,
-        bodyText: generated.body,
-        meta: { correlation_id: correlationId, agent_id: OUTREACH_AGENT_ID, provider: "resend", error: resendMsg },
-      });
-
-      if (normalized.includes("api key") || normalized.includes("invalid")) {
-        throw new Error(
-          "Resend API kľúč je neplatný alebo zrušený. Vygeneruj nový kľúč na resend.com/api-keys a nastav ho ako RESEND_API_KEY v .env.local."
-        );
-      }
-
-      if (normalized.includes("domain") || normalized.includes("from") || normalized.includes("sender")) {
-        throw new Error(
-          `Neplatná odosielacia adresa (${from}). Resend vyžaduje overenú doménu. Na testovanie použi onboarding@resend.dev.`
-        );
-      }
-
-      throw new Error(
-        `Resend chyba: ${resendMsg || "Email sa nepodarilo odoslať."}`
-      );
+export type OutreachDraftResult =
+  | {
+      ok: true;
+      activityId: string;
+      correlationId: string;
+      to: string;
+      subject: string;
+      body: string;
+      /** For the caller's usage metric; not for the client. */
+      usage: { agencyId: string; tokens: number };
     }
+  | OutreachFail;
 
-    let conversationId: string | null = null;
+/**
+ * Step 1 of outreach: generate the e-mail and store it as a draft the broker
+ * reads before anything is sent. Nothing leaves the system here.
+ *
+ * `scopedSupabase` is the request-scoped client, so the lead is resolved under
+ * the broker's tenant (RLS); `admin` writes the draft row.
+ */
+export async function prepareOutreachDraft(input: {
+  leadId: string;
+  scopedSupabase: SupabaseClient;
+  admin: SupabaseClient;
+  profileId?: string | null;
+}): Promise<OutreachDraftResult> {
+  if (!process.env.RESEND_API_KEY?.trim()) return { ok: false, status: 503, error: "Chýba RESEND_API_KEY." };
+  if (!process.env.OUTREACH_FROM_EMAIL) return { ok: false, status: 503, error: "Chýba OUTREACH_FROM_EMAIL." };
 
-    if (supabase) {
-      const conversationInsert = await supabase
-        .from("conversations")
-        .insert({
-          lead_id: lead.id,
-          channel: "email",
-          subject: generated.subject,
-          status: "open",
-        })
-        .select("*")
-        .single();
+  const lead = await resolveOutreachLead(input.leadId, input.scopedSupabase);
+  if (!lead) return { ok: false, status: 404, error: "Lead nebol nájdený." };
+  if (!lead.email) return { ok: false, status: 422, error: "Lead nemá email." };
 
-      if (!conversationInsert.error && conversationInsert.data) {
-        conversationId = conversationInsert.data.id;
-      }
+  const config = getOutreachConfig();
+  if (config.allowedStatuses.length > 0 && !config.allowedStatuses.includes(lead.status)) {
+    return { ok: false, status: 422, error: `Lead má nepodporovaný stav pre outreach (${lead.status}).` };
+  }
 
-      await supabase.from("messages").insert({
-        conversation_id: conversationId,
-        lead_id: lead.id,
-        direction: "outbound",
-        channel: "email",
-        sender_name: "Realitka AI",
-        sender_email: from,
-        content: generated.body,
-        ai_generated: true,
-      });
-    }
+  const agencyId = (await fetchLeadAgencyId(lead.id)) ?? SYSTEM_USAGE_AGENCY_ID;
+  const quota = await checkOutreachQuota(lead.id, agencyId, randomUUID());
+  if (quota) return quota;
 
-    await createActivity({
-      leadId: lead.id,
+  const variant = pickOutboundAbVariant();
+  const generated = await generateOutreachEmail(lead, { variant });
+
+  logAiRecommendation({
+    agencyId,
+    leadId: lead.id,
+    source: "ai_email",
+    recommendation: generated.subject,
+    reasoning: generated.body.slice(0, 2000),
+    dedupeKey: `ai_email:${lead.id}:${hashRecommendationDedupePart(`${generated.subject}\n${generated.body}`)}`,
+    modelVersion: generated.provider,
+  });
+
+  const model = generated.provider.replace(/^openai:/, "") || "gpt-4.1-mini";
+  const draft = await insertAgentDraft({
+    admin: input.admin,
+    leadId: lead.id,
+    agencyId,
+    profileId: input.profileId ?? null,
+    agentId: OUTREACH_AGENT_ID,
+    promptVersion: OUTREACH_PROMPT_VERSION,
+    channel: "email",
+    subject: generated.subject,
+    body: generated.body,
+    recipient: lead.email,
+    activity: {
       type: "Outreach",
-      title: "AI email odoslaný (schválil maklér)",
-      text: `Leadovi ${lead.name} bol odoslaný AI email na adresu ${lead.email}.`,
-      entityType: "lead",
-      entityId: lead.id,
+      title: "AI email — návrh na schválenie",
       actorName: "AI systém",
       source: "outreach",
-      severity: "success",
-      meta: { correlation_id: correlationId, agent_id: OUTREACH_AGENT_ID,
-        channel: "email",
-        subject: generated.subject,
-        provider: generated.provider,
-        conversationId,
-        variant,
-        stage: "sent",
-      },
-    });
-
-    await logAiAction({
-      action: "outreach_send",
-      agencyId,
-      leadId: lead.id,
-      actionKind: "sent",
-      channel: "email",
-      variant,
-      subjectPreview: generated.subject,
-      bodyText: generated.body,
-      meta: { correlation_id: correlationId, agent_id: OUTREACH_AGENT_ID,
-        provider: generated.provider,
-        conversationId,
-        resendOk: true,
-      },
-    });
-
-    const tokenDelta = Math.max(1, Math.floor(generated.totalTokens ?? 1));
-    await incrementUsageMetric({
-      agencyId,
-      metric: "ai_openai_tokens",
-      delta: tokenDelta,
-    });
-    await incrementUsageMetric({
-      agencyId,
-      metric: "outreach_send",
-      delta: 1,
-    });
-
-    return {
-      ok: true,
-      leadId: lead.id,
-      to: lead.email,
-      subject: generated.subject,
-      body: generated.body,
+    },
+    extraMeta: {
       provider: generated.provider,
-      conversationId,
+      totalTokens: generated.totalTokens ?? null,
       variant,
-    };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Nepodarilo sa odoslať AI email.";
+    },
+    auditAction: "ai_email",
+    auditExtras: {
+      variant,
+      model,
+      creditsSpent: CREDIT_ACTION_COSTS.aiEmail,
+      costEur: estimateOpenAiCostFromTotalTokens(model, generated.totalTokens ?? 0),
+    },
+  });
+  if (!draft.ok) return { ok: false, status: 500, error: "Návrh sa nepodarilo uložiť." };
 
+  return {
+    ok: true,
+    activityId: draft.activityId,
+    correlationId: draft.correlationId,
+    to: lead.email,
+    subject: generated.subject,
+    body: generated.body,
+    usage: { agencyId, tokens: Math.max(1, Math.floor(generated.totalTokens ?? 1)) },
+  };
+}
+
+function describeResendError(resendMsg: string, from: string): string {
+  const normalized = resendMsg.toLowerCase();
+  if (normalized.includes("api key") || normalized.includes("invalid")) {
+    return "Resend API kľúč je neplatný alebo zrušený. Vygeneruj nový kľúč na resend.com/api-keys a nastav ho ako RESEND_API_KEY.";
+  }
+  if (normalized.includes("domain") || normalized.includes("from") || normalized.includes("sender")) {
+    return `Neplatná odosielacia adresa (${from}). Resend vyžaduje overenú doménu.`;
+  }
+  return `Resend chyba: ${resendMsg || "Email sa nepodarilo odoslať."}`;
+}
+
+/**
+ * Step 2 of outreach: the sender approve-draft.ts uses for REVOLIS-OUTREACH
+ * drafts. It runs only after the broker approved the stored text and the
+ * Control Contract allowed the send; it sends exactly `subject` / `body`.
+ * The ai_suggested / human_approved / sent audit rows are approve-draft's job;
+ * that `sent` row is also what the daily limit and cooldown count.
+ */
+export async function sendApprovedOutreach(input: SendMessageInput): Promise<SendMessageResult> {
+  const fail = (error: string): SendMessageResult => ({ ok: false, channel: "email", to: input.to, error });
+  if (input.channel !== "email") return fail("Outreach posiela len email.");
+
+  const from = process.env.OUTREACH_FROM_EMAIL;
+  if (!from) return fail("Chýba OUTREACH_FROM_EMAIL.");
+  const resend = getResendClient();
+  if (!resend) return fail("Chýba RESEND_API_KEY.");
+
+  const correlationId = String(input.meta?.correlation_id ?? randomUUID());
+  const agencyId = (await fetchLeadAgencyId(input.leadId)) ?? SYSTEM_USAGE_AGENCY_ID;
+  const quota = await checkOutreachQuota(input.leadId, agencyId, correlationId);
+  if (quota) return fail(quota.error);
+
+  const subject = input.subject ?? "";
+  const sendResult = await resend.emails.send({
+    from,
+    to: input.to,
+    subject,
+    text: input.body,
+    tags: [{ name: "lead_id", value: input.leadId }],
+  });
+  const resendError = (sendResult as { error?: { message?: string } | null }).error;
+  if (resendError) {
+    const message = describeResendError(resendError.message ?? "", from);
     await createActivity({
-      leadId: leadForError?.id ?? null,
+      leadId: input.leadId,
       type: "Outreach",
       title: "AI email sa nepodarilo odoslať",
-      text: leadForError
-        ? `Pre lead ${leadForError.name} (${leadForError.email || "bez emailu"}) zlyhalo odoslanie: ${message}`
-        : `Odoslanie AI emailu zlyhalo: ${message}`,
+      text: `Odoslanie schváleného AI emailu na ${input.to} zlyhalo: ${message}`,
       entityType: "lead",
-      entityId: leadForError?.id ?? null,
+      entityId: input.leadId,
       actorName: "AI systém",
       source: "outreach",
       severity: "error",
-      meta: { correlation_id: correlationId, agent_id: OUTREACH_AGENT_ID,
-        leadId,
-        errorMessage: message,
-      },
-    });
-
-    throw error;
+      meta: { correlation_id: correlationId, agent_id: OUTREACH_AGENT_ID, errorMessage: message },
+    }).catch((e) => console.error("[sendApprovedOutreach] error activity:", e));
+    return fail(message);
   }
+
+  const messageId = (sendResult as { data?: { id?: string } | null }).data?.id;
+  return { ok: true, channel: "email", to: input.to, ...(messageId ? { messageId } : {}) };
 }
 
 export async function getOutreachAudit(): Promise<OutreachAudit> {

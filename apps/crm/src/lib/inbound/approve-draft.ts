@@ -2,7 +2,7 @@
 // Revolis.AI — Approve & send an AI draft to a lead (Tier 3)
 //
 // The only path by which AI-drafted text (inbound auto-reply, follow-up sweep,
-// dead-lead campaign) reaches a lead — see SEND_ACTIONS.
+// dead-lead campaign, outreach) reaches a lead — see SEND_ACTIONS.
 // Invariants:
 //   - sends exactly meta.subject / meta.body to meta.recipient — the text the
 //     broker saw, never a regenerated one;
@@ -21,7 +21,12 @@ import { logAiAction } from '@/lib/ai-action-audit'
 import { authorizeSend, authorityMeta } from '@/lib/control-plane/authorize-send'
 import { sendMessage, type SendMessageResult } from '@/lib/multi-channel-sender'
 import { AUTO_REPLY_PROMPT_VERSION } from './auto-reply'
-import { DEAD_LEAD_AGENT_ID, FOLLOWUP_SWEEP_AGENT_ID, INBOUND_AUTOREPLY_AGENT_ID } from './draft-view'
+import {
+  DEAD_LEAD_AGENT_ID,
+  FOLLOWUP_SWEEP_AGENT_ID,
+  INBOUND_AUTOREPLY_AGENT_ID,
+  OUTREACH_AGENT_ID,
+} from './draft-view'
 
 export type ApprovalState = 'sending' | 'sent' | 'send_failed'
 
@@ -30,11 +35,16 @@ export interface ApproveDraftInput {
   leadId:     string
   activityId: string
   approver:   { profileId: string; agencyId: string | null; label: string }
-  /** Injected for tests; defaults to the shared multi-channel sender. */
+  /**
+   * Injected for tests; defaults to the shared multi-channel sender, or for
+   * outreach drafts to the outreach sender (daily limit, cooldown, conversation log).
+   */
   send?:      typeof sendMessage
   now?:       () => Date
   /** Injected for tests; defaults to the platform kill switch (AGENT_KILL_SWITCH). */
   systemState?: SystemState
+  /** When set, only a draft of this agent is accepted (422 otherwise). */
+  expectAgentId?: string
 }
 
 /** Registered in packages/control-contract/src/actions.ts (irreversible, externally visible). */
@@ -49,6 +59,7 @@ export const SEND_ACTIONS: Readonly<Record<string, Partial<Record<'email' | 'sms
   [INBOUND_AUTOREPLY_AGENT_ID]: { email: INBOUND_SEND_ACTION },
   [FOLLOWUP_SWEEP_AGENT_ID]:    { email: 'followup.email.send', sms: 'followup.sms.send' },
   [DEAD_LEAD_AGENT_ID]:         { email: 'deadlead.email.send', sms: 'deadlead.sms.send' },
+  [OUTREACH_AGENT_ID]:          { email: 'outreach.email.send' },
 }
 
 export function sendActionFor(agentId: unknown, channel: unknown): string | null {
@@ -70,6 +81,13 @@ type DraftMeta = Record<string, unknown> & {
   approval_state?: ApprovalState
 }
 
+// Lazy: outreach-store pulls in Resend and the LLM client, which the other
+// agents' sends never need.
+async function outreachSender(): Promise<typeof sendMessage> {
+  const { sendApprovedOutreach } = await import('@/lib/outreach-store')
+  return sendApprovedOutreach
+}
+
 function fail(status: number, error: string): ApproveDraftResult {
   return { ok: false, status, error }
 }
@@ -78,7 +96,6 @@ export async function approveAndSendInboundDraft(
   input: ApproveDraftInput
 ): Promise<ApproveDraftResult> {
   const { admin, leadId, activityId, approver } = input
-  const send = input.send ?? sendMessage
   const now  = input.now ?? (() => new Date())
 
   if (!approver.agencyId) return fail(403, 'Profil nemá priradenú kanceláriu.')
@@ -107,6 +124,9 @@ export async function approveAndSendInboundDraft(
     meta.draft !== true ||
     meta.requires_approval !== true
   ) {
+    return fail(422, 'Táto aktivita nie je návrh na schválenie.')
+  }
+  if (input.expectAgentId && meta.agent_id !== input.expectAgentId) {
     return fail(422, 'Táto aktivita nie je návrh na schválenie.')
   }
   if (!meta.subject || !meta.body || !meta.recipient) {
@@ -187,6 +207,7 @@ export async function approveAndSendInboundDraft(
 
   let result: SendMessageResult
   try {
+    const send = input.send ?? (agentId === OUTREACH_AGENT_ID ? await outreachSender() : sendMessage)
     result = await send({
       leadId,
       to:          meta.recipient,

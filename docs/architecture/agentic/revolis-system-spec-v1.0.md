@@ -112,7 +112,7 @@ Dnes **neexistuje** žiadny agent spec ani register. Toto je prvý úplný zozna
 | `REVOLIS-CALL-COACH` | `lib/ai/call-coach.ts`, `call-analysis.ts` | Haiku | používateľ | — | nie | 0 | LIVE |
 | `REVOLIS-DEAL-STRATEGY` | `lib/ai/deal-strategy.ts`, `sales-brain.ts` | Haiku | používateľ | — | nie | 0 | LIVE |
 | `REVOLIS-DEAD-LEAD-CAMPAIGN` | `lib/ai/dead-lead-campaign.ts` | Haiku | používateľ | — | **áno (`sendMessage`)**, má `dry_run` | 3 | LIVE |
-| `REVOLIS-OUTREACH` | `lib/ai-outreach.ts`, `lib/outreach-store.ts` | gpt-4.1-mini | používateľ | `outreach_log` | áno, **po `human_approved`** (`api/outreach/approve`) | 3 | LIVE — vzorová brána |
+| `REVOLIS-OUTREACH` | `lib/ai-outreach.ts`, `lib/outreach-store.ts` | gpt-4.1-mini | používateľ | `outreach_log` | áno, **po schválení náhľadu** (`api/outreach/preview` → `send`/`approve`) | 3 | LIVE — návrh → klik |
 | `REVOLIS-AUTOPILOT` | `lib/ai/autopilot-runner.ts` → `action-executor.ts` | gpt-4o-mini | používateľ | `outreach_log` (`queued`) | nie priamo | 2 | LIVE |
 | `REVOLIS-BRI` | `lib/l99/bri-engine.ts` | gpt-4o | — | skóre | nie | 1 | UNVERIFIED (vs. deterministický `lib/bri/engine.ts`) |
 | `REVOLIS-RESEARCH` | `lib/research-agent/*` | gpt-4o-mini | — | — | — | — | DEFINED, nezapojené (`webFetchStub`) |
@@ -186,7 +186,7 @@ Repo pamäť (`brain/`, `memory/*.md`) je znalosť vývoja, nie produktová pam�
 Vercel crony (`apps/crm/vercel.json`, 16 plánovaných) + používateľské routy.
 Každý cron = jeden ohraničený beh → terminácia (Law 6) je daná runtime-om.
 Limity: `FOLLOWUP_MAX_AI_PER_LEAD`, `FOLLOWUP_COOLDOWN_DAYS`, `OUTREACH_DAILY_LIMIT`,
-cooldown v `lib/outreach-store.ts:213-237`, `lib/ai/rate-guard.ts` (20/min).
+cooldown v `lib/outreach-store.ts` (`checkOutreachQuota`, pri návrhu aj pri odoslaní), `lib/ai/rate-guard.ts` (20/min).
 Žiadny viackrokový autonómny loop v produkte → Blueprint §5 loop je dnes
 triviálne splnený. **Prvý loop, ktorý pribudne, musí mať explicitnú
 terminačnú podmienku v spec-u.**
@@ -272,7 +272,11 @@ až po merge.
 | inbound auto-reply | `inbound.reply.email.send` | návrh → klik |
 | follow-up sweep | `followup.{email,sms}.send` | návrh → klik |
 | dead-lead kampaň | `deadlead.{email,sms}.send` | návrh → klik |
-| outreach | `outreach.email.send` | klik na send/approve; cron/skript odmietnutý |
+| outreach | `outreach.email.send` | náhľad (`/api/outreach/preview`) → klik; cron/skript odmietnutý |
+
+Od 2026-09-25 (PR „Outreach náhľad textu") všetky 4 cesty zdieľajú jeden vzor:
+návrh s presným textom → maklér ho vidí → `approve-draft.ts` pošle doslovne ten
+text. Generate-and-send cesta už neexistuje ani pre outreach.
 
 Každý návrh aj každé odoslanie nesie `correlation_id` v `ai_action_audit.meta`.
 Agent spec pre všetky 4 agenty je v `apps/crm/src/lib/agents/agent-specs.ts`

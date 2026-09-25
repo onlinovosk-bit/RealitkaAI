@@ -8,7 +8,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockLogAiAction = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/ai-action-audit", () => ({ logAiAction: (...a: unknown[]) => mockLogAiAction(...a) }));
-vi.mock("@/lib/multi-channel-sender", () => ({ sendMessage: vi.fn() }));
+const mockSendMessage = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/multi-channel-sender", () => ({ sendMessage: (...a: unknown[]) => mockSendMessage(...a) }));
+const mockSendApprovedOutreach = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/outreach-store", () => ({
+  sendApprovedOutreach: (...a: unknown[]) => mockSendApprovedOutreach(...a),
+}));
 
 import { approveAndSendInboundDraft } from "../approve-draft";
 
@@ -167,7 +172,7 @@ describe("approveAndSendInboundDraft", () => {
   });
 
   it.each([
-    ["from an agent without an approve path", { agent_id: "REVOLIS-OUTREACH" }],
+    ["from an agent without an approve path", { agent_id: "REVOLIS-STEALTH-RECRUITER" }],
     ["not flagged as draft", { draft: false }],
     ["no approval requirement", { requires_approval: false }],
   ])("refuses an activity that is %s (422)", async (_label, override) => {
@@ -310,5 +315,49 @@ describe("approveAndSendInboundDraft", () => {
     const { admin } = fakeAdmin({});
     await approveAndSendInboundDraft({ admin, leadId: LEAD, activityId: ACT, approver, send });
     expect(mockLogAiAction.mock.calls[0][0].meta).toMatchObject({ correlation_id: ACT });
+  });
+
+  describe("REVOLIS-OUTREACH drafts", () => {
+    const outreach = (o: Record<string, unknown> = {}) =>
+      draftMeta({ agent_id: "REVOLIS-OUTREACH", prompt_version: "outreach-v1", ...o });
+
+    it("sends the previewed text under outreach.email.send", async () => {
+      const { admin } = fakeAdmin({ activity: { id: ACT, lead_id: LEAD, meta: outreach() } });
+      const res = await approveAndSendInboundDraft({
+        admin, leadId: LEAD, activityId: ACT, approver, send, expectAgentId: "REVOLIS-OUTREACH",
+      });
+      expect(res.ok).toBe(true);
+      expect(send.mock.calls[0][0]).toMatchObject({
+        to: "jan@example.com", subject: "Ďakujeme za záujem", body: "Dobrý deň, ozveme sa do hodiny.",
+      });
+      expect(mockLogAiAction.mock.calls[0][0].meta).toMatchObject({ action: "outreach.email.send" });
+    });
+
+    it("without an injected sender uses the outreach sender (limits + conversation log), not the generic one", async () => {
+      mockSendApprovedOutreach.mockResolvedValue({ ok: true, channel: "email", to: "jan@example.com", messageId: "re-1" });
+      const { admin } = fakeAdmin({ activity: { id: ACT, lead_id: LEAD, meta: outreach() } });
+      const res = await approveAndSendInboundDraft({ admin, leadId: LEAD, activityId: ACT, approver });
+      expect(res).toEqual({ ok: true, messageId: "re-1" });
+      expect(mockSendApprovedOutreach).toHaveBeenCalledTimes(1);
+      expect(mockSendMessage).not.toHaveBeenCalled();
+    });
+
+    it("refuses an outreach SMS draft (422) — only e-mail is registered", async () => {
+      const { admin } = fakeAdmin({
+        activity: { id: ACT, lead_id: LEAD, meta: outreach({ channel: "sms", recipient: "+421900000000" }) },
+      });
+      const res = await approveAndSendInboundDraft({ admin, leadId: LEAD, activityId: ACT, approver, send });
+      expect(res).toMatchObject({ ok: false, status: 422 });
+      expect(send).not.toHaveBeenCalled();
+    });
+
+    it("expectAgentId refuses another agent's draft (outreach route cannot send an inbound draft)", async () => {
+      const { admin } = fakeAdmin({});
+      const res = await approveAndSendInboundDraft({
+        admin, leadId: LEAD, activityId: ACT, approver, send, expectAgentId: "REVOLIS-OUTREACH",
+      });
+      expect(res).toMatchObject({ ok: false, status: 422 });
+      expect(send).not.toHaveBeenCalled();
+    });
   });
 });
