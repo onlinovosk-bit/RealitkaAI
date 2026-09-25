@@ -1,10 +1,4 @@
-import {
-  COCKPIT_LITE_MIN_SEATS,
-  COCKPIT_PRODUCTS,
-  SEAT_TIER_CONFIG,
-  TOPUP_PACKAGES,
-  type SeatTier,
-} from "@/lib/program-tier-pricing";
+import { COCKPIT_LITE_MIN_SEATS, TOPUP_PACKAGES } from "@/lib/program-tier-pricing";
 import {
   bandCockpitAttach,
   bandCreditRevenuePct,
@@ -12,6 +6,7 @@ import {
 } from "@/lib/metrics/guardrails";
 import type {
   AgencyBillingRow,
+  BilledAgency,
   AiCostDailyRow,
   AiCostSummary,
   CreditActivity,
@@ -20,21 +15,43 @@ import type {
   MrrBreakdown,
 } from "@/lib/metrics/types";
 
-export const SMOLKO_MANUAL_PLAN_MRR_EUR = 199;
+/**
+ * Kanonická cena (DEC-20260924-001): 199 € za kanceláriu mesačne, bez kreditov,
+ * onboarding 0 €. Nahrádza seat model 79 / 71 / 63 € (DEC-20260921-001), ktorý
+ * ostáva archivovaný v `program-tier-pricing.ts`.
+ */
+export const OFFICE_MONTHLY_EUR = 199;
 
-function seatTierFromAccountTier(accountTier: string | null): SeatTier {
-  switch (accountTier) {
-    case "starter":
-    case "free":
-      return "solo";
-    case "enterprise":
-    case "market_vision":
-      return "office";
-    case "pro":
-    case "active_force":
-    default:
-      return "team";
+/**
+ * Prečo sa kancelária počíta ako platiaca — v presnom poradí, v akom to
+ * vyhodnocuje `isPayingAgency`. Vracia `null`, keď neplatí.
+ *
+ * Existuje kvôli dashboardu: nie každý dôkaz je rovnako silný. `subscription`
+ * je záznam o predplatnom, `plan` alebo `account_tier` je len názov balíka, ktorý
+ * niekto nastavil. Founder musí vidieť rozdiel, nie súčet.
+ *
+ * JEDEN ZÁMERNÝ ROZDIEL oproti `isPayingAgency`: zrušené predplatné.
+ * `isPayingAgency` vráti `true` aj pre kanceláriu so `subscription_status =
+ * 'canceled'`, ak jej ostal nenulový `plan` alebo `account_tier` — na zrušenie
+ * sa nepozerá vôbec. Pre zdravotný scan je to neškodné, pre tržbu nie: každá
+ * odídená kancelária s dožívajúcim názvom balíka by pridala 199 € mesačne.
+ * MRR sa preto pýta na zrušenie ako na prvé. (Na dnešných produkčných dátach
+ * nemá `canceled` ani jedna kancelária, takže číslo sa tým nemení — je to
+ * poistka, nie oprava dnešného stavu. Samotný `isPayingAgency` nemením;
+ * to je zásah do `customer-health` a patrí do vlastného rozhodnutia.)
+ */
+export function payingBasis(row: AgencyBillingRow): string | null {
+  const status = (row.subscription_status ?? "").trim().toLowerCase();
+  if (status === "canceled" || status === "cancelled" || status === "inactive") {
+    return null;
   }
+  if ((row.manual_plan ?? "").trim()) return `manual_plan=${row.manual_plan!.trim()}`;
+  if (status === "active" || status === "trialing") return `subscription_status=${status}`;
+  const plan = (row.plan ?? "").trim();
+  if (plan && plan.toLowerCase() !== "free") return `plan=${plan}`;
+  const tier = (row.account_tier ?? "").trim();
+  if (tier && tier.toLowerCase() !== "free") return `account_tier=${tier}`;
+  return null;
 }
 
 function isAgencyActive(row: AgencyBillingRow): boolean {
@@ -48,41 +65,39 @@ function isAgencyActive(row: AgencyBillingRow): boolean {
   return false;
 }
 
-function isSmolkoManual(row: AgencyBillingRow): boolean {
-  return (row.manual_plan ?? "").trim().toLowerCase() === "market_vision";
-}
-
-/** MRR estimate — Smolko manual_plan on separate line at 199 €. */
+/**
+ * MRR = 199 € × počet platiacich kancelárií.
+ *
+ * Násobiteľ je `isPayingAgency` (`lib/customer-health/paid.ts`), nie
+ * `isAgencyActive`. Tie dva predikáty nie sú to isté: prvý znamená „platí nám",
+ * druhý „nie je vypnutá". Dnes sa na produkčných dátach zhodujú na tých istých
+ * troch kanceláriách, ale zhodovať sa nemusia — a tržbu smie určovať len ten
+ * prvý. Interné `Revolis Demo / Sandbox / System` majú `plan = 'Free'`, takže
+ * ich `isPayingAgency` správne vynecháva.
+ *
+ * Seaty a Owner Cockpit sa do MRR nepočítajú — v modeli 199 €/kancelária
+ * neexistujú ako samostatné položky. `computeActiveSeats` a
+ * `computeCockpitAttach` ostávajú ako prevádzkové metriky, nie tržbové.
+ */
 export function computeMrrBreakdown(agencies: AgencyBillingRow[]): MrrBreakdown {
-  let seatRevenueEur = 0;
-  let cockpitRevenueEur = 0;
-  let smolkoManualEur = 0;
-  let smolkoAgencyCount = 0;
+  const billed: BilledAgency[] = [];
 
   for (const row of agencies) {
-    if (!isAgencyActive(row)) continue;
-
-    if (isSmolkoManual(row)) {
-      smolkoManualEur += SMOLKO_MANUAL_PLAN_MRR_EUR;
-      smolkoAgencyCount += 1;
-      continue;
-    }
-
-    const tier = seatTierFromAccountTier(row.account_tier);
-    const seats = Math.max(0, row.seats ?? 0);
-    seatRevenueEur += seats * SEAT_TIER_CONFIG[tier].priceEur;
-
-    if (row.owner_cockpit_active) {
-      cockpitRevenueEur += COCKPIT_PRODUCTS.owner.priceEur;
-    }
+    const basis = payingBasis(row);
+    if (!basis) continue;
+    billed.push({
+      id: row.id,
+      name: row.name,
+      monthlyEur: OFFICE_MONTHLY_EUR,
+      basis,
+    });
   }
 
   return {
-    totalEur: seatRevenueEur + cockpitRevenueEur + smolkoManualEur,
-    seatRevenueEur,
-    cockpitRevenueEur,
-    smolkoManualEur,
-    smolkoAgencyCount,
+    totalEur: OFFICE_MONTHLY_EUR * billed.length,
+    officeMonthlyEur: OFFICE_MONTHLY_EUR,
+    billedAgencyCount: billed.length,
+    billed,
   };
 }
 

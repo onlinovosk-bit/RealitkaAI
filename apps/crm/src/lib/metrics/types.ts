@@ -4,6 +4,8 @@ export type AgencyBillingRow = {
   id: string;
   name: string | null;
   seats: number;
+  /** Číta ho `isPayingAgency` — bez neho by interné `Free` tenanty padli medzi platiace. */
+  plan: string | null;
   account_tier: string | null;
   manual_plan: string | null;
   owner_cockpit_active: boolean;
@@ -27,12 +29,23 @@ export type AiCostDailyRow = {
   cost_eur: number | null;
 };
 
+/** Jedna účtovaná kancelária a dôkaz, na ktorom stojí, že platí. */
+export type BilledAgency = {
+  id: string;
+  name: string | null;
+  monthlyEur: number;
+  /**
+   * Pole, z ktorého `isPayingAgency` odvodil, že kancelária platí — aby sa na
+   * dashboarde dalo vidieť, či to stojí na predplatnom, alebo len na názve plánu.
+   */
+  basis: string;
+};
+
 export type MrrBreakdown = {
   totalEur: number;
-  seatRevenueEur: number;
-  cockpitRevenueEur: number;
-  smolkoManualEur: number;
-  smolkoAgencyCount: number;
+  officeMonthlyEur: number;
+  billedAgencyCount: number;
+  billed: BilledAgency[];
 };
 
 export type CreditActivity = {
