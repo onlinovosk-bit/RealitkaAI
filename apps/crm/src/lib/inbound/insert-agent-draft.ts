@@ -27,6 +27,13 @@ export interface AgentDraftInput {
   }
   extraMeta?:   Record<string, unknown>
   auditAction:  string
+  /** Cost/model fields for the ai_suggested audit row, when the caller has them. */
+  auditExtras?: {
+    costEur?:      number | null
+    creditsSpent?: number | null
+    model?:        string | null
+    variant?:      string | null
+  }
 }
 
 /**
@@ -35,8 +42,10 @@ export interface AgentDraftInput {
  */
 export async function insertAgentDraft(
   d: AgentDraftInput,
-): Promise<{ ok: true; correlationId: string } | { ok: false; error: string }> {
+): Promise<{ ok: true; correlationId: string; activityId: string } | { ok: false; error: string }> {
   const correlationId = randomUUID()
+  // Chosen here so the caller can point the broker at this exact draft.
+  const activityId = randomUUID()
   const text = [
     d.body,
     '',
@@ -45,6 +54,7 @@ export async function insertAgentDraft(
   ].join('\n')
 
   const { error } = await d.admin.from('activities').insert({
+    id:          activityId,
     lead_id:     d.leadId,
     type:        d.activity.type,
     title:       d.activity.title,
@@ -79,6 +89,7 @@ export async function insertAgentDraft(
     channel:        d.channel === 'sms' ? 'sms' : 'email',
     subjectPreview: d.subject,
     bodyText:       d.body,
+    ...d.auditExtras,
     meta: {
       agent_id:        d.agentId,
       prompt_version:  d.promptVersion,
@@ -88,7 +99,7 @@ export async function insertAgentDraft(
     },
   }).catch((e) => console.error(`[insertAgentDraft] audit ${d.agentId}:`, e))
 
-  return { ok: true, correlationId }
+  return { ok: true, correlationId, activityId }
 }
 
 /** The address a draft on `channel` would be sent to, from the lead's contact fields. */
