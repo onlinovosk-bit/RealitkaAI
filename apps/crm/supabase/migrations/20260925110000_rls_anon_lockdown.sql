@@ -39,41 +39,72 @@
 --   INSERT INTO supabase_migrations.schema_migrations (version, name, statements, created_by)
 --   VALUES ('20260925110000', 'rls_anon_lockdown', ARRAY[]::text[], NULL);
 
--- tasks: tenant policy `tasks_agency` remains and keeps signed-in users working.
+-- tasks: created by 20260310_baseline_core_schema.sql, so it exists in every
+-- environment and needs no existence guard. The tenant policy `tasks_agency`
+-- remains and keeps signed-in users working.
 DROP POLICY IF EXISTS tasks_select ON public.tasks;
 DROP POLICY IF EXISTS tasks_insert ON public.tasks;
 DROP POLICY IF EXISTS tasks_update ON public.tasks;
 DROP POLICY IF EXISTS tasks_delete ON public.tasks;
 
+-- `saas_leads` and `lead_property_scores` are PROD drift: no migration in this
+-- repo creates either table, so on a fresh `supabase db reset` — which is what
+-- CI runs — they are simply absent. `DROP POLICY IF EXISTS` tolerates a missing
+-- policy but NOT a missing table: it raises 42P01, which is exactly how CI
+-- rejected the first version of this file. So the statements below are guarded
+-- on the table existing, the way 20260320_rls.sql (which created the permissive
+-- saas_leads policies in the first place) already guards its own.
+--
+-- Unconditional statements would also make this file mean "the hole is closed"
+-- in an environment that never had the hole, and fail there.
+
 -- lead_property_scores: no caller in the application at all.
-DROP POLICY IF EXISTS select_lead_property_scores ON public.lead_property_scores;
-DROP POLICY IF EXISTS insert_lead_property_scores ON public.lead_property_scores;
-DROP POLICY IF EXISTS update_lead_property_scores ON public.lead_property_scores;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_tables
+    WHERE schemaname = 'public' AND tablename = 'lead_property_scores'
+  ) THEN
+    EXECUTE 'DROP POLICY IF EXISTS select_lead_property_scores ON public.lead_property_scores';
+    EXECUTE 'DROP POLICY IF EXISTS insert_lead_property_scores ON public.lead_property_scores';
+    EXECUTE 'DROP POLICY IF EXISTS update_lead_property_scores ON public.lead_property_scores';
+  END IF;
+END $$;
 
 -- saas_leads: capture runs on the service role, which does not consult RLS.
-DROP POLICY IF EXISTS "saas_leads_select"          ON public.saas_leads;
-DROP POLICY IF EXISTS "Users can view their leads" ON public.saas_leads;
-DROP POLICY IF EXISTS "saas_leads_insert"          ON public.saas_leads;
-DROP POLICY IF EXISTS "Users can insert leads"     ON public.saas_leads;
-DROP POLICY IF EXISTS "saas_leads_update"          ON public.saas_leads;
-DROP POLICY IF EXISTS "Users can update own leads" ON public.saas_leads;
-DROP POLICY IF EXISTS "saas_leads_delete"          ON public.saas_leads;
-
--- The one path that genuinely needs RLS: the platform-admin funnel screen.
+-- The one path that genuinely needs RLS is the platform-admin funnel screen.
 -- Scoped to `authenticated` rather than `public`, so `anon` is not a candidate
 -- role for it at all — the mistake this migration exists to undo.
-DROP POLICY IF EXISTS saas_leads_platform_admin ON public.saas_leads;
-CREATE POLICY saas_leads_platform_admin
-  ON public.saas_leads FOR ALL TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles p
-      WHERE p.auth_user_id = auth.uid() AND p.is_platform_admin
-    )
-  )
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM public.profiles p
-      WHERE p.auth_user_id = auth.uid() AND p.is_platform_admin
-    )
-  );
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_tables
+    WHERE schemaname = 'public' AND tablename = 'saas_leads'
+  ) THEN
+    EXECUTE 'DROP POLICY IF EXISTS "saas_leads_select"          ON public.saas_leads';
+    EXECUTE 'DROP POLICY IF EXISTS "Users can view their leads" ON public.saas_leads';
+    EXECUTE 'DROP POLICY IF EXISTS "saas_leads_insert"          ON public.saas_leads';
+    EXECUTE 'DROP POLICY IF EXISTS "Users can insert leads"     ON public.saas_leads';
+    EXECUTE 'DROP POLICY IF EXISTS "saas_leads_update"          ON public.saas_leads';
+    EXECUTE 'DROP POLICY IF EXISTS "Users can update own leads" ON public.saas_leads';
+    EXECUTE 'DROP POLICY IF EXISTS "saas_leads_delete"          ON public.saas_leads';
+
+    EXECUTE 'DROP POLICY IF EXISTS saas_leads_platform_admin ON public.saas_leads';
+    EXECUTE $pol$
+      CREATE POLICY saas_leads_platform_admin
+        ON public.saas_leads FOR ALL TO authenticated
+        USING (
+          EXISTS (
+            SELECT 1 FROM public.profiles p
+            WHERE p.auth_user_id = auth.uid() AND p.is_platform_admin
+          )
+        )
+        WITH CHECK (
+          EXISTS (
+            SELECT 1 FROM public.profiles p
+            WHERE p.auth_user_id = auth.uid() AND p.is_platform_admin
+          )
+        )
+    $pol$;
+  END IF;
+END $$;
