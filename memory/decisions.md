@@ -1,5 +1,62 @@
 # Critical Decisions Log
 
+## [2026-09-25] DEC-20260925-002 — Baseline pre 30 PROD-only tabuliek (SCHEMA-BASELINE-01)
+
+`20260925210000_baseline_prod_only_tables.sql`, 996 riadkov. Rieši smer A z AP-023.
+
+**Nie `pg_dump`.** Session má k PROD len read-only SQL cez Supabase MCP a žiadny
+connection string; pýtať si ho by znamenalo produkčný credential v transcripte.
+DDL je teda **rekonštruované z katalógov** (`pg_attribute`, `pg_attrdef`,
+`pg_constraint`, `pg_indexes`, `pg_policies`, `pg_trigger`, `pg_proc`).
+Rekonštrukcia je slabšia než `pg_dump` — COMMENTy, storage parametre, collations
+a GRANTy pokryté nie sú a súbor to hovorí nahlas.
+
+**Dôkaz vernosti, nie tvrdenie.** Baseline prehraný na čistom lokálnom PG16,
+potom ten istý fingerprint dotaz spustený lokálne aj na PROD:
+
+| | n | md5 |
+|---|---|---|
+| COL | 249 | `f484deee…` |
+| CON | 78 | `1ee947e6…` |
+| IDX | 77 | `30b29062…` |
+| POL | 29 | `8e7656ff…` |
+| RLS | 30 | `aeb4f5a6…` |
+| TRG | 2 | `fc07bd2e…` |
+| **ALL** | **465** | **`c2f6d1ca79c3a3d5f59b92cfc6558c08`** |
+
+Všetkých 7 sedí. Druhý beh na tej istej DB prešiel bez chyby → idempotentné.
+
+**Tretí rozmer driftu, ktorý AP-023 nemeral: funkcie.**
+`profile_agencies_for_auth()` — nosná funkcia celého tenant RLS modelu, na ktorú
+sa odvolávajú policies naprieč schémou — **nie je v žiadnej migrácii**. Rovnako
+`ai_triage_feedback_set_agency()`. Baseline ich pridáva, ale úplná inventúra
+funkcií urobená nebola.
+
+**Nový bezpečnostný nález:** `onboarding_sessions` má policy
+`TO anon USING (true) WITH CHECK (true)` — plná anonymná čítacia AJ zápisová
+diera, ten istý tvar, aký zatvárali #697 a #702. Ani jeden ju nepokryl. Baseline
+ju **reprodukuje nezmenenú a nahlas označenú** — úlohou baseline je zhodnúť čistú
+DB s produkciou, nie meniť správanie produkcie pod commitom, ktorý sa tvári ako
+zápis stavu. Zatvorenie je samostatná zmena s vlastnou bránou.
+
+## [2026-09-25] AP-024 — Direktíva 5 odkazuje na skill, ktorý neexistuje
+
+`CLAUDE.md` vyžaduje spustiť `gdpr-advisor` pred každou featurou na externých/
+osobných dátach. `.claude/skills/` obsahuje `kontrolor`, `strategic-analysis`,
+`task-loop`. **`gdpr-advisor` v repozitári nie je.** Povinná brána nie je
+nepoužitá — je nevykonateľná.
+
+Posúdenie 5 osirelých tabuliek (`docs/reports/2026-09-25-gdpr-orphan-tables.md`)
+je preto robené ručne proti data-sourcing mape. Je to náhrada, nie splnenie
+Direktívy 5, a dokument to hovorí ako prvú vetu.
+
+**Jadro nálezu:** `revolis_zaujemcovia` má `full_name`, `source_portal`,
+`external_id`, `behavioral_notes`, `raw_data` — schéma tvarovaná presne na to,
+čo mapa v ZHLUK 5 označuje ako „Osobné údaje predajcu = GDPR NIE". Obsah riadkov
+som **neotvoril**; tvrdím len, že pôvod treba overiť, nie odhadnúť. 6 riadkov.
+
+Nemažem nič. Zmazať údaje s neustáleným pôvodom zničí aj dôkaz o tom, odkiaľ sú.
+
 ## [2026-09-25] AP-023 — Migrácie popisujú 81 zo 111 tabuliek (SCHEMA-DRIFT-INVENTORY)
 
 Inventúra po AP-022. Plný report: `docs/reports/2026-09-25-schema-drift-inventory.md`.
