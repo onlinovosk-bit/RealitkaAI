@@ -1,5 +1,46 @@
 # Critical Decisions Log
 
+## [2026-09-26] — ONBOARDING-ANON-01: zatvorená anon diera na `onboarding_sessions` (founder GO)
+
+Nález z #705: pri reprodukovaní produkčných policies do baseline vyplávala policy,
+ktorú nepokryl ani #697, ani #702:
+
+    CREATE POLICY "Allow anon access" ON public.onboarding_sessions
+      AS PERMISSIVE FOR ALL TO anon USING (true) WITH CHECK (true);
+
+`FOR ALL`, teda nie len čítanie — kdokoľvek s verejným anon kľúčom mohol
+onboarding sessions aj vkladať, meniť a mazať.
+
+**Merané na PROD, nie odhadnuté:**
+
+| | `anon` vidí riadkov |
+|---|---|
+| pred | **5** |
+| po | **0** |
+
+Service role vidí 5 aj po zmene, policies 0, RLS stále zapnutá.
+
+**Prečo dropnuté a nie nahradené.** Oba volajúci sú v
+`api/onboarding/session/route.ts` (GET r. 88, POST upsert r. 172) a oba si klienta
+stavajú cez `createServiceRoleClient()`. Service role RLS neobchádza okľukou —
+nekonzultuje ju vôbec. Browser k tabuľke nechodí priamo; `lib/onboarding/session-api.ts`
+to hovorí vo vlastnej hlavičke: „Browser-safe helpers for onboarding_sessions sync
+**via service-role API**". Grep názvu tabuľky nad `apps/crm/src` vráti tie dva call
+sity, dve testovacie assertions a ten komentár — nič iné.
+
+Tá policy teda nikdy neumožňovala funkčnú cestu, len tabuľku exponovala. Rovnaký
+tvar ako `saas_leads` v #697: dropnutá, nenahradená.
+
+**Aplikované na PROD v tej istej zmene** pod founder GO, s meraním pred/po cez
+`set local role anon` — rovnaká metóda a rovnaká konvencia ako #697. Migrácia
+zapísaná do `supabase_migrations.schema_migrations` (version 20260926090000).
+
+**Vzťah k baseline:** `20260925210000_baseline_prod_only_tables.sql` tabuľku
+zakladá a tú policy na čistej DB **znovu vytvorí** — zámerne, aby baseline
+zodpovedal produkcii. Táto migrácia ju potom odoberie, na oboch. Vytvoriť a hneď
+dropnúť vyzerá zbytočne, ale je to poctivá história: existovala, potom sme ju
+odstránili. Prepísať baseline by znamenalo prepísať históriu.
+
 ## [2026-09-25] AP-026 — 404-PATH-01 na druhý pokus: `usePathname()` na 404 klame
 
 Overenie na produkcii po merge #706 ukázalo, že môj fix z #705 bol polovičný.
