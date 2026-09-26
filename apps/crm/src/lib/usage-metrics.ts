@@ -41,7 +41,11 @@ export type UsageMetricName =
   | "concierge_callback"
   | "concierge_freebusy"
   | "concierge_properties"
-  | "onboarding_session";
+  | "onboarding_session"
+  // A broker pressing Call or Email on a lead. Counted so the contact substrate
+  // has usage visibility like every other write path, not because C1 is derived
+  // from it — C1 comes from lead_events, which is the auditable record.
+  | "lead_contact_attempt";
 
 /**
  * Inkrementuje denný počítadlo cez RPC (service role).

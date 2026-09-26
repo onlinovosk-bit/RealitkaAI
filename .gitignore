@@ -55,3 +55,6 @@ apps/crm/supabase/.temp/
 apps/crm/tmp-*.json
 tmp-*.md
 apps/crm/design-handoff-zips/
+
+# Hourly Task Scheduler nudge — local only, never committed (memory/hourly-summary.ps1).
+memory/hourly-trigger.local.md

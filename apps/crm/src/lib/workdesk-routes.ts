@@ -23,7 +23,6 @@ const NON_WORKDESK_PREFIXES = [
   "/aup",
   "/dpa-request",
   "/buyer-onboarding",
-  "/bsm-reforma",
   "/register",
 ];
 
