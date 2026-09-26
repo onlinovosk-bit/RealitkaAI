@@ -1,5 +1,62 @@
 # Critical Decisions Log
 
+## [2026-09-26] AP-027 / BASELINE-BENCHMARK-01 — optimalizovali by sme 3,5 % (founder GO)
+
+Compiler a Build Protocol (Sol 5.6) tvrdia zrýchlenie buildu. Zrýchlenie je
+pomer; menovateľ neexistoval. Zmeraný na `docs/prompts/runner/` (najväčší
+súvislý stack: 14 súborov, 1 561 riadkov) a na reálnych behoch.
+
+| vrstva | median | n | podiel median PR cyklu |
+|---|---|---|---|
+| beh agentného tasku (`.ai/bus/ledger/2026-09.jsonl`) | **88 s** | 9 | **3,5 %** |
+| jeden úspešný beh CI | **549 s** | 19 | **22 %** |
+| PR created → merged | **42 min** | 40 | 100 % |
+
+Zvyšných ~74 % je čakanie (review, GO, noc), nie výpočet. **Compiler
+optimalizuje počet model callov a veľkosť kontextu — teda tie 3,5 %.** Aj keby
+agentné behy stlačil na nulu, median cyklus spadne zo 42 na ~40,5 min.
+
+Najdrahšie číslo nie je latencia, ale opakovanie: **8 z 30 CI behov je červených
+(27 %)** a `TASK-TC-BATCH-1` zhorel 4 iterácie × ~94 s a skončil na `HUMAN`.
+Rozklad jedného CI behu (job `108469704435`): `npm ci` ~3,5 min, `next build`
+84 s, `playwright install` 30 s, `supabase start` + 118 migrácií **len 17 s** —
+teda nie tam, kde som to pôvodne v tejto session akcentoval.
+
+### Nálezy v našom vlastnom stacku
+- `05-prompt-stack.md` (a `06-dispatch.md`) hovorí o **siedmich** vrstvách
+  a siedmich hashoch; definuje a hashuje **osem** (S0–S7). Off-by-one
+  v dokumente, ktorý má byť dôkazný. Zachytené mechanicky skriptom, nie čítaním.
+- `RUN SUMMARY` (12-loop) má povinné `NEZMERANÉ`, ale **žiadne časové pole** —
+  founderova otázka „prečo to trvá dlho" je z neho nezodpovedateľná.
+- Ledger má `started_at`/`finished_at`, ale nie `model_calls` ani `tokens_in/out`.
+  A v **9 z 9** reálnych záznamov je `model: null`, `cost_usd: 0` — presne tá
+  chyba, ktorú `09-judge.md` sám pomenoval: „Buď to meria, alebo tam to číslo
+  nie je." Vlastné pravidlo nie je vynútené → rozpočtová brána nezasiahne nikdy.
+- Stack už obsahuje to, čo Compiler predáva ako nové: 8 vrstiev s hashmi,
+  delenie DETERMINISTICKÉ/INTELIGENTNÉ, write-probe disjunktnosť, rozpočty,
+  Judge, REPEATABLE/ONE-SHOT.
+
+### Metóda
+Meria **skript, nie agent** — `scripts/ops/measure-prompt-stack.mjs`. Dôvod je
+AP-025: fixture som si vtedy napísal z toho, čo moje vlastné SQL potrebovalo,
+a „overenie" prešlo. Dátové sady sú zmrazené v
+`docs/reports/assets/2026-09-26-baseline-benchmark/` (PR cykly, CI behy, ledger,
+výstup skriptu), aby compiled porovnanie bežalo proti číslam, nie proti spomienke.
+Metriky sú definované **pred** číslami; `model_calls`, tokeny a `cost_usd`
+zostávajú v povinnej sekcii NEZMERANÉ, pretože ich ledger nezaznamenáva.
+
+### Rozhodnutie
+- **STOP** na „Production Standard" pre Compiler/Build Protocol → v0.1 DRAFT.
+- **BUILD** na CI: cache `npm ci` (až −38 % CI), fastpath bez `.ts/.tsx`,
+  lokálna brána pred pushom (dotýka sa 27 % červených behov).
+- **BUILD, lacné:** `model_calls` + `tokens_in/out` do ledger schémy a čas do
+  `RUN SUMMARY`. Bez toho bude každý ďalší benchmark opäť odhad.
+
+Report: `docs/reports/2026-09-26-baseline-benchmark.md` (vrátane brány pre
+tvrdenie „compiled je rýchlejší pri rovnakej kvalite" — päť podmienok).
+
+---
+
 ## [2026-09-26] — ONBOARDING-ANON-01: zatvorená anon diera na `onboarding_sessions` (founder GO)
 
 Nález z #705: pri reprodukovaní produkčných policies do baseline vyplávala policy,

@@ -1,0 +1,248 @@
+{
+  "source": "GitHub API list_workflow_runs saas-grade-pipeline.yml status=completed perPage=30",
+  "captured_at": "2026-09-26",
+  "definition": "duration_seconds = updated_at - run_started_at",
+  "n": 30,
+  "runs": [
+    {
+      "id": 36265656939,
+      "created_at": "2026-09-26T19:19:33Z",
+      "event": "pull_request",
+      "conclusion": "success",
+      "head_branch": "claude/loving-thompson-0s22ut",
+      "duration_seconds": 557
+    },
+    {
+      "id": 36265025293,
+      "created_at": "2026-09-26T19:08:51Z",
+      "event": "push",
+      "conclusion": "success",
+      "head_branch": "main",
+      "duration_seconds": 592
+    },
+    {
+      "id": 36189229073,
+      "created_at": "2026-09-25T21:01:45Z",
+      "event": "pull_request",
+      "conclusion": "success",
+      "head_branch": "claude/zealous-albattani-2h32y5",
+      "duration_seconds": 420
+    },
+    {
+      "id": 36188889240,
+      "created_at": "2026-09-25T20:58:18Z",
+      "event": "pull_request",
+      "conclusion": "cancelled",
+      "head_branch": "claude/zealous-albattani-2h32y5",
+      "duration_seconds": 219
+    },
+    {
+      "id": 36187076160,
+      "created_at": "2026-09-25T20:39:34Z",
+      "event": "push",
+      "conclusion": "success",
+      "head_branch": "main",
+      "duration_seconds": 558
+    },
+    {
+      "id": 36183610601,
+      "created_at": "2026-09-25T20:05:13Z",
+      "event": "pull_request",
+      "conclusion": "success",
+      "head_branch": "claude/loving-thompson-0s22ut",
+      "duration_seconds": 459
+    },
+    {
+      "id": 36183139500,
+      "created_at": "2026-09-25T20:00:43Z",
+      "event": "push",
+      "conclusion": "success",
+      "head_branch": "main",
+      "duration_seconds": 408
+    },
+    {
+      "id": 36180058151,
+      "created_at": "2026-09-25T19:30:06Z",
+      "event": "pull_request",
+      "conclusion": "success",
+      "head_branch": "claude/loving-thompson-0s22ut",
+      "duration_seconds": 548
+    },
+    {
+      "id": 36179394948,
+      "created_at": "2026-09-25T19:23:39Z",
+      "event": "push",
+      "conclusion": "failure",
+      "head_branch": "main",
+      "duration_seconds": 311
+    },
+    {
+      "id": 36178924835,
+      "created_at": "2026-09-25T19:18:59Z",
+      "event": "pull_request",
+      "conclusion": "success",
+      "head_branch": "claude/loving-thompson-0s22ut",
+      "duration_seconds": 583
+    },
+    {
+      "id": 36178793395,
+      "created_at": "2026-09-25T19:17:43Z",
+      "event": "pull_request",
+      "conclusion": "failure",
+      "head_branch": "claude/keen-lovelace-ih8ej3",
+      "duration_seconds": 326
+    },
+    {
+      "id": 36178609243,
+      "created_at": "2026-09-25T19:15:55Z",
+      "event": "push",
+      "conclusion": "failure",
+      "head_branch": "main",
+      "duration_seconds": 320
+    },
+    {
+      "id": 36177960451,
+      "created_at": "2026-09-25T19:09:41Z",
+      "event": "pull_request",
+      "conclusion": "failure",
+      "head_branch": "claude/loving-thompson-0s22ut",
+      "duration_seconds": 325
+    },
+    {
+      "id": 36177378330,
+      "created_at": "2026-09-25T19:04:04Z",
+      "event": "pull_request",
+      "conclusion": "success",
+      "head_branch": "claude/keen-lovelace-ih8ej3",
+      "duration_seconds": 541
+    },
+    {
+      "id": 36175659567,
+      "created_at": "2026-09-25T18:47:31Z",
+      "event": "push",
+      "conclusion": "success",
+      "head_branch": "main",
+      "duration_seconds": 615
+    },
+    {
+      "id": 36174438882,
+      "created_at": "2026-09-25T18:35:55Z",
+      "event": "pull_request",
+      "conclusion": "success",
+      "head_branch": "claude/keen-lovelace-ih8ej3",
+      "duration_seconds": 508
+    },
+    {
+      "id": 36174384589,
+      "created_at": "2026-09-25T18:35:23Z",
+      "event": "push",
+      "conclusion": "success",
+      "head_branch": "main",
+      "duration_seconds": 576
+    },
+    {
+      "id": 36174346139,
+      "created_at": "2026-09-25T18:35:02Z",
+      "event": "push",
+      "conclusion": "cancelled",
+      "head_branch": "main",
+      "duration_seconds": 36
+    },
+    {
+      "id": 36135539917,
+      "created_at": "2026-09-25T12:32:48Z",
+      "event": "pull_request",
+      "conclusion": "success",
+      "head_branch": "claude/keen-lovelace-ih8ej3",
+      "duration_seconds": 505
+    },
+    {
+      "id": 36134704452,
+      "created_at": "2026-09-25T12:24:05Z",
+      "event": "pull_request",
+      "conclusion": "failure",
+      "head_branch": "claude/keen-lovelace-ih8ej3",
+      "duration_seconds": 413
+    },
+    {
+      "id": 36134397719,
+      "created_at": "2026-09-25T12:20:49Z",
+      "event": "pull_request",
+      "conclusion": "success",
+      "head_branch": "claude/loving-thompson-0s22ut",
+      "duration_seconds": 559
+    },
+    {
+      "id": 36134196699,
+      "created_at": "2026-09-25T12:18:43Z",
+      "event": "pull_request",
+      "conclusion": "success",
+      "head_branch": "claude/zealous-albattani-2h32y5",
+      "duration_seconds": 567
+    },
+    {
+      "id": 36133533123,
+      "created_at": "2026-09-25T12:11:38Z",
+      "event": "pull_request",
+      "conclusion": "success",
+      "head_branch": "claude/loving-thompson-0s22ut",
+      "duration_seconds": 395
+    },
+    {
+      "id": 36131904586,
+      "created_at": "2026-09-25T11:53:55Z",
+      "event": "push",
+      "conclusion": "success",
+      "head_branch": "main",
+      "duration_seconds": 561
+    },
+    {
+      "id": 36130712873,
+      "created_at": "2026-09-25T11:40:53Z",
+      "event": "pull_request",
+      "conclusion": "success",
+      "head_branch": "claude/loving-thompson-0s22ut",
+      "duration_seconds": 405
+    },
+    {
+      "id": 36129620054,
+      "created_at": "2026-09-25T11:28:58Z",
+      "event": "push",
+      "conclusion": "failure",
+      "head_branch": "main",
+      "duration_seconds": 312
+    },
+    {
+      "id": 36129033589,
+      "created_at": "2026-09-25T11:22:32Z",
+      "event": "pull_request",
+      "conclusion": "failure",
+      "head_branch": "claude/loving-thompson-0s22ut",
+      "duration_seconds": 316
+    },
+    {
+      "id": 36128319331,
+      "created_at": "2026-09-25T11:14:37Z",
+      "event": "push",
+      "conclusion": "failure",
+      "head_branch": "main",
+      "duration_seconds": 336
+    },
+    {
+      "id": 36128277022,
+      "created_at": "2026-09-25T11:14:09Z",
+      "event": "push",
+      "conclusion": "cancelled",
+      "head_branch": "main",
+      "duration_seconds": 44
+    },
+    {
+      "id": 36127084245,
+      "created_at": "2026-09-25T11:00:58Z",
+      "event": "pull_request",
+      "conclusion": "success",
+      "head_branch": "claude/keen-lovelace-ih8ej3",
+      "duration_seconds": 549
+    }
+  ]
+}
