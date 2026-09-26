@@ -149,7 +149,7 @@ export const PLATFORM_TABLES = [
   { table: "api_keys", note: "B2B API — service_role only" },
   { table: "api_usage_logs", note: "B2B API — service_role only" },
   { table: "bsm_campaign_config", note: "Global campaign config" },
-  { table: "bsm_reforma_leads", note: "Own-profile capture; route requires a session" },
+  { table: "bsm_reforma_leads", note: "Capture route retired 2026-09-25; service_role only" },
   { table: "portal_listings", note: "Shared portal inventory" },
   { table: "listing_price_history", note: "Portal-linked history" },
   { table: "kataster_events", note: "Scoped via watched_parcels (tested indirectly)" },

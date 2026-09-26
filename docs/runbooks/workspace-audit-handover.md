@@ -28,7 +28,7 @@ na jeho disk — a práve tá slepá časť je dôvod, prečo vznikla lokálna s
 | `.cursor/mcp.json` | 8 | `"CLAUDE_FLOW_CWD": "C:/RealitkaAI"` |
 | `packages/mcp-config.json` | 6, 15, 25, 32 | `"C:\\RealitkaAI\\packages\\mcp-*\\dist\\server.js"` |
 | `apps/crm/.claude/settings.local.json` | 13 | `Bash(cat C:/RealitkaAI/.github/workflows/*.yml)` |
-| `memory/hourly-summary.ps1` | 7 | `$filePath = "C:\RealitkaAI\memory\session-summary.md"` |
+| ~~`memory/hourly-summary.ps1`~~ | ~~7~~ | **opravené:** cesta sa teraz odvodzuje z `$PSScriptRoot` a nudge ide do gitignorovaného `memory/hourly-trigger.local.md` |
 
 **Falošné poplachy — netreba ich riešiť:** `scripts/vercel-ignore-command.test.mjs`
 (cesty na Git Bash, nezávislé od repa), `apps/crm/scripts/tc-orchestrator.mjs`
