@@ -1,13 +1,18 @@
-﻿import { createActivity } from "@/lib/activities-store";
+﻿import type { SupabaseClient } from "@supabase/supabase-js";
+import { createActivity } from "@/lib/activities-store";
 import {
   recalculateAllMatches,
   recalculateMatchesForLead,
   recalculateMatchesForProperty,
 } from "@/lib/matching-store";
 
-export async function autoRecalculateForLead(leadId: string) {
+/**
+ * Pass the request-scoped client. Without it, on the server matching read
+ * through the browser singleton, found nothing and wrote nothing.
+ */
+export async function autoRecalculateForLead(leadId: string, scoped?: SupabaseClient | null) {
   try {
-    const result = await recalculateMatchesForLead(leadId);
+    const result = await recalculateMatchesForLead(leadId, scoped);
 
     try {
       await createActivity({
@@ -21,7 +26,7 @@ export async function autoRecalculateForLead(leadId: string) {
         source: "matching",
         severity: "info",
         meta: result,
-      });
+      }, scoped);
     } catch {}
 
     return result;
@@ -31,9 +36,9 @@ export async function autoRecalculateForLead(leadId: string) {
   }
 }
 
-export async function autoRecalculateForProperty(propertyId: string) {
+export async function autoRecalculateForProperty(propertyId: string, scoped?: SupabaseClient | null) {
   try {
-    const result = await recalculateMatchesForProperty(propertyId);
+    const result = await recalculateMatchesForProperty(propertyId, scoped);
 
     try {
       await createActivity({
@@ -47,7 +52,7 @@ export async function autoRecalculateForProperty(propertyId: string) {
         source: "matching",
         severity: "info",
         meta: result,
-      });
+      }, scoped);
     } catch {}
 
     return result;
@@ -57,9 +62,9 @@ export async function autoRecalculateForProperty(propertyId: string) {
   }
 }
 
-export async function autoRecalculateEverything() {
+export async function autoRecalculateEverything(scoped?: SupabaseClient | null) {
   try {
-    const result = await recalculateAllMatches();
+    const result = await recalculateAllMatches(scoped);
 
     try {
       await createActivity({
@@ -73,7 +78,7 @@ export async function autoRecalculateEverything() {
         source: "matching",
         severity: "info",
         meta: result,
-      });
+      }, scoped);
     } catch {}
 
     return result;
