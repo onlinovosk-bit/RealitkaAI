@@ -3313,3 +3313,44 @@ aj netrackované súbory naraz.
 ### Ďalej
 `GO STASH-TO-BRANCHES` — až podľa výpisu, premeniť hodnotné stashe na vetvy
 a pushnúť. To je prvý zápis a chce vlastné rozhodnutie.
+
+---
+
+## 2026-09-27 — STASH-TO-BRANCHES: evakuovať, nie triediť; a oprava vlastnej diery
+
+Brána `GO STASH-TO-BRANCHES`. Bez zápisu do PROD, bez zmeny na disku.
+
+### Rozhodnutie bez dát — a prečo je to v poriadku
+Founder dal GO **skôr**, než poslal výstup `stash-rescue-report.ps1`, takže
+neviem, čo v tých 90 stashoch je. Namiesto čakania som otočil návrh:
+**neselektujem, evakuujem všetko.** Pri záchrane sa netriedi pred evakuáciou —
+zmazať vetvu, ktorá sa ukáže ako balast, je lacné; obnoviť zahodený stash nie.
+
+### Mechanika overená behom (git 2.43), nie odhadnutá
+1. `git branch <meno> stash@{N}` vetvu vytvorí a **stash zostane** v zozname.
+2. Obsah vetvy sa rovná obsahu stashu.
+3. Stash uložený s `-u` má netrackované súbory v **treťom rodičovi (`^3`)**
+   a tie pri pushi vetvy **odchádzajú na remote tiež** (overené pushom do bare repa).
+4. 🔴 **`git stash show --name-only` netrackované súbory NEVYPISUJE.**
+
+### 🔴 Oprava vlastnej chyby z #711
+Bod 4 znamená, že `stash-rescue-report.ps1` (shipnutý v #711) mal **dieru
+v detekcii tajomstiev**: stashnutý netrackovaný `.env` by nikto neoznačil.
+Opravené — číta sa aj `^3`, rozšírený vzor (`password`, `token`, `.pfx`),
+a výpis teraz uvádza počet netrackovaných zvlášť s upozornením, že odchádzajú
+pri pushi.
+
+### Postavené
+`scripts/ops/stash-to-branches.ps1`:
+- **dry-run je východzí**, `-Execute` je nutný na akúkoľvek zmenu,
+- vytvára len lokálne vetvy `zachrana/<datum>-<NN>-<slug>`, idempotentne,
+- **nikdy nepushuje**, nemaže stashe, nerobí checkout,
+- vetvy s tajomstvami označí a príkaz na push vypíše **len pre tie ostatné**.
+
+Dôvod, prečo nepushuje automaticky, plynie priamo z bodov 3+4: push vetvy by
+zverejnil netrackovaný `.env` zo stashu.
+
+### Ďalej
+Founder spustí dry-run, pozrie výpis, potom `-Execute`, potom sa rozhodne
+o pushi. Výstup `stash-rescue-report.ps1` je stále vítaný — ale už nie je
+podmienkou záchrany.

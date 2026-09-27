@@ -116,8 +116,13 @@ foreach ($repo in $repos) {
                 $ref = $p[0]; $date = $p[1]; $msg = $p[2]
                 $stat = @(git stash show --stat $ref 2>$null)
                 $last = if ($stat.Count -gt 0) { $stat[-1].Trim() } else { '(prazdny alebo necitatelny)' }
-                $files = @(git stash show --name-only $ref 2>$null)
-                $secret = @($files | Where-Object { $_ -match '\.env|secret|credential|\.pem$|\.key$' })
+                # POZOR: 'git stash show --name-only' NETRACKOVANE subory nevypisuje.
+                # Overene behom (git 2.43). Preto sa citaju zo tretieho rodica ^3
+                # zvlast - inak by stashnuty .env nikto neoznacil.
+                $tracked = @(git stash show --name-only $ref 2>$null)
+                $untrack = @(git ls-tree -r --name-only "$ref^3" 2>$null)
+                $files   = @($tracked + $untrack | Where-Object { $_ })
+                $secret  = @($files | Where-Object { $_ -match '\.env|secret|credential|password|token|\.pem$|\.key$|\.pfx$' })
                 Write-Output ("  {0,-12} {1}  {2}" -f $ref, $date, $msg)
                 Write-Output ("      {0}" -f $last)
                 if ($files.Count -gt 0 -and $files.Count -le 6) {
@@ -126,8 +131,11 @@ foreach ($repo in $repos) {
                     $files | Select-Object -First 5 | ForEach-Object { Write-Output "        $_" }
                     Write-Output ("        ... a dalsich {0} suborov" -f ($files.Count - 5))
                 }
+                if ($untrack.Count -gt 0) {
+                    Write-Output ("      z toho {0} NETRACKOVANYCH (stash -u) - tie sa pri pushi vetvy dostanu na remote" -f $untrack.Count)
+                }
                 if ($secret.Count -gt 0) {
-                    Write-Output ("      !! POZOR: stash meni {0} suborov s tajomstvami - pri obnove opatrne" -f $secret.Count)
+                    Write-Output ("      !! POZOR: stash sa dotyka {0} suborov, ktore vyzeraju ako tajomstva - NEPUSHOVAT bez kontroly" -f $secret.Count)
                 }
             }
         } finally { Pop-Location }
