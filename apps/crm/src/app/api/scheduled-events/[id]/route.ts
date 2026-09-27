@@ -116,7 +116,11 @@ export async function PATCH(request: Request, context: RouteContext) {
         source: "scheduled-events",
         severity: event.status === "cancelled" ? "warning" : "info",
         meta: { eventType: event.eventType, status: event.status },
-      });
+      }, supabase).catch((e) =>
+        // The event is already saved; a missing timeline entry must not
+        // turn that into an error for the broker.
+        console.error("[scheduled-events] activity:", e instanceof Error ? e.message : e),
+      );
     }
 
     return okResponse({ event });
@@ -161,7 +165,11 @@ export async function DELETE(_request: Request, context: RouteContext) {
         actorName: profile.full_name || "Maklér",
         source: "scheduled-events",
         severity: "warning",
-      });
+      }, supabase).catch((e) =>
+        // The event is already saved; a missing timeline entry must not
+        // turn that into an error for the broker.
+        console.error("[scheduled-events] activity:", e instanceof Error ? e.message : e),
+      );
     }
 
     return okResponse({ deleted: true });
