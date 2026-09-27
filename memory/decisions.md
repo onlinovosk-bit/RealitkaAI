@@ -42,6 +42,99 @@ text leadu už ide do AI cez triage (rovnaký právny základ 6(1)(f)).
 - Webhook cesta sa správa ako predtým (refaktor na ten istý helper).
 - **Známa diera (W1):** lead bez telefónu, ktorého jediná adresa je adresa kancelárie,
   dostane návrh na túto adresu. Maklér ju vidí v potvrdzovacom dialógu pred odoslaním.
+
+## [2026-09-27] AP-028 / CI-FASTPATH-01 — a oprava vlastného čísla z AP-027 (founder GO)
+
+### Najprv oprava, pretože mení odporúčanie
+AP-027 tvrdil `npm ci + setup ~3,5 min ← najväčšia jednotlivá položka`. **Bolo to
+nesprávne.** Nebolo to odčítané z krokov jobu, bol to zoskupený odhad. Presné časy
+(job `108467951031`, `main`, 586 s) hovoria:
+
+| krok | s | % |
+|---|---|---|
+| **Test** (vitest) | **183** | 31 % |
+| **Start local Supabase** | **115** | 20 % |
+| **Build** (`next build`) | **90** | 15 % |
+| Lint 37 · Playwright install 31 · Reset DB 30 · Typecheck 29 | | 21 % |
+| Upload artifact 18 · **npm ci 18** · smoke 16 · setup-node 8 | | 10 % |
+
+`npm ci` je **18 s**, nie 3,5 min — `actions/setup-node@v4` má `cache: npm`
+s `cache-dependency-path` na `apps/crm/package-lock.json` už dlho. Cache existuje
+a funguje. Odporúčanie „cache `npm ci` → až −38 % CI" je **zrušené**; bolo by to
+26 s, teda 4 %.
+
+Je to presne tá chyba, ktorú AP-027 vyčítal Compileru, o úroveň vyššie:
+optimalizoval som zložku, ktorú som nezmeral po krokoch. Report je opravený
+v §2.1.1, nie prepísaný — pôvodné tvrdenie je v ňom citované ako nesprávne.
+
+### Čo sa nasadilo
+**Fastpath.** Diff, ktorý sa dotýka výhradne `docs/`, `memory/` a `.ai/`,
+preskočí `Build`, `Debug`, `Upload artifact`, `Install Playwright Chromium`
+a `Playwright smoke` — 155 s z 586 s (**−26 %**). Kvalifikuje sa **9 z 40**
+posledných zmergovaných PR (22,5 %), teda priemerne −35 s/PR. Skromné, a je to
+napísané ako skromné.
+
+Rozhodnutie robí `scripts/ci/classify-diff.sh` s 19 testami. Dve vlastnosti sú
+podstatné:
+- **`Test` sa nepreskakuje nikdy.** Vitest suite reálne otvára 30+ ciest
+  v `docs/` (`tests/verification/*.verification.test.ts`,
+  `tests/rls/rls-tenant-isolation.test.ts`, listing fixtures). Zmena `.md`
+  testy rozbiť **dokáže**. Fastpath, ktorý by ich preskočil, by prepustil
+  reálne zlyhanie. To je STOP 2 z auditu Compilera aplikovaný na seba.
+- **Fail-safe.** Keď sa zoznam zmenených súborov nedá zistiť, skript hlási
+  plný beh. Podmienky krokov sú `!= 'false'`, nie `== 'true'` — chýbajúci
+  výstup teda znamená beh, nie preskočenie.
+
+`checkout` dostal `fetch-depth: 2`, aby bol na PR dostupný `HEAD^1`/`HEAD^2`
+(base a head merge commitu) — presný diff PR bez fetchu 111 vetiev.
+
+**Lokálna brána.** `scripts/ci/prepush-gate.sh` beží 45 s a spustí presne tie
+brány, ktoré padajú: helper testy, API contract ratchet, typecheck baseline,
+lint. Proti zmeraným **27 % červených behov**, kde každý stojí celý ďalší cyklus.
+Skript **sám neinštaluje git hook** a explicitne vypisuje sekciu NEOVERENÉ
+(migrácie bez DB, vitest, smoke) — brána, ktorá naznačuje plné pokrytie, je
+horšia než žiadna.
+
+### Nález, ktorý vyplával z prvého behu tej brány
+`typecheck-baseline.mjs` počítal `error TS` nad celým výstupom `tsc`, teda aj nad
+`.next/types/**`. V CI to nebolo vidieť (`Typecheck` beží pred `Build`, `.next`
+neexistuje), ale lokálne hlásil 66 proti baseline 54 a **padal na artefaktoch
+odkazujúcich na súbory zmazané v #708**. Brána, ktorá lokálne padá bez príčiny, sa
+prestane spúšťať — na to ten istý súbor vyššie sám varuje pri
+`schema-governance-guard.yml`.
+
+Opravené: počíta sa zdroj, `.next/` sa vylučuje a **vypíše sa, koľko sa vylúčilo**.
+Pokrytie sa nemení, CI túto triedu nikdy nevidelo; zrovnalo sa len lokálne číslo
+s tým, ktoré rozhoduje. Overené: 54 zdroj + 12 `.next` = 66 = všetky výskyty.
+
+**A druhá chyba, moja, v tej oprave.** Prvá verzia regexu bola
+`/^([^\s(][^(]*)\(/` — zastavila sa na prvej zátvorke, takže cesty s Next.js
+route groups (`src/app/(dashboard)/leads/page.tsx`) nezmatchovala **vôbec**
+a chyby v celom `(dashboard)` segmente by z počtu zmizli. Zachytené tým, že
+súčet nesedel: 54 + 8 ≠ 66. Opravené na `/^(\S.*?)\(/` a **zafixované testom**
+s fixture, ktorá route groups obsahuje; proti starému regexu ten test padá
+(1/1 namiesto 3/2), takže má zuby.
+
+### Neurobené, s číslom
+- `Test` 183 s + `Start local Supabase` 115 s = **51 % behu**. Najväčší
+  zostávajúci cieľ. Rozdelenie DB-závislých a čistých testov by ich vedelo
+  prekryť, ale to je vlastná brána, nie prívesok k tejto.
+- `Upload artifact` (18 s, `.next`, 7 dní retencie) — **žiadny workflow ho
+  nesťahuje**. Manuálna debug pomôcka. Ponechané, nahlásené.
+- `find-dead-exports.mjs` v `code-contract-guard.yml` je dormantný krok
+  (`hashFiles(...) != ''`) čakajúci na PR #358, ktoré nikdy neprišlo.
+- Cache Playwright prehliadača (31 s) zámerne **nie** — `--with-deps` inštaluje
+  systémové knižnice, ktoré sa necachujú, a riziko rozbitia smoke brány za 5 %
+  nestojí.
+
+### Overovacia diera, priznaná
+Tento PR sa dotýka `.github/`, `scripts/` a `apps/crm/scripts/`, takže sám sa
+kvalifikuje na **plný beh**. Rýchlu vetvu teda prvýkrát vykoná až najbližšie
+docs-only PR. `git diff HEAD^1 HEAD^2` na reálnom merge refe je overené 19 testami
+nad zoznamami ciest, nie proti živému merge commitu. Najhorší prípad pri chybe je
+plný beh, nie preskočená brána.
+
+---
 ## [2026-09-27] — ACTIVITY-CLIENT-01: serverové zápisy aktivít cez prehliadačového klienta (founder GO 2)
 
 - **Otázka:** prečo PROD od 18. 9. nezapísal ani jednu aktivitu?
@@ -3462,3 +3555,35 @@ podmienkou záchrany.
   pred samotným súhlasom. V Testing režime navyše Google zneplatní refresh token
   po 7 dňoch, takže pridanie testera je riešenie na týždeň, nie riešenie.
   Publikovať app je trvalé; cena je varovanie „neoverená aplikácia" pri pripájaní.
+
+## 2026-09-27 — CONCIERGE-SECRET-FAIL-CLOSED nasadené (#716, `9c72fa1a`)
+
+Uzatvára nález z dnešného záznamu „Concierge endpointy sú v produkcii bez
+autentifikácie (fail-open)" vyššie. Ten záznam popisuje stav **pred** týmto
+commitom; od `9c72fa1a` už neplatí.
+
+- **Zmena.** `conciergeSecretOk`: `if (!expected) return true` → `return false`.
+  Chýbajúca env premenná je nesprávna konfigurácia, nie povolenie. Päť testov
+  podľa vzoru `cron-auth.test.ts`; komentár v `proxy.ts` prestal tvrdiť, že
+  `CONCIERGE_SHARED_SECRET` je „optional".
+- **KOREKCIA vlastného tvrdenia.** Povedal som, že fail-closed sa nesmie nasadiť
+  pred nastavením secretu. Dôkaz, ktorý som na to mal, pokrýval len `callback`
+  (0 leadov); `properties` a `freebusy` žiadny lead nevytvárajú, takže o nich
+  nehovoril nič. Domeral som to na `usage_metrics_daily`:
+
+  ```
+  concierge% metriky  →  0 riadkov
+  celá tabuľka (kontrola) →  54 riadkov, 6 metrík, posledný zápis dnes
+  ```
+
+  Kontrolný dotaz je tam zámerne: bez neho „nula riadkov" môže rovnako dobre
+  znamenať rozbitú metriku ako nulovú prevádzku. Znamená nulovú prevádzku —
+  všetky tri routy neboli v produkcii nikdy zavolané. Preto sa nasadenie pred
+  premennou nedá nič rozbiť a pozícia sa obrátila.
+- **Následok pre founderov krok.** Tri routy dnes vracajú 401 **zámerne**, nie
+  omylom. Poradie ostáva Vercel → Voiceflow (`x-concierge-secret`) → redeploy;
+  Vercel aplikuje env premenné až pri builde, takže bez redeployu sa nič nezmení.
+- **Typecheck ratchet.** `NodeJS.ProcessEnv` vyžaduje `NODE_ENV`, takže `{}` aj
+  priame `as NodeJS.ProcessEnv` sú typové chyby a ratchet ich počíta. Jeden
+  helper `env()` s `as unknown as` ich drží na jednom mieste: 64 chýb proti 69
+  na maine, teda o päť menej ako pred PR.
