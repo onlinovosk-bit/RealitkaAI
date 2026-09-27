@@ -508,6 +508,10 @@ async function fetchCurrentBillingStatusUncached(stripe: Stripe) {
 
 export async function handleStripeWebhookEvent(event: Stripe.Event) {
   const object: any = event.data.object;
+  // The Stripe webhook has no user session. Without an explicit client the
+  // activity insert fell back to the browser singleton (anon) and RLS
+  // rejected every billing activity; the error was swallowed below.
+  const activityClient = createServiceRoleClient();
 
   try {
     if (event.type === "checkout.session.completed") {
@@ -537,7 +541,7 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
         source: "billing",
         severity: "success",
         meta: { eventType: event.type, customer: object.customer, subscription: object.subscription },
-      });
+      }, activityClient);
     }
 
     if (event.type === "customer.subscription.created") {
@@ -555,7 +559,7 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
         source: "billing",
         severity: "success",
         meta: { eventType: event.type, customer: object.customer, status: object.status },
-      });
+      }, activityClient);
     }
 
     if (event.type === "customer.subscription.updated") {
@@ -592,7 +596,7 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
         source: "billing",
         severity: "info",
         meta: { eventType: event.type, customer: object.customer, status: object.status },
-      });
+      }, activityClient);
     }
 
     if (event.type === "customer.subscription.deleted") {
@@ -609,7 +613,7 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
         source: "billing",
         severity: "warning",
         meta: { eventType: event.type, customer: object.customer, status: object.status },
-      });
+      }, activityClient);
     }
 
     if (event.type === "invoice.paid") {
@@ -629,7 +633,7 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
           subscription: object.subscription,
           amountPaid: object.amount_paid,
         },
-      });
+      }, activityClient);
     }
 
     if (event.type === "invoice.payment_failed") {
@@ -648,7 +652,7 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
           customer: object.customer,
           subscription: object.subscription,
         },
-      });
+      }, activityClient);
     }
   } catch (error) {
     console.error("Billing activity logging error:", error);

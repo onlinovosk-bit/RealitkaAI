@@ -56,7 +56,7 @@ export async function PATCH(
         actorName: "Systém",
         source: "inventory",
         severity: "info",
-      });
+      }, supabase);
     } catch {}
 
     await autoRecalculateForProperty(id);
@@ -102,7 +102,7 @@ export async function DELETE(
         actorName: "Systém",
         source: "inventory",
         severity: "warning",
-      });
+      }, supabase);
     } catch {}
 
     return okResponse({ deletedId: id });
