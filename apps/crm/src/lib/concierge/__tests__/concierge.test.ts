@@ -11,6 +11,18 @@ import {
   fetchConciergeFreeBusy,
 } from "@/lib/concierge/freebusy";
 import { conciergeBookingIdempotencyKey } from "@/lib/concierge/booking";
+
+/**
+ * A fake env for these pure helpers.
+ *
+ * `NodeJS.ProcessEnv` requires NODE_ENV here, so both a bare `{}` and a direct
+ * `as NodeJS.ProcessEnv` are type errors — the repo's typecheck ratchet counts
+ * them. `as unknown as` is the conversion the compiler itself suggests, and
+ * routing every call through one helper keeps that in a single place instead
+ * of repeating it at each call site.
+ */
+const env = (vars: Record<string, string> = {}): NodeJS.ProcessEnv =>
+  vars as unknown as NodeJS.ProcessEnv;
 import { SMOLKO_AGENCY_ID } from "@/lib/profiles/resolve-profile-for-auth";
 
 const FRESH = new Date().toISOString();
@@ -64,7 +76,7 @@ describe("concierge search (N07)", () => {
       ],
       { locality: "Bratislava" },
       new Date(),
-      { PUBLIC_LISTING_MAX_AGE_DAYS: "7" } as NodeJS.ProcessEnv,
+      env({ PUBLIC_LISTING_MAX_AGE_DAYS: "7" }),
     );
     expect(cards.map((c) => c.id)).toEqual(["2"]);
     expect(cards[0].brokerName).toBe("Anna");
@@ -139,17 +151,39 @@ describe("concierge callback (N07)", () => {
 
 describe("concierge agency / secret", () => {
   it("defaults to Smolko agency", () => {
-    expect(resolveConciergeAgencyId({})).toBe(SMOLKO_AGENCY_ID);
+    expect(resolveConciergeAgencyId(env())).toBe(SMOLKO_AGENCY_ID);
   });
 
-  it("secret gate: empty env allows; set env requires match", () => {
-    expect(conciergeSecretOk(null, {})).toBe(true);
+  it("refuses when CONCIERGE_SHARED_SECRET is unset", () => {
+    // The point of the change: a missing env var is a misconfiguration, not
+    // permission. Previously this returned true and the three routes outside
+    // the session gate accepted anonymous callers.
+    expect(conciergeSecretOk(null, env())).toBe(false);
+    expect(conciergeSecretOk("anything", env())).toBe(false);
+  });
+
+  it("refuses when CONCIERGE_SHARED_SECRET is blank", () => {
     expect(
-      conciergeSecretOk("x", { CONCIERGE_SHARED_SECRET: "x" } as NodeJS.ProcessEnv),
-    ).toBe(true);
-    expect(
-      conciergeSecretOk("y", { CONCIERGE_SHARED_SECRET: "x" } as NodeJS.ProcessEnv),
+      conciergeSecretOk("x", env({ CONCIERGE_SHARED_SECRET: "  " })),
     ).toBe(false);
+  });
+
+  it("refuses a missing header even when the secret is set", () => {
+    expect(
+      conciergeSecretOk(null, env({ CONCIERGE_SHARED_SECRET: "x" })),
+    ).toBe(false);
+  });
+
+  it("refuses a wrong header", () => {
+    expect(
+      conciergeSecretOk("y", env({ CONCIERGE_SHARED_SECRET: "x" })),
+    ).toBe(false);
+  });
+
+  it("accepts an exact match", () => {
+    expect(
+      conciergeSecretOk("x", env({ CONCIERGE_SHARED_SECRET: "x" })),
+    ).toBe(true);
   });
 });
 

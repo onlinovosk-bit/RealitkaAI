@@ -1,3 +1,89 @@
+## Session 2026-09-27 (CONCIERGE-SECRET-FAIL-CLOSED nasadené)
+
+### Dokončené
+- **#716 `9c72fa1a`** — `conciergeSecretOk` je fail-closed. Bez
+  `CONCIERGE_SHARED_SECRET` vracia `false`, nie `true`. Päť testov podľa vzoru
+  `cron-auth.test.ts`, opravený zastaraný komentár v `proxy.ts`.
+- **Zápis vyššie v tejto session („Ďalší krok: až keď je secret vo Vercele")
+  bol prekonaný a je to KOREKCIA môjho tvrdenia.** Dôkaz, na ktorom stálo,
+  pokrýval len `callback` (0 leadov) — `properties` ani `freebusy` lead
+  nevytvárajú. Po domeraní `usage_metrics_daily` (0 riadkov pre `concierge%`
+  proti kontrolnej celej tabuľke: 54 riadkov, 6 metrík, zápis dnes) je jasné,
+  že tie routy neboli v produkcii nikdy zavolané, takže nasadenie pred
+  premennou nemá čo rozbiť.
+- **Typecheck ratchet: 64 proti 69 na maine.** Prvá verzia testov ich pridala
+  tri; typovaný helper `env()` ich odstránil a ešte dve staršie zmazal.
+
+### Rozpracované / Pending
+- **HUMAN: `CONCIERGE_SHARED_SECRET`** — founder generuje a vkladá; hodnota
+  nesmie prejsť konverzáciou. Vercel → Voiceflow (`x-concierge-secret`) →
+  redeploy. Do tej chvíle tri concierge routy vracajú 401 **zámerne**.
+- **HUMAN: Google OAuth consent (B08)** — publikovať app (Testing režim zabíja
+  refresh token po 7 dňoch), potom `CONCIERGE_GOOGLE_PROFILE_ID` + redeploy.
+- **HUMAN: `scripts/ops/stripe-verify-prices.sh`** — späť len `n/9 resolved`.
+- Diera W1: lead bez telefónu, ktorého jediná adresa je adresa kancelárie.
+
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/concierge/agency.ts`: fail-open → fail-closed.
+- `apps/crm/src/lib/concierge/__tests__/concierge.test.ts`: 5 testov + `env()`.
+- `apps/crm/src/proxy.ts`: komentár — secret je required, nie optional.
+
+### Ďalší krok
+Po founderovom nastavení secretu overiť cez `filter_project_envs`, že premenná
+je v produkcii, a až potom hlásiť Concierge ako zapojiteľný.
+
+---
+
+## Session 2026-09-27 (ACTIVITY-CLIENT-01)
+### Dokončené
+- Serverové `createActivity` volania dostali klienta: `api/scheduled-events/*`, `api/properties/[id]`,
+  `lib/billing-store.ts` (Stripe webhook), `lib/outreach-store.ts`; guard test v `tests/verification/`.
+### Rozpracované / Pending
+- PROD runbook B/C: foundrov test (B.1 200/draftCreated, B.2 OK) sa **nedostal do PROD DB ani do
+  PROD logov**, takže neoverené. Čaká na URL a leadId z odpovede.
+- Stripe VERIFY (CHECKOUT-ENV-01 krok A) — founder.
+- Dlh: 5 lib súborov s unscoped `createActivity` (zoznam v teste).
+### Kľúčové súbory zmenené
+- `apps/crm/src/app/api/scheduled-events/{route.ts,[id]/route.ts}`: scoped klient, aktivita nefatálna
+- `apps/crm/src/lib/billing-store.ts`: service-role klient pre billing aktivity
+- `apps/crm/tests/verification/server-activity-client.verification.test.ts`: nový guard
+### Ďalší krok
+Founder: Stripe VERIFY výstup; B.1 znova proti `app.revolis.ai` s celou odpoveďou.
+
+## Session 2026-09-27 (Concierge fail-open, B08 stav overený)
+
+### Dokončené
+- **Overený skutočný stav B08 namiesto opakovania návodu.** Consent neprebehol
+  (`profile_google_calendar` = 0 riadkov), takže `CONCIERGE_GOOGLE_PROFILE_ID`
+  nie je z čoho odvodiť. Produkcia pritom **na B08 kóde beží** — `main` `f90e6032`
+  (#708), posledný production deploy `READY`, `calendar-auth.ts` aj scope
+  `calendar.events.freebusy` sú na maine. Blokátor je ľudský: OAuth app v režime
+  Testing vráti `403 access_denied` a v tom režime Google zabíja refresh token
+  po 7 dňoch.
+- **Nájdené: Concierge endpointy sú v produkcii bez autentifikácie.**
+  `conciergeSecretOk` je fail-open (`if (!expected) return true`) a vo Vercel
+  produkcii nie je žiadna `CONCIERGE_*` premenná. Tri routy sú v `proxy.ts`
+  mimo session brány. Repo pritom rovnakú triedu chyby **už raz opravilo** —
+  `isAuthorizedCronBearer` je fail-closed a má na to test. Detail v `decisions.md`.
+- **Odmeraný dopad:** 0 leadov so `source = 'website-concierge'` za celú dobu,
+  widget podľa reportu z 2026-09-17 nikdy nebol zapojený. Expozícia reálna,
+  nevyužitá — a preto je teraz najlacnejší moment ju zavrieť.
+
+### Rozpracované / Pending
+- **HUMAN: `CONCIERGE_SHARED_SECRET`.** Founder ho generuje a vkladá sám —
+  hodnota by inak prešla konverzáciou. Poradie: Vercel → Voiceflow → redeploy.
+- **HUMAN: Google OAuth consent** — publikovať app, potom pripojiť účet
+  a nastaviť `CONCIERGE_GOOGLE_PROFILE_ID`.
+- **KOREKCIA v poradí krokov:** nastavenie env premennej JE tá zmena správania,
+  nie následná zmena kódu. Pôvodné tvrdenie Clauda bolo opačné a nesprávne.
+
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md`: tieto zistenia. Kód nezmenený.
+
+### Ďalší krok
+`GO CONCIERGE-SECRET-FAIL-CLOSED` — až keď je secret vo Vercele aj vo Voiceflow.
+
+---
 ## Session 2026-09-27 (MIGRATION-HISTORY-RECONCILE)
 
 ### Dokončené
@@ -83,6 +169,8 @@
 
 ### Ďalší krok
 Calendly webhook (founder) alebo inventúra stĺpcov naprieč schémou.
+
+---
 
 ## Session 2026-09-25 (RLS vlna dokončená, CI attribution, PR-6, BSM retired)
 ### Dokončené

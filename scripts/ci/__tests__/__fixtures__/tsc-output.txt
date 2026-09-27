@@ -1,0 +1,7 @@
+src/lib/leads/score.ts(12,3): error TS2322: Type 'string' is not assignable to type 'number'.
+src/app/(dashboard)/leads/page.tsx(44,9): error TS18047: 'lead' is possibly 'null'.
+src/app/(marketing)/demo/live/page.tsx(7,1): error TS2339: Property 'x' does not exist.
+.next/types/app/(dashboard)/leads/page.ts(14,13): error TS2344: Type 'OmitWithTag<...>' does not satisfy the constraint '{ [x: string]: never; }'.
+.next/types/app/api/x/route.ts(2,24): error TS2307: Cannot find module '../../../src/app/api/x/route.js'.
+  Types of property 'foo' are incompatible.
+    Type 'undefined' is not assignable to type 'string'.
