@@ -1,5 +1,70 @@
 # Critical Decisions Log
 
+## [2026-09-27] AP-024 / MIGRATION-HISTORY-RECONCILE — 65 nezaznamenaných migrácií, 46 z nich bez následku (founder GO)
+
+Otázka nebola „koľko riadkov chýba v histórii", ale „čo z toho produkcia naozaj
+nemá". `supabase_migrations.schema_migrations` je účtovný záznam, nie meranie:
+v ten istý deň sa potvrdil aj prípad **chýba v histórii, efekt je tam**
+(`20260728140000_profiles_platform_admin`), aj **chýba v histórii, efekt tam nie je**
+(`20260827214500_leads_revoke_anon_table_privileges`).
+
+Zmerané per objekt na PROD, nie odvodené: **784 tvrdení** (politika, stĺpec, index,
+trigger, funkcia, constraint, oprávnenie) zo 65 nezaznamenaných migrácií.
+
+| | počet |
+|---|---|
+| migrácie v repozitári / riadky v histórii | 120 / 61 |
+| nezaznamenané, po ktorých **nechýba nič** | **46** |
+| nezaznamenané, po ktorých niečo chýba | 19 |
+| z toho: chýba správne (zrušila neskoršia migrácia) | 33 nálezov |
+| z toho: **odstránenie, ktoré PROD nedostal** | 10 |
+| z toho: **objekt, ktorý PROD nemá** | 77 |
+
+**Šesť „duchov" nie je záhada.** Spárované podľa názvu: štyri sú ten istý súbor
+zapísaný pod inou verziou, pretože migrácia aplikovaná cez Supabase MCP si razí
+vlastnú časovú pečiatku. To je mechanizmus podstatnej časti driftu, nie nehoda.
+Dva zvyšné (`repair_scheduled_events_phase1_20260923`) sú necommitnutá oprava —
+ale `scheduled_events` na PROD sa presne zhoduje s tým, čo tvorí
+`20260527143000_event_scheduler_phase1.sql`, takže popis nechýba, chýba zápis.
+
+### Rozhodnutia
+
+- **BUILD (hotové):** meranie ako zopakovateľný nástroj v repozitári
+  (`scripts/ops/reconcile-migration-history.mjs`), nie jednorazové tvrdenie v chate.
+- **BACKLOG s bránou, nie teraz:** štyri nálezy nižšie. Každý je samostatná zmena
+  na produkcii s vlastným rizikom; brána bola na meranie.
+- **Priznaná vlastná chyba v metóde:** prvé kolo prevádzalo názvy politík na malé
+  písmená, čo je správne pre necitovaný a nesprávne pre citovaný identifikátor.
+  Vyrobilo to 7 falošných nálezov na baseline súbore. Po oprave je ich 0 a baseline
+  je verný. Dotknutých bolo presne 10 tvrdení, všetky preverené so správnou
+  veľkosťou písmen.
+
+### Bezpečnostné nálezy (nič sa nemenilo, iba zmerané)
+
+1. **`anon` má na `public.leads` všetkých 7 oprávnení** (511 riadkov klienta).
+   Neuniká nič — `leads` má jednu politiku `leads_tenant` pre `authenticated` —
+   ale vrstva, ktorú `20260827214500` mala pridať, tam nie je. 107 zo 111 tabuliek
+   dáva `anon` plné DML; RLS je všade jediná brána.
+2. **26 politík nesie `IS NULL` únik v 16 tabuľkách.** 11 vedie cez `leads.agency_id`,
+   ktorý je `NOT NULL` → mŕtve. **10 tabuliek** má vlastný nullable `agency_id`
+   a únik na `INSERT`/`ALL` pre `authenticated` → ktokoľvek s účtom môže vyrobiť
+   nepriradený riadok, ktorý potom vidí každý nájomník. Riadkov s `NULL` dnes: **0**.
+   Zápisová sonda sa **nespúšťala** (brána bola read-only); dôkaz je z tela politiky.
+3. **27 tabuliek má RLS zapnutú a nula politík** (`credit_ledger`, `decisions`,
+   `exclusivity_outcomes`, `ai_sourced_deals`). **Dnes to nie je chyba** — všetci
+   volajúci idú cez `createServiceRoleClient()`, ktorý RLS obchádza. Chybou sa to
+   stane pri prvom dotaze s tokenom používateľa.
+4. **`lead_scores_agency`** je zrušenie, ktoré nedobehlo a žiadna neskoršia migrácia
+   ju netvorí. (`20260904150000_drop_open_anon_policies` naopak dobehol — pod verziou
+   20260904184236 — a všetkých 15 anon politík je pryč.)
+
+**Dôsledok pre „CI je zelené":** CI prehráva migrácie na čistú PG 15 a testuje inú
+databázu než tú klientovu. Merateľne: na čistej DB `anon` na `leads` oprávnenia nemá,
+na PROD má; na čistej DB existuje 7 tabuliek, ktoré na PROD neexistujú. Zelené CI
+hovorí „migrácie idú za sebou bez chyby", nie „produkcia je v tomto stave".
+
+Report: `docs/reports/2026-09-27-migration-history-reconcile.md`.
+
 ## [2026-09-26] AP-027 / BASELINE-BENCHMARK-01 — optimalizovali by sme 3,5 % (founder GO)
 
 Compiler a Build Protocol (Sol 5.6) tvrdia zrýchlenie buildu. Zrýchlenie je

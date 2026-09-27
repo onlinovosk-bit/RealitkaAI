@@ -1,3 +1,65 @@
+## Session 2026-09-27 (MIGRATION-HISTORY-RECONCILE)
+
+### Dokončené
+- **AP-024 / MIGRATION-HISTORY-RECONCILE** — história migrácií PROD zmierená
+  s repozitárom **per objekt**, nie per tabuľka. 120 migrácií v repe, 61 riadkov
+  v histórii, 65 nezaznamenaných. **784 tvrdení** o objektoch zmeraných na PROD
+  (politika, stĺpec, index, trigger, funkcia, constraint, oprávnenie).
+  Výsledok: **46 zo 65 nezaznamenaných migrácií nechýba po nich nič**; 19 áno,
+  s 120 nálezmi — 33 chýba správne, **10 je odstránenie, ktoré PROD nedostal**,
+  77 je objekt, ktorý PROD nemá. Report:
+  `docs/reports/2026-09-27-migration-history-reconcile.md`.
+- **Šesť „duchov" vysvetlených.** Spárované podľa názvu, nie verzie: 4 sú ten istý
+  súbor pod inou verziou (migrácia cez Supabase MCP si razí vlastnú pečiatku — to je
+  mechanizmus driftu), 2 sú necommitnutá oprava `scheduled_events`, ktorej koncový
+  stav sa však presne zhoduje s `20260527143000_event_scheduler_phase1.sql`.
+- **Nástroj, nie jednorazové tvrdenie** — `scripts/ops/reconcile-migration-history.mjs`
+  (`--mode diff` a `--mode sql`). Meranie sa dá zopakovať kýmkoľvek.
+- **Kontrola baseline súboru**: 63 tvrdení z `20260925210000_baseline_prod_only_tables.sql`,
+  **0 nezhôd** — baseline je verný. Overené aj to, že `"Allow anon access"` sa
+  vo baseline a v lockdowne zhoduje vrátane veľkosti písmen, takže na čistej DB je
+  koncový stav správny.
+- **Opravená moja vlastná chyba v metóde** — extraktor prevádzal názvy politík na
+  malé písmená (správne pre necitovaný, nesprávne pre citovaný identifikátor).
+  Vyrobilo 7 falošných nálezov; po oprave 0. Popísané v reporte, nie zamlčané.
+
+### Bezpečnostné nálezy — zmerané, NIČ nemenené (každý má vlastnú bránu)
+- **`anon` má na `public.leads` všetkých 7 oprávnení** (511 riadkov). Neuniká nič
+  (jedna politika `leads_tenant` pre `authenticated`), ale `20260827214500` nedobehol.
+  107 zo 111 tabuliek dáva `anon` plné DML → RLS je všade jediná brána.
+- **26 politík s `IS NULL` únikom v 16 tabuľkách.** 11 mŕtvych (vedú cez
+  `leads.agency_id`, ktorý je `NOT NULL`). **10 tabuliek dosiahnuteľných**:
+  vlastný nullable `agency_id` + únik na `INSERT`/`ALL` pre `authenticated`
+  (`ai_action_audit`, `ai_actions`, `bri_history`, `client_dna`, `deal_moments`,
+  `deal_risk`, `lead_events`, `lead_scores`, `priority_alerts`, `properties`).
+  Riadkov s `NULL` dnes: 0. Zápisová sonda **nespúšťaná** — brána bola read-only.
+- **27 tabuliek: RLS zapnutá, nula politík** (`credit_ledger`, `decisions`,
+  `exclusivity_outcomes`, `ai_sourced_deals`). **Dnes to nie je chyba** — dotrasované,
+  všetci volajúci idú cez `createServiceRoleClient()`.
+- **`lead_scores_agency`** — nedobehnuté zrušenie, žiadna neskoršia migrácia ju netvorí.
+
+### Rozpracované / Pending
+- **`GO RLS-LEADS-REVOKE`** — dobehnúť `20260827214500` na PROD. Najvyššia hodnota
+  na najmenšej ploche: jeden `REVOKE`, bez zmeny chovania aplikácie.
+- **`GO RLS-NULL-ESCAPES`** — 10 tabuliek, každú premerať zvlášť pred zmenou.
+- **`GO RLS-ANON-GUARD-TEST`** — statický ratchet v CI proti novým `true`/`IS NULL`
+  politikám pre `public`/`anon`, s povolenkou pre historické súbory.
+- **404-PATH-01 po hydratácii NEOVERENÉ** — sieťová politika odmieta `app.revolis.ai:443`.
+- **Calendly webhook** — founder check, 5 min.
+- **Pôvod 6 riadkov v `revolis_zaujemcovia`** — GDPR.
+- **Smer B z AP-023** — 14 tabuliek, ktoré kód volá a v PROD nie sú (tento report
+  ich potvrdil vrátane ich indexov, politík a oprávnení).
+- Cenník + Stripe KYB — founder.
+
+### Kľúčové súbory zmenené
+- `docs/reports/2026-09-27-migration-history-reconcile.md`: nový — AP-024, meranie per objekt.
+- `scripts/ops/reconcile-migration-history.mjs`: nový — zopakovateľné zmierenie histórie.
+- `docs/reports/2026-09-25-schema-drift-inventory.md`: odkaz na nadväzujúci AP-024.
+- `memory/decisions.md`, `memory/session-summary.md`: prepend.
+
+### Ďalší krok
+`GO RLS-LEADS-REVOKE` — odobrať `anon` oprávnenia na `public.leads`.
+
 ## Session 2026-09-26 (ONBOARDING-ANON-01)
 
 ### Dokončené
