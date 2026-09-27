@@ -6,8 +6,13 @@
   (PR #1 zmergovaná). Nič z toho nežije v Revolis.
 - **INBOUND-DRAFT-01** (GO A): AI návrh odpovede pre reálne leady —
   `apps/crm/src/lib/inbound/reply-draft.ts`, napojené v `api/acquire/email` a `api/leads/inbound`.
+- **AP-023 smer B triáž** (GO 2): 15 chýbajúcich tabuliek overených v PROD, volajúci
+  dotrasovaní (živé / za flagom / mŕtve). Rozhodovacia tabuľka v `memory/decisions.md` (COACH-HONEST).
+- **COACH-HONEST**: `api/coaching/insight` + `components/coaching/BrokerCoach.tsx` — žiadne
+  vymyslené čísla na dashboarde.
 
 ### Rozpracované / Pending
+- Founder odpovede k smeru B: starter pack, Calendly webhook, hodnoty `*_ENABLED` flagov.
 - `INBOUND_WEBHOOK_SECRET` nie je v project env na Vercel → `/api/webhooks/inbound-lead` vracia 503.
   Nevolá ho nikto; rozhodnúť, či webhook zrušiť.
 - Po merge overiť na PROD: nový lead z portálu → v časovej osi „AI návrh odpovede" →
@@ -15,6 +20,8 @@
   stále neoverený.
 
 ### Kľúčové súbory zmenené
+- `apps/crm/src/app/api/coaching/insight/route.ts`: bez štatistík žiadny panel, bez zdroja žiadne číslo
+- `apps/crm/src/components/coaching/BrokerCoach.tsx`: skryje hodnoty bez zdroja, bez „V regióne Prešov"
 - `apps/crm/src/lib/inbound/reply-draft.ts`: nový zdieľaný draft helper + `after()` scheduler + kill switch
 - `apps/crm/src/lib/inbound/auto-reply.ts`: `timeoutMs` voľba, `fallback` príznak
 - `apps/crm/src/lib/inbound/process-lead.ts`: krok 5 cez helper (správanie bez zmeny)

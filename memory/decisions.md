@@ -1,5 +1,26 @@
 # Critical Decisions Log
 
+## [2026-09-27] COACH-HONEST — dashboard už neukazuje vymyslené čísla (founder GO)
+
+**Nález (GO 2, AP-023 smer B):** `broker_performance_stats` v PROD neexistuje, takže
+`/api/coaching/insight` každému maklérovi vrátil natvrdo „TOP 12 %", „18 DNÍ",
+„O 4 dni rýchlejšie ako priemer", „3 Day Streak", 58 % follow-up a panel `BrokerCoach`
+ich zobrazil ako jeho vlastné. Porušenie Direktívy 4 („never a fake number"). Aj pri
+existujúcich štatistikách boli streak, rank a porovnanie s priemerom vymyslené a pod
+rankom stálo „V regióne Prešov".
+
+**Rozhodnutie (Ústava v2: BUILD — retencia, dôvera v čísla):**
+- Bez nameraných štatistík panel nie je (`ok:false, reason:"no_stats"`).
+- S nimi ide len to, čo má zdroj (rýchlosť uzatvárania, insight z reálnych čísel alebo
+  uložený AI tip). Streak, regionálny rank a porovnanie s priemerom sú `null` a skryté.
+- **Migrácia sa nerobí.** Tabuľku nič neplní — založiť ju by len zmenilo „vymyslené"
+  na „prázdne". Plnenie štatistík je samostatné rozhodnutie.
+
+**Ostatné tabuľky zo smeru B** (rozhodovacia tabuľka v chate 2026-09-27): čakajú na
+founder odpovede — starter pack (predávame?), Calendly webhook (nastavený?), hodnoty
+`*_ENABLED` flagov. Mŕtvy kód (`demand_signals`, `enrichment_log`, `strategic_alerts`,
+crony demo-brief/recap) je kandidát na zmazanie.
+
 ## [2026-09-27] INBOUND-DRAFT-01 — AI návrh odpovede aj pre reálne leady (founder GO A)
 
 **Problém:** „Schváliť a odoslať" (#690) dostávalo inbound návrhy len z
