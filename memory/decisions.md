@@ -3265,3 +3265,51 @@ kde je skutočný klon stále lepší. Zápis/mazanie cez `anon` odvodené, nie 
 `GO RLS-ANON-LOCKDOWN` — zavrieť `USING (true)` policies na `tasks`,
 `saas_leads`, `lead_property_scores`, `lead_property_events` migráciou
 v repe + aplikovať. Predbieha F3 aj `AI-COST-DAILY-MIGRATION-FIX`.
+
+---
+
+## 2026-09-27 — STASH-RESCUE: audit disku otočil prioritu, presun priečinkov nie je problém
+
+Brána `GO STASH-RESCUE`. Bez zápisu na disk aj do PROD.
+
+### Čo ukázal founderov beh `workspace-audit.ps1` (2026-09-25, PC-ONLINOVO)
+- **21 git repozitárov** na disku, z toho **tri živé klony `RealitkaAI`**
+  (`C:\RealitkaAI`, `...\realitka-ai-crm\RealitkaAI`, `...\Documents\GitHub\RealitkaAI`)
+  a jedno trojnásobne vnorené repo.
+- 🔴 **`C:\RealitkaAI`: 90 stashov + 19 necommitnutých súborov.**
+- 🔴 **Tri repozitáre bez remote** — obsah existuje len na tom disku:
+  `Onlinovo.sk AI L99 project` (50 necommitnutých, detached HEAD),
+  `eaa-validation` (9), `revolis-ai-bus`.
+- 🔴 **14 git worktrees** v `C:\RealitkaAI\.worktrees\`. Worktree drží absolútnu
+  cestu → presun ich rozbije všetkých 14 (rieši `git worktree repair`).
+  **Môj cloudový sken hlásil „žiadne worktrees" — v cloudovom klone nie sú.
+  Presne táto slepota bola dôvod auditu.**
+- ✅ **Docker nebeží** → lokálna Supabase nie je v hre. Jediná položka, o ktorej
+  som povedal „môže bolieť viac než minúty", odpadla.
+- Plánovač úloh: `RevolisAI-HourlySummary` **[Ready]** → `C:\RealitkaAI\memory\hourly-summary.ps1`. Potvrdené.
+- `LongPathsEnabled = 0` → limit 260 znakov platí; `C:\Projects\revolis-agent-os\`
+  je o 16 znakov hlbšie než `C:\RealitkaAI\`.
+- OneDrive je `C:\Users\aondr\OneDrive`, `C:\Projects` je mimo → v poriadku.
+- 8,4 GB `node_modules` v 275 priečinkoch. 826 absolútnych ciest v `C:\RealitkaAI`
+  (nafúknuté 14 worktrees, ktoré nesú kópie tých istých 9 miest), 186 v `RealitkaAI-run`.
+
+### Rozhodnutie
+**Presun priečinkov nie je problém — problém je, že práca existuje na jedinom
+disku bez zálohy.** Presúvať, kým to platí, nemá zmysel. Poradie sa otočilo:
+najprv záloha, potom prípadne presun.
+
+### Postavené
+`scripts/ops/stash-rescue-report.ps1` — len číta. Súhrn v ohrození, výpis
+stashov s dátumom/popisom/štatistikou (bez obsahu súborov, s varovaním pri
+zmenách v `.env`), necommitnuté zmeny, lokálne vetvy mimo remote, a návrh
+postupu. Bez diakritiky — founder musel predchádzajúci skript prepisovať na
+UTF-8 BOM, lebo PowerShell 5.1 diakritiku v ASCII súbore zle prečítal.
+
+Opravená vlastná chyba v návrhu postupu: `git bundle --all` **stashe nezahŕňa**
+a `$(...)` je bash, nie PowerShell. Nahradené kópiou celého priečinka cez
+`robocopy` ako primárnym odporúčaním — jediné, čo zachytí stashe, necommitnuté
+aj netrackované súbory naraz.
+
+### Ďalej
+`GO STASH-TO-BRANCHES` — až podľa výpisu, premeniť hodnotné stashe na vetvy
+a pushnúť. To je prvý zápis a chce vlastné rozhodnutie.
