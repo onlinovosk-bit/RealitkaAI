@@ -1,5 +1,25 @@
 # Critical Decisions Log
 
+## [2026-09-27] — ACTIVITY-CLIENT-01: serverové zápisy aktivít cez prehliadačového klienta (founder GO 2)
+
+- **Otázka:** prečo PROD od 18. 9. nezapísal ani jednu aktivitu?
+- **Odpoveď:** hlavne nízka prevádzka. Za 24 h 1× `/login`, 1× `/dashboard`; hlavné cesty
+  (lead, úlohy, timeline) klienta posielajú správne.
+- **Nájdený bug:** `createActivity()` bez klienta padá na prehliadačového klienta. Na serveri
+  je to `anon` a INSERT politika na `activities` je len pre `authenticated`, takže RLS
+  zápis zamietne.
+  - `scheduled-events` POST/PATCH/DELETE: udalosť sa uloží, potom 400 maklérovi.
+    Latentné, v PROD je 0 udalostí.
+  - Stripe webhook: všetkých 6 billing aktivít ticho zahodených (0 v PROD). Tier sync
+    nebol dotknutý.
+  - `properties/[id]`, `outreach-store`: aktivita stratená, chyba prehltnutá.
+- **Oprava:** request-scoped klient v routách, service-role vo webhooku; v `scheduled-events`
+  je aktivita nefatálna. Guard test `server-activity-client.verification.test.ts` sa na
+  starom kóde červená presne na týchto 12 miestach.
+- **Známy dlh** (explicitný zoznam v teste): `matching-hooks`, `ai-scoring-store`,
+  `notification-store`, `integrations-store`, `ai/matching-engine`.
+- Ústava: BUILD — prvé použitie kalendára by maklérovi hlásilo chybu pri úspechu (retencia).
+
 ## [2026-09-26] AP-027 / BASELINE-BENCHMARK-01 — optimalizovali by sme 3,5 % (founder GO)
 
 Compiler a Build Protocol (Sol 5.6) tvrdia zrýchlenie buildu. Zrýchlenie je
