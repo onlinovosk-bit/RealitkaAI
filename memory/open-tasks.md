@@ -252,13 +252,39 @@ force-pushovať, písať priamo do `main` ani hľadať alternatívne credentials
 Governance mechanizmus tu zafungoval správne — toto je jeho zamýšľané správanie,
 nie porucha.
 
-**Founder gate:** GO REQUIRED na **rozhodnutie o access modeli**, nie na opravu.
-Dve legitímne cesty:
-- (a) otvoriť agentom branch/PR cestu do governance repa s review bránou, alebo
-- (b) nechať ju zavretú a governance patche aplikovať výhradne ručne.
+**Founder gate:** ROZHODNUTÉ 2026-09-27 — **variant (a)**: otvoriť agentom
+branch/PR cestu do governance repa s review bránou. Odmietnutá alternatíva (b)
+bola nechať cestu zavretú a patche aplikovať výhradne ručne.
 
-Pri (b) bude každý takýto patch čakať na founderove ruky — to je akceptovateľná
-cena, ale má byť vybraná, nie zdedená mlčaním.
+**Review brána už existuje — netreba ju stavať.** `uptm-runner` má
+`.github/workflows/pytest.yml` s triggerom `on: pull_request` a štyrmi krokmi:
+syntax gate (UPTM-009), `pytest`, **mutation gate** (láme každý menovaný
+mechanizmus a vyžaduje, aby jeho dôkazy zčervenali) a enforcement evidence
+(UPTM-006, commit sa číta z checkoutu, nedá sa mu ho nadiktovať). Agentská PR
+teda prechádza silnejšou bránou než samotný merge — otvorenie cesty nezvyšuje
+riziko o nič, čo by CI neskontrolovalo.
+
+**Čo na (a) ešte treba — dve nezávislé akcie, obe founder-side:**
+
+- [ ] **A. GitHub** — Claude GitHub App na `onlinovosk-bit/uptm-runner`:
+      nainštalovať, alebo doplniť `contents: write`, ak už nainštalovaná je.
+      Bez toho ostáva `403` pri vytváraní branchu (symptóm 2). Nastavuje sa cez
+      https://claude.ai/connect-github; inštaláciu na repo schvaľuje owner
+      GitHub organizácie.
+- [ ] **B. Claude Code session** — povoliť `add_repo(uptm-runner, access: "push")`
+      (permission rule v `settings.json` alebo interaktívne schválenie). Bez toho
+      ostáva lokálne odmietnutie (symptóm 1). POZOR: samotný attach je len prvý
+      z dvoch krokov — GitHub API nástroje session sú scoped na attachnuté repá,
+      takže PR cesta sa otvorí až po A **aj** B.
+
+**Branch naming:** `pytest.yml` má `push: branches: [main, "cursor/**"]`. Vetvy
+s prefixom `claude/**` teda dostanú CI len na `pull_request`, nie na push. Ak má
+mať agentská vetva CI aj pred otvorením PR, treba do toho zoznamu pridať
+`claude/**` — samostatná jednoriadková zmena v `uptm-runner`.
+
+**Do not fix autonomously (platí aj po (a)):** PR cesta neznamená merge právo.
+Žiadny agent nemerguje do `main`, neobchádza branch protection, neforce-pushuje
+ani nehľadá alternatívne credentials. Review brána je CI + founder, nie agent.
 
 ## P0 — Critical AUTH / tenant (2026-08-25 auth hunt)
 
