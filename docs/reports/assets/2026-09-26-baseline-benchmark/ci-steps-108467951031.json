@@ -1,0 +1,44 @@
+{
+  "source": "GitHub Actions API list_workflow_jobs, run 36265025293 (main, run_number 2184)",
+  "job_id": 108467951031,
+  "job_name": "Lint, test, build",
+  "head_sha": "f90e60320719e98a2bc38726081ab10349534554",
+  "job_started_at": "2026-09-26T19:08:55Z",
+  "job_completed_at": "2026-09-26T19:18:41Z",
+  "job_seconds": 586,
+  "definition": "seconds = completed_at - started_at per step",
+  "note": "Táto sada vyvracia prvú verziu §2.1 reportu, ktorá tvrdila 'npm ci + setup ~3,5 min'. npm ci je 18 s; setup-node 8 s. Cache npm už bola v workflowe zapnutá.",
+  "steps": [
+    { "n": 1,  "name": "Set up job", "seconds": 1 },
+    { "n": 2,  "name": "actions/checkout@v4", "seconds": 2 },
+    { "n": 3,  "name": "Guard - n8n workflow exports contain no secrets", "seconds": 0 },
+    { "n": 4,  "name": "Guard - stealth lead-gen legal hold (AP-011)", "seconds": 0 },
+    { "n": 5,  "name": "actions/setup-node@v4 (npm cache restore)", "seconds": 8 },
+    { "n": 6,  "name": "Install (npm ci)", "seconds": 18 },
+    { "n": 7,  "name": "Lint", "seconds": 37 },
+    { "n": 8,  "name": "Test CI helper scripts", "seconds": 0 },
+    { "n": 9,  "name": "Typecheck (baseline gate)", "seconds": 29 },
+    { "n": 10, "name": "Setup Supabase CLI", "seconds": 2 },
+    { "n": 11, "name": "Authenticate to ghcr.io", "seconds": 0 },
+    { "n": 12, "name": "Start local Supabase", "seconds": 115 },
+    { "n": 13, "name": "Export local credentials", "seconds": 1 },
+    { "n": 18, "name": "Reset DB (migracie + seed.sql)", "seconds": 30 },
+    { "n": 19, "name": "Test (vitest)", "seconds": 183 },
+    { "n": 20, "name": "Build (next build)", "seconds": 90 },
+    { "n": 21, "name": "Debug - find .next", "seconds": 0 },
+    { "n": 22, "name": "Upload artifact (.next)", "seconds": 18 },
+    { "n": 23, "name": "Install Playwright Chromium", "seconds": 31 },
+    { "n": 24, "name": "Playwright smoke", "seconds": 16 }
+  ],
+  "fastpath_targets": {
+    "steps": ["Build (next build)", "Upload artifact (.next)", "Install Playwright Chromium", "Playwright smoke"],
+    "seconds": 155,
+    "share_of_job": 0.264,
+    "qualifying_prs": "9 z 40 (22,5 %) posledných zmergovaných PR sa dotklo výhradne docs/ + memory/"
+  },
+  "deliberately_not_skipped": {
+    "steps": ["Start local Supabase", "Reset DB (migracie + seed.sql)", "Test (vitest)"],
+    "seconds": 328,
+    "why": "vitest čita reálne súbory z docs/ (tests/verification/*, tests/rls/rls-tenant-isolation.test.ts, listing fixtures — 30+ ciest). Zmena .md testy rozbiť dokáže."
+  }
+}
