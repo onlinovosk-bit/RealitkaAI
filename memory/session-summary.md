@@ -1,3 +1,82 @@
+## Session 2026-09-27 (BASELINE-BENCHMARK-01, CI-FASTPATH-01, TEST-SPLIT-01 zmerané)
+
+### Dokončené
+- **BASELINE-BENCHMARK-01** (#709) — zmeraný menovateľ, ktorý chýbal na to, aby
+  bolo tvrdenie Compilera o zrýchlení vôbec overiteľné:
+  `docs/reports/2026-09-26-baseline-benchmark.md` + 5 zmrazených dátových sád
+  v `docs/reports/assets/2026-09-26-baseline-benchmark/` + merací skript
+  `scripts/ops/measure-prompt-stack.mjs`. Beh agentného tasku median **88 s
+  (3,5 % PR cyklu)**, CI **549 s (22 %)**, PR created→merged **42 min (n=40)**.
+  Zvyšných ~74 % je čakanie. Compiler optimalizuje tie 3,5 %.
+- **CI-FASTPATH-01** (#713) — diff výhradne v `docs/`/`memory/`/`.ai/` preskočí
+  Build, artifact a Playwright: **155 s z 586 s (−26 %)** na 9 z 40 PR (22,5 %).
+  `scripts/ci/classify-diff.sh` + 19 testov, fail-safe na plný beh.
+  `Test` sa nepreskakuje nikdy — vitest číta 30+ ciest v `docs/`.
+- **Lokálna brána** `scripts/ci/prepush-gate.sh` — 43 s proti zmeraným **27 %
+  červených behov** (8 z 30). Vypisuje povinné NEOVERENÉ.
+- **ONBOARDING-ANON-01** (#709) — anon `FOR ALL` policy na `onboarding_sessions`
+  dropnutá, aplikované na PROD, merané `anon` 5 → 0.
+- Overený fastpath **proti reálnemu merge refu** (`git fetch --depth=2 origin
+  refs/pull/713/merge`): `HEAD^1`/`HEAD^2` dá presný diff PR →
+  `app_touched=true`, `reason=mimo docs/memory: .github/...`. Teda správna
+  vetva, nie fail-safe.
+
+### Opravené vlastné chyby (obe zmerané, nie zamlčané)
+- **AP-027 tvrdil `npm ci ~3,5 min ← najväčšia položka`. Nesprávne.** Po krokoch
+  je to **18 s** (so setup-node 26 s = 4 %); `cache: npm` v workflowe už dlho je.
+  Odporúčanie „cache npm ci → −38 % CI" **zrušené**. Report opravený v §2.1.1,
+  pôvodné tvrdenie v ňom citované ako nesprávne, nie vymazané. Tá istá chyba,
+  akú AP-027 vyčítal Compileru, o úroveň vyššie.
+- **`typecheck-baseline.mjs` počítal `.next/types/**`** → lokálne 66 vs baseline
+  54, padalo na artefaktoch po #708. A v mojej oprave **druhá chyba**: regex
+  `/^([^\s(][^(]*)\(/` sa zastaví na prvej zátvorke, takže route groups
+  (`src/app/(dashboard)/...`) nezmatchoval vôbec a chyby v celom segmente by
+  z počtu zmizli. Zachytené tým, že súčet nesedel (54 + 8 ≠ 66). Opravené na
+  `/^(\S.*?)\(/` a zafixované fixture testom, ktorý proti starému regexu padá.
+
+### Rozpracované / Pending
+- **#713** čaká na dobehnutie `Lint, test, build` a merge (GO daný).
+- **TEST-SPLIT-01** (GO daný) — zmerané, ale **mechanizmus sa musel zmeniť**:
+  rozdelenie testov podľa grepu je **nespoľahlivé** —
+  `tests/rls/rls-tenant-isolation.test.ts` používa `createServiceClient()`
+  a nezmatchuje ho žiadny vzor (`createClient(`, `TEST_SUPABASE`, `SERVICE_ROLE`…).
+  Namiesto toho: `supabase start` na **pozadí**, prekrytý s npm ci + lint +
+  typecheck. Strop **min(84,115) = 84 s ≈ 14 %** na každom behu, bez oslabenia
+  brán. Mechanika overená (prekryv 7 s vs 11 s, zlyhanie → exit 1, zaseknutie →
+  exit 124 + log). Implementácia po merge #713, na čistej vetve.
+- Calendly webhook — 5-minútová kontrola foundera; `demo_bookings` v PROD neexistuje.
+- Provenance 6 riadkov v `revolis_zaujemcovia` — GDPR, rozhodnutie foundera.
+- Direction B z AP-023 (14 tabuliek, ktoré app volá a v PROD nie sú) + inventúra
+  funkcií a stĺpcov — nezmerané.
+- Dve dokumenty Sol 5.6 (Prompt Stack Compiler / Build Protocol) — nie sú v repe
+  a ich presný text už nemám; buď ich prilepiť znova, alebo napísať
+  Revolis-native v0.1 z nameraných čísel (odporúčam druhé).
+
+### Kľúčové súbory zmenené
+- `docs/reports/2026-09-26-baseline-benchmark.md`: baseline + §2.1.1 oprava
+- `docs/reports/assets/2026-09-26-baseline-benchmark/`: 5 zmrazených sád
+- `scripts/ops/measure-prompt-stack.mjs`: mechanické meranie stacku (nie agentom)
+- `scripts/ci/classify-diff.sh` + `__tests__/classify-diff.test.sh`: fastpath, 19 testov
+- `scripts/ci/prepush-gate.sh`: lokálna brána, 43 s
+- `apps/crm/scripts/typecheck-baseline.mjs`: počíta zdroj, nie `.next/`
+- `.github/workflows/saas-grade-pipeline.yml`: fetch-depth 2, classify step, 5 gated krokov
+- `apps/crm/supabase/migrations/20260926090000_onboarding_sessions_anon_lockdown.sql`
+
+### Nálezy nahlásené, nie opravené
+- `Test` 183 s + `Supabase start` 115 s = **51 % behu** — najväčší zostávajúci cieľ.
+- `Upload artifact` (`.next`, 18 s, 7 dní retencie) — **žiadny workflow ho nesťahuje**.
+- `find-dead-exports.mjs` v `code-contract-guard.yml` je dormantný krok čakajúci
+  na PR #358, ktoré nikdy neprišlo.
+- #710 pridalo svoje dva záznamy na **koniec** `decisions.md` (r. 3265), hoci log
+  je inak newest-first. Nechané tak — cudzie záznamy nepresúvam.
+- Vetva `claude/loving-thompson-0s22ut` je **zdieľaná** (dnes do nej dvakrát
+  pushol niekto mimo tejto session). Nikdy do nej force-push.
+
+### Ďalší krok
+Domerať #713 a zmergovať, potom TEST-SPLIT-01 na čistej vetve — a keďže wrap-up
+je `memory/`-only diff, bude to **prvý reálny beh rýchlej vetvy fastpathu**:
+zmerať skutočnú úsporu z krokov jobu a zapísať ju, nie strop.
+
 ## Session 2026-09-27 (ACTIVITY-CLIENT-01)
 ### Dokončené
 - Serverové `createActivity` volania dostali klienta: `api/scheduled-events/*`, `api/properties/[id]`,
