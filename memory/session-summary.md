@@ -1,3 +1,27 @@
+## Session 2026-09-26 (ONBOARDING-ANON-01)
+
+### Dokončené
+- **ONBOARDING-ANON-01**: `20260926090000_onboarding_sessions_anon_lockdown.sql`.
+  Dropnutá policy `"Allow anon access"` (`FOR ALL TO anon USING(true) WITH CHECK(true)`).
+  **Aplikované na PROD** pod founder GO: `anon` 5 → 0 riadkov, service role stále 5,
+  policies 0, RLS zapnutá. Overené lokálne na oboch tvaroch DB + idempotencia.
+
+### Rozpracované / Pending
+- **404-PATH-01 po hydratácii NEOVERENÉ** — sieťová politika prostredia odmieta
+  `app.revolis.ai:443` pre headless browser (403 na CONNECT). Server HTML a deploy
+  overené; post-hydratačný stav nie. Buď povoliť tú doménu, alebo klik foundera.
+- **Calendly webhook** — founder check, 5 min.
+- **Pôvod 6 riadkov v `revolis_zaujemcovia`** — GDPR.
+- **Smer B z AP-023** — 14 tabuliek, ktoré kód volá a v PROD nie sú.
+- **Inventúra funkcií a stĺpcov** — 3. a 4. rozmer driftu, oba nezmerané.
+- **UGKK-QUERY** — nedokončené.
+
+### Kľúčové súbory zmenené
+- `apps/crm/supabase/migrations/20260926090000_onboarding_sessions_anon_lockdown.sql`: nový
+
+### Ďalší krok
+Calendly webhook (founder) alebo inventúra stĺpcov naprieč schémou.
+
 ## Session 2026-09-25 (RLS vlna dokončená, CI attribution, PR-6, BSM retired)
 ### Dokončené
 - **RLS-OUTREACH-LOGS** — `apps/crm/supabase/migrations/20260925230000_outreach_logs_tenant_parity.sql`.
@@ -70,8 +94,6 @@ potom spustí runbook B/C a pošle výsledok.
   ma dnes zviedol k zmazaniu 1339 riadkov histórie.
 
 ### Rozpracované / Pending
-- **`onboarding_sessions` anon diera** — `TO anon USING(true) WITH CHECK(true)`.
-  Nový nález z baseline. Nepokryli ju #697 ani #702. Vlastná brána.
 - **Pôvod 6 riadkov v `revolis_zaujemcovia`** — founder check, minúty.
 - **Calendly webhook** — stále neoverený. 14 tabuliek, ktoré kód volá a v PROD
   nie sú (smer B z AP-023), baseline NERIEŠI.
