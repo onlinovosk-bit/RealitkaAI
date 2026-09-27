@@ -106,15 +106,36 @@ CI spotrebovala 3,6 h výpočtu = 11 % reálneho času okna
 červených.** Každý červený beh neplatí len 325 s CI — platí ďalší agentný
 cyklus, ďalší push a ďalších ~9 min CI.
 
-Rozklad jedného behu (job `108469704435`, merané v tejto session):
+### 2.1.1 OPRAVA (2026-09-27) — rozklad behu po krokoch
 
-```
-npm ci + setup             ~3,5 min    ← najväčšia jednotlivá položka
-next build                    84 s
-playwright install chromium   30 s
-tsc + eslint + smoke          ~65 s
-supabase start + 118 migrácií  17 s    ← nie je to bottleneck, hoci sa to tak tvári
-```
+> Prvá verzia tohto odseku tvrdila `npm ci + setup ~3,5 min ← najväčšia
+> jednotlivá položka`. **To bolo nesprávne a bola to moja chyba.** Číslo nebolo
+> odčítané z krokov jobu; bol to zoskupený odhad. Presné časy z GitHub Actions
+> API (job `108467951031`, `main`, 586 s celkom) hovoria iné:
+
+| krok | s | % behu |
+|---|---|---|
+| **Test** (vitest) | **183** | **31 %** |
+| **Start local Supabase** | **115** | **20 %** |
+| **Build** (`next build`) | **90** | **15 %** |
+| Lint (eslint) | 37 | 6 % |
+| Install Playwright Chromium | 31 | 5 % |
+| Reset DB (migrácie + seed) | 30 | 5 % |
+| Typecheck (baseline gate) | 29 | 5 % |
+| Upload artifact (`.next`) | 18 | 3 % |
+| **Install (`npm ci`)** | **18** | **3 %** |
+| Playwright smoke | 16 | 3 % |
+| setup-node (obnova cache) | 8 | 1 % |
+| checkout + guardy + zvyšok | ~11 | 2 % |
+
+**`npm ci` je 18 s, nie 3,5 min.** Dôvod je v workflowe a mal som ho prečítať
+skôr, než som odporúčal jeho opravu: `actions/setup-node@v4` tam už má
+`cache: npm` s `cache-dependency-path: apps/crm/package-lock.json`. Cache
+existuje a funguje. `npm ci` + `setup-node` je **26 s = 4 %** behu.
+
+Poučenie je presne to, čo tento report tvrdí o Compileri, obrátené proti mne:
+**optimalizoval som zložku, ktorú som nezmeral po krokoch.** Tá istá chyba, iná
+úroveň.
 
 ### 2.2 Agentné tasky do detailu
 
@@ -153,11 +174,12 @@ do nuly, median cyklus spadne zo 42 min na ~40,5 min.
 **FAKT.** Tri zmeny, ktoré sa dotýkajú zmeraných 96,5 %, a ani jedna nie je
 v Compileri:
 
-| zmena | zasiahne | odhadovaný efekt |
+| zmena | zasiahne | efekt |
 |---|---|---|
-| cache `npm ci` v `saas-grade-pipeline.yml` | ~3,5 min z 9,2 min CI | **až −38 % CI** (horná hranica: ak cache `npm ci` eliminuje úplne) |
-| preskočiť `next build` + `playwright install` pri diffe bez `.ts/.tsx` | 114 s | −20 % CI na docs PR |
+| ~~cache `npm ci`~~ | ~~3,5 min~~ → 26 s | **ZRUŠENÉ** — cache už existuje, viď §2.1.1 |
+| preskočiť `Build` + artifact + Playwright pri diffe iba v `docs/`+`memory/` | 155 s z 586 s | **−26 % na takom PR**; 9 z 40 PR (22,5 %) — priemerne −35 s/PR |
 | znížiť 27 % červených behov (lokálna brána pred pushom) | celý ďalší cyklus | **najväčší jednotlivý zdroj** |
+| *(neurobené, vlastná brána)* rozdeliť `Test` 183 s + `Supabase` 115 s | **51 % behu** | najväčší zostávajúci cieľ |
 
 **PREDPOKLAD.** Percentá v tabuľke sú aritmetika nad zmeranými zložkami, nie
 zmeraný výsledok zmeny. Overí sa až po nasadení, na tých istých metrikách.
@@ -214,8 +236,15 @@ Tvrdenie sa prijme **iba** ak platí všetkých päť. Inak je to v0.1 draft.
 **STOP na „Production Standard".** Compiler a Build Protocol optimalizujú
 zmeraných 3,5 %. Prečísliť na **v0.1 DRAFT** a doplniť tri STOP opravy z auditu.
 
-**BUILD na CI.** Cache `npm ci`, fastpath pre diffy bez `.ts/.tsx`, lokálna
-brána pred pushom. Dotýka sa zmeraných 22 % a 27 % červených behov.
+**BUILD na CI** — vykonané 2026-09-27 ako CI-FASTPATH-01. Nie však tak, ako to
+stálo tu: cache `npm ci` sa zrušila, pretože meranie po krokoch ukázalo, že už
+existuje (§2.1.1). Nasadené je preskočenie `Build` + artifact + Playwright na
+diffe, ktorý sa dotýka iba `docs/` a `memory/` (155 s), a lokálna brána
+`scripts/ci/prepush-gate.sh` (45 s) proti 27 % červených behov.
+
+`Test` sa nepreskakuje **nikdy**, ani na docs diffe: vitest suite reálne číta
+30+ ciest v `docs/`, takže zmena `.md` testy rozbiť dokáže. Fastpath, ktorý by
+ich preskočil, by prepustil reálne zlyhanie — to je drahšie než 183 s.
 
 **BUILD, lacné:** doplniť `model_calls` a `tokens_in/out` do ledger schémy
 a čas do `RUN SUMMARY`. Bez toho bude každý ďalší benchmark opäť odhad.

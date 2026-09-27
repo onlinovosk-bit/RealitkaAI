@@ -26,7 +26,14 @@ jobs:
       packages: read
 
     steps:
+      # fetch-depth: 2 nie je kozmetika. Na `pull_request` je checkout merge
+      # commit, ktorého ^1 je base a ^2 je head — `git diff HEAD^1 HEAD^2` je
+      # teda presne diff PR, bez fetchovania celej histórie (111 vetiev).
+      # Pri depth 1 by oba rodičia chýbali a classify-diff.sh by správne
+      # spadol do fail-safe, teda do plného behu — funkčné, ale zbytočné.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - name: Guard - n8n workflow exports contain no secrets
         run: |
@@ -63,6 +70,23 @@ jobs:
             exit 1
           fi
 
+      # ── CI-FASTPATH-01 ────────────────────────────────────────────────
+      # Diff, ktorý sa dotýka výhradne docs/ a memory/, nemôže zmeniť výsledok
+      # `next build` ani troch smoke specs — v apps/crm/src nie je ani jeden
+      # import .md/.mdx a tie specs žiadny docs súbor neotvárajú. Tie štyri
+      # kroky (155 s z 586 s, merané na jobe 108467951031) sa preto preskočia.
+      #
+      # `Test` sa NEPRESKAKUJE nikdy: vitest suite reálne číta 30+ ciest
+      # v docs/ (tests/verification/*, tests/rls/rls-tenant-isolation.test.ts),
+      # takže zmena .md testy rozbiť dokáže.
+      #
+      # Krok samotný nikdy nezhodí job: pri akejkoľvek neistote vracia
+      # app_touched=true, teda plný beh.
+      - name: Classify diff (fastpath gate)
+        id: scope
+        run: ../../scripts/ci/classify-diff.sh
+        working-directory: apps/crm
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -80,7 +104,10 @@ jobs:
       # The retry that guards `supabase start` is itself guarded: a wrapper that
       # silently stopped retrying, or looped forever, would be worse than none.
       - name: Test CI helper scripts
-        run: ./scripts/ci/__tests__/supabase-start.test.sh
+        run: |
+          ./scripts/ci/__tests__/supabase-start.test.sh
+          ./scripts/ci/__tests__/classify-diff.test.sh
+          node ./scripts/ci/__tests__/typecheck-baseline.test.mjs
 
       - name: Typecheck (baseline gate)
         working-directory: apps/crm
@@ -210,6 +237,7 @@ jobs:
           TEST_SUPABASE_SERVICE_ROLE_KEY: ${{ env.TEST_SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Build
+        if: steps.scope.outputs.app_touched != 'false'
         run: npm run build
         working-directory: apps/crm
         env:
@@ -218,6 +246,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
       - name: Debug - find .next
+        if: steps.scope.outputs.app_touched != 'false'
         run: |
           echo "=== Workspace root ==="
           ls -la ${{ github.workspace }}
@@ -227,6 +256,7 @@ jobs:
           ls -la ${{ github.workspace }}/apps/crm/.next/ || echo "NOT FOUND"
 
       - name: Upload artifact
+        if: steps.scope.outputs.app_touched != 'false'
         uses: actions/upload-artifact@v4
         with:
           name: nextjs-build-${{ github.sha }}
@@ -237,10 +267,12 @@ jobs:
 
       # ── Playwright smoke (Fáza 1): reálna smoke brána pred merge ──
       - name: Install Playwright Chromium
+        if: steps.scope.outputs.app_touched != 'false'
         run: npx playwright install chromium --with-deps
         working-directory: apps/crm
 
       - name: Playwright smoke (next start + ephemeral DB)
+        if: steps.scope.outputs.app_touched != 'false'
         run: |
           set -e
           npm run start &
@@ -271,6 +303,13 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CI: true
+
+      # Preskočené kroky sú v UI šedé, ale bez tohto riadku sa v logu nedá
+      # prečítať PREČO. Brána, ktorá mlčky nebeží, je horšia než pomalá.
+      - name: Note the fastpath (build and smoke skipped)
+        if: steps.scope.outputs.app_touched == 'false'
+        run: |
+          echo "::notice title=CI-FASTPATH-01::${{ steps.scope.outputs.reason }}"
 
       - name: Upload Playwright artifacts
         if: failure()
