@@ -30,6 +30,22 @@
 
 ### Ďalší krok
 Po merge: overiť prvý reálny návrh na PROD a že maklér ho vie odoslať.
+## Session 2026-09-27 (ACTIVITY-CLIENT-01)
+### Dokončené
+- Serverové `createActivity` volania dostali klienta: `api/scheduled-events/*`, `api/properties/[id]`,
+  `lib/billing-store.ts` (Stripe webhook), `lib/outreach-store.ts`; guard test v `tests/verification/`.
+### Rozpracované / Pending
+- PROD runbook B/C: foundrov test (B.1 200/draftCreated, B.2 OK) sa **nedostal do PROD DB ani do
+  PROD logov**, takže neoverené. Čaká na URL a leadId z odpovede.
+- Stripe VERIFY (CHECKOUT-ENV-01 krok A) — founder.
+- Dlh: 5 lib súborov s unscoped `createActivity` (zoznam v teste).
+### Kľúčové súbory zmenené
+- `apps/crm/src/app/api/scheduled-events/{route.ts,[id]/route.ts}`: scoped klient, aktivita nefatálna
+- `apps/crm/src/lib/billing-store.ts`: service-role klient pre billing aktivity
+- `apps/crm/tests/verification/server-activity-client.verification.test.ts`: nový guard
+### Ďalší krok
+Founder: Stripe VERIFY výstup; B.1 znova proti `app.revolis.ai` s celou odpoveďou.
+
 ## Session 2026-09-27 (Concierge fail-open, B08 stav overený)
 
 ### Dokončené
