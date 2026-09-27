@@ -3358,3 +3358,50 @@ kde je skutočný klon stále lepší. Zápis/mazanie cez `anon` odvodené, nie 
 `GO RLS-ANON-LOCKDOWN` — zavrieť `USING (true)` policies na `tasks`,
 `saas_leads`, `lead_property_scores`, `lead_property_events` migráciou
 v repe + aplikovať. Predbieha F3 aj `AI-COST-DAILY-MIGRATION-FIX`.
+
+## 2026-09-27 — Concierge endpointy sú v produkcii bez autentifikácie (fail-open)
+
+- **Nález.** `conciergeSecretOk` vracia `true`, keď `CONCIERGE_SHARED_SECRET` nie je
+  nastavený (`if (!expected) return true`). Vo Vercel produkcii **nie je nastavená
+  žiadna `CONCIERGE_*` premenná** — overené cez `filter_project_envs`. Tri routy sú
+  pritom v `proxy.ts` zámerne mimo session brány (`PUBLIC_PATHS`):
+  `/api/concierge/properties`, `/api/concierge/callback`, `/api/concierge/freebusy`.
+  Chráni ich teda len IP rate limit.
+- **Prečo to nie je dizajnová debata.** Repo túto triedu chyby **už raz opravilo**:
+  `isAuthorizedCronBearer` má `if (!secret) return false` a vlastný test
+  („refuses when CRON_SECRET is unset"), pod GO `FIX-CRON-SECRET-FAIL-CLOSED`.
+  Concierge má rovnaký tvar kódu a opačné rozhodnutie. Je to nezrovnalosť
+  s pravidlom, ktoré už platí, nie nový spor o prístupe.
+- **Rozsah dopadu, odmerané a nie odhadnuté.** `select count(*) from leads where
+  source = 'website-concierge'` = **0**, `first_seen` NULL. Report
+  `docs/reports/2026-09-17-smolko-concierge-wave-run.md` hovorí „Live Voiceflow
+  wiring … still HUMAN" a v ďalších krokoch má stále „Wire Voiceflow → Concierge
+  endpoints". Widget teda nebol nikdy zapojený a cez ten endpoint neprišiel ani
+  jeden lead. Expozícia je reálna, ale nevyužitá.
+- **Dôsledok pre poradie krokov — KOREKCIA.** Najprv som founderovi povedal „najprv
+  premenná, až potom kód". Je to naopak: **nastavenie premennej JE tá zmena
+  správania**, lebo kód sa ňou prepne z fail-open na vyžadovanie hlavičky
+  `x-concierge-secret`. Keby widget bežal, nastavenie premennej by mu zhodilo
+  zber leadov. Že to dnes nič nezhodí, je len dôsledok toho, že widget nebeží —
+  nie toho, že poradie bolo správne.
+- **Preto je teraz najlacnejší moment.** Secret bude existovať skôr, než widget
+  vznikne, takže ho bude posielať od prvého dňa namiesto dodatočnej opravy.
+  Vercel aplikuje env premenné až pri builde, takže poradie je:
+  Vercel → Voiceflow → redeploy.
+- **Hodnotu secretu Claude nenastavuje.** Musela by prejsť ako parameter nástroja
+  a tým sa zobraziť v konverzácii. Generuje a vkladá ju founder.
+
+## 2026-09-27 — B08 Google consent: stav overený, nie odhadnutý
+
+- `select … from public.profile_google_calendar` = **0 riadkov**. Consent neprebehol,
+  takže `CONCIERGE_GOOGLE_PROFILE_ID` nie je z čoho odvodiť — preto to poradie.
+- **Produkcia na B08 kóde beží.** `main` = `f90e6032` (#708), posledný production
+  deployment `READY`. `calendar-auth.ts` je na maine, freebusy berie token cez
+  `resolveConciergeAccessToken`, scope `calendar.events.freebusy` je v auth route.
+  Obava z `CANCELED` deploymentu, ktorú Claude mal, neplatí.
+- `GOOGLE_CLIENT_ID` aj `GOOGLE_CLIENT_SECRET` sú v produkcii. `NEXT_PUBLIC_APP_URL`
+  tiež — hodnota je šifrovaná, ale musí sedieť s redirect URI v Google console.
+- **Blokátor ostáva ľudský:** OAuth app je v režime Testing → `403 access_denied`
+  pred samotným súhlasom. V Testing režime navyše Google zneplatní refresh token
+  po 7 dňoch, takže pridanie testera je riešenie na týždeň, nie riešenie.
+  Publikovať app je trvalé; cena je varovanie „neoverená aplikácia" pri pripájaní.

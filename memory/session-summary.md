@@ -1,3 +1,38 @@
+## Session 2026-09-27 (Concierge fail-open, B08 stav overený)
+
+### Dokončené
+- **Overený skutočný stav B08 namiesto opakovania návodu.** Consent neprebehol
+  (`profile_google_calendar` = 0 riadkov), takže `CONCIERGE_GOOGLE_PROFILE_ID`
+  nie je z čoho odvodiť. Produkcia pritom **na B08 kóde beží** — `main` `f90e6032`
+  (#708), posledný production deploy `READY`, `calendar-auth.ts` aj scope
+  `calendar.events.freebusy` sú na maine. Blokátor je ľudský: OAuth app v režime
+  Testing vráti `403 access_denied` a v tom režime Google zabíja refresh token
+  po 7 dňoch.
+- **Nájdené: Concierge endpointy sú v produkcii bez autentifikácie.**
+  `conciergeSecretOk` je fail-open (`if (!expected) return true`) a vo Vercel
+  produkcii nie je žiadna `CONCIERGE_*` premenná. Tri routy sú v `proxy.ts`
+  mimo session brány. Repo pritom rovnakú triedu chyby **už raz opravilo** —
+  `isAuthorizedCronBearer` je fail-closed a má na to test. Detail v `decisions.md`.
+- **Odmeraný dopad:** 0 leadov so `source = 'website-concierge'` za celú dobu,
+  widget podľa reportu z 2026-09-17 nikdy nebol zapojený. Expozícia reálna,
+  nevyužitá — a preto je teraz najlacnejší moment ju zavrieť.
+
+### Rozpracované / Pending
+- **HUMAN: `CONCIERGE_SHARED_SECRET`.** Founder ho generuje a vkladá sám —
+  hodnota by inak prešla konverzáciou. Poradie: Vercel → Voiceflow → redeploy.
+- **HUMAN: Google OAuth consent** — publikovať app, potom pripojiť účet
+  a nastaviť `CONCIERGE_GOOGLE_PROFILE_ID`.
+- **KOREKCIA v poradí krokov:** nastavenie env premennej JE tá zmena správania,
+  nie následná zmena kódu. Pôvodné tvrdenie Clauda bolo opačné a nesprávne.
+
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md`: tieto zistenia. Kód nezmenený.
+
+### Ďalší krok
+`GO CONCIERGE-SECRET-FAIL-CLOSED` — až keď je secret vo Vercele aj vo Voiceflow.
+
+---
+
 ## Session 2026-09-26 (ONBOARDING-ANON-01)
 
 ### Dokončené
@@ -21,6 +56,8 @@
 
 ### Ďalší krok
 Calendly webhook (founder) alebo inventúra stĺpcov naprieč schémou.
+
+---
 
 ## Session 2026-09-25 (RLS vlna dokončená, CI attribution, PR-6, BSM retired)
 ### Dokončené
