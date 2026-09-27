@@ -3512,3 +3512,35 @@ podmienkou záchrany.
   pred samotným súhlasom. V Testing režime navyše Google zneplatní refresh token
   po 7 dňoch, takže pridanie testera je riešenie na týždeň, nie riešenie.
   Publikovať app je trvalé; cena je varovanie „neoverená aplikácia" pri pripájaní.
+
+## 2026-09-27 — CONCIERGE-SECRET-FAIL-CLOSED nasadené (#716, `9c72fa1a`)
+
+Uzatvára nález z dnešného záznamu „Concierge endpointy sú v produkcii bez
+autentifikácie (fail-open)" vyššie. Ten záznam popisuje stav **pred** týmto
+commitom; od `9c72fa1a` už neplatí.
+
+- **Zmena.** `conciergeSecretOk`: `if (!expected) return true` → `return false`.
+  Chýbajúca env premenná je nesprávna konfigurácia, nie povolenie. Päť testov
+  podľa vzoru `cron-auth.test.ts`; komentár v `proxy.ts` prestal tvrdiť, že
+  `CONCIERGE_SHARED_SECRET` je „optional".
+- **KOREKCIA vlastného tvrdenia.** Povedal som, že fail-closed sa nesmie nasadiť
+  pred nastavením secretu. Dôkaz, ktorý som na to mal, pokrýval len `callback`
+  (0 leadov); `properties` a `freebusy` žiadny lead nevytvárajú, takže o nich
+  nehovoril nič. Domeral som to na `usage_metrics_daily`:
+
+  ```
+  concierge% metriky  →  0 riadkov
+  celá tabuľka (kontrola) →  54 riadkov, 6 metrík, posledný zápis dnes
+  ```
+
+  Kontrolný dotaz je tam zámerne: bez neho „nula riadkov" môže rovnako dobre
+  znamenať rozbitú metriku ako nulovú prevádzku. Znamená nulovú prevádzku —
+  všetky tri routy neboli v produkcii nikdy zavolané. Preto sa nasadenie pred
+  premennou nedá nič rozbiť a pozícia sa obrátila.
+- **Následok pre founderov krok.** Tri routy dnes vracajú 401 **zámerne**, nie
+  omylom. Poradie ostáva Vercel → Voiceflow (`x-concierge-secret`) → redeploy;
+  Vercel aplikuje env premenné až pri builde, takže bez redeployu sa nič nezmení.
+- **Typecheck ratchet.** `NodeJS.ProcessEnv` vyžaduje `NODE_ENV`, takže `{}` aj
+  priame `as NodeJS.ProcessEnv` sú typové chyby a ratchet ich počíta. Jeden
+  helper `env()` s `as unknown as` ich drží na jednom mieste: 64 chýb proti 69
+  na maine, teda o päť menej ako pred PR.

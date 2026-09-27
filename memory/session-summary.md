@@ -1,3 +1,39 @@
+## Session 2026-09-27 (CONCIERGE-SECRET-FAIL-CLOSED nasadené)
+
+### Dokončené
+- **#716 `9c72fa1a`** — `conciergeSecretOk` je fail-closed. Bez
+  `CONCIERGE_SHARED_SECRET` vracia `false`, nie `true`. Päť testov podľa vzoru
+  `cron-auth.test.ts`, opravený zastaraný komentár v `proxy.ts`.
+- **Zápis vyššie v tejto session („Ďalší krok: až keď je secret vo Vercele")
+  bol prekonaný a je to KOREKCIA môjho tvrdenia.** Dôkaz, na ktorom stálo,
+  pokrýval len `callback` (0 leadov) — `properties` ani `freebusy` lead
+  nevytvárajú. Po domeraní `usage_metrics_daily` (0 riadkov pre `concierge%`
+  proti kontrolnej celej tabuľke: 54 riadkov, 6 metrík, zápis dnes) je jasné,
+  že tie routy neboli v produkcii nikdy zavolané, takže nasadenie pred
+  premennou nemá čo rozbiť.
+- **Typecheck ratchet: 64 proti 69 na maine.** Prvá verzia testov ich pridala
+  tri; typovaný helper `env()` ich odstránil a ešte dve staršie zmazal.
+
+### Rozpracované / Pending
+- **HUMAN: `CONCIERGE_SHARED_SECRET`** — founder generuje a vkladá; hodnota
+  nesmie prejsť konverzáciou. Vercel → Voiceflow (`x-concierge-secret`) →
+  redeploy. Do tej chvíle tri concierge routy vracajú 401 **zámerne**.
+- **HUMAN: Google OAuth consent (B08)** — publikovať app (Testing režim zabíja
+  refresh token po 7 dňoch), potom `CONCIERGE_GOOGLE_PROFILE_ID` + redeploy.
+- **HUMAN: `scripts/ops/stripe-verify-prices.sh`** — späť len `n/9 resolved`.
+- Diera W1: lead bez telefónu, ktorého jediná adresa je adresa kancelárie.
+
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/concierge/agency.ts`: fail-open → fail-closed.
+- `apps/crm/src/lib/concierge/__tests__/concierge.test.ts`: 5 testov + `env()`.
+- `apps/crm/src/proxy.ts`: komentár — secret je required, nie optional.
+
+### Ďalší krok
+Po founderovom nastavení secretu overiť cez `filter_project_envs`, že premenná
+je v produkcii, a až potom hlásiť Concierge ako zapojiteľný.
+
+---
+
 ## Session 2026-09-27 (ACTIVITY-CLIENT-01)
 ### Dokončené
 - Serverové `createActivity` volania dostali klienta: `api/scheduled-events/*`, `api/properties/[id]`,
