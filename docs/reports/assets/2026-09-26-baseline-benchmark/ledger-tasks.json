@@ -1,0 +1,106 @@
+{
+  "source": ".ai/bus/ledger/2026-09.jsonl (re\u00e1lny bus ledger, 2026-09-15..16)",
+  "definition": "wall_seconds = finished_at - started_at",
+  "n": 9,
+  "tasks": [
+    {
+      "run_id": "RUN-20260915112141-TASK-0100",
+      "task_id": "TASK-0100",
+      "agent": "cursor-lane-a",
+      "model": null,
+      "iterations": 1,
+      "cost_usd": 0,
+      "verdict": "ACCEPT",
+      "acceptance_checks": 4,
+      "wall_seconds": 148
+    },
+    {
+      "run_id": "RUN-20260915184947-TASK-NS-001",
+      "task_id": "TASK-NS-001",
+      "agent": "cursor-north-star",
+      "model": null,
+      "iterations": 1,
+      "cost_usd": 0,
+      "verdict": "ACCEPT",
+      "acceptance_checks": 3,
+      "wall_seconds": 35
+    },
+    {
+      "run_id": "RUN-20260915185203-TASK-NS-001",
+      "task_id": "TASK-NS-001",
+      "agent": "cursor-north-star",
+      "model": null,
+      "iterations": 2,
+      "cost_usd": 0,
+      "verdict": "ACCEPT",
+      "acceptance_checks": 3,
+      "wall_seconds": 11
+    },
+    {
+      "run_id": "RUN-20260915201856-TASK-TC-BATCH-1",
+      "task_id": "TASK-TC-BATCH-1",
+      "agent": "tc-orchestrator",
+      "model": null,
+      "iterations": 1,
+      "cost_usd": 0,
+      "verdict": "REJECT",
+      "acceptance_checks": 4,
+      "wall_seconds": 98
+    },
+    {
+      "run_id": "RUN-20260916064357-TASK-TC-BATCH-1",
+      "task_id": "TASK-TC-BATCH-1",
+      "agent": "tc-orchestrator",
+      "model": null,
+      "iterations": 2,
+      "cost_usd": 0,
+      "verdict": "REJECT",
+      "acceptance_checks": 5,
+      "wall_seconds": 92
+    },
+    {
+      "run_id": "RUN-20260916072230-TASK-TC-BATCH-1",
+      "task_id": "TASK-TC-BATCH-1",
+      "agent": "tc-orchestrator",
+      "model": null,
+      "iterations": 3,
+      "cost_usd": 0,
+      "verdict": "REJECT",
+      "acceptance_checks": 5,
+      "wall_seconds": 97
+    },
+    {
+      "run_id": "RUN-20260916080325-TASK-EXTERNAL-OK",
+      "task_id": "TASK-EXTERNAL-OK",
+      "agent": "selftest",
+      "model": null,
+      "iterations": 1,
+      "cost_usd": 0,
+      "verdict": "ACCEPT",
+      "acceptance_checks": 1,
+      "wall_seconds": 0
+    },
+    {
+      "run_id": "RUN-20260916080325-TASK-EXTERNAL-FAIL",
+      "task_id": "TASK-EXTERNAL-FAIL",
+      "agent": "selftest",
+      "model": null,
+      "iterations": 1,
+      "cost_usd": 0,
+      "verdict": "REJECT",
+      "acceptance_checks": 1,
+      "wall_seconds": 0
+    },
+    {
+      "run_id": "RUN-20260916080336-TASK-TC-BATCH-1",
+      "task_id": "TASK-TC-BATCH-1",
+      "agent": "tc-orchestrator",
+      "model": null,
+      "iterations": 4,
+      "cost_usd": 0,
+      "verdict": "HUMAN",
+      "acceptance_checks": 4,
+      "wall_seconds": 88
+    }
+  ]
+}
