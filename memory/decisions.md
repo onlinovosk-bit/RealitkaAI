@@ -1,5 +1,27 @@
 # Critical Decisions Log
 
+## [2026-09-27] INBOUND-DRAFT-01 — AI návrh odpovede aj pre reálne leady (founder GO A)
+
+**Problém:** „Schváliť a odoslať" (#690) dostávalo inbound návrhy len z
+`/api/webhooks/inbound-lead`, ktorý nikto nevolá (v kóde žiadny volajúci, v PROD
+logoch žiadna prevádzka). Reálne leady (`/api/acquire/email`, `/api/leads/inbound`)
+dostávali iba šablónové potvrdenie — maklér nemal pripravenú odpoveď.
+
+**Rozhodnutie (Ústava v2: BUILD):** oba reálne vstupy po uložení leadu vytvoria
+AI návrh `REVOLIS-INBOUND-AUTOREPLY` cez zdieľaný `lib/inbound/reply-draft.ts`.
+Retencia: maklér odpovie na nový dopyt jedným klikom. Žiadny nový dátový zdroj —
+text leadu už ide do AI cez triage (rovnaký právny základ 6(1)(f)).
+
+- **Tier 3 nezmenený:** iba draft + `ai_suggested`; odoslanie ide cez approve-draft
+  → Control Contract (`inbound.reply.email.send`). Nič sa neodosiela automaticky.
+- **Šablónové potvrdenie ostáva** (opt-in kancelárie). Keď LLM nestihne 8 s a vráti
+  pevný text, návrh sa nevytvorí — iba by zopakoval potvrdenie.
+- **Po odpovedi (`after()`):** Worker ani formulár nečakajú na LLM.
+- **Kill switch:** `INBOUND_REPLY_DRAFT_DISABLED=1` (platí od ďalšieho deployu).
+- Webhook cesta sa správa ako predtým (refaktor na ten istý helper).
+- **Známa diera (W1):** lead bez telefónu, ktorého jediná adresa je adresa kancelárie,
+  dostane návrh na túto adresu. Maklér ju vidí v potvrdzovacom dialógu pred odoslaním.
+
 ## [2026-09-26] AP-027 / BASELINE-BENCHMARK-01 — optimalizovali by sme 3,5 % (founder GO)
 
 Compiler a Build Protocol (Sol 5.6) tvrdia zrýchlenie buildu. Zrýchlenie je
