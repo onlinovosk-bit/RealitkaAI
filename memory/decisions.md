@@ -3608,3 +3608,56 @@ commitom; od `9c72fa1a` už neplatí.
   priame `as NodeJS.ProcessEnv` sú typové chyby a ratchet ich počíta. Jeden
   helper `env()` s `as unknown as` ich drží na jednom mieste: 64 chýb proti 69
   na maine, teda o päť menej ako pred PR.
+
+## 2026-09-28 — INBOUND-WEBHOOK-SECRET-AUDIT: endpoint je zavretý a je to bez dopadu
+
+Doplnok k `CONCIERGE-SECRET-FAIL-CLOSED`. Pri overovaní produkčných env premenných
+sa ukázalo, že `INBOUND_WEBHOOK_SECRET` v produkcii **nie je nastavený** (85 premenných
+v Production, medzi nimi `CRON_SECRET` aj `GOOGLE_CLIENT_ID` — výpis je teda úplný).
+`apps/crm/src/app/api/webhooks/inbound-lead/route.ts` ho od `ebb55b1f` (#690,
+2026-09-24, TASK-SEC-002) **vyžaduje** a bez neho vracia 503.
+
+### Záver: zavretie nemá žiadny dopad
+
+`POST /api/webhooks/inbound-lead` v produkcii **nikdy nevytvoril lead** — ani počas
+štyroch a pol mesiaca, keď auth bol `if (secret)`, teda fakticky žiadny.
+
+| dôkaz | hodnota |
+| :--- | ---: |
+| `leads` spolu (kontrola, že tabuľka žije) | 511, posledný zápis 2026-09-22 |
+| `leads` so `source = 'Inbound'` (default route) | **0** |
+| `leads` s `last_contact = 'Práve importovaný'` | **0** |
+| volajúci `processInboundLead` v repe | **1** (iba tá routa) |
+
+Druhý riadok sám o sebe nestačí — volajúci si `source` môže poslať vlastný. Preto
+ten tretí: `last_contact = 'Práve importovaný'` je literál, ktorý zapisuje
+`process-lead.ts:88` bez ohľadu na vstup. Nula znamená, že cez `processInboundLead`
+neprešiel ani jeden lead. Zvyšné zdroje v `leads` sú prisúdené: `realvia_import_smolko`
+(439) z Realvia importu, `portal:*` z `/api/acquire/email`, `valuation_widget`
+z valuation submitu, a šesť zdrojov po 4 riadkoch s rovnakou časovou pečiatkou je
+seed `apps/crm/supabase/seed/2026-08-26-demo-reality-monopol.sql`.
+
+### Čo tento audit NEDOKAZUJE
+
+Dokazuje, že žiadne volanie **neuspelo**. Nedokazuje, že dnes nikto nevolá a nedostáva
+503 — to by ukázali runtime logy, ale ich retencia je na tomto pláne **~1 hodina**:
+24-hodinové okno vrátilo 12 záznamov pre cron, ktorý beží každých 5 minút. V tej
+jednej hodine bolo 15 requestov a ani jeden na `inbound-lead`.
+
+**Rozhodnutie:** nechať zavreté, nenastavovať secret naslepo. Ak sa marketingový web
+niekedy na ten endpoint napojí, secret musí byť prvý — rovnaký smer závislosti ako
+pri Concierge.
+
+### Vedľajší nález (mimo zadania, neoverená príčina)
+
+`public.events` má **0 riadkov a 0 typov eventov za celú dobu**. `logEvent`
+(`lib/events/log-event.ts`) sa v komentári označuje za „the single entry point for
+all events", **nikdy nehádže výnimku** a zapisuje cez cookie/session klienta
+(`@/lib/supabase/server`), nie service-role. Tabuľka má RLS zapnuté a 3 policies.
+Z tej tabuľky čítajú štyri miesta: `dashboard/summary` (dva `count`), 
+`ai/dashboard-insights-gather`, `morning-brief/gather` (počet nových leadov) 
+a `events/integrity-monitor`.
+
+Príčina je **hypotéza, nie meranie**: session klient v serverovom kontexte bez session
+by na INSERT narazil na RLS a `logEvent` chybu prehltne. Overené je len to, že tabuľka
+je prázdna a že tie štyri miesta z nej počítajú. Patrí to na samostatné zadanie.
