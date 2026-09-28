@@ -3991,3 +3991,86 @@ a `events/integrity-monitor`.
 Príčina je **hypotéza, nie meranie**: session klient v serverovom kontexte bez session
 by na INSERT narazil na RLS a `logEvent` chybu prehltne. Overené je len to, že tabuľka
 je prázdna a že tie štyri miesta z nej počítajú. Patrí to na samostatné zadanie.
+
+## 2026-09-28 — EVENTS-PIPELINE-AUDIT: ranný brief hlási nulu aj v dni, keď lead prišiel
+
+Nadväzuje na vedľajší nález z `INBOUND-WEBHOOK-SECRET-AUDIT` (#722). Tam bola
+príčina označená za hypotézu. Hypotéza je **potvrdená pre automatické cesty
+a vyvrátená ako úplné vysvetlenie** — jedna živá cesta ostáva nevysvetlená.
+
+### Meranie s kontrolou
+
+| tabuľka | riadkov | |
+| :--- | ---: | :--- |
+| `leads` | 511 | kontrola — DB žije |
+| `activities` | 190 | kontrola |
+| `usage_metrics_daily` | 54 | kontrola |
+| `events` | **0** | nikdy ani jeden |
+| `lead_scores` | **0** | nikdy ani jeden |
+| `bri_score_history` | **0** | nikdy ani jeden |
+| `leads` od 2026-09-01 | **7** | reálny príjem beží ďalej |
+
+Prvé tri riadky sú tam zámerne: bez nich „nula" znamená rovnako dobre mŕtvu DB
+ako mŕtvu cestu. DB žije a aplikácia do nej zapisuje. Mŕtva je celá vetva
+events + BRI.
+
+### Príčina, časť potvrdená
+
+INSERT policy na `events` znie
+`with_check (profile_id IN (SELECT id FROM profiles WHERE auth_user_id = auth.uid()))`.
+Bez session je `auth.uid()` NULL, `auth_user_id = NULL` nie je nikdy pravda,
+poddotaz vráti prázdnu množinu a INSERT je **vždy** odmietnutý. `logEvent`
+pritom zapisuje cez cookie/session klienta (`@/lib/supabase/server`), nie
+service-role, a v komentári o sebe hovorí „Never throws — failures are silently
+logged to console".
+
+Zapisovateľov je päť a ani jeden nemôže uspieť:
+
+| call site | spúšťa | session |
+| :--- | :--- | :--- |
+| `lib/arbitrage/scan.ts` | `cron/arbitrage-scan` | nie → RLS odmietne |
+| `lib/price-trail/engine.ts` | `cron/price-trail-sync` | nie → RLS odmietne |
+| `lib/inbound/process-lead.ts` | webhook, dokázateľne mŕtvy (#722) | nie |
+| `lib/bri/engine.ts` (`computeBRI`) | `cron/recompute-bri` | nie → RLS odmietne |
+| `api/events/route.ts` | `logEventClient()` | **áno, ale 0 volaní v celom repe** |
+
+Posledný riadok je podstatný a je to grep, nie dojem: `logEventClient` nemá
+v `apps/crm/src` ani jedno použitie. Endpoint `/api/events` je teda korektný
+a nedosiahnuteľný.
+
+### Príčina, časť NEvysvetlená — otvorená neznáma
+
+Jedna cesta so session existuje: hooky `use-bri-score` a `use-bri-live` volajú
+`/api/leads/bri-recompute` → `computeBRI` → `logEvent`. Tá by policy prešla.
+Napriek tomu je `lead_scores` aj `bri_score_history` na nule, takže ani ona
+nikdy nedobehla. Overil som, že to **nie je** nesúladom signatúry RPC, ako som
+najprv predpokladal: `compute_bri_score_v2(p_lead_id text, p_profile_id uuid,
+p_trigger_event text)` v produkcii existuje a volanie mu zodpovedá. Príčina
+zostáva neznáma.
+
+### Dopad: nie vymyslené číslo, ale nula, ktorá protirečí realite
+
+Čítajúcich miest sú štyri a **ani jedno si nič nedopočítava** — `?? 0` všade,
+`dashboard-insights-gather` dokonca číta service-role klientom, takže tam RLS
+prekážkou nie je a nula je naozaj stav tabuľky. Direktíva 4 v zmysle „fake
+number" porušená nie je.
+
+Horší je iný problém. `morning-brief/gather.ts:91` počíta
+`newLeads = events.filter(e => e.event_type === 'lead_created').length`, čo je
+štrukturálne vždy 0, a `generators/ai-text.ts:145` to posiela do promptu ako
+`- Nové dopyty: ${overnight.newLeads}`. Od 1. 9. pritom pribudlo **7 leadov**.
+Ranný brief teda maklérovi tvrdí, že v noci neprišlo nič, aj v deň, keď dopyt
+prišiel. To nie je vymyslené číslo — je to **nepravdivá nula podaná ako
+meranie**, a v brief, podľa ktorého sa niekto ráno rozhoduje, je to horšie.
+
+Že sa to dá spraviť správne, dokazuje ten istý priečinok: `director-brief.ts:24`
+počíta to isté priamo z `leads` a je správne. Dva briefy, tá istá otázka, jeden
+odpoveď má a druhý nie.
+
+### Ďalej
+
+Oprava nie je „zapnúť events". Najlacnejšie a bez migrácie: `morning-brief`
+prepnúť na zdroj, ktorý dáta má (`leads`), rovnako ako to už robí
+`director-brief`. Až potom sa dá riešiť, či má events pipeline vôbec žiť —
+`logEvent` cez service-role klienta by RLS obišiel, ale to je zmena
+bezpečnostného modelu a patrí jej vlastné GO.
