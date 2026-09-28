@@ -22,6 +22,12 @@ vi.mock("@/lib/acquire/inbound-lead-auto-response", () => ({
   runInboundLeadAutoResponse: vi.fn(async () => undefined),
 }));
 
+const mockDraftReply = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/inbound/reply-draft", () => ({
+  INBOUND_REPLY_DRAFT_TIMEOUT_MS: 8000,
+  scheduleInboundReplyDraft: (...args: unknown[]) => mockDraftReply(...args),
+}));
+
 const INQUIRY_BODY = {
   version: 1,
   receivedAt: "2026-08-17T12:00:00.000Z",
@@ -320,6 +326,37 @@ describe("POST /api/acquire/email dedup claim", () => {
     expect(body.lead_created).toBe(false);
     expect(body.reason).toBe("duplicate");
     expect(leadInserts).toBe(1);
+  });
+
+  it("drafts an AI reply for the broker to approve when a lead is created (never sends)", async () => {
+    mockDraftReply.mockClear();
+    mailboxProfileId = PROFILE_ID;
+    profileRow = { full_name: "Testovaci Makler" };
+    const { POST } = await import("../route");
+
+    const res = await POST(makeRequest());
+    expect(res.status).toBe(200);
+    expect((await res.json()).lead_created).toBe(true);
+
+    const [leadId] = [...leadRows.keys()];
+    expect(mockDraftReply).toHaveBeenCalledTimes(1);
+    expect(mockDraftReply.mock.calls[0][0]).toMatchObject({
+      leadId,
+      agencyId: AGENCY_ID,
+      profileId: PROFILE_ID,
+      agentName: "Testovaci Makler",
+      lead: { email: "jan@example.com" },
+      activitySource: "acquire_email",
+      skipOnFallback: true,
+    });
+  });
+
+  it("does not draft again for a duplicate notification", async () => {
+    mockDraftReply.mockClear();
+    const { POST } = await import("../route");
+    await POST(makeRequest());
+    await POST(makeRequest());
+    expect(mockDraftReply).toHaveBeenCalledTimes(1);
   });
 
   it("assigns the lead to the broker whose inbound address received the mail", async () => {

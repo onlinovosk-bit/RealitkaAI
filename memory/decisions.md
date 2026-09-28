@@ -65,6 +65,61 @@ byť menší než aritmetický strop 84 s. Číslo doplní až prvý beh — a d
 z `prekrytych`, nie z celkového času.
 
 ---
+## [2026-09-28] — DEMAND-SOURCE-A: Realvia dopyt dnes nedodáva žiadnou cestou (founder GO A)
+
+- **Webhooky:** `realvia_webhook_logs` nesú len `advert` (202), `delete` (26) a
+  `unknown`/test (7). Žiadny typ pre klienta alebo dopyt.
+- **Import kontaktov:** 5 stĺpcov (meno, priezvisko, email, telefón, maklér).
+- **`buyer_intents`:** len 3 riadky (verejný formulár, posledný júl).
+- **Otvorená neznáma** zapísaná v `master-data-sourcing-map.md`: či Realvia CRM
+  dopyty eviduje a vie ich exportovať. `realvia.sk` je z agentového prostredia
+  blokovaný a verejné výsledky o tom nehovoria.
+  - Zistí to founder: jedna otázka Realvii alebo referenčnému klientovi.
+- **Dôsledok:** kým neznáma nie je uzavretá, jediný reálny zdroj dopytu je maklér
+  (možnosť B). Ústava: B = VALIDATE, najprv overiť s referenčným klientom, či by
+  dopyt vypĺňali.
+## [2026-09-27] COACH-HONEST — dashboard už neukazuje vymyslené čísla (founder GO)
+
+**Nález (GO 2, AP-023 smer B):** `broker_performance_stats` v PROD neexistuje, takže
+`/api/coaching/insight` každému maklérovi vrátil natvrdo „TOP 12 %", „18 DNÍ",
+„O 4 dni rýchlejšie ako priemer", „3 Day Streak", 58 % follow-up a panel `BrokerCoach`
+ich zobrazil ako jeho vlastné. Porušenie Direktívy 4 („never a fake number"). Aj pri
+existujúcich štatistikách boli streak, rank a porovnanie s priemerom vymyslené a pod
+rankom stálo „V regióne Prešov".
+
+**Rozhodnutie (Ústava v2: BUILD — retencia, dôvera v čísla):**
+- Bez nameraných štatistík panel nie je (`ok:false, reason:"no_stats"`).
+- S nimi ide len to, čo má zdroj (rýchlosť uzatvárania, insight z reálnych čísel alebo
+  uložený AI tip). Streak, regionálny rank a porovnanie s priemerom sú `null` a skryté.
+- **Migrácia sa nerobí.** Tabuľku nič neplní — založiť ju by len zmenilo „vymyslené"
+  na „prázdne". Plnenie štatistík je samostatné rozhodnutie.
+
+**Ostatné tabuľky zo smeru B** (rozhodovacia tabuľka v chate 2026-09-27): čakajú na
+founder odpovede — starter pack (predávame?), Calendly webhook (nastavený?), hodnoty
+`*_ENABLED` flagov. Mŕtvy kód (`demand_signals`, `enrichment_log`, `strategic_alerts`,
+crony demo-brief/recap) je kandidát na zmazanie.
+
+## [2026-09-27] INBOUND-DRAFT-01 — AI návrh odpovede aj pre reálne leady (founder GO A)
+
+**Problém:** „Schváliť a odoslať" (#690) dostávalo inbound návrhy len z
+`/api/webhooks/inbound-lead`, ktorý nikto nevolá (v kóde žiadny volajúci, v PROD
+logoch žiadna prevádzka). Reálne leady (`/api/acquire/email`, `/api/leads/inbound`)
+dostávali iba šablónové potvrdenie — maklér nemal pripravenú odpoveď.
+
+**Rozhodnutie (Ústava v2: BUILD):** oba reálne vstupy po uložení leadu vytvoria
+AI návrh `REVOLIS-INBOUND-AUTOREPLY` cez zdieľaný `lib/inbound/reply-draft.ts`.
+Retencia: maklér odpovie na nový dopyt jedným klikom. Žiadny nový dátový zdroj —
+text leadu už ide do AI cez triage (rovnaký právny základ 6(1)(f)).
+
+- **Tier 3 nezmenený:** iba draft + `ai_suggested`; odoslanie ide cez approve-draft
+  → Control Contract (`inbound.reply.email.send`). Nič sa neodosiela automaticky.
+- **Šablónové potvrdenie ostáva** (opt-in kancelárie). Keď LLM nestihne 8 s a vráti
+  pevný text, návrh sa nevytvorí — iba by zopakoval potvrdenie.
+- **Po odpovedi (`after()`):** Worker ani formulár nečakajú na LLM.
+- **Kill switch:** `INBOUND_REPLY_DRAFT_DISABLED=1` (platí od ďalšieho deployu).
+- Webhook cesta sa správa ako predtým (refaktor na ten istý helper).
+- **Známa diera (W1):** lead bez telefónu, ktorého jediná adresa je adresa kancelárie,
+  dostane návrh na túto adresu. Maklér ju vidí v potvrdzovacom dialógu pred odoslaním.
 
 ## [2026-09-27] — MATCHING-ZERO: PROD má 0 zhôd; príčina je v kóde AJ v dátach (founder GO)
 
@@ -3631,3 +3686,56 @@ commitom; od `9c72fa1a` už neplatí.
   priame `as NodeJS.ProcessEnv` sú typové chyby a ratchet ich počíta. Jeden
   helper `env()` s `as unknown as` ich drží na jednom mieste: 64 chýb proti 69
   na maine, teda o päť menej ako pred PR.
+
+## 2026-09-28 — INBOUND-WEBHOOK-SECRET-AUDIT: endpoint je zavretý a je to bez dopadu
+
+Doplnok k `CONCIERGE-SECRET-FAIL-CLOSED`. Pri overovaní produkčných env premenných
+sa ukázalo, že `INBOUND_WEBHOOK_SECRET` v produkcii **nie je nastavený** (85 premenných
+v Production, medzi nimi `CRON_SECRET` aj `GOOGLE_CLIENT_ID` — výpis je teda úplný).
+`apps/crm/src/app/api/webhooks/inbound-lead/route.ts` ho od `ebb55b1f` (#690,
+2026-09-24, TASK-SEC-002) **vyžaduje** a bez neho vracia 503.
+
+### Záver: zavretie nemá žiadny dopad
+
+`POST /api/webhooks/inbound-lead` v produkcii **nikdy nevytvoril lead** — ani počas
+štyroch a pol mesiaca, keď auth bol `if (secret)`, teda fakticky žiadny.
+
+| dôkaz | hodnota |
+| :--- | ---: |
+| `leads` spolu (kontrola, že tabuľka žije) | 511, posledný zápis 2026-09-22 |
+| `leads` so `source = 'Inbound'` (default route) | **0** |
+| `leads` s `last_contact = 'Práve importovaný'` | **0** |
+| volajúci `processInboundLead` v repe | **1** (iba tá routa) |
+
+Druhý riadok sám o sebe nestačí — volajúci si `source` môže poslať vlastný. Preto
+ten tretí: `last_contact = 'Práve importovaný'` je literál, ktorý zapisuje
+`process-lead.ts:88` bez ohľadu na vstup. Nula znamená, že cez `processInboundLead`
+neprešiel ani jeden lead. Zvyšné zdroje v `leads` sú prisúdené: `realvia_import_smolko`
+(439) z Realvia importu, `portal:*` z `/api/acquire/email`, `valuation_widget`
+z valuation submitu, a šesť zdrojov po 4 riadkoch s rovnakou časovou pečiatkou je
+seed `apps/crm/supabase/seed/2026-08-26-demo-reality-monopol.sql`.
+
+### Čo tento audit NEDOKAZUJE
+
+Dokazuje, že žiadne volanie **neuspelo**. Nedokazuje, že dnes nikto nevolá a nedostáva
+503 — to by ukázali runtime logy, ale ich retencia je na tomto pláne **~1 hodina**:
+24-hodinové okno vrátilo 12 záznamov pre cron, ktorý beží každých 5 minút. V tej
+jednej hodine bolo 15 requestov a ani jeden na `inbound-lead`.
+
+**Rozhodnutie:** nechať zavreté, nenastavovať secret naslepo. Ak sa marketingový web
+niekedy na ten endpoint napojí, secret musí byť prvý — rovnaký smer závislosti ako
+pri Concierge.
+
+### Vedľajší nález (mimo zadania, neoverená príčina)
+
+`public.events` má **0 riadkov a 0 typov eventov za celú dobu**. `logEvent`
+(`lib/events/log-event.ts`) sa v komentári označuje za „the single entry point for
+all events", **nikdy nehádže výnimku** a zapisuje cez cookie/session klienta
+(`@/lib/supabase/server`), nie service-role. Tabuľka má RLS zapnuté a 3 policies.
+Z tej tabuľky čítajú štyri miesta: `dashboard/summary` (dva `count`), 
+`ai/dashboard-insights-gather`, `morning-brief/gather` (počet nových leadov) 
+a `events/integrity-monitor`.
+
+Príčina je **hypotéza, nie meranie**: session klient v serverovom kontexte bez session
+by na INSERT narazil na RLS a `logEvent` chybu prehltne. Overené je len to, že tabuľka
+je prázdna a že tie štyri miesta z nej počítajú. Patrí to na samostatné zadanie.
