@@ -1,5 +1,18 @@
 # Critical Decisions Log
 
+## [2026-09-28] — DEMAND-SOURCE-A: Realvia dopyt dnes nedodáva žiadnou cestou (founder GO A)
+
+- **Webhooky:** `realvia_webhook_logs` nesú len `advert` (202), `delete` (26) a
+  `unknown`/test (7). Žiadny typ pre klienta alebo dopyt.
+- **Import kontaktov:** 5 stĺpcov (meno, priezvisko, email, telefón, maklér).
+- **`buyer_intents`:** len 3 riadky (verejný formulár, posledný júl).
+- **Otvorená neznáma** zapísaná v `master-data-sourcing-map.md`: či Realvia CRM
+  dopyty eviduje a vie ich exportovať. `realvia.sk` je z agentového prostredia
+  blokovaný a verejné výsledky o tom nehovoria.
+  - Zistí to founder: jedna otázka Realvii alebo referenčnému klientovi.
+- **Dôsledok:** kým neznáma nie je uzavretá, jediný reálny zdroj dopytu je maklér
+  (možnosť B). Ústava: B = VALIDATE, najprv overiť s referenčným klientom, či by
+  dopyt vypĺňali.
 ## [2026-09-27] COACH-HONEST — dashboard už neukazuje vymyslené čísla (founder GO)
 
 **Nález (GO 2, AP-023 smer B):** `broker_performance_stats` v PROD neexistuje, takže
