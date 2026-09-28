@@ -105,6 +105,41 @@ zostáva `Lint`, `Typecheck` a helper testy — práca viazaná na CPU, ktorá s
 o sieť nebije. Okno je menšie, ale nemá byť zaplatené spomalením toho, čo sa
 prekrýva. Overí sa tretím a štvrtým behom; dovtedy je zisk NEOVERENÝ.
 
+#### Štvrtý beh (`45f5f950`, PR #725) — zisk je menší a nie je stabilný
+
+| krok | beh 3 | **beh 4** | baseline |
+|---|---|---|---|
+| setup-node | 6 | **6** | 6 / 8 / 7 |
+| Install | — | **17** | 18 / 17 / 10 |
+| štart Supabase (wall) | 110 | **136** | 108 / 113 / 108 |
+| čakanie | 6 | **20** | — |
+| Lint | +23 nad baseline | **65** | 35 / 33 / 23 |
+| Typecheck | +6 nad baseline | **39** | 28 / 28 / 16 |
+| čisté | **−63** | **−37** | — |
+
+Dve veci, jedna potvrdená a jedna oslabená.
+
+**Potvrdené dvakrát:** `setup-node` 6 s a `Install` 17 s, oba v baseline pásme.
+Diagnóza kontencie medzi npm cache restore a docker pull platí a presun ju na
+týchto dvoch krokoch odstránil. To je najpevnejší výsledok celej zmeny.
+
+**Oslabené:** `−63 s` nie je stabilné číslo, je to optimistický koniec rozsahu.
+Štvrtý beh dal `−37 s`. Štart Supabase trval 136 s namiesto 110 s, čakanie 20 s
+namiesto 6 s, a `Lint` vyskočil na 65 s. Kontencia teda nezmizla — presunula sa
+na CPU kroky a jej veľkosť kolíše medzi behmi. Poctivá formulácia je
+**−37 až −63 s**, nie `−63 s`.
+
+**Slabé miesto merania, priznané:** „nad baseline" závisí od toho, ktorý stĺpec
+baseline pre daný runner vyberiem, a normalizátor rýchlosti runnera nemám.
+Beh 4 zaraďujem k pomalým podľa `Test` 178 s (pomalé behy 174/173, rýchly 105)
+a `Reset DB` 30 s. Keby bol runner rýchly, čisté číslo by vyšlo horšie. Preto
+uvádzam aj surové časy, nie len delty — aby sa dali prepočítať proti inej
+voľbe baseline.
+
+Fastpath potvrdený **štvrtýkrát**: Build, Debug, Upload artifact, Playwright
+install a Playwright smoke `skipped`, `Note the fastpath` prešiel. Job celkom
+376 s.
+
 ### Neoverené
 Skutočná úspora. Docker pull je sieťovo viazaný a `npm ci` + eslint + tsc sú
 CPU-viazané, takže na 2-jadrovom runneri sa môžu biť o zdroje a prekryv môže
