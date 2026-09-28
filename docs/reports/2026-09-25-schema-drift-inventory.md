@@ -199,3 +199,9 @@ s reálnym rizikom a patrí pod vlastnú bránu s vlastným rozsahom. Tu je len 
    nezaloží žiadna migrácia. Bez neho sa drift vráti.
 4. **Rozhodnúť o piatich tabuľkách z časti C.** Nie „zmazať" — najprv určiť pôvod
    a právny základ 30 riadkov osobných údajov. Kandidát na `gdpr-advisor` skill.
+
+---
+
+**Nadväzuje na to AP-024** (`docs/reports/2026-09-27-migration-history-reconcile.md`):
+smer B je tam potvrdený per objekt, nie len per tabuľka, a pribudol tretí smer —
+migrácie, ktoré na PROD nedobehli, hoci ich efekt inde existuje.
