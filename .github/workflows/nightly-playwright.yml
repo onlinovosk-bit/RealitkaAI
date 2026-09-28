@@ -15,6 +15,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
+    # Viď saas-grade-pipeline.yml — `contents: read` musí ostať, inak padne
+    # checkout; `packages: read` je pre pull z ghcr.io.
+    permissions:
+      contents: read
+      packages: read
+
     steps:
       - uses: actions/checkout@v4
 
@@ -31,10 +37,48 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Pinned, not `latest`. With `latest` the action asks the GitHub API
+          # for the newest release on every job, unauthenticated, and on
+          # 2026-09-24 that query is what took the pipeline down:
+          #
+          #   ##[error] Failed to resolve latest Supabase CLI release: rate limit exceeded
+          #
+          # Lint, the CI helper tests and the typecheck gate had all passed by
+          # then; the job died in setup, before `supabase start` was reached.
+          # A fixed version needs no such lookup.
+          #
+          # It also makes the toolchain deterministic: with `latest`, two runs of
+          # the same commit could install different CLIs. 2.117.0 is the version
+          # `latest` already resolved to (published 2026-09-07), so pinning it
+          # changes nothing about what CI installs today.
+          #
+          # To bump: pick a version published to npm as `supabase`, change it in
+          # BOTH workflows, and let CI prove `supabase start` still works — the
+          # repo's config.toml still uses the deprecated [inbucket] section, so
+          # a CLI jump is not automatically safe.
+          version: 2.117.0
 
+      # `supabase start` sťahuje šesť images z ghcr.io. Anonymný pull má nízky
+      # limit na zdieľanú IP GitHub runnerov a 2026-09-23 oň CI opakovane
+      # zaseklo: najprv zlyhal jeden image, o dve minúty neskôr všetkých šesť
+      # (`toomanyrequests`). Tento krok je v poradí 10 z 22, takže keď padne,
+      # Test aj Build sa preskočia — CI vtedy o kóde nepovie nič a červená
+      # farba nesúvisí s diffom.
+      #
+      # Prihlásenie zdvihne limit z anonymného na per-account. Token je
+      # ephemerálny GITHUB_TOKEN daného behu, nie uložený secret, a ide cez
+      # env + --password-stdin, aby sa neobjavil v príkazovom riadku ani v logu.
+      - name: Authenticate to ghcr.io (raise pull rate limit)
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+
+      # Ten istý wrapper ako v `saas-grade-pipeline.yml`. Nightly ho doteraz
+      # nemal — volal `supabase start` priamo, takže prvé odmietnutie z registry
+      # zhodilo celý beh bez jediného pokusu navyše. Registry vyberá skript,
+      # preto tu nie je žiadne `env`.
       - name: Start local Supabase
-        run: supabase start
+        run: ../../scripts/ci/supabase-start.sh
         working-directory: apps/crm
 
       - name: Export local credentials

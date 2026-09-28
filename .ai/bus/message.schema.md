@@ -1,4 +1,87 @@
-# Bus Message Schema v0.1
+# Bus Message Schema v1
+
+Canonical envelope. `npm run bus -- send --file <draft.md>` validates this shape
+and assigns the id; `npm run bus:validate` gates it in CI. The v0.1 shape below
+still describes the 35 messages written before v1 — those are never rewritten.
+
+```yaml
+---
+v: 1
+id: MSG-20260918-001-branch-audit      # PREFIX-YYYYMMDD-NNN-slug (MSG|TASK|CTX|DEC)
+type: task|context|result|decision|state|blocker
+status: draft|open|in_progress|blocked|done|archived
+from: sol-gpt|claude-code|founder|runner|cursor
+to: sol-gpt|claude-code|founder|runner|cursor
+created_at: 2026-09-18T09:00:00Z
+task_id: TASK-347-BRANCH-AUDIT         # optional; thread defaults to it
+mode: READ_ONLY|PLAN|IMPLEMENT|REVIEW  # optional
+stop_after_report: true                # optional
+summary: one line, max 280 chars       # what the receiving agent reads first
+counters:                              # optional, machine-countable facts
+  safe_to_delete: 281
+  open_pr: 31
+decisions_required:                    # optional; only what genuinely needs a human
+  - id: D1
+    question: Delete the 281 merged branches?
+    options: [batched, all at once, keep]
+    recommendation: batched, with backup refs
+    gate: GO REQUIRED
+evidence:
+  commands: []
+  files: []
+  urls: []
+scope:
+  repo_paths: []
+  forbidden_paths: []
+  external_systems: []
+next_action:
+  gate: AUTO-SAFE|GO REQUIRED|STOP
+  description: exactly one concrete action
+---
+```
+
+## Rules the validator enforces
+
+- `summary` is one line and under 280 characters — detail belongs in the body.
+- `from`/`to`/`type`/`status`/`gate` come from the closed lists above.
+- `created_at` is a parseable timestamp.
+- `next_action` carries a gate and exactly one action.
+- No credentials anywhere in the message (bus rule 6).
+- Any value containing `#` is quoted. Unquoted, YAML reads `summary: PR #593 is open`
+  as the value `PR` plus a comment, and the rest of the sentence is gone. `bus send`
+  refuses such a draft; `bus validate --warnings` reports existing ones. A deliberate
+  comment (`status: done   # closed on main`, with a space after `#`) is left alone.
+- On `to`, `type`, `status`, `mode` and `gate` this is not a style issue. The
+  execution agent reads those to decide whether it may act, so `mode: READ_ONLY
+  #len docasne` reaches it as a clean `READ_ONLY` and the condition is gone. The
+  consumer refuses any task whose frontmatter lost text on one of those keys and
+  answers with a blocker instead of executing. Quote the value and resend.
+
+## Body template
+
+```markdown
+## Summary
+
+One paragraph with the actionable fact.
+
+## Context
+
+- Relevant repo state.
+- Constraints and rules.
+- What is explicitly out of scope.
+
+## Evidence
+
+- Command output, file path, PR, CI link, or report path.
+
+## Next action
+
+Exactly one next action and the required gate.
+```
+
+---
+
+# Bus Message Schema v0.1 (pre-v1, historical)
 
 Use this shape for files in `inbox/`, `outbox/`, `tasks/`, `context/`, and
 `decisions/`. Markdown is the transport; YAML front matter carries fields that

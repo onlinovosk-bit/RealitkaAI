@@ -108,6 +108,7 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 vi.mock("@/lib/ai/open-followup-generator", () => ({
+  FOLLOWUP_PROMPT_VERSION: "open-followup-v1",
   generateOpenFollowUpsBatch: (...args: unknown[]) => generateBatchMock(...args),
 }));
 

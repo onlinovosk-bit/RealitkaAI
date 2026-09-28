@@ -3,6 +3,8 @@ import { NextRequest } from "next/server";
 
 const SECRET = "test-acquire-shared-secret";
 const AGENCY_ID = "11111111-1111-1111-1111-111111111111";
+const PROFILE_ID = "22222222-2222-4222-8222-222222222222";
+const OTHER_PROFILE_ID = "33333333-3333-4333-8333-333333333333";
 
 const mockFrom = vi.fn();
 
@@ -18,6 +20,12 @@ vi.mock("@/lib/acquire/inbound-lead-triage", () => ({
 
 vi.mock("@/lib/acquire/inbound-lead-auto-response", () => ({
   runInboundLeadAutoResponse: vi.fn(async () => undefined),
+}));
+
+const mockDraftReply = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/inbound/reply-draft", () => ({
+  INBOUND_REPLY_DRAFT_TIMEOUT_MS: 8000,
+  scheduleInboundReplyDraft: (...args: unknown[]) => mockDraftReply(...args),
 }));
 
 const INQUIRY_BODY = {
@@ -53,10 +61,18 @@ describe("POST /api/acquire/email dedup claim", () => {
   let leadInserts: number;
   let leadShouldFail: boolean;
   let leadCommitsDespiteError: boolean;
-  let leadInserts: number;
-  let leadShouldFail: boolean;
   /** When true, SELECT pretends the key is absent (race: another worker claimed after our read). */
   let hideExistingOnSelect: boolean;
+  /** `inbound_mailboxes.profile_id` for the address the mail arrived at (null = agency mailbox). */
+  let mailboxProfileId: string | null;
+  /** Row returned from `profiles`; null simulates a profile outside the agency. */
+  let profileRow: { full_name: string | null } | null;
+  let mailboxReceivedUpdates: number;
+  let ownerBackfills: Array<Record<string, unknown>>;
+  /** Identita kancelárie pre stráž kontaktu (W1): adresy maklérov, agentúry, schránok. */
+  let agencyProfileEmails: Array<{ email: string | null }>;
+  let agencyEmail: string | null;
+  let agencyMailboxEmails: Array<{ email: string | null }>;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -67,9 +83,14 @@ describe("POST /api/acquire/email dedup claim", () => {
     leadInserts = 0;
     leadShouldFail = false;
     leadCommitsDespiteError = false;
-    leadInserts = 0;
-    leadShouldFail = false;
     hideExistingOnSelect = false;
+    mailboxProfileId = null;
+    profileRow = null;
+    mailboxReceivedUpdates = 0;
+    ownerBackfills = [];
+    agencyProfileEmails = [];
+    agencyEmail = null;
+    agencyMailboxEmails = [];
 
     mockFrom.mockImplementation((table: string) => {
       if (table === "acquire_dedup_keys") {
@@ -131,18 +152,16 @@ describe("POST /api/acquire/email dedup claim", () => {
                   last_contact: payload.last_contact,
                   note: payload.note,
                   source: payload.source,
+                  email: payload.email,
                   agency_id: payload.agency_id,
                   ai_triage_at: null,
+                  assigned_profile_id: payload.assigned_profile_id ?? null,
+                  assigned_agent: payload.assigned_agent,
                 };
                 if (leadShouldFail) {
                   if (leadCommitsDespiteError) {
                     leadRows.set(String(payload.id), row);
                   }
-          insert: () => ({
-            select: () => ({
-              single: async () => {
-                leadInserts += 1;
-                if (leadShouldFail) {
                   return {
                     data: null,
                     error: { message: "insert aborted", code: "57014" },
@@ -161,21 +180,27 @@ describe("POST /api/acquire/email dedup claim", () => {
               }),
             }),
           }),
-                return {
-                  data: {
-                    id: "lead-1",
-                    name: "Jan Novak",
-                    status: "Nový",
-                    score: 50,
-                    last_contact: "Práve vytvorený (email gateway)",
-                    note: "n",
-                    source: "portal:Nehnuteľnosti.sk",
-                    agency_id: AGENCY_ID,
-                    ai_triage_at: null,
+          // backfillLeadOwner: .update().eq(id).eq(agency).is(assigned_profile_id, null).select()
+          update: (payload: Record<string, unknown>) => ({
+            eq: (_idCol: string, id: string) => ({
+              eq: (_agencyCol: string, agency: string) => ({
+                is: (col: string, value: null) => ({
+                  select: async () => {
+                    const row = leadRows.get(id);
+                    if (!row || row.agency_id !== agency) {
+                      return { data: [], error: null };
+                    }
+                    // `.is(col, null)` must actually gate the write, otherwise a manual
+                    // assignment would silently get overwritten by a later duplicate.
+                    if ((row as Record<string, unknown>)[col] !== value) {
+                      return { data: [], error: null };
+                    }
+                    Object.assign(row, payload);
+                    ownerBackfills.push({ id, ...payload });
+                    return { data: [{ id }], error: null };
                   },
-                  error: null,
-                };
-              },
+                }),
+              }),
             }),
           }),
         };
@@ -183,11 +208,56 @@ describe("POST /api/acquire/email dedup claim", () => {
 
       if (table === "inbound_mailboxes") {
         return {
+          // resolveMailboxOwner: .select("profile_id").eq().eq().maybeSingle()
+          // loadAgencyIdentity:  .select("email").eq("agency_id", …)  ← awaituje sa priamo
+          select: (cols: string) =>
+            cols === "email"
+              ? { eq: async () => ({ data: agencyMailboxEmails, error: null }) }
+              : {
+                  eq: () => ({
+                    eq: () => ({
+                      maybeSingle: async () => ({
+                        data: { profile_id: mailboxProfileId },
+                        error: null,
+                      }),
+                    }),
+                  }),
+                },
           update: () => ({
             eq: () => ({
-              eq: async () => ({ data: null, error: null }),
+              eq: async () => {
+                mailboxReceivedUpdates += 1;
+                return { data: null, error: null };
+              },
             }),
           }),
+        };
+      }
+
+      if (table === "agencies") {
+        return {
+          select: () => ({
+            eq: () => ({
+              maybeSingle: async () => ({ data: { email: agencyEmail }, error: null }),
+            }),
+          }),
+        };
+      }
+
+      if (table === "profiles") {
+        return {
+          // resolveMailboxOwner: .select("full_name").eq().eq().maybeSingle()
+          // loadAgencyIdentity:  .select("email").eq("agency_id", …)
+          select: (cols: string) =>
+            cols === "email"
+              ? { eq: async () => ({ data: agencyProfileEmails, error: null }) }
+              : {
+                  eq: () => ({
+                    eq: () => ({
+                      maybeSingle: async () => ({ data: profileRow, error: null }),
+                    }),
+                  }),
+                },
         };
       }
 
@@ -256,5 +326,175 @@ describe("POST /api/acquire/email dedup claim", () => {
     expect(body.lead_created).toBe(false);
     expect(body.reason).toBe("duplicate");
     expect(leadInserts).toBe(1);
+  });
+
+  it("drafts an AI reply for the broker to approve when a lead is created (never sends)", async () => {
+    mockDraftReply.mockClear();
+    mailboxProfileId = PROFILE_ID;
+    profileRow = { full_name: "Testovaci Makler" };
+    const { POST } = await import("../route");
+
+    const res = await POST(makeRequest());
+    expect(res.status).toBe(200);
+    expect((await res.json()).lead_created).toBe(true);
+
+    const [leadId] = [...leadRows.keys()];
+    expect(mockDraftReply).toHaveBeenCalledTimes(1);
+    expect(mockDraftReply.mock.calls[0][0]).toMatchObject({
+      leadId,
+      agencyId: AGENCY_ID,
+      profileId: PROFILE_ID,
+      agentName: "Testovaci Makler",
+      lead: { email: "jan@example.com" },
+      activitySource: "acquire_email",
+      skipOnFallback: true,
+    });
+  });
+
+  it("does not draft again for a duplicate notification", async () => {
+    mockDraftReply.mockClear();
+    const { POST } = await import("../route");
+    await POST(makeRequest());
+    await POST(makeRequest());
+    expect(mockDraftReply).toHaveBeenCalledTimes(1);
+  });
+
+  it("assigns the lead to the broker whose inbound address received the mail", async () => {
+    mailboxProfileId = PROFILE_ID;
+    profileRow = { full_name: "Testovaci Makler" };
+    const { POST } = await import("../route");
+
+    const res = await POST(makeRequest());
+    expect(res.status).toBe(200);
+    expect((await res.json()).lead_created).toBe(true);
+
+    const [lead] = [...leadRows.values()];
+    expect(lead.assigned_profile_id).toBe(PROFILE_ID);
+    expect(lead.assigned_agent).toBe("Testovaci Makler");
+  });
+
+  it("leaves the lead unassigned for an agency mailbox (profile_id is null)", async () => {
+    mailboxProfileId = null;
+    const { POST } = await import("../route");
+
+    const res = await POST(makeRequest());
+    expect(res.status).toBe(200);
+
+    const [lead] = [...leadRows.values()];
+    expect(lead.assigned_profile_id).toBeNull();
+    expect(lead.assigned_agent).toBe("Nepriradený");
+  });
+
+  it("does not assign when the mailbox profile belongs to another agency", async () => {
+    mailboxProfileId = PROFILE_ID;
+    profileRow = null; // agency-scoped lookup returned nothing
+    const { POST } = await import("../route");
+
+    const res = await POST(makeRequest());
+    expect(res.status).toBe(200);
+
+    const [lead] = [...leadRows.values()];
+    expect(lead.assigned_profile_id).toBeNull();
+    expect(lead.assigned_agent).toBe("Nepriradený");
+  });
+
+  it("backfills the owner when the office copy arrived first and the broker copy is a duplicate", async () => {
+    const { POST } = await import("../route");
+
+    // 1. office@ copy — agency mailbox, no owner
+    mailboxProfileId = null;
+    profileRow = null;
+    const first = await POST(makeRequest());
+    expect((await first.json()).lead_created).toBe(true);
+    const [lead] = [...leadRows.values()];
+    expect(lead.assigned_profile_id).toBeNull();
+
+    // 2. the same portal notification, this time via the broker's address
+    mailboxProfileId = PROFILE_ID;
+    profileRow = { full_name: "Testovaci Makler" };
+    const second = await POST(makeRequest());
+    const body = await second.json();
+    expect(body.lead_created).toBe(false);
+    expect(body.reason).toBe("duplicate");
+    expect(body.owner_backfilled).toBe(true);
+
+    expect(lead.assigned_profile_id).toBe(PROFILE_ID);
+    expect(lead.assigned_agent).toBe("Testovaci Makler");
+    expect(leadInserts).toBe(1);
+  });
+
+  it("never overwrites an assignment that already exists", async () => {
+    const { POST } = await import("../route");
+
+    mailboxProfileId = PROFILE_ID;
+    profileRow = { full_name: "Prvy Makler" };
+    await POST(makeRequest());
+    const [lead] = [...leadRows.values()];
+    expect(lead.assigned_profile_id).toBe(PROFILE_ID);
+
+    // A duplicate from a different broker address must not steal the lead.
+    mailboxProfileId = OTHER_PROFILE_ID;
+    profileRow = { full_name: "Druhy Makler" };
+    const second = await POST(makeRequest());
+    expect((await second.json()).owner_backfilled).toBe(false);
+
+    expect(lead.assigned_profile_id).toBe(PROFILE_ID);
+    expect(lead.assigned_agent).toBe("Prvy Makler");
+    expect(ownerBackfills).toHaveLength(0);
+  });
+
+  it("records delivery on the mailbox even when no lead is created", async () => {
+    const { POST } = await import("../route");
+    const notALead = { ...INQUIRY_BODY, email: { ...INQUIRY_BODY.email, text: "ziadny kontakt" } };
+
+    const res = await POST(makeRequest(notALead));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.lead_created).toBe(false);
+    expect(body.reason).toBe("not_a_lead");
+
+    // The heartbeat is what tells a broken forwarding rule apart from a quiet week.
+    expect(mailboxReceivedUpdates).toBe(1);
+    expect(leadInserts).toBe(0);
+  });
+
+  // W1: stráž kontaktu musí fungovať CEZ route, nielen v parseri samostatne.
+  // Produkčný prípad: lead z 2026-09-22 05:47 má ako kontakt adresu makléra.
+  it("neuloží adresu makléra ako kontakt záujemcu", async () => {
+    const brokerAddress = "makler@realitysmolko.sk";
+    agencyProfileEmails = [{ email: brokerAddress }];
+
+    const { POST } = await import("../route");
+    const res = await POST(
+      makeRequest({
+        ...INQUIRY_BODY,
+        email: {
+          ...INQUIRY_BODY.email,
+          text: `Meno: Jan Novak
+E-mail: ${brokerAddress}
+Telefon: +421 912 345 678
+Sprava: Chcem obhliadku
+PO99999X`,
+        },
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    const lead = [...leadRows.values()][0];
+    expect(lead).toBeDefined();
+    // Prázdny e-mail je čitateľný stav. Cudzia adresa by spustila auto-odpoveď
+    // smerom na klienta namiesto záujemcu.
+    expect(lead.email).toBe("");
+  });
+
+  it("adresu skutočného záujemcu uloží aj keď identita agentúry je načítaná", async () => {
+    agencyProfileEmails = [{ email: "makler@realitysmolko.sk" }];
+
+    const { POST } = await import("../route");
+    const res = await POST(makeRequest());
+
+    expect(res.status).toBe(200);
+    const lead = [...leadRows.values()][0];
+    expect(lead.email).toBe("jan@example.com");
   });
 });

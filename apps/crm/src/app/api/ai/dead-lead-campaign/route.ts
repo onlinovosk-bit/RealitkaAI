@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { checkAiRateLimit } from "@/lib/ai/rate-guard";
-import { generateBatchReactivationPlan } from "@/lib/ai/dead-lead-campaign";
+import { DEAD_LEAD_PROMPT_VERSION, generateBatchReactivationPlan } from "@/lib/ai/dead-lead-campaign";
 import type { DeadLeadInput } from "@/lib/ai/dead-lead-campaign";
-import { sendMessage } from "@/lib/multi-channel-sender";
+import { DEAD_LEAD_AGENT_ID } from "@/lib/inbound/draft-view";
+import { insertAgentDraft, recipientFor } from "@/lib/inbound/insert-agent-draft";
+import { createServiceRoleClient } from "@/lib/supabase/admin";
 
 /** GET /api/ai/dead-lead-campaign — generuje preview kampaň, NEnposiela správy */
 export async function GET(req: Request) {
@@ -39,7 +41,14 @@ export async function GET(req: Request) {
   });
 }
 
-/** POST /api/ai/dead-lead-campaign — admin schvaľuje a spúšťa odoslanie */
+/**
+ * POST /api/ai/dead-lead-campaign — vytvorí NÁVRHY reaktivačných správ.
+ *
+ * Tier 3 (Revolis System Spec §13): nič neodosiela. Každý návrh sa objaví
+ * v časovej osi leadu a maklér ho pošle cez „Schváliť a odoslať"
+ * (POST /api/leads/:id/drafts/:activityId/approve) — presne ten text, ktorý
+ * videl. `dry_run: true` vráti plány bez zápisu.
+ */
 export async function POST(req: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -56,44 +65,73 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Max 50 lead_ids na jeden request." }, { status: 400 });
   }
 
+  // Request-scoped client: RLS decides which of the ids this user may touch.
   const { data: leads } = await supabase
     .from("leads")
-    .select("id, name, email, phone, status, budget, property_type, location, last_contact_at, score, note")
+    .select("id, agency_id, name, email, phone, status, budget, property_type, location, last_contact_at, score, note")
     .in("id", body.lead_ids);
 
   if (!leads?.length) return NextResponse.json({ ok: false, error: "No leads found" }, { status: 404 });
 
-  // Batch: menej API calls
-  const plans     = await generateBatchReactivationPlan(leads as DeadLeadInput[]);
-  const approved  = plans.filter((c) => c.should_reactivate);
+  const plans    = await generateBatchReactivationPlan(leads as DeadLeadInput[]);
+  const approved = plans.filter((c) => c.should_reactivate);
 
   if (body.dry_run) {
-    return NextResponse.json({ ok: true, dry_run: true, would_send: approved.length, plans: approved });
+    return NextResponse.json({ ok: true, dry_run: true, would_draft: approved.length, plans: approved });
   }
 
-  const results = await Promise.allSettled(
-    approved
-      .filter((plan) => plan!.lead.phone || plan!.lead.email)
-      .map((plan) =>
-        sendMessage({
-          leadId:      plan!.lead.id,
-          to:          plan!.lead.phone ?? plan!.lead.email!,
-          channel:     plan!.channel,
-          body:        plan!.message,
-          subject:     plan!.subject,
-          aiGenerated: true,
-        })
-      )
+  // Only rows the caller could read above reach this point, so the service
+  // role is used for the activity write alone, not for tenant selection.
+  const admin = createServiceRoleClient();
+  if (!admin) {
+    return NextResponse.json({ ok: false, error: "Služba nie je dostupná." }, { status: 503 });
+  }
+
+  const agencyByLead = new Map(
+    (leads as Array<{ id: string; agency_id?: string | null }>).map((l) => [l.id, l.agency_id ?? null]),
   );
 
-  const sent    = results.filter((r) => r.status === "fulfilled" && r.value.ok).length;
-  const failed  = results.length - sent;
-  const noContact = approved.length - results.length;
+  let drafted = 0;
+  let noContact = 0;
+  const failures: string[] = [];
+
+  for (const plan of approved) {
+    const recipient = recipientFor(plan.channel, plan.lead);
+    if (!recipient) noContact += 1;
+
+    const res = await insertAgentDraft({
+      admin,
+      leadId: plan.lead.id,
+      agencyId: agencyByLead.get(plan.lead.id) ?? null,
+      agentId: DEAD_LEAD_AGENT_ID,
+      promptVersion: DEAD_LEAD_PROMPT_VERSION,
+      channel: plan.channel,
+      subject: plan.subject || "Ozývame sa znova",
+      body: plan.message.trim(),
+      recipient,
+      activity: {
+        type: "AI reaktivácia",
+        title: "Návrh reaktivácie (AI)",
+        actorName: "AI dead-lead kampaň",
+        source: "api_dead_lead_campaign",
+        notes: [
+          `Dôvod: ${plan.reason}`,
+          `Kanál: ${plan.channel} · šanca ${plan.reactivation_score} %`,
+        ],
+      },
+      extraMeta: { reactivation_score: plan.reactivation_score, cooldown_days: plan.cooldown_days },
+      auditAction: "dead_lead_campaign_draft",
+    });
+    if (res.ok) drafted += 1;
+    else failures.push(`${plan.lead.id}: ${res.error}`);
+  }
 
   return NextResponse.json({
-    ok:      true,
-    sent,
-    failed,
-    skipped: plans.length - approved.length + noContact,
+    ok: true,
+    drafted,
+    sent: 0,
+    no_contact: noContact,
+    skipped: plans.length - approved.length,
+    failures,
   });
 }

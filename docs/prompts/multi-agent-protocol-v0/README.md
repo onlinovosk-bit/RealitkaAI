@@ -15,6 +15,7 @@
 | 04 | `04-independent-first.md` | Resolve from artifacts, no chat SoT |
 | 05 | `05-grok-permission-boundary.md` | Grok may challenge, not decide |
 | 06 | `06-operating-mode-b.md` | **Operating mode B** (2026-09-17): one executor (Claude Cowork) + subagent reviewers; advisors via founder decision only |
+| 07 | `07-work-block-execution-protocol.md` | **WBEP v0.1 — NÁVRH, NIE JE V PLATNOSTI.** Granularita schvaľovania: founder schvaľuje výsledok Work Blocku, nie interné kroky. Platí až po founderovom `DECISION`. |
 
 ## Relationship to existing bus
 

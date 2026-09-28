@@ -107,7 +107,11 @@ export async function POST(request: Request) {
           status: event.status,
           location: event.location,
         },
-      });
+      }, supabase).catch((e) =>
+        // The event is already saved; a missing timeline entry must not
+        // turn that into an error for the broker.
+        console.error("[scheduled-events] activity:", e instanceof Error ? e.message : e),
+      );
     }
 
     return okResponse({ event, deduplicated: false }, { status: 201 });

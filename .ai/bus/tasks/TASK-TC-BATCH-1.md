@@ -1,7 +1,7 @@
 ---
 id: TASK-TC-BATCH-1
 type: task
-status: running
+status: done
 owner: tc-orchestrator
 created_at: 2026-09-15T20:17:17.832Z
 scope:
@@ -36,6 +36,20 @@ budget:
   max_iterations: 3
   max_cost_usd: 2
 risk: low
+evidence:
+  commands:
+    - "git merge-base --is-ancestor b324c71 HEAD  # exit 0 - commit davky je predkom HEAD"
+    - "git branch -a --contains b324c71  # main, remotes/origin/main (aj audit/2026-09-16, docs/operating-mode-b)"
+    - "git show --stat b324c71  # fix(types): typecheck paydown batch 1 (21 errors) (#560); 6 suborov, +239/-34; obsahuje vsetky tri subory scope"
+    - "git log --oneline --all -- apps/crm/src/lib/acquisition/sync/persist/__tests__/persist-sync.test.ts apps/crm/src/lib/moat-capture/__tests__/moat-capture.test.ts 'apps/crm/src/app/(public)/buyer-onboarding/__tests__/actions.test.ts'  # b324c71 je posledna zmena vsetkych troch suborov"
+    - "git log -1 --format=%ad --date=iso b324c71  # 2026-09-16 12:23:00 +0200"
+    - "grep -n TASK-TC-BATCH-1 .ai/bus/ledger/2026-09.jsonl  # 4 behy: RUN-20260915201856 REJECT, RUN-20260916064357 REJECT, RUN-20260916072230 REJECT, RUN-20260916080336 HUMAN"
+  files:
+    - apps/crm/src/lib/acquisition/sync/persist/__tests__/persist-sync.test.ts
+    - apps/crm/src/lib/moat-capture/__tests__/moat-capture.test.ts
+    - apps/crm/src/app/(public)/buyer-onboarding/__tests__/actions.test.ts
+    - .ai/bus/ledger/2026-09.jsonl
+  urls: []
 verdict:
   result: HUMAN
   reason: "rozpocet prekroceny - 3 behov >= limit 3"
@@ -130,3 +144,32 @@ kontraktu; amendmenty kontraktu maju mat vlastne pocitadlo.
 Andrej Ondrus / 2026-09-16 / 10:16:38+02:00
 Podpis viazany na verdict_run_id RUN-20260916080336-TASK-TC-BATCH-1
 (front matter founder_approval).
+
+## Zosuladenie stavu so stromom, 2026-09-17
+
+FINDING: kod davky je na `main`, karta drzala `status: running`.
+EVIDENCE: `git merge-base --is-ancestor b324c71 HEAD` -> exit 0;
+`git branch -a --contains b324c71` -> `main`, `remotes/origin/main`;
+`git show --stat b324c71` -> commit `fix(types): typecheck paydown batch 1
+(21 errors) (#560)` meni vsetky tri subory zo `scope.repo_paths`.
+
+ACTION: `status` zmeneny `running` -> `done`, doplneny blok `evidence`
+podla pravidla STATE MUST BE EVIDENCE-BACKED
+(`docs/prompts/multi-agent-protocol-v0/06-operating-mode-b.md`).
+
+Stav po vrstvach:
+
+| vrstva | stav | dokaz |
+|---|---|---|
+| commit | **na `main`** | `git merge-base --is-ancestor b324c71 HEAD` exit 0 |
+| PR | **unknown** | cislo `#560` je iba z predmetu commitu `b324c71`; `gh pr view 560` v tejto session nebezal |
+| produkcia | **unknown** | ziaden deploy dokaz v repe |
+
+FINDING: `verdict.result` zostava `HUMAN` a je **nedotknuty**.
+EVIDENCE: `06-operating-mode-b.md`, sekcia "Pravidla pridane z behov 16. az 17. 9.":
+"Verdikt zapisuje iba Judge. Rucne `verdict.result` = porusenie."
+Verdikt `HUMAN` z behu `RUN-20260916080336-TASK-TC-BATCH-1` je posledny, co Judge
+zapisal, a plati dalej. Co ho uzatvara, nie je prepis verdiktu, ale podpis foundera
+v `founder_approval` (Andrej Ondrus, 2026-09-16T10:16:38+02:00), viazany na ten isty
+`verdict_run_id`. `status: done` teda znamena: Judge vydal HUMAN, founder branu
+zavrel, kod je na `main`.

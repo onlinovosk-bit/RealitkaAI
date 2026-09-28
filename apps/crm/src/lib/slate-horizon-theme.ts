@@ -31,6 +31,9 @@ export const SLATE_HORIZON = {
   railWidth: "76px",
   sidebarWidth: "300px",
   ctaGradient: "linear-gradient(90deg, #F97316, #FB923C)",
+  /** Svetly variant topbarGradient pre informacne panely — rovnaka modra rodina,
+      rovnaky smer (90deg), ale citatelny s tmavym textom. */
+  noticeGradient: "linear-gradient(90deg, #EFF6FF 0%, #E8EEF6 55%, #DCE7F5 100%)",
   focusRing: "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2",
 } as const;
 

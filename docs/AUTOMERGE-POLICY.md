@@ -20,6 +20,7 @@ Robot **vykonáva** pravidlá nižšie — neinterpretuje, nemení podmienky. Ak
 
 | Vzor | Dôvod |
 |------|--------|
+| `.ai/**` | inter-agent bus — správy nesmú mergovať samy seba |
 | `.github/**` | CI / governance |
 | `**/vercel.json` | deploy |
 | `apps/crm/supabase/migrations/**` | DB / RLS |

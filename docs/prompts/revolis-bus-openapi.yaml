@@ -1,0 +1,221 @@
+openapi: 3.1.0
+info:
+  title: Revolis Inter-Agent Bus
+  version: "1.0.0"
+  description: |
+    Transport between strategic agents (SOL/GPT) and execution agents (Claude Code).
+    Every message is a file in `.ai/bus` in the Revolis repository, so the bus
+    inherits git history, review and rollback.
+
+    Import this file as the schema of a ChatGPT Custom GPT Action and set
+    authentication to "API key / Bearer" with the value of REVOLIS_BUS_TOKEN.
+servers:
+  - url: https://bus.revolis.invalid
+    description: Replace with the deployed bus host (or an ngrok/cloudflared tunnel for local runs).
+security:
+  - bearerAuth: []
+paths:
+  /health:
+    get:
+      operationId: busHealth
+      summary: Liveness probe. No data, no auth.
+      security: []
+      responses:
+        "200":
+          description: Service is up.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  service: { type: string }
+                  version: { type: integer }
+  /bus/messages:
+    get:
+      operationId: listBusMessages
+      summary: Read the queue (compressed digest by default for a strategic agent).
+      parameters:
+        - { in: query, name: box, schema: { $ref: "#/components/schemas/Box" }, description: "Default: outbox." }
+        - { in: query, name: to, schema: { $ref: "#/components/schemas/Agent" } }
+        - { in: query, name: from, schema: { $ref: "#/components/schemas/Agent" } }
+        - { in: query, name: status, schema: { $ref: "#/components/schemas/Status" } }
+        - { in: query, name: task, schema: { type: string }, description: "Filter by task_id/thread." }
+        - { in: query, name: type, schema: { $ref: "#/components/schemas/MessageType" } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+        - { in: query, name: format, schema: { type: string, enum: [json, digest] } }
+      responses:
+        "200":
+          description: Messages as JSON, or a plain-text digest when format=digest.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  box: { $ref: "#/components/schemas/Box" }
+                  count: { type: integer }
+                  messages:
+                    type: array
+                    items: { $ref: "#/components/schemas/Envelope" }
+            text/plain:
+              schema: { type: string }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      operationId: postBusMessage
+      summary: Post a task, context packet or decision for another agent.
+      parameters:
+        - in: query
+          name: box
+          schema: { $ref: "#/components/schemas/Box" }
+          description: "Default: inbox. Writable boxes only (inbox, tasks, context, decisions)."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Envelope" }
+      responses:
+        "201":
+          description: Stored. The response carries the assigned id and the digest.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  id: { type: string }
+                  box: { $ref: "#/components/schemas/Box" }
+                  path: { type: string }
+                  digest: { type: string }
+        "400": { description: "Envelope rejected (field-level problems, or a detected credential)." }
+        "403": { description: "That box is not writable over HTTP." }
+        "409": { description: "A message with this id already exists." }
+        "413": { description: "Body over 64 KB — link to a repo file instead of pasting logs." }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /bus/messages/{id}:
+    get:
+      operationId: readBusMessage
+      summary: Read one message in full, or as a digest.
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string } }
+        - { in: query, name: box, schema: { $ref: "#/components/schemas/Box" }, description: "Default: outbox." }
+        - { in: query, name: format, schema: { type: string, enum: [json, digest] } }
+      responses:
+        "200":
+          description: The message.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  box: { $ref: "#/components/schemas/Box" }
+                  message: { $ref: "#/components/schemas/Envelope" }
+                  pre_v1: { type: boolean }
+            text/plain:
+              schema: { type: string }
+        "404": { description: Not found in that box. }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /bus/messages/{id}/ack:
+    post:
+      operationId: ackBusMessage
+      summary: Close a message — set its status and move it out of the working box.
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string } }
+        - { in: query, name: box, schema: { $ref: "#/components/schemas/Box" }, description: "Default: inbox." }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: { $ref: "#/components/schemas/Status" }
+                to_box: { $ref: "#/components/schemas/Box" }
+      responses:
+        "200": { description: Acknowledged. }
+        "404": { description: Not found. }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  responses:
+    Unauthorized:
+      description: Missing or invalid bearer token.
+  schemas:
+    Box:
+      type: string
+      enum: [inbox, outbox, tasks, context, decisions, state, archive]
+    Agent:
+      type: string
+      enum: [sol-gpt, claude-code, founder, runner, cursor]
+    MessageType:
+      type: string
+      enum: [task, context, result, decision, state, blocker]
+    Status:
+      type: string
+      enum: [draft, open, in_progress, blocked, done, archived]
+    Gate:
+      type: string
+      enum: ["AUTO-SAFE", "GO REQUIRED", "STOP"]
+      description: Anything beyond AUTO-SAFE needs the founder. Agents never self-approve.
+    Envelope:
+      type: object
+      required: [type, status, from, to, summary]
+      properties:
+        id:
+          type: string
+          description: "PREFIX-YYYYMMDD-NNN-slug. Omit and the bus assigns one."
+        type: { $ref: "#/components/schemas/MessageType" }
+        status: { $ref: "#/components/schemas/Status" }
+        from: { $ref: "#/components/schemas/Agent" }
+        to: { $ref: "#/components/schemas/Agent" }
+        created_at: { type: string, format: date-time }
+        task_id: { type: string }
+        thread: { type: string }
+        mode:
+          type: string
+          enum: [READ_ONLY, PLAN, IMPLEMENT, REVIEW]
+        stop_after_report:
+          type: boolean
+          description: Execution agent reports and stops instead of continuing.
+        summary:
+          type: string
+          maxLength: 280
+          description: One line. This is what the receiving agent reads first.
+        counters:
+          type: object
+          additionalProperties: { type: number }
+          description: "Machine-countable facts, e.g. { safe_to_delete: 281, open_pr: 31 }."
+        decisions_required:
+          type: array
+          items:
+            type: object
+            required: [question, gate]
+            properties:
+              id: { type: string }
+              question: { type: string }
+              options: { type: array, items: { type: string } }
+              recommendation: { type: string }
+              gate: { $ref: "#/components/schemas/Gate" }
+        evidence:
+          type: object
+          properties:
+            commands: { type: array, items: { type: string } }
+            files: { type: array, items: { type: string } }
+            urls: { type: array, items: { type: string } }
+        scope:
+          type: object
+          properties:
+            repo_paths: { type: array, items: { type: string } }
+            forbidden_paths: { type: array, items: { type: string } }
+            external_systems: { type: array, items: { type: string } }
+        next_action:
+          type: object
+          required: [gate, description]
+          properties:
+            gate: { $ref: "#/components/schemas/Gate" }
+            description: { type: string }
+        body:
+          type: string
+          description: Markdown detail. Never required for the receiving agent to act.

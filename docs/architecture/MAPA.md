@@ -7,6 +7,8 @@ Path-qualified Obsidian odkazy — jednoznačný cieľ v repe.
 - [[docs/architecture/engineering-constitution|Engineering Constitution]] — 5 princípov
 - [[docs/architecture/revolis-constitution-v2|Revolis Constitution v2]]
 - [[docs/architecture/antipatterns-log|Antipatterns log]] — AP-001 … AP-013
+- [[docs/architecture/agentic/agentic-system-blueprint-v1.0|Agentic System Blueprint v1.0]] — kontrakt agentnej vrstvy (cross-product)
+- [[docs/architecture/agentic/revolis-system-spec-v1.0|Revolis System Spec v1.0]] — Blueprint aplikovaný na reálny kód + gap + verdikt Ústavy
 - [[brain/ENGINE|Brain OS ENGINE]]
 
 ## Rozhodnutia

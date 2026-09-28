@@ -14,10 +14,27 @@ const securityHeaders = [
 	{ key: "Permissions-Policy", value: "camera=(), microphone=()" },
 ];
 
+/** Onboarding capability URLs put session_id in the address bar / query; never send Referer. */
+const onboardingNoReferrerHeaders = [
+	{ key: "Referrer-Policy", value: "no-referrer" },
+];
+
 const nextConfig = {
 	outputFileTracingRoot: path.join(__dirname, "../.."),
 	async headers() {
 		return [
+			{
+				source: "/onboarding",
+				headers: onboardingNoReferrerHeaders,
+			},
+			{
+				source: "/onboarding/:path*",
+				headers: onboardingNoReferrerHeaders,
+			},
+			{
+				source: "/api/onboarding/session",
+				headers: onboardingNoReferrerHeaders,
+			},
 			{
 				source: "/(.*)",
 				headers: securityHeaders,

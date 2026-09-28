@@ -38,6 +38,8 @@ export type ResolvedAuthProfile = {
   tier_updated_at?: string | null;
   team_license_id?: string | null;
   agency_name?: string | null;
+  /** Najvyššie oprávnenie v aplikácii — odomyká interné plochy. */
+  is_platform_admin?: boolean | null;
 };
 
 type ProfileLookupResult = {

@@ -167,7 +167,9 @@ export async function findScheduledEventByIdempotencyKey(
   scoped?: SupabaseClient | null,
 ): Promise<ScheduledEvent | null> {
   const supabase = await getClient(scoped);
-  if (!supabase) return null;
+  if (!supabase) {
+    throw new Error("Databáza nie je dostupná.");
+  }
 
   const { data, error } = await supabase
     .from("scheduled_events")
@@ -177,8 +179,15 @@ export async function findScheduledEventByIdempotencyKey(
     .in("status", [...ACTIVE_SCHEDULED_EVENT_STATUSES])
     .limit(1);
 
-  if (error || !data || data.length === 0) {
-    if (error) console.error("findScheduledEventByIdempotencyKey:", error.message);
+  // Fail-closed: lookup error must not be treated as "no prior event" —
+  // that would skip dedup and insert a duplicate booking.
+  if (error) {
+    throw new Error(
+      `Nepodarilo sa overiť idempotenciu termínu: ${error.message}`,
+    );
+  }
+
+  if (!data || data.length === 0) {
     return null;
   }
 
@@ -198,7 +207,9 @@ export async function findConflictingScheduledEvents(
   ignoreEventId?: string,
 ): Promise<ScheduledEvent[]> {
   const supabase = await getClient(scoped);
-  if (!supabase) return [];
+  if (!supabase) {
+    throw new Error("Databáza nie je dostupná.");
+  }
 
   const { data, error } = await supabase
     .from("scheduled_events")
@@ -209,8 +220,16 @@ export async function findConflictingScheduledEvents(
     .lt("starts_at", endsAt)
     .gt("ends_at", startsAt);
 
-  if (error || !data) {
-    if (error) console.error("findConflictingScheduledEvents:", error.message);
+  // Fail-closed: a free/busy read failure must not look like an empty calendar.
+  // Returning [] here used to let createScheduledEvent insert through and
+  // double-book the slot (SMO-B09 false "termín potvrdený").
+  if (error) {
+    throw new Error(
+      `Nepodarilo sa overiť voľný termín: ${error.message}`,
+    );
+  }
+
+  if (!data) {
     return [];
   }
 

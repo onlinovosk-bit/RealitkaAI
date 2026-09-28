@@ -254,4 +254,93 @@ describe("scheduled-events — idempotencia a free/busy (SMO-B09)", () => {
     );
     expect(result.idempotencyKey).toContain(AGENCY);
   });
+
+  it("chyba free/busy SELECT fail-closed — nevytvorí termín (žiadny falošný confirmation)", async () => {
+    // Idempotency lookup (uses .limit) succeeds empty; free/busy (.lt/.gt) errors.
+    // Old code swallowed free/busy errors as [] and inserted through the slot.
+    let sawFreeBusy = false;
+    const brokenClient = {
+      from: () => ({
+        select: () => {
+          const preds: { kind: string }[] = [];
+          const chain: any = {
+            eq: () => chain,
+            in: () => chain,
+            lt: () => {
+              preds.push({ kind: "lt" });
+              sawFreeBusy = true;
+              return chain;
+            },
+            gt: () => {
+              preds.push({ kind: "gt" });
+              sawFreeBusy = true;
+              return chain;
+            },
+            limit: () => chain,
+            then: (onOk: (r: unknown) => unknown) => {
+              const isFreeBusy = preds.some((p) => p.kind === "lt" || p.kind === "gt");
+              if (isFreeBusy) {
+                return Promise.resolve({
+                  data: null,
+                  error: { message: "statement timeout" },
+                }).then(onOk);
+              }
+              return Promise.resolve({ data: [], error: null }).then(onOk);
+            },
+          };
+          return chain;
+        },
+        insert: () => {
+          throw new Error("insert must not run when free/busy fails");
+        },
+      }),
+    };
+
+    resolveTenantSupabaseMock.mockResolvedValue(brokenClient);
+
+    const { createScheduledEvent } = await import("@/lib/scheduled-events/store");
+
+    await expect(
+      createScheduledEvent(AGENCY, PROFILE, baseInput, brokenClient as never),
+    ).rejects.toThrow(/voľný termín|statement timeout/i);
+
+    expect(sawFreeBusy).toBe(true);
+  });
+
+  it("chyba idempotency SELECT fail-closed — nevytvorí duplicitný termín", async () => {
+    let selectCalls = 0;
+    const brokenClient = {
+      from: () => ({
+        select: () => {
+          selectCalls += 1;
+          const chain: any = {
+            eq: () => chain,
+            in: () => chain,
+            lt: () => chain,
+            gt: () => chain,
+            limit: () => chain,
+            then: (onOk: (r: unknown) => unknown) =>
+              Promise.resolve({
+                data: null,
+                error: { message: "connection reset" },
+              }).then(onOk),
+          };
+          return chain;
+        },
+        insert: () => {
+          throw new Error("insert must not run when idempotency lookup fails");
+        },
+      }),
+    };
+
+    resolveTenantSupabaseMock.mockResolvedValue(brokenClient);
+
+    const { createScheduledEvent } = await import("@/lib/scheduled-events/store");
+
+    await expect(
+      createScheduledEvent(AGENCY, PROFILE, baseInput, brokenClient as never),
+    ).rejects.toThrow(/idempotenciu|connection reset/i);
+
+    expect(selectCalls).toBeGreaterThanOrEqual(1);
+  });
 });

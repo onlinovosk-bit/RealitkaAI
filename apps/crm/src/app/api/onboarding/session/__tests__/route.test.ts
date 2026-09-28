@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ONBOARDING_SESSION_MAX_AGE_MS } from "@/lib/onboarding/session-api";
 
 const SESSION_ID = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
 
@@ -11,19 +12,22 @@ const mockCreateServiceRoleClient = vi.hoisted(() =>
 );
 
 vi.mock("@/lib/supabase/admin", () => ({
-  createServiceRoleClient: (...args: unknown[]) =>
-    mockCreateServiceRoleClient(...args),
+  createServiceRoleClient: () => mockCreateServiceRoleClient(),
 }));
 
 vi.mock("@/lib/rate-limit", () => ({
-  rateLimit: (...args: unknown[]) => mockRateLimit(...args),
+  rateLimit: (...args: [string, number, number]) => mockRateLimit(...args),
 }));
 
 function chainSelect(result: { data: unknown; error: unknown }) {
+  const terminal = {
+    maybeSingle: async () => result,
+  };
   return {
     select: () => ({
       eq: () => ({
-        maybeSingle: async () => result,
+        gt: () => terminal,
+        maybeSingle: terminal.maybeSingle,
       }),
     }),
     upsert: () => ({
@@ -32,6 +36,14 @@ function chainSelect(result: { data: unknown; error: unknown }) {
       }),
     }),
   };
+}
+
+function freshUpdatedAt() {
+  return new Date().toISOString();
+}
+
+function staleUpdatedAt() {
+  return new Date(Date.now() - ONBOARDING_SESSION_MAX_AGE_MS - 60_000).toISOString();
 }
 
 describe("/api/onboarding/session", () => {
@@ -47,7 +59,7 @@ describe("/api/onboarding/session", () => {
           session_id: SESSION_ID,
           step: 2,
           form_data: { name: "Test" },
-          updated_at: "2026-09-04T12:00:00.000Z",
+          updated_at: freshUpdatedAt(),
         },
         error: null,
       }),
@@ -80,7 +92,7 @@ describe("/api/onboarding/session", () => {
     expect(mockFrom).not.toHaveBeenCalled();
   });
 
-  it("GET returns one session by session_id", async () => {
+  it("GET returns one fresh session by session_id", async () => {
     const { GET } = await import("../route");
     const res = await GET(
       new Request(
@@ -93,6 +105,58 @@ describe("/api/onboarding/session", () => {
     expect(body.ok).toBe(true);
     expect(body.session.session_id).toBe(SESSION_ID);
     expect(mockFrom).toHaveBeenCalledWith("onboarding_sessions");
+  });
+
+  it("GET returns 404 when session is older than max age (V1)", async () => {
+    mockFrom.mockImplementation(() =>
+      chainSelect({
+        data: {
+          session_id: SESSION_ID,
+          step: 2,
+          form_data: { name: "Test", phone: "+421900000000" },
+          updated_at: staleUpdatedAt(),
+        },
+        error: null,
+      }),
+    );
+    const { GET } = await import("../route");
+    const res = await GET(
+      new Request(
+        `http://localhost/api/onboarding/session?session_id=${SESSION_ID}`,
+        { headers: { "x-forwarded-for": "10.0.0.1" } },
+      ),
+    );
+    expect(res.status).toBe(404);
+    const body = await res.json();
+    expect(body.ok).toBe(false);
+  });
+
+  it("GET returns 404 when DB filter yields no row (expired/missing)", async () => {
+    mockFrom.mockImplementation(() =>
+      chainSelect({
+        data: null,
+        error: null,
+      }),
+    );
+    const { GET } = await import("../route");
+    const res = await GET(
+      new Request(
+        `http://localhost/api/onboarding/session?session_id=${SESSION_ID}`,
+        { headers: { "x-forwarded-for": "10.0.0.1" } },
+      ),
+    );
+    expect(res.status).toBe(404);
+  });
+
+  it("sets Referrer-Policy: no-referrer on GET responses (V2)", async () => {
+    const { GET } = await import("../route");
+    const res = await GET(
+      new Request(
+        `http://localhost/api/onboarding/session?session_id=${SESSION_ID}`,
+        { headers: { "x-forwarded-for": "10.0.0.1" } },
+      ),
+    );
+    expect(res.headers.get("Referrer-Policy")).toBe("no-referrer");
   });
 
   it("POST upserts by session_id (happy path)", async () => {
@@ -116,6 +180,7 @@ describe("/api/onboarding/session", () => {
     expect(body.ok).toBe(true);
     expect(body.session.session_id).toBe(SESSION_ID);
     expect(mockFrom).toHaveBeenCalledWith("onboarding_sessions");
+    expect(res.headers.get("Referrer-Policy")).toBe("no-referrer");
   });
 
   it("POST rejects invalid uuid", async () => {
@@ -149,6 +214,7 @@ describe("/api/onboarding/session", () => {
     );
     expect(res.status).toBe(429);
     expect(mockFrom).not.toHaveBeenCalled();
+    expect(res.headers.get("Referrer-Policy")).toBe("no-referrer");
   });
 
   it("PUT is denied (no listing/bulk)", async () => {

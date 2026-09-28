@@ -50,4 +50,16 @@ describe("[verification] onboarding_sessions Path B (API + DROP anon ALL)", () =
       expect(src, rel).toMatch(/upsertOnboardingSession|getOnboardingSession/);
     }
   });
+
+  it("proxy allows anonymous access to /api/onboarding/session (A3)", () => {
+    const proxy = readFileSync(join(CRM_ROOT, "src/proxy.ts"), "utf8");
+    const publicSet = proxy.match(
+      /const PUBLIC_PATHS = new Set\(\[([\s\S]*?)\]\);/,
+    )?.[1];
+    expect(publicSet, "PUBLIC_PATHS must remain an explicit path set").toBeTruthy();
+    expect(publicSet).toContain('"/api/onboarding/session"');
+    // Must NOT widen to authenticated MVP onboarding APIs.
+    expect(publicSet).not.toContain('"/api/onboarding/mvp');
+    expect(proxy).not.toContain('"/api/onboarding/mvp/"');
+  });
 });
