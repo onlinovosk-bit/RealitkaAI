@@ -36,6 +36,7 @@ interface Recorded {
   columns: string
   filters: Filters
   or: string[]
+  not: string[]
 }
 
 /**
@@ -47,7 +48,9 @@ interface Recorded {
 function makeClient(opts: {
   newLeadCount: number
   activeCount?: number
+  contactedCount?: number
   staleCount?: number
+  staleQueryFails?: boolean
   pipeline?: { budget: string; status: string }[]
   priority?: { name: string; ai_priority: string; score: number; last_contact: string }[]
   events?: { event_type: string; entity_id?: string | null; payload?: unknown; created_at?: string }[]
@@ -56,7 +59,7 @@ function makeClient(opts: {
 
   const client = {
     from(table: string) {
-      const entry: Recorded = { table, columns: '', filters: {}, or: [] }
+      const entry: Recorded = { table, columns: '', filters: {}, or: [], not: [] }
       recorded.push(entry)
 
       const resolve = (): Record<string, unknown> => {
@@ -86,8 +89,18 @@ function makeClient(opts: {
           if ('gte:created_at' in entry.filters) {
             return { data: null, count: opts.newLeadCount, error: null }
           }
-          if (entry.or.length > 0) {
-            return { data: null, count: opts.staleCount ?? 0, error: null }
+          // Two staleness queries now: the denominator ("does anyone carry a
+          // contact timestamp at all") and the count itself. They are told
+          // apart by the lt: filter, not by call order.
+          const touchesLastContactAt = entry.not.some((n) => n.startsWith('last_contact_at.'))
+          if (touchesLastContactAt) {
+            if (opts.staleQueryFails) {
+              return { data: null, count: null, error: { message: 'PostgREST said no' } }
+            }
+            if ('lt:last_contact_at' in entry.filters) {
+              return { data: null, count: opts.staleCount ?? 0, error: null }
+            }
+            return { data: null, count: opts.contactedCount ?? 0, error: null }
           }
           if (entry.columns.includes('budget')) {
             return { data: opts.pipeline ?? [], error: null }
@@ -111,6 +124,10 @@ function makeClient(opts: {
         in: chain,
         order: chain,
         limit: chain,
+        not: (col: string, op: string, val: unknown) => {
+          entry.not.push(`${col}.${op}.${String(val)}`)
+          return builder
+        },
         or: (expr: string) => {
           entry.or.push(expr)
           return builder
@@ -228,8 +245,8 @@ describe('morning brief — stats query columns', () => {
     const scoped = leadsQueries(recorded).filter(
       (r) => r.filters['eq:assigned_profile_id'] === PROFILE,
     )
-    // active count, pipeline rows, priority rows, stale count
-    expect(scoped).toHaveLength(4)
+    // active count, pipeline rows, priority rows, contacted denominator, stale count
+    expect(scoped).toHaveLength(5)
   })
 
   it('selects leads.name, never the non-existent full_name', async () => {
@@ -249,20 +266,70 @@ describe('morning brief — stats query columns', () => {
     expect(data?.stats.priorityLeadNames).toEqual(['Ján Kováč'])
   })
 
-  it('measures staleness on last_contact_at and excludes leads younger than the cutoff', async () => {
-    const { client, recorded } = makeClient({ newLeadCount: 0, staleCount: 7 })
+  it('measures staleness on last_contact_at, never on the free-text last_contact', async () => {
+    const { client, recorded } = makeClient({ newLeadCount: 0, contactedCount: 12, staleCount: 7 })
     mockCreateAdmin.mockReturnValue(client)
 
     const data = await gatherBriefData(PROFILE)
 
-    const staleQuery = leadsQueries(recorded).find((r) => r.or.length > 0)
+    const staleQuery = leadsQueries(recorded).find((r) => 'lt:last_contact_at' in r.filters)
     expect(staleQuery, 'no staleness query was issued').toBeDefined()
-    expect(staleQuery?.or[0]).toContain('last_contact_at')
     // The free-text column must not be compared against a timestamp cutoff.
-    expect(staleQuery?.or[0]).not.toMatch(/(^|[^_])last_contact\.(is|lt)/)
-    expect(staleQuery?.filters).toHaveProperty('lt:created_at')
-
+    expect(staleQuery?.filters).not.toHaveProperty('lt:last_contact')
     expect(data?.stats.staleContacts48h).toBe(7)
+  })
+
+  it('reports null, not 0, when no lead carries a contact timestamp', async () => {
+    // Production today: last_contact_at is NULL on all 511 rows. The shape that
+    // shipped in #727 answered this case with the broker's entire book —
+    // measured 142/142, 72/72, 66/66, 47/47, 39/39 for the five largest
+    // assignees — because `last_contact_at IS NULL` sat inside the staleness
+    // test. Zero would be the opposite lie. Only null is true.
+    const { client } = makeClient({ newLeadCount: 0, contactedCount: 0, staleCount: 40 })
+    mockCreateAdmin.mockReturnValue(client)
+
+    const data = await gatherBriefData(PROFILE)
+
+    expect(data?.stats.staleContacts48h).toBeNull()
+  })
+
+  it('never counts a lead nobody has contacted as one that went quiet', async () => {
+    const { client, recorded } = makeClient({ newLeadCount: 0, contactedCount: 12, staleCount: 7 })
+    mockCreateAdmin.mockReturnValue(client)
+
+    await gatherBriefData(PROFILE)
+
+    // "no one ever called them" belongs to pendingContact, not to staleness.
+    for (const q of leadsQueries(recorded)) {
+      expect(
+        q.or.join('|'),
+        'staleness must not admit rows via last_contact_at IS NULL',
+      ).not.toContain('last_contact_at.is.null')
+    }
+    const staleQuery = leadsQueries(recorded).find((r) => 'lt:last_contact_at' in r.filters)
+    expect(staleQuery?.not.some((n) => n === 'last_contact_at.is.null')).toBe(true)
+  })
+
+  it('reports null, not 0, when the staleness query errors', async () => {
+    // `?? 0` on a rejected query is the exact bug #727 had to undo on four
+    // other counts. A failure must stay unknown.
+    const { client } = makeClient({ newLeadCount: 0, staleQueryFails: true })
+    mockCreateAdmin.mockReturnValue(client)
+
+    const data = await gatherBriefData(PROFILE)
+
+    expect(data?.stats.staleContacts48h).toBeNull()
+  })
+
+  it('starts reporting on its own once a contact timestamp exists', async () => {
+    // No further code change should be needed the day something begins writing
+    // last_contact_at.
+    const { client } = makeClient({ newLeadCount: 0, contactedCount: 1, staleCount: 0 })
+    mockCreateAdmin.mockReturnValue(client)
+
+    const data = await gatherBriefData(PROFILE)
+
+    expect(data?.stats.staleContacts48h).toBe(0)
   })
 
   it('sums pipeline value from the scoped rows', async () => {
