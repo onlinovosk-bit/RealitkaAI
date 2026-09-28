@@ -4074,3 +4074,53 @@ prepnúť na zdroj, ktorý dáta má (`leads`), rovnako ako to už robí
 `director-brief`. Až potom sa dá riešiť, či má events pipeline vôbec žiť —
 `logEvent` cez service-role klienta by RLS obišiel, ale to je zmena
 bezpečnostného modelu a patrí jej vlastné GO.
+
+---
+
+## 2026-09-28 — PR-BACKLOG-TRIAGE: z dvanástich otvorených PR platí päť
+
+**Brána:** `GO PR-BACKLOG-TRIAGE` · **Rozhodnutie:** BUILD (meranie), merge = founder
+**Dokument:** `docs/reports/2026-09-28-pr-backlog-triage.md` · **Referenčný `main`:** `fe505a26`
+
+Backlog sa neposudzoval z popisov PR — tie sú väčšinou z augusta a `main` sa
+odvtedy posunul. Každý PR sa meral dvakrát: či je opravovaný vzor **dnes** v kóde
+na `origin/main`, a či sa vetva vôbec dá zmergovať (`git merge-tree --write-tree`,
+skutočný trojcestný merge).
+
+**Platné (chyba žije na `main`), v odporúčanom poradí:** #490 (cookie-less anon
+singleton v `lead-automation-store.ts` + chýbajúca migrácia tenant RLS → mazanie
+cudzích pravidiel), #486 (`if (callerProfile?.agency_id && …)` pred admin klientom
+v HubSpot sync aj call-analyze), #447 (`api/invite/route.ts` upsertuje profil bez
+`agency_id` — továreň na siroty, ktoré prechádzajú #486), #370 (read-modify-write
+na `purchased_credits_balance`), #462 (recovery-link gate kontroluje rolu, nie
+agentúru → prevzatie účtu naprieč tenantmi).
+
+**Prekonané, zavrieť:** #371 (vecná oprava na `main`; merge by pridal iba duplicitný
+komentárový riadok), #444 (`main` po #719 už scoped klienta má — a sú to jediné dva
+kódové konflikty v celej sade), #459 (`requirePlatformAdmin()` je na `main`),
+#439 (uvoľnenie dedup claimu zmergované ako #440), #475 (0 kódových súborov,
+termín spred mesiaca).
+
+**Čiastočne prekonané — vyrezať, nie mergovať:** #495 (zostáva jediný riadok
+`bri?.new_score ?? 50`, ktorý pri zlyhanom výpočte vyrobí skóre nad prahom 40 a
+spustí auto-odpoveď klientovi), #443 (zostávajú dva riadky v `matching/action/route.ts`).
+
+### Dve veci, ktoré meranie odhalilo mimo zadania
+
+1. **Repozitár má tri root commity.** Vetvy #439 a #459 rastú z root `75e75c0c`,
+   `main` z `43c21f4b`; `merge-tree` na nich vracia `refusing to merge unrelated
+   histories`. Nesú `apps/crm/apps/crm/tsconfig.json` a vlastnú kópiu `.cursor/rules/`
+   — teda celý repozitár vnorený do `apps/crm/`. Vznikli tým, že agent v Cursore
+   inicializoval nový repozitár namiesto práce v existujúcom. Nie je to stav
+   opraviteľný mergom.
+2. **`api/properties/[id]/route.ts` má ten istý fail-open ako #486** (`callerProfile?.agency_id
+   && oldProperty?.agencyId && …`). Nekryje ho žiadny otvorený PR. Zaznamenané ako
+   otvorený nález, neopravené v tejto bráne.
+
+### Oprava vlastného merania, ktorú dokument uvádza
+
+Prvé kolo porovnávalo `git diff origin/main <head>` a vyšlo z neho, že osem PR by
+zmazalo 136 až 841 súborov z `main`. **Bolo to nesprávne** — `git diff` porovnáva
+stromy, merge berie zmeny od spoločného predka. Skutočný merge ukázal, že štyri PR
+sú čisté s nulou zmazaných súborov a zo zvyšku má konflikt v kóde jediný (#444).
+Číslo z prvého kola v dokumente nefiguruje.
