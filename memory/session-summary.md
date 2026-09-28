@@ -1,3 +1,17 @@
+## Session 2026-09-27 (MATCHING-ZERO)
+### Dokončené
+- Matching číta cez klienta volajúceho, prázdne čítanie nemaže zhody:
+  `apps/crm/src/lib/matching-store.ts`, `matching-hooks.ts`, routy leads/properties; 6 nových testov.
+### Rozpracované / Pending
+- Founder rozhodnutie: ako dostať dopyt do 439 importovaných kontaktov (matching bez neho nič nenájde).
+- Denný matching cron (`ai/matching-engine`) — vlastný návrh.
+- Stripe VERIFY; B.1 znova proti `app.revolis.ai`.
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/matching-store.ts`: čítania so `scoped`, guard proti zmazaniu pri prázdnom čítaní
+- `apps/crm/src/lib/matching-hooks.ts`: `scoped` parameter až po recalculate aj aktivitu
+### Ďalší krok
+Founder: po merge spustiť raz „Prepočítať matching" a rozhodnúť o dopyte importovaných kontaktov.
+
 ## Session 2026-09-27 (CONCIERGE-SECRET-FAIL-CLOSED nasadené)
 
 ### Dokončené

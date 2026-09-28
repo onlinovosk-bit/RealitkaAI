@@ -1,5 +1,26 @@
 # Critical Decisions Log
 
+## [2026-09-27] — MATCHING-ZERO: PROD má 0 zhôd; príčina je v kóde AJ v dátach (founder GO)
+
+- **Fakty PROD:** 511 leadov a 133 nehnuteľností, ale 0 zhôd.
+  - 16. 4. manuálny prepočet zapísal 33 434 zhôd.
+  - Od 20. 5. každý prepočet zapísal 0 a zároveň zmazal uložené zhody.
+- **Príčina 1 — kód, opravené:**
+  - `recalculateAllMatches` a `recalculateMatchesForProperty` čítali leady a nehnuteľnosti
+    bez klienta, takže na serveri `resolveSessionAgencyId` vrátil null → `[]`. Delete bežal
+    cez správneho klienta.
+  - `matching-hooks` (auto-prepočet po uložení leadu/nehnuteľnosti) nepodával klienta vôbec.
+  - Oprava: klient ide do čítaní; prázdne čítanie nemaže uložené zhody. 6 testov, všetky
+    6 padajú na starom kóde.
+  - „R3 remediation" predtým opravila len zápisy a jej verification test kontroloval text,
+    nie správanie.
+- **Príčina 2 — dáta, rozhodnutie foundera:** referenčný klient má 455 leadov, 439 z importu
+  kontaktov Realvia (`contacts-import-core.ts`). Import zámerne ukladá
+  `location/budget/property_type/rooms = ""`. Dopyt vyplnený: lokalita 7, typ 16, rozpočet 7.
+  Matching nemá čo porovnať, oprava kódu zhody pre tieto kontakty nevytvorí.
+- **Zostáva:** denný cron `ai/matching-engine` volá prepočet bez klienta. Potrebuje vlastný
+  návrh (iterácia cez agentúry, service-role); nič nezmaže, beží ako anon.
+
 ## [2026-09-27] AP-028 / CI-FASTPATH-01 — a oprava vlastného čísla z AP-027 (founder GO)
 
 ### Najprv oprava, pretože mení odporúčanie

@@ -17,7 +17,6 @@ const KNOWN_DEBT = new Set([
   "src/lib/ai/matching-engine.ts",
   "src/lib/ai-scoring-store.ts",
   "src/lib/integrations-store.ts",
-  "src/lib/matching-hooks.ts",
   "src/lib/notification-store.ts",
 ]);
 
