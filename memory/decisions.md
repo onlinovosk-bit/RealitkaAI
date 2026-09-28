@@ -80,7 +80,26 @@ a 184 s. Obnova npm cache a pull šiestich images si idú po tom istom hrdle.
 −19 s (beh 2)**. Rozptyl medzi dvoma behmi je väčší než polovica zisku, takže
 „−84 s" by bolo tvrdenie bez opory.
 
-### SETUP-NODE-REORDER (founder GO)
+### SETUP-NODE-REORDER — zmerané, presun zabral
+Tretí beh (`a46ed0c9`, zmergované ako `dfa805db`):
+
+| krok | beh 1 | beh 2 | **beh 3** | baseline |
+|---|---|---|---|---|
+| **setup-node** | 37 | 49 | **6** | 6 / 8 / 7 |
+| **štart Supabase** | 137 | 184 | **110** | 108 / 113 / 108 |
+| čakanie | 19 | 38 | **6** | — |
+| **čisté** | −72 | −19 | **−63** | — |
+
+`setup-node` **49 → 6 s** a štart **184 → 110 s**: príčina bola naozaj v tom,
+že npm cache restore a docker pull idú po tom istom hrdle. Diagnóza potvrdená
+tým, že presun ju odstránil.
+
+**Kontencia sa však len presunula.** `Lint` +23 s a `Typecheck` +6 s nad
+baseline, lebo teraz bežia súbežne s pullom — ale ako CPU-viazané platia menej
+než sieťovo viazaný cache restore. **−63 s je po odpočítaní** tých +29 s aj
++12 s nového testu; hrubých −104 s neuvádzam ako výsledok. Zvyšok do stropu
+84 s poradím krokov neodstrániteľný: pull musí s niečím koexistovať.
+
 `setup-node` a `Install` presunuté PRED štart Supabase. V prekryvnom okne
 zostáva `Lint`, `Typecheck` a helper testy — práca viazaná na CPU, ktorá sa
 o sieť nebije. Okno je menšie, ale nemá byť zaplatené spomalením toho, čo sa
