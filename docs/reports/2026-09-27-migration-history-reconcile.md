@@ -200,6 +200,19 @@ Zápisovú sondu (vložiť riadok ako `authenticated` a vrátiť transakciu) som
 **nespúšťal** — brána bola na meranie, nie na zápis do produkcie. Dôkaz je textový,
 z tela politiky, a je jednoznačný.
 
+> **VYRIEŠENÉ 2026-09-28** (`GO RLS-NULL-ESCAPES`). `20260928070000_rls_null_escapes.sql`
+> dobehla na produkcii, história zapísaná pod verziou súboru. Zmerané na PROD:
+> politík s `agency_id IS NULL` na tých 10 tabuľkách **14 → 0**, politík celkovo
+> 19 → 15 (štyri `properties_*_agency` zrušené, `properties_tenant` zostala sama).
+> Dáta nedotknuté: `ai_action_audit` 226, `properties` 133, nepriradených riadkov
+> 0 vo všetkých desiatich. Overené aj z pohľadu prihláseného používateľa
+> v transakcii s `rollback`: nepriradený riadok nasadený service rolou je preň
+> **neviditeľný (0)**, vlastný pokus o vloženie `agency_id = NULL` vracia **42501**,
+> a zápis aj čítanie vlastnej agentúry fungujú ďalej (vidí 64 z 226 audit riadkov
+> a 132 z 133 nehnuteľností — teda prísnu podmnožinu, nie všetko).
+> Osem tabuliek + `ai_action_audit` prepísané bez disjunkcie, `properties`
+> vyriešená zrušením štyroch politík, ktoré tú správnu rušili.
+
 Ďalšie dvom politikám únik dosahuje aj `anon`: `portal_listings."users see own or
 public listings"` a `listing_price_history."users see own price history"`. Obe
 tabuľky sú prázdne (0 riadkov), takže latentné.
@@ -253,9 +266,9 @@ samostatná zmena s vlastným rizikom a patrí pod vlastnú bránu.
 1. ~~**`leads` revoke** — dobehnúť `20260827214500` na produkcii.~~ **HOTOVO
    2026-09-28**, viď vsuvku pri náleze 1. Zostáva otvorená všeobecnejšia otázka:
    106 ďalších tabuliek stále dáva `anon` plné DML a RLS je na nich jediná brána.
-2. **`IS NULL` úniky na zápise** (10 tabuliek). Buď `agency_id NOT NULL` tam, kde to
-   dáta unesú, alebo prepísať politiky bez disjunkcie. Pred zmenou treba každú
-   tabuľku premerať zvlášť — presne to sa robilo pri `leads` v `20260921200000`.
+2. ~~**`IS NULL` úniky na zápise** (10 tabuliek).~~ **HOTOVO 2026-09-28**, viď
+   vsuvku vyššie. Zvolená cesta: prepísať politiky, nie `NOT NULL` — `NOT NULL` by
+   novo rozbil service-role zapisovateľov, ktorých sa RLS nikdy netýkala.
 3. **Statický ratchet v CI** proti regresii: test, ktorý zlyhá, keď nová migrácia
    pridá politiku s `true` alebo s `IS NULL` únikom pre `public`/`anon`, s povolenkou
    pre historické súbory (ako `typecheck-baseline`). Bez neho sa vzor vráti.
