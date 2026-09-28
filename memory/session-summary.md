@@ -15,9 +15,15 @@
   pullom idú po tom istom hrdle; tretie to potvrdilo tým, že presun kontenciu
   odstránil — `setup-node` **49 → 6 s**, štart Supabase **184 → 110 s**,
   čakanie **38 → 6 s**. **Čisté −63 s.**
-  **Štvrtý beh (#725) dal −37 s** — `setup-node` a `Install` zostali čisté,
-  ale štart trval 136 s a `Lint` 65 s. Kontencia sa presunula, nezmizla.
-  Poctivý rozsah je **−37 až −63 s**; `−63` je jeho optimistický koniec.
+  **Behy 4 a 5 to vyvrátili.** −37 s a potom −5 až +17 s (podľa voľby
+  baseline). Štart Supabase kolísal **110 → 136 → 178 s** a prekryvné okno
+  82–116 s ho nezakryje. Beh 5 mal navyše najpomalší štart a **najčistejší**
+  `Lint` (36 s), čo je priamy protipríklad k môjmu vlastnému vysvetleniu
+  „kontencia sa presunula na CPU kroky".
+  **Preukázané:** `setup-node` 6/6/8 s a `Install` 17/14 s, tri behy
+  v baseline — pôvodná kontencia bola reálna a presun ju odstránil.
+  **Nepreukázané:** že štart na pozadí niečo ušetrí. Rozsah −63 až +17 s,
+  rozptyl väčší než efekt. Otvorené pre foundera: vrátiť štart do popredia?
 
 ### Tri opravy vlastných tvrdení — všetky zmerané, žiadna zamlčaná
 1. **`npm ci ~3,5 min` bolo nesprávne.** Po krokoch **18 s**; `cache: npm` už
@@ -88,7 +94,7 @@ toho istého behu runner-variance nekriví — na rozdiel od porovnávania celko
 
 ### Ďalší krok
 CI je hotová v rozsahu, ktorý dávali dáta: fastpath −123 s na docs PR,
-štart na pozadí −37 až −63 s (dva behy, nie stabilné číslo), lokálna brána proti 27 % červených.
+štart na pozadí bez preukázaného zisku (−63 až +17 s naprieč 3 behmi), lokálna brána proti 27 % červených.
 Ďalší najväčší cieľ je `Test` (vitest), ale ten sa nedá skrátiť bez zásahu do
 pokrytia — to potrebuje vlastnú bránu a vlastné GO, nie prívesok.
 
