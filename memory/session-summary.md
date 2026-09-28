@@ -12,7 +12,7 @@
   riadkov, **132 z 133** nehnuteľností. Po `rollback` na PROD nezostalo nič
   (overené: 0 testovacích riadkov, 0 temp funkcií, počty 226/133).
 - **História pod verziou súboru**: `20260928070000 :: rls_null_escapes`, 62 → 63 riadkov.
-  Nezaznamenaných migrácií z AP-024 už len **63**.
+  Nezaznamenaných migrácií z AP-024 už len **64** — pôvodne som napísal 63, čo bolo odvodené, nie zmerané: `20260928070000` je nový súbor, ktorý v tých 65 nikdy nebol, takže odpočítať sa dá len `20260827214500`. Premerané nástrojom `reconcile-migration-history.mjs --mode diff`: 121 súborov, 63 riadkov histórie, **64 nezaznamenaných**, 6 duchov.
 - **CI na `0cc7cc2` celé zelené** (7/7), vrátane prvého behu `null-escape-rls.test.ts`
   proti reálnemu Supabase stacku a prehratia migrácie na čistej PG 15.
 - **Zachytené ticho namiesto červenej**: na heade `03945da` nebežal ani jeden

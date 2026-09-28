@@ -37,7 +37,7 @@ namiesto 64/132 — rozdiel bol práve riadok z testovacieho insertu. Premerané
 v transakcii bez zápisov. Číslo v neusporiadanom výraze nie je meranie.
 
 **História opravená pod verziou súboru** (ako pri `leads`): `20260928070000 ::
-rls_null_escapes`, riadkov 62 → **63**. Nezaznamenaných migrácií z AP-024 už len **63**.
+rls_null_escapes`, riadkov 62 → **63**. Nezaznamenaných migrácií z AP-024 už len **64** — pôvodne som napísal 63, čo bolo odvodené, nie zmerané: `20260928070000` je nový súbor, ktorý v tých 65 nikdy nebol, takže odpočítať sa dá len `20260827214500`. Premerané nástrojom `reconcile-migration-history.mjs --mode diff`: 121 súborov, 63 riadkov histórie, **64 nezaznamenaných**, 6 duchov.
 
 **Stále otvorené a netvrdím inak:** `bri_history` zostáva cross-tenant čitateľná cez
 `"Enterprise BRI access"` a `"Locked BRI read-only"` — obe pre rolu `public`, obe bez
