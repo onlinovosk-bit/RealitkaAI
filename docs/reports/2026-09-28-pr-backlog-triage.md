@@ -287,6 +287,38 @@ a gate na `!bri`), #443 (dva riadky — scoped klient v `matching/action`).
 
 ---
 
+## Dodatok, dopísaný v ten istý deň: čo táto triáž nezachytila
+
+**#370 sa zmergoval a `main` po ňom nelintoval.**
+
+Merania vyššie sú platné, ale **neúplné**. Overoval som dve veci — či chyba žije
+na `main`, a či sa vetva dá zmergovať (`merge-tree`). Neoveril som **tretiu, ktorá
+rozhodla**: či kód na tej vetve vôbec kompiluje.
+
+`refs/pr/370` niesol štyri súbory, v ktorých sa stará a nová verzia prekrývali bez
+konfliktných markerov. Tri z nich neparsujú, a jeden — `credits-billing.ts` —
+parsuje a padá až za behu (`ReferenceError: supabase is not defined`) uprostred
+Stripe top-up webhooku. Keby som na tej vetve spustil `npm run lint`, tri parsing
+errors by vyšli **pred** mergom.
+
+`merge-tree` odpovedá na otázku „zlúčia sa stromy". Neodpovedá na otázku
+„je výsledok správny kód". Pri vetve staršej než pár dní to nie je to isté.
+
+### Pravidlo, ktoré z toho platí pre zvyšné PR z tohto zoznamu
+
+Pred mergom ktoréhokoľvek z **#490, #486, #447, #462** treba na jeho vetve spustiť
+repo bránu, nie len pozrieť mergovateľnosť:
+
+```
+git fetch origin pull/<N>/head:refs/pr/<N> && git checkout refs/pr/<N>
+bash scripts/ci/prepush-gate.sh
+```
+
+Zelená brána na vetve, nie zelený `merge-tree`. Oprava škody po #370 je v tom
+istom PR ako tento dokument.
+
+---
+
 ## Čo tento dokument netvrdí
 
 - **Netvrdí, že päť „platných" PR prejde CI.** Merge-tree overil zlučiteľnosť
