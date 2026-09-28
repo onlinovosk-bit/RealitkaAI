@@ -1,5 +1,53 @@
 # Critical Decisions Log
 
+## [2026-09-28] RLS-LEADS-REVOKE — `anon` stráca oprávnenia na `public.leads` (founder GO)
+
+Prvý zo štyroch nálezov AP-024 uzavretý. Nie nová migrácia — príkazy z existujúceho
+`20260827214500_leads_revoke_anon_table_privileges.sql`, ktorý v repozitári ležal od
+27. augusta a na produkciu nikdy nedobehol.
+
+**Prečo to bola bezpečná zmena, preukázateľne a nie odhadom.** `leads` má jedinú
+politiku `leads_tenant` viazanú na `authenticated`. Žiadna politika sa nevzťahovala
+na `anon`, takže každá jeho operácia bola už predtým odmietnutá RLS — revoke odobral
+vrstvu, ktorá bola prítomná, ale nedosiahnuteľná. Dotrasované aj na volajúcich: všetky
+verejné cesty zapisujúce leady (`api/valuation/submit`, `api/leads/inbound`,
+`api/concierge/callback`, `api/acquire/email`, server action `(public)/buyer-onboarding`)
+idú cez service role, ktorá oprávnenia aj RLS obchádza. Žiadna z nich sa revoke nedotkol.
+
+**Zmerané, PRED → PO:**
+
+| rola | pred | po |
+|---|---|---|
+| `anon` | S I U D T R G | **nič** |
+| `authenticated` | S I U D T R G | S I U D T R G (bez zmeny) |
+| `service_role` | S I U D T R G | S I U D T R G (bez zmeny) |
+| `PUBLIC` | nič | nič |
+
+511 riadkov a 0 s `agency_id IS NULL` nedotknutých, RLS zapnutá, `leads_tenant`
+nedotknutá. Kontrola všetkých 22 tvrdení tej migrácie proti PROD: **0 nezhôd**.
+
+**Overené aj z pohľadu `anon`, nie len z katalógu.** V transakcii so `set local role
+anon`: `SELECT` → `42501 permission denied for table leads`, `INSERT` → to isté.
+Pred zmenou `SELECT` vracal prázdny úspech (`[]` s `error=null`) — a odstránenie
+presne tohto stavu bolo v komentári tej migrácie uvedené ako jej dôvod. Ten dôvod
+teda platí a teraz je aj naplnený.
+
+**Zápis do histórie pod verziou SÚBORU**, nie novo razenou:
+`insert into supabase_migrations.schema_migrations (version, name) values
+('20260827214500', 'leads_revoke_anon_table_privileges')` — ekvivalent
+`supabase migration repair --status applied`. Vedomé rozhodnutie: `apply_migration`
+cez MCP by si razil vlastnú pečiatku, a to je presne mechanizmus driftu, ktorý AP-024
+zdokumentoval. Bolo by absurdné opravovať drift spôsobom, ktorý vyrobí ďalšieho ducha.
+História: 61 → **62 riadkov**, nezaznamenaných migrácií 65 → **64**.
+
+**Čo sa NEriešilo, hoci to meranie ukázalo:** `authenticated` drží na `leads` aj
+`TRUNCATE`, `REFERENCES` a `TRIGGER`, teda viac, než tá migrácia dáva. Migrácia to
+nerevokuje, takže som to nerevokoval ani ja — bola by to zmena chovania nad rámec
+brány. Zapísané ako otvorené, nie potichu opravené.
+
+Zostáva: **106 zo 111 tabuliek** stále dáva `anon` plné DML a RLS je na nich jediná
+brána. To je nález 2 a 3 z AP-024, každý s vlastnou bránou.
+
 ## [2026-09-27] — MATCHING-ZERO: PROD má 0 zhôd; príčina je v kóde AJ v dátach (founder GO)
 
 - **Fakty PROD:** 511 leadov a 133 nehnuteľností, ale 0 zhôd.

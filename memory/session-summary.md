@@ -1,3 +1,51 @@
+## Session 2026-09-28 (RLS-LEADS-REVOKE)
+
+### Dokončené
+- **RLS-LEADS-REVOKE aplikované na PROD** pod founder GO. Príkazy z existujúceho
+  `20260827214500_leads_revoke_anon_table_privileges.sql` (ležal v repe od 27. augusta,
+  na produkciu nikdy nedobehol). `anon` na `public.leads`: **7 oprávnení → 0**.
+  `authenticated` a `service_role` bez zmeny, 511 riadkov a 0 s `agency_id IS NULL`
+  nedotknutých, `leads_tenant` nedotknutá. Kontrola 22 tvrdení tej migrácie: 0 nezhôd.
+- **Overené z pohľadu `anon`, nie len z katalógu**: `set local role anon` → `SELECT`
+  aj `INSERT` vracajú `42501 permission denied`. Pred zmenou `SELECT` vracal prázdny
+  úspech — odstránenie práve tohto bolo v komentári migrácie uvedené ako jej dôvod.
+- **Bezpečnosť preukázaná, nie odhadnutá**: `leads` má jedinú politiku `leads_tenant`
+  pre `authenticated`, takže na `anon` sa nevzťahovala žiadna → bol už odmietnutý RLS.
+  Dotrasované aj na volajúcich: všetky verejné cesty zapisujúce leady idú cez service role.
+- **História opravená pod verziou SÚBORU**, nie novo razenou (ekvivalent
+  `supabase migration repair`). `apply_migration` cez MCP si razí vlastnú pečiatku —
+  a to je mechanizmus driftu z AP-024; opravovať drift spôsobom, ktorý vyrobí ďalšieho
+  ducha, by bolo absurdné. História 61 → 62, nezaznamenaných migrácií 65 → 64.
+- **PR #720 (AP-024)** zelené na `0f8458e`, mergeable; do PR stiahnutý main (#713, #715,
+  #717, #719). Prvý base merge mal konflikt v memory súboroch (obe strany prependovali) —
+  vyriešený zachovaním oboch strán, overené `--numstat` aj počtami riadkov.
+
+### Rozpracované / Pending
+- **`GO RLS-NULL-ESCAPES`** — 10 tabuliek s `IS NULL` únikom na `INSERT`/`ALL` pre
+  `authenticated`. Každú premerať zvlášť pred zmenou; dnes 0 riadkov s `NULL`.
+- **`GO RLS-ANON-GUARD-TEST`** — statický ratchet proti novým `true`/`IS NULL` politikám
+  pre `public`/`anon`. Nie je to duplikát `schema-governance-guard.mjs` (ten kontroluje
+  mená tabuliek).
+- **Otvorené, nie potichu opravené**: `authenticated` drží na `leads` aj `TRUNCATE`,
+  `REFERENCES`, `TRIGGER` — viac, než migrácia dáva. Migrácia to nerevokuje, tak som
+  to nerevokoval ani ja.
+- **106 zo 111 tabuliek** stále dáva `anon` plné DML; RLS je na nich jediná brána.
+- **27 tabuliek s RLS a nula politikami** — dnes bez následku (všetci volajúci idú cez
+  service role), chybou sa to stane pri prvom dotaze s tokenom používateľa.
+- **404-PATH-01 po hydratácii NEOVERENÉ** — sieťová politika odmieta `app.revolis.ai:443`.
+- **Calendly webhook** — founder check, 5 min.
+- **Pôvod 6 riadkov v `revolis_zaujemcovia`** — GDPR.
+- Cenník + Stripe KYB — founder.
+
+### Kľúčové súbory zmenené
+- `docs/reports/2026-09-27-migration-history-reconcile.md`: datovaná vsuvka „VYRIEŠENÉ
+  2026-09-28" pri náleze 1 + odškrtnutý prvý ďalší krok. Meranie ponechané ako bolo.
+- `memory/decisions.md`, `memory/session-summary.md`: prepend.
+
+### Ďalší krok
+`GO RLS-NULL-ESCAPES` — 10 tabuliek, kde ktokoľvek s účtom môže vyrobiť nepriradený
+riadok viditeľný všetkým nájomníkom.
+
 ## Session 2026-09-27 (MATCHING-ZERO)
 ### Dokončené
 - Matching číta cez klienta volajúceho, prázdne čítanie nemaže zhody:

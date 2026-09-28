@@ -145,6 +145,26 @@ a `onboarding_sessions`.
 RLS je všade jediná brána. To je v Supabase bežné nastavenie, ale znamená, že
 každá jedna politika je jednobodová porucha.
 
+> **VYRIEŠENÉ 2026-09-28** (`GO RLS-LEADS-REVOKE`). Príkazy zo súboru
+> `20260827214500` dobehli na produkcii, vrátane zápisu histórie pod **verziou
+> súboru**, nie novo razenou — teda bez toho, aby vznikol ďalší duch.
+> Zmerané po zmene: `anon` nedrží na `public.leads` ani jedno zo 7 oprávnení,
+> `authenticated` a `service_role` bez zmeny, 511 riadkov a 0 s `agency_id IS NULL`
+> nedotknutých, politika `leads_tenant` nedotknutá. Overené aj z pohľadu `anon`,
+> nie len z katalógu: `SELECT` aj `INSERT` vracajú **42501 permission denied**
+> (pred zmenou `SELECT` vracal prázdny úspech — presne to, čo komentár v tej
+> migrácii chcel odstrániť). Šírka problému však platí ďalej: ostáva **106 zo 111
+> tabuliek** s plným DML pre `anon`.
+
+Zmena bola bezpečná preukázateľne, nie odhadom: `leads` má jedinú politiku
+`leads_tenant` viazanú na `authenticated`, takže **žiadna politika sa nevzťahovala
+na `anon`** a každá jeho operácia bola už dnes odmietnutá RLS. Revoke odobral
+vrstvu, ktorá bola prítomná, ale nedosiahnuteľná. Overené aj na volajúcich: všetky
+verejné cesty, ktoré zapisujú leady (`api/valuation/submit`, `api/leads/inbound`,
+`api/concierge/callback`, `api/acquire/email`, server action
+`(public)/buyer-onboarding`), používajú service role, ktorá oprávnenia aj RLS
+obchádza.
+
 ### 2. 26 politík nesie `IS NULL` únik — a 10 tabuliek ho má na zápise
 
 Vzor, ktorý sa našiel 25. 9. na `bsm_reforma_leads`, nie je výnimka. Na produkcii
@@ -230,10 +250,9 @@ samostatná zmena s vlastným rizikom a patrí pod vlastnú bránu.
 
 ## Ďalší krok, podľa hodnoty
 
-1. **`leads` revoke** — dobehnúť `20260827214500` na produkcii. Najvyššia hodnota
-   na najmenšej ploche: jeden `REVOKE`, žiadna zmena chovania aplikácie (`authenticated`
-   a `service_role` si oprávnenia nechávajú), a odstraňuje jednobodovú poruchu na
-   tabuľke s 511 riadkami klientových dát.
+1. ~~**`leads` revoke** — dobehnúť `20260827214500` na produkcii.~~ **HOTOVO
+   2026-09-28**, viď vsuvku pri náleze 1. Zostáva otvorená všeobecnejšia otázka:
+   106 ďalších tabuliek stále dáva `anon` plné DML a RLS je na nich jediná brána.
 2. **`IS NULL` úniky na zápise** (10 tabuliek). Buď `agency_id NOT NULL` tam, kde to
    dáta unesú, alebo prepísať politiky bez disjunkcie. Pred zmenou treba každú
    tabuľku premerať zvlášť — presne to sa robilo pri `leads` v `20260921200000`.
