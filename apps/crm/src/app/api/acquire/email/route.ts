@@ -11,6 +11,7 @@ import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { agencyDomainsFrom, dedupKey, parseEmail, toLeadCandidate } from "@/lib/acquire/email-adapter";
 import { runInboundLeadTriageAndNotify } from "@/lib/acquire/inbound-lead-triage";
 import { runInboundLeadAutoResponse } from "@/lib/acquire/inbound-lead-auto-response";
+import { INBOUND_REPLY_DRAFT_TIMEOUT_MS, scheduleInboundReplyDraft } from "@/lib/inbound/reply-draft";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -419,6 +420,24 @@ export async function POST(req: NextRequest) {
 
     await runInboundLeadTriageAndNotify(supa, lead, candidate);
     await runInboundLeadAutoResponse(supa, lead, candidate);
+    // AI návrh odpovede čaká v časovej osi na „Schváliť a odoslať" — nič neodchádza.
+    // Po odpovedi, aby Worker nečakal na LLM.
+    scheduleInboundReplyDraft({
+      admin: supa,
+      leadId: String(lead.id),
+      agencyId,
+      profileId: owner?.profileId ?? null,
+      agentName: owner?.agentName ?? null,
+      lead: {
+        name: candidate.name,
+        email: candidate.email,
+        message: candidate.note,
+        source: candidate.source,
+      },
+      activitySource: "acquire_email",
+      timeoutMs: INBOUND_REPLY_DRAFT_TIMEOUT_MS,
+      skipOnFallback: true,
+    });
 
     console.log(JSON.stringify({ status: "LEAD_CREATED", requestId, agencyId, lead_id: lead.id }));
     return NextResponse.json({

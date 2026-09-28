@@ -57,6 +57,7 @@ START=$SECONDS
 step "CI helper skripty"        "$ROOT" ./scripts/ci/__tests__/supabase-start.test.sh
 step "classify-diff (fastpath)" "$ROOT" ./scripts/ci/__tests__/classify-diff.test.sh
 step "typecheck ratchet (regex)" "$ROOT" node ./scripts/ci/__tests__/typecheck-baseline.test.mjs
+step "wait-for-supabase"        "$ROOT" ./scripts/ci/__tests__/wait-for-supabase.test.sh
 step "API contract (ratchet)"   "$ROOT" node apps/crm/scripts/check-api-contract.mjs --ci
 step "Typecheck (baseline)"     "$CRM"  node scripts/typecheck-baseline.mjs
 step "Lint"                     "$CRM"  npm run lint
