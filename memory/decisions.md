@@ -140,6 +140,83 @@ Fastpath potvrdený **štvrtýkrát**: Build, Debug, Upload artifact, Playwright
 install a Playwright smoke `skipped`, `Note the fastpath` prešiel. Job celkom
 376 s.
 
+#### Piaty beh (`999fd6ea`) — vyvracia môj mechanizmus, nielen moje číslo
+
+| krok | beh 3 | beh 4 | **beh 5** | baseline |
+|---|---|---|---|---|
+| setup-node | 6 | 6 | **8** | 6 / 8 / 7 |
+| Install | — | 17 | **14** | 18 / 17 / 10 |
+| **štart Supabase (wall)** | 110 | 136 | **178** | 108 / 113 / 108 |
+| **čakanie** | 6 | 20 | **96** | — |
+| prekrytie | 104 | 116 | **82** | — |
+| Lint | ~58 | 65 | **36** | 35 / 33 / 23 |
+| Typecheck | ~34 | 39 | **32** | 28 / 28 / 16 |
+| Test | — | 178 | **135** | 174 / 173 / 105 |
+| job celkom | — | 376 | **382** | — |
+
+**Mechanizmus, ktorý som tvrdil v beh-4 zázname, je vyvrátený.** Napísal som,
+že „kontencia sa presunula na CPU kroky". Beh 5 má **najpomalší štart zo
+všetkých (178 s) a pritom najčistejší `Lint` (36 s)**. Keby bol mechanizmus
+kontencia s pullom, najpomalší pull by mal prísť s najviac nafúknutým Lintom.
+Prišiel s najmenej nafúknutým. Jedno pozorovanie to nedokazuje, ale je to
+priamy protipríklad a moje tvrdenie po ňom nemá oporu.
+
+**Čo tú variabilitu naozaj riadi: samotný štart Supabase.** 110 → 136 → 178 s
+na tom istom workflow. Prekryvné okno (`Lint` + `Typecheck` + helper) je
+82–116 s a 178 s štart jednoducho nezakryje — preto sa v behu 5 čakalo 96 s.
+Zisk je rukojemníkom toho rozptylu, nie poradia krokov.
+
+**Čisté číslo pre beh 5 závisí od voľby baseline — uvádzam obe:**
+
+- pomalý baseline (Lint 35, Typecheck 28): hrubo 110 − 96 = 14 s, mínus +5
+  kontencie a +14 môjho helper testu → **−5 s**
+- interpolovaný podľa `Test` 135 s medzi 175 a 105 (Lint ≈ 29, Typecheck ≈ 22):
+  → **+17 s, teda strata**
+
+Nevyberám si tú lichotivejšiu. Poctivý záver je, že **beh 5 nepriniesol
+merateľný zisk** a že rozsah naprieč tromi behmi je **−63 až +17 s**.
+
+**Čo zo zmeny ostáva preukázané:** `setup-node` 6 / 6 / 8 s a `Install`
+— / 17 / 14 s, tri behy v baseline pásme. Pôvodná kontencia medzi npm cache
+restore a docker pullom bola reálna a presun ju odstránil. To drží.
+
+**Čo preukázané NIE JE:** že štart na pozadí prináša zisk. Tri behy dali
+−63, −37 a −5 až +17 s. Priemer je kladný, ale rozptyl je väčší než efekt —
+to je presne ten tvar dát, pri ktorom sa nedá tvrdiť nič.
+
+**OTVORENÉ, pre foundera:** zvážiť návrat štartu Supabase do popredia.
+Zjednoduší workflow o `wait-for-supabase.sh` a jeho 7 testov, a podľa dát
+nestojí nič. Proti tomu: `setup-node`/`Install` zlepšenie by sa zachovalo aj
+tak (to je vec poradia, nie pozadia), takže návrat je lacný. **Neriešim bez GO.**
+
+Fastpath potvrdený **piatykrát**: päť krokov `skipped`, `Note the fastpath`
+prešiel.
+
+#### Pozor: CI fastpath a Vercel `ignoreCommand` NEMERAJÚ to isté
+
+Na #726 Vercel postavil **plné preview (`Ready`)**, hoci PR je memory-only.
+Predpovedal som `Ignored` a mýlil som sa. Príčina NIE JE fail-safe pri
+nerozlíšiteľnom `VERCEL_GIT_PREVIOUS_SHA` — to je vysvetlenie zapísané vyššie
+pre iný prípad a tu **neplatí**. Bez tejto poznámky by ho ďalšia session
+použila a diagnostikovala zle.
+
+Obe brány sú správne. Líšia sa referenčným bodom:
+
+| brána | porovnáva proti | videla na #726 |
+|---|---|---|
+| CI `classify-diff.sh` | `HEAD^1..HEAD^2` na merge refe = **base..head** | 2 súbory, oba `memory/` → fastpath |
+| Vercel `ignoreCommand` | `VERCEL_GIT_PREVIOUS_SHA` = **predchádzajúci deployment vetvy** | 7 ne-memory súborov → build |
+
+Tých 7 súborov (`alert-dispatch.ts`, `bri-engine.ts`, RLS migrácia, RLS test,
+2 reporty, `reconcile-migration-history.mjs`) neprišlo z tohto PR — prišli
+z **mergu `main` do vetvy**, ktorý #720 priniesol. Z pohľadu deploymentu vetvy
+sú to reálne nové súbory oproti tomu, čo bolo nasadené naposledy, takže Vercel
+build spustil správne.
+
+**Dôsledok pre čítanie:** „memory-only PR" nie je to isté ako „memory-only
+oproti poslednému deploymentu". Akonáhle sa do vetvy zmerguje base, Vercel
+postaví — a nie je to regresia fastpathu.
+
 ### Neoverené
 Skutočná úspora. Docker pull je sieťovo viazaný a `npm ci` + eslint + tsc sú
 CPU-viazané, takže na 2-jadrovom runneri sa môžu biť o zdroje a prekryv môže
@@ -3991,3 +4068,86 @@ a `events/integrity-monitor`.
 Príčina je **hypotéza, nie meranie**: session klient v serverovom kontexte bez session
 by na INSERT narazil na RLS a `logEvent` chybu prehltne. Overené je len to, že tabuľka
 je prázdna a že tie štyri miesta z nej počítajú. Patrí to na samostatné zadanie.
+
+## 2026-09-28 — EVENTS-PIPELINE-AUDIT: ranný brief hlási nulu aj v dni, keď lead prišiel
+
+Nadväzuje na vedľajší nález z `INBOUND-WEBHOOK-SECRET-AUDIT` (#722). Tam bola
+príčina označená za hypotézu. Hypotéza je **potvrdená pre automatické cesty
+a vyvrátená ako úplné vysvetlenie** — jedna živá cesta ostáva nevysvetlená.
+
+### Meranie s kontrolou
+
+| tabuľka | riadkov | |
+| :--- | ---: | :--- |
+| `leads` | 511 | kontrola — DB žije |
+| `activities` | 190 | kontrola |
+| `usage_metrics_daily` | 54 | kontrola |
+| `events` | **0** | nikdy ani jeden |
+| `lead_scores` | **0** | nikdy ani jeden |
+| `bri_score_history` | **0** | nikdy ani jeden |
+| `leads` od 2026-09-01 | **7** | reálny príjem beží ďalej |
+
+Prvé tri riadky sú tam zámerne: bez nich „nula" znamená rovnako dobre mŕtvu DB
+ako mŕtvu cestu. DB žije a aplikácia do nej zapisuje. Mŕtva je celá vetva
+events + BRI.
+
+### Príčina, časť potvrdená
+
+INSERT policy na `events` znie
+`with_check (profile_id IN (SELECT id FROM profiles WHERE auth_user_id = auth.uid()))`.
+Bez session je `auth.uid()` NULL, `auth_user_id = NULL` nie je nikdy pravda,
+poddotaz vráti prázdnu množinu a INSERT je **vždy** odmietnutý. `logEvent`
+pritom zapisuje cez cookie/session klienta (`@/lib/supabase/server`), nie
+service-role, a v komentári o sebe hovorí „Never throws — failures are silently
+logged to console".
+
+Zapisovateľov je päť a ani jeden nemôže uspieť:
+
+| call site | spúšťa | session |
+| :--- | :--- | :--- |
+| `lib/arbitrage/scan.ts` | `cron/arbitrage-scan` | nie → RLS odmietne |
+| `lib/price-trail/engine.ts` | `cron/price-trail-sync` | nie → RLS odmietne |
+| `lib/inbound/process-lead.ts` | webhook, dokázateľne mŕtvy (#722) | nie |
+| `lib/bri/engine.ts` (`computeBRI`) | `cron/recompute-bri` | nie → RLS odmietne |
+| `api/events/route.ts` | `logEventClient()` | **áno, ale 0 volaní v celom repe** |
+
+Posledný riadok je podstatný a je to grep, nie dojem: `logEventClient` nemá
+v `apps/crm/src` ani jedno použitie. Endpoint `/api/events` je teda korektný
+a nedosiahnuteľný.
+
+### Príčina, časť NEvysvetlená — otvorená neznáma
+
+Jedna cesta so session existuje: hooky `use-bri-score` a `use-bri-live` volajú
+`/api/leads/bri-recompute` → `computeBRI` → `logEvent`. Tá by policy prešla.
+Napriek tomu je `lead_scores` aj `bri_score_history` na nule, takže ani ona
+nikdy nedobehla. Overil som, že to **nie je** nesúladom signatúry RPC, ako som
+najprv predpokladal: `compute_bri_score_v2(p_lead_id text, p_profile_id uuid,
+p_trigger_event text)` v produkcii existuje a volanie mu zodpovedá. Príčina
+zostáva neznáma.
+
+### Dopad: nie vymyslené číslo, ale nula, ktorá protirečí realite
+
+Čítajúcich miest sú štyri a **ani jedno si nič nedopočítava** — `?? 0` všade,
+`dashboard-insights-gather` dokonca číta service-role klientom, takže tam RLS
+prekážkou nie je a nula je naozaj stav tabuľky. Direktíva 4 v zmysle „fake
+number" porušená nie je.
+
+Horší je iný problém. `morning-brief/gather.ts:91` počíta
+`newLeads = events.filter(e => e.event_type === 'lead_created').length`, čo je
+štrukturálne vždy 0, a `generators/ai-text.ts:145` to posiela do promptu ako
+`- Nové dopyty: ${overnight.newLeads}`. Od 1. 9. pritom pribudlo **7 leadov**.
+Ranný brief teda maklérovi tvrdí, že v noci neprišlo nič, aj v deň, keď dopyt
+prišiel. To nie je vymyslené číslo — je to **nepravdivá nula podaná ako
+meranie**, a v brief, podľa ktorého sa niekto ráno rozhoduje, je to horšie.
+
+Že sa to dá spraviť správne, dokazuje ten istý priečinok: `director-brief.ts:24`
+počíta to isté priamo z `leads` a je správne. Dva briefy, tá istá otázka, jeden
+odpoveď má a druhý nie.
+
+### Ďalej
+
+Oprava nie je „zapnúť events". Najlacnejšie a bez migrácie: `morning-brief`
+prepnúť na zdroj, ktorý dáta má (`leads`), rovnako ako to už robí
+`director-brief`. Až potom sa dá riešiť, či má events pipeline vôbec žiť —
+`logEvent` cez service-role klienta by RLS obišiel, ale to je zmena
+bezpečnostného modelu a patrí jej vlastné GO.
