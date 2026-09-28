@@ -8,7 +8,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHash, timingSafeEqual } from "crypto";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
-import { agencyDomainsFrom, dedupKey, parseEmail, toLeadCandidate } from "@/lib/acquire/email-adapter";
+import {
+  agencyDomainsFrom,
+  dedupKey,
+  notLeadDiagnostics,
+  notLeadReason,
+  parseEmail,
+  toLeadCandidate,
+} from "@/lib/acquire/email-adapter";
 import { runInboundLeadTriageAndNotify } from "@/lib/acquire/inbound-lead-triage";
 import { runInboundLeadAutoResponse } from "@/lib/acquire/inbound-lead-auto-response";
 import { INBOUND_REPLY_DRAFT_TIMEOUT_MS, scheduleInboundReplyDraft } from "@/lib/inbound/reply-draft";
@@ -295,6 +302,9 @@ export async function POST(req: NextRequest) {
       console.log(JSON.stringify({
         status: "NOT_A_LEAD", requestId, agencyId, event_id: ev.eventId,
         reason: duplicate ? "duplicate" : "not_a_lead",
+        // Presný dôvod + technické príznaky, bez osobných údajov (INBOUND-NOTALEAD-01).
+        detail: notLeadReason(ev, duplicate),
+        ...notLeadDiagnostics(ev),
         owner_backfilled: ownerBackfilled,
       }));
       return NextResponse.json({
