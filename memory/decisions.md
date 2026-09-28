@@ -254,6 +254,112 @@ text leadu už ide do AI cez triage (rovnaký právny základ 6(1)(f)).
 - Webhook cesta sa správa ako predtým (refaktor na ten istý helper).
 - **Známa diera (W1):** lead bez telefónu, ktorého jediná adresa je adresa kancelárie,
   dostane návrh na túto adresu. Maklér ju vidí v potvrdzovacom dialógu pred odoslaním.
+## [2026-09-28] RLS-NULL-ESCAPES — `IS NULL` únik odstránený z 10 tabuliek (founder GO; NA PROD ZATIAĽ NEAPLIKOVANÉ)
+
+Druhý zo štyroch nálezov AP-024. `20260928070000_rls_null_escapes.sql` je
+v repozitári a **na produkcii zatiaľ nebežal** — pri udelení brány som sľúbil, že
+migráciu predložím pred aplikovaním. Platí to.
+
+**Diera je zmeraná, nie odvodená.** Na lokálnej PG 16 s vernou schémou (vrátane
+`profile_agencies_for_auth()` doslovne z PROD cez `pg_get_functiondef`, dvoch
+tenantov a `auth.uid()`):
+
+| | PRED | PO |
+|---|---|---|
+| A vloží riadok s `agency_id = NULL` | **10/10 OK** | **10/10 → 42501** |
+| B z iného tenanta ten riadok vidí | **10/10 vidí** | **10/10 nevidí (0)** |
+| ani A nevidí svoj nepriradený riadok | — | 0 |
+| A vloží riadok svojej agentúry | — | 10/10 OK |
+| A ho číta | — | 10/10 = 1 |
+| B ho nečíta | — | 10/10 = 0 |
+
+Idempotentné (druhý beh bez chyby) aj na tvare DB, kde dve z tých tabuliek
+neexistujú (guard `to_regclass` ohlási a preskočí).
+
+**Chyba v mojom prvom harnesse, priznaná:** dve tabuľky vrátili 42501 už PRED
+zmenou. Nebola to vlastnosť politiky — zabudol som `grant select on profiles to
+authenticated`. Osem politík ide cez `SECURITY DEFINER` funkciu a grant
+nepotrebuje, dve čítajú `profiles` priamo. Po doplnení grantu (ako je to na PROD)
+je PRED stav 10/10 zneužiteľný. Nevern0 harness = bezcenný dôkaz.
+
+**Dve remedy, nie jedna.** Osem tabuliek + `ai_action_audit` má únik v jedinej
+tenant politike → prepísaná bez disjunkcie. `properties` má správnu politiku
+`properties_tenant` a **navyše** štyri `properties_*_agency` s únikom; keďže
+politiky sa OR-ujú, tie štyri tú správnu rušia → zrušené, nie prepísané.
+
+**Prečo politika a nie `NOT NULL`.** `SET NOT NULL` by bol trvácnejší, ale RLS sa
+service role nikdy netýkala — `NOT NULL` by novo rozbil každého service-role
+zapisovateľa, ktorý `agency_id` vynecháva. Väčší dosah než hranica, o ktorú tu ide.
+Politika JE tá hranica.
+
+**Dvaja zapisovatelia opravení v tom istom commite**, inak by zmena tichý
+cross-tenant zápis premenila na tiché zlyhanie:
+- `lib/l99/alert-dispatch.ts` (`priority_alerts`) — `agency_id` nedodával vôbec,
+  prechádzal len vďaka disjunkcii. Teraz berie tenanta z leadu.
+- `lib/l99/bri-engine.ts` (`bri_history`) — to isté, plus **nález navyše**:
+  `bri_history.profile_id` je `NOT NULL` bez defaultu a kód ho nedodával, takže
+  ten insert **vždy padal na 23502** a nikto to nevidel, lebo sa chyba zahadzovala.
+  Preto má tabuľka 0 riadkov. Doplnené oboje a chyba sa loguje.
+
+**Pripnuté testom**: `apps/crm/tests/rls/null-escape-rls.test.ts` overuje obe
+vlastnosti — že tenant nepriradený riadok nevyrobí, aj že **nevidí** taký, ktorý
+už existuje (nasadený service rolou). Test iba prvej vlastnosti by prešiel aj proti
+politike, ktorá ďalej tečie na čítaní. Lokálne nespustený — Docker v tomto
+prostredí nie je, takže prvý beh bude v CI.
+
+**Otvorené, mimo tejto brány:** `bri_history` zostáva cross-tenant čitateľná cez
+`"Enterprise BRI access"` a `"Locked BRI read-only"` — obe pre rolu `public`
+a obe bez akéhokoľvek tenant filtra (stačí `account_tier='enterprise'`, resp.
+`tier_locked_at IS NOT NULL`). Nie je to `IS NULL` únik, takže to táto brána
+nerieši — ale znamená to, že `bri_history` NIE JE uzavretá a nehovorím, že je.
+
+## [2026-09-28] RLS-LEADS-REVOKE — `anon` stráca oprávnenia na `public.leads` (founder GO)
+
+Prvý zo štyroch nálezov AP-024 uzavretý. Nie nová migrácia — príkazy z existujúceho
+`20260827214500_leads_revoke_anon_table_privileges.sql`, ktorý v repozitári ležal od
+27. augusta a na produkciu nikdy nedobehol.
+
+**Prečo to bola bezpečná zmena, preukázateľne a nie odhadom.** `leads` má jedinú
+politiku `leads_tenant` viazanú na `authenticated`. Žiadna politika sa nevzťahovala
+na `anon`, takže každá jeho operácia bola už predtým odmietnutá RLS — revoke odobral
+vrstvu, ktorá bola prítomná, ale nedosiahnuteľná. Dotrasované aj na volajúcich: všetky
+verejné cesty zapisujúce leady (`api/valuation/submit`, `api/leads/inbound`,
+`api/concierge/callback`, `api/acquire/email`, server action `(public)/buyer-onboarding`)
+idú cez service role, ktorá oprávnenia aj RLS obchádza. Žiadna z nich sa revoke nedotkol.
+
+**Zmerané, PRED → PO:**
+
+| rola | pred | po |
+|---|---|---|
+| `anon` | S I U D T R G | **nič** |
+| `authenticated` | S I U D T R G | S I U D T R G (bez zmeny) |
+| `service_role` | S I U D T R G | S I U D T R G (bez zmeny) |
+| `PUBLIC` | nič | nič |
+
+511 riadkov a 0 s `agency_id IS NULL` nedotknutých, RLS zapnutá, `leads_tenant`
+nedotknutá. Kontrola všetkých 22 tvrdení tej migrácie proti PROD: **0 nezhôd**.
+
+**Overené aj z pohľadu `anon`, nie len z katalógu.** V transakcii so `set local role
+anon`: `SELECT` → `42501 permission denied for table leads`, `INSERT` → to isté.
+Pred zmenou `SELECT` vracal prázdny úspech (`[]` s `error=null`) — a odstránenie
+presne tohto stavu bolo v komentári tej migrácie uvedené ako jej dôvod. Ten dôvod
+teda platí a teraz je aj naplnený.
+
+**Zápis do histórie pod verziou SÚBORU**, nie novo razenou:
+`insert into supabase_migrations.schema_migrations (version, name) values
+('20260827214500', 'leads_revoke_anon_table_privileges')` — ekvivalent
+`supabase migration repair --status applied`. Vedomé rozhodnutie: `apply_migration`
+cez MCP by si razil vlastnú pečiatku, a to je presne mechanizmus driftu, ktorý AP-024
+zdokumentoval. Bolo by absurdné opravovať drift spôsobom, ktorý vyrobí ďalšieho ducha.
+História: 61 → **62 riadkov**, nezaznamenaných migrácií 65 → **64**.
+
+**Čo sa NEriešilo, hoci to meranie ukázalo:** `authenticated` drží na `leads` aj
+`TRUNCATE`, `REFERENCES` a `TRIGGER`, teda viac, než tá migrácia dáva. Migrácia to
+nerevokuje, takže som to nerevokoval ani ja — bola by to zmena chovania nad rámec
+brány. Zapísané ako otvorené, nie potichu opravené.
+
+Zostáva: **106 zo 111 tabuliek** stále dáva `anon` plné DML a RLS je na nich jediná
+brána. To je nález 2 a 3 z AP-024, každý s vlastnou bránou.
 
 ## [2026-09-27] — MATCHING-ZERO: PROD má 0 zhôd; príčina je v kóde AJ v dátach (founder GO)
 
@@ -387,6 +493,70 @@ plný beh, nie preskočená brána.
 - **Známy dlh** (explicitný zoznam v teste): `matching-hooks`, `ai-scoring-store`,
   `notification-store`, `integrations-store`, `ai/matching-engine`.
 - Ústava: BUILD — prvé použitie kalendára by maklérovi hlásilo chybu pri úspechu (retencia).
+## [2026-09-27] AP-024 / MIGRATION-HISTORY-RECONCILE — 65 nezaznamenaných migrácií, 46 z nich bez následku (founder GO)
+
+Otázka nebola „koľko riadkov chýba v histórii", ale „čo z toho produkcia naozaj
+nemá". `supabase_migrations.schema_migrations` je účtovný záznam, nie meranie:
+v ten istý deň sa potvrdil aj prípad **chýba v histórii, efekt je tam**
+(`20260728140000_profiles_platform_admin`), aj **chýba v histórii, efekt tam nie je**
+(`20260827214500_leads_revoke_anon_table_privileges`).
+
+Zmerané per objekt na PROD, nie odvodené: **784 tvrdení** (politika, stĺpec, index,
+trigger, funkcia, constraint, oprávnenie) zo 65 nezaznamenaných migrácií.
+
+| | počet |
+|---|---|
+| migrácie v repozitári / riadky v histórii | 120 / 61 |
+| nezaznamenané, po ktorých **nechýba nič** | **46** |
+| nezaznamenané, po ktorých niečo chýba | 19 |
+| z toho: chýba správne (zrušila neskoršia migrácia) | 33 nálezov |
+| z toho: **odstránenie, ktoré PROD nedostal** | 10 |
+| z toho: **objekt, ktorý PROD nemá** | 77 |
+
+**Šesť „duchov" nie je záhada.** Spárované podľa názvu: štyri sú ten istý súbor
+zapísaný pod inou verziou, pretože migrácia aplikovaná cez Supabase MCP si razí
+vlastnú časovú pečiatku. To je mechanizmus podstatnej časti driftu, nie nehoda.
+Dva zvyšné (`repair_scheduled_events_phase1_20260923`) sú necommitnutá oprava —
+ale `scheduled_events` na PROD sa presne zhoduje s tým, čo tvorí
+`20260527143000_event_scheduler_phase1.sql`, takže popis nechýba, chýba zápis.
+
+### Rozhodnutia
+
+- **BUILD (hotové):** meranie ako zopakovateľný nástroj v repozitári
+  (`scripts/ops/reconcile-migration-history.mjs`), nie jednorazové tvrdenie v chate.
+- **BACKLOG s bránou, nie teraz:** štyri nálezy nižšie. Každý je samostatná zmena
+  na produkcii s vlastným rizikom; brána bola na meranie.
+- **Priznaná vlastná chyba v metóde:** prvé kolo prevádzalo názvy politík na malé
+  písmená, čo je správne pre necitovaný a nesprávne pre citovaný identifikátor.
+  Vyrobilo to 7 falošných nálezov na baseline súbore. Po oprave je ich 0 a baseline
+  je verný. Dotknutých bolo presne 10 tvrdení, všetky preverené so správnou
+  veľkosťou písmen.
+
+### Bezpečnostné nálezy (nič sa nemenilo, iba zmerané)
+
+1. **`anon` má na `public.leads` všetkých 7 oprávnení** (511 riadkov klienta).
+   Neuniká nič — `leads` má jednu politiku `leads_tenant` pre `authenticated` —
+   ale vrstva, ktorú `20260827214500` mala pridať, tam nie je. 107 zo 111 tabuliek
+   dáva `anon` plné DML; RLS je všade jediná brána.
+2. **26 politík nesie `IS NULL` únik v 16 tabuľkách.** 11 vedie cez `leads.agency_id`,
+   ktorý je `NOT NULL` → mŕtve. **10 tabuliek** má vlastný nullable `agency_id`
+   a únik na `INSERT`/`ALL` pre `authenticated` → ktokoľvek s účtom môže vyrobiť
+   nepriradený riadok, ktorý potom vidí každý nájomník. Riadkov s `NULL` dnes: **0**.
+   Zápisová sonda sa **nespúšťala** (brána bola read-only); dôkaz je z tela politiky.
+3. **27 tabuliek má RLS zapnutú a nula politík** (`credit_ledger`, `decisions`,
+   `exclusivity_outcomes`, `ai_sourced_deals`). **Dnes to nie je chyba** — všetci
+   volajúci idú cez `createServiceRoleClient()`, ktorý RLS obchádza. Chybou sa to
+   stane pri prvom dotaze s tokenom používateľa.
+4. **`lead_scores_agency`** je zrušenie, ktoré nedobehlo a žiadna neskoršia migrácia
+   ju netvorí. (`20260904150000_drop_open_anon_policies` naopak dobehol — pod verziou
+   20260904184236 — a všetkých 15 anon politík je pryč.)
+
+**Dôsledok pre „CI je zelené":** CI prehráva migrácie na čistú PG 15 a testuje inú
+databázu než tú klientovu. Merateľne: na čistej DB `anon` na `leads` oprávnenia nemá,
+na PROD má; na čistej DB existuje 7 tabuliek, ktoré na PROD neexistujú. Zelené CI
+hovorí „migrácie idú za sebou bez chyby", nie „produkcia je v tomto stave".
+
+Report: `docs/reports/2026-09-27-migration-history-reconcile.md`.
 
 ## [2026-09-26] AP-027 / BASELINE-BENCHMARK-01 — optimalizovali by sme 3,5 % (founder GO)
 
