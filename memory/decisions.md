@@ -1,5 +1,49 @@
 # Critical Decisions Log
 
+## [2026-09-28] RLS-NULL-ESCAPES aplikované na PROD (founder GO)
+
+`20260928070000_rls_null_escapes.sql` dobehla na produkcii. Predtým overená lokálne
+(PG 16, pred/po 10/10) aj v CI (čistá PG 15 + `null-escape-rls.test.ts` prvý beh zelený).
+
+**Zmerané na PROD, PRED → PO:**
+
+| | PRED | PO |
+|---|---|---|
+| politiky s `agency_id IS NULL` na 10 tabuľkách | **14** | **0** |
+| politiky celkovo na tých 10 tabuľkách | 19 | 15 |
+| `ai_action_audit` / `properties` riadkov | 226 / 133 | 226 / 133 |
+| riadkov s `agency_id IS NULL` (súčet 10 tabuliek) | 0 | 0 |
+
+Rozdiel 19 → 15 sú štyri zrušené `properties_*_agency`; `properties_tenant` zostala
+ako jediná politika tej tabuľky.
+
+**Overené z pohľadu prihláseného používateľa, nie len z katalógu.** V transakcii so
+`set local role authenticated` + reálnym `auth.uid()`, celé s `rollback`:
+
+| sonda | ai_actions | ai_action_audit | properties |
+|---|---|---|---|
+| vidí nepriradený riadok (nasadený service rolou)? | 0 | 0 | 0 |
+| vloží riadok s `agency_id = NULL`? | 42501 | 42501 | 42501 |
+| vloží riadok svojej agentúry? | — | OK | OK |
+
+Čítanie nedotknuté a preukázateľne zúžené na tenanta: ten používateľ vidí **64 z 226**
+riadkov `ai_action_audit` a **132 z 133** nehnuteľností — prísnu podmnožinu, nie všetko.
+Po `rollback` na produkcii nezostal ani jeden testovací riadok ani temp funkcia
+(overené dotazom), počty 226/133 nezmenené.
+
+**Nepresnosť, ktorú som opravil v priebehu merania:** prvé čítanie počtov som mal
+v neusporiadanom `VALUES` spolu s tými testovacími insertami, takže vyšlo 65/133
+namiesto 64/132 — rozdiel bol práve riadok z testovacieho insertu. Premerané zvlášť,
+v transakcii bez zápisov. Číslo v neusporiadanom výraze nie je meranie.
+
+**História opravená pod verziou súboru** (ako pri `leads`): `20260928070000 ::
+rls_null_escapes`, riadkov 62 → **63**. Nezaznamenaných migrácií z AP-024 už len **64** — pôvodne som napísal 63, čo bolo odvodené, nie zmerané: `20260928070000` je nový súbor, ktorý v tých 65 nikdy nebol, takže odpočítať sa dá len `20260827214500`. Premerané nástrojom `reconcile-migration-history.mjs --mode diff`: 121 súborov, 63 riadkov histórie, **64 nezaznamenaných**, 6 duchov.
+
+**Stále otvorené a netvrdím inak:** `bri_history` zostáva cross-tenant čitateľná cez
+`"Enterprise BRI access"` a `"Locked BRI read-only"` — obe pre rolu `public`, obe bez
+tenant filtra. Vidno ich aj v PO výpise politík. Nie je to `IS NULL` únik, takže mimo
+tejto brány; je to samostatný nález.
+
 ## [2026-09-28] AP-029 / TEST-SPLIT-01 — štart na pozadí, a oprava môjho tvrdenia o rozptyle (founder GO)
 
 ### Najprv oprava, lebo mení merací plán
