@@ -157,7 +157,14 @@ function buildContext(data: GatheredData): string {
 
   lines.push(`\nPIPELINE: aktívnych: ${stats.activeLeads}, hot (>=60): ${stats.hotLeads}`)
   lines.push(`Čakajú na kontakt: ${stats.pendingContact} (z toho HOT: ${stats.hotPending})`)
-  lines.push(`Neodpovedané >48h: ${stats.staleContacts48h}`)
+  // `null` goes into the prompt as words, not as a number. Handing the model a
+  // bare `0` here would invite it to write "nikto nečaká na odpoveď", which is
+  // a claim the data cannot support.
+  lines.push(
+    stats.staleContacts48h === null
+      ? 'Neodpovedané >48h: nemerané (nikto zatiaľ nezapisuje čas posledného kontaktu) — o tomto čísle nepíš'
+      : `Neodpovedané >48h: ${stats.staleContacts48h}`,
+  )
   lines.push(`Hodnota pipeline: ${stats.pipelineValueEur.toLocaleString('sk')} €`)
   if (stats.priorityLeadNames.length) {
     lines.push(`Priority leady: ${stats.priorityLeadNames.join(', ')}`)
@@ -194,7 +201,9 @@ export function buildDeliveryFallbackText(
     '🌅 Dobré ráno!',
     '',
     `Dnes máte ${hotLeads} HOT leadov čakajúcich na kontakt.`,
-    `Neodpovedané správy staršie ako 48h: ${data.stats.staleContacts48h}.`,
+    data.stats.staleContacts48h === null
+      ? 'Neodpovedané správy staršie ako 48h: zatiaľ nemeriame.'
+      : `Neodpovedané správy staršie ako 48h: ${data.stats.staleContacts48h}.`,
     'Systém momentálne generuje váš personalizovaný brief — skúste znova o 10 minút.',
     '',
     `Priamy odkaz na leady: ${baseUrl}/leads`,
@@ -217,10 +226,12 @@ function buildFallbackText(
     ? `Priority: ${stats.priorityLeadNames.slice(0, 3).join(', ')}.`
     : overnight.replies.length > 0
     ? `${overnight.replies[0].leadName} odpovedal cez noc.`
-    : `Neodpovedané >48h: ${stats.staleContacts48h}.`
+    : stats.staleContacts48h !== null
+    ? `Neodpovedané >48h: ${stats.staleContacts48h}.`
+    : `Aktívnych leadov: ${stats.activeLeads}.`
   const veta3 = score >= 75
     ? `Zavolajte ${name} dnes pred 10:00.`
-    : stats.staleContacts48h > 0
+    : stats.staleContacts48h !== null && stats.staleContacts48h > 0
     ? `Najprv kontaktujte ${stats.staleContacts48h} leadov bez odpovede >48h.`
     : `Pošlite follow-up top 3 priority dnes dopoludnia.`
 
