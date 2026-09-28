@@ -1,4 +1,5 @@
 import { createServiceRoleClient } from "@/lib/supabase/admin";
+import { applyCreditPurchase } from "@/lib/credits/mutate-credits";
 import { STARTER_PACK } from "@/lib/starter-pack/constants";
 
 export type RedeemStarterPackResult =
@@ -9,6 +10,7 @@ function normalizeCode(raw: string): string {
   return raw.trim().toUpperCase().replace(/\s+/g, "");
 }
 
+/** Uplatnenie kódu → purchased kredity (neexpirujú), idempotentné + atomické. */
 /**
  * Uplatnenie kódu → purchased kredity (neexpirujú), idempotentné.
  *
@@ -50,6 +52,12 @@ export async function redeemStarterPackCode(input: {
   }
 
   const creditValue = row.value ?? STARTER_PACK.creditValue;
+  const idempotencyKey = `starter_pack_redeem:${row.id}:${input.agencyId}`;
+  const redeemedAt = new Date().toISOString();
+
+  const creditResult = await applyCreditPurchase({
+    agencyId: input.agencyId,
+    amount: creditValue,
   const redeemedAt = new Date().toISOString();
 
   // Claim FIRST — len jeden caller vyhrá pri súbehu.
@@ -139,11 +147,35 @@ async function finalizeCreditsForClaimedCode(input: {
     agency_id: agencyId,
     delta: creditValue,
     reason: "starter_pack_redeem",
+    idempotencyKey,
     ref: code,
-    idempotency_key: idempotencyKey,
-    source: "purchase",
   });
 
+  if (!creditResult.ok) {
+    console.warn("[starter-pack] redeem credits:", creditResult.error);
+    if (creditResult.error === "agency_not_found") {
+      return { ok: false, error: "agency_not_found" };
+    }
+    return { ok: false, error: "grant_failed" };
+  }
+
+  const { error: codeErr } = await supabase
+    .from("credit_redemption_codes")
+    .update({
+      redeemed_by_agency: input.agencyId,
+      redeemed_at: redeemedAt,
+    })
+    .eq("id", row.id)
+    .is("redeemed_at", null);
+
+  if (codeErr) {
+    console.warn("[starter-pack] redeem code mark:", codeErr.message);
+  }
+
+  return {
+    ok: true,
+    creditsGranted: creditValue,
+    alreadyRedeemed: creditResult.skipped === true,
   if (ledgerErr) {
     // Unique violation na idempotency_key = súbeh s nami — považuj za už pripísané.
     if (/duplicate|unique/i.test(ledgerErr.message ?? "")) {
