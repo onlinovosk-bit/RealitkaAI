@@ -86,8 +86,12 @@ export type ExpireGrantResult = {
 /**
  * Sweep nevyčerpaných grant kreditov za `periodKey` (zvyčajne previousPeriodKey).
  *
- * Safety býva v RPC `expire_grant_credits`, nie tu: idempotenciu aj odmietnutie
- * expirácie, keď už dobehol grant za aktuálny period, rieši jedna transakcia.
+ * Safety je v RPC `expire_grant_credits`, nie tu: idempotenciu, zámok riadku aj
+ * odmietnutie expirácie, keď už dobehol grant za aktuálny period, rieši jedna
+ * transakcia. Ten tretí guard RPC pôvodne nemal — doplnila ho migrácia
+ * `20260928120000_expire_grant_refuse_after_current_grant.sql`, lebo bez neho
+ * retry po zlyhanej expirácii vymazal práve udelený mesačný grant.
+ *
  * Tu zostáva len rýchly skip bez RPC, keď snapshot už ukazuje nulu.
  */
 export async function expireGrantCreditsForAgency(
