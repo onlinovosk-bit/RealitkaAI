@@ -4,6 +4,10 @@ import {
   monthlyGrantIdempotencyKey,
 } from "@/lib/credits/grant-idempotency";
 import {
+  applyMonthlyGrantCredits,
+  expireGrantCreditsAtomic,
+} from "@/lib/credits/mutate-credits";
+import {
   COCKPIT_PRODUCTS,
   CREDIT_GRANTS,
   monthlyAgencyGrantCredits,
@@ -37,7 +41,7 @@ function seatTierFromAccountTier(accountTier: string | null): SeatTier {
   }
 }
 
-/** Idempotentný mesačný grant (1. deň mesiaca). */
+/** Idempotentný mesačný grant (1. deň mesiaca) — atomický RPC s FOR UPDATE. */
 export async function grantMonthlyCreditsForAgency(
   agency: AgencyCreditRow,
   periodKey: string,
@@ -56,48 +60,22 @@ export async function grantMonthlyCreditsForAgency(
   if (amount <= 0) return { granted: 0, skipped: true };
 
   const idempotencyKey = monthlyGrantIdempotencyKey(agency.id, periodKey);
-  const { data: existing } = await supabase
-    .from("credit_ledger")
-    .select("id")
-    .eq("idempotency_key", idempotencyKey)
-    .maybeSingle();
-
-  if (existing) return { granted: 0, skipped: true };
-
-  const newGrantBalance = agency.grant_credits_balance + amount;
-  const newTotal = newGrantBalance + agency.purchased_credits_balance;
-
-  const { error: ledgerErr } = await supabase.from("credit_ledger").insert({
-    agency_id: agency.id,
-    delta: amount,
-    reason: "monthly_grant",
-    ref: periodKey,
-    idempotency_key: idempotencyKey,
-    source: "grant" satisfies CreditLedgerSource,
+  const result = await applyMonthlyGrantCredits({
+    agencyId: agency.id,
+    amount,
+    periodKey,
+    idempotencyKey,
   });
 
-  if (ledgerErr) {
-    console.warn("[grant-engine] ledger insert:", ledgerErr.message);
+  if (!result.ok) {
+    console.warn("[grant-engine] monthly grant:", result.error);
     return { granted: 0, skipped: true };
   }
-
-  const { error: agencyErr } = await supabase
-    .from("agencies")
-    .update({
-      grant_credits_balance: newGrantBalance,
-      credits_balance: newTotal,
-      billing_updated_at: new Date().toISOString(),
-    })
-    .eq("id", agency.id);
-
-  if (agencyErr) {
-    console.warn("[grant-engine] agency update:", agencyErr.message);
-    return { granted: 0, skipped: true };
-  }
-
-  return { granted: amount, skipped: false };
+  if (result.skipped) return { granted: 0, skipped: true };
+  return { granted: result.granted ?? amount, skipped: false };
 }
 
+/** Sweep nevyčerpaných grant kreditov — atomický RPC (neprepíše purchased). */
 export type ExpireGrantResult = {
   expired: number;
   skipped: boolean;
@@ -138,10 +116,22 @@ export async function expireGrantCreditsForAgency(
     return { expired: 0, skipped: true, error: "service_unavailable" };
   }
 
-  const toExpire = agency.grant_credits_balance;
-  if (toExpire <= 0) return { expired: 0, skipped: true };
+  // Rýchly skip bez RPC, keď snapshot už ukazuje nulu (cron filter .gt grant).
+  if (agency.grant_credits_balance <= 0) return { expired: 0, skipped: true };
 
   const idempotencyKey = grantExpiryIdempotencyKey(agency.id, periodKey);
+  const result = await expireGrantCreditsAtomic({
+    agencyId: agency.id,
+    periodKey,
+    idempotencyKey,
+  });
+
+  if (!result.ok) {
+    console.warn("[grant-engine] expiry:", result.error);
+    return { expired: 0, skipped: true };
+  }
+  if (result.skipped) return { expired: 0, skipped: true };
+  return { expired: result.expired ?? 0, skipped: false };
   const existing = await ledgerHasIdempotencyKey(supabase, idempotencyKey);
   if (existing.error) {
     console.warn("[grant-engine] expiry ledger lookup:", existing.error);

@@ -10,6 +10,48 @@
 - `apps/crm/src/lib/inbound/process-lead.ts`: agency stamp, insert fail-closed, no fake BRI reply
 ### Ďalší krok
 Founder merge inbound-lead PR; then oldest open criticals (#369/#370/#443/#444).
+## Session 2026-09-28 (RLS-NULL-ESCAPES aplikované na PROD)
+
+### Dokončené
+- **`20260928070000_rls_null_escapes.sql` APLIKOVANÁ NA PROD** pod founder GO.
+  Politík s `agency_id IS NULL` na 10 tabuľkách **14 → 0**, politík celkovo 19 → 15
+  (štyri `properties_*_agency` zrušené, `properties_tenant` zostala sama).
+  Dáta nedotknuté: `ai_action_audit` 226, `properties` 133, nepriradených riadkov 0.
+- **Sonda z pohľadu prihláseného používateľa** (`set local role authenticated` +
+  reálny `auth.uid()`, celé v `rollback`): nepriradený riadok nasadený service rolou
+  je **neviditeľný (0/0/0)**, vlastný insert `agency_id = NULL` → **42501 ×3**,
+  insert vlastnej agentúry → **OK**. Čítanie zúžené na tenanta: **64 z 226** audit
+  riadkov, **132 z 133** nehnuteľností. Po `rollback` na PROD nezostalo nič
+  (overené: 0 testovacích riadkov, 0 temp funkcií, počty 226/133).
+- **História pod verziou súboru**: `20260928070000 :: rls_null_escapes`, 62 → 63 riadkov.
+  Nezaznamenaných migrácií z AP-024 už len **64** — pôvodne som napísal 63, čo bolo odvodené, nie zmerané: `20260928070000` je nový súbor, ktorý v tých 65 nikdy nebol, takže odpočítať sa dá len `20260827214500`. Premerané nástrojom `reconcile-migration-history.mjs --mode diff`: 121 súborov, 63 riadkov histórie, **64 nezaznamenaných**, 6 duchov.
+- **CI na `0cc7cc2` celé zelené** (7/7), vrátane prvého behu `null-escape-rls.test.ts`
+  proti reálnemu Supabase stacku a prehratia migrácie na čistej PG 15.
+- **Zachytené ticho namiesto červenej**: na heade `03945da` nebežal ani jeden
+  `pull_request` workflow, pretože PR bol v konflikte (main sa posunul o #721, #723)
+  a GitHub nevie postaviť merge ref. Bez toho merge by migrácia aj test ostali
+  neotestované a tvrdil by som opak. Konflikt vyriešený zachovaním oboch strán
+  (`170 0` a `155 0` v `--numstat`).
+
+### Rozpracované / Pending
+- **`bri_history` NIE JE uzavretá**: `"Enterprise BRI access"` a `"Locked BRI read-only"`
+  sú pre rolu `public` bez tenant filtra — ktokoľvek s `account_tier='enterprise'`,
+  resp. `tier_locked_at IS NOT NULL`, číta celú tabuľku. Samostatný nález.
+- **`GO RLS-ANON-GUARD-TEST`** — statický ratchet proti novým `true`/`IS NULL` politikám.
+- **27 tabuliek s RLS a nula politikami** — dnes bez následku (service role).
+- **`authenticated` drží na `leads` aj TRUNCATE/REFERENCES/TRIGGER**.
+- **`lead_scores_agency`** — nedobehnuté zrušenie, žiadna neskoršia migrácia ju netvorí.
+- **404-PATH-01 po hydratácii NEOVERENÉ**; **Calendly webhook** (founder, 5 min);
+  **pôvod 6 riadkov v `revolis_zaujemcovia`** (GDPR); cenník + Stripe KYB (founder).
+- **PR #720 nie je zmergovaný** — merge je rozhodnutie foundera.
+
+### Kľúčové súbory zmenené
+- `docs/reports/2026-09-27-migration-history-reconcile.md`: vsuvka „VYRIEŠENÉ 2026-09-28"
+  pri náleze 2 + odškrtnutý druhý ďalší krok.
+- `memory/decisions.md`, `memory/session-summary.md`: prepend.
+
+### Ďalší krok
+`GO RLS-BRI-HISTORY` — zavrieť dve `public` politiky na `bri_history` bez tenant filtra.
 ## Session 2026-09-28 (TEST-SPLIT-01, SETUP-NODE-REORDER — a tri opravy vlastných tvrdení)
 
 ### Dokončené
@@ -27,9 +69,15 @@ Founder merge inbound-lead PR; then oldest open criticals (#369/#370/#443/#444).
   pullom idú po tom istom hrdle; tretie to potvrdilo tým, že presun kontenciu
   odstránil — `setup-node` **49 → 6 s**, štart Supabase **184 → 110 s**,
   čakanie **38 → 6 s**. **Čisté −63 s.**
-  **Štvrtý beh (#725) dal −37 s** — `setup-node` a `Install` zostali čisté,
-  ale štart trval 136 s a `Lint` 65 s. Kontencia sa presunula, nezmizla.
-  Poctivý rozsah je **−37 až −63 s**; `−63` je jeho optimistický koniec.
+  **Behy 4 a 5 to vyvrátili.** −37 s a potom −5 až +17 s (podľa voľby
+  baseline). Štart Supabase kolísal **110 → 136 → 178 s** a prekryvné okno
+  82–116 s ho nezakryje. Beh 5 mal navyše najpomalší štart a **najčistejší**
+  `Lint` (36 s), čo je priamy protipríklad k môjmu vlastnému vysvetleniu
+  „kontencia sa presunula na CPU kroky".
+  **Preukázané:** `setup-node` 6/6/8 s a `Install` 17/14 s, tri behy
+  v baseline — pôvodná kontencia bola reálna a presun ju odstránil.
+  **Nepreukázané:** že štart na pozadí niečo ušetrí. Rozsah −63 až +17 s,
+  rozptyl väčší než efekt. Otvorené pre foundera: vrátiť štart do popredia?
 
 ### Tri opravy vlastných tvrdení — všetky zmerané, žiadna zamlčaná
 1. **`npm ci ~3,5 min` bolo nesprávne.** Po krokoch **18 s**; `cache: npm` už
@@ -100,7 +148,7 @@ toho istého behu runner-variance nekriví — na rozdiel od porovnávania celko
 
 ### Ďalší krok
 CI je hotová v rozsahu, ktorý dávali dáta: fastpath −123 s na docs PR,
-štart na pozadí −37 až −63 s (dva behy, nie stabilné číslo), lokálna brána proti 27 % červených.
+štart na pozadí bez preukázaného zisku (−63 až +17 s naprieč 3 behmi), lokálna brána proti 27 % červených.
 Ďalší najväčší cieľ je `Test` (vitest), ale ten sa nedá skrátiť bez zásahu do
 pokrytia — to potrebuje vlastnú bránu a vlastné GO, nie prívesok.
 
