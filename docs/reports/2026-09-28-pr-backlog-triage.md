@@ -319,6 +319,35 @@ istom PR ako tento dokument.
 
 ---
 
+## Druhý dodatok: #370 bol revertnutý, moja oprava padla s ním
+
+Po tom, čo som popísal škodu po merge #370 a opravil ju, **iná session #370 celý
+revertla** (#731, `89e4c663`). Dôvod je ten istý, ktorý som meral: `main` sa
+nedal sparsovať a každý otvorený PR bol červený z cudzieho dôvodu.
+
+Revert je z týchto dvoch ciest tá lacnejšia a ja to neobhajujem inak: moja
+oprava bola rekonštrukcia rozpoleného merge, teda hádanie zámeru z dvoch
+prekrytých verzií. Revert je návrat k stavu, ktorý raz preukázateľne fungoval.
+
+Čo tým padlo:
+
+- oprava `redemption.ts`, `credits-billing.ts`, `credits/grant-engine.ts`
+  a ich testov — `main` je späť na pred-#370 kóde,
+- migrácia `20260928120000_expire_grant_refuse_after_current_grant.sql` —
+  funkcia `expire_grant_credits`, ktorú opravovala, na `main` už neexistuje.
+
+**Nález o tej poistke tým ale neprestal platiť.** Ak sa #370 bude robiť znova,
+RPC `expire_grant_credits` musí mať guard proti expirácii, keď už dobehol grant
+za aktuálny period — inak retry po zlyhanej expirácii zmaže práve udelený grant.
+Zmerané, nie odvodené: stará funkcia na to vrátila
+`{"ok":true,"expired":100}` a `grant_credits_balance = 0`. Text migrácie aj
+štyri scenáre sú v histórii tejto vetvy (`6b049cf5`), odkiaľ sa dajú vybrať.
+
+Čo z pôvodného PR ostalo v platnosti: **sweep tenant brán** (dotýka sa úplne
+iných súborov) a tento dokument.
+
+---
+
 ## Čo tento dokument netvrdí
 
 - **Netvrdí, že päť „platných" PR prejde CI.** Merge-tree overil zlučiteľnosť

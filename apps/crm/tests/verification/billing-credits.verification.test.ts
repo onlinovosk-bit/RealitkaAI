@@ -97,12 +97,8 @@ describe("billing credits panel verification", () => {
       "utf8",
     );
     expect(billing).toContain("applyTopupPurchase");
-    // Ledger aj zostatok píše RPC v jednej transakcii, takže aplikácia už
-    // `agencies` neupravuje a nemá čo vracať späť. Predtým tu bol manuálny
-    // zápis a rollback ledgeru — ten tu už nesmie byť.
-    expect(billing).toContain("applyCreditPurchase");
-    expect(billing).not.toContain("topup balance:");
-    expect(billing).not.toContain('.delete().eq("idempotency_key", idempotencyKey)');
+    expect(billing).toContain("topup balance:");
+    expect(billing).toContain('.delete().eq("idempotency_key", idempotencyKey)');
   });
 
   it("legacy webhook does not map unknown Stripe prices to free", () => {
@@ -128,27 +124,9 @@ describe("billing credits panel verification", () => {
       path.join(CRM_ROOT, "src/lib/credits/monthly-cycle.ts"),
       "utf8",
     );
-    const expireGuardMigration = fs.readFileSync(
-      path.join(
-        CRM_ROOT,
-        "supabase/migrations/20260928120000_expire_grant_refuse_after_current_grant.sql",
-      ),
-      "utf8",
-    );
-
     expect(grantEngine).toContain("ExpireGrantResult");
-    expect(grantEngine).toContain("expireGrantCreditsAtomic");
-
-    // Poistka sa presťahovala z TS do RPC, ale musí existovať. Bez nej retry po
-    // zlyhanej expirácii vymaže práve udelený mesačný grant.
-    expect(expireGuardMigration).toContain(
-      "refuse expire: current-period grant already applied",
-    );
-    expect(expireGuardMigration).toContain("current_period_grant_applied");
-    expect(expireGuardMigration).toMatch(/v_current_grant_key/);
-    // Kľúč musí zodpovedať monthlyGrantIdempotencyKey.
-    expect(expireGuardMigration).toContain("'grant:' || p_agency_id::text");
-
+    expect(grantEngine).toContain("refuse expire: current-period grant already applied");
+    expect(grantEngine).toMatch(/error:\s*ledgerErr\.message/);
     expect(monthlyCycle).toContain("expireFailedAgencyIds");
     expect(monthlyCycle).toContain("expire_failed:");
     expect(monthlyCycle).toMatch(/ok:\s*false/);

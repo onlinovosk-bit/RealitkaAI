@@ -1,17 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-
-const applyMonthlyGrantCreditsMock = vi.fn();
-const expireGrantCreditsAtomicMock = vi.fn();
-
-vi.mock("@/lib/supabase/admin", () => ({
-  createServiceRoleClient: () => ({}),
-}));
-
-vi.mock("@/lib/credits/mutate-credits", () => ({
-  applyMonthlyGrantCredits: (...args: unknown[]) => applyMonthlyGrantCreditsMock(...args),
-  expireGrantCreditsAtomic: (...args: unknown[]) => expireGrantCreditsAtomicMock(...args),
-}));
-
 import {
   currentPeriodKey,
   previewMonthlyGrant,
@@ -25,6 +12,18 @@ import {
   grantExpiryIdempotencyKey,
   monthlyGrantIdempotencyKey,
 } from "@/lib/credits/grant-idempotency";
+
+const mockFrom = vi.fn();
+const mockMaybeSingle = vi.fn();
+const mockInsert = vi.fn();
+const mockUpdate = vi.fn();
+const mockEq = vi.fn();
+
+vi.mock("@/lib/supabase/admin", () => ({
+  createServiceRoleClient: () => ({
+    from: mockFrom,
+  }),
+}));
 
 function agency(overrides: Partial<AgencyCreditRow> = {}): AgencyCreditRow {
   return {
@@ -42,8 +41,29 @@ function agency(overrides: Partial<AgencyCreditRow> = {}): AgencyCreditRow {
 describe("grant-engine", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    applyMonthlyGrantCreditsMock.mockResolvedValue({ ok: true, granted: 100, skipped: false });
-    expireGrantCreditsAtomicMock.mockResolvedValue({ ok: true, expired: 40, skipped: false });
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "credit_ledger") {
+        return {
+          select: () => ({
+            eq: () => ({ maybeSingle: mockMaybeSingle }),
+          }),
+          insert: mockInsert,
+        };
+      }
+      if (table === "agencies") {
+        return {
+          update: (payload: unknown) => ({
+            eq: () => {
+              mockUpdate(payload);
+              return { error: null };
+            },
+          }),
+        };
+      }
+      return {};
+    });
+    mockMaybeSingle.mockResolvedValue({ data: null });
+    mockInsert.mockResolvedValue({ error: null });
   });
 
   it("currentPeriodKey formats YYYYMM", () => {
@@ -67,23 +87,17 @@ describe("grant-engine", () => {
     );
   });
 
-  it("grantMonthlyCreditsForAgency skips when RPC reports skipped", async () => {
-    applyMonthlyGrantCreditsMock.mockResolvedValueOnce({ ok: true, skipped: true, granted: 0 });
+  it("grantMonthlyCreditsForAgency skips when idempotency row exists", async () => {
+    mockMaybeSingle.mockResolvedValueOnce({ data: { id: "existing" } });
 
     const result = await grantMonthlyCreditsForAgency(agency(), "202606");
 
     expect(result).toEqual({ granted: 0, skipped: true });
-    expect(applyMonthlyGrantCreditsMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        agencyId: "agency-1",
-        amount: 100,
-        periodKey: "202606",
-        idempotencyKey: "grant:agency-1:202606",
-      }),
-    );
+    expect(mockInsert).not.toHaveBeenCalled();
+    expect(mockUpdate).not.toHaveBeenCalled();
   });
 
-  it("grantMonthlyCreditsForAgency credits grant pool via atomic RPC", async () => {
+  it("grantMonthlyCreditsForAgency credits grant pool only", async () => {
     const row = agency({
       grant_credits_balance: 10,
       purchased_credits_balance: 200,
@@ -91,22 +105,33 @@ describe("grant-engine", () => {
 
     const result = await grantMonthlyCreditsForAgency(row, "202606");
 
-    expect(result).toEqual({ granted: 100, skipped: false });
-    expect(applyMonthlyGrantCreditsMock).toHaveBeenCalledWith(
+    expect(result.skipped).toBe(false);
+    expect(result.granted).toBe(100);
+    expect(mockInsert).toHaveBeenCalledWith(
       expect.objectContaining({
-        agencyId: "agency-1",
-        amount: 100,
-        idempotencyKey: "grant:agency-1:202606",
+        agency_id: "agency-1",
+        source: "grant",
+        idempotency_key: "grant:agency-1:202606",
+      }),
+    );
+    expect(mockUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        grant_credits_balance: 110,
+        credits_balance: 310,
       }),
     );
   });
 
-  it("expireGrantCreditsForAgency uses the atomic RPC and passes no stale balances", async () => {
+  it("expireGrantCreditsForAgency does not touch purchased balance", async () => {
     const row = agency({
       grant_credits_balance: 40,
       purchased_credits_balance: 80,
       credits_balance: 120,
     });
+    // 1) no prior expiry ledger  2) no current-period grant
+    mockMaybeSingle
+      .mockResolvedValueOnce({ data: null })
+      .mockResolvedValueOnce({ data: null });
 
     const result = await expireGrantCreditsForAgency(
       row,
@@ -115,47 +140,95 @@ describe("grant-engine", () => {
     );
 
     expect(result).toEqual({ expired: 40, skipped: false });
-    // Purchased/credits zo snapshotu sa RPC neposielaju — prave ich posielanie
-    // bolo tou stratou suvisiaceho zapisu (#370).
-    expect(expireGrantCreditsAtomicMock).toHaveBeenCalledWith({
-      agencyId: "agency-1",
-      periodKey: "202605",
-      idempotencyKey: "grant_expiry:agency-1:202605",
-    });
-  });
-
-  it("expireGrantCreditsForAgency is idempotent when the RPC reports skipped", async () => {
-    expireGrantCreditsAtomicMock.mockResolvedValueOnce({ ok: true, skipped: true, expired: 0 });
-
-    const result = await expireGrantCreditsForAgency(
-      agency({ grant_credits_balance: 40 }),
-      "202605",
-      new Date("2026-06-01T12:00:00Z"),
+    expect(mockUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        grant_credits_balance: 0,
+        credits_balance: 80,
+      }),
     );
-
-    expect(result).toEqual({ expired: 0, skipped: true });
+    expect(mockInsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        delta: -40,
+        reason: "grant_expiry",
+        source: "grant",
+      }),
+    );
   });
 
-  it("expireGrantCreditsForAgency skips the RPC when the snapshot grant is zero", async () => {
+  it("expireGrantCreditsForAgency is idempotent when balance already cleared", async () => {
     const result = await expireGrantCreditsForAgency(
       agency({ grant_credits_balance: 0, credits_balance: 100 }),
       "202605",
+      new Date("2026-06-01T12:00:00Z"),
     );
 
     expect(result).toEqual({ expired: 0, skipped: true });
-    expect(expireGrantCreditsAtomicMock).not.toHaveBeenCalled();
+    expect(mockInsert).not.toHaveBeenCalled();
+    expect(mockUpdate).not.toHaveBeenCalled();
   });
 
-  it("expireGrantCreditsForAgency reports skipped (not expired) when the RPC fails", async () => {
-    expireGrantCreditsAtomicMock.mockResolvedValueOnce({ ok: false, error: "deadlock detected" });
+  it("expire repairs uncleared balance when expiry ledger exists and no current grant", async () => {
+    mockMaybeSingle
+      .mockResolvedValueOnce({ data: { id: "expiry-done" } })
+      .mockResolvedValueOnce({ data: null });
 
     const result = await expireGrantCreditsForAgency(
-      agency({ grant_credits_balance: 40 }),
+      agency({
+        grant_credits_balance: 40,
+        purchased_credits_balance: 80,
+        credits_balance: 120,
+      }),
       "202605",
       new Date("2026-06-01T12:00:00Z"),
     );
 
-    // Nikdy nehlasit expirovane kredity, ked RPC neprebehlo — cron by to zapocital.
+    expect(result).toEqual({ expired: 40, skipped: false });
+    expect(mockInsert).not.toHaveBeenCalled();
+    expect(mockUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        grant_credits_balance: 0,
+        credits_balance: 80,
+      }),
+    );
+  });
+
+  it("expire refuses to wipe when current-period grant already exists", async () => {
+    mockMaybeSingle
+      .mockResolvedValueOnce({ data: null }) // no prior expiry
+      .mockResolvedValueOnce({ data: { id: "grant-row" } }); // current grant present
+
+    const result = await expireGrantCreditsForAgency(
+      agency({
+        grant_credits_balance: 140,
+        purchased_credits_balance: 80,
+        credits_balance: 220,
+      }),
+      "202605",
+      new Date("2026-06-01T12:00:00Z"),
+    );
+
     expect(result).toEqual({ expired: 0, skipped: true });
+    expect(mockInsert).not.toHaveBeenCalled();
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it("expire surfaces ledger insert failures as error (not silent skip)", async () => {
+    mockMaybeSingle
+      .mockResolvedValueOnce({ data: null })
+      .mockResolvedValueOnce({ data: null });
+    mockInsert.mockResolvedValueOnce({ error: { message: "unique violation" } });
+
+    const result = await expireGrantCreditsForAgency(
+      agency(),
+      "202605",
+      new Date("2026-06-01T12:00:00Z"),
+    );
+
+    expect(result).toEqual({
+      expired: 0,
+      skipped: true,
+      error: "unique violation",
+    });
+    expect(mockUpdate).not.toHaveBeenCalled();
   });
 });

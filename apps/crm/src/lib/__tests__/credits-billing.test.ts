@@ -13,8 +13,6 @@ const mockMaybeSingle = vi.fn();
 const mockSingle = vi.fn();
 const mockInsert = vi.fn();
 const mockUpdate = vi.fn();
-const mockEq = vi.fn();
-const applyCreditPurchaseMock = vi.fn();
 const mockDeleteEq = vi.fn();
 const mockAgencyUpdateResult = vi.fn();
 
@@ -22,10 +20,6 @@ vi.mock("@/lib/supabase/admin", () => ({
   createServiceRoleClient: () => ({
     from: mockFrom,
   }),
-}));
-
-vi.mock("@/lib/credits/mutate-credits", () => ({
-  applyCreditPurchase: (...args: unknown[]) => applyCreditPurchaseMock(...args),
 }));
 
 vi.mock("@/lib/credits/grant-engine", () => ({
@@ -106,7 +100,6 @@ describe("credits-billing", () => {
       },
     });
     mockInsert.mockResolvedValue({ error: null });
-    applyCreditPurchaseMock.mockResolvedValue({ ok: true, credited: 150, skipped: false });
   });
 
   describe("buildSeatCheckoutSessionParams", () => {
@@ -274,7 +267,7 @@ describe("credits-billing", () => {
   });
 
   describe("applyTopupPurchase", () => {
-    it("credits via atomic purchase RPC idempotently", async () => {
+    it("writes purchase ledger idempotently", async () => {
       const first = await applyTopupPurchase({
         agencyId: "agency-1",
         packageKey: "rast",
@@ -282,20 +275,25 @@ describe("credits-billing", () => {
       });
 
       expect(first).toBe(true);
-      expect(applyCreditPurchaseMock).toHaveBeenCalledWith(
+      expect(mockInsert).toHaveBeenCalledWith(
         expect.objectContaining({
-          agencyId: "agency-1",
-          amount: 150,
-          reason: "credit_topup",
-          idempotencyKey: "purchase:agency-1:cs_test_1",
-          ref: "rast",
+          agency_id: "agency-1",
+          delta: 150,
+          source: "purchase",
+          idempotency_key: "purchase:agency-1:cs_test_1",
         }),
       );
-      // Zostatok zapisuje RPC v tej istej transakcii ako ledger — aplikacia
-      // uz `agencies` neupravuje (#370). Preto sa tu na `mockUpdate` netvrdi nic.
+      expect(mockUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          purchased_credits_balance: 150,
+          credits_balance: 200,
+        }),
+        "id",
+        "agency-1",
+      );
 
-      applyCreditPurchaseMock.mockResolvedValueOnce({ ok: true, skipped: true, credited: 0 });
-      applyCreditPurchaseMock.mockClear();
+      mockMaybeSingle.mockResolvedValueOnce({ data: { id: "existing" } });
+      mockInsert.mockClear();
 
       const second = await applyTopupPurchase({
         agencyId: "agency-1",
@@ -304,13 +302,13 @@ describe("credits-billing", () => {
       });
 
       expect(second).toBe(true);
-      expect(applyCreditPurchaseMock).toHaveBeenCalledTimes(1);
+      expect(mockInsert).not.toHaveBeenCalled();
     });
 
-    it("returns false when the purchase RPC fails", async () => {
-      applyCreditPurchaseMock.mockResolvedValueOnce({
-        ok: false,
-        error: "deadlock detected",
+    it("rolls back ledger and returns false when balance update fails", async () => {
+      mockAgencyUpdateResult.mockResolvedValueOnce({
+        data: null,
+        error: { message: "update failed" },
       });
 
       const ok = await applyTopupPurchase({
@@ -319,9 +317,12 @@ describe("credits-billing", () => {
         stripeSessionId: "cs_fail_balance",
       });
 
-      // Ziadny rollback ledgeru sa uz nerobi a nema sa robit: ledger aj zostatok
-      // su v jednej transakcii RPC, takze zlyhanie nenecha polovicny stav.
       expect(ok).toBe(false);
+      expect(mockInsert).toHaveBeenCalled();
+      expect(mockDeleteEq).toHaveBeenCalledWith(
+        "idempotency_key",
+        "purchase:agency-1:cs_fail_balance",
+      );
     });
   });
 
@@ -366,13 +367,7 @@ describe("credits-billing", () => {
       } as never);
 
       expect(handled).toBe(true);
-      expect(applyCreditPurchaseMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          agencyId: "agency-1",
-          amount: 150,
-          idempotencyKey: "purchase:agency-1:cs_topup_1",
-        }),
-      );
+      expect(mockInsert).toHaveBeenCalled();
     });
 
     it("ignores legacy checkout events", async () => {

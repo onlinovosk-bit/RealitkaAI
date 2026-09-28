@@ -4245,3 +4245,22 @@ zmazalo 136 až 841 súborov z `main`. **Bolo to nesprávne** — `git diff` por
 stromy, merge berie zmeny od spoločného predka. Skutočný merge ukázal, že štyri PR
 sú čisté s nulou zmazaných súborov a zo zvyšku má konflikt v kóde jediný (#444).
 Číslo z prvého kola v dokumente nefiguruje.
+
+
+### Dodatok 2026-09-28 večer — #370 revertnutý (#731), oprava po ňom padla
+
+`89e4c663` revertol #370 celý. `mutate-credits.ts` aj
+`20260804230000_atomic_credit_mutations.sql` sú z `main` preč, kód je späť na
+read-modify-write. Moja oprava rozpoleného merge aj migrácia s guardom pre
+`expire_grant_credits` tým stratili predmet a z PR #730 sú vyňaté.
+
+Revert je správnejšia voľba než moja rekonštrukcia: ja som hádal zámer z dvoch
+prekrytých verzií, revert vracia stav, ktorý raz fungoval.
+
+**Nález prežíva revert:** ak sa #370 bude robiť znova, `expire_grant_credits`
+musí odmietnuť expiráciu, keď je v ledgeri grant za aktuálny period. Bez toho
+retry po zlyhanej expirácii zmaže práve udelený mesačný grant — zmerané na
+Postgres 16, stará funkcia vrátila `expired: 100` a vynulovala zostatok. Text
+migrácie je v histórii vetvy `claude/epic-mendel-oal1wt` v commite `6b049cf5`.
+
+Z PR #730 zostáva v platnosti sweep tenant brán a triážny dokument.
