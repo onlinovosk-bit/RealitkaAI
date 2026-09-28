@@ -59,7 +59,7 @@ export async function PATCH(
       }, supabase);
     } catch {}
 
-    await autoRecalculateForProperty(id);
+    await autoRecalculateForProperty(id, supabase);
     return okResponse({ property });
   } catch (error) {
     return errorResponse(
