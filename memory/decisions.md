@@ -1,5 +1,49 @@
 # Critical Decisions Log
 
+## [2026-09-28] RLS-NULL-ESCAPES aplikované na PROD (founder GO)
+
+`20260928070000_rls_null_escapes.sql` dobehla na produkcii. Predtým overená lokálne
+(PG 16, pred/po 10/10) aj v CI (čistá PG 15 + `null-escape-rls.test.ts` prvý beh zelený).
+
+**Zmerané na PROD, PRED → PO:**
+
+| | PRED | PO |
+|---|---|---|
+| politiky s `agency_id IS NULL` na 10 tabuľkách | **14** | **0** |
+| politiky celkovo na tých 10 tabuľkách | 19 | 15 |
+| `ai_action_audit` / `properties` riadkov | 226 / 133 | 226 / 133 |
+| riadkov s `agency_id IS NULL` (súčet 10 tabuliek) | 0 | 0 |
+
+Rozdiel 19 → 15 sú štyri zrušené `properties_*_agency`; `properties_tenant` zostala
+ako jediná politika tej tabuľky.
+
+**Overené z pohľadu prihláseného používateľa, nie len z katalógu.** V transakcii so
+`set local role authenticated` + reálnym `auth.uid()`, celé s `rollback`:
+
+| sonda | ai_actions | ai_action_audit | properties |
+|---|---|---|---|
+| vidí nepriradený riadok (nasadený service rolou)? | 0 | 0 | 0 |
+| vloží riadok s `agency_id = NULL`? | 42501 | 42501 | 42501 |
+| vloží riadok svojej agentúry? | — | OK | OK |
+
+Čítanie nedotknuté a preukázateľne zúžené na tenanta: ten používateľ vidí **64 z 226**
+riadkov `ai_action_audit` a **132 z 133** nehnuteľností — prísnu podmnožinu, nie všetko.
+Po `rollback` na produkcii nezostal ani jeden testovací riadok ani temp funkcia
+(overené dotazom), počty 226/133 nezmenené.
+
+**Nepresnosť, ktorú som opravil v priebehu merania:** prvé čítanie počtov som mal
+v neusporiadanom `VALUES` spolu s tými testovacími insertami, takže vyšlo 65/133
+namiesto 64/132 — rozdiel bol práve riadok z testovacieho insertu. Premerané zvlášť,
+v transakcii bez zápisov. Číslo v neusporiadanom výraze nie je meranie.
+
+**História opravená pod verziou súboru** (ako pri `leads`): `20260928070000 ::
+rls_null_escapes`, riadkov 62 → **63**. Nezaznamenaných migrácií z AP-024 už len **64** — pôvodne som napísal 63, čo bolo odvodené, nie zmerané: `20260928070000` je nový súbor, ktorý v tých 65 nikdy nebol, takže odpočítať sa dá len `20260827214500`. Premerané nástrojom `reconcile-migration-history.mjs --mode diff`: 121 súborov, 63 riadkov histórie, **64 nezaznamenaných**, 6 duchov.
+
+**Stále otvorené a netvrdím inak:** `bri_history` zostáva cross-tenant čitateľná cez
+`"Enterprise BRI access"` a `"Locked BRI read-only"` — obe pre rolu `public`, obe bez
+tenant filtra. Vidno ich aj v PO výpise politík. Nie je to `IS NULL` únik, takže mimo
+tejto brány; je to samostatný nález.
+
 ## [2026-09-28] AP-029 / TEST-SPLIT-01 — štart na pozadí, a oprava môjho tvrdenia o rozptyle (founder GO)
 
 ### Najprv oprava, lebo mení merací plán
@@ -139,6 +183,83 @@ voľbe baseline.
 Fastpath potvrdený **štvrtýkrát**: Build, Debug, Upload artifact, Playwright
 install a Playwright smoke `skipped`, `Note the fastpath` prešiel. Job celkom
 376 s.
+
+#### Piaty beh (`999fd6ea`) — vyvracia môj mechanizmus, nielen moje číslo
+
+| krok | beh 3 | beh 4 | **beh 5** | baseline |
+|---|---|---|---|---|
+| setup-node | 6 | 6 | **8** | 6 / 8 / 7 |
+| Install | — | 17 | **14** | 18 / 17 / 10 |
+| **štart Supabase (wall)** | 110 | 136 | **178** | 108 / 113 / 108 |
+| **čakanie** | 6 | 20 | **96** | — |
+| prekrytie | 104 | 116 | **82** | — |
+| Lint | ~58 | 65 | **36** | 35 / 33 / 23 |
+| Typecheck | ~34 | 39 | **32** | 28 / 28 / 16 |
+| Test | — | 178 | **135** | 174 / 173 / 105 |
+| job celkom | — | 376 | **382** | — |
+
+**Mechanizmus, ktorý som tvrdil v beh-4 zázname, je vyvrátený.** Napísal som,
+že „kontencia sa presunula na CPU kroky". Beh 5 má **najpomalší štart zo
+všetkých (178 s) a pritom najčistejší `Lint` (36 s)**. Keby bol mechanizmus
+kontencia s pullom, najpomalší pull by mal prísť s najviac nafúknutým Lintom.
+Prišiel s najmenej nafúknutým. Jedno pozorovanie to nedokazuje, ale je to
+priamy protipríklad a moje tvrdenie po ňom nemá oporu.
+
+**Čo tú variabilitu naozaj riadi: samotný štart Supabase.** 110 → 136 → 178 s
+na tom istom workflow. Prekryvné okno (`Lint` + `Typecheck` + helper) je
+82–116 s a 178 s štart jednoducho nezakryje — preto sa v behu 5 čakalo 96 s.
+Zisk je rukojemníkom toho rozptylu, nie poradia krokov.
+
+**Čisté číslo pre beh 5 závisí od voľby baseline — uvádzam obe:**
+
+- pomalý baseline (Lint 35, Typecheck 28): hrubo 110 − 96 = 14 s, mínus +5
+  kontencie a +14 môjho helper testu → **−5 s**
+- interpolovaný podľa `Test` 135 s medzi 175 a 105 (Lint ≈ 29, Typecheck ≈ 22):
+  → **+17 s, teda strata**
+
+Nevyberám si tú lichotivejšiu. Poctivý záver je, že **beh 5 nepriniesol
+merateľný zisk** a že rozsah naprieč tromi behmi je **−63 až +17 s**.
+
+**Čo zo zmeny ostáva preukázané:** `setup-node` 6 / 6 / 8 s a `Install`
+— / 17 / 14 s, tri behy v baseline pásme. Pôvodná kontencia medzi npm cache
+restore a docker pullom bola reálna a presun ju odstránil. To drží.
+
+**Čo preukázané NIE JE:** že štart na pozadí prináša zisk. Tri behy dali
+−63, −37 a −5 až +17 s. Priemer je kladný, ale rozptyl je väčší než efekt —
+to je presne ten tvar dát, pri ktorom sa nedá tvrdiť nič.
+
+**OTVORENÉ, pre foundera:** zvážiť návrat štartu Supabase do popredia.
+Zjednoduší workflow o `wait-for-supabase.sh` a jeho 7 testov, a podľa dát
+nestojí nič. Proti tomu: `setup-node`/`Install` zlepšenie by sa zachovalo aj
+tak (to je vec poradia, nie pozadia), takže návrat je lacný. **Neriešim bez GO.**
+
+Fastpath potvrdený **piatykrát**: päť krokov `skipped`, `Note the fastpath`
+prešiel.
+
+#### Pozor: CI fastpath a Vercel `ignoreCommand` NEMERAJÚ to isté
+
+Na #726 Vercel postavil **plné preview (`Ready`)**, hoci PR je memory-only.
+Predpovedal som `Ignored` a mýlil som sa. Príčina NIE JE fail-safe pri
+nerozlíšiteľnom `VERCEL_GIT_PREVIOUS_SHA` — to je vysvetlenie zapísané vyššie
+pre iný prípad a tu **neplatí**. Bez tejto poznámky by ho ďalšia session
+použila a diagnostikovala zle.
+
+Obe brány sú správne. Líšia sa referenčným bodom:
+
+| brána | porovnáva proti | videla na #726 |
+|---|---|---|
+| CI `classify-diff.sh` | `HEAD^1..HEAD^2` na merge refe = **base..head** | 2 súbory, oba `memory/` → fastpath |
+| Vercel `ignoreCommand` | `VERCEL_GIT_PREVIOUS_SHA` = **predchádzajúci deployment vetvy** | 7 ne-memory súborov → build |
+
+Tých 7 súborov (`alert-dispatch.ts`, `bri-engine.ts`, RLS migrácia, RLS test,
+2 reporty, `reconcile-migration-history.mjs`) neprišlo z tohto PR — prišli
+z **mergu `main` do vetvy**, ktorý #720 priniesol. Z pohľadu deploymentu vetvy
+sú to reálne nové súbory oproti tomu, čo bolo nasadené naposledy, takže Vercel
+build spustil správne.
+
+**Dôsledok pre čítanie:** „memory-only PR" nie je to isté ako „memory-only
+oproti poslednému deploymentu". Akonáhle sa do vetvy zmerguje base, Vercel
+postaví — a nie je to regresia fastpathu.
 
 ### Neoverené
 Skutočná úspora. Docker pull je sieťovo viazaný a `npm ci` + eslint + tsc sú

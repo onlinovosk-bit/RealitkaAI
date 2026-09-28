@@ -320,10 +320,41 @@ export function dedupKey(ev: AcquireEvent): string {
   return createHash("sha1").update(base).digest("hex").slice(0, 16);
 }
 
+export type NotLeadReason = "duplicate" | "not_inquiry" | "no_contact" | "unknown_source";
+
+/**
+ * Prečo event nie je lead (null = je lead). Poradie kontrol = poradie v
+ * `toLeadCandidate`; dôvod sa loguje, aby bolo vidno, či parser nezahadzuje
+ * skutočné dopyty (INBOUND-NOTALEAD-01).
+ */
+export function notLeadReason(ev: AcquireEvent, duplicate: boolean): NotLeadReason | null {
+  if (duplicate) return "duplicate";
+  if (ev.eventKind !== "inquiry") return "not_inquiry";
+  if (!(ev.contactEmail || ev.contactPhone)) return "no_contact";
+  if (ev.source === "Unknown") return "unknown_source";
+  return null;
+}
+
+/**
+ * Bezpečný popis zamietnutého eventu do logu: len technické príznaky, žiadne
+ * meno, adresa, telefón ani text správy.
+ */
+export function notLeadDiagnostics(ev: AcquireEvent) {
+  return {
+    source: ev.source,
+    source_type: ev.sourceType,
+    event_kind: ev.eventKind,
+    has_contact_email: Boolean(ev.contactEmail),
+    has_contact_phone: Boolean(ev.contactPhone),
+    has_listing_ref: Boolean(ev.listingPortalId || ev.listingInternalId || ev.listingTitle),
+    has_message: Boolean(ev.inquiryText),
+    parser_version: ev.parserVersion,
+  };
+}
+
 /** NIE každý event je lead. Vracia null pre dup/unsubscribe/no-contact/unknown. */
 export function toLeadCandidate(ev: AcquireEvent, agencyId: string, duplicate: boolean) {
-  if (duplicate || ev.eventKind !== "inquiry") return null;
-  if (!(ev.contactEmail || ev.contactPhone) || ev.source === "Unknown") return null;
+  if (notLeadReason(ev, duplicate)) return null;
   return {
     agencyId,
     name: ev.contactName ?? "Neznámy",
