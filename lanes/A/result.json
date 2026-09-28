@@ -1,0 +1,56 @@
+{
+    "acceptance":  [
+                       {
+                           "cmd":  "node apps/crm/scripts/typecheck-baseline.mjs",
+                           "pass":  true,
+                           "id":  "A1",
+                           "exit_code":  0
+                       },
+                       {
+                           "cmd":  "node apps/crm/scripts/check-api-contract.mjs --ci",
+                           "pass":  true,
+                           "id":  "A2",
+                           "exit_code":  0
+                       },
+                       {
+                           "cmd":  "npm --prefix apps/crm run lint",
+                           "pass":  true,
+                           "id":  "A3",
+                           "exit_code":  0
+                       },
+                       {
+                           "cmd":  "git diff --name-only origin/main...HEAD",
+                           "pass":  true,
+                           "id":  "A4",
+                           "exit_code":  0
+                       }
+                   ],
+    "changed_files":  [
+                          "apps/crm/scripts/judge.mjs",
+                          "apps/crm/scripts/typecheck-baseline.mjs",
+                          "apps/crm/scripts/typecheck-baseline.json",
+                          "apps/crm/package.json",
+                          "apps/crm/package-lock.json",
+                          ".ai/bus/tasks/TASK-TEMPLATE.md",
+                          ".ai/bus/tasks/TASK-0100.md",
+                          ".ai/bus/ledger/2026-09.jsonl",
+                          ".github/workflows/saas-grade-pipeline.yml",
+                          "lanes/A/report.md",
+                          "lanes/A/judge-output.txt",
+                          "lanes/A/result.json"
+                      ],
+    "verdict":  "ACCEPT",
+    "production_effect":  null,
+    "remaining_risks":  [
+                            "ignoreBuildErrors remains true by design",
+                            "CI cwd vs baseline path relies on DEFAULT_BASELINE fallback if relative path misses"
+                        ],
+    "evidence_refs":  [
+                          ".ai/bus/ledger/2026-09.jsonl#RUN-20260915112141-TASK-0100",
+                          "lanes/A/judge-output.txt",
+                          "apps/crm/scripts/typecheck-baseline.json"
+                      ],
+    "task_id":  "TASK-0100",
+    "typecheck_baseline_count":  69,
+    "lane":  "A"
+}

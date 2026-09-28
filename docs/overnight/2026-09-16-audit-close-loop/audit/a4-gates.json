@@ -1,0 +1,121 @@
+{
+  "agent": "A4-gates",
+  "generated_at": "2026-09-16T11:45:00+02:00",
+  "commands_run": [
+    { "cmd": "Get-ChildItem .ai/bus/tasks/", "exit_code": 0 },
+    { "cmd": "parse status/verdict from TASK-*.md", "exit_code": 0 },
+    { "cmd": "Get-Content .ai/bus/ledger/2026-09.jsonl", "exit_code": 0 },
+    { "cmd": "Select-String cost_usd .ai/bus/ledger/2026-09.jsonl", "exit_code": 0 },
+    { "cmd": "Test-Path .ai/bus/state/typecheck-loop-locks.json", "exit_code": 0 }
+  ],
+  "findings": [
+    {
+      "id": "task:TASK-TC-BATCH-1",
+      "title": "TC batch 1 stuck status=running after HUMAN + founder_approval",
+      "kind": "zacate_nedotiahnute",
+      "state": "BLOCKED",
+      "evidence": "front matter status:running verdict.result:HUMAN; founder_approval filled 2026-09-16T10:16:38+02:00; ledger RUN-20260916080336; batch/tc-1 not in main",
+      "evidence_cmd": "Get-Content .ai/bus/tasks/TASK-TC-BATCH-1.md -TotalCount 49; git merge-base --is-ancestor batch/tc-1 origin/main",
+      "age_days": 0,
+      "impact": "high",
+      "effort": "S",
+      "write_territory": [".ai/bus/tasks/TASK-TC-BATCH-1.md"],
+      "next_action": "finish/PR via orchestrator after Judge runnable — founder already signed HUMAN",
+      "blocked_by": "orch:tc-orchestrator-missing-on-main"
+    },
+    {
+      "id": "task:TASK-NS-001-stale-status",
+      "title": "TASK-NS-001 document state disagrees with ledger ACCEPT",
+      "kind": "zdokumentovane_neplatne",
+      "state": "READY",
+      "evidence": "task status=IN_PROGRESS verdict.result=null; ledger two ACCEPT runs including RUN-20260915185203-TASK-NS-001",
+      "evidence_cmd": "Get-Content .ai/bus/tasks/TASK-NS-001.md | Select-String 'status:|result:'; Select-String TASK-NS-001 .ai/bus/ledger/2026-09.jsonl",
+      "age_days": 1,
+      "impact": "medium",
+      "effort": "S",
+      "write_territory": [".ai/bus/tasks/TASK-NS-001.md"],
+      "next_action": "Reconcile front matter to done + ACCEPT with ledger_run_id (Judge/reopen rules apply — do not hand-edit verdict without reopen protocol)",
+      "blocked_by": "preflight:judge_exists"
+    },
+    {
+      "id": "task:TASK-0100-obsolete-vs-main",
+      "title": "TASK-0100 still open but Judge already on main via #554",
+      "kind": "zdokumentovane_neplatne",
+      "state": "OBSOLETE",
+      "evidence": "TASK-0100 status=open scope includes judge.mjs; git log --diff-filter=A judge.mjs → bb67075a0 #554; judge on origin/main",
+      "evidence_cmd": "Get-Content .ai/bus/tasks/TASK-0100.md -TotalCount 20; git log --oneline --diff-filter=A -- apps/crm/scripts/judge.mjs",
+      "age_days": 1,
+      "impact": "medium",
+      "effort": "S",
+      "write_territory": [".ai/bus/tasks/TASK-0100.md"],
+      "next_action": "Close/mark done with evidence of #554 — not re-implement Judge",
+      "blocked_by": null
+    },
+    {
+      "id": "task:TASK-0003",
+      "title": "Branch cleanup evidence pack still blocked",
+      "kind": "zacate_nedotiahnute",
+      "state": "BLOCKED",
+      "evidence": "status:blocked gate:NEEDS-EVIDENCE",
+      "evidence_cmd": "Get-Content .ai/bus/tasks/TASK-0003.md -TotalCount 25",
+      "age_days": 26,
+      "impact": "medium",
+      "effort": "L",
+      "write_territory": [],
+      "next_action": "Evidence pack only after founder GO",
+      "blocked_by": "founder_GO_evidence_pack"
+    },
+    {
+      "id": "gate:cost_usd_unmeasured",
+      "title": "All ledger runs record cost_usd:0 (unmeasured presented as zero)",
+      "kind": "zapnute_nesledovane",
+      "state": "READY",
+      "evidence": "9/9 ledger lines match \"cost_usd\":0; 0 lines with null; contract 11 forbids zero when unmeasured",
+      "evidence_cmd": "Get-Content .ai/bus/ledger/2026-09.jsonl | measure cost_usd patterns",
+      "age_days": 0,
+      "impact": "high",
+      "effort": "S",
+      "write_territory": ["apps/crm/scripts/judge.mjs"],
+      "next_action": "Change writer to cost_usd:null + cost_measured:false when unmeasured; do not invent a cost meter",
+      "blocked_by": "runtime:crm-node-modules-absent"
+    },
+    {
+      "id": "locks:typecheck-loop-absent",
+      "title": "typecheck-loop-locks.json does not exist",
+      "kind": "zacate_nedotiahnute",
+      "state": "UNKNOWN",
+      "evidence": "Test-Path .ai/bus/state/typecheck-loop-locks.json = False",
+      "evidence_cmd": "Test-Path .ai/bus/state/typecheck-loop-locks.json; Get-ChildItem .ai/bus/state",
+      "age_days": null,
+      "impact": "low",
+      "effort": "S",
+      "write_territory": [],
+      "next_action": "Expected absent until typecheck loop launches; consistent with NOT_LAUNCHED",
+      "blocked_by": "pkg:typecheck-paydown-not-launched"
+    },
+    {
+      "id": "task:TASK-RLS-ONBOARDING-SESSION",
+      "title": "RLS onboarding task is prose status PR open — no YAML verdict block",
+      "kind": "zacate_nedotiahnute",
+      "state": "UNKNOWN",
+      "evidence": "File has markdown Status PR open Path B; no YAML front matter status/verdict; PR #534 claimed — cannot verify open/merged without gh",
+      "evidence_cmd": "Get-Content .ai/bus/tasks/TASK-RLS-ONBOARDING-SESSION.md -TotalCount 20",
+      "age_days": null,
+      "impact": "high",
+      "effort": "M",
+      "write_territory": [],
+      "next_action": "Verify PR #534 state with network; until then UNKNOWN (never auto-execute)",
+      "blocked_by": "open_prs_unknown_no_network"
+    }
+  ],
+  "not_determinable": [
+    {
+      "question": "Is founder_approval on TASK-TC-BATCH-1 sufficient for finish without re-Judge?",
+      "why": "finish semantics require runnable judge.mjs; currently BLOCK"
+    },
+    {
+      "question": "PR #534 / other open critical fix PRs current state",
+      "why": "no gh / no external access"
+    }
+  ]
+}

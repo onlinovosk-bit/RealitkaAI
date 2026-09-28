@@ -1,0 +1,22 @@
+{
+  "run_id": "2026-09-05T2308-CEST-research",
+  "wave": "W0",
+  "status": "READY",
+  "base_sha": "cf3604613cdbb6a7a279e175f2c792fb25591461",
+  "head_sha": "4ebb91fba58277cc696f4de66a4e9382b16e7313".Trim(),
+  "started_eligible": true,
+  "blocked_reasons": [],
+  "output_root": "output/overnight/2026-09-05T2308-CEST-research",
+  "scope": "research_and_specs",
+  "runner": {
+    "name": "Cursor agent",
+    "tools": ["repo_read","web_search","web_fetch","shell","docs_write"],
+    "auth": "subscription_session",
+    "spend_cap": "subscription_only",
+    "ruflo_bridge_v0": false,
+    "max_workers": 3
+  },
+  "path_safety": "PASS",
+  "write_set_disjointness": "PASS",
+  "checked_at_utc": "2026-09-05T21:10:13.6286613Z"
+}

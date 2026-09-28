@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import EmptyState from "@/components/shared/empty-state";
 import LeadsModule from "@/components/leads/leads-module";
 import { getSupabaseClient } from "@/lib/supabase/client";
-import { listLeads, type Lead } from "@/lib/leads-store";
+import { LEADS_PAGE_SIZE, listLeads, type Lead } from "@/lib/leads-store";
 import { listProfiles, listTeams } from "@/lib/team-store";
 import { recommendations } from "@/lib/mock-data";
 
@@ -33,17 +33,20 @@ export default function LeadsPageClient({
   const [profiles, setProfiles] = useState<ProfileOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
 
     const loadViaApi = async (): Promise<boolean> => {
       try {
-        const res = await fetch(`/api/leads/inventory?view=${inventoryView}`);
+        const res = await fetch(`/api/leads/inventory?view=${inventoryView}&limit=${LEADS_PAGE_SIZE}&offset=0`);
         if (!res.ok) return false;
         const payload = (await res.json()) as {
           inventory?: {
             leads: Lead[];
+            hasMore?: boolean;
             teams: TeamOption[];
             profiles: ProfileOption[];
           };
@@ -51,6 +54,7 @@ export default function LeadsPageClient({
         if (!payload.inventory) return false;
         if (cancelled) return true;
         setLeads(payload.inventory.leads);
+        setHasMore(payload.inventory.hasMore ?? payload.inventory.leads.length === LEADS_PAGE_SIZE);
         setTeams(payload.inventory.teams);
         setProfiles(payload.inventory.profiles);
         setLoadError(null);
@@ -66,6 +70,7 @@ export default function LeadsPageClient({
       profileRows: ProfileOption[],
     ) => {
       setLeads(leadRows);
+      setHasMore(leadRows.length === LEADS_PAGE_SIZE);
       setTeams(teamRows);
       setProfiles(profileRows);
       setLoadError(null);
@@ -94,7 +99,7 @@ export default function LeadsPageClient({
 
       try {
         const [leadRows, teamRows, profileRows] = await Promise.all([
-          listLeads(undefined, supabase),
+          listLeads(undefined, supabase, { limit: LEADS_PAGE_SIZE, offset: 0 }),
           listTeams(supabase),
           listProfiles(supabase),
         ]);
@@ -139,6 +144,37 @@ export default function LeadsPageClient({
     };
   }, [initialLeadCount, inventoryView]);
 
+  const loadMore = async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const res = await fetch(
+        `/api/leads/inventory?view=${inventoryView}&limit=${LEADS_PAGE_SIZE}&offset=${leads.length}`,
+      );
+      if (res.ok) {
+        const payload = (await res.json()) as {
+          inventory?: { leads: Lead[]; hasMore?: boolean };
+        };
+        const next = payload.inventory?.leads ?? [];
+        setLeads((prev) => [...prev, ...next]);
+        setHasMore(payload.inventory?.hasMore ?? next.length === LEADS_PAGE_SIZE);
+        return;
+      }
+      const supabase = getSupabaseClient();
+      if (!supabase) return;
+      const next = await listLeads(undefined, supabase, {
+        limit: LEADS_PAGE_SIZE,
+        offset: leads.length,
+      });
+      setLeads((prev) => [...prev, ...next]);
+      setHasMore(next.length === LEADS_PAGE_SIZE);
+    } catch {
+      /* keep current page */
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="rounded-2xl border border-gray-200 bg-white p-10 text-center text-sm text-gray-600">
@@ -157,6 +193,7 @@ export default function LeadsPageClient({
   }
 
   return (
+    <>
     <LeadsModule
       leads={leads}
       teams={teams}
@@ -165,5 +202,18 @@ export default function LeadsPageClient({
       profileMissingAgency={profileMissingAgency}
       initialLeadCount={initialLeadCount}
     />
+      {hasMore ? (
+        <div className="mt-4 text-center">
+          <button
+            type="button"
+            onClick={() => void loadMore()}
+            disabled={loadingMore}
+            className="cursor-pointer rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-800 disabled:opacity-60"
+          >
+            {loadingMore ? "Načítavam…" : "Načítať ďalšie"}
+          </button>
+        </div>
+      ) : null}
+    </>
   );
 }

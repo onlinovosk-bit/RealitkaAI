@@ -130,7 +130,7 @@ export async function PATCH(
       }
     } catch {}
 
-    await autoRecalculateForLead(id);
+    await autoRecalculateForLead(id, supabase);
     rescoreLead(id); // fire-and-forget: update score + AI insight
 
     if (oldLead?.status !== lead.status) {

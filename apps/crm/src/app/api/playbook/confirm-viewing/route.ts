@@ -1,7 +1,9 @@
 import { errorResponse, okResponse } from "@/lib/api-response";
 import { getCurrentUser } from "@/lib/auth";
+import { readDemoModeFromCookie } from "@/lib/demo-mode-cookie";
 import { getLead } from "@/lib/leads-store";
 import { sendMessage } from "@/lib/multi-channel-sender";
+import { createClient } from "@/lib/supabase/server";
 import { mockBusyDay } from "@/services/playbook/mock";
 
 function normalizeSkE164(raw: string): string | null {
@@ -59,8 +61,23 @@ export async function POST(request: Request) {
     return errorResponse("Chýba leadId alebo subtitle.", 400);
   }
 
-  const lead = await getLead(leadId);
-  const demo = demoContact(playbookItemId);
+  // Pass the request-scoped client. Without it `getLead` resolves through the
+  // browser singleton, the select fails on the server and the lead used to fall
+  // back to a fixture — so a real viewing confirmation went to the demo contact.
+  const supabase = await createClient();
+  const lead = await getLead(leadId, supabase);
+  const demoMode = await readDemoModeFromCookie();
+
+  if (!lead && !demoMode) {
+    return errorResponse(
+      "Lead nebol nájdený alebo nepatrí do vašej agentúry.",
+      404,
+    );
+  }
+
+  // The playbook fixture contact exists for the demo tour only. It must never
+  // stand in for a real buyer's missing email or phone.
+  const demo = demoMode ? demoContact(playbookItemId) : undefined;
 
   const email =
     (lead?.email && lead.email.trim()) ||
@@ -128,7 +145,7 @@ export async function POST(request: Request) {
   }
 
   return errorResponse(
-    "Pre tohto leada nie je zadaný email ani telefón a nebol nájdený demo kontakt k položke playbook.",
+    "Pre tohto leada nie je zadaný email ani telefón. Doplňte kontakt v CRM — potvrdenie sa neodosiela na náhradný kontakt.",
     400
   );
 }

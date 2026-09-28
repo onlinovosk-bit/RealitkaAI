@@ -11,6 +11,8 @@ begin
     drop policy if exists "demo_update_leads" on public.leads;
     drop policy if exists "demo_delete_leads" on public.leads;
     drop policy if exists "leads_tenant" on public.leads;
+    -- Table-level REVOKE for anon/PUBLIC is in 20260827214500 (do not GRANT anon SELECT;
+    -- RLS-only leaves PostgREST empty-success instead of 42501).
     create policy "leads_tenant"
       on public.leads for all to authenticated
       using (agency_id in (select public.profile_agencies_for_auth()))

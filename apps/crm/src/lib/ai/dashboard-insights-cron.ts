@@ -11,7 +11,7 @@ import {
   gatherAgencyDashboardSummary,
   gatherAgencyProperties,
 } from '@/lib/ai/dashboard-insights-gather'
-import { logAiAction } from '@/lib/ai-action-audit'
+import { persistAiCostTelemetry } from '@/lib/ai/persist-cost-telemetry'
 import { CREDIT_ACTION_COSTS } from '@/lib/program-tier-pricing'
 import { withTimeout } from '@/lib/async/with-timeout'
 
@@ -106,9 +106,11 @@ export async function generateAndCacheAgencyInsights(
       return { agencyId, ok: false, empty: false, error: upsertErr.message }
     }
 
-    await logAiAction({
-      action: 'dashboard_insights',
+    // Schema-tolerant cost write (prod missing cost_eur columns → meta fallback).
+    // Replaces logAiAction here — see docs/audit/2026-09-04-ai-cost-telemetry.md
+    await persistAiCostTelemetry({
       agencyId,
+      feature: 'dashboard_insights',
       creditsSpent: generated.audit.source === 'llm' ? CREDIT_ACTION_COSTS.leadAnalysis : 0,
       costEur: generated.audit.costEur,
       model: generated.audit.model,

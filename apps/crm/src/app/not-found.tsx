@@ -1,13 +1,18 @@
 import Link from 'next/link'
 
+import { NotFoundPath } from '@/components/NotFoundPath'
+
 export default function NotFound() {
+  // POZOR: ziadne <html>/<body>. V App Routeri sa not-found renderuje DOVNUTRA
+  // root layoutu (app/layout.tsx), ktory uz svoje <html><body> ma. Vnorene tagy
+  // prehliadac zahodi a React na neplatnom vnoreni vyrenderuje prazdnu stranku —
+  // presne to robilo z kazdej 404 bielu plochu namiesto tejto karty.
   return (
-    <html lang="sk">
-      <body style={{
-        margin: 0, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-        background: '#F2F6FA', minHeight: '100vh',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
+    <div style={{
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+      background: '#F2F6FA', minHeight: '100vh',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
         <div style={{
           background: '#fff', border: '0.5px solid #D6E2EF',
           borderRadius: 10, padding: '48px 40px', maxWidth: 440,
@@ -42,19 +47,21 @@ export default function NotFound() {
             Táto stránka neexistuje
           </h1>
           <p style={{ fontSize: 13, color: '#7A8BA8', lineHeight: 1.6, marginBottom: 28 }}>
-            Adresa <code style={{
+            <NotFoundPath codeStyle={{
               background: '#F2F6FA', padding: '2px 6px',
               borderRadius: 4, fontSize: 11, color: '#1B3A5C',
-            }}>app.revolis.ai/team/permissions</code> alebo iná stránka, ktorú hľadáte, nebola nájdená.
+            }} />
           </p>
 
           {/* Quick links */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}>
             {[
-              { href: '/dashboard',         label: 'Dashboard — Kde sú peniaze dnes' },
-              { href: '/team',              label: 'Tím výkonnosť' },
-              { href: '/team/permissions',  label: 'Oprávnenia tímu' },
-              { href: '/billing',           label: 'Predplatné a licencie' },
+              { href: '/dashboard',              label: 'Dashboard — Kde sú peniaze dnes' },
+              { href: '/team',                   label: 'Tím výkonnosť' },
+              { href: '/team/permissions',       label: 'Oprávnenia tímu' },
+              { href: '/billing',                label: 'Predplatné a licencie' },
+              { href: '/integrations',           label: 'Integrations' },
+              { href: '/integrations/realvia',   label: 'Realvia ingest' },
             ].map(link => (
               <Link key={link.href} href={link.href} style={{
                 padding: '9px 14px', background: '#F2F6FA',
@@ -77,7 +84,6 @@ export default function NotFound() {
             Ísť na Dashboard
           </Link>
         </div>
-      </body>
-    </html>
+    </div>
   )
 }

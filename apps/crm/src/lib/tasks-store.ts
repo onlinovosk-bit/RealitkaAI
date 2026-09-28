@@ -58,12 +58,44 @@ function normalizeLeadId(value: string | null | undefined) {
   return normalized.length > 0 ? normalized : null;
 }
 
+/**
+ * Tenant scope pre `tasks`.
+ *
+ * `public.tasks` NEMA stlpec `agency_id` (viz baseline schema) — tenant sa odvodzuje
+ * cez `lead_id -> leads.agency_id`, presne ako RLS policy `tasks_agency`.
+ * Vracia `null`, ak sa tenant neda urcit (fail-closed).
+ */
+async function resolveAgencyLeadIds(
+  supabase: import("@supabase/supabase-js").SupabaseClient,
+): Promise<string[] | null> {
+  const { resolveSessionAgencyId } = await import("@/lib/tenant-scope");
+  const agencyId = await resolveSessionAgencyId(supabase);
+
+  if (!agencyId) {
+    console.warn("[tasks-store] listTasks: missing profile agency_id — returning empty set");
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("leads")
+    .select("id")
+    .eq("agency_id", agencyId);
+
+  if (error || !data) {
+    console.error("[tasks-store] listTasks agency leads error:", error?.message);
+    return null;
+  }
+
+  return (data as Array<{ id: string }>).map((row) => row.id);
+}
+
 export async function listTasks(
   scopedSupabase?: import("@supabase/supabase-js").SupabaseClient | null,
 ): Promise<Task[]> {
   const supabase = await resolveTenantSupabase(scopedSupabase);
 
   if (!supabase) {
+    if (process.env.NODE_ENV === "production") return [];
     return [...getDemoTasksStore()].sort((a, b) => {
       const left = a.createdAt ? new Date(a.createdAt).getTime() : 0;
       const right = b.createdAt ? new Date(b.createdAt).getTime() : 0;
@@ -71,28 +103,38 @@ export async function listTasks(
     });
   }
 
+  const leadIds = await resolveAgencyLeadIds(supabase);
+  if (leadIds === null) return [];
+  if (leadIds.length === 0) return [];
+
   const { data, error } = await supabase
     .from("tasks")
     .select("*")
+    .in("lead_id", leadIds)
     .order("created_at", { ascending: false });
 
   if (error || !data) {
+    // Fail-closed: chyba DB nikdy nesmie vratit demo/mock data — chatbot ich cita ako fakt.
     console.error("listTasks error:", error?.message);
-    return demoTasks;
+    return [];
   }
 
-  return data.map((item: any) => ({
-    id: item.id,
-    leadId: item.lead_id ?? null,
-    assignedProfileId: item.assigned_profile_id ?? null,
-    title: item.title,
-    description: item.description ?? "",
-    status: item.status ?? "open",
-    priority: item.priority ?? "medium",
-    dueAt: item.due_at ?? null,
-    completedAt: item.completed_at ?? null,
-    createdAt: item.created_at,
-  }));
+  const allowedLeadIds = new Set(leadIds);
+
+  return data
+    .filter((item: any) => typeof item.lead_id === "string" && allowedLeadIds.has(item.lead_id))
+    .map((item: any) => ({
+      id: item.id,
+      leadId: item.lead_id ?? null,
+      assignedProfileId: item.assigned_profile_id ?? null,
+      title: item.title,
+      description: item.description ?? "",
+      status: item.status ?? "open",
+      priority: item.priority ?? "medium",
+      dueAt: item.due_at ?? null,
+      completedAt: item.completed_at ?? null,
+      createdAt: item.created_at,
+    }));
 }
 
 export async function createTask(

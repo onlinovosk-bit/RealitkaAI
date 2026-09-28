@@ -49,7 +49,7 @@ export function WorkdeskRail() {
         {WORKDESK_RAIL.map((item) => {
           const active = item.match(pathname);
           return (
-            <Link
+            <Link prefetch={false}
               key={item.id}
               href={item.href}
               style={{
@@ -71,7 +71,7 @@ export function WorkdeskRail() {
               }}
             >
               <NavIconGlyph name={item.icon} size={20} color="#fff" />
-              <span>{item.label}</span>
+              <span title={item.label}>{item.label}</span>
             </Link>
           );
         })}

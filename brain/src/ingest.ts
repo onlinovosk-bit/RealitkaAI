@@ -4,6 +4,9 @@ import { buildDecisions, buildRegistry } from "./catalog.js";
 import { loadBrain } from "./loader.js";
 import { argString, normalizeNewlines, parseCliArgs, stableJson, writeIfChanged } from "./repo.js";
 
+export const DECISIONS_SOT = "memory/decisions.md";
+export const DECISIONS_TWIN = "brain/decisions/decisions.md";
+
 export interface IngestResult {
   registryCount: number;
   decisionCount: number;
@@ -16,11 +19,26 @@ function checkContent(path: string, expected: string): boolean {
   return existsSync(path) && normalizeNewlines(readFileSync(path, "utf8")) === expected;
 }
 
+/** Variant A (D-2026-08-17-01): ingest reads only memory/decisions.md. The brain MD twin is forbidden. */
+export function assertDecisionsSourceOfTruth(repoRoot: string): void {
+  const sot = resolve(repoRoot, DECISIONS_SOT);
+  if (!existsSync(sot)) {
+    throw new Error(`brain:ingest requires ${DECISIONS_SOT} as the only decisions source of truth`);
+  }
+  const twin = resolve(repoRoot, DECISIONS_TWIN);
+  if (existsSync(twin)) {
+    throw new Error(
+      `${DECISIONS_TWIN} is a forbidden hand-maintained duplicate; SoT is ${DECISIONS_SOT} (D-2026-08-17-01 Variant A)`,
+    );
+  }
+}
+
 export function runIngest(options: {
   repoRoot: string;
   brainRoot: string;
   check?: boolean;
 }): IngestResult {
+  assertDecisionsSourceOfTruth(options.repoRoot);
   const registry = buildRegistry(options.repoRoot);
   const decisions = buildDecisions(options.repoRoot);
   const registryPath = resolve(options.brainRoot, "registry", "index.json");

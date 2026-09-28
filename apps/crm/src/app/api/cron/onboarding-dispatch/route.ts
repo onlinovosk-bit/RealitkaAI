@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
+import { isAuthorizedCronBearer } from "@/lib/cron-auth";
 import { runOnboardingDispatch } from "@/lib/onboarding-dispatch";
 
 export async function POST(req: Request) {
-  const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!isAuthorizedCronBearer(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

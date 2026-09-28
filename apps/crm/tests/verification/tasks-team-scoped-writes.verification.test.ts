@@ -39,5 +39,6 @@ describe("[verification] Tasks + team scoped writes (R2 remediation)", () => {
     expect(teamStore).toMatch(/export async function createTeam\([\s\S]*scoped\?:/);
     expect(teamStore).toMatch(/export async function createProfile\([\s\S]*scoped\?:/);
     expect(teamStore).toMatch(/export async function assignLeadToProfile\([\s\S]*scoped\?:/);
+    // Same-agency gate lives in assign-lead-same-agency.verification.test.ts
   });
 });

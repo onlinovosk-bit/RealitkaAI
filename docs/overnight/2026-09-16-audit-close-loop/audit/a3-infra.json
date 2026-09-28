@@ -1,0 +1,81 @@
+{
+  "agent": "A3-infra",
+  "generated_at": "2026-09-16T11:45:00+02:00",
+  "commands_run": [
+    { "cmd": "Get-ChildItem .github/workflows/", "exit_code": 0 },
+    { "cmd": "Select-String on: .github/workflows/*.yml (heads)", "exit_code": 0 },
+    { "cmd": "Test-Path .github/workflows/scope-guard.yml", "exit_code": 0 },
+    { "cmd": "Get-Content .github/workflows/schema-governance-guard.yml -TotalCount 25", "exit_code": 0 },
+    { "cmd": "Get-Content .github/workflows/brain-weekly-audit.yml -TotalCount 20", "exit_code": 0 },
+    { "cmd": "Test-Path vercel.json; Test-Path apps/crm/vercel.json", "exit_code": 0 }
+  ],
+  "findings": [
+    {
+      "id": "workflow:scope-guard-b7-missing",
+      "title": "B7 scope-guard workflow documented in runner layer 10 but absent",
+      "kind": "zdokumentovane_neplatne",
+      "state": "READY",
+      "evidence": "docs/prompts/runner/10-integration.md specifies .github/workflows/scope-guard.yml; Test-Path = False; rg scope-guard in .github/workflows empty",
+      "evidence_cmd": "Test-Path .github/workflows/scope-guard.yml",
+      "age_days": 0,
+      "impact": "high",
+      "effort": "M",
+      "write_territory": [".github/workflows/scope-guard.yml"],
+      "next_action": "Implement B7 only after acceptance+negative case are expressible as runnable commands (CI EXTERNAL place must exist)",
+      "blocked_by": null
+    },
+    {
+      "id": "workflow:schema-governance-schedule-disabled",
+      "title": "Schema governance guard schedule commented out; only workflow_dispatch",
+      "kind": "hotove_nezapnute",
+      "state": "BLOCKED",
+      "evidence": "schema-governance-guard.yml on: workflow_dispatch only; comment SCHEDULE DISABLED 2026-06-17 waiting SCHEMA_GUARD_* secrets",
+      "evidence_cmd": "Get-Content .github/workflows/schema-governance-guard.yml -TotalCount 20",
+      "age_days": 91,
+      "impact": "medium",
+      "effort": "S",
+      "write_territory": [".github/workflows/schema-governance-guard.yml"],
+      "next_action": "Founder set GitHub secrets then re-enable cron — not agent",
+      "blocked_by": "secrets:SCHEMA_GUARD_*",
+      "evidence_extra": "not_in_repo for whether secrets exist in GitHub"
+    },
+    {
+      "id": "workflow:brain-weekly-scheduled",
+      "title": "brain-weekly-audit has schedule cron Monday 05:00 UTC",
+      "kind": "zapnute_nesledovane",
+      "state": "UNKNOWN",
+      "evidence": "on.schedule present in workflow file; no local ledger of weekly runs in .ai/bus/ledger",
+      "evidence_cmd": "Get-Content .github/workflows/brain-weekly-audit.yml -TotalCount 15; Get-ChildItem .ai/bus/ledger",
+      "age_days": null,
+      "impact": "low",
+      "effort": "S",
+      "write_territory": [],
+      "next_action": "Verify Actions run history — requires GitHub (external); marked not_in_repo for run history",
+      "blocked_by": null
+    },
+    {
+      "id": "workflow:saas-grade-has-pr-synchronize",
+      "title": "saas-grade-pipeline listens to pull_request synchronize",
+      "kind": "hotove_nezapnute",
+      "state": "READY",
+      "evidence": "on.pull_request.types includes synchronize — general CI re-runs on new commits; does NOT replace B7 scope-guard",
+      "evidence_cmd": "Select-String -Path .github/workflows/saas-grade-pipeline.yml -Pattern 'synchronize' -Context 2,0",
+      "age_days": null,
+      "impact": "low",
+      "effort": "S",
+      "write_territory": [],
+      "next_action": "Keep; still need dedicated scope-guard for repo_paths contract",
+      "blocked_by": null
+    }
+  ],
+  "not_determinable": [
+    {
+      "question": "Have scheduled workflows actually run since enablement?",
+      "why": "evidence: not_in_repo — Actions history requires GitHub API/UI"
+    },
+    {
+      "question": "Are SCHEMA_GUARD_* / billing secrets present?",
+      "why": "evidence: not_in_repo — secrets not in repository"
+    }
+  ]
+}

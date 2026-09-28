@@ -5,11 +5,11 @@ import {
   resolveBillingPlanFromManualPlan,
 } from "@/lib/billing/resolve-agency-manual-plan";
 import { fetchAgencyCreditsSummary } from "@/lib/billing/fetch-agency-credits-summary";
+import { getCurrentPlanKey } from "@/lib/billing-store";
 import {
-  getCurrentPlanKey,
-  getCurrentPlanTier,
-} from "@/lib/billing-store";
-import { isEnterpriseSalesIntelligenceEnabled } from "@/lib/enterprise-sales-intelligence-gate";
+  isEnterpriseSalesIntelligenceEnabled,
+  planKeyEnablesEnterpriseIntel,
+} from "@/lib/enterprise-sales-intelligence-gate";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET() {
@@ -18,7 +18,11 @@ export async function GET() {
   if (!user) return errorResponse("Unauthorized", 401);
 
   try {
-    const creditsSummary = await fetchAgencyCreditsSummary(supabase, user.id);
+    // Paralelne — credits a manual plan su nezavisle Supabase dotazy.
+    const [creditsSummary, manualPlan] = await Promise.all([
+      fetchAgencyCreditsSummary(supabase, user.id),
+      fetchAgencyManualPlan(supabase, user.id),
+    ]);
     const creditsFields = creditsSummary
       ? {
           creditsBalance: creditsSummary.creditsBalance,
@@ -33,7 +37,6 @@ export async function GET() {
           monthlyGrantCredits: 0,
         };
 
-    const manualPlan = await fetchAgencyManualPlan(supabase, user.id);
     const manualPlanKey = resolveBillingPlanFromManualPlan(manualPlan);
     if (manualPlanKey) {
       const enterpriseSalesIntelligence =
@@ -47,11 +50,11 @@ export async function GET() {
       });
     }
 
-    const [tier, planKey, enterpriseSalesIntelligence] = await Promise.all([
-      getCurrentPlanTier(),
-      getCurrentPlanKey(),
-      isEnterpriseSalesIntelligenceEnabled(),
-    ]);
+    // Jeden zdielany billing status: planKey nacitame raz zo Stripe a tier aj
+    // enterprise flag odvodime lokalne — ziadne dalsie Stripe round-tripy.
+    const planKey = await getCurrentPlanKey();
+    const tier: "free" | "pro" = planKey === "free" ? "free" : "pro";
+    const enterpriseSalesIntelligence = planKeyEnablesEnterpriseIntel(planKey);
     return okResponse({
       tier,
       planKey,
