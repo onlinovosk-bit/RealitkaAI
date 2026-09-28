@@ -1,5 +1,48 @@
 # Critical Decisions Log
 
+## [2026-09-27] COACH-HONEST — dashboard už neukazuje vymyslené čísla (founder GO)
+
+**Nález (GO 2, AP-023 smer B):** `broker_performance_stats` v PROD neexistuje, takže
+`/api/coaching/insight` každému maklérovi vrátil natvrdo „TOP 12 %", „18 DNÍ",
+„O 4 dni rýchlejšie ako priemer", „3 Day Streak", 58 % follow-up a panel `BrokerCoach`
+ich zobrazil ako jeho vlastné. Porušenie Direktívy 4 („never a fake number"). Aj pri
+existujúcich štatistikách boli streak, rank a porovnanie s priemerom vymyslené a pod
+rankom stálo „V regióne Prešov".
+
+**Rozhodnutie (Ústava v2: BUILD — retencia, dôvera v čísla):**
+- Bez nameraných štatistík panel nie je (`ok:false, reason:"no_stats"`).
+- S nimi ide len to, čo má zdroj (rýchlosť uzatvárania, insight z reálnych čísel alebo
+  uložený AI tip). Streak, regionálny rank a porovnanie s priemerom sú `null` a skryté.
+- **Migrácia sa nerobí.** Tabuľku nič neplní — založiť ju by len zmenilo „vymyslené"
+  na „prázdne". Plnenie štatistík je samostatné rozhodnutie.
+
+**Ostatné tabuľky zo smeru B** (rozhodovacia tabuľka v chate 2026-09-27): čakajú na
+founder odpovede — starter pack (predávame?), Calendly webhook (nastavený?), hodnoty
+`*_ENABLED` flagov. Mŕtvy kód (`demand_signals`, `enrichment_log`, `strategic_alerts`,
+crony demo-brief/recap) je kandidát na zmazanie.
+
+## [2026-09-27] INBOUND-DRAFT-01 — AI návrh odpovede aj pre reálne leady (founder GO A)
+
+**Problém:** „Schváliť a odoslať" (#690) dostávalo inbound návrhy len z
+`/api/webhooks/inbound-lead`, ktorý nikto nevolá (v kóde žiadny volajúci, v PROD
+logoch žiadna prevádzka). Reálne leady (`/api/acquire/email`, `/api/leads/inbound`)
+dostávali iba šablónové potvrdenie — maklér nemal pripravenú odpoveď.
+
+**Rozhodnutie (Ústava v2: BUILD):** oba reálne vstupy po uložení leadu vytvoria
+AI návrh `REVOLIS-INBOUND-AUTOREPLY` cez zdieľaný `lib/inbound/reply-draft.ts`.
+Retencia: maklér odpovie na nový dopyt jedným klikom. Žiadny nový dátový zdroj —
+text leadu už ide do AI cez triage (rovnaký právny základ 6(1)(f)).
+
+- **Tier 3 nezmenený:** iba draft + `ai_suggested`; odoslanie ide cez approve-draft
+  → Control Contract (`inbound.reply.email.send`). Nič sa neodosiela automaticky.
+- **Šablónové potvrdenie ostáva** (opt-in kancelárie). Keď LLM nestihne 8 s a vráti
+  pevný text, návrh sa nevytvorí — iba by zopakoval potvrdenie.
+- **Po odpovedi (`after()`):** Worker ani formulár nečakajú na LLM.
+- **Kill switch:** `INBOUND_REPLY_DRAFT_DISABLED=1` (platí od ďalšieho deployu).
+- Webhook cesta sa správa ako predtým (refaktor na ten istý helper).
+- **Známa diera (W1):** lead bez telefónu, ktorého jediná adresa je adresa kancelárie,
+  dostane návrh na túto adresu. Maklér ju vidí v potvrdzovacom dialógu pred odoslaním.
+
 ## [2026-09-27] — MATCHING-ZERO: PROD má 0 zhôd; príčina je v kóde AJ v dátach (founder GO)
 
 - **Fakty PROD:** 511 leadov a 133 nehnuteľností, ale 0 zhôd.

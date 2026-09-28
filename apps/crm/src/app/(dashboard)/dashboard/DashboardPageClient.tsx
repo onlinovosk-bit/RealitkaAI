@@ -26,6 +26,7 @@ import { ActionQueuePanel } from "@/components/dashboard/ActionQueuePanel";
 import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
 import { canRenderModule, normalizeModuleTier } from "@/lib/modules/registry";
 import { buildFirstAudit, formatAuditMoney } from "@/lib/workdesk/first-audit";
+import type { CoachingPayload } from "@/lib/coaching/coaching-payload";
 
 const EnterpriseSalesIntelligencePanel = dynamic(
   () => import("@/components/dashboard/EnterpriseSalesIntelligencePanel"),
@@ -61,18 +62,7 @@ type ForecastingTargets = {
   avgProbabilityPercent: number;
 };
 
-type CoachingInsightPayload = {
-  stats: {
-    funnelDropOffStage: string;
-    followUpConsistency: number;
-    avgDealVelocityDays: number;
-  };
-  insight: string;
-  streakDays: number;
-  followUpRankLabel: string;
-  dealVelocityLabel: string;
-  dealVelocityDeltaLabel: string;
-};
+type CoachingInsightPayload = CoachingPayload;
 
 const DEFAULT_FORECAST_TARGETS: ForecastingTargets = {
   expectedClosedDeals: 3,
