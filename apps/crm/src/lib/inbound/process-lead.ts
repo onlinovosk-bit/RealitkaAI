@@ -10,8 +10,7 @@
 import { computeBRI }        from '@/lib/bri/engine'
 import { logEvent }          from '@/lib/events/log-event'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
-import { AUTO_REPLY_PROMPT_VERSION, generateAutoReply } from './auto-reply'
-import { insertAgentDraft } from './insert-agent-draft'
+import { draftInboundReply } from './reply-draft'
 
 import { INBOUND_AUTOREPLY_AGENT_ID } from './draft-view'
 
@@ -113,41 +112,26 @@ export async function processInboundLead(
     return { leadId, briScore, draftCreated: false, replySent: false }
   }
 
-  // 5. AI reply → draft only. Input is untrusted (payload.message), so the
-  //    text must pass a human before it reaches anyone.
-  const reply = await generateAutoReply({
-    leadName:     payload.name,
-    source:       payload.source ?? 'web',
-    message:      payload.message,
-    propertyType: payload.propertyType,
-    location:     payload.location,
-    budget:       payload.budget,
-    agentName:    profile.full_name ?? undefined,
-  })
-
-  const draft = await insertAgentDraft({
+  // 5. AI reply → draft only (shared with the other inbound paths).
+  const draft = await draftInboundReply({
     admin,
     leadId,
     agencyId,
-    profileId:     payload.profileId,
-    agentId:       INBOUND_AUTOREPLY_AGENT_ID,
-    promptVersion: AUTO_REPLY_PROMPT_VERSION,
-    channel:       'email',
-    subject:       reply.subject,
-    body:          reply.body,
-    recipient:     payload.email,
-    activity: {
-      type:      'AI návrh odpovede',
-      title:     `Návrh odpovede (AI) — ${reply.subject}`,
-      actorName: 'AI inbound auto-reply',
-      source:    'webhook_inbound_lead',
-      notes:     ['Kanál: email', `Príjemca: ${payload.email}`],
+    profileId:      payload.profileId,
+    agentName:      profile.full_name ?? null,
+    lead: {
+      name:         payload.name,
+      email:        payload.email,
+      message:      payload.message,
+      source:       payload.source,
+      propertyType: payload.propertyType,
+      location:     payload.location,
+      budget:       payload.budget,
     },
-    auditAction: 'ai_email',
+    activitySource: 'webhook_inbound_lead',
   })
-  if (!draft.ok) {
+  if (!draft.created) {
     // The lead exists; losing the draft is recoverable, so report, don't fail.
-    console.error('[processInboundLead] draft insert failed:', draft.error)
     return { leadId, briScore, draftCreated: false, replySent: false }
   }
 

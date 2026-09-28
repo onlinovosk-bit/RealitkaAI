@@ -432,7 +432,7 @@ export async function sendApprovedOutreach(input: SendMessageInput): Promise<Sen
       source: "outreach",
       severity: "error",
       meta: { correlation_id: correlationId, agent_id: OUTREACH_AGENT_ID, errorMessage: message },
-    }).catch((e) => console.error("[sendApprovedOutreach] error activity:", e));
+    }, createServiceRoleClient()).catch((e) => console.error("[sendApprovedOutreach] error activity:", e));
     return fail(message);
   }
 

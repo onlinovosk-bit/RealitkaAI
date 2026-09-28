@@ -205,6 +205,87 @@ dať spätne spojiť s tenantom.
 porušenia iba pohltí do tolerovaného dlhu — vrátane tých dvoch, ktoré sa medzitým
 opravili (`Opravené od baseline: 2`). Stratili by sme jediný dôkaz, že ratchet funguje.
 
+## P0 — Governance write path (agent → `uptm-runner`)
+
+### GOVERNANCE-WRITE-01 — agent nemá potvrdenú write/review cestu do `uptm-runner`
+
+**Root cause (overený, nie hypotéza).** Dva nezávislé symptómy, dve rôzne
+príčiny. Držať ich oddelene — opravou jedného druhý nezmizne:
+
+1. **Claude Code session (lokálna permission vrstva, NIE GitHub).**
+   `add_repo(uptm-runner, access: "push")` → *denied by the Claude Code auto
+   mode classifier, Reason: [Permission Grant]*. Navyše GitHub API nástroje tej
+   session sú scoped na `onlinovosk-bit/realitkaai`, takže attach je len prvý
+   z dvoch krokov — sám by PR cestu neotvoril.
+2. **Iná agentická integrácia (GitHub-side).** HTTP `403` pri vytváraní branchu
+   na `uptm-runner`. Kandidáti: Claude GitHub App nie je na tom repo
+   nainštalovaná, alebo je nainštalovaná bez `contents: write`.
+
+Ako ich rozlíšiť: ak je App na `uptm-runner` nainštalovaná, symptóm 2 je
+oprávnenie; ak nie je, je to inštalácia. Vidno to v GitHub settings.
+
+Anonymné git čítanie `uptm-runner` **funguje** (klon + overenie patchu prebehli),
+takže to nie je otázka viditeľnosti repa, ale výhradne zápisu.
+
+**Status:** OPEN — nie je to bug v kóde a nič to nerozbíja. Blokuje to
+aplikovanie agentických governance patchov do `uptm-runner`. Ticket nie je
+„blocked", on sám blokuje; potrebuje rozhodnutie, nie čakanie.
+
+**Nesúvisí s `CHECKOUT-ENV-01`.** Tam ide o Stripe seat price IDs a
+self-service príjem v CRM; žiadna kauzálna väzba. Slovo „checkout" v oboch
+kontextoch znamená inú vec (git/review environment vs. Stripe checkout) a práve
+tá dvojznačnosť už raz spôsobila zlúčenie oboch do jedného blockera.
+
+**Čaká na to konkrétna, hotová práca:** enforcement-summary patch pre
+`uptm-runner` — 2 súbory, 90 riadkov diffu: `constitution/capital-rules.json`
+(`enforcement_summary` 2/7 → 3/6, poznámka dopĺňa P12) + nový
+`tests/test_enforcement_summary.py`. Drift bol reálny: P12 má
+`enforced_since: 2026-09-24` (`earned_by: UPTM-008`) a summary sa tri dni
+neprepočítalo, pričom jeho vlastná poznámka tvrdí „Counted from
+principles[].enforcement". Žiadny test to číslo nečítal.
+Logika overená mutáciou (staré 2/7 zhodí count test; správne 3/6 s poznámkou bez
+P12 zhodí note test; finálny stav 0 failed). **`pytest` v sandboxe nebol
+spustený** — to je jediná chýbajúca časť dôkazu.
+
+**Do not fix autonomously:** žiadny agent nesmie obchádzať branch protection,
+force-pushovať, písať priamo do `main` ani hľadať alternatívne credentials.
+Governance mechanizmus tu zafungoval správne — toto je jeho zamýšľané správanie,
+nie porucha.
+
+**Founder gate:** ROZHODNUTÉ 2026-09-27 — **variant (a)**: otvoriť agentom
+branch/PR cestu do governance repa s review bránou. Odmietnutá alternatíva (b)
+bola nechať cestu zavretú a patche aplikovať výhradne ručne.
+
+**Review brána už existuje — netreba ju stavať.** `uptm-runner` má
+`.github/workflows/pytest.yml` s triggerom `on: pull_request` a štyrmi krokmi:
+syntax gate (UPTM-009), `pytest`, **mutation gate** (láme každý menovaný
+mechanizmus a vyžaduje, aby jeho dôkazy zčervenali) a enforcement evidence
+(UPTM-006, commit sa číta z checkoutu, nedá sa mu ho nadiktovať). Agentská PR
+teda prechádza silnejšou bránou než samotný merge — otvorenie cesty nezvyšuje
+riziko o nič, čo by CI neskontrolovalo.
+
+**Čo na (a) ešte treba — dve nezávislé akcie, obe founder-side:**
+
+- [ ] **A. GitHub** — Claude GitHub App na `onlinovosk-bit/uptm-runner`:
+      nainštalovať, alebo doplniť `contents: write`, ak už nainštalovaná je.
+      Bez toho ostáva `403` pri vytváraní branchu (symptóm 2). Nastavuje sa cez
+      https://claude.ai/connect-github; inštaláciu na repo schvaľuje owner
+      GitHub organizácie.
+- [ ] **B. Claude Code session** — povoliť `add_repo(uptm-runner, access: "push")`
+      (permission rule v `settings.json` alebo interaktívne schválenie). Bez toho
+      ostáva lokálne odmietnutie (symptóm 1). POZOR: samotný attach je len prvý
+      z dvoch krokov — GitHub API nástroje session sú scoped na attachnuté repá,
+      takže PR cesta sa otvorí až po A **aj** B.
+
+**Branch naming:** `pytest.yml` má `push: branches: [main, "cursor/**"]`. Vetvy
+s prefixom `claude/**` teda dostanú CI len na `pull_request`, nie na push. Ak má
+mať agentská vetva CI aj pred otvorením PR, treba do toho zoznamu pridať
+`claude/**` — samostatná jednoriadková zmena v `uptm-runner`.
+
+**Do not fix autonomously (platí aj po (a)):** PR cesta neznamená merge právo.
+Žiadny agent nemerguje do `main`, neobchádza branch protection, neforce-pushuje
+ani nehľadá alternatívne credentials. Review brána je CI + founder, nie agent.
+
 ## P0 — Critical AUTH / tenant (2026-08-25 auth hunt)
 
 - [ ] **GO FIX-HUBSPOT-ANALYZE-TENANT-GATE** — require non-null caller `agency_id` + matching lead agency before admin HubSpot sync / call-analyze persist (`docs/reports/2026-08-25-critical-auth-bug-hunt.md` #1–2)

@@ -122,6 +122,13 @@ register bude lepší zdroj, keď nabehne.
 **Ako využiť:** TOTO je tvoj jediný AUTOMATICKÝ signál o klientovi. Použi ho ako
 zdroj "posledný kontakt" namiesto prázdneho ručného `last_contact`.
 
+**Dopyt klientov (overené 2026-09-28, MATCHING-ZERO):** Realvia webhooky nesú iba
+ponuku — `advert` (202) a `delete` (26), žiadny typ pre klienta alebo jeho dopyt.
+Import kontaktov (`contacts-import-core.ts`) mal 5 stĺpcov: meno, priezvisko,
+email, telefón, maklér. Dopyt (lokalita, typ, rozpočet, izby) z Realvie dnes
+**neprichádza žiadnou cestou**. Či ho Realvia CRM vôbec eviduje a vie exportovať,
+je otvorená neznáma (nižšie).
+
 ---
 
 ## PORADIE OŽIVOVANIA (podľa pomeru hodnota/úsilie)
@@ -135,6 +142,10 @@ zdroj "posledný kontakt" namiesto prázdneho ručného `last_contact`.
 6. **Zhluk 7** (ÚPN) — najťažšie (PDF/per-obec), počká na centrálny register.
 
 ## OTVORENÉ NEZNÁME (treba dohľadať/overiť — nie hádať)
+- Eviduje Realvia CRM dopyty klientov (lokalita, typ, rozpočet) a dá sa ich
+  exportovať spolu s kontaktmi, alebo cez API/webhook? → Realvia podpora /
+  referenčný klient (čo vidia v Realvii pri kontakte). Bez toho matching pre
+  439 importovaných kontaktov nemá čo porovnať.
 - Má Portál výstavby (vystavba.uupv.sk) verejné API? → ÚPV SR.
 - Poskytujú portály (nehnutelnosti.sk/topreality.sk) dátové partnerstvo? → ich B2B.
 - Podmienky a cena zmluvy s ÚGKK na vlastníkov? → CRZ vzor + ÚGKK podateľňa.
