@@ -1,3 +1,97 @@
+## Session 2026-09-28 (TEST-SPLIT-01, SETUP-NODE-REORDER — a tri opravy vlastných tvrdení)
+
+### Dokončené
+- **CI-FASTPATH-01 zmergovaný** (#713, `ddf2ac46`) a **zmeraný trikrát v praxi**:
+  411 / 415 / 306 s proti 536 s plnému behu. Päť krokov `skipped`,
+  `Note the fastpath` success — teda dôkaz, že klasifikátor vrátil `false`
+  na reálnom `pull_request` evente, nie len že beh bol kratší.
+- **Wrap-up 2026-09-27 zmergovaný** (#718, `055a9cc3`), vrátane vyriešeného
+  konfliktu s #717 tak, že **oba záznamy zostali** (`79 0`, nula zmazaných).
+- **TEST-SPLIT-01 nasadený** (#723): `supabase start` ide na pozadie a prekrýva
+  sa s prácou, ktorá databázu nepotrebuje. Logika v
+  `scripts/ci/wait-for-supabase.sh` so **7 testami**, nie inline v YAML.
+- **SETUP-NODE-REORDER** (#723, zmergované ako `dfa805db`): `setup-node` a
+  `npm ci` presunuté PRED štart Supabase. Dve merania ukázali, že si s docker
+  pullom idú po tom istom hrdle; tretie to potvrdilo tým, že presun kontenciu
+  odstránil — `setup-node` **49 → 6 s**, štart Supabase **184 → 110 s**,
+  čakanie **38 → 6 s**. **Čisté −63 s.**
+  **Štvrtý beh (#725) dal −37 s** — `setup-node` a `Install` zostali čisté,
+  ale štart trval 136 s a `Lint` 65 s. Kontencia sa presunula, nezmizla.
+  Poctivý rozsah je **−37 až −63 s**; `−63` je jeho optimistický koniec.
+
+### Tri opravy vlastných tvrdení — všetky zmerané, žiadna zamlčaná
+1. **`npm ci ~3,5 min` bolo nesprávne.** Po krokoch **18 s**; `cache: npm` už
+   dlho v workflowe bolo. Odporúčanie na tom postavené **zrušené**.
+2. **„Rozptyl jobu je pod 1 %" bolo nesprávne.** Platilo pre dva behy hodinu od
+   seba (411/415 s); tretí o deväť hodín neskôr dal **306 s**, teda **26 %**.
+   Príčina (PREDPOKLAD): výkon runnera — zrýchlili sa všetky CPU-viazané kroky
+   v podobnom pomere, kým sieťovo viazaný štart Supabase sa nepohol. Dôsledok:
+   merací plán „jeden beh pred, jeden po" som musel zahodiť.
+3. **„Vercel stavia plný preview pre docs diff" bolo nesprávne.** `ignoreCommand`
+   je korektný a testovaný; prvý build je jeho **fail-safe** pri neznámom
+   `VERCEL_GIT_PREVIOUS_SHA`. Overené skôr, než by podľa toho niekto siahol na
+   `vercel.json`.
+
+### Kontencia — zmeraná, nie tušená
+| krok | beh 1 | beh 2 | **beh 3** | baseline |
+|---|---|---|---|---|
+| **setup-node** | 37 | 49 | **6** | 6 / 8 / 7 |
+| Install | 15 | 22 | **16** | 18 / 17 / 10 |
+| **štart Supabase** | 137 | 184 | **110** | 108 / 113 / 108 |
+| Lint | 30 | 37 | 58 | 35 / 33 / 23 |
+| Typecheck | 24 | 25 | 34 | 28 / 28 / 16 |
+
+```
+beh 1: štart 137s | čakalo sa 19s | čisté -72s
+beh 2: štart 184s | čakalo sa 38s | čisté -19s
+beh 3: štart 110s | čakalo sa  6s | čisté -63s   <- po presune
+```
+
+Po behoch 1 a 2 bol rozptyl **väčší než polovica zisku**, takže „−84 s" by bolo
+tvrdenie bez opory. Preto SETUP-NODE-REORDER — a tretí beh diagnózu potvrdil
+tým, že príčinu odstránil.
+
+**Kontencia však nezmizla, len sa presunula.** `Lint` a `Typecheck` sú teraz
++29 s nad baseline, lebo ony bežia súbežne s pullom. Sú CPU-viazané, takže
+platia menej než sieťovo viazaný npm cache restore. Čisté −63 s je **po**
+odpočítaní tých +29 s aj +12 s môjho nového testu; hrubé číslo −104 s
+neuvádzam ako výsledok. Zvyšok do stropu 84 s poradie krokov neodstráni —
+pull musí s niečím koexistovať.
+
+### Merací princíp, ktorý z toho ostáva
+`wait-for-supabase.sh` vypisuje `prekrytych` z **jedného** behu. Podiel v rámci
+toho istého behu runner-variance nekriví — na rozdiel od porovnávania celkových
+časov medzi behmi, čo je pri ±26 % nepoužiteľné.
+
+### Rozpracované / Pending
+- *(#723 zmergované ako `dfa805db` — pozri vyššie, nie je pending.)*
+- Dva dokumenty Sol 5.6 (Prompt Stack Compiler / Build Protocol) — nie sú v repe
+  a ich presný text už nemám. Buď ich prilepiť znova, alebo napísať
+  Revolis-native v0.1 z nameraných čísel (odporúčam druhé).
+- Calendly webhook; provenance 6 riadkov v `revolis_zaujemcovia` (GDPR);
+  Direction B z AP-023; inventúra funkcií a stĺpcov — všetko nezmerané.
+
+### Kľúčové súbory zmenené
+- `.github/workflows/saas-grade-pipeline.yml`: fastpath, štart na pozadí, poradie
+- `scripts/ci/wait-for-supabase.sh` + `__tests__/`: čakanie a meranie, 7 testov
+- `scripts/ci/classify-diff.sh` + `__tests__/`: fastpath, 19 testov
+- `scripts/ci/prepush-gate.sh`: lokálna brána, teraz 7 kontrol
+- `apps/crm/scripts/typecheck-baseline.mjs`: počíta zdroj, nie `.next/`
+- `memory/decisions.md`: AP-028, AP-029
+
+### Nahlásené, neopravené
+- `Test` (vitest) zostáva najväčšou položkou behu.
+- `Upload artifact` (18 s, `.next`, 7 dní) — žiadny workflow ho nesťahuje.
+- #710 pridalo záznamy na koniec `decisions.md`, hoci log je newest-first.
+- Vetva `claude/loving-thompson-0s22ut` je **zdieľaná** — dnes do nej trikrát
+  pushol niekto mimo tejto session. Nikdy force-push.
+
+### Ďalší krok
+CI je hotová v rozsahu, ktorý dávali dáta: fastpath −123 s na docs PR,
+štart na pozadí −37 až −63 s (dva behy, nie stabilné číslo), lokálna brána proti 27 % červených.
+Ďalší najväčší cieľ je `Test` (vitest), ale ten sa nedá skrátiť bez zásahu do
+pokrytia — to potrebuje vlastnú bránu a vlastné GO, nie prívesok.
+
 ## Session 2026-09-27 (AGENTIC-SYSTEM repo + INBOUND-DRAFT-01)
 
 ### Dokončené

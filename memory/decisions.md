@@ -80,11 +80,65 @@ a 184 s. Obnova npm cache a pull šiestich images si idú po tom istom hrdle.
 −19 s (beh 2)**. Rozptyl medzi dvoma behmi je väčší než polovica zisku, takže
 „−84 s" by bolo tvrdenie bez opory.
 
-### SETUP-NODE-REORDER (founder GO)
+### SETUP-NODE-REORDER — zmerané, presun zabral
+Tretí beh (`a46ed0c9`, zmergované ako `dfa805db`):
+
+| krok | beh 1 | beh 2 | **beh 3** | baseline |
+|---|---|---|---|---|
+| **setup-node** | 37 | 49 | **6** | 6 / 8 / 7 |
+| **štart Supabase** | 137 | 184 | **110** | 108 / 113 / 108 |
+| čakanie | 19 | 38 | **6** | — |
+| **čisté** | −72 | −19 | **−63** | — |
+
+`setup-node` **49 → 6 s** a štart **184 → 110 s**: príčina bola naozaj v tom,
+že npm cache restore a docker pull idú po tom istom hrdle. Diagnóza potvrdená
+tým, že presun ju odstránil.
+
+**Kontencia sa však len presunula.** `Lint` +23 s a `Typecheck` +6 s nad
+baseline, lebo teraz bežia súbežne s pullom — ale ako CPU-viazané platia menej
+než sieťovo viazaný cache restore. **−63 s je po odpočítaní** tých +29 s aj
++12 s nového testu; hrubých −104 s neuvádzam ako výsledok. Zvyšok do stropu
+84 s poradím krokov neodstrániteľný: pull musí s niečím koexistovať.
+
 `setup-node` a `Install` presunuté PRED štart Supabase. V prekryvnom okne
 zostáva `Lint`, `Typecheck` a helper testy — práca viazaná na CPU, ktorá sa
 o sieť nebije. Okno je menšie, ale nemá byť zaplatené spomalením toho, čo sa
 prekrýva. Overí sa tretím a štvrtým behom; dovtedy je zisk NEOVERENÝ.
+
+#### Štvrtý beh (`45f5f950`, PR #725) — zisk je menší a nie je stabilný
+
+| krok | beh 3 | **beh 4** | baseline |
+|---|---|---|---|
+| setup-node | 6 | **6** | 6 / 8 / 7 |
+| Install | — | **17** | 18 / 17 / 10 |
+| štart Supabase (wall) | 110 | **136** | 108 / 113 / 108 |
+| čakanie | 6 | **20** | — |
+| Lint | +23 nad baseline | **65** | 35 / 33 / 23 |
+| Typecheck | +6 nad baseline | **39** | 28 / 28 / 16 |
+| čisté | **−63** | **−37** | — |
+
+Dve veci, jedna potvrdená a jedna oslabená.
+
+**Potvrdené dvakrát:** `setup-node` 6 s a `Install` 17 s, oba v baseline pásme.
+Diagnóza kontencie medzi npm cache restore a docker pull platí a presun ju na
+týchto dvoch krokoch odstránil. To je najpevnejší výsledok celej zmeny.
+
+**Oslabené:** `−63 s` nie je stabilné číslo, je to optimistický koniec rozsahu.
+Štvrtý beh dal `−37 s`. Štart Supabase trval 136 s namiesto 110 s, čakanie 20 s
+namiesto 6 s, a `Lint` vyskočil na 65 s. Kontencia teda nezmizla — presunula sa
+na CPU kroky a jej veľkosť kolíše medzi behmi. Poctivá formulácia je
+**−37 až −63 s**, nie `−63 s`.
+
+**Slabé miesto merania, priznané:** „nad baseline" závisí od toho, ktorý stĺpec
+baseline pre daný runner vyberiem, a normalizátor rýchlosti runnera nemám.
+Beh 4 zaraďujem k pomalým podľa `Test` 178 s (pomalé behy 174/173, rýchly 105)
+a `Reset DB` 30 s. Keby bol runner rýchly, čisté číslo by vyšlo horšie. Preto
+uvádzam aj surové časy, nie len delty — aby sa dali prepočítať proti inej
+voľbe baseline.
+
+Fastpath potvrdený **štvrtýkrát**: Build, Debug, Upload artifact, Playwright
+install a Playwright smoke `skipped`, `Note the fastpath` prešiel. Job celkom
+376 s.
 
 ### Neoverené
 Skutočná úspora. Docker pull je sieťovo viazaný a `npm ci` + eslint + tsc sú
