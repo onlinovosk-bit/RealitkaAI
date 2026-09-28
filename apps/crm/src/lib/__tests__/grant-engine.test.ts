@@ -101,16 +101,12 @@ describe("grant-engine", () => {
     );
   });
 
-  it("expireGrantCreditsForAgency uses atomic RPC and does not pass stale purchased", async () => {
+  it("expireGrantCreditsForAgency uses the atomic RPC and passes no stale balances", async () => {
     const row = agency({
       grant_credits_balance: 40,
       purchased_credits_balance: 80,
       credits_balance: 120,
     });
-    // 1) no prior expiry ledger  2) no current-period grant
-    mockMaybeSingle
-      .mockResolvedValueOnce({ data: null })
-      .mockResolvedValueOnce({ data: null });
 
     const result = await expireGrantCreditsForAgency(
       row,
@@ -119,6 +115,8 @@ describe("grant-engine", () => {
     );
 
     expect(result).toEqual({ expired: 40, skipped: false });
+    // Purchased/credits zo snapshotu sa RPC neposielaju — prave ich posielanie
+    // bolo tou stratou suvisiaceho zapisu (#370).
     expect(expireGrantCreditsAtomicMock).toHaveBeenCalledWith({
       agencyId: "agency-1",
       periodKey: "202605",
@@ -126,92 +124,38 @@ describe("grant-engine", () => {
     });
   });
 
-  it("expireGrantCreditsForAgency is idempotent when RPC skips", async () => {
+  it("expireGrantCreditsForAgency is idempotent when the RPC reports skipped", async () => {
     expireGrantCreditsAtomicMock.mockResolvedValueOnce({ ok: true, skipped: true, expired: 0 });
-  it("expireGrantCreditsForAgency is idempotent when balance already cleared", async () => {
+
+    const result = await expireGrantCreditsForAgency(
+      agency({ grant_credits_balance: 40 }),
+      "202605",
+      new Date("2026-06-01T12:00:00Z"),
+    );
+
+    expect(result).toEqual({ expired: 0, skipped: true });
+  });
+
+  it("expireGrantCreditsForAgency skips the RPC when the snapshot grant is zero", async () => {
     const result = await expireGrantCreditsForAgency(
       agency({ grant_credits_balance: 0, credits_balance: 100 }),
-      "202605",
-      new Date("2026-06-01T12:00:00Z"),
-    );
-
-    expect(result).toEqual({ expired: 0, skipped: true });
-    expect(mockInsert).not.toHaveBeenCalled();
-    expect(mockUpdate).not.toHaveBeenCalled();
-  });
-
-  it("expire repairs uncleared balance when expiry ledger exists and no current grant", async () => {
-    mockMaybeSingle
-      .mockResolvedValueOnce({ data: { id: "expiry-done" } })
-      .mockResolvedValueOnce({ data: null });
-
-    const result = await expireGrantCreditsForAgency(
-      agency({
-        grant_credits_balance: 40,
-        purchased_credits_balance: 80,
-        credits_balance: 120,
-      }),
-      "202605",
-      new Date("2026-06-01T12:00:00Z"),
-    );
-
-    expect(result).toEqual({ expired: 40, skipped: false });
-    expect(mockInsert).not.toHaveBeenCalled();
-    expect(mockUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        grant_credits_balance: 0,
-        credits_balance: 80,
-      }),
-    );
-  });
-
-  it("expire refuses to wipe when current-period grant already exists", async () => {
-    mockMaybeSingle
-      .mockResolvedValueOnce({ data: null }) // no prior expiry
-      .mockResolvedValueOnce({ data: { id: "grant-row" } }); // current grant present
-
-    const result = await expireGrantCreditsForAgency(
-      agency({
-        grant_credits_balance: 140,
-        purchased_credits_balance: 80,
-        credits_balance: 220,
-      }),
-      "202605",
-      new Date("2026-06-01T12:00:00Z"),
-    );
-
-    expect(result).toEqual({ expired: 0, skipped: true });
-  });
-
-  it("expireGrantCreditsForAgency skips RPC when snapshot grant is zero", async () => {
-    const result = await expireGrantCreditsForAgency(
-      agency({ grant_credits_balance: 0 }),
       "202605",
     );
 
     expect(result).toEqual({ expired: 0, skipped: true });
     expect(expireGrantCreditsAtomicMock).not.toHaveBeenCalled();
-    expect(mockInsert).not.toHaveBeenCalled();
-    expect(mockUpdate).not.toHaveBeenCalled();
   });
 
-  it("expire surfaces ledger insert failures as error (not silent skip)", async () => {
-    mockMaybeSingle
-      .mockResolvedValueOnce({ data: null })
-      .mockResolvedValueOnce({ data: null });
-    mockInsert.mockResolvedValueOnce({ error: { message: "unique violation" } });
+  it("expireGrantCreditsForAgency reports skipped (not expired) when the RPC fails", async () => {
+    expireGrantCreditsAtomicMock.mockResolvedValueOnce({ ok: false, error: "deadlock detected" });
 
     const result = await expireGrantCreditsForAgency(
-      agency(),
+      agency({ grant_credits_balance: 40 }),
       "202605",
       new Date("2026-06-01T12:00:00Z"),
     );
 
-    expect(result).toEqual({
-      expired: 0,
-      skipped: true,
-      error: "unique violation",
-    });
-    expect(mockUpdate).not.toHaveBeenCalled();
+    // Nikdy nehlasit expirovane kredity, ked RPC neprebehlo — cron by to zapocital.
+    expect(result).toEqual({ expired: 0, skipped: true });
   });
 });

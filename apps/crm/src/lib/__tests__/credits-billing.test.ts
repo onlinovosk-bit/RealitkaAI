@@ -291,14 +291,8 @@ describe("credits-billing", () => {
           ref: "rast",
         }),
       );
-      expect(mockUpdate).toHaveBeenCalledWith(
-        expect.objectContaining({
-          purchased_credits_balance: 150,
-          credits_balance: 200,
-        }),
-        "id",
-        "agency-1",
-      );
+      // Zostatok zapisuje RPC v tej istej transakcii ako ledger — aplikacia
+      // uz `agencies` neupravuje (#370). Preto sa tu na `mockUpdate` netvrdi nic.
 
       applyCreditPurchaseMock.mockResolvedValueOnce({ ok: true, skipped: true, credited: 0 });
       applyCreditPurchaseMock.mockClear();
@@ -313,10 +307,10 @@ describe("credits-billing", () => {
       expect(applyCreditPurchaseMock).toHaveBeenCalledTimes(1);
     });
 
-    it("rolls back ledger and returns false when balance update fails", async () => {
-      mockAgencyUpdateResult.mockResolvedValueOnce({
-        data: null,
-        error: { message: "update failed" },
+    it("returns false when the purchase RPC fails", async () => {
+      applyCreditPurchaseMock.mockResolvedValueOnce({
+        ok: false,
+        error: "deadlock detected",
       });
 
       const ok = await applyTopupPurchase({
@@ -325,12 +319,9 @@ describe("credits-billing", () => {
         stripeSessionId: "cs_fail_balance",
       });
 
+      // Ziadny rollback ledgeru sa uz nerobi a nema sa robit: ledger aj zostatok
+      // su v jednej transakcii RPC, takze zlyhanie nenecha polovicny stav.
       expect(ok).toBe(false);
-      expect(mockInsert).toHaveBeenCalled();
-      expect(mockDeleteEq).toHaveBeenCalledWith(
-        "idempotency_key",
-        "purchase:agency-1:cs_fail_balance",
-      );
     });
   });
 

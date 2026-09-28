@@ -26,19 +26,16 @@ vi.mock("@/lib/credits/mutate-credits", () => ({
 
 import { redeemStarterPackCode } from "@/lib/starter-pack/redemption";
 
+/**
+ * Po #370 už redemption nesiaha na `credit_ledger` ani `agencies` — pripísanie
+ * robí RPC `apply_credit_purchase` a idempotencia je jeho, nie kontrola ledgeru
+ * pred zápisom. Preto sa tu mockuje iba `credit_redemption_codes`; keby kód
+ * siahol inam, `mockFrom` vráti `{}` a test spadne na chýbajúcej metóde.
+ */
 describe("starter pack code redemption", () => {
   let claimChain: ReturnType<typeof buildClaimChain>;
-  let agencyUpdateEq: ReturnType<typeof vi.fn>;
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-
-    mockEq.mockReturnValue({ maybeSingle: mockMaybeSingle, is: mockIs });
-    mockIs.mockReturnValue({ eq: mockEq });
-    mockUpdate.mockReturnValue({ eq: mockEq });
-    claimChain = buildClaimChain({ data: { id: "code-row-1" } });
-    agencyUpdateEq = vi.fn().mockResolvedValue({ error: null });
-
+  function wireTables() {
     mockFrom.mockImplementation((table: string) => {
       if (table === "credit_redemption_codes") {
         return {
@@ -55,56 +52,17 @@ describe("starter pack code redemption", () => {
       }
       return {};
     });
+  }
 
+  beforeEach(() => {
+    vi.clearAllMocks();
+    claimChain = buildClaimChain({ data: { id: "code-row-1" } });
+    wireTables();
     applyCreditPurchaseMock.mockResolvedValue({ ok: true, credited: 47, skipped: false });
   });
 
-  it("grants purchased credits via atomic RPC and marks code redeemed", async () => {
+  it("claims the code first, then grants credits via the atomic RPC", async () => {
     mockMaybeSingle.mockResolvedValueOnce({
-      if (table === "credit_ledger") {
-        return {
-          select: () => ({
-            eq: () => ({
-              maybeSingle: mockMaybeSingle,
-            }),
-          }),
-          insert: mockInsert,
-        };
-      }
-      if (table === "agencies") {
-        return {
-          select: () => ({
-            eq: () => ({
-              single: mockSingle,
-            }),
-          }),
-          update: (...args: unknown[]) => {
-            mockUpdate(...args);
-            return { eq: agencyUpdateEq };
-          },
-        };
-      }
-      return {};
-    });
-
-    mockInsert.mockResolvedValue({ error: null });
-  });
-
-  it("claims code before granting purchased credits", async () => {
-    // 1) lookup code  2) ledger idempotency check
-    mockMaybeSingle
-      .mockResolvedValueOnce({
-        data: {
-          id: "code-row-1",
-          code: "REV-47-ABC123",
-          value: 47,
-          redeemed_by_agency: null,
-          redeemed_at: null,
-        },
-      })
-      .mockResolvedValueOnce({ data: null });
-
-    mockSingle.mockResolvedValue({
       data: {
         id: "code-row-1",
         code: "REV-47-ABC123",
@@ -125,7 +83,8 @@ describe("starter pack code redemption", () => {
       alreadyRedeemed: false,
     });
 
-    expect(applyCreditPurchaseMock).toHaveBeenCalledWith(
+    // Claim prebehol podmienene — bez `.is("redeemed_at", null)` by dve agentury
+    // mohli claimnut ten isty kod.
     expect(mockUpdate).toHaveBeenCalledWith({
       redeemed_by_agency: "agency-1",
       redeemed_at: expect.any(String),
@@ -133,44 +92,20 @@ describe("starter pack code redemption", () => {
     expect(claimChain.eq).toHaveBeenCalledWith("id", "code-row-1");
     expect(claimChain.is).toHaveBeenCalledWith("redeemed_at", null);
 
-    expect(mockInsert).toHaveBeenCalledWith(
+    expect(applyCreditPurchaseMock).toHaveBeenCalledWith(
       expect.objectContaining({
         agencyId: "agency-1",
         amount: 47,
         reason: "starter_pack_redeem",
         idempotencyKey: "starter_pack_redeem:code-row-1:agency-1",
+        ref: "REV-47-ABC123",
       }),
     );
   });
 
-  it("rejects when another agency already claimed the code (lost race)", async () => {
+  it("rejects when another agency won the claim race", async () => {
     claimChain = buildClaimChain({ data: null });
-    mockFrom.mockImplementation((table: string) => {
-      if (table === "credit_redemption_codes") {
-        return {
-          select: () => ({
-            eq: () => ({
-              maybeSingle: mockMaybeSingle,
-            }),
-          }),
-          update: (...args: unknown[]) => {
-            mockUpdate(...args);
-            return claimChain;
-          },
-        };
-      }
-      if (table === "credit_ledger") {
-        return {
-          select: () => ({
-            eq: () => ({
-              maybeSingle: mockMaybeSingle,
-            }),
-          }),
-          insert: mockInsert,
-        };
-      }
-      return {};
-    });
+    wireTables();
 
     mockMaybeSingle
       .mockResolvedValueOnce({
@@ -182,7 +117,7 @@ describe("starter pack code redemption", () => {
           redeemed_at: null,
         },
       })
-      // re-read after lost claim
+      // re-read po prehratom claime
       .mockResolvedValueOnce({
         data: {
           id: "code-row-1",
@@ -198,21 +133,20 @@ describe("starter pack code redemption", () => {
     });
 
     expect(result).toEqual({ ok: false, error: "code_already_used" });
-    expect(mockInsert).not.toHaveBeenCalled();
+    expect(applyCreditPurchaseMock).not.toHaveBeenCalled();
   });
 
-  it("is idempotent when same agency redeems again (ledger present)", async () => {
-    mockMaybeSingle
-      .mockResolvedValueOnce({
-        data: {
-          id: "code-row-2",
-          code: "REV-47-DUP999",
-          value: 47,
-          redeemed_by_agency: "agency-1",
-          redeemed_at: "2026-06-01T00:00:00Z",
-        },
-      })
-      .mockResolvedValueOnce({ data: { id: "ledger-1" } });
+  it("reports alreadyRedeemed when the RPC skips a repeated redemption", async () => {
+    applyCreditPurchaseMock.mockResolvedValue({ ok: true, skipped: true });
+    mockMaybeSingle.mockResolvedValueOnce({
+      data: {
+        id: "code-row-2",
+        code: "REV-47-DUP999",
+        value: 47,
+        redeemed_by_agency: "agency-1",
+        redeemed_at: "2026-06-01T00:00:00Z",
+      },
+    });
 
     const result = await redeemStarterPackCode({
       code: "REV-47-DUP999",
@@ -224,27 +158,19 @@ describe("starter pack code redemption", () => {
       creditsGranted: 47,
       alreadyRedeemed: true,
     });
-    expect(applyCreditPurchaseMock).not.toHaveBeenCalled();
+    // Kod uz bol claimnuty nami — druhy claim sa nesmie pokusat.
+    expect(mockUpdate).not.toHaveBeenCalled();
   });
 
-  it("retries credit grant when code is claimed by us but ledger is missing", async () => {
-    mockMaybeSingle
-      .mockResolvedValueOnce({
-        data: {
-          id: "code-row-4",
-          code: "REV-47-RETRY1",
-          value: 47,
-          redeemed_by_agency: "agency-1",
-          redeemed_at: "2026-08-12T00:00:00Z",
-        },
-      })
-      .mockResolvedValueOnce({ data: null });
-
-    mockSingle.mockResolvedValue({
+  it("surfaces agency_not_found from the RPC instead of a generic failure", async () => {
+    applyCreditPurchaseMock.mockResolvedValue({ ok: false, error: "agency_not_found" });
+    mockMaybeSingle.mockResolvedValueOnce({
       data: {
-        purchased_credits_balance: 0,
-        grant_credits_balance: 0,
-        credits_balance: 0,
+        id: "code-row-4",
+        code: "REV-47-RETRY1",
+        value: 47,
+        redeemed_by_agency: "agency-1",
+        redeemed_at: "2026-08-12T00:00:00Z",
       },
     });
 
@@ -253,15 +179,10 @@ describe("starter pack code redemption", () => {
       agencyId: "agency-1",
     });
 
-    expect(result).toEqual({
-      ok: true,
-      creditsGranted: 47,
-      alreadyRedeemed: false,
-    });
-    expect(mockInsert).toHaveBeenCalled();
+    expect(result).toEqual({ ok: false, error: "agency_not_found" });
   });
 
-  it("rejects code already used by another agency", async () => {
+  it("rejects a code already used by another agency without claiming", async () => {
     mockMaybeSingle.mockResolvedValue({
       data: {
         id: "code-row-3",
@@ -278,5 +199,7 @@ describe("starter pack code redemption", () => {
     });
 
     expect(result).toEqual({ ok: false, error: "code_already_used" });
+    expect(applyCreditPurchaseMock).not.toHaveBeenCalled();
+    expect(mockUpdate).not.toHaveBeenCalled();
   });
 });

@@ -10,14 +10,17 @@ function normalizeCode(raw: string): string {
   return raw.trim().toUpperCase().replace(/\s+/g, "");
 }
 
-/** Uplatnenie kódu → purchased kredity (neexpirujú), idempotentné + atomické. */
 /**
- * Uplatnenie kódu → purchased kredity (neexpirujú), idempotentné.
+ * Uplatnenie kódu → purchased kredity (neexpirujú), idempotentné + atomické.
  *
  * Poradie je zámerné: najprv atomický claim kódu (UPDATE … WHERE redeemed_at IS NULL),
  * až potom ledger/agency. Predchádzajúci grant-then-mark tok umožňoval, aby dve
  * agentúry súbežne (alebo po zlyhaní mark kroku) dostali kredity za jeden kód —
  * idempotency key obsahuje agencyId, takže ledger unikátnosť to nechytila.
+ *
+ * Samotné pripísanie ide cez `applyCreditPurchase` (RPC `apply_credit_purchase`),
+ * takže ledger aj zostatok agentúry sa menia v jednej transakcii. Predchádzajúci
+ * read-modify-write nad `agencies` strácal súbežný zápis (#370).
  */
 export async function redeemStarterPackCode(input: {
   code: string;
@@ -52,12 +55,6 @@ export async function redeemStarterPackCode(input: {
   }
 
   const creditValue = row.value ?? STARTER_PACK.creditValue;
-  const idempotencyKey = `starter_pack_redeem:${row.id}:${input.agencyId}`;
-  const redeemedAt = new Date().toISOString();
-
-  const creditResult = await applyCreditPurchase({
-    agencyId: input.agencyId,
-    amount: creditValue,
   const redeemedAt = new Date().toISOString();
 
   // Claim FIRST — len jeden caller vyhrá pri súbehu.
@@ -111,6 +108,15 @@ export async function redeemStarterPackCode(input: {
 
 type AdminClient = NonNullable<ReturnType<typeof createServiceRoleClient>>;
 
+/**
+ * Pripíše kredity za kód, ktorý už je claimnutý. Idempotencia je na strane RPC
+ * (`p_idempotency_key`), takže opakované volanie vráti `skipped` namiesto druhého
+ * pripísania.
+ *
+ * `supabase` sa tu už nepoužíva — `applyCreditPurchase` si service-role klienta
+ * vytvára sám. Zostáva v type, lebo volajúci ho majú a odstránenie by bola
+ * nesúvisiaca zmena signatúry.
+ */
 async function finalizeCreditsForClaimedCode(input: {
   supabase: AdminClient;
   codeRowId: string;
@@ -118,34 +124,12 @@ async function finalizeCreditsForClaimedCode(input: {
   agencyId: string;
   creditValue: number;
 }): Promise<RedeemStarterPackResult> {
-  const { supabase, codeRowId, code, agencyId, creditValue } = input;
+  const { codeRowId, code, agencyId, creditValue } = input;
   const idempotencyKey = `starter_pack_redeem:${codeRowId}:${agencyId}`;
 
-  const { data: existingLedger } = await supabase
-    .from("credit_ledger")
-    .select("id")
-    .eq("idempotency_key", idempotencyKey)
-    .maybeSingle();
-
-  if (existingLedger) {
-    return { ok: true, creditsGranted: creditValue, alreadyRedeemed: true };
-  }
-
-  const { data: agency } = await supabase
-    .from("agencies")
-    .select("purchased_credits_balance, grant_credits_balance, credits_balance")
-    .eq("id", agencyId)
-    .single();
-
-  if (!agency) return { ok: false, error: "agency_not_found" };
-
-  const purchased = (agency.purchased_credits_balance ?? 0) + creditValue;
-  const grant = agency.grant_credits_balance ?? 0;
-  const billingUpdatedAt = new Date().toISOString();
-
-  const { error: ledgerErr } = await supabase.from("credit_ledger").insert({
-    agency_id: agencyId,
-    delta: creditValue,
+  const creditResult = await applyCreditPurchase({
+    agencyId,
+    amount: creditValue,
     reason: "starter_pack_redeem",
     idempotencyKey,
     ref: code,
@@ -159,49 +143,9 @@ async function finalizeCreditsForClaimedCode(input: {
     return { ok: false, error: "grant_failed" };
   }
 
-  const { error: codeErr } = await supabase
-    .from("credit_redemption_codes")
-    .update({
-      redeemed_by_agency: input.agencyId,
-      redeemed_at: redeemedAt,
-    })
-    .eq("id", row.id)
-    .is("redeemed_at", null);
-
-  if (codeErr) {
-    console.warn("[starter-pack] redeem code mark:", codeErr.message);
-  }
-
   return {
     ok: true,
     creditsGranted: creditValue,
     alreadyRedeemed: creditResult.skipped === true,
-  if (ledgerErr) {
-    // Unique violation na idempotency_key = súbeh s nami — považuj za už pripísané.
-    if (/duplicate|unique/i.test(ledgerErr.message ?? "")) {
-      return { ok: true, creditsGranted: creditValue, alreadyRedeemed: true };
-    }
-    console.warn("[starter-pack] redeem ledger:", ledgerErr.message);
-    return { ok: false, error: "grant_failed" };
-  }
-
-  const { error: agencyErr } = await supabase
-    .from("agencies")
-    .update({
-      purchased_credits_balance: purchased,
-      credits_balance: grant + purchased,
-      billing_updated_at: billingUpdatedAt,
-    })
-    .eq("id", agencyId);
-
-  if (agencyErr) {
-    console.warn("[starter-pack] redeem agency:", agencyErr.message);
-    return { ok: false, error: "grant_failed" };
-  }
-
-  return {
-    ok: true,
-    creditsGranted: creditValue,
-    alreadyRedeemed: false,
   };
 }
