@@ -1,3 +1,50 @@
+## Session 2026-09-28 (RLS-NULL-ESCAPES — pripravené, NA PROD NEAPLIKOVANÉ)
+
+### Dokončené
+- **`20260928070000_rls_null_escapes.sql`** — `agency_id IS NULL OR …` odstránené
+  z tenant politík 10 tabuliek. **Na produkcii zatiaľ NEBEŽALO** (sľúbil som
+  predložiť migráciu pred aplikovaním; čaká na samostatné GO).
+- **Dôkaz pred/po na lokálnej PG 16** s vernou schémou (`profile_agencies_for_auth()`
+  doslovne z PROD, dvaja tenanti, `auth.uid()`): PRED **10/10** A vloží nepriradený
+  riadok a B z iného tenanta ho vidí; PO **10/10** insert → 42501 a viditeľnosť → 0.
+  Nedotknuté: A vloží riadok svojej agentúry 10/10 OK, A ho číta 10/10, B ho nečíta 10/10.
+  Idempotentné + guard overený na DB, kde dve tabuľky chýbajú.
+- **Priznaná chyba v prvom harnesse**: chýbal `grant select on profiles to
+  authenticated`, takže dve tabuľky vyzerali bezpečne už PRED zmenou. Po doplnení
+  (ako na PROD) je PRED 10/10 zneužiteľných.
+- **Dvaja zapisovatelia opravení** (`alert-dispatch.ts`, `bri-engine.ts`) — `agency_id`
+  nedodávali vôbec a prechádzali len vďaka disjunkcii; bez tejto opravy by zmena
+  tichý cross-tenant zápis premenila na tiché zlyhanie.
+- **Nález navyše**: `bri_history.profile_id` je `NOT NULL` bez defaultu a kód ho
+  nedodával → ten insert **vždy padal na 23502**, ticho (chyba sa zahadzovala).
+  Preto má tabuľka 0 riadkov. Doplnené, chyba sa teraz loguje.
+- **Test** `apps/crm/tests/rls/null-escape-rls.test.ts` — pripína obe vlastnosti
+  (nevyrobíš nepriradený riadok; nevidíš ten, čo už existuje). Lokálne nespustený,
+  Docker tu nie je — prvý beh bude v CI.
+
+### Rozpracované / Pending
+- **GO na aplikovanie `20260928070000` na PROD** — migrácia je pripravená a dokázaná
+  lokálne, na produkcii nebežala.
+- **`bri_history` NIE JE uzavretá**: `"Enterprise BRI access"` a `"Locked BRI read-only"`
+  sú pre rolu `public` bez akéhokoľvek tenant filtra. Nie je to `IS NULL` únik, takže
+  mimo tejto brány — ale netvrdím, že tabuľka je čistá.
+- **`GO RLS-ANON-GUARD-TEST`** — statický ratchet proti novým `true`/`IS NULL` politikám.
+- **27 tabuliek s RLS a nula politikami** — dnes bez následku (service role), chybou
+  sa to stane pri prvom dotaze s tokenom používateľa.
+- **`authenticated` drží na `leads` aj TRUNCATE/REFERENCES/TRIGGER** — viac, než migrácia dáva.
+- **404-PATH-01 po hydratácii NEOVERENÉ**; **Calendly webhook** (founder, 5 min);
+  **pôvod 6 riadkov v `revolis_zaujemcovia`** (GDPR); cenník + Stripe KYB (founder).
+
+### Kľúčové súbory zmenené
+- `apps/crm/supabase/migrations/20260928070000_rls_null_escapes.sql`: nová migrácia.
+- `apps/crm/src/lib/l99/alert-dispatch.ts`: tenant na `priority_alerts` + log chyby.
+- `apps/crm/src/lib/l99/bri-engine.ts`: `agency_id` + `profile_id` na `bri_history` + log chyby.
+- `apps/crm/tests/rls/null-escape-rls.test.ts`: nový regresný test.
+- `memory/decisions.md`, `memory/session-summary.md`: prepend.
+
+### Ďalší krok
+GO na aplikovanie `20260928070000` na PROD (merania pred/po zopakujem na produkcii).
+
 ## Session 2026-09-28 (RLS-LEADS-REVOKE)
 
 ### Dokončené

@@ -1,5 +1,64 @@
 # Critical Decisions Log
 
+## [2026-09-28] RLS-NULL-ESCAPES — `IS NULL` únik odstránený z 10 tabuliek (founder GO; NA PROD ZATIAĽ NEAPLIKOVANÉ)
+
+Druhý zo štyroch nálezov AP-024. `20260928070000_rls_null_escapes.sql` je
+v repozitári a **na produkcii zatiaľ nebežal** — pri udelení brány som sľúbil, že
+migráciu predložím pred aplikovaním. Platí to.
+
+**Diera je zmeraná, nie odvodená.** Na lokálnej PG 16 s vernou schémou (vrátane
+`profile_agencies_for_auth()` doslovne z PROD cez `pg_get_functiondef`, dvoch
+tenantov a `auth.uid()`):
+
+| | PRED | PO |
+|---|---|---|
+| A vloží riadok s `agency_id = NULL` | **10/10 OK** | **10/10 → 42501** |
+| B z iného tenanta ten riadok vidí | **10/10 vidí** | **10/10 nevidí (0)** |
+| ani A nevidí svoj nepriradený riadok | — | 0 |
+| A vloží riadok svojej agentúry | — | 10/10 OK |
+| A ho číta | — | 10/10 = 1 |
+| B ho nečíta | — | 10/10 = 0 |
+
+Idempotentné (druhý beh bez chyby) aj na tvare DB, kde dve z tých tabuliek
+neexistujú (guard `to_regclass` ohlási a preskočí).
+
+**Chyba v mojom prvom harnesse, priznaná:** dve tabuľky vrátili 42501 už PRED
+zmenou. Nebola to vlastnosť politiky — zabudol som `grant select on profiles to
+authenticated`. Osem politík ide cez `SECURITY DEFINER` funkciu a grant
+nepotrebuje, dve čítajú `profiles` priamo. Po doplnení grantu (ako je to na PROD)
+je PRED stav 10/10 zneužiteľný. Nevern0 harness = bezcenný dôkaz.
+
+**Dve remedy, nie jedna.** Osem tabuliek + `ai_action_audit` má únik v jedinej
+tenant politike → prepísaná bez disjunkcie. `properties` má správnu politiku
+`properties_tenant` a **navyše** štyri `properties_*_agency` s únikom; keďže
+politiky sa OR-ujú, tie štyri tú správnu rušia → zrušené, nie prepísané.
+
+**Prečo politika a nie `NOT NULL`.** `SET NOT NULL` by bol trvácnejší, ale RLS sa
+service role nikdy netýkala — `NOT NULL` by novo rozbil každého service-role
+zapisovateľa, ktorý `agency_id` vynecháva. Väčší dosah než hranica, o ktorú tu ide.
+Politika JE tá hranica.
+
+**Dvaja zapisovatelia opravení v tom istom commite**, inak by zmena tichý
+cross-tenant zápis premenila na tiché zlyhanie:
+- `lib/l99/alert-dispatch.ts` (`priority_alerts`) — `agency_id` nedodával vôbec,
+  prechádzal len vďaka disjunkcii. Teraz berie tenanta z leadu.
+- `lib/l99/bri-engine.ts` (`bri_history`) — to isté, plus **nález navyše**:
+  `bri_history.profile_id` je `NOT NULL` bez defaultu a kód ho nedodával, takže
+  ten insert **vždy padal na 23502** a nikto to nevidel, lebo sa chyba zahadzovala.
+  Preto má tabuľka 0 riadkov. Doplnené oboje a chyba sa loguje.
+
+**Pripnuté testom**: `apps/crm/tests/rls/null-escape-rls.test.ts` overuje obe
+vlastnosti — že tenant nepriradený riadok nevyrobí, aj že **nevidí** taký, ktorý
+už existuje (nasadený service rolou). Test iba prvej vlastnosti by prešiel aj proti
+politike, ktorá ďalej tečie na čítaní. Lokálne nespustený — Docker v tomto
+prostredí nie je, takže prvý beh bude v CI.
+
+**Otvorené, mimo tejto brány:** `bri_history` zostáva cross-tenant čitateľná cez
+`"Enterprise BRI access"` a `"Locked BRI read-only"` — obe pre rolu `public`
+a obe bez akéhokoľvek tenant filtra (stačí `account_tier='enterprise'`, resp.
+`tier_locked_at IS NOT NULL`). Nie je to `IS NULL` únik, takže to táto brána
+nerieši — ale znamená to, že `bri_history` NIE JE uzavretá a nehovorím, že je.
+
 ## [2026-09-28] RLS-LEADS-REVOKE — `anon` stráca oprávnenia na `public.leads` (founder GO)
 
 Prvý zo štyroch nálezov AP-024 uzavretý. Nie nová migrácia — príkazy z existujúceho
