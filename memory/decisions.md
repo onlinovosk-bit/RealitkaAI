@@ -1,5 +1,98 @@
 # Critical Decisions Log
 
+## [2026-09-28] AP-029 / TEST-SPLIT-01 — štart na pozadí, a oprava môjho tvrdenia o rozptyle (founder GO)
+
+### Najprv oprava, lebo mení merací plán
+Po druhom behu fastpathu som napísal, že **šum jobu je pod 1 %** (411 a 415 s
+hodinu od seba), a že preto bude 84 s spoľahlivo merateľných. **Tretí beh to
+vyvrátil: 306 s na tom istom obsahu**, teda o 26 % menej.
+
+| krok | so 20:00 | so 21:07 | ne 05:59 |
+|---|---|---|---|
+| Install | 18 | 17 | **10** |
+| Lint | 35 | 33 | **23** |
+| Typecheck | 28 | 28 | **16** |
+| **Test** | **174** | **173** | **105** |
+| Start local Supabase | 112 | 113 | 108 |
+| **celkom** | **411** | **415** | **306** |
+
+**PREDPOKLAD (nie fakt): výkon runnera.** Dôkaz preň je tvar zmeny — zrýchlili
+sa všetky CPU-viazané kroky v podobnom pomere (eslint −34 %, tsc −43 %,
+vitest −39 %, npm ci −41 %), hoci nezdieľajú nič okrem procesora, kým
+`Start local Supabase`, viazaný na sťahovanie images, sa nepohol (112 → 108).
+
+**Dôsledok:** strop TEST-SPLIT-01 (84 s) je **menší než rozptyl runnera**
+(±109 s). Porovnanie „jeden beh pred, jeden po" nedokáže nič — a presne to som
+navrhoval. Merací plán je opravený nižšie.
+
+### Čo sa nasadilo
+`Start local Supabase` ide **na pozadie** a prekrýva sa s `npm ci`, `Lint`,
+`Typecheck` a helper testami. Poradie krokov: CLI a ghcr login hore, štart na
+pozadie, potom node toolchain a kontroly, a `Wait for local Supabase` až tesne
+pred `Export local credentials`.
+
+Exit kód ide cez súbor, nie cez `wait`: **každý krok Actions je iný shell**,
+takže `wait $!` z nasledujúceho kroku na ten proces nedočiahne — je to cudzie
+PID, nie potomok. Môj vlastný testovací harness na tú istú vec padol
+(`wait: pid is not a child of this shell`), čo je dobrá pripomienka, že to nie
+je teoretická poznámka.
+
+### Meranie, ktoré runner-variance neovplyvní
+`wait-for-supabase.sh` vypisuje `::notice` s tromi číslami z JEDNÉHO behu:
+
+    supabase start <total>s | cakalo sa <waited>s | prekrytych <total-waited>s
+
+`prekrytych` je priamo úspora a je to **podiel v rámci toho istého behu**,
+takže rýchlosť runnera ho nekriví. To je náhrada za pôvodný plán „porovnaj
+celkový čas pred a po", ktorý by pri ±26 % rozptyle nič nedokázal.
+
+### Brány, nie inline bash
+Logika čakania je v `scripts/ci/wait-for-supabase.sh` a kryje ju
+`scripts/ci/__tests__/wait-for-supabase.test.sh` — 7 kontrol: prenos úspechu,
+reálny prekryv, notice s meracou hodnotou, prenos zlyhania, zaseknutie → 124,
+správa uvádzajúca skutočný limit (nie konštantu v texte), a chýbajúci log.
+Inline bash v YAML nikto nespustí, kým nespadne CI; to je presne ten dôvod,
+prečo `classify-diff.sh` dostal 19 testov.
+
+Fail-safe: nedokončený štart končí 124 a **vypíše celý log**. Tichý pád by sa
+prejavil až o krok neskôr na `supabase status`, teda ako niečo nesúvisiace —
+ten druh diagnostiky stál hodinu pri BOM markeri 16. 9. 2026.
+
+### Zmerané po nasadení (dva behy) — a oprava odhadu
+| krok | beh 1 | beh 2 | baseline pred zmenou |
+|---|---|---|---|
+| **setup-node** | **37** | **49** | 6 / 8 / 7 |
+| Install | 15 | **22** | 18 / 17 / 10 |
+| Lint | 30 | **37** | 35 / 33 / 23 |
+| Typecheck | 24 | 25 | 28 / 28 / 16 |
+| helper testy | 12 | 13 | 0 (nový test) |
+
+```
+beh 1: štart 137s | čakalo sa 19s | prekrytých 118s | kritická cesta 110 -> 19
+beh 2: štart 184s | čakalo sa 38s | prekrytých 146s | kritická cesta 110 -> 38
+```
+
+**Kontencia potvrdená dvoma meraniami, teda FAKT, nie predpoklad.** `setup-node`
+37 a 49 s proti baseline 6-8 s, a samotný štart narástol zo 108-113 s na 137
+a 184 s. Obnova npm cache a pull šiestich images si idú po tom istom hrdle.
+
+Čistý zisk po odpočítaní kontencie a môjho nového testu: **−72 s (beh 1) a
+−19 s (beh 2)**. Rozptyl medzi dvoma behmi je väčší než polovica zisku, takže
+„−84 s" by bolo tvrdenie bez opory.
+
+### SETUP-NODE-REORDER (founder GO)
+`setup-node` a `Install` presunuté PRED štart Supabase. V prekryvnom okne
+zostáva `Lint`, `Typecheck` a helper testy — práca viazaná na CPU, ktorá sa
+o sieť nebije. Okno je menšie, ale nemá byť zaplatené spomalením toho, čo sa
+prekrýva. Overí sa tretím a štvrtým behom; dovtedy je zisk NEOVERENÝ.
+
+### Neoverené
+Skutočná úspora. Docker pull je sieťovo viazaný a `npm ci` + eslint + tsc sú
+CPU-viazané, takže na 2-jadrovom runneri sa môžu biť o zdroje a prekryv môže
+byť menší než aritmetický strop 84 s. Číslo doplní až prvý beh — a doplní sa
+z `prekrytych`, nie z celkového času.
+
+---
 ## [2026-09-28] — DEMAND-SOURCE-A: Realvia dopyt dnes nedodáva žiadnou cestou (founder GO A)
 
 - **Webhooky:** `realvia_webhook_logs` nesú len `advert` (202), `delete` (26) a

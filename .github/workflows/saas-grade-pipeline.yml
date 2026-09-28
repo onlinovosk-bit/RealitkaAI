@@ -87,6 +87,18 @@ jobs:
         run: ../../scripts/ci/classify-diff.sh
         working-directory: apps/crm
 
+      # SETUP-NODE-REORDER. Toolchain a npm cache sa pripravia PRED štartom
+      # Supabase, nie počas neho.
+      #
+      # Dôvod je zmeraný, nie tušený. Keď `setup-node` bežal súbežne s docker
+      # pullom, trval 37 s a 49 s proti baseline 6-8 s, `Install` 15 a 22 proti
+      # 10-18, a samotný štart narástol zo 108-113 s na 137 a 184 s. Obnova npm
+      # cache aj pull šiestich images sú to isté úzke hrdlo — sieť a disk —
+      # takže súbežne si navzájom predlžujú čas.
+      #
+      # Po presune zostáva v prekryvnom okne `Lint`, `Typecheck` a helper testy,
+      # teda práca viazaná na CPU, ktorá sa o sieť nebije. Prekryv bude menší,
+      # ale nemal by byť zaplatený spomalením toho, čo sa prekrýva.
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -97,23 +109,7 @@ jobs:
         run: npm ci
         working-directory: apps/crm
 
-      - name: Lint
-        run: npm run lint
-        working-directory: apps/crm
 
-      # The retry that guards `supabase start` is itself guarded: a wrapper that
-      # silently stopped retrying, or looped forever, would be worse than none.
-      - name: Test CI helper scripts
-        run: |
-          ./scripts/ci/__tests__/supabase-start.test.sh
-          ./scripts/ci/__tests__/classify-diff.test.sh
-          node ./scripts/ci/__tests__/typecheck-baseline.test.mjs
-
-      - name: Typecheck (baseline gate)
-        working-directory: apps/crm
-        run: node scripts/typecheck-baseline.mjs
-
-      # ── Ephemeral test DB: žiadne prod secrets v test/build fáze ──
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
@@ -167,8 +163,60 @@ jobs:
       # `public.ecr.aws` a ghcr.io v ňom nie je, ten krok je dormantný. Ostáva
       # ako poistka pre prípad, že `SUPABASE_START_REGISTRIES` ghcr.io vráti —
       # vtedy pôjde pull prihlásený, nie anonymne.
-      - name: Start local Supabase
-        run: ../../scripts/ci/supabase-start.sh
+      # TEST-SPLIT-01: štart ide na POZADIE a beží, kým sa inštaluje a lintuje.
+      #
+      # Zmerané (job 108806218894 a dva pred ním): `Start local Supabase` je
+      # 108-113 s a je to druhá najväčšia položka behu. Nič z toho, čo beží
+      # pred ním, ho nepotrebuje — `npm ci`, `Lint` a `Typecheck` sa databázy
+      # nedotknú. Serializovať ich za ním je čistá strata.
+      #
+      # Exit kód ide do súboru, nie cez `wait`: každý krok workflowu je iný
+      # shell, takže `wait $!` z nasledujúceho kroku na tento proces nedočiahne.
+      # Overené lokálne na stube — prekryv 7 s namiesto 11 s, zlyhanie sa
+      # prenieslo ako exit 1, zaseknutie skončilo na exit 124 s vypísaným logom.
+      - name: Start local Supabase (na pozadí)
+        run: |
+          set -uo pipefail
+          rm -f "$RUNNER_TEMP/supabase-start.exit"
+          ( ../../scripts/ci/supabase-start.sh; echo $? > "$RUNNER_TEMP/supabase-start.exit" ) \
+            > "$RUNNER_TEMP/supabase-start.log" 2>&1 &
+          echo "supabase start beží na pozadí (pid $!); medzitým pokračuje npm ci, Lint a Typecheck"
+          date +%s > "$RUNNER_TEMP/supabase-start.began"
+        working-directory: apps/crm
+
+      - name: Lint
+        run: npm run lint
+        working-directory: apps/crm
+
+      # The retry that guards `supabase start` is itself guarded: a wrapper that
+      # silently stopped retrying, or looped forever, would be worse than none.
+      - name: Typecheck (baseline gate)
+        working-directory: apps/crm
+        run: node scripts/typecheck-baseline.mjs
+
+      # ── Ephemeral test DB: žiadne prod secrets v test/build fáze ──
+      # Pozor na jednu vec, ktorá vyzerá nebezpečne a nie je: tento krok beží
+      # v prekryvnom okne, teda KÝM sa na pozadí štartuje skutočná Supabase,
+      # a `supabase-start.test.sh` si pritom podstrkuje vlastný stub `supabase`
+      # do PATH. Kolízia nenastane — stub je v PATH iba v procese toho testu,
+      # zatiaľ čo bežiaci štart si svoje binárky vyriešil pri spustení a má
+      # vlastné prostredie. Stub navyše pracuje v mktemp adresári, nie v
+      # `apps/crm`, takže sa nedotkne stavu bežiacej inštancie.
+      - name: Test CI helper scripts
+        run: |
+          ./scripts/ci/__tests__/supabase-start.test.sh
+          ./scripts/ci/__tests__/classify-diff.test.sh
+          node ./scripts/ci/__tests__/typecheck-baseline.test.mjs
+          ./scripts/ci/__tests__/wait-for-supabase.test.sh
+
+      # Čaká sa TU, nie skôr. Logika je v `scripts/ci/wait-for-supabase.sh`,
+      # nie inline: inline bash v YAML nikto nespustí, kým nespadne CI, a táto
+      # vetva sa musí dať otestovať skôr. Kryje ju
+      # `scripts/ci/__tests__/wait-for-supabase.test.sh` (7 kontrol vrátane
+      # zaseknutia a prenosu exit kódu), rovnako ako supabase-start.sh a
+      # classify-diff.sh.
+      - name: Wait for local Supabase
+        run: ../../scripts/ci/wait-for-supabase.sh
         working-directory: apps/crm
 
       - name: Export local credentials
