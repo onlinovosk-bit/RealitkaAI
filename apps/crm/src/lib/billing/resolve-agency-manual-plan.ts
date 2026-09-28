@@ -39,6 +39,6 @@ export async function fetchAgencyManualPlan(
 }
 
 export function manualPlanKeyToTier(planKey: ResolvedBillingPlan): "free" | "pro" {
-  if (planKey === "free") return "free";
+  if (planKey === "free" || planKey === "unknown") return "free";
   return "pro";
 }

@@ -1,0 +1,74 @@
+{
+  "run_id": "20260905T2304-ruflo-overnight",
+  "lane_id": "E",
+  "base_sha": "cf3604613cdbb6a7a279e175f2c792fb25591461",
+  "status": "PASS_WITH_CONDITIONS",
+  "produced_files": [
+    "lanes/E/report.md",
+    "lanes/E/sources.json",
+    "lanes/E/result.json"
+  ],
+  "list_prices_eur": {
+    "soloSeat": 79,
+    "teamSeat": 71,
+    "officeSeat": 63,
+    "ownerCockpit": 349,
+    "ownerCockpitFounder": 249,
+    "cockpitLite": 0
+  },
+  "full_price_scenarios_eur_mo": {
+    "A_seat_plus_lite": {
+      "5": 355,
+      "10": 630,
+      "20": 1260
+    },
+    "B_seat_plus_owner_cockpit": {
+      "5": 704,
+      "10": 979,
+      "20": 1609
+    },
+    "C_lite_plus_one_rast_topup": {
+      "5": 484,
+      "10": 759,
+      "20": 1389
+    },
+    "D_outcome": "DEFERRED"
+  },
+  "pilot_hypothesis": {
+    "price_eur_mo": 355,
+    "seats": 5,
+    "tier": "team",
+    "cockpit": "lite",
+    "credit_vs_subscription": "100% of paid pilot months credited to first 12 months subscription",
+    "support_scope": "weekday email/Slack; no custom integrations; no outbound UC publish",
+    "stop_limit": "4 weeks OR <2 weekly active brokers"
+  },
+  "models": {
+    "preferred": "seat_plus_optional_agency_usage",
+    "deferred": "outcome_success_fee"
+  },
+  "competitor_unit_notes": {
+    "backOFFICE_plus_ZRKS_approx_eur_mo": 54,
+    "realsys_professional_eur_mo": 210,
+    "autocrm_from_eur_mo": 129,
+    "realman_sk": "UNKNOWN"
+  },
+  "conditions": [
+    "Stripe PROD price IDs unverified",
+    "WTP not market-proven; list ≠ validated ARPU",
+    "Cost floor / credit retail mirror ≠ selling price",
+    "Portal/UC commercial fees UNKNOWN (Lane C)",
+    "No billing code changes this night",
+    "Smolko 199 grandfather untouched"
+  ],
+  "unknowns": [
+    "stripe_prod_wiring",
+    "reference_arpu_new_logos",
+    "vat_quote_treatment",
+    "uc_commercial_fees",
+    "wtp",
+    "owner_cockpit_necessity_for_pilot"
+  ],
+  "next_action": "Hand HYPOTHESIS 355 EUR (5 seats) + 5/10/20 matrix (355/630/1260 Lite; 704/979/1609 Owner) to Lane F; freeze SSOT; no pricing code edits",
+  "written_at_utc": "2026-09-05T21:16:19Z"
+}

@@ -2,14 +2,15 @@
 
 import { Lightbulb, TrendingDown, Trophy, Zap } from "lucide-react";
 
+// Null = no data source for that value; the tile or badge is not rendered.
 type BrokerCoachProps = {
   brokerStats: {
-    followUpRankLabel: string;
-    dealVelocityLabel: string;
-    dealVelocityDeltaLabel: string;
+    followUpRankLabel: string | null;
+    dealVelocityLabel: string | null;
+    dealVelocityDeltaLabel: string | null;
   };
   insight: string;
-  streakDays: number;
+  streakDays: number | null;
 };
 
 export default function BrokerCoach({ brokerStats, insight, streakDays }: BrokerCoachProps) {
@@ -24,10 +25,12 @@ export default function BrokerCoach({ brokerStats, insight, streakDays }: Broker
           </div>
           <h2 className="text-sm font-black italic uppercase tracking-widest text-white">Revolis AI Coaching</h2>
         </div>
-        <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
-          <Trophy className="text-yellow-500" size={12} />
-          <span className="text-[9px] font-black uppercase text-slate-400">{streakDays} Day Streak</span>
-        </div>
+        {streakDays != null ? (
+          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+            <Trophy className="text-yellow-500" size={12} />
+            <span className="text-[9px] font-black uppercase text-slate-400">{streakDays} Day Streak</span>
+          </div>
+        ) : null}
       </div>
 
       <div className="space-y-6">
@@ -37,22 +40,29 @@ export default function BrokerCoach({ brokerStats, insight, streakDays }: Broker
           <p className="text-sm font-medium italic leading-relaxed text-slate-200">"{insight}"</p>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-4">
-            <p className="mb-1 text-[8px] font-black uppercase tracking-tighter text-slate-500">Follow-up Rank</p>
-            <div className="flex items-end gap-2">
-              <span className="text-lg font-black text-white">{brokerStats.followUpRankLabel}</span>
-              <TrendingDown size={14} className="mb-1 text-red-500" />
-            </div>
-            <p className="mt-1 text-[7px] uppercase text-slate-600">V regióne Prešov</p>
-          </div>
+        {brokerStats.followUpRankLabel != null || brokerStats.dealVelocityLabel != null ? (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {brokerStats.followUpRankLabel != null ? (
+              <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-4">
+                <p className="mb-1 text-[8px] font-black uppercase tracking-tighter text-slate-500">Follow-up Rank</p>
+                <div className="flex items-end gap-2">
+                  <span className="text-lg font-black text-white">{brokerStats.followUpRankLabel}</span>
+                  <TrendingDown size={14} className="mb-1 text-red-500" />
+                </div>
+              </div>
+            ) : null}
 
-          <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-4">
-            <p className="mb-1 text-[8px] font-black uppercase tracking-tighter text-slate-500">Deal Velocity</p>
-            <span className="text-lg font-black text-white">{brokerStats.dealVelocityLabel}</span>
-            <p className="mt-1 text-[7px] uppercase text-emerald-500">{brokerStats.dealVelocityDeltaLabel}</p>
+            {brokerStats.dealVelocityLabel != null ? (
+              <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-4">
+                <p className="mb-1 text-[8px] font-black uppercase tracking-tighter text-slate-500">Deal Velocity</p>
+                <span className="text-lg font-black text-white">{brokerStats.dealVelocityLabel}</span>
+                {brokerStats.dealVelocityDeltaLabel != null ? (
+                  <p className="mt-1 text-[7px] uppercase text-emerald-500">{brokerStats.dealVelocityDeltaLabel}</p>
+                ) : null}
+              </div>
+            ) : null}
           </div>
-        </div>
+        ) : null}
       </div>
     </div>
   );

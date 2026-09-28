@@ -104,11 +104,11 @@ describe("moat-capture helpers", () => {
   });
 
   it("insertDealOutcomeRow uses unspecified when reason omitted", async () => {
-    let captured: Record<string, unknown> | null = null;
+    const captured: { row: Record<string, unknown> | null } = { row: null };
     const client: DealOutcomeSupabase = {
       from: () => ({
         insert: async (row: Record<string, unknown>) => {
-          captured = row;
+          captured.row = row;
           return { error: null };
         },
         select: () => ({
@@ -139,15 +139,15 @@ describe("moat-capture helpers", () => {
       client,
     );
 
-    expect(captured?.reason_code).toBe(UNSPECIFIED_REASON_CODE);
+    expect(captured.row?.reason_code).toBe(UNSPECIFIED_REASON_CODE);
   });
 
   it("persistDealOutcome inserts known reason without unspecified", async () => {
-    let captured: Record<string, unknown> | null = null;
+    const captured: { row: Record<string, unknown> | null } = { row: null };
     const client: DealOutcomeSupabase = {
       from: () => ({
         insert: async (row: Record<string, unknown>) => {
-          captured = row;
+          captured.row = row;
           return { error: null };
         },
         select: () => ({
@@ -180,12 +180,12 @@ describe("moat-capture helpers", () => {
       client,
     );
 
-    expect(captured?.reason_code).toBe("cena");
-    expect(captured?.reason_text).toBe("OK");
+    expect(captured.row?.reason_code).toBe("cena");
+    expect(captured.row?.reason_text).toBe("OK");
   });
 
   it("persistDealOutcome updates latest unspecified row when present", async () => {
-    let updated: Record<string, unknown> | null = null;
+    const updated: { row: Record<string, unknown> | null } = { row: null };
     const client: DealOutcomeSupabase = {
       from: () => ({
         insert: async () => ({ error: null }),
@@ -204,7 +204,7 @@ describe("moat-capture helpers", () => {
         }),
         update: (row: Record<string, unknown>) => ({
           eq: async () => {
-            updated = row;
+            updated.row = row;
             return { error: null };
           },
         }),
@@ -221,7 +221,7 @@ describe("moat-capture helpers", () => {
       client,
     );
 
-    expect(updated?.reason_code).toBe("konkurencia");
+    expect(updated.row?.reason_code).toBe("konkurencia");
   });
 
   it("updateLatestUnspecifiedDealOutcome returns false when no row", async () => {

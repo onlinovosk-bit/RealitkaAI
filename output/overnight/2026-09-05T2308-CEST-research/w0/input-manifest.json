@@ -1,0 +1,50 @@
+﻿[
+    {
+        "path":  "docs/overnight/2026-09-05-ruflo-swarm/START-HERE.md",
+        "sha256":  "a062cedae73fdb04719c04b7f00e330ecbed4ecac521530fd05e44b4fa7b652b",
+        "origin":  "LOCAL_OR_BASE",
+        "present":  true
+    },
+    {
+        "path":  "docs/overnight/2026-09-05-ruflo-swarm/lanes.json",
+        "sha256":  "d60edc89ba6e310f0d9635a1e4543f62125c1b13c1e2f4af16911785ff20faef",
+        "origin":  "LOCAL_OR_BASE",
+        "present":  true
+    },
+    {
+        "path":  "docs/overnight/2026-09-05-ruflo-swarm/seed-evidence.md",
+        "sha256":  "4e570b3ca38fe91a459688d185ca3e679662ff49dc3f56b8cc93ea749517c731",
+        "origin":  "LOCAL_OR_BASE",
+        "present":  true
+    },
+    {
+        "path":  "docs/overnight/2026-09-05-ruflo-swarm/launch-record.md",
+        "sha256":  "05854369264cfee591a2c1a7ed0fbba6ae7c8a315c46c98c6a5ce579e9c44896",
+        "origin":  "LOCAL_OR_BASE",
+        "present":  true
+    },
+    {
+        "path":  "apps/crm/package.json",
+        "sha256":  "7bc5e4ca0aee853e06b334e911ef2acc07f5ed7a0dcd7c6062b00c0f8315419f",
+        "origin":  "LOCAL_OR_BASE",
+        "present":  true
+    },
+    {
+        "path":  "apps/crm/src/lib/program-tier-pricing.ts",
+        "sha256":  "9e4c2ec12177be796877d29396426ee2604408493248ee6d27707f6424614550",
+        "origin":  "LOCAL_OR_BASE",
+        "present":  true
+    },
+    {
+        "path":  "apps/crm/docs/pricing-v1.md",
+        "sha256":  "410d3e7f5ec2aaeb0720c4f1d2f058023e4b2313f1c0446fa041286badeca490",
+        "origin":  "LOCAL_OR_BASE",
+        "present":  true
+    },
+    {
+        "path":  "apps/crm/AGENTS.md",
+        "sha256":  "8109cf8ef6c42b665722bf4f277d8e59e25418ca0b8e9b106af03f3f396b3d29",
+        "origin":  "LOCAL_OR_BASE",
+        "present":  true
+    }
+]

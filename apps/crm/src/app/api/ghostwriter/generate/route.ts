@@ -53,6 +53,14 @@ Požiadavky na list:
 
 Vráť IBA HTML obsah listu (bez <!DOCTYPE>, <html>, <head> tagov). Použi inline štýly pre profesionálny vzhľad.`;
 
+    // Profil sa číta PRED volaním OpenAI — spotreba tokenov sa inak nedá
+    // pripísať kancelárii a spadla by na systémového tenanta.
+    const { data: profile } = await supabaseAuth
+      .from("profiles")
+      .select("agency_id")
+      .eq("auth_user_id", user.id)
+      .maybeSingle();
+
     const t0 = Date.now();
     const model = "gpt-4o";
     const { content: letterHtmlRaw, promptTokens, completionTokens } = await callOpenAI({
@@ -60,17 +68,12 @@ Vráť IBA HTML obsah listu (bez <!DOCTYPE>, <html>, <head> tagov). Použi inlin
       max_tokens:  1200,
       temperature: 0.7,
       tag:         "ghostwriter",
+      agencyId:    profile?.agency_id ?? undefined,
       messages: [
         { role: "system", content: "Si expert na slovenský realitný trh a profesionálnu komunikáciu." },
         { role: "user",   content: prompt },
       ],
     });
-
-    const { data: profile } = await supabaseAuth
-      .from("profiles")
-      .select("agency_id")
-      .eq("auth_user_id", user.id)
-      .maybeSingle();
 
     await logAiAction({
       action: "ghostwriter",

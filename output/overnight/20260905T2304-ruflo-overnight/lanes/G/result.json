@@ -1,0 +1,79 @@
+{
+  "run_id": "20260905T2304-ruflo-overnight",
+  "lane_id": "G",
+  "base_sha": "cf3604613cdbb6a7a279e175f2c792fb25591461",
+  "input_hashes": {
+    "lanes/A/report.md": "f3fbc2102e3b150670a26a6f2ffdc27bdfa87c3876fbf8d2ffe9f9b4ce658321",
+    "lanes/A/result.json": "a4f315c5012066ec0d518272052d8fac943728258fd829409dbf1858cac2a6ed",
+    "lanes/A/sources.json": "4c5805fa4f09f91827bf71a1ae43531eb8d9b2462071cb3069f945e40322cda9",
+    "lanes/D/report.md": "deffec4f1b48a27f043da202b035e5c33cff53736dad91686c8ab3b660e7f1df",
+    "lanes/D/result.json": "0cc39455b022abcd30f20f5b02771946f631748c6319136f4d71046bdec4c474",
+    "lanes/D/sources.json": "307d0e05f2e0133c0d4e63a6d100382ed5fdfc7251330126ed38743d5cac0357",
+    "lanes/E/report.md": "9d604f87095642d954227f0343f0fdc8dd21666ebe44b25bfd6a98d03c50b574",
+    "lanes/E/result.json": "c1def3429bafd6f6726f5cf459f9f82594770be241c034c7cd4cb95bc86172a4",
+    "lanes/E/sources.json": "84a5f58910384209ad09d6a8bc20e8ca504471f8e749d789f9f81301beba67ac",
+    "lanes/C/report.md": "01d9b73fa9ec6e7ce9c9c667eb15da21bb6463947fe30eca3a1a7e58ba370d2d",
+    "lanes/C/result.json": "a28715fd65e57441572d0ffbeec56049db56bc2cecf9d10fa0bffcb7726b05b8",
+    "base_sha": "cf3604613cdbb6a7a279e175f2c792fb25591461"
+  },
+  "status": "PASS_WITH_CONDITIONS",
+  "produced_files": [
+    "lanes/G/report.md",
+    "lanes/G/sources.json",
+    "lanes/G/result.json"
+  ],
+  "backlog_ids": [
+    "BO-P1",
+    "BO-P2",
+    "BO-P3",
+    "BO-P4",
+    "BO-P5",
+    "BO-P6",
+    "BO-P7",
+    "BO-P8",
+    "BO-P9"
+  ],
+  "cut_scope_without_portals": [
+    "BO-P1",
+    "BO-P2",
+    "BO-P3",
+    "BO-P4",
+    "BO-P7",
+    "BO-P8",
+    "BO-P9"
+  ],
+  "blocked_on_uc": [
+    "BO-P5",
+    "BO-P6"
+  ],
+  "impl_order": [
+    "W-G1_schema_tenant_freeze",
+    "W-G2_security_data_primitives",
+    "W-G3_parallel_ui_adapters_after_contracts",
+    "W-G4_single_integrator",
+    "W-G5_e2e_rls_portal_tests"
+  ],
+  "dag_critical_path": "GO -> P1 -> (P2 || P3) -> P4 -> P7 -> P8",
+  "constitution_posture": "VALIDATE_FIRST",
+  "constitution_vetoes": {
+    "Q1_pay": "ceiling_VALIDATE_until_paid_signal",
+    "Q8_portal_timing": "too_early_without_UC_BACKLOG"
+  },
+  "unknowns": [
+    "prod_migration_apply_and_live_RLS",
+    "UC_import_package_credentials_schema",
+    "phone_CDR_vs_value_release_requirement",
+    "scheduled_events_usage",
+    "stripe_prod_price_wiring",
+    "WTP_for_355_hypothesis"
+  ],
+  "conditions": [
+    "specs_only_no_app_code",
+    "P5_P6_blocked_pending_UC",
+    "no_fake_constitution_scores",
+    "exact_new_filenames_deferred_to_impl",
+    "stripe_and_prod_RLS_still_PROD_UNKNOWN"
+  ],
+  "next_action": "Freeze G for W3 gate with F; H/I/J review DAG+collisions; await founder GO before BO-P1",
+  "written_at_utc": "2026-09-05T21:25:59Z"
+}

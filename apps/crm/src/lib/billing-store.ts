@@ -16,6 +16,7 @@ import {
  * `handlePricingCheckoutWebhook`. Legacy `syncAccountTier` must not run on
  * those sessions — they have `authUserId` but no `planKey`, so the legacy
  * path would resolve priceId=undefined → free and wipe the paid tier.
+ * path would previously resolve priceId=undefined → free and wipe the paid tier.
  */
 export function isPricingCheckoutMetadata(
   meta: Record<string, string> | null | undefined,
@@ -41,15 +42,37 @@ const TIER_TO_UI_ROLE: Record<string, string> = {
 
 // PomocnĂˇ funkcia â€“ zapĂ­Ĺˇe account_tier + ui_role do profiles
 // Preferuje authUserId z metadĂˇt, fallback na stripe_customer_id
+/**
+ * True only when we actually know the price AND it is one of the Enterprise
+ * prices. The `!priceId` guard is the whole fix: without it an undefined price
+ * equals an unset env var and silently answers "yes, this was Enterprise".
+ */
+function isEnterprisePriceId(priceId: string | null | undefined): boolean {
+  if (!priceId) return false;
+  return (
+    priceId === process.env.STRIPE_PRICE_ENTERPRISE ||
+    priceId === process.env.STRIPE_PRICE_MARKET_VISION
+  );
+}
+
 async function syncAccountTier(
   stripeCustomerIdOrAuthUserId: string,
   priceId: string | null | undefined,
-  opts?: { lockDowngrade?: boolean; resetLock?: boolean; byAuthUserId?: boolean }
+  opts?: {
+    lockDowngrade?: boolean;
+    resetLock?: boolean;
+    byAuthUserId?: boolean;
+    /** Explicit free downgrade (e.g. subscription.deleted). */
+    forceFree?: boolean;
+  }
 ): Promise<void> {
   const supabase = createServiceRoleClient();
   if (!supabase) return;
 
-  const tier    = resolvePlanKeyFromStripePriceId(priceId);
+  const tier = opts?.forceFree ? "free" : resolvePlanKeyFromStripePriceId(priceId);
+  // Unknown Stripe prices must not mutate a paid profile to free.
+  if (tier === "unknown") return;
+
   const uiRole  = TIER_TO_UI_ROLE[tier] ?? "agent";
   const update: Record<string, string | null | boolean> = {
     account_tier:    tier,
@@ -95,7 +118,10 @@ function getStripe() {
   }
 
   logInfo("Stripe client initialized", "getStripe");
-  return new Stripe(secretKey);
+  // Perf hotfix: bez explicitneho timeoutu drzi Stripe SDK request az 80s
+  // (a undici fetch az 300s), takze route vedela visiet minuty.
+  // 5s timeout + max 1 retry = najhorsi pripad ~10s namiesto minut.
+  return new Stripe(secretKey, { timeout: 5000, maxNetworkRetries: 1 });
 }
 
 function getAppUrl() {
@@ -108,8 +134,12 @@ function getAppUrl() {
   }
 }
 
-async function loadAuthHelpers() {
-  return import("@/lib/auth");
+// Zdielany promise — paralelne volania zdielaju jeden dynamic import
+// (dedupe; zaroven stabilna identita modulu pre memo aj testy).
+let authHelpersPromise: Promise<typeof import("@/lib/auth")> | null = null;
+function loadAuthHelpers() {
+  authHelpersPromise ??= import("@/lib/auth");
+  return authHelpersPromise;
 }
 
 export const BILLING_PLANS = [
@@ -347,39 +377,95 @@ export async function createCustomerPortalSession() {
   };
 }
 
-export async function getCurrentBillingStatus() {
+// ── Kratkodobe memo pre getCurrentBillingStatus ─────────────────────────────
+// Preco: /api/billing/plan (a dalsie miesta) volaju getCurrentPlanTier,
+// getCurrentPlanKey aj isEnterpriseSalesIntelligenceEnabled a KAZDA z nich
+// interne vola getCurrentBillingStatus — t.j. 3x ta ista sekvencia Stripe
+// requestov v jednom HTTP requeste. Modulove memo s kratkym TTL (5s) zaruci,
+// ze vsetci volajuci v ramci jedneho requestu zdielaju JEDEN promise.
+// V lambde je to bezpecne: kazda instancia ma vlastnu Map, TTL 5s znamena,
+// ze zmena predplatneho sa prejavi takmer okamzite a stary stav neprezije.
+const BILLING_STATUS_MEMO_TTL_MS = 5_000;
+const billingStatusMemo = new Map<
+  string,
+  { at: number; promise: Promise<CurrentBillingStatus> }
+>();
+
+/** Len pre testy — vycisti memo medzi test casemi. */
+export function __resetBillingStatusMemoForTests() {
+  billingStatusMemo.clear();
+}
+
+function emptyBillingStatus() {
+  return {
+    hasCustomer: false,
+    hasSubscription: false,
+    customer: null,
+    subscription: null,
+    invoices: [],
+  };
+}
+
+type CurrentBillingStatus =
+  | Awaited<ReturnType<typeof fetchCurrentBillingStatusUncached>>
+  | ReturnType<typeof emptyBillingStatus>;
+
+export async function getCurrentBillingStatus(): Promise<CurrentBillingStatus> {
   const stripe = getStripe();
   if (!stripe) {
-    return {
-      hasCustomer: false,
-      hasSubscription: false,
-      customer: null,
-      subscription: null,
-      invoices: [],
-    };
+    return emptyBillingStatus();
   }
+
+  const { getCurrentUser } = await loadAuthHelpers();
+  const user = await getCurrentUser().catch(() => null);
+  const memoKey = user?.id || user?.email || "anonymous";
+
+  const cached = billingStatusMemo.get(memoKey);
+  if (cached && Date.now() - cached.at < BILLING_STATUS_MEMO_TTL_MS) {
+    return cached.promise;
+  }
+  // Obcasne upratanie expirovanych zaznamov, aby Map nerastla donekonecna.
+  if (billingStatusMemo.size > 100) {
+    const now = Date.now();
+    for (const [key, entry] of billingStatusMemo) {
+      if (now - entry.at >= BILLING_STATUS_MEMO_TTL_MS) billingStatusMemo.delete(key);
+    }
+  }
+
+  const promise = fetchCurrentBillingStatusUncached(stripe).catch((error) => {
+    // Fail-open: pri Stripe chybe/timeoute vratime rovnaky fallback ako pri
+    // chybajucom billingu (default/free plan) a memo zahodime, aby dalsi
+    // request skusil Stripe znova.
+    billingStatusMemo.delete(memoKey);
+    console.warn(
+      "[billing] getCurrentBillingStatus zlyhal — fail-open na default plan:",
+      error
+    );
+    return emptyBillingStatus();
+  });
+  billingStatusMemo.set(memoKey, { at: Date.now(), promise });
+  return promise;
+}
+
+async function fetchCurrentBillingStatusUncached(stripe: Stripe) {
   const customer = await findStripeCustomerByCurrentUserEmail();
 
   if (!customer) {
-    return {
-      hasCustomer: false,
-      hasSubscription: false,
-      customer: null,
-      subscription: null,
-      invoices: [],
-    };
+    return emptyBillingStatus();
   }
 
-  const subscriptions = await stripe.subscriptions.list({
-    customer: customer.id,
-    status: "all",
-    limit: 10,
-  });
-
-  const invoices = await stripe.invoices.list({
-    customer: customer.id,
-    limit: 5,
-  });
+  // Paralelne — subscriptions a invoices su nezavisle (setri jedno RTT).
+  const [subscriptions, invoices] = await Promise.all([
+    stripe.subscriptions.list({
+      customer: customer.id,
+      status: "all",
+      limit: 10,
+    }),
+    stripe.invoices.list({
+      customer: customer.id,
+      limit: 5,
+    }),
+  ]);
 
   const activeSubscription =
     subscriptions.data.find((item) => item.status === "active") ||
@@ -423,6 +509,10 @@ export async function getCurrentBillingStatus() {
 
 export async function handleStripeWebhookEvent(event: Stripe.Event) {
   const object: any = event.data.object;
+  // The Stripe webhook has no user session. Without an explicit client the
+  // activity insert fell back to the browser singleton (anon) and RLS
+  // rejected every billing activity; the error was swallowed below.
+  const activityClient = createServiceRoleClient();
 
   try {
     if (event.type === "checkout.session.completed") {
@@ -452,7 +542,7 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
         source: "billing",
         severity: "success",
         meta: { eventType: event.type, customer: object.customer, subscription: object.subscription },
-      });
+      }, activityClient);
     }
 
     if (event.type === "customer.subscription.created") {
@@ -470,19 +560,24 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
         source: "billing",
         severity: "success",
         meta: { eventType: event.type, customer: object.customer, status: object.status },
-      });
+      }, activityClient);
     }
 
     if (event.type === "customer.subscription.updated") {
       const subscription = object as Stripe.Subscription;
       const newPriceId = subscription.items.data[0]?.price.id;
-      const previousPriceId = (event.data.previous_attributes as any)?.items?.data?.[0]?.price?.id;
-      const wasEnterprise =
-        previousPriceId === process.env.STRIPE_PRICE_ENTERPRISE ||
-        previousPriceId === process.env.STRIPE_PRICE_MARKET_VISION;
-      const isEnterprise =
-        newPriceId === process.env.STRIPE_PRICE_ENTERPRISE ||
-        newPriceId === process.env.STRIPE_PRICE_MARKET_VISION;
+      // Stripe fills `previous_attributes` only with the fields that changed, so
+      // an absent `items` means the price did not move at all — a renewal, a
+      // payment-method swap, a cancel_at_period_end flip. The old code compared
+      // that `undefined` straight against the env vars, and production has no
+      // STRIPE_PRICE_ENTERPRISE, so `undefined === undefined` made every such
+      // event look like a downgrade out of Enterprise. Anyone not on
+      // MARKET_VISION got tier_locked_at stamped on the next renewal and was
+      // told to "restore the Enterprise plan" they had never bought.
+      const previousPriceId: string | undefined = (event.data.previous_attributes as any)?.items
+        ?.data?.[0]?.price?.id;
+      const wasEnterprise = isEnterprisePriceId(previousPriceId);
+      const isEnterprise = isEnterprisePriceId(newPriceId);
       const isDowngradeFromEnterprise = wasEnterprise && !isEnterprise;
 
       await syncAccountTier(
@@ -502,11 +597,11 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
         source: "billing",
         severity: "info",
         meta: { eventType: event.type, customer: object.customer, status: object.status },
-      });
+      }, activityClient);
     }
 
     if (event.type === "customer.subscription.deleted") {
-      await syncAccountTier(object.customer as string, null);
+      await syncAccountTier(object.customer as string, null, { forceFree: true });
 
       await createActivity({
         leadId: null,
@@ -519,7 +614,7 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
         source: "billing",
         severity: "warning",
         meta: { eventType: event.type, customer: object.customer, status: object.status },
-      });
+      }, activityClient);
     }
 
     if (event.type === "invoice.paid") {
@@ -539,7 +634,7 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
           subscription: object.subscription,
           amountPaid: object.amount_paid,
         },
-      });
+      }, activityClient);
     }
 
     if (event.type === "invoice.payment_failed") {
@@ -558,7 +653,7 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
           customer: object.customer,
           subscription: object.subscription,
         },
-      });
+      }, activityClient);
     }
   } catch (error) {
     console.error("Billing activity logging error:", error);
@@ -567,7 +662,7 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
   return { ok: true };
 }
 
-export type ResolvedBillingPlan = PlanKey | "free";
+export type ResolvedBillingPlan = PlanKey | "free" | "unknown";
 
 /** Legacy add-on Stripe price IDs — keep in env for existing subscriptions; archive products in Stripe dashboard. */
 function resolveLegacyAddonPlanKey(priceId: string): ResolvedBillingPlan | null {
@@ -587,7 +682,9 @@ function resolveLegacyAddonPlanKey(priceId: string): ResolvedBillingPlan | null 
 export function resolvePlanKeyFromStripePriceId(
   priceId: string | null | undefined
 ): ResolvedBillingPlan {
-  if (!priceId) return "free";
+  // Missing / blank price is unknown — never invent a free downgrade here.
+  // Explicit free writes go through syncAccountTier({ forceFree: true }).
+  if (!priceId) return "unknown";
   if (priceId === process.env.STRIPE_PRICE_PROTOCOL_AUTH)  return PLAN_KEYS.COMMAND;
   if (priceId === process.env.STRIPE_PRICE_MARKET_VISION)  return PLAN_KEYS.ENTERPRISE;
   if (priceId === process.env.STRIPE_PRICE_ENTERPRISE)     return PLAN_KEYS.ENTERPRISE;
@@ -597,6 +694,7 @@ export function resolvePlanKeyFromStripePriceId(
   // Self-serve seat prices (PR-4). Without this, customer.subscription.*
   // events after seat checkout resolve as unknown → free and wipe the tier
   // that handlePricingCheckoutWebhook just wrote.
+  // events after seat checkout resolve as unknown and previously wiped to free.
   for (const tier of SEAT_TIERS) {
     const seatPriceId = process.env[SEAT_TIER_STRIPE_ENV[tier]];
     if (seatPriceId && priceId === seatPriceId) {
@@ -607,17 +705,21 @@ export function resolvePlanKeyFromStripePriceId(
   const legacyAddon = resolveLegacyAddonPlanKey(priceId);
   if (legacyAddon) return legacyAddon;
 
-  const message = `Unknown Stripe price id — defaulting tier to free: ${priceId}`;
+  const message = `Unknown Stripe price id — leaving tier unchanged: ${priceId}`;
   logInfo(message, "resolvePlanKeyFromStripePriceId");
   console.warn(`[billing] ${message}`);
   void autoErrorCapture(new Error(message), `billing:resolvePlanKeyFromStripePriceId:${priceId}`);
-  return "free";
+  return "unknown";
 }
 
 export async function getCurrentPlanKey(): Promise<ResolvedBillingPlan> {
   const status = await getCurrentBillingStatus();
   const priceId = status.subscription?.items?.[0]?.priceId ?? null;
-  return resolvePlanKeyFromStripePriceId(priceId);
+  const key = resolvePlanKeyFromStripePriceId(priceId);
+  // Display / fail-open: no recognizable paid price → free for UI & gates.
+  // Webhook sync uses resolvePlanKeyFromStripePriceId + syncAccountTier no-op
+  // so unknown prices never overwrite a paid tier.
+  return key === "unknown" ? "free" : key;
 }
 
 export async function getCurrentPlanTier(): Promise<"free" | "pro"> {

@@ -120,6 +120,7 @@ async function maybeOpenAIDossier(params: {
       response_format: { type: "json_object" },
       messages: [{ role: "user", content: prompt }],
       tag: "research-agent",
+      agencyId: params.input.agencyId,
     });
     const parsed = JSON.parse(result.content);
     return enforceEvidenceGuard(dossierSchema.parse(parsed));

@@ -34,5 +34,7 @@ jobs:
       - name: API route contract (revolis-api.mdc)
         run: node apps/crm/scripts/check-api-contract.mjs --ci
 
+      # Script ships with PR #358; until then skip so half-merged #356 does not fail every CRM PR.
       - name: Mŕtve exporty (trieda chyby spendCredits)
+        if: hashFiles('apps/crm/scripts/find-dead-exports.mjs') != ''
         run: node apps/crm/scripts/find-dead-exports.mjs --ci

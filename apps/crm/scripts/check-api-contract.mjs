@@ -50,10 +50,12 @@ const CHECKS = [
     id: "ratelimit",
     label: "@/lib/rate-limit — POVINNÉ na verejných endpointoch",
     needle: /@\/lib\/rate-limit/,
-    // Verejné = bez kontroly session. Heuristika: nepoužíva auth ani CRON_SECRET.
+    // Verejné = bez kontroly session. Heuristika: nepoužíva auth ani cron Bearer.
     applies: (t) =>
       /export\s+async\s+function\s+(POST|PUT|PATCH)\b/.test(t) &&
-      !/auth\.getUser|createClient\(\)|CRON_SECRET|checkCapabilityAccess|revolisGuard/.test(t),
+      !/auth\.getUser|createClient\(\)|CRON_SECRET|isAuthorizedCronBearer|@\/lib\/cron-auth|checkCapabilityAccess|revolisGuard/.test(
+        t,
+      ),
   },
 ];
 

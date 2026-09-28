@@ -3,8 +3,10 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   DATASET_VERSION,
+  agencyDomainsFrom,
   PARSER_VERSION,
   dedupKey,
+  htmlToText,
   parseEmail,
   toLeadCandidate,
 } from "../email-adapter";
@@ -59,7 +61,7 @@ Sprava: od kedy je voľný byt?`;
 describe("email-adapter eval dataset", () => {
   it("eval 1: Nehnutelnosti portal inquiry", () => {
     const ev = parseEmail(EVAL_NEHNUTELNOSTI, RECEIVED_AT);
-    expect(PARSER_VERSION).toBe("1.2");
+    expect(PARSER_VERSION).toBe("1.3");
     expect(DATASET_VERSION).toBe("v1.1");
     expect(ev.sourceType).toBe("Portal");
     expect(ev.source).toBe("Nehnuteľnosti.sk");
@@ -80,7 +82,7 @@ describe("email-adapter eval dataset", () => {
     expect(dedupKey(ev)).toBe("672608c5e7a2ebcd");
     const lead = toLeadCandidate(ev, SMOLKO_AGENCY, false);
     expect(lead?.source).toBe("web_form");
-    expect(lead?._meta.parserVersion).toBe("1.2");
+    expect(lead?._meta.parserVersion).toBe("1.3");
   });
 
   it("eval 7: Bazos Palenčár availability inquiry (Smolko gold)", () => {
@@ -132,5 +134,252 @@ describe("email-adapter eval dataset", () => {
     const lead = toLeadCandidate(ev, SMOLKO_AGENCY, false);
     expect(lead?.phone).toBe("0905123456");
     expect(lead?.note).toContain("Availability Question");
+  });
+});
+
+// ── Regresie z produkcie (Reality Smolko, 7 dopytov 2026-07 … 2026-09) ────────
+// Každý prípad nižšie je skutočný lead uložený v produkčnej DB so zlým obsahom.
+// Zdroj: audit 2026-09-19 nad public.leads, agency 11111111-…-111111111111.
+// Mená a adresy sú SYNTETICKÉ — reprodukuje sa tvar správy, nie osobné údaje
+// klientov (GDPR: do repa nepatria).
+
+const RECIPIENT_SMOLKO = "office@realitysmolko.sk";
+
+describe("parser regresie z produkcie", () => {
+  it("HTML v tele nesmie skončiť v mene (regresia: lead 2026-09-07)", () => {
+    const raw = [
+      "Reality.sk - nova reakcia na inzerat",
+      "<html><body><table><tr><td><b>Meno:</b> Zuzana Vzorová<br/></td></tr>",
+      "<tr><td><b>E-mail:</b> zuzana.vzorova@example.com</td></tr>",
+      "<tr><td><b>Telefón:</b> 0911 503 619</td></tr>",
+      "<tr><td><b>Správa:</b> Dobrý deň, mám záujem o obhliadku.</td></tr>",
+      "</table></body></html>",
+    ].join("\n");
+
+    const ev = parseEmail(raw, RECEIVED_AT, { recipient: RECIPIENT_SMOLKO });
+
+    expect(ev.contactName).toBe("Zuzana Vzorová");
+    expect(ev.contactName).not.toMatch(/[<>]/);
+    expect(ev.contactEmail).toBe("zuzana.vzorova@example.com");
+    expect(ev.contactPhone).toBe("0911503619");
+    expect(ev.source).toBe("Reality.sk");
+
+    const lead = toLeadCandidate(ev, SMOLKO_AGENCY, false);
+    expect(lead?.name).toBe("Zuzana Vzorová");
+  });
+
+  it("adresa samotnej RK sa nesmie stať kontaktom záujemcu (lead 2026-09-08)", () => {
+    const raw = [
+      "Nehnutelnosti.sk - nova sprava",
+      "Komu: office@realitysmolko.sk",
+      "Meno: Peter Kráľ",
+      "E-mail: peter.kral@gmail.com",
+      "Sprava: máte ešte voľný ten byt?",
+    ].join("\n");
+
+    const ev = parseEmail(raw, RECEIVED_AT, { recipient: RECIPIENT_SMOLKO });
+    expect(ev.contactEmail).toBe("peter.kral@gmail.com");
+  });
+
+  it("keď je v mailu iba adresa RK, nevyberie ju ako kontakt", () => {
+    const raw = [
+      "Nehnutelnosti.sk - nova sprava",
+      "Komu: office@realitysmolko.sk",
+      "Sprava: záujem o obhliadku",
+      "Telefon: 0905 123 456",
+    ].join("\n");
+
+    const ev = parseEmail(raw, RECEIVED_AT, { recipient: RECIPIENT_SMOLKO });
+    expect(ev.contactEmail).toBeNull();
+    expect(ev.contactPhone).toBe("0905123456"); // kontakt drží telefón
+  });
+
+  it("noreply portálu nie je kontakt záujemcu", () => {
+    const raw = [
+      "bazos.sk",
+      "Od: noreply@bazos.sk",
+      "E-mail: kupujuci@gmail.com",
+      "Sprava: inzerat 181012929 je aktualny?",
+    ].join("\n");
+
+    const ev = parseEmail(raw, RECEIVED_AT, { recipient: RECIPIENT_SMOLKO });
+    expect(ev.contactEmail).toBe("kupujuci@gmail.com");
+  });
+
+  it("odstráni koncovú bodku v adrese (regresia: lead 2026-09-19)", () => {
+    const raw = [
+      "Nehnutelnosti.sk",
+      "Meno: Jozef Vzorný",
+      "Sprava: ozvite sa prosím na jozef.vzorny@example.sk.",
+    ].join("\n");
+
+    const ev = parseEmail(raw, RECEIVED_AT, { recipient: RECIPIENT_SMOLKO });
+    expect(ev.contactEmail).toBe("jozef.vzorny@example.sk");
+  });
+
+  it("htmlToText je na čistom texte no-op (chráni existujúce rawHash)", () => {
+    expect(htmlToText(EVAL_NEHNUTELNOSTI)).toBe(EVAL_NEHNUTELNOSTI);
+    expect(htmlToText(EVAL_BAZOS_PALENCAR)).toBe(EVAL_BAZOS_PALENCAR);
+  });
+
+  it("rawHash sa počíta z pôvodného raw, nie z normalizovaného textu", () => {
+    const plain = "byty.sk\nMeno: A B\nE-mail: a@b.sk";
+    const html = "byty.sk<br/>Meno: A B<br/>E-mail: a@b.sk";
+    const a = parseEmail(plain, RECEIVED_AT);
+    const b = parseEmail(html, RECEIVED_AT);
+    expect(a.contactName).toBe(b.contactName); // polia rovnaké
+    expect(a.rawHash).not.toBe(b.rawHash); // hash rozdielny -> idempotencia zachovaná
+  });
+});
+
+// ── W1: integrita kontaktu ────────────────────────────────────────────────────
+// Doménová stráž stála na zhode s doménou PRÍJEMCU. Odkedy ingest beží na
+// `revolis.ai`, doména kancelárie sa s ňou nikdy nezhoduje, takže stráž prestala
+// vylučovať vlastné adresy klienta. Produkčný dôsledok: lead z 2026-09-22 05:47 má
+// ako kontaktný e-mail adresu jedného z maklérov, nie záujemcu.
+
+const RK_DOMAIN = "realitysmolko.sk";
+const RK_BROKER = `makler@${RK_DOMAIN}`;
+const RK_OFFICE = `office@${RK_DOMAIN}`;
+const INGEST = "makler@revolis.ai";
+
+describe("W1 — kontakt nesmie byť človek od klienta", () => {
+  it("adresu makléra nevydá ako kontakt, keď lead má telefón", () => {
+    const raw = [
+      "Nehnutelnosti.sk - dopyt",
+      "Meno: Jan Novak",
+      `E-mail: ${RK_BROKER}`,
+      "Telefon: +421 912 345 678",
+      "Sprava: Mam zaujem o obhliadku",
+    ].join("\n");
+
+    const ev = parseEmail(raw, RECEIVED_AT, {
+      recipient: INGEST,
+      addresses: [RK_BROKER],
+      domains: agencyDomainsFrom([RK_BROKER]),
+    });
+
+    expect(ev.contactEmail).toBeNull();
+    expect(ev.contactPhone).toBe("+421912345678");
+  });
+
+  it("vylúči aj adresu kancelárie, ktorá nie je profilom — cez doménu", () => {
+    const raw = [
+      "Nehnutelnosti.sk - dopyt",
+      "Meno: Jan Novak",
+      `E-mail: ${RK_OFFICE}`,
+      "Telefon: 0911222333",
+    ].join("\n");
+
+    const ev = parseEmail(raw, RECEIVED_AT, {
+      recipient: INGEST,
+      addresses: [RK_BROKER], // office@ v profiloch nie je
+      domains: agencyDomainsFrom([RK_BROKER]),
+    });
+
+    expect(ev.contactEmail).toBeNull();
+  });
+
+  it("osobný gmail makléra vylúči, ale gmail záujemcu si nechá", () => {
+    const brokerGmail = "makler.osobny@gmail.com";
+    const buyerGmail = "kupujuci@gmail.com";
+    const raw = [
+      "Preposlany dopyt",
+      `E-mail: ${brokerGmail}`,
+      "Telefon: 0911222333",
+      `Kontakt na zaujemcu: ${buyerGmail}`,
+    ].join("\n");
+
+    const ev = parseEmail(raw, RECEIVED_AT, {
+      recipient: INGEST,
+      addresses: [brokerGmail],
+      domains: agencyDomainsFrom([brokerGmail]),
+    });
+
+    // Presná adresa makléra padá, ale `gmail.com` sa NESMIE stať filtrom na všetkých.
+    expect(ev.contactEmail).toBe(buyerGmail);
+  });
+
+  it("bez telefónu fallback ostáva — prázdny lead je horší než nepresný kontakt", () => {
+    const raw = ["Dopyt", `E-mail: ${RK_BROKER}`, "Sprava: Mam zaujem"].join("\n");
+
+    const ev = parseEmail(raw, RECEIVED_AT, {
+      recipient: INGEST,
+      addresses: [RK_BROKER],
+      domains: agencyDomainsFrom([RK_BROKER]),
+    });
+
+    expect(ev.contactPhone).toBeNull();
+    expect(ev.contactEmail).toBe(RK_BROKER);
+  });
+
+  it("záujemcu na cudzej doméne nechá prejsť", () => {
+    const raw = [
+      "Nehnutelnosti.sk - dopyt",
+      "Meno: Jan Novak",
+      "E-mail: jan@example.com",
+      "Telefon: 0911222333",
+    ].join("\n");
+
+    const ev = parseEmail(raw, RECEIVED_AT, {
+      recipient: INGEST,
+      addresses: [RK_BROKER],
+      domains: agencyDomainsFrom([RK_BROKER]),
+    });
+
+    expect(ev.contactEmail).toBe("jan@example.com");
+  });
+
+  it("ingest doména ostáva vylúčená aj bez identity agentúry", () => {
+    const raw = ["Dopyt", `E-mail: ${INGEST}`, "Telefon: 0911222333"].join("\n");
+    const ev = parseEmail(raw, RECEIVED_AT, { recipient: INGEST });
+    expect(ev.contactEmail).toBeNull();
+  });
+});
+
+describe("W1 — dôkaz, že chybu odstraňuje práve stráž", () => {
+  // Ten istý vstup dvakrát. Rozdiel je JEDINE identita kancelárie, takže výsledok
+  // nemôže pochádzať z ničoho iného. Prvý prípad je presne to, čo je v produkcii:
+  // lead z 2026-09-22 05:47 má ako kontakt adresu makléra.
+  const raw = [
+    "Nehnutelnosti.sk - dopyt",
+    "Meno: Jan Novak",
+    `E-mail: ${RK_BROKER}`,
+    "Telefon: 0911222333",
+  ].join("\n");
+
+  it("bez identity kancelárie vráti adresu makléra (reprodukcia chyby)", () => {
+    const ev = parseEmail(raw, RECEIVED_AT, { recipient: INGEST });
+    expect(ev.contactEmail).toBe(RK_BROKER);
+  });
+
+  it("s identitou kancelárie ju nevráti", () => {
+    const ev = parseEmail(raw, RECEIVED_AT, {
+      recipient: INGEST,
+      addresses: [RK_BROKER],
+      domains: agencyDomainsFrom([RK_BROKER]),
+    });
+    expect(ev.contactEmail).toBeNull();
+  });
+});
+
+describe("W1 — agencyDomainsFrom", () => {
+  it("verejných poskytovateľov nezaradí medzi domény kancelárie", () => {
+    const domains = agencyDomainsFrom([
+      RK_BROKER,
+      "niekto@gmail.com",
+      "niekto@zoznam.sk",
+      "niekto@seznam.cz",
+      null,
+      undefined,
+      "bez-zavinaca",
+    ]);
+    expect(domains).toEqual([RK_DOMAIN]);
+  });
+
+  it("duplicity a veľkosť písmen zjednotí", () => {
+    expect(agencyDomainsFrom([`a@${RK_DOMAIN}`, `B@${RK_DOMAIN.toUpperCase()}`])).toEqual([
+      RK_DOMAIN,
+    ]);
   });
 });

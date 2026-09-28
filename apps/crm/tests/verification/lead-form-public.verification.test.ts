@@ -45,8 +45,8 @@ describe("[verification] B1 public lead form (Wave B)", () => {
     expect(config).not.toContain("body.agency");
   });
 
-  it("middleware bypasses session auth for public inbound route", () => {
-    const mw = readFileSync(join(CRM_ROOT, "middleware.ts"), "utf8");
-    expect(mw).toContain("'/api/leads/inbound'");
+  it("proxy bypasses session auth for public inbound route", () => {
+    const proxy = readFileSync(join(CRM_ROOT, "src/proxy.ts"), "utf8");
+    expect(proxy).toContain('"/api/leads/inbound"');
   });
 });

@@ -18,8 +18,22 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
 
+    # Pridanie `permissions` token OBMEDZÍ presne na vymenované práva, takže
+    # `contents: read` tu musí byť — bez neho prestane fungovať checkout.
+    # `packages: read` je to, čo potrebuje pull z ghcr.io.
+    permissions:
+      contents: read
+      packages: read
+
     steps:
+      # fetch-depth: 2 nie je kozmetika. Na `pull_request` je checkout merge
+      # commit, ktorého ^1 je base a ^2 je head — `git diff HEAD^1 HEAD^2` je
+      # teda presne diff PR, bez fetchovania celej histórie (111 vetiev).
+      # Pri depth 1 by oba rodičia chýbali a classify-diff.sh by správne
+      # spadol do fail-safe, teda do plného behu — funkčné, ale zbytočné.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - name: Guard - n8n workflow exports contain no secrets
         run: |
@@ -56,6 +70,35 @@ jobs:
             exit 1
           fi
 
+      # ── CI-FASTPATH-01 ────────────────────────────────────────────────
+      # Diff, ktorý sa dotýka výhradne docs/ a memory/, nemôže zmeniť výsledok
+      # `next build` ani troch smoke specs — v apps/crm/src nie je ani jeden
+      # import .md/.mdx a tie specs žiadny docs súbor neotvárajú. Tie štyri
+      # kroky (155 s z 586 s, merané na jobe 108467951031) sa preto preskočia.
+      #
+      # `Test` sa NEPRESKAKUJE nikdy: vitest suite reálne číta 30+ ciest
+      # v docs/ (tests/verification/*, tests/rls/rls-tenant-isolation.test.ts),
+      # takže zmena .md testy rozbiť dokáže.
+      #
+      # Krok samotný nikdy nezhodí job: pri akejkoľvek neistote vracia
+      # app_touched=true, teda plný beh.
+      - name: Classify diff (fastpath gate)
+        id: scope
+        run: ../../scripts/ci/classify-diff.sh
+        working-directory: apps/crm
+
+      # SETUP-NODE-REORDER. Toolchain a npm cache sa pripravia PRED štartom
+      # Supabase, nie počas neho.
+      #
+      # Dôvod je zmeraný, nie tušený. Keď `setup-node` bežal súbežne s docker
+      # pullom, trval 37 s a 49 s proti baseline 6-8 s, `Install` 15 a 22 proti
+      # 10-18, a samotný štart narástol zo 108-113 s na 137 a 184 s. Obnova npm
+      # cache aj pull šiestich images sú to isté úzke hrdlo — sieť a disk —
+      # takže súbežne si navzájom predlžujú čas.
+      #
+      # Po presune zostáva v prekryvnom okne `Lint`, `Typecheck` a helper testy,
+      # teda práca viazaná na CPU, ktorá sa o sieť nebije. Prekryv bude menší,
+      # ale nemal by byť zaplatený spomalením toho, čo sa prekrýva.
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -66,18 +109,114 @@ jobs:
         run: npm ci
         working-directory: apps/crm
 
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          # Pinned, not `latest`. With `latest` the action asks the GitHub API
+          # for the newest release on every job, unauthenticated, and on
+          # 2026-09-24 that query is what took the pipeline down:
+          #
+          #   ##[error] Failed to resolve latest Supabase CLI release: rate limit exceeded
+          #
+          # Lint, the CI helper tests and the typecheck gate had all passed by
+          # then; the job died in setup, before `supabase start` was reached.
+          # A fixed version needs no such lookup.
+          #
+          # It also makes the toolchain deterministic: with `latest`, two runs of
+          # the same commit could install different CLIs. 2.117.0 is the version
+          # `latest` already resolved to (published 2026-09-07), so pinning it
+          # changes nothing about what CI installs today.
+          #
+          # To bump: pick a version published to npm as `supabase`, change it in
+          # BOTH workflows, and let CI prove `supabase start` still works — the
+          # repo's config.toml still uses the deprecated [inbucket] section, so
+          # a CLI jump is not automatically safe.
+          version: 2.117.0
+
+      # `supabase start` sťahuje šesť images z ghcr.io. Anonymný pull má nízky
+      # limit na zdieľanú IP GitHub runnerov a 2026-09-23 oň CI opakovane
+      # zaseklo: najprv zlyhal jeden image, o dve minúty neskôr všetkých šesť
+      # (`toomanyrequests`). Tento krok je v poradí 10 z 22, takže keď padne,
+      # Test aj Build sa preskočia — CI vtedy o kóde nepovie nič a červená
+      # farba nesúvisí s diffom.
+      #
+      # Prihlásenie zdvihne limit z anonymného na per-account. Token je
+      # ephemerálny GITHUB_TOKEN daného behu, nie uložený secret, a ide cez
+      # env + --password-stdin, aby sa neobjavil v príkazovom riadku ani v logu.
+      - name: Authenticate to ghcr.io (raise pull rate limit)
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+
+      # Prihlásenie vyššie je nutné, ale nestačí, a čakanie tiež nie: prvá verzia
+      # wrappera skúšala ghcr.io trikrát s 45s a 90s backoffom, bežala 3m44s a
+      # aj tak spadla. Preto `scripts/ci/supabase-start.sh` mení registry, nie
+      # čas — nesie celú diagnózu a kryje ho `scripts/ci/__tests__`.
+      #
+      # Registry vyberá skript, nie tento krok: nastavuje
+      # SUPABASE_INTERNAL_IMAGE_REGISTRY pre každý pokus zvlášť, takže akékoľvek
+      # step-level `env` by aj tak prebil. Hodnota tu by teda nič nerobila a
+      # budúci čitateľ by podľa nej hádal zle — preto tu žiadna nie je.
+      #
+      # Poznámka k `Authenticate to ghcr.io` vyššie: odkedy default zoznam vedie
+      # `public.ecr.aws` a ghcr.io v ňom nie je, ten krok je dormantný. Ostáva
+      # ako poistka pre prípad, že `SUPABASE_START_REGISTRIES` ghcr.io vráti —
+      # vtedy pôjde pull prihlásený, nie anonymne.
+      # TEST-SPLIT-01: štart ide na POZADIE a beží, kým sa inštaluje a lintuje.
+      #
+      # Zmerané (job 108806218894 a dva pred ním): `Start local Supabase` je
+      # 108-113 s a je to druhá najväčšia položka behu. Nič z toho, čo beží
+      # pred ním, ho nepotrebuje — `npm ci`, `Lint` a `Typecheck` sa databázy
+      # nedotknú. Serializovať ich za ním je čistá strata.
+      #
+      # Exit kód ide do súboru, nie cez `wait`: každý krok workflowu je iný
+      # shell, takže `wait $!` z nasledujúceho kroku na tento proces nedočiahne.
+      # Overené lokálne na stube — prekryv 7 s namiesto 11 s, zlyhanie sa
+      # prenieslo ako exit 1, zaseknutie skončilo na exit 124 s vypísaným logom.
+      - name: Start local Supabase (na pozadí)
+        run: |
+          set -uo pipefail
+          rm -f "$RUNNER_TEMP/supabase-start.exit"
+          ( ../../scripts/ci/supabase-start.sh; echo $? > "$RUNNER_TEMP/supabase-start.exit" ) \
+            > "$RUNNER_TEMP/supabase-start.log" 2>&1 &
+          echo "supabase start beží na pozadí (pid $!); medzitým pokračuje npm ci, Lint a Typecheck"
+          date +%s > "$RUNNER_TEMP/supabase-start.began"
+        working-directory: apps/crm
+
       - name: Lint
         run: npm run lint
         working-directory: apps/crm
 
-      # ── Ephemeral test DB: žiadne prod secrets v test/build fáze ──
-      - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
-        with:
-          version: latest
+      # The retry that guards `supabase start` is itself guarded: a wrapper that
+      # silently stopped retrying, or looped forever, would be worse than none.
+      - name: Typecheck (baseline gate)
+        working-directory: apps/crm
+        run: node scripts/typecheck-baseline.mjs
 
-      - name: Start local Supabase
-        run: supabase start
+      # ── Ephemeral test DB: žiadne prod secrets v test/build fáze ──
+      # Pozor na jednu vec, ktorá vyzerá nebezpečne a nie je: tento krok beží
+      # v prekryvnom okne, teda KÝM sa na pozadí štartuje skutočná Supabase,
+      # a `supabase-start.test.sh` si pritom podstrkuje vlastný stub `supabase`
+      # do PATH. Kolízia nenastane — stub je v PATH iba v procese toho testu,
+      # zatiaľ čo bežiaci štart si svoje binárky vyriešil pri spustení a má
+      # vlastné prostredie. Stub navyše pracuje v mktemp adresári, nie v
+      # `apps/crm`, takže sa nedotkne stavu bežiacej inštancie.
+      - name: Test CI helper scripts
+        run: |
+          ./scripts/ci/__tests__/supabase-start.test.sh
+          ./scripts/ci/__tests__/classify-diff.test.sh
+          node ./scripts/ci/__tests__/typecheck-baseline.test.mjs
+          ./scripts/ci/__tests__/wait-for-supabase.test.sh
+
+      # Čaká sa TU, nie skôr. Logika je v `scripts/ci/wait-for-supabase.sh`,
+      # nie inline: inline bash v YAML nikto nespustí, kým nespadne CI, a táto
+      # vetva sa musí dať otestovať skôr. Kryje ju
+      # `scripts/ci/__tests__/wait-for-supabase.test.sh` (7 kontrol vrátane
+      # zaseknutia a prenosu exit kódu), rovnako ako supabase-start.sh a
+      # classify-diff.sh.
+      - name: Wait for local Supabase
+        run: ../../scripts/ci/wait-for-supabase.sh
         working-directory: apps/crm
 
       - name: Export local credentials
@@ -146,6 +285,7 @@ jobs:
           TEST_SUPABASE_SERVICE_ROLE_KEY: ${{ env.TEST_SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Build
+        if: steps.scope.outputs.app_touched != 'false'
         run: npm run build
         working-directory: apps/crm
         env:
@@ -154,6 +294,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
       - name: Debug - find .next
+        if: steps.scope.outputs.app_touched != 'false'
         run: |
           echo "=== Workspace root ==="
           ls -la ${{ github.workspace }}
@@ -163,6 +304,7 @@ jobs:
           ls -la ${{ github.workspace }}/apps/crm/.next/ || echo "NOT FOUND"
 
       - name: Upload artifact
+        if: steps.scope.outputs.app_touched != 'false'
         uses: actions/upload-artifact@v4
         with:
           name: nextjs-build-${{ github.sha }}
@@ -173,10 +315,12 @@ jobs:
 
       # ── Playwright smoke (Fáza 1): reálna smoke brána pred merge ──
       - name: Install Playwright Chromium
+        if: steps.scope.outputs.app_touched != 'false'
         run: npx playwright install chromium --with-deps
         working-directory: apps/crm
 
       - name: Playwright smoke (next start + ephemeral DB)
+        if: steps.scope.outputs.app_touched != 'false'
         run: |
           set -e
           npm run start &
@@ -208,6 +352,13 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CI: true
 
+      # Preskočené kroky sú v UI šedé, ale bez tohto riadku sa v logu nedá
+      # prečítať PREČO. Brána, ktorá mlčky nebeží, je horšia než pomalá.
+      - name: Note the fastpath (build and smoke skipped)
+        if: steps.scope.outputs.app_touched == 'false'
+        run: |
+          echo "::notice title=CI-FASTPATH-01::${{ steps.scope.outputs.reason }}"
+
       - name: Upload Playwright artifacts
         if: failure()
         uses: actions/upload-artifact@v4
@@ -218,3 +369,89 @@ jobs:
             apps/crm/test-results/
           retention-days: 7
           if-no-files-found: ignore
+
+  # ── CP-P0-4 Control Contract ──────────────────────────────────────────────
+  # Runs standalone: the package has zero runtime dependencies, so this job needs
+  # no npm install and no ephemeral DB. It gates the authority engine on its own,
+  # independently of whether the CRM job can start Supabase.
+  control-contract:
+    name: Control Contract (authority + closed loop)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Guard - the contract has no runtime dependencies
+        run: |
+          set -e
+          if grep -RnP '^\s*import .* from "(?!\./|\.\./|node:)' packages/control-contract/src; then
+            echo "::error::packages/control-contract must import only relative paths and node: builtins"
+            exit 1
+          fi
+          if node -e "const p=require('./packages/control-contract/package.json');process.exit(p.dependencies?1:0)"; then
+            echo "dependency guard OK"
+          else
+            echo "::error::packages/control-contract must declare no runtime dependencies"
+            exit 1
+          fi
+
+      - name: Install typecheck tooling (dev only, nothing at runtime)
+        run: npm install --no-save --no-package-lock --no-audit --no-fund typescript@5.9.3 @types/node@22
+        working-directory: packages/control-contract
+
+      - name: Typecheck
+        run: npx tsc -p tsconfig.json --noEmit
+        working-directory: packages/control-contract
+
+      - name: Test
+        run: node --test packages/control-contract/tests/*.test.ts
+
+  bus:
+    name: BUS (transport authority boundary)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # No install step for the suite: the bus imports nothing but node builtins,
+      # so it runs on a bare checkout. If that ever stops being true this job
+      # fails on the import, which is the honest signal.
+      - name: Test
+        run: npm run bus:test
+
+      # Envelopes are data, and the tests do not read them: a malformed `v: 1`
+      # message reaches main through a green Test step. `bus:validate` exits 1 on
+      # an error, so this is a gate rather than a report. Pre-v1 messages stay
+      # warnings by the standing decision not to rewrite them, and warnings do
+      # not fail — only errors do. Runs before the tooling install for the same
+      # bare-checkout reason as the suite above.
+      - name: Validate envelopes
+        run: npm run bus:validate
+
+      # The suite runs under Node's type-stripping, which discards types rather
+      # than checking them — #612 shipped three type errors straight through a
+      # green Test step. #617 added the tsconfig and the `bus:typecheck` script
+      # but nothing invoked them, so the guard was declarative. This runs it.
+      #
+      # Tooling is installed here, dev-only, mirroring the control-contract job:
+      # the bus has no runtime dependencies and a root `npm install` would tie
+      # this job to the whole monorepo's dependency tree for no gain.
+      - name: Install typecheck tooling (dev only, nothing at runtime)
+        run: npm install --no-save --no-package-lock --no-audit --no-fund typescript@5.9.3 @types/node@22
+        working-directory: packages/bus-core
+
+      # Same tsconfig and same tsc version as the root `npm run bus:typecheck`,
+      # invoked from the package because that is where the tooling lives.
+      - name: Typecheck
+        run: npx tsc -p tsconfig.json --noEmit
+        working-directory: packages/bus-core

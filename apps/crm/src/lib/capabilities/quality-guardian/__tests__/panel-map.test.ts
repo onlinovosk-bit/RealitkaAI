@@ -52,6 +52,8 @@ describe("buildGuardianPanelView", () => {
           location: "Modrá nad Cirochou",
           currency: "EUR",
           rooms: "",
+          type: "Dom",
+          transactionType: "Predaj",
         },
         draft: {
           draftId: "d1",

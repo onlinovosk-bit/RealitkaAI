@@ -1,16 +1,18 @@
-﻿import type { Lead } from "@/lib/mock-data";
+import type { Lead } from "@/lib/mock-data";
 import type { Property } from "@/lib/properties-store";
 
 export type PropertyMatchResult = {
   propertyId: string;
   matchScore: number;
   reasons: string[];
+  comparedCriteria?: number;
 };
 
 export type LeadMatchResult = {
   leadId: string;
   matchScore: number;
   reasons: string[];
+  comparedCriteria?: number;
 };
 
 function extractBudget(value: string) {
@@ -20,6 +22,11 @@ function extractBudget(value: string) {
 
 function normalize(text: string) {
   return String(text || "").toLowerCase().trim();
+}
+
+/** Empty values never score and never generate "sedí" reasons. */
+function bothPresent(a: string, b: string) {
+  return Boolean(normalize(a) && normalize(b));
 }
 
 function includesEitherWay(a: string, b: string) {
@@ -56,36 +63,56 @@ function scoreBudget(leadBudget: number, propertyPrice: number) {
 export function calculateLeadPropertyMatch(lead: Lead, property: Property) {
   let score = 0;
   const reasons: string[] = [];
+  let comparedCriteria = 0;
 
   const leadBudget = extractBudget(lead.budget);
   const leadNote = normalize(lead.note);
 
-  if (normalize(lead.propertyType) === normalize(property.type)) {
-    score += 25;
-    reasons.push("typ nehnuteľnosti sedí");
+  if (bothPresent(lead.propertyType, property.type)) {
+    comparedCriteria += 1;
+    if (normalize(lead.propertyType) === normalize(property.type)) {
+      score += 25;
+      reasons.push("typ nehnuteľnosti sedí");
+    }
   }
 
-  if (includesEitherWay(lead.location, property.location)) {
-    score += 30;
-    reasons.push("lokalita sedí");
+  if (bothPresent(lead.location, property.location)) {
+    comparedCriteria += 1;
+    if (includesEitherWay(lead.location, property.location)) {
+      score += 30;
+      reasons.push("lokalita sedí");
+    }
   }
 
-  if (normalize(lead.rooms) === normalize(property.rooms)) {
-    score += 20;
-    reasons.push("počet izieb sedí");
+  if (bothPresent(lead.rooms, property.rooms)) {
+    comparedCriteria += 1;
+    if (normalize(lead.rooms) === normalize(property.rooms)) {
+      score += 20;
+      reasons.push("počet izieb sedí");
+    }
   }
 
-  const budget = scoreBudget(leadBudget, property.price);
-  score += budget.score;
-  if (budget.reason) reasons.push(budget.reason);
+  if (leadBudget && property.price) {
+    comparedCriteria += 1;
+    const budget = scoreBudget(leadBudget, property.price);
+    score += budget.score;
+    if (budget.reason) reasons.push(budget.reason);
+  }
 
-  const featureMatches = (property.features || []).filter((feature) =>
-    leadNote.includes(normalize(feature))
-  );
+  const featureCandidates = (property.features || [])
+    .map((feature) => normalize(feature))
+    .filter((feature) => feature.length > 0);
 
-  if (featureMatches.length > 0) {
-    score += Math.min(15, featureMatches.length * 5);
-    reasons.push("sedí výbava");
+  if (leadNote && featureCandidates.length > 0) {
+    comparedCriteria += 1;
+    const featureMatches = featureCandidates.filter((feature) =>
+      leadNote.includes(feature)
+    );
+
+    if (featureMatches.length > 0) {
+      score += Math.min(15, featureMatches.length * 5);
+      reasons.push("sedí výbava");
+    }
   }
 
   if (normalize(lead.timeline).includes("ihneď")) {
@@ -101,6 +128,7 @@ export function calculateLeadPropertyMatch(lead: Lead, property: Property) {
   return {
     score: Math.min(100, score),
     reasons,
+    comparedCriteria,
   };
 }
 
@@ -117,6 +145,7 @@ export function getMatchingPropertiesForLead(
         propertyId: property.id,
         matchScore: result.score,
         reasons: result.reasons,
+        comparedCriteria: result.comparedCriteria,
       };
     })
     .filter((item) => item.matchScore >= minScore)
@@ -136,6 +165,7 @@ export function getMatchingLeadsForProperty(
         leadId: lead.id,
         matchScore: result.score,
         reasons: result.reasons,
+        comparedCriteria: result.comparedCriteria,
       };
     })
     .filter((item) => item.matchScore >= minScore)

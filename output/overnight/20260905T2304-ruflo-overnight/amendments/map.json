@@ -1,0 +1,221 @@
+{
+  "run_id": "20260905T2304-ruflo-overnight",
+  "cycle": 1,
+  "max_cycles": 1,
+  "base_sha": "cf3604613cdbb6a7a279e175f2c792fb25591461",
+  "written_at_utc": "2026-09-05T21:40:50Z",
+  "author_lanes_frozen": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "H",
+    "I",
+    "J"
+  ],
+  "authoritative_package_root": "output/overnight/20260905T2304-ruflo-overnight/w0/input/local_draft/",
+  "authoritative_run_root": "output/overnight/20260905T2304-ruflo-overnight/",
+  "live_package_status": "NON_AUTHORITATIVE_FOR_THIS_RUN",
+  "final_must": "NO_GO_IMPLEMENTATION",
+  "final_must_reason": "F-H1 CRITICAL phone path unrepaired in code (spec amended only); F-H2 tenant NULL bypass unrepaired in code; F-H3 portal path BLOCKED on vendor; commercial VALIDATE_FIRST",
+  "items": [
+    {
+      "id": "AMD-H1",
+      "finding": "F-H1",
+      "severity": "CRITICAL",
+      "source_lane": "H",
+      "action": "AMEND_SPEC",
+      "status": "SUPERSEDED_BY_AMENDMENT",
+      "supersedes": [
+        "lanes/D/report.md#D8",
+        "lanes/G/report.md#BO-P2"
+      ],
+      "amendment_file": "amendments/AMD-H1-phone-db-enforced.md",
+      "residual": "CODE_UNCHANGED — implementation GO remains NO_GO until select-strip + DB-enforced reveal land and H re-review PASS",
+      "blocked_on": null
+    },
+    {
+      "id": "AMD-H2",
+      "finding": "F-H2",
+      "severity": "HIGH",
+      "source_lane": "H",
+      "action": "AMEND_SPEC",
+      "status": "SUPERSEDED_BY_AMENDMENT",
+      "supersedes": [
+        "lanes/G/report.md#BO-P1",
+        "lanes/D/report.md#D5"
+      ],
+      "amendment_file": "amendments/AMD-H2-tenant-leads-null.md",
+      "residual": "CODE_UNCHANGED — multi-tenant / Cohort GO blocked until leads+properties NULL bypass removed post-backfill",
+      "blocked_on": null
+    },
+    {
+      "id": "AMD-H3",
+      "finding": "F-H3",
+      "severity": "HIGH",
+      "source_lane": "H",
+      "action": "BLOCKED",
+      "status": "BLOCKED",
+      "supersedes": [
+        "lanes/D/report.md#D9 soft-read as implementable"
+      ],
+      "amendment_file": "amendments/AMD-H3-export-vendor-blocked.md",
+      "residual": "P5/P6 stay BLOCKED; do not unblock without UC vendor package",
+      "blocked_on": "customer_or_vendor_data: United Classifieds Import docs (full-file vs per-listing, delete/deactivate, auth/ack)"
+    },
+    {
+      "id": "AMD-I1",
+      "finding": "I-F1",
+      "severity": "HIGH",
+      "source_lane": "I",
+      "action": "AMEND_HANDOFF",
+      "status": "SUPERSEDED_BY_AMENDMENT",
+      "supersedes": [
+        "lanes/F/report.md soft sequencing that allows paid before kill"
+      ],
+      "amendment_file": "amendments/AMD-I-commercial-gates.md",
+      "residual": "Needs founder GO + interview data (>=6) before paid C1",
+      "blocked_on": "customer_data: EXP-B1/F3 interview outcomes"
+    },
+    {
+      "id": "AMD-I2",
+      "finding": "I-F2",
+      "severity": "HIGH",
+      "source_lane": "I",
+      "action": "AMEND_HANDOFF",
+      "status": "SUPERSEDED_BY_AMENDMENT",
+      "supersedes": [
+        "lanes/E/report.md soft commercial PASS reading"
+      ],
+      "amendment_file": "amendments/AMD-I-commercial-gates.md",
+      "residual": "WTP unproven; 355+credit HYPOTHESIS only",
+      "blocked_on": "customer_data: dual price-card responses"
+    },
+    {
+      "id": "AMD-I3",
+      "finding": "I-F3",
+      "severity": "HIGH",
+      "source_lane": "I",
+      "action": "AMEND_HANDOFF",
+      "status": "SUPERSEDED_BY_AMENDMENT",
+      "supersedes": [
+        "any reading of F8 as EUR ROI / commission proof"
+      ],
+      "amendment_file": "amendments/AMD-I-commercial-gates.md",
+      "residual": "Outcome/success-fee DEFERRED until attribution+portal truth",
+      "blocked_on": null
+    },
+    {
+      "id": "AMD-J1",
+      "finding": "J-01",
+      "severity": "CRITICAL",
+      "source_lane": "J",
+      "action": "AMEND_PROVENANCE",
+      "status": "SUPERSEDED_BY_AMENDMENT",
+      "supersedes": [
+        "live docs/overnight/2026-09-05-ruflo-swarm/* as SSOT for this RUN",
+        "Lane F live package hash citations as authoritative"
+      ],
+      "amendment_file": "amendments/AMD-J-run-authority.md",
+      "residual": "Live package remains mutated; treat as NON-AUTHORITATIVE",
+      "blocked_on": null
+    },
+    {
+      "id": "AMD-J2",
+      "finding": "J-02",
+      "severity": "HIGH",
+      "source_lane": "J",
+      "action": "AMEND_PROVENANCE",
+      "status": "SUPERSEDED_BY_AMENDMENT",
+      "supersedes": [
+        "live launch-record.md run_id binding for morning handoff of this RUN"
+      ],
+      "amendment_file": "amendments/AMD-J-run-authority.md",
+      "residual": "Sibling RUN 2026-09-05T2308-CEST-research is out of scope; founder must pick morning authority if dual packs remain",
+      "blocked_on": "founder_choice: which RUN is morning-authoritative (2304 vs 2308)"
+    }
+  ],
+  "deferred_notes": [
+    {
+      "finding": "F-H4",
+      "severity": "MEDIUM",
+      "action": "NOTE",
+      "note": "Cut-scope schedule feasible only after F-H1/F-H2 cleared in code; attempt-logging owner still thin"
+    },
+    {
+      "finding": "F-H5",
+      "severity": "LOW",
+      "action": "NOTE",
+      "note": "Storage prefix BO when media upload in scope"
+    },
+    {
+      "finding": "I-F4",
+      "severity": "MEDIUM",
+      "action": "CARRY",
+      "note": "EXP-B3 migration stopwatch before C1 clock — carried in AMD-I"
+    },
+    {
+      "finding": "I-F5",
+      "severity": "MEDIUM",
+      "action": "CARRY",
+      "note": "Paid cap 2 + interview mix — carried in AMD-I"
+    },
+    {
+      "finding": "I-F6",
+      "severity": "MEDIUM",
+      "action": "CARRY",
+      "note": "Reorder interviews then migration then paid — carried in AMD-I"
+    },
+    {
+      "finding": "I-F7",
+      "severity": "LOW",
+      "action": "AFFIRM",
+      "note": "Manual invoice only; no self-serve Stripe claims"
+    },
+    {
+      "finding": "I-F8",
+      "severity": "LOW",
+      "action": "AFFIRM",
+      "note": "Keep no-client-names / grandfather hygiene"
+    },
+    {
+      "finding": "J-03",
+      "severity": "MEDIUM",
+      "action": "NOTE",
+      "note": "Do not treat mutable control/status.json as frozen worker input"
+    },
+    {
+      "finding": "J-04",
+      "severity": "MEDIUM",
+      "action": "NOTE",
+      "note": "O6 parsers accept both sources.json schemas; do not rewrite frozen A-G"
+    },
+    {
+      "finding": "J-05",
+      "severity": "MEDIUM",
+      "action": "NOTE",
+      "note": "Future runs hash w0 freeze paths only"
+    },
+    {
+      "finding": "J-06",
+      "severity": "LOW",
+      "action": "NOTE",
+      "note": "D _scratch/ local only; not in W2 hash contract"
+    },
+    {
+      "finding": "J-07",
+      "severity": "LOW",
+      "action": "NOTE",
+      "note": "Budget/deadline ASSUMED; no spend escalation"
+    }
+  ],
+  "counts": {
+    "critical_high_mapped": 8,
+    "amended": 7,
+    "blocked": 1,
+    "fake_fixes": 0
+  }
+}

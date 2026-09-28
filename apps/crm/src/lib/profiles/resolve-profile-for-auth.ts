@@ -4,6 +4,27 @@ import {
   entitlementRank,
   normalizeProfileEntitlements,
 } from "@/lib/profiles/normalize-profile-entitlements";
+import { getAuthProfileRequestMemo } from "@/lib/profiles/auth-profile-request-memo";
+
+const REQUEST_PROFILE_SELECT =
+  "id, agency_id, auth_user_id, email, role, ui_role, account_tier, full_name, tier_updated_at";
+
+export function widenProfileSelect(select: string): string {
+  const canonicalCols = new Set(
+    REQUEST_PROFILE_SELECT.split(",")
+      .map((part) => part.trim())
+      .filter(Boolean),
+  );
+  const requested = select
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (requested.length === 0) return REQUEST_PROFILE_SELECT;
+  if (requested.every((col) => canonicalCols.has(col))) {
+    return REQUEST_PROFILE_SELECT;
+  }
+  return select;
+}
 
 export type ResolvedAuthProfile = {
   id: string;
@@ -14,8 +35,11 @@ export type ResolvedAuthProfile = {
   role?: string | null;
   ui_role?: string | null;
   account_tier?: string | null;
+  tier_updated_at?: string | null;
   team_license_id?: string | null;
   agency_name?: string | null;
+  /** Najvyššie oprávnenie v aplikácii — odomyká interné plochy. */
+  is_platform_admin?: boolean | null;
 };
 
 type ProfileLookupResult = {
@@ -25,15 +49,22 @@ type ProfileLookupResult = {
 /** Reality Smolko tenant — canonical agency UUID (prod). */
 export const SMOLKO_AGENCY_ID = "11111111-1111-1111-1111-111111111111";
 
-/** Reality Smolko owner logins (prod + Google auth). */
+/**
+ * Reality Smolko owner logins (prod + Google auth).
+ * Exact allowlist ONLY — never the whole @realitysmolko.sk domain.
+ * Domain-wide matching pulled any broker/agent onto the owner profile via
+ * smolkoProfileLookupEmails + entitlementRank, and `emailMatch ?? best`
+ * could link auth_user_id onto the owner row when it was still null.
+ */
+const SMOLKO_OWNER_EMAILS = new Set([
+  "office@realitysmolko.sk",
+  "rastislav.smolko@gmail.com",
+]);
+
 export function isSmolkoOwnerEmail(email: string | null | undefined): boolean {
   const normalized = String(email ?? "").trim().toLowerCase();
   if (!normalized) return false;
-  return (
-    normalized === "office@realitysmolko.sk" ||
-    normalized === "rastislav.smolko@gmail.com" ||
-    normalized.endsWith("@realitysmolko.sk")
-  );
+  return SMOLKO_OWNER_EMAILS.has(normalized);
 }
 
 /**
@@ -49,6 +80,25 @@ export function smolkoProfileLookupEmails(loginEmail: string | null | undefined)
     candidates.add("office@realitysmolko.sk");
   }
   return [...candidates];
+}
+
+const TIER_UPDATE_THROTTLE_MS = 60 * 60 * 1000;
+
+export function shouldPersistNormalizedTiers(
+  profile: ResolvedAuthProfile,
+  normalized: ResolvedAuthProfile,
+  nowMs = Date.now(),
+): boolean {
+  const valuesDiffer =
+    normalized.role !== profile.role ||
+    normalized.ui_role !== profile.ui_role ||
+    normalized.account_tier !== profile.account_tier;
+  if (!valuesDiffer) return false;
+  const updatedAt = profile.tier_updated_at;
+  if (!updatedAt) return true;
+  const ts = Date.parse(updatedAt);
+  if (Number.isNaN(ts)) return true;
+  return nowMs - ts >= TIER_UPDATE_THROTTLE_MS;
 }
 
 async function findSmolkoOwnerProfileViaServiceRole(
@@ -79,17 +129,26 @@ async function findSmolkoOwnerProfileViaServiceRole(
   );
 
   let emailMatch: ResolvedAuthProfile | null = null;
-  let best: ResolvedAuthProfile | null = null;
   for (const row of owners) {
     const profile = row as unknown as ResolvedAuthProfile;
     const rowEmail = String(profile.email ?? "").trim().toLowerCase();
     if (loginCandidates.has(rowEmail)) {
       emailMatch = pickPreferredProfile(emailMatch, profile);
     }
-    best = pickPreferredProfile(best, profile);
   }
 
-  return emailMatch ?? best;
+  // Never fall back to an arbitrary owner/founder — that handed the Smolko
+  // owner profile (and a possible auth_user_id link) to any matching caller.
+  return emailMatch;
+}
+
+/**
+ * Email equality must never pass raw user input to ILIKE: `_` and `%` are
+ * wildcards (`in_o@x.com` matches `info@x.com`). Use exact `eq` when the
+ * candidate contains those chars; otherwise `ilike` for legacy case-folding.
+ */
+export function emailLookupNeedsExactMatch(email: string): boolean {
+  return /[%_]/.test(email);
 }
 
 async function findProfileByEmailCandidates(
@@ -98,11 +157,10 @@ async function findProfileByEmailCandidates(
   select: string,
 ): Promise<ProfileLookupResult> {
   for (const candidate of smolkoProfileLookupEmails(loginEmail)) {
-    const { data } = await client
-      .from("profiles")
-      .select(select)
-      .ilike("email", candidate)
-      .maybeSingle();
+    const base = client.from("profiles").select(select);
+    const { data } = emailLookupNeedsExactMatch(candidate)
+      ? await base.eq("email", candidate).maybeSingle()
+      : await base.ilike("email", candidate).maybeSingle();
     if (data) {
       return { profile: data as unknown as ResolvedAuthProfile };
     }
@@ -213,6 +271,27 @@ async function findProfileForAuthUser(
   email?: string | null,
   select = "id, agency_id, auth_user_id",
 ): Promise<ProfileLookupResult> {
+  const memo = getAuthProfileRequestMemo();
+  const resolvedSelect = widenProfileSelect(select);
+  const key = "find:" + userId + ":" + String(email ?? "").trim().toLowerCase() + ":" + resolvedSelect;
+  const hit = memo.get(key);
+  if (hit) return hit as Promise<ProfileLookupResult>;
+  const pending = findProfileForAuthUserUncached(
+    supabase,
+    userId,
+    email,
+    resolvedSelect,
+  );
+  memo.set(key, pending);
+  return pending;
+}
+
+async function findProfileForAuthUserUncached(
+  supabase: SupabaseClient,
+  userId: string,
+  email?: string | null,
+  select = "id, agency_id, auth_user_id",
+): Promise<ProfileLookupResult> {
   const byAuth = await supabase
     .from("profiles")
     .select(select)
@@ -238,8 +317,10 @@ async function findProfileForAuthUser(
   let preferred = pickPreferredProfile(authProfile, byEmail.profile);
 
   // RLS often hides the canonical email row while auth_user_id stub is visible — always merge via service role.
+  const alreadyLinked =
+    preferred?.auth_user_id === userId && Boolean(preferred.agency_id);
   const service = createServiceRoleClient();
-  if (service) {
+  if (service && (!alreadyLinked || isSmolkoOwnerEmail(email))) {
     preferred = await findProfileViaServiceRole(
       service,
       userId,
@@ -265,11 +346,25 @@ export async function linkProfileToAuthUser(
   userId: string,
   email?: string | null,
 ): Promise<ResolvedAuthProfile | null> {
+  const memo = getAuthProfileRequestMemo();
+  const key = "link:" + userId + ":" + String(email ?? "").trim().toLowerCase();
+  const hit = memo.get(key);
+  if (hit) return hit as Promise<ResolvedAuthProfile | null>;
+  const pending = linkProfileToAuthUserUncached(supabase, userId, email);
+  memo.set(key, pending);
+  return pending;
+}
+
+async function linkProfileToAuthUserUncached(
+  supabase: SupabaseClient,
+  userId: string,
+  email?: string | null,
+): Promise<ResolvedAuthProfile | null> {
   const lookup = await findProfileForAuthUser(
     supabase,
     userId,
     email,
-    "id, agency_id, auth_user_id, email, role, ui_role, account_tier",
+    "id, agency_id, auth_user_id, email, role, ui_role, account_tier, tier_updated_at",
   );
   let profile = lookup.profile;
 
@@ -279,7 +374,7 @@ export async function linkProfileToAuthUser(
       service,
       userId,
       email,
-      "id, agency_id, auth_user_id, email, role, ui_role, account_tier",
+      "id, agency_id, auth_user_id, email, role, ui_role, account_tier, tier_updated_at",
     );
     if (
       smolkoCanonical &&
@@ -293,12 +388,7 @@ export async function linkProfileToAuthUser(
 
   if (profile?.auth_user_id === userId && profile.agency_id) {
     const normalized = normalizeProfileEntitlements(profile);
-    if (
-      normalized &&
-      (normalized.role !== profile.role ||
-        normalized.ui_role !== profile.ui_role ||
-        normalized.account_tier !== profile.account_tier)
-    ) {
+    if (normalized && shouldPersistNormalizedTiers(profile, normalized)) {
       await supabase
         .from("profiles")
         .update({
@@ -318,7 +408,14 @@ export async function linkProfileToAuthUser(
       linkedOk ? { ...profile, auth_user_id: userId } : profile,
     );
 
-    if (linkedOk && linked && (linked.role || linked.ui_role || linked.account_tier)) {
+    if (
+      linkedOk &&
+      linked &&
+      shouldPersistNormalizedTiers(
+        linkedOk ? { ...profile, auth_user_id: userId } : profile,
+        linked,
+      )
+    ) {
       const tierPayload = {
         role: linked.role,
         ui_role: linked.ui_role,

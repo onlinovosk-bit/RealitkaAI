@@ -128,8 +128,16 @@ describe("grant-engine", () => {
       purchased_credits_balance: 80,
       credits_balance: 120,
     });
+    // 1) no prior expiry ledger  2) no current-period grant
+    mockMaybeSingle
+      .mockResolvedValueOnce({ data: null })
+      .mockResolvedValueOnce({ data: null });
 
-    const result = await expireGrantCreditsForAgency(row, "202605");
+    const result = await expireGrantCreditsForAgency(
+      row,
+      "202605",
+      new Date("2026-06-01T12:00:00Z"),
+    );
 
     expect(result).toEqual({ expired: 40, skipped: false });
     expect(mockUpdate).toHaveBeenCalledWith(
@@ -147,12 +155,80 @@ describe("grant-engine", () => {
     );
   });
 
-  it("expireGrantCreditsForAgency is idempotent", async () => {
-    mockMaybeSingle.mockResolvedValueOnce({ data: { id: "done" } });
-
-    const result = await expireGrantCreditsForAgency(agency(), "202605");
+  it("expireGrantCreditsForAgency is idempotent when balance already cleared", async () => {
+    const result = await expireGrantCreditsForAgency(
+      agency({ grant_credits_balance: 0, credits_balance: 100 }),
+      "202605",
+      new Date("2026-06-01T12:00:00Z"),
+    );
 
     expect(result).toEqual({ expired: 0, skipped: true });
     expect(mockInsert).not.toHaveBeenCalled();
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it("expire repairs uncleared balance when expiry ledger exists and no current grant", async () => {
+    mockMaybeSingle
+      .mockResolvedValueOnce({ data: { id: "expiry-done" } })
+      .mockResolvedValueOnce({ data: null });
+
+    const result = await expireGrantCreditsForAgency(
+      agency({
+        grant_credits_balance: 40,
+        purchased_credits_balance: 80,
+        credits_balance: 120,
+      }),
+      "202605",
+      new Date("2026-06-01T12:00:00Z"),
+    );
+
+    expect(result).toEqual({ expired: 40, skipped: false });
+    expect(mockInsert).not.toHaveBeenCalled();
+    expect(mockUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        grant_credits_balance: 0,
+        credits_balance: 80,
+      }),
+    );
+  });
+
+  it("expire refuses to wipe when current-period grant already exists", async () => {
+    mockMaybeSingle
+      .mockResolvedValueOnce({ data: null }) // no prior expiry
+      .mockResolvedValueOnce({ data: { id: "grant-row" } }); // current grant present
+
+    const result = await expireGrantCreditsForAgency(
+      agency({
+        grant_credits_balance: 140,
+        purchased_credits_balance: 80,
+        credits_balance: 220,
+      }),
+      "202605",
+      new Date("2026-06-01T12:00:00Z"),
+    );
+
+    expect(result).toEqual({ expired: 0, skipped: true });
+    expect(mockInsert).not.toHaveBeenCalled();
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it("expire surfaces ledger insert failures as error (not silent skip)", async () => {
+    mockMaybeSingle
+      .mockResolvedValueOnce({ data: null })
+      .mockResolvedValueOnce({ data: null });
+    mockInsert.mockResolvedValueOnce({ error: { message: "unique violation" } });
+
+    const result = await expireGrantCreditsForAgency(
+      agency(),
+      "202605",
+      new Date("2026-06-01T12:00:00Z"),
+    );
+
+    expect(result).toEqual({
+      expired: 0,
+      skipped: true,
+      error: "unique violation",
+    });
+    expect(mockUpdate).not.toHaveBeenCalled();
   });
 });

@@ -1,4 +1,7 @@
 import { NextResponse } from "next/server";
+import { INBOUND_REPLY_DRAFT_TIMEOUT_MS, scheduleInboundReplyDraft } from "@/lib/inbound/reply-draft";
+import { runInboundLeadAutoResponse } from "@/lib/acquire/inbound-lead-auto-response";
+import { runInboundLeadTriageAndNotify } from "@/lib/acquire/inbound-lead-triage";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/rate-limit";
 import { resolveInboundAgency } from "@/lib/leads/inbound-form-config";
@@ -115,9 +118,10 @@ export async function POST(request: Request) {
         phone: input.phone.slice(0, 50),
         location: "",
         budget: "",
-        property_type: "Byt",
+        // Form does not ask — never invent (AP-001). Same pattern as Sprievodca rooms fix (#523).
+        property_type: "",
         rooms: "",
-        financing: "Hypotéka",
+        financing: "",
         timeline: "",
         source: "web_form",
         status: "Nový",
@@ -135,6 +139,34 @@ export async function POST(request: Request) {
       if (html) return htmlResponse("<p>Nepodarilo sa odoslať. Skúste neskôr.</p>", 500);
       return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
     }
+
+    const note = noteParts.join(" · ").slice(0, 5000);
+
+    void runInboundLeadTriageAndNotify(supabase, data, {
+      agencyId: resolved.agencyId,
+      name: input.name.slice(0, 200),
+      status: "Nový",
+      note,
+      source: "web_form",
+    });
+
+    void runInboundLeadAutoResponse(supabase, data, {
+      agencyId: resolved.agencyId,
+      name: input.name.slice(0, 200),
+      email: input.email,
+    });
+
+    // AI návrh odpovede pre makléra (Tier 3: len návrh, odošle ho maklér).
+    // Beží po odpovedi, aby formulár nečakal na LLM.
+    scheduleInboundReplyDraft({
+      admin: supabase,
+      leadId: String(data.id),
+      agencyId: resolved.agencyId,
+      lead: { name: input.name.slice(0, 200), email: input.email, message: note, source: "web_form" },
+      activitySource: "web_form",
+      timeoutMs: INBOUND_REPLY_DRAFT_TIMEOUT_MS,
+      skipOnFallback: true,
+    });
 
     if (html) {
       return NextResponse.redirect(new URL(`/f/${input.slug}?submitted=1`, request.url), 303);
