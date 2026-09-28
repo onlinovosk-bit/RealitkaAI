@@ -468,13 +468,13 @@ h1 em { font-style:normal; color:var(--cyan); }
   display:inline-flex; align-items:center; gap:8px;
   padding:6px 16px; border-radius:999px; margin-bottom:20px;
   background:rgba(124,58,237,.15); border:1px solid rgba(124,58,237,.3);
-  font-size:11px; font-weight:800; color:#A78BFA; letter-spacing:.12em; text-transform:uppercase;
+  font-size:13px; font-weight:800; color:#819FC4; letter-spacing:.12em; text-transform:uppercase;
 }
 .rscan-headline {
   font-size:clamp(30px,5vw,54px); font-weight:900; line-height:1.08;
   letter-spacing:-.03em; color:#fff; margin-bottom:16px;
 }
-.rscan-headline em { font-style:normal; color:#A78BFA; }
+.rscan-headline em { font-style:normal; color:#819FC4; }
 .rscan-sub {
   font-size:17px; color:rgba(255,255,255,.5); max-width:560px; line-height:1.65; margin-bottom:56px;
 }
@@ -487,7 +487,7 @@ h1 em { font-style:normal; color:var(--cyan); }
   border-radius:20px; padding:32px;
 }
 .rscan-what-title {
-  font-size:12px; font-weight:800; color:rgba(255,255,255,.3);
+  font-size:14px; font-weight:800; color:rgba(255,255,255,.3);
   letter-spacing:.12em; text-transform:uppercase; margin-bottom:20px;
 }
 .rscan-item {
@@ -498,14 +498,14 @@ h1 em { font-style:normal; color:var(--cyan); }
 }
 .rscan-item:hover { background:rgba(124,58,237,.08); border-color:rgba(124,58,237,.2); }
 .rscan-item-icon { font-size:20px; flex-shrink:0; margin-top:1px; }
-.rscan-item-text strong { display:block; font-size:13px; font-weight:800; color:#fff; margin-bottom:3px; }
-.rscan-item-text span { font-size:12px; color:rgba(255,255,255,.45); line-height:1.5; }
+.rscan-item-text strong { display:block; font-size:15px; font-weight:800; color:#fff; margin-bottom:3px; }
+.rscan-item-text span { font-size:14px; color:rgba(255,255,255,.45); line-height:1.5; }
 .rscan-sample {
   background:rgba(255,255,255,.04); border:1px solid rgba(124,58,237,.25);
   border-radius:20px; padding:32px;
 }
 .rscan-sample-label {
-  font-size:11px; font-weight:800; color:#A78BFA; letter-spacing:.12em;
+  font-size:13px; font-weight:800; color:#819FC4; letter-spacing:.12em;
   text-transform:uppercase; margin-bottom:20px; display:flex; align-items:center; gap:8px;
 }
 .rscan-contact-card {
@@ -515,31 +515,31 @@ h1 em { font-style:normal; color:var(--cyan); }
 }
 .rscan-contact-card::before {
   content:''; position:absolute; left:0; top:0; bottom:0; width:3px;
-  background:linear-gradient(180deg,#A78BFA,#7C3AED);
+  background:linear-gradient(180deg,#3D6BA5,#143A6B);
 }
 .rscan-contact-name {
-  font-size:14px; font-weight:800; color:#fff; margin-bottom:4px;
+  font-size:16px; font-weight:800; color:#fff; margin-bottom:4px;
 }
 .rscan-contact-meta {
-  font-size:11px; color:rgba(255,255,255,.4); margin-bottom:10px; line-height:1.5;
+  font-size:13px; color:rgba(255,255,255,.4); margin-bottom:10px; line-height:1.5;
 }
 .rscan-contact-why {
-  font-size:11px; color:rgba(167,139,250,.8); line-height:1.55;
+  font-size:13px; color:rgba(129,159,196,.8); line-height:1.55;
   padding:8px 10px; background:rgba(124,58,237,.1); border-radius:8px;
   border:1px solid rgba(124,58,237,.15);
 }
 .rscan-bri-row {
   display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;
 }
-.rscan-bri-label { font-size:11px; font-weight:700; color:rgba(255,255,255,.4); }
+.rscan-bri-label { font-size:13px; font-weight:700; color:rgba(255,255,255,.4); }
 .rscan-bri-score {
-  font-size:18px; font-weight:900; color:#A78BFA;
+  font-size:18px; font-weight:900; color:#819FC4;
 }
 .rscan-action-chip {
   display:inline-flex; align-items:center; gap:6px;
   padding:5px 12px; border-radius:999px; margin-top:10px;
   background:rgba(124,58,237,.15); border:1px solid rgba(124,58,237,.3);
-  font-size:11px; font-weight:800; color:#A78BFA;
+  font-size:13px; font-weight:800; color:#819FC4;
 }
 .rscan-pricing-box {
   margin-top:40px; background:rgba(255,255,255,.04); border:1px solid rgba(124,58,237,.3);
@@ -550,7 +550,7 @@ h1 em { font-style:normal; color:var(--cyan); }
 }
 .rscan-price-group {}
 .rscan-price-tag {
-  font-size:11px; font-weight:800; color:rgba(255,255,255,.35);
+  font-size:13px; font-weight:800; color:rgba(255,255,255,.35);
   letter-spacing:.12em; text-transform:uppercase; margin-bottom:4px;
 }
 .rscan-price-main {
@@ -558,17 +558,17 @@ h1 em { font-style:normal; color:var(--cyan); }
 }
 .rscan-price-main sup { font-size:22px; vertical-align:top; margin-top:10px; color:rgba(255,255,255,.5); }
 .rscan-price-sub {
-  font-size:13px; color:rgba(255,255,255,.4); margin-top:4px;
+  font-size:15px; color:rgba(255,255,255,.4); margin-top:4px;
 }
 .rscan-price-sub s { color:rgba(255,255,255,.25); }
 .rscan-subscriber-note {
   padding:10px 16px; border-radius:10px; background:rgba(34,197,94,.08);
-  border:1px solid rgba(34,197,94,.2); font-size:12px; color:rgba(74,222,128,.8);
+  border:1px solid rgba(34,197,94,.2); font-size:14px; color:rgba(74,222,128,.8);
   display:flex; align-items:center; gap:8px;
 }
 .rscan-cta-btn {
-  padding:18px 36px; border-radius:14px; font-size:15px; font-weight:900;
-  background:linear-gradient(135deg,#7C3AED,#6D28D9); color:#fff; border:none; cursor:pointer;
+  padding:18px 36px; border-radius:14px; font-size:17px; font-weight:900;
+  background:linear-gradient(135deg,#1B4F8A,#143A6B); color:#fff; border:none; cursor:pointer;
   transition:transform .2s, box-shadow .2s; white-space:nowrap;
   box-shadow:0 8px 32px rgba(124,58,237,.35);
 }
@@ -577,11 +577,11 @@ h1 em { font-style:normal; color:var(--cyan); }
   display:flex; gap:20px; flex-wrap:wrap; margin-top:16px;
 }
 .rscan-trust-item {
-  font-size:12px; color:rgba(255,255,255,.35); display:flex; align-items:center; gap:5px;
+  font-size:14px; color:rgba(255,255,255,.35); display:flex; align-items:center; gap:5px;
 }
 .rscan-trust-item span { color:rgba(74,222,128,.7); font-weight:800; }
 .rscan-no-plan {
-  margin-top:12px; font-size:12px; color:rgba(255,255,255,.3); font-style:italic;
+  margin-top:12px; font-size:14px; color:rgba(255,255,255,.3); font-style:italic;
 }
 
 /* ── BUTTON SHIMMER ── */

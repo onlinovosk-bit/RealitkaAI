@@ -1,5 +1,1218 @@
 # Critical Decisions Log
 
+## [2026-09-28] AP-029 / TEST-SPLIT-01 — štart na pozadí, a oprava môjho tvrdenia o rozptyle (founder GO)
+
+### Najprv oprava, lebo mení merací plán
+Po druhom behu fastpathu som napísal, že **šum jobu je pod 1 %** (411 a 415 s
+hodinu od seba), a že preto bude 84 s spoľahlivo merateľných. **Tretí beh to
+vyvrátil: 306 s na tom istom obsahu**, teda o 26 % menej.
+
+| krok | so 20:00 | so 21:07 | ne 05:59 |
+|---|---|---|---|
+| Install | 18 | 17 | **10** |
+| Lint | 35 | 33 | **23** |
+| Typecheck | 28 | 28 | **16** |
+| **Test** | **174** | **173** | **105** |
+| Start local Supabase | 112 | 113 | 108 |
+| **celkom** | **411** | **415** | **306** |
+
+**PREDPOKLAD (nie fakt): výkon runnera.** Dôkaz preň je tvar zmeny — zrýchlili
+sa všetky CPU-viazané kroky v podobnom pomere (eslint −34 %, tsc −43 %,
+vitest −39 %, npm ci −41 %), hoci nezdieľajú nič okrem procesora, kým
+`Start local Supabase`, viazaný na sťahovanie images, sa nepohol (112 → 108).
+
+**Dôsledok:** strop TEST-SPLIT-01 (84 s) je **menší než rozptyl runnera**
+(±109 s). Porovnanie „jeden beh pred, jeden po" nedokáže nič — a presne to som
+navrhoval. Merací plán je opravený nižšie.
+
+### Čo sa nasadilo
+`Start local Supabase` ide **na pozadie** a prekrýva sa s `npm ci`, `Lint`,
+`Typecheck` a helper testami. Poradie krokov: CLI a ghcr login hore, štart na
+pozadie, potom node toolchain a kontroly, a `Wait for local Supabase` až tesne
+pred `Export local credentials`.
+
+Exit kód ide cez súbor, nie cez `wait`: **každý krok Actions je iný shell**,
+takže `wait $!` z nasledujúceho kroku na ten proces nedočiahne — je to cudzie
+PID, nie potomok. Môj vlastný testovací harness na tú istú vec padol
+(`wait: pid is not a child of this shell`), čo je dobrá pripomienka, že to nie
+je teoretická poznámka.
+
+### Meranie, ktoré runner-variance neovplyvní
+`wait-for-supabase.sh` vypisuje `::notice` s tromi číslami z JEDNÉHO behu:
+
+    supabase start <total>s | cakalo sa <waited>s | prekrytych <total-waited>s
+
+`prekrytych` je priamo úspora a je to **podiel v rámci toho istého behu**,
+takže rýchlosť runnera ho nekriví. To je náhrada za pôvodný plán „porovnaj
+celkový čas pred a po", ktorý by pri ±26 % rozptyle nič nedokázal.
+
+### Brány, nie inline bash
+Logika čakania je v `scripts/ci/wait-for-supabase.sh` a kryje ju
+`scripts/ci/__tests__/wait-for-supabase.test.sh` — 7 kontrol: prenos úspechu,
+reálny prekryv, notice s meracou hodnotou, prenos zlyhania, zaseknutie → 124,
+správa uvádzajúca skutočný limit (nie konštantu v texte), a chýbajúci log.
+Inline bash v YAML nikto nespustí, kým nespadne CI; to je presne ten dôvod,
+prečo `classify-diff.sh` dostal 19 testov.
+
+Fail-safe: nedokončený štart končí 124 a **vypíše celý log**. Tichý pád by sa
+prejavil až o krok neskôr na `supabase status`, teda ako niečo nesúvisiace —
+ten druh diagnostiky stál hodinu pri BOM markeri 16. 9. 2026.
+
+### Zmerané po nasadení (dva behy) — a oprava odhadu
+| krok | beh 1 | beh 2 | baseline pred zmenou |
+|---|---|---|---|
+| **setup-node** | **37** | **49** | 6 / 8 / 7 |
+| Install | 15 | **22** | 18 / 17 / 10 |
+| Lint | 30 | **37** | 35 / 33 / 23 |
+| Typecheck | 24 | 25 | 28 / 28 / 16 |
+| helper testy | 12 | 13 | 0 (nový test) |
+
+```
+beh 1: štart 137s | čakalo sa 19s | prekrytých 118s | kritická cesta 110 -> 19
+beh 2: štart 184s | čakalo sa 38s | prekrytých 146s | kritická cesta 110 -> 38
+```
+
+**Kontencia potvrdená dvoma meraniami, teda FAKT, nie predpoklad.** `setup-node`
+37 a 49 s proti baseline 6-8 s, a samotný štart narástol zo 108-113 s na 137
+a 184 s. Obnova npm cache a pull šiestich images si idú po tom istom hrdle.
+
+Čistý zisk po odpočítaní kontencie a môjho nového testu: **−72 s (beh 1) a
+−19 s (beh 2)**. Rozptyl medzi dvoma behmi je väčší než polovica zisku, takže
+„−84 s" by bolo tvrdenie bez opory.
+
+### SETUP-NODE-REORDER — zmerané, presun zabral
+Tretí beh (`a46ed0c9`, zmergované ako `dfa805db`):
+
+| krok | beh 1 | beh 2 | **beh 3** | baseline |
+|---|---|---|---|---|
+| **setup-node** | 37 | 49 | **6** | 6 / 8 / 7 |
+| **štart Supabase** | 137 | 184 | **110** | 108 / 113 / 108 |
+| čakanie | 19 | 38 | **6** | — |
+| **čisté** | −72 | −19 | **−63** | — |
+
+`setup-node` **49 → 6 s** a štart **184 → 110 s**: príčina bola naozaj v tom,
+že npm cache restore a docker pull idú po tom istom hrdle. Diagnóza potvrdená
+tým, že presun ju odstránil.
+
+**Kontencia sa však len presunula.** `Lint` +23 s a `Typecheck` +6 s nad
+baseline, lebo teraz bežia súbežne s pullom — ale ako CPU-viazané platia menej
+než sieťovo viazaný cache restore. **−63 s je po odpočítaní** tých +29 s aj
++12 s nového testu; hrubých −104 s neuvádzam ako výsledok. Zvyšok do stropu
+84 s poradím krokov neodstrániteľný: pull musí s niečím koexistovať.
+
+`setup-node` a `Install` presunuté PRED štart Supabase. V prekryvnom okne
+zostáva `Lint`, `Typecheck` a helper testy — práca viazaná na CPU, ktorá sa
+o sieť nebije. Okno je menšie, ale nemá byť zaplatené spomalením toho, čo sa
+prekrýva. Overí sa tretím a štvrtým behom; dovtedy je zisk NEOVERENÝ.
+
+#### Štvrtý beh (`45f5f950`, PR #725) — zisk je menší a nie je stabilný
+
+| krok | beh 3 | **beh 4** | baseline |
+|---|---|---|---|
+| setup-node | 6 | **6** | 6 / 8 / 7 |
+| Install | — | **17** | 18 / 17 / 10 |
+| štart Supabase (wall) | 110 | **136** | 108 / 113 / 108 |
+| čakanie | 6 | **20** | — |
+| Lint | +23 nad baseline | **65** | 35 / 33 / 23 |
+| Typecheck | +6 nad baseline | **39** | 28 / 28 / 16 |
+| čisté | **−63** | **−37** | — |
+
+Dve veci, jedna potvrdená a jedna oslabená.
+
+**Potvrdené dvakrát:** `setup-node` 6 s a `Install` 17 s, oba v baseline pásme.
+Diagnóza kontencie medzi npm cache restore a docker pull platí a presun ju na
+týchto dvoch krokoch odstránil. To je najpevnejší výsledok celej zmeny.
+
+**Oslabené:** `−63 s` nie je stabilné číslo, je to optimistický koniec rozsahu.
+Štvrtý beh dal `−37 s`. Štart Supabase trval 136 s namiesto 110 s, čakanie 20 s
+namiesto 6 s, a `Lint` vyskočil na 65 s. Kontencia teda nezmizla — presunula sa
+na CPU kroky a jej veľkosť kolíše medzi behmi. Poctivá formulácia je
+**−37 až −63 s**, nie `−63 s`.
+
+**Slabé miesto merania, priznané:** „nad baseline" závisí od toho, ktorý stĺpec
+baseline pre daný runner vyberiem, a normalizátor rýchlosti runnera nemám.
+Beh 4 zaraďujem k pomalým podľa `Test` 178 s (pomalé behy 174/173, rýchly 105)
+a `Reset DB` 30 s. Keby bol runner rýchly, čisté číslo by vyšlo horšie. Preto
+uvádzam aj surové časy, nie len delty — aby sa dali prepočítať proti inej
+voľbe baseline.
+
+Fastpath potvrdený **štvrtýkrát**: Build, Debug, Upload artifact, Playwright
+install a Playwright smoke `skipped`, `Note the fastpath` prešiel. Job celkom
+376 s.
+
+### Neoverené
+Skutočná úspora. Docker pull je sieťovo viazaný a `npm ci` + eslint + tsc sú
+CPU-viazané, takže na 2-jadrovom runneri sa môžu biť o zdroje a prekryv môže
+byť menší než aritmetický strop 84 s. Číslo doplní až prvý beh — a doplní sa
+z `prekrytych`, nie z celkového času.
+
+---
+## [2026-09-28] — DEMAND-SOURCE-A: Realvia dopyt dnes nedodáva žiadnou cestou (founder GO A)
+
+- **Webhooky:** `realvia_webhook_logs` nesú len `advert` (202), `delete` (26) a
+  `unknown`/test (7). Žiadny typ pre klienta alebo dopyt.
+- **Import kontaktov:** 5 stĺpcov (meno, priezvisko, email, telefón, maklér).
+- **`buyer_intents`:** len 3 riadky (verejný formulár, posledný júl).
+- **Otvorená neznáma** zapísaná v `master-data-sourcing-map.md`: či Realvia CRM
+  dopyty eviduje a vie ich exportovať. `realvia.sk` je z agentového prostredia
+  blokovaný a verejné výsledky o tom nehovoria.
+  - Zistí to founder: jedna otázka Realvii alebo referenčnému klientovi.
+- **Dôsledok:** kým neznáma nie je uzavretá, jediný reálny zdroj dopytu je maklér
+  (možnosť B). Ústava: B = VALIDATE, najprv overiť s referenčným klientom, či by
+  dopyt vypĺňali.
+## [2026-09-27] COACH-HONEST — dashboard už neukazuje vymyslené čísla (founder GO)
+
+**Nález (GO 2, AP-023 smer B):** `broker_performance_stats` v PROD neexistuje, takže
+`/api/coaching/insight` každému maklérovi vrátil natvrdo „TOP 12 %", „18 DNÍ",
+„O 4 dni rýchlejšie ako priemer", „3 Day Streak", 58 % follow-up a panel `BrokerCoach`
+ich zobrazil ako jeho vlastné. Porušenie Direktívy 4 („never a fake number"). Aj pri
+existujúcich štatistikách boli streak, rank a porovnanie s priemerom vymyslené a pod
+rankom stálo „V regióne Prešov".
+
+**Rozhodnutie (Ústava v2: BUILD — retencia, dôvera v čísla):**
+- Bez nameraných štatistík panel nie je (`ok:false, reason:"no_stats"`).
+- S nimi ide len to, čo má zdroj (rýchlosť uzatvárania, insight z reálnych čísel alebo
+  uložený AI tip). Streak, regionálny rank a porovnanie s priemerom sú `null` a skryté.
+- **Migrácia sa nerobí.** Tabuľku nič neplní — založiť ju by len zmenilo „vymyslené"
+  na „prázdne". Plnenie štatistík je samostatné rozhodnutie.
+
+**Ostatné tabuľky zo smeru B** (rozhodovacia tabuľka v chate 2026-09-27): čakajú na
+founder odpovede — starter pack (predávame?), Calendly webhook (nastavený?), hodnoty
+`*_ENABLED` flagov. Mŕtvy kód (`demand_signals`, `enrichment_log`, `strategic_alerts`,
+crony demo-brief/recap) je kandidát na zmazanie.
+
+## [2026-09-27] INBOUND-DRAFT-01 — AI návrh odpovede aj pre reálne leady (founder GO A)
+
+**Problém:** „Schváliť a odoslať" (#690) dostávalo inbound návrhy len z
+`/api/webhooks/inbound-lead`, ktorý nikto nevolá (v kóde žiadny volajúci, v PROD
+logoch žiadna prevádzka). Reálne leady (`/api/acquire/email`, `/api/leads/inbound`)
+dostávali iba šablónové potvrdenie — maklér nemal pripravenú odpoveď.
+
+**Rozhodnutie (Ústava v2: BUILD):** oba reálne vstupy po uložení leadu vytvoria
+AI návrh `REVOLIS-INBOUND-AUTOREPLY` cez zdieľaný `lib/inbound/reply-draft.ts`.
+Retencia: maklér odpovie na nový dopyt jedným klikom. Žiadny nový dátový zdroj —
+text leadu už ide do AI cez triage (rovnaký právny základ 6(1)(f)).
+
+- **Tier 3 nezmenený:** iba draft + `ai_suggested`; odoslanie ide cez approve-draft
+  → Control Contract (`inbound.reply.email.send`). Nič sa neodosiela automaticky.
+- **Šablónové potvrdenie ostáva** (opt-in kancelárie). Keď LLM nestihne 8 s a vráti
+  pevný text, návrh sa nevytvorí — iba by zopakoval potvrdenie.
+- **Po odpovedi (`after()`):** Worker ani formulár nečakajú na LLM.
+- **Kill switch:** `INBOUND_REPLY_DRAFT_DISABLED=1` (platí od ďalšieho deployu).
+- Webhook cesta sa správa ako predtým (refaktor na ten istý helper).
+- **Známa diera (W1):** lead bez telefónu, ktorého jediná adresa je adresa kancelárie,
+  dostane návrh na túto adresu. Maklér ju vidí v potvrdzovacom dialógu pred odoslaním.
+## [2026-09-28] RLS-NULL-ESCAPES — `IS NULL` únik odstránený z 10 tabuliek (founder GO; NA PROD ZATIAĽ NEAPLIKOVANÉ)
+
+Druhý zo štyroch nálezov AP-024. `20260928070000_rls_null_escapes.sql` je
+v repozitári a **na produkcii zatiaľ nebežal** — pri udelení brány som sľúbil, že
+migráciu predložím pred aplikovaním. Platí to.
+
+**Diera je zmeraná, nie odvodená.** Na lokálnej PG 16 s vernou schémou (vrátane
+`profile_agencies_for_auth()` doslovne z PROD cez `pg_get_functiondef`, dvoch
+tenantov a `auth.uid()`):
+
+| | PRED | PO |
+|---|---|---|
+| A vloží riadok s `agency_id = NULL` | **10/10 OK** | **10/10 → 42501** |
+| B z iného tenanta ten riadok vidí | **10/10 vidí** | **10/10 nevidí (0)** |
+| ani A nevidí svoj nepriradený riadok | — | 0 |
+| A vloží riadok svojej agentúry | — | 10/10 OK |
+| A ho číta | — | 10/10 = 1 |
+| B ho nečíta | — | 10/10 = 0 |
+
+Idempotentné (druhý beh bez chyby) aj na tvare DB, kde dve z tých tabuliek
+neexistujú (guard `to_regclass` ohlási a preskočí).
+
+**Chyba v mojom prvom harnesse, priznaná:** dve tabuľky vrátili 42501 už PRED
+zmenou. Nebola to vlastnosť politiky — zabudol som `grant select on profiles to
+authenticated`. Osem politík ide cez `SECURITY DEFINER` funkciu a grant
+nepotrebuje, dve čítajú `profiles` priamo. Po doplnení grantu (ako je to na PROD)
+je PRED stav 10/10 zneužiteľný. Nevern0 harness = bezcenný dôkaz.
+
+**Dve remedy, nie jedna.** Osem tabuliek + `ai_action_audit` má únik v jedinej
+tenant politike → prepísaná bez disjunkcie. `properties` má správnu politiku
+`properties_tenant` a **navyše** štyri `properties_*_agency` s únikom; keďže
+politiky sa OR-ujú, tie štyri tú správnu rušia → zrušené, nie prepísané.
+
+**Prečo politika a nie `NOT NULL`.** `SET NOT NULL` by bol trvácnejší, ale RLS sa
+service role nikdy netýkala — `NOT NULL` by novo rozbil každého service-role
+zapisovateľa, ktorý `agency_id` vynecháva. Väčší dosah než hranica, o ktorú tu ide.
+Politika JE tá hranica.
+
+**Dvaja zapisovatelia opravení v tom istom commite**, inak by zmena tichý
+cross-tenant zápis premenila na tiché zlyhanie:
+- `lib/l99/alert-dispatch.ts` (`priority_alerts`) — `agency_id` nedodával vôbec,
+  prechádzal len vďaka disjunkcii. Teraz berie tenanta z leadu.
+- `lib/l99/bri-engine.ts` (`bri_history`) — to isté, plus **nález navyše**:
+  `bri_history.profile_id` je `NOT NULL` bez defaultu a kód ho nedodával, takže
+  ten insert **vždy padal na 23502** a nikto to nevidel, lebo sa chyba zahadzovala.
+  Preto má tabuľka 0 riadkov. Doplnené oboje a chyba sa loguje.
+
+**Pripnuté testom**: `apps/crm/tests/rls/null-escape-rls.test.ts` overuje obe
+vlastnosti — že tenant nepriradený riadok nevyrobí, aj že **nevidí** taký, ktorý
+už existuje (nasadený service rolou). Test iba prvej vlastnosti by prešiel aj proti
+politike, ktorá ďalej tečie na čítaní. Lokálne nespustený — Docker v tomto
+prostredí nie je, takže prvý beh bude v CI.
+
+**Otvorené, mimo tejto brány:** `bri_history` zostáva cross-tenant čitateľná cez
+`"Enterprise BRI access"` a `"Locked BRI read-only"` — obe pre rolu `public`
+a obe bez akéhokoľvek tenant filtra (stačí `account_tier='enterprise'`, resp.
+`tier_locked_at IS NOT NULL`). Nie je to `IS NULL` únik, takže to táto brána
+nerieši — ale znamená to, že `bri_history` NIE JE uzavretá a nehovorím, že je.
+
+## [2026-09-28] RLS-LEADS-REVOKE — `anon` stráca oprávnenia na `public.leads` (founder GO)
+
+Prvý zo štyroch nálezov AP-024 uzavretý. Nie nová migrácia — príkazy z existujúceho
+`20260827214500_leads_revoke_anon_table_privileges.sql`, ktorý v repozitári ležal od
+27. augusta a na produkciu nikdy nedobehol.
+
+**Prečo to bola bezpečná zmena, preukázateľne a nie odhadom.** `leads` má jedinú
+politiku `leads_tenant` viazanú na `authenticated`. Žiadna politika sa nevzťahovala
+na `anon`, takže každá jeho operácia bola už predtým odmietnutá RLS — revoke odobral
+vrstvu, ktorá bola prítomná, ale nedosiahnuteľná. Dotrasované aj na volajúcich: všetky
+verejné cesty zapisujúce leady (`api/valuation/submit`, `api/leads/inbound`,
+`api/concierge/callback`, `api/acquire/email`, server action `(public)/buyer-onboarding`)
+idú cez service role, ktorá oprávnenia aj RLS obchádza. Žiadna z nich sa revoke nedotkol.
+
+**Zmerané, PRED → PO:**
+
+| rola | pred | po |
+|---|---|---|
+| `anon` | S I U D T R G | **nič** |
+| `authenticated` | S I U D T R G | S I U D T R G (bez zmeny) |
+| `service_role` | S I U D T R G | S I U D T R G (bez zmeny) |
+| `PUBLIC` | nič | nič |
+
+511 riadkov a 0 s `agency_id IS NULL` nedotknutých, RLS zapnutá, `leads_tenant`
+nedotknutá. Kontrola všetkých 22 tvrdení tej migrácie proti PROD: **0 nezhôd**.
+
+**Overené aj z pohľadu `anon`, nie len z katalógu.** V transakcii so `set local role
+anon`: `SELECT` → `42501 permission denied for table leads`, `INSERT` → to isté.
+Pred zmenou `SELECT` vracal prázdny úspech (`[]` s `error=null`) — a odstránenie
+presne tohto stavu bolo v komentári tej migrácie uvedené ako jej dôvod. Ten dôvod
+teda platí a teraz je aj naplnený.
+
+**Zápis do histórie pod verziou SÚBORU**, nie novo razenou:
+`insert into supabase_migrations.schema_migrations (version, name) values
+('20260827214500', 'leads_revoke_anon_table_privileges')` — ekvivalent
+`supabase migration repair --status applied`. Vedomé rozhodnutie: `apply_migration`
+cez MCP by si razil vlastnú pečiatku, a to je presne mechanizmus driftu, ktorý AP-024
+zdokumentoval. Bolo by absurdné opravovať drift spôsobom, ktorý vyrobí ďalšieho ducha.
+História: 61 → **62 riadkov**, nezaznamenaných migrácií 65 → **64**.
+
+**Čo sa NEriešilo, hoci to meranie ukázalo:** `authenticated` drží na `leads` aj
+`TRUNCATE`, `REFERENCES` a `TRIGGER`, teda viac, než tá migrácia dáva. Migrácia to
+nerevokuje, takže som to nerevokoval ani ja — bola by to zmena chovania nad rámec
+brány. Zapísané ako otvorené, nie potichu opravené.
+
+Zostáva: **106 zo 111 tabuliek** stále dáva `anon` plné DML a RLS je na nich jediná
+brána. To je nález 2 a 3 z AP-024, každý s vlastnou bránou.
+
+## [2026-09-27] — MATCHING-ZERO: PROD má 0 zhôd; príčina je v kóde AJ v dátach (founder GO)
+
+- **Fakty PROD:** 511 leadov a 133 nehnuteľností, ale 0 zhôd.
+  - 16. 4. manuálny prepočet zapísal 33 434 zhôd.
+  - Od 20. 5. každý prepočet zapísal 0 a zároveň zmazal uložené zhody.
+- **Príčina 1 — kód, opravené:**
+  - `recalculateAllMatches` a `recalculateMatchesForProperty` čítali leady a nehnuteľnosti
+    bez klienta, takže na serveri `resolveSessionAgencyId` vrátil null → `[]`. Delete bežal
+    cez správneho klienta.
+  - `matching-hooks` (auto-prepočet po uložení leadu/nehnuteľnosti) nepodával klienta vôbec.
+  - Oprava: klient ide do čítaní; prázdne čítanie nemaže uložené zhody. 6 testov, všetky
+    6 padajú na starom kóde.
+  - „R3 remediation" predtým opravila len zápisy a jej verification test kontroloval text,
+    nie správanie.
+- **Príčina 2 — dáta, rozhodnutie foundera:** referenčný klient má 455 leadov, 439 z importu
+  kontaktov Realvia (`contacts-import-core.ts`). Import zámerne ukladá
+  `location/budget/property_type/rooms = ""`. Dopyt vyplnený: lokalita 7, typ 16, rozpočet 7.
+  Matching nemá čo porovnať, oprava kódu zhody pre tieto kontakty nevytvorí.
+- **Zostáva:** denný cron `ai/matching-engine` volá prepočet bez klienta. Potrebuje vlastný
+  návrh (iterácia cez agentúry, service-role); nič nezmaže, beží ako anon.
+
+## [2026-09-27] AP-028 / CI-FASTPATH-01 — a oprava vlastného čísla z AP-027 (founder GO)
+
+### Najprv oprava, pretože mení odporúčanie
+AP-027 tvrdil `npm ci + setup ~3,5 min ← najväčšia jednotlivá položka`. **Bolo to
+nesprávne.** Nebolo to odčítané z krokov jobu, bol to zoskupený odhad. Presné časy
+(job `108467951031`, `main`, 586 s) hovoria:
+
+| krok | s | % |
+|---|---|---|
+| **Test** (vitest) | **183** | 31 % |
+| **Start local Supabase** | **115** | 20 % |
+| **Build** (`next build`) | **90** | 15 % |
+| Lint 37 · Playwright install 31 · Reset DB 30 · Typecheck 29 | | 21 % |
+| Upload artifact 18 · **npm ci 18** · smoke 16 · setup-node 8 | | 10 % |
+
+`npm ci` je **18 s**, nie 3,5 min — `actions/setup-node@v4` má `cache: npm`
+s `cache-dependency-path` na `apps/crm/package-lock.json` už dlho. Cache existuje
+a funguje. Odporúčanie „cache `npm ci` → až −38 % CI" je **zrušené**; bolo by to
+26 s, teda 4 %.
+
+Je to presne tá chyba, ktorú AP-027 vyčítal Compileru, o úroveň vyššie:
+optimalizoval som zložku, ktorú som nezmeral po krokoch. Report je opravený
+v §2.1.1, nie prepísaný — pôvodné tvrdenie je v ňom citované ako nesprávne.
+
+### Čo sa nasadilo
+**Fastpath.** Diff, ktorý sa dotýka výhradne `docs/`, `memory/` a `.ai/`,
+preskočí `Build`, `Debug`, `Upload artifact`, `Install Playwright Chromium`
+a `Playwright smoke` — 155 s z 586 s (**−26 %**). Kvalifikuje sa **9 z 40**
+posledných zmergovaných PR (22,5 %), teda priemerne −35 s/PR. Skromné, a je to
+napísané ako skromné.
+
+Rozhodnutie robí `scripts/ci/classify-diff.sh` s 19 testami. Dve vlastnosti sú
+podstatné:
+- **`Test` sa nepreskakuje nikdy.** Vitest suite reálne otvára 30+ ciest
+  v `docs/` (`tests/verification/*.verification.test.ts`,
+  `tests/rls/rls-tenant-isolation.test.ts`, listing fixtures). Zmena `.md`
+  testy rozbiť **dokáže**. Fastpath, ktorý by ich preskočil, by prepustil
+  reálne zlyhanie. To je STOP 2 z auditu Compilera aplikovaný na seba.
+- **Fail-safe.** Keď sa zoznam zmenených súborov nedá zistiť, skript hlási
+  plný beh. Podmienky krokov sú `!= 'false'`, nie `== 'true'` — chýbajúci
+  výstup teda znamená beh, nie preskočenie.
+
+`checkout` dostal `fetch-depth: 2`, aby bol na PR dostupný `HEAD^1`/`HEAD^2`
+(base a head merge commitu) — presný diff PR bez fetchu 111 vetiev.
+
+**Lokálna brána.** `scripts/ci/prepush-gate.sh` beží 45 s a spustí presne tie
+brány, ktoré padajú: helper testy, API contract ratchet, typecheck baseline,
+lint. Proti zmeraným **27 % červených behov**, kde každý stojí celý ďalší cyklus.
+Skript **sám neinštaluje git hook** a explicitne vypisuje sekciu NEOVERENÉ
+(migrácie bez DB, vitest, smoke) — brána, ktorá naznačuje plné pokrytie, je
+horšia než žiadna.
+
+### Nález, ktorý vyplával z prvého behu tej brány
+`typecheck-baseline.mjs` počítal `error TS` nad celým výstupom `tsc`, teda aj nad
+`.next/types/**`. V CI to nebolo vidieť (`Typecheck` beží pred `Build`, `.next`
+neexistuje), ale lokálne hlásil 66 proti baseline 54 a **padal na artefaktoch
+odkazujúcich na súbory zmazané v #708**. Brána, ktorá lokálne padá bez príčiny, sa
+prestane spúšťať — na to ten istý súbor vyššie sám varuje pri
+`schema-governance-guard.yml`.
+
+Opravené: počíta sa zdroj, `.next/` sa vylučuje a **vypíše sa, koľko sa vylúčilo**.
+Pokrytie sa nemení, CI túto triedu nikdy nevidelo; zrovnalo sa len lokálne číslo
+s tým, ktoré rozhoduje. Overené: 54 zdroj + 12 `.next` = 66 = všetky výskyty.
+
+**A druhá chyba, moja, v tej oprave.** Prvá verzia regexu bola
+`/^([^\s(][^(]*)\(/` — zastavila sa na prvej zátvorke, takže cesty s Next.js
+route groups (`src/app/(dashboard)/leads/page.tsx`) nezmatchovala **vôbec**
+a chyby v celom `(dashboard)` segmente by z počtu zmizli. Zachytené tým, že
+súčet nesedel: 54 + 8 ≠ 66. Opravené na `/^(\S.*?)\(/` a **zafixované testom**
+s fixture, ktorá route groups obsahuje; proti starému regexu ten test padá
+(1/1 namiesto 3/2), takže má zuby.
+
+### Neurobené, s číslom
+- `Test` 183 s + `Start local Supabase` 115 s = **51 % behu**. Najväčší
+  zostávajúci cieľ. Rozdelenie DB-závislých a čistých testov by ich vedelo
+  prekryť, ale to je vlastná brána, nie prívesok k tejto.
+- `Upload artifact` (18 s, `.next`, 7 dní retencie) — **žiadny workflow ho
+  nesťahuje**. Manuálna debug pomôcka. Ponechané, nahlásené.
+- `find-dead-exports.mjs` v `code-contract-guard.yml` je dormantný krok
+  (`hashFiles(...) != ''`) čakajúci na PR #358, ktoré nikdy neprišlo.
+- Cache Playwright prehliadača (31 s) zámerne **nie** — `--with-deps` inštaluje
+  systémové knižnice, ktoré sa necachujú, a riziko rozbitia smoke brány za 5 %
+  nestojí.
+
+### Overovacia diera, priznaná
+Tento PR sa dotýka `.github/`, `scripts/` a `apps/crm/scripts/`, takže sám sa
+kvalifikuje na **plný beh**. Rýchlu vetvu teda prvýkrát vykoná až najbližšie
+docs-only PR. `git diff HEAD^1 HEAD^2` na reálnom merge refe je overené 19 testami
+nad zoznamami ciest, nie proti živému merge commitu. Najhorší prípad pri chybe je
+plný beh, nie preskočená brána.
+
+---
+## [2026-09-27] — ACTIVITY-CLIENT-01: serverové zápisy aktivít cez prehliadačového klienta (founder GO 2)
+
+- **Otázka:** prečo PROD od 18. 9. nezapísal ani jednu aktivitu?
+- **Odpoveď:** hlavne nízka prevádzka. Za 24 h 1× `/login`, 1× `/dashboard`; hlavné cesty
+  (lead, úlohy, timeline) klienta posielajú správne.
+- **Nájdený bug:** `createActivity()` bez klienta padá na prehliadačového klienta. Na serveri
+  je to `anon` a INSERT politika na `activities` je len pre `authenticated`, takže RLS
+  zápis zamietne.
+  - `scheduled-events` POST/PATCH/DELETE: udalosť sa uloží, potom 400 maklérovi.
+    Latentné, v PROD je 0 udalostí.
+  - Stripe webhook: všetkých 6 billing aktivít ticho zahodených (0 v PROD). Tier sync
+    nebol dotknutý.
+  - `properties/[id]`, `outreach-store`: aktivita stratená, chyba prehltnutá.
+- **Oprava:** request-scoped klient v routách, service-role vo webhooku; v `scheduled-events`
+  je aktivita nefatálna. Guard test `server-activity-client.verification.test.ts` sa na
+  starom kóde červená presne na týchto 12 miestach.
+- **Známy dlh** (explicitný zoznam v teste): `matching-hooks`, `ai-scoring-store`,
+  `notification-store`, `integrations-store`, `ai/matching-engine`.
+- Ústava: BUILD — prvé použitie kalendára by maklérovi hlásilo chybu pri úspechu (retencia).
+## [2026-09-27] AP-024 / MIGRATION-HISTORY-RECONCILE — 65 nezaznamenaných migrácií, 46 z nich bez následku (founder GO)
+
+Otázka nebola „koľko riadkov chýba v histórii", ale „čo z toho produkcia naozaj
+nemá". `supabase_migrations.schema_migrations` je účtovný záznam, nie meranie:
+v ten istý deň sa potvrdil aj prípad **chýba v histórii, efekt je tam**
+(`20260728140000_profiles_platform_admin`), aj **chýba v histórii, efekt tam nie je**
+(`20260827214500_leads_revoke_anon_table_privileges`).
+
+Zmerané per objekt na PROD, nie odvodené: **784 tvrdení** (politika, stĺpec, index,
+trigger, funkcia, constraint, oprávnenie) zo 65 nezaznamenaných migrácií.
+
+| | počet |
+|---|---|
+| migrácie v repozitári / riadky v histórii | 120 / 61 |
+| nezaznamenané, po ktorých **nechýba nič** | **46** |
+| nezaznamenané, po ktorých niečo chýba | 19 |
+| z toho: chýba správne (zrušila neskoršia migrácia) | 33 nálezov |
+| z toho: **odstránenie, ktoré PROD nedostal** | 10 |
+| z toho: **objekt, ktorý PROD nemá** | 77 |
+
+**Šesť „duchov" nie je záhada.** Spárované podľa názvu: štyri sú ten istý súbor
+zapísaný pod inou verziou, pretože migrácia aplikovaná cez Supabase MCP si razí
+vlastnú časovú pečiatku. To je mechanizmus podstatnej časti driftu, nie nehoda.
+Dva zvyšné (`repair_scheduled_events_phase1_20260923`) sú necommitnutá oprava —
+ale `scheduled_events` na PROD sa presne zhoduje s tým, čo tvorí
+`20260527143000_event_scheduler_phase1.sql`, takže popis nechýba, chýba zápis.
+
+### Rozhodnutia
+
+- **BUILD (hotové):** meranie ako zopakovateľný nástroj v repozitári
+  (`scripts/ops/reconcile-migration-history.mjs`), nie jednorazové tvrdenie v chate.
+- **BACKLOG s bránou, nie teraz:** štyri nálezy nižšie. Každý je samostatná zmena
+  na produkcii s vlastným rizikom; brána bola na meranie.
+- **Priznaná vlastná chyba v metóde:** prvé kolo prevádzalo názvy politík na malé
+  písmená, čo je správne pre necitovaný a nesprávne pre citovaný identifikátor.
+  Vyrobilo to 7 falošných nálezov na baseline súbore. Po oprave je ich 0 a baseline
+  je verný. Dotknutých bolo presne 10 tvrdení, všetky preverené so správnou
+  veľkosťou písmen.
+
+### Bezpečnostné nálezy (nič sa nemenilo, iba zmerané)
+
+1. **`anon` má na `public.leads` všetkých 7 oprávnení** (511 riadkov klienta).
+   Neuniká nič — `leads` má jednu politiku `leads_tenant` pre `authenticated` —
+   ale vrstva, ktorú `20260827214500` mala pridať, tam nie je. 107 zo 111 tabuliek
+   dáva `anon` plné DML; RLS je všade jediná brána.
+2. **26 politík nesie `IS NULL` únik v 16 tabuľkách.** 11 vedie cez `leads.agency_id`,
+   ktorý je `NOT NULL` → mŕtve. **10 tabuliek** má vlastný nullable `agency_id`
+   a únik na `INSERT`/`ALL` pre `authenticated` → ktokoľvek s účtom môže vyrobiť
+   nepriradený riadok, ktorý potom vidí každý nájomník. Riadkov s `NULL` dnes: **0**.
+   Zápisová sonda sa **nespúšťala** (brána bola read-only); dôkaz je z tela politiky.
+3. **27 tabuliek má RLS zapnutú a nula politík** (`credit_ledger`, `decisions`,
+   `exclusivity_outcomes`, `ai_sourced_deals`). **Dnes to nie je chyba** — všetci
+   volajúci idú cez `createServiceRoleClient()`, ktorý RLS obchádza. Chybou sa to
+   stane pri prvom dotaze s tokenom používateľa.
+4. **`lead_scores_agency`** je zrušenie, ktoré nedobehlo a žiadna neskoršia migrácia
+   ju netvorí. (`20260904150000_drop_open_anon_policies` naopak dobehol — pod verziou
+   20260904184236 — a všetkých 15 anon politík je pryč.)
+
+**Dôsledok pre „CI je zelené":** CI prehráva migrácie na čistú PG 15 a testuje inú
+databázu než tú klientovu. Merateľne: na čistej DB `anon` na `leads` oprávnenia nemá,
+na PROD má; na čistej DB existuje 7 tabuliek, ktoré na PROD neexistujú. Zelené CI
+hovorí „migrácie idú za sebou bez chyby", nie „produkcia je v tomto stave".
+
+Report: `docs/reports/2026-09-27-migration-history-reconcile.md`.
+
+## [2026-09-26] AP-027 / BASELINE-BENCHMARK-01 — optimalizovali by sme 3,5 % (founder GO)
+
+Compiler a Build Protocol (Sol 5.6) tvrdia zrýchlenie buildu. Zrýchlenie je
+pomer; menovateľ neexistoval. Zmeraný na `docs/prompts/runner/` (najväčší
+súvislý stack: 14 súborov, 1 561 riadkov) a na reálnych behoch.
+
+| vrstva | median | n | podiel median PR cyklu |
+|---|---|---|---|
+| beh agentného tasku (`.ai/bus/ledger/2026-09.jsonl`) | **88 s** | 9 | **3,5 %** |
+| jeden úspešný beh CI | **549 s** | 19 | **22 %** |
+| PR created → merged | **42 min** | 40 | 100 % |
+
+Zvyšných ~74 % je čakanie (review, GO, noc), nie výpočet. **Compiler
+optimalizuje počet model callov a veľkosť kontextu — teda tie 3,5 %.** Aj keby
+agentné behy stlačil na nulu, median cyklus spadne zo 42 na ~40,5 min.
+
+Najdrahšie číslo nie je latencia, ale opakovanie: **8 z 30 CI behov je červených
+(27 %)** a `TASK-TC-BATCH-1` zhorel 4 iterácie × ~94 s a skončil na `HUMAN`.
+Rozklad jedného CI behu (job `108469704435`): `npm ci` ~3,5 min, `next build`
+84 s, `playwright install` 30 s, `supabase start` + 118 migrácií **len 17 s** —
+teda nie tam, kde som to pôvodne v tejto session akcentoval.
+
+### Nálezy v našom vlastnom stacku
+- `05-prompt-stack.md` (a `06-dispatch.md`) hovorí o **siedmich** vrstvách
+  a siedmich hashoch; definuje a hashuje **osem** (S0–S7). Off-by-one
+  v dokumente, ktorý má byť dôkazný. Zachytené mechanicky skriptom, nie čítaním.
+- `RUN SUMMARY` (12-loop) má povinné `NEZMERANÉ`, ale **žiadne časové pole** —
+  founderova otázka „prečo to trvá dlho" je z neho nezodpovedateľná.
+- Ledger má `started_at`/`finished_at`, ale nie `model_calls` ani `tokens_in/out`.
+  A v **9 z 9** reálnych záznamov je `model: null`, `cost_usd: 0` — presne tá
+  chyba, ktorú `09-judge.md` sám pomenoval: „Buď to meria, alebo tam to číslo
+  nie je." Vlastné pravidlo nie je vynútené → rozpočtová brána nezasiahne nikdy.
+- Stack už obsahuje to, čo Compiler predáva ako nové: 8 vrstiev s hashmi,
+  delenie DETERMINISTICKÉ/INTELIGENTNÉ, write-probe disjunktnosť, rozpočty,
+  Judge, REPEATABLE/ONE-SHOT.
+
+### Metóda
+Meria **skript, nie agent** — `scripts/ops/measure-prompt-stack.mjs`. Dôvod je
+AP-025: fixture som si vtedy napísal z toho, čo moje vlastné SQL potrebovalo,
+a „overenie" prešlo. Dátové sady sú zmrazené v
+`docs/reports/assets/2026-09-26-baseline-benchmark/` (PR cykly, CI behy, ledger,
+výstup skriptu), aby compiled porovnanie bežalo proti číslam, nie proti spomienke.
+Metriky sú definované **pred** číslami; `model_calls`, tokeny a `cost_usd`
+zostávajú v povinnej sekcii NEZMERANÉ, pretože ich ledger nezaznamenáva.
+
+### Rozhodnutie
+- **STOP** na „Production Standard" pre Compiler/Build Protocol → v0.1 DRAFT.
+- **BUILD** na CI: cache `npm ci` (až −38 % CI), fastpath bez `.ts/.tsx`,
+  lokálna brána pred pushom (dotýka sa 27 % červených behov).
+- **BUILD, lacné:** `model_calls` + `tokens_in/out` do ledger schémy a čas do
+  `RUN SUMMARY`. Bez toho bude každý ďalší benchmark opäť odhad.
+
+Report: `docs/reports/2026-09-26-baseline-benchmark.md` (vrátane brány pre
+tvrdenie „compiled je rýchlejší pri rovnakej kvalite" — päť podmienok).
+
+---
+
+## [2026-09-26] — ONBOARDING-ANON-01: zatvorená anon diera na `onboarding_sessions` (founder GO)
+
+Nález z #705: pri reprodukovaní produkčných policies do baseline vyplávala policy,
+ktorú nepokryl ani #697, ani #702:
+
+    CREATE POLICY "Allow anon access" ON public.onboarding_sessions
+      AS PERMISSIVE FOR ALL TO anon USING (true) WITH CHECK (true);
+
+`FOR ALL`, teda nie len čítanie — kdokoľvek s verejným anon kľúčom mohol
+onboarding sessions aj vkladať, meniť a mazať.
+
+**Merané na PROD, nie odhadnuté:**
+
+| | `anon` vidí riadkov |
+|---|---|
+| pred | **5** |
+| po | **0** |
+
+Service role vidí 5 aj po zmene, policies 0, RLS stále zapnutá.
+
+**Prečo dropnuté a nie nahradené.** Oba volajúci sú v
+`api/onboarding/session/route.ts` (GET r. 88, POST upsert r. 172) a oba si klienta
+stavajú cez `createServiceRoleClient()`. Service role RLS neobchádza okľukou —
+nekonzultuje ju vôbec. Browser k tabuľke nechodí priamo; `lib/onboarding/session-api.ts`
+to hovorí vo vlastnej hlavičke: „Browser-safe helpers for onboarding_sessions sync
+**via service-role API**". Grep názvu tabuľky nad `apps/crm/src` vráti tie dva call
+sity, dve testovacie assertions a ten komentár — nič iné.
+
+Tá policy teda nikdy neumožňovala funkčnú cestu, len tabuľku exponovala. Rovnaký
+tvar ako `saas_leads` v #697: dropnutá, nenahradená.
+
+**Aplikované na PROD v tej istej zmene** pod founder GO, s meraním pred/po cez
+`set local role anon` — rovnaká metóda a rovnaká konvencia ako #697. Migrácia
+zapísaná do `supabase_migrations.schema_migrations` (version 20260926090000).
+
+**Vzťah k baseline:** `20260925210000_baseline_prod_only_tables.sql` tabuľku
+zakladá a tú policy na čistej DB **znovu vytvorí** — zámerne, aby baseline
+zodpovedal produkcii. Táto migrácia ju potom odoberie, na oboch. Vytvoriť a hneď
+dropnúť vyzerá zbytočne, ale je to poctivá história: existovala, potom sme ju
+odstránili. Prepísať baseline by znamenalo prepísať históriu.
+
+## [2026-09-25] — RLS vlna: čo bola diera a čo bol drift (founder GO ×6)
+
+**Rozhodnutie o `outreach_logs`: BUILD, ale ako parity, nie ako nový návrh.**
+Pri práci sa ukázalo, že správnu policy repo definuje od 16. 6. v
+`20260616124500_rls_wave_a_leak_closure.sql`. Tá migrácia **nie je v histórii PROD a jej
+efekt tam tiež nie je**. Nová migrácia `20260925230000` preto kopíruje jej telo verbatim
+(porovnané, normalizované na case/whitespace: identické) — aby sa dva súbory nemohli
+rozísť. Merané ako `anon`: PRED sa dal outreach audit log **mazať**, PO nie.
+
+**Prečo CI tú dieru nikdy nenahlásilo.** Izolačný RLS test beží proti čistej databáze
+zloženej z migrácií, kde Wave A aplikovaná JE. PROD je iný organizmus. Z toho vyplýva
+pravidlo, ktoré platí nad rámec tohto nálezu: **„prechádza CI" nie je dôkaz „funguje na
+PROD"**, kým sa história nezrovná.
+
+**Stav histórie (merané):** 118 migrácií v repe, 59 v histórii PROD, **65 chýba**, 6 je
+v histórii a nie v repe. Absencia v histórii ≠ absencia efektu — v jeden deň sme videli
+oba prípady: `20260728140000_profiles_platform_admin` v histórii nie je a stĺpec funguje;
+`20260616124500` v histórii nie je a policy nefunguje. Nedá sa z toho robiť sumárny
+výrok, iba merať per objekt.
+
+**Rozhodnutie o BSM funneli: RETIRE (nie service-role prepojenie).** Ústava:
+- Q1 (zaplatil by dnešný klient?) — **NIE**, 0 leadov za 5 mesiacov → strop VALIDATE.
+- Q8 (správny čas?) — **VETO**. Kampaň stojí na pravidlách „platných od 1.1.2026"
+  a otázke „predať teraz alebo počkať". Termín prešiel pred 9 mesiacmi. Nie je to
+  priskoro, je to pozde.
+- Technicky to nebola skrutka: `bsm_reforma_leads` má `profile_id` a žiadne `agency_id`,
+  takže verejný zber nemá vlastníka, ktorého schéma vie zapísať → verejná verzia by
+  vyžadovala zmenu schémy. Navyše `consent_marketing BOOLEAN NOT NULL DEFAULT TRUE`,
+  a súhlas s defaultom TRUE nie je súhlas (GDPR brána z CLAUDE.md).
+- Zmazaná len stránka a routa. Tabuľky, migrácie, config riadok a edge funkcia zostali →
+  revival je revert + GDPR prechod. Ak bude treba verejný zber, správny tvar už existuje:
+  `saas_leads` cez `api/sales-funnel/demo-request` na service role.
+
+**Rozhodnutie o PR-6: BUILD, s vlastnou negated routou.** Enterprise brána na
+`/api/ai/lead-events` sa neobišla — nepoužila sa. C1 nesmie byť vlastnosť cenníka, inak
+je konverzný pomer výrokom o pláne, nie o práci. Nová routa nič netvrdí nad rámec
+„človek stlačil Zavolať/Email v tomto čase na tomto kanáli"; `outcome` zostáva nenastavený,
+takže tretí stav (unknown) si drží význam. `occurred_at` je zo servera, klientský timestamp
+sa zahodí (pinnuté testom).
+
+**Otvorené, nahlásené, neopravené:** `properties` nesie tie isté `agency_id IS NULL`
+escapy pre `authenticated` vedľa správnej `properties_tenant`. Dnes 0 riadkov s NULL →
+latentné. Patrí mu vlastná brána.
+## [2026-09-25] AP-026 — 404-PATH-01 na druhý pokus: `usePathname()` na 404 klame
+
+Overenie na produkcii po merge #706 ukázalo, že môj fix z #705 bol polovičný.
+Žiadal som `/overujem-404-path-fix-abc123`, stránka vypísala:
+
+    Adresa app.revolis.ai/_not-found, ktorú hľadáte, nebola nájdená.
+
+`usePathname()` na 404 vracia **interný názov routy** (`_not-found`), nie
+požadovanú URL. Next.js nastaví segment path routera na `_not-found` a
+`app/not-found.tsx` je server komponent prerenderovaný ako `/404` — ani server
+render, ani router požadovanú adresu nepozná.
+
+**Zadrôtovanú `/team/permissions` som teda nahradil inou nepravdivou adresou.**
+Menej zavádzajúcou (`_not-found` je zjavne interné), ale stále nepravdivou.
+A hlavne som v #705 tvrdil, že to zobrazí reálnu cestu — netvrdil som to
+overene, tvrdil som to z návrhu.
+
+**Oprava:** `window.location.pathname` v `useEffect`. Je to jediné miesto, kde
+požadovaná URL existuje, a je čitateľné až po mount. Do vtedy veta adresu
+nepomenuje vôbec (`Stránka, ktorú hľadáte, nebola nájdená.`) — mlčať je lepšie
+než pomenovať zlú stránku.
+
+**Poučenie k metóde, tretíkrát dnes:** build prešiel aj pri zlej verzii, lebo
+build nevie, čo `usePathname()` v runtime vráti. Jediné, čo to odhalilo, bol
+fetch reálnej produkcie. Pri čomkoľvek, čo závisí na runtime hodnote, je
+„skompilovalo sa" nula dôkazu.
+
+## [2026-09-25] AP-025 — Štvrtý rozmer driftu: stĺpce. A chyba v mojom overovaní.
+
+CI na #705 zhodila moju vlastnú baseline migráciu:
+
+    ERROR: column profiles.tier_locked_at does not exist (SQLSTATE 42703)
+    At statement: 140
+    CREATE POLICY "Locked BRI read-only" ON public.bri_history ... profiles.tier_locked_at ...
+
+`profiles` **zakladá** `20260310_baseline_core_schema.sql`. Ale `tier_locked_at`
+**nepridáva žiadna migrácia** — existuje len v PROD. AP-023 porovnával názvy
+tabuliek; stĺpce na migráciami vytvorených tabuľkách nikto nemeral. Rozsah
+merania: z 8 stĺpcov, ktoré moje policies čítajú, chýba presne 1.
+
+**Prečo to lokálne prešlo — a to je tá horšia časť nálezu.** Lokálny fixture som
+napísal ručne podľa toho, čo moje policies potrebujú, takže `tier_locked_at` v
+ňom bol. **Testoval som SQL proti fixture, ktorú som postavil podľa toho SQL** —
+test potvrdil môj predpoklad namiesto toho, aby ho napadol. 7/7 md5 zhoda bola
+pravdivá a zároveň bezcenná ako dôkaz replayovateľnosti.
+
+Oprava overovania: fixture sa stavia z toho, **čo migrácie vytvárajú**, nie z
+toho, čo testovaný súbor potrebuje. Znovu overené na oboch tvaroch:
+čistý (bez stĺpca) → exit 0 + NOTICE, policy preskočená;
+PROD-tvar (so stĺpcom) → exit 0, policy vytvorená, 7/7 md5 zhoda drží.
+
+**Oprava kódu:** guard na `information_schema.columns`, nie pridanie stĺpca.
+Pridať stĺpec do `profiles` je zmena schémy mimo rozsahu tohto súboru a hlavne
+by nález schovala namiesto toho, aby ho zaznamenala.
+
+**Inventúra stĺpcov naprieč schémou urobená NEBOLA.** Vieme o jednom, lebo naň
+CI spadla. Koľko ich je celkovo, nikto nemeral.
+
+## [2026-09-25] — PROD runbook B/C: čo som overil sám, a nález „limit na neexistujúcej tabuľke" (founder GO)
+
+- **Overené (read-only):**
+  - PROD beží `9808807` (#703), stav READY.
+  - `activities.id` = uuid → návrhy z #704 sa dajú vložiť.
+  - V PROD je **0 návrhov** (`meta.draft=true`) → runbook B ešte nikdy neprebehol.
+  - Service-role kľúč na PROD runtime **funguje**: cron `dashboard-insights` o 13:35 UTC
+    zapísal do `ai_action_audit`. V projektových env je `SUPABASE_SERVICE_ROLE_KEY` iba
+    pre Preview, takže produkčná hodnota ide asi z tímových (shared) premenných.
+- **Nález:** `messages`, `conversations` ani `outreach_log` v PROD **neexistujú**.
+  - Denný limit aj cooldown outreachu čítali `messages`; chybu prehltli, vrátili 0
+    a limit tak na PROD ticho nefungoval.
+  - Opravené v #704: obe kontroly počítajú `sent` riadky v `ai_action_audit`
+    (zapisuje ich approve-draft) a pri nečitateľnej histórii **fail-closed** (503).
+  - Denný limit sa počíta per kancelária, nie globálne.
+- **Neoverené, founder:** `RESEND_API_KEY`, `OUTREACH_FROM_EMAIL` a `INBOUND_WEBHOOK_SECRET`
+  nie sú v projektových env pre Production. Treba ich overiť v Team → Shared Environment
+  Variables. Runtime logy (retencia < 3 dni) to nerozhodli.
+- Samotné kroky B a C (webhook s tajným kľúčom, klik prihláseného makléra, redeploy
+  s `AGENT_KILL_SWITCH`) z tohto prostredia spraviť neviem.
+
+## [2026-09-25] — Outreach: maklér vidí presný text pred odoslaním (founder GO „Outreach náhľad textu")
+
+- **Predtým:** „Vygenerovať a odoslať" = jeden klik, text maklér uvidel až po odoslaní.
+- **Teraz dva kroky:**
+  - `POST /api/outreach/preview` → `prepareOutreachDraft` skontroluje stav, denný limit
+    a cooldown, vygeneruje text a uloží ho ako návrh (`insertAgentDraft`). Nič neodíde.
+  - `POST /api/outreach/{send,approve}` vyžaduje `activityId` návrhu (bez neho 400) a ide
+    cez spoločný `approve-draft.ts` (`expectAgentId: REVOLIS-OUTREACH`, kill switch, claim
+    lock, audit). Odosiela `sendApprovedOutreach`: doslovne schválený text, znova overí
+    limit a cooldown, zapíše conversation + messages.
+- `sendAiOutreachEmail` (skript/cron) je vždy odmietnutý pred generovaním.
+- UI `outreach-send-panel.tsx`: „Vygenerovať návrh" → náhľad → „Schváliť a odoslať".
+- Všetky 4 cesty „AI text → klient" majú teraz jeden vzor: návrh → klik → doslovné odoslanie.
+- **Neoverené na PROD** (runbook B/C stále čaká na foundera).
+- Ústava: BUILD — priamo odstraňuje riziko, že klient dostane text, ktorý maklér nevidel
+  (retencia + dôvera referenčného klienta).
+## [2026-09-25] DEC-20260925-002 — Baseline pre 30 PROD-only tabuliek (SCHEMA-BASELINE-01)
+
+`20260925210000_baseline_prod_only_tables.sql`, 996 riadkov. Rieši smer A z AP-023.
+
+**Nie `pg_dump`.** Session má k PROD len read-only SQL cez Supabase MCP a žiadny
+connection string; pýtať si ho by znamenalo produkčný credential v transcripte.
+DDL je teda **rekonštruované z katalógov** (`pg_attribute`, `pg_attrdef`,
+`pg_constraint`, `pg_indexes`, `pg_policies`, `pg_trigger`, `pg_proc`).
+Rekonštrukcia je slabšia než `pg_dump` — COMMENTy, storage parametre, collations
+a GRANTy pokryté nie sú a súbor to hovorí nahlas.
+
+**Dôkaz vernosti, nie tvrdenie.** Baseline prehraný na čistom lokálnom PG16,
+potom ten istý fingerprint dotaz spustený lokálne aj na PROD:
+
+| | n | md5 |
+|---|---|---|
+| COL | 249 | `f484deee…` |
+| CON | 78 | `1ee947e6…` |
+| IDX | 77 | `30b29062…` |
+| POL | 29 | `8e7656ff…` |
+| RLS | 30 | `aeb4f5a6…` |
+| TRG | 2 | `fc07bd2e…` |
+| **ALL** | **465** | **`c2f6d1ca79c3a3d5f59b92cfc6558c08`** |
+
+Všetkých 7 sedí. Druhý beh na tej istej DB prešiel bez chyby → idempotentné.
+
+**Tretí rozmer driftu, ktorý AP-023 nemeral: funkcie.**
+`profile_agencies_for_auth()` — nosná funkcia celého tenant RLS modelu, na ktorú
+sa odvolávajú policies naprieč schémou — **nie je v žiadnej migrácii**. Rovnako
+`ai_triage_feedback_set_agency()`. Baseline ich pridáva, ale úplná inventúra
+funkcií urobená nebola.
+
+**Nový bezpečnostný nález:** `onboarding_sessions` má policy
+`TO anon USING (true) WITH CHECK (true)` — plná anonymná čítacia AJ zápisová
+diera, ten istý tvar, aký zatvárali #697 a #702. Ani jeden ju nepokryl. Baseline
+ju **reprodukuje nezmenenú a nahlas označenú** — úlohou baseline je zhodnúť čistú
+DB s produkciou, nie meniť správanie produkcie pod commitom, ktorý sa tvári ako
+zápis stavu. Zatvorenie je samostatná zmena s vlastnou bránou.
+
+## [2026-09-25] AP-024 — Direktíva 5 odkazuje na skill, ktorý neexistuje
+
+`CLAUDE.md` vyžaduje spustiť `gdpr-advisor` pred každou featurou na externých/
+osobných dátach. `.claude/skills/` obsahuje `kontrolor`, `strategic-analysis`,
+`task-loop`. **`gdpr-advisor` v repozitári nie je.** Povinná brána nie je
+nepoužitá — je nevykonateľná.
+
+Posúdenie 5 osirelých tabuliek (`docs/reports/2026-09-25-gdpr-orphan-tables.md`)
+je preto robené ručne proti data-sourcing mape. Je to náhrada, nie splnenie
+Direktívy 5, a dokument to hovorí ako prvú vetu.
+
+**Jadro nálezu:** `revolis_zaujemcovia` má `full_name`, `source_portal`,
+`external_id`, `behavioral_notes`, `raw_data` — schéma tvarovaná presne na to,
+čo mapa v ZHLUK 5 označuje ako „Osobné údaje predajcu = GDPR NIE". Obsah riadkov
+som **neotvoril**; tvrdím len, že pôvod treba overiť, nie odhadnúť. 6 riadkov.
+
+Nemažem nič. Zmazať údaje s neustáleným pôvodom zničí aj dôkaz o tom, odkiaľ sú.
+
+## [2026-09-25] — Všetky 4 cesty „AI text → klient" sú za schválením aj kontraktom; agent spec je zaťažený testom (founder GO ×3)
+
+- **Dead-lead kampaň** (`REVOLIS-DEAD-LEAD-CAMPAIGN`): POST už nič neodosiela. Z každého
+  plánu vznikne návrh; maklér ho pošle cez approve path (`deadlead.email.send` /
+  `deadlead.sms.send`).
+  - Opravené sú dve staré chyby. POST po schválenom náhľade z GET vygeneroval **iný**
+    text. Adresát bol `phone ?? email` bez ohľadu na kanál.
+- **Outreach** (`REVOLIS-OUTREACH`): `sendAiOutreachEmail` sa **pred generovaním** pýta
+  kontraktu na `outreach.email.send`.
+  - Klik v `/api/outreach/{send,approve}` je schválenie.
+  - Cron `/api/scheduled-outreach` a automatizačný skript schválenie nemajú, takže sú
+    **štrukturálne odmietnuté**, aj keď je `SCHEDULED_OUTREACH_ENABLED=true`. Pravidlo
+    „nikdy automatický send prospektom" už nedrží flag, ale kontrakt.
+  - `/send` nemá náhľad textu: maklér schvaľuje akciu, nie konkrétny text. Je to
+    zapísaná slabina, nie oprava.
+- **Jedna autorita:** `lib/control-plane/authorize-send.ts` a jeden zapisovač návrhov
+  `lib/inbound/insert-agent-draft.ts`. Používajú ich všetci štyria agenti, inbound
+  aj follow-up boli prerobené.
+- **`correlation_id`:**
+  - Vzniká pri návrhu (alebo pri štarte outreach sendu).
+  - Nesie ho každý riadok `ai_action_audit` (`ai_suggested` → `human_approved` →
+    `sent` / `send_failed`) aj aktivita.
+  - Staré návrhy použijú ako náhradu id aktivity.
+- **Agent spec:** `apps/crm/src/lib/agents/agent-specs.ts`, polia podľa Blueprint L1
+  pre 4 agentov.
+  - `agent-specs.test.ts` zlyhá, keď akcia nie je v registri, keď sa `SEND_ACTIONS`
+    líši od spec-u, keď prompt nie je verzovaný alebo keď chýba súbor evalu či kódu.
+    Spec je tak zaťažený, nie dekoratívny.
+- **Prah Ústavy (3 agenti za kontraktom) je prekročený — 4.** Agent Factory ide na
+  **posúdenie** Ústavou, nie na automatický BUILD. Dnešný vzor pridá agenta ako
+  1 záznam v mape + 1 akciu + 1 spec, takže duplicita, ktorú by Factory riešila,
+  zatiaľ nie je preukázaná.
+- **Stále neoverené na PROD:** zámok proti dvojitému odoslaniu a kill switch (runbook B/C).
+## [2026-09-25] AP-023 — Migrácie popisujú 81 zo 111 tabuliek (SCHEMA-DRIFT-INVENTORY)
+
+Inventúra po AP-022. Plný report: `docs/reports/2026-09-25-schema-drift-inventory.md`.
+
+| | |
+|---|---|
+| Tabuliek v PROD | **111** |
+| Zakladá migrácia | **105** |
+| **V PROD bez migrácie** | **30** (17 má živého volajúceho) |
+| **V migrácii, nie v PROD** | **24** (14 má volajúceho → tie volania padajú) |
+
+**Smer B je vážnejší.** Aplikácia volá 14 tabuliek, ktoré v PROD neexistujú. Overené
+`to_regclass(...) IS NOT NULL` = false, nie odvodené. Najviac exponované:
+`credit_redemption_codes` (6 volaní, starter-pack), `demo_bookings` (5, Calendly webhook).
+
+**Rozlíšené živé vs. mŕtve, nie zhrnuté do paniky:** `/api/cron/demo-brief` a
+`demo-recap` **nie sú** medzi 16 cronmi vo `vercel.json` — sú mŕtve. Žiadny naplánovaný
+cron nepadá na chýbajúcej tabuľke (dotrasované: `notification-digest` →
+`routine_notifications`, `credits-cycle` → `agencies`, oba existujú). Očakával som opak.
+Živá je `/api/webhooks/calendly` — vracia 500 a stráca atribúciu dema, **ak** je webhook
+v Calendly nastavený. To z repa overiť neviem → founder check.
+
+**Vedľajší nález (C):** 30 riadkov osobných údajov (`full_name`, `email`, `phone`,
+`behavioral_notes`, `source_portal`) v 5 tabuľkách, ktoré nezakladá migrácia a nečíta
+žiadny kód. Obsah riadkov som **neotvoril** — len `information_schema.columns` a
+`count(*)`. Dve tabuľky majú názvy stĺpcov z copy-paste výstupu AI nástroja
+(`<img src=...perplexity.ai...`). Neodporúčam zmazať: pôvod a právny základ nie sú
+ustálené, to je Direktíva 4/5, teda founder rozhodnutie.
+
+**Korekcia vlastného čísla:** v priebehu práce som uviedol 113 tabuliek; `count(*)` dal
+111. Zle som prerátal výpis. Preto samotné porovnanie robí SQL, nie ručný prepis.
+
+## [2026-09-25] AP-022 — Migrácia, ktorá prejde lokálne a zabije CI (CI-UNBLOCK-01)
+
+`20260925110000_rls_anon_lockdown.sql` (#697) zhodila `Lint, test, build` na `main`
+aj na každom otvorenom PR. `supabase start` prehráva migrácie na čistú DB a padol:
+
+    ERROR: relation "public.lead_property_scores" does not exist (SQLSTATE 42P01)
+    At statement: 4
+
+**Príčina je hlbšia než jedna migrácia.** `lead_property_scores` ani `saas_leads`
+**nezakladá žiadna migrácia** v `apps/crm/supabase/migrations/`. Existujú len v PROD,
+založené mimo migračnej histórie. Migračný adresár teda **nie je** replikovateľný popis
+produkčnej schémy — to je presne AP z [2026-09-22] „Čistá DB z migrácií ≠ produkčná DB",
+len tentokrát sa prejavil ako výpadok CI, nie ako drift.
+
+**Prečo to nikto nechytil:** vlastný CI beh #697 bol **cancelled** (superseded pushom
+#698). Nadväzuje na AP z [2026-09-22] o zrušených behoch na `main`.
+
+**Meranie, nie odhad** — správanie závisí od verzie Postgresu a rozdiel je poučný:
+
+| | čistá DB |
+|---|---|
+| PG 15 (`major_version = 15`, čo CI bootuje) | ERROR 42P01 na prvom `DROP POLICY` |
+| PG 16 (lokálne, ten istý súbor) | `DROP POLICY IF EXISTS` len NOTICE, ale súbor padne nižšie na `CREATE POLICY ... ON public.saas_leads` |
+
+Súbor sa teda na prázdnu DB nedá prehrať ani na jednej verzii — len padne inde.
+
+**Oprava:** oba bloky obalené do `DO $$ ... IF to_regclass(...) IS NULL THEN RETURN`.
+Na PROD sa nemení nič (tabuľky existujú → vykoná sa to isté), na čistej DB sa blok
+preskočí. Overené na lokálnom PG16 v dvoch scenároch: čistá DB (exit 0) aj PROD-tvar
+(15 policies → 2, `anon` vidí 0 riadkov, service role vidí dáta).
+
+**Poučenie do ďalších migrácií:** komentár vo vnútri `DO $$` nesmie obsahovať `$$`
+ani apostrof — ukončí dollar-quote a rozbije súbor. Chytil to až lokálny beh, nie
+čítanie kódu.
+
+## [2026-09-25] — Follow-up sweep je iba návrhár; odosiela maklér cez ten istý kontrakt (founder GO)
+
+Druhé porušenie Tier 3 zo System Spec §13 je uzavreté. Nočný cron
+`/api/cron/follow-up-sweep` už **nikdy nič neodošle**. `FOLLOWUP_MODE=send` sa ignoruje
+a v odpovedi sa hlási ako `requested_mode`. Tichá zmena správania to nie je.
+
+- **Návrh nesie presne ten text, ktorý maklér schvaľuje.** V `meta` sú `subject`, `body`,
+  `channel`, `recipient`, `agent_id=REVOLIS-FOLLOWUP-SWEEP` a
+  `prompt_version=open-followup-v1`. Audit zapíše `ai_suggested` s `agency_id` leadu.
+- **Approve path je spoločný pre oboch agentov.** Mapa `agent + kanál → akcia registra`:
+  follow-up e-mail → `followup.email.send`, SMS → `followup.sms.send`. Obe akcie už
+  v registri boli. Kontrakt a kill switch platia rovnako ako pri inbound.
+- **WhatsApp návrhy zostávajú ručné.** Pre ne neexistuje registrovaná akcia, takže
+  route vráti 422. Návrh bez kontaktu pre daný kanál sa jedným klikom odoslať nedá.
+- **Staré follow-up drafty (bez `agent_id`) tlačidlo nedostanú.** Nemajú uložený text.
+- **Merané:** voči starej route padnú 3 z 5 nových testov vrátane „nikdy neodošle".
+
+## [2026-09-24] — Control Contract stráži prvú živú cestu (inbound send) a kill switch má zdroj
+
+Founder povedal „pokračuj" na návrh z task-loopu. Toto je druhý BUILD bod zo System
+Spec: kontrakt je už postavený, ale nemal živého konzumenta (AP-007).
+
+- **Nová akcia v registri:** `inbound.reply.email.send` — EXECUTE, irreversible,
+  externally visible, resend/probable. Nevolá sa ako `followup.email.send`, lebo ide
+  o iného agenta a iný audit trail.
+- **`approve-draft.ts` sa pýta kontraktu pred zamknutím návrhu.** Postup je
+  `resolveAuthority` → `applyApproval` (approvalId = id aktivity) → `mayAct`.
+  Pri FORBIDDEN vráti 503; návrh sa nezamkne a nič sa neodošle.
+- **Kill switch:** `AGENT_KILL_SWITCH=1|true` v env, načítava ho
+  `lib/control-plane/system-state.ts`. Rovnaký zdroj teraz používa aj
+  `run-context.ts`, kde bol natvrdo `false`.
+  **Obmedzenie:** zmena env na Vercel si vyžaduje redeploy. Nie je to okamžitá
+  brzda — zapísané ako otvorená medzera v Spec §12.
+- **Čo zámerne NIE je súčasťou:** ostatné AI call-sites (follow-up sweep, dead-lead
+  kampaň, outreach). Každá z nich je vlastná stena.
+## [2026-09-25] DEC-20260925-001 — MRR = 199 € × platiace kancelárie (PRICING-MODEL-01)
+
+Vykonanie `DEC-20260924-001` v kóde. `computeMrrBreakdown()` už nepočíta seaty ani
+Owner Cockpit — v modeli 199 €/kancelária neexistujú ako samostatné tržbové položky.
+`computeActiveSeats` a `computeCockpitAttach` ostávajú ako **prevádzkové** metriky.
+
+**Násobiteľ je `isPayingAgency`, nie `isAgencyActive`.** Nie je to to isté: prvý
+znamená „platí nám", druhý „nie je vypnutá". Na dnešných dátach sa zhodujú na tých
+istých troch kanceláriách, ale zhodovať sa nemusia a tržbu smie určovať len prvý.
+Predikát som nevymyslel — `lib/customer-health/paid.ts` ho má od skôr.
+
+**Produkcia (2026-09-25), MRR = 597 €:**
+
+| kancelária | na čom stojí, že platí |
+|---|---|
+| Reality Smolko s.r.o. | `manual_plan=market_vision` |
+| Reality Monopol | `manual_plan=protocol_authority` |
+| AA REALITY Košice s.r.o. | `plan=solo` |
+
+`Revolis Demo / Sandbox / System` majú `plan='Free'` → vynechané.
+
+**NÁLEZ: `isPayingAgency` nekontroluje zrušenie.** Vráti `true` aj pre kanceláriu so
+`subscription_status='canceled'`, ak jej ostal nenulový `plan` alebo `account_tier`.
+Pre zdravotný scan neškodné, pre tržbu nie — každá odídená kancelária s dožívajúcim
+názvom balíka by pridala 199 € mesačne. `payingBasis()` sa preto pýta na zrušenie ako
+na prvé a **zámerne sa v tomto jednom bode rozchádza** s `isPayingAgency`; oba testy to
+pomenúvajú. Na dnešných dátach nemá `canceled` ani jedna kancelária, takže číslo sa tým
+nemení — je to poistka, nie oprava dnešného stavu. **Samotný `isPayingAgency` nemením**,
+to je zásah do `customer-health` a patrí do vlastného rozhodnutia.
+
+**Slabý dôkaz, ktorý treba vidieť:** AA REALITY sa počíta na základe `plan='solo'` —
+teda názvu balíka, nie záznamu o predplatnom. Žiadna kancelária nemá
+`stripe_subscription_id`. Preto dlaždica MRR nesie tabuľku „na čom stojí, že platí" —
+founder má vidieť rozdiel medzi predplatným a štítkom, nie ich súčet.
+
+
+## [2026-09-24] DEC-20260924-001 — Cenník: 199 € / kancelária / mesiac, bez kreditov
+
+**NAHRÁDZA `DEC-20260921-001` (seat model 79 / 71 / 63 €).** Seat cenník je
+archivovaný, nie zrušený — ostáva v `program-tier-pricing.ts` a v Stripe VERIFY kite
+`docs/ops/2026-09-21-stripe-verify-kit.md` pre budúce použitie.
+
+- **Rozhodnutie foundera:** 199 € za kanceláriu mesačne s DPH, **onboarding 0 €**,
+  **AI bez kreditov**. Hlavný experiment už nie je cena, ale pozicionovanie okolo
+  Lead Factory.
+- **Dôvod pivotu:** najčastejšia požiadavka z rozhovorov bola „vyrobte lead factory,
+  ktorá nám bude nosiť nové leady". Agregácia existujúcich leadov nie je Lead Factory.
+- **Stav v kóde: HOTOVÉ (PRICING-MODEL-01).** `computeMrrBreakdown()` počíta
+  `OFFICE_MONTHLY_EUR = 199` × počet platiacich kancelárií. Seaty a Owner Cockpit
+  sa do MRR nepočítajú. Vykazovaný MRR 278 € → **597 €** (3 platiace kancelárie).
+- **Zmluva:** Stripe Products/Prices sa nevytvárajú. `sk_live_…` nikdy neopúšťa
+  founderove ruky. Žiadne price ID sa nevymýšľa.
+
+## [2026-09-24] DEC-20260924-002 — AI nákladová telemetria: merať tam, kde sa míňa
+
+**Kontext:** `ai_openai_tokens` mal za celú históriu súčet **11** a posledný záznam
+z 2026-08-15. Deväť z desiatich zapisovacích miest posielalo `delta: 0` s komentárom
+„Contract import must be live; delta 0 avoids skewing AI token counters" — import tam
+nebol kvôli meraniu, ale aby prešla `Zmluva kódu (ratchet)`, ktorá hľadá prítomnosť
+importu, nie či sa niečo počíta.
+
+- **Dosadiť tam skutočné tokeny nešlo** — tie routy žiadne neminú (GET čítania, cron
+  gate, OAuth). Nula je tam správne číslo; chyba je, že sa dotýkajú počítadla AI tokenov.
+- **Meria sa v `callOpenAI()`** (#682) — jeden chokepoint pre všetkých 11 volajúcich.
+  Skutočné čísla tam už boli, len sa logovali do `stderr` a zahadzovali.
+- **`agencyId` dotiahnutý na všetkých 11** (#686): 6 bez dotazu navyše, 2 presunom
+  poradia (`ghostwriter`, `valuation/estimate`), 2 jedným lookupom na AI ceste
+  (`action-executor`, `bri-engine`) s nemým zlyhaním.
+- **AP-010 uzavreté** (#688): `logAiActionAudit()` zapisoval `cost_eur`,
+  `credits_spent`, `model`, `latency_ms` do stĺpcov, ktoré v produkcii neexistovali.
+  Migrácie `20260611000002` a `20260611000004` boli v repe, ale neboli aplikované.
+  Insert padal do `console.warn`. Aplikované ako `20260924183806`.
+
+## [2026-09-24] DEC-20260924-003 — Marža sa nepočíta v SQL a nevypĺňa sa nulou
+
+`ai_cost_daily` (migrácia `20260924200000`) nesie **výhradne skutočný náklad**:
+`agency_id, day_utc, action_count, cost_eur`. Tržba a marža sa počítajú v TypeScripte
+z `computeMrrBreakdown()`.
+
+- **Prečo nie v SQL:** pôvodná migrácia počítala `revenue_eur_retail =
+  credits_spent * 0,86` podľa archivovaného kreditového cenníka. Pri 199 €/kancelária
+  bez kreditov je `credits_spent` vždy NULL → pohľad by vykazoval retail 0 € a maržu
+  −cost_eur. `FounderMetricsDashboard` ten pohľad číta, takže by poctivý prázdny stav
+  nahradil nepravdivým číslom.
+- **Prečo nie duplikovať `isAgencyActive` v SQL:** cenník a definícia aktívnej
+  kancelárie by žili na dvoch miestach a raz by sa rozišli.
+- **`costGap`:** keď za obdobie prebehli akcie, ale zapísaný náklad je 0 €, marža je
+  `null` a dlaždica ukáže „—" s dôvodom. Marža `MRR − 0` by tvrdila, že AI nič nestojí.
+  To je dnes reálny stav: 168 z 198 riadkov má `meta.costEur`, **všetky null**.
+  Niet čo backfillovať — náklad sa nikdy nevypočítal.
+- **`security_invoker = true`** na pohľade — rešpektuje RLS `ai_action_audit_select_tenant`.
+  Pôvodná migrácia to nemala.
+
+## [2026-09-24] AP-021 — AP-010 je konkrétna cena migračného driftu
+
+**Tento záznam NIE JE samostatný nález.** Pri AUDIT-SCHEMA-01 som nameral 113 súborov
+proti 53 registrovaným a chcel to zapísať ako nový nález. **F2B (#687, `4ec5f48f`) ten
+istý drift zmeral o 12 minút skôr, hlbšie a presnejšie** —
+`docs/reports/2026-09-24-f2b-prod-shape-rehearsal.md` je autoritatívny zdroj, nie tento
+odsek. Moje čísla (113/53) sa s jeho (111/48) rozchádzajú o okamih merania a o to, že
+#688 medzitým jednu registráciu pridal; **neuvádzam ich ako konkurenčný údaj.**
+
+F2B ukázal viac, než som mal: replay **iba zo zapísaných** migrácií dáva `OK=16,
+FAILED=32`, čiže **aplikovaná časť je sama o sebe nekoherentná** — táto databáza sa zo
+`schema_migrations` postaviť nedá. Príčina má meno: `20260310_baseline_core_schema.sql`
+a `20260921195500_legalize_inbound_mailboxes.sql` sú v neaplikovanej dávke, hoci ich
+objekty v PROD existujú. Po ich doplnení `OK=50, FAILED=0`.
+
+**Čo k tomu pridáva AP-010:** prvý doložený prípad, keď ten drift **stál funkčnosť**, nie
+len koherenciu. `logAiActionAudit()` zapisoval do štyroch stĺpcov, ktoré v PROD
+neexistovali, insert padal do `console.warn` a eurová cena AI sa nikdy nikam neuložila.
+Druhý prípad z 2026-09-23: `20260817220000` / `last_contact_at`, čítaná na 59 miestach.
+
+Zosúladenie vedie F2B, nie táto úloha.
+## [2026-09-24] — Tier-3 brána: inbound AI odpoveď je draft, nie e-mail (founder GO)
+
+**Zmena správania na PROD po merge:** `/api/webhooks/inbound-lead` už leadovi nepošle
+AI e-mail ani WhatsApp. AI text sa uloží ako draft do `activities` a zapíše sa do
+`ai_action_audit` so stavom `ai_suggested` / `pending_human`. Odoslanie robí maklér.
+
+- **Webhook je fail-closed.** Bez `INBOUND_WEBHOOK_SECRET` vracia 503. Ak integrácia
+  posiela požiadavky bez Bearer tokenu, po merge prestane fungovať — to je zámer.
+- Uzatvára aj **TASK-SEC-002**: service-role insert s `agency_id` a chyba insertu
+  zhodí request (AP-010).
+- **Prvý agent so stopou `agent_id` a `prompt_version`:** `REVOLIS-INBOUND-AUTOREPLY`
+  s promptom `inbound-autoreply-v1`.
+- **„Schváliť a odoslať" (founder GO, tá istá PR #690).** Tlačidlo je na návrhu
+  v časovej osi leadu. Cesta: `POST /api/leads/:id/drafts/:activityId/approve` →
+  `lib/inbound/approve-draft.ts`.
+  - Odošle **presne** uložený `subject`/`body` na uložený `recipient`. Text sa
+    negeneruje nanovo. Preto návrh odteraz ukladá text do `meta`. Starší návrh
+    bez uloženého textu sa odoslať nedá (422) a maklér odpovie ručne.
+  - Schváliť smie len maklér kancelárie, ktorej patrí lead. Iná kancelária
+    dostane 404, aby sa nedalo zistiť, že návrh existuje.
+  - Najviac jedno odoslanie: riadok sa pred odoslaním zamkne podmieneným
+    UPDATE (`approval_state` null/`send_failed` → `sending`). Dvojklik alebo
+    druhá karta dostane 409.
+  - Audit: `human_approved` → send → `sent` / `send_failed`. Po `send_failed`
+    sa dá odoslanie zopakovať.
+  - **Neoverené proti živej DB:** syntax PostgREST filtra
+    `meta->>approval_state.is.null` v `.or()`. Ak je zlá, zámok vráti chybu a
+    nič sa neodošle. Zlyhá to bezpečným smerom, ale tlačidlo potom nebude
+    fungovať. Overiť na preview.
+  - `sendMessage` pre e-mail vyžaduje `OUTREACH_FROM_EMAIL`. Ak chýba,
+    odoslanie skončí ako viditeľný `send_failed`, nie ticho.
+
+## [2026-09-24] — Agentic System Blueprint v1.0 prijatý ako kontrakt, nie ako stavebný plán
+
+Founder dal GO na `AGENTIC-SYSTEM-BLUEPRINT-v1.0`. Uložený doslovne v
+`docs/architecture/agentic/agentic-system-blueprint-v1.0.md`. Jeho §21 predpisuje ako ďalší
+krok REVOLIS SYSTEM SPEC v1.0, ktorý je v `docs/architecture/agentic/revolis-system-spec-v1.0.md`
+a je vyplnený z reálneho kódu, nie z predstavy.
+
+**Hlavný nález:** Revolis má väčšinu stavebných blokov Blueprintu. Governance vrstva
+(`packages/control-contract`) je však **DEFINED, nie LIVE**, pretože jej jediný konzument
+beží len v testoch. Rovnaká akcia „AI text odchádza ku klientovi" má dnes štyri režimy:
+draft, ľudské schválenie, `dry_run` a žiadnu bránu.
+
+**P0 porušenie Tier 3:** `lib/inbound/process-lead.ts:102-135` posiela AI-generovaný
+e-mail a WhatsApp bez schválenia. Obsah je čiastočne riadený vstupom `payload.message`.
+Webhook `/api/webhooks/inbound-lead` overuje Bearer iba vtedy, ak je
+`INBOUND_WEBHOOK_SECRET` nastavený. Či je nastavený na PROD, je UNVERIFIED, lebo výpis
+mien z Vercelu bol orezaný. Šablónová auto-odpoveď v `lib/acquire/*` porušením **nie je**:
+text je pevný a kancelária ju zapína cez opt-in.
+
+**Ústava v2 na Blueprint §21:**
+- **BUILD:**
+  - Tier-3 brána na inbound auto-reply, spolu s prohibited-behavior testami.
+  - Zapojenie control-contractu do jednej živej Tier-3 cesty.
+  - `agent_id` a `prompt_version` do `ai_action_audit.meta`.
+- **BACKLOG (timing veto Q8):**
+  - Agent Factory. Odomkne sa pri 3. agentovi za control-contractom (ADR 2026-09-11b,
+    Engineering Constitution princíp 4).
+  - Managed Agents runtime. Odomkne sa pri prvom multi-step tool-use loope.
+  - Produktové skills. Odomknú sa pri druhom použití.
+- **MIMO REPO:** špecifikácie Onlinovo, MIA Vellar a Phone Operator.
+
+## [2026-09-23] — W1 hotová: identita kancelárie sa odovzdáva, nedopočítava
+
+**Zmena správania, nie oprava kozmetiky:** automatická odpoveď už neodíde na adresu
+klienta. Doteraz mohla — lead z 2026-09-22 05:47 má ako kontaktný e-mail adresu
+jedného z maklérov (overené: presná zhoda s `profiles.email`).
+
+- **Stráž nestojí na doméne príjemcu.** Stará podmienka `domain === recipientDomain`
+  fungovala, kým ingest bežal na doméne kancelárie. Odkedy beží na `revolis.ai`, je
+  doména príjemcu vždy `revolis.ai` a doména klienta sa s ňou nikdy nezhoduje.
+  Identita kancelárie sa teraz načíta v route a odovzdá parseru.
+- **Zdroj je nameraný, nie vymyslený:** `profiles.email` (12 riadkov na doméne klienta),
+  `agencies.email` (v produkcii prázdne) a `inbound_mailboxes.email`. Žiadny nový stĺpec,
+  žiadna migrácia, žiadny zápis do produkčnej DB — eskalácia D sa nekonala.
+- **Verejné domény sa z identity vyhadzujú.** Medzi profilmi sú aj gmail adresy. Bez
+  tohto filtra by maklér s osobným gmailom zahodil každého záujemcu z gmailu. Jeho
+  konkrétna adresa sa aj tak vylúči presnou zhodou — presnosť bez vedľajších škôd.
+- **Fallback na vylúčenú adresu padá, len keď lead má telefón.** Bez telefónu by lead
+  ostal úplne bez kontaktu, čo je horšie. **Zostávajúca diera:** lead bez telefónu, kde
+  jediná adresa je adresa klienta, stále dostane tú adresu. Vedomé, nie prehliadnuté.
+- **Dopyt na identitu je fail-soft.** Keby zhodil request, stratili by sme dopyt kvôli
+  oprave, ktorá ho má chrániť. Pri chybe sa vráti prázdna identita a parser sa správa
+  ako predtým.
+- **`to_missing` vs `to_unmatched`.** Dva úplne odlišné dôvody nepriradenia vyzerali
+  v dátach rovnako (žiadny heartbeat). Teraz sa dajú rozlíšiť — a to je rozdiel medzi
+  „oprav Worker" a „domapuj adresu".
+
+Dôkaz: 55/55 testov v acquire oblasti, z toho dvojica, kde ten istý vstup bez identity
+vráti adresu makléra (reprodukcia produkčnej chyby) a s identitou `null`. `tsc` 51 chýb
+pred aj po (nula pridaných), `next build` čistý.
+## [2026-09-23] — FUNNEL-PRICING-01 vykonaný: `/porovnanie-programov` už nesľubuje nákup programu
+
+`DEC-20260921-001` rozhodol, že kanonický je **seat model** (79 / 71 / 63 € na makléra)
+a že programy 49/99/199/449 € nesmú ostať aktívnym predajným funnelom. Rozhodnutie
+stálo dva dni bez vykonania. #647 (`fc381004`) ho vykonalo v UI.
+
+**Stav pred:** štyri CTA „Vybrať" / „★ Aktivovať" viedli na `/billing`, teda k seat
+checkoutu. Zákazník klikol na jeden cenník a skončil v druhom — pričom **vlastný banner
+stránky** (`:167`) už hovoril, že tie moduly sú na roadmape a nie v self-serve checkoute.
+Stránka si teda protirečila sama so sebou, nielen s cenníkom.
+
+**Zvolená cesta:** z dvoch schválených možností (stiahnuť stránku **alebo** prerobiť na
+informačnú) padla voľba na druhú. Menej deštruktívna a cenník ostáva ako čestná informácia
+o roadmape, nie ako predajný sľub.
+
+- Štyri plan-CTA prestali byť odkazmi → statický badge **„Na roadmape"**, zhodný
+  s bannerom. V kóde je komentár s dôvodom, aby to niekto nevrátil ako „chýbajúce CTA".
+- Spodné CTA mieri na `/upgrade`: **„Kúpiť seaty — 79 / 71 / 63 € na makléra →"**.
+- **Nedotknuté zámerne:** cenník ako roadmapa, banner `:167`, veta o garancii a
+  onboardingu — to je copy/legal rozhodnutie, nie funnel.
+
+**Overené na mergnutom `main`, nie na vetve:** `href="/billing"` má v súbore nula
+výskytov; „Na roadmape" je `:237` (vnútri mapy cez všetky štyri plány); `/upgrade` CTA
+je `:302-306`; `git diff d57eac1c origin/main` na tomto súbore je prázdny.
+
+**Čo to NEODOMYKÁ.** `/upgrade` stále nevedie do Stripe. `CHECKOUT-ENV-01` je
+nedotknutý — seat `price_…` ID v produkcii chýbajú a Krok A (Stripe VERIFY,
+`sk_live_…`, founder lokálne) sa zatiaľ nespustil. Toto odstránilo **falošný sľub**,
+nie blokádu príjmu. Kto dnes klikne na „Kúpiť seaty", dostane sa na `/upgrade`, kde
+`seatCheckoutAvailable` je `false`.
+
+---
+
+### Sprievodné nálezy z tej istej session
+
+**1. Ratchet `Zmluva kódu` je štrukturálne deravý.** `code-contract-guard.yml:14-18`
+beží **iba na `pull_request`** s path filtrom `apps/crm/src/**` — na push do `main`
+nebeží vôbec. Dlh teda neplatí ten, kto ho vyrobil; zaplatí ho prvý ďalší CRM PR.
+Dnes 9 nových porušení z #581 a #579 sedí na `main`. Detail, tranžovanie a STOP
+podmienky: `memory/open-tasks.md` → `RATCHET-API-CONTRACT-01`.
+
+**Tranža 1 splatená ešte v ten deň (#660, `GO RATCHET-TRANCHE-1`): 9 → 6.** Tri
+`concierge/*` routy prešli na `okResponse`/`errorResponse`, 16 zo 17 call site-ov;
+sedemnásty ostal ručný, lebo `freebusy` vracia `{ok:false, reason, detail?}` bez kľúča
+`error` a `errorResponse()` by ho pridal — to je verejný kontrakt widgetu na cudzom webe,
+nie kozmetika. Tvar odpovedí je pripnutý testom `api-response-wire.test.ts`.
+
+Dve korekcie k tomu, čo som predtým tvrdil. Triedu `api-response` som odhadol na
+5 porušení — v skutočnosti sú **3**; číslo ukázalo až spustenie po prepise, nie odhad.
+A napísal som, že tranža 1 „odblokuje ďalší CRM PR" — **neodblokuje**: kontrola je
+binárna (padá pri akomkoľvek novom porušení), takže je červená až do nuly.
+
+Kľúčový nález: tranža `usage-metrics` (4 z 9) sa **nedá opraviť bez rozhodnutia
+o billingu**. `UsageMetricName` je uzavretý union šiestich hodnôt a ani jedna nesedí
+na concierge ani onboarding. Splniť ratchet tam znamená pridať nové názvy metrík do
+`increment_usage_metric` RPC — tabuľky, z ktorej sa odvodzuje spotreba a reporting.
+Lint si teda pýta zmenu obchodného modelu.
+
+**2. Moja chyba z #621 stála dva PR-y.** Skript pri prepise `TASK-BUS-RUNNER-2D.md`
+zapísal `head + '\n---\n' + body`, kde `head` už na `---` končil. Výsledok:
+`EF BB BF 2D 2D 2D 0A 2D 2D 2D 0A` — BOM plus zdvojený otvárací oddeľovač. `bus:validate`
+padal na `main`, nie len na PR. Opravili to **dvaja agenti paralelne**: #648 (`988edf6b`)
+a #647 (`fc381004`). Výsledné súbory sú byte-identické, takže `main` je v poriadku a nič
+sa nestratilo — ale jedna moja chyba minula dva review cykly a dva Vercel deploye
+na vyčerpanej hobby kvóte. Samostatne otvorené a nevysvetlené: **prečo #621 prešlo CI
+zelené s rozbitým frontmatterom.**
+
+**3. Vercel burn je merateľný.** Pri jednej kontrole boli v queue tri deploye z troch
+rôznych agentných vetiev (`cursor/fix-assignment-rules-tenant-gate`,
+`claude/zealous-albattani-2h32y5`, `codex/smolko-public-chatbot`) plus dva z tejto
+práce. `ignoreCommand` v oboch `vercel.json` je empiricky inertný. Ignored Build Step
+v dashboarde ostáva neprečítaný — founder-only krok.
+
 ## [2026-09-23] — /blueprint zrušený: predával sme metodiku nesprávnemu kupcovi
 
 Founder sa spýtal, čo tou stránkou hovoríme, a navrhol ju zrušiť. Po prečítaní kódu
@@ -237,7 +1450,7 @@ founder musel z nich skladať obraz sám. To je presne opak toho, načo je agent
   only then automate. Real Handoff #1 is the next intended use, but it requires
   a concrete engineering task; Phase 2 remains explicitly blocked.
 
-## [2026-09-06] — Smolko chatbot: internal CRM assistant BUILD, public Concierge still gated
+## [2026-09-06] — SUPERSEDED: Smolko chatbot: internal CRM assistant BUILD, public Concierge still gated
 
 - **GO:** Founder "Go Chatbot pre Smolka."
 - **Decision:** Build only a safe internal CRM assistant slice in `/revolis-ai`,
@@ -259,6 +1472,16 @@ founder musel z nich skladať obraz sám. To je presne opak toho, načo je agent
   Contract telemetry uses `usage_metrics_daily` metric `ai_chatbot_queries`.
   Contradiction check: none; public chatbot remains explicitly blocked.
 - **Artifact:** `docs/reports/2026-09-06-smolko-crm-chatbot-mvp.md`.
+
+> Tento záznam je historický a nahrádza ho nasledujúce rozhodnutie po spresnení zákazníka. Uvedený report bol odstránený; jeho obsah zostáva dostupný v Git histórii.
+
+## [2026-09-06] — Reality Smolko chatbot: internal CRM panel REVERT, Voiceflow guide BUILD
+
+- **Trigger:** zákazník výslovne opravil zadanie: chatbot patrí na verejný web Reality Smolko a má sa pýtať na druh nehnuteľnosti, zámer a lokalitu.
+- **Evidence:** `https://www.realitysmolko.sk/` už má vložený Voiceflow projekt s launcherom „Poraďte sa!“; Creator v aktuálnom prostredí vyžaduje prihlásenie.
+- **Decision:** odstrániť interný `/revolis-ai` panel, API a CRM engine. Použiť existujúci Voiceflow projekt, nie nový Revolis chatbot. Prvý tok je bez PII, CRM zápisu, bookingu a neovereného filtračného endpointu.
+- **Artifact:** `docs/briefs/BO-smolko-voiceflow-correction.md`, `docs/voiceflow/reality-smolko-property-guide-v1.md`, `docs/reports/2026-09-06-smolko-voiceflow-audit.md`.
+- **External gate:** zmenu canvasu a publikovanie vykoná vlastník po sprístupnení Voiceflow projektu; skript na webe sa nemení.
 
 
 
@@ -2035,3 +3258,819 @@ zmena kontraktu a patrí do vlastnej brány. Zámerne neopravené:
 - **Čo to neodomyká.** Gate C ostáva zablokovaný: `bus/main` je stále na
   `17f30d4` (2026-09-19), žiadny remote C-0 nebežal. Toto odstraňuje prekážku
   v kroku §4, nespúšťa ho.
+
+## 2026-09-23 — P-2 + P-3: RLS model loop tabuliek uzavretý v repe (#644, #645)
+
+- **P-2 (#644 `5b2e915`) — rozdelenie 2/3, bez zmeny schémy.** Päť loop tabuliek
+  dostalo explicitný RLS model. Dve infra (`ai_jobs`, `lead_triage_idempotency`)
+  ostávajú `RLS ON, 0 policies` — ale už **ako zámer, nie ako opomenutie**:
+  obe majú `COMMENT ON TABLE 'intentional infra deny-all'`, lebo nemajú tenantný
+  kľúč a prístup k nim ide výlučne cez `service_role` (`rolbypassrls`). Tri
+  tenantné (`credit_ledger`, `decisions`, `exclusivity_outcomes`) dostali
+  SELECT + INSERT pre `authenticated` scopované na `agency_id`.
+- **Prečo DROP+CREATE a nie guard na neexistenciu.** `credit_ledger` už tenantné
+  policies mal — z `20260613000000`, ktorá však v PROD nikdy nebežala.
+  `DROP POLICY IF EXISTS` + `CREATE` je jediný tvar, ktorý **konverguje obe
+  strany na rovnaký výsledok** bez ohľadu na to, čo na danej inštancii je.
+- **Odchýlka od zadania, hlásená pred implementáciou.** Zadanie znelo
+  `USING (agency_id = current_agency_id())`. Tá funkcia v repe **neexistuje**.
+  Použitý je zavedený helper `public.profile_agencies_for_auth()` (`SETOF uuid`,
+  `SECURITY DEFINER`, `STABLE`, 26 migrácií). Sémanticky ekvivalent pre
+  používateľa s jednou agentúrou, korektný aj pre viac.
+- **P-3 (#645 `6ae75ba`) — vetva `agency_id IS NULL` zatvorená natrvalo.**
+  Tri policies (`platform_events_select_tenant`, `ai_action_audit_select_tenant`,
+  `ai_action_audit_insert_tenant`) sprístupňovali každému prihlásenému riadky
+  s `agency_id IS NULL`. Podmienka na uzavretie bola count = 0; meranie proti
+  živému PROD tesne pred zmenou: `platform_events` **1420 / 0 NULL**,
+  `ai_action_audit` **186 / 0 NULL**. (Skoršie meranie ukazovalo 178 — tabuľka
+  je živá, číslo narástlo; `NULL = 0` platí v oboch.)
+- **Zvyšok výrazu ostal bajt na bajt.** Nemenil sa `cmd`, `roles` ani tvar
+  poddotazu, a **zámerne** sa nepresúval na `profile_agencies_for_auth()`, hoci
+  je to inde v repe zavedený helper. Brána odstraňuje vetvu, nič iné.
+- **Nález, ktorý zmenil tvar P-3 migrácie: `ai_action_audit` nemá rovnaký tvar
+  v CI a v PROD.** Repo migrácia `20260616123000_rls_wave_a_hardening.sql` obe
+  menované policies dropuje a nahrádza jedinou `ai_action_audit_tenant`
+  (`FOR ALL`, `profile_agencies_for_auth`) — ale v PROD nikdy nebežala, je jednou
+  zo 60 neaplikovaných. Bezpodmienečný `CREATE` by teda v CI **pridal** policies,
+  ktoré tamojší model nemá; a permisívne RLS policies sa **OR-ujú**, teda by
+  prístup **rozšíril**, nie zúžil. Preto sú zmeny na `ai_action_audit` guardované
+  na existenciu policy: v CI no-op, v PROD prepis. Testované obe vetvy zvlášť.
+- **Dôkaz behaviorálny, nie len tvarový.** Ako rola `authenticated`
+  (`begin; set local role authenticated; set local "request.jwt.claim.sub" = …`),
+  fixtures 1 vlastný + 1 osirený riadok:
+  `platform_events` SELECT — so starou policy osirený viditeľný **1**, po P-3 **0**;
+  `ai_action_audit` INSERT `agency_id → NULL` — so starou policy `INSERT 0 1`,
+  po P-3 `ERROR: new row violates row-level security policy`.
+  Replay celého setu `APPLIED_OK=111 FAILED=0`, migrácia aplikovaná 3× — idempotentná.
+- **DÔLEŽITÉ — merge do `main` nezatvoril dieru v PROD.** Obe migrácie sú
+  v aktívnom sete, ale **neaplikované na PROD**; deploy je samostatná brána.
+  Overené po merge #645: všetky tri policies majú v PROD stále vetvu
+  `(agency_id IS NULL) OR …`. Repo je uzavreté, PROD nie.
+- **`BUS` CI blocker — diagnostikovaný, opravený iným PR.** `bus:validate` padal
+  na `Unsupported YAML line: --- (line 1)` v `.ai/bus/tasks/TASK-BUS-RUNNER-2D.md`;
+  červené bolo aj na `main`, teda na každom PR v repe. Opravené cez #647/#648,
+  `bus:validate` je zelený (0 errors).
+  > ⚠️ **PRÍČINU SOM URČIL NESPRÁVNE.** Napísal som sem aj do komentára na #644,
+  > že za to môže **UTF-8 BOM**, a odporučil BOM-tolerantný parser. Nie je to tak:
+  > `parseBusDocument` strihá vedúci BOM odjakživa (`envelope.ts:151`,
+  > `raw.replace(/^\uFEFF/, "")` s doslovným znakom — preto ho môj grep na
+  > „BOM"/„FEFF" nenašiel). Skutočnou príčinou bol **zdvojený `---`**. BOM v tom
+  > súbore síce bol, ale bol neškodný. Plná korekcia s reprodukciou je nižšie
+  > v sekcii „Korekcia: ‚BOM zhadzuje parser' bolo nesprávne (#653)".
+  > **Položka `BUS-YAML-BOM-TOLERANCE` je tým zrušená — nebolo čo opraviť.**
+
+## 2026-09-23 — `ignoreCommand` bol 6 dní pod mŕtvym kľúčom (nahrádza #578)
+
+- **Nález:** `#578` uložil príkaz pod `"git": { "ignoreCommand": ... }`. Vercel ten kľúč
+  **nečíta** — `ignoreCommand` je top-level vlastnosť `vercel.json`, objekt `git` prijíma
+  `deploymentEnabled`. Ignored Build Step sa od 2026-09-17 ani raz nespustil; oba projekty
+  buildovali každý commit vrátane docs-only a migration-only.
+- **Dôkaz, nie dedukcia:** build log `dpl_8pgg5NkEQQPs1a942q86FeaiDLqP` (commit `472ca758`,
+  0 súborov pod `apps/crm`) ide z „Cloning completed" rovno na „Running vercel build" —
+  medzi tým nie je žiadny ignore krok.
+- **Prečo to vyzeralo funkčné:** 12 `CANCELED` deploymentov pôsobilo ako preskočené buildy.
+  Po spárovaní podľa commitov vyšiel nezmysel — `b32aa132` (1 súbor pod `apps/crm`) mal
+  `realitka-ai`=CANCELED a `revolis-marketing`=READY, teda presne naopak. Tie `CANCELED` sú
+  `autoJobCancelation` pri rýchlych mergoch na `main`, nie ignoreCommand.
+- **Prečo to harness nechytil:** `scripts/vercel-ignore-command.test.mjs` mal príkaz natvrdo
+  v konštante a `vercel.json` vôbec nečítal. Testoval logiku shellu, nie to, či Vercel kľúč
+  prečíta. 4/4 zelené nad mŕtvym kľúčom. **Kópia driftuje, čítanie nie** — harness teraz
+  načítava príkaz zo súboru a zlyhá (exit 1), ak sa `ignoreCommand` opäť ocitne pod `git`.
+- **Oprava príkazu:** základ `VERCEL_GIT_PREVIOUS_SHA` (Vercel ho vystavuje práve len keď je
+  Ignored Build Step nastavený) s fallbackom `HEAD^`; `git cat-file -e` overí dostupnosť
+  v shallow klone a pri pochybnosti **buildne** (fail-open); `apps/crm` vylučuje
+  `supabase/migrations`, lebo migrácie aplikuje `supabase db push`, nie Next.js build.
+- **KOREKCIA VLASTNÉHO TVRDENIA:** túto bránu som navrhol s odôvodnením, že „vráti zhruba
+  polovicu denného limitu". **To bolo nesprávne** a `memory/decisions.md` (2026-09-20) to už
+  raz zaznamenal: kvóta `api-deployments-free-per-day` sa míňa pri **vytvorení** deploymentu,
+  ignoreCommand beží až potom. Šetrí build minúty a CI čas, nie počet deploymentov.
+  Nekonzultoval som memory pred návrhom a zopakoval som chybu, ktorú projekt už mal opravenú.
+- **Na počet deploymentov je páka inde:** `git.deploymentEnabled` (per vetva alebo úplne),
+  prípadne vypnutie preview deploymentov v nastavení projektu. Produktové rozhodnutie —
+  stratia sa preview URL — samostatná brána, bez GO sa nerobí.
+## 2026-09-23 — Gate A/B zavreté, Gate C stále bez dôkazu (#649, #653)
+
+- **Gate B zmergovaný ako `ee3d9f3` (#649): capability `repo-head`.** Prvá
+  capability, ktorej odpoveď nie je konštanta. `BUS ALIVE` dokazuje, že sa
+  slučka točí, ale jeho dve pevné slová by vyzerali rovnako z procesu, ktorý
+  tento stroj nikdy nevidel. `repo-head` odpovedá commitom, na ktorom runner
+  stojí, a kontrakt porovnáva odpoveď proti sha prečítanej **pred** spustením
+  procesu — vymyslená, dobre tvarovaná sha kontrakt neprejde.
+- **Hranica sa nepohla a nesmie sa tak čítať.** Exekútor ďalej beží s
+  `--tools ""`, `--safe-mode`, `--permission-mode manual` a v zahadzovacom cwd,
+  bajt na bajt. **Model nedostal prístup na čítanie.** Číta runner, model
+  relayuje, kontrakt chytí model, ktorý nerelayuje. Dať modelu vlastné nástroje
+  je samostatné rozhodnutie za samostatnou bránou — bez GO sa neotvára.
+- **Mechanizmus rozšírenia dosahu je zámerne úzky.** Capability deklaruje
+  `facts` — uzavretú úniu (dnes jediný `repo_head`), ktorú runner zbiera cez
+  mapu `FACT_SOURCES` v `consume.ts`. Capability **pomenuje, čo potrebuje,
+  nie príkaz.** Pridať dosah znamená pridať zdroj pod review, nie nový reťazec.
+- **Fakty sa zbierajú pred rozpočtom.** Stroj, ktorý nevie odpovedať na
+  `git rev-parse HEAD`, je problém prostredia: beh zlyhá, task ostane otvorený,
+  slot sa neminie, blocker sa nepošle. Ďalší cyklus to skúsi znova.
+- **Jeden test púšťa skutočný `FACT_SOURCES.repo_head` bez injekcie** a pripína
+  ho na `git rev-parse HEAD`. Bez neho by jediný kus dotýkajúci sa stroja
+  zostal brána existujúca len na papieri — presne to, čo riešilo #620.
+
+### Korekcia: „BOM zhadzuje parser" bolo nesprávne (#653)
+
+- `bus:validate` bol červený na maine a ja som príčinu určil ako **UTF-8 BOM**
+  v `TASK-BUS-RUNNER-2D.md` a na tom základe odporučil BOM-tolerantný parser.
+  **Nesprávne.** Reprodukované priamo proti parseru:
+
+  | vstup | výsledok |
+  |---|---|
+  | `---` | parsed |
+  | `BOM + ---` | **parsed** — samotný BOM je neškodný |
+  | `BOM + --- potom ---` | ERROR |
+  | `--- potom ---` (bez BOM) | ERROR — tá istá chyba, BOM netreba |
+
+- Príčinou bol **zdvojený `---`**. `parseBusDocument` strihá vedúci BOM
+  odjakživa (`envelope.ts:151`), takže parser BOM-tolerantný **už bol** — len to
+  nikto nepripol testom, čiže tolerancia bola náhodná.
+- Dátovú polovicu opravilo #648 (zmazaný riadok bol presne `﻿---`).
+  Parserová polovica je #653 (`6f6e367`): hláška pomenuje príčinu
+  (`duplicated frontmatter delimiter`) namiesto symptómu
+  (`Unsupported YAML line: ---`), plus tri regresné testy — BOM sa parsuje,
+  zdvojený delimiter je odmietnutý v oboch podobách, a nepodporovaný riadok,
+  ktorý delimiter nie je, si drží generickú hlášku.
+
+### Druhá korekcia z tej istej línie
+
+- Pri #626 som napísal, že starý handshake dostane „401 na každom volaní".
+  Skutočné zlyhanie bolo **`403` na BUS-002**: SOL token sa autentifikuje, takže
+  BUS-001 prejde a padne až výsledok s `from: claude-code` pod SOL bearerom.
+  Záver (remote C-0 na maine neprejde) platil, mechanizmus nie.
+
+### Stav brán
+
+| Brána | Stav |
+|---|---|
+| Gate A | ✅ `45989e8` (#612) — per-agent identita, `from` viazané na bearer |
+| Gate B | ✅ `ee3d9f3` (#649) — `repo-head`, hranica `--tools ""` nedotknutá |
+| Gate C | 🔴 **BLOCKED** — `bus/main` stále `17f30d425971fe86a78e213c70d67cce8241403d`, remote C-0 nebežal |
+
+- **Gate C je founder-side a nedá sa obísť odo mňa.** Runbook aj handshake sú
+  na `main` pripravené; potrebný je server s `AUTH MODE: per-agent` a
+  `store: github`, tunel, a **oba** tokeny v prostredí shellu, z ktorého sa
+  handshake spúšťa. Dôkaz = päť riadkov výstupu (`MODE:`, `SERVER AUTH:`,
+  `store:`, štyri `BUS-00x`, `COPY_PASTE_REQUIRED:`) plus `before`/`after` TIP
+  vetvy `bus/main`. Tokeny sa neposielajú do chatu.
+- **Nezapísané zámerne:** `memory/session-summary.md` sa nedotýkam — drží stav
+  paralelne bežiacej session (revenue blocker `/upgrade`) a prepis by ho zahodil.
+  Founder rozhodol „len decisions".
+
+## 2026-09-23 — PROD deploy audit: `db push` dnes neprejde (READ ONLY)
+
+- **Hlavný záver:** `supabase db push` spadne na **druhej** neaplikovanej migrácii.
+  Nie na dátach — na DDL, ktoré vytvára objekt existujúci v PROD. Riziko teda nie je
+  strata dát, ale **čiastočná aplikácia**: Supabase migruje po jednej v transakcii
+  a pri prvej chybe skončí; predchádzajúce ostanú zapísané v `schema_migrations`.
+  Vznikne stav, čo nezodpovedá ani repu, ani dnešnému PROD.
+- **Stav:** repo 111 migrácií, `schema_migrations` 51, **63 neaplikovaných**.
+  Plus **3 „duchovia"** — v `schema_migrations` sú, v repe nie
+  (`20260802134100`, `20260802134104`, `20260904184236`). PROD nesie zmeny bez zdroja.
+- **16 bodov zlyhania v 4 súboroch**, každý overený proti `pg_class`/`pg_policies`/
+  `pg_trigger`/`pg_proc` — objekt v PROD existuje:
+  `20260527120000` 1 policy (prvé zlyhanie, riadok 31) ·
+  `20260608120000` 9 indexov + 3 policies + 1 trigger ·
+  `20260629120000` 1 policy · `20260722120000` 1 funkcia bez `OR REPLACE`.
+- **KOREKCIA priebežného zistenia:** 5× `ADD CONSTRAINT` som najprv označil za riziko.
+  Po prečítaní súborov to neplatí — každý má pred sebou `DROP CONSTRAINT IF EXISTS`,
+  sú idempotentné. Regex na `IF NOT EXISTS` nestačil, rozhodlo až čítanie.
+- **Čo riziko nie je:** 44× `CREATE TABLE`, všetky `IF NOT EXISTS`, ani jeden
+  neguardovaný. 0 neguardovaných `ADD COLUMN`, 0 `CREATE TYPE`.
+- **Jediná deštruktívna operácia je no-op:** `DROP COLUMN realsoft_export_pass`
+  (`20260616103500`) je `ALTER TABLE IF EXISTS` + `DROP COLUMN IF EXISTS` a v PROD
+  je ten stĺpec už dávno zhodený (`information_schema.columns` = 0, hash stĺpec
+  existuje, pgcrypto nainštalované). Žiadna strata dát v celej dávke.
+- **Poradie:** F1 spraviť tých 16 príkazov idempotentnými (1 PR, 4 súbory,
+  overenie dvojitým replayom) → F2 nácvik na Supabase branch → F3 push na PROD →
+  F4 md5 parity fingerprint CI vs PROD.
+- **Dve otvorené otázky pre vlastníka, bez ktorých sa F3 nedá naplánovať:**
+  je na tomto Supabase pláne dostupný **branching** (F2 bez neho je hádanie),
+  a je zapnuté **PITR** s akým oknom (F3 inak nemá rollback).
+- Dokument: `docs/reports/2026-09-23-prod-deploy-plan.md`.
+
+## 2026-09-23 — W1 kontaktná garda, B08 Concierge kalendár, odblokovanie CI
+
+- **W1 (#659) — lead nedostane ako kontakt adresu agentúry.** Ingest e-mailov bral
+  prvú adresu v texte, čo pri preposlanom dopyte znamenalo adresu makléra alebo
+  `@realitysmolko.sk`. Overené na produkčnom leade z 05:47: kontaktný e-mail bol
+  **presná zhoda** s `profiles.email`. Garda filtruje adresy agentúry, jej doménu,
+  `revolis.ai` a role-adresy (`info@`, `noreply@`…).
+  **Rozhodnutie, ktoré zadanie nepýtalo:** verejní poskytovatelia (gmail, zoznam,
+  seznam, centrum…) sa z odvodených domén agentúry VYLUČUJÚ. Bez toho by osobný
+  gmail makléra zablokoval každého gmail kupca — garda by zabíjala leady.
+  **Lookup agentúry je fail-soft** (try/catch): stratiť lead kvôli chybe lookupu je
+  horšie než pustiť slabší kontakt. Telefón sa počíta PRED e-mailom, aby sa dalo
+  rozhodnúť, či sa oplatí vrátiť sporný e-mail vôbec.
+  **Zvyšková diera, vedome ponechaná:** lead bez telefónu, ktorého jediná adresa je
+  adresa klienta, ju stále dostane. Alternatíva je zahodiť lead — horšia.
+
+- **B08 (#668) — Concierge freebusy na refresh-token flow.** Väzba je na PROFIL
+  (`CONCIERGE_GOOGLE_PROFILE_ID`), nie na access token v env, ktorý expiruje
+  v hodine a nikto ho ručne neobnovuje. Token ide cez existujúcu
+  `getGoogleCalendarAccessToken(profileId)`. **Refresh token nikdy nejde do env.**
+  - **Scope:** `freebusy.query` NIE JE pokrytý scope-om `calendar.events`, na ktorom
+    OAuth flow dovtedy stál. Nehádal som to: `developers.google.com` je z tohto
+    prostredia blokovaný egress politikou, tak rozhodol **discovery dokument**
+    Calendar API v3. Z povolených štyroch pridaný najužší — `calendar.events.freebusy`.
+    `calendar` a `calendar.readonly` by dali čítanie OBSAHU udalostí, ktoré
+    Concierge na zistenie voľných termínov nepotrebuje.
+  - **Dôvody zlyhania sú konštanty typu, nie prepošlané OAuth hlášky.** Text ako
+    `invalid_grant` alebo `revoked` sa nedostane do odpovede ani do logu.
+  - **Upstream zlyhanie nevracia pole `busy`.** Prázdne `busy: []` by sa dalo čítať
+    ako „celý deň voľný" a Concierge by ponúkol termín, ktorý neexistuje. Test to drží.
+  - **Kontrakt odpovede ponechaný** (`reason`/`detail`, bez kľúča `error`): verzia
+    z #660. Meniť tvar odpovede verejného endpointu kvôli lint pravidlu je zmena
+    kontraktu, ktorú si nikto neobjednal.
+  - **STOP:** bez Google OAuth consentu pre nový scope vracia `freebusy.query` 403
+    aj s platným tokenom. Consent je ľudský klik — HUMAN_ACTION_REQUIRED.
+
+- **CI odblokované (#673).** `supabase/setup-cli` exportuje
+  `SUPABASE_INTERNAL_IMAGE_REGISTRY=ghcr.io` (v repe to nikde nie je —
+  `git log -S ... --all` = 0 výskytov, exportuje to tá akcia). ghcr.io teraz škrtí
+  pull `toomanyrequests, allowed: 44000/minute` **aj prihlásený**.
+  - **Vyvrátená hypotéza:** myslel som si, že `docker login` ten limit zdvihne.
+    Beh `a41f6d57` to vyvrátil — obe login vetvy prešli, `supabase start` padol.
+    Autentifikácia ten limit neobchádza. PR s login krokom (#672) som zavrel,
+    špekulatívny druhý pokus som nespúšťal.
+  - **Riešenie:** step-level `env: SUPABASE_INTERNAL_IMAGE_REGISTRY: docker.io`.
+    Job-level by nestačil, keby akcia premennú exportovala cez `$GITHUB_ENV` —
+    step-level `env` má prednosť a platí len tam, kde sa images naozaj sťahujú.
+    Premennú nemažeme (nie je naša), prebíjame ju.
+  - **Dôkaz:** všetkých šesť images stiahnutých z `docker.io`, nula `toomanyrequests`.
+  - **Jednorazová kolízia:** prvý beh po oprave padol na `bind host port 54322:
+    address already in use` — infra chyba pred spustením akéhokoľvek testu.
+    Jeden re-run prešiel zelený. Nie je to systémový problém; keby sa zopakoval,
+    treba diagnostiku (`ss -lntp` pred `supabase start`), nie ďalší zásah naslepo.
+  - **NADRADENÉ #671 (`959b251a`), ešte v ten istý večer.** Krok už nemá žiadne
+    step-level `env`; volá `scripts/ci/supabase-start.sh`, ktorý skúša registry
+    po sebe a **vedie `public.ecr.aws`**, nie `docker.io`. Dôvod je odmeraný,
+    nie preferenčný: ECR odmieta bare `Rate exceeded` na pull-y za sekundu,
+    proti čomu retry konverguje, kým ghcr.io odmieta `allowed: 44000/minute`,
+    čo je zdieľaný objemový strop a ten retry nepremôže (prvá verzia skriptu
+    skúšala ten istý registry 3× s 45 s a 90 s backoffom — 3m44s a aj tak červená).
+    `docker.io` ostáva v zozname ako druhá, nezávisle limitovaná cesta.
+    Platí teda: **jednorazová oprava z #673 bola správna diagnóza, ale nie
+    konečné riešenie.** Kto číta tento záznam, nech sa riadi skriptom.
+
+- **Zrušený `/blueprint` (#665).** Stránka nepovedala, čo Revolis robí ani pre koho.
+  Prvý pokus o opravu (#664) padol, lebo merge `/blueprint` do vetvy súbor znova
+  rozbil; zavrel som ho ako superseded namiesto opakovania sporu #660 vs #662.
+## 2026-09-23 — F1: 63 neaplikovaných migrácií je idempotentných (`GO MIGRATIONS-IDEMPOTENT-F1`)
+
+- **Výsledok:** opakovaný beh neaplikovanej dávky prešiel z **58/63** na **63/63**.
+  `supabase db push` už nespadne na DDL, ktoré vytvára objekt existujúci v PROD.
+- **DVE KOREKCIE VLASTNÉHO AUDITU z tej istej session** — obe našiel až beh, nie čítanie:
+  1. `20260722120000_sandbox_gdpr_consent.sql` som viedol ako `CREATE FUNCTION` bez
+     guardu. **Neplatí** — má pred sebou `DROP FUNCTION IF EXISTS ...(text)` a PROD
+     podpis (`requested_slug text`) mu presne sedí. Nebolo čo opravovať.
+  2. Naopak **pribudli dva súbory, ktoré statický sken nemohol nájsť**, lebo chyba
+     nie je v tvare príkazu, ale v stave po prvom behu:
+     - `20260618120000_realsoft_import_logs_upsert_constraint.sql` — `DROP INDEX
+       IF EXISTS` na indexe, ktorý po prvom behu **vlastní constraint** → `2BP01`.
+       Opravené poradím: najprv `DROP CONSTRAINT`, index zmizne s ním.
+     - `20260720193000_valuation_tenants.sql` — `CREATE OR REPLACE FUNCTION` nevie
+       zmeniť návratový typ (`42P13`), a neskoršia `20260722120000` ju pretvára
+       s iným `RETURNS TABLE`. Opravené `DROP FUNCTION IF EXISTS` pred ňou.
+  **Bilancia: nie 15 príkazov v 3 súboroch, ale 17 v 5.** Regex vidí tvar, nie stav —
+  dvojitý replay je jediný spôsob, ako túto triedu chýb nájsť.
+- **Zmeny:** 9× `CREATE INDEX IF NOT EXISTS`, 5× `DROP POLICY IF EXISTS` pred
+  `CREATE POLICY`, 1× `DROP TRIGGER IF EXISTS`, 1× preradenie `DROP CONSTRAINT`,
+  1× `DROP FUNCTION IF EXISTS`. Žiadna zmena správania — len guardy a poradie.
+- **Dôkaz:** pred zmenou beh2 = 58/63 (5 súborov padá, menovite zaznamenané);
+  po zmene beh1 (čistá DB) 111/111, beh2 63/63, beh3 63/63.
+- **Mimo rozsahu, zaznamenané:** replay celého setu druhýkrát padá na **14 už
+  aplikovaných** migráciách (policies bez guardu v `20260411`, `20260425231426`,
+  `20260507*`, `20260508*` …). `db push` ich nikdy nepustí znova, takže deploy
+  neblokujú — ale `supabase db reset` na ne narazí, ak by sa niekedy púšťal 2×.
+  Samostatná brána, ak vôbec.
+- **Ďalej:** F2 (nácvik na Supabase branch) a F3 (push) naďalej čakajú na odpovede,
+  či je dostupný branching a či je zapnuté PITR.
+
+## 2026-09-24 — F2B: nácvik proti PROD tvaru; `schema_migrations` nie je zostaviteľná
+
+- **Supabase branch (pôvodná F2) zrušený pred vytvorením.** Docs: preview branch je
+  *„built by replaying the migration history against a fresh database"*, teda
+  *„equivalent to `supabase db reset`"*. Nereprodukoval by PROD, kde objekty vznikli
+  mimo migrácií — a to je presne riziko, ktoré mal merať. Platený resource za dôkaz,
+  ktorý už máme dvakrát. Branch som nevytvoril.
+- **NOVÝ NÁLEZ — aplikovaná časť histórie je nekoherentná.** Postaviť schému len
+  z 48 migrácií zapísaných v `schema_migrations`: **OK=16, FAILED=32**. Padá na
+  `leads`, `profiles`, `agencies`, `activities`, `properties`, `tasks`,
+  `portal_listings`, `lead_scores`, `lead_property_matches`, `inbound_mailboxes`
+  a na `profile_agencies_for_auth()`. Baseline `20260310` a
+  `20260921195500_legalize_inbound_mailboxes` sú v NEAPLIKOVANEJ dávke, hoci ich
+  objekty v PROD existujú. **Z `schema_migrations` sa táto DB postaviť nedá.**
+  Po doplnení oboch: OK=50, FAILED=0.
+- **Rozsah odchýlky:** z objektov, ktoré 63 migrácií vytvára, v migračne
+  postavenom základe chýba 32/42 tabuliek, 66/69 indexov, 70/80 policies,
+  8/8 triggerov, 13/13 funkcií.
+- **Obe „neviditeľné" opravy z F1 overené proti skutočnému PROD tvaru:**
+  - `uq_realsoft_import_logs_dedupe` je v PROD index **vlastnený constraintom**
+    → pred F1 `cannot drop index … constraint … requires it`; po F1 bez chyby.
+  - `get_valuation_tenant` má v PROD **6-stĺpcový** `RETURNS TABLE` (s `is_sandbox`),
+    zatiaľ čo `20260720193000` deklaruje 5 → pred F1 `cannot change return type
+    of existing function` (Postgres sám radí `Use DROP FUNCTION … first`);
+    po F1 bez chyby. PROD teda nesie tvar z neskoršej `20260722120000`.
+- **Čo NIE JE overené:** tvary 80 policies a stĺpce 32 tabuliek. Fixture v plnom
+  PROD tvare som nestaval — rekonštrukcia 32 tabuliek zo `information_schema` je
+  sama zdrojom chýb. Uzavrie to len skutočný klon (*Restore to a new project*),
+  ktorý je platený a bez samostatného GO ho nerobím.
+- **Pred F3 zostáva:** stav PITR add-onu (cez dostupné nástroje nečitateľný;
+  `archive_mode=on` je nutná, nie postačujúca podmienka) a rozhodnutie o klone.
+- Dokument: `docs/reports/2026-09-24-f2b-prod-shape-rehearsal.md`.
+## 2026-09-24 — Lead Revenue Engine: WALL 0 postavený, engine kontrakt zapísaný
+
+**Rozhodnutie: BUILD** (substrát merania) + **BACKLOG** (dve vrstvy, timing veto).
+
+### Ústavná brána — verdikt po vrstvách
+- **Lead Generation** ako „nájdi nových predajcov zvonku" → **BACKLOG, timing veto (Q8).**
+  Zhluk 3 mapy zdrojov hovorí pri vlastníkoch z katastra doslova NEROBIŤ bez zmluvy
+  s ÚGKK; Zhluk 5 (portály) zakazuje osobné údaje predajcu. Zároveň platí
+  `PHASE_1_REQUIRES_UGKK = FALSE` — MVP musí fungovať bez ÚGKK, nie naň čakať.
+- **Lead Acquisition / Intelligence / Qualification / Sales-Ready** → **BUILD.**
+  Bežia na Zhluku 1 (vlastné CRM dáta) + Zhluku 8 (Realvia), nula externých závislostí.
+- **Market Intelligence, signály z portálov, Bod zlomu** → BACKLOG, ten istý timing veto.
+
+### Korekcia taxonómie (dôležitejšia než kód)
+Pôvodný návrh označoval inbound za „Lead Generation, len inbound". **To bolo zle.**
+Realvia ani portálový e-mail nevytvárajú dopyt — doručujú ho. Hranica je
+`zdroj dopytu → záchyt → nový lead`, a rozlišovacím znakom je **atribúcia**: lead,
+ktorý vie ukázať na vlastnú kampaň/UTM, je generovaný; lead z cudzej rúry je
+akvirovaný. `UNKNOWN` sa nikdy ticho nemení na `GENERATED_BY_REVOLIS`.
+Bez tejto hranice by sa o pár týždňov dalo tvrdiť, že Lead Factory generuje leady,
+hoci len dobre spracúva cudzie.
+
+### Druhá korekcia: LLM nie je rozhodca obchodnej pravdy
+Prvý návrh dával BRI skóre aj kvalifikáciu priamo modelu. Opravené: LLM extrahuje
+signály a vysvetľuje, **skóre a kvalifikácia sú deterministické** a verzované
+(`ruleset_version`). Ten istý lead musí dať ten istý výsledok aj zajtra po zmene
+modelu. Extrahované signály sa ukladajú oddelene s `extraction_version`, aby sa
+dalo pre-skórovať bez novej extrakcie — inak by sa drift len posunul o krok vyššie.
+
+### Tretia korekcia: stiahnuté nepodložené tvrdenia
+- „Pipeline stojí centy, kredity netreba" — **stiahnuté.** Ekonomický záver bez
+  merania v EUR. Nákladová telemetria je teraz deliverable (§10), nie predpoklad.
+- „Prvý kontakt do 15 minút" — **vymyslené číslo, stiahnuté.** Žiadne SLA nie je
+  potvrdené; brief vedie 4 pracovné hodiny ako predpoklad. `EXTERNAL_SLA = NONE`,
+  interné radenie podľa veku leadu je povolené, nazvať to SLA nie.
+
+### Postavené (PR #680, `fe1a6a5`)
+Typovaný substrát kontaktného pokusu. Reuse `lead_events` (aditívne stĺpce), nie
+nová tabuľka — presne ako brief §2.4 predpísal (AP-019). `activities` zamietnuté,
+nemá `agency_id`. Resolver vracia tri stavy: `none` / `unknown` / `known`;
+`created_at` sa nikdy nedosadí za `occurred_at`. Brány: lint čistý, typecheck
+54/54 (tých 6 navyše lokálne boli `.next/types` artefakty, presne ako to zapísalo
+#678), build zelený, vitest 1499 + 16 nových.
+
+### Zapísané
+- `docs/architecture/lead-revenue-engine-v1.md` — inžiniersky kontrakt (taxonómia,
+  atribúcia, A1–A8, verzovanie, dve fronty, cost telemetry, rebrík dôkazov,
+  právne triedy). **Nenahrádza** brief; slovník C0/C1/C2 ostáva v briefe.
+- `docs/briefs/l99-lead-factory-initiative.md` §2.4 — amendment, diera zatvorená.
+
+### Nálezy mimo rozsahu, nezasiahnuté
+1. RLS na `lead_events`: policy `agency_id is null OR ...` → riadok bez `agency_id`
+   je čitateľný naprieč tenantmi. Samostatný PR.
+2. `/api/ai/lead-events` je Enterprise-gated → C1 by bolo merateľné len pre
+   Enterprise. Rozhodne sa pri napojení ľudskej akcie.
+3. Migrácia `20260817220000` (`last_contact_at`) podľa vlastnej hlavičky nie je na
+   PROD, ale kód ju číta na 59 miestach. Živý nesúlad.
+
+### Ďalej
+`GO_CONTACT_EVENT_PROD_MIGRATION` — bez aplikovania `20260924060000` substrát
+existuje len v kóde a C1 ostáva `pending`. Potom extrakcia signálov (úzky rozsah:
+seller_intent, property_type, locality, timeframe) a deterministický rule engine.
+
+---
+
+## 2026-09-24 — GHOST-MIGRATIONS-RECONCILE: duch nie je ten, kto nemá meno, ale ten, kto nemá md5
+
+Brána `GO GHOST-MIGRATIONS-RECONCILE`. Bez zápisu do PROD. Report:
+`docs/reports/2026-09-24-ghost-migrations-reconcile.md`.
+
+### Oprava vlastného tvrdenia
+Bránu som navrhol s tým, že v PROD je **5 duchov bez súboru v repe** a treba
+ich zrekonštruovať ako 5 migrácií. **Nevytvoril som ani jednu** — meranie md5
+uloženého SQL ukázalo, že by boli duplicitné. Predchádzajúce číslo vzniklo
+porovnaním reťazcov verzií, nie obsahu. Tretíkrát v tejto session záver
+z textového porovnania, ktorý beh vyvrátil (`ADD CONSTRAINT`, BOM, teraz toto).
+Pravidlo pre mňa: pri migráciách je dôkaz md5 alebo spustenie, nikdy meno.
+
+### Namerané (2026-09-24 ~19:40 UTC)
+- 114 súborov v repe, 57 verzií registrovaných v PROD.
+- **4 z 6 nepriradených verzií sú ALIAS** — bajt na bajt ten istý súbor pod iným
+  razítkom: `20260802134100`→`20260731210000_valuation_estimates.sql`,
+  `20260802134104`→`20260731220000_system_usage_agency.sql`,
+  `20260923113535` a `20260923120358` → oba `20260527143000_event_scheduler_phase1.sql`
+  (ten istý súbor spustený dvakrát, raz s a raz bez koncového newline; pridal 0 objektov).
+- `20260904184236` = nechránený variant `20260904150000`; priradené ručne, md5 nesedí.
+- **Jediné skutočne chýbajúce DDL: `20260924193624 ai_cost_daily_view`**, aplikované
+  do PROD 19:36 UTC bez súboru v repe.
+- Skutočný rozsah `db push`: **61 spustení, ~58 s novým obsahom** — nie 63.
+  F2B aj plán nasadenia to číslo nadhodnocujú.
+
+### 🔴 Blokant F3
+`20260611000004_ai_cost_daily.sql` je v neaplikovanej dávke a jeho
+`CREATE OR REPLACE VIEW` má na 3. mieste `credits_spent`, kým PROD má
+`action_count`. Odsimulované proti nameranému PROD tvaru:
+`ERROR: cannot change name of view column "action_count" to "credits_spent"`,
+psql exit 3 → **`db push` sa zastaví uprostred dávky**. Proti základu
+postavenému z migrácií ten istý súbor prejde na 0 aj pri dvojitom replaye —
+preto to F1 ani CI nemohli vidieť. Prvý doložený prípad diery, ktorú F2B
+pomenovala. Nový pohľad v PROD je pritom vecne lepší (len skutočný náklad,
+`security_invoker = true`); repo je pozadu, oprava patrí do migrácie.
+
+### Pravidlo (platí od teraz)
+Každý zápis do PROD musí mať v repe súbor s **tým istým razítkom a tým istým
+SQL**, v tom istom PR. Spustiť existujúci súbor pod novým razítkom je tiež
+porušenie — vznikne alias, ktorý `db push` zopakuje a ktorý pokazí každé
+počítanie odchýlky. Prepísať v PROD objekt, ktorý vytvára neaplikovaná
+migrácia, bez opravy tej migrácie, je najhorší prípad.
+
+### Postavené
+- `scripts/db/migration-ledger-audit.mjs` — bez závislostí, klasifikuje
+  MATCH/ALIAS/GHOST, exit 1 na GHOST. Reprodukuje ručné meranie presne.
+- `scripts/db/migration-ledger-audit.test.mjs` — 12/12. Mutačne overené:
+  odstránenie tvaru bez koncového newline zhodí 5 testov, md5 zhoda pri
+  `stmts > 1` zhodí 1.
+- `scripts/db/fixtures/prod-ledger-2026-09-24.json` — nameraný ledger ako dôkaz.
+
+**Hranica nástroja:** md5 je dôkaz len pri `stmts = 1`. Viacpríkazové migrácie
+má Supabase rozsekané, 5 záznamov má `stmts = 0` úplne bez textu. GHOST je
+podnet na ručné dohľadanie, nie rozsudok.
+
+### Backlog (nezasiahnuté)
+- `pipeline_moves_tenant_select/write` nesú v PROD vetvu `leads.agency_id IS NULL OR …`
+  — tú istú, ktorú P-3 zavrela inde.
+
+### Ďalej
+`GO AI-COST-DAILY-MIGRATION-FIX` — prepísať `20260611000004` na PROD tvar
+(`action_count`, `security_invoker = true`, bez `revenue_eur_retail`/`margin_eur`),
+inak F3 spadne. Pred F3 stále chýbajú dve rozhodnutia: **PITR add-on** a **klon áno/nie**.
+
+---
+
+## 2026-09-25 — PROD-SHAPE-DIFF: P0 v RLS, a migrácia, ktorá je registrovaná a nikdy nebežala
+
+Brána `GO PROD-SHAPE-DIFF`. Bez zápisu do PROD. Report:
+`docs/reports/2026-09-25-prod-shape-diff.md`.
+
+### 🔴🔴 P0 — `tasks` a `saas_leads` sú otvorené pre `anon`
+Overené správaním (`set local role anon`, v transakcii s rollback):
+**227 úloh naprieč 41 leadmi a 14 SaaS leadov vidí neprihlásený volajúci.**
+Plus `onboarding_sessions` 5 riadkov.
+
+Príčina: policies `USING (true)` pre rolu `public` na `tasks`
+(select/insert/update/delete), `saas_leads` (všetky štyri),
+`lead_property_scores`, `lead_property_events`, `onboarding_sessions`,
+`competition_radar`. RLS policies sa OR-ujú → korektná `tasks_agency` nemá
+účinok. `anon` má na `tasks`/`properties`/`activities` plné tabuľkové granty.
+
+Opravu v repe má iba `onboarding_sessions`
+(`20260904220000_drop_onboarding_sessions_anon_all.sql`, v neaplikovanej dávke).
+Pre `tasks`, `saas_leads`, `lead_property_scores`, `lead_property_events`
+oprava **neexistuje**. Zápis a mazanie cez anon som zámerne neskúšal.
+
+### 🔴 `20260429111000_decision_intelligence_core.sql` — registrovaná, nikdy nebežala
+V PROD z nej neexistuje **0 z 11** objektov (4 tabuľky, 6 stĺpcov na `leads`,
+3 indexy). `db push` ju nikdy nespustí, lebo je v `schema_migrations`.
+
+### 🔴 16 tabuliek, ktoré aplikovaná časť histórie vytvára a v PROD nie sú
+11 z nich má živé volanie v kóde. Najhoršie:
+`app/api/ai/decision/score-lead/route.ts:69` robí
+`await supabase.from("lead_action_scores").insert({...})` **bez čítania `error`**
+→ endpoint vráti `{ok:true}` a nezapíše nič. Tiché zahadzovanie dát v produkcii.
+
+### Metóda (nahrádza platený klon)
+Dva lokálne základy: `BASE` = všetkých 114 migrácií (OK=114 FAILED=0),
+`APPLIED_BASE` = 53 súborov aplikovanej časti (OK=52 FAILED=1). Rozdiel
+`APPLIED_BASE` − `PROD` je presne to, čo `db push` nedoplní. Prepisy PROD
+výpisov overené checksumom (`9f77b581…` 94 bucketov, `f8f6e5b5…` 120 riadkov
+kindu `col`) — žiadny záver nestojí na neoverenom prepise.
+
+### Ďalšie namerané
+- Stĺpce: 18 objektov s iným tvarom. Spiace (kód ich nečíta): `agencies` 5
+  stĺpcov, `leads` 7 stĺpcov, `ai_sourced_deals.lead_id/property_id` `text` vs
+  `uuid`. Prvý dojem z grepu tvrdil opak; beh ho vyvrátil.
+- Funkcie: **žiadna kolízia**, 37 v PROD, každá spoločná má zhodný návratový typ,
+  secdef aj volatility. Hranica: kľúč sa orezáva na 63 znakov (typ `name`).
+- Policies: 10 tabuliek sa líši, **všetky smerom k väčšej otvorenosti**. Policies
+  sa OR-ujú, takže push pridá tenant policy navrch a otvorenosť nezmenší.
+- Vetva `agency_id IS NULL OR …` žije v PROD ďalej na `activities`,
+  `lead_property_matches`, `properties`, `outreach_logs`, `pipeline_moves`.
+
+### Neoverené
+Dátové constrainty (CHECK/FK/NOT NULL vs existujúce riadky) — jediná trieda,
+kde je skutočný klon stále lepší. Zápis/mazanie cez `anon` odvodené, nie merané.
+
+### Ďalej
+`GO RLS-ANON-LOCKDOWN` — zavrieť `USING (true)` policies na `tasks`,
+`saas_leads`, `lead_property_scores`, `lead_property_events` migráciou
+v repe + aplikovať. Predbieha F3 aj `AI-COST-DAILY-MIGRATION-FIX`.
+
+---
+
+## 2026-09-27 — STASH-RESCUE: audit disku otočil prioritu, presun priečinkov nie je problém
+
+Brána `GO STASH-RESCUE`. Bez zápisu na disk aj do PROD.
+
+### Čo ukázal founderov beh `workspace-audit.ps1` (2026-09-25, PC-ONLINOVO)
+- **21 git repozitárov** na disku, z toho **tri živé klony `RealitkaAI`**
+  (`C:\RealitkaAI`, `...\realitka-ai-crm\RealitkaAI`, `...\Documents\GitHub\RealitkaAI`)
+  a jedno trojnásobne vnorené repo.
+- 🔴 **`C:\RealitkaAI`: 90 stashov + 19 necommitnutých súborov.**
+- 🔴 **Tri repozitáre bez remote** — obsah existuje len na tom disku:
+  `Onlinovo.sk AI L99 project` (50 necommitnutých, detached HEAD),
+  `eaa-validation` (9), `revolis-ai-bus`.
+- 🔴 **14 git worktrees** v `C:\RealitkaAI\.worktrees\`. Worktree drží absolútnu
+  cestu → presun ich rozbije všetkých 14 (rieši `git worktree repair`).
+  **Môj cloudový sken hlásil „žiadne worktrees" — v cloudovom klone nie sú.
+  Presne táto slepota bola dôvod auditu.**
+- ✅ **Docker nebeží** → lokálna Supabase nie je v hre. Jediná položka, o ktorej
+  som povedal „môže bolieť viac než minúty", odpadla.
+- Plánovač úloh: `RevolisAI-HourlySummary` **[Ready]** → `C:\RealitkaAI\memory\hourly-summary.ps1`. Potvrdené.
+- `LongPathsEnabled = 0` → limit 260 znakov platí; `C:\Projects\revolis-agent-os\`
+  je o 16 znakov hlbšie než `C:\RealitkaAI\`.
+- OneDrive je `C:\Users\aondr\OneDrive`, `C:\Projects` je mimo → v poriadku.
+- 8,4 GB `node_modules` v 275 priečinkoch. 826 absolútnych ciest v `C:\RealitkaAI`
+  (nafúknuté 14 worktrees, ktoré nesú kópie tých istých 9 miest), 186 v `RealitkaAI-run`.
+
+### Rozhodnutie
+**Presun priečinkov nie je problém — problém je, že práca existuje na jedinom
+disku bez zálohy.** Presúvať, kým to platí, nemá zmysel. Poradie sa otočilo:
+najprv záloha, potom prípadne presun.
+
+### Postavené
+`scripts/ops/stash-rescue-report.ps1` — len číta. Súhrn v ohrození, výpis
+stashov s dátumom/popisom/štatistikou (bez obsahu súborov, s varovaním pri
+zmenách v `.env`), necommitnuté zmeny, lokálne vetvy mimo remote, a návrh
+postupu. Bez diakritiky — founder musel predchádzajúci skript prepisovať na
+UTF-8 BOM, lebo PowerShell 5.1 diakritiku v ASCII súbore zle prečítal.
+
+Opravená vlastná chyba v návrhu postupu: `git bundle --all` **stashe nezahŕňa**
+a `$(...)` je bash, nie PowerShell. Nahradené kópiou celého priečinka cez
+`robocopy` ako primárnym odporúčaním — jediné, čo zachytí stashe, necommitnuté
+aj netrackované súbory naraz.
+
+### Ďalej
+`GO STASH-TO-BRANCHES` — až podľa výpisu, premeniť hodnotné stashe na vetvy
+a pushnúť. To je prvý zápis a chce vlastné rozhodnutie.
+
+---
+
+## 2026-09-27 — STASH-TO-BRANCHES: evakuovať, nie triediť; a oprava vlastnej diery
+
+Brána `GO STASH-TO-BRANCHES`. Bez zápisu do PROD, bez zmeny na disku.
+
+### Rozhodnutie bez dát — a prečo je to v poriadku
+Founder dal GO **skôr**, než poslal výstup `stash-rescue-report.ps1`, takže
+neviem, čo v tých 90 stashoch je. Namiesto čakania som otočil návrh:
+**neselektujem, evakuujem všetko.** Pri záchrane sa netriedi pred evakuáciou —
+zmazať vetvu, ktorá sa ukáže ako balast, je lacné; obnoviť zahodený stash nie.
+
+### Mechanika overená behom (git 2.43), nie odhadnutá
+1. `git branch <meno> stash@{N}` vetvu vytvorí a **stash zostane** v zozname.
+2. Obsah vetvy sa rovná obsahu stashu.
+3. Stash uložený s `-u` má netrackované súbory v **treťom rodičovi (`^3`)**
+   a tie pri pushi vetvy **odchádzajú na remote tiež** (overené pushom do bare repa).
+4. 🔴 **`git stash show --name-only` netrackované súbory NEVYPISUJE.**
+
+### 🔴 Oprava vlastnej chyby z #711
+Bod 4 znamená, že `stash-rescue-report.ps1` (shipnutý v #711) mal **dieru
+v detekcii tajomstiev**: stashnutý netrackovaný `.env` by nikto neoznačil.
+Opravené — číta sa aj `^3`, rozšírený vzor (`password`, `token`, `.pfx`),
+a výpis teraz uvádza počet netrackovaných zvlášť s upozornením, že odchádzajú
+pri pushi.
+
+### Postavené
+`scripts/ops/stash-to-branches.ps1`:
+- **dry-run je východzí**, `-Execute` je nutný na akúkoľvek zmenu,
+- vytvára len lokálne vetvy `zachrana/<datum>-<NN>-<slug>`, idempotentne,
+- **nikdy nepushuje**, nemaže stashe, nerobí checkout,
+- vetvy s tajomstvami označí a príkaz na push vypíše **len pre tie ostatné**.
+
+Dôvod, prečo nepushuje automaticky, plynie priamo z bodov 3+4: push vetvy by
+zverejnil netrackovaný `.env` zo stashu.
+
+### Ďalej
+Founder spustí dry-run, pozrie výpis, potom `-Execute`, potom sa rozhodne
+o pushi. Výstup `stash-rescue-report.ps1` je stále vítaný — ale už nie je
+podmienkou záchrany.
+## 2026-09-27 — Concierge endpointy sú v produkcii bez autentifikácie (fail-open)
+
+- **Nález.** `conciergeSecretOk` vracia `true`, keď `CONCIERGE_SHARED_SECRET` nie je
+  nastavený (`if (!expected) return true`). Vo Vercel produkcii **nie je nastavená
+  žiadna `CONCIERGE_*` premenná** — overené cez `filter_project_envs`. Tri routy sú
+  pritom v `proxy.ts` zámerne mimo session brány (`PUBLIC_PATHS`):
+  `/api/concierge/properties`, `/api/concierge/callback`, `/api/concierge/freebusy`.
+  Chráni ich teda len IP rate limit.
+- **Prečo to nie je dizajnová debata.** Repo túto triedu chyby **už raz opravilo**:
+  `isAuthorizedCronBearer` má `if (!secret) return false` a vlastný test
+  („refuses when CRON_SECRET is unset"), pod GO `FIX-CRON-SECRET-FAIL-CLOSED`.
+  Concierge má rovnaký tvar kódu a opačné rozhodnutie. Je to nezrovnalosť
+  s pravidlom, ktoré už platí, nie nový spor o prístupe.
+- **Rozsah dopadu, odmerané a nie odhadnuté.** `select count(*) from leads where
+  source = 'website-concierge'` = **0**, `first_seen` NULL. Report
+  `docs/reports/2026-09-17-smolko-concierge-wave-run.md` hovorí „Live Voiceflow
+  wiring … still HUMAN" a v ďalších krokoch má stále „Wire Voiceflow → Concierge
+  endpoints". Widget teda nebol nikdy zapojený a cez ten endpoint neprišiel ani
+  jeden lead. Expozícia je reálna, ale nevyužitá.
+- **Dôsledok pre poradie krokov — KOREKCIA.** Najprv som founderovi povedal „najprv
+  premenná, až potom kód". Je to naopak: **nastavenie premennej JE tá zmena
+  správania**, lebo kód sa ňou prepne z fail-open na vyžadovanie hlavičky
+  `x-concierge-secret`. Keby widget bežal, nastavenie premennej by mu zhodilo
+  zber leadov. Že to dnes nič nezhodí, je len dôsledok toho, že widget nebeží —
+  nie toho, že poradie bolo správne.
+- **Preto je teraz najlacnejší moment.** Secret bude existovať skôr, než widget
+  vznikne, takže ho bude posielať od prvého dňa namiesto dodatočnej opravy.
+  Vercel aplikuje env premenné až pri builde, takže poradie je:
+  Vercel → Voiceflow → redeploy.
+- **Hodnotu secretu Claude nenastavuje.** Musela by prejsť ako parameter nástroja
+  a tým sa zobraziť v konverzácii. Generuje a vkladá ju founder.
+
+## 2026-09-27 — B08 Google consent: stav overený, nie odhadnutý
+
+- `select … from public.profile_google_calendar` = **0 riadkov**. Consent neprebehol,
+  takže `CONCIERGE_GOOGLE_PROFILE_ID` nie je z čoho odvodiť — preto to poradie.
+- **Produkcia na B08 kóde beží.** `main` = `f90e6032` (#708), posledný production
+  deployment `READY`. `calendar-auth.ts` je na maine, freebusy berie token cez
+  `resolveConciergeAccessToken`, scope `calendar.events.freebusy` je v auth route.
+  Obava z `CANCELED` deploymentu, ktorú Claude mal, neplatí.
+- `GOOGLE_CLIENT_ID` aj `GOOGLE_CLIENT_SECRET` sú v produkcii. `NEXT_PUBLIC_APP_URL`
+  tiež — hodnota je šifrovaná, ale musí sedieť s redirect URI v Google console.
+- **Blokátor ostáva ľudský:** OAuth app je v režime Testing → `403 access_denied`
+  pred samotným súhlasom. V Testing režime navyše Google zneplatní refresh token
+  po 7 dňoch, takže pridanie testera je riešenie na týždeň, nie riešenie.
+  Publikovať app je trvalé; cena je varovanie „neoverená aplikácia" pri pripájaní.
+
+## 2026-09-27 — CONCIERGE-SECRET-FAIL-CLOSED nasadené (#716, `9c72fa1a`)
+
+Uzatvára nález z dnešného záznamu „Concierge endpointy sú v produkcii bez
+autentifikácie (fail-open)" vyššie. Ten záznam popisuje stav **pred** týmto
+commitom; od `9c72fa1a` už neplatí.
+
+- **Zmena.** `conciergeSecretOk`: `if (!expected) return true` → `return false`.
+  Chýbajúca env premenná je nesprávna konfigurácia, nie povolenie. Päť testov
+  podľa vzoru `cron-auth.test.ts`; komentár v `proxy.ts` prestal tvrdiť, že
+  `CONCIERGE_SHARED_SECRET` je „optional".
+- **KOREKCIA vlastného tvrdenia.** Povedal som, že fail-closed sa nesmie nasadiť
+  pred nastavením secretu. Dôkaz, ktorý som na to mal, pokrýval len `callback`
+  (0 leadov); `properties` a `freebusy` žiadny lead nevytvárajú, takže o nich
+  nehovoril nič. Domeral som to na `usage_metrics_daily`:
+
+  ```
+  concierge% metriky  →  0 riadkov
+  celá tabuľka (kontrola) →  54 riadkov, 6 metrík, posledný zápis dnes
+  ```
+
+  Kontrolný dotaz je tam zámerne: bez neho „nula riadkov" môže rovnako dobre
+  znamenať rozbitú metriku ako nulovú prevádzku. Znamená nulovú prevádzku —
+  všetky tri routy neboli v produkcii nikdy zavolané. Preto sa nasadenie pred
+  premennou nedá nič rozbiť a pozícia sa obrátila.
+- **Následok pre founderov krok.** Tri routy dnes vracajú 401 **zámerne**, nie
+  omylom. Poradie ostáva Vercel → Voiceflow (`x-concierge-secret`) → redeploy;
+  Vercel aplikuje env premenné až pri builde, takže bez redeployu sa nič nezmení.
+- **Typecheck ratchet.** `NodeJS.ProcessEnv` vyžaduje `NODE_ENV`, takže `{}` aj
+  priame `as NodeJS.ProcessEnv` sú typové chyby a ratchet ich počíta. Jeden
+  helper `env()` s `as unknown as` ich drží na jednom mieste: 64 chýb proti 69
+  na maine, teda o päť menej ako pred PR.
+
+## 2026-09-28 — INBOUND-WEBHOOK-SECRET-AUDIT: endpoint je zavretý a je to bez dopadu
+
+Doplnok k `CONCIERGE-SECRET-FAIL-CLOSED`. Pri overovaní produkčných env premenných
+sa ukázalo, že `INBOUND_WEBHOOK_SECRET` v produkcii **nie je nastavený** (85 premenných
+v Production, medzi nimi `CRON_SECRET` aj `GOOGLE_CLIENT_ID` — výpis je teda úplný).
+`apps/crm/src/app/api/webhooks/inbound-lead/route.ts` ho od `ebb55b1f` (#690,
+2026-09-24, TASK-SEC-002) **vyžaduje** a bez neho vracia 503.
+
+### Záver: zavretie nemá žiadny dopad
+
+`POST /api/webhooks/inbound-lead` v produkcii **nikdy nevytvoril lead** — ani počas
+štyroch a pol mesiaca, keď auth bol `if (secret)`, teda fakticky žiadny.
+
+| dôkaz | hodnota |
+| :--- | ---: |
+| `leads` spolu (kontrola, že tabuľka žije) | 511, posledný zápis 2026-09-22 |
+| `leads` so `source = 'Inbound'` (default route) | **0** |
+| `leads` s `last_contact = 'Práve importovaný'` | **0** |
+| volajúci `processInboundLead` v repe | **1** (iba tá routa) |
+
+Druhý riadok sám o sebe nestačí — volajúci si `source` môže poslať vlastný. Preto
+ten tretí: `last_contact = 'Práve importovaný'` je literál, ktorý zapisuje
+`process-lead.ts:88` bez ohľadu na vstup. Nula znamená, že cez `processInboundLead`
+neprešiel ani jeden lead. Zvyšné zdroje v `leads` sú prisúdené: `realvia_import_smolko`
+(439) z Realvia importu, `portal:*` z `/api/acquire/email`, `valuation_widget`
+z valuation submitu, a šesť zdrojov po 4 riadkoch s rovnakou časovou pečiatkou je
+seed `apps/crm/supabase/seed/2026-08-26-demo-reality-monopol.sql`.
+
+### Čo tento audit NEDOKAZUJE
+
+Dokazuje, že žiadne volanie **neuspelo**. Nedokazuje, že dnes nikto nevolá a nedostáva
+503 — to by ukázali runtime logy, ale ich retencia je na tomto pláne **~1 hodina**:
+24-hodinové okno vrátilo 12 záznamov pre cron, ktorý beží každých 5 minút. V tej
+jednej hodine bolo 15 requestov a ani jeden na `inbound-lead`.
+
+**Rozhodnutie:** nechať zavreté, nenastavovať secret naslepo. Ak sa marketingový web
+niekedy na ten endpoint napojí, secret musí byť prvý — rovnaký smer závislosti ako
+pri Concierge.
+
+### Vedľajší nález (mimo zadania, neoverená príčina)
+
+`public.events` má **0 riadkov a 0 typov eventov za celú dobu**. `logEvent`
+(`lib/events/log-event.ts`) sa v komentári označuje za „the single entry point for
+all events", **nikdy nehádže výnimku** a zapisuje cez cookie/session klienta
+(`@/lib/supabase/server`), nie service-role. Tabuľka má RLS zapnuté a 3 policies.
+Z tej tabuľky čítajú štyri miesta: `dashboard/summary` (dva `count`), 
+`ai/dashboard-insights-gather`, `morning-brief/gather` (počet nových leadov) 
+a `events/integrity-monitor`.
+
+Príčina je **hypotéza, nie meranie**: session klient v serverovom kontexte bez session
+by na INSERT narazil na RLS a `logEvent` chybu prehltne. Overené je len to, že tabuľka
+je prázdna a že tie štyri miesta z nej počítajú. Patrí to na samostatné zadanie.
+
+## 2026-09-28 — EVENTS-PIPELINE-AUDIT: ranný brief hlási nulu aj v dni, keď lead prišiel
+
+Nadväzuje na vedľajší nález z `INBOUND-WEBHOOK-SECRET-AUDIT` (#722). Tam bola
+príčina označená za hypotézu. Hypotéza je **potvrdená pre automatické cesty
+a vyvrátená ako úplné vysvetlenie** — jedna živá cesta ostáva nevysvetlená.
+
+### Meranie s kontrolou
+
+| tabuľka | riadkov | |
+| :--- | ---: | :--- |
+| `leads` | 511 | kontrola — DB žije |
+| `activities` | 190 | kontrola |
+| `usage_metrics_daily` | 54 | kontrola |
+| `events` | **0** | nikdy ani jeden |
+| `lead_scores` | **0** | nikdy ani jeden |
+| `bri_score_history` | **0** | nikdy ani jeden |
+| `leads` od 2026-09-01 | **7** | reálny príjem beží ďalej |
+
+Prvé tri riadky sú tam zámerne: bez nich „nula" znamená rovnako dobre mŕtvu DB
+ako mŕtvu cestu. DB žije a aplikácia do nej zapisuje. Mŕtva je celá vetva
+events + BRI.
+
+### Príčina, časť potvrdená
+
+INSERT policy na `events` znie
+`with_check (profile_id IN (SELECT id FROM profiles WHERE auth_user_id = auth.uid()))`.
+Bez session je `auth.uid()` NULL, `auth_user_id = NULL` nie je nikdy pravda,
+poddotaz vráti prázdnu množinu a INSERT je **vždy** odmietnutý. `logEvent`
+pritom zapisuje cez cookie/session klienta (`@/lib/supabase/server`), nie
+service-role, a v komentári o sebe hovorí „Never throws — failures are silently
+logged to console".
+
+Zapisovateľov je päť a ani jeden nemôže uspieť:
+
+| call site | spúšťa | session |
+| :--- | :--- | :--- |
+| `lib/arbitrage/scan.ts` | `cron/arbitrage-scan` | nie → RLS odmietne |
+| `lib/price-trail/engine.ts` | `cron/price-trail-sync` | nie → RLS odmietne |
+| `lib/inbound/process-lead.ts` | webhook, dokázateľne mŕtvy (#722) | nie |
+| `lib/bri/engine.ts` (`computeBRI`) | `cron/recompute-bri` | nie → RLS odmietne |
+| `api/events/route.ts` | `logEventClient()` | **áno, ale 0 volaní v celom repe** |
+
+Posledný riadok je podstatný a je to grep, nie dojem: `logEventClient` nemá
+v `apps/crm/src` ani jedno použitie. Endpoint `/api/events` je teda korektný
+a nedosiahnuteľný.
+
+### Príčina, časť NEvysvetlená — otvorená neznáma
+
+Jedna cesta so session existuje: hooky `use-bri-score` a `use-bri-live` volajú
+`/api/leads/bri-recompute` → `computeBRI` → `logEvent`. Tá by policy prešla.
+Napriek tomu je `lead_scores` aj `bri_score_history` na nule, takže ani ona
+nikdy nedobehla. Overil som, že to **nie je** nesúladom signatúry RPC, ako som
+najprv predpokladal: `compute_bri_score_v2(p_lead_id text, p_profile_id uuid,
+p_trigger_event text)` v produkcii existuje a volanie mu zodpovedá. Príčina
+zostáva neznáma.
+
+### Dopad: nie vymyslené číslo, ale nula, ktorá protirečí realite
+
+Čítajúcich miest sú štyri a **ani jedno si nič nedopočítava** — `?? 0` všade,
+`dashboard-insights-gather` dokonca číta service-role klientom, takže tam RLS
+prekážkou nie je a nula je naozaj stav tabuľky. Direktíva 4 v zmysle „fake
+number" porušená nie je.
+
+Horší je iný problém. `morning-brief/gather.ts:91` počíta
+`newLeads = events.filter(e => e.event_type === 'lead_created').length`, čo je
+štrukturálne vždy 0, a `generators/ai-text.ts:145` to posiela do promptu ako
+`- Nové dopyty: ${overnight.newLeads}`. Od 1. 9. pritom pribudlo **7 leadov**.
+Ranný brief teda maklérovi tvrdí, že v noci neprišlo nič, aj v deň, keď dopyt
+prišiel. To nie je vymyslené číslo — je to **nepravdivá nula podaná ako
+meranie**, a v brief, podľa ktorého sa niekto ráno rozhoduje, je to horšie.
+
+Že sa to dá spraviť správne, dokazuje ten istý priečinok: `director-brief.ts:24`
+počíta to isté priamo z `leads` a je správne. Dva briefy, tá istá otázka, jeden
+odpoveď má a druhý nie.
+
+### Ďalej
+
+Oprava nie je „zapnúť events". Najlacnejšie a bez migrácie: `morning-brief`
+prepnúť na zdroj, ktorý dáta má (`leads`), rovnako ako to už robí
+`director-brief`. Až potom sa dá riešiť, či má events pipeline vôbec žiť —
+`logEvent` cez service-role klienta by RLS obišiel, ale to je zmena
+bezpečnostného modelu a patrí jej vlastné GO.

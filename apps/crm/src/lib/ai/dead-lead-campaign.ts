@@ -32,6 +32,9 @@ export interface ReactivationCandidate {
   cooldown_days:      number;   // Minimálna pauza pred ďalším kontaktom
 }
 
+/** Bump whenever SYSTEM or the batch template changes; stamped on every draft. */
+export const DEAD_LEAD_PROMPT_VERSION = "dead-lead-v1";
+
 const SYSTEM = `Si expert na real estate sales recovery pre slovenský trh. \
 Hodnotíš mŕtve leady a rozhoduješ ktoré majú zmysel reaktivovať a ako. \
 Správy sú ľudské, konkrétne, nie spamové. Odkazuj na niečo konkrétne — novú nehnuteľnosť, zmenu trhu. \

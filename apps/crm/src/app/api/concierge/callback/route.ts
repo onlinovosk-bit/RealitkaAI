@@ -1,4 +1,7 @@
-import { NextResponse } from "next/server";
+import { z } from "zod";
+import { errorResponse, okResponse } from "@/lib/api-response";
+import { validateBody } from "@/lib/api-validate";
+import { incrementUsageMetric } from "@/lib/usage-metrics";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/rate-limit";
 import {
@@ -13,6 +16,17 @@ import {
 const IDEMP_PREFIX = "concierge-idemp:";
 
 /**
+ * Deliberately permissive: the business rules (consent, honeypot, phone-or-email,
+ * the sk/camelCase field aliases) live in validateConciergeCallback and stay
+ * there — a zod rewrite of them would be a regression dressed as compliance.
+ * This schema only does what the route used to do inline and did badly:
+ * reject a body that is not a JSON object. Before, a malformed payload was
+ * swallowed into `{}` and came back as "consent required", which told the
+ * caller nothing true.
+ */
+const CallbackBodySchema = z.record(z.string(), z.unknown());
+
+/**
  * Website Concierge — callback / soft lead (N07 / M1).
  * Consent-gated. Inserts into `leads` with agency_id = Smolko.
  * Idempotent via marker in `note` (leads has no meta jsonb in this schema).
@@ -22,33 +36,31 @@ export async function POST(request: Request) {
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   const { allowed } = await rateLimit(`concierge-cb:${ip}`, 10, 60_000);
   if (!allowed) {
-    return NextResponse.json({ ok: false, error: "Too many requests." }, { status: 429 });
+    return errorResponse("Too many requests.", 429);
   }
 
   if (!conciergeSecretOk(request.headers.get("x-concierge-secret"))) {
-    return NextResponse.json({ ok: false, error: "Unauthorized." }, { status: 401 });
+    return errorResponse("Unauthorized.", 401);
   }
 
-  const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
-  const validated = validateConciergeCallback(body);
+  const parsed = await validateBody(request, CallbackBodySchema);
+  if (!parsed.ok) return parsed.response;
+
+  const validated = validateConciergeCallback(parsed.data);
   if (!validated.ok) {
-    return NextResponse.json(
-      { ok: false, error: validated.error },
-      { status: validated.status },
-    );
+    return errorResponse(validated.error, validated.status);
   }
 
   if (validated.input.honeypot) {
-    return NextResponse.json({ ok: true });
+    return okResponse({});
   }
 
   const agencyId = resolveConciergeAgencyId();
+  await incrementUsageMetric({ agencyId, metric: "concierge_callback" });
+
   const supabase = createServiceRoleClient();
   if (!supabase) {
-    return NextResponse.json(
-      { ok: false, error: "Service unavailable." },
-      { status: 503 },
-    );
+    return errorResponse("Service unavailable.", 503);
   }
 
   const idem = buildCallbackIdempotencyKey(agencyId, validated.input);
@@ -64,11 +76,7 @@ export async function POST(request: Request) {
 
   const existing = existingRows?.[0];
   if (existing?.id) {
-    return NextResponse.json({
-      ok: true,
-      leadId: existing.id,
-      duplicate: true,
-    });
+    return okResponse({ leadId: existing.id, duplicate: true });
   }
 
   const noteParts = [
@@ -105,11 +113,8 @@ export async function POST(request: Request) {
 
   if (error) {
     console.error("[concierge/callback]", error.message);
-    return NextResponse.json(
-      { ok: false, error: "Could not save callback." },
-      { status: 500 },
-    );
+    return errorResponse("Could not save callback.", 500);
   }
 
-  return NextResponse.json({ ok: true, leadId, duplicate: false });
+  return okResponse({ leadId, duplicate: false });
 }

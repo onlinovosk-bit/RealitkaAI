@@ -66,3 +66,23 @@ test("the shared token still runs, as DEGRADED, so a pre-identity deployment kee
 test("no credential at all is an error, never an unauthenticated run", () => {
   assert.throws(() => handshakeAuthFromEnv({}), /no bus credential/);
 });
+
+test("handshakeAuthFromEnv refuses a secret that cannot become a header", () => {
+  // Same rule on the client side, where the token really is interpolated into
+  // `Bearer ${token}`. Without this the handshake fails inside `fetch`, several
+  // frames from the variable at fault.
+  assert.throws(
+    () => handshakeAuthFromEnv({ REVOLIS_BUS_TOKEN_SOL: "<A>", REVOLIS_BUS_TOKEN_CLAUDE: "b" }),
+    /REVOLIS_BUS_TOKEN_SOL still looks like an unfilled placeholder/,
+  );
+  assert.throws(
+    () => handshakeAuthFromEnv({ REVOLIS_BUS_TOKEN: "<sem vlož PAT>" }),
+    /REVOLIS_BUS_TOKEN still looks like an unfilled placeholder/,
+  );
+  // The pre-existing checks keep their order: two identical secrets are still
+  // reported as identical, not as malformed.
+  assert.throws(
+    () => handshakeAuthFromEnv({ REVOLIS_BUS_TOKEN_SOL: "same", REVOLIS_BUS_TOKEN_CLAUDE: "same" }),
+    /the same secret/,
+  );
+});

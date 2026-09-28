@@ -67,16 +67,50 @@ export default function FounderMetricsDashboard({
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">
           MRR odhad · {metrics.periodLabel}
         </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <MetricCard title="Celkový MRR" value={formatEur(mrr.totalEur)} />
-          <MetricCard title="Seat revenue" value={formatEur(mrr.seatRevenueEur)} />
-          <MetricCard title="Owner Cockpit" value={formatEur(mrr.cockpitRevenueEur)} />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <MetricCard
-            title="Smolko manual (199 €)"
-            value={formatEur(mrr.smolkoManualEur)}
-            detail={`${mrr.smolkoAgencyCount} agentúr · grandfathered`}
+            title="Celkový MRR"
+            value={formatEur(mrr.totalEur)}
+            detail={`${mrr.billedAgencyCount} × ${formatEur(mrr.officeMonthlyEur)}`}
+          />
+          <MetricCard
+            title="Platiace kancelárie"
+            value={String(mrr.billedAgencyCount)}
+            detail="bez kreditov, onboarding 0 €"
+          />
+          <MetricCard
+            title="Cena za kanceláriu"
+            value={formatEur(mrr.officeMonthlyEur)}
+            detail="mesačne s DPH"
           />
         </div>
+
+        {mrr.billed.length > 0 ? (
+          <div className="mt-4 overflow-hidden rounded-xl border border-slate-700/60">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-slate-900/80 text-xs uppercase tracking-wide text-slate-400">
+                <tr>
+                  <th className="px-4 py-2 font-medium">Kancelária</th>
+                  <th className="px-4 py-2 font-medium">Na čom stojí, že platí</th>
+                  <th className="px-4 py-2 text-right font-medium">Mesačne</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800 bg-slate-900/40">
+                {mrr.billed.map((agency) => (
+                  <tr key={agency.id}>
+                    <td className="px-4 py-2 text-white">{agency.name ?? agency.id}</td>
+                    <td className="px-4 py-2">
+                      <code className="text-xs text-slate-400">{agency.basis}</code>
+                    </td>
+                    <td className="px-4 py-2 text-right text-white">
+                      {formatEur(agency.monthlyEur)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
       </section>
 
       <section>
@@ -131,23 +165,31 @@ export default function FounderMetricsDashboard({
 
       <section>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">
-          AI cost daily
+          AI náklad tento mesiac
         </h2>
         {aiCost.available ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <MetricCard title="Dni v okne" value={String(aiCost.days)} />
-            <MetricCard title="Kredity spent" value={String(aiCost.creditsSpent)} />
-            <MetricCard title="Cost EUR" value={formatEur(aiCost.costEur)} />
+            <MetricCard title="Dni s AI aktivitou" value={String(aiCost.days)} />
+            <MetricCard title="AI akcií" value={String(aiCost.actionCount)} />
             <MetricCard
-              title="Margin EUR"
-              value={formatEur(aiCost.marginEur)}
-              detail={`Retail ${formatEur(aiCost.revenueEurRetail)}`}
+              title="AI náklad"
+              value={formatEur(aiCost.costEur)}
+              detail="skutočné OpenAI tokeny"
+            />
+            <MetricCard
+              title="Marža"
+              value={aiCost.marginEur == null ? "—" : formatEur(aiCost.marginEur)}
+              detail={
+                aiCost.costGap
+                  ? "náklad sa nezapisuje — logAiAction dostáva costEur: null"
+                  : `MRR ${formatEur(aiCost.mrrEur)} − AI náklad`
+              }
             />
           </div>
         ) : (
           <p className="rounded-xl border border-slate-700/60 bg-slate-900/60 p-4 text-sm text-slate-400">
             View <code className="text-slate-300">ai_cost_daily</code> nie je dostupná — migrácia
-            20260611000004 ešte nebeží v tomto prostredí.
+            20260924200000 ešte nebeží v tomto prostredí.
           </p>
         )}
       </section>

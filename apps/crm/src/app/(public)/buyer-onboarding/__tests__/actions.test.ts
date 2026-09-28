@@ -117,6 +117,16 @@ describe("submitBuyerOnboarding auto-response + honest rooms", () => {
       { agencyId: AGENCY_ID, name: "Ján Test", email: "jan@example.com" },
     );
     expect(mockNotify).toHaveBeenCalledTimes(1);
+    // Service-role client must be the 2nd arg — cookie-less public form otherwise
+    // hits browser singleton and tasks_agency RLS drops the follow-up task.
+    expect(mockCreateTask).toHaveBeenCalledTimes(1);
+    expect(mockCreateTask).toHaveBeenCalledWith(
+      expect.objectContaining({
+        leadId: LEAD_ID,
+        title: expect.stringContaining("Nový buyer lead"),
+      }),
+      expect.objectContaining({ from: expect.any(Function) }),
+    );
   });
 
   it("does not invent rooms:2 izby in source", async () => {

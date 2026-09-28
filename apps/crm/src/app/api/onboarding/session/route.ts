@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { errorResponse, okResponse } from "@/lib/api-response";
+import { validateBody } from "@/lib/api-validate";
+import { incrementUsageMetric, SYSTEM_USAGE_AGENCY_ID } from "@/lib/usage-metrics";
 import {
   isOnboardingSessionId,
   isOnboardingSessionWithinMaxAge,
@@ -9,6 +12,14 @@ import { rateLimit } from "@/lib/rate-limit";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
+
+/**
+ * Permissive on purpose. The precise rules — session id shape, step range,
+ * form_data size with its own 413 — are below and keep their Slovak messages
+ * and status codes. This only replaces the inline `request.json().catch()`
+ * with the shared parser the API contract expects.
+ */
+const SessionPostBodySchema = z.record(z.string(), z.unknown());
 
 const MAX_FORM_DATA_BYTES = 64_000;
 const RATE_LIMIT_MAX = 30;
@@ -122,16 +133,16 @@ export async function POST(request: Request) {
       return withCapabilityHeaders(errorResponse("Príliš veľa pokusov.", 429));
     }
 
-    const body = (await request.json().catch(() => null)) as {
-      session_id?: unknown;
-      step?: unknown;
-      form_data?: unknown;
-      updated_at?: unknown;
-    } | null;
-
-    if (!body || typeof body !== "object") {
+    const parsed = await validateBody(request, SessionPostBodySchema);
+    if (!parsed.ok) {
+      // validateBody's own response is returned bare, without the no-referrer
+      // header this route puts on every reply. Dropping it on a 400 would leak
+      // session_id through Referer to whatever the caller navigates to next —
+      // the exact thing withCapabilityHeaders exists to prevent. So the route
+      // keeps its own error, in Slovak, wrapped.
       return withCapabilityHeaders(errorResponse("Neplatné telo požiadavky.", 400));
     }
+    const body = parsed.data;
 
     const sessionId = typeof body.session_id === "string" ? body.session_id.trim() : "";
     if (!isOnboardingSessionId(sessionId)) {
@@ -175,6 +186,11 @@ export async function POST(request: Request) {
       console.error("[POST /api/onboarding/session]", error.message);
       return withCapabilityHeaders(errorResponse(error.message, 500));
     }
+
+    await incrementUsageMetric({
+      agencyId: SYSTEM_USAGE_AGENCY_ID,
+      metric: "onboarding_session",
+    });
 
     return withCapabilityHeaders(okResponse({ session: data }));
   } catch (error) {

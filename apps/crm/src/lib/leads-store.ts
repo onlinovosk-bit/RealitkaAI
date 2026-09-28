@@ -60,6 +60,7 @@ import {
 } from "@/lib/mock-data";
 import { supabaseClient, getSupabaseClient } from "@/lib/supabase/client";
 import { resolveTenantSupabase } from "@/lib/supabase/resolve-client";
+import { toInboundDraftView, type InboundDraftView } from "@/lib/inbound/draft-view";
 
 export type { Lead, LeadStatus, Recommendation } from "@/lib/mock-data";
 
@@ -182,6 +183,8 @@ export type LeadActivity = {
   type: ActivityType;
   text: string;
   date: string;
+  /** Set only for an inbound AI reply draft awaiting broker approval (Tier 3). */
+  inboundDraft?: InboundDraftView | null;
 };
 
 type ActivityMeta = {
@@ -1236,6 +1239,7 @@ export async function getActivitiesByLeadId(
     type: normalizeActivityType(item.type),
     text: item.text,
     date: formatActivityDate(item.created_at),
+    inboundDraft: toInboundDraftView(item.meta),
   }));
 }
 

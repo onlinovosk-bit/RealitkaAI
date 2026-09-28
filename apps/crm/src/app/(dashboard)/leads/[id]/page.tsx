@@ -10,6 +10,7 @@ import {
   type Lead,
   type LeadActivity,
 } from "@/lib/leads-store";
+import { InboundDraftApprove } from "@/components/leads/inbound-draft-approve";
 import { buildGoogleCalendarTemplateUrl, openGoogleCalendarUrl } from "@/lib/google-calendar-url";
 import {
   AI_ASSISTANT_CHAT_CTA,
@@ -227,6 +228,48 @@ export default function LeadDetailPage() {
   );
 
   useRealtimeLeadScore(id || undefined, onRealtimeScore);
+
+  /**
+   * Record that the broker tried to reach this lead.
+   *
+   * This is the fact C1 (preheated) is counted on. Before it existed the only
+   * evidence was `leads.last_contact`, a text column whose default is the
+   * string "Práve vytvorený" — nothing countable, so a contact rate could only
+   * be guessed at.
+   *
+   * It posts to /api/leads/[id]/contact-attempt rather than
+   * /api/ai/lead-events, which is behind the Enterprise Sales Intelligence
+   * gate: a funnel number must not be a property of the price list.
+   *
+   * `keepalive` matters here. Both callers are real <a href> navigations to
+   * tel:/mailto:, which hand the page to the dialer or mail client and can
+   * background or unload it before an ordinary fetch finishes. keepalive lets
+   * the request outlive that.
+   *
+   * No outcome is sent. Pressing Call proves an attempt, not a conversation,
+   * and claiming "unanswered" would be inventing a result. Silent on success by
+   * design — a toast behind an opening dialer is noise — but never silent on
+   * failure, because an attempt that was not recorded is an attempt C1 will
+   * never see.
+   */
+  const logContactAttempt = useCallback(
+    (channel: "call" | "email") => {
+      if (!id) return;
+      void fetch(`/api/leads/${encodeURIComponent(id)}/contact-attempt`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channel }),
+        keepalive: true,
+      })
+        .then(async (res) => {
+          if (res.ok) return;
+          const data = (await res.json().catch(() => ({}))) as { error?: string };
+          showToast(`Pokus o kontakt sa nezaznamenal: ${data.error ?? res.status}`);
+        })
+        .catch(() => showToast("Pokus o kontakt sa nezaznamenal (sieť)."));
+    },
+    [id, showToast]
+  );
 
   const accountTier: "market_vision" | "authority" = "market_vision";
 
@@ -667,7 +710,10 @@ export default function LeadDetailPage() {
                         <span className="text-xs font-semibold text-gray-700">{act.type}</span>
                         <span className="text-xs text-gray-400">{act.date}</span>
                       </div>
-                      <p className="text-sm text-gray-600">{act.text}</p>
+                      <p className="text-sm text-gray-600 whitespace-pre-line">{act.text}</p>
+                      {act.inboundDraft && (
+                        <InboundDraftApprove leadId={id} activityId={act.id} draft={act.inboundDraft} />
+                      )}
                     </div>
                   </div>
                 ))}
@@ -719,6 +765,7 @@ export default function LeadDetailPage() {
                 {lead.phone && (
                   <a
                     href={`tel:${lead.phone}`}
+                    onClick={() => logContactAttempt("call")}
                     className="flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium w-full min-h-[44px] transition-all active:scale-95"
                     style={{
                       borderColor: WORKDESK_INNER_ROW.borderColor,
@@ -732,6 +779,7 @@ export default function LeadDetailPage() {
                 {lead.email && (
                   <a
                     href={`mailto:${lead.email}`}
+                    onClick={() => logContactAttempt("email")}
                     className="flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium w-full min-h-[44px] transition-all active:scale-95"
                     style={{
                       borderColor: WORKDESK_INNER_ROW.borderColor,

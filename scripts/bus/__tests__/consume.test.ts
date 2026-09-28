@@ -9,6 +9,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer, type Server } from "node:http";
+import { execFile } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -791,4 +794,123 @@ test("a task parked by the cap stays parked after the window frees — the found
     dailyCap: 100,
   });
   assert.equal(later[0]!.action === "skipped" && later[0]!.code, "needs_founder");
+});
+
+const REPO_HEAD_TASK = {
+  ...LIVE_TASK,
+  summary: "Report the REPO HEAD of the machine you are running on.",
+  next_action: { gate: "AUTO-SAFE", description: "Odpovedz commit sha a nevykonavaj ziadne zmeny." },
+};
+
+test("repo-head: the runner reads the sha, the model relays it, the contract checks both", async (t) => {
+  const bus = await harness();
+  t.after(() => bus.close());
+
+  const head = "5b2e9153b70a6dbad0bd8f1573b23f301e6ee612";
+  const taskId = await seedTask(bus.client, REPO_HEAD_TASK);
+  const prompts: string[] = [];
+
+  const outcomes = await runConsumer({
+    client: bus.client,
+    executor: stubExecutor(head, prompts),
+    ledger: bus.ledger,
+    gatherFacts: async () => ({ repo_head: head }),
+  });
+
+  assert.equal(outcomes[0]!.action, "executed");
+  assert.equal(outcomes[0]!.action === "executed" && outcomes[0]!.reply, head);
+
+  // The sha reached the process in its prompt: the runner read it, not the model.
+  assert.match(prompts[0]!, new RegExp(head));
+  assert.match(prompts[0]!, new RegExp(taskId));
+
+  const results = await bus.client.list("outbox", { from: "claude-code" });
+  assert.equal(results[0]!.thread, taskId);
+  assert.equal(results[0]!.counters?.repo_changes, 0);
+});
+
+test("repo-head: a reply that invents a sha fails the contract and is not published", async (t) => {
+  const bus = await harness();
+  t.after(() => bus.close());
+
+  await seedTask(bus.client, REPO_HEAD_TASK);
+  const outcomes = await runConsumer({
+    client: bus.client,
+    executor: stubExecutor("0123456789abcdef0123456789abcdef01234567"),
+    ledger: bus.ledger,
+    gatherFacts: async () => ({ repo_head: "5b2e9153b70a6dbad0bd8f1573b23f301e6ee612" }),
+  });
+
+  assert.equal(outcomes[0]!.action, "failed");
+  assert.match(outcomes[0]!.action === "failed" ? outcomes[0]!.reason : "", /is not the repository head/);
+
+  // Nothing reached the bus: a failed contract must not look like an answer.
+  assert.equal((await bus.client.list("outbox", { from: "claude-code" })).length, 0);
+});
+
+test("a fact the machine cannot read stops the run before it costs anything", async (t) => {
+  const bus = await harness();
+  t.after(() => bus.close());
+
+  const stateDir = await mkdtemp(path.join(tmpdir(), "bus-cap-"));
+  t.after(() => rm(stateDir, { recursive: true, force: true }));
+  const counter = new FileExecutionCounter(stateDir);
+
+  await seedTask(bus.client, REPO_HEAD_TASK);
+  const forbidden: ClaudeExecutor = async () => {
+    throw new Error("Claude must not be invoked without the facts the capability declared");
+  };
+
+  const outcomes = await runConsumer({
+    client: bus.client,
+    executor: forbidden,
+    ledger: bus.ledger,
+    counter,
+    gatherFacts: async () => {
+      throw new Error("capability repo-head: fact repo_head could not be read");
+    },
+  });
+
+  assert.equal(outcomes[0]!.action, "failed");
+  assert.match(outcomes[0]!.action === "failed" ? outcomes[0]!.reason : "", /fact repo_head could not be read/);
+
+  // The budget is for executions. An environment that could not answer never
+  // reached one, so it must not have spent a slot.
+  assert.equal((await counter.stamps()).length, 0);
+
+  // No blocker either: this is transient, and the task stays open so the next
+  // cycle retries once the machine recovers.
+  assert.equal((await bus.client.list("outbox", { from: "claude-code" })).length, 0);
+  assert.equal((await bus.client.list("inbox", { to: "claude-code", status: "open" })).length, 1);
+});
+
+test("the real fact source reads this repository, with nothing injected", async (t) => {
+  // Every other repo-head test substitutes `gatherFacts`, which would leave the
+  // one piece that touches the machine unexercised — a guard that only exists
+  // on paper. This one runs it for real and pins the value to git itself.
+  const bus = await harness();
+  t.after(() => bus.close());
+
+  const { stdout } = await promisify(execFile)("git", ["rev-parse", "HEAD"], {
+    cwd: path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../.."),
+  });
+  const head = stdout.trim();
+
+  await seedTask(bus.client, REPO_HEAD_TASK);
+  // Stands in for a model that relays faithfully: it answers with the sha the
+  // runner put in the prompt, and nothing else.
+  const relaying: ClaudeExecutor = async (prompt) => ({
+    reply: /\b([0-9a-f]{40})\b/.exec(prompt)?.[1] ?? "no sha in prompt",
+    sessionId: "stub-session",
+    model: "stub",
+    numTurns: 1,
+    durationMs: 1,
+    costUsd: 0,
+    command: "stub-executor (not a real Claude Code process)",
+  });
+
+  const outcomes = await runConsumer({ client: bus.client, executor: relaying, ledger: bus.ledger });
+
+  assert.equal(outcomes[0]!.action, "executed");
+  assert.equal(outcomes[0]!.action === "executed" && outcomes[0]!.reply, head);
 });

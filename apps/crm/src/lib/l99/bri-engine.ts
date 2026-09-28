@@ -62,7 +62,8 @@ function buildReasoningFactors(components: BriComponents): ReasoningFactor[] {
 async function generateReasoningString(
   components: BriComponents,
   score: number,
-  leadContext: { name: string; lastActivity: string }
+  leadContext: { name: string; lastActivity: string },
+  agencyId?: string
 ): Promise<string> {
   try {
     const { content } = await callOpenAI({
@@ -70,6 +71,7 @@ async function generateReasoningString(
       max_tokens:  150,
       temperature: 0.2,
       tag:         "bri-reasoning",
+      agencyId,
       messages: [{
         role: "user",
         content: `Vygeneruj stručný, transparentný vysvetľovací text (max 2 vety, slovensky) prečo
@@ -99,10 +101,25 @@ export async function computeEnterpriseBri(
 ): Promise<BriResult> {
   await requireEnterprise();
 
+  const supabase = await createClient();
+
+  // Tenant príležitosti sa číta PRED AI volaním, aby sa spotreba tokenov
+  // účtovala kancelárii, nie systémovému tenantovi.
+  const { data: leadRow } = await supabase
+    .from("leads")
+    .select("agency_id, profile_id")
+    .eq("id", leadId)
+    .maybeSingle();
+
   const score = calculateBriScore(components);
   const alertLevel = getBriAlertLevel(score);
   const reasoningFactors = buildReasoningFactors(components);
-  const reasoningString = await generateReasoningString(components, score, leadContext);
+  const reasoningString = await generateReasoningString(
+    components,
+    score,
+    leadContext,
+    leadRow?.agency_id ?? undefined
+  );
 
   const result: BriResult = {
     score,
@@ -113,8 +130,17 @@ export async function computeEnterpriseBri(
     calculatedAt: new Date().toISOString(),
   };
 
-  const supabase = await createClient();
-  await supabase.from("bri_history").insert({
+  // agency_id was read above for cost attribution but never written, so every
+  // row landed unattributed and passed only through the `agency_id IS NULL`
+  // disjunct in bri_history_tenant. That disjunct is gone (RLS-NULL-ESCAPES), so
+  // the tenant has to be on the row for the insert to be allowed at all.
+  // profile_id is NOT NULL on bri_history and was never supplied either, so this
+  // insert has been failing with 23502 on every call — silently, because the
+  // error was discarded. Both columns come from the lead, the same way
+  // alert-dispatch resolves them.
+  const { error: briHistoryError } = await supabase.from("bri_history").insert({
+    agency_id: leadRow?.agency_id ?? null,
+    profile_id: leadRow?.profile_id ?? null,
     lead_id: leadId,
     bri_score: score,
     sofia_engagement_velocity: components.sofiaEngagementVelocity,
@@ -124,6 +150,14 @@ export async function computeEnterpriseBri(
     reasoning_string: reasoningString,
     reasoning_factors: reasoningFactors,
   });
+
+  // The insert used to be fire-and-forget. A denied write would now be silent,
+  // which is worse than the hole it replaces: the caller would believe the BRI
+  // history was recorded. The score itself is still returned — losing the audit
+  // row must not fail the request that computed it.
+  if (briHistoryError) {
+    console.error("[bri-engine] bri_history insert failed:", briHistoryError.message);
+  }
 
   if (alertLevel === "high" || alertLevel === "critical") {
     await dispatchPriorityAlert(leadId, score, reasoningString);

@@ -49,11 +49,18 @@ At the start of every session:
 At the end of each session, update:
 - `memory/decisions.md` (new milestones, architectural decisions).
 - `memory/people.md` (team/stakeholders changes).
-- `memory/session-summary.md` (compressed state: what was built, what's pending, last file paths touched).
+- `memory/session-summary.md` — **PREPEND, nikdy neprepisuj.** Súbor je
+  chronologický log, do ktorého každá session pridáva na začiatok. Formulácia
+  „compressed state from the previous session" nižšie opisuje tvar JEDNÉHO
+  záznamu, nie celého súboru. 2026-09-25 to zviedlo agenta k `write` namiesto
+  `prepend` a zmazalo 1339 riadkov histórie (48 sessions) — zachytené pred
+  mergom, viď #701.
 
 **Task-loop (povinné):** Pred ukončením turnu aplikuj `.claude/skills/task-loop/SKILL.md` — navrhni jednu ďalšiu úlohu s GO bránou. Nepokračuj autonómne na PROD/merge/novú scope bez explicitného GO.
 
 ## Session Summary Format (memory/session-summary.md)
+> Toto je tvar JEDNÉHO záznamu, ktorý sa pridáva NA ZAČIATOK súboru.
+> Existujúci obsah zostáva nedotknutý.
 ```
 ## Session [DATE]
 ### Dokončené

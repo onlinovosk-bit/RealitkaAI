@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   DATASET_VERSION,
+  agencyDomainsFrom,
   PARSER_VERSION,
   dedupKey,
   htmlToText,
@@ -228,5 +229,157 @@ describe("parser regresie z produkcie", () => {
     const b = parseEmail(html, RECEIVED_AT);
     expect(a.contactName).toBe(b.contactName); // polia rovnaké
     expect(a.rawHash).not.toBe(b.rawHash); // hash rozdielny -> idempotencia zachovaná
+  });
+});
+
+// ── W1: integrita kontaktu ────────────────────────────────────────────────────
+// Doménová stráž stála na zhode s doménou PRÍJEMCU. Odkedy ingest beží na
+// `revolis.ai`, doména kancelárie sa s ňou nikdy nezhoduje, takže stráž prestala
+// vylučovať vlastné adresy klienta. Produkčný dôsledok: lead z 2026-09-22 05:47 má
+// ako kontaktný e-mail adresu jedného z maklérov, nie záujemcu.
+
+const RK_DOMAIN = "realitysmolko.sk";
+const RK_BROKER = `makler@${RK_DOMAIN}`;
+const RK_OFFICE = `office@${RK_DOMAIN}`;
+const INGEST = "makler@revolis.ai";
+
+describe("W1 — kontakt nesmie byť človek od klienta", () => {
+  it("adresu makléra nevydá ako kontakt, keď lead má telefón", () => {
+    const raw = [
+      "Nehnutelnosti.sk - dopyt",
+      "Meno: Jan Novak",
+      `E-mail: ${RK_BROKER}`,
+      "Telefon: +421 912 345 678",
+      "Sprava: Mam zaujem o obhliadku",
+    ].join("\n");
+
+    const ev = parseEmail(raw, RECEIVED_AT, {
+      recipient: INGEST,
+      addresses: [RK_BROKER],
+      domains: agencyDomainsFrom([RK_BROKER]),
+    });
+
+    expect(ev.contactEmail).toBeNull();
+    expect(ev.contactPhone).toBe("+421912345678");
+  });
+
+  it("vylúči aj adresu kancelárie, ktorá nie je profilom — cez doménu", () => {
+    const raw = [
+      "Nehnutelnosti.sk - dopyt",
+      "Meno: Jan Novak",
+      `E-mail: ${RK_OFFICE}`,
+      "Telefon: 0911222333",
+    ].join("\n");
+
+    const ev = parseEmail(raw, RECEIVED_AT, {
+      recipient: INGEST,
+      addresses: [RK_BROKER], // office@ v profiloch nie je
+      domains: agencyDomainsFrom([RK_BROKER]),
+    });
+
+    expect(ev.contactEmail).toBeNull();
+  });
+
+  it("osobný gmail makléra vylúči, ale gmail záujemcu si nechá", () => {
+    const brokerGmail = "makler.osobny@gmail.com";
+    const buyerGmail = "kupujuci@gmail.com";
+    const raw = [
+      "Preposlany dopyt",
+      `E-mail: ${brokerGmail}`,
+      "Telefon: 0911222333",
+      `Kontakt na zaujemcu: ${buyerGmail}`,
+    ].join("\n");
+
+    const ev = parseEmail(raw, RECEIVED_AT, {
+      recipient: INGEST,
+      addresses: [brokerGmail],
+      domains: agencyDomainsFrom([brokerGmail]),
+    });
+
+    // Presná adresa makléra padá, ale `gmail.com` sa NESMIE stať filtrom na všetkých.
+    expect(ev.contactEmail).toBe(buyerGmail);
+  });
+
+  it("bez telefónu fallback ostáva — prázdny lead je horší než nepresný kontakt", () => {
+    const raw = ["Dopyt", `E-mail: ${RK_BROKER}`, "Sprava: Mam zaujem"].join("\n");
+
+    const ev = parseEmail(raw, RECEIVED_AT, {
+      recipient: INGEST,
+      addresses: [RK_BROKER],
+      domains: agencyDomainsFrom([RK_BROKER]),
+    });
+
+    expect(ev.contactPhone).toBeNull();
+    expect(ev.contactEmail).toBe(RK_BROKER);
+  });
+
+  it("záujemcu na cudzej doméne nechá prejsť", () => {
+    const raw = [
+      "Nehnutelnosti.sk - dopyt",
+      "Meno: Jan Novak",
+      "E-mail: jan@example.com",
+      "Telefon: 0911222333",
+    ].join("\n");
+
+    const ev = parseEmail(raw, RECEIVED_AT, {
+      recipient: INGEST,
+      addresses: [RK_BROKER],
+      domains: agencyDomainsFrom([RK_BROKER]),
+    });
+
+    expect(ev.contactEmail).toBe("jan@example.com");
+  });
+
+  it("ingest doména ostáva vylúčená aj bez identity agentúry", () => {
+    const raw = ["Dopyt", `E-mail: ${INGEST}`, "Telefon: 0911222333"].join("\n");
+    const ev = parseEmail(raw, RECEIVED_AT, { recipient: INGEST });
+    expect(ev.contactEmail).toBeNull();
+  });
+});
+
+describe("W1 — dôkaz, že chybu odstraňuje práve stráž", () => {
+  // Ten istý vstup dvakrát. Rozdiel je JEDINE identita kancelárie, takže výsledok
+  // nemôže pochádzať z ničoho iného. Prvý prípad je presne to, čo je v produkcii:
+  // lead z 2026-09-22 05:47 má ako kontakt adresu makléra.
+  const raw = [
+    "Nehnutelnosti.sk - dopyt",
+    "Meno: Jan Novak",
+    `E-mail: ${RK_BROKER}`,
+    "Telefon: 0911222333",
+  ].join("\n");
+
+  it("bez identity kancelárie vráti adresu makléra (reprodukcia chyby)", () => {
+    const ev = parseEmail(raw, RECEIVED_AT, { recipient: INGEST });
+    expect(ev.contactEmail).toBe(RK_BROKER);
+  });
+
+  it("s identitou kancelárie ju nevráti", () => {
+    const ev = parseEmail(raw, RECEIVED_AT, {
+      recipient: INGEST,
+      addresses: [RK_BROKER],
+      domains: agencyDomainsFrom([RK_BROKER]),
+    });
+    expect(ev.contactEmail).toBeNull();
+  });
+});
+
+describe("W1 — agencyDomainsFrom", () => {
+  it("verejných poskytovateľov nezaradí medzi domény kancelárie", () => {
+    const domains = agencyDomainsFrom([
+      RK_BROKER,
+      "niekto@gmail.com",
+      "niekto@zoznam.sk",
+      "niekto@seznam.cz",
+      null,
+      undefined,
+      "bez-zavinaca",
+    ]);
+    expect(domains).toEqual([RK_DOMAIN]);
+  });
+
+  it("duplicity a veľkosť písmen zjednotí", () => {
+    expect(agencyDomainsFrom([`a@${RK_DOMAIN}`, `B@${RK_DOMAIN.toUpperCase()}`])).toEqual([
+      RK_DOMAIN,
+    ]);
   });
 });

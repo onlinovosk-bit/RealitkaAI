@@ -1,4 +1,3 @@
-﻿---
 ---
 id: TASK-BUS-RUNNER-2D
 type: task

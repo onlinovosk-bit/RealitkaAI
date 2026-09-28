@@ -56,10 +56,10 @@ export async function PATCH(
         actorName: "Systém",
         source: "inventory",
         severity: "info",
-      });
+      }, supabase);
     } catch {}
 
-    await autoRecalculateForProperty(id);
+    await autoRecalculateForProperty(id, supabase);
     return okResponse({ property });
   } catch (error) {
     return errorResponse(
@@ -102,7 +102,7 @@ export async function DELETE(
         actorName: "Systém",
         source: "inventory",
         severity: "warning",
-      });
+      }, supabase);
     } catch {}
 
     return okResponse({ deletedId: id });

@@ -37,6 +37,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  assertUsableBearer,
   createBusHandler,
   FileBusStore,
   type BusAgent,
@@ -96,6 +97,10 @@ export function handshakeAuthFromEnv(env: NodeJS.ProcessEnv = process.env): Hand
   const claude = env.REVOLIS_BUS_TOKEN_CLAUDE;
 
   if (sol && claude) {
+    // Checked here, where the variable name is still known. Downstream these are
+    // interpolated into `Bearer ${token}` and any complaint is about that.
+    assertUsableBearer(sol, "REVOLIS_BUS_TOKEN_SOL");
+    assertUsableBearer(claude, "REVOLIS_BUS_TOKEN_CLAUDE");
     if (sol === claude) {
       throw new Error(
         "REVOLIS_BUS_TOKEN_SOL and REVOLIS_BUS_TOKEN_CLAUDE are the same secret — " +
@@ -120,6 +125,7 @@ export function handshakeAuthFromEnv(env: NodeJS.ProcessEnv = process.env): Hand
         "(per-agent), or REVOLIS_BUS_TOKEN (shared, DEGRADED), for a remote handshake.",
     );
   }
+  assertUsableBearer(shared, "REVOLIS_BUS_TOKEN");
   // One secret worn by both agents: every call still authenticates, but the
   // server binds `from` to nobody, so BUS-004 has no boundary to measure.
   return {
