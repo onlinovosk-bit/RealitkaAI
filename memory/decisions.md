@@ -192,6 +192,31 @@ tak (to je vec poradia, nie pozadia), takže návrat je lacný. **Neriešim bez 
 Fastpath potvrdený **piatykrát**: päť krokov `skipped`, `Note the fastpath`
 prešiel.
 
+#### Pozor: CI fastpath a Vercel `ignoreCommand` NEMERAJÚ to isté
+
+Na #726 Vercel postavil **plné preview (`Ready`)**, hoci PR je memory-only.
+Predpovedal som `Ignored` a mýlil som sa. Príčina NIE JE fail-safe pri
+nerozlíšiteľnom `VERCEL_GIT_PREVIOUS_SHA` — to je vysvetlenie zapísané vyššie
+pre iný prípad a tu **neplatí**. Bez tejto poznámky by ho ďalšia session
+použila a diagnostikovala zle.
+
+Obe brány sú správne. Líšia sa referenčným bodom:
+
+| brána | porovnáva proti | videla na #726 |
+|---|---|---|
+| CI `classify-diff.sh` | `HEAD^1..HEAD^2` na merge refe = **base..head** | 2 súbory, oba `memory/` → fastpath |
+| Vercel `ignoreCommand` | `VERCEL_GIT_PREVIOUS_SHA` = **predchádzajúci deployment vetvy** | 7 ne-memory súborov → build |
+
+Tých 7 súborov (`alert-dispatch.ts`, `bri-engine.ts`, RLS migrácia, RLS test,
+2 reporty, `reconcile-migration-history.mjs`) neprišlo z tohto PR — prišli
+z **mergu `main` do vetvy**, ktorý #720 priniesol. Z pohľadu deploymentu vetvy
+sú to reálne nové súbory oproti tomu, čo bolo nasadené naposledy, takže Vercel
+build spustil správne.
+
+**Dôsledok pre čítanie:** „memory-only PR" nie je to isté ako „memory-only
+oproti poslednému deploymentu". Akonáhle sa do vetvy zmerguje base, Vercel
+postaví — a nie je to regresia fastpathu.
+
 ### Neoverené
 Skutočná úspora. Docker pull je sieťovo viazaný a `npm ci` + eslint + tsc sú
 CPU-viazané, takže na 2-jadrovom runneri sa môžu biť o zdroje a prekryv môže
