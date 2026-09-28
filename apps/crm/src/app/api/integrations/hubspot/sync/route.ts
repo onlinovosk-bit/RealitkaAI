@@ -43,7 +43,15 @@ export async function POST(request: Request) {
     )
   }
 
-  if (callerProfile?.agency_id && lead.agency_id !== callerProfile.agency_id) {
+  // Fail closed. The previous form was `callerProfile?.agency_id && lead... !== ...`,
+  // which skips the comparison entirely when the caller has no agency: a profile
+  // with a null agency_id passed the gate and reached the service-role sync
+  // below, pushing another tenant's lead into HubSpot. A missing agency is not
+  // permission to read everything — it is permission to read nothing.
+  if (!callerProfile?.agency_id) {
+    return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 })
+  }
+  if (lead.agency_id !== callerProfile.agency_id) {
     return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 })
   }
 
