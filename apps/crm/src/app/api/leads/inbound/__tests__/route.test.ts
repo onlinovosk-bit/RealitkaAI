@@ -32,6 +32,12 @@ vi.mock("@/lib/supabase/admin", () => ({
   createServiceRoleClient: () => ({ from: (...args: unknown[]) => mockFrom(...args) }),
 }));
 
+const mockDraftReply = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/inbound/reply-draft", () => ({
+  INBOUND_REPLY_DRAFT_TIMEOUT_MS: 8000,
+  scheduleInboundReplyDraft: (...args: unknown[]) => mockDraftReply(...args),
+}));
+
 vi.mock("@/lib/rate-limit", () => ({
   rateLimit: (...args: unknown[]) => mockRateLimit(...args),
 }));
@@ -128,6 +134,31 @@ describe("POST /api/leads/inbound auto-response wiring", () => {
         email: "jan@example.com",
       },
     );
+    expect(mockSendInboundAutoResponse).not.toHaveBeenCalled();
+  });
+
+  it("queues an AI reply draft for the broker (after the response, never sent)", async () => {
+    const { POST } = await import("../route");
+    const response = await POST(
+      makeJsonRequest({
+        slug: SLUG,
+        token: TOKEN,
+        name: "Ján Inbound",
+        email: "jan@example.com",
+        note: "Chcem obhliadku",
+        consent: true,
+      }),
+    );
+    expect(response.status).toBe(200);
+
+    await vi.waitFor(() => expect(mockDraftReply).toHaveBeenCalledTimes(1));
+    expect(mockDraftReply.mock.calls[0][0]).toMatchObject({
+      leadId: LEAD_ID,
+      agencyId: AGENCY_ID,
+      lead: { name: "Ján Inbound", email: "jan@example.com", message: "Chcem obhliadku", source: "web_form" },
+      activitySource: "web_form",
+      skipOnFallback: true,
+    });
     expect(mockSendInboundAutoResponse).not.toHaveBeenCalled();
   });
 

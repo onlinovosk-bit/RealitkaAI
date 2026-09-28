@@ -1,3 +1,36 @@
+## Session 2026-09-27 (AGENTIC-SYSTEM repo + INBOUND-DRAFT-01)
+
+### Dokončené
+- **AGENTIC-SYSTEM** (samostatný private repo `onlinovosk-bit/AGENTIC-SYSTEM`): Blueprint v1.0,
+  Model Routing Policy v1.0.1, decision matrix, `config/model-routing.yaml` + CI test súladu
+  (PR #1 zmergovaná). Nič z toho nežije v Revolis.
+- **INBOUND-DRAFT-01** (GO A): AI návrh odpovede pre reálne leady —
+  `apps/crm/src/lib/inbound/reply-draft.ts`, napojené v `api/acquire/email` a `api/leads/inbound`.
+- **AP-023 smer B triáž** (GO 2): 15 chýbajúcich tabuliek overených v PROD, volajúci
+  dotrasovaní (živé / za flagom / mŕtve). Rozhodovacia tabuľka v `memory/decisions.md` (COACH-HONEST).
+- **COACH-HONEST**: `api/coaching/insight` + `components/coaching/BrokerCoach.tsx` — žiadne
+  vymyslené čísla na dashboarde.
+
+### Rozpracované / Pending
+- Founder odpovede k smeru B: starter pack, Calendly webhook, hodnoty `*_ENABLED` flagov.
+- `INBOUND_WEBHOOK_SECRET` nie je v project env na Vercel → `/api/webhooks/inbound-lead` vracia 503.
+  Nevolá ho nikto; rozhodnúť, či webhook zrušiť.
+- Po merge overiť na PROD: nový lead z portálu → v časovej osi „AI návrh odpovede" →
+  „Schváliť a odoslať" (log `INBOUND_REPLY_DRAFT`). PostgREST filter approve-draft proti živej DB
+  stále neoverený.
+
+### Kľúčové súbory zmenené
+- `apps/crm/src/app/api/coaching/insight/route.ts`: bez štatistík žiadny panel, bez zdroja žiadne číslo
+- `apps/crm/src/components/coaching/BrokerCoach.tsx`: skryje hodnoty bez zdroja, bez „V regióne Prešov"
+- `apps/crm/src/lib/inbound/reply-draft.ts`: nový zdieľaný draft helper + `after()` scheduler + kill switch
+- `apps/crm/src/lib/inbound/auto-reply.ts`: `timeoutMs` voľba, `fallback` príznak
+- `apps/crm/src/lib/inbound/process-lead.ts`: krok 5 cez helper (správanie bez zmeny)
+- `apps/crm/src/app/api/acquire/email/route.ts`, `apps/crm/src/app/api/leads/inbound/route.ts`: napojenie
+- `apps/crm/src/lib/agents/agent-specs.ts`: REVOLIS-INBOUND-AUTOREPLY 1.1.0
+
+### Ďalší krok
+Po merge: overiť prvý reálny návrh na PROD a že maklér ho vie odoslať.
+
 ## Session 2026-09-27 (MATCHING-ZERO)
 ### Dokončené
 - Matching číta cez klienta volajúceho, prázdne čítanie nemaže zhody:

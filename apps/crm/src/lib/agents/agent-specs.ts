@@ -44,10 +44,12 @@ const NEVER = [
 export const AGENT_SPECS: readonly AgentSpec[] = [
   {
     agentId: "REVOLIS-INBOUND-AUTOREPLY",
-    version: "1.0.0",
+    version: "1.1.0",
     mission: "Draft a first reply to a new inbound lead so the broker can answer within minutes.",
-    trigger: "POST /api/webhooks/inbound-lead (Bearer INBOUND_WEBHOOK_SECRET)",
-    inputs: ["lead form payload (untrusted: payload.message)", "broker name"],
+    trigger:
+      "New lead on POST /api/acquire/email (portal e-mail gateway), POST /api/leads/inbound (web form, after response) " +
+      "or POST /api/webhooks/inbound-lead (Bearer INBOUND_WEBHOOK_SECRET). Kill switch: INBOUND_REPLY_DRAFT_DISABLED=1.",
+    inputs: ["lead contact + message (untrusted: the lead's own text)", "broker name when the mailbox is personal"],
     outputs: ["activities draft (meta: subject, body, recipient, correlation_id)", "ai_action_audit ai_suggested"],
     allowedActions: ["inbound.reply.email.send"],
     forbiddenActions: NEVER,
@@ -55,14 +57,25 @@ export const AGENT_SPECS: readonly AgentSpec[] = [
     model: "claude-haiku (lib/ai/claude.ts)",
     approvalPolicy: "Draft only; broker clicks 'Schváliť a odoslať' → approve-draft → Control Contract.",
     memoryPolicy: "Stateless. Reads only the current payload; stores nothing but the draft.",
-    failurePolicy: "LLM timeout → deterministic fallback text; draft insert failure keeps the lead and reports draftCreated=false.",
+    failurePolicy:
+      "Webhook: LLM timeout → deterministic fallback draft. Gateway/form: LLM timeout (8 s) → no draft (the templated " +
+      "acknowledgement already covers it). Any draft failure keeps the lead.",
     evaluationSuite: [
       "src/lib/inbound/__tests__/process-lead.test.ts",
+      "src/lib/inbound/__tests__/reply-draft.test.ts",
       "src/app/api/webhooks/inbound-lead/__tests__/route.test.ts",
+      "src/app/api/acquire/email/__tests__/route.test.ts",
+      "src/app/api/leads/inbound/__tests__/route.test.ts",
       "src/lib/inbound/__tests__/approve-draft.test.ts",
     ],
     owner: "founder",
-    code: ["src/lib/inbound/process-lead.ts", "src/lib/inbound/auto-reply.ts"],
+    code: [
+      "src/lib/inbound/reply-draft.ts",
+      "src/lib/inbound/process-lead.ts",
+      "src/lib/inbound/auto-reply.ts",
+      "src/app/api/acquire/email/route.ts",
+      "src/app/api/leads/inbound/route.ts",
+    ],
   },
   {
     agentId: "REVOLIS-FOLLOWUP-SWEEP",
