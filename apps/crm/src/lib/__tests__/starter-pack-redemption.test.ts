@@ -1,9 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { redeemStarterPackCode } from "@/lib/starter-pack/redemption";
 
 const mockMaybeSingle = vi.fn();
+const mockSingle = vi.fn();
+const mockInsert = vi.fn();
 const mockUpdate = vi.fn();
 const mockFrom = vi.fn();
-const applyCreditPurchaseMock = vi.fn();
 
 /** Claim chain: update().eq().is().select().maybeSingle() */
 function buildClaimChain(result: { data: unknown; error?: unknown }) {
@@ -20,22 +22,12 @@ vi.mock("@/lib/supabase/admin", () => ({
   }),
 }));
 
-vi.mock("@/lib/credits/mutate-credits", () => ({
-  applyCreditPurchase: (...args: unknown[]) => applyCreditPurchaseMock(...args),
-}));
-
-import { redeemStarterPackCode } from "@/lib/starter-pack/redemption";
-
 describe("starter pack code redemption", () => {
   let claimChain: ReturnType<typeof buildClaimChain>;
   let agencyUpdateEq: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
-
-    mockEq.mockReturnValue({ maybeSingle: mockMaybeSingle, is: mockIs });
-    mockIs.mockReturnValue({ eq: mockEq });
-    mockUpdate.mockReturnValue({ eq: mockEq });
     claimChain = buildClaimChain({ data: { id: "code-row-1" } });
     agencyUpdateEq = vi.fn().mockResolvedValue({ error: null });
 
@@ -53,14 +45,6 @@ describe("starter pack code redemption", () => {
           },
         };
       }
-      return {};
-    });
-
-    applyCreditPurchaseMock.mockResolvedValue({ ok: true, credited: 47, skipped: false });
-  });
-
-  it("grants purchased credits via atomic RPC and marks code redeemed", async () => {
-    mockMaybeSingle.mockResolvedValueOnce({
       if (table === "credit_ledger") {
         return {
           select: () => ({
@@ -106,11 +90,9 @@ describe("starter pack code redemption", () => {
 
     mockSingle.mockResolvedValue({
       data: {
-        id: "code-row-1",
-        code: "REV-47-ABC123",
-        value: 47,
-        redeemed_by_agency: null,
-        redeemed_at: null,
+        purchased_credits_balance: 10,
+        grant_credits_balance: 20,
+        credits_balance: 30,
       },
     });
 
@@ -125,7 +107,6 @@ describe("starter pack code redemption", () => {
       alreadyRedeemed: false,
     });
 
-    expect(applyCreditPurchaseMock).toHaveBeenCalledWith(
     expect(mockUpdate).toHaveBeenCalledWith({
       redeemed_by_agency: "agency-1",
       redeemed_at: expect.any(String),
@@ -135,10 +116,11 @@ describe("starter pack code redemption", () => {
 
     expect(mockInsert).toHaveBeenCalledWith(
       expect.objectContaining({
-        agencyId: "agency-1",
-        amount: 47,
+        agency_id: "agency-1",
+        delta: 47,
         reason: "starter_pack_redeem",
-        idempotencyKey: "starter_pack_redeem:code-row-1:agency-1",
+        source: "purchase",
+        idempotency_key: "starter_pack_redeem:code-row-1:agency-1",
       }),
     );
   });
@@ -224,7 +206,7 @@ describe("starter pack code redemption", () => {
       creditsGranted: 47,
       alreadyRedeemed: true,
     });
-    expect(applyCreditPurchaseMock).not.toHaveBeenCalled();
+    expect(mockInsert).not.toHaveBeenCalled();
   });
 
   it("retries credit grant when code is claimed by us but ledger is missing", async () => {
@@ -265,15 +247,15 @@ describe("starter pack code redemption", () => {
     mockMaybeSingle.mockResolvedValue({
       data: {
         id: "code-row-3",
-        code: "REV-47-OTHER",
+        code: "REV-47-USED01",
         value: 47,
-        redeemed_by_agency: "other-agency",
+        redeemed_by_agency: "agency-other",
         redeemed_at: "2026-06-01T00:00:00Z",
       },
     });
 
     const result = await redeemStarterPackCode({
-      code: "REV-47-OTHER",
+      code: "REV-47-USED01",
       agencyId: "agency-1",
     });
 
