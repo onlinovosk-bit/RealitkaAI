@@ -87,6 +87,29 @@ jobs:
         run: ../../scripts/ci/classify-diff.sh
         working-directory: apps/crm
 
+      # SETUP-NODE-REORDER. Toolchain a npm cache sa pripravia PRED štartom
+      # Supabase, nie počas neho.
+      #
+      # Dôvod je zmeraný, nie tušený. Keď `setup-node` bežal súbežne s docker
+      # pullom, trval 37 s a 49 s proti baseline 6-8 s, `Install` 15 a 22 proti
+      # 10-18, a samotný štart narástol zo 108-113 s na 137 a 184 s. Obnova npm
+      # cache aj pull šiestich images sú to isté úzke hrdlo — sieť a disk —
+      # takže súbežne si navzájom predlžujú čas.
+      #
+      # Po presune zostáva v prekryvnom okne `Lint`, `Typecheck` a helper testy,
+      # teda práca viazaná na CPU, ktorá sa o sieť nebije. Prekryv bude menší,
+      # ale nemal by byť zaplatený spomalením toho, čo sa prekrýva.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/crm/package-lock.json
+
+      - name: Install
+        run: npm ci
+        working-directory: apps/crm
+
+
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
@@ -159,16 +182,6 @@ jobs:
             > "$RUNNER_TEMP/supabase-start.log" 2>&1 &
           echo "supabase start beží na pozadí (pid $!); medzitým pokračuje npm ci, Lint a Typecheck"
           date +%s > "$RUNNER_TEMP/supabase-start.began"
-        working-directory: apps/crm
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: apps/crm/package-lock.json
-
-      - name: Install
-        run: npm ci
         working-directory: apps/crm
 
       - name: Lint
