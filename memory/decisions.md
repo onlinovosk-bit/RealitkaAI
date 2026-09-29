@@ -81,6 +81,68 @@ minimalizácia. Logujeme **len registrovateľnú doménu**, nikdy lokálnu čas�
   v `inbound_mailboxes`. Vlastná trieda problému (GO MAILBOX).
 - **#370 (atomické kreditové RPC) je stále neimplementované.** Revert odstránil rozbitý
   kód; pôvodný zámer si vyžaduje čerstvý, otestovaný PR.
+## 2026-09-29 — CREDITS-RELAND: #370 vrátené poriadne, migrácia ako prvá
+
+**Rozhodnutie:** #370 sa nevracia prehratím jeho commitu. Migrácia ide na PROD
+prvá (vlastná brána, meranie pred/po), kód sa píše na aktuálne súbory.
+
+**Prečo nie prehratie:** commit 1cfb6a3 obsahuje samotné poškodenie — hunky
+pristáli na zlých offsetoch. `git checkout 1cfb6a3 -- redemption.ts` by vrátil
+dvakrát deklarované `redeemedAt` aj polovicu volania vnútri cudzej funkcie.
+Rovnako bol poškodený aj jeho test súbor (`it(` otvorené dvakrát).
+
+**Nález, ktorý #370 nemal:** `ALTER DEFAULT PRIVILEGES` v schéme `public` dáva
+EXECUTE na každú novú funkciu rolám `anon` aj `authenticated`
+(`pg_default_acl`, `defaclobjtype = 'f'` → `anon=X | authenticated=X`).
+Migrácia #370 nemala žiadne granty. Aplikovaná doslova by tri SECURITY DEFINER
+funkcie, ktoré pripisujú kredity, boli volateľné cez PostgREST kýmkoľvek s anon
+kľúčom zo prehliadača — SECURITY DEFINER obchádza RLS. Do migrácie pribudol
+REVOKE + GRANT na `service_role`; overené `has_function_privilege`:
+anon false / authenticated false / service_role true.
+
+**Nález pri čítaní mangled patchu:** #370 by bol zahodil poistku v
+`expireGrantCreditsForAgency`, ktorá odmieta expirovať, keď už bol pridelený
+grant aktuálneho obdobia (jeho hunk nahradil celé telo a starý kód nechal ako
+nedosiahnuteľný). Regresia skrytá v poškodení. Poistka zostáva; cez RPC ide len
+posledná dvojica zápisov. Repair vetva si necháva priamy zápis zámerne — RPC by
+na existujúci idempotency key povedal `skipped` a balance by zostal nevyčistený.
+
+**PROD pred/po:** RPC 0 z 3 → 3 z 3; `20260804230000` chýbal → je, pod verziou
+súboru; história 63 → 64 riadkov. `md5(prosrc)` na PROD = md5 tiel v súbore
+(2cbeb33b / 49ee8644 / e7e631c2) — migrácia v repo a stav DB nie sú „podobné",
+sú zhodné. Sonda na jednorazovej agentúre (upratala po sebe v tom istom volaní):
+purchase 100 → 0/100/100, replay kľúča → skipped, grant 50 → 50/100/150,
+expire → 0/100/100, spend 40 → 0/60/60, amount 0 → invalid_amount, neznáma
+agentúra → agency_not_found, invariant platí, 0 zvyšných riadkov.
+
+**Stav po zmene:** jediný priamy zápis credit balance v aplikačnom kóde je
+strážená repair vetva v grant-engine. Všetko ostatné ide cez `spend_credits`
+a tri nové RPC.
+
+**Otvorené (nie je súčasťou tejto brány):** `spend_credits` má stále
+`anon=X | authenticated=X` — prihlásený používateľ vie minúť kredity cudzej
+agentúry (griefing, nie razenie). Nahlásené, neopravené.
+
+**PR:** #741 (draft), vetva reštartovaná z main po merge #733.
+
+## [2026-09-29] DEMAND-D1 kolo 2 — backfill gate, D4 kontrakt, privacy audit, Truth Matrix (founder GO)
+- **GO:** #749 do review (označený ready), backfill experiment, audit volaní LLM. **WAIT:** flag na PROD. **NIE:** outbound na 439 leadov, pipeline € bez zdroja rozpočtu, MCP/bus pred D1.
+- **Backfill = formálny gate** (`lib/demand/backfill-score.ts`): gold dataset (`evidence_present`, `gold_value`, `evidence_span`); UNKNOWN pri texte bez údaja nie je chyba; precision ≥ 95 % pre lokalitu, budget, typ, izby, disposition; false values ≤ 2 %; `unsupported = 0`; support < 10 → INSUFFICIENT. CLI exit 0 len pri PASS.
+- **D4 vstupný kontrakt** (`docs/architecture/matching-input-contract-v1.md`, len spec): matching nesmie čítať `leads.property_type/rooms/financing/timeline` — predvyplnené na **4 miestach** (acquire/email opravené; `lead-create-form.tsx` „Byt/2 izby/Hypotéka/Do 3 mesiacov“, `map-realvia-client.ts:221`, `integrations-store.ts:317`).
+- **Historické dáta** (`docs/reports/2026-09-29-invented-defaults-data-fix.md`): 59 leadov má „Byt“+„Hypotéka“, z toho 42 portálových; dokázateľne neupravených 12 → SQL pripravené, **nespustené**. 47 nerozlíšiteľných sa hromadne nemení.
+- **Privacy audit (#750):** 34 volaní LLM (23 živých). 3 živé úniky (call-coach/stream, listing-content/stream, embeddings) opravené; sanitizer doplnený o medzinárodné čísla. 19 miest posiela celé mená (MINIMIZE, rozhodnutie foundera). `/legal/sub-processors` neuvádza Anthropic.
+- **Anthropic podmienky overené** z Commercial Terms (bez tréningu na Customer Content) a DPA (processor, SCC M2/M3, 15 dní na námietku k subprocesorom, mazanie do 30 dní po skončení). Retencia API počas zmluvy a miesto spracovania: OVERIŤ (oficiálna stránka nedostupná z prostredia).
+- **Capability Truth Matrix** zavedená v #745 (`docs/architecture/capability-truth-matrix.md`).
+
+## [2026-09-29] DEMAND-D1 — Demand Contract v1 postavený, na PROD vypnutý (founder GO: D1 + backfill experiment)
+- **BUILD** (Ústava: Q1 áno, Smolko platí za leady s dopytom; Q3 áno, bez dopytu nie je matching → obhliadka). Rozsah = D1 + backfill experiment, nič z D2–D7.
+- **Kontrakt:** 11 polí, každé `{value, confidence, source, evidence}`; hodnotu navrhne Haiku, **rozhoduje kód** (`lib/demand/verify.ts`): citát musí byť doslovne v texte a hodnota sa musí dať z citátu spätne prečítať, inak explicitné `unknown` + `rejected`.
+- **Úložisko:** `lead_demands` (append-only, `agency_id NOT NULL`, zápis len service role, čítanie tenant cez `profile_agencies_for_auth()`); `leads` sa nemení.
+- **Opravené počas práce (overené):** (1) `acquire/email` dosádzal všetkým leadom `property_type="Byt"`, `financing="Hypotéka"` — PROD 42/42 portálových leadov; (2) zdieľaný sanitizer **nemaskoval SK mobily `0903 123 456`** (regex 9 číslic namiesto 10) — týkalo sa všetkých 9 miest volajúcich Claude.
+- **Neoverené lokálne:** migrácia + RLS test (lokálny Postgres nešiel spustiť pod rootom) → dôkaz dá CI `supabase db reset` + `tests/rls/lead-demands-rls.test.ts`.
+- **Backfill experiment nespustený:** kontajner nemá `ANTHROPIC_API_KEY`; skript je pripravený, zápis do DB neexistuje. Navrhnutý prah: precision ≥ 95 % na pole, false+ ≤ 2 %.
+- **GO brány pred zapnutím:** oznámenie Smolkovi o Anthropic ako subprocesorovi (čl. 6 DPA) → migrácia na PROD → `DEMAND_EXTRACTION_ENABLED=true`.
+- Spec: `docs/architecture/demand-contract-v1.md`.
 
 ## [2026-09-29] — DPA s Reality Smolko je podpísaná (rev.2, apríl 2026); Anthropic chýba v zozname subprocesorov
 
