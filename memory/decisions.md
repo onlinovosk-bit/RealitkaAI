@@ -81,6 +81,32 @@ minimalizácia. Logujeme **len registrovateľnú doménu**, nikdy lokálnu čas�
   v `inbound_mailboxes`. Vlastná trieda problému (GO MAILBOX).
 - **#370 (atomické kreditové RPC) je stále neimplementované.** Revert odstránil rozbitý
   kód; pôvodný zámer si vyžaduje čerstvý, otestovaný PR.
+## 2026-09-29 — CHECKOUT-ENV-01: krok A je hotový, VERIFY zoznam je teraz odvodený z kódu
+
+**Zistenie:** handoff tvrdil „krok A nezačatý". Nie je to pravda:
+`docs/reports/2026-09-22-stripe-verify-prices.md` → **0/9**, na live účte sú len
+ceny starého program modelu. Riadok v `open-tasks.md` ostal nezaškrtnutý.
+Skutočný blokér príjmu je **krok C** (founder vytvorí ceny v Stripe).
+
+**Rozhodnutie:** očakávania VERIFY sa presúvajú z Python literálu v bash skripte
+do `scripts/ops/stripe-expected-prices.json` a test ich porovnáva s
+`program-tier-pricing.ts`. Dôvod: ceny v kroku C bude founder zadávať ručne,
+VERIFY je jediná kontrola, že sa zhodujú so sumou, ktorú checkout účtuje. Ručne
+udržiavaný zoznam už raz zaostal — `STRIPE_PRICE_STARTER_PACK` (47 €, predáva
+sa na `/balik`) v ňom chýbal. 9 → 10 objektov.
+
+**Bezpečnosť:** pôvodný skript posielal kľúč ako `curl -u "$STRIPE_SECRET_KEY:"`,
+teda v argv, viditeľný v `ps` (porušenie pravidla „tokeny nikdy ako CLI flag").
+Teraz Python `urllib`, kľúč iba v hlavičke; test to stráži a padol na pôvodnom
+wrapperi. Odporúčaný je restricted key s právom *Prices: Read*.
+
+**Mutation proof:** 7 mutácií (suma v kóde, chýbajúci riadok v manifeste,
+vypnutá kontrola intervalu, prvá zhoda namiesto AMBIG, prijatie test kľúča, kľúč
+v curl argv, pôvodný wrapper) → každá červená, návrat → 10/10 zelené.
+
+**Stav:** BUILD, pretože odblokúva self-service príjem (PRIME DIRECTIVE). Nič
+nevytvára v Stripe, nečíta kľúč, nemení produkčný kód.
+
 ## 2026-09-29 — CREDITS-RELAND: #370 vrátené poriadne, migrácia ako prvá
 
 **Rozhodnutie:** #370 sa nevracia prehratím jeho commitu. Migrácia ide na PROD

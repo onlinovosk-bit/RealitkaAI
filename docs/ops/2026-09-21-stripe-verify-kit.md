@@ -1,5 +1,17 @@
 # Stripe VERIFY kit — CHECKOUT-ENV-01 / -02
 
+> **Stav 2026-09-29:** krok A **už prebehol 2026-09-22 → 0/9**
+> (`docs/reports/2026-09-22-stripe-verify-prices.md`). Blokuje **krok C**:
+> ceny v Stripe neexistujú. Čo presne vytvoriť: `bash scripts/ops/stripe-verify-prices.sh --spec`
+> (bez kľúča). Po vytvorení spusti VERIFY znova — vypíše env patch pre krok B.
+>
+> **Objektov je 10, nie 9:** pribudol `STRIPE_PRICE_STARTER_PACK` (47 € one-time,
+> marketing `/balik`), ktorý pôvodný zoznam nemal. Zoznam je teraz v
+> `scripts/ops/stripe-expected-prices.json` a test
+> `apps/crm/tests/verification/stripe-expected-prices.verification.test.ts`
+> padne, keď sa rozíde s `program-tier-pricing.ts`. Tabuľky nižšie sú z 21. 9.;
+> pri rozpore platí `--spec`.
+
 **Krok A** z `memory/open-tasks.md`. Read-only. Nič nevytvára, nič nezapisuje.
 Spúšťa **founder** s live secret key; agent kľúč nedostáva a price ID nehádže.
 
@@ -30,11 +42,19 @@ kódu je zoznam iný v oboch smeroch:
 tento dokument a výstup dáva rovno v tvare `KĽÚČ=price_…`:
 
 ```bash
-export STRIPE_SECRET_KEY=sk_live_…      # kľúč nikdy do chatu ani do repa
+export STRIPE_SECRET_KEY=rk_live_…      # kľúč nikdy do chatu ani do repa
 bash scripts/ops/stripe-verify-prices.sh
 ```
 
-Vypíše `N/9 resolved`. Riadky `OK` sa dajú priamo použiť v kroku B.
+Stačí **restricted key** (Stripe Dashboard → Developers → API keys → Create
+restricted key → *Prices: Read*, všetko ostatné *None*). Ak unikne, nevie nič
+účtovať ani čítať zákazníkov. Testovací kľúč (`sk_test_`) skript odmietne — vrátil
+by 0/N a zviedol by k záveru „ceny neexistujú".
+
+Vypíše `N/10 resolved`, stav každej brány a na konci blok `KĽÚČ=price_…` pre
+krok B (len jednoznačné zhody). Pri `MISSING` ukáže ceny s rovnakou sumou a
+dôvod, prečo nesedia (`interval=1xyear`, `type=recurring`, `livemode=false`…).
+Kľúč ide iba do HTTP hlavičky, nie do argumentu procesu.
 
 Späť posielaj **iba výstup**. Price ID nie sú tajomstvo, secret key áno.
 
