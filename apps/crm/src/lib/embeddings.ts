@@ -4,6 +4,8 @@
  * Server-only – nepoužívaj v "use client" komponentoch
  */
 
+import { sanitizeText } from "@/lib/ai/sanitize";
+
 import type { Lead } from "@/lib/mock-data";
 import type { Property } from "@/lib/properties-store";
 
@@ -29,7 +31,9 @@ export type EmbeddingResult = {
  * Generuje embedding vektor pre zadaný text cez OpenAI API.
  */
 export async function generateEmbedding(text: string): Promise<EmbeddingResult> {
-  const input = text.trim().slice(0, 8000); // max ~8k znakov pre bezpečnosť
+  // Leads' notes and free-text search queries can carry phones/e-mails; the
+  // embedding needs the meaning, not the contact. Masked before leaving (P0).
+  const input = sanitizeText(text.trim().slice(0, 8000)).sanitized;
   if (!input) {
     return {
       embedding: new Array(EMBEDDING_DIMENSIONS).fill(0) as number[],

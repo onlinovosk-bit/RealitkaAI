@@ -11,6 +11,24 @@
 - `memory/decisions.md`, `memory/session-summary.md`: prepend
 ### Ďalší krok
 `GO DEMAND-D1` — extrakcia dopytu z portálových e-mailov (94 % leadov bez dopytu); paralelne `GO B-REPO` pre Projekt B.
+## Session 2026-09-29 (DEMAND-D1)
+### Dokončené
+- Demand Contract v1 + verifikátor + redakcia + extrakcia (Haiku) + `lead_demands` + napojenie na `acquire/email` za flagom: `apps/crm/src/lib/demand/*`, `supabase/migrations/20260929120000_lead_demands.sql`
+- Backfill experiment (read-only) + labeling + scoring: `apps/crm/scripts/demand-backfill-experiment.ts`, `lib/demand/backfill-score.ts`
+- Oprava maskovania SK mobilov v `lib/ai/sanitize.ts`; koniec vymýšľania „Byt"/„Hypotéka" v `acquire/email`
+### Rozpracované / Pending
+- Spustiť backfill experiment (founder/Vercel s `ANTHROPIC_API_KEY`) → ručné označenie → `score`
+- Oznámenie Smolkovi (Anthropic subprocesor) pred zapnutím flagu; migrácia na PROD; flag
+- PR #745 (audit) — nemergovať, oddelené nálezy/rozhodnutia/scope
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/demand/`: nový modul Demand Contract v1
+- `apps/crm/src/lib/ai/sanitize.ts`: 10-ciferné SK mobily
+- `apps/crm/src/app/api/acquire/email/route.ts`: bez vymyslených polí, plánuje extrakciu
+- `docs/architecture/demand-contract-v1.md`: spec, GO brány, KPI SQL
+- Kolo 2: gold-dataset gate, D4 vstupný kontrakt, plán opravy 42/59 leadov, privacy audit + opravy (#750), Truth Matrix (#745)
+### Ďalší krok
+Founder spustí `extract` na vzorke 60 leadov a vyplní gold dataset → `score` → PASS/FAIL rozhodne o flagu. Paralelne: merge #750 (P0 privacy).
+
 ## Session 2026-09-29
 ### Dokončené
 - CREDITS-RELAND krok 1: `20260804230000_atomic_credit_mutations.sql` aplikovaná na PROD pred kódom, s históriou pod verziou súboru (63 → 64 riadkov). RPC 0 z 3 → 3 z 3.
