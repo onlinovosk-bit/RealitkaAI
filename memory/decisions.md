@@ -1,5 +1,27 @@
 # Critical Decisions Log
 
+## [2026-09-29] — DPA s Reality Smolko je podpísaná (rev.2, apríl 2026); Anthropic chýba v zozname subprocesorov
+
+- **Platí podpísaná DPA rev.2 z apríla 2026** (founder poskytol PDF „Spracovanie osobných
+  údajov"). `docs/legal/DPA_Reality_Smolko.md` s označením DRAFT **nie je aktuálny stav**.
+  Session 2026-09-28 z neho mylne usúdila, že zmluva nie je podpísaná.
+  - Podpisy v textovej vrstve PDF overiť nešlo, stav „podpísané" uvádza founder.
+- **Import dopytov klientov a matching spadajú pod čl. 2** („Prevádzka CRM funkcionality
+  a správa kontaktov"). Matching je výpočet v DB bez AI, takže nevzniká nový príjemca dát.
+  Netreba nový podpis.
+- **Nesúlad — Anthropic (Claude) nie je v čl. 6 (Subprocesori).** V zmluve je len OpenAI.
+  - Kód volá Anthropic cez `lib/ai/claude.ts` v 9 miestach, vrátane
+    `inbound/auto-reply.ts` (meno a text správy leadu), `open-followup-generator.ts`
+    a `lead-triage-batch.ts`.
+  - PROD `ai_action_audit` má volania `claude-haiku-4-5`.
+  - Čl. 6 ods. 1: generálne povolenie. Podmienky: (a) subprocesor viazaný DPA,
+    (b) oznámenie 30 dní vopred, (c) námietka klienta do 15 dní.
+  - **Dodatok sa nepodpisuje.** Treba písomné oznámenie klientovi a overiť (a):
+    DPA Anthropicu pre API účet.
+  - Oznámenie ide dodatočne, lebo spracovanie už beží.
+- **Menšia nepresnosť:** čl. 3 uvádza primárne DC Frankfurt, Supabase projekt je
+  eu-west-1 (Írsko). Obe lokality sú v EÚ, opraviť pri ďalšej revízii.
+
 ## [2026-09-28] RLS-NULL-ESCAPES aplikované na PROD (founder GO)
 
 `20260928070000_rls_null_escapes.sql` dobehla na produkcii. Predtým overená lokálne

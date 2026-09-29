@@ -1,3 +1,5 @@
+> **⚠️ NEAKTUÁLNE (2026-09-29):** s Reality Smolko platí **podpísaná DPA rev.2 z apríla 2026** (PDF u foundera). Tento súbor je starší pracovný návrh — pre aktuálny stav viď `memory/decisions.md` (2026-09-29).
+
 # Zmluva o spracúvaní osobných údajov
 ### (Sprostredkovateľská zmluva podľa čl. 28 Nariadenia GDPR)
 
