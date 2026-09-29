@@ -9,6 +9,23 @@ gap audit `apps/crm` + Supabase + PROD. Tento dokument je ten audit.
 testy) + **počty z PROD** Supabase (`ypgajkhqtbriqqmyawyv`), iba agregáty, žiadne
 osobné údaje.
 
+> **Ako čítať tento PR (audit trail).** Tento dokument je **audit**, nie
+> build. Oddelenie:
+> - **Nálezy** (fakty s dôkazom): sekcie 1–2 a 4–5.
+> - **Rozhodnutia foundera** (2026-09-29): pozri tabuľku nižšie.
+> - **Schválený build scope:** iba `GO DEMAND-D1` + `DEMAND-BACKFILL EXPERIMENT`,
+>   implementované v **samostatnom PR**. Sekcia 3 (D2–D7) je **plán, nie schválený
+>   scope**. Každý ďalší deň potrebuje vlastné GO.
+>
+> | Rozhodnutie | Stav | Kde |
+> |---|---|---|
+> | Revolis = systém okolo dopytu (Truth → Intelligence → Automation) | PRIJATÉ | founder, 2026-09-29 |
+> | `GO DEMAND-D1` + backfill experiment | SCHVÁLENÉ na build | samostatný implementačný PR |
+> | D2 (bezpečnosť + pravdivé čísla) | P0 podľa foundera, **čaká na GO** | — |
+> | D3–D7 | plán, **neschválené** | — |
+> | MCP, bus runtime, Sentry, veľké command center, Projekt B ako hlavný sprint | ODLOŽENÉ | founder, 2026-09-29 |
+> | Merge tohto PR | **nemergovať len preto, že je CI zelené** | founder, 2026-09-29 |
+
 ---
 
 ## 1. Verdikt k návrhu z ChatGPT
@@ -71,7 +88,7 @@ neodoslalo (0), ale riziko ostáva v kóde.
 landing page („13/20 obsadené", náhodne pribúda), náhodný progress bar v
 AcquisitionHub, pevne zadané pravdepodobnosti výhry vo forecaste.
 
-## 3. Upravený 7-dňový Demand sprint (realistický, každý deň s dôkazom)
+## 3. Upravený 7-dňový Demand sprint — PLÁN, schválený je iba D1
 
 Princíp: **najprv naplniť slučku reálnymi dátami, potom inteligencia.**
 Každý krok ide cez PR, CI a GO foundera pred PROD.
