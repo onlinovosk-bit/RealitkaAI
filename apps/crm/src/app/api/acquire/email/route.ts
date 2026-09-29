@@ -266,6 +266,7 @@ export async function POST(req: NextRequest) {
     const identity = await loadAgencyIdentity(supa, agencyId);
     const ev = parseEmail(raw, receivedAt, {
       recipient: email.to ?? null,
+      subject: email.subject ?? null,
       addresses: identity.addresses,
       domains: identity.domains,
     });
