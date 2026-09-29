@@ -32,6 +32,12 @@ type InboundEmailPayload = {
   };
   email?: {
     to?: string;
+    /**
+     * Hlavička `From`. Voliteľná: Cloudflare Worker (mimo tohto repozitára) ju
+     * zatiaľ neposiela, Gmail pull áno. Bez nej sa parser správa presne ako
+     * predtým — pole len pridáva záložné rozpoznanie zdroja.
+     */
+    from?: string;
     subject?: string;
     text?: string;
     html?: string;
@@ -267,6 +273,7 @@ export async function POST(req: NextRequest) {
     const ev = parseEmail(raw, receivedAt, {
       recipient: email.to ?? null,
       subject: email.subject ?? null,
+      from: email.from ?? null,
       addresses: identity.addresses,
       domains: identity.domains,
     });

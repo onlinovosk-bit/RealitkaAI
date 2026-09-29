@@ -61,7 +61,7 @@ Sprava: od kedy je voľný byt?`;
 describe("email-adapter eval dataset", () => {
   it("eval 1: Nehnutelnosti portal inquiry", () => {
     const ev = parseEmail(EVAL_NEHNUTELNOSTI, RECEIVED_AT);
-    expect(PARSER_VERSION).toBe("1.3");
+    expect(PARSER_VERSION).toBe("1.4");
     expect(DATASET_VERSION).toBe("v1.1");
     expect(ev.sourceType).toBe("Portal");
     expect(ev.source).toBe("Nehnuteľnosti.sk");
@@ -82,7 +82,7 @@ describe("email-adapter eval dataset", () => {
     expect(dedupKey(ev)).toBe("672608c5e7a2ebcd");
     const lead = toLeadCandidate(ev, SMOLKO_AGENCY, false);
     expect(lead?.source).toBe("web_form");
-    expect(lead?._meta.parserVersion).toBe("1.3");
+    expect(lead?._meta.parserVersion).toBe("1.4");
   });
 
   it("eval 7: Bazos Palenčár availability inquiry (Smolko gold)", () => {
