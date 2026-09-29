@@ -11,6 +11,10 @@
       "schedule": "0 2 * * *"
     },
     {
+      "path": "/api/cron/recompute-bri",
+      "schedule": "40 2 * * *"
+    },
+    {
       "path": "/api/cron/seller-rescue",
       "schedule": "45 5 * * *"
     },
