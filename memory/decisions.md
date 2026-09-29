@@ -1,5 +1,12 @@
 # Critical Decisions Log
 
+## [2026-09-29] DEMAND-OS-GAP — návrh „Demand OS" (ChatGPT) overený na PROD dátach
+- Smer prijatý (founder): Revolis = systém okolo dopytu, nie počet modulov.
+- **Zmerané na PROD:** 513 leadov, **482 (94 %) bez lokality aj rozpočtu**, 439 = Realvia import Smolko (>90 dní), 9 nových za 30 dní; `lead_property_matches` 0, `lead_scores` 0, `deal_outcomes` 1, `buyer_intents` 3.
+- **Hlavná medzera je zachytenie dopytu, nie AI.** Upravený 7-dňový sprint: D1 extrakcia dopytu, D2 bezpečnosť (auto-odpoveď a ghostwriter obchádzajú `authorizeSend`), D3 plánovače, D4 matching, D5 reaktivácia 439 kontaktov až po GDPR bráne (súhlasov 4), D6 pravdivý dashboard (odstrániť 180 000 € default), D7 red team + GO.
+- BACKLOG: MCP (dnes mock), bus ako runtime produktu, Sentry.
+- Report: `docs/reports/2026-09-29-demand-os-gap-audit.md`.
+
 ## [2026-09-29] PROJEKT-B — founder: vstup do krátkodobých prenájmov ako samostatný produkt
 - **Rozhodnutie foundera** (nie výsledok Ústavy Revolisu): záložný produkt pre správu krátkodobých prenájmov, budovaný **zvlášť** (vlastný repo, Supabase, Vercel, Stripe); z Revolisu sa preberajú vzory kópiou, nie spoločným balíkom.
 - **Kľúčové technické rozhodnutie (návrh):** channel manager sa nestavia — základ je **Channex** (white-label, Booking/Airbnb/Expedia; $130/mes. + $0,50/jednotku). Airbnb API je pre nových partnerov uzavreté. Smart zámky cez **Seam**.
