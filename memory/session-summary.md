@@ -1536,6 +1536,19 @@ Bez GO nič. Krok 2 je ďalší v poradí, ale vyžaduje samostatné founder GO.
 **`GO CP-P0-1A`** (Safe Spine Foundation) — primárna ďalšia brána. Bez nej sa acceptance #4/#5 nedajú dokončiť. Pred implementáciou treba presne vyriešiť, čo durable persistence znamená, lebo práve to blokuje event-spine A. Rozsah: A1 kanonická v2 schéma · A2 `scope` diskriminátor · A3 tenant isolation · A4 correlation/causation/run sémantika · A5 idempotency · A6 versioning · A7 invariant enforcement · A8 migration ownership. **Žiadny produkčný PII backfill** — to je CP-P0-1C.
 `CP-P0-2` (durable approvals) zostáva ako **alternatívny následný** gate — nie je vykonaný ani aktuálny a neotvára sa súbežne, aby nevznikli dve meniace sa P0 osi naraz.
 
+## Session 2026-08-27
+### Dokončené
+- Critical bug hunt: assignment rules cross-tenant wipe → PR #490
+- Report: `docs/reports/2026-08-27-assignment-rules-tenant-gate.md`
+### Rozpracované / Pending
+- Founder merge #490 (+ older critical-bug PRs still open)
+- Ops backfill NULL agency_id on lead_assignment_rules after migrate
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/lead-automation-store.ts`: scoped client + agencyId
+- `apps/crm/supabase/migrations/20260827230000_lead_assignment_rules_tenant_rls.sql`: tenant RLS
+### Ďalší krok
+Founder merge #490 after CI green; apply migration on prod.
+
 ## Session 2026-08-25
 ### Dokončené
 - Critical bug hunt (correctness): 4 HIGH/CRITICAL — `docs/reports/2026-08-25-critical-bug-hunt.md`
