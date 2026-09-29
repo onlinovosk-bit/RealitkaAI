@@ -4,7 +4,7 @@
 // vercel.json: {"path": "/api/cron/recompute-bri", "schedule": "0 */6 * * *"}
 // ================================================================
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient }              from '@/lib/supabase/server'
+import { createAdminClient }         from '@/lib/supabase/server'
 import { batchRecomputeBRI }         from '@/lib/events/bri-score'
 
 export async function GET(request: NextRequest) {
@@ -14,11 +14,22 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const supabase = await createClient()
-    const { data: profiles } = await supabase
+    // Service-role, not the cookie client: a cron request carries no session,
+    // so the cookie client reads `profiles` as anon and RLS returns nothing.
+    const supabase = createAdminClient()
+
+    // `account_status` does not exist on `profiles` — the column is `is_active`.
+    // The old filter made this query error, `profiles` came back null, and the
+    // route returned `{ computed: 0 }` without ever saying why (BRI-DEAD-PATH).
+    const { data: profiles, error: profileErr } = await supabase
       .from('profiles')
       .select('id')
-      .eq('account_status', 'active')
+      .eq('is_active', true)
+
+    if (profileErr) {
+      console.error('[recompute-bri cron] profile fetch failed:', profileErr.message)
+      return NextResponse.json({ error: profileErr.message }, { status: 500 })
+    }
 
     if (!profiles?.length) return NextResponse.json({ ok: true, computed: 0 })
 
@@ -26,7 +37,7 @@ export async function GET(request: NextRequest) {
     const BATCH = 5
     for (let i = 0; i < profiles.length; i += BATCH) {
       const counts = await Promise.all(
-        profiles.slice(i, i + BATCH).map(p => batchRecomputeBRI(p.id))
+        profiles.slice(i, i + BATCH).map(p => batchRecomputeBRI(p.id, supabase))
       )
       totalComputed += counts.reduce((s, n) => s + n, 0)
     }
