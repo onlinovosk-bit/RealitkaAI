@@ -1,3 +1,16 @@
+## Session 2026-09-29 (PROON-AUDIT)
+### Dokončené
+- Audit Proon Channel Manager + mapovanie na Revolis + 1-týždňová roadmapa: `docs/reports/2026-09-29-proon-channel-manager-audit.md`
+- Founder zvolil Projekt B (krátkodobé prenájmy, samostatne): plán, roadmapa, agentický workflow v `docs/strategy/2026-09-29-projekt-b-str-plan.md` (Channex + Seam, pilot za 1 týždeň, parita 6–8 týždňov)
+- Gap audit Demand OS nad kódom + PROD dátami, upravený 7-dňový sprint: `docs/reports/2026-09-29-demand-os-gap-audit.md`
+### Rozpracované / Pending
+- Proon: founder dodal screenshoty a text webu (vrátane cenníka); priamy crawl v prostredí stále blokovaný.
+- Founder GO: nový repo + názov, entita/vlastníctvo kódu, pilotný ubytovateľ, účty Channex/Seam.
+### Kľúčové súbory zmenené
+- `docs/reports/2026-09-29-proon-channel-manager-audit.md`: nový report
+- `memory/decisions.md`, `memory/session-summary.md`: prepend
+### Ďalší krok
+`GO DEMAND-D1` — extrakcia dopytu z portálových e-mailov (94 % leadov bez dopytu); paralelne `GO B-REPO` pre Projekt B.
 ## Session 2026-09-29 (CHECKOUT-ENV-01 — krok A)
 ### Dokončené
 - **Korekcia stavu:** krok A NIE JE nezačatý — prebehol 2026-09-22 → **0/9**
