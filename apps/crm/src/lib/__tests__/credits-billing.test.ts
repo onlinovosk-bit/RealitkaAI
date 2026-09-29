@@ -22,6 +22,12 @@ vi.mock("@/lib/supabase/admin", () => ({
   }),
 }));
 
+const applyCreditPurchaseMock = vi.fn();
+
+vi.mock("@/lib/credits/mutate-credits", () => ({
+  applyCreditPurchase: (...args: unknown[]) => applyCreditPurchaseMock(...args),
+}));
+
 vi.mock("@/lib/credits/grant-engine", () => ({
   currentPeriodKey: () => "202606",
   grantMonthlyCreditsForAgency: vi.fn().mockResolvedValue({ granted: 100, skipped: false }),
@@ -49,6 +55,7 @@ describe("credits-billing", () => {
       error: null,
     });
     mockDeleteEq.mockResolvedValue({ error: null });
+    applyCreditPurchaseMock.mockResolvedValue({ ok: true, credited: 150, skipped: false });
 
     mockFrom.mockImplementation((table: string) => {
       if (table === "credit_ledger") {
@@ -267,49 +274,43 @@ describe("credits-billing", () => {
   });
 
   describe("applyTopupPurchase", () => {
-    it("writes purchase ledger idempotently", async () => {
-      const first = await applyTopupPurchase({
+    it("credits the top-up through the atomic RPC", async () => {
+      const ok = await applyTopupPurchase({
         agencyId: "agency-1",
         packageKey: "rast",
         stripeSessionId: "cs_test_1",
       });
 
-      expect(first).toBe(true);
-      expect(mockInsert).toHaveBeenCalledWith(
-        expect.objectContaining({
-          agency_id: "agency-1",
-          delta: 150,
-          source: "purchase",
-          idempotency_key: "purchase:agency-1:cs_test_1",
-        }),
-      );
-      expect(mockUpdate).toHaveBeenCalledWith(
-        expect.objectContaining({
-          purchased_credits_balance: 150,
-          credits_balance: 200,
-        }),
-        "id",
-        "agency-1",
-      );
-
-      mockMaybeSingle.mockResolvedValueOnce({ data: { id: "existing" } });
-      mockInsert.mockClear();
-
-      const second = await applyTopupPurchase({
+      expect(ok).toBe(true);
+      expect(applyCreditPurchaseMock).toHaveBeenCalledWith({
         agencyId: "agency-1",
-        packageKey: "rast",
-        stripeSessionId: "cs_test_1",
+        amount: 150,
+        reason: "credit_topup",
+        idempotencyKey: "purchase:agency-1:cs_test_1",
+        ref: "rast",
       });
-
-      expect(second).toBe(true);
+      // Ledger ani balance sa už nezapisujú odtiaľto — a teda ani nemôže
+      // vzniknúť stav "ledger áno, balance nie", ktorý predtým bolo treba
+      // kompenzačne mazať.
       expect(mockInsert).not.toHaveBeenCalled();
+      expect(mockUpdate).not.toHaveBeenCalled();
+      expect(mockDeleteEq).not.toHaveBeenCalled();
     });
 
-    it("rolls back ledger and returns false when balance update fails", async () => {
-      mockAgencyUpdateResult.mockResolvedValueOnce({
-        data: null,
-        error: { message: "update failed" },
+    it("is idempotent: a replayed webhook reports success without crediting twice", async () => {
+      applyCreditPurchaseMock.mockResolvedValueOnce({ ok: true, credited: 0, skipped: true });
+
+      const ok = await applyTopupPurchase({
+        agencyId: "agency-1",
+        packageKey: "rast",
+        stripeSessionId: "cs_test_1",
       });
+
+      expect(ok).toBe(true);
+    });
+
+    it("returns false when the RPC fails so Stripe retries", async () => {
+      applyCreditPurchaseMock.mockResolvedValueOnce({ ok: false, error: "agency_not_found" });
 
       const ok = await applyTopupPurchase({
         agencyId: "agency-1",
@@ -318,11 +319,7 @@ describe("credits-billing", () => {
       });
 
       expect(ok).toBe(false);
-      expect(mockInsert).toHaveBeenCalled();
-      expect(mockDeleteEq).toHaveBeenCalledWith(
-        "idempotency_key",
-        "purchase:agency-1:cs_fail_balance",
-      );
+      expect(mockDeleteEq).not.toHaveBeenCalled();
     });
   });
 
@@ -367,7 +364,13 @@ describe("credits-billing", () => {
       } as never);
 
       expect(handled).toBe(true);
-      expect(mockInsert).toHaveBeenCalled();
+      expect(applyCreditPurchaseMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          agencyId: "agency-1",
+          amount: 150,
+          idempotencyKey: "purchase:agency-1:cs_topup_1",
+        }),
+      );
     });
 
     it("ignores legacy checkout events", async () => {
