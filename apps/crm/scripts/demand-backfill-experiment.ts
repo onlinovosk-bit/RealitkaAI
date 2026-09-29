@@ -8,7 +8,7 @@
  *
  *   # 1. extract (needs ANTHROPIC_API_KEY + service role in .env.local)
  *   npx tsx scripts/demand-backfill-experiment.ts extract --agency <uuid> --sample 60
- *   # 2. a human fills `judgement` (correct|wrong) and `truth_value` in labels.csv
+ *   # 2. a human fills, for EVERY row: evidence_present (y|n), gold_value, evidence_span
  *   # 3. score
  *   npx tsx scripts/demand-backfill-experiment.ts score tmp-demand-backfill/<run>/labels.csv
  *
@@ -85,15 +85,22 @@ async function extract() {
 function score() {
   const file = process.argv[3];
   if (!file) throw new Error("usage: score <labels.csv>");
-  const { fields, overall } = scoreLabels(readFileSync(file, "utf8"));
-  const pct = (v: number | null) => (v === null ? "  n/a" : `${(v * 100).toFixed(0).padStart(4)}%`);
-  console.log("field          labeled  extracted  precision  recall  unknown  false+");
-  for (const f of [...fields, { field: "OVERALL", ...overall }]) {
+  const report = scoreLabels(readFileSync(file, "utf8"));
+  const pct = (v: number | null) => (v === null ? "n/a" : `${(v * 100).toFixed(1)}%`);
+  const line = (name: string, m: (typeof report)["overall"], extra = "") =>
     console.log(
-      `${String(f.field).padEnd(14)} ${String(f.labeled).padStart(7)}  ${String(f.extracted).padStart(9)}  ` +
-        `${pct(f.precision).padStart(9)}  ${pct(f.recall).padStart(6)}  ${pct(f.unknown_rate).padStart(7)}  ${pct(f.false_positive_rate).padStart(6)}`,
+      [name.padEnd(14), m.labeled, m.correct, m.correct_unknown, m.missed, m.false_value, m.unsupported,
+        pct(m.precision), pct(m.recall), pct(m.false_value_rate), extra]
+        .map((v) => String(v).padStart(9)).join(" "),
     );
-  }
+  console.log(["field".padEnd(14), "labeled", "correct", "unk_ok", "missed", "false", "unsupp", "precision", "recall", "false%"]
+    .map((v) => String(v).padStart(9)).join(" "));
+  for (const [f, m] of Object.entries(report.fields)) line(f, m);
+  line("OVERALL", report.overall);
+  console.log("\nGATE (precision >= 95 %, false values <= 2 %, unsupported = 0, support >= 10)");
+  for (const g of report.gates) line(g.group, g.metrics, `${g.verdict} ${g.reasons.join("; ")}`);
+  console.log(`\nVERDICT: ${report.verdict}`);
+  process.exitCode = report.verdict === "PASS" ? 0 : 2;
 }
 
 const cmd = process.argv[2];
