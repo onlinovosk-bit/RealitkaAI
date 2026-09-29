@@ -107,23 +107,31 @@ describe("text zostáva primárnym signálom", () => {
 });
 
 describe("diagnostika", () => {
-  it("povie, ako sa zdroj rozpoznal, a neprezradí odosielateľa", () => {
+  it("povie doménu odosielateľa, nikdy celú adresu", () => {
     const ev = parse(ANONYMOUS_BODY, "Ján Novák <jan.novak@nehnutelnosti.sk>");
     expect(notLeadDiagnostics(ev)).toMatchObject({
       source: "Nehnuteľnosti.sk",
       source_detected_by: "sender",
-      has_sender: true,
+      sender_domain: "nehnutelnosti.sk",
     });
     const logged = JSON.stringify(notLeadDiagnostics(ev));
-    // Zdroj sa pomenovať smie; adresa odosielateľa nie.
-    for (const pii of ["jan.novak", "Novák", "912"]) {
+    // Doména smie; lokálna časť, meno ani telefón nie.
+    for (const pii of ["jan.novak", "Novák", "912", "@"]) {
       expect(logged).not.toContain(pii);
     }
   });
 
-  it("bez hlavičky From to v logu vidno — Worker ju zatiaľ neposiela", () => {
+  it("neznámu doménu zaznamená tiež — inak sa unknown_source nedá vyriešiť", () => {
+    expect(notLeadDiagnostics(parse(ANONYMOUS_BODY, "noreply@nejaky-portal.sk"))).toMatchObject({
+      source: "Unknown",
+      source_detected_by: "none",
+      sender_domain: "nejaky-portal.sk",
+    });
+  });
+
+  it("bez hlavičky From je doména null, nie prázdny reťazec", () => {
     expect(notLeadDiagnostics(parse(ANONYMOUS_BODY))).toMatchObject({
-      has_sender: false,
+      sender_domain: null,
       source_detected_by: "none",
     });
   });

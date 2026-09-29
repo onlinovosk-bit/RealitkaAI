@@ -180,3 +180,49 @@ describe("scheduleInboundReplyDraft", () => {
     expect(db.activities).toHaveLength(0);
   });
 });
+
+describe("viditeľnosť výsledku v logoch", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.unstubAllEnvs();
+    mockGenerate.mockResolvedValue({ subject: "S", body: "B" });
+  });
+
+  /**
+   * Vercel na tomto pláne drží len warn/error a zoskupuje riadky podľa
+   * requestu. Keby nevytvorený návrh ostal na `console.log`, celý request bez
+   * iného varovania je v logoch neviditeľný — presne prípad leadu z
+   * 2026-09-29 07:37, kde sa dôvod chýbajúceho návrhu už nedal zistiť.
+   */
+  it("nevytvorený návrh ide na warn aj s dôvodom", async () => {
+    vi.stubEnv("INBOUND_REPLY_DRAFT_DISABLED", "1");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    scheduleInboundReplyDraft(input(admin()));
+    await vi.waitFor(() => expect(warn).toHaveBeenCalled());
+
+    expect(JSON.parse(warn.mock.calls[0][0] as string)).toMatchObject({
+      status: "INBOUND_REPLY_DRAFT",
+      source: "acquire_email",
+      result: "disabled",
+    });
+    expect(log).not.toHaveBeenCalled();
+    warn.mockRestore();
+    log.mockRestore();
+  });
+
+  it("vytvorený návrh ostáva na log — úspech nie je varovanie", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const db = admin();
+
+    scheduleInboundReplyDraft(input(db));
+    await vi.waitFor(() => expect(log).toHaveBeenCalled());
+
+    expect(JSON.parse(log.mock.calls[0][0] as string)).toMatchObject({ result: "created" });
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+    log.mockRestore();
+  });
+});
