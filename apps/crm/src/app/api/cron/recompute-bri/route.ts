@@ -1,7 +1,14 @@
 // ================================================================
 // Revolis.AI — BRI Batch Recompute Cron
-// Runs every 6 hours to refresh all lead scores
-// vercel.json: {"path": "/api/cron/recompute-bri", "schedule": "0 */6 * * *"}
+// vercel.json: {"path": "/api/cron/recompute-bri", "schedule": "40 2 * * *"}
+//
+// Denne, nie každých 6 hodín: účet je na Vercel Hobby, ktorý povoľuje len jeden
+// beh denne — sub-denný výraz zhodí celý deployment, nielen ten cron. Pôvodná
+// hlavička tu sľubovala "0 */6 * * *", pričom vo vercel.json nebol vôbec žiadny
+// záznam; to bola presne tá nezrovnalosť, ktorú BRI-DEAD-PATH (#738) našiel.
+//
+// Čas je zvolený: bri-snapshot o 02:00 prerotuje score_24h_ago → score_7d_ago,
+// o 02:40 sa dopočítajú nové skóre, a ranný brief o 06:00 ich už vidí čerstvé.
 // ================================================================
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient }         from '@/lib/supabase/server'
