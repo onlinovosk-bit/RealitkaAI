@@ -23,7 +23,7 @@ export async function PATCH(
       supabase.from("profiles").select("agency_id").eq("auth_user_id", user.id).maybeSingle(),
     ]);
 
-    if (callerProfile?.agency_id && oldProperty?.agencyId && oldProperty.agencyId !== callerProfile.agency_id) {
+    if (!callerProfile?.agency_id || oldProperty?.agencyId !== callerProfile.agency_id) {
       return errorResponse("Forbidden", 403);
     }
 
@@ -85,7 +85,7 @@ export async function DELETE(
       supabase.from("profiles").select("agency_id").eq("auth_user_id", user.id).maybeSingle(),
     ]);
 
-    if (callerProfile?.agency_id && oldProperty?.agencyId && oldProperty.agencyId !== callerProfile.agency_id) {
+    if (!callerProfile?.agency_id || oldProperty?.agencyId !== callerProfile.agency_id) {
       return errorResponse("Forbidden", 403);
     }
 

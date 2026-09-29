@@ -37,12 +37,14 @@ export async function PATCH(
     const body = (await request.json()) as Partial<AiRecommendationInput>;
     const previous = await getAiRecommendationById(id);
 
-    if (callerProfile?.agency_id && previous?.leadId) {
-      const { data: leadRow } = await supabase
-        .from("leads").select("agency_id").eq("id", previous.leadId).maybeSingle();
-      if (leadRow?.agency_id !== callerProfile.agency_id) {
-        return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
-      }
+    if (!callerProfile?.agency_id || !previous?.leadId) {
+      return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+    }
+
+    const { data: leadRow } = await supabase
+      .from("leads").select("agency_id").eq("id", previous.leadId).maybeSingle();
+    if (leadRow?.agency_id !== callerProfile.agency_id) {
+      return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
     }
 
     let recommendation = await updateAiRecommendation(id, body);

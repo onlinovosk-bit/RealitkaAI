@@ -47,7 +47,7 @@ export async function PATCH(
 
     const { data: leadRow } = await supabase
       .from("leads").select("agency_id, created_at").eq("id", id).maybeSingle();
-    if (callerProfile?.agency_id && leadRow?.agency_id !== callerProfile.agency_id) {
+    if (!callerProfile?.agency_id || leadRow?.agency_id !== callerProfile.agency_id) {
       return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
     }
 
@@ -214,7 +214,7 @@ export async function DELETE(
 
     const { data: leadRow } = await supabase
       .from("leads").select("agency_id").eq("id", id).maybeSingle();
-    if (callerProfile?.agency_id && leadRow?.agency_id !== callerProfile.agency_id) {
+    if (!callerProfile?.agency_id || leadRow?.agency_id !== callerProfile.agency_id) {
       return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
     }
 

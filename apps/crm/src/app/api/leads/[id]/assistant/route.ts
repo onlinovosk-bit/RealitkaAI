@@ -21,7 +21,7 @@ export async function POST(
     const { data: lead } = await supabase
       .from("leads").select("agency_id").eq("id", id).maybeSingle();
 
-    if (callerProfile?.agency_id && lead?.agency_id !== callerProfile.agency_id) {
+    if (!callerProfile?.agency_id || lead?.agency_id !== callerProfile.agency_id) {
       return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
     }
 
