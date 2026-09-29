@@ -12,8 +12,9 @@
 - `apps/crm/src/lib/ai/sanitize.ts`: 10-ciferné SK mobily
 - `apps/crm/src/app/api/acquire/email/route.ts`: bez vymyslených polí, plánuje extrakciu
 - `docs/architecture/demand-contract-v1.md`: spec, GO brány, KPI SQL
+- Kolo 2: gold-dataset gate, D4 vstupný kontrakt, plán opravy 42/59 leadov, privacy audit + opravy (#750), Truth Matrix (#745)
 ### Ďalší krok
-Spustiť backfill experiment na vzorke 60 leadov a označiť ju — rozhodne, či sa flag smie zapnúť.
+Founder spustí `extract` na vzorke 60 leadov a vyplní gold dataset → `score` → PASS/FAIL rozhodne o flagu. Paralelne: merge #750 (P0 privacy).
 
 ## Session 2026-09-29
 ### Dokončené
