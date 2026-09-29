@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHash, timingSafeEqual } from "crypto";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
+import { scheduleDemandExtraction } from "@/lib/demand/store";
 import {
   agencyDomainsFrom,
   dedupKey,
@@ -368,9 +369,11 @@ export async function POST(req: NextRequest) {
         phone: candidate.phone.slice(0, 50),
         location: "",
         budget: "",
-        property_type: "Byt",
+        // Nikdy nevymýšľať (AP-001): mail sa na typ ani financovanie nepýta.
+        // Dopyt z textu správy zapisuje Demand Contract do `lead_demands`.
+        property_type: "",
         rooms: "",
-        financing: "Hypotéka",
+        financing: "",
         timeline: "",
         source: candidate.source,
         status: candidate.status,
@@ -455,6 +458,15 @@ export async function POST(req: NextRequest) {
       activitySource: "acquire_email",
       timeoutMs: INBOUND_REPLY_DRAFT_TIMEOUT_MS,
       skipOnFallback: true,
+    });
+
+    scheduleDemandExtraction({
+      admin: supa,
+      agencyId,
+      leadId: String(lead.id),
+      inquiryText: ev.inquiryText ?? "",
+      leadName: candidate.name,
+      source: "acquire_email",
     });
 
     console.log(JSON.stringify({ status: "LEAD_CREATED", requestId, agencyId, lead_id: lead.id }));
