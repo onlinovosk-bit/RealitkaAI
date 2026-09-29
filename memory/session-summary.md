@@ -1,3 +1,27 @@
+## Session 2026-09-29 (CHECKOUT-ENV-01 — krok A)
+### Dokončené
+- **Korekcia stavu:** krok A NIE JE nezačatý — prebehol 2026-09-22 → **0/9**
+  (`docs/reports/2026-09-22-stripe-verify-prices.md`). Blokér príjmu je **krok C**.
+  `memory/open-tasks.md` opravený.
+- `scripts/ops/stripe-expected-prices.json`: 10 cien (pribudol `STARTER_PACK` 47 €, predáva sa na `/balik`, v pôvodných 9 chýbal).
+- `scripts/ops/stripe_verify_prices.py`: stránkovanie, `expand product`, kontrola typu/intervalu/per_unit/livemode/EUR, „blízko" dôvody pri MISSING, odmietne test kľúč, `--spec` pre krok C bez kľúča, env patch iba z jednoznačných zhôd.
+- Kľúč už nejde do argv (pôvodne `curl -u` → viditeľný v `ps`).
+- `apps/crm/tests/verification/stripe-expected-prices.verification.test.ts`: 10 testov, manifest ↔ kód + offline fixtures vrátane reálneho snapshotu z 22. 9. Mutation proof 7× červená → zelená.
+### Rozpracované / Pending
+- **Krok C (founder):** vytvoriť ceny podľa `bash scripts/ops/stripe-verify-prices.sh --spec`, minimum 3 seat ceny; potom VERIFY → B → D.
+- 22. 9. report uvádza, že agent čítal `sk_live_` z lokálneho `.vercel/.env.production.local` — founder zváži rotáciu a restricted key.
+- Marketing `/api/starter-pack/checkout` nevaliduje formát price ID (`isValidStripePriceId`) — drobnosť, neopravené.
+- Typecheck ratchet: strop 54 → 51 (ubudli 3), nezmenené.
+### Kľúčové súbory zmenené
+- scripts/ops/stripe-verify-prices.sh: tenký wrapper nad Pythonom
+- scripts/ops/stripe_verify_prices.py: nový VERIFY
+- scripts/ops/stripe-expected-prices.json: nový manifest
+- apps/crm/tests/verification/stripe-expected-prices.verification.test.ts: nový drift + behavior test
+- docs/ops/2026-09-21-stripe-verify-kit.md: stav + použitie
+- memory/open-tasks.md, memory/decisions.md
+### Ďalší krok
+Founder: krok C v Stripe live mode (`--spec`), potom spustiť VERIFY a poslať výstup.
+
 ## Session 2026-09-29
 ### Dokončené
 - CREDITS-RELAND krok 1: `20260804230000_atomic_credit_mutations.sql` aplikovaná na PROD pred kódom, s históriou pod verziou súboru (63 → 64 riadkov). RPC 0 z 3 → 3 z 3.

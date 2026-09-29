@@ -1,0 +1,244 @@
+/**
+ * CHECKOUT-ENV-01 — Stripe VERIFY must check exactly what the code sells.
+ *
+ * `scripts/ops/stripe-verify-prices.sh` is what the founder runs against live
+ * Stripe (step A) and re-runs after creating prices by hand (step C). Its
+ * expectations live in `scripts/ops/stripe-expected-prices.json`. If that file
+ * drifts from `program-tier-pricing.ts`, VERIFY reports OK for a price the
+ * checkout will charge at a different amount — or never checks a surface that
+ * is live (the 47 € starter pack was missing from the original 9).
+ *
+ * Part 1 derives the list from the code and compares. Part 2 runs the script
+ * offline (`--fixture`) against Stripe-shaped data, including the real
+ * 2026-09-22 live snapshot (docs/reports/2026-09-22-stripe-verify-prices.md).
+ */
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+import { describe, expect, it } from "vitest";
+import {
+  COCKPIT_PRODUCTS,
+  SEAT_TIERS,
+  SEAT_TIER_CONFIG,
+  SEAT_TIER_STRIPE_ENV,
+  STARTER_PACK,
+  TOPUP_PACKAGES,
+} from "@/lib/program-tier-pricing";
+
+const OPS = resolve(__dirname, "../../../../scripts/ops");
+const MANIFEST = join(OPS, "stripe-expected-prices.json");
+const SCRIPT = join(OPS, "stripe_verify_prices.py");
+const WRAPPER = join(OPS, "stripe-verify-prices.sh");
+
+type Row = { env: string; amount: number; type: "recurring" | "one_time"; gate: string };
+
+function rowsFromCode(): Row[] {
+  const rows: Row[] = [];
+  for (const tier of SEAT_TIERS) {
+    rows.push({
+      env: SEAT_TIER_STRIPE_ENV[tier],
+      amount: SEAT_TIER_CONFIG[tier].priceEur * 100,
+      type: "recurring",
+      gate: "seat",
+    });
+  }
+  for (const c of Object.values(COCKPIT_PRODUCTS)) {
+    if (!c.enabled) continue;
+    if (c.stripeEnvKey) {
+      rows.push({ env: c.stripeEnvKey, amount: c.priceEur * 100, type: "recurring", gate: "cockpit" });
+    }
+    if (c.founderStripeEnvKey && c.founderPriceEur != null) {
+      rows.push({
+        env: c.founderStripeEnvKey,
+        amount: c.founderPriceEur * 100,
+        type: "recurring",
+        gate: "cockpit",
+      });
+    }
+  }
+  for (const p of Object.values(TOPUP_PACKAGES)) {
+    rows.push({ env: p.stripeEnvKey, amount: p.priceEur * 100, type: "one_time", gate: "topup" });
+  }
+  rows.push({
+    env: STARTER_PACK.stripeEnvKey,
+    amount: STARTER_PACK.priceEur * 100,
+    type: "one_time",
+    gate: "starter_pack",
+  });
+  return rows;
+}
+
+function rowsFromManifest(): Row[] {
+  const raw = JSON.parse(readFileSync(MANIFEST, "utf8")) as { prices: Row[] };
+  return raw.prices.map(({ env, amount, type, gate }) => ({ env, amount, type, gate }));
+}
+
+const byEnv = (a: Row, b: Row) => a.env.localeCompare(b.env);
+
+describe("stripe-expected-prices.json ↔ program-tier-pricing.ts", () => {
+  it("lists exactly the sellable prices, at the amounts and billing types the code charges", () => {
+    expect(rowsFromManifest().sort(byEnv)).toEqual(rowsFromCode().sort(byEnv));
+  });
+
+  it("does not ask for the disabled Owner Cockpit Pro", () => {
+    const envs = rowsFromManifest().map((r) => r.env);
+    expect(COCKPIT_PRODUCTS.ownerPro.enabled).toBe(false);
+    expect(envs).not.toContain(COCKPIT_PRODUCTS.ownerPro.stripeEnvKey);
+  });
+});
+
+// ---------------------------------------------------------------------------
+
+type StripePrice = Record<string, unknown>;
+let seq = 0;
+
+function price(amount: number, opts: Partial<{
+  type: "recurring" | "one_time";
+  interval: string;
+  intervalCount: number;
+  currency: string;
+  livemode: boolean;
+  product: string;
+}> = {}): StripePrice {
+  const type = opts.type ?? "recurring";
+  seq += 1;
+  return {
+    id: `price_fixture${String(seq).padStart(6, "0")}`,
+    unit_amount: amount,
+    currency: opts.currency ?? "eur",
+    active: true,
+    livemode: opts.livemode ?? true,
+    type,
+    billing_scheme: "per_unit",
+    recurring:
+      type === "recurring"
+        ? { interval: opts.interval ?? "month", interval_count: opts.intervalCount ?? 1, usage_type: "licensed" }
+        : null,
+    product: { name: opts.product ?? `product ${amount}`, active: true },
+  };
+}
+
+function allExpected(): StripePrice[] {
+  return rowsFromManifest().map((r) => price(r.amount, { type: r.type, product: r.env }));
+}
+
+/** Parent env minus any real Stripe key, so a test run can never reach live. */
+function scriptEnv(extra: Record<string, string> = {}): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = { ...process.env, ...extra };
+  if (!("STRIPE_SECRET_KEY" in extra)) delete env.STRIPE_SECRET_KEY;
+  return env;
+}
+
+function run(prices: StripePrice[]) {
+  const dir = mkdtempSync(join(tmpdir(), "stripe-verify-"));
+  const file = join(dir, "prices.json");
+  // Two pages, so the fixture shape matches a paginated live list.
+  const half = Math.ceil(prices.length / 2);
+  writeFileSync(
+    file,
+    JSON.stringify({
+      pages: [
+        { data: prices.slice(0, half), has_more: true },
+        { data: prices.slice(half), has_more: false },
+      ],
+    }),
+  );
+  const res = spawnSync("python3", [SCRIPT, "--fixture", file], {
+    encoding: "utf8",
+    env: scriptEnv(),
+  });
+  return { code: res.status, out: `${res.stdout}${res.stderr}` };
+}
+
+const TOTAL = () => rowsFromManifest().length;
+
+describe("stripe_verify_prices.py (offline, --fixture)", () => {
+  it("resolves every price and prints a complete env patch", () => {
+    const { code, out } = run(allExpected());
+    expect(out).toContain(`${TOTAL()}/${TOTAL()} resolved`);
+    for (const r of rowsFromManifest()) expect(out).toMatch(new RegExp(`^${r.env}=price_`, "m"));
+    expect(code).toBe(0);
+  });
+
+  it("2026-09-22 live snapshot: nothing matches, step C, legacy 49 € monthly is not a 49 € top-up", () => {
+    const live = [
+      price(4900, { product: "Revolis.AI Pro" }),
+      price(4900, { product: "Revolis.AI Starter" }),
+      price(4950, { type: "one_time", product: "Onboarding Revolis.AI" }),
+      price(9900, { type: "one_time", product: "Onboarding Revolis.AI" }),
+      price(9900, { product: "Active Force" }),
+      price(9900, { product: "Revolis.AI Pro" }),
+      price(19900, { product: "Market Vision" }),
+      price(29900, { product: "Revolis.AI Enterprise" }),
+      price(44900, { product: "Protocol Authority" }),
+    ];
+    const { code, out } = run(live);
+    expect(out).toContain(`0/${TOTAL()} resolved`);
+    expect(out).toMatch(/MISSING {2}STRIPE_PRICE_CREDITS_START[\s\S]*blizko: .*Revolis\.AI Starter.*type=recurring/);
+    expect(out).toContain("Seat brana NEUPLNA -> krok C");
+    expect(out).not.toMatch(/^STRIPE_PRICE_\w+=price_/m);
+    expect(code).toBe(1);
+  });
+
+  it("a 79 € price billed yearly is not the Solo seat", () => {
+    const prices = allExpected().filter((p) => p.unit_amount !== 7900);
+    prices.push(price(7900, { interval: "year", product: "Solo Seat" }));
+    const { code, out } = run(prices);
+    expect(out).toMatch(/MISSING {2}STRIPE_PRICE_SOLO_SEAT[\s\S]*blizko: .*interval=1xyear/);
+    expect(out).not.toMatch(/^STRIPE_PRICE_SOLO_SEAT=/m);
+    expect(code).toBe(1);
+  });
+
+  it("two matching candidates are AMBIG and never reach the env patch", () => {
+    const prices = [...allExpected(), price(7100, { product: "Team Seat (duplicate)" })];
+    const { code, out } = run(prices);
+    expect(out).toMatch(/AMBIG {4}STRIPE_PRICE_TEAM_SEAT {3}-- 2 kandidati/);
+    expect(out).not.toMatch(/^STRIPE_PRICE_TEAM_SEAT=/m);
+    expect(code).toBe(1);
+  });
+
+  it("test-mode and non-EUR prices do not count", () => {
+    const prices = allExpected().filter((p) => ![6300, 4700].includes(p.unit_amount as number));
+    prices.push(price(6300, { livemode: false }), price(4700, { type: "one_time", currency: "czk" }));
+    const { out } = run(prices);
+    expect(out).toMatch(/MISSING {2}STRIPE_PRICE_OFFICE_SEAT[\s\S]*livemode=false/);
+    expect(out).toMatch(/MISSING {2}STRIPE_PRICE_STARTER_PACK[\s\S]*currency=czk/);
+  });
+
+  it("seat gate complete with top-up missing: step B may proceed for what resolved", () => {
+    const prices = allExpected().filter((p) => p.unit_amount !== 99900);
+    const { code, out } = run(prices);
+    expect(out).toContain("Seat brana kompletna -> krok B");
+    expect(out).toMatch(/^STRIPE_PRICE_SOLO_SEAT=price_/m);
+    expect(code).toBe(1);
+  });
+});
+
+describe("secret hygiene", () => {
+  it("the key reaches Stripe only as an HTTP header, never through argv", () => {
+    // Code lines only: the comments may explain why curl is not used.
+    const code = (path: string) =>
+      readFileSync(path, "utf8")
+        .split("\n")
+        .filter((l) => !/^\s*#/.test(l))
+        .join("\n");
+    const src = code(SCRIPT);
+    const wrapper = code(WRAPPER);
+    expect(src).toContain('headers={"Authorization": f"Bearer {key}"}');
+    expect(src).not.toMatch(/subprocess|os\.system|Popen|\bcurl\b/);
+    // The wrapper must not touch the key at all — the original passed it to
+    // `curl -u` on a continuation line, visible in `ps` for the whole request.
+    expect(wrapper).not.toMatch(/\bcurl\b|STRIPE_SECRET_KEY/);
+    expect(wrapper).toMatch(/exec python3 .*stripe_verify_prices\.py/);
+  });
+
+  it("refuses a test-mode key instead of reporting 0/N", () => {
+    const res = spawnSync("python3", [SCRIPT], {
+      encoding: "utf8",
+      env: scriptEnv({ STRIPE_SECRET_KEY: "sk_test_fixture" }),
+    });
+    expect(res.stderr).toContain("TEST kluc");
+    expect(res.status).toBe(2);
+  });
+});
