@@ -9,7 +9,7 @@ export type AcquireEmailPayload = {
   version: 1;
   receivedAt: string;
   mailbox: { agencyId: string };
-  email: { to: string; subject: string; text: string; html: string };
+  email: { to: string; from: string; subject: string; text: string; html: string };
 };
 
 export type GmailInboundConfig = {
@@ -140,6 +140,9 @@ export function mapGmailMessageToAcquire(msg: GmailMessage, mailbox: InboundMail
     mailbox: { agencyId: mailbox.agencyId },
     email: {
       to: mailbox.email,
+      // Záložný signál zdroja: keď portál prestane uvádzať svoj názov v tele,
+      // rozpozná ho doména odosielateľa (SOURCE-FROM).
+      from: headerOf(msg.payload?.headers, "From"),
       subject: headerOf(msg.payload?.headers, "Subject"),
       text: bodies.text,
       html: bodies.html,
