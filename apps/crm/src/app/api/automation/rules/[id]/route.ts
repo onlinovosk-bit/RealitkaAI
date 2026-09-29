@@ -23,11 +23,11 @@ async function resolveOwnership(ruleId: string): Promise<{
   // If table/row doesn't exist yet (graceful for demo mode), allow
   if (!rule) return { ok: true, agencyId: null };
 
-  if (rule.agency_id && profile?.agency_id && rule.agency_id !== profile.agency_id) {
+  if (!profile?.agency_id || rule.agency_id !== profile.agency_id) {
     return { ok: false, status: 403, error: "Forbidden" };
   }
 
-  return { ok: true, agencyId: profile?.agency_id ?? null };
+  return { ok: true, agencyId: profile.agency_id };
 }
 
 export async function PATCH(

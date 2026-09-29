@@ -44,7 +44,7 @@ export async function POST(
     return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 });
   }
 
-  if (profile?.agency_id && row.agency_id !== profile.agency_id) {
+  if (!profile?.agency_id || row.agency_id !== profile.agency_id) {
     return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
   }
 
