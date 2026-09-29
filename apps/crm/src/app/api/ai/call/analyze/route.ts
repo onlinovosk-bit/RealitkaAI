@@ -32,10 +32,6 @@ export async function POST(req: Request) {
     const { data: callerProfile } = await supabase.from("profiles").select("agency_id").eq("auth_user_id", user.id).maybeSingle();
 
     const { data: leadRow } = await supabase.from("leads").select("agency_id").eq("id", lead_id).maybeSingle();
-    // Fail closed — same shape as the HubSpot sync gate. `callerProfile?.agency_id &&`
-    // short-circuits to "allowed" for a profile with no agency, which then wrote
-    // activity and tasks against an arbitrary lead through the admin path.
-    if (!callerProfile?.agency_id || leadRow?.agency_id !== callerProfile.agency_id) {
     // Fail closed pred admin zápisom: persist ide cez service-role klienta,
     // ktorý obchádza RLS, takže profil bez agentúry sa sem nesmie dostať.
     if (!sameAgency(callerProfile?.agency_id, leadRow?.agency_id)) {
