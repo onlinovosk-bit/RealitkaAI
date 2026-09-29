@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { deleteProperty, getProperty, updateProperty } from "@/lib/properties-store";
 import { createActivity } from "@/lib/activities-store";
 import { autoRecalculateForProperty } from "@/lib/matching-hooks";
+import { sameAgency } from "@/lib/tenant-scope";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -24,6 +25,8 @@ export async function PATCH(
     ]);
 
     if (!callerProfile?.agency_id || oldProperty?.agencyId !== callerProfile.agency_id) {
+    // Fail closed aj pri nenájdenej nehnuteľnosti: 403 nepovie, či id existuje.
+    if (!sameAgency(callerProfile?.agency_id, oldProperty?.agencyId)) {
       return errorResponse("Forbidden", 403);
     }
 
@@ -86,6 +89,8 @@ export async function DELETE(
     ]);
 
     if (!callerProfile?.agency_id || oldProperty?.agencyId !== callerProfile.agency_id) {
+    // Fail closed aj pri nenájdenej nehnuteľnosti: 403 nepovie, či id existuje.
+    if (!sameAgency(callerProfile?.agency_id, oldProperty?.agencyId)) {
       return errorResponse("Forbidden", 403);
     }
 

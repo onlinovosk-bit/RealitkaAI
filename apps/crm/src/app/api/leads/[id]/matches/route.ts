@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { listLeadPropertyMatchesByLeadId } from "@/lib/matching-store";
 import { createClient } from "@/lib/supabase/server";
+import { sameAgency } from "@/lib/tenant-scope";
 
 export async function GET(
   _request: Request,
@@ -20,6 +21,7 @@ export async function GET(
       .from("leads").select("agency_id").eq("id", id).maybeSingle();
 
     if (!callerProfile?.agency_id || lead?.agency_id !== callerProfile.agency_id) {
+    if (!sameAgency(callerProfile?.agency_id, lead?.agency_id)) {
       return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
     }
 

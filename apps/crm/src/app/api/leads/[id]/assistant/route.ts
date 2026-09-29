@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getAssistantAnswer } from "@/lib/assistant-chat";
+import { sameAgency } from "@/lib/tenant-scope";
 
 export async function POST(
   request: Request,
@@ -22,6 +23,7 @@ export async function POST(
       .from("leads").select("agency_id").eq("id", id).maybeSingle();
 
     if (!callerProfile?.agency_id || lead?.agency_id !== callerProfile.agency_id) {
+    if (!sameAgency(callerProfile?.agency_id, lead?.agency_id)) {
       return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
     }
 

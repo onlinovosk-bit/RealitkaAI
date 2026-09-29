@@ -14,6 +14,7 @@ import {
   captureAiRecommendationReaction,
   hashRecommendationDedupePart,
 } from "@/lib/moat-capture/log-ai-recommendation";
+import { sameAgency } from "@/lib/tenant-scope";
 
 function formatPriority(priority: string) {
   if (priority === "high") return "Vysoká";
@@ -44,6 +45,17 @@ export async function PATCH(
     const { data: leadRow } = await supabase
       .from("leads").select("agency_id").eq("id", previous.leadId).maybeSingle();
     if (leadRow?.agency_id !== callerProfile.agency_id) {
+    // Fail closed. `updateAiRecommendation` sa na agentúru nepýta, takže bez
+    // overeného tenanta by prešiel update cudzieho odporúčania. `leadId` je
+    // v type povinný — chýba iba vtedy, keď `previous` nie je nájdené.
+    if (!callerProfile?.agency_id || !previous?.leadId) {
+      return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+    }
+    const callerAgencyId = callerProfile.agency_id as string;
+
+    const { data: leadRow } = await supabase
+      .from("leads").select("agency_id").eq("id", previous.leadId).maybeSingle();
+    if (!sameAgency(callerAgencyId, leadRow?.agency_id)) {
       return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
     }
 
@@ -78,14 +90,15 @@ export async function PATCH(
           : "deactivated"
         : "updated";
 
+    // `callerAgencyId` je tu už overený vyššie — táto podmienka je o tom, či
+    // sa stav naozaj zmenil, nie o prístupe.
     if (
-      callerProfile?.agency_id &&
       previous?.status !== recommendation.status &&
       (recommendation.status === "active" || recommendation.status === "inactive")
     ) {
       const actionHash = hashRecommendationDedupePart(recommendation.title);
       captureAiRecommendationReaction({
-        agencyId: callerProfile.agency_id,
+        agencyId: callerAgencyId,
         dedupeKey: `crm_rec:${recommendation.leadId}:${actionHash}`,
         status: recommendation.status === "active" ? "accepted" : "rejected",
       });
