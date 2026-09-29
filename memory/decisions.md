@@ -44,6 +44,16 @@ agentúry (griefing, nie razenie). Nahlásené, neopravené.
 
 **PR:** #741 (draft), vetva reštartovaná z main po merge #733.
 
+## [2026-09-29] DEMAND-D1 — Demand Contract v1 postavený, na PROD vypnutý (founder GO: D1 + backfill experiment)
+- **BUILD** (Ústava: Q1 áno, Smolko platí za leady s dopytom; Q3 áno, bez dopytu nie je matching → obhliadka). Rozsah = D1 + backfill experiment, nič z D2–D7.
+- **Kontrakt:** 11 polí, každé `{value, confidence, source, evidence}`; hodnotu navrhne Haiku, **rozhoduje kód** (`lib/demand/verify.ts`): citát musí byť doslovne v texte a hodnota sa musí dať z citátu spätne prečítať, inak explicitné `unknown` + `rejected`.
+- **Úložisko:** `lead_demands` (append-only, `agency_id NOT NULL`, zápis len service role, čítanie tenant cez `profile_agencies_for_auth()`); `leads` sa nemení.
+- **Opravené počas práce (overené):** (1) `acquire/email` dosádzal všetkým leadom `property_type="Byt"`, `financing="Hypotéka"` — PROD 42/42 portálových leadov; (2) zdieľaný sanitizer **nemaskoval SK mobily `0903 123 456`** (regex 9 číslic namiesto 10) — týkalo sa všetkých 9 miest volajúcich Claude.
+- **Neoverené lokálne:** migrácia + RLS test (lokálny Postgres nešiel spustiť pod rootom) → dôkaz dá CI `supabase db reset` + `tests/rls/lead-demands-rls.test.ts`.
+- **Backfill experiment nespustený:** kontajner nemá `ANTHROPIC_API_KEY`; skript je pripravený, zápis do DB neexistuje. Navrhnutý prah: precision ≥ 95 % na pole, false+ ≤ 2 %.
+- **GO brány pred zapnutím:** oznámenie Smolkovi o Anthropic ako subprocesorovi (čl. 6 DPA) → migrácia na PROD → `DEMAND_EXTRACTION_ENABLED=true`.
+- Spec: `docs/architecture/demand-contract-v1.md`.
+
 ## [2026-09-29] — DPA s Reality Smolko je podpísaná (rev.2, apríl 2026); Anthropic chýba v zozname subprocesorov
 
 - **Platí podpísaná DPA rev.2 z apríla 2026** (founder poskytol PDF „Spracovanie osobných
