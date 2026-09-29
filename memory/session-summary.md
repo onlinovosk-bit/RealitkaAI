@@ -11,6 +11,29 @@
 - `memory/decisions.md`, `memory/session-summary.md`: prepend
 ### Ďalší krok
 `GO DEMAND-D1` — extrakcia dopytu z portálových e-mailov (94 % leadov bez dopytu); paralelne `GO B-REPO` pre Projekt B.
+## Session 2026-09-29 (CHECKOUT-ENV-01 — krok A)
+### Dokončené
+- **Korekcia stavu:** krok A NIE JE nezačatý — prebehol 2026-09-22 → **0/9**
+  (`docs/reports/2026-09-22-stripe-verify-prices.md`). Blokér príjmu je **krok C**.
+  `memory/open-tasks.md` opravený.
+- `scripts/ops/stripe-expected-prices.json`: 10 cien (pribudol `STARTER_PACK` 47 €, predáva sa na `/balik`, v pôvodných 9 chýbal).
+- `scripts/ops/stripe_verify_prices.py`: stránkovanie, `expand product`, kontrola typu/intervalu/per_unit/livemode/EUR, „blízko" dôvody pri MISSING, odmietne test kľúč, `--spec` pre krok C bez kľúča, env patch iba z jednoznačných zhôd.
+- Kľúč už nejde do argv (pôvodne `curl -u` → viditeľný v `ps`).
+- `apps/crm/tests/verification/stripe-expected-prices.verification.test.ts`: 10 testov, manifest ↔ kód + offline fixtures vrátane reálneho snapshotu z 22. 9. Mutation proof 7× červená → zelená.
+### Rozpracované / Pending
+- **Krok C (founder):** vytvoriť ceny podľa `bash scripts/ops/stripe-verify-prices.sh --spec`, minimum 3 seat ceny; potom VERIFY → B → D.
+- 22. 9. report uvádza, že agent čítal `sk_live_` z lokálneho `.vercel/.env.production.local` — founder zváži rotáciu a restricted key.
+- Marketing `/api/starter-pack/checkout` nevaliduje formát price ID (`isValidStripePriceId`) — drobnosť, neopravené.
+- Typecheck ratchet: strop 54 → 51 (ubudli 3), nezmenené.
+### Kľúčové súbory zmenené
+- scripts/ops/stripe-verify-prices.sh: tenký wrapper nad Pythonom
+- scripts/ops/stripe_verify_prices.py: nový VERIFY
+- scripts/ops/stripe-expected-prices.json: nový manifest
+- apps/crm/tests/verification/stripe-expected-prices.verification.test.ts: nový drift + behavior test
+- docs/ops/2026-09-21-stripe-verify-kit.md: stav + použitie
+- memory/open-tasks.md, memory/decisions.md
+### Ďalší krok
+Founder: krok C v Stripe live mode (`--spec`), potom spustiť VERIFY a poslať výstup.
 ## Session 2026-09-29 (UPTM-011 … UPTM-017 — uptm-runner)
 ## Session 2026-09-29 (DEMAND-D1)
 ### Dokončené
@@ -29,6 +52,7 @@
 - Kolo 2: gold-dataset gate, D4 vstupný kontrakt, plán opravy 42/59 leadov, privacy audit + opravy (#750), Truth Matrix (#745)
 ### Ďalší krok
 Founder spustí `extract` na vzorke 60 leadov a vyplní gold dataset → `score` → PASS/FAIL rozhodne o flagu. Paralelne: merge #750 (P0 privacy).
+
 
 ## Session 2026-09-29
 ### Dokončené

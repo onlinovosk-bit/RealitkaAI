@@ -1,6 +1,6 @@
 # Open Tasks — Prioritized Queue
 
-> Posledná aktualizácia: 2026-09-21 | Task-loop sync (/upgrade prod smoke FAIL → root cause)
+> Posledná aktualizácia: 2026-09-29 | CHECKOUT-ENV-01: A hotové (0/9), blokér je C
 
 ## P0 — Billing /upgrade Stripe (revenue)
 
@@ -36,7 +36,15 @@ IDs. Musia existovať v Stripe účte a byť overené proti nemu.
 
 **Poradie krokov (founder, 2026-09-21):**
 
-- [ ] **A. Stripe VERIFY** — read-only. **Spusti:**
+- [x] **A. Stripe VERIFY — PREBEHOL 2026-09-22 → 0/9 → krok C.**
+      `docs/reports/2026-09-22-stripe-verify-prices.md`: na live účte je 9 cien,
+      všetky zo starého program modelu (49/99/199/299/449 €), žiadna seat/cockpit/
+      top-up suma. Tento riadok bol omylom nezaškrtnutý do 2026-09-29, takže
+      handoff hlásil „A nezačaté". **Skutočný blokér je C.**
+      2026-09-29: skript prepísaný (manifest + drift test voči kódu, 10 objektov
+      vrátane `STARTER_PACK`, kľúč len v HTTP hlavičke, `--spec` pre krok C).
+      Pôvodný zápis:
+      Read-only. **Spusti:**
       `STRIPE_SECRET_KEY=sk_live_… bash scripts/ops/stripe-verify-prices.sh`
       (#622 — vypíše `N/9 resolved` a riadky `KĽÚČ=price_…` pripravené na env).
       **Ako čítať výsledok** a čo robiť pri každom výstupe:
@@ -48,7 +56,9 @@ IDs. Musia existovať v Stripe účte a byť overené proti nemu.
       neblokujú nič a preto sú nebezpečné; top-up ×4 sú samostatná brána).
       `_OWNER_COCKPIT_PRO` sa neoveruje — `enabled: false`.
 - [ ] **B. Ak existujú** → env patch s reálnymi `price_…` ID (founder zapisuje)
-- [ ] **C. Ak neexistujú** → STOP, samostatné GO na vytvorenie Stripe Products/Prices
+- [ ] **C. ← TU SME. Ceny neexistujú** → founder vytvorí v Stripe live mode presne to,
+      čo vypíše `bash scripts/ops/stripe-verify-prices.sh --spec` (bez kľúča; minimum
+      pre P0 = 3 seat ceny). Agent ceny nevytvára. Potom znova VERIFY → B.
 - [ ] **D.** Vercel production env → deploy → prihlásený `/upgrade` smoke → Stripe Checkout
 - [x] **E.** `/porovnanie-programov` cleanup — hotové 2026-09-23 (#647 → `fc381004`),
       viď `FUNNEL-PRICING-01` nižšie. Nemiešalo sa do D, ako bolo určené.
