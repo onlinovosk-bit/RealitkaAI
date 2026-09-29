@@ -25,6 +25,13 @@ osobné údaje.
 > | D3–D7 | plán, **neschválené** | — |
 > | MCP, bus runtime, Sentry, veľké command center, Projekt B ako hlavný sprint | ODLOŽENÉ | founder, 2026-09-29 |
 > | Merge tohto PR | **nemergovať len preto, že je CI zelené** | founder, 2026-09-29 |
+> | #749 (D1) do review/merge pipeline | GO | founder, 2026-09-29 (druhé kolo) |
+> | Backfill experiment ako formálny gate (gold dataset, UNKNOWN ≠ chyba, unsupported = 0) | GO | #749 |
+> | Audit všetkých volaní LLM na PII (P0 gate) | GO → hotový | #750 |
+> | `DEMAND_EXTRACTION_ENABLED=true` na PROD | **WAIT**: až po backfill gate + privacy gate | — |
+> | Automatický outbound na 439 starých leadov | **NIE** | — |
+> | Pipeline € bez reálneho zdroja rozpočtu | **NIE** | — |
+> | Metrika „feature complete“ → Capability Truth Matrix (CODE / VERIFIED / PRODUCTION PROVEN) | PRIJATÉ | `docs/architecture/capability-truth-matrix.md` |
 
 ---
 
