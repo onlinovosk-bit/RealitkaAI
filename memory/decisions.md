@@ -1,5 +1,87 @@
 # Critical Decisions Log
 
+## [2026-09-29] Príjem leadov: dva tiché výpadky opravené, tretí je zatiaľ len zmeraný
+
+**Kontext:** od 2026-09-22 nevznikol ani jeden lead, hoci maily do inbound schránky
+chodili ďalej. Founder našiel v schránke skutočný dopyt z nehnutelnosti.sk, ktorý sa
+leadom nikdy nestal.
+
+### Čo bolo zmergované
+
+| PR | Čo |
+|---|---|
+| #728 | `NOT_A_LEAD` log nesie presný dôvod (`duplicate` / `not_inquiry` / `no_contact` / `unknown_source`) + technické príznaky bez osobných údajov |
+| #731 | revert #370 — main sa nedal sparsovať, 4 produkčné deploymenty ERROR, každý PR červený z cudzieho dôvodu |
+| #732 | pätička „odhlásiť" už nezahodí skutočný dopyt |
+| #739 | zdroj sa rozpozná aj podľa domény odosielateľa, nielen podľa textu |
+| #743 | doména odosielateľa v logu + zlyhaný AI návrh na `warn` *(otvorený)* |
+
+### Príčina výpadku (#732)
+
+`eventKind` sa nastavil na `unsubscribe`, keď sa `/unsubscribe|odhlásiť/` našlo
+**kdekoľvek** v predmete, texte alebo HTML. Portálové notifikácie dnes nesú pätičku
+„Odhlásiť sa z odberu", takže **každý dopyt** sa vyhodnotil ako odhlásenie a zahodil.
+Rozpoznanie portálu pritom fungovalo — zhodilo to výlučne to jedno slovo v pätičke.
+
+**Oprava:** o odhlásení rozhoduje **predmet**; telo sa berie do úvahy len vtedy, keď mail
+nenesie žiadny kontakt (vtedy z neho lead aj tak byť nemôže). Route posiela `email.subject`
+do parsera; bez neho sa použije prvý riadok, takže pôvodní volajúci aj eval dataset bežia ďalej.
+
+### Prečo #739 (rovnaká trieda chyby, iný spúšťač)
+
+Rozpoznanie zdroja stálo výlučne na texte. Keby portál prestal uvádzať svoj názov,
+`source` spadne na `Unknown` → `unknown_source` → `NOT_A_LEAD`, bez akéhokoľvek signálu.
+`SOURCE_RULES` má preto dva nezávislé signály: `text` (primárny, nezmenený) a `domain`
+odosielateľa (záloha, pýta sa až keď text zdroj neurčil). Zhoda je presná doména alebo
+subdoména — `nehnutelnosti.sk.evil.com` neprejde. Záchrana cez odosielateľa pridá
+varovanie `source_from_sender`, aby bolo vidno, že textové pravidlo hnije.
+`PARSER_VERSION` 1.3 → 1.4.
+
+### Zmerané na PROD 2026-09-29 08:42 (nie odvodené)
+
+- **Reťazec nie je prerušený:** o 07:37 vznikol lead cez e-mailovú bránu
+  (`last_contact: "Práve vytvorený (email gateway)"`). Pozor — má `source: web_form`,
+  takže to **nie je** dôkaz, že #732 zachraňuje portálové dopyty.
+- **Dopyty sa stále zahadzujú, ale z iného dôvodu.** Štyri maily 07:59–08:40, všetky
+  `source: Unknown`, `source_detected_by: none`, `has_sender: **true**`,
+  `has_message: false`, `has_listing_ref: false`, a všetky s `to_unmatched`.
+- **Lead z 07:37 nedostal AI návrh** — nula aktivít, `ai_triage_at` prázdne. Dôvod sa
+  zistiť nedal (viď nižšie).
+
+### Dve veci, v ktorých som sa mýlil
+
+1. **Cloudflare Worker `From` POSIELA.** V #739 som napísal opak. Každý produkčný
+   záznam má `has_sender: true`. Záloha zdroja na hlavnej ceste teda beží.
+2. **`has_sender: boolean` bola priúzka voľba.** Odosielateľ je známy, ale jeho doména
+   nesedí na žiadne pravidlo — a nevieme, ktorá to je, takže `unknown_source` sa nedá
+   vyriešiť. #743 nahrádza príznak za `sender_domain` (len doména, nikdy lokálna časť).
+
+### Poznámka k pozorovateľnosti (platí aj mimo tejto úlohy)
+
+Vercel na tomto pláne drží **len `warn`/`error`** a zoskupuje riadky **podľa requestu**.
+Úspešný request bez varovania je v logoch neviditeľný celý — vrátane `LEAD_CREATED`
+a `INBOUND_REPLY_DRAFT`, ktoré sú `console.log`. Retencia je ~1 h; request z 07:37 bol
+o 08:42 už preč. #743 preto posiela **nevytvorený** návrh na `warn`.
+
+### GDPR
+
+`gdpr-advisor` skill, ktorý CLAUDE.md (direktíva 5) vyžaduje, **v repozitári neexistuje** —
+`.claude/skills/` obsahuje len `kontrolor`, `strategic-analysis`, `task-loop`. Rozbor pre
+`sender_domain` je preto ručný a je v popise #743: 6(1)(f), test proporcionality,
+minimalizácia. Logujeme **len registrovateľnú doménu**, nikdy lokálnu časť; test to stráži
+(`expect(logged).not.toContain("@")`). Osobné údaje sa do logov nedostávajú ani inak —
+žiadne meno, adresa, telefón ani text správy.
+
+### Otvorené
+
+- **Koľko dopytov sa od 22. 9. stratilo, sa už nedozvieme** — surové maily sa neukladajú.
+- **Kontrakt Cloudflare Workera je mimo verzovania a mimo review.** `payload.mailbox.agencyId`
+  určuje agentúru a `email.to` makléra; oboje príde zvonka a nič v repozitári to nekontroluje.
+- **`to_unmatched` na všetkých štyroch mailoch** — adresa, na ktorú chodia, nie je
+  v `inbound_mailboxes`. Vlastná trieda problému (GO MAILBOX).
+- **#370 (atomické kreditové RPC) je stále neimplementované.** Revert odstránil rozbitý
+  kód; pôvodný zámer si vyžaduje čerstvý, otestovaný PR.
+
 ## [2026-09-29] — DPA s Reality Smolko je podpísaná (rev.2, apríl 2026); Anthropic chýba v zozname subprocesorov
 
 - **Platí podpísaná DPA rev.2 z apríla 2026** (founder poskytol PDF „Spracovanie osobných
