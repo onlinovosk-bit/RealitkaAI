@@ -12,6 +12,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getClaudeClient, CLAUDE_SONNET } from "@/lib/ai/claude";
+import { sanitizeText } from "@/lib/ai/sanitize";
 import { SYSTEM_PROMPT, buildListingUserPrompt, sanitizePropertyInput } from "@/lib/ai/listing-content";
 import type { PropertyInput, ListingPersona } from "@/lib/ai/listing-content";
 
@@ -31,7 +32,8 @@ export async function POST(req: Request) {
   }
 
   const encoder   = new TextEncoder();
-  const userPrompt = buildListingUserPrompt(property, persona);
+  // Streams bypass callClaude, so mask here: agent_notes may carry owner contacts.
+  const userPrompt = sanitizeText(buildListingUserPrompt(property, persona)).sanitized;
 
   const readable = new ReadableStream({
     async start(controller) {

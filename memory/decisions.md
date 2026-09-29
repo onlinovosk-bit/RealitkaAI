@@ -1,5 +1,31 @@
 # Critical Decisions Log
 
+## 2026-09-29 — CHECKOUT-ENV-01: krok A je hotový, VERIFY zoznam je teraz odvodený z kódu
+
+**Zistenie:** handoff tvrdil „krok A nezačatý". Nie je to pravda:
+`docs/reports/2026-09-22-stripe-verify-prices.md` → **0/9**, na live účte sú len
+ceny starého program modelu. Riadok v `open-tasks.md` ostal nezaškrtnutý.
+Skutočný blokér príjmu je **krok C** (founder vytvorí ceny v Stripe).
+
+**Rozhodnutie:** očakávania VERIFY sa presúvajú z Python literálu v bash skripte
+do `scripts/ops/stripe-expected-prices.json` a test ich porovnáva s
+`program-tier-pricing.ts`. Dôvod: ceny v kroku C bude founder zadávať ručne,
+VERIFY je jediná kontrola, že sa zhodujú so sumou, ktorú checkout účtuje. Ručne
+udržiavaný zoznam už raz zaostal — `STRIPE_PRICE_STARTER_PACK` (47 €, predáva
+sa na `/balik`) v ňom chýbal. 9 → 10 objektov.
+
+**Bezpečnosť:** pôvodný skript posielal kľúč ako `curl -u "$STRIPE_SECRET_KEY:"`,
+teda v argv, viditeľný v `ps` (porušenie pravidla „tokeny nikdy ako CLI flag").
+Teraz Python `urllib`, kľúč iba v hlavičke; test to stráži a padol na pôvodnom
+wrapperi. Odporúčaný je restricted key s právom *Prices: Read*.
+
+**Mutation proof:** 7 mutácií (suma v kóde, chýbajúci riadok v manifeste,
+vypnutá kontrola intervalu, prvá zhoda namiesto AMBIG, prijatie test kľúča, kľúč
+v curl argv, pôvodný wrapper) → každá červená, návrat → 10/10 zelené.
+
+**Stav:** BUILD, pretože odblokúva self-service príjem (PRIME DIRECTIVE). Nič
+nevytvára v Stripe, nečíta kľúč, nemení produkčný kód.
+
 ## 2026-09-29 — CREDITS-RELAND: #370 vrátené poriadne, migrácia ako prvá
 
 **Rozhodnutie:** #370 sa nevracia prehratím jeho commitu. Migrácia ide na PROD
@@ -43,6 +69,25 @@ a tri nové RPC.
 agentúry (griefing, nie razenie). Nahlásené, neopravené.
 
 **PR:** #741 (draft), vetva reštartovaná z main po merge #733.
+
+## [2026-09-29] DEMAND-D1 kolo 2 — backfill gate, D4 kontrakt, privacy audit, Truth Matrix (founder GO)
+- **GO:** #749 do review (označený ready), backfill experiment, audit volaní LLM. **WAIT:** flag na PROD. **NIE:** outbound na 439 leadov, pipeline € bez zdroja rozpočtu, MCP/bus pred D1.
+- **Backfill = formálny gate** (`lib/demand/backfill-score.ts`): gold dataset (`evidence_present`, `gold_value`, `evidence_span`); UNKNOWN pri texte bez údaja nie je chyba; precision ≥ 95 % pre lokalitu, budget, typ, izby, disposition; false values ≤ 2 %; `unsupported = 0`; support < 10 → INSUFFICIENT. CLI exit 0 len pri PASS.
+- **D4 vstupný kontrakt** (`docs/architecture/matching-input-contract-v1.md`, len spec): matching nesmie čítať `leads.property_type/rooms/financing/timeline` — predvyplnené na **4 miestach** (acquire/email opravené; `lead-create-form.tsx` „Byt/2 izby/Hypotéka/Do 3 mesiacov“, `map-realvia-client.ts:221`, `integrations-store.ts:317`).
+- **Historické dáta** (`docs/reports/2026-09-29-invented-defaults-data-fix.md`): 59 leadov má „Byt“+„Hypotéka“, z toho 42 portálových; dokázateľne neupravených 12 → SQL pripravené, **nespustené**. 47 nerozlíšiteľných sa hromadne nemení.
+- **Privacy audit (#750):** 34 volaní LLM (23 živých). 3 živé úniky (call-coach/stream, listing-content/stream, embeddings) opravené; sanitizer doplnený o medzinárodné čísla. 19 miest posiela celé mená (MINIMIZE, rozhodnutie foundera). `/legal/sub-processors` neuvádza Anthropic.
+- **Anthropic podmienky overené** z Commercial Terms (bez tréningu na Customer Content) a DPA (processor, SCC M2/M3, 15 dní na námietku k subprocesorom, mazanie do 30 dní po skončení). Retencia API počas zmluvy a miesto spracovania: OVERIŤ (oficiálna stránka nedostupná z prostredia).
+- **Capability Truth Matrix** zavedená v #745 (`docs/architecture/capability-truth-matrix.md`).
+
+## [2026-09-29] DEMAND-D1 — Demand Contract v1 postavený, na PROD vypnutý (founder GO: D1 + backfill experiment)
+- **BUILD** (Ústava: Q1 áno, Smolko platí za leady s dopytom; Q3 áno, bez dopytu nie je matching → obhliadka). Rozsah = D1 + backfill experiment, nič z D2–D7.
+- **Kontrakt:** 11 polí, každé `{value, confidence, source, evidence}`; hodnotu navrhne Haiku, **rozhoduje kód** (`lib/demand/verify.ts`): citát musí byť doslovne v texte a hodnota sa musí dať z citátu spätne prečítať, inak explicitné `unknown` + `rejected`.
+- **Úložisko:** `lead_demands` (append-only, `agency_id NOT NULL`, zápis len service role, čítanie tenant cez `profile_agencies_for_auth()`); `leads` sa nemení.
+- **Opravené počas práce (overené):** (1) `acquire/email` dosádzal všetkým leadom `property_type="Byt"`, `financing="Hypotéka"` — PROD 42/42 portálových leadov; (2) zdieľaný sanitizer **nemaskoval SK mobily `0903 123 456`** (regex 9 číslic namiesto 10) — týkalo sa všetkých 9 miest volajúcich Claude.
+- **Neoverené lokálne:** migrácia + RLS test (lokálny Postgres nešiel spustiť pod rootom) → dôkaz dá CI `supabase db reset` + `tests/rls/lead-demands-rls.test.ts`.
+- **Backfill experiment nespustený:** kontajner nemá `ANTHROPIC_API_KEY`; skript je pripravený, zápis do DB neexistuje. Navrhnutý prah: precision ≥ 95 % na pole, false+ ≤ 2 %.
+- **GO brány pred zapnutím:** oznámenie Smolkovi o Anthropic ako subprocesorovi (čl. 6 DPA) → migrácia na PROD → `DEMAND_EXTRACTION_ENABLED=true`.
+- Spec: `docs/architecture/demand-contract-v1.md`.
 
 ## [2026-09-29] — DPA s Reality Smolko je podpísaná (rev.2, apríl 2026); Anthropic chýba v zozname subprocesorov
 
