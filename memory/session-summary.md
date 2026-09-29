@@ -1,3 +1,45 @@
+## Session 2026-09-29 (príjem leadov: pätička, zdroj podľa odosielateľa, diagnostika)
+
+### Dokončené
+- **#728 INBOUND-NOTALEAD-01** — `NOT_A_LEAD` log nesie presný dôvod + technické príznaky
+  bez osobných údajov (`apps/crm/src/lib/acquire/email-adapter.ts`).
+- **#731 revert #370** — produkcia sa nenasadila ~1 h, 4 deploymenty ERROR, main sa nedal
+  sparsovať. Overené cez `pg_proc`, že migrácia z #370 sa do PROD nikdy nedostala.
+- **#732 pätička „odhlásiť"** — o odhlásení rozhoduje predmet, nie výskyt slova kdekoľvek
+  v tele. Nový `unsubscribe-footer.test.ts` padá 4 zo 6 na starom parseri.
+- **#739 SOURCE-FROM** — `SOURCE_RULES` má dva nezávislé signály (text + doména
+  odosielateľa), varovanie `source_from_sender`, `PARSER_VERSION` 1.3 → 1.4.
+  Gmail pull hlavičku `From` mal a zahadzoval ju; teraz ju posiela.
+- **PROD kontrola 08:42** — lead o 07:37 vznikol cez e-mailovú bránu (ale `web_form`,
+  nie portál). Štyri maily 07:59–08:40 zahodené ako `unknown_source` /`not_inquiry`,
+  všetky s `has_sender: true` a `source_detected_by: none`.
+
+### Rozpracované / Pending
+- **#743 DIAG-2 je otvorený a zelený** (7/7 checkov) — `sender_domain` v logu namiesto
+  `has_sender`, nevytvorený AI návrh na `warn`. Čaká na merge foundera.
+- **Lead z 07:37 nedostal AI návrh** — nula aktivít, dôvod neznámy. Odpoveď príde až
+  z logov po nasadení #743.
+- **`to_unmatched` na všetkých štyroch mailoch** — adresa nie je v `inbound_mailboxes`
+  (GO MAILBOX, read-only analýza).
+- **Kontrakt Cloudflare Workera mimo repozitára** — určuje agentúru aj makléra, nič ho
+  nekontroluje.
+- **#370 (atomické kreditové RPC)** čaká na čerstvú, otestovanú implementáciu.
+- **`gdpr-advisor` skill neexistuje**, hoci ho CLAUDE.md direktíva 5 vyžaduje. GDPR rozbor
+  pre `sender_domain` spravený ručne v popise #743.
+
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/acquire/email-adapter.ts`: `isUnsubscribe` podľa predmetu; `SOURCE_RULES`
+  ako tabuľka s `text` + `domain`; `senderDomainOf`; `sender_domain` v diagnostike.
+- `apps/crm/src/app/api/acquire/email/route.ts`: posiela `subject` aj `from` do parsera;
+  `NOT_A_LEAD` log nesie dôvod a príznaky.
+- `apps/crm/src/lib/inbound/gmail-pull.ts`: hlavička `From` ide do payloadu.
+- `apps/crm/src/lib/inbound/reply-draft.ts`: nevytvorený návrh na `warn`, vytvorený na `log`.
+- Nové testy: `not-lead-reason.test.ts`, `unsubscribe-footer.test.ts`, `source-detection.test.ts`,
+  rozšírený `reply-draft.test.ts`.
+
+### Ďalší krok
+Zmergovať #743 a z prvých logov po nasadení zistiť, ktorá doména dnes chodí (patrí do
+`SOURCE_RULES`, alebo je to bežná pošta?) a prečo lead nedostáva AI návrh.
 ## Session 2026-09-29 (PROON-AUDIT)
 ### Dokončené
 - Audit Proon Channel Manager + mapovanie na Revolis + 1-týždňová roadmapa: `docs/reports/2026-09-29-proon-channel-manager-audit.md`
