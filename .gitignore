@@ -53,6 +53,8 @@ apps/crm/error-capture.log
 .swarm/*.json
 apps/crm/supabase/.temp/
 apps/crm/tmp-*.json
+# DEMAND-BACKFILL experiment output (redacted lead text) — never commit
+apps/crm/tmp-demand-backfill/
 tmp-*.md
 apps/crm/design-handoff-zips/
 
