@@ -1,3 +1,75 @@
+## Session 2026-09-28/29 (PR-BACKLOG-TRIAGE, TENANT-FAILOPEN-SWEEP, škoda po #370)
+
+### Dokončené
+- **PR-BACKLOG-TRIAGE** (#730) — `docs/reports/2026-09-28-pr-backlog-triage.md`.
+  Každý otvorený PR meraný dvakrát: či je opravovaný vzor **dnes** na `main`,
+  a či sa vetva dá zmergovať (`git merge-tree --write-tree`). Z dvanástich
+  platí päť, sedem je prekonaných.
+- **TENANT-FAILOPEN-SWEEP** (#730) — vzor
+  `if (caller?.agency_id && row.agency_id !== caller.agency_id)` sa pri
+  `agency_id = null` skratuje a bránu preskočí. Nie je teoretický:
+  `api/invite/route.ts` profily bez agentúry reálne vyrába. Prepísaných
+  **12 z 13 miest v 9 súboroch** na `sameAgency()` v **existujúcom**
+  `src/lib/tenant-scope.ts`. 21 nových testov, všetky mutačne overené.
+- **Brána odbehnutá na vetvách #447, #462, #490** proti aktuálnemu `main`
+  (nie proti ich starej báze). Všetky tri: gate PASS, konflikt iba
+  v `memory/session-summary.md`. #490 navyše zhasol práve ten test, ktorý
+  bol naň napísaný — výnimka v allowliste po ňom prestáva platiť.
+
+### Tri opravy vlastných chýb
+1. **Triáž overila zlučiteľnosť stromov, nie či vetva kompiluje.** #370 som
+   odporučil na merge; jeho vlastný kód mal tri parsing errors. Keby som na
+   `refs/pr/370` pustil lint, vyšli by pred mergom, nie po ňom. Dopísané do
+   dokumentu aj s príkazom pre zvyšné PR.
+2. **Napísal som, že „safety je v RPC", bez toho, aby som sa do RPC pozrel.**
+   Nebola tam. Zmerané na Postgres 16: stará `expire_grant_credits` vrátila
+   `{"ok":true,"expired":100}` a vynulovala zostatok, ktorý bol grantom za
+   aktuálny mesiac.
+3. **Prvé meranie mergovateľnosti bolo nesprávne.** `git diff origin/main <head>`
+   tvrdil, že osem PR zmaže 136–841 súborov. `git diff` porovnáva stromy, merge
+   berie zmeny od spoločného predka. Skutočný merge: štyri čisté s nulou
+   zmazaných, jediný kódový konflikt v #444.
+
+### Čo sa stalo s #370
+Founder ho zmergoval; merge bol rozpolený — stará a nová verzia štyroch súborov
+zostali v strome vedľa seba bez konfliktných markerov. Tri neparsovali;
+`credits-billing.ts` parsoval a padal až za behu (`ReferenceError: supabase is
+not defined`) uprostred Stripe top-up webhooku, teda **po** pripísaní kreditov.
+Opravil som to, ale iná session #370 medzitým celá revertla (#731). Revert bol
+správnejší: moja oprava bola rekonštrukcia zámeru z dvoch prekrytých verzií,
+revert vracia stav, ktorý raz preukázateľne fungoval. Vyňal som svoju opravu
+a konflikt vyriešil v prospech `main`.
+
+### Nález, ktorý prežíva revert #370
+Ak sa #370 bude robiť znova, RPC `expire_grant_credits` **musí** odmietnuť
+expiráciu, keď je v ledgeri grant za aktuálny period — inak retry po zlyhanej
+expirácii zmaže práve udelený mesačný grant. Text migrácie s guardom aj štyri
+odbehnuté scenáre sú v histórii vetvy `claude/epic-mendel-oal1wt`, commit
+`6b049cf5`.
+
+### Rozpracované / Pending
+- **#490 → #447 → #462** čakajú na merge; brána na všetkých troch overená.
+  #490 potrebuje úpravu allowlistu v sweep teste (v tomto PR).
+- **#486 sa dá zavrieť** — pokryté sweepom, jeho vlastné testy prevzaté doslova.
+- **Zavrieť ako prekonané:** #371, #444, #459, #439, #475.
+- **`CHECKOUT-ENV-01`** — bez `STRIPE_PRICE_*_SEAT` v produkcii sa nedá zaplatiť.
+  Founderov krok, skript pripravený od #622.
+- **90 stashov na jednom disku bez zálohy** — dry-run výpis zo
+  `stash-to-branches.ps1` stále neprišiel. Jediná položka, kde hrozí
+  nenávratná strata.
+
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/tenant-scope.ts`: `sameAgency()` — fail-closed zhoda tenantov
+- 9 route súborov v `apps/crm/src/app/api/`: brány prepísané na `sameAgency()`
+- `apps/crm/tests/verification/tenant-failopen-sweep.verification.test.ts`:
+  vzor mimo celého `src/app/api`, výnimka viazaná na existenciu migrácie
+- `docs/reports/2026-09-28-pr-backlog-triage.md`: triáž + dva dodatky
+
+### Ďalší krok
+Founder merguje #490 → #447 → #462 v tomto poradí; potom zavrieť #486, #371,
+#444, #459, #439, #475. Paralelne `CHECKOUT-ENV-01` — bez neho je tržba nula
+bez ohľadu na zvyšok.
+
 ## Session 2026-09-28 (RLS-NULL-ESCAPES aplikované na PROD)
 
 ### Dokončené

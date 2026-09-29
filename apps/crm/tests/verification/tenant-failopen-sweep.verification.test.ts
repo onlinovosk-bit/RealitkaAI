@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -19,11 +19,30 @@ const API_ROOT = join(CRM_ROOT, "src/app/api");
 const FAIL_OPEN = /\?\.agency_id\s*&&/;
 
 /**
- * Jediná známa výnimka. `lead_assignment_rules` nemá stĺpec `agency_id` — oprava
- * potrebuje migráciu a rieši ju PR #490 vrátane tenant RLS. Keby sme sem siahli
- * teraz, #490 by sa prestalo dať zmergovať.
+ * Jediná výnimka — a je naviazaná na svoju PRÍČINU, nie na dátum ani na to, či si
+ * niekto spomenie ju zmazať.
+ *
+ * `lead_assignment_rules` nemá stĺpec `agency_id`, takže tam nie je podľa čoho
+ * bránu postaviť. Chýbajúci stĺpec dopĺňa migrácia z PR #490. Kým tá migrácia
+ * v repozitári nie je, vzor v tomto jednom súbore tolerujeme; v okamihu, keď
+ * pribudne, výnimka zaniká a súbor musí byť čistý.
+ *
+ * Preto tu nie je pevný zoznam. Pevný zoznam by po merge #490 zhnil a nikto by
+ * si to nevšimol — presne to, čomu má tento súbor brániť. Zoznam sa počíta zo
+ * stavu repozitára, takže test je zelený pred aj po #490 a červený vtedy, keď
+ * skutočne má byť.
  */
-const ALLOWED = new Set(["automation/rules/[id]/route.ts"]);
+const ASSIGNMENT_RULES_ROUTE = "automation/rules/[id]/route.ts";
+const ASSIGNMENT_RULES_TENANT_MIGRATION =
+  "supabase/migrations/20260827230000_lead_assignment_rules_tenant_rls.sql";
+
+function agencyColumnMigrationLanded(): boolean {
+  return existsSync(join(CRM_ROOT, ASSIGNMENT_RULES_TENANT_MIGRATION));
+}
+
+const ALLOWED = new Set(
+  agencyColumnMigrationLanded() ? [] : [ASSIGNMENT_RULES_ROUTE],
+);
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
@@ -50,11 +69,20 @@ describe("[verification] tenant gates fail closed across the API surface", () =>
     expect(offenders).toEqual([]);
   });
 
-  it("výnimka stále existuje — keď ju #490 opraví, zmaž ju aj odtiaľto", () => {
-    // Bez tejto kontroly by zoznam výnimiek potichu zhnil.
-    for (const rel of ALLOWED) {
-      const body = readFileSync(join(API_ROOT, rel), "utf8");
-      expect(FAIL_OPEN.test(body)).toBe(true);
+  it("výnimka platí presne dovtedy, kým chýba migrácia, ktorá jej berie dôvod", () => {
+    const migrationLanded = agencyColumnMigrationLanded();
+    const routeFailsOpen = FAIL_OPEN.test(
+      readFileSync(join(API_ROOT, ASSIGNMENT_RULES_ROUTE), "utf8"),
+    );
+
+    if (migrationLanded) {
+      // #490 je vnútri: `lead_assignment_rules` má `agency_id`, bránu sa dá
+      // postaviť, takže tolerancia skončila.
+      expect(routeFailsOpen).toBe(false);
+    } else {
+      // Ešte nie je čím bránu postaviť. Keby tu vzor už nebol, výnimka je
+      // zbytočná a patrí preč aj s touto vetvou.
+      expect(routeFailsOpen).toBe(true);
     }
   });
 
