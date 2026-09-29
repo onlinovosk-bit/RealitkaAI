@@ -26,10 +26,17 @@ describe("notLeadReason", () => {
     expect(notLeadReason(parseEmail(INQUIRY, "2026-09-28"), true)).toBe("duplicate");
   });
 
-  it("not_inquiry — any 'odhlásiť' / unsubscribe text flips the event kind", () => {
-    const ev = parseEmail(`${INQUIRY}\nOdhlásiť odber noviniek`, "2026-09-28");
+  it("not_inquiry — an unsubscribe named in the subject", () => {
+    const ev = parseEmail("Odhlásenie z odberu\nE-mail: x@y.sk", "2026-09-28");
     expect(notLeadReason(ev, false)).toBe("not_inquiry");
     expect(toLeadCandidate(ev, AGENCY, false)).toBeNull();
+  });
+
+  it("an 'odhlásiť' footer under a real inquiry is NOT not_inquiry", () => {
+    const ev = parseEmail(`${INQUIRY}\nOdhlásiť sa z odberu`, "2026-09-28", {
+      subject: "nehnutelnosti.sk notification",
+    });
+    expect(notLeadReason(ev, false)).toBeNull();
   });
 
   it("no_contact", () => {
@@ -55,7 +62,7 @@ describe("notLeadReason", () => {
 
 describe("notLeadDiagnostics", () => {
   it("carries only technical flags — no name, address, phone or message text", () => {
-    const ev = parseEmail(`${INQUIRY}\nOdhlásiť`, "2026-09-28");
+    const ev = parseEmail("Odhlásenie z odberu\n" + INQUIRY, "2026-09-28");
     const logged = JSON.stringify(notLeadDiagnostics(ev));
     for (const pii of ["Jan", "Novak", "jan.novak@example.com", "912", "obhliadku", "PO12345X"]) {
       expect(logged).not.toContain(pii);

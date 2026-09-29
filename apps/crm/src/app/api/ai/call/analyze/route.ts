@@ -3,6 +3,7 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { analyzeCall } from "@/lib/ai/call-analysis";
 import { persistCallAnalysisToCrm } from "@/lib/workflows/call-analysis-persist";
 import { UUIDSchema } from "@/lib/api-validate";
+import { sameAgency } from "@/lib/tenant-scope";
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -35,6 +36,9 @@ export async function POST(req: Request) {
     // short-circuits to "allowed" for a profile with no agency, which then wrote
     // activity and tasks against an arbitrary lead through the admin path.
     if (!callerProfile?.agency_id || leadRow?.agency_id !== callerProfile.agency_id) {
+    // Fail closed pred admin zápisom: persist ide cez service-role klienta,
+    // ktorý obchádza RLS, takže profil bez agentúry sa sem nesmie dostať.
+    if (!sameAgency(callerProfile?.agency_id, leadRow?.agency_id)) {
       return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
     }
 

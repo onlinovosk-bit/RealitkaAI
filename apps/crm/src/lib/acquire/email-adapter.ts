@@ -233,10 +233,26 @@ function classifyIntent(text: string): [string, string] {
   return ["General Inquiry", "no keyword matched (default)"];
 }
 
+/**
+ * Odhlásenie z odberu, NIE dopyt. Rozhoduje predmet — pätička s odkazom na
+ * odhlásenie je dnes v každej portálovej notifikácii, takže hľadať toto slovo
+ * kdekoľvek v tele znamená zahodiť skutočný dopyt (PROD: nehnutelnosti.sk
+ * pridali pätičku, od 2026-09-22 nevznikol ani jeden lead).
+ * V tele sa berie do úvahy len vtedy, keď mail nenesie žiadny kontakt — vtedy
+ * z neho aj tak lead byť nemôže.
+ */
+// Pokrýva odhlásiť / odhlásenie / odhlásený.
+const UNSUBSCRIBE_RE = /unsubscribe|odhl[aá]s/i;
+
+function isUnsubscribe(subject: string, text: string, hasContact: boolean): boolean {
+  if (UNSUBSCRIBE_RE.test(subject)) return true;
+  return !hasContact && UNSUBSCRIBE_RE.test(text);
+}
+
 export function parseEmail(
   raw: string,
   receivedAt?: string,
-  opts?: { recipient?: string | null } & AgencyIdentity,
+  opts?: { recipient?: string | null; subject?: string | null } & AgencyIdentity,
 ): AcquireEvent {
   // Polia sa čítajú z normalizovaného textu, hash ostáva nad pôvodným `raw`.
   const text = htmlToText(raw);
@@ -278,7 +294,15 @@ export function parseEmail(
     extractionConfidence: 0,
     sourceType,
     source,
-    eventKind: /unsubscribe|odhl[aá]siť/i.test(text) ? "unsubscribe" : "inquiry",
+    eventKind: isUnsubscribe(
+      // Route skladá raw ako `subject + text + html`, takže bez explicitného
+      // predmetu je ním prvý riadok.
+      opts?.subject ?? text.split("\n")[0] ?? "",
+      text,
+      Boolean(contactEmail || contactPhone),
+    )
+      ? "unsubscribe"
+      : "inquiry",
     contactName: cleanName(nameM?.[1]?.split("\n")[0]),
     contactEmail,
     contactPhone,
