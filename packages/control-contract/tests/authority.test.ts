@@ -5,6 +5,7 @@ import {
   applyApproval,
   buildAuthorityContext,
   DEFAULT_AUTHORITY_POLICY,
+  lookupAction,
   mayAct,
   matchesDenyList,
   resolveAuthority,
@@ -213,4 +214,69 @@ describe("policy is data", () => {
   it("the OD-10 override ships disabled", () => {
     assert.equal(DEFAULT_AUTHORITY_POLICY.externallyVisibleOverride.enabled, false);
   });
+});
+
+describe("inbound.reply.email.send — live Tier-3 path (apps/crm approve-draft)", () => {
+  const runtime = (killSwitch = false) => ({
+    agentId: "REVOLIS-INBOUND-AUTOREPLY",
+    tenantId: "agency-A",
+    actorRole: "broker",
+    confidence: 1,
+    systemState: { degraded: false, killSwitch },
+  });
+
+  it("is registered as irreversible and externally visible", () => {
+    const meta = lookupAction("inbound.reply.email.send");
+    assert.ok(meta);
+    assert.equal(meta.reversible, false);
+    assert.equal(meta.externallyVisible, true);
+    assert.equal(meta.capability, "EXECUTE");
+  });
+
+  it("requires approval without one, and becomes actionable only with one", () => {
+    const ctx = buildAuthorityContext("inbound.reply.email.send", runtime());
+    assert.ok(ctx);
+    const verdict = resolveAuthority(ctx, { now: NOW });
+    assert.equal(verdict.authority, "APPROVAL_REQUIRED");
+    assert.equal(mayAct(verdict), false);
+    const approved = applyApproval(verdict, {
+      approvalId: "act-1",
+      approvedBy: "makler@rk.sk",
+      approvedAt: "2026-09-24T20:00:00.000Z",
+    });
+    assert.equal(mayAct(approved), true);
+  });
+
+  it("kill switch forbids it even with a human approval (I-007)", () => {
+    const ctx = buildAuthorityContext("inbound.reply.email.send", runtime(true));
+    assert.ok(ctx);
+    const verdict = resolveAuthority(ctx, { now: NOW });
+    assert.equal(verdict.authority, "FORBIDDEN");
+    const approved = applyApproval(verdict, {
+      approvalId: "act-1",
+      approvedBy: "makler@rk.sk",
+      approvedAt: "2026-09-24T20:00:00.000Z",
+    });
+    assert.equal(mayAct(approved), false);
+  });
+});
+
+describe("dead-lead + outreach sends — every AI→client action floors at APPROVAL_REQUIRED", () => {
+  for (const action of ["deadlead.email.send", "deadlead.sms.send", "outreach.email.send"]) {
+    it(`${action} needs a human approval and is FORBIDDEN under the kill switch`, () => {
+      const base = {
+        agentId: "test-agent",
+        tenantId: "agency-A",
+        actorRole: "broker",
+        confidence: 1,
+      };
+      const open = buildAuthorityContext(action, { ...base, systemState: { degraded: false, killSwitch: false } });
+      assert.ok(open);
+      assert.equal(resolveAuthority(open, { now: NOW }).authority, "APPROVAL_REQUIRED");
+
+      const stopped = buildAuthorityContext(action, { ...base, systemState: { degraded: false, killSwitch: true } });
+      assert.ok(stopped);
+      assert.equal(resolveAuthority(stopped, { now: NOW }).authority, "FORBIDDEN");
+    });
+  }
 });

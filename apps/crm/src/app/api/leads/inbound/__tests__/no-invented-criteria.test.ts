@@ -31,6 +31,12 @@ vi.mock("@/lib/supabase/admin", () => ({
   createServiceRoleClient: () => ({ from: (...args: unknown[]) => mockFrom(...args) }),
 }));
 
+const mockDraftReply = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/inbound/reply-draft", () => ({
+  INBOUND_REPLY_DRAFT_TIMEOUT_MS: 8000,
+  scheduleInboundReplyDraft: (...args: unknown[]) => mockDraftReply(...args),
+}));
+
 vi.mock("@/lib/rate-limit", () => ({
   rateLimit: (...args: unknown[]) => mockRateLimit(...args),
 }));

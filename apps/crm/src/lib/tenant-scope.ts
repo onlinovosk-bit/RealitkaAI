@@ -25,3 +25,23 @@ export function filterRowsByAgency<T extends { agency_id?: string | null }>(
   if (!agencyId) return [];
   return rows.filter((row) => row.agency_id === agencyId);
 }
+
+/**
+ * Fail-closed zhoda tenantov pre route handlery.
+ *
+ * Chýbajúca agentúra na volajúcom ALEBO na riadku znamená NIE, nikdy ÁNO.
+ *
+ * Nahrádza vzor `if (caller?.agency_id && row.agency_id !== caller.agency_id)`,
+ * ktorý sa pri `agency_id = null` skratoval a podmienku preskočil. Profil bez
+ * agentúry — aký vyrába pozvánka v `api/invite/route.ts` — tak prešiel bránou
+ * do admin cesty, ktorá obchádza RLS.
+ *
+ * Rovnaká sémantika ako `filterRowsByAgency` vyššie: bez agentúry nula prístupu.
+ */
+export function sameAgency(
+  callerAgencyId: string | null | undefined,
+  rowAgencyId: string | null | undefined,
+): boolean {
+  if (!callerAgencyId || !rowAgencyId) return false;
+  return callerAgencyId === rowAgencyId;
+}

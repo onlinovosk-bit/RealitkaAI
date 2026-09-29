@@ -8,9 +8,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHash, timingSafeEqual } from "crypto";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
-import { agencyDomainsFrom, dedupKey, parseEmail, toLeadCandidate } from "@/lib/acquire/email-adapter";
+import { scheduleDemandExtraction } from "@/lib/demand/store";
+import {
+  agencyDomainsFrom,
+  dedupKey,
+  notLeadDiagnostics,
+  notLeadReason,
+  parseEmail,
+  toLeadCandidate,
+} from "@/lib/acquire/email-adapter";
 import { runInboundLeadTriageAndNotify } from "@/lib/acquire/inbound-lead-triage";
 import { runInboundLeadAutoResponse } from "@/lib/acquire/inbound-lead-auto-response";
+import { INBOUND_REPLY_DRAFT_TIMEOUT_MS, scheduleInboundReplyDraft } from "@/lib/inbound/reply-draft";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,6 +33,12 @@ type InboundEmailPayload = {
   };
   email?: {
     to?: string;
+    /**
+     * Hlavička `From`. Voliteľná: Cloudflare Worker (mimo tohto repozitára) ju
+     * zatiaľ neposiela, Gmail pull áno. Bez nej sa parser správa presne ako
+     * predtým — pole len pridáva záložné rozpoznanie zdroja.
+     */
+    from?: string;
     subject?: string;
     text?: string;
     html?: string;
@@ -258,6 +273,8 @@ export async function POST(req: NextRequest) {
     const identity = await loadAgencyIdentity(supa, agencyId);
     const ev = parseEmail(raw, receivedAt, {
       recipient: email.to ?? null,
+      subject: email.subject ?? null,
+      from: email.from ?? null,
       addresses: identity.addresses,
       domains: identity.domains,
     });
@@ -294,6 +311,9 @@ export async function POST(req: NextRequest) {
       console.log(JSON.stringify({
         status: "NOT_A_LEAD", requestId, agencyId, event_id: ev.eventId,
         reason: duplicate ? "duplicate" : "not_a_lead",
+        // Presný dôvod + technické príznaky, bez osobných údajov (INBOUND-NOTALEAD-01).
+        detail: notLeadReason(ev, duplicate),
+        ...notLeadDiagnostics(ev),
         owner_backfilled: ownerBackfilled,
       }));
       return NextResponse.json({
@@ -349,9 +369,11 @@ export async function POST(req: NextRequest) {
         phone: candidate.phone.slice(0, 50),
         location: "",
         budget: "",
-        property_type: "Byt",
+        // Nikdy nevymýšľať (AP-001): mail sa na typ ani financovanie nepýta.
+        // Dopyt z textu správy zapisuje Demand Contract do `lead_demands`.
+        property_type: "",
         rooms: "",
-        financing: "Hypotéka",
+        financing: "",
         timeline: "",
         source: candidate.source,
         status: candidate.status,
@@ -419,6 +441,33 @@ export async function POST(req: NextRequest) {
 
     await runInboundLeadTriageAndNotify(supa, lead, candidate);
     await runInboundLeadAutoResponse(supa, lead, candidate);
+    // AI návrh odpovede čaká v časovej osi na „Schváliť a odoslať" — nič neodchádza.
+    // Po odpovedi, aby Worker nečakal na LLM.
+    scheduleInboundReplyDraft({
+      admin: supa,
+      leadId: String(lead.id),
+      agencyId,
+      profileId: owner?.profileId ?? null,
+      agentName: owner?.agentName ?? null,
+      lead: {
+        name: candidate.name,
+        email: candidate.email,
+        message: candidate.note,
+        source: candidate.source,
+      },
+      activitySource: "acquire_email",
+      timeoutMs: INBOUND_REPLY_DRAFT_TIMEOUT_MS,
+      skipOnFallback: true,
+    });
+
+    scheduleDemandExtraction({
+      admin: supa,
+      agencyId,
+      leadId: String(lead.id),
+      inquiryText: ev.inquiryText ?? "",
+      leadName: candidate.name,
+      source: "acquire_email",
+    });
 
     console.log(JSON.stringify({ status: "LEAD_CREATED", requestId, agencyId, lead_id: lead.id }));
     return NextResponse.json({

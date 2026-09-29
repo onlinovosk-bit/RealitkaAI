@@ -12,6 +12,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getClaudeClient, CLAUDE_HAIKU } from "@/lib/ai/claude";
+import { sanitizeText } from "@/lib/ai/sanitize";
 import { checkAiRateLimit } from "@/lib/ai/rate-guard";
 import { logAiAction } from "@/lib/ai-action-audit";
 import { estimateClaudeCostEur } from "@/lib/ai/llm-usage-cost";
@@ -58,7 +59,7 @@ export async function POST(req: Request) {
           messages: [
             {
               role: "user",
-              content: `Ohodnoť hovor makléra na základe prepisu:\n\n${transcript.slice(0, 6_000)}\n\nVráť JSON:
+              content: `Ohodnoť hovor makléra na základe prepisu:\n\n${sanitizeText(transcript.slice(0, 6_000)).sanitized}\n\nVráť JSON:
 {
   "score": 0-100,
   "strengths": ["max 3 konkrétne veci čo maklér robil dobre"],

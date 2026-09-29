@@ -53,7 +53,7 @@ export async function POST(req: Request) {
   const { data: lead, error: leadError } = await supabase
     .from("leads")
     .select(
-      "id, name, status, score, budget, property_type, rooms, last_contact_at, created_at"
+      "id, name, status, score, budget, property_type, rooms, last_contact_at, created_at, agency_id"
     )
     .eq("id", leadId)
     .single();
@@ -118,6 +118,7 @@ export async function POST(req: Request) {
       temperature: 0.7,
       max_tokens:  400,
       tag:         "call-script",
+      agencyId:    lead.agency_id ?? undefined,
       messages:    [{ role: "user", content: prompt }],
     });
     script = content.trim();

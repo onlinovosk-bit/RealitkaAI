@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { deleteProperty, getProperty, updateProperty } from "@/lib/properties-store";
 import { createActivity } from "@/lib/activities-store";
 import { autoRecalculateForProperty } from "@/lib/matching-hooks";
+import { sameAgency } from "@/lib/tenant-scope";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -23,7 +24,8 @@ export async function PATCH(
       supabase.from("profiles").select("agency_id").eq("auth_user_id", user.id).maybeSingle(),
     ]);
 
-    if (callerProfile?.agency_id && oldProperty?.agencyId && oldProperty.agencyId !== callerProfile.agency_id) {
+    // Fail closed aj pri nenájdenej nehnuteľnosti: 403 nepovie, či id existuje.
+    if (!sameAgency(callerProfile?.agency_id, oldProperty?.agencyId)) {
       return errorResponse("Forbidden", 403);
     }
 
@@ -56,10 +58,10 @@ export async function PATCH(
         actorName: "Systém",
         source: "inventory",
         severity: "info",
-      });
+      }, supabase);
     } catch {}
 
-    await autoRecalculateForProperty(id);
+    await autoRecalculateForProperty(id, supabase);
     return okResponse({ property });
   } catch (error) {
     return errorResponse(
@@ -85,7 +87,8 @@ export async function DELETE(
       supabase.from("profiles").select("agency_id").eq("auth_user_id", user.id).maybeSingle(),
     ]);
 
-    if (callerProfile?.agency_id && oldProperty?.agencyId && oldProperty.agencyId !== callerProfile.agency_id) {
+    // Fail closed aj pri nenájdenej nehnuteľnosti: 403 nepovie, či id existuje.
+    if (!sameAgency(callerProfile?.agency_id, oldProperty?.agencyId)) {
       return errorResponse("Forbidden", 403);
     }
 
@@ -102,7 +105,7 @@ export async function DELETE(
         actorName: "Systém",
         source: "inventory",
         severity: "warning",
-      });
+      }, supabase);
     } catch {}
 
     return okResponse({ deletedId: id });

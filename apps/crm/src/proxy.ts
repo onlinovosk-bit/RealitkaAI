@@ -29,8 +29,11 @@ const PUBLIC_PATHS = new Set([
   // Public onboarding wizard sync (Path B API). Founder GO 2026-09-17: sync
   // must work without login. Route still validates session_id + rate-limits.
   "/api/onboarding/session",
-  // Website Concierge (Smolko). GO-W3-SHIP 2026-09-17. Routes rate-limit +
-  // optional CONCIERGE_SHARED_SECRET; agency locked to Smolko.
+  // Website Concierge (Smolko). GO-W3-SHIP 2026-09-17. Outside the session gate
+  // because the caller is a widget on the client's own site, not a logged-in
+  // user — so CONCIERGE_SHARED_SECRET is the whole of their authentication, and
+  // since 2026-09-27 it is required rather than optional (conciergeSecretOk).
+  // Rate-limited as well; agency locked to Smolko.
   "/api/concierge/properties",
   "/api/concierge/callback",
   "/api/concierge/freebusy",

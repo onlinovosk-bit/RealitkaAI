@@ -2,17 +2,29 @@
 // Revolis.AI — Inbound Lead Webhook
 // POST /api/webhooks/inbound-lead
 // Called by marketing site, portals, or any form integration.
-// Auth: Bearer ${INBOUND_WEBHOOK_SECRET} (optional but recommended)
+// Auth: Bearer ${INBOUND_WEBHOOK_SECRET} — REQUIRED. Without the env var the
+// endpoint is closed (503), never open (TASK-SEC-002).
 // ================================================================
-import { NextRequest, NextResponse } from 'next/server'
-import { processInboundLead }        from '@/lib/inbound/process-lead'
+import { createHash, timingSafeEqual } from 'crypto'
+import { NextRequest, NextResponse }   from 'next/server'
+import { InboundLeadError, processInboundLead } from '@/lib/inbound/process-lead'
+
+function bearerMatches(header: string | null, secret: string): boolean {
+  if (!header) return false
+  // Hash both sides so timingSafeEqual always compares equal-length buffers.
+  const a = createHash('sha256').update(header).digest()
+  const b = createHash('sha256').update(`Bearer ${secret}`).digest()
+  return timingSafeEqual(a, b)
+}
 
 export async function POST(request: NextRequest) {
-  const secret = process.env.INBOUND_WEBHOOK_SECRET
-  if (secret) {
-    if (request.headers.get('authorization') !== `Bearer ${secret}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const secret = process.env.INBOUND_WEBHOOK_SECRET?.trim()
+  if (!secret) {
+    console.error('[inbound-lead] INBOUND_WEBHOOK_SECRET is not set — endpoint closed')
+    return NextResponse.json({ error: 'Webhook nie je nakonfigurovaný.' }, { status: 503 })
+  }
+  if (!bearerMatches(request.headers.get('authorization'), secret)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   let body: Record<string, unknown>
@@ -46,8 +58,11 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json({ ok: true, ...result })
-  } catch (err: any) {
-    console.error('[inbound-lead]', err.message)
-    return NextResponse.json({ error: err.message }, { status: 500 })
+  } catch (err) {
+    if (err instanceof InboundLeadError) {
+      return NextResponse.json({ error: err.message }, { status: err.status })
+    }
+    console.error('[inbound-lead]', err instanceof Error ? err.message : err)
+    return NextResponse.json({ error: 'Chyba spracovania leadu.' }, { status: 500 })
   }
 }

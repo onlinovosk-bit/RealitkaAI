@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { INBOUND_REPLY_DRAFT_TIMEOUT_MS, scheduleInboundReplyDraft } from "@/lib/inbound/reply-draft";
 import { runInboundLeadAutoResponse } from "@/lib/acquire/inbound-lead-auto-response";
 import { runInboundLeadTriageAndNotify } from "@/lib/acquire/inbound-lead-triage";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
@@ -153,6 +154,18 @@ export async function POST(request: Request) {
       agencyId: resolved.agencyId,
       name: input.name.slice(0, 200),
       email: input.email,
+    });
+
+    // AI návrh odpovede pre makléra (Tier 3: len návrh, odošle ho maklér).
+    // Beží po odpovedi, aby formulár nečakal na LLM.
+    scheduleInboundReplyDraft({
+      admin: supabase,
+      leadId: String(data.id),
+      agencyId: resolved.agencyId,
+      lead: { name: input.name.slice(0, 200), email: input.email, message: note, source: "web_form" },
+      activitySource: "web_form",
+      timeoutMs: INBOUND_REPLY_DRAFT_TIMEOUT_MS,
+      skipOnFallback: true,
     });
 
     if (html) {

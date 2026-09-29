@@ -35,7 +35,16 @@ export interface GatheredData {
     weeklyRevForecast: number | null
     pendingContact: number
     hotPending: number
-    staleContacts48h: number
+    /**
+     * Leads that WERE contacted and then went quiet for STALE_HOURS.
+     *
+     * `null` means not measurable, and is not the same as `0`. Nothing writes
+     * `leads.last_contact_at` yet (NULL on all 511 production rows), so for a
+     * broker whose leads carry no contact timestamp at all there is no honest
+     * count to give. Rendering `0` there would claim "nothing is stale";
+     * rendering the row count would claim every lead is. Both are false.
+     */
+    staleContacts48h: number | null
     pipelineValueEur: number
     priorityLeadNames: string[]
     priceDropCount: number
@@ -59,7 +68,7 @@ export async function gatherBriefData(profileId: string): Promise<GatheredData |
   const [{ data: profile, error: profileErr }, { data: settings, error: settingsErr }] = await Promise.all([
     supabase
       .from('profiles')
-      .select('full_name, email')
+      .select('full_name, email, agency_id')
       .eq('id', profileId)
       .single(),
     supabase
@@ -87,8 +96,30 @@ export async function gatherBriefData(profileId: string): Promise<GatheredData |
 
   const events = overnightEvents ?? []
 
-  // Count new leads
-  const newLeads = events.filter(e => e.event_type === 'lead_created').length
+  // ── New leads ─────────────────────────────────────────────
+  // Counted from `leads`, NOT from `events`.
+  //
+  // `events` has never held a row in production (EVENTS-PIPELINE-AUDIT, #724):
+  // its INSERT policy requires auth.uid(), every writer that feeds it is cron
+  // or a webhook with no session, and logEvent swallows the rejection. Counting
+  // 'lead_created' rows therefore returned 0 on every single day — including
+  // days when leads really did arrive. A brief a broker acts on at 8am is the
+  // worst place for a false zero. `director-brief.ts` already counts this
+  // correctly, straight from `leads`.
+  //
+  // Scoped by agency, not by assignee: a lead that arrived overnight usually
+  // is not assigned yet (7 of the last 14 production leads have
+  // assigned_profile_id NULL), so scoping by assignee would reintroduce the
+  // same false zero for exactly the fresh demand this number exists to report.
+  const { count: newLeadCount, error: newLeadErr } = await supabase
+    .from('leads')
+    .select('id', { count: 'exact', head: true })
+    .eq('agency_id', profile.agency_id)
+    .gte('created_at', since)
+
+  if (newLeadErr) console.error('[gather] new lead count error', newLeadErr.message)
+
+  const newLeads = newLeadCount ?? 0
 
   // Count score increases
   const scoreIncreases = events.filter(
@@ -170,37 +201,93 @@ export async function gatherBriefData(profileId: string): Promise<GatheredData |
   }
 
   // ── Active leads count ────────────────────────────────────
+  // These four queries used to filter on `leads.profile_id` and select
+  // `leads.full_name`. Neither column exists: the table has `agency_id`,
+  // `assigned_profile_id` and `name`. PostgREST rejected every one of them,
+  // the errors were never read, and `?? 0` turned each rejection into a zero.
+  // activeLeads, pipelineValueEur, priorityLeadNames and staleContacts48h were
+  // therefore permanently 0 / empty — a second false zero behind the first one
+  // (EVENTS-PIPELINE-AUDIT, #724).
+  //
+  // Scoped by assignee here, unlike newLeads above: these are "my leads"
+  // numbers, and 493 of 511 production leads carry assigned_profile_id, so the
+  // scope resolves to real work. A lead nobody owns is nobody's pipeline.
   const staleCutoff = new Date(Date.now() - STALE_HOURS * 3_600_000).toISOString()
 
-  const [{ count: activeLeads }, { data: pipelineLeads }, { data: priorityLeads }, { count: staleContacts48h }] =
+  const [
+    { count: activeLeads },
+    { data: pipelineLeads },
+    { data: priorityLeads },
+    { count: contactedCount, error: contactedErr },
+    { count: staleCount, error: staleErr },
+  ] =
     await Promise.all([
       supabase
         .from('leads')
         .select('id', { count: 'exact', head: true })
-        .eq('profile_id', profileId)
+        .eq('assigned_profile_id', profileId)
         .neq('status', 'closed')
         .neq('status', 'lost'),
       supabase
         .from('leads')
         .select('budget, status')
-        .eq('profile_id', profileId),
+        .eq('assigned_profile_id', profileId),
       supabase
         .from('leads')
-        .select('full_name, ai_priority, score, last_contact')
-        .eq('profile_id', profileId)
+        .select('name, ai_priority, score, last_contact')
+        .eq('assigned_profile_id', profileId)
         .in('ai_priority', ['Vysoká', 'Stredná'])
         .order('ai_priority', { ascending: true })
         .limit(5),
+      // Staleness reads `last_contact_at` (timestamptz), not `last_contact`
+      // (free text: 'Práve vytvorený', 'Práve importovaný', occasionally an ISO
+      // string). Comparing a cutoff against that text was a lexicographic
+      // accident, not a date comparison.
+      //
+      // Two queries, because "is this measurable at all" and "what is the
+      // count" are different questions and only the first one can be answered
+      // today. `last_contact_at` is NULL on all 511 production rows, so the
+      // denominator query returns 0 and the count is reported as `null`.
+      //
+      // The previous shape included `last_contact_at IS NULL` in the staleness
+      // test. That conflated "we contacted them and they went quiet" with "no
+      // one has ever contacted them" — and since the column is empty, the
+      // disjunct matched every row. Measured on production before this change:
+      // the count equalled the broker's entire book, exactly, for all five
+      // largest assignees (142/142, 72/72, 66/66, 47/47, 39/39). A false 100%
+      // reached the brief as the recommended action of the day
+      // ("Najprv kontaktujte 142 leadov bez odpovede >48h").
+      //
+      // This shape heals itself: the first time anything writes
+      // `last_contact_at`, `contactedCount` goes above zero and the number
+      // starts reporting for real, with no further code change.
       supabase
         .from('leads')
         .select('id', { count: 'exact', head: true })
-        .eq('profile_id', profileId)
-        .or(`last_contact.is.null,last_contact.lt.${staleCutoff}`),
+        .eq('assigned_profile_id', profileId)
+        .not('last_contact_at', 'is', null),
+      supabase
+        .from('leads')
+        .select('id', { count: 'exact', head: true })
+        .eq('assigned_profile_id', profileId)
+        .not('last_contact_at', 'is', null)
+        .lt('last_contact_at', staleCutoff),
     ])
 
   const pipelineValueEur = (pipelineLeads ?? [])
     .filter((row) => row.status !== 'closed' && row.status !== 'lost')
     .reduce((sum, row) => sum + parseBudgetEur(row.budget), 0)
+
+  // A query error means "we do not know", never "zero". `?? 0` on a rejected
+  // query is exactly the bug #727 had to undo on four other counts; it must not
+  // be reintroduced here under a nicer name.
+  if (contactedErr) console.error('[gather] contacted-count error', contactedErr.message)
+  if (staleErr) console.error('[gather] stale-count error', staleErr.message)
+
+  const staleContacts48h: number | null =
+    contactedErr || staleErr || contactedCount === null || (contactedCount ?? 0) === 0
+      ? null
+      : staleCount ?? null
 
   const pendingContact = activeLeads ?? 0
   const hotPending = hotLeads.length
@@ -219,9 +306,9 @@ export async function gatherBriefData(profileId: string): Promise<GatheredData |
       weeklyRevForecast: null,
       pendingContact,
       hotPending,
-      staleContacts48h: staleContacts48h ?? 0,
+      staleContacts48h,
       pipelineValueEur,
-      priorityLeadNames: (priorityLeads ?? []).map((l) => l.full_name ?? 'Lead'),
+      priorityLeadNames: (priorityLeads ?? []).map((l) => l.name ?? 'Lead'),
       priceDropCount: priceDrops.length,
     },
   }
