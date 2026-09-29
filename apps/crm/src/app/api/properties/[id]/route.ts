@@ -24,7 +24,6 @@ export async function PATCH(
       supabase.from("profiles").select("agency_id").eq("auth_user_id", user.id).maybeSingle(),
     ]);
 
-    if (!callerProfile?.agency_id || oldProperty?.agencyId !== callerProfile.agency_id) {
     // Fail closed aj pri nenájdenej nehnuteľnosti: 403 nepovie, či id existuje.
     if (!sameAgency(callerProfile?.agency_id, oldProperty?.agencyId)) {
       return errorResponse("Forbidden", 403);
@@ -88,7 +87,6 @@ export async function DELETE(
       supabase.from("profiles").select("agency_id").eq("auth_user_id", user.id).maybeSingle(),
     ]);
 
-    if (!callerProfile?.agency_id || oldProperty?.agencyId !== callerProfile.agency_id) {
     // Fail closed aj pri nenájdenej nehnuteľnosti: 403 nepovie, či id existuje.
     if (!sameAgency(callerProfile?.agency_id, oldProperty?.agencyId)) {
       return errorResponse("Forbidden", 403);

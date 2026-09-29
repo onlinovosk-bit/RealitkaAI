@@ -20,7 +20,6 @@ export async function PATCH(
     const { data: teamRow } = await supabase
       .from("teams").select("agency_id").eq("id", id).maybeSingle();
 
-    if (!callerProfile?.agency_id || teamRow?.agency_id !== callerProfile.agency_id) {
     if (!sameAgency(callerProfile?.agency_id, teamRow?.agency_id)) {
       return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
     }
