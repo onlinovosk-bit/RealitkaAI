@@ -22,8 +22,10 @@ const PATTERNS: Array<{ key: string; regex: RegExp }> = [
   },
   {
     key: 'PHONE',
-    // Explicit SK/CZ prefix (+421/+420) or Slovak 09xx mobile format
-    regex: /(\+421|\+420)[\s\-]?\d{3}[\s\-]?\d{3}[\s\-]?\d{3}|(?<![0-9])0[689]\d[\s\-]?\d{3}[\s\-]?\d{3}(?![0-9])/g,
+    // Explicit SK/CZ prefix (+421/+420) or the domestic 10-digit 09xx mobile
+    // format ("0903 123 456"). The earlier pattern expected 9 digits after the
+    // leading 0 and therefore never matched a real Slovak mobile number.
+    regex: /(\+421|\+420)[\s\-]?\d{3}[\s\-]?\d{3}[\s\-]?\d{3}|(?<![0-9])0[689]\d{2}[\s\-]?\d{3}[\s\-]?\d{3}(?![0-9])/g,
   },
   {
     key: 'IBAN',
@@ -33,6 +35,13 @@ const PATTERNS: Array<{ key: string; regex: RegExp }> = [
     key: 'RC',
     // Slovak/Czech birth number: XXXXXX/XXXX or XXXXXX/XXX
     regex: /\b\d{6}\/\d{3,4}\b/g,
+  },
+  {
+    key: 'PHONE',
+    // International forms the SK/CZ pattern above misses: "00421 903 123 456"
+    // and any "+<country code>" number ("+43 664 1234567", "+49 170 1234567").
+    // Requires the leading "+" or "00" so prices and areas are never touched.
+    regex: /(?<![0-9])(?:\+|00)\d{2,3}(?:[\s\-]?\d{2,4}){2,4}(?![0-9])/g,
   },
 ]
 
