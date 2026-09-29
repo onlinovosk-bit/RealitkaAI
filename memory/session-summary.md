@@ -1,14 +1,15 @@
 ## Session 2026-09-29 (PROON-AUDIT)
 ### Dokončené
 - Audit Proon Channel Manager + mapovanie na Revolis + 1-týždňová roadmapa: `docs/reports/2026-09-29-proon-channel-manager-audit.md`
+- Founder zvolil Projekt B (krátkodobé prenájmy, samostatne): plán, roadmapa, agentický workflow v `docs/strategy/2026-09-29-projekt-b-str-plan.md` (Channex + Seam, pilot za 1 týždeň, parita 6–8 týždňov)
 ### Rozpracované / Pending
 - Plný crawl čaká na povolenie domén proon.tech v prostredí (alebo screenshoty od foundera).
-- Founder: zámer (funkcie pre RK / segment krátkodobých prenájmov / sledovanie).
+- Founder GO: nový repo + názov, entita/vlastníctvo kódu, pilotný ubytovateľ, účty Channex/Seam.
 ### Kľúčové súbory zmenené
 - `docs/reports/2026-09-29-proon-channel-manager-audit.md`: nový report
 - `memory/decisions.md`, `memory/session-summary.md`: prepend
 ### Ďalší krok
-`GO INBOX-VALIDATE` — 3 otázky Smolkovi (objem dopytov, portály, čas odpovede).
+`GO B-REPO` — založiť samostatný repo Projektu B z kostry Revolisu (D1 plánu).
 
 ## Session 2026-09-28 (RLS-NULL-ESCAPES aplikované na PROD)
 

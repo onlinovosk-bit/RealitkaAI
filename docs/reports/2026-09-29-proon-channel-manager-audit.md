@@ -150,6 +150,14 @@ Všetko ostatné z bodu 3 zostáva VALIDATE/BACKLOG/REJECT podľa tabuľky.
 5. **Blokery pred akýmkoľvek novým scope:** Stripe KYB + cenník, `RLS-BRI-HISTORY`,
    Calendly webhook, PR #720.
 
+## 8. Dodatok 2026-09-29 — rozhodnutie foundera
+
+Founder zvolil variant **(b)**: vstup do správy krátkodobých prenájmov ako
+**samostatný produkt** (záložný variant, mimo Revolisu). Verdikt „REJECT" vyššie
+platí pre Revolis; pre Projekt B platí plán v
+`docs/strategy/2026-09-29-projekt-b-str-plan.md`, vrátane faktov overených zo
+screenshotov (bod 0 tohto reportu je tým čiastočne nahradený).
+
 ## Zdroje
 
 - [Channel Manager a PMS systém pre ubytovanie | Proon](https://channelmanager.proon.tech/) (úryvok z indexu)

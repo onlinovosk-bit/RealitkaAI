@@ -1,5 +1,12 @@
 # Critical Decisions Log
 
+## [2026-09-29] PROJEKT-B — founder: vstup do krátkodobých prenájmov ako samostatný produkt
+- **Rozhodnutie foundera** (nie výsledok Ústavy Revolisu): záložný produkt pre správu krátkodobých prenájmov, budovaný **zvlášť** (vlastný repo, Supabase, Vercel, Stripe); z Revolisu sa preberajú vzory kópiou, nie spoločným balíkom.
+- **Kľúčové technické rozhodnutie (návrh):** channel manager sa nestavia — základ je **Channex** (white-label, Booking/Airbnb/Expedia; $130/mes. + $0,50/jednotku). Airbnb API je pre nových partnerov uzavreté. Smart zámky cez **Seam**.
+- **Termín:** „100 % funkcií LIVE za týždeň" nie je reálne; týždeň 1 = pilot na 1–3 jednotkách, parita 6–8 týždňov.
+- **Riziká zapísané pre foundera:** vlastníctvo kódu/entita, čas foundera vs. otvorený Stripe KYB Revolisu, pilotný ubytovateľ, GDPR dokladov hostí (čl. 6(1)(c)).
+- Plán: `docs/strategy/2026-09-29-projekt-b-str-plan.md`.
+
 ## [2026-09-29] PROON-AUDIT — Proon Channel Manager: REJECT ako celok, 1 vzor na VALIDATE
 - Proon Channel Manager je PMS + channel manager pre **ubytovanie** (Booking/Airbnb/Hauzi), modul horizontálneho PROON CRM/ERP — nie realitný konkurent.
 - Zadanie „všetky funkcie LIVE do 1 týždňa": **REJECT** — Q1 VETO (Reality Smolko by za ubytovacie funkcie neplatila), Q8 VETO (Stripe KYB, RLS-BRI-HISTORY otvorené).
