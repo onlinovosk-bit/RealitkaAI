@@ -20,6 +20,49 @@
 - Prenositeľný vzor: **jednotný inbox dopytov z portálov + ghostwriter návrh odpovede** → VALIDATE so Smolkom (D1), potom BUILD za flagom. Stavia na existujúcom `acquire/email`, `inbound/gmail-pull`, `ghostwriter`.
 - Web bol v prostredí zablokovaný (EGRESS_BLOCKED) — audit z verejného indexu, nie priamy crawl.
 - Report: `docs/reports/2026-09-29-proon-channel-manager-audit.md`.
+## 2026-09-29 — CREDITS-RELAND: #370 vrátené poriadne, migrácia ako prvá
+
+**Rozhodnutie:** #370 sa nevracia prehratím jeho commitu. Migrácia ide na PROD
+prvá (vlastná brána, meranie pred/po), kód sa píše na aktuálne súbory.
+
+**Prečo nie prehratie:** commit 1cfb6a3 obsahuje samotné poškodenie — hunky
+pristáli na zlých offsetoch. `git checkout 1cfb6a3 -- redemption.ts` by vrátil
+dvakrát deklarované `redeemedAt` aj polovicu volania vnútri cudzej funkcie.
+Rovnako bol poškodený aj jeho test súbor (`it(` otvorené dvakrát).
+
+**Nález, ktorý #370 nemal:** `ALTER DEFAULT PRIVILEGES` v schéme `public` dáva
+EXECUTE na každú novú funkciu rolám `anon` aj `authenticated`
+(`pg_default_acl`, `defaclobjtype = 'f'` → `anon=X | authenticated=X`).
+Migrácia #370 nemala žiadne granty. Aplikovaná doslova by tri SECURITY DEFINER
+funkcie, ktoré pripisujú kredity, boli volateľné cez PostgREST kýmkoľvek s anon
+kľúčom zo prehliadača — SECURITY DEFINER obchádza RLS. Do migrácie pribudol
+REVOKE + GRANT na `service_role`; overené `has_function_privilege`:
+anon false / authenticated false / service_role true.
+
+**Nález pri čítaní mangled patchu:** #370 by bol zahodil poistku v
+`expireGrantCreditsForAgency`, ktorá odmieta expirovať, keď už bol pridelený
+grant aktuálneho obdobia (jeho hunk nahradil celé telo a starý kód nechal ako
+nedosiahnuteľný). Regresia skrytá v poškodení. Poistka zostáva; cez RPC ide len
+posledná dvojica zápisov. Repair vetva si necháva priamy zápis zámerne — RPC by
+na existujúci idempotency key povedal `skipped` a balance by zostal nevyčistený.
+
+**PROD pred/po:** RPC 0 z 3 → 3 z 3; `20260804230000` chýbal → je, pod verziou
+súboru; história 63 → 64 riadkov. `md5(prosrc)` na PROD = md5 tiel v súbore
+(2cbeb33b / 49ee8644 / e7e631c2) — migrácia v repo a stav DB nie sú „podobné",
+sú zhodné. Sonda na jednorazovej agentúre (upratala po sebe v tom istom volaní):
+purchase 100 → 0/100/100, replay kľúča → skipped, grant 50 → 50/100/150,
+expire → 0/100/100, spend 40 → 0/60/60, amount 0 → invalid_amount, neznáma
+agentúra → agency_not_found, invariant platí, 0 zvyšných riadkov.
+
+**Stav po zmene:** jediný priamy zápis credit balance v aplikačnom kóde je
+strážená repair vetva v grant-engine. Všetko ostatné ide cez `spend_credits`
+a tri nové RPC.
+
+**Otvorené (nie je súčasťou tejto brány):** `spend_credits` má stále
+`anon=X | authenticated=X` — prihlásený používateľ vie minúť kredity cudzej
+agentúry (griefing, nie razenie). Nahlásené, neopravené.
+
+**PR:** #741 (draft), vetva reštartovaná z main po merge #733.
 
 ## [2026-09-29] — DPA s Reality Smolko je podpísaná (rev.2, apríl 2026); Anthropic chýba v zozname subprocesorov
 
