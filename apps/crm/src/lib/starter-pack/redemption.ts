@@ -1,4 +1,5 @@
 import { createServiceRoleClient } from "@/lib/supabase/admin";
+import { applyCreditPurchase } from "@/lib/credits/mutate-credits";
 import { STARTER_PACK } from "@/lib/starter-pack/constants";
 
 export type RedeemStarterPackResult =
@@ -39,7 +40,6 @@ export async function redeemStarterPackCode(input: {
     if (row.redeemed_by_agency === input.agencyId) {
       // Claim už prebehol — dokáž kredity (retry po zlyhaní grantu).
       return finalizeCreditsForClaimedCode({
-        supabase,
         codeRowId: row.id,
         code,
         agencyId: input.agencyId,
@@ -84,7 +84,6 @@ export async function redeemStarterPackCode(input: {
       return { ok: false, error: "code_already_used" };
     }
     return finalizeCreditsForClaimedCode({
-      supabase,
       codeRowId: again.id,
       code,
       agencyId: input.agencyId,
@@ -93,7 +92,6 @@ export async function redeemStarterPackCode(input: {
   }
 
   return finalizeCreditsForClaimedCode({
-    supabase,
     codeRowId: row.id,
     code,
     agencyId: input.agencyId,
@@ -101,75 +99,40 @@ export async function redeemStarterPackCode(input: {
   });
 }
 
-type AdminClient = NonNullable<ReturnType<typeof createServiceRoleClient>>;
-
 async function finalizeCreditsForClaimedCode(input: {
-  supabase: AdminClient;
   codeRowId: string;
   code: string;
   agencyId: string;
   creditValue: number;
 }): Promise<RedeemStarterPackResult> {
-  const { supabase, codeRowId, code, agencyId, creditValue } = input;
+  const { codeRowId, code, agencyId, creditValue } = input;
   const idempotencyKey = `starter_pack_redeem:${codeRowId}:${agencyId}`;
 
-  const { data: existingLedger } = await supabase
-    .from("credit_ledger")
-    .select("id")
-    .eq("idempotency_key", idempotencyKey)
-    .maybeSingle();
-
-  if (existingLedger) {
-    return { ok: true, creditsGranted: creditValue, alreadyRedeemed: true };
-  }
-
-  const { data: agency } = await supabase
-    .from("agencies")
-    .select("purchased_credits_balance, grant_credits_balance, credits_balance")
-    .eq("id", agencyId)
-    .single();
-
-  if (!agency) return { ok: false, error: "agency_not_found" };
-
-  const purchased = (agency.purchased_credits_balance ?? 0) + creditValue;
-  const grant = agency.grant_credits_balance ?? 0;
-  const billingUpdatedAt = new Date().toISOString();
-
-  const { error: ledgerErr } = await supabase.from("credit_ledger").insert({
-    agency_id: agencyId,
-    delta: creditValue,
+  // Kód je v tomto bode už claimnutý touto agentúrou (viď redeemStarterPackCode),
+  // takže tu zostáva len pripísanie kreditov. apply_credit_purchase drží riadok
+  // agentúry pod FOR UPDATE a zapisuje ledger aj balance v jednej transakcii;
+  // predchádzajúci tok čítal balance, pripočítal a zapísal absolútnu hodnotu, čo
+  // súbežnému top-upu alebo mesačnému grantu prepísalo jeho časť. Idempotency key
+  // nesie id kódu aj agencyId, takže retry po zlyhaní grantu vráti `skipped`.
+  const result = await applyCreditPurchase({
+    agencyId,
+    amount: creditValue,
     reason: "starter_pack_redeem",
+    idempotencyKey,
     ref: code,
-    idempotency_key: idempotencyKey,
-    source: "purchase",
   });
 
-  if (ledgerErr) {
-    // Unique violation na idempotency_key = súbeh s nami — považuj za už pripísané.
-    if (/duplicate|unique/i.test(ledgerErr.message ?? "")) {
-      return { ok: true, creditsGranted: creditValue, alreadyRedeemed: true };
+  if (!result.ok) {
+    console.warn("[starter-pack] redeem credits:", result.error);
+    if (result.error === "agency_not_found") {
+      return { ok: false, error: "agency_not_found" };
     }
-    console.warn("[starter-pack] redeem ledger:", ledgerErr.message);
-    return { ok: false, error: "grant_failed" };
-  }
-
-  const { error: agencyErr } = await supabase
-    .from("agencies")
-    .update({
-      purchased_credits_balance: purchased,
-      credits_balance: grant + purchased,
-      billing_updated_at: billingUpdatedAt,
-    })
-    .eq("id", agencyId);
-
-  if (agencyErr) {
-    console.warn("[starter-pack] redeem agency:", agencyErr.message);
     return { ok: false, error: "grant_failed" };
   }
 
   return {
     ok: true,
     creditsGranted: creditValue,
-    alreadyRedeemed: false,
+    alreadyRedeemed: result.skipped === true,
   };
 }

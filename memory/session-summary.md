@@ -1,3 +1,26 @@
+## Session 2026-09-29
+### Dokončené
+- CREDITS-RELAND krok 1: `20260804230000_atomic_credit_mutations.sql` aplikovaná na PROD pred kódom, s históriou pod verziou súboru (63 → 64 riadkov). RPC 0 z 3 → 3 z 3.
+- Do migrácie doplnený grants blok, ktorý #370 nemal: `ALTER DEFAULT PRIVILEGES` dáva EXECUTE každej novej funkcii aj `anon` a `authenticated`, takže tri SECURITY DEFINER funkcie na pripisovanie kreditov by boli volateľné anon kľúčom z prehliadača. Teraz service_role only (overené `has_function_privilege`).
+- Overené, že telá funkcií na PROD sú bajt na bajt zhodné s repo súborom (md5(prosrc) = md5 tiel v migrácii).
+- Funkčná sonda na jednorazovej agentúre: purchase / replay / grant / expire / spend / invalid_amount / agency_not_found, invariant platí, upratané v tom istom volaní.
+- CREDITS-RELAND krok 2: kód napísaný na aktuálne súbory (nie prehratý z 1cfb6a3, ktorý je sám poškodený). Zachovaná poistka v expiry, ktorú by #370 bol zahodil.
+- PR #741 (draft) otvorený, vetva reštartovaná z main po merge #733.
+- #733 (revert #370) medzitým mergnutý — produkcia odmrazená, main = a1eba9d.
+### Rozpracované / Pending
+- #741 čaká na review foundera (peniaze — nemergujem sám).
+- `spend_credits` má stále `anon=X | authenticated=X` — prihlásený používateľ vie minúť kredity cudzej agentúry. Nahlásené, neopravené.
+- Founder: Stripe KYB + 14 chýbajúcich price ID + rozhodnutie mesačne-plus-kredity; Calendly webhook podľa runbooku.
+### Kľúčové súbory zmenené
+- apps/crm/supabase/migrations/20260804230000_atomic_credit_mutations.sql: obnovená z 1cfb6a3 + grants blok (service_role only)
+- apps/crm/src/lib/credits/mutate-credits.ts: nová, tri RPC wrappery
+- apps/crm/src/lib/credits-billing.ts: applyTopupPurchase cez RPC, kompenzačné mazanie ledgeru už netreba
+- apps/crm/src/lib/credits/grant-engine.ts: grant aj expiry cez RPC, poistky expiry zachované
+- apps/crm/src/lib/starter-pack/redemption.ts: zápis kreditov cez RPC, claim-first poradie nedotknuté
+- 4 test súbory: 43/43 zelených
+### Ďalší krok
+Počkať na merge #741; potom `GO SCHEMA-GAP-RATCHET` — CI test, ktorý padne, keď aplikačný kód volá tabuľku, ktorú nevytvára žiadna migrácia (19 takých dnes ako allowlist).
+
 ## Session 2026-09-28 (RLS-NULL-ESCAPES aplikované na PROD)
 
 ### Dokončené
