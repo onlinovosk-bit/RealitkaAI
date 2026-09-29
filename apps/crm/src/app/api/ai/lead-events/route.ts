@@ -52,14 +52,13 @@ export async function POST(req: Request) {
     }
 
     if (
-      profile.agency_id &&
-      leadLookup.agencyId &&
+      !profile.agency_id ||
       leadLookup.agencyId !== profile.agency_id
     ) {
       return errorResponse("Nemáš prístup k tomuto leadu.", 403);
     }
 
-    const agencyId = leadLookup.agencyId ?? profile.agency_id;
+    const agencyId = profile.agency_id;
 
     const { data, error } = await supabase
       .from("lead_events")

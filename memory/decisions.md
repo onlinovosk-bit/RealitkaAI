@@ -1,5 +1,27 @@
 # Critical Decisions Log
 
+## [2026-09-29] — DPA s Reality Smolko je podpísaná (rev.2, apríl 2026); Anthropic chýba v zozname subprocesorov
+
+- **Platí podpísaná DPA rev.2 z apríla 2026** (founder poskytol PDF „Spracovanie osobných
+  údajov"). `docs/legal/DPA_Reality_Smolko.md` s označením DRAFT **nie je aktuálny stav**.
+  Session 2026-09-28 z neho mylne usúdila, že zmluva nie je podpísaná.
+  - Podpisy v textovej vrstve PDF overiť nešlo, stav „podpísané" uvádza founder.
+- **Import dopytov klientov a matching spadajú pod čl. 2** („Prevádzka CRM funkcionality
+  a správa kontaktov"). Matching je výpočet v DB bez AI, takže nevzniká nový príjemca dát.
+  Netreba nový podpis.
+- **Nesúlad — Anthropic (Claude) nie je v čl. 6 (Subprocesori).** V zmluve je len OpenAI.
+  - Kód volá Anthropic cez `lib/ai/claude.ts` v 9 miestach, vrátane
+    `inbound/auto-reply.ts` (meno a text správy leadu), `open-followup-generator.ts`
+    a `lead-triage-batch.ts`.
+  - PROD `ai_action_audit` má volania `claude-haiku-4-5`.
+  - Čl. 6 ods. 1: generálne povolenie. Podmienky: (a) subprocesor viazaný DPA,
+    (b) oznámenie 30 dní vopred, (c) námietka klienta do 15 dní.
+  - **Dodatok sa nepodpisuje.** Treba písomné oznámenie klientovi a overiť (a):
+    DPA Anthropicu pre API účet.
+  - Oznámenie ide dodatočne, lebo spracovanie už beží.
+- **Menšia nepresnosť:** čl. 3 uvádza primárne DC Frankfurt, Supabase projekt je
+  eu-west-1 (Írsko). Obe lokality sú v EÚ, opraviť pri ďalšej revízii.
+
 ## [2026-09-28] RLS-NULL-ESCAPES aplikované na PROD (founder GO)
 
 `20260928070000_rls_null_escapes.sql` dobehla na produkcii. Predtým overená lokálne
@@ -4264,3 +4286,65 @@ Postgres 16, stará funkcia vrátila `expired: 100` a vynulovala zostatok. Text
 migrácie je v histórii vetvy `claude/epic-mendel-oal1wt` v commite `6b049cf5`.
 
 Z PR #730 zostáva v platnosti sweep tenant brán a triážny dokument.
+
+## 2026-09-29 — Opakujúci sa vzor: hotová funkcia bez vstupného bodu
+
+Tri nezávislé audity za dva dni (`INBOUND-WEBHOOK-SECRET-AUDIT` #722,
+`EVENTS-PIPELINE-AUDIT` #724, `BRIEF-ENABLE-01`, `BRI-DEAD-PATH`) narazili na
+ten istý tvar chyby. Nie je to trikrát náhoda, je to vzor, a preto je to tu
+zapísané ako jeden záznam, nie ako tri kuriozity.
+
+**Tvar:** kód je hotový, otestovaný, zmergovaný a v niektorých prípadoch aj
+naplánovaný v cron-e. Chýba jediná vec — miesto, kde sa to spustí. A pretože
+každá vrstva zlyháva ticho (`?? 0`, `logEvent` „never throws", cron vráti
+`{sent: 0}`), nikdy sa to neprejaví ako chyba. Prejaví sa to ako nula.
+
+### Štyri prípady, merané nezávisle
+
+| funkcia | kód | vstupný bod | výsledok v PROD |
+| :--- | :--- | :--- | :--- |
+| Concierge (3 routy) | hotový | Voiceflow widget nikdy nezapojený | 0 volaní za celú dobu |
+| `inbound-lead` webhook | hotový | žiadny volajúci v repe | 0 leadov, ani počas 4,5 mesiaca bez auth |
+| ranný brief | hotový, cron beží `0 6 * * *` | `BriefSettings.tsx` neimportuje žiadna stránka | `morning_brief_settings` = 0 → `{sent: 0}` |
+| BRI | hotový, RPC v PROD funkčné | `components/bri/index.ts` neimportuje nikto | `lead_scores` = 0, `bri_score_history` = 0 |
+
+### BRI má navyše štyri nezávislé blokátory
+
+Ktorýkoľvek z nich sám stačí na to, aby nikdy nedobehlo. Uzatvára to otvorenú
+neznámu z #724 — moja vtedajšia domnienka (nesúlad signatúry RPC) bola
+**nesprávna**, overené: `compute_bri_score_v2(p_lead_id text, p_profile_id uuid,
+p_trigger_event text)` existuje, je `SECURITY DEFINER`, owner `postgres`,
+`EXECUTE` má anon aj authenticated, a zapisuje do
+`bri_config | lead_scores | bri_score_history`. Databáza je v poriadku.
+
+1. `/api/cron/recompute-bri` **nie je vo `vercel.json`** — 16 cronov, tento
+   medzi nimi nie je, hoci hlavička toho súboru tvrdí `schedule: "0 */6 * * *"`.
+2. Tá routa filtruje `profiles.account_status` — **stĺpec neexistuje**.
+3. `batchRecomputeBRI` filtruje `leads.profile_id` — **stĺpec neexistuje**
+   (tá istá chyba, akú opravil #727 v `morning-brief/gather.ts`).
+4. Filtruje `.eq('status','active')` — reálne statusy sú
+   `Horúci | Nový | Obhliadka | Ponuka | Uzavretý`, leadov so `'active'` je **0**.
+
+Aj keby sa všetky štyri opravili, RPC číta z `events` šesťkrát a tá tabuľka má
+0 riadkov; `bri_config` tiež 0.
+
+### Čo z toho plynie pre plánovanie
+
+Počet zmergovaných PR nevypovedá o tom, koľko produktu beží. Odhad k 2026-09-28:
+kód napísaný ~85 %, zapojené v prevádzke ~25 %. Ten rozdiel nie je technický
+dlh — je to **nezapojenie**, a je lacnejšie ho odstrániť než čokoľvek doprogramovať.
+
+Metóda, ktorá to odhalila, je prenositeľná a stojí za zopakovanie pri každej
+ďalšej funkcii: (1) kontrolný dotaz, aby „nula riadkov" neznamenala rovnako
+dobre mŕtvu tabuľku ako mŕtvu cestu; (2) vystopovať reťaz volajúcich **až po
+miesto, kde sa komponent renderuje** — nie len po hook alebo export.
+
+### Nezapisujem ako rozhodnuté
+
+Čo s tými funkciami ďalej (zapojiť vs. odstrániť) rozhoduje founder. Odporúčanie
+zostáva: najprv BRI, až potom ranný brief — brief bez BRI pošle klientovi e-mail
+s prázdnymi sekciami, a to je horšia prvá skúsenosť než žiadny e-mail.
+
+Kandidát na lacnú poistku, nie hotová vec: kontrola v CI, ktorá vypíše
+komponenty pod `components/**`, ktoré nikto neimportuje. Všetky štyri prípady
+vyššie by bola zachytila.
