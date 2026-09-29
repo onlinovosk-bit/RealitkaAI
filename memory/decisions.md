@@ -1,5 +1,12 @@
 # Critical Decisions Log
 
+## [2026-09-29] PROON-AUDIT — Proon Channel Manager: REJECT ako celok, 1 vzor na VALIDATE
+- Proon Channel Manager je PMS + channel manager pre **ubytovanie** (Booking/Airbnb/Hauzi), modul horizontálneho PROON CRM/ERP — nie realitný konkurent.
+- Zadanie „všetky funkcie LIVE do 1 týždňa": **REJECT** — Q1 VETO (Reality Smolko by za ubytovacie funkcie neplatila), Q8 VETO (Stripe KYB, RLS-BRI-HISTORY otvorené).
+- Prenositeľný vzor: **jednotný inbox dopytov z portálov + ghostwriter návrh odpovede** → VALIDATE so Smolkom (D1), potom BUILD za flagom. Stavia na existujúcom `acquire/email`, `inbound/gmail-pull`, `ghostwriter`.
+- Web bol v prostredí zablokovaný (EGRESS_BLOCKED) — audit z verejného indexu, nie priamy crawl.
+- Report: `docs/reports/2026-09-29-proon-channel-manager-audit.md`.
+
 ## [2026-09-29] — DPA s Reality Smolko je podpísaná (rev.2, apríl 2026); Anthropic chýba v zozname subprocesorov
 
 - **Platí podpísaná DPA rev.2 z apríla 2026** (founder poskytol PDF „Spracovanie osobných

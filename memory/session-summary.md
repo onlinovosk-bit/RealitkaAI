@@ -1,3 +1,15 @@
+## Session 2026-09-29 (PROON-AUDIT)
+### Dokončené
+- Audit Proon Channel Manager + mapovanie na Revolis + 1-týždňová roadmapa: `docs/reports/2026-09-29-proon-channel-manager-audit.md`
+### Rozpracované / Pending
+- Plný crawl čaká na povolenie domén proon.tech v prostredí (alebo screenshoty od foundera).
+- Founder: zámer (funkcie pre RK / segment krátkodobých prenájmov / sledovanie).
+### Kľúčové súbory zmenené
+- `docs/reports/2026-09-29-proon-channel-manager-audit.md`: nový report
+- `memory/decisions.md`, `memory/session-summary.md`: prepend
+### Ďalší krok
+`GO INBOX-VALIDATE` — 3 otázky Smolkovi (objem dopytov, portály, čas odpovede).
+
 ## Session 2026-09-28 (RLS-NULL-ESCAPES aplikované na PROD)
 
 ### Dokončené
