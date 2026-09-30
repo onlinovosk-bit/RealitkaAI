@@ -1,5 +1,53 @@
 # Critical Decisions Log
 
+## [2026-09-30] AUTO-RESPONSE-VISIBLE — každý pokus o auto-odpoveď zanechá záznam (BUILD, GO foundera)
+
+**Nové dôkazy od foundera (screenshoty Vercel + Resend, 30. 9. ~12:40 UTC) — zužujú príčinu:**
+- Vercel projekt `realitka-ai`: `RESEND_API_KEY` **existuje** (Production + Preview, „Updated Jul 1")
+  s odznakom **„Needs Attention"** (dôvod odznaku neviem — nebol prečítaný); `OUTREACH_FROM_EMAIL`
+  existuje **len pre Production** („Updated Apr 20", hodnota nevidená). Predošlé „nie sú v env" bolo
+  chyba výpisu nástroja (skrýval 12 z 85 položiek).
+- Resend (tím „onlinovo.sk") → Domains: **jediná doména `revolis.ai`, stav „Partially Failed"**
+  (vytvorená pred 6 mesiacmi). **`mg.revolis.ai` v Resende nie je**, hoci kód ako predvolené From
+  používa `onboarding@mg.revolis.ai` a docs (`email-delivery-setup.md`) ju odporúčajú.
+- **Hypotéza (NEDOKÁZANÁ):** Resend odmieta odoslanie, lebo odosielacia doména nie je overená
+  (buď `mg.revolis.ai` neexistuje, alebo `revolis.ai` je „Partially Failed"). Dôkaz zatiaľ chýba:
+  buď Resend → Logs (POST /emails so stavom 4xx), alebo záznam `inbound.auto_response` po ďalšom
+  leade. Súvisiaci nezmapovaný dopad: ak Supabase Auth posiela e-maily cez Resend SMTP z tejto
+  domény, môžu zlyhávať aj registračné/reset e-maily — **neoverené**.
+- Vlastník-profil agentúry `11111111-…` (reply-to): `ra***@gmail.com`; komu patrí, founder zatiaľ
+  neodpovedal.
+
+**Zmena (kód, bez nového odosielania):**
+- `inbound-lead-auto-response.ts`: funkcia sa rozpadla na `attemptInboundAutoResponse` (vracia
+  pomenovaný výsledok) + tenký `runInboundLeadAutoResponse`, ktorý zapíše **presne jeden**
+  `platform_events` záznam `inbound.auto_response` s `outcome`: `sent`, `sent_unmarked`,
+  `skipped_no_email`, `skipped_already_sent`, `skipped_disabled`, `failed_no_reply_to`,
+  `failed_send`, `failed_error`. Správanie (kto dostane e-mail, kedy) sa nezmenilo.
+- `send-inbound-auto-response.ts`: zlyhanie nesie `failure {reason, httpStatus, errorName}`
+  (`config`, `auth`, `domain_not_verified`, `invalid_from`, `validation`, `rate_limit`,
+  `server_error`, `network`, `unknown`); vyhodená sieťová chyba sa už nezosype cez výnimku.
+  **Text chyby sa nikdy nezapisuje** (môže niesť adresu príjemcu).
+- `auto-response-outcome.ts` (nový): typy + `recordAutoResponseOutcome` (nikdy nehádže).
+- Čítanie: `select created_at, payload from platform_events where event_type='inbound.auto_response'
+  order by created_at desc;`
+
+**Nález počas práce (tenant vidí diagnostiku):** Playbook stránka zobrazuje v hlavičke surový
+`event_type` poslednej live udalosti tenanta, takže Smolkov maklér mohol vidieť text `ai.call_failed`
+(z #760, už na PROD). **Oprava v tomto PR:** SSE `/api/events/stream` vylučuje `ai.call_failed` a
+`inbound.auto_response` (`platform-events-visibility.ts`). **Zostatok (BACKLOG):** RLS politika
+`platform_events_select_tenant` stále dovoľuje tenantovi čítať tieto riadky priamo (PostgREST) —
+skutočné oddelenie by vyžadovalo migráciu RLS; obsah je len kódy, žiadne PII.
+
+**Dôkaz:** 31 nových testov (`inbound-auto-response-outcome.test.ts`) + test streamu; súvisiace
+sady 250 zelených (1 integračný test potrebuje lokálnu DB — prostredie, v CI zelený); lint čistý;
+typecheck 49 (bez nových chýb); **mutation proof 11/11 zabitých**, súbory obnovené bit-for-bit.
+Mutácia M3 odhalila skutočnú chybu vlastného regexu (názov domény s bodkou) — opravená pred pushom.
+
+**Stále platí (VALIDATE, rozhoduje founder):** zapnutie skutočného odosielania — overiť reply-to
+profil, opraviť/overiť odosielaciu doménu v Resende (DNS je na foundera), rozhodnúť o odosielaní
+v mene Smolkovej kancelárie.
+
 ## [2026-09-30] AUTO-RESPONSE-CHECK — potvrdenie leadovi NIKDY neodišlo (read-only, GO foundera)
 
 **Oprava rámca:** predchádzajúce zápisy hovorili „NULL u 6/6 leadov od 19. 9." — to bolo príliš

@@ -1,3 +1,26 @@
+## Session 2026-09-30 (AUTO-RESPONSE-VISIBLE)
+### Dokončené
+- **AUTO-RESPONSE-VISIBLE** (GO foundera): každý pokus o auto-odpoveď zapíše jeden záznam
+  `platform_events` `inbound.auto_response` (výsledok + dôvod, bez PII a bez textu chyby); sender
+  klasifikuje chyby Resendu (`domain_not_verified`, `auth`, `config`, …). Testy 31 + stream,
+  mutation proof 11/11, lint čistý, typecheck 49.
+- **Nález opravený v tom istom PR:** SSE stream tenanta už neposiela `ai.call_failed` ani
+  `inbound.auto_response` (Playbook zobrazoval surový názov udalosti).
+- **Zúžená príčina (nedokázaná):** Resend má len `revolis.ai` v stave „Partially Failed",
+  `mg.revolis.ai` nie je; `RESEND_API_KEY` má vo Verceli odznak „Needs Attention".
+### Rozpracované / Pending
+- **Founder:** Resend → Logs (odmietnuté POST /emails) alebo otvoriť doménu `revolis.ai` a pozrieť,
+  ktorý DNS záznam zlyháva; odznak „Needs Attention" pri `RESEND_API_KEY`; komu patrí reply-to profil
+  (`ra***@gmail.com`).
+- Po merge + nasadení: prvý nový lead vysvetlí sám seba (`inbound.auto_response`).
+- READ-REASON 14:05 UTC; RLS oddelenie diagnostiky (BACKLOG); zvyšok z predošlých sekcií nezmenený.
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/acquire/{inbound-lead-auto-response,send-inbound-auto-response}.ts`,
+  `auto-response-outcome.ts` (nový), `apps/crm/src/lib/platform-events-visibility.ts` (nový),
+  `apps/crm/src/app/api/events/stream/route.ts`, `apps/crm/src/lib/ai/ai-failure-record.ts`.
+### Ďalší krok
+Merge PR (zelené CI) → nasadenie → prečítať `inbound.auto_response` pri ďalšom leade.
+
 ## Session 2026-09-30 (AUTO-RESPONSE-CHECK)
 ### Dokončené
 - **AUTO-RESPONSE-CHECK** (read-only): `auto_response_sent_at` je NULL u **515 z 515** leadov, od

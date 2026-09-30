@@ -1,7 +1,8 @@
 import { emitPlatformEventServer } from "@/lib/platform-events-server";
+import { AI_CALL_FAILED_EVENT } from "@/lib/platform-events-visibility";
 import type { AiFailure } from "./ai-failure";
 
-export const AI_CALL_FAILED_EVENT = "ai.call_failed";
+export { AI_CALL_FAILED_EVENT };
 
 /**
  * Trvalý záznam zlyhaného AI kroku na leade — prežije aj retenciu Vercel logov (~1 h),
@@ -12,7 +13,8 @@ export const AI_CALL_FAILED_EVENT = "ai.call_failed";
  *
  * Payload nesie iba kód dôvodu, HTTP status, typ chyby, request-id, názov funkcie a ID
  * leadu — nikdy text chyby ani obsah správy (viď ai-failure.ts). `platform_events` číta
- * aj SSE stream tenanta, preto sem nepatrí nič, čo by klient nemal vidieť.
+ * aj tenant (RLS), preto sem nepatrí nič, čo by klient nemal vidieť. SSE stream tenanta
+ * tento typ udalosti nevysiela (viď platform-events-visibility.ts).
  *
  * Best-effort: nikdy nehádže. Stratený záznam je len horšia diagnostika; stratený lead nie.
  */
