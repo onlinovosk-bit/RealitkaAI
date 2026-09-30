@@ -215,6 +215,16 @@ dať spätne spojiť s tenantom.
 porušenia iba pohltí do tolerovaného dlhu — vrátane tých dvoch, ktoré sa medzitým
 opravili (`Opravené od baseline: 2`). Stratili by sme jediný dôkaz, že ratchet funguje.
 
+## P1 — RAU (Revolis Agentic University) — základ na vetve, čaká na foundera
+
+- [ ] Founder: rozhodnúť o merge draft PR s RAU základom — odporúčanie A (`docs/rau/RAU-v1.0.md` §Rozhodnutia foundera)
+- [ ] Founder: Onlinovo.sk a AI Phone Operator (Blueprint §17) — nepotvrdené / odstrániť / potvrdiť
+- [ ] Founder: doplniť fakty pre projekty 03–07 (kto je Nájomná agentúra/Proon, kde žije Mia, YouTube kanály)
+- [ ] Founder: denylist auto-merge pre `docs/rau/**`, `.claude/skills/rau/**`, `scripts/ops/rau-route.mjs` (`.github/scripts/automerge-policy.mjs`, Tier 3)
+- [ ] Po ~10 použitiach (riadky „RAU route:" v session-summary): vyhodnotiť presnosť a zvážiť riadok v CLAUDE.md
+- [ ] Pred každou zmenou `routing-rules.json`: nová slepá sada (AP-025 — neladiť na vlastnej sade)
+- [ ] Overiť u zdroja: pravidlá YouTube (detský obsah, hromadný/AI obsah) a EÚ (označovanie AI obsahu) pred stavbou kampusov 03, 06, 07
+
 ## P0 — Governance write path (agent → `uptm-runner`)
 
 ### GOVERNANCE-WRITE-01 — agent nemá potvrdenú write/review cestu do `uptm-runner`
