@@ -187,6 +187,9 @@ export async function runInboundLeadAutoResponse(
       aiReason: freshLead?.ai_reason,
       aiPriority: freshLead?.ai_priority,
       source: freshLead?.source,
+      // Bez toho sa otvorenie tohto e-mailu nedá priradiť k leadu
+      // (ENGAGEMENT-EMAIL-01).
+      leadId,
     });
 
     if (!sendResult.ok) {

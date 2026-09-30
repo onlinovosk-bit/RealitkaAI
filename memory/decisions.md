@@ -5094,3 +5094,59 @@ to, kým je prázdna.
 `arbitrage/scan.ts` aj `price-trail/engine.ts` čítajú zvyšok svojich dát cookie
 klientom, hoci sú to crony — tá istá trieda chyby ako recompute-bri pred #742.
 Zámerne som to nerozširoval; vyplávalo by to pri ich zapojení do `cron_runs`.
+
+---
+
+## 2026-09-30 — ENGAGEMENT-EMAIL-01: prvý skutočný engagement signál
+
+Founder GO. Nadväzuje na EVENTS-WRITE-PATH-01 (#765) — bez serverovej
+zapisovacej cesty by tento signál nemal kam pristáť.
+
+### Ktorý signál a prečo práve ten
+
+Otvorenie/klik v **automatickej odpovedi záujemcovi na jeho dopyt**. Je to
+jediný e-mail, ktorý reálne chodí skutočnému leadovi, a chodí v momente
+najvyššieho záujmu. `RESEND_API_KEY` je v produkcii (founder overil v UI;
+projektový API výpis ho nezobrazil — druhýkrát ten istý klam, viď
+service-role kľúč vyššie).
+
+Zvažované a zamietnuté: `outreach-store` tagoval `lead_id` už predtým, ale
+`outreach_logs` má 0 riadkov — nikdy nebežal, takže signál z neho neexistuje.
+
+### Čo bolo zlomené
+
+Reťaz mala štyri články, tri z nich nefungovali:
+
+1. odoslať e-mail s tagom `lead_id` — auto-odpoveď tag nemala
+2. webhook prijme open/click — ✓ fungovalo
+3. uložiť to — `new Map()` v pamäti procesu; na serverless zmizne s inštanciou
+4. niekto to prečíta — `getEmailEngagement` nemal ANI JEDNÉHO volajúceho
+
+### Zmena
+
+- `sendInboundAutoResponse` prijíma `leadId` a posiela ho ako Resend tag.
+  Voliteľné, aby volajúci bez leadu ostali nedotknutí. Hodnota sa validuje
+  proti `[A-Za-z0-9_-]+`, inak by celé odoslanie spadlo na tagu.
+- `lib/events/email-engagement.ts`: zapíše `message_opened` / `message_clicked`
+  na lead cez `logEventDetailed` so service-role klientom.
+- `events.profile_id` je NOT NULL a **24 aktívnych leadov nemá
+  `assigned_profile_id`** — preto záloha na aktívny profil tej istej agentúry.
+  Bez nej by sa stratil engagement práve čerstvého, nepriradeného leadu.
+- Do payloadu nejde predmet, telo ani adresa. Do `events` osobné údaje
+  nepatria; stačí fakt, že sa e-mail otvoril.
+- `message_clicked` doplnené do `EventType`.
+- `lib/ai/email-engagement-store.ts` **zmazané** — po tejto zmene naň
+  neukazoval nikto.
+
+### Bezpečnostná oprava v tom istom súbore
+
+Webhook mal `if (webhookSecret)`: pri chýbajúcej premennej sa podpis
+neoveroval a endpoint prijal čokoľvek. Cezeň sa teraz zapisuje do `events`,
+takže otvorený znamenal, že ktokoľvek vyrobí engagement signál pre ľubovoľný
+lead. Teraz vracia 503. Tretí výskyt tej istej triedy po cron-e a Concierge
+(#717): chýbajúca premenná je chyba konfigurácie, nie povolenie.
+
+### Čo to ešte nerobí
+
+BRI z toho začne počítať až keď prvý lead e-mail otvorí. Do tej doby zostáva
+`events` prázdna a guard z #761 skóre stále nezapíše — správne.

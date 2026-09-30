@@ -10,7 +10,22 @@ export type InboundAutoResponsePayload = {
   aiReason?: string | null;
   aiPriority?: string | null;
   source?: string | null;
+  /**
+   * ENGAGEMENT-EMAIL-01 — bez tagu sa otvorenie tohto e-mailu nedá priradiť
+   * k leadu. Resend vráti tagy späť vo webhooku `email.opened`; `lead_id` je
+   * jediné, čím sa dá udalosť naviazať. Voliteľné, aby volajúci bez leadu
+   * (test, preview) ostali nedotknutí — vtedy sa e-mail pošle bez tagu
+   * a engagement sa z neho nezachytí.
+   */
+  leadId?: string | null;
 };
+
+/**
+ * Resend povoľuje v tagoch len ASCII písmená, číslice, `_` a `-`.
+ * Id leadu je `text`, takže nemusí byť UUID — radšej overíme, než aby celé
+ * odoslanie spadlo na tagu.
+ */
+const RESEND_TAG_VALUE = /^[A-Za-z0-9_-]+$/;
 
 const DEFAULT_FROM_EMAIL = "onboarding@mg.revolis.ai";
 
@@ -127,12 +142,18 @@ export async function sendInboundAutoResponse(
   const fromEmail = resolveInboundFromEmail(replyTo);
   const resend = new Resend(apiKey);
 
+  const leadId = payload.leadId?.trim();
+  const tags = leadId && RESEND_TAG_VALUE.test(leadId)
+    ? [{ name: "lead_id", value: leadId }]
+    : undefined;
+
   const result = await resend.emails.send({
     from: formatInboundFromAddress(agentName, fromEmail),
     to: payload.to,
     replyTo,
     subject,
     text: body,
+    ...(tags ? { tags } : {}),
   });
 
   if (result.error) {
