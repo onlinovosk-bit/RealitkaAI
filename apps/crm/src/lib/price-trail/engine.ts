@@ -2,7 +2,7 @@
 // Revolis.AI — Price Trail Engine
 // Server-side: add points, compute motivation, check alerts
 // ================================================================
-import { createClient }  from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { logEvent }      from '@/lib/events/log-event'
 import type {
   PricePoint, SellerMotivation, NegotiationBrief,
@@ -41,6 +41,9 @@ export async function addPricePoint(opts: {
   // Log event for BRI recomputation downstream
   if (result?.is_drop && (opts.listingId || opts.leadId)) {
     await logEvent({
+      // Cron nemá session — bez service-role klienta RLS insert odmietne
+      // (EVENTS-WRITE-PATH-01).
+      client:     createAdminClient(),
       profileId:  opts.profileId,
       entityType: opts.leadId ? 'lead' : 'property',
       entityId:   opts.leadId ?? opts.listingId ?? null,
