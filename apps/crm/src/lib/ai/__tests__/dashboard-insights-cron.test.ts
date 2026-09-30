@@ -300,6 +300,46 @@ describe('dashboard-insights-cron cache writer', () => {
     expect(upsert.mock.calls[0][0].payload.actions).toHaveLength(0)
   })
 
+  it('meta nesie dôvod, prečo model nezodpovedal (AI-FAIL-VISIBLE) — bez textu chyby', async () => {
+    vi.mocked(generateDashboardInsights).mockResolvedValueOnce({
+      insights: buildDataFallback({ period: 'today', summary: smolkoSummary, userName: 'Maklér' }),
+      audit: {
+        source: 'fallback',
+        model: 'claude-haiku-4-5-20251001',
+        costEur: null,
+        latencyMs: 12,
+        failure: {
+          reason: 'billing',
+          httpStatus: 400,
+          errorType: 'invalid_request_error',
+          errorName: 'BadRequestError',
+          requestId: 'req_5',
+        },
+      },
+    })
+    const { from } = mockAdminForCache({ summary: smolkoSummary })
+
+    await generateAndCacheAgencyInsights({ from } as never, AGENCY_ID)
+
+    const call = persistAiCostTelemetryMock.mock.calls.at(-1)?.[0]
+    expect(call.meta).toMatchObject({
+      source: 'fallback',
+      failure_reason: 'billing',
+      failure_http_status: 400,
+      failure_error_type: 'invalid_request_error',
+      failure_request_id: 'req_5',
+    })
+  })
+
+  it('bez zlyhania sa do meta nedostanú žiadne failure_* kľúče', async () => {
+    const { from } = mockAdminForCache({ summary: smolkoSummary })
+
+    await generateAndCacheAgencyInsights({ from } as never, AGENCY_ID)
+
+    const meta = persistAiCostTelemetryMock.mock.calls.at(-1)?.[0].meta as Record<string, unknown>
+    expect(Object.keys(meta).filter((k) => k.startsWith('failure_'))).toEqual([])
+  })
+
   it('generateAndCacheAgencyInsights persists cost via persistAiCostTelemetry', async () => {
     const { from } = mockAdminForCache({ summary: smolkoSummary })
     await generateAndCacheAgencyInsights({ from } as never, AGENCY_ID)

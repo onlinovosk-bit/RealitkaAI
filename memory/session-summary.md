@@ -1,3 +1,81 @@
+## Session 2026-09-30 (AI-FAIL-VISIBLE)
+
+### Dokončené
+- **AI-FAIL-VISIBLE** — zlyhanie volania na LLM po sebe zanechá stopu: kód dôvodu
+  (`auth` / `billing` / `rate_limit` / `timeout` / `config` …), HTTP status, request-id; **nikdy
+  text chyby**. Rieši viditeľnosť, nie príčinu (tá je stále neznáma).
+- `withAiTimeout` loguje každé zlyhanie na `warn` vrátane pozdného odmietnutia po timeoute;
+  správanie sa nezmenilo. Inbound triage a AI návrh zapisujú `ai.call_failed` do
+  `platform_events`; `dashboard_insights` nesie `failure_*` v `ai_action_audit.meta`.
+- Dôkaz: 97 zelených testov na dotknutých súboroch, **mutation proof 14/14**, lint čistý,
+  typecheck ratchet 49 ≤ 54 (žiadna chyba v mojich súboroch). Bez migrácie.
+- Detail, SQL na zistenie príčiny a riziká: `memory/decisions.md` (záznam AI-FAIL-VISIBLE).
+
+### Rozpracované / Pending
+- **Po nasadení PR**: spustiť SQL z `decisions.md` — dôvod uvidíme z `ai_action_audit` po
+  najbližšom cron behu (~06:24 alebo ~13:35 UTC), z `platform_events` po ďalšom leade.
+- **Founder (2 min):** Anthropic Console (chyby požiadaviek, kredit) + dátum zmeny
+  `ANTHROPIC_API_KEY` vo Vercel env — môže príčinu určiť skôr než nasadenie.
+- **Riziko:** `ai.call_failed` ide cez SSE stream tenanta (`/api/events/stream`); kód `billing`
+  by klient videl v sieťovom paneli. Filter je samostatná malá zmena, nerobená.
+- Zostáva: `auto_response_sent_at` NULL u 6 z 6 leadov, `dashboard_insights` nikdy `llm`.
+
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/ai/ai-failure.ts` (nový), `ai-failure-record.ts` (nový): klasifikácia + záznam.
+- `apps/crm/src/lib/ai/fallback.ts`: `withAiTimeout` s logom a `onFailure`.
+- `apps/crm/src/lib/{inbound/auto-reply,inbound/reply-draft,acquire/inbound-lead-triage}.ts`,
+  `lib/ai/{dashboard-insights,dashboard-insights-cron}.ts`: dôvod do výsledku, logu a záznamu.
+- 5 volajúcich `withAiTimeout` dostalo názov funkcie.
+- 6 nových / rozšírených testových súborov.
+
+### Ďalší krok
+Podľa zistenej príčiny (`reason` z SQL v `decisions.md`). Ak `timeout` → iný problém než kľúč
+(okno 500–800 ms); ak `auth`/`billing` → krok foundera v Anthropic Console / Vercel env.
+
+## Session 2026-09-30 (LEAD-NO-DRAFT — read-only)
+
+### Dokončené
+- **LEAD-NO-DRAFT** — regresia lokalizovaná, príčina **nedokázaná**. Detail a tabuľka dôkazov:
+  `memory/decisions.md` (záznam 2026-09-30 „LEAD-NO-DRAFT").
+- Posledné `ai_triage_at` v celej DB je 2026-09-22 09:13:15; 3 z 3 leadov po výpadku nemajú
+  triage ani AI návrh; cron 05:00 ich za dve noci nespracoval.
+- Vylúčené: ID modelu, constraint/trigger na `leads`, `no_email`, auto-response krok,
+  schéma `activities`.
+- **Lead z Nehnuteľnosti.sk dnes 07:05 vznikol** → oprava #732/#739 na portálovej ceste
+  funguje (n = 1).
+- Korekcie #755: „v okne nula z portálu" bolo nesprávne, „2 z 2" je 3 z 3.
+
+### Rozpracované / Pending
+- **Skutočná chyba volania Claude je neznáma** — kód ju prehltne, logy expirujú za ~1 h.
+- **Founder (2 min):** Anthropic Console (chyby požiadaviek, kredit) + dátum zmeny
+  `ANTHROPIC_API_KEY` vo Vercel env.
+- `auto_response_sent_at` NULL u 6 z 6 leadov; `dashboard_insights` 0 z 212 `llm`.
+- Klon je plytký od 25. 9. — 22.–25. 9. v kóde neoverené.
+
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md`: PREPEND. Žiadna zmena kódu ani DB.
+
+### Ďalší krok
+AI-FAIL-VISIBLE (malý PR): logovať triedu chyby a HTTP status pri zlyhaní AI volania a zapísať
+trvalý dôvod pri zlyhanom triage/drafte. Čaká na GO.
+## Session 2026-09-30 (UPTM-018 — `account_equity` ostáva v packu)
+### Dokončené
+- **Founder GO na UPTM-018 → rozhodnutie „len v packu, nič v repe nestavať"** (`DEC-UPTM-018`). `onlinovosk-bit/uptm-runner` [#54](https://github.com/onlinovosk-bit/uptm-runner/pull/54) (draft, nemergovať bez „merguj 54").
+- **Oprava mojej chybnej premisy z 2026-09-29.** UPTM-018 nebol „dve čísla od foundera" ani „700 je len fixture": `validation_capital.amount` = 700 € je **nastavené founderom 2026-09-23** (`DEC-UPTM-004`, `set_by: founder`). Chýba jediný údaj, `capital.account_equity`, a ten je údaj **packu**, nie parameter repa (`DEC-UPTM-MAP-Q3`). Zdroj omylu: zastaraná próza `uptm004_detector.founder_parameter_required` („unset") — opravená na `SATISFIED 2026-09-23`.
+- Guard (25 testov): status v poznámke sa musí rovnať stavu troch parametrov, odvodený z dát, v oboch smeroch. **L2 zmerané:** pod mutáciou ostáva všetkých 804 existujúcich testov zelených → záznam nebol strážený. 877 passed, mutation-gate 35/35, `enforcement-evidence` `tree_clean`, `unproven_claims: []`.
+### Rozpracované / Pending
+- ~~Merge #54~~ — hotovo: zmergované founderom 2026-09-30 (`f7b0550`), overené obsahom na `main` (poznámka `SATISFIED`, guard, `DEC-UPTM-018`, mutation case; 877 passed).
+- **`account_equity`:** zadá founder do prvého reálneho packu (systém, ktorý drží účet). Dovtedy capital gaty končia na `UNKNOWN` — zamýšľaný stav, nie medzera.
+- Zastaraná próza sa môže objaviť aj inde v `capital-rules.json` (`open_limits`, `checks_note`); guard stráži len jednu poznámku. Neriešené.
+- Záznam 2026-09-25 `DEC-UPTM-MAP-Q3` v `uptm-runner/docs/decisions.md` stále „stays OPEN" bez odkazu na DEC-UPTM-017 — rozhodnutie foundera.
+### Kľúčové súbory zmenené (uptm-runner)
+- constitution/capital-rules.json: poznámka `founder_parameter_required` opravená (nič nepridané do ústavy)
+- tests/test_capital_parameter_status.py: nový guard
+- runner/mutation_gate.py: +1 case `capital-note-claims-unset-again`
+- docs/decisions.md: `DEC-UPTM-018`; docs/specs/UPTM-018-account-equity-stays-in-the-pack.md
+### Ďalší krok
+Founder: „merguj 756" (tento záznam). Potom najvyššia hodnota je v RealitkaAI, nie v UPTM: **CHECKOUT-ENV-01 krok C** (blokér príjmu — vytvoriť ceny v Stripe live mode podľa `bash scripts/ops/stripe-verify-prices.sh --spec`, potom VERIFY). Podľa `memory/open-tasks.md`, dnes znova neoverené.
+
 ## Session 2026-09-30 (GO MAILBOX — read-only)
 
 ### Dokončené

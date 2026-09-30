@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { triageLeadBatches, type TriageLeadInput } from "@/lib/ai/lead-triage-batch";
+import { classifyAiError, reportAiFailure } from "@/lib/ai/ai-failure";
+import { recordAiFailureEvent } from "@/lib/ai/ai-failure-record";
 import { createNotification, type NotificationPriority } from "@/lib/notifications/store";
 import { logAiRecommendation } from "@/lib/moat-capture/log-ai-recommendation";
 
@@ -61,6 +63,7 @@ type TriageDeps = {
   triageLeadBatches: typeof triageLeadBatches;
   createNotification: typeof createNotification;
   resolveOwnerProfileId: typeof resolveOwnerProfileId;
+  recordAiFailureEvent?: typeof recordAiFailureEvent;
 };
 
 const defaultDeps: TriageDeps = {
@@ -100,7 +103,22 @@ export async function runInboundLeadTriageAndNotify(
       source: String(lead.source ?? candidate.source ?? ""),
     };
 
-    const triage = await deps.triageLeadBatches([input]);
+    let triage: Awaited<ReturnType<typeof triageLeadBatches>>;
+    try {
+      triage = await deps.triageLeadBatches([input]);
+    } catch (aiError) {
+      // Zlyhanie AI kroku nesmie zaniknúť: `ai_triage_at` ostane NULL bez akejkoľvek stopy
+      // prečo (výpadok po 22. 9.). Chyba ide do logu ako kód dôvodu a do trvalého záznamu.
+      const failure = classifyAiError(aiError);
+      reportAiFailure("inbound_triage", failure, { leadId });
+      await (deps.recordAiFailureEvent ?? recordAiFailureEvent)({
+        agencyId: String(lead.agency_id ?? candidate.agencyId),
+        leadId,
+        feature: "inbound_triage",
+        failure,
+      });
+      return;
+    }
     const row = triage[0];
     if (!row) return;
 

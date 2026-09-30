@@ -64,7 +64,7 @@ export async function analyzeCall(transcript: string): Promise<CallAnalysisResul
     return extractJson<CallAnalysisResult>(raw);
   });
 
-  return withAiTimeout(aiCall, callAnalysisFallback(), 500);
+  return withAiTimeout(aiCall, callAnalysisFallback(), 500, { feature: 'call_analysis' });
 }
 
 function fallback(msg: string): CallAnalysisResult {
