@@ -2,7 +2,7 @@
 // Revolis.AI — Arbitrage Scan Orchestrator
 // Runs the full pipeline: fetch → parse → upsert → match → save
 // ================================================================
-import { createClient }         from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { logEvent }             from '@/lib/events/log-event'
 import { parseBazosRSS }        from './parsers/bazos-parser'
 import { findMatches }          from './matchers/cross-portal-matcher'
@@ -159,6 +159,9 @@ export async function runArbitrageScan(
 
     // ── 8. Log event ─────────────────────────────────────────
     await logEvent({
+      // Cron nemá session — bez service-role klienta RLS insert odmietne
+      // (EVENTS-WRITE-PATH-01).
+      client:     createAdminClient(),
       profileId,
       entityType: 'system',
       entityId:   null,
