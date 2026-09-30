@@ -121,6 +121,16 @@ export async function generateAndCacheAgencyInsights(
         cron: true,
         actions_count: payload.actions.length,
         empty: generated.audit.source === 'empty',
+        // Prečo model nezodpovedal — bez toho je `source: fallback` nerozlíšiteľný
+        // (kľúč, kredit, timeout). Nikdy text chyby.
+        ...(generated.audit.failure
+          ? {
+              failure_reason: generated.audit.failure.reason,
+              failure_http_status: generated.audit.failure.httpStatus,
+              failure_error_type: generated.audit.failure.errorType,
+              failure_request_id: generated.audit.failure.requestId,
+            }
+          : {}),
       },
     })
 

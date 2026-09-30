@@ -61,5 +61,5 @@ Vráť JSON:
     return extractJson<DealStrategy>(raw)
   })
 
-  return withAiTimeout(aiCall, fallback(score), 500)
+  return withAiTimeout(aiCall, fallback(score), 500, { feature: 'deal_strategy' })
 }
