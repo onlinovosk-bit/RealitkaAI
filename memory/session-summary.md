@@ -1,12 +1,13 @@
-## Session 2026-09-29 (UPTM-018a — uptm-runner, dva draft PR)
+## Session 2026-09-29 (UPTM-018a — uptm-runner, #52 a #53 ZMERGOVANÉ 2026-09-30)
 ### Dokončené
+- **Zmergované founderom 2026-09-30, overené obsahom na `origin/main` (`154e2c9`):** #52 aj #53. Na `main`: 851 passed, syntax gate OK, mutation-gate 34/34 `ok`, enforcement-evidence `tree_clean`, `unproven_claims: []`. Mapa už neobsahuje „unadopted"; guard aj mutation case sú v `main`.
 - **UPTM-018a** → `onlinovosk-bit/uptm-runner` [#53](https://github.com/onlinovosk-bit/uptm-runner/pull/53) (draft, nemergovať bez „merguj 53"). `governance-map.md` už nehovorí, že Q3 je „unadopted"; nový **obojstranný** guard (18 testov) + 1 mutation case. Spec preregistrovaný v samostatnom commite pred implementáciou (P4).
   - **L2 zmerané, nie tvrdené:** pod tou istou mutáciou je starý jednostranný test GREEN, nový guard RED.
   - Na pôvodnej mape guard hlási presne jeden rozpor (Q3); Q1/Q2/Q5 čisté.
 - **`main` v uptm-runner bol dnes červený** (druhá časová bomba po #50: 8 failed pri 21:03Z, 9 od 30. 9. 08:00Z) → oprava ako samostatný draft [#52](https://github.com/onlinovosk-bit/uptm-runner/pull/52). Množina bômb **zmeraná posunom hodín** (freezegun na 4 dátumoch, +3 mesiace), nie hádaná: 830 passed všade.
 - Plný beh na lokálnej integračnej vetve (018a + #52): 851 passed, syntax gate OK, mutation-gate 34/34 `ok`, enforcement-evidence `tree_clean`, `unproven_claims: []`.
 ### Rozpracované / Pending
-- **Merge je akt foundera; poradie #52 / #53 nie je záväzné.** CI na prvom behu #53 padlo na tých istých 8 testoch ako červený `main` (nie z #53) → oprava z #52 je portovaná do vetvy #53 (`d980156`), diff #53 dočasne nesie aj 2 súbory z #52 a po merge #52 sa zúži. #52 CI zelené; CI na `d980156` beží — výsledok príde ako event.
+- ~~Merge #52/#53~~ — hotovo (viď hore). Do `main` sa dostal aj port opravy v #53 bez duplicity (ten istý commit `3a3b5e6`).
 - **UPTM-018 čaká na foundera:** dve čísla (`capital.account_equity`, `validation_capital.amount`) — bez nich VC-I5/VC-I6 končia na `UNKNOWN`. Nezmenené.
 - `uptm-runner/docs/decisions.md`, záznam 2026-09-25 `DEC-UPTM-MAP-Q3` („stays OPEN") nemá odkaz dopredu na DEC-UPTM-017. Poznamenané, **neopravené** — rozhodnutie foundera.
 - Vložený „Prompt OS / dve dráhy / 8 slučiek" text: neboli v ňom pokyny pre túto session, nič sa nestavalo. Vrecková karta čaká na GO a odpoveď, **ktorá slučka je prvá** v živom teste u makléra.
@@ -17,7 +18,7 @@
 - runner/mutation_gate.py: +2 cases (`map-q3-relation-reads-unadopted-again` v #53, `drill-fixture-pinned-to-a-date` v #52)
 - tests/test_detector_invocation.py: dátumy drillu ako vek, nie kalendár (#52)
 ### Ďalší krok
-Founder: „merguj 52" a „merguj 53" (ľubovoľné poradie), keď je CI na #53 zelené. Overiť obsahom na `origin/main`, nie odznakom.
+Founder: dve čísla pre UPTM-018 (`capital.account_equity`, `validation_capital.amount`) — bez nich VC-I5/VC-I6 končia na `UNKNOWN`. Nezačaté, nič nie je rozpracované na disku.
 
 ## Session 2026-09-29 (CHECKOUT-ENV-01 — krok A)
 ### Dokončené
