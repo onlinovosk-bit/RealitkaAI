@@ -1,3 +1,24 @@
+## Session 2026-09-30 (RAU — Revolis Agentic University)
+### Dokončené
+- Pokus zabiť plán + audit skutočného stavu (read-only): `docs/reports/2026-09-30-rau-w0-reality-audit.md`. Zistenia: Runner je z väčšej časti kontrakt, Model Router/Cost Governor neexistujú, „8 loopov" v repe nie je, Agent Factory prah je prekročený (4) → posúdenie Ústavou, Onlinovo.sk a AI Phone Operator chýbajú v zozname 7 projektov.
+- RAU základ (zero-runtime): `docs/rau/` (README, RAU-v1.0, registry.json, routing-rules.json, 24 promptov P00–P23), skill `.claude/skills/rau/SKILL.md`, router `scripts/ops/rau-route.mjs`, test `apps/crm/tests/verification/rau.verification.test.ts`.
+- Dôkaz: 152 testov (vitest) zelených; lint, typecheck ratchet a API contract PASS lokálne (`scripts/ci/prepush-gate.sh`); mutačný dôkaz 56/56 (každá sabotáž zhasne test); tri nezávislé slepé sady, prvý beh na zmrazenom routeri: gate presne 61 % / 80 % / 40 %, nebezpečné podhodnotenia 3 / 2 / 6 (adverzariálna sada); nezávislý review *SHIP WITH FIXES* → opravené. **CI na PR zatiaľ nebežala; nič nie je VERIFIED v produkcii.**
+- Záznam v `memory/decisions.md` (BUILD len vrstvy bez runtime; ťažké časti BACKLOG; veto Q1 vedome prekročené foundrom).
+### Rozpracované / Pending
+- **Draft PR #759 čaká na foundera** (merge = „merguj 759"); CI zelená na `7f713a4`. Merge spustí Vercel build `apps/crm` (v diffe sú len testy).
+- Founder: Onlinovo.sk / AI Phone Operator; kto je „Nájomná agentúra"/„Proon"; kde žije Mia; denylist auto-merge pre RAU cesty (`.github/` je Tier 3); krok C (Stripe ceny) má prednosť.
+- Finálna verzia routeru nemá čerstvú slepú sadu (NEZMERANÉ); YouTube/EÚ pravidlá NEOVERENÉ.
+- Nástroje: MCP servery Ruflo a onlinovo sa nepripojili (CONNECTION_CLOSED); priložená kópia chatu nebola k dispozícii.
+### Kľúčové súbory zmenené
+- docs/rau/*: README, RAU-v1.0, registry.json, routing-rules.json, prompts/P00–P23
+- .claude/skills/rau/SKILL.md: Rector (pridaný cez `git add -f`, priečinok je v .gitignore ako ostatné skills)
+- scripts/ops/rau-route.mjs: deterministický router (PTC)
+- apps/crm/tests/verification/rau.verification.test.ts: verifikácia
+- docs/reports/2026-09-30-rau-w0-reality-audit.md: audit W0
+- memory/decisions.md, memory/session-summary.md, memory/open-tasks.md
+### Ďalší krok
+Founder: krok C v Stripe live mode (`bash scripts/ops/stripe-verify-prices.sh --spec`) — najrýchlejšia cesta k príjmu. Potom rozhodnutie o merge draft PR s RAU.
+
 ## Session 2026-09-30 (AI-FAIL-VISIBLE)
 
 ### Dokončené
@@ -182,6 +203,7 @@ Zmergovať #743 a z prvých logov po nasadení zistiť, ktorá doména dnes chod
 - `memory/decisions.md`, `memory/session-summary.md`: prepend
 ### Ďalší krok
 `GO DEMAND-D1` — extrakcia dopytu z portálových e-mailov (94 % leadov bez dopytu); paralelne `GO B-REPO` pre Projekt B.
+
 ## Session 2026-09-29 (CHECKOUT-ENV-01 — krok A)
 ### Dokončené
 - **Korekcia stavu:** krok A NIE JE nezačatý — prebehol 2026-09-22 → **0/9**
