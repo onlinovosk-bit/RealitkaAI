@@ -1,5 +1,34 @@
 # Critical Decisions Log
 
+## [2026-09-30] READ-REASON — AI volania odmieta Anthropic kvôli kreditu (read-only, PROD SELECT 19:09 UTC)
+
+**Dôvod zlyhania AI je dokázaný:** `ai.call_failed` po nasadení #760 (PROD `platform_events`, 3 riadky) —
+všetky `reason = billing`, `http_status = 400`, `error_type = invalid_request_error`:
+- 13:02:41 UTC `inbound_triage` (req `req_011CfZfkwHui9TCNqnmWuWfY`)
+- 18:36:39 UTC `inbound_triage` (req `req_011Cfa7DzakhfuJwXdtyz5mG`)
+- 18:36:41 UTC `inbound_reply_draft` (req `req_011Cfa7EBhzLsDegL7etnPxJ`)
+Dashboard cron 13:35:44–47 UTC: 3 × `fallback` s `failure_reason = billing` (HTTP 400) + 1 × `empty`
+(`ai_action_audit`, `meta->>'failure_reason'`). Nové leady od 09:30 UTC: 2 (13:02 bez e-mailu,
+18:36 s e-mailom, obidva `web_form`) — `ai_triage_at` NULL, 0 activities.
+
+**Čo to znamená:** HTTP 400 samo o sebe klasifikátor zaradí ako `invalid_request`; `billing` vznikne
+len zhodou textu správy so vzorom „credit balance / billing / payment required / insufficient
+credit". Teda Anthropic odmieta volania s hláškou o **nedostatku kreditu**. Textu správy som
+nevidel (zámerne sa neukladá, môže niesť PII). Sedí to s tichom od 22. 9. (posledný triage
+2026-09-22 09:13). **Kľúč ani kód nie sú príčina** — a preto nepomôže žiadna zmena v kóde.
+
+**Nedokázané:** ktorá organizácia/workspace Anthropic Console kľúč vlastní; či ide o vyčerpaný
+predplatený kredit, alebo o zlyhanú platbu/limit. Dashboard `llm` = 0 z 212 od 4. 9. tým
+vysvetlený nie je (triage 22. 9. fungoval) — zostáva BACKLOG.
+
+**Krok foundera (2 min, peniaze → len on):** Anthropic Console → Settings → **Billing**: stav
+kreditu, doplniť a zapnúť auto-reload + upozornenie na nízky zostatok. Potom overiť **read-only**:
+ďalší lead má `ai_triage_at` a po cron behu prestanú pribúdať `ai.call_failed`.
+
+**Stav dosahu:** `inbound.auto_response` = 0 riadkov (kód z PR #764 ešte nie je na PROD). Kým sa
+#764 nezmerguje, tenant (Smolko) môže v hlavičke Playbooku vidieť `ai.call_failed` — SSE filter
+je práve v #764.
+
 ## [2026-09-30] AUTO-RESPONSE-VISIBLE — každý pokus o auto-odpoveď zanechá záznam (BUILD, GO foundera)
 
 **Nové dôkazy od foundera (screenshoty Vercel + Resend, 30. 9. ~12:40 UTC) — zužujú príčinu:**

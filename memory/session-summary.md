@@ -1,3 +1,21 @@
+## Session 2026-09-30 (READ-REASON)
+### Dokončené
+- **READ-REASON** (read-only): AI volania odmieta Anthropic s dôvodom `billing` (HTTP 400,
+  `invalid_request_error`) — 3 × `ai.call_failed` (triage 13:02 a 18:36, návrh odpovede 18:36 UTC)
+  + dashboard cron 13:35 UTC. Teda **nedostatok kreditu**, nie kľúč ani kód. Detail a request-id:
+  `memory/decisions.md`.
+### Rozpracované / Pending
+- **Founder (2 min):** Anthropic Console → Billing: doplniť kredit, zapnúť auto-reload + upozornenie.
+- Po doplnení: read-only overenie (nový lead má `ai_triage_at`; `ai.call_failed` neprirastá).
+- **PR #764 čaká na „merguj 764"** — nesie aj SSE filter (kým nie je na PROD, tenant môže vidieť
+  `ai.call_failed` v hlavičke Playbooku). Potom prvý `inbound.auto_response`.
+- Resend: doména `revolis.ai` „Partially Failed", `mg.revolis.ai` neexistuje (príčina auto-odpovede,
+  nedokázaná). Backfill triage pre leady od 22. 9. — až po doplnení kreditu, vyžaduje GO.
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md`: záznam (žiadna zmena kódu).
+### Ďalší krok
+Founder doplní Anthropic kredit → overiť ďalší lead; `merguj 764`.
+
 ## Session 2026-09-30 (AUTO-RESPONSE-VISIBLE)
 ### Dokončené
 - **AUTO-RESPONSE-VISIBLE** (GO foundera): každý pokus o auto-odpoveď zapíše jeden záznam
