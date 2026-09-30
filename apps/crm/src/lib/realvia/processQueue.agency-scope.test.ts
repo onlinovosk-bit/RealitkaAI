@@ -202,8 +202,14 @@ describe("Realvia processQueue agency scope", () => {
         source_system: "realvia",
       }),
     );
-    // Must not force PK = source_id (collides across tenants).
-    expect(insertPayloads[0]).not.toHaveProperty("id");
+    // PK nesmie byť source_id (kolízia medzi tenantmi) — ALE `id` MUSÍ existovať:
+    // properties.id je v PROD `text NOT NULL` bez defaultu. Predošlá asercia
+    // `not.toHaveProperty("id")` kódovala chybu, ktorá od 2026-09-11 blokovala vytvorenie
+    // každej novej ponuky (viď processQueue.create-id.test.ts).
+    const insertedId = (insertPayloads[0] as { id?: unknown }).id;
+    expect(typeof insertedId).toBe("string");
+    expect(insertedId).not.toBe("");
+    expect(insertedId).not.toBe(SHARED_SOURCE_ID);
     expect(stub.mutateEqs.find(([c, v]) => c === "id" && v === PROPERTY_A_ID)).toBeUndefined();
   });
 

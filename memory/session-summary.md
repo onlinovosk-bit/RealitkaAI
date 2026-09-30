@@ -1,3 +1,31 @@
+## Session 2026-09-30 (REALVIA-CREATE-ID + LISTING-REF-CHECK)
+### Dokončené
+- **REALVIA-CREATE-ID** — nové ponuky z Realvie sa od 4. 9. nevytvárali: PR #522 prestal posielať
+  `id`, `properties.id` je v PROD `NOT NULL` bez defaultu. 31 webhookov / 17 ponúk zlyhalo
+  (11.–28. 9.). Oprava: `crypto.randomUUID()` v CREATE vetve, bez migrácie. Regresný test s DB
+  dvojníkom, ktorý vynucuje PROD obmedzenie; mutation proof 5/5; starý test kódoval chybu
+  (`not.toHaveProperty("id")`) — opravený.
+- **LISTING-REF-CHECK** — atribúcia cez zákazku funguje technicky (`internal_reference` → maklér,
+  132/132), ale dnes je mapovateľných len 2 z 11 leadov; parser berie pätičku „Odoslané z
+  administračného systému" ako názov inzerátu.
+- **Smolko:** odpoveď na e-mail z 29. 9. + 3 screenshoty (Nehnuteľnosti admin Dopyty/Klienti,
+  Realvia „Klienti" vypnutá dodávateľom). Aspoň 4 stratené dopyty 23.–26. 9. Export klientov =
+  1156 kontaktov bez poznámok a zákaziek.
+- Detail, plán opakovania a Ústava: `memory/decisions.md` (záznam REALVIA-CREATE-ID).
+### Rozpracované / Pending
+- **Po merge a nasadení PR:** opakovanie 31 webhookov (GO + `CRON_SECRET` foundera). **Pozor na
+  4 stiahnuté ponuky** — viď plán v `decisions.md`.
+- **READ-REASON** (dôvod zlyhania AI z PROD) — naplánované 14:05 UTC; po nasadení #760.
+- Reálny súčasný mail z Nehnuteľnosti.sk pre opravu extrakcie referencie.
+- Draft Smolkovi — founder výslovne odložil.
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/realvia/processQueue.ts`: CREATE vetva generuje `id`; opravené komentáre.
+- `apps/crm/src/lib/realvia/processQueue.create-id.test.ts` (nový), `processQueue.agency-scope.test.ts`
+  (asercia opravená).
+### Ďalší krok
+Merge PR → overiť nasadenie → GO na opakovanie webhookov (12 + 1 bezpečných, 4 stiahnuté cez
+re-pend delete jobov).
+
 ## Session 2026-09-30 (RAU — Revolis Agentic University)
 ### Dokončené
 - Pokus zabiť plán + audit skutočného stavu (read-only): `docs/reports/2026-09-30-rau-w0-reality-audit.md`. Zistenia: Runner je z väčšej časti kontrakt, Model Router/Cost Governor neexistujú, „8 loopov" v repe nie je, Agent Factory prah je prekročený (4) → posúdenie Ústavou, Onlinovo.sk a AI Phone Operator chýbajú v zozname 7 projektov.
