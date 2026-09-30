@@ -1,3 +1,37 @@
+## Session 2026-09-30 (AI-FAIL-VISIBLE)
+
+### Dokončené
+- **AI-FAIL-VISIBLE** — zlyhanie volania na LLM po sebe zanechá stopu: kód dôvodu
+  (`auth` / `billing` / `rate_limit` / `timeout` / `config` …), HTTP status, request-id; **nikdy
+  text chyby**. Rieši viditeľnosť, nie príčinu (tá je stále neznáma).
+- `withAiTimeout` loguje každé zlyhanie na `warn` vrátane pozdného odmietnutia po timeoute;
+  správanie sa nezmenilo. Inbound triage a AI návrh zapisujú `ai.call_failed` do
+  `platform_events`; `dashboard_insights` nesie `failure_*` v `ai_action_audit.meta`.
+- Dôkaz: 97 zelených testov na dotknutých súboroch, **mutation proof 14/14**, lint čistý,
+  typecheck ratchet 49 ≤ 54 (žiadna chyba v mojich súboroch). Bez migrácie.
+- Detail, SQL na zistenie príčiny a riziká: `memory/decisions.md` (záznam AI-FAIL-VISIBLE).
+
+### Rozpracované / Pending
+- **Po nasadení PR**: spustiť SQL z `decisions.md` — dôvod uvidíme z `ai_action_audit` po
+  najbližšom cron behu (~06:24 alebo ~13:35 UTC), z `platform_events` po ďalšom leade.
+- **Founder (2 min):** Anthropic Console (chyby požiadaviek, kredit) + dátum zmeny
+  `ANTHROPIC_API_KEY` vo Vercel env — môže príčinu určiť skôr než nasadenie.
+- **Riziko:** `ai.call_failed` ide cez SSE stream tenanta (`/api/events/stream`); kód `billing`
+  by klient videl v sieťovom paneli. Filter je samostatná malá zmena, nerobená.
+- Zostáva: `auto_response_sent_at` NULL u 6 z 6 leadov, `dashboard_insights` nikdy `llm`.
+
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/ai/ai-failure.ts` (nový), `ai-failure-record.ts` (nový): klasifikácia + záznam.
+- `apps/crm/src/lib/ai/fallback.ts`: `withAiTimeout` s logom a `onFailure`.
+- `apps/crm/src/lib/{inbound/auto-reply,inbound/reply-draft,acquire/inbound-lead-triage}.ts`,
+  `lib/ai/{dashboard-insights,dashboard-insights-cron}.ts`: dôvod do výsledku, logu a záznamu.
+- 5 volajúcich `withAiTimeout` dostalo názov funkcie.
+- 6 nových / rozšírených testových súborov.
+
+### Ďalší krok
+Podľa zistenej príčiny (`reason` z SQL v `decisions.md`). Ak `timeout` → iný problém než kľúč
+(okno 500–800 ms); ak `auth`/`billing` → krok foundera v Anthropic Console / Vercel env.
+
 ## Session 2026-09-30 (LEAD-NO-DRAFT — read-only)
 
 ### Dokončené
