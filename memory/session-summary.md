@@ -1,3 +1,18 @@
+## Session 2026-09-30 (DEMAND-D4)
+### Dokončené
+- D4 matching na overenom dopyte: engine, tabuľka + RLS, API, karta na detaile leadu, funnel skript (`apps/crm/src/lib/demand/match*.ts`, `supabase/migrations/20260930120000_demand_property_matches.sql`)
+- Kontrakt `matching-input-contract-v1.md` doplnený o rozhodnutia v1; Truth Matrix: D4 CODE+VERIFIED, PROD ⏳
+### Rozpracované / Pending
+- PROD: backfill D1 (founder) → migrácie → flagy → `demand-match-run --apply`
+- Mimo v1: dopyt potvrdený maklérom, meranie „maklér otvoril/poslal“, prepočet pri zmene nehnuteľnosti
+- #766 MEMORY-GUARD čaká na review
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/demand/match.ts`, `match-store.ts`, `store.ts`: engine, zápis, napojenie po D1
+- `apps/crm/src/app/api/leads/[id]/demand-matches/route.ts`, `components/leads/demand-matches-card.tsx`: čítanie + UI
+- `apps/crm/tests/rls/demand-matches-rls.test.ts`: tenant pin
+### Ďalší krok
+Founder spustí backfill D1 na vzorke 60 → pri PASS migrácie D1+D4 na PROD a zapnutie D1.
+
 ## Session 2026-09-30 (REALVIA-CREATE-ID + LISTING-REF-CHECK)
 ### Dokončené
 - **REALVIA-CREATE-ID** — nové ponuky z Realvie sa od 4. 9. nevytvárali: PR #522 prestal posielať

@@ -1,5 +1,13 @@
 # Critical Decisions Log
 
+## [2026-09-30] DEMAND-D4 — matching iba na overenom dopyte, za flagom (founder GO)
+- **Čo:** engine `lib/demand/match.ts`, zápis `match-store.ts` do novej tabuľky `demand_property_matches` (`demand_record_id NOT NULL`, tenant RLS, zápis len service role), API `/api/leads/[id]/demand-matches`, karta na detaile leadu (✓/✗/⚠ + citát klienta), skript `scripts/demand-match-run.ts` (predvolene dry-run funnel, `--apply` len na GO).
+- **Zdroj pravdy:** výhradne `lead_demands`; starý matching (číta predvyplnené `leads.*`) nezmenený a oddelený.
+- **Spúšťanie:** hneď po uložení demand recordu so `status=ok`, samostatný flag `DEMAND_MATCHING_ENABLED` (OFF), aby sa D1 dalo zmerať skôr, než D4 zapíše.
+- **Pravidlá podľa PROD dát** (150 nehnuteľností): typ tvrdo (aj „Neznáme“ = nie), riadky „Dopyt“ vyradené, aktívne aj preklep „Aktivna“, lokalita so skloňovaním (prefix 5), rozpočet do +10 % ako ✗, bez fallbacku; skóre = zhody/(zhody+nezhody), prah 0,6, top 10.
+- **Overenie:** 51 testov (engine, API, flag) + RLS test; 5/5 mutantov zabitých (2 prežili prvé kolo → doplnené testy „Dopyt bez disposition“ a „rejected s hodnotou“).
+- **Na PROD nič:** `lead_demands` tam ešte nie je. Poradie: backfill D1 → migrácie D1 + D4 → `DEMAND_EXTRACTION_ENABLED` → zmerať → `DEMAND_MATCHING_ENABLED` → `demand-match-run --apply` na históriu.
+
 ## [2026-09-30] REALVIA-CREATE-ID — nové ponuky sa od 4. 9. nevytvárajú (BUILD, GO foundera)
 
 **Príčina (mechanizmus dokázaný kódom + schémou + chybou):** PR #522 (2026-09-04) prestal pri
