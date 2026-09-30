@@ -12,10 +12,16 @@
 //    Tá istá trieda chyby, akú repo už raz zavrelo pod GO
 //    FIX-CRON-SECRET-FAIL-CLOSED a potom pri Concierge (#717): chýbajúca
 //    premenná je chyba konfigurácie, nie povolenie. Teraz vracia 503.
-import crypto from "crypto";
+//
+// 3. Podpis sa overuje podľa schémy, akou ho Resend naozaj podpisuje. Pôvodný
+//    kód porovnával `svix-signature` s hex HMAC-om nad telom — to sa nemôže
+//    rovnať NIKDY, takže každá skutočná doručenka dostala 401 a reťaz bola
+//    prerušená presne na článku, ktorý som v #765 označil za funkčný.
+//    Detaily a dôkaz z primárneho zdroja: `lib/webhooks/standard-webhooks.ts`.
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { recordEmailEngagement } from "@/lib/events/email-engagement";
+import { verifyStandardWebhook } from "@/lib/webhooks/standard-webhooks";
 import { storeReply } from "@/lib/email-tracking";
 
 export const runtime = "nodejs";
@@ -42,15 +48,17 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const signature = req.headers.get("svix-signature") ?? "";
-  const hmac = crypto.createHmac("sha256", webhookSecret).update(rawBody).digest("hex");
-  let sigValid = false;
-  try {
-    sigValid = crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(hmac));
-  } catch {
-    // length mismatch — treated as invalid
-  }
-  if (!sigValid) {
+  const check = verifyStandardWebhook({
+    secret:          webhookSecret,
+    id:              req.headers.get("svix-id") ?? "",
+    timestamp:       req.headers.get("svix-timestamp") ?? "",
+    signatureHeader: req.headers.get("svix-signature") ?? "",
+    body:            rawBody,
+  });
+  if (!check.valid) {
+    // Dôvod ide do logu, nie do odpovede — volajúcemu by len prezradil, ktorá
+    // časť kontroly padla.
+    console.error("[resend-webhook] podpis neprešiel:", check.reason);
     return NextResponse.json({ ok: false, error: "Invalid signature" }, { status: 401 });
   }
 

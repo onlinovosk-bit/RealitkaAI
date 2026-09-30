@@ -5150,3 +5150,76 @@ lead. Teraz vracia 503. Tretí výskyt tej istej triedy po cron-e a Concierge
 
 BRI z toho začne počítať až keď prvý lead e-mail otvorí. Do tej doby zostáva
 `events` prázdna a guard z #761 skóre stále nezapíše — správne.
+
+---
+
+## 2026-09-30 — WEBHOOK-SIGNATURE-01: článok, ktorý som označil za funkčný, funkčný nebol
+
+PR #768. Nájdené pri kontrole po merge #765, nie pri písaní #765 — to je tá
+podstatná časť záznamu.
+
+### Čo som tvrdil a čo bola pravda
+
+V tele #765 je tabuľka reťaze štyroch článkov. Článok 2 „webhook prijme
+open/click" som označil `✓ fungovalo`. Nefungoval. Endpoint porovnával
+hlavičku `svix-signature` s obyčajným hex HMAC-om nad telom požiadavky:
+
+```ts
+crypto.createHmac("sha256", webhookSecret).update(rawBody).digest("hex")
+```
+
+Resend podpisuje cez Svix (Standard Webhooks). Overené z primárneho zdroja,
+`node_modules/standardwebhooks/dist/index.js`, nie z pamäte:
+
+| | Svix | pôvodný kód |
+|---|---|---|
+| kľúč | base64 dekódovaný zvyšok po `whsec_` | celý reťazec ako ASCII |
+| podpisuje sa | `{svix-id}.{svix-timestamp}.{telo}` | len telo |
+| kódovanie | `v1,<base64>`, viac podpisov oddelených medzerou | 64 znakov hexu |
+
+Tri nezávislé rozdiely. Dĺžky nesúhlasia, takže `timingSafeEqual` vyhodí
+výnimku, `catch` ju spolkne a `sigValid` zostane `false`. **Každá skutočná
+doručenka z Resendu dostala 401.** Signál nemal ako doraziť — ani predtým, ani
+po #765.
+
+### Prečo to prešlo okolo mňa
+
+Ten kód som nepísal, len som do neho pridal fail-closed 503. Overil som, že
+podpis sa overuje **vždy**, a to som zamenil za overenie, že sa overuje
+**správne**. Presne tá istá zámena, akú tento kontrolór hľadá inde:
+„kontrola existuje" nie je „kontrola funguje".
+
+Druhé poučenie: `catch {}` okolo `timingSafeEqual` s komentárom
+„length mismatch — treated as invalid" bol jediný viditeľný príznak. Nesúlad
+dĺžky pri porovnaní dvoch HMAC-ov tej istej funkcie nemôže nastať nikdy —
+znamenal, že tie dve strany nie sú tá istá schéma. Bol to nález, nie okrajový
+prípad.
+
+### Ako je to opravené
+
+`lib/webhooks/standard-webhooks.ts` nad `node:crypto`, **bez novej
+závislosti**: balík `svix` je v `node_modules` len tranzitívne (hoistnutý),
+spoliehať sa na to pri builde na Verceli by bola tichá časovaná bomba.
+Vrátane tolerancie 5 min proti replayu a viacerých podpisov v hlavičke kvôli
+rotácii kľúča.
+
+### Dôkaz, ktorý nie je kruhový
+
+Test neporovnáva výstup funkcie s tou istou matematikou. Obsahuje **zamrznutý
+vektor vygenerovaný skutočnou knižnicou `standardwebhooks`** (`sign()`
+s daným id, timestampom a telom) a overuje, že ho naša funkcia reprodukuje
+znak za znak. Zamrznutý zámerne — aby test nezávisel na tranzitívnej
+závislosti, ktorá môže z `node_modules` zmiznúť.
+
+Dva testy pinujú samotnú opravu: stará hex schéma musí dostať `false`
+na úrovni funkcie aj 401 na úrovni endpointu.
+
+24 nových testov (15 podpis + 9 endpoint). Endpoint predtým nemal ani jeden.
+
+### Čo z toho platí ďalej
+
+Zvyšné dva predpoklady reťaze sú v Resend dashboarde a ja ich z repa
+neoverím: či je endpoint registrovaný na `email.opened` a `email.clicked`,
+a či je pre odosielaciu doménu zapnuté Open/Click tracking (v Resende je
+vypnuté by default). `RESEND_WEBHOOK_SECRET` v produkcii **je** — typ
+`sensitive`, target production + preview, overené cez Vercel API.
