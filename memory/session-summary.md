@@ -20,6 +20,61 @@
 ### Ďalší krok
 Founder: dve čísla pre UPTM-018 (`capital.account_equity`, `validation_capital.amount`) — bez nich VC-I5/VC-I6 končia na `UNKNOWN`. Nezačaté, nič nie je rozpracované na disku.
 
+## Session 2026-09-29 (príjem leadov: pätička, zdroj podľa odosielateľa, diagnostika)
+
+### Dokončené
+- **#728 INBOUND-NOTALEAD-01** — `NOT_A_LEAD` log nesie presný dôvod + technické príznaky
+  bez osobných údajov (`apps/crm/src/lib/acquire/email-adapter.ts`).
+- **#731 revert #370** — produkcia sa nenasadila ~1 h, 4 deploymenty ERROR, main sa nedal
+  sparsovať. Overené cez `pg_proc`, že migrácia z #370 sa do PROD nikdy nedostala.
+- **#732 pätička „odhlásiť"** — o odhlásení rozhoduje predmet, nie výskyt slova kdekoľvek
+  v tele. Nový `unsubscribe-footer.test.ts` padá 4 zo 6 na starom parseri.
+- **#739 SOURCE-FROM** — `SOURCE_RULES` má dva nezávislé signály (text + doména
+  odosielateľa), varovanie `source_from_sender`, `PARSER_VERSION` 1.3 → 1.4.
+  Gmail pull hlavičku `From` mal a zahadzoval ju; teraz ju posiela.
+- **PROD kontrola 08:42** — lead o 07:37 vznikol cez e-mailovú bránu (ale `web_form`,
+  nie portál). Štyri maily 07:59–08:40 zahodené ako `unknown_source` /`not_inquiry`,
+  všetky s `has_sender: true` a `source_detected_by: none`.
+
+### Rozpracované / Pending
+- **#743 DIAG-2 je otvorený a zelený** (7/7 checkov) — `sender_domain` v logu namiesto
+  `has_sender`, nevytvorený AI návrh na `warn`. Čaká na merge foundera.
+- **Lead z 07:37 nedostal AI návrh** — nula aktivít, dôvod neznámy. Odpoveď príde až
+  z logov po nasadení #743.
+- **`to_unmatched` na všetkých štyroch mailoch** — adresa nie je v `inbound_mailboxes`
+  (GO MAILBOX, read-only analýza).
+- **Kontrakt Cloudflare Workera mimo repozitára** — určuje agentúru aj makléra, nič ho
+  nekontroluje.
+- **#370 (atomické kreditové RPC)** čaká na čerstvú, otestovanú implementáciu.
+- **`gdpr-advisor` skill neexistuje**, hoci ho CLAUDE.md direktíva 5 vyžaduje. GDPR rozbor
+  pre `sender_domain` spravený ručne v popise #743.
+
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/acquire/email-adapter.ts`: `isUnsubscribe` podľa predmetu; `SOURCE_RULES`
+  ako tabuľka s `text` + `domain`; `senderDomainOf`; `sender_domain` v diagnostike.
+- `apps/crm/src/app/api/acquire/email/route.ts`: posiela `subject` aj `from` do parsera;
+  `NOT_A_LEAD` log nesie dôvod a príznaky.
+- `apps/crm/src/lib/inbound/gmail-pull.ts`: hlavička `From` ide do payloadu.
+- `apps/crm/src/lib/inbound/reply-draft.ts`: nevytvorený návrh na `warn`, vytvorený na `log`.
+- Nové testy: `not-lead-reason.test.ts`, `unsubscribe-footer.test.ts`, `source-detection.test.ts`,
+  rozšírený `reply-draft.test.ts`.
+
+### Ďalší krok
+Zmergovať #743 a z prvých logov po nasadení zistiť, ktorá doména dnes chodí (patrí do
+`SOURCE_RULES`, alebo je to bežná pošta?) a prečo lead nedostáva AI návrh.
+## Session 2026-09-29 (PROON-AUDIT)
+### Dokončené
+- Audit Proon Channel Manager + mapovanie na Revolis + 1-týždňová roadmapa: `docs/reports/2026-09-29-proon-channel-manager-audit.md`
+- Founder zvolil Projekt B (krátkodobé prenájmy, samostatne): plán, roadmapa, agentický workflow v `docs/strategy/2026-09-29-projekt-b-str-plan.md` (Channex + Seam, pilot za 1 týždeň, parita 6–8 týždňov)
+- Gap audit Demand OS nad kódom + PROD dátami, upravený 7-dňový sprint: `docs/reports/2026-09-29-demand-os-gap-audit.md`
+### Rozpracované / Pending
+- Proon: founder dodal screenshoty a text webu (vrátane cenníka); priamy crawl v prostredí stále blokovaný.
+- Founder GO: nový repo + názov, entita/vlastníctvo kódu, pilotný ubytovateľ, účty Channex/Seam.
+### Kľúčové súbory zmenené
+- `docs/reports/2026-09-29-proon-channel-manager-audit.md`: nový report
+- `memory/decisions.md`, `memory/session-summary.md`: prepend
+### Ďalší krok
+`GO DEMAND-D1` — extrakcia dopytu z portálových e-mailov (94 % leadov bez dopytu); paralelne `GO B-REPO` pre Projekt B.
 ## Session 2026-09-29 (CHECKOUT-ENV-01 — krok A)
 ### Dokončené
 - **Korekcia stavu:** krok A NIE JE nezačatý — prebehol 2026-09-22 → **0/9**
@@ -1557,6 +1612,19 @@ Bez GO nič. Krok 2 je ďalší v poradí, ale vyžaduje samostatné founder GO.
 ### Ďalší krok
 **`GO CP-P0-1A`** (Safe Spine Foundation) — primárna ďalšia brána. Bez nej sa acceptance #4/#5 nedajú dokončiť. Pred implementáciou treba presne vyriešiť, čo durable persistence znamená, lebo práve to blokuje event-spine A. Rozsah: A1 kanonická v2 schéma · A2 `scope` diskriminátor · A3 tenant isolation · A4 correlation/causation/run sémantika · A5 idempotency · A6 versioning · A7 invariant enforcement · A8 migration ownership. **Žiadny produkčný PII backfill** — to je CP-P0-1C.
 `CP-P0-2` (durable approvals) zostáva ako **alternatívny následný** gate — nie je vykonaný ani aktuálny a neotvára sa súbežne, aby nevznikli dve meniace sa P0 osi naraz.
+
+## Session 2026-08-27
+### Dokončené
+- Critical bug hunt: assignment rules cross-tenant wipe → PR #490
+- Report: `docs/reports/2026-08-27-assignment-rules-tenant-gate.md`
+### Rozpracované / Pending
+- Founder merge #490 (+ older critical-bug PRs still open)
+- Ops backfill NULL agency_id on lead_assignment_rules after migrate
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/lead-automation-store.ts`: scoped client + agencyId
+- `apps/crm/supabase/migrations/20260827230000_lead_assignment_rules_tenant_rls.sql`: tenant RLS
+### Ďalší krok
+Founder merge #490 after CI green; apply migration on prod.
 
 ## Session 2026-08-25
 ### Dokončené
