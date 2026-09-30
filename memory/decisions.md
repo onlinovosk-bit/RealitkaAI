@@ -4885,3 +4885,54 @@ telefonáty — `logEvent` existuje a nikto ho nevolá z miest, kde sa to deje),
 alebo (b) BRI zo Revolis odstrániť a neplatiť zaň údržbu. Odporúčanie: (a),
 ale až keď bude jasné, ktorý jeden signál klient naozaj uvidí — nie všetkých
 päť zložiek naraz.
+
+---
+
+## 2026-09-30 — MORNING-BRIEF-DECIDE-01: brief sa nedá zapnúť + BRIEF-CRON-OBSERVE-01
+
+### Meranie: reťaz je prerušená na vstupe
+
+```
+cron 06:00 → morning_brief_settings WHERE enabled = true → 0 riadkov → { sent: 0 }
+                      ↑ zapisuje jedine hook use-morning-brief
+                      ↑ ten volá jedine komponent BriefSettings.tsx
+                      ↑ ten NEIMPORTUJE NIKTO
+```
+
+Vystopované až po miesto renderu, nie po export: `BriefSettings.tsx` sa v celom
+`apps/crm/src` nikde nevykresľuje; mimo neho je už len typ rovnakého mena.
+Maklér teda nemá kde brief zapnúť. Štvrtý prípad vzoru z #738.
+
+### Čo by v e-maile bolo
+
+Z dvanástich slotov nesú v bežné ráno informáciu dva až tri:
+- **trvalo prázdne**: horúce leady (`lead_scores >= 60`, strop skóre je 22),
+  nárasty skóre, zmeny na LV, arbitráž, cenové poklesy, odpovede — všetko
+  z `events` (0 riadkov)
+- **čestne `null`**: bez kontaktu 48 h (`last_contact_at` prázdny na všetkých riadkoch)
+- **reálne**: nové leady za noc (ale 11 leadov za 30 dní → väčšinu rán 0),
+  aktívne leady (514), čaká na kontakt
+- **neoverené**: hodnota pipeline (parsovaná z textového `budget`)
+
+Tie nuly nie sú „v noci sa nič nedialo" — sú to nezapojené zdroje, ktoré
+vyzerajú ako meranie. Denný e-mail s deviatimi trvalými nulami učí klienta,
+že Revolis nič nesleduje, a robí to presvedčivo.
+
+### Odporúčanie (NEZAPÍSANÉ AKO ROZHODNUTÉ — patrí founderovi)
+
+Nezapájať a nemazať: parkovať s pomenovanou podmienkou — brief sa zapína, keď
+aspoň 5 z 12 slotov nesie reálne dáta. A hlavne: nie je to samostatné
+rozhodnutie. Osud briefu visí na tom istom rozhodnutí o engagemente ako BRI.
+Ak sa začne zbierať jeden reálny signál, brief ožije ako vedľajší efekt.
+
+### Rozhodnutie: BUILD — BRIEF-CRON-OBSERVE-01
+
+Nezávisle od osudu briefu platí, že jeho cron vracal `{ sent: 0, failed: 0 }`
+rovnako pri „nikto to nemá zapnutý" ako pri „všetkým zlyhalo doručenie".
+Doplnené: riadok v `cron_runs` na každý beh, rozlíšenie „nastavenia
+neexistujú" vs. „existujú, ale sú vypnuté" (dva dotazy, nie jeden), zlyhanie
+bez chybovej hlášky sa nestratí, a beh, ktorý mal komu poslať a neposlal
+nikomu, vracia HTTP 500.
+
+Tretí cron s rovnakým vzorom po recompute-bri. Stojí za zváženie urobiť
+`cron_runs` povinnou súčasťou každého nového cronu, nie dodatočnou opravou.
