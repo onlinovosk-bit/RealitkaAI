@@ -1,5 +1,46 @@
 # Critical Decisions Log
 
+## 2026-09-30 — RAU (Revolis Agentic University): základ postavený, ťažké časti do Strategic Backlogu
+
+**Zadanie foundera:** „postaviť RAU do LIVE produkcie" (Univerzita programovania nad 7 projektmi:
+Revolis, UPTM, Mia Vellar, 2× konkurent, 2× YouTube).
+
+**Pokus zabiť plán (dôkazy):**
+- Prah pre Agent Factory (3 agenti za control-contractom) je prekročený (4); rozhodnutie z 2026-09-25 znie
+  „posúdenie Ústavou, nie automatický BUILD, duplicita zatiaľ nepreukázaná". RAU nie je Agent Factory, ale
+  platí rovnaká logika (AP-012).
+- Prompt/stack optimalizácia zasahuje 3,5 % cyklu PR; zvyšok (~74 %, odhad) je čakanie; 27 % CI červených
+  (`docs/reports/2026-09-26-baseline-benchmark.md`).
+- Model Router a Cost Governor neexistujú a nemajú nad čím rozhodovať (ledger `model:null`, `cost_usd:0` v 9/9).
+- Runner 00–12 je z väčšej časti kontrakt (v kóde len `tc-orchestrator.mjs` a `judge.mjs`).
+- Najrýchlejšia cesta k príjmu je krok C (Stripe ceny), nie RAU.
+- „8 uzavretých loopov" v repe nie je. Zoznam 7 projektov vynecháva Onlinovo.sk a AI Phone Operator (Blueprint §17).
+
+**Ústava v2:** Q1 NIE → strop VALIDATE; Q8 „príliš skoro" pre ťažké časti. Skóre nepočítané (Q1/Q8 sú foundera).
+**Founder dal výslovné GO na RAU → vedomé prekročenie veta Q1 → BUILD len vrstvy bez runtime, DB, UI a PROD.**
+
+**BUILD:** `docs/rau/` (README, RAU-v1.0, registry, routing-rules, 24 promptov), `.claude/skills/rau/`,
+`scripts/ops/rau-route.mjs`, `apps/crm/tests/verification/rau.verification.test.ts`,
+`docs/reports/2026-09-30-rau-w0-reality-audit.md`.
+**BACKLOG (s podmienkou odomknutia v `registry.json`):** Control Center UI, Model Router, Cost Governor,
+Agent Factory (posúdenie Ústavou), produktová pamäť v DB, autonómny režim (allowlist prázdny).
+
+**Engineering justification:** trigger new-abstraction; path new-code (tenké, obaluje existujúce); alternatívy
+(len prompty / rozšíriť task-loop / Agent Factory) odmietnuté; contradiction check: flag (Q1 veto prekročené
+foundrom; P05 „nový router bez ADR" — zastupuje tento záznam a `docs/rau/RAU-v1.0.md`; AP-012 riziko uznané).
+
+**Dôkaz:** 152 testov (vitest) zelených; lint, typecheck ratchet a API contract PASS lokálne (`scripts/ci/prepush-gate.sh`); mutačný dôkaz 56/56 (každá sabotáž zhasne test); tri nezávislé slepé sady, prvý beh na zmrazenom routeri: gate presne 61 % / 80 % / 40 %, nebezpečné podhodnotenia 3 / 2 / 6 (adverzariálna sada); nezávislý review *SHIP WITH FIXES* → opravené. **CI na PR zatiaľ nebežala; nič nie je VERIFIED v produkcii.**  Podrobnosti a slabiny: `docs/rau/RAU-v1.0.md` §11.
+**Čo to NIE JE:** router je triedič kľúčovými slovami, nie bezpečnostná kontrola; adverzariálne formulácie
+prejdú. Nezaujatý odhad presnosti brány: 80 % (bežné formulácie), ~40 % (adverzariálne) — **finálna verzia na
+čerstvej sade NEZMERANÁ**.
+
+**Vedome neoverené:** pravidlá YouTube/EÚ pre AI a detský obsah; priložená kópia chatu nebola k dispozícii;
+MCP servery Ruflo a onlinovo sa nepripojili (swarm runtime sa nepoužil ani nepredstieral).
+
+**Otvorené pre foundera** (`docs/rau/RAU-v1.0.md` §Rozhodnutia foundera): rozsah/merge; Onlinovo.sk a AI Phone
+Operator; identita „Nájomná agentúra"/„Proon" a kde žije Mia; skill je po merge v sile pre každú session;
+denylist auto-merge pre RAU cesty (Tier 3, robí founder); krok C má prednosť.
+
 ## 2026-09-29 — CHECKOUT-ENV-01: krok A je hotový, VERIFY zoznam je teraz odvodený z kódu
 
 **Zistenie:** handoff tvrdil „krok A nezačatý". Nie je to pravda:
