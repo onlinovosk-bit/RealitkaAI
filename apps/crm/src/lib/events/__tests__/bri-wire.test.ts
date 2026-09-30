@@ -135,10 +135,13 @@ describe('batchRecomputeBRI — filtre na skutočné stĺpce', () => {
     const { client } = makeClient([{ id: 'l1' }, { id: 'l2' }, { id: 'l3' }])
     mockCreateClient.mockReturnValue(client)
 
-    const computed = await batchRecomputeBRI(PROFILE)
+    const result = await batchRecomputeBRI(PROFILE)
 
     // Na starom kóde by dotaz zlyhal na neexistujúcom stĺpci a vrátilo by sa 0.
-    expect(computed).toBe(3)
+    expect(result.computed).toBe(3)
+    expect(result.leads).toBe(3)
+    expect(result.failed).toBe(0)
+    expect(result.firstError).toBeNull()
   })
 
   it('prijme klienta zvonku, aby cron mohol podať service-role', async () => {
