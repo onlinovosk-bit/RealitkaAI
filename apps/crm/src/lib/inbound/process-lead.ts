@@ -96,6 +96,9 @@ export async function processInboundLead(
 
   // 4. Audit event
   await logEvent({
+    // Webhook nemá session: bez service-role klienta RLS insert odmietne
+    // a udalosť zmizne v console.error (EVENTS-WRITE-PATH-01).
+    client:     admin,
     profileId:  payload.profileId,
     entityType: 'lead',
     entityId:   leadId,
