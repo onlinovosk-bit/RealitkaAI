@@ -1,3 +1,17 @@
+## Session 2026-09-30 (MEMORY-GUARD)
+### Dokončené
+- MEMORY-GUARD: workflow + skript + 12 testov, prah overený na histórii main a mutačne (`scripts/ci/memory-append-only.sh`, `.github/workflows/memory-guard.yml`)
+- Oprava vlastného tvrdenia: merge 9774b2c na #745 nič nezmazal (artefakt diffu zastaranej vetvy), zapísané v decisions.md
+### Rozpracované / Pending
+- D1 na PROD: backfill experiment (founder), Anthropic v DPA + /legal/sub-processors, migrácia lead_demands
+- Štítok `memory-rewrite-approved` vytvoriť v GitHub UI pri prvom použití (netreba vopred)
+### Kľúčové súbory zmenené
+- `scripts/ci/memory-append-only.sh`: guard (merge-tree, nadpisy, limit 20 riadkov, štítok)
+- `scripts/ci/__tests__/memory-append-only.test.sh`: 12 scenárov
+- `.github/workflows/memory-guard.yml`: nový workflow; `saas-grade-pipeline.yml`: testy guardu
+### Ďalší krok
+Backfill experiment D1 (founder) → potom `GO DEMAND-D4` podľa `matching-input-contract-v1.md`.
+
 ## Session 2026-09-30 (REALVIA-CREATE-ID + LISTING-REF-CHECK)
 ### Dokončené
 - **REALVIA-CREATE-ID** — nové ponuky z Realvie sa od 4. 9. nevytvárali: PR #522 prestal posielať

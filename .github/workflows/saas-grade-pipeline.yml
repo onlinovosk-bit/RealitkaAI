@@ -208,6 +208,7 @@ jobs:
           ./scripts/ci/__tests__/classify-diff.test.sh
           node ./scripts/ci/__tests__/typecheck-baseline.test.mjs
           ./scripts/ci/__tests__/wait-for-supabase.test.sh
+          ./scripts/ci/__tests__/memory-append-only.test.sh
 
       # Čaká sa TU, nie skôr. Logika je v `scripts/ci/wait-for-supabase.sh`,
       # nie inline: inline bash v YAML nikto nespustí, kým nespadne CI, a táto

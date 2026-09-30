@@ -1,5 +1,12 @@
 # Critical Decisions Log
 
+## [2026-09-30] MEMORY-GUARD — CI zablokuje PR, ktorý zmaže históriu pamäte (founder GO)
+- **Čo:** `.github/workflows/memory-guard.yml` + `scripts/ci/memory-append-only.sh` (12 testov, zapojené aj do `saas-grade-pipeline`).
+- **Ako:** simuluje merge PR do bázy (`git merge-tree`), nie diff vetvy. **FAIL**, keď z `session-summary.md` / `decisions.md` zmizne nadpis záznamu (`## …`) alebo > 20 riadkov. **WARN** pri oprave do 20 riadkov bez straty záznamu. Výnimka: štítok `memory-rewrite-approved`.
+- **Prah zmeraný na histórii main:** #746 (−1090) → FAIL; #751 obnova (−96) → FAIL (patrí štítok); legitímne opravy #692 (−2), #709 (−2), #725 (−1), #726 (−4) → PASS s varovaním. Pravidlo „0 zmazaných“ by ich zablokovalo.
+- **Mutačne overené:** kontrola, ktorá vždy prejde → 5 testov červených; bez kontroly nadpisov → 3 červené.
+- **OPRAVA môjho tvrdenia z 2026-09-29:** founderov merge 9774b2c na #745 **nič nezmazal**. Zlúčil main v stave 75f18cf a záznam PR-BACKLOG-TRIAGE pribudol až s #744 o 1,5 min neskôr. „−72 riadkov“ bol artefakt diffu zastaranej vetvy, rovnaký ako neskôr „−1211“. Commit ff37498 „obnovil“ niečo, čo nechýbalo; škoda nevznikla (na main je záznam 1×). Replay: `memory-append-only.sh 167a99b 9774b2c` → ok. Presne preto guard porovnáva simulovaný merge.
+
 ## [2026-09-30] REALVIA-CREATE-ID — nové ponuky sa od 4. 9. nevytvárajú (BUILD, GO foundera)
 
 **Príčina (mechanizmus dokázaný kódom + schémou + chybou):** PR #522 (2026-09-04) prestal pri
