@@ -13,7 +13,7 @@
 import { NextRequest, NextResponse }     from 'next/server'
 import { createAdminClient }             from '@/lib/supabase/server'
 import { generateAndDeliverBrief }       from '@/lib/morning-brief/assemble'
-import { deriveCronStatus, recordCronRun } from '@/lib/ops/cron-run'
+import { cronHttpStatus, deriveCronStatus, recordCronRun } from '@/lib/ops/cron-run'
 import {
   briefNobodyEnabledReason,
   summariseBriefDeliveries,
@@ -107,9 +107,9 @@ export async function GET(request: NextRequest) {
     detail: { settings_rows: scanned, enabled_rows: eligible },
   })
 
-  // Mal komu poslať a neposlal nikomu — to nie je úspešný beh. HTTP 500 je
-  // jediné, čo v prehľade Cron Jobs uvidíš bez toho, aby si sa pýtal DB.
-  const httpStatus = status === 'failed' ? 500 : 200
+  // Pravidlo aj s dôvodom žije v cronHttpStatus(); tu sa len použije, aby obe
+  // cron routes nemali každá svoju verziu.
+  const httpStatus = cronHttpStatus(status, logError)
 
   return NextResponse.json({
     ok: status !== 'failed',

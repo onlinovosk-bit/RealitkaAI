@@ -19,7 +19,7 @@ vi.mock('@/lib/supabase/server', () => ({
 }))
 
 import { batchRecomputeBRI } from '../bri-score'
-import { deriveCronStatus, recordCronRun } from '@/lib/ops/cron-run'
+import { cronHttpStatus, deriveCronStatus, recordCronRun } from '@/lib/ops/cron-run'
 
 const PROFILE = '33333333-3333-3333-3333-333333333333'
 
@@ -104,6 +104,31 @@ describe('deriveCronStatus', () => {
     expect(deriveCronStatus(26, 0, 26)).toBe('failed')  // mal čo, nezapísal nič
     expect(deriveCronStatus(26, 20, 6)).toBe('partial')
     expect(deriveCronStatus(26, 26, 0)).toBe('ok')
+  })
+})
+
+describe('cronHttpStatus — 500 je záložný signál, nie hlavný', () => {
+  // CI to chytila na morning-brief: bezpodmienečné 500 pri `failed` porušilo
+  // zmluvu, ktorú drží dvanásť ďalších cronov a pinuje ju tests/smoke.spec.ts
+  // („cron s platným CRON_SECRET nevracia 500"). V CI nie je RESEND_API_KEY,
+  // takže doručenie briefu legitímne zlyhá — a route vracala 500.
+  it('zlyhaný beh, ktorý sa zapísal do denníka, vracia 200', () => {
+    expect(cronHttpStatus('failed', null)).toBe(200)
+  })
+
+  it('zlyhaný beh, o ktorom nie je ani záznam, vracia 500', () => {
+    // Vtedy je stavový kód jediné, čo po behu zostane — napr. kým migrácia
+    // `cron_runs` nie je na PROD aplikovaná.
+    expect(cronHttpStatus('failed', 'relation "cron_runs" does not exist')).toBe(500)
+  })
+
+  it('úspešný ani prázdny beh nikdy nevracia 500', () => {
+    expect(cronHttpStatus('ok', null)).toBe(200)
+    expect(cronHttpStatus('empty', null)).toBe(200)
+    expect(cronHttpStatus('partial', null)).toBe(200)
+    // Ani keď zlyhá samotný zápis denníka — beh sám prebehol v poriadku.
+    expect(cronHttpStatus('ok', 'zápis zlyhal')).toBe(200)
+    expect(cronHttpStatus('empty', 'zápis zlyhal')).toBe(200)
   })
 })
 
