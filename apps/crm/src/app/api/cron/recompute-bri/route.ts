@@ -9,10 +9,22 @@
 //
 // Čas je zvolený: bri-snapshot o 02:00 prerotuje score_24h_ago → score_7d_ago,
 // o 02:40 sa dopočítajú nové skóre, a ranný brief o 06:00 ich už vidí čerstvé.
+//
+// BRI-CRON-OBSERVE-01 — prvý beh 2026-09-30 o 02:40 nezapísal ani jedno skóre
+// a o 07:50 sa už nedalo zistiť prečo: runtime logy Vercelu tu prežijú asi
+// hodinu a táto route vracala `{ ok: true, computed: 0 }` rovnako pri „nebolo
+// čo počítať" ako pri „všetko zlyhalo". Odvtedy:
+//   • každý beh nechá riadok v `cron_runs` (scanned / eligible / written /
+//     failed / prvá chyba doslovne),
+//   • beh, ktorý mal čo počítať a nezapísal nič, vracia HTTP 500, aby bol
+//     v prehľade Cron Jobs červený a nie zeleno tichý.
 // ================================================================
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient }         from '@/lib/supabase/server'
 import { batchRecomputeBRI }         from '@/lib/events/bri-score'
+import { deriveCronStatus, recordCronRun } from '@/lib/ops/cron-run'
+
+const JOB = 'recompute-bri'
 
 export async function GET(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
@@ -20,11 +32,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  try {
-    // Service-role, not the cookie client: a cron request carries no session,
-    // so the cookie client reads `profiles` as anon and RLS returns nothing.
-    const supabase = createAdminClient()
+  const startedAt = new Date()
+  // Service-role, not the cookie client: a cron request carries no session,
+  // so the cookie client reads `profiles` as anon and RLS returns nothing.
+  const supabase = createAdminClient()
 
+  try {
     // `account_status` does not exist on `profiles` — the column is `is_active`.
     // The old filter made this query error, `profiles` came back null, and the
     // route returned `{ computed: 0 }` without ever saying why (BRI-DEAD-PATH).
@@ -35,31 +48,62 @@ export async function GET(request: NextRequest) {
 
     if (profileErr) {
       console.error('[recompute-bri cron] profile fetch failed:', profileErr.message)
-      return NextResponse.json({ error: profileErr.message }, { status: 500 })
+      await recordCronRun(supabase, {
+        job: JOB, status: 'failed', startedAt,
+        firstError: `profiles fetch: ${profileErr.message}`,
+      })
+      return NextResponse.json({ ok: false, error: profileErr.message }, { status: 500 })
     }
 
-    if (!profiles?.length) return NextResponse.json({ ok: true, computed: 0 })
+    const scanned = profiles?.length ?? 0
+    let eligible = 0
+    let written  = 0
+    let failed   = 0
+    let firstError: string | null = null
 
-    let totalComputed = 0
     const BATCH = 5
-    for (let i = 0; i < profiles.length; i += BATCH) {
-      const counts = await Promise.all(
-        profiles.slice(i, i + BATCH).map(p => batchRecomputeBRI(p.id, supabase))
+    for (let i = 0; i < scanned; i += BATCH) {
+      const results = await Promise.all(
+        profiles!.slice(i, i + BATCH).map(p => batchRecomputeBRI(p.id, supabase))
       )
-      totalComputed += counts.reduce((s, n) => s + n, 0)
+      for (const r of results) {
+        eligible += r.leads
+        written  += r.computed
+        failed   += r.failed
+        firstError ??= r.firstError
+      }
     }
+
+    const status = deriveCronStatus(eligible, written, failed)
+    const logError = await recordCronRun(supabase, {
+      job: JOB, status, startedAt,
+      scanned, eligible, written, failed, firstError,
+      detail: { profiles_scanned: scanned },
+    })
+
+    // Beh, ktorý mal čo počítať a nezapísal nič, nie je úspech. HTTP 500 je
+    // jediné, čo v prehľade Cron Jobs uvidíš bez toho, aby si sa pýtal DB.
+    const httpStatus = status === 'failed' ? 500 : 200
 
     return NextResponse.json({
-      ok: true,
-      profiles_processed: profiles.length,
-      scores_computed: totalComputed,
-      computed_at: new Date().toISOString(),
-    })
+      ok: status !== 'failed',
+      status,
+      profiles_processed: scanned,
+      leads_eligible:     eligible,
+      scores_computed:    written,
+      scores_failed:      failed,
+      first_error:        firstError,
+      // Keď zlyhá aj samotný denník, nesmie to zapadnúť — inak sme späť tam,
+      // kde sa o behu nedá zistiť nič.
+      run_log_error:      logError,
+      computed_at:        new Date().toISOString(),
+    }, { status: httpStatus })
   } catch (error) {
+    const message = error instanceof Error ? error.message : 'Recompute zlyhal.'
     console.error('[recompute-bri]', error)
-    return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : 'Recompute zlyhal.' },
-      { status: 500 }
-    )
+    await recordCronRun(supabase, {
+      job: JOB, status: 'failed', startedAt, firstError: message,
+    })
+    return NextResponse.json({ ok: false, error: message }, { status: 500 })
   }
 }
