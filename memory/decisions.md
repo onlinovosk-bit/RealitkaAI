@@ -1,5 +1,39 @@
 # Critical Decisions Log
 
+## [2026-09-30] PO DOPLNENÍ KREDITU — `billing` zmizlo, dashboard odhalil vlastnú chybu (800 ms okno)
+
+**Kontext:** founder doplnil kredit (Console, faktúra 30. 9. Paid 24,60 USD = 20 USD + 23 % DPH,
+zostatok 20,00 USD; produkčný kľúč = ten s dátumom 7. 7. 2026, sedí na poslednú zmenu Vercel
+`ANTHROPIC_API_KEY` Production 7. 7. 20:04 UTC). Dashboard cron sa o **20:07:10 UTC** spustil
+(Cursor s produkčným `CRON_SECRET` z Vercelu; odpoveď `ok:true, agencies 4, succeeded 4, failed 0,
+duration_ms 8499`).
+
+**Čo ukazuje `ai_action_audit` z toho behu:** 3 × `fallback` s `failure_reason = timeout`,
+`latencyMs` 801 / 829 / 801, 1 × `empty`. **Žiadne `billing`.** Teda kredit/kľúč sú s vysokou
+pravdepodobnosťou v poriadku (odmietnutie pre kredit by sa vrátilo ako `billing` HTTP 400, tak ako
+predtým). **Nedokázané:** samotný úspešný `llm` výsledok — ešte nikto nevidel; dôkaz príde z Console
+Usage (Haiku požiadavky 30. 9. po 20:00 UTC) alebo z ďalšieho leadu (triage/návrh majú dlhšie okná).
+
+**Pozor na metriku crona:** `succeeded: 4, failed: 0` znamená len, že cron prešiel agentúry; AI
+výstup bol v 3 zo 4 prípadov záloha. Nepoužívať ako dôkaz, že AI funguje (ďalší prípad tichého zlyhania).
+
+**Skutočná príčina „dashboard nikdy `llm` (0 z 212 od 4. 9.)":** `generateDashboardInsights`
+(`apps/crm/src/lib/ai/dashboard-insights.ts` ~237–241) volá `withAiTimeout(..., 800, …)` pri Haiku
+volaní s `max_tokens: 700` — okno 800 ms nestačí ani na prvé tokeny, takže vždy vyprší. Premenná
+`DASHBOARD_INSIGHTS_TIMEOUT_MS` (predvolene 8000) v `dashboard-insights-cron.ts` sa týka len
+vonkajšieho `withTimeout`; vnútorných 800 ms sa nedotkne (zavádzajúce). Dashboard AI teda pravdepodobne
+**nikdy nefungoval**, nie je to dôsledok kreditu. Lead cesta (návrh odpovede má 8 s okno,
+`INBOUND_REPLY_DRAFT_TIMEOUT_MS`) touto chybou netrpí — triage okno som nenašiel, čaká na lead.
+
+**Návrh (čaká na GO): DASHBOARD-LLM-WINDOW** — parameter `timeoutMs` do `generateDashboardInsights`,
+cron ho naplní z `INSIGHTS_AI_TIMEOUT_MS`, živá cesta si nechá rýchle okno; `maxDuration` na cron
+route (dnes nie je nastavené, cron trval 8,5 s, batch 3 agentúr paralelne → s dlhším oknom hrozí
+limit funkcie na Hobby). Test + mutation proof; náklad je v centoch.
+
+**Skutočná spotreba (korekcia odhadu):** z kreditu z mája a júna (40 USD bez DPH) sa do 22. 9. minulo
+všetko → ~9 USD/mesiac; nový kredit 20 USD vydrží asi 2 mesiace → auto-reload + nižší mesačný limit
+(dnes 50 000 USD, upozornenie pri 40 USD).
+
 ## [2026-09-30] READ-REASON — AI volania odmieta Anthropic kvôli kreditu (read-only, PROD SELECT 19:09 UTC)
 
 **Dôvod zlyhania AI je dokázaný:** `ai.call_failed` po nasadení #760 (PROD `platform_events`, 3 riadky) —

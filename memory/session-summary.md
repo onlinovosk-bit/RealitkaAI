@@ -1,3 +1,18 @@
+## Session 2026-09-30 (PO DOPLNENÍ KREDITU)
+### Dokončené
+- Kredit doplnený (Console, 20 USD); `billing` zmizlo — dashboard cron 20:07 UTC (spustil Cursor)
+  vrátil `timeout` (latencia ~800 ms), nie `billing`. Samotný `llm` úspech zatiaľ NEVIDENÝ.
+- Nájdená príčina „dashboard nikdy `llm`": tvrdé 800 ms okno pri Haiku volaní s `max_tokens: 700`
+  (`dashboard-insights.ts` ~237); `DASHBOARD_INSIGHTS_TIMEOUT_MS` ho neovplyvní.
+### Rozpracované / Pending
+- **GO DASHBOARD-LLM-WINDOW** (parameter okna + `maxDuration`, test + mutation proof).
+- Dôkaz AI: Console Usage (Haiku po 20:00 UTC) alebo ďalší lead; kontrola naplánovaná 1. 10. 07:10 UTC.
+- **PR #764 čaká na „merguj 764"**; auto-reload + nižší limit v Console; Resend doména `revolis.ai`.
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md`: záznam (žiadna zmena kódu).
+### Ďalší krok
+GO DASHBOARD-LLM-WINDOW; `merguj 764`.
+
 ## Session 2026-09-30 (READ-REASON)
 ### Dokončené
 - **READ-REASON** (read-only): AI volania odmieta Anthropic s dôvodom `billing` (HTTP 400,
