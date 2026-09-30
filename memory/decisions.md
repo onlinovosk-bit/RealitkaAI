@@ -1,5 +1,87 @@
 # Critical Decisions Log
 
+## [2026-09-30] REALVIA-CREATE-ID — nové ponuky sa od 4. 9. nevytvárajú (BUILD, GO foundera)
+
+**Príčina (mechanizmus dokázaný kódom + schémou + chybou):** PR #522 (2026-09-04) prestal pri
+vytvorení ponuky posielať `id` s predpokladom „DB generates id". `properties.id` je však v PROD
+`text NOT NULL` **bez defaultu**, takže každé vytvorenie novej ponuky z Realvie zlyhá na
+`null value in column "id" of relation "properties" violates not-null constraint`.
+Aktualizácie existujúcich ponúk prechádzajú — preto to nikto nezbadal.
+
+**Rozsah (PROD `SELECT`):** posledná vytvorená ponuka 2026-08-28, od 1. 9. 0 vytvorených;
+prvé zlyhanie 2026-09-11 (vtedy prišla prvá nová ponuka po #522); **31 `advert` webhookov,
+17 rôznych ponúk, 0 z nich v `properties`**. Fronta: 31 jobov `failed` (`retry_count` 3 = vyčerpané)
++ 1 nesúvisiaci starý `unknown` z 25. 5. (Agency resolution failed). Nedokázané: že #522 je
+jediná príčina (časová zhoda + mechanizmus; commit s presným zavedením som neurčil — klon je plytký).
+
+**Prečo to testy nezachytili:** `processQueue.agency-scope.test.ts` kódoval chybu ako požiadavku
+(`expect(insertPayloads[0]).not.toHaveProperty("id")`, komentár „Must not force PK = source_id")
+a mock inserta vždy uspel. Zámer (id nesmie byť `source_id`) bol správny, vyjadrenie nie.
+
+**Oprava:** `processQueue.ts` CREATE vetva generuje `id = crypto.randomUUID()` (zámerne NIE
+`source_id` — kolízia medzi tenantmi, dôvod #522). Bez migrácie. Ostatné cesty vkladajúce do
+`properties` už `id` posielajú (`uc/persist.ts`, `properties-store.ts`) — overené. Nový test
+`processQueue.create-id.test.ts` používa DB dvojník, ktorý vynucuje PROD obmedzenie; stará
+asercia opravená na „`id` existuje a nie je `source_id`". Mutation proof 5/5.
+Alternatíva (nerobená): migrácia `alter column id set default gen_random_uuid()::text` —
+chránila by aj budúce cesty, ale je to zásah do PROD; zvážiť samostatne.
+
+### Plán opakovania 31 zlyhaných webhookov (PROD zápis — čaká na GO, po nasadení opravy)
+
+- **Spúšťa founder:** `GET /api/cron/realvia-process?replay_failed=1` s `Authorization: Bearer
+  $CRON_SECRET` (secret nemám a nesmiem ho zisťovať — AP-004). Endpoint berie joby `failed`
+  **od najstaršieho** (správne poradie: staršie payloady prv). Predvolený limit 50 pokryje všetkých
+  32 (31 advertov + 1 starý `unknown`, ktorý zlyhá znova — neškodné). Worker berie 10 jobov
+  na beh (externý cron, 5 min) → ~20 min.
+- **PASCA — 4 z 17 ponúk boli po poslednom zlyhanom inzeráte stiahnuté** (`archiveType: cancel`,
+  24.–25. 9.). Naivné opakovanie by ich vytvorilo ako **aktívne**. 12 ponúk nebolo nikdy zmazaných
+  (bezpečné), 1 bola zmazaná a potom znova inzerovaná (opakovanie je správne).
+- **Riešenie (navrhnuté):** zároveň s opakovaním nastaviť 4 zodpovedajúce `delete` joby späť na
+  `pending` (SQL `UPDATE` na `realvia_processing_queue` + `realvia_webhook_logs`, robím ja
+  po GO). Worker radí podľa `created_at` vzostupne, teda advert (starší) sa spracuje pred deletom
+  (novším) a stav sa dorovná cez skutočný kód (`cancel` → „Stiahnutá"). Okno, kedy je ponuka
+  krátko aktívna, je najviac jeden beh workera. Overenie po: 17 nových `properties`, 4 z nich
+  „Stiahnutá".
+
+### LISTING-REF-CHECK — výsledok (atribúcia leadu na makléra cez zákazku)
+
+- **Reťaz funguje (dokázané):** „Interné č." z e-mailu → `properties.payload_raw->advert->>
+  'internal_reference'` (131/132) → `broker_*` (132/132 ponúk, 9 maklérov). `RS056N` a `RS061B`
+  z dvoch starších leadov sa spárovali každý na presne jednu ponuku.
+- **Dnes mapovateľné len 2 z 11 portálových leadov** (od júla): 2 s interným číslom, 1 len s ID
+  portálu (Realvia ho nenesie), 1 testovací kód, 5 bez referencie, 2 so smetím. Nehnuteľnosti.sk
+  od 22. 9.: **0 z 3**.
+- **Chyba parsera:** `listingTitle` fallback (`Odoslané z …`) berie pätičku „Odoslané z
+  administračného systému" ako názov inzerátu → falošná referencia; `has_listing_ref` je `true`
+  a `no_listing_ref` sa nenahlási (lead z 30. 9. 07:05).
+- **Neznáme:** ako vyzerá SÚČASNÝ formát Nehnuteľnosti.sk mailu — surové maily sa neukladajú,
+  v Gmaile žiadny portálový mail nie je, fixtury sú syntetické. Potrebný jeden reálny mail
+  (stačí anonymizovaný) alebo logovať len názvy riadkov.
+- **Zásah do atribúcie:** dopyt na ponuku vytvorenú po 28. 8. nemá ponuku → ani makléra.
+
+### Odpoveď Smolka a screenshoty (30. 9.) — čo z nich plynie
+
+- Posledný e-mail (29. 9.) sa pýtal, či Realvia eviduje, čo klienti hľadajú. **Odpoveď:** Realvia
+  „Klienti" je **vypnutá dodávateľom** („Táto funkcia je momentálne vypnutá … kontaktujte nás");
+  e-mail pre podporu Realvie Smolko poslal a čaká. Z admin.nehnuteľnosti.sk exportoval 4 roky
+  klientov: `kontakty.txt` = **1156 riadkov × 7 stĺpcov** (ID, e-mail, telefón, meno, priezvisko,
+  vlastník, rola) — **bez poznámky, zákazky, dátumu a zdroja**. Admin ich však má (karta klienta:
+  zdroj, maklér, dopyty so zákazkou, poznámky vo voľnom texte); export ich zahadzuje.
+- **Portálový admin „Dopyty" je zdroj pravdy pre počet stratených dopytov:** dopyty z 23., 25. (2×)
+  a 26. 9. nemajú v Revolise lead (Revolis: žiadny lead medzi 22. 9. 09:13 a 29. 9. 01:32) →
+  **aspoň 4 stratené dopyty**. Zoznam a e-maily však nie sú 1:1 (dnešný lead z 07:05 v zozname
+  navrchu nie je), takže číslo z adminu nie je automaticky počet stratených.
+- Prílohy s osobnými údajmi klientov **neotvorené** okrem štruktúry (hlavička, počty); nie sú v repe.
+  Import 1156 kontaktov bez GDPR rozboru nerobiť (`gdpr-advisor` v repe neexistuje).
+
+### Rozhodnutia podľa Ústavy v2
+
+- **REALVIA-CREATE-ID — BUILD** (Q1 áno: platiaci klient nevidí nové ponuky 6 týždňov; Q3 áno;
+  Q8 správny čas; Q9 < 2 týždne).
+- **Oprava extrakcie referencie z e-mailu — BACKLOG do dodania reálneho mailu** (bez vzorky by to
+  bola ďalšia ničím nepodložená úprava parsera).
+- **Opakovanie webhookov — čaká na GO** (PROD zápis + secret foundera).
+
 ## 2026-09-30 — RAU (Revolis Agentic University): základ postavený, ťažké časti do Strategic Backlogu
 
 **Zadanie foundera:** „postaviť RAU do LIVE produkcie" (Univerzita programovania nad 7 projektmi:

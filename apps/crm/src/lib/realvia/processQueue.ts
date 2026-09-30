@@ -213,7 +213,8 @@ export async function processAdvertPayload(
     // ── Taxonomy (honest unknown — never fog to Ostatné / Predaj) ─
     const mappedType = mapCategory(advert.category);
     const mappedTransaction = mapTransaction(advert.transaction);
-    // Creates use source_id as properties.id; updates keep existing.id.
+    // Iba pre log: pri vytvorení ešte nie je pridelené `id` (viď vetvu CREATE nižšie);
+    // updaty ponechávajú existing.id.
     const propertyId = existing?.id ?? sourceId;
 
     if (isRealviaMappingUnknown(mappedType)) {
@@ -318,7 +319,13 @@ export async function processAdvertPayload(
         priceChanged,
       };
     } else {
-      // ── CREATE new property (DB generates id — source_id is NOT a global PK)
+      // ── CREATE new property (source_id NIE JE globálny PK — viď PR #522)
+      // `id` sa generuje TU. PR #522 prestal posielať `id: source_id` s predpokladom,
+      // že ho vygeneruje DB, ale `properties.id` je v PROD `text NOT NULL` bez defaultu:
+      // každé vytvorenie novej ponuky zlyhalo na `null value in column "id"` (31
+      // webhookov, 17 ponúk od 2026-09-11). Aktualizácie existujúcich ponúk prechádzali,
+      // preto to nikto nezbadal. Ostatné cesty (uc/persist, properties-store) `id` posielajú.
+      propertyData.id = crypto.randomUUID();
       propertyData.created_at = new Date().toISOString();
 
       const { data: inserted, error } = await sb
