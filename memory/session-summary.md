@@ -24,6 +24,23 @@
 ### Ďalší krok
 AI-FAIL-VISIBLE (malý PR): logovať triedu chyby a HTTP status pri zlyhaní AI volania a zapísať
 trvalý dôvod pri zlyhanom triage/drafte. Čaká na GO.
+## Session 2026-09-30 (UPTM-018 — `account_equity` ostáva v packu)
+### Dokončené
+- **Founder GO na UPTM-018 → rozhodnutie „len v packu, nič v repe nestavať"** (`DEC-UPTM-018`). `onlinovosk-bit/uptm-runner` [#54](https://github.com/onlinovosk-bit/uptm-runner/pull/54) (draft, nemergovať bez „merguj 54").
+- **Oprava mojej chybnej premisy z 2026-09-29.** UPTM-018 nebol „dve čísla od foundera" ani „700 je len fixture": `validation_capital.amount` = 700 € je **nastavené founderom 2026-09-23** (`DEC-UPTM-004`, `set_by: founder`). Chýba jediný údaj, `capital.account_equity`, a ten je údaj **packu**, nie parameter repa (`DEC-UPTM-MAP-Q3`). Zdroj omylu: zastaraná próza `uptm004_detector.founder_parameter_required` („unset") — opravená na `SATISFIED 2026-09-23`.
+- Guard (25 testov): status v poznámke sa musí rovnať stavu troch parametrov, odvodený z dát, v oboch smeroch. **L2 zmerané:** pod mutáciou ostáva všetkých 804 existujúcich testov zelených → záznam nebol strážený. 877 passed, mutation-gate 35/35, `enforcement-evidence` `tree_clean`, `unproven_claims: []`.
+### Rozpracované / Pending
+- ~~Merge #54~~ — hotovo: zmergované founderom 2026-09-30 (`f7b0550`), overené obsahom na `main` (poznámka `SATISFIED`, guard, `DEC-UPTM-018`, mutation case; 877 passed).
+- **`account_equity`:** zadá founder do prvého reálneho packu (systém, ktorý drží účet). Dovtedy capital gaty končia na `UNKNOWN` — zamýšľaný stav, nie medzera.
+- Zastaraná próza sa môže objaviť aj inde v `capital-rules.json` (`open_limits`, `checks_note`); guard stráži len jednu poznámku. Neriešené.
+- Záznam 2026-09-25 `DEC-UPTM-MAP-Q3` v `uptm-runner/docs/decisions.md` stále „stays OPEN" bez odkazu na DEC-UPTM-017 — rozhodnutie foundera.
+### Kľúčové súbory zmenené (uptm-runner)
+- constitution/capital-rules.json: poznámka `founder_parameter_required` opravená (nič nepridané do ústavy)
+- tests/test_capital_parameter_status.py: nový guard
+- runner/mutation_gate.py: +1 case `capital-note-claims-unset-again`
+- docs/decisions.md: `DEC-UPTM-018`; docs/specs/UPTM-018-account-equity-stays-in-the-pack.md
+### Ďalší krok
+Founder: „merguj 756" (tento záznam). Potom najvyššia hodnota je v RealitkaAI, nie v UPTM: **CHECKOUT-ENV-01 krok C** (blokér príjmu — vytvoriť ceny v Stripe live mode podľa `bash scripts/ops/stripe-verify-prices.sh --spec`, potom VERIFY). Podľa `memory/open-tasks.md`, dnes znova neoverené.
 
 ## Session 2026-09-30 (GO MAILBOX — read-only)
 
