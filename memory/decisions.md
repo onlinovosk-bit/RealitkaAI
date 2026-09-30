@@ -1,5 +1,37 @@
 # Critical Decisions Log
 
+## [2026-09-30] REALVIA-REPLAY — 31 zlyhaných webhookov opakovaných (PROD zápis, GO foundera)
+
+**Vykonané (PROD, po nasadení #763):**
+1. Founder spustil `GET /api/cron/realvia-process?replay_failed=1` (Bearer `CRON_SECRET`, ktorý
+   nemám — AP-004). Endpoint vrátil do fronty 32 jobov (31 `advert` + 1 starý `unknown`);
+   spracovanie 11:50–11:55 UTC.
+2. Ja (po overení `advert_failed = 0` a že všetky adverty sú `completed`) v 11:59 UTC nastavil
+   späť na `pending` **5 `delete` jobov** (5 logov + 5 jobov, `UPDATE … RETURNING` = 5/5).
+   Pred zápisom SELECT: všetky 4 dotknuté ponuky existovali, boli „Aktívna" a po delete
+   neprišiel nový advert. 5 jobov = 4 ponuky (jedna mala `sold` a potom `cancel`; worker
+   radí podľa `created_at`, teda konečný stav určuje neskorší `cancel`).
+
+**Výsledok (SELECT 12:10 UTC):** `properties` 132 → **149** (+17 = 17 ponúk); 5 delete jobov
+`completed` 12:00:47–52; 4 ponuky „Stiahnutá" (celkovo „Stiahnutá" 8, 4 boli už predtým);
+fronta `pending` 0, `failed` 1 = starý `unknown` job `c540b1f2` („Agency resolution failed",
+`retry_count` 3/3) — nesúvisí, nechaný. Plán z predchádzajúceho záznamu sa naplnil bez odchýlky.
+
+**Nedokázané:** že oprava funguje na ČERSTVOM webhooku — posledný webhook je z 2026-09-28 12:26 UTC,
+nový od vtedy neprišiel (replay overuje kód na starých payloadoch, nie príjem).
+
+**Pozorovania (BACKLOG, žiadny zásah; Ústava: nič z toho dnes neblokuje platiaceho klienta):**
+- **Globálny unique index v PROD:** `idx_properties_source_id_unique ON properties (source_id)
+  WHERE source_id IS NOT NULL` — kód (PR #522) predpokladá `source_id` NIE globálne unikátny
+  (per agentúra). Dnes Realvia používa jedna agentúra → bez dopadu; druhá agentúra s
+  rovnakým `source_id` by narazila. Riešiť až s druhým Realvia klientom (timing veto „príliš
+  skoro").
+- **Jednorazový create/create race:** job `51ab2faa` (retry 1) zlyhal na tomto indexe v ten istý
+  okamih (11:50:21), keď iný job vytvoril tú istú ponuku (11:50:20); po retry-i dobehol ako
+  update (11:55). Pravdepodobná príčina: viac advertov k jednej ponuke (31 advertov / 17 ponúk)
+  v jednej dávke — **nedokázané**, workerov kód som na súbeh nečítal. Retry to opraví, takže
+  neškodné; v produkcii pri bežnom toku (1 webhook naraz) nepravdepodobné.
+
 ## [2026-09-30] REALVIA-CREATE-ID — nové ponuky sa od 4. 9. nevytvárajú (BUILD, GO foundera)
 
 **Príčina (mechanizmus dokázaný kódom + schémou + chybou):** PR #522 (2026-09-04) prestal pri

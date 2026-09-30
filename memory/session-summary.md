@@ -1,3 +1,24 @@
+## Session 2026-09-30 (REALVIA-REPLAY)
+### Dokončené
+- **REALVIA-REPLAY** (PROD zápis, GO foundera): 31 zlyhaných `advert` webhookov opakovaných
+  (krok 1 founder cez cron `replay_failed=1`, krok 2 ja — 5 `delete` jobov späť na `pending`).
+  `properties` 132 → 149 (+17 ponúk), 4 ponuky stiahnuté správne („Stiahnutá"), fronta
+  `pending` 0 / `failed` 1 (starý nesúvisiaci `unknown` z mája). Detail: `memory/decisions.md`.
+- Pozorovania do BACKLOGu: globálny unique index `properties.source_id` v PROD (kód predpokladá
+  per agentúra) a jednorazový create/create race (opravil sa retry-om).
+### Rozpracované / Pending
+- **Nedokázané:** oprava na ČERSTVOM webhooku — posledný webhook z Realvie je z 28. 9. 12:26 UTC.
+- **READ-REASON** (dôvod zlyhania AI z PROD) — naplánované 14:05 UTC (`trig_019M6drrtpCz8n24hpjiFFPu`).
+- Extrakcia referencie z Nehnuteľnosti.sk mailu (potrebný reálny súčasný mail); chyba pätičky
+  ako názvu inzerátu.
+- `auto_response_sent_at` NULL u 6/6 leadov od 19. 9. — neskúmané.
+- Voliteľné: filter `ai.call_failed` v tenantovom SSE streame; DB default pre `properties.id`.
+- Draft Smolkovi — founder výslovne odložil.
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md`: záznam REPLAY (žiadna zmena kódu).
+### Ďalší krok
+AUTO-RESPONSE-CHECK: prečo `auto_response_sent_at` je NULL u 6/6 leadov od 19. 9. (read-only; GO).
+
 ## Session 2026-09-30 (REALVIA-CREATE-ID + LISTING-REF-CHECK)
 ### Dokončené
 - **REALVIA-CREATE-ID** — nové ponuky z Realvie sa od 4. 9. nevytvárali: PR #522 prestal posielať
