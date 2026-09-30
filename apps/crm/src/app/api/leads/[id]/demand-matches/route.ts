@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { errorResponse, okResponse } from "@/lib/api-response";
 import { createClient } from "@/lib/supabase/server";
 import { sameAgency } from "@/lib/tenant-scope";
 import { hasMinimalDemand } from "@/lib/demand/match";
 import type { Demand } from "@/lib/demand/contract";
+import { incrementUsageMetric } from "@/lib/usage-metrics";
 
 /**
  * DEMAND-D4 read path for the lead page: the current verified demand and the
@@ -14,7 +15,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    if (!user) return errorResponse("Unauthorized", 401);
 
     const { id } = await params;
     const { data: callerProfile } = await supabase
@@ -22,7 +23,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     const { data: lead } = await supabase
       .from("leads").select("agency_id").eq("id", id).maybeSingle();
     if (!sameAgency(callerProfile?.agency_id, lead?.agency_id)) {
-      return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+      return errorResponse("Forbidden", 403);
     }
 
     const { data: record } = await supabase
@@ -34,11 +35,11 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       .maybeSingle();
 
     if (!record) {
-      return NextResponse.json({ ok: true, demand: null, matches: [], reason: "no_demand" });
+      return okResponse({ demand: null, matches: [], reason: "no_demand" });
     }
     if (record.status !== "ok" || !hasMinimalDemand(record.demand as Demand)) {
-      return NextResponse.json({
-        ok: true, demand: record, matches: [],
+      return okResponse({
+        demand: record, matches: [],
         reason: record.status !== "ok" ? `extraction_${record.status}` : "insufficient_demand",
       });
     }
@@ -50,9 +51,13 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       .order("score", { ascending: false });
     if (error) throw new Error(error.message);
 
-    return NextResponse.json({ ok: true, demand: record, matches: matches ?? [] });
+    // Counted only when matches were actually shown: the funnel's "opened" step.
+    if (matches && matches.length > 0 && callerProfile?.agency_id) {
+      await incrementUsageMetric({ agencyId: callerProfile.agency_id, metric: "demand_matches_view" });
+    }
+    return okResponse({ demand: record, matches: matches ?? [] });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Nepodarilo sa načítať zhody.";
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    return errorResponse(message, 500);
   }
 }

@@ -7,6 +7,11 @@ const mocks = vi.hoisted(() => ({
   demand: vi.fn(),
   matches: vi.fn(),
   matchesQueried: vi.fn(),
+  metric: vi.fn(),
+}));
+
+vi.mock("@/lib/usage-metrics", () => ({
+  incrementUsageMetric: (...args: unknown[]) => mocks.metric(...args),
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -67,6 +72,7 @@ describe("GET /api/leads/[id]/demand-matches", () => {
     const body = await (await GET(new Request("http://x"), params())).json();
     expect(body).toMatchObject({ ok: true, demand: null, matches: [], reason: "no_demand" });
     expect(mocks.matchesQueried).not.toHaveBeenCalled();
+    expect(mocks.metric).not.toHaveBeenCalled();
   });
 
   it("failed extraction or too little demand → reason, no matches", async () => {
@@ -83,5 +89,14 @@ describe("GET /api/leads/[id]/demand-matches", () => {
     const body = await (await GET(new Request("http://x"), params())).json();
     expect(mocks.matchesQueried).toHaveBeenCalledWith("d-latest");
     expect(body.matches).toHaveLength(1);
+    // the funnel's "opened" step is counted only when matches were shown
+    expect(mocks.metric).toHaveBeenCalledWith({ agencyId: "A", metric: "demand_matches_view" });
+  });
+
+  it("no matches shown → nothing counted", async () => {
+    mocks.demand.mockResolvedValue({ data: { id: "d1", status: "ok", demand: FULL } });
+    mocks.matches.mockResolvedValue({ data: [], error: null });
+    await GET(new Request("http://x"), params());
+    expect(mocks.metric).not.toHaveBeenCalled();
   });
 });
