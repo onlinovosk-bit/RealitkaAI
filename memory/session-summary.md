@@ -1,3 +1,32 @@
+## Session 2026-09-30 (GO MAILBOX — read-only)
+
+### Dokončené
+- **GO MAILBOX** — `to_unmatched` neznamená „adresa chýba v tabuľke": loguje sa pri `!owner`,
+  teda aj pri riadku s `profile_id = NULL`. Dokázané zhodou logu `07:36:32` s heartbeatom
+  `smolko-a7f2@revolis.ai` `07:36:33.8`. Detail + tabuľka dôkazov: `memory/decisions.md`
+  (záznam 2026-09-30).
+- Od 22. 9. 07:40 nedostala mail žiadna z 8 maklérskych schránok (7× NULL heartbeat).
+- Dnešných 7 mailov v okne 06:30–07:36 UTC = 7 rôznych nie-portálových domén (newslettre,
+  softvér, asociácia). Parser ich zamieta správne.
+- Korekcie: #743 je už zmergovaný (`b898322`); existuje aj lead `portal:Reality.sk` z 29. 9.
+  01:32 UTC (pred #732); AI návrh chýba obom gateway leadom (2 z 2), nie jednému.
+
+### Rozpracované / Pending
+- **Obálka vs. hlavička `To`** — stále neuzavreté, čaká na prvý maklérsky preposlaný mail.
+- **Prečo gateway leady nemajú AI návrh / `ai_triage_at`** — nepreverené (kód `reply-draft.ts`
+  + cron `lead-ai-triage`).
+- **Tok celej pošty `office@` do príjmu** — GDPR minimalizácia, riešiť filtrom na strane Gmailu.
+- **`gmail-pull.ts` `.limit(1)` bez `ORDER BY`** — latentné, dormantné, neopravené.
+- Zostáva z 29. 9.: kontrakt Workera mimo repa, #370, chýbajúci `gdpr-advisor`.
+
+### Kľúčové súbory zmenené
+- `memory/decisions.md`: záznam GO MAILBOX (PREPEND).
+- `memory/session-summary.md`: tento záznam (PREPEND).
+- Žiadna zmena kódu ani DB.
+
+### Ďalší krok
+LEAD-NO-DRAFT: zistiť, prečo dva gateway leady nemajú aktivity ani `ai_triage_at`
+(read-only: `lib/inbound/reply-draft.ts`, cron `lead-ai-triage`, PROD SELECT). Čaká na GO.
 ## Session 2026-09-29 (UPTM-018a — uptm-runner, #52 a #53 ZMERGOVANÉ 2026-09-30)
 ### Dokončené
 - **Zmergované founderom 2026-09-30, overené obsahom na `origin/main` (`154e2c9`):** #52 aj #53. Na `main`: 851 passed, syntax gate OK, mutation-gate 34/34 `ok`, enforcement-evidence `tree_clean`, `unproven_claims: []`. Mapa už neobsahuje „unadopted"; guard aj mutation case sú v `main`.

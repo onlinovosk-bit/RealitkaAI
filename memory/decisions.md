@@ -1,5 +1,67 @@
 # Critical Decisions Log
 
+## [2026-09-30] GO MAILBOX — `to_unmatched` neznamená „adresa chýba v `inbound_mailboxes`"
+
+**Rozsah:** read-only. PROD `SELECT` (`ypgajkhqtbriqqmyawyv`, 06:11 a 07:45 UTC) + Vercel runtime
+logy (`dpl_41RE29y…`, okno 04:52–07:52 UTC). Žiadny zápis do DB, žiadna zmena kódu.
+
+**Záver:** hypotéza z 29. 9. („všetky štyri maily prišli na adresu mimo tabuľky") je pre dnešnú
+prevádzku **vyvrátená**. `to_unmatched` sa loguje pri `!owner` (`route.ts:291-295`) a
+`resolveMailboxOwner` vráti `null` aj vtedy, keď riadok EXISTUJE, ale má `profile_id = NULL`
+(`route.ts:96-97`) — teda pri adrese celej agentúry. Presne to sa deje na
+`smolko-a7f2@revolis.ai`. Log tieto dva prípady nerozlíši.
+
+| Tvrdenie | Stav | Dôkaz |
+|---|---|---|
+| `to_unmatched` = „bez makléra", nie „riadok chýba" | **dokázané** | kód `route.ts:96-97, 291-295` |
+| Request s `to_unmatched` zasiahol existujúci riadok | **dokázané** | log `07:36:32` (`sender_domain: efakturuj.eu`) ↔ heartbeat `smolko-a7f2@` = `07:36:33.8`; heartbeat sa píše len pri zhode `(agency_id, email)`, rozdiel 1,8 s = dva lookupy pred zápisom |
+| Schránky: 11 riadkov, všetky `active`; 3 agentúrne (`profile_id` NULL), 8 maklérskych | namerané | `SELECT` 07:45 UTC |
+| Od 22. 9. 07:40 nedostala mail **žiadna** maklérska schránka | namerané | 7 z 8 má `last_received_at` NULL; `adamovicova` = 22. 9. 07:40:05 (testovací mail z 22. 9.) |
+| Dnešná prevádzka ide cez Worker, nie Gmail-pull | nepriamy dôkaz | `requestId` sú UUID, Gmail-pull posiela `gmail-pull:<agency>:<id>`; `vercel.json` nemá cron na `/api/inbound/gmail-pull`. Env `GMAIL_INBOUND_PULL_ENABLED` som nečítal |
+| Maily v okne nie sú portálové dopyty | namerané (doména), obsah nečítaný | 7 requestov 06:30–07:36, 7 rôznych `sender_domain` (`narks.sk`, `kros.sk`, `depositphotos.com`, `vse.sk`, `info.biedronka.pl`, `unibind.cz`, `efakturuj.eu`); dôvody `unknown_source` ×4, `no_contact` ×2, `not_inquiry` ×1; žiadna portálová doména |
+| Obálkový vs. hlavičkový `To` | **NEUZAVRETÉ** | nikto z maklérov preposielanie nezapol → stále chýba vzorka (rovnaký stav ako v `docs/reports/2026-09-22-ingest-envelope-and-recipient-guard.md`) |
+
+### Čo z toho plynie
+
+- **Dnešný tok je zrejme celá pošta `office@`, nie výber portálových notifikácií.** V okne
+  je 7 mailov a nula z realitného portálu. Parser ich zamieta správne. „Výpadok" teda nie je
+  (aspoň dnes) „dopyty sa zahadzujú", ale **„dopyty v okne nedorazili, resp. sú v šume"** —
+  čo z logov nerozlíšim.
+- **Štyri maily z 29. 9. 07:59–08:40 nikdy neboli preukázané ako dopyty.** Neviem to vyvrátiť
+  ani potvrdiť: logy expirovali (~1 h), `to` sa neloguje, surový mail sa neukladá.
+- **Tok celej pošty klienta do príjmu je GDPR otázka (minimalizácia).** Parser číta obsah
+  všetkého, loguje len doménu. Riešenie patrí k zdroju: preposielať z Gmailu len portálové
+  domény. `gdpr-advisor` skill neexistuje — rozbor nerobím, len vlajkujem.
+
+### Korekcie predchádzajúcich záznamov
+
+- **#743 je zmergovaný** (`b898322`, 2026-09-29 22:56 CEST) — záznam z 29. 9. ho vedie ako otvorený.
+- **„Od 22. 9. žiadny lead" je nepresné.** 29. 9. sú v Smolko agentúre dva: `portal:Reality.sk`
+  o 01:32 UTC a `web_form` o 07:37 UTC (obidva `last_contact` = „email gateway"). Reality.sk
+  lead vznikol **pred** #732 (zmergovaný 06:47 UTC), takže nie je dôkazom, že oprava funguje —
+  len že Reality.sk maily starý parser prepustil (asi bez pätičky „odhlásiť").
+- **Lead bez AI návrhu nie je jednorazový, je 2 z 2.** Obidva gateway leady majú 0 aktivít
+  a `ai_triage_at` NULL. Cron `lead-ai-triage` (denne 05:00 UTC) vyberá práve
+  `ai_triage_at IS NULL`, a napriek tomu ich nespracoval. Príčinu som **nepreveril**.
+
+### Latentná chyba (neopravená)
+
+`gmail-pull.ts:153-165` — `loadMailboxForAgency` berie `.limit(1)` **bez `ORDER BY`**. Agentúra
+Smolko má 9 riadkov, takže `to` v payloade je nedeterministický a po každom `UPDATE`
+heartbeatu sa môže zmeniť (fyzické poradie tuple). Ak sa Gmail-pull raz zapne, mohol by
+pripísať všetku poštu jednému maklérovi. Dnes dormantné (viď vyššie), preto len zápis.
+
+### Rozhodnutia podľa Ústavy v2 (návrh, čaká na GO)
+
+- **LEAD-NO-DRAFT — navrhnuté BUILD (najprv read-only diagnostika).** Q1 áno (klient platí za
+  AI návrh odpovede), Q3 áno (rýchlosť Lead → Telefonát), Q8 správny čas, Q9 < 2 týždne.
+- **DIAG-3 (`to_unmatched` rozdeliť na `row_found` / `profile_linked`) — BACKLOG.** Dnes
+  nemení rozhodnutie; odomkne sa, keď prvý maklér zapne preposielanie (vtedy je otázka
+  obálka vs. hlavička živá). Nelogovať lokálnu časť adresy — maklérske aliasy nesú priezvisko.
+- **Trvalý zápisník príjmu (doména + dôvod + čas, bez PII) — VALIDATE.** Rieši „koľko sa
+  stratilo, už sa nedozvieme", ale je to PROD migrácia + GDPR rozbor; najprv ukázať
+  klientovi, že by mu to pomohlo.
+
 ## [2026-09-29] Príjem leadov: dva tiché výpadky opravené, tretí je zatiaľ len zmeraný
 
 **Kontext:** od 2026-09-22 nevznikol ani jeden lead, hoci maily do inbound schránky
