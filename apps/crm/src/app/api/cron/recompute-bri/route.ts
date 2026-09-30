@@ -23,6 +23,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient }         from '@/lib/supabase/server'
 import { batchRecomputeBRI }         from '@/lib/events/bri-score'
 import { deriveCronStatus, recordCronRun } from '@/lib/ops/cron-run'
+import { checkEngagementSignal, engagementMissingReason } from '@/lib/events/engagement-signal'
 
 const JOB = 'recompute-bri'
 
@@ -38,6 +39,41 @@ export async function GET(request: NextRequest) {
   const supabase = createAdminClient()
 
   try {
+    // EVENTS-REVIVE-01 — bez jediného eventu dá RPC každému leadu tých istých
+    // 12/100. Zapísať 514 rovnakých čísel do produkcie a tváriť sa, že je to
+    // skóre pripravenosti kupujúceho, je vymyslené číslo (CLAUDE.md, 4).
+    // Radšej nezapíšeme nič a povieme prečo.
+    const signal = await checkEngagementSignal(supabase)
+
+    if (signal.error) {
+      // Nevedieť, či signál existuje, NIE JE to isté ako vedieť, že chýba.
+      console.error('[recompute-bri cron] events probe failed:', signal.error)
+      await recordCronRun(supabase, {
+        job: JOB, status: 'failed', startedAt,
+        firstError: `events probe: ${signal.error}`,
+      })
+      return NextResponse.json({ ok: false, error: signal.error }, { status: 500 })
+    }
+
+    if (!signal.present) {
+      const reason = engagementMissingReason()
+      console.warn('[recompute-bri cron]', reason)
+      const logError = await recordCronRun(supabase, {
+        job: JOB, status: 'empty', startedAt,
+        firstError: reason,
+        detail: { skipped: 'no_engagement_signal', event_rows: 0 },
+      })
+      return NextResponse.json({
+        ok: true,
+        status: 'empty',
+        skipped: 'no_engagement_signal',
+        reason,
+        scores_computed: 0,
+        run_log_error: logError,
+        computed_at: new Date().toISOString(),
+      })
+    }
+
     // `account_status` does not exist on `profiles` — the column is `is_active`.
     // The old filter made this query error, `profiles` came back null, and the
     // route returned `{ computed: 0 }` without ever saying why (BRI-DEAD-PATH).

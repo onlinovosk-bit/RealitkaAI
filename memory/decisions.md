@@ -4830,3 +4830,58 @@ jedného stĺpca, ale možnosť, aby sa to stalo bez svedka.
 Prečo presne beh 2026-09-30 nezapísal nič, stále nevieme. Rozhodne to buď
 prehľad Vercel → Cron Jobs (posledný beh a návratový kód), alebo prvý beh po
 nasadení tejto zmeny — ten už odpoveď zapíše sám.
+
+---
+
+## 2026-09-30 — EVENTS-REVIVE-01: signál neexistuje, BRI sa parkuje čestne
+
+Founder GO. Úloha znela rozhodnúť osud events pipeline. Moje odporúčanie pred
+meraním bolo „nekriesiť `events`, ale BRI prepočítať z `activities` (190
+riadkov) a `leads`". **To odporúčanie meranie vyvrátilo.**
+
+### Merania (PROD, 2026-09-30)
+
+- `public.events`: 0 riadkov.
+- `activities`: 191 riadkov, ale `lead_id` je vyplnené len na **4** z nich
+  a `profile_id` na **žiadnom**. Ako signál o leade to neexistuje. Číslo „190
+  riadkov" v mojom odporúčaní bolo pokrytie tabuľky, nie pokrytie leadov —
+  presne tá zámena, ktorú má chytať `kontrolor`.
+- Prehľad 19 tabuliek s `lead_id`, koľko **rôznych leadov** pokrývajú:
+  `decisions` 48 (posledný riadok jún, 0 za 30 dní), `tasks` 41 (11 čerstvých),
+  `lead_consents` 4, `activities` 3, `buyer_intents` 3, zvyšok 0.
+  Aktívnych leadov je 514.
+- `leads.last_contact_at`: vyplnené na **0** zo 514. `leads.source`: 514/514,
+  14 rôznych hodnôt. `leads.bri_score`: 514/514, všetky nuly.
+
+### Aritmetika, ktorá to uzatvára
+
+Bez jediného eventu platí pre každý lead: recency 0, engagement 0, match 0,
+source spadne na `COALESCE(…, 40)`, decay 1,0:
+
+    0·0,30 + 0·0,25 + 40·0,20 + 0·0,15 + 40·0,10 = 12
+
+Každý lead 12/100. Aj pri najlepšom zdroji (90) je strop 22, pričom
+`getHotLeads` filtruje `bri_score >= 60`. Zoznam horúcich leadov je teda
+**matematicky zaručene prázdny** — nie „zatiaľ nikto nie je horúci".
+
+### Rozhodnutie
+
+`events` sa nekriesi cez service-role klienta (zmena bezpečnostného modelu
+kvôli jednej metrike) a **nenahrádza sa ničím** — náhrada neexistuje. BRI
+nemá vstup pre engagement a nedá sa ho odvodiť z ničoho, čo v DB je.
+
+Čo sa zaviedlo: cron pred výpočtom overí `events` a ak je prázdna, **nezapíše
+nič** a do `cron_runs` uloží dôvod aj s číslami. CLAUDE.md, smernica 4:
+nepripojený zdroj → čestný stav, nikdy vymyslené číslo. 514 rovnakých
+dvanástok v produkčnej DB je vymyslené číslo.
+
+Chyba dotazu na `events` sa pritom NEsmie tváriť ako „signál chýba" — vracia
+500. Nevedieť nie je to isté ako vedieť, že nie je.
+
+### Nezapisujem ako rozhodnuté — patrí founderovi
+
+Buď (a) začať engagement naozaj zbierať (otvorenia e-mailov, kliky, obhliadky,
+telefonáty — `logEvent` existuje a nikto ho nevolá z miest, kde sa to deje),
+alebo (b) BRI zo Revolis odstrániť a neplatiť zaň údržbu. Odporúčanie: (a),
+ale až keď bude jasné, ktorý jeden signál klient naozaj uvidí — nie všetkých
+päť zložiek naraz.
