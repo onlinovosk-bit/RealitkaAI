@@ -1,5 +1,194 @@
 # Critical Decisions Log
 
+## [2026-09-30] GO MAILBOX — `to_unmatched` neznamená „adresa chýba v `inbound_mailboxes`"
+
+**Rozsah:** read-only. PROD `SELECT` (`ypgajkhqtbriqqmyawyv`, 06:11 a 07:45 UTC) + Vercel runtime
+logy (`dpl_41RE29y…`, okno 04:52–07:52 UTC). Žiadny zápis do DB, žiadna zmena kódu.
+
+**Záver:** hypotéza z 29. 9. („všetky štyri maily prišli na adresu mimo tabuľky") je pre dnešnú
+prevádzku **vyvrátená**. `to_unmatched` sa loguje pri `!owner` (`route.ts:291-295`) a
+`resolveMailboxOwner` vráti `null` aj vtedy, keď riadok EXISTUJE, ale má `profile_id = NULL`
+(`route.ts:96-97`) — teda pri adrese celej agentúry. Presne to sa deje na
+`smolko-a7f2@revolis.ai`. Log tieto dva prípady nerozlíši.
+
+| Tvrdenie | Stav | Dôkaz |
+|---|---|---|
+| `to_unmatched` = „bez makléra", nie „riadok chýba" | **dokázané** | kód `route.ts:96-97, 291-295` |
+| Request s `to_unmatched` zasiahol existujúci riadok | **dokázané** | log `07:36:32` (`sender_domain: efakturuj.eu`) ↔ heartbeat `smolko-a7f2@` = `07:36:33.8`; heartbeat sa píše len pri zhode `(agency_id, email)`, rozdiel 1,8 s = dva lookupy pred zápisom |
+| Schránky: 11 riadkov, všetky `active`; 3 agentúrne (`profile_id` NULL), 8 maklérskych | namerané | `SELECT` 07:45 UTC |
+| Od 22. 9. 07:40 nedostala mail **žiadna** maklérska schránka | namerané | 7 z 8 má `last_received_at` NULL; `adamovicova` = 22. 9. 07:40:05 (testovací mail z 22. 9.) |
+| Dnešná prevádzka ide cez Worker, nie Gmail-pull | nepriamy dôkaz | `requestId` sú UUID, Gmail-pull posiela `gmail-pull:<agency>:<id>`; `vercel.json` nemá cron na `/api/inbound/gmail-pull`. Env `GMAIL_INBOUND_PULL_ENABLED` som nečítal |
+| Maily v okne nie sú portálové dopyty | namerané (doména), obsah nečítaný | 7 requestov 06:30–07:36, 7 rôznych `sender_domain` (`narks.sk`, `kros.sk`, `depositphotos.com`, `vse.sk`, `info.biedronka.pl`, `unibind.cz`, `efakturuj.eu`); dôvody `unknown_source` ×4, `no_contact` ×2, `not_inquiry` ×1; žiadna portálová doména |
+| Obálkový vs. hlavičkový `To` | **NEUZAVRETÉ** | nikto z maklérov preposielanie nezapol → stále chýba vzorka (rovnaký stav ako v `docs/reports/2026-09-22-ingest-envelope-and-recipient-guard.md`) |
+
+### Čo z toho plynie
+
+- **Dnešný tok je zrejme celá pošta `office@`, nie výber portálových notifikácií.** V okne
+  je 7 mailov a nula z realitného portálu. Parser ich zamieta správne. „Výpadok" teda nie je
+  (aspoň dnes) „dopyty sa zahadzujú", ale **„dopyty v okne nedorazili, resp. sú v šume"** —
+  čo z logov nerozlíšim.
+- **Štyri maily z 29. 9. 07:59–08:40 nikdy neboli preukázané ako dopyty.** Neviem to vyvrátiť
+  ani potvrdiť: logy expirovali (~1 h), `to` sa neloguje, surový mail sa neukladá.
+- **Tok celej pošty klienta do príjmu je GDPR otázka (minimalizácia).** Parser číta obsah
+  všetkého, loguje len doménu. Riešenie patrí k zdroju: preposielať z Gmailu len portálové
+  domény. `gdpr-advisor` skill neexistuje — rozbor nerobím, len vlajkujem.
+
+### Korekcie predchádzajúcich záznamov
+
+- **#743 je zmergovaný** (`b898322`, 2026-09-29 22:56 CEST) — záznam z 29. 9. ho vedie ako otvorený.
+- **„Od 22. 9. žiadny lead" je nepresné.** 29. 9. sú v Smolko agentúre dva: `portal:Reality.sk`
+  o 01:32 UTC a `web_form` o 07:37 UTC (obidva `last_contact` = „email gateway"). Reality.sk
+  lead vznikol **pred** #732 (zmergovaný 06:47 UTC), takže nie je dôkazom, že oprava funguje —
+  len že Reality.sk maily starý parser prepustil (asi bez pätičky „odhlásiť").
+- **Lead bez AI návrhu nie je jednorazový, je 2 z 2.** Obidva gateway leady majú 0 aktivít
+  a `ai_triage_at` NULL. Cron `lead-ai-triage` (denne 05:00 UTC) vyberá práve
+  `ai_triage_at IS NULL`, a napriek tomu ich nespracoval. Príčinu som **nepreveril**.
+
+### Latentná chyba (neopravená)
+
+`gmail-pull.ts:153-165` — `loadMailboxForAgency` berie `.limit(1)` **bez `ORDER BY`**. Agentúra
+Smolko má 9 riadkov, takže `to` v payloade je nedeterministický a po každom `UPDATE`
+heartbeatu sa môže zmeniť (fyzické poradie tuple). Ak sa Gmail-pull raz zapne, mohol by
+pripísať všetku poštu jednému maklérovi. Dnes dormantné (viď vyššie), preto len zápis.
+
+### Rozhodnutia podľa Ústavy v2 (návrh, čaká na GO)
+
+- **LEAD-NO-DRAFT — navrhnuté BUILD (najprv read-only diagnostika).** Q1 áno (klient platí za
+  AI návrh odpovede), Q3 áno (rýchlosť Lead → Telefonát), Q8 správny čas, Q9 < 2 týždne.
+- **DIAG-3 (`to_unmatched` rozdeliť na `row_found` / `profile_linked`) — BACKLOG.** Dnes
+  nemení rozhodnutie; odomkne sa, keď prvý maklér zapne preposielanie (vtedy je otázka
+  obálka vs. hlavička živá). Nelogovať lokálnu časť adresy — maklérske aliasy nesú priezvisko.
+- **Trvalý zápisník príjmu (doména + dôvod + čas, bez PII) — VALIDATE.** Rieši „koľko sa
+  stratilo, už sa nedozvieme", ale je to PROD migrácia + GDPR rozbor; najprv ukázať
+  klientovi, že by mu to pomohlo.
+
+## [2026-09-29] Príjem leadov: dva tiché výpadky opravené, tretí je zatiaľ len zmeraný
+
+**Kontext:** od 2026-09-22 nevznikol ani jeden lead, hoci maily do inbound schránky
+chodili ďalej. Founder našiel v schránke skutočný dopyt z nehnutelnosti.sk, ktorý sa
+leadom nikdy nestal.
+
+### Čo bolo zmergované
+
+| PR | Čo |
+|---|---|
+| #728 | `NOT_A_LEAD` log nesie presný dôvod (`duplicate` / `not_inquiry` / `no_contact` / `unknown_source`) + technické príznaky bez osobných údajov |
+| #731 | revert #370 — main sa nedal sparsovať, 4 produkčné deploymenty ERROR, každý PR červený z cudzieho dôvodu |
+| #732 | pätička „odhlásiť" už nezahodí skutočný dopyt |
+| #739 | zdroj sa rozpozná aj podľa domény odosielateľa, nielen podľa textu |
+| #743 | doména odosielateľa v logu + zlyhaný AI návrh na `warn` *(otvorený)* |
+
+### Príčina výpadku (#732)
+
+`eventKind` sa nastavil na `unsubscribe`, keď sa `/unsubscribe|odhlásiť/` našlo
+**kdekoľvek** v predmete, texte alebo HTML. Portálové notifikácie dnes nesú pätičku
+„Odhlásiť sa z odberu", takže **každý dopyt** sa vyhodnotil ako odhlásenie a zahodil.
+Rozpoznanie portálu pritom fungovalo — zhodilo to výlučne to jedno slovo v pätičke.
+
+**Oprava:** o odhlásení rozhoduje **predmet**; telo sa berie do úvahy len vtedy, keď mail
+nenesie žiadny kontakt (vtedy z neho lead aj tak byť nemôže). Route posiela `email.subject`
+do parsera; bez neho sa použije prvý riadok, takže pôvodní volajúci aj eval dataset bežia ďalej.
+
+### Prečo #739 (rovnaká trieda chyby, iný spúšťač)
+
+Rozpoznanie zdroja stálo výlučne na texte. Keby portál prestal uvádzať svoj názov,
+`source` spadne na `Unknown` → `unknown_source` → `NOT_A_LEAD`, bez akéhokoľvek signálu.
+`SOURCE_RULES` má preto dva nezávislé signály: `text` (primárny, nezmenený) a `domain`
+odosielateľa (záloha, pýta sa až keď text zdroj neurčil). Zhoda je presná doména alebo
+subdoména — `nehnutelnosti.sk.evil.com` neprejde. Záchrana cez odosielateľa pridá
+varovanie `source_from_sender`, aby bolo vidno, že textové pravidlo hnije.
+`PARSER_VERSION` 1.3 → 1.4.
+
+### Zmerané na PROD 2026-09-29 08:42 (nie odvodené)
+
+- **Reťazec nie je prerušený:** o 07:37 vznikol lead cez e-mailovú bránu
+  (`last_contact: "Práve vytvorený (email gateway)"`). Pozor — má `source: web_form`,
+  takže to **nie je** dôkaz, že #732 zachraňuje portálové dopyty.
+- **Dopyty sa stále zahadzujú, ale z iného dôvodu.** Štyri maily 07:59–08:40, všetky
+  `source: Unknown`, `source_detected_by: none`, `has_sender: **true**`,
+  `has_message: false`, `has_listing_ref: false`, a všetky s `to_unmatched`.
+- **Lead z 07:37 nedostal AI návrh** — nula aktivít, `ai_triage_at` prázdne. Dôvod sa
+  zistiť nedal (viď nižšie).
+
+### Dve veci, v ktorých som sa mýlil
+
+1. **Cloudflare Worker `From` POSIELA.** V #739 som napísal opak. Každý produkčný
+   záznam má `has_sender: true`. Záloha zdroja na hlavnej ceste teda beží.
+2. **`has_sender: boolean` bola priúzka voľba.** Odosielateľ je známy, ale jeho doména
+   nesedí na žiadne pravidlo — a nevieme, ktorá to je, takže `unknown_source` sa nedá
+   vyriešiť. #743 nahrádza príznak za `sender_domain` (len doména, nikdy lokálna časť).
+
+### Poznámka k pozorovateľnosti (platí aj mimo tejto úlohy)
+
+Vercel na tomto pláne drží **len `warn`/`error`** a zoskupuje riadky **podľa requestu**.
+Úspešný request bez varovania je v logoch neviditeľný celý — vrátane `LEAD_CREATED`
+a `INBOUND_REPLY_DRAFT`, ktoré sú `console.log`. Retencia je ~1 h; request z 07:37 bol
+o 08:42 už preč. #743 preto posiela **nevytvorený** návrh na `warn`.
+
+### GDPR
+
+`gdpr-advisor` skill, ktorý CLAUDE.md (direktíva 5) vyžaduje, **v repozitári neexistuje** —
+`.claude/skills/` obsahuje len `kontrolor`, `strategic-analysis`, `task-loop`. Rozbor pre
+`sender_domain` je preto ručný a je v popise #743: 6(1)(f), test proporcionality,
+minimalizácia. Logujeme **len registrovateľnú doménu**, nikdy lokálnu časť; test to stráži
+(`expect(logged).not.toContain("@")`). Osobné údaje sa do logov nedostávajú ani inak —
+žiadne meno, adresa, telefón ani text správy.
+
+### Otvorené
+
+- **Koľko dopytov sa od 22. 9. stratilo, sa už nedozvieme** — surové maily sa neukladajú.
+- **Kontrakt Cloudflare Workera je mimo verzovania a mimo review.** `payload.mailbox.agencyId`
+  určuje agentúru a `email.to` makléra; oboje príde zvonka a nič v repozitári to nekontroluje.
+- **`to_unmatched` na všetkých štyroch mailoch** — adresa, na ktorú chodia, nie je
+  v `inbound_mailboxes`. Vlastná trieda problému (GO MAILBOX).
+- **#370 (atomické kreditové RPC) je stále neimplementované.** Revert odstránil rozbitý
+  kód; pôvodný zámer si vyžaduje čerstvý, otestovaný PR.
+## [2026-09-29] DEMAND-OS-GAP — návrh „Demand OS" (ChatGPT) overený na PROD dátach
+- Smer prijatý (founder): Revolis = systém okolo dopytu, nie počet modulov.
+- **Zmerané na PROD:** 513 leadov, **482 (94 %) bez lokality aj rozpočtu**, 439 = Realvia import Smolko (>90 dní), 9 nových za 30 dní; `lead_property_matches` 0, `lead_scores` 0, `deal_outcomes` 1, `buyer_intents` 3.
+- **Hlavná medzera je zachytenie dopytu, nie AI.** Upravený 7-dňový sprint: D1 extrakcia dopytu, D2 bezpečnosť (auto-odpoveď a ghostwriter obchádzajú `authorizeSend`), D3 plánovače, D4 matching, D5 reaktivácia 439 kontaktov až po GDPR bráne (súhlasov 4), D6 pravdivý dashboard (odstrániť 180 000 € default), D7 red team + GO.
+- BACKLOG: MCP (dnes mock), bus ako runtime produktu, Sentry.
+- Report: `docs/reports/2026-09-29-demand-os-gap-audit.md`.
+
+## [2026-09-29] PROJEKT-B — founder: vstup do krátkodobých prenájmov ako samostatný produkt
+- **Rozhodnutie foundera** (nie výsledok Ústavy Revolisu): záložný produkt pre správu krátkodobých prenájmov, budovaný **zvlášť** (vlastný repo, Supabase, Vercel, Stripe); z Revolisu sa preberajú vzory kópiou, nie spoločným balíkom.
+- **Kľúčové technické rozhodnutie (návrh):** channel manager sa nestavia — základ je **Channex** (white-label, Booking/Airbnb/Expedia; $130/mes. + $0,50/jednotku). Airbnb API je pre nových partnerov uzavreté. Smart zámky cez **Seam**.
+- **Termín:** „100 % funkcií LIVE za týždeň" nie je reálne; týždeň 1 = pilot na 1–3 jednotkách, parita 6–8 týždňov.
+- **Riziká zapísané pre foundera:** vlastníctvo kódu/entita, čas foundera vs. otvorený Stripe KYB Revolisu, pilotný ubytovateľ, GDPR dokladov hostí (čl. 6(1)(c)).
+- Plán: `docs/strategy/2026-09-29-projekt-b-str-plan.md`.
+
+## [2026-09-29] PROON-AUDIT — Proon Channel Manager: REJECT ako celok, 1 vzor na VALIDATE
+- Proon Channel Manager je PMS + channel manager pre **ubytovanie** (Booking/Airbnb/Hauzi), modul horizontálneho PROON CRM/ERP — nie realitný konkurent.
+- Zadanie „všetky funkcie LIVE do 1 týždňa": **REJECT** — Q1 VETO (Reality Smolko by za ubytovacie funkcie neplatila), Q8 VETO (Stripe KYB, RLS-BRI-HISTORY otvorené).
+- Prenositeľný vzor: **jednotný inbox dopytov z portálov + ghostwriter návrh odpovede** → VALIDATE so Smolkom (D1), potom BUILD za flagom. Stavia na existujúcom `acquire/email`, `inbound/gmail-pull`, `ghostwriter`.
+- Web bol v prostredí zablokovaný (EGRESS_BLOCKED) — audit z verejného indexu, nie priamy crawl.
+- Report: `docs/reports/2026-09-29-proon-channel-manager-audit.md`.
+## 2026-09-29 — CHECKOUT-ENV-01: krok A je hotový, VERIFY zoznam je teraz odvodený z kódu
+
+**Zistenie:** handoff tvrdil „krok A nezačatý". Nie je to pravda:
+`docs/reports/2026-09-22-stripe-verify-prices.md` → **0/9**, na live účte sú len
+ceny starého program modelu. Riadok v `open-tasks.md` ostal nezaškrtnutý.
+Skutočný blokér príjmu je **krok C** (founder vytvorí ceny v Stripe).
+
+**Rozhodnutie:** očakávania VERIFY sa presúvajú z Python literálu v bash skripte
+do `scripts/ops/stripe-expected-prices.json` a test ich porovnáva s
+`program-tier-pricing.ts`. Dôvod: ceny v kroku C bude founder zadávať ručne,
+VERIFY je jediná kontrola, že sa zhodujú so sumou, ktorú checkout účtuje. Ručne
+udržiavaný zoznam už raz zaostal — `STRIPE_PRICE_STARTER_PACK` (47 €, predáva
+sa na `/balik`) v ňom chýbal. 9 → 10 objektov.
+
+**Bezpečnosť:** pôvodný skript posielal kľúč ako `curl -u "$STRIPE_SECRET_KEY:"`,
+teda v argv, viditeľný v `ps` (porušenie pravidla „tokeny nikdy ako CLI flag").
+Teraz Python `urllib`, kľúč iba v hlavičke; test to stráži a padol na pôvodnom
+wrapperi. Odporúčaný je restricted key s právom *Prices: Read*.
+
+**Mutation proof:** 7 mutácií (suma v kóde, chýbajúci riadok v manifeste,
+vypnutá kontrola intervalu, prvá zhoda namiesto AMBIG, prijatie test kľúča, kľúč
+v curl argv, pôvodný wrapper) → každá červená, návrat → 10/10 zelené.
+
+**Stav:** BUILD, pretože odblokúva self-service príjem (PRIME DIRECTIVE). Nič
+nevytvára v Stripe, nečíta kľúč, nemení produkčný kód.
+
 ## 2026-09-29 — CREDITS-RELAND: #370 vrátené poriadne, migrácia ako prvá
 
 **Rozhodnutie:** #370 sa nevracia prehratím jeho commitu. Migrácia ide na PROD

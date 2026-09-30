@@ -1,3 +1,258 @@
+## Session 2026-09-30 (GO MAILBOX — read-only)
+
+### Dokončené
+- **GO MAILBOX** — `to_unmatched` neznamená „adresa chýba v tabuľke": loguje sa pri `!owner`,
+  teda aj pri riadku s `profile_id = NULL`. Dokázané zhodou logu `07:36:32` s heartbeatom
+  `smolko-a7f2@revolis.ai` `07:36:33.8`. Detail + tabuľka dôkazov: `memory/decisions.md`
+  (záznam 2026-09-30).
+- Od 22. 9. 07:40 nedostala mail žiadna z 8 maklérskych schránok (7× NULL heartbeat).
+- Dnešných 7 mailov v okne 06:30–07:36 UTC = 7 rôznych nie-portálových domén (newslettre,
+  softvér, asociácia). Parser ich zamieta správne.
+- Korekcie: #743 je už zmergovaný (`b898322`); existuje aj lead `portal:Reality.sk` z 29. 9.
+  01:32 UTC (pred #732); AI návrh chýba obom gateway leadom (2 z 2), nie jednému.
+
+### Rozpracované / Pending
+- **Obálka vs. hlavička `To`** — stále neuzavreté, čaká na prvý maklérsky preposlaný mail.
+- **Prečo gateway leady nemajú AI návrh / `ai_triage_at`** — nepreverené (kód `reply-draft.ts`
+  + cron `lead-ai-triage`).
+- **Tok celej pošty `office@` do príjmu** — GDPR minimalizácia, riešiť filtrom na strane Gmailu.
+- **`gmail-pull.ts` `.limit(1)` bez `ORDER BY`** — latentné, dormantné, neopravené.
+- Zostáva z 29. 9.: kontrakt Workera mimo repa, #370, chýbajúci `gdpr-advisor`.
+
+### Kľúčové súbory zmenené
+- `memory/decisions.md`: záznam GO MAILBOX (PREPEND).
+- `memory/session-summary.md`: tento záznam (PREPEND).
+- Žiadna zmena kódu ani DB.
+
+### Ďalší krok
+LEAD-NO-DRAFT: zistiť, prečo dva gateway leady nemajú aktivity ani `ai_triage_at`
+(read-only: `lib/inbound/reply-draft.ts`, cron `lead-ai-triage`, PROD SELECT). Čaká na GO.
+## Session 2026-09-29 (UPTM-018a — uptm-runner, #52 a #53 ZMERGOVANÉ 2026-09-30)
+### Dokončené
+- **Zmergované founderom 2026-09-30, overené obsahom na `origin/main` (`154e2c9`):** #52 aj #53. Na `main`: 851 passed, syntax gate OK, mutation-gate 34/34 `ok`, enforcement-evidence `tree_clean`, `unproven_claims: []`. Mapa už neobsahuje „unadopted"; guard aj mutation case sú v `main`.
+- **UPTM-018a** → `onlinovosk-bit/uptm-runner` [#53](https://github.com/onlinovosk-bit/uptm-runner/pull/53) (draft, nemergovať bez „merguj 53"). `governance-map.md` už nehovorí, že Q3 je „unadopted"; nový **obojstranný** guard (18 testov) + 1 mutation case. Spec preregistrovaný v samostatnom commite pred implementáciou (P4).
+  - **L2 zmerané, nie tvrdené:** pod tou istou mutáciou je starý jednostranný test GREEN, nový guard RED.
+  - Na pôvodnej mape guard hlási presne jeden rozpor (Q3); Q1/Q2/Q5 čisté.
+- **`main` v uptm-runner bol dnes červený** (druhá časová bomba po #50: 8 failed pri 21:03Z, 9 od 30. 9. 08:00Z) → oprava ako samostatný draft [#52](https://github.com/onlinovosk-bit/uptm-runner/pull/52). Množina bômb **zmeraná posunom hodín** (freezegun na 4 dátumoch, +3 mesiace), nie hádaná: 830 passed všade.
+- Plný beh na lokálnej integračnej vetve (018a + #52): 851 passed, syntax gate OK, mutation-gate 34/34 `ok`, enforcement-evidence `tree_clean`, `unproven_claims: []`.
+### Rozpracované / Pending
+- ~~Merge #52/#53~~ — hotovo (viď hore). Do `main` sa dostal aj port opravy v #53 bez duplicity (ten istý commit `3a3b5e6`).
+- **UPTM-018 čaká na foundera:** dve čísla (`capital.account_equity`, `validation_capital.amount`) — bez nich VC-I5/VC-I6 končia na `UNKNOWN`. Nezmenené.
+- `uptm-runner/docs/decisions.md`, záznam 2026-09-25 `DEC-UPTM-MAP-Q3` („stays OPEN") nemá odkaz dopredu na DEC-UPTM-017. Poznamenané, **neopravené** — rozhodnutie foundera.
+- Vložený „Prompt OS / dve dráhy / 8 slučiek" text: neboli v ňom pokyny pre túto session, nič sa nestavalo. Vrecková karta čaká na GO a odpoveď, **ktorá slučka je prvá** v živom teste u makléra.
+### Kľúčové súbory zmenené (uptm-runner)
+- docs/specs/UPTM-018a-map-q3-record-contradiction.md: spec + výsledok
+- docs/architecture/governance-map.md: odsek „two capital numbers" hovorí, čo Q3 rozhodol
+- tests/test_governance_map_consistency.py: nový guard
+- runner/mutation_gate.py: +2 cases (`map-q3-relation-reads-unadopted-again` v #53, `drill-fixture-pinned-to-a-date` v #52)
+- tests/test_detector_invocation.py: dátumy drillu ako vek, nie kalendár (#52)
+### Ďalší krok
+Founder: dve čísla pre UPTM-018 (`capital.account_equity`, `validation_capital.amount`) — bez nich VC-I5/VC-I6 končia na `UNKNOWN`. Nezačaté, nič nie je rozpracované na disku.
+
+## Session 2026-09-29 (príjem leadov: pätička, zdroj podľa odosielateľa, diagnostika)
+
+### Dokončené
+- **#728 INBOUND-NOTALEAD-01** — `NOT_A_LEAD` log nesie presný dôvod + technické príznaky
+  bez osobných údajov (`apps/crm/src/lib/acquire/email-adapter.ts`).
+- **#731 revert #370** — produkcia sa nenasadila ~1 h, 4 deploymenty ERROR, main sa nedal
+  sparsovať. Overené cez `pg_proc`, že migrácia z #370 sa do PROD nikdy nedostala.
+- **#732 pätička „odhlásiť"** — o odhlásení rozhoduje predmet, nie výskyt slova kdekoľvek
+  v tele. Nový `unsubscribe-footer.test.ts` padá 4 zo 6 na starom parseri.
+- **#739 SOURCE-FROM** — `SOURCE_RULES` má dva nezávislé signály (text + doména
+  odosielateľa), varovanie `source_from_sender`, `PARSER_VERSION` 1.3 → 1.4.
+  Gmail pull hlavičku `From` mal a zahadzoval ju; teraz ju posiela.
+- **PROD kontrola 08:42** — lead o 07:37 vznikol cez e-mailovú bránu (ale `web_form`,
+  nie portál). Štyri maily 07:59–08:40 zahodené ako `unknown_source` /`not_inquiry`,
+  všetky s `has_sender: true` a `source_detected_by: none`.
+
+### Rozpracované / Pending
+- **#743 DIAG-2 je otvorený a zelený** (7/7 checkov) — `sender_domain` v logu namiesto
+  `has_sender`, nevytvorený AI návrh na `warn`. Čaká na merge foundera.
+- **Lead z 07:37 nedostal AI návrh** — nula aktivít, dôvod neznámy. Odpoveď príde až
+  z logov po nasadení #743.
+- **`to_unmatched` na všetkých štyroch mailoch** — adresa nie je v `inbound_mailboxes`
+  (GO MAILBOX, read-only analýza).
+- **Kontrakt Cloudflare Workera mimo repozitára** — určuje agentúru aj makléra, nič ho
+  nekontroluje.
+- **#370 (atomické kreditové RPC)** čaká na čerstvú, otestovanú implementáciu.
+- **`gdpr-advisor` skill neexistuje**, hoci ho CLAUDE.md direktíva 5 vyžaduje. GDPR rozbor
+  pre `sender_domain` spravený ručne v popise #743.
+
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/acquire/email-adapter.ts`: `isUnsubscribe` podľa predmetu; `SOURCE_RULES`
+  ako tabuľka s `text` + `domain`; `senderDomainOf`; `sender_domain` v diagnostike.
+- `apps/crm/src/app/api/acquire/email/route.ts`: posiela `subject` aj `from` do parsera;
+  `NOT_A_LEAD` log nesie dôvod a príznaky.
+- `apps/crm/src/lib/inbound/gmail-pull.ts`: hlavička `From` ide do payloadu.
+- `apps/crm/src/lib/inbound/reply-draft.ts`: nevytvorený návrh na `warn`, vytvorený na `log`.
+- Nové testy: `not-lead-reason.test.ts`, `unsubscribe-footer.test.ts`, `source-detection.test.ts`,
+  rozšírený `reply-draft.test.ts`.
+
+### Ďalší krok
+Zmergovať #743 a z prvých logov po nasadení zistiť, ktorá doména dnes chodí (patrí do
+`SOURCE_RULES`, alebo je to bežná pošta?) a prečo lead nedostáva AI návrh.
+## Session 2026-09-29 (PROON-AUDIT)
+### Dokončené
+- Audit Proon Channel Manager + mapovanie na Revolis + 1-týždňová roadmapa: `docs/reports/2026-09-29-proon-channel-manager-audit.md`
+- Founder zvolil Projekt B (krátkodobé prenájmy, samostatne): plán, roadmapa, agentický workflow v `docs/strategy/2026-09-29-projekt-b-str-plan.md` (Channex + Seam, pilot za 1 týždeň, parita 6–8 týždňov)
+- Gap audit Demand OS nad kódom + PROD dátami, upravený 7-dňový sprint: `docs/reports/2026-09-29-demand-os-gap-audit.md`
+### Rozpracované / Pending
+- Proon: founder dodal screenshoty a text webu (vrátane cenníka); priamy crawl v prostredí stále blokovaný.
+- Founder GO: nový repo + názov, entita/vlastníctvo kódu, pilotný ubytovateľ, účty Channex/Seam.
+### Kľúčové súbory zmenené
+- `docs/reports/2026-09-29-proon-channel-manager-audit.md`: nový report
+- `memory/decisions.md`, `memory/session-summary.md`: prepend
+### Ďalší krok
+`GO DEMAND-D1` — extrakcia dopytu z portálových e-mailov (94 % leadov bez dopytu); paralelne `GO B-REPO` pre Projekt B.
+## Session 2026-09-29 (CHECKOUT-ENV-01 — krok A)
+### Dokončené
+- **Korekcia stavu:** krok A NIE JE nezačatý — prebehol 2026-09-22 → **0/9**
+  (`docs/reports/2026-09-22-stripe-verify-prices.md`). Blokér príjmu je **krok C**.
+  `memory/open-tasks.md` opravený.
+- `scripts/ops/stripe-expected-prices.json`: 10 cien (pribudol `STARTER_PACK` 47 €, predáva sa na `/balik`, v pôvodných 9 chýbal).
+- `scripts/ops/stripe_verify_prices.py`: stránkovanie, `expand product`, kontrola typu/intervalu/per_unit/livemode/EUR, „blízko" dôvody pri MISSING, odmietne test kľúč, `--spec` pre krok C bez kľúča, env patch iba z jednoznačných zhôd.
+- Kľúč už nejde do argv (pôvodne `curl -u` → viditeľný v `ps`).
+- `apps/crm/tests/verification/stripe-expected-prices.verification.test.ts`: 10 testov, manifest ↔ kód + offline fixtures vrátane reálneho snapshotu z 22. 9. Mutation proof 7× červená → zelená.
+### Rozpracované / Pending
+- **Krok C (founder):** vytvoriť ceny podľa `bash scripts/ops/stripe-verify-prices.sh --spec`, minimum 3 seat ceny; potom VERIFY → B → D.
+- 22. 9. report uvádza, že agent čítal `sk_live_` z lokálneho `.vercel/.env.production.local` — founder zváži rotáciu a restricted key.
+- Marketing `/api/starter-pack/checkout` nevaliduje formát price ID (`isValidStripePriceId`) — drobnosť, neopravené.
+- Typecheck ratchet: strop 54 → 51 (ubudli 3), nezmenené.
+### Kľúčové súbory zmenené
+- scripts/ops/stripe-verify-prices.sh: tenký wrapper nad Pythonom
+- scripts/ops/stripe_verify_prices.py: nový VERIFY
+- scripts/ops/stripe-expected-prices.json: nový manifest
+- apps/crm/tests/verification/stripe-expected-prices.verification.test.ts: nový drift + behavior test
+- docs/ops/2026-09-21-stripe-verify-kit.md: stav + použitie
+- memory/open-tasks.md, memory/decisions.md
+### Ďalší krok
+Founder: krok C v Stripe live mode (`--spec`), potom spustiť VERIFY a poslať výstup.
+## Session 2026-09-29 (UPTM-011 … UPTM-017 — uptm-runner)
+
+> **PRVÁ VEC PRE NOVÚ SESSION:** Founder dal **GO na UPTM-018a**. Vetva
+> `claude/map-q3-record-contradiction` je založená z `origin/main` (`5dfb832`),
+> **bez commitov**. Nič nie je rozpracované na disku — začni preregistráciou
+> špecifikácie (P4), viď „Ďalší krok".
+
+**Repozitár:** `onlinovosk-bit/uptm-runner`, klon v `/home/user/uptm-runner`.
+Primárny pracovný adresár session je `/home/user/RealitkaAI`.
+**UPTM rozhodnutia patria do `uptm-runner`, nie do RealitkaAI.**
+
+---
+
+### Dokončené — všetko zmergované na `main`
+
+`main` = **`5dfb832`**, strom čistý, **830 passed**, `mutation-gate` **32 mutácií,
+`ok: true`**, `baseline_error: None`, `enforcement-evidence` `tree_clean: true`,
+`unproven_claims: 0`.
+
+| # | čo | PR |
+|---|---|---|
+| UPTM-011 | kontrakt pre Bearish Quasimodo; šesťosový status rebrík (`source, rules, implementation, no_leakage, stats, performance`) | #43 |
+| UPTM-012 | **definícia swingu** — `runner/swing.py`, `Swing(index, price, kind, confirmed_at)`, invariant `confirmed_at = index + pivot_bars`; plató nedá swing; nič sa spätne nereviduje | #44 |
+| UPTM-013 | ES/MES do sourcing mapy — `runner/data_sources.py`, stavy `NOT_IN_MAP → MAPPED_UNVERIFIED → VERIFIED_TERMS → LICENSED → CONNECTED`; `research/data_sources/es_mes_bars.json` | #45 |
+| UPTM-014 | **pravidlo rollu** — `runner/roll.py`; zmerané, že back-adjusted séria **precení už potvrdené swingy** (105 → 115), preto je neprípustná | #46 |
+| UPTM-015 | MAP-Q1 + MAP-Q2 zatvorené; `runner/cross_repository.py` (nezapojené do `gates.py` zámerne) | #47, #48 |
+| UPTM-016 | MAP-Q5 zatvorené; `runner/wave_names.py`, kvalifikované ID `uptm-runner:W<n>` | #49 |
+| — | **oprava červeného `main`** — časovaná bomba v `tests/test_kill_switch_detector.py` | #50 |
+| UPTM-017 | **`at_risk` = risk-to-stop; účet je podlaha pod tranžou**; VC-I5 + VC-I6; MAP-Q3 zatvorené | #51 |
+
+**Všetkých päť governance otázok (MAP-Q1…Q5) je rozhodnutých.**
+
+#### UPTM-017 detailne (posledný blok)
+- **VC-I5** — `capital.at_risk_basis` musí byť deklarovaný; prijíma sa len
+  `risk_to_stop`. Zamietnuté: `notional` (700 notionalu nekúpi ES ani MES —
+  strop, ktorý nepovolí žiadny test, nie je veľkosť testu) a `margin`
+  (artefakt brokera/burzy, hýbe sa s volatilitou). Nedeklarovaný = `UNKNOWN`,
+  nie `FAIL`.
+- **VC-I6** — `cumulative_realised_loss` je strop len ak naň účet dosiahne.
+  `account_equity < amount` → FAIL. Chýbajúca equity = `UNKNOWN`, pomenuje kľúč.
+  **Žiadne číslo sa nevymýšľa.**
+- Súbory: `runner/detectors/validation_capital.py`,
+  `tests/test_at_risk_unit_and_floor.py` (28 testov, U1–U8),
+  `runner/mutation_gate.py` (+`at-risk-basis-unchecked`, `account-floor-unchecked`;
+  `map-q3-marked-decided` prenamierený na `map-q3-turned-into-a-ceiling`),
+  `docs/architecture/governance-map.md`, `docs/decisions.md` (DEC-UPTM-017).
+
+---
+
+### Rozpracované / Pending
+
+- **UPTM-018a — GO DANÉ, nezačaté.** `governance-map.md` si protirečí o Q3:
+  - riadok **112**: „**DEC-UPTM-MAP-Q3 leaves that relation unadopted.**"
+    (napísal PR #38, zarezervoval si label pre *otvorenosť*)
+  - riadok **166**: „**DECIDED (DEC-UPTM-MAP-Q3, 2026-09-29): THE ACCOUNT IS A
+    FLOOR UNDER THE TRANCHE.**"
+  Nadpis Q3 je doslova *„How do €700 and €750 relate?"* — tá istá dvojica, nie
+  dve rôzne otázky. **Kód je v poriadku** (VC-I6 číta `capital.account_equity`
+  z packu, nie €750 z druhého repa; P11 drží). Chybný je len záznam rozhodnutia.
+  **Prečo to nechytil test:** `test_map_q3_is_decided_as_a_floor_and_copies_no_number`
+  overuje len, že rozhodnutie *je* v dokumente — nie že tam nie je zároveň opak.
+  Guard je jednostranný.
+
+- **Čaká na foundera, nezačaté:**
+  - **Dve čísla pre UPTM-018:** `capital.account_equity` a
+    `validation_capital.amount`. Bez nich VC-I5/VC-I6 končia na `UNKNOWN`.
+    (700 EUR je dnes len fixture v testoch, nie rozhodnutie.)
+  - **Štyri vendor otázky k ES/MES dátam** — egress blokovaný 3× na
+    `databento.com`, `cmegroup.com`, `interactivebrokers.com`, `firstratedata.com`
+    (403/407 z proxy = org policy). Nikdy som si podmienky nevymyslel.
+    Diskvalifikačná otázka: *„dodávate surové per-contract dáta?"* (nie
+    back-adjusted — UPTM-014 zmeral, prečo).
+  - ebook strany pre Quasimodo + pp. 27–30; Hafez primárny zdroj;
+    migrácia `mechanical_break_retest_hafez.json` na rebrík;
+    183 packov, ktoré evidence schéma nepozná;
+    zastaraná próza `founder_parameter_required` v `constitution/capital-rules.json`
+    (ponúknuté, GO nedané).
+
+---
+
+### Kľúčové súbory zmenené
+
+- `runner/detectors/validation_capital.py`: VC-I5 (`AT_RISK_BASIS`) + VC-I6 (podlaha)
+- `runner/swing.py`, `runner/roll.py`, `runner/data_sources.py`, `runner/wave_names.py`,
+  `runner/cross_repository.py`, `runner/pattern_contract.py`: nové moduly UPTM-011…016
+- `runner/mutation_gate.py`: 32 mutácií
+- `docs/architecture/governance-map.md`: všetkých 5 otázok DECIDED (**+ rozpor, viď UPTM-018a**)
+- `docs/decisions.md`: DEC-UPTM-011 … DEC-UPTM-017, DEC-UPTM-MAP-Q1/Q2/Q3/Q5
+
+---
+
+### Stojace pravidlá (neporušiteľné)
+
+1. **Žiadna implementácia bez explicitného GO.**
+2. **Merge je akt foundera** — len na explicitné „merguj N". GO menujúce už
+   zmergovanú PR **nie je** GO pre inú otvorenú; pýtaj sa, nesubstituuj.
+   (Stalo sa 2× — „merguj 43" po merge #43.)
+3. **Preregistrácia pred implementáciou (P4)** — spec vo vlastnom commite.
+4. **Guardy sa prenamierujú, nemažú**, keď sa fakt zmení; docstring povie prečo.
+5. **„Derived, never typed"** — množiny sa merajú, nie píšu.
+6. **Čísla, ktoré sú apetítom na riziko, nevymýšľaj.** Founder ich stanovuje.
+7. `LIVE_TRADING` zostáva `false`; bezpečnostná obálka sa nerozširuje.
+8. **Merge overuj obsahom na `origin/main`**, nie zeleným odznakom.
+9. Vzdialené vetvy: `git ls-remote origin refs/heads/...` — tento klon
+   netrackuje `origin/<branch>`, `git rev-parse origin/X` fatalne padne.
+10. **403/407 z proxy = org policy.** Nahlás blokovaný host, neobchádzaj,
+    nikdy nevypínaj TLS verifikáciu ani `HTTPS_PROXY`.
+11. `pytest`/`mutation-gate` **nikdy súbežne** — brána mutuje súbory na disku,
+    paralelný pytest číta zmutovaný strom a hlási falošné red. (Stalo sa.)
+12. `pyproject.toml` má `addopts = "-q"` → súhrnný riadok „N passed" sa nezobrazí
+    pri `-q`; spusti bez neho, ak chceš počet.
+13. Mutation-gate JSON má kľúč **`mutations`**, nie `cases`.
+
+---
+
+### Ďalší krok
+
+**UPTM-018a** (GO dané): preregistruj spec, potom:
+1. prepíš odsek na r. 112 `governance-map.md` tak, aby hovoril, čo
+   DEC-UPTM-MAP-Q3 rozhodol (vzťah = *podlaha*; `account_equity` je deklarovaný
+   údaj packu, **nie** €750 z druhého repa, ktoré `uptm-runner` nesmie prepísať);
+2. pridaj **obojstranný test**: dokument nesmie niesť „unadopted" aj „DECIDED"
+   pod tým istým labelom;
+3. jeden mutation case;
+4. draft PR, **nemergovať** bez „merguj N".
+
 ## Session 2026-09-29 (DEMAND-D1)
 ### Dokončené
 - Demand Contract v1 + verifikátor + redakcia + extrakcia (Haiku) + `lead_demands` + napojenie na `acquire/email` za flagom: `apps/crm/src/lib/demand/*`, `supabase/migrations/20260929120000_lead_demands.sql`
@@ -15,6 +270,7 @@
 - Kolo 2: gold-dataset gate, D4 vstupný kontrakt, plán opravy 42/59 leadov, privacy audit + opravy (#750), Truth Matrix (#745)
 ### Ďalší krok
 Founder spustí `extract` na vzorke 60 leadov a vyplní gold dataset → `score` → PASS/FAIL rozhodne o flagu. Paralelne: merge #750 (P0 privacy).
+
 
 ## Session 2026-09-29
 ### Dokončené
@@ -1385,6 +1641,19 @@ Bez GO nič. Krok 2 je ďalší v poradí, ale vyžaduje samostatné founder GO.
 ### Ďalší krok
 **`GO CP-P0-1A`** (Safe Spine Foundation) — primárna ďalšia brána. Bez nej sa acceptance #4/#5 nedajú dokončiť. Pred implementáciou treba presne vyriešiť, čo durable persistence znamená, lebo práve to blokuje event-spine A. Rozsah: A1 kanonická v2 schéma · A2 `scope` diskriminátor · A3 tenant isolation · A4 correlation/causation/run sémantika · A5 idempotency · A6 versioning · A7 invariant enforcement · A8 migration ownership. **Žiadny produkčný PII backfill** — to je CP-P0-1C.
 `CP-P0-2` (durable approvals) zostáva ako **alternatívny následný** gate — nie je vykonaný ani aktuálny a neotvára sa súbežne, aby nevznikli dve meniace sa P0 osi naraz.
+
+## Session 2026-08-27
+### Dokončené
+- Critical bug hunt: assignment rules cross-tenant wipe → PR #490
+- Report: `docs/reports/2026-08-27-assignment-rules-tenant-gate.md`
+### Rozpracované / Pending
+- Founder merge #490 (+ older critical-bug PRs still open)
+- Ops backfill NULL agency_id on lead_assignment_rules after migrate
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/lead-automation-store.ts`: scoped client + agencyId
+- `apps/crm/supabase/migrations/20260827230000_lead_assignment_rules_tenant_rls.sql`: tenant RLS
+### Ďalší krok
+Founder merge #490 after CI green; apply migration on prod.
 
 ## Session 2026-08-25
 ### Dokončené

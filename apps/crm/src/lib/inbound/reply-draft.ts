@@ -119,12 +119,19 @@ export async function draftInboundReplySafely(d: InboundReplyDraftInput): Promis
 export function scheduleInboundReplyDraft(d: InboundReplyDraftInput): void {
   const task = async () => {
     const res = await draftInboundReplySafely(d)
-    console.log(JSON.stringify({
+    const line = JSON.stringify({
       status: 'INBOUND_REPLY_DRAFT',
       source: d.activitySource,
       lead_id: d.leadId,
       result: res.created ? 'created' : res.reason,
-    }))
+    })
+    // Nevytvorený návrh je `warn`, nie `log`. Vercel na tomto pláne drží len
+    // `warn`/`error` a zoskupuje riadky podľa requestu, takže úspešný request
+    // bez varovania je v logoch neviditeľný celý. Presne to sa stalo leadu
+    // z 2026-09-29 07:37: lead v DB je, návrh nie, a dôvod sa už nedal zistiť.
+    // Vedľajší efekt: `warn` zviditeľní aj `LEAD_CREATED` z toho istého requestu.
+    if (res.created) console.log(line)
+    else console.warn(line)
   }
   try {
     after(task)
