@@ -5207,3 +5207,48 @@ a `.github/workflows/code-contract-guard.yml`, do jobu „Zmluva kódu (ratchet)
 kde už žije `check-api-contract.mjs`. **Zmena workflow súboru je jediná v tomto
 kroku, ktorá spadá pod founderov zákaz — bez nej by ale brána nebola bránou.
 Nadobudne účinnosť až jeho mergom.**
+
+---
+
+## 2026-09-30 — EVENTS-WRITE-PATH-01: udalosť zo servera má konečne čím zapísať
+
+Founder GO (a): zbierať engagement, jeden signál. Toto je jeho nutná podmienka —
+platí bez ohľadu na to, ktorý signál nakoniec vyhrá.
+
+### Oprava vlastného predpokladu
+
+Tvrdil som, že blokátorom je RLS politika a že bude treba migráciu politík.
+**Nie je.** Na `public.events` existuje politika `service role full access`
+(`auth.role() = 'service_role'`) a je správna. Jediným blokátorom bolo, že
+`logEvent` zapisoval **vždy cookie klientom**: v cron-e a webhooku nie je
+session, `auth.uid()` je NULL, politika „users insert own profile events"
+padla a chyba skončila v `console.error`. Zo štyroch serverových zapisovateľov
+neprešiel ani jeden — odtiaľ 0 riadkov za celú dobu.
+
+### Zmena
+
+- `logEvent` prijíma voliteľného `client`. Serverové cesty podajú service-role,
+  session cesta (`/api/events` z prehliadača) zostáva nedotknutá pod RLS.
+- `logEventDetailed` vracia dôvod zlyhania. `null` predtým znamenalo zároveň
+  „nič sa nezapísalo" aj „politika ma odmietla" — tá nerozlíšiteľnosť držala
+  prázdnu tabuľku štyri mesiace bez povšimnutia.
+- Zapojení traja serveroví volajúci: `inbound/process-lead.ts` (webhook, mal
+  `admin` už v scope), `arbitrage/scan.ts` a `price-trail/engine.ts` (crony).
+
+### Bezpečnostný nález pri tom istom
+
+`anon` aj `authenticated` mali na `events` grant `TRUNCATE`, `DELETE`, `UPDATE`.
+RLS chráni riadky, ale **TRUNCATE nie je riadková operácia a RLS ju
+nekontroluje** — držiteľ browserového kľúča mohol tabuľku vyprázdniť jedným
+volaním. Migrácia `20260930140000_events_revoke_destructive.sql` to odoberá;
+zostáva SELECT + INSERT, oboje scopované politikami. Overené na TEST projekte
+v transakcii s ROLLBACK. NEAPLIKOVANÁ na PROD.
+
+Moment je zvolený zámerne: do tejto tabuľky ide engagement signál a zužuje sa
+to, kým je prázdna.
+
+### Otvorené
+
+`arbitrage/scan.ts` aj `price-trail/engine.ts` čítajú zvyšok svojich dát cookie
+klientom, hoci sú to crony — tá istá trieda chyby ako recompute-bri pred #742.
+Zámerne som to nerozširoval; vyplávalo by to pri ich zapojení do `cron_runs`.
