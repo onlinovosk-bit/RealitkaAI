@@ -1,5 +1,80 @@
 # Critical Decisions Log
 
+## [2026-09-30] LEAD-NO-DRAFT — AI krok po príjme leadu sa od 22. 9. nezapisuje; príčina zatiaľ NEDOKÁZANÁ
+
+**Rozsah:** read-only (PROD `SELECT` 08:20–08:50 UTC + čítanie kódu). Žiadny zápis, žiadna
+zmena kódu.
+
+**Záver:** obmedzil som, kde chyba je, nie čo presne je. Zlyháva reťaz „úspešné volanie Claude →
+zápis výsledku"; schéma, ID modelu, poradie krokov v route ani heuristika ju nevysvetľujú.
+Skutočnú chybu API z uložených dát nezískam: logy leadu z 07:05 expirovali a kód chybu
+prehltne (viď „Nedokázané").
+
+### Dokázané (namerané)
+
+- **Tretí gateway lead:** `portal:Nehnuteľnosti.sk`, 2026-09-30 07:05:39 UTC. Je to prvý lead
+  z Nehnuteľnosti.sk od 22. 9. (portál, ktorého pätička spôsobila výpadok) → oprava #732/#739
+  na portálovej ceste funguje. **n = 1**, zdroj `portal:`, nie `web_form`.
+- **Všetky 3 leady po výpadku** (29. 9. 01:32, 29. 9. 07:37, 30. 9. 07:05): e-mail áno,
+  `ai_triage_at` NULL, `ai_priority` NULL, 0 aktivít, 0 riadkov v `ai_action_audit`,
+  `auto_response_sent_at` NULL. Teda **3 z 3**, nie „2 z 2".
+- **Regresia, nie dlhodobý stav:** 11 z 11 starších gateway leadov (do 22. 9.) má
+  `ai_triage_at`. Posledné v celej DB (514 leadov) je **2026-09-22 09:13:15** — 2 s po vzniku
+  leadu, teda AI vtedy fungovalo. Odvtedy 0. Cron `lead-ai-triage` (05:00 denne) tie tri
+  leady za dve noci nespracoval, hoci spĺňajú jeho filter (`Nový`, `ai_priority_manual_at` NULL).
+- **Triage nemá heuristickú cestu pre tieto leady:** `isSparseImportLead` vyžaduje skóre 0
+  a prázdny `last_contact`; leady majú skóre 50 a `last_contact` „email gateway" → vždy
+  potrebujú volanie Claude.
+- **`AI návrh odpovede` v `activities` neexistuje nikdy** (0 riadkov). Neviem odlíšiť „nikdy
+  nefungovalo" od „prestalo" — po nasadení #712 (28. 9.) vznikli len tieto 3 leady.
+
+### Vylúčené
+
+- ID modelu: `claude-haiku-4-5-20251001` je platné.
+- Constraint `leads_ai_priority_ck` súhlasí s hodnotami, ktoré kód píše; trigger
+  `trg_leads_platform_events` pri UPDATE bez zmeny `status` nič nerobí.
+- `no_email` (všetky 3 majú e-mail); `runInboundLeadAutoResponse` nemôže zhodiť request
+  (catch-all), takže nebráni naplánovaniu draftu.
+- `activities`: žiadny CHECK na `type`, všetky stĺpce, ktoré `insertAgentDraft` píše, existujú.
+- Zmena kódu: `claude.ts`, `sanitize.ts`, `lead-triage-batch.ts`, `inbound-lead-triage.ts`
+  sa vo viditeľnej histórii medzi 22. a 29. 9. nezmenili. **Klon je plytký od 25. 9.**, takže
+  22.–25. 9. je neoverené.
+- `INBOUND_REPLY_DRAFT_DISABLED` je podľa zadania nenastavené (env som nečítal).
+
+### Nedokázané
+
+- **Skutočná chyba volania Claude.** `withAiTimeout` robí `promise.catch(() => fallback)` bez
+  logu, takže draft skončí ako `llm_fallback` a timeout sa nedá odlíšiť od odmietnutia.
+  Triage loguje `console.error`, ale Vercel drží ~1 h a log leadu z 07:05 je preč (API vracia
+  `ExceedsBillingLimitError` pri dotaze mimo okna).
+- Či je `ANTHROPIC_API_KEY` platný / účet má kredit — nemám ako overiť bez kľúča.
+
+### Vedľajšie pozorovania (nesúvisia so záverom)
+
+- **`dashboard_insights` nikdy nebolo od modelu:** v `ai_action_audit` je 0 z 212 riadkov
+  `source = llm` od 4. 9. (159 `fallback`, 53 `empty`); latencie väčšinou < 800 ms budget →
+  odmietnutie, nie timeout. Keďže triage 22. 9. fungoval, **nie je to dôkaz o mŕtvom kľúči** —
+  samostatný problém.
+- **`auto_response_sent_at` NULL u všetkých 6 leadov od 19. 9.** — potvrdenie leadovi neodišlo
+  alebo sa nezapísalo. Nepreverené (reply-to agentúry? Resend?).
+
+### Korekcie záznamu GO MAILBOX (#755)
+
+- „V okne nula z realitného portálu, dopyty nedorazili" je **nesprávne**: pozeral som len
+  zamietnuté maily (`NOT_A_LEAD`). Lead z Nehnuteľnosti.sk dnes 07:05 vznikol a vo vzorke
+  zamietnutých ho nebolo vidieť.
+- „AI návrh chýba 2 z 2" → **3 z 3**.
+
+### Rozhodnutia podľa Ústavy v2 (návrh, čaká na GO)
+
+- **AI-FAIL-VISIBLE — BUILD (malý PR).** `withAiTimeout` loguje triedu chyby a HTTP status
+  (bez PII); zlyhaný triage a draft zapíšu trvalý dôvod, aby ďalší lead vysvetlil sám seba aj
+  po hodine. Q1 áno (AI triage aj návrh zlyhali ticho ≥ 8 dní), Q3 áno, Q8 správny čas, Q9 áno.
+- **Kontrola Anthropic Console + `ANTHROPIC_API_KEY` v Vercel env** — 2-minútový krok foundera,
+  nie kód; rozhodne, či je príčina kľúč/kredit.
+- **`dashboard_insights` nikdy `llm` — BACKLOG.** Nie je to zdroj straty klienta.
+- **`auto_response_sent_at` NULL — VALIDATE.** Najprv zistiť príčinu, potom rozhodnúť.
+
 ## [2026-09-30] GO MAILBOX — `to_unmatched` neznamená „adresa chýba v `inbound_mailboxes`"
 
 **Rozsah:** read-only. PROD `SELECT` (`ypgajkhqtbriqqmyawyv`, 06:11 a 07:45 UTC) + Vercel runtime
