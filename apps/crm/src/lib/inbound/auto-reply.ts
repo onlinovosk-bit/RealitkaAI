@@ -4,6 +4,7 @@
 // ================================================================
 import { callClaude, CLAUDE_HAIKU, extractJson } from '@/lib/ai/claude'
 import { withAiTimeout }                          from '@/lib/ai/fallback'
+import type { AiFailure }                         from '@/lib/ai/ai-failure'
 
 /**
  * Bump whenever SYSTEM or the user template below changes. Stamped on every
@@ -27,6 +28,8 @@ export interface AutoReplyResult {
   body:    string
   /** True when the LLM timed out or failed and this is the fixed fallback text. */
   fallback?: boolean
+  /** Prečo LLM zlyhal (kód dôvodu, HTTP status, request-id — nikdy text chyby). Len pri `fallback`. */
+  failure?: AiFailure
 }
 
 /** Default LLM budget. Callers off the hot path may allow more. */
@@ -68,5 +71,10 @@ JSON: { "subject": "predmet emailu SK", "body": "text emailu SK, max 4 vety" }`,
     return extractJson<AutoReplyResult>(raw)
   })
 
-  return withAiTimeout(aiCall, fallback, opts.timeoutMs ?? AUTO_REPLY_TIMEOUT_MS)
+  let failure: AiFailure | undefined
+  const result = await withAiTimeout(aiCall, fallback, opts.timeoutMs ?? AUTO_REPLY_TIMEOUT_MS, {
+    feature:   'inbound_auto_reply',
+    onFailure: (f) => { failure = f },
+  })
+  return result === fallback && failure ? { ...fallback, failure } : result
 }

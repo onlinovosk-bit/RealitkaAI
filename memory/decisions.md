@@ -1,5 +1,62 @@
 # Critical Decisions Log
 
+## [2026-09-30] AI-FAIL-VISIBLE — zlyhanie volania na LLM po sebe zanechá stopu (BUILD, GO foundera)
+
+**Rozhodnutie z LEAD-NO-DRAFT:** AI triage a AI návrh odpovede po príjme leadu zlyhávajú od
+22. 9. bez stopy. Skutočná chyba je z uložených dát nezistiteľná, lebo `withAiTimeout` robil
+`promise.catch(() => fallback)` bez logu a Vercel drží len `warn`/`error` ~1 h. Tento PR
+**nerieši príčinu, rieši viditeľnosť** — ďalší lead (alebo zajtrajší cron) vysvetlí sám seba.
+
+### Čo sa zmenilo (bez migrácie, správanie pri úspechu aj pri zálohe rovnaké)
+
+- `lib/ai/ai-failure.ts` — `classifyAiError` mapuje `status` / `type` z tela / názov triedy /
+  `requestID` na kód dôvodu: `auth`, `billing`, `rate_limit`, `overloaded`, `server_error`,
+  `not_found`, `invalid_request`, `network`, `config`, `bad_output`, `timeout`, `unknown`.
+  **Text chyby sa nikdy nelogí ani neukladá** (môže niesť meno, e-mail, telefón z leadu) —
+  správa sa používa len na rozpoznanie „kredit/billing" a chýbajúceho kľúča. Testy to stoja
+  na leaky-vstupe.
+- `withAiTimeout(promise, fallback, ms, { feature, onFailure })` — každé zlyhanie sa zaloguje
+  ako `AI_CALL_FAILED` na `warn`. Oneskorené odmietnutie po vypršaní okna sa loguje tiež
+  (`after_timeout: true`) — ukáže skutočnú príčinu pomalého zlyhania. Časovač sa po skončení
+  sľubu ruší. Všetkých 7 volajúcich má názov funkcie.
+- **Inbound triage + AI návrh** — dôvod v logu (`llm_reason`, `llm_http_status` v
+  `INBOUND_REPLY_DRAFT`) a trvalo v `platform_events` (`event_type = 'ai.call_failed'`).
+- **`dashboard_insights`** — dôvod v `audit.failure` a v `ai_action_audit.meta`
+  (`failure_reason`, `failure_http_status`, `failure_error_type`, `failure_request_id`).
+
+### Ako sa dozvedieť príčinu (po nasadení)
+
+```sql
+-- dashboard cron (beží 2× denne, ~06:24 a ~13:35 UTC) — najrýchlejšia cesta
+select created_at, meta->>'failure_reason' as reason, meta->>'failure_http_status' as http
+from ai_action_audit where meta->>'feature' = 'dashboard_insights' order by created_at desc limit 8;
+-- konkrétny lead
+select created_at, payload from platform_events
+where event_type = 'ai.call_failed' order by created_at desc limit 20;
+```
+`reason = auth` → kľúč; `billing` → kredit; `rate_limit` / `overloaded` → kapacita; `timeout`
+→ okno 500–800 ms je pre Haiku príliš tesné (**potom je to iný problém než kľúč**);
+`config` → chýba `ANTHROPIC_API_KEY` v tomto prostredí.
+
+### Rozhodnutia a riziká
+
+- **`platform_events` číta aj SSE stream tenanta** (`/api/events/stream` posiela `type` +
+  `payload` do prehliadača agentúry). Payload preto nesie len kód dôvodu, HTTP status, typ
+  chyby, request-id, názov funkcie a ID vlastného leadu. Kód `billing` by v sieťovom paneli
+  videl aj klient. Ak to nie je prijateľné, filtrovať `ai.call_failed` v streame — samostatná
+  malá zmena, zámerne nerobená v tomto PR.
+- **Nový typ udalosti bez migrácie:** `platform_events.event_type` je voľný text bez CHECK.
+- **Existujúci test upravený:** `reply-draft.test.ts` › „never throws" mal `toEqual({created:
+  false, reason: 'error'})`; výsledok teraz nesie aj `failure`, tak je to `toMatchObject`.
+- Mutation proof: 14 z 14 mutácií zabitých (jedna prežila a odhalila medzeru — kontrola
+  visiaceho časovača — ktorá sa doplnila).
+
+### Nerobené (zámerne)
+
+- Oprava príčiny — je neznáma. Ďalšie kroky podľa zistenej príčiny.
+- `auto_response_sent_at` NULL u 6 z 6 leadov od 19. 9. (VALIDATE) a `dashboard_insights` nikdy
+  `llm` (BACKLOG) zostávajú, ako sú.
+
 ## [2026-09-30] LEAD-NO-DRAFT — AI krok po príjme leadu sa od 22. 9. nezapisuje; príčina zatiaľ NEDOKÁZANÁ
 
 **Rozsah:** read-only (PROD `SELECT` 08:20–08:50 UTC + čítanie kódu). Žiadny zápis, žiadna

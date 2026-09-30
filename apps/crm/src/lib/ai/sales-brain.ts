@@ -68,5 +68,5 @@ Vráť JSON:
     return extractJson<SalesBrainInsight>(raw);
   });
 
-  return withAiTimeout(aiCall, salesBrainFallback(score), 500);
+  return withAiTimeout(aiCall, salesBrainFallback(score), 500, { feature: 'sales_brain' });
 }

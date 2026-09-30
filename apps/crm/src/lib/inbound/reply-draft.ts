@@ -7,6 +7,8 @@
 // ================================================================
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { after } from 'next/server'
+import { classifyAiError, type AiFailure } from '@/lib/ai/ai-failure'
+import { recordAiFailureEvent } from '@/lib/ai/ai-failure-record'
 import { AUTO_REPLY_PROMPT_VERSION, generateAutoReply } from './auto-reply'
 import { INBOUND_AUTOREPLY_AGENT_ID } from './draft-view'
 import { insertAgentDraft, recipientFor } from './insert-agent-draft'
@@ -39,7 +41,12 @@ export interface InboundReplyDraftInput {
 
 export type InboundReplyDraftResult =
   | { created: true; activityId: string }
-  | { created: false; reason: 'disabled' | 'no_email' | 'llm_fallback' | 'insert_failed' | 'error' }
+  | {
+      created: false
+      reason: 'disabled' | 'no_email' | 'llm_fallback' | 'insert_failed' | 'error'
+      /** Prečo krok zlyhal (kód dôvodu, HTTP status, request-id — nikdy text chyby). */
+      failure?: AiFailure
+    }
 
 /**
  * LLM budget on the live ingest paths. Off the user's critical path (the lead
@@ -68,7 +75,9 @@ export async function draftInboundReply(d: InboundReplyDraftInput): Promise<Inbo
     agentName:    d.agentName ?? undefined,
   }, { timeoutMs: d.timeoutMs })
 
-  if (reply.fallback && d.skipOnFallback) return { created: false, reason: 'llm_fallback' }
+  if (reply.fallback && d.skipOnFallback) {
+    return { created: false, reason: 'llm_fallback', ...(reply.failure ? { failure: reply.failure } : {}) }
+  }
 
   const draft = await insertAgentDraft({
     admin:         d.admin,
@@ -107,7 +116,7 @@ export async function draftInboundReplySafely(d: InboundReplyDraftInput): Promis
     return await draftInboundReply(d)
   } catch (e) {
     console.error(`[draftInboundReply] ${d.activitySource}:`, e)
-    return { created: false, reason: 'error' }
+    return { created: false, reason: 'error', failure: classifyAiError(e) }
   }
 }
 
@@ -119,11 +128,14 @@ export async function draftInboundReplySafely(d: InboundReplyDraftInput): Promis
 export function scheduleInboundReplyDraft(d: InboundReplyDraftInput): void {
   const task = async () => {
     const res = await draftInboundReplySafely(d)
+    const failure = res.created ? undefined : res.failure
     const line = JSON.stringify({
       status: 'INBOUND_REPLY_DRAFT',
       source: d.activitySource,
       lead_id: d.leadId,
       result: res.created ? 'created' : res.reason,
+      // Prečo LLM zlyhal — bez toho `llm_fallback` nerozlíši kredit, kľúč a timeout.
+      ...(failure ? { llm_reason: failure.reason, llm_http_status: failure.httpStatus } : {}),
     })
     // Nevytvorený návrh je `warn`, nie `log`. Vercel na tomto pláne drží len
     // `warn`/`error` a zoskupuje riadky podľa requestu, takže úspešný request
@@ -132,6 +144,19 @@ export function scheduleInboundReplyDraft(d: InboundReplyDraftInput): void {
     // Vedľajší efekt: `warn` zviditeľní aj `LEAD_CREATED` z toho istého requestu.
     if (res.created) console.log(line)
     else console.warn(line)
+    // Log žije ~1 h; dôvod zlyhania sa musí dať prečítať aj neskôr.
+    if (failure) {
+      try {
+        await recordAiFailureEvent({
+          agencyId: d.agencyId,
+          leadId: d.leadId,
+          feature: 'inbound_reply_draft',
+          failure,
+        })
+      } catch {
+        // Best-effort: kontrakt „nikdy nehádže" nemá závisieť od implementácie zapisovača.
+      }
+    }
   }
   try {
     after(task)

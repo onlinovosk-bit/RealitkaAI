@@ -2,6 +2,7 @@ import type { DashboardSummaryResponse } from '@/app/api/dashboard/summary/route
 import { estimateClaudeCostEur } from './llm-usage-cost'
 import { callClaude, CLAUDE_HAIKU, extractJson } from './claude'
 import { withAiTimeout } from './fallback'
+import type { AiFailure } from './ai-failure'
 
 export type PropertySnapshot = {
   id: string
@@ -38,6 +39,8 @@ export type DashboardInsightsAudit = {
   model: string | null
   costEur: number | null
   latencyMs: number | null
+  /** Prečo model nezodpovedal (len pri `fallback`): kód dôvodu, HTTP status, request-id. */
+  failure?: AiFailure | null
 }
 
 export type GenerateDashboardInsightsResult = {
@@ -230,10 +233,17 @@ Vráť JSON:
     }
   })
 
+  let failure: AiFailure | null = null
   const result: GenerateDashboardInsightsResult = await withAiTimeout(aiCall, {
     insights: fallback,
     audit: { source: 'fallback' as const, model: CLAUDE_HAIKU, costEur: null, latencyMs: 0 },
-  }, 800)
-  if (result.audit.source === 'fallback') result.audit.latencyMs = Date.now() - t0
+  }, 800, {
+    feature: 'dashboard_insights',
+    onFailure: (f) => { failure = f },
+  })
+  if (result.audit.source === 'fallback') {
+    result.audit.latencyMs = Date.now() - t0
+    result.audit.failure = failure
+  }
   return result
 }
