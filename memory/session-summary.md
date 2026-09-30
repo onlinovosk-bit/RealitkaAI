@@ -1,3 +1,30 @@
+## Session 2026-09-30 (LEAD-NO-DRAFT — read-only)
+
+### Dokončené
+- **LEAD-NO-DRAFT** — regresia lokalizovaná, príčina **nedokázaná**. Detail a tabuľka dôkazov:
+  `memory/decisions.md` (záznam 2026-09-30 „LEAD-NO-DRAFT").
+- Posledné `ai_triage_at` v celej DB je 2026-09-22 09:13:15; 3 z 3 leadov po výpadku nemajú
+  triage ani AI návrh; cron 05:00 ich za dve noci nespracoval.
+- Vylúčené: ID modelu, constraint/trigger na `leads`, `no_email`, auto-response krok,
+  schéma `activities`.
+- **Lead z Nehnuteľnosti.sk dnes 07:05 vznikol** → oprava #732/#739 na portálovej ceste
+  funguje (n = 1).
+- Korekcie #755: „v okne nula z portálu" bolo nesprávne, „2 z 2" je 3 z 3.
+
+### Rozpracované / Pending
+- **Skutočná chyba volania Claude je neznáma** — kód ju prehltne, logy expirujú za ~1 h.
+- **Founder (2 min):** Anthropic Console (chyby požiadaviek, kredit) + dátum zmeny
+  `ANTHROPIC_API_KEY` vo Vercel env.
+- `auto_response_sent_at` NULL u 6 z 6 leadov; `dashboard_insights` 0 z 212 `llm`.
+- Klon je plytký od 25. 9. — 22.–25. 9. v kóde neoverené.
+
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md`: PREPEND. Žiadna zmena kódu ani DB.
+
+### Ďalší krok
+AI-FAIL-VISIBLE (malý PR): logovať triedu chyby a HTTP status pri zlyhaní AI volania a zapísať
+trvalý dôvod pri zlyhanom triage/drafte. Čaká na GO.
+
 ## Session 2026-09-30 (GO MAILBOX — read-only)
 
 ### Dokončené
