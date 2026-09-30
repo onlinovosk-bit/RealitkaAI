@@ -14,7 +14,9 @@ on:
   pull_request:
     paths:
       - "apps/crm/src/**"
+      - "apps/crm/vercel.json"
       - "apps/crm/scripts/check-api-contract.mjs"
+      - "apps/crm/scripts/check-cron-observability.mjs"
       - "apps/crm/scripts/find-dead-exports.mjs"
       - "apps/crm/scripts/*-baseline.json"
   workflow_dispatch:
@@ -33,6 +35,12 @@ jobs:
 
       - name: API route contract (revolis-api.mdc)
         run: node apps/crm/scripts/check-api-contract.mjs --ci
+
+      # CRON-RUNS-CI-GATE-01: každý cron zo vercel.json musí po sebe nechať
+      # riadok v `cron_runs`. Tretí výskyt toho istého vzoru (recompute-bri,
+      # morning-brief) je lacnejšie zastaviť tu než opravovať spätne.
+      - name: Cron denník (ratchet)
+        run: node apps/crm/scripts/check-cron-observability.mjs --ci
 
       # Script ships with PR #358; until then skip so half-merged #356 does not fail every CRM PR.
       - name: Mŕtve exporty (trieda chyby spendCredits)

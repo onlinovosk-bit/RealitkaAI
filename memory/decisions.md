@@ -4936,3 +4936,34 @@ nikomu, vracia HTTP 500.
 
 Tretí cron s rovnakým vzorom po recompute-bri. Stojí za zváženie urobiť
 `cron_runs` povinnou súčasťou každého nového cronu, nie dodatočnou opravou.
+
+---
+
+## 2026-09-30 — CRON-RUNS-CI-GATE-01: denník cronu ako brána, nie ako disciplína
+
+Tretí cron s tým istým vzorom (recompute-bri, morning-brief) bol dôvod prestať
+to opravovať spätne. `check-cron-observability.mjs` číta crony z `vercel.json`,
+mapuje ich na `route.ts` a hlási dve veci:
+
+- `observe` — route nevolá `recordCronRun` (beh nenechá stopu)
+- `missing-route` — cron ukazuje na route, ktorá neexistuje (404 každý deň)
+
+Stav pri zavedení: 17 záznamov vo vercel.json, 16 rôznych routes, **2 s
+denníkom** (recompute-bri, morning-brief), 14 bez, 0 chýbajúcich routes.
+
+RATCHET, nie tvrdá brána. Tých 14 je v baseline a CI ich toleruje; job zlyhá
+len pri NOVOM cron-e bez denníka. Poučenie zo `schema-governance-guard.yml`,
+kde trvalo červený beh vytrénoval alarm fatigue a workflow sa musel vypnúť.
+Dlh sa tak nezvyšuje a nemusí sa splácať naraz.
+
+Overené testom, ktorý spúšťa skript ako podproces nad umelým stromom v
+dočasnom adresári (`tests/verification/cron-observability-gate.test.ts`,
+6 prípadov): nový cron bez `recordCronRun` vráti exit 1, baseline dlh vráti 0,
+cron bez route.ts je nález, tá istá route s dvoma rozvrhmi sa počíta raz.
+Kontrola, ktorú nikto neoveril, je prianie — to platí aj pre kontrolu samotnú.
+
+Zapojené na dvoch miestach: `scripts/ci/prepush-gate.sh` (lokálne, pred pushom)
+a `.github/workflows/code-contract-guard.yml`, do jobu „Zmluva kódu (ratchet)",
+kde už žije `check-api-contract.mjs`. **Zmena workflow súboru je jediná v tomto
+kroku, ktorá spadá pod founderov zákaz — bez nej by ale brána nebola bránou.
+Nadobudne účinnosť až jeho mergom.**
