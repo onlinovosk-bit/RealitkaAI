@@ -46,6 +46,23 @@ export function deriveCronStatus(
 }
 
 /**
+ * HTTP kód pre beh cronu.
+ *
+ * Kód je ZÁLOŽNÝ signál, nie hlavný — hlavný je riadok v `cron_runs`, ktorý
+ * prežije aj po hodine, keď logy Vercelu zmiznú. Preto 500 len vtedy, keď beh
+ * zlyhal A ZÁROVEŇ sa o tom nikam nezapísalo: vtedy je stavový kód jediné, čo
+ * po behu zostane.
+ *
+ * Bezpodmienečné 500 tu bolo prvé a bolo nesprávne: porušovalo zmluvu, ktorú
+ * drží dvanásť ďalších cronov a pinuje ju `tests/smoke.spec.ts` — „cron
+ * s platným CRON_SECRET nevracia 500". V CI to spadlo na morning-brief, lebo
+ * tam RESEND_API_KEY nie je nakonfigurovaný, takže doručenie legitímne zlyhá.
+ */
+export function cronHttpStatus(status: CronRunStatus, logError: string | null): number {
+  return status === 'failed' && logError ? 500 : 200
+}
+
+/**
  * Zapíše jeden riadok do `cron_runs`. Vracia chybu namiesto toho, aby ju
  * pohltila; `null` znamená, že zápis prešiel.
  */

@@ -4967,3 +4967,85 @@ telefonáty — `logEvent` existuje a nikto ho nevolá z miest, kde sa to deje),
 alebo (b) BRI zo Revolis odstrániť a neplatiť zaň údržbu. Odporúčanie: (a),
 ale až keď bude jasné, ktorý jeden signál klient naozaj uvidí — nie všetkých
 päť zložiek naraz.
+
+---
+
+## 2026-09-30 — MORNING-BRIEF-DECIDE-01: brief sa nedá zapnúť + BRIEF-CRON-OBSERVE-01
+
+### Meranie: reťaz je prerušená na vstupe
+
+```
+cron 06:00 → morning_brief_settings WHERE enabled = true → 0 riadkov → { sent: 0 }
+                      ↑ zapisuje jedine hook use-morning-brief
+                      ↑ ten volá jedine komponent BriefSettings.tsx
+                      ↑ ten NEIMPORTUJE NIKTO
+```
+
+Vystopované až po miesto renderu, nie po export: `BriefSettings.tsx` sa v celom
+`apps/crm/src` nikde nevykresľuje; mimo neho je už len typ rovnakého mena.
+Maklér teda nemá kde brief zapnúť. Štvrtý prípad vzoru z #738.
+
+### Čo by v e-maile bolo
+
+Z dvanástich slotov nesú v bežné ráno informáciu dva až tri:
+- **trvalo prázdne**: horúce leady (`lead_scores >= 60`, strop skóre je 22),
+  nárasty skóre, zmeny na LV, arbitráž, cenové poklesy, odpovede — všetko
+  z `events` (0 riadkov)
+- **čestne `null`**: bez kontaktu 48 h (`last_contact_at` prázdny na všetkých riadkoch)
+- **reálne**: nové leady za noc (ale 11 leadov za 30 dní → väčšinu rán 0),
+  aktívne leady (514), čaká na kontakt
+- **neoverené**: hodnota pipeline (parsovaná z textového `budget`)
+
+Tie nuly nie sú „v noci sa nič nedialo" — sú to nezapojené zdroje, ktoré
+vyzerajú ako meranie. Denný e-mail s deviatimi trvalými nulami učí klienta,
+že Revolis nič nesleduje, a robí to presvedčivo.
+
+### Odporúčanie (NEZAPÍSANÉ AKO ROZHODNUTÉ — patrí founderovi)
+
+Nezapájať a nemazať: parkovať s pomenovanou podmienkou — brief sa zapína, keď
+aspoň 5 z 12 slotov nesie reálne dáta. A hlavne: nie je to samostatné
+rozhodnutie. Osud briefu visí na tom istom rozhodnutí o engagemente ako BRI.
+Ak sa začne zbierať jeden reálny signál, brief ožije ako vedľajší efekt.
+
+### Rozhodnutie: BUILD — BRIEF-CRON-OBSERVE-01
+
+Nezávisle od osudu briefu platí, že jeho cron vracal `{ sent: 0, failed: 0 }`
+rovnako pri „nikto to nemá zapnutý" ako pri „všetkým zlyhalo doručenie".
+Doplnené: riadok v `cron_runs` na každý beh, rozlíšenie „nastavenia
+neexistujú" vs. „existujú, ale sú vypnuté" (dva dotazy, nie jeden), zlyhanie
+bez chybovej hlášky sa nestratí, a beh, ktorý mal komu poslať a neposlal
+nikomu, vracia HTTP 500.
+
+Tretí cron s rovnakým vzorom po recompute-bri. Stojí za zváženie urobiť
+`cron_runs` povinnou súčasťou každého nového cronu, nie dodatočnou opravou.
+
+---
+
+## 2026-09-30 — CRON-RUNS-CI-GATE-01: denník cronu ako brána, nie ako disciplína
+
+Tretí cron s tým istým vzorom (recompute-bri, morning-brief) bol dôvod prestať
+to opravovať spätne. `check-cron-observability.mjs` číta crony z `vercel.json`,
+mapuje ich na `route.ts` a hlási dve veci:
+
+- `observe` — route nevolá `recordCronRun` (beh nenechá stopu)
+- `missing-route` — cron ukazuje na route, ktorá neexistuje (404 každý deň)
+
+Stav pri zavedení: 17 záznamov vo vercel.json, 16 rôznych routes, **2 s
+denníkom** (recompute-bri, morning-brief), 14 bez, 0 chýbajúcich routes.
+
+RATCHET, nie tvrdá brána. Tých 14 je v baseline a CI ich toleruje; job zlyhá
+len pri NOVOM cron-e bez denníka. Poučenie zo `schema-governance-guard.yml`,
+kde trvalo červený beh vytrénoval alarm fatigue a workflow sa musel vypnúť.
+Dlh sa tak nezvyšuje a nemusí sa splácať naraz.
+
+Overené testom, ktorý spúšťa skript ako podproces nad umelým stromom v
+dočasnom adresári (`tests/verification/cron-observability-gate.test.ts`,
+6 prípadov): nový cron bez `recordCronRun` vráti exit 1, baseline dlh vráti 0,
+cron bez route.ts je nález, tá istá route s dvoma rozvrhmi sa počíta raz.
+Kontrola, ktorú nikto neoveril, je prianie — to platí aj pre kontrolu samotnú.
+
+Zapojené na dvoch miestach: `scripts/ci/prepush-gate.sh` (lokálne, pred pushom)
+a `.github/workflows/code-contract-guard.yml`, do jobu „Zmluva kódu (ratchet)",
+kde už žije `check-api-contract.mjs`. **Zmena workflow súboru je jediná v tomto
+kroku, ktorá spadá pod founderov zákaz — bez nej by ale brána nebola bránou.
+Nadobudne účinnosť až jeho mergom.**

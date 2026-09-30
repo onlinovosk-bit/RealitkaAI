@@ -22,7 +22,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient }         from '@/lib/supabase/server'
 import { batchRecomputeBRI }         from '@/lib/events/bri-score'
-import { deriveCronStatus, recordCronRun } from '@/lib/ops/cron-run'
+import { cronHttpStatus, deriveCronStatus, recordCronRun } from '@/lib/ops/cron-run'
 import { checkEngagementSignal, engagementMissingReason } from '@/lib/events/engagement-signal'
 
 const JOB = 'recompute-bri'
@@ -117,9 +117,8 @@ export async function GET(request: NextRequest) {
       detail: { profiles_scanned: scanned },
     })
 
-    // Beh, ktorý mal čo počítať a nezapísal nič, nie je úspech. HTTP 500 je
-    // jediné, čo v prehľade Cron Jobs uvidíš bez toho, aby si sa pýtal DB.
-    const httpStatus = status === 'failed' ? 500 : 200
+    // Pravidlo aj s dôvodom žije v cronHttpStatus().
+    const httpStatus = cronHttpStatus(status, logError)
 
     return NextResponse.json({
       ok: status !== 'failed',
