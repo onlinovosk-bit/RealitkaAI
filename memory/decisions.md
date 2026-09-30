@@ -4600,3 +4600,59 @@ s prázdnymi sekciami, a to je horšia prvá skúsenosť než žiadny e-mail.
 Kandidát na lacnú poistku, nie hotová vec: kontrola v CI, ktorá vypíše
 komponenty pod `components/**`, ktoré nikto neimportuje. Všetky štyri prípady
 vyššie by bola zachytila.
+
+---
+
+## 2026-09-30 — BRI-WIRE-01 zmergované, prvý beh nezapísal nič (BRI-CRON-OBSERVE-01)
+
+#742 sa zmergoval 2026-09-29 o 18:19Z. Cron `/api/cron/recompute-bri` mal
+o 02:40 UTC prvýkrát v histórii projektu naozaj zapísať do produkčnej DB.
+Kontrola o 07:50: `lead_scores` 0, `bri_score_history` 0.
+
+### Čo sa pri diagnostike overilo
+
+- `compute_bri_score` má `INSERT INTO lead_scores` nepodmienený. Keby sa raz
+  zavolala, riadok existuje. Neexistuje ⇒ RPC sa nikdy nezavolalo.
+- Kontrolné dotazy: 512 aktívnych leadov, z toho 493 sedí na aktívny profil,
+  19 aktívnych profilov, `events` stále 0.
+- Ostatné crony z `vercel.json` ráno bežali (guardian 06:57, dashboard-insights
+  06:24, notification-digest 06:58, customer-health 07:06) ⇒ cron infraštruktúra
+  aj `CRON_SECRET` fungujú.
+- `customer-health` aj `guardian-run` používajú **ten istý** `createAdminClient()`
+  a zapísali ⇒ service-role klient v produkcii funguje.
+
+### Chybná hypotéza, ktorú treba mať zapísanú
+
+Z API výpisu premenných na Verceli som usúdil, že produkcii chýba
+`SUPABASE_SERVICE_ROLE_KEY` (výpis vrátil len dva preview záznamy) a napísal,
+že `createAdminClient` preto potichu degraduje na anon klienta. Founderov
+screenshot z UI ukázal tretí, produkčný záznam, ktorý API nevrátilo. Poučenie:
+**neúplný výpis z API nie je dôkaz neexistencie.** Druhá, nezávislá kontrola
+(iné crony na tom istom klientovi zapisujú) by ten záver bola vyvrátila skôr
+a stála by jeden grep.
+
+### Rozhodnutie: BUILD — `cron_runs`
+
+Skutočný nález nie je konkrétna príčina, ale to, že sa nedala zistiť. Po behu
+cronu nezostala stopa: logy Vercelu tu prežijú asi hodinu a route vracala
+`{ ok: true, computed: 0 }` rovnako pri „nebolo čo počítať" ako pri „všetko
+zlyhalo". Osem hodín po behu sa to už nedalo vyšetriť.
+
+- `cron_runs`: jeden riadok na beh (scanned / eligible / written / failed /
+  prvá chyba doslovne / trvanie). Prevádzkový denník, nie tenant dáta —
+  bez `agency_id`, bez prístupu pre anon aj authenticated, RLS zapnutá.
+- `batchRecomputeBRI` vracia rozpis namiesto jedného čísla. Predtým sa
+  neúspešné prepočty odfiltrovali cez `.filter(Boolean)` a „0" znamenalo
+  zároveň „profil nemá leady" aj „všetkých 26 RPC zlyhalo".
+- Beh, ktorý mal čo počítať a nezapísal nič, vracia HTTP 500, nie 200 —
+  aby bol v prehľade Cron Jobs červený.
+
+Tretí výskyt toho istého vzoru (po `morning-brief/gather.ts` a `bri-score.ts`):
+chyba sa premení na nulu a nula sa tvári ako výsledok. Tu sa nezavrela oprava
+jedného stĺpca, ale možnosť, aby sa to stalo bez svedka.
+
+### Otvorené
+
+Prečo presne beh 2026-09-30 nezapísal nič, stále nevieme. Rozhodne to buď
+prehľad Vercel → Cron Jobs (posledný beh a návratový kód), alebo prvý beh po
+nasadení tejto zmeny — ten už odpoveď zapíše sám.
