@@ -243,6 +243,68 @@ Existujú všetky 4 top-up ceny, one-time?
 
 ---
 
+## 6b. Stav Vercelu, odmeraný 2026-09-30 (nie odhad)
+
+Doteraz bol odmeraný len Stripe (krok A → 0/9). **Vercel nikto nepozrel.**
+Odmerané cez Vercel API na projekte `realitka-ai`
+(`prj_gXxD0vtqXTtBdV3amGVspPJvQntW`), 85 premenných spolu, iba názvy a ciele —
+hodnoty sa nedešifrovali.
+
+Z desiatich premenných, ktoré dnešný kód číta, je vo Verceli **nula**:
+
+| premenná | v Verceli | bráni |
+|---|---|---|
+| `STRIPE_PRICE_SOLO_SEAT` | ❌ | `/upgrade` seat checkout (P0) |
+| `STRIPE_PRICE_TEAM_SEAT` | ❌ | to isté |
+| `STRIPE_PRICE_OFFICE_SEAT` | ❌ | to isté |
+| `STRIPE_PRICE_OWNER_COCKPIT_FOUNDER` | ❌ | cockpit checkbox |
+| `STRIPE_PRICE_OWNER_COCKPIT` | ❌ | cockpit checkbox |
+| `STRIPE_PRICE_CREDITS_START` | ❌ | `/billing#topup` |
+| `STRIPE_PRICE_CREDITS_RAST` | ❌ | `/billing#topup` |
+| `STRIPE_PRICE_CREDITS_PRO` | ❌ | `/billing#topup` |
+| `STRIPE_PRICE_CREDITS_MEGA` | ❌ | `/billing#topup` |
+| `STRIPE_PRICE_STARTER_PACK` | ❌ | marketing `/balik` |
+
+Čo vo Verceli **je** — sedem premenných, žiadna z nich zo zoznamu vyššie:
+
+```
+STRIPE_SECRET_KEY                production
+STRIPE_WEBHOOK_SECRET            development, preview, production
+STRIPE_PRICE_STARTER             development, preview, production
+STRIPE_PRICE_PRO                 production
+STRIPE_PRICE_MARKET_VISION       production, preview, development
+STRIPE_PRICE_PROTOCOL_AUTH       preview, production
+STRIPE_PRICE_ONBOARDING          production
+```
+
+Päť `STRIPE_PRICE_*` premenných patrí **starému** plánovému modelu
+(`billing-store.ts`), nie cenníku v `program-tier-pricing.ts`. Sú deklarované
+v `apps/crm/src/config/env.ts:28-34`; desať nových tam deklarovaných **nie je**,
+takže schéma prostredia dnes nepopisuje, čo aplikácia naozaj potrebuje.
+
+Dôsledok pre poradie krokov: **krok B nie je čiastočne hotový, je nedotknutý.**
+Po kroku C treba doplniť všetkých desať, nie dopĺňať chýbajúce.
+
+Pozor pri upratovaní: `env.ts` deklaruje sedem starých cien, vo Verceli je päť.
+`STRIPE_PRICE_SCALE` (`billing-store.ts:673`) a `STRIPE_PRICE_ENTERPRISE`
+(`billing-store.ts:52`) sa čítajú, ale nastavené nie sú — mapovanie ceny na plán
+cez tieto dva riadky teda nikdy nezaberie. Nie je to blokátor tržby, ale patrí
+to na zoznam pri čistení starého modelu.
+
+### Čo z toho zostáva na founderovi
+
+1. **Krok C** — vytvoriť desať cien v Stripe LIVE. Presné sumy a typy:
+   `bash scripts/ops/stripe-verify-prices.sh --spec` (kľúč netreba).
+2. **Krok A znova** — `STRIPE_SECRET_KEY=rk_live_… bash scripts/ops/stripe-verify-prices.sh`
+   vypíše riadky `KLUC=price_…`.
+3. **Krok B** — vložiť ich do Vercelu (§7) a **redeploy**.
+4. **Krok D** — smoke podľa §8.
+
+Agent nedostáva live kľúč a ceny nevytvára. Bez kroku C nevie pohnúť ničím —
+tri kroky zo štyroch stoja na účte, ku ktorému nemá prístup.
+
+---
+
 ## 7. Krok B — env patch (zapisuje founder)
 
 Vercel projekt `realitka-ai`, target **production** (a `preview`, ak chceš
