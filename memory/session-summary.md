@@ -1,3 +1,19 @@
+## Session 2026-10-01 (DASHBOARD-LLM-WINDOW)
+### Dokončené
+- **DASHBOARD-LLM-WINDOW** (GO foundera): dashboard AI volanie dostalo okno 6 s (cron 7,5 s) namiesto
+  natvrdo 800 ms; `maxDuration = 60` na cron route; premenná `DASHBOARD_INSIGHTS_TIMEOUT_MS` teraz skutočne
+  riadi okno. 6 nových testov + test crona, mutation proof 8/8, lint čistý, typecheck 49.
+### Rozpracované / Pending
+- Prvý `source: llm` z dashboard crona (06:00 UTC alebo ručné spustenie) — dôkaz, že model v okne odpovie.
+- Overiť, že build preview prijal `maxDuration = 60` na Hobby.
+- PR #764 (teraz nesie aj túto zmenu) čaká na „merguj 764"; auto-reload + nižší limit v Console; Resend doména.
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/ai/dashboard-insights.ts`, `dashboard-insights-cron.ts`,
+  `apps/crm/src/app/api/cron/dashboard-insights/route.ts`; testy `dashboard-insights-window.test.ts` (nový),
+  `dashboard-insights-cron.test.ts`.
+### Ďalší krok
+Merge → nasadenie → prečítať `ai_action_audit` po behu crona o 06:00 UTC (`source`, `failure_reason`).
+
 ## Session 2026-09-30 (PO DOPLNENÍ KREDITU)
 ### Dokončené
 - Kredit doplnený (Console, 20 USD); `billing` zmizlo — dashboard cron 20:07 UTC (spustil Cursor)

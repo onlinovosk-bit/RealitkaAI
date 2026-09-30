@@ -1,5 +1,32 @@
 # Critical Decisions Log
 
+## [2026-10-01] DASHBOARD-LLM-WINDOW — dashboard AI dostane čas na odpoveď (BUILD, GO foundera)
+
+**Príčina (dokázaná kódom + auditom):** `generateDashboardInsights` volal `withAiTimeout(..., 800, …)`
+pri Haiku s `max_tokens: 700`. `latencyMs` 801/829/801 a `failure_reason = timeout` z behu 30. 9. 20:07 UTC
+(po doplnení kreditu). Jediný volajúci je cron (čítač `/api/dashboard/insights` modelu nevolá), takže sa
+nečakalo na interaktívnu odozvu. Premenná `DASHBOARD_INSIGHTS_TIMEOUT_MS` (8 s) nastavovala len vonkajší
+`withTimeout` a na vnútorné okno nedosiahla.
+
+**Zmena:**
+- `dashboard-insights.ts`: `generateDashboardInsights(input, { timeoutMs })`; predvolené
+  `DASHBOARD_LLM_TIMEOUT_MS = 6000` (namiesto 800).
+- `dashboard-insights-cron.ts`: cron posiela `INSIGHTS_LLM_TIMEOUT_MS = max(2500, INSIGHTS_AI_TIMEOUT_MS − 500)`,
+  teda KRATŠIE než vonkajšie okno — inak by vonkajší `withTimeout` vyhral skôr a zlyhanie by skončilo
+  bez dôvodu v audite. Premenná prostredia teraz skutočne riadi okno.
+- `route.ts`: `export const maxDuration = 60` (2 dávky po 3 agentúrach; zber dát ~4 s + okno modelu; ~23 s
+  v najhoršom prípade nad predvolenými 10 s). **Neoverené z dokumentácie**, či Hobby 60 s dovolí —
+  ak nie, zlyhá build preview hneď v PR.
+
+**Dôkaz:** 6 nových testov (fake timery: odpoveď po 1,5 s a 5 s sa prijme, po vypršaní `timeout` s dôvodom,
+okno volajúceho sa rešpektuje, časovač sa uvoľní, vnútorné < vonkajšie, `maxDuration` ≥ 30) + test, že cron
+posiela okno; súvisiace sady 127 zelených; lint čistý; typecheck 49 (bez nových chýb); **mutation proof 8/8**
+zabitých, súbory obnovené bit-for-bit.
+
+**Nedokázané:** že model v tomto okne skutočne odpovie (prvý `source: llm` zatiaľ nikto nevidel) — príde z ďalšieho
+behu crona (1. 10. 06:00 UTC) alebo z ručného spustenia; výstup môže odhaliť ďalšiu chybu (`bad_output`,
+zle orezaný JSON pri `max_tokens: 700`) — viditeľnosť z #760 ju ukáže.
+
 ## [2026-09-30] PO DOPLNENÍ KREDITU — `billing` zmizlo, dashboard odhalil vlastnú chybu (800 ms okno)
 
 **Kontext:** founder doplnil kredit (Console, faktúra 30. 9. Paid 24,60 USD = 20 USD + 23 % DPH,
