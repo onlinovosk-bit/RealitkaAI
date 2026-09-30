@@ -5,7 +5,7 @@
 - Dôkaz: 152 testov (vitest) zelených; lint, typecheck ratchet a API contract PASS lokálne (`scripts/ci/prepush-gate.sh`); mutačný dôkaz 56/56 (každá sabotáž zhasne test); tri nezávislé slepé sady, prvý beh na zmrazenom routeri: gate presne 61 % / 80 % / 40 %, nebezpečné podhodnotenia 3 / 2 / 6 (adverzariálna sada); nezávislý review *SHIP WITH FIXES* → opravené. **CI na PR zatiaľ nebežala; nič nie je VERIFIED v produkcii.**
 - Záznam v `memory/decisions.md` (BUILD len vrstvy bez runtime; ťažké časti BACKLOG; veto Q1 vedome prekročené foundrom).
 ### Rozpracované / Pending
-- **Draft PR čaká na foundera** (merge = „merguj N"); CI na PR zatiaľ nebežala. Merge spustí Vercel build `apps/crm` (v diffe sú len testy).
+- **Draft PR #759 čaká na foundera** (merge = „merguj 759"); CI zelená na `7f713a4`. Merge spustí Vercel build `apps/crm` (v diffe sú len testy).
 - Founder: Onlinovo.sk / AI Phone Operator; kto je „Nájomná agentúra"/„Proon"; kde žije Mia; denylist auto-merge pre RAU cesty (`.github/` je Tier 3); krok C (Stripe ceny) má prednosť.
 - Finálna verzia routeru nemá čerstvú slepú sadu (NEZMERANÉ); YouTube/EÚ pravidlá NEOVERENÉ.
 - Nástroje: MCP servery Ruflo a onlinovo sa nepripojili (CONNECTION_CLOSED); priložená kópia chatu nebola k dispozícii.

@@ -20,7 +20,7 @@ related:
 > (projekt → walls → režim → brána → reťazec promptov) a odovzdať founderovi jedno rozhodnutie.
 > **Čo je to technicky:** skill (Rector) + register projektov + deterministický router (skript) +
 > knižnica 24 promptov. Bez runtime, bez DB, bez UI.
-> **Stav dôkazu:** IMPLEMENTED + TESTED (vetva; CI beží na PR). Nie PRODUCTION; nič sa nenasadilo.
+> **Stav dôkazu:** IMPLEMENTED + TESTED (vetva; CI zelená na commite `7f713a4` (run 36696657555): `Lint, test, build` (vitest vrátane 152 RAU testov, build, Playwright smoke), `BUS`, `Control Contract`, `Memory Engine`). Nie PRODUCTION; nič sa nenasadilo.
 > **Čo router NIE JE:** bezpečnostná kontrola. Je to triedič kľúčovými slovami (§11).
 
 ## 1. Verdikt — pokus zabiť plán (2026-09-30)
@@ -194,7 +194,7 @@ Vzor sa povýši po druhom použití.
 
 ## 11. Dôkaz
 
-**Stav:** IMPLEMENTED + TESTED lokálne; **CI zatiaľ nebežala** (draft PR); nič nie je VERIFIED v produkcii.
+**Stav:** IMPLEMENTED + TESTED lokálne aj v CI — CI zelená na commite `7f713a4` (run 36696657555): `Lint, test, build` (vitest vrátane 152 RAU testov, build, Playwright smoke), `BUS`, `Control Contract`, `Memory Engine`. Nič nie je VERIFIED v produkcii. (CI spočiatku nebežala: PR mal konflikt v `memory/*` po PREPEND-och iných session; GitHub pri konflikte `pull_request` workflowy nespúšťa. Po zlúčení `main` do vetvy bežala.)
 
 **Testy.** `apps/crm/tests/verification/rau.verification.test.ts` — 152 testov. Pokrýva: konzistenciu
 dát (cesty, prompty, steny, regexy), knižnicu promptov (šablóna, odkazy), **pozitívny aj negatívny prípad pre
@@ -255,7 +255,7 @@ aplikovať, lebo zdroják obsahoval doslovné neviditeľné znaky — nahradené
 citáte" pôvodne prechádzal z iného dôvodu (neznámy druh práce) — pridaná kontrola `quoted_only_triggers`.
 
 **Čo nie je dokázané:** reálne použitie na úlohách foundera; výkon finálnej verzie na čerstvých formuláciách;
-že RAU skracuje čakanie foundera; prechod CI; čokoľvek v produkcii; presnosť reuse heuristiky.
+že RAU skracuje čakanie foundera; čokoľvek v produkcii; presnosť reuse heuristiky.
 
 ## 12. Zdroje a čo chýba
 

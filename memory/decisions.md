@@ -29,7 +29,7 @@ Agent Factory (posúdenie Ústavou), produktová pamäť v DB, autonómny režim
 (len prompty / rozšíriť task-loop / Agent Factory) odmietnuté; contradiction check: flag (Q1 veto prekročené
 foundrom; P05 „nový router bez ADR" — zastupuje tento záznam a `docs/rau/RAU-v1.0.md`; AP-012 riziko uznané).
 
-**Dôkaz:** 152 testov (vitest) zelených; lint, typecheck ratchet a API contract PASS lokálne (`scripts/ci/prepush-gate.sh`); mutačný dôkaz 56/56 (každá sabotáž zhasne test); tri nezávislé slepé sady, prvý beh na zmrazenom routeri: gate presne 61 % / 80 % / 40 %, nebezpečné podhodnotenia 3 / 2 / 6 (adverzariálna sada); nezávislý review *SHIP WITH FIXES* → opravené. **CI na PR zatiaľ nebežala; nič nie je VERIFIED v produkcii.**  Podrobnosti a slabiny: `docs/rau/RAU-v1.0.md` §11.
+**Dôkaz:** 152 testov (vitest) zelených; lint, typecheck ratchet a API contract PASS lokálne (`scripts/ci/prepush-gate.sh`); mutačný dôkaz 56/56 (každá sabotáž zhasne test); tri nezávislé slepé sady, prvý beh na zmrazenom routeri: gate presne 61 % / 80 % / 40 %, nebezpečné podhodnotenia 3 / 2 / 6 (adverzariálna sada); nezávislý review *SHIP WITH FIXES* → opravené. **CI zelená na `7f713a4` (PR #759); nič nie je VERIFIED v produkcii.**  Podrobnosti a slabiny: `docs/rau/RAU-v1.0.md` §11.
 **Čo to NIE JE:** router je triedič kľúčovými slovami, nie bezpečnostná kontrola; adverzariálne formulácie
 prejdú. Nezaujatý odhad presnosti brány: 80 % (bežné formulácie), ~40 % (adverzariálne) — **finálna verzia na
 čerstvej sade NEZMERANÁ**.
