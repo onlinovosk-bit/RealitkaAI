@@ -16,7 +16,7 @@ export interface AcquireEvent {
    * zachránila ho doména odosielateľa — signál, že textové pravidlo hnije.
    */
   sourceDetectedBy: "text" | "sender" | "none";
-  /** Doména odosielateľa (bez lokálnej časti — do logu ide len `has_sender`). */
+  /** Doména odosielateľa. Bez lokálnej časti — do logu ide len toto. */
   senderDomain?: string | null;
   eventKind: "inquiry" | "reply" | "unsubscribe" | "update" | "spam" | "unknown";
   contactName?: string | null;
@@ -440,10 +440,14 @@ export function notLeadDiagnostics(ev: AcquireEvent) {
     has_contact_phone: Boolean(ev.contactPhone),
     has_listing_ref: Boolean(ev.listingPortalId || ev.listingInternalId || ev.listingTitle),
     has_message: Boolean(ev.inquiryText),
-    // Ako sa zdroj rozpoznal a či Worker vôbec posiela `From`. Adresa ani
-    // doména odosielateľa do logu nejde.
+    // Ako sa zdroj rozpoznal + doména odosielateľa. Bez domény sa
+    // `unknown_source` nedá vyriešiť: v PROD prichádza `has_sender: true` so
+    // `source_detected_by: "none"`, čiže odosielateľ je známy, ale jeho doména
+    // nesedí na žiadne pravidlo — a nevieme, ktorá to je.
+    // GDPR: LEN doména, nikdy lokálna časť. `senderDomainOf` lokálnu časť
+    // zahadzuje, takže sem sa nemá ako dostať.
     source_detected_by: ev.sourceDetectedBy,
-    has_sender: Boolean(ev.senderDomain),
+    sender_domain: ev.senderDomain ?? null,
     parser_version: ev.parserVersion,
   };
 }

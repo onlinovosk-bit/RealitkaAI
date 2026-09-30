@@ -1,0 +1,543 @@
+{
+  "schema": "rau.registry.v1",
+  "version": "1.0.0",
+  "updated": "2026-09-30",
+  "principle": "Neznámy fakt je null a zapísaný ako open_unknown; čísla rizika (kapitál, limity) určuje len founder. Volatilný stav registry nenesie (je v state_sources). Polia risk_class, default_mode, fast_eligible a founder_confirmed sú NÁVRH RAU (písané rukou, nie odvodené z repa) a po potvrdení ich prepisuje founder; zdroj pre projekty 03–07 je správa foundera z 2026-09-30.",
+  "modes": {
+    "FAST": "Žiadny spúšťač rizika, žiadny indikátor navyše. Základný reťazec promptov, nezávislé QA, CI.",
+    "STANDARD": "Aspoň jeden spúšťač alebo indikátor. Základný reťazec + aktivované prompty (kontrakty, bezpečnosť, brány).",
+    "HARDENED": "Projekt s vysokým rizikom alebo kritický spúšťač. Pridáva Red Team a Security; overovateľ musí byť iný agent/model než implementátor.",
+    "AUTONOMOUS": "Nikdy sa nevyberá automaticky. Povolený len pre typy operácií z autonomous_allowlist (dnes prázdny). Rozšírenie allowlistu je rozhodnutie foundera cez PR."
+  },
+  "autonomous_allowlist": [],
+  "gates": {
+    "AUTO-SAFE": "Čítanie, lokálny kód na vetve, testy, docs v scope. Bez explicitného GO.",
+    "GO_REQUIRED": "Priprav a zastav. Čaká sa na výslovné slovo foundera (merge, PROD, secrets, nová scope, externá komunikácia, schválenie kontraktu).",
+    "STOP": "Nahlás blokér a nepokračuj. Router ho vracia len pre rozpoznané prípady: osobné údaje a vlastníci/LV, projekt v inom repozitári. Že zdroj dát chýba v sourcing mape, router neoveruje (to robí P06).",
+    "ASK": "Router nevie rozhodnúť deterministicky (projekt neznámy/nejednoznačný, druh práce neznámy). Polož foundera JEDNU otázku s možnosťami a odporúčaním."
+  },
+  "walls": {
+    "WALL-PROJECT": {
+      "rule": "Agent pracuje v jednom projekte. Nečíta ani nemení iný projekt. Medzi projektmi sa prenáša vzor (pattern), nie dáta.",
+      "enforcement": "ADVISORY: router zisťuje repozitár projektu; samotné oddelenie držia oprávnenia repozitárov a founder."
+    },
+    "WALL-ENV": {
+      "rule": "LOCAL → TEST → STAGING → PRODUCTION. Prostredie sa nepreskakuje bez brány. Preview nasadenie nie je staging.",
+      "enforcement": "ADVISORY + CI/Vercel. Oddelený staging dnes nie je doložený (P16 to musí povedať)."
+    },
+    "WALL-DATA": {
+      "rule": "Triedy: PUBLIC, INTERNAL, CONFIDENTIAL, SENSITIVE. Osobné údaje a externé zdroje len podľa docs/architecture/master-data-sourcing-map.md a GDPR bránou. Pamäť postavy (Mia) a kapitálové dáta (UPTM) sú izolované.",
+      "enforcement": "ADVISORY + RLS v Revolise. Router pri scrapingu osobných údajov vracia STOP."
+    },
+    "WALL-FINANCIAL": {
+      "rule": "Peniaze, obchodovanie, kapitálové a rizikové limity určuje a mení len founder. LIVE_TRADING zostáva false. Agent hranice nikdy neuvoľňuje.",
+      "enforcement": "ADVISORY v tomto repe; tvrdé brány sú v repozitári UPTM."
+    },
+    "WALL-EXTERNAL": {
+      "rule": "Odoslanie správy, publikácia obsahu, platba, zmena PROD, zmazanie dát = Tier 3: ľudské schválenie vždy.",
+      "enforcement": "ENFORCED len na dvoch cestách odosielania (authorizeSend v apps/crm/src/lib/control-plane/authorize-send.ts: schválenie návrhu a outreach). Iné odosielacie cesty v kóde existujú bez tejto brány — pre ne je to ADVISORY."
+    },
+    "WALL-FOUNDER": {
+      "rule": "VISION, PRIORITY, DECISION, APPROVAL patria founderovi. Agent nerozširuje vlastné oprávnenia, nevypína brány, nemení walls ani registry autonómne.",
+      "enforcement": "CONVENTION + review PR. Súbory docs/rau/, .claude/skills/rau/ a scripts/ops/rau-route.mjs NIE sú na denylist auto-merge; preto na PR so zmenou walls/registry/allowlistu nepridávaj label automerge (ochranu denylistu môže pridať len founder — .github/ je Tier 3)."
+    }
+  },
+  "chains": {
+    "kinds": {
+      "DECIDE": [
+        "P00",
+        "P01",
+        "P02",
+        "P03"
+      ],
+      "BUILD": [
+        "P00",
+        "P01",
+        "P02",
+        "P03",
+        "P10",
+        "P11",
+        "P15",
+        "P22",
+        "P23"
+      ],
+      "FIX": [
+        "P00",
+        "P10",
+        "P11",
+        "P15",
+        "P22"
+      ],
+      "OPS": [
+        "P00",
+        "P01",
+        "P03",
+        "P17",
+        "P18",
+        "P19",
+        "P22",
+        "P23"
+      ],
+      "CONTENT": [
+        "P00",
+        "P03",
+        "P11",
+        "P22",
+        "P23"
+      ]
+    },
+    "hardened_adds": [
+      "P13",
+      "P14"
+    ],
+    "note": "Reťazec je deterministický zoznam ÚČASTNÝCH promptov. Rector preskočí prompt, ak platí jeho riadok „Nepoužívaj, keď“. Pri obsahu (CONTENT) je P17/P18 brána a akt publikácie."
+  },
+  "projects": [
+    {
+      "id": "rau",
+      "name": "Revolis Agentic University (RAU)",
+      "number": "00",
+      "type": "meta",
+      "repo": "onlinovosk-bit/RealitkaAI",
+      "in_this_repo": true,
+      "repo_default": false,
+      "stage": "FOUNDATION (docs + skill + deterministický router; bez runtime)",
+      "mission": "Z každého founder zadania zostaviť najmenší potrebný, bezpečný postup (projekt, walls, režim, reťazec promptov) a odovzdať founderovi jedno rozhodnutie.",
+      "risk_class": "MEDIUM",
+      "default_mode": "STANDARD",
+      "fast_eligible": true,
+      "walls": [
+        "WALL-PROJECT",
+        "WALL-FOUNDER"
+      ],
+      "state_sources": [
+        "docs/rau/RAU-v1.0.md",
+        "memory/decisions.md"
+      ],
+      "source_of_truth": "docs/rau/",
+      "founder_approval": [
+        "zmena walls",
+        "zmena autonomous_allowlist",
+        "zmena registry",
+        "zapojenie do CLAUDE.md"
+      ],
+      "founder_confirmed": true,
+      "open_unknowns": []
+    },
+    {
+      "id": "revolis",
+      "name": "Revolis.AI",
+      "number": "01",
+      "type": "saas",
+      "repo": "onlinovosk-bit/RealitkaAI",
+      "in_this_repo": true,
+      "repo_default": true,
+      "stage": "LIVE v produkcii pre referenčného klienta; samoobslužný nákup zatiaľ nefunguje (CHECKOUT-ENV-01, memory/open-tasks.md)",
+      "mission": "Agentic Real Estate CRM: skrátiť cestu Lead → Telefonát → Obhliadka → Zmluva → Provízia; žiadny lead nevychladne bez povšimnutia.",
+      "mission_source": "docs/architecture/agentic/revolis-system-spec-v1.0.md §2",
+      "risk_class": "HIGH",
+      "default_mode": "STANDARD",
+      "fast_eligible": true,
+      "walls": [
+        "WALL-PROJECT",
+        "WALL-ENV",
+        "WALL-DATA",
+        "WALL-EXTERNAL",
+        "WALL-FOUNDER"
+      ],
+      "state_sources": [
+        "memory/open-tasks.md",
+        "memory/session-summary.md",
+        "memory/decisions.md"
+      ],
+      "source_of_truth": "memory/decisions.md",
+      "founder_approval": [
+        "merge do main",
+        "zápis do PROD DB",
+        "zmena env/tajomstiev",
+        "odoslanie správy klientovi",
+        "zmena cien",
+        "zmazanie dát",
+        "migrácia",
+        "pomenovanie referenčného klienta vo verejných textoch"
+      ],
+      "founder_confirmed": true,
+      "open_unknowns": []
+    },
+    {
+      "id": "uptm",
+      "name": "UPTM",
+      "number": "02",
+      "type": "trading",
+      "repo": "onlinovosk-bit/uptm-runner",
+      "in_this_repo": false,
+      "repo_default": false,
+      "stage": "PRE-LIVE (LIVE_TRADING=false)",
+      "mission": "Výskumný, rozhodovací a exekučný systém pre obchodovanie s preregistráciou, adversariálnym overovaním a hranicou schválenia foundera.",
+      "mission_source": "memory/session-summary.md (2026-09-29, UPTM-011…017)",
+      "risk_class": "CRITICAL",
+      "default_mode": "HARDENED",
+      "fast_eligible": false,
+      "walls": [
+        "WALL-PROJECT",
+        "WALL-ENV",
+        "WALL-DATA",
+        "WALL-FINANCIAL",
+        "WALL-EXTERNAL",
+        "WALL-FOUNDER"
+      ],
+      "state_sources": [
+        "uptm-runner: docs/decisions.md"
+      ],
+      "source_of_truth": "uptm-runner: docs/decisions.md (rozhodnutia UPTM patria tam, nie do RealitkaAI)",
+      "founder_approval": [
+        "LIVE_TRADING",
+        "zmena kapitálových a rizikových limitov",
+        "zadanie objednávky",
+        "merge (výslovné „merguj N“)",
+        "rozšírenie bezpečnostnej obálky"
+      ],
+      "founder_confirmed": true,
+      "open_unknowns": [
+        "capital.account_equity a validation_capital.amount určuje founder (RAU ich nikdy nevymýšľa)"
+      ],
+      "repo_source": "memory/session-summary.md (2026-09-29): „Repozitár: onlinovosk-bit/uptm-runner“"
+    },
+    {
+      "id": "mia",
+      "name": "AI Influencerka Mia Vellar",
+      "number": "03",
+      "type": "character-content",
+      "repo": null,
+      "in_this_repo": false,
+      "repo_default": false,
+      "stage": "UNKNOWN (Blueprint §17.3 ju vedie ako systém; v tomto repe nemá kód ani repozitár)",
+      "mission": "Agentic Character & Content System; identita postavy a policy pamäť majú prednosť pred generovaným obsahom.",
+      "mission_source": "docs/architecture/agentic/agentic-system-blueprint-v1.0.md §17.3",
+      "risk_class": "MEDIUM",
+      "default_mode": "STANDARD",
+      "fast_eligible": true,
+      "walls": [
+        "WALL-PROJECT",
+        "WALL-DATA",
+        "WALL-EXTERNAL",
+        "WALL-FOUNDER"
+      ],
+      "state_sources": [],
+      "source_of_truth": null,
+      "founder_approval": [
+        "publikácia obsahu",
+        "zmena identity postavy",
+        "monetizácia/platená propagácia"
+      ],
+      "founder_confirmed": true,
+      "open_unknowns": [
+        "kde projekt žije (repozitár, nástroje)",
+        "platformy a účty",
+        "pravidlá označovania AI obsahu pre dané platformy a EÚ (NEOVERENÉ — over pred publikovaním)"
+      ]
+    },
+    {
+      "id": "najomna-konkurent",
+      "name": "Konkurent Nájomnej agentúry",
+      "number": "04",
+      "type": "competitive-product",
+      "repo": null,
+      "in_this_repo": false,
+      "repo_default": false,
+      "stage": "UNKNOWN (v repe 0 zmienok)",
+      "mission": "Postaviť produkt z problému zákazníka, nie z kópie zoznamu funkcií konkurenta.",
+      "mission_source": "founder, 2026-09-30",
+      "risk_class": "MEDIUM",
+      "default_mode": "STANDARD",
+      "fast_eligible": true,
+      "walls": [
+        "WALL-PROJECT",
+        "WALL-DATA",
+        "WALL-EXTERNAL",
+        "WALL-FOUNDER"
+      ],
+      "state_sources": [],
+      "source_of_truth": null,
+      "founder_approval": [
+        "publikácia",
+        "zber dát o konkurentovi mimo verejných faktov",
+        "kontakt so zákazníkmi konkurenta"
+      ],
+      "founder_confirmed": true,
+      "open_unknowns": [
+        "kto presne je „Nájomná agentúra“ (subjekt, web)",
+        "repozitár a rozsah",
+        "zdroje dát o konkurentovi nie sú v master-data-sourcing-map (robots.txt/ToS; bez osobných údajov)"
+      ]
+    },
+    {
+      "id": "proon-konkurent",
+      "name": "Konkurent Proon",
+      "number": "05",
+      "type": "competitive-product",
+      "repo": null,
+      "in_this_repo": false,
+      "repo_default": false,
+      "stage": "UNKNOWN (v repe 0 zmienok)",
+      "mission": "Postaviť produkt z problému zákazníka, nie z kópie zoznamu funkcií konkurenta. Znalosti o konkurentovi sa nemiešajú s inými projektmi.",
+      "mission_source": "founder, 2026-09-30",
+      "risk_class": "MEDIUM",
+      "default_mode": "STANDARD",
+      "fast_eligible": true,
+      "walls": [
+        "WALL-PROJECT",
+        "WALL-DATA",
+        "WALL-EXTERNAL",
+        "WALL-FOUNDER"
+      ],
+      "state_sources": [],
+      "source_of_truth": null,
+      "founder_approval": [
+        "publikácia",
+        "zber dát o konkurentovi mimo verejných faktov",
+        "kontakt so zákazníkmi konkurenta"
+      ],
+      "founder_confirmed": true,
+      "open_unknowns": [
+        "čo presne je Proon a v čom sa má konkurovať",
+        "repozitár a rozsah",
+        "zdroje dát nie sú v master-data-sourcing-map"
+      ]
+    },
+    {
+      "id": "yt-kids",
+      "name": "YouTube: detské riekanky",
+      "number": "06",
+      "type": "content-factory",
+      "repo": null,
+      "in_this_repo": false,
+      "repo_default": false,
+      "stage": "NOT_STARTED (v repe 0 zmienok)",
+      "mission": "Šablónovaná výroba videí s detskými riekankami; LLM len pri ideácii, výbere tém a analytike, mechanické kroky deterministicky.",
+      "mission_source": "founder, 2026-09-30",
+      "risk_class": "MEDIUM",
+      "default_mode": "STANDARD",
+      "fast_eligible": true,
+      "walls": [
+        "WALL-PROJECT",
+        "WALL-DATA",
+        "WALL-EXTERNAL",
+        "WALL-FOUNDER"
+      ],
+      "state_sources": [],
+      "source_of_truth": null,
+      "founder_approval": [
+        "publikácia videa",
+        "nastavenia monetizácie",
+        "platená propagácia"
+      ],
+      "founder_confirmed": true,
+      "open_unknowns": [
+        "pravidlá YouTube pre obsah pre deti a monetizáciu (COPPA / „made for kids“) — NEOVERENÉ, over pred stavbou",
+        "pravidlá YouTube pre hromadne vyrábaný/AI obsah a monetizáciu — NEOVERENÉ",
+        "kanál, účet, nástroje na hlas/hudbu/vizuál",
+        "licencie na hudbu a vizuály"
+      ]
+    },
+    {
+      "id": "yt-ambient",
+      "name": "YouTube: dážď a ambient na spanie",
+      "number": "07",
+      "type": "content-portfolio",
+      "repo": null,
+      "in_this_repo": false,
+      "repo_default": false,
+      "stage": "NOT_STARTED (v repe 0 zmienok)",
+      "mission": "Portfólio obsahových experimentov: publikuj, meraj retenciu/CTR/watch time/príjem, škáluj alebo zabi.",
+      "mission_source": "founder, 2026-09-30",
+      "risk_class": "MEDIUM",
+      "default_mode": "STANDARD",
+      "fast_eligible": true,
+      "walls": [
+        "WALL-PROJECT",
+        "WALL-DATA",
+        "WALL-EXTERNAL",
+        "WALL-FOUNDER"
+      ],
+      "state_sources": [],
+      "source_of_truth": null,
+      "founder_approval": [
+        "publikácia videa",
+        "nastavenia monetizácie",
+        "platená propagácia"
+      ],
+      "founder_confirmed": true,
+      "open_unknowns": [
+        "pravidlá YouTube pre opakujúci sa/hromadne vyrábaný obsah a monetizáciu — NEOVERENÉ",
+        "zdroj údajov o trendoch a analytike nie je v master-data-sourcing-map",
+        "licencie na zvuky a vizuály"
+      ]
+    },
+    {
+      "id": "onlinovo",
+      "name": "Onlinovo.sk",
+      "number": "—",
+      "type": "ecommerce",
+      "repo": null,
+      "in_this_repo": false,
+      "repo_default": false,
+      "stage": "UNKNOWN (Blueprint §17.2). V tomto repe je Onlinovo MCP (docs/onlinovo, packages/mcp-onlinovo; memory/open-tasks.md); samotný e-shop je mimo repo (system spec: MIMO REPO).",
+      "mission": "Agentic E-commerce System.",
+      "mission_source": "docs/architecture/agentic/agentic-system-blueprint-v1.0.md §17.2",
+      "risk_class": "UNKNOWN",
+      "default_mode": "STANDARD",
+      "fast_eligible": false,
+      "walls": [
+        "WALL-PROJECT",
+        "WALL-DATA",
+        "WALL-EXTERNAL",
+        "WALL-FOUNDER"
+      ],
+      "state_sources": [
+        "memory/open-tasks.md (Onlinovo MCP)"
+      ],
+      "source_of_truth": null,
+      "founder_approval": [],
+      "founder_confirmed": false,
+      "open_unknowns": [
+        "Blueprint ho vedie medzi štyrmi počiatočnými systémami, ale nie je v zozname 7 projektov — vedomé vynechanie, alebo zabudnutie?"
+      ]
+    },
+    {
+      "id": "phone-operator",
+      "name": "AI Phone Operator",
+      "number": "—",
+      "type": "voice-operator",
+      "repo": null,
+      "in_this_repo": false,
+      "repo_default": false,
+      "stage": "UNKNOWN (Blueprint §17.4: samostatný produkt)",
+      "mission": "Agentic Voice Business Operator: prijať hovor, pochopiť zámer, konať cez nástroje, zhrnúť, follow-up.",
+      "mission_source": "docs/architecture/agentic/agentic-system-blueprint-v1.0.md §17.4",
+      "risk_class": "UNKNOWN",
+      "default_mode": "STANDARD",
+      "fast_eligible": false,
+      "walls": [
+        "WALL-PROJECT",
+        "WALL-DATA",
+        "WALL-EXTERNAL",
+        "WALL-FOUNDER"
+      ],
+      "state_sources": [],
+      "source_of_truth": null,
+      "founder_approval": [],
+      "founder_confirmed": false,
+      "open_unknowns": [
+        "Blueprint ho vedie medzi štyrmi počiatočnými systémami, ale nie je v zozname 7 projektov — vedomé vynechanie, alebo zabudnutie?"
+      ]
+    }
+  ],
+  "backlog": [
+    {
+      "id": "agent-factory",
+      "title": "Agent Factory v1.0 (štandardizovaná výrobná linka agentov)",
+      "match": [
+        "agent factory",
+        "agent.?factor\\w*"
+      ],
+      "veto": "pôvodne timing (Q8); prah 3 agentov za control-contractom je PREKROČENÝ (4) — rozhodnutie: posúdenie Ústavou, nie automatický BUILD; duplicita, ktorú by Factory riešila, zatiaľ nepreukázaná",
+      "unlock": "výsledok posúdenia Ústavou v2 (nie automatický BUILD); podmienka: preukázaná duplicita pri pridávaní agentov (dnes 1 záznam v mape + 1 akcia + 1 spec)",
+      "source": "memory/decisions.md (2026-09-25, „Všetky 4 cesty AI text → klient sú za schválením…“, odsek „Prah Ústavy (3 agenti za kontraktom) je prekročený — 4“); docs/architecture/adr-2026-09-11b-software-factory-v1-minimum.md"
+    },
+    {
+      "id": "product-skills",
+      "title": "Produktové Skills",
+      "match": [
+        "produktov\\w* skill\\w*"
+      ],
+      "veto": "jeden konzument na skill",
+      "unlock": "druhé použitie tej istej procedúry v druhom agentovi",
+      "source": "docs/architecture/agentic/revolis-system-spec-v1.0.md (ROZHODNUTIE)"
+    },
+    {
+      "id": "managed-agents-runtime",
+      "title": "Managed Agents runtime",
+      "match": [
+        "managed agent\\w*",
+        "agent runtime",
+        "vlastn\\w* runtime"
+      ],
+      "veto": "timing (Q8) + Technology Bias",
+      "unlock": "prvý agent s tool use a viackrokovým loopom",
+      "source": "docs/architecture/agentic/revolis-system-spec-v1.0.md (ROZHODNUTIE)"
+    },
+    {
+      "id": "model-router",
+      "title": "Model Router (automatický výber modelu)",
+      "match": [
+        "model router\\w*",
+        "model.?routing",
+        "smerovan\\w* model\\w*"
+      ],
+      "veto": "neexistuje meranie, nad ktorým by router rozhodoval",
+      "unlock": "model, model_calls a tokeny sú merané aspoň 30 dní a ukážu, že výber modelu je materiálna nákladová položka (prah určí founder PRED meraním)",
+      "source": "docs/reports/2026-09-26-baseline-benchmark.md (N3, N4)"
+    },
+    {
+      "id": "cost-governor",
+      "title": "Cost Governor (rozpočtové brány nad agentmi)",
+      "match": [
+        "cost governor\\w*",
+        "finops agent\\w*",
+        "rozpoctov\\w* brana"
+      ],
+      "veto": "brána nad nemeranou hodnotou nezasiahne nikdy",
+      "unlock": "cost a model_calls merané v ledgeri (dnes model:null, cost_usd:0 v 9/9 záznamov)",
+      "source": "docs/reports/2026-09-26-baseline-benchmark.md (N4)"
+    },
+    {
+      "id": "rau-control-center",
+      "title": "RAU Control Center (UI modul v Control Plane)",
+      "match": [
+        "control center",
+        "rau control",
+        "riadiace centrum"
+      ],
+      "veto": "Ústava v2 Q1 (klient by nezaplatil) + Q8",
+      "unlock": "aspoň 10 zaznamenaných použití routeru (riadok „RAU route:“ v memory/session-summary.md), meraná presnosť brány nad prahom z P12 a výslovné GO foundera",
+      "source": "docs/architecture/founder-control-plane-v1-repo-confrontation.md (STRATEGIC BACKLOG)"
+    },
+    {
+      "id": "product-memory-db",
+      "title": "Produktová pamäť v databáze (Memory Engine pre produkt)",
+      "match": [
+        "memory engine",
+        "produktov\\w* pamat\\w*",
+        "graf znalost\\w*"
+      ],
+      "veto": "gate: 3 platiaci klienti",
+      "unlock": "traja platiaci klienti",
+      "source": "docs/architecture/agentic/revolis-system-spec-v1.0.md §0; docs/architecture/adr-2026-07-28-memory-engine.md"
+    },
+    {
+      "id": "planned-construction",
+      "title": "Plánovaná stavba / Bod zlomu / Deal Risk predikcie / Market Intelligence",
+      "match": [
+        "planovan\\w* stavb\\w*",
+        "bod zlomu",
+        "deal risk",
+        "market intelligence"
+      ],
+      "veto": "timing (dáta nie sú dostupné)",
+      "unlock": "ÚPV SR verejné API; dáta z portálu; N mesiacov reálnej histórie dealov",
+      "source": "docs/architecture/revolis-constitution-v2.md (Strategic Backlog)"
+    },
+    {
+      "id": "autonomous-mode",
+      "title": "Autonómny režim RAU",
+      "match": [
+        "autonomn\\w* rezim",
+        "autonomous mode"
+      ],
+      "veto": "Agent ≠ authority",
+      "unlock": "founder zapíše typ operácie do autonomous_allowlist cez PR",
+      "source": "docs/rau/RAU-v1.0.md"
+    }
+  ]
+}

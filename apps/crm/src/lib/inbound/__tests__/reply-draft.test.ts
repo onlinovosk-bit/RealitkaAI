@@ -12,12 +12,16 @@ const LEAD_ID = "lead-1";
 const mockGenerate = vi.hoisted(() => vi.fn());
 const mockLogAiAction = vi.hoisted(() => vi.fn());
 const mockResendSend = vi.hoisted(() => vi.fn());
+const mockRecordFailure = vi.hoisted(() => vi.fn());
 
 vi.mock("../auto-reply", () => ({
   AUTO_REPLY_PROMPT_VERSION: "inbound-autoreply-v1",
   generateAutoReply: (...a: unknown[]) => mockGenerate(...a),
 }));
 vi.mock("@/lib/ai-action-audit", () => ({ logAiAction: (...a: unknown[]) => mockLogAiAction(...a) }));
+vi.mock("@/lib/ai/ai-failure-record", () => ({
+  recordAiFailureEvent: (...a: unknown[]) => mockRecordFailure(...a),
+}));
 vi.mock("resend", () => ({
   Resend: vi.fn().mockImplementation(() => ({ emails: { send: mockResendSend } })),
 }));
@@ -148,9 +152,11 @@ describe("draftInboundReplySafely", () => {
 
   it("never throws — the lead is already stored", async () => {
     mockGenerate.mockRejectedValue(new Error("llm exploded"));
-    await expect(draftInboundReplySafely(input(admin()))).resolves.toEqual({
+    // `failure` pribudlo s AI-FAIL-VISIBLE; kontrakt „nikdy nehádže, vráti error" ostáva.
+    await expect(draftInboundReplySafely(input(admin()))).resolves.toMatchObject({
       created: false,
       reason: "error",
+      failure: { reason: "unknown" },
     });
     mockGenerate.mockResolvedValue({ subject: "S", body: "B" });
     await expect(draftInboundReplySafely(input(admin({ insertThrows: true })))).resolves.toMatchObject({
@@ -178,5 +184,163 @@ describe("scheduleInboundReplyDraft", () => {
     expect(() => scheduleInboundReplyDraft(input(db))).not.toThrow();
     await vi.waitFor(() => expect(mockGenerate).toHaveBeenCalled());
     expect(db.activities).toHaveLength(0);
+  });
+});
+
+describe("viditeľnosť výsledku v logoch", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.unstubAllEnvs();
+    mockGenerate.mockResolvedValue({ subject: "S", body: "B" });
+  });
+
+  /**
+   * Vercel na tomto pláne drží len warn/error a zoskupuje riadky podľa
+   * requestu. Keby nevytvorený návrh ostal na `console.log`, celý request bez
+   * iného varovania je v logoch neviditeľný — presne prípad leadu z
+   * 2026-09-29 07:37, kde sa dôvod chýbajúceho návrhu už nedal zistiť.
+   */
+  it("nevytvorený návrh ide na warn aj s dôvodom", async () => {
+    vi.stubEnv("INBOUND_REPLY_DRAFT_DISABLED", "1");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    scheduleInboundReplyDraft(input(admin()));
+    await vi.waitFor(() => expect(warn).toHaveBeenCalled());
+
+    expect(JSON.parse(warn.mock.calls[0][0] as string)).toMatchObject({
+      status: "INBOUND_REPLY_DRAFT",
+      source: "acquire_email",
+      result: "disabled",
+    });
+    expect(log).not.toHaveBeenCalled();
+    warn.mockRestore();
+    log.mockRestore();
+  });
+
+  it("vytvorený návrh ostáva na log — úspech nie je varovanie", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const db = admin();
+
+    scheduleInboundReplyDraft(input(db));
+    await vi.waitFor(() => expect(log).toHaveBeenCalled());
+
+    expect(JSON.parse(log.mock.calls[0][0] as string)).toMatchObject({ result: "created" });
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+    log.mockRestore();
+  });
+});
+
+describe("dôvod zlyhania AI kroku (AI-FAIL-VISIBLE)", () => {
+  const BILLING = {
+    reason: "billing",
+    httpStatus: 400,
+    errorType: "invalid_request_error",
+    errorName: "BadRequestError",
+    requestId: "req_1",
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.unstubAllEnvs();
+    mockRecordFailure.mockResolvedValue(undefined);
+  });
+
+  it("llm_fallback nesie dôvod z LLM vrstvy", async () => {
+    mockGenerate.mockResolvedValue({ subject: "S", body: "B", fallback: true, failure: BILLING });
+    const res = await draftInboundReply(input(admin()));
+    expect(res).toEqual({ created: false, reason: "llm_fallback", failure: BILLING });
+  });
+
+  it("warn riadok má llm_reason a llm_http_status — llm_fallback sa dá rozlíšiť", async () => {
+    mockGenerate.mockResolvedValue({ subject: "S", body: "B", fallback: true, failure: BILLING });
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    scheduleInboundReplyDraft(input(admin()));
+    await vi.waitFor(() => expect(mockRecordFailure).toHaveBeenCalled());
+
+    expect(JSON.parse(warn.mock.calls[0][0] as string)).toMatchObject({
+      status: "INBOUND_REPLY_DRAFT",
+      result: "llm_fallback",
+      llm_reason: "billing",
+      llm_http_status: 400,
+    });
+    warn.mockRestore();
+  });
+
+  it("zlyhanie sa zapíše trvalo (prežije retenciu logov) — bez textu chyby", async () => {
+    mockGenerate.mockResolvedValue({ subject: "S", body: "B", fallback: true, failure: BILLING });
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    scheduleInboundReplyDraft(input(admin()));
+    await vi.waitFor(() => expect(mockRecordFailure).toHaveBeenCalledTimes(1));
+
+    expect(mockRecordFailure).toHaveBeenCalledWith({
+      agencyId: AGENCY_ID,
+      leadId: LEAD_ID,
+      feature: "inbound_reply_draft",
+      failure: BILLING,
+    });
+    vi.restoreAllMocks();
+  });
+
+  it("vytvorený návrh nič nezapisuje", async () => {
+    mockGenerate.mockResolvedValue({ subject: "S", body: "B" });
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    scheduleInboundReplyDraft(input(admin()));
+    await vi.waitFor(() => expect(log).toHaveBeenCalled());
+
+    expect(mockRecordFailure).not.toHaveBeenCalled();
+    log.mockRestore();
+  });
+
+  it("kill switch nie je zlyhanie AI — nezapisuje sa", async () => {
+    vi.stubEnv("INBOUND_REPLY_DRAFT_DISABLED", "1");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    scheduleInboundReplyDraft(input(admin()));
+    await vi.waitFor(() => expect(warn).toHaveBeenCalled());
+
+    expect(mockRecordFailure).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it("chýbajúci e-mail nie je zlyhanie AI — nezapisuje sa", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    scheduleInboundReplyDraft(input(admin(), { lead: { name: "Ján", email: "", message: "x", source: "portal" } }));
+    await vi.waitFor(() => expect(warn).toHaveBeenCalled());
+
+    expect(mockRecordFailure).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it("vyhodená chyba sa klasifikuje, zaloguje a zapíše; text chyby v logu nie je", async () => {
+    mockGenerate.mockRejectedValue(new Error("Ján Novák jan.novak@example.com"));
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    scheduleInboundReplyDraft(input(admin()));
+    await vi.waitFor(() => expect(mockRecordFailure).toHaveBeenCalledTimes(1));
+
+    expect(mockRecordFailure.mock.calls[0][0]).toMatchObject({
+      feature: "inbound_reply_draft",
+      failure: { reason: "unknown" },
+    });
+    expect(warn.mock.calls.map((c) => String(c[0])).join("\n")).not.toContain("jan.novak@example.com");
+    vi.restoreAllMocks();
+  });
+
+  it("zlyhanie zápisu záznamu nezhodí naplánovaný návrh", async () => {
+    mockGenerate.mockResolvedValue({ subject: "S", body: "B", fallback: true, failure: BILLING });
+    mockRecordFailure.mockRejectedValue(new Error("db down"));
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    expect(() => scheduleInboundReplyDraft(input(admin()))).not.toThrow();
+    await vi.waitFor(() => expect(mockRecordFailure).toHaveBeenCalled());
+    vi.restoreAllMocks();
   });
 });

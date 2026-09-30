@@ -49,7 +49,7 @@ export async function generateCallCoachFeedback(transcript: string): Promise<Coa
     return extractJson<CoachFeedback>(raw);
   });
 
-  return withAiTimeout(aiCall, callCoachFallback(), 500);
+  return withAiTimeout(aiCall, callCoachFallback(), 500, { feature: 'call_coach' });
 }
 
 function defaultFeedback(): CoachFeedback {
