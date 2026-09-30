@@ -1,3 +1,20 @@
+## Session 2026-09-30 (AUTO-RESPONSE-CHECK)
+### Dokončené
+- **AUTO-RESPONSE-CHECK** (read-only): `auto_response_sent_at` je NULL u **515 z 515** leadov, od
+  začiatku — auto-odpoveď v PROD **nikdy nefungovala** (predchádzajúci zápis „6/6 od 19. 9." bol
+  príliš úzky). Príčina NIE JE dokázaná (`RESEND_API_KEY`/`OUTREACH_FROM_EMAIL` a Resend doména
+  neoverené); 4 tiché východy bez trvalej stopy v DB. Detail: `memory/decisions.md`.
+- Riziko: reply-to = profil vlastníka agentúry `11111111-…` s gmail adresou (kto to je, neoverené).
+### Rozpracované / Pending
+- **Founder (2 min):** Vercel Team → Shared Env: `RESEND_API_KEY`, `OUTREACH_FROM_EMAIL`; Resend →
+  Domains: `mg.revolis.ai` Verified; a kto je vlastník-profil agentúry `11111111-…` (gmail).
+- **AUTO-RESPONSE-VISIBLE** — návrh (BUILD, malý PR); čaká na GO.
+- READ-REASON 14:05 UTC; PR #764 čaká na merge; ostatné z predošlej sekcie nezmenené.
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md`: záznam (žiadna zmena kódu).
+### Ďalší krok
+GO AUTO-RESPONSE-VISIBLE (viditeľnosť, nič sa neodosiela) + founderova 2-minútová kontrola env.
+
 ## Session 2026-09-30 (REALVIA-REPLAY)
 ### Dokončené
 - **REALVIA-REPLAY** (PROD zápis, GO foundera): 31 zlyhaných `advert` webhookov opakovaných

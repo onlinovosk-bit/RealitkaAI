@@ -1,5 +1,54 @@
 # Critical Decisions Log
 
+## [2026-09-30] AUTO-RESPONSE-CHECK — potvrdenie leadovi NIKDY neodišlo (read-only, GO foundera)
+
+**Oprava rámca:** predchádzajúce zápisy hovorili „NULL u 6/6 leadov od 19. 9." — to bolo príliš
+úzke. **`auto_response_sent_at` je NULL u 515 z 515 leadov** (513 s e-mailom), od prvého leadu
+(2026-06-02); stĺpec existuje od migrácie 2026-07-13. Základná čiara z 3.–15. 9. hovorila to isté
+(0 z 504). Nejde o regresiu z 19. 9. — **v PROD neexistuje jediný úspešný záznam auto-odpovede.**
+Prečo (nikdy sa nezapla vs. zlyháva pri každom pokuse), zatiaľ nevieme; výpadok z 22. 9. a tento
+problém sú nezávislé.
+
+**Dokázané (PROD SELECT + kód):**
+- `agencies.auto_response_enabled = true` pre agentúru `11111111-…` (ktorej patria všetky leady);
+  agentúra nemá `email` ani `phone`, reply-to sa preto berie z profilu vlastníka (1 profil,
+  e-mail **na gmail.com**, nie na `revolis.ai`).
+- Vstup do funkcie `runInboundLeadAutoResponse` je zapojený vo 4 cestách (`/api/acquire/email`,
+  `/api/leads/inbound`, `/api/valuation/submit`, buyer-onboarding); v e-mailovej ceste sa volá
+  `await` hneď po triage. Že sa funkcia pri konkrétnych leadoch skutočne zavolala, dokázať neviem
+  (nezostáva stopa).
+- Funkcia má **4 tiché východy** (bez e-mailu, vypnuté, chýba reply-to, zlyhanie odoslania):
+  všetky končia `return` po `autoErrorCapture`, ktorý zapisuje do súboru `error-capture.log`
+  (na Vercel je súborový systém len na čítanie → zápis zlyhá) a do `console.error`.
+  Trvalá stopa v DB **neexistuje**; Vercel drží error logy ~1 h → dôvod sa stratí.
+- V PROD nie je žiadny dôkaz, že Resend niekedy odoslal čokoľvek: `outreach_logs` má 0 riadkov,
+  v `platform_events` žiadny e-mailový event.
+
+**Nedokázané (príčina NIE JE známa):**
+- Či je `RESEND_API_KEY` (musí začínať `re_`) a `OUTREACH_FROM_EMAIL` v PROD nastavený. V projektových
+  env `realitka-ai` nie sú, ale výpis nástroja skrýva 12 z 85 položiek a `SUPABASE_SERVICE_ROLE_KEY`
+  je tiež len Preview, pričom PROD beží → produkčné hodnoty idú zrejme z tímových (shared) env.
+  Z tohto prostredia neviem overiť bez dešifrovania hodnôt (nerobím).
+- Či je `mg.revolis.ai` v Resend „Verified". Bez neho Resend odošle zamietnutie a lead nedostane nič
+  (odosielateľ je pre gmail reply-to `OUTREACH_FROM_EMAIL` alebo `onboarding@mg.revolis.ai`).
+- Runtime logy k leadom neexistujú (posledný lead s e-mailom 07:05 UTC; Hobby retencia ~1 h).
+
+**Riziko pred zapnutím (pozor):** odosielateľ = kancelária, `Reply-To` = profil vlastníka agentúry
+`11111111-…` s **gmail** adresou. Ak je to profil foundera a nie Smolka, odpoveď klienta Smolka by
+pristála u foundera. Overiť, kto je ten profil, PRED tým, než sa auto-odpoveď rozbehne.
+
+**Rozhodnutia podľa Ústavy v2 (návrh, čaká na GO):**
+- **AUTO-RESPONSE-VISIBLE — BUILD (malý PR, rovnaký vzor ako #760).** Každý východ zapíše
+  `platform_events` `inbound.auto_response` s `outcome` (`sent`, `skipped_no_email`,
+  `skipped_disabled`, `skipped_already_sent`, `failed_no_reply_to`, `failed_no_api_key`,
+  `failed_send`) + triedou chyby, bez textu chyby a bez PII. Nezapína nič nové: iba urobí z tichého
+  neúspechu viditeľný, takže ďalší lead vysvetlí sám seba. Q1 áno (rýchla odpoveď je jadro produktu),
+  Q8 správny čas.
+- **Zapnutie skutočného odosielania — VALIDATE, rozhoduje founder.** Najprv (a) overiť
+  `RESEND_API_KEY` + `OUTREACH_FROM_EMAIL` v Team → Shared Env a `mg.revolis.ai` v Resend → Domains,
+  (b) overiť, komu patrí reply-to profil, (c) rozhodnúť, či odchádza e-mail v mene Smolkovej kancelárie
+  (obsah je neutrálny, právny základ 6(1)(f); GDPR skill v repe nie je — analýza ručne).
+
 ## [2026-09-30] REALVIA-REPLAY — 31 zlyhaných webhookov opakovaných (PROD zápis, GO foundera)
 
 **Vykonané (PROD, po nasadení #763):**
