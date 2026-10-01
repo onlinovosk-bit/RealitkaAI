@@ -60,6 +60,7 @@ import {
 } from "@/lib/mock-data";
 import { supabaseClient, getSupabaseClient } from "@/lib/supabase/client";
 import { resolveTenantSupabase } from "@/lib/supabase/resolve-client";
+import { toInboundDraftView, type InboundDraftView } from "@/lib/inbound/draft-view";
 
 export type { Lead, LeadStatus, Recommendation } from "@/lib/mock-data";
 
@@ -84,6 +85,29 @@ export type LeadFilters = {
   location?: string;
   minScore?: number;
 };
+
+/** Default page size for /dashboard and /leads. Other callers omit `page` and keep 500. */
+export const LEADS_PAGE_SIZE = 50;
+export const LEADS_LIST_MAX = 500;
+
+export type LeadListPage = {
+  limit?: number;
+  offset?: number;
+};
+
+export const LEADS_LIST_SELECT =
+  "id, agency_id, name, email, phone, location, budget, property_type, rooms, financing, timeline, source, status, score, assigned_agent, assigned_profile_id, last_contact, note, created_at, client_segment, buyer_readiness_score, ai_insight, sofia_insight, ai_engine, ai_priority, ai_reason, ai_triage_at, ai_priority_manual_at, last_ai_followup_at, ai_followup_count";
+
+export function resolveLeadListPage(page?: LeadListPage): { limit: number; offset: number } {
+  const limit = Math.min(Math.max(page?.limit ?? LEADS_LIST_MAX, 1), LEADS_LIST_MAX);
+  const offset = Math.max(page?.offset ?? 0, 0);
+  return { limit, offset };
+}
+
+function paginateLeadItems<T>(items: T[], page?: LeadListPage): T[] {
+  const { limit, offset } = resolveLeadListPage(page);
+  return items.slice(offset, offset + limit);
+}
 
 export type LeadInput = {
   agencyId: string;
@@ -159,6 +183,8 @@ export type LeadActivity = {
   type: ActivityType;
   text: string;
   date: string;
+  /** Set only for an inbound AI reply draft awaiting broker approval (Tier 3). */
+  inboundDraft?: InboundDraftView | null;
 };
 
 type ActivityMeta = {
@@ -709,9 +735,14 @@ export async function addLeadActivity(
   leadId: string,
   text: string,
   type: ActivityType = "Telefonat",
-  meta?: ActivityMeta
+  meta?: ActivityMeta,
+  /**
+   * Request-scoped client. Server callers SHOULD pass it so activity inserts
+   * use the authenticated session instead of the cookie-less browser singleton.
+   */
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
 ) {
-  await appendActivity(leadId, text, type, meta);
+  await appendActivity(leadId, text, type, meta, scoped);
 }
 
 function applyFilters(items: Lead[], filters?: LeadFilters) {
@@ -764,16 +795,17 @@ export function getAvailableLocations(items: Lead[]) {
 export async function listLeads(
   filters?: LeadFilters,
   scopedSupabase?: import("@supabase/supabase-js").SupabaseClient | null,
+  page?: LeadListPage,
 ): Promise<Lead[]> {
   if (await readDemoModeFromCookie()) {
-    return applyFilters(getDemoShowcaseLeads(), filters);
+    return paginateLeadItems(applyFilters(getDemoShowcaseLeads(), filters), page);
   }
 
   const supabase = await resolveTenantSupabase(scopedSupabase);
 
   if (!supabase) {
     if (process.env.NODE_ENV === "production") return [];
-    return applyFilters(mockLeads, filters);
+    return paginateLeadItems(applyFilters(mockLeads, filters), page);
   }
 
   const { resolveSessionAgencyId } = await import("@/lib/tenant-scope");
@@ -783,13 +815,14 @@ export async function listLeads(
     return [];
   }
 
+  const { limit, offset } = resolveLeadListPage(page);
   let query = supabase
     .from("leads")
-    .select("*")
+    .select(LEADS_LIST_SELECT)
     .eq("agency_id", agencyId)
     .order("score", { ascending: false })
     .order("created_at", { ascending: false })
-    .limit(500);
+    .range(offset, offset + limit - 1);
 
   if (filters?.status) {
     query = query.eq("status", filters.status);
@@ -817,7 +850,7 @@ export async function listLeads(
     if (process.env.NODE_ENV === "production") {
       return [];
     }
-    return applyFilters(mockLeads, filters);
+    return paginateLeadItems(applyFilters(mockLeads, filters), page);
   }
 
   const rows = (data ?? []) as SupabaseLeadRow[];
@@ -835,7 +868,12 @@ export async function getLead(
 
   const supabase = await resolveTenantSupabase(scoped);
 
+  // Fixture fallback is a local-development convenience only. In production it
+  // hands the caller a demo lead (demo name, demo email, demo phone) for a real
+  // lead id, which downstream senders then treat as a real contact.
+  // `listLeads` already guards this the same way.
   if (!supabase) {
+    if (process.env.NODE_ENV === "production") return undefined;
     return mockLeads.find((lead) => lead.id === id);
   }
 
@@ -846,6 +884,7 @@ export async function getLead(
     .single();
 
   if (error || !data) {
+    if (process.env.NODE_ENV === "production") return undefined;
     return mockLeads.find((lead) => lead.id === id);
   }
 
@@ -1200,6 +1239,7 @@ export async function getActivitiesByLeadId(
     type: normalizeActivityType(item.type),
     text: item.text,
     date: formatActivityDate(item.created_at),
+    inboundDraft: toInboundDraftView(item.meta),
   }));
 }
 
@@ -1469,4 +1509,59 @@ export async function getAiRecommendationMetricsLast7Days(): Promise<AiRecommend
   });
 
   return Array.from(metricsMap.values());
+}
+
+/**
+ * System (service-role) lead reads for cron / background jobs.
+ *
+ * `listLeads()` and `getLead()` resolve the tenant through the request session.
+ * On a server route with no session they fall back to the browser singleton,
+ * `resolveSessionAgencyId` returns null and the caller silently gets an empty
+ * set — a false-green cron. Background jobs must therefore pass an explicit
+ * service-role client and use these readers instead.
+ *
+ * These bypass RLS by design: only call them from a trusted server context
+ * (cron handlers), never from a user-facing route.
+ */
+export async function getLeadAsService(
+  serviceClient: import("@supabase/supabase-js").SupabaseClient,
+  id: string,
+): Promise<Lead | undefined> {
+  const { data, error } = await serviceClient
+    .from("leads")
+    .select(LEADS_LIST_SELECT)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`getLeadAsService: ${error.message}`);
+  }
+  if (!data) return undefined;
+
+  return mapRowToLead(data as SupabaseLeadRow);
+}
+
+export async function listLeadsAsService(
+  serviceClient: import("@supabase/supabase-js").SupabaseClient,
+  options?: { limit?: number; withEmailOnly?: boolean },
+): Promise<Lead[]> {
+  const limit = Math.min(Math.max(options?.limit ?? LEADS_LIST_MAX, 1), LEADS_LIST_MAX);
+
+  let query = serviceClient
+    .from("leads")
+    .select(LEADS_LIST_SELECT)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (options?.withEmailOnly !== false) {
+    query = query.not("email", "is", null).neq("email", "");
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    throw new Error(`listLeadsAsService: ${error.message}`);
+  }
+
+  return ((data ?? []) as SupabaseLeadRow[]).map((row) => mapRowToLead(row));
 }

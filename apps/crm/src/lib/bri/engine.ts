@@ -109,18 +109,24 @@ export async function getHotLeads(
   client?:   SupabaseClient,
 ): Promise<Array<BRIScoreV2 & { full_name: string; phone: string | null }>> {
   const supabase = client ?? await createClient()
-  const { data } = await supabase
+  // `leads` has no `full_name` column — it is `name`. The embedded select made
+  // PostgREST reject the whole query, so this returned [] even once lead_scores
+  // had rows (BRI-DEAD-PATH, #738). The outward field stays `full_name` because
+  // callers (morning brief, dashboard hot list) read it under that name.
+  const { data, error } = await supabase
     .from('lead_scores')
-    .select('*, leads(full_name, phone)')
+    .select('*, leads(name, phone)')
     .eq('profile_id', profileId)
     .gte('bri_score', 60)
     .order('bri_score', { ascending: false })
     .limit(limit)
 
+  if (error) console.error('[getHotLeads] fetch failed:', error.message)
+
   return (data ?? []).map(row => ({
     ...row,
-    full_name: (row.leads as any)?.full_name ?? 'Neznámy',
-    phone:     (row.leads as any)?.phone     ?? null,
+    full_name: (row.leads as any)?.name ?? 'Neznámy',
+    phone:     (row.leads as any)?.phone ?? null,
   }))
 }
 

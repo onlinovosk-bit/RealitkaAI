@@ -22,6 +22,29 @@ describe("[verification] Acquire email gateway", () => {
     expect(route).toContain("createServiceRoleClient");
   });
 
+  it("releases acquire_dedup_keys claim when lead insert fails (no permanent lead loss)", () => {
+    const route = readFileSync(
+      join(CRM_ROOT, "src/app/api/acquire/email/route.ts"),
+      "utf8",
+    );
+
+    // Dedup claim must be checked (unique conflict → duplicate) and rolled back on lead failure.
+    expect(route).toContain('from("acquire_dedup_keys").insert');
+    expect(route).toContain("isUniqueConflict");
+    expect(route).toContain(".delete()");
+    expect(route).toContain('.eq("key", key)');
+    expect(route).toMatch(
+      /insert error[\s\S]*acquire_dedup_keys[\s\S]*\.delete\(\)[\s\S]*\.eq\("key", key\)/,
+    );
+    // Retry after an unknown commit must not create a second lead.
+    expect(route).toContain("deterministicLeadId");
+    expect(route).toContain("acquire-email-lead:");
+    expect(route).toContain("LEAD_ALREADY_EXISTS");
+    expect(route).toMatch(
+      /isUniqueConflict\(error\)[\s\S]*from\("leads"\)[\s\S]*\.eq\("id", leadId\)/,
+    );
+  });
+
   it("agency_id comes from inbound address map, not parsed email", () => {
     const map = readFileSync(
       join(CRM_ROOT, "src/lib/acquire/agency-map.ts"),
@@ -33,10 +56,8 @@ describe("[verification] Acquire email gateway", () => {
     expect(map).not.toContain("parseEmail");
   });
 
-  it("middleware and proxy bypass session auth for acquire email webhook", () => {
-    const mw = readFileSync(join(CRM_ROOT, "middleware.ts"), "utf8");
+  it("proxy bypasses session auth for acquire email webhook", () => {
     const proxy = readFileSync(join(CRM_ROOT, "src/proxy.ts"), "utf8");
-    expect(mw).toContain("'/api/acquire/email'");
     expect(proxy).toContain('"/api/acquire/email"');
   });
 
@@ -62,7 +83,9 @@ describe("[verification] Acquire email gateway", () => {
 
     expect(orchestrator).toContain("auto_response_enabled");
     expect(orchestrator).toContain("auto_response_sent_at");
-    expect(orchestrator).toContain("assigned_agent,ai_reason,ai_priority,source");
+    expect(orchestrator).toContain("assigned_agent,ai_priority,source");
+    // ai_reason je interné zdôvodnenie triedenia — do e-mailu klientovi nepatrí (viď šablóna).
+    expect(orchestrator).not.toContain("ai_reason");
     expect(orchestrator).toContain("loadAgencyAutoResponseContext");
     expect(orchestrator).toContain("autoErrorCapture");
     expect(orchestrator).not.toMatch(/catch\s*\{\s*\}/);

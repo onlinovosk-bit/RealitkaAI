@@ -7,28 +7,81 @@
 import type { SalesBrainInsight } from "./sales-brain";
 import type { CallAnalysisResult } from "./call-analysis";
 import type { CoachFeedback } from "./call-coach";
+import { classifyAiError, reportAiFailure, type AiFailure } from "./ai-failure";
+
+export interface WithAiTimeoutOptions {
+  /** Názov funkcie do logu (`AI_CALL_FAILED`), napr. `dashboard_insights`. */
+  feature?: string;
+  /** Zavolá sa presne raz pri zlyhaní (timeout alebo odmietnutie), pred návratom zálohy. */
+  onFailure?: (failure: AiFailure) => void;
+}
 
 /**
  * Races `promise` against a timeout.
  * - Timeout wins  → returns `fallback` (never throws)
  * - Promise wins  → returns its resolved value
  * - Promise rejects → returns `fallback`
+ *
+ * Každé zlyhanie sa zaloguje ako `AI_CALL_FAILED` (`warn`) s kódom dôvodu, HTTP statusom
+ * a request-id — nikdy s textom chyby. Ticho prehltnuté odmietnutie bolo presne dôvod,
+ * prečo sa výpadok AI po 22. 9. nedal zistiť. Ak chyba príde až po vypršaní okna,
+ * zaloguje sa tiež (`after_timeout: true`): ukáže skutočnú príčinu pomalého zlyhania.
  */
 export function withAiTimeout<T>(
   promise: Promise<T>,
   fallback: T,
-  ms = 500
+  ms = 500,
+  opts: WithAiTimeoutOptions = {},
 ): Promise<T> {
+  const feature = opts.feature ?? "unlabeled";
+  const startedAt = Date.now();
+  let settled = false;
+  let timedOut = false;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+
+  const fail = (failure: AiFailure) => {
+    reportAiFailure(feature, failure, { elapsedMs: Date.now() - startedAt });
+    try {
+      opts.onFailure?.(failure);
+    } catch {
+      // Diagnostika nesmie zmeniť výsledok volania.
+    }
+  };
+
   const timeout = new Promise<T>((resolve) => {
-    const id = setTimeout(() => resolve(fallback), ms);
+    timer = setTimeout(() => {
+      if (settled) return;
+      timedOut = true;
+      fail({ reason: "timeout", httpStatus: null, errorType: null, errorName: null, requestId: null });
+      resolve(fallback);
+    }, ms);
     // Allow Node.js to exit even if this timer is still pending
-    if (typeof id === "object" && "unref" in id) id.unref();
+    if (typeof timer === "object" && "unref" in timer) timer.unref();
   });
 
-  return Promise.race([
-    promise.catch(() => fallback),
-    timeout,
-  ]);
+  const guarded = promise.then(
+    (value) => {
+      settled = true;
+      clearTimeout(timer);
+      return value;
+    },
+    (err: unknown) => {
+      settled = true;
+      clearTimeout(timer);
+      // Po timeoute už `onFailure` bežalo (s `timeout`); pozdné odmietnutie ide len do logu.
+      if (timedOut) {
+        reportAiFailure(feature, classifyAiError(err), {
+          elapsedMs: Date.now() - startedAt,
+          afterTimeout: true,
+        });
+      } else {
+        fail(classifyAiError(err));
+      }
+      return fallback;
+    },
+  );
+
+  return Promise.race([guarded, timeout]);
 }
 
 // ---------------------------------------------------------------------------

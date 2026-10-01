@@ -10,7 +10,6 @@ const FEATURE_PATHS: Record<string, string> = {
   daily_briefing: "/dashboard",
   hot_alert: "/dashboard",
   ambient_radar: "/l99-hub",
-  ghost_bsm: "/bsm-reforma",
   kataster_pulse: "/leads",
   kataster_pulse_unlimited: "/l99-hub",
   xml_ingestor: "/import",

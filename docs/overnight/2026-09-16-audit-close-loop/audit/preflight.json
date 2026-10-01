@@ -1,0 +1,133 @@
+{
+  "mode": "AUDIT",
+  "generated_at": "2026-09-16T11:45:00+02:00",
+  "base_sha_local": "7318e61599a379a75155ddb9a2688e8d338380b4",
+  "checks": [
+    {
+      "id": "repo_branch",
+      "cmd": "git rev-parse --abbrev-ref HEAD",
+      "exit_code": 0,
+      "output": "audit/2026-09-16",
+      "result": "OK"
+    },
+    {
+      "id": "clean_tree",
+      "cmd": "git status --porcelain",
+      "exit_code": 0,
+      "output": "(empty)",
+      "result": "OK"
+    },
+    {
+      "id": "origin_main_local",
+      "cmd": "git rev-parse origin/main",
+      "exit_code": 0,
+      "output": "7318e61599a379a75155ddb9a2688e8d338380b4",
+      "result": "OK",
+      "note": "local ref only; HEAD==origin/main (0 0)"
+    },
+    {
+      "id": "origin_main_fresh",
+      "cmd": "git fetch && git rev-parse origin/main",
+      "exit_code": null,
+      "output": "NOT RUN — founder AUDIT MODE forbids external service access",
+      "result": "UNKNOWN"
+    },
+    {
+      "id": "worktrees",
+      "cmd": "git worktree list",
+      "exit_code": 0,
+      "output": "126 worktrees listed (including C:/RealitkaAI-run/audit @ audit/2026-09-16)",
+      "result": "OK"
+    },
+    {
+      "id": "open_prs",
+      "cmd": "gh pr list --state open",
+      "exit_code": null,
+      "output": "NOT RUN — founder AUDIT MODE forbids external service access",
+      "result": "UNKNOWN"
+    },
+    {
+      "id": "judge_exists",
+      "cmd": "node apps/crm/scripts/judge.mjs --help",
+      "exit_code": 1,
+      "output": "Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'js-yaml' imported from .../apps/crm/scripts/judge.mjs",
+      "result": "BLOCK"
+    },
+    {
+      "id": "node_modules_crm",
+      "cmd": "Test-Path apps/crm/node_modules",
+      "exit_code": 0,
+      "output": "False",
+      "result": "BLOCK",
+      "note": "js-yaml is in package.json/lock but not installed; npm ci not run (audit forbids heavy install as workaround for missing critical dep — reported as BLOCK)"
+    },
+    {
+      "id": "baseline_exists",
+      "cmd": "Test-Path apps/crm/scripts/typecheck-baseline.json",
+      "exit_code": 0,
+      "output": "True",
+      "result": "OK"
+    },
+    {
+      "id": "tc_orchestrator_on_tree",
+      "cmd": "Test-Path apps/crm/scripts/tc-orchestrator.mjs; git cat-file -e origin/main:apps/crm/scripts/tc-orchestrator.mjs",
+      "exit_code": 128,
+      "output": "False; fatal: path does not exist in origin/main. Present on branch chore/tc-orchestrator",
+      "result": "BLOCK",
+      "note": "RUNNER.md + 01/06 require tc-orchestrator.mjs as Ruflo fallback; file absent on main"
+    },
+    {
+      "id": "locks",
+      "cmd": "Test-Path .ai/bus/state/typecheck-loop-locks.json",
+      "exit_code": 0,
+      "output": "False (state/ has .gitkeep, night-wave-onlinovo.md)",
+      "result": "OK"
+    },
+    {
+      "id": "contracts",
+      "cmd": "Get-ChildItem .ai/bus/tasks/",
+      "exit_code": 0,
+      "output": "TASK-0001..0008, 0100, NS-001, RLS-ONBOARDING-SESSION, TC-BATCH-1, TEMPLATE",
+      "result": "OK"
+    },
+    {
+      "id": "ledger",
+      "cmd": "Get-Content .ai/bus/ledger/2026-09.jsonl -Tail 1",
+      "exit_code": 0,
+      "output": "last run RUN-20260916080336-TASK-TC-BATCH-1 verdict=HUMAN (founder_approval present in task)",
+      "result": "OK"
+    },
+    {
+      "id": "claude_md",
+      "cmd": "Test-Path CLAUDE.md",
+      "exit_code": 0,
+      "output": "True",
+      "result": "OK"
+    },
+    {
+      "id": "ruflo_runtime",
+      "cmd": "where.exe ruflo; Test-Path .ruflo; Get-Content .cursor/mcp.json",
+      "exit_code": 1,
+      "output": "ruflo CLI not found; .ruflo/manifest-lead-form-public.yaml exists; mcp.json pins npx ruflo@latest (not a pinned version)",
+      "result": "UNKNOWN"
+    }
+  ],
+  "blocking": [
+    "judge_exists: judge.mjs cannot execute (missing js-yaml / no apps/crm/node_modules)",
+    "tc_orchestrator_on_tree: apps/crm/scripts/tc-orchestrator.mjs missing on origin/main while Ruflo unverified"
+  ],
+  "unknown": [
+    "origin_main_fresh (no git fetch)",
+    "open_prs (no gh)",
+    "ruflo_runtime (CLI absent; mcp uses @latest; no swarm runtime proof)"
+  ],
+  "ruflo_runtime": "unverified",
+  "reconciliation_conflicts": [
+    "RUNNER.md names tc-orchestrator.mjs as the deterministic runner; file absent on main (exists only on chore/tc-orchestrator)",
+    "judge.mjs is on main (#554) but TASK-0100 status=open with null verdict still frames Judge as Lane A work",
+    "TASK-NS-001 status=IN_PROGRESS + verdict.result=null while ledger has ACCEPT RUN-20260915185203-TASK-NS-001",
+    "layer 10 documents scope-guard.yml B7; Test-Path .github/workflows/scope-guard.yml = False",
+    "ledger cost_usd=0 on all 9 lines; contract 09/11 require null when unmeasured"
+  ],
+  "stop_condition_if_strict_01": "missing_required_tool / judge_blocked — Runner must not enter EXECUTION"
+}

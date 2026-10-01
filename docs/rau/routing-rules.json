@@ -1,0 +1,1193 @@
+{
+  "schema": "rau.routing-rules.v1",
+  "version": "1.0.0",
+  "normalization": "text sa pred porovnaním prevedie na malé písmená a zbaví diakritiky (NFD); vzory sú písané bez diakritiky",
+  "fail_closed": "Gate je PODLAHA pre rozpoznané výrazy. Neznámy projekt/druh = ASK; poradenská otázka so spomenutým rizikom = ASK (nikdy ticho AUTO-SAFE). Nerozpoznaný úkon (metafora, parafráza, dvojitá negácia) môže prejsť — preto Rector číta zadanie sám a vynútenie stojí na úrovni akcie.",
+  "projects": {
+    "rau": {
+      "strong": [
+        "\\brau\\b",
+        "agentic university",
+        "univerzit\\w* programovan\\w*",
+        "prompt (os|stack|library)",
+        "\\brektor\\w*",
+        "\\brector\\b"
+      ],
+      "weak": []
+    },
+    "revolis": {
+      "strong": [
+        "revolis",
+        "realitk\\w*",
+        "\\bcrm\\b",
+        "makler\\w*",
+        "\\/upgrade",
+        "\\bstripe"
+      ],
+      "weak": [
+        "\\blead\\w*",
+        "follow.?up",
+        "\\bseat\\w*",
+        "inbound",
+        "checkout",
+        "nehnutel\\w*",
+        "\\bupgrade\\b",
+        "premium plan\\w*",
+        "\\bsegment [abc]\\b"
+      ]
+    },
+    "uptm": {
+      "strong": [
+        "\\buptm\\b",
+        "uptm-runner",
+        "quasimodo",
+        "live_trading",
+        "live.?trading",
+        "obchodovan\\w*",
+        "\\btrading\\b"
+      ],
+      "weak": [
+        "\\bmes\\b",
+        "swing\\w*",
+        "futures",
+        "broker\\w*"
+      ]
+    },
+    "mia": {
+      "strong": [
+        "\\bmia\\b",
+        "\\bmi(u|ou)\\b",
+        "vellar\\w*",
+        "influencer\\w*"
+      ],
+      "weak": []
+    },
+    "najomna-konkurent": {
+      "strong": [
+        "najomn\\w*\\s+agentur\\w*"
+      ],
+      "weak": []
+    },
+    "proon-konkurent": {
+      "strong": [
+        "\\bproon\\w*"
+      ],
+      "weak": []
+    },
+    "yt-kids": {
+      "strong": [
+        "riekank\\w*",
+        "nursery rhyme\\w*",
+        "detsk\\w* (pesnick\\w*|video\\w*)",
+        "kids (video|channel|song)\\w*"
+      ],
+      "weak": [
+        "\\bkids\\b",
+        "\\bdetsk\\w*",
+        "\\byoutube\\b",
+        "\\byt\\b"
+      ]
+    },
+    "yt-ambient": {
+      "strong": [
+        "ambient\\w*",
+        "white noise",
+        "rain sounds?",
+        "zvuk\\w* dazd\\w*",
+        "\\bdazd\\w*",
+        "sleep (video|music|channel)\\w*",
+        "na spanie"
+      ],
+      "weak": [
+        "\\bsleep\\b",
+        "\\brain\\b",
+        "relax\\w*",
+        "\\bcozy\\b",
+        "\\byoutube\\b",
+        "\\byt\\b"
+      ]
+    },
+    "onlinovo": {
+      "strong": [
+        "\\bonlinovo\\b",
+        "e-?shop\\w*",
+        "leadhub"
+      ],
+      "weak": [
+        "e-?commerce"
+      ]
+    },
+    "phone-operator": {
+      "strong": [
+        "phone operator",
+        "ai telefon\\w*",
+        "telefonn\\w* operator\\w*",
+        "hlasov\\w* (asistent|operator)\\w*"
+      ],
+      "weak": [
+        "missed calls?",
+        "voiceflow"
+      ]
+    }
+  },
+  "kinds": {
+    "order": [
+      "BUILD",
+      "FIX",
+      "CONTENT",
+      "OPS",
+      "DECIDE"
+    ],
+    "BUILD": [
+      "\\bpostav\\w*",
+      "\\bvytvor\\w*",
+      "\\bimplement\\w*",
+      "\\bnaprogramuj\\w*",
+      "\\bpridaj\\w*",
+      "\\bbuild\\w*",
+      "\\bcreate\\b",
+      "\\badd\\b",
+      "\\brozsir\\w*",
+      "\\bzabal\\w*",
+      "\\bnaimplementuj\\w*",
+      "\\bdokonc\\w*",
+      "\\bchc(el|em)( by som)? aby\\b",
+      "\\bpotrebujem (aby|novu|nejaku)\\b",
+      "\\bmusi vediet\\b"
+    ],
+    "FIX": [
+      "\\boprav\\w*",
+      "\\bfix\\w*",
+      "\\bbug\\w*",
+      "\\bzlyh\\w*",
+      "\\bpada\\w*",
+      "cerven\\w* (ci|build|test)\\w*",
+      "nefunguj\\w*",
+      "\\bbroken\\b",
+      "\\buprav\\w*",
+      "\\bprepis\\w*",
+      "\\bzjednodus\\w*",
+      "\\bskrat\\w*",
+      "\\brefaktor\\w*",
+      "\\bpremenuj\\w*",
+      "\\bpreformuluj\\w*"
+    ],
+    "CONTENT": [
+      "\\bvide[oiau]\\w*",
+      "riekank\\w*",
+      "\\bskript\\w*",
+      "thumbnail\\w*",
+      "\\btitul\\w*",
+      "\\bclank\\w*",
+      "\\bclanok\\w*",
+      "\\bblog\\w*",
+      "\\breel\\w*",
+      "\\bshorts?\\b",
+      "\\bobsah\\w*",
+      "\\bcontent\\b",
+      "pesnick\\w*",
+      "\\bscenar\\w*",
+      "storyboard\\w*",
+      "\\bpodcast\\w*",
+      "\\bdraft\\w*",
+      "\\btext(y|ov|u)?\\b",
+      "\\bcopy\\b",
+      "\\bpopis\\w*",
+      "\\bnapis\\w* (mail|email|e-mail|clanok|post|odpoved|spravu)\\b",
+      "\\bpoznamk\\w*",
+      "\\bzhrnutie\\b",
+      "\\bpripra\\w* (poznamk|text|draft|popis)\\w*",
+      "\\bvariant\\w*",
+      "\\blinkedin\\b",
+      "\\bpost(u|y|ov|e)?\\b"
+    ],
+    "OPS": [],
+    "DECIDE": [
+      "\\bporad\\w*",
+      "\\bnavrhni\\w*",
+      "\\banalyz\\w*",
+      "\\bzhodnot\\w*",
+      "\\brozhodni\\w*",
+      "\\bstrateg\\w*",
+      "\\bodporuc\\w*",
+      "\\bporovnaj\\w*",
+      "\\bprever\\w*",
+      "\\baudit\\w*",
+      "\\bzisti\\w*",
+      "\\bvysvetli\\w*",
+      "\\bposud\\w*",
+      "ultrathink",
+      "\\bpreco\\b",
+      "\\bwhy\\b",
+      "\\bhow\\b",
+      "\\bwhat\\b",
+      "\\bnajd\\w*",
+      "\\bvypis\\w*",
+      "\\bukaz\\w*",
+      "\\bzobraz\\w*",
+      "\\bzhrn\\w*",
+      "\\bsumariz\\w*",
+      "\\bspocitaj\\w*",
+      "\\bprehlad\\w*",
+      "\\bnapady?\\b",
+      "\\bvymysli\\w*",
+      "\\bnapis\\w* plan\\b",
+      "\\brozober\\w*",
+      "\\brozbor\\w*"
+    ],
+    "fix_first": [
+      "\\b(napis|pridaj|doplnit?|dopln)\\w* (unit )?(testy?|dokument\\w*|docs|readme)\\b",
+      "\\bdocs v repe\\b",
+      "\\bunit testy?\\b"
+    ],
+    "advice_first": [
+      "\\bvysvetli\\w*",
+      "\\bporad\\w*",
+      "\\brozober\\w*",
+      "\\banalyz\\w*",
+      "\\bzhodnot\\w*",
+      "\\bporovnaj\\w*",
+      "\\bnavrhni\\w*",
+      "\\bzhrn\\w*",
+      "\\bposud\\w*",
+      "\\bco (by sa stalo|znamena)\\b",
+      "\\brozbor\\b",
+      "\\bprecitaj\\w*",
+      "\\bpozri\\b",
+      "\\bskontroluj\\w*",
+      "\\bpovedz\\b"
+    ]
+  },
+  "ops_only_triggers": [
+    "deploy-prod",
+    "prod-touch",
+    "db-mutation",
+    "merge"
+  ],
+  "triggers": [
+    {
+      "id": "live-trading",
+      "severity": "CRITICAL",
+      "gate": "GO_REQUIRED",
+      "walls": [
+        "WALL-FINANCIAL",
+        "WALL-EXTERNAL",
+        "WALL-FOUNDER"
+      ],
+      "any": [
+        "live.?trading",
+        "live_trading",
+        "zive obchodovan\\w*",
+        "ostr\\w* obchodovan\\w*",
+        "(poloz|zadaj|posli|place)\\w* (objednavk|order)\\w*",
+        "\\bobchoduj\\w*"
+      ],
+      "activates": [
+        "P02",
+        "P13",
+        "P14",
+        "P17"
+      ],
+      "reason": "Obchodovanie naživo a objednávky sú nevratné finančné akcie (WALL-FINANCIAL).",
+      "advisory_ok": false
+    },
+    {
+      "id": "capital-risk-limits",
+      "severity": "CRITICAL",
+      "gate": "GO_REQUIRED",
+      "walls": [
+        "WALL-FINANCIAL",
+        "WALL-FOUNDER"
+      ],
+      "any": [
+        "risk limit\\w*",
+        "limit\\w* (strat|rizik|pozic)\\w*",
+        "position (limit|siz)\\w*",
+        "loss limit\\w*",
+        "stop.?loss",
+        "account.?equity",
+        "capital (limit|rules?|at risk)",
+        "kapitalov\\w* (limit|pravidl)\\w*"
+      ],
+      "activates": [
+        "P02",
+        "P13",
+        "P17"
+      ],
+      "reason": "Kapitálové a rizikové limity určuje len founder; agent ich nikdy nevymýšľa ani neuvoľňuje.",
+      "advisory_ok": false
+    },
+    {
+      "id": "merge",
+      "severity": "HIGH",
+      "gate": "GO_REQUIRED",
+      "walls": [
+        "WALL-FOUNDER"
+      ],
+      "any": [
+        "\\bmerg\\w*",
+        "\\bzmerg\\w*",
+        "\\bforce.?push\\w*",
+        "push\\w* (do )?main\\b",
+        "hlavn\\w* vetv\\w*",
+        "\\bdo main\\b",
+        "\\bpush\\w*.{0,40}\\b(main|master)(a|u|e|om)?\\b",
+        "\\bgit push (-f|--force)",
+        "--force\\b",
+        "\\bzluc\\w* (pr\\b|pull|branch|vetv)",
+        "\\bmerge pr\\b"
+      ],
+      "activates": [
+        "P15",
+        "P17"
+      ],
+      "reason": "Merge je akt foundera (výslovné „merguj N“).",
+      "advisory_ok": true
+    },
+    {
+      "id": "deploy-prod",
+      "severity": "HIGH",
+      "gate": "GO_REQUIRED",
+      "walls": [
+        "WALL-ENV",
+        "WALL-EXTERNAL"
+      ],
+      "any": [
+        "\\bdeploy\\w*",
+        "\\bnasad\\w*",
+        "\\brelease\\b",
+        "go.?live",
+        "\\bspust\\w* (do )?(ostr|produkc)\\w*",
+        "ostr\\w* (prostred|nasaden|prevadzk)\\w*",
+        "\\bna ostro\\b",
+        "\\bnaostro\\b",
+        "\\bpust\\w* (to )?(na )?(ostro|net|live)\\b",
+        "\\brozbehn\\w*",
+        "\\bdaj\\w* (to |tie |ten |tu )?hore\\b",
+        "\\bship\\w*",
+        "\\bvypust\\w*",
+        "promote to (live|prod\\w*)",
+        "vercel (promote|rollback|deploy|--prod)",
+        "\\breleas\\w*"
+      ],
+      "activates": [
+        "P17",
+        "P18",
+        "P19",
+        "P20",
+        "P21"
+      ],
+      "reason": "Nasadenie mení produkciu (Blueprint Tier 3); vyžaduje READY z P17 a GO foundera.",
+      "advisory_ok": true
+    },
+    {
+      "id": "prod-touch",
+      "severity": "HIGH",
+      "gate": "GO_REQUIRED",
+      "walls": [
+        "WALL-ENV"
+      ],
+      "any": [
+        "\\bprod\\b",
+        "\\b(na|v|do|vo)\\s+(live\\s+|ostrej\\s+)?produkci\\w*",
+        "produkcn\\w* (db|databaz\\w*|prostredi\\w*|data\\w*|server\\w*)",
+        "\\bproduction\\b",
+        "zive? (data|prostred)\\w*",
+        "\\bna ostrej\\b",
+        "live (databaz|db|data|prostredie)\\w*",
+        "\\bna ostr(u|ej|om|o|ych|e|y)\\b"
+      ],
+      "activates": [
+        "P17",
+        "P19"
+      ],
+      "reason": "Zásah do PROD je GO REQUIRED (čítanie cez SELECT je povolené len s pripraveným dôkazom).",
+      "advisory_ok": true
+    },
+    {
+      "id": "db-mutation",
+      "severity": "HIGH",
+      "gate": "GO_REQUIRED",
+      "walls": [
+        "WALL-DATA",
+        "WALL-ENV"
+      ],
+      "any": [
+        "migrac\\w*",
+        "\\bmigration\\w*",
+        "\\b(insert|alter|truncate)\\b",
+        "\\bdrop (table|column|database|index|schema|policy|view|function)\\w*",
+        "\\bdelete\\b",
+        "\\bzmaz\\w*",
+        "\\bvymaz\\w*",
+        "\\bodstran\\w* (data|zaznam|riadk)\\w*",
+        "\\brls\\b",
+        "\\bbackfill\\w*",
+        "\\bvynuluj\\w*",
+        "\\bdb push\\b",
+        "apply_?migration",
+        "execute_?sql",
+        "\\bupdate\\s+\\w+\\s+set\\b",
+        "\\bdelete from\\b",
+        "\\b(wipe|purge|erase)\\b"
+      ],
+      "activates": [
+        "P06",
+        "P14",
+        "P16"
+      ],
+      "reason": "Zmena databázy, RLS alebo zmazanie dát je nevratné alebo bezpečnostne citlivé.",
+      "advisory_ok": true
+    },
+    {
+      "id": "secrets-env",
+      "severity": "HIGH",
+      "gate": "GO_REQUIRED",
+      "walls": [
+        "WALL-DATA",
+        "WALL-FOUNDER"
+      ],
+      "any": [
+        "\\bsecret\\w*",
+        "\\btajomstv\\w*",
+        "\\bapi.?key\\w*",
+        "\\bkluc(e|om|a|ov|u)?\\b",
+        "\\bheslo\\b",
+        "\\bhesl\\w*",
+        "\\bcredential\\w*",
+        "service.?role",
+        "\\benv\\b",
+        "\\.env\\b",
+        "premenn\\w* prostredia",
+        "\\bsk_live",
+        "\\bprihlasovac\\w*"
+      ],
+      "activates": [
+        "P14"
+      ],
+      "reason": "Tajomstvá a prostredie: lokálny secret nikdy na PROD; zápis env je GO REQUIRED.",
+      "advisory_ok": true
+    },
+    {
+      "id": "external-send-campaign",
+      "severity": "HIGH",
+      "gate": "GO_REQUIRED",
+      "walls": [
+        "WALL-EXTERNAL"
+      ],
+      "any": [
+        "\\boutreach\\w*",
+        "\\bnewsletter\\w*",
+        "\\brozposl\\w*",
+        "cold (mail|email)\\w*",
+        "\\bkampan\\w*"
+      ],
+      "activates": [
+        "P13",
+        "P14"
+      ],
+      "reason": "Hromadná externá komunikácia je Tier 3 (ľudské schválenie).",
+      "advisory_ok": true
+    },
+    {
+      "id": "external-send",
+      "severity": "HIGH",
+      "gate": "GO_REQUIRED",
+      "walls": [
+        "WALL-EXTERNAL"
+      ],
+      "any": [
+        "\\b(e-?mail\\w*|mail\\w*|sms|whatsapp|notifik\\w*)\\b",
+        "\\bsprav(a|y|u|e|ou|ach|ami)\\b"
+      ],
+      "and": [
+        "\\b(posli\\w*|poslat|poslem|posleme|posiel\\w*|odosl\\w*|odosiel\\w*|send\\w*|zasl\\w*|zasiel\\w*)\\b"
+      ],
+      "activates": [
+        "P13",
+        "P14"
+      ],
+      "reason": "Odoslanie správy mimo tenanta je Tier 3 (ľudské schválenie).",
+      "advisory_ok": true
+    },
+    {
+      "id": "publish",
+      "severity": "HIGH",
+      "gate": "GO_REQUIRED",
+      "walls": [
+        "WALL-EXTERNAL"
+      ],
+      "any": [
+        "\\bpublikuj\\w*",
+        "\\bpublikova\\w*",
+        "\\bpublikac\\w*",
+        "\\bpublish\\w*",
+        "\\bupload\\w*",
+        "\\bzverejn\\w*",
+        "\\bna net\\b",
+        "\\bdaj\\w* (to )?(von|na net|na web)\\b"
+      ],
+      "activates": [
+        "P13",
+        "P17",
+        "P18"
+      ],
+      "reason": "Publikácia obsahu je Tier 3; akt publikácie je brána P17/P18.",
+      "advisory_ok": true
+    },
+    {
+      "id": "payments-pricing",
+      "severity": "HIGH",
+      "gate": "GO_REQUIRED",
+      "walls": [
+        "WALL-EXTERNAL",
+        "WALL-FOUNDER"
+      ],
+      "any": [
+        "\\bstripe",
+        "\\bplatb\\w*",
+        "\\bpayment\\w*",
+        "\\bfaktur\\w*",
+        "\\binvoice\\w*",
+        "\\brefund\\w*",
+        "\\bcen(a|y|u|e|nik\\w*|ov\\w*)\\b",
+        "\\bpricing\\b",
+        "\\bmonetiz\\w*",
+        "\\bzalohovk\\w*",
+        "\\bvystav\\w*",
+        "\\bpredfaktur\\w*",
+        "\\bcien\\b",
+        "\\bcenach\\b",
+        "\\bcenou\\b",
+        "\\bcenami\\b",
+        "\\bcharge\\b",
+        "\\bstrhni\\w*"
+      ],
+      "activates": [
+        "P14",
+        "P17"
+      ],
+      "reason": "Platby, ceny a monetizácia sú verejné/finančné zmeny (AUTOMERGE denylist).",
+      "advisory_ok": true
+    },
+    {
+      "id": "scrape-generic",
+      "severity": "MEDIUM",
+      "gate": "GO_REQUIRED",
+      "walls": [
+        "WALL-DATA"
+      ],
+      "any": [
+        "\\bscrap\\w*",
+        "\\bcrawl\\w*"
+      ],
+      "activates": [
+        "P06"
+      ],
+      "reason": "Zdroj dát musí byť v docs/architecture/master-data-sourcing-map.md; respektuj robots.txt/ToS.",
+      "advisory_ok": true
+    },
+    {
+      "id": "personal-data-acquisition",
+      "severity": "HIGH",
+      "gate": "STOP",
+      "walls": [
+        "WALL-DATA"
+      ],
+      "any": [
+        "\\b(scrap|crawl|harvest|zozbier|nazber|vytiahn)\\w*",
+        "\\bstiahn\\w*.{0,40}\\b(majitel|vlastnik|inzerat|portal)\\w*",
+        "\\bnazbier\\w*"
+      ],
+      "and": [
+        "osobn\\w* udaj\\w*",
+        "\\btelefon\\w*",
+        "e-?mail\\w*",
+        "\\bvlastnik\\w*",
+        "\\bmajitel\\w*",
+        "kontakt\\w* (na )?(osob|ludi|majitel|vlastnik)\\w*",
+        "\\bcisl\\w* (na )?(ludi|majitel|predavajuc)\\w*",
+        "telefonn\\w* cisl\\w*",
+        "\\bmobil\\w*",
+        "\\bmaily?\\b"
+      ],
+      "activates": [
+        "P06"
+      ],
+      "reason": "GDPR: osobné údaje sa neskrapujú. Zdroj musí byť v sourcing mape a mať právny základ.",
+      "advisory_ok": false
+    },
+    {
+      "id": "cadastre-owners",
+      "severity": "HIGH",
+      "gate": "STOP",
+      "walls": [
+        "WALL-DATA"
+      ],
+      "any": [
+        "katastr\\w*",
+        "kataster\\w*"
+      ],
+      "and": [
+        "\\bvlastnik\\w*",
+        "\\bmajitel\\w*",
+        "\\bowner\\w*"
+      ],
+      "activates": [
+        "P06"
+      ],
+      "reason": "Vlastníci z katastra iba cez zmluvu s ÚGKK (master-data-sourcing-map).",
+      "advisory_ok": false
+    },
+    {
+      "id": "reference-client-publicity",
+      "severity": "HIGH",
+      "gate": "GO_REQUIRED",
+      "walls": [
+        "WALL-EXTERNAL",
+        "WALL-DATA"
+      ],
+      "any": [
+        "\\bsmolk\\w*"
+      ],
+      "and": [
+        "\\b(marketing|web\\w*|referenc\\w*|case.?study|linkedin|prezentac\\w*|publikuj\\w*|publikac\\w*|post\\w*|landing|pitch|zverejn\\w*)\\b"
+      ],
+      "activates": [
+        "P13"
+      ],
+      "reason": "Referenčný klient sa verejne nepomenúva bez súhlasu.",
+      "advisory_ok": false
+    },
+    {
+      "id": "authority-change",
+      "severity": "HIGH",
+      "gate": "GO_REQUIRED",
+      "walls": [
+        "WALL-FOUNDER"
+      ],
+      "any": [
+        "kill.?switch",
+        "zmen\\w* (pravidl|policy|opravnen|permission|governance|hranic|walls?)\\w*",
+        "vypn\\w* (\\w+ )?(brany|gate|guard|bezpecnost\\w*|kontrol\\w*)",
+        "rozsir\\w* (opravnen|permission|autonom)\\w*",
+        "allowlist\\w*",
+        "(obid|obist|vynech)\\w* (kontrol|brany|gate)\\w*",
+        "\\bprav\\w* zapisova\\w*",
+        "\\bpriamo (na|do) main\\b"
+      ],
+      "activates": [
+        "P13"
+      ],
+      "reason": "Agent nerozširuje vlastné oprávnenia ani nevypína brány (Blueprint Law 10).",
+      "advisory_ok": false
+    },
+    {
+      "id": "destructive-ops",
+      "severity": "HIGH",
+      "gate": "GO_REQUIRED",
+      "walls": [
+        "WALL-ENV"
+      ],
+      "any": [
+        "\\brm -(rf|fr)\\b",
+        "reset --hard",
+        "drop table\\w*",
+        "git clean -\\w*f",
+        "git branch -d",
+        "\\|\\s*(sh|bash)\\b"
+      ],
+      "activates": [
+        "P14"
+      ],
+      "reason": "Nevratná operácia.",
+      "advisory_ok": true
+    },
+    {
+      "id": "contact-people",
+      "severity": "HIGH",
+      "gate": "GO_REQUIRED",
+      "walls": [
+        "WALL-EXTERNAL"
+      ],
+      "any": [
+        "\\bkontaktuj\\w*",
+        "napis\\w* (mu|jej|im|ludom|klient\\w*|majitel\\w*|makler\\w*)",
+        "\\bzavol\\w*",
+        "\\bozvi sa\\b",
+        "odpovedz\\w* (klient\\w*|zakaznik\\w*|leadom|ludom)",
+        "\\bposli\\w* (to )?(von|hned)\\b",
+        "\\bposli\\w* .{0,30}(maklerom|klientom|leadom|ludom|zakaznikom)\\w*",
+        "\\bping\\w*",
+        "\\bnotify\\b",
+        "\\bupozorni\\w*",
+        "\\binformuj\\w* (vsetk|klient|makler|lead)\\w*",
+        "\\bemail (all|every|the)\\b",
+        "\\bcall (the|all|every) (brokers?|leads?|clients?|customers?)\\b"
+      ],
+      "activates": [
+        "P13",
+        "P14"
+      ],
+      "reason": "Oslovenie reálnych ľudí je Tier 3 (ľudské schválenie).",
+      "advisory_ok": false
+    },
+    {
+      "id": "data-removal",
+      "severity": "HIGH",
+      "gate": "GO_REQUIRED",
+      "walls": [
+        "WALL-DATA",
+        "WALL-ENV"
+      ],
+      "any": [
+        "\\b(vyhod|zahod|vycisti|premaz|odstran|zrus|vymaz|zmaz)\\w*"
+      ],
+      "and": [
+        "\\bzaznam\\w*",
+        "\\bdata\\b",
+        "\\budaj\\w*",
+        "\\briadk\\w*",
+        "\\blead\\w*",
+        "\\btabulk\\w*",
+        "\\bdatabaz\\w*",
+        "\\buzivatel\\w*",
+        "\\bucet\\w*",
+        "\\bklient\\w*"
+      ],
+      "activates": [
+        "P06",
+        "P14",
+        "P16"
+      ],
+      "reason": "Odstránenie záznamov je nevratné (WALL-DATA).",
+      "advisory_ok": true
+    },
+    {
+      "id": "owner-lookup",
+      "severity": "HIGH",
+      "gate": "STOP",
+      "walls": [
+        "WALL-DATA"
+      ],
+      "any": [
+        "komu patri\\w*",
+        "kto (je )?(majitel|vlastnik)\\w*",
+        "kto vlastni\\w*",
+        "kto stoji za",
+        "zisti\\w* (kto|komu)"
+      ],
+      "and": [
+        "\\b(byt(y|om|u|e|ov|ech)?|dom|domy|domu|nehnutel\\w*|pozemk\\w*|parcel\\w*|inzerat\\w*)\\b"
+      ],
+      "activates": [
+        "P06"
+      ],
+      "reason": "Zisťovanie vlastníkov nehnuteľností = osobné údaje; len cez zmluvu s ÚGKK (master-data-sourcing-map).",
+      "advisory_ok": false
+    },
+    {
+      "id": "upload-content",
+      "severity": "HIGH",
+      "gate": "GO_REQUIRED",
+      "walls": [
+        "WALL-EXTERNAL"
+      ],
+      "any": [
+        "\\bnahraj\\w*",
+        "\\bnahrat\\b",
+        "\\bnahrame\\b"
+      ],
+      "and": [
+        "\\bvide[oiau]\\w*",
+        "\\bkanal\\w*",
+        "\\byoutube\\b",
+        "\\byt\\b",
+        "\\bweb\\w*",
+        "\\bstrank\\w*",
+        "\\binstagram\\b",
+        "\\btiktok\\b"
+      ],
+      "activates": [
+        "P13",
+        "P17",
+        "P18"
+      ],
+      "reason": "Nahranie obsahu na verejný kanál je publikácia (Blueprint Tier 3).",
+      "advisory_ok": false
+    },
+    {
+      "id": "cadastre-lv",
+      "severity": "HIGH",
+      "gate": "STOP",
+      "walls": [
+        "WALL-DATA"
+      ],
+      "any": [
+        "\\blv\\b",
+        "list vlastnictva"
+      ],
+      "activates": [
+        "P06"
+      ],
+      "reason": "List vlastníctva = údaje o vlastníkoch (osobné údaje); len cez zmluvu s ÚGKK (master-data-sourcing-map).",
+      "advisory_ok": false
+    },
+    {
+      "id": "secrets-read",
+      "severity": "HIGH",
+      "gate": "GO_REQUIRED",
+      "advisory_ok": false,
+      "walls": [
+        "WALL-DATA",
+        "WALL-FOUNDER"
+      ],
+      "any": [
+        "\\b(vypis|ukaz|zobraz|precitaj|cat|show|print|reveal|dump|skopiruj)\\w*.{0,40}(\\w+_(key|secret|token|password)\\b|\\bkey\\b|\\bsecret\\b|\\btoken\\b|\\bheslo\\b|\\bhesla\\b|\\bpassword\\b|\\.env\\w*|private key)",
+        "\\bid_rsa\\b",
+        "private key",
+        "access.?token",
+        "what is the (admin )?password"
+      ],
+      "activates": [
+        "P14"
+      ],
+      "reason": "Zobrazenie hodnoty tajomstva (kľúč, heslo, token, .env) je GO REQUIRED; lokálny secret nikdy na PROD."
+    },
+    {
+      "id": "owner-contact-lookup",
+      "severity": "HIGH",
+      "gate": "STOP",
+      "advisory_ok": false,
+      "walls": [
+        "WALL-DATA"
+      ],
+      "any": [
+        "\\b(zisti|najdi|ziskaj|vypis|vyhladaj|dohladaj|zober)\\w*.{0,50}\\b(majitel|vlastnik|predavajuc)\\w*"
+      ],
+      "and": [
+        "\\b(telefon|mobil|e-?mail|maily?|kontakt|meno)\\w*"
+      ],
+      "activates": [
+        "P06"
+      ],
+      "reason": "Zisťovanie kontaktov na majiteľov = osobné údaje; zdroj musí byť v sourcing mape a mať právny základ."
+    }
+  ],
+  "cues": [
+    {
+      "id": "agent",
+      "any": [
+        "\\bagent\\w*"
+      ],
+      "activates": [
+        "P07",
+        "P08"
+      ],
+      "for_kinds": [
+        "BUILD"
+      ]
+    },
+    {
+      "id": "workflow",
+      "any": [
+        "workflow\\w*",
+        "slucka\\w*",
+        "slucky",
+        "\\bloop\\w*",
+        "automatiz\\w*",
+        "routine\\w*",
+        "orchestr\\w*"
+      ],
+      "activates": [
+        "P07"
+      ],
+      "for_kinds": [
+        "BUILD"
+      ]
+    },
+    {
+      "id": "data-events",
+      "any": [
+        "\\bevent\\w*",
+        "\\bapi\\b",
+        "integrac\\w*",
+        "zdroj\\w* dat",
+        "\\bdata\\b",
+        "databaz\\w*",
+        "tabulk\\w*",
+        "\\bschem\\w*",
+        "\\budaj\\w*"
+      ],
+      "activates": [
+        "P06"
+      ],
+      "for_kinds": [
+        "BUILD"
+      ]
+    },
+    {
+      "id": "user-facing",
+      "any": [
+        "\\bui\\b",
+        "\\bux\\b",
+        "strank\\w*",
+        "obrazovk\\w*",
+        "\\bcopy\\b",
+        "landing",
+        "marketing",
+        "dashboard\\w*"
+      ],
+      "activates": [
+        "P04"
+      ],
+      "for_kinds": [
+        "BUILD"
+      ]
+    },
+    {
+      "id": "architecture",
+      "any": [
+        "architektur\\w*",
+        "komponent\\w*",
+        "\\bsluzb\\w*",
+        "\\bmodul\\w*",
+        "infrastrukt\\w*",
+        "\\badr\\b"
+      ],
+      "activates": [
+        "P05"
+      ],
+      "for_kinds": [
+        "BUILD"
+      ]
+    },
+    {
+      "id": "llm-quality",
+      "any": [
+        "\\bllm\\b",
+        "\\bmodel\\w*",
+        "\\bscor\\w*",
+        "\\bskor\\w*",
+        "klasifik\\w*",
+        "\\bprompt\\w*",
+        "halucin\\w*",
+        "\\beval\\w*"
+      ],
+      "activates": [
+        "P12"
+      ],
+      "for_kinds": [
+        "BUILD",
+        "FIX"
+      ]
+    },
+    {
+      "id": "multi-task",
+      "any": [
+        "\\bvln\\w*",
+        "paralel\\w*",
+        "viac (uloh|suborov|krokov|projektov)",
+        "\\bdag\\b",
+        "swarm\\w*"
+      ],
+      "activates": [
+        "P09"
+      ],
+      "for_kinds": [
+        "BUILD",
+        "FIX",
+        "OPS"
+      ]
+    },
+    {
+      "id": "observability",
+      "any": [
+        "monitor\\w*",
+        "\\balert\\w*",
+        "observab\\w*",
+        "\\bmetrik\\w*"
+      ],
+      "activates": [
+        "P20"
+      ],
+      "for_kinds": [
+        "BUILD",
+        "OPS"
+      ]
+    }
+  ],
+  "reuse": {
+    "roots": [
+      ".claude/skills",
+      "docs/prompts",
+      "docs/architecture",
+      "docs/capabilities",
+      "docs/runbooks",
+      "apps/crm/src/lib/agents"
+    ],
+    "exclude": [
+      "docs/rau"
+    ],
+    "extensions": [
+      ".md",
+      ".ts"
+    ],
+    "head_lines": 60,
+    "min_listed": 2,
+    "strong": 3,
+    "stem_length": 6,
+    "min_token_length": 4,
+    "stopwords": [
+      "aby",
+      "ako",
+      "ale",
+      "alebo",
+      "ani",
+      "bude",
+      "budu",
+      "ktore",
+      "ktory",
+      "ktora",
+      "ktoru",
+      "musi",
+      "naše",
+      "nase",
+      "nasa",
+      "neni",
+      "pre",
+      "pri",
+      "tento",
+      "tieto",
+      "toto",
+      "tuto",
+      "ked",
+      "keby",
+      "preto",
+      "este",
+      "tiez",
+      "lebo",
+      "tiez",
+      "even",
+      "from",
+      "have",
+      "that",
+      "this",
+      "with",
+      "will",
+      "what",
+      "when",
+      "your",
+      "into",
+      "them",
+      "they",
+      "there",
+      "their",
+      "about",
+      "which",
+      "would",
+      "should",
+      "could"
+    ]
+  },
+  "act_verbs": [
+    "\\bzmen\\w*",
+    "\\bzmaz\\w*",
+    "\\bvymaz\\w*",
+    "\\bodstran\\w*",
+    "\\bposli\\w*",
+    "\\bodosl\\w*",
+    "\\bnasad\\w*",
+    "\\bspust\\w*",
+    "\\bpust\\w*",
+    "\\bpushn\\w*",
+    "\\bmerg\\w*",
+    "\\bzmerg\\w*",
+    "\\bnahraj\\w*",
+    "\\bnahrat\\w*",
+    "\\bnastav\\w*",
+    "\\bvypn\\w*",
+    "\\bzapn\\w*",
+    "\\bpripoj\\w*",
+    "\\baktivuj\\w*",
+    "\\bupdat\\w*",
+    "\\bdeploy\\w*",
+    "\\bdelete\\b",
+    "\\bsend\\b",
+    "\\bvykonaj\\w*",
+    "\\bnapis\\w* (mu|jej|im|ludom)",
+    "\\bkontaktuj\\w*",
+    "\\bzavol\\w*",
+    "\\bvyhod\\w*",
+    "\\bzahod\\w*",
+    "\\bdaj\\w* (to )?(von|na net|na web|na ostro)",
+    "\\bvydaj\\w*",
+    "\\brozbehn\\w*",
+    "\\bvynuluj\\w*",
+    "\\bvytiahn\\w*",
+    "\\bzverejn\\w*",
+    "\\bozvi sa\\b",
+    "\\brozpos\\w*",
+    "\\bpublikuj\\w*",
+    "\\bpublikova\\w*",
+    "\\bupload\\w*",
+    "\\bposiel\\w*",
+    "\\bposlat\\b",
+    "\\bodosiel\\w*",
+    "\\bdaj\\w* (to )?hore\\b",
+    "\\bsprav\\w*",
+    "\\burob\\w*",
+    "\\baplikuj\\w*",
+    "\\bzapis\\w*",
+    "\\bzdrazni\\w*",
+    "\\bzlacni\\w*",
+    "\\bdaj\\b",
+    "\\brovno\\b",
+    "\\bhned\\b",
+    "\\bzaroven\\b",
+    "\\ba potom\\b",
+    "\\bmigruj\\w*",
+    "\\bprehod\\w*",
+    "\\bdopis\\w*",
+    "\\breleas\\w*",
+    "\\bship\\w*",
+    "\\bvypust\\w*",
+    "\\bpromote\\b",
+    "\\bpush\\b",
+    "\\bwipe\\b",
+    "\\bpurge\\b",
+    "\\berase\\b",
+    "\\bcharge\\b",
+    "\\bstrhni\\w*",
+    "\\bexecute\\w*",
+    "\\brun\\b",
+    "\\bapply\\w*",
+    "\\bzrus\\w*",
+    "\\bvymen\\w*",
+    "\\bemail (all|every)"
+  ],
+  "name_phrases": {
+    "rau": [
+      "revolis agentic university",
+      "revolis ai agentic university"
+    ]
+  },
+  "masks": {
+    "note": "Z textu pre TRIGGERY a povelové slovesá sa vynechajú (1) negované pokyny a (2) citovaný text (texty pre UI, názvy). Druh práce a projekt sa určujú z celého textu.",
+    "negations": [
+      "\\bbez \\w+",
+      "\\bnic ne\\w+",
+      "\\bne(posielaj|odosielaj|merguj|zmerguj|nasadzuj|nasadaj|publikuj|mazaj|maz|dotykaj|pushuj|menit|men|rob)\\w*",
+      "\\bziadn\\w* (merg|nasaden|deploy|odoslan|posiel)\\w*"
+    ]
+  },
+  "read_only_phrases": [
+    "\\blen (analyz\\w*|citanie|citaj\\w*|teoreticky|teoria|text|dokument\\w*|navrh\\w*|plan|draft\\w*|posudenie|rozbor|copy|zoznam)\\b",
+    "\\bstaci mi zoznam\\b",
+    "\\bnic (nespustaj|nemen|neposielaj|nepublikuj|nemerguj|nenasadzuj)\\b",
+    "\\bna nic nesahaj\\b",
+    "\\bnikomu nic\\b",
+    "\\blen (otazka|nazor|poradenstvo|rada)\\b",
+    "\\bjen (analyz\\w*|otazka)\\b"
+  ]
+}

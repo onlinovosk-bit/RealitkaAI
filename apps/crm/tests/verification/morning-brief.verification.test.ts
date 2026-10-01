@@ -164,6 +164,16 @@ describe("[verification] Morning Brief backend", () => {
     expect(text).toContain("5");
   });
 
+  it("says the staleness is unmeasured rather than printing a number or null", () => {
+    // Production today: nothing writes leads.last_contact_at, so gather returns
+    // null. This is the text a broker actually reads at 8am — it must not say
+    // "null", and it must not say "0", which would claim nobody is waiting.
+    const text = buildDeliveryFallbackText(minimalGathered({ staleContacts48h: null }), 0);
+    expect(text).not.toContain("null");
+    expect(text).toContain("nemeriame");
+    expect(text).not.toMatch(/staršie ako 48h: 0/);
+  });
+
   it("generateBriefText uses LLM branch when Claude responds", async () => {
     const result = await generateBriefText(seedGathered(), "A");
     expect(result.contentSource).toBe("llm");

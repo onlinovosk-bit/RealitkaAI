@@ -1,0 +1,278 @@
+{
+  "stack": "docs/prompts/runner",
+  "measured_at": "2026-09-26T19:48:18.013Z",
+  "method": {
+    "est_tokens_by_chars": "chars / 4",
+    "est_tokens_by_words": "words * 1.3",
+    "note": "ODHAD, nie tokenizer. Dve nezávisle metódy sú tu preto, aby bol vidieť rozptyl."
+  },
+  "totals": {
+    "files": 14,
+    "lines": 1561,
+    "bytes": 49283,
+    "words": 7003,
+    "est_tokens_by_chars": 11649,
+    "est_tokens_by_words": 9104
+  },
+  "layers": {
+    "found": true,
+    "layer_ids": [
+      "S0",
+      "S1",
+      "S2",
+      "S3",
+      "S4",
+      "S5",
+      "S6",
+      "S7"
+    ],
+    "layer_count": 8,
+    "claims": [
+      {
+        "file": "05-prompt-stack.md",
+        "claim": "sedem hash",
+        "claimed_count": 7
+      }
+    ],
+    "mismatches": [
+      {
+        "file": "05-prompt-stack.md",
+        "claim": "sedem hash",
+        "claimed_count": 7
+      }
+    ]
+  },
+  "stages": {
+    "serial_stages": 15,
+    "qa_stages": [
+      "AUDIT",
+      "RECONCILE",
+      "WRITE-PROBE",
+      "WORKER VALIDATION",
+      "JUDGE",
+      "MERGE GATE (B7)",
+      "RE-AUDIT"
+    ],
+    "list": [
+      {
+        "n": 1,
+        "stage": "PREFLIGHT",
+        "layer": "01"
+      },
+      {
+        "n": 2,
+        "stage": "AUDIT",
+        "layer": "02"
+      },
+      {
+        "n": 3,
+        "stage": "RECONCILE",
+        "layer": "02"
+      },
+      {
+        "n": 4,
+        "stage": "DAG",
+        "layer": "03"
+      },
+      {
+        "n": 5,
+        "stage": "PARTITION",
+        "layer": "04"
+      },
+      {
+        "n": 6,
+        "stage": "WRITE-PROBE",
+        "layer": "04"
+      },
+      {
+        "n": 7,
+        "stage": "PROMPT STACK",
+        "layer": "05"
+      },
+      {
+        "n": 8,
+        "stage": "DISPATCH",
+        "layer": "06"
+      },
+      {
+        "n": 9,
+        "stage": "PARALLEL EXECUTION",
+        "layer": "07"
+      },
+      {
+        "n": 10,
+        "stage": "WORKER VALIDATION",
+        "layer": "08"
+      },
+      {
+        "n": 11,
+        "stage": "COLLECT + INTEGRATE",
+        "layer": "10"
+      },
+      {
+        "n": 12,
+        "stage": "JUDGE",
+        "layer": "09"
+      },
+      {
+        "n": 13,
+        "stage": "MERGE GATE (B7)",
+        "layer": "10"
+      },
+      {
+        "n": 14,
+        "stage": "LEDGER",
+        "layer": "11"
+      },
+      {
+        "n": 15,
+        "stage": "RE-AUDIT",
+        "layer": "12"
+      }
+    ]
+  },
+  "time_instrumentation": {
+    "patterns_searched": 10,
+    "hits": [
+      {
+        "file": "11-ledger-memory.md",
+        "field": "started_at",
+        "count": 1
+      },
+      {
+        "file": "11-ledger-memory.md",
+        "field": "finished_at",
+        "count": 1
+      }
+    ],
+    "instrumented": true
+  },
+  "per_file": [
+    {
+      "file": "docs/prompts/runner/00-system.md",
+      "name": "00-system.md",
+      "bytes": 4133,
+      "lines": 130,
+      "words": 602,
+      "est_tokens_by_chars": 967,
+      "est_tokens_by_words": 783
+    },
+    {
+      "file": "docs/prompts/runner/01-project-context.md",
+      "name": "01-project-context.md",
+      "bytes": 2906,
+      "lines": 86,
+      "words": 418,
+      "est_tokens_by_chars": 694,
+      "est_tokens_by_words": 543
+    },
+    {
+      "file": "docs/prompts/runner/02-audit.md",
+      "name": "02-audit.md",
+      "bytes": 4588,
+      "lines": 129,
+      "words": 678,
+      "est_tokens_by_chars": 1087,
+      "est_tokens_by_words": 881
+    },
+    {
+      "file": "docs/prompts/runner/03-dag.md",
+      "name": "03-dag.md",
+      "bytes": 2656,
+      "lines": 87,
+      "words": 389,
+      "est_tokens_by_chars": 627,
+      "est_tokens_by_words": 506
+    },
+    {
+      "file": "docs/prompts/runner/04-wave-partition.md",
+      "name": "04-wave-partition.md",
+      "bytes": 3368,
+      "lines": 114,
+      "words": 482,
+      "est_tokens_by_chars": 795,
+      "est_tokens_by_words": 627
+    },
+    {
+      "file": "docs/prompts/runner/05-prompt-stack.md",
+      "name": "05-prompt-stack.md",
+      "bytes": 3043,
+      "lines": 97,
+      "words": 437,
+      "est_tokens_by_chars": 720,
+      "est_tokens_by_words": 568
+    },
+    {
+      "file": "docs/prompts/runner/06-dispatch.md",
+      "name": "06-dispatch.md",
+      "bytes": 3150,
+      "lines": 107,
+      "words": 444,
+      "est_tokens_by_chars": 746,
+      "est_tokens_by_words": 577
+    },
+    {
+      "file": "docs/prompts/runner/07-worker-contract.md",
+      "name": "07-worker-contract.md",
+      "bytes": 3163,
+      "lines": 106,
+      "words": 452,
+      "est_tokens_by_chars": 740,
+      "est_tokens_by_words": 588
+    },
+    {
+      "file": "docs/prompts/runner/08-validation.md",
+      "name": "08-validation.md",
+      "bytes": 3221,
+      "lines": 110,
+      "words": 459,
+      "est_tokens_by_chars": 762,
+      "est_tokens_by_words": 597
+    },
+    {
+      "file": "docs/prompts/runner/09-judge.md",
+      "name": "09-judge.md",
+      "bytes": 3316,
+      "lines": 107,
+      "words": 474,
+      "est_tokens_by_chars": 784,
+      "est_tokens_by_words": 616
+    },
+    {
+      "file": "docs/prompts/runner/10-integration.md",
+      "name": "10-integration.md",
+      "bytes": 3438,
+      "lines": 123,
+      "words": 510,
+      "est_tokens_by_chars": 811,
+      "est_tokens_by_words": 663
+    },
+    {
+      "file": "docs/prompts/runner/11-ledger-memory.md",
+      "name": "11-ledger-memory.md",
+      "bytes": 3746,
+      "lines": 110,
+      "words": 511,
+      "est_tokens_by_chars": 889,
+      "est_tokens_by_words": 664
+    },
+    {
+      "file": "docs/prompts/runner/12-loop.md",
+      "name": "12-loop.md",
+      "bytes": 3514,
+      "lines": 118,
+      "words": 490,
+      "est_tokens_by_chars": 832,
+      "est_tokens_by_words": 637
+    },
+    {
+      "file": "docs/prompts/runner/RUNNER.md",
+      "name": "RUNNER.md",
+      "bytes": 5041,
+      "lines": 137,
+      "words": 657,
+      "est_tokens_by_chars": 1195,
+      "est_tokens_by_words": 854
+    }
+  ]
+}

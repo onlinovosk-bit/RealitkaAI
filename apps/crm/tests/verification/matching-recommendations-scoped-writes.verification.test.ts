@@ -36,6 +36,7 @@ describe("[verification] Matching + recommendations scoped writes (R3 remediatio
     const salesFunnelStore = readFileSync(join(CRM_ROOT, "src/lib/sales-funnel-store.ts"), "utf8");
 
     expect(matchingStore).toMatch(/export async function recalculateMatchesForLead\([\s\S]*scoped\?:/);
+    expect(matchingStore).toMatch(/export async function updateLeadPropertyMatchStatus\([\s\S]*scoped\?:/);
     expect(recommendationsStore).toMatch(/export async function recalculateRecommendationsForLead\([\s\S]*scoped\?:/);
     expect(salesFunnelStore).toMatch(/export async function createSaasLead\([\s\S]*scoped\?:/);
     expect(salesFunnelStore).toContain("resolveTenantSupabase(scoped)");

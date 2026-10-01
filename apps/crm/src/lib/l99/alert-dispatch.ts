@@ -9,7 +9,7 @@ export async function dispatchPriorityAlert(
 
   const { data: lead } = await supabase
     .from("leads")
-    .select("name, profile_id, profiles(phone, full_name)")
+    .select("name, agency_id, profile_id, profiles(phone, full_name)")
     .eq("id", leadId)
     .single();
 
@@ -43,11 +43,22 @@ export async function dispatchPriorityAlert(
     }
   }
 
-  await supabase.from("priority_alerts").insert({
+  // The alert inherits the lead's tenant. Before RLS-NULL-ESCAPES this insert
+  // carried no agency_id at all and was admitted by the `agency_id IS NULL`
+  // disjunct in priority_alerts_tenant — which also made every such alert
+  // readable by every other tenant.
+  const { error: alertError } = await supabase.from("priority_alerts").insert({
+    agency_id: lead.agency_id,
     lead_id: leadId,
     bri_score: briScore,
     alert_type: agentPhone ? "sms" : "in_app",
     message,
     delivered: Boolean(agentPhone),
   });
+
+  // The SMS may already have gone out, so a failed row is worth a log line and
+  // not an exception: the caller cannot un-send it.
+  if (alertError) {
+    console.error("[alert-dispatch] priority_alerts insert failed:", alertError.message);
+  }
 }

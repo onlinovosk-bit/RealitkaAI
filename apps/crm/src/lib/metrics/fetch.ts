@@ -8,7 +8,7 @@ import type {
 } from "@/lib/metrics/types";
 
 const AGENCY_SELECT =
-  "id, name, seats, account_tier, manual_plan, owner_cockpit_active, cockpit_tier, subscription_status, billing_source";
+  "id, name, seats, plan, account_tier, manual_plan, owner_cockpit_active, cockpit_tier, subscription_status, billing_source";
 
 const LEDGER_LOOKBACK_DAYS = 62;
 
@@ -27,7 +27,7 @@ export async function fetchFounderMetrics(): Promise<FounderMetricsSnapshot | nu
       .gte("created_at", since.toISOString()),
     supabase
       .from("ai_cost_daily")
-      .select("day_utc, credits_spent, cost_eur, revenue_eur_retail, margin_eur")
+      .select("agency_id, day_utc, action_count, cost_eur")
       .gte("day_utc", since.toISOString().slice(0, 10))
       .order("day_utc", { ascending: false }),
   ]);

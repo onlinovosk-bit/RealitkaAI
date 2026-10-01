@@ -3,6 +3,7 @@ import { createActivity } from "@/lib/activities-store";
 import { getCurrentProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import {
+  ScheduledEventConflictError,
   createScheduledEvent,
   leadBelongsToAgency,
   listScheduledEvents,
@@ -78,12 +79,17 @@ export async function POST(request: Request) {
   }
 
   try {
-    const event = await createScheduledEvent(
+    const { event, deduplicated } = await createScheduledEvent(
       profile.agency_id,
       profile.id,
       input,
       supabase,
     );
+
+    // Opakovaný request: žiadny druhý event, žiadna druhá aktivita/notifikácia.
+    if (deduplicated) {
+      return okResponse({ event, deduplicated: true }, { status: 200 });
+    }
 
     if (event.leadId) {
       await createActivity({
@@ -101,11 +107,28 @@ export async function POST(request: Request) {
           status: event.status,
           location: event.location,
         },
+      }, supabase).catch((e) =>
+        // The event is already saved; a missing timeline entry must not
+        // turn that into an error for the broker.
+        console.error("[scheduled-events] activity:", e instanceof Error ? e.message : e),
+      );
+    }
+
+    return okResponse({ event, deduplicated: false }, { status: 201 });
+  } catch (error) {
+    if (error instanceof ScheduledEventConflictError) {
+      return errorResponse(error.message, 409, {
+        code: error.code,
+        conflicts: error.conflicts.map((conflict) => ({
+          id: conflict.id,
+          title: conflict.title,
+          startsAt: conflict.startsAt,
+          endsAt: conflict.endsAt,
+          status: conflict.status,
+        })),
       });
     }
 
-    return okResponse({ event }, { status: 201 });
-  } catch (error) {
     const message =
       error instanceof Error ? error.message : "Nepodarilo sa vytvoriť udalosť.";
     return errorResponse(message, 400);

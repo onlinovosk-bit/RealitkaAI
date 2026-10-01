@@ -27,10 +27,15 @@ export async function PATCH(
     const { data: callerProfile } = await supabase
       .from("profiles").select("agency_id").eq("auth_user_id", user.id).maybeSingle();
 
+    // Fail-closed: missing caller agency must not mutate match status.
+    if (!callerProfile?.agency_id) {
+      return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+    }
+
     const { data: lead } = await supabase
       .from("leads").select("agency_id").eq("id", id).maybeSingle();
 
-    if (callerProfile?.agency_id && lead?.agency_id !== callerProfile.agency_id) {
+    if (!lead || lead.agency_id !== callerProfile.agency_id) {
       return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
     }
 
@@ -46,14 +51,17 @@ export async function PATCH(
     const { match, previousStatus } = await updateLeadPropertyMatchStatus(
       id,
       matchId,
-      body.status
+      body.status,
+      supabase,
     );
 
     if (previousStatus !== match.status) {
       await addLeadActivity(
         id,
         `Matching ponuka '${match.propertyTitle}' zmenila stav: ${formatMatchStatus(previousStatus ?? "sent")} -> ${formatMatchStatus(match.status ?? "sent")}.`,
-        "Email"
+        "Email",
+        undefined,
+        supabase,
       );
     }
 

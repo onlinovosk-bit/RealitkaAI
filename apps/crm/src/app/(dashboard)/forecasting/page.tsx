@@ -37,7 +37,7 @@ export default async function ForecastingPage() {
 
   const [result, { profile }] = await Promise.all([
     safeServerAction(
-      () => getForecastingData(),
+      () => getForecastingData(supabase),
       "Nepodarilo sa načítať forecasting a benchmarky."
     ),
     resolveProfileForAuthUser(

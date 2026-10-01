@@ -3,6 +3,7 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { analyzeCall } from "@/lib/ai/call-analysis";
 import { persistCallAnalysisToCrm } from "@/lib/workflows/call-analysis-persist";
 import { UUIDSchema } from "@/lib/api-validate";
+import { sameAgency } from "@/lib/tenant-scope";
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -31,7 +32,9 @@ export async function POST(req: Request) {
     const { data: callerProfile } = await supabase.from("profiles").select("agency_id").eq("auth_user_id", user.id).maybeSingle();
 
     const { data: leadRow } = await supabase.from("leads").select("agency_id").eq("id", lead_id).maybeSingle();
-    if (callerProfile?.agency_id && leadRow?.agency_id !== callerProfile.agency_id) {
+    // Fail closed pred admin zápisom: persist ide cez service-role klienta,
+    // ktorý obchádza RLS, takže profil bez agentúry sa sem nesmie dostať.
+    if (!sameAgency(callerProfile?.agency_id, leadRow?.agency_id)) {
       return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
     }
 

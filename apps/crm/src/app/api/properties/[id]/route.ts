@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { deleteProperty, getProperty, updateProperty } from "@/lib/properties-store";
 import { createActivity } from "@/lib/activities-store";
 import { autoRecalculateForProperty } from "@/lib/matching-hooks";
+import { sameAgency } from "@/lib/tenant-scope";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -19,27 +20,32 @@ export async function PATCH(
     if (!UUID_RE.test(id)) return errorResponse("Invalid ID", 400);
     const body = await request.json();
     const [oldProperty, { data: callerProfile }] = await Promise.all([
-      getProperty(id),
+      getProperty(id, supabase),
       supabase.from("profiles").select("agency_id").eq("auth_user_id", user.id).maybeSingle(),
     ]);
 
-    if (callerProfile?.agency_id && oldProperty?.agencyId && oldProperty.agencyId !== callerProfile.agency_id) {
+    // Fail closed aj pri nenájdenej nehnuteľnosti: 403 nepovie, či id existuje.
+    if (!sameAgency(callerProfile?.agency_id, oldProperty?.agencyId)) {
       return errorResponse("Forbidden", 403);
     }
 
-    const property = await updateProperty(id, {
-      title:       body.title,
-      location:    body.location,
-      price:       typeof body.price === "number" ? body.price : undefined,
-      type:        body.type,
-      rooms:       body.rooms,
-      features:    Array.isArray(body.features) ? body.features : undefined,
-      status:      body.status,
-      description: body.description,
-      ownerName:   body.ownerName,
-      ownerPhone:  body.ownerPhone,
-      // agencyId is intentionally NOT accepted from body — prevents cross-tenant reassignment
-    });
+    const property = await updateProperty(
+      id,
+      {
+        title:       body.title,
+        location:    body.location,
+        price:       typeof body.price === "number" ? body.price : undefined,
+        type:        body.type,
+        rooms:       body.rooms,
+        features:    Array.isArray(body.features) ? body.features : undefined,
+        status:      body.status,
+        description: body.description,
+        ownerName:   body.ownerName,
+        ownerPhone:  body.ownerPhone,
+        // agencyId is intentionally NOT accepted from body — prevents cross-tenant reassignment
+      },
+      supabase,
+    );
 
     try {
       await createActivity({
@@ -52,10 +58,10 @@ export async function PATCH(
         actorName: "Systém",
         source: "inventory",
         severity: "info",
-      });
+      }, supabase);
     } catch {}
 
-    await autoRecalculateForProperty(id);
+    await autoRecalculateForProperty(id, supabase);
     return okResponse({ property });
   } catch (error) {
     return errorResponse(
@@ -77,15 +83,16 @@ export async function DELETE(
     const { id } = await params;
     if (!UUID_RE.test(id)) return errorResponse("Invalid ID", 400);
     const [oldProperty, { data: callerProfile }] = await Promise.all([
-      getProperty(id),
+      getProperty(id, supabase),
       supabase.from("profiles").select("agency_id").eq("auth_user_id", user.id).maybeSingle(),
     ]);
 
-    if (callerProfile?.agency_id && oldProperty?.agencyId && oldProperty.agencyId !== callerProfile.agency_id) {
+    // Fail closed aj pri nenájdenej nehnuteľnosti: 403 nepovie, či id existuje.
+    if (!sameAgency(callerProfile?.agency_id, oldProperty?.agencyId)) {
       return errorResponse("Forbidden", 403);
     }
 
-    await deleteProperty(id);
+    await deleteProperty(id, supabase);
 
     try {
       await createActivity({
@@ -98,7 +105,7 @@ export async function DELETE(
         actorName: "Systém",
         source: "inventory",
         severity: "warning",
-      });
+      }, supabase);
     } catch {}
 
     return okResponse({ deletedId: id });

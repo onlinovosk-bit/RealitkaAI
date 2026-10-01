@@ -1,4 +1,4 @@
-import { listLeads } from "@/lib/leads-store";
+import { LEADS_PAGE_SIZE, listLeads } from "@/lib/leads-store";
 import {
   linkProfileToAuthUser,
   resolveProfileForAuthUser,
@@ -31,7 +31,7 @@ export async function bootstrapLeadsPage(
     user.email,
   );
 
-  const leads = await listLeads(undefined, supabase);
+  const leads = await listLeads(undefined, supabase, { limit: LEADS_PAGE_SIZE, offset: 0 });
 
   return {
     profileMissingAgency,

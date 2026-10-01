@@ -153,6 +153,7 @@ Vráť IBA text správy (bez uvodzoviek). Tón: ľudský, nie korporátny.`;
       max_tokens: 400,
       temperature: 0.75,
       tag: "stealth-outreach",
+      agencyId,
       messages: [
         { role: "system", content: "Si slovenský realitný expert. Píš prirodzene, bez floskúl." },
         { role: "user", content: prompt },

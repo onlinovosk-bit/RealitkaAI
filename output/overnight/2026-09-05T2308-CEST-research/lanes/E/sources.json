@@ -1,0 +1,5 @@
+[
+  {"claim":"Seat prices 79/71/63","path":"apps/crm/src/lib/program-tier-pricing.ts","lines_or_note":"PLAN_PRICES_EUR","evidence_type":"repo"},
+  {"claim":"Cockpit 349/499","path":"apps/crm/docs/pricing-v1.md","lines_or_note":"Vrstva 2","evidence_type":"repo"},
+  {"claim":"backOFFICE 95/year software","path":"lanes/B/sources.json","lines_or_note":"vendor","evidence_type":"prior_lane"}
+]

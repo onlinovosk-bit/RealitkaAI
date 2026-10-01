@@ -1,0 +1,65 @@
+[
+  {
+    "claim": "W1 output hashes recorded for A/B/C and match files",
+    "path_or_url": "output/overnight/20260905T2304-ruflo-overnight/control/w1-output-hashes.json",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "control_hash_manifest",
+    "limit": "verified by lanes/J/verify_provenance.py"
+  },
+  {
+    "claim": "W2/W3 output hashes for D–G match (0 mismatches)",
+    "path_or_url": "output/overnight/20260905T2304-ruflo-overnight/control/w2-output-hashes.json",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "control_hash_manifest",
+    "limit": "also w3-output-hashes.json"
+  },
+  {
+    "claim": "W0 freeze START-HERE hash equals A/D input_hashes",
+    "path_or_url": "output/overnight/20260905T2304-ruflo-overnight/w0/input/local_draft/START-HERE.md",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "w0_immutable_input",
+    "limit": "status PREPARED at freeze"
+  },
+  {
+    "claim": "Live START-HERE hash equals F input_hashes (INPUT_DRIFT)",
+    "path_or_url": "docs/overnight/2026-09-05-ruflo-swarm/START-HERE.md",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "live_mutable_package",
+    "limit": "NON-AUTHORITATIVE for this RUN"
+  },
+  {
+    "claim": "w0 launch-record run_id is 20260905T2304-ruflo-overnight",
+    "path_or_url": "output/overnight/20260905T2304-ruflo-overnight/w0/input/local_draft/launch-record.md",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "w0_immutable_input",
+    "limit": "ASSUMED fields present"
+  },
+  {
+    "claim": "Live launch-record run_id is sibling 2026-09-05T2308-CEST-research",
+    "path_or_url": "docs/overnight/2026-09-05-ruflo-swarm/launch-record.md",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "live_mutable_package",
+    "limit": "cross-run contamination risk"
+  },
+  {
+    "claim": "W0 READY; bridge EXCLUDED; subscription runner",
+    "path_or_url": "output/overnight/20260905T2304-ruflo-overnight/w0/report.md",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "w0_report",
+    "limit": "no spend meter in control/"
+  },
+  {
+    "claim": "Lane F hashed drifted live package docs",
+    "path_or_url": "output/overnight/20260905T2304-ruflo-overnight/lanes/F/result.json",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "lane_result",
+    "limit": "input_hashes section"
+  },
+  {
+    "claim": "Automated verification artifact",
+    "path_or_url": "output/overnight/20260905T2304-ruflo-overnight/lanes/J/verify-out.json",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "lane_j_tooling",
+    "limit": "script suggested STOP; human PASS_WITH_CONDITIONS after content diff"
+  }
+]

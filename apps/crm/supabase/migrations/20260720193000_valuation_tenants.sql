@@ -26,6 +26,11 @@ CREATE POLICY "valuation_tenants_service_role_all"
 REVOKE ALL ON TABLE public.valuation_tenants FROM anon, authenticated;
 GRANT ALL ON TABLE public.valuation_tenants TO service_role;
 
+-- CREATE OR REPLACE nevie zmenit navratovy typ existujucej funkcie (42P13).
+-- Neskorsia migracia 20260722120000 ju pretvara s inym RETURNS TABLE, takze
+-- pri opakovanom behu by tento prikaz zlyhal. Zhod ju najprv.
+DROP FUNCTION IF EXISTS public.get_valuation_tenant(text);
+
 CREATE OR REPLACE FUNCTION public.get_valuation_tenant(requested_slug text)
 RETURNS TABLE (
   slug text,

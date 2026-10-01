@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
 import { signGoogleOAuthState } from "@/lib/google-oauth-state";
 
-// Presmerovanie na Google OAuth (Calendar + Gmail scope ako predtým)
+// Presmerovanie na Google OAuth (Calendar + free/busy + Gmail scope)
 export async function GET(req: Request) {
   const reqUrl = new URL(req.url);
   const appUrl =
@@ -42,6 +42,14 @@ export async function GET(req: Request) {
 
   const scope = [
     "https://www.googleapis.com/auth/calendar.events",
+    // B08: `freebusy.query` NIE JE pokrytý scope-om `calendar.events`. Podľa
+    // discovery dokumentu Calendar API v3 ho povoľujú len `calendar`,
+    // `calendar.events.freebusy`, `calendar.freebusy` a `calendar.readonly`.
+    // Z nich je `calendar.events.freebusy` najužší — dá dostupnosť kalendárov,
+    // ku ktorým už máme `calendar.events`, a nič navyše. Plný `calendar`
+    // ani `calendar.readonly` by dali čítanie obsahu udalostí, čo Concierge
+    // na zistenie voľných termínov nepotrebuje.
+    "https://www.googleapis.com/auth/calendar.events.freebusy",
     "https://www.googleapis.com/auth/gmail.send",
     "openid",
     "email",

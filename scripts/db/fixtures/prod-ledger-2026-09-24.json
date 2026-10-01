@@ -1,0 +1,344 @@
+[
+  {
+    "version": "20260320",
+    "name": "rls",
+    "md5": "1b79948085c73cfe07bfd0b29e88ed70",
+    "stmts": 1
+  },
+  {
+    "version": "20260411",
+    "name": "performance_fee",
+    "md5": "2dfd6f48de1f253dc5487713cd256a11",
+    "stmts": 12
+  },
+  {
+    "version": "20260412",
+    "name": "activity_stream_view",
+    "md5": "6a8ea5f6df59669258e8cc3fa2b445c6",
+    "stmts": 4
+  },
+  {
+    "version": "20260413",
+    "name": "ai_insight_alias",
+    "md5": "3c19fa1155c88f1a3262d2e9d50030a3",
+    "stmts": 2
+  },
+  {
+    "version": "20260418",
+    "name": "enterprise_ai_intelligence",
+    "md5": "56a52c5c1704142e884e1c653f149d19",
+    "stmts": 30
+  },
+  {
+    "version": "20260419",
+    "name": "enterprise_rls_profile_link",
+    "md5": "f077f300f18dded370aed961d1c4a74f",
+    "stmts": 20
+  },
+  {
+    "version": "20260424",
+    "name": "google_calendar_oauth",
+    "md5": "1473718f4ddb510c507a97eed00213fb",
+    "stmts": 6
+  },
+  {
+    "version": "20260425231407",
+    "name": "event_pipeline",
+    "md5": "5d6af7a25d7021a380095565f8678c5a",
+    "stmts": 29
+  },
+  {
+    "version": "20260425231426",
+    "name": "bri_live_score",
+    "md5": "cacc5bb43155007718b93526bb34ec20",
+    "stmts": 16
+  },
+  {
+    "version": "20260426114846",
+    "name": "morning_brief",
+    "md5": "81cc34d216f065f2cbfc35cd1566cc93",
+    "stmts": 12
+  },
+  {
+    "version": "20260426120111",
+    "name": "arbitrage_engine",
+    "md5": "773fabac82a716b33c8e554e4cd0a40f",
+    "stmts": 31
+  },
+  {
+    "version": "20260426121525",
+    "name": "price_trail",
+    "md5": "d7d3ebd0be6d1ed9820d2708ee43bb09",
+    "stmts": 25
+  },
+  {
+    "version": "20260426133000",
+    "name": "ghost_monitor",
+    "md5": "48d74f5c3d5bafbd7e2bdb08da28bbb9",
+    "stmts": 17
+  },
+  {
+    "version": "20260426143000",
+    "name": "broker_trust_protocol",
+    "md5": "eae1b5a24386f9c8d972be078b141720",
+    "stmts": 24
+  },
+  {
+    "version": "20260426150000",
+    "name": "bsm_reforma_campaign",
+    "md5": "70c5216fd2987897336385643508ec48",
+    "stmts": 23
+  },
+  {
+    "version": "20260426170000",
+    "name": "demand_data_moat",
+    "md5": "48b218a94774814cf7a51b004c8cb994",
+    "stmts": 13
+  },
+  {
+    "version": "20260426183000",
+    "name": "competitor_sleep_detector",
+    "md5": "ed81c947e1dff861f4a52bb293a13727",
+    "stmts": 21
+  },
+  {
+    "version": "20260426193000",
+    "name": "b2b_data_api",
+    "md5": "48a0fb65a05451e0aec32b364c2c615d",
+    "stmts": 15
+  },
+  {
+    "version": "20260426203000",
+    "name": "ai_coaching_engine",
+    "md5": "58cbd7d80c2b13ef542be81b95f0dddf",
+    "stmts": 20
+  },
+  {
+    "version": "20260426210000",
+    "name": "developer_api_onboarding",
+    "md5": "7736afb35a05df1482000d350fb16eb6",
+    "stmts": 8
+  },
+  {
+    "version": "20260428130500",
+    "name": "onboarding_mvp",
+    "md5": "b3959a8305bfcf7555596d738c0b117f",
+    "stmts": 8
+  },
+  {
+    "version": "20260428164000",
+    "name": "demo_prefill_links",
+    "md5": "2906bc4c22f509eafb4d7cec0f132815",
+    "stmts": 2
+  },
+  {
+    "version": "20260428214500",
+    "name": "leads_indexes",
+    "md5": "8a485aa11868ea7c56f83ac14d409b9a",
+    "stmts": 6
+  },
+  {
+    "version": "20260429111000",
+    "name": "decision_intelligence_core",
+    "md5": "27b8f3fdfa20a5b157112bc7f2479653",
+    "stmts": 11
+  },
+  {
+    "version": "20260502000000",
+    "name": "push_subscriptions",
+    "md5": "8babe0be6f26797d5a5cf1afd3100a56",
+    "stmts": 5
+  },
+  {
+    "version": "20260504000000",
+    "name": "onboarding_checklist_v2",
+    "md5": "c0320589da5ba0f98725f2c425bcfe5a",
+    "stmts": 1
+  },
+  {
+    "version": "20260504100000",
+    "name": "rate_limit_buckets",
+    "md5": "95b95c0b49e95f2cb26eec5627bcd78b",
+    "stmts": 5
+  },
+  {
+    "version": "20260504200000",
+    "name": "automat_onboarding_schema",
+    "md5": "0646dff41871190ae071d8facfc7c10e",
+    "stmts": 21
+  },
+  {
+    "version": "20260507120000",
+    "name": "outreach_campaigns",
+    "md5": "60bb2e4ef24b20f251b5d8ecfcb465fa",
+    "stmts": 3
+  },
+  {
+    "version": "20260507140000",
+    "name": "rls_decision_tables",
+    "md5": "6698725489a2a00366d3ae18b921d1d9",
+    "stmts": 1
+  },
+  {
+    "version": "20260507150000",
+    "name": "outreach_segments_templates",
+    "md5": "302840efcf4d42384740b384faed8fa1",
+    "stmts": 8
+  },
+  {
+    "version": "20260507160000",
+    "name": "rls_leads_activities",
+    "md5": "c356daf90aee368fea2ff135643088f1",
+    "stmts": 12
+  },
+  {
+    "version": "20260508180000",
+    "name": "rls_properties",
+    "md5": "07a49db40d4e0e60dcc53518648a3010",
+    "stmts": 3
+  },
+  {
+    "version": "20260508200000",
+    "name": "profile_integrations",
+    "md5": "97e4d3efc0a5493d50e18550cda7d337",
+    "stmts": 4
+  },
+  {
+    "version": "20260508210000",
+    "name": "rls_tasks_recommendations",
+    "md5": "00baf819411d121023350d8bf682df7b",
+    "stmts": 9
+  },
+  {
+    "version": "20260508220000",
+    "name": "rls_agencies_profiles_teams",
+    "md5": "71a6474888f3eacc3fe0e5fc0beae565",
+    "stmts": 15
+  },
+  {
+    "version": "20260508230000",
+    "name": "rls_lead_property_matches",
+    "md5": "aaef65007f39e41f335a0b975a3ffe9e",
+    "stmts": 7
+  },
+  {
+    "version": "20260509000000",
+    "name": "rls_lead_scores",
+    "md5": "c302e269b375cbf4740e23b6586e9ab0",
+    "stmts": 3
+  },
+  {
+    "version": "20260512103000",
+    "name": "realvia_agency_credentials_metrics",
+    "md5": "c3cdca96c4ae638a5384bdad8e7d8165",
+    "stmts": 12
+  },
+  {
+    "version": "20260512174500",
+    "name": "realvia_schema_health_rpc",
+    "md5": "520a9b4cf74b7673a4dda79d62e138bd",
+    "stmts": 6
+  },
+  {
+    "version": "20260514120000",
+    "name": "architect_workflows_leads_columns",
+    "md5": "5bf09d57acb83972607fea672b1c5fee",
+    "stmts": 7
+  },
+  {
+    "version": "20260523183000",
+    "name": "resolve_agency_id_for_realvia_rpc",
+    "md5": "563b7ff78fe4e3344434dcc9f7d5ac20",
+    "stmts": 4
+  },
+  {
+    "version": "20260527143000",
+    "name": "event_scheduler_phase1",
+    "md5": "4fffd4d568872e9f5c5f7a64ef815e8a",
+    "stmts": 12
+  },
+  {
+    "version": "20260528103000",
+    "name": "realvia_agency_ident_bracket_normalize",
+    "md5": "de26e7c11c19aea051f5ccf4f9179c4c",
+    "stmts": 7
+  },
+  {
+    "version": "20260802134100",
+    "name": "valuation_estimates",
+    "md5": "9ee5698c007702cd59d662dc2b14279a",
+    "stmts": 1
+  },
+  {
+    "version": "20260802134104",
+    "name": "system_usage_agency",
+    "md5": "2db81c2854ccfb0454ac9e9544147d74",
+    "stmts": 1
+  },
+  {
+    "version": "20260811220000",
+    "name": "acquisition_core",
+    "md5": null,
+    "stmts": 0
+  },
+  {
+    "version": "20260817220000",
+    "name": "p0_schema_alters_leads_profiles",
+    "md5": "d41d8cd98f00b204e9800998ecf8427e",
+    "stmts": 0
+  },
+  {
+    "version": "20260903070000",
+    "name": "customer_health_daily",
+    "md5": "d41d8cd98f00b204e9800998ecf8427e",
+    "stmts": 0
+  },
+  {
+    "version": "20260904184236",
+    "name": "drop_open_anon_policies",
+    "md5": "b0d394d0b19ed39007dbbb97f9adafe1",
+    "stmts": 1
+  },
+  {
+    "version": "20260921200851",
+    "name": "inbound_mailboxes_profile_id",
+    "md5": "41f0b02e2dc43d789c9db8eef7298cfd",
+    "stmts": 1
+  },
+  {
+    "version": "20260923113535",
+    "name": "repair_scheduled_events_phase1_20260923",
+    "md5": "f1af8cde7c6a2f826d036a699861fd73",
+    "stmts": 1
+  },
+  {
+    "version": "20260923120358",
+    "name": "repair_scheduled_events_phase1_20260923",
+    "md5": "8ccd9dbd7077bfe0eda31d31c6e8ddf7",
+    "stmts": 1
+  },
+  {
+    "version": "20260924060000",
+    "name": "lead_contact_event_substrate",
+    "md5": "d41d8cd98f00b204e9800998ecf8427e",
+    "stmts": 0
+  },
+  {
+    "version": "20260924120000",
+    "name": "lead_signals",
+    "md5": "d41d8cd98f00b204e9800998ecf8427e",
+    "stmts": 0
+  },
+  {
+    "version": "20260924183806",
+    "name": "ai_action_audit_cost_columns",
+    "md5": "975649da3e341f87e46962f700831a51",
+    "stmts": 1
+  },
+  {
+    "version": "20260924193624",
+    "name": "ai_cost_daily_view",
+    "md5": "b39cda0d06d1e5994b8e01dce71a9ae6",
+    "stmts": 1
+  }
+]

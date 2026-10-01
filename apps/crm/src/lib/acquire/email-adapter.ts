@@ -1,6 +1,6 @@
 import { createHash } from "crypto";
 
-export const PARSER_VERSION = "1.2";
+export const PARSER_VERSION = "1.4";
 export const DATASET_VERSION = "v1.1";
 
 export interface AcquireEvent {
@@ -11,6 +11,13 @@ export interface AcquireEvent {
   extractionConfidence: number;
   sourceType: "Portal" | "Website" | "Social" | "Unknown";
   source: string;
+  /**
+   * Čím sa zdroj rozpoznal. `sender` znamená, že text zdroj neprezradil a
+   * zachránila ho doména odosielateľa — signál, že textové pravidlo hnije.
+   */
+  sourceDetectedBy: "text" | "sender" | "none";
+  /** Doména odosielateľa. Bez lokálnej časti — do logu ide len toto. */
+  senderDomain?: string | null;
   eventKind: "inquiry" | "reply" | "unsubscribe" | "update" | "spam" | "unknown";
   contactName?: string | null;
   contactEmail?: string | null;
@@ -25,13 +32,27 @@ export interface AcquireEvent {
   warnings: string[];
 }
 
-const SOURCE_RULES: [RegExp, AcquireEvent["sourceType"], string][] = [
-  [/nehnutelnosti\.sk|Nehnuteľnosti\.sk/i, "Portal", "Nehnuteľnosti.sk"],
-  [/bazos\.sk/i, "Portal", "Bazoš.sk"],
-  [/byty\.sk/i, "Portal", "Byty.sk"],
-  [/topreality/i, "Portal", "TopReality.sk"],
-  [/reality\.sk/i, "Portal", "Reality.sk"],
-  [/formular@realitysmolko\.sk/i, "Website", "realitysmolko.sk (web formulár)"],
+/**
+ * Jedno pravidlo = jeden zdroj, dva nezávislé signály. `text` je primárny a
+ * ostáva presne taký, aký bol. `domain` je záloha: keď portál prestane uvádzať
+ * svoj názov v tele mailu, rozpozná ho adresa odosielateľa namiesto toho, aby
+ * príjem spadol na `Unknown` a potichu zahadzoval dopyty.
+ */
+type SourceRule = {
+  text: RegExp;
+  /** Doména odosielateľa vrátane subdomén (`mail.portal.sk`). Bez lokálnej časti. */
+  domain?: string;
+  type: AcquireEvent["sourceType"];
+  label: string;
+};
+
+const SOURCE_RULES: SourceRule[] = [
+  { text: /nehnutelnosti\.sk|Nehnuteľnosti\.sk/i, domain: "nehnutelnosti.sk", type: "Portal", label: "Nehnuteľnosti.sk" },
+  { text: /bazos\.sk/i, domain: "bazos.sk", type: "Portal", label: "Bazoš.sk" },
+  { text: /byty\.sk/i, domain: "byty.sk", type: "Portal", label: "Byty.sk" },
+  { text: /topreality/i, domain: "topreality.sk", type: "Portal", label: "TopReality.sk" },
+  { text: /reality\.sk/i, domain: "reality.sk", type: "Portal", label: "Reality.sk" },
+  { text: /formular@realitysmolko\.sk/i, domain: "realitysmolko.sk", type: "Website", label: "realitysmolko.sk (web formulár)" },
 ];
 
 const EMAIL_RE = /[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+/;
@@ -53,9 +74,210 @@ const INTENT: [string, RegExp[]][] = [
   ["Information Request", [/inform[aá]ci/i, /fotk/i, /podrobnejš/i]],
 ];
 
-function detectSource(raw: string): [AcquireEvent["sourceType"], string] {
-  for (const [re, st, s] of SOURCE_RULES) if (re.test(raw)) return [st, s];
-  return ["Unknown", "Unknown"];
+// ── HTML normalizácia ─────────────────────────────────────────────────────────
+// Route skladá raw ako `subject + "\n" + text + "\n" + html`, takže do regexov
+// nad poľami padal aj HTML markup. Prejavy v produkcii (Reality Smolko, 7 dopytov
+// od 2026-07): meno uložené aj s `</b>` a `<br/>`, 4 zo 7 mien `Neznámy`.
+// Normalizuje sa IBA vstup pre extrakciu polí; `rawHash`/`eventId` sa naďalej
+// počítajú z pôvodného `raw`, aby sa nezmenila idempotencia už prijatých správ.
+
+const HTML_ENTITIES: Record<string, string> = {
+  amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ",
+};
+
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&#(\d+);/g, (_m, d: string) => String.fromCodePoint(Number(d)))
+    .replace(/&#x([0-9a-f]+);/gi, (_m, h: string) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&([a-z]+);/gi, (m, n: string) => HTML_ENTITIES[n.toLowerCase()] ?? m);
+}
+
+/** HTML → text. Na čistom texte je to no-op (vracia vstup nezmenený). */
+export function htmlToText(raw: string): string {
+  if (!/<[a-z!/]/i.test(raw)) return raw;
+  return decodeEntities(
+    raw
+      .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, " ")
+      .replace(/<!--[\s\S]*?-->/g, " ")
+      .replace(/<\/?(?:br|p|div|tr|li|h[1-6]|table|thead|tbody)\b[^>]*>/gi, "\n")
+      .replace(/<[^>]+>/g, ""),
+  )
+    .replace(/[ \t\u00a0]+/g, " ")
+    .split("\n")
+    .map((l) => l.trim())
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+// ── výber kontaktnej adresy ───────────────────────────────────────────────────
+// Pôvodný fallback bral `raw.match(EMAIL_RE)?.[0]`, teda PRVÚ adresu kdekoľvek
+// v správe. Pri preposlanom portálovom maile je to často adresa príjemcu alebo
+// noreply portálu — v produkcii tak vznikol lead s e-mailom `office@realitysmolko.sk`,
+// čo je adresa samotnej kancelárie, nie záujemcu.
+
+const NON_LEAD_LOCALPART =
+  /^(?:no-?reply|donotreply|do-not-reply|mailer-daemon|postmaster|bounces?|notifications?)$/i;
+
+/**
+ * Verejní poskytovatelia pošty. Doména agentúry sa z nich NIKDY neodvodzuje:
+ * maklér s osobným gmailom by inak zahodil každého záujemcu z gmailu.
+ * Jeho konkrétna adresa sa aj tak vylúči cez `agencyAddresses` (presná zhoda).
+ */
+const PUBLIC_EMAIL_DOMAINS = new Set([
+  "gmail.com",
+  "googlemail.com",
+  "outlook.com",
+  "hotmail.com",
+  "live.com",
+  "msn.com",
+  "yahoo.com",
+  "yahoo.co.uk",
+  "icloud.com",
+  "me.com",
+  "proton.me",
+  "protonmail.com",
+  "zoznam.sk",
+  "azet.sk",
+  "centrum.sk",
+  "post.sk",
+  "pobox.sk",
+  "inmail.sk",
+  "atlas.sk",
+  "seznam.cz",
+  "email.cz",
+  "centrum.cz",
+]);
+
+/** Adresy a domény, ktoré patria kancelárii — nie záujemcovi. */
+export type AgencyIdentity = {
+  /** Presné adresy: profily maklérov, adresa agentúry, prijímacie schránky. */
+  addresses?: readonly string[] | null;
+  /** Domény odvodené z tých adries, po odfiltrovaní verejných poskytovateľov. */
+  domains?: readonly string[] | null;
+};
+
+/**
+ * Z adries kancelárie vyrobí zoznam jej vlastných domén. Verejné domény vypadnú —
+ * inak by sa `gmail.com` jedného makléra stal filtrom na všetkých záujemcov.
+ */
+export function agencyDomainsFrom(addresses: readonly (string | null | undefined)[]): string[] {
+  const out = new Set<string>();
+  for (const addr of addresses) {
+    const domain = addr?.trim().toLowerCase().split("@")[1];
+    if (!domain) continue;
+    if (PUBLIC_EMAIL_DOMAINS.has(domain)) continue;
+    out.add(domain);
+  }
+  return [...out];
+}
+
+/** Odstráni obaľujúcu interpunkciu (`<a@b.sk>`, `a@b.sk.`) a overí tvar. */
+export function cleanEmail(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const s = value.trim().replace(/^[<("'\s]+/, "").replace(/[>)"'.,;:\s]+$/, "");
+  return /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(s) ? s : null;
+}
+
+/**
+ * Doménová stráž stála na tom, že sa doména adresy rovná doméne PRÍJEMCU. Kým ingest
+ * bežal na doméne kancelárie, fungovalo to. Odkedy beží na `revolis.ai`, je doména
+ * príjemcu vždy `revolis.ai` a doména kancelárie sa s ňou nikdy nezhoduje — stráž teda
+ * prestala vylučovať vlastné adresy klienta. Preto sa identita kancelárie odovzdáva
+ * zvonku (`agencyAddresses` / `agencyDomains`) a nedopočítava sa z príjemcu.
+ */
+function isNonLeadAddress(addr: string, ctx?: ContactContext): boolean {
+  const lower = addr.toLowerCase();
+  const [local, domain] = lower.split("@");
+  if (NON_LEAD_LOCALPART.test(local)) return true;
+  if (domain === "revolis.ai") return true; // naša ingest schránka
+
+  // Presná adresa kancelárie alebo makléra — platí aj na verejnej doméne.
+  if (ctx?.agencyAddresses?.has(lower)) return true;
+  // Vlastná doména kancelárie (verejní poskytovatelia sú z nej odfiltrovaní).
+  if (domain && ctx?.agencyDomains?.has(domain)) return true;
+
+  const r = ctx?.recipient?.trim().toLowerCase();
+  if (!r) return false;
+  if (lower === r) return true; // presne adresa príjemcu
+  const recipientDomain = r.split("@")[1];
+  return Boolean(recipientDomain) && domain === recipientDomain;
+}
+
+type ContactContext = {
+  recipient?: string | null;
+  agencyAddresses?: ReadonlySet<string>;
+  agencyDomains?: ReadonlySet<string>;
+};
+
+/**
+ * `hasPhone` rozhoduje o poslednom kroku. Keď žiadny kandidát neprejde strážou,
+ * pôvodný kód aj tak vrátil `labelled` — teda adresu, ktorú stráž práve zamietla.
+ * Pri leade, ktorý MÁ telefón, je to zlá výmena: prázdny e-mail je čitateľný stav,
+ * kdežto cudzia adresa vyzerá ako platný kontakt a odíde na ňu automatická odpoveď.
+ * Bez telefónu by lead ostal bez akéhokoľvek kontaktu, preto tam fallback ostáva.
+ */
+function pickContactEmail(text: string, ctx: ContactContext, hasPhone: boolean): string | null {
+  const labelled = cleanEmail(text.match(L.email)?.[1]);
+  if (labelled && !isNonLeadAddress(labelled, ctx)) return labelled;
+  for (const candidate of text.match(new RegExp(EMAIL_RE.source, "g")) ?? []) {
+    const cleaned = cleanEmail(candidate);
+    if (cleaned && !isNonLeadAddress(cleaned, ctx)) return cleaned;
+  }
+  return hasPhone ? null : labelled;
+}
+
+/** Zvyškový markup a oddeľovače v mene (napr. `</b> Meno Priezvisko<br/>`). */
+function cleanName(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const s = value
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/^[\s:\-–—|]+/, "")
+    .replace(/[\s|]+$/, "")
+    .trim();
+  return s ? s.slice(0, 120) : null;
+}
+
+/**
+ * Doména z adresy odosielateľa. Zvládne aj `Portál <noreply@portal.sk>`.
+ * Vracia null, keď hlavička chýba — Cloudflare Worker ju dnes ešte neposiela.
+ */
+export function senderDomainOf(from: string | null | undefined): string | null {
+  const addr = cleanEmail(from?.match(EMAIL_RE)?.[0]);
+  const domain = addr?.split("@")[1]?.toLowerCase();
+  return domain ? domain : null;
+}
+
+/** Presná doména alebo jej subdoména. `nehnutelnosti.sk.evil.com` sa NEzhoduje. */
+function domainMatches(domain: string, rule: string): boolean {
+  return domain === rule || domain.endsWith(`.${rule}`);
+}
+
+type DetectedSource = {
+  sourceType: AcquireEvent["sourceType"];
+  source: string;
+  detectedBy: AcquireEvent["sourceDetectedBy"];
+};
+
+/**
+ * Text rozhoduje ako doteraz. Doména odosielateľa sa pýta až vtedy, keď text
+ * zdroj neurčil — nikdy ho neprepisuje. Odosielateľ sa dá sfalšovať, ale telo
+ * mailu rovnako, a zdroj nie je autorizačná hranica: rozhoduje len o tom, či
+ * dopyt vôbec vznikne ako lead.
+ */
+function detectSource(text: string, senderDomain: string | null): DetectedSource {
+  for (const r of SOURCE_RULES) {
+    if (r.text.test(text)) return { sourceType: r.type, source: r.label, detectedBy: "text" };
+  }
+  if (senderDomain) {
+    for (const r of SOURCE_RULES) {
+      if (r.domain && domainMatches(senderDomain, r.domain)) {
+        return { sourceType: r.type, source: r.label, detectedBy: "sender" };
+      }
+    }
+  }
+  return { sourceType: "Unknown", source: "Unknown", detectedBy: "none" };
 }
 
 function classifyIntent(text: string): [string, string] {
@@ -68,39 +290,85 @@ function classifyIntent(text: string): [string, string] {
   return ["General Inquiry", "no keyword matched (default)"];
 }
 
-export function parseEmail(raw: string, receivedAt?: string): AcquireEvent {
-  const [sourceType, source] = detectSource(raw);
-  const nameM = raw.match(L.name);
-  const emailM = raw.match(L.email);
-  const phoneM = raw.match(L.phone);
-  const contactEmail = emailM ? emailM[1] : (raw.match(EMAIL_RE)?.[0] ?? null);
+/**
+ * Odhlásenie z odberu, NIE dopyt. Rozhoduje predmet — pätička s odkazom na
+ * odhlásenie je dnes v každej portálovej notifikácii, takže hľadať toto slovo
+ * kdekoľvek v tele znamená zahodiť skutočný dopyt (PROD: nehnutelnosti.sk
+ * pridali pätičku, od 2026-09-22 nevznikol ani jeden lead).
+ * V tele sa berie do úvahy len vtedy, keď mail nenesie žiadny kontakt — vtedy
+ * z neho aj tak lead byť nemôže.
+ */
+// Pokrýva odhlásiť / odhlásenie / odhlásený.
+const UNSUBSCRIBE_RE = /unsubscribe|odhl[aá]s/i;
+
+function isUnsubscribe(subject: string, text: string, hasContact: boolean): boolean {
+  if (UNSUBSCRIBE_RE.test(subject)) return true;
+  return !hasContact && UNSUBSCRIBE_RE.test(text);
+}
+
+export function parseEmail(
+  raw: string,
+  receivedAt?: string,
+  opts?: {
+    recipient?: string | null;
+    subject?: string | null;
+    /** Hlavička `From`. Chýba → správanie je presne také ako predtým. */
+    from?: string | null;
+  } & AgencyIdentity,
+): AcquireEvent {
+  // Polia sa čítajú z normalizovaného textu, hash ostáva nad pôvodným `raw`.
+  const text = htmlToText(raw);
+  const senderDomain = senderDomainOf(opts?.from);
+  const detected = detectSource(text, senderDomain);
+  const nameM = text.match(L.name);
+  const phoneM = text.match(L.phone);
+  // Telefón sa musí poznať PRED výberom e-mailu — rozhoduje o poslednom fallbacku.
   const contactPhone = phoneM
     ? phoneM[1].replace(/\s+/g, "")
-    : (raw.match(PHONE_RE)?.[0]?.replace(/\s+/g, "") ?? null);
-  const msgM = raw.match(L.msg);
+    : (text.match(PHONE_RE)?.[0]?.replace(/\s+/g, "") ?? null);
+  const contactEmail = pickContactEmail(
+    text,
+    {
+      recipient: opts?.recipient,
+      agencyAddresses: new Set((opts?.addresses ?? []).map((a) => a.trim().toLowerCase())),
+      agencyDomains: new Set((opts?.domains ?? []).map((d) => d.trim().toLowerCase())),
+    },
+    Boolean(contactPhone),
+  );
+  const msgM = text.match(L.msg);
   let inquiryText = msgM ? msgM[1].replace(/\s+/g, " ").trim() : null;
   if (inquiryText) {
     const footerCut = inquiryText.search(/\bIntern[eé]\s+č\./i);
     if (footerCut > 0) inquiryText = inquiryText.slice(0, footerCut).trim();
     inquiryText = inquiryText.slice(0, 1000);
   }
-  const [intent, reason] = classifyIntent(inquiryText ?? raw);
-  const internalId = raw.match(INTERNAL_ID_RE)?.[1] ?? null;
+  const [intent, reason] = classifyIntent(inquiryText ?? text);
+  const internalId = text.match(INTERNAL_ID_RE)?.[1] ?? null;
   const portalId =
-    raw.match(L.portalId)?.[1] ?? raw.match(L.bazosInzerat)?.[1] ?? null;
+    text.match(L.portalId)?.[1] ?? text.match(L.bazosInzerat)?.[1] ?? null;
   let listingTitle: string | null = null;
   if (!internalId && !portalId) {
-    const t = raw.match(/(?:Odoslan[eé] z|EXKLUZ[IÍ]VNE)[:\s]*(.+)/);
+    const t = text.match(/(?:Odoslan[eé] z|EXKLUZ[IÍ]VNE)[:\s]*(.+)/);
     if (t) listingTitle = t[1].trim().split("\n")[0].slice(0, 160);
   }
   const ev: AcquireEvent = {
     parserVersion: PARSER_VERSION,
     datasetVersion: DATASET_VERSION,
     extractionConfidence: 0,
-    sourceType,
-    source,
-    eventKind: /unsubscribe|odhl[aá]siť/i.test(raw) ? "unsubscribe" : "inquiry",
-    contactName: nameM ? nameM[1].trim().split("\n")[0].slice(0, 120) : null,
+    sourceType: detected.sourceType,
+    source: detected.source,
+    sourceDetectedBy: detected.detectedBy,
+    senderDomain,
+    eventKind: isUnsubscribe(
+      // Route skladá raw ako `subject + text + html`, takže bez explicitného
+      // predmetu je ním prvý riadok.
+      opts?.subject ?? text.split("\n")[0] ?? "",
+      text,
+      Boolean(contactEmail || contactPhone),
+    )
+      ? "unsubscribe"
+      : "inquiry",
+    contactName: cleanName(nameM?.[1]?.split("\n")[0]),
     contactEmail,
     contactPhone,
     listingPortalId: portalId,
@@ -129,6 +397,9 @@ export function parseEmail(raw: string, receivedAt?: string): AcquireEvent {
     ev.warnings.push("no_listing_ref");
   }
   if (ev.source === "Unknown") ev.warnings.push("unknown_source");
+  // Zdroj zachránila doména odosielateľa — textové pravidlo prestalo platiť.
+  // Lead vznikne, ale chceme o tom vedieť skôr, než zmizne aj druhý signál.
+  if (ev.sourceDetectedBy === "sender") ev.warnings.push("source_from_sender");
   return ev;
 }
 
@@ -141,10 +412,49 @@ export function dedupKey(ev: AcquireEvent): string {
   return createHash("sha1").update(base).digest("hex").slice(0, 16);
 }
 
+export type NotLeadReason = "duplicate" | "not_inquiry" | "no_contact" | "unknown_source";
+
+/**
+ * Prečo event nie je lead (null = je lead). Poradie kontrol = poradie v
+ * `toLeadCandidate`; dôvod sa loguje, aby bolo vidno, či parser nezahadzuje
+ * skutočné dopyty (INBOUND-NOTALEAD-01).
+ */
+export function notLeadReason(ev: AcquireEvent, duplicate: boolean): NotLeadReason | null {
+  if (duplicate) return "duplicate";
+  if (ev.eventKind !== "inquiry") return "not_inquiry";
+  if (!(ev.contactEmail || ev.contactPhone)) return "no_contact";
+  if (ev.source === "Unknown") return "unknown_source";
+  return null;
+}
+
+/**
+ * Bezpečný popis zamietnutého eventu do logu: len technické príznaky, žiadne
+ * meno, adresa, telefón ani text správy.
+ */
+export function notLeadDiagnostics(ev: AcquireEvent) {
+  return {
+    source: ev.source,
+    source_type: ev.sourceType,
+    event_kind: ev.eventKind,
+    has_contact_email: Boolean(ev.contactEmail),
+    has_contact_phone: Boolean(ev.contactPhone),
+    has_listing_ref: Boolean(ev.listingPortalId || ev.listingInternalId || ev.listingTitle),
+    has_message: Boolean(ev.inquiryText),
+    // Ako sa zdroj rozpoznal + doména odosielateľa. Bez domény sa
+    // `unknown_source` nedá vyriešiť: v PROD prichádza `has_sender: true` so
+    // `source_detected_by: "none"`, čiže odosielateľ je známy, ale jeho doména
+    // nesedí na žiadne pravidlo — a nevieme, ktorá to je.
+    // GDPR: LEN doména, nikdy lokálna časť. `senderDomainOf` lokálnu časť
+    // zahadzuje, takže sem sa nemá ako dostať.
+    source_detected_by: ev.sourceDetectedBy,
+    sender_domain: ev.senderDomain ?? null,
+    parser_version: ev.parserVersion,
+  };
+}
+
 /** NIE každý event je lead. Vracia null pre dup/unsubscribe/no-contact/unknown. */
 export function toLeadCandidate(ev: AcquireEvent, agencyId: string, duplicate: boolean) {
-  if (duplicate || ev.eventKind !== "inquiry") return null;
-  if (!(ev.contactEmail || ev.contactPhone) || ev.source === "Unknown") return null;
+  if (notLeadReason(ev, duplicate)) return null;
   return {
     agencyId,
     name: ev.contactName ?? "Neznámy",

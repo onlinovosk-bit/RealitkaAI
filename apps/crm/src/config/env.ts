@@ -32,6 +32,19 @@ const envSchema = z.object({
   STRIPE_PRICE_PROTOCOL_AUTH: z.string().optional(),
   STRIPE_PRICE_ENTERPRISE: z.string().optional(),
   STRIPE_PRICE_ONBOARDING: z.string().optional(),
+  // Pricing stack v1.0 (program-tier-pricing.ts). Deklarované tu, aby schéma
+  // hovorila pravdu o tom, čo aplikácia naozaj číta; drift stráži
+  // tests/verification/stripe-expected-prices.verification.test.ts.
+  STRIPE_PRICE_SOLO_SEAT: z.string().optional(),
+  STRIPE_PRICE_TEAM_SEAT: z.string().optional(),
+  STRIPE_PRICE_OFFICE_SEAT: z.string().optional(),
+  STRIPE_PRICE_OWNER_COCKPIT: z.string().optional(),
+  STRIPE_PRICE_OWNER_COCKPIT_FOUNDER: z.string().optional(),
+  STRIPE_PRICE_CREDITS_START: z.string().optional(),
+  STRIPE_PRICE_CREDITS_RAST: z.string().optional(),
+  STRIPE_PRICE_CREDITS_PRO: z.string().optional(),
+  STRIPE_PRICE_CREDITS_MEGA: z.string().optional(),
+  STRIPE_PRICE_STARTER_PACK: z.string().optional(),
 
   // ── App URLs ─────────────────────────────────────────────────
   NEXT_PUBLIC_APP_URL: z.string().url().optional(),

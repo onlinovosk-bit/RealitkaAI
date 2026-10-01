@@ -5,6 +5,15 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { generateSyntheticProperties } from "@/lib/demo/synthetic-properties";
 import { GOLD_STANDARD_POPRAD_STUROVA_3I } from "@/lib/mock-data";
 
+// Vokabulár stavov žije v kontrakte verejnej viditeľnosti (SMO-B04), aby
+// „čo znamená aktívna" malo jedno miesto pre CRM aj pre verejný matcher.
+import {
+  ACTIVE_STATUS_VALUES,
+  RESERVED_STATUS_VALUES,
+  SOLD_STATUS_VALUES,
+  normalizeStatusKey,
+} from "@/lib/properties/public-visibility";
+
 export type Property = {
   id: string;
   agencyId: string | null;
@@ -24,6 +33,13 @@ export type Property = {
   brokerPhone?: string;
   /** Realvia webhook identita — mapované z `source_id` stĺpca. */
   sourceId?: string;
+  /**
+   * Čas poslednej synchronizácie z Realvie (`realvia_updated_at`).
+   *
+   * SMO-B04: bez neho sa nedá dokázať, že ponuka je aktuálna. Verejné
+   * zobrazenie ho vyžaduje — viď `lib/properties/public-visibility.ts`.
+   */
+  realviaUpdatedAt?: string | null;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -58,6 +74,32 @@ export type PropertyFilters = {
   type?: string;
 };
 
+export const PROPERTIES_PAGE_SIZE = 50;
+export const PROPERTIES_LIST_MAX = 500;
+// agency_id je nutné pre filterRowsByAgency — bez neho tenant-filter zahodí všetky riadky (summary = 0).
+export const PROPERTIES_SELECT_SUMMARY = "id, status, agency_id";
+
+export type PropertyListPage = {
+  limit?: number;
+  offset?: number;
+  columns?: "summary" | "list" | "full";
+};
+
+export function resolvePropertyListPage(page?: PropertyListPage): {
+  limit: number;
+  offset: number;
+  columns: NonNullable<PropertyListPage["columns"]>;
+} {
+  const limit = Math.min(Math.max(page?.limit ?? PROPERTIES_LIST_MAX, 1), PROPERTIES_LIST_MAX);
+  const offset = Math.max(page?.offset ?? 0, 0);
+  return { limit, offset, columns: page?.columns ?? "full" };
+}
+
+function paginatePropertyItems<T>(items: T[], page?: PropertyListPage): T[] {
+  const { limit, offset } = resolvePropertyListPage(page);
+  return items.slice(offset, offset + limit);
+}
+
 export type PropertiesSummary = {
   total: number;
   active: number;
@@ -74,31 +116,11 @@ export type PropertiesInventory = {
 const PROPERTIES_SELECT_CORE =
   "id, agency_id, source_id, title, location, price, type, rooms, features, status, created_at, broker_name, broker_email, broker_phone";
 
-const PROPERTIES_SELECT_FULL = `${PROPERTIES_SELECT_CORE}, description, owner_name, owner_phone, updated_at`;
+// `realvia_updated_at` je freshness signál pre SMO-B04. Ak stĺpec v danom
+// prostredí nie je, select zlyhá a nižšie sa retryuje CORE — výsledkom je
+// `realviaUpdatedAt: null`, teda fail-closed „nevieme, ako staré to je".
+const PROPERTIES_SELECT_FULL = `${PROPERTIES_SELECT_CORE}, description, owner_name, owner_phone, updated_at, realvia_updated_at`;
 
-const ACTIVE_STATUS_VALUES = new Set([
-  "aktívna",
-  "aktivna",
-  "active",
-  "aktivní",
-  "aktivni",
-]);
-
-const RESERVED_STATUS_VALUES = new Set([
-  "rezervovaná",
-  "rezervovana",
-  "reserved",
-]);
-
-const SOLD_STATUS_VALUES = new Set([
-  "predaná",
-  "predana",
-  "sold",
-]);
-
-function normalizeStatusKey(status: string): string {
-  return status.trim().toLowerCase();
-}
 
 export function buildPropertiesSummary(items: Property[]): PropertiesSummary {
   let active = 0;
@@ -149,6 +171,7 @@ function mapPropertyRow(item: Record<string, unknown>): Property {
     brokerEmail: String(item.broker_email ?? ""),
     brokerPhone: String(item.broker_phone ?? ""),
     sourceId: item.source_id != null ? String(item.source_id) : undefined,
+    realviaUpdatedAt: (item.realvia_updated_at as string | null | undefined) ?? null,
     createdAt: item.created_at as string | undefined,
     updatedAt: item.updated_at as string | undefined,
   };
@@ -317,16 +340,17 @@ export async function getPropertiesSummary(scopedSupabase?: SupabaseClient | nul
 export async function listProperties(
   filters?: PropertyFilters,
   scopedSupabase?: SupabaseClient | null,
+  page?: PropertyListPage,
 ): Promise<Property[]> {
   if (await readDemoModeFromCookie()) {
-    return applyPropertyFilters(getDemoShowcaseProperties(), filters);
+    return paginatePropertyItems(applyPropertyFilters(getDemoShowcaseProperties(), filters), page);
   }
 
   const supabase = await resolveTenantSupabase(scopedSupabase);
 
   if (!supabase) {
     if (process.env.NODE_ENV === "production") return [];
-    return applyPropertyFilters(getDemoShowcaseProperties(), filters);
+    return paginatePropertyItems(applyPropertyFilters(getDemoShowcaseProperties(), filters), page);
   }
 
   const { resolveSessionAgencyId } = await import("@/lib/tenant-scope");
@@ -340,13 +364,14 @@ export async function listProperties(
   const typeFilter = filters?.type?.trim();
   const locationFilter = filters?.location?.trim();
   const qTrimmed = filters?.q?.trim();
+  const { limit, offset, columns } = resolvePropertyListPage(page);
 
   const runSelect = async (selectColumns: string, includeDescriptionInOr: boolean) => {
     let query = supabase
       .from("properties")
       .select(selectColumns)
       .order("created_at", { ascending: false })
-      .limit(500);
+      .range(offset, offset + limit - 1);
 
     if (statusFilter) {
       query = query.eq("status", statusFilter);
@@ -367,9 +392,16 @@ export async function listProperties(
     return query;
   };
 
-  let { data, error } = await runSelect(PROPERTIES_SELECT_FULL, true);
+  const primarySelect =
+    columns === "summary"
+      ? PROPERTIES_SELECT_SUMMARY
+      : columns === "list"
+        ? PROPERTIES_SELECT_CORE
+        : PROPERTIES_SELECT_FULL;
+  let { data, error } = await runSelect(primarySelect, columns === "full");
 
   if (
+    columns === "full" &&
     (error || !data) &&
     isMissingOptionalPropertiesColumnError(error?.message)
   ) {
@@ -389,6 +421,19 @@ export async function listProperties(
     data as unknown as Record<string, unknown>[]
   );
   return tenantScoped.map((item) => mapPropertyRow(item as Record<string, unknown>));
+}
+
+/**
+ * SMO-B04: každý lookup/update/delete nad `properties` musí byť viazaný na `agency_id`.
+ * Fail-closed — bez rozpoznanej agentúry mutácia neprebehne vôbec.
+ */
+async function requireSessionAgencyId(supabase: SupabaseClient): Promise<string> {
+  const { resolveSessionAgencyId } = await import("@/lib/tenant-scope");
+  const agencyId = await resolveSessionAgencyId(supabase);
+  if (!agencyId) {
+    throw new Error("Chýba tenant profil pre nehnuteľnosti.");
+  }
+  return agencyId;
 }
 
 async function scopePropertyRowsToProfileAgency(
@@ -557,8 +602,12 @@ export async function createProperty(input: PropertyInput) {
   return result;
 }
 
-export async function updateProperty(id: string, input: Partial<PropertyInput>) {
-  const supabase = await resolveTenantSupabase();
+export async function updateProperty(
+  id: string,
+  input: Partial<PropertyInput>,
+  scopedSupabase?: SupabaseClient | null,
+) {
+  const supabase = await resolveTenantSupabase(scopedSupabase);
 
   if (!supabase) {
     return {
@@ -577,6 +626,8 @@ export async function updateProperty(id: string, input: Partial<PropertyInput>) 
     };
   }
 
+  const agencyId = await requireSessionAgencyId(supabase);
+
   const payload: any = {};
 
   if (typeof input.title !== "undefined") payload.title = input.title;
@@ -594,6 +645,7 @@ export async function updateProperty(id: string, input: Partial<PropertyInput>) 
     .from("properties")
     .update(payload)
     .eq("id", id)
+    .eq("agency_id", agencyId)
     .select("*")
     .single();
 
@@ -608,6 +660,7 @@ export async function updateProperty(id: string, input: Partial<PropertyInput>) 
         .from("properties")
         .update(fallbackPayload)
         .eq("id", id)
+        .eq("agency_id", agencyId)
         .select("*")
         .single();
 
@@ -656,17 +709,23 @@ export async function updateProperty(id: string, input: Partial<PropertyInput>) 
   };
 }
 
-export async function deleteProperty(id: string) {
-  const supabase = await resolveTenantSupabase();
+export async function deleteProperty(
+  id: string,
+  scopedSupabase?: SupabaseClient | null,
+) {
+  const supabase = await resolveTenantSupabase(scopedSupabase);
 
   if (!supabase) {
     return { ok: true };
   }
 
+  const agencyId = await requireSessionAgencyId(supabase);
+
   const { error } = await supabase
     .from("properties")
     .delete()
-    .eq("id", id);
+    .eq("id", id)
+    .eq("agency_id", agencyId);
 
   if (error) {
     throw new Error(error.message);
