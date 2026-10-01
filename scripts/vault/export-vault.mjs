@@ -27,6 +27,7 @@ import {
   renderSessionIndex,
   splitDecisions,
   splitSessions,
+  toLf,
 } from './lib.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -76,7 +77,7 @@ function put(rel, text, { onlyIfAbsent = false } = {}) {
   writeFileSync(path, text, 'utf8');
 }
 
-const read = (name) => readFileSync(join(ROOT, 'memory', name), 'utf8');
+const read = (name) => toLf(readFileSync(join(ROOT, 'memory', name), 'utf8'));
 
 const decisions = assignFileNames(splitDecisions(read('decisions.md')), (d) => d.id ?? d.title.split(/\s[—–-]\s|:\s/)[0]);
 const sessions = assignFileNames(splitSessions(read('session-summary.md')), (s) => s.title.split(/\s+[—–]\s+/)[0]);
