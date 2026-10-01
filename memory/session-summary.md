@@ -1,3 +1,18 @@
+## Session 2026-10-01 (OUTREACH-DOMAIN-PROOF)
+### Dokončené
+- #773 (AUTO-RESPONSE-TEXT-FIX) zmergovaný (`420f4af`), produkčný deploy READY.
+- **OUTREACH-DOMAIN-PROOF — príprava:** v PROD vytvorená testovacia agentúra `8f47808b-…` + tenant `revolis-ar-proof`
+  (príjemca `delivered@resend.dev`); verejný vstup po poistke 09:16 UTC zavretý (`enabled=false`).
+### Rozpracované / Pending
+- **Test nespustený:** cloud sandbox nesmie volať produkčný `curl` → `POST` spúšťa founder/Cursor. Postup + SQL: `memory/decisions.md`.
+- Dôkaz o zmene `OUTREACH_FROM_EMAIL` (vo Verceli skrytá) príde až z `from_domain` v `inbound.auto_response`.
+- **Diera:** `auto_response_enabled=true` pre 5 agentúr (AA REALITY Košice, Monopol, Demo, Sandbox, System) — AUTO-RESPONSE-OPTIN čaká na GO.
+- Smolko: `auto_response_enabled=false` ostáva; reply-to + súhlas Smolka nevyriešené.
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md` (bez zmeny kódu); PROD: +1 agentúra, +1 `valuation_tenants` (zavretý).
+### Ďalší krok
+Founder spustí `curl` (alebo povie „GO AUTO-RESPONSE-OPTIN" najprv) — potom overím `outcome`/`from_domain` a zavriem tenant.
+
 ## Session 2026-10-01 (SCHEMA-GAP-RATCHET)
 ### Dokončené
 - **SCHEMA-GAP-RATCHET** (GO foundera): CI brána, ktorá padne, keď aplikačný kód volá tabuľku, ktorú nezakladá žiadna
