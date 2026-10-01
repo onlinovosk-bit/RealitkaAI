@@ -15,10 +15,18 @@ import { persistAiCostTelemetry } from '@/lib/ai/persist-cost-telemetry'
 import { CREDIT_ACTION_COSTS } from '@/lib/program-tier-pricing'
 import { withTimeout } from '@/lib/async/with-timeout'
 
-const INSIGHTS_AI_TIMEOUT_MS = Math.max(
+export const INSIGHTS_AI_TIMEOUT_MS = Math.max(
   3000,
   Number(process.env.DASHBOARD_INSIGHTS_TIMEOUT_MS ?? '8000'),
 )
+
+/**
+ * Okno pre samotné volanie modelu. Musí byť KRATŠIE než vonkajší `INSIGHTS_AI_TIMEOUT_MS`,
+ * inak by vonkajší `withTimeout` vyhral skôr a zlyhanie by skončilo bez dôvodu (`failure`)
+ * v audite. Dovtedy sa premenná `DASHBOARD_INSIGHTS_TIMEOUT_MS` vonkajšieho okna nedostala
+ * k volaniu vôbec — vnútri bolo natvrdo 800 ms.
+ */
+export const INSIGHTS_LLM_TIMEOUT_MS = Math.max(2500, INSIGHTS_AI_TIMEOUT_MS - 500)
 
 export type DashboardInsightsCachePayload = DashboardInsightsOutput & {
   period: 'today' | 'last_7_days'
@@ -71,12 +79,15 @@ export async function generateAndCacheAgencyInsights(
     const properties = await gatherAgencyProperties(admin, agencyId)
 
     const generated = await withTimeout(
-      generateDashboardInsights({
-        period: 'today',
-        summary,
-        userName: displayName,
-        properties,
-      }),
+      generateDashboardInsights(
+        {
+          period: 'today',
+          summary,
+          userName: displayName,
+          properties,
+        },
+        { timeoutMs: INSIGHTS_LLM_TIMEOUT_MS },
+      ),
       INSIGHTS_AI_TIMEOUT_MS,
       {
         insights: {
