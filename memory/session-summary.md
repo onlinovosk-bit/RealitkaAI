@@ -1,3 +1,13 @@
+## Session 2026-10-01 (PORT-304)
+### Dokončené
+- `forgot-password` posiela `redirectTo` na `/auth/callback?next=/reset-password`; `reset-password` pri legacy `?code=` presmeruje na server-side `/auth/callback` namiesto klientskej výmeny (`lib/supabase/recovery-redirect.ts`). Test `recovery-redirect.test.ts` (3), mutation proof 4/4.
+- **Zámerne NEPRENESENÉ z #304:** zmena `redirectTo` v `api/settings/auth-email-tests/route.ts`. PKCE výmena kódu potrebuje `code_verifier` cookie v prehliadači, ktorý reset vyžiadal; owner, ktorý vyvolá recovery pre iný e-mail, ho nemá, a admin `generateLink` PKCE nepoužíva (vracia tokeny v hash). `/auth/callback` bez `code` by tam skončil chybou. #767 túto route navyše zmenil (cross-tenant gate).
+### Rozpracované / Pending
+- Founder: Supabase šablóna Reset Password na TokenHash (`/auth/confirm?token_hash={{ .TokenHash }}&type=recovery`) — jediné riešenie pre mobil/cross-device. #304 možno zavrieť po merge.
+- `prepush-gate` PASS; migrácie NEOVERENÉ.
+### Ďalší krok
+Zavrieť PR z triáže (#155, #326, #393, #360–#365, #495, #443, #304) po merge #776; potom nová brána podľa task-loop.
+
 ## Session 2026-10-01 (PORT-495)
 ### Dokončené
 - `lib/inbound/process-lead.ts`: zlyhaný BRI už nevyrobí skóre 50; `briScore: number | null`, bez draftu a do audit eventu ide `null`. Test „never invents a BRI score". Mutation proof: návrat `?? 50` → červená. Druhá mutácia (odstránenie `=== null`) je ekvivalentná (`null < 40` je v JS pravda); kontrola ostáva kvôli typom.
