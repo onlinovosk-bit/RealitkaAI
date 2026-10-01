@@ -171,8 +171,19 @@ export function buildDataFallback(input: DashboardInsightsInput): DashboardInsig
   return { headline, summary: summaryText, actions }
 }
 
+/**
+ * Okno (ms) na odpoveď modelu, ak volajúci nezadá vlastné.
+ *
+ * Bolo tvrdých 800 ms pri volaní Haiku s `max_tokens: 700` — nestačí ani na prvé tokeny, takže
+ * každé volanie skončilo `timeout` a dashboard od 4. 9. nemal jediný `llm` výsledok (0 z 212;
+ * `latencyMs` 801 v `ai_action_audit`). Jediný volajúci je cron (nie užívateľská požiadavka),
+ * takže sa tu nečaká na interaktívnu odozvu.
+ */
+export const DASHBOARD_LLM_TIMEOUT_MS = 6_000
+
 export async function generateDashboardInsights(
   input: DashboardInsightsInput,
+  opts: { timeoutMs?: number } = {},
 ): Promise<GenerateDashboardInsightsResult> {
   const t0 = Date.now()
   if (!hasTenantData(input.summary)) {
@@ -237,7 +248,7 @@ Vráť JSON:
   const result: GenerateDashboardInsightsResult = await withAiTimeout(aiCall, {
     insights: fallback,
     audit: { source: 'fallback' as const, model: CLAUDE_HAIKU, costEur: null, latencyMs: 0 },
-  }, 800, {
+  }, opts.timeoutMs ?? DASHBOARD_LLM_TIMEOUT_MS, {
     feature: 'dashboard_insights',
     onFailure: (f) => { failure = f },
   })
