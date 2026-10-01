@@ -1,3 +1,17 @@
+## Session 2026-10-01 (ZÁVER: nasadenie zablokované + pracovný protokol)
+### Dokončené
+- Zmergované a živé v PROD: #771, #772, #773. Zmergované v `main`, NEnasadené: #780 (`04563ef`: `after()` vo verejných trasách, stráž, migrácia opt-in default) a #782 (TENANT-GATE-2, iná session).
+- PROD opt-in: auto-odpoveď vypnutá pre 6 z 7 agentúr (`count(*) from agencies where auto_response_enabled` = 0 po zavretí testovacej).
+### Rozpracované / Pending
+- **Nasadenie blokuje Vercel Hobby limit (100/deň):** API 402, `remaining: 0`, reset **2026-10-02 12:16:54 UTC**. Oprava môjho skoršieho tvrdenia: limit sa NEuvoľňuje po jednom (uvoľnený slot 11:42 hneď zabrala preview cudzej vetvy `claude/brave-bohr-arikv2`). Preview `04563ef` existuje, nepromovať (preview env ≠ produkčné premenné, napr. `OUTREACH_FROM_EMAIL`).
+- **Rozhodnutie foundera (jedno):** Pro plán (okamžite) / čakať do 2026-10-02 12:17 UTC (+ preview nasadenia vetiev `claude/*` vypnúť; `git.deploymentEnabled` podľa dokumentácie berie konkrétne názvy vetiev, maska neoverená; nejasné, či „ignorované" buildy počítajú do limitu).
+- Po nasadení: e2e dôkaz (postup v zázname LEAD-PIPELINE-AFTER) → body 3, 5, 6, 10 na ✅ = 70 % dokázané.
+- Migrácia opt-in default NIE je na PROD (samostatné GO). Smolko reply-to + súhlas. Širšia trieda `void`/`.catch` (14 v 10 súboroch).
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md` (len pamäť, tento záver).
+### Ďalší krok
+Odpoveď „Pro" alebo „čakám" → potom jedna stena: nasadenie + e2e dôkaz.
+
 ## Session 2026-10-01 (LEAD-PIPELINE-AFTER)
 ### Dokončené
 - **LEAD-PIPELINE-AFTER** (GO foundera, jedna stena): `runAfterResponse` (`after()`, sekvenčne, izolované chyby) namiesto `void` v 5 trasách

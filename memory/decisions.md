@@ -1,5 +1,26 @@
 # Critical Decisions Log
 
+## [2026-10-01] Working agreement „celé steny" — POMOCNÉ PRAVIDLO bolo uložené, bolo porušené; kontrolovateľný protokol
+
+**Fakt:** pravidlo je uložené od 2026-09-22 (záznam „Working agreement: whole walls, not screws" nižšie + `CLAUDE.md` direktíva 0) a čítalo sa pri štarte.
+Founder 1. 10. ~12:20 UTC: „strašne si mi kúskoval robotu", „uklikal som sa k smrti". **Príčina = dodržanie, nie uloženie.** Ďalšia veta v pamäti by nepomohla.
+
+**Dnešné porušenia (konkrétne, aby sa dali počítať):**
+1. Jedna stena „auto-odpoveď je bezpečná na zapnutie" rozdelená na 4 GO (OPTIN, OPTIN-DEFAULT, OUTREACH-DOMAIN-PROOF, LEAD-PIPELINE-AFTER) + „GO DEPLOY".
+2. Ručný test pre foundera bez predchádzajúceho prečítania celej cesty kódu — `void` v 3 trasách som pri čítaní videl a nespochybnil.
+3. Desiatky správ na automatické upozornenia („Vercel Ready, žiadna akcia") — presne to, čo zakazuje záznam z 22. 9.
+4. Samostatné memory PR uprostred bloku (#779, prvá podoba #780).
+5. Pushe po každom kroku: **12 z 99 nasadení za 24 h bolo z mojej vetvy** (ďalších 87 z iných session). Denný limit Vercel Hobby (100) sa vyčerpal.
+
+**Protokol (kontrolovateľný, platí od teraz):**
+- **P1** Pred návrhom GO napísať celý reťazec „vstup → výstup → dôkaz v PROD" = JEDNA stena. Ak by mala >1 GO, zlúčiť.
+- **P2** Pred žiadosťou o ručný krok foundera prečítať celú cestu kódu a spraviť pre-flight (čo sa môže pokaziť). Až potom prosiť.
+- **P3** Automatické upozornenie bez zmeny stavu = žiadna správa. Ak odpoveď musí byť, najviac jeden riadok, nikdy odsek „žiadna akcia".
+- **P4** Pamäť = jeden commit na konci bloku, v tej istej PR ako kód. Nikdy samostatná memory PR uprostred bloku.
+- **P5** Jeden push na stenu (každý push = nasadenie; limit 100/deň, spoločný pre všetky session).
+- **P6** Každý blok končí riadkom `Postup: X % → Y %` podľa SCOREBOARD.
+- **P7** V rámci schválenej steny sa nepýtať: rozhodnúť, zapísať, pokračovať. Pýtať sa len pri PROD zápise, merge, platbe.
+
 ## [2026-10-01] SCOREBOARD — „prvá reakcia na lead" (lead → AI triáž → AI návrh → potvrdenie klientovi → viditeľnosť): 30 % dokázané v PROD
 
 **Metóda (aby sa dalo prepočítať, nie veriť):** 10 kontrolných bodov. ✅ = dokázané v PROD, 🟡 = postavené/zmergované, ale nedokázané alebo čiastočné,
