@@ -1,3 +1,17 @@
+## Session 2026-10-01 (D1-BACKFILL-A)
+### Dokončené
+- `--input` pre backfill experiment: historické portálové e-maily cez produkčný parser (`apps/crm/src/lib/demand/backfill-input.ts`, skript)
+- #766 MEMORY-GUARD a #769 D4 zmergované 2026-10-01
+### Rozpracované / Pending
+- Founder: export 40–60 dopytových e-mailov → `extract --agency … --input …` → označiť `labels.csv` → `score`
+- Founder/právnik: Anthropic v DPA a `/legal/sub-processors` pred behom
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/demand/backfill-input.ts`: MIME čítačka (.eml/.mbox/.txt) + produkčná cesta `parseEmail`
+- `apps/crm/scripts/demand-backfill-experiment.ts`: `--input`, deduplikácia, `sources.csv`, `--agency` voliteľné
+- `docs/architecture/demand-contract-v1.md`: vstup experimentu + prečo PROD nestačí
+### Ďalší krok
+Founder spustí experiment s e-mailmi a označí gold dataset; pri PASS migrácie D1+D4 na PROD.
+
 ## Session 2026-09-30 (DEMAND-D4)
 ### Dokončené
 - D4 matching na overenom dopyte: engine, tabuľka + RLS, API, karta na detaile leadu, funnel skript (`apps/crm/src/lib/demand/match*.ts`, `supabase/migrations/20260930120000_demand_property_matches.sql`)
