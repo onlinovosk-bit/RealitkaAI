@@ -1,3 +1,17 @@
+## Session 2026-09-30 (DEMAND-D4)
+### Dokončené
+- D4 matching na overenom dopyte: engine, tabuľka + RLS, API, karta na detaile leadu, funnel skript (`apps/crm/src/lib/demand/match*.ts`, `supabase/migrations/20260930120000_demand_property_matches.sql`)
+- Kontrakt `matching-input-contract-v1.md` doplnený o rozhodnutia v1; Truth Matrix: D4 CODE+VERIFIED, PROD ⏳
+### Rozpracované / Pending
+- PROD: backfill D1 (founder) → migrácie → flagy → `demand-match-run --apply`
+- Mimo v1: dopyt potvrdený maklérom, meranie „maklér otvoril/poslal“, prepočet pri zmene nehnuteľnosti
+- #766 MEMORY-GUARD zmergované 2026-10-01
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/demand/match.ts`, `match-store.ts`, `store.ts`: engine, zápis, napojenie po D1
+- `apps/crm/src/app/api/leads/[id]/demand-matches/route.ts`, `components/leads/demand-matches-card.tsx`: čítanie + UI
+- `apps/crm/tests/rls/demand-matches-rls.test.ts`: tenant pin
+### Ďalší krok
+Backfill D1: PROD má na Smolko ≤8 rozpočtov, ≤6 izieb, ≤8 kúpa/prenájom (regex horná hranica) → brána (support ≥10) na PROD dátach nemôže prejsť. Founder volí A (+ historické portálové e-maily, `--input`), B (shadow mode) alebo C (znížiť support — neodporúčané).
 ## Session 2026-09-30 (MEMORY-GUARD)
 ### Dokončené
 - MEMORY-GUARD: workflow + skript + 12 testov, prah overený na histórii main a mutačne (`scripts/ci/memory-append-only.sh`, `.github/workflows/memory-guard.yml`)

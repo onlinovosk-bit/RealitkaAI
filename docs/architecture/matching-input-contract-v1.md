@@ -1,7 +1,10 @@
 # Matching Input Contract v1 — odovzdanie D1 → D4
 
-**Stav:** SPEC, nie je implementovaný. D4 (matching) sa stavia až po GO foundera a po
-prejdení backfill gate (`docs/architecture/demand-contract-v1.md`).
+**Stav (2026-09-30):** IMPLEMENTOVANÝ za flagom `DEMAND_MATCHING_ENABLED` (default OFF),
+`GO DEMAND-D4`. Na PROD neprodukuje nič, kým nebeží D1 (tabuľka `lead_demands` tam ešte
+nie je, backfill gate neprešiel). Kód: `lib/demand/match.ts`, `match-store.ts`,
+`app/api/leads/[id]/demand-matches`, `components/leads/demand-matches-card.tsx`,
+`scripts/demand-match-run.ts`, migrácia `20260930120000_demand_property_matches.sql`.
 **Účel:** aby matching (D4) nevrátil do systému domýšľanie, ktoré D1 odstránil.
 
 ```
@@ -60,9 +63,27 @@ leads celkom
 ```
 Až posledný riadok je obchodný výsledok.
 
-## 5. Akceptačné testy D4 (pri implementácii)
+## 5. Akceptačné testy D4 (implementované v `lib/demand/__tests__/match.test.ts`, RLS v `tests/rls/demand-matches-rls.test.ts`)
 
 - lead s `property_type` iba v `leads` (napr. „Byt“ z formulára) → **0 zhôd**, `reason = no_verified_demand`
 - lead s dopytom v `lead_demands`, ale pole `rejected` → pole sa ignoruje
 - zhoda bez `demand_record_id` sa nedá zapísať (constraint)
 - budget chýba → budget sa nepočíta, nedosadí sa 180 000 €
+
+## 6. Rozhodnutia pri implementácii (v1)
+
+| Pravidlo | Hodnota | Prečo |
+|---|---|---|
+| Typ nehnuteľnosti | tvrdá podmienka; typ inzerátu „Neznáme“ = nie je zhoda | PROD typy: Byt, Dom, Chata, Pozemok, Komerčná, Záhradný domček, Neznáme |
+| Transakcia | kupa ↔ Predaj, prenajom ↔ Prenájom; riadok „Dopyt“ nikdy; predávajúci/prenajímateľ = `not_a_buyer` | „Dopyt“ v `properties.transaction_type` je dopyt, nie ponuka |
+| Stav | iba aktívne („Aktívna“ aj „Aktivna“) | na PROD existujú oba zápisy |
+| Lokalita | tvrdá; každé slovo z dopytu ≥ 3 znaky v lokalite inzerátu, pri slovách ≥ 5 znakov stačí zhodných prvých 5 | skloňovanie: „v Petržalke“ ↔ „Petržalka“, „Košiciach“ ↔ „Košice“ |
+| Rozpočet | ≤ max ✓; do +10 % ✗ (zobrazí sa); nad +10 % vyradené; bez ceny = neznáme | žiadny fallback; `budget_min` sa nepoužíva na vyradenie |
+| Izby, plocha | rozsah min–max; mimo = ✗; chýbajúce = neznáme | |
+| Skóre | zhody / (zhody + nezhody), prah 0,6, najviac 10 na dopyt | neznáme nič nepridá ani neuberie |
+| Minimum | typ + (lokalita alebo rozpočet) v dopyte **a** aspoň jedna z nich ✓ na inzeráte | typ sám nestačí |
+
+**Mimo v1 (otvorené):**
+- Dopyt potvrdený maklérom (§1) neexistuje, D4 číta len `lead_demands`.
+- Posledný krok funnelu (§4, „maklér otvoril / poslal klientovi“) sa zatiaľ nemeria.
+- Zhody sa prepočítajú pri novom demand recorde, nie pri zmene nehnuteľnosti.
