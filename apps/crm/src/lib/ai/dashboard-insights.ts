@@ -34,6 +34,17 @@ export type DashboardInsightsOutput = {
   notesForOwner?: string
 }
 
+/**
+ * Čo model skutočne vrátil — aj keď sa výstup nepodarilo spracovať (`bad_output`).
+ * Bez `stopReason` sa „orezaný JSON na limite max_tokens" nedal odlíšiť od „model napísal
+ * nevalidný JSON". Žiadny text výstupu — môže niesť mená leadov.
+ */
+export type DashboardLlmUsage = {
+  stopReason: string | null
+  inputTokens: number | null
+  outputTokens: number | null
+}
+
 export type DashboardInsightsAudit = {
   source: 'llm' | 'fallback' | 'empty'
   model: string | null
@@ -41,6 +52,8 @@ export type DashboardInsightsAudit = {
   latencyMs: number | null
   /** Prečo model nezodpovedal (len pri `fallback`): kód dôvodu, HTTP status, request-id. */
   failure?: AiFailure | null
+  /** Prítomné vždy, keď model odpovedal (aj pri `bad_output`); chýba pri timeoute/odmietnutí. */
+  usage?: DashboardLlmUsage | null
 }
 
 export type GenerateDashboardInsightsResult = {
@@ -181,6 +194,9 @@ export function buildDataFallback(input: DashboardInsightsInput): DashboardInsig
  */
 export const DASHBOARD_LLM_TIMEOUT_MS = 6_000
 
+/** Strop výstupu dashboardového volania (tokeny). Pozri komentár pri volaní. */
+export const DASHBOARD_LLM_MAX_TOKENS = 1_000
+
 export async function generateDashboardInsights(
   input: DashboardInsightsInput,
   opts: { timeoutMs?: number } = {},
@@ -197,9 +213,13 @@ export async function generateDashboardInsights(
   const fallback = buildDataFallback(input)
   const context = buildContext(input)
 
+  let usage: DashboardLlmUsage | null = null
+
   const aiCall: Promise<GenerateDashboardInsightsResult> = callClaude({
     model: CLAUDE_HAIKU,
-    max_tokens: 700,
+    // 700 vyšlo pri slovenčine tesne (tokeny na slovo sú vyššie) — beh 1. 10. 06:24 UTC dal
+    // 1× llm, 1× bad_output po 6,4 s. Príčinu (orezanie vs. zlý JSON) ukáže `usage.stopReason`.
+    max_tokens: DASHBOARD_LLM_MAX_TOKENS,
     system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
     messages: [{
       role: 'user',
@@ -226,6 +246,12 @@ Vráť JSON:
     }],
   }, 'dashboard-insights').then(resp => {
     const latencyMs = Date.now() - t0
+    // Zapíše sa PRED parsovaním, aby `usage` prežilo aj `bad_output`.
+    usage = {
+      stopReason: resp.stop_reason ?? null,
+      inputTokens: resp.usage?.input_tokens ?? null,
+      outputTokens: resp.usage?.output_tokens ?? null,
+    }
     const raw = resp.content[0].type === 'text' ? resp.content[0].text : ''
     const parsed = extractJson<LlmInsightsPayload>(raw)
     return {
@@ -240,6 +266,7 @@ Vráť JSON:
         model: CLAUDE_HAIKU,
         costEur: estimateClaudeCostEur(CLAUDE_HAIKU, resp.usage.input_tokens, resp.usage.output_tokens),
         latencyMs: Date.now() - t0,
+        usage,
       },
     }
   })
@@ -255,6 +282,7 @@ Vráť JSON:
   if (result.audit.source === 'fallback') {
     result.audit.latencyMs = Date.now() - t0
     result.audit.failure = failure
+    result.audit.usage = usage
   }
   return result
 }
