@@ -79,6 +79,35 @@ priradil všetky leady jednému maklérovi).
   prijatie maklérskej adresy, vypnuté radenie) červené → návrat zelený. typecheck 49 (baseline 54).
 - Nedotknuté: kontrakt Cloudflare Workera, DB, PROD. Pri zapnutí pullu stále platí GDPR bod
   z GO MAILBOX (preposielať len portálové domény).
+## [2026-10-01] OUTREACH-DOMAIN-PROOF — príprava hotová, test NESPUSTENÝ (čaká na POST foundera); verejný vstup zavretý
+
+**Cieľ:** dokázať v PROD, že po oprave `OUTREACH_FROM_EMAIL` odosielanie ide z overenej domény (`inbound.auto_response`
+→ `outcome=sent`, `from_domain` = overená doména), bez e-mailu na skutočného človeka.
+
+**Zistené (dôkaz z PROD):**
+- Existujú len 2 `valuation_tenants`: `demo` (is_sandbox → e-mail sa zámerne nikdy neposiela) a `reality-smolko`
+  (brána `auto_response_enabled=false`). Žiadny vhodný vstup pre test → vytvorený izolovaný testovací tenant.
+- `OUTREACH_FROM_EMAIL` a `RESEND_API_KEY` sú vo Verceli skryté (`hiddenProductionEnvCount`) — **zmenu hodnoty z mojej
+  strany nevidno a nedešifrujem**. Dôkazom je až `from_domain` z testu. Bash `curl` na `app.revolis.ai` z cloud
+  sandboxu je zamietnutý (nezdolávať) → `POST` spúšťa founder/Cursor (verejný endpoint, bez tajomstva).
+- **Diera:** `auto_response_enabled` je `true` pre AA REALITY Košice, Reality Monopol, Revolis Demo, Revolis Sandbox,
+  Revolis System (predvolená hodnota stĺpca = opt-out). Po oprave odosielateľa by prvý reálny lead u nich odišiel
+  naostro bez ich vedomia. Odporúčanie: AUTO-RESPONSE-OPTIN (nastaviť `false`, zapínať len so súhlasom) — čaká na GO.
+
+**Vytvorené v PROD (08:30 UTC, GO foundera):** agentúra `Revolis Auto-Response Proof (test)`
+`8f47808b-9443-4dc9-a1a1-35283f22b427` (`agencies.email = delivered@resend.dev`, reply-to mimo `revolis.ai`, takže
+odosielateľ sa berie z `OUTREACH_FROM_EMAIL`) + `valuation_tenants.slug = revolis-ar-proof` (is_sandbox=false).
+Príjemca testu je testovacia adresa Resendu `delivered@resend.dev` — nikto reálny nič nedostane.
+**09:16 UTC poistka: `enabled=false`, `auto_response_enabled=false`** (test sa dovtedy nespustil: 0 leadov, 0 udalostí).
+
+**Zopakovanie testu (až keď founder potvrdí zmenu `OUTREACH_FROM_EMAIL` + redeploy):**
+1. `update valuation_tenants set enabled=true where slug='revolis-ar-proof'; update agencies set auto_response_enabled=true where id='8f47808b-9443-4dc9-a1a1-35283f22b427';`
+2. `curl -sS -X POST https://app.revolis.ai/api/valuation/submit -H 'Content-Type: application/json' -d '{"agencySlug":"revolis-ar-proof","name":"Ján Skúšobný","email":"delivered@resend.dev","phone":"+421900000000","propertyType":"byt","location":"Košice","sqm":55,"sellWithin12Months":true,"privacyAck":true}'`
+3. Overenie: `select created_at, payload from platform_events where event_type='inbound.auto_response' and agency_id='8f47808b-9443-4dc9-a1a1-35283f22b427' order by created_at desc;`
+   a `leads.auto_response_sent_at` nie NULL. Výsledky: `sent`+`revolis.ai` = OK; `failed_send/invalid_from` = stále gmail/`noreply@`;
+   `domain_not_verified` = doména neoverená.
+4. Hneď zavrieť späť (krok 1 s `false`).
+
 ## [2026-10-01] SCHEMA-GAP-RATCHET — kód nesmie volať tabuľku, ktorú nezakladá migrácia (BUILD, GO foundera)
 
 **Rozhodnutie: BUILD** (GO foundera; Ústava: ochranná brána, nie klientska funkcia — Q1 sa neuplatňuje, hodnota je
