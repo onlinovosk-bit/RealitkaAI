@@ -1,3 +1,20 @@
+## Session 2026-10-01 (AUTO-RESPONSE-OPTIN)
+### Dokončené
+- **AUTO-RESPONSE-OPTIN** (GO foundera, PROD zápis): `auto_response_enabled=false` pre AA REALITY Košice, Reality Monopol,
+  Revolis Demo, Revolis Sandbox, Revolis System (5 riadkov). Po zápise: 6 z 7 agentúr `false`, `true` len testovacia.
+- Nález: 08:41 UTC `Revolis Demo` `sent` z `revolis.ai` na syntetický dopyt (`niekde.sk`) — Resend z `revolis.ai` posiela;
+  `OUTREACH_FROM_EMAIL` to nedokazuje (odosielateľ šiel z reply-to na `revolis.ai`).
+- #779 zmergoval founder (memory).
+### Rozpracované / Pending
+- **Founder:** otvoriť v Resende e-mail z 08:41 (Emails → Logs): stav (delivered/bounced) + skutočné znenie textu v produkcii.
+- OUTREACH-DOMAIN-PROOF: `Invoke-RestMethod` z `memory/decisions.md` (testovací tenant otvorený do 10:16 UTC, potom sa zavrie).
+- **AUTO-RESPONSE-OPTIN-DEFAULT:** predvolená hodnota stĺpca je stále `true` (migrácia + test) — čaká na GO.
+- Smolko: `false` ostáva; reply-to + súhlas nevyriešené.
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md` (bez zmeny kódu); PROD: 5 riadkov v `agencies`.
+### Ďalší krok
+GO AUTO-RESPONSE-OPTIN-DEFAULT (migrácia, aby nová agentúra nezačínala so zapnutou auto-odpoveďou).
+
 ## Session 2026-10-01 (OUTREACH-DOMAIN-PROOF)
 ### Dokončené
 - #773 (AUTO-RESPONSE-TEXT-FIX) zmergovaný (`420f4af`), produkčný deploy READY.

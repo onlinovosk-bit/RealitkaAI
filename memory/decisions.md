@@ -1,5 +1,30 @@
 # Critical Decisions Log
 
+## [2026-10-01] AUTO-RESPONSE-OPTIN — auto-odpoveď vypnutá pre 5 agentúr, ktoré o nej nevedeli (PROD zápis, GO foundera)
+
+**Prečo:** `agencies.auto_response_enabled` má predvolenú hodnotu `true` (opt-out). Po oprave odosielateľa by prvý reálny
+lead u agentúry, ktorá o funkcii nevie, odišiel naostro (Stealth/Reference: nič v mene klienta bez súhlasu).
+
+**Dôkaz pred zápisom (PROD, 09:50 UTC):**
+- Nová nálezová udalosť: **2026-10-01 08:41:28 UTC `Revolis Demo` — `inbound.auto_response` = `sent`, `from_domain=revolis.ai`**,
+  `leads.auto_response_sent_at` zapísané. Lead `portal:Nehnuteľnosti.sk`, príjemca na doméne `niekde.sk` (syntetický
+  dopyt, nie reálny klient). Všetky profily Demo agentúry sú `@revolis.ai` → odosielateľ vyšiel z reply-to na
+  `revolis.ai`, **nie z `OUTREACH_FROM_EMAIL`** — dokazuje, že Resend posiela z `revolis.ai`, ale NEdokazuje opravu
+  `OUTREACH_FROM_EMAIL`. Syntetické leady v agentúre so zapnutou auto-odpoveďou idú naostro na neexistujúce domény
+  (riziko bounce-ov a reputácie odosielateľa) — ďalší dôvod na opt-in.
+- Ostatné udalosti: Smolko 06:47 `failed_send/domain_not_verified/403`, Smolko 09:00 `skipped_no_email`.
+
+**Vykonané (PROD):** `update agencies set auto_response_enabled=false where id in (…5 id…) and auto_response_enabled=true`
+→ **5 riadkov**: AA REALITY Košice s.r.o., Reality Monopol, Revolis Demo, Revolis Sandbox (internal), Revolis System.
+Stav po zápise (7 agentúr): `false` = 6 (vrátane Smolka), `true` = 1 (testovacia `8f47808b-…`, otvorená do poistky 10:16 UTC).
+
+**Zostáva otvorené (nie je v tomto GO):**
+- Predvolená hodnota stĺpca je stále `true` → NOVÁ agentúra dostane auto-odpoveď zapnutú. Oprava = migrácia
+  `alter column auto_response_enabled set default false` (+ test, PR) — **AUTO-RESPONSE-OPTIN-DEFAULT**, čaká na GO.
+- Zapnutie pre konkrétnu agentúru: `update agencies set auto_response_enabled=true where id='…'` až so súhlasom agentúry;
+  pre Demo/Sandbox len na test.
+- OUTREACH-DOMAIN-PROOF stále nespustený (founder ešte nepustil `Invoke-RestMethod`).
+
 ## [2026-10-01] OUTREACH-DOMAIN-PROOF — príprava hotová, test NESPUSTENÝ (čaká na POST foundera); verejný vstup zavretý
 
 **Cieľ:** dokázať v PROD, že po oprave `OUTREACH_FROM_EMAIL` odosielanie ide z overenej domény (`inbound.auto_response`
