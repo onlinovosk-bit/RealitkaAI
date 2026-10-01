@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { safeErrorName, type AutoResponseSendReason } from "@/lib/acquire/auto-response-outcome";
 
 export type InboundAutoResponsePayload = {
   to: string;
@@ -102,9 +103,64 @@ export function buildInboundAutoResponseSubject(payload: InboundAutoResponsePayl
   return buildInboundAutoResponseContent(payload).subject;
 }
 
+/** Zlyhanie odoslania — iba kódy, nikdy text chyby (môže niesť adresu príjemcu). */
+export type InboundAutoResponseFailure = {
+  reason: AutoResponseSendReason;
+  httpStatus: number | null;
+  errorName: string | null;
+};
+
 export type SendInboundAutoResponseResult =
   | { ok: true }
-  | { ok: false; error: string };
+  | { ok: false; error: string; failure: InboundAutoResponseFailure };
+
+// `.{0,80}` (nie `[^.]*`): názov domény v správe obsahuje bodky („The domain mg.revolis.ai was not found").
+const DOMAIN_NOT_VERIFIED_MESSAGE =
+  /domain.{0,80}(is not verified|not verified|not found)|verify (your |the )?domain/i;
+const NETWORK_MESSAGE =
+  /fetch failed|ECONNRESET|ECONNREFUSED|ENOTFOUND|ETIMEDOUT|EAI_AGAIN|socket hang up|connection error/i;
+
+/**
+ * Zaradí chybu z Resendu do kódu dôvodu. Správa sa použije len na zhodu so vzorom
+ * (napr. „doména nie je overená"), do výstupu ide iba kód, HTTP status a názov chyby.
+ */
+export function classifyResendError(error: unknown): InboundAutoResponseFailure {
+  const e = typeof error === "object" && error !== null ? (error as Record<string, unknown>) : {};
+  const name = typeof e.name === "string" ? e.name : null;
+  const status = typeof e.statusCode === "number" ? e.statusCode : null;
+  const message = typeof e.message === "string" ? e.message : "";
+  const base = { httpStatus: status, errorName: safeErrorName(name) };
+
+  if (name === "missing_api_key") return { ...base, reason: "config" };
+  if (name === "invalid_api_key" || status === 401) return { ...base, reason: "auth" };
+  if (DOMAIN_NOT_VERIFIED_MESSAGE.test(message)) return { ...base, reason: "domain_not_verified" };
+  if (name === "invalid_from_address") return { ...base, reason: "invalid_from" };
+  if (status === 403 || name === "restricted_api_key" || name === "invalid_access") {
+    return { ...base, reason: "auth" };
+  }
+  if (
+    status === 429 ||
+    name === "rate_limit_exceeded" ||
+    name === "daily_quota_exceeded" ||
+    name === "monthly_quota_exceeded"
+  ) {
+    return { ...base, reason: "rate_limit" };
+  }
+  if (
+    status === 400 ||
+    status === 422 ||
+    name === "validation_error" ||
+    name === "invalid_parameter" ||
+    name === "missing_required_field" ||
+    name === "invalid_idempotent_request"
+  ) {
+    return { ...base, reason: "validation" };
+  }
+  if ((status !== null && status >= 500) || name === "internal_server_error" || name === "application_error") {
+    return { ...base, reason: "server_error" };
+  }
+  return { ...base, reason: "unknown" };
+}
 
 /**
  * Transport only — plain-text SK template via Resend.
@@ -115,28 +171,54 @@ export async function sendInboundAutoResponse(
 ): Promise<SendInboundAutoResponseResult> {
   const apiKey = process.env.RESEND_API_KEY?.trim();
   if (!apiKey?.startsWith("re_")) {
-    return { ok: false, error: "RESEND_API_KEY missing or invalid" };
+    return {
+      ok: false,
+      error: "RESEND_API_KEY missing or invalid",
+      failure: { reason: "config", httpStatus: null, errorName: null },
+    };
   }
 
   const replyTo = payload.replyTo.trim();
   if (!replyTo) {
-    return { ok: false, error: "replyTo is required" };
+    return {
+      ok: false,
+      error: "replyTo is required",
+      failure: { reason: "validation", httpStatus: null, errorName: null },
+    };
   }
 
   const { subject, body, agentName } = buildInboundAutoResponseContent(payload);
   const fromEmail = resolveInboundFromEmail(replyTo);
   const resend = new Resend(apiKey);
 
-  const result = await resend.emails.send({
-    from: formatInboundFromAddress(agentName, fromEmail),
-    to: payload.to,
-    replyTo,
-    subject,
-    text: body,
-  });
+  let result: Awaited<ReturnType<typeof resend.emails.send>>;
+  try {
+    result = await resend.emails.send({
+      from: formatInboundFromAddress(agentName, fromEmail),
+      to: payload.to,
+      replyTo,
+      subject,
+      text: body,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      ok: false,
+      error: message,
+      failure: {
+        reason: NETWORK_MESSAGE.test(message) ? "network" : "unknown",
+        httpStatus: null,
+        errorName: safeErrorName(error),
+      },
+    };
+  }
 
   if (result.error) {
-    return { ok: false, error: result.error.message ?? "Resend send failed" };
+    return {
+      ok: false,
+      error: result.error.message ?? "Resend send failed",
+      failure: classifyResendError(result.error),
+    };
   }
 
   return { ok: true };

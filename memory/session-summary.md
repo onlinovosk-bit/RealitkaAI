@@ -1,3 +1,113 @@
+## Session 2026-10-01 (DASHBOARD-LLM-WINDOW)
+### Dokončené
+- **DASHBOARD-LLM-WINDOW** (GO foundera): dashboard AI volanie dostalo okno 6 s (cron 7,5 s) namiesto
+  natvrdo 800 ms; `maxDuration = 60` na cron route; premenná `DASHBOARD_INSIGHTS_TIMEOUT_MS` teraz skutočne
+  riadi okno. 6 nových testov + test crona, mutation proof 8/8, lint čistý, typecheck 49.
+### Rozpracované / Pending
+- Prvý `source: llm` z dashboard crona (06:00 UTC alebo ručné spustenie) — dôkaz, že model v okne odpovie.
+- Overiť, že build preview prijal `maxDuration = 60` na Hobby.
+- PR #764 (teraz nesie aj túto zmenu) čaká na „merguj 764"; auto-reload + nižší limit v Console; Resend doména.
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/ai/dashboard-insights.ts`, `dashboard-insights-cron.ts`,
+  `apps/crm/src/app/api/cron/dashboard-insights/route.ts`; testy `dashboard-insights-window.test.ts` (nový),
+  `dashboard-insights-cron.test.ts`.
+### Ďalší krok
+Merge → nasadenie → prečítať `ai_action_audit` po behu crona o 06:00 UTC (`source`, `failure_reason`).
+
+## Session 2026-09-30 (PO DOPLNENÍ KREDITU)
+### Dokončené
+- Kredit doplnený (Console, 20 USD); `billing` zmizlo — dashboard cron 20:07 UTC (spustil Cursor)
+  vrátil `timeout` (latencia ~800 ms), nie `billing`. Samotný `llm` úspech zatiaľ NEVIDENÝ.
+- Nájdená príčina „dashboard nikdy `llm`": tvrdé 800 ms okno pri Haiku volaní s `max_tokens: 700`
+  (`dashboard-insights.ts` ~237); `DASHBOARD_INSIGHTS_TIMEOUT_MS` ho neovplyvní.
+### Rozpracované / Pending
+- **GO DASHBOARD-LLM-WINDOW** (parameter okna + `maxDuration`, test + mutation proof).
+- Dôkaz AI: Console Usage (Haiku po 20:00 UTC) alebo ďalší lead; kontrola naplánovaná 1. 10. 07:10 UTC.
+- **PR #764 čaká na „merguj 764"**; auto-reload + nižší limit v Console; Resend doména `revolis.ai`.
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md`: záznam (žiadna zmena kódu).
+### Ďalší krok
+GO DASHBOARD-LLM-WINDOW; `merguj 764`.
+
+## Session 2026-09-30 (READ-REASON)
+### Dokončené
+- **READ-REASON** (read-only): AI volania odmieta Anthropic s dôvodom `billing` (HTTP 400,
+  `invalid_request_error`) — 3 × `ai.call_failed` (triage 13:02 a 18:36, návrh odpovede 18:36 UTC)
+  + dashboard cron 13:35 UTC. Teda **nedostatok kreditu**, nie kľúč ani kód. Detail a request-id:
+  `memory/decisions.md`.
+### Rozpracované / Pending
+- **Founder (2 min):** Anthropic Console → Billing: doplniť kredit, zapnúť auto-reload + upozornenie.
+- Po doplnení: read-only overenie (nový lead má `ai_triage_at`; `ai.call_failed` neprirastá).
+- **PR #764 čaká na „merguj 764"** — nesie aj SSE filter (kým nie je na PROD, tenant môže vidieť
+  `ai.call_failed` v hlavičke Playbooku). Potom prvý `inbound.auto_response`.
+- Resend: doména `revolis.ai` „Partially Failed", `mg.revolis.ai` neexistuje (príčina auto-odpovede,
+  nedokázaná). Backfill triage pre leady od 22. 9. — až po doplnení kreditu, vyžaduje GO.
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md`: záznam (žiadna zmena kódu).
+### Ďalší krok
+Founder doplní Anthropic kredit → overiť ďalší lead; `merguj 764`.
+
+## Session 2026-09-30 (AUTO-RESPONSE-VISIBLE)
+### Dokončené
+- **AUTO-RESPONSE-VISIBLE** (GO foundera): každý pokus o auto-odpoveď zapíše jeden záznam
+  `platform_events` `inbound.auto_response` (výsledok + dôvod, bez PII a bez textu chyby); sender
+  klasifikuje chyby Resendu (`domain_not_verified`, `auth`, `config`, …). Testy 31 + stream,
+  mutation proof 11/11, lint čistý, typecheck 49.
+- **Nález opravený v tom istom PR:** SSE stream tenanta už neposiela `ai.call_failed` ani
+  `inbound.auto_response` (Playbook zobrazoval surový názov udalosti).
+- **Zúžená príčina (nedokázaná):** Resend má len `revolis.ai` v stave „Partially Failed",
+  `mg.revolis.ai` nie je; `RESEND_API_KEY` má vo Verceli odznak „Needs Attention".
+### Rozpracované / Pending
+- **Founder:** Resend → Logs (odmietnuté POST /emails) alebo otvoriť doménu `revolis.ai` a pozrieť,
+  ktorý DNS záznam zlyháva; odznak „Needs Attention" pri `RESEND_API_KEY`; komu patrí reply-to profil
+  (`ra***@gmail.com`).
+- Po merge + nasadení: prvý nový lead vysvetlí sám seba (`inbound.auto_response`).
+- READ-REASON 14:05 UTC; RLS oddelenie diagnostiky (BACKLOG); zvyšok z predošlých sekcií nezmenený.
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/acquire/{inbound-lead-auto-response,send-inbound-auto-response}.ts`,
+  `auto-response-outcome.ts` (nový), `apps/crm/src/lib/platform-events-visibility.ts` (nový),
+  `apps/crm/src/app/api/events/stream/route.ts`, `apps/crm/src/lib/ai/ai-failure-record.ts`.
+### Ďalší krok
+Merge PR (zelené CI) → nasadenie → prečítať `inbound.auto_response` pri ďalšom leade.
+
+## Session 2026-09-30 (AUTO-RESPONSE-CHECK)
+### Dokončené
+- **AUTO-RESPONSE-CHECK** (read-only): `auto_response_sent_at` je NULL u **515 z 515** leadov, od
+  začiatku — auto-odpoveď v PROD **nikdy nefungovala** (predchádzajúci zápis „6/6 od 19. 9." bol
+  príliš úzky). Príčina NIE JE dokázaná (`RESEND_API_KEY`/`OUTREACH_FROM_EMAIL` a Resend doména
+  neoverené); 4 tiché východy bez trvalej stopy v DB. Detail: `memory/decisions.md`.
+- Riziko: reply-to = profil vlastníka agentúry `11111111-…` s gmail adresou (kto to je, neoverené).
+### Rozpracované / Pending
+- **Founder (2 min):** Vercel Team → Shared Env: `RESEND_API_KEY`, `OUTREACH_FROM_EMAIL`; Resend →
+  Domains: `mg.revolis.ai` Verified; a kto je vlastník-profil agentúry `11111111-…` (gmail).
+- **AUTO-RESPONSE-VISIBLE** — návrh (BUILD, malý PR); čaká na GO.
+- READ-REASON 14:05 UTC; PR #764 čaká na merge; ostatné z predošlej sekcie nezmenené.
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md`: záznam (žiadna zmena kódu).
+### Ďalší krok
+GO AUTO-RESPONSE-VISIBLE (viditeľnosť, nič sa neodosiela) + founderova 2-minútová kontrola env.
+
+## Session 2026-09-30 (REALVIA-REPLAY)
+### Dokončené
+- **REALVIA-REPLAY** (PROD zápis, GO foundera): 31 zlyhaných `advert` webhookov opakovaných
+  (krok 1 founder cez cron `replay_failed=1`, krok 2 ja — 5 `delete` jobov späť na `pending`).
+  `properties` 132 → 149 (+17 ponúk), 4 ponuky stiahnuté správne („Stiahnutá"), fronta
+  `pending` 0 / `failed` 1 (starý nesúvisiaci `unknown` z mája). Detail: `memory/decisions.md`.
+- Pozorovania do BACKLOGu: globálny unique index `properties.source_id` v PROD (kód predpokladá
+  per agentúra) a jednorazový create/create race (opravil sa retry-om).
+### Rozpracované / Pending
+- **Nedokázané:** oprava na ČERSTVOM webhooku — posledný webhook z Realvie je z 28. 9. 12:26 UTC.
+- **READ-REASON** (dôvod zlyhania AI z PROD) — naplánované 14:05 UTC (`trig_019M6drrtpCz8n24hpjiFFPu`).
+- Extrakcia referencie z Nehnuteľnosti.sk mailu (potrebný reálny súčasný mail); chyba pätičky
+  ako názvu inzerátu.
+- `auto_response_sent_at` NULL u 6/6 leadov od 19. 9. — neskúmané.
+- Voliteľné: filter `ai.call_failed` v tenantovom SSE streame; DB default pre `properties.id`.
+- Draft Smolkovi — founder výslovne odložil.
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md`: záznam REPLAY (žiadna zmena kódu).
+### Ďalší krok
+AUTO-RESPONSE-CHECK: prečo `auto_response_sent_at` je NULL u 6/6 leadov od 19. 9. (read-only; GO).
+
 ## Session 2026-09-30 (REALVIA-CREATE-ID + LISTING-REF-CHECK)
 ### Dokončené
 - **REALVIA-CREATE-ID** — nové ponuky z Realvie sa od 4. 9. nevytvárali: PR #522 prestal posielať
