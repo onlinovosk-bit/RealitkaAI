@@ -101,3 +101,86 @@ export async function recordCronRun(
     return message
   }
 }
+
+// ================================================================
+// CRON-ALIVE — odmietnutý cron nesmie byť neviditeľný
+//
+// Autorizácia je prvá vec v každej cron route, takže 401 nastane PRED akýmkoľvek
+// zápisom. Runtime logy Vercelu tu prežijú asi hodinu. Dôsledok: keď je
+// `cron_runs` ráno prázdna, nedá sa odlíšiť „Vercel cron nespustil" od „spustil
+// a dostal 401, lebo CRON_SECRET nesedí". To sú dve úplne odlišné poruchy
+// s dvoma odlišnými opravami — a presne na tomto sa 2026-10-01 zastavila
+// diagnostika, keď desať tabuliek bolo prázdnych a nebolo čím rozhodnúť.
+//
+// Vercel posiela na každom cron requeste hlavičku `x-vercel-cron-schedule`
+// (docs: vercel.com/docs/cron-jobs/manage-cron-jobs). 401 s touto hlavičkou
+// preto nechá v `cron_runs` riadok. Bez hlavičky sa nezapisuje nič, takže
+// náhodný skener tabuľku nemá ako zapĺňať; a keďže hlavička sa sfalšovať dá,
+// zápis je zastropovaný na jeden riadok na job za hodinu.
+// ================================================================
+
+/** Hlavička, ktorou sa Vercel cron hlási. Jediný spoľahlivý rozlišovač. */
+export const CRON_SCHEDULE_HEADER = 'x-vercel-cron-schedule'
+
+/** Rozvrh z hlavičky, alebo null, keď request nepochádza z Vercel cronu. */
+export function vercelCronSchedule(headers: Headers): string | null {
+  const raw = headers.get(CRON_SCHEDULE_HEADER)
+  if (!raw) return null
+  const trimmed = raw.trim()
+  // Hlavička bez obsahu nie je dôkaz o cron behu; neplodíme z nej riadok.
+  if (!trimmed) return null
+  // Rozvrh je krátky výraz; dlhý vstup je šum, nie rozvrh.
+  return trimmed.slice(0, 120)
+}
+
+export const UNAUTHORIZED_CRON_ERROR = 'unauthorized: CRON_SECRET nesedí alebo chýba'
+
+/**
+ * Zapíše, že Vercel cron prišel a bol odmietnutý. Vracia `true`, keď riadok
+ * vznikol, `false` keď sa preskočil (nie je to cron, alebo strop na hodinu).
+ *
+ * Fail-soft ako `recordCronRun`: chyba zápisu nesmie zmeniť 401 na 500, inak by
+ * sa z observability stala nová porucha.
+ */
+export async function recordUnauthorizedCronRun(
+  client:   SupabaseClient,
+  job:      string,
+  schedule: string | null,
+): Promise<boolean> {
+  if (!schedule) return false
+
+  try {
+    // Strop: jeden riadok na job za hodinu. Hlavičku vie poslať ktokoľvek,
+    // tabuľka nie je skládka.
+    const sinceIso = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+    const { data: recent, error: lookupErr } = await client
+      .from('cron_runs')
+      .select('id')
+      .eq('job', job)
+      .eq('first_error', UNAUTHORIZED_CRON_ERROR)
+      .gte('started_at', sinceIso)
+      .limit(1)
+      .maybeSingle()
+
+    // Nevedieť, či už riadok je, nie je dôvod zapísať druhý.
+    if (lookupErr) {
+      console.error(`[cron_runs] 401 lookup pre ${job} zlyhal:`, lookupErr.message)
+      return false
+    }
+    if (recent) return false
+
+    const error = await recordCronRun(client, {
+      job,
+      status:     'failed',
+      firstError: UNAUTHORIZED_CRON_ERROR,
+      detail:     { unauthorized: true, vercel_cron_schedule: schedule },
+    })
+    return error === null
+  } catch (err) {
+    console.error(
+      `[cron_runs] 401 zápis pre ${job} vyhodil výnimku:`,
+      err instanceof Error ? err.message : String(err),
+    )
+    return false
+  }
+}
