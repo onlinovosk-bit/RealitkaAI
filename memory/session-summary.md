@@ -1,3 +1,14 @@
+## Session 2026-10-01 (LOG-PII-CLEANUP-2)
+### Dokončené
+- `support/request` a `legal/dpa-request`: oba logy (e-mail aj webhook) idú cez `describeError`; `describeError` navyše maskuje e-maily a dlhé číselné rady v samotnej správe (SMTP chyby píšu „Recipient rejected: <a@b.sk>", webhook môže vrátiť poslané späť). Žiadateľ support/DPA je zákazník, jeho adresa je aj v `replyTo`.
+- **Vyvrátené z auditu (B14):** Resend SDK vracia `ErrorResponse = { message, statusCode, name }` bez príjemcu a chybu nevyhadzuje, takže logy v `neighborhood-watch/subscribe`, `ghostwriter/send-email` zostávajú bezo zmeny. Podmienečné je to len pri `EMAIL_PROVIDER=SMTP`/`BREVO` (neznáme v prod).
+- Test najprv nebol schopný zachytiť pôvodnú chybu (`JSON.stringify` neserializuje vlastnosti `Error`); opravené cez `util.inspect`, potom mutation proof: návrat route súborov → červené, odstránenie maskovania e-mailov → červené.
+### Rozpracované / Pending
+- Postavené na vetve #784 (`claude/log-pii-cleanup`), lebo `describeError` ešte nie je na `main`. Po merge #784 sa PR sám presmeruje na `main`.
+- Stále nezmenené a nepreverené: `calendly` `raw_payload`, nemaskované mená v LLM promptoch (rozhodnutie o minimalizácii je produktové).
+### Ďalší krok
+Merge #784, potom tento PR. Krok C pri Stripe zostáva blokátor č. 1.
+
 ## Session 2026-10-01 (LOG-PII-CLEANUP)
 ### Dokončené
 - `lib/leads-store.ts`: odstránený `console.log('updateAiRecommendation:', { id, payload, data, error })` (celý riadok z `.select("*")` v produkcii) a z chyby „Unexpected data format" zmizol `JSON.stringify(data)` (chyba putuje do odpovede aj logu).

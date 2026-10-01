@@ -42,3 +42,17 @@ describe("príjem leadov loguje cez describeError, nie celý objekt chyby", () =
     expect(triage).not.toMatch(/best-effort failed:",\s*triageError\)/);
   });
 });
+
+describe("describeError maskuje adresy a čísla aj v samotnej správe", () => {
+  it("SMTP chyba s adresou príjemcu", () => {
+    const out = describeError(new Error("Recipient rejected: <jan.novak+x@firma.sk> 550 5.1.1"));
+    expect(out).not.toContain("jan.novak");
+    expect(out).not.toContain("firma.sk");
+    expect(out).toContain("[e-mail]");
+  });
+
+  it("telefónne číslo v správe", () => {
+    expect(describeError("zlyhalo pre +421 900 123 456")).not.toContain("900 123");
+    expect(describeError("HTTP 500 po 12 ms")).toBe("HTTP 500 po 12 ms");
+  });
+});
