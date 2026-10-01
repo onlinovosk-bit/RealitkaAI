@@ -1,5 +1,20 @@
 # Critical Decisions Log
 
+## 2026-10-01 — ACTIVITIES-RLS-CHECK: `activities` s `lead_id IS NULL` je čitateľné každému prihlásenému (187 riadkov, 144+ e-mailov)
+
+**GO foundera, read-only (SELECT), obsah riadkov NEČÍTANÝ.** Detail: `docs/reports/2026-10-01-activities-rls-check.md`.
+
+- **Dokázané:** politika `activities_select_agency` pustí `lead_id IS NULL`; `activities` nemá `agency_id`; PROD má 4 agentúry;
+  aplikácia číta tenantovým klientom (`listActivities`). 187 riadkov, žiadny nemá `profile_id`. Podľa regexu 127 `team` +
+  17 `saas_lead` riadkov obsahuje e-mail, 5 `lead` + 3 `property` telefón.
+- **Neoverené:** komu údaje patria (obsah som nečítal). Oprava iba **navrhnutá**, neaplikovaná.
+- **Prečo to repo nezatvorí:** leaky politiky (`activities_*_agency`, `matches_*_agency`) sú len v
+  `migrations-archive/20260412_…`, nie v aktívnej sade → treba novú migráciu s `DROP POLICY IF EXISTS`.
+- **Odporúčanie:** krok 1 (`DROP POLICY activities_select_agency`) hneď; INSERT politiku NEZRUŠIŤ bez agency kľúča —
+  `matching` ešte 29. 9. píše riadky s `lead_id IS NULL`. GDPR: posúdiť ako možný incident (rozhodnutie foundera).
+- Moja korekcia: v PROD-MIGRATION-AUDIT som písal „cross-tenant únik NEPOTVRDZUJEM" — **dosiahnuteľnosť je teraz potvrdená**,
+  vlastníctvo dát stále nie.
+
 ## 2026-10-01 — PROD-MIGRATION-AUDIT: PROD zaostáva v 29 tabuľkách; 9 RLS politík s vetvou `agency_id IS NULL`
 
 **GO foundera, read-only (len SELECT), nič sa neaplikovalo.** Detail: `docs/reports/2026-10-01-prod-migration-audit.md`.

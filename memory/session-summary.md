@@ -1,3 +1,16 @@
+## Session 2026-10-01 (ACTIVITIES-RLS-CHECK)
+### Dokončené
+- Read-only kontrola `activities`: 187 riadkov s `lead_id IS NULL` je čitateľných každému prihlásenému (dokázané); 144+ obsahuje e-mail, 8+ telefón. Obsah nečítaný.
+- Report + navrhnutá oprava: `docs/reports/2026-10-01-activities-rls-check.md`.
+### Rozpracované / Pending
+- **Founder:** GO na `DROP POLICY IF EXISTS activities_select_agency` (jediný krok, ktorý zastaví únik); posúdiť GDPR incident.
+- Návrh agency kľúča pre `activities` bez leadu (INSERT politiku zatiaľ nerušiť — `matching` píše NULL-lead riadky).
+- Rovnaký vzor: `lead_property_matches`, `pipeline_moves`, `platform_events` (dnes 0 NULL riadkov, latentné).
+### Kľúčové súbory zmenené
+- `docs/reports/2026-10-01-activities-rls-check.md` (nový), `memory/decisions.md`, `memory/session-summary.md`.
+### Ďalší krok
+GO na krok 1 (`DROP POLICY`) — po ňom overiť SELECT ako tenant a že feed nespadne.
+
 ## Session 2026-10-01 (PROD-MIGRATION-AUDIT)
 ### Dokončené
 - Read-only audit repo vs PROD → `docs/reports/2026-10-01-prod-migration-audit.md` (29 tabuliek chýba, 9 RLS politík s NULL vetvou).
