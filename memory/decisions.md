@@ -1,5 +1,31 @@
 # Critical Decisions Log
 
+## 2026-10-01 — ACTIVITY-STREAM-TENANT-ISOLATED: `security_invoker = true` na `activity_stream` aplikovaný v PROD — únik cez `activities` je zatvorený
+
+**GO foundera.** `ALTER VIEW public.activity_stream SET (security_invoker = true);` (PROD `ypgajkhqtbriqqmyawyv`, `execute_sql`;
+migrácia `20261001150000_activity_stream_security_invoker.sql`).
+
+**Overené ako `authenticated` (SELECT, transakcia s rollbackom), všetky 4 agentúry — viditeľné celkom / bez leadu:**
+| agentúra | pred | po |
+|---|---|---|
+| `1111…` | 193 / 187 | 3 / 0 |
+| `8f3a…` | 193 / 187 | 0 / 0 |
+| `b101…` | — | 3 / 0 |
+| `dbbb…` | — | 0 / 0 |
+`reloptions = {security_invoker=true}`; `anon` SELECT = false. **Cesty k `activities` overené: tabuľka (anon, authenticated) aj pohľad (anon, authenticated) — všetky štyri uzavreté.**
+
+**Zostáva otvorené:**
+- `activities_insert_agency` stále dovoľuje tenantovi INSERT s `lead_id IS NULL` (`matching` ich píše).
+- 187 riadkov v tabuľke zostáva (vlastníctvo neznáme, nič sa nemazalo).
+- 7 ďalších pohľadov čitateľných pre `anon` bez `security_invoker` (obsah/konzumenti neoverení).
+- `lead_property_matches` / `pipeline_moves` / `platform_events`: vetva `agency_id IS NULL` (0 NULL riadkov dnes, latentné).
+- UI `/activities` a dashboard feed po zúžení som neotvoril (neoverené); zúžia sa na vlastné aktivity.
+- GDPR posúdenie (údaje boli čitateľné aj bez prihlásenia) — rozhodnutie foundera.
+
+**Proces — chyba, ktorú zapisujem:** tento únik som zatváral tromi kolami GO (DROP POLICY → zistenie pohľadu → REVOKE → security_invoker), lebo
+som najprv overil iba tabuľku a nie všetky cesty k dátam (pohľady, anon). Pravidlo 0 v CLAUDE.md („steny, nie skrutky") to porušuje. Pre nabudúce:
+pri každej RLS oprave najprv zmapovať VŠETKY cesty (tabuľka, pohľady, funkcie, rola anon/authenticated) a predložiť jeden blok SQL + jeden overovací skript.
+
 ## 2026-10-01 — ACTIVITY-STREAM-ANON-REVOKED: `REVOKE ALL ON activity_stream FROM anon` aplikovaný v PROD (druhá polovica úniku ZOSTÁVA)
 
 **GO foundera na REVOKE** (literálne: „REVOKE activity_stream anon"). Jediný príkaz: `REVOKE ALL ON public.activity_stream FROM anon;`

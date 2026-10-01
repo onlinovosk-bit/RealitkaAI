@@ -1,3 +1,17 @@
+## Session 2026-10-01 (ACTIVITY-STREAM-TENANT-ISOLATED)
+### Dokončené
+- `security_invoker = true` na `activity_stream` v PROD; overené ako `authenticated` pre 4 agentúry (3/0, 0/0, 3/0, 0/0) a `anon` zablokovaný. Únik cez `activities` zatvorený na všetkých cestách (tabuľka + pohľad × anon + authenticated).
+- Migrácia `20261001150000_activity_stream_security_invoker.sql`.
+### Rozpracované / Pending
+- `activities_insert_agency`, 187 riadkov v tabuľke, 7 pohľadov čitateľných pre anon, NULL-vetvy na `lead_property_matches`/`pipeline_moves`/`platform_events`.
+- UI `/activities` a dashboard feed neotvorené po zúžení.
+- GDPR posúdenie incidentu (founder).
+- PROCES: tento blok bol 3 kolá GO namiesto jedného — viď decisions.md; ďalej jeden uzavretý blok (TENANT-ISOLATION-WALL).
+### Kľúčové súbory zmenené
+- `apps/crm/supabase/migrations/20261001150000_activity_stream_security_invoker.sql` (nový), `memory/decisions.md`, `memory/session-summary.md`; PROD: 1 `ALTER VIEW`.
+### Ďalší krok
+GO na TENANT-ISOLATION-WALL (jeden blok: všetky zostávajúce cesty + jeden overovací skript).
+
 ## Session 2026-10-01 (ACTIVITY-STREAM-ANON-REVOKED)
 ### Dokončené
 - `REVOKE ALL ON public.activity_stream FROM anon` v PROD; `anon` dostane `permission denied` (pred: 193 riadkov). Migrácia `20261001140000_revoke_activity_stream_anon.sql`.
