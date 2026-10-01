@@ -1,5 +1,47 @@
 # Critical Decisions Log
 
+## [2026-10-01] LEAD-PIPELINE-AFTER — lead pipeline sa vo verejných trasách dokončí po odpovedi (BUILD, GO foundera; NEnasadené, e2e dôkaz čaká)
+
+**Rozhodnutie BUILD (brána Ústavy v2):** Smolkov hlavný verejný vstup (valuation widget) dnes nedostáva AI triáž ani okamžité potvrdenie
+(namerané 10:14 UTC) — to je jadro hodnoty (rýchla reakcia na lead → zákazník platí a zostáva). Nie je „príliš skoro", zákazník to potrebuje.
+
+**Čo sa zmenilo (`apps/crm`):**
+- Nový `src/lib/acquire/after-response.ts` — `runAfterResponse(label, steps)`: `after()` z `next/server`, kroky PO SEBE
+  (auto-odpoveď číta `ai_priority` zapísanú triážou), pád kroku sa zachytí s kontextom a nezastaví ďalší, nikdy nehádže volajúcemu,
+  mimo requestu (testy) fallback ako v `lib/inbound/reply-draft.ts`.
+- `void`/`.catch` bez `await` nahradené v: `api/valuation/submit` (triáž → auto-odpoveď), `api/leads/inbound` (triáž → auto-odpoveď),
+  `(public)/buyer-onboarding/actions.ts` (notifikácia → auto-odpoveď → rescore), `api/leads/[id]/activities` a `api/leads/[id]` (rescore;
+  autentifikované dashboard trasy — `rescoreLead` je v zozname stráže, preto ich bolo treba opraviť rovnako).
+- `export const maxDuration = 60` pri týchto trasách a na `buyer-onboarding/page.tsx` (server action preberá limit stránky) —
+  `after()` beží v rámci limitu; bez neho by sa pri 10 s predvolenom limite práca mohla znova prerušiť. 60 s ako pri `cron/dashboard-insights`.
+- Stráž: `tests/verification/lead-pipeline-after.verification.test.ts` — AST sken `src/app`: každé volanie
+  `runInboundLeadTriageAndNotify` / `runInboundLeadAutoResponse` / `notifyNewBuyerLead` / `rescoreLead` musí byť `await`-nuté alebo
+  vo vnútri `runAfterResponse`; overený na 13 umelých vstupoch; kontroluje aj `maxDuration >= 30`.
+
+**Dôkaz:** testy 268/269 v dotknutých oblastiach (jediný červený = `valuation/submit/route.integration.test.ts`, vyžaduje `TEST_SUPABASE_URL`,
+v CI beží; mocky triáže/auto-odpovede + `vi.waitFor` → prejde cez fallback); nové: helper 6, route-level 3 vstupy (práca je pri odpovedi len
+naplánovaná, dobehne v `after()`, poradie, auto-odpoveď beží aj pri páde triáže, sandbox nič neplánuje), stráž 24; mutation proof **14/14**
+(súbory obnovené bit-for-bit); lint čistý; typecheck 49 (strop 54).
+
+**NIE je dokázané (poctivo):** že `after()` na Verceli skutočne udrží funkciu nažive a triáž + auto-odpoveď dobehnú — to ukáže až
+nasadený beh. Dôvod, prečo to nejde hneď: **Vercel Hobby limit 100 nasadení/deň je vyčerpaný** (status 10:37 UTC „api-deployments-free-per-day");
+merge do `main` môže produkčné nasadenie odmietnuť až do uvoľnenia okna.
+
+**E2E dôkaz po nasadení (jeden beh, jedno spustenie foundera):**
+1. Over, že produkčné nasadenie merge commitu je READY.
+2. Otvoriť testovací tenant: `update valuation_tenants set enabled=true where slug='revolis-ar-proof'; update agencies set auto_response_enabled=true where id='8f47808b-9443-4dc9-a1a1-35283f22b427';`
+3. Founder (PowerShell; bash `curl` s `\` v PowerShelli nefunguje — `curl` je tam alias na `Invoke-WebRequest`):
+   `$body = @{ agencySlug="revolis-ar-proof"; name="Ján Skúšobný"; email="delivered@resend.dev"; phone="+421900000000"; propertyType="byt"; location="Košice"; sqm=55; sellWithin12Months=$true; privacyAck=$true } | ConvertTo-Json`
+   `Invoke-RestMethod -Method Post -Uri "https://app.revolis.ai/api/valuation/submit" -ContentType "application/json; charset=utf-8" -Body ([System.Text.Encoding]::UTF8.GetBytes($body))`
+4. Overiť: nový lead má `ai_triage_at` aj `auto_response_sent_at`; `platform_events` `inbound.auto_response` (outcome/reason/from_domain);
+   Resend Logs — skutočné znenie textu. Dokazuje aj `OUTREACH_FROM_EMAIL`.
+5. Zavrieť: `enabled=false`, `auto_response_enabled=false`; over `count(*) from agencies where auto_response_enabled` = 0.
+
+**Zmerané, mimo tohto GO (ďalšia stena, ak chceš):** širšia trieda — `void`/`.catch`/`.then` bez `await` v API trasách a server actions —
+**14 príkazov v 10 súboroch z 237** (AST sken, nie odhad); nie všetky sú chyby (`events/stream` je legitímny stream). Podstatné:
+`api/leads/[id]/route.ts` (`globalEventBus.emit` + `notifyHotLead` — push pre „Horúci" lead), `api/leads/route.ts`,
+`api/demo/capture-lead` (2), `api/webhooks/hubspot`. Nedotknuté.
+
 ## [2026-10-01] OUTREACH-DOMAIN-PROOF — test zlyhal PRED odoslaním: triáž ani auto-odpoveď sa vo verejných trasách nedokončia (`void` bez `await`)
 
 **Nameraný fakt (PROD):** testovací lead `4f63eb2c-…` (`valuation_widget`, agentúra `8f47808b-…`, príjemca `delivered@resend.dev`)

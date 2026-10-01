@@ -1,3 +1,20 @@
+## Session 2026-10-01 (LEAD-PIPELINE-AFTER)
+### Dokončené
+- **LEAD-PIPELINE-AFTER** (GO foundera, jedna stena): `runAfterResponse` (`after()`, sekvenčne, izolované chyby) namiesto `void` v 5 trasách
+  (valuation/submit, leads/inbound, buyer-onboarding, leads/[id]/activities, leads/[id]) + `maxDuration=60` + AST stráž proti návratu.
+  Testy 268/269 (zvyšok CI-only), mutation proof 14/14, lint čistý, typecheck 49.
+- PR #780 zlúčil `main` (konflikt vyriešený), nesie memory + migráciu opt-in default + túto stenu.
+### Rozpracované / Pending
+- **E2E dôkaz po nasadení** (a tým aj `OUTREACH_FROM_EMAIL`): postup v `memory/decisions.md`. Blokované: **Vercel Hobby limit nasadení vyčerpaný** (100/deň).
+- Rozhodnutie foundera: počkať na okno limitu / Pro / obmedziť preview nasadenia vetiev `claude/*`.
+- Migrácia opt-in default NIE je na PROD (samostatné GO po merge).
+- Širšia trieda `void`/`.catch` bez `await`: 14 príkazov v 10 súboroch (zmerané), vrátane `notifyHotLead` push — nedotknuté.
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/acquire/after-response.ts` (nový); 5 trás + `buyer-onboarding/page.tsx` (maxDuration);
+  testy: `after-response.test.ts`, 3× `*.after-response.test.ts`, `tests/verification/lead-pipeline-after.verification.test.ts`.
+### Ďalší krok
+„merguj 780" (jedna stena) → nasadenie, keď Vercel dovolí → e2e dôkaz jedným behom.
+
 ## Session 2026-10-01 (OUTREACH-DOMAIN-PROOF — výsledok)
 ### Dokončené
 - Test odosielania spustený (founder, 10:14 UTC): lead vznikol, **triáž ani auto-odpoveď nedobehli** (0 udalostí, `ai_triage_at` NULL).

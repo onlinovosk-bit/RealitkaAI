@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { INBOUND_REPLY_DRAFT_TIMEOUT_MS, scheduleInboundReplyDraft } from "@/lib/inbound/reply-draft";
+import { runAfterResponse } from "@/lib/acquire/after-response";
 import { runInboundLeadAutoResponse } from "@/lib/acquire/inbound-lead-auto-response";
 import { runInboundLeadTriageAndNotify } from "@/lib/acquire/inbound-lead-triage";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/rate-limit";
 import { resolveInboundAgency } from "@/lib/leads/inbound-form-config";
+
+// `after()` (triáž + auto-odpoveď + AI návrh) beží v rámci tohto limitu.
+export const maxDuration = 60;
 
 type ParsedInbound = {
   slug: string;
@@ -142,19 +146,30 @@ export async function POST(request: Request) {
 
     const note = noteParts.join(" · ").slice(0, 5000);
 
-    void runInboundLeadTriageAndNotify(supabase, data, {
-      agencyId: resolved.agencyId,
-      name: input.name.slice(0, 200),
-      status: "Nový",
-      note,
-      source: "web_form",
-    });
-
-    void runInboundLeadAutoResponse(supabase, data, {
-      agencyId: resolved.agencyId,
-      name: input.name.slice(0, 200),
-      email: input.email,
-    });
+    // Po odpovedi (LEAD-PIPELINE-AFTER): `void` by sa na serverless nedokončil. Triáž ide PRED
+    // auto-odpoveďou — ta číta `ai_priority`.
+    runAfterResponse("leads-inbound", [
+      {
+        name: "triage",
+        run: () =>
+          runInboundLeadTriageAndNotify(supabase, data, {
+            agencyId: resolved.agencyId,
+            name: input.name.slice(0, 200),
+            status: "Nový",
+            note,
+            source: "web_form",
+          }),
+      },
+      {
+        name: "auto_response",
+        run: () =>
+          runInboundLeadAutoResponse(supabase, data, {
+            agencyId: resolved.agencyId,
+            name: input.name.slice(0, 200),
+            email: input.email,
+          }),
+      },
+    ]);
 
     // AI návrh odpovede pre makléra (Tier 3: len návrh, odošle ho maklér).
     // Beží po odpovedi, aby formulár nečakal na LLM.
