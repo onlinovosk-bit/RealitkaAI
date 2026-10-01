@@ -1,3 +1,20 @@
+## Session 2026-10-01 (AUTO-RESPONSE-OPTIN-DEFAULT)
+### Dokončené
+- **AUTO-RESPONSE-OPTIN-DEFAULT** (GO foundera): migrácia `20261001100000_auto_response_opt_in_default.sql`
+  (`SET DEFAULT false`) + test `auto-response-opt-in-default.verification.test.ts`. Mutation proof 8/8, reálny Postgres
+  (PGlite) OK, replay 128/128, schema-gap 0, prepush-gate PASS, typecheck 49, lint čistý.
+### Rozpracované / Pending
+- **Migrácia NIE je na PROD** — aplikácia = samostatné GO po merge PR. Dovtedy je PROD predvolená hodnota `true`.
+- Nie je UI prepínač `auto_response_enabled` → zapnutie len SQL-om so súhlasom agentúry.
+- OUTREACH-DOMAIN-PROOF stále čaká (founder: `Invoke-RestMethod` z `memory/decisions.md`; testovací vstup po poistke zavretý).
+- Otvorené: PR s migráciou (draft, na vetve spolu s memory #780), Resend log e-mailu z 08:41, Smolko reply-to + súhlas.
+### Kľúčové súbory zmenené
+- `apps/crm/supabase/migrations/20261001100000_auto_response_opt_in_default.sql` (nový)
+- `apps/crm/tests/verification/auto-response-opt-in-default.verification.test.ts` (nový)
+- `memory/decisions.md`, `memory/session-summary.md`
+### Ďalší krok
+Po „merguj N" GO na aplikáciu migrácie na PROD; potom OUTREACH-DOMAIN-PROOF.
+
 ## Session 2026-10-01 (AUTO-RESPONSE-OPTIN)
 ### Dokončené
 - **AUTO-RESPONSE-OPTIN** (GO foundera, PROD zápis): `auto_response_enabled=false` pre AA REALITY Košice, Reality Monopol,

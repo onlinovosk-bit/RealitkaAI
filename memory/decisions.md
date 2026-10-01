@@ -1,5 +1,28 @@
 # Critical Decisions Log
 
+## [2026-10-01] AUTO-RESPONSE-OPTIN-DEFAULT — nová agentúra nezačína so zapnutou auto-odpoveďou (BUILD, GO foundera; migrácia zatiaľ NEnasadená na PROD)
+
+**Problém:** `agencies.auto_response_enabled` mal od `20260713150000` predvolenú hodnotu `true` (opt-out). Po
+AUTO-RESPONSE-OPTIN (5 existujúcich agentúr vypnutých) by NOVÁ agentúra stále dostala auto-odpoveď zapnutú bez vedomia.
+
+**Zmena (PR, draft):** `apps/crm/supabase/migrations/20261001100000_auto_response_opt_in_default.sql` —
+`ALTER COLUMN auto_response_enabled SET DEFAULT false` (+ COMMENT). Mení LEN predvolenú hodnotu, existujúce riadky
+nedotýka. Test `tests/verification/auto-response-opt-in-default.verification.test.ts`: prejde migrácie v poradí názvov
+a overí výslednú hodnotu `false`; parser overený na umelých vstupoch; žiadna migrácia hromadne neupdatuje stĺpec.
+
+**Dôkaz:** mutation proof **8/8** (opt-out späť, migrácia chýba, zaradená pred pôvodnú, hromadný UPDATE, DROP DEFAULT,
+zlá tabuľka, preklep stĺpca, zakomentované); reálny Postgres (PGlite): pred `true`, po `false`, starý riadok ostal `true`,
+nový `false`, explicitné `true` funguje, `NOT NULL` zachované, idempotentné; replay **128/128** migrácií, 146 objektov,
+0 rozdielov (schema-gap oracle); schema-gap brána 0 nových medzier; prepush-gate PASS; typecheck 49 (strop 54), lint čistý.
+
+**Následok, ktorý treba vedieť:** v kóde ani UI NIE JE prepínač `auto_response_enabled` (grep: len lib/acquire a skripty).
+Nová agentúra teda auto-odpoveď nedostane, kým ju niekto nezapne SQL-om (`update agencies set auto_response_enabled=true
+where id='…'`) — až so súhlasom agentúry. Prepínač v nastaveniach agentúry = samostatná úloha (len ak to zákazníci chcú).
+
+**Zostáva (mimo tohto GO):** (1) aplikácia migrácie na PROD (Supabase) — samostatné GO po merge; do tej doby je PROD
+predvolená hodnota stále `true`. (2) Kódový fallback `loadAgencyAutoResponseContext`: pri CHÝBAJÚCOM stĺpci
+(`autoResponseEnabled = true`) odosiela — fail-open v prostredí bez migrácie; PROD stĺpec má, nízka priorita.
+
 ## [2026-10-01] AUTO-RESPONSE-OPTIN — auto-odpoveď vypnutá pre 5 agentúr, ktoré o nej nevedeli (PROD zápis, GO foundera)
 
 **Prečo:** `agencies.auto_response_enabled` má predvolenú hodnotu `true` (opt-out). Po oprave odosielateľa by prvý reálny
