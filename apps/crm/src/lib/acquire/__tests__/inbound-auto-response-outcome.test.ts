@@ -129,8 +129,8 @@ describe("AUTO-RESPONSE-VISIBLE — každý pokus zanechá jeden záznam", () =>
     vi.restoreAllMocks();
   });
 
-  it("sent: e-mail odišiel a značka sa zapísala", async () => {
-    vi.spyOn(sendModule, "sendInboundAutoResponse").mockResolvedValue({ ok: true });
+  it("sent: e-mail odišiel a značka sa zapísala (v udalosti je doména odosielateľa)", async () => {
+    vi.spyOn(sendModule, "sendInboundAutoResponse").mockResolvedValue({ ok: true, fromDomain: "revolis.ai" });
     const { updates } = await run();
 
     const ev = recorded();
@@ -142,17 +142,19 @@ describe("AUTO-RESPONSE-VISIBLE — každý pokus zanechá jeden záznam", () =>
       reason: null,
       http_status: null,
       error_name: null,
+      from_domain: "revolis.ai",
     });
     expect(updates).toHaveLength(1);
   });
 
   it("sent_unmarked: e-mail odišiel, ale značku sa nepodarilo zapísať", async () => {
-    vi.spyOn(sendModule, "sendInboundAutoResponse").mockResolvedValue({ ok: true });
+    vi.spyOn(sendModule, "sendInboundAutoResponse").mockResolvedValue({ ok: true, fromDomain: "revolis.ai" });
     await run({ updateError: { message: "db down" } });
 
     expect(recorded().payload).toMatchObject({
       outcome: "sent_unmarked",
       reason: "dedup_update_failed",
+      from_domain: "revolis.ai",
     });
   });
 
@@ -192,7 +194,12 @@ describe("AUTO-RESPONSE-VISIBLE — každý pokus zanechá jeden záznam", () =>
     vi.spyOn(sendModule, "sendInboundAutoResponse").mockResolvedValue({
       ok: false,
       error: `The revolis.ai domain is not verified (to: ${LEAD_EMAIL})`,
-      failure: { reason: "domain_not_verified", httpStatus: 403, errorName: "validation_error" },
+      failure: {
+        reason: "domain_not_verified",
+        httpStatus: 403,
+        errorName: "validation_error",
+        fromDomain: "gmail.com",
+      },
     });
     const { updates } = await run();
 
@@ -202,6 +209,7 @@ describe("AUTO-RESPONSE-VISIBLE — každý pokus zanechá jeden záznam", () =>
       reason: "domain_not_verified",
       http_status: 403,
       error_name: "validation_error",
+      from_domain: "gmail.com",
     });
     expect(updates).toHaveLength(0);
   });
@@ -359,7 +367,12 @@ describe("sendInboundAutoResponse — dôvod zlyhania z Resendu", () => {
     expect(res).toEqual({
       ok: false,
       error: "The revolis.ai domain is not verified.",
-      failure: { reason: "domain_not_verified", httpStatus: 403, errorName: "validation_error" },
+      failure: {
+        reason: "domain_not_verified",
+        httpStatus: 403,
+        errorName: "validation_error",
+        fromDomain: "mg.revolis.ai", // predvolený odosielateľ, keď OUTREACH_FROM_EMAIL nie je nastavený
+      },
     });
   });
 
@@ -374,6 +387,6 @@ describe("sendInboundAutoResponse — dôvod zlyhania z Resendu", () => {
 
   it("úspech → ok", async () => {
     resendSendMock.mockResolvedValue({ data: { id: "em_1" }, error: null });
-    expect(await sendInboundAutoResponse(payload)).toEqual({ ok: true });
+    expect(await sendInboundAutoResponse(payload)).toEqual({ ok: true, fromDomain: "mg.revolis.ai" });
   });
 });

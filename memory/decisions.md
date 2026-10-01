@@ -1,5 +1,31 @@
 # Critical Decisions Log
 
+## [2026-10-01] AUTO-RESPONSE-TEXT-FIX — text auto-odpovede bez interného AI zdôvodnenia + stráž odosielateľa (BUILD, GO foundera)
+
+**Dôkaz problému (Resend Logs, 403, 1. 10. 2026):** šablóna vkladala do e-mailu `ai_reason` — interné AI zdôvodnenie
+triedenia („Generická správa bez identifikácie konkrétnej nehnuteľnosti, bez kontaktu…") — a podpisovala ho menom
+kancelárie. Zároveň `From` bol na `gmail.com` (hodnota `OUTREACH_FROM_EMAIL` vo Verceli Production), ktorú Resend nikdy
+neoverí → 403. **Žiadny e-mail s týmto textom nebol doručený** (403; 0 z 516 `auto_response_sent_at`; 0 udalostí `sent`;
+brána `auto_response_enabled=false` pre Smolka drží).
+
+**Rozhodnutie: BUILD** (chráni dôveryhodnosť značky pred prvým reálnym odoslaním; bez opravy je zapnutie auto-odpovede
+reputačné riziko). Zmeny (`apps/crm/src/lib/acquire/`):
+- `send-inbound-auto-response.ts`: `aiReason` odstránené z payloadu aj šablóny; text len z overených faktov (oslovenie
+  len ak vyzerá ako meno, portál, čas odpovede podľa priority, kontakt, podpis); formulácie **rodovo neutrálne**
+  („dopyt mi prišiel", „ozvem sa" — žiadne „dostal/dostala som"); predmet `Váš dopyt bol prijatý — {maklér/kancelária}`.
+  `safeGreetingName` (e-mail, telefón, číslice, „Unknown/Neznámy", zalomenie riadku, >60 znakov → bez mena).
+  `PUBLIC_MAILBOX_DOMAINS` + stráž: odosielateľ na verejnej poštovej doméne → `invalid_from` **bez volania Resendu**.
+- `auto-response-outcome.ts` / `inbound-lead-auto-response.ts`: udalosť `inbound.auto_response` nesie `from_domain`
+  (naša konfigurácia, nie osobný údaj) pri `sent`, `sent_unmarked` aj `failed_send`; orchestrátor už nečíta `ai_reason`.
+- Dôkaz: nový `inbound-auto-response-text.test.ts` (presné finálne znenia pre 3 typické leady, `ai_reason` nepreteká ani
+  cez starý tvar payloadu), mutation proof **16/16**, lint čistý, typecheck 49 (strop 54).
+
+**Čo tým NIE JE vyriešené (founder / ďalšie GO):** `OUTREACH_FROM_EMAIL` vo Verceli musí ukazovať na overenú doménu
+(napr. `revolis.ai`), nie gmail/noreply — **zatiaľ nemeniť**, kým je brána vypnutá; reply-to (`ra***@gmail.com` nepoznáme);
+súhlas Smolka; Resend „Enable Receiving" (MX `@` kolidujúci s existujúcou poštou — nepridávať root MX, resp. použiť
+subdoménu `mg.revolis.ai`). Postup zapnutia späť: viď záznam AUTO-RESPONSE-GATE nižšie (pribudol bod: `from_domain`
+v prvej udalosti `sent` musí byť overená doména).
+
 ## [2026-10-01] AUTO-RESPONSE-GATE — príčina auto-odpovede dokázaná; odosielanie vypnuté pre Smolka (PROD zápis, GO foundera)
 
 **Prvý reálny lead po dobití (Bazoš.sk, s e-mailom), PROD:**
