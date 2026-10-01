@@ -1,3 +1,14 @@
+## Session 2026-10-01 (merge #774)
+### Dokončené
+- #774 zmergovaný do main (`3dc3119`), CI zelené. STATUS.md ≈ 43 %.
+### Rozpracované / Pending
+- **Overiť nasadenie** (Vercel) a prvý riadok v `inbound_mail_outcomes`.
+- **Founder: Stripe krok C** (0/10 cien) — najväčší posun k 100 %.
+### Kľúčové súbory zmenené
+- `docs/STATUS.md`, `memory/*`.
+### Ďalší krok
+Founder: Stripe krok C (`bash scripts/ops/stripe-verify-prices.sh --spec`).
+
 ## Session 2026-10-01 (CI-FIX 2: idempotentná stena)
 ### Dokončené
 - Stena `20261001160500` prepísaná na idempotentnú (CI padlo na chýbajúcom `v_genome_calibration`).

@@ -1,5 +1,12 @@
 # Critical Decisions Log
 
+## 2026-10-01 — #774 ZMERGOVANÝ (`3dc3119`, squash) — stav ≈ 43 %
+
+**GO foundera.** Merge až po zelenom „Lint, test, build" na hlave `d790168` (7/7 kontrol). Cesta: duplicitná verzia migrácie → CI-FIX; migrácia steny
+padla na čistej DB (PROD-only pohľady `v_genome_*`) → idempotentná; main sa medzitým posunul → konflikt len v `memory/session-summary.md` → vyriešený (obe vetvy).
+V PROD ostáva všetko, čo bolo aplikované skôr (migrácie sú idempotentné, repo ↔ PROD zhodné okrem histórie migrácií, kde riadky nie sú).
+**Neoverené:** produkčné nasadenie kódu z #774 (Vercel); prvý zápis do `inbound_mail_outcomes` po nasadení. STATUS.md aktualizovaný (≈ 43 %).
+
 ## 2026-10-01 — CI-FIX 2: stena `20261001160500` padla v CI na `relation "public.v_genome_calibration" does not exist` → migrácia idempotentná
 
 **Príčina (z logu CI, `supabase start`):** v čistej databáze neexistujú pohľady `v_genome_calibration`, `v_genome_decisions_resolved`,
