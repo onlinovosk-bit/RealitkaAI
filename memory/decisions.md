@@ -5331,3 +5331,132 @@ to, kým je prázdna.
 `arbitrage/scan.ts` aj `price-trail/engine.ts` čítajú zvyšok svojich dát cookie
 klientom, hoci sú to crony — tá istá trieda chyby ako recompute-bri pred #742.
 Zámerne som to nerozširoval; vyplávalo by to pri ich zapojení do `cron_runs`.
+
+---
+
+## 2026-09-30 — ENGAGEMENT-EMAIL-01: prvý skutočný engagement signál
+
+Founder GO. Nadväzuje na EVENTS-WRITE-PATH-01 (#765) — bez serverovej
+zapisovacej cesty by tento signál nemal kam pristáť.
+
+### Ktorý signál a prečo práve ten
+
+Otvorenie/klik v **automatickej odpovedi záujemcovi na jeho dopyt**. Je to
+jediný e-mail, ktorý reálne chodí skutočnému leadovi, a chodí v momente
+najvyššieho záujmu. `RESEND_API_KEY` je v produkcii (founder overil v UI;
+projektový API výpis ho nezobrazil — druhýkrát ten istý klam, viď
+service-role kľúč vyššie).
+
+Zvažované a zamietnuté: `outreach-store` tagoval `lead_id` už predtým, ale
+`outreach_logs` má 0 riadkov — nikdy nebežal, takže signál z neho neexistuje.
+
+### Čo bolo zlomené
+
+Reťaz mala štyri články, tri z nich nefungovali:
+
+1. odoslať e-mail s tagom `lead_id` — auto-odpoveď tag nemala
+2. webhook prijme open/click — ✓ fungovalo
+3. uložiť to — `new Map()` v pamäti procesu; na serverless zmizne s inštanciou
+4. niekto to prečíta — `getEmailEngagement` nemal ANI JEDNÉHO volajúceho
+
+### Zmena
+
+- `sendInboundAutoResponse` prijíma `leadId` a posiela ho ako Resend tag.
+  Voliteľné, aby volajúci bez leadu ostali nedotknutí. Hodnota sa validuje
+  proti `[A-Za-z0-9_-]+`, inak by celé odoslanie spadlo na tagu.
+- `lib/events/email-engagement.ts`: zapíše `message_opened` / `message_clicked`
+  na lead cez `logEventDetailed` so service-role klientom.
+- `events.profile_id` je NOT NULL a **24 aktívnych leadov nemá
+  `assigned_profile_id`** — preto záloha na aktívny profil tej istej agentúry.
+  Bez nej by sa stratil engagement práve čerstvého, nepriradeného leadu.
+- Do payloadu nejde predmet, telo ani adresa. Do `events` osobné údaje
+  nepatria; stačí fakt, že sa e-mail otvoril.
+- `message_clicked` doplnené do `EventType`.
+- `lib/ai/email-engagement-store.ts` **zmazané** — po tejto zmene naň
+  neukazoval nikto.
+
+### Bezpečnostná oprava v tom istom súbore
+
+Webhook mal `if (webhookSecret)`: pri chýbajúcej premennej sa podpis
+neoveroval a endpoint prijal čokoľvek. Cezeň sa teraz zapisuje do `events`,
+takže otvorený znamenal, že ktokoľvek vyrobí engagement signál pre ľubovoľný
+lead. Teraz vracia 503. Tretí výskyt tej istej triedy po cron-e a Concierge
+(#717): chýbajúca premenná je chyba konfigurácie, nie povolenie.
+
+### Čo to ešte nerobí
+
+BRI z toho začne počítať až keď prvý lead e-mail otvorí. Do tej doby zostáva
+`events` prázdna a guard z #761 skóre stále nezapíše — správne.
+
+---
+
+## 2026-09-30 — WEBHOOK-SIGNATURE-01: článok, ktorý som označil za funkčný, funkčný nebol
+
+PR #768. Nájdené pri kontrole po merge #765, nie pri písaní #765 — to je tá
+podstatná časť záznamu.
+
+### Čo som tvrdil a čo bola pravda
+
+V tele #765 je tabuľka reťaze štyroch článkov. Článok 2 „webhook prijme
+open/click" som označil `✓ fungovalo`. Nefungoval. Endpoint porovnával
+hlavičku `svix-signature` s obyčajným hex HMAC-om nad telom požiadavky:
+
+```ts
+crypto.createHmac("sha256", webhookSecret).update(rawBody).digest("hex")
+```
+
+Resend podpisuje cez Svix (Standard Webhooks). Overené z primárneho zdroja,
+`node_modules/standardwebhooks/dist/index.js`, nie z pamäte:
+
+| | Svix | pôvodný kód |
+|---|---|---|
+| kľúč | base64 dekódovaný zvyšok po `whsec_` | celý reťazec ako ASCII |
+| podpisuje sa | `{svix-id}.{svix-timestamp}.{telo}` | len telo |
+| kódovanie | `v1,<base64>`, viac podpisov oddelených medzerou | 64 znakov hexu |
+
+Tri nezávislé rozdiely. Dĺžky nesúhlasia, takže `timingSafeEqual` vyhodí
+výnimku, `catch` ju spolkne a `sigValid` zostane `false`. **Každá skutočná
+doručenka z Resendu dostala 401.** Signál nemal ako doraziť — ani predtým, ani
+po #765.
+
+### Prečo to prešlo okolo mňa
+
+Ten kód som nepísal, len som do neho pridal fail-closed 503. Overil som, že
+podpis sa overuje **vždy**, a to som zamenil za overenie, že sa overuje
+**správne**. Presne tá istá zámena, akú tento kontrolór hľadá inde:
+„kontrola existuje" nie je „kontrola funguje".
+
+Druhé poučenie: `catch {}` okolo `timingSafeEqual` s komentárom
+„length mismatch — treated as invalid" bol jediný viditeľný príznak. Nesúlad
+dĺžky pri porovnaní dvoch HMAC-ov tej istej funkcie nemôže nastať nikdy —
+znamenal, že tie dve strany nie sú tá istá schéma. Bol to nález, nie okrajový
+prípad.
+
+### Ako je to opravené
+
+`lib/webhooks/standard-webhooks.ts` nad `node:crypto`, **bez novej
+závislosti**: balík `svix` je v `node_modules` len tranzitívne (hoistnutý),
+spoliehať sa na to pri builde na Verceli by bola tichá časovaná bomba.
+Vrátane tolerancie 5 min proti replayu a viacerých podpisov v hlavičke kvôli
+rotácii kľúča.
+
+### Dôkaz, ktorý nie je kruhový
+
+Test neporovnáva výstup funkcie s tou istou matematikou. Obsahuje **zamrznutý
+vektor vygenerovaný skutočnou knižnicou `standardwebhooks`** (`sign()`
+s daným id, timestampom a telom) a overuje, že ho naša funkcia reprodukuje
+znak za znak. Zamrznutý zámerne — aby test nezávisel na tranzitívnej
+závislosti, ktorá môže z `node_modules` zmiznúť.
+
+Dva testy pinujú samotnú opravu: stará hex schéma musí dostať `false`
+na úrovni funkcie aj 401 na úrovni endpointu.
+
+24 nových testov (15 podpis + 9 endpoint). Endpoint predtým nemal ani jeden.
+
+### Čo z toho platí ďalej
+
+Zvyšné dva predpoklady reťaze sú v Resend dashboarde a ja ich z repa
+neoverím: či je endpoint registrovaný na `email.opened` a `email.clicked`,
+a či je pre odosielaciu doménu zapnuté Open/Click tracking (v Resende je
+vypnuté by default). `RESEND_WEBHOOK_SECRET` v produkcii **je** — typ
+`sensitive`, target production + preview, overené cez Vercel API.
