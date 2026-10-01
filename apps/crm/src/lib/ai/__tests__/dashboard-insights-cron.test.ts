@@ -9,6 +9,8 @@ import {
   generateDashboardInsights,
 } from '../dashboard-insights'
 import {
+  INSIGHTS_AI_TIMEOUT_MS,
+  INSIGHTS_LLM_TIMEOUT_MS,
   generateAndCacheAgencyInsights,
   listActiveAgencyIds,
 } from '../dashboard-insights-cron'
@@ -329,6 +331,16 @@ describe('dashboard-insights-cron cache writer', () => {
       failure_error_type: 'invalid_request_error',
       failure_request_id: 'req_5',
     })
+  })
+
+  it('cron pošle generátoru vlastné okno kratšie než vonkajšie (nie natvrdo 800 ms)', async () => {
+    const { from } = mockAdminForCache({ summary: smolkoSummary })
+
+    await generateAndCacheAgencyInsights({ from } as never, AGENCY_ID)
+
+    const opts = vi.mocked(generateDashboardInsights).mock.calls.at(-1)?.[1]
+    expect(opts).toEqual({ timeoutMs: INSIGHTS_LLM_TIMEOUT_MS })
+    expect(INSIGHTS_LLM_TIMEOUT_MS).toBeLessThan(INSIGHTS_AI_TIMEOUT_MS)
   })
 
   it('bez zlyhania sa do meta nedostanú žiadne failure_* kľúče', async () => {

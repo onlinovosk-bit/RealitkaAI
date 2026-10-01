@@ -1,6 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { autoErrorCapture } from "@/lib/auto-error-capture";
 import { sendInboundAutoResponse } from "@/lib/acquire/send-inbound-auto-response";
+import {
+  recordAutoResponseOutcome,
+  safeErrorName,
+  type AutoResponseResult,
+} from "@/lib/acquire/auto-response-outcome";
 
 const OWNER_UI_ROLES = ["owner_vision", "owner_protocol"] as const;
 const MISSING_COLUMN = "42703";
@@ -125,57 +130,80 @@ export async function resolveInboundAutoResponseContacts(
 }
 
 /**
- * Best-effort inbound auto-response after triage.
- * Never throws — failures are logged via autoErrorCapture.
+ * Jeden pokus o auto-odpoveď. Každý východ vracia pomenovaný výsledok, aby po ňom zostala
+ * stopa; neočakávané výnimky (čítanie z DB…) nechá prepadnúť volajúcemu, ktorý ich zapíše
+ * ako `failed_error`.
  */
-export async function runInboundLeadAutoResponse(
+async function attemptInboundAutoResponse(
   supa: SupabaseClient,
-  lead: InboundLeadAutoResponseLead,
+  agencyId: string,
+  leadId: string,
   candidate: InboundLeadAutoResponseCandidate,
-): Promise<void> {
+): Promise<AutoResponseResult> {
   const leadEmail = candidate.email.trim();
-  if (!leadEmail) return;
+  if (!leadEmail) return { outcome: "skipped_no_email" };
 
-  const agencyId = String(lead.agency_id ?? candidate.agencyId);
-  const leadId = String(lead.id);
+  const { data: freshLead, error: freshLeadError } = await supa
+    .from("leads")
+    .select(
+      "auto_response_sent_at,name,assigned_agent,ai_reason,ai_priority,source",
+    )
+    .eq("id", leadId)
+    .maybeSingle();
 
-  try {
-    const { data: freshLead, error: freshLeadError } = await supa
-      .from("leads")
-      .select(
-        "auto_response_sent_at,name,assigned_agent,ai_reason,ai_priority,source",
-      )
-      .eq("id", leadId)
-      .maybeSingle();
-
-    if (freshLeadError) {
-      if (isMissingColumnError(freshLeadError)) {
-        autoErrorCapture(
-          "leads.auto_response_sent_at missing — apply prod SQL migration bundle before enabling auto-response",
-          "inbound-auto-response:migration_required",
-        );
-        return;
-      }
-      throw new Error(`dedup guard read failed: ${freshLeadError.message}`);
-    }
-    if (freshLead?.auto_response_sent_at) return;
-
-    const { agency, autoResponseEnabled } = await loadAgencyAutoResponseContext(supa, agencyId);
-    if (!autoResponseEnabled) return;
-
-    const { replyTo, agencyPhone } = await resolveInboundAutoResponseContacts(
-      supa,
-      agencyId,
-      agency,
-    );
-
-    if (!replyTo) {
+  if (freshLeadError) {
+    if (isMissingColumnError(freshLeadError)) {
       autoErrorCapture(
-        `missing agency reply-to for agency ${agencyId}`,
-        "inbound-auto-response:missing_reply_to",
+        "leads.auto_response_sent_at missing — apply prod SQL migration bundle before enabling auto-response",
+        "inbound-auto-response:migration_required",
       );
-      return;
+      return { outcome: "failed_error", reason: "migration_required" };
     }
+    throw new Error(`dedup guard read failed: ${freshLeadError.message}`);
+  }
+  if (freshLead?.auto_response_sent_at) return { outcome: "skipped_already_sent" };
+
+  const { agency, autoResponseEnabled } = await loadAgencyAutoResponseContext(supa, agencyId);
+  if (!autoResponseEnabled) return { outcome: "skipped_disabled" };
+
+  const { replyTo, agencyPhone } = await resolveInboundAutoResponseContacts(
+    supa,
+    agencyId,
+    agency,
+  );
+
+  if (!replyTo) {
+    autoErrorCapture(
+      `missing agency reply-to for agency ${agencyId}`,
+      "inbound-auto-response:missing_reply_to",
+    );
+    return { outcome: "failed_no_reply_to" };
+  }
+
+  const sendResult = await sendInboundAutoResponse({
+    to: leadEmail,
+    leadName: freshLead?.name?.trim() || candidate.name,
+    agencyName: agency?.name?.trim() || "Realitná kancelária",
+    agencyPhone,
+    replyTo,
+    assignedAgent: freshLead?.assigned_agent,
+    aiReason: freshLead?.ai_reason,
+    aiPriority: freshLead?.ai_priority,
+    source: freshLead?.source,
+  });
+
+  if (!sendResult.ok) {
+    autoErrorCapture(
+      new Error(sendResult.error),
+      "inbound-auto-response:resend_send",
+    );
+    return {
+      outcome: "failed_send",
+      reason: sendResult.failure?.reason ?? "unknown",
+      httpStatus: sendResult.failure?.httpStatus ?? null,
+      errorName: sendResult.failure?.errorName ?? null,
+    };
+  }
 
     const sendResult = await sendInboundAutoResponse({
       to: leadEmail,
@@ -199,18 +227,41 @@ export async function runInboundLeadAutoResponse(
       );
       return;
     }
+  const sentAt = new Date().toISOString();
+  const { error: updateError } = await supa
+    .from("leads")
+    .update({ auto_response_sent_at: sentAt })
+    .eq("id", leadId)
+    .is("auto_response_sent_at", null);
 
-    const sentAt = new Date().toISOString();
-    const { error: updateError } = await supa
-      .from("leads")
-      .update({ auto_response_sent_at: sentAt })
-      .eq("id", leadId)
-      .is("auto_response_sent_at", null);
+  if (updateError) {
+    autoErrorCapture(updateError, "inbound-auto-response:dedup_update");
+    return { outcome: "sent_unmarked", reason: "dedup_update_failed" };
+  }
 
-    if (updateError) {
-      autoErrorCapture(updateError, "inbound-auto-response:dedup_update");
-    }
+  return { outcome: "sent" };
+}
+
+/**
+ * Best-effort inbound auto-response after triage.
+ * Never throws — failures are logged via autoErrorCapture, and every attempt leaves exactly
+ * one persistent `inbound.auto_response` record (see auto-response-outcome.ts).
+ */
+export async function runInboundLeadAutoResponse(
+  supa: SupabaseClient,
+  lead: InboundLeadAutoResponseLead,
+  candidate: InboundLeadAutoResponseCandidate,
+): Promise<void> {
+  const agencyId = String(lead.agency_id ?? candidate.agencyId);
+  const leadId = String(lead.id);
+
+  let result: AutoResponseResult;
+  try {
+    result = await attemptInboundAutoResponse(supa, agencyId, leadId, candidate);
   } catch (error) {
     autoErrorCapture(error, "inbound-auto-response");
+    result = { outcome: "failed_error", reason: "unexpected", errorName: safeErrorName(error) };
   }
+
+  await recordAutoResponseOutcome({ agencyId, leadId, result });
 }
