@@ -1,3 +1,14 @@
+## Session 2026-10-01 (CI-FIX duplicitná verzia migrácie)
+### Dokončené
+- Červené „Lint, test, build" na #774: duplicitná verzia `20261001100000` (moja migrácia vs `auto_response_opt_in_default` z main). Premenované na `20261001100500_inbound_mail_outcomes.sql`; duplicít 0.
+### Rozpracované / Pending
+- Overiť, že CI na novej hlave prejde (`supabase start` trvá ~10 min).
+- Ratchet proti duplicitným verziám migrácií (navrhnuté, nezačaté).
+### Kľúčové súbory zmenené
+- `apps/crm/supabase/migrations/20261001100500_inbound_mail_outcomes.sql` (premenované), `memory/*`.
+### Ďalší krok
+Počkať na CI; potom merge #774 (rozhodnutie foundera).
+
 ## Session 2026-10-01 (TENANT-ISOLATION-WALL + stav)
 ### Dokončené
 - Stena v PROD jednou transakciou: 8/8 pohľadov invoker + bez anon, 8/9 politík bez NULL vetvy, 11 SECURITY DEFINER funkcií uzavretých. Migrácia `20261001160500_tenant_isolation_wall.sql`.

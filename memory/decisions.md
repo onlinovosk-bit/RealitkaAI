@@ -1,5 +1,18 @@
 # Critical Decisions Log
 
+## 2026-10-01 — CI-FIX: duplicitná verzia migrácie `20261001100000` (moja chyba) → `inbound_mail_outcomes` premenovaná na `20261001100500`
+
+**Príčina (z logu CI, `supabase start`):** `ERROR: duplicate key value violates unique constraint "schema_migrations_pkey" — Key (version)=(20261001100000)`.
+Dve migrácie mali rovnakú verziu: `20261001100000_auto_response_opt_in_default.sql` (z `main`, iná session) a moja
+`20261001100000_inbound_mail_outcomes.sql`. Skontroloval som, že duplicita bola jediná (`uniq -d` pred: 1, po: 0).
+
+**Oprava:** `git mv` → `20261001100500_inbound_mail_outcomes.sql` (obsah nezmenený). PROD nie je dotknutý: tabuľka tam bola aplikovaná cez
+`execute_sql`, riadok v histórii migrácií nemá, takže premenovanie ju nemení. Staršie záznamy v memory spomínajú pôvodný názov —
+nemenené (memory je prepend-only), platí tento záznam.
+
+**Poučenie:** pred pridaním migrácie skontrolovať `ls migrations | sed … | uniq -d` proti aktuálnemu `main`; iná session pridáva migrácie
+paralelne. Zaslúži ratchet v CI (samostatné GO) — dnes sa duplicita zistí až v 10-minútovom `supabase start`.
+
 ## 2026-10-01 — TENANT-ISOLATION-WALL: uzavretý balík aplikovaný v PROD (jedna transakcia), + stav architektúry ~40 %
 
 **GO foundera.** Migrácia `20261001160500_tenant_isolation_wall.sql` (aplikovaná jednou transakciou, `execute_sql`).
