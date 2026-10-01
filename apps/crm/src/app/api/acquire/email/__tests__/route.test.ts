@@ -67,6 +67,9 @@ describe("POST /api/acquire/email dedup claim", () => {
   let mailboxProfileId: string | null;
   /** true = adresa v `inbound_mailboxes` vôbec nie je. */
   let mailboxRowMissing: boolean;
+  /** Riadky zapísané do `inbound_mail_outcomes`; `outcomeWriteFails` simuluje pád denníka. */
+  let outcomeRows: Array<Record<string, unknown>>;
+  let outcomeWriteFails: boolean;
   /** Row returned from `profiles`; null simulates a profile outside the agency. */
   let profileRow: { full_name: string | null } | null;
   let mailboxReceivedUpdates: number;
@@ -78,6 +81,8 @@ describe("POST /api/acquire/email dedup claim", () => {
 
   beforeEach(() => {
     mailboxRowMissing = false;
+    outcomeRows = [];
+    outcomeWriteFails = false;
     vi.clearAllMocks();
     vi.stubEnv("ACQUIRE_SHARED_SECRET", SECRET);
     claimedKeys = new Set();
@@ -264,6 +269,16 @@ describe("POST /api/acquire/email dedup claim", () => {
         };
       }
 
+      if (table === "inbound_mail_outcomes") {
+        return {
+          insert: async (row: Record<string, unknown>) => {
+            if (outcomeWriteFails) return { error: { message: "boom" } };
+            outcomeRows.push(row);
+            return { error: null };
+          },
+        };
+      }
+
       throw new Error(`unexpected table ${table}`);
     });
   });
@@ -407,6 +422,41 @@ describe("POST /api/acquire/email dedup claim", () => {
     const logged = warn.mock.calls.map((c) => String(c[0])).join("\n");
     expect(logged).toContain("to_unmatched");
     expect(logged).not.toContain("to_agency_mailbox");
+    warn.mockRestore();
+  });
+
+  it("zapíše trvalú stopu aj pre mail, z ktorého lead nevznikne — len doména, nikdy adresa", async () => {
+    const { POST } = await import("../route");
+    const res = await POST(makeRequest({
+      ...INQUIRY_BODY,
+      email: { to: "smolko@inbound.revolis.ai", from: "Jan Novak <jan.novak@pima.sk>", subject: "Newsletter", text: "Dobry den", html: "" },
+    }));
+    expect(res.status).toBe(200);
+    expect(outcomeRows).toHaveLength(1);
+    const [row] = outcomeRows;
+    expect(row.outcome).toBe("not_a_lead");
+    expect(row.sender_domain).toBe("pima.sk");
+    expect(row.agency_id).toBe(AGENCY_ID);
+    expect(JSON.stringify(row)).not.toContain("@");
+    expect(JSON.stringify(row)).not.toContain("jan.novak");
+  });
+
+  it("zapíše stopu aj keď lead vznikne", async () => {
+    const { POST } = await import("../route");
+    await POST(makeRequest());
+    expect(outcomeRows).toHaveLength(1);
+    expect(outcomeRows[0].outcome).toBe("lead_created");
+    expect(outcomeRows[0].reason).toBeNull();
+  });
+
+  it("pád denníka nerozbije príjem leadu", async () => {
+    outcomeWriteFails = true;
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { POST } = await import("../route");
+    const res = await POST(makeRequest());
+    expect(res.status).toBe(200);
+    expect([...leadRows.values()]).toHaveLength(1);
+    expect(warn.mock.calls.map((c) => String(c[0])).join("\n")).toContain("mail_outcome_write_failed");
     warn.mockRestore();
   });
 

@@ -1,3 +1,16 @@
+## Session 2026-10-01 (DOMAIN-LOG-DURABLE)
+### Dokončené
+- DOMAIN-READ (read-only): za 6 h jediný `NOT_A_LEAD` (`pima.sk`, no_contact) — z jednej vzorky sa nedá rozhodnúť o `SOURCE_RULES`.
+- DOMAIN-LOG-DURABLE: tabuľka `inbound_mail_outcomes` + fail-soft zápis z route (len doména + príznaky, bez adries/obsahu). Testy + mutation proof.
+### Rozpracované / Pending
+- Migrácia NIE JE v PROD — aplikácia po merge len s GO.
+- Retencia 90 dní: purge cron zatiaľ nie je (otvorené).
+- #774 (MAILBOX-LOG-FIX) a táto zmena sú na jednej vetve → jeden PR.
+### Kľúčové súbory zmenené
+- `apps/crm/supabase/migrations/20261001100000_inbound_mail_outcomes.sql`, `apps/crm/src/lib/inbound/mail-outcome.ts`, `apps/crm/src/app/api/acquire/email/route.ts` + testy.
+### Ďalší krok
+Merge → GO na aplikáciu migrácie v PROD → po pár dňoch `SELECT sender_domain, count(*)` nad tabuľkou.
+
 ## Session 2026-10-01 (MAILBOX-LOG-FIX)
 ### Dokončené
 - Korekcia handoffu: #743 zmergovaný, záznam GO MAILBOX už bol zapísaný (#755) — nič sa nedopisovalo.

@@ -1,5 +1,35 @@
 # Critical Decisions Log
 
+## 2026-10-01 — DOMAIN-LOG-DURABLE: trvalá stopa po každom e-maile príjmu (tabuľka `inbound_mail_outcomes`)
+
+**Rozhodnutie:** BUILD na výslovné GO foundera. **Ústava v2 (poctivo):** Q1 „zaplatil by za to klient" —
+priamo NIE (je to diagnostika, nie funkcia), preto by podľa veta strop bol VALIDATE; GO foundera to
+prebíja a zapisujem to, nie skrývam. Dôvod BUILD: bez trvalej stopy sa nedá zistiť, koľko dopytov klienta
+sa zahodilo (DOMAIN-READ: za 6 h jediný záznam, logy ~1 h). Q8 timing: príjem je dnes blokér retencie.
+
+**Zdroj dát / GDPR (ručný rozbor — skill `gdpr-advisor` v repe NEEXISTUJE):**
+vlastný príjem e-mailov (nie nový externý zdroj, mimo `master-data-sourcing-map`). Ukladá sa LEN
+registrovateľná doména odosielateľa + boolean príznaky + dôvod; NIKDY lokálna časť adresy, meno,
+telefón, text správy ani `to`. Právny základ 6(1)(f); proporcionalita: doména osobu neidentifikuje,
+miernejší prostriedok (log s ~1 h retenciou) nestačí. Test stráži, že riadok neobsahuje `@`.
+
+**Zmena:** migrácia `20261001100000_inbound_mail_outcomes.sql` (RLS ON, 0 politík, REVOKE anon/authenticated —
+rovnaký model ako `cron_runs`), `lib/inbound/mail-outcome.ts` (explicitný zoznam polí, fail-soft zápis,
+pád denníka ide na `console.warn`, príjem leadu nerozbije), zapojené do route pre `lead_created`,
+`not_a_lead` aj race-duplicitu.
+
+**Dôkaz:** 113 testov zelených; mutation proof — odstránený zápis `lead_created` (2 červené), adresa
+v `sender_domain` (2 červené), odstránený try/catch (1 červený) → návrat zelený. eslint 0 chýb,
+typecheck 49 (baseline 54), check-api-contract a check-cron-observability bez nových porušení.
+
+**NEAPLIKOVANÉ NA PROD:** migrácia je len v repe. Aplikovať ju (Supabase PROD `ypgajkhqtbriqqmyawyv`) je
+samostatný krok po merge — vyžaduje GO. Kým tabuľka v PROD nie je, zápis zlyhá fail-soft
+(`mail_outcome_write_failed` na warn) a príjem funguje ako doteraz.
+
+**OTVORENÉ:** (1) **Retencia 90 dní je len deklarovaná, mazanie nebeží** — pred ostrým behom treba purge
+(cron, ktorý prejde `cron-observability` ratchet). (2) Fiktívne číslo „koľko dopytov sa stratilo od 22. 9."
+sa týmto spätne NEZISTÍ — stopa začína až od nasadenia.
+
 ## 2026-10-01 — MAILBOX-LOG-FIX: log rozlišuje agentúrnu schránku, Gmail pull nevyberá náhodnú adresu
 
 **Rozhodnutie:** BUILD (GO foundera). Nemení, koľko leadov vznikne — odstraňuje zavádzajúci

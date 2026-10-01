@@ -21,6 +21,7 @@ import { runInboundLeadTriageAndNotify } from "@/lib/acquire/inbound-lead-triage
 import { runInboundLeadAutoResponse } from "@/lib/acquire/inbound-lead-auto-response";
 import { INBOUND_REPLY_DRAFT_TIMEOUT_MS, scheduleInboundReplyDraft } from "@/lib/inbound/reply-draft";
 import { mailboxLogEvent } from "@/lib/inbound/mailbox-routing";
+import { buildMailOutcomeRow, recordInboundMailOutcome } from "@/lib/inbound/mail-outcome";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -293,6 +294,16 @@ export async function POST(req: NextRequest) {
     const mailboxEvent = mailboxLogEvent({ mailbox, rowFound, hasOwner: owner != null });
     if (mailboxEvent) console.warn(`[acquire.email] ${mailboxEvent} requestId=${requestId}`);
 
+    // Trvalá stopa po tomto maile (logy Vercelu prežijú ~1 h). Fail-soft.
+    const recordOutcome = (outcome: "lead_created" | "not_a_lead", reason: string | null) =>
+      recordInboundMailOutcome(
+        supa,
+        buildMailOutcomeRow({
+          agencyId, requestId, eventId: ev.eventId ?? null, outcome, reason,
+          diagnostics: notLeadDiagnostics(ev), mailboxEvent,
+        }),
+      );
+
     // 4. dedup check — SELECT najprv (presne ako pôvodne), duplicate flag ide do toLeadCandidate
     const { data: existing } = await supa
       .from("acquire_dedup_keys")
@@ -307,6 +318,7 @@ export async function POST(req: NextRequest) {
       const ownerBackfilled = duplicate
         ? await backfillLeadOwner(supa, deterministicLeadId(key), agencyId, owner)
         : false;
+      await recordOutcome("not_a_lead", notLeadReason(ev, duplicate));
       console.log(JSON.stringify({
         status: "NOT_A_LEAD", requestId, agencyId, event_id: ev.eventId,
         reason: duplicate ? "duplicate" : "not_a_lead",
@@ -337,6 +349,7 @@ export async function POST(req: NextRequest) {
       const ownerBackfilled = await backfillLeadOwner(
         supa, deterministicLeadId(key), agencyId, owner,
       );
+      await recordOutcome("not_a_lead", "duplicate");
       console.log(JSON.stringify({
         status: "NOT_A_LEAD", requestId, agencyId, event_id: ev.eventId,
         reason: "duplicate",
@@ -468,6 +481,8 @@ export async function POST(req: NextRequest) {
       source: "acquire_email",
     });
 
+
+    await recordOutcome("lead_created", null);
     console.log(JSON.stringify({ status: "LEAD_CREATED", requestId, agencyId, lead_id: lead.id }));
     return NextResponse.json({
       ok: true,
