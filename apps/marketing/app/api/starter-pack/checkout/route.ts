@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-
-const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY ?? ''
-const STARTER_PACK_PRICE = process.env.STRIPE_PRICE_STARTER_PACK ?? ''
+import { isValidStripePriceId } from '../../../../lib/pricing'
 
 export async function POST(req: NextRequest) {
   const body = await req.json() as {
@@ -21,7 +19,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'consent_required' }, { status: 400 })
   }
 
-  if (!STRIPE_SECRET || !STARTER_PACK_PRICE) {
+  // Read per request, not at import: a module-level const freezes whatever the
+  // build saw. And validate the format — a placeholder such as `price_xxx` or a
+  // value pasted with a trailing newline is truthy, so the old `!PRICE` check let
+  // it through and the customer met Stripe's error on the checkout button instead
+  // of an honest "not configured". Same predicate the CRM uses for every other
+  // price (`isValidStripePriceId`), so the two cannot disagree.
+  const stripeSecret = (process.env.STRIPE_SECRET_KEY ?? '').trim()
+  const starterPackPrice = (process.env.STRIPE_PRICE_STARTER_PACK ?? '').trim()
+
+  if (!stripeSecret || !isValidStripePriceId(starterPackPrice)) {
     return NextResponse.json({ error: 'checkout_not_configured' }, { status: 503 })
   }
 
@@ -30,12 +37,12 @@ export async function POST(req: NextRequest) {
   const stripeRes = await fetch('https://api.stripe.com/v1/checkout/sessions', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${STRIPE_SECRET}`,
+      Authorization: `Bearer ${stripeSecret}`,
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     body: new URLSearchParams({
       'payment_method_types[0]': 'card',
-      'line_items[0][price]': STARTER_PACK_PRICE,
+      'line_items[0][price]': starterPackPrice,
       'line_items[0][quantity]': '1',
       mode: 'payment',
       customer_email: email,

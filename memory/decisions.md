@@ -1,5 +1,27 @@
 # Critical Decisions Log
 
+## 2026-10-01 — STARTER-PACK-GUARD: /balik checkout validuje formát price ID (BUILD)
+
+**Rozhodnutie:** BUILD, malá oprava. Dôvod: `/balik` je jediný low-ticket predajný
+vstup (47 €) a práve tam sa čaká na nahratie `STRIPE_PRICE_STARTER_PACK` (krok B).
+Zástupná alebo zle vložená hodnota by sa dnes prejavila až chybou Stripe na
+platobnom tlačidle, čiže stratený kupujúci pri prvom reálnom použití.
+
+**Čo bolo zle:** route kontrolovala `!STARTER_PACK_PRICE`, teda len neprázdnosť, a
+čítala env raz pri importe modulu. `price_xxx` aj hodnota s koncovým riadkom sú
+pravdivé, takže prešli rovno do Stripe.
+
+**Oprava:** env sa číta pri každom volaní, oreže sa a overí rovnakým
+`isValidStripePriceId` ako každá iná cena v CRM (marketing ho dostal cez existujúci
+re-export `lib/pricing.ts`, nie kópiou regexu). Neplatná cena alebo chýbajúci kľúč
+dá 503 `checkout_not_configured` a Stripe sa nezavolá. Správanie pri platnej
+konfigurácii sa nemení.
+
+**Dôkaz:** `apps/crm/tests/verification/starter-pack-checkout-price-guard.verification.test.ts`
+(14 testov; v `apps/marketing` nie je test runner). Mutácie: pôvodná route, kontrola
+formátu nahradená truthiness, neorezaná cena, vynechaný kľúč, neorezaný kľúč, každá
+červená. Návrat: 14/14.
+
 ## [2026-10-01] OUTREACH-DOMAIN-PROOF — príprava hotová, test NESPUSTENÝ (čaká na POST foundera); verejný vstup zavretý
 
 **Cieľ:** dokázať v PROD, že po oprave `OUTREACH_FROM_EMAIL` odosielanie ide z overenej domény (`inbound.auto_response`
