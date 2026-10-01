@@ -1,3 +1,13 @@
+## Session 2026-10-01 (PORT-443)
+### Dokončené
+- Scoped klient v `createProperty` (nový 2. parameter), `getLeadById`, `POST /api/properties` a `matching/action`. `POST /api/properties` vracia `okResponse({ property })`: formulár kontroloval `data.ok`, takže po úspešnom vytvorení ukazoval chybu.
+- Test `src/app/api/properties/__tests__/scoped-client.test.ts` + 1 test v `properties-store-cross-tenant.test.ts`. Mutation proof 5/5 (každý z piatich zásahov vrátený zvlášť → červená).
+- `prepush-gate` PASS (typecheck 49/54, lint); migrácie NEOVERENÉ.
+### Rozpracované / Pending
+- #443 možno zavrieť po merge tohto PR (PATCH/DELETE boli na main už predtým). #495 a #304 čakajú na vlastné GO.
+### Ďalší krok
+GO PORT-495 (1 riadok: fiktívne BRI skóre 50).
+
 ## Session 2026-10-01 (PR-BACKLOG-TRIAGE-2)
 ### Dokončené
 - `docs/reports/2026-10-01-pr-backlog-triage-2.md`: 25 otvorených PR zmeraných cez `merge-tree` (po `--unshallow`) a čítaním `origin/main`. Nič nezmergované ani zatvorené.

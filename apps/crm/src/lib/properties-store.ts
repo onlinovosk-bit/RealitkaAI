@@ -499,8 +499,11 @@ export async function getProperty(
   };
 }
 
-export async function createProperty(input: PropertyInput) {
-  const supabase = await resolveTenantSupabase();
+export async function createProperty(
+  input: PropertyInput,
+  scopedSupabase?: SupabaseClient | null,
+) {
+  const supabase = await resolveTenantSupabase(scopedSupabase);
 
   if (!supabase) {
     return {
