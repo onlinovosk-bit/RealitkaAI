@@ -273,12 +273,10 @@ export async function GET(
 
     const { data: callerProfile } = await supabase
       .from("profiles").select("agency_id, id").eq("auth_user_id", user.id).maybeSingle();
-    if (callerProfile?.agency_id) {
-      const { data: leadRow } = await supabase
-        .from("leads").select("agency_id").eq("id", id).maybeSingle();
-      if (leadRow?.agency_id !== callerProfile.agency_id) {
+    const { data: leadRow } = await supabase
+      .from("leads").select("agency_id").eq("id", id).maybeSingle();
+    if (!sameAgency(callerProfile?.agency_id, leadRow?.agency_id)) {
         return errorResponse("Forbidden", 403);
-      }
     }
 
     return okResponse({ lead });

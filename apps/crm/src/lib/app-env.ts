@@ -1,4 +1,6 @@
-﻿export function getRequiredEnv(name: string) {
+﻿import { DEGRADED_WITHOUT, validateEnv } from "@/config/env";
+
+export function getRequiredEnv(name: string) {
   const value = process.env[name];
 
   if (!value) {
@@ -53,16 +55,12 @@ export function getEnvironmentHealth(): {
       present: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL),
     },
     {
-      key: "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
-      label: "Supabase publishable key",
-      required: false,
-      present: Boolean(process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY),
-    },
-    {
-      key: "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-      label: "Supabase anon key",
-      required: false,
-      present: Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
+      key: "SUPABASE_KEY",
+      label: "Supabase kľúč (NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY alebo NEXT_PUBLIC_SUPABASE_ANON_KEY)",
+      required: true,
+      present: Boolean(
+        process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      ),
     },
     {
       key: "OPENAI_API_KEY",
@@ -102,9 +100,15 @@ export function getEnvironmentHealth(): {
     },
   ];
 
-  const requiredOk = checks
-    .filter((item) => item.required)
-    .every((item) => item.present);
+  // Premenné, bez ktorých funkcia ticho umrie — rovnaký zoznam ako štart-log `[env] degraded`.
+  const listed = new Set(checks.map((c) => c.key));
+  for (const [key, feature] of Object.entries(DEGRADED_WITHOUT)) {
+    if (listed.has(key)) continue;
+    checks.push({ key, label: `${key} — ${feature}`, required: false, present: Boolean(process.env[key]?.trim()) });
+  }
+
+  // Jeden zdroj pravdy: povinné = to, čo vynucuje schéma v config/env.ts.
+  const requiredOk = validateEnv().ok;
 
   const resend = Boolean(process.env.RESEND_API_KEY?.trim());
   const from = Boolean(process.env.OUTREACH_FROM_EMAIL?.trim());
