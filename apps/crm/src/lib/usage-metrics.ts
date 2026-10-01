@@ -45,7 +45,10 @@ export type UsageMetricName =
   // A broker pressing Call or Email on a lead. Counted so the contact substrate
   // has usage visibility like every other write path, not because C1 is derived
   // from it — C1 comes from lead_events, which is the auditable record.
-  | "lead_contact_attempt";
+  | "lead_contact_attempt"
+  // DEMAND-D4: a broker opened the verified-demand matches on a lead — the
+  // "opened" step of the matching funnel (matching-input-contract-v1 §4).
+  | "demand_matches_view";
 
 /**
  * Inkrementuje denný počítadlo cez RPC (service role).
