@@ -1,3 +1,13 @@
+## Session 2026-10-01 (PR-BACKLOG-TRIAGE-3)
+### Dokončené
+- `docs/reports/2026-10-01-pr-backlog-triage-3.md`: 14 otvorených PR, merge-tree proti `main` `e1340c1d`.
+- **Kľúčové zistenie:** founder zatvoril #443/#495/#304, ale opravy sú len v drafte #776 (overené na `origin/main`: `?? 50` stále tam, `getRecoveryCodeCallbackPath` a scoped `createProperty` nie). Zatvorenie je pravdivé až po merge #776.
+- #774 nesie migráciu `20261001100000_inbound_mail_outcomes.sql` → neoverená bez Postgresu.
+### Rozpracované / Pending
+- Founder: merge #776; zavrieť #358; rozhodnúť docs PR (#433, #426, #366, #351, #357); BACKLOG #198/#192/#191/#189/#186.
+### Ďalší krok
+Merge #776; potom `[env]` log → fail-fast rozhodnutie.
+
 ## Session 2026-10-01 (ENV-SINGLE-SOURCE)
 ### Dokončené
 - `lib/app-env.ts` (živá diagnostika `/system`, health-dashboard, smoke-tests) už nemá vlastnú pravdu o povinných premenných: `requiredOk = validateEnv().ok` z `config/env.ts`. Dva zdroje → jeden.
