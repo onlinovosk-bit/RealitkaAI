@@ -1,3 +1,12 @@
+## Session 2026-10-01 (PR-BACKLOG-TRIAGE-2)
+### Dokončené
+- `docs/reports/2026-10-01-pr-backlog-triage-2.md`: 25 otvorených PR zmeraných cez `merge-tree` (po `--unshallow`) a čítaním `origin/main`. Nič nezmergované ani zatvorené.
+- **Korekcia triáže z 28. 9.:** #443 nie je „2 riadky" — chýba scoped klient aj v `POST /api/properties` a `getLeadById`. Handoff tvrdil, že #495/#443 neboli označené; boli.
+### Rozpracované / Pending
+- Founder: zavrieť #155, #326, #393, #360–#365; rozhodnúť BACKLOG #198/#192/#189/#186/#191.
+### Ďalší krok
+GO PORT-443 (alebo PORT-495).
+
 ## Session 2026-10-01 (CHECKOUT-DIAG-01)
 ### Dokončené
 - `/api/billing/checkout-config` vracia `missingPriceEnvKeys {seat, topup}` — iba NÁZVY premenných, ktoré chýbajú alebo nie sú platné `price_…` (apps/crm/src/lib/program-tier-pricing.ts: `missingSeatPriceEnvKeys`, `missingTopupPriceEnvKeys`).
