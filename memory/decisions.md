@@ -1,5 +1,17 @@
 # Critical Decisions Log
 
+## [2026-10-01] D1-BACKFILL-A — gold set doplnený o historické portálové e-maily (founder GO)
+- **Prečo:** PROD má na jedinom reálnom tenante 61 poznámok ≥ 40 znakov (39 z Realvia importu bez dopytu). Horná hranica podľa regexu: rozpočet ≤ 8, izby ≤ 6, kúpa/prenájom ≤ 8. Brána so support ≥ 10 by skončila `INSUFFICIENT` bez ohľadu na model. Founder zvolil A (nie B shadow mode, nie C znížiť prah).
+- **Čo:** `scripts/demand-backfill-experiment.ts extract --input <priečinok>` číta `.eml` / `.mbox` / `.txt` a púšťa ich cez produkčný `parseEmail` → `inquiryText` + meno kontaktu (rovnaký vstup ako `acquire/email` → `scheduleDemandExtraction`). Mail, z ktorého by lead nevznikol, sa nemeria. Id = hash obsahu, deduplikácia DB × schránka. Bez novej závislosti (vlastná MIME čítačka v `lib/demand/backfill-input.ts`).
+- **Beh:** founder lokálne s `.env.local`; táto session nemá kľúče aplikácie a v GitHube PROD secrets nie sú. Pred behom: Anthropic v DPA / `/legal/sub-processors` (rozhodnutie foundera/právnika).
+
+## [2026-09-30] DEMAND-D4 — matching iba na overenom dopyte, za flagom (founder GO)
+- **Čo:** engine `lib/demand/match.ts`, zápis `match-store.ts` do novej tabuľky `demand_property_matches` (`demand_record_id NOT NULL`, tenant RLS, zápis len service role), API `/api/leads/[id]/demand-matches`, karta na detaile leadu (✓/✗/⚠ + citát klienta), skript `scripts/demand-match-run.ts` (predvolene dry-run funnel, `--apply` len na GO).
+- **Zdroj pravdy:** výhradne `lead_demands`; starý matching (číta predvyplnené `leads.*`) nezmenený a oddelený.
+- **Spúšťanie:** hneď po uložení demand recordu so `status=ok`, samostatný flag `DEMAND_MATCHING_ENABLED` (OFF), aby sa D1 dalo zmerať skôr, než D4 zapíše.
+- **Pravidlá podľa PROD dát** (150 nehnuteľností): typ tvrdo (aj „Neznáme“ = nie), riadky „Dopyt“ vyradené, aktívne aj preklep „Aktivna“, lokalita so skloňovaním (prefix 5), rozpočet do +10 % ako ✗, bez fallbacku; skóre = zhody/(zhody+nezhody), prah 0,6, top 10.
+- **Overenie:** 51 testov (engine, API, flag) + RLS test; 5/5 mutantov zabitých (2 prežili prvé kolo → doplnené testy „Dopyt bez disposition“ a „rejected s hodnotou“).
+- **Na PROD nič:** `lead_demands` tam ešte nie je. Poradie: backfill D1 → migrácie D1 + D4 → `DEMAND_EXTRACTION_ENABLED` → zmerať → `DEMAND_MATCHING_ENABLED` → `demand-match-run --apply` na históriu.
 ## [2026-09-30] MEMORY-GUARD — CI zablokuje PR, ktorý zmaže históriu pamäte (founder GO)
 - **Čo:** `.github/workflows/memory-guard.yml` + `scripts/ci/memory-append-only.sh` (12 testov, zapojené aj do `saas-grade-pipeline`).
 - **Ako:** simuluje merge PR do bázy (`git merge-tree`), nie diff vetvy. **FAIL**, keď z `session-summary.md` / `decisions.md` zmizne nadpis záznamu (`## …`) alebo > 20 riadkov. **WARN** pri oprave do 20 riadkov bez straty záznamu. Výnimka: štítok `memory-rewrite-approved`.

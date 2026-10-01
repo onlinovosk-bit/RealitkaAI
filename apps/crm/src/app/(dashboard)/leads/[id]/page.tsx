@@ -26,6 +26,7 @@ import {
 import { useRealtimeLeadScore } from "@/hooks/useRealtimeLeadScore";
 import SalesBrainPanel from "@/components/leads/sales-brain-panel";
 import DealStrategyCard from "@/components/leads/deal-strategy-card";
+import DemandMatchesCard from "@/components/leads/demand-matches-card";
 import KatasterMonitorCard from "@/components/leads/KatasterMonitorCard";
 import {
   SLATE_HORIZON,
@@ -856,6 +857,7 @@ export default function LeadDetailPage() {
             ) : null}
             {id ? <SalesBrainPanel leadId={id} /> : null}
             {id ? <DealStrategyCard leadId={id} /> : null}
+            {id ? <DemandMatchesCard leadId={id} /> : null}
             {id ? (
               <KatasterMonitorCard
                 parcelId={id}
