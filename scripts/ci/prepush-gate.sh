@@ -60,6 +60,7 @@ step "typecheck ratchet (regex)" "$ROOT" node ./scripts/ci/__tests__/typecheck-b
 step "wait-for-supabase"        "$ROOT" ./scripts/ci/__tests__/wait-for-supabase.test.sh
 step "API contract (ratchet)"   "$ROOT" node apps/crm/scripts/check-api-contract.mjs --ci
 step "Cron denník (ratchet)"    "$ROOT" node apps/crm/scripts/check-cron-observability.mjs --ci
+step "Schema-gap (ratchet)"     "$ROOT" node apps/crm/scripts/check-schema-gap.mjs --ci
 step "Typecheck (baseline)"     "$CRM"  node scripts/typecheck-baseline.mjs
 step "Lint"                     "$CRM"  npm run lint
 
