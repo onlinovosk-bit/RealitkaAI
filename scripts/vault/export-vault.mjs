@@ -18,6 +18,7 @@ import {
   assignFileNames,
   buildTokenMap,
   frontmatter,
+  graphConfig,
   isOverwritable,
   renderDashboard,
   renderDecision,
@@ -26,6 +27,7 @@ import {
   renderSession,
   renderSessionIndex,
   splitDecisions,
+  shouldWriteGraph,
   splitSessions,
   toLf,
 } from './lib.mjs';
@@ -107,6 +109,21 @@ for (const f of readdirSync(join(ROOT, 'memory')).filter((n) => n.endsWith('.md'
 put('HOME.md', renderHome({ decisions, sessions, opsFiles }, ctx));
 put('Dashboard.md', renderDashboard(ctx));
 for (const [name, text] of Object.entries(TEMPLATES)) put(`99-TEMPLATES/${name}`, text, { onlyIfAbsent: true });
+
+// Graf: vlastný súbor používateľa → len ak chýba alebo je nedotknutý (viď shouldWriteGraph).
+{
+  const gPath = join(vault, '.obsidian', 'graph.json');
+  const gExisting = existsSync(gPath) ? readFileSync(gPath, 'utf8') : null;
+  if (shouldWriteGraph(gExisting)) {
+    stats.written++;
+    if (!dry) {
+      mkdirSync(dirname(gPath), { recursive: true });
+      writeFileSync(gPath, JSON.stringify(graphConfig(), null, 2) + '\n', 'utf8');
+    }
+  } else {
+    stats.preserved.push('.obsidian/graph.json');
+  }
+}
 
 const mode = dry ? 'DRY-RUN (nič nezapísané)' : 'zapísané';
 console.log(`vault: ${vault} — ${mode}`);

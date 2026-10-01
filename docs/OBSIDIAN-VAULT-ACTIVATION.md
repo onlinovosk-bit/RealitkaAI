@@ -73,3 +73,7 @@ Frontmatter: `type`, `date`, `verdict`, `decision_id`, `prs`, `tags`. Tokeny roz
 
 Obmedzenie: export je jednosmerný (repo → vault). Úpravy generovaných poznámok sa pri ďalšom
 exporte prepíšu; ručné poznámky patria do súborov bez markera `generated`.
+
+Graf: exportér zapíše `.obsidian/graph.json` (filter bez `HOME`/indexov, farby: `#kind/prod` červená,
+`#decision` modrá, `#session` oranžová, `#ops` zelená) **len ak súbor chýba alebo je nedotknutý**.
+Tvoje vlastné úpravy grafu sa neprepíšu. Po exporte graf zatvor a znova otvor.
