@@ -103,8 +103,8 @@ describe("stripe-expected-prices.json ↔ program-tier-pricing.ts", () => {
  * works. What it prevents is a new sellable price landing in the code while
  * the schema stays silent about it.
  *
- * The schema is read as text on purpose: importing the module runs
- * `parseEnv()` at load and throws without a full production environment.
+ * The schema is read as text on purpose: it keeps this check independent of
+ * the runtime environment.
  */
 const ENV_SCHEMA = resolve(__dirname, "../../src/config/env.ts");
 

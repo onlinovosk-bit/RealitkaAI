@@ -19,6 +19,17 @@ const API_ROOT = join(CRM_ROOT, "src/app/api");
 const FAIL_OPEN = /\?\.agency_id\s*&&/;
 
 /**
+ * DRUHÝ fail-open tvar (TENANT-GATE-2, nález PII-GATE-AUDIT): brána obalená do
+ * `if (caller?.agency_id) { … row.agency_id !== caller.agency_id … }`. Profil bez
+ * agentúry blok celý preskočí, takže prejde rovnako ako pri `&&` vzore vyššie.
+ *
+ * Zámerne sa hľadá aj porovnanie vo vnútri bloku (do 400 znakov): holé
+ * `if (profile?.agency_id) { … }` bez porovnania (napr. voliteľné logovanie) brána nie je.
+ */
+const FAIL_OPEN_WRAPPED =
+  /if\s*\(\s*\w+\??\.agency_id\s*\)\s*\{[\s\S]{0,400}?!==\s*\w+\??\.agency_id/;
+
+/**
  * Jediná výnimka — a je naviazaná na svoju PRÍČINU, nie na dátum ani na to, či si
  * niekto spomenie ju zmazať.
  *
@@ -65,6 +76,14 @@ describe("[verification] tenant gates fail closed across the API surface", () =>
       .filter((f) => FAIL_OPEN.test(readFileSync(f, "utf8")))
       .map((f) => relative(API_ROOT, f).split("\\").join("/"))
       .filter((rel) => !ALLOWED.has(rel));
+
+    expect(offenders).toEqual([]);
+  });
+
+  it("žiadna routa nepoužíva fail-open brány obalené do if (caller?.agency_id) { … !== … }", () => {
+    const offenders = files
+      .filter((f) => FAIL_OPEN_WRAPPED.test(readFileSync(f, "utf8")))
+      .map((f) => relative(API_ROOT, f).split("\\").join("/"));
 
     expect(offenders).toEqual([]);
   });

@@ -7,6 +7,140 @@
 ### Ďalší krok
 Founder: povoliť push vetvy `claude/split-776-fixes` a draft PR; potom zmergovať split.
 
+## Session 2026-10-01 (TENANT-GATE-2)
+### Dokončené
+- 8 fail-open brán tvaru `if (callerProfile?.agency_id) { … }` → fail-closed `sameAgency()`: `leads/[id]/activities` GET/POST, `leads/[id]/moves` GET/POST, `tasks/[id]` PATCH/DELETE, `leads/[id]` GET. `tasks` DELETE: volajúci bez agentúry dostane 403 (tasks nemá vlastný `agency_id`, tenant ide cez lead).
+- `deal-strategy` a `sales-brain` majú novú tenant kontrolu (predtým iba `getUser`).
+- `getPipelineMovesByLeadId` a `appendPipelineMove` prijímajú scoped klienta; `moves` route ho odovzdáva (predtým browser singleton → trieda #443).
+- Sweep test dostal druhý tvar (`FAIL_OPEN_WRAPPED`); route test `fail-closed-gates.test.ts` (6) cez reálne handlery + store test `pipeline-moves-scoped.test.ts` (2). Mutation proof 7/7 (každý zásah vrátený zvlášť → červená; `leads-store` mutácia prežila route test, preto store test).
+- `prepush-gate` PASS; migrácie NEOVERENÉ (zmena sa ich netýka).
+### Rozpracované / Pending
+- Vetva `claude/tenant-gate-2` je zatiaľ len lokálna — push čaká na founderovo výslovné povolenie.
+- RLS politiky pre `activities`, `pipeline_moves`, `tasks` som nečítal; nález bol „RLS je jediný múr", teraz je ich viac.
+- Ostatné nálezy PII-GATE-AUDIT (Meta lookalike, ghostwriter, logy) čakajú na vlastné GO.
+### Ďalší krok
+Povoliť push `claude/tenant-gate-2` + draft PR; potom GO META-LOOKALIKE-HASH.
+
+## Session 2026-10-01 (PII-GATE-AUDIT)
+### Dokončené
+- `docs/reports/2026-10-01-pii-gate-audit.md` (read-only). Rozsah „obe oblasti" určil founder; pojem v repe nebol definovaný.
+- **Kľúčový nález:** druhý fail-open tvar `if (callerProfile?.agency_id) {…}` (8 miest: leads/[id]/activities, moves, tasks/[id], leads/[id] GET) — sweep regex `/\?\.agency_id\s*&&/` ho nevidí. + `moves` GET číta bez scoped klienta, `deal-strategy` bez tenant kontroly.
+- Externé/logy: Meta lookalike posiela e-maily v čistom texte (komentár tvrdí hash), ghostwriter posiela meno/adresu vlastníka + „dedičstvo" do OpenAI a ukladá bez tenanta, `console.log` celého riadku v `leads-store.ts:694`, HubSpot bez právneho podkladu.
+- Jedno tvrdenie z prechodu vyvrátené (call-coach prepis sa maskuje).
+### Rozpracované / Pending
+- Súvisiaci split: #781 (PORT-443/495/304) otvorený ako draft, vetva `claude/split-776-fixes` (founder povolil push).
+### Ďalší krok
+GO TENANT-GATE-2 (A1+A2+A3), potom META-LOOKALIKE-HASH.
+
+## Session 2026-10-01 (PORT-774-MIGRATION-VERIFY)
+### Dokončené
+- Migrácia `20261001100000_inbound_mail_outcomes.sql` z #774 overená na **skutočnom Postgrese 16.13** (scratch, port 55433, role anon/authenticated/service_role + Supabase-like default privileges). Žiadny zápis do PROD.
+- Prešlo: aplikácia 1× aj 2× (idempotentná); RLS zapnutá; anon/authenticated bez grantov a `permission denied` na INSERT aj SELECT; service_role (bypassrls) INSERT/SELECT ok; defaults (`has_*` false, `id`, `created_at`); CHECK odmietne `outcome='bogus'`; NOT NULL `agency_id`; index `(agency_id, created_at DESC)`.
+- **Kód ↔ tabuľka:** 16 kľúčov `InboundMailOutcomeRow` = 16 stĺpcov (okrem `id`, `created_at`), 0 rozdielov; INSERT so všetkými 16 hodnotami prešiel.
+- **Mutation proof na ochranu:** bez `REVOKE` anon stále neprejde (zastaví ho RLS bez politík); bez `REVOKE` aj RLS anon zapíše riadok. Dva nezávislé múry, test rozlišuje.
+- Ratchet z #778 na zlúčenom strome (`main` + #774): exit 0, 0 nových medzier (126 volaných tabuliek, 147 objektov z migrácií).
+### Rozpracované / Pending
+- **Neoverené:** Supabase `db reset` (CLI/Docker tu nie je), retencia 90 dní — mazanie zatiaľ NEBEŽÍ (priznáva aj migrácia); skutočné PROD schéma (PROD zaostáva za repom o 26 migrácií podľa #778) — táto tabuľka je nová, ale pred aplikáciou na PROD treba poradie migrácií.
+- Zápis kódu z #774 som netestoval proti DB cez Supabase klienta, iba SQL s rovnakými stĺpcami.
+### Ďalší krok
+Merge #774 je founderov úkon; pred aplikáciou migrácie na PROD overiť poradie voči 26 neaplikovaným migráciám.
+
+## Session 2026-10-01 (PR-BACKLOG-TRIAGE-3)
+### Dokončené
+- `docs/reports/2026-10-01-pr-backlog-triage-3.md`: 14 otvorených PR, merge-tree proti `main` `e1340c1d`.
+- **Kľúčové zistenie:** founder zatvoril #443/#495/#304, ale opravy sú len v drafte #776 (overené na `origin/main`: `?? 50` stále tam, `getRecoveryCodeCallbackPath` a scoped `createProperty` nie). Zatvorenie je pravdivé až po merge #776.
+- #774 nesie migráciu `20261001100000_inbound_mail_outcomes.sql` → neoverená bez Postgresu.
+### Rozpracované / Pending
+- Founder: merge #776; zavrieť #358; rozhodnúť docs PR (#433, #426, #366, #351, #357); BACKLOG #198/#192/#191/#189/#186.
+### Ďalší krok
+Merge #776; potom `[env]` log → fail-fast rozhodnutie.
+
+## Session 2026-10-01 (ENV-SINGLE-SOURCE)
+### Dokončené
+- `lib/app-env.ts` (živá diagnostika `/system`, health-dashboard, smoke-tests) už nemá vlastnú pravdu o povinných premenných: `requiredOk = validateEnv().ok` z `config/env.ts`. Dva zdroje → jeden.
+- Dve individuálne Supabase kľúč-kontroly nahradené jednou `SUPABASE_KEY` (PUBLISHABLE *alebo* ANON, required). Do `/system` pribudli `SUPABASE_SERVICE_ROLE_KEY` a `CRON_SECRET` (zo `DEGRADED_WITHOUT`), rovnaký zoznam ako štart-log.
+- **Viditeľná zmena správania:** `/system` ide do `fallback`, ak chýba Supabase kľúč (predtým stačila URL). Je to pravdivejšie, ale ak prod kľúč naozaj nemá, stránka to ukáže.
+- Test `app-env-single-source.test.ts` (9), mutation proof 5/5. Súvisiace testy 40/40; `prepush-gate` PASS; migrácie NEOVERENÉ.
+### Rozpracované / Pending
+- `[env]` log z produkcie stále chýba (#776 nezmergovaný). Fail-fast až po ňom.
+### Ďalší krok
+Merge #776 → nasadenie → `[env]` log → rozhodnutie o fail-fast.
+
+## Session 2026-10-01 (ENV-SCHEMA-RECONCILE — iba kódová strana)
+### Dokončené
+- **Premisa chýbala:** GO prišlo bez `[env]` logu z nasadenia (#776 nie je zmergovaný), takže schému som zosúladil len s tým, čo KÓD číta, nie s produkciou. Produkčnú stranu stále neviem.
+- Zistenie: `lib/app-env.ts` je živá diagnostika (`/system`, health-dashboard) a hovorí, že povinná je iba `NEXT_PUBLIC_SUPABASE_URL`; `config/env.ts` bola s ňou v rozpore (šesť povinných). **Dva zdroje pravdy o env — zjednotenie je ďalšia brána.**
+- `config/env.ts`: hard-required = URL + (ANON *alebo* PUBLISHABLE; superRefine). `OPENAI_API_KEY`, `STRIPE_SECRET_KEY`, `CRON_SECRET`, `SUPABASE_SERVICE_ROLE_KEY` sú voliteľné (kód ich ošetruje: `getOpenAIClient()` null, `isAuthorizedCronBearer` fail-closed, `createServiceRoleClient()` null) a idú do `DEGRADED_WITHOUT` — štart-log hlási `[env] degraded (…)` s dopadom na funkciu. Whitespace-only = nenastavené (kód trimuje); prázdny reťazec = invalid.
+- 12 testov, mutation proof 7/7 (dve prežili prvé kolo → doplnené testy → červené).
+- `prepush-gate` PASS (typecheck 49/54, lint); migrácie NEOVERENÉ.
+### Rozpracované / Pending
+- Po nasadení #776 hľadať `[env]` vo Vercel runtime logoch → skutočný stav prod (vrátane team-shared premenných, ktoré som nevidel). Až potom rozhodnúť o fail-fast.
+- Zjednotiť `app-env.ts` a `config/env.ts` (jeden zdroj pravdy).
+### Ďalší krok
+Merge #776 → nasadenie → prečítať `[env]` log → GO ENV-SINGLE-SOURCE.
+
+## Session 2026-10-01 (ENV-TS-WIRE)
+### Dokončené
+- **Meranie Vercel `realitka-ai` (iba názvy a ciele, 85 záznamov, 69 kľúčov):** v `production` NIE JE `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (existuje len `SUPABASE_SECRET_KEY`/`SUPABASE_ANON_KEY`/`SUPABASE_PUBLISHABLE_KEY` z integrácie a `SERVICE_ROLE` pre 2 preview vetvy) ani `OPENAI_API_KEY`. `env.ts` ich všetky vyžaduje. **Zapojiť `env.ts` ako fail-fast by dnes zhodilo produkciu.** Team-shared premenné som nevidel — beh to potvrdí.
+- Preto wiring bez pádu: `config/env.ts` exportuje `validateEnv()` (nehádže, vracia iba NÁZVY kľúčov, nikdy hodnoty) a lazy `getEnv()`; modulový singleton `export const env = parseEnv()` zmizol (nikto ho neimportoval). Nový `src/instrumentation.ts` pri štarte nodejs runtime zaloguje `[env] schema ↔ runtime drift (…)`, nikdy nehádže. 5 testov, mutation proof 4/4 (+1 ekvivalentná).
+- `prepush-gate` PASS (typecheck 49/54, lint); migrácie NEOVERENÉ. `next build` lokálne nespustený (CI).
+### Rozpracované / Pending
+- Po nasadení hľadať `[env]` v Vercel runtime logoch → skutočný zoznam chýbajúcich. Potom rozhodnúť: (a) doplniť Vercel, alebo (b) upraviť schému podľa reality (ANON *alebo* PUBLISHABLE; `OPENAI_API_KEY` je v kóde ošetrený ako voliteľný), a až potom fail-fast. Samostatná brána.
+- Podozrenie na prod: bez `SUPABASE_SERVICE_ROLE_KEY` vráti `createServiceRoleClient()` null (cron, metriky, audit insert). Overiť v logoch, nehádať.
+### Ďalší krok
+Po merge #776 a nasadení: GO ENV-SCHEMA-RECONCILE na základe `[env]` logu.
+
+## Session 2026-10-01 (PORT-304)
+### Dokončené
+- `forgot-password` posiela `redirectTo` na `/auth/callback?next=/reset-password`; `reset-password` pri legacy `?code=` presmeruje na server-side `/auth/callback` namiesto klientskej výmeny (`lib/supabase/recovery-redirect.ts`). Test `recovery-redirect.test.ts` (3), mutation proof 4/4.
+- **Zámerne NEPRENESENÉ z #304:** zmena `redirectTo` v `api/settings/auth-email-tests/route.ts`. PKCE výmena kódu potrebuje `code_verifier` cookie v prehliadači, ktorý reset vyžiadal; owner, ktorý vyvolá recovery pre iný e-mail, ho nemá, a admin `generateLink` PKCE nepoužíva (vracia tokeny v hash). `/auth/callback` bez `code` by tam skončil chybou. #767 túto route navyše zmenil (cross-tenant gate).
+### Rozpracované / Pending
+- Founder: Supabase šablóna Reset Password na TokenHash (`/auth/confirm?token_hash={{ .TokenHash }}&type=recovery`) — jediné riešenie pre mobil/cross-device. #304 možno zavrieť po merge.
+- `prepush-gate` PASS; migrácie NEOVERENÉ.
+### Ďalší krok
+Zavrieť PR z triáže (#155, #326, #393, #360–#365, #495, #443, #304) po merge #776; potom nová brána podľa task-loop.
+
+## Session 2026-10-01 (PORT-495)
+### Dokončené
+- `lib/inbound/process-lead.ts`: zlyhaný BRI už nevyrobí skóre 50; `briScore: number | null`, bez draftu a do audit eventu ide `null`. Test „never invents a BRI score". Mutation proof: návrat `?? 50` → červená. Druhá mutácia (odstránenie `=== null`) je ekvivalentná (`null < 40` je v JS pravda); kontrola ostáva kvôli typom.
+- Na `main` je dnes iba draft (`replySent` vždy false), takže pôvodné „auto-odpoveď klientovi" z #495 už neplatí; zostáva fiktívne číslo a zbytočný draft.
+- `prepush-gate` PASS; migrácie NEOVERENÉ.
+### Rozpracované / Pending
+- #495 možno zavrieť po merge. #304 čaká na GO PORT-304.
+### Ďalší krok
+GO PORT-304 alebo zavretie PR z triáže.
+
+## Session 2026-10-01 (PORT-443)
+### Dokončené
+- Scoped klient v `createProperty` (nový 2. parameter), `getLeadById`, `POST /api/properties` a `matching/action`. `POST /api/properties` vracia `okResponse({ property })`: formulár kontroloval `data.ok`, takže po úspešnom vytvorení ukazoval chybu.
+- Test `src/app/api/properties/__tests__/scoped-client.test.ts` + 1 test v `properties-store-cross-tenant.test.ts`. Mutation proof 5/5 (každý z piatich zásahov vrátený zvlášť → červená).
+- `prepush-gate` PASS (typecheck 49/54, lint); migrácie NEOVERENÉ.
+### Rozpracované / Pending
+- #443 možno zavrieť po merge tohto PR (PATCH/DELETE boli na main už predtým). #495 a #304 čakajú na vlastné GO.
+### Ďalší krok
+GO PORT-495 (1 riadok: fiktívne BRI skóre 50).
+
+## Session 2026-10-01 (PR-BACKLOG-TRIAGE-2)
+### Dokončené
+- `docs/reports/2026-10-01-pr-backlog-triage-2.md`: 25 otvorených PR zmeraných cez `merge-tree` (po `--unshallow`) a čítaním `origin/main`. Nič nezmergované ani zatvorené.
+- **Korekcia triáže z 28. 9.:** #443 nie je „2 riadky" — chýba scoped klient aj v `POST /api/properties` a `getLeadById`. Handoff tvrdil, že #495/#443 neboli označené; boli.
+### Rozpracované / Pending
+- Founder: zavrieť #155, #326, #393, #360–#365; rozhodnúť BACKLOG #198/#192/#189/#186/#191.
+### Ďalší krok
+GO PORT-443 (alebo PORT-495).
+
+## Session 2026-10-01 (CHECKOUT-DIAG-01)
+### Dokončené
+- `/api/billing/checkout-config` vracia `missingPriceEnvKeys {seat, topup}` — iba NÁZVY premenných, ktoré chýbajú alebo nie sú platné `price_…` (apps/crm/src/lib/program-tier-pricing.ts: `missingSeatPriceEnvKeys`, `missingTopupPriceEnvKeys`).
+- Test `checkout-config-missing-keys.verification.test.ts` (3). Mutation proof: invertovaný filter → 3× červená, po obnovení zelená. `prepush-gate` PASS (typecheck 49/54, lint); migrácie NEOVERENÉ (bez Dockera).
+### Rozpracované / Pending
+- Krok C → A → B → D z CHECKOUT-ENV-01 stále na founderovi.
+- Endpoint nemá auth; názvy cenových premenných sú v ňom teraz viditeľné (hodnoty nikdy). Ak je to nežiaduce, zabrániť cez auth gate.
+- Vetva `claude/charming-feynman-gp7uf4` namiesto `claude/epic-mendel-oal1wt` z handoffu; memory na nej nemala záznamy z 30. 9.–1. 10.
+### Kľúčové súbory zmenené
+- apps/crm/src/lib/program-tier-pricing.ts, apps/crm/src/app/api/billing/checkout-config/route.ts, nový test
+### Ďalší krok
+GO PR-BACKLOG-TRIAGE-2 alebo ENV-TS-WIRE; po kroku B jedno GET na checkout-config skráti krok D.
 ## Session 2026-10-01 (OUTREACH-DOMAIN-PROOF)
 ### Dokončené
 - #773 (AUTO-RESPONSE-TEXT-FIX) zmergovaný (`420f4af`), produkčný deploy READY.
