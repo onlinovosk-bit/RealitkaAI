@@ -15,9 +15,11 @@ import { persistAiCostTelemetry } from '@/lib/ai/persist-cost-telemetry'
 import { CREDIT_ACTION_COSTS } from '@/lib/program-tier-pricing'
 import { withTimeout } from '@/lib/async/with-timeout'
 
+// Predvolených 8 s (→ vnútorné 7,5 s) bolo tesných: beh 1. 10. 06:24 UTC dal volania po 6,4–7,5 s
+// (1× llm po 7 488 ms, 1× timeout po 7 501 ms). Dĺžku okna pri 3 dávkach strážia testy voči maxDuration.
 export const INSIGHTS_AI_TIMEOUT_MS = Math.max(
   3000,
-  Number(process.env.DASHBOARD_INSIGHTS_TIMEOUT_MS ?? '8000'),
+  Number(process.env.DASHBOARD_INSIGHTS_TIMEOUT_MS ?? '14000'),
 )
 
 /**
@@ -134,6 +136,15 @@ export async function generateAndCacheAgencyInsights(
         empty: generated.audit.source === 'empty',
         // Prečo model nezodpovedal — bez toho je `source: fallback` nerozlíšiteľný
         // (kľúč, kredit, timeout). Nikdy text chyby.
+        // Čo model vrátil (aj pri bad_output): stop_reason odlíši orezanie na max_tokens od
+        // nevalidného JSON. Žiadny text výstupu.
+        ...(generated.audit.usage
+          ? {
+              stop_reason: generated.audit.usage.stopReason,
+              input_tokens: generated.audit.usage.inputTokens,
+              output_tokens: generated.audit.usage.outputTokens,
+            }
+          : {}),
         ...(generated.audit.failure
           ? {
               failure_reason: generated.audit.failure.reason,
