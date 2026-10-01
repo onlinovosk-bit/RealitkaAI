@@ -1,5 +1,21 @@
 # Critical Decisions Log
 
+## [2026-10-01] OBSIDIAN-VAULT-EXPORT — pamäť do Obsidianu skriptom foundera, nie swarmom (BUILD, malé; NEnasadené nikam — len repo)
+
+**Brána Ústavy v2:** BUILD, ale malé. Vault `RealitkaAI-Memory` na screenshote končí 2026-06-09, `memory/decisions.md` je na 2026-10-01 (214 rozhodnutí,
+113 sessions) → founder dnes hľadá v zastaranej kópii. Hodnota: rýchle dohľadanie „prečo sme to rozhodli" a „kde sme skončili" bez čítania 5 700 riadkov.
+Hranica: žiadna zmena produktu ani PROD; zákazník ju nezaplatí priamo → drží sa na ceste „nástroj foundera", nerozširovať (žiadna obojsmerná synchronizácia).
+
+**Čo vzniklo:** `scripts/vault/{lib,export-vault}.mjs` + 13 testov (`npm run vault:test`). Ručný, jednosmerný export `memory/` → vault: `HOME`, 1 poznámka na rozhodnutie
+a session (frontmatter `type/date/verdict/decision_id/prs/tags`), `Decision-Index`, `Session-Index`, `03-OPS`, `Dashboard` (Dataview/Tasks), šablóny.
+Tokeny rozhodnutí a `#PR` sa linkujú → graf + backlinky.
+
+**Zámerne:** swarm do vaultu NEzapisuje (founder 2026-09-04 platí — skript spúšťa founder). Skript nič nemaže, prepíše len `generated: true`; ručné poznámky
+(`Decision-Log`) nechá. Bez `--out` nič nezapíše.
+
+**Dôkaz:** 214/214 rozhodnutí, 113/113 sessions (pôvodný parser strácal 10 netypických hlavičiek → opravené + test), 0 rozbitých wikilinkov, 2. beh = 0 zmien (idempotentné),
+ručná poznámka a súbor bez markera zachované. NEOVERENÉ: vzhľad v reálnom Obsidiane na Windows (nemám prístup) a Dataview dotazy (vyžadujú plugin).
+
 ## [2026-10-01] SCOREBOARD — „prvá reakcia na lead" (lead → AI triáž → AI návrh → potvrdenie klientovi → viditeľnosť): 30 % dokázané v PROD
 
 **Metóda (aby sa dalo prepočítať, nie veriť):** 10 kontrolných bodov. ✅ = dokázané v PROD, 🟡 = postavené/zmergované, ale nedokázané alebo čiastočné,

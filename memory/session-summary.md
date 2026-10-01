@@ -1,3 +1,18 @@
+## Session 2026-10-01 (OBSIDIAN-VAULT-EXPORT)
+### Dokončené
+- **OBSIDIAN-VAULT-EXPORT** (zadanie foundera: „zakomponuj čo najviac do práce aj Obsidian"): ručný jednosmerný export `memory/` → vault.
+  214 rozhodnutí + 113 sessions ako samostatné poznámky s frontmatterom, wikilinky na tokeny rozhodnutí a `#PR`, HOME, indexy, Dashboard, šablóny.
+  13 testov OK, 0 rozbitých wikilinkov, idempotentné, ručné poznámky sa nedotknú.
+### Rozpracované / Pending
+- Founder: spustiť `npm run vault:export -- --out "C:\RealitkaAI-Memory" --dry-run`, potom naostro; skontrolovať vzhľad v Obsidiane (NEOVERENÉ odo mňa).
+- Dataview + Tasks pluginy treba zapnúť v Obsidiane, inak `Dashboard` ukáže len kód (indexy fungujú aj bez nich).
+- Existujúci ručný `Decision-Log` vo vaulte ostáva; generovaný index je `Decision-Index`.
+### Kľúčové súbory zmenené
+- `scripts/vault/lib.mjs`, `scripts/vault/export-vault.mjs`, `scripts/vault/vault.test.mjs` (nové); `package.json` (`vault:export`, `vault:test`);
+  `docs/OBSIDIAN-VAULT-ACTIVATION.md` (postup); `memory/decisions.md`, `memory/session-summary.md`.
+### Ďalší krok
+Founder spustí export a pozrie graf; ak sedí, jedna úloha navyše: týždenný pripomenutý export (ručný) — nič automatické bez GO.
+
 ## Session 2026-10-01 (LEAD-PIPELINE-AFTER)
 ### Dokončené
 - **LEAD-PIPELINE-AFTER** (GO foundera, jedna stena): `runAfterResponse` (`after()`, sekvenčne, izolované chyby) namiesto `void` v 5 trasách
