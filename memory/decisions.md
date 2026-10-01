@@ -1,5 +1,28 @@
 # Critical Decisions Log
 
+## 2026-10-01 — ACTIVITIES-SELECT-LEAK-CLOSED: `DROP POLICY activities_select_agency` aplikovaný v PROD
+
+**GO foundera.** Jediný príkaz: `DROP POLICY IF EXISTS activities_select_agency ON public.activities;` (PROD `ypgajkhqtbriqqmyawyv`,
+cez `execute_sql`; migrácia `20261001130000_drop_activities_select_agency.sql` v repe, s rollbackom v komentári).
+
+**Dôkaz (SELECT ako rola `authenticated`, JWT `sub` používateľa agentúry, transakcia s rollbackom):**
+| používateľ | pred (viditeľné / bez leadu) | po |
+|---|---|---|
+| agentúra `1111…` | 190 / 187 | 3 / 0 |
+| agentúra `8f3a…` | 187 / 187 | 0 / 0 |
+| agentúra `b101…` | — | 3 / 0 |
+Zostáva `activities_tenant_select` + dve INSERT politiky. Štvrtú agentúru (`dbbb…`) som netestoval.
+
+**Cena (vedomá):** tenant už nevidí riadky bez leadu — ani vlastné `matching` (10 ks). Či UI feed bez nich funguje, som
+**neoveril** (nespúšťal som aplikáciu).
+
+**Neuzavreté:**
+- `activities_insert_agency` stále dovoľuje tenantovi vkladať riadky s `lead_id IS NULL` (nezrušené zámerne, `matching` ich píše).
+- 187 riadkov v tabuľke ZOSTÁVA (nič sa nemazalo) — ich vlastníctvo je neznáme; rozhodnúť o zmazaní/prisúdení.
+- Podobné politiky na `lead_property_matches`, `pipeline_moves`, `platform_events` s vetvou `agency_id IS NULL` (dnes 0 NULL riadkov).
+- **GDPR:** po dobu, čo politika existovala, mohol používateľ akejkoľvek agentúry čítať tie riadky. Posúdenie incidentu je rozhodnutie
+  foundera; či k čítaniu reálne došlo, z DB nezistím (nemáme audit čítaní).
+
 ## 2026-10-01 — ACTIVITIES-RLS-CHECK: `activities` s `lead_id IS NULL` je čitateľné každému prihlásenému (187 riadkov, 144+ e-mailov)
 
 **GO foundera, read-only (SELECT), obsah riadkov NEČÍTANÝ.** Detail: `docs/reports/2026-10-01-activities-rls-check.md`.

@@ -1,3 +1,17 @@
+## Session 2026-10-01 (ACTIVITIES-SELECT-LEAK-CLOSED)
+### Dokončené
+- `DROP POLICY activities_select_agency` v PROD. Overené ako tenant: pred 187 cudzích riadkov viditeľných, po 0 (tri agentúry).
+- Migrácia `20261001130000_drop_activities_select_agency.sql` (repo ↔ PROD konvergujú), rollback v komentári.
+### Rozpracované / Pending
+- Overiť UI feed bez NULL-lead riadkov (neskúšané).
+- Agency kľúč pre aktivity bez leadu → až potom zrušiť `activities_insert_agency`.
+- Osud 187 riadkov (zmazať / prisúdiť) + GDPR posúdenie incidentu (founder).
+- Rovnaký vzor: `lead_property_matches`, `pipeline_moves`, `platform_events`.
+### Kľúčové súbory zmenené
+- `apps/crm/supabase/migrations/20261001130000_drop_activities_select_agency.sql` (nový), `memory/decisions.md`, `memory/session-summary.md`; PROD: 1 politika zrušená.
+### Ďalší krok
+Overiť feed v UI pre tenanta; potom návrh agency kľúča.
+
 ## Session 2026-10-01 (ACTIVITIES-RLS-CHECK)
 ### Dokončené
 - Read-only kontrola `activities`: 187 riadkov s `lead_id IS NULL` je čitateľných každému prihlásenému (dokázané); 144+ obsahuje e-mail, 8+ telefón. Obsah nečítaný.
