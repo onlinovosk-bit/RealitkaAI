@@ -1,0 +1,48 @@
+name: Memory Guard
+
+# MEMORY-GUARD: memory/session-summary.md a memory/decisions.md sú prepend-only
+# logy (CLAUDE.md, „Session Wrap-up"). Toto pravidlo bolo porušené potichu
+# dvakrát (#701, #746 — −1090 riadkov, 44 záznamov) a dvakrát sa naopak
+# „opravovalo" niečo, čo nikdy nechýbalo (#745, diff zastaranej vetvy).
+#
+# Kontrola simuluje merge PR do bázy (`git merge-tree`) a zlyhá, keď by z logu
+# zmizol záznam alebo viac ako 20 riadkov. Logika aj 12 testov:
+# scripts/ci/memory-append-only.sh, scripts/ci/__tests__/memory-append-only.test.sh.
+#
+# Vedomý prepis (napr. obnova ako #751): štítok PR `memory-rewrite-approved`.
+# Žiadne secrets, žiadne závislosti — iba git.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+    paths:
+      - "memory/session-summary.md"
+      - "memory/decisions.md"
+      - "scripts/ci/memory-append-only.sh"
+      - ".github/workflows/memory-guard.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    name: Memory append-only
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # merge-tree potrebuje spoločného predka bázy aj hlavy PR
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Fetch base
+        run: git fetch --no-tags origin "${{ github.event.pull_request.base.ref }}"
+
+      - name: Check memory logs are not rewritten
+        env:
+          MEMORY_GUARD_ALLOW: ${{ contains(github.event.pull_request.labels.*.name, 'memory-rewrite-approved') && '1' || '0' }}
+        run: |
+          ./scripts/ci/memory-append-only.sh \
+            "origin/${{ github.event.pull_request.base.ref }}" \
+            "${{ github.event.pull_request.head.sha }}"
