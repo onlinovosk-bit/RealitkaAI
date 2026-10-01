@@ -198,6 +198,17 @@ describe("processInboundLead — Tier-3 gate", () => {
     expect(mockGenerate).not.toHaveBeenCalled();
   });
 
+  it("never invents a BRI score: failed computation → briScore null, no draft", async () => {
+    const inserts = wireDb({});
+    mockComputeBRI.mockResolvedValue(null);
+    const res = await processInboundLead(payload());
+
+    expect(res.briScore).toBeNull();
+    expect(res.draftCreated).toBe(false);
+    expect(inserts.activities).toHaveLength(0);
+    expect(mockGenerate).not.toHaveBeenCalled();
+  });
+
   it("keeps the lead when only the draft insert fails, and reports no draft", async () => {
     const inserts = wireDb({ activityInsertError: { message: "boom" } });
     const result = await processInboundLead(payload());

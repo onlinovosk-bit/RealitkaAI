@@ -166,3 +166,13 @@ describe("properties-store — cross-tenant negatívny kontrakt (SMO-B04)", () =
     await expect(listProperties(undefined, client as never)).resolves.toEqual([]);
   });
 });
+
+describe("createProperty scoped client", () => {
+  it("resolves the tenant client from the caller-supplied scoped client", async () => {
+    const scoped = { from: () => ({ insert: () => ({ select: () => ({ single: async () => ({ data: null, error: { message: "stop" } }) }) }) }) };
+    resolveTenantSupabaseMock.mockResolvedValue(scoped);
+    const { createProperty } = await import("../properties-store");
+    await createProperty({ title: "t", location: "l", price: 1, type: "Byt", rooms: "2", features: [], status: "Aktívna" } as never, scoped as never).catch(() => undefined);
+    expect(resolveTenantSupabaseMock).toHaveBeenCalledWith(scoped);
+  });
+});
