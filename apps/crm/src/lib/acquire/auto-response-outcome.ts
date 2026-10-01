@@ -67,6 +67,8 @@ export interface AutoResponseResult {
   httpStatus?: number | null;
   /** Názov chyby (kódový reťazec), nikdy text správy. */
   errorName?: string | null;
+  /** Doména odosielateľa (napr. `revolis.ai`) — naša konfigurácia, nie osobný údaj. */
+  fromDomain?: string | null;
 }
 
 const ERROR_NAME_RE = /^[A-Za-z][A-Za-z0-9_.]{0,47}$/;
@@ -100,6 +102,7 @@ export async function recordAutoResponseOutcome(input: {
         reason: input.result.reason ?? null,
         http_status: input.result.httpStatus ?? null,
         error_name: input.result.errorName ?? null,
+        from_domain: input.result.fromDomain ?? null,
       },
     });
   } catch (e) {

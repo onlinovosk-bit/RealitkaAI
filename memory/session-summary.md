@@ -1,3 +1,23 @@
+## Session 2026-10-01 (AUTO-RESPONSE-TEXT-FIX)
+### Dokončené
+- **AUTO-RESPONSE-TEXT-FIX** (GO foundera): šablóna auto-odpovede už neobsahuje `ai_reason`; text len z overených faktov,
+  rodovo neutrálny; predmet `Váš dopyt bol prijatý — {maklér}`; oslovenie len ak vyzerá ako meno; odosielateľ na verejnej
+  poštovej doméne (gmail…) sa zamietne ako `invalid_from` pred volaním Resendu; `from_domain` v `inbound.auto_response`.
+  Testy 130/130 v `src/lib/acquire` + verifikácia, mutation proof 16/16, lint čistý, typecheck 49 (strop 54).
+- Dokázané: nikdy nebol doručený e-mail s chybným textom (Resend 403; 0/516 `auto_response_sent_at`; brána drží).
+### Rozpracované / Pending
+- **Founder (nič z toho zatiaľ nerobiť, kým nie je GO):** `OUTREACH_FROM_EMAIL` vo Verceli → adresa na overenej doméne
+  (nie gmail, nie `noreply@`); Resend „Enable Receiving"/MX; reply-to a súhlas Smolka; auto-reload + nižší limit v Console.
+- Dashboard cron po #771: prečítať `stop_reason`, `failure_reason`, latenciu (13:00 UTC alebo ručne).
+- BACKLOG: `auto_response_enabled` predvolene `true` (opt-out) → opt-in; RLS oddelenie diagnostiky `platform_events`.
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/acquire/send-inbound-auto-response.ts`: nová šablóna, `safeGreetingName`, stráž verejných domén.
+- `apps/crm/src/lib/acquire/inbound-lead-auto-response.ts`, `auto-response-outcome.ts`: `from_domain`, bez `ai_reason`.
+- `apps/crm/src/lib/acquire/__tests__/inbound-auto-response-text.test.ts` (nový) + 2 upravené testy + 1 verifikačný pin.
+### Ďalší krok
+Founder opraví `OUTREACH_FROM_EMAIL` (verená doména) až po schválení; potom skúšobný lead s `auto_response_enabled=true`
+len pre testovaciu agentúru → `outcome=sent`, `from_domain` = overená doména.
+
 ## Session 2026-10-01 (AUTO-RESPONSE-GATE)
 ### Dokončené
 - #771 zmergovaný a nasadený (`d29b73c`). Prvý reálny lead po dobití (06:46:58 UTC, Bazoš.sk): AI triedenie
