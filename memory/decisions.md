@@ -1,5 +1,20 @@
 # Critical Decisions Log
 
+## 2026-10-01 — CI-FIX 2: stena `20261001160500` padla v CI na `relation "public.v_genome_calibration" does not exist` → migrácia idempotentná
+
+**Príčina (z logu CI, `supabase start`):** v čistej databáze neexistujú pohľady `v_genome_calibration`, `v_genome_decisions_resolved`,
+`v_genome_exclusivity_patterns` (v PROD vznikli mimo migrácií; repo definuje len `genome_decision_open`). Moja stena ich bezpodmienečne
+`REVOKE`-ovala → CI ju zachytilo skôr, než sa dostala do main. (Prvý beh po oprave duplicitnej verzie skončil „cancelled" — `wait-for-supabase`
+visel 12 min; druhý beh (re-run) ukázal skutočnú chybu.) Zvyšné moje migrácie `130000`–`150000` v CI prešli; `170000` zatiaľ nebehla (CI zlyhal pred ňou).
+
+**Oprava:** stena prepísaná na idempotentný DO blok — každá zmena sa vykoná len ak objekt existuje (`to_regclass`, `pg_policies`). V PROD je výsledok
+rovnaký ako pri aplikovanej verzii (aplikovaná bola prvá verzia; sémantika zhodná). Statická kontrola objektov voči repu: ostatné pohľady, tabuľky,
+politiky aj `profile_agencies_for_auth` existujú v migráciách.
+
+**Nemerané — vedomé:** lokálny Postgres mi prostredie nepovolilo spustiť; pokusy o overenie syntaxe v PROD (dočasná funkcia / suchý beh v rollbacku)
+trikrát vypršali po 60 s v nástroji (databáza bola zdravá, žiadne zámky ani visiace transakcie — overené `pg_stat_activity`). Syntax PL/pgSQL tak overí až CI.
+**Poučenie:** migrácie, ktoré siahajú na objekty z PROD, píšať guardované; PROD nie je odrazom repa (pozri audit).
+
 ## 2026-10-01 — ACTIVITIES-INSERT-AGENCY-KEY: `activities.agency_id` + trigger + politiky aplikované v PROD; `activities_insert_agency` zrušená
 
 **GO foundera.** Migrácia `20261001170000_activities_agency_key.sql` (aplikovaná jednou transakciou, `execute_sql`). Návrh: spätne kompatibilný — **writery v kóde sa

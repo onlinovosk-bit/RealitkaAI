@@ -1,3 +1,14 @@
+## Session 2026-10-01 (CI-FIX 2: idempotentná stena)
+### Dokončené
+- Stena `20261001160500` prepísaná na idempotentnú (CI padlo na chýbajúcom `v_genome_calibration`).
+### Rozpracované / Pending
+- CI na novej hlave: čaká sa na „Lint, test, build" (migrácia `170000` v CI ešte nebehla).
+- Merge #774 po zelenom CI (GO foundera platí).
+### Kľúčové súbory zmenené
+- `apps/crm/supabase/migrations/20261001160500_tenant_isolation_wall.sql`, `memory/*`.
+### Ďalší krok
+Zelené CI → squash merge #774.
+
 ## Session 2026-10-01 (ACTIVITIES-INSERT-AGENCY-KEY)
 ### Dokončené
 - `activities.agency_id` + trigger `activities_fill_agency` + politiky `activities_agency_select/insert`; `activities_insert_agency` zrušená. Suchý beh 8/8 + overenie ako 4 agentúry. Politík s `agency_id IS NULL` v `public`: 0.
