@@ -1,3 +1,16 @@
+## Session 2026-10-01 (TENANT-ISOLATION-WALL + stav)
+### Dokončené
+- Stena v PROD jednou transakciou: 8/8 pohľadov invoker + bez anon, 8/9 politík bez NULL vetvy, 11 SECURITY DEFINER funkcií uzavretých. Migrácia `20261001160500_tenant_isolation_wall.sql`.
+- Odhad stavu architektúry ≈ 40 % (tabuľka v decisions.md; váhy sú moje).
+### Rozpracované / Pending
+- **Najväčší posun k 100 %: Stripe krok C (0/10 cien live) — founder.** Potom VERIFY → B → D.
+- Zmergovať #774 + vyriešiť Vercel limit nasadení (Pro plán alebo 24 h) — bez toho nie je nič z dneška v produkcii.
+- Zostáva: `activities_insert_agency` (agency kľúč), 12 funkcií volaných session/cronom, 187 riadkov `activities`, Resend DNS.
+### Kľúčové súbory zmenené
+- `apps/crm/supabase/migrations/20261001160500_tenant_isolation_wall.sql` (nový), `memory/decisions.md`, `memory/session-summary.md`; PROD: 1 transakcia.
+### Ďalší krok
+Founder: Stripe krok C (`bash scripts/ops/stripe-verify-prices.sh --spec`), potom merge #774.
+
 ## Session 2026-10-01 (ACTIVITY-STREAM-TENANT-ISOLATED)
 ### Dokončené
 - `security_invoker = true` na `activity_stream` v PROD; overené ako `authenticated` pre 4 agentúry (3/0, 0/0, 3/0, 0/0) a `anon` zablokovaný. Únik cez `activities` zatvorený na všetkých cestách (tabuľka + pohľad × anon + authenticated).

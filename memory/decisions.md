@@ -1,5 +1,37 @@
 # Critical Decisions Log
 
+## 2026-10-01 — TENANT-ISOLATION-WALL: uzavretý balík aplikovaný v PROD (jedna transakcia), + stav architektúry ~40 %
+
+**GO foundera.** Migrácia `20261001160500_tenant_isolation_wall.sql` (aplikovaná jednou transakciou, `execute_sql`).
+
+**Čo uzavrelo (overené dotazmi po aplikácii):**
+- **8/8 pohľadov** `security_invoker = true`; `anon` SELECT = false na všetkých. Štyri `genome_*` pohľady (`decisions` všetkých agentúr, `anon` čítal
+  **240 riadkov** z `genome_decision_open`) zavreté aj pre `authenticated` (v kóde ich nikto nečíta).
+- **Politiky s vetvou `agency_id IS NULL`: 8/9 odstránených** (4× `matches_*_agency` zrušené — ostáva bezpečná `lead_property_matches_agency`;
+  `pipeline_moves_*` a `platform_events_select_tenant` prepísané). Zostáva `activities_insert_agency`.
+- **11 `SECURITY DEFINER` funkcií** (z 23 netriggerových, spustiteľných `anon`) zavretých: service-role-only (`spend_credits`, `rate_limit_increment`,
+  `increment_usage_metric`, `resolve_agency_id_for_*`) + bez volajúceho (`emit_platform_event`, `log_event`, `record_kataster_event`,
+  `recompute_broker_metrics`, `compute_motivation_score`, `realvia_schema_health`); `service_role` EXECUTE overené.
+- Dáta ako `authenticated`: agentúra 1111… → `activity_stream` 3, `platform_events` 951; 8f3a… → 0, 24 (žiadny nárast, žiadny pád).
+
+**Zostáva (vedome, nezmenené):** `activities_insert_agency` (agency kľúč), 12 funkcií volaných používateľskou session/cronom (`record_brief_click/open`,
+`add_price_point`, `compute_bri_score(_v2)`, `expire_arbitrage_matches`, `rotate_bri_snapshots`, `get_valuation_tenant`, `match_leads/properties`,
+`profile_agencies_for_auth`, `rls_audit_snapshot`) — REVOKE bez testu by mohol rozbiť beh; 187 riadkov `activities` bez leadu (vlastník neznámy).
+**Nemerané:** UI /activities a dashboard feed po zúžení; pohľady `arbitrage_stats`, `morning_brief_stats`, `negotiation_briefs` vracajú 0 riadkov
+pred aj po (tabuľky prázdne → regresiu to nevie dokázať).
+
+**Stav architektúry (môj ODHAD, nie meranie; váhy sú moje a dajú sa zmeniť): ≈ 40 %.**
+| blok | váha | stav | skóre |
+|---|---|---|---|
+| Príjem e-mailov → lead | 30 | 2/5 hotové (parser, diagnostika), 2/5 čaká na merge #774 + nasadenie, 1/5 čaká na dáta | 50 % |
+| AI návrh + odoslanie | 15 | triage ✅, návrh ✅, odoslanie ❌ (Resend DNS, reply-to, súhlas) | 67 % |
+| Predaj / platby (Stripe) | 30 | 0 z 10 cien na live účte (krok C = founder) | 0 % |
+| Tenantová izolácia | 15 | 27 z 40 identifikovaných ciest | 68 % |
+| Schéma + nasadenie | 10 | schéma ~98 % (chýbajú `lead_demands`, `demand_property_matches`); nasadenie blokuje Vercel limit | 50 % |
+
+**Proces — priznané:** dnes veľa času šlo do bezpečnostného reťazca (4 kolá GO), ktorý nezvýšil pravdepodobnosť ďalšieho platiaceho klienta
+(PRIME DIRECTIVE). Únik bol reálny (e-maily čitateľné cez `anon`) a oprava mala zmysel, ale mala byť jeden blok a nie reťaz.
+
 ## 2026-10-01 — ACTIVITY-STREAM-TENANT-ISOLATED: `security_invoker = true` na `activity_stream` aplikovaný v PROD — únik cez `activities` je zatvorený
 
 **GO foundera.** `ALTER VIEW public.activity_stream SET (security_invoker = true);` (PROD `ypgajkhqtbriqqmyawyv`, `execute_sql`;
