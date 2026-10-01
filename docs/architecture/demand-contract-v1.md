@@ -94,8 +94,18 @@ where l.created_at >= :enabled_at and l.source like 'portal:%';
 
 `scripts/demand-backfill-experiment.ts` iba číta, žiadne zápisy do DB.
 
-1. `extract --agency <uuid> --sample 60` vytvorí `tmp-demand-backfill/<run>/labels.csv`
-   (súbor je v gitignore a obsahuje len redigovaný text).
+1. `extract --agency <uuid> --sample 100 [--input <priečinok>]` vytvorí
+   `tmp-demand-backfill/<run>/labels.csv` (súbor je v gitignore a obsahuje len
+   redigovaný text).
+   - `--input` (GO D1-BACKFILL-A, 2026-10-01): historické dopytové e-maily z
+     portálov (`.eml`, `.mbox` z Google Takeout, `.txt`). Idú **tou istou cestou
+     ako produkcia**: `parseEmail` nad predmetom + textom + HTML, potom
+     `inquiryText` a meno kontaktu, presne ako ich `acquire/email` posiela do
+     extrakcie. Mail, z ktorého by produkcia lead nevytvorila, sa nemeria.
+   - Riadky z e-mailov majú id z hashu obsahu (`email:<12 hex>`), nie meno ani
+     adresu. `sources.csv` v tom istom lokálnom priečinku ich mapuje na súbor.
+   - Ten istý dopyt v DB aj v schránke sa meria raz (deduplikácia podľa
+     redigovaného textu).
 2. **Gold dataset:** človek vyplní pri KAŽDOM riadku (lead × pole) nezávisle od
    extraktora:
    - `evidence_present` (`y`/`n`): uvádza text toto pole výslovne?
@@ -122,6 +132,12 @@ where l.created_at >= :enabled_at and l.source like 'portal:%';
 (priemerne 162 znakov), 39 z Realvia importu, 8 ostatných. Realvia import (439)
 má text pri 39 leadoch, zvyšok je bez textu. Tam extrakcia vráti `no_text`
 a nič si nevymyslí.
+
+**Prečo `--input` (2026-10-01, agregáty, horná hranica podľa regexu):** jediný
+reálny tenant má 61 poznámok ≥ 40 znakov, z toho 39 z Realvia importu bez
+dopytových slov. Rozpočet ≤ 8, izby ≤ 6, kúpa/prenájom ≤ 8, typ ≤ 11. Brána so
+support ≥ 10 by na samotných PROD dátach skončila `INSUFFICIENT` bez ohľadu na
+kvalitu modelu. Demo tenant sa nemeria (vymyslený text).
 
 ## Anthropic ako subprocesor — overené z oficiálnych zdrojov (2026-09-29)
 

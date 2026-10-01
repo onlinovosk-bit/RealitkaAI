@@ -1,3 +1,18 @@
+## Session 2026-10-01 (D1-BACKFILL-A)
+### Dokončené
+- `--input` pre backfill experiment: historické portálové e-maily cez produkčný parser (`apps/crm/src/lib/demand/backfill-input.ts`, skript)
+- #766 MEMORY-GUARD zmergované; #769 D4 zelené po vyriešení konfliktu v pamäti (oba záznamy zachované)
+### Rozpracované / Pending
+- Founder: export 40–60 dopytových e-mailov → `extract --agency … --input …` → označiť `labels.csv` → `score`
+- Founder/právnik: Anthropic v DPA a `/legal/sub-processors` pred behom
+- #769 čaká na merge
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/demand/backfill-input.ts`: MIME čítačka (.eml/.mbox/.txt) + produkčná cesta `parseEmail`
+- `apps/crm/scripts/demand-backfill-experiment.ts`: `--input`, deduplikácia, `sources.csv`, `--agency` voliteľné
+- `docs/architecture/demand-contract-v1.md`: vstup experimentu + prečo PROD nestačí
+### Ďalší krok
+Founder spustí experiment s e-mailmi a označí gold dataset; pri PASS migrácie D1+D4 na PROD.
+
 ## Session 2026-09-30 (MEMORY-GUARD)
 ### Dokončené
 - MEMORY-GUARD: workflow + skript + 12 testov, prah overený na histórii main a mutačne (`scripts/ci/memory-append-only.sh`, `.github/workflows/memory-guard.yml`)

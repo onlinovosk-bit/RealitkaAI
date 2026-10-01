@@ -1,5 +1,10 @@
 # Critical Decisions Log
 
+## [2026-10-01] D1-BACKFILL-A — gold set doplnený o historické portálové e-maily (founder GO)
+- **Prečo:** PROD má na jedinom reálnom tenante 61 poznámok ≥ 40 znakov (39 z Realvia importu bez dopytu). Horná hranica podľa regexu: rozpočet ≤ 8, izby ≤ 6, kúpa/prenájom ≤ 8. Brána so support ≥ 10 by skončila `INSUFFICIENT` bez ohľadu na model. Founder zvolil A (nie B shadow mode, nie C znížiť prah).
+- **Čo:** `scripts/demand-backfill-experiment.ts extract --input <priečinok>` číta `.eml` / `.mbox` / `.txt` a púšťa ich cez produkčný `parseEmail` → `inquiryText` + meno kontaktu (rovnaký vstup ako `acquire/email` → `scheduleDemandExtraction`). Mail, z ktorého by lead nevznikol, sa nemeria. Id = hash obsahu, deduplikácia DB × schránka. Bez novej závislosti (vlastná MIME čítačka v `lib/demand/backfill-input.ts`).
+- **Beh:** founder lokálne s `.env.local`; táto session nemá kľúče aplikácie a v GitHube PROD secrets nie sú. Pred behom: Anthropic v DPA / `/legal/sub-processors` (rozhodnutie foundera/právnika).
+
 ## [2026-09-30] MEMORY-GUARD — CI zablokuje PR, ktorý zmaže históriu pamäte (founder GO)
 - **Čo:** `.github/workflows/memory-guard.yml` + `scripts/ci/memory-append-only.sh` (12 testov, zapojené aj do `saas-grade-pipeline`).
 - **Ako:** simuluje merge PR do bázy (`git merge-tree`), nie diff vetvy. **FAIL**, keď z `session-summary.md` / `decisions.md` zmizne nadpis záznamu (`## …`) alebo > 20 riadkov. **WARN** pri oprave do 20 riadkov bez straty záznamu. Výnimka: štítok `memory-rewrite-approved`.
