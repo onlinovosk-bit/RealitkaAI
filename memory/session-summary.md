@@ -1,3 +1,16 @@
+## Session 2026-10-01 (PORT-774-MIGRATION-VERIFY)
+### Dokončené
+- Migrácia `20261001100000_inbound_mail_outcomes.sql` z #774 overená na **skutočnom Postgrese 16.13** (scratch, port 55433, role anon/authenticated/service_role + Supabase-like default privileges). Žiadny zápis do PROD.
+- Prešlo: aplikácia 1× aj 2× (idempotentná); RLS zapnutá; anon/authenticated bez grantov a `permission denied` na INSERT aj SELECT; service_role (bypassrls) INSERT/SELECT ok; defaults (`has_*` false, `id`, `created_at`); CHECK odmietne `outcome='bogus'`; NOT NULL `agency_id`; index `(agency_id, created_at DESC)`.
+- **Kód ↔ tabuľka:** 16 kľúčov `InboundMailOutcomeRow` = 16 stĺpcov (okrem `id`, `created_at`), 0 rozdielov; INSERT so všetkými 16 hodnotami prešiel.
+- **Mutation proof na ochranu:** bez `REVOKE` anon stále neprejde (zastaví ho RLS bez politík); bez `REVOKE` aj RLS anon zapíše riadok. Dva nezávislé múry, test rozlišuje.
+- Ratchet z #778 na zlúčenom strome (`main` + #774): exit 0, 0 nových medzier (126 volaných tabuliek, 147 objektov z migrácií).
+### Rozpracované / Pending
+- **Neoverené:** Supabase `db reset` (CLI/Docker tu nie je), retencia 90 dní — mazanie zatiaľ NEBEŽÍ (priznáva aj migrácia); skutočné PROD schéma (PROD zaostáva za repom o 26 migrácií podľa #778) — táto tabuľka je nová, ale pred aplikáciou na PROD treba poradie migrácií.
+- Zápis kódu z #774 som netestoval proti DB cez Supabase klienta, iba SQL s rovnakými stĺpcami.
+### Ďalší krok
+Merge #774 je founderov úkon; pred aplikáciou migrácie na PROD overiť poradie voči 26 neaplikovaným migráciám.
+
 ## Session 2026-10-01 (PR-BACKLOG-TRIAGE-3)
 ### Dokončené
 - `docs/reports/2026-10-01-pr-backlog-triage-3.md`: 14 otvorených PR, merge-tree proti `main` `e1340c1d`.
