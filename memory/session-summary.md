@@ -1,3 +1,15 @@
+## Session 2026-10-01 (STARTER-PACK-GUARD)
+### Dokončené
+- `apps/marketing/app/api/starter-pack/checkout/route.ts`: env sa číta pri každom volaní a orezáva; `STRIPE_PRICE_STARTER_PACK` sa overuje `isValidStripePriceId` (503 `checkout_not_configured`, Stripe sa nevolá). Predtým stačila neprázdna hodnota, takže `price_xxx` alebo hodnota s koncovým riadkom išla do Stripe.
+- `apps/marketing/lib/pricing.ts`: re-export `isValidStripePriceId` z CRM (jeden validátor, nie kópia regexu).
+- `apps/crm/tests/verification/starter-pack-checkout-price-guard.verification.test.ts`: 14 testov, mutation proof 5×.
+### Rozpracované / Pending
+- Krok C (Stripe ceny) je stále na founderovi; `STRIPE_PRICE_STARTER_PACK` (47 €) je jedna z 10 cien v `--spec`.
+- Marketing nemá vlastný test runner; testy jeho route bežia v `apps/crm/tests/verification`.
+### Kľúčové súbory zmenené
+- apps/marketing/app/api/starter-pack/checkout/route.ts, apps/marketing/lib/pricing.ts, apps/crm/tests/verification/starter-pack-checkout-price-guard.verification.test.ts, memory/decisions.md
+### Ďalší krok
+Čakať na výstup VERIFY po founderovom kroku C, potom krok B (env patch).
 ## Session 2026-10-01 (LEAD-PIPELINE-AFTER)
 ### Dokončené
 - **LEAD-PIPELINE-AFTER** (GO foundera, jedna stena): `runAfterResponse` (`after()`, sekvenčne, izolované chyby) namiesto `void` v 5 trasách
@@ -62,6 +74,7 @@ Po „merguj N" GO na aplikáciu migrácie na PROD; potom OUTREACH-DOMAIN-PROOF.
 - `memory/decisions.md`, `memory/session-summary.md` (bez zmeny kódu); PROD: 5 riadkov v `agencies`.
 ### Ďalší krok
 GO AUTO-RESPONSE-OPTIN-DEFAULT (migrácia, aby nová agentúra nezačínala so zapnutou auto-odpoveďou).
+
 
 ## Session 2026-10-01 (TENANT-GATE-2)
 ### Dokončené

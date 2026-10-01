@@ -14,6 +14,7 @@ export {
   founderKancelarieRemaining,
   areSeatCheckoutPricesConfigured,
   formatSeatPriceLabel,
+  isValidStripePriceId,
 } from '../../crm/src/lib/program-tier-pricing'
 
 export type { SeatTier } from '../../crm/src/lib/program-tier-pricing'
