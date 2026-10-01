@@ -1,3 +1,16 @@
+## Session 2026-10-01 (ENV-SCHEMA-RECONCILE — iba kódová strana)
+### Dokončené
+- **Premisa chýbala:** GO prišlo bez `[env]` logu z nasadenia (#776 nie je zmergovaný), takže schému som zosúladil len s tým, čo KÓD číta, nie s produkciou. Produkčnú stranu stále neviem.
+- Zistenie: `lib/app-env.ts` je živá diagnostika (`/system`, health-dashboard) a hovorí, že povinná je iba `NEXT_PUBLIC_SUPABASE_URL`; `config/env.ts` bola s ňou v rozpore (šesť povinných). **Dva zdroje pravdy o env — zjednotenie je ďalšia brána.**
+- `config/env.ts`: hard-required = URL + (ANON *alebo* PUBLISHABLE; superRefine). `OPENAI_API_KEY`, `STRIPE_SECRET_KEY`, `CRON_SECRET`, `SUPABASE_SERVICE_ROLE_KEY` sú voliteľné (kód ich ošetruje: `getOpenAIClient()` null, `isAuthorizedCronBearer` fail-closed, `createServiceRoleClient()` null) a idú do `DEGRADED_WITHOUT` — štart-log hlási `[env] degraded (…)` s dopadom na funkciu. Whitespace-only = nenastavené (kód trimuje); prázdny reťazec = invalid.
+- 12 testov, mutation proof 7/7 (dve prežili prvé kolo → doplnené testy → červené).
+- `prepush-gate` PASS (typecheck 49/54, lint); migrácie NEOVERENÉ.
+### Rozpracované / Pending
+- Po nasadení #776 hľadať `[env]` vo Vercel runtime logoch → skutočný stav prod (vrátane team-shared premenných, ktoré som nevidel). Až potom rozhodnúť o fail-fast.
+- Zjednotiť `app-env.ts` a `config/env.ts` (jeden zdroj pravdy).
+### Ďalší krok
+Merge #776 → nasadenie → prečítať `[env]` log → GO ENV-SINGLE-SOURCE.
+
 ## Session 2026-10-01 (ENV-TS-WIRE)
 ### Dokončené
 - **Meranie Vercel `realitka-ai` (iba názvy a ciele, 85 záznamov, 69 kľúčov):** v `production` NIE JE `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (existuje len `SUPABASE_SECRET_KEY`/`SUPABASE_ANON_KEY`/`SUPABASE_PUBLISHABLE_KEY` z integrácie a `SERVICE_ROLE` pre 2 preview vetvy) ani `OPENAI_API_KEY`. `env.ts` ich všetky vyžaduje. **Zapojiť `env.ts` ako fail-fast by dnes zhodilo produkciu.** Team-shared premenné som nevidel — beh to potvrdí.
