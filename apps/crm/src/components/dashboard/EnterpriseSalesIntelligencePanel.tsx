@@ -97,78 +97,7 @@ export default function EnterpriseSalesIntelligencePanel({ enabled }: Props) {
   }, [enabled, agencyId, load]);
 
   if (!enabled) {
-    return (
-      <div className="relative overflow-hidden rounded-[20px] border p-5" style={panelStyle}>
-        <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: "#B45309" }}>
-          Protocol Authority
-        </p>
-        <h3 className="text-lg font-bold" style={{ color: SLATE_HORIZON.ink }}>
-          AI Sales Intelligence
-        </h3>
-        <p className="mt-1 text-xs" style={{ color: SLATE_HORIZON.muted }}>
-          BRI skóre · Kataster Pulse · Competition Heatmap · Neural Pulse
-        </p>
-
-        <div className="pointer-events-none mt-4 select-none space-y-2 opacity-40">
-          {["Novák – BRI 91/100", "Kováč – BRI 78/100", "Horváth – BRI 65/100"].map((item) => (
-            <div
-              key={item}
-              className="rounded-xl border p-3 text-sm"
-              style={{
-                borderColor: WORKDESK_INNER_ROW.borderColor,
-                background: WORKDESK_INNER_ROW.background,
-                color: SLATE_HORIZON.muted,
-              }}
-            >
-              {item}
-            </div>
-          ))}
-        </div>
-
-        <div
-          className="mt-6 rounded-2xl border p-5 text-center"
-          style={{ background: "#FFFBEB", borderColor: "#FDE68A" }}
-        >
-          <p className="mb-1 text-sm font-black" style={{ color: SLATE_HORIZON.ink }}>
-            ★ Dostupné v Protocol Authority
-          </p>
-          <div className="mb-4 mt-3 grid grid-cols-2 gap-1.5 text-left">
-            {[
-              "Kto je pripravený kúpiť hneď (skóre 0-100)",
-              "Okamžité upozornenie na horúceho klienta",
-              "Kataster naživo: hneď vidíš zmeny vlastníkov",
-              "Mapa, kde konkurencia nestíha (tam sú peniaze dnes)",
-              "Živý AI radar: kde sa trh hýbe práve teraz",
-              "Návrat starých klientov, čo sa dlho neozvali",
-              "Skryté ponuky mimo bežných portálov",
-              "Ochrana tvojich dát a tímu",
-              "1 majiteľ + 4 makléri v cene",
-              "Jednoduché reporty: kde sme zarobili a kde unikajú peniaze",
-              "Osobný Protocol manažér pre rýchlu pomoc",
-              "SLA 99.99% uptime",
-            ].map((f) => (
-              <div key={f} className="flex items-start gap-1.5 text-[11px]" style={{ color: SLATE_HORIZON.muted }}>
-                <span className="mt-px shrink-0" style={{ color: "#B45309" }}>
-                  ✓
-                </span>
-                {f}
-              </div>
-            ))}
-          </div>
-          <Link
-            href="/billing"
-            className="inline-flex items-center gap-2 rounded-full px-5 py-2 text-xs font-black uppercase tracking-widest transition-all hover:opacity-95"
-            style={{
-              background: "linear-gradient(135deg, #F59E0B, #D97706)",
-              color: SLATE_HORIZON.inkDeep,
-              boxShadow: "0 4px 16px rgba(245,158,11,0.2)",
-            }}
-          >
-            ★ Aktivovať Protocol Authority
-          </Link>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (

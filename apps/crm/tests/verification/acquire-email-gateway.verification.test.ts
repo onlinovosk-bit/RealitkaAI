@@ -1,0 +1,98 @@
+import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
+const CRM_ROOT = process.cwd();
+
+describe("[verification] Acquire email gateway", () => {
+  it("route accepts Cloudflare Worker JSON payload with shared-secret auth", () => {
+    const route = readFileSync(
+      join(CRM_ROOT, "src/app/api/acquire/email/route.ts"),
+      "utf8",
+    );
+
+    expect(route).toContain("req.json()");
+    expect(route).not.toContain("req.text()");
+    expect(route).not.toContain("resend.webhooks.verify");
+    expect(route).not.toContain("emails.receiving.get");
+    expect(route).not.toMatch(/import\s*\{[^}]*agencyForInbound/);
+    expect(route).toContain("ACQUIRE_SHARED_SECRET");
+    expect(route).toContain("x-shared-secret");
+    expect(route).toContain("payload?.mailbox?.agencyId");
+    expect(route).toContain("createServiceRoleClient");
+  });
+
+  it("releases acquire_dedup_keys claim when lead insert fails (no permanent lead loss)", () => {
+    const route = readFileSync(
+      join(CRM_ROOT, "src/app/api/acquire/email/route.ts"),
+      "utf8",
+    );
+
+    // Dedup claim must be checked (unique conflict → duplicate) and rolled back on lead failure.
+    expect(route).toContain('from("acquire_dedup_keys").insert');
+    expect(route).toContain("isUniqueConflict");
+    expect(route).toContain(".delete()");
+    expect(route).toContain('.eq("key", key)');
+    expect(route).toMatch(
+      /insert error[\s\S]*acquire_dedup_keys[\s\S]*\.delete\(\)[\s\S]*\.eq\("key", key\)/,
+    );
+    // Retry after an unknown commit must not create a second lead.
+    expect(route).toContain("deterministicLeadId");
+    expect(route).toContain("acquire-email-lead:");
+    expect(route).toContain("LEAD_ALREADY_EXISTS");
+    expect(route).toMatch(
+      /isUniqueConflict\(error\)[\s\S]*from\("leads"\)[\s\S]*\.eq\("id", leadId\)/,
+    );
+  });
+
+  it("agency_id comes from inbound address map, not parsed email", () => {
+    const map = readFileSync(
+      join(CRM_ROOT, "src/lib/acquire/agency-map.ts"),
+      "utf8",
+    );
+
+    expect(map).toContain("smolko@inbound.revolis.ai");
+    expect(map).toContain("11111111-1111-1111-1111-111111111111");
+    expect(map).not.toContain("parseEmail");
+  });
+
+  it("proxy bypasses session auth for acquire email webhook", () => {
+    const proxy = readFileSync(join(CRM_ROOT, "src/proxy.ts"), "utf8");
+    expect(proxy).toContain('"/api/acquire/email"');
+  });
+
+  it("route delegates inbound auto-response to shared helper after triage", () => {
+    const route = readFileSync(
+      join(CRM_ROOT, "src/app/api/acquire/email/route.ts"),
+      "utf8",
+    );
+    const orchestrator = readFileSync(
+      join(CRM_ROOT, "src/lib/acquire/inbound-lead-auto-response.ts"),
+      "utf8",
+    );
+    const sender = readFileSync(
+      join(CRM_ROOT, "src/lib/acquire/send-inbound-auto-response.ts"),
+      "utf8",
+    );
+
+    expect(route).toContain("runInboundLeadTriageAndNotify");
+    expect(route).toContain("runInboundLeadAutoResponse");
+    expect(route).not.toMatch(/from\s+["']resend["']/);
+    expect(route).not.toContain("resend.emails.send");
+    expect(route).not.toMatch(/catch\s*\{\s*\}/);
+
+    expect(orchestrator).toContain("auto_response_enabled");
+    expect(orchestrator).toContain("auto_response_sent_at");
+    expect(orchestrator).toContain("assigned_agent,ai_priority,source");
+    // ai_reason je interné zdôvodnenie triedenia — do e-mailu klientovi nepatrí (viď šablóna).
+    expect(orchestrator).not.toContain("ai_reason");
+    expect(orchestrator).toContain("loadAgencyAutoResponseContext");
+    expect(orchestrator).toContain("autoErrorCapture");
+    expect(orchestrator).not.toMatch(/catch\s*\{\s*\}/);
+
+    expect(sender).toContain("replyTo");
+    expect(sender).not.toContain("reply_to");
+    expect(sender).toContain("resolveInboundFromEmail");
+    expect(sender).not.toContain('const FROM_EMAIL = "noreply@revolis.ai"');
+  });
+});

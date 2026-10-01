@@ -13,7 +13,7 @@ export async function POST(request: Request) {
     const leadId = body?.leadId as string | undefined;
 
     if (leadId) {
-      const result = await recalculateRecommendationsForLead(leadId);
+      const result = await recalculateRecommendationsForLead(leadId, supabase);
 
       await createActivity({
         leadId,
@@ -26,12 +26,12 @@ export async function POST(request: Request) {
         source: "ai",
         severity: "info",
         meta: result,
-      });
+      }, supabase);
 
       return NextResponse.json({ ok: true, mode: "single", result });
     }
 
-    const result = await recalculateAllRecommendations();
+    const result = await recalculateAllRecommendations(supabase);
 
     await createActivity({
       leadId: null,
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
       source: "ai",
       severity: "info",
       meta: result,
-    });
+    }, supabase);
 
     return NextResponse.json({ ok: true, mode: "all", result });
   } catch (error) {

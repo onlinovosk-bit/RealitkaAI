@@ -50,4 +50,24 @@ describe("[verification] AI triage / lead scoring", () => {
     expect(split.forAi).toHaveLength(1);
     expect(split.forAi[0]?.id).toBe("l-rich");
   });
+
+  it("unifies BRI buyer_readiness_score over legacy leads.score for display", () => {
+    const briLead = {
+      score: 40,
+      buyer_readiness_score: 91,
+      aiPriority: "Vysoká",
+      aiTriageAt: "2026-06-01T10:00:00Z",
+      lastContact: "2026-06-01",
+    };
+    expect(getLeadDisplayScore(briLead)).toBe(91);
+
+    const legacyOnly = {
+      score: 72,
+      buyer_readiness_score: null,
+      aiPriority: null,
+      aiTriageAt: null,
+      lastContact: "2026-06-01",
+    };
+    expect(getLeadDisplayScore(legacyOnly)).toBe(72);
+  });
 });

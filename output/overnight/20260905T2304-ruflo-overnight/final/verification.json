@@ -1,0 +1,44 @@
+{
+  "run_id": "20260905T2304-ruflo-overnight",
+  "base_sha": "cf3604613cdbb6a7a279e175f2c792fb25591461",
+  "completed_at": "2026-09-05T23:40:00+02:00",
+  "verdict": "NO_GO_IMPLEMENTATION",
+  "wave_status": {
+    "W0": "PASS",
+    "W1": "PASS_WITH_CONDITIONS",
+    "W2": "PASS_WITH_CONDITIONS",
+    "W3": "PASS_WITH_CONDITIONS",
+    "W4": "H_STOP_I_J_PASS_WITH_CONDITIONS",
+    "W5": "PASS_WITH_CONDITIONS",
+    "W6": "COMPLETE"
+  },
+  "lane_status": {
+    "A": "PASS_WITH_CONDITIONS",
+    "B": "PASS_WITH_CONDITIONS",
+    "C": "PASS_WITH_CONDITIONS",
+    "D": "PASS_WITH_CONDITIONS",
+    "E": "PASS_WITH_CONDITIONS",
+    "F": "PASS_WITH_CONDITIONS",
+    "G": "PASS_WITH_CONDITIONS",
+    "H": "STOP",
+    "I": "PASS_WITH_CONDITIONS",
+    "J": "PASS_WITH_CONDITIONS",
+    "K": "PASS_WITH_CONDITIONS",
+    "O0": "PASS"
+  },
+  "final_files": [
+    "final/morning-report.md",
+    "final/decision-contract.md",
+    "final/implementation-backlog.md",
+    "final/human-decisions.md",
+    "final/verification.json"
+  ],
+  "conditions": [
+    "CRITICAL phone audit unrepaired in code",
+    "HIGH tenant NULL under-scoped unrepaired in code",
+    "UC outbound vendor BLOCKED",
+    "Commercial VALIDATE_FIRST"
+  ],
+  "parallel_run_non_authoritative": "output/overnight/2026-09-05T2308-CEST-research/",
+  "spend": "subscription_only_assumed_no_paid_api_escalation"
+}

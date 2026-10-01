@@ -12,6 +12,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { processRealviaQueue } from '@/lib/realvia/processQueue';
 import { enqueueReplayFailedQueueJobs } from '@/lib/realvia/webhookStore';
+import { reconcileWebhookProcessedFlags } from '@/lib/realvia/reconcileWebhookProcessed';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -37,11 +38,24 @@ export async function GET(request: NextRequest) {
       replayResult = await enqueueReplayFailedQueueJobs(replayLimit);
     }
 
+    const reconcileParam = request.nextUrl.searchParams.get('reconcile_processed');
+    const runReconcile =
+      reconcileParam === '1' ||
+      reconcileParam === 'true' ||
+      reconcileParam === 'yes' ||
+      reconcileParam === 'on';
+
+    let reconcileResult = null;
+    if (runReconcile) {
+      reconcileResult = await reconcileWebhookProcessedFlags({ limit: 200 });
+    }
+
     const result = await processRealviaQueue();
     return NextResponse.json({
       ok: true,
       ...result,
       ...(replayResult ? { replay_failed_jobs: replayResult } : {}),
+      ...(reconcileResult ? { reconcile_processed: reconcileResult } : {}),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Worker failed';

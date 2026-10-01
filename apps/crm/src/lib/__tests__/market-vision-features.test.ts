@@ -29,6 +29,7 @@ const GUARDIAN_CAPABILITIES = (
 const PROTOCOL_ONLY_CAPABILITIES: LicenseCapability[] = [
   "canUseCompetitionRadar",
   "canUseMonopolDominance",
+  "canUseStealthRecruiter",
 ];
 
 function routeToPagePath(href: string): string {

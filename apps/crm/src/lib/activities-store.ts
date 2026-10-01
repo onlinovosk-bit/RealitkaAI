@@ -88,20 +88,23 @@ export async function listActivitiesForLead(leadId: string): Promise<ActivityIte
   return all.filter((item) => item.leadId === leadId);
 }
 
-export async function createActivity(input: {
-  leadId?: string | null;
-  profileId?: string | null;
-  type: string;
-  title?: string;
-  text: string;
-  entityType?: string;
-  entityId?: string | null;
-  actorName?: string;
-  source?: string;
-  severity?: string;
-  meta?: Record<string, unknown>;
-}) {
-  const supabase = await resolveTenantSupabase();
+export async function createActivity(
+  input: {
+    leadId?: string | null;
+    profileId?: string | null;
+    type: string;
+    title?: string;
+    text: string;
+    entityType?: string;
+    entityId?: string | null;
+    actorName?: string;
+    source?: string;
+    severity?: string;
+    meta?: Record<string, unknown>;
+  },
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+) {
+  const supabase = await resolveTenantSupabase(scoped);
 
   const payload = {
     lead_id: input.leadId ?? null,

@@ -28,8 +28,10 @@ function getDemoRecommendationsStore() {
   return globalRecommendationsStore.__realitkaDemoRecommendations;
 }
 
-async function listPersistedMatches(): Promise<SimpleMatch[]> {
-  const supabase = await resolveTenantSupabase();
+async function listPersistedMatches(
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+): Promise<SimpleMatch[]> {
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     return [];
@@ -90,8 +92,10 @@ export async function listRecommendations(
   }));
 }
 
-async function clearRecommendations() {
-  const supabase = await resolveTenantSupabase();
+async function clearRecommendations(
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+) {
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     const store = getDemoRecommendationsStore();
@@ -109,8 +113,11 @@ async function clearRecommendations() {
   }
 }
 
-async function insertRecommendations(rows: GeneratedRecommendation[]) {
-  const supabase = await resolveTenantSupabase();
+async function insertRecommendations(
+  rows: GeneratedRecommendation[],
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+) {
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     const store = getDemoRecommendationsStore();
@@ -162,10 +169,13 @@ async function insertRecommendations(rows: GeneratedRecommendation[]) {
   return { inserted: payload.length };
 }
 
-export async function recalculateRecommendationsForLead(leadId: string) {
+export async function recalculateRecommendationsForLead(
+  leadId: string,
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+) {
   const [leads, matches] = await Promise.all([
-    listLeads(),
-    listPersistedMatches(),
+    listLeads(undefined, scoped),
+    listPersistedMatches(scoped),
   ]);
 
   const lead = leads.find((item) => item.id === leadId);
@@ -174,7 +184,7 @@ export async function recalculateRecommendationsForLead(leadId: string) {
     throw new Error("Lead nebol nájdený.");
   }
 
-  const supabase = await resolveTenantSupabase();
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (supabase) {
     const { error: deleteError } = await supabase
@@ -196,7 +206,7 @@ export async function recalculateRecommendationsForLead(leadId: string) {
 
   const leadMatches = matches.filter((item) => item.leadId === leadId);
   const recommendations = generateRecommendationsForLead(lead, leadMatches);
-  const result = await insertRecommendations(recommendations);
+  const result = await insertRecommendations(recommendations, scoped);
 
   return {
     leadId,
@@ -204,20 +214,22 @@ export async function recalculateRecommendationsForLead(leadId: string) {
   };
 }
 
-export async function recalculateAllRecommendations() {
+export async function recalculateAllRecommendations(
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+) {
   const [leads, matches] = await Promise.all([
-    listLeads(),
-    listPersistedMatches(),
+    listLeads(undefined, scoped),
+    listPersistedMatches(scoped),
   ]);
 
-  await clearRecommendations();
+  await clearRecommendations(scoped);
 
   const rows = leads.flatMap((lead) => {
     const leadMatches = matches.filter((item) => item.leadId === lead.id);
     return generateRecommendationsForLead(lead, leadMatches);
   });
 
-  const result = await insertRecommendations(rows);
+  const result = await insertRecommendations(rows, scoped);
 
   return {
     totalLeads: leads.length,

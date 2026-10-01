@@ -3,8 +3,10 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 import { supabaseClient } from "@/lib/supabase/client";
+import { upsertOnboardingSession } from "@/lib/onboarding/session-api";
 import { AI_ASSISTANT_NAME } from "@/lib/ai-brand";
 import { getNextSlug, getPrevSlug, getStepBySlug } from "./config";
+import type { OnboardingPathMode } from "./config";
 import type { OnboardingChecklist } from "@/lib/onboarding-mvp";
 
 export type OnboardingData = {
@@ -59,12 +61,15 @@ export function useOnboarding(currentSlug: string) {
   const router = useRouter();
   const [formData, setFormData] = useState<OnboardingData>(DEFAULT_DATA);
   const [loaded, setLoaded] = useState(false);
+  const [pathMode, setPathModeState] = useState<OnboardingPathMode>("full");
   const sessionIdRef = useRef<string | null>(null);
   const formDataRef = useRef<OnboardingData>(DEFAULT_DATA);
 
   useEffect(() => {
     const savedId = localStorage.getItem("onboarding_session_id");
     if (savedId) sessionIdRef.current = savedId;
+    const path = localStorage.getItem("onboarding_path");
+    if (path === "short" || path === "full") setPathModeState(path);
     const raw = localStorage.getItem("onboarding_data");
     if (raw) {
       try {
@@ -84,6 +89,11 @@ export function useOnboarding(currentSlug: string) {
     formDataRef.current = formData;
   }, [formData]);
 
+  const setPathMode = (mode: OnboardingPathMode) => {
+    setPathModeState(mode);
+    localStorage.setItem("onboarding_path", mode);
+  };
+
   /** Uloží lokálne hneď; Supabase na pozadí — navigácia nesmie čakať na sieť (inak „Pokračovať" nefunguje). */
   const save = (data: OnboardingData) => {
     let sessionId = sessionIdRef.current;
@@ -95,18 +105,12 @@ export function useOnboarding(currentSlug: string) {
     localStorage.setItem("onboarding_data", JSON.stringify(data));
     localStorage.setItem("onboarding_step", currentSlug);
     const step = getStepBySlug(currentSlug);
-    void supabaseClient
-      .from("onboarding_sessions")
-      .upsert({
-        session_id: sessionId,
-        step: step?.index ?? 1,
-        form_data: data,
-        updated_at: new Date().toISOString(),
-      })
-      .then(
-        () => {},
-        () => {}
-      );
+    void upsertOnboardingSession({
+      session_id: sessionId,
+      step: step?.index ?? 1,
+      form_data: data,
+      updated_at: new Date().toISOString(),
+    }).catch(() => {}); // soft-fail — localStorage is SoT
   };
 
   const update = (fields: Partial<OnboardingData>) =>
@@ -118,17 +122,17 @@ export function useOnboarding(currentSlug: string) {
 
   const next = () => {
     save(formDataRef.current);
-    const nextSlug = getNextSlug(currentSlug);
+    const nextSlug = getNextSlug(currentSlug, pathMode);
     if (nextSlug) router.push(`/onboarding/${nextSlug}`);
   };
 
   const back = () => {
-    const prevSlug = getPrevSlug(currentSlug);
+    const prevSlug = getPrevSlug(currentSlug, pathMode);
     if (prevSlug) router.push(`/onboarding/${prevSlug}`);
   };
 
   const skip = () => {
-    const nextSlug = getNextSlug(currentSlug);
+    const nextSlug = getNextSlug(currentSlug, pathMode);
     if (nextSlug) router.push(`/onboarding/${nextSlug}`);
   };
 
@@ -141,5 +145,5 @@ export function useOnboarding(currentSlug: string) {
     return patchOnboardingChecklist(company, email, patch, contactName);
   }, []);
 
-  return { formData, update, next, back, skip, loaded, patchChecklist };
+  return { formData, update, next, back, skip, loaded, patchChecklist, pathMode, setPathMode };
 }

@@ -1,0 +1,50 @@
+{
+    "evidence_refs":  [
+                          "lanes/C/judge-output.txt",
+                          "docs/reports/2026-09-15-business-loop-baseline.md"
+                      ],
+    "task_id":  "TASK-0102",
+    "lane":  "C",
+    "acceptance":  [
+                       {
+                           "cmd":  "npm --prefix apps/crm test -- matching",
+                           "pass":  true,
+                           "id":  "C1",
+                           "exit_code":  0
+                       },
+                       {
+                           "cmd":  "node apps/crm/scripts/check-api-contract.mjs --ci",
+                           "pass":  true,
+                           "id":  "C2",
+                           "exit_code":  0
+                       },
+                       {
+                           "cmd":  "git diff --name-only origin/main...HEAD",
+                           "pass":  true,
+                           "note":  "verified after commit",
+                           "id":  "C3",
+                           "exit_code":  0
+                       }
+                   ],
+    "production_effect":  {
+                              "QUALIFICATION":  0,
+                              "LEAD":  506,
+                              "note":  "matching guards only; recalculateAllMatches NOT run",
+                              "source":  "zmerané 2026-09-14/15, founder session",
+                              "INTENT":  3
+                          },
+    "changed_files":  [
+                          "apps/crm/src/lib/matching.ts",
+                          "apps/crm/src/lib/__tests__/matching.test.ts",
+                          "docs/reports/2026-09-15-business-loop-baseline.md",
+                          "lanes/C/report.md",
+                          "lanes/C/judge-output.txt",
+                          "lanes/C/result.json"
+                      ],
+    "verdict":  "PASS",
+    "remaining_risks":  [
+                            "QUALIFICATION stays 0 until recalculate is authorized",
+                            "baseline SQL not executed against prod",
+                            "lanes/C/* is in package write_set but outside paste-prompt SCOPE 3-file list — included for DONE artifacts"
+                        ]
+}

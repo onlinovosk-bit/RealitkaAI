@@ -1,0 +1,23 @@
+---
+description: DB schema — migrations, allowlist, RLS, no new tables without ADL GO
+globs:
+  - apps/crm/supabase/**
+  - apps/crm/public-schema-allowlist.json
+  - "**/migrations/*.sql"
+---
+
+# Revolis DB Patterns
+
+Pred migráciou: over `supabase/migrations/` + `public-schema-allowlist.json`. Tabuľka takmer vždy existuje.
+
+## Pravidlá
+
+- Nová tabuľka / nový koncept = STOP + explicitné founder GO (ADL AD-019, AP-019).
+- Každá tenant tabuľka: RLS + `agency_id` izolácia; over `tests/rls/`.
+- Forward-only migrácie — rollback = nová migrácia, nie revert v prod.
+- Po zmene schémy: aktualizuj allowlist ak sa mení public surface.
+
+## Po zmene
+
+- `npx vitest run tests/rls/` (CI to vyžaduje).
+- `rg` v `tests/verification/` pre dotknuté scoped-writes testy.

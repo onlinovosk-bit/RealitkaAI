@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
-import { createProperty } from "@/lib/properties-store";
+import { createProperty, listProperties } from "@/lib/properties-store";
 import { checkAiRateLimit } from "@/lib/ai/rate-guard";
 import { z } from "zod";
 
@@ -27,9 +27,8 @@ export async function GET() {
   const { supabase, user } = await getAuthUser()
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const { data, error } = await supabase.from("properties").select("*")
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data)
+  const properties = await listProperties(undefined, supabase)
+  return NextResponse.json(properties)
 }
 
 export async function POST(req: Request) {

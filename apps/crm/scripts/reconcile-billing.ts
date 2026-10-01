@@ -40,11 +40,11 @@ function main(): number {
 
   const unknownSample = "price_unknown_wave0_smoke";
   const unknownPlan = resolvePlanKeyFromStripePriceId(unknownSample);
-  if (unknownPlan !== "free") {
-    console.error(`  FAIL  unknown price should map to free, got: ${unknownPlan}`);
+  if (unknownPlan !== "unknown") {
+    console.error(`  FAIL  unknown price should map to unknown, got: ${unknownPlan}`);
     issues++;
   } else {
-    console.log(`  OK    unknown price → free (expected)`);
+    console.log(`  OK    unknown price → unknown (expected)`);
   }
 
   if (!process.env.STRIPE_SECRET_KEY) {

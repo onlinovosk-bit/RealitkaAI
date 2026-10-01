@@ -12,7 +12,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getClaudeClient, CLAUDE_SONNET } from "@/lib/ai/claude";
-import { SYSTEM_PROMPT, buildListingUserPrompt } from "@/lib/ai/listing-content";
+import { sanitizeText } from "@/lib/ai/sanitize";
+import { SYSTEM_PROMPT, buildListingUserPrompt, sanitizePropertyInput } from "@/lib/ai/listing-content";
 import type { PropertyInput, ListingPersona } from "@/lib/ai/listing-content";
 
 export async function POST(req: Request) {
@@ -23,7 +24,7 @@ export async function POST(req: Request) {
   let property: PropertyInput, persona: ListingPersona;
   try {
     const body = await req.json();
-    property = body.property;
+    property = sanitizePropertyInput(body.property as PropertyInput);
     persona  = body.persona ?? "GENERAL";
     if (!property?.type || !property?.location) throw new Error("missing fields");
   } catch {
@@ -31,7 +32,8 @@ export async function POST(req: Request) {
   }
 
   const encoder   = new TextEncoder();
-  const userPrompt = buildListingUserPrompt(property, persona);
+  // Streams bypass callClaude, so mask here: agent_notes may carry owner contacts.
+  const userPrompt = sanitizeText(buildListingUserPrompt(property, persona)).sanitized;
 
   const readable = new ReadableStream({
     async start(controller) {

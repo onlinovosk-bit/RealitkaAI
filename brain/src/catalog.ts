@@ -1,0 +1,989 @@
+import { existsSync, readdirSync } from "node:fs";
+import { join } from "node:path";
+import type { DecisionRecord, RegistryRecord } from "./schema.js";
+import { SCHEMA_VERSION } from "./schema.js";
+import { compareAscii, digestFiles, gitMetadata, listFiles } from "./repo.js";
+
+const GENOME_LAYER2_LEGACY_PATH = "apps/crm/supabase/migrations/2026_genome_layer2.sql";
+const GENOME_LAYER2_RENAMED_RE = /^\d{14}_rename_genome_layer2\.sql$/;
+
+/** Feature-detect Genome Layer 2 migration filename: 14-digit rename, else legacy 2026_*. */
+export function resolveGenomeLayer2EvidencePath(repoRoot: string, path: string): string {
+  if (!path.endsWith("genome_layer2.sql")) return path;
+  const dir = join(repoRoot, "apps/crm/supabase/migrations");
+  if (!existsSync(dir)) return path;
+  const files = readdirSync(dir);
+  const basename = path.split("/").pop() ?? "";
+  if (files.includes(basename)) return path;
+  const renamed = files.filter((file) => GENOME_LAYER2_RENAMED_RE.test(file)).sort();
+  if (renamed.length > 0) return `apps/crm/supabase/migrations/${renamed[renamed.length - 1]}`;
+  if (files.includes("2026_genome_layer2.sql")) return GENOME_LAYER2_LEGACY_PATH;
+  return path;
+}
+
+interface RegistrySpec {
+  id: string;
+  type: RegistryRecord["type"];
+  name: string;
+  purpose: string;
+  owner: string;
+  sourcePath: string;
+  roots: string[];
+  dependencies: string[];
+  relatedDecisions: string[];
+  capabilities: string[];
+}
+
+interface DecisionSpec {
+  id: string;
+  title: string;
+  date: string;
+  status: DecisionRecord["status"];
+  problem: string;
+  choice: string;
+  rationale: string;
+  alternatives?: string[];
+  expectedOutcome: string;
+  observedOutcome: string;
+  reviewAt: string;
+  relatedAssets: string[];
+  supersedes?: string[];
+  confidence?: DecisionRecord["confidence"];
+  evidence: Array<{ path: string; line: number; note: string }>;
+}
+
+const REGISTRY_SPECS: RegistrySpec[] = [
+  {
+    id: "identity.founder",
+    type: "documentation",
+    name: "Founder identity brief",
+    purpose: "Model-independent brief for how AI tools should work with the founder before any task.",
+    owner: "founder",
+    sourcePath: "brain/identity/FOUNDER.md",
+    roots: ["brain/identity/FOUNDER.md"],
+    dependencies: ["brain.engine"],
+    relatedDecisions: [],
+    capabilities: ["founder", "identity"],
+  },
+  {
+    id: "identity.company",
+    type: "documentation",
+    name: "Company identity brief",
+    purpose: "What Revolis is, for whom, pricing direction, and North Star constraints for AI assistants.",
+    owner: "founder",
+    sourcePath: "brain/identity/COMPANY.md",
+    roots: ["brain/identity/COMPANY.md"],
+    dependencies: ["brain.engine", "identity.founder"],
+    relatedDecisions: [],
+    capabilities: ["company", "identity"],
+  },
+  {
+    id: "memory.lessons",
+    type: "documentation",
+    name: "Operational lessons register",
+    purpose: "Documented incidents and prevention rules; complements the decision log with verified learnings.",
+    owner: "founder",
+    sourcePath: "brain/lessons",
+    roots: ["brain/lessons"],
+    dependencies: ["brain.engine", "memory.decisions"],
+    relatedDecisions: [],
+    capabilities: ["lesson", "lessons-register"],
+  },
+  {
+    id: "brain.engine",
+    type: "governance",
+    name: "Revolis Brain OS Engine",
+    purpose: "Governance, evidence hierarchy, update protocol, and founder gates for company memory.",
+    owner: "founder",
+    sourcePath: "brain/ENGINE.md",
+    roots: ["brain/ENGINE.md"],
+    dependencies: ["governance.architecture", "memory.decisions"],
+    relatedDecisions: ["rme-dec-20260522-004"],
+    capabilities: ["brain-governance", "evidence-hierarchy", "change-gates"],
+  },
+  {
+    id: "governance.architecture",
+    type: "documentation",
+    name: "Architecture and governance corpus",
+    purpose: "Canonical and supporting architecture documents used to constrain product and engineering work.",
+    owner: "founder",
+    sourcePath: "docs/architecture",
+    roots: ["docs/architecture"],
+    dependencies: [],
+    relatedDecisions: ["rme-dec-20260624-001", "rme-dec-20260623-002"],
+    capabilities: ["architecture-guidance", "antipattern-governance", "data-sourcing"],
+  },
+  {
+    id: "governance.engineering-constitution",
+    type: "governance",
+    name: "Engineering Constitution",
+    purpose:
+      "Three-layer code governance (Constitution / Policy / Enforcement); Builder decision tree and Judge justification format wired to Decision Memory.",
+    owner: "engineering",
+    sourcePath: "docs/architecture/engineering-constitution.md",
+    roots: ["docs/architecture/engineering-constitution.md", ".cursor/rules/l99-engineering-constitution.mdc"],
+    dependencies: ["brain.engine", "memory.decisions", "governance.architecture"],
+    relatedDecisions: ["rme-dec-20260802-001"],
+    capabilities: ["engineering-justification", "reuse-policy", "builder-judge-gate"],
+  },
+  {
+    id: "memory.decisions",
+    type: "decision-log",
+    name: "Critical decisions log",
+    purpose: "Canonical historical decision source; generated Brain records remain pointers to this log.",
+    owner: "founder",
+    sourcePath: "memory/decisions.md",
+    roots: ["memory/decisions.md"],
+    dependencies: ["governance.architecture"],
+    relatedDecisions: ["rme-dec-20260522-004"],
+    capabilities: ["decision-history", "rationale-memory", "outcome-tracking"],
+  },
+  {
+    id: "decisions.adr-2026-07-28-architecture-evolution",
+    type: "adr",
+    name: "ADR 2026-07-28 architecture evolution",
+    purpose:
+      "Accepted path for structured Brain (Knowledge Objects when a second machine consumer exists), single canonical home per concept, and Architecture Governor vs Implementation Engineer roles.",
+    owner: "founder",
+    sourcePath: "brain/decisions/adr-2026-07-28-architecture-evolution.md",
+    roots: ["brain/decisions/adr-2026-07-28-architecture-evolution.md"],
+    dependencies: ["brain.engine", "governance.architecture", "memory.decisions"],
+    relatedDecisions: ["rme-dec-20260522-004"],
+    capabilities: ["architecture-evolution", "structured-brain", "governance-roles", "concept-canonical-home"],
+  },
+  {
+    id: "policy.cursor-rules",
+    type: "policy",
+    name: "Cursor governance rules",
+    purpose: "Operational rules referenced as policy evidence, never reclassified as historical decisions.",
+    owner: "engineering",
+    sourcePath: ".cursor/rules",
+    roots: [".cursor/rules"],
+    dependencies: ["governance.architecture"],
+    relatedDecisions: ["rme-dec-20260611-001", "rme-dec-20260618-001"],
+    capabilities: ["coding-policy", "security-policy", "database-policy"],
+  },
+  {
+    id: "repo.packages",
+    type: "package",
+    name: "Monorepo package manifests",
+    purpose: "Workspace topology and direct dependency inventory without copying dependency source code.",
+    owner: "engineering",
+    sourcePath: "package.json",
+    roots: ["package.json", "apps/crm/package.json", "apps/marketing/package.json", "packages"],
+    dependencies: ["policy.cursor-rules"],
+    relatedDecisions: [],
+    capabilities: ["workspace-topology", "dependency-inventory"],
+  },
+  {
+    id: "crm.application",
+    type: "application",
+    name: "CRM application surface",
+    purpose: "Inventory of CRM pages, layouts, and application code used for documentation drift checks.",
+    owner: "engineering",
+    sourcePath: "apps/crm/src/app",
+    roots: ["apps/crm/src/app"],
+    dependencies: ["repo.packages", "database.migrations"],
+    relatedDecisions: ["rme-dec-20260717-001"],
+    capabilities: ["crm-ui", "public-pages", "authenticated-workdesk"],
+  },
+  {
+    id: "crm.api",
+    type: "api",
+    name: "CRM route handlers",
+    purpose: "Inventory of API route handlers used to verify documented endpoint paths.",
+    owner: "engineering",
+    sourcePath: "apps/crm/src/app/api",
+    roots: ["apps/crm/src/app/api"],
+    dependencies: ["repo.packages", "database.migrations"],
+    relatedDecisions: ["rme-dec-20260522-001", "rme-dec-20260706-001", "rme-dec-20260719-001"],
+    capabilities: ["http-api", "integration-contracts", "lead-intake"],
+  },
+  {
+    id: "database.migrations",
+    type: "database",
+    name: "Supabase migrations",
+    purpose: "Versioned database structure used as code-side evidence; production state remains independently verified.",
+    owner: "engineering",
+    sourcePath: "apps/crm/supabase/migrations",
+    roots: ["apps/crm/supabase/migrations"],
+    dependencies: ["policy.cursor-rules"],
+    relatedDecisions: ["rme-dec-20260624-002", "rme-dec-20260722-001"],
+    capabilities: ["database-schema", "tenant-isolation", "consent-storage"],
+  },
+  {
+    id: "ci.workflows",
+    type: "workflow",
+    name: "GitHub Actions workflows",
+    purpose: "CI and governance workflow inventory; remote branch protection is not inferred from files.",
+    owner: "engineering",
+    sourcePath: ".github/workflows",
+    roots: [".github/workflows", ".github/scripts"],
+    dependencies: ["repo.packages", "policy.cursor-rules"],
+    relatedDecisions: ["rme-dec-20260611-001", "rme-dec-20260618-001", "rme-dec-20260618-002"],
+    capabilities: ["continuous-integration", "schema-governance", "merge-policy"],
+  },
+  {
+    id: "automation.n8n",
+    type: "automation",
+    name: "n8n workflow source area",
+    purpose: "Inventory only. Credentials, execution payloads, and customer data are excluded from Brain records.",
+    owner: "founder",
+    sourcePath: "automation/n8n",
+    roots: ["automation/n8n"],
+    dependencies: ["policy.cursor-rules"],
+    relatedDecisions: [],
+    capabilities: ["workflow-automation", "manual-approval-boundary"],
+  },
+  {
+    id: "process.premortem-template",
+    type: "documentation",
+    name: "Premortem process template",
+    purpose: "Standard premortem workflow for Strategic Bet and Core Platform initiatives before first commit.",
+    owner: "founder",
+    sourcePath: "docs/templates/premortem.md",
+    roots: ["docs/templates/premortem.md"],
+    dependencies: ["governance.architecture", "policy.cursor-rules"],
+    relatedDecisions: [],
+    capabilities: ["process-standard", "premortem", "risk-governance"],
+  },
+  {
+    id: "process.build-package-template",
+    type: "documentation",
+    name: "Build Package delivery standard",
+    purpose:
+      "Single-file delivery standard for Core Platform, Strategic Bet, migrations, and new capabilities before Cursor implementation.",
+    owner: "founder",
+    sourcePath: "docs/templates/build-package.md",
+    roots: ["docs/templates/build-package.md"],
+    dependencies: ["governance.architecture", "policy.cursor-rules", "process.premortem-template"],
+    relatedDecisions: [],
+    capabilities: ["process-standard", "build-package"],
+  },
+  {
+    id: "architecture.product-roadmap-mapping-202607",
+    type: "documentation",
+    name: "Product roadmap mapping 2026-07",
+    purpose:
+      "Binding map of sixteen proposed modules to existing Revolis owners; Capture-now/Learn-later moat strategy.",
+    owner: "founder",
+    sourcePath: "docs/architecture/product-roadmap-mapping-2026-07.md",
+    roots: ["docs/architecture/product-roadmap-mapping-2026-07.md"],
+    dependencies: ["governance.architecture", "process.veos-integration"],
+    relatedDecisions: ["rme-dec-20260726-001"],
+    capabilities: ["architecture-decision", "architecture-guidance", "product-roadmap"],
+  },
+  {
+    id: "build-package.moat-capture",
+    type: "documentation",
+    name: "Build Package: Moat Capture layer",
+    purpose:
+      "Moat capture Blok B (deal_outcomes + moat_ai_recommendations); PROD migration pending founder GO.",
+    owner: "founder",
+    sourcePath: "docs/briefs/build-package-moat-capture-blok-b.md",
+    roots: [
+      "docs/briefs/overnight/overnight-brief-moat-capture.md",
+      "docs/briefs/build-package-moat-capture-blok-b.md",
+      "docs/premortems/2026-07-26-moat-capture.md",
+      "apps/crm/supabase/migrations/20260726120000_moat_capture_blok_b.sql",
+    ],
+    dependencies: ["process.build-package-template", "architecture.product-roadmap-mapping-202607"],
+    relatedDecisions: [],
+    capabilities: ["build-package", "core-platform", "data-capture"],
+  },
+  {
+    id: "build-package.guardian-v1",
+    type: "documentation",
+    name: "Build Package: Guardian v1",
+    purpose:
+      "Core Platform brief for guardian_findings hourly checks and daily digest; runs after moat-capture merge.",
+    owner: "founder",
+    sourcePath: "docs/briefs/overnight/overnight-brief-guardian-v1.md",
+    roots: [
+      "docs/briefs/overnight/overnight-brief-guardian-v1.md",
+      "docs/premortems/2026-07-27-guardian-v1.md",
+      "docs/briefs/build-package-guardian-v1-blok-c.md",
+      "apps/crm/supabase/migrations/20260727120000_guardian_v1_blok_c.sql",
+      "apps/crm/src/lib/guardian/runner.ts",
+      "apps/crm/src/app/api/cron/guardian-run/route.ts",
+    ],
+    dependencies: [
+      "process.build-package-template",
+      "architecture.product-roadmap-mapping-202607",
+      "build-package.moat-capture",
+    ],
+    relatedDecisions: [],
+    capabilities: ["build-package", "core-platform", "guardian"],
+  },
+  {
+    id: "build-package.operator-dashboard-v1",
+    type: "documentation",
+    name: "Build Package: Operator Dashboard v1",
+    purpose:
+      "Cross-tenant aggregate-first operator view (attention feed, agency table, platform health); platform-admin gate and no PII in aggregates.",
+    owner: "founder",
+    sourcePath: "docs/briefs/overnight/build-package-operator-dashboard.md",
+    roots: [
+      "docs/briefs/overnight/build-package-operator-dashboard.md",
+      "docs/premortems/2026-07-29-operator-dashboard.md",
+      "docs/prompts/cursor-kickoff-operator-dashboard-v1.md",
+      "apps/crm/supabase/migrations/20260728140000_profiles_platform_admin.sql",
+      "apps/crm/src/app/operator/page.tsx",
+      "apps/crm/src/lib/operator/gather.ts",
+    ],
+    dependencies: [
+      "process.build-package-template",
+      "build-package.guardian-v1",
+      "architecture.product-roadmap-mapping-202607",
+    ],
+    relatedDecisions: ["rme-dec-20260728-001"],
+    capabilities: ["build-package", "core-platform", "operator-dashboard"],
+  },
+  {
+    id: "premortem.ads-smolko-ab",
+    type: "documentation",
+    name: "Premortem: Google Ads A/B Smolko",
+    purpose: "Filled premortem for the Smolko Google Ads A/B campaign; outcome review scheduled 2026-09-07.",
+    owner: "founder",
+    sourcePath: "docs/premortems/2026-07-23-ads-smolko-ab.md",
+    roots: ["docs/premortems/2026-07-23-ads-smolko-ab.md"],
+    dependencies: ["process.premortem-template"],
+    relatedDecisions: ["rme-dec-20260723-001"],
+    capabilities: ["premortem", "ads-campaign", "risk-governance"],
+  },
+  {
+    id: "process.veos-voice-compiler",
+    type: "documentation",
+    name: "VEOS Voice Compiler standard",
+    purpose:
+      "Conversational standard for compiling founder voice dictation into engineering bundles; check brain/registry before proposing NEW modules.",
+    owner: "founder+Claude",
+    sourcePath: "docs/prompts/veos-voice-compiler.md",
+    roots: ["docs/prompts/veos-voice-compiler.md"],
+    dependencies: ["brain.engine", "governance.architecture", "policy.cursor-rules"],
+    relatedDecisions: [],
+    capabilities: ["process-standard", "veos", "voice-compiler"],
+  },
+
+  {
+    id: "memory.workspace",
+    type: "documentation",
+    name: "Session and operational memory corpus",
+    purpose:
+      "Curated memory/*.md surfaces (session summary, open tasks, people) for retrieval; excludes ephemeral chat. Decisions remain memory.decisions only.",
+    owner: "founder",
+    sourcePath: "memory",
+    roots: ["memory"],
+    dependencies: ["memory.decisions", "brain.engine"],
+    relatedDecisions: ["rme-dec-20260522-004"],
+    capabilities: ["session-memory", "operational-memory", "retrieval"],
+  },
+  {
+    id: "docs.audit-corpus",
+    type: "documentation",
+    name: "Repository audit corpus",
+    purpose:
+      "Durable docs/audit/** findings used for governance discovery; not ephemeral reports/briefs/prompts.",
+    owner: "engineering",
+    sourcePath: "docs/audit",
+    roots: ["docs/audit"],
+    dependencies: ["brain.engine", "governance.architecture"],
+    relatedDecisions: [],
+    capabilities: ["audit-corpus", "retrieval", "governance-evidence"],
+  },
+  {
+    id: "brain.audits",
+    type: "documentation",
+    name: "Committed Brain OS audit history",
+    purpose:
+      "Dated MD+JSON audit pairs under brain/audits/; weekly learning reads these (brain:weekly does not create audits).",
+    owner: "engineering",
+    sourcePath: "brain/audits",
+    roots: ["brain/audits"],
+    dependencies: ["brain.engine", "ci.workflows"],
+    relatedDecisions: [],
+    capabilities: ["audit-history", "retrieval", "weekly-learning-input"],
+  },
+  {
+    id: "brain.retrieval-contract",
+    type: "documentation",
+    name: "Brain retrieval and discoverability contract",
+    purpose:
+      "Defines how semantic registry records map to inventory coverage; forbids indexing ephemeral reports/briefs/prompts wholesale.",
+    owner: "founder",
+    sourcePath: "docs/architecture/brain-retrieval-contract.md",
+    roots: ["docs/architecture/brain-retrieval-contract.md"],
+    dependencies: ["brain.engine", "governance.architecture"],
+    relatedDecisions: ["rme-dec-20260522-004"],
+    capabilities: ["retrieval", "discoverability", "registry-governance"],
+  },
+
+  {
+    id: "process.veos-integration",
+    type: "documentation",
+    name: "VEOS architecture integration",
+    purpose:
+      "Maps the 12-module VEOS proposal to existing Revolis owners; conversational layer only, no new runtime modules.",
+    owner: "founder+Claude",
+    sourcePath: "docs/architecture/veos-integration.md",
+    roots: ["docs/architecture/veos-integration.md"],
+    dependencies: ["process.veos-voice-compiler", "governance.architecture"],
+    relatedDecisions: [],
+    capabilities: ["process-standard", "veos", "architecture-guidance"],
+  },
+];
+
+const DECISION_SPECS: DecisionSpec[] = [
+  {
+    id: "rme-dec-20260522-001",
+    title: "Standardize the Realvia response contract",
+    date: "2026-05-22",
+    status: "active",
+    problem: "Realvia-facing endpoints returned inconsistent response shapes.",
+    choice: "Return a result and message envelope from every Realvia-facing endpoint.",
+    rationale: "The integration feedback identified response format as the remaining technical blocker.",
+    expectedOutcome: "A stable external response contract for webhook and import calls.",
+    observedOutcome: "Implementation is present in the repository; an external partner retest is unavailable.",
+    reviewAt: "2026-08-22",
+    relatedAssets: ["crm.api"],
+    evidence: [
+      { path: "memory/decisions.md", line: 90, note: "Canonical decision entry and rationale." },
+      { path: "apps/crm/src/lib/realvia/responses.ts", line: 3, note: "Current response helper implementation." },
+    ],
+  },
+  {
+    id: "rme-dec-20260522-002",
+    title: "Support the Realvia delete v2 payload",
+    date: "2026-05-22",
+    status: "active",
+    problem: "The production delete payload used an action field instead of the legacy deleted boolean.",
+    choice: "Recognize action delete and map archiveType to the resulting property status.",
+    rationale: "The implementation must follow the documented v2 payload.",
+    expectedOutcome: "Correct archival behavior for sold, rented, and cancelled listings.",
+    observedOutcome: "The parser implementation is present in the repository.",
+    reviewAt: "2027-05-22",
+    relatedAssets: ["crm.api"],
+    evidence: [
+      { path: "memory/decisions.md", line: 95, note: "Canonical decision entry." },
+      { path: "apps/crm/src/lib/realvia/types.ts", line: 108, note: "Delete payload guard implementation." },
+    ],
+  },
+  {
+    id: "rme-dec-20260522-003",
+    title: "Unify Realvia authentication failures",
+    date: "2026-05-22",
+    status: "active",
+    problem: "Missing and incorrect credentials produced different external errors.",
+    choice: "Return Invalid authentication for every external authentication failure.",
+    rationale: "A stable contract avoids leaking internal detail.",
+    expectedOutcome: "Consistent and less revealing authentication errors.",
+    observedOutcome: "The shared error constant is present in the repository.",
+    reviewAt: "2027-05-22",
+    relatedAssets: ["crm.api"],
+    evidence: [
+      { path: "memory/decisions.md", line: 100, note: "Canonical decision entry." },
+      { path: "apps/crm/src/lib/realvia/responses.ts", line: 11, note: "Current shared authentication error." },
+    ],
+  },
+  {
+    id: "rme-dec-20260522-004",
+    title: "Use repository memory as the AI handoff layer",
+    date: "2026-05-22",
+    status: "active",
+    problem: "Copy and paste handoffs between AI tools caused context drift.",
+    choice: "Use the repository memory directory instead of adding Notion or CrewAI.",
+    rationale: "Existing versioned files provide a small, inspectable source of truth.",
+    expectedOutcome: "Traceable handoffs with less repeated reconstruction.",
+    observedOutcome: "The repository contains and actively updates the memory directory.",
+    reviewAt: "2026-11-22",
+    relatedAssets: ["memory.decisions", "brain.engine"],
+    evidence: [{ path: "memory/decisions.md", line: 105, note: "Canonical decision and consequences." }],
+  },
+  {
+    id: "rme-dec-20260611-001",
+    title: "Require up-to-date branches before merge",
+    date: "2026-06-11",
+    status: "verification_required",
+    problem: "Parallel stale branches caused repeated semantic regressions.",
+    choice: "Require branches to be current and require the Lint, test, build check.",
+    rationale: "Semantic conflicts must become visible before merge.",
+    expectedOutcome: "Fewer regressions caused by stale verification artifacts.",
+    observedOutcome: "The rule is documented locally; remote branch-protection state is unavailable.",
+    reviewAt: "2026-07-29",
+    relatedAssets: ["ci.workflows", "policy.cursor-rules"],
+    evidence: [
+      { path: "memory/decisions.md", line: 110, note: "Canonical decision and incident count." },
+      { path: ".cursor/rules/l99-golden-rule.mdc", line: 10, note: "Operational policy reference, not a second decision source." },
+    ],
+  },
+  {
+    id: "rme-dec-20260618-001",
+    title: "Use a pattern-based stealth feature guard",
+    date: "2026-06-18",
+    status: "active",
+    problem: "A name-specific CI guard could be bypassed by renaming forbidden behavior.",
+    choice: "Guard the forbidden behavior family with a name pattern.",
+    rationale: "Governance must cover behavior rather than one historical label.",
+    expectedOutcome: "CI catches renamed variants of the prohibited feature family.",
+    observedOutcome: "The pattern is present in repository merge-policy automation.",
+    reviewAt: "2026-12-18",
+    relatedAssets: ["ci.workflows", "governance.architecture"],
+    evidence: [
+      { path: "memory/decisions.md", line: 127, note: "Canonical incident and decision." },
+      { path: ".github/scripts/automerge-policy.mjs", line: 28, note: "Current policy implementation." },
+    ],
+  },
+  {
+    id: "rme-dec-20260618-002",
+    title: "Pause the schema guard schedule until secrets exist",
+    date: "2026-06-18",
+    status: "verification_required",
+    problem: "Missing CI secrets caused a false red schema report every night.",
+    choice: "Disable the schedule and retain manual workflow dispatch.",
+    rationale: "The guard should report schema drift, not configuration noise.",
+    expectedOutcome: "No recurring false alarms while manual verification remains available.",
+    observedOutcome: "The schedule remains absent from the workflow; remote secret state is unavailable.",
+    reviewAt: "2026-07-29",
+    relatedAssets: ["ci.workflows"],
+    evidence: [
+      { path: "memory/decisions.md", line: 133, note: "Canonical decision and re-enable condition." },
+      { path: ".github/workflows/schema-governance-guard.yml", line: 3, note: "Current workflow trigger evidence." },
+    ],
+  },
+  {
+    id: "rme-dec-20260619-001",
+    title: "Show honest pending qualification",
+    date: "2026-06-19",
+    status: "verification_required",
+    problem: "Imported leads lacked the fields needed for readiness scoring.",
+    choice: "Show missing qualification instead of fabricating a backfill.",
+    rationale: "The available import contains identity, not intent or readiness.",
+    expectedOutcome: "Trustworthy UI that does not present invented qualification.",
+    observedOutcome: "A current production UI verification is unavailable.",
+    reviewAt: "2026-07-29",
+    relatedAssets: ["crm.application", "governance.architecture"],
+    evidence: [{ path: "memory/decisions.md", line: 140, note: "Canonical fact, veto, and decision." }],
+  },
+  {
+    id: "rme-dec-20260619-002",
+    title: "Validate a first-party qualification source",
+    date: "2026-06-19",
+    status: "superseded",
+    problem: "The primary import source did not contain qualification fields.",
+    choice: "Inspect a first-party demand export instead of enriching empty fields.",
+    rationale: "Qualification must come from an evidenced source.",
+    expectedOutcome: "Determine whether a legal bulk qualification source exists.",
+    observedOutcome: "The later audit found that the bulk qualification export was unavailable.",
+    reviewAt: "2026-06-23",
+    relatedAssets: ["governance.architecture"],
+    evidence: [
+      { path: "memory/decisions.md", line: 145, note: "Original validation decision." },
+      { path: "memory/decisions.md", line: 183, note: "Later evidence that superseded the path." },
+    ],
+  },
+  {
+    id: "rme-dec-20260622-001",
+    title: "Compare every documented property area",
+    date: "2026-06-22",
+    status: "active",
+    problem: "Several truthful area values in one listing produced a false quality flag.",
+    choice: "Compare every square-metre value against the structured and source-description area set.",
+    rationale: "Quality review must distinguish legitimate multiple area types from drift.",
+    expectedOutcome: "Fewer false flags without weakening area validation.",
+    observedOutcome: "The decision log records a six-of-six production capability smoke result.",
+    reviewAt: "2026-12-22",
+    relatedAssets: ["crm.application"],
+    evidence: [
+      { path: "memory/decisions.md", line: 196, note: "Canonical decision and recorded smoke outcome." },
+      { path: "apps/crm/src/lib/capabilities/quality-guardian/review.ts", line: 45, note: "Current review implementation." },
+    ],
+  },
+  {
+    id: "rme-dec-20260623-001",
+    title: "Reject the low-value client CSV write",
+    date: "2026-06-23",
+    status: "active",
+    problem: "The export was mostly duplicate identity data and did not add qualification.",
+    choice: "Do not perform a production write for the marginal broker-assignment field.",
+    rationale: "The write risk was not justified by the available new information.",
+    expectedOutcome: "Avoid a risky bulk mutation with little customer value.",
+    observedOutcome: "The veto is recorded; no separate implementation was required.",
+    reviewAt: "2027-06-23",
+    relatedAssets: ["database.migrations"],
+    evidence: [{ path: "memory/decisions.md", line: 180, note: "Canonical export audit and veto." }],
+  },
+  {
+    id: "rme-dec-20260623-002",
+    title: "Remove governance documents hidden in a vague commit",
+    date: "2026-06-23",
+    status: "active",
+    problem: "Unrelated governance documents entered the product repository under a vague commit label.",
+    choice: "Remove the documents and require line-level review for docs and chore commits.",
+    rationale: "A commit label is not a substitute for scope review.",
+    expectedOutcome: "Less documentation contamination and clearer ownership.",
+    observedOutcome: "The decision log records the cleanup PR.",
+    reviewAt: "2026-12-23",
+    relatedAssets: ["governance.architecture", "policy.cursor-rules"],
+    evidence: [{ path: "memory/decisions.md", line: 203, note: "Canonical incident, decision, and rule." }],
+  },
+  {
+    id: "rme-dec-20260624-001",
+    title: "Define Revolis as a Knowledge Monopoly system",
+    date: "2026-06-24",
+    status: "active",
+    problem: "The product direction was drifting toward generic AI-for-real-estate positioning.",
+    choice: "Use the Revenue, Learning, Network, and Evolution loops as the North Star.",
+    rationale: "The long-term advantage is accumulated organizational knowledge and outcomes.",
+    expectedOutcome: "A durable prioritization frame tied to measurable customer learning.",
+    observedOutcome: "The canonical North Star document exists; later-loop outcomes remain unavailable.",
+    reviewAt: "2026-09-24",
+    relatedAssets: ["governance.architecture"],
+    evidence: [
+      { path: "memory/decisions.md", line: 218, note: "Canonical decision entry." },
+      { path: "docs/architecture/north-star-2027-2030.md", line: 3, note: "Current North Star source." },
+    ],
+  },
+  {
+    id: "rme-dec-20260624-002",
+    title: "Adopt the prediction and outcome substrate",
+    date: "2026-06-24",
+    status: "verification_required",
+    problem: "Predictions could not be compared with later exclusivity outcomes.",
+    choice: "Use decisions and exclusivity outcomes as the Loop 2 substrate, without automatic sending.",
+    rationale: "Learning requires both the prediction and its later result.",
+    expectedOutcome: "A traceable foundation for future decision-to-outcome evaluation.",
+    observedOutcome: "Migration and writer code exist; current production and policy state require verification.",
+    reviewAt: "2026-07-29",
+    relatedAssets: ["database.migrations", "crm.application"],
+    evidence: [
+      { path: "memory/decisions.md", line: 224, note: "Canonical decision and safety rule." },
+      { path: "apps/crm/supabase/migrations/20260817120000_rename_genome_layer2.sql", line: 4, note: "14-digit rename of 2026_genome_layer2.sql; tolerate either filename until founder applies." },
+    ],
+  },
+  {
+    id: "rme-dec-20260624-003",
+    title: "Park autonomous genome deployment",
+    date: "2026-06-24",
+    status: "active",
+    problem: "Autonomous deployment lacked sufficient evidence and a proven safety gate.",
+    choice: "Keep auto-deploy parked and retain human approval.",
+    rationale: "The system must not act autonomously before the quality gate is proven.",
+    expectedOutcome: "No unapproved automatic production action.",
+    observedOutcome: "The concept remains listed as parked; no unpark decision is recorded.",
+    reviewAt: "2026-09-24",
+    relatedAssets: ["governance.architecture"],
+    evidence: [
+      { path: "memory/decisions.md", line: 230, note: "Canonical parking decision." },
+      { path: "docs/architecture/l99-parked-concepts.md", line: 12, note: "Current parked-concept evidence." },
+    ],
+  },
+  {
+    id: "rme-dec-20260624-004",
+    title: "Pivot from architecture writing to revenue-loop execution",
+    date: "2026-06-24",
+    status: "verification_required",
+    problem: "Additional architecture concepts were delaying execution of the first revenue loop.",
+    choice: "Close directional architecture and continue with draft-only follow-up execution.",
+    rationale: "Customer-facing learning had higher immediate value than another concept document.",
+    expectedOutcome: "More execution against Loop 1 and less speculative architecture work.",
+    observedOutcome: "A measured outcome for the process decision is unavailable.",
+    reviewAt: "2026-07-29",
+    relatedAssets: ["governance.architecture"],
+    evidence: [{ path: "memory/decisions.md", line: 235, note: "Canonical process decision and merge boundary." }],
+  },
+  {
+    id: "rme-dec-20260706-001",
+    title: "Build Proof of Value without a new table",
+    date: "2026-07-06",
+    status: "active",
+    problem: "The product needed a public ROI proof flow without schema duplication.",
+    choice: "Reuse the existing SaaS lead store and shared lead creation function.",
+    rationale: "Reuse reduced migration risk and preserved one lead contract.",
+    expectedOutcome: "A public proof route with honest copy and no new database object.",
+    observedOutcome: "The decision log records a merged route and production smoke.",
+    reviewAt: "2026-10-06",
+    relatedAssets: ["crm.api", "crm.application"],
+    evidence: [
+      { path: "memory/decisions.md", line: 262, note: "Canonical decision and recorded verification." },
+      { path: "apps/crm/src/app/api/proof/route.ts", line: 7, note: "Current API implementation." },
+    ],
+  },
+  {
+    id: "rme-dec-20260717-001",
+    title: "Use an outcome-first workdesk",
+    date: "2026-07-17",
+    status: "verification_required",
+    problem: "The product emphasized features and fallback KPIs instead of the first customer result.",
+    choice: "Use a short first audit, one primary action, and existing signals.",
+    rationale: "A smaller path should expose value without creating another AI engine.",
+    expectedOutcome: "Faster first value with no fabricated KPI fallback.",
+    observedOutcome: "Implementation and verification files exist, but the decision log merge state is stale.",
+    reviewAt: "2026-07-29",
+    relatedAssets: ["crm.application"],
+    evidence: [
+      { path: "memory/decisions.md", line: 253, note: "Canonical decision and documented verification." },
+      { path: "apps/crm/src/lib/workdesk/first-audit.ts", line: 90, note: "Current first-audit implementation." },
+    ],
+  },
+  {
+    id: "rme-dec-20260719-001",
+    title: "Gate the valuation widget with deterministic data and privacy",
+    date: "2026-07-19",
+    status: "verification_required",
+    problem: "Customer interest existed, but pricing data, privacy, distribution, and service boundaries were incomplete.",
+    choice: "Use a multi-tenant valuation route and prohibit model-generated price ranges without a reproducible source.",
+    rationale: "A public estimate must be deterministic, attributable, and privacy-safe.",
+    expectedOutcome: "A reusable tenant route without fictitious valuation output.",
+    observedOutcome: "The route and deterministic engine exist; current data-license and production gates require verification.",
+    reviewAt: "2026-07-29",
+    relatedAssets: ["crm.api", "crm.application", "database.migrations"],
+    evidence: [
+      { path: "memory/decisions.md", line: 241, note: "Canonical scope and gates." },
+      { path: "apps/crm/src/app/api/valuation/submit/route.ts", line: 103, note: "Current submission implementation." },
+    ],
+  },
+  {
+    id: "rme-dec-20260719-002",
+    title: "Bundle valuation in Revolis seat pricing",
+    date: "2026-07-19",
+    status: "verification_required",
+    problem: "The commercial model for the valuation widget was undecided.",
+    choice: "Include the widget in the Revolis package instead of charging a separate fee.",
+    rationale: "The widget should strengthen the existing seat value proposition.",
+    expectedOutcome: "Commercial validation through an additional paying agency.",
+    observedOutcome: "Commercial validation is unavailable in repository evidence.",
+    reviewAt: "2026-08-19",
+    relatedAssets: ["crm.application"],
+    evidence: [{ path: "memory/decisions.md", line: 251, note: "Canonical pricing decision and validation condition." }],
+  },
+  {
+    id: "rme-dec-20260722-001",
+    title: "Separate sandbox submissions and normalized consent",
+    date: "2026-07-22",
+    status: "verification_required",
+    problem: "A public demo must not create normal production leads or inflate the lead schema with consent fields.",
+    choice: "Use a sandbox tenant and a separate lead consent relation.",
+    rationale: "The design preserves tenant integrity and keeps consent evidence normalized.",
+    expectedOutcome: "Demo submissions remain isolated while consent evidence is versioned.",
+    observedOutcome: "Repository code and migration exist; production application and founder smoke are unavailable.",
+    reviewAt: "2026-07-29",
+    relatedAssets: ["crm.api", "database.migrations"],
+    evidence: [
+      { path: "memory/decisions.md", line: 172, note: "Canonical decision and founder gate." },
+      { path: "apps/crm/supabase/migrations/20260722120000_sandbox_gdpr_consent.sql", line: 108, note: "Repository migration evidence only." },
+    ],
+  },
+  {
+    id: "rme-dec-20260723-001",
+    title: "Premortem gate for Google Ads A/B Smolko campaign",
+    date: "2026-07-23",
+    status: "active",
+    problem: "A paid Ads A/B test could burn budget without measurable outcomes or customer SLA capacity.",
+    choice: "Require filled premortem mitigations, D-1 tracking tests, geo cap, spend kill signals, and Smolko SLA confirmation before GO.",
+    rationale: "Seven risks scored ≥6; mitigations change the plan rather than relying on attention alone.",
+    expectedOutcome: "Campaign starts only after conditional GO criteria are met; outcome reviewed after campaign window.",
+    observedOutcome: "Premortem filled; Smolko SLA question and D-1 tests pending before GO.",
+    reviewAt: "2026-09-07",
+    relatedAssets: ["premortem.ads-smolko-ab"],
+    evidence: [
+      { path: "docs/premortems/2026-07-23-ads-smolko-ab.md", line: 1, note: "Filled premortem with P×Z matrix and mitigations." },
+    ],
+  },
+  {
+    id: "rme-dec-20260726-001",
+    title: "Product roadmap mapping 2026-07 — reuse before build",
+    date: "2026-07-26",
+    status: "active",
+    problem:
+      "Sixteen proposed product modules risk duplicating existing capabilities or delaying moat data capture until after the three-customer learning gate.",
+    choice:
+      "Adopt the binding mapping table: nine REUSE/EXTEND, three Capture-now moat modules, four DEFER; no new systems where an owner already exists.",
+    rationale:
+      "Principal panel verdict and North Star require historical outcome and recommendation data before learning features can succeed.",
+    expectedOutcome:
+      "Every new module proposal is checked against the mapping table; capture PRs precede learn-phase features.",
+    observedOutcome: "Mapping document registered; moat capture and Guardian v1 implementation pending separate founder GO PRs.",
+    reviewAt: "2026-10-26",
+    relatedAssets: ["architecture.product-roadmap-mapping-202607"],
+    evidence: [
+      {
+        path: "docs/architecture/product-roadmap-mapping-2026-07.md",
+        line: 8,
+        note: "Binding mapping table and Capture-now/Learn-later moat strategy.",
+      },
+    ],
+  },
+  {
+    id: "rme-dec-20260728-001",
+    title: "Operator dashboard = aggregate-first cross-tenant access",
+    date: "2026-07-28",
+    status: "active",
+    problem:
+      "Founder manually checks each agency in SQL; first cross-tenant UI risks PII leakage and tenant mixing without strict gates.",
+    choice:
+      "Ship /operator under OPERATOR_DASHBOARD_ENABLED (default false) with profiles.is_platform_admin authz (404 not 403), aggregates only in v1, platform-admin separate from agency role; drill-down deferred to v1.1 with audit.",
+    rationale:
+      "Build Package premortem: aggregate-first + explicit platform role; unavailable metrics must not display as zero.",
+    expectedOutcome:
+      "Agency users always 404; platform admin sees counts per agency_id with sandbox excluded; prod flag stays off until founder SQL grant + smoke.",
+    observedOutcome: "v1 implementation on feat/operator-dashboard-v1; prod apply of migration pending founder.",
+    reviewAt: "2026-10-28",
+    relatedAssets: ["build-package.operator-dashboard-v1"],
+    evidence: [
+      {
+        path: "docs/briefs/overnight/build-package-operator-dashboard.md",
+        line: 36,
+        note: "NF1 aggregate-first; NF3 platform-admin only.",
+      },
+      {
+        path: "apps/crm/src/lib/operator/aggregate-schema.ts",
+        line: 1,
+        note: "Forbidden PII keys on operator aggregate rows.",
+      },
+      {
+        path: "apps/crm/supabase/migrations/20260728140000_profiles_platform_admin.sql",
+        line: 1,
+        note: "Platform-admin schema gate + founder UPDATE reminder.",
+      },
+    ],
+  },
+  {
+    id: "rme-dec-20260802-001",
+    title: "Adopt Engineering Constitution wired to Decision Memory",
+    date: "2026-08-02",
+    status: "active",
+    problem:
+      "Code changes lacked a consistent reuse-first policy and Builder justifications had no single ingest path into Organizational Memory.",
+    choice:
+      "Adopt three-layer Engineering Constitution (Constitution / Policy / Enforcement); store justifications in memory/decisions.md with engineering-justification capability; Judge = Kontrolór with mandatory format check.",
+    rationale:
+      "Extends existing Decision Memory and brain/registry without a parallel coding log; aligns with ADR 2026-07-28 single canonical home per concept.",
+    alternatives: [
+      "Separate JSON coding-decision log (rejected — duplicate graph)",
+      "CI-only enforcement without Decision Memory (rejected — no contradiction protocol)",
+    ],
+    expectedOutcome:
+      "Every new file/component/dep either reuses or leaves a traceable justification in memory/decisions.md; brain:ingest projects curated entries.",
+    observedOutcome: "Constitution document and cursor rule merged; ingest pending first PR.",
+    reviewAt: "2026-11-02",
+    relatedAssets: ["governance.engineering-constitution", "memory.decisions", "policy.cursor-rules"],
+    evidence: [
+      {
+        path: "docs/architecture/engineering-constitution.md",
+        line: 1,
+        note: "Canonical three-layer constitution and Decision Memory ingest protocol.",
+      },
+      {
+        path: "memory/decisions.md",
+        line: 290,
+        note: "Adoption entry in canonical decision log.",
+      },
+    ],
+  },
+  {
+    id: "rme-dec-20260727-002",
+    title: "Guardian v1.1 — STALE 90d+7d and production agency allowlist",
+    date: "2026-07-27",
+    status: "active",
+    problem:
+      "Guardian v1 STALE flagged imported Smolko contacts with no lead_events (473 open STALE on prod), risking baseline panic and false alerts.",
+    choice:
+      "STALE only when latest lead_event is after 7d quiet and within 90d activity window; no created_at fallback. Production runner uses GUARDIAN_AGENCY_ALLOWLIST (unset/empty = no tenant runs). GUARDIAN_DIGEST_ENABLED stays default false; baseline kill >50 unchanged.",
+    rationale:
+      "Premortem #1 (P×Z=9): digest off and founder-reviewed thresholds before customer email; allowlist prevents cron touching demo/sandbox tenants until IDs confirmed.",
+    expectedOutcome:
+      "After deploy + allowlist env + optional SQL cleanup, STALE reflects real engagement gaps only; paying tenant runs are explicit.",
+    observedOutcome: "Prod audit 2026-07-27: 473/473 open STALE invalid under v1.1 (no lead_events); implementation in feat/guardian-v1.1-thresholds.",
+    reviewAt: "2026-08-27",
+    relatedAssets: ["build-package.guardian-v1"],
+    evidence: [
+      {
+        path: "docs/premortems/2026-07-27-guardian-v1.md",
+        line: 15,
+        note: "Baseline + digest env mitigations; >50 finding kill.",
+      },
+      {
+        path: "apps/crm/src/lib/guardian/config.ts",
+        line: 4,
+        note: "v1.1 thresholds and GUARDIAN_AGENCY_ALLOWLIST filter.",
+      },
+      {
+        path: "apps/crm/src/lib/guardian/rules.ts",
+        line: 41,
+        note: "STALE requires lead_events window 7d–90d.",
+      },
+    ],
+  },
+];
+
+export function buildRegistry(repoRoot: string): RegistryRecord[] {
+  return REGISTRY_SPECS.map((spec) => {
+    const files = listFiles(repoRoot, spec.roots);
+    const metadata = gitMetadata(repoRoot, spec.sourcePath);
+    return {
+      schemaVersion: SCHEMA_VERSION,
+      id: spec.id,
+      type: spec.type,
+      name: spec.name,
+      purpose: spec.purpose,
+      owner: spec.owner,
+      status: files.length > 0 ? "active" : "unknown",
+      source: { path: spec.sourcePath, commit: metadata.commit },
+      createdAt: metadata.createdAt,
+      lastVerifiedAt: metadata.lastVerifiedAt,
+      dependencies: [...spec.dependencies].sort(),
+      relatedDecisions: [...spec.relatedDecisions].sort(),
+      evidence: [
+        {
+          path: spec.sourcePath,
+          commit: metadata.commit,
+          note: files.length > 0
+            ? `Inventory contains ${files.length} file(s); digest ${digestFiles(repoRoot, files)}.`
+            : "Source unavailable in the current workspace.",
+        },
+      ],
+      confidence: files.length > 0 ? "high" : "low",
+      sensitivity: "internal",
+      capabilities: [...spec.capabilities].sort(),
+      inventory: {
+        fileCount: files.length,
+        digest: files.length > 0 ? digestFiles(repoRoot, files) : "unavailable",
+        sample: files.slice(0, 12),
+      },
+      canonical: false,
+    } satisfies RegistryRecord;
+  }).sort((left, right) => compareAscii(left.id, right.id));
+}
+
+export function buildDecisions(repoRoot: string): DecisionRecord[] {
+  return DECISION_SPECS.map((spec) => {
+    const source = spec.evidence[0].path;
+    const sourceMeta = gitMetadata(repoRoot, source);
+    return {
+      schemaVersion: SCHEMA_VERSION,
+      id: spec.id,
+      title: spec.title,
+      date: spec.date,
+      owner: "founder",
+      status: spec.status,
+      problem: spec.problem,
+      choice: spec.choice,
+      rationale: spec.rationale,
+      alternatives: spec.alternatives ?? ["unavailable"],
+      expectedOutcome: spec.expectedOutcome,
+      observedOutcome: spec.observedOutcome,
+      reviewAt: spec.reviewAt,
+      relatedAssets: [...spec.relatedAssets].sort(),
+      supersedes: [...(spec.supersedes ?? [])].sort(),
+      source: { path: source, commit: sourceMeta.commit },
+      evidence: spec.evidence.map((item) => {
+        const path = resolveGenomeLayer2EvidencePath(repoRoot, item.path);
+        const metadata = gitMetadata(repoRoot, path);
+        return { ...item, path, commit: metadata.commit };
+      }),
+      confidence: spec.confidence ?? "high",
+      sensitivity: "internal",
+      canonical: false,
+    } satisfies DecisionRecord;
+  }).sort((left, right) => compareAscii(left.id, right.id));
+}

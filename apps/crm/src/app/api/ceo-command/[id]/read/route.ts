@@ -4,6 +4,7 @@ import { isCeoCommandOwner } from "@/lib/ceo-command/access";
 import { markNotificationRead } from "@/lib/notifications/store";
 import { resolveProfileForAuthUser } from "@/lib/profiles/resolve-profile-for-auth";
 import { UUIDSchema } from "@/lib/api-validate";
+import { sameAgency } from "@/lib/tenant-scope";
 
 export async function POST(
   _req: Request,
@@ -44,7 +45,7 @@ export async function POST(
     return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 });
   }
 
-  if (profile?.agency_id && row.agency_id !== profile.agency_id) {
+  if (!sameAgency(profile?.agency_id, row.agency_id)) {
     return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
   }
 

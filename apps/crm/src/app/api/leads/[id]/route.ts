@@ -10,6 +10,19 @@ import { createLeadStatusChangedEvent } from "@/domain/leads/events";
 import { notifyHotLead } from "@/services/push/PushNotificationService";
 import { createClient } from "@/lib/supabase/server";
 import { normalizeAiPriority } from "@/lib/workflows/lead-ai-priority";
+import {
+  isTerminalLeadStatus,
+  resolveOpenDecisionsForLead,
+} from "@/lib/agents/followup/outcomeWriter";
+import { logError } from "@/lib/logger";
+import {
+  daysBetweenIso,
+  logDealOutcome,
+  mapLeadStatusToDealOutcome,
+  parseBudgetToPrice,
+} from "@/lib/moat-capture/log-deal-outcome";
+import { isReasonValidForDealOutcome } from "@/lib/moat-capture/deal-outcome-reason";
+import { sameAgency } from "@/lib/tenant-scope";
 
 export async function PATCH(
   request: Request,
@@ -21,7 +34,7 @@ export async function PATCH(
     if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
     const { data: callerProfile } = await supabase
-      .from("profiles").select("agency_id").eq("auth_user_id", user.id).maybeSingle();
+      .from("profiles").select("agency_id, id").eq("auth_user_id", user.id).maybeSingle();
 
     const { id } = await params;
 
@@ -34,14 +47,34 @@ export async function PATCH(
     }
 
     const { data: leadRow } = await supabase
-      .from("leads").select("agency_id").eq("id", id).maybeSingle();
-    if (callerProfile?.agency_id && leadRow?.agency_id !== callerProfile.agency_id) {
+      .from("leads").select("agency_id, created_at").eq("id", id).maybeSingle();
+    if (!sameAgency(callerProfile?.agency_id, leadRow?.agency_id)) {
       return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
     }
 
     const body = await request.json();
 
-    const oldLead = await getLead(id);
+    const dealOutcomeReasonCode =
+      typeof body.dealOutcomeReasonCode === "string" ? body.dealOutcomeReasonCode.trim() : "";
+    const dealOutcomeReasonText =
+      body.dealOutcomeReasonText === null || body.dealOutcomeReasonText === undefined
+        ? null
+        : String(body.dealOutcomeReasonText).slice(0, 2000);
+
+    const oldLead = await getLead(id, supabase);
+
+    const nextStatus = typeof body.status === "string" ? body.status : oldLead?.status;
+    const nextDealOutcome =
+      nextStatus && oldLead?.status !== nextStatus
+        ? mapLeadStatusToDealOutcome(nextStatus)
+        : null;
+    if (
+      nextDealOutcome &&
+      dealOutcomeReasonCode &&
+      !isReasonValidForDealOutcome(nextDealOutcome, dealOutcomeReasonCode)
+    ) {
+      return errorResponse("Neplatný dôvod uzavretia obchodu.", 400);
+    }
 
     const lead = await updateLead(id, {
       name: body.name,
@@ -68,7 +101,7 @@ export async function PATCH(
       ...(body.aiTriageManualLock === true || body.aiTriageManualLock === false
         ? { aiTriageManualLock: body.aiTriageManualLock }
         : {}),
-    });
+    }, supabase);
 
     try {
       if (oldLead?.status !== lead.status) {
@@ -82,7 +115,7 @@ export async function PATCH(
           actorName: lead.assignedAgent || "Systém",
           source: "pipeline",
           severity: "info",
-        });
+        }, supabase);
       } else {
         await createActivity({
           leadId: id,
@@ -94,11 +127,11 @@ export async function PATCH(
           actorName: lead.assignedAgent || "Systém",
           source: "crm",
           severity: "info",
-        });
+        }, supabase);
       }
     } catch {}
 
-    await autoRecalculateForLead(id);
+    await autoRecalculateForLead(id, supabase);
     rescoreLead(id); // fire-and-forget: update score + AI insight
 
     if (oldLead?.status !== lead.status) {
@@ -110,6 +143,42 @@ export async function PATCH(
 
       if (lead.status === "Horúci" && lead.assignedProfileId) {
         notifyHotLead(lead.assignedProfileId, lead.name, id).catch(() => {/* best-effort */});
+      }
+
+      const agencyId = leadRow?.agency_id ?? callerProfile?.agency_id;
+      if (agencyId && isTerminalLeadStatus(lead.status)) {
+        try {
+          await resolveOpenDecisionsForLead({
+            leadId: id,
+            agencyId,
+            newStatus: lead.status,
+          });
+        } catch (outcomeError) {
+          logError("[loop2-outcome] resolveOpenDecisionsForLead failed", {
+            leadId: id,
+            agencyId,
+            status: lead.status,
+            error: outcomeError instanceof Error ? outcomeError.message : String(outcomeError),
+          });
+        }
+
+        const dealOutcome = mapLeadStatusToDealOutcome(lead.status);
+        if (dealOutcome) {
+          logDealOutcome({
+            agencyId,
+            leadId: id,
+            outcome: dealOutcome,
+            reasonCode: dealOutcomeReasonCode || undefined,
+            reasonText: dealOutcomeReasonText,
+            agentId: callerProfile?.id ?? lead.assignedProfileId ?? null,
+            propertyType: lead.propertyType ?? null,
+            location: lead.location ?? null,
+            price: parseBudgetToPrice(lead.budget),
+            timeToCloseDays: daysBetweenIso(
+              lead.createdAt ?? (leadRow?.created_at ? String(leadRow.created_at) : null),
+            ),
+          });
+        }
       }
     }
 
@@ -132,7 +201,7 @@ export async function DELETE(
     if (!user) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
 
     const { data: callerProfile } = await supabase
-      .from("profiles").select("agency_id").eq("auth_user_id", user.id).maybeSingle();
+      .from("profiles").select("agency_id, id").eq("auth_user_id", user.id).maybeSingle();
 
     const { id } = await params;
 
@@ -146,13 +215,13 @@ export async function DELETE(
 
     const { data: leadRow } = await supabase
       .from("leads").select("agency_id").eq("id", id).maybeSingle();
-    if (callerProfile?.agency_id && leadRow?.agency_id !== callerProfile.agency_id) {
+    if (!sameAgency(callerProfile?.agency_id, leadRow?.agency_id)) {
       return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
     }
 
-    const oldLead = await getLead(id);
+    const oldLead = await getLead(id, supabase);
 
-    await deleteLead(id);
+    await deleteLead(id, supabase);
 
     try {
       await createActivity({
@@ -165,7 +234,7 @@ export async function DELETE(
         actorName: oldLead?.assignedAgent || "Systém",
         source: "crm",
         severity: "warning",
-      });
+      }, supabase);
     } catch {}
 
     return okResponse({ deletedId: id });
@@ -196,14 +265,14 @@ export async function GET(
       );
     }
 
-    const lead = await getLead(id);
+    const lead = await getLead(id, supabase);
     if (!lead) {
       // Always return valid JSON, even if not found
       return okResponse({ lead: null });
     }
 
     const { data: callerProfile } = await supabase
-      .from("profiles").select("agency_id").eq("auth_user_id", user.id).maybeSingle();
+      .from("profiles").select("agency_id, id").eq("auth_user_id", user.id).maybeSingle();
     if (callerProfile?.agency_id) {
       const { data: leadRow } = await supabase
         .from("leads").select("agency_id").eq("id", id).maybeSingle();

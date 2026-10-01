@@ -1,4 +1,5 @@
 import type { UiRole } from "./intelligence-hub";
+import { canRenderModule, normalizeModuleTier, type ModuleKey } from "@/lib/modules/registry";
 
 // ─── Menu varianty ─────────────────────────────────────────────────────────
 export type MenuVariant =
@@ -44,6 +45,11 @@ export type NavItem = {
   section:        NavSection;
   showFor:        MenuVariant[];
   permissionKey?: keyof TeamMemberPermissions;
+  /**
+   * Položka sa zobrazí len používateľovi s `profiles.is_platform_admin = true`.
+   * `showFor` na to nestačí — to je licenčný program, nie oprávnenie.
+   */
+  platformAdminOnly?: boolean;
 };
 
 export type TeamMemberPermissions = {
@@ -167,7 +173,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
 
   {
     id: "today",
-    label: "Dnes uzavriem",
+    label: "Kde mám peniaze dnes?",
     sublabel: "Ranný briefing · Hot leady · Priority",
     href: "/dashboard",
     icon: "clock",
@@ -186,11 +192,10 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   },
   {
     id: "pipeline",
-    label: "Kto je pripravený kúpiť",
-    sublabel: "BRI scoring · Pipeline · AI predikcia",
+    label: "Komu volať teraz",
+    sublabel: "AI priorita · Pipeline · Kto čaká na kontakt",
     href: "/leads",
     icon: "fire",
-    badge: { label: "live", variant: "hot" },
     section: "main",
     showFor: ["agent_solo", "agent_team"],
   },
@@ -291,7 +296,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
 
   {
     id: "owner-dashboard",
-    label: "Kde sú peniaze dnes",
+    label: "Kde mám peniaze dnes?",
     sublabel: "Revenue pulse · Hot dealy · Alerty",
     href: "/dashboard",
     icon: "money",
@@ -327,9 +332,18 @@ export const ALL_NAV_ITEMS: NavItem[] = [
     showFor: ["owner_vision", "owner_protocol"],
   },
   {
+    id: "owner-leads",
+    label: "Komu volať teraz",
+    sublabel: "AI priorita · Nové leady · Kto čaká na kontakt",
+    href: "/leads",
+    icon: "fire",
+    section: "main",
+    showFor: ["owner_vision", "owner_protocol"],
+  },
+  {
     id: "ceo-command",
-    label: "CEO Command",
-    sublabel: "Riaditeľské príkazy · Briefy z rutín",
+    label: "Kde unikajú peniaze",
+    sublabel: "Seller rescue · Rizikové dealy · Briefy z rutín",
     href: "/ceo-command",
     icon: "lock",
     section: "main",
@@ -382,6 +396,17 @@ export const ALL_NAV_ITEMS: NavItem[] = [
     showFor: ["owner_vision", "owner_protocol"],
   },
   {
+    id: "internal-metrics",
+    label: "Metriky zakladateľa",
+    sublabel: "MRR · Platiace kancelárie · AI náklad",
+    href: "/internal/metrics",
+    icon: "chart-up",
+    badge: { label: "owner", variant: "owner" },
+    section: "settings",
+    showFor: ["agent_solo", "agent_team", "owner_vision", "owner_protocol"],
+    platformAdminOnly: true,
+  },
+  {
     id: "settings",
     label: "Nastavenia a integrácie",
     sublabel: "Portály · GDPR · API · Notifikácie",
@@ -391,8 +416,17 @@ export const ALL_NAV_ITEMS: NavItem[] = [
     showFor: ["agent_solo", "agent_team", "owner_vision", "owner_protocol"],
   },
   {
+    id: "google-ads",
+    label: "Google Ads (test)",
+    sublabel: "Pripojený testovací účet a kampane",
+    href: "/acquisition",
+    icon: "radar",
+    section: "settings",
+    showFor: ["owner_vision", "owner_protocol"],
+  },
+  {
     id: "onboarding-monitor",
-    label: "Onboarding Automat",
+    label: "Automat onboardingu",
     sublabel: "Adopcia klientov · At-risk · Emaily",
     href: "/onboarding-monitor",
     icon: "chart-up",
@@ -402,18 +436,42 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   },
 ];
 
+const NAV_MODULE_KEYS: Partial<Record<NavItem["id"], ModuleKey>> = {
+  "hidden-market": "menu_hidden_market_hub",
+  competition: "menu_competition_radar",
+};
+
+function fallbackTierFromVariant(variant: MenuVariant): string {
+  if (variant === "owner_protocol") return "protocol_authority";
+  if (variant === "owner_vision") return "market_vision";
+  if (variant === "agent_team" || variant === "agent_solo") return "pro";
+  return "free";
+}
+
 // ─── Helper funkcie ────────────────────────────────────────────────────────
 
 export const IMPORT_CONTACTS_NAV_ID = "import-contacts";
 
 export function getNavItems(
   variant:     MenuVariant,
-  permissions?: Partial<TeamMemberPermissions>
+  permissions?: Partial<TeamMemberPermissions>,
+  accountTier?: string | null,
+  /**
+   * Bez tohto príznaku sa položky s `platformAdminOnly` nezobrazia vôbec —
+   * predvolene teda nikomu. Existujúce volania sa tým nemenia.
+   */
+  options?: { isPlatformAdmin?: boolean },
 ): NavItem[] {
   const perms = { ...DEFAULT_TEAM_PERMISSIONS, ...permissions };
+  const tier = normalizeModuleTier(accountTier ?? fallbackTierFromVariant(variant));
+  const isPlatformAdmin = options?.isPlatformAdmin === true;
+
   return ALL_NAV_ITEMS.filter((item) => {
+    if (item.platformAdminOnly && !isPlatformAdmin) return false;
     if (!item.showFor.includes(variant)) return false;
     if (item.permissionKey) return perms[item.permissionKey] === true;
+    const moduleKey = NAV_MODULE_KEYS[item.id];
+    if (moduleKey) return canRenderModule(moduleKey, tier);
     return true;
   });
 }
@@ -432,6 +490,24 @@ export function applyImportNavBadges(
     }
     const { badge: _removed, ...withoutBadge } = item;
     return withoutBadge;
+  });
+}
+
+const LEADS_NAV_IDS = new Set(["pipeline", "owner-leads"]);
+
+/** Červený badge = počet leadov so statusom Nový (skrytý pri 0). */
+export function applyLeadsNavBadges(
+  items: NavItem[],
+  newStatusLeadCount: number | null,
+): NavItem[] {
+  if (newStatusLeadCount === null || newStatusLeadCount <= 0) return items;
+
+  return items.map((item) => {
+    if (!LEADS_NAV_IDS.has(item.id)) return item;
+    return {
+      ...item,
+      badge: { label: String(newStatusLeadCount), variant: "hot" },
+    };
   });
 }
 

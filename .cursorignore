@@ -1,0 +1,5 @@
+﻿# Git worktrees — duplicitné .cursor/rules a CLAUDE.md (3× token overhead)
+.worktrees/
+
+# Claude skills cache (nie project rules)
+.claude/skills/**/scripts/__pycache__/

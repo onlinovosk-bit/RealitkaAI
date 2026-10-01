@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { NavIcon } from "@/components/ui/NavIcon";
 import {
   applyImportNavBadges,
+  applyLeadsNavBadges,
   getNavItems,
   SECTION_LABELS,
   VARIANT_THEMES,
@@ -48,8 +49,6 @@ function getDemoVariant(program: FounderDemoProgram): MenuVariant {
 }
 
 function formatWorkdeskBadgeLabel(badge: NavBadge): string {
-  if (badge.label === "live") return "3";
-  if (badge.label === "hot") return "17";
   return badge.label;
 }
 
@@ -114,6 +113,8 @@ interface AppSidebarProps {
   agencyName?:  string;
   agencyManualPlan?: string | null;
   userName?:    string;
+  /** `profiles.is_platform_admin` — odomyká položky s `platformAdminOnly`. */
+  isPlatformAdmin?: boolean;
 }
 
 // ─── Workdesk kompaktná položka (secondary sidebar) ───────────────────────
@@ -131,7 +132,7 @@ function WorkdeskNavRow({
       : { background: SLATE_HORIZON.brand, color: "#fff" };
 
   return (
-    <Link
+    <Link prefetch={false}
       href={item.href}
       style={{
         display: "flex",
@@ -200,7 +201,7 @@ function NavItemRow({
   const subtitle  = getDemoSubtitle(demoProgram);
 
   return (
-    <Link
+    <Link prefetch={false}
       href={item.href}
       style={{
         display:         "flex",
@@ -548,6 +549,7 @@ export default function AppSidebar({
   agencyName,
   agencyManualPlan,
   userName,
+  isPlatformAdmin,
 }: AppSidebarProps) {
   const pathname = usePathname();
   const router   = useRouter();
@@ -562,6 +564,7 @@ export default function AppSidebar({
   const [toastVisible,    setToastVisible]    = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<NavSection[]>([]);
   const [leadsCount, setLeadsCount] = useState<number | null>(null);
+  const [newStatusLeadCount, setNewStatusLeadCount] = useState<number | null>(null);
   const gKeyRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const gPressedRef = useRef(false);
 
@@ -577,6 +580,14 @@ export default function AppSidebar({
   const demoVariant   = getDemoVariant(demoProgram);
   const renderVariant = isFounderDemo ? demoVariant : menuContext.variant;
   const theme         = VARIANT_THEMES[renderVariant];
+  const demoTierMap: Record<FounderDemoProgram, string> = {
+    free: "free",
+    starter: "starter",
+    active_force: "pro",
+    market_vision: "market_vision",
+    protocol_authority: "protocol_authority",
+  };
+  const navTier = isFounderDemo ? demoTierMap[demoProgram] : menuContext.accountTier;
   const planLabel     = isFounderDemo
     ? FOUNDER_DEMO_PROGRAMS.find((p) => p.id === demoProgram)?.label ?? "Protocol Authority"
     : menuContext.planLabel;
@@ -666,9 +677,11 @@ export default function AppSidebar({
   useEffect(() => {
     fetch("/api/crm/tenant-health", { credentials: "include" })
       .then((r) => (r.ok ? r.json() : null))
-      .then((data: { snapshot?: { counts?: { leads?: number } } } | null) => {
+      .then((data: { snapshot?: { counts?: { leads?: number; newStatusLeads?: number } } } | null) => {
         const count = data?.snapshot?.counts?.leads;
+        const newCount = data?.snapshot?.counts?.newStatusLeads;
         if (typeof count === "number") setLeadsCount(count);
+        if (typeof newCount === "number") setNewStatusLeadCount(newCount);
       })
       .catch(() => {
         // badge je optional — bez countu necháme statické menu
@@ -700,11 +713,17 @@ export default function AppSidebar({
   }, []);
 
   // Nav položky filtrované podľa variantu + permissions + import badge
-  const navItems = applyImportNavBadges(
-    isFounderDemo
-      ? filterItemsByDemoProgram(getNavItems(renderVariant, permissions), demoProgram)
-      : getNavItems(renderVariant, permissions),
-    leadsCount,
+  const navItems = applyLeadsNavBadges(
+    applyImportNavBadges(
+      isFounderDemo
+        ? filterItemsByDemoProgram(
+            getNavItems(renderVariant, permissions, navTier, { isPlatformAdmin }),
+            demoProgram,
+          )
+        : getNavItems(renderVariant, permissions, navTier, { isPlatformAdmin }),
+      leadsCount,
+    ),
+    newStatusLeadCount,
   );
 
   // Zoskup do sekcií v správnom poradí

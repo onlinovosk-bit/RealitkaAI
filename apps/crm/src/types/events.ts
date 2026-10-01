@@ -13,7 +13,7 @@ export type EventType =
   | 'lead_created' | 'lead_viewed' | 'lead_updated' | 'lead_qualified'
   | 'lead_disqualified' | 'lead_archived' | 'lead_reactivated'
   // Messaging
-  | 'message_sent' | 'message_opened' | 'message_replied' | 'message_failed'
+  | 'message_sent' | 'message_opened' | 'message_clicked' | 'message_replied' | 'message_failed'
   // Calls
   | 'call_initiated' | 'call_completed' | 'call_missed' | 'call_analyzed'
   // Property

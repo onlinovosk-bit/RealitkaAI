@@ -213,8 +213,11 @@ export async function listProfiles(
   return (data as SupabaseProfileRow[]).map(mapProfile);
 }
 
-export async function createTeam(input: { agencyId: string; name: string }) {
-  const supabase = await resolveTenantSupabase();
+export async function createTeam(
+  input: { agencyId: string; name: string },
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+) {
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     const teams = getDemoTeamsStore();
@@ -246,9 +249,10 @@ export async function createTeam(input: { agencyId: string; name: string }) {
 
 export async function updateTeam(
   id: string,
-  input: { name?: string; isActive?: boolean }
+  input: { name?: string; isActive?: boolean },
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
 ) {
-  const supabase = await resolveTenantSupabase();
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     const teams = getDemoTeamsStore();
@@ -284,15 +288,18 @@ export async function updateTeam(
   return mapTeam(data as SupabaseTeamRow);
 }
 
-export async function createProfile(input: {
-  agencyId: string;
-  teamId: string | null;
-  fullName: string;
-  email: string;
-  role: string;
-  phone: string;
-}) {
-  const supabase = await resolveTenantSupabase();
+export async function createProfile(
+  input: {
+    agencyId: string;
+    teamId: string | null;
+    fullName: string;
+    email: string;
+    role: string;
+    phone: string;
+  },
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+) {
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     const profiles = getDemoProfilesStore();
@@ -359,9 +366,15 @@ export async function updateProfile(
     role?: string;
     teamId?: string | null;
     isActive?: boolean;
-  }
+  },
+  /**
+   * Request-scoped client. Server callers MUST pass it: without it this falls
+   * back to the cookie-less browser singleton, `profiles_self_update` rejects
+   * the write and the edit silently no-ops or 500s.
+   */
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
 ): Promise<Profile> {
-  const supabase = await resolveTenantSupabase();
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     const profiles = getDemoProfilesStore();
@@ -408,27 +421,58 @@ export async function updateProfile(
   return mapProfile(data as SupabaseProfileRow);
 }
 
-export async function assignLeadToProfile(leadId: string, profileId: string) {
-  const supabase = await resolveTenantSupabase();
+export async function assignLeadToProfile(
+  leadId: string,
+  profileId: string,
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+) {
+  const supabase = await resolveTenantSupabase(scoped);
 
+  // Fail-closed: never pretend the assignment succeeded when we cannot write.
   if (!supabase) {
-    return { ok: true };
+    throw new Error("Supabase nie je nastavený. Lead sa nedá priradiť.");
   }
 
-  const profiles = await listProfiles();
-  const profile = profiles.find((item) => item.id === profileId);
+  const { resolveSessionAgencyId } = await import("@/lib/tenant-scope");
+  const agencyId = await resolveSessionAgencyId(supabase);
+  if (!agencyId) {
+    throw new Error("Chýba agentúra v profile. Lead sa nedá priradiť.");
+  }
 
-  const { error } = await supabase
+  // Target agent must belong to the caller's agency — otherwise a forged
+  // profileId stamps a foreign UUID onto the lead and downstream notify/push
+  // paths can leak the lead name to another tenant.
+  const { data: targetProfile, error: profileError } = await supabase
+    .from("profiles")
+    .select("id, full_name, agency_id")
+    .eq("id", profileId)
+    .eq("agency_id", agencyId)
+    .maybeSingle();
+
+  if (profileError) {
+    throw new Error(profileError.message);
+  }
+  if (!targetProfile) {
+    throw new Error("Agent nepatrí do vašej agentúry.");
+  }
+
+  const { data: updated, error } = await supabase
     .from("leads")
     .update({
       assigned_profile_id: profileId,
-      assigned_agent: profile?.fullName ?? "Priradený agent",
+      assigned_agent: targetProfile.full_name ?? "Priradený agent",
       last_contact: "Priradené agentovi práve teraz",
       updated_at: new Date().toISOString(),
     })
-    .eq("id", leadId);
+    .eq("id", leadId)
+    .eq("agency_id", agencyId)
+    .select("id")
+    .maybeSingle();
 
   if (error) throw new Error(error.message);
+  if (!updated) {
+    throw new Error("Lead nebol nájdený alebo nepatrí do vašej agentúry.");
+  }
 
   return { ok: true };
 }

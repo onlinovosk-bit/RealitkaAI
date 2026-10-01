@@ -3,15 +3,18 @@
 import { useState } from "react";
 
 const PRO_PRICE = 99;
-const CONVERSION_BOOST = 1.34; // +34% konverzia
+/** Illustrative scenario only — user-controlled uplift, not a claimed average. */
+const DEFAULT_SCENARIO_UPLIFT_PCT = 15;
 
 export default function RoiCalculator() {
   const [agents, setAgents] = useState(3);
   const [dealsPerMonth, setDealsPerMonth] = useState(5);
   const [avgCommission, setAvgCommission] = useState(3000);
+  const [upliftPct, setUpliftPct] = useState(DEFAULT_SCENARIO_UPLIFT_PCT);
 
+  const uplift = 1 + upliftPct / 100;
   const currentRevenue = agents * dealsPerMonth * avgCommission;
-  const withRevolis = currentRevenue * CONVERSION_BOOST;
+  const withRevolis = currentRevenue * uplift;
   const gain = withRevolis - currentRevenue;
   const roiDays = gain > 0 ? Math.round(PRO_PRICE / (gain / 30)) : 0;
 
@@ -24,10 +27,10 @@ export default function RoiCalculator() {
       }}
     >
       <h3 className="text-lg font-bold mb-1" style={{ color: "#F0F9FF" }}>
-        🧮 Kalkulačka návratnosti
+        Kalkulačka scénára
       </h3>
       <p className="text-sm mb-6" style={{ color: "#64748B" }}>
-        Vypočítajte si návratnosť investície do Revolis.AI
+        Model „čo keby“ — nie priemer z produkcie. Nastavte si vlastný odhad nárastu.
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -103,6 +106,20 @@ export default function RoiCalculator() {
         </div>
       </div>
 
+      <div className="mb-6">
+        <label className="mb-2 block text-xs font-semibold" style={{ color: "#94A3B8" }}>
+          Scénár nárastu uzavretí: +{upliftPct}%
+        </label>
+        <input
+          type="range"
+          min={5}
+          max={40}
+          value={upliftPct}
+          onChange={(e) => setUpliftPct(Number(e.target.value))}
+          className="w-full"
+        />
+      </div>
+
       {/* Výsledky */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div
@@ -131,13 +148,13 @@ export default function RoiCalculator() {
           }}
         >
           <p className="text-xs mb-1" style={{ color: "#94A3B8" }}>
-            S Revolis.AI Market Vision
+            Scénár s Revolis
           </p>
           <p className="text-2xl font-bold" style={{ color: "#22D3EE" }}>
             {Math.round(withRevolis).toLocaleString("sk-SK")} €
           </p>
           <p className="text-xs" style={{ color: "#64748B" }}>
-            provízií / mesiac (+34%)
+            provízií / mesiac (+{upliftPct}%)
           </p>
         </div>
 
@@ -149,7 +166,7 @@ export default function RoiCalculator() {
           }}
         >
           <p className="text-xs mb-1" style={{ color: "#94A3B8" }}>
-            Návratnosť investície
+            Návratnosť (scénár)
           </p>
           <p className="text-2xl font-bold" style={{ color: "#34D399" }}>
             {roiDays} dní
@@ -161,8 +178,7 @@ export default function RoiCalculator() {
       </div>
 
       <p className="text-xs mt-4 text-center" style={{ color: "#334155" }}>
-        * Kalkulácia na základe priemerného rastu konverzií +34% u kancelárií
-        používajúcich Revolis.AI Pro
+        * Ilustratívny scénár podľa vašich vstupov — nie meraný priemer zákazníkov.
       </p>
     </div>
   );

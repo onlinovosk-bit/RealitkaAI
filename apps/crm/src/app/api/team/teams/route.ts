@@ -44,7 +44,7 @@ export async function POST(request: Request) {
     const team = await createTeam({
       agencyId,
       name: body.name,
-    });
+    }, supabase);
 
     await createActivity({
       leadId: null,
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
       actorName: "Systém",
       source: "team",
       severity: "info",
-    });
+    }, supabase);
 
     return NextResponse.json({ ok: true, team });
   } catch (error) {

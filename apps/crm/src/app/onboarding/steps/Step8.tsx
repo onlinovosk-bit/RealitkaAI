@@ -1,6 +1,7 @@
 "use client";
 import { useOnboarding } from "../useOnboarding";
 import { PrimaryBtn, SecondaryBtn } from "./shared";
+import { RedeemStarterPackCode } from "@/components/billing/RedeemStarterPackCode";
 
 const GOALS = [
   { id: "more_leads",   emoji: "📈", label: "Získať viac leadov",        desc: "Chcem viac záujemcov mesačne" },
@@ -57,6 +58,14 @@ export default function Step8({ slug }: { slug: string }) {
               className="w-full accent-gray-900" />
           </div>
         ))}
+      </div>
+
+      <div className="border border-gray-100 rounded-xl p-4 max-w-lg mb-6">
+        <p className="text-sm font-semibold text-gray-900 mb-1">Mám kód z balíka (voliteľné)</p>
+        <p className="text-xs text-gray-500 mb-3">
+          Ak si kúpil/a štartovací balík, zadaj kód z emailu — pripíšeme 47 € kreditov.
+        </p>
+        <RedeemStarterPackCode compact />
       </div>
 
       <div className="bg-yellow-50 border border-yellow-100 rounded-xl p-4 text-sm text-gray-600 max-w-lg">

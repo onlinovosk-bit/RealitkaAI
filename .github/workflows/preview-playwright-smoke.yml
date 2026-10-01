@@ -1,0 +1,56 @@
+name: Preview — Playwright smoke
+
+on:
+  deployment_status:
+
+concurrency:
+  group: preview-smoke-${{ github.event.deployment_status.deployment_id }}
+  cancel-in-progress: true
+
+jobs:
+  preview-smoke:
+    name: Playwright smoke (Vercel Preview)
+    if: >
+      github.event.deployment_status.state == 'success' &&
+      github.event.deployment_status.environment == 'Preview' &&
+      contains(github.event.deployment_status.target_url, 'realitka-ai')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/crm/package-lock.json
+
+      - name: Install
+        run: npm ci
+        working-directory: apps/crm
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+        working-directory: apps/crm
+
+      - name: Playwright preview smoke
+        run: npm run test:smoke:preview
+        working-directory: apps/crm
+        env:
+          PLAYWRIGHT_SKIP_WEBSERVER: "1"
+          NEXT_PUBLIC_SITE_URL: ${{ github.event.deployment_status.target_url }}
+          # Runner guard only — preview app uses its own Vercel env
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+          CI: true
+
+      - name: Upload Playwright artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-preview-smoke-${{ github.run_id }}
+          path: |
+            apps/crm/playwright-report/
+            apps/crm/test-results/
+          retention-days: 7
+          if-no-files-found: ignore

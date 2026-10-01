@@ -11,14 +11,24 @@ import {
   gatherAgencyDashboardSummary,
   gatherAgencyProperties,
 } from '@/lib/ai/dashboard-insights-gather'
-import { logAiAction } from '@/lib/ai-action-audit'
+import { persistAiCostTelemetry } from '@/lib/ai/persist-cost-telemetry'
 import { CREDIT_ACTION_COSTS } from '@/lib/program-tier-pricing'
 import { withTimeout } from '@/lib/async/with-timeout'
 
-const INSIGHTS_AI_TIMEOUT_MS = Math.max(
+// Predvolených 8 s (→ vnútorné 7,5 s) bolo tesných: beh 1. 10. 06:24 UTC dal volania po 6,4–7,5 s
+// (1× llm po 7 488 ms, 1× timeout po 7 501 ms). Dĺžku okna pri 3 dávkach strážia testy voči maxDuration.
+export const INSIGHTS_AI_TIMEOUT_MS = Math.max(
   3000,
-  Number(process.env.DASHBOARD_INSIGHTS_TIMEOUT_MS ?? '8000'),
+  Number(process.env.DASHBOARD_INSIGHTS_TIMEOUT_MS ?? '14000'),
 )
+
+/**
+ * Okno pre samotné volanie modelu. Musí byť KRATŠIE než vonkajší `INSIGHTS_AI_TIMEOUT_MS`,
+ * inak by vonkajší `withTimeout` vyhral skôr a zlyhanie by skončilo bez dôvodu (`failure`)
+ * v audite. Dovtedy sa premenná `DASHBOARD_INSIGHTS_TIMEOUT_MS` vonkajšieho okna nedostala
+ * k volaniu vôbec — vnútri bolo natvrdo 800 ms.
+ */
+export const INSIGHTS_LLM_TIMEOUT_MS = Math.max(2500, INSIGHTS_AI_TIMEOUT_MS - 500)
 
 export type DashboardInsightsCachePayload = DashboardInsightsOutput & {
   period: 'today' | 'last_7_days'
@@ -71,12 +81,15 @@ export async function generateAndCacheAgencyInsights(
     const properties = await gatherAgencyProperties(admin, agencyId)
 
     const generated = await withTimeout(
-      generateDashboardInsights({
-        period: 'today',
-        summary,
-        userName: displayName,
-        properties,
-      }),
+      generateDashboardInsights(
+        {
+          period: 'today',
+          summary,
+          userName: displayName,
+          properties,
+        },
+        { timeoutMs: INSIGHTS_LLM_TIMEOUT_MS },
+      ),
       INSIGHTS_AI_TIMEOUT_MS,
       {
         insights: {
@@ -106,20 +119,40 @@ export async function generateAndCacheAgencyInsights(
       return { agencyId, ok: false, empty: false, error: upsertErr.message }
     }
 
-    await logAiAction({
-      action: 'dashboard_insights',
+    // Schema-tolerant cost write (prod missing cost_eur columns → meta fallback).
+    // Replaces logAiAction here — see docs/audit/2026-09-04-ai-cost-telemetry.md
+    await persistAiCostTelemetry({
       agencyId,
+      feature: 'dashboard_insights',
       creditsSpent: generated.audit.source === 'llm' ? CREDIT_ACTION_COSTS.leadAnalysis : 0,
       costEur: generated.audit.costEur,
       model: generated.audit.model,
       latencyMs: generated.audit.latencyMs,
       subjectPreview: payload.headline.slice(0, 200),
-      costEur: generated.audit.costEur,
       meta: {
         source: generated.audit.source,
         cron: true,
         actions_count: payload.actions.length,
         empty: generated.audit.source === 'empty',
+        // Prečo model nezodpovedal — bez toho je `source: fallback` nerozlíšiteľný
+        // (kľúč, kredit, timeout). Nikdy text chyby.
+        // Čo model vrátil (aj pri bad_output): stop_reason odlíši orezanie na max_tokens od
+        // nevalidného JSON. Žiadny text výstupu.
+        ...(generated.audit.usage
+          ? {
+              stop_reason: generated.audit.usage.stopReason,
+              input_tokens: generated.audit.usage.inputTokens,
+              output_tokens: generated.audit.usage.outputTokens,
+            }
+          : {}),
+        ...(generated.audit.failure
+          ? {
+              failure_reason: generated.audit.failure.reason,
+              failure_http_status: generated.audit.failure.httpStatus,
+              failure_error_type: generated.audit.failure.errorType,
+              failure_request_id: generated.audit.failure.requestId,
+            }
+          : {}),
       },
     })
 

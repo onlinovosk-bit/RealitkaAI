@@ -10,6 +10,7 @@ import {
   type Lead,
   type LeadActivity,
 } from "@/lib/leads-store";
+import { InboundDraftApprove } from "@/components/leads/inbound-draft-approve";
 import { buildGoogleCalendarTemplateUrl, openGoogleCalendarUrl } from "@/lib/google-calendar-url";
 import {
   AI_ASSISTANT_CHAT_CTA,
@@ -25,6 +26,7 @@ import {
 import { useRealtimeLeadScore } from "@/hooks/useRealtimeLeadScore";
 import SalesBrainPanel from "@/components/leads/sales-brain-panel";
 import DealStrategyCard from "@/components/leads/deal-strategy-card";
+import DemandMatchesCard from "@/components/leads/demand-matches-card";
 import KatasterMonitorCard from "@/components/leads/KatasterMonitorCard";
 import {
   SLATE_HORIZON,
@@ -32,6 +34,15 @@ import {
   WORKDESK_INPUT,
   WORKDESK_PANEL,
 } from "@/lib/slate-horizon-theme";
+import { AiPriorityBadge } from "@/components/leads/AiPriorityBadge";
+import { DealOutcomeReasonModal } from "@/components/leads/deal-outcome-reason-modal";
+import {
+  dealOutcomeKindForTerminalStatus,
+  isDealOutcomeTerminalLeadStatus,
+  type DealOutcomeTerminalLeadStatus,
+} from "@/lib/moat-capture/deal-outcome-reason";
+import { withDealOutcomePatchFields } from "@/lib/leads/deal-outcome-patch";
+import type { DealOutcomePatchFields } from "@/lib/leads/deal-outcome-patch";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -193,6 +204,11 @@ export default function LeadDetailPage() {
   // delete confirmation
   const [confirmDelete, setConfirmDelete] = useState(false);
 
+  const [dealOutcomeModal, setDealOutcomeModal] = useState<{
+    open: boolean;
+    pendingStatus: DealOutcomeTerminalLeadStatus | null;
+  }>({ open: false, pendingStatus: null });
+
   const { msg: toast, show: showToast } = useToast();
 
   const [scorePulse, setScorePulse] = useState(false);
@@ -213,6 +229,48 @@ export default function LeadDetailPage() {
   );
 
   useRealtimeLeadScore(id || undefined, onRealtimeScore);
+
+  /**
+   * Record that the broker tried to reach this lead.
+   *
+   * This is the fact C1 (preheated) is counted on. Before it existed the only
+   * evidence was `leads.last_contact`, a text column whose default is the
+   * string "Práve vytvorený" — nothing countable, so a contact rate could only
+   * be guessed at.
+   *
+   * It posts to /api/leads/[id]/contact-attempt rather than
+   * /api/ai/lead-events, which is behind the Enterprise Sales Intelligence
+   * gate: a funnel number must not be a property of the price list.
+   *
+   * `keepalive` matters here. Both callers are real <a href> navigations to
+   * tel:/mailto:, which hand the page to the dialer or mail client and can
+   * background or unload it before an ordinary fetch finishes. keepalive lets
+   * the request outlive that.
+   *
+   * No outcome is sent. Pressing Call proves an attempt, not a conversation,
+   * and claiming "unanswered" would be inventing a result. Silent on success by
+   * design — a toast behind an opening dialer is noise — but never silent on
+   * failure, because an attempt that was not recorded is an attempt C1 will
+   * never see.
+   */
+  const logContactAttempt = useCallback(
+    (channel: "call" | "email") => {
+      if (!id) return;
+      void fetch(`/api/leads/${encodeURIComponent(id)}/contact-attempt`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channel }),
+        keepalive: true,
+      })
+        .then(async (res) => {
+          if (res.ok) return;
+          const data = (await res.json().catch(() => ({}))) as { error?: string };
+          showToast(`Pokus o kontakt sa nezaznamenal: ${data.error ?? res.status}`);
+        })
+        .catch(() => showToast("Pokus o kontakt sa nezaznamenal (sieť)."));
+    },
+    [id, showToast]
+  );
 
   const accountTier: "market_vision" | "authority" = "market_vision";
 
@@ -268,7 +326,7 @@ export default function LeadDetailPage() {
   }, []);
 
   // ── patch lead ──
-  const patchLead = useCallback(async (fields: Partial<Lead>) => {
+  const patchLead = useCallback(async (fields: Partial<Lead> & Partial<DealOutcomePatchFields>) => {
     if (!lead) return;
     const optimistic = { ...lead, ...fields };
     setLead(optimistic);
@@ -289,6 +347,40 @@ export default function LeadDetailPage() {
       setIsSavingField(false);
     }
   }, [lead, id, showToast]);
+
+  const handleStatusSelectChange = useCallback(
+    (nextStatus: Lead["status"]) => {
+      if (!lead) return;
+      if (
+        isDealOutcomeTerminalLeadStatus(nextStatus) &&
+        nextStatus !== lead.status
+      ) {
+        setDealOutcomeModal({ open: true, pendingStatus: nextStatus });
+        return;
+      }
+      void patchLead({ status: nextStatus });
+    },
+    [lead, patchLead],
+  );
+
+  const confirmDealOutcome = useCallback(
+    async (reasonCode: string, reasonText: string) => {
+      if (!lead || !dealOutcomeModal.pendingStatus) return;
+      const pendingStatus = dealOutcomeModal.pendingStatus;
+      setDealOutcomeModal({ open: false, pendingStatus: null });
+      await patchLead(
+        withDealOutcomePatchFields(
+          { status: pendingStatus },
+          { dealOutcomeReasonCode: reasonCode, dealOutcomeReasonText: reasonText },
+        ),
+      );
+    },
+    [lead, dealOutcomeModal.pendingStatus, patchLead],
+  );
+
+  const cancelDealOutcomeModal = useCallback(() => {
+    setDealOutcomeModal({ open: false, pendingStatus: null });
+  }, []);
 
   // ── add activity ──
   async function addActivity(e: React.SyntheticEvent<HTMLFormElement>) {
@@ -478,10 +570,17 @@ export default function LeadDetailPage() {
               <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusColor(lead.status)}`}>
                 {lead.status}
               </span>
+              <AiPriorityBadge priority={lead.aiPriority} />
               {isSavingField && (
                 <span className="text-xs" style={{ color: SLATE_HORIZON.muted }}>Ukladám…</span>
               )}
             </div>
+            {lead.aiReason ? (
+              <p className="mt-2 text-sm leading-relaxed" style={{ color: SLATE_HORIZON.navText }}>
+                <span className="font-semibold" style={{ color: SLATE_HORIZON.deep }}>AI dôvod:</span>{" "}
+                {lead.aiReason}
+              </p>
+            ) : null}
           </div>
 
           {/* header actions */}
@@ -612,7 +711,10 @@ export default function LeadDetailPage() {
                         <span className="text-xs font-semibold text-gray-700">{act.type}</span>
                         <span className="text-xs text-gray-400">{act.date}</span>
                       </div>
-                      <p className="text-sm text-gray-600">{act.text}</p>
+                      <p className="text-sm text-gray-600 whitespace-pre-line">{act.text}</p>
+                      {act.inboundDraft && (
+                        <InboundDraftApprove leadId={id} activityId={act.id} draft={act.inboundDraft} />
+                      )}
                     </div>
                   </div>
                 ))}
@@ -635,7 +737,8 @@ export default function LeadDetailPage() {
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: SLATE_HORIZON.muted }}>Stav</p>
               <select
                 value={lead.status}
-                onChange={e => patchLead({ status: e.target.value as Lead["status"] })}
+                onChange={(e) => handleStatusSelectChange(e.target.value as Lead["status"])}
+                data-testid="lead-status-select"
                 className="w-full rounded-xl border px-3 py-2.5 text-sm font-semibold outline-none min-h-[44px]"
                 style={{
                   background: WORKDESK_INPUT.background,
@@ -663,6 +766,7 @@ export default function LeadDetailPage() {
                 {lead.phone && (
                   <a
                     href={`tel:${lead.phone}`}
+                    onClick={() => logContactAttempt("call")}
                     className="flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium w-full min-h-[44px] transition-all active:scale-95"
                     style={{
                       borderColor: WORKDESK_INNER_ROW.borderColor,
@@ -676,6 +780,7 @@ export default function LeadDetailPage() {
                 {lead.email && (
                   <a
                     href={`mailto:${lead.email}`}
+                    onClick={() => logContactAttempt("email")}
                     className="flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium w-full min-h-[44px] transition-all active:scale-95"
                     style={{
                       borderColor: WORKDESK_INNER_ROW.borderColor,
@@ -752,6 +857,7 @@ export default function LeadDetailPage() {
             ) : null}
             {id ? <SalesBrainPanel leadId={id} /> : null}
             {id ? <DealStrategyCard leadId={id} /> : null}
+            {id ? <DemandMatchesCard leadId={id} /> : null}
             {id ? (
               <KatasterMonitorCard
                 parcelId={id}
@@ -1025,6 +1131,17 @@ export default function LeadDetailPage() {
           </div>
         </div>
       </div>
+      {lead && dealOutcomeModal.open && dealOutcomeModal.pendingStatus ? (
+        <DealOutcomeReasonModal
+          open
+          outcome={dealOutcomeKindForTerminalStatus(dealOutcomeModal.pendingStatus)}
+          leadName={lead.name}
+          onConfirm={(code, text) => {
+            void confirmDealOutcome(code, text);
+          }}
+          onCancel={cancelDealOutcomeModal}
+        />
+      ) : null}
     </main>
   );
 }

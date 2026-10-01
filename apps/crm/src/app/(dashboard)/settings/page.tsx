@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { PushNotificationsToggle } from '@/components/settings/PushNotificationsToggle';
+import { AuthEmailTestsCard } from '@/components/settings/AuthEmailTestsCard';
 import { SLATE_HORIZON, WORKDESK_CARD } from '@/lib/slate-horizon-theme';
 
 const PLAN_NAMES: Record<string, string> = {
@@ -84,6 +85,8 @@ export default function SettingsPage() {
             </div>
           </div>
         </section>
+
+        <AuthEmailTestsCard />
 
         <PushNotificationsToggle />
       </div>

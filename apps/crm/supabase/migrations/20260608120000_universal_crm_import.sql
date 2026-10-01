@@ -133,15 +133,15 @@ CREATE TABLE IF NOT EXISTS migration_cases (
 );
 
 -- ── 4. INDEXY ───────────────────────────────────────────────
-CREATE INDEX idx_import_jobs_agency     ON import_jobs(agency_id);
-CREATE INDEX idx_import_jobs_status     ON import_jobs(status);
-CREATE INDEX idx_import_jobs_source     ON import_jobs(source_system);
-CREATE INDEX idx_import_jobs_created    ON import_jobs(started_at DESC);
-CREATE INDEX idx_import_rows_job        ON import_rows(job_id);
-CREATE INDEX idx_import_rows_agency     ON import_rows(agency_id);
-CREATE INDEX idx_import_rows_lead       ON import_rows(lead_id) WHERE lead_id IS NOT NULL;
-CREATE INDEX idx_migration_cases_crm    ON migration_cases(source_crm);
-CREATE INDEX idx_migration_cases_agency ON migration_cases(agency_id);
+CREATE INDEX IF NOT EXISTS idx_import_jobs_agency     ON import_jobs(agency_id);
+CREATE INDEX IF NOT EXISTS idx_import_jobs_status     ON import_jobs(status);
+CREATE INDEX IF NOT EXISTS idx_import_jobs_source     ON import_jobs(source_system);
+CREATE INDEX IF NOT EXISTS idx_import_jobs_created    ON import_jobs(started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_import_rows_job        ON import_rows(job_id);
+CREATE INDEX IF NOT EXISTS idx_import_rows_agency     ON import_rows(agency_id);
+CREATE INDEX IF NOT EXISTS idx_import_rows_lead       ON import_rows(lead_id) WHERE lead_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_migration_cases_crm    ON migration_cases(source_crm);
+CREATE INDEX IF NOT EXISTS idx_migration_cases_agency ON migration_cases(agency_id);
 
 -- ── 5. RLS ──────────────────────────────────────────────────
 ALTER TABLE import_jobs       ENABLE ROW LEVEL SECURITY;
@@ -149,6 +149,7 @@ ALTER TABLE import_rows       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE migration_cases   ENABLE ROW LEVEL SECURITY;
 
 -- import_jobs: vidí len vlastná agentúra
+DROP POLICY IF EXISTS "import_jobs_agency_isolation" ON import_jobs;
 CREATE POLICY "import_jobs_agency_isolation" ON import_jobs
   FOR ALL USING (
     agency_id IN (
@@ -158,6 +159,7 @@ CREATE POLICY "import_jobs_agency_isolation" ON import_jobs
   );
 
 -- import_rows: vidí len vlastná agentúra
+DROP POLICY IF EXISTS "import_rows_agency_isolation" ON import_rows;
 CREATE POLICY "import_rows_agency_isolation" ON import_rows
   FOR ALL USING (
     agency_id IN (
@@ -167,6 +169,7 @@ CREATE POLICY "import_rows_agency_isolation" ON import_rows
   );
 
 -- migration_cases: len service role (internal analytics)
+DROP POLICY IF EXISTS "migration_cases_service_only" ON migration_cases;
 CREATE POLICY "migration_cases_service_only" ON migration_cases
   FOR ALL USING (auth.role() = 'service_role');
 
@@ -176,6 +179,7 @@ RETURNS TRIGGER AS $$
 BEGIN NEW.updated_at = now(); RETURN NEW; END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS migration_cases_updated_at ON migration_cases;
 CREATE TRIGGER migration_cases_updated_at
   BEFORE UPDATE ON migration_cases
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();

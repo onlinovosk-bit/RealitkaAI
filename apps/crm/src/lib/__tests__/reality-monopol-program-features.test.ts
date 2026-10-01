@@ -62,6 +62,7 @@ describe("Reality Monopol — capability registry", () => {
     }
     expect(MONOPOL_CAPABILITIES).toContain("canUseCompetitionRadar");
     expect(MONOPOL_CAPABILITIES).toContain("canUseMonopolDominance");
+    expect(MONOPOL_CAPABILITIES).toContain("canUseStealthRecruiter");
   });
 
   it("keeps monopol caps locked for market_vision", () => {
@@ -158,12 +159,13 @@ describe("Reality Monopol — implementation anchors", () => {
     expect(missing, missing.join("\n")).toEqual([]);
   });
 
-  it("wires L99 hub with CompetitionMap and IntelBrief", () => {
+  it("wires L99 hub with cadastre map and module policy guards", () => {
     const hub = join(CRM_ROOT, "src/app/(dashboard)/l99-hub/page.tsx");
     const source = readFileSync(hub, "utf8");
-    expect(source).toContain("CompetitionMap");
-    expect(source).toContain("IntelBrief");
-    expect(source).toContain("isProtocolAuthority");
+    expect(source).toContain("CadastreMapView");
+    expect(source).toContain('canRenderModule("hub_breaking_point"');
+    expect(source).toContain('canRenderModule("hub_neighborhood_change"');
+    expect(source).not.toContain("3 nové signály");
   });
 
   it("documents Reality Monopol in billing store copy", () => {

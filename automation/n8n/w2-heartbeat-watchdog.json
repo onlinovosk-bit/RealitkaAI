@@ -1,0 +1,139 @@
+{
+  "name": "W2 — Heartbeat Watchdog (Revolis)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
+      },
+      "id": "a1000000-0000-0000-0000-000000000001",
+      "name": "Každých 30 min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "url": "https://app.revolis.ai/odhad/reality-smolko",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "a1000000-0000-0000-0000-000000000002",
+      "name": "Check Smolko widget",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, 0]
+    },
+    {
+      "parameters": {
+        "url": "https://app.revolis.ai/odhad/demo",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "a1000000-0000-0000-0000-000000000003",
+      "name": "Check demo sandbox",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 0]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $('Check Smolko widget').item.json.statusCode }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "notEquals"
+              }
+            },
+            {
+              "leftValue": "={{ $('Check demo sandbox').item.json.statusCode }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "or"
+        }
+      },
+      "id": "a1000000-0000-0000-0000-000000000004",
+      "name": "Niečo nie je 200?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [660, 0]
+    },
+    {
+      "parameters": {
+        "sendTo": "andrej@revolis.ai",
+        "subject": "🔴 REVOLIS WATCHDOG: widget/demo nevracia 200",
+        "emailType": "text",
+        "message": "=Heartbeat watchdog zachytil problém ({{ $now.format('dd.MM.yyyy HH:mm') }}):\n\n/odhad/reality-smolko → HTTP {{ $('Check Smolko widget').item.json.statusCode }}\n/odhad/demo → HTTP {{ $('Check demo sandbox').item.json.statusCode }}\n\nOver okamžite:\n1. https://app.revolis.ai/odhad/reality-smolko\n2. Vercel deploy log\n3. Supabase status\n\nPravidlo z incidentu 22.07: kód nikdy pred migráciou.",
+        "options": {}
+      },
+      "id": "a1000000-0000-0000-0000-000000000005",
+      "name": "Email founderovi",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [880, -80],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PLACEHOLDER_PO_IMPORTE",
+          "name": "Gmail Revolis"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Každých 30 min": {
+      "main": [[{ "node": "Check Smolko widget", "type": "main", "index": 0 }]]
+    },
+    "Check Smolko widget": {
+      "main": [[{ "node": "Check demo sandbox", "type": "main", "index": 0 }]]
+    },
+    "Check demo sandbox": {
+      "main": [[{ "node": "Niečo nie je 200?", "type": "main", "index": 0 }]]
+    },
+    "Niečo nie je 200?": {
+      "main": [
+        [{ "node": "Email founderovi", "type": "main", "index": 0 }],
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Bratislava"
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "revolis-w2-watchdog"
+  }
+}

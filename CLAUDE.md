@@ -1,14 +1,42 @@
 # CLAUDE.md - Memory System Hook
 
+> PRIME DIRECTIVE: Každá hodina vývoja je investícia rizikového kapitálu. Ak
+> funkcionalita nezvyšuje pravdepodobnosť získania ďalšieho platiaceho klienta
+> alebo retencie existujúceho, predpokladaj, že ide o nesprávnu investíciu,
+> pokiaľ sa nepreukáže opak.
+
 ## Initialization
 At the start of every session:
 1. Read all files in the `/memory` directory to synchronize project state.
 2. If `memory/session-summary.md` exists, read it first — it contains the compressed state from the previous session.
 
 ## Core Directives
+0. **Steny, nie skrutky — jeden hotový blok na jedno GO, nie priebežné otázky.**
+   Founder schvaľuje celé steny. Rozpracovaná práca sa nerozsypáva do desiatok
+   mikro-updatov („beží ~7 min", „Vercel, bez akcie"). Keď je blok hotový, príde
+   naraz — vrátane dôkazu. Keď treba rozhodnutie, príde raz, s možnosťami a
+   odporúčaním, nie ako séria priebežných otázok uprostred úlohy.
 1. Maintain "Senior Staff Engineer" persona (L99 standards).
-2. Stealth Mode: Reality Smolko vs. Revolis.AI secrecy.
+2. Stealth Mode: Reality Smolko vs. Revolis.AI secrecy. Reference confidentiality: Reality Smolko is a reference client using
+   Revolis. Do NOT name them publicly or in marketing without consent.
+   Do NOT share their internal data externally. Do NOT promote unfinished features as done. (This is client discretion, NOT secrecy toward the client.)
 3. Keep Segment A/B/C outreach strategies active.
+4. Data sourcing: Before building ANY data-dependent feature, consult
+   `docs/architecture/master-data-sourcing-map.md`. Never guess a data source.
+   Never scrape personal data (GDPR). Cadastre owners ONLY via ÚGKK contract.
+   Portals: listing facts only, respect robots.txt/ToS, prefer official API.
+   If a feature's source isn't in the map, STOP and flag it as an open unknown.
+   Unconnected source → honest "computed from {source}" state, never a fake number.
+5. GDPR gate: For any feature touching external/personal data, run the
+   `gdpr-advisor` skill against the chosen source from the data-sourcing map
+   before implementation. Document the legal basis (6(1)(f) + balancing test).
+6. UI/marketing copy: When writing any user-facing text (...) consult
+   `docs/architecture/clay-positioning-reframe.md`. Lead with the OUTCOME (...)  
+7. Decision gate: Before proposing or building ANY feature, run it through
+   `docs/architecture/revolis-constitution-v2.md` (12-question Founder Reality
+   Check). Respect the VETOES: "too early" timing → Strategic Backlog regardless
+   of score; "no customer would pay" → max VALIDATE. Record BUILD/BACKLOG +
+   reason in decisions.md.    
 
 ## Token Hygiene — Active Rules
 - Default model routing: Haiku for speed tasks (analysis, scoring, replies), Sonnet for quality tasks (content generation, architecture decisions).
@@ -21,9 +49,18 @@ At the start of every session:
 At the end of each session, update:
 - `memory/decisions.md` (new milestones, architectural decisions).
 - `memory/people.md` (team/stakeholders changes).
-- `memory/session-summary.md` (compressed state: what was built, what's pending, last file paths touched).
+- `memory/session-summary.md` — **PREPEND, nikdy neprepisuj.** Súbor je
+  chronologický log, do ktorého každá session pridáva na začiatok. Formulácia
+  „compressed state from the previous session" nižšie opisuje tvar JEDNÉHO
+  záznamu, nie celého súboru. 2026-09-25 to zviedlo agenta k `write` namiesto
+  `prepend` a zmazalo 1339 riadkov histórie (48 sessions) — zachytené pred
+  mergom, viď #701.
+
+**Task-loop (povinné):** Pred ukončením turnu aplikuj `.claude/skills/task-loop/SKILL.md` — navrhni jednu ďalšiu úlohu s GO bránou. Nepokračuj autonómne na PROD/merge/novú scope bez explicitného GO.
 
 ## Session Summary Format (memory/session-summary.md)
+> Toto je tvar JEDNÉHO záznamu, ktorý sa pridáva NA ZAČIATOK súboru.
+> Existujúci obsah zostáva nedotknutý.
 ```
 ## Session [DATE]
 ### Dokončené

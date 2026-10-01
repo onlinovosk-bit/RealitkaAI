@@ -1,0 +1,18 @@
+{
+  "entries": [
+    "/api/cron/arbitrage-scan#observe",
+    "/api/cron/bri-snapshot#observe",
+    "/api/cron/credits-cycle#observe",
+    "/api/cron/customer-health#observe",
+    "/api/cron/dashboard-insights#observe",
+    "/api/cron/follow-up-sweep#observe",
+    "/api/cron/guardian-digest#observe",
+    "/api/cron/guardian-run#observe",
+    "/api/cron/heartbeat-check#observe",
+    "/api/cron/lead-ai-triage#observe",
+    "/api/cron/notification-digest#observe",
+    "/api/cron/price-trail-sync#observe",
+    "/api/cron/pulse#observe",
+    "/api/cron/seller-rescue#observe"
+  ]
+}

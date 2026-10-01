@@ -3,7 +3,7 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
-import { getLeads, type Lead } from "@/lib/leads-store";
+import { LEADS_PAGE_SIZE, listLeads, type Lead } from "@/lib/leads-store";
 import PriorityLeads from "@/components/dashboard/priority-leads";
 import AiInsightsPanel from "@/components/dashboard/AiInsightsPanel";
 import { supabaseClient } from "@/lib/supabase/client";
@@ -19,11 +19,14 @@ import { AIAssistBanner } from "@/components/dashboard/AIAssistBanner";
 import { AssistantPanelDynamic } from "@/components/dashboard/AssistantPanel.dynamic";
 import L99DecisionOpsPanel from "@/components/dashboard/L99DecisionOpsPanel";
 import { WorkdeskCommandHero } from "@/components/dashboard/WorkdeskCommandHero";
+import { FirstAuditPanel } from "@/components/dashboard/FirstAuditPanel";
 import { ImportContactsBanner } from "@/components/dashboard/ImportContactsBanner";
-import { AIPriorityStrip } from "@/components/dashboard/AIPriorityStrip";
-import { NextBestActionPanel } from "@/components/dashboard/NextBestActionPanel";
 import { FollowUpTodayCard } from "@/components/follow-up/FollowUpTodayCard";
+import { ActionQueuePanel } from "@/components/dashboard/ActionQueuePanel";
 import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
+import { canRenderModule, normalizeModuleTier } from "@/lib/modules/registry";
+import { buildFirstAudit, formatAuditMoney } from "@/lib/workdesk/first-audit";
+import type { CoachingPayload } from "@/lib/coaching/coaching-payload";
 
 const EnterpriseSalesIntelligencePanel = dynamic(
   () => import("@/components/dashboard/EnterpriseSalesIntelligencePanel"),
@@ -59,18 +62,7 @@ type ForecastingTargets = {
   avgProbabilityPercent: number;
 };
 
-type CoachingInsightPayload = {
-  stats: {
-    funnelDropOffStage: string;
-    followUpConsistency: number;
-    avgDealVelocityDays: number;
-  };
-  insight: string;
-  streakDays: number;
-  followUpRankLabel: string;
-  dealVelocityLabel: string;
-  dealVelocityDeltaLabel: string;
-};
+type CoachingInsightPayload = CoachingPayload;
 
 const DEFAULT_FORECAST_TARGETS: ForecastingTargets = {
   expectedClosedDeals: 3,
@@ -122,6 +114,8 @@ export type DashboardPageClientProps = {
 export default function DashboardPageClient({ initialPropertiesSummary }: DashboardPageClientProps) {
   const [userName, setUserName] = useState<string | undefined>(undefined);
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [leadsHasMore, setLeadsHasMore] = useState(false);
+  const [leadsLoadingMore, setLeadsLoadingMore] = useState(false);
   const [plan, setPlan] = useState<PlanTier>("free");
   const [planKey, setPlanKey] = useState<string>("free");
   const [forecastingSummary, setForecastingSummary] = useState<ForecastingSummary | null>(null);
@@ -134,97 +128,156 @@ export default function DashboardPageClient({ initialPropertiesSummary }: Dashbo
   const [enterpriseSalesIntelligence, setEnterpriseSalesIntelligence] = useState(false);
   const [coachingPayload, setCoachingPayload] = useState<CoachingInsightPayload | null>(null);
 
+  async function loadMoreLeads() {
+    if (leadsLoadingMore || !leadsHasMore) return;
+    setLeadsLoadingMore(true);
+    try {
+      const next = await listLeads(undefined, undefined, {
+        limit: LEADS_PAGE_SIZE,
+        offset: leads.length,
+      });
+      setLeads((prev) => [...prev, ...next]);
+      setLeadsHasMore(next.length === LEADS_PAGE_SIZE);
+    } catch (e) {
+      console.error("Failed to load more leads:", e);
+    } finally {
+      setLeadsLoadingMore(false);
+    }
+  }
+
+  async function markLeadContacted(leadId: string) {
+    const nowIso = new Date().toISOString();
+    await fetch(`/api/leads/${leadId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        status: "Teplý",
+        lastContact: nowIso,
+      }),
+    });
+    await fetch(`/api/leads/${leadId}/activities`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "Kontakt",
+        note: "Lead bol kontaktovaný cez Action Queue (Volať/Napísať).",
+      }),
+    });
+    setLeads((prev) =>
+      prev.map((lead) =>
+        lead.id === leadId
+          ? {
+              ...lead,
+              status: "Teplý",
+              lastContact: nowIso,
+            }
+          : lead,
+      ),
+    );
+  }
+
   const assistantLeadOptions = useMemo(
     () => leads.map((l) => ({ id: l.id, name: l.name })),
     [leads]
   );
   const assistantDefaultLeadId = useMemo(() => leads[0]?.id, [leads]);
+  // Must stay above early returns — rules-of-hooks.
+  const firstAudit = useMemo(() => buildFirstAudit(leads), [leads]);
 
   useEffect(() => {
     async function loadDashboard() {
       try {
         let leadsData: Lead[] = [];
         try {
-          leadsData = await getLeads();
+          leadsData = await listLeads(undefined, undefined, { limit: LEADS_PAGE_SIZE, offset: 0 });
         } catch (e) {
           console.error("Failed to load leads:", e);
         }
         setLeads(leadsData);
+        setLeadsHasMore(leadsData.length === LEADS_PAGE_SIZE);
+        setIsLoading(false);
 
-        try {
-          const response = await fetch("/api/forecasting/summary");
-          if (response.ok) {
-            const payload = await response.json();
-            if (payload?.summary) setForecastingSummary(payload.summary as ForecastingSummary);
-            if (payload?.targets) {
-              setForecastTargets({
-                expectedClosedDeals: Number(payload.targets.expectedClosedDeals) || DEFAULT_FORECAST_TARGETS.expectedClosedDeals,
-                expectedPipelineValue: Number(payload.targets.expectedPipelineValue) || DEFAULT_FORECAST_TARGETS.expectedPipelineValue,
-                avgProbabilityPercent: Number(payload.targets.avgProbabilityPercent) || DEFAULT_FORECAST_TARGETS.avgProbabilityPercent,
-              });
+        await Promise.allSettled([
+          (async () => {
+            try {
+              const response = await fetch("/api/forecasting/summary", { signal: AbortSignal.timeout(10_000) });
+              if (response.ok) {
+                const payload = await response.json();
+                if (payload?.summary) setForecastingSummary(payload.summary as ForecastingSummary);
+                if (payload?.targets) {
+                  setForecastTargets({
+                    expectedClosedDeals: Number(payload.targets.expectedClosedDeals) || DEFAULT_FORECAST_TARGETS.expectedClosedDeals,
+                    expectedPipelineValue: Number(payload.targets.expectedPipelineValue) || DEFAULT_FORECAST_TARGETS.expectedPipelineValue,
+                    avgProbabilityPercent: Number(payload.targets.avgProbabilityPercent) || DEFAULT_FORECAST_TARGETS.avgProbabilityPercent,
+                  });
+                }
+              }
+            } catch { /* forecasting optional */ }
+          })(),
+          (async () => {
+            try {
+              const mf = await fetch("/api/ai/monthly-forecast", { signal: AbortSignal.timeout(10_000) });
+              const m = (await mf.json()) as MonthlyMoneyForecastPayload & { error?: string };
+              if (mf.ok && m?.ok && typeof m.totalExpectedEur === "number") {
+                setMonthlyMoney(m);
+                setMonthlyMoneyStatus("ok");
+              } else {
+                setMonthlyMoneyStatus("error");
+              }
+            } catch {
+              setMonthlyMoneyStatus("error");
             }
-          }
-        } catch { /* forecasting optional */ }
-
-        try {
-          const mf = await fetch("/api/ai/monthly-forecast");
-          const m = (await mf.json()) as MonthlyMoneyForecastPayload & { error?: string };
-          if (mf.ok && m?.ok && typeof m.totalExpectedEur === "number") {
-            setMonthlyMoney(m);
-            setMonthlyMoneyStatus("ok");
-          } else {
-            setMonthlyMoneyStatus("error");
-          }
-        } catch {
-          setMonthlyMoneyStatus("error");
-        }
-
-        try {
-          const { data: { user } } = await supabaseClient.auth.getUser();
-          if (user) {
-            const { data: profile } = await supabaseClient
-              .from("profiles")
-              .select("full_name, email")
-              .or(`auth_user_id.eq.${user.id},id.eq.${user.id}`)
-              .maybeSingle();
-            setUserName(profile?.full_name || profile?.email || user.email || undefined);
-          }
-        } catch { /* user name optional */ }
-
-        try {
-          const planRes = await fetch("/api/billing/plan");
-          if (planRes.ok) {
-            const planData = await planRes.json();
-            if (planData?.tier) setPlan(planData.tier as PlanTier);
-            if (planData?.planKey) setPlanKey(planData.planKey as string);
-            if (planData?.enterpriseSalesIntelligence) {
-              setEnterpriseSalesIntelligence(true);
+          })(),
+          (async () => {
+            try {
+              const { data: { user } } = await supabaseClient.auth.getUser();
+              if (user) {
+                const { data: profile } = await supabaseClient
+                  .from("profiles")
+                  .select("full_name, email")
+                  .or(`auth_user_id.eq.${user.id},id.eq.${user.id}`)
+                  .maybeSingle();
+                setUserName(profile?.full_name || profile?.email || user.email || undefined);
+              }
+            } catch { /* user name optional */ }
+          })(),
+          (async () => {
+            try {
+              const planRes = await fetch("/api/billing/plan", { signal: AbortSignal.timeout(10_000) });
+              if (planRes.ok) {
+                const planData = await planRes.json();
+                if (planData?.tier) setPlan(planData.tier as PlanTier);
+                if (planData?.planKey) setPlanKey(planData.planKey as string);
+                if (planData?.enterpriseSalesIntelligence) {
+                  setEnterpriseSalesIntelligence(true);
+                }
+              }
+            } catch { /* plan optional */ }
+          })(),
+          (async () => {
+            try {
+              const coachingRes = await fetch("/api/coaching/insight", { signal: AbortSignal.timeout(10_000) });
+              if (coachingRes.ok) {
+                const coachingData = (await coachingRes.json()) as { ok?: boolean } & CoachingInsightPayload;
+                if (coachingData?.ok) {
+                  setCoachingPayload({
+                    stats: coachingData.stats,
+                    insight: coachingData.insight,
+                    streakDays: coachingData.streakDays,
+                    followUpRankLabel: coachingData.followUpRankLabel,
+                    dealVelocityLabel: coachingData.dealVelocityLabel,
+                    dealVelocityDeltaLabel: coachingData.dealVelocityDeltaLabel,
+                  });
+                }
+              }
+            } catch {
+              // coaching panel is optional
             }
-          }
-        } catch { /* plan optional */ }
-
-        try {
-          const coachingRes = await fetch("/api/coaching/insight");
-          if (coachingRes.ok) {
-            const coachingData = (await coachingRes.json()) as { ok?: boolean } & CoachingInsightPayload;
-            if (coachingData?.ok) {
-              setCoachingPayload({
-                stats: coachingData.stats,
-                insight: coachingData.insight,
-                streakDays: coachingData.streakDays,
-                followUpRankLabel: coachingData.followUpRankLabel,
-                dealVelocityLabel: coachingData.dealVelocityLabel,
-                dealVelocityDeltaLabel: coachingData.dealVelocityDeltaLabel,
-              });
-            }
-          }
-        } catch {
-          // coaching panel is optional
-        }
+          })(),
+        ]);
       } catch (error) {
         console.error("Failed to load dashboard:", error);
         setLoadError("Nepodarilo sa načítať dáta pre prehľad. Skúste obnoviť stránku.");
-      } finally {
         setIsLoading(false);
       }
     }
@@ -263,11 +316,19 @@ export default function DashboardPageClient({ initialPropertiesSummary }: Dashbo
   const offers = leads.filter(l => l.status === "Ponuka").length;
   const conversionRate = totalLeads > 0 ? Math.round((offers / totalLeads) * 100) : 0;
   const displayTotalLeads = totalLeads;
+  const showFirstAudit =
+    firstAudit.dataQuality !== "ready" ||
+    firstAudit.forgottenLeads > 0 ||
+    firstAudit.atRiskDeals > 0;
 
   const dealsTrend = forecastingSummary ? getTrend(forecastingSummary.expectedClosedDeals, forecastTargets.expectedClosedDeals) : null;
   const valueTrend = forecastingSummary ? getTrend(forecastingSummary.expectedPipelineValue, forecastTargets.expectedPipelineValue, " EUR") : null;
   const probabilityTrend = forecastingSummary ? getTrend(forecastingSummary.avgProbabilityPercent, forecastTargets.avgProbabilityPercent, " %") : null;
   const showRevenueCommandCenter = planKey === "command" || planKey === "enterprise";
+  const moduleTier = normalizeModuleTier(planKey || plan);
+  const canShowEnterpriseSalesIntelligence =
+    enterpriseSalesIntelligence &&
+    canRenderModule("dashboard_ai_sales_intelligence", moduleTier);
 
   return (
     <div className="p-3 md:p-6" style={{ minHeight: "100%" }} id="actions">
@@ -276,9 +337,17 @@ export default function DashboardPageClient({ initialPropertiesSummary }: Dashbo
 
         <ImportContactsBanner leadsCount={totalLeads} />
 
-        <AIPriorityStrip leads={leads} loading={isLoading} />
+        {showFirstAudit ? (
+          <FirstAuditPanel
+            leads={leads}
+            continueHref="#today-focus"
+            continueLabel="Ukáž mi dnešné príležitosti"
+          />
+        ) : null}
 
-        <NextBestActionPanel leads={leads} loading={isLoading} />
+        <div id="today-focus">
+          <ActionQueuePanel leads={leads} onLeadAction={markLeadContacted} />
+        </div>
 
         <div className="mb-6">
           <FollowUpTodayCard leads={leads} />
@@ -287,12 +356,38 @@ export default function DashboardPageClient({ initialPropertiesSummary }: Dashbo
         <section className="mb-6 grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
           <KpiCard
             title="predpoklad obratu tento mesiac"
-            value={monthlyMoney?.totalExpectedEur ? `€${Math.round((monthlyMoney.totalExpectedEur ?? 0) / 1000)}k` : "€124k"}
-            subtitle="AI mesačný odhad"
+            value={
+              monthlyMoney?.totalExpectedEur != null
+                ? `€${Math.round(monthlyMoney.totalExpectedEur / 1000)}k`
+                : firstAudit.commissionEstimateEur != null
+                  ? formatAuditMoney(firstAudit.commissionEstimateEur)
+                  : "—"
+            }
+            subtitle={
+              monthlyMoney?.totalExpectedEur != null
+                ? "Mesačný odhad z rozpočtov × skóre"
+                : "Odhad 3 % z rozpočtov (alebo — bez dát)"
+            }
           />
-          <KpiCard title="pripravení kúpiť (AI)" value={hotLeads || 24} subtitle="Horúce príležitosti" />
-          <KpiCard title="akcie s vysokým dopadom dnes" value={Math.min(hotLeads + showings, 7) || 7} subtitle="Prioritný zoznam" />
-          <KpiCard title="ohrozené provízie" value="€18.4k" subtitle="Follow-up bez reakcie" />
+          <KpiCard
+            title="horúce príležitosti"
+            value={hotLeads}
+            subtitle="Stav Horúci — z vášho CRM"
+          />
+          <KpiCard
+            title="stagnujúci / zabudnutí"
+            value={firstAudit.forgottenLeads}
+            subtitle="Bez kontaktu podľa prahu follow-upu"
+          />
+          <KpiCard
+            title="ohrozené provízie"
+            value={formatAuditMoney(firstAudit.atRiskCommissionEur)}
+            subtitle={
+              firstAudit.atRiskCommissionEur == null
+                ? "Doplňte rozpočty — inak bez odhadu"
+                : `${firstAudit.atRiskDeals} ohrozených · 3 % z rozpočtu`
+            }
+          />
         </section>
 
         <section className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -390,16 +485,29 @@ export default function DashboardPageClient({ initialPropertiesSummary }: Dashbo
           <PriorityLeads leads={leads} plan={plan} />
           <AiInsightsPanel leads={leads} plan={plan} />
         </section>
+        {leadsHasMore ? (
+          <div className="mb-6 text-center">
+            <button
+              type="button"
+              onClick={() => void loadMoreLeads()}
+              disabled={leadsLoadingMore}
+              className="cursor-pointer rounded-xl px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+              style={{ background: SLATE_HORIZON.topbarGradient }}
+            >
+              {leadsLoadingMore ? "Načítavam…" : "Načítať ďalšie príležitosti"}
+            </button>
+          </div>
+        ) : null}
 
-        <section className="mb-6">
-          <EnterpriseSalesIntelligencePanel
-            enabled={enterpriseSalesIntelligence}
-          />
-        </section>
+        {canShowEnterpriseSalesIntelligence && (
+          <section className="mb-6">
+            <EnterpriseSalesIntelligencePanel enabled />
+          </section>
+        )}
 
         {showRevenueCommandCenter ? (
           <section className="mb-6">
-            <RevenueView />
+            <RevenueView leads={leads} />
           </section>
         ) : null}
 

@@ -6,6 +6,7 @@ import {
 } from "@/lib/credits-billing";
 import { recordMigrationDfyServiceOrder } from "@/lib/migration-dfy-service";
 import { parseSeatTier, parseTopupPackageKey } from "@/lib/program-tier-pricing";
+import { fulfillStarterPackPurchase } from "@/lib/starter-pack/fulfillment";
 
 /**
  * PR-4 pricing checkout webhook branch — seat + credit top-up.
@@ -72,6 +73,14 @@ export async function handlePricingCheckoutWebhook(
       packageKey,
       stripeSessionId: session.id,
     });
+  }
+
+  if (checkoutType === "starter_pack") {
+    const result = await fulfillStarterPackPurchase({
+      stripeSessionId: session.id,
+      customerEmail: session.customer_details?.email ?? session.customer_email,
+    });
+    return result !== null;
   }
 
   return false;

@@ -19,6 +19,16 @@ describe('Realvia payload type guards', () => {
       ).toBe(true);
     });
 
+    it('accepts string source_id from Realvia PROD', () => {
+      expect(
+        isDeletePayload({
+          source_id: '13303557',
+          action: 'delete',
+          archiveType: 'cancel',
+        }),
+      ).toBe(true);
+    });
+
     it('rejects legacy deleted:true shape', () => {
       expect(
         isDeletePayload({ source_id: 1123, deleted: true }),

@@ -1,0 +1,5 @@
+{
+  "name": "@revolis/bus-cli",
+  "private": true,
+  "type": "module"
+}

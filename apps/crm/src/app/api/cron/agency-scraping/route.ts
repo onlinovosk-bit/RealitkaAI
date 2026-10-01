@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isAuthorizedCronBearer } from "@/lib/cron-auth";
 import { createAdminClient } from "@/lib/supabase/server";
 import { AgencyDiscoveryEngine } from "@/domain/agency/AgencyDiscovery";
 import { SupabaseAgenciesRepository } from "@/infra/db/SupabaseAgenciesRepository";
@@ -6,8 +7,7 @@ import { PortalNehnutelnostiSource } from "@/infra/scraping/PortalNehnutelnostiS
 import { AgencyScrapingService } from "@/services/agency/AgencyScrapingService";
 
 export async function POST(req: Request) {
-  const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!isAuthorizedCronBearer(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
