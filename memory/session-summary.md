@@ -34,6 +34,43 @@ Merge → GO na aplikáciu migrácie v PROD → po pár dňoch `SELECT sender_do
 - `apps/crm/src/lib/inbound/mailbox-routing.ts` (nový), `gmail-pull.ts`, `app/api/acquire/email/route.ts` + testy.
 ### Ďalší krok
 Review + merge PR; potom z logov zistiť, ktoré `sender_domain` reálne prichádzajú.
+## Session 2026-10-01 (SCHEMA-GAP-RATCHET)
+### Dokončené
+- **SCHEMA-GAP-RATCHET** (GO foundera): CI brána, ktorá padne, keď aplikačný kód volá tabuľku, ktorú nezakladá žiadna
+  migrácia. `apps/crm/scripts/check-schema-gap.mjs` (bez závislostí), výnimky viazané na príčinu v
+  `schema-gap-allowlist.json`, test `tests/verification/schema-gap-ratchet.verification.test.ts` (54 testov), zapojené do
+  `prepush-gate.sh` a `code-contract-guard.yml` (job „Zmluva kódu", beží aj pri zmene migrácií).
+- **Premerané:** 125 volaných tabuliek, 146 objektov z migrácií, **4 medzery** (nie 19): `event_store`, `messages`,
+  `outreach_log`, `team_member_permissions`. Číslo 19/24 bola iná veličina (PROD ↔ kód): na PROD chýba **30** volaných tabuliek.
+- Dôkazy: skener = TS AST (0 rozdielov, 1440 súborov); parser = skutočný Postgres (127/127 migrácií, 0 rozdielov);
+  mutácie 7/7; `prepush-gate.sh` PASS; verification 493/493.
+### Rozpracované / Pending
+- **Nález (GO brána):** 26 tabuliek s migráciou v repe nie je na PROD — vrátane `cron_runs`, `demo_bookings`,
+  `credit_redemption_codes`, `notifications`. Aplikovať migrácie na PROD (história pod verziou súboru).
+- **Founder rozhodnutie** pre 4 medzery: migrácia / oprava názvu (`outreach_log` → `outreach_logs`?) / zmazanie mŕtveho kódu.
+### Kľúčové súbory zmenené
+- `apps/crm/scripts/check-schema-gap.mjs`, `schema-gap-allowlist.json`, `schema-gap-pg-oracle.mjs` (nové).
+- `apps/crm/tests/verification/schema-gap-ratchet.verification.test.ts` (nový).
+- `scripts/ci/prepush-gate.sh`, `.github/workflows/code-contract-guard.yml`: zapojenie brány.
+### Ďalší krok
+Merge PR (founder) → potom GO na aplikáciu 26 neaplikovaných migrácií na PROD, začať `cron_runs`.
+
+## Session 2026-10-01 (UPTM-019 — ratchet nad slepou škvrnou evidence schémy)
+### Dokončené
+- **UPTM-019** → `onlinovosk-bit/uptm-runner` [#55](https://github.com/onlinovosk-bit/uptm-runner/pull/55) (draft, nemergovať bez „merguj 55"). Founder zvolil „len ratchet, nič nesprísňovať". Množina koreňových kľúčov, ktoré runner číta a evidence schéma nepozná, je **odvodená z kódu** (AST), uznaná v `schemas/schema-gaps.json` (8 kľúčov s dôvodmi) a ratchet padá oboma smermi (nová medzera / zastaraný záznam). 918 passed, mutation-gate 37/37, `enforcement-evidence` `tree_clean`. Žiadna zmena správania, nič v `runner/` okrem `mutation_gate.py`.
+- **Rešerš pred voľbou (read-only):** schéma pri nezhode vracia `[]` (žiadny účinok); z 321 validácií v suite padá 189. Žiadna ďalšia časová bomba v `uptm-runner` do 3/2028.
+- **Moja chyba v návrhu:** ponúkol som pinovať 189/321; ten počet je nestabilný (hýbe ním každý nový test), pinuje sa odvodená množina kľúčov. Aj preregistrované `K2` bolo zlé (trestalo by úspech v deň zavretia medzery) — postavené ináč a odchýlka je zapísaná v §4 špecu.
+### Rozpracované / Pending
+- **Merge #55** — akt foundera; CI beží (príde ako event).
+- **Zablokované tvojimi vstupmi, nezačaté:** ES/MES vendor otázky (proxy blokuje `databento.com`, `cmegroup.com`, `interactivebrokers.com`, `firstratedata.com`), strany ebooku pre Quasimodo, primárny zdroj Hafez, migrácia `mechanical_break_retest_hafez.json` na rebrík. Bez nich v UPTM nie je ďalšia veľká vetva.
+- **Skutočná oprava schémy** (naučiť tvary capital/kill_switch) čaká na **reálny pack** z trading systému; potom je to zmena správania s vlastným GO.
+### Kľúčové súbory zmenené (uptm-runner)
+- docs/specs/UPTM-019-schema-gap-ratchet.md: spec + výsledok + priznaná odchýlka K2
+- schemas/schema-gaps.json: 8 uznaných kľúčov s dôvodmi
+- tests/test_schema_gap_ratchet.py: ratchet (39 testov)
+- runner/mutation_gate.py: +2 cases (`schema-gap-widens-silently`, `schema-gap-baseline-goes-stale`)
+### Ďalší krok
+Founder: „merguj 55". Potom najvyššia hodnota je v RealitkaAI, nie v UPTM: **CHECKOUT-ENV-01 krok C** (ceny v Stripe live mode; checklist je v chate z 2026-09-30, zdroj pravdy `bash scripts/ops/stripe-verify-prices.sh --spec`).
 
 ## Session 2026-10-01 (AUTO-RESPONSE-TEXT-FIX)
 ### Dokončené

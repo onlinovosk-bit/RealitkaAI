@@ -64,6 +64,48 @@ priradil všetky leady jednému maklérovi).
   prijatie maklérskej adresy, vypnuté radenie) červené → návrat zelený. typecheck 49 (baseline 54).
 - Nedotknuté: kontrakt Cloudflare Workera, DB, PROD. Pri zapnutí pullu stále platí GDPR bod
   z GO MAILBOX (preposielať len portálové domény).
+## [2026-10-01] SCHEMA-GAP-RATCHET — kód nesmie volať tabuľku, ktorú nezakladá migrácia (BUILD, GO foundera)
+
+**Rozhodnutie: BUILD** (GO foundera; Ústava: ochranná brána, nie klientska funkcia — Q1 sa neuplatňuje, hodnota je
+zabrániť triede chýb, ktorá stála #370 [4 deploymenty ERROR, produkcia hodinu bez nasadenia] a tichý 23502 na
+`bri_history` [insert roky padal so zahodenou chybou]). Žiadny zápis do PROD, žiadne DDL.
+
+**Premerané, nie prevzaté — číslo z handoveru („19 z 24") bolo iná veličina.** Tri rôzne počty, ktoré sa nesmú miešať:
+
+| Smer | Počet | Zdroj |
+|---|---|---|
+| Kód volá tabuľku, ktorú **nezakladá žiadna migrácia v repe** (to stráži táto brána) | **4** z 125 volaných | `check-schema-gap.mjs` |
+| Kód volá tabuľku, ktorá **nie je na PROD** | **30** z 125 | `to_regclass` na PROD, ten istý zoznam |
+| z toho: migrácia v repe existuje, na PROD nedobehla | **26** | rozdiel predošlých dvoch |
+
+Prvá hodnota nie je 19; 19/24 vzniklo najpravdepodobnejšie z PROD-strany (nedokázané — pôvod merania som nevidel).
+
+**Štyri medzery dnes (všetky overené: nie sú ani na PROD, ani v žiadnom `.sql` v repe okrem `event_store`):**
+`event_store` (DDL leží v `src/infra/db/migrations/002_event_store.sql`, kam `supabase db reset` nesiaha),
+`messages`, `outreach_log` (PROD má `outreach_logs`), `team_member_permissions`. Každá je v
+`apps/crm/scripts/schema-gap-allowlist.json` s `cause` + `resolution` — rozhodnutie o nich je founderovo
+(migrácia vs. oprava názvu vs. zmazanie mŕtveho kódu), nie moje.
+
+**Dizajn výnimiek (vzor #744, rozšírený):** výnimka platí, kým migrácia chýba. Keď pribudne, záznam je neplatný
+(`STALE_CAUSE_RESOLVED`) a CI žiada jeho zmazanie v tom istom PR — nie byrokracia: stale záznam by po zmazaní migrácie
+potichu odpustil návrat medzery. Rovnako `STALE_NO_CALLER` a `ENTRY_INCOMPLETE`. `.from(<výraz>)`, ktorý sa nedá
+previesť na názov (dnes 0), je pomenovaná slepá škvrna (`dynamicSites`), nie ticho.
+
+**Dôkazy:** (1) 54 testov vrátane skenera vs. TypeScript AST nad 1440 súbormi (823 literálov, 0 rozdielov);
+(2) parser migrácií vs. **skutočný Postgres** (PGlite): 127/127 migrácií, 146 objektov, 0 rozdielov v oboch smeroch,
+oracle `schema-gap-pg-oracle.mjs` padá na `EXECUTE format('CREATE TABLE …')` (overené); (3) mutácie na reálnom strome
+7/7 chytené (nový súbor, zmazaná migrácia, preklep cez helper / objektovú / exportovanú konštantu, odobraná výnimka,
+výnimka, ktorej príčina zanikla); (4) `prepush-gate.sh` prešiel (typecheck 49, strop 54; lint čistý); `tests/verification`
+76 súborov / 493 testov zelených.
+
+**Čo brána NEVIDÍ (priznané):** `client["from"]("x")`, `const { from } = sb`, názov tabuľky zložený za behu,
+`EXECUTE format('CREATE TABLE …')` v migrácii, stĺpce, RPC. Nekontroluje, či je migrácia aplikovaná na PROD.
+
+**NÁLEZ MIMO ZADANIA (nenapravený, čaká na GO):** 26 tabuliek s migráciou v repe na PROD nie je — vrátane `cron_runs`
+(migrácia 20260930080000; `recordCronRun` doň zapisuje z `recompute-bri` a `morning-brief` → trvalá stopa po behu týchto
+dvoch cronov na PROD nevzniká; v kóde ju nič iné nečíta, čítanie ide mimo repa a neoveril som ho), `demo_bookings` (Calendly webhook robí upsert a pri chybe vráti 500), `credit_redemption_codes`,
+`notifications`. `lead_demands`, `demand_property_matches` sú zámerne neaplikované (DEMAND za flagom). Opravou je
+aplikácia migrácií na PROD (história pod verziou súboru, nie `apply_migration`) — samostatná brána.
 
 ## [2026-10-01] AUTO-RESPONSE-TEXT-FIX — text auto-odpovede bez interného AI zdôvodnenia + stráž odosielateľa (BUILD, GO foundera)
 
