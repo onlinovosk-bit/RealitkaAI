@@ -19,6 +19,23 @@
 ### Ďalší krok
 Merge PR (founder) → potom GO na aplikáciu 26 neaplikovaných migrácií na PROD, začať `cron_runs`.
 
+## Session 2026-10-01 (UPTM-019 — ratchet nad slepou škvrnou evidence schémy)
+### Dokončené
+- **UPTM-019** → `onlinovosk-bit/uptm-runner` [#55](https://github.com/onlinovosk-bit/uptm-runner/pull/55) (draft, nemergovať bez „merguj 55"). Founder zvolil „len ratchet, nič nesprísňovať". Množina koreňových kľúčov, ktoré runner číta a evidence schéma nepozná, je **odvodená z kódu** (AST), uznaná v `schemas/schema-gaps.json` (8 kľúčov s dôvodmi) a ratchet padá oboma smermi (nová medzera / zastaraný záznam). 918 passed, mutation-gate 37/37, `enforcement-evidence` `tree_clean`. Žiadna zmena správania, nič v `runner/` okrem `mutation_gate.py`.
+- **Rešerš pred voľbou (read-only):** schéma pri nezhode vracia `[]` (žiadny účinok); z 321 validácií v suite padá 189. Žiadna ďalšia časová bomba v `uptm-runner` do 3/2028.
+- **Moja chyba v návrhu:** ponúkol som pinovať 189/321; ten počet je nestabilný (hýbe ním každý nový test), pinuje sa odvodená množina kľúčov. Aj preregistrované `K2` bolo zlé (trestalo by úspech v deň zavretia medzery) — postavené ináč a odchýlka je zapísaná v §4 špecu.
+### Rozpracované / Pending
+- **Merge #55** — akt foundera; CI beží (príde ako event).
+- **Zablokované tvojimi vstupmi, nezačaté:** ES/MES vendor otázky (proxy blokuje `databento.com`, `cmegroup.com`, `interactivebrokers.com`, `firstratedata.com`), strany ebooku pre Quasimodo, primárny zdroj Hafez, migrácia `mechanical_break_retest_hafez.json` na rebrík. Bez nich v UPTM nie je ďalšia veľká vetva.
+- **Skutočná oprava schémy** (naučiť tvary capital/kill_switch) čaká na **reálny pack** z trading systému; potom je to zmena správania s vlastným GO.
+### Kľúčové súbory zmenené (uptm-runner)
+- docs/specs/UPTM-019-schema-gap-ratchet.md: spec + výsledok + priznaná odchýlka K2
+- schemas/schema-gaps.json: 8 uznaných kľúčov s dôvodmi
+- tests/test_schema_gap_ratchet.py: ratchet (39 testov)
+- runner/mutation_gate.py: +2 cases (`schema-gap-widens-silently`, `schema-gap-baseline-goes-stale`)
+### Ďalší krok
+Founder: „merguj 55". Potom najvyššia hodnota je v RealitkaAI, nie v UPTM: **CHECKOUT-ENV-01 krok C** (ceny v Stripe live mode; checklist je v chate z 2026-09-30, zdroj pravdy `bash scripts/ops/stripe-verify-prices.sh --spec`).
+
 ## Session 2026-10-01 (AUTO-RESPONSE-TEXT-FIX)
 ### Dokončené
 - **AUTO-RESPONSE-TEXT-FIX** (GO foundera): šablóna auto-odpovede už neobsahuje `ai_reason`; text len z overených faktov,
