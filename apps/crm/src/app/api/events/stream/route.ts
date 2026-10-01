@@ -6,6 +6,7 @@
 export const runtime = "nodejs";
 
 import { createClient } from "@/lib/supabase/server";
+import { operatorOnlyEventTypesFilter } from "@/lib/platform-events-visibility";
 
 export async function GET() {
   const supabase = await createClient();
@@ -48,6 +49,8 @@ export async function GET() {
             .from("platform_events")
             .select("id,event_type,payload,created_at,agency_id")
             .gt("created_at", cursor)
+            // Diagnostika pre prevádzku (ai.call_failed, inbound.auto_response) tenant nevidí.
+            .not("event_type", "in", operatorOnlyEventTypesFilter())
             .order("created_at", { ascending: true })
             .limit(50);
 
