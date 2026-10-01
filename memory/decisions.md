@@ -1,5 +1,31 @@
 # Critical Decisions Log
 
+## [2026-10-01] SCOREBOARD — „prvá reakcia na lead" (lead → AI triáž → AI návrh → potvrdenie klientovi → viditeľnosť): 30 % dokázané v PROD
+
+**Metóda (aby sa dalo prepočítať, nie veriť):** 10 kontrolných bodov. ✅ = dokázané v PROD, 🟡 = postavené/zmergované, ale nedokázané alebo čiastočné,
+⛔ = chýba/blokované. Prísne % = ✅/10. Vážené % = (✅ + 0,5·🟡)/10 (váha 0,5 je MOJA konvencia, nie meranie). Rozsah = len táto reakcia na lead,
+NIE celé Revolis.AI (na to nemáme definovaného menovateľa).
+
+| # | Bod | Stav 1. 10. 11:05 UTC | Dôkaz |
+|---|-----|------|-------|
+| 1 | Príjem leadu z portálových e-mailov | ✅ | leady Bazoš / Nehnuteľnosti.sk v PROD dnes |
+| 2 | Príjem z widgetu / formulára / buyer-onboarding | ✅ | widget lead 10:14 sa uložil |
+| 3 | AI triáž dobehne na všetkých vstupoch | 🟡 | e-mail cesta ✅ (5 z 6 leadov za 24 h má triáž); widget ⛔ — oprava v #780, nenasadená |
+| 4 | AI návrh odpovede pre makléra | 🟡 | funguje (~8 s); kvalita textu otvorená („Vaša záujem") |
+| 5 | Text potvrdenia klientovi bez interného AI textu | 🟡 | v PROD od #773; reálne znenie ešte nevidené (Resend Logs) |
+| 6 | Odoslanie z overenej domény | 🟡 | Resend poslal z revolis.ai (Demo 08:41); `OUTREACH_FROM_EMAIL` nedokázaná |
+| 7 | Potvrdenie živé pre referenčného klienta | ⛔ | vypnuté: chýba reply-to + súhlas |
+| 8 | Viditeľnosť (udalosti, dôvody zlyhaní) | ✅ | `inbound.auto_response`, `ai.call_failed` zapisujú v PROD |
+| 9 | Poistky (opt-in) | 🟡 | 6 z 7 agentúr vypnutých ✅; default pre nové agentúry = migrácia, nenasadená |
+| 10 | Nasadzovanie do PROD funguje | ⛔ | Vercel Hobby limit 100/deň; PROD = #776, `main` je o #782 (TENANT-GATE-2) pred ňou |
+
+**Skóre: 3 ✅ / 5 🟡 / 2 ⛔ → 30 % dokázané, 55 % vážené.**
+
+**Plán k 100 % (poradie podľa páky):** (1) odblokovať nasadzovanie (#10) → (2) „merguj 780" → (3) e2e beh: otvorím testovací tenant, founder pustí 1 príkaz,
+overím → bod 3, 5, 6, 10 na ✅ = **70 % dokázané** (podmienene, ak beh prejde) → (4) aplikácia migrácie opt-in default (bod 9, moje SQL na GO) →
+(5) kvalita AI návrhu (bod 4) → (6) Smolko: reply-to + súhlas (bod 7, obchodný krok foundera) = 100 %.
+**Pravidlo od teraz:** každý blok končí jedným riadkom `Postup: X % → Y %` podľa tejto tabuľky.
+
 ## [2026-10-01] LEAD-PIPELINE-AFTER — lead pipeline sa vo verejných trasách dokončí po odpovedi (BUILD, GO foundera; NEnasadené, e2e dôkaz čaká)
 
 **Rozhodnutie BUILD (brána Ústavy v2):** Smolkov hlavný verejný vstup (valuation widget) dnes nedostáva AI triáž ani okamžité potvrdenie
