@@ -1,3 +1,17 @@
+## Session 2026-10-01 (TENANT-GATE-2)
+### Dokončené
+- 8 fail-open brán tvaru `if (callerProfile?.agency_id) { … }` → fail-closed `sameAgency()`: `leads/[id]/activities` GET/POST, `leads/[id]/moves` GET/POST, `tasks/[id]` PATCH/DELETE, `leads/[id]` GET. `tasks` DELETE: volajúci bez agentúry dostane 403 (tasks nemá vlastný `agency_id`, tenant ide cez lead).
+- `deal-strategy` a `sales-brain` majú novú tenant kontrolu (predtým iba `getUser`).
+- `getPipelineMovesByLeadId` a `appendPipelineMove` prijímajú scoped klienta; `moves` route ho odovzdáva (predtým browser singleton → trieda #443).
+- Sweep test dostal druhý tvar (`FAIL_OPEN_WRAPPED`); route test `fail-closed-gates.test.ts` (6) cez reálne handlery + store test `pipeline-moves-scoped.test.ts` (2). Mutation proof 7/7 (každý zásah vrátený zvlášť → červená; `leads-store` mutácia prežila route test, preto store test).
+- `prepush-gate` PASS; migrácie NEOVERENÉ (zmena sa ich netýka).
+### Rozpracované / Pending
+- Vetva `claude/tenant-gate-2` je zatiaľ len lokálna — push čaká na founderovo výslovné povolenie.
+- RLS politiky pre `activities`, `pipeline_moves`, `tasks` som nečítal; nález bol „RLS je jediný múr", teraz je ich viac.
+- Ostatné nálezy PII-GATE-AUDIT (Meta lookalike, ghostwriter, logy) čakajú na vlastné GO.
+### Ďalší krok
+Povoliť push `claude/tenant-gate-2` + draft PR; potom GO META-LOOKALIKE-HASH.
+
 ## Session 2026-10-01 (OUTREACH-DOMAIN-PROOF)
 ### Dokončené
 - #773 (AUTO-RESPONSE-TEXT-FIX) zmergovaný (`420f4af`), produkčný deploy READY.
