@@ -1,5 +1,20 @@
 # Critical Decisions Log
 
+## 2026-10-01 — ACTIVITIES-INSERT-AGENCY-KEY: `activities.agency_id` + trigger + politiky aplikované v PROD; `activities_insert_agency` zrušená
+
+**GO foundera.** Migrácia `20261001170000_activities_agency_key.sql` (aplikovaná jednou transakciou, `execute_sql`). Návrh: spätne kompatibilný — **writery v kóde sa
+nemenia**: BEFORE INSERT trigger `activities_fill_agency` doplní `agency_id` z JWT session (`profile_agencies_for_auth()`) pri riadku bez leadu;
+service role (bez `auth.uid()`) ostáva NULL a RLS obchádza. Nové politiky `activities_agency_select` / `activities_agency_insert` (WITH CHECK nedovolí podstrčiť
+cudziu agentúru); lead-viazané ostávajú pod `activities_tenant_*`.
+
+**Dôkaz — suchý beh v PROD (transakcia + rollback, 8/8 očakávaní):** (A) 1111 vloží bez leadu a bez agency_id → `agency_id = 1111…`; (B) 1111 podstrčí agentúru 8f3a →
+`new row violates row-level security policy`; (C) lead-viazaný INSERT ok; (D/D2) 1111 vidí 2 vlastné riadky aj cez `activity_stream`; (D3) staré NULL/NULL riadky 0;
+(E) 8f3a nevidí nič cudzie (0); (F) `anon` INSERT zablokovaný. **Po reálnej aplikácii:** 0 zvyškov z testu, politiky = `activities_agency_insert/select`,
+`activities_tenant_select/write`; trigger+stĺpec prítomné; politík s `agency_id IS NULL` v celom `public` = **0**; ako `authenticated` (acts/stream): 1111 → 3/3, 8f3a → 0/0, b101 → 3/3, dbbb → 0/0.
+
+**Vedomé obmedzenia:** 193 riadkov má `agency_id = NULL` (187 historických bez vlastníka + 6 lead-viazaných) → vidí ich len service role, **nemažú sa**; multi-agency používateľ dostane
+abecedne prvú agentúru; trigger nerieši aktivity z admin klienta (bez session). **Nemerané:** UI `/activities` a dashboard feed (neotvorené), beh `matching` pod novou politikou v živej prevádzke.
+
 ## 2026-10-01 — STATUS-MD: jedna stránka stavu `docs/STATUS.md`
 
 **GO foundera.** Dôvod: founder „sa uklikal k smrti a nevidel postup". Obsah: celkový odhad ≈ 40 % (váhy moje, uvedené), tabuľka blokov

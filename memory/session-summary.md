@@ -1,3 +1,16 @@
+## Session 2026-10-01 (ACTIVITIES-INSERT-AGENCY-KEY)
+### Dokončené
+- `activities.agency_id` + trigger `activities_fill_agency` + politiky `activities_agency_select/insert`; `activities_insert_agency` zrušená. Suchý beh 8/8 + overenie ako 4 agentúry. Politík s `agency_id IS NULL` v `public`: 0.
+- STATUS.md aktualizovaný (izolácia 70 %).
+### Rozpracované / Pending
+- Zostáva z izolácie: 12 funkcií volaných session/cronom (REVOKE bez testu by mohol rozbiť beh).
+- UI `/activities` + živý beh `matching` po novej politike (neoverené).
+- Migrácia `20261001170000_activities_agency_key.sql` je len v PR #774 (po merge sa zhoduje s PROD).
+### Kľúčové súbory zmenené
+- `apps/crm/supabase/migrations/20261001170000_activities_agency_key.sql` (nový), `docs/STATUS.md`, `memory/*`; PROD: 1 transakcia.
+### Ďalší krok
+Founder: Stripe krok C; potom merge #774.
+
 ## Session 2026-10-01 (STATUS-MD)
 ### Dokončené
 - `docs/STATUS.md` — jedna stránka stavu (≈ 40 %, blokery, čo potrebujem od foundera, hotové dnes).
