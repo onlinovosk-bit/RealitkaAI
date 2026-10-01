@@ -1,5 +1,29 @@
 # Critical Decisions Log
 
+## [2026-10-01] OUTREACH-DOMAIN-PROOF — test zlyhal PRED odoslaním: triáž ani auto-odpoveď sa vo verejných trasách nedokončia (`void` bez `await`)
+
+**Nameraný fakt (PROD):** testovací lead `4f63eb2c-…` (`valuation_widget`, agentúra `8f47808b-…`, príjemca `delivered@resend.dev`)
+vznikol 2026-10-01 10:14:16 UTC a **nemá `ai_triage_at`, nemá `auto_response_sent_at`**; v `platform_events` nie je `inbound.auto_response`
+ani `ai.call_failed`. Vercel runtime log (dpl `BCbVFVR…`, #778): `POST /api/valuation/submit 200`, `[ai:valuation-commentary] 2511ms`,
+potom **nič** (žiadna triáž, žiadna chyba). Funkcia po odoslaní odpovede nedobehla — nie je to problém konfigurácie ani domény.
+
+**Kód (overené čítaním):** `void runInboundLeadTriageAndNotify` + `void runInboundLeadAutoResponse` v `app/api/valuation/submit/route.ts:167,180`;
+`void` aj v `app/api/leads/inbound/route.ts:145,153` a `app/(public)/buyer-onboarding/actions.ts:234` (auto-odpoveď).
+Trasa `app/api/acquire/email/route.ts:442-443` ich `await`-uje — a práve tam udalosti vznikajú (Smolko 06:47, Demo 08:41).
+Repo už má správny vzor `after(task)` z `next/server` v `lib/inbound/reply-draft.ts:162` (Next ^16.2.4).
+
+**Záver a jeho hranica:** príčinou je takmer iste zmrazenie serverless funkcie po odoslaní odpovede (rozdiel `await` vs `void` +
+logy bez chyby). **Nie je to dokázané kontrolným pokusom** — ten príde až po oprave. **Dopad:** widget leady (hlavný verejný vstup
+Smolka, tenant `reality-smolko`) nedostávajú AI triáž ani auto-odpoveď, nezávisle od odosielateľa. Pre `leads/inbound` a buyer-onboarding
+je dopad odvodený z kódu, nie nameraný.
+
+**Stav PROD po teste:** tenant `revolis-ar-proof` zatvorený, `agencies.auto_response_enabled = true` pre **0** z 7 agentúr (overené).
+Testovací lead ostáva v testovacej agentúre (nemazaný).
+
+**Poučenie (founder 10:35: „prečo zase skrutky namiesto stien"):** chybu bolo možné nájsť ČÍTANÍM trasy skôr, než som ťa požiadal
+o ručný test — `void` som pri čítaní `valuation/submit` videl a nespochybnil. Ďalší blok = jedna stena (celá trieda chyby + dôkaz
++ ďalší test), nie rad mikro-GO: oprava všetkých `void` volaní lead pipeline, stráž proti návratu a opakovaný end-to-end test.
+
 ## [2026-10-01] AUTO-RESPONSE-OPTIN-DEFAULT — nová agentúra nezačína so zapnutou auto-odpoveďou (BUILD, GO foundera; migrácia zatiaľ NEnasadená na PROD)
 
 **Problém:** `agencies.auto_response_enabled` mal od `20260713150000` predvolenú hodnotu `true` (opt-out). Po

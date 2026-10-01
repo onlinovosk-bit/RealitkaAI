@@ -1,3 +1,17 @@
+## Session 2026-10-01 (OUTREACH-DOMAIN-PROOF — výsledok)
+### Dokončené
+- Test odosielania spustený (founder, 10:14 UTC): lead vznikol, **triáž ani auto-odpoveď nedobehli** (0 udalostí, `ai_triage_at` NULL).
+  Príčina takmer iste `void` bez `await` v `valuation/submit`, `leads/inbound`, `buyer-onboarding` (log + kód; kontrolný pokus až po oprave).
+- Testovací vstup zavretý; `auto_response_enabled` = 0 z 7 agentúr (overené).
+### Rozpracované / Pending
+- **Stena LEAD-PIPELINE-AFTER (čaká na GO):** `after()` namiesto `void` vo všetkých 3 trasách + stráž proti návratu + opakovaný e2e test.
+- `OUTREACH_FROM_EMAIL` stále nedokázané (test sa k odoslaniu nedostal). Smolko reply-to + súhlas, Resend Logs e-mailu z 08:41.
+- PR #780 (memory + migrácia opt-in default) — konflikt vyriešený merge-om `main`; migrácia NIE je na PROD.
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md` (bez zmeny kódu); PROD: tenant zavretý.
+### Ďalší krok
+GO LEAD-PIPELINE-AFTER (jedna stena: oprava + stráž + e2e dôkaz).
+
 ## Session 2026-10-01 (AUTO-RESPONSE-OPTIN-DEFAULT)
 ### Dokončené
 - **AUTO-RESPONSE-OPTIN-DEFAULT** (GO foundera): migrácia `20261001100000_auto_response_opt_in_default.sql`
