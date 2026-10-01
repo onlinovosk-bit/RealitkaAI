@@ -10,6 +10,8 @@ import {
   founderKancelarieRemaining,
   isFounderKancelariaEligible,
   isOwnerCockpitPurchasable,
+  missingSeatPriceEnvKeys,
+  missingTopupPriceEnvKeys,
   ownerCockpitPriceEur,
   type SeatTier,
 } from "@/lib/program-tier-pricing";
@@ -23,6 +25,11 @@ export async function GET() {
     seatCheckoutAvailable,
     topupCheckoutAvailable,
     checkoutAvailable: seatCheckoutAvailable || topupCheckoutAvailable,
+    // Env var NAMES only (never values) that are unset or not a valid price_*.
+    missingPriceEnvKeys: {
+      seat: missingSeatPriceEnvKeys(),
+      topup: missingTopupPriceEnvKeys(),
+    },
     founderCockpitEligible: founderEligible,
     founderCockpitRemaining: founderKancelarieRemaining(),
     seatTiers: SEAT_TIERS.map((tier: SeatTier) => ({

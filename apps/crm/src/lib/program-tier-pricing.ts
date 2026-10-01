@@ -341,6 +341,22 @@ export function areSeatCheckoutPricesConfigured(): boolean {
   return SEAT_TIERS.every((tier) => isValidStripePriceId(getSeatStripePriceId(tier)));
 }
 
+/**
+ * Names (never values) of the seat price env vars that are not a valid `price_*`.
+ * Lets one GET of /api/billing/checkout-config say exactly what is still missing.
+ */
+export function missingSeatPriceEnvKeys(): string[] {
+  return SEAT_TIERS.filter((tier) => !isValidStripePriceId(getSeatStripePriceId(tier))).map(
+    (tier) => SEAT_TIER_STRIPE_ENV[tier],
+  );
+}
+
+export function missingTopupPriceEnvKeys(): string[] {
+  return TOPUP_PACKAGE_KEYS.filter(
+    (key) => !isValidStripePriceId(getTopupStripePriceId(key)),
+  ).map((key) => TOPUP_PACKAGES[key].stripeEnvKey);
+}
+
 export function areTopupCheckoutPricesConfigured(): boolean {
   return TOPUP_PACKAGE_KEYS.every((key) => isValidStripePriceId(getTopupStripePriceId(key)));
 }
