@@ -1,3 +1,14 @@
+## Session 2026-10-01 (OBSIDIAN-VAULT-EXPORT-CRLF)
+### Dokončené
+- Oprava exportéra: na Windows (CRLF) dry-run ukázal `rozhodnutia 0 · sessions 11`. Príčina: `.` v regexe nezachytí `\r`. Fix: normalizácia na LF v `lib.mjs` + `export-vault.mjs`, test CRLF = LF (14/14).
+### Rozpracované / Pending
+- Founder: po merge opraviť `C:\RealitkaAI-main` (`git -C C:\RealitkaAI-main fetch origin main; git -C C:\RealitkaAI-main checkout --detach origin/main`) a spustiť export. NEOVERENÉ na reálnom Windows.
+- `C:\RealitkaAI` je na starej vetve `claude/epic-mendel-oal1wt` (2 vs 116 commitov) s neuloženým `memory/session-summary.md` — nedotknuté.
+### Kľúčové súbory zmenené
+- `scripts/vault/lib.mjs`, `scripts/vault/export-vault.mjs`, `scripts/vault/vault.test.mjs`
+### Ďalší krok
+Founder spustí export po merge; potom Obsidian pluginy Dataview + Tasks.
+
 ## Session 2026-10-01 (OBSIDIAN-VAULT-EXPORT)
 ### Dokončené
 - **OBSIDIAN-VAULT-EXPORT** (zadanie foundera: „zakomponuj čo najviac do práce aj Obsidian"): ručný jednosmerný export `memory/` → vault.

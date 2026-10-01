@@ -13,6 +13,7 @@ import {
   splitDecisions,
   splitSessions,
   tokenOf,
+  toLf,
 } from './lib.mjs';
 
 const ctx = { exportedOn: '2026-10-01' };
@@ -133,4 +134,13 @@ test('buildTokenMap: pri duplicite vyhrá najnovší záznam (vstup je od najnov
     { id: null, title: 'SAME-TOK — staré', file: 'old' },
   ]);
   assert.equal(m.get('SAME-TOK'), 'new');
+});
+
+test('CRLF (Windows checkout) dáva rovnaký výsledok ako LF', () => {
+  const lf = '## [2026-10-01] AAA-BBB — t (BUILD)\ntelo\n## Session 2026-10-01 (X-Y)\nobsah\n';
+  const crlf = lf.replace(/\n/g, '\r\n');
+  assert.deepEqual(splitDecisions(crlf), splitDecisions(lf));
+  assert.deepEqual(splitSessions(crlf), splitSessions(lf));
+  assert.equal(splitDecisions(crlf).length, 1);
+  assert.equal(toLf('a\r\nb\rc'), 'a\nb\nc');
 });
