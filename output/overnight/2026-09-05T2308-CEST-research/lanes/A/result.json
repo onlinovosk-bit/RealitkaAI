@@ -1,0 +1,22 @@
+{
+  "run_id": "2026-09-05T2308-CEST-research",
+  "lane_id": "A",
+  "base_sha": "cf3604613cdbb6a7a279e175f2c792fb25591461",
+  "input_hashes": {},
+  "status": "PASS_WITH_CONDITIONS",
+  "produced_files": [
+    "report.md",
+    "sources.json",
+    "result.json"
+  ],
+  "unknowns": [
+    "PROD apply status of 102 migrations",
+    "Vercel production cron enablement vs 16 vercel.json entries / 27 handlers",
+    "Live Stripe billing/webhook health and sold tiers",
+    "Production Realvia/portal scraping for paying agencies",
+    "Production use of call-analyzer with real transcripts",
+    "History/location of missing .cursor/rules/revolis-builder.mdc",
+    "Remote existence of deals/contacts tables beyond repo migrations"
+  ],
+  "next_action": "Freeze Lane A reuse matrix at W1 gate; do not greenfield core CRM entities; schedule docs chore to restore revolis-builder.mdc or retarget AGENTS.md; Lane B/C consume CODE_PRESENT paths with PROD_UNKNOWN intact"
+}

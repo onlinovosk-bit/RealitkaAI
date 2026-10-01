@@ -1,7 +1,7 @@
 import type { Team, Profile } from "@/lib/team-store";
 import type { Lead } from "@/lib/leads-store";
 
-type AnyProfile = Profile & { team_id?: string | null };
+type AnyProfile = Pick<Profile, "id" | "role"> & Partial<Profile> & { team_id?: string | null };
 
 export function getVisibleTeamsForProfile(profile: AnyProfile | null, teams: Team[]): Team[] {
   if (!profile) return [];

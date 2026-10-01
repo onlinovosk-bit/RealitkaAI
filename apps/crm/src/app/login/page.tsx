@@ -134,6 +134,15 @@ export default function LoginPage() {
                 />
               </div>
 
+              <div className="flex justify-end">
+                <Link
+                  href="/forgot-password"
+                  className={`text-sm font-semibold text-teal-800 underline ${LANDING_FOCUS_RING}`}
+                >
+                  Zabudnuté heslo?
+                </Link>
+              </div>
+
               <button
                 type="submit"
                 disabled={isLoading}

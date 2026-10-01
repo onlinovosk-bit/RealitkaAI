@@ -61,8 +61,8 @@ describe("realvia import dry-run", () => {
   it("skips clients without name or contact", () => {
     const report = buildRealviaDryRunReport({
       clients: [
-        { owner: { name: "", email: "x@y.sk" } },
-        { owner: { name: "No Contact" } },
+        { owner: { name: "", email: "x@y.sk" } } as never,
+        { owner: { name: "No Contact" } } as never,
       ],
       agencyId: AGENCY,
     });

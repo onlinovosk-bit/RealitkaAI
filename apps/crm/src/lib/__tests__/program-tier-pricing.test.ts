@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { CREDIT_RATES } from "@/lib/credits/credit-rates";
 import {
   CREDIT_GRANTS,
   CREDIT_ACTION_COSTS,
@@ -17,6 +18,7 @@ import {
   areSeatCheckoutPricesConfigured,
   areTopupCheckoutPricesConfigured,
   getOwnerCockpitStripePriceId,
+  isValidStripePriceId,
 } from "@/lib/program-tier-pricing";
 
 describe("program-tier-pricing v1.0", () => {
@@ -48,11 +50,12 @@ describe("program-tier-pricing v1.0", () => {
   });
 
   describe("CREDIT_ACTION_COSTS", () => {
-    it("defines spotrebný cenník", () => {
-      expect(CREDIT_ACTION_COSTS.leadUnlock).toBe(4);
-      expect(CREDIT_ACTION_COSTS.leadAnalysis).toBe(1);
-      expect(CREDIT_ACTION_COSTS.aiEmail).toBe(1);
-      expect(CREDIT_ACTION_COSTS.listingDescription).toBe(2);
+    it("mirrors CREDIT_RATES SSOT (leadUnlock=20)", () => {
+      expect(CREDIT_ACTION_COSTS.leadUnlock).toBe(CREDIT_RATES.LEAD_UNLOCK);
+      expect(CREDIT_ACTION_COSTS.leadUnlock).toBe(20);
+      expect(CREDIT_ACTION_COSTS.leadAnalysis).toBe(CREDIT_RATES.AI_ANALYSIS);
+      expect(CREDIT_ACTION_COSTS.aiEmail).toBe(CREDIT_RATES.AI_EMAIL);
+      expect(CREDIT_ACTION_COSTS.listingDescription).toBe(CREDIT_RATES.LISTING_DESCRIPTION);
     });
   });
 
@@ -160,6 +163,23 @@ describe("program-tier-pricing v1.0", () => {
     });
 
     it("areTopupCheckoutPricesConfigured false when any package missing", () => {
+      expect(areTopupCheckoutPricesConfigured()).toBe(false);
+    });
+
+    it("isValidStripePriceId rejects placeholder and invalid IDs", () => {
+      expect(isValidStripePriceId("")).toBe(false);
+      expect(isValidStripePriceId("xxx")).toBe(false);
+      expect(isValidStripePriceId("price_xxx")).toBe(false);
+      expect(isValidStripePriceId("price_")).toBe(false);
+      expect(isValidStripePriceId("prod_abc12345678")).toBe(false);
+      expect(isValidStripePriceId("price_1ABC123def456ghi")).toBe(true);
+    });
+
+    it("areTopupCheckoutPricesConfigured false for placeholder price_xxx env", () => {
+      process.env.STRIPE_PRICE_CREDITS_START = "price_xxx";
+      process.env.STRIPE_PRICE_CREDITS_RAST = "price_1ABC123def456ghi";
+      process.env.STRIPE_PRICE_CREDITS_PRO = "price_1ABC123def456ghi";
+      process.env.STRIPE_PRICE_CREDITS_MEGA = "price_1ABC123def456ghi";
       expect(areTopupCheckoutPricesConfigured()).toBe(false);
     });
   });

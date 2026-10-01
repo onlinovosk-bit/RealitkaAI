@@ -1,0 +1,122 @@
+{
+  "run_id": "20260905T2304-ruflo-overnight",
+  "lane_id": "I",
+  "base_sha": "cf3604613cdbb6a7a279e175f2c792fb25591461",
+  "input_hashes": {
+    "lanes/F/report.md": "9c3f79dca8f5b42ea3eb959b9bfea0bd0206dff3b43a22893ef6a38380412530",
+    "lanes/F/result.json": "d83e58c1aa2f808975bd4fdd177c9a3b4fc16ee836cca1d98b36af9eb7c16b6c",
+    "lanes/F/sources.json": "dca69123923c7a1f4bd4404fd7f2ccf939286bdcfc30aee6283ec514b394c818",
+    "lanes/G/report.md": "0f5ab509884ed89020420705cddd8ac4b2a80bd76c458a755c3782f439b0070e",
+    "lanes/G/result.json": "5743d33c5627cdeda74e087a893b76a2883fa28d022c6a1cddefb4c34c50a090",
+    "lanes/G/sources.json": "4823be0e5c29bff98c3ec71fdc92a9f6ea1c76ac5ad92628047bf6842a9ad481",
+    "lanes/E/report.md": "9d604f87095642d954227f0343f0fdc8dd21666ebe44b25bfd6a98d03c50b574",
+    "lanes/E/result.json": "c1def3429bafd6f6726f5cf459f9f82594770be241c034c7cd4cb95bc86172a4",
+    "lanes/E/sources.json": "84a5f58910384209ad09d6a8bc20e8ca504471f8e749d789f9f81301beba67ac",
+    "lanes/B/report.md": "307e38610715d7f121f375e65895d3fd9e10e61d6b0a206ba05953a758e41b24",
+    "lanes/B/result.json": "3856f373f07154958b54557b114e2ca5e2eac292a6dc331752babc097c631dee",
+    "lanes/B/sources.json": "8d7f257f34e79633f9a6354c422d6478a6a6158a04f12ee633f60b4f315a8fc7",
+    "docs/overnight/2026-09-05-ruflo-swarm/lanes.json": "d60edc89ba6e310f0d9635a1e4543f62125c1b13c1e2f4af16911785ff20faef",
+    "docs/overnight/2026-09-05-ruflo-swarm/START-HERE.md": "a062cedae73fdb04719c04b7f00e330ecbed4ecac521530fd05e44b4fa7b652b",
+    "base_sha": "cf3604613cdbb6a7a279e175f2c792fb25591461"
+  },
+  "status": "PASS_WITH_CONDITIONS",
+  "produced_files": [
+    "lanes/I/report.md",
+    "lanes/I/sources.json",
+    "lanes/I/result.json"
+  ],
+  "reads": [
+    "F",
+    "G",
+    "E",
+    "B"
+  ],
+  "author_files_edited": false,
+  "verdict": "PASS_WITH_CONDITIONS",
+  "commercial_posture": "VALIDATE_FIRST",
+  "critique_axes": [
+    "buy_reason",
+    "price_vs_value",
+    "migration_cost",
+    "outcome_attribution",
+    "pilot_selection",
+    "falsifying_experiment"
+  ],
+  "findings": [
+    {
+      "id": "I-F1",
+      "severity": "HIGH",
+      "axis": "buy_reason",
+      "fix": "interviews_ge6_and_B_kill_before_paid_C1"
+    },
+    {
+      "id": "I-F2",
+      "severity": "HIGH",
+      "axis": "price_vs_value",
+      "fix": "dual_price_cards_credit_vs_none; soft_E_pass_rejected"
+    },
+    {
+      "id": "I-F3",
+      "severity": "HIGH",
+      "axis": "outcome_attribution",
+      "fix": "latency_learning_only; outcome_fees_deferred"
+    },
+    {
+      "id": "I-F4",
+      "severity": "MEDIUM",
+      "axis": "migration_cost",
+      "fix": "EXP-B3_before_C1_clock"
+    },
+    {
+      "id": "I-F5",
+      "severity": "MEDIUM",
+      "axis": "pilot_selection",
+      "fix": "paid_cap_2_until_WTP_review; interview_mix"
+    },
+    {
+      "id": "I-F6",
+      "severity": "MEDIUM",
+      "axis": "falsifying_experiment",
+      "fix": "reorder_interviews_migration_then_paid"
+    },
+    {
+      "id": "I-F7",
+      "severity": "LOW",
+      "axis": "price_vs_value",
+      "fix": "manual_invoice_only"
+    },
+    {
+      "id": "I-F8",
+      "severity": "LOW",
+      "axis": "pilot_selection",
+      "fix": "keep_no_client_names_grandfather"
+    }
+  ],
+  "conditions": [
+    "Interviews >=6 and Lane B kill clear before any paid C1 invoice",
+    "Migration stopwatch (EXP-B3) before C1 week-1 clock",
+    "Hard cap 2 paid HYPOTHESIS pilots until convert/WTP review",
+    "355 + credit remain HYPOTHESIS; human GO on credit cash cost",
+    "F8 latency is learning KPI only — not ROI/commission proof",
+    "Outcome/success-fee pricing stays DEFERRED",
+    "No list price code changes; no self-serve Stripe claims",
+    "No edits to lanes F/G/E/B; no external sends from this run",
+    "P5/P6 remain blocked; commercial narrative must not imply publish is near"
+  ],
+  "counter_evidence_retained": [
+    "Excel+Admin and backOFFICE+ZRKS rational stay paths",
+    "Admin!=CRM does not imply Revolis purchase",
+    "Realsys 210-349 existence anchor != Revolis WTP",
+    "Credit can buy polite paid month without true WTP"
+  ],
+  "unknowns": [
+    "primary_wtp_at_355_with_without_credit",
+    "unpaid_job_prevalence_icp_5_20",
+    "migration_hours_to_revolis",
+    "portal_commercial_fees_TCO",
+    "stripe_prod_readiness",
+    "prospect_list_bias"
+  ],
+  "next_action": "Freeze Lane I for W4; Lane K/O6 must lift sequencing conditions into final/human-decisions.md; founder GO required before paid invites",
+  "written_at_utc": "2026-09-05T21:32:10Z"
+}

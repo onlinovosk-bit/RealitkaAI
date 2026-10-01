@@ -1,8 +1,12 @@
 import { errorResponse, okResponse } from "@/lib/api-response";
 import { computeReadinessScore, getRiskLabel, normalizeChecklist } from "@/lib/onboarding-mvp";
+import { requirePlatformAdmin } from "@/lib/onboarding-mvp/require-platform-admin";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 
 export async function GET() {
+  const denied = await requirePlatformAdmin();
+  if (denied) return denied;
+
   const supabase = createServiceRoleClient();
   if (!supabase) return errorResponse("Service role nie je nakonfigurovaný.", 500);
 
@@ -31,4 +35,3 @@ export async function GET() {
   const atRisk = enriched.filter((r) => r.risk !== "low");
   return okResponse({ total: enriched.length, atRisk: atRisk.length, clients: atRisk });
 }
-

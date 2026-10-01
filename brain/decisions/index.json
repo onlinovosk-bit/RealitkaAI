@@ -1,0 +1,1071 @@
+[
+  {
+    "alternatives": [
+      "unavailable"
+    ],
+    "canonical": false,
+    "choice": "Return a result and message envelope from every Realvia-facing endpoint.",
+    "confidence": "high",
+    "date": "2026-05-22",
+    "evidence": [
+      {
+        "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+        "line": 90,
+        "note": "Canonical decision entry and rationale.",
+        "path": "memory/decisions.md"
+      },
+      {
+        "commit": "3ded37864f32351e3a0e05f0929c70a44ee2c4a1",
+        "line": 3,
+        "note": "Current response helper implementation.",
+        "path": "apps/crm/src/lib/realvia/responses.ts"
+      }
+    ],
+    "expectedOutcome": "A stable external response contract for webhook and import calls.",
+    "id": "rme-dec-20260522-001",
+    "observedOutcome": "Implementation is present in the repository; an external partner retest is unavailable.",
+    "owner": "founder",
+    "problem": "Realvia-facing endpoints returned inconsistent response shapes.",
+    "rationale": "The integration feedback identified response format as the remaining technical blocker.",
+    "relatedAssets": [
+      "crm.api"
+    ],
+    "reviewAt": "2026-08-22",
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+      "path": "memory/decisions.md"
+    },
+    "status": "active",
+    "supersedes": [],
+    "title": "Standardize the Realvia response contract"
+  },
+  {
+    "alternatives": [
+      "unavailable"
+    ],
+    "canonical": false,
+    "choice": "Recognize action delete and map archiveType to the resulting property status.",
+    "confidence": "high",
+    "date": "2026-05-22",
+    "evidence": [
+      {
+        "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+        "line": 95,
+        "note": "Canonical decision entry.",
+        "path": "memory/decisions.md"
+      },
+      {
+        "commit": "ee7f52effff3bb6468eb3c5d6b58f938cfeb5a4d",
+        "line": 108,
+        "note": "Delete payload guard implementation.",
+        "path": "apps/crm/src/lib/realvia/types.ts"
+      }
+    ],
+    "expectedOutcome": "Correct archival behavior for sold, rented, and cancelled listings.",
+    "id": "rme-dec-20260522-002",
+    "observedOutcome": "The parser implementation is present in the repository.",
+    "owner": "founder",
+    "problem": "The production delete payload used an action field instead of the legacy deleted boolean.",
+    "rationale": "The implementation must follow the documented v2 payload.",
+    "relatedAssets": [
+      "crm.api"
+    ],
+    "reviewAt": "2027-05-22",
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+      "path": "memory/decisions.md"
+    },
+    "status": "active",
+    "supersedes": [],
+    "title": "Support the Realvia delete v2 payload"
+  },
+  {
+    "alternatives": [
+      "unavailable"
+    ],
+    "canonical": false,
+    "choice": "Return Invalid authentication for every external authentication failure.",
+    "confidence": "high",
+    "date": "2026-05-22",
+    "evidence": [
+      {
+        "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+        "line": 100,
+        "note": "Canonical decision entry.",
+        "path": "memory/decisions.md"
+      },
+      {
+        "commit": "3ded37864f32351e3a0e05f0929c70a44ee2c4a1",
+        "line": 11,
+        "note": "Current shared authentication error.",
+        "path": "apps/crm/src/lib/realvia/responses.ts"
+      }
+    ],
+    "expectedOutcome": "Consistent and less revealing authentication errors.",
+    "id": "rme-dec-20260522-003",
+    "observedOutcome": "The shared error constant is present in the repository.",
+    "owner": "founder",
+    "problem": "Missing and incorrect credentials produced different external errors.",
+    "rationale": "A stable contract avoids leaking internal detail.",
+    "relatedAssets": [
+      "crm.api"
+    ],
+    "reviewAt": "2027-05-22",
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+      "path": "memory/decisions.md"
+    },
+    "status": "active",
+    "supersedes": [],
+    "title": "Unify Realvia authentication failures"
+  },
+  {
+    "alternatives": [
+      "unavailable"
+    ],
+    "canonical": false,
+    "choice": "Use the repository memory directory instead of adding Notion or CrewAI.",
+    "confidence": "high",
+    "date": "2026-05-22",
+    "evidence": [
+      {
+        "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+        "line": 105,
+        "note": "Canonical decision and consequences.",
+        "path": "memory/decisions.md"
+      }
+    ],
+    "expectedOutcome": "Traceable handoffs with less repeated reconstruction.",
+    "id": "rme-dec-20260522-004",
+    "observedOutcome": "The repository contains and actively updates the memory directory.",
+    "owner": "founder",
+    "problem": "Copy and paste handoffs between AI tools caused context drift.",
+    "rationale": "Existing versioned files provide a small, inspectable source of truth.",
+    "relatedAssets": [
+      "brain.engine",
+      "memory.decisions"
+    ],
+    "reviewAt": "2026-11-22",
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+      "path": "memory/decisions.md"
+    },
+    "status": "active",
+    "supersedes": [],
+    "title": "Use repository memory as the AI handoff layer"
+  },
+  {
+    "alternatives": [
+      "unavailable"
+    ],
+    "canonical": false,
+    "choice": "Require branches to be current and require the Lint, test, build check.",
+    "confidence": "high",
+    "date": "2026-06-11",
+    "evidence": [
+      {
+        "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+        "line": 110,
+        "note": "Canonical decision and incident count.",
+        "path": "memory/decisions.md"
+      },
+      {
+        "commit": "c614d282c9e588758376aab3961c27c7717c400c",
+        "line": 10,
+        "note": "Operational policy reference, not a second decision source.",
+        "path": ".cursor/rules/l99-golden-rule.mdc"
+      }
+    ],
+    "expectedOutcome": "Fewer regressions caused by stale verification artifacts.",
+    "id": "rme-dec-20260611-001",
+    "observedOutcome": "The rule is documented locally; remote branch-protection state is unavailable.",
+    "owner": "founder",
+    "problem": "Parallel stale branches caused repeated semantic regressions.",
+    "rationale": "Semantic conflicts must become visible before merge.",
+    "relatedAssets": [
+      "ci.workflows",
+      "policy.cursor-rules"
+    ],
+    "reviewAt": "2026-07-29",
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+      "path": "memory/decisions.md"
+    },
+    "status": "verification_required",
+    "supersedes": [],
+    "title": "Require up-to-date branches before merge"
+  },
+  {
+    "alternatives": [
+      "unavailable"
+    ],
+    "canonical": false,
+    "choice": "Guard the forbidden behavior family with a name pattern.",
+    "confidence": "high",
+    "date": "2026-06-18",
+    "evidence": [
+      {
+        "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+        "line": 127,
+        "note": "Canonical incident and decision.",
+        "path": "memory/decisions.md"
+      },
+      {
+        "commit": "e34be75860c880e1543f772b2ad7b17e40006734",
+        "line": 28,
+        "note": "Current policy implementation.",
+        "path": ".github/scripts/automerge-policy.mjs"
+      }
+    ],
+    "expectedOutcome": "CI catches renamed variants of the prohibited feature family.",
+    "id": "rme-dec-20260618-001",
+    "observedOutcome": "The pattern is present in repository merge-policy automation.",
+    "owner": "founder",
+    "problem": "A name-specific CI guard could be bypassed by renaming forbidden behavior.",
+    "rationale": "Governance must cover behavior rather than one historical label.",
+    "relatedAssets": [
+      "ci.workflows",
+      "governance.architecture"
+    ],
+    "reviewAt": "2026-12-18",
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+      "path": "memory/decisions.md"
+    },
+    "status": "active",
+    "supersedes": [],
+    "title": "Use a pattern-based stealth feature guard"
+  },
+  {
+    "alternatives": [
+      "unavailable"
+    ],
+    "canonical": false,
+    "choice": "Disable the schedule and retain manual workflow dispatch.",
+    "confidence": "high",
+    "date": "2026-06-18",
+    "evidence": [
+      {
+        "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+        "line": 133,
+        "note": "Canonical decision and re-enable condition.",
+        "path": "memory/decisions.md"
+      },
+      {
+        "commit": "ddadb0b95c9176d1e6b1dbc671ac52f914aecf7d",
+        "line": 3,
+        "note": "Current workflow trigger evidence.",
+        "path": ".github/workflows/schema-governance-guard.yml"
+      }
+    ],
+    "expectedOutcome": "No recurring false alarms while manual verification remains available.",
+    "id": "rme-dec-20260618-002",
+    "observedOutcome": "The schedule remains absent from the workflow; remote secret state is unavailable.",
+    "owner": "founder",
+    "problem": "Missing CI secrets caused a false red schema report every night.",
+    "rationale": "The guard should report schema drift, not configuration noise.",
+    "relatedAssets": [
+      "ci.workflows"
+    ],
+    "reviewAt": "2026-07-29",
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+      "path": "memory/decisions.md"
+    },
+    "status": "verification_required",
+    "supersedes": [],
+    "title": "Pause the schema guard schedule until secrets exist"
+  },
+  {
+    "alternatives": [
+      "unavailable"
+    ],
+    "canonical": false,
+    "choice": "Show missing qualification instead of fabricating a backfill.",
+    "confidence": "high",
+    "date": "2026-06-19",
+    "evidence": [
+      {
+        "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+        "line": 140,
+        "note": "Canonical fact, veto, and decision.",
+        "path": "memory/decisions.md"
+      }
+    ],
+    "expectedOutcome": "Trustworthy UI that does not present invented qualification.",
+    "id": "rme-dec-20260619-001",
+    "observedOutcome": "A current production UI verification is unavailable.",
+    "owner": "founder",
+    "problem": "Imported leads lacked the fields needed for readiness scoring.",
+    "rationale": "The available import contains identity, not intent or readiness.",
+    "relatedAssets": [
+      "crm.application",
+      "governance.architecture"
+    ],
+    "reviewAt": "2026-07-29",
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+      "path": "memory/decisions.md"
+    },
+    "status": "verification_required",
+    "supersedes": [],
+    "title": "Show honest pending qualification"
+  },
+  {
+    "alternatives": [
+      "unavailable"
+    ],
+    "canonical": false,
+    "choice": "Inspect a first-party demand export instead of enriching empty fields.",
+    "confidence": "high",
+    "date": "2026-06-19",
+    "evidence": [
+      {
+        "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+        "line": 145,
+        "note": "Original validation decision.",
+        "path": "memory/decisions.md"
+      },
+      {
+        "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+        "line": 183,
+        "note": "Later evidence that superseded the path.",
+        "path": "memory/decisions.md"
+      }
+    ],
+    "expectedOutcome": "Determine whether a legal bulk qualification source exists.",
+    "id": "rme-dec-20260619-002",
+    "observedOutcome": "The later audit found that the bulk qualification export was unavailable.",
+    "owner": "founder",
+    "problem": "The primary import source did not contain qualification fields.",
+    "rationale": "Qualification must come from an evidenced source.",
+    "relatedAssets": [
+      "governance.architecture"
+    ],
+    "reviewAt": "2026-06-23",
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+      "path": "memory/decisions.md"
+    },
+    "status": "superseded",
+    "supersedes": [],
+    "title": "Validate a first-party qualification source"
+  },
+  {
+    "alternatives": [
+      "unavailable"
+    ],
+    "canonical": false,
+    "choice": "Compare every square-metre value against the structured and source-description area set.",
+    "confidence": "high",
+    "date": "2026-06-22",
+    "evidence": [
+      {
+        "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+        "line": 196,
+        "note": "Canonical decision and recorded smoke outcome.",
+        "path": "memory/decisions.md"
+      },
+      {
+        "commit": "55135350c872d60cce03a704a9fa4f5f69731a9d",
+        "line": 45,
+        "note": "Current review implementation.",
+        "path": "apps/crm/src/lib/capabilities/quality-guardian/review.ts"
+      }
+    ],
+    "expectedOutcome": "Fewer false flags without weakening area validation.",
+    "id": "rme-dec-20260622-001",
+    "observedOutcome": "The decision log records a six-of-six production capability smoke result.",
+    "owner": "founder",
+    "problem": "Several truthful area values in one listing produced a false quality flag.",
+    "rationale": "Quality review must distinguish legitimate multiple area types from drift.",
+    "relatedAssets": [
+      "crm.application"
+    ],
+    "reviewAt": "2026-12-22",
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+      "path": "memory/decisions.md"
+    },
+    "status": "active",
+    "supersedes": [],
+    "title": "Compare every documented property area"
+  },
+  {
+    "alternatives": [
+      "unavailable"
+    ],
+    "canonical": false,
+    "choice": "Do not perform a production write for the marginal broker-assignment field.",
+    "confidence": "high",
+    "date": "2026-06-23",
+    "evidence": [
+      {
+        "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+        "line": 180,
+        "note": "Canonical export audit and veto.",
+        "path": "memory/decisions.md"
+      }
+    ],
+    "expectedOutcome": "Avoid a risky bulk mutation with little customer value.",
+    "id": "rme-dec-20260623-001",
+    "observedOutcome": "The veto is recorded; no separate implementation was required.",
+    "owner": "founder",
+    "problem": "The export was mostly duplicate identity data and did not add qualification.",
+    "rationale": "The write risk was not justified by the available new information.",
+    "relatedAssets": [
+      "database.migrations"
+    ],
+    "reviewAt": "2027-06-23",
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+      "path": "memory/decisions.md"
+    },
+    "status": "active",
+    "supersedes": [],
+    "title": "Reject the low-value client CSV write"
+  },
+  {
+    "alternatives": [
+      "unavailable"
+    ],
+    "canonical": false,
+    "choice": "Remove the documents and require line-level review for docs and chore commits.",
+    "confidence": "high",
+    "date": "2026-06-23",
+    "evidence": [
+      {
+        "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+        "line": 203,
+        "note": "Canonical incident, decision, and rule.",
+        "path": "memory/decisions.md"
+      }
+    ],
+    "expectedOutcome": "Less documentation contamination and clearer ownership.",
+    "id": "rme-dec-20260623-002",
+    "observedOutcome": "The decision log records the cleanup PR.",
+    "owner": "founder",
+    "problem": "Unrelated governance documents entered the product repository under a vague commit label.",
+    "rationale": "A commit label is not a substitute for scope review.",
+    "relatedAssets": [
+      "governance.architecture",
+      "policy.cursor-rules"
+    ],
+    "reviewAt": "2026-12-23",
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+      "path": "memory/decisions.md"
+    },
+    "status": "active",
+    "supersedes": [],
+    "title": "Remove governance documents hidden in a vague commit"
+  },
+  {
+    "alternatives": [
+      "unavailable"
+    ],
+    "canonical": false,
+    "choice": "Use the Revenue, Learning, Network, and Evolution loops as the North Star.",
+    "confidence": "high",
+    "date": "2026-06-24",
+    "evidence": [
+      {
+        "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+        "line": 218,
+        "note": "Canonical decision entry.",
+        "path": "memory/decisions.md"
+      },
+      {
+        "commit": "46a5e302fc118b88427bdc17af5047c10248ac12",
+        "line": 3,
+        "note": "Current North Star source.",
+        "path": "docs/architecture/north-star-2027-2030.md"
+      }
+    ],
+    "expectedOutcome": "A durable prioritization frame tied to measurable customer learning.",
+    "id": "rme-dec-20260624-001",
+    "observedOutcome": "The canonical North Star document exists; later-loop outcomes remain unavailable.",
+    "owner": "founder",
+    "problem": "The product direction was drifting toward generic AI-for-real-estate positioning.",
+    "rationale": "The long-term advantage is accumulated organizational knowledge and outcomes.",
+    "relatedAssets": [
+      "governance.architecture"
+    ],
+    "reviewAt": "2026-09-24",
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+      "path": "memory/decisions.md"
+    },
+    "status": "active",
+    "supersedes": [],
+    "title": "Define Revolis as a Knowledge Monopoly system"
+  },
+  {
+    "alternatives": [
+      "unavailable"
+    ],
+    "canonical": false,
+    "choice": "Use decisions and exclusivity outcomes as the Loop 2 substrate, without automatic sending.",
+    "confidence": "high",
+    "date": "2026-06-24",
+    "evidence": [
+      {
+        "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+        "line": 224,
+        "note": "Canonical decision and safety rule.",
+        "path": "memory/decisions.md"
+      },
+      {
+        "commit": "12abc8302d8112878fcf054ccd88bfbe2157fb33",
+        "line": 4,
+        "note": "14-digit rename of 2026_genome_layer2.sql; tolerate either filename until founder applies.",
+        "path": "apps/crm/supabase/migrations/20260817120000_rename_genome_layer2.sql"
+      }
+    ],
+    "expectedOutcome": "A traceable foundation for future decision-to-outcome evaluation.",
+    "id": "rme-dec-20260624-002",
+    "observedOutcome": "Migration and writer code exist; current production and policy state require verification.",
+    "owner": "founder",
+    "problem": "Predictions could not be compared with later exclusivity outcomes.",
+    "rationale": "Learning requires both the prediction and its later result.",
+    "relatedAssets": [
+      "crm.application",
+      "database.migrations"
+    ],
+    "reviewAt": "2026-07-29",
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+      "path": "memory/decisions.md"
+    },
+    "status": "verification_required",
+    "supersedes": [],
+    "title": "Adopt the prediction and outcome substrate"
+  },
+  {
+    "alternatives": [
+      "unavailable"
+    ],
+    "canonical": false,
+    "choice": "Keep auto-deploy parked and retain human approval.",
+    "confidence": "high",
+    "date": "2026-06-24",
+    "evidence": [
+      {
+        "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+        "line": 230,
+        "note": "Canonical parking decision.",
+        "path": "memory/decisions.md"
+      },
+      {
+        "commit": "5088200c8f0a633cbc109d7299106eb87d66a205",
+        "line": 12,
+        "note": "Current parked-concept evidence.",
+        "path": "docs/architecture/l99-parked-concepts.md"
+      }
+    ],
+    "expectedOutcome": "No unapproved automatic production action.",
+    "id": "rme-dec-20260624-003",
+    "observedOutcome": "The concept remains listed as parked; no unpark decision is recorded.",
+    "owner": "founder",
+    "problem": "Autonomous deployment lacked sufficient evidence and a proven safety gate.",
+    "rationale": "The system must not act autonomously before the quality gate is proven.",
+    "relatedAssets": [
+      "governance.architecture"
+    ],
+    "reviewAt": "2026-09-24",
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+      "path": "memory/decisions.md"
+    },
+    "status": "active",
+    "supersedes": [],
+    "title": "Park autonomous genome deployment"
+  },
+  {
+    "alternatives": [
+      "unavailable"
+    ],
+    "canonical": false,
+    "choice": "Close directional architecture and continue with draft-only follow-up execution.",
+    "confidence": "high",
+    "date": "2026-06-24",
+    "evidence": [
+      {
+        "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+        "line": 235,
+        "note": "Canonical process decision and merge boundary.",
+        "path": "memory/decisions.md"
+      }
+    ],
+    "expectedOutcome": "More execution against Loop 1 and less speculative architecture work.",
+    "id": "rme-dec-20260624-004",
+    "observedOutcome": "A measured outcome for the process decision is unavailable.",
+    "owner": "founder",
+    "problem": "Additional architecture concepts were delaying execution of the first revenue loop.",
+    "rationale": "Customer-facing learning had higher immediate value than another concept document.",
+    "relatedAssets": [
+      "governance.architecture"
+    ],
+    "reviewAt": "2026-07-29",
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+      "path": "memory/decisions.md"
+    },
+    "status": "verification_required",
+    "supersedes": [],
+    "title": "Pivot from architecture writing to revenue-loop execution"
+  },
+  {
+    "alternatives": [
+      "unavailable"
+    ],
+    "canonical": false,
+    "choice": "Reuse the existing SaaS lead store and shared lead creation function.",
+    "confidence": "high",
+    "date": "2026-07-06",
+    "evidence": [
+      {
+        "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+        "line": 262,
+        "note": "Canonical decision and recorded verification.",
+        "path": "memory/decisions.md"
+      },
+      {
+        "commit": "0f46f0bd8a10cf3ee48906aa839049ebb895c398",
+        "line": 7,
+        "note": "Current API implementation.",
+        "path": "apps/crm/src/app/api/proof/route.ts"
+      }
+    ],
+    "expectedOutcome": "A public proof route with honest copy and no new database object.",
+    "id": "rme-dec-20260706-001",
+    "observedOutcome": "The decision log records a merged route and production smoke.",
+    "owner": "founder",
+    "problem": "The product needed a public ROI proof flow without schema duplication.",
+    "rationale": "Reuse reduced migration risk and preserved one lead contract.",
+    "relatedAssets": [
+      "crm.api",
+      "crm.application"
+    ],
+    "reviewAt": "2026-10-06",
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+      "path": "memory/decisions.md"
+    },
+    "status": "active",
+    "supersedes": [],
+    "title": "Build Proof of Value without a new table"
+  },
+  {
+    "alternatives": [
+      "unavailable"
+    ],
+    "canonical": false,
+    "choice": "Use a short first audit, one primary action, and existing signals.",
+    "confidence": "high",
+    "date": "2026-07-17",
+    "evidence": [
+      {
+        "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+        "line": 253,
+        "note": "Canonical decision and documented verification.",
+        "path": "memory/decisions.md"
+      },
+      {
+        "commit": "4ccd5c51a93ec0bc82d72ef66818b98ce11a1e13",
+        "line": 90,
+        "note": "Current first-audit implementation.",
+        "path": "apps/crm/src/lib/workdesk/first-audit.ts"
+      }
+    ],
+    "expectedOutcome": "Faster first value with no fabricated KPI fallback.",
+    "id": "rme-dec-20260717-001",
+    "observedOutcome": "Implementation and verification files exist, but the decision log merge state is stale.",
+    "owner": "founder",
+    "problem": "The product emphasized features and fallback KPIs instead of the first customer result.",
+    "rationale": "A smaller path should expose value without creating another AI engine.",
+    "relatedAssets": [
+      "crm.application"
+    ],
+    "reviewAt": "2026-07-29",
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+      "path": "memory/decisions.md"
+    },
+    "status": "verification_required",
+    "supersedes": [],
+    "title": "Use an outcome-first workdesk"
+  },
+  {
+    "alternatives": [
+      "unavailable"
+    ],
+    "canonical": false,
+    "choice": "Use a multi-tenant valuation route and prohibit model-generated price ranges without a reproducible source.",
+    "confidence": "high",
+    "date": "2026-07-19",
+    "evidence": [
+      {
+        "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+        "line": 241,
+        "note": "Canonical scope and gates.",
+        "path": "memory/decisions.md"
+      },
+      {
+        "commit": "eeba38af1025a8264ea7f324f259717d3921c11e",
+        "line": 103,
+        "note": "Current submission implementation.",
+        "path": "apps/crm/src/app/api/valuation/submit/route.ts"
+      }
+    ],
+    "expectedOutcome": "A reusable tenant route without fictitious valuation output.",
+    "id": "rme-dec-20260719-001",
+    "observedOutcome": "The route and deterministic engine exist; current data-license and production gates require verification.",
+    "owner": "founder",
+    "problem": "Customer interest existed, but pricing data, privacy, distribution, and service boundaries were incomplete.",
+    "rationale": "A public estimate must be deterministic, attributable, and privacy-safe.",
+    "relatedAssets": [
+      "crm.api",
+      "crm.application",
+      "database.migrations"
+    ],
+    "reviewAt": "2026-07-29",
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+      "path": "memory/decisions.md"
+    },
+    "status": "verification_required",
+    "supersedes": [],
+    "title": "Gate the valuation widget with deterministic data and privacy"
+  },
+  {
+    "alternatives": [
+      "unavailable"
+    ],
+    "canonical": false,
+    "choice": "Include the widget in the Revolis package instead of charging a separate fee.",
+    "confidence": "high",
+    "date": "2026-07-19",
+    "evidence": [
+      {
+        "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+        "line": 251,
+        "note": "Canonical pricing decision and validation condition.",
+        "path": "memory/decisions.md"
+      }
+    ],
+    "expectedOutcome": "Commercial validation through an additional paying agency.",
+    "id": "rme-dec-20260719-002",
+    "observedOutcome": "Commercial validation is unavailable in repository evidence.",
+    "owner": "founder",
+    "problem": "The commercial model for the valuation widget was undecided.",
+    "rationale": "The widget should strengthen the existing seat value proposition.",
+    "relatedAssets": [
+      "crm.application"
+    ],
+    "reviewAt": "2026-08-19",
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+      "path": "memory/decisions.md"
+    },
+    "status": "verification_required",
+    "supersedes": [],
+    "title": "Bundle valuation in Revolis seat pricing"
+  },
+  {
+    "alternatives": [
+      "unavailable"
+    ],
+    "canonical": false,
+    "choice": "Use a sandbox tenant and a separate lead consent relation.",
+    "confidence": "high",
+    "date": "2026-07-22",
+    "evidence": [
+      {
+        "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+        "line": 172,
+        "note": "Canonical decision and founder gate.",
+        "path": "memory/decisions.md"
+      },
+      {
+        "commit": "17181d6d6e1616d0f4177a95198977e2c4abb826",
+        "line": 108,
+        "note": "Repository migration evidence only.",
+        "path": "apps/crm/supabase/migrations/20260722120000_sandbox_gdpr_consent.sql"
+      }
+    ],
+    "expectedOutcome": "Demo submissions remain isolated while consent evidence is versioned.",
+    "id": "rme-dec-20260722-001",
+    "observedOutcome": "Repository code and migration exist; production application and founder smoke are unavailable.",
+    "owner": "founder",
+    "problem": "A public demo must not create normal production leads or inflate the lead schema with consent fields.",
+    "rationale": "The design preserves tenant integrity and keeps consent evidence normalized.",
+    "relatedAssets": [
+      "crm.api",
+      "database.migrations"
+    ],
+    "reviewAt": "2026-07-29",
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+      "path": "memory/decisions.md"
+    },
+    "status": "verification_required",
+    "supersedes": [],
+    "title": "Separate sandbox submissions and normalized consent"
+  },
+  {
+    "alternatives": [
+      "unavailable"
+    ],
+    "canonical": false,
+    "choice": "Require filled premortem mitigations, D-1 tracking tests, geo cap, spend kill signals, and Smolko SLA confirmation before GO.",
+    "confidence": "high",
+    "date": "2026-07-23",
+    "evidence": [
+      {
+        "commit": "e88da3375cb223b09b5f08ea77fd4a897558d09a",
+        "line": 1,
+        "note": "Filled premortem with P×Z matrix and mitigations.",
+        "path": "docs/premortems/2026-07-23-ads-smolko-ab.md"
+      }
+    ],
+    "expectedOutcome": "Campaign starts only after conditional GO criteria are met; outcome reviewed after campaign window.",
+    "id": "rme-dec-20260723-001",
+    "observedOutcome": "Premortem filled; Smolko SLA question and D-1 tests pending before GO.",
+    "owner": "founder",
+    "problem": "A paid Ads A/B test could burn budget without measurable outcomes or customer SLA capacity.",
+    "rationale": "Seven risks scored ≥6; mitigations change the plan rather than relying on attention alone.",
+    "relatedAssets": [
+      "premortem.ads-smolko-ab"
+    ],
+    "reviewAt": "2026-09-07",
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "e88da3375cb223b09b5f08ea77fd4a897558d09a",
+      "path": "docs/premortems/2026-07-23-ads-smolko-ab.md"
+    },
+    "status": "active",
+    "supersedes": [],
+    "title": "Premortem gate for Google Ads A/B Smolko campaign"
+  },
+  {
+    "alternatives": [
+      "unavailable"
+    ],
+    "canonical": false,
+    "choice": "Adopt the binding mapping table: nine REUSE/EXTEND, three Capture-now moat modules, four DEFER; no new systems where an owner already exists.",
+    "confidence": "high",
+    "date": "2026-07-26",
+    "evidence": [
+      {
+        "commit": "c4e2e8c481e0bb720fb435378210df226d7ff745",
+        "line": 8,
+        "note": "Binding mapping table and Capture-now/Learn-later moat strategy.",
+        "path": "docs/architecture/product-roadmap-mapping-2026-07.md"
+      }
+    ],
+    "expectedOutcome": "Every new module proposal is checked against the mapping table; capture PRs precede learn-phase features.",
+    "id": "rme-dec-20260726-001",
+    "observedOutcome": "Mapping document registered; moat capture and Guardian v1 implementation pending separate founder GO PRs.",
+    "owner": "founder",
+    "problem": "Sixteen proposed product modules risk duplicating existing capabilities or delaying moat data capture until after the three-customer learning gate.",
+    "rationale": "Principal panel verdict and North Star require historical outcome and recommendation data before learning features can succeed.",
+    "relatedAssets": [
+      "architecture.product-roadmap-mapping-202607"
+    ],
+    "reviewAt": "2026-10-26",
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "c4e2e8c481e0bb720fb435378210df226d7ff745",
+      "path": "docs/architecture/product-roadmap-mapping-2026-07.md"
+    },
+    "status": "active",
+    "supersedes": [],
+    "title": "Product roadmap mapping 2026-07 — reuse before build"
+  },
+  {
+    "alternatives": [
+      "unavailable"
+    ],
+    "canonical": false,
+    "choice": "STALE only when latest lead_event is after 7d quiet and within 90d activity window; no created_at fallback. Production runner uses GUARDIAN_AGENCY_ALLOWLIST (unset/empty = no tenant runs). GUARDIAN_DIGEST_ENABLED stays default false; baseline kill >50 unchanged.",
+    "confidence": "high",
+    "date": "2026-07-27",
+    "evidence": [
+      {
+        "commit": "c4e2e8c481e0bb720fb435378210df226d7ff745",
+        "line": 15,
+        "note": "Baseline + digest env mitigations; >50 finding kill.",
+        "path": "docs/premortems/2026-07-27-guardian-v1.md"
+      },
+      {
+        "commit": "e0f1084c675b863d1c7a84159a1c28db5de928fe",
+        "line": 4,
+        "note": "v1.1 thresholds and GUARDIAN_AGENCY_ALLOWLIST filter.",
+        "path": "apps/crm/src/lib/guardian/config.ts"
+      },
+      {
+        "commit": "e0f1084c675b863d1c7a84159a1c28db5de928fe",
+        "line": 41,
+        "note": "STALE requires lead_events window 7d–90d.",
+        "path": "apps/crm/src/lib/guardian/rules.ts"
+      }
+    ],
+    "expectedOutcome": "After deploy + allowlist env + optional SQL cleanup, STALE reflects real engagement gaps only; paying tenant runs are explicit.",
+    "id": "rme-dec-20260727-002",
+    "observedOutcome": "Prod audit 2026-07-27: 473/473 open STALE invalid under v1.1 (no lead_events); implementation in feat/guardian-v1.1-thresholds.",
+    "owner": "founder",
+    "problem": "Guardian v1 STALE flagged imported Smolko contacts with no lead_events (473 open STALE on prod), risking baseline panic and false alerts.",
+    "rationale": "Premortem #1 (P×Z=9): digest off and founder-reviewed thresholds before customer email; allowlist prevents cron touching demo/sandbox tenants until IDs confirmed.",
+    "relatedAssets": [
+      "build-package.guardian-v1"
+    ],
+    "reviewAt": "2026-08-27",
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "c4e2e8c481e0bb720fb435378210df226d7ff745",
+      "path": "docs/premortems/2026-07-27-guardian-v1.md"
+    },
+    "status": "active",
+    "supersedes": [],
+    "title": "Guardian v1.1 — STALE 90d+7d and production agency allowlist"
+  },
+  {
+    "alternatives": [
+      "unavailable"
+    ],
+    "canonical": false,
+    "choice": "Ship /operator under OPERATOR_DASHBOARD_ENABLED (default false) with profiles.is_platform_admin authz (404 not 403), aggregates only in v1, platform-admin separate from agency role; drill-down deferred to v1.1 with audit.",
+    "confidence": "high",
+    "date": "2026-07-28",
+    "evidence": [
+      {
+        "commit": "9ddf61f486f6c253695838b3f226d2a337099ff5",
+        "line": 36,
+        "note": "NF1 aggregate-first; NF3 platform-admin only.",
+        "path": "docs/briefs/overnight/build-package-operator-dashboard.md"
+      },
+      {
+        "commit": "d5d6e11719b61b75ea463ce2233f3d77cdbd1f2d",
+        "line": 1,
+        "note": "Forbidden PII keys on operator aggregate rows.",
+        "path": "apps/crm/src/lib/operator/aggregate-schema.ts"
+      },
+      {
+        "commit": "d5d6e11719b61b75ea463ce2233f3d77cdbd1f2d",
+        "line": 1,
+        "note": "Platform-admin schema gate + founder UPDATE reminder.",
+        "path": "apps/crm/supabase/migrations/20260728140000_profiles_platform_admin.sql"
+      }
+    ],
+    "expectedOutcome": "Agency users always 404; platform admin sees counts per agency_id with sandbox excluded; prod flag stays off until founder SQL grant + smoke.",
+    "id": "rme-dec-20260728-001",
+    "observedOutcome": "v1 implementation on feat/operator-dashboard-v1; prod apply of migration pending founder.",
+    "owner": "founder",
+    "problem": "Founder manually checks each agency in SQL; first cross-tenant UI risks PII leakage and tenant mixing without strict gates.",
+    "rationale": "Build Package premortem: aggregate-first + explicit platform role; unavailable metrics must not display as zero.",
+    "relatedAssets": [
+      "build-package.operator-dashboard-v1"
+    ],
+    "reviewAt": "2026-10-28",
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "9ddf61f486f6c253695838b3f226d2a337099ff5",
+      "path": "docs/briefs/overnight/build-package-operator-dashboard.md"
+    },
+    "status": "active",
+    "supersedes": [],
+    "title": "Operator dashboard = aggregate-first cross-tenant access"
+  },
+  {
+    "alternatives": [
+      "Separate JSON coding-decision log (rejected — duplicate graph)",
+      "CI-only enforcement without Decision Memory (rejected — no contradiction protocol)"
+    ],
+    "canonical": false,
+    "choice": "Adopt three-layer Engineering Constitution (Constitution / Policy / Enforcement); store justifications in memory/decisions.md with engineering-justification capability; Judge = Kontrolór with mandatory format check.",
+    "confidence": "high",
+    "date": "2026-08-02",
+    "evidence": [
+      {
+        "commit": "593972a73ceb98bb428525859f9f42d41ed9607b",
+        "line": 1,
+        "note": "Canonical three-layer constitution and Decision Memory ingest protocol.",
+        "path": "docs/architecture/engineering-constitution.md"
+      },
+      {
+        "commit": "3eda9429f5d638d5383a8bf3f18e1e9b6f633392",
+        "line": 290,
+        "note": "Adoption entry in canonical decision log.",
+        "path": "memory/decisions.md"
+      }
+    ],
+    "expectedOutcome": "Every new file/component/dep either reuses or leaves a traceable justification in memory/decisions.md; brain:ingest projects curated entries.",
+    "id": "rme-dec-20260802-001",
+    "observedOutcome": "Constitution document and cursor rule merged; ingest pending first PR.",
+    "owner": "founder",
+    "problem": "Code changes lacked a consistent reuse-first policy and Builder justifications had no single ingest path into Organizational Memory.",
+    "rationale": "Extends existing Decision Memory and brain/registry without a parallel coding log; aligns with ADR 2026-07-28 single canonical home per concept.",
+    "relatedAssets": [
+      "governance.engineering-constitution",
+      "memory.decisions",
+      "policy.cursor-rules"
+    ],
+    "reviewAt": "2026-11-02",
+    "schemaVersion": 1,
+    "sensitivity": "internal",
+    "source": {
+      "commit": "593972a73ceb98bb428525859f9f42d41ed9607b",
+      "path": "docs/architecture/engineering-constitution.md"
+    },
+    "status": "active",
+    "supersedes": [],
+    "title": "Adopt Engineering Constitution wired to Decision Memory"
+  }
+]

@@ -1,0 +1,43 @@
+{
+  "wave_id": "WAVE-1-PROPOSAL-2026-09-16-AUDIT",
+  "base_sha": "7318e61599a379a75155ddb9a2688e8d338380b4",
+  "dag_hash": "NOT_COMPUTED — hash tool not specified; base_sha recorded instead",
+  "launchable": false,
+  "launch_blockers": [
+    "preflight BLOCK: node apps/crm/scripts/judge.mjs --help → ERR_MODULE_NOT_FOUND js-yaml (no apps/crm/node_modules)",
+    "preflight BLOCK: apps/crm/scripts/tc-orchestrator.mjs missing on origin/main while ruflo_runtime=unverified",
+    "layer 04: write_probe not run (only required immediately before execution; execution not authorized)",
+    "executable READY set size 1 and owner=founder — not an agent wave"
+  ],
+  "tasks": [],
+  "agents": [],
+  "worktrees": [],
+  "write_territories": {},
+  "validation": [],
+  "exit_gate": "NOT RUNNABLE — would be: node apps/crm/scripts/judge.mjs <contract> after npm ci; currently exit 1",
+  "write_probe": {
+    "ran_at": null,
+    "result": "NOT_RUN",
+    "collisions": [],
+    "note": "Per layer 04, write-probe runs immediately before execution, not at planning. AUDIT MODE stops before execution."
+  },
+  "conditional_after_founder_GO_and_preflight_green": {
+    "note": "Not a launch. Sequence suggestion only.",
+    "wave_0_env": "Operator: npm ci in apps/crm until judge.mjs --help exits 0 (env, not PR)",
+    "wave_1_candidate_if_still_ready": {
+      "tasks": ["bus:close-TASK-0100"],
+      "agents": ["founder-or-single-agent"],
+      "write_territories": {
+        "bus:close-TASK-0100": [".ai/bus/tasks/TASK-0100.md"]
+      },
+      "exit_gate": "Select-String status:done on TASK-0100.md; Judge not required if no verdict block write — if verdict touched, Judge reopen required"
+    },
+    "explicitly_not_in_wave_1": [
+      "orch:land-tc-orchestrator (risk high → HUMAN; negative_case incomplete)",
+      "gate:scope-guard-b7 (negative_case not runnable locally)",
+      "gate:cost_usd_null_when_unmeasured (deps + negative_case)",
+      "typecheck paydown loop (NOT_LAUNCHED)",
+      "TASK-TC-BATCH-1 finish (needs orchestrator + network for PR)"
+    ]
+  }
+}

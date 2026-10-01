@@ -11,6 +11,7 @@ packages/
 ├── mcp-comm/            # Communication server — send_email, send_sms, log_interaction
 ├── mcp-calendar/        # Calendar server — find_available_slots, create_event
 ├── mcp-telephony/       # Telephony server — initiate_call, get_call_transcript
+├── mcp-onlinovo/        # Onlinovo shop MCP — health, stock_low, orders_open (read); writes denied
 ├── mcp-config.json      # Claude Desktop / Claude Code client config (example)
 ├── docker-compose.yml   # Local integration testing
 └── .env.example         # All required environment variables
@@ -49,6 +50,7 @@ claude mcp add revolis-crm  node packages/mcp-crm/dist/server.js
 claude mcp add revolis-comm node packages/mcp-comm/dist/server.js
 claude mcp add revolis-calendar  node packages/mcp-calendar/dist/server.js
 claude mcp add revolis-telephony node packages/mcp-telephony/dist/server.js
+claude mcp add onlinovo -- npx tsx packages/mcp-onlinovo/src/server.ts
 ```
 
 ## Tool contracts (JSON schema)

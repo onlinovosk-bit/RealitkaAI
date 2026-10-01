@@ -1,5 +1,4 @@
-﻿import { getSupabaseClient } from "@/lib/supabase/client";
-import { resolveTenantSupabase } from "@/lib/supabase/resolve-client";
+﻿import { resolveTenantSupabase } from "@/lib/supabase/resolve-client";
 import { createActivity } from "@/lib/activities-store";
 
 export type SaaSLead = {
@@ -45,7 +44,10 @@ const demoSaasLeads: SaaSLead[] = [
 
 
 
-async function logSaasLeadActivity(lead: SaaSLead) {
+async function logSaasLeadActivity(
+  lead: SaaSLead,
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+) {
   try {
     await createActivity({
       leadId: null,
@@ -64,7 +66,7 @@ async function logSaasLeadActivity(lead: SaaSLead) {
         source: lead.source,
         status: lead.status,
       },
-    });
+    }, scoped);
 
     console.log("[sales-funnel] Activity úspešne zapísaná pre SaaS lead:", lead.id);
   } catch (error) {
@@ -76,8 +78,10 @@ async function logSaasLeadActivity(lead: SaaSLead) {
   }
 }
 
-export async function listSaasLeads(): Promise<SaaSLead[]> {
-  const supabase = await resolveTenantSupabase();
+export async function listSaasLeads(
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+): Promise<SaaSLead[]> {
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     return demoSaasLeads;
@@ -108,17 +112,20 @@ export async function listSaasLeads(): Promise<SaaSLead[]> {
   }));
 }
 
-export async function createSaasLead(input: {
-  name: string;
-  email: string;
-  phone?: string;
-  company: string;
-  agentsCount: number;
-  city?: string;
-  note?: string;
-  source?: string;
-}) {
-  const supabase = await resolveTenantSupabase();
+export async function createSaasLead(
+  input: {
+    name: string;
+    email: string;
+    phone?: string;
+    company: string;
+    agentsCount: number;
+    city?: string;
+    note?: string;
+    source?: string;
+  },
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+) {
+  const supabase = await resolveTenantSupabase(scoped);
 
   const fallbackLead: SaaSLead = {
     id: crypto.randomUUID(),
@@ -134,7 +141,7 @@ export async function createSaasLead(input: {
   };
 
   if (!supabase) {
-    await logSaasLeadActivity(fallbackLead);
+    await logSaasLeadActivity(fallbackLead, scoped);
     return fallbackLead;
   }
 
@@ -155,9 +162,10 @@ export async function createSaasLead(input: {
     .single();
 
   if (error) {
-    console.error("[sales-funnel] createSaasLead fallback:", error.message);
-    await logSaasLeadActivity(fallbackLead);
-    return fallbackLead;
+    // Fail closed — never return a fake UUID that makes callers report ok:true
+    // while saas_leads has no durable row (public demo funnel silent drop).
+    console.error("[sales-funnel] createSaasLead insert failed:", error.message);
+    throw new Error(error.message);
   }
 
   const result: SaaSLead = {
@@ -174,12 +182,14 @@ export async function createSaasLead(input: {
     createdAt: data.created_at,
   };
 
-  await logSaasLeadActivity(result);
+  await logSaasLeadActivity(result, scoped);
   return result;
 }
 
-export async function getSalesFunnelData() {
-  const leads = await listSaasLeads();
+export async function getSalesFunnelData(
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+) {
+  const leads = await listSaasLeads(scoped);
 
   const kpis = {
     total: leads.length,

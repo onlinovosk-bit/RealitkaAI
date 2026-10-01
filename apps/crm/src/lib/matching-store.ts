@@ -158,9 +158,15 @@ export async function listLeadPropertyMatchesByLeadId(
 export async function updateLeadPropertyMatchStatus(
   leadId: string,
   matchId: string,
-  status: string
+  status: string,
+  /**
+   * Request-scoped client. Server callers MUST pass it: without it this falls
+   * back to the cookie-less browser singleton, RLS rejects the write (after
+   * matches_anon_legacy_all drop) and match status never persists.
+   */
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
 ): Promise<{ match: LeadPropertyMatchListItem; previousStatus: string | null }> {
-  const supabase = await resolveTenantSupabase();
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     throw new Error("Supabase nie je nastavený. Matching sa nedá aktualizovať.");
@@ -195,7 +201,7 @@ export async function updateLeadPropertyMatchStatus(
     throw new Error(updateError.message);
   }
 
-  const property = await getProperty(updated.property_id);
+  const property = await getProperty(updated.property_id, scoped);
 
   return {
     previousStatus,
@@ -308,15 +314,18 @@ export async function getLeadPropertyMatchPerformanceSummary(): Promise<LeadProp
   };
 }
 
-export async function recalculateMatchesForLead(leadId: string) {
-  const supabase = await resolveTenantSupabase();
+export async function recalculateMatchesForLead(
+  leadId: string,
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+) {
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     throw new Error("Supabase nie je nastavený. Matching sa nedá zapísať do databázy.");
   }
 
-  const lead = await getLead(leadId);
-  const properties = await listProperties();
+  const lead = await getLead(leadId, scoped);
+  const properties = await listProperties(undefined, scoped);
 
   if (!lead) {
     throw new Error("Lead nebol nájdený.");
@@ -389,18 +398,29 @@ export async function recalculateMatchesForLead(leadId: string) {
   };
 }
 
-export async function recalculateMatchesForProperty(propertyId: string) {
-  const supabase = await resolveTenantSupabase();
+export async function recalculateMatchesForProperty(
+  propertyId: string,
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+) {
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     throw new Error("Supabase nie je nastavený. Matching sa nedá zapísať do databázy.");
   }
 
-  const property = await getProperty(propertyId);
-  const leads = await listLeads();
+  // Reads go through the same client as the writes. Without it, on the server
+  // they fell back to the browser singleton, found no agency and returned
+  // nothing, while the delete below still removed the property's matches.
+  const property = await getProperty(propertyId, scoped);
+  const leads = await listLeads(undefined, scoped);
 
   if (!property) {
     throw new Error("Nehnuteľnosť nebola nájdená.");
+  }
+
+  // An empty read is not evidence that no lead fits: keep what is stored.
+  if (leads.length === 0) {
+    return { mode: "property" as const, propertyId, inserted: 0 };
   }
 
   const leadMatches = getMatchingLeadsForProperty(property, leads, 35);
@@ -470,14 +490,26 @@ export async function recalculateMatchesForProperty(propertyId: string) {
   };
 }
 
-export async function recalculateAllMatches() {
-  const supabase = await resolveTenantSupabase();
+export async function recalculateAllMatches(
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+) {
+  const supabase = await resolveTenantSupabase(scoped);
 
   if (!supabase) {
     throw new Error("Supabase nie je nastavený. Matching sa nedá zapísať do databázy.");
   }
 
-  const [leads, properties] = await Promise.all([listLeads(), listProperties()]);
+  // Same client for reads and writes (see recalculateMatchesForProperty).
+  const [leads, properties] = await Promise.all([
+    listLeads(undefined, scoped),
+    listProperties(undefined, scoped),
+  ]);
+
+  // An empty read is not evidence that nothing matches. Since May every global
+  // recalculation read nothing, deleted every match and wrote 0.
+  if (leads.length === 0 || properties.length === 0) {
+    return { mode: "all" as const, totalRows: 0, totalLeads: leads.length, totalProperties: properties.length };
+  }
 
   try {
     const { error: deleteError } = await withMatchingTimeout(

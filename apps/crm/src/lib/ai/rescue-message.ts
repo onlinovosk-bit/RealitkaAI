@@ -88,7 +88,7 @@ Vráť JSON:
     return extractJson<RescuePlanOutput>(raw);
   });
 
-  return withAiTimeout(aiCall, hardcodedFallback(context, channel), 500);
+  return withAiTimeout(aiCall, hardcodedFallback(context, channel), 500, { feature: 'rescue_message' });
 }
 
 function hardcodedFallback(ctx: RescueContext, channel: RescueChannel): RescuePlanOutput {

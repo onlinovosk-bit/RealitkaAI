@@ -1,0 +1,46 @@
+name: Schema Governance Guard
+
+on:
+  workflow_dispatch:
+  # SCHEDULE DISABLED (2026-06-17): nightly runs failed without SCHEMA_GUARD_* secrets
+  # and trained "always red" alarm fatigue. Re-enable after setting:
+  #   SCHEMA_GUARD_SUPABASE_URL
+  #   SCHEMA_GUARD_SUPABASE_SERVICE_ROLE_KEY
+  # in GitHub → Settings → Secrets → Actions. Manual workflow_dispatch still works.
+  # schedule:
+  #   - cron: "17 4 * * *"
+
+jobs:
+  schema_guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/crm/package-lock.json
+
+      - name: Install CRM deps
+        run: npm ci
+        working-directory: apps/crm
+
+      - name: Guard config must have secrets
+        run: |
+          if [ -z "${SCHEMA_GUARD_SUPABASE_URL}" ] || [ -z "${SCHEMA_GUARD_SUPABASE_SERVICE_ROLE_KEY}" ]; then
+            echo "::error::Missing SCHEMA_GUARD_SUPABASE_URL or SCHEMA_GUARD_SUPABASE_SERVICE_ROLE_KEY"
+            exit 1
+          fi
+        env:
+          SCHEMA_GUARD_SUPABASE_URL: ${{ secrets.SCHEMA_GUARD_SUPABASE_URL }}
+          SCHEMA_GUARD_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SCHEMA_GUARD_SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Run schema drift guard
+        run: node scripts/schema-governance-guard.mjs
+        working-directory: apps/crm
+        env:
+          SCHEMA_GUARD_SUPABASE_URL: ${{ secrets.SCHEMA_GUARD_SUPABASE_URL }}
+          SCHEMA_GUARD_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SCHEMA_GUARD_SUPABASE_SERVICE_ROLE_KEY }}
+

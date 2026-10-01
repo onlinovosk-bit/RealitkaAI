@@ -7,6 +7,11 @@ backups/
 
 # dependencies
 /node_modules
+# `/node_modules` is root-anchored, so the dev-only tooling that the
+# control-contract and bus CI jobs install per package was not ignored. Anyone
+# running those typechecks locally would otherwise be one `git add -A` away
+# from committing it.
+packages/*/node_modules/
 /.pnp
 .pnp.js
 
@@ -45,6 +50,13 @@ next-env.d.ts
 .claude/skills/
 **/__pycache__/
 apps/crm/error-capture.log
+.swarm/*.json
+apps/crm/supabase/.temp/
 apps/crm/tmp-*.json
+# DEMAND-BACKFILL experiment output (redacted lead text) — never commit
+apps/crm/tmp-demand-backfill/
 tmp-*.md
 apps/crm/design-handoff-zips/
+
+# Hourly Task Scheduler nudge — local only, never committed (memory/hourly-summary.ps1).
+memory/hourly-trigger.local.md

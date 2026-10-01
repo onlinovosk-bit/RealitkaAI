@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { updateTeam } from "@/lib/team-store";
+import { sameAgency } from "@/lib/tenant-scope";
 
 export async function PATCH(
   request: Request,
@@ -19,7 +20,7 @@ export async function PATCH(
     const { data: teamRow } = await supabase
       .from("teams").select("agency_id").eq("id", id).maybeSingle();
 
-    if (callerProfile?.agency_id && teamRow?.agency_id !== callerProfile.agency_id) {
+    if (!sameAgency(callerProfile?.agency_id, teamRow?.agency_id)) {
       return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
     }
 
@@ -28,7 +29,7 @@ export async function PATCH(
     const team = await updateTeam(id, {
       name:     typeof body.name     === "string"  ? body.name     : undefined,
       isActive: typeof body.isActive === "boolean" ? body.isActive : undefined,
-    });
+    }, supabase);
 
     return NextResponse.json({ ok: true, team });
   } catch (error) {

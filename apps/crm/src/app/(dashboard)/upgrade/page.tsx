@@ -3,6 +3,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { SLATE_HORIZON, WORKDESK_CARD } from '@/lib/slate-horizon-theme';
+import { BILLING_TOPUP_HREF } from '@/lib/program-tier-pricing';
+import { RedeemStarterPackCode } from '@/components/billing/RedeemStarterPackCode';
 
 type SeatTierKey = 'solo' | 'team' | 'office';
 type TopupKey = 'start' | 'rast' | 'pro' | 'mega';
@@ -23,6 +25,9 @@ type CheckoutConfig = {
   }>;
   cockpit: {
     liteMinSeats: number;
+    /** Optional: older deployments of the API do not send it. Absence is
+     *  treated as purchasable, so this never hides the add-on by accident. */
+    ownerPurchasable?: boolean;
     ownerPriceEur: number;
     ownerFounderPriceEur: number;
   };
@@ -48,7 +53,11 @@ export default function UpgradePage() {
     fetch('/api/billing/checkout-config')
       .then((r) => r.json())
       .then((d) => {
-        if (d.ok && d.data) setConfig(d.data);
+        // okResponse spreads payload at the top level ({ ok, seatCheckoutAvailable, ... }),
+        // not under `.data` — same contract as CreditsTopupPanel.
+        if (d.ok && typeof d.seatCheckoutAvailable === 'boolean') {
+          setConfig(d as CheckoutConfig);
+        }
       })
       .catch(() => setConfig(null))
       .finally(() => setLoading(false));
@@ -63,7 +72,13 @@ export default function UpgradePage() {
     if (tierMeta) setSeatCount(tierMeta.defaultSeats);
   }, [tierMeta?.key]);
 
-  const cockpitEligible = (tierMeta?.minSeats ?? 3) <= seatCount && seatCount >= 3;
+  // Two independent conditions. Seat count is about the customer's plan;
+  // `ownerPurchasable` is about whether the price the UI is about to display
+  // actually exists in Stripe. Offering the add-on without the second one lets
+  // the customer agree to a total that checkout cannot charge.
+  const cockpitPurchasable = config?.cockpit.ownerPurchasable !== false;
+  const cockpitEligible =
+    (tierMeta?.minSeats ?? 3) <= seatCount && seatCount >= 3 && cockpitPurchasable;
   const cockpitPrice = config?.founderCockpitEligible
     ? config.cockpit.ownerFounderPriceEur
     : config?.cockpit.ownerPriceEur ?? 349;
@@ -86,8 +101,9 @@ export default function UpgradePage() {
           body: JSON.stringify(body),
         });
         const data = await res.json();
-        if (data.ok && data.data?.result?.url) {
-          window.location.href = data.data.result.url;
+        // okResponse({ result }) → { ok: true, result: { url } }
+        if (data.ok && data.result?.url) {
+          window.location.href = data.result.url;
           return;
         }
         setError(data.error ?? 'Checkout nie je dostupný.');
@@ -124,9 +140,9 @@ export default function UpgradePage() {
         <div
           className="mb-8 rounded-xl border p-6"
           style={{
-            background: '#FEF3C7',
-            borderColor: '#FCD34D',
-            color: '#92400E',
+            background: SLATE_HORIZON.noticeGradient,
+            borderColor: SLATE_HORIZON.softBorder,
+            color: SLATE_HORIZON.brandDeep,
           }}
         >
           <h2 className="text-lg font-semibold mb-2">Checkout momentálne nedostupný</h2>
@@ -268,6 +284,23 @@ export default function UpgradePage() {
         </section>
       )}
 
+      <section
+        className="mb-8 rounded-xl border p-6"
+        style={{
+          background: WORKDESK_CARD.background,
+          borderColor: WORKDESK_CARD.borderColor,
+          boxShadow: WORKDESK_CARD.boxShadow,
+        }}
+      >
+        <h2 className="text-xl font-semibold mb-2" style={{ color: SLATE_HORIZON.ink }}>
+          Kód zo štartovacieho balíka
+        </h2>
+        <p className="text-sm mb-4" style={{ color: SLATE_HORIZON.muted }}>
+          Kúpil si maklérsky balík za 47 €? Zadaj kód z emailu — pripíšeme 47 € kreditov na účet.
+        </p>
+        <RedeemStarterPackCode />
+      </section>
+
       {config?.topupCheckoutAvailable && (
         <section
           className="rounded-xl border p-6"
@@ -277,56 +310,19 @@ export default function UpgradePage() {
             boxShadow: WORKDESK_CARD.boxShadow,
           }}
         >
-          <h2 className="text-xl font-semibold mb-4" style={{ color: SLATE_HORIZON.ink }}>
+          <h2 className="text-xl font-semibold mb-2" style={{ color: SLATE_HORIZON.ink }}>
             Doplniť kredity
           </h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {config.topupPackages.map((pkg) => (
-              <div
-                key={pkg.key}
-                className="rounded-lg border p-4 flex flex-col"
-                style={{
-                  borderColor: pkg.featured ? SLATE_HORIZON.brand : SLATE_HORIZON.line,
-                  background: pkg.featured ? SLATE_HORIZON.soft : '#fff',
-                }}
-              >
-                {pkg.featured && (
-                  <span
-                    className="text-xs font-semibold mb-1"
-                    style={{ color: SLATE_HORIZON.brandDeep }}
-                  >
-                    Odporúčané
-                  </span>
-                )}
-                <div className="font-semibold" style={{ color: SLATE_HORIZON.ink }}>
-                  {pkg.label}
-                </div>
-                <div className="text-lg font-bold" style={{ color: SLATE_HORIZON.ink }}>
-                  {pkg.credits} kr
-                </div>
-                <div className="text-sm mb-4" style={{ color: SLATE_HORIZON.muted }}>
-                  {pkg.priceEur} € jednorazovo
-                </div>
-                <button
-                  type="button"
-                  disabled={!!checkoutLoading}
-                  onClick={() =>
-                    startCheckout(
-                      { checkoutType: 'topup', topupPackage: pkg.key },
-                      `topup-${pkg.key}`,
-                    )
-                  }
-                  className="mt-auto w-full rounded-md py-2 text-sm font-semibold text-white"
-                  style={{
-                    background: SLATE_HORIZON.brand,
-                    opacity: checkoutLoading ? 0.6 : 1,
-                  }}
-                >
-                  {checkoutLoading === `topup-${pkg.key}` ? '…' : 'Kúpiť'}
-                </button>
-              </div>
-            ))}
-          </div>
+          <p className="text-sm mb-4" style={{ color: SLATE_HORIZON.muted }}>
+            Top-up balíčky kreditov sú na stránke fakturácie spolu so zostatkom a breakdownom grantu.
+          </p>
+          <Link
+            href={BILLING_TOPUP_HREF}
+            className="inline-flex rounded-md px-6 py-2.5 text-sm font-semibold text-white"
+            style={{ background: SLATE_HORIZON.topbarGradient }}
+          >
+            Doplniť kredity
+          </Link>
         </section>
       )}
     </div>

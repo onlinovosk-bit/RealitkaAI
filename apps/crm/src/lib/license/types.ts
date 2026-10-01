@@ -25,7 +25,8 @@ export type LicenseCapability =
   | "canViewClosingWindow"
   | "canUseCompetitionRadar"
   | "canAccessGuardianAlerts"
-  | "canUseMonopolDominance";
+  | "canUseMonopolDominance"
+  | "canUseStealthRecruiter";
 
 export type UpgradeIntentEvent =
   | "locked_feature_view"

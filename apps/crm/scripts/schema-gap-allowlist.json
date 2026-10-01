@@ -1,0 +1,34 @@
+{
+  "$comment": "Výnimky pre check-schema-gap.mjs. Každá je viazaná na PRÍČINU: platí, kým migrácia chýba. Keď ju niekto pridá (alebo kód prestane tabuľku volať), záznam je neplatný a CI žiada jeho zmazanie. Zoznam sa môže len zmenšovať.",
+  "missingTable": [
+    {
+      "table": "event_store",
+      "cause": "DDL existuje len v apps/crm/src/infra/db/migrations/002_event_store.sql (\"Run once against Supabase SQL editor\"), mimo adresára, ktorý prehráva `supabase db reset`. V PROD tabuľka nie je. Volá ju EventStore (append/getEvents/getEventsByType, používa ho LeadService); chyba sa prehodí ako výnimka.",
+      "resolution": "Migrácia v apps/crm/supabase/migrations/ zakladajúca public.event_store (obsah 002_event_store.sql), alebo odstránenie EventStore s jeho volajúcimi.",
+      "prod": "absent",
+      "verifiedAt": "2026-10-01"
+    },
+    {
+      "table": "messages",
+      "cause": "Žiadna migrácia ani iný SQL súbor v repe túto tabuľku nezakladá; v PROD nie je (PROD má `outbound_messages`). Dve miesta: getHoursSinceLastAiEmailToLead (outbound-orchestrator.ts; exportovaná, v src ju nikto nevolá) a listOutreachMessages (outreach-store.ts; pri chybe potichu vráti []).",
+      "resolution": "Rozhodnutie foundera: migrácia zakladajúca public.messages, presmerovanie na existujúcu tabuľku, alebo odstránenie mŕtveho kódu.",
+      "prod": "absent",
+      "verifiedAt": "2026-10-01"
+    },
+    {
+      "table": "outreach_log",
+      "cause": "Žiadna migrácia túto tabuľku nezakladá; v PROD nie je, PROD má `outreach_logs` (množné číslo). Insert v ai/action-executor.ts (akcia send_email) vráti { ok: false, detail: error.message }.",
+      "resolution": "Rozhodnutie foundera: oprava názvu na existujúcu tabuľku (stĺpce musia sedieť s tým, čo kód zapisuje), alebo migrácia zakladajúca public.outreach_log.",
+      "prod": "absent",
+      "verifiedAt": "2026-10-01"
+    },
+    {
+      "table": "team_member_permissions",
+      "cause": "Žiadna migrácia túto tabuľku nezakladá; v PROD nie je. GET /api/nav/permissions chybu čítania zahodí a vráti DEFAULT_TEAM_PERMISSIONS.",
+      "resolution": "Migrácia zakladajúca public.team_member_permissions (stĺpce podľa SELECT v api/nav/permissions/route.ts) s tenant RLS, alebo odstránenie route.",
+      "prod": "absent",
+      "verifiedAt": "2026-10-01"
+    }
+  ],
+  "dynamicSites": []
+}

@@ -1,0 +1,98 @@
+{
+  "agent": "A1-git",
+  "generated_at": "2026-09-16T11:45:00+02:00",
+  "commands_run": [
+    { "cmd": "git rev-parse --abbrev-ref HEAD", "exit_code": 0 },
+    { "cmd": "git status --porcelain", "exit_code": 0 },
+    { "cmd": "git rev-parse HEAD; git rev-parse origin/main; git rev-list --left-right --count origin/main...HEAD", "exit_code": 0 },
+    { "cmd": "git worktree list", "exit_code": 0 },
+    { "cmd": "git for-each-ref --format=... refs/heads (no_upstream count)", "exit_code": 0 },
+    { "cmd": "git log -1 --format=%ci feat/bridge-harness batch/tc-1 chore/tc-orchestrator", "exit_code": 0 },
+    { "cmd": "git merge-base --is-ancestor batch/tc-1 origin/main", "exit_code": 1 },
+    { "cmd": "git cat-file -e origin/main:apps/crm/scripts/tc-orchestrator.mjs", "exit_code": 128 },
+    { "cmd": "git cat-file -e origin/main:apps/crm/scripts/judge.mjs", "exit_code": 0 },
+    { "cmd": "gh pr list --state open", "exit_code": null, "note": "skipped — no external access" }
+  ],
+  "findings": [
+    {
+      "id": "branch:feat/bridge-harness",
+      "title": "Local branch feat/bridge-harness has no upstream; worktree still checked out",
+      "kind": "zacate_nedotiahnute",
+      "state": "STALE",
+      "evidence": "git for-each-ref shows feat/bridge-harness|| (empty upstream); tip 2026-09-07 age_days=9; worktree C:/RealitkaAI on that branch",
+      "evidence_cmd": "git for-each-ref --format=\"%(refname:short)|%(upstream:short)|%(committerdate:iso)\" refs/heads | findstr bridge-harness; git worktree list",
+      "age_days": 9,
+      "impact": "medium",
+      "effort": "M",
+      "write_territory": [],
+      "next_action": "Founder decide: push+PR or delete after evidence; Agent OS V0 blocked on push per memory/open-tasks.md",
+      "blocked_by": "open_prs_unknown_no_network"
+    },
+    {
+      "id": "branch:batch/tc-1",
+      "title": "Integration branch batch/tc-1 not ancestor of origin/main after HUMAN+founder_approval",
+      "kind": "zacate_nedotiahnute",
+      "state": "BLOCKED",
+      "evidence": "git merge-base --is-ancestor batch/tc-1 origin/main → exit 1; tip 15ef093d2 2026-09-16; TASK-TC-BATCH-1 verdict HUMAN + founder_approval filled",
+      "evidence_cmd": "git merge-base --is-ancestor batch/tc-1 origin/main; git log -1 --oneline batch/tc-1",
+      "age_days": 0,
+      "impact": "high",
+      "effort": "S",
+      "write_territory": [],
+      "next_action": "Orchestrator finish/PR path — blocked by missing tc-orchestrator on main and no network for gh",
+      "blocked_by": "orch:tc-orchestrator-missing-on-main"
+    },
+    {
+      "id": "branch:chore/tc-orchestrator",
+      "title": "tc-orchestrator.mjs lives on chore/tc-orchestrator, not on main",
+      "kind": "zacate_nedotiahnute",
+      "state": "READY",
+      "evidence": "git ls-tree chore/tc-orchestrator lists apps/crm/scripts/tc-orchestrator.mjs; git cat-file -e origin/main:... → fatal path does not exist; worktree C:/RealitkaAI-run/orchestrator",
+      "evidence_cmd": "git ls-tree -r chore/tc-orchestrator --name-only | findstr tc-orchestrator; git cat-file -e origin/main:apps/crm/scripts/tc-orchestrator.mjs",
+      "age_days": 1,
+      "impact": "high",
+      "effort": "M",
+      "write_territory": ["apps/crm/scripts/tc-orchestrator.mjs"],
+      "next_action": "Land orchestrator via separate PR after npm ci + Judge runnable; do not invent API",
+      "blocked_by": null
+    },
+    {
+      "id": "worktrees:count-126",
+      "title": "126 git worktrees attached to this repo object store",
+      "kind": "zrusene_neupratane",
+      "state": "STALE",
+      "evidence": "(git worktree list).Count = 126",
+      "evidence_cmd": "git worktree list",
+      "age_days": null,
+      "impact": "low",
+      "effort": "L",
+      "write_territory": [],
+      "next_action": "TASK-0003 evidence pack before any mass cleanup (status=blocked NEEDS-EVIDENCE)",
+      "blocked_by": "task:TASK-0003"
+    },
+    {
+      "id": "branches:no-upstream-22",
+      "title": "22 local heads have no upstream",
+      "kind": "zacate_nedotiahnute",
+      "state": "UNKNOWN",
+      "evidence": "no_upstream=22 of local_branches=431; includes feat/bridge-harness, fix/tc-*, batch leftovers",
+      "evidence_cmd": "git for-each-ref ... (no_upstream filter)",
+      "age_days": null,
+      "impact": "medium",
+      "effort": "L",
+      "write_territory": [],
+      "next_action": "Classify each with PR evidence; cannot list open PRs without network",
+      "blocked_by": "open_prs_unknown_no_network"
+    }
+  ],
+  "not_determinable": [
+    {
+      "question": "Which local branches already have open PRs?",
+      "why": "gh pr list forbidden in this AUDIT MODE (no external service)"
+    },
+    {
+      "question": "Is origin/main tip current with GitHub?",
+      "why": "git fetch forbidden in this AUDIT MODE"
+    }
+  ]
+}

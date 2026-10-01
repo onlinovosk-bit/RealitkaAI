@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { filterRowsByAgency } from "@/lib/tenant-scope";
+import { filterRowsByAgency, DEMO_AGENCY_ID } from "@/lib/tenant-scope";
 
 describe("filterRowsByAgency", () => {
   const rows = [
@@ -14,5 +14,11 @@ describe("filterRowsByAgency", () => {
 
   it("returns empty when agency is unknown", () => {
     expect(filterRowsByAgency(rows, null)).toEqual([]);
+  });
+
+  it("exposes demo agency id for orphan backfill ops", () => {
+    expect(DEMO_AGENCY_ID).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+    );
   });
 });

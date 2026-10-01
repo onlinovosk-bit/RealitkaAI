@@ -7,6 +7,8 @@ const PUBLIC_PATHS = new Set([
   "/",
   "/login",
   "/register",
+  "/forgot-password",
+  "/reset-password",
   "/auth/callback",
   "/auth/confirm",
   "/api/healthz",
@@ -14,24 +16,71 @@ const PUBLIC_PATHS = new Set([
   "/api/demo/capture-lead",
   "/api/demo/estimate",
   "/api/demo/prefill-links",
+  "/api/proof",
+  "/proof",
   "/api/billing/webhook",
   "/api/integrations/google/callback",
   "/api/webhooks/hubspot",
+  "/api/leads/inbound",
+  "/api/acquire/email",
+  "/api/acquisition/google/lead-webhook",
+  "/api/valuation/submit",
+  "/api/valuation/estimate",
+  // Public onboarding wizard sync (Path B API). Founder GO 2026-09-17: sync
+  // must work without login. Route still validates session_id + rate-limits.
+  "/api/onboarding/session",
+  // Website Concierge (Smolko). GO-W3-SHIP 2026-09-17. Outside the session gate
+  // because the caller is a widget on the client's own site, not a logged-in
+  // user — so CONCIERGE_SHARED_SECRET is the whole of their authentication, and
+  // since 2026-09-27 it is required rather than optional (conciergeSecretOk).
+  // Rate-limited as well; agency locked to Smolko.
+  "/api/concierge/properties",
+  "/api/concierge/callback",
+  "/api/concierge/freebusy",
 ]);
 
 const CRON_PATH_PREFIX = "/api/agents";
 const CRON_API_PATH_PREFIX = "/api/cron/";
+/** Bearer CRON_SECRET routes outside /api/cron/ — bypass session gate like cron. */
+const CRON_AUTH_API_PATHS = new Set([
+  "/api/followup",
+  "/api/inbound/gmail-pull",
+]);
 const SCORING_CRON_PATHS = ["/api/scoring"];
 /** 410 Gone shims — bypass session gate so callers receive deprecated response. */
 const DEPRECATED_API_SHIMS = new Set(["/api/scoring", "/api/segmentation"]);
 /** Removed routes — let Next return 404 (no session gate). PR-4 scrape removal. */
 const REMOVED_API_PATHS = new Set(["/api/scrape"]);
 const WEBHOOK_API_SEGMENT = "/api/webhooks";
-/** Onboarding MVP APIs — service-role in route handlers; bypass session gate for SSR/cron callers. */
-const ONBOARDING_MVP_PREFIX = "/api/onboarding/mvp/";
+
+export const PROXY_AUTH_TIMEOUT_MS = 5_000;
+export const PROXY_AUTH_TIMEOUT_MARKER = "[proxy-auth-timeout]";
+
+export function createProxyFetch(timeoutMs = PROXY_AUTH_TIMEOUT_MS): typeof fetch {
+  return (input, init) => {
+    const timeoutSignal = AbortSignal.timeout(timeoutMs);
+    const signal = init?.signal
+      ? AbortSignal.any([init.signal, timeoutSignal])
+      : timeoutSignal;
+    return fetch(input, { ...init, signal });
+  };
+}
+
+export function isProxyAuthTimeoutError(err: unknown): boolean {
+  return err instanceof Error && (err.name === "AbortError" || err.name === "TimeoutError");
+}
 
 function isRealviaImportPath(pathname: string): boolean {
   return pathname === "/api/realvia/import" || pathname === "/api/realvia/import/";
+}
+
+function isUcExportImportPath(pathname: string): boolean {
+  return (
+    pathname === "/api/uc/import" ||
+    pathname === "/api/uc/import/" ||
+    pathname === "/api/realsoft/import" ||
+    pathname === "/api/realsoft/import/"
+  );
 }
 
 function isWebhookApiPath(pathname: string): boolean {
@@ -49,6 +98,7 @@ const PUBLIC_STATIC_FILES = new Set([
 
 function isPublic(pathname: string): boolean {
   if (PUBLIC_PATHS.has(pathname)) return true;
+  if (pathname.startsWith("/odhad/")) return true;
   if (PUBLIC_STATIC_FILES.has(pathname)) return true;
   if (pathname.startsWith("/api/healthz")) return true;
   if (pathname.startsWith("/_next")) return true;
@@ -60,6 +110,7 @@ function isPublic(pathname: string): boolean {
 }
 
 function isCronRoute(pathname: string): boolean {
+  if (CRON_AUTH_API_PATHS.has(pathname)) return true;
   if (pathname.startsWith(CRON_PATH_PREFIX)) return true;
   if (pathname.startsWith(CRON_API_PATH_PREFIX)) return true;
   return SCORING_CRON_PATHS.some((p) => pathname.startsWith(p));
@@ -73,13 +124,18 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard/reputation/integrity", request.url), 308);
   }
 
+  // Canonical Realvia integrations URL (legacy admin path)
+  if (pathname === "/admin/integrations/realvia" || pathname.startsWith("/admin/integrations/realvia/")) {
+    return NextResponse.redirect(new URL("/integrations/realvia", request.url), 308);
+  }
+
   if (isPublic(pathname)) return NextResponse.next();
   if (isRealviaImportPath(pathname)) return NextResponse.next();
+  if (isUcExportImportPath(pathname)) return NextResponse.next();
   if (isWebhookApiPath(pathname)) return NextResponse.next();
   if (REMOVED_API_PATHS.has(pathname)) return NextResponse.next();
   if (DEPRECATED_API_SHIMS.has(pathname)) return NextResponse.next();
   if (isCronRoute(pathname)) return NextResponse.next();
-  if (pathname.startsWith(ONBOARDING_MVP_PREFIX)) return NextResponse.next();
 
   let response = NextResponse.next({
     request: { headers: request.headers },
@@ -93,6 +149,7 @@ export async function proxy(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     supabaseKey,
     {
+      global: { fetch: createProxyFetch() },
       cookies: {
         getAll() {
           return request.cookies.getAll();
@@ -110,9 +167,29 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let user = null;
+  try {
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
+    user = authUser;
+  } catch (err) {
+    if (isProxyAuthTimeoutError(err)) {
+      console.error(PROXY_AUTH_TIMEOUT_MARKER, pathname);
+      // Pages: fail-open so SSR/layout can re-check auth (avoids 300s hang).
+      // APIs: fail-closed — several handlers rely on this gate and use
+      // service-role clients without a second getUser() (e.g. neighborhood-watch;
+      // import/test-xml additionally requires IMPORT_TEST_API_KEY).
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json(
+          { ok: false, error: "Unauthorized" },
+          { status: 401 }
+        );
+      }
+      return response;
+    }
+    throw err;
+  }
 
   if (!user && pathname.startsWith("/api/")) {
     return NextResponse.json(

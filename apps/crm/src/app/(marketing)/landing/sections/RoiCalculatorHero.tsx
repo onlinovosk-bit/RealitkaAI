@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { computeLeakModel } from '@/lib/proof/engine';
 import { SLATE_HORIZON, WORKDESK_CARD } from '@/lib/slate-horizon-theme';
 
 export default function RoiCalculatorHero() {
@@ -9,22 +10,15 @@ export default function RoiCalculatorHero() {
   const [responseMinutes, setResponseMinutes] = useState(120);
   const [dealRate, setDealRate] = useState(8);
 
-  const model = useMemo(() => {
-    const avgRevenuePerDeal = 2400;
-    const responsePenalty = Math.min(responseMinutes / 240, 1);
-    const lostShare = 0.25 + responsePenalty * 0.35;
-    const currentDeals = (leadsPerMonth * dealRate) / 100;
-    const monthlyLeakEur = currentDeals * avgRevenuePerDeal * lostShare;
-
-    const proLiftShare = 0.22;
-    const recoveredEur = monthlyLeakEur * proLiftShare;
-    const projectedDeals = currentDeals + recoveredEur / avgRevenuePerDeal;
-    return {
-      monthlyLeakEur: Math.round(monthlyLeakEur),
-      recoveredEur: Math.round(recoveredEur),
-      projectedDeals: Math.round(projectedDeals * 10) / 10,
-    };
-  }, [dealRate, leadsPerMonth, responseMinutes]);
+  const model = useMemo(
+    () =>
+      computeLeakModel({
+        leadsPerMonth,
+        responseMinutes,
+        dealRatePercent: dealRate,
+      }),
+    [dealRate, leadsPerMonth, responseMinutes],
+  );
 
   return (
     <section className="pb-10 pt-4" style={{ background: SLATE_HORIZON.bg }}>

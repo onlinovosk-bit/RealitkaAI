@@ -9,6 +9,7 @@ import {
   cockpitLiteEligible,
   founderKancelarieRemaining,
   isFounderKancelariaEligible,
+  isOwnerCockpitPurchasable,
   ownerCockpitPriceEur,
   type SeatTier,
 } from "@/lib/program-tier-pricing";
@@ -16,12 +17,13 @@ import {
 export async function GET() {
   const seatCheckoutAvailable = areSeatCheckoutPricesConfigured();
   const topupCheckoutAvailable = areTopupCheckoutPricesConfigured();
+  const founderEligible = isFounderKancelariaEligible();
 
   return okResponse({
     seatCheckoutAvailable,
     topupCheckoutAvailable,
     checkoutAvailable: seatCheckoutAvailable || topupCheckoutAvailable,
-    founderCockpitEligible: isFounderKancelariaEligible(),
+    founderCockpitEligible: founderEligible,
     founderCockpitRemaining: founderKancelarieRemaining(),
     seatTiers: SEAT_TIERS.map((tier: SeatTier) => ({
       key: tier,
@@ -33,13 +35,14 @@ export async function GET() {
     })),
     cockpit: {
       liteMinSeats: 3,
+      // Purchasable at the price shown below — not merely "a price exists".
+      // The founder and standard prices are separate Stripe objects and the
+      // UI renders whichever applies, so the check must use the same one.
+      ownerPurchasable: isOwnerCockpitPurchasable({ founderEligible }),
       ownerPriceEur: ownerCockpitPriceEur({ founderEligible: false }),
       ownerFounderPriceEur: ownerCockpitPriceEur({ founderEligible: true }),
       cockpitLiteEligible,
     },
-    topupPackages: TOPUP_PACKAGE_KEYS.map((key) => ({
-      key,
-      ...TOPUP_PACKAGES[key],
-    })),
+    topupPackages: TOPUP_PACKAGE_KEYS.map((key) => TOPUP_PACKAGES[key]),
   });
 }

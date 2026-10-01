@@ -1,5 +1,6 @@
 import type { PlanKey } from "@/lib/billing-types";
 import { PLAN_KEYS } from "@/lib/billing-types";
+import { CREDIT_RATES } from "@/lib/credits/credit-rates";
 
 /**
  * L99 pricing stack v1.0 — jediný zdroj pravdy pre seat, cockpit, kredity, add-ony.
@@ -114,15 +115,28 @@ export const COCKPIT_PRODUCTS: Record<CockpitProductKey, CockpitProductConfig> =
   },
 };
 
-/** Spotrebný cenník kreditov (Vrstva 3). */
+/**
+ * Spotrebný cenník kreditov (Vrstva 3) — display/audit mirror of CREDIT_RATES.
+ * SSOT for amounts: @/lib/credits/credit-rates (PR #339 debt / Wave 6A).
+ * Does not wire spendCredits(); call-site spend = Wave 7 (founder list).
+ */
 export const CREDIT_ACTION_COSTS = {
-  leadUnlock: 4,
-  leadAnalysis: 1,
-  aiEmail: 1,
-  listingDescription: 2,
+  leadUnlock: CREDIT_RATES.LEAD_UNLOCK,
+  leadAnalysis: CREDIT_RATES.AI_ANALYSIS,
+  aiEmail: CREDIT_RATES.AI_EMAIL,
+  listingDescription: CREDIT_RATES.LISTING_DESCRIPTION,
 } as const;
 
 export type CreditActionKey = keyof typeof CREDIT_ACTION_COSTS;
+
+/** G2 — Maklérsky štartovací balík (low-ticket, marketing /balik). */
+export const STARTER_PACK = {
+  label: "Maklérsky štartovací balík",
+  priceEur: 47,
+  creditValue: 47,
+  stripeEnvKey: "STRIPE_PRICE_STARTER_PACK",
+  checkoutType: "starter_pack" as const,
+} as const;
 
 /** Top-up balíčky — one-time Stripe Checkout (karta). */
 export const TOPUP_PACKAGE_KEYS = ["start", "rast", "pro", "mega"] as const;
@@ -257,6 +271,18 @@ export function parseTopupPackageKey(value: string | null | undefined): TopupPac
   return null;
 }
 
+/** Stripe price IDs must be real `price_*` values — not env placeholders. */
+const STRIPE_PRICE_ID_PATTERN = /^price_[a-zA-Z0-9]{8,}$/;
+
+export function isValidStripePriceId(value: string | null | undefined): boolean {
+  const id = (value ?? "").trim();
+  if (!id) return false;
+  const lower = id.toLowerCase();
+  if (lower === "xxx" || lower === "price_xxx") return false;
+  if (lower.includes("xxx")) return false;
+  return STRIPE_PRICE_ID_PATTERN.test(id);
+}
+
 export function getSeatStripePriceId(tier: SeatTier): string {
   return process.env[SEAT_TIER_STRIPE_ENV[tier]] ?? "";
 }
@@ -265,25 +291,62 @@ export function getTopupStripePriceId(key: TopupPackageKey): string {
   return process.env[TOPUP_PACKAGES[key].stripeEnvKey] ?? "";
 }
 
+export function getStarterPackStripePriceId(): string {
+  return process.env[STARTER_PACK.stripeEnvKey] ?? "";
+}
+
+export function isStarterPackCheckoutAvailable(): boolean {
+  return isValidStripePriceId(getStarterPackStripePriceId());
+}
+
+/**
+ * Resolves the Owner Cockpit price for the price the caller is being SHOWN.
+ *
+ * There is deliberately no fallback between the founder and the standard
+ * price. `ownerCockpitPriceEur()` returns 249 € while founder places remain and
+ * 349 € afterwards, and the UI renders exactly that number. Falling back from an
+ * unset founder key to the standard price would charge 349 € against a
+ * displayed 249 € — a silent overcharge at the moment of payment, which is worse
+ * than not selling the add-on at all.
+ *
+ * Returns "" when the applicable price is not configured. Callers must treat
+ * that as "not purchasable" rather than "charge the other one".
+ */
 export function getOwnerCockpitStripePriceId(opts?: {
   founderEligible?: boolean;
 }): string {
   const owner = COCKPIT_PRODUCTS.owner;
-  if (opts?.founderEligible && owner.founderStripeEnvKey) {
-    const founderId = process.env[owner.founderStripeEnvKey] ?? "";
-    if (founderId) return founderId;
-  }
-  const envKey = owner.stripeEnvKey;
+  const envKey =
+    opts?.founderEligible && owner.founderStripeEnvKey
+      ? owner.founderStripeEnvKey
+      : owner.stripeEnvKey;
   return envKey ? (process.env[envKey] ?? "") : "";
 }
 
+/**
+ * Is the Owner Cockpit actually purchasable at the price the UI displays?
+ *
+ * Gates the checkbox. Without it the customer can tick an add-on whose price
+ * is not configured, see it in the total, and pay without it
+ * (`buildSeatCheckoutSessionParams` drops the line item) — a silent revenue
+ * loss and a price the customer never agreed to.
+ */
+export function isOwnerCockpitPurchasable(opts?: {
+  founderEligible?: boolean;
+}): boolean {
+  return isValidStripePriceId(getOwnerCockpitStripePriceId(opts));
+}
+
 export function areSeatCheckoutPricesConfigured(): boolean {
-  return SEAT_TIERS.every((tier) => getSeatStripePriceId(tier).length > 0);
+  return SEAT_TIERS.every((tier) => isValidStripePriceId(getSeatStripePriceId(tier)));
 }
 
 export function areTopupCheckoutPricesConfigured(): boolean {
-  return TOPUP_PACKAGE_KEYS.every((key) => getTopupStripePriceId(key).length > 0);
+  return TOPUP_PACKAGE_KEYS.every((key) => isValidStripePriceId(getTopupStripePriceId(key)));
 }
+
+/** Deep link pre doplnenie kreditov (402 modals, generátor). */
+export const BILLING_TOPUP_HREF = "/billing#topup";
 
 export function isCheckoutConfigured(): boolean {
   return areSeatCheckoutPricesConfigured() && areTopupCheckoutPricesConfigured();

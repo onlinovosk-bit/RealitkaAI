@@ -1,0 +1,573 @@
+{
+  "meta": {
+    "source": "Štatistický úrad Slovenskej republiky",
+    "table": "sp3801qr",
+    "table_label": "Indexy realizačných cien nehnuteľností - regionálne, štvrťročne",
+    "fetched": "2026-08-11",
+    "licencia": "komerčné použitie s citáciou — docs/legal/susr-povolenie-2026-08-10.md",
+    "api_url": "https://data.statistics.sk/api/v2/dataset/sp3801qr",
+    "datacube_href": "http://datacube.statistics.sk/#!/view/sk/vbd_sk_win2/sp3801qr/v_sp3801qr_00_00_00_sk",
+    "source_update": "2026-05-29",
+    "regions": [
+      {
+        "code": "SK041",
+        "label": "Prešovský kraj"
+      },
+      {
+        "code": "SK042",
+        "label": "Košický kraj"
+      }
+    ],
+    "dimensions": [
+      {
+        "id": "nuts13",
+        "note": "0 SR + Oblasti + Kraje",
+        "label": "nuts13",
+        "codes": [
+          {
+            "code": "SK0",
+            "label": "Slovenská republika",
+            "index": 0
+          },
+          {
+            "code": "SK01",
+            "label": "Bratislavský kraj (NUTS2)",
+            "index": 1
+          },
+          {
+            "code": "SK010",
+            "label": "Bratislavský kraj",
+            "index": 2
+          },
+          {
+            "code": "SK02",
+            "label": "Západné Slovensko",
+            "index": 3
+          },
+          {
+            "code": "SK021",
+            "label": "Trnavský kraj",
+            "index": 4
+          },
+          {
+            "code": "SK022",
+            "label": "Trenčiansky kraj",
+            "index": 5
+          },
+          {
+            "code": "SK023",
+            "label": "Nitriansky kraj",
+            "index": 6
+          },
+          {
+            "code": "SK03",
+            "label": "Stredné Slovensko",
+            "index": 7
+          },
+          {
+            "code": "SK031",
+            "label": "Žilinský kraj",
+            "index": 8
+          },
+          {
+            "code": "SK032",
+            "label": "Banskobystrický kraj",
+            "index": 9
+          },
+          {
+            "code": "SK04",
+            "label": "Východné Slovensko",
+            "index": 10
+          },
+          {
+            "code": "SK041",
+            "label": "Prešovský kraj",
+            "index": 11
+          },
+          {
+            "code": "SK042",
+            "label": "Košický kraj",
+            "index": 12
+          }
+        ]
+      },
+      {
+        "id": "sp3801qr_rok",
+        "note": "Rok",
+        "label": "sp3801qr_rok",
+        "codes": [
+          {
+            "code": "2026",
+            "label": null,
+            "index": 0
+          },
+          {
+            "code": "2025",
+            "label": null,
+            "index": 1
+          },
+          {
+            "code": "2024",
+            "label": null,
+            "index": 2
+          },
+          {
+            "code": "2023",
+            "label": null,
+            "index": 3
+          },
+          {
+            "code": "2022",
+            "label": null,
+            "index": 4
+          }
+        ]
+      },
+      {
+        "id": "sp3801qr_nakneh",
+        "note": "Nákupy nehnuteľností",
+        "label": "sp3801qr_nakneh",
+        "codes": [
+          {
+            "code": "TOTAL",
+            "label": "Spolu",
+            "index": 0
+          },
+          {
+            "code": "DW_NEW",
+            "label": "Nákup nových nehnuteľností",
+            "index": 1
+          },
+          {
+            "code": "DW_EXST",
+            "label": "Nákup existujúcich nehnuteľností",
+            "index": 2
+          }
+        ]
+      },
+      {
+        "id": "sp3801qr_stv",
+        "note": "Štvrťrok",
+        "label": "sp3801qr_stv",
+        "codes": [
+          {
+            "code": "1. Q.",
+            "label": null,
+            "index": 0
+          },
+          {
+            "code": "2. Q.",
+            "label": null,
+            "index": 1
+          },
+          {
+            "code": "3. Q.",
+            "label": null,
+            "index": 2
+          },
+          {
+            "code": "4. Q.",
+            "label": null,
+            "index": 3
+          }
+        ]
+      },
+      {
+        "id": "sp3801qr_mj",
+        "note": "Merná jednotka",
+        "label": "sp3801qr_mj",
+        "codes": [
+          {
+            "code": "b_romr",
+            "label": "romr = 100",
+            "index": 0
+          },
+          {
+            "code": "b_predch_obd_f",
+            "label": "predchádzajúce obdobie = 100",
+            "index": 1
+          }
+        ]
+      }
+    ],
+    "index_bases": {
+      "b_romr": "romr = 100 (rovnaké obdobie minulého roka = 100)",
+      "b_predch_obd_f": "predchádzajúce obdobie = 100"
+    },
+    "property_types": {
+      "TOTAL": "Spolu",
+      "DW_NEW": "Nákup nových nehnuteľností",
+      "DW_EXST": "Nákup existujúcich nehnuteľností"
+    },
+    "note": "Indexy realizačných cien nehnuteľností určených na bývanie za 1.Q 2022 - 1.Q 2024 boli revidované na základe usmernenia Eurostatu k cenovej aktualizácii váh pre výpočet indexu cien nehnuteľností\nZdroj údajov:\nŠtatistický úrad SR (HPI)\n",
+    "observation_count": 240,
+    "non_null_observation_count": 192,
+    "wired_into_valuation": false
+  },
+  "dataset": {
+    "version": "2.0",
+    "class": "dataset",
+    "label": "Indexy realizačných cien nehnuteľností - regionálne, štvrťročne",
+    "update": "2026-05-29",
+    "note": "Indexy realizačných cien nehnuteľností určených na bývanie za 1.Q 2022 - 1.Q 2024 boli revidované na základe usmernenia Eurostatu k cenovej aktualizácii váh pre výpočet indexu cien nehnuteľností\nZdroj údajov:\nŠtatistický úrad SR (HPI)\n",
+    "href": "http://datacube.statistics.sk/#!/view/sk/vbd_sk_win2/sp3801qr/v_sp3801qr_00_00_00_sk",
+    "id": [
+      "nuts13",
+      "sp3801qr_rok",
+      "sp3801qr_nakneh",
+      "sp3801qr_stv",
+      "sp3801qr_mj",
+      "sp3801qr_data"
+    ],
+    "size": [
+      2,
+      5,
+      3,
+      4,
+      2,
+      1
+    ],
+    "role": {
+      "time": [
+        "sp3801qr_rok"
+      ],
+      "geo": [
+        "nuts13"
+      ],
+      "metric": [
+        "sp3801qr_data"
+      ]
+    },
+    "dimension": {
+      "nuts13": {
+        "label": "nuts13",
+        "note": "0 SR + Oblasti + Kraje",
+        "category": {
+          "index": {
+            "SK041": 0,
+            "SK042": 1
+          },
+          "label": {
+            "SK041": "Prešovský kraj",
+            "SK042": "Košický kraj"
+          }
+        }
+      },
+      "sp3801qr_rok": {
+        "label": "sp3801qr_rok",
+        "note": "Rok",
+        "category": {
+          "index": {
+            "2022": 4,
+            "2023": 3,
+            "2024": 2,
+            "2025": 1,
+            "2026": 0
+          }
+        }
+      },
+      "sp3801qr_nakneh": {
+        "label": "sp3801qr_nakneh",
+        "note": "Nákupy nehnuteľností",
+        "category": {
+          "index": {
+            "TOTAL": 0,
+            "DW_NEW": 1,
+            "DW_EXST": 2
+          },
+          "label": {
+            "TOTAL": "Spolu",
+            "DW_NEW": "Nákup nových nehnuteľností",
+            "DW_EXST": "Nákup existujúcich nehnuteľností"
+          }
+        }
+      },
+      "sp3801qr_stv": {
+        "label": "sp3801qr_stv",
+        "note": "Štvrťrok",
+        "category": {
+          "index": {
+            "1. Q.": 0,
+            "2. Q.": 1,
+            "3. Q.": 2,
+            "4. Q.": 3
+          },
+          "label": {
+            "1. Q.": null,
+            "2. Q.": null,
+            "3. Q.": null,
+            "4. Q.": null
+          }
+        }
+      },
+      "sp3801qr_mj": {
+        "label": "sp3801qr_mj",
+        "note": "Merná jednotka",
+        "category": {
+          "index": {
+            "b_romr": 0,
+            "b_predch_obd_f": 1
+          },
+          "label": {
+            "b_romr": "romr = 100",
+            "b_predch_obd_f": "predchádzajúce obdobie = 100"
+          }
+        }
+      },
+      "sp3801qr_data": {
+        "label": "sp3801qr_data",
+        "note": "Data",
+        "category": {
+          "index": {
+            "NUM_VALUE": 0
+          },
+          "label": {
+            "NUM_VALUE": "hodnota"
+          }
+        }
+      }
+    },
+    "value": [
+      112.9,
+      105.4,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      110.9,
+      106.5,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      113.3,
+      105.1,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      113.1,
+      104.7,
+      116,
+      103,
+      114.8,
+      103.1,
+      112.2,
+      100.9,
+      107.2,
+      100.7,
+      111.8,
+      103.3,
+      107.6,
+      100.1,
+      104.9,
+      100.7,
+      114.5,
+      105.7,
+      117,
+      103,
+      116.5,
+      103.8,
+      113.9,
+      100.9,
+      95,
+      98.5,
+      95.3,
+      100.4,
+      102.1,
+      104.2,
+      106.4,
+      103.2,
+      96.8,
+      94.4,
+      96.7,
+      99.1,
+      102.4,
+      104,
+      100.4,
+      103.3,
+      94.3,
+      99.5,
+      94.6,
+      100.8,
+      101.6,
+      104.3,
+      107.8,
+      103.1,
+      106.7,
+      101.5,
+      106.4,
+      100.2,
+      98,
+      97.3,
+      98,
+      99,
+      100.6,
+      98.8,
+      106.5,
+      99.2,
+      99.6,
+      98.2,
+      101.4,
+      105.3,
+      109.7,
+      102.3,
+      105.2,
+      100.4,
+      96.3,
+      97,
+      96.9,
+      97.2,
+      null,
+      null,
+      123.3,
+      100.4,
+      123.9,
+      105.7,
+      115.5,
+      99,
+      null,
+      null,
+      124.4,
+      93.6,
+      122.4,
+      105.1,
+      108,
+      103.5,
+      null,
+      null,
+      121.1,
+      104.8,
+      123.4,
+      106,
+      120.5,
+      96.5,
+      111,
+      102.9,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      113.1,
+      101.5,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      110.6,
+      103.4,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      108.4,
+      99.6,
+      112.1,
+      105.1,
+      112.3,
+      101.7,
+      107.4,
+      100.8,
+      106.3,
+      103.5,
+      106.1,
+      100.6,
+      113.6,
+      107.2,
+      115.3,
+      103.3,
+      108.8,
+      98.8,
+      113.4,
+      106.2,
+      111.9,
+      100.6,
+      105.7,
+      100.2,
+      101.4,
+      101.5,
+      107.1,
+      101.7,
+      108.6,
+      101.6,
+      110.5,
+      105.4,
+      105.9,
+      103.5,
+      107,
+      100.8,
+      106.1,
+      100.1,
+      106.3,
+      101.8,
+      100.3,
+      101.1,
+      107.2,
+      101.9,
+      109.3,
+      101.9,
+      111.4,
+      106.1,
+      103.5,
+      98,
+      93.6,
+      96.3,
+      93.3,
+      100.2,
+      97.9,
+      103.5,
+      98.2,
+      96.7,
+      95.3,
+      99.7,
+      95.6,
+      101,
+      98.9,
+      101.6,
+      106.6,
+      98.3,
+      93.1,
+      95.3,
+      92.9,
+      99.9,
+      97.6,
+      104.1,
+      null,
+      null,
+      123,
+      106.6,
+      117.2,
+      100.4,
+      111,
+      98.8,
+      null,
+      null,
+      115.6,
+      102.7,
+      111.3,
+      100.8,
+      106.8,
+      98.2,
+      null,
+      null,
+      128.2,
+      109.1,
+      121.4,
+      100.2,
+      113.8,
+      99.1
+    ]
+  }
+}

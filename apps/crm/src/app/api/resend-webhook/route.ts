@@ -1,7 +1,27 @@
 // Resend webhooks: inbound replies + email.opened / email.clicked (lead_id tag)
-import crypto from "crypto";
+//
+// ENGAGEMENT-EMAIL-01 — dve zmeny oproti pôvodnej verzii:
+//
+// 1. Otvorenie a klik končia v `events`, nie v `Map`-e v pamäti procesu.
+//    Pôvodné `recordEmailOpen` / `recordEmailClick` zapisovali do modulovej
+//    premennej, ktorá na serverless zmizne s inštanciou — a `getEmailEngagement`
+//    nemal v repe ani jedného volajúceho. Signál sa prijímal a zahadzoval.
+//
+// 2. Podpis sa overuje vždy. Pôvodné `if (webhookSecret)` znamenalo, že pri
+//    chýbajúcej premennej sa kontrola preskočila a endpoint prijal čokoľvek.
+//    Tá istá trieda chyby, akú repo už raz zavrelo pod GO
+//    FIX-CRON-SECRET-FAIL-CLOSED a potom pri Concierge (#717): chýbajúca
+//    premenná je chyba konfigurácie, nie povolenie. Teraz vracia 503.
+//
+// 3. Podpis sa overuje podľa schémy, akou ho Resend naozaj podpisuje. Pôvodný
+//    kód porovnával `svix-signature` s hex HMAC-om nad telom — to sa nemôže
+//    rovnať NIKDY, takže každá skutočná doručenka dostala 401 a reťaz bola
+//    prerušená presne na článku, ktorý som v #765 označil za funkčný.
+//    Detaily a dôkaz z primárneho zdroja: `lib/webhooks/standard-webhooks.ts`.
 import { NextRequest, NextResponse } from "next/server";
-import { recordEmailClick, recordEmailOpen } from "@/lib/ai/email-engagement-store";
+import { createAdminClient } from "@/lib/supabase/server";
+import { recordEmailEngagement } from "@/lib/events/email-engagement";
+import { verifyStandardWebhook } from "@/lib/webhooks/standard-webhooks";
 import { storeReply } from "@/lib/email-tracking";
 
 export const runtime = "nodejs";
@@ -17,18 +37,29 @@ export async function POST(req: NextRequest) {
   const rawBody = await req.text();
 
   const webhookSecret = process.env.RESEND_WEBHOOK_SECRET;
-  if (webhookSecret) {
-    const signature = req.headers.get("svix-signature") ?? "";
-    const hmac = crypto.createHmac("sha256", webhookSecret).update(rawBody).digest("hex");
-    let sigValid = false;
-    try {
-      sigValid = crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(hmac));
-    } catch {
-      // length mismatch — treated as invalid
-    }
-    if (!sigValid) {
-      return NextResponse.json({ ok: false, error: "Invalid signature" }, { status: 401 });
-    }
+  if (!webhookSecret) {
+    // Fail-closed: bez tajomstva sa podpis overiť nedá, takže endpoint nesmie
+    // nič prijať. Do `events` sa cezeň zapisuje — otvorený by znamenal, že
+    // ktokoľvek vie vyrobiť engagement signál pre ľubovoľný lead.
+    console.error("[resend-webhook] RESEND_WEBHOOK_SECRET nie je nastavený");
+    return NextResponse.json(
+      { ok: false, error: "Webhook nie je nakonfigurovaný." },
+      { status: 503 },
+    );
+  }
+
+  const check = verifyStandardWebhook({
+    secret:          webhookSecret,
+    id:              req.headers.get("svix-id") ?? "",
+    timestamp:       req.headers.get("svix-timestamp") ?? "",
+    signatureHeader: req.headers.get("svix-signature") ?? "",
+    body:            rawBody,
+  });
+  if (!check.valid) {
+    // Dôvod ide do logu, nie do odpovede — volajúcemu by len prezradil, ktorá
+    // časť kontroly padla.
+    console.error("[resend-webhook] podpis neprešiel:", check.reason);
+    return NextResponse.json({ ok: false, error: "Invalid signature" }, { status: 401 });
   }
 
   const body = JSON.parse(rawBody) as Record<string, unknown>;
@@ -39,11 +70,26 @@ export async function POST(req: NextRequest) {
 
   if (type === "email.opened" || type === "email.clicked") {
     const leadId = leadIdFromTags(data?.tags);
-    if (leadId) {
-      if (type === "email.opened") recordEmailOpen(leadId, createdAt);
-      else recordEmailClick(leadId, createdAt);
+    if (!leadId) {
+      // E-mail bez tagu sa k leadu priradiť nedá. Nie je to chyba volajúceho,
+      // ale bez `handled` by sa to tvárilo, že sa niečo zapísalo.
+      return NextResponse.json({ ok: true, handled: type, recorded: false, reason: "bez lead_id tagu" });
     }
-    return NextResponse.json({ ok: true, handled: type });
+
+    // Webhook nemá session — service-role, inak RLS insert odmietne
+    // (EVENTS-WRITE-PATH-01).
+    const result = await recordEmailEngagement(createAdminClient(), {
+      leadId,
+      kind:       type === "email.opened" ? "opened" : "clicked",
+      occurredAt: createdAt,
+    });
+
+    return NextResponse.json({
+      ok: true,
+      handled:  type,
+      recorded: result.recorded,
+      reason:   result.reason,
+    });
   }
 
   // Legacy / custom payload: { to, text, date }

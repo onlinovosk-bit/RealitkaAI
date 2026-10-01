@@ -18,6 +18,7 @@ import { recordRealviaBatchMetrics } from './metrics';
 import {
   isAdvertPayload,
   isDeletePayload,
+  normalizeRealviaSourceId,
   PROPERTY_STATUS,
 } from './types';
 import type {
@@ -25,6 +26,12 @@ import type {
   RealviaDeletePayload,
   RealviaProcessingResult,
 } from './types';
+import {
+  isRealviaMappingUnknown,
+  mapCategory,
+  mapTransaction,
+  roomsFromCategory,
+} from '@/lib/realvia/map-taxonomy';
 
 /** Maximum jobs to process per invocation */
 const BATCH_SIZE = 10;
@@ -95,7 +102,7 @@ export async function processRealviaQueue(): Promise<{
         result = await processAdvertPayload(payload, agency_id);
       } else if (isDeletePayload(payload)) {
         result = await processDeletePayload(
-          payload.source_id,
+          normalizeRealviaSourceId(payload.source_id),
           agency_id,
           payload.archiveType,
         );
@@ -168,12 +175,22 @@ export async function processRealviaQueue(): Promise<{
 
 /**
  * Process a standard advert (create/update) payload.
- * Idempotent: uses source_id for upsert.
+ * Idempotent per tenant: unique key is (agency_id, source_system, source_id).
+ * Never look up / mutate by source_id alone — that rewrites another agency's row.
  */
-async function processAdvertPayload(
+export async function processAdvertPayload(
   payload: RealviaWebhookPayload,
-  agencyId: string | null,
+  agencyId: string,
 ): Promise<RealviaProcessingResult> {
+  const tenantAgencyId = String(agencyId ?? '').trim();
+  if (!tenantAgencyId) {
+    return {
+      success: false,
+      action: 'skipped',
+      error: REALVIA_PROCESSING_ERROR_AGENCY_RESOLUTION_FAILED,
+    };
+  }
+
   const sb = createServiceRoleClient();
   if (!sb) {
     return { success: false, action: 'skipped', error: 'DB client unavailable' };
@@ -184,26 +201,53 @@ async function processAdvertPayload(
   const brokerSourceId = String(broker.source_id);
 
   try {
-    // ── Check if property already exists (by source_id) ─────────
+    // ── Tenant-scoped existence check (matches idx_properties_tenant_source_unique)
     const { data: existing } = await sb
       .from('properties')
       .select('id, price, status')
+      .eq('agency_id', tenantAgencyId)
+      .eq('source_system', 'realvia')
       .eq('source_id', sourceId)
       .maybeSingle();
+
+    // ── Taxonomy (honest unknown — never fog to Ostatné / Predaj) ─
+    const mappedType = mapCategory(advert.category);
+    const mappedTransaction = mapTransaction(advert.transaction);
+    // Iba pre log: pri vytvorení ešte nie je pridelené `id` (viď vetvu CREATE nižšie);
+    // updaty ponechávajú existing.id.
+    const propertyId = existing?.id ?? sourceId;
+
+    if (isRealviaMappingUnknown(mappedType)) {
+      logWarn('[realvia-worker] Unknown Realvia category code', {
+        categoryCode: advert.category,
+        propertyId,
+        sourceId,
+      });
+    }
+    if (isRealviaMappingUnknown(mappedTransaction)) {
+      logWarn('[realvia-worker] Unknown Realvia transaction code', {
+        transactionCode: advert.transaction,
+        propertyId,
+        sourceId,
+      });
+    }
 
     // ── Build property record ───────────────────────────────────
     const propertyData: Record<string, unknown> = {
       source_id: sourceId,
       source_system: 'realvia',
+      agency_id: tenantAgencyId,
       title: advert.title ?? '',
       description: advert.description ?? '',
       price: advert.price ?? 0,
       currency: mapCurrency(advert.currency),
-      type: mapCategory(advert.category),
-      transaction_type: mapTransaction(advert.transaction),
+      type: mappedType,
+      transaction_type: mappedTransaction,
       status: PROPERTY_STATUS.ACTIVE,
       location: buildLocationString(advert),
-      rooms: advert.rooms_count ? `${advert.rooms_count} izby` : '',
+      rooms: advert.rooms_count
+        ? `${advert.rooms_count} izby`
+        : (roomsFromCategory(advert.category) ?? ""),
       rooms_count: advert.rooms_count ?? null,
       floor: advert.floor ?? null,
       usable_area: advert.usable_area ?? null,
@@ -225,10 +269,6 @@ async function processAdvertPayload(
       features: mapFeatures(advert),
     };
 
-    if (agencyId) {
-      propertyData.agency_id = agencyId;
-    }
-
     let priceChanged = false;
 
     if (existing) {
@@ -245,14 +285,15 @@ async function processAdvertPayload(
           oldPrice,
           newPrice,
           mapCurrency(advert.currency),
-          agencyId,
+          tenantAgencyId,
         );
       }
 
       const { error } = await sb
         .from('properties')
         .update(propertyData)
-        .eq('id', existing.id);
+        .eq('id', existing.id)
+        .eq('agency_id', tenantAgencyId);
 
       if (error) {
         return {
@@ -266,6 +307,7 @@ async function processAdvertPayload(
       logInfo('[realvia-worker] Property updated', {
         propertyId: existing.id,
         sourceId,
+        agencyId: tenantAgencyId,
         priceChanged,
       });
 
@@ -277,8 +319,13 @@ async function processAdvertPayload(
         priceChanged,
       };
     } else {
-      // ── CREATE new property ───────────────────────────────────
-      propertyData.id = sourceId; // Use source_id as property ID for simplicity
+      // ── CREATE new property (source_id NIE JE globálny PK — viď PR #522)
+      // `id` sa generuje TU. PR #522 prestal posielať `id: source_id` s predpokladom,
+      // že ho vygeneruje DB, ale `properties.id` je v PROD `text NOT NULL` bez defaultu:
+      // každé vytvorenie novej ponuky zlyhalo na `null value in column "id"` (31
+      // webhookov, 17 ponúk od 2026-09-11). Aktualizácie existujúcich ponúk prechádzali,
+      // preto to nikto nezbadal. Ostatné cesty (uc/persist, properties-store) `id` posielajú.
+      propertyData.id = crypto.randomUUID();
       propertyData.created_at = new Date().toISOString();
 
       const { data: inserted, error } = await sb
@@ -304,13 +351,14 @@ async function processAdvertPayload(
           null,
           advert.price,
           mapCurrency(advert.currency),
-          agencyId,
+          tenantAgencyId,
         );
       }
 
       logInfo('[realvia-worker] Property created', {
         propertyId: inserted.id,
         sourceId,
+        agencyId: tenantAgencyId,
       });
 
       return {
@@ -324,6 +372,7 @@ async function processAdvertPayload(
     const message = err instanceof Error ? err.message : 'Unknown error';
     logError('[realvia-worker] processAdvertPayload failed', {
       sourceId,
+      agencyId: tenantAgencyId,
       error: message,
     });
     return {
@@ -338,28 +387,44 @@ async function processAdvertPayload(
 /**
  * Process a delete/cancellation payload.
  * NEVER hard-deletes — maps archiveType to property status.
+ * Must be agency-scoped: global source_id match can soft-delete another tenant.
  */
-async function processDeletePayload(
-  sourceId: number,
-  agencyId: string | null,
+export async function processDeletePayload(
+  sourceId: string,
+  agencyId: string,
   archiveType?: RealviaDeletePayload['archiveType'],
 ): Promise<RealviaProcessingResult> {
+  const tenantAgencyId = String(agencyId ?? '').trim();
+  if (!tenantAgencyId) {
+    return {
+      success: false,
+      action: 'skipped',
+      sourceId,
+      error: REALVIA_PROCESSING_ERROR_AGENCY_RESOLUTION_FAILED,
+    };
+  }
+
   const sb = createServiceRoleClient();
   if (!sb) {
     return { success: false, action: 'skipped', error: 'DB client unavailable' };
   }
 
-  const sourceIdStr = String(sourceId);
+  const sourceIdStr = sourceId;
 
   try {
     const { data: existing } = await sb
       .from('properties')
       .select('id, status')
+      .eq('agency_id', tenantAgencyId)
+      .eq('source_system', 'realvia')
       .eq('source_id', sourceIdStr)
       .maybeSingle();
 
     if (!existing) {
-      logWarn('[realvia-worker] Delete for unknown property', { sourceId });
+      logWarn('[realvia-worker] Delete for unknown property', {
+        sourceId,
+        agencyId: tenantAgencyId,
+      });
       return {
         success: true,
         action: 'skipped',
@@ -382,7 +447,8 @@ async function processDeletePayload(
         updated_at: new Date().toISOString(),
         realvia_updated_at: new Date().toISOString(),
       })
-      .eq('id', existing.id);
+      .eq('id', existing.id)
+      .eq('agency_id', tenantAgencyId);
 
     if (error) {
       return {
@@ -397,6 +463,7 @@ async function processDeletePayload(
     logInfo('[realvia-worker] Property marked as deleted', {
       propertyId: existing.id,
       sourceId,
+      agencyId: tenantAgencyId,
       archiveType,
       status: newStatus,
     });
@@ -411,6 +478,7 @@ async function processDeletePayload(
     const message = err instanceof Error ? err.message : 'Unknown error';
     logError('[realvia-worker] processDeletePayload failed', {
       sourceId,
+      agencyId: tenantAgencyId,
       error: message,
     });
     return { success: false, action: 'skipped', sourceId, error: message };
@@ -467,38 +535,6 @@ function buildLocationString(advert: RealviaWebhookPayload['advert']): string {
   if (advert.street) parts.push(advert.street);
   // Location IDs would need a lookup table for names — for now, store as-is
   return parts.join(', ') || '';
-}
-
-/**
- * Map Realvia category number to our property type.
- * TODO: Populate from Realvia číselníky documentation.
- */
-function mapCategory(category: number): string {
-  const categoryMap: Record<number, string> = {
-    11: 'Byt',
-    12: 'Byt',
-    13: 'Dom',
-    14: 'Dom',
-    15: 'Pozemok',
-    16: 'Pozemok',
-    17: 'Komerčná',
-    18: 'Komerčná',
-    19: 'Ostatné',
-    20: 'Ostatné',
-  };
-  return categoryMap[category] ?? 'Ostatné';
-}
-
-/**
- * Map Realvia transaction number to our transaction type.
- */
-function mapTransaction(transaction: number): string {
-  const transactionMap: Record<number, string> = {
-    123: 'Predaj',
-    124: 'Prenájom',
-    125: 'Dražba',
-  };
-  return transactionMap[transaction] ?? 'Predaj';
 }
 
 /**

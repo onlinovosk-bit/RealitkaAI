@@ -1,0 +1,234 @@
+.balik-page {
+  --balik-brand: #0ea5e9;
+  --balik-brand-deep: #0284c7;
+  --balik-ink: #0f172a;
+  --balik-muted: #64748b;
+  --balik-line: #e2e8f0;
+  --balik-bg: #f8fafc;
+  --balik-soft: #eff6ff;
+  --balik-green: #047857;
+  --balik-cta: linear-gradient(90deg, #0ea5e9, #38bdf8);
+  --balik-shadow: 0 8px 32px rgba(15, 23, 42, 0.06);
+  background: linear-gradient(180deg, var(--balik-bg), #fff);
+  color: var(--balik-ink);
+  min-height: 100vh;
+}
+
+.balik-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 24px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--balik-line);
+}
+
+.balik-logo {
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  color: var(--balik-ink);
+  text-decoration: none;
+}
+
+.balik-logo span {
+  color: var(--balik-brand);
+}
+
+.balik-wrap {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 24px 80px;
+}
+
+.balik-hero {
+  padding: 64px 0 48px;
+  text-align: center;
+}
+
+.balik-tag {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--balik-brand-deep);
+  margin-bottom: 12px;
+}
+
+.balik-title {
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  font-weight: 900;
+  line-height: 1.15;
+  margin: 0 0 16px;
+  letter-spacing: -0.02em;
+}
+
+.balik-title em {
+  font-style: normal;
+  color: var(--balik-brand-deep);
+}
+
+.balik-lead {
+  font-size: 1.05rem;
+  color: var(--balik-muted);
+  max-width: 560px;
+  margin: 0 auto 32px;
+  line-height: 1.6;
+}
+
+.balik-price-card {
+  display: inline-block;
+  background: #fff;
+  border: 2px solid var(--balik-brand);
+  border-radius: 20px;
+  padding: 28px 40px;
+  box-shadow: var(--balik-shadow);
+  margin-bottom: 24px;
+}
+
+.balik-price {
+  font-size: 3rem;
+  font-weight: 900;
+  color: var(--balik-ink);
+  line-height: 1;
+}
+
+.balik-price span {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--balik-muted);
+}
+
+.balik-credit-badge {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 8px 16px;
+  background: var(--balik-soft);
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--balik-green);
+}
+
+.balik-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 32px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #fff;
+  background: var(--balik-cta);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 0 4px 20px rgba(14, 165, 233, 0.35);
+  transition: transform 0.15s, opacity 0.15s;
+}
+
+.balik-cta:hover {
+  transform: translateY(-1px);
+}
+
+.balik-cta:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.balik-sec {
+  padding: 48px 0;
+  border-top: 1px solid var(--balik-line);
+}
+
+.balik-sec h2 {
+  font-size: 1.35rem;
+  font-weight: 800;
+  margin: 0 0 20px;
+}
+
+.balik-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.balik-item {
+  background: #fff;
+  border: 1px solid var(--balik-line);
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: var(--balik-shadow);
+}
+
+.balik-item h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.balik-item p {
+  font-size: 0.85rem;
+  color: var(--balik-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.balik-anchor {
+  font-size: 0.9rem;
+  color: var(--balik-muted);
+  margin-top: 16px;
+}
+
+.balik-form {
+  max-width: 400px;
+  margin: 24px auto 0;
+  text-align: left;
+}
+
+.balik-form label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--balik-ink);
+}
+
+.balik-form input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--balik-line);
+  border-radius: 10px;
+  font-size: 1rem;
+  margin-bottom: 12px;
+}
+
+.balik-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.75rem;
+  color: var(--balik-muted);
+  margin-bottom: 16px;
+  line-height: 1.45;
+}
+
+.balik-error {
+  color: #dc2626;
+  font-size: 0.85rem;
+  margin-top: 8px;
+}
+
+.balik-note {
+  font-size: 0.75rem;
+  color: var(--balik-muted);
+  margin-top: 24px;
+  text-align: center;
+}

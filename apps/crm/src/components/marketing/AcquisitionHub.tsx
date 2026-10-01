@@ -21,6 +21,8 @@ import type {
   PropertyEstimate, NeighborAlert, ArbitrageCandidate,
   StealthProspect, ModuleStatus,
 } from "@/types/acquisition-hub";
+import { useLicenseCapabilities } from "@/hooks/useLicenseCapabilities";
+import { PremiumLockedBlur, PremiumLockedOverlay } from "@/components/license/PremiumLockedOverlay";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
 function formatEur(n: number) {
@@ -810,7 +812,10 @@ export function DigitalTwin() {
 // ═══════════════════════════════════════════════════════════════════════════
 // MODULE 6: Stealth Recruiter
 // ═══════════════════════════════════════════════════════════════════════════
-export function StealthRecruiter() {
+export function StealthRecruiter({ accountTier }: { accountTier?: string | null }) {
+  const { can } = useLicenseCapabilities(accountTier ?? "free");
+  const canUseStealthRecruiter = can("canUseStealthRecruiter");
+
   const [prospects, setProspects]     = useState<StealthProspect[]>([]);
   const [loading, setLoading]         = useState(false);
   const [loaded, setLoaded]           = useState(false);
@@ -819,18 +824,36 @@ export function StealthRecruiter() {
   const [outreachLoading, setOL]      = useState(false);
   const [sendEmail, setSendEmail]     = useState("");
   const [sent, setSent]               = useState(false);
+  const [scanError, setScanError]     = useState<string | null>(null);
+  const [isDemoMode, setIsDemoMode]   = useState(false);
 
   const scan = async () => {
-    setLoading(true); setSelected(null); setOutreach(null); setSent(false);
+    setLoading(true); setSelected(null); setOutreach(null); setSent(false); setScanError(null);
     try {
       const res = await fetch("/api/stealth-recruiter/scan", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ area: "Prešov", onlyToday: true, generateNew: false }),
       });
-      const data = await res.json() as { prospects?: StealthProspect[] };
+      const data = await res.json() as {
+        prospects?: StealthProspect[];
+        error?: string;
+        demoMode?: boolean;
+        source?: string;
+      };
+      if (!res.ok) {
+        setProspects([]);
+        setScanError(data.error ?? `Scan zlyhal (${res.status}).`);
+        setLoaded(true);
+        return;
+      }
       setProspects(data.prospects ?? []);
+      setIsDemoMode(Boolean(data.demoMode || data.source === "demo"));
       setLoaded(true);
-    } catch { setProspects([]); setLoaded(true); }
+    } catch {
+      setProspects([]);
+      setScanError("Nepodarilo sa spustiť scan.");
+      setLoaded(true);
+    }
     setLoading(false);
   };
 
@@ -872,19 +895,34 @@ export function StealthRecruiter() {
 
   return (
     <Card accent="rgba(34,211,238,0.20)" tag="Shadow MLS" tagColor="#67E8F9">
-      <UserSearch className="mb-5" size={32} style={{ color: "#22D3EE" }} />
-      <h2 className="text-xl font-bold mb-1.5" style={{ color: SLATE_HORIZON.ink }}>6. Tichý Náborár</h2>
-      <p className="text-xs mb-4" style={{ color: "#64748B" }}>
-        Nájde predajcov na Bazoši, ktorým sa nedarí predať. AI napíše správu každému presne na mieru.
-      </p>
+      <div className="relative">
+        <UserSearch className="mb-5" size={32} style={{ color: "#22D3EE" }} />
+        <h2 className="text-xl font-bold mb-1.5" style={{ color: SLATE_HORIZON.ink }}>6. Tichý Náborár</h2>
+        <p className="text-xs mb-4" style={{ color: "#64748B" }}>
+          Nájde predajcov na Bazoši a portáloch, ktorým sa nedarí predať. AI napíše správu každému presne na mieru.
+        </p>
+        {isDemoMode && (
+          <span
+            className="mb-3 inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide"
+            style={{ background: "rgba(251,191,36,0.15)", color: "#FCD34D", border: "1px solid rgba(251,191,36,0.35)" }}
+          >
+            Demo režim
+          </span>
+        )}
+        <PremiumLockedBlur active={!canUseStealthRecruiter}>
       <div className="flex-1 space-y-2">
         {!loaded ? (
-          <Btn onClick={() => void scan()} loading={loading}
+          <Btn onClick={() => void scan()} loading={loading} disabled={!canUseStealthRecruiter}
                className="border-cyan-500/30 text-cyan-400 bg-cyan-500/5 hover:bg-cyan-500/10 border">
             {loading ? "Skenujem portály..." : "SPUSTIŤ STEALTH SCAN"}
           </Btn>
         ) : (
           <>
+            {scanError && (
+              <p className="text-xs rounded-xl p-3" style={{ background: "#FEF2F2", color: "#B91C1C", border: "1px solid #FECACA" }}>
+                {scanError}
+              </p>
+            )}
             <div className="space-y-1.5 max-h-44 overflow-y-auto">
               {prospects.map(p => (
                 <button key={p.id} onClick={() => void generateOutreach(p)}
@@ -934,10 +972,19 @@ export function StealthRecruiter() {
                 )}
               </div>
             )}
-            <Btn onClick={() => { setLoaded(false); setSelected(null); setOutreach(null); setSent(false); }} variant="outline">
+            <Btn onClick={() => { setLoaded(false); setSelected(null); setOutreach(null); setSent(false); setScanError(null); }} variant="outline">
               <RefreshCcw size={12} /> Nový scan
             </Btn>
           </>
+        )}
+      </div>
+        </PremiumLockedBlur>
+        {!canUseStealthRecruiter && (
+          <PremiumLockedOverlay
+            capability="canUseStealthRecruiter"
+            headline="Tichý Náborár je súčasť Reality Monopol"
+            subline="Identifikuj samopredajcov s dlhým inzerátom a pošli im AI outreach — len na Protocol Authority."
+          />
         )}
       </div>
     </Card>

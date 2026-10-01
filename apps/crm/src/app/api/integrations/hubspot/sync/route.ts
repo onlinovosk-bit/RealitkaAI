@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { createClient, createAdminClient } from "@/lib/supabase/server"
 import type { HubSpotSyncResult } from "@/lib/hubspot/types"
 import { syncLeadToHubSpot } from "@/lib/hubspot/sync"
+import { sameAgency } from "@/lib/tenant-scope";
 
 export async function POST(request: Request) {
   // Require auth — this route reads leads and pushes to HubSpot
@@ -43,7 +44,8 @@ export async function POST(request: Request) {
     )
   }
 
-  if (callerProfile?.agency_id && lead.agency_id !== callerProfile.agency_id) {
+  // Fail closed pred admin syncom: odtiaľto odchádza PII leadu do HubSpotu.
+  if (!sameAgency(callerProfile?.agency_id, lead.agency_id)) {
     return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 })
   }
 

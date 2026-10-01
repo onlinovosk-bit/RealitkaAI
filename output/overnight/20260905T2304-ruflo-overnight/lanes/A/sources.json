@@ -1,0 +1,205 @@
+[
+  {
+    "claim": "102 migrations cataloged for CRM at BASE",
+    "path_or_url": "output/overnight/20260905T2304-ruflo-overnight/w0/input/migrations_catalog/list.txt",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "w0_catalog",
+    "limit": "list only; contents via git show"
+  },
+  {
+    "claim": "Core tables leads/activities/properties/agencies/teams/profiles created in baseline",
+    "path_or_url": "apps/crm/supabase/migrations/20260310_baseline_core_schema.sql",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "migration_at_base",
+    "limit": "historical demo RLS also in this file; superseded later"
+  },
+  {
+    "claim": "scheduled_events supports viewing/meeting/call with tenant RLS",
+    "path_or_url": "apps/crm/supabase/migrations/20260527143000_event_scheduler_phase1.sql",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "migration_at_base",
+    "limit": "schema+policy; not prod usage"
+  },
+  {
+    "claim": "scheduled_events store implementation present",
+    "path_or_url": "apps/crm/src/lib/scheduled-events/store.ts",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "code_at_base",
+    "limit": "CODE_PRESENT not prod adoption"
+  },
+  {
+    "claim": "Agency billing columns + credit_ledger exist",
+    "path_or_url": "apps/crm/supabase/migrations/20260602_agency_billing_and_credits.sql",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "migration_at_base",
+    "limit": "Stripe live unverified"
+  },
+  {
+    "claim": "Program tier pricing module exists",
+    "path_or_url": "apps/crm/src/lib/program-tier-pricing.ts",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "code_at_base",
+    "limit": "align with docs; not Stripe dashboard"
+  },
+  {
+    "claim": "Pricing docs exist",
+    "path_or_url": "apps/crm/docs/pricing-v1.md",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "doc_at_base",
+    "limit": "doc may drift from live prices"
+  },
+  {
+    "claim": "import_jobs/import_rows universal CRM import schema",
+    "path_or_url": "apps/crm/supabase/migrations/20260608120000_universal_crm_import.sql",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "migration_at_base",
+    "limit": "source_system allowlist != certified connectors"
+  },
+  {
+    "claim": "enrichment_log supports record_type contact without contacts table",
+    "path_or_url": "apps/crm/supabase/migrations/20260614213000_enrichment_log_and_contacts_dossier.sql",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "migration_at_base",
+    "limit": "no CREATE TABLE contacts"
+  },
+  {
+    "claim": "leads.dossier column added",
+    "path_or_url": "apps/crm/supabase/migrations/20260614220000_add_leads_dossier.sql",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "migration_at_base",
+    "limit": null
+  },
+  {
+    "claim": "ai_sourced_deals exists (not classic deals)",
+    "path_or_url": "apps/crm/supabase/migrations/20260411_performance_fee.sql",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "migration_at_base",
+    "limit": "AI fee satellite"
+  },
+  {
+    "claim": "deal_risk/deal_moments tables",
+    "path_or_url": "apps/crm/supabase/migrations/20260418_enterprise_ai_intelligence.sql",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "migration_at_base",
+    "limit": "intelligence not CRM pipeline"
+  },
+  {
+    "claim": "deal_outcomes table",
+    "path_or_url": "apps/crm/supabase/migrations/20260726120000_moat_capture_blok_b.sql",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "migration_at_base",
+    "limit": null
+  },
+  {
+    "claim": "ai_action_audit is AI channel audit not phone CDR",
+    "path_or_url": "apps/crm/supabase/migrations/20260610000001_ai_action_audit.sql",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "migration_at_base",
+    "limit": "channel default email"
+  },
+  {
+    "claim": "Late anon policy drop migration; claims prod apply 2026-09-04",
+    "path_or_url": "apps/crm/supabase/migrations/20260904150000_drop_open_anon_policies.sql",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "migration_at_base",
+    "limit": "header claim not re-verified live"
+  },
+  {
+    "claim": "No public.contacts CREATE TABLE in migrations (git grep empty)",
+    "path_or_url": "apps/crm/supabase/migrations/",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "negative_search_at_base",
+    "limit": "search coverage migrations only"
+  },
+  {
+    "claim": "C0/C1/C2 draft definitions + SLA assumption",
+    "path_or_url": "docs/briefs/l99-lead-factory-initiative.md",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "brief_draft",
+    "limit": "awaiting founder GO; SLA PREDPOKLAD"
+  },
+  {
+    "claim": "Lead factory initiative marked DRAFT awaiting C0/C1/C2 GO",
+    "path_or_url": "docs/briefs/README.md",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "index_doc",
+    "limit": null
+  },
+  {
+    "claim": "AGENTS.md still references missing revolis-builder.mdc",
+    "path_or_url": "apps/crm/AGENTS.md",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "doc_at_base",
+    "limit": null
+  },
+  {
+    "claim": "revolis-builder.mdc missing at BASE; engineering constitution present",
+    "path_or_url": ".cursor/rules/l99-engineering-constitution.mdc",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "rule_at_base",
+    "limit": "builder file absent per ls-tree"
+  },
+  {
+    "claim": "Seed confirms revolis-builder missing; Stripe unverified",
+    "path_or_url": "docs/overnight/2026-09-05-ruflo-swarm/seed-evidence.md",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "local_draft_seed",
+    "limit": "LOCAL_DRAFT in w0"
+  },
+  {
+    "claim": "Production blockers brief is alias only",
+    "path_or_url": "docs/briefs/reality-smolko-production-blockers-2026-09-04.md",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "doc_at_base",
+    "limit": "not live DB"
+  },
+  {
+    "claim": "Twilio listed as optional SMS dependency",
+    "path_or_url": "apps/crm/package.json",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "package_at_base",
+    "limit": "dep present != audit trail"
+  },
+  {
+    "claim": "Call analyzer verification exists",
+    "path_or_url": "apps/crm/tests/verification/call-analyzer.verification.test.ts",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "test_at_base",
+    "limit": "feature test != phone audit store"
+  },
+  {
+    "claim": "Billing credits verification exists",
+    "path_or_url": "apps/crm/tests/verification/billing-credits.verification.test.ts",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "test_at_base",
+    "limit": null
+  },
+  {
+    "claim": "Realvia/Realsoft/universal import API routes present",
+    "path_or_url": "apps/crm/src/app/api/realvia/import/route.ts",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "code_at_base",
+    "limit": "also realsoft + universal-import tree"
+  },
+  {
+    "claim": "Portal Nehnutelnosti scrape source + test",
+    "path_or_url": "apps/crm/src/infra/scraping/PortalNehnutelnostiSource.ts",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "code_at_base",
+    "limit": "import/scrape not export contract"
+  },
+  {
+    "claim": "Cron job surface exists under app/api/cron",
+    "path_or_url": "apps/crm/src/app/api/cron/",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "code_tree_at_base",
+    "limit": "enabled set in Vercel unknown"
+  },
+  {
+    "claim": "BASE_SHA is origin/main Strazca pritoku commit",
+    "path_or_url": "git:cf3604613cdbb6a7a279e175f2c792fb25591461",
+    "accessed_at": "2026-09-05",
+    "evidence_type": "git_object",
+    "limit": "worktree HEAD may differ"
+  }
+]

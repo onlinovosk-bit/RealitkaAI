@@ -38,6 +38,20 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     visibleFor: ["agent", "owner"],
   },
   {
+    key: "inzerat-generator",
+    label: "Generátor inzerátu",
+    path: "/inzerat-generator",
+    emoji: "📝",
+    visibleFor: ["agent", "owner"],
+  },
+  {
+    key: "followup",
+    label: "Follow-up drafty",
+    path: "/followup",
+    emoji: "✉️",
+    visibleFor: ["agent", "owner"],
+  },
+  {
     key: "porovnanie-programov",
     label: "Porovnanie programov",
     path: "/porovnanie-programov",
@@ -165,6 +179,13 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     visibleFor: ["agent", "owner"],
   },
   {
+    key: "google-ads",
+    label: "Google Ads (test)",
+    path: "/acquisition",
+    emoji: "G",
+    visibleFor: ["owner"],
+  },
+  {
     key: "settings",
     label: "Nastavenia",
     path: "/settings",
@@ -196,6 +217,7 @@ export const NAV_GROUPS = [
       "playbook",
       "revolis-ai",
       "l99-hub",
+      "followup",
       "call-analyzer",
       "leads",
       "tasks",
@@ -213,6 +235,7 @@ export const NAV_GROUPS = [
       "kupujuci-predajca",
       "klonovanie-kupujucich",
       "zachran-samopredajcu",
+      "google-ads",
     ],
   },
   {

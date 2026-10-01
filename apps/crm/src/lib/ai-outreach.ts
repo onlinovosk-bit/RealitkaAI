@@ -77,6 +77,9 @@ export type OutreachEmailResult = {
   totalTokens?: number;
 };
 
+/** Bump whenever the outreach prompt below changes; stamped on the ai_suggested audit row. */
+export const OUTREACH_PROMPT_VERSION = "outreach-v1";
+
 export async function generateOutreachEmail(
   lead: LeadLike,
   options?: OutreachGenerateOptions

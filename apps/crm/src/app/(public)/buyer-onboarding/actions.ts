@@ -1,13 +1,17 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { runInboundLeadAutoResponse } from "@/lib/acquire/inbound-lead-auto-response";
+import { createAdminClient } from "@/lib/supabase/server";
 import { createTask } from "@/lib/tasks-store";
 import { notifyNewBuyerLead } from "@/lib/notify-new-lead";
 import { rescoreLead } from "@/lib/rescore-lead";
+import { autoErrorCapture } from "@/lib/auto-error-capture";
+import { SMOLKO_AGENCY_ID } from "@/lib/profiles/resolve-profile-for-auth";
 import {
   computeBuyerReadinessScore,
   deriveClientSegment,
+  mapIntentPropertyTypeToSk,
   type BuyerIntentInput,
   type DealType,
   type PropertyType,
@@ -23,8 +27,13 @@ const SEGMENT_LABEL: Record<string, string> = {
   other:            "Iný",
 };
 
+function resolveBuyerOnboardingAgencyId(): string {
+  return process.env.LEAD_FORM_AGENCY_ID_SMOLKO?.trim() || SMOLKO_AGENCY_ID;
+}
+
 export async function submitBuyerOnboarding(formData: FormData) {
-  const supabase = await createClient();
+  const admin = createAdminClient();
+  const agencyId = resolveBuyerOnboardingAgencyId();
 
   // ── 1. Parse + validate form input ────────────────────────────────────────
   const name      = String(formData.get("name") ?? "").trim();
@@ -58,69 +67,89 @@ export async function submitBuyerOnboarding(formData: FormData) {
 
   const segment       = deriveClientSegment(intentInput);
   const readinessScore = computeBuyerReadinessScore(intentInput);
+  const skPropertyType = mapIntentPropertyTypeToSk(propType);
 
-  // ── 2. Upsert lead ────────────────────────────────────────────────────────
+  // ── 2. Upsert lead (service role — public form has no tenant session) ───────
   let leadId: string | null = null;
 
-  try {
-    // check existing lead by email
-    const { data: existing } = await supabase
-      .from("leads")
-      .select("id")
-      .eq("email", email)
-      .maybeSingle();
+  const { data: existing, error: existingError } = await admin
+    .from("leads")
+    .select("id")
+    .eq("email", email)
+    .eq("agency_id", agencyId)
+    .maybeSingle();
 
-    if (existing?.id) {
-      leadId = existing.id;
-      await supabase
-        .from("leads")
-        .update({
-          name,
-          phone: phone || undefined,
-          client_segment: segment,
-          buyer_readiness_score: readinessScore,
-        })
-        .eq("id", leadId);
-    } else {
-      const { data: newLead } = await supabase
-        .from("leads")
-        .insert({
-          id: crypto.randomUUID(),
-          name,
-          email,
-          phone: phone || "",
-          status: "Nový",
-          source: "Buyer onboarding",
-          score: readinessScore,
-          client_segment: segment,
-          buyer_readiness_score: readinessScore,
-          assigned_agent: "Nepriradený",
-          last_contact: "Práve vytvorený",
-          note: focusText ? `Fokus: ${focusText}` : "",
-          location: city,
-          budget: budgetMax > 0 ? `${budgetMin.toLocaleString("sk-SK")} – ${budgetMax.toLocaleString("sk-SK")} €` : "",
-          property_type: propType,
-          rooms: "2 izby",
-          financing: mortgage ? "Hypotéka" : "Hotovosť",
-          timeline: horizon === "0-3" ? "Ihneď" : horizon === "3-6" ? "Do 3 mesiacov" : "Do 6 mesiacov",
-        })
-        .select("id")
-        .single();
-
-      leadId = newLead?.id ?? null;
-    }
-  } catch {
-    // Lead upsert failed — continue without it (buyer still gets redirected)
+  if (existingError) {
+    autoErrorCapture(existingError, "buyer-onboarding:lead_lookup");
   }
 
-  // ── 3. Write buyer_intent ─────────────────────────────────────────────────
+  if (existing?.id) {
+    leadId = existing.id;
+    const { error: updateError } = await admin
+      .from("leads")
+      .update({
+        name,
+        phone: phone || undefined,
+        client_segment: segment,
+        buyer_readiness_score: readinessScore,
+        location: city || undefined,
+        property_type: skPropertyType,
+        budget: budgetMax > 0
+          ? `${budgetMin.toLocaleString("sk-SK")} – ${budgetMax.toLocaleString("sk-SK")} €`
+          : undefined,
+        financing: mortgage ? "Hypotéka" : "Hotovosť",
+        timeline: horizon === "0-3" ? "Ihneď" : horizon === "3-6" ? "Do 3 mesiacov" : "Do 6 mesiacov",
+      })
+      .eq("id", leadId);
+
+    if (updateError) {
+      autoErrorCapture(updateError, "buyer-onboarding:lead_update");
+      leadId = null;
+    }
+  } else {
+    const newLeadId = crypto.randomUUID();
+    const { data: newLead, error: insertError } = await admin
+      .from("leads")
+      .insert({
+        id: newLeadId,
+        agency_id: agencyId,
+        name,
+        email,
+        phone: phone || "",
+        status: "Nový",
+        source: "Buyer onboarding",
+        score: readinessScore,
+        client_segment: segment,
+        buyer_readiness_score: readinessScore,
+        assigned_agent: "Nepriradený",
+        last_contact: "Práve vytvorený",
+        note: focusText ? `Fokus: ${focusText}` : "",
+        location: city,
+        budget: budgetMax > 0 ? `${budgetMin.toLocaleString("sk-SK")} – ${budgetMax.toLocaleString("sk-SK")} €` : "",
+        property_type: skPropertyType,
+        // Wizard does not ask rooms — never invent (AP-001). Empty is honest.
+        rooms: "",
+        financing: mortgage ? "Hypotéka" : "Hotovosť",
+        timeline: horizon === "0-3" ? "Ihneď" : horizon === "3-6" ? "Do 3 mesiacov" : "Do 6 mesiacov",
+      })
+      .select("id, agency_id")
+      .single();
+
+    if (insertError) {
+      autoErrorCapture(insertError, "buyer-onboarding:lead_insert");
+    } else {
+      leadId = newLead?.id ?? null;
+    }
+  }
+
+  // ── 3. Upsert buyer_intent ────────────────────────────────────────────────
   let intentId: string | null = null;
 
   if (leadId) {
-    try {
-      const { data: intent } = await supabase
-        .from("buyer_intents")
-        .insert({
+    const { data: intent, error: intentError } = await admin
+      .from("buyer_intents")
+      .upsert(
+        {
           lead_id: leadId,
           deal_type: dealType,
           property_type: propType,
@@ -133,13 +162,16 @@ export async function submitBuyerOnboarding(formData: FormData) {
           raw_focus_text: focusText,
           client_segment: segment,
           buyer_readiness_score: readinessScore,
-        })
-        .select("id")
-        .single();
+        },
+        { onConflict: "lead_id" },
+      )
+      .select("id")
+      .single();
 
+    if (intentError) {
+      autoErrorCapture(intentError, "buyer-onboarding:buyer_intent_upsert");
+    } else {
       intentId = intent?.id ?? null;
-    } catch {
-      // Intent write failed — redirect without intentId
     }
   }
 
@@ -152,32 +184,41 @@ export async function submitBuyerOnboarding(formData: FormData) {
         ? `${budgetMin > 0 ? `${budgetMin.toLocaleString("sk-SK")} – ` : "do "}${budgetMax.toLocaleString("sk-SK")} €`
         : "neurčený";
 
-      await createTask({
-        leadId,
-        assignedProfileId: null,
-        title: `Nový buyer lead: ${name} (${SEGMENT_LABEL[segment] ?? segment})`,
-        description: [
-          `Segment: ${SEGMENT_LABEL[segment] ?? segment}`,
-          `Skóre pripravenosti: ${readinessScore}/100`,
-          `Hľadá: ${propType}${city ? ` v ${city}` : ""}, rozpočet: ${budgetStr}`,
-          focusText ? `Fokus: "${focusText}"` : "",
-          `Ponuky: ${listingUrl}`,
-        ].filter(Boolean).join("\n"),
-        status: "open",
-        priority: readinessScore >= 60 ? "high" : readinessScore >= 30 ? "medium" : "low",
-        dueAt: null,
-      });
-    } catch {
-      // CRM task failure is non-blocking
+      // Must pass service-role client: public form has no auth cookies; browser
+      // singleton + tasks_agency RLS (profile_agencies_for_auth) rejects the insert
+      // and the catch below silently drops the agent follow-up task.
+      await createTask(
+        {
+          leadId,
+          assignedProfileId: null,
+          title: `Nový buyer lead: ${name} (${SEGMENT_LABEL[segment] ?? segment})`,
+          description: [
+            `Segment: ${SEGMENT_LABEL[segment] ?? segment}`,
+            `Skóre pripravenosti: ${readinessScore}/100`,
+            `Hľadá: ${propType}${city ? ` v ${city}` : ""}, rozpočet: ${budgetStr}`,
+            focusText ? `Fokus: "${focusText}"` : "",
+            `Ponuky: ${listingUrl}`,
+          ]
+            .filter(Boolean)
+            .join("\n"),
+          status: "open",
+          priority: readinessScore >= 60 ? "high" : readinessScore >= 30 ? "medium" : "low",
+          dueAt: null,
+        },
+        admin,
+      );
+    } catch (taskError) {
+      autoErrorCapture(taskError, "buyer-onboarding:crm_task");
     }
   }
 
-  // ── 3.6 Notify + rescore ──────────────────────────────────────────────────
+  // ── 3.6 Notify + auto-response + rescore ──────────────────────────────────
   if (leadId) {
     const budgetStr = budgetMax > 0
       ? `${budgetMin > 0 ? `${budgetMin.toLocaleString("sk-SK")} – ` : "do "}${budgetMax.toLocaleString("sk-SK")} €`
       : "neurčený";
 
+    // Internal agency email — keep (different purpose from lead auto-response).
     notifyNewBuyerLead({
       leadName: name,
       leadEmail: email,
@@ -187,9 +228,16 @@ export async function submitBuyerOnboarding(formData: FormData) {
       budget: budgetStr,
       focusText: focusText || undefined,
       leadUrl: `/leads/${leadId}`,
-    }).catch(() => {});
+    }).catch((err) => autoErrorCapture(err, "buyer-onboarding:notify"));
 
-    rescoreLead(leadId).catch(() => {});
+    // Lead-facing auto-response (same wire as valuation/inbound — PR #521).
+    void runInboundLeadAutoResponse(
+      admin,
+      { id: leadId, agency_id: agencyId },
+      { agencyId, name, email },
+    );
+
+    rescoreLead(leadId).catch((err) => autoErrorCapture(err, "buyer-onboarding:rescore"));
   }
 
   // ── 4. Build redirect URL → /nehnutelnosti ────────────────────────────────

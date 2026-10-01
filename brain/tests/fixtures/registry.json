@@ -1,0 +1,42 @@
+[
+  {
+    "schemaVersion": 1,
+    "id": "fixture.source",
+    "type": "documentation",
+    "name": "Fixture source",
+    "purpose": "Provides a deterministic source for Memory Engine tests.",
+    "owner": "engineering",
+    "status": "active",
+    "source": {
+      "path": "fixture/source.md",
+      "commit": "fixture"
+    },
+    "createdAt": "2026-01-01",
+    "lastVerifiedAt": "2026-01-01",
+    "dependencies": [],
+    "relatedDecisions": [
+      "fixture-decision"
+    ],
+    "evidence": [
+      {
+        "path": "fixture/source.md",
+        "line": 1,
+        "commit": "fixture",
+        "note": "Fixture evidence"
+      }
+    ],
+    "confidence": "high",
+    "sensitivity": "internal",
+    "capabilities": [
+      "fixture-capability"
+    ],
+    "inventory": {
+      "fileCount": 1,
+      "digest": "sha256:fixture",
+      "sample": [
+        "fixture/source.md"
+      ]
+    },
+    "canonical": false
+  }
+]
