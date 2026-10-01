@@ -1,3 +1,14 @@
+## Session 2026-10-01 (ENV-TS-WIRE)
+### Dokončené
+- **Meranie Vercel `realitka-ai` (iba názvy a ciele, 85 záznamov, 69 kľúčov):** v `production` NIE JE `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (existuje len `SUPABASE_SECRET_KEY`/`SUPABASE_ANON_KEY`/`SUPABASE_PUBLISHABLE_KEY` z integrácie a `SERVICE_ROLE` pre 2 preview vetvy) ani `OPENAI_API_KEY`. `env.ts` ich všetky vyžaduje. **Zapojiť `env.ts` ako fail-fast by dnes zhodilo produkciu.** Team-shared premenné som nevidel — beh to potvrdí.
+- Preto wiring bez pádu: `config/env.ts` exportuje `validateEnv()` (nehádže, vracia iba NÁZVY kľúčov, nikdy hodnoty) a lazy `getEnv()`; modulový singleton `export const env = parseEnv()` zmizol (nikto ho neimportoval). Nový `src/instrumentation.ts` pri štarte nodejs runtime zaloguje `[env] schema ↔ runtime drift (…)`, nikdy nehádže. 5 testov, mutation proof 4/4 (+1 ekvivalentná).
+- `prepush-gate` PASS (typecheck 49/54, lint); migrácie NEOVERENÉ. `next build` lokálne nespustený (CI).
+### Rozpracované / Pending
+- Po nasadení hľadať `[env]` v Vercel runtime logoch → skutočný zoznam chýbajúcich. Potom rozhodnúť: (a) doplniť Vercel, alebo (b) upraviť schému podľa reality (ANON *alebo* PUBLISHABLE; `OPENAI_API_KEY` je v kóde ošetrený ako voliteľný), a až potom fail-fast. Samostatná brána.
+- Podozrenie na prod: bez `SUPABASE_SERVICE_ROLE_KEY` vráti `createServiceRoleClient()` null (cron, metriky, audit insert). Overiť v logoch, nehádať.
+### Ďalší krok
+Po merge #776 a nasadení: GO ENV-SCHEMA-RECONCILE na základe `[env]` logu.
+
 ## Session 2026-10-01 (PORT-304)
 ### Dokončené
 - `forgot-password` posiela `redirectTo` na `/auth/callback?next=/reset-password`; `reset-password` pri legacy `?code=` presmeruje na server-side `/auth/callback` namiesto klientskej výmeny (`lib/supabase/recovery-redirect.ts`). Test `recovery-redirect.test.ts` (3), mutation proof 4/4.

@@ -123,7 +123,34 @@ const envSchema = z.object({
 
 export type Env = z.infer<typeof envSchema>;
 
-function parseEnv(): Env {
+export interface EnvIssue {
+  key: string;
+  message: string;
+}
+
+/**
+ * Non-throwing check of `source` against the schema. Reports key NAMES and
+ * zod's generic message only — never a received value (secrets).
+ */
+export function validateEnv(
+  source: Record<string, string | undefined> = process.env,
+): { ok: boolean; issues: EnvIssue[] } {
+  const result = envSchema.safeParse(source);
+  if (result.success) return { ok: true, issues: [] };
+  return {
+    ok: false,
+    issues: result.error.issues.map((i) => ({ key: i.path.join("."), message: i.message })),
+  };
+}
+
+/**
+ * Strict accessor — throws on an invalid environment. Deliberately lazy: it used
+ * to be a module-level `export const env = parseEnv()`, which nothing imported;
+ * wiring that as-is would have taken production down on any variable Vercel
+ * lacks today (measured 2026-10-01). Import this only after the schema has been
+ * reconciled with production.
+ */
+export function getEnv(): Env {
   const result = envSchema.safeParse(process.env);
   if (!result.success) {
     const missing = result.error.issues
@@ -133,6 +160,3 @@ function parseEnv(): Env {
   }
   return result.data;
 }
-
-// Singleton — parsed once at module load, fails fast on startup
-export const env = parseEnv();
