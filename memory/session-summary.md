@@ -1,11 +1,10 @@
 ## Session 2026-10-01 (D1-BACKFILL-A)
 ### Dokončené
 - `--input` pre backfill experiment: historické portálové e-maily cez produkčný parser (`apps/crm/src/lib/demand/backfill-input.ts`, skript)
-- #766 MEMORY-GUARD zmergované; #769 D4 zelené po vyriešení konfliktu v pamäti (oba záznamy zachované)
+- #766 MEMORY-GUARD a #769 D4 zmergované 2026-10-01
 ### Rozpracované / Pending
 - Founder: export 40–60 dopytových e-mailov → `extract --agency … --input …` → označiť `labels.csv` → `score`
 - Founder/právnik: Anthropic v DPA a `/legal/sub-processors` pred behom
-- #769 čaká na merge
 ### Kľúčové súbory zmenené
 - `apps/crm/src/lib/demand/backfill-input.ts`: MIME čítačka (.eml/.mbox/.txt) + produkčná cesta `parseEmail`
 - `apps/crm/scripts/demand-backfill-experiment.ts`: `--input`, deduplikácia, `sources.csv`, `--agency` voliteľné
@@ -13,6 +12,20 @@
 ### Ďalší krok
 Founder spustí experiment s e-mailmi a označí gold dataset; pri PASS migrácie D1+D4 na PROD.
 
+## Session 2026-09-30 (DEMAND-D4)
+### Dokončené
+- D4 matching na overenom dopyte: engine, tabuľka + RLS, API, karta na detaile leadu, funnel skript (`apps/crm/src/lib/demand/match*.ts`, `supabase/migrations/20260930120000_demand_property_matches.sql`)
+- Kontrakt `matching-input-contract-v1.md` doplnený o rozhodnutia v1; Truth Matrix: D4 CODE+VERIFIED, PROD ⏳
+### Rozpracované / Pending
+- PROD: backfill D1 (founder) → migrácie → flagy → `demand-match-run --apply`
+- Mimo v1: dopyt potvrdený maklérom, meranie „maklér otvoril/poslal“, prepočet pri zmene nehnuteľnosti
+- #766 MEMORY-GUARD zmergované 2026-10-01
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/demand/match.ts`, `match-store.ts`, `store.ts`: engine, zápis, napojenie po D1
+- `apps/crm/src/app/api/leads/[id]/demand-matches/route.ts`, `components/leads/demand-matches-card.tsx`: čítanie + UI
+- `apps/crm/tests/rls/demand-matches-rls.test.ts`: tenant pin
+### Ďalší krok
+Backfill D1: PROD má na Smolko ≤8 rozpočtov, ≤6 izieb, ≤8 kúpa/prenájom (regex horná hranica) → brána (support ≥10) na PROD dátach nemôže prejsť. Founder volí A (+ historické portálové e-maily, `--input`), B (shadow mode) alebo C (znížiť support — neodporúčané).
 ## Session 2026-09-30 (MEMORY-GUARD)
 ### Dokončené
 - MEMORY-GUARD: workflow + skript + 12 testov, prah overený na histórii main a mutačne (`scripts/ci/memory-append-only.sh`, `.github/workflows/memory-guard.yml`)

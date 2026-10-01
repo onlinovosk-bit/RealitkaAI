@@ -26,6 +26,7 @@ stav neposúva, ani keď „by to malo fungovať".
 | BRI | ✅ | ❌ | ❌ | cron neplánovaný, `events` = 0 |
 | Buyer prediction | ✅ | čiastočne | ❌ | beží len vo verejnom onboardingu; `buyer_intents` = 3 |
 | Matching | ✅ | čiastočne | ❌ | `lead_property_matches` = 0; chýba dopyt (94 % leadov) |
+| **Matching na overenom dopyte (D4)** | ✅ | ✅ | ⏳ | #D4 PR: 51 testov + RLS, 5/5 mutantov zabitých; PROD čaká na D1 (flag `DEMAND_MATCHING_ENABLED`) |
 | Next best action | čiastočne | ❌ | ❌ | počíta sa v prehliadači; `/api/daily-actions` bez UI |
 | Ranný brief | ✅ | ❌ | ❌ | cron beží, posiela 0 (nastavenia nie sú v UI) |
 | Reaktivácia | čiastočne | ❌ | ❌ | `seller-rescue` tvorí úlohy; outbound ZAKÁZANÝ bez GDPR brány |
