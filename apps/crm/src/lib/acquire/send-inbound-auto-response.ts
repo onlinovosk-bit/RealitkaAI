@@ -8,7 +8,12 @@ export type InboundAutoResponsePayload = {
   agencyPhone?: string | null;
   replyTo: string;
   assignedAgent?: string | null;
-  aiReason?: string | null;
+  /**
+   * Zámerne tu NIE JE `aiReason`. To je interné zdôvodnenie AI triedenia („Generická správa bez
+   * identifikácie konkrétnej nehnuteľnosti…"), nie popis toho, čo klient hľadá — vložené do e-mailu
+   * dalo vetu „Viem, že hľadáte generická správa…" a prezrádzalo klientovi interné poznámky
+   * (zachytené 1. 10. 2026 v Resend Logs pred odoslaním; e-mail nikdy neodišiel).
+   */
   aiPriority?: string | null;
   source?: string | null;
   /**
@@ -60,6 +65,25 @@ export function resolveInboundFromEmail(replyTo: string): string {
 }
 
 // --- ŠABLÓNA: Variant A (teplý maklér) ---
+//
+// Obsahuje IBA overené fakty: oslovenie (len ak vyzerá ako meno), portál, čas odpovede podľa
+// priority a kontakt. Nič z AI zdôvodnenia ani z textu správy klienta. Formulácie sú rodovo
+// neutrálne („dopyt mi prišiel", „ozvem sa") — meno makléra môže byť mužské aj ženské.
+
+/** Meno sa použije v osloveniu len ak vyzerá ako meno (nie e-mail, telefón, „Unknown"…). */
+const GREETING_NAME_RE = /^[\p{L}][\p{L}\p{M}'.\- ]{0,58}$/u;
+const GREETING_NAME_DENYLIST = new Set([
+  "unknown", "neznámy", "neznamy", "neznáma", "neznama", "anonym", "anonymný", "n/a", "test",
+]);
+
+export function safeGreetingName(name: string | null | undefined): string {
+  // Zalomenie riadku ani tabulátor v poli „meno" nie je meno (vložený text) — GREETING_NAME_RE ich
+  // nepustí, preto sa medzery zlučujú len medzi znakmi " ", nie cez \s.
+  const trimmed = (name ?? "").trim().replace(/ {2,}/g, " ");
+  if (!trimmed || !GREETING_NAME_RE.test(trimmed)) return "";
+  if (GREETING_NAME_DENYLIST.has(trimmed.toLowerCase())) return "";
+  return trimmed;
+}
 
 export function buildInboundAutoResponseContent(payload: InboundAutoResponsePayload): {
   subject: string;
@@ -71,10 +95,6 @@ export function buildInboundAutoResponseContent(payload: InboundAutoResponsePayl
   const rawAgent = payload.assignedAgent?.trim();
   const agentName = rawAgent && rawAgent !== "Nepriradený" ? rawAgent : agencyName;
 
-  const aiReasonShort = payload.aiReason
-    ? payload.aiReason.split(/[.!?]/)[0].slice(0, 80).trim()
-    : null;
-
   const responseTime =
     payload.aiPriority === "Vysoká"
       ? "dnes"
@@ -83,25 +103,23 @@ export function buildInboundAutoResponseContent(payload: InboundAutoResponsePayl
         : "v priebehu dňa";
 
   const portalName = payload.source?.startsWith("portal:")
-    ? payload.source.replace("portal:", "")
+    ? payload.source.replace("portal:", "").trim()
     : null;
 
-  const greeting = payload.leadName.trim() ? `Dobrý deň, ${payload.leadName.trim()},` : "Dobrý deň,";
+  const greetingName = safeGreetingName(payload.leadName);
+  const greeting = greetingName ? `Dobrý deň, ${greetingName},` : "Dobrý deň,";
   const portalPart = portalName ? ` z portálu ${portalName}` : "";
-  const reasonPart = aiReasonShort
-    ? `Viem, že hľadáte ${aiReasonShort.charAt(0).toLowerCase() + aiReasonShort.slice(1)} — pozriem sa na to a ozvem sa vám ${responseTime}.`
-    : `Pozriem sa na to a ozvem sa vám ${responseTime}.`;
 
   const replyTo = payload.replyTo.trim();
   const contactLine = agencyPhone
     ? `pokojne mi napíšte na ${replyTo} alebo zavolajte na ${agencyPhone}`
     : `pokojne mi napíšte na ${replyTo}`;
 
-  const subject = `Váš dopyt som dostal — ${agentName}`;
+  const subject = `Váš dopyt bol prijatý — ${agentName}`;
 
   const body = `${greeting}
 
-dostal som váš dopyt${portalPart}. ${reasonPart}
+váš dopyt${portalPart} mi prišiel. Pozriem sa naň a ozvem sa vám ${responseTime}.
 
 Ak medzitým chcete niečo doplniť alebo sa opýtať, ${contactLine}.
 
@@ -123,11 +141,27 @@ export type InboundAutoResponseFailure = {
   reason: AutoResponseSendReason;
   httpStatus: number | null;
   errorName: string | null;
+  /** Doména odosielateľa (naša konfigurácia, nie osobný údaj) — bez nej sa príčina 403 musela hádať. */
+  fromDomain?: string | null;
 };
 
 export type SendInboundAutoResponseResult =
-  | { ok: true }
+  | { ok: true; fromDomain?: string | null }
   | { ok: false; error: string; failure: InboundAutoResponseFailure };
+
+/**
+ * Verejné poštové domény: Resend ich nikdy neoverí (nepatria nám), takže odoslanie z nich vždy
+ * skončí 403. Zachytené 1. 10. 2026: `OUTREACH_FROM_EMAIL` vo Verceli niesol gmail.com adresu.
+ */
+export const PUBLIC_MAILBOX_DOMAINS: ReadonlySet<string> = new Set([
+  "gmail.com", "googlemail.com", "outlook.com", "hotmail.com", "live.com", "msn.com",
+  "yahoo.com", "icloud.com", "me.com", "proton.me", "protonmail.com",
+  "azet.sk", "centrum.sk", "zoznam.sk", "post.sk", "pobox.sk", "seznam.cz", "email.cz",
+]);
+
+export function emailDomain(address: string): string {
+  return address.split("@")[1]?.trim().toLowerCase() ?? "";
+}
 
 // `.{0,80}` (nie `[^.]*`): názov domény v správe obsahuje bodky („The domain mg.revolis.ai was not found").
 const DOMAIN_NOT_VERIFIED_MESSAGE =
@@ -204,6 +238,18 @@ export async function sendInboundAutoResponse(
 
   const { subject, body, agentName } = buildInboundAutoResponseContent(payload);
   const fromEmail = resolveInboundFromEmail(replyTo);
+  const fromDomain = emailDomain(fromEmail);
+
+  // Odosielateľ na verejnej poštovej doméne by Resend aj tak odmietol (403) — zamietame skôr a s
+  // jasným dôvodom, bez volania API.
+  if (PUBLIC_MAILBOX_DOMAINS.has(fromDomain)) {
+    return {
+      ok: false,
+      error: `From address uses a public mailbox domain (${fromDomain}) — set OUTREACH_FROM_EMAIL to a verified sending domain`,
+      failure: { reason: "invalid_from", httpStatus: null, errorName: null, fromDomain },
+    };
+  }
+
   const resend = new Resend(apiKey);
 
   // Bez tagu sa otvorenie tohto e-mailu nedá priradiť k leadu
@@ -233,6 +279,7 @@ export async function sendInboundAutoResponse(
         reason: NETWORK_MESSAGE.test(message) ? "network" : "unknown",
         httpStatus: null,
         errorName: safeErrorName(error),
+        fromDomain,
       },
     };
   }
@@ -241,9 +288,9 @@ export async function sendInboundAutoResponse(
     return {
       ok: false,
       error: result.error.message ?? "Resend send failed",
-      failure: classifyResendError(result.error),
+      failure: { ...classifyResendError(result.error), fromDomain },
     };
   }
 
-  return { ok: true };
+  return { ok: true, fromDomain };
 }
