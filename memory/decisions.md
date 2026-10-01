@@ -1,5 +1,22 @@
 # Critical Decisions Log
 
+## 2026-10-01 — APPLY-INBOUND-OUTCOMES: `inbound_mail_outcomes` aplikovaná v PROD
+
+**GO foundera.** PROD `ypgajkhqtbriqqmyawyv`, DDL z `20261001100000_inbound_mail_outcomes.sql` (rovnaký text), spustené
+cez `execute_sql` PRED merge #774 — poradie tabuľka → kód je zámerné (kód píše fail-soft, takže opačné poradie by len
+sypalo warn).
+
+**Overené po aplikácii (SELECT, nie odhad):** tabuľka existovala 0× pred, existuje po; `relrowsecurity = true`,
+politík 0, grantov pre anon/authenticated 0, stĺpcov 18, riadkov 0 (kód zatiaľ nenasadený).
+
+**Poctivé výhrady:**
+- Aplikované cez `execute_sql`, NIE cez `apply_migration` (nástroj nebol dostupný) → riadok v histórii migrácií PROD
+  nevznikol. Repo a PROD sa v histórii rozchádzajú.
+- **Nový nález: PROD história migrácií končí `20260928070000`.** Migrácie z 29.–30. 9. z repa (napr. `cron_runs`,
+  `lead_demands`, `demand_property_matches`) v PROD NIE SÚ — `cron_runs` tam neexistuje. Kód, ktorý ich používa,
+  v PROD fail-soft zlyháva. Netýka sa tejto zmeny; vlajkujem, neriešim (patrí na samostatné GO).
+- Retencia 90 dní stále len deklarovaná (purge nebeží).
+
 ## 2026-10-01 — DOMAIN-LOG-DURABLE: trvalá stopa po každom e-maile príjmu (tabuľka `inbound_mail_outcomes`)
 
 **Rozhodnutie:** BUILD na výslovné GO foundera. **Ústava v2 (poctivo):** Q1 „zaplatil by za to klient" —

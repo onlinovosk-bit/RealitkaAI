@@ -1,3 +1,15 @@
+## Session 2026-10-01 (APPLY-INBOUND-OUTCOMES)
+### Dokončené
+- Migrácia `inbound_mail_outcomes` aplikovaná v PROD (RLS on, 0 politík, 0 grantov klientskym rolám, 18 stĺpcov, 0 riadkov) — overené SELECT-om.
+### Rozpracované / Pending
+- #774 stále draft, CI zelená; po merge sa začne zapisovať. Merge = rozhodnutie foundera.
+- **PROD história migrácií končí 28. 9.** (chýba napr. `cron_runs`) — treba samostatné GO na audit rozdielu repo vs PROD.
+- Purge cron pre retenciu 90 dní.
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md`; PROD: 1 nová tabuľka.
+### Ďalší krok
+Merge #774 → po prvom reálnom maile `SELECT sender_domain, outcome, count(*)` nad `inbound_mail_outcomes`.
+
 ## Session 2026-10-01 (DOMAIN-LOG-DURABLE)
 ### Dokončené
 - DOMAIN-READ (read-only): za 6 h jediný `NOT_A_LEAD` (`pima.sk`, no_contact) — z jednej vzorky sa nedá rozhodnúť o `SOURCE_RULES`.
