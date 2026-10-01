@@ -1,3 +1,15 @@
+## Session 2026-10-01 (META-LOOKALIKE-HASH)
+### Dokončené
+- `api/meta/lookalike`: do Meta idú SHA-256 hashe normalizovaných (trim + lowercase) e-mailov, nie čisté adresy (komentár to tvrdil, kód nie — PII-GATE-AUDIT B1). Nová `lib/meta/hash-email.ts` (`hashEmailForMeta`, `hashedEmailRows`): dedupe, preskočí null/prázdne/neplatné (predtým `l.email.toLowerCase()` na null zhodilo route), pri prázdnom zozname 400 bez volania Meta.
+- Testy: route (3) + helper (3). Mutation proof: bez hashu, bez dedupe, bez filtra, bez null-kontroly, bez 400, hash bez normalizácie → červené; dve mutácie sú ekvivalentné (normalizácia je zámerne dvakrát — v riadku aj v hash funkcii).
+- `prepush-gate` PASS; typecheck 49 (môj test najprv pridal 5 chýb, opravené).
+### Rozpracované / Pending
+- **Neoverené voči Meta:** `schema: ["EMAIL"]` s už zahashovanými hodnotami som nemohol vyskúšať (bez prístupu k Meta API). Overiť na testovacom ad accounte pred ostrým použitím.
+- **Súhlas (čl. 6(1)(a)) NIE JE vyriešený** — hashovanie nie je anonymizácia; hashované e-maily sú stále osobné údaje. Ide o `leads_demo` (vlastní prospekti Revolisu). Rozhodnutie o právnom základe je founderovo.
+- Route chráni `CRON_SECRET` bearer, ale UI (`AcquisitionHub.tsx`) ju volá z prehliadača bez neho → v praxi vždy 401 (nezmenené, mimo scope).
+### Ďalší krok
+Founder: rozhodnúť o súhlase/právnom základe pre Meta audience; potom GO LOG-PII-CLEANUP.
+
 ## Session 2026-10-01 (TENANT-GATE-2)
 ### Dokončené
 - 8 fail-open brán tvaru `if (callerProfile?.agency_id) { … }` → fail-closed `sameAgency()`: `leads/[id]/activities` GET/POST, `leads/[id]/moves` GET/POST, `tasks/[id]` PATCH/DELETE, `leads/[id]` GET. `tasks` DELETE: volajúci bez agentúry dostane 403 (tasks nemá vlastný `agency_id`, tenant ide cez lead).
