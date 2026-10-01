@@ -1,3 +1,17 @@
+## Session 2026-10-01 (HOT-LEAD-PUSH-AFTER)
+### Dokončené
+- `apps/crm/src/app/api/leads/[id]/route.ts`: `notifyHotLead` ide cez `runAfterResponse` (predtým `.catch` bez `await`, na serverless sa po odpovedi zmrazil).
+- `apps/crm/tests/verification/lead-pipeline-after.verification.test.ts`: stráž rozšírená o `notifyHotLead`.
+- `apps/crm/src/app/api/leads/[id]/__tests__/route-hot-push.test.ts`: 5 behaviorálnych testov (poradie voči odpovedi cez zachytené `after()`).
+- Zúžený rozsah dôkazom: `globalEventBus` nemá odberateľov (emit = no-op), HubSpot webhook len loguje, `leads_demo` má 0 riadkov. PROD len SELECT: 8 push odberov / 2 používatelia / 6 Horúcich leadov.
+### Rozpracované / Pending
+- Nasadenie blokuje Vercel Hobby limit 100/deň (SCOREBOARD bod 10); `after()` v PROD stále nedokázané.
+- PR #785 (STARTER-PACK-GUARD) čaká na merge; krok C (Stripe ceny) na founderovi.
+### Kľúčové súbory zmenené
+- apps/crm/src/app/api/leads/[id]/route.ts, apps/crm/tests/verification/lead-pipeline-after.verification.test.ts, apps/crm/src/app/api/leads/[id]/__tests__/route-hot-push.test.ts, memory/decisions.md
+### Ďalší krok
+Počkať na merge a uvoľnenie Vercel limitu, potom e2e beh podľa SCOREBOARDu (bod 3, 5, 6, 10).
+
 ## Session 2026-10-01 (LEAD-PIPELINE-AFTER)
 ### Dokončené
 - **LEAD-PIPELINE-AFTER** (GO foundera, jedna stena): `runAfterResponse` (`after()`, sekvenčne, izolované chyby) namiesto `void` v 5 trasách

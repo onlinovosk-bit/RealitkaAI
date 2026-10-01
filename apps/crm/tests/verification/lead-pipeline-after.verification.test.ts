@@ -26,6 +26,7 @@ const PIPELINE_FUNCTIONS = new Set([
   'runInboundLeadAutoResponse',
   'notifyNewBuyerLead',
   'rescoreLead',
+  'notifyHotLead',
 ])
 
 type Nalez = { subor: string; riadok: number; funkcia: string }
@@ -105,6 +106,7 @@ describe('[verification] lead pipeline: skener rozpozná nebezpečné volania (u
     ['holé volanie bez await', 'runInboundLeadTriageAndNotify(a, b, c);'],
     ['.catch bez await', 'notifyNewBuyerLead(x).catch(() => {});'],
     ['.then bez await', 'rescoreLead(id).then(() => {});'],
+    ['notifyHotLead .catch bez await (push pre Horúci lead)', 'notifyHotLead(a, b, c).catch(() => {});'],
     ['priradené do premennej a nikdy neawaitnuté', 'const p = runInboundLeadAutoResponse(a, b, c);'],
     ['void v zátvorkách', 'void (runInboundLeadAutoResponse(a, b, c));'],
     ['vnútri inej funkcie bez await', 'function f() { void rescoreLead(id); }'],
@@ -153,8 +155,8 @@ describe('[verification] lead pipeline: reálny repozitár (src/app)', () => {
 
   it('skener niečo našiel (harness, ktorý nič nenájde, by prešiel aj pri porušení)', () => {
     const spolu = vysledky.reduce((a, v) => a + v.r.vsetky, 0)
-    // valuation/submit 2 + leads/inbound 2 + buyer-onboarding 3 + acquire/email 2 = 9
-    expect(spolu).toBeGreaterThanOrEqual(9)
+    // valuation/submit 2 + leads/inbound 2 + buyer-onboarding 3 + acquire/email 2 + leads/[id] (notifyHotLead) 1 = 10
+    expect(spolu).toBeGreaterThanOrEqual(10)
   })
 
   it('každé volanie lead pipeline je await-nuté alebo vo vnútri runAfterResponse', () => {
@@ -169,6 +171,7 @@ describe('[verification] lead pipeline: reálny repozitár (src/app)', () => {
     'src/app/api/valuation/submit/route.ts',
     'src/app/api/leads/inbound/route.ts',
     'src/app/(public)/buyer-onboarding/actions.ts',
+    'src/app/api/leads/[id]/route.ts',
   ])('%s používa runAfterResponse', (rel) => {
     expect(readFileSync(join(CRM, rel), 'utf8')).toContain('runAfterResponse(')
   })
@@ -177,6 +180,7 @@ describe('[verification] lead pipeline: reálny repozitár (src/app)', () => {
     'src/app/api/valuation/submit/route.ts',
     'src/app/api/leads/inbound/route.ts',
     'src/app/(public)/buyer-onboarding/page.tsx',
+    'src/app/api/leads/[id]/route.ts',
   ])('%s má maxDuration >= 30 s (after() beží v jeho rámci)', (rel) => {
     const m = readFileSync(join(CRM, rel), 'utf8').match(/export const maxDuration = (\d+)/)
     expect(m).not.toBeNull()

@@ -1,5 +1,28 @@
 # Critical Decisions Log
 
+## 2026-10-01 — HOT-LEAD-PUSH-AFTER: push pre „Horúci" lead dobehne po odpovedi (BUILD, zúžený rozsah; NEnasadené)
+
+**Rozhodnutie BUILD (brána Ústavy v2):** push „HOT lead — okamžitá akcia" je to, čo maklér dostane v momente, keď má zavolať — priamo retencia.
+Dôkaz, že kanál je živý (PROD, len SELECT): `push_subscriptions` 8 odberov / 2 používatelia, 6 leadov v stave „Horúci".
+
+**Zmerané PRED kódom (zúženie rozsahu).** Pôvodná ponuka z #780 hovorila o „14 príkazoch v 10 súboroch". Prečítal som reálne miesta:
+- `api/leads/[id]` `notifyHotLead(...).catch(...)` bez `await` → **skutočná chyba, opravené.**
+- `globalEventBus.emit(...)` v `api/leads/[id]` a `api/leads`: na `globalEventBus` nie je zaregistrovaný **žiaden** odberateľ (`grep` na `.on(` = 0) → no-op, **nedotknuté**.
+- `api/webhooks/hubspot` `processEventsAsync`: robí len `console.log` → neškodné, **nedotknuté**.
+- `api/demo/capture-lead` `syncLeadToHubSpot`: tabuľka `leads_demo` má 0 riadkov (trasa sa nepoužíva) → **nedotknuté**.
+Ostatné príkazy z tých 14 (mimo miest vyššie) som nečítal; rozsah tejto zmeny je len `notifyHotLead`.
+
+**Čo sa zmenilo (`apps/crm`):** `api/leads/[id]/route.ts` — push ide cez `runAfterResponse("lead-hot-push", …)`; trasa už má `maxDuration = 60`.
+Stráž `tests/verification/lead-pipeline-after.verification.test.ts` rozšírená o `notifyHotLead` (AST sken + `maxDuration` + použitie `runAfterResponse`).
+
+**Dôkaz:** nový `src/app/api/leads/[id]/__tests__/route-hot-push.test.ts` (5 testov; `after()` zachytené: v čase odpovede push nebežal, spustí ho až naplánovaný krok;
+pád pushu odpoveď nepokazí; bez makléra / iný stav / už Horúci → bez pushu). Okolité testy 212/212, lint čistý, typecheck 49 (strop 54).
+Mutation proof: stráž 4/4 červená (pôvodná trasa, `notifyHotLead` vyradený zo zoznamu, `maxDuration = 10`, `void` mimo `runAfterResponse`);
+behaviorálny test 3/3 červená (pôvodná trasa, push inline pred odpoveďou, podmienka „Horúci" zrušená). Štvrtá mutácia (`.catch(e => { throw e })`) prežila —
+je ekvivalentná, izoláciu pádu robí `runAfterResponse`, nie trasa, takže ju nepočítam ako dôkaz.
+
+**NIE je dokázané:** že `after()` na Verceli push naozaj doručí (platí rovnako ako pri LEAD-PIPELINE-AFTER; ukáže to až nasadený beh). Nasadzovanie blokuje Vercel Hobby limit (SCOREBOARD bod 10).
+
 ## [2026-10-01] SCOREBOARD — „prvá reakcia na lead" (lead → AI triáž → AI návrh → potvrdenie klientovi → viditeľnosť): 30 % dokázané v PROD
 
 **Metóda (aby sa dalo prepočítať, nie veriť):** 10 kontrolných bodov. ✅ = dokázané v PROD, 🟡 = postavené/zmergované, ale nedokázané alebo čiastočné,
