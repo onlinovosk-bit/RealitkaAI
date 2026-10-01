@@ -1,3 +1,16 @@
+## Session 2026-10-01 (CHECKOUT-DIAG-01)
+### Dokončené
+- `/api/billing/checkout-config` vracia `missingPriceEnvKeys {seat, topup}` — iba NÁZVY premenných, ktoré chýbajú alebo nie sú platné `price_…` (apps/crm/src/lib/program-tier-pricing.ts: `missingSeatPriceEnvKeys`, `missingTopupPriceEnvKeys`).
+- Test `checkout-config-missing-keys.verification.test.ts` (3). Mutation proof: invertovaný filter → 3× červená, po obnovení zelená. `prepush-gate` PASS (typecheck 49/54, lint); migrácie NEOVERENÉ (bez Dockera).
+### Rozpracované / Pending
+- Krok C → A → B → D z CHECKOUT-ENV-01 stále na founderovi.
+- Endpoint nemá auth; názvy cenových premenných sú v ňom teraz viditeľné (hodnoty nikdy). Ak je to nežiaduce, zabrániť cez auth gate.
+- Vetva `claude/charming-feynman-gp7uf4` namiesto `claude/epic-mendel-oal1wt` z handoffu; memory na nej nemala záznamy z 30. 9.–1. 10.
+### Kľúčové súbory zmenené
+- apps/crm/src/lib/program-tier-pricing.ts, apps/crm/src/app/api/billing/checkout-config/route.ts, nový test
+### Ďalší krok
+GO PR-BACKLOG-TRIAGE-2 alebo ENV-TS-WIRE; po kroku B jedno GET na checkout-config skráti krok D.
+
 ## Session 2026-10-01 (AUTO-RESPONSE-GATE)
 ### Dokončené
 - #771 zmergovaný a nasadený (`d29b73c`). Prvý reálny lead po dobití (06:46:58 UTC, Bazoš.sk): AI triedenie
