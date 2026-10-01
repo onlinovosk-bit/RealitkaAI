@@ -34,6 +34,24 @@ Merge → GO na aplikáciu migrácie v PROD → po pár dňoch `SELECT sender_do
 - `apps/crm/src/lib/inbound/mailbox-routing.ts` (nový), `gmail-pull.ts`, `app/api/acquire/email/route.ts` + testy.
 ### Ďalší krok
 Review + merge PR; potom z logov zistiť, ktoré `sender_domain` reálne prichádzajú.
+## Session 2026-10-01 (HANDOFF — CHECKOUT-ENV-01 krok A uzavretý, odovzdanie do nového chatu)
+### Dokončené
+- PR #748 zmergovaný 2026-09-29: CHECKOUT-ENV-01 krok A. Korekcia stavu: VERIFY prebehol už 2026-09-22 → **0/9** (`docs/reports/2026-09-22-stripe-verify-prices.md`), blokér príjmu je **krok C** (ceny v Stripe neexistujú).
+- `scripts/ops/stripe-expected-prices.json`: manifest 10 cien (pribudol `STRIPE_PRICE_STARTER_PACK` 47 € one-time, `/balik`).
+- `scripts/ops/stripe_verify_prices.py` (+ tenký wrapper `.sh`): stránkovanie; kontrola typu, intervalu, per_unit, livemode a EUR; dôvody pri takmer-zhodách; odmieta test kľúč; `--spec` bez kľúča. Kľúč už nejde do argv (pôvodne `curl -u`), iba do HTTP hlavičky.
+- `apps/crm/tests/verification/stripe-expected-prices.verification.test.ts`: 10 testov (manifest ↔ `program-tier-pricing.ts` + offline fixtures vrátane snapshotu z 22. 9.), mutation proof 7×.
+- Nález #746 (zmazaných 44 sessions v tomto súbore) medzičasom vyriešený na `main`: história obnovená a CI guard #766 bráni ďalšiemu mazaniu.
+### Rozpracované / Pending
+- **Krok C (founder, P0):** `bash scripts/ops/stripe-verify-prices.sh --spec` → vytvoriť ceny v Stripe live mode (minimum 3 seat ceny 79/71/63 € mesačne, per unit) → VERIFY s restricted kľúčom (*Prices: Read*) → poslať výstup → krok B (env patch, zapisuje founder) → krok D (deploy, smoke `/upgrade`, kontrola sumy v Checkout).
+- Founder: zvážiť rotáciu `sk_live_` (report z 22. 9.: agent ho čítal z lokálneho `.vercel/.env.production.local`).
+- Founder: `Lint, test, build` nie je required check v branch protection.
+- Bez GO: `apps/marketing/app/api/starter-pack/checkout/route.ts` nevaliduje formát price ID (`isValidStripePriceId`).
+- Bez GO: typecheck ratchet hlási, že strop sa dá znížiť; `spend_credits` RPC má EXECUTE pre `anon`/`authenticated`.
+- Poučenia: dorovnávať cez `git merge origin/main` (nie rebase) a po merge lint; `git checkout <ref> -- <súbor>` prepíše aj vlastné zmeny; statický test „nesmie obsahovať X" overiť aj proti pôvodnému kódu (prvá verzia prepustila `curl -u` na pokračovacom riadku).
+### Kľúčové súbory zmenené
+- memory/session-summary.md: tento handoff záznam (prepend)
+### Ďalší krok
+Čakať na výstup VERIFY po founderovom kroku C, potom pripraviť krok B. Medzitým navrhnúť `GO STARTER-PACK-GUARD` (validácia price ID v marketing checkoute + test s mutation proof).
 ## Session 2026-10-01 (SCHEMA-GAP-RATCHET)
 ### Dokončené
 - **SCHEMA-GAP-RATCHET** (GO foundera): CI brána, ktorá padne, keď aplikačný kód volá tabuľku, ktorú nezakladá žiadna
@@ -72,6 +90,7 @@ Merge PR (founder) → potom GO na aplikáciu 26 neaplikovaných migrácií na P
 ### Ďalší krok
 Founder: „merguj 55". Potom najvyššia hodnota je v RealitkaAI, nie v UPTM: **CHECKOUT-ENV-01 krok C** (ceny v Stripe live mode; checklist je v chate z 2026-09-30, zdroj pravdy `bash scripts/ops/stripe-verify-prices.sh --spec`).
 
+
 ## Session 2026-10-01 (AUTO-RESPONSE-TEXT-FIX)
 ### Dokončené
 - **AUTO-RESPONSE-TEXT-FIX** (GO foundera): šablóna auto-odpovede už neobsahuje `ai_reason`; text len z overených faktov,
@@ -91,6 +110,7 @@ Founder: „merguj 55". Potom najvyššia hodnota je v RealitkaAI, nie v UPTM: *
 ### Ďalší krok
 Founder opraví `OUTREACH_FROM_EMAIL` (verená doména) až po schválení; potom skúšobný lead s `auto_response_enabled=true`
 len pre testovaciu agentúru → `outcome=sent`, `from_domain` = overená doména.
+
 
 ## Session 2026-10-01 (AUTO-RESPONSE-GATE)
 ### Dokončené
