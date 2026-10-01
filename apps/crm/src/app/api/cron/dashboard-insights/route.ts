@@ -12,6 +12,12 @@ import {
 
 const BATCH = 3
 
+// Dávky po 3 agentúrach bežia paralelne, každá dávka = zber dát (~4 s) + okno modelu (do ~7,5 s).
+// Pri 4 agentúrach sú to 2 dávky, v najhoršom prípade ~23 s — nad predvolenými 10 s funkcie.
+// 60 s je strop, ktorý Vercel pre Hobby podľa mojej znalosti dovoľuje (neoverené z dokumentácie;
+// ak by ho plán neprijal, zlyhá build preview hneď v PR).
+export const maxDuration = 60
+
 export async function GET(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET
   if (!cronSecret || request.headers.get('authorization') !== `Bearer ${cronSecret}`) {
