@@ -31,7 +31,8 @@ export interface InboundLeadPayload {
 
 export interface ProcessLeadResult {
   leadId:       string
-  briScore:     number
+  /** null = BRI sa nepodarilo vypočítať (nikdy nie vymyslená hodnota). */
+  briScore:     number | null
   draftCreated: boolean
   /** Always false: sending is a human action (Tier 3). Kept for API compatibility. */
   replySent:    false
@@ -92,7 +93,8 @@ export async function processInboundLead(
 
   // 3. Compute BRI
   const bri      = await computeBRI(leadId, payload.profileId, 'lead_created')
-  const briScore = bri?.new_score ?? 50
+  // Zlyhaný výpočet nesmie vyrobiť skóre: žiadne vymyslené číslo, žiadny draft.
+  const briScore = bri?.new_score ?? null
 
   // 4. Audit event
   await logEvent({
@@ -111,7 +113,7 @@ export async function processInboundLead(
     },
   })
 
-  if (briScore < BRI_REPLY_THRESHOLD || !payload.email) {
+  if (briScore === null || briScore < BRI_REPLY_THRESHOLD || !payload.email) {
     return { leadId, briScore, draftCreated: false, replySent: false }
   }
 

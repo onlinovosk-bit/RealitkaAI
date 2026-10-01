@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { runAfterResponse } from "@/lib/acquire/after-response";
 import { runInboundLeadAutoResponse } from "@/lib/acquire/inbound-lead-auto-response";
 import { runInboundLeadTriageAndNotify } from "@/lib/acquire/inbound-lead-triage";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
@@ -10,6 +11,9 @@ import { buildDeterministicEstimate } from "@/lib/valuation/estimate-engine";
 import { buildValuationLeadInsert } from "@/lib/valuation/lead-mapper";
 import { buildSandboxSubmissionPayload, hashClientIp } from "@/lib/valuation/sandbox";
 import { resolveTenantRecord } from "@/lib/valuation/tenant";
+
+// `after()` (triáž + auto-odpoveď) beží v rámci tohto limitu.
+export const maxDuration = 60;
 
 const propertySchema = z.object({
   propertyType: z.enum(["byt", "dom"]),
@@ -164,24 +168,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: "Nepodarilo sa uložiť dopyt." }, { status: 500 });
     }
 
-    void runInboundLeadTriageAndNotify(
-      supabase,
-      inserted,
+    // Po odpovedi (LEAD-PIPELINE-AFTER): `void` by sa na serverless nedokončil. Triáž ide PRED
+    // auto-odpoveďou — ta číta `ai_priority`. Sandbox sa vracia skôr a e-mail nikdy neposiela.
+    runAfterResponse("valuation-submit", [
       {
-        agencyId: tenant.agencyId,
-        name: payload.name,
-        status: "Nový",
-        note: leadRow.note,
-        source: "valuation_widget",
+        name: "triage",
+        run: () =>
+          runInboundLeadTriageAndNotify(supabase, inserted, {
+            agencyId: tenant.agencyId,
+            name: payload.name,
+            status: "Nový",
+            note: leadRow.note,
+            source: "valuation_widget",
+          }),
       },
-    );
-
-    // Non-sandbox only — sandbox returns earlier and must never send email.
-    void runInboundLeadAutoResponse(supabase, inserted, {
-      agencyId: tenant.agencyId,
-      name: payload.name,
-      email: payload.email,
-    });
+      {
+        name: "auto_response",
+        run: () =>
+          runInboundLeadAutoResponse(supabase, inserted, {
+            agencyId: tenant.agencyId,
+            name: payload.name,
+            email: payload.email,
+          }),
+      },
+    ]);
 
     return NextResponse.json({ ok: true, leadId: inserted.id, estimate });
   } catch (error) {

@@ -52,3 +52,24 @@ Rozhodnutia: [[memory/decisions|Rozhodnutia]]. Retrieval:
 **Ručne, mimo swarmu.** Tento dokument definuje zrkadlenie; neautomatizuje sync.
 Odkazy v mape sú **path-qualified** (`[[docs/architecture/...|label]]`), nie
 kratké `[[INDEX]]` bez jednoznačného Markdown cieľa.
+
+
+## Export `memory/` → vault `RealitkaAI-Memory` (ručný, jednosmerný)
+
+Vault mimo repa (`C:\RealitkaAI-Memory`) sa plní **skriptom, ktorý spúšťa founder** — swarm
+do neho stále nezapisuje. Skript nič nemaže, nevolá sieť a prepíše len súbory s
+`generated: true` vo frontmatteri (ručné poznámky ako `Decision-Log` ostávajú nedotknuté).
+
+```
+npm run vault:export -- --out "C:\RealitkaAI-Memory" --dry-run   # najprv náhľad
+npm run vault:export -- --out "C:\RealitkaAI-Memory"
+```
+
+Čo vznikne: `HOME` (posledná session + ďalší krok), `01-DECISIONS/` (1 poznámka na rozhodnutie
++ `Decision-Index`), `02-SESSIONS/` (1 poznámka na session + `Session-Index`), `03-OPS/`
+(open-tasks, people, …), `Dashboard` (Dataview/Tasks), `99-TEMPLATES/` (vytvorí sa len raz).
+Frontmatter: `type`, `date`, `verdict`, `decision_id`, `prs`, `tags`. Tokeny rozhodnutí
+(`LEAD-PIPELINE-AFTER`) a `#PR` sa v texte zmenia na wikilinky / odkazy → funguje graf a backlinky.
+
+Obmedzenie: export je jednosmerný (repo → vault). Úpravy generovaných poznámok sa pri ďalšom
+exporte prepíšu; ručné poznámky patria do súborov bez markera `generated`.

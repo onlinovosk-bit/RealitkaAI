@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { runAfterResponse } from "@/lib/acquire/after-response";
 import { runInboundLeadAutoResponse } from "@/lib/acquire/inbound-lead-auto-response";
 import { createAdminClient } from "@/lib/supabase/server";
 import { createTask } from "@/lib/tasks-store";
@@ -218,26 +219,35 @@ export async function submitBuyerOnboarding(formData: FormData) {
       ? `${budgetMin > 0 ? `${budgetMin.toLocaleString("sk-SK")} – ` : "do "}${budgetMax.toLocaleString("sk-SK")} €`
       : "neurčený";
 
-    // Internal agency email — keep (different purpose from lead auto-response).
-    notifyNewBuyerLead({
-      leadName: name,
-      leadEmail: email,
-      segment: SEGMENT_LABEL[segment] ?? segment,
-      readinessScore,
-      city,
-      budget: budgetStr,
-      focusText: focusText || undefined,
-      leadUrl: `/leads/${leadId}`,
-    }).catch((err) => autoErrorCapture(err, "buyer-onboarding:notify"));
-
-    // Lead-facing auto-response (same wire as valuation/inbound — PR #521).
-    void runInboundLeadAutoResponse(
-      admin,
-      { id: leadId, agency_id: agencyId },
-      { agencyId, name, email },
-    );
-
-    rescoreLead(leadId).catch((err) => autoErrorCapture(err, "buyer-onboarding:rescore"));
+    // Po odpovedi (LEAD-PIPELINE-AFTER): bez `await` by sa na serverless nič z toho nedokončilo.
+    runAfterResponse("buyer-onboarding", [
+      {
+        // Internal agency email — keep (different purpose from lead auto-response).
+        name: "notify",
+        run: () =>
+          notifyNewBuyerLead({
+            leadName: name,
+            leadEmail: email,
+            segment: SEGMENT_LABEL[segment] ?? segment,
+            readinessScore,
+            city,
+            budget: budgetStr,
+            focusText: focusText || undefined,
+            leadUrl: `/leads/${leadId}`,
+          }),
+      },
+      {
+        // Lead-facing auto-response (same wire as valuation/inbound — PR #521).
+        name: "auto_response",
+        run: () =>
+          runInboundLeadAutoResponse(
+            admin,
+            { id: leadId, agency_id: agencyId },
+            { agencyId, name, email },
+          ),
+      },
+      { name: "rescore", run: () => rescoreLead(leadId) },
+    ]);
   }
 
   // ── 4. Build redirect URL → /nehnutelnosti ────────────────────────────────
