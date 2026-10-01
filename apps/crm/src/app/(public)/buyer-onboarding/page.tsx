@@ -1,6 +1,9 @@
 import { submitBuyerOnboarding } from "./actions";
 import { SprievodcaFormAnalytics } from "@/components/sprievodca/SprievodcaFormAnalytics";
 
+// Server action `submitBuyerOnboarding` spúšťa notifikáciu + auto-odpoveď cez `after()` v rámci tohto limitu.
+export const maxDuration = 60;
+
 const SPRIEVODCA_AGENCY_SLUG = "reality-smolko";
 
 const DEAL_TYPES = [

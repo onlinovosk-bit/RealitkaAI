@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { getActivitiesByLeadId, getLead } from "@/lib/leads-store";
 import { createActivity } from "@/lib/activities-store";
+import { runAfterResponse } from "@/lib/acquire/after-response";
 import { rescoreLead } from "@/lib/rescore-lead";
 import { getCurrentProfile } from "@/lib/auth";
 import { tryCreateReminderFromNote } from "@/lib/google-calendar-server";
 import { createClient } from "@/lib/supabase/server";
 import { sameAgency } from "@/lib/tenant-scope";
+
+// `after()` (prepočet skóre + AI insight) beží v rámci tohto limitu.
+export const maxDuration = 60;
 
 export async function GET(
   _request: Request,
@@ -71,7 +75,8 @@ export async function POST(
       severity: "info",
     }, supabase);
 
-    rescoreLead(id); // fire-and-forget
+    // Po odpovedi (LEAD-PIPELINE-AFTER): bez `await` by sa prepočet na serverless nedokončil.
+    runAfterResponse("lead-activity", [{ name: "rescore", run: () => rescoreLead(id) }]);
 
     const profile = await getCurrentProfile();
     const lead = await getLead(id, supabase);
