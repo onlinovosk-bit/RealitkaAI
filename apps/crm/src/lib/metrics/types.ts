@@ -61,6 +61,13 @@ export type GuardrailSnapshot = {
   creditRevenueBand: GuardrailBand;
 };
 
+export type MetricTrendSeries = {
+  metric: string;
+  label: string;
+  weekLabels: string[];
+  values: (number | null)[];
+};
+
 export type FounderMetricsSnapshot = {
   asOf: string;
   periodLabel: string;
@@ -74,4 +81,6 @@ export type FounderMetricsSnapshot = {
   creditRevenuePctOfTotal: number | null;
   aiCost: AiCostSummary;
   guardrails: GuardrailSnapshot;
+  trends: MetricTrendSeries[];
+  aiCostDailySeries: AiCostDailyRow[];
 };

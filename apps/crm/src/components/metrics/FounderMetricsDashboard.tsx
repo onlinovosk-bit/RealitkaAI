@@ -1,3 +1,4 @@
+import { MetricSparkline } from "@/components/metrics/MetricSparkline";
 import type { GuardrailBand } from "@/lib/metrics/guardrails";
 import type { FounderMetricsSnapshot } from "@/lib/metrics/types";
 
@@ -31,25 +32,39 @@ function bandLabel(band: GuardrailBand): string {
   }
 }
 
+function trendFor(metrics: FounderMetricsSnapshot, metricKey: string) {
+  return metrics.trends.find((t) => t.metric === metricKey)?.values ?? [];
+}
+
 function MetricCard({
   title,
   value,
   detail,
   band,
+  trendValues,
+  trendColor = "#34d399",
 }: {
   title: string;
   value: string;
   detail?: string;
   band?: GuardrailBand;
+  trendValues?: (number | null)[];
+  trendColor?: string;
 }) {
   return (
     <div
       className={`rounded-xl border p-4 ${band ? bandClass(band) : "border-slate-700/60 bg-slate-900/60 text-white"}`}
     >
-      <p className="text-xs uppercase tracking-wide opacity-70">{title}</p>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-xs uppercase tracking-wide opacity-70">{title}</p>
+        {trendValues ? <MetricSparkline values={trendValues} color={trendColor} /> : null}
+      </div>
       <p className="mt-2 text-2xl font-semibold">{value}</p>
       {detail ? <p className="mt-1 text-sm opacity-80">{detail}</p> : null}
       {band ? <p className="mt-2 text-xs font-medium">{bandLabel(band)}</p> : null}
+      {trendValues ? (
+        <p className="mt-1 text-[10px] uppercase tracking-wide opacity-50">4 týždne</p>
+      ) : null}
     </div>
   );
 }
@@ -68,7 +83,11 @@ export default function FounderMetricsDashboard({
           MRR odhad · {metrics.periodLabel}
         </h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <MetricCard title="Celkový MRR" value={formatEur(mrr.totalEur)} />
+          <MetricCard
+            title="Celkový MRR"
+            value={formatEur(mrr.totalEur)}
+            trendValues={trendFor(metrics, "mrr_total_eur")}
+          />
           <MetricCard title="Seat revenue" value={formatEur(mrr.seatRevenueEur)} />
           <MetricCard title="Owner Cockpit" value={formatEur(mrr.cockpitRevenueEur)} />
           <MetricCard
@@ -109,12 +128,25 @@ export default function FounderMetricsDashboard({
           Kredity · {metrics.periodLabel}
         </h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <MetricCard title="Grant" value={String(credits.granted)} detail="mesačný grant pool" />
-          <MetricCard title="Spend" value={String(credits.spent)} detail="mínus grant_expiry" />
+          <MetricCard
+            title="Grant"
+            value={String(credits.granted)}
+            detail="mesačný grant pool"
+            trendValues={trendFor(metrics, "credits_granted")}
+          />
+          <MetricCard
+            title="Spend"
+            value={String(credits.spent)}
+            detail="mínus grant_expiry"
+            trendValues={trendFor(metrics, "credits_spent")}
+            trendColor="#fbbf24"
+          />
           <MetricCard
             title="Purchase"
             value={String(credits.purchased)}
             detail={formatEur(credits.purchaseRevenueEur)}
+            trendValues={trendFor(metrics, "credits_purchased")}
+            trendColor="#60a5fa"
           />
           <MetricCard
             title="Credit revenue %"
@@ -125,6 +157,7 @@ export default function FounderMetricsDashboard({
             }
             detail="top-up / (MRR + top-up)"
             band={guardrails.creditRevenueBand}
+            trendValues={trendFor(metrics, "credit_revenue_pct")}
           />
         </div>
       </section>
@@ -134,16 +167,35 @@ export default function FounderMetricsDashboard({
           AI cost daily
         </h2>
         {aiCost.available ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <MetricCard title="Dni v okne" value={String(aiCost.days)} />
-            <MetricCard title="Kredity spent" value={String(aiCost.creditsSpent)} />
-            <MetricCard title="Cost EUR" value={formatEur(aiCost.costEur)} />
-            <MetricCard
-              title="Margin EUR"
-              value={formatEur(aiCost.marginEur)}
-              detail={`Retail ${formatEur(aiCost.revenueEurRetail)}`}
-            />
-          </div>
+          <>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <MetricCard title="Dni v okne" value={String(aiCost.days)} />
+              <MetricCard
+                title="Kredity spent"
+                value={String(aiCost.creditsSpent)}
+                trendValues={trendFor(metrics, "ai_credits_spent")}
+              />
+              <MetricCard
+                title="Cost EUR"
+                value={formatEur(aiCost.costEur)}
+                trendValues={trendFor(metrics, "ai_cost_eur")}
+                trendColor="#f87171"
+              />
+              <MetricCard
+                title="Margin EUR"
+                value={formatEur(aiCost.marginEur)}
+                detail={`Retail ${formatEur(aiCost.revenueEurRetail)}`}
+                trendValues={trendFor(metrics, "ai_margin_eur")}
+              />
+            </div>
+            {metrics.aiCostDailySeries.length > 0 ? (
+              <p className="mt-3 text-xs text-slate-500">
+                Denný trend: {metrics.aiCostDailySeries[0]?.day_utc} →{" "}
+                {metrics.aiCostDailySeries[metrics.aiCostDailySeries.length - 1]?.day_utc} (
+                {metrics.aiCostDailySeries.length} dní)
+              </p>
+            ) : null}
+          </>
         ) : (
           <p className="rounded-xl border border-slate-700/60 bg-slate-900/60 p-4 text-sm text-slate-400">
             View <code className="text-slate-300">ai_cost_daily</code> nie je dostupná — migrácia
