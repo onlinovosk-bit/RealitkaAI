@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
 import { getActivitiesByLeadId, getLead } from "@/lib/leads-store";
 import { createActivity } from "@/lib/activities-store";
+import { runAfterResponse } from "@/lib/acquire/after-response";
 import { rescoreLead } from "@/lib/rescore-lead";
 import { getCurrentProfile } from "@/lib/auth";
 import { tryCreateReminderFromNote } from "@/lib/google-calendar-server";
 import { createClient } from "@/lib/supabase/server";
+import { sameAgency } from "@/lib/tenant-scope";
+
+// `after()` (prepočet skóre + AI insight) beží v rámci tohto limitu.
+export const maxDuration = 60;
 
 export async function GET(
   _request: Request,
@@ -20,12 +25,10 @@ export async function GET(
 
     const { id } = await params;
 
-    if (callerProfile?.agency_id) {
-      const { data: leadRow } = await supabase
-        .from("leads").select("agency_id").eq("id", id).maybeSingle();
-      if (leadRow?.agency_id !== callerProfile.agency_id) {
+    const { data: leadRow } = await supabase
+      .from("leads").select("agency_id").eq("id", id).maybeSingle();
+    if (!sameAgency(callerProfile?.agency_id, leadRow?.agency_id)) {
         return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
-      }
     }
 
     const activities = await getActivitiesByLeadId(id, supabase);
@@ -50,12 +53,10 @@ export async function POST(
 
     const { id } = await params;
 
-    if (callerProfile?.agency_id) {
-      const { data: leadRow } = await supabase
-        .from("leads").select("agency_id").eq("id", id).maybeSingle();
-      if (leadRow?.agency_id !== callerProfile.agency_id) {
+    const { data: leadRow } = await supabase
+      .from("leads").select("agency_id").eq("id", id).maybeSingle();
+    if (!sameAgency(callerProfile?.agency_id, leadRow?.agency_id)) {
         return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
-      }
     }
 
     const body = await request.json();
@@ -74,7 +75,8 @@ export async function POST(
       severity: "info",
     }, supabase);
 
-    rescoreLead(id); // fire-and-forget
+    // Po odpovedi (LEAD-PIPELINE-AFTER): bez `await` by sa prepočet na serverless nedokončil.
+    runAfterResponse("lead-activity", [{ name: "rescore", run: () => rescoreLead(id) }]);
 
     const profile = await getCurrentProfile();
     const lead = await getLead(id, supabase);

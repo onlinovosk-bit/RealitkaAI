@@ -225,6 +225,146 @@ priradil všetky leady jednému maklérovi).
   prijatie maklérskej adresy, vypnuté radenie) červené → návrat zelený. typecheck 49 (baseline 54).
 - Nedotknuté: kontrakt Cloudflare Workera, DB, PROD. Pri zapnutí pullu stále platí GDPR bod
   z GO MAILBOX (preposielať len portálové domény).
+## [2026-10-01] SCOREBOARD — „prvá reakcia na lead" (lead → AI triáž → AI návrh → potvrdenie klientovi → viditeľnosť): 30 % dokázané v PROD
+
+**Metóda (aby sa dalo prepočítať, nie veriť):** 10 kontrolných bodov. ✅ = dokázané v PROD, 🟡 = postavené/zmergované, ale nedokázané alebo čiastočné,
+⛔ = chýba/blokované. Prísne % = ✅/10. Vážené % = (✅ + 0,5·🟡)/10 (váha 0,5 je MOJA konvencia, nie meranie). Rozsah = len táto reakcia na lead,
+NIE celé Revolis.AI (na to nemáme definovaného menovateľa).
+
+| # | Bod | Stav 1. 10. 11:05 UTC | Dôkaz |
+|---|-----|------|-------|
+| 1 | Príjem leadu z portálových e-mailov | ✅ | leady Bazoš / Nehnuteľnosti.sk v PROD dnes |
+| 2 | Príjem z widgetu / formulára / buyer-onboarding | ✅ | widget lead 10:14 sa uložil |
+| 3 | AI triáž dobehne na všetkých vstupoch | 🟡 | e-mail cesta ✅ (5 z 6 leadov za 24 h má triáž); widget ⛔ — oprava v #780, nenasadená |
+| 4 | AI návrh odpovede pre makléra | 🟡 | funguje (~8 s); kvalita textu otvorená („Vaša záujem") |
+| 5 | Text potvrdenia klientovi bez interného AI textu | 🟡 | v PROD od #773; reálne znenie ešte nevidené (Resend Logs) |
+| 6 | Odoslanie z overenej domény | 🟡 | Resend poslal z revolis.ai (Demo 08:41); `OUTREACH_FROM_EMAIL` nedokázaná |
+| 7 | Potvrdenie živé pre referenčného klienta | ⛔ | vypnuté: chýba reply-to + súhlas |
+| 8 | Viditeľnosť (udalosti, dôvody zlyhaní) | ✅ | `inbound.auto_response`, `ai.call_failed` zapisujú v PROD |
+| 9 | Poistky (opt-in) | 🟡 | 6 z 7 agentúr vypnutých ✅; default pre nové agentúry = migrácia, nenasadená |
+| 10 | Nasadzovanie do PROD funguje | ⛔ | Vercel Hobby limit 100/deň; PROD = #776, `main` je o #782 (TENANT-GATE-2) pred ňou |
+
+**Skóre: 3 ✅ / 5 🟡 / 2 ⛔ → 30 % dokázané, 55 % vážené.**
+
+**Plán k 100 % (poradie podľa páky):** (1) odblokovať nasadzovanie (#10) → (2) „merguj 780" → (3) e2e beh: otvorím testovací tenant, founder pustí 1 príkaz,
+overím → bod 3, 5, 6, 10 na ✅ = **70 % dokázané** (podmienene, ak beh prejde) → (4) aplikácia migrácie opt-in default (bod 9, moje SQL na GO) →
+(5) kvalita AI návrhu (bod 4) → (6) Smolko: reply-to + súhlas (bod 7, obchodný krok foundera) = 100 %.
+**Pravidlo od teraz:** každý blok končí jedným riadkom `Postup: X % → Y %` podľa tejto tabuľky.
+
+## [2026-10-01] LEAD-PIPELINE-AFTER — lead pipeline sa vo verejných trasách dokončí po odpovedi (BUILD, GO foundera; NEnasadené, e2e dôkaz čaká)
+
+**Rozhodnutie BUILD (brána Ústavy v2):** Smolkov hlavný verejný vstup (valuation widget) dnes nedostáva AI triáž ani okamžité potvrdenie
+(namerané 10:14 UTC) — to je jadro hodnoty (rýchla reakcia na lead → zákazník platí a zostáva). Nie je „príliš skoro", zákazník to potrebuje.
+
+**Čo sa zmenilo (`apps/crm`):**
+- Nový `src/lib/acquire/after-response.ts` — `runAfterResponse(label, steps)`: `after()` z `next/server`, kroky PO SEBE
+  (auto-odpoveď číta `ai_priority` zapísanú triážou), pád kroku sa zachytí s kontextom a nezastaví ďalší, nikdy nehádže volajúcemu,
+  mimo requestu (testy) fallback ako v `lib/inbound/reply-draft.ts`.
+- `void`/`.catch` bez `await` nahradené v: `api/valuation/submit` (triáž → auto-odpoveď), `api/leads/inbound` (triáž → auto-odpoveď),
+  `(public)/buyer-onboarding/actions.ts` (notifikácia → auto-odpoveď → rescore), `api/leads/[id]/activities` a `api/leads/[id]` (rescore;
+  autentifikované dashboard trasy — `rescoreLead` je v zozname stráže, preto ich bolo treba opraviť rovnako).
+- `export const maxDuration = 60` pri týchto trasách a na `buyer-onboarding/page.tsx` (server action preberá limit stránky) —
+  `after()` beží v rámci limitu; bez neho by sa pri 10 s predvolenom limite práca mohla znova prerušiť. 60 s ako pri `cron/dashboard-insights`.
+- Stráž: `tests/verification/lead-pipeline-after.verification.test.ts` — AST sken `src/app`: každé volanie
+  `runInboundLeadTriageAndNotify` / `runInboundLeadAutoResponse` / `notifyNewBuyerLead` / `rescoreLead` musí byť `await`-nuté alebo
+  vo vnútri `runAfterResponse`; overený na 13 umelých vstupoch; kontroluje aj `maxDuration >= 30`.
+
+**Dôkaz:** testy 268/269 v dotknutých oblastiach (jediný červený = `valuation/submit/route.integration.test.ts`, vyžaduje `TEST_SUPABASE_URL`,
+v CI beží; mocky triáže/auto-odpovede + `vi.waitFor` → prejde cez fallback); nové: helper 6, route-level 3 vstupy (práca je pri odpovedi len
+naplánovaná, dobehne v `after()`, poradie, auto-odpoveď beží aj pri páde triáže, sandbox nič neplánuje), stráž 24; mutation proof **14/14**
+(súbory obnovené bit-for-bit); lint čistý; typecheck 49 (strop 54).
+
+**NIE je dokázané (poctivo):** že `after()` na Verceli skutočne udrží funkciu nažive a triáž + auto-odpoveď dobehnú — to ukáže až
+nasadený beh. Dôvod, prečo to nejde hneď: **Vercel Hobby limit 100 nasadení/deň je vyčerpaný** (status 10:37 UTC „api-deployments-free-per-day");
+merge do `main` môže produkčné nasadenie odmietnuť až do uvoľnenia okna.
+
+**E2E dôkaz po nasadení (jeden beh, jedno spustenie foundera):**
+1. Over, že produkčné nasadenie merge commitu je READY.
+2. Otvoriť testovací tenant: `update valuation_tenants set enabled=true where slug='revolis-ar-proof'; update agencies set auto_response_enabled=true where id='8f47808b-9443-4dc9-a1a1-35283f22b427';`
+3. Founder (PowerShell; bash `curl` s `\` v PowerShelli nefunguje — `curl` je tam alias na `Invoke-WebRequest`):
+   `$body = @{ agencySlug="revolis-ar-proof"; name="Ján Skúšobný"; email="delivered@resend.dev"; phone="+421900000000"; propertyType="byt"; location="Košice"; sqm=55; sellWithin12Months=$true; privacyAck=$true } | ConvertTo-Json`
+   `Invoke-RestMethod -Method Post -Uri "https://app.revolis.ai/api/valuation/submit" -ContentType "application/json; charset=utf-8" -Body ([System.Text.Encoding]::UTF8.GetBytes($body))`
+4. Overiť: nový lead má `ai_triage_at` aj `auto_response_sent_at`; `platform_events` `inbound.auto_response` (outcome/reason/from_domain);
+   Resend Logs — skutočné znenie textu. Dokazuje aj `OUTREACH_FROM_EMAIL`.
+5. Zavrieť: `enabled=false`, `auto_response_enabled=false`; over `count(*) from agencies where auto_response_enabled` = 0.
+
+**Zmerané, mimo tohto GO (ďalšia stena, ak chceš):** širšia trieda — `void`/`.catch`/`.then` bez `await` v API trasách a server actions —
+**14 príkazov v 10 súboroch z 237** (AST sken, nie odhad); nie všetky sú chyby (`events/stream` je legitímny stream). Podstatné:
+`api/leads/[id]/route.ts` (`globalEventBus.emit` + `notifyHotLead` — push pre „Horúci" lead), `api/leads/route.ts`,
+`api/demo/capture-lead` (2), `api/webhooks/hubspot`. Nedotknuté.
+
+## [2026-10-01] OUTREACH-DOMAIN-PROOF — test zlyhal PRED odoslaním: triáž ani auto-odpoveď sa vo verejných trasách nedokončia (`void` bez `await`)
+
+**Nameraný fakt (PROD):** testovací lead `4f63eb2c-…` (`valuation_widget`, agentúra `8f47808b-…`, príjemca `delivered@resend.dev`)
+vznikol 2026-10-01 10:14:16 UTC a **nemá `ai_triage_at`, nemá `auto_response_sent_at`**; v `platform_events` nie je `inbound.auto_response`
+ani `ai.call_failed`. Vercel runtime log (dpl `BCbVFVR…`, #778): `POST /api/valuation/submit 200`, `[ai:valuation-commentary] 2511ms`,
+potom **nič** (žiadna triáž, žiadna chyba). Funkcia po odoslaní odpovede nedobehla — nie je to problém konfigurácie ani domény.
+
+**Kód (overené čítaním):** `void runInboundLeadTriageAndNotify` + `void runInboundLeadAutoResponse` v `app/api/valuation/submit/route.ts:167,180`;
+`void` aj v `app/api/leads/inbound/route.ts:145,153` a `app/(public)/buyer-onboarding/actions.ts:234` (auto-odpoveď).
+Trasa `app/api/acquire/email/route.ts:442-443` ich `await`-uje — a práve tam udalosti vznikajú (Smolko 06:47, Demo 08:41).
+Repo už má správny vzor `after(task)` z `next/server` v `lib/inbound/reply-draft.ts:162` (Next ^16.2.4).
+
+**Záver a jeho hranica:** príčinou je takmer iste zmrazenie serverless funkcie po odoslaní odpovede (rozdiel `await` vs `void` +
+logy bez chyby). **Nie je to dokázané kontrolným pokusom** — ten príde až po oprave. **Dopad:** widget leady (hlavný verejný vstup
+Smolka, tenant `reality-smolko`) nedostávajú AI triáž ani auto-odpoveď, nezávisle od odosielateľa. Pre `leads/inbound` a buyer-onboarding
+je dopad odvodený z kódu, nie nameraný.
+
+**Stav PROD po teste:** tenant `revolis-ar-proof` zatvorený, `agencies.auto_response_enabled = true` pre **0** z 7 agentúr (overené).
+Testovací lead ostáva v testovacej agentúre (nemazaný).
+
+**Poučenie (founder 10:35: „prečo zase skrutky namiesto stien"):** chybu bolo možné nájsť ČÍTANÍM trasy skôr, než som ťa požiadal
+o ručný test — `void` som pri čítaní `valuation/submit` videl a nespochybnil. Ďalší blok = jedna stena (celá trieda chyby + dôkaz
++ ďalší test), nie rad mikro-GO: oprava všetkých `void` volaní lead pipeline, stráž proti návratu a opakovaný end-to-end test.
+
+## [2026-10-01] AUTO-RESPONSE-OPTIN-DEFAULT — nová agentúra nezačína so zapnutou auto-odpoveďou (BUILD, GO foundera; migrácia zatiaľ NEnasadená na PROD)
+
+**Problém:** `agencies.auto_response_enabled` mal od `20260713150000` predvolenú hodnotu `true` (opt-out). Po
+AUTO-RESPONSE-OPTIN (5 existujúcich agentúr vypnutých) by NOVÁ agentúra stále dostala auto-odpoveď zapnutú bez vedomia.
+
+**Zmena (PR, draft):** `apps/crm/supabase/migrations/20261001100000_auto_response_opt_in_default.sql` —
+`ALTER COLUMN auto_response_enabled SET DEFAULT false` (+ COMMENT). Mení LEN predvolenú hodnotu, existujúce riadky
+nedotýka. Test `tests/verification/auto-response-opt-in-default.verification.test.ts`: prejde migrácie v poradí názvov
+a overí výslednú hodnotu `false`; parser overený na umelých vstupoch; žiadna migrácia hromadne neupdatuje stĺpec.
+
+**Dôkaz:** mutation proof **8/8** (opt-out späť, migrácia chýba, zaradená pred pôvodnú, hromadný UPDATE, DROP DEFAULT,
+zlá tabuľka, preklep stĺpca, zakomentované); reálny Postgres (PGlite): pred `true`, po `false`, starý riadok ostal `true`,
+nový `false`, explicitné `true` funguje, `NOT NULL` zachované, idempotentné; replay **128/128** migrácií, 146 objektov,
+0 rozdielov (schema-gap oracle); schema-gap brána 0 nových medzier; prepush-gate PASS; typecheck 49 (strop 54), lint čistý.
+
+**Následok, ktorý treba vedieť:** v kóde ani UI NIE JE prepínač `auto_response_enabled` (grep: len lib/acquire a skripty).
+Nová agentúra teda auto-odpoveď nedostane, kým ju niekto nezapne SQL-om (`update agencies set auto_response_enabled=true
+where id='…'`) — až so súhlasom agentúry. Prepínač v nastaveniach agentúry = samostatná úloha (len ak to zákazníci chcú).
+
+**Zostáva (mimo tohto GO):** (1) aplikácia migrácie na PROD (Supabase) — samostatné GO po merge; do tej doby je PROD
+predvolená hodnota stále `true`. (2) Kódový fallback `loadAgencyAutoResponseContext`: pri CHÝBAJÚCOM stĺpci
+(`autoResponseEnabled = true`) odosiela — fail-open v prostredí bez migrácie; PROD stĺpec má, nízka priorita.
+
+## [2026-10-01] AUTO-RESPONSE-OPTIN — auto-odpoveď vypnutá pre 5 agentúr, ktoré o nej nevedeli (PROD zápis, GO foundera)
+
+**Prečo:** `agencies.auto_response_enabled` má predvolenú hodnotu `true` (opt-out). Po oprave odosielateľa by prvý reálny
+lead u agentúry, ktorá o funkcii nevie, odišiel naostro (Stealth/Reference: nič v mene klienta bez súhlasu).
+
+**Dôkaz pred zápisom (PROD, 09:50 UTC):**
+- Nová nálezová udalosť: **2026-10-01 08:41:28 UTC `Revolis Demo` — `inbound.auto_response` = `sent`, `from_domain=revolis.ai`**,
+  `leads.auto_response_sent_at` zapísané. Lead `portal:Nehnuteľnosti.sk`, príjemca na doméne `niekde.sk` (syntetický
+  dopyt, nie reálny klient). Všetky profily Demo agentúry sú `@revolis.ai` → odosielateľ vyšiel z reply-to na
+  `revolis.ai`, **nie z `OUTREACH_FROM_EMAIL`** — dokazuje, že Resend posiela z `revolis.ai`, ale NEdokazuje opravu
+  `OUTREACH_FROM_EMAIL`. Syntetické leady v agentúre so zapnutou auto-odpoveďou idú naostro na neexistujúce domény
+  (riziko bounce-ov a reputácie odosielateľa) — ďalší dôvod na opt-in.
+- Ostatné udalosti: Smolko 06:47 `failed_send/domain_not_verified/403`, Smolko 09:00 `skipped_no_email`.
+
+**Vykonané (PROD):** `update agencies set auto_response_enabled=false where id in (…5 id…) and auto_response_enabled=true`
+→ **5 riadkov**: AA REALITY Košice s.r.o., Reality Monopol, Revolis Demo, Revolis Sandbox (internal), Revolis System.
+Stav po zápise (7 agentúr): `false` = 6 (vrátane Smolka), `true` = 1 (testovacia `8f47808b-…`, otvorená do poistky 10:16 UTC).
+
+**Zostáva otvorené (nie je v tomto GO):**
+- Predvolená hodnota stĺpca je stále `true` → NOVÁ agentúra dostane auto-odpoveď zapnutú. Oprava = migrácia
+  `alter column auto_response_enabled set default false` (+ test, PR) — **AUTO-RESPONSE-OPTIN-DEFAULT**, čaká na GO.
+- Zapnutie pre konkrétnu agentúru: `update agencies set auto_response_enabled=true where id='…'` až so súhlasom agentúry;
+  pre Demo/Sandbox len na test.
+- OUTREACH-DOMAIN-PROOF stále nespustený (founder ešte nepustil `Invoke-RestMethod`).
+
 ## [2026-10-01] OUTREACH-DOMAIN-PROOF — príprava hotová, test NESPUSTENÝ (čaká na POST foundera); verejný vstup zavretý
 
 **Cieľ:** dokázať v PROD, že po oprave `OUTREACH_FROM_EMAIL` odosielanie ide z overenej domény (`inbound.auto_response`

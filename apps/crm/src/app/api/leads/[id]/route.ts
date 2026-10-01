@@ -3,6 +3,7 @@ import { okResponse, errorResponse } from "@/lib/api-response";
 import { deleteLead, getLead, updateLead } from "@/lib/leads-store";
 import { createActivity } from "@/lib/activities-store";
 import { autoRecalculateForLead } from "@/lib/matching-hooks";
+import { runAfterResponse } from "@/lib/acquire/after-response";
 import { rescoreLead } from "@/lib/rescore-lead";
 import { UUIDSchema } from "@/lib/api-validate";
 import { globalEventBus } from "@/infra/messaging/EventBus";
@@ -23,6 +24,9 @@ import {
 } from "@/lib/moat-capture/log-deal-outcome";
 import { isReasonValidForDealOutcome } from "@/lib/moat-capture/deal-outcome-reason";
 import { sameAgency } from "@/lib/tenant-scope";
+
+// `after()` (prepočet skóre + AI insight) beží v rámci tohto limitu.
+export const maxDuration = 60;
 
 export async function PATCH(
   request: Request,
@@ -132,7 +136,8 @@ export async function PATCH(
     } catch {}
 
     await autoRecalculateForLead(id, supabase);
-    rescoreLead(id); // fire-and-forget: update score + AI insight
+    // Po odpovedi (LEAD-PIPELINE-AFTER): update score + AI insight; bez `await` by sa na serverless nedokončil.
+    runAfterResponse("lead-update", [{ name: "rescore", run: () => rescoreLead(id) }]);
 
     if (oldLead?.status !== lead.status) {
       globalEventBus.emit(createLeadStatusChangedEvent(id, {
@@ -273,12 +278,10 @@ export async function GET(
 
     const { data: callerProfile } = await supabase
       .from("profiles").select("agency_id, id").eq("auth_user_id", user.id).maybeSingle();
-    if (callerProfile?.agency_id) {
-      const { data: leadRow } = await supabase
-        .from("leads").select("agency_id").eq("id", id).maybeSingle();
-      if (leadRow?.agency_id !== callerProfile.agency_id) {
+    const { data: leadRow } = await supabase
+      .from("leads").select("agency_id").eq("id", id).maybeSingle();
+    if (!sameAgency(callerProfile?.agency_id, leadRow?.agency_id)) {
         return errorResponse("Forbidden", 403);
-      }
     }
 
     return okResponse({ lead });

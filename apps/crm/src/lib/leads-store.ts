@@ -1371,9 +1371,10 @@ export async function appendPipelineMove(
   leadId: string,
   leadName: string,
   fromStatus: string,
-  toStatus: string
+  toStatus: string,
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
 ) {
-  const supabase = await resolveTenantSupabase();
+  const supabase = await resolveTenantSupabase(scoped);
   if (!supabase) return;
 
   const { error } = await supabase.from("pipeline_moves").insert({
@@ -1386,8 +1387,11 @@ export async function appendPipelineMove(
   if (error) console.error("appendPipelineMove error:", error.message);
 }
 
-export async function getPipelineMovesByLeadId(leadId: string): Promise<PipelineMove[]> {
-  const supabase = await resolveTenantSupabase();
+export async function getPipelineMovesByLeadId(
+  leadId: string,
+  scoped?: import("@supabase/supabase-js").SupabaseClient | null,
+): Promise<PipelineMove[]> {
+  const supabase = await resolveTenantSupabase(scoped);
   if (!supabase) return [];
 
   const { data, error } = await supabase

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { deleteTask, updateTask } from "@/lib/tasks-store";
 import { createActivity } from "@/lib/activities-store";
+import { sameAgency } from "@/lib/tenant-scope";
 
 export async function PATCH(
   request: Request,
@@ -25,12 +26,10 @@ export async function PATCH(
       );
     }
 
-    if (callerProfile?.agency_id) {
-      const { data: leadRow } = await supabase
-        .from("leads").select("agency_id").eq("id", body.leadId).maybeSingle();
-      if (leadRow?.agency_id !== callerProfile.agency_id) {
+    const { data: leadRow } = await supabase
+      .from("leads").select("agency_id").eq("id", body.leadId).maybeSingle();
+    if (!sameAgency(callerProfile?.agency_id, leadRow?.agency_id)) {
         return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
-      }
     }
 
     const completedAt =
@@ -85,15 +84,18 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    if (callerProfile?.agency_id) {
-      const { data: taskRow } = await supabase
-        .from("tasks").select("lead_id").eq("id", id).maybeSingle();
-      if (taskRow?.lead_id) {
-        const { data: leadRow } = await supabase
-          .from("leads").select("agency_id").eq("id", taskRow.lead_id).maybeSingle();
-        if (leadRow?.agency_id !== callerProfile.agency_id) {
-          return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
-        }
+    // Fail-closed: volajúci bez agentúry nesmie mazať nič (tasks nemá vlastný agency_id,
+    // tenant sa odvodzuje z leadu).
+    if (!callerProfile?.agency_id) {
+      return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+    }
+    const { data: taskRow } = await supabase
+      .from("tasks").select("lead_id").eq("id", id).maybeSingle();
+    if (taskRow?.lead_id) {
+      const { data: leadRow } = await supabase
+        .from("leads").select("agency_id").eq("id", taskRow.lead_id).maybeSingle();
+      if (!sameAgency(callerProfile.agency_id, leadRow?.agency_id)) {
+        return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
       }
     }
 
