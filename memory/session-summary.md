@@ -1,3 +1,12 @@
+## Session 2026-10-01 (OBSIDIAN-GRAPH-DEFAULTS)
+### Dokončené
+- Exportér zapisuje `.obsidian/graph.json`: filter bez `HOME`/`Decision-Index`/`Session-Index`/`Dashboard` + farby podľa tagu (`kind/prod` červená, `decision` modrá, `session` oranžová, `ops` zelená). Zapíše sa len ak súbor chýba/je nedotknutý; upravený sa nikdy neprepíše. 16 testov.
+### Rozpracované / Pending
+- Founder: spustiť export, graf zatvoriť a znova otvoriť. NEOVERENÉ v reálnom Obsidiane (formát graph.json podľa verzie 1.13).
+### Kľúčové súbory zmenené
+- `scripts/vault/{lib,export-vault,vault.test}.mjs`, `docs/OBSIDIAN-VAULT-ACTIVATION.md`
+### Ďalší krok
+Vercel limit nasadení (blokuje bod 10 SCOREBOARD) — rozhodnutie foundera.
 ## Session 2026-10-01 (CI-FIX 2: idempotentná stena)
 ### Dokončené
 - Stena `20261001160500` prepísaná na idempotentnú (CI padlo na chýbajúcom `v_genome_calibration`).
