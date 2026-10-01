@@ -63,8 +63,11 @@ export function classify(title, body) {
 }
 
 /** Rozdelí log na záznamy podľa `## ` hlavičiek; nedatované `##` zostanú v tele predchádzajúceho. */
+/** Windows checkout (autocrlf) má CRLF; `.` v regexe `\r` nezachytí, preto všade normalizujeme na LF. */
+export const toLf = (text) => text.replace(/\r\n?/g, '\n');
+
 function splitByHeads(md, matchHead) {
-  const lines = md.split('\n');
+  const lines = toLf(md).split('\n');
   const entries = [];
   let cur = null;
   let fence = false;
