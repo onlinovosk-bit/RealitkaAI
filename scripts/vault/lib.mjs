@@ -63,8 +63,11 @@ export function classify(title, body) {
 }
 
 /** Rozdelí log na záznamy podľa `## ` hlavičiek; nedatované `##` zostanú v tele predchádzajúceho. */
+/** Windows checkout (autocrlf) má CRLF; `.` v regexe `\r` nezachytí, preto všade normalizujeme na LF. */
+export const toLf = (text) => text.replace(/\r\n?/g, '\n');
+
 function splitByHeads(md, matchHead) {
-  const lines = md.split('\n');
+  const lines = toLf(md).split('\n');
   const entries = [];
   let cur = null;
   let fence = false;
@@ -434,3 +437,50 @@ tags:
 
 `,
 };
+
+const rgb = (hex) => ({ a: 1, rgb: parseInt(hex.replace('#', ''), 16) });
+
+/** Predvolený graf: bez uzlov-rozcestníkov (HOME + indexy prekrývajú väzby) a s farbami podľa typu. */
+export function graphConfig() {
+  return {
+    'collapse-filter': false,
+    search: '-file:HOME -file:Decision-Index -file:Session-Index -file:Dashboard',
+    showTags: false,
+    showAttachments: false,
+    hideUnresolved: false,
+    showOrphans: true,
+    'collapse-color-groups': false,
+    // Pri zhode vyhráva prvá skupina → PROD zápisy vyniknú nad „decision".
+    colorGroups: [
+      { query: 'tag:#kind/prod', color: rgb('#E5534B') },
+      { query: 'tag:#decision', color: rgb('#5B8DEF') },
+      { query: 'tag:#session', color: rgb('#F2A33A') },
+      { query: 'tag:#ops', color: rgb('#8FBF7F') },
+    ],
+    'collapse-display': true,
+    showArrow: false,
+    textFadeMultiplier: 0,
+    nodeSizeMultiplier: 1,
+    lineSizeMultiplier: 1,
+    'collapse-forces': true,
+    centerStrength: 0.5,
+    repelStrength: 10,
+    linkStrength: 1,
+    linkDistance: 250,
+    scale: 1,
+  };
+}
+
+/**
+ * graph.json je používateľov súbor (JSON nemá frontmatter marker): zapíšeme ho len ak chýba
+ * alebo je nedotknutý (prázdny filter aj skupiny). Upravený graf nikdy neprepíšeme.
+ */
+export function shouldWriteGraph(existingText) {
+  if (existingText === null) return true;
+  try {
+    const g = JSON.parse(existingText);
+    return !g.search && (!g.colorGroups || g.colorGroups.length === 0);
+  } catch {
+    return false; // poškodený/neznámy súbor nechaj na používateľa
+  }
+}

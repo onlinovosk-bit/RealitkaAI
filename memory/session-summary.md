@@ -1,3 +1,198 @@
+## Session 2026-10-01 (OBSIDIAN-GRAPH-DEFAULTS)
+### Dokončené
+- Exportér zapisuje `.obsidian/graph.json`: filter bez `HOME`/`Decision-Index`/`Session-Index`/`Dashboard` + farby podľa tagu (`kind/prod` červená, `decision` modrá, `session` oranžová, `ops` zelená). Zapíše sa len ak súbor chýba/je nedotknutý; upravený sa nikdy neprepíše. 16 testov.
+### Rozpracované / Pending
+- Founder: spustiť export, graf zatvoriť a znova otvoriť. NEOVERENÉ v reálnom Obsidiane (formát graph.json podľa verzie 1.13).
+### Kľúčové súbory zmenené
+- `scripts/vault/{lib,export-vault,vault.test}.mjs`, `docs/OBSIDIAN-VAULT-ACTIVATION.md`
+### Ďalší krok
+Vercel limit nasadení (blokuje bod 10 SCOREBOARD) — rozhodnutie foundera.
+## Session 2026-10-01 (CI-FIX 2: idempotentná stena)
+### Dokončené
+- Stena `20261001160500` prepísaná na idempotentnú (CI padlo na chýbajúcom `v_genome_calibration`).
+### Rozpracované / Pending
+- CI na novej hlave: čaká sa na „Lint, test, build" (migrácia `170000` v CI ešte nebehla).
+- Merge #774 po zelenom CI (GO foundera platí).
+### Kľúčové súbory zmenené
+- `apps/crm/supabase/migrations/20261001160500_tenant_isolation_wall.sql`, `memory/*`.
+### Ďalší krok
+Zelené CI → squash merge #774.
+
+## Session 2026-10-01 (ACTIVITIES-INSERT-AGENCY-KEY)
+### Dokončené
+- `activities.agency_id` + trigger `activities_fill_agency` + politiky `activities_agency_select/insert`; `activities_insert_agency` zrušená. Suchý beh 8/8 + overenie ako 4 agentúry. Politík s `agency_id IS NULL` v `public`: 0.
+- STATUS.md aktualizovaný (izolácia 70 %).
+### Rozpracované / Pending
+- Zostáva z izolácie: 12 funkcií volaných session/cronom (REVOKE bez testu by mohol rozbiť beh).
+- UI `/activities` + živý beh `matching` po novej politike (neoverené).
+- Migrácia `20261001170000_activities_agency_key.sql` je len v PR #774 (po merge sa zhoduje s PROD).
+### Kľúčové súbory zmenené
+- `apps/crm/supabase/migrations/20261001170000_activities_agency_key.sql` (nový), `docs/STATUS.md`, `memory/*`; PROD: 1 transakcia.
+### Ďalší krok
+Founder: Stripe krok C; potom merge #774.
+
+## Session 2026-10-01 (STATUS-MD)
+### Dokončené
+- `docs/STATUS.md` — jedna stránka stavu (≈ 40 %, blokery, čo potrebujem od foundera, hotové dnes).
+### Rozpracované / Pending
+- Aktualizovať STATUS.md po každom bloku. CI na #774 (Lint, test, build) beží po oprave migrácie.
+### Kľúčové súbory zmenené
+- `docs/STATUS.md` (nový), `memory/decisions.md`, `memory/session-summary.md`.
+### Ďalší krok
+Founder: Stripe krok C (+30 bodov), potom merge #774.
+
+## Session 2026-10-01 (CI-FIX duplicitná verzia migrácie)
+### Dokončené
+- Červené „Lint, test, build" na #774: duplicitná verzia `20261001100000` (moja migrácia vs `auto_response_opt_in_default` z main). Premenované na `20261001100500_inbound_mail_outcomes.sql`; duplicít 0.
+### Rozpracované / Pending
+- Overiť, že CI na novej hlave prejde (`supabase start` trvá ~10 min).
+- Ratchet proti duplicitným verziám migrácií (navrhnuté, nezačaté).
+### Kľúčové súbory zmenené
+- `apps/crm/supabase/migrations/20261001100500_inbound_mail_outcomes.sql` (premenované), `memory/*`.
+### Ďalší krok
+Počkať na CI; potom merge #774 (rozhodnutie foundera).
+
+## Session 2026-10-01 (TENANT-ISOLATION-WALL + stav)
+### Dokončené
+- Stena v PROD jednou transakciou: 8/8 pohľadov invoker + bez anon, 8/9 politík bez NULL vetvy, 11 SECURITY DEFINER funkcií uzavretých. Migrácia `20261001160500_tenant_isolation_wall.sql`.
+- Odhad stavu architektúry ≈ 40 % (tabuľka v decisions.md; váhy sú moje).
+### Rozpracované / Pending
+- **Najväčší posun k 100 %: Stripe krok C (0/10 cien live) — founder.** Potom VERIFY → B → D.
+- Zmergovať #774 + vyriešiť Vercel limit nasadení (Pro plán alebo 24 h) — bez toho nie je nič z dneška v produkcii.
+- Zostáva: `activities_insert_agency` (agency kľúč), 12 funkcií volaných session/cronom, 187 riadkov `activities`, Resend DNS.
+### Kľúčové súbory zmenené
+- `apps/crm/supabase/migrations/20261001160500_tenant_isolation_wall.sql` (nový), `memory/decisions.md`, `memory/session-summary.md`; PROD: 1 transakcia.
+### Ďalší krok
+Founder: Stripe krok C (`bash scripts/ops/stripe-verify-prices.sh --spec`), potom merge #774.
+
+## Session 2026-10-01 (ACTIVITY-STREAM-TENANT-ISOLATED)
+### Dokončené
+- `security_invoker = true` na `activity_stream` v PROD; overené ako `authenticated` pre 4 agentúry (3/0, 0/0, 3/0, 0/0) a `anon` zablokovaný. Únik cez `activities` zatvorený na všetkých cestách (tabuľka + pohľad × anon + authenticated).
+- Migrácia `20261001150000_activity_stream_security_invoker.sql`.
+### Rozpracované / Pending
+- `activities_insert_agency`, 187 riadkov v tabuľke, 7 pohľadov čitateľných pre anon, NULL-vetvy na `lead_property_matches`/`pipeline_moves`/`platform_events`.
+- UI `/activities` a dashboard feed neotvorené po zúžení.
+- GDPR posúdenie incidentu (founder).
+- PROCES: tento blok bol 3 kolá GO namiesto jedného — viď decisions.md; ďalej jeden uzavretý blok (TENANT-ISOLATION-WALL).
+### Kľúčové súbory zmenené
+- `apps/crm/supabase/migrations/20261001150000_activity_stream_security_invoker.sql` (nový), `memory/decisions.md`, `memory/session-summary.md`; PROD: 1 `ALTER VIEW`.
+### Ďalší krok
+GO na TENANT-ISOLATION-WALL (jeden blok: všetky zostávajúce cesty + jeden overovací skript).
+
+## Session 2026-10-01 (ACTIVITY-STREAM-ANON-REVOKED)
+### Dokončené
+- `REVOKE ALL ON public.activity_stream FROM anon` v PROD; `anon` dostane `permission denied` (pred: 193 riadkov). Migrácia `20261001140000_revoke_activity_stream_anon.sql`.
+### Rozpracované / Pending
+- **Stále otvorené:** `authenticated` cez `activity_stream` vidí 193 riadkov (cudzie e-maily/telefóny). Čaká na GO: `ALTER VIEW … SET (security_invoker = true)`.
+- 7 ďalších pohľadov čitateľných pre `anon` (obsah/konzumenti neoverení).
+- Overiť UI `/activities` a feed na dashboarde po security_invoker (zúži sa na vlastné aktivity).
+- GDPR posúdenie (údaje boli čitateľné aj bez prihlásenia) — rozhodnutie foundera.
+### Kľúčové súbory zmenené
+- `apps/crm/supabase/migrations/20261001140000_revoke_activity_stream_anon.sql` (nový), `memory/decisions.md`, `memory/session-summary.md`; PROD: grant odobraný.
+### Ďalší krok
+GO na `security_invoker = true` pre `activity_stream`, potom overenie ako `authenticated` (očakávané len vlastné, 3 pre agentúru 1111…).
+
+## Session 2026-10-01 (ACTIVITIES-FEED-CHECK)
+### Dokončené
+- Zistené (read-only): `DROP POLICY activities_select_agency` zatvoril tabuľku, ale **pohľad `activity_stream` stále vydáva 193 riadkov (187 bez leadu) aj roli `anon`** — pohľad obchádza RLS.
+- 8 pohľadov v PROD má rovnaký vzor (owner postgres, bez security_invoker, SELECT pre anon).
+- Audit PROD migrácií je zastaraný: väčšina chýbajúcich tabuliek je už aplikovaná (iná session/founder); chýba `lead_demands`, `demand_property_matches`.
+### Rozpracované / Pending
+- **URGENT, čaká na GO:** `REVOKE ALL ON public.activity_stream FROM anon` + `ALTER VIEW … SET (security_invoker = true)`.
+- Posúdiť ďalších 7 pohľadov (obsah + konzumenti) a ich `REVOKE ... FROM anon`.
+- GDPR posúdenie incidentu: údaje boli čitateľné aj bez prihlásenia (cez pohľad) — vážnejšie než pôvodne.
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md` (žiadna zmena kódu, žiadna zmena PROD).
+### Ďalší krok
+GO na opravu `activity_stream`, potom overenie ako `anon` a `authenticated` (očakávané 0 / len vlastné).
+
+## Session 2026-10-01 (ACTIVITIES-SELECT-LEAK-CLOSED)
+### Dokončené
+- `DROP POLICY activities_select_agency` v PROD. Overené ako tenant: pred 187 cudzích riadkov viditeľných, po 0 (tri agentúry).
+- Migrácia `20261001130000_drop_activities_select_agency.sql` (repo ↔ PROD konvergujú), rollback v komentári.
+### Rozpracované / Pending
+- Overiť UI feed bez NULL-lead riadkov (neskúšané).
+- Agency kľúč pre aktivity bez leadu → až potom zrušiť `activities_insert_agency`.
+- Osud 187 riadkov (zmazať / prisúdiť) + GDPR posúdenie incidentu (founder).
+- Rovnaký vzor: `lead_property_matches`, `pipeline_moves`, `platform_events`.
+### Kľúčové súbory zmenené
+- `apps/crm/supabase/migrations/20261001130000_drop_activities_select_agency.sql` (nový), `memory/decisions.md`, `memory/session-summary.md`; PROD: 1 politika zrušená.
+### Ďalší krok
+Overiť feed v UI pre tenanta; potom návrh agency kľúča.
+
+## Session 2026-10-01 (ACTIVITIES-RLS-CHECK)
+### Dokončené
+- Read-only kontrola `activities`: 187 riadkov s `lead_id IS NULL` je čitateľných každému prihlásenému (dokázané); 144+ obsahuje e-mail, 8+ telefón. Obsah nečítaný.
+- Report + navrhnutá oprava: `docs/reports/2026-10-01-activities-rls-check.md`.
+### Rozpracované / Pending
+- **Founder:** GO na `DROP POLICY IF EXISTS activities_select_agency` (jediný krok, ktorý zastaví únik); posúdiť GDPR incident.
+- Návrh agency kľúča pre `activities` bez leadu (INSERT politiku zatiaľ nerušiť — `matching` píše NULL-lead riadky).
+- Rovnaký vzor: `lead_property_matches`, `pipeline_moves`, `platform_events` (dnes 0 NULL riadkov, latentné).
+### Kľúčové súbory zmenené
+- `docs/reports/2026-10-01-activities-rls-check.md` (nový), `memory/decisions.md`, `memory/session-summary.md`.
+### Ďalší krok
+GO na krok 1 (`DROP POLICY`) — po ňom overiť SELECT ako tenant a že feed nespadne.
+
+## Session 2026-10-01 (PROD-MIGRATION-AUDIT)
+### Dokončené
+- Read-only audit repo vs PROD → `docs/reports/2026-10-01-prod-migration-audit.md` (29 tabuliek chýba, 9 RLS politík s NULL vetvou).
+### Rozpracované / Pending
+- Overiť obsah 187 `activities` s `lead_id IS NULL` (cross-tenant viditeľnosť) — rozhodnúť o zúžení politiky.
+- Overiť, ako zlyháva Starter Pack plnenie bez `credit_redemption_codes`.
+- Aplikácia chýbajúcich tabuliek po dávkach — každá samostatné GO.
+### Kľúčové súbory zmenené
+- `docs/reports/2026-10-01-prod-migration-audit.md` (nový), `memory/decisions.md`, `memory/session-summary.md`.
+### Ďalší krok
+GO na kontrolu `activities` (typ/čas, bez osobných údajov) a na overenie Starter Pack plnenia.
+
+## Session 2026-10-01 (APPLY-INBOUND-OUTCOMES)
+### Dokončené
+- Migrácia `inbound_mail_outcomes` aplikovaná v PROD (RLS on, 0 politík, 0 grantov klientskym rolám, 18 stĺpcov, 0 riadkov) — overené SELECT-om.
+### Rozpracované / Pending
+- #774 stále draft, CI zelená; po merge sa začne zapisovať. Merge = rozhodnutie foundera.
+- **PROD história migrácií končí 28. 9.** (chýba napr. `cron_runs`) — treba samostatné GO na audit rozdielu repo vs PROD.
+- Purge cron pre retenciu 90 dní.
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md`; PROD: 1 nová tabuľka.
+### Ďalší krok
+Merge #774 → po prvom reálnom maile `SELECT sender_domain, outcome, count(*)` nad `inbound_mail_outcomes`.
+
+## Session 2026-10-01 (DOMAIN-LOG-DURABLE)
+### Dokončené
+- DOMAIN-READ (read-only): za 6 h jediný `NOT_A_LEAD` (`pima.sk`, no_contact) — z jednej vzorky sa nedá rozhodnúť o `SOURCE_RULES`.
+- DOMAIN-LOG-DURABLE: tabuľka `inbound_mail_outcomes` + fail-soft zápis z route (len doména + príznaky, bez adries/obsahu). Testy + mutation proof.
+### Rozpracované / Pending
+- Migrácia NIE JE v PROD — aplikácia po merge len s GO.
+- Retencia 90 dní: purge cron zatiaľ nie je (otvorené).
+- #774 (MAILBOX-LOG-FIX) a táto zmena sú na jednej vetve → jeden PR.
+### Kľúčové súbory zmenené
+- `apps/crm/supabase/migrations/20261001100000_inbound_mail_outcomes.sql`, `apps/crm/src/lib/inbound/mail-outcome.ts`, `apps/crm/src/app/api/acquire/email/route.ts` + testy.
+### Ďalší krok
+Merge → GO na aplikáciu migrácie v PROD → po pár dňoch `SELECT sender_domain, count(*)` nad tabuľkou.
+
+## Session 2026-10-01 (MAILBOX-LOG-FIX)
+### Dokončené
+- Korekcia handoffu: #743 zmergovaný, záznam GO MAILBOX už bol zapísaný (#755) — nič sa nedopisovalo.
+- MAILBOX-LOG-FIX: `to_agency_mailbox` vs `to_unmatched` vs `to_missing`; `loadMailboxForAgency` deterministický (len agentúrna adresa).
+### Rozpracované / Pending
+- UNKNOWN-SOURCE-KEEP odložený (BACKLOG): chýba dôkaz, že portálové dopyty padajú na `unknown_source`; najprv domény z logov po #743.
+- Stále otvorené: kontrakt Workera mimo repa; GDPR filter pošty pred zapnutím pullu.
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/inbound/mailbox-routing.ts` (nový), `gmail-pull.ts`, `app/api/acquire/email/route.ts` + testy.
+### Ďalší krok
+Review + merge PR; potom z logov zistiť, ktoré `sender_domain` reálne prichádzajú.
+
+## Session 2026-10-01 (OBSIDIAN-VAULT-EXPORT-CRLF)
+### Dokončené
+- Oprava exportéra: na Windows (CRLF) dry-run ukázal `rozhodnutia 0 · sessions 11`. Príčina: `.` v regexe nezachytí `\r`. Fix: normalizácia na LF v `lib.mjs` + `export-vault.mjs`, test CRLF = LF (14/14).
+### Rozpracované / Pending
+- Founder: po merge opraviť `C:\RealitkaAI-main` (`git -C C:\RealitkaAI-main fetch origin main; git -C C:\RealitkaAI-main checkout --detach origin/main`) a spustiť export. NEOVERENÉ na reálnom Windows.
+- `C:\RealitkaAI` je na starej vetve `claude/epic-mendel-oal1wt` (2 vs 116 commitov) s neuloženým `memory/session-summary.md` — nedotknuté.
+### Kľúčové súbory zmenené
+- `scripts/vault/lib.mjs`, `scripts/vault/export-vault.mjs`, `scripts/vault/vault.test.mjs`
+### Ďalší krok
+Founder spustí export po merge; potom Obsidian pluginy Dataview + Tasks.
+
 ## Session 2026-10-01 (OBSIDIAN-VAULT-EXPORT)
 ### Dokončené
 - **OBSIDIAN-VAULT-EXPORT** (zadanie foundera: „zakomponuj čo najviac do práce aj Obsidian"): ručný jednosmerný export `memory/` → vault.

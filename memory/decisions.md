@@ -1,5 +1,281 @@
 # Critical Decisions Log
 
+## 2026-10-01 — CI-FIX 2: stena `20261001160500` padla v CI na `relation "public.v_genome_calibration" does not exist` → migrácia idempotentná
+
+**Príčina (z logu CI, `supabase start`):** v čistej databáze neexistujú pohľady `v_genome_calibration`, `v_genome_decisions_resolved`,
+`v_genome_exclusivity_patterns` (v PROD vznikli mimo migrácií; repo definuje len `genome_decision_open`). Moja stena ich bezpodmienečne
+`REVOKE`-ovala → CI ju zachytilo skôr, než sa dostala do main. (Prvý beh po oprave duplicitnej verzie skončil „cancelled" — `wait-for-supabase`
+visel 12 min; druhý beh (re-run) ukázal skutočnú chybu.) Zvyšné moje migrácie `130000`–`150000` v CI prešli; `170000` zatiaľ nebehla (CI zlyhal pred ňou).
+
+**Oprava:** stena prepísaná na idempotentný DO blok — každá zmena sa vykoná len ak objekt existuje (`to_regclass`, `pg_policies`). V PROD je výsledok
+rovnaký ako pri aplikovanej verzii (aplikovaná bola prvá verzia; sémantika zhodná). Statická kontrola objektov voči repu: ostatné pohľady, tabuľky,
+politiky aj `profile_agencies_for_auth` existujú v migráciách.
+
+**Nemerané — vedomé:** lokálny Postgres mi prostredie nepovolilo spustiť; pokusy o overenie syntaxe v PROD (dočasná funkcia / suchý beh v rollbacku)
+trikrát vypršali po 60 s v nástroji (databáza bola zdravá, žiadne zámky ani visiace transakcie — overené `pg_stat_activity`). Syntax PL/pgSQL tak overí až CI.
+**Poučenie:** migrácie, ktoré siahajú na objekty z PROD, píšať guardované; PROD nie je odrazom repa (pozri audit).
+
+## 2026-10-01 — ACTIVITIES-INSERT-AGENCY-KEY: `activities.agency_id` + trigger + politiky aplikované v PROD; `activities_insert_agency` zrušená
+
+**GO foundera.** Migrácia `20261001170000_activities_agency_key.sql` (aplikovaná jednou transakciou, `execute_sql`). Návrh: spätne kompatibilný — **writery v kóde sa
+nemenia**: BEFORE INSERT trigger `activities_fill_agency` doplní `agency_id` z JWT session (`profile_agencies_for_auth()`) pri riadku bez leadu;
+service role (bez `auth.uid()`) ostáva NULL a RLS obchádza. Nové politiky `activities_agency_select` / `activities_agency_insert` (WITH CHECK nedovolí podstrčiť
+cudziu agentúru); lead-viazané ostávajú pod `activities_tenant_*`.
+
+**Dôkaz — suchý beh v PROD (transakcia + rollback, 8/8 očakávaní):** (A) 1111 vloží bez leadu a bez agency_id → `agency_id = 1111…`; (B) 1111 podstrčí agentúru 8f3a →
+`new row violates row-level security policy`; (C) lead-viazaný INSERT ok; (D/D2) 1111 vidí 2 vlastné riadky aj cez `activity_stream`; (D3) staré NULL/NULL riadky 0;
+(E) 8f3a nevidí nič cudzie (0); (F) `anon` INSERT zablokovaný. **Po reálnej aplikácii:** 0 zvyškov z testu, politiky = `activities_agency_insert/select`,
+`activities_tenant_select/write`; trigger+stĺpec prítomné; politík s `agency_id IS NULL` v celom `public` = **0**; ako `authenticated` (acts/stream): 1111 → 3/3, 8f3a → 0/0, b101 → 3/3, dbbb → 0/0.
+
+**Vedomé obmedzenia:** 193 riadkov má `agency_id = NULL` (187 historických bez vlastníka + 6 lead-viazaných) → vidí ich len service role, **nemažú sa**; multi-agency používateľ dostane
+abecedne prvú agentúru; trigger nerieši aktivity z admin klienta (bez session). **Nemerané:** UI `/activities` a dashboard feed (neotvorené), beh `matching` pod novou politikou v živej prevádzke.
+
+## 2026-10-01 — STATUS-MD: jedna stránka stavu `docs/STATUS.md`
+
+**GO foundera.** Dôvod: founder „sa uklikal k smrti a nevidel postup". Obsah: celkový odhad ≈ 40 % (váhy moje, uvedené), tabuľka blokov
+s tým, čo ich blokuje, 4 veci od foundera zoradené podľa dopadu, hotové dnes s dôkazom, otvorené nenaliehavé veci, pravidlá práce.
+**Údržba:** aktualizovať po každom uzavretom bloku (hore dátum+čas). CLAUDE.md som NEMENIL (je to inštrukčný súbor foundera) — ak
+chceš, aby to bol záväzný krok Session Wrap-up, pridaj tam jednu vetu.
+**Poctivosť:** % je odhad, nie meranie; `Lint, test, build` na #774 v čase zápisu ešte bežal (oprava duplicitnej verzie migrácie).
+
+## 2026-10-01 — CI-FIX: duplicitná verzia migrácie `20261001100000` (moja chyba) → `inbound_mail_outcomes` premenovaná na `20261001100500`
+
+**Príčina (z logu CI, `supabase start`):** `ERROR: duplicate key value violates unique constraint "schema_migrations_pkey" — Key (version)=(20261001100000)`.
+Dve migrácie mali rovnakú verziu: `20261001100000_auto_response_opt_in_default.sql` (z `main`, iná session) a moja
+`20261001100000_inbound_mail_outcomes.sql`. Skontroloval som, že duplicita bola jediná (`uniq -d` pred: 1, po: 0).
+
+**Oprava:** `git mv` → `20261001100500_inbound_mail_outcomes.sql` (obsah nezmenený). PROD nie je dotknutý: tabuľka tam bola aplikovaná cez
+`execute_sql`, riadok v histórii migrácií nemá, takže premenovanie ju nemení. Staršie záznamy v memory spomínajú pôvodný názov —
+nemenené (memory je prepend-only), platí tento záznam.
+
+**Poučenie:** pred pridaním migrácie skontrolovať `ls migrations | sed … | uniq -d` proti aktuálnemu `main`; iná session pridáva migrácie
+paralelne. Zaslúži ratchet v CI (samostatné GO) — dnes sa duplicita zistí až v 10-minútovom `supabase start`.
+
+## 2026-10-01 — TENANT-ISOLATION-WALL: uzavretý balík aplikovaný v PROD (jedna transakcia), + stav architektúry ~40 %
+
+**GO foundera.** Migrácia `20261001160500_tenant_isolation_wall.sql` (aplikovaná jednou transakciou, `execute_sql`).
+
+**Čo uzavrelo (overené dotazmi po aplikácii):**
+- **8/8 pohľadov** `security_invoker = true`; `anon` SELECT = false na všetkých. Štyri `genome_*` pohľady (`decisions` všetkých agentúr, `anon` čítal
+  **240 riadkov** z `genome_decision_open`) zavreté aj pre `authenticated` (v kóde ich nikto nečíta).
+- **Politiky s vetvou `agency_id IS NULL`: 8/9 odstránených** (4× `matches_*_agency` zrušené — ostáva bezpečná `lead_property_matches_agency`;
+  `pipeline_moves_*` a `platform_events_select_tenant` prepísané). Zostáva `activities_insert_agency`.
+- **11 `SECURITY DEFINER` funkcií** (z 23 netriggerových, spustiteľných `anon`) zavretých: service-role-only (`spend_credits`, `rate_limit_increment`,
+  `increment_usage_metric`, `resolve_agency_id_for_*`) + bez volajúceho (`emit_platform_event`, `log_event`, `record_kataster_event`,
+  `recompute_broker_metrics`, `compute_motivation_score`, `realvia_schema_health`); `service_role` EXECUTE overené.
+- Dáta ako `authenticated`: agentúra 1111… → `activity_stream` 3, `platform_events` 951; 8f3a… → 0, 24 (žiadny nárast, žiadny pád).
+
+**Zostáva (vedome, nezmenené):** `activities_insert_agency` (agency kľúč), 12 funkcií volaných používateľskou session/cronom (`record_brief_click/open`,
+`add_price_point`, `compute_bri_score(_v2)`, `expire_arbitrage_matches`, `rotate_bri_snapshots`, `get_valuation_tenant`, `match_leads/properties`,
+`profile_agencies_for_auth`, `rls_audit_snapshot`) — REVOKE bez testu by mohol rozbiť beh; 187 riadkov `activities` bez leadu (vlastník neznámy).
+**Nemerané:** UI /activities a dashboard feed po zúžení; pohľady `arbitrage_stats`, `morning_brief_stats`, `negotiation_briefs` vracajú 0 riadkov
+pred aj po (tabuľky prázdne → regresiu to nevie dokázať).
+
+**Stav architektúry (môj ODHAD, nie meranie; váhy sú moje a dajú sa zmeniť): ≈ 40 %.**
+| blok | váha | stav | skóre |
+|---|---|---|---|
+| Príjem e-mailov → lead | 30 | 2/5 hotové (parser, diagnostika), 2/5 čaká na merge #774 + nasadenie, 1/5 čaká na dáta | 50 % |
+| AI návrh + odoslanie | 15 | triage ✅, návrh ✅, odoslanie ❌ (Resend DNS, reply-to, súhlas) | 67 % |
+| Predaj / platby (Stripe) | 30 | 0 z 10 cien na live účte (krok C = founder) | 0 % |
+| Tenantová izolácia | 15 | 27 z 40 identifikovaných ciest | 68 % |
+| Schéma + nasadenie | 10 | schéma ~98 % (chýbajú `lead_demands`, `demand_property_matches`); nasadenie blokuje Vercel limit | 50 % |
+
+**Proces — priznané:** dnes veľa času šlo do bezpečnostného reťazca (4 kolá GO), ktorý nezvýšil pravdepodobnosť ďalšieho platiaceho klienta
+(PRIME DIRECTIVE). Únik bol reálny (e-maily čitateľné cez `anon`) a oprava mala zmysel, ale mala byť jeden blok a nie reťaz.
+
+## 2026-10-01 — ACTIVITY-STREAM-TENANT-ISOLATED: `security_invoker = true` na `activity_stream` aplikovaný v PROD — únik cez `activities` je zatvorený
+
+**GO foundera.** `ALTER VIEW public.activity_stream SET (security_invoker = true);` (PROD `ypgajkhqtbriqqmyawyv`, `execute_sql`;
+migrácia `20261001150000_activity_stream_security_invoker.sql`).
+
+**Overené ako `authenticated` (SELECT, transakcia s rollbackom), všetky 4 agentúry — viditeľné celkom / bez leadu:**
+| agentúra | pred | po |
+|---|---|---|
+| `1111…` | 193 / 187 | 3 / 0 |
+| `8f3a…` | 193 / 187 | 0 / 0 |
+| `b101…` | — | 3 / 0 |
+| `dbbb…` | — | 0 / 0 |
+`reloptions = {security_invoker=true}`; `anon` SELECT = false. **Cesty k `activities` overené: tabuľka (anon, authenticated) aj pohľad (anon, authenticated) — všetky štyri uzavreté.**
+
+**Zostáva otvorené:**
+- `activities_insert_agency` stále dovoľuje tenantovi INSERT s `lead_id IS NULL` (`matching` ich píše).
+- 187 riadkov v tabuľke zostáva (vlastníctvo neznáme, nič sa nemazalo).
+- 7 ďalších pohľadov čitateľných pre `anon` bez `security_invoker` (obsah/konzumenti neoverení).
+- `lead_property_matches` / `pipeline_moves` / `platform_events`: vetva `agency_id IS NULL` (0 NULL riadkov dnes, latentné).
+- UI `/activities` a dashboard feed po zúžení som neotvoril (neoverené); zúžia sa na vlastné aktivity.
+- GDPR posúdenie (údaje boli čitateľné aj bez prihlásenia) — rozhodnutie foundera.
+
+**Proces — chyba, ktorú zapisujem:** tento únik som zatváral tromi kolami GO (DROP POLICY → zistenie pohľadu → REVOKE → security_invoker), lebo
+som najprv overil iba tabuľku a nie všetky cesty k dátam (pohľady, anon). Pravidlo 0 v CLAUDE.md („steny, nie skrutky") to porušuje. Pre nabudúce:
+pri každej RLS oprave najprv zmapovať VŠETKY cesty (tabuľka, pohľady, funkcie, rola anon/authenticated) a predložiť jeden blok SQL + jeden overovací skript.
+
+## 2026-10-01 — ACTIVITY-STREAM-ANON-REVOKED: `REVOKE ALL ON activity_stream FROM anon` aplikovaný v PROD (druhá polovica úniku ZOSTÁVA)
+
+**GO foundera na REVOKE** (literálne: „REVOKE activity_stream anon"). Jediný príkaz: `REVOKE ALL ON public.activity_stream FROM anon;`
+(PROD `ypgajkhqtbriqqmyawyv`, `execute_sql`; migrácia `20261001140000_revoke_activity_stream_anon.sql`).
+
+**Overené (SELECT):**
+- `anon` → `ERROR 42501: permission denied for view activity_stream` (pred: 193 riadkov).
+- `has_table_privilege('anon', …, 'SELECT')` = false, `'INSERT'` = false.
+- `authenticated` (agentúra `8f3a…`) → **stále 193 / 187 bez leadu** cez pohľad.
+
+**ČO ZOSTÁVA OTVORENÉ (vedome, GO bol len na REVOKE):** prihlásený používateľ ľubovoľnej agentúry stále cez `activity_stream` číta
+všetkých 193 riadkov vrátane cudzích e-mailov/telefónov. Oprava je `ALTER VIEW public.activity_stream SET (security_invoker = true)`
+— čaká na samostatné GO. `activity_stream` zatiaľ nie je opravený v zmysle tenantovej izolácie.
+
+**Ďalších 7 pohľadov** (`arbitrage_stats`, `genome_decision_open`, `morning_brief_stats`, `negotiation_briefs`, `v_genome_*` ×3)
+má `SELECT` pre `anon` a nie je `security_invoker` — nedotknuté, obsah ani konzumenti neoverení.
+
+## 2026-10-01 — ACTIVITIES-FEED-CHECK: ⚠️ `DROP POLICY` únik NEZATVORIL — pohľad `activity_stream` obchádza RLS a je čitateľný aj pre `anon`
+
+**Read-only (SELECT), nič som nezmenil. Čaká na GO — URGENT.**
+
+**Dokázané (SELECT ako rola, transakcia s rollbackom, PROD `ypgajkhqtbriqqmyawyv`):**
+| rola | zdroj | viditeľné riadky |
+|---|---|---|
+| `authenticated` (agentúra `8f3a…`) | `activities` | 0 (po DROP POLICY — oprava platí pre tabuľku) |
+| `authenticated` (agentúra `8f3a…`) | **`activity_stream`** | **193, z toho 187 bez leadu** |
+| **`anon`** | **`activity_stream`** | **193, z toho 187 bez leadu** |
+| `anon` | `activities` | 0 |
+
+**Príčina:** `public.activity_stream` je pohľad vlastnený `postgres`, bez `security_invoker`, takže beží s právami vlastníka a **RLS
+obchádza**; `anon` aj `authenticated` majú naň `SELECT`. Pohľad vyrába migrácia `20260412_activity_stream_view.sql`.
+Teda moje `DROP POLICY activities_select_agency` zatvorilo tabuľku, ale **nie pohľad** — a pohľad je horší: čitateľný bez
+prihlásenia cez verejný anon kľúč (PostgREST). Moje predošlé „únik je zatvorený" platí **iba pre priamy prístup k `activities`**.
+
+**Rovnaký vzor má 8 pohľadov** (owner `postgres`, bez `security_invoker`, `SELECT` pre `anon`): `activity_stream`, `arbitrage_stats`,
+`genome_decision_open`, `morning_brief_stats`, `negotiation_briefs`, `v_genome_calibration`, `v_genome_decisions_resolved`,
+`v_genome_exclusivity_patterns`. Čo vystavujú, som nečítal; ich dosah je **NEOVERENÝ** okrem `activity_stream`.
+
+**Jediný konzument `activity_stream`:** `src/app/api/activities/route.ts` — vyžaduje prihláseného používateľa (401 inak), číta tenantovým
+klientom. Teda `REVOKE ... FROM anon` ho nerozbije; `security_invoker = true` ho zúži na riadky vlastných leadov (zámer).
+
+**Navrhnutá oprava (NEAPLIKOVANÁ):**
+1. `REVOKE ALL ON public.activity_stream FROM anon;` + `ALTER VIEW public.activity_stream SET (security_invoker = true);`
+2. Pre ďalších 7 pohľadov najprv zistiť konzumentov a obsah; bezpečný minimálny krok je `REVOKE ALL ... FROM anon` (nezmení správanie prihlásených).
+
+**Oprava môjho auditu (PROD-MIGRATION-AUDIT, ráno):** nebola nepravdivá, ale je **zastaraná** — história migrácií v PROD sa medzitým rozšírila
+(`demo_ops`, `enrichment_log…`, `credit_redemption_codes`, `ai_generations`, `acquisition_sync_tables`, `cron_runs`,
+`20261001160000_land_unapplied_tables_hardening`); niekto (iná session / founder) ich aplikoval po mojom audite. Podľa `pg_class` teraz
+chýbajú len `lead_demands`, `demand_property_matches` a pohľad `ai_action_daily_agency`. Starter Pack tabuľka `credit_redemption_codes` už existuje.
+
+## 2026-10-01 — ACTIVITIES-SELECT-LEAK-CLOSED: `DROP POLICY activities_select_agency` aplikovaný v PROD
+
+**GO foundera.** Jediný príkaz: `DROP POLICY IF EXISTS activities_select_agency ON public.activities;` (PROD `ypgajkhqtbriqqmyawyv`,
+cez `execute_sql`; migrácia `20261001130000_drop_activities_select_agency.sql` v repe, s rollbackom v komentári).
+
+**Dôkaz (SELECT ako rola `authenticated`, JWT `sub` používateľa agentúry, transakcia s rollbackom):**
+| používateľ | pred (viditeľné / bez leadu) | po |
+|---|---|---|
+| agentúra `1111…` | 190 / 187 | 3 / 0 |
+| agentúra `8f3a…` | 187 / 187 | 0 / 0 |
+| agentúra `b101…` | — | 3 / 0 |
+Zostáva `activities_tenant_select` + dve INSERT politiky. Štvrtú agentúru (`dbbb…`) som netestoval.
+
+**Cena (vedomá):** tenant už nevidí riadky bez leadu — ani vlastné `matching` (10 ks). Či UI feed bez nich funguje, som
+**neoveril** (nespúšťal som aplikáciu).
+
+**Neuzavreté:**
+- `activities_insert_agency` stále dovoľuje tenantovi vkladať riadky s `lead_id IS NULL` (nezrušené zámerne, `matching` ich píše).
+- 187 riadkov v tabuľke ZOSTÁVA (nič sa nemazalo) — ich vlastníctvo je neznáme; rozhodnúť o zmazaní/prisúdení.
+- Podobné politiky na `lead_property_matches`, `pipeline_moves`, `platform_events` s vetvou `agency_id IS NULL` (dnes 0 NULL riadkov).
+- **GDPR:** po dobu, čo politika existovala, mohol používateľ akejkoľvek agentúry čítať tie riadky. Posúdenie incidentu je rozhodnutie
+  foundera; či k čítaniu reálne došlo, z DB nezistím (nemáme audit čítaní).
+
+## 2026-10-01 — ACTIVITIES-RLS-CHECK: `activities` s `lead_id IS NULL` je čitateľné každému prihlásenému (187 riadkov, 144+ e-mailov)
+
+**GO foundera, read-only (SELECT), obsah riadkov NEČÍTANÝ.** Detail: `docs/reports/2026-10-01-activities-rls-check.md`.
+
+- **Dokázané:** politika `activities_select_agency` pustí `lead_id IS NULL`; `activities` nemá `agency_id`; PROD má 4 agentúry;
+  aplikácia číta tenantovým klientom (`listActivities`). 187 riadkov, žiadny nemá `profile_id`. Podľa regexu 127 `team` +
+  17 `saas_lead` riadkov obsahuje e-mail, 5 `lead` + 3 `property` telefón.
+- **Neoverené:** komu údaje patria (obsah som nečítal). Oprava iba **navrhnutá**, neaplikovaná.
+- **Prečo to repo nezatvorí:** leaky politiky (`activities_*_agency`, `matches_*_agency`) sú len v
+  `migrations-archive/20260412_…`, nie v aktívnej sade → treba novú migráciu s `DROP POLICY IF EXISTS`.
+- **Odporúčanie:** krok 1 (`DROP POLICY activities_select_agency`) hneď; INSERT politiku NEZRUŠIŤ bez agency kľúča —
+  `matching` ešte 29. 9. píše riadky s `lead_id IS NULL`. GDPR: posúdiť ako možný incident (rozhodnutie foundera).
+- Moja korekcia: v PROD-MIGRATION-AUDIT som písal „cross-tenant únik NEPOTVRDZUJEM" — **dosiahnuteľnosť je teraz potvrdená**,
+  vlastníctvo dát stále nie.
+
+## 2026-10-01 — PROD-MIGRATION-AUDIT: PROD zaostáva v 29 tabuľkách; 9 RLS politík s vetvou `agency_id IS NULL`
+
+**GO foundera, read-only (len SELECT), nič sa neaplikovalo.** Detail: `docs/reports/2026-10-01-prod-migration-audit.md`.
+
+- Porovnanie na úrovni **objektov** (nie mien migrácií): z repa chýba v PROD **29/138 tabuliek, 2/8 views, 4/40
+  funkcií, 15/155 stĺpcov**. Hranica metódy: parser nevidí indexy, triggery, granty, `ALTER POLICY`, dáta.
+- **Obchodne najdôležitejšie:** `credit_redemption_codes` chýba, a volá ju tok Starter Pack (47 €). Tiež chýbajú
+  `lead_demands`, `demand_property_matches`, `cron_runs`, `demo_*`, `notifications`. Reálne zlyhanie za behu som
+  nemeral.
+- **Bezpečnosť:** 9 politík pre `authenticated` má vetvu `agency_id IS NULL`. `leads`/`platform_events` majú dnes 0
+  takých riadkov (latentné). **`activities` nemá `agency_id` a politika pustí 187 riadkov s `lead_id IS NULL`
+  každému prihlásenému** — obsah som nečítal, cudzie dáta NEPOTVRDENÉ.
+- Oprava predošlej mojej vety: „PROD história končí 28. 9." je pravda, ale meno migrácie ≠ objekt — rozdiel je 21
+  migračných súborov, nie ~60.
+
+## 2026-10-01 — APPLY-INBOUND-OUTCOMES: `inbound_mail_outcomes` aplikovaná v PROD
+
+**GO foundera.** PROD `ypgajkhqtbriqqmyawyv`, DDL z `20261001100000_inbound_mail_outcomes.sql` (rovnaký text), spustené
+cez `execute_sql` PRED merge #774 — poradie tabuľka → kód je zámerné (kód píše fail-soft, takže opačné poradie by len
+sypalo warn).
+
+**Overené po aplikácii (SELECT, nie odhad):** tabuľka existovala 0× pred, existuje po; `relrowsecurity = true`,
+politík 0, grantov pre anon/authenticated 0, stĺpcov 18, riadkov 0 (kód zatiaľ nenasadený).
+
+**Poctivé výhrady:**
+- Aplikované cez `execute_sql`, NIE cez `apply_migration` (nástroj nebol dostupný) → riadok v histórii migrácií PROD
+  nevznikol. Repo a PROD sa v histórii rozchádzajú.
+- **Nový nález: PROD história migrácií končí `20260928070000`.** Migrácie z 29.–30. 9. z repa (napr. `cron_runs`,
+  `lead_demands`, `demand_property_matches`) v PROD NIE SÚ — `cron_runs` tam neexistuje. Kód, ktorý ich používa,
+  v PROD fail-soft zlyháva. Netýka sa tejto zmeny; vlajkujem, neriešim (patrí na samostatné GO).
+- Retencia 90 dní stále len deklarovaná (purge nebeží).
+
+## 2026-10-01 — DOMAIN-LOG-DURABLE: trvalá stopa po každom e-maile príjmu (tabuľka `inbound_mail_outcomes`)
+
+**Rozhodnutie:** BUILD na výslovné GO foundera. **Ústava v2 (poctivo):** Q1 „zaplatil by za to klient" —
+priamo NIE (je to diagnostika, nie funkcia), preto by podľa veta strop bol VALIDATE; GO foundera to
+prebíja a zapisujem to, nie skrývam. Dôvod BUILD: bez trvalej stopy sa nedá zistiť, koľko dopytov klienta
+sa zahodilo (DOMAIN-READ: za 6 h jediný záznam, logy ~1 h). Q8 timing: príjem je dnes blokér retencie.
+
+**Zdroj dát / GDPR (ručný rozbor — skill `gdpr-advisor` v repe NEEXISTUJE):**
+vlastný príjem e-mailov (nie nový externý zdroj, mimo `master-data-sourcing-map`). Ukladá sa LEN
+registrovateľná doména odosielateľa + boolean príznaky + dôvod; NIKDY lokálna časť adresy, meno,
+telefón, text správy ani `to`. Právny základ 6(1)(f); proporcionalita: doména osobu neidentifikuje,
+miernejší prostriedok (log s ~1 h retenciou) nestačí. Test stráži, že riadok neobsahuje `@`.
+
+**Zmena:** migrácia `20261001100000_inbound_mail_outcomes.sql` (RLS ON, 0 politík, REVOKE anon/authenticated —
+rovnaký model ako `cron_runs`), `lib/inbound/mail-outcome.ts` (explicitný zoznam polí, fail-soft zápis,
+pád denníka ide na `console.warn`, príjem leadu nerozbije), zapojené do route pre `lead_created`,
+`not_a_lead` aj race-duplicitu.
+
+**Dôkaz:** 113 testov zelených; mutation proof — odstránený zápis `lead_created` (2 červené), adresa
+v `sender_domain` (2 červené), odstránený try/catch (1 červený) → návrat zelený. eslint 0 chýb,
+typecheck 49 (baseline 54), check-api-contract a check-cron-observability bez nových porušení.
+
+**NEAPLIKOVANÉ NA PROD:** migrácia je len v repe. Aplikovať ju (Supabase PROD `ypgajkhqtbriqqmyawyv`) je
+samostatný krok po merge — vyžaduje GO. Kým tabuľka v PROD nie je, zápis zlyhá fail-soft
+(`mail_outcome_write_failed` na warn) a príjem funguje ako doteraz.
+
+**OTVORENÉ:** (1) **Retencia 90 dní je len deklarovaná, mazanie nebeží** — pred ostrým behom treba purge
+(cron, ktorý prejde `cron-observability` ratchet). (2) Fiktívne číslo „koľko dopytov sa stratilo od 22. 9."
+sa týmto spätne NEZISTÍ — stopa začína až od nasadenia.
+
+## 2026-10-01 — MAILBOX-LOG-FIX: log rozlišuje agentúrnu schránku, Gmail pull nevyberá náhodnú adresu
+
+**Rozhodnutie:** BUILD (GO foundera). Nemení, koľko leadov vznikne — odstraňuje zavádzajúci
+log a latentnú chybu pred zapnutím pullu (PRIME DIRECTIVE: bez opravy by pull po zapnutí
+priradil všetky leady jednému maklérovi).
+
+- `to_unmatched` sa predtým logoval aj pre existujúci riadok s `profile_id = NULL`. Teraz:
+  `to_missing` (bez `to`), `to_agency_mailbox` (riadok existuje, patrí agentúre — normálne),
+  `to_unmatched` (adresa v tabuľke nie je / profil mimo agentúry). Logika v
+  `apps/crm/src/lib/inbound/mailbox-routing.ts`.
+- `loadMailboxForAgency` (`gmail-pull.ts`) už nerobí `.limit(1)` bez `order`. Berie len
+  agentúrne adresy (`profile_id` NULL), abecedne prvú; bez nej `mailbox_not_found`.
+  Zámerne radšej chyba než maklérska adresa.
+- Dôkaz: 106 testov (inbound + acquire) zelených, mutation proof 3/3 (zlúčenie logov,
+  prijatie maklérskej adresy, vypnuté radenie) červené → návrat zelený. typecheck 49 (baseline 54).
+- Nedotknuté: kontrakt Cloudflare Workera, DB, PROD. Pri zapnutí pullu stále platí GDPR bod
+  z GO MAILBOX (preposielať len portálové domény).
 ## [2026-10-01] OBSIDIAN-VAULT-EXPORT — pamäť do Obsidianu skriptom foundera, nie swarmom (BUILD, malé; NEnasadené nikam — len repo)
 
 **Brána Ústavy v2:** BUILD, ale malé. Vault `RealitkaAI-Memory` na screenshote končí 2026-06-09, `memory/decisions.md` je na 2026-10-01 (214 rozhodnutí,

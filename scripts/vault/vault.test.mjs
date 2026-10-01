@@ -6,13 +6,16 @@ import {
   classify,
   collectPrs,
   frontmatter,
+  graphConfig,
   isOverwritable,
   linkify,
   nextStep,
   renderDecision,
+  shouldWriteGraph,
   splitDecisions,
   splitSessions,
   tokenOf,
+  toLf,
 } from './lib.mjs';
 
 const ctx = { exportedOn: '2026-10-01' };
@@ -133,4 +136,31 @@ test('buildTokenMap: pri duplicite vyhrá najnovší záznam (vstup je od najnov
     { id: null, title: 'SAME-TOK — staré', file: 'old' },
   ]);
   assert.equal(m.get('SAME-TOK'), 'new');
+});
+
+test('CRLF (Windows checkout) dáva rovnaký výsledok ako LF', () => {
+  const lf = '## [2026-10-01] AAA-BBB — t (BUILD)\ntelo\n## Session 2026-10-01 (X-Y)\nobsah\n';
+  const crlf = lf.replace(/\n/g, '\r\n');
+  assert.deepEqual(splitDecisions(crlf), splitDecisions(lf));
+  assert.deepEqual(splitSessions(crlf), splitSessions(lf));
+  assert.equal(splitDecisions(crlf).length, 1);
+  assert.equal(toLf('a\r\nb\rc'), 'a\nb\nc');
+});
+
+test('graphConfig: filtruje rozcestníky, farby podľa typu, PROD má prednosť', () => {
+  const g = graphConfig();
+  for (const f of ['HOME', 'Decision-Index', 'Session-Index', 'Dashboard']) assert.match(g.search, new RegExp(`-file:${f}\\b`));
+  assert.equal(g.colorGroups[0].query, 'tag:#kind/prod');
+  assert.equal(g.colorGroups[0].color.rgb, 0xe5534b);
+  assert.deepEqual(g.colorGroups.map((c) => c.query), ['tag:#kind/prod', 'tag:#decision', 'tag:#session', 'tag:#ops']);
+  JSON.parse(JSON.stringify(g)); // serializovateľné
+});
+
+test('shouldWriteGraph: chýba/nedotknutý áno; upravený alebo poškodený nie', () => {
+  assert.equal(shouldWriteGraph(null), true);
+  assert.equal(shouldWriteGraph('{"search":"","colorGroups":[]}'), true);
+  assert.equal(shouldWriteGraph('{"showTags":true}'), true);
+  assert.equal(shouldWriteGraph('{"search":"tag:#x","colorGroups":[]}'), false);
+  assert.equal(shouldWriteGraph('{"search":"","colorGroups":[{"query":"a"}]}'), false);
+  assert.equal(shouldWriteGraph('{not json'), false);
 });

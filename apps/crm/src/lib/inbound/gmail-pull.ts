@@ -1,4 +1,5 @@
 import { createServiceRoleClient } from "@/lib/supabase/admin";
+import { pickAgencyMailbox, type MailboxRow } from "./mailbox-routing";
 
 export const GMAIL_READONLY_SCOPE = "https://www.googleapis.com/auth/gmail.readonly";
 export const GMAIL_TOKEN_URL = "https://oauth2.googleapis.com/token";
@@ -155,13 +156,11 @@ export async function loadMailboxForAgency(agencyId: string): Promise<InboundMai
   if (!sb) return null;
   const { data } = await sb
     .from("inbound_mailboxes")
-    .select("agency_id,email")
-    .eq("agency_id", agencyId)
-    .limit(1)
-    .maybeSingle();
-  const row = data as { agency_id?: string; email?: string } | null;
-  if (!row?.email || !row.agency_id) return null;
-  return { agencyId: row.agency_id, email: row.email };
+    .select("email,profile_id")
+    .eq("agency_id", agencyId);
+  // Pull nevie, komu mail patrí → smie niesť len adresu celej agentúry (viď pickAgencyMailbox).
+  const email = pickAgencyMailbox((data ?? []) as MailboxRow[]);
+  return email ? { agencyId, email } : null;
 }
 
 export async function runGmailInboundPull(deps: {
