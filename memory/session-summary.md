@@ -34,6 +34,21 @@ Merge → GO na aplikáciu migrácie v PROD → po pár dňoch `SELECT sender_do
 - `apps/crm/src/lib/inbound/mailbox-routing.ts` (nový), `gmail-pull.ts`, `app/api/acquire/email/route.ts` + testy.
 ### Ďalší krok
 Review + merge PR; potom z logov zistiť, ktoré `sender_domain` reálne prichádzajú.
+## Session 2026-10-01 (OUTREACH-DOMAIN-PROOF)
+### Dokončené
+- #773 (AUTO-RESPONSE-TEXT-FIX) zmergovaný (`420f4af`), produkčný deploy READY.
+- **OUTREACH-DOMAIN-PROOF — príprava:** v PROD vytvorená testovacia agentúra `8f47808b-…` + tenant `revolis-ar-proof`
+  (príjemca `delivered@resend.dev`); verejný vstup po poistke 09:16 UTC zavretý (`enabled=false`).
+### Rozpracované / Pending
+- **Test nespustený:** cloud sandbox nesmie volať produkčný `curl` → `POST` spúšťa founder/Cursor. Postup + SQL: `memory/decisions.md`.
+- Dôkaz o zmene `OUTREACH_FROM_EMAIL` (vo Verceli skrytá) príde až z `from_domain` v `inbound.auto_response`.
+- **Diera:** `auto_response_enabled=true` pre 5 agentúr (AA REALITY Košice, Monopol, Demo, Sandbox, System) — AUTO-RESPONSE-OPTIN čaká na GO.
+- Smolko: `auto_response_enabled=false` ostáva; reply-to + súhlas Smolka nevyriešené.
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md` (bez zmeny kódu); PROD: +1 agentúra, +1 `valuation_tenants` (zavretý).
+### Ďalší krok
+Founder spustí `curl` (alebo povie „GO AUTO-RESPONSE-OPTIN" najprv) — potom overím `outcome`/`from_domain` a zavriem tenant.
+
 ## Session 2026-10-01 (HANDOFF — CHECKOUT-ENV-01 krok A uzavretý, odovzdanie do nového chatu)
 ### Dokončené
 - PR #748 zmergovaný 2026-09-29: CHECKOUT-ENV-01 krok A. Korekcia stavu: VERIFY prebehol už 2026-09-22 → **0/9** (`docs/reports/2026-09-22-stripe-verify-prices.md`), blokér príjmu je **krok C** (ceny v Stripe neexistujú).
