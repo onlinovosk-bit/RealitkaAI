@@ -1,3 +1,14 @@
+## Session 2026-10-01 (ENV-SINGLE-SOURCE)
+### Dokončené
+- `lib/app-env.ts` (živá diagnostika `/system`, health-dashboard, smoke-tests) už nemá vlastnú pravdu o povinných premenných: `requiredOk = validateEnv().ok` z `config/env.ts`. Dva zdroje → jeden.
+- Dve individuálne Supabase kľúč-kontroly nahradené jednou `SUPABASE_KEY` (PUBLISHABLE *alebo* ANON, required). Do `/system` pribudli `SUPABASE_SERVICE_ROLE_KEY` a `CRON_SECRET` (zo `DEGRADED_WITHOUT`), rovnaký zoznam ako štart-log.
+- **Viditeľná zmena správania:** `/system` ide do `fallback`, ak chýba Supabase kľúč (predtým stačila URL). Je to pravdivejšie, ale ak prod kľúč naozaj nemá, stránka to ukáže.
+- Test `app-env-single-source.test.ts` (9), mutation proof 5/5. Súvisiace testy 40/40; `prepush-gate` PASS; migrácie NEOVERENÉ.
+### Rozpracované / Pending
+- `[env]` log z produkcie stále chýba (#776 nezmergovaný). Fail-fast až po ňom.
+### Ďalší krok
+Merge #776 → nasadenie → `[env]` log → rozhodnutie o fail-fast.
+
 ## Session 2026-10-01 (ENV-SCHEMA-RECONCILE — iba kódová strana)
 ### Dokončené
 - **Premisa chýbala:** GO prišlo bez `[env]` logu z nasadenia (#776 nie je zmergovaný), takže schému som zosúladil len s tým, čo KÓD číta, nie s produkciou. Produkčnú stranu stále neviem.
