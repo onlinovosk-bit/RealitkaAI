@@ -1,5 +1,33 @@
 # Critical Decisions Log
 
+## [2026-10-01] AUTO-RESPONSE-GATE — príčina auto-odpovede dokázaná; odosielanie vypnuté pre Smolka (PROD zápis, GO foundera)
+
+**Prvý reálny lead po dobití (Bazoš.sk, s e-mailom), PROD:**
+- 06:46:58 UTC lead vznikol → 06:47:00 `ai_triage_at` (AI triedenie, priorita „Nízka") → 06:47:03 `platform_events`
+  `inbound.auto_response`: **`failed_send` / `domain_not_verified` / HTTP 403 / `validation_error`** → 06:47:06 aktivita
+  „AI návrh odpovede". `ai.call_failed` od dobitia: 0. **Celá lead cesta s AI funguje** (8 dní rozbitá), zlyhanie je
+  odteraz viditeľné.
+- **Príčina `auto_response_sent_at` 0 z 515 je dokázaná:** Resend odmieta odosielateľa — doména nie je overená.
+  Sedí s Resend → Domains: len `revolis.ai` „Partially Failed", `mg.revolis.ai` neexistuje. Ktorá doména je presne
+  odosielateľ (`OUTREACH_FROM_EMAIL` je vo Verceli skrytá, predvolene `onboarding@mg.revolis.ai`), neviem.
+  Pravdepodobne rovnaká chyba blokuje aj „Schváliť a odoslať" pri AI návrhoch — **neoverené**.
+
+**Prečo brána:** oprava domény by naraz spustila e-maily na skutočných klientov Smolka (odosielateľ = kancelária,
+`Reply-To` = gmail profil vlastníka agentúry `ra***@gmail.com`, ktorý nepoznáme) a Smolko o auto-odpovediach
+nevie (Stealth/Reference: nič v jeho mene bez súhlasu).
+
+**Vykonané (PROD, 2026-10-01 07:17:20 UTC):** `update agencies set auto_response_enabled = false
+where id = '11111111-1111-1111-1111-111111111111'` → 1 riadok (`RETURNING` potvrdil). Dôkaz: 1 agentúra `false`,
+5 `true`. Ostatných 5 agentúr nemá za 30 dní žiadny lead (Smolko 14, z toho 11 s e-mailom), expozícia je nízka,
+ale **predvolená hodnota stĺpca je `true`** (opt-out) — BACKLOG: zmeniť na opt-in, resp. vypnúť aj ostatné.
+Ďalší lead zapíše `inbound.auto_response` s `outcome = skipped_disabled` (dôkaz, že brána drží).
+
+**Opätovné zapnutie (až keď platí VŠETKO):** (1) Resend: odosielacia doména Verified (DNS záznamy `revolis.ai`
+alebo iná doména v `OUTREACH_FROM_EMAIL`), (2) reply-to: `agencies.email` agentúry `1111…` nastavený na schválený
+kontakt Smolka (dnes sa berie profil `ra***@gmail.com`, nepotvrdený), (3) Smolko schválil odosielanie a znenie
+(šablóna: `send-inbound-auto-response.ts`), (4) `update agencies set auto_response_enabled = true where
+id = '11111111-1111-1111-1111-111111111111'`, (5) overiť: ďalší lead → `outcome = sent` a `auto_response_sent_at` nie NULL.
+
 ## [2026-10-01] DASHBOARD-LLM-OUTPUT-FIT — prvý `llm` výsledok dashboardu; zvyšok volaní padá na čase a výstupe (BUILD, GO foundera)
 
 **Dôkaz po nasadení #764 (PROD `ai_action_audit`, dashboard cron 2026-10-01 06:24 UTC):** 1× `llm`
