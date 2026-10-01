@@ -1,3 +1,14 @@
+## Session 2026-10-01 (PII-GATE-AUDIT)
+### Dokončené
+- `docs/reports/2026-10-01-pii-gate-audit.md` (read-only). Rozsah „obe oblasti" určil founder; pojem v repe nebol definovaný.
+- **Kľúčový nález:** druhý fail-open tvar `if (callerProfile?.agency_id) {…}` (8 miest: leads/[id]/activities, moves, tasks/[id], leads/[id] GET) — sweep regex `/\?\.agency_id\s*&&/` ho nevidí. + `moves` GET číta bez scoped klienta, `deal-strategy` bez tenant kontroly.
+- Externé/logy: Meta lookalike posiela e-maily v čistom texte (komentár tvrdí hash), ghostwriter posiela meno/adresu vlastníka + „dedičstvo" do OpenAI a ukladá bez tenanta, `console.log` celého riadku v `leads-store.ts:694`, HubSpot bez právneho podkladu.
+- Jedno tvrdenie z prechodu vyvrátené (call-coach prepis sa maskuje).
+### Rozpracované / Pending
+- Súvisiaci split: #781 (PORT-443/495/304) otvorený ako draft, vetva `claude/split-776-fixes` (founder povolil push).
+### Ďalší krok
+GO TENANT-GATE-2 (A1+A2+A3), potom META-LOOKALIKE-HASH.
+
 ## Session 2026-10-01 (PORT-774-MIGRATION-VERIFY)
 ### Dokončené
 - Migrácia `20261001100000_inbound_mail_outcomes.sql` z #774 overená na **skutočnom Postgrese 16.13** (scratch, port 55433, role anon/authenticated/service_role + Supabase-like default privileges). Žiadny zápis do PROD.
