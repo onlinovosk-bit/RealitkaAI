@@ -1,3 +1,13 @@
+## Session 2026-10-01 (PORT-495)
+### Dokončené
+- `lib/inbound/process-lead.ts`: zlyhaný BRI už nevyrobí skóre 50; `briScore: number | null`, bez draftu a do audit eventu ide `null`. Test „never invents a BRI score". Mutation proof: návrat `?? 50` → červená. Druhá mutácia (odstránenie `=== null`) je ekvivalentná (`null < 40` je v JS pravda); kontrola ostáva kvôli typom.
+- Na `main` je dnes iba draft (`replySent` vždy false), takže pôvodné „auto-odpoveď klientovi" z #495 už neplatí; zostáva fiktívne číslo a zbytočný draft.
+- `prepush-gate` PASS; migrácie NEOVERENÉ.
+### Rozpracované / Pending
+- #495 možno zavrieť po merge. #304 čaká na GO PORT-304.
+### Ďalší krok
+GO PORT-304 alebo zavretie PR z triáže.
+
 ## Session 2026-10-01 (PORT-443)
 ### Dokončené
 - Scoped klient v `createProperty` (nový 2. parameter), `getLeadById`, `POST /api/properties` a `matching/action`. `POST /api/properties` vracia `okResponse({ property })`: formulár kontroloval `data.ok`, takže po úspešnom vytvorení ukazoval chybu.
