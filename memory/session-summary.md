@@ -1,3 +1,12 @@
+## Session 2026-10-01 (SPLIT-776-FIXES)
+### Dokončené
+- Z #776 vyrezané bloky PORT-443 / PORT-495 / PORT-304 do samostatnej vetvy z `origin/main` (`4850ca9`): 12 súborov (+144/−16), žiadne ENV ani docs bloky. Opravy: scoped klient do `createProperty`/`getLeadById`/`POST /api/properties`/`matching/action` (+ `{ok:true}`), zlyhaný BRI → `briScore: null` bez draftu, `?code=` a forgot-password cez server-side `/auth/callback`.
+- Súvisiace testy 116/116 (12 súborov). Mutation proofs z pôvodných brán platia (rovnaký kód).
+### Rozpracované / Pending
+- Push novej vetvy čaká na founderovo výslovné povolenie (jediná povolená vetva je `claude/charming-feynman-gp7uf4`). Po merge splitu zostane #776 s CHECKOUT-DIAG, ENV blokmi a docs.
+### Ďalší krok
+Founder: povoliť push vetvy `claude/split-776-fixes` a draft PR; potom zmergovať split.
+
 ## Session 2026-10-01 (OUTREACH-DOMAIN-PROOF)
 ### Dokončené
 - #773 (AUTO-RESPONSE-TEXT-FIX) zmergovaný (`420f4af`), produkčný deploy READY.

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabaseClient } from "@/lib/supabase/client";
+import { getRecoveryCodeCallbackPath } from "@/lib/supabase/recovery-redirect";
 
 type Phase = "loading" | "ready" | "error" | "done";
 
@@ -34,8 +35,8 @@ async function establishRecoverySession(): Promise<{ ok: boolean; detail?: strin
 
   const code = params.get("code");
   if (code) {
-    const { error } = await supabaseClient.auth.exchangeCodeForSession(code);
-    if (error) return { ok: false, detail: error.message };
+    window.location.replace(getRecoveryCodeCallbackPath(code));
+    return { ok: false, detail: "redirect" };
   }
 
   // Give SSR client a moment to ingest hash tokens / cookies.
