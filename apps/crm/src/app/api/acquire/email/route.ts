@@ -20,6 +20,7 @@ import {
 import { runInboundLeadTriageAndNotify } from "@/lib/acquire/inbound-lead-triage";
 import { runInboundLeadAutoResponse } from "@/lib/acquire/inbound-lead-auto-response";
 import { INBOUND_REPLY_DRAFT_TIMEOUT_MS, scheduleInboundReplyDraft } from "@/lib/inbound/reply-draft";
+import { describeError } from "@/lib/log-safe";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -477,7 +478,7 @@ export async function POST(req: NextRequest) {
       event_id: ev.eventId,
     });
   } catch (e) {
-    console.error("[acquire.email]", e);
+    console.error("[acquire.email]", describeError(e));
     return NextResponse.json({ ok: false, error: String(e) }, { status: 500 });
   }
 }

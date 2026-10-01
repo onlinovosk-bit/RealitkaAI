@@ -1,3 +1,15 @@
+## Session 2026-10-01 (LOG-PII-CLEANUP)
+### Dokončené
+- `lib/leads-store.ts`: odstránený `console.log('updateAiRecommendation:', { id, payload, data, error })` (celý riadok z `.select("*")` v produkcii) a z chyby „Unexpected data format" zmizol `JSON.stringify(data)` (chyba putuje do odpovede aj logu).
+- `api/founder/send-legal-update-email`: log už neobsahuje e-mail príjemcu ani celý objekt chyby.
+- Nový `lib/log-safe.ts` (`describeError`: iba názov + správa, bez `details`). Použitý v `acquire/email` a `inbound-lead-triage`, kde sa logoval celý objekt chyby. Dôvod overený na Postgrese 16: `DETAIL` chyby obsahuje celý vkladaný riadok („Failing row contains (…)"), a PostgREST ho nesie v `details`. Ide o preventívnu úpravu; že tieto konkrétne cesty vyhadzujú PostgREST objekt, som nedokázal.
+- Testy 7 (log-safe 4 + pii-log-cleanup 3); mutation proof 5/5.
+### Rozpracované / Pending
+- **Zámerne nezmenené (nepreverené):** Resend logy v `neighborhood-watch/subscribe:56`, `ghostwriter/send-email:68`, `support/request:72`, `legal/dpa-request:65`. Tvar chyby z Resend SDK som nevidel a nenašiel som dôkaz, že nesie príjemcu.
+- Ghostwriter a HubSpot (právny podklad) stále čakajú na founderovo rozhodnutie.
+### Ďalší krok
+Povoliť push `claude/log-pii-cleanup`; potom rozhodnutie o súhlase pri Meta/HubSpot/ghostwriter.
+
 ## Session 2026-10-01 (TENANT-GATE-2)
 ### Dokončené
 - 8 fail-open brán tvaru `if (callerProfile?.agency_id) { … }` → fail-closed `sameAgency()`: `leads/[id]/activities` GET/POST, `leads/[id]/moves` GET/POST, `tasks/[id]` PATCH/DELETE, `leads/[id]` GET. `tasks` DELETE: volajúci bez agentúry dostane 403 (tasks nemá vlastný `agency_id`, tenant ide cez lead).
