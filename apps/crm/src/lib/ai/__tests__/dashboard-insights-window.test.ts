@@ -118,6 +118,21 @@ describe('cron — okno modelu musí byť kratšie než vonkajšie', () => {
     expect(INSIGHTS_LLM_TIMEOUT_MS).toBeGreaterThanOrEqual(2500)
   })
 
+  it('okno je dosť dlhé na volania po 6–8 s (merané 1. 10.: 6,4 s a 7,5 s)', () => {
+    expect(INSIGHTS_LLM_TIMEOUT_MS).toBeGreaterThanOrEqual(10_000)
+  })
+
+  it('3 dávky (do 9 agentúr) v najhoršom prípade stihnú maxDuration (zber dát ~5 s + okno)', () => {
+    const source = readFileSync(
+      join(process.cwd(), 'src/app/api/cron/dashboard-insights/route.ts'),
+      'utf8',
+    )
+    const maxDuration = Number(source.match(/export const maxDuration\s*=\s*(\d+)/)![1])
+    const gatherMs = 5_000
+    const batches = 3
+    expect((INSIGHTS_AI_TIMEOUT_MS + gatherMs) * batches).toBeLessThanOrEqual(maxDuration * 1000)
+  })
+
   it('route exportuje maxDuration, ktoré pokryje 2 dávky s dlhým oknom (>= 30 s)', () => {
     const source = readFileSync(
       join(process.cwd(), 'src/app/api/cron/dashboard-insights/route.ts'),

@@ -1,5 +1,35 @@
 # Critical Decisions Log
 
+## [2026-10-01] DASHBOARD-LLM-OUTPUT-FIT — prvý `llm` výsledok dashboardu; zvyšok volaní padá na čase a výstupe (BUILD, GO foundera)
+
+**Dôkaz po nasadení #764 (PROD `ai_action_audit`, dashboard cron 2026-10-01 06:24 UTC):** 1× `llm`
+(7 488 ms, 0,0035 €, `claude-haiku-4-5`), 1× `fallback/timeout` (7 501 ms — okno 7,5 s vyčerpané),
+1× `fallback/bad_output` (6 380 ms), 1× `empty`. Teda: kredit a kľúč fungujú (kľúč z Vercelu je v
+organizácii s kreditom), oprava 800 ms okna zabrala — **prvý `llm` dashboardu v histórii (predtým 0 z 212)**.
+Zmeraná cena 0,0035 €/volanie → ~8 volaní denne ≈ 0,03 €/deň ≈ 1 €/mesiac len za dashboard.
+
+**Čo zostáva zlé:** z 3 volaní s dátami uspelo 1. Volania trvajú 6–7,5 s, teda okno 7,5 s je tesné
+(jedno uspelo o 12 ms pred hranicou, jedno ju trafilo). `bad_output` po 6,4 s je **pravdepodobne** orezaný
+JSON na `max_tokens: 700` (slovenčina = viac tokenov na slovo) — **NEDOKÁZANÉ**, `stop_reason` sa neukladal.
+
+**Zmena:**
+- Audit (`DashboardInsightsAudit.usage`) nesie `stopReason`, `inputTokens`, `outputTokens` — zapíše sa PRED
+  parsovaním, takže prežije `bad_output`; cron ich ukladá do `meta` (`stop_reason`, `input_tokens`,
+  `output_tokens`). Bez textu výstupu (môže niesť mená leadov).
+- `max_tokens` 700 → 1000 (`DASHBOARD_LLM_MAX_TOKENS`) — pokus; ďalší beh ukáže cez `stop_reason`, či to stačí.
+- Predvolené okno crona `DASHBOARD_INSIGHTS_TIMEOUT_MS` 8000 → 14000 (→ vnútorné 13,5 s). Worst-case:
+  3 dávky (do 9 agentúr) × (zber ~5 s + 14 s) ≈ 57 s ≤ `maxDuration` 60 s — stráži test. Nad 9 agentúr treba
+  dávky skrátiť/rozdeliť beh (BACKLOG, dnes sú 4).
+
+**Ako čítať ďalší beh:** `select created_at, meta->>'source', meta->>'failure_reason', meta->>'stop_reason',
+meta->>'output_tokens', meta->>'latencyMs' from ai_action_audit where meta->>'feature'='dashboard_insights'
+order by created_at desc;` — `bad_output` + `stop_reason = max_tokens` ⇒ ešte väčší strop alebo kratší výstup
+v prompte; `bad_output` + `end_turn` ⇒ chyba parsovania (iný problém); `timeout` ⇒ okno stále tesné.
+
+**Dôkaz kódu:** 6 nových testov (`dashboard-insights-usage.test.ts`) + 2 invarianty okna + 2 testy meta v cron
+teste; súvisiace sady 137 zelených; lint čistý; typecheck 49 (bez nových chýb); **mutation proof 9/9** zabitých,
+súbory obnovené bit-for-bit.
+
 ## [2026-10-01] D1-BACKFILL-A — gold set doplnený o historické portálové e-maily (founder GO)
 - **Prečo:** PROD má na jedinom reálnom tenante 61 poznámok ≥ 40 znakov (39 z Realvia importu bez dopytu). Horná hranica podľa regexu: rozpočet ≤ 8, izby ≤ 6, kúpa/prenájom ≤ 8. Brána so support ≥ 10 by skončila `INSUFFICIENT` bez ohľadu na model. Founder zvolil A (nie B shadow mode, nie C znížiť prah).
 - **Čo:** `scripts/demand-backfill-experiment.ts extract --input <priečinok>` číta `.eml` / `.mbox` / `.txt` a púšťa ich cez produkčný `parseEmail` → `inquiryText` + meno kontaktu (rovnaký vstup ako `acquire/email` → `scheduleDemandExtraction`). Mail, z ktorého by lead nevznikol, sa nemeria. Id = hash obsahu, deduplikácia DB × schránka. Bez novej závislosti (vlastná MIME čítačka v `lib/demand/backfill-input.ts`).

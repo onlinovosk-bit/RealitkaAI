@@ -1,3 +1,21 @@
+## Session 2026-10-01 (DASHBOARD-LLM-OUTPUT-FIT)
+### Dokončené
+- #764 v produkcii; dashboard cron 06:24 UTC: **prvý `llm` v histórii** (7 488 ms, 0,0035 €), + 1× timeout
+  (7 501 ms), 1× `bad_output` (6 380 ms). Kredit/kľúč potvrdené. Detail: `memory/decisions.md`.
+- **DASHBOARD-LLM-OUTPUT-FIT** (GO foundera): audit nesie `stop_reason` + tokeny (aj pri `bad_output`),
+  `max_tokens` 700 → 1000, okno crona 8 → 14 s (3 dávky stihnú `maxDuration` 60 — stráži test).
+  Testy + mutation proof 9/9, lint čistý, typecheck 49.
+### Rozpracované / Pending
+- Po nasadení: ďalší dashboard cron (13:00 UTC alebo ručne) — prečítať `stop_reason`, `failure_reason`, latenciu.
+- Prvý reálny lead: triage + návrh odpovede + `inbound.auto_response` (zatiaľ 0 záznamov, lead od nasadenia nebol).
+- Founder: auto-reload + nižší mesačný limit v Console; Resend doména `revolis.ai` („Partially Failed").
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/ai/dashboard-insights.ts`, `dashboard-insights-cron.ts`,
+  `apps/crm/src/app/api/cron/dashboard-insights/route.ts`; testy `dashboard-insights-usage.test.ts` (nový),
+  `dashboard-insights-window.test.ts`, `dashboard-insights-cron.test.ts`.
+### Ďalší krok
+Merge → nasadenie → ručný beh dashboard crona a prečítať `ai_action_audit`.
+
 ## Session 2026-10-01 (D1-BACKFILL-A)
 ### Dokončené
 - `--input` pre backfill experiment: historické portálové e-maily cez produkčný parser (`apps/crm/src/lib/demand/backfill-input.ts`, skript)

@@ -343,6 +343,41 @@ describe('dashboard-insights-cron cache writer', () => {
     expect(INSIGHTS_LLM_TIMEOUT_MS).toBeLessThan(INSIGHTS_AI_TIMEOUT_MS)
   })
 
+  it('meta nesie stop_reason a tokeny, keď model odpovedal (aj pri bad_output) — bez textu výstupu', async () => {
+    vi.mocked(generateDashboardInsights).mockResolvedValueOnce({
+      insights: buildDataFallback({ period: 'today', summary: smolkoSummary, userName: 'Maklér' }),
+      audit: {
+        source: 'fallback',
+        model: 'claude-haiku-4-5-20251001',
+        costEur: null,
+        latencyMs: 6380,
+        failure: { reason: 'bad_output', httpStatus: null, errorType: null, errorName: 'SyntaxError', requestId: null },
+        usage: { stopReason: 'max_tokens', inputTokens: 420, outputTokens: 700 },
+      },
+    })
+    const { from } = mockAdminForCache({ summary: smolkoSummary })
+
+    await generateAndCacheAgencyInsights({ from } as never, AGENCY_ID)
+
+    const meta = persistAiCostTelemetryMock.mock.calls.at(-1)?.[0].meta as Record<string, unknown>
+    expect(meta).toMatchObject({
+      failure_reason: 'bad_output',
+      stop_reason: 'max_tokens',
+      input_tokens: 420,
+      output_tokens: 700,
+    })
+  })
+
+  it('bez odpovede modelu sa do meta nedostanú stop_reason ani tokeny', async () => {
+    const { from } = mockAdminForCache({ summary: smolkoSummary })
+
+    await generateAndCacheAgencyInsights({ from } as never, AGENCY_ID)
+
+    const meta = persistAiCostTelemetryMock.mock.calls.at(-1)?.[0].meta as Record<string, unknown>
+    expect(Object.keys(meta)).not.toContain('stop_reason')
+    expect(Object.keys(meta)).not.toContain('output_tokens')
+  })
+
   it('bez zlyhania sa do meta nedostanú žiadne failure_* kľúče', async () => {
     const { from } = mockAdminForCache({ summary: smolkoSummary })
 
