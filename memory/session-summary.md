@@ -1,3 +1,20 @@
+## Session 2026-10-01 (AUTO-RESPONSE-GATE)
+### Dokončené
+- #771 zmergovaný a nasadený (`d29b73c`). Prvý reálny lead po dobití (06:46:58 UTC, Bazoš.sk): AI triedenie
+  (+1,6 s) aj AI návrh odpovede (+8 s) fungujú; `inbound.auto_response` = `failed_send / domain_not_verified / 403`.
+- **Príčina auto-odpovede dokázaná:** Resend doména neoverená. **AUTO-RESPONSE-GATE** (GO foundera, PROD zápis
+  07:17:20 UTC): `agencies.auto_response_enabled = false` pre agentúru `11111111-…` (Smolko) — kým nie je schválený
+  reply-to, znenie a súhlas Smolka a overená doména. Postup zapnutia: `memory/decisions.md`.
+### Rozpracované / Pending
+- **Founder:** Resend → doména `revolis.ai` → červené DNS záznamy (screenshot) — oprava je bezpečná, kým je brána vypnutá.
+- Rozhodnúť reply-to (`ra***@gmail.com` nepoznáme) a súhlas Smolka s odosielaním; potom zapnúť späť.
+- Dashboard cron po #771 (13:00 UTC alebo ručne): `stop_reason`, `failure_reason`, latencia.
+- BACKLOG: `auto_response_enabled` predvolene `true` (opt-out) → opt-in; auto-reload + nižší limit v Console.
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md` (žiadna zmena kódu); PROD: 1 riadok v `agencies`.
+### Ďalší krok
+Ďalší lead → `skipped_disabled` (brána drží); founder opraví DNS; rozhodnutie o reply-to.
+
 ## Session 2026-10-01 (DASHBOARD-LLM-OUTPUT-FIT)
 ### Dokončené
 - #764 v produkcii; dashboard cron 06:24 UTC: **prvý `llm` v histórii** (7 488 ms, 0,0035 €), + 1× timeout
