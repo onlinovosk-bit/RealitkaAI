@@ -6,11 +6,14 @@ const envSchema = z.object({
 
   // ── Supabase ─────────────────────────────────────────────────
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+  // Kód akceptuje ktorýkoľvek z dvoch (getKey() v lib/supabase/*); vynucuje to superRefine nižšie.
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1).optional(),
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1).optional(),
+  // Voliteľné: createServiceRoleClient() vráti null → funkcia sa degraduje (viď DEGRADED_WITHOUT).
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
 
   // ── OpenAI / Anthropic ────────────────────────────────────────
-  OPENAI_API_KEY: z.string().min(1),
+  OPENAI_API_KEY: z.string().min(1).optional(), // getOpenAIClient() vracia null
   ANTHROPIC_API_KEY: z.string().optional(),
   OUTREACH_MODEL: z.string().default("gpt-4.1-mini"),
   OUTREACH_HIGH_QUALITY_MODEL: z.string().default("gpt-4.1"),
@@ -23,7 +26,7 @@ const envSchema = z.object({
   OUTREACH_LEAD_COOLDOWN_HOURS: z.coerce.number().default(20),
 
   // ── Stripe ───────────────────────────────────────────────────
-  STRIPE_SECRET_KEY: z.string().min(1),
+  STRIPE_SECRET_KEY: z.string().min(1).optional(), // app-env.ts: voliteľné pre pilot bez platieb
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
   STRIPE_PRICE_STARTER: z.string().optional(),
   STRIPE_PRICE_PRO: z.string().optional(),
@@ -91,7 +94,7 @@ const envSchema = z.object({
   RESCUE_AUTOMATION_ENABLED: z.coerce.boolean().default(false),
 
   // ── Cron / Jobs ──────────────────────────────────────────────
-  CRON_SECRET: z.string().min(1),
+  CRON_SECRET: z.string().min(1).optional(), // isAuthorizedCronBearer je fail-closed pri chýbajúcom
 
   // ── Misc ─────────────────────────────────────────────────────
   NEXT_PUBLIC_MAP_STYLE_URL: z.string().url().optional(),
@@ -119,11 +122,61 @@ const envSchema = z.object({
   IMAP_SECURE: z.coerce.boolean().default(true),
   IMAP_USER: z.string().optional(),
   IMAP_PASSWORD: z.string().optional(),
+}).superRefine((v, ctx) => {
+  if (!v.NEXT_PUBLIC_SUPABASE_ANON_KEY && !v.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["NEXT_PUBLIC_SUPABASE_ANON_KEY|NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"],
+      message: "Required (one of)",
+    });
+  }
 });
+
+/**
+ * Premenné, bez ktorých app nabehne, ale konkrétna funkcia je mŕtva. Nie sú to
+ * chyby schémy — logujú sa ako `degraded`, aby tichá degradácia bola viditeľná.
+ */
+export const DEGRADED_WITHOUT: Record<string, string> = {
+  SUPABASE_SERVICE_ROLE_KEY: "cron, metriky, audit insert (createServiceRoleClient() = null)",
+  CRON_SECRET: "cron/interné endpointy odmietajú všetky volania (fail-closed)",
+  STRIPE_SECRET_KEY: "fakturácia a checkout",
+  OPENAI_API_KEY: "Whisper prepis, embeddings, AI outreach",
+};
 
 export type Env = z.infer<typeof envSchema>;
 
-function parseEnv(): Env {
+export interface EnvIssue {
+  key: string;
+  message: string;
+}
+
+/**
+ * Non-throwing check of `source` against the schema. Reports key NAMES and
+ * zod's generic message only — never a received value (secrets).
+ */
+export function validateEnv(
+  source: Record<string, string | undefined> = process.env,
+): { ok: boolean; issues: EnvIssue[]; degraded: { key: string; feature: string }[] } {
+  const degraded = Object.entries(DEGRADED_WITHOUT)
+    .filter(([key]) => !source[key]?.trim())
+    .map(([key, feature]) => ({ key, feature }));
+  const result = envSchema.safeParse(source);
+  if (result.success) return { ok: true, issues: [], degraded };
+  return {
+    ok: false,
+    issues: result.error.issues.map((i) => ({ key: i.path.join("."), message: i.message })),
+    degraded,
+  };
+}
+
+/**
+ * Strict accessor — throws on an invalid environment. Deliberately lazy: it used
+ * to be a module-level `export const env = parseEnv()`, which nothing imported;
+ * wiring that as-is would have taken production down on any variable Vercel
+ * lacks today (measured 2026-10-01). Import this only after the schema has been
+ * reconciled with production.
+ */
+export function getEnv(): Env {
   const result = envSchema.safeParse(process.env);
   if (!result.success) {
     const missing = result.error.issues
@@ -133,6 +186,3 @@ function parseEnv(): Env {
   }
   return result.data;
 }
-
-// Singleton — parsed once at module load, fails fast on startup
-export const env = parseEnv();

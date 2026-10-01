@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { okResponse, errorResponse } from "@/lib/api-response";
 import { createProperty, listProperties } from "@/lib/properties-store";
 import { checkAiRateLimit } from "@/lib/ai/rate-guard";
 import { z } from "zod";
@@ -61,11 +62,12 @@ export async function POST(req: Request) {
       description: body.description ?? "",
       ownerName: body.ownerName ?? "",
       ownerPhone: body.ownerPhone ?? "",
-    })
-    return NextResponse.json(property)
+    }, supabase)
+    // property-create-form kontroluje data.ok (rovnaký kontrakt ako PATCH [id]).
+    return okResponse({ property })
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error"
-    return NextResponse.json({ error: message }, { status: 500 })
+    return errorResponse(message, 500)
   }
 }
 
