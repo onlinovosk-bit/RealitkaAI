@@ -1,5 +1,20 @@
 # Critical Decisions Log
 
+## 2026-10-01 — PROD-MIGRATION-AUDIT: PROD zaostáva v 29 tabuľkách; 9 RLS politík s vetvou `agency_id IS NULL`
+
+**GO foundera, read-only (len SELECT), nič sa neaplikovalo.** Detail: `docs/reports/2026-10-01-prod-migration-audit.md`.
+
+- Porovnanie na úrovni **objektov** (nie mien migrácií): z repa chýba v PROD **29/138 tabuliek, 2/8 views, 4/40
+  funkcií, 15/155 stĺpcov**. Hranica metódy: parser nevidí indexy, triggery, granty, `ALTER POLICY`, dáta.
+- **Obchodne najdôležitejšie:** `credit_redemption_codes` chýba, a volá ju tok Starter Pack (47 €). Tiež chýbajú
+  `lead_demands`, `demand_property_matches`, `cron_runs`, `demo_*`, `notifications`. Reálne zlyhanie za behu som
+  nemeral.
+- **Bezpečnosť:** 9 politík pre `authenticated` má vetvu `agency_id IS NULL`. `leads`/`platform_events` majú dnes 0
+  takých riadkov (latentné). **`activities` nemá `agency_id` a politika pustí 187 riadkov s `lead_id IS NULL`
+  každému prihlásenému** — obsah som nečítal, cudzie dáta NEPOTVRDENÉ.
+- Oprava predošlej mojej vety: „PROD história končí 28. 9." je pravda, ale meno migrácie ≠ objekt — rozdiel je 21
+  migračných súborov, nie ~60.
+
 ## 2026-10-01 — APPLY-INBOUND-OUTCOMES: `inbound_mail_outcomes` aplikovaná v PROD
 
 **GO foundera.** PROD `ypgajkhqtbriqqmyawyv`, DDL z `20261001100000_inbound_mail_outcomes.sql` (rovnaký text), spustené

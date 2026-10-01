@@ -1,3 +1,15 @@
+## Session 2026-10-01 (PROD-MIGRATION-AUDIT)
+### Dokončené
+- Read-only audit repo vs PROD → `docs/reports/2026-10-01-prod-migration-audit.md` (29 tabuliek chýba, 9 RLS politík s NULL vetvou).
+### Rozpracované / Pending
+- Overiť obsah 187 `activities` s `lead_id IS NULL` (cross-tenant viditeľnosť) — rozhodnúť o zúžení politiky.
+- Overiť, ako zlyháva Starter Pack plnenie bez `credit_redemption_codes`.
+- Aplikácia chýbajúcich tabuliek po dávkach — každá samostatné GO.
+### Kľúčové súbory zmenené
+- `docs/reports/2026-10-01-prod-migration-audit.md` (nový), `memory/decisions.md`, `memory/session-summary.md`.
+### Ďalší krok
+GO na kontrolu `activities` (typ/čas, bez osobných údajov) a na overenie Starter Pack plnenia.
+
 ## Session 2026-10-01 (APPLY-INBOUND-OUTCOMES)
 ### Dokončené
 - Migrácia `inbound_mail_outcomes` aplikovaná v PROD (RLS on, 0 politík, 0 grantov klientskym rolám, 18 stĺpcov, 0 riadkov) — overené SELECT-om.
