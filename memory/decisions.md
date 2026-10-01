@@ -1,5 +1,38 @@
 # Critical Decisions Log
 
+## 2026-10-01 — ACTIVITIES-FEED-CHECK: ⚠️ `DROP POLICY` únik NEZATVORIL — pohľad `activity_stream` obchádza RLS a je čitateľný aj pre `anon`
+
+**Read-only (SELECT), nič som nezmenil. Čaká na GO — URGENT.**
+
+**Dokázané (SELECT ako rola, transakcia s rollbackom, PROD `ypgajkhqtbriqqmyawyv`):**
+| rola | zdroj | viditeľné riadky |
+|---|---|---|
+| `authenticated` (agentúra `8f3a…`) | `activities` | 0 (po DROP POLICY — oprava platí pre tabuľku) |
+| `authenticated` (agentúra `8f3a…`) | **`activity_stream`** | **193, z toho 187 bez leadu** |
+| **`anon`** | **`activity_stream`** | **193, z toho 187 bez leadu** |
+| `anon` | `activities` | 0 |
+
+**Príčina:** `public.activity_stream` je pohľad vlastnený `postgres`, bez `security_invoker`, takže beží s právami vlastníka a **RLS
+obchádza**; `anon` aj `authenticated` majú naň `SELECT`. Pohľad vyrába migrácia `20260412_activity_stream_view.sql`.
+Teda moje `DROP POLICY activities_select_agency` zatvorilo tabuľku, ale **nie pohľad** — a pohľad je horší: čitateľný bez
+prihlásenia cez verejný anon kľúč (PostgREST). Moje predošlé „únik je zatvorený" platí **iba pre priamy prístup k `activities`**.
+
+**Rovnaký vzor má 8 pohľadov** (owner `postgres`, bez `security_invoker`, `SELECT` pre `anon`): `activity_stream`, `arbitrage_stats`,
+`genome_decision_open`, `morning_brief_stats`, `negotiation_briefs`, `v_genome_calibration`, `v_genome_decisions_resolved`,
+`v_genome_exclusivity_patterns`. Čo vystavujú, som nečítal; ich dosah je **NEOVERENÝ** okrem `activity_stream`.
+
+**Jediný konzument `activity_stream`:** `src/app/api/activities/route.ts` — vyžaduje prihláseného používateľa (401 inak), číta tenantovým
+klientom. Teda `REVOKE ... FROM anon` ho nerozbije; `security_invoker = true` ho zúži na riadky vlastných leadov (zámer).
+
+**Navrhnutá oprava (NEAPLIKOVANÁ):**
+1. `REVOKE ALL ON public.activity_stream FROM anon;` + `ALTER VIEW public.activity_stream SET (security_invoker = true);`
+2. Pre ďalších 7 pohľadov najprv zistiť konzumentov a obsah; bezpečný minimálny krok je `REVOKE ALL ... FROM anon` (nezmení správanie prihlásených).
+
+**Oprava môjho auditu (PROD-MIGRATION-AUDIT, ráno):** nebola nepravdivá, ale je **zastaraná** — história migrácií v PROD sa medzitým rozšírila
+(`demo_ops`, `enrichment_log…`, `credit_redemption_codes`, `ai_generations`, `acquisition_sync_tables`, `cron_runs`,
+`20261001160000_land_unapplied_tables_hardening`); niekto (iná session / founder) ich aplikoval po mojom audite. Podľa `pg_class` teraz
+chýbajú len `lead_demands`, `demand_property_matches` a pohľad `ai_action_daily_agency`. Starter Pack tabuľka `credit_redemption_codes` už existuje.
+
 ## 2026-10-01 — ACTIVITIES-SELECT-LEAK-CLOSED: `DROP POLICY activities_select_agency` aplikovaný v PROD
 
 **GO foundera.** Jediný príkaz: `DROP POLICY IF EXISTS activities_select_agency ON public.activities;` (PROD `ypgajkhqtbriqqmyawyv`,

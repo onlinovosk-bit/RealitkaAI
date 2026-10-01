@@ -1,3 +1,17 @@
+## Session 2026-10-01 (ACTIVITIES-FEED-CHECK)
+### Dokončené
+- Zistené (read-only): `DROP POLICY activities_select_agency` zatvoril tabuľku, ale **pohľad `activity_stream` stále vydáva 193 riadkov (187 bez leadu) aj roli `anon`** — pohľad obchádza RLS.
+- 8 pohľadov v PROD má rovnaký vzor (owner postgres, bez security_invoker, SELECT pre anon).
+- Audit PROD migrácií je zastaraný: väčšina chýbajúcich tabuliek je už aplikovaná (iná session/founder); chýba `lead_demands`, `demand_property_matches`.
+### Rozpracované / Pending
+- **URGENT, čaká na GO:** `REVOKE ALL ON public.activity_stream FROM anon` + `ALTER VIEW … SET (security_invoker = true)`.
+- Posúdiť ďalších 7 pohľadov (obsah + konzumenti) a ich `REVOKE ... FROM anon`.
+- GDPR posúdenie incidentu: údaje boli čitateľné aj bez prihlásenia (cez pohľad) — vážnejšie než pôvodne.
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md` (žiadna zmena kódu, žiadna zmena PROD).
+### Ďalší krok
+GO na opravu `activity_stream`, potom overenie ako `anon` a `authenticated` (očakávané 0 / len vlastné).
+
 ## Session 2026-10-01 (ACTIVITIES-SELECT-LEAK-CLOSED)
 ### Dokončené
 - `DROP POLICY activities_select_agency` v PROD. Overené ako tenant: pred 187 cudzích riadkov viditeľných, po 0 (tri agentúry).
