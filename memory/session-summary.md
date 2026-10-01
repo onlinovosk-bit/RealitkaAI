@@ -1,3 +1,16 @@
+## Session 2026-10-01 (ACTIVITY-STREAM-ANON-REVOKED)
+### Dokončené
+- `REVOKE ALL ON public.activity_stream FROM anon` v PROD; `anon` dostane `permission denied` (pred: 193 riadkov). Migrácia `20261001140000_revoke_activity_stream_anon.sql`.
+### Rozpracované / Pending
+- **Stále otvorené:** `authenticated` cez `activity_stream` vidí 193 riadkov (cudzie e-maily/telefóny). Čaká na GO: `ALTER VIEW … SET (security_invoker = true)`.
+- 7 ďalších pohľadov čitateľných pre `anon` (obsah/konzumenti neoverení).
+- Overiť UI `/activities` a feed na dashboarde po security_invoker (zúži sa na vlastné aktivity).
+- GDPR posúdenie (údaje boli čitateľné aj bez prihlásenia) — rozhodnutie foundera.
+### Kľúčové súbory zmenené
+- `apps/crm/supabase/migrations/20261001140000_revoke_activity_stream_anon.sql` (nový), `memory/decisions.md`, `memory/session-summary.md`; PROD: grant odobraný.
+### Ďalší krok
+GO na `security_invoker = true` pre `activity_stream`, potom overenie ako `authenticated` (očakávané len vlastné, 3 pre agentúru 1111…).
+
 ## Session 2026-10-01 (ACTIVITIES-FEED-CHECK)
 ### Dokončené
 - Zistené (read-only): `DROP POLICY activities_select_agency` zatvoril tabuľku, ale **pohľad `activity_stream` stále vydáva 193 riadkov (187 bez leadu) aj roli `anon`** — pohľad obchádza RLS.

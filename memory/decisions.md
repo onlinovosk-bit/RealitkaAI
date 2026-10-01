@@ -1,5 +1,22 @@
 # Critical Decisions Log
 
+## 2026-10-01 — ACTIVITY-STREAM-ANON-REVOKED: `REVOKE ALL ON activity_stream FROM anon` aplikovaný v PROD (druhá polovica úniku ZOSTÁVA)
+
+**GO foundera na REVOKE** (literálne: „REVOKE activity_stream anon"). Jediný príkaz: `REVOKE ALL ON public.activity_stream FROM anon;`
+(PROD `ypgajkhqtbriqqmyawyv`, `execute_sql`; migrácia `20261001140000_revoke_activity_stream_anon.sql`).
+
+**Overené (SELECT):**
+- `anon` → `ERROR 42501: permission denied for view activity_stream` (pred: 193 riadkov).
+- `has_table_privilege('anon', …, 'SELECT')` = false, `'INSERT'` = false.
+- `authenticated` (agentúra `8f3a…`) → **stále 193 / 187 bez leadu** cez pohľad.
+
+**ČO ZOSTÁVA OTVORENÉ (vedome, GO bol len na REVOKE):** prihlásený používateľ ľubovoľnej agentúry stále cez `activity_stream` číta
+všetkých 193 riadkov vrátane cudzích e-mailov/telefónov. Oprava je `ALTER VIEW public.activity_stream SET (security_invoker = true)`
+— čaká na samostatné GO. `activity_stream` zatiaľ nie je opravený v zmysle tenantovej izolácie.
+
+**Ďalších 7 pohľadov** (`arbitrage_stats`, `genome_decision_open`, `morning_brief_stats`, `negotiation_briefs`, `v_genome_*` ×3)
+má `SELECT` pre `anon` a nie je `security_invoker` — nedotknuté, obsah ani konzumenti neoverení.
+
 ## 2026-10-01 — ACTIVITIES-FEED-CHECK: ⚠️ `DROP POLICY` únik NEZATVORIL — pohľad `activity_stream` obchádza RLS a je čitateľný aj pre `anon`
 
 **Read-only (SELECT), nič som nezmenil. Čaká na GO — URGENT.**
