@@ -9,6 +9,70 @@
 - Route chráni `CRON_SECRET` bearer, ale UI (`AcquisitionHub.tsx`) ju volá z prehliadača bez neho → v praxi vždy 401 (nezmenené, mimo scope).
 ### Ďalší krok
 Founder: rozhodnúť o súhlase/právnom základe pre Meta audience; potom GO LOG-PII-CLEANUP.
+## Session 2026-10-01 (LEAD-PIPELINE-AFTER)
+### Dokončené
+- **LEAD-PIPELINE-AFTER** (GO foundera, jedna stena): `runAfterResponse` (`after()`, sekvenčne, izolované chyby) namiesto `void` v 5 trasách
+  (valuation/submit, leads/inbound, buyer-onboarding, leads/[id]/activities, leads/[id]) + `maxDuration=60` + AST stráž proti návratu.
+  Testy 268/269 (zvyšok CI-only), mutation proof 14/14, lint čistý, typecheck 49.
+- PR #780 zlúčil `main` (konflikt vyriešený), nesie memory + migráciu opt-in default + túto stenu.
+### Rozpracované / Pending
+- **E2E dôkaz po nasadení** (a tým aj `OUTREACH_FROM_EMAIL`): postup v `memory/decisions.md`. Blokované: **Vercel Hobby limit nasadení vyčerpaný** (100/deň).
+- Rozhodnutie foundera: počkať na okno limitu / Pro / obmedziť preview nasadenia vetiev `claude/*`.
+- Migrácia opt-in default NIE je na PROD (samostatné GO po merge).
+- Širšia trieda `void`/`.catch` bez `await`: 14 príkazov v 10 súboroch (zmerané), vrátane `notifyHotLead` push — nedotknuté.
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/acquire/after-response.ts` (nový); 5 trás + `buyer-onboarding/page.tsx` (maxDuration);
+  testy: `after-response.test.ts`, 3× `*.after-response.test.ts`, `tests/verification/lead-pipeline-after.verification.test.ts`.
+### Ďalší krok
+„merguj 780" (jedna stena) → nasadenie, keď Vercel dovolí → e2e dôkaz jedným behom.
+
+## Session 2026-10-01 (OUTREACH-DOMAIN-PROOF — výsledok)
+### Dokončené
+- Test odosielania spustený (founder, 10:14 UTC): lead vznikol, **triáž ani auto-odpoveď nedobehli** (0 udalostí, `ai_triage_at` NULL).
+  Príčina takmer iste `void` bez `await` v `valuation/submit`, `leads/inbound`, `buyer-onboarding` (log + kód; kontrolný pokus až po oprave).
+- Testovací vstup zavretý; `auto_response_enabled` = 0 z 7 agentúr (overené).
+### Rozpracované / Pending
+- **Stena LEAD-PIPELINE-AFTER (čaká na GO):** `after()` namiesto `void` vo všetkých 3 trasách + stráž proti návratu + opakovaný e2e test.
+- `OUTREACH_FROM_EMAIL` stále nedokázané (test sa k odoslaniu nedostal). Smolko reply-to + súhlas, Resend Logs e-mailu z 08:41.
+- PR #780 (memory + migrácia opt-in default) — konflikt vyriešený merge-om `main`; migrácia NIE je na PROD.
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md` (bez zmeny kódu); PROD: tenant zavretý.
+### Ďalší krok
+GO LEAD-PIPELINE-AFTER (jedna stena: oprava + stráž + e2e dôkaz).
+
+## Session 2026-10-01 (AUTO-RESPONSE-OPTIN-DEFAULT)
+### Dokončené
+- **AUTO-RESPONSE-OPTIN-DEFAULT** (GO foundera): migrácia `20261001100000_auto_response_opt_in_default.sql`
+  (`SET DEFAULT false`) + test `auto-response-opt-in-default.verification.test.ts`. Mutation proof 8/8, reálny Postgres
+  (PGlite) OK, replay 128/128, schema-gap 0, prepush-gate PASS, typecheck 49, lint čistý.
+### Rozpracované / Pending
+- **Migrácia NIE je na PROD** — aplikácia = samostatné GO po merge PR. Dovtedy je PROD predvolená hodnota `true`.
+- Nie je UI prepínač `auto_response_enabled` → zapnutie len SQL-om so súhlasom agentúry.
+- OUTREACH-DOMAIN-PROOF stále čaká (founder: `Invoke-RestMethod` z `memory/decisions.md`; testovací vstup po poistke zavretý).
+- Otvorené: PR s migráciou (draft, na vetve spolu s memory #780), Resend log e-mailu z 08:41, Smolko reply-to + súhlas.
+### Kľúčové súbory zmenené
+- `apps/crm/supabase/migrations/20261001100000_auto_response_opt_in_default.sql` (nový)
+- `apps/crm/tests/verification/auto-response-opt-in-default.verification.test.ts` (nový)
+- `memory/decisions.md`, `memory/session-summary.md`
+### Ďalší krok
+Po „merguj N" GO na aplikáciu migrácie na PROD; potom OUTREACH-DOMAIN-PROOF.
+
+## Session 2026-10-01 (AUTO-RESPONSE-OPTIN)
+### Dokončené
+- **AUTO-RESPONSE-OPTIN** (GO foundera, PROD zápis): `auto_response_enabled=false` pre AA REALITY Košice, Reality Monopol,
+  Revolis Demo, Revolis Sandbox, Revolis System (5 riadkov). Po zápise: 6 z 7 agentúr `false`, `true` len testovacia.
+- Nález: 08:41 UTC `Revolis Demo` `sent` z `revolis.ai` na syntetický dopyt (`niekde.sk`) — Resend z `revolis.ai` posiela;
+  `OUTREACH_FROM_EMAIL` to nedokazuje (odosielateľ šiel z reply-to na `revolis.ai`).
+- #779 zmergoval founder (memory).
+### Rozpracované / Pending
+- **Founder:** otvoriť v Resende e-mail z 08:41 (Emails → Logs): stav (delivered/bounced) + skutočné znenie textu v produkcii.
+- OUTREACH-DOMAIN-PROOF: `Invoke-RestMethod` z `memory/decisions.md` (testovací tenant otvorený do 10:16 UTC, potom sa zavrie).
+- **AUTO-RESPONSE-OPTIN-DEFAULT:** predvolená hodnota stĺpca je stále `true` (migrácia + test) — čaká na GO.
+- Smolko: `false` ostáva; reply-to + súhlas nevyriešené.
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md` (bez zmeny kódu); PROD: 5 riadkov v `agencies`.
+### Ďalší krok
+GO AUTO-RESPONSE-OPTIN-DEFAULT (migrácia, aby nová agentúra nezačínala so zapnutou auto-odpoveďou).
 
 ## Session 2026-10-01 (TENANT-GATE-2)
 ### Dokončené
