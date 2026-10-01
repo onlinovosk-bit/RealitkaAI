@@ -20,6 +20,7 @@ import {
 import { runInboundLeadTriageAndNotify } from "@/lib/acquire/inbound-lead-triage";
 import { runInboundLeadAutoResponse } from "@/lib/acquire/inbound-lead-auto-response";
 import { INBOUND_REPLY_DRAFT_TIMEOUT_MS, scheduleInboundReplyDraft } from "@/lib/inbound/reply-draft";
+import { mailboxLogEvent } from "@/lib/inbound/mailbox-routing";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -80,8 +81,8 @@ async function resolveMailboxOwner(
   supa: NonNullable<SupabaseAdmin>,
   agencyId: string,
   mailbox: string | null,
-): Promise<MailboxOwner | null> {
-  if (!mailbox) return null;
+): Promise<{ owner: MailboxOwner | null; rowFound: boolean }> {
+  if (!mailbox) return { owner: null, rowFound: false };
 
   const { data: row, error } = await supa
     .from("inbound_mailboxes")
@@ -91,10 +92,11 @@ async function resolveMailboxOwner(
     .maybeSingle();
   if (error) {
     console.error("[acquire.email] mailbox lookup error=", JSON.stringify(error));
-    return null;
+    return { owner: null, rowFound: false };
   }
+  const rowFound = row != null;
   const profileId = row?.profile_id;
-  if (!profileId) return null;
+  if (!profileId) return { owner: null, rowFound };
 
   const { data: profile, error: profileError } = await supa
     .from("profiles")
@@ -104,11 +106,11 @@ async function resolveMailboxOwner(
     .maybeSingle();
   if (profileError) {
     console.error("[acquire.email] owner profile lookup error=", JSON.stringify(profileError));
-    return null;
+    return { owner: null, rowFound };
   }
-  if (!profile) return null;
+  if (!profile) return { owner: null, rowFound };
 
-  return { profileId, agentName: profile.full_name ?? "Priradený agent" };
+  return { owner: { profileId, agentName: profile.full_name ?? "Priradený agent" }, rowFound };
 }
 
 /**
@@ -283,16 +285,13 @@ export async function POST(req: NextRequest) {
     // 3b. komu adresa patrí + heartbeat doručenia. Oboje pred dedupom, aby sa
     // zaznamenal aj mail, z ktorého lead nevznikne (duplicita, not_a_lead).
     const mailbox = normalizeMailbox(email.to);
-    const owner = await resolveMailboxOwner(supa, agencyId, mailbox);
+    const { owner, rowFound } = await resolveMailboxOwner(supa, agencyId, mailbox);
     await markMailboxReceived(supa, agencyId, mailbox);
     // Dva rôzne dôvody nepriradenia vyzerali v dátach rovnako (žiadny heartbeat).
     // Bez tohto rozlíšenia sa nedá povedať, či Worker neposlal `to`, alebo poslal
     // adresu, ktorú nemáme namapovanú — a to sú dve úplne odlišné opravy.
-    if (!mailbox) {
-      console.warn(`[acquire.email] to_missing requestId=${requestId}`);
-    } else if (!owner) {
-      console.warn(`[acquire.email] to_unmatched requestId=${requestId}`);
-    }
+    const mailboxEvent = mailboxLogEvent({ mailbox, rowFound, hasOwner: owner != null });
+    if (mailboxEvent) console.warn(`[acquire.email] ${mailboxEvent} requestId=${requestId}`);
 
     // 4. dedup check — SELECT najprv (presne ako pôvodne), duplicate flag ide do toLeadCandidate
     const { data: existing } = await supa

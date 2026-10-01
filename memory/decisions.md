@@ -1,5 +1,23 @@
 # Critical Decisions Log
 
+## 2026-10-01 — MAILBOX-LOG-FIX: log rozlišuje agentúrnu schránku, Gmail pull nevyberá náhodnú adresu
+
+**Rozhodnutie:** BUILD (GO foundera). Nemení, koľko leadov vznikne — odstraňuje zavádzajúci
+log a latentnú chybu pred zapnutím pullu (PRIME DIRECTIVE: bez opravy by pull po zapnutí
+priradil všetky leady jednému maklérovi).
+
+- `to_unmatched` sa predtým logoval aj pre existujúci riadok s `profile_id = NULL`. Teraz:
+  `to_missing` (bez `to`), `to_agency_mailbox` (riadok existuje, patrí agentúre — normálne),
+  `to_unmatched` (adresa v tabuľke nie je / profil mimo agentúry). Logika v
+  `apps/crm/src/lib/inbound/mailbox-routing.ts`.
+- `loadMailboxForAgency` (`gmail-pull.ts`) už nerobí `.limit(1)` bez `order`. Berie len
+  agentúrne adresy (`profile_id` NULL), abecedne prvú; bez nej `mailbox_not_found`.
+  Zámerne radšej chyba než maklérska adresa.
+- Dôkaz: 106 testov (inbound + acquire) zelených, mutation proof 3/3 (zlúčenie logov,
+  prijatie maklérskej adresy, vypnuté radenie) červené → návrat zelený. typecheck 49 (baseline 54).
+- Nedotknuté: kontrakt Cloudflare Workera, DB, PROD. Pri zapnutí pullu stále platí GDPR bod
+  z GO MAILBOX (preposielať len portálové domény).
+
 ## [2026-10-01] AUTO-RESPONSE-GATE — príčina auto-odpovede dokázaná; odosielanie vypnuté pre Smolka (PROD zápis, GO foundera)
 
 **Prvý reálny lead po dobití (Bazoš.sk, s e-mailom), PROD:**

@@ -65,6 +65,8 @@ describe("POST /api/acquire/email dedup claim", () => {
   let hideExistingOnSelect: boolean;
   /** `inbound_mailboxes.profile_id` for the address the mail arrived at (null = agency mailbox). */
   let mailboxProfileId: string | null;
+  /** true = adresa v `inbound_mailboxes` vôbec nie je. */
+  let mailboxRowMissing: boolean;
   /** Row returned from `profiles`; null simulates a profile outside the agency. */
   let profileRow: { full_name: string | null } | null;
   let mailboxReceivedUpdates: number;
@@ -75,6 +77,7 @@ describe("POST /api/acquire/email dedup claim", () => {
   let agencyMailboxEmails: Array<{ email: string | null }>;
 
   beforeEach(() => {
+    mailboxRowMissing = false;
     vi.clearAllMocks();
     vi.stubEnv("ACQUIRE_SHARED_SECRET", SECRET);
     claimedKeys = new Set();
@@ -217,7 +220,7 @@ describe("POST /api/acquire/email dedup claim", () => {
                   eq: () => ({
                     eq: () => ({
                       maybeSingle: async () => ({
-                        data: { profile_id: mailboxProfileId },
+                        data: mailboxRowMissing ? null : { profile_id: mailboxProfileId },
                         error: null,
                       }),
                     }),
@@ -383,6 +386,28 @@ describe("POST /api/acquire/email dedup claim", () => {
     const [lead] = [...leadRows.values()];
     expect(lead.assigned_profile_id).toBeNull();
     expect(lead.assigned_agent).toBe("Nepriradený");
+  });
+
+  it("agentúrna schránka sa loguje ako to_agency_mailbox, nie ako to_unmatched", async () => {
+    mailboxProfileId = null;
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { POST } = await import("../route");
+    await POST(makeRequest());
+    const logged = warn.mock.calls.map((c) => String(c[0])).join("\n");
+    expect(logged).toContain("to_agency_mailbox");
+    expect(logged).not.toContain("to_unmatched");
+    warn.mockRestore();
+  });
+
+  it("adresa, ktorá v inbound_mailboxes nie je, sa loguje ako to_unmatched", async () => {
+    mailboxRowMissing = true;
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { POST } = await import("../route");
+    await POST(makeRequest());
+    const logged = warn.mock.calls.map((c) => String(c[0])).join("\n");
+    expect(logged).toContain("to_unmatched");
+    expect(logged).not.toContain("to_agency_mailbox");
+    warn.mockRestore();
   });
 
   it("does not assign when the mailbox profile belongs to another agency", async () => {

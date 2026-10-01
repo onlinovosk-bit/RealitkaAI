@@ -1,3 +1,15 @@
+## Session 2026-10-01 (MAILBOX-LOG-FIX)
+### Dokončené
+- Korekcia handoffu: #743 zmergovaný, záznam GO MAILBOX už bol zapísaný (#755) — nič sa nedopisovalo.
+- MAILBOX-LOG-FIX: `to_agency_mailbox` vs `to_unmatched` vs `to_missing`; `loadMailboxForAgency` deterministický (len agentúrna adresa).
+### Rozpracované / Pending
+- UNKNOWN-SOURCE-KEEP odložený (BACKLOG): chýba dôkaz, že portálové dopyty padajú na `unknown_source`; najprv domény z logov po #743.
+- Stále otvorené: kontrakt Workera mimo repa; GDPR filter pošty pred zapnutím pullu.
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/inbound/mailbox-routing.ts` (nový), `gmail-pull.ts`, `app/api/acquire/email/route.ts` + testy.
+### Ďalší krok
+Review + merge PR; potom z logov zistiť, ktoré `sender_domain` reálne prichádzajú.
+
 ## Session 2026-10-01 (AUTO-RESPONSE-GATE)
 ### Dokončené
 - #771 zmergovaný a nasadený (`d29b73c`). Prvý reálny lead po dobití (06:46:58 UTC, Bazoš.sk): AI triedenie
