@@ -1,0 +1,21 @@
+-- ACTIVITIES-RLS-CHECK krok 1: zatvoriť únik `activities` s `lead_id IS NULL`.
+--
+-- `activities` nemá `agency_id`. Politika `activities_select_agency` (rola `authenticated`) pustila každý riadok
+-- s `lead_id IS NULL`; pri SELECT sa permissive politiky OR-ujú, takže bezpečná `activities_tenant_select`
+-- ju neprebila. V PROD to bolo 187 riadkov viditeľných používateľom všetkých 4 agentúr (e-maily, telefóny).
+-- Politika nebola v žiadnej aktívnej migrácii (len v migrations-archive/20260412_enterprise_realtime_audit_rls.sql),
+-- preto ju repo samo nezatvorilo.
+--
+-- Aplikované v PROD 2026-10-01 (execute_sql). Overené ako rola `authenticated` pre používateľov troch agentúr:
+-- pred 190/187 (smolko), 187/187 (8f3a…); po 3/0, 0/0, 3/0 (viditeľné celkom / z toho bez leadu).
+--
+-- NEZRUŠENÉ zámerne: `activities_insert_agency` (INSERT s `lead_id IS NULL`) — `matching` ešte 29. 9. zapisuje
+-- riadky bez leadu; zrušenie by zápisy ticho zlyhalo. Rieši sa agency kľúčom pre aktivity bez leadu (samostatné GO).
+--
+-- ROLLBACK (presná pôvodná definícia):
+--   CREATE POLICY activities_select_agency ON public.activities FOR SELECT TO authenticated
+--   USING ((lead_id IS NULL) OR (EXISTS (SELECT 1 FROM leads l WHERE ((l.id = activities.lead_id) AND
+--     ((l.agency_id IS NULL) OR (l.agency_id IN (SELECT p.agency_id FROM profiles p
+--       WHERE ((p.auth_user_id = auth.uid()) AND (p.agency_id IS NOT NULL)))))))));
+
+DROP POLICY IF EXISTS activities_select_agency ON public.activities;
