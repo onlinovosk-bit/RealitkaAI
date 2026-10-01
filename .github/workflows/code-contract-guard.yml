@@ -19,6 +19,12 @@ on:
       - "apps/crm/scripts/check-cron-observability.mjs"
       - "apps/crm/scripts/find-dead-exports.mjs"
       - "apps/crm/scripts/*-baseline.json"
+      - "apps/crm/scripts/check-schema-gap.mjs"
+      - "apps/crm/scripts/schema-gap-allowlist.json"
+      # SCHEMA-GAP-RATCHET porovnáva kód s migráciami, takže ho musí spustiť aj PR,
+      # ktorý migráciu len zmaže alebo pridá — bez zmeny jediného riadku v src.
+      - "apps/crm/supabase/migrations/**"
+      - "apps/crm/supabase/functions/**"
   workflow_dispatch:
 
 jobs:
@@ -41,6 +47,12 @@ jobs:
       # morning-brief) je lacnejšie zastaviť tu než opravovať spätne.
       - name: Cron denník (ratchet)
         run: node apps/crm/scripts/check-cron-observability.mjs --ci
+
+      # SCHEMA-GAP-RATCHET: kód nesmie volať tabuľku, ktorú nezakladá žiadna migrácia.
+      # Tretí smer driftu z AP-023 (PROD<->migrácie sa dá porovnať len proti živej DB,
+      # kód<->migrácie z repa). Výnimky sú viazané na príčinu; zoznam sa môže len zmenšovať.
+      - name: Schema-gap (kód -> migrácie)
+        run: node apps/crm/scripts/check-schema-gap.mjs --ci
 
       # Script ships with PR #358; until then skip so half-merged #356 does not fail every CRM PR.
       - name: Mŕtve exporty (trieda chyby spendCredits)
