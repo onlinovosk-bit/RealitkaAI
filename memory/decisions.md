@@ -1,5 +1,13 @@
 # Critical Decisions Log
 
+## 2026-10-01 — STATUS-MD: jedna stránka stavu `docs/STATUS.md`
+
+**GO foundera.** Dôvod: founder „sa uklikal k smrti a nevidel postup". Obsah: celkový odhad ≈ 40 % (váhy moje, uvedené), tabuľka blokov
+s tým, čo ich blokuje, 4 veci od foundera zoradené podľa dopadu, hotové dnes s dôkazom, otvorené nenaliehavé veci, pravidlá práce.
+**Údržba:** aktualizovať po každom uzavretom bloku (hore dátum+čas). CLAUDE.md som NEMENIL (je to inštrukčný súbor foundera) — ak
+chceš, aby to bol záväzný krok Session Wrap-up, pridaj tam jednu vetu.
+**Poctivosť:** % je odhad, nie meranie; `Lint, test, build` na #774 v čase zápisu ešte bežal (oprava duplicitnej verzie migrácie).
+
 ## 2026-10-01 — CI-FIX: duplicitná verzia migrácie `20261001100000` (moja chyba) → `inbound_mail_outcomes` premenovaná na `20261001100500`
 
 **Príčina (z logu CI, `supabase start`):** `ERROR: duplicate key value violates unique constraint "schema_migrations_pkey" — Key (version)=(20261001100000)`.

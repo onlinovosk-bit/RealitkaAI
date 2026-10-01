@@ -1,3 +1,13 @@
+## Session 2026-10-01 (STATUS-MD)
+### Dokončené
+- `docs/STATUS.md` — jedna stránka stavu (≈ 40 %, blokery, čo potrebujem od foundera, hotové dnes).
+### Rozpracované / Pending
+- Aktualizovať STATUS.md po každom bloku. CI na #774 (Lint, test, build) beží po oprave migrácie.
+### Kľúčové súbory zmenené
+- `docs/STATUS.md` (nový), `memory/decisions.md`, `memory/session-summary.md`.
+### Ďalší krok
+Founder: Stripe krok C (+30 bodov), potom merge #774.
+
 ## Session 2026-10-01 (CI-FIX duplicitná verzia migrácie)
 ### Dokončené
 - Červené „Lint, test, build" na #774: duplicitná verzia `20261001100000` (moja migrácia vs `auto_response_opt_in_default` z main). Premenované na `20261001100500_inbound_mail_outcomes.sql`; duplicít 0.
