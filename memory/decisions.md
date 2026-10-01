@@ -6,6 +6,224 @@
 - **Prah zmeraný na histórii main:** #746 (−1090) → FAIL; #751 obnova (−96) → FAIL (patrí štítok); legitímne opravy #692 (−2), #709 (−2), #725 (−1), #726 (−4) → PASS s varovaním. Pravidlo „0 zmazaných“ by ich zablokovalo.
 - **Mutačne overené:** kontrola, ktorá vždy prejde → 5 testov červených; bez kontroly nadpisov → 3 červené.
 - **OPRAVA môjho tvrdenia z 2026-09-29:** founderov merge 9774b2c na #745 **nič nezmazal**. Zlúčil main v stave 75f18cf a záznam PR-BACKLOG-TRIAGE pribudol až s #744 o 1,5 min neskôr. „−72 riadkov“ bol artefakt diffu zastaranej vetvy, rovnaký ako neskôr „−1211“. Commit ff37498 „obnovil“ niečo, čo nechýbalo; škoda nevznikla (na main je záznam 1×). Replay: `memory-append-only.sh 167a99b 9774b2c` → ok. Presne preto guard porovnáva simulovaný merge.
+## [2026-10-01] DASHBOARD-LLM-WINDOW — dashboard AI dostane čas na odpoveď (BUILD, GO foundera)
+
+**Príčina (dokázaná kódom + auditom):** `generateDashboardInsights` volal `withAiTimeout(..., 800, …)`
+pri Haiku s `max_tokens: 700`. `latencyMs` 801/829/801 a `failure_reason = timeout` z behu 30. 9. 20:07 UTC
+(po doplnení kreditu). Jediný volajúci je cron (čítač `/api/dashboard/insights` modelu nevolá), takže sa
+nečakalo na interaktívnu odozvu. Premenná `DASHBOARD_INSIGHTS_TIMEOUT_MS` (8 s) nastavovala len vonkajší
+`withTimeout` a na vnútorné okno nedosiahla.
+
+**Zmena:**
+- `dashboard-insights.ts`: `generateDashboardInsights(input, { timeoutMs })`; predvolené
+  `DASHBOARD_LLM_TIMEOUT_MS = 6000` (namiesto 800).
+- `dashboard-insights-cron.ts`: cron posiela `INSIGHTS_LLM_TIMEOUT_MS = max(2500, INSIGHTS_AI_TIMEOUT_MS − 500)`,
+  teda KRATŠIE než vonkajšie okno — inak by vonkajší `withTimeout` vyhral skôr a zlyhanie by skončilo
+  bez dôvodu v audite. Premenná prostredia teraz skutočne riadi okno.
+- `route.ts`: `export const maxDuration = 60` (2 dávky po 3 agentúrach; zber dát ~4 s + okno modelu; ~23 s
+  v najhoršom prípade nad predvolenými 10 s). **Neoverené z dokumentácie**, či Hobby 60 s dovolí —
+  ak nie, zlyhá build preview hneď v PR.
+
+**Dôkaz:** 6 nových testov (fake timery: odpoveď po 1,5 s a 5 s sa prijme, po vypršaní `timeout` s dôvodom,
+okno volajúceho sa rešpektuje, časovač sa uvoľní, vnútorné < vonkajšie, `maxDuration` ≥ 30) + test, že cron
+posiela okno; súvisiace sady 127 zelených; lint čistý; typecheck 49 (bez nových chýb); **mutation proof 8/8**
+zabitých, súbory obnovené bit-for-bit.
+
+**Nedokázané:** že model v tomto okne skutočne odpovie (prvý `source: llm` zatiaľ nikto nevidel) — príde z ďalšieho
+behu crona (1. 10. 06:00 UTC) alebo z ručného spustenia; výstup môže odhaliť ďalšiu chybu (`bad_output`,
+zle orezaný JSON pri `max_tokens: 700`) — viditeľnosť z #760 ju ukáže.
+
+## [2026-09-30] PO DOPLNENÍ KREDITU — `billing` zmizlo, dashboard odhalil vlastnú chybu (800 ms okno)
+
+**Kontext:** founder doplnil kredit (Console, faktúra 30. 9. Paid 24,60 USD = 20 USD + 23 % DPH,
+zostatok 20,00 USD; produkčný kľúč = ten s dátumom 7. 7. 2026, sedí na poslednú zmenu Vercel
+`ANTHROPIC_API_KEY` Production 7. 7. 20:04 UTC). Dashboard cron sa o **20:07:10 UTC** spustil
+(Cursor s produkčným `CRON_SECRET` z Vercelu; odpoveď `ok:true, agencies 4, succeeded 4, failed 0,
+duration_ms 8499`).
+
+**Čo ukazuje `ai_action_audit` z toho behu:** 3 × `fallback` s `failure_reason = timeout`,
+`latencyMs` 801 / 829 / 801, 1 × `empty`. **Žiadne `billing`.** Teda kredit/kľúč sú s vysokou
+pravdepodobnosťou v poriadku (odmietnutie pre kredit by sa vrátilo ako `billing` HTTP 400, tak ako
+predtým). **Nedokázané:** samotný úspešný `llm` výsledok — ešte nikto nevidel; dôkaz príde z Console
+Usage (Haiku požiadavky 30. 9. po 20:00 UTC) alebo z ďalšieho leadu (triage/návrh majú dlhšie okná).
+
+**Pozor na metriku crona:** `succeeded: 4, failed: 0` znamená len, že cron prešiel agentúry; AI
+výstup bol v 3 zo 4 prípadov záloha. Nepoužívať ako dôkaz, že AI funguje (ďalší prípad tichého zlyhania).
+
+**Skutočná príčina „dashboard nikdy `llm` (0 z 212 od 4. 9.)":** `generateDashboardInsights`
+(`apps/crm/src/lib/ai/dashboard-insights.ts` ~237–241) volá `withAiTimeout(..., 800, …)` pri Haiku
+volaní s `max_tokens: 700` — okno 800 ms nestačí ani na prvé tokeny, takže vždy vyprší. Premenná
+`DASHBOARD_INSIGHTS_TIMEOUT_MS` (predvolene 8000) v `dashboard-insights-cron.ts` sa týka len
+vonkajšieho `withTimeout`; vnútorných 800 ms sa nedotkne (zavádzajúce). Dashboard AI teda pravdepodobne
+**nikdy nefungoval**, nie je to dôsledok kreditu. Lead cesta (návrh odpovede má 8 s okno,
+`INBOUND_REPLY_DRAFT_TIMEOUT_MS`) touto chybou netrpí — triage okno som nenašiel, čaká na lead.
+
+**Návrh (čaká na GO): DASHBOARD-LLM-WINDOW** — parameter `timeoutMs` do `generateDashboardInsights`,
+cron ho naplní z `INSIGHTS_AI_TIMEOUT_MS`, živá cesta si nechá rýchle okno; `maxDuration` na cron
+route (dnes nie je nastavené, cron trval 8,5 s, batch 3 agentúr paralelne → s dlhším oknom hrozí
+limit funkcie na Hobby). Test + mutation proof; náklad je v centoch.
+
+**Skutočná spotreba (korekcia odhadu):** z kreditu z mája a júna (40 USD bez DPH) sa do 22. 9. minulo
+všetko → ~9 USD/mesiac; nový kredit 20 USD vydrží asi 2 mesiace → auto-reload + nižší mesačný limit
+(dnes 50 000 USD, upozornenie pri 40 USD).
+
+## [2026-09-30] READ-REASON — AI volania odmieta Anthropic kvôli kreditu (read-only, PROD SELECT 19:09 UTC)
+
+**Dôvod zlyhania AI je dokázaný:** `ai.call_failed` po nasadení #760 (PROD `platform_events`, 3 riadky) —
+všetky `reason = billing`, `http_status = 400`, `error_type = invalid_request_error`:
+- 13:02:41 UTC `inbound_triage` (req `req_011CfZfkwHui9TCNqnmWuWfY`)
+- 18:36:39 UTC `inbound_triage` (req `req_011Cfa7DzakhfuJwXdtyz5mG`)
+- 18:36:41 UTC `inbound_reply_draft` (req `req_011Cfa7EBhzLsDegL7etnPxJ`)
+Dashboard cron 13:35:44–47 UTC: 3 × `fallback` s `failure_reason = billing` (HTTP 400) + 1 × `empty`
+(`ai_action_audit`, `meta->>'failure_reason'`). Nové leady od 09:30 UTC: 2 (13:02 bez e-mailu,
+18:36 s e-mailom, obidva `web_form`) — `ai_triage_at` NULL, 0 activities.
+
+**Čo to znamená:** HTTP 400 samo o sebe klasifikátor zaradí ako `invalid_request`; `billing` vznikne
+len zhodou textu správy so vzorom „credit balance / billing / payment required / insufficient
+credit". Teda Anthropic odmieta volania s hláškou o **nedostatku kreditu**. Textu správy som
+nevidel (zámerne sa neukladá, môže niesť PII). Sedí to s tichom od 22. 9. (posledný triage
+2026-09-22 09:13). **Kľúč ani kód nie sú príčina** — a preto nepomôže žiadna zmena v kóde.
+
+**Nedokázané:** ktorá organizácia/workspace Anthropic Console kľúč vlastní; či ide o vyčerpaný
+predplatený kredit, alebo o zlyhanú platbu/limit. Dashboard `llm` = 0 z 212 od 4. 9. tým
+vysvetlený nie je (triage 22. 9. fungoval) — zostáva BACKLOG.
+
+**Krok foundera (2 min, peniaze → len on):** Anthropic Console → Settings → **Billing**: stav
+kreditu, doplniť a zapnúť auto-reload + upozornenie na nízky zostatok. Potom overiť **read-only**:
+ďalší lead má `ai_triage_at` a po cron behu prestanú pribúdať `ai.call_failed`.
+
+**Stav dosahu:** `inbound.auto_response` = 0 riadkov (kód z PR #764 ešte nie je na PROD). Kým sa
+#764 nezmerguje, tenant (Smolko) môže v hlavičke Playbooku vidieť `ai.call_failed` — SSE filter
+je práve v #764.
+
+## [2026-09-30] AUTO-RESPONSE-VISIBLE — každý pokus o auto-odpoveď zanechá záznam (BUILD, GO foundera)
+
+**Nové dôkazy od foundera (screenshoty Vercel + Resend, 30. 9. ~12:40 UTC) — zužujú príčinu:**
+- Vercel projekt `realitka-ai`: `RESEND_API_KEY` **existuje** (Production + Preview, „Updated Jul 1")
+  s odznakom **„Needs Attention"** (dôvod odznaku neviem — nebol prečítaný); `OUTREACH_FROM_EMAIL`
+  existuje **len pre Production** („Updated Apr 20", hodnota nevidená). Predošlé „nie sú v env" bolo
+  chyba výpisu nástroja (skrýval 12 z 85 položiek).
+- Resend (tím „onlinovo.sk") → Domains: **jediná doména `revolis.ai`, stav „Partially Failed"**
+  (vytvorená pred 6 mesiacmi). **`mg.revolis.ai` v Resende nie je**, hoci kód ako predvolené From
+  používa `onboarding@mg.revolis.ai` a docs (`email-delivery-setup.md`) ju odporúčajú.
+- **Hypotéza (NEDOKÁZANÁ):** Resend odmieta odoslanie, lebo odosielacia doména nie je overená
+  (buď `mg.revolis.ai` neexistuje, alebo `revolis.ai` je „Partially Failed"). Dôkaz zatiaľ chýba:
+  buď Resend → Logs (POST /emails so stavom 4xx), alebo záznam `inbound.auto_response` po ďalšom
+  leade. Súvisiaci nezmapovaný dopad: ak Supabase Auth posiela e-maily cez Resend SMTP z tejto
+  domény, môžu zlyhávať aj registračné/reset e-maily — **neoverené**.
+- Vlastník-profil agentúry `11111111-…` (reply-to): `ra***@gmail.com`; komu patrí, founder zatiaľ
+  neodpovedal.
+
+**Zmena (kód, bez nového odosielania):**
+- `inbound-lead-auto-response.ts`: funkcia sa rozpadla na `attemptInboundAutoResponse` (vracia
+  pomenovaný výsledok) + tenký `runInboundLeadAutoResponse`, ktorý zapíše **presne jeden**
+  `platform_events` záznam `inbound.auto_response` s `outcome`: `sent`, `sent_unmarked`,
+  `skipped_no_email`, `skipped_already_sent`, `skipped_disabled`, `failed_no_reply_to`,
+  `failed_send`, `failed_error`. Správanie (kto dostane e-mail, kedy) sa nezmenilo.
+- `send-inbound-auto-response.ts`: zlyhanie nesie `failure {reason, httpStatus, errorName}`
+  (`config`, `auth`, `domain_not_verified`, `invalid_from`, `validation`, `rate_limit`,
+  `server_error`, `network`, `unknown`); vyhodená sieťová chyba sa už nezosype cez výnimku.
+  **Text chyby sa nikdy nezapisuje** (môže niesť adresu príjemcu).
+- `auto-response-outcome.ts` (nový): typy + `recordAutoResponseOutcome` (nikdy nehádže).
+- Čítanie: `select created_at, payload from platform_events where event_type='inbound.auto_response'
+  order by created_at desc;`
+
+**Nález počas práce (tenant vidí diagnostiku):** Playbook stránka zobrazuje v hlavičke surový
+`event_type` poslednej live udalosti tenanta, takže Smolkov maklér mohol vidieť text `ai.call_failed`
+(z #760, už na PROD). **Oprava v tomto PR:** SSE `/api/events/stream` vylučuje `ai.call_failed` a
+`inbound.auto_response` (`platform-events-visibility.ts`). **Zostatok (BACKLOG):** RLS politika
+`platform_events_select_tenant` stále dovoľuje tenantovi čítať tieto riadky priamo (PostgREST) —
+skutočné oddelenie by vyžadovalo migráciu RLS; obsah je len kódy, žiadne PII.
+
+**Dôkaz:** 31 nových testov (`inbound-auto-response-outcome.test.ts`) + test streamu; súvisiace
+sady 250 zelených (1 integračný test potrebuje lokálnu DB — prostredie, v CI zelený); lint čistý;
+typecheck 49 (bez nových chýb); **mutation proof 11/11 zabitých**, súbory obnovené bit-for-bit.
+Mutácia M3 odhalila skutočnú chybu vlastného regexu (názov domény s bodkou) — opravená pred pushom.
+
+**Stále platí (VALIDATE, rozhoduje founder):** zapnutie skutočného odosielania — overiť reply-to
+profil, opraviť/overiť odosielaciu doménu v Resende (DNS je na foundera), rozhodnúť o odosielaní
+v mene Smolkovej kancelárie.
+
+## [2026-09-30] AUTO-RESPONSE-CHECK — potvrdenie leadovi NIKDY neodišlo (read-only, GO foundera)
+
+**Oprava rámca:** predchádzajúce zápisy hovorili „NULL u 6/6 leadov od 19. 9." — to bolo príliš
+úzke. **`auto_response_sent_at` je NULL u 515 z 515 leadov** (513 s e-mailom), od prvého leadu
+(2026-06-02); stĺpec existuje od migrácie 2026-07-13. Základná čiara z 3.–15. 9. hovorila to isté
+(0 z 504). Nejde o regresiu z 19. 9. — **v PROD neexistuje jediný úspešný záznam auto-odpovede.**
+Prečo (nikdy sa nezapla vs. zlyháva pri každom pokuse), zatiaľ nevieme; výpadok z 22. 9. a tento
+problém sú nezávislé.
+
+**Dokázané (PROD SELECT + kód):**
+- `agencies.auto_response_enabled = true` pre agentúru `11111111-…` (ktorej patria všetky leady);
+  agentúra nemá `email` ani `phone`, reply-to sa preto berie z profilu vlastníka (1 profil,
+  e-mail **na gmail.com**, nie na `revolis.ai`).
+- Vstup do funkcie `runInboundLeadAutoResponse` je zapojený vo 4 cestách (`/api/acquire/email`,
+  `/api/leads/inbound`, `/api/valuation/submit`, buyer-onboarding); v e-mailovej ceste sa volá
+  `await` hneď po triage. Že sa funkcia pri konkrétnych leadoch skutočne zavolala, dokázať neviem
+  (nezostáva stopa).
+- Funkcia má **4 tiché východy** (bez e-mailu, vypnuté, chýba reply-to, zlyhanie odoslania):
+  všetky končia `return` po `autoErrorCapture`, ktorý zapisuje do súboru `error-capture.log`
+  (na Vercel je súborový systém len na čítanie → zápis zlyhá) a do `console.error`.
+  Trvalá stopa v DB **neexistuje**; Vercel drží error logy ~1 h → dôvod sa stratí.
+- V PROD nie je žiadny dôkaz, že Resend niekedy odoslal čokoľvek: `outreach_logs` má 0 riadkov,
+  v `platform_events` žiadny e-mailový event.
+
+**Nedokázané (príčina NIE JE známa):**
+- Či je `RESEND_API_KEY` (musí začínať `re_`) a `OUTREACH_FROM_EMAIL` v PROD nastavený. V projektových
+  env `realitka-ai` nie sú, ale výpis nástroja skrýva 12 z 85 položiek a `SUPABASE_SERVICE_ROLE_KEY`
+  je tiež len Preview, pričom PROD beží → produkčné hodnoty idú zrejme z tímových (shared) env.
+  Z tohto prostredia neviem overiť bez dešifrovania hodnôt (nerobím).
+- Či je `mg.revolis.ai` v Resend „Verified". Bez neho Resend odošle zamietnutie a lead nedostane nič
+  (odosielateľ je pre gmail reply-to `OUTREACH_FROM_EMAIL` alebo `onboarding@mg.revolis.ai`).
+- Runtime logy k leadom neexistujú (posledný lead s e-mailom 07:05 UTC; Hobby retencia ~1 h).
+
+**Riziko pred zapnutím (pozor):** odosielateľ = kancelária, `Reply-To` = profil vlastníka agentúry
+`11111111-…` s **gmail** adresou. Ak je to profil foundera a nie Smolka, odpoveď klienta Smolka by
+pristála u foundera. Overiť, kto je ten profil, PRED tým, než sa auto-odpoveď rozbehne.
+
+**Rozhodnutia podľa Ústavy v2 (návrh, čaká na GO):**
+- **AUTO-RESPONSE-VISIBLE — BUILD (malý PR, rovnaký vzor ako #760).** Každý východ zapíše
+  `platform_events` `inbound.auto_response` s `outcome` (`sent`, `skipped_no_email`,
+  `skipped_disabled`, `skipped_already_sent`, `failed_no_reply_to`, `failed_no_api_key`,
+  `failed_send`) + triedou chyby, bez textu chyby a bez PII. Nezapína nič nové: iba urobí z tichého
+  neúspechu viditeľný, takže ďalší lead vysvetlí sám seba. Q1 áno (rýchla odpoveď je jadro produktu),
+  Q8 správny čas.
+- **Zapnutie skutočného odosielania — VALIDATE, rozhoduje founder.** Najprv (a) overiť
+  `RESEND_API_KEY` + `OUTREACH_FROM_EMAIL` v Team → Shared Env a `mg.revolis.ai` v Resend → Domains,
+  (b) overiť, komu patrí reply-to profil, (c) rozhodnúť, či odchádza e-mail v mene Smolkovej kancelárie
+  (obsah je neutrálny, právny základ 6(1)(f); GDPR skill v repe nie je — analýza ručne).
+
+## [2026-09-30] REALVIA-REPLAY — 31 zlyhaných webhookov opakovaných (PROD zápis, GO foundera)
+
+**Vykonané (PROD, po nasadení #763):**
+1. Founder spustil `GET /api/cron/realvia-process?replay_failed=1` (Bearer `CRON_SECRET`, ktorý
+   nemám — AP-004). Endpoint vrátil do fronty 32 jobov (31 `advert` + 1 starý `unknown`);
+   spracovanie 11:50–11:55 UTC.
+2. Ja (po overení `advert_failed = 0` a že všetky adverty sú `completed`) v 11:59 UTC nastavil
+   späť na `pending` **5 `delete` jobov** (5 logov + 5 jobov, `UPDATE … RETURNING` = 5/5).
+   Pred zápisom SELECT: všetky 4 dotknuté ponuky existovali, boli „Aktívna" a po delete
+   neprišiel nový advert. 5 jobov = 4 ponuky (jedna mala `sold` a potom `cancel`; worker
+   radí podľa `created_at`, teda konečný stav určuje neskorší `cancel`).
+
+**Výsledok (SELECT 12:10 UTC):** `properties` 132 → **149** (+17 = 17 ponúk); 5 delete jobov
+`completed` 12:00:47–52; 4 ponuky „Stiahnutá" (celkovo „Stiahnutá" 8, 4 boli už predtým);
+fronta `pending` 0, `failed` 1 = starý `unknown` job `c540b1f2` („Agency resolution failed",
+`retry_count` 3/3) — nesúvisí, nechaný. Plán z predchádzajúceho záznamu sa naplnil bez odchýlky.
+
+**Nedokázané:** že oprava funguje na ČERSTVOM webhooku — posledný webhook je z 2026-09-28 12:26 UTC,
+nový od vtedy neprišiel (replay overuje kód na starých payloadoch, nie príjem).
+
+**Pozorovania (BACKLOG, žiadny zásah; Ústava: nič z toho dnes neblokuje platiaceho klienta):**
+- **Globálny unique index v PROD:** `idx_properties_source_id_unique ON properties (source_id)
+  WHERE source_id IS NOT NULL` — kód (PR #522) predpokladá `source_id` NIE globálne unikátny
+  (per agentúra). Dnes Realvia používa jedna agentúra → bez dopadu; druhá agentúra s
+  rovnakým `source_id` by narazila. Riešiť až s druhým Realvia klientom (timing veto „príliš
+  skoro").
+- **Jednorazový create/create race:** job `51ab2faa` (retry 1) zlyhal na tomto indexe v ten istý
+  okamih (11:50:21), keď iný job vytvoril tú istú ponuku (11:50:20); po retry-i dobehol ako
+  update (11:55). Pravdepodobná príčina: viac advertov k jednej ponuke (31 advertov / 17 ponúk)
+  v jednej dávke — **nedokázané**, workerov kód som na súbeh nečítal. Retry to opraví, takže
+  neškodné; v produkcii pri bežnom toku (1 webhook naraz) nepravdepodobné.
 
 ## [2026-09-30] REALVIA-CREATE-ID — nové ponuky sa od 4. 9. nevytvárajú (BUILD, GO foundera)
 
