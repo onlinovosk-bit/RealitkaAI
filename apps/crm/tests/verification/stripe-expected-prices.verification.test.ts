@@ -90,6 +90,60 @@ describe("stripe-expected-prices.json ↔ program-tier-pricing.ts", () => {
 
 // ---------------------------------------------------------------------------
 
+/**
+ * ENV-SCHEMA-CHECKOUT — the env schema must name every price the code reads.
+ *
+ * `src/config/env.ts` declared the legacy plan prices and none of the ten the
+ * pricing stack actually reads, so the schema described a product that no
+ * longer exists. Measured 2026-09-30: zero of the ten were set in Vercel
+ * production either (docs/ops/2026-09-21-stripe-verify-kit.md §6b).
+ *
+ * Scope, stated plainly: this locks code against the schema. It cannot see
+ * production — no CI check can — so a green run here does NOT mean checkout
+ * works. What it prevents is a new sellable price landing in the code while
+ * the schema stays silent about it.
+ *
+ * The schema is read as text on purpose: importing the module runs
+ * `parseEnv()` at load and throws without a full production environment.
+ */
+const ENV_SCHEMA = resolve(__dirname, "../../src/config/env.ts");
+
+function priceKeysDeclaredInSchema(): string[] {
+  return [...readFileSync(ENV_SCHEMA, "utf8").matchAll(/^\s*(STRIPE_PRICE_\w+)\s*:/gm)].map(
+    (m) => m[1],
+  );
+}
+
+describe("src/config/env.ts ↔ program-tier-pricing.ts", () => {
+  it("declares every price env key the code sells", () => {
+    const declared = new Set(priceKeysDeclaredInSchema());
+    const missing = rowsFromCode()
+      .map((r) => r.env)
+      .filter((env) => !declared.has(env))
+      .sort();
+    expect(missing).toEqual([]);
+  });
+
+  it("does not declare the disabled Owner Cockpit Pro", () => {
+    // ownerPro is not sellable (enabled: false), so nothing reads its key and
+    // the manifest omits it. The schema must omit it too — a declared key for
+    // a product that cannot be bought reads as "provision this" to whoever
+    // fills Vercel next. Enabling ownerPro should fail here and be a
+    // deliberate edit, not a silent inheritance.
+    const declared = priceKeysDeclaredInSchema();
+    const key = COCKPIT_PRODUCTS.ownerPro.stripeEnvKey;
+    expect(COCKPIT_PRODUCTS.ownerPro.enabled).toBe(false);
+    expect(declared.includes(key!)).toBe(false);
+  });
+
+  it("names no price key twice", () => {
+    const declared = priceKeysDeclaredInSchema();
+    expect(declared.length).toBe(new Set(declared).size);
+  });
+});
+
+// ---------------------------------------------------------------------------
+
 type StripePrice = Record<string, unknown>;
 let seq = 0;
 
