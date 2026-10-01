@@ -146,7 +146,7 @@ async function attemptInboundAutoResponse(
   const { data: freshLead, error: freshLeadError } = await supa
     .from("leads")
     .select(
-      "auto_response_sent_at,name,assigned_agent,ai_reason,ai_priority,source",
+      "auto_response_sent_at,name,assigned_agent,ai_priority,source",
     )
     .eq("id", leadId)
     .maybeSingle();
@@ -187,7 +187,6 @@ async function attemptInboundAutoResponse(
     agencyPhone,
     replyTo,
     assignedAgent: freshLead?.assigned_agent,
-    aiReason: freshLead?.ai_reason,
     aiPriority: freshLead?.ai_priority,
     source: freshLead?.source,
     // Bez toho sa otvorenie tohto e-mailu nedá priradiť k leadu
@@ -205,6 +204,7 @@ async function attemptInboundAutoResponse(
       reason: sendResult.failure?.reason ?? "unknown",
       httpStatus: sendResult.failure?.httpStatus ?? null,
       errorName: sendResult.failure?.errorName ?? null,
+      fromDomain: sendResult.failure?.fromDomain ?? null,
     };
   }
 
@@ -217,10 +217,10 @@ async function attemptInboundAutoResponse(
 
   if (updateError) {
     autoErrorCapture(updateError, "inbound-auto-response:dedup_update");
-    return { outcome: "sent_unmarked", reason: "dedup_update_failed" };
+    return { outcome: "sent_unmarked", reason: "dedup_update_failed", fromDomain: sendResult.fromDomain ?? null };
   }
 
-  return { outcome: "sent" };
+  return { outcome: "sent", fromDomain: sendResult.fromDomain ?? null };
 }
 
 /**

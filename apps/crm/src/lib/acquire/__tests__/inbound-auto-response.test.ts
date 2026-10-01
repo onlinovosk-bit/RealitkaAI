@@ -39,14 +39,13 @@ describe("send-inbound-auto-response template", () => {
       agencyPhone: "+421900000000",
       replyTo: "office@realitysmolko.sk",
       assignedAgent: "Demo Makler 1",
-      aiReason: "Byt 3+kk v centre Bratislavy.",
       aiPriority: "Vysoká",
       source: "portal:Nehnuteľnosti.sk",
     });
 
     expect(text).toContain("Dobrý deň, Ján");
-    expect(text).toContain("dostal som váš dopyt z portálu Nehnuteľnosti.sk");
-    expect(text).toContain("Viem, že hľadáte");
+    expect(text).toContain("váš dopyt z portálu Nehnuteľnosti.sk mi prišiel");
+    expect(text).not.toContain("Viem, že hľadáte");
     expect(text).toContain("ozvem sa vám dnes");
     expect(text).toContain("Demo Makler 1");
     expect(text).not.toContain("ďakujeme za váš dopyt");
@@ -225,10 +224,11 @@ describe("runInboundLeadAutoResponse", () => {
       expect.objectContaining({
         replyTo: "owner@test.sk",
         assignedAgent: "Demo Makler 1",
-        aiReason: "Byt v centre.",
         aiPriority: "Vysoká",
         source: "portal:Nehnuteľnosti.sk",
       }),
     );
+    // interné zdôvodnenie triedenia sa do e-mailu vôbec nepredáva
+    expect(sendSpy.mock.calls[0][0]).not.toHaveProperty("aiReason");
   });
 });

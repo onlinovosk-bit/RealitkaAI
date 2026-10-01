@@ -83,7 +83,9 @@ describe("[verification] Acquire email gateway", () => {
 
     expect(orchestrator).toContain("auto_response_enabled");
     expect(orchestrator).toContain("auto_response_sent_at");
-    expect(orchestrator).toContain("assigned_agent,ai_reason,ai_priority,source");
+    expect(orchestrator).toContain("assigned_agent,ai_priority,source");
+    // ai_reason je interné zdôvodnenie triedenia — do e-mailu klientovi nepatrí (viď šablóna).
+    expect(orchestrator).not.toContain("ai_reason");
     expect(orchestrator).toContain("loadAgencyAutoResponseContext");
     expect(orchestrator).toContain("autoErrorCapture");
     expect(orchestrator).not.toMatch(/catch\s*\{\s*\}/);
