@@ -17,14 +17,24 @@ At the start of every session:
    naraz — vrátane dôkazu. Keď treba rozhodnutie, príde raz, s možnosťami a
    odporúčaním, nie ako séria priebežných otázok uprostred úlohy.
 
-   **Vynucuje to hook, nie dobrá vôľa.** Toto pravidlo bolo v CLAUDE.md celý
+   **Vynucujú to hooky, nie dobrá vôľa.** Toto pravidlo bolo v CLAUDE.md celý
    čas a 2026-09-28 aj tak nevydržalo do polovice session: šesť správ za sebou
    v tvare „bez zmeny, check-in preplánovaný na 18:31". CLAUDE.md sa číta RAZ,
-   na začiatku session — v jej strede už pravidlo nedrží. Preto je v
-   `.claude/hooks/wall-rule.sh` + `UserPromptSubmit` hook v
-   `.claude/settings.json`, ktorý ho vkladá do kontextu pri KAŽDOM prompte.
-   **Ten hook nie je duplicita tohto odstavca — je to jeho jediné vynútenie.
-   Nemazať.**
+   na začiatku session — v jej strede už pravidlo nedrží. Preto ho do kontextu
+   vkladajú hooky v `.claude/settings.json`, pri KAŽDOM prompte aj po
+   resume/compact:
+   - `.claude/hooks/working-agreement.sh` — zdroj pravdy je
+     `memory/working-agreement.md`, blok `DIGEST` (`SessionStart`,
+     `UserPromptSubmit`) a blok `WEBHOOK` (`PostToolUse: ReadNotifications`).
+     Text pravidla sa mení TAM, nie v skripte.
+   - `cat .claude/WALL-RULES.md` — plné znenie pravidiel stien.
+
+   **Tie hooky nie sú duplicita tohto odstavca — sú jeho jediné vynútenie.
+   Nemazať.** A naopak: tretí hook s natvrdo zapísaným textom pravidla
+   nepridávať. 2026-10-02 to #800 skúsil (`wall-rule.sh`) a merge `main`
+   zlúčil oba príkazy do jedného JSON objektu s dvoma kľúčmi `"command"` —
+   `JSON.parse` aj `jq` nechajú posledný, takže nový hook sa nespustil nikdy.
+   Jeden zdroj pravdy, jeden skript.
 
    Tiché čakanie je správne chovanie: check-in, ktorý nič nenašiel, sa
    nehlási, len sa preplánuje. Výnimka, kedy sa ozvať okamžite aj uprostred

@@ -82,7 +82,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/wall-rule.sh\"",
             "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/working-agreement.sh\" prompt 2>/dev/null || true",
             "timeout": 10
           },
