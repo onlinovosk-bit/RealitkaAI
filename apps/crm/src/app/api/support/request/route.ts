@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { dispatchInboundTicket, sendInboundEmail } from "@/lib/inbound-routing";
+import { describeError } from "@/lib/log-safe";
 
 type SupportRequestPayload = {
   fullName?: string;
@@ -69,7 +70,7 @@ export async function POST(request: Request) {
     });
     emailSent = true;
   } catch (error) {
-    console.error("[support:request] email dispatch failed", error);
+    console.error("[support:request] email dispatch failed", describeError(error));
   }
 
   try {
@@ -90,7 +91,7 @@ export async function POST(request: Request) {
     });
     webhookSent = true;
   } catch (error) {
-    console.error("[support:request] webhook dispatch failed", error);
+    console.error("[support:request] webhook dispatch failed", describeError(error));
   }
 
   if (!emailSent && !webhookSent) {
