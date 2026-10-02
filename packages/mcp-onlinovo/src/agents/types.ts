@@ -50,6 +50,8 @@ export interface OrderRecord {
 export interface ProductRecord {
   sku: string;
   family: string;
+  /** "set" = a fixed-price bundle SKU of the family, "tester" = a 15 ml sample. */
+  kind: "single" | "set" | "tester";
   size_ml: number | null;
   list_price_gross: number | null;
   unit_cost_net: number | null;
