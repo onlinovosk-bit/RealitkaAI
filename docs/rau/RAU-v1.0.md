@@ -267,6 +267,63 @@ citáte" pôvodne prechádzal z iného dôvodu (neznámy druh práce) — pridan
   som nepoužil ani nepredstieral; vlny bežali cez natívnych sub-agentov (audit, tri slepé sady, review).
 - Skill `gdpr-advisor`, na ktorý odkazuje `CLAUDE.md`, v repe neexistuje (AP-024); P06 to hovorí priamo.
 
+## 13. Leverage track (L01–L05) — dodatok 2026-10-02
+
+Zadanie: štyri prompty zo screenshotov Instagramu (+ návrh doplniť „Asset Compounder") vziať ako špecifikáciu
+modulov RAU. Sprievodca a mapa názvov: `docs/rau/leverage/README.md`. **Bez routeru, runtime, DB a UI;** päť
+read-only textov a jeden záznam v Strategic Backlogu.
+
+**Pokus zabiť plán:**
+
+| # | Dôvod | Dôkaz |
+|---|---|---|
+| 1 | „Presne toto sme už riešili ako Knowledge DNA → Leverage → Productization" — v repe to **nie je zapísané**. Ak sa to riešilo v chate, pre ďalšiu session to neexistuje. | grep nad repom 2026-10-02: 0 zásahov na „Knowledge DNA", „Leverage Stack/Engine", „Asset Converter/Compounder", „Naval", „Time-for-Money" (dva náhodné zásahy: slovo „productized" v nesúvisiacich súboroch) |
+| 2 | „Execution Engine" (Build → Verify → Ship → Measure → Learn) je **samotné RAU** (P00–P23); nový modul by bol duplicita. | §3, `docs/rau/prompts/` |
+| 3 | „Asset Compounder" (prompt → postup → agent → funkcia → modul) prekrýva P22/P23 a posúdenie Agent Factory (prah prekročený → Ústava, nie automatický BUILD). | §1 riadok 1; preto L05 len **navrhuje**, nestavia |
+| 4 | Zdrojové prompty sú všeobecné: stoja na sebaopise (model rád pochváli) a každý zámerný krok foundera (GO, merge, cena) by označili za „únik času". Druhý prompt má úlohu skopírovanú z prvého. | screenshoty (5 z 6 snímok) |
+| 5 | Atribúcie (Naval Ravikant a i.) sú tvrdenia autora príspevku; triáda „špecifické know-how + páka + zodpovednosť" je z pamäte modelu, **neoverená**. | — |
+| 6 | **Najväčšie riziko: znova vytlačí krok C.** Track nič nestavia a spúšťa ho len founder. Štyri zo šiestich slepých behov (L01, L03 s testovacím vstupom, L04, L05) samy postavili krok C pred ďalší RAU alebo stavbu; L02 ho uviedol ako zámerné rozhodnutie foundera. | §Dôkaz nižšie |
+
+**Ústava v2 (12 otázok):** Q1 NIE → **VETO**; Q2, Q3 nie; Q4–Q6 len nepriamo (L01 hľadá moat, ale nové dáta
+nevzniknú); Q7 nižšie ROI ako krok C; Q8 interný track prijateľný, **externý predaj príliš skoro → Backlog**;
+Q9 áno; Q10 pasce: Technology Bias, Feature Trap; Q11, Q12 nie. **Skóre (odhad): ≈ 2 z 12** (Q8 interne a Q9;
+nepriame Q4–Q6 sa nerátajú) → podľa stupnice Ústavy (pod 6) **REJECT**; Q1 navyše stropuje na VALIDATE, čo je
+„over so zákazníkom pred stavbou" — zákazník tu neexistuje. **GO prišlo pred kontrolou Ústavy:** founder dal GO
+skôr, než videl Q1 = NIE a toto skóre. Zmena ostáva len preto, že ide o read-only text, ktorý sa zmaže jedným
+revertom (`docs/rau/leverage/` + backlog položka); **potvrdenie prekročenia je jeho, nie moje.**
+**Záznam (`memory/decisions.md`, 2026-10-02):** *REJECT podľa skóre (≈ 2 z 12, Q1 veto); founder dal GO pred
+kontrolou → BUILD len read-only prompty a dokumentácia, bez routeru, runtime, DB, UI a predaja navonok;
+potvrdenie foundera čaká.*
+
+**Engineering justification** (`docs/architecture/engineering-constitution.md`):
+- **Trigger:** rozšírenie knižnice promptov. **Decision path:** EXTEND (konvencia P22/P23), v **oddelenom adresári**,
+  aby sa nedotkli invarianty „práve P00–P23" a reťaze routeru.
+- **Alternatives:** (a) P24–P28 — odmietnuté: P-prompty ťahá router do reťazca, L-prompty spúšťa len founder;
+  (b) nový druh práce `LEVERAGE` v routeri — **odložené** do prvého reálneho behu L01 (Q8); (c) záznam v
+  `registry.json` pre track — odmietnuté: nespotrebované dáta (AP-012). Do registra ide len backlog položka
+  `leverage-external-productization`.
+- **Why not reuse:** v repe nič netaží opakujúce sa rozhodnutia foundera; P22 zapisuje, netaží.
+- **Expected outcome:** z prvého behu L01 vznikne rozhodnutie zapísané v `memory/decisions.md`. **NEMERANÉ.**
+- **Contradiction check:** Q1 veto a skóre REJECT (prekročenie čaká na potvrdenie foundera); AP-012 (Architecture Inflation) — riziko uznané, preto len text.
+
+**Dôkaz (stav: IMPLEMENTED + TESTED; užitočnosť NEMERANÁ):**
+- `apps/crm/tests/verification/rau-leverage.verification.test.ts` — 49 testov: štruktúra L01–L05, ochranné pravidlá **v správnej
+  sekcii** promptu, backlog položka a jej zhoda v routeri (tabuľka 29 fráz vrátane falošných poplachov), pravdivosť tvrdení
+  README, skillu, §13 a záznamu v `decisions.md`. Existujúce RAU testy sú nezmenené (spolu 201 zelených).
+- **Mutácie: 76/76** sabotáž v kópii stromu zhasne test (prompty, regexy backlogu, README, spec, skill, report, decisions).
+  Prvý beh zabil 70; jedna medzera v teste bola skutočná (L04 „Číslo odhadni" prežilo → doplnená aserícia), päť „nepoužitých"
+  bolo mojich zastaraných vzorov. Prvá verzia testu nechala prežiť 44 z 45 **nezávislých** mutácií reviewera; tie sa na nový
+  test nespúšťali (ich vzory sú na starý text), pokryté sú ich triedy.
+- **Nezávislý adverzariálny review** (read-only): *SHIP WITH FIXES*, 0× P0, 8× P1 — všetky opravené (viď
+  `docs/reports/2026-10-02-rau-leverage-blind-run.md`).
+- **Slepé behy modelu** (LLM-sudca; 6 + 6 behov; podrobnosti, metóda a limity v správe): **beh 1 (prvý, bez opráv, nezaujatý)** —
+  5 vymyslených alebo zle prečítaných tvrdení, ~14 neoznačených viet, 1 porušenie pravidla (L04: AUTORITA ako konverzia),
+  limit „jedna obrazovka" nesplnil nikto (48–73 riadkov); **beh 2 (po opravách, nové výňatky; nie nezaujaté)** — 2 a ~2, všetkých
+  6 vo limite riadkov. Obe stráže fungovali v oboch behoch: L03 bez L01 sa zastaví, L05 nepovýši nič bez 2 použití.
+  Slabina behu 2: L04 pripísal founderovi činnosť, ktorú zdroj pripisuje neurčenému „HUMAN"; po behu 2 prišla ešte posledná dávka
+  opráv, ktorá **nebola spustená (NEMERANÉ)**.
+- **Neoverené:** že výstup foundera posunie k rozhodnutiu; triáda z bodu 5 vyššie; poslednú (6.) snímku som nevidel.
+
 ## Rozhodnutia foundera
 
 Jedno zhrnutie, s odporúčaním (jedna odpoveď stačí, napr. „1A 2A 3A 4A"):

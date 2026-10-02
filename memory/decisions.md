@@ -1,5 +1,29 @@
 # Critical Decisions Log
 
+## 2026-10-02 — RAU Leverage track (L01–L05): REJECT podľa skóre, founder GO pred kontrolou → read-only prompty (BUILD zúžený)
+
+**Brána Ústavy v2 (12 otázok):** Q1 NIE → VETO; Q2, Q3 nie; Q4–Q6 len nepriamo; Q7 nižšie ROI ako krok C; Q8 interný track áno, externý predaj príliš skoro;
+Q9 áno; Q10 pasce Technology Bias a Feature Trap; Q11, Q12 nie. **Skóre (odhad) ≈ 2 z 12 → REJECT** (pod 6). Founder dal „GO!" skôr, než videl toto skóre.
+**Rozhodnutie: BUILD zúžený na read-only prompty a dokumentáciu**, ktoré sa zmažú jedným revertom; router, runtime, DB, UI a predaj navonok BACKLOG.
+**Potvrdenie prekročenia čaká na foundera.**
+
+**Pokus zabiť plán:** v repe 0 zásahov na „Knowledge DNA", „Leverage Stack/Engine", „Asset Converter/Compounder", „Naval" (tvrdenie „toto sme už riešili" nie je zapísané);
+„Execution Engine" = samotné RAU (duplicita → nestavané); „Asset Compounder" prekrýva P22/P23 a posúdenie Agent Factory (prah prekročený → Ústava) → L05 len navrhuje.
+Zdroj je marketingový príspevok s neoverenými atribúciami; v jeho druhom prompte je úloha skopírovaná z prvého.
+
+**Čo vzniklo (PR #803):** `docs/rau/leverage/` L01–L05 + README; backlog položka `leverage-external-productization` (veto Q1/Q8; odomkne ju platiaci zákazník Revolisu
+a L01–L04 spustené founderom s rozhodnutím zapísaným tu); odsek v `.claude/skills/rau/SKILL.md`; §13 v `docs/rau/RAU-v1.0.md`; test `rau-leverage.verification.test.ts`;
+správa `docs/reports/2026-10-02-rau-leverage-blind-run.md`. Router sa nemenil, len dáta backlogu.
+
+**Dôkaz:** Testy: `rau-leverage.verification.test.ts` 49 testov (štruktúra, ochranné pravidlá v správnych sekciách, backlog + tabuľka 29 fráz, pravdivosť README/skillu/§13/decisions); RAU suita 152 nezmenená (spolu 201 zelených); lint a typecheck ratchet PASS. Mutačný dôkaz: 76 mutácií v kópii stromu (prompty, backlog regexy, README, spec, skill, report, decisions) → 76/76 zabitých po jednej skutočnej oprave testu (L04 „Číslo odhadni" prežilo) a po oprave piatich mojich zastaraných mutačných vzorov; 45 mutácií reviewera sa na nový test nespúšťalo (ich vzory sú na starý text), pokryté sú ich triedy. Slepé behy modelu (LLM-sudca, 6 + 6 behov, nie nezaujaté): beh 1 (prvý, bez opráv) 5 vymyslených alebo zle prečítaných tvrdení,
+~14 neoznačených viet, 1 porušenie pravidla (L04: AUTORITA ako konverzia); beh 2 (po opravách, nové výňatky) 2 a ~2. Nezávislý adverzariálny review: SHIP WITH FIXES (0× P0, 8× P1, všetky P1 opravené).
+
+**NIE je dokázané:** že L01–L05 pomôžu founderovi rozhodnúť (NEMERANÉ — jediný test je jeho prvý beh L01 a zápis, či z neho vzniklo rozhodnutie); že posledná dávka opráv po behu 2
+nič nepokazila (nespustené); triáda „know-how + páka + zodpovednosť" je z pamäte modelu; poslednú snímku príspevku som nevidel.
+
+**Moje chyby, opravené:** (1) prvá verzia testov nechala prežiť 44 z 45 nezávislých mutácií a README tvrdilo „TESTED ochranné pravidlá" — test prepísaný na parsovanie sekcií;
+(2) §13 odkazoval na záznam v tomto súbore skôr, než existoval — je to tento záznam; (3) preklep v regexe (`speniaz` namiesto `spenaz`) odhalil až pridaný prípad „speňažiť";
+(4) „skóre sa nepočíta" v prvej verzii §13 odporovalo Ústave (skóre je povinné) — doplnené.
 ## 2026-10-02 — EVENTS-WIRE: `public.events` mala 0 riadkov, pretože zapisovateľ nebol zapojený; crony pritom bežia
 
 **Vyvrátená diagnóza (moja, meraním).** Tvrdil som, že cron route nikto nedosiahol s platným `CRON_SECRET`, a z toho
