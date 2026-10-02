@@ -1,5 +1,39 @@
 # Critical Decisions Log
 
+## [2026-10-02] Opt-in auto-odpoveď konečne tesní: migrácia na PROD + fail-closed (SCOREBOARD bod 9 ✅)
+
+**Čo sa aplikovalo na PROD** (founder GO, 2026-10-02 ~19:45 UTC): migrácia `20261001100000_auto_response_opt_in_default`
+(`ALTER TABLE public.agencies ALTER COLUMN auto_response_enabled SET DEFAULT false` + nový COMMENT).
+
+**Dôkaz pred → po:** `column_default` `true` → **`false`**; komentár stĺpca starý (opt-out) → nový (opt-in);
+migrácia v `supabase_migrations` **nebola** → **je**, aj s `rollback[1] = 'ALTER … SET DEFAULT true;'`;
+agentúry 7 → **7**, z toho `true` 1 → **1** (existujúce riadky sa nedotkli).
+**Živý dôkaz:** `INSERT` skúšobnej agentúry v transakcii → `auto_response_enabled = false`; `ROLLBACK` → 0 zostatkových riadkov.
+
+**P01 REALITY AUDIT zabil pôvodnú premisu:** úloha nebola „napíš migráciu". Migráciu už niekto napísal, zrevidoval a zmergoval
+do `main` — **len ju nikto nikdy nepustil na PROD**, pričom NESKORŠIA migrácia (`20261001160000`) tam bola. Súbor v repe ≠ aplikované na PROD.
+
+**Dve priznané odchýlky:** (a) `apply_migration` nie je v tejto session dostupný (Supabase MCP dáva len `execute_sql`), takže DDL
+šlo cez `execute_sql` a záznam do `supabase_migrations` som vložil **výslovne, aj s rollbackom** — nie obišiel, ako to spravil
+`inbound_mail_outcomes`; (b) verzia ide do histórie **mimo poradia** (`…100000` po už aplikovanom `…160000`). Nechal som verziu z repa,
+aby repo a PROD súhlasili; premenovanie by tie dva zdroje rozišlo.
+
+**Prečo to samo nestačilo (#811):** `loadAgencyAutoResponseContext` mala `let autoResponseEnabled = true` a test `!== false`.
+POSIELAŤ bolo predvolené chovanie TROCH zlyhaní — chýbajúci stĺpec (`42703`), chýbajúci riadok agentúry, hodnota `NULL`.
+Default `false` sa tým obchádzal: e-mail klientovi agentúry mohol odísť bez jej súhlasu. Teraz init `false`, test `=== true`,
+a nový dôvod `consent_unknown` v `platform_events` odlišuje „vedome vypnuté" od „súhlas sa nedal prečítať".
+Mutačný dôkaz: fail-open init → 5 padlo · `!== false` → 2 · dôvod sa prestane zapisovať → 3 · prehltnutá chyba čítania → 1.
+
+**SCOREBOARD:** bod 9 (migrácia opt-in default na PROD) ✅ → **70 % dokázané** (7 z 10; bolo 60 %). Vážené číslo **nemerané** —
+váhy nemám prepočítané, nebudem ho hádať. Do 100 % zostáva: bod 5 (Resend Logs text), bod 4 (kvalita AI návrhu),
+bod 7 (referenčný klient: schválený reply-to + súhlas — obchodný krok foundera).
+
+**ROZPOR V GOVERNANCE, ktorý treba rozhodnúť:** dva aktívne hooky si protirečia o tom, KEDY sa píše pamäť.
+`working-agreement.sh` (DIGEST, #796): „Memory zápis RAZ na konci session, nie po každom bloku."
+`.claude/working-protocol.md` (#787): „Pamäť = 1 commit na konci steny, v tej istej PR ako kód."
+Oba zakazujú samostatnú memory PR, ale rozchádzajú sa v kadencii. Držím sa novšieho a konkrétnejšieho (per stena);
+hlásim to, pretože je to presne tá trieda tichej divergencie, ktorú #800 opravoval v `settings.json`.
+
 ## 2026-10-02 — RAU Leverage track (L01–L05): REJECT podľa skóre, founder GO pred kontrolou → read-only prompty (BUILD zúžený)
 
 **Brána Ústavy v2 (12 otázok):** Q1 NIE → VETO; Q2, Q3 nie; Q4–Q6 len nepriamo; Q7 nižšie ROI ako krok C; Q8 interný track áno, externý predaj príliš skoro;
