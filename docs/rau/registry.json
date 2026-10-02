@@ -1,7 +1,7 @@
 {
   "schema": "rau.registry.v1",
   "version": "1.0.0",
-  "updated": "2026-09-30",
+  "updated": "2026-10-02",
   "principle": "Neznámy fakt je null a zapísaný ako open_unknown; čísla rizika (kapitál, limity) určuje len founder. Volatilný stav registry nenesie (je v state_sources). Polia risk_class, default_mode, fast_eligible a founder_confirmed sú NÁVRH RAU (písané rukou, nie odvodené z repa) a po potvrdení ich prepisuje founder; zdroj pre projekty 03–07 je správa foundera z 2026-09-30.",
   "modes": {
     "FAST": "Žiadny spúšťač rizika, žiadny indikátor navyše. Základný reťazec promptov, nezávislé QA, CI.",
@@ -538,6 +538,18 @@
       "veto": "Agent ≠ authority",
       "unlock": "founder zapíše typ operácie do autonomous_allowlist cez PR",
       "source": "docs/rau/RAU-v1.0.md"
+    },
+    {
+      "id": "leverage-external-productization",
+      "title": "Predaj RAU / Leverage promptov ako digitálny produkt (kurz, e-book, šablóny)",
+      "match": [
+        "(predaj\\w*|predat|predavat\\w*|speniaz\\w*) (rau|leverage|prompt\\w*)",
+        "(kurz|ebook|e-book|sablon\\w*) (z|ako|na zaklade) (rau|leverage|prompt\\w*)",
+        "digitaln\\w* produkt"
+      ],
+      "veto": "Ústava Q1 (dnešný klient by nezaplatil) a Q8 (príliš skoro); founder 2026-10-02: moduly nie sú digitálny produkt na predaj",
+      "unlock": "aspoň jeden platiaci zákazník Revolisu A L01–L04 spustené founderom aspoň raz s rozhodnutím zapísaným v memory/decisions.md; potom nové posúdenie Ústavou v2",
+      "source": "docs/rau/leverage/README.md; docs/architecture/revolis-constitution-v2.md (Strategic Backlog)"
     }
   ]
 }

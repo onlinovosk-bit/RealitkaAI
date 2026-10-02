@@ -1,7 +1,7 @@
 # Revolis.AI — STAV NA JEDNEJ STRÁNKE
 
 > Aktualizuje sa **po každom uzavretom bloku** (jeden riadok zmeny hore + tabuľka). Čísla sú merané, kde je uvedený dôkaz;
-> **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 07:40 UTC** (nasadenie #774 overené).
+> **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 09:40 UTC** (RAU Leverage track — docs-only, % nezmenené).
 
 ## Celkom: ≈ 49 %  (odhad)
 
@@ -18,6 +18,10 @@
 2. ~~Merge #774~~ ✅ hotovo (`3dc3119`) a **nasadené v produkcii** (overené: deployment READY, 23 riadkov v `inbound_mail_outcomes`, nové `to_agency_mailbox` v logoch, 0× `mail_outcome_write_failed`).
 3. **Vercel**: denný limit nasadení (free plán, >100/deň) sa dnes už uvoľnil (buildy bežia), ale hrozí znova → Pro plán, ak sa to bude opakovať.
 4. **Resend DNS** (doména `revolis.ai`) + **reply-to** + súhlas Smolka s odosielaním. *(+5 bodov)*
+
+## Hotové 2026-10-02 (docs-only, bez vplyvu na %)
+- **RAU Leverage track (L01–L05):** päť read-only promptov v `docs/rau/leverage/` (znalosti foundera → páka → produkt → majetok), sprievodca, položka v Strategic Backlogu
+  (predaj promptov ako produktu) a testy. **Nič nenasadené, nič nepredávame, užitočnosť NEMERANÁ** — overená je len štruktúra a ochranné pravidlá. Krok C ostáva #1.
 
 ## Hotové dnes (2026-10-01) — s dôkazom
 - **Príjem:** `to_agency_mailbox` vs `to_unmatched` v logu, deterministický Gmail pull; tabuľka `inbound_mail_outcomes` v PROD (RLS on, 0 politík). Kód čaká na merge (#774).

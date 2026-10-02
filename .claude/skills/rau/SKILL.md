@@ -74,6 +74,17 @@ NEXT ACTION. Na konci turnu aplikuj `task-loop` (P23). Do záznamu session prida
 `RAU route: <gate> <kind> <projekt>` (rozšírenie formátu zo CLAUDE.md; z týchto riadkov sa neskôr
 spočíta použitie a presnosť).
 
+## Leverage track (L01–L05) — moduly o znalostiach foundera
+
+Päť read-only promptov v `docs/rau/leverage/` (Knowledge DNA, Leverage audit, Productize, Time→Asset,
+Asset Compounder). Sprievodca a poradie: `docs/rau/leverage/README.md`. **Router tento track nepozná** —
+na „spusti Knowledge DNA / L02 / Asset Compounder" vráti `ASK` (nepozná druh práce). Ak founder modul
+**pomenoval**, je to zodpovedaná otázka: nepýtaj sa znova, načítaj len daný súbor `L0X-*.md`, spusti
+jeho blok `PROMPT` a **povedz to** v riadku `RAU route:` (napr. `ASK→L01 (modul pomenoval founder)`). Nie je
+to zníženie rizikovej brány: prompty nič nemenia ani neodosielajú. Pravidlá L-promptov (nič nedomýšľať,
+zakázané vstupy CRM a `memory/people.md`, bez čísel rizika) neobchádzaj. Predaj promptov ako produktu je
+Strategic Backlog (`leverage-external-productization`) — nestav ho.
+
 ## Pevné pravidlá
 
 - Jedna úloha = jeden projekt (WALL-PROJECT). Projekt v inom repozitári (UPTM) sa tu nerobí.

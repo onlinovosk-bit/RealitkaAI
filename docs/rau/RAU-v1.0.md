@@ -267,6 +267,57 @@ citáte" pôvodne prechádzal z iného dôvodu (neznámy druh práce) — pridan
   som nepoužil ani nepredstieral; vlny bežali cez natívnych sub-agentov (audit, tri slepé sady, review).
 - Skill `gdpr-advisor`, na ktorý odkazuje `CLAUDE.md`, v repe neexistuje (AP-024); P06 to hovorí priamo.
 
+## 13. Leverage track (L01–L05) — dodatok 2026-10-02
+
+Zadanie: štyri prompty zo screenshotov Instagramu (+ návrh doplniť „Asset Compounder") vziať ako špecifikáciu
+modulov RAU. Sprievodca a mapa názvov: `docs/rau/leverage/README.md`. **Bez routeru, runtime, DB a UI;** päť
+read-only textov a jeden záznam v Strategic Backlogu.
+
+**Pokus zabiť plán:**
+
+| # | Dôvod | Dôkaz |
+|---|---|---|
+| 1 | „Presne toto sme už riešili ako Knowledge DNA → Leverage → Productization" — v repe to **nie je zapísané**. Ak sa to riešilo v chate, pre ďalšiu session to neexistuje. | grep nad repom 2026-10-02: 0 zásahov na „Knowledge DNA", „Leverage Stack/Engine", „Asset Converter/Compounder", „Naval", „Time-for-Money" (dva náhodné zásahy: slovo „productized" v nesúvisiacich súboroch) |
+| 2 | „Execution Engine" (Build → Verify → Ship → Measure → Learn) je **samotné RAU** (P00–P23); nový modul by bol duplicita. | §3, `docs/rau/prompts/` |
+| 3 | „Asset Compounder" (prompt → postup → agent → funkcia → modul) prekrýva P22/P23 a posúdenie Agent Factory (prah prekročený → Ústava, nie automatický BUILD). | §1 riadok 1; preto L05 len **navrhuje**, nestavia |
+| 4 | Zdrojové prompty sú všeobecné: stoja na sebaopise (model rád pochváli) a každý zámerný krok foundera (GO, merge, cena) by označili za „únik času". Druhý prompt má úlohu skopírovanú z prvého. | screenshoty (5 z 6 snímok) |
+| 5 | Atribúcie (Naval Ravikant a i.) sú tvrdenia autora príspevku; triáda „špecifické know-how + páka + zodpovednosť" je z pamäte modelu, **neoverená**. | — |
+| 6 | **Najväčšie riziko: znova vytlačí krok C.** Track nič nestavia a spúšťa ho len founder. Štyri zo šiestich slepých behov (L01, L03 s testovacím vstupom, L04, L05) samy postavili krok C pred ďalší RAU alebo stavbu; L02 ho uviedol ako zámerné rozhodnutie foundera. | §Dôkaz nižšie |
+
+**Ústava v2:** Q1 NIE → **VETO → max VALIDATE**; Q2, Q3 nie; Q4–Q6 len nepriamo (L01 hľadá moat, ale nové dáta
+nevzniknú); Q7 nižšie ROI ako krok C; Q8 interný track prijateľný, **externý predaj príliš skoro → Backlog**;
+Q9 áno; Q10 pasce: Technology Bias, Feature Trap; Q11, Q12 nie. Skóre sa nepočíta. **Záznam
+(`memory/decisions.md`, 2026-10-02):** *VALIDATE (strop z Q1); founder dal výslovné GO → BUILD len read-only
+prompty a dokumentácia; router, runtime, DB, UI a predaj navonok BACKLOG.* Veto je teda vedome prekročené
+founderom, nie obídené.
+
+**Engineering justification** (`docs/architecture/engineering-constitution.md`):
+- **Trigger:** rozšírenie knižnice promptov. **Decision path:** EXTEND (konvencia P22/P23), v **oddelenom adresári**,
+  aby sa nedotkli invarianty „práve P00–P23" a reťaze routeru.
+- **Alternatives:** (a) P24–P28 — odmietnuté: P-prompty ťahá router do reťazca, L-prompty spúšťa len founder;
+  (b) nový druh práce `LEVERAGE` v routeri — **odložené** do prvého reálneho behu L01 (Q8); (c) záznam v
+  `registry.json` pre track — odmietnuté: nespotrebované dáta (AP-012). Do registra ide len backlog položka
+  `leverage-external-productization`.
+- **Why not reuse:** v repe nič netaží opakujúce sa rozhodnutia foundera; P22 zapisuje, netaží.
+- **Expected outcome:** z prvého behu L01 vznikne rozhodnutie zapísané v `memory/decisions.md`. **NEMERANÉ.**
+- **Contradiction check:** Q1 veto (vedome prekročené); AP-012 (Architecture Inflation) — riziko uznané, preto len text.
+
+**Dôkaz (stav: IMPLEMENTED + TESTED; užitočnosť NEMERANÁ):**
+- `apps/crm/tests/verification/rau-leverage.verification.test.ts` — štruktúra L01–L05, ochranné pravidlá v každom
+  prompte, backlog položka a jej zhoda v routeri, pravdivosť tvrdení README o routeri. Existujúcich 152 RAU
+  testov je nezmenených.
+- **Slepý beh (prvý, pred akoukoľvek úpravou promptov):** 6 nezávislých behov (L01, L02, L03 bez L01, L03 s
+  testovacím vstupom L01, L04, L05) na rovnakom DATA PACKu výňatkov z repa; vykonávateľ smel čítať len pridelené
+  súbory (počet volaní Read = počet pridelených súborov). Chýbajúce vstupy (hodiny, príjem, publikum, zoznamy
+  foundera) vykonávateľ **nemal**.
+- **Čo som pri čítaní všetkých šiestich výstupov zistil:** každý obsahoval `NEZNÁME` aj sekciu „Čo hovorí PROTI"
+  a pýtal presne 3 otázky; L03 bez L01 sa zastavil vetou „Najprv spusti L01."; L05 nepovýšil nič (0 použití mimo
+  testov); L01 označil všetkých päť nájdených vzorov za COMMODITY a know-how **nevymyslel**; žiadny výstup
+  nenapísal sumu ceny ani meno referenčného klienta. **Slabina:** výstupy mali ~50–70 riadkov, pokyn „max jedna
+  obrazovka" nebol overiteľný.
+- **Neoverené:** že výstup foundera posunie k rozhodnutiu; triáda z bodu 5 vyššie; poslednú (6.) snímku som
+  nevidel.
+
 ## Rozhodnutia foundera
 
 Jedno zhrnutie, s odporúčaním (jedna odpoveď stačí, napr. „1A 2A 3A 4A"):
