@@ -4,8 +4,10 @@ import { validateBody } from "@/lib/api-validate";
 import { getCurrentProfile } from "@/lib/auth";
 import { ContactEventValidationError, CONTACT_CHANNELS, CONTACT_OUTCOMES } from "@/lib/lead-contact-events/types";
 import { recordContactAttempt } from "@/lib/lead-contact-events/store";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { incrementUsageMetric } from "@/lib/usage-metrics";
+import { logEventDetailed } from "@/lib/events/log-event";
+import type { EventType } from "@/types/events";
 
 export const dynamic = "force-dynamic";
 
@@ -81,6 +83,49 @@ export async function POST(
       note: parsed.data.note,
     });
 
+    // EVENTS-WIRE-01 — ten istý fakt musí dopadnúť aj do `public.events`.
+    //
+    // `lead_contact_events` je zdroj pravdy pre funnel, ale BRI a celá AI
+    // vrstva čítajú `events`, a tá mala 0 riadkov, takže skóre sa zámerne
+    // nepočítalo (EVENTS-REVIVE-01). Bez tohto zápisu by bol pokus o kontakt
+    // zaznamenaný a zároveň pre skóre neviditeľný.
+    //
+    // Service-role klient, nie cookie: tento zápis nemá padnúť na RLS, keď ho
+    // route volá v mene profilu, ktorý už bol autorizovaný vyššie
+    // (EVENTS-WRITE-PATH-01).
+    //
+    // Typ eventu je zámerne skromný. Route o doručení ani o odpovedi nevie nič
+    // (viď jej vlastnú zmluvu vyššie), takže `call_initiated` /
+    // `message_initiated` — nikdy `call_completed` ani `message_sent`.
+    //
+    // Fail-soft: zaznamenaný pokus sa nesmie zmeniť na 500 preto, že sa
+    // nepodarila jeho kópia pre skóre. Chyba sa ale nezahadzuje — ide v
+    // odpovedi ako `eventLogError`, aby bola viditeľná.
+    const CONTACT_EVENT_TYPE: Record<string, EventType> = {
+      call:  "call_initiated",
+      email: "message_initiated",
+    };
+    const eventType = CONTACT_EVENT_TYPE[parsed.data.channel];
+    let eventLogError: string | null = null;
+    if (eventType) {
+      const logged = await logEventDetailed({
+        client:     createAdminClient(),
+        profileId:  profile.id,
+        entityType: "lead",
+        entityId:   leadId.trim(),
+        eventType,
+        payload: {
+          channel: parsed.data.channel,
+          outcome: parsed.data.outcome ?? "unknown",
+          source:  "manual",
+          // Zámerne žiadna poznámka ani kontaktné údaje — `events` nesie fakt,
+          // že sa pokus stal, nie jeho obsah.
+          contact_event_id: id,
+        },
+      });
+      eventLogError = logged.error;
+    }
+
     // After the write, never before: a counter must not be able to report an
     // attempt that was not recorded. It swallows its own failures internally,
     // so it cannot turn a recorded attempt into a 500 either.
@@ -89,7 +134,7 @@ export async function POST(
       metric: "lead_contact_attempt",
     });
 
-    return okResponse({ eventId: id });
+    return okResponse({ eventId: id, eventLogError });
   } catch (error) {
     if (error instanceof ContactEventValidationError) {
       // Cross-tenant and unknown-lead both land here; neither is a server fault.

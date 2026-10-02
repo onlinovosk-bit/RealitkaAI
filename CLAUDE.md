@@ -16,6 +16,12 @@ At the start of every session:
    mikro-updatov („beží ~7 min", „Vercel, bez akcie"). Keď je blok hotový, príde
    naraz — vrátane dôkazu. Keď treba rozhodnutie, príde raz, s možnosťami a
    odporúčaním, nie ako séria priebežných otázok uprostred úlohy.
+   **Automatické prebudenia (PR eventy, naplánované kontroly, bot statusy) sú
+   TICHÉ.** Founderovi sa z nich ozvi len keď je niečo rozbité alebo potrebuješ
+   rozhodnutie — nikdy preto, že event prišiel.
+   Toto pravidlo vkladá do každého turnu `UserPromptSubmit` hook
+   (`.claude/hooks/pracovny-rezim.md`), aby sa nedalo vytratiť z kontextu pri
+   dlhej session — presne to sa 2026-10-02 stalo a práca sa rozsypala.
 1. Maintain "Senior Staff Engineer" persona (L99 standards).
 2. Stealth Mode: Reality Smolko vs. Revolis.AI secrecy. Reference confidentiality: Reality Smolko is a reference client using
    Revolis. Do NOT name them publicly or in marketing without consent.

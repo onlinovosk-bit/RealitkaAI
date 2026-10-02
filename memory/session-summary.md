@@ -1,3 +1,24 @@
+## Session 2026-10-02 (CRON-ALIVE hardening + EVENTS-WIRE)
+### Dokončené
+- #786 hardening: strop `cron_runs` 401 zápisu na **(job, rozvrh)** namiesto `job` (falošná hlavička už nepreempuje riadok Vercelu), `user_agent` do `detail`, tvar cronu overený PRED dotazom do DB. Commit `b8eb2ac`, CI 7/7, oba review nálezy odpovedané.
+- **Vyvrátil som vlastnú diagnózu #786 meraním:** crony BEŽIA (`cron_runs` riadok 03:36:49, status `empty`). Hypotéza „plán Vercelu je blokér" padá. Telo PR aj komentár opravené, vyvrátený záver nechaný označený v zázname.
+- EVENTS-WIRE: `ENTITY_TYPES`/`EVENT_TYPES` ako runtime slovník s derivovanými typmi; zod validácia na `/api/events` (400 bez zápisu, 500 pri zlyhaní, koniec `as` pretypovania); `lead_viewed` zapojené na detaile leadu; demo tlačidlo z vymyslených signálov prepojené na `/api/leads/bri-recompute`; kontaktný pokus loguje `call_initiated`/`message_initiated` service-role klientom. 67/67 testov, mutačný test drží zapojenie.
+- Pracovný režim („steny, nie skrutky") vynútený `UserPromptSubmit` hookom — `.claude/hooks/pracovny-rezim.md`, aby sa nedal vytratiť z kontextu.
+### Rozpracované / Pending
+- #786 čaká na merge (zelený, `clean`).
+- `GO SCHEMA-GAP-PROD` stále polovičný: migrácie na PROD sú, CI brána proti reálnej PROD schéme nie.
+- Vercel je **stále free** — founder NEPREŠEL na Pro (opravil moju chybnú poznámku). Nekupovať kvôli cronom, dôkaz pre to neexistuje.
+### Kľúčové súbory zmenené
+- `apps/crm/src/types/events.ts`: runtime slovníky + derivované typy + `message_initiated`
+- `apps/crm/src/app/api/events/route.ts`: zod validácia, `logEventDetailed`, 500 pri zlyhaní zápisu
+- `apps/crm/src/lib/events/log-event.ts`: `logEventClient` cez `fetch` s prečítaným stavom (koniec tichého beaconu)
+- `apps/crm/src/app/(dashboard)/leads/[id]/page.tsx`: `lead_viewed` na mount, demo tlačidlo na reálny prepočet
+- `apps/crm/src/app/api/leads/[id]/contact-attempt/route.ts`: skromný event + `eventLogError` v odpovedi
+- `apps/crm` testy: `src/lib/events/__tests__/events-wire.test.ts`, `tests/verification/events-wire.verification.test.ts`
+- `.claude/hooks/pracovny-rezim.md`, `.claude/hooks/inject-pracovny-rezim.sh`, `.claude/settings.json`, `CLAUDE.md`
+### Ďalší krok
+Merge #786, potom nasadiť EVENTS-WIRE a overiť na PROD prvý skutočný riadok v `events` z ľudskej práce → neprázdne `lead_scores` po ďalšom okne cronu.
+
 ## Session 2026-10-01 (OBSIDIAN-GRAPH-DEFAULTS)
 ### Dokončené
 - Exportér zapisuje `.obsidian/graph.json`: filter bez `HOME`/`Decision-Index`/`Session-Index`/`Dashboard` + farby podľa tagu (`kind/prod` červená, `decision` modrá, `session` oranžová, `ops` zelená). Zapíše sa len ak súbor chýba/je nedotknutý; upravený sa nikdy neprepíše. 16 testov.
