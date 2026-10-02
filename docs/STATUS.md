@@ -19,7 +19,11 @@
 2. ~~Merge #774~~ ✅ hotovo (`3dc3119`) a **nasadené v produkcii** (overené: deployment READY, 23 riadkov v `inbound_mail_outcomes`, nové `to_agency_mailbox` v logoch, 0× `mail_outcome_write_failed`).
 3. **Vercel**: Pro **netreba kvôli cronom** — tie bežia, dokázané dvoma riadkami v `cron_runs`
    (`recompute-bri` 03:36:49, `morning-brief` 06:30:30, obe 2026-10-02, každý vo svojom okne s posunom 30–57 min).
-   Denný limit nasadení (free, >100/deň) je samostatný problém a hrozí znova pri paralelných agentných sessions.
+   Denný limit nasadení riešený **bez platenia**: meranie 100 posledných nasadení ukázalo **88 preview vs 12 produkčných**,
+   25 vetiev, jeden agentný workstream sám 30 — teda ~88 % stropu míňali agentné preview buildy, na ktorých
+   `Playwright smoke` aj tak končil ako `skipped`. `ignoreCommand` ich odteraz na `claude/*` preskakuje
+   (produkcia a `main` nikdy). Ak po tomto strop ešte padne, Pro je oprávnené a bude to vidieť na dátach.
+   **Neoverené:** či Vercel Hobby licenčne pokrýva komerčný projekt — ak nie, Pro treba bez ohľadu na buildy.
 4. **Resend DNS** (doména `revolis.ai`) + **reply-to** + súhlas Smolka s odosielaním. *(+5 bodov)*
 
 ## Hotové dnes (2026-10-01) — s dôkazom
