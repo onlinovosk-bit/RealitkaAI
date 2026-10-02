@@ -689,10 +689,6 @@ export async function updateAiRecommendation(
     .eq("id", id)
     .select("*");
 
-  // Logovanie pre debug
-  // eslint-disable-next-line no-console
-  console.log('updateAiRecommendation:', { id, payload, data, error });
-
   if (error) {
     throw new Error(error.message);
   }
@@ -703,7 +699,10 @@ export async function updateAiRecommendation(
   if (data && !Array.isArray(data)) {
     return mapRecommendationAdminRow(data as SupabaseAiRecommendationRow);
   }
-  throw new Error('updateAiRecommendation: Unexpected data format: ' + JSON.stringify(data));
+  // Bez obsahu `data`: riadok môže niesť osobné údaje a chyba putuje do odpovede aj do logu.
+  throw new Error(
+    `updateAiRecommendation: Unexpected data format (${Array.isArray(data) ? `array[${data.length}]` : typeof data})`,
+  );
 }
 
 async function appendActivity(

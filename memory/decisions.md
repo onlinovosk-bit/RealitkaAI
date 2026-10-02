@@ -1,5 +1,46 @@
 # Critical Decisions Log
 
+## 2026-10-01 — HOT-LEAD-PUSH-AFTER: push pre „Horúci" lead dobehne po odpovedi (BUILD, zúžený rozsah; NEnasadené)
+
+**Rozhodnutie BUILD (brána Ústavy v2):** push „HOT lead — okamžitá akcia" je to, čo maklér dostane v momente, keď má zavolať — priamo retencia.
+Dôkaz, že kanál je živý (PROD, len SELECT): `push_subscriptions` 8 odberov / 2 používatelia, 6 leadov v stave „Horúci".
+
+**Zmerané PRED kódom (zúženie rozsahu).** Pôvodná ponuka z #780 hovorila o „14 príkazoch v 10 súboroch". Prečítal som reálne miesta:
+- `api/leads/[id]` `notifyHotLead(...).catch(...)` bez `await` → **skutočná chyba, opravené.**
+- `globalEventBus.emit(...)` v `api/leads/[id]` a `api/leads`: na `globalEventBus` nie je zaregistrovaný **žiaden** odberateľ (`grep` na `.on(` = 0) → no-op, **nedotknuté**.
+- `api/webhooks/hubspot` `processEventsAsync`: robí len `console.log` → neškodné, **nedotknuté**.
+- `api/demo/capture-lead` `syncLeadToHubSpot`: tabuľka `leads_demo` má 0 riadkov (trasa sa nepoužíva) → **nedotknuté**.
+Ostatné príkazy z tých 14 (mimo miest vyššie) som nečítal; rozsah tejto zmeny je len `notifyHotLead`.
+
+**Čo sa zmenilo (`apps/crm`):** `api/leads/[id]/route.ts` — push ide cez `runAfterResponse("lead-hot-push", …)`; trasa už má `maxDuration = 60`.
+Stráž `tests/verification/lead-pipeline-after.verification.test.ts` rozšírená o `notifyHotLead` (AST sken + `maxDuration` + použitie `runAfterResponse`).
+
+**Dôkaz:** nový `src/app/api/leads/[id]/__tests__/route-hot-push.test.ts` (5 testov; `after()` zachytené: v čase odpovede push nebežal, spustí ho až naplánovaný krok;
+pád pushu odpoveď nepokazí; bez makléra / iný stav / už Horúci → bez pushu). Okolité testy 212/212, lint čistý, typecheck 49 (strop 54).
+Mutation proof: stráž 4/4 červená (pôvodná trasa, `notifyHotLead` vyradený zo zoznamu, `maxDuration = 10`, `void` mimo `runAfterResponse`);
+behaviorálny test 3/3 červená (pôvodná trasa, push inline pred odpoveďou, podmienka „Horúci" zrušená). Štvrtá mutácia (`.catch(e => { throw e })`) prežila —
+je ekvivalentná, izoláciu pádu robí `runAfterResponse`, nie trasa, takže ju nepočítam ako dôkaz.
+
+**NIE je dokázané:** že `after()` na Verceli push naozaj doručí (platí rovnako ako pri LEAD-PIPELINE-AFTER; ukáže to až nasadený beh). Nasadzovanie blokuje Vercel Hobby limit (SCOREBOARD bod 10).
+## 2026-10-02 — WORK-STYLE-WALL: „iba steny“ vynútené hookmi + overenie nasadenia #774
+
+**GO foundera.** (1) Pravidlá práce: `.claude/WALL-RULES.md` (8 pravidiel, ~10 riadkov) + hooky `SessionStart` a `UserPromptSubmit` v `.claude/settings.json`, ktoré ich
+vkladajú do kontextu pri KAŽDEJ správe — pamäť modelu sa nespolieha. Overené: JSON platný (`jq -e`), 43 `allow` / 12 `deny` nezmenené (diff `permissions` = prázdny),
+pipe-test príkazu vypíše súbor (exit 0, 10 riadkov). **Nemerané:** že hook v tejto session reálne strieda kontext (UserPromptSubmit sa spúšťa mimo tahu) — potvrdí sa
+objavením pravidiel v ďalšej správe.
+(2) **Overenie nasadenia #774 (read-only):** produkčný deployment `dpl_ByWG76…` pre `3dc3119` = READY; novšie produkčné nasadenia (#783, #794) tiež READY. V DB
+`inbound_mail_outcomes`: 23 riadkov (1× lead_created, 22× not_a_lead, 14 domén) od 2026-10-01 19:41 do 2026-10-02 07:24. Runtime logy za 6 h: `to_agency_mailbox`
+prítomné (nový log žije), `mail_outcome_write_failed` 0×. **Záver: #774 je nasadený a funguje.**
+(3) **Dáta z príjmu:** `unknown_source` = firemné/newsletterové domény (`backoffice.sk`, `slovensko.sk`, `kros.sk`, `tchibo.sk`…), žiadny portál → do `SOURCE_RULES` sa nepridáva,
+UNKNOWN-SOURCE-KEEP zostáva **BACKLOG** (Ústava v2: bez dôkazu o strate reálneho dopytu). Poznatok: do príjmu tečie celá pošta schránky (GDPR minimalizácia na zdroji).
+
+## 2026-10-01 — #774 ZMERGOVANÝ (`3dc3119`, squash) — stav ≈ 43 %
+
+**GO foundera.** Merge až po zelenom „Lint, test, build" na hlave `d790168` (7/7 kontrol). Cesta: duplicitná verzia migrácie → CI-FIX; migrácia steny
+padla na čistej DB (PROD-only pohľady `v_genome_*`) → idempotentná; main sa medzitým posunul → konflikt len v `memory/session-summary.md` → vyriešený (obe vetvy).
+V PROD ostáva všetko, čo bolo aplikované skôr (migrácie sú idempotentné, repo ↔ PROD zhodné okrem histórie migrácií, kde riadky nie sú).
+**Neoverené:** produkčné nasadenie kódu z #774 (Vercel); prvý zápis do `inbound_mail_outcomes` po nasadení. STATUS.md aktualizovaný (≈ 43 %).
+
 ## 2026-10-02 — GMAIL-PULL-FINISH: Gmail pull dokončený pre pilot jedného tenanta (kód, nie aktivácia)
 
 **Podnet:** 1.10. 11:10 Smolkov Gmail hlásil `552 5.3.4 size exceeded` pri preposielaní na `smolko-a7f2@revolis.ai`; auto-forward preposiela aj nepodstatnú poštu
