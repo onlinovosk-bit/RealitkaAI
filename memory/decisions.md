@@ -1,5 +1,48 @@
 # Critical Decisions Log
 
+## 2026-10-02 — WORK-STYLE-WALL: „iba steny“ vynútené hookmi + overenie nasadenia #774
+
+**GO foundera.** (1) Pravidlá práce: `.claude/WALL-RULES.md` (8 pravidiel, ~10 riadkov) + hooky `SessionStart` a `UserPromptSubmit` v `.claude/settings.json`, ktoré ich
+vkladajú do kontextu pri KAŽDEJ správe — pamäť modelu sa nespolieha. Overené: JSON platný (`jq -e`), 43 `allow` / 12 `deny` nezmenené (diff `permissions` = prázdny),
+pipe-test príkazu vypíše súbor (exit 0, 10 riadkov). **Nemerané:** že hook v tejto session reálne strieda kontext (UserPromptSubmit sa spúšťa mimo tahu) — potvrdí sa
+objavením pravidiel v ďalšej správe.
+(2) **Overenie nasadenia #774 (read-only):** produkčný deployment `dpl_ByWG76…` pre `3dc3119` = READY; novšie produkčné nasadenia (#783, #794) tiež READY. V DB
+`inbound_mail_outcomes`: 23 riadkov (1× lead_created, 22× not_a_lead, 14 domén) od 2026-10-01 19:41 do 2026-10-02 07:24. Runtime logy za 6 h: `to_agency_mailbox`
+prítomné (nový log žije), `mail_outcome_write_failed` 0×. **Záver: #774 je nasadený a funguje.**
+(3) **Dáta z príjmu:** `unknown_source` = firemné/newsletterové domény (`backoffice.sk`, `slovensko.sk`, `kros.sk`, `tchibo.sk`…), žiadny portál → do `SOURCE_RULES` sa nepridáva,
+UNKNOWN-SOURCE-KEEP zostáva **BACKLOG** (Ústava v2: bez dôkazu o strate reálneho dopytu). Poznatok: do príjmu tečie celá pošta schránky (GDPR minimalizácia na zdroji).
+
+## 2026-10-01 — #774 ZMERGOVANÝ (`3dc3119`, squash) — stav ≈ 43 %
+
+**GO foundera.** Merge až po zelenom „Lint, test, build" na hlave `d790168` (7/7 kontrol). Cesta: duplicitná verzia migrácie → CI-FIX; migrácia steny
+padla na čistej DB (PROD-only pohľady `v_genome_*`) → idempotentná; main sa medzitým posunul → konflikt len v `memory/session-summary.md` → vyriešený (obe vetvy).
+V PROD ostáva všetko, čo bolo aplikované skôr (migrácie sú idempotentné, repo ↔ PROD zhodné okrem histórie migrácií, kde riadky nie sú).
+**Neoverené:** produkčné nasadenie kódu z #774 (Vercel); prvý zápis do `inbound_mail_outcomes` po nasadení. STATUS.md aktualizovaný (≈ 43 %).
+
+## 2026-10-02 — GMAIL-PULL-FINISH: Gmail pull dokončený pre pilot jedného tenanta (kód, nie aktivácia)
+
+**Podnet:** 1.10. 11:10 Smolkov Gmail hlásil `552 5.3.4 size exceeded` pri preposielaní na `smolko-a7f2@revolis.ai`; auto-forward preposiela aj nepodstatnú poštu
+(minimalizácia dát) a limit veľkosti je vlastnosť e-mailového kanála. Gmail API limit nemá. GO foundera: „Dokonči Gmail pull".
+
+**Constitution v2 (smernica 7):** BUILD — otázka 1 áno (retencia: stratený dopyt = stratená provízia), žiadne VETO; ide o reliability lane, nie nový feature. Skóre sa nepočíta
+ako nový bet. **gdpr-advisor (smernica 5): skill v tejto session nebol dostupný** → vlastná analýza v `docs/architecture/inbound-gmail-pull-gdpr.md`, nie právne stanovisko;
+oprava návrhu §11 (súhlas v Google okne nie je základ pre údaje záujemcov, základom ostáva zákazník ako prevádzkovateľ).
+
+**Čo bolo hotové už pred touto prácou (nie moje):** `gmail-pull.ts`, route, `loadMailboxForAgency` s `pickAgencyMailbox` (#774). **Čo chýbalo a je doplnené:**
+1. Trvalá pamäť spracovaných správ (`agency_gmail_inbound_seen`, iba ID, deny-all RLS, retencia 30 d) — predtým `Set` v pamäti = každý beh sťahoval telá znova.
+2. Fail-closed: bez pamäte pull nič nečíta. 3. Časové okno `newer_than:Nd` + stránkovanie (predtým len 25 najnovších). 4. Strop tela 200 000 znakov.
+5. Rozlíšenie chýb: 400 sa zapíše ako vybavené, 401/408/429/5xx/sieť sa opakuje. 6. `invalid_grant` pomenovaný, chyby neprepadajú ako výnimka.
+7. Stopa v `cron_runs` (len beh s novými správami alebo chybou). 8. Spúšťač `.github/workflows/gmail-inbound-pull.yml` (Vercel Hobby = cron max. denne; sub-denný výraz by odmietol deploy).
+
+**Dôkaz:** 112 testov v `src/lib/inbound` + 8 v novom strážcovi `gmail-pull-boundaries.verification.test.ts`, celé `tests/verification` 80/80 súborov, 542 testov zelených.
+Mutácie: bez `labelIds`, bez fail-closed guardu, 401 ako trvalá, bez rekontroly štítka, bez `markSeen`, politika v migrácii → vždy červené. Prvá mutácia „bez orezania tela" **prežila**
+(test pokrýval len text, nie html) → doplnený test, teraz padá pre oba. `tsc`: žiadna chyba v mojich súboroch (existujúce chyby sú v `scripts/inbound-auto-response-smoke-v1.ts`).
+
+**Nemerané — vedomé:** žiadne živé volanie Google (nemám token ani súhlas Smolka); migrácia **neaplikovaná v PROD** (čaká na GO); workflow neprebehol (secrets nie sú); nepreukázané,
+že Smolkov Gmail filter na portály existuje. **Google režim aplikácie** (Testing = refresh token 7 dní, In production unverified = limit 100 používateľov) je z dokumentácie, nie z merania.
+**Aktivácia vyžaduje foundera + Smolka:** (a) Google Cloud client + consent, (b) Smolko udelí súhlas a vytvorí filter→štítok, (c) migrácia do PROD, (d) secrets `CRM_BASE_URL`/`CRON_SECRET`
+v GitHube + env vo Verceli, (e) dual-run 24–48 h, až potom vypnúť forward, (f) dodatok k DPA. SCOREBOARD sa nehýbe (30 %): v PROD ešte nič nebeží.
+
 ## 2026-10-01 — CI-FIX 2: stena `20261001160500` padla v CI na `relation "public.v_genome_calibration" does not exist` → migrácia idempotentná
 
 **Príčina (z logu CI, `supabase start`):** v čistej databáze neexistujú pohľady `v_genome_calibration`, `v_genome_decisions_resolved`,
