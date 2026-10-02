@@ -1,3 +1,17 @@
+## Session 2026-10-02 (GMAIL-PULL PROD tabuľka + working-style)
+### Dokončené
+- `agency_gmail_inbound_seen` v PROD s dôkazom (RLS deny-all, 0 riadkov).
+- `memory/working-style.md`: pravidlo „steny, nie skrutky", ticho na PR udalosti, dôkaz že samotný text nestačí.
+- Návod na kroky 3–5 (Google Cloud, Smolkov súhlas + filter, secrets/env) odovzdaný foundrovi v odpovedi.
+### Rozpracované / Pending
+- Hook `UserPromptSubmit` v `.claude/settings.json`: blokovaný auto-mode klasifikátorom, čaká na founderovo povolenie.
+- Aktivácia pullu: kroky 3–5 (founder + Smolko), koncept pre Smolka (krok 2) a DPA dodatok neurobené.
+- Otázka vypnutia forwardu: rozhoduje Smolko po dual-run.
+### Kľúčové súbory zmenené
+- `memory/working-style.md`, `memory/decisions.md`, `memory/session-summary.md`.
+### Ďalší krok
+Founder: kroky 3–5; ja: koncept pre Smolka + DPA dodatok na GO.
+
 ## Session 2026-10-02 (GMAIL-PULL-FINISH)
 ### Dokončené
 - Gmail pull: trvalý dedup (`agency_gmail_inbound_seen`), fail-closed, okno+stránkovanie, strop tela, rozlíšenie chýb, stopa v `cron_runs`, spúšťač v GitHub Actions (`apps/crm/src/lib/inbound/gmail-pull.ts`, route, migrácia `20261002090000`, `.github/workflows/gmail-inbound-pull.yml`).

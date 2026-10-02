@@ -1,5 +1,15 @@
 # Critical Decisions Log
 
+## 2026-10-02 — GMAIL-PULL tabuľka v PROD + pracovný štýl „steny" do pamäte
+
+**GO foundera („GO migrácia PROD").** `agency_gmail_inbound_seen` aplikovaná v PROD (`execute_sql`, idempotentné `create ... if not exists`, text zhodný s
+`20261002090000_gmail_inbound_seen.sql`). Pred: tabuľka neexistovala, `agencies` áno, Smolko má 9 riadkov `inbound_mailboxes`.
+**Dôkaz po:** RLS zapnutá, 0 politík, `anon` ani `authenticated` nemajú žiadne právo (select/insert/update/delete), stĺpce presne
+`agency_id,gmail_message_id,outcome,acquired_at`, 1 cudzí kľúč (`agencies`), 0 riadkov. Pull sa NEZAPOL (`GMAIL_INBOUND_PULL_ENABLED` nie je `true`).
+**Nemerané:** zápis/čítanie zo service role cez reálny beh pullu (ešte nebežal). Zápis do migračnej evidencie Supabase (`list_migrations`) som nerobil — súbor je v repe,
+PROD má objekt; ak guard porovnáva verzie, bude treba záznam doplniť.
+**Pracovný štýl:** `memory/working-style.md` (steny, ticho na PR udalosti). Hook zatiaľ nezavedený (blokovaný klasifikátorom), viď súbor.
+
 ## 2026-10-02 — GMAIL-PULL-FINISH: Gmail pull dokončený pre pilot jedného tenanta (kód, nie aktivácia)
 
 **Podnet:** 1.10. 11:10 Smolkov Gmail hlásil `552 5.3.4 size exceeded` pri preposielaní na `smolko-a7f2@revolis.ai`; auto-forward preposiela aj nepodstatnú poštu
