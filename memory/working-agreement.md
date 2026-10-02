@@ -33,27 +33,20 @@
    - Platí len pre menovaný blok. Bez tejto vety, alebo mimo bloku, merge ostáva
      founderov akt na „merguj N". PROD a nová scope potrebujú vlastné GO.
 5. **Pred ukončením turnu** jedna ďalšia úloha s bránou (task-loop), nie zoznam.
-6. **Postup v %, v každej správe s výsledkom bloku** a na otázku „kde sme".
-   Posledný riadok správy:
-   `Postup: produkt X % → Y % (±N b.) · session k/n zadaných blokov hotových`
+6. **Postup v %, v každej správe s výsledkom bloku** a na otázku „kde sme"
+   (founder, 2026-10-02: „Kde sa nachádzame v danej session od nula do sto
+   percent?"). Správa **začína** riadkom a **končí** riadkom:
+   `session X % (odhad, k/n) · produkt Y %` … `Postup: produkt Y % → Z % (±N b.)`
    - **Produkt** = vážený odhad z tabuľky v `docs/STATUS.md` (Σ váha × skóre / Σ váh,
-     zaokrúhlené **nadol**). **X mi dá hook** (riadok „POSTUP"), nepíšem ho z hlavy.
-     Y uvediem len ak sa tabuľka zmenila; inak `X → X (0 b.)` — nulový posun sa
-     píše, nevynecháva. Váhy sú moje; je to odhad, nie meranie.
-   - **Session** = zlomok blokov, ktoré founder v tejto session zadal (GO) a sú
-     hotové s dôkazom. Vždy zlomok so zoznamom, nikdy holé %. Nie je to postup
-     k cieľu — preto sú v riadku dve čísla, nie jedno.
+     zaokrúhlené **nadol**). **Y mi dá hook** (riadok „POSTUP"), nepíšem ho z hlavy.
+     Z uvediem len ak sa tabuľka zmenila; inak `Y → Y (0 b.)` — nulový posun sa
+     píše, nevynecháva. Váhy sú moje; je to odhad, nie meranie. Ak blok zmenil
+     tabuľku, aktualizujem `docs/STATUS.md` v tom istom PR.
+   - **Session** = k/n blokov, ktoré founder v tejto session zadal (GO) a sú
+     hotové s dôkazom; X = k/n v %, vždy so zlomkom a zoznamom blokov, nikdy
+     holé %. Nie je to postup k cieľu — preto sú dve čísla, nie jedno.
    - Hook označí `docs/STATUS.md` staršie ako 24 h ako STARÉ; vtedy ho buď
-     prepočítam, alebo napíšem, že je staré. Aktualizácia tabuľky po uzavretom
-     bloku zostáva pravidlom samotného `docs/STATUS.md`.
-6. **Každá správa o hotovom bloku začína percentami.** Founder sa 2026-10-02
-   pýtal druhýkrát, takže to nie je štýl, ale požiadavka:
-   - **session X %** — koľko z toho, čo bolo v tejto session zadané, je hotové
-     a dokázané. Je to **odhad** a musí byť ako odhad označený.
-   - **produkt Y %** — celkové číslo z `docs/STATUS.md` (vážené bloky).
-     Keď sa blokom zmenilo, `docs/STATUS.md` sa aktualizuje v tom istom PR;
-     keď sa nezmenilo, poviem to.
-   Bez čísel správa nie je hotová, aj keby bol kód hotový.
+     prepočítam, alebo napíšem, že je staré.
 
 ## Ako je to vynútené (a prečo to nestačí zapísať)
 
@@ -78,7 +71,7 @@ adresáre, ktoré mali settings pri štarte).
 
 **Známe limity:** hooky platia pre session otvorenú v tomto repe. Session
 otvorená priamo v `uptm-runner` tento hook nenačíta (má vlastný CLAUDE.md).
-Hook text *pripomína*, nenútí: neodpíše za mňa — ani riadok „Postup:" za mňa nenapíše,
+Hook text *pripomína*, nenútí: neodpíše za mňa — ani riadky „session …" a „Postup:" za mňa nenapíše,
 len mi dá správne číslo. Ak ho zabudnem aj s číslom pred očami, ďalší krok je Stop hook,
 ktorý odmietne odpoveď bez riadku „Postup:" (nepostavený: spustil by sa aj na webhook-echo,
 kde pravidlo 2 žiada ticho). Ak zlyhá aj to, ďalším krokom je
@@ -91,8 +84,7 @@ PRACOVNÁ DOHODA s founderom (memory/working-agreement.md): STENY, NIE SKRUTKY.
 3) Memory zápis RAZ na konci session (jeden PR), nie po každom bloku a nie dopisovanie po merge.
 4) „merguj blok X" = zmerguj všetky ZELENÉ PR toho bloku v poradí závislostí (CI zelené na aktuálnom head, clean, expectedHeadSha), over obsah na main, jedna správa. Inak merge len na „merguj N".
 5) Na konci jedna ďalšia úloha s bránou, nie zoznam.
-6) Každá správa s výsledkom bloku (a odpoveď na „kde sme") KONČÍ riadkom `Postup: produkt X % → Y % (±N b.) · session k/n zadaných blokov hotových`. X vezmi z riadku POSTUP nižšie (počíta ho hook z docs/STATUS.md, nepíš ho z hlavy); nulový posun napíš ako 0 b.; session vždy zlomok so zoznamom.
-6) KAŽDÁ správa o hotovom bloku ZAČÍNA percentami: „session X % (odhad) · produkt Y %" — X = koľko zo zadania tejto session je hotové a dokázané, Y = celkové číslo z docs/STATUS.md (ak sa blokom zmenilo, aktualizuj STATUS.md v tom istom PR). Bez čísel správa nie je hotová.
+6) KAŽDÁ správa o hotovom bloku (a odpoveď na „kde sme") ZAČÍNA riadkom `session X % (odhad, k/n) · produkt Y %` a KONČÍ riadkom `Postup: produkt Y % → Z % (±N b.)`. Y = číslo z riadku POSTUP nižšie (počíta ho hook z docs/STATUS.md, nepíš ho z hlavy); X = k/n zo zadaných blokov tejto session hotových s dôkazom (zoznam v správe). Nulový posun = 0 b. Zmenila sa tabuľka → aktualizuj docs/STATUS.md v tom istom PR.
 <!-- DIGEST:END -->
 
 <!-- WEBHOOK:START -->

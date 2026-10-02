@@ -23,7 +23,7 @@ block() { # block <MARKER>
 
 progress() { # POSTUP z docs/STATUS.md; pri chybe vráti poctivé "nedá sa", nikdy ticho nič
   local f="$root/docs/STATUS.md" calc d t then now age stale="" pct rows parts
-  local rule='Správa s výsledkom bloku alebo otázkou "kde sme" KONČÍ riadkom: Postup: produkt X % -> Y % (+-N b.) | session k/n zadaných blokov hotových. X je číslo z tohto riadku; Y len ak sa zmenila tabuľka, inak X -> X (0 b.). Session = zlomok blokov, ktoré founder v tejto session zadal (GO) a sú hotové s dôkazom, vždy so zlomkom a zoznamom, nikdy holé %. Váhy sú odhad, nie meranie.'
+  local rule='Správa o hotovom bloku alebo otázka "kde sme" ZAČÍNA riadkom: session X % (odhad, k/n) | produkt Y % a KONČÍ riadkom: Postup: produkt Y % -> Z % (+-N b.). Y je číslo z tohto riadku; Z len ak sa zmenila tabuľka, inak Y -> Y (0 b.). X = k/n zadaných blokov tejto session hotových s dôkazom, vždy so zlomkom a zoznamom, nikdy holé %. Váhy sú odhad, nie meranie.'
   if [ ! -r "$f" ]; then
     printf 'POSTUP: chýba docs/STATUS.md, číslo sa nedá vypočítať. Povedz to; nevymýšľaj ho. %s' "$rule"; return 0
   fi
