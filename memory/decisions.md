@@ -41,6 +41,29 @@ aby BRI nedostalo vymyslený signál.
 **Pozor na MCP:** `execute_sql` na `DELETE` timeoutuje (čaká na potvrdenie, ktoré v tomto kontexte nepríde).
 Obídené `DO $$ ... $$` blokom. CTE `delete ... where id in (select id from probe)` nefunguje — DELETE nevidí riadok
 vložený v tom istom príkaze (snapshot), hlási `deleted: 0` a riadok zostane.
+## 2026-10-02 — GMAIL-PULL-FINISH: Gmail pull dokončený pre pilot jedného tenanta (kód, nie aktivácia)
+
+**Podnet:** 1.10. 11:10 Smolkov Gmail hlásil `552 5.3.4 size exceeded` pri preposielaní na `smolko-a7f2@revolis.ai`; auto-forward preposiela aj nepodstatnú poštu
+(minimalizácia dát) a limit veľkosti je vlastnosť e-mailového kanála. Gmail API limit nemá. GO foundera: „Dokonči Gmail pull".
+
+**Constitution v2 (smernica 7):** BUILD — otázka 1 áno (retencia: stratený dopyt = stratená provízia), žiadne VETO; ide o reliability lane, nie nový feature. Skóre sa nepočíta
+ako nový bet. **gdpr-advisor (smernica 5): skill v tejto session nebol dostupný** → vlastná analýza v `docs/architecture/inbound-gmail-pull-gdpr.md`, nie právne stanovisko;
+oprava návrhu §11 (súhlas v Google okne nie je základ pre údaje záujemcov, základom ostáva zákazník ako prevádzkovateľ).
+
+**Čo bolo hotové už pred touto prácou (nie moje):** `gmail-pull.ts`, route, `loadMailboxForAgency` s `pickAgencyMailbox` (#774). **Čo chýbalo a je doplnené:**
+1. Trvalá pamäť spracovaných správ (`agency_gmail_inbound_seen`, iba ID, deny-all RLS, retencia 30 d) — predtým `Set` v pamäti = každý beh sťahoval telá znova.
+2. Fail-closed: bez pamäte pull nič nečíta. 3. Časové okno `newer_than:Nd` + stránkovanie (predtým len 25 najnovších). 4. Strop tela 200 000 znakov.
+5. Rozlíšenie chýb: 400 sa zapíše ako vybavené, 401/408/429/5xx/sieť sa opakuje. 6. `invalid_grant` pomenovaný, chyby neprepadajú ako výnimka.
+7. Stopa v `cron_runs` (len beh s novými správami alebo chybou). 8. Spúšťač `.github/workflows/gmail-inbound-pull.yml` (Vercel Hobby = cron max. denne; sub-denný výraz by odmietol deploy).
+
+**Dôkaz:** 112 testov v `src/lib/inbound` + 8 v novom strážcovi `gmail-pull-boundaries.verification.test.ts`, celé `tests/verification` 80/80 súborov, 542 testov zelených.
+Mutácie: bez `labelIds`, bez fail-closed guardu, 401 ako trvalá, bez rekontroly štítka, bez `markSeen`, politika v migrácii → vždy červené. Prvá mutácia „bez orezania tela" **prežila**
+(test pokrýval len text, nie html) → doplnený test, teraz padá pre oba. `tsc`: žiadna chyba v mojich súboroch (existujúce chyby sú v `scripts/inbound-auto-response-smoke-v1.ts`).
+
+**Nemerané — vedomé:** žiadne živé volanie Google (nemám token ani súhlas Smolka); migrácia **neaplikovaná v PROD** (čaká na GO); workflow neprebehol (secrets nie sú); nepreukázané,
+že Smolkov Gmail filter na portály existuje. **Google režim aplikácie** (Testing = refresh token 7 dní, In production unverified = limit 100 používateľov) je z dokumentácie, nie z merania.
+**Aktivácia vyžaduje foundera + Smolka:** (a) Google Cloud client + consent, (b) Smolko udelí súhlas a vytvorí filter→štítok, (c) migrácia do PROD, (d) secrets `CRM_BASE_URL`/`CRON_SECRET`
+v GitHube + env vo Verceli, (e) dual-run 24–48 h, až potom vypnúť forward, (f) dodatok k DPA. SCOREBOARD sa nehýbe (30 %): v PROD ešte nič nebeží.
 
 ## 2026-10-01 — CI-FIX 2: stena `20261001160500` padla v CI na `relation "public.v_genome_calibration" does not exist` → migrácia idempotentná
 

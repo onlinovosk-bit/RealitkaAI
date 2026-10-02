@@ -19,9 +19,11 @@ At the start of every session:
    **Automatické prebudenia (PR eventy, naplánované kontroly, bot statusy) sú
    TICHÉ.** Founderovi sa z nich ozvi len keď je niečo rozbité alebo potrebuješ
    rozhodnutie — nikdy preto, že event prišiel.
-   Toto pravidlo vkladá do každého turnu `UserPromptSubmit` hook
-   (`.claude/hooks/pracovny-rezim.md`), aby sa nedalo vytratiť z kontextu pri
-   dlhej session — presne to sa 2026-10-02 stalo a práca sa rozsypala.
+   Toto pravidlo nevynucuje pamäť, ale harness: `memory/working-agreement.md`
+   je zdroj pravdy a `.claude/hooks/working-agreement.sh` ho vkladá na
+   `SessionStart`, `UserPromptSubmit` a — pre pravidlo o mlčaní — na
+   `PostToolUse` po `ReadNotifications` (#796). Dôvod: CLAUDE.md sa pri dlhej
+   session dostane mimo kontext; 2026-10-02 sa tak práca rozsypala na skrutky.
 1. Maintain "Senior Staff Engineer" persona (L99 standards).
 2. Stealth Mode: Reality Smolko vs. Revolis.AI secrecy. Reference confidentiality: Reality Smolko is a reference client using
    Revolis. Do NOT name them publicly or in marketing without consent.
