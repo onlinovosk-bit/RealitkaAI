@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { validateEnv } from "../env";
+import { failFastKeys, getEnv, normalizeEnv, validateEnv } from "../env";
 import { register } from "../../instrumentation";
 
 const URL_ = "https://x.supabase.co";
@@ -38,21 +38,36 @@ describe("validateEnv", () => {
     ]);
   });
 
-  it("treats an empty-string variable as invalid, not as unset", () => {
-    const r = validateEnv({ ...MIN, CRON_SECRET: "" });
+  it("treats an empty or whitespace-only optional variable as unset, not as invalid", () => {
+    for (const v of ["", "   "]) {
+      const r = validateEnv({ ...MIN, CALENDAR_ICS_URL: v, CRON_SECRET: v });
+      expect(r.ok, JSON.stringify(v)).toBe(true);
+      expect(r.issues).toEqual([]);
+    }
+  });
+
+  it("still flags a NON-empty but invalid value (it must be fixed, not hidden)", () => {
+    const r = validateEnv({ ...MIN, CALENDAR_ICS_URL: "not a url" });
     expect(r.ok).toBe(false);
-    expect(r.issues.map((i) => i.key)).toEqual(["CRON_SECRET"]);
+    expect(r.issues.map((i) => i.key)).toEqual(["CALENDAR_ICS_URL"]);
+  });
+
+  it("an empty hard-required variable is still an error", () => {
+    expect(validateEnv({ ...MIN, NEXT_PUBLIC_SUPABASE_URL: "" }).issues.map((i) => i.key)).toEqual([
+      "NEXT_PUBLIC_SUPABASE_URL",
+    ]);
+    expect(validateEnv({ NEXT_PUBLIC_SUPABASE_URL: URL_, NEXT_PUBLIC_SUPABASE_ANON_KEY: " " }).ok).toBe(false);
+  });
+
+  it("an empty SUPABASE_SERVICE_ROLE_KEY is unset: reported as degraded, not as an error", () => {
+    const r = validateEnv({ ...MIN, SUPABASE_SERVICE_ROLE_KEY: "" });
+    expect(r.ok).toBe(true);
+    expect(r.degraded.map((d) => d.key)).toContain("SUPABASE_SERVICE_ROLE_KEY");
   });
 
   it("counts a whitespace-only value as unset (the code trims before use)", () => {
     const r = validateEnv({ ...MIN, CRON_SECRET: "   " });
     expect(r.degraded.map((d) => d.key)).toContain("CRON_SECRET");
-  });
-
-  it("treats an empty SUPABASE_SERVICE_ROLE_KEY as invalid too", () => {
-    expect(validateEnv({ ...MIN, SUPABASE_SERVICE_ROLE_KEY: "" }).issues.map((i) => i.key)).toEqual([
-      "SUPABASE_SERVICE_ROLE_KEY",
-    ]);
   });
 
   it("stops reporting a degraded key once it is set", () => {
@@ -94,11 +109,86 @@ describe("register (startup report)", () => {
     expect(out).toContain("SUPABASE_SERVICE_ROLE_KEY");
   });
 
+  it("v produkcii bez Supabase URL zhodí štart a nevypíše hodnoty", async () => {
+    setEnv({});
+    vi.stubEnv("NODE_ENV", "production");
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    await expect(register()).rejects.toThrow(/fail-fast.*NEXT_PUBLIC_SUPABASE_URL/);
+  });
+
+  it("v produkcii s neplatnou voliteľnou premennou štart nezhodí", async () => {
+    setEnv(MIN);
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("CALENDAR_ICS_URL", "not a url");
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    await expect(register()).resolves.toBeUndefined();
+  });
+
+  it("ENV_FAILFAST=off štart nezhodí ani bez Supabase", async () => {
+    setEnv({});
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("ENV_FAILFAST", "off");
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    await expect(register()).resolves.toBeUndefined();
+  });
+
   it("is silent on the edge runtime", async () => {
     setEnv({});
     vi.stubEnv("NEXT_RUNTIME", "edge");
     const err = vi.spyOn(console, "error").mockImplementation(() => undefined);
     await register();
     expect(err).not.toHaveBeenCalled();
+  });
+});
+
+describe("getEnv (strict accessor) uses the same normalization", () => {
+  it("does not throw on an empty optional variable", () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", URL_);
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "a");
+    vi.stubEnv("CALENDAR_ICS_URL", "");
+    expect(() => getEnv()).not.toThrow();
+  });
+
+  it("still throws on a non-empty invalid one, naming the key but not the value", () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", URL_);
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "a");
+    vi.stubEnv("CALENDAR_ICS_URL", "tajna-hodnota");
+    expect(() => getEnv()).toThrow(/CALENDAR_ICS_URL/);
+    try { getEnv(); } catch (e) { expect(String((e as Error).message)).not.toContain("tajna-hodnota"); }
+  });
+});
+
+describe("normalizeEnv", () => {
+  it("maps empty and whitespace-only to undefined and keeps the rest untouched", () => {
+    expect(normalizeEnv({ A: "", B: "  ", C: " x ", D: undefined })).toEqual({
+      A: undefined, B: undefined, C: " x ", D: undefined,
+    });
+  });
+});
+
+describe("failFastKeys", () => {
+  const issues = [
+    { key: "NEXT_PUBLIC_SUPABASE_URL", message: "Invalid input" },
+    { key: "CALENDAR_ICS_URL", message: "Invalid input" },
+  ];
+  const prod = { NODE_ENV: "production" } as Record<string, string | undefined>;
+
+  it("v produkcii zhodí len kritické kľúče, nie voliteľné", () => {
+    expect(failFastKeys(issues, prod)).toEqual(["NEXT_PUBLIC_SUPABASE_URL"]);
+  });
+  it("neplatná voliteľná premenná štart nezhodí", () => {
+    expect(failFastKeys([issues[1]], prod)).toEqual([]);
+  });
+  it("chýbajúci Supabase kľúč (superRefine) je kritický", () => {
+    const k = "NEXT_PUBLIC_SUPABASE_ANON_KEY|NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY";
+    expect(failFastKeys([{ key: k, message: "Required (one of)" }], prod)).toEqual([k]);
+  });
+  it("preview, dev a test nikdy nepadnú", () => {
+    expect(failFastKeys(issues, { ...prod, VERCEL_ENV: "preview" })).toEqual([]);
+    expect(failFastKeys(issues, { NODE_ENV: "development" })).toEqual([]);
+    expect(failFastKeys(issues, { NODE_ENV: "test" })).toEqual([]);
+  });
+  it("ENV_FAILFAST=off je núdzový vypínač", () => {
+    expect(failFastKeys(issues, { ...prod, ENV_FAILFAST: "off" })).toEqual([]);
   });
 });

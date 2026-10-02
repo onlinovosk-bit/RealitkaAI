@@ -1,3 +1,28 @@
+## Session 2026-10-02 (ENV-FAILFAST)
+### Dokončené
+- `apps/crm/src/config/env.ts`: `CRITICAL_ENV_KEYS` + `failFastKeys()` — fail-fast len pre Supabase URL a kľúč, len produkčný runtime (nie preview/dev/test), vypínač `ENV_FAILFAST=off`.
+- `apps/crm/src/instrumentation.ts`: `register()` po logu vyhodí chybu iba pre kritické kľúče; voliteľné premenné štart nikdy nezhodia.
+- Testy 25/25, mutation proof 5/5, prepush-gate PASS (typecheck 49/54, lint).
+### Rozpracované / Pending
+- Vetva stavia na #793 (`normalizeEnv`); PR je stacked na `claude/env-empty-optional`. Founder: merge #793 → potom retarget/merge tohto PR.
+- Produkčný `[env]` log po #793 ešte nezmeraný (`CALENDAR_ICS_URL`); tento PR sa ho nedotýka, lebo voliteľné kľúče nepadajú.
+### Kľúčové súbory zmenené
+- apps/crm/src/config/env.ts, apps/crm/src/instrumentation.ts, apps/crm/src/config/__tests__/env-validate.test.ts
+### Ďalší krok
+Founder: Stripe krok C; merge #784, #793, potom tento PR.
+
+## Session 2026-10-02 (ENV-EMPTY-OPTIONAL)
+### Dokončené
+- `config/env.ts`: nový `normalizeEnv` — prázdna alebo whitespace-only premenná = nenastavená; použitý v `validateEnv` aj `getEnv`. Dôvod: produkčný `[env]` log (1. 10.) hlásil jediný drift `CALENDAR_ICS_URL (Invalid input)`, kód tú premennú nikde nečíta a prázdny reťazec pri `z.string().url().optional()` zlyhá.
+- **Čo sa NEZMENILO (zámerne):** neprázdna, ale neplatná hodnota ostáva chybou, aj prázdna povinná premenná (`NEXT_PUBLIC_SUPABASE_URL`, Supabase kľúč). Ak drift po nasadení nezmizne, hodnota vo Verceli je neprázdna a neplatná (napr. placeholder) a treba ju opraviť alebo zmazať tam.
+- Zmena správania: prázdna `SUPABASE_SERVICE_ROLE_KEY`/`CRON_SECRET`… bola predtým `issue` (min(1)), teraz je „nenastavená" a ide do `degraded` (kód ju tak aj ošetruje — `.trim()` v `isAuthorizedCronBearer`, `createServiceRoleClient`).
+- 17 testov, mutation proof 4/4.
+### Rozpracované / Pending
+- Push vetvy `claude/env-empty-optional` čaká na povolenie. Po nasadení overiť v logu `[env]`, či `CALENDAR_ICS_URL` zmizol.
+- Fail-fast stále nezapájam: ďalšia podmienka je čistý `[env]` log.
+### Ďalší krok
+Merge, nasadenie, kontrola `[env]` logu.
+
 ## Session 2026-10-01 (HOT-LEAD-PUSH-AFTER)
 ### Dokončené
 - `apps/crm/src/app/api/leads/[id]/route.ts`: `notifyHotLead` ide cez `runAfterResponse` (predtým `.catch` bez `await`, na serverless sa po odpovedi zmrazil).

@@ -151,6 +151,21 @@ export interface EnvIssue {
 }
 
 /**
+ * Prázdna alebo whitespace-only premenná znamená „nenastavená" (Vercel aj `.env`
+ * ju bežne nechajú prázdnu). Bez toho voliteľné `z.string().url()` hlásilo prázdny
+ * reťazec ako neplatnú URL (produkcia 1. 10. 2026: `CALENDAR_ICS_URL`) a fail-fast
+ * by padol na premennej, ktorú kód ani nečíta. Neprázdna ale neplatná hodnota
+ * ostáva chybou — tú treba opraviť, nie ukryť.
+ */
+export function normalizeEnv(
+  source: Record<string, string | undefined>,
+): Record<string, string | undefined> {
+  const out: Record<string, string | undefined> = {};
+  for (const [k, v] of Object.entries(source)) out[k] = v?.trim() === "" ? undefined : v;
+  return out;
+}
+
+/**
  * Non-throwing check of `source` against the schema. Reports key NAMES and
  * zod's generic message only — never a received value (secrets).
  */
@@ -160,13 +175,39 @@ export function validateEnv(
   const degraded = Object.entries(DEGRADED_WITHOUT)
     .filter(([key]) => !source[key]?.trim())
     .map(([key, feature]) => ({ key, feature }));
-  const result = envSchema.safeParse(source);
+  const result = envSchema.safeParse(normalizeEnv(source));
   if (result.success) return { ok: true, issues: [], degraded };
   return {
     ok: false,
     issues: result.error.issues.map((i) => ({ key: i.path.join("."), message: i.message })),
     degraded,
   };
+}
+
+/**
+ * Premenné, bez ktorých app nemôže fungovať vôbec (bez Supabase nefunguje ani
+ * prihlásenie, ani čítanie dát). Len pre ne je fail-fast; neplatná voliteľná
+ * premenná (napr. CALENDAR_ICS_URL) štart nikdy nezhodí.
+ */
+export const CRITICAL_ENV_KEYS = [
+  "NEXT_PUBLIC_SUPABASE_URL",
+  "NEXT_PUBLIC_SUPABASE_ANON_KEY|NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+] as const;
+
+/**
+ * Fail-fast rozhodnutie pre štart: iba produkčný runtime (nie preview/dev/test),
+ * iba kritické kľúče, s núdzovým vypínačom `ENV_FAILFAST=off`. Vráti názvy kľúčov
+ * (nikdy hodnoty) alebo prázdne pole = nechať app nabehnúť.
+ */
+export function failFastKeys(
+  issues: EnvIssue[],
+  source: Record<string, string | undefined> = process.env,
+): string[] {
+  if (source.NODE_ENV !== "production") return [];
+  if (source.VERCEL_ENV && source.VERCEL_ENV !== "production") return [];
+  if (source.ENV_FAILFAST?.trim().toLowerCase() === "off") return [];
+  const critical = new Set<string>(CRITICAL_ENV_KEYS);
+  return issues.filter((i) => critical.has(i.key)).map((i) => i.key);
 }
 
 /**
@@ -177,7 +218,7 @@ export function validateEnv(
  * reconciled with production.
  */
 export function getEnv(): Env {
-  const result = envSchema.safeParse(process.env);
+  const result = envSchema.safeParse(normalizeEnv(process.env));
   if (!result.success) {
     const missing = result.error.issues
       .map((i) => `  ${i.path.join(".")}: ${i.message}`)
