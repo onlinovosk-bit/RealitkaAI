@@ -15,7 +15,7 @@ Zdroj je marketingový príspevok s neoverenými atribúciami; v jeho druhom pro
 a L01–L04 spustené founderom s rozhodnutím zapísaným tu); odsek v `.claude/skills/rau/SKILL.md`; §13 v `docs/rau/RAU-v1.0.md`; test `rau-leverage.verification.test.ts`;
 správa `docs/reports/2026-10-02-rau-leverage-blind-run.md`. Router sa nemenil, len dáta backlogu.
 
-**Dôkaz:** @@TESTS@@ Mutačný dôkaz: @@MUT@@ Slepé behy modelu (LLM-sudca, 6 + 6 behov, nie nezaujaté): beh 1 (prvý, bez opráv) 5 vymyslených alebo zle prečítaných tvrdení,
+**Dôkaz:** Testy: `rau-leverage.verification.test.ts` 49 testov (štruktúra, ochranné pravidlá v správnych sekciách, backlog + tabuľka 29 fráz, pravdivosť README/skillu/§13/decisions); RAU suita 152 nezmenená (spolu 201 zelených); lint a typecheck ratchet PASS. Mutačný dôkaz: 76 mutácií v kópii stromu (prompty, backlog regexy, README, spec, skill, report, decisions) → 76/76 zabitých po jednej skutočnej oprave testu (L04 „Číslo odhadni" prežilo) a po oprave piatich mojich zastaraných mutačných vzorov; 45 mutácií reviewera sa na nový test nespúšťalo (ich vzory sú na starý text), pokryté sú ich triedy. Slepé behy modelu (LLM-sudca, 6 + 6 behov, nie nezaujaté): beh 1 (prvý, bez opráv) 5 vymyslených alebo zle prečítaných tvrdení,
 ~14 neoznačených viet, 1 porušenie pravidla (L04: AUTORITA ako konverzia); beh 2 (po opravách, nové výňatky) 2 a ~2. Nezávislý adverzariálny review: SHIP WITH FIXES (0× P0, 8× P1, všetky P1 opravené).
 
 **NIE je dokázané:** že L01–L05 pomôžu founderovi rozhodnúť (NEMERANÉ — jediný test je jeho prvý beh L01 a zápis, či z neho vzniklo rozhodnutie); že posledná dávka opráv po behu 2

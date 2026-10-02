@@ -4,7 +4,7 @@
 > čas, čo z toho sa dá premeniť na opakovateľný majetok a čo z hotovej práce povýšiť o jeden stupeň.
 > **Technicky:** päť textov v `docs/rau/leverage/`. Bez runtime, DB a UI; všetky prompty sú len na čítanie. Jediná
 > zmena správania je dátová: položka v Strategic Backlogu (router pri predaji promptov vráti `GO_REQUIRED`).
-> **Stav dôkazu:** IMPLEMENTED + TESTED (štruktúra, ochranné pravidlá, backlog položka) + dva slepé behy modelu
+> **Stav dôkazu:** IMPLEMENTED + TESTED (49 testov, mutácie 76/76) + dva slepé behy modelu a nezávislý review
 > (`docs/reports/2026-10-02-rau-leverage-blind-run.md`). Užitočnosť pre foundera **NEMERANÁ**.
 
 ## Verdikt (poctivo)

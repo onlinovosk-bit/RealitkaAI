@@ -64,6 +64,14 @@ Spolu: A = 2 (obe L04), B ≈ 2, v limite riadkov 6 z 6 (slová: 5 z 6, jeden hr
 výňatkoch; je to teda lepšie než „ladené na tej istej sade", ale nie nezaujaté. Sudca aj vykonávateľ sú z tej istej
 rodiny modelov. Jeden beh na prompt je anekdota, nie štatistika.
 
+## Mutačný dôkaz testov (nie sudca, deterministické)
+
+76 mutácií v kópii stromu (nikdy v skutočnom repe; overené hashom súborov pred a po): prompty (vymazané/otočené pravidlá,
+čísla ceny `€49`/`EUR 49`/„70 percent", meno klienta vrátane „Smoľko"/„Reality S."), regexy backlogu (každá alternatíva),
+README, §13, skill, report a `decisions.md`. Prvý beh: 70 zabitých; **1 skutočná medzera** v teste (L04 „Číslo odhadni"
+prežilo → doplnená aserícia), 5 „nepoužitých" kvôli mojim zastaraným vzorom (zalomené riadky, zmenený text) → opravené a
+znovu spustené: 76/76. Nezávislých 45 mutácií reviewera pôvodný test nezabil (44 prežilo); na nový test sa nespúšťali.
+
 ## Posledná dávka opráv — NEMERANÁ
 
 Po behu 2 sa podľa sudcu doplnilo: pravidlo „neurčený aktér (HUMAN) = NEZARADENÉ" a „MAJETOK len s dokladom" (L02, L04),

@@ -219,7 +219,7 @@ describe("RAU leverage: every prompt carries its safeguards in the right section
     expect(s["PRAVIDLÁ"]).toContain("Trakciu nikdy nehľadaj v CRM");
     expect(s["PRAVIDLÁ"]).toContain("Každý predpoklad scenára nesie [FOUNDER] alebo je to otázka");
     expect(s["KROKY"]).toContain("slovný scenár");
-    expect(s["KROKY"]).toContain("Ak predpoklady nedal, napíš len NEZNÁME");
+    expect(s["KROKY"]).toContain("Číslo len z čísel, ktoré founder dal. Ak predpoklady nedal, napíš len NEZNÁME");
   });
 
   it("L05 counts a use only in real work, promotes one rung on >=2 uses (or nothing) and treats AGENT+ as a proposal", () => {

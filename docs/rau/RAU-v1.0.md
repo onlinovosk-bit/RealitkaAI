@@ -304,23 +304,25 @@ potvrdenie foundera čaká.*
   `leverage-external-productization`.
 - **Why not reuse:** v repe nič netaží opakujúce sa rozhodnutia foundera; P22 zapisuje, netaží.
 - **Expected outcome:** z prvého behu L01 vznikne rozhodnutie zapísané v `memory/decisions.md`. **NEMERANÉ.**
-- **Contradiction check:** Q1 veto (vedome prekročené); AP-012 (Architecture Inflation) — riziko uznané, preto len text.
+- **Contradiction check:** Q1 veto a skóre REJECT (prekročenie čaká na potvrdenie foundera); AP-012 (Architecture Inflation) — riziko uznané, preto len text.
 
 **Dôkaz (stav: IMPLEMENTED + TESTED; užitočnosť NEMERANÁ):**
-- `apps/crm/tests/verification/rau-leverage.verification.test.ts` — štruktúra L01–L05, ochranné pravidlá v každom
-  prompte, backlog položka a jej zhoda v routeri, pravdivosť tvrdení README o routeri. Existujúcich 152 RAU
-  testov je nezmenených.
-- **Slepý beh (prvý, pred akoukoľvek úpravou promptov):** 6 nezávislých behov (L01, L02, L03 bez L01, L03 s
-  testovacím vstupom L01, L04, L05) na rovnakom DATA PACKu výňatkov z repa; vykonávateľ smel čítať len pridelené
-  súbory (počet volaní Read = počet pridelených súborov). Chýbajúce vstupy (hodiny, príjem, publikum, zoznamy
-  foundera) vykonávateľ **nemal**.
-- **Čo som pri čítaní všetkých šiestich výstupov zistil:** každý obsahoval `NEZNÁME` aj sekciu „Čo hovorí PROTI"
-  a pýtal presne 3 otázky; L03 bez L01 sa zastavil vetou „Najprv spusti L01."; L05 nepovýšil nič (0 použití mimo
-  testov); L01 označil všetkých päť nájdených vzorov za COMMODITY a know-how **nevymyslel**; žiadny výstup
-  nenapísal sumu ceny ani meno referenčného klienta. **Slabina:** výstupy mali ~50–70 riadkov, pokyn „max jedna
-  obrazovka" nebol overiteľný.
-- **Neoverené:** že výstup foundera posunie k rozhodnutiu; triáda z bodu 5 vyššie; poslednú (6.) snímku som
-  nevidel.
+- `apps/crm/tests/verification/rau-leverage.verification.test.ts` — 49 testov: štruktúra L01–L05, ochranné pravidlá **v správnej
+  sekcii** promptu, backlog položka a jej zhoda v routeri (tabuľka 29 fráz vrátane falošných poplachov), pravdivosť tvrdení
+  README, skillu, §13 a záznamu v `decisions.md`. Existujúce RAU testy sú nezmenené (spolu 201 zelených).
+- **Mutácie: 76/76** sabotáž v kópii stromu zhasne test (prompty, regexy backlogu, README, spec, skill, report, decisions).
+  Prvý beh zabil 70; jedna medzera v teste bola skutočná (L04 „Číslo odhadni" prežilo → doplnená aserícia), päť „nepoužitých"
+  bolo mojich zastaraných vzorov. Prvá verzia testu nechala prežiť 44 z 45 **nezávislých** mutácií reviewera; tie sa na nový
+  test nespúšťali (ich vzory sú na starý text), pokryté sú ich triedy.
+- **Nezávislý adverzariálny review** (read-only): *SHIP WITH FIXES*, 0× P0, 8× P1 — všetky opravené (viď
+  `docs/reports/2026-10-02-rau-leverage-blind-run.md`).
+- **Slepé behy modelu** (LLM-sudca; 6 + 6 behov; podrobnosti, metóda a limity v správe): **beh 1 (prvý, bez opráv, nezaujatý)** —
+  5 vymyslených alebo zle prečítaných tvrdení, ~14 neoznačených viet, 1 porušenie pravidla (L04: AUTORITA ako konverzia),
+  limit „jedna obrazovka" nesplnil nikto (48–73 riadkov); **beh 2 (po opravách, nové výňatky; nie nezaujaté)** — 2 a ~2, všetkých
+  6 vo limite riadkov. Obe stráže fungovali v oboch behoch: L03 bez L01 sa zastaví, L05 nepovýši nič bez 2 použití.
+  Slabina behu 2: L04 pripísal founderovi činnosť, ktorú zdroj pripisuje neurčenému „HUMAN"; po behu 2 prišla ešte posledná dávka
+  opráv, ktorá **nebola spustená (NEMERANÉ)**.
+- **Neoverené:** že výstup foundera posunie k rozhodnutiu; triáda z bodu 5 vyššie; poslednú (6.) snímku som nevidel.
 
 ## Rozhodnutia foundera
 

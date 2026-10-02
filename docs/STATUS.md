@@ -21,7 +21,8 @@
 
 ## Hotové 2026-10-02 (docs-only, bez vplyvu na %)
 - **RAU Leverage track (L01–L05):** päť read-only promptov v `docs/rau/leverage/` (znalosti foundera → páka → produkt → majetok), sprievodca, položka v Strategic Backlogu
-  (predaj promptov ako produktu) a testy. **Nič nenasadené, nič nepredávame, užitočnosť NEMERANÁ** — overená je len štruktúra a ochranné pravidlá. Krok C ostáva #1.
+  (predaj promptov ako produktu) a testy. **Nič nenasadené, nič nepredávame, užitočnosť NEMERANÁ** — overená je len štruktúra a ochranné pravidlá (49 testov, mutácie 76/76, dva slepé behy, nezávislý review).
+  Podľa Ústavy v2 je to REJECT (skóre ≈ 2/12); GO prišlo pred kontrolou → **čaká na tvoje potvrdenie** (PR #803). Krok C ostáva #1.
 
 ## Hotové dnes (2026-10-01) — s dôkazom
 - **Príjem:** `to_agency_mailbox` vs `to_unmatched` v logu, deterministický Gmail pull; tabuľka `inbound_mail_outcomes` v PROD (RLS on, 0 politík). Kód čaká na merge (#774).
