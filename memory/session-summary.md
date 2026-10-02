@@ -1,3 +1,14 @@
+## Session 2026-10-02 (WORKING-MODE-WALLS)
+### Dokončené
+- `memory/working-mode.md`: záväzný režim „steny, nie skrutky“ (jedno GO = jedna celá stena, ticho počas steny, PR eventy bez správ, jeden report).
+- `.claude/settings.json` + `.claude/working-mode-reminder.txt`: hooky `UserPromptSubmit` (ku každej správe foundera) a `SessionStart` (štart, resume, clear, compact) vkladajú pripomienku do kontextu, takže režim nezávisí od mojej pamäte.
+### Rozpracované / Pending
+- Hooky sa načítajú pri novej session; v tejto session ich účinok nie je overený (overené len JSON a obsah príkazu).
+### Kľúčové súbory zmenené
+- memory/working-mode.md, memory/preferences.md, .claude/settings.json, .claude/working-mode-reminder.txt
+### Ďalší krok
+Founder: `GO PLATBY-END-TO-END` (celá stena okolo platieb).
+
 ## Session 2026-10-02 (GMAIL-PULL-FINISH)
 ### Dokončené
 - Gmail pull: trvalý dedup (`agency_gmail_inbound_seen`), fail-closed, okno+stránkovanie, strop tela, rozlíšenie chýb, stopa v `cron_runs`, spúšťač v GitHub Actions (`apps/crm/src/lib/inbound/gmail-pull.ts`, route, migrácia `20261002090000`, `.github/workflows/gmail-inbound-pull.yml`).
