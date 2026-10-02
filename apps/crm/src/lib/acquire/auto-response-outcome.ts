@@ -29,7 +29,12 @@ export type AutoResponseOutcome =
   | "skipped_no_email"
   /** `auto_response_sent_at` už je nastavené (dedup). */
   | "skipped_already_sent"
-  /** `agencies.auto_response_enabled = false`. */
+  /**
+   * `agencies.auto_response_enabled` nie je `true`. S `reason: "consent_unknown"`
+   * to znamená, že sa súhlas nedal prečítať (chýbajúci stĺpec, chýbajúci riadok,
+   * NULL) — nie že si ho agentúra vedome vypla. Fail-closed: bez hodnoty `true`
+   * sa neposiela.
+   */
   | "skipped_disabled"
   /** Nedá sa určiť reply-to (agentúra ani vlastník nemá e-mail). */
   | "failed_no_reply_to"
@@ -56,6 +61,12 @@ export type AutoResponseSendReason =
 export type AutoResponsePrepareReason =
   /** Chýba stĺpec `leads.auto_response_sent_at` (nespustená migrácia). */
   | "migration_required"
+  /**
+   * `agencies.auto_response_enabled` sa nedal prečítať ako boolean — chýbajúci
+   * stĺpec, chýbajúci riadok agentúry alebo NULL. Neposlali sme, pretože súhlas
+   * agentúry nepoznáme; nie preto, že by si auto-odpoveď vypla.
+   */
+  | "consent_unknown"
   /** Značku `auto_response_sent_at` sa po odoslaní nepodarilo zapísať. */
   | "dedup_update_failed"
   /** Neočakávaná výnimka (čítanie z DB, …). */
