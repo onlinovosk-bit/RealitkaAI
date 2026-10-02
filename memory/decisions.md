@@ -1,5 +1,10 @@
 # Critical Decisions Log
 
+## [2026-10-02] Dôkazová brána ako pravidlo projektu + hook (founder: „ulož si tento spôsob práce, nech ho o 20 správ nezabudneš")
+- **Spôsob práce:** verdikt/stav iba z primárneho zdroja overeného v tom istom turne. Chýbajúci vstup sa overí, nevymýšľa a raz sa povie, čo poslať. Gold labels robí človek. Pred bránou pre-flight na agregátoch. Opakované GO bez nového vstupu dostane krátku odpoveď. PROD/merge/flag iba na explicitné GO pri zelenom CI. Vzor: `GO D1-VERDICT` 2× bez score výstupu → žiadny vymyslený verdikt.
+- **Prečo nestačí memory/:** číta sa len na začiatku session; pri dlhej konverzácii sa kontext sumarizuje a pravidlo sa môže stratiť.
+- **Riešenie:** (1) CLAUDE.md direktíva 8, ktorú harness vkladá do kontextu každej session aj po sumarizácii. (2) `UserPromptSubmit` hook `.claude/hooks/evidence-gate.sh` (registrovaný v `.claude/settings.json`) pridá 3-riadkovú pripomienku ku každej správe s GO / verdikt / merge / PROD / flag / PASS. Je deterministický, nezávisí od toho, či si model pamätá. Ostatné správy sú bez šumu.
+
 ## 2026-10-02 — GMAIL-PULL-FINISH: Gmail pull dokončený pre pilot jedného tenanta (kód, nie aktivácia)
 
 **Podnet:** 1.10. 11:10 Smolkov Gmail hlásil `552 5.3.4 size exceeded` pri preposielaní na `smolko-a7f2@revolis.ai`; auto-forward preposiela aj nepodstatnú poštu
