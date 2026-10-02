@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAuthorizedCronBearer } from "@/lib/cron-auth";
 import { createAdminClient } from "@/lib/supabase/server";
+import { hashedEmailRows } from "@/lib/meta/hash-email";
 
 const META_API_BASE = "https://graph.facebook.com/v19.0";
 
@@ -40,6 +41,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Žiadne leady pre vytvorenie audience." }, { status: 400 });
     }
 
+    const emailsPayload = hashedEmailRows(leads);
+    if (emailsPayload.length === 0) {
+      return NextResponse.json({ error: "Žiadne použiteľné e-maily pre audience." }, { status: 400 });
+    }
+
     // 2. Vytvor Custom Audience na Meta
     const audienceName = `Revolis ${source} ${new Date().toISOString().slice(0, 10)}`;
     const caRes = await fetch(`${META_API_BASE}/act_${adAccountId}/customaudiences`, {
@@ -61,8 +67,7 @@ export async function POST(request: Request) {
 
     const audienceId = caData.id;
 
-    // 3. Upload hashed emails (SHA256 via Meta Hashing header)
-    const emailsPayload = leads.map(l => [l.email.toLowerCase().trim()]);
+    // 3. Upload SHA-256 hashov normalizovaných e-mailov (nie čistých adries)
     const uploadRes = await fetch(`${META_API_BASE}/${audienceId}/users`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -102,10 +107,10 @@ export async function POST(request: Request) {
     return NextResponse.json({
       audienceId,
       audienceName,
-      size: leads.length,
+      size: emailsPayload.length,
       status:     "creating",
       lookalikeId: laData.id ?? undefined,
-      message:    `Custom Audience vytvorená z ${leads.length} emailov. Lookalike spracováva Meta (24–48h).`,
+      message:    `Custom Audience vytvorená z ${emailsPayload.length} emailov. Lookalike spracováva Meta (24–48h).`,
     });
   } catch (err) {
     console.error("[meta/lookalike]", err);

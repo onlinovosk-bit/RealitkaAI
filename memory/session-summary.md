@@ -9,6 +9,40 @@
 ### Ďalší krok
 Founder: Stripe krok C (`bash scripts/ops/stripe-verify-prices.sh --spec`).
 
+## Session 2026-10-02 (GMAIL-PULL-FINISH)
+### Dokončené
+- Gmail pull: trvalý dedup (`agency_gmail_inbound_seen`), fail-closed, okno+stránkovanie, strop tela, rozlíšenie chýb, stopa v `cron_runs`, spúšťač v GitHub Actions (`apps/crm/src/lib/inbound/gmail-pull.ts`, route, migrácia `20261002090000`, `.github/workflows/gmail-inbound-pull.yml`).
+- Strážca `tests/verification/gmail-pull-boundaries.verification.test.ts` + 7 mutácií (1 prežila → opravené).
+- GDPR posúdenie `docs/architecture/inbound-gmail-pull-gdpr.md` (skill gdpr-advisor nebol dostupný), runbook §6–8.
+- Smolkovo NDR z 1.10.: vysvetlené, koncept odpovede odoslal founder.
+### Rozpracované / Pending
+- Aktivácia (nič nebeží v PROD): Google Cloud client + Smolkov súhlas + filter→štítok, migrácia do PROD, GitHub secrets, env vo Verceli, dual-run, DPA dodatok.
+- Token v env = pilot 1 tenanta; šifrovaná tabuľka a odpojenie v UI (fáza B) nerobené.
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/inbound/gmail-pull.ts`, `apps/crm/src/app/api/inbound/gmail-pull/route.ts`, `apps/crm/supabase/migrations/20261002090000_gmail_inbound_seen.sql`, `.github/workflows/gmail-inbound-pull.yml`, `docs/runbooks/gmail-pull-setup.md`, `docs/architecture/inbound-gmail-pull-gdpr.md`.
+### Ďalší krok
+Founder: GO na aplikáciu migrácie v PROD + rozhodnutie o Google režime (In production unverified pre pilot).
+
+## Session 2026-10-01 (META-LOOKALIKE-HASH)
+### Dokončené
+- `api/meta/lookalike`: do Meta idú SHA-256 hashe normalizovaných (trim + lowercase) e-mailov, nie čisté adresy (komentár to tvrdil, kód nie — PII-GATE-AUDIT B1). Nová `lib/meta/hash-email.ts` (`hashEmailForMeta`, `hashedEmailRows`): dedupe, preskočí null/prázdne/neplatné (predtým `l.email.toLowerCase()` na null zhodilo route), pri prázdnom zozname 400 bez volania Meta.
+- Testy: route (3) + helper (3). Mutation proof: bez hashu, bez dedupe, bez filtra, bez null-kontroly, bez 400, hash bez normalizácie → červené; dve mutácie sú ekvivalentné (normalizácia je zámerne dvakrát — v riadku aj v hash funkcii).
+- `prepush-gate` PASS; typecheck 49 (môj test najprv pridal 5 chýb, opravené).
+### Rozpracované / Pending
+- **Neoverené voči Meta:** `schema: ["EMAIL"]` s už zahashovanými hodnotami som nemohol vyskúšať (bez prístupu k Meta API). Overiť na testovacom ad accounte pred ostrým použitím.
+- **Súhlas (čl. 6(1)(a)) NIE JE vyriešený** — hashovanie nie je anonymizácia; hashované e-maily sú stále osobné údaje. Ide o `leads_demo` (vlastní prospekti Revolisu). Rozhodnutie o právnom základe je founderovo.
+- Route chráni `CRON_SECRET` bearer, ale UI (`AcquisitionHub.tsx`) ju volá z prehliadača bez neho → v praxi vždy 401 (nezmenené, mimo scope).
+### Ďalší krok
+Founder: rozhodnúť o súhlase/právnom základe pre Meta audience; potom GO LOG-PII-CLEANUP.
+## Session 2026-10-01 (OBSIDIAN-GRAPH-DEFAULTS)
+### Dokončené
+- Exportér zapisuje `.obsidian/graph.json`: filter bez `HOME`/`Decision-Index`/`Session-Index`/`Dashboard` + farby podľa tagu (`kind/prod` červená, `decision` modrá, `session` oranžová, `ops` zelená). Zapíše sa len ak súbor chýba/je nedotknutý; upravený sa nikdy neprepíše. 16 testov.
+### Rozpracované / Pending
+- Founder: spustiť export, graf zatvoriť a znova otvoriť. NEOVERENÉ v reálnom Obsidiane (formát graph.json podľa verzie 1.13).
+### Kľúčové súbory zmenené
+- `scripts/vault/{lib,export-vault,vault.test}.mjs`, `docs/OBSIDIAN-VAULT-ACTIVATION.md`
+### Ďalší krok
+Vercel limit nasadení (blokuje bod 10 SCOREBOARD) — rozhodnutie foundera.
 ## Session 2026-10-01 (CI-FIX 2: idempotentná stena)
 ### Dokončené
 - Stena `20261001160500` prepísaná na idempotentnú (CI padlo na chýbajúcom `v_genome_calibration`).
