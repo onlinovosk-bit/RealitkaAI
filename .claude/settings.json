@@ -61,14 +61,6 @@
     ]
   },
   "hooks": {
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/evidence-gate.sh",
-            "timeout": 5
-          }
     "SessionStart": [
       {
         "hooks": [
@@ -97,6 +89,11 @@
             "type": "command",
             "command": "cat \"${CLAUDE_PROJECT_DIR:-.}/.claude/WALL-RULES.md\" 2>/dev/null || true",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/evidence-gate.sh",
+            "timeout": 5
           }
         ]
       }
@@ -108,6 +105,17 @@
           {
             "type": "command",
             "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/working-agreement.sh\" webhook 2>/dev/null || true",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/session-progress.sh\" stop 2>/dev/null || true",
             "timeout": 10
           }
         ]

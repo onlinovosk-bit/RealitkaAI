@@ -13,6 +13,24 @@
 | Tenantová izolácia | 15 | 28 z 40 ciest zavretých | 70 % | nič naliehavé (zoznam nižšie) |
 | Schéma + nasadenie | 10 | schéma ~98 % · nasadenie blokuje Vercel limit | 50 % | Vercel Pro alebo čakanie 24 h |
 
+<!-- SESSION:START -->
+## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)
+Cieľ: Demand OS — D1 + D4 v PROD, merané
+> % = podiel hotových míľnikov (rovnaká váha, nie odhad práce). Míľnik sa odškrtne iba s dôkazom z toho istého turnu.
+- [x] D1 kód + Demand Contract v1 (#749)
+- [x] PII oprava LLM volaní (#750)
+- [x] Audit + kontrakt D1→D4 + Truth Matrix (#745)
+- [x] MEMORY-GUARD (#766)
+- [x] D4 matching kód (#769)
+- [x] Backfill vstup z historických e-mailov (#770)
+- [x] PROD migrácie D1 + D4 (overené 2026-10-02: tabuľky `lead_demands`, `demand_property_matches` existujú, 0 riadkov)
+- [ ] Anthropic v DPA + `/legal/sub-processors` (founder/právnik)
+- [ ] Backfill beh nad e-mailmi + gold labels + `score` (founder)
+- [ ] D1 verdikt PASS (z výstupu `score`)
+- [ ] `DEMAND_EXTRACTION_ENABLED` na PROD + zmerané
+- [ ] `DEMAND_MATCHING_ENABLED` + `demand-match-run --apply`
+<!-- SESSION:END -->
+
 ## Čo potrebujem od teba (zoradené podľa dopadu)
 1. **Stripe krok C** — vytvoriť ceny: `bash scripts/ops/stripe-verify-prices.sh --spec` → potom pošli výstup `…verify-prices.sh`; overenie spravím ja. *(+30 bodov, jediný krok, ktorý odblokuje platiaceho klienta)*
 2. ~~Merge #774~~ ✅ hotovo (`3dc3119`) a **nasadené v produkcii** (overené: deployment READY, 23 riadkov v `inbound_mail_outcomes`, nové `to_agency_mailbox` v logoch, 0× `mail_outcome_write_failed`).
@@ -29,7 +47,7 @@
 ## Otvorené, ale NIE naliehavé (v poradí)
 - 12 funkcií volaných session/cronom (REVOKE bez testu by mohol rozbiť beh) · 193 riadkov `activities` má `agency_id = NULL` (187 historických bez vlastníka + 6 lead-viazaných) — viditeľné len service role, nemažú sa.
 - Retencia 90 dní pre `inbound_mail_outcomes` — mazací cron nebeží.
-- `lead_demands`, `demand_property_matches` chýbajú v PROD (demand vrstva).
+- `lead_demands`, `demand_property_matches` sú v PROD od 2026-10-02 (overené), prázdne: extrakcia aj matching sú vypnuté flagmi.
 - UI `/activities` po zúžení RLS som neotvoril.
 - GDPR: posúdiť, či únik cez `anon` bol incident (rozhodnutie foundera).
 
