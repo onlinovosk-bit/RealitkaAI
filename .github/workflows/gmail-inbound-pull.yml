@@ -1,0 +1,49 @@
+name: Gmail inbound pull
+
+# GMAIL-PULL-FINISH: spúšťač pre /api/inbound/gmail-pull.
+#
+# Prečo GitHub a nie vercel.json: CRM beží na Vercel Hobby, kde cron smie bežať najviac
+# raz denne a deploy so spoločným výrazom častejším než denne sa odmietne. Dopyt, ktorý
+# čaká na pull až do rána, je stratený dopyt.
+#
+# Inertné, kým founder nenastaví OBA: secrets CRM_BASE_URL a CRON_SECRET (repo → Settings →
+# Secrets) A vo Verceli GMAIL_INBOUND_PULL_ENABLED=true. Bez secrets sa job čisto preskočí.
+# Endpoint sám vyžaduje Bearer CRON_SECRET; nič iné tu nie je tajné.
+# Beh z GitHub schedule môže meškať niekoľko minút — pull to znesie (lookback + dedup).
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: gmail-inbound-pull
+  cancel-in-progress: false
+
+jobs:
+  pull:
+    name: Pull labeled Gmail
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Call pull endpoint
+        env:
+          CRM_BASE_URL: ${{ secrets.CRM_BASE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRM_BASE_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "::notice::CRM_BASE_URL / CRON_SECRET nie sú nastavené — pull sa preskakuje."
+            exit 0
+          fi
+          code=$(curl -sS -o /tmp/pull.json -w '%{http_code}' --max-time 90 \
+            -X POST "${CRM_BASE_URL%/}/api/inbound/gmail-pull" \
+            -H "Authorization: Bearer ${CRON_SECRET}")
+          echo "HTTP ${code}"
+          # Telo odpovede nesie iba počty a kódy chýb (žiadny obsah správ ani token).
+          cat /tmp/pull.json; echo
+          case "$code" in
+            2*) ;;
+            *) echo "::error::gmail-pull vrátil HTTP ${code}"; exit 1 ;;
+          esac

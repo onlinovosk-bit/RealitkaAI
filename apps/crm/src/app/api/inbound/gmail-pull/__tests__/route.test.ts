@@ -2,6 +2,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 const mockPull = vi.fn();
+const mockRecord = vi.fn();
+const mockClient = vi.fn();
+
+vi.mock("@/lib/supabase/admin", () => ({ createServiceRoleClient: () => mockClient() }));
+vi.mock("@/lib/ops/cron-run", async (orig) => ({
+  ...(await orig<typeof import("@/lib/ops/cron-run")>()),
+  recordCronRun: (...args: unknown[]) => mockRecord(...args),
+}));
 
 vi.mock("@/lib/inbound/gmail-pull", () => ({
   runGmailInboundPull: (...args: unknown[]) => mockPull(...args),
@@ -20,6 +28,8 @@ describe("POST /api/inbound/gmail-pull", () => {
     vi.clearAllMocks();
     vi.stubEnv("CRON_SECRET", "fixture-cron");
     mockPull.mockResolvedValue({ ok: true, pulled: 0, posted: 0, errors: [] });
+    mockClient.mockReturnValue({});
+    mockRecord.mockResolvedValue(null);
   });
 
   it("returns 401 without Bearer CRON_SECRET", async () => {
@@ -49,5 +59,42 @@ describe("POST /api/inbound/gmail-pull", () => {
     expect(mockPull).toHaveBeenCalledOnce();
     const body = await res.json();
     expect(body.ok).toBe(true);
+  });
+
+  it("tichý beh bez nových správ nezapisuje do cron_runs", async () => {
+    await GET(req("fixture-cron"));
+    expect(mockRecord).not.toHaveBeenCalled();
+  });
+
+  it("vypnutý pull nezapisuje do cron_runs", async () => {
+    mockPull.mockResolvedValue({ ok: true, skipped: "disabled", pulled: 0, posted: 0, errors: [] });
+    await GET(req("fixture-cron"));
+    expect(mockRecord).not.toHaveBeenCalled();
+  });
+
+  it("beh s novými správami nechá stopu s počtami", async () => {
+    mockPull.mockResolvedValue({ ok: true, pulled: 2, posted: 2, errors: [], alreadySeen: 5, outsideLabel: 0 });
+    const res = await GET(req("fixture-cron"));
+    expect(res.status).toBe(200);
+    expect(mockRecord).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ job: "gmail-inbound-pull", status: "ok", eligible: 2, written: 2, failed: 0 }),
+    );
+  });
+
+  it("vypršaný token: 503 a stopa s dôvodom (jediný signál, že dopyty prestali chodiť)", async () => {
+    mockPull.mockResolvedValue({ ok: false, error: "oauth_refresh_failed:invalid_grant" });
+    const res = await GET(req("fixture-cron"));
+    expect(res.status).toBe(503);
+    expect(mockRecord).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ status: "failed", firstError: "oauth_refresh_failed:invalid_grant" }),
+    );
+  });
+
+  it("zlyhanie aj zápisu stopy vráti 500, aby chyba nezostala nemá", async () => {
+    mockPull.mockResolvedValue({ ok: false, error: "gmail_list_failed" });
+    mockRecord.mockResolvedValue("db down");
+    expect((await GET(req("fixture-cron"))).status).toBe(500);
   });
 });
