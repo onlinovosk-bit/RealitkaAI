@@ -1,3 +1,16 @@
+## Session 2026-10-02 (PLATBY-E2E implementácia)
+### Dokončené
+- `apps/crm/src/lib/billing-lifecycle.ts` + volanie v `api/billing/webhook/route.ts`: zrušenie, zmena miest a zlyhaná platba sa premietajú do `agencies` (stav zo `subscriptions.retrieve`, nie z udalosti). Chyba → 500, Stripe zopakuje.
+- `STRIPE_WEBHOOK_SECRET` v `DEGRADED_WITHOUT` (`config/env.ts`); `webhookSecretConfigured` v `/api/billing/checkout-config`.
+- Testy: `src/lib/__tests__/billing-lifecycle.test.ts` (15), `env-validate.test.ts` upravený; mutation proof 9/9; `prepush-gate` PASS.
+- `docs/STATUS.md` (riadok platieb), `docs/reports/2026-10-02-platby-e2e-implementacia.md`.
+### Rozpracované / Pending
+- PROD neoverené: webhook endpoint a udalosti v Stripe, `STRIPE_WEBHOOK_SECRET` vo Vercel, ceny (krok C). Stará cesta `planKey` (F3) nezmenená.
+### Kľúčové súbory zmenené
+- apps/crm/src/lib/billing-lifecycle.ts, apps/crm/src/app/api/billing/webhook/route.ts, apps/crm/src/config/env.ts, apps/crm/src/app/api/billing/checkout-config/route.ts
+### Ďalší krok
+Founder: Stripe krok C a `STRIPE_WEBHOOK_SECRET`; potom smoke nákup a zrušenie.
+
 ## Session 2026-10-02 (RAU Leverage track L01–L05)
 ### Dokončené
 - `docs/rau/leverage/` (L01–L05 + README): päť read-only promptov z nápadu zo screenshotov, vlastné formulácie; „Execution Engine" sa nestavia (je to existujúce RAU). Ústava v2: Q1 veto, skóre ≈ 2/12 → REJECT; GO prišlo pred kontrolou, potvrdenie čaká na foundera.
