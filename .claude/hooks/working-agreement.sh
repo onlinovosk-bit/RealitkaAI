@@ -2,9 +2,12 @@
 # Pracovná dohoda -> kontext modelu. Zdroj pravdy: memory/working-agreement.md
 # (bloky DIGEST a WEBHOOK). Použitie: working-agreement.sh <start|prompt|webhook>
 #
-#   start    SessionStart       celá dohoda (aj po resume/compact)
-#   prompt   UserPromptSubmit   celá dohoda pri každej správe foundera
+#   start    SessionStart       celá dohoda + POSTUP (aj po resume/compact)
+#   prompt   UserPromptSubmit   celá dohoda + POSTUP pri každej správe foundera
 #   webhook  PostToolUse        pravidlo pre webhook (ReadNotifications)
+#
+# POSTUP = celkové % produktu, VYPOČÍTANÉ z tabuľky v docs/STATUS.md (súčet
+# váha x skóre / súčet váh, zaokrúhlené nadol), nie napísané z hlavy.
 #
 # Nikdy nezlyhá hlučne: chyba hooku by session rozbila. Ak chýba súbor alebo
 # blok, vloží sa zabudovaná záložná verzia - hook nesmie ticho nerobiť nič.
@@ -16,6 +19,41 @@ file="$root/memory/working-agreement.md"
 block() { # block <MARKER>
   [ -r "$file" ] || return 0
   sed -n "/<!-- $1:START -->/,/<!-- $1:END -->/p" "$file" | sed "/<!-- $1:/d"
+}
+
+progress() { # POSTUP z docs/STATUS.md; pri chybe vráti poctivé "nedá sa", nikdy ticho nič
+  local f="$root/docs/STATUS.md" calc d t then now age stale="" pct rows parts
+  local rule='Správa s výsledkom bloku alebo otázkou "kde sme" KONČÍ riadkom: Postup: produkt X % -> Y % (+-N b.) | session k/n zadaných blokov hotových. X je číslo z tohto riadku; Y len ak sa zmenila tabuľka, inak X -> X (0 b.). Session = zlomok blokov, ktoré founder v tejto session zadal (GO) a sú hotové s dôkazom, vždy so zlomkom a zoznamom, nikdy holé %. Váhy sú odhad, nie meranie.'
+  if [ ! -r "$f" ]; then
+    printf 'POSTUP: chýba docs/STATUS.md, číslo sa nedá vypočítať. Povedz to; nevymýšľaj ho. %s' "$rule"; return 0
+  fi
+  calc="$(awk -F'|' '
+    function t(s){ gsub(/[*[:space:]]/, "", s); return s }
+    { w = t($3); s = t($5) }
+    w ~ /^[0-9]+$/ && s ~ /^[0-9]+(,[0-9]+)?%$/ {
+      name = $2; gsub(/\*/, "", name); gsub(/^ +| +$/, "", name)
+      sub(/%/, "", s); sub(/,/, ".", s)
+      W += w; S += w * s; n++
+      parts = parts (parts ? "; " : "") name " " s " % (váha " w ")"
+    }
+    END { if (W > 0) printf "%d|%d|%s", n, int(S / W), parts }' "$f" 2>/dev/null)"
+  if [ -z "$calc" ]; then
+    printf 'POSTUP: tabuľku v docs/STATUS.md sa nepodarilo prečítať (stĺpce: blok | váha | stav | skóre). Prepočítaj ručne, povedz že je to ručne; nevymýšľaj. %s' "$rule"; return 0
+  fi
+  rows="${calc%%|*}"; calc="${calc#*|}"; pct="${calc%%|*}"; parts="${calc#*|}"
+  d="$(grep -oE 'Posledná aktualizácia: \*\*[0-9]{4}-[0-9]{2}-[0-9]{2}, [0-9]{2}:[0-9]{2} UTC' "$f" | head -1 | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}, [0-9]{2}:[0-9]{2}')"
+  if [ -n "$d" ]; then
+    t="${d#*, }"; d="${d%%,*}"
+    then="$(date -u -d "$d $t" +%s 2>/dev/null)"; now="$(date -u +%s)"
+    if [ -n "$then" ]; then
+      age=$(( (now - then) / 3600 ))
+      [ "$age" -gt 24 ] && stale=" STARÉ ${age} h: prepočítaj tabuľku v docs/STATUS.md pred uvedením čísla, alebo povedz, že je staré."
+    fi
+    d="k $d $t UTC"
+  else
+    d="dátum poslednej aktualizácie chýba"
+  fi
+  printf 'POSTUP (vypočítané z docs/STATUS.md, %s, %s riadkov): produkt %s %% (zaokrúhlené nadol, odhad). Bloky: %s.%s %s' "$d" "$rows" "$pct" "$parts" "$stale" "$rule"
 }
 
 case "$event" in
@@ -31,6 +69,8 @@ esac
 if [ -z "$text" ]; then
   text="PRACOVNÁ DOHODA: steny, nie skrutky. Jeden blok = jedna správa s dôkazom; na webhooky bez zmeny stavu neodpisuj; memory zapíš raz na konci session; „merguj blok X\" = zmerguj zelené PR toho bloku a over na main. (Záloha: chýba memory/working-agreement.md alebo jeho blok DIGEST.)"
 fi
+
+[ "$event" = "webhook" ] || text="$text"$'\n'"$(progress)"
 
 jq -cn --arg h "$hook" --arg c "$text" '{hookSpecificOutput:{hookEventName:$h,additionalContext:$c}}'
 exit 0
