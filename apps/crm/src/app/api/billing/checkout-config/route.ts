@@ -25,6 +25,8 @@ export async function GET() {
     seatCheckoutAvailable,
     topupCheckoutAvailable,
     checkoutAvailable: seatCheckoutAvailable || topupCheckoutAvailable,
+    // Len boolean (nikdy hodnota): bez webhook secretu platba prejde, ale plán sa neodomkne.
+    webhookSecretConfigured: Boolean(process.env.STRIPE_WEBHOOK_SECRET?.trim()),
     // Env var NAMES only (never values) that are unset or not a valid price_*.
     missingPriceEnvKeys: {
       seat: missingSeatPriceEnvKeys(),

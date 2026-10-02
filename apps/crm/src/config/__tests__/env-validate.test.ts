@@ -4,7 +4,13 @@ import { register } from "../../instrumentation";
 
 const URL_ = "https://x.supabase.co";
 const MIN = { NEXT_PUBLIC_SUPABASE_URL: URL_, NEXT_PUBLIC_SUPABASE_ANON_KEY: "a" };
-const DEGRADABLE = ["CRON_SECRET", "OPENAI_API_KEY", "STRIPE_SECRET_KEY", "SUPABASE_SERVICE_ROLE_KEY"];
+const DEGRADABLE = [
+  "CRON_SECRET",
+  "OPENAI_API_KEY",
+  "STRIPE_SECRET_KEY",
+  "STRIPE_WEBHOOK_SECRET",
+  "SUPABASE_SERVICE_ROLE_KEY",
+];
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -12,7 +18,7 @@ afterEach(() => {
 });
 
 describe("validateEnv", () => {
-  it("accepts URL + anon key; the four optional ones are reported as degraded, not as errors", () => {
+  it("accepts URL + anon key; the five optional ones are reported as degraded, not as errors", () => {
     const r = validateEnv(MIN);
     expect(r.ok).toBe(true);
     expect(r.issues).toEqual([]);
@@ -57,7 +63,11 @@ describe("validateEnv", () => {
 
   it("stops reporting a degraded key once it is set", () => {
     const r = validateEnv({ ...MIN, CRON_SECRET: "c", OPENAI_API_KEY: "o" });
-    expect(r.degraded.map((d) => d.key).sort()).toEqual(["STRIPE_SECRET_KEY", "SUPABASE_SERVICE_ROLE_KEY"]);
+    expect(r.degraded.map((d) => d.key).sort()).toEqual([
+      "STRIPE_SECRET_KEY",
+      "STRIPE_WEBHOOK_SECRET",
+      "SUPABASE_SERVICE_ROLE_KEY",
+    ]);
   });
 
   it("never echoes a received value", () => {
