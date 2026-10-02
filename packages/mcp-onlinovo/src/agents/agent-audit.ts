@@ -19,7 +19,8 @@ export function beginAgentAudit(tool: string, agentId: string, action: string, d
     request_id: audit.request_id,
     log: audit.log,
     finish(extra?: Record<string, unknown>) {
-      audit.finish({ agent_id: agentId, action, verdict: decision.verdict, ...extra });
+      // The guard facts come last: a summary can add detail but never overwrite who acted, what, or the verdict.
+      audit.finish({ ...extra, agent_id: agentId, action, verdict: decision.verdict });
     },
   };
 }
