@@ -4,6 +4,7 @@ import { classifyAiError, reportAiFailure } from "@/lib/ai/ai-failure";
 import { recordAiFailureEvent } from "@/lib/ai/ai-failure-record";
 import { createNotification, type NotificationPriority } from "@/lib/notifications/store";
 import { logAiRecommendation } from "@/lib/moat-capture/log-ai-recommendation";
+import { describeError } from "@/lib/log-safe";
 
 export const NEW_LEAD_REASON_MAX = 180;
 const OWNER_UI_ROLES = ["owner_vision", "owner_protocol"] as const;
@@ -166,6 +167,6 @@ export async function runInboundLeadTriageAndNotify(
       },
     });
   } catch (triageError) {
-    console.error("[acquire.email] triage/notification best-effort failed:", triageError);
+    console.error("[acquire.email] triage/notification best-effort failed:", describeError(triageError));
   }
 }
