@@ -1,3 +1,15 @@
+## Session 2026-10-02 (E2E DÔKAZ)
+### Dokončené
+- **E2E dôkaz prešiel v PROD:** triáž +2,4 s, auto-odpoveď +4,1 s po vytvorení leadu, `inbound.auto_response` = `sent`, `from_domain=revolis.ai` → `after()` funguje a `OUTREACH_FROM_EMAIL` je na overenej doméne. Nasadenie sa odblokovalo samo.
+- Testovací vstup zavretý. SCOREBOARD: 30 % → **60 %** dokázané (75 % vážené).
+### Rozpracované / Pending
+- Bod 5: reálne znenie textu z Resend Logs (1 screenshot). Bod 9: migrácia opt-in default na PROD (moje SQL, GO). Bod 4: kvalita AI návrhu. Bod 7: Smolko reply-to + súhlas.
+- **Nález:** `Revolis Demo` má auto-odpoveď zapnutú + agentúrny e-mail (zmena 1. 10. 11:40 UTC, nie moja) — ponechané, 0 leadov odvtedy.
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md` (len pamäť; PROD: tenant otvorený a zavretý).
+### Ďalší krok
+Jedna stena SMOLKO-LIVE: migrácia opt-in default + reply-to + zapnutie + overenie na prvom reálnom leade (potrebuje od foundera schválený reply-to a súhlas Smolka).
+
 ## Session 2026-10-01 (ZÁVER: nasadenie zablokované + pracovný protokol)
 ### Dokončené
 - Zmergované a živé v PROD: #771, #772, #773. Zmergované v `main`, NEnasadené: #780 (`04563ef`: `after()` vo verejných trasách, stráž, migrácia opt-in default) a #782 (TENANT-GATE-2, iná session).

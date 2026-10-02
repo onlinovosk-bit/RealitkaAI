@@ -1,5 +1,27 @@
 # Critical Decisions Log
 
+## [2026-10-02] E2E DÔKAZ — `after()` vo verejných trasách funguje v PROD; `OUTREACH_FROM_EMAIL` na overenej doméne; SCOREBOARD 60 %
+
+**Nasadenie (oprava skoršieho záveru):** 1. 10. 12:17 UTC Vercel API vrátilo `402` `remaining: 0` s resetom o 24 h. 2. 10. ~06:28 UTC už Vercel nasadzoval (limit sa uvoľnil skôr,
+presná príčina nezistená). Produkčné nasadenia z merge-ov iných session: `3dc3119` (#774) READY, `b534ca5` (#783) vo fronte — **obe obsahujú `04563ef`** (overené `git merge-base --is-ancestor`).
+
+**Test (founder, PowerShell, 2. 10. 06:31:11 UTC)** — lead `f6b49255-…` (`valuation_widget`, testovacia agentúra `8f47808b-…`, príjemca `delivered@resend.dev`):
+- `ai_triage_at` **+2,4 s** (priorita „Stredná"), `auto_response_sent_at` **+4,1 s** (pred opravou: 0 z 1 — ani jedno).
+- `platform_events`: `inbound.auto_response` = **`sent`**, **`from_domain = revolis.ai`**.
+
+**Čo to dokazuje:** (a) triáž → auto-odpoveď dobehnú po odpovedi v PROD, v poradí; (b) odosielateľ sa berie z `OUTREACH_FROM_EMAIL` na `revolis.ai`: reply-to
+testovacej agentúry je `delivered@resend.dev` (nie na `revolis.ai`, takže z neho odosielateľ nevznikol) a `from_domain` nie je ani predvolená `mg.revolis.ai`, ani gmail;
+Resend adresu prijal (`sent`, bez chyby).
+**Čo NEdokazuje:** skutočné znenie textu (Resend Logs — jeden screenshot), doručenie reálnemu klientovi (príjemca bola testovacia adresa Resendu), kvalitu AI návrhu.
+
+**PROD po teste:** tenant `revolis-ar-proof` zatvorený, jeho flag `false`. **Nález:** `Revolis Demo` má `auto_response_enabled = true` a agentúrny e-mail na `revolis.ai`;
+`updated_at` 2026-10-01 11:40:55 UTC (po mojom vypnutí o 09:50) — **nie moja zmena**, 0 leadov odvtedy, ponechané (interná demo agentúra, mohlo byť zámerné). Jej syntetické
+leady (`niekde.sk`) by pri zapnutí odchádzali naostro → riziko bounce-ov. Počet agentúr so zapnutou auto-odpoveďou: **1** (Demo), nie 0.
+
+**SCOREBOARD (aktualizácia, prísne = ✅/10):** ✅ 1, 2, **3**, **6**, 8, **10** (6) · 🟡 4, 5, 9 (3) · ⛔ 7 (1) → **60 % dokázané, 75 % vážené** (bolo 30 % / 55 %).
+Do 100 %: bod 5 (Resend Logs text, 1 screenshot) → 70 % · bod 9 (migrácia opt-in default na PROD, moje SQL na GO) → 80 % · bod 4 (kvalita AI návrhu) → 90 % ·
+bod 7 (Smolko: schválený reply-to + súhlas — obchodný krok foundera) → 100 %.
+
 ## [2026-10-01] Working agreement „celé steny" — POMOCNÉ PRAVIDLO bolo uložené, bolo porušené; kontrolovateľný protokol
 
 **Fakt:** pravidlo je uložené od 2026-09-22 (záznam „Working agreement: whole walls, not screws" nižšie + `CLAUDE.md` direktíva 0) a čítalo sa pri štarte.
