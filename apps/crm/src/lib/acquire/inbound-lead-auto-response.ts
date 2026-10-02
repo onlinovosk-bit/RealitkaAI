@@ -209,9 +209,14 @@ async function attemptInboundAutoResponse(
   }
 
   const sentAt = new Date().toISOString();
+  // `last_contact_at` rides the dedup update rather than a second statement:
+  // the send has confirmed, both columns describe the same event, and one
+  // round trip cannot half-succeed. Ten surfaces read last_contact_at and
+  // nothing wrote it before this (0 of 520 production rows) — see
+  // lib/leads/mark-contacted.ts for the full note.
   const { error: updateError } = await supa
     .from("leads")
-    .update({ auto_response_sent_at: sentAt })
+    .update({ auto_response_sent_at: sentAt, last_contact_at: sentAt })
     .eq("id", leadId)
     .is("auto_response_sent_at", null);
 
