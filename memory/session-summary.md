@@ -1,3 +1,16 @@
+## Session 2026-10-02 (ENV-FAILFAST)
+### Dokončené
+- `apps/crm/src/config/env.ts`: `CRITICAL_ENV_KEYS` + `failFastKeys()` — fail-fast len pre Supabase URL a kľúč, len produkčný runtime (nie preview/dev/test), vypínač `ENV_FAILFAST=off`.
+- `apps/crm/src/instrumentation.ts`: `register()` po logu vyhodí chybu iba pre kritické kľúče; voliteľné premenné štart nikdy nezhodia.
+- Testy 25/25, mutation proof 5/5, prepush-gate PASS (typecheck 49/54, lint).
+### Rozpracované / Pending
+- Vetva stavia na #793 (`normalizeEnv`); PR je stacked na `claude/env-empty-optional`. Founder: merge #793 → potom retarget/merge tohto PR.
+- Produkčný `[env]` log po #793 ešte nezmeraný (`CALENDAR_ICS_URL`); tento PR sa ho nedotýka, lebo voliteľné kľúče nepadajú.
+### Kľúčové súbory zmenené
+- apps/crm/src/config/env.ts, apps/crm/src/instrumentation.ts, apps/crm/src/config/__tests__/env-validate.test.ts
+### Ďalší krok
+Founder: Stripe krok C; merge #784, #793, potom tento PR.
+
 ## Session 2026-10-02 (ENV-EMPTY-OPTIONAL)
 ### Dokončené
 - `config/env.ts`: nový `normalizeEnv` — prázdna alebo whitespace-only premenná = nenastavená; použitý v `validateEnv` aj `getEnv`. Dôvod: produkčný `[env]` log (1. 10.) hlásil jediný drift `CALENDAR_ICS_URL (Invalid input)`, kód tú premennú nikde nečíta a prázdny reťazec pri `z.string().url().optional()` zlyhá.
