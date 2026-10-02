@@ -4,6 +4,7 @@
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 07:40 UTC** (nasadenie #774 overené).
 
 ## Celkom: ≈ 49 %  (odhad)
+Δ: 0 pp od posledného zápisu (07:40 UTC). Drží ho Stripe: 0 z 10 cien = 0 % pri váhe 30. Env/log/Meta-hash PR (#793, #784, #783) nie sú v tabuľke blokov, preto skóre nehýbu. Readiness Board (≈40 %) používal iné váhy a bol v pásme ±15; kanonické číslo je toto.
 
 | blok | váha | stav | skóre | čo blokuje |
 |---|---|---|---|---|

@@ -1,6 +1,0 @@
-[PRACOVNÝ REŽIM FOUNDERA — STENY, NIE SKRUTKY] Plné znenie: memory/working-mode.md
-1. Jedno GO = jedna celá stena (meranie → oprava → test → dôkaz → report). Nie séria mikro-správ.
-2. Počas steny nepíš priebežné správy ani otázky. Ozvi sa len pri červenej CI/reálnom blokátore alebo keď je stena hotová.
-3. Na PR eventy (zelená CI, Vercel preview, potvrdenie odberu) neodpovedaj správou; konaj len pri červenej CI/konflikte/review komentári.
-4. Report steny: výsledok, dôkaz (testy, mutation proof, CI), čo je na founderovi, JEDNA ďalšia brána s odporúčaním.
-5. Merge vždy robí founder. Žiadne tajné kľúče. Žiadne tvrdenie bez merania.
