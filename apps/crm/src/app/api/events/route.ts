@@ -1,13 +1,46 @@
 // ================================================================
 // Revolis.AI — POST /api/events
 // Client-side event beacon endpoint
+//
+// EVENTS-WIRE-01 — prečo tu pribudla validácia:
+//
+// Táto route brala telo ako `as { entityType, eventType, ... }` a posielala ho
+// priamo do insertu. Pretypovanie nie je kontrola: jediný volajúci v appke
+// (tlačidlo na detaile leadu) posielal `{ leadId, signals }`, takže
+// `entity_type` aj `event_type` boli `undefined`, insert padol na NOT NULL,
+// `logEvent` chybu zapísal do `console.error` a route aj tak vrátila `ok: true`.
+// Výsledok: `public.events` mala štyri mesiace 0 riadkov, BRI preto zámerne
+// odmietalo počítať (EVENTS-REVIVE-01) a desať tabuliek AI vrstvy zostalo
+// prázdnych. Jedno tiché `catch` pod jedným `as` zastavilo celú vrstvu.
+//
+// `event_type` navyše NEMÁ v DB CHECK (len `entity_type` ho má), takže preklep
+// v názve by sa zapísal a otrávil pipeline natrvalo. Kód je jediná brána.
 // ================================================================
 import { NextRequest, NextResponse } from 'next/server'
+import { z }                         from 'zod'
 import { createClient }              from '@/lib/supabase/server'
-import { logEvent }                  from '@/lib/events/log-event'
+import { validateBody }              from '@/lib/api-validate'
+import { logEventDetailed }          from '@/lib/events/log-event'
 import { checkIntegrity }            from '@/lib/events/integrity-monitor'
 import { recomputeBRI }              from '@/lib/events/bri-score'
-import type { EntityType, EventType } from '@/types/events'
+import { ENTITY_TYPES, EVENT_TYPES } from '@/types/events'
+import type { EventType }            from '@/types/events'
+
+/**
+ * Schéma ukazuje na uzavreté slovníky v `@/types/events`, nerestatuje ich.
+ * Pridanie typu na jednom mieste tak nemôže nechať API a typy v nezhode.
+ *
+ * `payload` je zámerne `unknown` record bez tvaru — nesie fakt, nie osobné
+ * údaje, a každý producent má vlastné polia.
+ */
+const EventBody = z.object({
+  entityType: z.enum(ENTITY_TYPES),
+  entityId:   z.string().trim().min(1).max(200).optional(),
+  eventType:  z.enum(EVENT_TYPES),
+  // zod 4 vyžaduje aj typ kľúča; jednoargumentový `z.record` je zod 3.
+  payload:    z.record(z.string(), z.unknown()).optional(),
+  sessionId:  z.string().trim().min(1).max(200).optional(),
+})
 
 // Events that trigger BRI recomputation
 const BRI_TRIGGER_EVENTS: EventType[] = [
@@ -34,16 +67,15 @@ export async function POST(request: NextRequest) {
       .single()
     if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
 
-    const body = await request.json() as {
-      entityType: EntityType
-      entityId?:  string
-      eventType:  EventType
-      payload?:   Record<string, unknown>
-      sessionId?: string
-    }
+    const parsed = await validateBody(request, EventBody)
+    if (!parsed.ok) return parsed.response
+    const body = parsed.data
 
-    // Insert event
-    const eventId = await logEvent({
+    // Zápis, a jeho zlyhanie sa NEZAHADZUJE. `logEvent` vracia `null` rovnako
+    // pri „nezapísalo sa" ako pri „politika ma odmietla", a práve tá
+    // nerozlíšiteľnosť držala prázdnu tabuľku. Volajúci musí vedieť, že jeho
+    // event neexistuje — inak sa signál stráca presne tak ako doteraz.
+    const { id: eventId, error: logError } = await logEventDetailed({
       profileId:  profile.id,
       entityType: body.entityType,
       entityId:   body.entityId,
@@ -52,18 +84,25 @@ export async function POST(request: NextRequest) {
       sessionId:  body.sessionId,
     })
 
+    if (logError || !eventId) {
+      return NextResponse.json(
+        { ok: false, error: logError ?? 'Event sa nezapísal.' },
+        { status: 500 },
+      )
+    }
+
     // Side effects (fire-and-forget, don't block response)
     const sideEffects: Promise<unknown>[] = []
 
     // 1. Recompute BRI if triggered
-    if (BRI_TRIGGER_EVENTS.includes(body.eventType) && body.entityId) {
+    if (BRI_TRIGGER_EVENTS.includes(body.eventType as EventType) && body.entityId) {
       sideEffects.push(
         recomputeBRI(body.entityId, profile.id).catch(console.error)
       )
     }
 
     // 2. Check integrity if export action
-    if (INTEGRITY_EVENTS.includes(body.eventType)) {
+    if (INTEGRITY_EVENTS.includes(body.eventType as EventType)) {
       const entityCount = (body.payload?.count as number) ?? 1
       sideEffects.push(
         checkIntegrity(profile.id, user.id, body.eventType, entityCount)
