@@ -1,5 +1,12 @@
 # Critical Decisions Log
 
+## [2026-10-02] HOOKS-MERGE-FIX — dve nezávislé sady hookov sa zišli v `.claude/settings.json`
+
+**Fakt:** `main` medzitým dostal vlastnú sadu hookov z inej session (#792, #796: `working-agreement.sh`, `memory/working-agreement.md`, `WALL-RULES.md`; SessionStart / UserPromptSubmit / PostToolUse na ReadNotifications). Automatický merge `main` do tejto vetvy (5f54ac4, 08:12 UTC) zlúčil `.claude/settings.json` textovo bez konfliktu, ale vznikol **neplatný JSON** (chýbala čiarka) — CI „Lint, test, build" spadlo na `working-protocol-hooks.verification.test.ts` (SyntaxError, pozícia 1780). Bez opravy by sa po merge-i rozbilo načítanie nastavení Claude Code na `main`.
+**Oprava:** `settings.json` zostavený z platného `main` + moje skupiny hookov (permissions nezmenené: allow 43 / deny 12). Hooky z oboch strán ostali — nič z cudzej sady som nemazal.
+**Dôkaz:** 23/23 testov hookov, prepush gate PASS (77 s), v `memory/` 0 zmazaných riadkov voči `main`.
+**Otvorené (rozhodnutie foundera, nie moje):** obe sady hlásia to isté pravidlo („steny, nie skrutky"), takže pri každej správe sa injektujú dvakrát (úspora kontextu vs. redundancia). `push-throttle` (blokácia 2. pushu) je jediná časť, ktorú druhá sada nemá. Zlúčenie do jedného zdroja pravdy = samostatná stena, len na GO.
+
 ## [2026-10-02] WORKING-PROTOCOL-HOOKS — „steny, nie skrutky" vynucuje hook, nie pamäť
 
 **Zadanie foundera:** „Odteraz už iba steny! Ulož si to do pamäti. Ak to nestačí, aby si na to o 20 správ nezabudol, nájdi funkčné riešenie."
