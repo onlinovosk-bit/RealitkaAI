@@ -89,3 +89,40 @@ export class AgentError extends Error {
     this.code = code;
   }
 }
+
+// ── Opportunity (ONL-REVENUE-OPPORTUNITY) ─────────────────────────────────────
+
+export type OpportunityType = "REORDER_WINDOW" | "REACTIVATION_POOL" | "UNPAID_RECOVERY" | "STOCKOUT_LEAK";
+
+export interface EstimatedValue {
+  kind: "ESTIMATE";
+  currency: "EUR";
+  metric: "incremental_net_revenue" | "recovered_net_revenue" | "net_revenue_at_risk";
+  low: number;
+  high: number;
+  /** The assumptions this estimate was computed from. An estimate without its basis is not allowed. */
+  basis: Record<string, number | string>;
+}
+
+export interface PreparedAction {
+  name: "PREPARE_REORDER_AUDIENCE" | "PREPARE_REACTIVATION_AUDIENCE" | "PREPARE_PAYMENT_REMINDER" | "RESTOCK_OR_PAUSE_ADS";
+  tier: 0 | 1 | 3;
+  customer_facing: boolean;
+  requires_approval: boolean;
+  /** BLOCKED = the registry denies the underlying action. HUMAN_ONLY = a person does it outside this system. */
+  execution: "BLOCKED" | "HUMAN_ONLY";
+  blocked_by: string | null;
+}
+
+export interface Opportunity {
+  opportunity_id: string;
+  type: OpportunityType;
+  segment_or_scope: string;
+  evidence: Evidence[];
+  estimated_value: EstimatedValue | null;
+  confidence: Confidence;
+  recommended_next_action: PreparedAction;
+  constraints: string[];
+  expires_at: string;
+  policy_status: PolicyStatus;
+}
