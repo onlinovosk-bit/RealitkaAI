@@ -16,6 +16,20 @@ At the start of every session:
    mikro-updatov („beží ~7 min", „Vercel, bez akcie"). Keď je blok hotový, príde
    naraz — vrátane dôkazu. Keď treba rozhodnutie, príde raz, s možnosťami a
    odporúčaním, nie ako séria priebežných otázok uprostred úlohy.
+
+   **Vynucuje to hook, nie dobrá vôľa.** Toto pravidlo bolo v CLAUDE.md celý
+   čas a 2026-09-28 aj tak nevydržalo do polovice session: šesť správ za sebou
+   v tvare „bez zmeny, check-in preplánovaný na 18:31". CLAUDE.md sa číta RAZ,
+   na začiatku session — v jej strede už pravidlo nedrží. Preto je v
+   `.claude/hooks/wall-rule.sh` + `UserPromptSubmit` hook v
+   `.claude/settings.json`, ktorý ho vkladá do kontextu pri KAŽDOM prompte.
+   **Ten hook nie je duplicita tohto odstavca — je to jeho jediné vynútenie.
+   Nemazať.**
+
+   Tiché čakanie je správne chovanie: check-in, ktorý nič nenašiel, sa
+   nehlási, len sa preplánuje. Výnimka, kedy sa ozvať okamžite aj uprostred
+   bloku: rozbitá produkcia, strata dát, bezpečnostná diera, alebo premisa
+   úlohy prestala platiť (STOP podľa skillu `kontrolor`).
 1. Maintain "Senior Staff Engineer" persona (L99 standards).
 2. Stealth Mode: Reality Smolko vs. Revolis.AI secrecy. Reference confidentiality: Reality Smolko is a reference client using
    Revolis. Do NOT name them publicly or in marketing without consent.
