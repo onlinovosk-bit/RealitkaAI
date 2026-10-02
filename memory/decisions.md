@@ -41,6 +41,117 @@ aby BRI nedostalo vymyslený signál.
 **Pozor na MCP:** `execute_sql` na `DELETE` timeoutuje (čaká na potvrdenie, ktoré v tomto kontexte nepríde).
 Obídené `DO $$ ... $$` blokom. CTE `delete ... where id in (select id from probe)` nefunguje — DELETE nevidí riadok
 vložený v tom istom príkaze (snapshot), hlási `deleted: 0` a riadok zostane.
+## [2026-10-02] HOOKS-MERGE-FIX — dve nezávislé sady hookov sa zišli v `.claude/settings.json`
+
+**Fakt:** `main` medzitým dostal vlastnú sadu hookov z inej session (#792, #796: `working-agreement.sh`, `memory/working-agreement.md`, `WALL-RULES.md`; SessionStart / UserPromptSubmit / PostToolUse na ReadNotifications). Automatický merge `main` do tejto vetvy (5f54ac4, 08:12 UTC) zlúčil `.claude/settings.json` textovo bez konfliktu, ale vznikol **neplatný JSON** (chýbala čiarka) — CI „Lint, test, build" spadlo na `working-protocol-hooks.verification.test.ts` (SyntaxError, pozícia 1780). Bez opravy by sa po merge-i rozbilo načítanie nastavení Claude Code na `main`.
+**Oprava:** `settings.json` zostavený z platného `main` + moje skupiny hookov (permissions nezmenené: allow 43 / deny 12). Hooky z oboch strán ostali — nič z cudzej sady som nemazal.
+**Dôkaz:** 23/23 testov hookov, prepush gate PASS (77 s), v `memory/` 0 zmazaných riadkov voči `main`.
+**Otvorené (rozhodnutie foundera, nie moje):** obe sady hlásia to isté pravidlo („steny, nie skrutky"), takže pri každej správe sa injektujú dvakrát (úspora kontextu vs. redundancia). `push-throttle` (blokácia 2. pushu) je jediná časť, ktorú druhá sada nemá. Zlúčenie do jedného zdroja pravdy = samostatná stena, len na GO.
+
+## [2026-10-02] WORKING-PROTOCOL-HOOKS — „steny, nie skrutky" vynucuje hook, nie pamäť
+
+**Zadanie foundera:** „Odteraz už iba steny! Ulož si to do pamäti. Ak to nestačí, aby si na to o 20 správ nezabudol, nájdi funkčné riešenie."
+**Fakt:** samotný zápis nestačil — pravidlo bolo v `CLAUDE.md` (dir. 0) a v memory od 2026-09-22 a 1. 10. sa porušilo. Preto mechanizmus, ktorý nezávisí od mojej pamäte.
+
+**Čo je nové (`.claude/`):**
+- `working-protocol.md` — kanonický protokol, 8 pravidiel (1 GO = 1 stena; pred ručným krokom foundera prečítať cestu kódu; upozornenie bez zmeny = ticho; 1 memory commit a 1 push na stenu; `Postup: X % → Y %`; nepýtať sa v rámci steny; nič nehádať).
+- `hooks/working-protocol.mjs` — **SessionStart** vloží celý protokol, **UserPromptSubmit** vloží skrátenú verziu pri KAŽDEJ správe foundera (rule je tak vždy v poslednom kontexte, nie 100 správ späť).
+- `hooks/push-throttle.mjs` — **PreToolUse/PostToolUse (Bash)**: druhý `git push` do 20 min je zablokovaný (exit 2) so správou; výnimka `WALL_PUSH_OK=1 git push …` (oprava červeného CI / výslovná požiadavka foundera) + dôvod v odpovedi.
+  Zlyhaný push čas nezapíše (retry po sieťovej chybe sa neblokuje), „git push" v správe commitu/heredoc sa ignoruje, hook je fail-open (vlastná chyba nikdy neblokuje prácu).
+- Zapojené v `.claude/settings.json` aj `apps/crm/.claude/settings.json` (session môže štartovať v podadresári; koreň sa hľadá cez `git rev-parse --show-toplevel`); oprávnenia nedotknuté.
+
+**Dôkaz:** v živej session sa po zápise `settings.json` pri správe foundera hneď objavila injekcia `[PROTOKOL: steny, nie skrutky] …` (hook bežal bez reštartu); `apps/crm/tests/verification/working-protocol-hooks.verification.test.ts`
+23 testov (zapojenie, obsah injekcie, každé rozhodnutie throttle); mutation proof **15/15**; prepush-gate PASS; typecheck 49 (strop 54). Pri písaní test odhalil dve chyby môjho detektora (text v úvodzovkách, zbytočná kontrola zlyhania) — opravené.
+
+**Limity (poctivo):**
+1. Hook pripomína a blokuje push; **nevie vynútiť** „1 GO = 1 stena" ani ticho pri notifikáciách — to je stále na mne, ale je to pri každej správe v kontexte. Kontrola v praxi: ak sa pri správe foundera NEobjaví riadok `[PROTOKOL…]`, hook nebeží (skontrolovať `/hooks`).
+2. Hooky platia pre Claude Code sessions v tomto repe (v tejto už teraz, v nových po merge). Či ich číta aj Cursor/iný nástroj — **nemerané**.
+3. „Bez zmeny" správy na automatické upozornenia z PR vznikajú preto, že session sleduje PR (predvolené). Vypnúť sledovanie memory-only PR môže len founder vetou „nesleduj PR".
+**Vypnutie:** zmazať sekciu `hooks` v oboch `settings.json`.
+
+## [2026-10-02] SMOLKO-LIVE — PRIPRAVENÉ, čaká na 2 vstupy od Smolka (nič v PROD pre Smolka sa nezmenilo)
+
+**Zadanie foundera:** „GO by som dal, ale nemám jeho odpoveď. Zatiaľ to priprav." → Smolko: `auto_response_enabled = false` zostáva, jeho riadok som nemenil.
+
+**Čo je hotové a dokázané (PROD, 2. 10.):** `after()` pipeline (triáž +2,4 s, auto-odpoveď +4,1 s), odosielanie z `revolis.ai`, udalosti `inbound.auto_response`, text bez interného AI zdôvodnenia (kód od #773).
+**Stav Smolka (namerané):** `agencies.email = reality-smolko@revolis.ai` (nastavené 1. 10. 11:40:55 UTC jedným príkazom spolu s Demo → `demo@revolis.ai`; nie ja), `phone = NULL`,
+16 leadov/30 dní (12 s e-mailom, 9 za 7 dní; zdroje: portal, web_form) → **prvý reálny lead s e-mailom čakaj do 1–2 dní** po zapnutí. Default stĺpca v PROD je stále `true`.
+
+**Vstupy, ktoré musia prísť (nič z toho nezistím sám):**
+1. **Súhlas Smolka** s odosielaním potvrdenia ich klientom v ich mene (+ ak chce, schváli znenie — ukážka nižšie).
+2. **Kontaktná adresa, kam majú klienti písať** (+ voliteľne telefón do podpisu). Dve cesty:
+   - **A (odporúčam):** vlastná schránka Smolka. `agencies.email` = ich adresa; odosielateľ ide z `OUTREACH_FROM_EMAIL` na `revolis.ai` (cesta **dokázaná dnes**: testovacia agentúra mala reply-to mimo `revolis.ai`).
+   - **B:** ponechať `reality-smolko@revolis.ai` — **len ak je overené, že odpovede na ňu niekto číta.** Príjem na `revolis.ai` ide cez Cloudflare Email Routing Worker (mimo repa), takže **neviem, kam odpovede
+     na túto adresu dopadnú** (v `inbound_mailboxes` má Smolko 9 schránok na `revolis.ai`, `reality-smolko@revolis.ai` medzi nimi NIE JE). Founder overí v Cloudflare → Email Routing.
+
+**Aktivačný postup (jedna transakcia, spustím po „GO SMOLKO-LIVE" + vstupoch):**
+```sql
+begin;
+alter table public.agencies alter column auto_response_enabled set default false;            -- migrácia 20261001100000 (idempotentná)
+insert into supabase_migrations.schema_migrations (version, name)
+  values ('20261001100000','auto_response_opt_in_default') on conflict do nothing;
+update public.agencies set email = '<KONTAKT>', phone = <TELEFON | null>                    -- len pri ceste A
+  where id = '11111111-1111-1111-1111-111111111111';
+update public.agencies set auto_response_enabled = true
+  where id = '11111111-1111-1111-1111-111111111111' returning id, email, auto_response_enabled;
+commit;
+```
+**Overenie:** hneď po zápise `select auto_response_enabled, email from agencies where id='1111…'`; potom `send_later` o 24 h: `inbound.auto_response` pre Smolka (`sent` + `from_domain=revolis.ai` + `auto_response_sent_at` nie NULL na leade; `failed_*` → dôvod v `reason`).
+**Vypnutie (kill-switch, okamžité, per lead):** `update agencies set auto_response_enabled=false where id='1111…'`. Už odoslané e-maily sa nedajú vrátiť.
+
+**Ukážka, čo dostane Smolkov klient** (agentúra bez priradeného makléra, nízka priorita, portál Nehnuteľnosti.sk — nie návrh e-mailu pre Smolka, podklad pre rozhovor foundera):
+> Predmet: Váš dopyt bol prijatý — Reality Smolko s.r.o.
+> Dobrý deň, {meno},
+> váš dopyt z portálu Nehnuteľnosti.sk mi prišiel. Pozriem sa naň a ozvem sa vám v priebehu dňa.
+> Ak medzitým chcete niečo doplniť alebo sa opýtať, pokojne mi napíšte na {KONTAKT}.
+> Reality Smolko s.r.o.
+(Pri vysokej priorite „ozvem sa vám dnes"; s telefónom pribudne „alebo zavolajte na {telefón}" a riadok telefónu v podpise.)
+
+**Otvorené / nezmerané:** (a) kam pristanú odpovede na `reality-smolko@revolis.ai` (Cloudflare mimo repa); (b) právny rámec (Smolko = prevádzkovateľ, Revolis = sprostredkovateľ; zmluva/súhlas) — `gdpr-advisor` v tejto session nie je dostupný, záznam právneho
+základu doplním pri aktivácii (CLAUDE.md dir. 5); (c) skutočné znenie z Resend Logs ešte nevidené (bod 5); (d) `docs/STATUS.md` (iná session) drží celkový odhad ≈ 40 %, môj SCOREBOARD je užší (prvá reakcia na lead, 60 %) — nie sú to rovnaké meradlá.
+
+## [2026-10-02] E2E DÔKAZ — `after()` vo verejných trasách funguje v PROD; `OUTREACH_FROM_EMAIL` na overenej doméne; SCOREBOARD 60 %
+
+**Nasadenie (oprava skoršieho záveru):** 1. 10. 12:17 UTC Vercel API vrátilo `402` `remaining: 0` s resetom o 24 h. 2. 10. ~06:28 UTC už Vercel nasadzoval (limit sa uvoľnil skôr,
+presná príčina nezistená). Produkčné nasadenia z merge-ov iných session: `3dc3119` (#774) READY, `b534ca5` (#783) vo fronte — **obe obsahujú `04563ef`** (overené `git merge-base --is-ancestor`).
+
+**Test (founder, PowerShell, 2. 10. 06:31:11 UTC)** — lead `f6b49255-…` (`valuation_widget`, testovacia agentúra `8f47808b-…`, príjemca `delivered@resend.dev`):
+- `ai_triage_at` **+2,4 s** (priorita „Stredná"), `auto_response_sent_at` **+4,1 s** (pred opravou: 0 z 1 — ani jedno).
+- `platform_events`: `inbound.auto_response` = **`sent`**, **`from_domain = revolis.ai`**.
+
+**Čo to dokazuje:** (a) triáž → auto-odpoveď dobehnú po odpovedi v PROD, v poradí; (b) odosielateľ sa berie z `OUTREACH_FROM_EMAIL` na `revolis.ai`: reply-to
+testovacej agentúry je `delivered@resend.dev` (nie na `revolis.ai`, takže z neho odosielateľ nevznikol) a `from_domain` nie je ani predvolená `mg.revolis.ai`, ani gmail;
+Resend adresu prijal (`sent`, bez chyby).
+**Čo NEdokazuje:** skutočné znenie textu (Resend Logs — jeden screenshot), doručenie reálnemu klientovi (príjemca bola testovacia adresa Resendu), kvalitu AI návrhu.
+
+**PROD po teste:** tenant `revolis-ar-proof` zatvorený, jeho flag `false`. **Nález:** `Revolis Demo` má `auto_response_enabled = true` a agentúrny e-mail na `revolis.ai`;
+`updated_at` 2026-10-01 11:40:55 UTC (po mojom vypnutí o 09:50) — **nie moja zmena**, 0 leadov odvtedy, ponechané (interná demo agentúra, mohlo byť zámerné). Jej syntetické
+leady (`niekde.sk`) by pri zapnutí odchádzali naostro → riziko bounce-ov. Počet agentúr so zapnutou auto-odpoveďou: **1** (Demo), nie 0.
+
+**SCOREBOARD (aktualizácia, prísne = ✅/10):** ✅ 1, 2, **3**, **6**, 8, **10** (6) · 🟡 4, 5, 9 (3) · ⛔ 7 (1) → **60 % dokázané, 75 % vážené** (bolo 30 % / 55 %).
+Do 100 %: bod 5 (Resend Logs text, 1 screenshot) → 70 % · bod 9 (migrácia opt-in default na PROD, moje SQL na GO) → 80 % · bod 4 (kvalita AI návrhu) → 90 % ·
+bod 7 (Smolko: schválený reply-to + súhlas — obchodný krok foundera) → 100 %.
+
+## [2026-10-01] Working agreement „celé steny" — POMOCNÉ PRAVIDLO bolo uložené, bolo porušené; kontrolovateľný protokol
+
+**Fakt:** pravidlo je uložené od 2026-09-22 (záznam „Working agreement: whole walls, not screws" nižšie + `CLAUDE.md` direktíva 0) a čítalo sa pri štarte.
+Founder 1. 10. ~12:20 UTC: „strašne si mi kúskoval robotu", „uklikal som sa k smrti". **Príčina = dodržanie, nie uloženie.** Ďalšia veta v pamäti by nepomohla.
+
+**Dnešné porušenia (konkrétne, aby sa dali počítať):**
+1. Jedna stena „auto-odpoveď je bezpečná na zapnutie" rozdelená na 4 GO (OPTIN, OPTIN-DEFAULT, OUTREACH-DOMAIN-PROOF, LEAD-PIPELINE-AFTER) + „GO DEPLOY".
+2. Ručný test pre foundera bez predchádzajúceho prečítania celej cesty kódu — `void` v 3 trasách som pri čítaní videl a nespochybnil.
+3. Desiatky správ na automatické upozornenia („Vercel Ready, žiadna akcia") — presne to, čo zakazuje záznam z 22. 9.
+4. Samostatné memory PR uprostred bloku (#779, prvá podoba #780).
+5. Pushe po každom kroku: **12 z 99 nasadení za 24 h bolo z mojej vetvy** (ďalších 87 z iných session). Denný limit Vercel Hobby (100) sa vyčerpal.
+
+**Protokol (kontrolovateľný, platí od teraz):**
+- **P1** Pred návrhom GO napísať celý reťazec „vstup → výstup → dôkaz v PROD" = JEDNA stena. Ak by mala >1 GO, zlúčiť.
+- **P2** Pred žiadosťou o ručný krok foundera prečítať celú cestu kódu a spraviť pre-flight (čo sa môže pokaziť). Až potom prosiť.
+- **P3** Automatické upozornenie bez zmeny stavu = žiadna správa. Ak odpoveď musí byť, najviac jeden riadok, nikdy odsek „žiadna akcia".
+- **P4** Pamäť = jeden commit na konci bloku, v tej istej PR ako kód. Nikdy samostatná memory PR uprostred bloku.
+- **P5** Jeden push na stenu (každý push = nasadenie; limit 100/deň, spoločný pre všetky session).
+- **P6** Každý blok končí riadkom `Postup: X % → Y %` podľa SCOREBOARD.
+- **P7** V rámci schválenej steny sa nepýtať: rozhodnúť, zapísať, pokračovať. Pýtať sa len pri PROD zápise, merge, platbe.
 ## 2026-10-01 — HOT-LEAD-PUSH-AFTER: push pre „Horúci" lead dobehne po odpovedi (BUILD, zúžený rozsah; NEnasadené)
 
 **Rozhodnutie BUILD (brána Ústavy v2):** push „HOT lead — okamžitá akcia" je to, čo maklér dostane v momente, keď má zavolať — priamo retencia.

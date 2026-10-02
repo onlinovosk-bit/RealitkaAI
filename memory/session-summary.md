@@ -23,6 +23,53 @@
 ### Ďalší krok
 Merge #786, potom nasadiť EVENTS-WIRE a overiť na PROD prvý skutočný riadok v `events` z ľudskej práce → neprázdne `lead_scores` po ďalšom okne cronu.
 
+## Session 2026-10-02 (WORKING-PROTOCOL-HOOKS)
+### Dokončené
+- Pravidlo „steny, nie skrutky" je teraz **vynucované hookmi**, nie len zapísané: protokol sa vkladá do kontextu pri štarte a pri každej správe foundera; druhý `git push` do 20 min blokuje `push-throttle` (výnimka `WALL_PUSH_OK=1` + dôvod). 23 testov, mutation proof 15/15, v živej session overené.
+### Rozpracované / Pending
+- Smolko: súhlas + kontaktná adresa → „GO SMOLKO-LIVE". Memory/hooky sú v PR #787 (jeden merge).
+- Ak sa pri správe foundera neobjaví riadok `[PROTOKOL…]`, hook nebeží → `/hooks`.
+### Kľúčové súbory zmenené
+- `.claude/working-protocol.md`, `.claude/hooks/working-protocol.mjs`, `.claude/hooks/push-throttle.mjs`, `.claude/settings.json`, `apps/crm/.claude/settings.json`, `apps/crm/tests/verification/working-protocol-hooks.verification.test.ts`, `memory/*`.
+### Ďalší krok
+„merguj 787" (memory + hooky v jednej PR), potom Smolkova odpoveď.
+
+## Session 2026-10-02 (SMOLKO-LIVE — príprava)
+### Dokončené
+- SMOLKO-LIVE pripravené bez zásahu do PROD pre Smolka: stav zmeraný, aktivačný SQL (1 transakcia), overenie, kill-switch a ukážka textu sú v `memory/decisions.md`.
+### Rozpracované / Pending
+- **Čaká na 2 vstupy od Smolka (cez foundera):** súhlas + kontaktná adresa (cesta A vlastná schránka — odporúčam; B `reality-smolko@revolis.ai` len ak je overené, kam idú odpovede — Cloudflare mimo repa).
+- Potom jedno „GO SMOLKO-LIVE" → ja spravím všetko (migrácia opt-in default + reply-to + zapnutie + overenie o 24 h).
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md` (len pamäť).
+### Ďalší krok
+Smolkova odpoveď → „GO SMOLKO-LIVE".
+
+## Session 2026-10-02 (E2E DÔKAZ)
+### Dokončené
+- **E2E dôkaz prešiel v PROD:** triáž +2,4 s, auto-odpoveď +4,1 s po vytvorení leadu, `inbound.auto_response` = `sent`, `from_domain=revolis.ai` → `after()` funguje a `OUTREACH_FROM_EMAIL` je na overenej doméne. Nasadenie sa odblokovalo samo.
+- Testovací vstup zavretý. SCOREBOARD: 30 % → **60 %** dokázané (75 % vážené).
+### Rozpracované / Pending
+- Bod 5: reálne znenie textu z Resend Logs (1 screenshot). Bod 9: migrácia opt-in default na PROD (moje SQL, GO). Bod 4: kvalita AI návrhu. Bod 7: Smolko reply-to + súhlas.
+- **Nález:** `Revolis Demo` má auto-odpoveď zapnutú + agentúrny e-mail (zmena 1. 10. 11:40 UTC, nie moja) — ponechané, 0 leadov odvtedy.
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md` (len pamäť; PROD: tenant otvorený a zavretý).
+### Ďalší krok
+Jedna stena SMOLKO-LIVE: migrácia opt-in default + reply-to + zapnutie + overenie na prvom reálnom leade (potrebuje od foundera schválený reply-to a súhlas Smolka).
+
+## Session 2026-10-01 (ZÁVER: nasadenie zablokované + pracovný protokol)
+### Dokončené
+- Zmergované a živé v PROD: #771, #772, #773. Zmergované v `main`, NEnasadené: #780 (`04563ef`: `after()` vo verejných trasách, stráž, migrácia opt-in default) a #782 (TENANT-GATE-2, iná session).
+- PROD opt-in: auto-odpoveď vypnutá pre 6 z 7 agentúr (`count(*) from agencies where auto_response_enabled` = 0 po zavretí testovacej).
+### Rozpracované / Pending
+- **Nasadenie blokuje Vercel Hobby limit (100/deň):** API 402, `remaining: 0`, reset **2026-10-02 12:16:54 UTC**. Oprava môjho skoršieho tvrdenia: limit sa NEuvoľňuje po jednom (uvoľnený slot 11:42 hneď zabrala preview cudzej vetvy `claude/brave-bohr-arikv2`). Preview `04563ef` existuje, nepromovať (preview env ≠ produkčné premenné, napr. `OUTREACH_FROM_EMAIL`).
+- **Rozhodnutie foundera (jedno):** Pro plán (okamžite) / čakať do 2026-10-02 12:17 UTC (+ preview nasadenia vetiev `claude/*` vypnúť; `git.deploymentEnabled` podľa dokumentácie berie konkrétne názvy vetiev, maska neoverená; nejasné, či „ignorované" buildy počítajú do limitu).
+- Po nasadení: e2e dôkaz (postup v zázname LEAD-PIPELINE-AFTER) → body 3, 5, 6, 10 na ✅ = 70 % dokázané.
+- Migrácia opt-in default NIE je na PROD (samostatné GO). Smolko reply-to + súhlas. Širšia trieda `void`/`.catch` (14 v 10 súboroch).
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md` (len pamäť, tento záver).
+### Ďalší krok
+Odpoveď „Pro" alebo „čakám" → potom jedna stena: nasadenie + e2e dôkaz.
 ## Session 2026-10-01 (HOT-LEAD-PUSH-AFTER)
 ### Dokončené
 - `apps/crm/src/app/api/leads/[id]/route.ts`: `notifyHotLead` ide cez `runAfterResponse` (predtým `.catch` bez `await`, na serverless sa po odpovedi zmrazil).
