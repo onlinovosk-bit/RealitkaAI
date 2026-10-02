@@ -73,6 +73,11 @@
             "type": "command",
             "command": "cat \"${CLAUDE_PROJECT_DIR:-.}/.claude/WALL-RULES.md\" 2>/dev/null || true",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/progress.sh\" 2>/dev/null || true",
+            "timeout": 5
           }
         ]
       }
@@ -88,6 +93,11 @@
           {
             "type": "command",
             "command": "cat \"${CLAUDE_PROJECT_DIR:-.}/.claude/WALL-RULES.md\" 2>/dev/null || true",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/progress.sh\" 2>/dev/null || true",
             "timeout": 5
           }
         ]
