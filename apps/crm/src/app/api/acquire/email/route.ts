@@ -20,6 +20,7 @@ import {
 import { runInboundLeadTriageAndNotify } from "@/lib/acquire/inbound-lead-triage";
 import { runInboundLeadAutoResponse } from "@/lib/acquire/inbound-lead-auto-response";
 import { INBOUND_REPLY_DRAFT_TIMEOUT_MS, scheduleInboundReplyDraft } from "@/lib/inbound/reply-draft";
+import { describeError } from "@/lib/log-safe";
 import { mailboxLogEvent } from "@/lib/inbound/mailbox-routing";
 import { buildMailOutcomeRow, recordInboundMailOutcome } from "@/lib/inbound/mail-outcome";
 
@@ -491,7 +492,7 @@ export async function POST(req: NextRequest) {
       event_id: ev.eventId,
     });
   } catch (e) {
-    console.error("[acquire.email]", e);
+    console.error("[acquire.email]", describeError(e));
     return NextResponse.json({ ok: false, error: String(e) }, { status: 500 });
   }
 }
