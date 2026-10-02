@@ -284,12 +284,16 @@ read-only textov a jeden záznam v Strategic Backlogu.
 | 5 | Atribúcie (Naval Ravikant a i.) sú tvrdenia autora príspevku; triáda „špecifické know-how + páka + zodpovednosť" je z pamäte modelu, **neoverená**. | — |
 | 6 | **Najväčšie riziko: znova vytlačí krok C.** Track nič nestavia a spúšťa ho len founder. Štyri zo šiestich slepých behov (L01, L03 s testovacím vstupom, L04, L05) samy postavili krok C pred ďalší RAU alebo stavbu; L02 ho uviedol ako zámerné rozhodnutie foundera. | §Dôkaz nižšie |
 
-**Ústava v2:** Q1 NIE → **VETO → max VALIDATE**; Q2, Q3 nie; Q4–Q6 len nepriamo (L01 hľadá moat, ale nové dáta
+**Ústava v2 (12 otázok):** Q1 NIE → **VETO**; Q2, Q3 nie; Q4–Q6 len nepriamo (L01 hľadá moat, ale nové dáta
 nevzniknú); Q7 nižšie ROI ako krok C; Q8 interný track prijateľný, **externý predaj príliš skoro → Backlog**;
-Q9 áno; Q10 pasce: Technology Bias, Feature Trap; Q11, Q12 nie. Skóre sa nepočíta. **Záznam
-(`memory/decisions.md`, 2026-10-02):** *VALIDATE (strop z Q1); founder dal výslovné GO → BUILD len read-only
-prompty a dokumentácia; router, runtime, DB, UI a predaj navonok BACKLOG.* Veto je teda vedome prekročené
-founderom, nie obídené.
+Q9 áno; Q10 pasce: Technology Bias, Feature Trap; Q11, Q12 nie. **Skóre (odhad): ≈ 2 z 12** (Q8 interne a Q9;
+nepriame Q4–Q6 sa nerátajú) → podľa stupnice Ústavy (pod 6) **REJECT**; Q1 navyše stropuje na VALIDATE, čo je
+„over so zákazníkom pred stavbou" — zákazník tu neexistuje. **GO prišlo pred kontrolou Ústavy:** founder dal GO
+skôr, než videl Q1 = NIE a toto skóre. Zmena ostáva len preto, že ide o read-only text, ktorý sa zmaže jedným
+revertom (`docs/rau/leverage/` + backlog položka); **potvrdenie prekročenia je jeho, nie moje.**
+**Záznam (`memory/decisions.md`, 2026-10-02):** *REJECT podľa skóre (≈ 2 z 12, Q1 veto); founder dal GO pred
+kontrolou → BUILD len read-only prompty a dokumentácia, bez routeru, runtime, DB, UI a predaja navonok;
+potvrdenie foundera čaká.*
 
 **Engineering justification** (`docs/architecture/engineering-constitution.md`):
 - **Trigger:** rozšírenie knižnice promptov. **Decision path:** EXTEND (konvencia P22/P23), v **oddelenom adresári**,

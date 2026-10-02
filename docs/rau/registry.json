@@ -543,9 +543,11 @@
       "id": "leverage-external-productization",
       "title": "Predaj RAU / Leverage promptov ako digitálny produkt (kurz, e-book, šablóny)",
       "match": [
-        "(predaj\\w*|predat|predavat\\w*|speniaz\\w*) (rau|leverage|prompt\\w*)",
-        "(kurz|ebook|e-book|sablon\\w*) (z|ako|na zaklade) (rau|leverage|prompt\\w*)",
-        "digitaln\\w* produkt"
+        "\\b(predaj\\w*|predav\\w*|predam\\w*|predat\\w*|spenaz\\w*|spoplatn\\w*|monetiz\\w*|licenc\\w*)\\b.{0,30}\\b(rau(?!:)|leverage|prompt\\w*)\\b",
+        "\\b(kurz\\w*|e-?book\\w*|webinar\\w*)\\b.{0,25}\\b(rau(?!:)|leverage|prompt\\w*)\\b",
+        "\\b(rau(?!:)|leverage|prompt\\w*)\\b.{0,30}\\b(kurz\\w*|e-?book\\w*|webinar\\w*)\\b",
+        "\\b(rau(?!:)|leverage|prompt\\w*)\\b.{0,40}digitaln\\w* produkt",
+        "digitaln\\w* produkt.{0,40}\\b(rau(?!:)|leverage|prompt\\w*)\\b"
       ],
       "veto": "Ústava Q1 (dnešný klient by nezaplatil) a Q8 (príliš skoro); founder 2026-10-02: moduly nie sú digitálny produkt na predaj",
       "unlock": "aspoň jeden platiaci zákazník Revolisu A L01–L04 spustené founderom aspoň raz s rozhodnutím zapísaným v memory/decisions.md; potom nové posúdenie Ústavou v2",

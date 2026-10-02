@@ -78,11 +78,13 @@ spočíta použitie a presnosť).
 
 Päť read-only promptov v `docs/rau/leverage/` (Knowledge DNA, Leverage audit, Productize, Time→Asset,
 Asset Compounder). Sprievodca a poradie: `docs/rau/leverage/README.md`. **Router tento track nepozná** —
-na „spusti Knowledge DNA / L02 / Asset Compounder" vráti `ASK` (nepozná druh práce). Ak founder modul
-**pomenoval**, je to zodpovedaná otázka: nepýtaj sa znova, načítaj len daný súbor `L0X-*.md`, spusti
-jeho blok `PROMPT` a **povedz to** v riadku `RAU route:` (napr. `ASK→L01 (modul pomenoval founder)`). Nie je
-to zníženie rizikovej brány: prompty nič nemenia ani neodosielajú. Pravidlá L-promptov (nič nedomýšľať,
-zakázané vstupy CRM a `memory/people.md`, bez čísel rizika) neobchádzaj. Predaj promptov ako produktu je
+na „spusti Knowledge DNA / L02 / Asset Compounder" vráti `ASK` len preto, že nepozná druh práce (prípadne
+ani projekt). Ak founder modul **pomenoval** a polia `triggers`, `backlog_conflicts` a `quoted_only_triggers`
+sú prázdne, otázku zodpovedal sám: nepýtaj sa znova, načítaj len daný súbor `L0X-*.md`, spusti jeho blok
+`PROMPT` a **povedz to**; do záznamu session zapíš `RAU route: ASK UNKNOWN <projekt> (→L0X, modul pomenoval
+founder)`. Ak je čo i len jedno z tých troch polí neprázdne, ASK ostáva a stojíš — bránu nikdy neznižuješ.
+Prompty nič nemenia ani neodosielajú. Ich pravidlá (nič nedomýšľať, zakázané vstupy CRM a `memory/people.md`,
+meno referenčného klienta sa nahrádza `[REF. KLIENT]`, bez čísel rizika) neobchádzaj. Predaj promptov ako produktu je
 Strategic Backlog (`leverage-external-productization`) — nestav ho.
 
 ## Pevné pravidlá
