@@ -33,6 +33,14 @@
    Tvar: `STAV: celkom ≈NN % (odhad) · Δ ±N pp od posledného zápisu · fronta: …`.
    Ak je Δ = 0, v tej istej správe povedať, čo číslo drží (nie obísť to). Blok, ktorý
    číslo zmení, aktualizuje `docs/STATUS.md` (pravidlo 6 v `WALL-RULES.md`).
+6. **Každá správa o hotovom bloku začína percentami.** Founder sa 2026-10-02
+   pýtal druhýkrát, takže to nie je štýl, ale požiadavka:
+   - **session X %** — koľko z toho, čo bolo v tejto session zadané, je hotové
+     a dokázané. Je to **odhad** a musí byť ako odhad označený.
+   - **produkt Y %** — celkové číslo z `docs/STATUS.md` (vážené bloky).
+     Keď sa blokom zmenilo, `docs/STATUS.md` sa aktualizuje v tom istom PR;
+     keď sa nezmenilo, poviem to.
+   Bez čísel správa nie je hotová, aj keby bol kód hotový.
 
 ## Ako je to vynútené (a prečo to nestačí zapísať)
 
@@ -67,6 +75,7 @@ PRACOVNÁ DOHODA s founderom (memory/working-agreement.md): STENY, NIE SKRUTKY.
 4) „merguj blok X" = zmerguj všetky ZELENÉ PR toho bloku v poradí závislostí (CI zelené na aktuálnom head, clean, expectedHeadSha), over obsah na main, jedna správa. Inak merge len na „merguj N".
 5) Na konci jedna ďalšia úloha s bránou, nie zoznam.
 6) KAŽDÁ správa foundera končí riadkom: STAV: celkom ≈NN % (odhad) · Δ ±N pp od posledného zápisu · fronta: … Číslo vezmi z riadku „AKTUÁLNY STAV" nižšie (z docs/STATUS.md), nepíš ho z hlavy. Ak Δ = 0, povedz čo číslo drží.
+6) KAŽDÁ správa o hotovom bloku ZAČÍNA percentami: „session X % (odhad) · produkt Y %" — X = koľko zo zadania tejto session je hotové a dokázané, Y = celkové číslo z docs/STATUS.md (ak sa blokom zmenilo, aktualizuj STATUS.md v tom istom PR). Bez čísel správa nie je hotová.
 <!-- DIGEST:END -->
 
 <!-- WEBHOOK:START -->
