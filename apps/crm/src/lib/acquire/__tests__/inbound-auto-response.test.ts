@@ -231,4 +231,76 @@ describe("runInboundLeadAutoResponse", () => {
     // interné zdôvodnenie triedenia sa do e-mailu vôbec nepredáva
     expect(sendSpy.mock.calls[0][0]).not.toHaveProperty("aiReason");
   });
+
+  it("stamps last_contact_at in the same update as auto_response_sent_at", async () => {
+    // Ten surfaces read leads.last_contact_at and nothing wrote it: 0 of 520
+    // production rows carried a value on 2026-10-02. The auto-response is one
+    // of exactly two paths that demonstrably reach the lead, and it already
+    // writes a dedup column after a confirmed send — so the contact stamp
+    // rides that statement instead of a second round trip that could
+    // half-succeed.
+    vi.spyOn(sendModule, "sendInboundAutoResponse").mockResolvedValue({ ok: true });
+    const updates: Record<string, unknown>[] = [];
+
+    const supa = {
+      from: (table: string) => {
+        if (table === "leads") {
+          return {
+            select: () => ({
+              eq: () => ({
+                maybeSingle: async () => ({
+                  data: {
+                    auto_response_sent_at: null,
+                    name: "Lead",
+                    assigned_agent: "Demo Makler 1",
+                    ai_priority: "Vysoká",
+                    source: "portal:Nehnuteľnosti.sk",
+                  },
+                  error: null,
+                }),
+              }),
+            }),
+            update: (row: Record<string, unknown>) => {
+              updates.push(row);
+              return { eq: () => ({ is: async () => ({ error: null }) }) };
+            },
+          };
+        }
+        if (table === "agencies") {
+          return {
+            select: (cols: string) => ({
+              eq: () => ({
+                maybeSingle: async () => {
+                  if (cols === "name") return { data: { name: "Smolko" }, error: null };
+                  if (cols === "auto_response_enabled") {
+                    return { data: { auto_response_enabled: true }, error: null };
+                  }
+                  return { data: { email: "office@test.sk", phone: null }, error: null };
+                },
+              }),
+            }),
+          };
+        }
+        return {
+          select: () => ({
+            eq: () => ({
+              maybeSingle: async () => ({ data: null, error: null }),
+              limit: () => ({ maybeSingle: async () => ({ data: null, error: null }) }),
+            }),
+          }),
+        };
+      },
+    } as unknown as SupabaseClient;
+
+    await runInboundLeadAutoResponse(
+      supa,
+      { id: "lead-1", agency_id: "agency-1" },
+      { agencyId: "agency-1", name: "Lead", email: "lead@test.sk" },
+    );
+
+    expect(updates).toHaveLength(1);
+    expect(updates[0]).toHaveProperty("last_contact_at");
+    // One statement, one timestamp: both columns describe the same send.
+    expect(updates[0].last_contact_at).toBe(updates[0].auto_response_sent_at);
+  });
 });

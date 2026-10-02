@@ -46,6 +46,14 @@
    - Hook označí `docs/STATUS.md` staršie ako 24 h ako STARÉ; vtedy ho buď
      prepočítam, alebo napíšem, že je staré. Aktualizácia tabuľky po uzavretom
      bloku zostáva pravidlom samotného `docs/STATUS.md`.
+6. **Každá správa o hotovom bloku začína percentami.** Founder sa 2026-10-02
+   pýtal druhýkrát, takže to nie je štýl, ale požiadavka:
+   - **session X %** — koľko z toho, čo bolo v tejto session zadané, je hotové
+     a dokázané. Je to **odhad** a musí byť ako odhad označený.
+   - **produkt Y %** — celkové číslo z `docs/STATUS.md` (vážené bloky).
+     Keď sa blokom zmenilo, `docs/STATUS.md` sa aktualizuje v tom istom PR;
+     keď sa nezmenilo, poviem to.
+   Bez čísel správa nie je hotová, aj keby bol kód hotový.
 
 ## Ako je to vynútené (a prečo to nestačí zapísať)
 
@@ -84,6 +92,7 @@ PRACOVNÁ DOHODA s founderom (memory/working-agreement.md): STENY, NIE SKRUTKY.
 4) „merguj blok X" = zmerguj všetky ZELENÉ PR toho bloku v poradí závislostí (CI zelené na aktuálnom head, clean, expectedHeadSha), over obsah na main, jedna správa. Inak merge len na „merguj N".
 5) Na konci jedna ďalšia úloha s bránou, nie zoznam.
 6) Každá správa s výsledkom bloku (a odpoveď na „kde sme") KONČÍ riadkom `Postup: produkt X % → Y % (±N b.) · session k/n zadaných blokov hotových`. X vezmi z riadku POSTUP nižšie (počíta ho hook z docs/STATUS.md, nepíš ho z hlavy); nulový posun napíš ako 0 b.; session vždy zlomok so zoznamom.
+6) KAŽDÁ správa o hotovom bloku ZAČÍNA percentami: „session X % (odhad) · produkt Y %" — X = koľko zo zadania tejto session je hotové a dokázané, Y = celkové číslo z docs/STATUS.md (ak sa blokom zmenilo, aktualizuj STATUS.md v tom istom PR). Bez čísel správa nie je hotová.
 <!-- DIGEST:END -->
 
 <!-- WEBHOOK:START -->
