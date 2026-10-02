@@ -220,9 +220,12 @@ dať spätne spojiť s tenantom.
 porušenia iba pohltí do tolerovaného dlhu — vrátane tých dvoch, ktoré sa medzitým
 opravili (`Opravené od baseline: 2`). Stratili by sme jediný dôkaz, že ratchet funguje.
 
-## P1 — RAU (Revolis Agentic University) — základ na vetve, čaká na foundera
+## P1 — RAU (Revolis Agentic University) — základ zmergovaný (#759, 2026-09-30); Leverage track na PR #803
 
-- [ ] Founder: rozhodnúť o merge draft PR s RAU základom — odporúčanie A (`docs/rau/RAU-v1.0.md` §Rozhodnutia foundera)
+- [x] RAU základ zmergovaný do `main` (#759). Rozhodnutia 1–5 v `docs/rau/RAU-v1.0.md` §Rozhodnutia foundera stále čakajú.
+- [ ] Founder: **potvrdiť alebo zrušiť Leverage track (PR #803)** — Ústava Q1 veto + skóre ≈ 2/12 → REJECT; GO prišlo pred kontrolou; zrušenie = zmazať `docs/rau/leverage/` + backlog položku `leverage-external-productization`
+- [ ] Founder: spustiť L01 raz na reálnom zadaní a zapísať, či z toho vzniklo rozhodnutie (jediné meranie užitočnosti; do tej doby NEMERANÉ)
+- [ ] Po prvom reálnom behu L01: zvážiť druh práce `LEVERAGE` v routeri (dnes `ASK`, Ústava Q8); predaj promptov ostáva Strategic Backlog (`leverage-external-productization`)
 - [ ] Founder: Onlinovo.sk a AI Phone Operator (Blueprint §17) — nepotvrdené / odstrániť / potvrdiť
 - [ ] Founder: doplniť fakty pre projekty 03–07 (kto je Nájomná agentúra/Proon, kde žije Mia, YouTube kanály)
 - [ ] Founder: denylist auto-merge pre `docs/rau/**`, `.claude/skills/rau/**`, `scripts/ops/rau-route.mjs` (`.github/scripts/automerge-policy.mjs`, Tier 3)

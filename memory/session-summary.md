@@ -20,6 +20,27 @@ Founder: Stripe krok C (+30 bodov).
 - memory/working-mode.md, memory/preferences.md, .claude/settings.json, .claude/working-mode-reminder.txt
 ### Ďalší krok
 Founder: `GO PLATBY-END-TO-END` (celá stena okolo platieb).
+## Session 2026-10-02 (RAU Leverage track L01–L05)
+### Dokončené
+- `docs/rau/leverage/` (L01–L05 + README): päť read-only promptov z nápadu zo screenshotov, vlastné formulácie; „Execution Engine" sa nestavia (je to existujúce RAU). Ústava v2: Q1 veto, skóre ≈ 2/12 → REJECT; GO prišlo pred kontrolou, potvrdenie čaká na foundera.
+- `docs/rau/registry.json`: backlog položka `leverage-external-productization`; 5 regexov overených tabuľkou 29 fráz (preklep `speniaz` → `spenaz` odhalil až test).
+- `.claude/skills/rau/SKILL.md`: holá žiadosť o modul → ASK ostáva pri akomkoľvek rizikovom poli; inak sa zapíše `RAU route: ASK UNKNOWN <projekt> (→L0X, …)`.
+- `docs/rau/RAU-v1.0.md` §13, `docs/reports/2026-10-02-rau-leverage-blind-run.md`, `apps/crm/tests/verification/rau-leverage.verification.test.ts` (49 testov; RAU suita 152 nezmenená).
+- Dôkaz: dva slepé behy (6 + 6, LLM-sudca; vymyslené/zle prečítané 5 → 2, neoznačené ~14 → ~2), nezávislý review SHIP WITH FIXES (0× P0, 8× P1 opravených), mutácie 76/76 po oprave jednej medzery v teste.
+- Krok C: `--spec` spustené, drift test 10/10. V session nie je Stripe kľúč, CLI ani nástroj → ceny vytvára founder; 3 seat ceny odblokujú `/upgrade`.
+### Rozpracované / Pending
+- Founder: potvrdiť alebo zrušiť Leverage track (PR #803; zrušenie = zmazať `docs/rau/leverage/` + backlog položku).
+- Posledná dávka opráv promptov po behu 2 sa nespustila (NEMERANÉ); užitočnosť L01–L05 NEMERANÁ — jediný test je prvý beh L01 foundera.
+- Krok C (Stripe) ostáva #1; Vercel limit nasadení („more than 100 per day") sa objavil znova na PR #803.
+- Moje chyby: mutačný skript mohol cez symlinky zmazať skutočné súbory (report, decisions) — zachytené pred dosiahnutím, opravené materializáciou a overené hashom; test aj README najprv tvrdili viac, než dokazovali (viď decisions.md).
+### Kľúčové súbory zmenené
+- docs/rau/leverage/*: päť promptov + README
+- docs/rau/registry.json: backlog položka; docs/rau/RAU-v1.0.md: §13; .claude/skills/rau/SKILL.md: odsek Leverage track
+- apps/crm/tests/verification/rau-leverage.verification.test.ts: 49 testov; docs/reports/2026-10-02-rau-leverage-blind-run.md: dôkaz
+- memory/decisions.md, memory/open-tasks.md, docs/STATUS.md
+### Ďalší krok
+Founder: krok C v Stripe (minimum 3 seat ceny), potom výstup `stripe-verify-prices.sh` (nie kľúč) → krok B.
+RAU route: AUTO-SAFE CONTENT rau
 ## Session 2026-10-02 (CRON-ALIVE hardening + EVENTS-WIRE)
 ### Dokončené
 - #786 hardening: strop `cron_runs` 401 zápisu na **(job, rozvrh)** namiesto `job` (falošná hlavička už nepreempuje riadok Vercelu), `user_agent` do `detail`, tvar cronu overený PRED dotazom do DB. Commit `b8eb2ac`, CI 7/7, oba review nálezy odpovedané.

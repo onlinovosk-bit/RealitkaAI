@@ -1,6 +1,7 @@
 # Revolis.AI — STAV NA JEDNEJ STRÁNKE
 
 > Aktualizuje sa **po každom uzavretom bloku** (jeden riadok zmeny hore + tabuľka). Čísla sú merané, kde je uvedený dôkaz;
+> **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 09:40 UTC** (RAU Leverage track — docs-only, % nezmenené).
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 08:30 UTC** (EVENTS-WIRE + CRON-ALIVE, zatiaľ nezmergované).
 
 ## Celkom: ≈ 49 %  (odhad)
@@ -38,6 +39,11 @@
    (produkcia a `main` nikdy). Ak po tomto strop ešte padne, Pro je oprávnené a bude to vidieť na dátach.
    **Neoverené:** či Vercel Hobby licenčne pokrýva komerčný projekt — ak nie, Pro treba bez ohľadu na buildy.
 4. **Resend DNS** (doména `revolis.ai`) + **reply-to** + súhlas Smolka s odosielaním. *(+5 bodov)*
+
+## Hotové 2026-10-02 (docs-only, bez vplyvu na %)
+- **RAU Leverage track (L01–L05):** päť read-only promptov v `docs/rau/leverage/` (znalosti foundera → páka → produkt → majetok), sprievodca, položka v Strategic Backlogu
+  (predaj promptov ako produktu) a testy. **Nič nenasadené, nič nepredávame, užitočnosť NEMERANÁ** — overená je len štruktúra a ochranné pravidlá (49 testov, mutácie 76/76, dva slepé behy, nezávislý review).
+  Podľa Ústavy v2 je to REJECT (skóre ≈ 2/12); GO prišlo pred kontrolou → **čaká na tvoje potvrdenie** (PR #803). Krok C ostáva #1.
 
 ## Hotové dnes (2026-10-01) — s dôkazom
 - **Príjem:** `to_agency_mailbox` vs `to_unmatched` v logu, deterministický Gmail pull; tabuľka `inbound_mail_outcomes` v PROD (RLS on, 0 politík). Kód čaká na merge (#774).
