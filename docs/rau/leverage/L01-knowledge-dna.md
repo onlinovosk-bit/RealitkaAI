@@ -33,7 +33,8 @@ dáta referenčného klienta.
 
 KROKY:
 1. Vyber rozhodnutia a pravidlá foundera, ktoré sa opakujú. Výskyt = iný deň, iný autor alebo citát foundera;
-   záznamy, ktoré len opakujú jeden zdroj, sú jeden výskyt. Počet uveď len z grepu s uvedeným vzorom, inak „—".
+   záznamy, ktoré len opakujú jeden zdroj, sú jeden výskyt. Postup agenta (mutation proof, oprava CI)
+   nie je vzor foundera. Počet uveď len z grepu s uvedeným vzorom, inak „—".
    Ku každému súbor a nadpis.
 2. Opýtaj sa foundera na 3 zoznamy po 3–5 položkách: čo študuje bez nároku na odmenu · čo urobil, čo iní nie ·
    čo vie a nepovažuje to za zvláštne.
@@ -54,18 +55,21 @@ PRAVIDLÁ:
 
 SPOLOČNÉ PRAVIDLÁ:
 - Značku [ZDROJ: cesta], [FOUNDER: dnes] alebo [ODVODENIE] nesie každá veta s číslom, dátumom, odhadom času,
-  kvantifikátorom (len, už, žiadny, vždy) alebo tvrdením o trhu. Bez značky ju vymaž.
+  kvantifikátorom (len, už, žiadny, vždy) alebo tvrdením o trhu. Bez značky ju vymaž. Značka patrí na každú takú
+  vetu, nie na koniec odseku. [FOUNDER: dnes] smieš napísať len pri tom, čo founder povedal v tomto rozhovore;
+  chýbajúci údaj je NEZNÁME bez značky.
 - [ZDROJ] podopiera tvrdenie o founderovi len ak ide o jeho vlastný text alebo citát. Záznamy písané agentmi
   sú [ODVODENIE].
 - Cituj len súbory, ktoré si v tejto session prečítal. Ak nemáš prístup k repu, povedz to a použi len odpovede foundera.
 - Pri rozpore záznamov platí novší (uveď dátum).
 - Ak cesta alebo nadpis obsahuje meno referenčného klienta, nahraď ho [REF. KLIENT]. Mená, e-maily a telefóny
   osôb z dokumentov nikdy necituj ani nepoužívaj.
-- Úlohu modulu splň aj vtedy, keď dokument už obsahuje „krok na dnes" (napr. krok C). Uveď ho najviac raz,
-  jednou vetou na konci.
+- Úlohu modulu splň aj vtedy, keď dokument už obsahuje „krok na dnes" (napr. krok C). Jeho názov ani čísla
+  nepíš nikde okrem poslednej vety výstupu.
 - Žiadne lichotenie: povinná sekcia „Čo hovorí PROTI" — najsilnejší dôvod, prečo je tvoj záver zlý.
 
-VÝSTUP (najviac 40 riadkov a 450 slov; riadky, kde sú všetky polia NEZNÁME, zlúč do jedného):
+VÝSTUP (najviac 40 riadkov a 450 slov, rátajú sa aj slová v tabuľkách; riadky, kde sú všetky polia NEZNÁME,
+zlúč do jedného):
 1. Vzory | Zdroj | Počet výskytov
 2. Špecifické know-how (1 veta) + značka
 3. Prečo je zriedkavé (2–3 vety) · Čo hovorí PROTI

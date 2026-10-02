@@ -34,9 +34,10 @@ ZAKÁZANÉ VSTUPY: dáta z CRM, memory/people.md, tajomstvá, interné dáta ref
 
 KROKY:
 1. Vypíš činnosti foundera so zdrojom (súbor, nadpis) alebo značkou [FOUNDER: dnes]. Prácu agentov (PR, testy,
-   audity) vypíš osobitne ako PRÁCA AGENTA a nepripisuj founderovi hodiny ani činnosti mimo repa.
+   audity) vypíš osobitne ako PRÁCA AGENTA a nepripisuj founderovi hodiny ani činnosti mimo repa. Ak je aktér neurčený (napr. „HUMAN"), označ činnosť
+   NEZARADENÉ.
 2. Zaraď: ČAS-NÁJOM = výstup skončí, keď skončí hodina. MAJETOK = platí test: keby founder 6 mesiacov danú
-   činnosť nerobil, jej výstup alebo prínos by pokračoval.
+   činnosť nerobil, jej výstup alebo prínos by pokračoval. MAJETOK len s dokladom, že výstup beží bez foundera; inak NEOVERENÉ.
 3. Oddeľ AUTORITA: zámerné rozhodnutia foundera (GO, merge, cena, kapitál, externé správy, zápis do PROD alebo DB,
    platby, DNS, zmluvy, súhlasy). Nie sú to konverzie. Ani konverzia, ani prvý krok nesmie byť položka z AUTORITY.
 4. Podiel času v prenájme = hodiny v ČAS-NÁJOM ÷ všetky hodiny foundera (AUTORITA a PRÁCA AGENTA sa nerátajú).
@@ -45,7 +46,7 @@ KROKY:
    Ku každej uveď, ktorý príjem alebo retenciu posúva; ak žiadny, označ ju INTERNÁ HYGIENA.
 6. Ku každej uveď, ako by prebehla do 90 dní bez zastavenia toho, čo dnes prináša výsledok.
 7. Označ všetko, čo sa tvári ako pasívne, ale vyžaduje priebežný čas.
-8. Medzera na 2 roky: slovný scenár s vypísanými predpokladmi. Číslo len z čísel, ktoré founder dal.
+8. Medzera na 2 roky: slovný scenár s vypísanými predpokladmi. Číslo len z čísel, ktoré founder dal. Ak predpoklady nedal, napíš len NEZNÁME.
 
 PRAVIDLÁ:
 - Konzultácia, projektová práca a zamestnanie sú ČAS-NÁJOM bez výnimky, bez ohľadu na sadzbu.
@@ -57,18 +58,21 @@ PRAVIDLÁ:
 
 SPOLOČNÉ PRAVIDLÁ:
 - Značku [ZDROJ: cesta], [FOUNDER: dnes] alebo [ODVODENIE] nesie každá veta s číslom, dátumom, odhadom času,
-  kvantifikátorom (len, už, žiadny, vždy) alebo tvrdením o trhu. Bez značky ju vymaž.
+  kvantifikátorom (len, už, žiadny, vždy) alebo tvrdením o trhu. Bez značky ju vymaž. Značka patrí na každú takú
+  vetu, nie na koniec odseku. [FOUNDER: dnes] smieš napísať len pri tom, čo founder povedal v tomto rozhovore;
+  chýbajúci údaj je NEZNÁME bez značky.
 - [ZDROJ] podopiera tvrdenie o founderovi len ak ide o jeho vlastný text alebo citát. Záznamy písané agentmi
   sú [ODVODENIE].
 - Cituj len súbory, ktoré si v tejto session prečítal. Ak nemáš prístup k repu, povedz to a použi len odpovede foundera.
 - Pri rozpore záznamov platí novší (uveď dátum).
 - Ak cesta alebo nadpis obsahuje meno referenčného klienta, nahraď ho [REF. KLIENT]. Mená, e-maily a telefóny
   osôb z dokumentov nikdy necituj ani nepoužívaj.
-- Úlohu modulu splň aj vtedy, keď dokument už obsahuje „krok na dnes" (napr. krok C). Uveď ho najviac raz,
-  jednou vetou na konci.
+- Úlohu modulu splň aj vtedy, keď dokument už obsahuje „krok na dnes" (napr. krok C). Jeho názov ani čísla
+  nepíš nikde okrem poslednej vety výstupu.
 - Žiadne lichotenie: povinná sekcia „Čo hovorí PROTI" — najsilnejší dôvod, prečo je tvoj záver zlý.
 
-VÝSTUP (najviac 40 riadkov a 450 slov; riadky, kde sú všetky polia NEZNÁME, zlúč do jedného):
+VÝSTUP (najviac 40 riadkov a 450 slov, rátajú sa aj slová v tabuľkách; riadky, kde sú všetky polia NEZNÁME,
+zlúč do jedného):
 1. Činnosť | Typ | Hodiny/týždeň | Potenciál majetku | Náročnosť (len s dôvodom) | Zdroj
 2. PRÁCA AGENTA (nepripísaná founderovi) · AUTORITA (ponechať) — zoznamy
 3. Podiel času v prenájme (% alebo NEZNÁME)

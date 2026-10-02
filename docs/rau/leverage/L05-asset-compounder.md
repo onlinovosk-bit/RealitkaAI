@@ -51,19 +51,23 @@ PRAVIDLÁ:
 
 SPOLOČNÉ PRAVIDLÁ:
 - Značku [ZDROJ: cesta], [FOUNDER: dnes] alebo [ODVODENIE] nesie každá veta s číslom, dátumom, odhadom času,
-  kvantifikátorom (len, už, žiadny, vždy) alebo tvrdením o trhu. Bez značky ju vymaž.
+  kvantifikátorom (len, už, žiadny, vždy) alebo tvrdením o trhu. Bez značky ju vymaž. Značka patrí na každú takú
+  vetu, nie na koniec odseku. [FOUNDER: dnes] smieš napísať len pri tom, čo founder povedal v tomto rozhovore;
+  chýbajúci údaj je NEZNÁME bez značky.
 - [ZDROJ] podopiera tvrdenie o founderovi len ak ide o jeho vlastný text alebo citát. Záznamy písané agentmi
   sú [ODVODENIE].
 - Cituj len súbory, ktoré si v tejto session prečítal. Ak nemáš prístup k repu, povedz to a použi len odpovede foundera.
 - Pri rozpore záznamov platí novší (uveď dátum).
 - Ak cesta alebo nadpis obsahuje meno referenčného klienta, nahraď ho [REF. KLIENT]. Mená, e-maily a telefóny
   osôb z dokumentov nikdy necituj ani nepoužívaj.
-- Úlohu modulu splň aj vtedy, keď dokument už obsahuje „krok na dnes" (napr. krok C). Uveď ho najviac raz,
-  jednou vetou na konci.
-- Žiadne lichotenie: povinná sekcia „Čo hovorí PROTI" — prečo sa povýšenie neoplatí.
+- Úlohu modulu splň aj vtedy, keď dokument už obsahuje „krok na dnes" (napr. krok C). Jeho názov ani čísla
+  nepíš nikde okrem poslednej vety výstupu.
+- Žiadne lichotenie: povinná sekcia „Čo hovorí PROTI" — najsilnejší dôvod, prečo je tvoj záver zlý (aj záver
+  „nepovyšovať").
 
-VÝSTUP (najviac 40 riadkov a 450 slov; riadky, kde sú všetky polia NEZNÁME, zlúč do jedného):
-1. Výsledok | Cesta | Stupeň | Použitia (kde) | Povýšiť? (áno/nie + dôvod)
+VÝSTUP (najviac 40 riadkov a 450 slov, rátajú sa aj slová v tabuľkách; riadky, kde sú všetky polia NEZNÁME,
+zlúč do jedného):
+1. Výsledok | Cesta | Stupeň | Použitia (kde) | Povýšiť? (áno/nie + vždy dôvod)
 2. Čo NIE JE aktívum a prečo
 3. FACT / RULE / FAILURE z bloku (alebo ODVODENIE)
 4. Najviac jedno aktívum na povýšenie: dôkaz · čo ho odomkne · cena (alebo NEMERANÉ) · Čo hovorí PROTI

@@ -138,7 +138,10 @@ describe("RAU leverage: every prompt carries its safeguards in the right section
         "nahraď ho [REF. KLIENT]",
         "Mená, e-maily a telefóny osôb z dokumentov nikdy necituj ani nepoužívaj",
         "Úlohu modulu splň aj vtedy, keď dokument už obsahuje",
-        "Uveď ho najviac raz",
+        "Jeho názov ani čísla nepíš nikde okrem poslednej vety výstupu",
+        "Značka patrí na každú takú vetu, nie na koniec odseku",
+        "[FOUNDER: dnes] smieš napísať len pri tom, čo founder povedal v tomto rozhovore",
+        "chýbajúci údaj je NEZNÁME bez značky",
         "Žiadne lichotenie: povinná sekcia „Čo hovorí PROTI",
       ]) {
         expect(c, needle).toContain(needle);
@@ -166,6 +169,7 @@ describe("RAU leverage: every prompt carries its safeguards in the right section
     expect(s["KROKY"]).toContain("Ak vieš, že áno, označ COMMODITY");
     expect(s["KROKY"]).toContain("označ NEOVERENÉ");
     expect(s["PRAVIDLÁ"]).toContain("COMMODITY");
+    expect(s["KROKY"]).toContain("Postup agenta (mutation proof, oprava CI) nie je vzor foundera");
     expect(s["PRAVIDLÁ"]).toContain("Ak sa nenájde ani jeden vzor s aspoň 2 výskytmi, povedz to a skonči");
   });
 
@@ -180,6 +184,9 @@ describe("RAU leverage: every prompt carries its safeguards in the right section
       expect(k).toContain("PRÁCA AGENTA");
       expect(k).toContain("INTERNÁ HYGIENA");
     }
+    expect(k2).toContain("ak je aktér neurčený (napr. „HUMAN\"), označ ju NEZARADENÉ");
+    expect(k4).toContain("Ak je aktér neurčený (napr. „HUMAN\"), označ činnosť NEZARADENÉ");
+    expect(k4).toContain("MAJETOK len s dokladom, že výstup beží bez foundera; inak NEOVERENÉ");
     expect(k2).toContain("Neautomatizuj ich a nenavrhuj ich ako upgrade");
     expect(k4).toContain("Nie sú to konverzie. Ani konverzia, ani prvý krok nesmie byť položka z AUTORITY");
     expect(k2).toContain("Index páky = hodiny vo vrstvách KÓD a MÉDIÁ ÷ všetky hodiny foundera");
@@ -198,7 +205,9 @@ describe("RAU leverage: every prompt carries its safeguards in the right section
     expect(s["KROKY"]).toContain("SPÔSOB, ako ju otestovať, nie číslo. Číslo určuje founder");
     expect(s["KROKY"]).toContain("Q1 = NIE → najvyšší výsledok je VALIDATE");
     expect(s["KROKY"]).toContain("BACKLOG bez ohľadu na skóre");
-    expect(s["KROKY"]).toContain("BUILD pridelí len founder");
+    expect(s["KROKY"]).toContain("BUILD pridelí len founder. Q1 alebo Q8 NEZNÁME znamená najviac VALIDATE");
+    expect(s["KROKY"]).toContain("Musí viazať na platiaceho klienta alebo retenciu so zdrojom; inak NEOVERENÉ a najviac VALIDATE");
+    expect(s["PRAVIDLÁ"]).toContain("Úloha, ktorá oslovuje ľudí, smie použiť len kanál so zdrojom; inak je úlohou zistiť kanál");
     expect(s["KROKY"]).toContain("EXTERNÝ PREDAJ vypíš len ako „odložené — Strategic Backlog");
     expect(promptBlock(byId("L03"))).not.toMatch(/zaraď\s+BUILD|zaraď vždy BUILD/);
     expect(s["PRAVIDLÁ"]).toContain("Strategic Backlog");
@@ -210,6 +219,7 @@ describe("RAU leverage: every prompt carries its safeguards in the right section
     expect(s["PRAVIDLÁ"]).toContain("Trakciu nikdy nehľadaj v CRM");
     expect(s["PRAVIDLÁ"]).toContain("Každý predpoklad scenára nesie [FOUNDER] alebo je to otázka");
     expect(s["KROKY"]).toContain("slovný scenár");
+    expect(s["KROKY"]).toContain("Ak predpoklady nedal, napíš len NEZNÁME");
   });
 
   it("L05 counts a use only in real work, promotes one rung on >=2 uses (or nothing) and treats AGENT+ as a proposal", () => {

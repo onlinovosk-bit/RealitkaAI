@@ -34,7 +34,8 @@ ZAKÁZANÉ VSTUPY: dáta z CRM, memory/people.md, tajomstvá, interné dáta ref
 
 KROKY:
 1. Vypíš činnosti, ktoré sa opakujú aspoň 2× (iný deň alebo iný záznam). Ku každej súbor a nadpis.
-2. Činnosť patrí founderovi len ak ju zdroj pripisuje jemu ([FOUNDER] alebo jeho citát). Prácu agentov (PR,
+2. Činnosť patrí founderovi len ak ju zdroj pripisuje jemu ([FOUNDER] alebo jeho citát); ak je aktér neurčený
+   (napr. „HUMAN"), označ ju NEZARADENÉ. Prácu agentov (PR,
    testy, audity) vypíš osobitne ako PRÁCA AGENTA a nepripisuj founderovi hodiny.
 3. Zaraď každú činnosť foundera do JEDNEJ vrstvy. Zmiešanú rozdeľ.
 4. Označ AUTORITA: kroky, ktoré robí founder zámerne (GO, merge, cena, kapitál, externé správy, zápis do PROD
@@ -56,18 +57,21 @@ PRAVIDLÁ:
 
 SPOLOČNÉ PRAVIDLÁ:
 - Značku [ZDROJ: cesta], [FOUNDER: dnes] alebo [ODVODENIE] nesie každá veta s číslom, dátumom, odhadom času,
-  kvantifikátorom (len, už, žiadny, vždy) alebo tvrdením o trhu. Bez značky ju vymaž.
+  kvantifikátorom (len, už, žiadny, vždy) alebo tvrdením o trhu. Bez značky ju vymaž. Značka patrí na každú takú
+  vetu, nie na koniec odseku. [FOUNDER: dnes] smieš napísať len pri tom, čo founder povedal v tomto rozhovore;
+  chýbajúci údaj je NEZNÁME bez značky.
 - [ZDROJ] podopiera tvrdenie o founderovi len ak ide o jeho vlastný text alebo citát. Záznamy písané agentmi
   sú [ODVODENIE].
 - Cituj len súbory, ktoré si v tejto session prečítal. Ak nemáš prístup k repu, povedz to a použi len odpovede foundera.
 - Pri rozpore záznamov platí novší (uveď dátum).
 - Ak cesta alebo nadpis obsahuje meno referenčného klienta, nahraď ho [REF. KLIENT]. Mená, e-maily a telefóny
   osôb z dokumentov nikdy necituj ani nepoužívaj.
-- Úlohu modulu splň aj vtedy, keď dokument už obsahuje „krok na dnes" (napr. krok C). Uveď ho najviac raz,
-  jednou vetou na konci.
+- Úlohu modulu splň aj vtedy, keď dokument už obsahuje „krok na dnes" (napr. krok C). Jeho názov ani čísla
+  nepíš nikde okrem poslednej vety výstupu.
 - Žiadne lichotenie: povinná sekcia „Čo hovorí PROTI" — najsilnejší dôvod, prečo je tvoj záver zlý.
 
-VÝSTUP (najviac 40 riadkov a 450 slov; riadky, kde sú všetky polia NEZNÁME, zlúč do jedného):
+VÝSTUP (najviac 40 riadkov a 450 slov, rátajú sa aj slová v tabuľkách; riadky, kde sú všetky polia NEZNÁME,
+zlúč do jedného):
 1. Činnosť | Vrstva | Hodiny/týždeň | Skóre | Zdroj
 2. PRÁCA AGENTA (nepripísaná founderovi) — zoznam
 3. AUTORITA (ponechať) — zoznam
