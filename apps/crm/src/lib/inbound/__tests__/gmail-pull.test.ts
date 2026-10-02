@@ -9,7 +9,10 @@ import {
   GMAIL_TOKEN_URL,
   gmailListUrl,
   isDmarcReject,
+  lookbackDaysFrom,
+  MAX_BODY_CHARS,
   mapGmailMessageToAcquire,
+  memorySeenStore,
   readGmailInboundConfig,
   runGmailInboundPull,
   type GmailMessage,
@@ -84,8 +87,9 @@ describe("gmail inbound pull (mock-first)", () => {
       env: ENV,
       fetch: fetchFn,
       loadMailbox: async () => MAILBOX,
+      seenStore: memorySeenStore(),
     });
-    expect(result).toEqual({ ok: true, pulled: 2, posted: 2, errors: [] });
+    expect(result).toEqual({ ok: true, pulled: 2, posted: 2, errors: [], alreadySeen: 0, outsideLabel: 0 });
 
     const acquireCalls = posted.filter((c) => c.url.endsWith("/api/acquire/email"));
     expect(acquireCalls).toHaveLength(2);
@@ -117,8 +121,9 @@ describe("gmail inbound pull (mock-first)", () => {
       env: ENV,
       fetch: fetchFn,
       loadMailbox: async () => MAILBOX,
+      seenStore: memorySeenStore(),
     });
-    expect(result).toMatchObject({ ok: true, posted: 0, pulled: 1 });
+    expect(result).toMatchObject({ ok: true, posted: 0, pulled: 1, outsideLabel: 1 });
   });
 
   it("does not call Google when pull is disabled", async () => {
@@ -141,5 +146,117 @@ describe("gmail inbound pull (mock-first)", () => {
     expect(src).not.toContain("profile_google_calendar");
     expect(src).toContain("FORBIDDEN_SCOPE_NEEDLES");
     expect(src).toContain("assertReadonlyScope");
+  });
+});
+
+describe("gmail inbound pull — dokončenie (trvalý dedup, hranice čítania)", () => {
+  type Call = { url: string; init?: RequestInit };
+
+  function harness(opts: { acquireStatus?: number; acquireThrows?: boolean; listIds?: string[] } = {}) {
+    const calls: Call[] = [];
+    const ids = opts.listIds ?? ["msg-dmarc-reject", "msg-plain-inquiry"];
+    const fetchFn: typeof fetch = async (input, init) => {
+      const url = String(input);
+      calls.push({ url, init });
+      if (url === GMAIL_TOKEN_URL) return jsonResponse(fixtures.token_readonly);
+      if (url.includes("/messages?")) return jsonResponse({ messages: ids.map((id) => ({ id })) });
+      if (url.includes("/messages/msg-dmarc-reject")) return jsonResponse(fixtures.message_dmarc_reject);
+      if (url.includes("/messages/msg-plain-inquiry")) return jsonResponse(fixtures.message_plain_inquiry);
+      if (url.includes("/messages/msg-unlabeled")) return jsonResponse(fixtures.message_unlabeled);
+      if (url === "https://crm.test/api/acquire/email") {
+        if (opts.acquireThrows) throw new Error("network");
+        return jsonResponse({ ok: true }, opts.acquireStatus ?? 200);
+      }
+      throw new Error(`unexpected_fetch:${url}`);
+    };
+    return { calls, fetchFn };
+  }
+  const gets = (calls: Call[]) => calls.filter((c) => /\/messages\/[^?]+\?format=full/.test(c.url));
+
+  it("druhý beh už správy zo štítku nesťahuje ani neposiela znova", async () => {
+    const store = memorySeenStore();
+    const first = harness();
+    await runGmailInboundPull({ env: ENV, fetch: first.fetchFn, loadMailbox: async () => MAILBOX, seenStore: store });
+    expect(gets(first.calls)).toHaveLength(2);
+
+    const second = harness();
+    const res = await runGmailInboundPull({ env: ENV, fetch: second.fetchFn, loadMailbox: async () => MAILBOX, seenStore: store });
+    expect(res).toMatchObject({ ok: true, pulled: 0, posted: 0, alreadySeen: 2 });
+    expect(gets(second.calls)).toHaveLength(0);
+    expect(second.calls.some((c) => c.url.endsWith("/api/acquire/email"))).toBe(false);
+  });
+
+  it("správa mimo štítka sa zahodí a zapíše ako vybavená, aby sa nečítala znova", async () => {
+    const store = memorySeenStore();
+    const h = harness({ listIds: ["msg-unlabeled"] });
+    const res = await runGmailInboundPull({ env: ENV, fetch: h.fetchFn, loadMailbox: async () => MAILBOX, seenStore: store });
+    expect(res).toMatchObject({ ok: true, posted: 0, outsideLabel: 1 });
+    expect(h.calls.some((c) => c.url.endsWith("/api/acquire/email"))).toBe(false);
+    expect([...(await store.filterSeen(AGENCY, ["msg-unlabeled"]))]).toEqual(["msg-unlabeled"]);
+  });
+
+  it("dočasná chyba acquire (5xx, 401, sieť) správu NEoznačí — zopakuje sa v ďalšom behu", async () => {
+    for (const opt of [{ acquireStatus: 503 }, { acquireStatus: 401 }, { acquireStatus: 429 }, { acquireThrows: true }]) {
+      const store = memorySeenStore();
+      const h = harness(opt);
+      const res = await runGmailInboundPull({ env: ENV, fetch: h.fetchFn, loadMailbox: async () => MAILBOX, seenStore: store });
+      expect(res).toMatchObject({ ok: true, posted: 0 });
+      expect((res as { errors: string[] }).errors.length).toBe(2);
+      expect((await store.filterSeen(AGENCY, ["msg-dmarc-reject", "msg-plain-inquiry"])).size).toBe(0);
+    }
+  });
+
+  it("trvalé odmietnutie (400) sa zapíše ako vybavené — zlá správa sa nesmie točiť donekonečna", async () => {
+    const store = memorySeenStore();
+    const h = harness({ acquireStatus: 400 });
+    const res = await runGmailInboundPull({ env: ENV, fetch: h.fetchFn, loadMailbox: async () => MAILBOX, seenStore: store });
+    expect(res).toMatchObject({ ok: true, posted: 0, errors: ["acquire_rejected_400", "acquire_rejected_400"] });
+    expect((await store.filterSeen(AGENCY, ["msg-dmarc-reject", "msg-plain-inquiry"])).size).toBe(2);
+  });
+
+  it("pamäť spracovaných správ sa nedá načítať → nič sa nečíta (fail-closed)", async () => {
+    const broken = {
+      filterSeen: async () => {
+        throw new Error("seen_store_read_failed");
+      },
+      markSeen: async () => undefined,
+    };
+    const h = harness();
+    const res = await runGmailInboundPull({ env: ENV, fetch: h.fetchFn, loadMailbox: async () => MAILBOX, seenStore: broken });
+    expect(res).toEqual({ ok: false, error: "seen_store_read_failed" });
+    expect(gets(h.calls)).toHaveLength(0);
+  });
+
+  it("vypršaný token vráti pomenovanú chybu, nie výnimku", async () => {
+    const fetchFn: typeof fetch = async () => jsonResponse({ error: "invalid_grant" }, 400);
+    const res = await runGmailInboundPull({ env: ENV, fetch: fetchFn, loadMailbox: async () => MAILBOX, seenStore: memorySeenStore() });
+    expect(res).toEqual({ ok: false, error: "oauth_refresh_failed:invalid_grant" });
+  });
+
+  it("zoznam je viazaný na štítok aj na časové okno", () => {
+    const url = gmailListUrl(LABEL, { lookbackDays: 5, pageToken: "tok" });
+    expect(url).toContain(`labelIds=${LABEL}`);
+    expect(url).toContain("q=newer_than%3A5d");
+    expect(url).toContain("pageToken=tok");
+    expect(lookbackDaysFrom("5")).toBe(5);
+    expect(lookbackDaysFrom("0")).toBe(3);
+    expect(lookbackDaysFrom("999")).toBe(3);
+    expect(lookbackDaysFrom(undefined)).toBe(3);
+  });
+
+  it("telo správy je orezané na strop", () => {
+    const big = Buffer.from("x".repeat(500_000)).toString("base64url");
+    const msg: GmailMessage = {
+      id: "m",
+      internalDate: "1755165600000",
+      payload: { headers: [], mimeType: "text/plain", body: { data: big } },
+    };
+    expect(mapGmailMessageToAcquire(msg, MAILBOX).email.text.length).toBe(MAX_BODY_CHARS);
+    const html: GmailMessage = {
+      id: "m",
+      internalDate: "1755165600000",
+      payload: { headers: [], mimeType: "text/html", body: { data: big } },
+    };
+    expect(mapGmailMessageToAcquire(html, MAILBOX).email.html.length).toBe(MAX_BODY_CHARS);
   });
 });

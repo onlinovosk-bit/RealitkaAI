@@ -1,6 +1,6 @@
 # Gmail inbound pull — setup pre foundera (V4-B)
 
-Mock-first: `apps/crm/src/lib/inbound/` + `GET|POST /api/inbound/gmail-pull`.
+Mock-first, dokončené pre pilot jedného tenanta (trvalý dedup, spúšťač, stopa v `cron_runs`): `apps/crm/src/lib/inbound/` + `GET|POST /api/inbound/gmail-pull`.
 Testy nevolajú živé Google. Token nikdy do gitu. Iba Preview / 1 test účet.
 Production + zákazník až po tvojom GO.
 
@@ -73,7 +73,38 @@ Očakávaj `200` a `posted >= 1` na správe so štítkom. Lead ide cez
   `tests/verification/inbound-gmail-pull-auth.verification.test.ts` a route unit
   testy vrátane chýbajúceho alebo nesprávneho secretu.
 
-## STOP / follow-up (mimo tento PR)
+## 6. Spúšťač (GMAIL-PULL-FINISH)
 
-- Žiadny `vercel.json` cron. Žiadna token tabuľka / revoke UI (fáza B).
-- Restricted-scope verification = fáza F. Forward na alias tu nevypínaj.
+Vercel Hobby nedovolí cron častejší než denný, takže pull spúšťa GitHub Actions
+`.github/workflows/gmail-inbound-pull.yml` (každých ~10 min, `workflow_dispatch` na ručný beh).
+Repo → Settings → Secrets → Actions: `CRM_BASE_URL` (production URL bez lomítka) a `CRON_SECRET`
+(rovnaký ako vo Verceli). Kým nie sú, job sa čisto preskočí. **Kill switch:** `GMAIL_INBOUND_PULL_ENABLED`
+vo Verceli (`false` → endpoint nič nečíta).
+
+Voliteľne `GOOGLE_GMAIL_INBOUND_LOOKBACK_DAYS` (1–14, default 3): ako ďaleko dozadu hľadá.
+Migrácia `20261002090000_gmail_inbound_seen.sql` musí byť aplikovaná pred zapnutím (inak
+`seen_store_read_failed` a pull nič nečíta — to je zámer).
+
+## 7. Prevádzka a poruchy
+
+- Trvalá stopa: `select * from cron_runs where job='gmail-inbound-pull' order by started_at desc limit 20;`
+  (zapisuje sa iba beh s novými správami alebo chybou).
+- `oauth_refresh_failed:invalid_grant` = token vypršal/odvolaný (aplikácia v *Testing* režime ho ruší po 7 dňoch).
+  Dopyty **neprichádzajú**, kým sa nezíska nový refresh token (§2). Forward na alias preto ostáva zálohou.
+- `seen_store_read_failed` / `seen_store_unavailable` = chýba migrácia alebo DB; pull zámerne nič nečíta.
+- `acquire_rejected_4xx` = ingest odmietol payload natrvalo; správa sa zapíše ako vybavená, aby sa netočila.
+- Odpojenie zákazníka: v Google účte *Zabezpečenie → Aplikácie s prístupom* odobrať „Revolis inbound",
+  vo Verceli zmazať `GOOGLE_GMAIL_INBOUND_REFRESH_TOKEN`, `GMAIL_INBOUND_PULL_ENABLED=false`.
+
+## 8. Cutover so zákazníkom (poradie)
+
+1. Zákazník vytvorí filter portály → štítok `Revolis` (§3). **Preposielanie ešte nevypína.**
+2. Zapnúť pull, 24–48 h dual-run: `last_received_at` sa hýbe, leady sa nezdvojujú (dedup).
+3. Až potom zákazník vypne auto-forward. Alias ostáva ako záloha.
+
+GDPR: pred krokom 2 prejsť `docs/architecture/inbound-gmail-pull-gdpr.md` §5.
+
+## STOP / follow-up
+
+- Token je v env (pilot, 1 tenant). Šifrovaná tabuľka a odpojenie v UI = fáza B návrhu, nerobené.
+- Restricted-scope verification = fáza F. Forward na alias tu nevypínaj, kým nie je dual-run dokázaný.
