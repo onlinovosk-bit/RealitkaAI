@@ -28,26 +28,17 @@ const BUILD = 1
 
 /**
  * Báza pre krok 3 skriptu (`git diff $BASE HEAD -- .`). Bez nej si skript vezme
- * `HEAD^`, a výsledok potom závisí od toho, kde test beží: na CI je to merge
- * ref PR, ktorý apps/crm nemení (PR len s dokumentmi alebo pamäťou), a diff je
- * prázdny, takže skript vyhodnotí „nič sa nezmenilo" a preskočí build. Testy
- * vetiev, ktoré majú dať BUILD, potom zlyhali len v takom PR a lokálne prešli.
- * Koreňový commit zaručuje, že apps/crm sa oproti nemu zmenil; v plytkom klone,
- * kde koreň nie je, skript skončí vetvou „báza nie je dostupná" a tiež buildí.
+ * `HEAD^`, a výsledok potom závisí od toho, kde test beží: CI robí checkout
+ * s `fetch-depth: 2` na merge ref PR, takže PR bez zmeny v apps/crm (dokumenty,
+ * pamäť) má prázdny diff, skript vyhodnotí „nič sa nezmenilo" a preskočí build.
+ * Testy vetiev, ktoré majú dať BUILD, potom zlyhali len v takom PR a lokálne
+ * prešli. Koreňový commit nepomáha: v plytkom klone je „koreňom" hranica
+ * stiahnutej histórie, nie skutočný prvý commit.
+ *
+ * Neexistujúca báza je jediná hodnota nezávislá od histórie: skript skončí
+ * vetvou „báza nie je dostupná" a buildí (neistota znamená buildovať).
  */
-function rootCommit(): string {
-  try {
-    const out = execFileSync('git', ['rev-list', '--max-parents=0', 'HEAD'], {
-      cwd: CRM,
-      encoding: 'utf8',
-      stdio: 'pipe',
-    })
-    return out.split('\n')[0]?.trim() || 'bez-korena'
-  } catch {
-    return 'bez-korena'
-  }
-}
-const BASE_WITH_CHANGES = rootCommit()
+const UNUSABLE_BASE = '0'.repeat(40)
 
 /** Spustí skript s DANÝM prostredím a vráti jeho exit kód. */
 function run(env: Record<string, string>): number {
@@ -64,7 +55,7 @@ function run(env: Record<string, string>): number {
         PATH: process.env.PATH ?? '',
         HOME: process.env.HOME ?? '',
         NODE_ENV: process.env.NODE_ENV ?? 'test',
-        VERCEL_GIT_PREVIOUS_SHA: BASE_WITH_CHANGES,
+        VERCEL_GIT_PREVIOUS_SHA: UNUSABLE_BASE,
         ...env,
       },
     })
