@@ -20,6 +20,41 @@ Founder: Stripe krok C (+30 bodov).
 - memory/working-mode.md, memory/preferences.md, .claude/settings.json, .claude/working-mode-reminder.txt
 ### Ďalší krok
 Founder: `GO PLATBY-END-TO-END` (celá stena okolo platieb).
+## Session 2026-10-01 (HOT-LEAD-PUSH-AFTER)
+### Dokončené
+- `apps/crm/src/app/api/leads/[id]/route.ts`: `notifyHotLead` ide cez `runAfterResponse` (predtým `.catch` bez `await`, na serverless sa po odpovedi zmrazil).
+- `apps/crm/tests/verification/lead-pipeline-after.verification.test.ts`: stráž rozšírená o `notifyHotLead`.
+- `apps/crm/src/app/api/leads/[id]/__tests__/route-hot-push.test.ts`: 5 behaviorálnych testov (poradie voči odpovedi cez zachytené `after()`).
+- Zúžený rozsah dôkazom: `globalEventBus` nemá odberateľov (emit = no-op), HubSpot webhook len loguje, `leads_demo` má 0 riadkov. PROD len SELECT: 8 push odberov / 2 používatelia / 6 Horúcich leadov.
+### Rozpracované / Pending
+- Nasadenie blokuje Vercel Hobby limit 100/deň (SCOREBOARD bod 10); `after()` v PROD stále nedokázané.
+- PR #785 (STARTER-PACK-GUARD) čaká na merge; krok C (Stripe ceny) na founderovi.
+### Kľúčové súbory zmenené
+- apps/crm/src/app/api/leads/[id]/route.ts, apps/crm/tests/verification/lead-pipeline-after.verification.test.ts, apps/crm/src/app/api/leads/[id]/__tests__/route-hot-push.test.ts, memory/decisions.md
+### Ďalší krok
+Počkať na merge a uvoľnenie Vercel limitu, potom e2e beh podľa SCOREBOARDu (bod 3, 5, 6, 10).
+## Session 2026-10-01 (LOG-PII-CLEANUP-2)
+### Dokončené
+- `support/request` a `legal/dpa-request`: oba logy (e-mail aj webhook) idú cez `describeError`; `describeError` navyše maskuje e-maily a dlhé číselné rady v samotnej správe (SMTP chyby píšu „Recipient rejected: <a@b.sk>", webhook môže vrátiť poslané späť). Žiadateľ support/DPA je zákazník, jeho adresa je aj v `replyTo`.
+- **Vyvrátené z auditu (B14):** Resend SDK vracia `ErrorResponse = { message, statusCode, name }` bez príjemcu a chybu nevyhadzuje, takže logy v `neighborhood-watch/subscribe`, `ghostwriter/send-email` zostávajú bezo zmeny. Podmienečné je to len pri `EMAIL_PROVIDER=SMTP`/`BREVO` (neznáme v prod).
+- Test najprv nebol schopný zachytiť pôvodnú chybu (`JSON.stringify` neserializuje vlastnosti `Error`); opravené cez `util.inspect`, potom mutation proof: návrat route súborov → červené, odstránenie maskovania e-mailov → červené.
+### Rozpracované / Pending
+- Postavené na vetve #784 (`claude/log-pii-cleanup`), lebo `describeError` ešte nie je na `main`. Po merge #784 sa PR sám presmeruje na `main`.
+- Stále nezmenené a nepreverené: `calendly` `raw_payload`, nemaskované mená v LLM promptoch (rozhodnutie o minimalizácii je produktové).
+### Ďalší krok
+Merge #784, potom tento PR. Krok C pri Stripe zostáva blokátor č. 1.
+
+## Session 2026-10-01 (LOG-PII-CLEANUP)
+### Dokončené
+- `lib/leads-store.ts`: odstránený `console.log('updateAiRecommendation:', { id, payload, data, error })` (celý riadok z `.select("*")` v produkcii) a z chyby „Unexpected data format" zmizol `JSON.stringify(data)` (chyba putuje do odpovede aj logu).
+- `api/founder/send-legal-update-email`: log už neobsahuje e-mail príjemcu ani celý objekt chyby.
+- Nový `lib/log-safe.ts` (`describeError`: iba názov + správa, bez `details`). Použitý v `acquire/email` a `inbound-lead-triage`, kde sa logoval celý objekt chyby. Dôvod overený na Postgrese 16: `DETAIL` chyby obsahuje celý vkladaný riadok („Failing row contains (…)"), a PostgREST ho nesie v `details`. Ide o preventívnu úpravu; že tieto konkrétne cesty vyhadzujú PostgREST objekt, som nedokázal.
+- Testy 7 (log-safe 4 + pii-log-cleanup 3); mutation proof 5/5.
+### Rozpracované / Pending
+- **Zámerne nezmenené (nepreverené):** Resend logy v `neighborhood-watch/subscribe:56`, `ghostwriter/send-email:68`, `support/request:72`, `legal/dpa-request:65`. Tvar chyby z Resend SDK som nevidel a nenašiel som dôkaz, že nesie príjemcu.
+- Ghostwriter a HubSpot (právny podklad) stále čakajú na founderovo rozhodnutie.
+### Ďalší krok
+Povoliť push `claude/log-pii-cleanup`; potom rozhodnutie o súhlase pri Meta/HubSpot/ghostwriter.
 ## Session 2026-10-02 (pracovná dohoda „steny, nie skrutky" + vynucujúce hooks)
 ### Dokončené
 - **Pracovná dohoda uložená a VYNÚTENÁ** (founder: „ak pamäť nestačí, nájdi funkčné riešenie"). Text v pamäti sám nestačil — pravidlo bolo v CLAUDE.md (direktíva 0) a bolo porušené. Teraz: `memory/working-agreement.md` (zdroj pravdy) + `.claude/hooks/working-agreement.sh` + `hooks` v `.claude/settings.json` (`SessionStart` aj po compact, `UserPromptSubmit` pri každej správe foundera, `PostToolUse` na `ReadNotifications` pri každom prebudení z webhooku). Overené: pipe-test 3 udalostí a záložných vetiev, `jq -e` pre každú, a **hook zaúčinkoval naživo** (po `ReadNotifications` sa vložil kontext WEBHOOK). Neoverené do ďalšej správy foundera: `UserPromptSubmit` (má vložiť riadok „PRACOVNÁ DOHODA").
