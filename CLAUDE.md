@@ -16,6 +16,14 @@ At the start of every session:
    mikro-updatov („beží ~7 min", „Vercel, bez akcie"). Keď je blok hotový, príde
    naraz — vrátane dôkazu. Keď treba rozhodnutie, príde raz, s možnosťami a
    odporúčaním, nie ako séria priebežných otázok uprostred úlohy.
+   **Automatické prebudenia (PR eventy, naplánované kontroly, bot statusy) sú
+   TICHÉ.** Founderovi sa z nich ozvi len keď je niečo rozbité alebo potrebuješ
+   rozhodnutie — nikdy preto, že event prišiel.
+   Toto pravidlo nevynucuje pamäť, ale harness: `memory/working-agreement.md`
+   je zdroj pravdy a `.claude/hooks/working-agreement.sh` ho vkladá na
+   `SessionStart`, `UserPromptSubmit` a — pre pravidlo o mlčaní — na
+   `PostToolUse` po `ReadNotifications` (#796). Dôvod: CLAUDE.md sa pri dlhej
+   session dostane mimo kontext; 2026-10-02 sa tak práca rozsypala na skrutky.
 
    **Vynucujú to hooky, nie dobrá vôľa.** Toto pravidlo bolo v CLAUDE.md celý
    čas a 2026-09-28 aj tak nevydržalo do polovice session: šesť správ za sebou

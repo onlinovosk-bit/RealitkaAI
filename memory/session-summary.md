@@ -1,3 +1,27 @@
+## Session 2026-10-02 (CRON-ALIVE hardening + EVENTS-WIRE)
+### Dokončené
+- #786 hardening: strop `cron_runs` 401 zápisu na **(job, rozvrh)** namiesto `job` (falošná hlavička už nepreempuje riadok Vercelu), `user_agent` do `detail`, tvar cronu overený PRED dotazom do DB. Commit `b8eb2ac`, CI 7/7, oba review nálezy odpovedané.
+- **Vyvrátil som vlastnú diagnózu #786 meraním:** crony BEŽIA (`cron_runs` riadok 03:36:49, status `empty`). Hypotéza „plán Vercelu je blokér" padá. Telo PR aj komentár opravené, vyvrátený záver nechaný označený v zázname.
+- EVENTS-WIRE: `ENTITY_TYPES`/`EVENT_TYPES` ako runtime slovník s derivovanými typmi; zod validácia na `/api/events` (400 bez zápisu, 500 pri zlyhaní, koniec `as` pretypovania); `lead_viewed` zapojené na detaile leadu; demo tlačidlo z vymyslených signálov prepojené na `/api/leads/bri-recompute`; kontaktný pokus loguje `call_initiated`/`message_initiated` service-role klientom. 67/67 testov, mutačný test drží zapojenie.
+- EVENTS-WIRE-02: `logEventClient` oddelený do `log-event-client.ts` — klientský komponent cezeň ťahal `next/headers` a zhodil Vercel build. Dynamický `await import()` nie je pre webpack únik z grafu. Pin drží, že do klientského modulu nepribudne iný než typový import (pin si odstrihne komentáre — tri verzie zhasínali na vlastnom vysvetlení).
+- CI chytilo skutočnú chybu vo fail-soft: v `contact-attempt` som ošetril len chybu VRÁTENÚ z `logEventDetailed`, nie výnimku z `createAdminClient()`. Chýbajúci service-role kľúč by zmenil zaznamenaný pokus na 500 a preskočil počítadlo. Celý blok je teraz v try/catch + 3 nové testy na tú vlastnosť (17/17).
+- VERCEL-IGNORE-BUILD: `apps/crm/scripts/vercel-ignore-build.sh` + `ignoreCommand` — agentné `claude/*` preview buildy sa preskakujú, produkcia a `main` NIKDY (poradie podmienok je bezpečnostné, mutačný test to drží). Dôvod: meranie 100 nasadení = 88 preview / 12 produkčných, ~88 % stropu míňal šum. Opravená aj diera v pôvodnom inline príkaze: bez `VERCEL_ENV` padal rovno na git diff a vedel preskočiť produkciu — neistota teraz znamená buildovať. 10 testov.
+- Percentá vynútené rovnako ako steny: `memory/working-agreement.md` pravidlo 6 + riadok v DIGEST → každá správa o hotovom bloku začína „session X % · produkt Y %". `docs/STATUS.md` 49 % → 52 %.
+- Pracovný režim („steny, nie skrutky") vynútený `UserPromptSubmit` hookom — `.claude/hooks/pracovny-rezim.md`, aby sa nedal vytratiť z kontextu.
+### Rozpracované / Pending
+- #786 čaká na merge (zelený, `clean`).
+- `GO SCHEMA-GAP-PROD` stále polovičný: migrácie na PROD sú, CI brána proti reálnej PROD schéme nie.
+- Vercel je **stále free** — founder NEPREŠEL na Pro (opravil moju chybnú poznámku). Nekupovať kvôli cronom, dôkaz pre to neexistuje.
+### Kľúčové súbory zmenené
+- `apps/crm/src/types/events.ts`: runtime slovníky + derivované typy + `message_initiated`
+- `apps/crm/src/app/api/events/route.ts`: zod validácia, `logEventDetailed`, 500 pri zlyhaní zápisu
+- `apps/crm/src/lib/events/log-event.ts`: `logEventClient` cez `fetch` s prečítaným stavom (koniec tichého beaconu)
+- `apps/crm/src/app/(dashboard)/leads/[id]/page.tsx`: `lead_viewed` na mount, demo tlačidlo na reálny prepočet
+- `apps/crm/src/app/api/leads/[id]/contact-attempt/route.ts`: skromný event + `eventLogError` v odpovedi
+- `apps/crm` testy: `src/lib/events/__tests__/events-wire.test.ts`, `tests/verification/events-wire.verification.test.ts`
+- `.claude/hooks/pracovny-rezim.md`, `.claude/hooks/inject-pracovny-rezim.sh`, `.claude/settings.json`, `CLAUDE.md`
+### Ďalší krok
+Merge #786, potom nasadiť EVENTS-WIRE a overiť na PROD prvý skutočný riadok v `events` z ľudskej práce → neprázdne `lead_scores` po ďalšom okne cronu.
 ## Session 2026-10-02 (ONL-AGENTS: P08 → P09 → P10, tri agentné roly pre onlinovo.sk)
 ### Dokončené
 - **P08** `docs/onlinovo/ONL-AGENTS-P08-AGENT-SPECS.md` (A–L: architektúra, existujúci register, 3 Agent Specs, matice akcií/schvaľovania/pamäte/zlyhaní/eval, UNKNOWN) a **P09** `docs/onlinovo/ONL-AGENTS-P09-IMPLEMENTATION-PLAN.md` (DAG T00–T10, územia zápisu, rollback, STOP podmienky).
