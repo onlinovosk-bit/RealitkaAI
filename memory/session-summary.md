@@ -1,3 +1,14 @@
+## Session 2026-10-02 (WORKING-PROTOCOL-HOOKS)
+### Dokončené
+- Pravidlo „steny, nie skrutky" je teraz **vynucované hookmi**, nie len zapísané: protokol sa vkladá do kontextu pri štarte a pri každej správe foundera; druhý `git push` do 20 min blokuje `push-throttle` (výnimka `WALL_PUSH_OK=1` + dôvod). 23 testov, mutation proof 15/15, v živej session overené.
+### Rozpracované / Pending
+- Smolko: súhlas + kontaktná adresa → „GO SMOLKO-LIVE". Memory/hooky sú v PR #787 (jeden merge).
+- Ak sa pri správe foundera neobjaví riadok `[PROTOKOL…]`, hook nebeží → `/hooks`.
+### Kľúčové súbory zmenené
+- `.claude/working-protocol.md`, `.claude/hooks/working-protocol.mjs`, `.claude/hooks/push-throttle.mjs`, `.claude/settings.json`, `apps/crm/.claude/settings.json`, `apps/crm/tests/verification/working-protocol-hooks.verification.test.ts`, `memory/*`.
+### Ďalší krok
+„merguj 787" (memory + hooky v jednej PR), potom Smolkova odpoveď.
+
 ## Session 2026-10-02 (SMOLKO-LIVE — príprava)
 ### Dokončené
 - SMOLKO-LIVE pripravené bez zásahu do PROD pre Smolka: stav zmeraný, aktivačný SQL (1 transakcia), overenie, kill-switch a ukážka textu sú v `memory/decisions.md`.

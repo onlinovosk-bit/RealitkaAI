@@ -1,5 +1,26 @@
 # Critical Decisions Log
 
+## [2026-10-02] WORKING-PROTOCOL-HOOKS — „steny, nie skrutky" vynucuje hook, nie pamäť
+
+**Zadanie foundera:** „Odteraz už iba steny! Ulož si to do pamäti. Ak to nestačí, aby si na to o 20 správ nezabudol, nájdi funkčné riešenie."
+**Fakt:** samotný zápis nestačil — pravidlo bolo v `CLAUDE.md` (dir. 0) a v memory od 2026-09-22 a 1. 10. sa porušilo. Preto mechanizmus, ktorý nezávisí od mojej pamäte.
+
+**Čo je nové (`.claude/`):**
+- `working-protocol.md` — kanonický protokol, 8 pravidiel (1 GO = 1 stena; pred ručným krokom foundera prečítať cestu kódu; upozornenie bez zmeny = ticho; 1 memory commit a 1 push na stenu; `Postup: X % → Y %`; nepýtať sa v rámci steny; nič nehádať).
+- `hooks/working-protocol.mjs` — **SessionStart** vloží celý protokol, **UserPromptSubmit** vloží skrátenú verziu pri KAŽDEJ správe foundera (rule je tak vždy v poslednom kontexte, nie 100 správ späť).
+- `hooks/push-throttle.mjs` — **PreToolUse/PostToolUse (Bash)**: druhý `git push` do 20 min je zablokovaný (exit 2) so správou; výnimka `WALL_PUSH_OK=1 git push …` (oprava červeného CI / výslovná požiadavka foundera) + dôvod v odpovedi.
+  Zlyhaný push čas nezapíše (retry po sieťovej chybe sa neblokuje), „git push" v správe commitu/heredoc sa ignoruje, hook je fail-open (vlastná chyba nikdy neblokuje prácu).
+- Zapojené v `.claude/settings.json` aj `apps/crm/.claude/settings.json` (session môže štartovať v podadresári; koreň sa hľadá cez `git rev-parse --show-toplevel`); oprávnenia nedotknuté.
+
+**Dôkaz:** v živej session sa po zápise `settings.json` pri správe foundera hneď objavila injekcia `[PROTOKOL: steny, nie skrutky] …` (hook bežal bez reštartu); `apps/crm/tests/verification/working-protocol-hooks.verification.test.ts`
+23 testov (zapojenie, obsah injekcie, každé rozhodnutie throttle); mutation proof **15/15**; prepush-gate PASS; typecheck 49 (strop 54). Pri písaní test odhalil dve chyby môjho detektora (text v úvodzovkách, zbytočná kontrola zlyhania) — opravené.
+
+**Limity (poctivo):**
+1. Hook pripomína a blokuje push; **nevie vynútiť** „1 GO = 1 stena" ani ticho pri notifikáciách — to je stále na mne, ale je to pri každej správe v kontexte. Kontrola v praxi: ak sa pri správe foundera NEobjaví riadok `[PROTOKOL…]`, hook nebeží (skontrolovať `/hooks`).
+2. Hooky platia pre Claude Code sessions v tomto repe (v tejto už teraz, v nových po merge). Či ich číta aj Cursor/iný nástroj — **nemerané**.
+3. „Bez zmeny" správy na automatické upozornenia z PR vznikajú preto, že session sleduje PR (predvolené). Vypnúť sledovanie memory-only PR môže len founder vetou „nesleduj PR".
+**Vypnutie:** zmazať sekciu `hooks` v oboch `settings.json`.
+
 ## [2026-10-02] SMOLKO-LIVE — PRIPRAVENÉ, čaká na 2 vstupy od Smolka (nič v PROD pre Smolka sa nezmenilo)
 
 **Zadanie foundera:** „GO by som dal, ale nemám jeho odpoveď. Zatiaľ to priprav." → Smolko: `auto_response_enabled = false` zostáva, jeho riadok som nemenil.
