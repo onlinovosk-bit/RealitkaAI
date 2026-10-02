@@ -1,3 +1,17 @@
+## Session 2026-10-02 (WORK-STYLE-WALL + overenie nasadenia #774)
+### Dokončené
+- „Iba steny“ vynútené hookmi (`.claude/WALL-RULES.md` + `SessionStart`/`UserPromptSubmit`), zapísané v `memory/preferences.md`.
+- Nasadenie #774 overené: deployment READY, 23 riadkov v `inbound_mail_outcomes`, `to_agency_mailbox` v logoch, 0 zlyhaní zápisu.
+- Dáta príjmu: žiadny portál medzi `unknown_source` → UNKNOWN-SOURCE-KEEP BACKLOG.
+- STATUS.md ≈ 49 %.
+### Rozpracované / Pending
+- Overiť v ďalšej správe, že hook strieda pravidlá do kontextu.
+- Founder: Stripe krok C (0/10 cien) — najväčší posun k 100 %.
+### Kľúčové súbory zmenené
+- `.claude/WALL-RULES.md` (nový), `.claude/settings.json` (+hooks), `docs/STATUS.md`, `memory/*`.
+### Ďalší krok
+Founder: Stripe krok C (`bash scripts/ops/stripe-verify-prices.sh --spec`).
+
 ## Session 2026-10-01 (merge #774)
 ### Dokončené
 - #774 zmergovaný do main (`3dc3119`), CI zelené. STATUS.md ≈ 43 %.
