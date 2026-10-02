@@ -4,6 +4,8 @@
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 09:40 UTC** (RAU Leverage track — docs-only, % nezmenené).
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 08:30 UTC** (EVENTS-WIRE + CRON-ALIVE, zatiaľ nezmergované).
 
+## Celkom: ≈ 49 %  (odhad)
+Δ: 0 pp od posledného zápisu (07:40 UTC). Drží ho Stripe: 0 z 10 cien = 0 % pri váhe 30. Env/log/Meta-hash PR (#793, #784, #783) nie sú v tabuľke blokov, preto skóre nehýbu. Readiness Board (≈40 %) používal iné váhy a bol v pásme ±15; kanonické číslo je toto.
 ## Celkom: ≈ 52 %  (odhad)
 
 | blok | váha | stav | skóre | čo blokuje |

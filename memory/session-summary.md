@@ -1,3 +1,25 @@
+## Session 2026-10-02 (STAV-V-KAZDEJ-SPRAVE)
+### Dokončené
+- Oprava #797: merge `main` do vetvy zlomil `.claude/settings.json` (neplatný JSON, dva bloky hooks zlepené). Vrátené na verziu z `main`; moje duplicitné hooky a `memory/working-mode.md` odstránené (nahradené `memory/working-agreement.md` z #796).
+- Pravidlo 6 v `memory/working-agreement.md`: každá správa foundera končí riadkom STAV (%, Δ, fronta). `.claude/hooks/working-agreement.sh` vkladá číslo z `docs/STATUS.md` pri každej správe, takže sa nepíše z hlavy.
+- `docs/STATUS.md`: riadok Δ a poznámka, prečo sa Readiness Board (≈40 %) a STATUS (≈49 %) líšia.
+### Rozpracované / Pending
+- Hook sa načíta po reštarte session; overenie: v ďalšej správe musí byť riadok AKTUÁLNY STAV.
+### Kľúčové súbory zmenené
+- .claude/settings.json, .claude/hooks/working-agreement.sh, memory/working-agreement.md, docs/STATUS.md
+### Ďalší krok
+Founder: Stripe krok C (+30 bodov).
+
+## Session 2026-10-02 (WORKING-MODE-WALLS)
+### Dokončené
+- `memory/working-mode.md`: záväzný režim „steny, nie skrutky“ (jedno GO = jedna celá stena, ticho počas steny, PR eventy bez správ, jeden report).
+- `.claude/settings.json` + `.claude/working-mode-reminder.txt`: hooky `UserPromptSubmit` (ku každej správe foundera) a `SessionStart` (štart, resume, clear, compact) vkladajú pripomienku do kontextu, takže režim nezávisí od mojej pamäte.
+### Rozpracované / Pending
+- Hooky sa načítajú pri novej session; v tejto session ich účinok nie je overený (overené len JSON a obsah príkazu).
+### Kľúčové súbory zmenené
+- memory/working-mode.md, memory/preferences.md, .claude/settings.json, .claude/working-mode-reminder.txt
+### Ďalší krok
+Founder: `GO PLATBY-END-TO-END` (celá stena okolo platieb).
 ## Session 2026-10-02 (RAU Leverage track L01–L05)
 ### Dokončené
 - `docs/rau/leverage/` (L01–L05 + README): päť read-only promptov z nápadu zo screenshotov, vlastné formulácie; „Execution Engine" sa nestavia (je to existujúce RAU). Ústava v2: Q1 veto, skóre ≈ 2/12 → REJECT; GO prišlo pred kontrolou, potvrdenie čaká na foundera.

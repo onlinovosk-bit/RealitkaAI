@@ -32,5 +32,20 @@ if [ -z "$text" ]; then
   text="PRACOVNÁ DOHODA: steny, nie skrutky. Jeden blok = jedna správa s dôkazom; na webhooky bez zmeny stavu neodpisuj; memory zapíš raz na konci session; „merguj blok X\" = zmerguj zelené PR toho bloku a over na main. (Záloha: chýba memory/working-agreement.md alebo jeho blok DIGEST.)"
 fi
 
+# Aktuálny stav z docs/STATUS.md (zdroj pravdy pre %), nie z pamäte modelu.
+if [ "$event" != "webhook" ]; then
+  status="$root/docs/STATUS.md"
+  line="$( [ -r "$status" ] && grep -m1 '^## Celkom' "$status" )"
+  delta="$( [ -r "$status" ] && grep -m1 '^Δ' "$status" )"
+  upd="$( [ -r "$status" ] && grep -m1 'Posledná aktualizácia' "$status" | sed 's/^> *//' )"
+  if [ -n "$line" ]; then
+    text="$text
+AKTUÁLNY STAV (docs/STATUS.md): ${line#\#\# } | ${delta:-Δ: nezapísané} | ${upd:-bez dátumu}"
+  else
+    text="$text
+AKTUÁLNY STAV: docs/STATUS.md chýba alebo nemá riadok '## Celkom'; % neuvádzaj z hlavy, povedz to."
+  fi
+fi
+
 jq -cn --arg h "$hook" --arg c "$text" '{hookSpecificOutput:{hookEventName:$h,additionalContext:$c}}'
 exit 0

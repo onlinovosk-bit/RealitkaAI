@@ -27,6 +27,12 @@
    - Platí len pre menovaný blok. Bez tejto vety, alebo mimo bloku, merge ostáva
      founderov akt na „merguj N". PROD a nová scope potrebujú vlastné GO.
 5. **Pred ukončením turnu** jedna ďalšia úloha s bránou (task-loop), nie zoznam.
+6. **Každá správa foundera sa končí riadkom STAV** (founder, 2026-10-02: „Prečo si
+   zase zabudol uvádzať posun v percentách?"). Číslo sa **nepíše z hlavy**: hook
+   ho pri každej správe vloží z `docs/STATUS.md` (riadky `## Celkom` a `Δ`).
+   Tvar: `STAV: celkom ≈NN % (odhad) · Δ ±N pp od posledného zápisu · fronta: …`.
+   Ak je Δ = 0, v tej istej správe povedať, čo číslo drží (nie obísť to). Blok, ktorý
+   číslo zmení, aktualizuje `docs/STATUS.md` (pravidlo 6 v `WALL-RULES.md`).
 6. **Každá správa o hotovom bloku začína percentami.** Founder sa 2026-10-02
    pýtal druhýkrát, takže to nie je štýl, ale požiadavka:
    - **session X %** — koľko z toho, čo bolo v tejto session zadané, je hotové
@@ -68,6 +74,7 @@ PRACOVNÁ DOHODA s founderom (memory/working-agreement.md): STENY, NIE SKRUTKY.
 3) Memory zápis RAZ na konci session (jeden PR), nie po každom bloku a nie dopisovanie po merge.
 4) „merguj blok X" = zmerguj všetky ZELENÉ PR toho bloku v poradí závislostí (CI zelené na aktuálnom head, clean, expectedHeadSha), over obsah na main, jedna správa. Inak merge len na „merguj N".
 5) Na konci jedna ďalšia úloha s bránou, nie zoznam.
+6) KAŽDÁ správa foundera končí riadkom: STAV: celkom ≈NN % (odhad) · Δ ±N pp od posledného zápisu · fronta: … Číslo vezmi z riadku „AKTUÁLNY STAV" nižšie (z docs/STATUS.md), nepíš ho z hlavy. Ak Δ = 0, povedz čo číslo drží.
 6) KAŽDÁ správa o hotovom bloku ZAČÍNA percentami: „session X % (odhad) · produkt Y %" — X = koľko zo zadania tejto session je hotové a dokázané, Y = celkové číslo z docs/STATUS.md (ak sa blokom zmenilo, aktualizuj STATUS.md v tom istom PR). Bez čísel správa nie je hotová.
 <!-- DIGEST:END -->
 
