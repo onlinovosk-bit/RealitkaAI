@@ -79,6 +79,25 @@
             "type": "command",
             "command": "cat \"$CLAUDE_PROJECT_DIR/.claude/working-mode-reminder.txt\""
           }
+    "SessionStart": [
+      {
+        "hooks": [
+          { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/working-agreement.sh\" start 2>/dev/null || true", "timeout": 10 }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/working-agreement.sh\" prompt 2>/dev/null || true", "timeout": 10 }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "ReadNotifications",
+        "hooks": [
+          { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/working-agreement.sh\" webhook 2>/dev/null || true", "timeout": 10 }
         ]
       }
     ]

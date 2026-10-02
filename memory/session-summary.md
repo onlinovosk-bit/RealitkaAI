@@ -8,6 +8,22 @@
 - memory/working-mode.md, memory/preferences.md, .claude/settings.json, .claude/working-mode-reminder.txt
 ### Ďalší krok
 Founder: `GO PLATBY-END-TO-END` (celá stena okolo platieb).
+## Session 2026-10-02 (pracovná dohoda „steny, nie skrutky" + vynucujúce hooks)
+### Dokončené
+- **Pracovná dohoda uložená a VYNÚTENÁ** (founder: „ak pamäť nestačí, nájdi funkčné riešenie"). Text v pamäti sám nestačil — pravidlo bolo v CLAUDE.md (direktíva 0) a bolo porušené. Teraz: `memory/working-agreement.md` (zdroj pravdy) + `.claude/hooks/working-agreement.sh` + `hooks` v `.claude/settings.json` (`SessionStart` aj po compact, `UserPromptSubmit` pri každej správe foundera, `PostToolUse` na `ReadNotifications` pri každom prebudení z webhooku). Overené: pipe-test 3 udalostí a záložných vetiev, `jq -e` pre každú, a **hook zaúčinkoval naživo** (po `ReadNotifications` sa vložil kontext WEBHOOK). Neoverené do ďalšej správy foundera: `UserPromptSubmit` (má vložiť riadok „PRACOVNÁ DOHODA").
+- **Trvalé GO „merguj blok X"** (founder, 2026-10-02): zmerguj všetky zelené PR menovaného bloku v poradí závislostí (CI zelené na aktuálnom head, clean, `expectedHeadSha`), over obsah na `main`, jedna správa. Podmienky v `memory/working-agreement.md`.
+- **Moje chyby, priznané:** ~12 správ o webhookoch bez zmeny stavu a 3 memory PR na 3 bloky (#754, #756, #777). Odteraz jeden memory PR na session.
+- **Env patch (krok B) sa nedá dokončiť bez výstupu VERIFY.** Read-only zistené: 9 z 10 `STRIPE_PRICE_*` číta len `crm` (jediný Vercel projekt `realitka-ai`, root `apps/crm`); `STRIPE_PRICE_STARTER_PACK` číta aj `apps/marketing/app/api/starter-pack/checkout`, ale marketing nemá Vercel projekt v tomto tíme → mimo P0. Vercel env som nevypisoval (nástroj nefiltruje podľa mena, vráti všetko).
+### Rozpracované / Pending
+- **Krok C (founder):** ceny v Stripe live mode podľa `bash scripts/ops/stripe-verify-prices.sh --spec`, potom VERIFY; **výstup pošli** (nie kľúč) → finálny env patch (krok B) → redeploy → smoke (D).
+- UPTM: ďalšia veľká vetva čaká na tvoje vstupy (ES/MES vendor podmienky, strany ebooku, primárny zdroj Hafez). `account_equity` ide do prvého reálneho packu.
+- **Limit hookov:** platia pre session otvorenú v RealitkaAI, nie pre session otvorenú priamo v `uptm-runner`. Hook *pripomína*, nenúti; ak zlyhá aj to, ďalší krok je tvrdší hook, nie dlhší text.
+### Kľúčové súbory zmenené
+- memory/working-agreement.md: dohoda + bloky DIGEST/WEBHOOK, z ktorých hook číta
+- .claude/hooks/working-agreement.sh: vkladá dohodu do kontextu, nikdy nezlyhá hlučne
+- .claude/settings.json: +`hooks` (+24 / −0, oprávnenia nedotknuté)
+### Ďalší krok
+Founder: výstup VERIFY po kroku C, alebo „merguj <N>" pre PR s touto dohodou.
 
 ## Session 2026-10-02 (GMAIL-PULL-FINISH)
 ### Dokončené
