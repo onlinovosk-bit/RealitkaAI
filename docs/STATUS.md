@@ -18,7 +18,7 @@
 | časť | stav | dôkaz | čo blokuje ďalší krok |
 |---|---|---|---|
 | Špecifikácia (P08) + plán (P09) | ✅ | `docs/onlinovo/ONL-AGENTS-P08-*.md`, `P09-*.md` | — |
-| 3 agenti (príležitosti, ďalšia akcia, experiment) | ✅ IMPLEMENTED/TESTED, read-only, **iba fixture/unconnected** | mcp-onlinovo 172/172, control-contract 72/72, crm agents 99/99 | živý zdroj dát = UNKNOWN |
+| 3 agenti (príležitosti, ďalšia akcia, experiment) | ✅ IMPLEMENTED/TESTED, read-only, **iba fixture/unconnected** | mcp-onlinovo 172/172, control-contract 72/72, crm agents 104/104 | živý zdroj dát = UNKNOWN |
 | Odoslanie/plánovanie kampane, zápis journey | ⛔ BLOCKED v registri | `onlinovo.campaign.*`, `onlinovo.journey.write` FORBIDDEN, schválenie ich neodomkne | LeadHub API kontrakt = UNKNOWN (čaká odpoveď podpory) |
 | Nezávislé overenie | ⏳ P11 | — | iná session; tento stav **nie je VERIFIED** |
 

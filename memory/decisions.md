@@ -17,7 +17,7 @@ oddelený od `ShopAdapter`; žiadny UniversalAdapter, `resolveAdapter()` nezmene
 najprv: počty, dátumy, RFM, marža, oprávnenosť, prahy a experimentová aritmetika sú funkcie/pravidlá, nikdy LLM. (5) Zákazníci sú pseudonymizovaní (HMAC, fail-closed bez soli);
 e-mail/telefón v `customer_ref` a vo výstupe sa odmieta. (6) Malá vzorka je INDICATIVE a nikdy nemôže skončiť KEEP.
 
-**Stav:** IMPLEMENTED/TESTED, nie VERIFIED (P11). Dôkaz: mcp-onlinovo 172/172, control-contract 72/72, crm agents 99/99, prepush-gate PASS; mutation proof na každý guard.
+**Stav:** IMPLEMENTED/TESTED, nie VERIFIED (P11). Dôkaz: mcp-onlinovo 172/172, control-contract 72/72, crm agents + approve-draft 104/104, prepush-gate PASS (po merge `main`); mutation proof na každý guard.
 
 ## [2026-10-02] HOOKS-MERGE-FIX — dve nezávislé sady hookov sa zišli v `.claude/settings.json`
 
