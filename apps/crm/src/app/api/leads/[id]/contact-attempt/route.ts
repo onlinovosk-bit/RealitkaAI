@@ -108,22 +108,33 @@ export async function POST(
     const eventType = CONTACT_EVENT_TYPE[parsed.data.channel];
     let eventLogError: string | null = null;
     if (eventType) {
-      const logged = await logEventDetailed({
-        client:     createAdminClient(),
-        profileId:  profile.id,
-        entityType: "lead",
-        entityId:   leadId.trim(),
-        eventType,
-        payload: {
-          channel: parsed.data.channel,
-          outcome: parsed.data.outcome ?? "unknown",
-          source:  "manual",
-          // Zámerne žiadna poznámka ani kontaktné údaje — `events` nesie fakt,
-          // že sa pokus stal, nie jeho obsah.
-          contact_event_id: id,
-        },
-      });
-      eventLogError = logged.error;
+      // CELÝ blok je v try/catch, nie len chyba vrátená z `logEventDetailed`.
+      // Prvá verzia chytala len návratovú hodnotu a to bola skutočná chyba,
+      // ktorú našlo CI: `createAdminClient()` môže VYHODIŤ (chýbajúci
+      // service-role kľúč), výnimka ušla do vonkajšieho catch a zaznamenaný
+      // pokus sa zmenil na 500 — plus sa preskočilo počítadlo. Presne to, čo
+      // komentár nižšie sľuboval, že sa stať nesmie.
+      try {
+        const logged = await logEventDetailed({
+          client:     createAdminClient(),
+          profileId:  profile.id,
+          entityType: "lead",
+          entityId:   leadId.trim(),
+          eventType,
+          payload: {
+            channel: parsed.data.channel,
+            outcome: parsed.data.outcome ?? "unknown",
+            source:  "manual",
+            // Zámerne žiadna poznámka ani kontaktné údaje — `events` nesie
+            // fakt, že sa pokus stal, nie jeho obsah.
+            contact_event_id: id,
+          },
+        });
+        eventLogError = logged.error;
+      } catch (err) {
+        eventLogError = err instanceof Error ? err.message : String(err);
+        console.error("[contact-attempt] zápis eventu zlyhal:", eventLogError);
+      }
     }
 
     // After the write, never before: a counter must not be able to report an
