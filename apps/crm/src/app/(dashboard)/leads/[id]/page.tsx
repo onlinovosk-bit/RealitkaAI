@@ -24,6 +24,7 @@ import {
   type NexusChatSettings,
 } from "@/lib/nexus-chat-settings";
 import { useRealtimeLeadScore } from "@/hooks/useRealtimeLeadScore";
+import { logEventClient } from "@/lib/events/log-event-client";
 import SalesBrainPanel from "@/components/leads/sales-brain-panel";
 import DealStrategyCard from "@/components/leads/deal-strategy-card";
 import DemandMatchesCard from "@/components/leads/demand-matches-card";
@@ -298,6 +299,22 @@ export default function LeadDetailPage() {
     }
     void load();
   }, [id, router]);
+
+  // EVENTS-WIRE-01 — otvorenie detailu leadu je prvý reálny signál, ktorý sa do
+  // `public.events` vôbec dostane. Je to zároveň BRI trigger, takže skóre sa
+  // prepočíta z práce, ktorá sa naozaj stala, nie z demo čísla.
+  //
+  // Vlastný effect, nie súčasť `load()`: zlyhanie zápisu eventu nesmie mať
+  // žiadny vplyv na to, či sa lead zobrazí. A `void` je tu zámerné — UI na
+  // event nečaká; `logEventClient` nikdy nerejectne a zlyhanie si zaloguje sám.
+  useEffect(() => {
+    if (!id) return;
+    void logEventClient({
+      entityType: "lead",
+      entityId:   id,
+      eventType:  "lead_viewed",
+    });
+  }, [id]);
 
   useEffect(() => {
     try {
@@ -934,43 +951,49 @@ export default function LeadDetailPage() {
                   color: SLATE_HORIZON.brandDeep,
                   background: SLATE_HORIZON.soft,
                 }}
+                // EVENTS-WIRE-01 — toto tlačidlo posielalo na `/api/events`
+                // telo `{ leadId, signals }` s pevne zadrôtovanými hodnotami
+                // (`email_open: 1`, `link_click: 0.9`, …), zatiaľ čo route číta
+                // `entityType` / `eventType`. Zápis teda nikdy neprešel, route
+                // aj tak vrátila `ok: true` a tlačidlo tvrdilo „nové skóre".
+                // Boli to vymyslené čísla nad zlyhaným zápisom (CLAUDE.md, 4).
+                //
+                // Teraz volá skutočný prepočet nad skutočnými eventmi. Keď
+                // eventy nie sú, skóre sa nezmení — a to je správna odpoveď,
+                // nie chyba.
                 onClick={async () => {
                   try {
-                    const res = await fetch("/api/events", {
+                    const res = await fetch("/api/leads/bri-recompute", {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        leadId: id,
-                        signals: {
-                          email_open: 1,
-                          link_click: 0.9,
-                          page_view: 0.5,
-                          reply: 0.3,
-                        },
-                      }),
+                      body: JSON.stringify({ leadId: id, trigger: "manual_recompute" }),
                     });
                     const data = (await res.json()) as {
                       ok?: boolean;
-                      lead?: Lead;
-                      score?: number;
+                      new_score?: number;
+                      old_score?: number;
+                      delta?: number;
                       error?: string;
                     };
                     if (!res.ok || !data.ok) {
-                      showToast(data.error ?? "Signály sa neodoslali.");
+                      showToast(data.error ?? "Skóre sa neprepočítalo.");
                       return;
                     }
-                    if (data.lead) setLead(data.lead);
-                    else if (typeof data.score === "number") {
-                      setLead((prev) =>
-                        prev ? { ...prev, score: data.score as number } : prev
+                    if (typeof data.new_score === "number") {
+                      const next = data.new_score;
+                      setLead((prev) => (prev ? { ...prev, score: next } : prev));
+                      showToast(
+                        data.delta === 0
+                          ? "Skóre sa nezmenilo — zatiaľ žiadne nové signály."
+                          : `Skóre ${data.old_score ?? "—"} → ${next}`,
                       );
                     }
                   } catch {
-                    showToast("Chyba siete pri odosielaní signálov.");
+                    showToast("Chyba siete pri prepočte skóre.");
                   }
                 }}
               >
-                ⚡ Demo: live signály → nové skóre
+                ⚡ Prepočítať skóre z reálnych signálov
               </button>
             </div>
 

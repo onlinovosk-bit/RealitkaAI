@@ -5,12 +5,30 @@ const mockGetCurrentProfile = vi.fn();
 const mockRecordContactAttempt = vi.fn();
 const mockIncrementUsageMetric = vi.fn();
 
+const mockCreateAdminClient = vi.fn((): unknown => ({}));
+// Typ je explicitný: bez neho si vi.fn odvodí `error: null` a `id: string`,
+// takže `mockResolvedValueOnce({ id: null, error: "…" })` prestane typovať.
+const mockLogEventDetailed = vi.fn(
+  async (...args: unknown[]): Promise<{ id: string | null; error: string | null }> => {
+    void args;
+    return { id: "event-1", error: null };
+  },
+);
+
 vi.mock("@/lib/auth", () => ({
   getCurrentProfile: () => mockGetCurrentProfile(),
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({ from: () => ({}) }),
+  // EVENTS-WIRE-01 — route zapisuje kópiu pokusu do `public.events`
+  // service-role klientom. Mock je nastaviteľný, aby sa dalo overiť, že ani
+  // jeho zlyhanie nezhodí zaznamenaný pokus.
+  createAdminClient: () => mockCreateAdminClient(),
+}));
+
+vi.mock("@/lib/events/log-event", () => ({
+  logEventDetailed: (...args: unknown[]) => mockLogEventDetailed(...args),
 }));
 
 vi.mock("@/lib/lead-contact-events/store", () => ({
@@ -163,5 +181,43 @@ describe("POST /api/leads/[id]/contact-attempt — telemetry", () => {
     mockRecordContactAttempt.mockRejectedValue(new Error("db down"));
     await post({ channel: "call" });
     expect(mockIncrementUsageMetric).not.toHaveBeenCalled();
+  });
+});
+
+describe("POST /api/leads/[id]/contact-attempt — kópia pokusu v public.events", () => {
+  it("zapíše skromný typ eventu, netvrdí doručenie", async () => {
+    await post({ channel: "call" });
+    expect(mockLogEventDetailed).toHaveBeenCalledWith(
+      expect.objectContaining({ entityType: "lead", eventType: "call_initiated" }),
+    );
+    await post({ channel: "email" });
+    expect(mockLogEventDetailed).toHaveBeenLastCalledWith(
+      expect.objectContaining({ eventType: "message_initiated" }),
+    );
+  });
+
+  it("zlyhanie zápisu eventu NEZHODÍ zaznamenaný pokus", async () => {
+    // Toto chytilo CI: ošetrená bola len chyba VRÁTENÁ z logEventDetailed,
+    // nie výnimka z createAdminClient() (chýbajúci service-role kľúč).
+    // Výnimka ušla do vonkajšieho catch, pokus sa zmenil na 500 a počítadlo
+    // sa preskočilo — presne to, čo fail-soft sľubuje, že sa stať nesmie.
+    mockCreateAdminClient.mockImplementationOnce(() => {
+      throw new Error("SUPABASE_SERVICE_ROLE_KEY chýba");
+    });
+    const res = await post({ channel: "call" });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({
+      ok: true,
+      eventLogError: "SUPABASE_SERVICE_ROLE_KEY chýba",
+    });
+    // Pokus bol zaznamenaný, takže sa musí aj započítať.
+    expect(mockIncrementUsageMetric).toHaveBeenCalled();
+  });
+
+  it("chyba vrátená zo zápisu tiež nezhodí pokus, ale je vidieť", async () => {
+    mockLogEventDetailed.mockResolvedValueOnce({ id: null, error: "RLS odmietla" });
+    const res = await post({ channel: "call" });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ ok: true, eventLogError: "RLS odmietla" });
   });
 });

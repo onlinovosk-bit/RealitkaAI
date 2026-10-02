@@ -27,7 +27,9 @@ depends_on:
 
 # V4-B inbound OAuth pull — design only
 
-**Tento dokument je návrh. Žiadny aplikačný kód, migrácia, worker ani token
+****Stav 2026-10-02:** pilotná implementácia (jeden tenant, token v env) je dokončená — pozri `docs/runbooks/gmail-pull-setup.md` a `docs/architecture/inbound-gmail-pull-gdpr.md` (oprava §11: súhlas v Google okne nie je právny základ pre údaje záujemcov). Fázy B (šifrovaná tabuľka, odpojenie v UI) a F (verifikácia) ostávajú.
+
+Pôvodný text: tento dokument je návrh. Žiadny aplikačný kód, migrácia, worker ani token
 sa v tomto PR nerealizuje. Implementácia začína až po explicitnom GO
 foundera.**
 

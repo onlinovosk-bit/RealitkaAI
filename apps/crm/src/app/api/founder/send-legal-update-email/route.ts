@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireRole } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimit } from "@/lib/rate-limit";
+import { describeError } from "@/lib/log-safe";
 import { Resend } from "resend";
 
 const BATCH_CAP = 200;
@@ -56,7 +57,8 @@ export async function POST() {
       });
       sent++;
     } catch (err) {
-      console.error("Email failed for " + profile.email + ":", err);
+      // Bez adresy príjemcu a bez celého objektu chyby (PII-GATE-AUDIT B4).
+      console.error("[founder/send-legal-update-email] email failed:", describeError(err));
     }
   }
   return NextResponse.json({ sent, total: profiles.length });
