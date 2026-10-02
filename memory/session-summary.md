@@ -1,3 +1,15 @@
+## Session 2026-10-02 (ENV-EMPTY-OPTIONAL)
+### Dokončené
+- `config/env.ts`: nový `normalizeEnv` — prázdna alebo whitespace-only premenná = nenastavená; použitý v `validateEnv` aj `getEnv`. Dôvod: produkčný `[env]` log (1. 10.) hlásil jediný drift `CALENDAR_ICS_URL (Invalid input)`, kód tú premennú nikde nečíta a prázdny reťazec pri `z.string().url().optional()` zlyhá.
+- **Čo sa NEZMENILO (zámerne):** neprázdna, ale neplatná hodnota ostáva chybou, aj prázdna povinná premenná (`NEXT_PUBLIC_SUPABASE_URL`, Supabase kľúč). Ak drift po nasadení nezmizne, hodnota vo Verceli je neprázdna a neplatná (napr. placeholder) a treba ju opraviť alebo zmazať tam.
+- Zmena správania: prázdna `SUPABASE_SERVICE_ROLE_KEY`/`CRON_SECRET`… bola predtým `issue` (min(1)), teraz je „nenastavená" a ide do `degraded` (kód ju tak aj ošetruje — `.trim()` v `isAuthorizedCronBearer`, `createServiceRoleClient`).
+- 17 testov, mutation proof 4/4.
+### Rozpracované / Pending
+- Push vetvy `claude/env-empty-optional` čaká na povolenie. Po nasadení overiť v logu `[env]`, či `CALENDAR_ICS_URL` zmizol.
+- Fail-fast stále nezapájam: ďalšia podmienka je čistý `[env]` log.
+### Ďalší krok
+Merge, nasadenie, kontrola `[env]` logu.
+
 ## Session 2026-10-01 (OBSIDIAN-GRAPH-DEFAULTS)
 ### Dokončené
 - Exportér zapisuje `.obsidian/graph.json`: filter bez `HOME`/`Decision-Index`/`Session-Index`/`Dashboard` + farby podľa tagu (`kind/prod` červená, `decision` modrá, `session` oranžová, `ops` zelená). Zapíše sa len ak súbor chýba/je nedotknutý; upravený sa nikdy neprepíše. 16 testov.

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { validateEnv } from "../env";
+import { getEnv, normalizeEnv, validateEnv } from "../env";
 import { register } from "../../instrumentation";
 
 const URL_ = "https://x.supabase.co";
@@ -38,21 +38,36 @@ describe("validateEnv", () => {
     ]);
   });
 
-  it("treats an empty-string variable as invalid, not as unset", () => {
-    const r = validateEnv({ ...MIN, CRON_SECRET: "" });
+  it("treats an empty or whitespace-only optional variable as unset, not as invalid", () => {
+    for (const v of ["", "   "]) {
+      const r = validateEnv({ ...MIN, CALENDAR_ICS_URL: v, CRON_SECRET: v });
+      expect(r.ok, JSON.stringify(v)).toBe(true);
+      expect(r.issues).toEqual([]);
+    }
+  });
+
+  it("still flags a NON-empty but invalid value (it must be fixed, not hidden)", () => {
+    const r = validateEnv({ ...MIN, CALENDAR_ICS_URL: "not a url" });
     expect(r.ok).toBe(false);
-    expect(r.issues.map((i) => i.key)).toEqual(["CRON_SECRET"]);
+    expect(r.issues.map((i) => i.key)).toEqual(["CALENDAR_ICS_URL"]);
+  });
+
+  it("an empty hard-required variable is still an error", () => {
+    expect(validateEnv({ ...MIN, NEXT_PUBLIC_SUPABASE_URL: "" }).issues.map((i) => i.key)).toEqual([
+      "NEXT_PUBLIC_SUPABASE_URL",
+    ]);
+    expect(validateEnv({ NEXT_PUBLIC_SUPABASE_URL: URL_, NEXT_PUBLIC_SUPABASE_ANON_KEY: " " }).ok).toBe(false);
+  });
+
+  it("an empty SUPABASE_SERVICE_ROLE_KEY is unset: reported as degraded, not as an error", () => {
+    const r = validateEnv({ ...MIN, SUPABASE_SERVICE_ROLE_KEY: "" });
+    expect(r.ok).toBe(true);
+    expect(r.degraded.map((d) => d.key)).toContain("SUPABASE_SERVICE_ROLE_KEY");
   });
 
   it("counts a whitespace-only value as unset (the code trims before use)", () => {
     const r = validateEnv({ ...MIN, CRON_SECRET: "   " });
     expect(r.degraded.map((d) => d.key)).toContain("CRON_SECRET");
-  });
-
-  it("treats an empty SUPABASE_SERVICE_ROLE_KEY as invalid too", () => {
-    expect(validateEnv({ ...MIN, SUPABASE_SERVICE_ROLE_KEY: "" }).issues.map((i) => i.key)).toEqual([
-      "SUPABASE_SERVICE_ROLE_KEY",
-    ]);
   });
 
   it("stops reporting a degraded key once it is set", () => {
@@ -100,5 +115,30 @@ describe("register (startup report)", () => {
     const err = vi.spyOn(console, "error").mockImplementation(() => undefined);
     await register();
     expect(err).not.toHaveBeenCalled();
+  });
+});
+
+describe("getEnv (strict accessor) uses the same normalization", () => {
+  it("does not throw on an empty optional variable", () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", URL_);
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "a");
+    vi.stubEnv("CALENDAR_ICS_URL", "");
+    expect(() => getEnv()).not.toThrow();
+  });
+
+  it("still throws on a non-empty invalid one, naming the key but not the value", () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", URL_);
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "a");
+    vi.stubEnv("CALENDAR_ICS_URL", "tajna-hodnota");
+    expect(() => getEnv()).toThrow(/CALENDAR_ICS_URL/);
+    try { getEnv(); } catch (e) { expect(String((e as Error).message)).not.toContain("tajna-hodnota"); }
+  });
+});
+
+describe("normalizeEnv", () => {
+  it("maps empty and whitespace-only to undefined and keeps the rest untouched", () => {
+    expect(normalizeEnv({ A: "", B: "  ", C: " x ", D: undefined })).toEqual({
+      A: undefined, B: undefined, C: " x ", D: undefined,
+    });
   });
 });
