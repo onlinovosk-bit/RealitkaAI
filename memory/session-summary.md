@@ -1,3 +1,14 @@
+## Session 2026-10-02 (SMOLKO-LIVE — príprava)
+### Dokončené
+- SMOLKO-LIVE pripravené bez zásahu do PROD pre Smolka: stav zmeraný, aktivačný SQL (1 transakcia), overenie, kill-switch a ukážka textu sú v `memory/decisions.md`.
+### Rozpracované / Pending
+- **Čaká na 2 vstupy od Smolka (cez foundera):** súhlas + kontaktná adresa (cesta A vlastná schránka — odporúčam; B `reality-smolko@revolis.ai` len ak je overené, kam idú odpovede — Cloudflare mimo repa).
+- Potom jedno „GO SMOLKO-LIVE" → ja spravím všetko (migrácia opt-in default + reply-to + zapnutie + overenie o 24 h).
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md` (len pamäť).
+### Ďalší krok
+Smolkova odpoveď → „GO SMOLKO-LIVE".
+
 ## Session 2026-10-02 (E2E DÔKAZ)
 ### Dokončené
 - **E2E dôkaz prešiel v PROD:** triáž +2,4 s, auto-odpoveď +4,1 s po vytvorení leadu, `inbound.auto_response` = `sent`, `from_domain=revolis.ai` → `after()` funguje a `OUTREACH_FROM_EMAIL` je na overenej doméne. Nasadenie sa odblokovalo samo.

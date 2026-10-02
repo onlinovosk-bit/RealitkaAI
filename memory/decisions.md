@@ -1,5 +1,46 @@
 # Critical Decisions Log
 
+## [2026-10-02] SMOLKO-LIVE — PRIPRAVENÉ, čaká na 2 vstupy od Smolka (nič v PROD pre Smolka sa nezmenilo)
+
+**Zadanie foundera:** „GO by som dal, ale nemám jeho odpoveď. Zatiaľ to priprav." → Smolko: `auto_response_enabled = false` zostáva, jeho riadok som nemenil.
+
+**Čo je hotové a dokázané (PROD, 2. 10.):** `after()` pipeline (triáž +2,4 s, auto-odpoveď +4,1 s), odosielanie z `revolis.ai`, udalosti `inbound.auto_response`, text bez interného AI zdôvodnenia (kód od #773).
+**Stav Smolka (namerané):** `agencies.email = reality-smolko@revolis.ai` (nastavené 1. 10. 11:40:55 UTC jedným príkazom spolu s Demo → `demo@revolis.ai`; nie ja), `phone = NULL`,
+16 leadov/30 dní (12 s e-mailom, 9 za 7 dní; zdroje: portal, web_form) → **prvý reálny lead s e-mailom čakaj do 1–2 dní** po zapnutí. Default stĺpca v PROD je stále `true`.
+
+**Vstupy, ktoré musia prísť (nič z toho nezistím sám):**
+1. **Súhlas Smolka** s odosielaním potvrdenia ich klientom v ich mene (+ ak chce, schváli znenie — ukážka nižšie).
+2. **Kontaktná adresa, kam majú klienti písať** (+ voliteľne telefón do podpisu). Dve cesty:
+   - **A (odporúčam):** vlastná schránka Smolka. `agencies.email` = ich adresa; odosielateľ ide z `OUTREACH_FROM_EMAIL` na `revolis.ai` (cesta **dokázaná dnes**: testovacia agentúra mala reply-to mimo `revolis.ai`).
+   - **B:** ponechať `reality-smolko@revolis.ai` — **len ak je overené, že odpovede na ňu niekto číta.** Príjem na `revolis.ai` ide cez Cloudflare Email Routing Worker (mimo repa), takže **neviem, kam odpovede
+     na túto adresu dopadnú** (v `inbound_mailboxes` má Smolko 9 schránok na `revolis.ai`, `reality-smolko@revolis.ai` medzi nimi NIE JE). Founder overí v Cloudflare → Email Routing.
+
+**Aktivačný postup (jedna transakcia, spustím po „GO SMOLKO-LIVE" + vstupoch):**
+```sql
+begin;
+alter table public.agencies alter column auto_response_enabled set default false;            -- migrácia 20261001100000 (idempotentná)
+insert into supabase_migrations.schema_migrations (version, name)
+  values ('20261001100000','auto_response_opt_in_default') on conflict do nothing;
+update public.agencies set email = '<KONTAKT>', phone = <TELEFON | null>                    -- len pri ceste A
+  where id = '11111111-1111-1111-1111-111111111111';
+update public.agencies set auto_response_enabled = true
+  where id = '11111111-1111-1111-1111-111111111111' returning id, email, auto_response_enabled;
+commit;
+```
+**Overenie:** hneď po zápise `select auto_response_enabled, email from agencies where id='1111…'`; potom `send_later` o 24 h: `inbound.auto_response` pre Smolka (`sent` + `from_domain=revolis.ai` + `auto_response_sent_at` nie NULL na leade; `failed_*` → dôvod v `reason`).
+**Vypnutie (kill-switch, okamžité, per lead):** `update agencies set auto_response_enabled=false where id='1111…'`. Už odoslané e-maily sa nedajú vrátiť.
+
+**Ukážka, čo dostane Smolkov klient** (agentúra bez priradeného makléra, nízka priorita, portál Nehnuteľnosti.sk — nie návrh e-mailu pre Smolka, podklad pre rozhovor foundera):
+> Predmet: Váš dopyt bol prijatý — Reality Smolko s.r.o.
+> Dobrý deň, {meno},
+> váš dopyt z portálu Nehnuteľnosti.sk mi prišiel. Pozriem sa naň a ozvem sa vám v priebehu dňa.
+> Ak medzitým chcete niečo doplniť alebo sa opýtať, pokojne mi napíšte na {KONTAKT}.
+> Reality Smolko s.r.o.
+(Pri vysokej priorite „ozvem sa vám dnes"; s telefónom pribudne „alebo zavolajte na {telefón}" a riadok telefónu v podpise.)
+
+**Otvorené / nezmerané:** (a) kam pristanú odpovede na `reality-smolko@revolis.ai` (Cloudflare mimo repa); (b) právny rámec (Smolko = prevádzkovateľ, Revolis = sprostredkovateľ; zmluva/súhlas) — `gdpr-advisor` v tejto session nie je dostupný, záznam právneho
+základu doplním pri aktivácii (CLAUDE.md dir. 5); (c) skutočné znenie z Resend Logs ešte nevidené (bod 5); (d) `docs/STATUS.md` (iná session) drží celkový odhad ≈ 40 %, môj SCOREBOARD je užší (prvá reakcia na lead, 60 %) — nie sú to rovnaké meradlá.
+
 ## [2026-10-02] E2E DÔKAZ — `after()` vo verejných trasách funguje v PROD; `OUTREACH_FROM_EMAIL` na overenej doméne; SCOREBOARD 60 %
 
 **Nasadenie (oprava skoršieho záveru):** 1. 10. 12:17 UTC Vercel API vrátilo `402` `remaining: 0` s resetom o 24 h. 2. 10. ~06:28 UTC už Vercel nasadzoval (limit sa uvoľnil skôr,
