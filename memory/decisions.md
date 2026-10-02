@@ -1,5 +1,24 @@
 # Critical Decisions Log
 
+## 2026-10-02 — ONL-AGENTS (P08→P10): tri interné agentné roly pre onlinovo.sk — BUILD (read-only), všetko zákazníkovi viditeľné BACKLOG
+
+**GO foundera:** „AGENTIC REVENUE OS — P08 → P09 → P10, FOUNDER GO: APPROVED". **Constitution v2 (smernica 7):** BUILD len pre to, čo je interné, reverzibilné a read-only
+(detekcia príležitostí, jedna odporúčaná akcia na zákazníka, plán experimentu). Dôvod: otázka 1 — rozhodnutia o e-mailingu onlinovo.sk sa dnes robia ručne a bez
+deterministického dôkazu; žiadne VETO. **Neodhadované:** žiadny dopad na tržby nie je meraný — agenti bežia iba na fixture/unconnected zdroji, takže produkčnú hodnotu zatiaľ
+nemajú. Prime Directive: pre Revolis zostáva priorita č. 1 Stripe krok C; táto práca ju nenahrádza.
+
+**BACKLOG (nie je dovolené bez nového GO a overeného podkladu):** `campaign.send/schedule/update`, `journey.write` (LeadHub kontrakt UNVERIFIED), `record.persist`
+(žiadna overená cesta zápisu), zapojenie LLM (`LLM_WIRED=false`, rozpočet 0), živý zdroj dát, trvalé schvaľovania (CP-P0-2), CI job pre `mcp-onlinovo` (`.github/**` = denylist).
+**DENIED (rozhodnutie vlastníka):** `price.change`, `customer.permission.change`.
+
+**Architektonické rozhodnutia:** (1) EXTEND existujúceho registra `apps/crm/src/lib/agents/agent-specs.ts` (`kind`, `domain`), nie druhý register. (2) Nový `RevenueDataPort`
+oddelený od `ShopAdapter`; žiadny UniversalAdapter, `resolveAdapter()` nezmenený, `denyWrite()` a write-stub nezmenené. (3) Guard v `mcp-onlinovo` je lokálne zrkadlo registra
+(NodeNext neumožňuje import `control-contract`); drift stráži `guard-differential.test.ts` (guard = `resolveAuthority` pre všetky akcie × istoty × kill switch). (4) Deterministika
+najprv: počty, dátumy, RFM, marža, oprávnenosť, prahy a experimentová aritmetika sú funkcie/pravidlá, nikdy LLM. (5) Zákazníci sú pseudonymizovaní (HMAC, fail-closed bez soli);
+e-mail/telefón v `customer_ref` a vo výstupe sa odmieta. (6) Malá vzorka je INDICATIVE a nikdy nemôže skončiť KEEP.
+
+**Stav:** IMPLEMENTED/TESTED, nie VERIFIED (P11). Dôkaz: mcp-onlinovo 172/172, control-contract 72/72, crm agents + approve-draft 104/104, prepush-gate PASS (po merge `main`); mutation proof na každý guard.
+
 ## [2026-10-02] HOOKS-MERGE-FIX — dve nezávislé sady hookov sa zišli v `.claude/settings.json`
 
 **Fakt:** `main` medzitým dostal vlastnú sadu hookov z inej session (#792, #796: `working-agreement.sh`, `memory/working-agreement.md`, `WALL-RULES.md`; SessionStart / UserPromptSubmit / PostToolUse na ReadNotifications). Automatický merge `main` do tejto vetvy (5f54ac4, 08:12 UTC) zlúčil `.claude/settings.json` textovo bez konfliktu, ale vznikol **neplatný JSON** (chýbala čiarka) — CI „Lint, test, build" spadlo na `working-protocol-hooks.verification.test.ts` (SyntaxError, pozícia 1780). Bez opravy by sa po merge-i rozbilo načítanie nastavení Claude Code na `main`.
