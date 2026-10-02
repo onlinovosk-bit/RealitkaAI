@@ -41,6 +41,25 @@ aby BRI nedostalo vymyslený signál.
 **Pozor na MCP:** `execute_sql` na `DELETE` timeoutuje (čaká na potvrdenie, ktoré v tomto kontexte nepríde).
 Obídené `DO $$ ... $$` blokom. CTE `delete ... where id in (select id from probe)` nefunguje — DELETE nevidí riadok
 vložený v tom istom príkaze (snapshot), hlási `deleted: 0` a riadok zostane.
+## 2026-10-02 — WORK-STYLE-WALL: „iba steny“ vynútené hookmi + overenie nasadenia #774
+
+**GO foundera.** (1) Pravidlá práce: `.claude/WALL-RULES.md` (8 pravidiel, ~10 riadkov) + hooky `SessionStart` a `UserPromptSubmit` v `.claude/settings.json`, ktoré ich
+vkladajú do kontextu pri KAŽDEJ správe — pamäť modelu sa nespolieha. Overené: JSON platný (`jq -e`), 43 `allow` / 12 `deny` nezmenené (diff `permissions` = prázdny),
+pipe-test príkazu vypíše súbor (exit 0, 10 riadkov). **Nemerané:** že hook v tejto session reálne strieda kontext (UserPromptSubmit sa spúšťa mimo tahu) — potvrdí sa
+objavením pravidiel v ďalšej správe.
+(2) **Overenie nasadenia #774 (read-only):** produkčný deployment `dpl_ByWG76…` pre `3dc3119` = READY; novšie produkčné nasadenia (#783, #794) tiež READY. V DB
+`inbound_mail_outcomes`: 23 riadkov (1× lead_created, 22× not_a_lead, 14 domén) od 2026-10-01 19:41 do 2026-10-02 07:24. Runtime logy za 6 h: `to_agency_mailbox`
+prítomné (nový log žije), `mail_outcome_write_failed` 0×. **Záver: #774 je nasadený a funguje.**
+(3) **Dáta z príjmu:** `unknown_source` = firemné/newsletterové domény (`backoffice.sk`, `slovensko.sk`, `kros.sk`, `tchibo.sk`…), žiadny portál → do `SOURCE_RULES` sa nepridáva,
+UNKNOWN-SOURCE-KEEP zostáva **BACKLOG** (Ústava v2: bez dôkazu o strate reálneho dopytu). Poznatok: do príjmu tečie celá pošta schránky (GDPR minimalizácia na zdroji).
+
+## 2026-10-01 — #774 ZMERGOVANÝ (`3dc3119`, squash) — stav ≈ 43 %
+
+**GO foundera.** Merge až po zelenom „Lint, test, build" na hlave `d790168` (7/7 kontrol). Cesta: duplicitná verzia migrácie → CI-FIX; migrácia steny
+padla na čistej DB (PROD-only pohľady `v_genome_*`) → idempotentná; main sa medzitým posunul → konflikt len v `memory/session-summary.md` → vyriešený (obe vetvy).
+V PROD ostáva všetko, čo bolo aplikované skôr (migrácie sú idempotentné, repo ↔ PROD zhodné okrem histórie migrácií, kde riadky nie sú).
+**Neoverené:** produkčné nasadenie kódu z #774 (Vercel); prvý zápis do `inbound_mail_outcomes` po nasadení. STATUS.md aktualizovaný (≈ 43 %).
+
 ## 2026-10-02 — GMAIL-PULL-FINISH: Gmail pull dokončený pre pilot jedného tenanta (kód, nie aktivácia)
 
 **Podnet:** 1.10. 11:10 Smolkov Gmail hlásil `552 5.3.4 size exceeded` pri preposielaní na `smolko-a7f2@revolis.ai`; auto-forward preposiela aj nepodstatnú poštu

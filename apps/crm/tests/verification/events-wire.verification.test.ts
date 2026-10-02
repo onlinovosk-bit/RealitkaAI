@@ -17,11 +17,49 @@ import { describe, expect, it } from 'vitest'
 const CRM = join(__dirname, '..', '..')
 const read = (p: string) => readFileSync(join(CRM, p), 'utf8')
 
+describe('prehliadačový zapisovateľ nesmie ťahať server', () => {
+  const clientLogger = read('src/lib/events/log-event-client.ts')
+  const serverLogger = read('src/lib/events/log-event.ts')
+
+  // EVENTS-WIRE-02 — toto zhodilo build. `log-event.ts` si cez
+  // `await import('@/lib/supabase/server')` dotiahne `next/headers`, a dynamický
+  // import pre webpack nie je únik: klientský komponent, ktorý si odtiaľ vzal
+  // `logEventClient`, spadol na „This API is only available in Server
+  // Components". Pin drží hranicu, nie formuláciu.
+  /**
+   * Komentáre sa pred kontrolou odstrihnú. Bez toho pin trafí aj vysvetlenie,
+   * ktoré zakázané moduly cituje — a pin, ktorý zhasne na komentári, nestráži
+   * hranicu, stráži formuláciu.
+   */
+  const codeOnly = (src: string) =>
+    src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+
+  it('klientský modul neimportuje nič serverové', () => {
+    const code = codeOnly(clientLogger)
+    // Jediná povolená závislosť je typová.
+    // `\s*` by zhltlo aj predchádzajúce prázdne riadky (\s matchuje \n), preto
+    // sa každý zásah ešte otrimuje.
+    const imports = (code.match(/^[^\S\n]*(?:import|export)\s[^\n]*from\s[^\n]*$/gm) ?? [])
+      .map((line) => line.trim())
+    expect(imports).toEqual(["import type { EntityType, EventType } from '@/types/events'"])
+    // A ani dynamický import — pre webpack to nie je únik z grafu.
+    expect(code).not.toMatch(/\bimport\s*\(/)
+    expect(code).not.toMatch(/require\s*\(/)
+  })
+
+  it('serverový modul už prehliadačovú funkciu nevyváža', () => {
+    expect(serverLogger).not.toContain('export async function logEventClient')
+    expect(serverLogger).not.toContain('export function logEventClient')
+  })
+})
+
 describe('prehliadač zapisuje eventy', () => {
   const leadPage = read('src/app/(dashboard)/leads/[id]/page.tsx')
 
-  it('detail leadu loguje lead_viewed cez logEventClient', () => {
+  it('detail leadu loguje lead_viewed cez logEventClient z klientského modulu', () => {
     expect(leadPage).toContain('logEventClient')
+    expect(leadPage).toContain('@/lib/events/log-event-client')
+    expect(leadPage).not.toMatch(/import \{ logEventClient \} from "@\/lib\/events\/log-event"/)
     expect(leadPage).toMatch(/eventType:\s*"lead_viewed"/)
   })
 

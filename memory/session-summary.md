@@ -36,6 +36,31 @@ Merge #786, potom nasadiť EVENTS-WIRE a overiť na PROD prvý skutočný riadok
 ### Ďalší krok
 Founder: výstup VERIFY po kroku C, alebo „merguj <N>" pre PR s touto dohodou.
 
+## Session 2026-10-02 (WORK-STYLE-WALL + overenie nasadenia #774)
+### Dokončené
+- „Iba steny“ vynútené hookmi (`.claude/WALL-RULES.md` + `SessionStart`/`UserPromptSubmit`), zapísané v `memory/preferences.md`.
+- Nasadenie #774 overené: deployment READY, 23 riadkov v `inbound_mail_outcomes`, `to_agency_mailbox` v logoch, 0 zlyhaní zápisu.
+- Dáta príjmu: žiadny portál medzi `unknown_source` → UNKNOWN-SOURCE-KEEP BACKLOG.
+- STATUS.md ≈ 49 %.
+### Rozpracované / Pending
+- Overiť v ďalšej správe, že hook strieda pravidlá do kontextu.
+- Founder: Stripe krok C (0/10 cien) — najväčší posun k 100 %.
+### Kľúčové súbory zmenené
+- `.claude/WALL-RULES.md` (nový), `.claude/settings.json` (+hooks), `docs/STATUS.md`, `memory/*`.
+### Ďalší krok
+Founder: Stripe krok C (`bash scripts/ops/stripe-verify-prices.sh --spec`).
+
+## Session 2026-10-01 (merge #774)
+### Dokončené
+- #774 zmergovaný do main (`3dc3119`), CI zelené. STATUS.md ≈ 43 %.
+### Rozpracované / Pending
+- **Overiť nasadenie** (Vercel) a prvý riadok v `inbound_mail_outcomes`.
+- **Founder: Stripe krok C** (0/10 cien) — najväčší posun k 100 %.
+### Kľúčové súbory zmenené
+- `docs/STATUS.md`, `memory/*`.
+### Ďalší krok
+Founder: Stripe krok C (`bash scripts/ops/stripe-verify-prices.sh --spec`).
+
 ## Session 2026-10-02 (GMAIL-PULL-FINISH)
 ### Dokončené
 - Gmail pull: trvalý dedup (`agency_gmail_inbound_seen`), fail-closed, okno+stránkovanie, strop tela, rozlíšenie chýb, stopa v `cron_runs`, spúšťač v GitHub Actions (`apps/crm/src/lib/inbound/gmail-pull.ts`, route, migrácia `20261002090000`, `.github/workflows/gmail-inbound-pull.yml`).

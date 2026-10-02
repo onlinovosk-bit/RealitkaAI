@@ -24,7 +24,7 @@ import {
   type NexusChatSettings,
 } from "@/lib/nexus-chat-settings";
 import { useRealtimeLeadScore } from "@/hooks/useRealtimeLeadScore";
-import { logEventClient } from "@/lib/events/log-event";
+import { logEventClient } from "@/lib/events/log-event-client";
 import SalesBrainPanel from "@/components/leads/sales-brain-panel";
 import DealStrategyCard from "@/components/leads/deal-strategy-card";
 import DemandMatchesCard from "@/components/leads/demand-matches-card";

@@ -88,46 +88,8 @@ export async function logEventDetailed(opts: LogEventOptions): Promise<LogEventR
   }
 }
 
-/**
- * Zápis eventu z prehliadača cez `/api/events`.
- *
- * EVENTS-WIRE-01 — prečo to už nie je `sendBeacon` a prečo to už nie je ticho:
- *
- * Táto funkcia nemala do 2026-10-02 ani jedného volajúceho, takže prehliadač
- * nezapísal za celú dobu ani jeden event. Keď sa zapájala, pôvodná verzia
- * posielala `sendBeacon` a odpoveď zahodila — a odpoveď je jediné miesto, kde
- * sa dá zistiť, že server telo odmietol. Presne tá nevidieľnosť (tiché
- * `catch`, `ok: true` nad zlyhaným insertom) držala `public.events` prázdnu.
- *
- * Preto `fetch` s prečítaným stavom a varovaním v konzole. Zostáva to
- * fire-and-forget voči UI — vracia Promise, ktorý nikto nemusí awaitovať a
- * ktorý nikdy nerejectne — ale zlyhanie už nie je neviditeľné.
- *
- * `keepalive` drží request aj cez navigáciu, čo pokrýva dôvod, pre ktorý tu
- * `sendBeacon` kedysi bol (klik na `tel:` / `mailto:` odnavigoval stránku).
- */
-export async function logEventClient(
-  opts: Omit<LogEventOptions, 'profileId' | 'client'>,
-): Promise<boolean> {
-  try {
-    const res = await fetch('/api/events', {
-      method:    'POST',
-      body:      JSON.stringify(opts),
-      headers:   { 'Content-Type': 'application/json' },
-      keepalive: true,
-    })
-    if (!res.ok) {
-      console.warn(
-        `[logEventClient] ${opts.eventType} odmietnutý: HTTP ${res.status}`,
-      )
-      return false
-    }
-    return true
-  } catch (err) {
-    console.warn(
-      `[logEventClient] ${opts.eventType} neodoslaný:`,
-      err instanceof Error ? err.message : String(err),
-    )
-    return false
-  }
-}
+// `logEventClient` sa presunul do `log-event-client.ts`. Dôvod je hranica, nie
+// vkus: tento modul si cez `await import('@/lib/supabase/server')` dotiahne
+// `next/headers`, a dynamický import pre webpack nie je únik — klientský
+// komponent, ktorý by si odtiaľ vzal len prehliadačovú funkciu, zhodí build
+// (EVENTS-WIRE-02).
