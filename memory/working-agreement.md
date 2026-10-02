@@ -27,6 +27,14 @@
    - Platí len pre menovaný blok. Bez tejto vety, alebo mimo bloku, merge ostáva
      founderov akt na „merguj N". PROD a nová scope potrebujú vlastné GO.
 5. **Pred ukončením turnu** jedna ďalšia úloha s bránou (task-loop), nie zoznam.
+6. **Každá správa o hotovom bloku začína percentami.** Founder sa 2026-10-02
+   pýtal druhýkrát, takže to nie je štýl, ale požiadavka:
+   - **session X %** — koľko z toho, čo bolo v tejto session zadané, je hotové
+     a dokázané. Je to **odhad** a musí byť ako odhad označený.
+   - **produkt Y %** — celkové číslo z `docs/STATUS.md` (vážené bloky).
+     Keď sa blokom zmenilo, `docs/STATUS.md` sa aktualizuje v tom istom PR;
+     keď sa nezmenilo, poviem to.
+   Bez čísel správa nie je hotová, aj keby bol kód hotový.
 
 ## Ako je to vynútené (a prečo to nestačí zapísať)
 
@@ -60,6 +68,7 @@ PRACOVNÁ DOHODA s founderom (memory/working-agreement.md): STENY, NIE SKRUTKY.
 3) Memory zápis RAZ na konci session (jeden PR), nie po každom bloku a nie dopisovanie po merge.
 4) „merguj blok X" = zmerguj všetky ZELENÉ PR toho bloku v poradí závislostí (CI zelené na aktuálnom head, clean, expectedHeadSha), over obsah na main, jedna správa. Inak merge len na „merguj N".
 5) Na konci jedna ďalšia úloha s bránou, nie zoznam.
+6) KAŽDÁ správa o hotovom bloku ZAČÍNA percentami: „session X % (odhad) · produkt Y %" — X = koľko zo zadania tejto session je hotové a dokázané, Y = celkové číslo z docs/STATUS.md (ak sa blokom zmenilo, aktualizuj STATUS.md v tom istom PR). Bez čísel správa nie je hotová.
 <!-- DIGEST:END -->
 
 <!-- WEBHOOK:START -->

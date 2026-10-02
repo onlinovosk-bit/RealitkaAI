@@ -24,6 +24,47 @@ nič nepokazila (nespustené); triáda „know-how + páka + zodpovednosť" je z
 **Moje chyby, opravené:** (1) prvá verzia testov nechala prežiť 44 z 45 nezávislých mutácií a README tvrdilo „TESTED ochranné pravidlá" — test prepísaný na parsovanie sekcií;
 (2) §13 odkazoval na záznam v tomto súbore skôr, než existoval — je to tento záznam; (3) preklep v regexe (`speniaz` namiesto `spenaz`) odhalil až pridaný prípad „speňažiť";
 (4) „skóre sa nepočíta" v prvej verzii §13 odporovalo Ústave (skóre je povinné) — doplnené.
+## 2026-10-02 — EVENTS-WIRE: `public.events` mala 0 riadkov, pretože zapisovateľ nebol zapojený; crony pritom bežia
+
+**Vyvrátená diagnóza (moja, meraním).** Tvrdil som, že cron route nikto nedosiahol s platným `CRON_SECRET`, a z toho
+som vyvodil, že blokérom je plán Vercelu. Po okne 02:40 pribudol riadok: `recompute-bri`, `empty`,
+`2026-10-02 03:36:49+00`, 974 ms, `{"skipped":"no_engagement_signal","event_rows":0}`. Riadok vzniká až PO
+autorizácii, takže **crony bežia a `CRON_SECRET` sedí**. Hypotéza o pláne padá. Čo riadok nedokazuje: že volajúcim
+bol Vercel — identita volajúceho sa nikde nezaznamenáva, a to je presne to, čo pridáva #786.
+
+**Skutočná príčina prázdnej AI vrstvy.** `events` = 0 → BRI zámerne nepočíta (EVENTS-REVIVE-01, správne). A `events`
+bola prázdna preto, že:
+- `logEventClient()` nemal **ani jedného volajúceho** — mŕtvy kód štyri mesiace,
+- jediný prehliadačový POST na `/api/events` (`leads/[id]/page.tsx:939`, tlačidlo „⚡ Demo: live signály") posielal
+  `{ leadId, signals }`, zatiaľ čo route čítala `body.entityType` / `body.eventType` — `undefined` išlo do insertu,
+  route nemala validáciu (`as` pretypovanie), chyba skončila v `console.error` a odpoveď bola `ok: true`.
+
+Jedno tiché `catch` pod jedným `as` zastavilo celú vrstvu. 522 leadov reálnej práce, 0 eventov.
+
+**Rozhodnutia:**
+1. `ENTITY_TYPES` / `EVENT_TYPES` sú **runtime polia** a typy sa z nich derivujú (`(typeof X)[number]`). Dôvod:
+   `events` má CHECK len na `entity_type`; `event_type` je v DB voľný text, takže preklep sa zapíše a otrávi pipeline
+   natrvalo. Brána, ktorá existuje len ako TS typ, na hranici HTTP neplatí nič.
+2. `/api/events` validuje zod schémou nad tými poliami; neznámy/chýbajúci typ = **400 bez zápisu**, zlyhaný zápis
+   = **500**, nikdy `ok: true` nad neexistujúcim riadkom.
+3. Kontaktný pokus (`/api/leads/[id]/contact-attempt`) loguje event service-role klientom, ale **skromne**:
+   `call_initiated` / `message_initiated` — nikdy `call_completed` / `message_sent`. Route o doručení ani odpovedi
+   nevie nič a nesmie to tvrdiť. Pre `message_initiated` pribudol typ do slovníka.
+4. Demo tlačidlo prepojené na skutočný `/api/leads/bri-recompute`. Vymyslené signály (`email_open: 1`, …) sú mimo
+   zdroja.
+
+**Pracovný režim je odteraz vynútený hookom.** `.claude/hooks/pracovny-rezim.md` + `UserPromptSubmit` hook
+v `.claude/settings.json`. Dôvod: CLAUDE.md sa pri dlhej session dostane mimo kontext a práca sa rozsypala na
+skrutky — founder sa „uklikal k smrti". Hook beží pri každom prompte, takže pravidlo nemá ako zostarnúť.
+
+**Dôkaz:** 67/67 testov v `src/lib/events/__tests__/` + nové piny; mutácia (odstránenie `lead_viewed` zapojenia)
+→ verification zhasne (2 failed), unit testy zelené; prepush brána VŠETKO PREŠLO, typecheck 49/54; PROD probe
+vložil presne ten tvar, ktorý kód posiela (prešel CHECK `entity_type`), a bol **zmazaný** — `events` je znova 0,
+aby BRI nedostalo vymyslený signál.
+
+**Pozor na MCP:** `execute_sql` na `DELETE` timeoutuje (čaká na potvrdenie, ktoré v tomto kontexte nepríde).
+Obídené `DO $$ ... $$` blokom. CTE `delete ... where id in (select id from probe)` nefunguje — DELETE nevidí riadok
+vložený v tom istom príkaze (snapshot), hlási `deleted: 0` a riadok zostane.
 ## 2026-10-02 — ONL-AGENTS (P08→P10): tri interné agentné roly pre onlinovo.sk — BUILD (read-only), všetko zákazníkovi viditeľné BACKLOG
 
 **GO foundera:** „AGENTIC REVENUE OS — P08 → P09 → P10, FOUNDER GO: APPROVED". **Constitution v2 (smernica 7):** BUILD len pre to, čo je interné, reverzibilné a read-only
