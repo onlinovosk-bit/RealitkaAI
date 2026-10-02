@@ -15,10 +15,18 @@ function parseBody(result: { content: Array<{ text: string }>; isError?: boolean
   };
 }
 
-test("server registers four onlinovo tools", () => {
+test("server registers seven onlinovo tools", () => {
   assert.deepEqual(
     tools.map((tool) => tool.name).sort(),
-    ["onlinovo_health", "onlinovo_orders_open", "onlinovo_stock_low", "onlinovo_write_product"]
+    [
+      "onlinovo_customer_next_action",
+      "onlinovo_experiment_plan",
+      "onlinovo_health",
+      "onlinovo_orders_open",
+      "onlinovo_revenue_opportunities",
+      "onlinovo_stock_low",
+      "onlinovo_write_product",
+    ]
   );
 });
 

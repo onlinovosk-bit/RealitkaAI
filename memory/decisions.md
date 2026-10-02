@@ -24,6 +24,24 @@ nič nepokazila (nespustené); triáda „know-how + páka + zodpovednosť" je z
 **Moje chyby, opravené:** (1) prvá verzia testov nechala prežiť 44 z 45 nezávislých mutácií a README tvrdilo „TESTED ochranné pravidlá" — test prepísaný na parsovanie sekcií;
 (2) §13 odkazoval na záznam v tomto súbore skôr, než existoval — je to tento záznam; (3) preklep v regexe (`speniaz` namiesto `spenaz`) odhalil až pridaný prípad „speňažiť";
 (4) „skóre sa nepočíta" v prvej verzii §13 odporovalo Ústave (skóre je povinné) — doplnené.
+## 2026-10-02 — ONL-AGENTS (P08→P10): tri interné agentné roly pre onlinovo.sk — BUILD (read-only), všetko zákazníkovi viditeľné BACKLOG
+
+**GO foundera:** „AGENTIC REVENUE OS — P08 → P09 → P10, FOUNDER GO: APPROVED". **Constitution v2 (smernica 7):** BUILD len pre to, čo je interné, reverzibilné a read-only
+(detekcia príležitostí, jedna odporúčaná akcia na zákazníka, plán experimentu). Dôvod: otázka 1 — rozhodnutia o e-mailingu onlinovo.sk sa dnes robia ručne a bez
+deterministického dôkazu; žiadne VETO. **Neodhadované:** žiadny dopad na tržby nie je meraný — agenti bežia iba na fixture/unconnected zdroji, takže produkčnú hodnotu zatiaľ
+nemajú. Prime Directive: pre Revolis zostáva priorita č. 1 Stripe krok C; táto práca ju nenahrádza.
+
+**BACKLOG (nie je dovolené bez nového GO a overeného podkladu):** `campaign.send/schedule/update`, `journey.write` (LeadHub kontrakt UNVERIFIED), `record.persist`
+(žiadna overená cesta zápisu), zapojenie LLM (`LLM_WIRED=false`, rozpočet 0), živý zdroj dát, trvalé schvaľovania (CP-P0-2), CI job pre `mcp-onlinovo` (`.github/**` = denylist).
+**DENIED (rozhodnutie vlastníka):** `price.change`, `customer.permission.change`.
+
+**Architektonické rozhodnutia:** (1) EXTEND existujúceho registra `apps/crm/src/lib/agents/agent-specs.ts` (`kind`, `domain`), nie druhý register. (2) Nový `RevenueDataPort`
+oddelený od `ShopAdapter`; žiadny UniversalAdapter, `resolveAdapter()` nezmenený, `denyWrite()` a write-stub nezmenené. (3) Guard v `mcp-onlinovo` je lokálne zrkadlo registra
+(NodeNext neumožňuje import `control-contract`); drift stráži `guard-differential.test.ts` (guard = `resolveAuthority` pre všetky akcie × istoty × kill switch). (4) Deterministika
+najprv: počty, dátumy, RFM, marža, oprávnenosť, prahy a experimentová aritmetika sú funkcie/pravidlá, nikdy LLM. (5) Zákazníci sú pseudonymizovaní (HMAC, fail-closed bez soli);
+e-mail/telefón v `customer_ref` a vo výstupe sa odmieta. (6) Malá vzorka je INDICATIVE a nikdy nemôže skončiť KEEP.
+
+**Stav:** IMPLEMENTED/TESTED, nie VERIFIED (P11). Dôkaz: mcp-onlinovo 172/172, control-contract 72/72, crm agents + approve-draft 104/104, prepush-gate PASS (po merge `main`); mutation proof na každý guard.
 
 ## [2026-10-02] HOOKS-MERGE-FIX — dve nezávislé sady hookov sa zišli v `.claude/settings.json`
 
