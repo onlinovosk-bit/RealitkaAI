@@ -26,6 +26,20 @@ const SCRIPT = join(CRM, 'scripts', 'vercel-ignore-build.sh')
 const SKIP = 0
 const BUILD = 1
 
+/**
+ * Báza pre krok 3 skriptu (`git diff $BASE HEAD -- .`). Bez nej si skript vezme
+ * `HEAD^`, a výsledok potom závisí od toho, kde test beží: CI robí checkout
+ * s `fetch-depth: 2` na merge ref PR, takže PR bez zmeny v apps/crm (dokumenty,
+ * pamäť) má prázdny diff, skript vyhodnotí „nič sa nezmenilo" a preskočí build.
+ * Testy vetiev, ktoré majú dať BUILD, potom zlyhali len v takom PR a lokálne
+ * prešli. Koreňový commit nepomáha: v plytkom klone je „koreňom" hranica
+ * stiahnutej histórie, nie skutočný prvý commit.
+ *
+ * Neexistujúca báza je jediná hodnota nezávislá od histórie: skript skončí
+ * vetvou „báza nie je dostupná" a buildí (neistota znamená buildovať).
+ */
+const UNUSABLE_BASE = '0'.repeat(40)
+
 /** Spustí skript s DANÝM prostredím a vráti jeho exit kód. */
 function run(env: Record<string, string>): number {
   try {
@@ -41,6 +55,7 @@ function run(env: Record<string, string>): number {
         PATH: process.env.PATH ?? '',
         HOME: process.env.HOME ?? '',
         NODE_ENV: process.env.NODE_ENV ?? 'test',
+        VERCEL_GIT_PREVIOUS_SHA: UNUSABLE_BASE,
         ...env,
       },
     })
