@@ -1,3 +1,15 @@
+## Session 2026-10-02 (PLATBY-E2E audit a kontrakt)
+### Dokončené
+- RAU reťazec P00 → P03 na ceste platby (read-only): `docs/reports/2026-10-02-platby-e2e-audit-a-kontrakt.md`.
+- Nález F1: zrušenie, zmena počtu miest a zlyhaná platba sa nepremietnu do `agencies` (jediný writer `subscription_status` je `applySeatCheckoutEntitlements`, zapisuje len `active`). Nález F2: chýbajúci `STRIPE_WEBHOOK_SECRET` sa nikde nehlási. F3/F4 v správe.
+- `docs/STATUS.md`: riadok platieb doplnený o audit; číslo sa nemení.
+### Rozpracované / Pending
+- Kontrakt čaká na `GO PLATBY-E2E`. PROD stav (trigger, webhook endpoint v Stripe) je UNVERIFIED.
+### Kľúčové súbory zmenené
+- docs/reports/2026-10-02-platby-e2e-audit-a-kontrakt.md, docs/STATUS.md
+### Ďalší krok
+Founder: `GO PLATBY-E2E`, potom Stripe krok C.
+
 ## Session 2026-10-02 (WORKING-PROTOCOL-HOOKS)
 ### Dokončené
 - Pravidlo „steny, nie skrutky" je teraz **vynucované hookmi**, nie len zapísané: protokol sa vkladá do kontextu pri štarte a pri každej správe foundera; druhý `git push` do 20 min blokuje `push-throttle` (výnimka `WALL_PUSH_OK=1` + dôvod). 23 testov, mutation proof 15/15, v živej session overené.
