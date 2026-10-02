@@ -13,7 +13,7 @@
 import { NextRequest, NextResponse }     from 'next/server'
 import { createAdminClient }             from '@/lib/supabase/server'
 import { generateAndDeliverBrief }       from '@/lib/morning-brief/assemble'
-import { cronHttpStatus, deriveCronStatus, recordCronRun, recordUnauthorizedCronRun, vercelCronSchedule } from '@/lib/ops/cron-run'
+import { cronHttpStatus, deriveCronStatus, recordCronRun, recordUnauthorizedCronRun, vercelCronSchedule, callerUserAgent } from '@/lib/ops/cron-run'
 import {
   briefNobodyEnabledReason,
   summariseBriefDeliveries,
@@ -25,12 +25,16 @@ const JOB = 'morning-brief'
 export async function GET(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET
   if (!cronSecret || request.headers.get('authorization') !== `Bearer ${cronSecret}`) {
-    // Keď request nesie `x-vercel-cron-schedule`, bol to Vercel cron a bol
-    // odmietnutý — to musí po sebe nechať stopu, inak je prázdna cron_runs
-    // nerozlíšiteľná od „cron vôbec nebežal". Bez hlavičky sa nezapisuje nič.
+    // Odmietnutie požiadavky s cron hlavičkou musí po sebe nechať stopu, inak je
+    // prázdna cron_runs nerozlíšiteľná od „cron vôbec nebežal". Hlavička JE len
+    // rozlišovač, nie dôkaz — poslať ju vie ktokoľvek — preto sa do riadku
+    // ukladá aj rozvrh a user agent a číta sa spolu s časom. Bez platného cron
+    // výrazu v hlavičke sa nezapisuje nič a nerobí sa ani dotaz do DB.
     const schedule = vercelCronSchedule(request.headers)
     if (schedule) {
-      await recordUnauthorizedCronRun(createAdminClient(), JOB, schedule)
+      await recordUnauthorizedCronRun(
+        createAdminClient(), JOB, schedule, callerUserAgent(request.headers),
+      )
     }
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
