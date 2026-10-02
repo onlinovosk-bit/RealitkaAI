@@ -2,6 +2,11 @@
 
 > Posledná aktualizácia: 2026-09-29 | CHECKOUT-ENV-01: A hotové (0/9), blokér je C
 
+## P0 — GMAIL-PULL aktivácia (Smolko, 2026-10-02)
+
+Kód hotový (PR vetva `claude/gmail-pull-finish`), v PROD nič nebeží. Čaká na foundera: migrácia `20261002090000` do PROD; Google Cloud client + režim
+aplikácie; Smolkov súhlas + filter→štítok; GitHub secrets `CRM_BASE_URL`/`CRON_SECRET` + env vo Verceli; dual-run; DPA dodatok. Detail: `docs/runbooks/gmail-pull-setup.md` §6–8.
+
 ## P0 — Billing /upgrade Stripe (revenue)
 
 - [x] Merge #369 okResponse consumer fix → `30a1ba906`

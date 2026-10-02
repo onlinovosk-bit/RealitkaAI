@@ -1,3 +1,17 @@
+## Session 2026-10-02 (GMAIL-PULL-FINISH)
+### Dokončené
+- Gmail pull: trvalý dedup (`agency_gmail_inbound_seen`), fail-closed, okno+stránkovanie, strop tela, rozlíšenie chýb, stopa v `cron_runs`, spúšťač v GitHub Actions (`apps/crm/src/lib/inbound/gmail-pull.ts`, route, migrácia `20261002090000`, `.github/workflows/gmail-inbound-pull.yml`).
+- Strážca `tests/verification/gmail-pull-boundaries.verification.test.ts` + 7 mutácií (1 prežila → opravené).
+- GDPR posúdenie `docs/architecture/inbound-gmail-pull-gdpr.md` (skill gdpr-advisor nebol dostupný), runbook §6–8.
+- Smolkovo NDR z 1.10.: vysvetlené, koncept odpovede odoslal founder.
+### Rozpracované / Pending
+- Aktivácia (nič nebeží v PROD): Google Cloud client + Smolkov súhlas + filter→štítok, migrácia do PROD, GitHub secrets, env vo Verceli, dual-run, DPA dodatok.
+- Token v env = pilot 1 tenanta; šifrovaná tabuľka a odpojenie v UI (fáza B) nerobené.
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/inbound/gmail-pull.ts`, `apps/crm/src/app/api/inbound/gmail-pull/route.ts`, `apps/crm/supabase/migrations/20261002090000_gmail_inbound_seen.sql`, `.github/workflows/gmail-inbound-pull.yml`, `docs/runbooks/gmail-pull-setup.md`, `docs/architecture/inbound-gmail-pull-gdpr.md`.
+### Ďalší krok
+Founder: GO na aplikáciu migrácie v PROD + rozhodnutie o Google režime (In production unverified pre pilot).
+
 ## Session 2026-10-01 (OBSIDIAN-GRAPH-DEFAULTS)
 ### Dokončené
 - Exportér zapisuje `.obsidian/graph.json`: filter bez `HOME`/`Decision-Index`/`Session-Index`/`Dashboard` + farby podľa tagu (`kind/prod` červená, `decision` modrá, `session` oranžová, `ops` zelená). Zapíše sa len ak súbor chýba/je nedotknutý; upravený sa nikdy neprepíše. 16 testov.
