@@ -7,7 +7,7 @@
 
 | blok | váha | stav | skóre | čo blokuje |
 |---|---|---|---|---|
-| **Predaj / platby (Stripe)** | 30 | **0 z 10 cien** na live účte | **0 %** | **founder: krok C v Stripe** |
+| **Predaj / platby (Stripe)** | 30 | **0 z 10 cien** na live účte · audit cesty platby (2. 10.): zrušenie/zmena miest/zlyhaná platba sa nepremietne do `agencies`, `STRIPE_WEBHOOK_SECRET` sa nehlási; kontrakt PLATBY-E2E čaká na GO (`docs/reports/2026-10-02-platby-e2e-audit-a-kontrakt.md`) | **0 %** | **founder: krok C v Stripe** (+ GO PLATBY-E2E) |
 | Príjem e-mailov → lead | 30 | parser ✅ · diagnostika (#743) ✅ · log schránok + trvalá stopa (#774) ✅ **nasadené a funguje** (23 riadkov od 1. 10. 19:41) · `unknown_source` → BACKLOG (dáta nepodporujú) | 80 % | nič — čaká na reálne portálové maily |
 | AI návrh + odoslanie | 15 | triage ✅ · návrh ✅ · odoslanie ❌ | 67 % | founder: Resend DNS + reply-to + súhlas Smolka |
 | Tenantová izolácia | 15 | 28 z 40 ciest zavretých | 70 % | nič naliehavé (zoznam nižšie) |
