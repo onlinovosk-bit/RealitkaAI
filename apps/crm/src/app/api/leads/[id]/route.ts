@@ -147,7 +147,13 @@ export async function PATCH(
       }, 1)).catch(() => {/* best-effort */});
 
       if (lead.status === "Horúci" && lead.assignedProfileId) {
-        notifyHotLead(lead.assignedProfileId, lead.name, id).catch(() => {/* best-effort */});
+        // Po odpovedi (LEAD-PIPELINE-AFTER): bez `await` sa push na serverless po odoslaní odpovede zmrazil
+        // a maklér sa o horúcom leade nedozvedel. Pád sa zachytí s kontextom, odpoveď nikdy nepokazí.
+        const assignedProfileId = lead.assignedProfileId;
+        const leadName = lead.name;
+        runAfterResponse("lead-hot-push", [
+          { name: "notify-hot-lead", run: () => notifyHotLead(assignedProfileId, leadName, id) },
+        ]);
       }
 
       const agencyId = leadRow?.agency_id ?? callerProfile?.agency_id;
