@@ -5,6 +5,8 @@ RAU route: GO_REQUIRED (ručne; router zamietnutý) roadmap Revolis.AI
 - Cenový ťah (§9): odsúhlasený cenník Start 25 / Team 60 / Kancelária 149 (7–25) / Sieť od 349 (26+), kredity 25/60/120/175 po 0,70 €, balíky o 1–4 c lacnejšie než AIRAmax (interpolované porovnanie).
 - `LISTING_DESCRIPTION` 2 → 1 kredit (`credit-rates.ts` + test; 40/40 testov OK; dopad nulový, `CREDITS_ENFORCEMENT=off`).
 - Oprava faktu: platí jediný klient (199 € + 99 € onboarding); „3 kancelárie / MRR 597 €“ z DEC-20260924-001 bolo podľa štítku plánu.
+- W0 inventúra cenníka v2: `docs/pricing/2026-10-05-pricing-v2-w0-inventory.md` (mapa povrch → checkout → webhook → grant; 8 rozporov plán vs. kód, napr. `billing-lifecycle.ts` neexistuje, DPH nie je v checkoute).
+- Otvorené pre foundera: základ DPH (s DPH 5. 10. vs. bez DPH v exekučnom pláne), veľkosti balíkov (kópia AIRAmax 50…300 vs. vlastné), W1 čaká na to.
 ### Rozpracované / Pending
 - Čaká GO na Stenu 0 (Stripe live ceny — krok C robí founder, Vercel limit, trial 14 d bez karty, e2e). Nič nestavané.
 - Neoverené: produkt AIRAmax (vidíme len web), trial flow, WhatsApp, protokol, `revolis-ai` chat, export cez Realvia — treba plný P01.
