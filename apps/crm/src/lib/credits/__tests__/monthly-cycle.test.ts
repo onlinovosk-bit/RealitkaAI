@@ -87,3 +87,80 @@ describe("runMonthlyCreditCycle", () => {
     expect(grantMock).toHaveBeenCalledTimes(2);
   });
 });
+
+describe("runMonthlyCreditCycle — pricing v2 (kritérium 6)", () => {
+  const v2Agency = {
+    id: "agency-v2",
+    seats: 4,
+    account_tier: "pro",
+    grant_credits_balance: 0,
+    purchased_credits_balance: 0,
+    owner_cockpit_active: false,
+    credits_balance: 0,
+    pricing_model: "v2",
+    pricing_band: "team",
+    pack_credits: 120,
+    subscription_status: "active",
+  };
+
+  /** Zaznamená stĺpce každého selectu a vráti riadky podľa `rows` / chyby podľa `errors`. */
+  function wireDb(opts: { rows: unknown[]; grantErrors?: Array<{ code?: string; message: string } | null> }) {
+    const selects: string[] = [];
+    const grantErrors = [...(opts.grantErrors ?? [])];
+    mockFrom.mockImplementation(() => ({
+      select: (cols: string) => {
+        selects.push(cols);
+        return {
+          gt: (col: string) => {
+            if (col === "grant_credits_balance") return Promise.resolve({ data: [], error: null });
+            const error = grantErrors.length ? grantErrors.shift()! : null;
+            return Promise.resolve({ data: error ? null : opts.rows, error });
+          },
+        };
+      },
+    }));
+    return selects;
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    expireMock.mockResolvedValue({ expired: 0, skipped: true });
+    grantMock.mockResolvedValue({ granted: 180, skipped: false });
+  });
+
+  it("the grant phase selects the v2 columns and hands the v2 agency (seats > 0) to the grant engine", async () => {
+    const selects = wireDb({ rows: [v2Agency] });
+    const result = await runMonthlyCreditCycle();
+
+    expect(result.ok).toBe(true);
+    const grantSelect = selects[1];
+    for (const col of ["pricing_model", "pricing_band", "pack_credits", "subscription_status"]) {
+      expect(grantSelect).toContain(col);
+    }
+    // expirácia (fáza 1) ostáva na pôvodných stĺpcoch
+    expect(selects[0]).not.toContain("pricing_model");
+    expect(grantMock).toHaveBeenCalledTimes(1);
+    expect(grantMock.mock.calls[0][0]).toMatchObject({ id: "agency-v2", pricing_model: "v2", pricing_band: "team", pack_credits: 120 });
+  });
+
+  it("before the migration is applied the cycle falls back to the legacy columns instead of failing", async () => {
+    const selects = wireDb({
+      rows: [agencyA],
+      grantErrors: [{ code: "42703", message: 'column agencies.pricing_model does not exist' }],
+    });
+    const result = await runMonthlyCreditCycle();
+
+    expect(result.ok).toBe(true);
+    expect(selects).toHaveLength(3);
+    expect(selects[2]).not.toContain("pricing_model");
+    expect(grantMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("any other grant-phase DB error still fails the cycle (no blanket fallback)", async () => {
+    wireDb({ rows: [agencyA], grantErrors: [{ code: "XX000", message: "connection reset" }] });
+    const result = await runMonthlyCreditCycle();
+    expect(result.ok).toBe(false);
+    expect(result.error).toBe("connection reset");
+    expect(grantMock).not.toHaveBeenCalled();
+  });
+});

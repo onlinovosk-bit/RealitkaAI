@@ -10,6 +10,14 @@ import {
   SEAT_TIER_CONFIG,
   SEAT_TIER_STRIPE_ENV,
 } from "@/lib/program-tier-pricing";
+import {
+  applyPricingV2SubscriptionEvent,
+  subscriptionHasPricingV2Price,
+} from "@/lib/credits-billing-v2";
+import {
+  PRICING_V2_CHECKOUT_TYPE_CREDITS,
+  PRICING_V2_CHECKOUT_TYPE_PLAN,
+} from "@/lib/pricing-v2-contract";
 
 /**
  * Seat / credit top-up / starter-pack checkouts are fulfilled by
@@ -24,9 +32,17 @@ export function isPricingCheckoutMetadata(
   return (
     checkoutType === "seat" ||
     checkoutType === "credit_topup" ||
-    checkoutType === "starter_pack"
+    checkoutType === "starter_pack" ||
+    checkoutType === PRICING_V2_CHECKOUT_TYPE_PLAN ||
+    checkoutType === PRICING_V2_CHECKOUT_TYPE_CREDITS
   );
 }
+
+const SUBSCRIPTION_LIFECYCLE_EVENTS = new Set([
+  "customer.subscription.created",
+  "customer.subscription.updated",
+  "customer.subscription.deleted",
+]);
 
 // Mapovanie tier â†’ ui_role
 const TIER_TO_UI_ROLE: Record<string, string> = {
@@ -512,6 +528,17 @@ export async function handleStripeWebhookEvent(event: Stripe.Event) {
   // activity insert fell back to the browser singleton (anon) and RLS
   // rejected every billing activity; the error was swallowed below.
   const activityClient = createServiceRoleClient();
+
+  // Cenník v2: predplatné s v2 cenou NESMIE ísť cez syncAccountTier (neznáme price ID by agentúru
+  // zhodilo na "free"). Zápis stavu/pásma je mimo try/catch nižšie: zlyhanie musí vrátiť chybu,
+  // aby Stripe udalosť zopakoval, nie ju potichu zahodil.
+  if (SUBSCRIPTION_LIFECYCLE_EVENTS.has(event.type) && subscriptionHasPricingV2Price(object)) {
+    const applied = await applyPricingV2SubscriptionEvent(event);
+    if (!applied) {
+      throw new Error(`Pricing v2 subscription event nebola spracovaná: ${event.type}`);
+    }
+    return { ok: true };
+  }
 
   try {
     if (event.type === "checkout.session.completed") {

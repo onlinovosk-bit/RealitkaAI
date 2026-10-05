@@ -3,13 +3,25 @@ import type Stripe from "stripe";
 import { handleStripeWebhookEvent, verifyStripeWebhook } from "@/lib/billing-store";
 import { handlePricingCheckoutWebhook } from "@/lib/credits-billing-webhook";
 import { autoErrorCapture } from "@/lib/auto-error-capture";
+import {
+  PRICING_V2_CHECKOUT_TYPE_CREDITS,
+  PRICING_V2_CHECKOUT_TYPE_PLAN,
+} from "@/lib/pricing-v2-contract";
 
-/** Seat / top-up / starter-pack — fulfilled only by handlePricingCheckoutWebhook. */
+/** Seat / top-up / starter-pack / pricing v2 — fulfilled only by handlePricingCheckoutWebhook. */
 function isPricingCheckoutSession(event: Stripe.Event): boolean {
+  const checkoutType = (event.data.object as Stripe.Checkout.Session).metadata?.checkoutType;
+  // Cenník v2: plní aj checkout.session.async_payment_succeeded (asynchrónna platba).
+  if (
+    event.type === "checkout.session.async_payment_succeeded" &&
+    (checkoutType === PRICING_V2_CHECKOUT_TYPE_PLAN || checkoutType === PRICING_V2_CHECKOUT_TYPE_CREDITS)
+  ) {
+    return true;
+  }
   if (event.type !== "checkout.session.completed") return false;
-  const session = event.data.object as Stripe.Checkout.Session;
-  const checkoutType = session.metadata?.checkoutType;
   return (
+    checkoutType === PRICING_V2_CHECKOUT_TYPE_PLAN ||
+    checkoutType === PRICING_V2_CHECKOUT_TYPE_CREDITS ||
     checkoutType === "seat" ||
     checkoutType === "credit_topup" ||
     checkoutType === "starter_pack"
