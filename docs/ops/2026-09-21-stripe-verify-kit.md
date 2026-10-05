@@ -47,7 +47,11 @@ bash scripts/ops/stripe-verify-prices.sh
 ```
 
 Stačí **restricted key** (Stripe Dashboard → Developers → API keys → Create
-restricted key → *Prices: Read*, všetko ostatné *None*). Ak unikne, nevie nič
+restricted key → *Prices: Read*, všetko ostatné *None*). Pridaj k nemu aj
+*Account: Read* — potom prvý riadok výpisu povie stav účtu (`UCET OK
+charges_enabled=true …`), čiže či je krok B1 naozaj hotový. Bez toho scope
+vypíše `UCET nemerane` a pokračuje; **nemerané nie je OK** a exit kódom nehýbe.
+Účet, ktorý neúčtuje, je exit 1 aj pri desiatich správnych cenách. Ak unikne, nevie nič
 účtovať ani čítať zákazníkov. Testovací kľúč (`sk_test_`) skript odmietne — vrátil
 by 0/N a zviedol by k záveru „ceny neexistujú".
 
@@ -334,12 +338,29 @@ runtime, existujúci deployment ich nezoberie.
 
 ## 8. Krok D — smoke po deployi
 
-1. `GET /api/billing/checkout-config` → `seatCheckoutAvailable: true`
-2. Prihlásený `/upgrade` → tlačidlo „Pokračovať do Stripe" sa vykreslí
-3. Klik → Stripe Checkout sa otvorí
-4. **Skontroluj sumu na Stripe stránke proti sume v UI** — nielen že sa otvorí.
+**Strojová časť — jeden príkaz, exit kód:**
+
+```bash
+bash scripts/ops/stripe-checkout-probe.sh          # default https://app.revolis.ai
+```
+
+Read-only, nezautentizovaný `GET /api/billing/checkout-config`. Vypíše stav
+oboch brán (seat je P0, top-up samostatná), **názvy** chýbajúcich premenných
+(nikdy hodnoty), ktorá z dvoch cockpit cien platí — a porovná sumy, ktoré
+nasadený kód ponúka, proti `scripts/ops/stripe-expected-prices.json`.
+Exit: `0` = obe brány OK a sumy sedia, `1` = niečo chýba alebo nesedí,
+`2` = sieť / HTTP / nečitateľné telo.
+
+Sonda **nedokazuje**, že Stripe cena za tou premennou má tú istú sumu — to je
+krok A. Dokazuje, že PROD tie premenné vidí a za koľko predáva.
+
+**Ručná časť — bez nej to nie je overené:**
+
+1. Prihlásený `/upgrade` → tlačidlo „Pokračovať do Stripe" sa vykreslí
+2. Klik → Stripe Checkout sa otvorí
+3. **Skontroluj sumu na Stripe stránke proti sume v UI** — nielen že sa otvorí.
    Toto je jediné miesto, kde sa chytí trap z §3.
-5. Ak je cockpit zaškrtnutý: Checkout musí ukázať **dva** line items
+4. Ak je cockpit zaškrtnutý: Checkout musí ukázať **dva** line items
 
 Krok E (`/porovnanie-programov` cleanup, `FUNNEL-PRICING-01`) sa sem **nemieša**.
 
@@ -353,5 +374,20 @@ Krok E (`/porovnanie-programov` cleanup, `FUNNEL-PRICING-01`) sa sem **nemieša*
 - **Nerieši `metadata.founderCockpit`**, ktorá klame pri fallbacku (§3). Tiež
   samostatný fix.
 - **Nerieši `FUNNEL-PRICING-01`.**
+- **Marketing je mimo manifest — vedomé rozhodnutie foundera (2026-10-05).**
+  `apps/marketing` číta ďalších **šesť** cien, ktoré v
+  `stripe-expected-prices.json` nie sú: `STRIPE_PRICE_AUDIT_149`,
+  `STRIPE_PRICE_AUDIT_99` (`/api/revenue-scan/checkout`),
+  `STRIPE_PRICE_SMART_START`, `STRIPE_PRICE_RADAR_MAKLERA`,
+  `STRIPE_PRICE_STRAZCA`, `STRIPE_PRICE_REALITY_MONOPOL`
+  (`/api/checkout/subscription`). Dôsledok, s ktorým sa počíta: VERIFY môže
+  vypísať „10/10 resolved" a sonda z §8 skončiť na 0, **kým marketingové
+  checkouty nepredajú nič**. Nie je to chyba merania, je to iný rozsah.
+- **Chybný stavový kód pri chýbajúcej marketingovej cene.** Zmerané 2026-10-05:
+  `apps/marketing/app/api/checkout/subscription/route.ts` vráti pri nenastavenej
+  premennej **400 `unknown_plan`** (prázdny string je falsy), nie 503 — teda
+  tvrdí „taký plán neexistuje" tam, kde len chýba konfigurácia.
+  `/api/revenue-scan/checkout` to má správne (503 `price_not_configured`).
+  Zapísané, **neopravené** — marketing je dnes mimo rozsahu, samostatné GO.
 - **Neoveruje, či `#369` naozaj opravil consumer contract** — to sa dá potvrdiť
   až po kroku D, keď sa UI konečne dostane za checkout gate.

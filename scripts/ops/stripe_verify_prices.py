@@ -8,6 +8,12 @@ Pouzitie:
     bash scripts/ops/stripe-verify-prices.sh
     bash scripts/ops/stripe-verify-prices.sh --spec    # co vytvorit v Stripe, bez kluca
 
+Scope "Account: Read" je VOLITELNY. S nim VERIFY povie aj stav uctu (KYB,
+krok B1) - charges_enabled/details_submitted/payouts_enabled. Bez neho Stripe
+vrati 403 a VERIFY napise "nemerane" a pokracuje kontrolou cien. Nemerane nie
+je OK: bez charges_enabled live checkout platbu NEPRIJME, aj keby desat cien
+sedelo na cent.
+
 Kluc sa cita IBA z env a ide IBA do HTTP hlavicky - nikdy do argv (kluc v argumente
 externeho procesu by bol viditelny v `ps`). Posli spat iba VYSTUP: price ID nie su tajomstvo, kluc ano.
 
@@ -107,6 +113,56 @@ def fetch_live(key):
         cursor = page["data"][-1]["id"]
 
 
+ACCOUNT_FIELDS = ("charges_enabled", "details_submitted", "payouts_enabled")
+
+
+def fetch_account(key):
+    """Stav uctu (KYB). Vracia (data, None) alebo (None, dovod preco nemerane).
+
+    403 je ocakavany stav, nie chyba: restricted kluc so scope "Prices: Read"
+    na /v1/account nema pravo. VERIFY ma zmysel aj bez toho - len o ucte
+    nepovie nic. 401 naopak znamena zly kluc a padne rovnako ako pri cenach.
+    """
+    req = urllib.request.Request(
+        "https://api.stripe.com/v1/account",
+        headers={"Authorization": f"Bearer {key}"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return json.load(resp), None
+    except urllib.error.HTTPError as e:
+        if e.code == 403:
+            return None, 'kluc nema scope "Account: Read" (HTTP 403)'
+        try:
+            msg = json.load(e).get("error", {}).get("message", "")
+        except Exception:
+            msg = ""
+        print(f"STRIPE ERROR {e.code}: {msg}", file=sys.stderr)
+        sys.exit(2)
+    except urllib.error.URLError as e:
+        print(f"NETWORK ERROR: {e.reason}", file=sys.stderr)
+        sys.exit(2)
+
+
+def print_account(account, note):
+    """Vypise stav uctu a vrati True / False / None (= nemerane).
+
+    None sa NIKDY nepocita ako OK a ani ako chyba - exit kod hybu iba merane
+    fakty. Preto je ten riadok vo vystupe hlasny.
+    """
+    if account is None:
+        print(f"UCET     nemerane -- {note}")
+        return None
+    flags = " ".join(f"{f}={str(bool(account.get(f))).lower()}" for f in ACCOUNT_FIELDS)
+    charges = bool(account.get("charges_enabled"))
+    print(f"{'UCET OK ' if charges else 'UCET NIE'} {flags}")
+    if not charges:
+        print("         Krok B1 (aktivacia/KYB) nie je hotovy. Ceny sa daju vytvorit,")
+        print("         ale live checkout platbu NEPRIJME, kym charges_enabled nie je true.")
+    print()
+    return charges
+
+
 def fetch_fixture(path):
     """Offline mod pre testy: {"pages": [<Stripe list objekt>, ...]}."""
     with open(path, encoding="utf-8") as f:
@@ -117,7 +173,10 @@ def fetch_fixture(path):
 def print_spec(manifest):
     print("Krok C - co vytvorit v Stripe Dashboard (LIVE mode). Vytvara founder, nie agent.\n")
     print("Kazda cena: currency EUR, Standard pricing (per unit), amount = presne co zakaznik")
-    print("zaplati (checkout nema automatic_tax). Recurring = Monthly, interval 1.\n")
+    print("zaplati. Recurring = Monthly, interval 1.\n")
+    print("DPH: tento kod neposiela automatic_tax ani tax_behavior, takze Stripe k sume NIC")
+    print("nepripocita. Ako platca DPH mas DPH obsiahnutu v tejto sume. Zadaj presne cisla")
+    print("nizsie - nie sumy bez DPH.\n")
     for gate, label in GATES.items():
         rows = [e for e in manifest if e["gate"] == gate]
         if not rows:
@@ -129,7 +188,7 @@ def print_spec(manifest):
     print("Potom znova spusti VERIFY - vypise riadky KLUC=price_... pre krok B.")
 
 
-def verify(manifest, prices):
+def verify(manifest, prices, charges_ok=None):
     ok_lines, unresolved, gate_ok = [], 0, {g: True for g in GATES}
     for e in manifest:
         same_amount = [p for p in prices if p.get("unit_amount") == e["amount"]]
@@ -163,7 +222,15 @@ def verify(manifest, prices):
         print("\nSeat brana kompletna -> krok B moze ist aj s ostatnymi MISSING.")
     else:
         print("\nSeat brana NEUPLNA -> krok C (STOP, samostatne GO). Co vytvorit: --spec")
-    return 0 if unresolved == 0 else 1
+
+    if charges_ok is False:
+        print("Ucet NEUCTUJE -> aj kompletne ceny su nepredajne, kym nedobehne krok B1.")
+    elif charges_ok is None:
+        print("Stav uctu NEMERANY -> VERIFY nevie povedat, ci live checkout prijme platbu.")
+
+    # Exit kod hybu iba merane fakty: nemerany ucet nie je dovod hlasit chybu,
+    # ale ani dovod tvrdit, ze je vsetko v poriadku - od toho je riadok vyssie.
+    return 0 if (unresolved == 0 and charges_ok is not False) else 1
 
 
 def main(argv):
@@ -172,7 +239,12 @@ def main(argv):
         print_spec(manifest)
         return 0
     if "--fixture" in argv:
-        return verify(manifest, fetch_fixture(argv[argv.index("--fixture") + 1]))
+        charges_ok = None
+        if "--account-fixture" in argv:
+            with open(argv[argv.index("--account-fixture") + 1], encoding="utf-8") as f:
+                raw = json.load(f)
+            charges_ok = print_account(raw.get("account"), raw.get("note"))
+        return verify(manifest, fetch_fixture(argv[argv.index("--fixture") + 1]), charges_ok)
 
     key = os.environ.get("STRIPE_SECRET_KEY", "").strip()
     if not key:
@@ -185,7 +257,10 @@ def main(argv):
     if not key.startswith(("sk_live_", "rk_live_")):
         print("Kluc nevyzera ako Stripe live kluc (sk_live_/rk_live_).", file=sys.stderr)
         return 2
-    return verify(manifest, fetch_live(key))
+    # Ucet ide PRVY: ked neuctuje, je to zavaznejsie nez ktorakolvek chybajuca
+    # cena - ale ceny sa aj tak dopocitaju, aby founder dostal oba fakty naraz.
+    charges_ok = print_account(*fetch_account(key))
+    return verify(manifest, fetch_live(key), charges_ok)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,27 @@
 # Critical Decisions Log
 
+## 2026-10-05 — STRIPE-STEP-C-PROOF: founderov ručný Stripe krok sa dá zmerať (BUILD)
+
+**GO foundera:** schválený plán `STRIPE-STEP-C-PROOF`. Prime Directive #1: krok C je jediná vec medzi nami a platiacim klientom; agent ceny nevytvára ani nedostáva live kľúč, takže jediné, čo môže urobiť, je spraviť ten ručný krok nepokaziteľným a merateľným.
+
+**Tri merané fakty, ktoré stenu spustili:**
+1. **KYB nikto nemeral.** VERIFY o účte nehovoril nič; runbook §B1 odporúčal „pozri sa do Dashboardu". Dalo sa vytvoriť 10 cien, doplniť 10 env premenných, urobiť redeploy — a až potom zistiť, že `charges_enabled=false`.
+2. **Runbook si protirečil s kódom.** §B2 tvrdil, že „Stripe pripočíta DPH navrch a zákazník zaplatí 58,80 € tam, kde si sľúbil 49 €". Zmerané: `automatic_tax|tax_behavior|tax_rates|tax_id_collection` má v `apps/` **nula** výskytov; všetkých šesť miest, čo zakladajú Checkout session (`credits-billing.ts:129,164`, `billing-store.ts:289`, tri `fetch` v `apps/marketing`), neposiela ani jedno. Stripe účtuje presne `unit_amount`. Veta vedela doviesť foundera (platiteľ DPH) k zadaniu desiatich cien v sumách bez DPH — a použitú Stripe cenu sa už nedá prepísať, iba archivovať.
+3. **Krok D bol zoznam piatich klikov.** Prvé dve položky boli strojovo overiteľné a nikto ich skriptom neoveroval.
+
+**Rozhodnutia:**
+- **Exit kódom hýbu iba MERANÉ fakty.** `charges_enabled=false` je exit 1 aj pri desiatich správnych cenách. Kľúč bez scope `Account: Read` → `UCET nemerane`, hlasno vypísané, ale ani OK, ani chyba (exit kód nehýbe). Nemerané nie je OK.
+- **`--spec` je jediný zdroj súm.** Runbook už žiadnu sumu neopakuje, odkazuje naň.
+- **Sonda kroku D nenahrádza človeka.** Dokazuje, že PROD vidí env premenné a za koľko predáva; **nedokazuje**, že Stripe cena za tou premennou má tú istú sumu (to je krok A), ani že sa Checkout otvorí s dvoma line items. Napísané priamo vo výstupe sondy, nielen v doc.
+- **Manifest dostal `key`**, aby sonda párovala sumy podľa kľúča z kódu a nehádala ich z názvu env premennej.
+- **Marketing zostáva mimo rozsahu** (rozhodnutie foundera „teraz vôbec neriešiť"), ale zapísaný: šesť ďalších cien mimo manifestu → VERIFY môže hlásiť „10/10", kým marketingové checkouty nepredajú nič.
+
+**Nález, zapísaný a NEopravený (mimo rozsahu):** `apps/marketing/app/api/checkout/subscription/route.ts:25` vráti pri nenastavenej cene **400 `unknown_plan`** namiesto 503 — tvrdí „taký plán neexistuje" tam, kde chýba konfigurácia. `/api/revenue-scan/checkout` to má správne. Kandidát na samostatné GO.
+
+**Dôkaz:** `tests/verification/` 86 súborov / 648 testov zelených (z toho 9 nových pre sondu proti **skutočnej** route, 4 nové pre stav účtu, 3 nové pre daňovú zmluvu); `prepush-gate.sh` PASS (typecheck 49/54, lint, BUS, control contract, schema-gap); `--spec` vypisuje 10 cien v nezmenených sumách.
+
+**NIE je dokázané:** že sonda prejde proti živému PROD — `app.revolis.ai:443` je zablokovaný egress politikou tejto session (`connect_rejected`, 403 na CONNECT), takže posledný beh musí spustiť founder zo svojho stroja. Namiesto toho je sonda overená proti **skutočnému telu route** (volá sa `GET` z `checkout-config/route.ts`, nie ručne napísaná odpoveď), čo drží tvar odpovede na sonde. Stav účtu naživo tiež neoverený — live kľúč má iba founder.
+
 ## 2026-10-05 — ONL-AGENTS-FIX: opravy nálezov P11 (BUILD, zúžený rozsah)
 
 **GO foundera:** „GO FIX" po P11 (nezávislé overenie #807: bez VERIFIED, 5 stredných nálezov F1–F5, F12 a 7 medzier v testoch). #807 bol medzitým zmergovaný, oprava je nový PR z `main`.

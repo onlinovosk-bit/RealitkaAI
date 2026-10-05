@@ -1,17 +1,16 @@
 # Revolis.AI — STAV NA JEDNEJ STRÁNKE
 
 > Aktualizuje sa **po každom uzavretom bloku** (jeden riadok zmeny hore + tabuľka). Čísla sú merané, kde je uvedený dôkaz;
-> **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 09:40 UTC** (RAU Leverage track — docs-only, % nezmenené).
-> **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 08:30 UTC** (EVENTS-WIRE + CRON-ALIVE, zatiaľ nezmergované).
+> **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-05, 07:00 UTC** (STRIPE-STEP-C-PROOF — meranie KYB vo VERIFY, sonda kroku D, oprava DPH tvrdenia v runbooku; % nezmenené, ceny stále 0 z 10).
 
 ## Celkom: ≈ 52 %  (odhad)
 
 | blok | váha | stav | skóre | čo blokuje |
 |---|---|---|---|---|
-| **Predaj / platby (Stripe)** | 30 | **0 z 10 cien** na live účte | **0 %** | **founder: krok C v Stripe** |
+| **Predaj / platby (Stripe)** | 30 | **0 z 10 cien** na live účte · cesta je ale meraná od konca po koniec: VERIFY hlási aj stav účtu (KYB), sonda `stripe-checkout-probe.sh` hlási, čo z toho vidí PROD | **0 %** | **founder: krok C v Stripe** |
 | Príjem e-mailov → lead | 30 | parser ✅ · diagnostika (#743) ✅ · log schránok + trvalá stopa (#774) ✅ **nasadené a funguje** (23 riadkov od 1. 10. 19:41) · `unknown_source` → BACKLOG (dáta nepodporujú) | 80 % | nič — čaká na reálne portálové maily |
 | AI návrh + odoslanie | 15 | triage ✅ · návrh ✅ · odoslanie ❌ | 67 % | founder: Resend DNS + reply-to + súhlas Smolka |
-| **AI vrstva (BRI, skóre, briefy)** | *(v „Schéma + nasadenie")* | **crony BEŽIA** (meraná stopa v `cron_runs`) · zapisovateľ eventov zapojený (#786, čaká na merge) · `events` stále 0 do nasadenia | 40 % | merge #786 + nasadenie |
+| **AI vrstva (BRI, skóre, briefy)** | *(v „Schéma + nasadenie")* | **crony BEŽIA** (meraná stopa v `cron_runs`) · zapisovateľ eventov zapojený a **nasadený** (#786 zmergovaný ako `f6886ed`, PROD deploy READY) · `events` je 0, kým človek neotvorí detail leadu — zámerne som testovací riadok nevložil | 40 % | reálna návšteva detailu leadu (potom `lead_scores` / `bri_history`) |
 | Tenantová izolácia | 15 | 28 z 40 ciest zavretých | 70 % | nič naliehavé (zoznam nižšie) |
 | Schéma + nasadenie | 10 | schéma ~98 % · nasadenie beží (buildy prechádzajú) · **hypotéza „cron blokuje plán Vercelu" VYVRÁTENÁ meraním** | 70 % | nič — Vercel Pro nie je pre crony potrebné |
 
@@ -27,7 +26,7 @@
 *Stav: #807 zmergovaný (nie mnou); opravy nálezov P11 sú v novom draft PR. Nič nenasadené. `packages/mcp-onlinovo` nemá CI job (`.github/**` je denylist → rozhodne founder).*
 
 ## Čo potrebujem od teba (zoradené podľa dopadu)
-1. **Stripe krok C** — vytvoriť ceny: `bash scripts/ops/stripe-verify-prices.sh --spec` → potom pošli výstup `…verify-prices.sh`; overenie spravím ja. *(+30 bodov, jediný krok, ktorý odblokuje platiaceho klienta)*
+1. **Stripe krok C** — vytvoriť ceny: `bash scripts/ops/stripe-verify-prices.sh --spec` → potom pošli výstup `…verify-prices.sh` (restricted key so scope **Prices: Read + Account: Read**, aby výpis povedal aj `charges_enabled`); sumy zadaj presne tak, ako ich `--spec` vypíše — DPH je v nich obsiahnutá, Stripe nič nepripočíta. Overenie spravím ja. *(+30 bodov, jediný krok, ktorý odblokuje platiaceho klienta)*
 2. ~~Merge #774~~ ✅ hotovo (`3dc3119`) a **nasadené v produkcii** (overené: deployment READY, 23 riadkov v `inbound_mail_outcomes`, nové `to_agency_mailbox` v logoch, 0× `mail_outcome_write_failed`).
 3. **Vercel**: Pro **netreba kvôli cronom** — tie bežia, dokázané dvoma riadkami v `cron_runs`
    (`recompute-bri` 03:36:49, `morning-brief` 06:30:30, obe 2026-10-02, každý vo svojom okne s posunom 30–57 min).

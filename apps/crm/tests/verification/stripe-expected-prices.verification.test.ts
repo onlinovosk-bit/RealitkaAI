@@ -31,13 +31,26 @@ const MANIFEST = join(OPS, "stripe-expected-prices.json");
 const SCRIPT = join(OPS, "stripe_verify_prices.py");
 const WRAPPER = join(OPS, "stripe-verify-prices.sh");
 
-type Row = { env: string; amount: number; type: "recurring" | "one_time"; gate: string };
+type Row = {
+  env: string;
+  /**
+   * Kľúč z kódu. Nie je kozmetika: `scripts/ops/stripe-checkout-probe.py` podľa
+   * neho páruje sumy, ktoré PROD vystaví, na sumy v manifeste — bez neho by
+   * musel hádať z názvu env premennej, a hádanie je presne to, čo tieto piny
+   * nemajú dovoliť.
+   */
+  key: string;
+  amount: number;
+  type: "recurring" | "one_time";
+  gate: string;
+};
 
 function rowsFromCode(): Row[] {
   const rows: Row[] = [];
   for (const tier of SEAT_TIERS) {
     rows.push({
       env: SEAT_TIER_STRIPE_ENV[tier],
+      key: tier,
       amount: SEAT_TIER_CONFIG[tier].priceEur * 100,
       type: "recurring",
       gate: "seat",
@@ -46,11 +59,20 @@ function rowsFromCode(): Row[] {
   for (const c of Object.values(COCKPIT_PRODUCTS)) {
     if (!c.enabled) continue;
     if (c.stripeEnvKey) {
-      rows.push({ env: c.stripeEnvKey, amount: c.priceEur * 100, type: "recurring", gate: "cockpit" });
+      rows.push({
+        env: c.stripeEnvKey,
+        key: c.key,
+        amount: c.priceEur * 100,
+        type: "recurring",
+        gate: "cockpit",
+      });
     }
     if (c.founderStripeEnvKey && c.founderPriceEur != null) {
       rows.push({
         env: c.founderStripeEnvKey,
+        // Founder cena nie je vlastný produkt, je to pole produktu `owner` —
+        // odvodenina je tu, na jednom mieste, nie v manifeste ako literál.
+        key: `${c.key}Founder`,
         amount: c.founderPriceEur * 100,
         type: "recurring",
         gate: "cockpit",
@@ -58,10 +80,17 @@ function rowsFromCode(): Row[] {
     }
   }
   for (const p of Object.values(TOPUP_PACKAGES)) {
-    rows.push({ env: p.stripeEnvKey, amount: p.priceEur * 100, type: "one_time", gate: "topup" });
+    rows.push({
+      env: p.stripeEnvKey,
+      key: p.key,
+      amount: p.priceEur * 100,
+      type: "one_time",
+      gate: "topup",
+    });
   }
   rows.push({
     env: STARTER_PACK.stripeEnvKey,
+    key: "starterPack",
     amount: STARTER_PACK.priceEur * 100,
     type: "one_time",
     gate: "starter_pack",
@@ -71,7 +100,7 @@ function rowsFromCode(): Row[] {
 
 function rowsFromManifest(): Row[] {
   const raw = JSON.parse(readFileSync(MANIFEST, "utf8")) as { prices: Row[] };
-  return raw.prices.map(({ env, amount, type, gate }) => ({ env, amount, type, gate }));
+  return raw.prices.map(({ env, key, amount, type, gate }) => ({ env, key, amount, type, gate }));
 }
 
 const byEnv = (a: Row, b: Row) => a.env.localeCompare(b.env);
@@ -268,6 +297,75 @@ describe("stripe_verify_prices.py (offline, --fixture)", () => {
     expect(code).toBe(1);
   });
 });
+
+/**
+ * CHECKOUT-KYB-01 — VERIFY musí povedať aj to, či účet vôbec môže účtovať.
+ *
+ * Krok B1 (aktivácia / KYB) nikto nemeral: runbook hovoril „pozri sa, či sa dá
+ * prepnúť na live mode". Založiť desať cien, doplniť desať env premenných,
+ * urobiť redeploy — a potom zistiť, že Stripe platbu neprijme — je presne tá
+ * strata času, ktorej sa dá vyhnúť jedným GET /v1/account.
+ *
+ * Pravidlo, ktoré tu testy držia: exit kódom hýbu iba MERANÉ fakty.
+ * `charges_enabled=false` je merané zlyhanie (exit 1). Kľúč bez scope
+ * `Account: Read` je „nemerané" — vypíše sa hlasno, ale netvári sa ani ako OK,
+ * ani ako chyba.
+ */
+function runWithAccount(prices: StripePrice[], account: Record<string, unknown> | null, note?: string) {
+  const dir = mkdtempSync(join(tmpdir(), "stripe-verify-acc-"));
+  const pricesFile = join(dir, "prices.json");
+  const accountFile = join(dir, "account.json");
+  writeFileSync(pricesFile, JSON.stringify({ pages: [{ data: prices, has_more: false }] }));
+  writeFileSync(accountFile, JSON.stringify({ account, note }));
+  const res = spawnSync(
+    "python3",
+    [SCRIPT, "--fixture", pricesFile, "--account-fixture", accountFile],
+    { encoding: "utf8", env: scriptEnv() },
+  );
+  return { code: res.status, out: `${res.stdout}${res.stderr}` };
+}
+
+describe("stav účtu (KYB) vo VERIFY", () => {
+  it("aktivovaný účet s kompletnými cenami je zelený", () => {
+    const { code, out } = runWithAccount(allExpected(), {
+      charges_enabled: true,
+      details_submitted: true,
+      payouts_enabled: true,
+    });
+    expect(out).toContain("UCET OK");
+    expect(out).toContain("charges_enabled=true");
+    expect(code).toBe(0);
+  });
+
+  it("účet, ktorý neúčtuje, je červený aj keď všetkých desať cien sedí", () => {
+    const { code, out } = runWithAccount(allExpected(), {
+      charges_enabled: false,
+      details_submitted: true,
+      payouts_enabled: false,
+    });
+    expect(out).toContain("UCET NIE");
+    expect(out).toContain("Krok B1");
+    expect(out).toContain(`${TOTAL()}/${TOTAL()} resolved`);
+    expect(out).toContain("Ucet NEUCTUJE");
+    expect(code).toBe(1);
+  });
+
+  it("kľúč bez Account: Read znamená nemerané — nie OK, ale ani chyba", () => {
+    const { code, out } = runWithAccount(allExpected(), null, 'kluc nema scope "Account: Read" (HTTP 403)');
+    expect(out).toContain("UCET     nemerane");
+    expect(out).toContain("Stav uctu NEMERANY");
+    expect(out).not.toContain("UCET OK");
+    expect(code).toBe(0);
+  });
+
+  it("bez --account-fixture sa stav účtu nevymýšľa", () => {
+    const { out } = run(allExpected());
+    expect(out).toContain("Stav uctu NEMERANY");
+    expect(out).not.toContain("charges_enabled=");
+  });
+});
+
+// ---------------------------------------------------------------------------
 
 describe("secret hygiene", () => {
   it("the key reaches Stripe only as an HTTP header, never through argv", () => {

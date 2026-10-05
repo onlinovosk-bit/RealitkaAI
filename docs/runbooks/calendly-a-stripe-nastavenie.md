@@ -206,8 +206,22 @@ Presné znenie krokov v Stripe UI sa mení a nebudem ti ho tu vymýšľať — v
 Dashboarde ťa prevedie checklist. Schvaľovanie býva hodiny až dni; ak niečo
 dožiada, príde e-mail a v Dashboarde svieti „Action required".
 
-**Kontrola, že je hotovo:** v Dashboarde sa dá prepnúť na **live mode** a
-Settings → Payouts zobrazuje účet a plán výplat, nie výzvu na doplnenie.
+**Kontrola, že je hotovo — merateľná, nie „pozri sa do Dashboardu":**
+
+```bash
+export STRIPE_SECRET_KEY=rk_live_…       # restricted key, scope Prices: Read + Account: Read
+bash scripts/ops/stripe-verify-prices.sh
+```
+
+Prvý riadok výpisu je stav účtu:
+
+```
+UCET OK  charges_enabled=true details_submitted=true payouts_enabled=true
+```
+
+`UCET NIE` znamená, že B1 nie je hotové a live checkout platbu neprijme, aj keby
+všetkých desať cien sedelo na cent. Ak kľúč nemá scope `Account: Read`, vypíše
+`UCET nemerane` a pokračuje kontrolou cien — **nemerané nie je OK**.
 
 ### B2. Vytvoriť produkty a ceny v Stripe (live mode)
 
@@ -218,14 +232,22 @@ catalog → Add product. Nastav:
 
 - **Name** = label z `program-tier-pricing.ts` (napr. „Rast", „Maklérsky
   štartovací balík", „Owner Cockpit")
-- **Price** = suma z tabuľky, **EUR**
+- **Price** = suma z `bash scripts/ops/stripe-verify-prices.sh --spec`, **EUR**
+  (`--spec` je jediný zdroj súm — vypisuje ich priamo z `program-tier-pricing.ts`)
 - **Billing** — pozor na typ, kód s tým počíta:
   - top-up balíčky (`start`, `rast`, `pro`, `mega`) a starter pack = **One-time**
   - tiery (Starter, Pro, Scale, Enterprise, Owner Cockpit) = **Recurring, monthly**
-- **Tax behavior** — ak si plátca DPH, rozhodni raz, či sú ceny **s DPH
-  (inclusive)** alebo **bez (exclusive)**, a drž to rovnako pri všetkých. V kóde
-  sú čísla ako `priceEur: 49`; ak ich myslíš s DPH, nastav inclusive, inak Stripe
-  pripočíta DPH navrch a zákazník zaplatí 58,80 € tam, kde si sľúbil 49 €.
+- **DPH — zadaj presne tú sumu, ktorú vypíše `--spec`, nič neprepočítavaj.**
+  Zmerané 2026-10-05: tento kód neposiela do Stripe ani `automatic_tax`, ani
+  `tax_behavior`, ani `tax_rates` — nikde, ani v CRM
+  (`apps/crm/src/lib/credits-billing.ts`, `billing-store.ts`), ani v marketingu.
+  Stripe teda zoberie presne `unit_amount` a **nič nepripočíta**. Ako platiteľ
+  DPH máš teda DPH **obsiahnutú** v tej sume a odvádzaš ju z nej; 79 € je 79 €,
+  ktoré zákazník zaplatí. Nezadávaj sumy bez DPH — použitú Stripe cenu sa už
+  nedá prepísať, iba archivovať a nahradiť novou.
+  Keby sa niekedy `automatic_tax` zapol, toto prestane platiť a zhasne pin
+  `apps/crm/tests/verification/stripe-tax-contract.verification.test.ts`,
+  ktorý tento odsek drží pri kóde.
 
 Po vytvorení skopíruj **Price ID** (tvar `price_...`, nie `prod_...`).
 

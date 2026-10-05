@@ -1,15 +1,15 @@
 {
-  "_comment": "Co musi existovat v Stripe live mode, aby sa dalo predavat. Sumy su v centoch. Drift voci kodu (program-tier-pricing.ts) strazi apps/crm/tests/verification/stripe-expected-prices.verification.test.ts. Neupravuj rucne bez zmeny kodu.",
+  "_comment": "Co musi existovat v Stripe live mode, aby sa dalo predavat. Sumy su v centoch. Drift voci kodu (program-tier-pricing.ts) strazi apps/crm/tests/verification/stripe-expected-prices.verification.test.ts. Neupravuj rucne bez zmeny kodu. Pole 'key' je kluc z kodu (SeatTier / TopupPackageKey / CockpitProductKey; pre founder cenu <key>Founder, pre starter pack starterPack) - sonda stripe-checkout-probe.py podla neho parova sumy z PROD, aby ich nemusela hadat z nazvu premennej.",
   "prices": [
-    { "env": "STRIPE_PRICE_SOLO_SEAT", "product": "Solo Seat", "amount": 7900, "type": "recurring", "gate": "seat" },
-    { "env": "STRIPE_PRICE_TEAM_SEAT", "product": "Team Seat", "amount": 7100, "type": "recurring", "gate": "seat" },
-    { "env": "STRIPE_PRICE_OFFICE_SEAT", "product": "Office Seat", "amount": 6300, "type": "recurring", "gate": "seat" },
-    { "env": "STRIPE_PRICE_OWNER_COCKPIT_FOUNDER", "product": "Owner Cockpit (founder)", "amount": 24900, "type": "recurring", "gate": "cockpit" },
-    { "env": "STRIPE_PRICE_OWNER_COCKPIT", "product": "Owner Cockpit", "amount": 34900, "type": "recurring", "gate": "cockpit" },
-    { "env": "STRIPE_PRICE_CREDITS_START", "product": "Kredity Štart (50)", "amount": 4900, "type": "one_time", "gate": "topup" },
-    { "env": "STRIPE_PRICE_CREDITS_RAST", "product": "Kredity Rast (150)", "amount": 12900, "type": "one_time", "gate": "topup" },
-    { "env": "STRIPE_PRICE_CREDITS_PRO", "product": "Kredity Pro (500)", "amount": 37900, "type": "one_time", "gate": "topup" },
-    { "env": "STRIPE_PRICE_CREDITS_MEGA", "product": "Kredity Mega (1500)", "amount": 99900, "type": "one_time", "gate": "topup" },
-    { "env": "STRIPE_PRICE_STARTER_PACK", "product": "Maklérsky štartovací balík", "amount": 4700, "type": "one_time", "gate": "starter_pack" }
+    { "env": "STRIPE_PRICE_SOLO_SEAT", "key": "solo", "product": "Solo Seat", "amount": 7900, "type": "recurring", "gate": "seat" },
+    { "env": "STRIPE_PRICE_TEAM_SEAT", "key": "team", "product": "Team Seat", "amount": 7100, "type": "recurring", "gate": "seat" },
+    { "env": "STRIPE_PRICE_OFFICE_SEAT", "key": "office", "product": "Office Seat", "amount": 6300, "type": "recurring", "gate": "seat" },
+    { "env": "STRIPE_PRICE_OWNER_COCKPIT_FOUNDER", "key": "ownerFounder", "product": "Owner Cockpit (founder)", "amount": 24900, "type": "recurring", "gate": "cockpit" },
+    { "env": "STRIPE_PRICE_OWNER_COCKPIT", "key": "owner", "product": "Owner Cockpit", "amount": 34900, "type": "recurring", "gate": "cockpit" },
+    { "env": "STRIPE_PRICE_CREDITS_START", "key": "start", "product": "Kredity Štart (50)", "amount": 4900, "type": "one_time", "gate": "topup" },
+    { "env": "STRIPE_PRICE_CREDITS_RAST", "key": "rast", "product": "Kredity Rast (150)", "amount": 12900, "type": "one_time", "gate": "topup" },
+    { "env": "STRIPE_PRICE_CREDITS_PRO", "key": "pro", "product": "Kredity Pro (500)", "amount": 37900, "type": "one_time", "gate": "topup" },
+    { "env": "STRIPE_PRICE_CREDITS_MEGA", "key": "mega", "product": "Kredity Mega (1500)", "amount": 99900, "type": "one_time", "gate": "topup" },
+    { "env": "STRIPE_PRICE_STARTER_PACK", "key": "starterPack", "product": "Maklérsky štartovací balík", "amount": 4700, "type": "one_time", "gate": "starter_pack" }
   ]
 }

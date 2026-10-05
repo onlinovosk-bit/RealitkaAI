@@ -1,3 +1,23 @@
+## Session 2026-10-05 (STRIPE-STEP-C-PROOF)
+### Dokončené
+- **VERIFY meria aj stav účtu (KYB).** `scripts/ops/stripe_verify_prices.py` robí `GET /v1/account` a vypisuje `charges_enabled/details_submitted/payouts_enabled` PRED kontrolou cien. 403 (kľúč bez `Account: Read`) degraduje na `UCET nemerane` a pokračuje — nemerané nie je OK, ale ani chyba. `charges_enabled=false` = exit 1 aj pri desiatich správnych cenách. Nový `--account-fixture` pre offline testy.
+- **Opravený rozpor runbooku s kódom.** `docs/runbooks/calendly-a-stripe-nastavenie.md` §B2 strašil, že Stripe pripočíta DPH navrch (58,80 € z 49 €). Zmerané: **nula** výskytov `automatic_tax|tax_behavior|tax_rates|tax_id_collection` v `apps/`. Nové znenie: zadaj presne sumu z `--spec`, DPH je v nej obsiahnutá. §B1 dostal merateľnú kontrolu namiesto „pozri sa do Dashboardu".
+- **Krok D je skript.** `scripts/ops/stripe-checkout-probe.{py,sh}` — read-only nezautentizovaný `GET /api/billing/checkout-config`, hlási obe brány, **názvy** (nikdy hodnoty) chýbajúcich premenných, ktorá z dvoch cockpit cien platí, a porovná sumy nasadeného kódu proti manifestu. Exit 0/1/2. Python, nie curl (deny-list + rovnaký vzor ako VERIFY).
+- **Manifest dostal `key`** (`solo`, …, `ownerFounder`, `starterPack`), aby sonda párovala sumy podľa kľúča z kódu a nehádala z názvu premennej; drží to rozšírený `stripe-expected-prices.verification.test.ts`.
+- **Zapísané, neopravené:** marketing číta 6 ďalších cien mimo manifestu (VERIFY môže hlásiť 10/10, kým marketing nepredá nič) a `/api/checkout/subscription` vracia pri chýbajúcej cene 400 `unknown_plan` namiesto 503. Marketing je vedome mimo rozsahu.
+- Dôkaz: `tests/verification/` **86 súborov / 648 testov** zelených, `prepush-gate.sh` PASS (typecheck 49/54).
+### Rozpracované / Pending
+- **Sonda nebola spustená proti živému PROD:** `app.revolis.ai:443` blokuje egress politika tejto session (403 na CONNECT). Posledný beh musí spraviť founder zo svojho stroja — dnes má byť červený (0 z 10 env), po kroku B + redeploy zelený. To je akceptačné kritérium celej Stripe cesty.
+- Krok C stále na founderovi: vytvoriť 10 cien v Stripe LIVE podľa `--spec`.
+### Kľúčové súbory zmenené
+- `scripts/ops/stripe_verify_prices.py`: stav účtu (KYB), `--account-fixture`, DPH veta v `--spec`.
+- `scripts/ops/stripe-checkout-probe.py` + `.sh` (NOVÉ): sonda kroku D.
+- `scripts/ops/stripe-expected-prices.json`: pole `key`.
+- `apps/crm/tests/verification/stripe-{checkout-probe,tax-contract}.verification.test.ts` (NOVÉ), `stripe-expected-prices.verification.test.ts` (rozšírené).
+- `docs/runbooks/calendly-a-stripe-nastavenie.md`, `docs/ops/2026-09-21-stripe-verify-kit.md`, `docs/STATUS.md`.
+### Ďalší krok
+Founder: `bash scripts/ops/stripe-verify-prices.sh --spec` → vytvoriť 10 cien v Stripe LIVE → poslať výstup VERIFY s kľúčom (Prices: Read + Account: Read).
+
 ## Session 2026-10-05 (ONL-AGENTS-FIX: nálezy P11 po merge #807)
 ### Dokončené
 - **P11 (nezávislý overovací agent, 47 sabotáží) nedala VERIFIED**; #807 bol medzitým zmergovaný, preto oprava ide ako nový PR z `main`. Opravené (všetko v `packages/mcp-onlinovo`, nič mimo):
