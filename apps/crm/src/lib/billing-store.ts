@@ -12,12 +12,15 @@ import {
 } from "@/lib/program-tier-pricing";
 import {
   applyPricingV2SubscriptionEvent,
+  resolvePricingV2PriceRole,
   subscriptionHasPricingV2Price,
 } from "@/lib/credits-billing-v2";
 import {
+  PRICING_V2_BAND_ACCOUNT_TIER,
   PRICING_V2_CHECKOUT_TYPE_CREDITS,
   PRICING_V2_CHECKOUT_TYPE_PLAN,
 } from "@/lib/pricing-v2-contract";
+import { planPriceIdOf } from "@/lib/pricing-v2-plan";
 
 /**
  * Seat / credit top-up / starter-pack checkouts are fulfilled by
@@ -729,6 +732,13 @@ export function resolvePlanKeyFromStripePriceId(
   const legacyAddon = resolveLegacyAddonPlanKey(priceId);
   if (legacyAddon) return legacyAddon;
 
+  // Cenník v2: pásmo je platený plán (rovnaké hodnoty ako legacy seat tier); balík kreditov
+  // a kredit plán neurčujú, takže „unknown“ bez hlučného varovania pre známu v2 cenu.
+  const v2Role = resolvePricingV2PriceRole(priceId);
+  if (v2Role) {
+    return v2Role.kind === "band" ? PRICING_V2_BAND_ACCOUNT_TIER[v2Role.bandId] : "unknown";
+  }
+
   const message = `Unknown Stripe price id — leaving tier unchanged: ${priceId}`;
   logInfo(message, "resolvePlanKeyFromStripePriceId");
   console.warn(`[billing] ${message}`);
@@ -738,7 +748,8 @@ export function resolvePlanKeyFromStripePriceId(
 
 export async function getCurrentPlanKey(): Promise<ResolvedBillingPlan> {
   const status = await getCurrentBillingStatus();
-  const priceId = status.subscription?.items?.[0]?.priceId ?? null;
+  // V2 predplatné nesie pásmo aj voliteľný balík; plán určuje pásmo (poradie položiek Stripe negarantuje).
+  const priceId = planPriceIdOf(status.subscription?.items);
   const key = resolvePlanKeyFromStripePriceId(priceId);
   // Display / fail-open: no recognizable paid price → free for UI & gates.
   // Webhook sync uses resolvePlanKeyFromStripePriceId + syncAccountTier no-op

@@ -758,12 +758,13 @@ describe("ŠVY A -> B: reálne handlery trás A -> reálny klientský parser B",
     expect(out).toMatchObject({ kind: "error", code: "legacy_subscription" });
   });
 
-  it("[ŠEV] 409 subscription_exists: klient ho zlúči s legacy_subscription (zlý text 'Predplatné máte dohodnuté')", async () => {
+  it("[ŠEV] 409 subscription_exists: klient ho nezlúči s legacy_subscription (oprava W3-fix č. 3)", async () => {
     const { params } = await doCheckout({ checkoutType: "pricing_v2", users: 3, packCredits: null });
     await handlePricingCheckoutWebhook(sessionEvent(params.metadata));
     stubFetchToRoute();
     const out = await submitPricingV2Checkout({ checkoutType: "pricing_v2", users: 3, packCredits: null });
-    expect(out).toMatchObject({ kind: "error", code: "legacy_subscription" }); // zdokumentované správanie
+    expect(out).toMatchObject({ kind: "error", code: "subscription_exists" });
+    expect((out as { message?: string }).message ?? "").not.toContain("Predplatné máte dohodnuté");
   });
 
   it("503 prices_not_configured -> 'nie je dostupné'", async () => {
