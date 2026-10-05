@@ -4,6 +4,10 @@
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-05, 07:55 UTC** (FAIL-OPEN-SWEEP + TRIAL-GATE-CLOSED variant A: po vypršaní trialu je účet read-only, nie otvorený; hlavička prepočítaná z tabuľky 53 % → 51 %).
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 08:30 UTC** (EVENTS-WIRE + CRON-ALIVE, zatiaľ nezmergované).
 
+## Celkom: ≈ 49 %  (odhad)
+Δ: 0 pp od posledného zápisu (07:40 UTC). Drží ho Stripe: 0 z 10 cien = 0 % pri váhe 30. Env/log/Meta-hash PR (#793, #784, #783) nie sú v tabuľke blokov, preto skóre nehýbu. Readiness Board (≈40 %) používal iné váhy a bol v pásme ±15; kanonické číslo je toto.
+## Celkom: ≈ 52 %  (odhad)
+## Celkom: ≈ 53 %  (odhad)
 ## Celkom: ≈ 51 %  (odhad, prepočítané z tabuľky nižšie)
 
 > Hlavička predtým hlásila ≈ 53 %, ale vážený súčet z jej VLASTNEJ tabuľky dáva
