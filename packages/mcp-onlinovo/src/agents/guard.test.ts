@@ -152,3 +152,14 @@ test("F12: a confidence that is not a number never passes a recommendation, a pa
   assert.equal(actionVerdict("onlinovo.data.observe", Number.NaN, NO_ENV).allowed, true);
   assert.equal(actionVerdict("onlinovo.opportunity.recommend", 0.6, NO_ENV).allowed, true);
 });
+
+test("N7: null, Infinity and a confidence above 1 never pass; only an absent confidence means full confidence", () => {
+  for (const bad of [null, Number.POSITIVE_INFINITY, 1.0001, 7, Number.NEGATIVE_INFINITY, "0.9", Number.NaN]) {
+    const d = authorizeAgentAction({ agentId: OPP, action: "onlinovo.opportunity.recommend", confidence: bad as never }, NO_ENV);
+    assert.equal(d.allowed, false, String(bad));
+    assert.equal(d.verdict, "APPROVAL_REQUIRED", String(bad));
+  }
+  assert.equal(authorizeAgentAction({ agentId: OPP, action: "onlinovo.opportunity.recommend" }, NO_ENV).allowed, true);
+  assert.equal(authorizeAgentAction({ agentId: OPP, action: "onlinovo.opportunity.recommend", confidence: 1 }, NO_ENV).allowed, true);
+  assert.equal(authorizeAgentAction({ agentId: OPP, action: "onlinovo.opportunity.recommend", confidence: 0.6 }, NO_ENV).allowed, true);
+});

@@ -1,3 +1,23 @@
+## Session 2026-10-05 (ONL-AGENTS-FIX-3: nálezy P11 #2 po merge #812)
+### Dokončené
+- **P11 #2 (nový nezávislý agent, 45 sabotáží) nedala VERIFIED** pre #812; opravy sú nový PR z `main`. Všetko v `packages/mcp-onlinovo`:
+  - **N3** sprísnený čas: `snapshot-validation.ts` (`parseIsoTimestamp`) prijme len skutočný ISO 8601 s pásmom; odmieta `"1"`, `"abc 1"`, `2026-02-30`, `T24:00`. Platí pre `as_of`, `placed_at` každej objednávky a `interventions[].at` každého zákazníka, v oboch agentoch cez jednu spoločnú `assertValidSnapshot`.
+  - **N4** riadky objednávky: `units` konečné číslo ≥ 0, `net_revenue` a `net_cost` konečné čísla (`net_cost = null` ostáva povolené = UNKNOWN), `lines` musí byť pole.
+  - **N1** `ExperimentLedger` už neprijme zmenu bez overenia: `add` len čerstvý PROPOSED; id, soľ alokácie a `planned_power` musia vyplývať z plánu; prechod z PROPOSED len s ľudským schválením a zámkom nad týmto plánom; výsledok len pri prechode na COMPLETE a zapečatený so správnou triedou vzorky; KEEP/REJECT/ITERATE len presne to, čo vyprodukuje `decideExperiment`; záznam sa nemení bez prechodu stavu.
+  - **N2** pečať výsledku je viazaná na `experiment_id` (id je hash plánu), takže výsledok nejde preniesť z iného experimentu.
+  - **N5** vstup sa serializuje raz a spracúva sa práve táto kópia (getter alebo `toJSON` ho po limite nevymení). **N7** `null`, `Infinity` a istota > 1 neprejdú guardom; len chýbajúca istota znamená plnú. **N8** horná hranica plánovanej vzorky 10 000 000. **N9** differential test pripína, že lokálny guard nie je pri nečíselnej istote voľnejší než registry.
+  - Pripnuté hranice: 48 h v `next-action`, presná hranica limitu vstupu 100 000 znakov.
+- Dôkaz: mcp-onlinovo **223/223**, `tsc` 0 chýb, control-contract **72/72**, crm `lib/agents` **69/69**, `prepush-gate.sh` všetko PASS (migrácie NEOVERENÉ). Sabotáž: 42 mutácií v konečnej podobe všetky červené. Pri práci vyšli 3 nedokázateľné vrstvy, preto **odstránené** a nie ponechané: kontrola minút a sekúnd (`Date.parse` ich odmieta sám, pripnuté testom), `lock_hash` v pečati (id plánu ho nahrádza).
+- **Opravy mojich tvrdení z #812:** (1) poznámka k pečati bola nepresná. Pečať chránila pred úpravou, ale výsledok sa dal preniesť z iného experimentu a `ExperimentLedger.update` vôbec nekontroloval obsah; teraz je to opravené a zostáva len: kto vie zapísať celý objekt a prepočítať pečať, ju sfalšuje (skutočná ochrana = perzistencia, BLOCKED). (2) „104/104" vs „69/69": išlo o **dva rôzne príkazy** (104 = `src/lib/agents` + `approve-draft.test.ts` po merge `main`, 69 = iba `src/lib/agents`); PR `apps/crm` nemenil. (3) Zoznam 24 sabotáží z #812 nie je v repe a nedá sa reprodukovať; od tohto PR sú sabotáže v texte tohto záznamu, nie ako skript.
+### Rozpracované / Pending
+- **Neopravené, vlastné GO:** `resolveAuthority` (`packages/control-contract/src/authority.ts:211`) pustí `NaN`/`undefined` istotu ako AUTONOMOUS (jednoriadková oprava `!(ctx.confidence >= min)`; jadro governance). P11 #2 to potvrdila a nepovažuje to za blokátor VERIFIED, ak je rozdiel zdokumentovaný (je, v `guard-differential.test.ts`).
+- **Priznané obmedzenia:** PII detekcia je heuristika (falošné pozitíva: čísla s 9–10 číslicami a nulovým paddingom; falošné negatíva: `0900/123/456`); kill switch je zapnutý pre nastavenú hodnotu, nenastavená premenná je vypnutá; riedke polia v procese (nie cez MCP) držia event loop ~1 s pred kontrolou limitu.
+- Stále UNKNOWN: LeadHub kontrakt, živý zdroj dát, perzistencia, trvalé schvaľovania, náklady LLM, CI job pre `mcp-onlinovo` (denylist).
+### Kľúčové súbory zmenené
+- `packages/mcp-onlinovo/src/agents/{snapshot-validation,experiment,opportunity,next-action,guard}.ts` a `src/tools/{agent-support,revenue-opportunities,customer-next-action,experiment-plan}.ts`: opravy N1–N9 + testy.
+### Ďalší krok
+P11 #3 na novej hlave tohto PR s novým nezávislým agentom; potom rozhodnutie o `authority.ts` (NaN) a o LeadHub kontrakte.
+
 ## Session 2026-10-05 (ONL-AGENTS-FIX: nálezy P11 po merge #807)
 ### Dokončené
 - **P11 (nezávislý overovací agent, 47 sabotáží) nedala VERIFIED**; #807 bol medzitým zmergovaný, preto oprava ide ako nový PR z `main`. Opravené (všetko v `packages/mcp-onlinovo`, nič mimo):

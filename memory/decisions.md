@@ -1,5 +1,13 @@
 # Critical Decisions Log
 
+## 2026-10-05 — ONL-AGENTS-FIX-3: opravy nálezov P11 #2 (BUILD, zúžený rozsah)
+
+**GO foundera:** „GO FIX 3" po P11 #2 (nezávislé overenie #812: bez VERIFIED, stredné N1–N4, nízke N5–N9). #812 bol medzitým zmergovaný, oprava je nový PR z `main`.
+**Constitution v2:** BUILD, čisto defenzívne (žiadny nový feature ani zákaznícka akcia).
+**Rozhodnutia:** (1) Jedna spoločná validácia snapshotu (`assertValidSnapshot`) namiesto dvoch kópií v agentoch; čas len striktný ISO 8601. (2) `ExperimentLedger` je jediné miesto, kde sa stav experimentu mení, a overuje ho celý: plán, id, soľ, schválenie, zámok, pečať, rozhodnutie. (3) Redundantné vrstvy, ktoré sa nedali dokázať sabotážou (kontrola minút/sekúnd, `lock_hash` v pečati), sa **odstránili**, nie ponechali. (4) Pečať výsledku stále nie je podpis: kto zapíše celý objekt, prepočíta ju; ochrana = perzistencia (BLOCKED). (5) `resolveAuthority` s `NaN` istotou — **stále neopravené, vlastné GO** (jadro governance).
+**Oprava záznamov z #812:** poznámka k pečati bola nepresná (opravené vyššie); „104/104 vs 69/69" boli dva rôzne príkazy; zoznam 24 sabotáží z #812 nie je reprodukovateľný z repa.
+**Stav:** IMPLEMENTED/TESTED, nie VERIFIED (P11 #3). mcp-onlinovo 223/223, control-contract 72/72, crm lib/agents 69/69, prepush-gate PASS, 42 sabotáží červených.
+
 ## 2026-10-05 — ONL-AGENTS-FIX: opravy nálezov P11 (BUILD, zúžený rozsah)
 
 **GO foundera:** „GO FIX" po P11 (nezávislé overenie #807: bez VERIFIED, 5 stredných nálezov F1–F5, F12 a 7 medzier v testoch). #807 bol medzitým zmergovaný, oprava je nový PR z `main`.

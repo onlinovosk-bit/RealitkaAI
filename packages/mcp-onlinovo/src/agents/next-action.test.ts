@@ -242,3 +242,31 @@ test("the open-payment hold lasts exactly 24 hours: at 24 h it still blocks, a m
   assert.equal(withUnpaid(24 * HOUR), "BLOCKED_OPEN_PAYMENT");
   assert.notEqual(withUnpaid(24 * HOUR + 60_000), "BLOCKED_OPEN_PAYMENT");
 });
+
+test("N3/N4 through the agent: a sloppy date, a NaN line or a bad intervention on ANY customer refuses the snapshot", () => {
+  const s = oneCustomer(120);
+  s.orders.push({ ...single100("FIX-ORDER-X1", "FIX-CUS-902", 5), placed_at: "abc 1" });
+  assert.equal(codeOf(() => decide("900", s)), "INVALID_INPUT");
+
+  const t = oneCustomer(120);
+  t.orders[0].lines[0].units = Number.NaN;
+  assert.equal(codeOf(() => decide("900", t)), "INVALID_INPUT");
+
+  const u = oneCustomer(120);
+  u.customers.push({ customer_ref: "FIX-CUS-903", consent: "marketing_ok", interventions: [{ action: "REPLENISHMENT", at: "12" }] });
+  assert.equal(codeOf(() => decide("900", u)), "INVALID_INPUT");
+
+  const v = oneCustomer(120);
+  v.as_of = "abc 1";
+  assert.equal(codeOf(() => decide("900", v)), "INVALID_INPUT");
+});
+
+test("the snapshot age limit is exact here too: 48 h is fresh, 48 h and one millisecond is stale", () => {
+  const at = (extraMs: number) => {
+    const s = oneCustomer(120);
+    s.as_of = new Date(NOW.getTime() - 48 * HOUR - extraMs).toISOString();
+    return decide("900", s).policy_status;
+  };
+  assert.notEqual(at(0), "BLOCKED_STALE");
+  assert.equal(at(1), "BLOCKED_STALE");
+});

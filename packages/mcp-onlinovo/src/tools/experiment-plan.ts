@@ -82,8 +82,8 @@ export async function handleExperimentPlan(args: unknown, deps?: AgentToolDeps) 
     actions: ["onlinovo.experiment.propose"],
     args,
     deps,
-    run: async () => {
-      const spec = proposeExperiment(toProposal(args));
+    run: async ({ args: clean }) => {
+      const spec = proposeExperiment(toProposal(clean));
       return {
         experiment: spec,
         persisted: false,

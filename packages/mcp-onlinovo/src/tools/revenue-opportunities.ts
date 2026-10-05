@@ -75,8 +75,8 @@ export async function handleRevenueOpportunities(args: unknown, deps?: AgentTool
     actions: ["onlinovo.data.observe", "onlinovo.opportunity.analyze", "onlinovo.opportunity.recommend"],
     args,
     deps,
-    run: async ({ env, now }) => {
-      const input = isRecord(args) ? args : {};
+    run: async ({ env, now, args: clean }) => {
+      const input = isRecord(clean) ? clean : {};
       const assumptions = parseAssumptions(input.assumptions);
       const params: OpportunityParams = { ...DEFAULT_OPPORTUNITY_PARAMS, assumptions };
       const { port, error_code } = resolveDataPort(env);

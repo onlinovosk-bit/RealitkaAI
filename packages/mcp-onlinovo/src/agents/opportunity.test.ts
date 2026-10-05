@@ -343,3 +343,19 @@ test("REORDER_WINDOW needs exactly one fulfilled order, whichever row comes firs
   assert.equal(typesOf(detectOpportunities(custom([older, inWindow]), NOW)).includes("REORDER_WINDOW"), false, "older row first");
   assert.equal(typesOf(detectOpportunities(custom([inWindow]), NOW)).includes("REORDER_WINDOW"), true);
 });
+
+test("N3/N4 through the agent: a sloppy date or a NaN on a line is refused, never read as something else", () => {
+  for (const placed_at of ["abc 1", "1", "2026-02-30T08:00:00Z", "2026-10-01T24:00:00Z"]) {
+    const o = order("FIX-ORDER-BADT", "FIX-CUS-810", 5, "unpaid");
+    o.placed_at = placed_at;
+    assert.equal(codeOf(() => detectOpportunities(custom([o]), NOW)), "INVALID_INPUT", placed_at);
+  }
+  for (const units of [Number.NaN, "5", -3]) {
+    const o = order("FIX-ORDER-BADL", "FIX-CUS-811", 20);
+    o.lines[0].units = units as never;
+    assert.equal(codeOf(() => detectOpportunities(custom([o]), NOW)), "INVALID_INPUT", String(units));
+  }
+  const bad = fixture();
+  bad.as_of = "12";
+  assert.equal(codeOf(() => detectOpportunities(bad, NOW)), "INVALID_INPUT");
+});

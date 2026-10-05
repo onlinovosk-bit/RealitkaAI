@@ -51,30 +51,33 @@ export async function runAgentTool<T extends object>(opts: {
   actions: readonly string[];
   args: unknown;
   deps?: AgentToolDeps;
-  run: (ctx: { env: NodeJS.ProcessEnv; now: Date }) => Promise<T>;
+  run: (ctx: { env: NodeJS.ProcessEnv; now: Date; args: unknown }) => Promise<T>;
   summarize?: (data: T) => Record<string, unknown>;
 }): Promise<ToolResult> {
   const env = opts.deps?.env ?? process.env;
   const now = (opts.deps?.now ?? (() => new Date()))();
 
-  let inputSize = 0;
+  // The input is serialised exactly once. What is measured against the cap is what is parsed and processed:
+  // a getter or a toJSON that answers differently the second time can no longer smuggle a larger value past it.
+  let serialized: string | undefined;
   try {
-    inputSize = JSON.stringify(opts.args ?? null).length;
+    serialized = JSON.stringify(opts.args ?? null);
   } catch {
-    inputSize = Number.POSITIVE_INFINITY;
+    serialized = undefined;
   }
-  if (inputSize > MAX_TOOL_INPUT_CHARS) {
+  if (serialized === undefined || serialized.length > MAX_TOOL_INPUT_CHARS) {
     const audit = beginAgentAudit(opts.tool, opts.agentId, opts.actions.join(","), {
       allowed: false, verdict: "FORBIDDEN", code: null, rule: "input_too_large", tier: null, message: "input too large",
     });
     audit.finish({ denied: true, reason: "input_too_large" });
     return asResult(
-      { success: false, request_id: audit.request_id, error: { code: "INPUT_TOO_LARGE", message: `tool input is larger than ${MAX_TOOL_INPUT_CHARS} characters` } },
+      { success: false, request_id: audit.request_id, error: { code: "INPUT_TOO_LARGE", message: `tool input is larger than ${MAX_TOOL_INPUT_CHARS} characters or cannot be serialised` } },
       true,
     );
   }
+  const args: unknown = JSON.parse(serialized);
 
-  const asked = requestedAction(opts.args);
+  const asked = requestedAction(args);
   const checks: string[] = asked === null ? [...opts.actions] : [asked, ...opts.actions];
   let last: GuardDecision | null = null;
   for (const action of checks) {
@@ -95,7 +98,7 @@ export async function runAgentTool<T extends object>(opts: {
   }
   const audit = beginAgentAudit(opts.tool, opts.agentId, opts.actions.join(","), last as GuardDecision);
   try {
-    const data = await opts.run({ env, now });
+    const data = await opts.run({ env, now, args });
     assertNoPii(data);
     audit.finish(opts.summarize?.(data));
     return asResult({ success: true, request_id: audit.request_id, data }, false);

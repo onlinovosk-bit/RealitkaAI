@@ -134,7 +134,7 @@ export function actionVerdict(
   }
   // `!(x >= floor)` rather than `x < floor`, and a typeof check because "0.9" >= 0.6 is true in JavaScript:
   // NaN, undefined, null and strings are "not enough confidence", never a pass.
-  if (typeof confidence !== "number" || !(confidence >= MIN_CONFIDENCE)) {
+  if (typeof confidence !== "number" || !(confidence >= MIN_CONFIDENCE) || confidence > 1) {
     return {
       allowed: false,
       verdict: "APPROVAL_REQUIRED",
@@ -159,7 +159,8 @@ export function authorizeAgentAction(
   input: { agentId: string; action: string; confidence?: number },
   env: NodeJS.ProcessEnv = process.env,
 ): GuardDecision {
-  const confidence = input.confidence ?? 1;
+  // Only an absent confidence means "full"; null, NaN and strings are kept and fail closed in `actionVerdict`.
+  const confidence = input.confidence === undefined ? 1 : input.confidence;
   const allowed = (AGENT_ALLOWED as Record<string, readonly string[] | undefined>)[input.agentId];
   if (!allowed) {
     return forbid("AGENT_UNKNOWN", "unknown_agent", null, `Agent "${input.agentId}" is not registered.`);

@@ -393,3 +393,46 @@ test("F7-F9 through the tool: string weights, a bad direction and a stray stop m
     assert.equal(parse(result).error?.code, code);
   }
 });
+
+// ── P11 #2 findings ───────────────────────────────────────────────────────────────────────────
+
+test("the input cap is exact: 100 000 characters of JSON pass the door, 100 001 do not", async () => {
+  const overhead = JSON.stringify({ requested_action: "" }).length;
+  const inputOf = (chars: number) => ({ requested_action: "x".repeat(chars - overhead) });
+  assert.equal(JSON.stringify(inputOf(100_000)).length, 100_000);
+  const atLimit = await handleRevenueOpportunities(inputOf(100_000), deps());
+  assert.notEqual(parse(atLimit).error?.code, "INPUT_TOO_LARGE", "refused by the guard for another reason, not by the cap");
+  const over = await handleRevenueOpportunities(inputOf(100_001), deps());
+  assert.equal(parse(over).error?.code, "INPUT_TOO_LARGE");
+});
+
+test("N5: what is measured against the cap is what is processed: a getter or toJSON cannot swap the value", async () => {
+  let reads = 0;
+  const sneaky = {
+    get customer_ref() {
+      reads += 1;
+      return reads === 1 ? "FIX-CUS-001" : "a".repeat(300_000);
+    },
+  };
+  const first = await handleCustomerNextAction(sneaky, deps());
+  assert.equal(parse(first).success, true, "the small first value is what is both measured and used");
+  assert.equal(reads, 1, "the input is read exactly once");
+
+  const withToJson = { customer_ref: "x", toJSON: () => ({ customer_ref: "FIX-CUS-001" }) };
+  assert.equal(parse(await handleCustomerNextAction(withToJson, deps())).success, true);
+
+  const circular: Record<string, unknown> = { customer_ref: "FIX-CUS-001" };
+  circular.self = circular;
+  const refused = await handleCustomerNextAction(circular, deps());
+  assert.equal(parse(refused).error?.code, "INPUT_TOO_LARGE");
+  const big = await handleCustomerNextAction({ customer_ref: 10n }, deps());
+  assert.equal(big.isError, true);
+});
+
+test("N5: the handler works on the serialised copy, so a later mutation of the caller's object changes nothing", async () => {
+  const args = { customer_ref: "FIX-CUS-001" };
+  const pending = handleCustomerNextAction(args, deps());
+  args.customer_ref = "FIX-CUS-002";
+  const body = parse(await pending);
+  assert.equal(body.data?.decision.customer_ref, "FIX-CUS-001");
+});

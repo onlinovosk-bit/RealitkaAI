@@ -1,6 +1,6 @@
 import { hashOf } from "./canonical.js";
 import { RunBudget } from "./budget.js";
-import { assertCustomerRef } from "./pseudonym.js";
+import { assertValidSnapshot, parseIsoTimestamp } from "./snapshot-validation.js";
 import { policyStatusFor } from "./guard.js";
 import {
   AgentError,
@@ -78,12 +78,6 @@ export interface OpportunityRun {
   usage: ReturnType<RunBudget["usage"]>;
 }
 
-function parseTime(iso: string, field: string): number {
-  const ms = Date.parse(iso);
-  if (!Number.isFinite(ms)) throw new AgentError("INVALID_INPUT", `${field} is not a valid timestamp`);
-  return ms;
-}
-
 const daysBetween = (fromMs: number, toMs: number): number => Math.floor((toMs - fromMs) / DAY);
 const round2 = (n: number): number => Math.round(n * 100) / 100;
 
@@ -149,18 +143,6 @@ function midpoint(o: Opportunity): number {
   return o.estimated_value ? (o.estimated_value.low + o.estimated_value.high) / 2 : -1;
 }
 
-function validate(snapshot: RevenueSnapshot): void {
-  if (!snapshot || !Array.isArray(snapshot.orders) || !Array.isArray(snapshot.customers) || !Array.isArray(snapshot.products)) {
-    throw new AgentError("INVALID_INPUT", "snapshot must contain customers, orders and products arrays");
-  }
-  for (const order of snapshot.orders) {
-    assertCustomerRef(order.customer_ref);
-    // An unparseable timestamp makes every age comparison false, so it would slip through every filter.
-    parseTime(order.placed_at, "order.placed_at");
-  }
-  for (const customer of snapshot.customers) assertCustomerRef(customer.customer_ref);
-}
-
 /** Pure function. Same snapshot, same `now`, same params give the same ids and the same numbers. */
 export function detectOpportunities(
   snapshot: RevenueSnapshot,
@@ -168,10 +150,10 @@ export function detectOpportunities(
   params: OpportunityParams = DEFAULT_OPPORTUNITY_PARAMS,
   budget: RunBudget = new RunBudget(),
 ): OpportunityRun {
-  validate(snapshot);
+  assertValidSnapshot(snapshot);
   budget.spendRows(snapshot.orders.length + snapshot.customers.length + snapshot.products.length);
 
-  const asOfMs = parseTime(snapshot.as_of, "snapshot.as_of");
+  const asOfMs = parseIsoTimestamp(snapshot.as_of, "snapshot.as_of");
   const nowMs = now.getTime();
   const ageHours = (nowMs - asOfMs) / HOUR;
   const empty = (status: OpportunityRunStatus): OpportunityRun => ({

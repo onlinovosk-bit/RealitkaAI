@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { RunBudget } from "./budget.js";
-import { hashOf } from "./canonical.js";
 import {
   approveExperiment,
   blockExperiment,
@@ -9,6 +8,7 @@ import {
   ExperimentLedger,
   proposeExperiment,
   recordResult,
+  resultSeal,
   startExperiment,
   type Approval,
   type ExperimentSpec,
@@ -278,7 +278,7 @@ test("F4: a decision recomputes the sample class and refuses a tampered result",
   // a forger who also re-seals the tampered result is still caught: the class follows from the counts and the plan
   const resealed = tamper((s) => {
     (s.result as NonNullable<ExperimentSpec["result"]>).sample_class = "ADEQUATE";
-    s.result_hash = hashOf(s.result);
+    s.result_hash = resultSeal(s);
   });
   assert.equal(codeOf(() => decideExperiment(resealed)), "RESULT_IMMUTABLE");
   // and the honest path still works, with the class derived from the counts
@@ -288,7 +288,8 @@ test("F4: a decision recomputes the sample class and refuses a tampered result",
 test("F5: the ledger refuses to change the plan, remove the approval or swap the lock of an approved experiment", () => {
   const ledger = new ExperimentLedger();
   const a = approved();
-  ledger.add(a);
+  ledger.add(proposed());
+  ledger.update(a);
   const attempt = (mutate: (s: ExperimentSpec) => void) => {
     const s = startExperiment(a);
     mutate(s);
@@ -328,4 +329,165 @@ test("F13: the lock also covers the audience, the opportunity link and the exper
   assert.equal(tamper((s) => { s.audience.opportunity_id = "opp_other"; }), "KPI_LOCKED");
   assert.equal(tamper((s) => { s.audience.size = 1; }), "KPI_LOCKED");
   assert.equal(tamper((s) => { s.experiment_id = "exp_000000000000"; }), "KPI_LOCKED");
+});
+
+// ── P11 #2 findings ───────────────────────────────────────────────────────────────────────────
+
+/** A ledger that has an honest experiment up to a COMPLETE result with an INDICATIVE sample. */
+function ledgerAtComplete() {
+  const ledger = new ExperimentLedger();
+  const p = proposed();
+  ledger.add(p);
+  const a = approveExperiment(p, APPROVAL);
+  ledger.update(a);
+  const r = startExperiment(a);
+  ledger.update(r);
+  const complete = recordResult(r, arms(300, 30, 90));
+  ledger.update(complete);
+  return { ledger, complete };
+}
+
+test("N1: a COMPLETE experiment cannot be moved to KEEP with a decision the plan does not produce", () => {
+  const { ledger, complete } = ledgerAtComplete();
+  const forged = { decision: "KEEP" as const, reason: "THRESHOLD_MET_ADEQUATE_SAMPLE" as const, note: "trust me" };
+  assert.equal(codeOf(() => ledger.update({ ...structuredClone(complete), state: "KEEP", decision: forged })), "RESULT_IMMUTABLE");
+  assert.equal(codeOf(() => ledger.update({ ...structuredClone(complete), state: "KEEP", decision: null })), "RESULT_IMMUTABLE");
+  assert.equal(ledger.get(complete.experiment_id)?.state, "COMPLETE");
+  const honest = decideExperiment(complete);
+  assert.equal(honest.state, "ITERATE");
+  assert.equal(codeOf(() => ledger.update(honest)), null);
+});
+
+test("N1: a recorded decision cannot be overwritten, not even in a terminal state", () => {
+  const { ledger, complete } = ledgerAtComplete();
+  const honest = decideExperiment(complete);
+  ledger.update(honest);
+  const rewritten = structuredClone(honest);
+  rewritten.decision = { decision: "ITERATE", reason: "INCONCLUSIVE", note: "rewritten" };
+  assert.equal(codeOf(() => ledger.update(rewritten)), "RESULT_IMMUTABLE");
+  assert.equal(codeOf(() => ledger.update({ ...structuredClone(honest), decision: null })), "RESULT_IMMUTABLE");
+});
+
+test("N1: a result cannot be planted before COMPLETE, and a record cannot change without a state transition", () => {
+  const ledger = new ExperimentLedger();
+  const p = proposed();
+  ledger.add(p);
+  const a = approveExperiment(p, APPROVAL);
+  const fake = recordResult(startExperiment(a), arms(700, 77, 116)).result;
+  const planted = { ...structuredClone(a), result: fake, result_hash: "0".repeat(64) };
+  assert.equal(codeOf(() => ledger.update(planted)), "RESULT_IMMUTABLE");
+  ledger.update(a);
+  assert.equal(codeOf(() => ledger.update({ ...structuredClone(a), result: fake, result_hash: "0".repeat(64) })), "RESULT_IMMUTABLE");
+  const running = startExperiment(a);
+  assert.equal(codeOf(() => ledger.update({ ...structuredClone(running), result: fake, result_hash: "0".repeat(64) })), "RESULT_IMMUTABLE");
+  ledger.update(running);
+  assert.equal(codeOf(() => ledger.update({ ...structuredClone(running), planned_power: "INDICATIVE_ONLY" })), "KPI_LOCKED");
+  assert.equal(codeOf(() => ledger.update({ ...structuredClone(running), decision: { decision: "BLOCKED", reason: "MISSING_DATA", note: "x" } })), "INVALID_TRANSITION");
+  assert.equal(codeOf(() => ledger.update(structuredClone(running))), null, "an identical record is a harmless no-op");
+});
+
+test("N1: the move out of PROPOSED needs a human approval and a lock computed over this very plan", () => {
+  const p = proposed();
+  const a = approveExperiment(p, APPROVAL);
+  const fresh = () => {
+    const ledger = new ExperimentLedger();
+    ledger.add(p);
+    return ledger;
+  };
+  assert.equal(codeOf(() => fresh().update({ ...structuredClone(a), approval: null })), "APPROVAL_REQUIRED");
+  assert.equal(codeOf(() => fresh().update({ ...structuredClone(a), approval: { ...APPROVAL, approved_by: " " } })), "APPROVAL_REQUIRED");
+  assert.equal(codeOf(() => fresh().update({ ...structuredClone(a), lock_hash: null })), "KPI_LOCKED");
+  assert.equal(codeOf(() => fresh().update({ ...structuredClone(a), lock_hash: "f".repeat(64) })), "KPI_LOCKED");
+  assert.equal(codeOf(() => fresh().update({ ...structuredClone(a), allocation_salt: "salt_forged00000000" })), "KPI_LOCKED");
+  assert.equal(codeOf(() => fresh().update(structuredClone(a))), null);
+});
+
+test("N1: an experiment enters the ledger only as a fresh PROPOSAL with an id that matches its plan", () => {
+  const ledger = new ExperimentLedger();
+  assert.equal(codeOf(() => ledger.add(approved())), "INVALID_TRANSITION");
+  assert.equal(codeOf(() => ledger.add({ ...proposed(), result: null, decision: { decision: "KEEP", reason: "THRESHOLD_MET_ADEQUATE_SAMPLE", note: "x" } })), "INVALID_TRANSITION");
+  assert.equal(codeOf(() => ledger.add({ ...proposed(), experiment_id: "exp_000000000000" })), "KPI_LOCKED");
+  const other = proposed({ treatment: "other" });
+  assert.equal(codeOf(() => ledger.add({ ...proposed(), hypothesis: "changed after the id was derived" })), "KPI_LOCKED");
+  assert.equal(codeOf(() => ledger.add(other)), null);
+  assert.equal(codeOf(() => ledger.update({ ...other, state: "BLOCKED", decision: { decision: "BLOCKED", reason: "MISSING_DATA", note: " " } })), "INVALID_TRANSITION");
+  assert.equal(codeOf(() => ledger.update(blockExperiment(other, "source gone"))), null);
+});
+
+test("N2: a sealed result cannot be lifted from another experiment, even when both have the same plan size", () => {
+  const completeA = recordResult(running(), arms(700, 77, 116));
+  const completeB = recordResult(running({ treatment: "reminder at day 30" }), arms(700, 77, 116));
+  const transplanted = { ...structuredClone(completeA), result: structuredClone(completeB.result), result_hash: completeB.result_hash };
+  assert.equal(codeOf(() => decideExperiment(transplanted)), "RESULT_IMMUTABLE");
+  assert.notEqual(completeA.result_hash, completeB.result_hash, "the seal depends on the experiment, not only on the numbers");
+  assert.deepEqual(completeA.result, completeB.result, "the two results are identical, so only the experiment id tells them apart");
+  assert.equal(resultSeal(completeA), completeA.result_hash);
+});
+
+test("N8: an absurd planned sample is refused", () => {
+  assert.equal(codeOf(() => proposeExperiment(proposal({ min_sample_per_arm: 1e308 }))), "SAMPLE_PLAN_REQUIRED");
+  assert.equal(codeOf(() => proposeExperiment(proposal({ min_sample_per_arm: 10_000_001 }))), "SAMPLE_PLAN_REQUIRED");
+  assert.doesNotThrow(() => proposeExperiment(proposal({ audience: { description: "huge", size: 100_000_000 }, min_sample_per_arm: 10_000_000 })));
+});
+
+test("N1: a forger who computes a lock over a forged allocation salt is still stopped: the salt follows from the plan", () => {
+  const p = proposed();
+  const ledger = new ExperimentLedger();
+  ledger.add(p);
+  const forgedButLocked = approveExperiment({ ...structuredClone(p), allocation_salt: "salt_forged0000000" }, APPROVAL);
+  assert.equal(codeOf(() => ledger.update(forgedButLocked)), "KPI_LOCKED");
+});
+
+test("N1: an experiment blocked before approval cannot carry an approval or a lock", () => {
+  const p = proposed();
+  const ledger = new ExperimentLedger();
+  ledger.add(p);
+  const blocked = blockExperiment(p, "source gone");
+  assert.equal(codeOf(() => ledger.update({ ...structuredClone(blocked), approval: APPROVAL })), "KPI_LOCKED");
+  assert.equal(codeOf(() => ledger.update({ ...structuredClone(blocked), lock_hash: "f".repeat(64) })), "KPI_LOCKED");
+  assert.equal(codeOf(() => ledger.update(blocked)), null);
+});
+
+test("N1: the move to COMPLETE needs a sealed result whose sample class follows from the counts", () => {
+  const p = proposed();
+  const setup = () => {
+    const ledger = new ExperimentLedger();
+    ledger.add(p);
+    const a = approveExperiment(p, APPROVAL);
+    ledger.update(a);
+    const r = startExperiment(a);
+    ledger.update(r);
+    return { ledger, complete: recordResult(r, arms(300, 30, 90)) };
+  };
+  const unsealed = setup();
+  assert.equal(codeOf(() => unsealed.ledger.update({ ...structuredClone(unsealed.complete), result_hash: null })), "RESULT_IMMUTABLE");
+  const edited = setup();
+  const lie = structuredClone(edited.complete);
+  (lie.result as NonNullable<ExperimentSpec["result"]>).sample_class = "ADEQUATE";
+  assert.equal(codeOf(() => edited.ledger.update(lie)), "RESULT_IMMUTABLE", "edited without re-sealing");
+  lie.result_hash = resultSeal(lie);
+  assert.equal(codeOf(() => edited.ledger.update(lie)), "RESULT_IMMUTABLE", "re-sealed: the class still does not follow from the counts");
+  assert.equal(codeOf(() => edited.ledger.update(edited.complete)), null);
+});
+
+test("N1: after the result is recorded its seal cannot be swapped, and no decision can appear before the result", () => {
+  const { ledger, complete } = ledgerAtComplete();
+  const honest = decideExperiment(complete);
+  assert.equal(codeOf(() => ledger.update({ ...structuredClone(honest), result_hash: "0".repeat(64) })), "RESULT_IMMUTABLE");
+  assert.equal(codeOf(() => ledger.update(honest)), null);
+
+  const other = new ExperimentLedger();
+  const p = proposed({ treatment: "reminder at day 20" });
+  other.add(p);
+  const a = approveExperiment(p, APPROVAL);
+  assert.equal(codeOf(() => other.update({ ...structuredClone(a), decision: { decision: "KEEP", reason: "THRESHOLD_MET_ADEQUATE_SAMPLE", note: "x" } })), "INVALID_TRANSITION");
+});
+
+test("N1: a PROPOSED experiment cannot be edited in place, in particular no approval or lock can be attached without a transition", () => {
+  const p = proposed();
+  const ledger = new ExperimentLedger();
+  ledger.add(p);
+  assert.equal(codeOf(() => ledger.update({ ...structuredClone(p), approval: APPROVAL })), "INVALID_TRANSITION");
+  assert.equal(codeOf(() => ledger.update({ ...structuredClone(p), lock_hash: "f".repeat(64) })), "INVALID_TRANSITION");
+  assert.equal(codeOf(() => ledger.update(structuredClone(p))), null, "an identical record is a harmless no-op");
 });
