@@ -74,7 +74,12 @@ function valueAndVariance(kind: KpiKind, a: ArmAggregate, label: string): { valu
     throw new AgentError("MISSING_DATA", `${label}: sum and sum_sq are required for a mean KPI`);
   }
   const mean = a.sum / a.n;
-  const sampleVariance = Math.max(0, (a.sum_sq - (a.sum * a.sum) / a.n) / (a.n - 1));
+  // Σx² can never be smaller than (Σx)²/n. A smaller value is an impossible aggregate, not "zero variance".
+  const rawSs = a.sum_sq - (a.sum * a.sum) / a.n;
+  if (rawSs < -1e-9 * Math.max(1, Math.abs(a.sum_sq))) {
+    throw new AgentError("MISSING_DATA", `${label}: sum_sq is smaller than sum^2/n, the aggregate is impossible`);
+  }
+  const sampleVariance = Math.max(0, rawSs / (a.n - 1));
   return { value: mean, varianceOfMean: sampleVariance / a.n };
 }
 
@@ -155,7 +160,15 @@ export function requiredSamplePerArm(
 
 export type SampleClass = "ADEQUATE" | "INDICATIVE";
 
-/** Below the planned size the result is only indicative. There is no third option. */
+/**
+ * Policy floor, not a statistical derivation: no experiment may call a sample adequate with fewer units
+ * per arm than this, whatever the plan says. The plan's own size (`requiredSamplePerArm`) can only raise it.
+ * Without the floor a plan could be pre-registered with min_sample_per_arm = 2 and "pass" on n = 2.
+ */
+export const MIN_ADEQUATE_SAMPLE_PER_ARM = 100;
+
+/** Below the planned size, or below the policy floor, the result is only indicative. There is no third option. */
 export function classifySample(nControl: number, nTreatment: number, requiredPerArm: number): SampleClass {
-  return nControl >= requiredPerArm && nTreatment >= requiredPerArm ? "ADEQUATE" : "INDICATIVE";
+  const required = Math.max(requiredPerArm, MIN_ADEQUATE_SAMPLE_PER_ARM);
+  return nControl >= required && nTreatment >= required ? "ADEQUATE" : "INDICATIVE";
 }
