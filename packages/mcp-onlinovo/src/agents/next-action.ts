@@ -116,7 +116,10 @@ export function decideNextAction(input: {
   if (!snapshot || !Array.isArray(snapshot.orders) || !Array.isArray(snapshot.customers) || !Array.isArray(snapshot.products)) {
     throw new AgentError("INVALID_INPUT", "snapshot must contain customers, orders and products arrays");
   }
-  for (const o of snapshot.orders) assertCustomerRef(o.customer_ref);
+  for (const o of snapshot.orders) {
+    assertCustomerRef(o.customer_ref);
+    parseTime(o.placed_at, "order.placed_at");
+  }
   for (const c of snapshot.customers) assertCustomerRef(c.customer_ref);
   budget.spendRows(snapshot.orders.length + snapshot.customers.length + snapshot.products.length);
 

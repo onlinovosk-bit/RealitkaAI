@@ -39,6 +39,14 @@ const BUILD = 1
  * vetvou „báza nie je dostupná" a buildí (neistota znamená buildovať).
  */
 const UNUSABLE_BASE = '0'.repeat(40)
+ * Vetvy, ktoré neskáču na vetvový filter, padajú na `git diff HEAD^ HEAD`.
+ * Ten závisí od checkoutu: v CI (`refs/pull/N/merge`) je HEAD^ = main a PR bez
+ * zmeny v apps/crm dá exit 0 (skip), takže test vtedy zbytočne zčervenie.
+ * Nedostupná báza je pre skript tá istá vetva "neistota = build", ale nezávisí
+ * od repozitára. Vetvový filter sa vyhodnocuje PRED diffom, takže test o ňom
+ * (claude/* = skip) zostáva rozlišovací.
+ */
+const UNREACHABLE_BASE = '0000000000000000000000000000000000000000'
 
 /** Spustí skript s DANÝM prostredím a vráti jeho exit kód. */
 function run(env: Record<string, string>): number {
@@ -85,21 +93,30 @@ describe('vercel-ignore-build.sh — produkcia sa NIKDY nepreskakuje', () => {
 
 describe('vercel-ignore-build.sh — agentné vetvy', () => {
   it('preview na claude/* sa preskočí', () => {
-    expect(run({ VERCEL_ENV: 'preview', VERCEL_GIT_COMMIT_REF: 'claude/zealous-albattani-2h32y5' }))
-      .toBe(SKIP)
+    // Nedostupná báza: keby vetvový filter nefungoval, skript by padol na
+    // "báza nie je dostupná" a vrátil BUILD. Bez nej by test prešiel aj s
+    // rozbitým filtrom, kedykoľvek je diff v checkoute prázdny (PR bez apps/crm).
+    expect(run({
+      VERCEL_ENV: 'preview',
+      VERCEL_GIT_COMMIT_REF: 'claude/zealous-albattani-2h32y5',
+      VERCEL_GIT_PREVIOUS_SHA: UNREACHABLE_BASE,
+    })).toBe(SKIP)
   })
 
   it('prefix musí sedieť presne — claudex/ nie je claude/', () => {
-    expect(run({ VERCEL_ENV: 'preview', VERCEL_GIT_COMMIT_REF: 'claudex/nieco' })).toBe(BUILD)
+    expect(run({ VERCEL_ENV: 'preview', VERCEL_GIT_COMMIT_REF: 'claudex/nieco',
+      VERCEL_GIT_PREVIOUS_SHA: UNREACHABLE_BASE })).toBe(BUILD)
   })
 
   it('vetva, ktorá claude len obsahuje, sa nepreskočí', () => {
-    expect(run({ VERCEL_ENV: 'preview', VERCEL_GIT_COMMIT_REF: 'feat/claude-integration' }))
+    expect(run({ VERCEL_ENV: 'preview', VERCEL_GIT_COMMIT_REF: 'feat/claude-integration',
+      VERCEL_GIT_PREVIOUS_SHA: UNREACHABLE_BASE }))
       .toBe(BUILD)
   })
 
   it('ľudské vetvy sa nepreskakujú', () => {
-    expect(run({ VERCEL_ENV: 'preview', VERCEL_GIT_COMMIT_REF: 'feat/notifications-inbox' }))
+    expect(run({ VERCEL_ENV: 'preview', VERCEL_GIT_COMMIT_REF: 'feat/notifications-inbox',
+      VERCEL_GIT_PREVIOUS_SHA: UNREACHABLE_BASE }))
       .toBe(BUILD)
   })
 })

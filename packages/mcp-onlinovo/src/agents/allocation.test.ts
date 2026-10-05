@@ -76,3 +76,10 @@ test("a stratum that is too small is skipped, not trusted, and an empty input is
   assert.equal(balanceReport(small, ["channel"]).flagged.some((f) => f.level === "tiny"), false);
   assert.equal(codeOf(() => balanceReport([], ["channel"])), "MISSING_DATA");
 });
+
+test("F7: weights given as strings or other non-numbers are refused, not coerced", () => {
+  for (const w of [{ control: "0.3", treatment: "0.3" }, { control: "0.5", treatment: 0.5 }, { control: 0.5, treatment: null }, { control: undefined, treatment: 1 }]) {
+    assert.equal(codeOf(() => assignArm("FIX-CUS-00001", "e", "s", w as never)), "ALLOCATION_INVALID", JSON.stringify(w));
+  }
+  assert.equal(codeOf(() => assignArm("FIX-CUS-00001", "e", "s", undefined as never)), "ALLOCATION_INVALID");
+});

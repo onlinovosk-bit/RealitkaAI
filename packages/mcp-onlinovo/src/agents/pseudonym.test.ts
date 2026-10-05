@@ -79,3 +79,42 @@ test("toLlmSafe keeps only whitelisted fields and refuses PII among them", () =>
   assert.equal("email" in safe, false);
   assert.equal(codeOf(() => toLlmSafe(source, ["customer_ref", "email"])), "PII_IN_PAYLOAD");
 });
+
+test("F1: the PII scan is linear. 300 000 characters of every pathological shape finish in well under a second", () => {
+  const N = 300_000;
+  const shapes = [
+    "a".repeat(N),
+    "a@".repeat(N / 2),
+    "a.".repeat(N / 2) + "@",
+    " ".repeat(N),
+    "(".repeat(N),
+    "( ".repeat(N / 2),
+    "+1" + " ".repeat(N),
+    "+1 ".repeat(N / 3),
+    "0 ".repeat(N / 2),
+    "x".repeat(N) + "@" + "y".repeat(N),
+  ];
+  for (const text of shapes) {
+    const started = Date.now();
+    looksLikePii(text);
+    const ms = Date.now() - started;
+    assert.ok(ms < 1000, `${ms} ms for a ${text.length}-character input starting ${JSON.stringify(text.slice(0, 6))}`);
+  }
+});
+
+test("e-mail detection keeps its exact shape: needs a local part, an '@' and a dotted domain", () => {
+  for (const yes of ["a@b.c", "jana.novakova@example.test", "x: jan@x.sk, ok", "mailto:a@b.sk"]) assert.equal(looksLikePii(yes), true, yes);
+  for (const no of ["a@b", "@b.c", "a@.c", "a@b.", "a @ b.c", "price @ 5.20", "no at sign here", "@", ""]) assert.equal(looksLikePii(no), false, JSON.stringify(no));
+});
+
+test("the cheap obfuscations are caught: (at), [at], (dot), full-width @, 421 without a plus, a local 0900 number", () => {
+  for (const text of ["jan(at)x.sk", "jan [at] x [dot] sk", "jan ( at ) x ( dot ) sk", "jan\uFF20x.sk", "421900123456", "421 900 123 456", "0900123456", "0900 123 456"]) {
+    assert.equal(looksLikePii(text), true, text);
+  }
+});
+
+test("ordinary ids and numbers are not mistaken for PII", () => {
+  for (const text of ["cus_0123456789abcdef", "FIX-CUS-001", "opp_a1b2c3d4e5f60718", "exp_0123456789ab", "order 421 pieces", "total 1 234,50 EUR", "2026-10-02T08:00:00.000Z", "a".repeat(64)]) {
+    assert.equal(looksLikePii(text), false, text);
+  }
+});
