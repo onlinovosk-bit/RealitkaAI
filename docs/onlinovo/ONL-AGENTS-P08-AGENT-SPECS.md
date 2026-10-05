@@ -37,7 +37,7 @@ depends_on: docs/onlinovo/ONL-MCP-002-IMPLEMENTATION.md, packages/control-contra
 3. LLM nikdy nepočíta: počty zákazníkov, dátumy, RFM, tržby, maržu, oprávnenosť, frekvenčné limity, prahy, aritmetiku experimentov ani KPI.
 4. Každý fakt má druh: `FACT` (z dát), `ESTIMATE` (vypočítaný z explicitných predpokladov), `ASSUMPTION` (vstup od foundera), `INFERENCE` (odvodenie). Inference sa nikdy ticho nestane faktom.
 5. Chýbajúci údaj je `UNKNOWN`, nikdy vymyslená hodnota. Nepodporovaná schopnosť je `BLOCKED`.
-6. Kill switch: premenná `ONLINOVO_AGENTS_KILL_SWITCH=1` zablokuje všetky akcie okrem čistého čítania stavu.
+6. Kill switch: premenná `ONLINOVO_AGENTS_KILL_SWITCH` (fail-closed: zapnutý pri akejkoľvek hodnote okrem explicitne vypnutej `0`, `false`, `off`, `no`, `disabled` alebo prázdnej) zablokuje všetky akcie okrem čistého čítania stavu.
 7. Identita zákazníka je pseudonymná (`customer_ref`). Surový e-mail ani telefón nesmú ísť do výstupu ani do (budúceho) LLM payloadu.
 
 ## C. AGENT SPEC — ONL-REVENUE-OPPORTUNITY

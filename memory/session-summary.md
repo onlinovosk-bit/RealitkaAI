@@ -1,3 +1,25 @@
+## Session 2026-10-05 (ONL-AGENTS-FIX: nálezy P11 po merge #807)
+### Dokončené
+- **P11 (nezávislý overovací agent, 47 sabotáží) nedala VERIFIED**; #807 bol medzitým zmergovaný, preto oprava ide ako nový PR z `main`. Opravené (všetko v `packages/mcp-onlinovo`, nič mimo):
+  - **F1** ReDoS v kontrole PII: e-mail sa hľadá lineárnym skenom okolo každého `@` (200 000 znakov držalo server ~50 s, teraz ms); nástroje odmietnu vstup > 100 000 znakov (`INPUT_TOO_LARGE`) skôr, než sa niečo parsuje. Pribudla detekcia `(at)`, `[dot]`, plnošírkové `@`, `421…` bez plus (stále heuristika, nie dôkaz).
+  - **F2** neplatné `placed_at` nikdy neprejde filtrami: `INVALID_INPUT` v oboch agentoch.
+  - **F3** plán s `min_sample_per_arm` < 100 sa odmietne (`SAMPLE_PLAN_TOO_SMALL`) a `classifySample` nikdy nedá ADEQUATE pod 100 na rameno. **100 je politický prah, nie štatistické odvodenie** (označené v kóde).
+  - **F4/F13** `decideExperiment` overí pečať výsledku (`result_hash`) a triedu vzorky vždy prepočíta z počtov a plánu; zámok pokrýva aj `experiment_id`, opis publika a `opportunity_id`. Obmedzenie: pečať chráni pred úpravou, nie pred útočníkom, ktorý prepočíta aj odhad; surové dáta tu nie sú.
+  - **F5** `ExperimentLedger.update` po schválení nepustí zmenu plánu, zrušenie schválenia ani výmenu zámku.
+  - **F6** nemožný agregát (`sum_sq` < `sum²/n`) sa odmietne. **F7–F9** alokácia len čísla, smer stop condition len `below|above`, stop condition len na primárnu alebo sekundárnu metriku.
+  - **F11** kill switch je fail-closed: zapnutý pri akejkoľvek hodnote okrem explicitne vypnutej. **F12** istota, ktorá nie je číslo (NaN, reťazec, null), nikdy neprejde odporúčaním.
+  - Sedem hraníc bez testu pripnutých: presne 48 h, 5 jednotiek, deň 45, 24 h, „práve jedna objednávka", odhad s neúplnými predpokladmi, lokálne číslo `0900…`.
+- Dôkaz: mcp-onlinovo **198/198**, `tsc` 0 chýb, control-contract **72/72**, crm `lib/agents` **69/69**, `prepush-gate.sh` všetko PASS (migrácie NEOVERENÉ). Sabotáž: 24 mutácií, 23 červených → po obnove zelených; 1 ekvivalentná (`sampleClass` vs `r.sample_class` po overení rovnosti), nie je to medzera.
+- **Oprava môjho tvrdenia:** veta „mutation proof na každý guard" z #807 bola prehnaná (P11 našla 7 medzier); správne je „na guardy po tomto PR".
+### Rozpracované / Pending
+- **Nález mimo môjho územia, neopravený:** `resolveAuthority` v `packages/control-contract/src/authority.ts` používa `ctx.confidence < minConfidence`, takže `NaN` confidence prejde ako AUTONOMOUS (rovnaká diera, aká bola v lokálnom guarde). Fix je jednoriadkový (`!(ctx.confidence >= min)`), ale je to jadro governance, takže ho navrhujem, nerobím bez GO.
+- Stále UNKNOWN: LeadHub kontrakt, živý zdroj dát, perzistencia, trvalé schvaľovania, náklady LLM, CI job pre `mcp-onlinovo` (denylist).
+### Kľúčové súbory zmenené
+- `packages/mcp-onlinovo/src/agents/{pseudonym,opportunity,next-action,kpi,allocation,experiment,guard}.ts` a `src/tools/agent-support.ts`: opravy F1–F13 + testy.
+- `docs/onlinovo/ONL-AGENTS-P08-AGENT-SPECS.md`: sémantika kill switchu.
+### Ďalší krok
+P11 znova na novej hlave tohto PR (nezávislý agent), potom rozhodnutie o `authority.ts` (NaN) a o LeadHub kontrakte.
+
 ## Session 2026-10-02 (RAU Leverage track L01–L05)
 ### Dokončené
 - `docs/rau/leverage/` (L01–L05 + README): päť read-only promptov z nápadu zo screenshotov, vlastné formulácie; „Execution Engine" sa nestavia (je to existujúce RAU). Ústava v2: Q1 veto, skóre ≈ 2/12 → REJECT; GO prišlo pred kontrolou, potvrdenie čaká na foundera.

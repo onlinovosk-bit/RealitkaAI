@@ -289,3 +289,57 @@ test("unpaid age bounds: younger than 2 h and older than 14 days are not recover
   assert.equal(ageHours(14 * 24), true);
   assert.equal(ageHours(14 * 24 + 1), false);
 });
+
+// ── P11 findings ──────────────────────────────────────────────────────────────────────────────
+
+test("F2: an order with an unparseable timestamp makes the snapshot invalid instead of slipping through every filter", () => {
+  for (const status of ["unpaid", "fulfilled", "cancelled"] as const) {
+    const o = order("FIX-ORDER-BAD", "FIX-CUS-800", 5, status);
+    o.placed_at = "garbage";
+    assert.equal(codeOf(() => detectOpportunities(custom([o], "unknown"), NOW)), "INVALID_INPUT", status);
+  }
+});
+
+test("the snapshot age limit is exact: 48 h is fresh, 48 h and one millisecond is stale", () => {
+  const at = (extraMs: number) => {
+    const snap = fixture();
+    snap.as_of = new Date(NOW.getTime() - 48 * 3_600_000 - extraMs).toISOString();
+    return detectOpportunities(snap, NOW).status;
+  };
+  assert.equal(at(0), "OK");
+  assert.equal(at(1), "STALE_SNAPSHOT");
+});
+
+test("an estimate needs BOTH revenue per recipient and incremental share; one alone gives null", () => {
+  const run = (assumptions: NonNullable<OpportunityParams["assumptions"]>) =>
+    detectOpportunities(fixture(), NOW, { ...DEFAULT_OPPORTUNITY_PARAMS, assumptions }).opportunities.filter((o) => o.type === "REORDER_WINDOW" || o.type === "REACTIVATION_POOL");
+  for (const o of run({ vat_rate: 0.23 })) assert.equal(o.estimated_value, null, "vat only");
+  for (const o of run({ vat_rate: 0.23, revenue_per_recipient_gross: { low: 1, high: 2 } })) assert.equal(o.estimated_value, null, "revenue only");
+  for (const o of run({ vat_rate: 0.23, incremental_share: { low: 0.1, high: 0.2 } })) assert.equal(o.estimated_value, null, "share only");
+  for (const o of run({ vat_rate: 0.23, revenue_per_recipient_gross: { low: 1, high: 2 }, incremental_share: { low: 0.1, high: 0.2 } })) {
+    assert.equal(o.estimated_value?.kind, "ESTIMATE");
+  }
+});
+
+test("the stock-out threshold is exact: 5 units in the look-back is a leak, 4 is not", () => {
+  const units = (n: number) => {
+    const snap = custom(
+      Array.from({ length: n }, (_, i) => ({
+        ...order(`FIX-ORDER-U${i}`, `FIX-CUS-4${String(i).padStart(2, "0")}`, 10 + i),
+        lines: [{ sku: "FIX-OUT-50", family: "out", size_ml: 50, units: 1, net_revenue: 15, net_cost: 10 }],
+      })),
+    );
+    snap.products = [{ sku: "FIX-OUT-50", family: "out", kind: "single", size_ml: 50, list_price_gross: 19.5, unit_cost_net: 10, in_stock: false }];
+    return typesOf(detectOpportunities(snap, NOW)).includes("STOCKOUT_LEAK");
+  };
+  assert.equal(units(4), false);
+  assert.equal(units(5), true);
+});
+
+test("REORDER_WINDOW needs exactly one fulfilled order, whichever row comes first", () => {
+  const inWindow = order("FIX-ORDER-R1", "FIX-CUS-410", 120);
+  const older = order("FIX-ORDER-R2", "FIX-CUS-410", 300);
+  assert.equal(typesOf(detectOpportunities(custom([inWindow, older]), NOW)).includes("REORDER_WINDOW"), false, "in-window row first");
+  assert.equal(typesOf(detectOpportunities(custom([older, inWindow]), NOW)).includes("REORDER_WINDOW"), false, "older row first");
+  assert.equal(typesOf(detectOpportunities(custom([inWindow]), NOW)).includes("REORDER_WINDOW"), true);
+});

@@ -15,6 +15,9 @@ export interface AgentToolDeps {
   now?: () => Date;
 }
 
+/** The input of a read-only tool is a handful of fields. Anything bigger is refused before it is parsed or scanned. */
+export const MAX_TOOL_INPUT_CHARS = 100_000;
+
 export type ToolResult = { content: Array<{ type: "text"; text: string }>; isError?: true };
 
 const REQUESTED_ACTION_DESCRIPTION =
@@ -53,6 +56,23 @@ export async function runAgentTool<T extends object>(opts: {
 }): Promise<ToolResult> {
   const env = opts.deps?.env ?? process.env;
   const now = (opts.deps?.now ?? (() => new Date()))();
+
+  let inputSize = 0;
+  try {
+    inputSize = JSON.stringify(opts.args ?? null).length;
+  } catch {
+    inputSize = Number.POSITIVE_INFINITY;
+  }
+  if (inputSize > MAX_TOOL_INPUT_CHARS) {
+    const audit = beginAgentAudit(opts.tool, opts.agentId, opts.actions.join(","), {
+      allowed: false, verdict: "FORBIDDEN", code: null, rule: "input_too_large", tier: null, message: "input too large",
+    });
+    audit.finish({ denied: true, reason: "input_too_large" });
+    return asResult(
+      { success: false, request_id: audit.request_id, error: { code: "INPUT_TOO_LARGE", message: `tool input is larger than ${MAX_TOOL_INPUT_CHARS} characters` } },
+      true,
+    );
+  }
 
   const asked = requestedAction(opts.args);
   const checks: string[] = asked === null ? [...opts.actions] : [asked, ...opts.actions];

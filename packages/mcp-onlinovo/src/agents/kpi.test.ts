@@ -7,6 +7,7 @@ import {
   diffEstimate,
   getKpi,
   KPI_REGISTRY,
+  MIN_ADEQUATE_SAMPLE_PER_ARM,
   requiredSamplePerArm,
 } from "./kpi.js";
 import { AgentError } from "./types.js";
@@ -115,4 +116,24 @@ test("a sample below the plan is INDICATIVE, at the plan it is ADEQUATE", () => 
   assert.equal(classifySample(600, 600, 600), "ADEQUATE");
   assert.equal(classifySample(599, 600, 600), "INDICATIVE");
   assert.equal(classifySample(600, 599, 600), "INDICATIVE");
+});
+
+// ── P11 findings ──────────────────────────────────────────────────────────────────────────────
+
+test("F3: the adequate-sample floor holds whatever the plan says", () => {
+  assert.equal(MIN_ADEQUATE_SAMPLE_PER_ARM, 100);
+  assert.equal(classifySample(2, 2, 2), "INDICATIVE", "a plan of 2 per arm is still indicative at n = 2");
+  assert.equal(classifySample(99, 99, 1), "INDICATIVE");
+  assert.equal(classifySample(100, 100, 1), "ADEQUATE");
+  assert.equal(classifySample(100, 100, 600), "INDICATIVE", "the plan can raise the bar above the floor");
+  assert.equal(classifySample(99, 100, 50), "INDICATIVE");
+  assert.equal(classifySample(100, 99, 50), "INDICATIVE");
+});
+
+test("F6: an impossible aggregate (sum_sq below sum^2/n) is refused, a constant sample is not", () => {
+  const m = getKpi("aov_net");
+  assert.equal(codeOf(() => diffEstimate(m, { n: 100, sum: 100, sum_sq: 1 }, { n: 100, sum: 120, sum_sq: 1 })), "MISSING_DATA");
+  const constant = diffEstimate(m, { n: 10, sum: 100, sum_sq: 1000 }, { n: 10, sum: 120, sum_sq: 1440 });
+  near(constant.standard_error, 0);
+  near(constant.difference, 2);
 });
