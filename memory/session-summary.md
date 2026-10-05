@@ -9,15 +9,21 @@ RAU route: GO_REQUIRED (ručne; router zamietnutý) roadmap Revolis.AI
 - Rozhodnutia foundera: ceny BEZ DPH, balíky vlastné 60/120/180/240/300, GO na W1.
 - W1 hotová: `apps/crm/src/lib/pricing-v2.ts` + `apps/crm/src/lib/__tests__/pricing-v2.test.ts` (23 testov; mutation proof 9/9 mutantov zabitých po zapracovaní zistení nezávislého P11; lint čistý; 0 TS chýb v nových súboroch). Nezapojené do checkoutu (W2), `PRICING_V2_ENABLED` vypnuté.
 - Nezávislé P11 (iný agent): kontraktné sumy PASS; zistenia R1–R5 (fail-closed `resolvePricingModel`, `isSafeInteger`, validácia základu a DPH, zmrazený cenník) opravené a pokryté testami.
+- **W2** (kontrakt `docs/pricing/2026-10-05-pricing-v2-w2-contract.md` + `pricing-v2-contract.ts`; 4 paralelné vetvy A–D v izolovaných worktrees, územia disjunktné, zlúčené do vetvy PR #822): A billing/webhook/granty/migrácia (39/39 mutantov), B CRM obrazovky (15/15), C marketing (21/21), D texty + VOP návrh (27/27). Všetko za `PRICING_V2_ENABLED` (predvolene vypnuté), pri vypnutom výstup zhodný (golden).
+- **W3** nezávislé QA (iný agent, offline e2e 54 testov): jadro PASS; nálezy opravené: replay `checkout.session.completed` po zrušení (stav sa berie zo Stripe), 409 `subscription_exists` vs. legacy, výnimka v checkoute → 503 `checkout_failed`, zvyšky cien (billing stránka, FAQ, Rozpis, paywally), `tests/integration` v CI. Koordinátor navyše našiel: **v2 platiteľ by mal plán „free“** (`getCurrentPlanKey` a `saas-ops` nepoznali v2 price ID) → opravené (`pricing-v2-plan.ts`).
+- Merge `origin/main` do vetvy (51 commitov; konflikt webhook route + memory vyriešený, memory append-only overené); nový `billing-lifecycle.ts` z `main` je so v2 kompatibilný (test `billing-lifecycle-pricing-v2`).
+- **W4** brána P15–P17: `docs/pricing/2026-10-05-pricing-v2-w4-production-gate.md` — verdikt **NOT READY** (bloker P1 funnel web → CRM, Stripe krok C a webhook, DPH, VOP, migrácia na PROD, kredity bez vynucovania).
+- Dôkaz: CRM celá sada 3105 testov OK (8 súborov vyžaduje `TEST_SUPABASE_*`, na báze neoverené), marketing 29/29, typecheck 49 ≤ strop 54, lint čistý; repo CI: Memory append-only, Zmluva kódu, Control Contract, BUS, Memory Engine zelené, „Lint, test, build“ pri písaní bežalo.
 - Otvorené: základ DPH u AIRAmax (pre tvrdenie „sme lacnejší“).
 ### Rozpracované / Pending
-- Čaká GO na Stenu 0 (Stripe live ceny — krok C robí founder, Vercel limit, trial 14 d bez karty, e2e). Nič nestavané.
-- Neoverené: produkt AIRAmax (vidíme len web), trial flow, WhatsApp, protokol, `revolis-ai` chat, export cez Realvia — treba plný P01.
+- **Funnel** (`/register` nečíta `pricing=v2&plan=…`) — vyžaduje návrh a GO (autentifikácia/onboarding).
+- Stripe krok C (founder), `STRIPE_WEBHOOK_SECRET` + endpoint s udalosťou `checkout.session.async_payment_succeeded`, migrácia `20261005120000` na PROD (GO), VOP v2 (právnik), základ DPH, politika kreditov (`CREDITS_ENFORCEMENT` off → predávať len plány).
+- Neoverené: reálna DB a Stripe, prehliadač, náklad AI na kredit (NEMERANÉ), produkt AIRAmax (len web).
 ### Kľúčové súbory zmenené
-- `docs/architecture/2026-10-05-mega-poplach-airamax-roadmap.md` (nový); `memory/decisions.md`, `memory/session-summary.md`.
-- `apps/crm/src/lib/credits/credit-rates.ts`, `apps/crm/src/lib/credits/__tests__/credit-rates.test.ts`: `LISTING_DESCRIPTION` 2 → 1.
+- Kód: `apps/crm/src/lib/pricing-v2*.ts`, `credits-billing-v2.ts`, `credits-billing-webhook.ts`, `billing-store.ts`, `saas-ops.ts`, `credits/{grant-engine,monthly-cycle,credit-rates}.ts`, `app/api/billing/**`, migrácia `20261005120000_pricing_v2_agency_columns.sql`, `components/billing/v2/**`, `apps/marketing/**`, texty (`terms`, `landing`, `AiInsightsPanel`…), `config/env.ts`, `vitest.config.js`.
+- Dokumenty: `docs/architecture/2026-10-05-mega-poplach-airamax-roadmap.md`, `docs/pricing/2026-10-05-pricing-v2-*.md` (W0 inventúra, W2 kontrakt, W4 brána), `w2c-notes.md`, `w2d-copy-and-legal-review.md`; `memory/decisions.md`, `memory/session-summary.md`.
 ### Ďalší krok
-GO Stena 0 „Môžem predať“.
+Jedna stena s GO: **FUNNEL-V2** — zachovať zvolený plán z webu cez registráciu a onboarding do `/upgrade` (bloker B1). Paralelne founder: Stripe krok C.
 ## Session 2026-10-05 (HERO-CAPTURE-SOURCE)
 ### Dokončené
 - **HERO-CAPTURE-SOURCE** (GO foundera, jedna stena): hero formulár na landing (`Hero.tsx:197` → `HeroEmailCapture`) posiela `source: "hero_email_capture"`;
