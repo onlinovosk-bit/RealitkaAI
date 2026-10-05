@@ -83,7 +83,7 @@ At the start of every session:
      poslať. Neopakuj celý postup.
    - PROD, merge a flagy iba na explicitné GO. Merge až keď je CI na aktuálnom heade zelené.
 9. **Postup session v %** (founder, 2026-10-02). Každá odpoveď foundrovi končí riadkom
-   `Session <cieľ>: NN % (a/b míľnikov) · ďalší míľnik: …` z bloku SESSION v `docs/STATUS.md`
+   `📊 Session (<cieľ>): NN % (a/b míľnikov) · Architektúra: Y % · ďalší míľnik: …` (formát z #801) z bloku SESSION v `docs/STATUS.md`
    (`bash .claude/hooks/session-progress.sh print`). % = hotové míľniky / všetky, odškrtnuté iba s dôkazom.
    Na začiatku novej session nahraď blok SESSION novým cieľom. Vynucuje to Stop hook: odpoveď bez riadku sa zablokuje.
 

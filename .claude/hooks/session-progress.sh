@@ -31,7 +31,9 @@ def progress():
     done = sum(1 for x, _ in items if x == "x")
     nxt = next((t for x, t in items if x == " "), "všetko hotové")
     pct = round(100 * done / len(items))
-    return f"Session {goal.group(1).strip() if goal else ''}: {pct} % ({done}/{len(items)} míľnikov) · ďalší míľnik: {nxt}"
+    tot = re.search(r"^## Celkom:\s*(.+)$", s, re.M)
+    arch = tot.group(1).strip() if tot else "?"
+    return f"📊 Session ({goal.group(1).strip() if goal else ''}): {pct} % ({done}/{len(items)} míľnikov) · Architektúra: {arch} · ďalší míľnik: {nxt}"
 
 line = progress()
 if os.environ["MODE"] == "print":

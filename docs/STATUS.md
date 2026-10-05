@@ -6,6 +6,8 @@
 
 ## Celkom: ≈ 52 %  (odhad)
 
+**Session 2026-10-02: 11 z 12 plánovaných blokov = 92 %** (počet blokov, nie vážené hodnotou; zostáva 1: Stripe krok C — founder).
+
 | blok | váha | stav | skóre | čo blokuje |
 |---|---|---|---|---|
 | **Predaj / platby (Stripe)** | 30 | **0 z 10 cien** na live účte | **0 %** | **founder: krok C v Stripe** |
