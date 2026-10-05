@@ -23,11 +23,24 @@ import { describe, expect, it } from "vitest";
 const REPO = resolve(__dirname, "../../../..");
 const TAX_API = /\b(automatic_tax|tax_behavior|tax_rates|tax_id_collection)\b/;
 
-/** Zdrojové súbory v apps/, ktoré pozná git — bez node_modules a buildov. */
+/** Testy a mocky: nič neposielajú do Stripe, a tento súbor tie polia cituje. */
+const IS_TEST = (f: string) =>
+  /(^|\/)(__tests__|__mocks__|tests)\//.test(f) || /\.(test|spec)\.(ts|tsx|js|mjs)$/.test(f);
+
+/**
+ * Produkčné zdroje v apps/, ktoré pozná git — bez node_modules, buildov a testov.
+ *
+ * Testy sú vylúčené podľa VLASTNOSTI (nič z nich neodchádza do Stripe), nie
+ * preto, aby sa tento súbor sám vyhol pinu. Prvá verzia ich nevylučovala
+ * a pin zhasol sám na sebe — lokálne prešiel iba preto, že `git ls-files`
+ * ešte nevidel nesledovaný súbor, a sčervenel až v CI po `git add`.
+ */
 function appSources(): string[] {
   const res = spawnSync("git", ["ls-files", "apps"], { cwd: REPO, encoding: "utf8" });
   if (res.status !== 0) throw new Error(`git ls-files zlyhalo: ${res.stderr}`);
-  return res.stdout.split("\n").filter((f) => /\.(ts|tsx|js|mjs)$/.test(f));
+  return res.stdout
+    .split("\n")
+    .filter((f) => /\.(ts|tsx|js|mjs)$/.test(f) && !IS_TEST(f));
 }
 
 /**
@@ -38,6 +51,22 @@ const codeOnly = (src: string) =>
   src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^[^\S\n]*\/\/.*$/gm, "");
 
 describe("Checkout neúčtuje daň navyše", () => {
+  it("prehľadáva naozaj tie súbory, ktoré Stripe volajú", () => {
+    // Pin, ktorý by kvôli chybe vo filtri prešiel nula súborov, by bol vždy
+    // zelený a nestrážil by nič. Toto drží, že sa pozrel tam, kde treba.
+    const files = appSources();
+    expect(files.length).toBeGreaterThan(100);
+    for (const required of [
+      "apps/crm/src/lib/credits-billing.ts",
+      "apps/crm/src/lib/billing-store.ts",
+      "apps/marketing/app/api/checkout/subscription/route.ts",
+      "apps/marketing/app/api/revenue-scan/checkout/route.ts",
+      "apps/marketing/app/api/starter-pack/checkout/route.ts",
+    ]) {
+      expect(files).toContain(required);
+    }
+  });
+
   it("žiadny zdroj v apps/ neposiela daňové pole do Stripe", () => {
     const offenders = appSources().filter((f) =>
       TAX_API.test(codeOnly(readFileSync(join(REPO, f), "utf8"))),
