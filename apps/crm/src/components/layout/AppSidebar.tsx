@@ -11,6 +11,7 @@ import {
   SECTION_LABELS,
   VARIANT_THEMES,
   DEFAULT_TEAM_PERMISSIONS,
+  UNKNOWN_TEAM_PERMISSIONS,
   type MenuVariant,
   type NavBadge,
   type NavItem,
@@ -689,13 +690,20 @@ export default function AppSidebar({
   }, []);
 
   // Načítaj permissions pre tímového makléra
+  // Člen tímu: kým oprávnenia nedorazia — a ak nedorazia — neukazuj nič navyše.
+  // Solo maklér sem nevstúpi a ponecháva si `DEFAULT_TEAM_PERMISSIONS` z
+  // počiatočného stavu, čo je pre neho správny default (vlastné kontakty).
+  // Predtým sa na oboch zlyhaniach vracal solo default, takže sieťová chyba v
+  // prehliadači odomkla export zdieľaných kontaktov
+  // (docs/reports/2026-10-05-fail-open-sweep.md, P2).
   useEffect(() => {
     if (renderVariant !== "agent_team") return;
     setPermLoading(true);
+    setPermissions(UNKNOWN_TEAM_PERMISSIONS);
     fetch("/api/nav/permissions")
-      .then((r) => r.ok ? r.json() : DEFAULT_TEAM_PERMISSIONS)
+      .then((r) => r.ok ? r.json() : UNKNOWN_TEAM_PERMISSIONS)
       .then((data: TeamMemberPermissions) => setPermissions(data))
-      .catch(() => setPermissions(DEFAULT_TEAM_PERMISSIONS))
+      .catch(() => setPermissions(UNKNOWN_TEAM_PERMISSIONS))
       .finally(() => setPermLoading(false));
   }, [renderVariant]);
 
