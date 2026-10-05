@@ -12,6 +12,10 @@
 - **B1 (Meta lookalike) — prehodnotená z VYSOKÁ na latentnú.** Kód posiela e-mail v čistom texte a nekontroluje súhlas, ale UI volá bez Bearer (401) a PROD `leads_demo` má 0 riadkov (route
   vráti 400 pred volaním Metu). Rozhodnutie čaká na foundera: A = vypnúť route (odporúčam), B = SHA-256 + `EMAIL_SHA256` + filter `gdpr_consent` + účelový súhlas. Hash je pseudonymizácia, nie anonymizácia.
 
+## [2026-10-05] Anthropic na verejnom zozname sub-procesorov (GO SUBPROCESSORS-PAGE)
+- `/legal/sub-processors`: nový riadok Anthropic (USA, AI spracovanie textu, SCC), dátum aktualizácie 5. 10. 2026. `/privacy`: Anthropic doplnený do vety o sprostredkovateľoch. `/legal/changelog` v2.5.
+- Zatvára nález z auditu volaní LLM (verejný zoznam uvádzal iba OpenAI pri ~20 živých volaniach Anthropicu). Oznámenie/dodatok k DPA (tlačivo #818) ostáva na founderovi; míľnik session sa odškrtne až po jeho odoslaní.
+
 ## [2026-10-05] TRIAL-GATE-CLOSED (variant A): po vypršaní je účet read-only; `unknown` je jediné zámerné fail-open
 
 **Founder rozhodnutie:** variant A — po vypršaní trialu alebo po zrušení platby klient
