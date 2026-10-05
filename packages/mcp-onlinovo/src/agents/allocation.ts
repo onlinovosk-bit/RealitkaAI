@@ -14,7 +14,10 @@ export interface Allocation {
 }
 
 export function validateAllocation(allocation: Allocation): void {
-  const { control, treatment } = allocation;
+  const { control, treatment } = allocation ?? ({} as Allocation);
+  if (typeof control !== "number" || typeof treatment !== "number") {
+    throw new AgentError("ALLOCATION_INVALID", "control and treatment weights must be numbers");
+  }
   if (!(control > 0) || !(treatment > 0) || Math.abs(control + treatment - 1) > 1e-9) {
     throw new AgentError("ALLOCATION_INVALID", "control and treatment weights must be positive and sum to 1");
   }

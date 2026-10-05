@@ -74,9 +74,15 @@ export function lookupOnlAction(action: string): OnlAction | null {
   return BY_ACTION.get(action) ?? null;
 }
 
+const KILL_SWITCH_OFF = new Set(["", "0", "false", "off", "no", "disabled"]);
+
+/**
+ * Fail-closed: the switch is ON for any value except an explicit "off" spelling. A typo such as "ture" or
+ * a spelling like "yes" or "enabled" stops the agents; it can never leave them running by accident.
+ */
 export function killSwitchOn(env: NodeJS.ProcessEnv = process.env): boolean {
   const raw = (env.ONLINOVO_AGENTS_KILL_SWITCH ?? "").trim().toLowerCase();
-  return raw === "1" || raw === "true" || raw === "on";
+  return !KILL_SWITCH_OFF.has(raw);
 }
 
 function forbid(code: GuardCode, rule: string, tier: Tier | null, message: string): GuardDecision {
@@ -126,7 +132,9 @@ export function actionVerdict(
       message: `${meta.capability} does not change the world.`,
     };
   }
-  if (confidence < MIN_CONFIDENCE) {
+  // `!(x >= floor)` rather than `x < floor`, and a typeof check because "0.9" >= 0.6 is true in JavaScript:
+  // NaN, undefined, null and strings are "not enough confidence", never a pass.
+  if (typeof confidence !== "number" || !(confidence >= MIN_CONFIDENCE)) {
     return {
       allowed: false,
       verdict: "APPROVAL_REQUIRED",

@@ -134,3 +134,21 @@ test("the action-level verdict honours the kill switch on its own, not only thro
   assert.equal(d.allowed, false);
   assert.equal(d.code, "KILL_SWITCH");
 });
+
+// ── P11 findings ──────────────────────────────────────────────────────────────────────────────
+
+test("F11: the kill switch is fail-closed: only an explicit off spelling leaves the agents running", () => {
+  const sw = (value: string | undefined) => killSwitchOn(value === undefined ? ({} as NodeJS.ProcessEnv) : ({ ONLINOVO_AGENTS_KILL_SWITCH: value } as NodeJS.ProcessEnv));
+  for (const on of ["1", "true", "TRUE", "on", " On ", "yes", "enabled", "ture", "2", "stop"]) assert.equal(sw(on), true, on);
+  for (const off of [undefined, "", "  ", "0", "false", "FALSE", "off", " Off ", "no", "disabled"]) assert.equal(sw(off), false, String(off));
+});
+
+test("F12: a confidence that is not a number never passes a recommendation, a passive read is unaffected", () => {
+  for (const bad of [Number.NaN, undefined as unknown as number, "0.9" as unknown as number, null as unknown as number]) {
+    const d = actionVerdict("onlinovo.opportunity.recommend", bad, NO_ENV);
+    assert.equal(d.allowed, false, String(bad));
+    assert.equal(d.verdict, "APPROVAL_REQUIRED", String(bad));
+  }
+  assert.equal(actionVerdict("onlinovo.data.observe", Number.NaN, NO_ENV).allowed, true);
+  assert.equal(actionVerdict("onlinovo.opportunity.recommend", 0.6, NO_ENV).allowed, true);
+});
