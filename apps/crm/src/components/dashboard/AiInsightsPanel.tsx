@@ -6,10 +6,14 @@ import Link from "next/link";
 import { useState } from "react";
 import { AlertTriangle, Flame, Zap } from "lucide-react";
 import { SLATE_HORIZON, SLATE_HORIZON_BADGES, WORKDESK_INNER_ROW, WORKDESK_PANEL } from "@/lib/slate-horizon-theme";
+import type { PricingV2Catalog } from "@/lib/pricing-v2";
+import { formatEurFromCents } from "@/components/marketing/pricing-v2-copy";
 
 interface AiInsightsPanelProps {
   leads: Lead[];
   plan?: PlanTier;
+  /** W2-D: katalóg cenníka v2 (server ho posiela len pri zapnutom prepínači); null/undefined = pôvodný text. */
+  pricingV2?: PricingV2Catalog | null;
 }
 
 const INSIGHT_STYLES = {
@@ -36,6 +40,7 @@ const INSIGHT_STYLES = {
 export default function AiInsightsPanel({
   leads,
   plan = "free",
+  pricingV2 = null,
 }: AiInsightsPanelProps) {
   const [expandedWarning, setExpandedWarning] = useState(false);
   const allInsights = generateDailyInsights(leads);
@@ -58,6 +63,7 @@ export default function AiInsightsPanel({
       return aTime - bTime;
     });
   const isFreePlan = plan === "free";
+  const cheapestV2Band = pricingV2 ? [...pricingV2.bands].sort((a, b) => a.netCents - b.netCents)[0] : undefined;
   const staleVisible = isFreePlan ? staleLeads.slice(0, 3) : staleLeads;
   const staleLockedCount = Math.max(staleLeads.length - staleVisible.length, 0);
 
@@ -207,7 +213,7 @@ export default function AiInsightsPanel({
                         color: SLATE_HORIZON.brandDeep,
                       }}
                     >
-                      <p>Ďalšie príležitosti odomkneš v programe Smart Start.</p>
+                      <p>{cheapestV2Band ? "Ďalšie príležitosti odomkneš v platenom pláne." : "Ďalšie príležitosti odomkneš v programe Smart Start."}</p>
                     </div>
                   )}
                 </div>
@@ -221,7 +227,11 @@ export default function AiInsightsPanel({
             lockedCount={locked.length}
             feature="príležitostí"
             titleOverride="+6 ďalších príležitostí"
-            ctaLabel="Odomknúť Market Vision od 199 € mesačne"
+            ctaLabel={
+              cheapestV2Band
+                ? `Odomknúť ďalšie príležitosti — plány od ${formatEurFromCents(cheapestV2Band.netCents)} mesačne bez DPH`
+                : "Odomknúť Market Vision od 199 € mesačne"
+            }
           />
         )}
       </div>
