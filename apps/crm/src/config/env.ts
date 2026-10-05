@@ -155,6 +155,7 @@ export const DEGRADED_WITHOUT: Record<string, string> = {
   CRON_SECRET: "cron/interné endpointy odmietajú všetky volania (fail-closed)",
   STRIPE_SECRET_KEY: "fakturácia a checkout",
   OPENAI_API_KEY: "Whisper prepis, embeddings, AI outreach",
+  STRIPE_WEBHOOK_SECRET: "webhook Stripe: platba prejde, ale plán sa neodomkne a zrušenie sa neprejaví",
 };
 
 export type Env = z.infer<typeof envSchema>;

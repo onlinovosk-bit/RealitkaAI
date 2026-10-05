@@ -26,6 +26,8 @@
     "brain:weekly": "tsx brain/src/weekly.ts",
     "brain:test": "tsx --test brain/tests/*.test.ts",
     "brain:typecheck": "tsc -p brain/tsconfig.json --noEmit",
+    "vault:export": "node scripts/vault/export-vault.mjs",
+    "vault:test": "node --test scripts/vault/vault.test.mjs",
     "prospect:score": "npx tsx scripts/prospecting/score.ts",
     "prospect:export": "npx tsx scripts/prospecting/export.ts",
     "prospect:test": "npm run test --prefix apps/crm -- --config ../../scripts/prospecting/vitest.config.ts",

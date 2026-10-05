@@ -31,6 +31,7 @@ describe("GET /api/billing/checkout-config", () => {
         "seatCheckoutAvailable",
         "topupCheckoutAvailable",
         "checkoutAvailable",
+        "webhookSecretConfigured",
         "missingPriceEnvKeys",
         "founderCockpitEligible",
         "founderCockpitRemaining",

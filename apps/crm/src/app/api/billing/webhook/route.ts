@@ -7,6 +7,8 @@ import {
   PRICING_V2_CHECKOUT_TYPE_CREDITS,
   PRICING_V2_CHECKOUT_TYPE_PLAN,
 } from "@/lib/pricing-v2-contract";
+import { syncAgencyBillingLifecycle } from "@/lib/billing-lifecycle";
+import { describeError } from "@/lib/log-safe";
 
 /** Seat / top-up / starter-pack / pricing v2 — fulfilled only by handlePricingCheckoutWebhook. */
 function isPricingCheckoutSession(event: Stripe.Event): boolean {
@@ -49,6 +51,19 @@ export async function POST(request: Request) {
         id: event.id,
       });
       return new NextResponse("Pricing checkout fulfillment failed", { status: 500 });
+    }
+
+    // Zrušenie, zmena miest a zlyhaná platba sa premietnu na kanceláriu. Chyba sa
+    // nepolyká: non-2xx znamená, že Stripe udalosť zopakuje.
+    try {
+      await syncAgencyBillingLifecycle(event);
+    } catch (error) {
+      console.error("[billing/webhook] lifecycle sync failed", {
+        type: event.type,
+        id: event.id,
+        error: describeError(error),
+      });
+      return new NextResponse("Billing lifecycle sync failed", { status: 500 });
     }
 
     await handleStripeWebhookEvent(event);

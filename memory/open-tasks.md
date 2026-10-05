@@ -2,6 +2,11 @@
 
 > Posledná aktualizácia: 2026-09-29 | CHECKOUT-ENV-01: A hotové (0/9), blokér je C
 
+## P0 — GMAIL-PULL aktivácia (Smolko, 2026-10-02)
+
+Kód hotový (PR vetva `claude/gmail-pull-finish`), v PROD nič nebeží. Čaká na foundera: migrácia `20261002090000` do PROD; Google Cloud client + režim
+aplikácie; Smolkov súhlas + filter→štítok; GitHub secrets `CRM_BASE_URL`/`CRON_SECRET` + env vo Verceli; dual-run; DPA dodatok. Detail: `docs/runbooks/gmail-pull-setup.md` §6–8.
+
 ## P0 — Billing /upgrade Stripe (revenue)
 
 - [x] Merge #369 okResponse consumer fix → `30a1ba906`
@@ -215,9 +220,12 @@ dať spätne spojiť s tenantom.
 porušenia iba pohltí do tolerovaného dlhu — vrátane tých dvoch, ktoré sa medzitým
 opravili (`Opravené od baseline: 2`). Stratili by sme jediný dôkaz, že ratchet funguje.
 
-## P1 — RAU (Revolis Agentic University) — základ na vetve, čaká na foundera
+## P1 — RAU (Revolis Agentic University) — základ zmergovaný (#759, 2026-09-30); Leverage track na PR #803
 
-- [ ] Founder: rozhodnúť o merge draft PR s RAU základom — odporúčanie A (`docs/rau/RAU-v1.0.md` §Rozhodnutia foundera)
+- [x] RAU základ zmergovaný do `main` (#759). Rozhodnutia 1–5 v `docs/rau/RAU-v1.0.md` §Rozhodnutia foundera stále čakajú.
+- [ ] Founder: **potvrdiť alebo zrušiť Leverage track (PR #803)** — Ústava Q1 veto + skóre ≈ 2/12 → REJECT; GO prišlo pred kontrolou; zrušenie = zmazať `docs/rau/leverage/` + backlog položku `leverage-external-productization`
+- [ ] Founder: spustiť L01 raz na reálnom zadaní a zapísať, či z toho vzniklo rozhodnutie (jediné meranie užitočnosti; do tej doby NEMERANÉ)
+- [ ] Po prvom reálnom behu L01: zvážiť druh práce `LEVERAGE` v routeri (dnes `ASK`, Ústava Q8); predaj promptov ostáva Strategic Backlog (`leverage-external-productization`)
 - [ ] Founder: Onlinovo.sk a AI Phone Operator (Blueprint §17) — nepotvrdené / odstrániť / potvrdiť
 - [ ] Founder: doplniť fakty pre projekty 03–07 (kto je Nájomná agentúra/Proon, kde žije Mia, YouTube kanály)
 - [ ] Founder: denylist auto-merge pre `docs/rau/**`, `.claude/skills/rau/**`, `scripts/ops/rau-route.mjs` (`.github/scripts/automerge-policy.mjs`, Tier 3)
