@@ -17,6 +17,7 @@
 // ================================================================
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { SystemState } from '@revolis/control-contract'
+import { markLeadContacted } from '@/lib/leads/mark-contacted'
 import { logAiAction } from '@/lib/ai-action-audit'
 import { authorizeSend, authorityMeta } from '@/lib/control-plane/authorize-send'
 import { sendMessage, type SendMessageResult } from '@/lib/multi-channel-sender'
@@ -224,8 +225,18 @@ export async function approveAndSendInboundDraft(
     }
   }
 
+  const sentAt = now().toISOString()
+
+  // A human approved it and the transport confirmed it left: this is contact.
+  // Fail-soft on purpose — the message is already gone, so a failed stamp must
+  // not be reported as a failed send. Only on result.ok: a draft that never
+  // sent is not contact.
+  if (result.ok) {
+    await markLeadContacted(admin, leadId, sentAt)
+  }
+
   const finalMeta: DraftMeta = result.ok
-    ? { ...claimedMeta, approval_state: 'sent', sent_at: now().toISOString(), message_id: result.messageId ?? null }
+    ? { ...claimedMeta, approval_state: 'sent', sent_at: sentAt, message_id: result.messageId ?? null }
     : { ...claimedMeta, approval_state: 'send_failed', last_error: result.error ?? 'send failed' }
 
   const { error: finalErr } = await admin

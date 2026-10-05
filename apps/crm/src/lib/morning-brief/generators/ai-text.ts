@@ -26,7 +26,9 @@ Píšeš ranný brief VÝLUČNE po slovensky. Max 300 slov. Žiadny marketing ja
 Štýl: priamy, konkrétny, akčný — nie všeobecné rady.
 
 Štruktúra (v tomto poradí, bez emoji v texte):
-1) DNEŠNÉ ČÍSLA — leady čakajúce na kontakt, HOT leady, neodpovedané >48h (konkrétne čísla z dát).
+1) DNEŠNÉ ČÍSLA — výlučne čísla, ktoré sú v DÁTACH. Ak je niektorý údaj
+   označený ako "nemerané", vôbec ho nespomínaj a NEDOPLŇUJ vlastný odhad —
+   radšej napíš o tých čísla, ktoré v dátach sú.
 2) TOP 3 PRIORITY — mená + jedna veta dôvodu urgentnosti pre každého (max 3).
 3) PIPELINE — hodnota pipeline v EUR ak je v dátach.
 4) TIP DŇA — jeden konkrétny tip podľa stavu pipeline (nie generický).
@@ -156,7 +158,16 @@ function buildContext(data: GatheredData): string {
   }
 
   lines.push(`\nPIPELINE: aktívnych: ${stats.activeLeads}, hot (>=60): ${stats.hotLeads}`)
-  lines.push(`Čakajú na kontakt: ${stats.pendingContact} (z toho HOT: ${stats.hotPending})`)
+  // The label says what is actually counted: leads with no RECORDED contact.
+  // "Čakajú na kontakt" claimed knowledge of the broker's phone calls, which
+  // the database does not have. Same `null`-as-words rule as staleness below —
+  // a bare number here used to be the broker's whole active book.
+  lines.push(
+    stats.pendingContact === null
+      ? 'Bez zaznamenaného kontaktu: nemerané (zatiaľ žiadny zaznamenaný kontakt) — o tomto čísle nepíš'
+      : `Bez zaznamenaného kontaktu: ${stats.pendingContact}` +
+        (stats.hotPending === null ? '' : ` (z toho HOT: ${stats.hotPending})`),
+  )
   // `null` goes into the prompt as words, not as a number. Handing the model a
   // bare `0` here would invite it to write "nikto nečaká na odpoveď", which is
   // a claim the data cannot support.
@@ -219,7 +230,15 @@ function buildFallbackText(
   const name  = top?.full_name ?? data.stats.priorityLeadNames[0] ?? 'Váš top lead'
   const { overnight, stats } = data
 
-  const veta1 = `Dnes čaká ${stats.pendingContact} leadov na kontakt (${stats.hotPending} HOT). Pipeline: ${stats.pipelineValueEur.toLocaleString('sk')} €.`
+  // When the contact trail does not exist yet, the sentence leads with numbers
+  // the data supports (active book, hot leads) instead of printing `null` —
+  // or, as before, the whole book dressed up as "waiting to be contacted".
+  const pipelineVeta = `Pipeline: ${stats.pipelineValueEur.toLocaleString('sk')} €.`
+  const veta1 = stats.pendingContact === null
+    ? `Aktívnych leadov: ${stats.activeLeads}, z toho HOT: ${stats.hotLeads}. ${pipelineVeta}`
+    : `Bez zaznamenaného kontaktu: ${stats.pendingContact} leadov` +
+      (stats.hotPending === null ? '' : ` (${stats.hotPending} HOT)`) +
+      `. ${pipelineVeta}`
   const veta2 = top
     ? `${name} má BRI ${score}/100 — priorita č. 1.`
     : stats.priorityLeadNames.length

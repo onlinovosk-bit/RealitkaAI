@@ -37,6 +37,8 @@ interface Recorded {
   filters: Filters
   or: string[]
   not: string[]
+  is: string[]
+  in: string[]
 }
 
 /**
@@ -51,6 +53,10 @@ function makeClient(opts: {
   contactedCount?: number
   staleCount?: number
   staleQueryFails?: boolean
+  pendingCount?: number
+  pendingQueryFails?: boolean
+  hotPendingCount?: number
+  hotPendingQueryFails?: boolean
   pipeline?: { budget: string; status: string }[]
   priority?: { name: string; ai_priority: string; score: number; last_contact: string }[]
   events?: { event_type: string; entity_id?: string | null; payload?: unknown; created_at?: string }[]
@@ -59,7 +65,7 @@ function makeClient(opts: {
 
   const client = {
     from(table: string) {
-      const entry: Recorded = { table, columns: '', filters: {}, or: [], not: [] }
+      const entry: Recorded = { table, columns: '', filters: {}, or: [], not: [], is: [], in: [] }
       recorded.push(entry)
 
       const resolve = (): Record<string, unknown> => {
@@ -102,6 +108,21 @@ function makeClient(opts: {
             }
             return { data: null, count: opts.contactedCount ?? 0, error: null }
           }
+          // "No recorded contact" queries, told apart by the `is` filter. The
+          // hot one additionally narrows by lead id, which is what separates
+          // it from the whole-book pending count.
+          if (entry.is.includes('last_contact_at.null')) {
+            if (entry.in.some((f) => f.startsWith('id.'))) {
+              if (opts.hotPendingQueryFails) {
+                return { data: null, count: null, error: { message: 'PostgREST said no' } }
+              }
+              return { data: null, count: opts.hotPendingCount ?? 0, error: null }
+            }
+            if (opts.pendingQueryFails) {
+              return { data: null, count: null, error: { message: 'PostgREST said no' } }
+            }
+            return { data: null, count: opts.pendingCount ?? 0, error: null }
+          }
           if (entry.columns.includes('budget')) {
             return { data: opts.pipeline ?? [], error: null }
           }
@@ -121,9 +142,16 @@ function makeClient(opts: {
           return builder
         },
         neq: chain,
-        in: chain,
+        in: (col: string, vals: unknown) => {
+          entry.in.push(`${col}.${Array.isArray(vals) ? vals.join(',') : String(vals)}`)
+          return builder
+        },
         order: chain,
         limit: chain,
+        is: (col: string, val: unknown) => {
+          entry.is.push(`${col}.${String(val)}`)
+          return builder
+        },
         not: (col: string, op: string, val: unknown) => {
           entry.not.push(`${col}.${op}.${String(val)}`)
           return builder
@@ -245,8 +273,9 @@ describe('morning brief — stats query columns', () => {
     const scoped = leadsQueries(recorded).filter(
       (r) => r.filters['eq:assigned_profile_id'] === PROFILE,
     )
-    // active count, pipeline rows, priority rows, contacted denominator, stale count
-    expect(scoped).toHaveLength(5)
+    // active count, pipeline rows, priority rows, contacted denominator,
+    // stale count, pending-contact count
+    expect(scoped).toHaveLength(6)
   })
 
   it('selects leads.name, never the non-existent full_name', async () => {
@@ -346,5 +375,147 @@ describe('morning brief — stats query columns', () => {
     const data = await gatherBriefData(PROFILE)
 
     expect(data?.stats.pipelineValueEur).toBe(200_000)
+  })
+})
+
+// ================================================================
+// "Čakajú na kontakt" was the broker's whole active book
+//
+// `pendingContact = activeLeads ?? 0` — a restatement of the row count wearing
+// the name of a measurement. The brief's headline action read "Máte N leadov
+// čakajúcich na kontakt" with N == every active lead the broker owns, on every
+// day, whatever had actually happened. Measured on production 2026-10-02: all
+// five largest assignees had active == pendingContact exactly (142, 72, 66,
+// 47, 39). Third instance of this class after staleContacts48h (#735) and
+// last_contact_at itself (#800).
+//
+// Every test below fails against the implementation that shipped before it.
+// ================================================================
+describe('morning brief — pendingContact', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockGetHotLeads.mockResolvedValue([])
+  })
+
+  it('is never the active-lead count', async () => {
+    // The whole defect in one assertion: a broker with 142 active leads of
+    // which 11 carry no recorded contact must not be told 142 are waiting.
+    const { client } = makeClient({
+      newLeadCount: 0,
+      activeCount: 142,
+      contactedCount: 131,
+      pendingCount: 11,
+    })
+    mockCreateAdmin.mockReturnValue(client)
+
+    const data = await gatherBriefData(PROFILE)
+
+    expect(data?.stats.activeLeads).toBe(142)
+    expect(data?.stats.pendingContact).toBe(11)
+    expect(data?.stats.pendingContact).not.toBe(data?.stats.activeLeads)
+  })
+
+  it('counts active leads with no recorded contact, excluding closed and lost', async () => {
+    const { client, recorded } = makeClient({
+      newLeadCount: 0,
+      contactedCount: 5,
+      pendingCount: 3,
+    })
+    mockCreateAdmin.mockReturnValue(client)
+
+    const data = await gatherBriefData(PROFILE)
+
+    expect(data?.stats.pendingContact).toBe(3)
+    const pendingQuery = leadsQueries(recorded).find(
+      (r) => r.is.includes('last_contact_at.null') && !r.in.some((f) => f.startsWith('id.')),
+    )
+    expect(pendingQuery, 'no query asks for active leads without a contact stamp').toBeDefined()
+    expect(pendingQuery?.filters).toHaveProperty('eq:assigned_profile_id', PROFILE)
+  })
+
+  it('is null while the broker has no recorded contact at all', async () => {
+    // Today's production state. "Nobody contacted them" cannot be told apart
+    // from "we do not record contacts", so there is no honest number — and
+    // rendering the row count would claim 100% again.
+    const { client } = makeClient({
+      newLeadCount: 0,
+      activeCount: 142,
+      contactedCount: 0,
+      pendingCount: 142,
+    })
+    mockCreateAdmin.mockReturnValue(client)
+
+    const data = await gatherBriefData(PROFILE)
+
+    expect(data?.stats.pendingContact).toBeNull()
+  })
+
+  it('is null when the count query fails, never zero', async () => {
+    // `?? 0` on a rejected query is the bug #724 left behind on four counts.
+    const { client } = makeClient({
+      newLeadCount: 0,
+      contactedCount: 9,
+      pendingQueryFails: true,
+    })
+    mockCreateAdmin.mockReturnValue(client)
+
+    const data = await gatherBriefData(PROFILE)
+
+    expect(data?.stats.pendingContact).toBeNull()
+  })
+
+  it('reports hotPending as the hot leads with no recorded contact', async () => {
+    // Was hotLeads.length — a duplicate of stats.hotLeads printed as
+    // "(z toho HOT: N)", which asserted it was the hot subset of those waiting.
+    mockGetHotLeads.mockResolvedValue([
+      { lead_id: 'aaaaaaaa-0000-0000-0000-000000000001', bri_score: 90, full_name: 'A', phone: null },
+      { lead_id: 'aaaaaaaa-0000-0000-0000-000000000002', bri_score: 80, full_name: 'B', phone: null },
+      { lead_id: 'aaaaaaaa-0000-0000-0000-000000000003', bri_score: 70, full_name: 'C', phone: null },
+    ])
+    const { client, recorded } = makeClient({
+      newLeadCount: 0,
+      contactedCount: 20,
+      pendingCount: 4,
+      hotPendingCount: 1,
+    })
+    mockCreateAdmin.mockReturnValue(client)
+
+    const data = await gatherBriefData(PROFILE)
+
+    expect(data?.stats.hotLeads).toBe(3)
+    expect(data?.stats.hotPending).toBe(1)
+    const hotQuery = leadsQueries(recorded).find(
+      (r) => r.is.includes('last_contact_at.null') && r.in.some((f) => f.startsWith('id.')),
+    )
+    expect(hotQuery, 'hotPending was not measured against the hot lead ids').toBeDefined()
+  })
+
+  it('does not query for hot pending when there are no hot leads', async () => {
+    const { client, recorded } = makeClient({
+      newLeadCount: 0,
+      contactedCount: 20,
+      pendingCount: 4,
+    })
+    mockCreateAdmin.mockReturnValue(client)
+
+    const data = await gatherBriefData(PROFILE)
+
+    expect(data?.stats.hotPending).toBe(0)
+    expect(
+      leadsQueries(recorded).filter((r) => r.in.some((f) => f.startsWith('id.'))),
+    ).toHaveLength(0)
+  })
+
+  it('is null for hotPending too while no contact trail exists', async () => {
+    mockGetHotLeads.mockResolvedValue([
+      { lead_id: 'aaaaaaaa-0000-0000-0000-000000000001', bri_score: 90, full_name: 'A', phone: null },
+    ])
+    const { client } = makeClient({ newLeadCount: 0, contactedCount: 0 })
+    mockCreateAdmin.mockReturnValue(client)
+
+    const data = await gatherBriefData(PROFILE)
+
+    expect(data?.stats.hotPending).toBeNull()
+    expect(data?.stats.hotLeads).toBe(1)
   })
 })
