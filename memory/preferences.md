@@ -1,4 +1,6 @@
 # Operation Preferences
+## 📊 POVINNÝ POSTUP V KAŽDEJ ODPOVEDI (founder, 2026-10-02)
+Každá odpoveď končí riadkom `📊 Session: X % · Architektúra: Y %` (0–100). Zdroj: `docs/STATUS.md`; vynútené hookom `.claude/hooks/progress.sh` + pravidlo 9 vo `.claude/WALL-RULES.md`. Dôvod: zabudol som ho uvádzať a founder nevidel postup.
 ## ⚙️ PRACOVNÝ REŽIM — STENY, NIE SKRUTKY (founder, 2026-10-02) — ZÁVÄZNÉ
 Founder: „odteraz už iba steny“. Jedno GO = jeden uzavretý blok s dôkazom; žiadne priebežné správy ani kolá GO; pred PROD/RLS zmenou zmapovať VŠETKY cesty
 (tabuľky, pohľady, funkcie × anon/authenticated) a predložiť jeden balík + jeden overovací skript; GO na časť bloku = aplikovať celý blok; každý blok končí dôkazom,
