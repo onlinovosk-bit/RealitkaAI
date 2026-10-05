@@ -9,6 +9,12 @@ const list = [
   { name: "Supabase", country: "USA/EÚ", purpose: "Databáza, autentifikácia", guarantee: "SCC" },
   { name: "Vercel", country: "USA", purpose: "Hosting, deployment", guarantee: "SCC" },
   { name: "OpenAI", country: "USA", purpose: "AI engine", guarantee: "SCC" },
+  {
+    name: "Anthropic",
+    country: "USA",
+    purpose: "AI spracovanie textu (triedenie dopytov, návrhy textov, zhrnutia, extrakcia dopytu)",
+    guarantee: "SCC",
+  },
   { name: "Resend", country: "USA", purpose: "Transakčné emaily", guarantee: "SCC" },
   { name: "Stripe", country: "USA/EÚ", purpose: "Platby, billing", guarantee: "SCC" },
   { name: "Twilio", country: "USA", purpose: "SMS notifikácie", guarantee: "SCC" },
@@ -24,7 +30,7 @@ export default function SubProcessorsPage() {
   return (
     <LegalPageShell
       title="Sub-procesori"
-      subtitle="Aktualizované: 21. apríla 2026"
+      subtitle="Aktualizované: 5. októbra 2026"
     >
       <div className="overflow-x-auto rounded-xl" style={{ border: "1px solid #112240" }}>
         <table className="w-full text-sm">
