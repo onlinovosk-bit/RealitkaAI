@@ -95,6 +95,11 @@
             "type": "command",
             "command": "cat \"${CLAUDE_PROJECT_DIR:-.}/.claude/WALL-RULES.md\" 2>/dev/null || true",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/progress.sh\" 2>/dev/null || true",
+            "timeout": 5
           }
         ]
       },
@@ -118,6 +123,16 @@
           {
             "type": "command",
             "command": "cat \"${CLAUDE_PROJECT_DIR:-.}/.claude/WALL-RULES.md\" 2>/dev/null || true",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/progress.sh\" 2>/dev/null || true",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/evidence-gate.sh",
             "timeout": 5
           }
         ]
@@ -159,6 +174,17 @@
           {
             "type": "command",
             "command": "node \"$(git rev-parse --show-toplevel)/.claude/hooks/push-throttle.mjs\" pre"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/session-progress.sh\" stop 2>/dev/null || true",
+            "timeout": 10
           }
         ]
       }
