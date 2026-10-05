@@ -5,6 +5,7 @@
 Founder vyhlásil mega poplach (konkurent airamax.com). Dôkaz = verejný web (snímky), nie produkt. Gap analýza: nepredbieha nás v AI, ale v **lieviku** (trial 14 d bez karty, platba, onboarding) a v šírke (Studio, export, burza, web).
 **Rozhodnutie (návrh, nie GO):** Stena 0 „Môžem predať“ = BUILD (Stripe seat ceny, nasadzovanie, trial, e2e). Kopírovanie Studio/web/burza/WhatsApp = Strategic Backlog s podmienkami odomknutia.
 Skóre Ústavy v2 sa NEUDEĽUJE (Q1/10/11/12 závisia od foundera). Detail: `docs/architecture/2026-10-05-mega-poplach-airamax-roadmap.md`.
+**Cenový ťah (návrh):** pri 199 € / kancelária sme voči AIRAmax (Tím 2–6 ľudí = 69 €) ≈ 2,9× drahší; plošná zľava problém nerieši. Navrhnutý test vstupného pásma (69 / 59 / 99 €) a minimum až po zmeraní nákladu AI na kanceláriu. **CONFLICT:** DEC-20260924-001 (199 €, bez Stripe cien) vs. `open-tasks.md` + checkout kód (seat ceny) — founder rozhodne, ktorý model platí.
 
 ## [2026-10-01] SCOREBOARD — „prvá reakcia na lead" (lead → AI triáž → AI návrh → potvrdenie klientovi → viditeľnosť): 30 % dokázané v PROD
 

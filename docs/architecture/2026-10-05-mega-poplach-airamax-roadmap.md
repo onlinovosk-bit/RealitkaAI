@@ -156,6 +156,38 @@ Alternatívy: (B) GO na kopírovací sprint A9–A12 — **neodporúčam** (Feat
 
 P01 (tabuľka v §2), P02 (§3), P03 (Stena 0 pripravená ako kontrakt po GO), P05 (REUSE→BUILD pravidlo v Stene 2), P23 (§6 jedno ďalšie rozhodnutie). Leverage L01–L05 **nepoužité**: súbor sám uvádza, že podľa Ústavy v2 ide o REJECT (skóre ≈ 2/12). Prompty P18–P23 a L01–L05 som celé neprečítal (načítanie sa skončilo na riadku 686 z 1235) — použil som ich len podľa tabuľky prehľadu.
 
-## 9. Referenčný klient
+## 9. Cenový ťah — „o koľko lacnejší?"
+
+### 9.1 Oprava Steny 0 (CONFLICT medzi zdrojmi)
+`memory/decisions.md` **DEC-20260924-001** (founder) nahradil seat model 79/71/63 € cenou **199 € / kancelária / mesiac s DPH, onboarding 0 €, AI bez kreditov**; „Stripe Products/Prices sa nevytvárajú“. `memory/open-tasks.md` (2026-09-29) a kód checkoutu (`areSeatCheckoutPricesConfigured`) pritom stále vyžadujú seat ceny. Stena 0 bod (a) preto **neznamená automaticky „vytvoriť seat ceny“**: najprv founder rozhodne, ako sa dnes platí (faktúra vs. Stripe) a ktorý cenový model platí. Ako platia dnešné 3 kancelárie (MRR 597 € podľa DEC-20260924-001) je **UNVERIFIED** (žiadna nemala `stripe_subscription_id`).
+
+### 9.2 Cenník AIRAmax (zo snímok; DPH na snímkach neuvedená)
+| Pásmo | Ľudia | Cena / mes | Kredity / mes (hodnota) | € na človeka (pri okrajoch pásma) |
+|---|---|---|---|---|
+| Sólo | 1 | 29 € | 20 (16 €) | 29 |
+| Tím | 2–6 | 69 € | 50 (40 €) | 34,50 → 11,50 |
+| Kancelária | 7–25 | 179 € | 100 (80 €) | 25,57 → 7,16 |
+| Sieť | 26+ | od 399 € | 150 (120 €) | ≈ 15,35 a nižšie |
+Kredit = 0,80 € (hodnota ÷ počet, rovnaká vo všetkých pásmach). 1 kredit = 1 úprava fotky / pôdorys z náčrtu / text inzerátu. Všetky funkcie sú v každom pásme (pásmo určuje počet ľudí); externisti a roly od pásma Tím. Ďalej: web 19,90 €/mes (+490 € zriadenie), asistovaný setup 299 €. Ročná platba Tím = 828 € (= 12 × 69 €); či mesačná platba stojí viac, nevieme.
+
+### 9.3 Naša cena vs. ich (199 € / kancelária, jedna cena pre všetkých)
+| Veľkosť kancelárie | AIRAmax | Revolis (199 € s DPH) | Rozdiel |
+|---|---|---|---|
+| 1 človek | 29 € | 199 € | ≈ 6,9× drahší |
+| 4 ľudia (typická?) | 69 € | 199 € | ≈ 2,9× drahší |
+| 6 ľudí | 69 € | 199 € | ≈ 2,9× |
+| 7–25 ľudí | 179 € | 199 € | +11 % |
+Pozn.: z ich tvrdenia „100 kancelárií / 400+ maklérov“ (neoverené) vychádza priemer ≈ 4 makléri na kanceláriu, teda **ich typický zákazník je v pásme, kde sme 2,9× drahší**. Porovnanie DPH: ak ich ceny sú bez DPH, 69 € = ≈ 84,9 € s DPH (sadzba 23 % — overiť); rozdiel by sa zmenšil na ≈ 2,3×, nie zmizol.
+
+### 9.4 Odporúčanie
+**Nie je to otázka „o koľko %“.** Pri jednej cene 199 € nie sme lacnejší v žiadnom pásme a plošná zľava o 10–30 % by nás neposunula pod ich cenu pre malé kancelárie (6,9× a 2,9× rozdiel). Navrhujem:
+1. **Nezľavovať 199 €** pre existujúce kancelárie (founder rozhodol po rozhovoroch; 3 kancelárie platia) — zľava by bola čistá strata marže.
+2. **Pridať vstupné pásmo „Tím 2–6“ a otestovať 3 varianty na novej kohorte** (30 dní, meria sa trial → platba): **69 €** (parita), **59 €** (−15 % voči nim), **99 €** (prémia, AI bez kreditov). Moje predbežné poradie: parita 69 € ako východisko; −15 % sú **moja heuristika, nie meranie**; viac než −15 % pod konkurenta so širšou ponukou signalizuje „lacné, lebo menej“ a pozýva cenovú vojnu, ktorú bez poznania nákladov nevyhráme.
+3. **Lacnejší cez celkový náklad, nie cez cenník:** migrácia/onboarding **0 €** (oni 299 €, akcia skončila 30. 9.) = pre 4-člennú kanceláriu v 1. roku ≈ 299 € úspory, čo je ≈ 4,3 mesiaca ich predplatného; AI bez kreditov (oni účtujú 0,80 €/kredit).
+4. **Spodná hranica ceny neexistuje, kým nepoznáme náklad AI na kanceláriu.** Ledger ho nenesie (merať sa začalo 24. 9. cez `callOpenAI()`, DEC-20260924-002); do tej doby je marža pri „AI bez kreditov“ **NEMERANÁ**. Návrh: najprv jedným SELECT-om zmerať skutočný mesačný náklad AI na existujúcu kanceláriu, potom stanoviť minimum.
+
+Rozhodnutie o cenách je výlučne founderovo a zmeny cien/billingu sú na denylist auto-merge. Tento oddiel je návrh, nie zmena.
+
+## 10. Referenčný klient
 
 V tomto dokumente je referenčný klient zámerne nepomenovaný. Dokument nie je určený na zdieľanie navonok.
