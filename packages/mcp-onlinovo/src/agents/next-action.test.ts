@@ -296,3 +296,12 @@ test("an intervention up to one hour ahead is tolerated, further ahead is BLOCKE
   assert.notEqual(at(3_600_000), "BLOCKED_INVALID_STATE");
   assert.equal(at(3_600_001), "BLOCKED_INVALID_STATE");
 });
+
+test("P11#5: a timestamp inside the one hour skew never yields a negative day count", () => {
+  const d = d900(120, (s) => {
+    s.customers[0].interventions = [{ action: "REPLENISHMENT", at: new Date(NOW.getTime() + 1_800_000).toISOString() }];
+  });
+  const ev = d.evidence.find((e) => e.key === "days_since_last_intervention");
+  assert.ok(typeof ev?.value === "number" && ev.value >= 0, String(ev?.value));
+  for (const e of d.evidence) if (e.key.startsWith("days_since")) assert.ok(typeof e.value !== "number" || e.value >= 0, e.key);
+});

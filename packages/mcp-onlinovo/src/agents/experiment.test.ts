@@ -858,3 +858,34 @@ test("N8: free text and stop conditions are bounded", () => {
 test("N7: the experiment id carries 64 bits of the plan hash", () => {
   assert.match(proposed().experiment_id, /^exp_[0-9a-f]{16}$/);
 });
+
+test("P11#5: hidden storage on an array, Map or typed array, never enters the ledger", () => {
+  const ledger = new ExperimentLedger();
+  const withProp = (mk: (a: unknown[]) => void) => {
+    const p = proposed() as unknown as { stop_conditions: unknown[]; secondary_metrics: unknown[] };
+    mk(p.stop_conditions);
+    return p;
+  };
+  for (const hide of [
+    (a: unknown[]) => { (a as unknown as Record<string, unknown>).m = new Map([[1, 2]]); },
+    (a: unknown[]) => { (a as unknown as Record<string, unknown>).payload = new Uint8Array(10); },
+    (a: unknown[]) => { (a as unknown as Record<string, unknown>).x = 1; },
+  ]) {
+    assert.equal(codeOf(() => ledger.add(withProp(hide) as never)), "INVALID_INPUT");
+  }
+  const sparse = proposed() as unknown as { stop_conditions: unknown[] };
+  sparse.stop_conditions.length = 3;
+  assert.equal(codeOf(() => ledger.add(sparse as never)), "INVALID_INPUT");
+});
+
+test("P11#5: look-alike blanks and oversized approval or note fields are refused", () => {
+  const p = proposed();
+  for (const blank of ["\u3164", "\u2800", "\u200E", "\u202A", "\u180B", "\u2061", "\u0600", "\u061C", "\uFE0F", "\u0001", "\u0085"]) {
+    assert.equal(codeOf(() => approveExperiment(p, { ...APPROVAL, approved_by: blank })), "APPROVAL_REQUIRED", `by ${JSON.stringify(blank)}`);
+  }
+  assert.equal(codeOf(() => approveExperiment(p, { ...APPROVAL, approved_by: "x".repeat(2001) })), "APPROVAL_REQUIRED");
+  assert.equal(codeOf(() => approveExperiment(p, { ...APPROVAL, approval_id: "x".repeat(2001) })), "APPROVAL_REQUIRED");
+  assert.equal(codeOf(() => proposed({ audience: { description: "d", size: 10, opportunity_id: "x".repeat(2001) } })), "INVALID_INPUT");
+  assert.equal(codeOf(() => proposed({ audience: { description: "d", size: 10, opportunity_id: 5 as never } })), "INVALID_INPUT");
+  assert.equal(codeOf(() => approveExperiment(p, { ...APPROVAL, approved_by: "founder" })), null);
+});

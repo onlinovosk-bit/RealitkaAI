@@ -1,8 +1,26 @@
+## Session 2026-10-05 (ONL-AGENTS-FIX-6: nálezy P11 #5 na #814)
+### Dokončené
+- **P11 #5 (nový nezávislý agent, 210 sabotáží, 53 volaní nástrojov) nedala VERIFIED** pre hlavu 15735f7: J2 FAIL, ostatné nároky PASS. Opravy v jednom pushi do #814:
+  - **J2:** `assertPlainJson` odmietne pole s vlastnými vlastnosťami mimo indexov (Map/typed array na poli) aj riedke pole.
+  - **J4:** `days_since_last_order`, `days_since_last_intervention` a dni v `opportunity.ts` sa orežú na ≥ 0 (predtým −1 v 1-hodinovej tolerancii).
+  - **J3:** `isBlank` používa `\p{Default_Ignorable_Code_Point}`, `\p{Cc}`, `\p{Cf}`, `\p{Z}` a U+2800 namiesto ručného zoznamu; stropy 2000 znakov pre `approval_id`, `approved_by`, poznámku BLOCKED a `opportunity_id` (typ string alebo null).
+  - Opravená nepravdivá veta o zámku (vyššie, FIX-5).
+  - Testy s negatívom: 3 nové; sabotáže (zrušenie orezania, kontroly polí, `\p{Cf}`) sú červené.
+- Dôkaz: mcp-onlinovo **262/262**, `tsc` 0 chýb, control-contract **72/72**.
+### Rozpracované / Pending
+- **Priznané limity (po P11 #5):** pečať výsledku nie je podpis a kto zapíše celý objekt, prepočíta ju (sfalšovateľné: `n_*` voči publiku, `stop_breached` mimo plánu, odhady); priame `approveExperiment`/`verifyLock` mimo ledgera sú slepé na Map v `audience`; ledger je v pamäti a žiadny nástroj ho nevolá; identita schvaľovateľa sa neoveruje; `approved_at` v budúcnosti prejde; `now = new Date(NaN)` hodí raw RangeError (injektujú len testy); denormálny priemer dá `relative_lift = Infinity`, ktorý ledger bezpečne odmietne.
+- Medzery v testoch hraníc (5000 uzlov, hĺbka 32, tvar odhadu, hranice rozhodovania) z P11 #5 zostávajú, nie sú blokujúce.
+- **Neopravené, vlastné GO:** `resolveAuthority` pustí `NaN` istotu ako AUTONOMOUS. Stále UNKNOWN: LeadHub kontrakt, živý zdroj, perzistencia, schvaľovania, náklady LLM, CI job (denylist).
+### Kľúčové súbory zmenené
+- `packages/mcp-onlinovo/src/agents/{experiment,next-action,opportunity}.ts` a testy.
+### Ďalší krok
+P11 #6 na novej hlave #814 (nový agent), alebo prijať limity a nechať VERIFIED na founderovi.
+
 ## Session 2026-10-05 (ONL-AGENTS-FIX-5: nálezy P11 #4 na #814)
 ### Dokončené
 - **P11 #4 (nový nezávislý agent, 165 sabotáží) nedala VERIFIED** pre hlavu 5add344: kód držal všetky pôvodné zlyhania z P11 #3, ale našla raw chyby, medzeru v zámku ledgera a medzery v testoch. Opravy idú ako ďalšie commity do #814 (`packages/mcp-onlinovo`):
   - **N1 raw chyby:** do ledgera vstupuje len JSON-tvarovaný záznam (`assertPlainJson` po jednom `structuredClone`): cyklus, BigInt, Map, Set, Date, typed array, `undefined`, NaN/Infinity, riedke pole, príliš hlboký (32) alebo veľký (5000 uzlov) záznam sa odmietnu ako `INVALID_INPUT`. Fuzz 8 840 volaní `add`/`update`: **0 raw chýb**, 23 prijatých = len `null` na miesto existujúceho `null`.
-  - **N2 zámok:** `canonicalJson` je slepý na obsah Map/Set/Date; po novom sa tam nedostanú, takže tichá zmena zamknutého plánu cez ne nejde. Cyklus sa nedetekuje osobitne, zachytí ho limit hĺbky.
+  - **N2 zámok:** `canonicalJson` je slepý na obsah Map/Set/Date; tvrdenie „po novom sa tam nedostanú“ bolo NEPRAVDIVÉ pre vlastné vlastnosti polí (P11 #5, J2); opravené v FIX-6. Cyklus sa nedetekuje osobitne, zachytí ho limit hĺbky.
   - **N3 neviditeľné znaky:** text, id, schvaľovateľ a poznámka z U+200B–U+200D, U+2060, U+00AD, U+180E sú prázdne (`trim()` ich nechával); texty majú strop 2000 znakov, stop podmienok max 20, každá s textovým popisom.
   - **N4 snapshot:** objednávka datovaná o viac než hodinu do budúcnosti (`2099`) je `INVALID_INPUT` v oboch agentoch (predtým FACT `days_since_last_order = -26386`); `line.sku`, `line.family`, `product.family` musia byť neprázdne texty.
   - **N5:** tvar zapečatenej výsledku (počty celé ≥ 0, odhady konečné čísla, `secondary`, `stop_breached`) sa overí pred výpočtom, takže `estimate: null` s platnou pečaťou je `RESULT_IMMUTABLE`, nie TypeError; Symbol, objekt s vlastným `toString` alebo Proxy ako istota už nehodí raw chybu v guarde.

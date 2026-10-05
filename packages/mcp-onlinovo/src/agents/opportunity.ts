@@ -78,7 +78,7 @@ export interface OpportunityRun {
   usage: ReturnType<RunBudget["usage"]>;
 }
 
-const daysBetween = (fromMs: number, toMs: number): number => Math.floor((toMs - fromMs) / DAY);
+const daysBetween = (fromMs: number, toMs: number): number => Math.max(0, Math.floor((toMs - fromMs) / DAY));
 const round2 = (n: number): number => Math.round(n * 100) / 100;
 
 function confidenceFromN(n: number, high: number, medium: number): Confidence {

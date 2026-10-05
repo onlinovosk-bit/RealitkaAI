@@ -159,7 +159,7 @@ export function decideNextAction(input: {
     if (lastInterventionMs === null || at > lastInterventionMs) lastInterventionMs = at;
   }
   base.push(
-    fact("days_since_last_intervention", lastInterventionMs === null ? null : Math.floor((nowMs - lastInterventionMs) / DAY)),
+    fact("days_since_last_intervention", lastInterventionMs === null ? null : Math.max(0, Math.floor((nowMs - lastInterventionMs) / DAY))),
   );
   if (lastInterventionMs !== null && nowMs - lastInterventionMs < rules.frequency_cap_days * DAY) {
     return blocked(ref, "BLOCKED_FREQUENCY_CAP", now, rules, [...base, assumed("frequency_cap_days", rules.frequency_cap_days)]);
@@ -169,7 +169,7 @@ export function decideNextAction(input: {
     return blocked(ref, "NO_ELIGIBLE_CANDIDATE", now, rules, [...base, fact("fulfilled_orders", 0)]);
   }
   const last = fulfilled[0];
-  const days = Math.floor((nowMs - Date.parse(last.placed_at)) / DAY);
+  const days = Math.max(0, Math.floor((nowMs - Date.parse(last.placed_at)) / DAY));
   base.push(fact("fulfilled_orders", fulfilled.length), fact("days_since_last_order", days));
 
   // ── Candidate generation (RULE) ──

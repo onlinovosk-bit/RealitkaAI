@@ -105,7 +105,7 @@ export interface ProposalInput {
 }
 
 /** `trim()` alone leaves U+00AD, U+180E, U+200B-U+200D and U+2060 (`\s` already covers U+FEFF): text made only of those is blank too. */
-const INVISIBLE = /[\s\u00AD\u180E\u200B-\u200D\u2060]/g;
+const INVISIBLE = /[\s\p{Default_Ignorable_Code_Point}\p{Cc}\p{Cf}\p{Z}\u2800]/gu;
 const isBlank = (text: string): boolean => text.replace(INVISIBLE, "") === "";
 
 /** Free text in a plan or a note. Long enough for any real sentence, short enough to bound the cost of hashing it. */
@@ -231,6 +231,10 @@ export function proposeExperiment(input: ProposalInput, budget: RunBudget = new 
   const control = nonEmpty(input.control, "control");
   const treatment = nonEmpty(input.treatment, "treatment");
   nonEmpty(input.audience?.description, "audience.description");
+  const oppId = input.audience.opportunity_id;
+  if (oppId !== undefined && oppId !== null && (typeof oppId !== "string" || oppId.length > MAX_TEXT_LENGTH)) {
+    throw new AgentError("INVALID_INPUT", "audience.opportunity_id must be a short string or null");
+  }
   if (!Number.isInteger(input.audience.size) || input.audience.size <= 0) {
     throw new AgentError("INVALID_INPUT", "audience.size must be a positive integer");
   }
@@ -318,8 +322,8 @@ function assertApproval(approval: Approval | null | undefined): asserts approval
   const shaped =
     approval !== null && typeof approval === "object" &&
     Object.keys(approval).sort().join(",") === "approval_id,approved_at,approved_by" &&
-    typeof approval.approval_id === "string" && !isBlank(approval.approval_id) &&
-    typeof approval.approved_by === "string" && !isBlank(approval.approved_by);
+    typeof approval.approval_id === "string" && !isBlank(approval.approval_id) && approval.approval_id.length <= MAX_TEXT_LENGTH &&
+    typeof approval.approved_by === "string" && !isBlank(approval.approved_by) && approval.approved_by.length <= MAX_TEXT_LENGTH;
   let timestamped = false;
   if (shaped) {
     try {
@@ -457,6 +461,10 @@ function assertPlainJson(value: unknown, state: { nodes: number }, depth: number
     throw new AgentError("INVALID_INPUT", "the experiment record holds an object that is not plain JSON data");
   }
   if (Array.isArray(value)) {
+    // Own properties other than the indexes (a Map or a typed array hung on an array) are hidden storage.
+    if (Object.keys(value).length !== value.length) {
+      throw new AgentError("INVALID_INPUT", "the experiment record holds an array with extra or missing entries");
+    }
     for (let i = 0; i < value.length; i += 1) assertPlainJson(value[i], state, depth + 1);
   } else {
     for (const key of Object.keys(value)) assertPlainJson((value as Record<string, unknown>)[key], state, depth + 1);
@@ -587,7 +595,7 @@ export class ExperimentLedger {
       const d = next.decision;
       if (
         d === null || typeof d !== "object" || Object.keys(d).sort().join(",") !== DECISION_KEYS ||
-        d.decision !== "BLOCKED" || d.reason !== "MISSING_DATA" || typeof d.note !== "string" || isBlank(d.note)
+        d.decision !== "BLOCKED" || d.reason !== "MISSING_DATA" || typeof d.note !== "string" || isBlank(d.note) || d.note.length > MAX_TEXT_LENGTH
       ) {
         throw new AgentError("INVALID_TRANSITION", "a blocked experiment needs a BLOCKED decision with a note");
       }
