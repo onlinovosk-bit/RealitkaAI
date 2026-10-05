@@ -3,6 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { SLATE_HORIZON, WORKDESK_CARD } from "@/lib/slate-horizon-theme";
+import PricingV2CreditsTopup from "@/components/billing/v2/PricingV2CreditsTopup";
+import { readPricingV2Config } from "@/components/billing/v2/usePricingV2Config";
+import type { PricingV2ConfigPayload } from "@/lib/pricing-v2-contract";
 
 type TopupKey = "start" | "rast" | "pro" | "mega";
 
@@ -33,6 +36,7 @@ function formatCredits(n: number): string {
 export default function CreditsTopupPanel() {
   const [plan, setPlan] = useState<CreditsPlan | null>(null);
   const [config, setConfig] = useState<CheckoutConfig | null>(null);
+  const [pricingV2, setPricingV2] = useState<PricingV2ConfigPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -51,6 +55,7 @@ export default function CreditsTopupPanel() {
             monthlyGrantCredits: planRes.monthlyGrantCredits ?? 0,
           });
         }
+        setPricingV2(readPricingV2Config(configRes));
         if (configRes.ok) {
           setConfig({
             topupCheckoutAvailable: Boolean(configRes.topupCheckoutAvailable),
@@ -152,6 +157,9 @@ export default function CreditsTopupPanel() {
         </div>
       )}
 
+      {pricingV2 ? (
+        <PricingV2CreditsTopup config={pricingV2} />
+      ) : (
       <div
         className="rounded-xl border p-6"
         style={{
@@ -238,6 +246,7 @@ export default function CreditsTopupPanel() {
           </div>
         )}
       </div>
+      )}
     </section>
   );
 }
