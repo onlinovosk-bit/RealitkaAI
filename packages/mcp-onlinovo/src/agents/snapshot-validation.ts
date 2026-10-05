@@ -27,36 +27,86 @@ export function parseIsoTimestamp(value: unknown, field: string): number {
   return ms;
 }
 
+/** Money and units above this are not data, they are an overflow waiting to happen (50 000 rows of it still sum safely). */
+const MAX_MAGNITUDE = 1e12;
+
 function finiteNumber(value: unknown, field: string, min?: number): number {
-  if (typeof value !== "number" || !Number.isFinite(value) || (min !== undefined && value < min)) {
-    throw new AgentError("INVALID_INPUT", `${field} must be a finite number${min !== undefined ? ` >= ${min}` : ""}`);
+  if (
+    typeof value !== "number" || !Number.isFinite(value) || Math.abs(value) > MAX_MAGNITUDE ||
+    (min !== undefined && value < min)
+  ) {
+    throw new AgentError(
+      "INVALID_INPUT",
+      `${field} must be a finite number with magnitude <= ${MAX_MAGNITUDE}${min !== undefined ? ` and >= ${min}` : ""}`,
+    );
   }
   return value;
 }
 
+function record(value: unknown, field: string): Record<string, unknown> {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    throw new AgentError("INVALID_INPUT", `${field} must be an object`);
+  }
+  return value as Record<string, unknown>;
+}
+
+function oneOf(value: unknown, allowed: readonly string[], field: string): void {
+  if (typeof value !== "string" || !allowed.includes(value)) {
+    throw new AgentError("INVALID_INPUT", `${field} must be one of ${allowed.join(", ")}`);
+  }
+}
+
+function numberOrNull(value: unknown, field: string): void {
+  if (value !== null) finiteNumber(value, field);
+}
+
 /**
  * Everything both agents read from a snapshot is checked once, up front, before any rule runs:
- * structure, pseudonymous references, every timestamp and every number on an order line.
- * A NaN or a string where a number belongs would otherwise turn a FACT into `null` or "05".
+ * structure, pseudonymous references, every timestamp, every enum and every number.
+ * A NaN or a string where a number belongs would otherwise turn a FACT into `null` or "05",
+ * and a null row would surface as a raw TypeError instead of INVALID_INPUT.
  */
 export function assertValidSnapshot(snapshot: RevenueSnapshot): void {
   if (!snapshot || !Array.isArray(snapshot.orders) || !Array.isArray(snapshot.customers) || !Array.isArray(snapshot.products)) {
     throw new AgentError("INVALID_INPUT", "snapshot must contain customers, orders and products arrays");
   }
+  oneOf(snapshot.source, ["fixture", "unconnected"], "snapshot.source");
   parseIsoTimestamp(snapshot.as_of, "snapshot.as_of");
-  for (const order of snapshot.orders) {
+  for (const raw of snapshot.orders) {
+    const order = record(raw, "order");
     assertCustomerRef(order.customer_ref);
     parseIsoTimestamp(order.placed_at, "order.placed_at");
+    if (typeof order.order_ref !== "string" || order.order_ref === "") throw new AgentError("INVALID_INPUT", "order.order_ref must be a non-empty string");
+    oneOf(order.status, ["fulfilled", "unpaid", "cancelled", "uncollected_cod", "other"], "order.status");
     if (!Array.isArray(order.lines)) throw new AgentError("INVALID_INPUT", "order.lines must be an array");
-    for (const line of order.lines) {
-      finiteNumber(line?.units, "order line units", 0);
-      finiteNumber(line?.net_revenue, "order line net_revenue");
-      if (line.net_cost !== null) finiteNumber(line.net_cost, "order line net_cost");
+    for (const rawLine of order.lines) {
+      const line = record(rawLine, "order line");
+      finiteNumber(line.units, "order line units", 0);
+      finiteNumber(line.net_revenue, "order line net_revenue");
+      numberOrNull(line.net_cost, "order line net_cost");
+      numberOrNull(line.size_ml, "order line size_ml");
     }
   }
-  for (const customer of snapshot.customers) {
+  for (const raw of snapshot.customers) {
+    const customer = record(raw, "customer");
     assertCustomerRef(customer.customer_ref);
+    oneOf(customer.consent, ["marketing_ok", "unknown", "opted_out"], "customer.consent");
     if (!Array.isArray(customer.interventions)) throw new AgentError("INVALID_INPUT", "customer.interventions must be an array");
-    for (const intervention of customer.interventions) parseIsoTimestamp(intervention?.at, "intervention.at");
+    for (const rawIntervention of customer.interventions) {
+      const intervention = record(rawIntervention, "intervention");
+      parseIsoTimestamp(intervention.at, "intervention.at");
+      if (typeof intervention.action !== "string") throw new AgentError("INVALID_INPUT", "intervention.action must be a string");
+    }
+  }
+  for (const raw of snapshot.products) {
+    const product = record(raw, "product");
+    if (typeof product.sku !== "string" || product.sku === "") throw new AgentError("INVALID_INPUT", "product.sku must be a non-empty string");
+    oneOf(product.kind, ["single", "set", "tester"], "product.kind");
+    numberOrNull(product.size_ml, "product.size_ml");
+    numberOrNull(product.list_price_gross, "product.list_price_gross");
+    numberOrNull(product.unit_cost_net, "product.unit_cost_net");
+    if (product.in_stock !== null && typeof product.in_stock !== "boolean") {
+      throw new AgentError("INVALID_INPUT", "product.in_stock must be true, false or null (UNKNOWN)");
+    }
   }
 }

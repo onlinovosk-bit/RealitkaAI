@@ -359,3 +359,14 @@ test("N3/N4 through the agent: a sloppy date or a NaN on a line is refused, neve
   bad.as_of = "12";
   assert.equal(codeOf(() => detectOpportunities(bad, NOW)), "INVALID_INPUT");
 });
+
+test("a snapshot dated up to one hour ahead of now is tolerated (clock skew), further ahead is invalid state", () => {
+  const at = (minutes: number) => {
+    const s = fixture();
+    s.as_of = new Date(NOW.getTime() + minutes * 60_000).toISOString();
+    return codeOf(() => detectOpportunities(s, NOW));
+  };
+  assert.equal(at(59), null);
+  assert.equal(at(60), null);
+  assert.equal(at(61), "INVALID_INPUT");
+});

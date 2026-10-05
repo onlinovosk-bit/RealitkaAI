@@ -163,3 +163,11 @@ test("N7: null, Infinity and a confidence above 1 never pass; only an absent con
   assert.equal(authorizeAgentAction({ agentId: OPP, action: "onlinovo.opportunity.recommend", confidence: 1 }, NO_ENV).allowed, true);
   assert.equal(authorizeAgentAction({ agentId: OPP, action: "onlinovo.opportunity.recommend", confidence: 0.6 }, NO_ENV).allowed, true);
 });
+
+test("a Symbol or an object as confidence is refused cleanly, never a raw TypeError", () => {
+  for (const odd of [Symbol("x"), {}, [0.9], () => 1]) {
+    let d;
+    assert.doesNotThrow(() => { d = actionVerdict("onlinovo.opportunity.recommend", odd as never, NO_ENV); }, String(typeof odd));
+    assert.equal((d as unknown as { allowed: boolean }).allowed, false);
+  }
+});

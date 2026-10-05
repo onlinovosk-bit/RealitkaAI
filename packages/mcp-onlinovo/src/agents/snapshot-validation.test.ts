@@ -82,3 +82,50 @@ test("the structure and the references are still checked first", () => {
   t.customers[0].customer_ref = "+421 905 123 456";
   assert.equal(codeOf(() => assertValidSnapshot(t)), "PII_IN_REF");
 });
+
+test("N5/N7: a null or non-object row, a bad enum and a bad product field are INVALID_INPUT, never a raw TypeError", () => {
+  const withBad = (mutate: (s: RevenueSnapshot) => void) => {
+    const s = fx();
+    mutate(s);
+    return codeOf(() => assertValidSnapshot(s));
+  };
+  for (const row of [null, undefined, 5, "x", [], true]) {
+    assert.equal(withBad((s) => { s.orders[0] = row as never; }), "INVALID_INPUT", `order ${String(row)}`);
+    assert.equal(withBad((s) => { s.customers[0] = row as never; }), "INVALID_INPUT", `customer ${String(row)}`);
+    assert.equal(withBad((s) => { s.products[0] = row as never; }), "INVALID_INPUT", `product ${String(row)}`);
+  }
+  assert.equal(withBad((s) => { s.customers[0].interventions[0] = null as never; s.customers[0].interventions.length = Math.max(1, s.customers[0].interventions.length); }), "INVALID_INPUT");
+  assert.equal(withBad((s) => { s.orders[0].status = "weird" as never; }), "INVALID_INPUT");
+  assert.equal(withBad((s) => { s.customers[0].consent = "yes" as never; }), "INVALID_INPUT");
+  assert.equal(withBad((s) => { s.source = "shoptet" as never; }), "INVALID_INPUT");
+  assert.equal(withBad((s) => { s.orders[0].order_ref = "" as never; }), "INVALID_INPUT");
+  assert.equal(withBad((s) => { s.products[0].in_stock = "yes" as never; }), "INVALID_INPUT");
+  assert.equal(withBad((s) => { s.products[0].kind = "bundle" as never; }), "INVALID_INPUT");
+  assert.equal(withBad((s) => { s.products[0].sku = "" as never; }), "INVALID_INPUT");
+  for (const field of ["list_price_gross", "unit_cost_net", "size_ml"] as const) {
+    assert.equal(withBad((s) => { (s.products[0] as unknown as Record<string, unknown>)[field] = Number.NaN; }), "INVALID_INPUT", field);
+    assert.equal(withBad((s) => { (s.products[0] as unknown as Record<string, unknown>)[field] = null; }), null, `${field} null is UNKNOWN`);
+  }
+  assert.equal(withBad((s) => { s.orders[0].lines[0].size_ml = Number.NaN; }), "INVALID_INPUT");
+  assert.equal(withBad((s) => { s.customers[0].interventions = [{ action: 5 as never, at: "2026-10-01T08:00:00Z" }]; }), "INVALID_INPUT");
+});
+
+test("N6: a magnitude that would overflow a sum is refused, a large honest value is not", () => {
+  const withLine = (units: number, revenue: number) => {
+    const s = fx();
+    s.orders[0].lines[0].units = units;
+    s.orders[0].lines[0].net_revenue = revenue;
+    return codeOf(() => assertValidSnapshot(s));
+  };
+  assert.equal(withLine(1e308, 20), "INVALID_INPUT");
+  assert.equal(withLine(1, 1e308), "INVALID_INPUT");
+  assert.equal(withLine(1, -1e308), "INVALID_INPUT");
+  assert.equal(withLine(1e12, 1e12), null);
+  assert.equal(withLine(1e12 + 1, 20), "INVALID_INPUT");
+});
+
+test("the fraction of a second has at most 9 digits", () => {
+  assert.equal(Number.isFinite(parseIsoTimestamp("2026-10-02T08:00:00.123456789Z", "t")), true);
+  assert.equal(codeOf(() => parseIsoTimestamp("2026-10-02T08:00:00.1234567890Z", "t")), "INVALID_INPUT");
+  assert.equal(codeOf(() => parseIsoTimestamp("2026-10-02T08:00:00.Z", "t")), "INVALID_INPUT");
+});

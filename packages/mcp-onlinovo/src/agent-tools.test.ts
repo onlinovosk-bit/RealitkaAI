@@ -424,9 +424,9 @@ test("N5: what is measured against the cap is what is processed: a getter or toJ
   const circular: Record<string, unknown> = { customer_ref: "FIX-CUS-001" };
   circular.self = circular;
   const refused = await handleCustomerNextAction(circular, deps());
-  assert.equal(parse(refused).error?.code, "INPUT_TOO_LARGE");
+  assert.equal(parse(refused).error?.code, "INVALID_INPUT", "not serialisable is not 'too large'");
   const big = await handleCustomerNextAction({ customer_ref: 10n }, deps());
-  assert.equal(big.isError, true);
+  assert.equal(parse(big).error?.code, "INVALID_INPUT");
 });
 
 test("N5: the handler works on the serialised copy, so a later mutation of the caller's object changes nothing", async () => {
@@ -435,4 +435,14 @@ test("N5: the handler works on the serialised copy, so a later mutation of the c
   args.customer_ref = "FIX-CUS-002";
   const body = parse(await pending);
   assert.equal(body.data?.decision.customer_ref, "FIX-CUS-001");
+});
+
+test("N9: an absent input is an empty input (not an error), a symbol or function input is refused cleanly", async () => {
+  assert.equal(parse(await handleRevenueOpportunities(undefined, deps())).success, true);
+  assert.equal(parse(await handleRevenueOpportunities(null, deps())).success, true);
+  for (const bad of [Symbol("x"), () => 1]) {
+    const result = await handleRevenueOpportunities(bad, deps());
+    assert.equal(result.isError, true);
+    assert.equal(parse(result).error?.code, "INVALID_INPUT");
+  }
 });

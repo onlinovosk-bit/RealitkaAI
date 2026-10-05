@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { RunBudget } from "./budget.js";
+import { hashOf } from "./canonical.js";
 import {
   approveExperiment,
   blockExperiment,
@@ -490,4 +491,229 @@ test("N1: a PROPOSED experiment cannot be edited in place, in particular no appr
   assert.equal(codeOf(() => ledger.update({ ...structuredClone(p), approval: APPROVAL })), "INVALID_TRANSITION");
   assert.equal(codeOf(() => ledger.update({ ...structuredClone(p), lock_hash: "f".repeat(64) })), "INVALID_TRANSITION");
   assert.equal(codeOf(() => ledger.update(structuredClone(p))), null, "an identical record is a harmless no-op");
+});
+
+// ── P11 #3 findings ───────────────────────────────────────────────────────────────────────────
+
+/** What an attacker can do: compute the id and the salt of an arbitrary plan with the public hash. */
+function forge(over: Record<string, unknown>): ExperimentSpec {
+  const base = proposed();
+  const plan = {
+    hypothesis: base.hypothesis, control: base.control, treatment: base.treatment, audience: base.audience,
+    primary_metric: base.primary_metric, secondary_metrics: base.secondary_metrics, success_threshold: base.success_threshold,
+    stop_conditions: base.stop_conditions, allocation: base.allocation, duration_days: base.duration_days,
+    min_sample_per_arm: base.min_sample_per_arm, ...over,
+  };
+  const id = hashOf(plan).slice(0, 12);
+  return {
+    ...base, ...plan,
+    experiment_id: `exp_${id}`,
+    allocation_salt: `salt_${hashOf({ id, kind: "allocation" }).slice(0, 16)}`,
+  } as ExperimentSpec;
+}
+
+test("N1: a record may only change state along a legal transition, and the state label is the decision's own", () => {
+  const p = proposed();
+  const ledger = new ExperimentLedger();
+  ledger.add(p);
+  assert.equal(codeOf(() => ledger.update({ ...approved(), state: "RUNNING" })), "INVALID_TRANSITION", "PROPOSED -> RUNNING skips approval");
+  assert.equal(codeOf(() => ledger.update({ ...structuredClone(p), state: "COMPLETE" })), "INVALID_TRANSITION");
+
+  const { ledger: l2, complete } = ledgerAtComplete();
+  const honest = decideExperiment(complete);
+  for (const label of ["KEEP", "REJECT"] as const) {
+    assert.equal(codeOf(() => l2.update({ ...structuredClone(honest), state: label })), "RESULT_IMMUTABLE", `ITERATE decision under the label ${label}`);
+  }
+  assert.equal(codeOf(() => l2.update(honest)), null);
+  for (const label of ["KEEP", "REJECT", "ITERATE", "COMPLETE", "RUNNING", "APPROVED", "PROPOSED"] as const) {
+    assert.equal(codeOf(() => l2.update({ ...structuredClone(honest), state: label })), label === "ITERATE" ? null : "INVALID_TRANSITION", `from a decided experiment to ${label}`);
+  }
+});
+
+test("N1: COMPLETE can be blocked, and every kind of KEEP/REJECT/ITERATE label mismatch is refused from a COMPLETE record", () => {
+  const { ledger, complete } = ledgerAtComplete();
+  const decision = decideExperiment(complete).decision;
+  for (const label of ["KEEP", "REJECT"] as const) {
+    assert.equal(codeOf(() => ledger.update({ ...structuredClone(complete), state: label, decision })), "RESULT_IMMUTABLE", label);
+  }
+  assert.equal(codeOf(() => ledger.update(blockExperiment(complete, "source gone"))), null);
+});
+
+test("N2: the ledger copies a record once: a getter or a proxy cannot show the checks one thing and the store another", () => {
+  const p = proposed();
+  const ledger = new ExperimentLedger();
+  let reads = 0;
+  const evil = { ...p };
+  Object.defineProperty(evil, "state", { enumerable: true, get: () => (++reads === 1 ? "PROPOSED" : "COMPLETE") });
+  assert.equal(codeOf(() => ledger.add(evil as ExperimentSpec)), null);
+  assert.equal(ledger.get(p.experiment_id)?.state, "PROPOSED", "what was checked is what was stored");
+
+  const a = approved();
+  ledger.update(a);
+  const run = startExperiment(a);
+  let seen = 0;
+  const sneaky = { ...run };
+  Object.defineProperty(sneaky, "state", { enumerable: true, get: () => (++seen === 1 ? "RUNNING" : "KEEP") });
+  assert.equal(codeOf(() => ledger.update(sneaky as ExperimentSpec)), null);
+  assert.equal(ledger.get(p.experiment_id)?.state, "RUNNING");
+  assert.equal(ledger.get(p.experiment_id)?.result, null);
+
+  assert.equal(codeOf(() => ledger.update(new Proxy({ ...run }, {}) as ExperimentSpec)), "INVALID_INPUT");
+  assert.equal(codeOf(() => ledger.update({ ...run, hypothesis: (() => 1) as never })), "INVALID_INPUT");
+  for (const bad of [null, undefined, 5, "x"]) {
+    assert.equal(codeOf(() => ledger.add(bad as never)), "INVALID_INPUT", String(bad));
+    assert.equal(codeOf(() => ledger.update(bad as never)), "INVALID_INPUT", String(bad));
+  }
+});
+
+test("N2: a caller's later changes to an object it handed over, or to a copy it got back, change nothing", () => {
+  const p = proposed();
+  const ledger = new ExperimentLedger();
+  ledger.add(p);
+  p.hypothesis = "changed after add";
+  assert.notEqual(ledger.get(proposed().experiment_id)?.hypothesis, "changed after add");
+
+  const a = approved();
+  ledger.update(a);
+  a.state = "KEEP";
+  assert.equal(ledger.get(a.experiment_id)?.state, "APPROVED");
+
+  ledger.list()[0].hypothesis = "changed through list()";
+  assert.notEqual(ledger.get(a.experiment_id)?.hypothesis, "changed through list()");
+  ledger.get(a.experiment_id)!.state = "KEEP";
+  assert.equal(ledger.get(a.experiment_id)?.state, "APPROVED");
+});
+
+test("N3: add() applies every proposal rule to a hand-built record, even with a self-consistent id", () => {
+  const cases: Array<[Record<string, unknown>, string]> = [
+    [{ min_sample_per_arm: 5 }, "SAMPLE_PLAN_TOO_SMALL"],
+    [{ min_sample_per_arm: 1e12 }, "SAMPLE_PLAN_REQUIRED"],
+    [{ allocation: { control: 0.99, treatment: 0.99 } }, "ALLOCATION_INVALID"],
+    [{ stop_conditions: [] }, "STOP_CONDITION_REQUIRED"],
+    [{ primary_metric: "open_rate", success_threshold: { metric: "open_rate", min_difference: 0.1 } }, "UNKNOWN_KPI"],
+    [{ audience: { description: "x", size: Number.NaN, opportunity_id: null } }, "INVALID_INPUT"],
+    [{ duration_days: 1e9 }, "INVALID_INPUT"],
+    [{ hypothesis: "  untrimmed  " }, "KPI_LOCKED"],
+  ];
+  for (const [over, code] of cases) {
+    assert.equal(codeOf(() => new ExperimentLedger().add(forge(over))), code, JSON.stringify(over).slice(0, 60));
+  }
+  assert.equal(codeOf(() => new ExperimentLedger().add(forge({}))), null, "an honest record built the same way is accepted");
+});
+
+test("N3: add() refuses a record with missing, unknown or malformed parts as INVALID_INPUT, not a raw TypeError", () => {
+  const ledger = () => new ExperimentLedger();
+  const p = proposed();
+  assert.equal(codeOf(() => ledger().add({ ...p, extra: 1 } as never)), "INVALID_INPUT");
+  const { audience: _a, ...noAudience } = p;
+  assert.equal(codeOf(() => ledger().add(noAudience as never)), "INVALID_INPUT");
+  assert.equal(codeOf(() => ledger().add({ ...p, audience: null } as never)), "INVALID_INPUT");
+  assert.ok(["INVALID_INPUT", "UNKNOWN_KPI"].includes(String(codeOf(() => ledger().add({ ...p, stop_conditions: "x" } as never)))), "an AgentError, not a raw TypeError");
+  const l = ledger();
+  l.add(p);
+  assert.equal(codeOf(() => l.update({ ...approved(), audience: { ...p.audience, extra: 1 } } as never)), "KPI_LOCKED");
+});
+
+test("N8: an approval needs string id and approver, an ISO 8601 timestamp and no extra fields", () => {
+  const p = proposed();
+  for (const bad of [
+    { ...APPROVAL, approved_at: "1" },
+    { ...APPROVAL, approved_at: "abc 2026" },
+    { ...APPROVAL, approved_at: "2026-02-30T08:00:00Z" },
+    { ...APPROVAL, approved_by: 7 },
+    { ...APPROVAL, approval_id: null },
+    { ...APPROVAL, extra: "x" },
+    { approval_id: "ap-1", approved_by: "founder" },
+  ]) {
+    assert.equal(codeOf(() => approveExperiment(p, bad as never)), "APPROVAL_REQUIRED", JSON.stringify(bad));
+  }
+  assert.doesNotThrow(() => approveExperiment(p, APPROVAL));
+  const ledger = new ExperimentLedger();
+  ledger.add(p);
+  const forged = { ...structuredClone(approveExperiment(p, APPROVAL)), approval: { ...APPROVAL, approved_by: 7 } };
+  assert.equal(codeOf(() => ledger.update(forged as never)), "APPROVAL_REQUIRED");
+});
+
+test("the id depends on every part of the plan: stop conditions, duration, opportunity link", () => {
+  const base = proposed().experiment_id;
+  assert.notEqual(proposed({ duration_days: 31 }).experiment_id, base);
+  assert.notEqual(proposed({ audience: { description: "single-order customers, 91-180 days", size: 2000, opportunity_id: "opp_other" } }).experiment_id, base);
+  assert.notEqual(
+    proposed({ stop_conditions: [{ metric: "second_purchase_rate_90d", direction: "below", value: -0.1, description: "treatment is worse by more than 10 points" }] }).experiment_id,
+    base,
+  );
+  assert.notEqual(proposed({ secondary_metrics: [] }).experiment_id, base);
+});
+
+test("planned power: adequate exactly when the SMALLER arm reaches the plan", () => {
+  const power = (size: number, control: number, treatment: number, min: number) =>
+    proposed({ audience: { description: "x", size }, allocation: { control, treatment }, min_sample_per_arm: min }).planned_power;
+  assert.equal(power(1200, 0.5, 0.5, 600), "ADEQUATE_POSSIBLE");
+  assert.equal(power(1199, 0.5, 0.5, 600), "INDICATIVE_ONLY");
+  assert.equal(power(10_000, 0.9, 0.1, 2000), "INDICATIVE_ONLY", "the treatment arm is the small one");
+  assert.equal(power(10_000, 0.1, 0.9, 2000), "INDICATIVE_ONLY", "and so is the control arm when it is the small one");
+  assert.equal(power(10_000, 0.9, 0.1, 1000), "ADEQUATE_POSSIBLE");
+});
+
+test("a re-sealed result with a different planned sample per arm is refused: the class follows the plan", () => {
+  const p = proposed();
+  const ledger = new ExperimentLedger();
+  ledger.add(p);
+  const a = approveExperiment(p, APPROVAL);
+  ledger.update(a);
+  const r = startExperiment(a);
+  ledger.update(r);
+  const complete = recordResult(r, arms(300, 30, 90));
+  const lie = structuredClone(complete);
+  (lie.result as NonNullable<ExperimentSpec["result"]>).required_per_arm = 100;
+  lie.result_hash = resultSeal(lie);
+  assert.equal(codeOf(() => ledger.update(lie)), "RESULT_IMMUTABLE");
+  assert.equal(codeOf(() => decideExperiment(lie)), "RESULT_IMMUTABLE");
+});
+
+test("N1: add() takes only a PROPOSED record, whichever other fields are clean, and each planted field alone is refused", () => {
+  const p = proposed();
+  const fresh = () => new ExperimentLedger();
+  for (const state of ["APPROVED", "RUNNING", "COMPLETE", "KEEP", "REJECT", "ITERATE", "BLOCKED"] as const) {
+    assert.equal(codeOf(() => fresh().add({ ...structuredClone(p), state })), "INVALID_TRANSITION", state);
+  }
+  const planted: Array<[string, Record<string, unknown>]> = [
+    ["approval", { approval: APPROVAL }],
+    ["lock_hash", { lock_hash: "f".repeat(64) }],
+    ["result", { result: { fake: 1 } }],
+    ["result_hash", { result_hash: "f".repeat(64) }],
+    ["decision", { decision: { decision: "KEEP", reason: "THRESHOLD_MET_ADEQUATE_SAMPLE", note: "x" } }],
+  ];
+  for (const [name, over] of planted) {
+    assert.equal(codeOf(() => fresh().add({ ...structuredClone(p), ...over } as never)), "INVALID_TRANSITION", name);
+  }
+});
+
+test("N3: the plan's audience record carries exactly its three fields, and an id equal to the normalised plan does not excuse a non-normalised one", () => {
+  const p = proposed();
+  assert.equal(codeOf(() => new ExperimentLedger().add({ ...structuredClone(p), audience: { ...p.audience, extra: 1 } } as never)), "KPI_LOCKED");
+  assert.equal(codeOf(() => new ExperimentLedger().add({ ...structuredClone(p), hypothesis: `  ${p.hypothesis}  ` })), "KPI_LOCKED", "same id, untrimmed text");
+  assert.equal(codeOf(() => new ExperimentLedger().add({ ...structuredClone(p), secondary_metrics: [...p.secondary_metrics, ...p.secondary_metrics] })), "KPI_LOCKED", "same id, duplicated secondary metric");
+});
+
+test("N1: a BLOCKED decision has exactly decision, reason and a text note", () => {
+  const p = proposed();
+  const ledgerWith = () => {
+    const l = new ExperimentLedger();
+    l.add(p);
+    return l;
+  };
+  const blocked = blockExperiment(p, "source gone");
+  const decisions: Array<[string, unknown]> = [
+    ["extra field", { ...blocked.decision, extra: 1 }],
+    ["numeric note", { ...blocked.decision, note: 5 }],
+    ["empty note", { ...blocked.decision, note: "  " }],
+    ["other reason", { ...blocked.decision, reason: "STOP_CONDITION" }],
+    ["other decision", { ...blocked.decision, decision: "KEEP" }],
+    ["null", null],
+  ];
+  for (const [name, decision] of decisions) {
+    assert.equal(codeOf(() => ledgerWith().update({ ...structuredClone(blocked), decision } as never)), "INVALID_TRANSITION", name);
+  }
+  assert.equal(codeOf(() => ledgerWith().update(blocked)), null);
 });

@@ -65,15 +65,16 @@ export async function runAgentTool<T extends object>(opts: {
   } catch {
     serialized = undefined;
   }
-  if (serialized === undefined || serialized.length > MAX_TOOL_INPUT_CHARS) {
+  const refuse = (code: "INPUT_TOO_LARGE" | "INVALID_INPUT", message: string, rule: string): ToolResult => {
     const audit = beginAgentAudit(opts.tool, opts.agentId, opts.actions.join(","), {
-      allowed: false, verdict: "FORBIDDEN", code: null, rule: "input_too_large", tier: null, message: "input too large",
+      allowed: false, verdict: "FORBIDDEN", code: null, rule, tier: null, message,
     });
-    audit.finish({ denied: true, reason: "input_too_large" });
-    return asResult(
-      { success: false, request_id: audit.request_id, error: { code: "INPUT_TOO_LARGE", message: `tool input is larger than ${MAX_TOOL_INPUT_CHARS} characters or cannot be serialised` } },
-      true,
-    );
+    audit.finish({ denied: true, reason: rule });
+    return asResult({ success: false, request_id: audit.request_id, error: { code, message } }, true);
+  };
+  if (serialized === undefined) return refuse("INVALID_INPUT", "tool input cannot be serialised to JSON", "input_not_serialisable");
+  if (serialized.length > MAX_TOOL_INPUT_CHARS) {
+    return refuse("INPUT_TOO_LARGE", `tool input is larger than ${MAX_TOOL_INPUT_CHARS} characters`, "input_too_large");
   }
   const args: unknown = JSON.parse(serialized);
 

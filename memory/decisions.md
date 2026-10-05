@@ -1,5 +1,13 @@
 # Critical Decisions Log
 
+## 2026-10-05 — ONL-AGENTS-FIX-4: opravy nálezov P11 #3 (BUILD, zúžený rozsah)
+
+**GO foundera:** „GO FIX 4" po P11 #3 (nezávislé overenie #814: bez VERIFIED; dva vysoké nálezy v ledgeri, stredné a nízke). #814 nebol zmergovaný, opravy idú do toho istého PR.
+**Constitution v2:** BUILD, čisto defenzívne.
+**Rozhodnutia:** (1) Ledger je jediné miesto zmeny stavu experimentu a overuje ho celý, **jeden `structuredClone` na vstup** (kontrola a uloženie nad tou istou kópiou). (2) Jedna sada pravidiel plánu: ledger prestaví plán cez `proposeExperiment` a porovná, nesmie existovať druhá validácia. (3) Štítok stavu = štítok rozhodnutia. (4) Číselné limity snapshotu (1e12) sú **politické, nie štatistické**; sú tu, aby 50 000 riadkov nepretieklo na Infinity. (5) Pečať výsledku stále nie je podpis (priznaný limit, nezmenený).
+**Oprava mojich záznamov:** tvrdenie z #814 „KEEP/REJECT/ITERATE je presne to, čo vyprodukuje `decideExperiment`" nebolo pravdivé pre štítok stavu a pre gettery; platí až po tomto kroku. Moje „42 červených" z #814 nekrylo legalitu prechodu; P11 #3 našla 28 zelených mutácií z 102 (9 ekvivalentných, 19 skutočných medzier). Po tomto kroku: 53 mutácií všetky červené.
+**Stav:** IMPLEMENTED/TESTED, nie VERIFIED (P11 #4). mcp-onlinovo 243/243, control-contract 72/72, crm lib/agents 69/69, prepush-gate PASS.
+
 ## 2026-10-05 — ONL-AGENTS-FIX-3: opravy nálezov P11 #2 (BUILD, zúžený rozsah)
 
 **GO foundera:** „GO FIX 3" po P11 #2 (nezávislé overenie #812: bez VERIFIED, stredné N1–N4, nízke N5–N9). #812 bol medzitým zmergovaný, oprava je nový PR z `main`.

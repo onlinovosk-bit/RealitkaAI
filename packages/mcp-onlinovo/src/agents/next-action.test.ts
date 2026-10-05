@@ -270,3 +270,14 @@ test("the snapshot age limit is exact here too: 48 h is fresh, 48 h and one mill
   assert.notEqual(at(0), "BLOCKED_STALE");
   assert.equal(at(1), "BLOCKED_STALE");
 });
+
+test("a snapshot dated up to one hour ahead of now is tolerated (clock skew), further ahead is invalid state", () => {
+  const at = (minutes: number) => {
+    const s = oneCustomer(120);
+    s.as_of = new Date(NOW.getTime() + minutes * 60_000).toISOString();
+    return codeOf(() => decide("900", s));
+  };
+  assert.equal(at(59), null);
+  assert.equal(at(60), null);
+  assert.equal(at(61), "INVALID_INPUT");
+});

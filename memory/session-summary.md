@@ -1,3 +1,23 @@
+## Session 2026-10-05 (ONL-AGENTS-FIX-4: nálezy P11 #3 na #814)
+### Dokončené
+- **P11 #3 (nový nezávislý agent, 102 sabotáží) nedala VERIFIED** pre #814 (hlava b2d6799). Opravy idú ako ďalšie commity do toho istého PR (#814 nebol zmergovaný). Všetko v `packages/mcp-onlinovo`:
+  - **Ledger, vysoká:** `ExperimentLedger.update` už viaže štítok stavu na rozhodnutie (KEEP s rozhodnutím REJECT/ITERATE sa odmietne, všetkých 12 kombinácií), a rozhodnutie je presne to, čo vyprodukuje `decideExperiment(stored)`.
+  - **TOCTOU, vysoká:** záznam sa skopíruje raz (`structuredClone`), kontroly aj uloženie používajú tú istú kópiu; getter, Proxy a funkcia v zázname už nezmenia, čo sa overilo a čo sa uložilo. Aliasing: `add`, `update`, `get`, `list` vracajú a ukladajú kópie.
+  - **`add()` a `update()` pustia záznam cez tie isté pravidlá ako `proposeExperiment`** (plán sa prestaví a porovná; nenormalizovaný plán, neznáme polia a ručne zložený záznam s vlastným id sa odmietnu); `add` prijme len čerstvý PROPOSED, každé podstrčené pole samostatne odmietnuté; BLOCKED rozhodnutie má presne tri polia a textovú poznámku.
+  - **Snapshot:** `null` a nie-objektové riadky, nesprávne enumy (`status`, `consent`, `source`, `kind`), `in_stock`, čísla produktov, `order_ref`, `sku`, `intervention.action` → `INVALID_INPUT`; peňažné hodnoty a jednotky nad 1e12 sa odmietnu (súčet 50 000 riadkov nepretečie na Infinity).
+  - **Schválenie:** `approved_at` striktný ISO 8601, `approval_id` a `approved_by` texty, presne tri polia.
+  - Nekódovateľný vstup (kruhová referencia, BigInt, symbol) = `INVALID_INPUT`, nie `INPUT_TOO_LARGE`; Symbol ako istota nehodí raw TypeError.
+- Dôkaz: mcp-onlinovo **243/243**, `tsc` 0 chýb, control-contract **72/72**, crm `lib/agents` **69/69**, `prepush-gate.sh` všetko PASS (migrácie NEOVERENÉ). Sabotáž: **53 mutácií, v konečnej podobe všetky červené**; 9 prvých prežilo (chýbajúce testy: stav pri `add`, každé podstrčené pole samostatne, `audience` a `planIdOf` v kontrole konzistencie, tvar BLOCKED rozhodnutia), pridal som testy a prebehli červené. Dve „zelené" v druhej dávke boli chybné vzory skriptu, nie medzera v testoch (overené samostatne).
+### Rozpracované / Pending
+- **Zostáva sfalšovateľné (priznaný limit):** kto vie zapísať celý objekt, môže zmeniť odhad, `stop_breached`, `secondary`, `primary_metric` a počty a pečať prepočítať; ledger je v pamäti a žiadny nástroj ho nevolá. Skutočná ochrana = perzistencia (`record.persist` BLOCKED).
+- **Neopravené, vlastné GO:** `resolveAuthority` (`packages/control-contract/src/authority.ts:211`) pustí `NaN` istotu ako AUTONOMOUS.
+- Nízke nálezy P11 #3, ktoré som nechal: PII heuristika (falošné pozitíva/negatíva), `approved_at` dátum v budúcnosti sa nekontroluje, polia navyše vo vnútri `stop_conditions` sa uložia. Kód `INPUT_TOO_LARGE` sa už nepoužíva pre nekódovateľný vstup.
+- Stále UNKNOWN: LeadHub kontrakt, živý zdroj dát, perzistencia, trvalé schvaľovania, náklady LLM, CI job pre `mcp-onlinovo` (denylist).
+### Kľúčové súbory zmenené
+- `packages/mcp-onlinovo/src/agents/{experiment,snapshot-validation,guard}.ts`, `src/tools/agent-support.ts` a testy: opravy N1–N5 z P11 #3.
+### Ďalší krok
+P11 #4 na pushnutej hlave #814 s novým nezávislým agentom (GO od foundera už je); potom rozhodnutie o `authority.ts` a LeadHub kontrakte.
+
 ## Session 2026-10-05 (ONL-AGENTS-FIX-3: nálezy P11 #2 po merge #812)
 ### Dokončené
 - **P11 #2 (nový nezávislý agent, 45 sabotáží) nedala VERIFIED** pre #812; opravy sú nový PR z `main`. Všetko v `packages/mcp-onlinovo`:

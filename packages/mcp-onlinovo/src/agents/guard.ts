@@ -141,7 +141,7 @@ export function actionVerdict(
       code: "APPROVAL_REQUIRED",
       rule: "low_confidence_floor",
       tier: meta.tier,
-      message: `Confidence ${confidence} is below ${MIN_CONFIDENCE}. A human must decide; no approval path exists in this build.`,
+      message: `Confidence ${String(confidence)} is not a number of at least ${MIN_CONFIDENCE}. A human must decide; no approval path exists in this build.`,
     };
   }
   return {

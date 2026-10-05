@@ -2,6 +2,7 @@ import { hashOf } from "./canonical.js";
 import { RunBudget } from "./budget.js";
 import { validateAllocation, type Allocation } from "./allocation.js";
 import { classifySample, diffEstimate, getKpi, MIN_ADEQUATE_SAMPLE_PER_ARM, type ArmAggregate, type DiffEstimate, type SampleClass } from "./kpi.js";
+import { parseIsoTimestamp } from "./snapshot-validation.js";
 import { AgentError } from "./types.js";
 
 /**
@@ -270,8 +271,22 @@ export function proposeExperiment(input: ProposalInput, budget: RunBudget = new 
 
 /** Only a human approval object moves PROPOSED to APPROVED. No agent action exposes this function. */
 function assertApproval(approval: Approval | null | undefined): asserts approval is Approval {
-  if (!approval || !approval.approval_id?.trim() || !approval.approved_by?.trim() || !Number.isFinite(Date.parse(approval.approved_at))) {
-    throw new AgentError("APPROVAL_REQUIRED", "a human approval (id, approver, timestamp) is required");
+  const shaped =
+    approval !== null && typeof approval === "object" &&
+    Object.keys(approval).sort().join(",") === "approval_id,approved_at,approved_by" &&
+    typeof approval.approval_id === "string" && approval.approval_id.trim() !== "" &&
+    typeof approval.approved_by === "string" && approval.approved_by.trim() !== "";
+  let timestamped = false;
+  if (shaped) {
+    try {
+      parseIsoTimestamp(approval.approved_at, "approval.approved_at");
+      timestamped = true;
+    } catch {
+      timestamped = false;
+    }
+  }
+  if (!shaped || !timestamped) {
+    throw new AgentError("APPROVAL_REQUIRED", "a human approval (id, approver, ISO 8601 timestamp) is required");
   }
 }
 
@@ -369,93 +384,141 @@ export function blockExperiment(spec: ExperimentSpec, note: string): ExperimentS
 }
 
 /** In-memory ledger. There is no delete and a recorded result can never be removed. */
+/** A decision record has exactly these fields. */
+const DECISION_KEYS = "decision,note,reason";
+
 export class ExperimentLedger {
   private readonly items = new Map<string, ExperimentSpec>();
 
+  /**
+   * The caller's object is copied exactly once, and every check and the stored record use that copy. A getter or
+   * a Proxy can therefore not answer one way to the checks and another way to the store.
+   */
+  private static copyOf(spec: unknown): ExperimentSpec {
+    if (spec === null || typeof spec !== "object") throw new AgentError("INVALID_INPUT", "an experiment record must be an object");
+    try {
+      return structuredClone(spec) as ExperimentSpec;
+    } catch {
+      throw new AgentError("INVALID_INPUT", "an experiment record must be plain data");
+    }
+  }
+
+  /** What `proposeExperiment` builds from this record's plan. The plan is validated by the very same rules. */
+  private static rebuilt(spec: ExperimentSpec): ExperimentSpec {
+    try {
+      return proposeExperiment({
+        hypothesis: spec.hypothesis,
+        control: spec.control,
+        treatment: spec.treatment,
+        audience: { description: spec.audience.description, size: spec.audience.size, opportunity_id: spec.audience.opportunity_id },
+        primary_metric: spec.primary_metric,
+        secondary_metrics: spec.secondary_metrics,
+        success_threshold: spec.success_threshold,
+        stop_conditions: spec.stop_conditions,
+        allocation: spec.allocation,
+        duration_days: spec.duration_days,
+        min_sample_per_arm: spec.min_sample_per_arm,
+      });
+    } catch (err) {
+      if (err instanceof AgentError) throw err;
+      throw new AgentError("INVALID_INPUT", "the experiment record is malformed");
+    }
+  }
+
+  /** The plan passes every proposal rule, and the id, the allocation salt and the planned power follow from it. */
+  private static assertConsistent(spec: ExperimentSpec): void {
+    const rebuilt = ExperimentLedger.rebuilt(spec);
+    if (Object.keys(spec).sort().join(",") !== Object.keys(rebuilt).sort().join(",")) {
+      throw new AgentError("INVALID_INPUT", "the experiment record has missing or unknown fields");
+    }
+    const planPart = (x: ExperimentSpec) =>
+      hashOf({ id: x.experiment_id, salt: x.allocation_salt, power: x.planned_power, plan: planIdOf(x), audience: x.audience });
+    if (planPart(rebuilt) !== planPart(spec)) {
+      throw new AgentError("KPI_LOCKED", "the experiment id, allocation salt or planned power does not follow from its plan");
+    }
+  }
+
   /** A new experiment enters the ledger only as a fresh PROPOSAL. Every later state comes through `update`. */
   add(spec: ExperimentSpec): void {
-    if (this.items.has(spec.experiment_id)) {
-      throw new AgentError("DUPLICATE_EXPERIMENT", `experiment ${spec.experiment_id} already exists`);
+    const next = ExperimentLedger.copyOf(spec);
+    if (this.items.has(next.experiment_id)) {
+      throw new AgentError("DUPLICATE_EXPERIMENT", `experiment ${String(next.experiment_id)} already exists`);
     }
     if (
-      spec.state !== "PROPOSED" || spec.approval !== null || spec.lock_hash !== null ||
-      spec.result !== null || spec.result_hash !== null || spec.decision !== null
+      next.state !== "PROPOSED" || next.approval !== null || next.lock_hash !== null ||
+      next.result !== null || next.result_hash !== null || next.decision !== null
     ) {
       throw new AgentError("INVALID_TRANSITION", "an experiment enters the ledger as PROPOSED, without approval, lock, result or decision");
     }
-    this.assertConsistent(spec);
-    this.items.set(spec.experiment_id, structuredClone(spec));
-  }
-
-  /** The id, the allocation salt and the planned power all follow from the plan. None of them can be set freely. */
-  private assertConsistent(spec: ExperimentSpec): void {
-    if (spec.experiment_id !== `exp_${planIdOf(spec)}`) {
-      throw new AgentError("KPI_LOCKED", "the experiment id does not match its plan");
-    }
-    if (spec.allocation_salt !== saltOf(planIdOf(spec)) || spec.planned_power !== plannedPowerOf(spec)) {
-      throw new AgentError("KPI_LOCKED", "the allocation salt or planned power does not follow from the plan");
-    }
+    ExperimentLedger.assertConsistent(next);
+    this.items.set(next.experiment_id, next);
   }
 
   update(spec: ExperimentSpec): void {
-    const stored = this.items.get(spec.experiment_id);
-    if (!stored) throw new AgentError("INVALID_INPUT", `experiment ${spec.experiment_id} is unknown`);
-    this.assertConsistent(spec);
-    if (stored.state !== spec.state && !TRANSITIONS[stored.state].includes(spec.state)) {
-      throw new AgentError("INVALID_TRANSITION", `${stored.state} -> ${spec.state} is not allowed`);
+    const next = ExperimentLedger.copyOf(spec);
+    const stored = this.items.get(next.experiment_id);
+    if (!stored) throw new AgentError("INVALID_INPUT", `experiment ${String(next.experiment_id)} is unknown`);
+    ExperimentLedger.assertConsistent(next);
+    if (stored.state !== next.state && !TRANSITIONS[stored.state].includes(next.state)) {
+      throw new AgentError("INVALID_TRANSITION", `${stored.state} -> ${next.state} is not allowed`);
     }
 
     // Approval and lock. After approval the plan, the approval and the salt are frozen for good.
     if (stored.lock_hash !== null) {
-      if (spec.lock_hash !== stored.lock_hash || hashOf(spec.approval) !== hashOf(stored.approval)) {
+      if (next.lock_hash !== stored.lock_hash || hashOf(next.approval) !== hashOf(stored.approval)) {
         throw new AgentError("KPI_LOCKED", "the approval or the lock of an approved experiment cannot be changed or removed");
       }
-      verifyLock(spec);
-    } else if (spec.state === "BLOCKED") {
-      if (spec.approval !== null || spec.lock_hash !== null) {
+      verifyLock(next);
+    } else if (next.state === "BLOCKED") {
+      if (next.approval !== null || next.lock_hash !== null) {
         throw new AgentError("KPI_LOCKED", "an experiment blocked before approval cannot carry an approval or a lock");
       }
-    } else if (spec.state !== "PROPOSED") {
+    } else if (next.state !== "PROPOSED") {
       // The only way out of PROPOSED is a human approval with a lock computed over this very plan.
-      assertApproval(spec.approval);
-      if (spec.lock_hash === null) throw new AgentError("KPI_LOCKED", "an approved experiment needs a lock");
-      verifyLock(spec);
+      assertApproval(next.approval);
+      if (next.lock_hash === null) throw new AgentError("KPI_LOCKED", "an approved experiment needs a lock");
+      verifyLock(next);
     }
 
     // Result. Recorded once, sealed, and only on the move to COMPLETE.
     if (stored.result !== null) {
-      if (!spec.result || hashOf(spec.result) !== hashOf(stored.result) || spec.result_hash !== stored.result_hash) {
+      if (!next.result || hashOf(next.result) !== hashOf(stored.result) || next.result_hash !== stored.result_hash) {
         throw new AgentError("RESULT_IMMUTABLE", "a recorded result cannot be removed or changed");
       }
-    } else if (spec.state === "COMPLETE") {
-      verifyResult(spec);
-    } else if (spec.result !== null || spec.result_hash !== null) {
+    } else if (next.state === "COMPLETE") {
+      verifyResult(next);
+    } else if (next.result !== null || next.result_hash !== null) {
       throw new AgentError("RESULT_IMMUTABLE", "a result can only be recorded when the experiment moves to COMPLETE");
     }
 
-    // Decision. KEEP, REJECT and ITERATE are exactly what the pre-registered plan and the sealed result decide.
+    // Decision. KEEP, REJECT and ITERATE are exactly what the pre-registered plan and the sealed result decide,
+    // and the state label must be the decision's own label.
     if (stored.decision !== null) {
-      if (hashOf(spec.decision) !== hashOf(stored.decision)) {
+      if (hashOf(next.decision) !== hashOf(stored.decision)) {
         throw new AgentError("RESULT_IMMUTABLE", "a recorded decision cannot be removed or changed");
       }
-    } else if (spec.state === "KEEP" || spec.state === "REJECT" || spec.state === "ITERATE") {
-      const expected = decideExperiment(stored).decision;
-      if (hashOf(spec.decision) !== hashOf(expected)) {
-        throw new AgentError("RESULT_IMMUTABLE", "the decision is not the one the pre-registered plan and the sealed result produce");
+    } else if (next.state === "KEEP" || next.state === "REJECT" || next.state === "ITERATE") {
+      const expected = decideExperiment(stored);
+      if (next.state !== expected.state || hashOf(next.decision) !== hashOf(expected.decision)) {
+        throw new AgentError("RESULT_IMMUTABLE", "the state and decision are not the ones the pre-registered plan and the sealed result produce");
       }
-    } else if (spec.state === "BLOCKED") {
-      if (spec.decision?.decision !== "BLOCKED" || spec.decision.reason !== "MISSING_DATA" || !spec.decision.note?.trim()) {
+    } else if (next.state === "BLOCKED") {
+      const d = next.decision;
+      if (
+        d === null || typeof d !== "object" || Object.keys(d).sort().join(",") !== DECISION_KEYS ||
+        d.decision !== "BLOCKED" || d.reason !== "MISSING_DATA" || typeof d.note !== "string" || d.note.trim() === ""
+      ) {
         throw new AgentError("INVALID_TRANSITION", "a blocked experiment needs a BLOCKED decision with a note");
       }
-    } else if (spec.decision !== null) {
-      throw new AgentError("INVALID_TRANSITION", `a decision cannot exist in state ${spec.state}`);
+    } else if (next.decision !== null) {
+      throw new AgentError("INVALID_TRANSITION", `a decision cannot exist in state ${next.state}`);
     }
 
     // No silent edits: without a transition the record must be identical.
-    if (stored.state === spec.state && hashOf(spec) !== hashOf(stored)) {
+    if (stored.state === next.state && hashOf(next) !== hashOf(stored)) {
       throw new AgentError("INVALID_TRANSITION", "an experiment changes only through a state transition");
     }
-    this.items.set(spec.experiment_id, structuredClone(spec));
+    this.items.set(next.experiment_id, next);
   }
 
   get(id: string): ExperimentSpec | null {
