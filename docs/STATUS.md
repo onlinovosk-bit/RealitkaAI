@@ -1,10 +1,16 @@
 # Revolis.AI — STAV NA JEDNEJ STRÁNKE
 
 > Aktualizuje sa **po každom uzavretom bloku** (jeden riadok zmeny hore + tabuľka). Čísla sú merané, kde je uvedený dôkaz;
+> **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-05, 07:55 UTC** (FAIL-OPEN-SWEEP + TRIAL-GATE-CLOSED variant A: po vypršaní trialu je účet read-only, nie otvorený; hlavička prepočítaná z tabuľky 53 % → 51 %).
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-05, 07:00 UTC** (STRIPE-STEP-C-PROOF + CHECKOUT-FAILCLOSED-01 — meranie KYB vo VERIFY, sonda kroku D, oprava DPH tvrdenia v runbooku, čestné stavové kódy na platiacej route; % nezmenené, ceny stále 0 z 10).
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 20:45 UTC** (opt-in auto-odpoveď: migrácia na PROD + fail-closed #811; `last_contact_at` sa zapisuje #800; „Čakajú na kontakt" prestalo byť celá kniha #804).
 
-## Celkom: ≈ 53 %  (odhad)
+## Celkom: ≈ 51 %  (odhad, prepočítané z tabuľky nižšie)
+
+> Hlavička predtým hlásila ≈ 53 %, ale vážený súčet z jej VLASTNEJ tabuľky dáva
+> 51 % (0×30 + 80×30 + 67×15 + 70×15 + 70×10 = 5155/100). Číslo, ktoré si nesedí
+> so svojím zdrojom, je presne tá chyba, ktorú tento týždeň opravujeme na troch
+> miestach — tak som ho prepočítal. Váhy sú odhad; ich zmena je founder rozhodnutie.
 
 **Session 2026-10-02: 11 z 12 plánovaných blokov = 92 %** (počet blokov, nie vážené hodnotou; zostáva 1: Stripe krok C — founder).
 
