@@ -350,3 +350,46 @@ test("the write stub is still denied after the agent tools were added", async ()
   assert.equal(result.isError, true);
   assert.equal(parse(result).error?.code, WRITE_DISABLED_CODE);
 });
+
+// ── P11 findings ──────────────────────────────────────────────────────────────────────────────
+
+test("F1: a 200 000 character input is refused at the door, fast, and audited without its content", async () => {
+  const huge = "a".repeat(200_000);
+  const cases: Array<[string, () => Promise<{ content: Array<{ text: string }>; isError?: true }>]> = [
+    ["next action", () => handleCustomerNextAction({ customer_ref: huge }, deps())],
+    ["experiment plan", () => handleExperimentPlan(planArgs({ hypothesis: huge }), deps())],
+    ["opportunities", () => handleRevenueOpportunities({ requested_action: huge }, deps())],
+  ];
+  for (const [name, call] of cases) {
+    const started = Date.now();
+    const { value, lines } = await withAudit(call);
+    assert.ok(Date.now() - started < 1000, `${name} took ${Date.now() - started} ms`);
+    assert.equal(value.isError, true, name);
+    assert.equal(parse(value).error?.code, "INPUT_TOO_LARGE", name);
+    assert.ok(value.content[0].text.length < 1000, "the refusal does not echo the input");
+    assert.ok(lines.some((l) => l.msg === "tool_done" && l.denied === true && l.reason === "input_too_large"), name);
+  }
+});
+
+test("F11: any non-off kill switch value stops the tools, including spellings the old code ignored", async () => {
+  for (const value of ["yes", "enabled", "ON", "ture"]) {
+    const result = await handleCustomerNextAction({ customer_ref: "FIX-CUS-001" }, deps({ ONLINOVO_AGENTS_KILL_SWITCH: value }));
+    assert.equal(parse(result).error?.code, "KILL_SWITCH", value);
+  }
+  const off = await handleCustomerNextAction({ customer_ref: "FIX-CUS-001" }, deps({ ONLINOVO_AGENTS_KILL_SWITCH: "off" }));
+  assert.equal(parse(off).success, true);
+});
+
+test("F7-F9 through the tool: string weights, a bad direction and a stray stop metric are INVALID_INPUT or ALLOCATION_INVALID, never success", async () => {
+  const cases: Array<[Record<string, unknown>, string]> = [
+    [{ allocation: { control: "0.3", treatment: "0.3" } }, "ALLOCATION_INVALID"],
+    [{ stop_conditions: [{ metric: "second_purchase_rate_90d", direction: "sideways", value: -0.05, description: "x" }] }, "INVALID_INPUT"],
+    [{ stop_conditions: [{ metric: "scan_rate", direction: "below", value: -0.05, description: "x" }] }, "INVALID_INPUT"],
+    [{ min_sample_per_arm: 2 }, "SAMPLE_PLAN_TOO_SMALL"],
+  ];
+  for (const [over, code] of cases) {
+    const result = await handleExperimentPlan(planArgs(over), deps());
+    assert.equal(result.isError, true, code);
+    assert.equal(parse(result).error?.code, code);
+  }
+});

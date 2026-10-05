@@ -214,3 +214,31 @@ test("DISCOVERY is only for a customer with a single fulfilled order", () => {
   assert.equal(d.candidates.find((c) => c.action === "DISCOVERY")?.reason, "MORE_THAN_ONE_ORDER");
   assert.equal(d.action, "NO_ACTION");
 });
+
+// ── P11 findings ──────────────────────────────────────────────────────────────────────────────
+
+test("F2: an order with an unparseable timestamp, even another customer's, makes the snapshot invalid", () => {
+  const s = oneCustomer(120);
+  s.orders.push({ ...single100("FIX-ORDER-BAD", "FIX-CUS-901", 5), placed_at: "garbage" });
+  assert.equal(codeOf(() => decide("900", s)), "INVALID_INPUT");
+});
+
+test("the replenishment window opens exactly on day 45 and discovery closes on day 44", () => {
+  const eligible = (days: number, action: string) => d900(days).candidates.find((c) => c.action === action)?.eligible === true;
+  assert.equal(eligible(44, "DISCOVERY"), true);
+  assert.equal(eligible(44, "REPLENISHMENT"), false);
+  assert.equal(eligible(45, "REPLENISHMENT"), true);
+  assert.equal(eligible(45, "DISCOVERY"), false);
+  assert.equal(d900(45).action, "REPLENISHMENT");
+  assert.equal(eligible(180, "REPLENISHMENT"), true);
+});
+
+test("the open-payment hold lasts exactly 24 hours: at 24 h it still blocks, a minute later it does not", () => {
+  const withUnpaid = (ageMs: number) => {
+    const s = oneCustomer(120);
+    s.orders.push({ ...single100("FIX-ORDER-UP", "FIX-CUS-900", 0), status: "unpaid", placed_at: new Date(NOW.getTime() - ageMs).toISOString() });
+    return decide("900", s).policy_status;
+  };
+  assert.equal(withUnpaid(24 * HOUR), "BLOCKED_OPEN_PAYMENT");
+  assert.notEqual(withUnpaid(24 * HOUR + 60_000), "BLOCKED_OPEN_PAYMENT");
+});

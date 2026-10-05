@@ -1,5 +1,13 @@
 # Critical Decisions Log
 
+## 2026-10-05 — ONL-AGENTS-FIX: opravy nálezov P11 (BUILD, zúžený rozsah)
+
+**GO foundera:** „GO FIX" po P11 (nezávislé overenie #807: bez VERIFIED, 5 stredných nálezov F1–F5, F12 a 7 medzier v testoch). #807 bol medzitým zmergovaný, oprava je nový PR z `main`.
+**Constitution v2:** BUILD, čisto defenzívne (žiadny nový feature, žiadna zákaznícka akcia); dôvod: tvrdenie „INDICATIVE vzorka nikdy KEEP" a „agent nič neposiela" platilo len za priaznivých vstupov.
+**Rozhodnutia:** (1) `MIN_ADEQUATE_SAMPLE_PER_ARM = 100` je **politický prah, nie štatistika** — plán ho môže len zvýšiť; zmena čísla je rozhodnutie foundera. (2) Kill switch je fail-closed (zapnutý pri každej hodnote okrem explicitne vypnutej). (3) Pečať výsledku experimentu (`result_hash`) chráni pred úpravou, nie pred útočníkom s prístupom k celému objektu; reálna ochrana príde s perzistenciou (BLOCKED). (4) `resolveAuthority` s `NaN` confidence prejde ako AUTONOMOUS — **neopravené, navrhnuté** (jadro governance, vlastné GO).
+**Oprava záznamu:** „mutation proof na každý guard" (záznam z #807) bolo prehnané; platí po tomto PR (24 sabotáží, 23 červených, 1 ekvivalentná).
+**Stav:** IMPLEMENTED/TESTED, nie VERIFIED (P11 znova). mcp-onlinovo 198/198, control-contract 72/72, crm lib/agents 69/69, prepush-gate PASS.
+
 ## 2026-10-02 — RAU Leverage track (L01–L05): REJECT podľa skóre, founder GO pred kontrolou → read-only prompty (BUILD zúžený)
 
 **Brána Ústavy v2 (12 otázok):** Q1 NIE → VETO; Q2, Q3 nie; Q4–Q6 len nepriamo; Q7 nižšie ROI ako krok C; Q8 interný track áno, externý predaj príliš skoro;

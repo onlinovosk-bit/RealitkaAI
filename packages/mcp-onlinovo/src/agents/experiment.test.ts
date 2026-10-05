@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { RunBudget } from "./budget.js";
+import { hashOf } from "./canonical.js";
 import {
   approveExperiment,
   blockExperiment,
@@ -248,4 +249,83 @@ test("meeting the threshold with an interval that includes zero is not KEEP", ()
   assert.ok((e.result?.estimate.difference ?? 0) >= 0.01);
   assert.ok((e.result?.estimate.ci95_low ?? 1) <= 0);
   assert.equal(e.state, "ITERATE");
+});
+
+// ── P11 findings ──────────────────────────────────────────────────────────────────────────────
+
+test("F3: a plan below the adequate-sample floor is refused, so INDICATIVE cannot be planned away", () => {
+  assert.equal(codeOf(() => proposeExperiment(proposal({ min_sample_per_arm: 2 }))), "SAMPLE_PLAN_TOO_SMALL");
+  assert.equal(codeOf(() => proposeExperiment(proposal({ min_sample_per_arm: 99 }))), "SAMPLE_PLAN_TOO_SMALL");
+  assert.doesNotThrow(() => proposeExperiment(proposal({ min_sample_per_arm: 100 })));
+  const tiny = full({ audience: { description: "large", size: 100_000 }, min_sample_per_arm: 100 }, arms(60, 3, 30));
+  assert.notEqual(tiny.state, "KEEP");
+  assert.equal(tiny.decision?.reason, "INDICATIVE_SAMPLE");
+});
+
+test("F4: a decision recomputes the sample class and refuses a tampered result", () => {
+  const complete = () => recordResult(running(), arms(300, 30, 90));
+  assert.equal(complete().result?.sample_class, "INDICATIVE");
+  const tamper = (mutate: (s: ExperimentSpec) => void) => {
+    const s = complete();
+    mutate(s);
+    return s;
+  };
+  assert.equal(codeOf(() => decideExperiment(tamper((s) => { (s.result as NonNullable<ExperimentSpec["result"]>).sample_class = "ADEQUATE"; }))), "RESULT_IMMUTABLE");
+  assert.equal(codeOf(() => decideExperiment(tamper((s) => { (s.result as NonNullable<ExperimentSpec["result"]>).n_control = 5000; }))), "RESULT_IMMUTABLE");
+  assert.equal(codeOf(() => decideExperiment(tamper((s) => { (s.result as NonNullable<ExperimentSpec["result"]>).stop_breached = { ...s.stop_conditions[0] }; }))), "RESULT_IMMUTABLE");
+  assert.equal(codeOf(() => decideExperiment(tamper((s) => { (s.result as NonNullable<ExperimentSpec["result"]>).estimate.ci95_low = 0.5; }))), "RESULT_IMMUTABLE");
+  assert.equal(codeOf(() => decideExperiment(tamper((s) => { s.result_hash = null; }))), "RESULT_IMMUTABLE");
+  // a forger who also re-seals the tampered result is still caught: the class follows from the counts and the plan
+  const resealed = tamper((s) => {
+    (s.result as NonNullable<ExperimentSpec["result"]>).sample_class = "ADEQUATE";
+    s.result_hash = hashOf(s.result);
+  });
+  assert.equal(codeOf(() => decideExperiment(resealed)), "RESULT_IMMUTABLE");
+  // and the honest path still works, with the class derived from the counts
+  assert.equal(decideExperiment(complete()).decision?.reason, "INDICATIVE_SAMPLE");
+});
+
+test("F5: the ledger refuses to change the plan, remove the approval or swap the lock of an approved experiment", () => {
+  const ledger = new ExperimentLedger();
+  const a = approved();
+  ledger.add(a);
+  const attempt = (mutate: (s: ExperimentSpec) => void) => {
+    const s = startExperiment(a);
+    mutate(s);
+    return codeOf(() => ledger.update(s));
+  };
+  assert.equal(attempt((s) => { s.success_threshold.min_difference = -100; }), "KPI_LOCKED");
+  assert.equal(attempt((s) => { s.approval = null; }), "KPI_LOCKED");
+  assert.equal(attempt((s) => { s.lock_hash = null; }), "KPI_LOCKED");
+  assert.equal(attempt((s) => { s.lock_hash = "0".repeat(64); }), "KPI_LOCKED");
+  assert.equal(attempt((s) => { s.approval = { ...(s.approval as Approval), approved_by: "someone else" }; }), "KPI_LOCKED");
+  assert.equal(attempt(() => undefined), null, "an honest transition is accepted");
+  assert.equal(ledger.get(a.experiment_id)?.state, "RUNNING");
+});
+
+test("F8: a stop condition direction must be below or above", () => {
+  const bad = [{ metric: "second_purchase_rate_90d", direction: "sideways" as never, value: -0.05, description: "x" }];
+  assert.equal(codeOf(() => proposeExperiment(proposal({ stop_conditions: bad }))), "INVALID_INPUT");
+  const badValue = [{ metric: "second_purchase_rate_90d", direction: "below" as const, value: "-0.05" as never, description: "x" }];
+  assert.equal(codeOf(() => proposeExperiment(proposal({ stop_conditions: badValue }))), "INVALID_INPUT");
+});
+
+test("F9: a stop condition on a metric that is neither primary nor secondary is refused at proposal, not at the end", () => {
+  const stray = [{ metric: "scan_rate", direction: "below" as const, value: -0.05, description: "x" }];
+  assert.equal(codeOf(() => proposeExperiment(proposal({ stop_conditions: stray }))), "INVALID_INPUT");
+  assert.doesNotThrow(() =>
+    proposeExperiment(proposal({ secondary_metrics: ["scan_rate"], stop_conditions: stray })),
+  );
+});
+
+test("F13: the lock also covers the audience, the opportunity link and the experiment id", () => {
+  const tamper = (mutate: (s: ExperimentSpec) => void) => {
+    const s = approved();
+    mutate(s);
+    return codeOf(() => startExperiment(s));
+  };
+  assert.equal(tamper((s) => { s.audience.description = "everyone, including opted-out customers"; }), "KPI_LOCKED");
+  assert.equal(tamper((s) => { s.audience.opportunity_id = "opp_other"; }), "KPI_LOCKED");
+  assert.equal(tamper((s) => { s.audience.size = 1; }), "KPI_LOCKED");
+  assert.equal(tamper((s) => { s.experiment_id = "exp_000000000000"; }), "KPI_LOCKED");
 });
