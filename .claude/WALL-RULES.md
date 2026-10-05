@@ -8,3 +8,4 @@ Pred každou odpoveďou: „Je toto stena, alebo skrutka?“ Skrutka = prepíš 
 6. **Každý blok končí:** dôkaz → zápis do memory (PREPEND) → aktualizovaný docs/STATUS.md → JEDNA ďalšia stena s GO bránou.
 7. **Prime Directive:** čo nezvyšuje šancu na platiaceho klienta, ide za predajom (Stripe krok C je priorita #1).
 8. **Nikdy vymyslené číslo.** Odhad je označený ako odhad. Merge iba na zelené CI. Reality Smolko verejne nemenuj.
+9. **Každá odpoveď končí riadkom `📊 Session: X % · Architektúra: Y %`** (zdroj `docs/STATUS.md`; hook `progress.sh` ho vypíše). Bez neho odpoveď nie je hotová.
