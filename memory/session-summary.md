@@ -1,3 +1,15 @@
+## Session 2026-10-05 (MEGA-POPLACH-AIRAMAX)
+RAU route: GO_REQUIRED (ručne; router zamietnutý) roadmap Revolis.AI
+### Dokončené
+- Roadmap `docs/architecture/2026-10-05-mega-poplach-airamax-roadmap.md`: gap analýza AIRAmax (zo snímok webu) vs repo, ULTRATHINK, 4 steny + backlog.
+### Rozpracované / Pending
+- Čaká GO na Stenu 0 (Stripe live ceny — krok C robí founder, Vercel limit, trial 14 d bez karty, e2e). Nič nestavané.
+- Neoverené: produkt AIRAmax (vidíme len web), trial flow, WhatsApp, protokol, `revolis-ai` chat, export cez Realvia — treba plný P01.
+### Kľúčové súbory zmenené
+- `docs/architecture/2026-10-05-mega-poplach-airamax-roadmap.md` (nový); `memory/decisions.md`, `memory/session-summary.md`.
+### Ďalší krok
+GO Stena 0 „Môžem predať“.
+
 ## Session 2026-10-01 (LEAD-PIPELINE-AFTER)
 ### Dokončené
 - **LEAD-PIPELINE-AFTER** (GO foundera, jedna stena): `runAfterResponse` (`after()`, sekvenčne, izolované chyby) namiesto `void` v 5 trasách
