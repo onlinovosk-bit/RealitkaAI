@@ -88,16 +88,8 @@ export async function logEventDetailed(opts: LogEventOptions): Promise<LogEventR
   }
 }
 
-/**
- * Client-side fire-and-forget via /api/events endpoint.
- * Use in React components — doesn't block UI.
- */
-export function logEventClient(opts: Omit<LogEventOptions, 'profileId' | 'client'>): void {
-  const body = JSON.stringify(opts)
-  if (typeof navigator !== 'undefined' && 'sendBeacon' in navigator) {
-    navigator.sendBeacon('/api/events', body)
-  } else {
-    fetch('/api/events', { method: 'POST', body, headers: { 'Content-Type': 'application/json' }, keepalive: true })
-      .catch(() => {}) // silent fail — events are best-effort
-  }
-}
+// `logEventClient` sa presunul do `log-event-client.ts`. Dôvod je hranica, nie
+// vkus: tento modul si cez `await import('@/lib/supabase/server')` dotiahne
+// `next/headers`, a dynamický import pre webpack nie je únik — klientský
+// komponent, ktorý by si odtiaľ vzal len prehliadačovú funkciu, zhodí build
+// (EVENTS-WIRE-02).

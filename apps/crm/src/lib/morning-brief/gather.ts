@@ -33,8 +33,34 @@ export interface GatheredData {
     newInquiries:   number
     scoreIncreases: number
     weeklyRevForecast: number | null
-    pendingContact: number
-    hotPending: number
+    /**
+     * Active leads with NO recorded contact — the honest reading of
+     * "waiting to be contacted".
+     *
+     * `null` means not measurable, and is not the same as `0`. It used to be
+     * `activeLeads`, i.e. the broker's entire active book, so the brief's
+     * headline action said 100% of leads were waiting no matter what had
+     * happened. Measured on production 2026-10-02: every one of the five
+     * largest assignees had active == pendingContact exactly
+     * (142, 72, 66, 47, 39). That is the same defect as staleContacts48h
+     * before #735 and as last_contact_at before #800 — a number that reads
+     * like a measurement but is a restatement of the row count.
+     *
+     * Reported as `null` while the broker has no contact trail at all,
+     * because "nobody has contacted them" cannot then be told apart from
+     * "we do not record contacts". Once anything stamps `last_contact_at`
+     * (the writer landed in #800) the count starts reporting for real with
+     * no further code change.
+     */
+    pendingContact: number | null
+    /**
+     * Hot leads with no recorded contact. Same `null` rule.
+     *
+     * Was `hotLeads.length` — a duplicate of `stats.hotLeads` under a name
+     * that claimed it was the hot subset of those waiting. The brief printed
+     * it as "(z toho HOT: N)", which made the claim explicit and false.
+     */
+    hotPending: number | null
     /**
      * Leads that WERE contacted and then went quiet for STALE_HOURS.
      *
@@ -213,6 +239,7 @@ export async function gatherBriefData(profileId: string): Promise<GatheredData |
   // numbers, and 493 of 511 production leads carry assigned_profile_id, so the
   // scope resolves to real work. A lead nobody owns is nobody's pipeline.
   const staleCutoff = new Date(Date.now() - STALE_HOURS * 3_600_000).toISOString()
+  const hotLeadIds = hotLeads.map((l) => l.lead_id).filter((id): id is string => !!id)
 
   const [
     { count: activeLeads },
@@ -220,6 +247,7 @@ export async function gatherBriefData(profileId: string): Promise<GatheredData |
     { data: priorityLeads },
     { count: contactedCount, error: contactedErr },
     { count: staleCount, error: staleErr },
+    { count: pendingCount, error: pendingErr },
   ] =
     await Promise.all([
       supabase
@@ -272,6 +300,18 @@ export async function gatherBriefData(profileId: string): Promise<GatheredData |
         .eq('assigned_profile_id', profileId)
         .not('last_contact_at', 'is', null)
         .lt('last_contact_at', staleCutoff),
+      // "Waiting to be contacted" = active lead with no recorded contact.
+      // Same shape as the staleness pair above, and for the same reason: the
+      // measurability question and the count are different questions. This
+      // replaces `pendingContact = activeLeads`, which restated the row count
+      // and therefore always read 100%.
+      supabase
+        .from('leads')
+        .select('id', { count: 'exact', head: true })
+        .eq('assigned_profile_id', profileId)
+        .neq('status', 'closed')
+        .neq('status', 'lost')
+        .is('last_contact_at', null),
     ])
 
   const pipelineValueEur = (pipelineLeads ?? [])
@@ -283,14 +323,40 @@ export async function gatherBriefData(profileId: string): Promise<GatheredData |
   // be reintroduced here under a nicer name.
   if (contactedErr) console.error('[gather] contacted-count error', contactedErr.message)
   if (staleErr) console.error('[gather] stale-count error', staleErr.message)
+  if (pendingErr) console.error('[gather] pending-contact-count error', pendingErr.message)
+
+  // One gate for every number derived from the contact trail: does this broker
+  // have ANY recorded contact at all? Until the answer is yes, "nobody has
+  // contacted this lead" is indistinguishable from "we do not record
+  // contacts", and both pendingContact and staleContacts48h are unmeasurable.
+  // Measured on production 2026-10-02: zero for every assignee, so both read
+  // `null` today and start reporting on their own once #800's writer fires.
+  const contactTrailExists =
+    !contactedErr && contactedCount !== null && (contactedCount ?? 0) > 0
 
   const staleContacts48h: number | null =
-    contactedErr || staleErr || contactedCount === null || (contactedCount ?? 0) === 0
-      ? null
-      : staleCount ?? null
+    !contactTrailExists || staleErr ? null : staleCount ?? null
 
-  const pendingContact = activeLeads ?? 0
-  const hotPending = hotLeads.length
+  const pendingContact: number | null =
+    !contactTrailExists || pendingErr ? null : pendingCount ?? null
+
+  // Hot leads with no recorded contact. Scoped by the ids we already hold, so
+  // this costs nothing when the broker has no hot leads and needs no change to
+  // the BRI engine's select.
+  let hotPending: number | null = null
+  if (contactTrailExists) {
+    if (hotLeadIds.length === 0) {
+      hotPending = 0
+    } else {
+      const { count: hotPendingCount, error: hotPendingErr } = await supabase
+        .from('leads')
+        .select('id', { count: 'exact', head: true })
+        .in('id', hotLeadIds)
+        .is('last_contact_at', null)
+      if (hotPendingErr) console.error('[gather] hot-pending-count error', hotPendingErr.message)
+      hotPending = hotPendingErr ? null : hotPendingCount ?? null
+    }
+  }
 
   return {
     settings:  settings as BriefSettings,
