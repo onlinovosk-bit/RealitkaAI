@@ -1,3 +1,61 @@
+## Session 2026-10-05 (HERO-CAPTURE-SOURCE)
+### Dokončené
+- **HERO-CAPTURE-SOURCE** (GO foundera, jedna stena): hero formulár na landing (`Hero.tsx:197` → `HeroEmailCapture`) posiela `source: "hero_email_capture"`;
+  `capture-lead` ho prijme, ale PROD constraint `leads_demo_source_check` povoľuje len `ai_odhadca`/`neighborhood_watch`/`digital_twin` (overené `pg_get_constraintdef`)
+  → INSERT 23514 → 500 → UI zobrazí „Nepodarilo sa uložiť kontakt." a nepresmeruje na `/register`. PROD `leads_demo` = 0 riadkov (konzistentné, nie dôkaz).
+- Oprava: migrácia `20261005100000_leads_demo_source_hero_email_capture.sql` (jeden `ALTER TABLE` DROP IF EXISTS + ADD = atómový a idempotentný) + verification test
+  `leads-demo-source-check.verification.test.ts` (reťaz klient → route → DB po prehraní migrácií). Test 10/10, mutation proof 4/4 (odstránená migrácia, migrácia bez hodnoty,
+  nový source v route bez migrácie, klient mimo zoznamu). Reálny Postgres (PGlite = PG 18.3): pred = hero 23514, po = OK, `bogus` stále 23514, 3× aplikácia bez zmeny, 4 riadky pred = 4 po.
+- `prepush-gate` PASS (typecheck 49, lint čistý). Celý vitest: 2778 passed, 8 súborov padá na chýbajúce `TEST_SUPABASE_*` (RLS + valuation integration; rovnako na čistom `main`, CI-only).
+- B1 (Meta lookalike) overený read-only: `meta/lookalike/route.ts:65,72` posiela e-mail v čistom texte, v route žiadna kontrola súhlasu; ale UI volá bez Bearer → 401 a PROD `leads_demo` = 0
+  riadkov → route vráti 400 pred volaním Metu. **Latentná chyba, dnes bez expozície** (audit ju hodnotil VYSOKÁ podľa kódu). Nič sa nezmenilo.
+### Rozpracované / Pending
+- **Migrácia NIE je na PROD** — aplikácia po merge = samostatné GO. Dovtedy hero formulár stále padá. Po aplikácii overiť (SELECT count alebo jedno odoslanie s označeným testovacím e-mailom).
+- **Právny podklad hero formulára:** `HeroEmailCapture` posiela `gdprConsent: true` natvrdo (súhlas = „Odoslaním súhlasíte" + odkaz na `/privacy`). Oprava spôsobí, že sa tento záznam začne reálne ukladať
+  → posúdiť (gdpr-advisor) explicitný súhlas/znenie. Neriešené v tejto stene.
+- **B1 rozhodnutie:** variant A = vypnúť `meta/lookalike` (410 + test), variant B = SHA-256 `EMAIL_SHA256` + filter `gdpr_consent` + účelový súhlas (pseudonymizácia ≠ anonymizácia).
+- `.claude/settings.json`: `mcp__Supabase__execute_sql` a `mcp__github__*` (vrátane `merge_pull_request`) povolené bez opýtania; deny blokuje `apply_migration`, nie `execute_sql`.
+- Neoverené: živá landing stránka (egress blokuje `revolis.ai`), migrácia na PG 15 (CI replay; PGlite je PG 18.3), od kedy hero formulár padá (oba kusy v repe od #735, 2026-09-28).
+### Kľúčové súbory zmenené
+- `apps/crm/supabase/migrations/20261005100000_leads_demo_source_hero_email_capture.sql` (nový)
+- `apps/crm/tests/verification/leads-demo-source-check.verification.test.ts` (nový)
+- `memory/decisions.md`, `memory/session-summary.md`
+### Ďalší krok
+„merguj N" po zelenom CI → GO na aplikáciu migrácie na PROD → overenie jedným odoslaním.
+
+## Session 2026-10-05 (FAIL-OPEN-SWEEP → TRIAL-GATE-CLOSED)
+### Dokončené
+- `docs/reports/2026-10-05-fail-open-sweep.md` (#817): audit piatich vzorov fail-open. Tri nálezy, šesť `!== false` označených ako fail-SAFE.
+- `lib/saas-ops.ts`: zmazaný `const canUseFullApp = true;` („DEV OVERRIDE" v produkcii). Zápis len v `trial`/`active`/`grace`; `limited`/`blocked` → read-only (founder variant A).
+- Nový stav `unknown` + `lookupFailed`: výpadok Stripe sa odlíši od zrušeného predplatného, takže nezamkne platiacich. Jediné zámerné fail-open, s `billingUnverified` a `console.warn`.
+- `types/navigation.ts` + `api/nav/permissions` + `AppSidebar`: `UNKNOWN_TEAM_PERMISSIONS` (všetko false) pre „je v tíme, ale oprávnenia sa nedali prečítať". Solo default nedotknutý.
+- `docs/STATUS.md`: hlavička prepočítaná 53 % → 51 % (nesedela s vlastnou tabuľkou; to číslo som predtým sám publikoval).
+### Rozpracované / Pending
+- #817 nesie audit aj opravu — jedna vetva, jeden PR; je to tá istá téma (fail-open brány), nie mix ako #800.
+- Neoverené: či vzor existuje aj mimo `apps/crm/src` (skripty, edge funkcie). Audit šiel len po `apps/crm/src/**`.
+- Stále bez GO: GOVERNANCE-DEDUP (tri súbežné formáty hlásenia postupu + kadencia pamäte).
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/saas-ops.ts`: brána prístupu prestala byť natvrdo otvorená; stav `unknown`.
+- `apps/crm/src/lib/feature-gating.ts`: `accessLevel` v odpovedi brány + honest správa o read-only.
+- `apps/crm/src/types/navigation.ts`: `UNKNOWN_TEAM_PERMISSIONS`.
+- `apps/crm/src/app/api/nav/permissions/route.ts`, `components/layout/AppSidebar.tsx`: deny pri nečitateľných oprávneniach.
+### Ďalší krok
+Merge #817 (po zelenom CI), potom krok C v Stripe — brána už nie je prázdna, takže ceny budú mať čo vynucovať.
+
+## Session 2026-10-05 (FAIL-OPEN SWEEP)
+### Dokončené
+- `docs/reports/2026-10-05-fail-open-sweep.md`: read-only audit piatich vzorov fail-open v `apps/crm/src/**`. Tri nálezy (P1 `canUseFullApp` natvrdo `true` s komentárom „DEV OVERRIDE"; P2 oprávnenia tímu default povoľujú export kontaktov; P3 `is_active ?? true` latentne) + šesť `!== false`, ktoré sú fail-SAFE a na opravu nie sú.
+- Zistené, že brána prístupu je LIVE (8 API ciest + 7 stránok), takže P1 nie je mŕtvy kód — len dnes nestojí nič, lebo Stripe nie je live (0 z 10 cien).
+### Rozpracované / Pending
+- P1 čaká na founder rozhodnutie: čo po vypršaní trialu — úplné zamknutie, alebo read-only režim? Bez toho sa `canUseFullApp` nedá správne opraviť.
+- P2 oprava (`can_export_contacts: false` v defaulte + odlíšiť „bez tímu" od „čítanie zlyhalo") je pripravená ako návrh, nie aplikovaná.
+- Stále otvorené z 2026-10-02: tri súbežné formáty hlásenia postupu + rozpor o kadencii pamäte (GOVERNANCE-DEDUP, bez GO).
+### Kľúčové súbory zmenené
+- `docs/reports/2026-10-05-fail-open-sweep.md`: nový, celý audit s dôkazmi po riadkoch.
+- `memory/decisions.md`: PREPEND — nálezy a dôvod, prečo P1 nie je incident ale termín.
+### Ďalší krok
+Rozhodnutie o P1 (zamknutie vs. read-only po vypršaní trialu) — až potom oprava `canUseFullApp`, lebo bez toho rozhodnutia sa nedá napísať správny test.
+
 ## Session 2026-10-02 (PLATBY-E2E implementácia)
 ### Dokončené
 - `apps/crm/src/lib/billing-lifecycle.ts` + volanie v `api/billing/webhook/route.ts`: zrušenie, zmena miest a zlyhaná platba sa premietajú do `agencies` (stav zo `subscriptions.retrieve`, nie z udalosti). Chyba → 500, Stripe zopakuje.
