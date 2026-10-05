@@ -23,7 +23,7 @@ Router `rau-route` sa nespustil (príkaz bol zamietnutý). Brána určená ručn
 |---|---|---|---|
 | A1 | Pozícia | „Menej klikania. Viac uzavretých obchodov.“ — CRM, ktoré sa píše samo | snímka 1 |
 | A2 | Dôvera | „AIRA nikdy nič neodošle bez vášho potvrdenia“ (opakuje sa pri každom module) | 1, 2, 5, 7 |
-| A3 | Lievik | 14 dní celej AIRA, **bez karty**, po skončení sa sama vypne; Google prihlásenie; SK/CZ; dáta v EÚ, nepoužité na tréning; **asistovaný onboarding zadarmo do 30. 9. 2026** (pripoja schránku) | 1 |
+| A3 | Lievik | 14 dní celej AIRA, **bez karty**, po skončení sa sama vypne; Google prihlásenie; SK/CZ; dáta v EÚ, nepoužité na tréning; asistovaný onboarding zadarmo do 30. 9. 2026 (pripoja schránku; **akcia už skončila**, viď A17) | 1 |
 | A4 | AI Inbox | e-mail + WhatsApp Business na jednom mieste, AI návrh odpovede, zápisy do CRM | 2 |
 | A5 | Automatizácie / smart úlohy | dopyt → kontakt → ponuka → obhliadka → follow-up | 2 |
 | A6 | Obhliadky a protokoly | digitálny protokol, podpis, spätná väzba klienta napojená na nehnuteľnosť | 2 |
@@ -34,7 +34,15 @@ Router `rau-route` sa nespustil (príkaz bol zamietnutý). Brána určená ručn
 | A11 | Burza ponúk | cross-office matching, kontakty chránené, upozornenie na kolíziu, dohoda o provízii zaznamenaná | 10 |
 | A12 | Webstránka | 5 šablón, vlastná doména, 19,90 €/mes, web na mieru od 1 490 € | 11, 12 |
 
-Silná stránka AIRAmax: **šírka a kompletný príbeh od registrácie po web**. Slabé miesto, ktoré z webu vidno: všetko je sľub bez zverejnených výsledkov (žiadne „klient X zachránil Y €“; v snímkach nie je ani jedno meranie).
+| A13 | Spolupráca s treťou stranou | pozvanie právnika/notára/fotografa, úlohy, nahrané dokumenty, aktivita | snímka 13 |
+| A14 | Reporty | predajný lievik, konverzia obhliadok, cena za m² podľa lokality, ponuka vs. dopyt, úspešnosť a ziskovosť maklérov | 14 |
+| A15 | Referencie | 5 menovaných referencií (majitelia kancelárií, makléri) k AIRA Studio; tvrdia, že Studio používajú „stovky maklérov“ **pod starým názvom Aura** | 15 |
+| A16 | Porovnávacia tabuľka | AIRA Studio vs. Box Brownie, Reimagine Home, Virtual Staging AI, Collov AI (staging, reel, pôdorys, text, náhľad pred registráciou) — „zostavené z verejných funkcií a cien, júl 2026“ | 16 |
+| A17 | Migrácia | import kontaktov/nehnuteľností/dopytov, tím a roly, e-mail + WhatsApp, exporty na portály, školenie; **svojpomocne 0 €, asistovaný setup 299 €**; akcia „zadarmo“ platila do 30. 9. 2026 (**už skončila**) | 17 |
+
+Silná stránka AIRAmax: **šírka, kompletný príbeh od registrácie po web a — nová informácia — existujúci produkt s údajným reálnym používaním** (Studio ako Aura). Oprava voči prvej verzii tohto dokumentu: tvrdil som, že web nemá žiadne referencie; **má 5 menovaných kvalitatívnych referencií**. Stále platí, že na snímkach nie je **žiadne meranie** (€, minúty, % zachránených leadov) a že referencie sú výber, ktorý si vybrali sami.
+
+**Čo z toho plynie:** Studio nie je „nová funkcia“, ale **distribučný kanál s etablovanou značkou**. To zvyšuje jeho váhu pri hodnotení hrozby, ale nemení to, že vyrobiť ho od nuly je zlá investícia (viď Stena 2: COMPOSE, nie BUILD).
 
 ---
 
@@ -59,6 +67,10 @@ Stavy: **LIVE** (volajúci v produkčnej ceste) · **DEFINED** · **MISSING** ·
 | A10 Export na portály | **MISSING †** | `api/properties` je CRUD; portály sa len čítajú (`PortalNehnutelnostiSource`); Realvia fronta existuje (možný export-rail, UNVERIFIED) |
 | A11 Burza ponúk | **MISSING** | žiadny cross-agency matching; navyše GDPR/zmluvný dizajn nevyriešený |
 | A12 Web kancelárie | **MISSING** | žiadna verejná šablóna webu |
+| A13 Spolupráca s treťou stranou | **MISSING †** | v `app/api` nenájdený pozvánkový tok pre externistu s dokumentmi |
+| A14 Reporty | DEFINED/LIVE † | stránky `performance`, `forecast`, `forecasting`, `sales-funnel`, `management`; **forecast dosádza 180 000 € pri chýbajúcom rozpočte** (matica pravdy) — nesmie sa ukazovať ako fakt |
+| A15–A16 Referencie a porovnanie | **MISSING** | žiadna zverejniteľná referencia; referenčný klient sa nesmie pomenovať bez súhlasu (CLAUDE.md, smernica 2) |
+| A17 Migrácia/import | DEFINED † | existuje `(dashboard)/import/page.tsx`; rozsah (kontakty/nehnuteľnosti/dopyty) a cena asistovaného setupu nezmerané |
 | Naše unikáty | LIVE/DEFINED | Realvia worker, Gmail pull, call-coach/analyzer, `competitor-watch`, `arbitrage`, `seller-rescue`, price-trail, control-contract (vynucované brány), PII redakcia pred LLM (`ai/sanitize.ts`) |
 
 **Čo z toho mení plán:** AIRAmax nás nepredbieha v „AI“. Predbieha nás v **ceste od záujemcu k platiacemu zákazníkovi** a v **šírke balíka**. Šírku (Studio, web, burza) nedoženieme za týždne bez straty zamerania; cestu k platbe áno.
@@ -79,7 +91,9 @@ Stavy: **LIVE** (volajúci v produkčnej ceste) · **DEFINED** · **MISSING** ·
 
 **Ťah 1 — Dobehnúť to, čo rozhoduje o kúpe (lievik).** Trial 14 dní bez karty, fungujúca platba, asistovaný onboarding, cenník. Bez toho nič ďalšie nemá odbyt.
 
-**Ťah 2 — Dokázať to, čo AIRAmax len sľubuje.** Ich web nemá jediné meranie. Naša páka je **dôkaz výsledku na reálnych dátach**: „X leadov zachránených, Y minút do prvej reakcie, Z € v pipeline“ — z PROD, nie z marketingu. (Pozn.: forecast dnes dosádza 180 000 € pri chýbajúcom rozpočte; nesmie sa ukazovať ako fakt.)
+**Ťah 1b — Znížiť cenu prechodu.** AIRAmax dnes predáva prechod ako službu (299 €, akcia skončila 30. 9.). Kto je v inom CRM, nemá dôvod meniť, ak je prechod bolestivý. Revolis má `import` a Realvia; cieľ je „prechod za 1 deň, bez poplatku pre prvých N kancelárií“ (počet N a cenu určuje founder). Overí sa rozhovorom, nie odhadom.
+
+**Ťah 2 — Dokázať to, čo AIRAmax len sľubuje.** Ich web má kvalitatívne referencie, ale nemá jediné meranie. Naša páka je **dôkaz výsledku na reálnych dátach**: „X leadov zachránených, Y minút do prvej reakcie, Z € v pipeline“ — z PROD, nie z marketingu. (Pozn.: forecast dnes dosádza 180 000 € pri chýbajúcom rozpočte; nesmie sa ukazovať ako fakt.)
 
 **Ťah 3 — Predbehnúť tam, kde máme dáta a oni (na snímkach) nič.** Strana **získavania mandátov a predávajúceho** (seller-rescue, price-trail, competitor-watch, arbitrage, acquisition OS), integrácie Realvia/RealSoft, dôkazná kontrola odosielania (control-contract). Ich „nič neodošle bez potvrdenia“ je slogan; náš je vynútený kódom a testovaný (mutation proofs). Toto je argument pre dôveryhodnosť, nie pre funkciu.
 
@@ -105,7 +119,8 @@ Reťazec: P01 → P04 → P06 → P12 → P13/P14 → P17.
 
 ### STENA 2 — „Dve paritné funkcie, ktoré rozhodujú“ · dni 31–60 · **VALIDATE, nie BUILD**
 Najprv rozhovor s 5–10 maklérmi/kanceláriami (Segment A/B/C): ktoré z A4-WhatsApp, A6-protokol, A10-export na portály, A9-AI foto by **zaplatili**? Ústava v2 Q1: ak NIE → max VALIDATE.
-Predbežná hypotéza (nepodložená, čaká na rozhovory): **export na portály** (ušetrí prepisovanie, použiť Realvia ako rail → REUSE) a **digitálny protokol z obhliadky** (priamy krok Lead → Obhliadka → Zmluva). AI foto a staging **nekupovať ako vlastný vývoj** — ak sa preukáže dopyt, integrovať hotové API (COMPOSE), nie stavať.
+Predbežná hypotéza (nepodložená, čaká na rozhovory): **export na portály** (ušetrí prepisovanie, použiť Realvia ako rail → REUSE) a **digitálny protokol z obhliadky** (priamy krok Lead → Obhliadka → Zmluva). AI foto a staging **nekupovať ako vlastný vývoj** — ak sa preukáže dopyt, integrovať hotové API (COMPOSE), nie stavať. Pozor: ich porovnávacia tabuľka ukazuje, že staging robí „takmer každý“; odlíšenie je až reel/pôdorys/text, čiže hodnotu tvorí balík, nie jedna funkcia.
+Do rozhovorov pridať: (a) prechod z iného CRM — čo by kanceláriu zastavilo, (b) spolupráca s treťou stranou (A13), (c) ktoré z A14 reportov riadia ich týždeň.
 Reťazec: P02 → P04 → P05 (REUSE → EXTEND → COMPOSE → BUILD) → P03 → …
 
 ### STENA 3 — „Predbehnúť“ · dni 61–90 · navrhované: BUILD len po výsledku Steny 1
@@ -132,7 +147,8 @@ Alternatívy: (B) GO na kopírovací sprint A9–A12 — **neodporúčam** (Feat
 
 1. Zaplatil by dnešný klient za čokoľvek z A4–A12? (Ústava Q1 — odpoveď mám len od vás.)
 2. Je „AIRAmax je ďaleko pred nami“ tvrdenie o **produkte** alebo o **webe**? Navrhujem jeden overený trial (transparentne, pod vlastným menom, bez obchádzania) a checklist: čo naozaj funguje po prihlásení. Rozhodnutie o registrácii u konkurenta je vaše.
-3. Cenník AIRAmax nemáme (snímka stránky Cenník chýba) — chýba porovnanie ceny.
+3. Plný cenník AIRAmax nemáme (snímka stránky Cenník chýba). Známe sú len: web 19,90 €/mes (zriadenie 490 € alebo od 1 490 € na mieru) a asistovaný setup 299 €. Cenu samotného CRM nepoznáme → porovnanie ceny nie je možné.
+3b. Referencie o Studiu sú ich výber a „stovky maklérov pod názvom Aura“ je ich tvrdenie; nevieme overiť, či ide o ten istý tím a produkt.
 4. Stav `revolis-ai` stránky, WhatsApp, protokol, export cez Realvia: † vyžaduje plný P01.
 5. Cieľové termíny a rozpočet: určuje founder.
 
