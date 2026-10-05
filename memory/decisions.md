@@ -1,5 +1,17 @@
 # Critical Decisions Log
 
+## [2026-10-05] HERO-CAPTURE-SOURCE: BUILD (oprava); Claude Mods → VALIDATE/BACKLOG; Meta lookalike (B1) = latentná, nie P0
+
+- **HERO-CAPTURE-SOURCE — BUILD.** Oprava existujúcej cesty, nie nová feature, preto bez 12-otázkového skórovania. Dôvod: hero e-mail formulár na landing je vstup akvizície
+  (Prime Directive) a podľa PROD constraintu nikdy neuložil lead. Migrácia je len rozšírenie zoznamu povolených hodnôt; PROD aplikácia = samostatné GO.
+  Trieda chyby („route povolí" ≠ „DB povolí") je pinovaná verification testom, ktorý prehráva migrácie.
+- **Claude Mods — VALIDATE/BACKLOG.** Q1 veto (dnešný klient by za to nezaplatil) → max VALIDATE. Mod nie je bezpečnostná hranica: beží s právami používateľa, nie je v sandboxe, pri
+  výnimke alebo prekročení 10 s sa hook preskočí (fail-open; opraviteľné `.catch` handlerom) a agent si vie mod v session sám napísať a načítať. Tvrdá hranica ostáva CI / GitHub / RLS /
+  scope tokenov (príklad: #701 sa zachytil pred mergom, dnes ho stráži `scripts/ci/memory-append-only.sh`). Control Plane plocha (BACKLOG) a Cost Governor (parked) sa týmto nemenia.
+  Nespájať s PII-GATE-AUDITOM: audit chráni PII v produkte, mod by chránil agenta.
+- **B1 (Meta lookalike) — prehodnotená z VYSOKÁ na latentnú.** Kód posiela e-mail v čistom texte a nekontroluje súhlas, ale UI volá bez Bearer (401) a PROD `leads_demo` má 0 riadkov (route
+  vráti 400 pred volaním Metu). Rozhodnutie čaká na foundera: A = vypnúť route (odporúčam), B = SHA-256 + `EMAIL_SHA256` + filter `gdpr_consent` + účelový súhlas. Hash je pseudonymizácia, nie anonymizácia.
+
 ## [2026-10-05] TRIAL-GATE-CLOSED (variant A): po vypršaní je účet read-only; `unknown` je jediné zámerné fail-open
 
 **Founder rozhodnutie:** variant A — po vypršaní trialu alebo po zrušení platby klient

@@ -1,3 +1,28 @@
+## Session 2026-10-05 (HERO-CAPTURE-SOURCE)
+### Dokončené
+- **HERO-CAPTURE-SOURCE** (GO foundera, jedna stena): hero formulár na landing (`Hero.tsx:197` → `HeroEmailCapture`) posiela `source: "hero_email_capture"`;
+  `capture-lead` ho prijme, ale PROD constraint `leads_demo_source_check` povoľuje len `ai_odhadca`/`neighborhood_watch`/`digital_twin` (overené `pg_get_constraintdef`)
+  → INSERT 23514 → 500 → UI zobrazí „Nepodarilo sa uložiť kontakt." a nepresmeruje na `/register`. PROD `leads_demo` = 0 riadkov (konzistentné, nie dôkaz).
+- Oprava: migrácia `20261005100000_leads_demo_source_hero_email_capture.sql` (jeden `ALTER TABLE` DROP IF EXISTS + ADD = atómový a idempotentný) + verification test
+  `leads-demo-source-check.verification.test.ts` (reťaz klient → route → DB po prehraní migrácií). Test 10/10, mutation proof 4/4 (odstránená migrácia, migrácia bez hodnoty,
+  nový source v route bez migrácie, klient mimo zoznamu). Reálny Postgres (PGlite = PG 18.3): pred = hero 23514, po = OK, `bogus` stále 23514, 3× aplikácia bez zmeny, 4 riadky pred = 4 po.
+- `prepush-gate` PASS (typecheck 49, lint čistý). Celý vitest: 2778 passed, 8 súborov padá na chýbajúce `TEST_SUPABASE_*` (RLS + valuation integration; rovnako na čistom `main`, CI-only).
+- B1 (Meta lookalike) overený read-only: `meta/lookalike/route.ts:65,72` posiela e-mail v čistom texte, v route žiadna kontrola súhlasu; ale UI volá bez Bearer → 401 a PROD `leads_demo` = 0
+  riadkov → route vráti 400 pred volaním Metu. **Latentná chyba, dnes bez expozície** (audit ju hodnotil VYSOKÁ podľa kódu). Nič sa nezmenilo.
+### Rozpracované / Pending
+- **Migrácia NIE je na PROD** — aplikácia po merge = samostatné GO. Dovtedy hero formulár stále padá. Po aplikácii overiť (SELECT count alebo jedno odoslanie s označeným testovacím e-mailom).
+- **Právny podklad hero formulára:** `HeroEmailCapture` posiela `gdprConsent: true` natvrdo (súhlas = „Odoslaním súhlasíte" + odkaz na `/privacy`). Oprava spôsobí, že sa tento záznam začne reálne ukladať
+  → posúdiť (gdpr-advisor) explicitný súhlas/znenie. Neriešené v tejto stene.
+- **B1 rozhodnutie:** variant A = vypnúť `meta/lookalike` (410 + test), variant B = SHA-256 `EMAIL_SHA256` + filter `gdpr_consent` + účelový súhlas (pseudonymizácia ≠ anonymizácia).
+- `.claude/settings.json`: `mcp__Supabase__execute_sql` a `mcp__github__*` (vrátane `merge_pull_request`) povolené bez opýtania; deny blokuje `apply_migration`, nie `execute_sql`.
+- Neoverené: živá landing stránka (egress blokuje `revolis.ai`), migrácia na PG 15 (CI replay; PGlite je PG 18.3), od kedy hero formulár padá (oba kusy v repe od #735, 2026-09-28).
+### Kľúčové súbory zmenené
+- `apps/crm/supabase/migrations/20261005100000_leads_demo_source_hero_email_capture.sql` (nový)
+- `apps/crm/tests/verification/leads-demo-source-check.verification.test.ts` (nový)
+- `memory/decisions.md`, `memory/session-summary.md`
+### Ďalší krok
+„merguj N" po zelenom CI → GO na aplikáciu migrácie na PROD → overenie jedným odoslaním.
+
 ## Session 2026-10-05 (FAIL-OPEN-SWEEP → TRIAL-GATE-CLOSED)
 ### Dokončené
 - `docs/reports/2026-10-05-fail-open-sweep.md` (#817): audit piatich vzorov fail-open. Tri nálezy, šesť `!== false` označených ako fail-SAFE.
