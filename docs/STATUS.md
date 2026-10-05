@@ -1,10 +1,10 @@
 # Revolis.AI — STAV NA JEDNEJ STRÁNKE
 
 > Aktualizuje sa **po každom uzavretom bloku** (jeden riadok zmeny hore + tabuľka). Čísla sú merané, kde je uvedený dôkaz;
-> **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 09:40 UTC** (RAU Leverage track — docs-only, % nezmenené).
+> **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 20:45 UTC** (opt-in auto-odpoveď: migrácia na PROD + fail-closed #811; `last_contact_at` sa zapisuje #800; „Čakajú na kontakt" prestalo byť celá kniha #804).
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 08:30 UTC** (EVENTS-WIRE + CRON-ALIVE, zatiaľ nezmergované).
 
-## Celkom: ≈ 52 %  (odhad)
+## Celkom: ≈ 53 %  (odhad)
 
 **Session 2026-10-02: 11 z 12 plánovaných blokov = 92 %** (počet blokov, nie vážené hodnotou; zostáva 1: Stripe krok C — founder).
 
@@ -12,8 +12,8 @@
 |---|---|---|---|---|
 | **Predaj / platby (Stripe)** | 30 | **0 z 10 cien** na live účte | **0 %** | **founder: krok C v Stripe** |
 | Príjem e-mailov → lead | 30 | parser ✅ · diagnostika (#743) ✅ · log schránok + trvalá stopa (#774) ✅ **nasadené a funguje** (23 riadkov od 1. 10. 19:41) · `unknown_source` → BACKLOG (dáta nepodporujú) | 80 % | nič — čaká na reálne portálové maily |
-| AI návrh + odoslanie | 15 | triage ✅ · návrh ✅ · odoslanie ❌ | 67 % | founder: Resend DNS + reply-to + súhlas Smolka |
-| **AI vrstva (BRI, skóre, briefy)** | *(v „Schéma + nasadenie")* | **crony BEŽIA** (meraná stopa v `cron_runs`) · zapisovateľ eventov zapojený (#786, čaká na merge) · `events` stále 0 do nasadenia | 40 % | merge #786 + nasadenie |
+| AI návrh + odoslanie | 15 | triage ✅ · návrh ✅ · odoslanie ❌ · **opt-in tesní**: migrácia `auto_response_enabled DEFAULT false` aplikovaná na PROD 2026-10-02 (overené `information_schema`, 7 agentúr nedotknutých, rollback v `supabase_migrations`) + fail-closed v kóde (#811, čaká na merge) | 67 % | founder: Resend DNS + reply-to + súhlas referenčného klienta |
+| **AI vrstva (BRI, skóre, briefy)** | *(v „Schéma + nasadenie")* | **crony BEŽIA** (meraná stopa v `cron_runs`) · zapisovateľ eventov zapojený (#786) · `events` stále 0 do nasadenia · **`leads.last_contact_at` konečne niekto zapisuje** (#800, bolo 0 z 520 riadkov) · ranný brief už nevydáva počet riadkov za meranie (#804: `pendingContact`/`hotPending` → `number \| null`) | 45 % | merge #786 + nasadenie; prvý reálny kontakt rozbehne stopu |
 | Tenantová izolácia | 15 | 28 z 40 ciest zavretých | 70 % | nič naliehavé (zoznam nižšie) |
 | Schéma + nasadenie | 10 | schéma ~98 % · nasadenie beží (buildy prechádzajú) · **hypotéza „cron blokuje plán Vercelu" VYVRÁTENÁ meraním** | 70 % | nič — Vercel Pro nie je pre crony potrebné |
 

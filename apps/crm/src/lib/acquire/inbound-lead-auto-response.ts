@@ -57,10 +57,25 @@ async function resolveOwnerContact(
 }
 
 /** Prod-safe agency load — tolerates missing optional columns (email, phone, flags). */
+/**
+ * FAIL-CLOSED. Auto-odpoveď odchádza v mene agentúry jej vlastným klientom, takže
+ * jediný stav, ktorý ju smie zapnúť, je výslovné `auto_response_enabled = true`.
+ *
+ * Predtým sa `autoResponseEnabled` inicializovalo na `true` a test znel
+ * `!== false`, čiže POSIELAŤ bolo predvolené chovanie troch rôznych zlyhaní:
+ * chýbajúci stĺpec (bol to kompatibilný obchvat z času, keď stĺpec na PROD
+ * ešte nebol), chýbajúci riadok agentúry, a hodnota NULL. Migrácia
+ * `20261001100000` (na PROD aplikovaná 2026-10-02) spravila z defaultu pre nové
+ * riadky `false` — ale týmito tromi cestami sa dal obísť, takže opt-in netesnil.
+ *
+ * Stĺpec na PROD overene existuje (`information_schema`, 2026-10-02), takže
+ * obchvat na chýbajúci stĺpec už nemá čo chrániť: ak sa súhlas prečítať nedá,
+ * nevieme ho predpokladať.
+ */
 export async function loadAgencyAutoResponseContext(
   supa: SupabaseClient,
   agencyId: string,
-): Promise<{ agency: AgencyRow | null; autoResponseEnabled: boolean }> {
+): Promise<{ agency: AgencyRow | null; autoResponseEnabled: boolean; consentUnknown: boolean }> {
   const { data: base, error: baseError } = await supa
     .from("agencies")
     .select("name")
@@ -78,7 +93,10 @@ export async function loadAgencyAutoResponseContext(
     auto_response_enabled: null,
   };
 
-  let autoResponseEnabled = true;
+  // Oba defaulty sú tie bezpečné: neposielať, a priznať, že súhlas nepoznáme.
+  // Prepíše ich len úspešné prečítanie skutočnej boolean hodnoty.
+  let autoResponseEnabled = false;
+  let consentUnknown = true;
 
   const { data: flags, error: flagsError } = await supa
     .from("agencies")
@@ -88,10 +106,14 @@ export async function loadAgencyAutoResponseContext(
 
   if (!flagsError && flags) {
     agency.auto_response_enabled = flags.auto_response_enabled;
-    autoResponseEnabled = flags.auto_response_enabled !== false;
+    // `=== true`, nie `!== false`: NULL ani undefined nie je súhlas.
+    autoResponseEnabled = flags.auto_response_enabled === true;
+    consentUnknown =
+      flags.auto_response_enabled !== true && flags.auto_response_enabled !== false;
   } else if (flagsError && !isMissingColumnError(flagsError)) {
     throw new Error(`agency flags lookup failed: ${flagsError.message}`);
   }
+  // Chýbajúci stĺpec alebo chýbajúci riadok: oba defaulty zostávajú v platnosti.
 
   const { data: contact, error: contactError } = await supa
     .from("agencies")
@@ -106,7 +128,7 @@ export async function loadAgencyAutoResponseContext(
     throw new Error(`agency contact lookup failed: ${contactError.message}`);
   }
 
-  return { agency, autoResponseEnabled };
+  return { agency, autoResponseEnabled, consentUnknown };
 }
 
 export async function resolveInboundAutoResponseContacts(
@@ -163,8 +185,15 @@ async function attemptInboundAutoResponse(
   }
   if (freshLead?.auto_response_sent_at) return { outcome: "skipped_already_sent" };
 
-  const { agency, autoResponseEnabled } = await loadAgencyAutoResponseContext(supa, agencyId);
-  if (!autoResponseEnabled) return { outcome: "skipped_disabled" };
+  const { agency, autoResponseEnabled, consentUnknown } = await loadAgencyAutoResponseContext(
+    supa,
+    agencyId,
+  );
+  if (!autoResponseEnabled) {
+    // Preskočenie z neznámeho súhlasu sa v audite nesmie strácať medzi
+    // agentúrami, ktoré si auto-odpoveď vedome vypli.
+    return { outcome: "skipped_disabled", reason: consentUnknown ? "consent_unknown" : null };
+  }
 
   const { replyTo, agencyPhone } = await resolveInboundAutoResponseContacts(
     supa,
