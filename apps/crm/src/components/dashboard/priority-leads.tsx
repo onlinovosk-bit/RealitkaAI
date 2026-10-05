@@ -4,6 +4,8 @@ import Link from "next/link";
 import type { Lead } from "@/lib/leads-store";
 import type { PlanTier } from "@/lib/ai-engine";
 import PaywallLock from "@/components/shared/PaywallLock";
+import { usePricingV2Catalog } from "@/components/marketing/pricing-v2-context";
+import { unlockCtaLabelV2 } from "@/components/marketing/pricing-v2-copy";
 import { SLATE_HORIZON, SLATE_HORIZON_BADGES, WORKDESK_INNER_ROW, WORKDESK_PANEL } from "@/lib/slate-horizon-theme";
 
 function getStatusClasses(status: Lead["status"]) {
@@ -35,6 +37,7 @@ interface PriorityLeadsProps {
 }
 
 export default function PriorityLeads({ leads, plan = "free" }: PriorityLeadsProps) {
+  const pricingV2 = usePricingV2Catalog();
   const allPriorityLeads = leads
     .filter((lead) => lead.status === "Horúci" || lead.score >= 80)
     .sort((a, b) => b.score - a.score)
@@ -133,7 +136,7 @@ export default function PriorityLeads({ leads, plan = "free" }: PriorityLeadsPro
             lockedCount={lockedCount}
             feature="príležitostí"
             titleOverride="+8 ďalších príležitostí"
-            ctaLabel="Odomknúť Protocol Authority od 449 € mesačne"
+            ctaLabel={pricingV2 ? unlockCtaLabelV2(pricingV2) : "Odomknúť Protocol Authority od 449 € mesačne"}
           />
         </div>
       )}

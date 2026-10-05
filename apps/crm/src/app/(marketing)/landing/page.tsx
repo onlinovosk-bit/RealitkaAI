@@ -102,7 +102,7 @@ export default function LandingPage() {
         <PreviewSection />
         <Testimonials />
         <ProofNumbers />
-        <ObjectionFaq />
+        <ObjectionFaq pricingV2={pricingV2} />
 
         <div className="mx-auto max-w-4xl px-4">
           <RoiGuaranteeSection />
