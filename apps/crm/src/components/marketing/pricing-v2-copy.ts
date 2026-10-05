@@ -63,6 +63,12 @@ export function packPriceLine(pack: PricingV2CatalogPack, vatPercent: number): s
   return `${pack.credits} kreditov mesačne navyše: ${formatEurFromCents(pack.netCents)} mesačne bez DPH (${formatEurFromCents(pack.grossCents)} s DPH ${formatPercent(vatPercent)})`;
 }
 
+/** CTA zamknutého obsahu vo v2: bez názvu legacy programu, cena najnižšieho pásma z katalógu (bez DPH). */
+export function unlockCtaLabelV2(catalog: Pick<PricingV2Catalog, "bands">): string {
+  const cheapest = [...catalog.bands].sort((a, b) => a.netCents - b.netCents)[0];
+  return `Odomknúť ďalšie príležitosti — plány od ${formatEurFromCents(cheapest.netCents)} mesačne bez DPH`;
+}
+
 /** Jednorazové dokúpenie: „0,70 € za kredit bez DPH (0,86 € s DPH 23 %)“. */
 export function creditUnitLine(catalog: Pick<PricingV2Catalog, "creditUnit" | "vatPercent">): string {
   return `${formatEurFromCents(catalog.creditUnit.netCents)} za kredit bez DPH (${formatEurFromCents(catalog.creditUnit.grossCents)} s DPH ${formatPercent(catalog.vatPercent)})`;

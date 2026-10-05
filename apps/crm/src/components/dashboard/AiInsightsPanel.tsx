@@ -8,6 +8,7 @@ import { AlertTriangle, Flame, Zap } from "lucide-react";
 import { SLATE_HORIZON, SLATE_HORIZON_BADGES, WORKDESK_INNER_ROW, WORKDESK_PANEL } from "@/lib/slate-horizon-theme";
 import type { PricingV2Catalog } from "@/lib/pricing-v2";
 import { formatEurFromCents } from "@/components/marketing/pricing-v2-copy";
+import { usePricingV2Catalog } from "@/components/marketing/pricing-v2-context";
 
 interface AiInsightsPanelProps {
   leads: Lead[];
@@ -40,8 +41,11 @@ const INSIGHT_STYLES = {
 export default function AiInsightsPanel({
   leads,
   plan = "free",
-  pricingV2 = null,
+  pricingV2: pricingV2Prop = null,
 }: AiInsightsPanelProps) {
+  // W3-fix: bez propu sa katalóg berie z providera v dashboard layoute (null pri vypnutom prepínači).
+  const pricingV2Ctx = usePricingV2Catalog();
+  const pricingV2 = pricingV2Prop ?? pricingV2Ctx;
   const [expandedWarning, setExpandedWarning] = useState(false);
   const allInsights = generateDailyInsights(leads);
   const { visible, locked, isLocked } = getVisibleRecommendations(
