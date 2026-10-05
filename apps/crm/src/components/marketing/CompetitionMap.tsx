@@ -5,6 +5,7 @@ import { Shield, Loader2 } from "lucide-react";
 import Link from "next/link";
 import type { CompetitionSector } from "@/types/intelligence-hub";
 import { SLATE_HORIZON, WORKDESK_CARD, WORKDESK_LOCKED } from "@/lib/slate-horizon-theme";
+import { usePricingV2Catalog } from "@/components/marketing/pricing-v2-context";
 
 const DEMO_SECTORS: CompetitionSector[] = [
   { name: "Sekčov", district: "Prešov – Sekčov", competitorCount: 4, heatScore: 80, isDemo: true, trend: "rising" },
@@ -27,6 +28,8 @@ interface Props {
 export function CompetitionMap({ isProtocolActive, onUpgrade }: Props) {
   const [sectors, setSectors] = useState<CompetitionSector[]>([]);
   const [loading, setLoading] = useState(true);
+  // W2-D: v2 ponuka neukazuje legacy plán ani cenu (449 €); bez providera ostáva pôvodný text.
+  const isV2 = usePricingV2Catalog() !== null;
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -51,10 +54,12 @@ export function CompetitionMap({ isProtocolActive, onUpgrade }: Props) {
         >
           <Shield size={32} className="mb-3" style={{ color: SLATE_HORIZON.brand }} aria-hidden />
           <p className="mb-1 text-sm font-bold" style={{ color: WORKDESK_LOCKED.titleColor }}>
-            Protocol Authority Required
+            {isV2 ? "Dostupné vo vybraných plánoch" : "Protocol Authority Required"}
           </p>
           <p className="mb-4 max-w-xs text-center text-xs" style={{ color: WORKDESK_LOCKED.subtitleColor }}>
-            Competition Heatmap je dostupná len pre Protocol Authority plán (449€/mes)
+            {isV2
+              ? "Competition Heatmap je súčasťou vybraných plánov."
+              : "Competition Heatmap je dostupná len pre Protocol Authority plán (449€/mes)"}
           </p>
           {onUpgrade ? (
             <button
@@ -63,7 +68,7 @@ export function CompetitionMap({ isProtocolActive, onUpgrade }: Props) {
               className={`min-h-11 rounded-xl px-5 py-2.5 text-xs font-black uppercase transition-all hover:scale-[1.02] ${SLATE_HORIZON.focusRing}`}
               style={{ background: SLATE_HORIZON.brand, color: "#fff" }}
             >
-              Upgradovať na Protocol Authority
+              {isV2 ? "Zobraziť plány" : "Upgradovať na Protocol Authority"}
             </button>
           ) : (
             <Link
