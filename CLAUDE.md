@@ -69,6 +69,23 @@ At the start of every session:
    Check). Respect the VETOES: "too early" timing → Strategic Backlog regardless
    of score; "no customer would pay" → max VALIDATE. Record BUILD/BACKLOG +
    reason in decisions.md.    
+8. **Dôkazová brána — žiadny verdikt bez primárneho vstupu** (founder, 2026-10-02).
+   Hook `.claude/hooks/evidence-gate.sh` toto pravidlo pripomína pri každej GO / verdikt / merge / PROD správe.
+   - Stav („zelené", „PASS", „hotové", „bezpečné") iba z primárneho zdroja overeného V TOMTO turne
+     (CI log, DB agregát, súbor, výstup príkazu). Nie z pamäti, súhrnu ani predpokladu.
+   - Chýba vstup → NEVYMÝŠĽAJ. Najprv over, či naozaj chýba (hľadaj súbor, stav PROD), potom raz povedz:
+     čo presne chýba, v akej forme to poslať a čo founder dostane späť.
+   - Overovacie dáta (gold labels, správne odpovede) robí človek nezávisle. Model ich nikdy nevypĺňa,
+     inak brána meria model voči sebe.
+   - Pred experimentom alebo bránou pre-flight na agregátoch: môže to vôbec prejsť (support, objem)?
+     Ak nie, povedz to vopred s možnosťami A/B/C a odporúčaním, nespúšťaj naslepo.
+   - Opakované GO bez nového vstupu → krátka odpoveď: čo som práve overil, že sa nič nezmenilo, čo treba
+     poslať. Neopakuj celý postup.
+   - PROD, merge a flagy iba na explicitné GO. Merge až keď je CI na aktuálnom heade zelené.
+9. **Postup session v %** (founder, 2026-10-02). Každá odpoveď foundrovi končí riadkom
+   `📊 Session (<cieľ>): NN % (a/b míľnikov) · Architektúra: Y % · ďalší míľnik: …` (formát z #801) z bloku SESSION v `docs/STATUS.md`
+   (`bash .claude/hooks/session-progress.sh print`). % = hotové míľniky / všetky, odškrtnuté iba s dôkazom.
+   Na začiatku novej session nahraď blok SESSION novým cieľom. Vynucuje to Stop hook: odpoveď bez riadku sa zablokuje.
 
 ## Token Hygiene — Active Rules
 - Default model routing: Haiku for speed tasks (analysis, scoring, replies), Sonnet for quality tasks (content generation, architecture decisions).
