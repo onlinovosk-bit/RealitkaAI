@@ -1,5 +1,13 @@
 # Critical Decisions Log
 
+## 2026-10-05 — ONL-AGENTS-FIX-5: opravy nálezov P11 #4 (BUILD, zúžený rozsah)
+
+**GO foundera:** „GO P11 #5" po P11 #4 (nezávislé overenie #814: bez VERIFIED; raw chyby pri nie-JSON záznamoch, medzera v zámku cez Map, medzery v testoch). Opravy idú do toho istého PR (#814 nie je zmergovaný).
+**Constitution v2:** BUILD, čisto defenzívne.
+**Rozhodnutia:** (1) Ledger prijíma **len JSON-tvarované dáta** (nie "čokoľvek, čo prežije structuredClone"); to uzatvára slepé miesto hashu (Map/Set/Date) aj raw chyby z `hashOf`. (2) Neviditeľné znaky sa v texte považujú za prázdno (zoznam je explicitný a pripnutý testom). (3) Objednávka z budúcnosti je neplatný vstup, nie záporný vek; tolerancia 1 h na hodinový posun. (4) Strop 2000 znakov, 20 stop podmienok a 5000 uzlov záznamu sú **politické limity na ohraničenie nákladu, nie štatistika**. (5) Redundantné vrstvy, ktoré sa sabotážou nedali dokázať (tvar `required_per_arm`, U+FEFF, osobitná detekcia cyklu), sa odstránili.
+**Oprava záznamov:** v session-summary z FIX-4 som písal „53 mutácií všetky červené"; P11 #4 našla 15 zelených zo 165 (z toho 10 ekvivalentných); 5 skutočných medzier je teraz pripnutých (rozhodnutie pri rovnakom štítku, `approval_id` z medzier, `order.status = other`, tolerancia `intervention.at`, audit oversized `requested_action`).
+**Stav:** IMPLEMENTED/TESTED, nie VERIFIED (P11 #5). mcp-onlinovo 259/259, control-contract 72/72, crm lib/agents 69/69, prepush-gate PASS.
+
 ## 2026-10-05 — ONL-AGENTS-FIX-4: opravy nálezov P11 #3 (BUILD, zúžený rozsah)
 
 **GO foundera:** „GO FIX 4" po P11 #3 (nezávislé overenie #814: bez VERIFIED; dva vysoké nálezy v ledgeri, stredné a nízke). #814 nebol zmergovaný, opravy idú do toho istého PR.

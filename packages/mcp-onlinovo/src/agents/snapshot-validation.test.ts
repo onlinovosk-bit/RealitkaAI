@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { buildFixtureSnapshot } from "./fixture-data.js";
-import { assertValidSnapshot, parseIsoTimestamp } from "./snapshot-validation.js";
+import { assertOrdersNotFromTheFuture, assertValidSnapshot, parseIsoTimestamp } from "./snapshot-validation.js";
 import { AgentError, type RevenueSnapshot } from "./types.js";
 
 const NOW = new Date("2026-10-02T08:00:00.000Z");
@@ -128,4 +128,37 @@ test("the fraction of a second has at most 9 digits", () => {
   assert.equal(Number.isFinite(parseIsoTimestamp("2026-10-02T08:00:00.123456789Z", "t")), true);
   assert.equal(codeOf(() => parseIsoTimestamp("2026-10-02T08:00:00.1234567890Z", "t")), "INVALID_INPUT");
   assert.equal(codeOf(() => parseIsoTimestamp("2026-10-02T08:00:00.Z", "t")), "INVALID_INPUT");
+});
+
+test("N4: order line sku and family and the product family must be non-empty strings", () => {
+  const withBad = (mutate: (s: RevenueSnapshot) => void) => {
+    const s = fx();
+    mutate(s);
+    return codeOf(() => assertValidSnapshot(s));
+  };
+  for (const bad of ["", 5, null, undefined, {}]) {
+    assert.equal(withBad((s) => { s.orders[0].lines[0].sku = bad as never; }), "INVALID_INPUT", `line sku ${String(bad)}`);
+    assert.equal(withBad((s) => { s.orders[0].lines[0].family = bad as never; }), "INVALID_INPUT", `line family ${String(bad)}`);
+    assert.equal(withBad((s) => { s.products[0].family = bad as never; }), "INVALID_INPUT", `product family ${String(bad)}`);
+  }
+});
+
+test("every order status in the type is accepted, including 'other'", () => {
+  for (const status of ["fulfilled", "unpaid", "cancelled", "uncollected_cod", "other"] as const) {
+    const s = fx();
+    s.orders[0].status = status;
+    assert.equal(codeOf(() => assertValidSnapshot(s)), null, status);
+  }
+});
+
+test("N4: an order dated in the future is refused, one hour of clock skew is tolerated", () => {
+  const at = (ms: number) => {
+    const s = fx();
+    s.orders[0].placed_at = new Date(NOW.getTime() + ms).toISOString();
+    return codeOf(() => assertOrdersNotFromTheFuture(s, NOW.getTime()));
+  };
+  assert.equal(at(0), null);
+  assert.equal(at(3_600_000), null);
+  assert.equal(at(3_600_001), "INVALID_INPUT");
+  assert.equal(at(80 * 365 * 86_400_000), "INVALID_INPUT");
 });

@@ -446,3 +446,11 @@ test("N9: an absent input is an empty input (not an error), a symbol or function
     assert.equal(parse(result).error?.code, "INVALID_INPUT");
   }
 });
+
+test("an oversized requested_action is audited without its content", async () => {
+  const marker = "SECRET-MARKER-" + "x".repeat(200);
+  const { value, lines } = await withAudit(() => handleRevenueOpportunities({ requested_action: marker }, deps()));
+  assert.equal(value.isError, true);
+  const text = lines.map((l) => JSON.stringify(l)).join("\n") + value.content[0].text;
+  assert.equal(text.includes("SECRET-MARKER"), false, "neither the audit trail nor the answer echoes the oversized value");
+});

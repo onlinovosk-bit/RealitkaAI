@@ -63,7 +63,7 @@ test("a proposal is PROPOSED, deterministic and carries a pre-registered plan", 
   assert.equal(a.approval, null);
   assert.equal(a.lock_hash, null);
   assert.equal(a.experiment_id, proposed().experiment_id);
-  assert.match(a.experiment_id, /^exp_[0-9a-f]{12}$/);
+  assert.match(a.experiment_id, /^exp_[0-9a-f]{16}$/);
   assert.notEqual(a.experiment_id, proposed({ treatment: "reminder at day 30" }).experiment_id);
   assert.equal(a.planned_power, "ADEQUATE_POSSIBLE");
   assert.equal(proposed({ audience: { description: "small", size: 800 } }).planned_power, "INDICATIVE_ONLY");
@@ -504,7 +504,7 @@ function forge(over: Record<string, unknown>): ExperimentSpec {
     stop_conditions: base.stop_conditions, allocation: base.allocation, duration_days: base.duration_days,
     min_sample_per_arm: base.min_sample_per_arm, ...over,
   };
-  const id = hashOf(plan).slice(0, 12);
+  const id = hashOf(plan).slice(0, 16);
   return {
     ...base, ...plan,
     experiment_id: `exp_${id}`,
@@ -716,4 +716,145 @@ test("N1: a BLOCKED decision has exactly decision, reason and a text note", () =
     assert.equal(codeOf(() => ledgerWith().update({ ...structuredClone(blocked), decision } as never)), "INVALID_TRANSITION", name);
   }
   assert.equal(codeOf(() => ledgerWith().update(blocked)), null);
+});
+
+// ── P11 #4 findings ───────────────────────────────────────────────────────────────────────────
+
+test("N1/N2: only JSON-shaped data enters the ledger: cycles, BigInt, Map, Set, Date, typed arrays, undefined and NaN are INVALID_INPUT, never a raw error", () => {
+  const p = proposed();
+  const bad: Array<[string, (s: Record<string, any>) => void]> = [
+    ["cycle in audience", (s) => { s.audience.self = s.audience; }],
+    ["BigInt in audience", (s) => { s.audience.x = 1n; }],
+    ["Map in a stop condition", (s) => { s.stop_conditions[0].x = new Map([["a", 1]]); }],
+    ["Set", (s) => { s.audience.x = new Set([1]); }],
+    ["Date", (s) => { s.audience.x = new Date(0); }],
+    ["typed array", (s) => { s.audience.x = new Uint8Array(4); }],
+    ["ArrayBuffer", (s) => { s.audience.x = new ArrayBuffer(4); }],
+    ["undefined value", (s) => { s.audience.x = undefined; }],
+    ["NaN", (s) => { s.audience.x = Number.NaN; }],
+    ["Infinity", (s) => { s.success_threshold.x = Number.POSITIVE_INFINITY; }],
+    ["sparse array", (s) => { s.secondary_metrics = new Array(3); }],
+    ["deep nesting", (s) => { let o: any = s.audience; for (let i = 0; i < 40; i += 1) { o.n = {}; o = o.n; } }],
+    ["too many nodes", (s) => { s.audience.x = Array.from({ length: 6000 }, (_, i) => i); }],
+  ];
+  for (const [name, mutate] of bad) {
+    const rec = structuredClone(p) as Record<string, any>;
+    mutate(rec);
+    assert.equal(codeOf(() => new ExperimentLedger().add(rec as never)), "INVALID_INPUT", `add: ${name}`);
+  }
+  const ledger = new ExperimentLedger();
+  ledger.add(p);
+  const a = approved();
+  for (const [name, mutate] of bad) {
+    const rec = structuredClone(a) as Record<string, any>;
+    mutate(rec);
+    assert.equal(codeOf(() => ledger.update(rec as never)), "INVALID_INPUT", `update: ${name}`);
+  }
+  assert.equal(codeOf(() => ledger.update(a)), null, "the honest record still goes through after all the refusals");
+});
+
+test("N2: a Map swapped in after approval cannot change a locked plan, because a Map never gets in", () => {
+  const p = proposed();
+  const withMap = structuredClone(p) as Record<string, any>;
+  withMap.stop_conditions[0].x = new Map([["a", 1]]);
+  assert.equal(codeOf(() => new ExperimentLedger().add(withMap as never)), "INVALID_INPUT");
+});
+
+test("L1 gap: a decided record with the right label but a changed decision (reason or note) is refused", () => {
+  const { ledger, complete } = ledgerAtComplete();
+  const honest = decideExperiment(complete);
+  for (const over of [{ note: "rewritten" }, { reason: "INCONCLUSIVE" }, { extra: 1 }] as const) {
+    const lie = structuredClone(honest) as Record<string, any>;
+    lie.decision = { ...lie.decision, ...over };
+    assert.equal(codeOf(() => ledger.update(lie as never)), "RESULT_IMMUTABLE", JSON.stringify(over));
+  }
+  assert.equal(codeOf(() => ledger.update(honest)), null);
+});
+
+test("N3: an approval id, an approver, a text or a note made only of white space or invisible characters is blank", () => {
+  const p = proposed();
+  for (const blank of ["", "   ", "\u200B", "\u200D\u2060", "\u00AD", "\u180E", "\uFEFF", " \u200B \t"]) {
+    assert.equal(codeOf(() => approveExperiment(p, { ...APPROVAL, approval_id: blank })), "APPROVAL_REQUIRED", `id ${JSON.stringify(blank)}`);
+    assert.equal(codeOf(() => approveExperiment(p, { ...APPROVAL, approved_by: blank })), "APPROVAL_REQUIRED", `by ${JSON.stringify(blank)}`);
+    assert.equal(codeOf(() => proposeExperiment(proposal({ hypothesis: blank }))), "INVALID_INPUT", `hypothesis ${JSON.stringify(blank)}`);
+    assert.equal(codeOf(() => blockExperiment(p, blank)), "INVALID_INPUT", `note ${JSON.stringify(blank)}`);
+  }
+  const ledger = new ExperimentLedger();
+  ledger.add(p);
+  const blocked = blockExperiment(p, "source gone");
+  assert.equal(codeOf(() => ledger.update({ ...structuredClone(blocked), decision: { ...blocked.decision, note: "\u200B" } } as never)), "INVALID_TRANSITION");
+  assert.doesNotThrow(() => approveExperiment(p, { ...APPROVAL, approval_id: "ap-\u200B-1" }), "invisible characters inside a real id are not blank");
+});
+
+test("N5: a sealed result whose counts or estimates are not numbers is refused as RESULT_IMMUTABLE, not a raw TypeError", () => {
+  const p = proposed();
+  const setup = () => {
+    const ledger = new ExperimentLedger();
+    ledger.add(p);
+    const a = approveExperiment(p, APPROVAL);
+    ledger.update(a);
+    const r = startExperiment(a);
+    ledger.update(r);
+    return { ledger, complete: recordResult(r, arms(700, 77, 116)) };
+  };
+  const shapes: Array<[string, (r: Record<string, any>) => void]> = [
+    ["estimate null", (r) => { r.estimate = null; }],
+    ["estimate NaN field", (r) => { r.estimate.difference = null; }],
+    ["n_control string", (r) => { r.n_control = "700"; }],
+    ["n_control fraction", (r) => { r.n_control = 700.5; }],
+    ["n_control negative", (r) => { r.n_control = -1; }],
+    ["secondary not array", (r) => { r.secondary = null; }],
+    ["secondary entry broken", (r) => { r.secondary = [{ metric: 5 }]; }],
+    ["stop_breached string", (r) => { r.stop_breached = "yes"; }],
+    ["stop_breached direction", (r) => { r.stop_breached = { metric: "a", direction: "sideways", value: 1 }; }],
+    ["primary_metric number", (r) => { r.primary_metric = 5; }],
+    ["n_treatment fraction, class unchanged", (r) => { r.n_treatment = 700.5; }],
+    ["n_control fraction, class unchanged", (r) => { r.n_control = 700.5; }],
+    ["n_control negative with a matching class", (r) => { r.n_control = -1; r.sample_class = "INDICATIVE"; }],
+    ["n_treatment negative with a matching class", (r) => { r.n_treatment = -1; r.sample_class = "INDICATIVE"; }],
+    ["relative_lift text", (r) => { r.estimate.relative_lift = "x"; }],
+    ["secondary relative_lift text", (r) => { r.secondary[0].estimate.relative_lift = "x"; }],
+    ["secondary estimate missing field", (r) => { delete r.secondary[0].estimate.standard_error; }],
+    ["required_per_arm null", (r) => { r.required_per_arm = null; }],
+  ];
+  for (const [name, mutate] of shapes) {
+    const { ledger, complete } = setup();
+    const lie = structuredClone(complete) as Record<string, any>;
+    mutate(lie.result);
+    lie.result_hash = resultSeal(lie as never);
+    assert.equal(codeOf(() => ledger.update(lie as never)), "RESULT_IMMUTABLE", `update: ${name}`);
+    assert.equal(codeOf(() => decideExperiment(lie as never)), "RESULT_IMMUTABLE", `decide: ${name}`);
+  }
+});
+
+test("N6: an approval is read once: a getter cannot pass the check and be stored as something else", () => {
+  const p = proposed();
+  let reads = 0;
+  const sneaky = {
+    approved_by: "founder",
+    approved_at: "2026-10-02T09:00:00.000Z",
+    get approval_id() {
+      reads += 1;
+      return reads === 1 ? "ap-1" : "";
+    },
+  };
+  const a = approveExperiment(p, sneaky as never);
+  assert.equal(a.approval?.approval_id, "ap-1");
+  assert.equal(reads, 1);
+  assert.equal(codeOf(() => approveExperiment(p, { ...APPROVAL, toJSON: () => null } as never)), "APPROVAL_REQUIRED");
+});
+
+test("N8: free text and stop conditions are bounded", () => {
+  assert.doesNotThrow(() => proposeExperiment(proposal({ hypothesis: "h".repeat(2000) })));
+  assert.equal(codeOf(() => proposeExperiment(proposal({ hypothesis: "h".repeat(2001) }))), "INVALID_INPUT");
+  const stop = { metric: "second_purchase_rate_90d", direction: "below" as const, value: -0.05, description: "d" };
+  assert.doesNotThrow(() => proposeExperiment(proposal({ stop_conditions: Array.from({ length: 20 }, () => ({ ...stop })) })));
+  assert.equal(codeOf(() => proposeExperiment(proposal({ stop_conditions: Array.from({ length: 21 }, () => ({ ...stop })) }))), "INVALID_INPUT");
+  assert.equal(codeOf(() => proposeExperiment(proposal({ stop_conditions: [{ ...stop, description: "d".repeat(2001) }] }))), "INVALID_INPUT");
+  assert.equal(codeOf(() => proposeExperiment(proposal({ stop_conditions: [{ ...stop, description: undefined as never }] }))), "INVALID_INPUT");
+  assert.equal(codeOf(() => proposeExperiment(proposal({ stop_conditions: [null as never] }))), "INVALID_INPUT");
+});
+
+test("N7: the experiment id carries 64 bits of the plan hash", () => {
+  assert.match(proposed().experiment_id, /^exp_[0-9a-f]{16}$/);
 });

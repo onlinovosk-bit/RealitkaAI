@@ -281,3 +281,18 @@ test("a snapshot dated up to one hour ahead of now is tolerated (clock skew), fu
   assert.equal(at(60), null);
   assert.equal(at(61), "INVALID_INPUT");
 });
+
+test("N4 through the agent: an order dated far in the future is INVALID_INPUT, not a negative age", () => {
+  const s = oneCustomer(120);
+  s.orders.push({ ...single100("FIX-ORDER-FUT", "FIX-CUS-904", 0), placed_at: "2099-01-01T00:00:00.000Z" });
+  assert.equal(codeOf(() => decide("900", s)), "INVALID_INPUT");
+});
+
+test("an intervention up to one hour ahead is tolerated, further ahead is BLOCKED_INVALID_STATE", () => {
+  const at = (ms: number) =>
+    d900(120, (s) => {
+      s.customers[0].interventions = [{ action: "REPLENISHMENT", at: new Date(NOW.getTime() + ms).toISOString() }];
+    }).policy_status;
+  assert.notEqual(at(3_600_000), "BLOCKED_INVALID_STATE");
+  assert.equal(at(3_600_001), "BLOCKED_INVALID_STATE");
+});

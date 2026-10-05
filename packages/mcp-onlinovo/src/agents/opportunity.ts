@@ -1,6 +1,6 @@
 import { hashOf } from "./canonical.js";
 import { RunBudget } from "./budget.js";
-import { assertValidSnapshot, parseIsoTimestamp } from "./snapshot-validation.js";
+import { assertOrdersNotFromTheFuture, assertValidSnapshot, parseIsoTimestamp } from "./snapshot-validation.js";
 import { policyStatusFor } from "./guard.js";
 import {
   AgentError,
@@ -165,6 +165,7 @@ export function detectOpportunities(
     usage: budget.usage(),
   });
   if (ageHours < -1) throw new AgentError("INVALID_INPUT", "snapshot.as_of is in the future");
+  assertOrdersNotFromTheFuture(snapshot, nowMs);
   if (ageHours > params.max_snapshot_age_hours) return empty("STALE_SNAPSHOT");
   if (snapshot.source === "unconnected") return empty("UNCONNECTED");
 

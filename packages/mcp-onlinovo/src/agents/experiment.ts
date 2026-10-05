@@ -104,8 +104,17 @@ export interface ProposalInput {
   min_sample_per_arm?: number;
 }
 
+/** `trim()` alone leaves U+00AD, U+180E, U+200B-U+200D and U+2060 (`\s` already covers U+FEFF): text made only of those is blank too. */
+const INVISIBLE = /[\s\u00AD\u180E\u200B-\u200D\u2060]/g;
+const isBlank = (text: string): boolean => text.replace(INVISIBLE, "") === "";
+
+/** Free text in a plan or a note. Long enough for any real sentence, short enough to bound the cost of hashing it. */
+const MAX_TEXT_LENGTH = 2000;
+const MAX_STOP_CONDITIONS = 20;
+
 function nonEmpty(value: unknown, field: string): string {
-  if (typeof value !== "string" || value.trim() === "") throw new AgentError("INVALID_INPUT", `${field} is required`);
+  if (typeof value !== "string" || isBlank(value)) throw new AgentError("INVALID_INPUT", `${field} is required`);
+  if (value.length > MAX_TEXT_LENGTH) throw new AgentError("INVALID_INPUT", `${field} is longer than ${MAX_TEXT_LENGTH} characters`);
   return value.trim();
 }
 
@@ -122,7 +131,7 @@ function planIdOf(plan: PlanFields): string {
     hypothesis, control, treatment,
     audience: { description: audience.description, size: audience.size, opportunity_id: audience.opportunity_id },
     primary_metric, secondary_metrics, success_threshold, stop_conditions, allocation, duration_days, min_sample_per_arm,
-  }).slice(0, 12);
+  }).slice(0, 16);
 }
 
 const saltOf = (id: string): string => `salt_${hashOf({ id, kind: "allocation" }).slice(0, 16)}`;
@@ -142,11 +151,39 @@ export function resultSeal(spec: Pick<ExperimentSpec, "experiment_id" | "result"
   return hashOf({ experiment_id: spec.experiment_id, result: spec.result });
 }
 
+const isRecord = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === "object" && !Array.isArray(v);
+const isFiniteNumber = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
+
+function estimateHasShape(e: unknown): boolean {
+  return (
+    isRecord(e) &&
+    ["control_value", "treatment_value", "difference", "standard_error", "ci95_low", "ci95_high"].every((k) => isFiniteNumber(e[k])) &&
+    (e.relative_lift === null || isFiniteNumber(e.relative_lift))
+  );
+}
+
+/** A sealed result is still data: its counts and estimates must be numbers before anything is computed from them. */
+function resultHasShape(r: unknown): r is ExperimentResult {
+  if (!isRecord(r)) return false;
+  const stop = r.stop_breached;
+  return (
+    typeof r.primary_metric === "string" &&
+    estimateHasShape(r.estimate) &&
+    Number.isInteger(r.n_control) && (r.n_control as number) >= 0 &&
+    Number.isInteger(r.n_treatment) && (r.n_treatment as number) >= 0 &&
+    Array.isArray(r.secondary) && r.secondary.every((x) => isRecord(x) && typeof x.metric === "string" && estimateHasShape(x.estimate)) &&
+    (stop === null || (isRecord(stop) && typeof stop.metric === "string" && (stop.direction === "below" || stop.direction === "above") && isFiniteNumber(stop.value)))
+  );
+}
+
 /** Seal intact and sample class derived from the counts and the plan. Returns the derived class. */
 function verifyResult(spec: ExperimentSpec): SampleClass {
   const r = spec.result;
   if (!r || spec.result_hash === null || resultSeal(spec) !== spec.result_hash) {
     throw new AgentError("RESULT_IMMUTABLE", "the recorded result does not match the seal taken when it was recorded");
+  }
+  if (!resultHasShape(r)) {
+    throw new AgentError("RESULT_IMMUTABLE", "the recorded result is malformed: counts and estimates must be finite numbers");
   }
   const sampleClass = classifySample(r.n_control, r.n_treatment, spec.min_sample_per_arm);
   if (r.required_per_arm !== spec.min_sample_per_arm || r.sample_class !== sampleClass) {
@@ -212,8 +249,15 @@ export function proposeExperiment(input: ProposalInput, budget: RunBudget = new 
   if (!input.stop_conditions || input.stop_conditions.length === 0) {
     throw new AgentError("STOP_CONDITION_REQUIRED", "at least one stop condition is required");
   }
+  if (input.stop_conditions.length > MAX_STOP_CONDITIONS) {
+    throw new AgentError("INVALID_INPUT", `at most ${MAX_STOP_CONDITIONS} stop conditions are allowed`);
+  }
   const observed = new Set([input.primary_metric, ...secondary]);
   for (const s of input.stop_conditions) {
+    if (s === null || typeof s !== "object") throw new AgentError("INVALID_INPUT", "a stop condition must be an object");
+    if (typeof s.description !== "string" || s.description.length > MAX_TEXT_LENGTH) {
+      throw new AgentError("INVALID_INPUT", `a stop condition needs a description of at most ${MAX_TEXT_LENGTH} characters`);
+    }
     getKpi(s.metric);
     if (s.direction !== "below" && s.direction !== "above") {
       throw new AgentError("INVALID_INPUT", 'stop condition direction must be "below" or "above"');
@@ -274,8 +318,8 @@ function assertApproval(approval: Approval | null | undefined): asserts approval
   const shaped =
     approval !== null && typeof approval === "object" &&
     Object.keys(approval).sort().join(",") === "approval_id,approved_at,approved_by" &&
-    typeof approval.approval_id === "string" && approval.approval_id.trim() !== "" &&
-    typeof approval.approved_by === "string" && approval.approved_by.trim() !== "";
+    typeof approval.approval_id === "string" && !isBlank(approval.approval_id) &&
+    typeof approval.approved_by === "string" && !isBlank(approval.approved_by);
   let timestamped = false;
   if (shaped) {
     try {
@@ -291,9 +335,16 @@ function assertApproval(approval: Approval | null | undefined): asserts approval
 }
 
 export function approveExperiment(spec: ExperimentSpec, approval: Approval | undefined): ExperimentSpec {
-  assertApproval(approval);
+  // Read once. A getter that answers differently on the second read cannot pass the check and be stored another way.
+  let once: unknown = null;
+  try {
+    once = JSON.parse(JSON.stringify(approval ?? null));
+  } catch {
+    once = null;
+  }
+  assertApproval(once as Approval | null);
   const next = move(spec, "APPROVED");
-  next.approval = { ...approval };
+  next.approval = { ...(once as Approval) };
   next.lock_hash = lockOf(next);
   return next;
 }
@@ -387,6 +438,31 @@ export function blockExperiment(spec: ExperimentSpec, note: string): ExperimentS
 /** A decision record has exactly these fields. */
 const DECISION_KEYS = "decision,note,reason";
 
+// A cycle is not detected on its own: it runs into the depth limit (or the node limit) after at most a few thousand steps.
+const MAX_RECORD_NODES = 5000;
+const MAX_RECORD_DEPTH = 32;
+
+function assertPlainJson(value: unknown, state: { nodes: number }, depth: number): void {
+  state.nodes += 1;
+  if (state.nodes > MAX_RECORD_NODES) throw new AgentError("INVALID_INPUT", "the experiment record is too large");
+  if (depth > MAX_RECORD_DEPTH) throw new AgentError("INVALID_INPUT", "the experiment record is nested too deeply");
+  if (value === null || typeof value === "string" || typeof value === "boolean") return;
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) throw new AgentError("INVALID_INPUT", "a number in the experiment record is not finite");
+    return;
+  }
+  if (typeof value !== "object") throw new AgentError("INVALID_INPUT", "the experiment record holds a value that is not JSON data");
+  const proto = Object.getPrototypeOf(value);
+  if (!Array.isArray(value) && proto !== Object.prototype && proto !== null) {
+    throw new AgentError("INVALID_INPUT", "the experiment record holds an object that is not plain JSON data");
+  }
+  if (Array.isArray(value)) {
+    for (let i = 0; i < value.length; i += 1) assertPlainJson(value[i], state, depth + 1);
+  } else {
+    for (const key of Object.keys(value)) assertPlainJson((value as Record<string, unknown>)[key], state, depth + 1);
+  }
+}
+
 export class ExperimentLedger {
   private readonly items = new Map<string, ExperimentSpec>();
 
@@ -396,11 +472,16 @@ export class ExperimentLedger {
    */
   private static copyOf(spec: unknown): ExperimentSpec {
     if (spec === null || typeof spec !== "object") throw new AgentError("INVALID_INPUT", "an experiment record must be an object");
+    let copy: ExperimentSpec;
     try {
-      return structuredClone(spec) as ExperimentSpec;
+      copy = structuredClone(spec) as ExperimentSpec;
     } catch {
       throw new AgentError("INVALID_INPUT", "an experiment record must be plain data");
     }
+    // `structuredClone` also keeps cycles, BigInt, Map, Set, Date and typed arrays. The hash that locks a plan is
+    // blind to the content of some of them, so only JSON-shaped data is accepted into the ledger.
+    assertPlainJson(copy, { nodes: 0 }, 0);
+    return copy;
   }
 
   /** What `proposeExperiment` builds from this record's plan. The plan is validated by the very same rules. */
@@ -506,7 +587,7 @@ export class ExperimentLedger {
       const d = next.decision;
       if (
         d === null || typeof d !== "object" || Object.keys(d).sort().join(",") !== DECISION_KEYS ||
-        d.decision !== "BLOCKED" || d.reason !== "MISSING_DATA" || typeof d.note !== "string" || d.note.trim() === ""
+        d.decision !== "BLOCKED" || d.reason !== "MISSING_DATA" || typeof d.note !== "string" || isBlank(d.note)
       ) {
         throw new AgentError("INVALID_TRANSITION", "a blocked experiment needs a BLOCKED decision with a note");
       }

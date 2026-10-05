@@ -171,3 +171,14 @@ test("a Symbol or an object as confidence is refused cleanly, never a raw TypeEr
     assert.equal((d as unknown as { allowed: boolean }).allowed, false);
   }
 });
+
+test("a confidence whose own toString throws, a null-prototype object and a throwing Proxy are refused cleanly", () => {
+  const throwing = { toString() { throw new Error("boom"); } };
+  const nullProto = Object.create(null);
+  const proxy = new Proxy({}, { get() { throw new Error("proxy"); } });
+  for (const odd of [throwing, nullProto, proxy]) {
+    let d;
+    assert.doesNotThrow(() => { d = actionVerdict("onlinovo.opportunity.recommend", odd as never, NO_ENV); });
+    assert.equal((d as unknown as { allowed: boolean }).allowed, false);
+  }
+});

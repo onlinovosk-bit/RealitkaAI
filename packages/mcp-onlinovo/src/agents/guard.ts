@@ -74,6 +74,9 @@ export function lookupOnlAction(action: string): OnlAction | null {
   return BY_ACTION.get(action) ?? null;
 }
 
+/** Never stringify an arbitrary value: an object can throw from its own toString. */
+const describe = (value: unknown): string => (typeof value === "number" ? String(value) : typeof value);
+
 const KILL_SWITCH_OFF = new Set(["", "0", "false", "off", "no", "disabled"]);
 
 /**
@@ -141,7 +144,7 @@ export function actionVerdict(
       code: "APPROVAL_REQUIRED",
       rule: "low_confidence_floor",
       tier: meta.tier,
-      message: `Confidence ${String(confidence)} is not a number of at least ${MIN_CONFIDENCE}. A human must decide; no approval path exists in this build.`,
+      message: `Confidence ${describe(confidence)} is not a number of at least ${MIN_CONFIDENCE}. A human must decide; no approval path exists in this build.`,
     };
   }
   return {

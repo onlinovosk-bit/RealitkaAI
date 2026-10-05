@@ -370,3 +370,9 @@ test("a snapshot dated up to one hour ahead of now is tolerated (clock skew), fu
   assert.equal(at(60), null);
   assert.equal(at(61), "INVALID_INPUT");
 });
+
+test("N4 through the agent: an order dated far in the future is INVALID_INPUT, not a negative age", () => {
+  const o = order("FIX-ORDER-FUT", "FIX-CUS-820", 0);
+  o.placed_at = "2099-01-01T00:00:00.000Z";
+  assert.equal(codeOf(() => detectOpportunities(custom([o]), NOW)), "INVALID_INPUT");
+});

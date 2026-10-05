@@ -81,6 +81,8 @@ export function assertValidSnapshot(snapshot: RevenueSnapshot): void {
     if (!Array.isArray(order.lines)) throw new AgentError("INVALID_INPUT", "order.lines must be an array");
     for (const rawLine of order.lines) {
       const line = record(rawLine, "order line");
+      if (typeof line.sku !== "string" || line.sku === "") throw new AgentError("INVALID_INPUT", "order line sku must be a non-empty string");
+      if (typeof line.family !== "string" || line.family === "") throw new AgentError("INVALID_INPUT", "order line family must be a non-empty string");
       finiteNumber(line.units, "order line units", 0);
       finiteNumber(line.net_revenue, "order line net_revenue");
       numberOrNull(line.net_cost, "order line net_cost");
@@ -101,12 +103,27 @@ export function assertValidSnapshot(snapshot: RevenueSnapshot): void {
   for (const raw of snapshot.products) {
     const product = record(raw, "product");
     if (typeof product.sku !== "string" || product.sku === "") throw new AgentError("INVALID_INPUT", "product.sku must be a non-empty string");
+    if (typeof product.family !== "string" || product.family === "") throw new AgentError("INVALID_INPUT", "product.family must be a non-empty string");
     oneOf(product.kind, ["single", "set", "tester"], "product.kind");
     numberOrNull(product.size_ml, "product.size_ml");
     numberOrNull(product.list_price_gross, "product.list_price_gross");
     numberOrNull(product.unit_cost_net, "product.unit_cost_net");
     if (product.in_stock !== null && typeof product.in_stock !== "boolean") {
       throw new AgentError("INVALID_INPUT", "product.in_stock must be true, false or null (UNKNOWN)");
+    }
+  }
+}
+
+const CLOCK_SKEW_MS = 3_600_000;
+
+/**
+ * An order cannot have been placed in the future. One that claims to be (year 2099) would otherwise become a
+ * FACT such as `days_since_last_order = -26386`. One hour of clock skew is tolerated, as for the snapshot itself.
+ */
+export function assertOrdersNotFromTheFuture(snapshot: RevenueSnapshot, nowMs: number): void {
+  for (const order of snapshot.orders) {
+    if (parseIsoTimestamp(order.placed_at, "order.placed_at") > nowMs + CLOCK_SKEW_MS) {
+      throw new AgentError("INVALID_INPUT", "an order is dated in the future");
     }
   }
 }

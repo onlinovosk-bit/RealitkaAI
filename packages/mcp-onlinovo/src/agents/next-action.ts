@@ -1,6 +1,6 @@
 import { RunBudget } from "./budget.js";
 import { assertCustomerRef } from "./pseudonym.js";
-import { assertValidSnapshot, parseIsoTimestamp } from "./snapshot-validation.js";
+import { assertOrdersNotFromTheFuture, assertValidSnapshot, parseIsoTimestamp } from "./snapshot-validation.js";
 import { AgentError, type Confidence, type Evidence, type OrderRecord, type RevenueSnapshot } from "./types.js";
 
 /**
@@ -114,6 +114,7 @@ export function decideNextAction(input: {
   const nowMs = now.getTime();
   const ageHours = (nowMs - parseIsoTimestamp(snapshot.as_of, "snapshot.as_of")) / HOUR;
   if (ageHours < -1) throw new AgentError("INVALID_INPUT", "snapshot.as_of is in the future");
+  assertOrdersNotFromTheFuture(snapshot, nowMs);
   if (ageHours > rules.max_snapshot_age_hours) {
     return blocked(ref, "BLOCKED_STALE", now, rules, [fact("snapshot_age_hours", Math.floor(ageHours))]);
   }
