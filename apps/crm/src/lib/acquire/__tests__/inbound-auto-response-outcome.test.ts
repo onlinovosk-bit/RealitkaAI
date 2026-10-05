@@ -29,6 +29,8 @@ type SupaOpts = {
   leadRead?: { data: unknown; error: unknown };
   sentAt?: string | null;
   enabled?: boolean;
+  /** Flag sa nedá prečítať: chýbajúci stĺpec (`42703`), chýbajúci riadok, alebo NULL. */
+  flagRead?: { data: unknown; error: unknown };
   agencyEmail?: string | null;
   owners?: Array<{ email: string | null; phone: string | null }>;
   updateError?: unknown;
@@ -69,7 +71,12 @@ function makeSupa(opts: SupaOpts = {}) {
               maybeSingle: async () => {
                 if (cols === "name") return { data: { name: "Smolko" }, error: null };
                 if (cols === "auto_response_enabled") {
-                  return { data: { auto_response_enabled: opts.enabled ?? true }, error: null };
+                  return (
+                    opts.flagRead ?? {
+                      data: { auto_response_enabled: opts.enabled ?? true },
+                      error: null,
+                    }
+                  );
                 }
                 return {
                   data: {
@@ -388,5 +395,81 @@ describe("sendInboundAutoResponse — dôvod zlyhania z Resendu", () => {
   it("úspech → ok", async () => {
     resendSendMock.mockResolvedValue({ data: { id: "em_1" }, error: null });
     expect(await sendInboundAutoResponse(payload)).toEqual({ ok: true, fromDomain: "mg.revolis.ai" });
+  });
+});
+
+// ================================================================
+// FAIL-CLOSED: nečitateľný súhlas sa v audite nesmie stratiť
+//
+// `loadAgencyAutoResponseContext` sa kedysi inicializovalo na `true` a testovalo
+// `!== false`, takže chýbajúci stĺpec, chýbajúci riadok agentúry aj NULL
+// znamenali POSIELAJ — e-mail klientovi agentúry bez jej súhlasu. Opt-in default
+// z migrácie 20261001100000 sa tým dal obísť.
+//
+// Preskočenie je teraz správne, ale nestačí: v `platform_events` sa musí dať
+// odlíšiť „agentúra si to vedome vypla" od „súhlas sme nevedeli prečítať".
+// ================================================================
+describe("AUTO-RESPONSE-FAIL-CLOSED — dôvod preskočenia je v audite", () => {
+  beforeEach(() => {
+    emitMock.mockReset();
+    emitMock.mockResolvedValue(undefined);
+    vi.restoreAllMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("chýbajúci stĺpec → skipped_disabled + consent_unknown, nič sa neposiela", async () => {
+    const sendSpy = vi.spyOn(sendModule, "sendInboundAutoResponse");
+
+    await run({ flagRead: { data: null, error: { code: "42703", message: "column missing" } } });
+
+    expect(sendSpy).not.toHaveBeenCalled();
+    const ev = recorded();
+    expect(ev.payload.outcome).toBe("skipped_disabled");
+    expect(ev.payload.reason).toBe("consent_unknown");
+  });
+
+  it("chýbajúci riadok agentúry → consent_unknown", async () => {
+    const sendSpy = vi.spyOn(sendModule, "sendInboundAutoResponse");
+
+    await run({ flagRead: { data: null, error: null } });
+
+    expect(sendSpy).not.toHaveBeenCalled();
+    expect(recorded().payload.reason).toBe("consent_unknown");
+  });
+
+  it("NULL nie je súhlas → consent_unknown", async () => {
+    const sendSpy = vi.spyOn(sendModule, "sendInboundAutoResponse");
+
+    await run({ flagRead: { data: { auto_response_enabled: null }, error: null } });
+
+    expect(sendSpy).not.toHaveBeenCalled();
+    expect(recorded().payload.reason).toBe("consent_unknown");
+  });
+
+  it("vedomé vypnutie → skipped_disabled BEZ consent_unknown", async () => {
+    // Rozlíšenie je celý zmysel toho dôvodu: toto nie je chyba čítania.
+    const sendSpy = vi.spyOn(sendModule, "sendInboundAutoResponse");
+
+    await run({ enabled: false });
+
+    expect(sendSpy).not.toHaveBeenCalled();
+    const ev = recorded();
+    expect(ev.payload.outcome).toBe("skipped_disabled");
+    expect(ev.payload.reason).not.toBe("consent_unknown");
+  });
+
+  it("výslovné true stále posiela", async () => {
+    // Fail-closed nesmie vypnúť agentúru, ktorá súhlas naozaj dala.
+    const sendSpy = vi
+      .spyOn(sendModule, "sendInboundAutoResponse")
+      .mockResolvedValue({ ok: true, messageId: "em_ok", fromDomain: "mg.revolis.ai" } as never);
+
+    await run({ enabled: true });
+
+    expect(sendSpy).toHaveBeenCalledTimes(1);
+    expect(recorded().payload.outcome).toBe("sent");
   });
 });
