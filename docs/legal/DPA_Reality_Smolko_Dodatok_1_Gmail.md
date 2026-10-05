@@ -31,7 +31,7 @@ oprávnením na prístup do účtu. Nie je to právny základ pre údaje záujem
 Prevádzkovateľa (⚠️ DOPLNIŤ po posúdení: predzmluvné opatrenia čl. 6 ods. 1 písm. b) / oprávnený záujem čl. 6 ods. 1 písm. f)).
 
 **3.2.** Prevádzkovateľ môže pokyn kedykoľvek odvolať: v Google účte (Zabezpečenie → Aplikácie s prístupom)
-alebo písomne Sprostredkovateľovi. Sprostredkovateľ po odvolaní do 24 hodín zmaže uložený prístupový token.
+alebo písomne Sprostredkovateľovi. Pri odpojení cez Revolis sa uložený prístupový token zmaže okamžite; pri písomnom odvolaní do 24 hodín.
 
 ## 4. Technické upozornenie, ktoré Prevádzkovateľ berie na vedomie
 
@@ -46,8 +46,9 @@ maže sa po 30 dňoch.
 
 **5.2.** Leady vzniknuté zo správ sa uchovávajú podľa hlavnej Zmluvy (čl. 2.3, čl. 9).
 
-**5.3.** Prístupový token je uložený v zabezpečenej konfigurácii prostredia Sprostredkovateľa, nie v zdrojovom
-kóde ani v protokoloch (Príloha č. 1, časť C).
+**5.3.** Prístupový token je uložený **šifrovane** (AES-256-GCM) v databáze Sprostredkovateľa, šifrovací kľúč je
+oddelený od databázy; token nie je v zdrojovom kóde ani v protokoloch (Príloha č. 1, časti B a C). Po kliknutí na „Odpojiť Gmail"
+sa uložený token okamžite zmaže a odvolá sa aj u Googlu.
 
 ## 6. Ďalší sprostredkovatelia
 
