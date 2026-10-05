@@ -11,6 +11,39 @@
 - `memory/working-style.md`, `memory/decisions.md`, `memory/session-summary.md`.
 ### Ďalší krok
 Founder: kroky 3–5; ja: koncept pre Smolka + DPA dodatok na GO.
+## Session 2026-10-05 (FAIL-OPEN-SWEEP → TRIAL-GATE-CLOSED)
+### Dokončené
+- `docs/reports/2026-10-05-fail-open-sweep.md` (#817): audit piatich vzorov fail-open. Tri nálezy, šesť `!== false` označených ako fail-SAFE.
+- `lib/saas-ops.ts`: zmazaný `const canUseFullApp = true;` („DEV OVERRIDE" v produkcii). Zápis len v `trial`/`active`/`grace`; `limited`/`blocked` → read-only (founder variant A).
+- Nový stav `unknown` + `lookupFailed`: výpadok Stripe sa odlíši od zrušeného predplatného, takže nezamkne platiacich. Jediné zámerné fail-open, s `billingUnverified` a `console.warn`.
+- `types/navigation.ts` + `api/nav/permissions` + `AppSidebar`: `UNKNOWN_TEAM_PERMISSIONS` (všetko false) pre „je v tíme, ale oprávnenia sa nedali prečítať". Solo default nedotknutý.
+- `docs/STATUS.md`: hlavička prepočítaná 53 % → 51 % (nesedela s vlastnou tabuľkou; to číslo som predtým sám publikoval).
+### Rozpracované / Pending
+- #817 nesie audit aj opravu — jedna vetva, jeden PR; je to tá istá téma (fail-open brány), nie mix ako #800.
+- Neoverené: či vzor existuje aj mimo `apps/crm/src` (skripty, edge funkcie). Audit šiel len po `apps/crm/src/**`.
+- Stále bez GO: GOVERNANCE-DEDUP (tri súbežné formáty hlásenia postupu + kadencia pamäte).
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/saas-ops.ts`: brána prístupu prestala byť natvrdo otvorená; stav `unknown`.
+- `apps/crm/src/lib/feature-gating.ts`: `accessLevel` v odpovedi brány + honest správa o read-only.
+- `apps/crm/src/types/navigation.ts`: `UNKNOWN_TEAM_PERMISSIONS`.
+- `apps/crm/src/app/api/nav/permissions/route.ts`, `components/layout/AppSidebar.tsx`: deny pri nečitateľných oprávneniach.
+### Ďalší krok
+Merge #817 (po zelenom CI), potom krok C v Stripe — brána už nie je prázdna, takže ceny budú mať čo vynucovať.
+
+## Session 2026-10-05 (FAIL-OPEN SWEEP)
+### Dokončené
+- `docs/reports/2026-10-05-fail-open-sweep.md`: read-only audit piatich vzorov fail-open v `apps/crm/src/**`. Tri nálezy (P1 `canUseFullApp` natvrdo `true` s komentárom „DEV OVERRIDE"; P2 oprávnenia tímu default povoľujú export kontaktov; P3 `is_active ?? true` latentne) + šesť `!== false`, ktoré sú fail-SAFE a na opravu nie sú.
+- Zistené, že brána prístupu je LIVE (8 API ciest + 7 stránok), takže P1 nie je mŕtvy kód — len dnes nestojí nič, lebo Stripe nie je live (0 z 10 cien).
+### Rozpracované / Pending
+- P1 čaká na founder rozhodnutie: čo po vypršaní trialu — úplné zamknutie, alebo read-only režim? Bez toho sa `canUseFullApp` nedá správne opraviť.
+- P2 oprava (`can_export_contacts: false` v defaulte + odlíšiť „bez tímu" od „čítanie zlyhalo") je pripravená ako návrh, nie aplikovaná.
+- Stále otvorené z 2026-10-02: tri súbežné formáty hlásenia postupu + rozpor o kadencii pamäte (GOVERNANCE-DEDUP, bez GO).
+### Kľúčové súbory zmenené
+- `docs/reports/2026-10-05-fail-open-sweep.md`: nový, celý audit s dôkazmi po riadkoch.
+- `memory/decisions.md`: PREPEND — nálezy a dôvod, prečo P1 nie je incident ale termín.
+### Ďalší krok
+Rozhodnutie o P1 (zamknutie vs. read-only po vypršaní trialu) — až potom oprava `canUseFullApp`, lebo bez toho rozhodnutia sa nedá napísať správny test.
+
 ## Session 2026-10-02 (PLATBY-E2E implementácia)
 ### Dokončené
 - `apps/crm/src/lib/billing-lifecycle.ts` + volanie v `api/billing/webhook/route.ts`: zrušenie, zmena miest a zlyhaná platba sa premietajú do `agencies` (stav zo `subscriptions.retrieve`, nie z udalosti). Chyba → 500, Stripe zopakuje.

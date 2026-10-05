@@ -47,7 +47,7 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-lg font-semibold text-white mb-2">Sub-procesori</h2>
           <p>
-            Supabase, Vercel, OpenAI, Resend, Stripe, Twilio – všetci viazaní SCC zárukami.{" "}
+            Supabase, Vercel, OpenAI, Anthropic, Resend, Stripe, Twilio – všetci viazaní SCC zárukami.{" "}
             <a href="/legal/sub-processors" className="text-cyan-400 hover:underline">
               Úplný zoznam sub-procesorov →
             </a>
