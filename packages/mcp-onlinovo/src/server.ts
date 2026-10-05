@@ -2,12 +2,23 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 
+import { customerNextActionTool, handleCustomerNextAction } from "./tools/customer-next-action.js";
+import { experimentPlanTool, handleExperimentPlan } from "./tools/experiment-plan.js";
 import { handleHealth, healthTool } from "./tools/health.js";
 import { handleOrdersOpen, ordersOpenTool } from "./tools/orders-open.js";
+import { handleRevenueOpportunities, revenueOpportunitiesTool } from "./tools/revenue-opportunities.js";
 import { handleStockLow, stockLowTool } from "./tools/stock-low.js";
 import { handleWriteProduct, writeProductTool } from "./tools/write-stub.js";
 
-const tools = [healthTool, stockLowTool, ordersOpenTool, writeProductTool];
+const tools = [
+  healthTool,
+  stockLowTool,
+  ordersOpenTool,
+  writeProductTool,
+  revenueOpportunitiesTool,
+  customerNextActionTool,
+  experimentPlanTool,
+];
 
 const server = new Server(
   { name: "onlinovo-mcp-server", version: "0.1.0" },
@@ -27,6 +38,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       return handleOrdersOpen(args);
     case "onlinovo_write_product":
       return handleWriteProduct(args);
+    case "onlinovo_revenue_opportunities":
+      return handleRevenueOpportunities(args);
+    case "onlinovo_customer_next_action":
+      return handleCustomerNextAction(args);
+    case "onlinovo_experiment_plan":
+      return handleExperimentPlan(args);
     default:
       return {
         content: [{ type: "text" as const, text: JSON.stringify({ error: `Unknown tool: ${name}` }) }],
