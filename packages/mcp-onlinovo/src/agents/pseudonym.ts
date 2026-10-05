@@ -6,15 +6,45 @@ import { AgentError } from "./types.js";
  * a (future) LLM payload. The guard below is a heuristic, not proof: it catches the obvious shapes,
  * and the real protection is that agents only ever receive pseudonymous references.
  */
-const EMAIL = /[^\s@"',;<>()]+@[^\s@"',;<>()]+\.[^\s@"',;<>()]+/;
+const EMAIL_CHAR = /[^\s@"',;<>()]/;
 const PHONE_INTERNATIONAL = /(?:\+|\b00)\d[\d ()./-]{7,}\d/;
 const PHONE_LOCAL = /\b0\d{2,3}[ /-]?\d{3}[ -]?\d{3}\b/;
+// Slovak number written without the plus: 421 900 123 456.
+const PHONE_SK_NO_PLUS = /\b421[ -]?\d{3}[ -]?\d{3}[ -]?\d{3}\b/;
 const PSEUDONYM_REF = /^(?:cus_[0-9a-f]{16}|FIX-CUS-\d{3,})$/;
 
 const MIN_SALT_LENGTH = 16;
+/**
+ * Linear e-mail scan. The earlier single regex backtracked badly on long strings (200 000 characters held
+ * the event loop for ~50 s). Every '@' is checked once: an allowed character right before it, and a run of
+ * allowed characters after it that contains a '.' with a character on both sides. '@' is excluded from the
+ * class, so the runs never overlap and the total work is linear.
+ */
+function hasEmail(text: string): boolean {
+  let at = text.indexOf("@");
+  while (at !== -1) {
+    if (at > 0 && EMAIL_CHAR.test(text[at - 1])) {
+      let end = at + 1;
+      while (end < text.length && EMAIL_CHAR.test(text[end])) end += 1;
+      const domain = text.slice(at + 1, end);
+      for (let k = 1; k < domain.length - 1; k += 1) if (domain[k] === ".") return true;
+    }
+    at = text.indexOf("@", at + 1);
+  }
+  return false;
+}
+
+/** Folds the cheap obfuscations: full-width characters, "(at)", "[at]", "(dot)", "[dot]". Still a heuristic. */
+function foldObfuscation(text: string): string {
+  return text
+    .normalize("NFKC")
+    .replace(/ {0,3}[[(] {0,3}at {0,3}[\])] {0,3}/gi, "@")
+    .replace(/ {0,3}[[(] {0,3}dot {0,3}[\])] {0,3}/gi, ".");
+}
 
 export function looksLikePii(text: string): boolean {
-  return EMAIL.test(text) || PHONE_INTERNATIONAL.test(text) || PHONE_LOCAL.test(text);
+  const folded = foldObfuscation(text);
+  return hasEmail(folded) || PHONE_INTERNATIONAL.test(folded) || PHONE_LOCAL.test(folded) || PHONE_SK_NO_PLUS.test(folded);
 }
 
 /** Deterministic pseudonym: the same person always maps to the same reference under the same salt. */
