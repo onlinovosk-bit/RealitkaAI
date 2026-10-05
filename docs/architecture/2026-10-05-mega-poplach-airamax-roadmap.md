@@ -181,7 +181,7 @@ Pozn.: z ich tvrdenia „100 kancelárií / 400+ maklérov“ (neoverené) vych�
 
 ### 9.4 Odporúčanie
 **Nie je to otázka „o koľko %“.** Pri jednej cene 199 € nie sme lacnejší v žiadnom pásme a plošná zľava o 10–30 % by nás neposunula pod ich cenu pre malé kancelárie (6,9× a 2,9× rozdiel). Navrhujem:
-1. **Nezľavovať 199 €** pre existujúce kancelárie (founder rozhodol po rozhovoroch; 3 kancelárie platia) — zľava by bola čistá strata marže.
+1. **Nezľavovať 199 €** pre existujúce kancelárie (founder rozhodol po rozhovoroch; platí jediný klient — oprava v §9.5 bod 2) — zľava by bola čistá strata marže.
 2. **Pridať vstupné pásmo „Tím 2–6“ a otestovať 3 varianty na novej kohorte** (30 dní, meria sa trial → platba): **69 €** (parita), **59 €** (−15 % voči nim), **99 €** (prémia, AI bez kreditov). Moje predbežné poradie: parita 69 € ako východisko; −15 % sú **moja heuristika, nie meranie**; viac než −15 % pod konkurenta so širšou ponukou signalizuje „lacné, lebo menej“ a pozýva cenovú vojnu, ktorú bez poznania nákladov nevyhráme.
 3. **Lacnejší cez celkový náklad, nie cez cenník:** migrácia/onboarding **0 €** (oni 299 €, akcia skončila 30. 9.) = pre 4-člennú kanceláriu v 1. roku ≈ 299 € úspory, čo je ≈ 4,3 mesiaca ich predplatného; AI bez kreditov (oni účtujú 0,80 €/kredit).
 4. **Spodná hranica ceny neexistuje, kým nepoznáme náklad AI na kanceláriu.** Ledger ho nenesie (merať sa začalo 24. 9. cez `callOpenAI()`, DEC-20260924-002); do tej doby je marža pri „AI bez kreditov“ **NEMERANÁ**. Návrh: najprv jedným SELECT-om zmerať skutočný mesačný náklad AI na existujúcu kanceláriu, potom stanoviť minimum.
@@ -190,14 +190,16 @@ Rozhodnutie o cenách je výlučne founderovo a zmeny cien/billingu sú na denyl
 
 ### 9.5 Návrh foundera z 5. 10. (cenník + kredity) a prepočet
 
-**Stav:** návrh foundera, **nie schválená zmena**. Ak sa schváli, nahrádza `DEC-20260924-001` (199 € / kancelária, „AI bez kreditov“).
+**Stav (aktualizované po odpovediach foundera 5. 10.):** cenník a kredity sú **odsúhlasené ako smer**, implementácia (pásma, Stripe, UI) čaká na samostatné GO. Jediná kódová zmena, ktorú founder výslovne nariadil: `LISTING_DESCRIPTION` 2 → 1 kredit (hotovo, viď nižšie). Odsúhlasený model nahrádza `DEC-20260924-001` (199 € / kancelária, „AI bez kreditov“) — nahradenie vyplýva z toho, že founder navrhol kredity; výslovne na otázku (e) neodpovedal.
 
 | Pásmo | Ľudia | Cena s DPH | Bez DPH (23 %, overiť) | AIRAmax | Rozdiel (nominálne) | Kredity |
 |---|---|---|---|---|---|---|
 | Start | 1 | 25 € | 20,33 € | 29 € | −13,8 % | 25 |
 | Team | 2–6 | 60 € | 48,78 € | 69 € | −13,0 % | 60 |
-| Kancelária | 7–22 | 149 € | 121,14 € | 179 € | −16,8 % | 120 |
-| Sieť | 23+ | od 349 € | 283,74 € | od 399 € | −12,5 % | 175 |
+| Kancelária | 7–25 | 149 € | 121,14 € | 179 € | −16,8 % | 120 |
+| Sieť | 26+ | od 349 € | 283,74 € | od 399 € | −12,5 % | 175 |
+
+Hranica Siete bola na pokyn foundera posunutá z 23+ na **26+** (Kancelária 7–25). Tým zaniklo okno, v ktorom sme boli +95 % drahší. Pozn.: hranice pásiem (2–6, 7–25, 26+) sú teraz zhodné s hranicami AIRAmax; je to vedomé, lebo zákazník porovnáva rovnaké veľkosti kancelárií.
 
 **Ak sú ich ceny bez DPH** (na snímkach neuvedené), ich ceny s DPH sú ≈ 35,67 / 84,87 / 220,17 / 490,77 € a my sme lacnejší o ≈ 29–32 %, nie o 13–17 %. Pred zverejnením cenníka to treba zistiť z ich VOP/pätičky.
 
@@ -213,15 +215,29 @@ Rozhodnutie o cenách je výlučne founderovo a zmeny cien/billingu sú na denyl
 Dôsledok: za nižšiu cenu dávame o 33–45 % viac kreditov na 1 € plánu. Je to silná ponuka, **ale pri neznámom nákladovom kredite je to nemeraná expozícia** (viď nižšie).
 
 **Čo kontrolor musí povedať nahlas:**
-1. **Okno 23–25 používateľov:** pri našom okraji „Sieť od 23“ platí kancelária s 23–25 ľuďmi 349 €, u nich 179 € (+95 %). U 26+ sme zasa lacnejší (349 vs. 399 €). Riešenie je rozhodnutie foundera (posun hranice Siete, napr. na 26+, alebo vedomé prijatie okna).
-2. **Rozdiel cien vs. dnešných 199 €:** pri pásme Team (60 €) je to −70 % príjmu na kanceláriu. Na vyrovnanie 1 kancelárie za 199 € treba ≈ 3,3 kancelárie za 60 €. Ak by dnešné 3 platiace kancelárie (MRR 597 €) mali ≤ 6 ľudí a prešli na Team, MRR by klesol na 180 €. Ich veľkosti sú **UNVERIFIED**; navrhujem **grandfathering** (ostávajú na dojednanej cene), nie automatickú migráciu.
-3. **Sadzba za akciu je dôležitejšia než cena kreditu.** V `credit-rates.ts`: `LISTING_DESCRIPTION` = **2 kredity**, `AI_ANALYSIS` = 1, `AI_EMAIL` = 1, `LEAD_UNLOCK` = 20. U nich je text inzerátu **1 kredit = 0,80 €**; u nás by popis stál 2 × 0,70 = **1,40 € (+75 %)**. Pri −12,5 % cieli treba sadzbu popisu znížiť na 1 kredit (0,70 €). Rozhodnutie foundera („founder decides which actions spend credits“ — komentár v kóde).
+1. **Okno 23–25 používateľov — VYRIEŠENÉ** posunom Siete na 26+ (founder: OK).
+2. **Rozdiel cien vs. dnešných 199 € a oprava môjho predpokladu.** Founder (5. 10.): platiaci zákazník je **jediný** (referenčný klient): zaplatil **199 € za 1 mesiac + 99 € za onboarding**. Moje predchádzajúce tvrdenie o „3 platiacich kanceláriách / MRR 597 €“ bolo prevzaté z `DEC-20260924-001`, ktoré počítalo podľa **štítku plánu, nie podľa platby** (samotný zápis priznáva, že žiadna kancelária nemá `stripe_subscription_id`). Správne: zaplatené spolu 298 €; či prebieha obnova, nie je známe (UNVERIFIED). Dashboard MRR môže zobrazovať nadsadené číslo — overiť SELECT-om (čaká na GO). Pre jedného klienta: prechod z 199 € na Team 60 € by znamenal −139 €/mes (ak má ≤ 6 ľudí; veľkosť neznáma). Founder súhlasil s **grandfatheringom** (ostáva na dojednanej cene). Na vyrovnanie 1 kancelárie za 199 € treba ≈ 3,3 kancelárie za 60 € — to platí pre nové zákazníkov. Pozn.: onboarding 99 € je v rozpore s `DEC-20260924-001` („onboarding 0 €“); rozhodnúť, ktorý platí pre nových zákazníkov (AIRAmax ho predáva za 299 €).
+3. **Sadzba za akciu je dôležitejšia než cena kreditu — ZMENENÉ.** V `credit-rates.ts` bola `LISTING_DESCRIPTION` = 2 kredity (u nich text inzerátu 1 kredit = 0,80 €; u nás by popis stál 2 × 0,70 = 1,40 €, +75 %). Founder: OK zmeniť → **`LISTING_DESCRIPTION: 1`** (popis = 0,70 €). Test `credit-rates.test.ts` upravený; `src/lib/credits` + `program-tier-pricing.test.ts`: 6 súborov / 40 testov prešlo. Dopad na zákazníka dnes **nulový**: `CREDITS_ENFORCEMENT` je predvolene `off`, kredity sa nestrhávajú, mení sa len zalogované `creditsSpent`. Mutation proof som nerobil (test len pripína konštantu).
 4. **Čo kredity reálne míňajú:** spotreba kreditov je zapojená len v dvoch trasách (`api/ai/listing-content`, `api/ai/property-launch-pack`). `AI_ANALYSIS`, `AI_EMAIL` a `LEAD_UNLOCK` majú sadzbu, ale volajúceho som nenašiel (DEFINED). Naše kredity nekúpia fotky ani video (Studio nemáme), teda „25 kreditov“ pre nás znamená hlavne texty a analýzy.
 5. **Náklad na kredit je NEMERANÝ.** Cena kreditu 0,70 € je zmysluplná len ak náklad (LLM, prípadné API na obrázky) na najdrahšiu akciu, ktorú za kredit predáme, je pod ňou s maržou. Vzorec: marža na kredit = 1 − (náklad na kredit ÷ 0,70 €). Číslo dosadím po zmeraní z `callOpenAI()` telemetrie (DEC-20260924-002). Do tej doby je 0,70 € **predbežné**.
-6. **Doplnkové balíky (top-up) musia sedieť s „hodnotou“.** Dnešné balíky: 50 kr = 49 € (0,98), 150 = 129 € (0,86), 500 = 379 € (0,76), 1 500 = 999 € (0,67). Ak plán uvádza „hodnotu 0,70 €/kredit“, balík za 0,98 € vyzerá nepoctivo. Návrh (heuristika): 50 kr = 35 €, 150 kr = 99 €, 500 kr = 315 €, 1 500 kr = 900 € (0,70 → 0,60 €/kr). Balíky sú samostatné rozhodnutie a Stripe ceny nevytvára agent.
+6. **Balíky kreditov — prepočet podľa pokynu foundera (v balíčkoch o 1–4 centy lacnejší na kredit než AIRAmax).** Ich balíky (nová snímka): **mesačné** balíky 50 kr = 30 € (0,60), 100 = 55 € (0,55), 150 = 78 € (0,52), 200 = 98 € (0,49), 250 = 118 € (0,472), 300 = 135 € (0,45), nad 300 na mieru; bez balíčka 0,80 €/kredit. Kredity zdieľa celá kancelária; 1 kredit = 1 úprava fotky / 1 pôdorys / 1 text inzerátu, AI Video Reel = 4 kredity; keď sa kredity minú, CRM funguje ďalej bez obmedzenia. Ich balíky majú iné veľkosti než naše plány, preto porovnávam s **lineárne interpolovanou cenou ich balíka pri našej veľkosti** (interpolácia je moja, nie ich cenník):
+
+| Náš balík (kr / mes) | Ich cena pri rovnakom počte (interpolácia) | Naša cena | €/kredit (my vs. oni) | Rozdiel na kredit | Zľava voči 0,70 € |
+|---|---|---|---|---|---|
+| 60 | 35,00 € | **34 €** | 0,567 vs. 0,583 | −1,7 c | −19 % |
+| 120 | 64,20 € | **62 €** | 0,517 vs. 0,535 | −1,8 c | −26 % |
+| 180 | 90,00 € | **86 €** | 0,478 vs. 0,500 | −2,2 c | −32 % |
+| 240 | 114,00 € | **108 €** | 0,450 vs. 0,475 | −2,5 c | −36 % |
+| 300 | 135,00 € | **129 €** | 0,430 vs. 0,450 | −2,0 c | −39 % |
+| nad 300 | — | na mieru | — | — | — |
+| bez balíčka | — | **0,70 €/kredit** | 0,70 vs. 0,80 | −10 c | — |
+
+Rozdiel na kredit je vo všetkých balíkoch v rozsahu 1–4 centov (1,7–2,5 c), čiže zadanie je splnené; väčšie hodnoty by znižovali maržu bez znalosti nákladu. Voči ich **najbližšiemu skutočnému** balíku (napr. naše 60 kr za 34 € vs. ich 50 kr za 30 € = 0,60) je rozdiel iný (3,3 c), preto je zrovnateľné len interpolované porovnanie. **Strop nákladu:** pri 50 % marži smie náklad na kredit byť najviac 0,283 € (balík 60) až 0,215 € (balík 300); pre ad hoc kredit 0,35 €. Reálny náklad na kredit je NEMERANÝ. Dnešné balíky v kóde (`TOPUP_PACKAGES`: 50/49 €, 150/129 €, 500/379 €, 1 500/999 €, jednorazové) sú **drahšie než ich** (0,67–0,98 vs. 0,45–0,60 €/kredit) a nahrádzajú sa; ich balíky sú mesačné predplatné, náš dnešný top-up je jednorazový — rozdiel v modeli treba rozhodnúť. Stripe ceny nevytvára agent.
+6b. **Princíp „CRM funguje aj bez kreditov“.** Dnes by pri `CREDITS_ENFORCEMENT=enforce` `spendForAction` odmietol akciu pri nedostatku kreditov. Odporúčanie: odmietať len akcie merané kreditmi (AI texty), nikdy jadro CRM (kontakty, dopyty, úlohy). Rozhodnutie foundera pri zapnutí vynucovania (zapnutie je navyše podmienené ohlásením referenčnému klientovi — komentár v `spend-for-action.ts`).
 7. **Implementácia nie je zmena konštanty.** Nový model je cena podľa pásma počtu ľudí, kým kód je seat model (cena × počet seatov). Potrebné: pásma v `program-tier-pricing.ts`, UI (`/billing`, `/upgrade`, `/porovnanie-programov`), testy, nové Stripe produkty (zakladá founder). Je to billing/ceny = **denylist auto-merge**, vždy founder. Prácu nemeriam (`NEMERANÉ`).
 
-**Rozhodnutia pre foundera (po jednom):** (a) hranica Siete (23+ vs. 26+), (b) sadzba `LISTING_DESCRIPTION` 2 → 1, (c) cena kreditu 0,70 € ako predbežná, (d) grandfathering dnešných kancelárií, (e) či zrušiť „AI bez kreditov“ z `DEC-20260924-001`.
+**Odpovede foundera 5. 10.:** (a) hranica Siete → 26+ ✔, (b) `LISTING_DESCRIPTION` 2 → 1 ✔ (vykonané), (c) cena kreditu 0,70 € ✔ + balíky o 1–4 centy lacnejšie než AIRAmax ✔ (prepočet vyššie), (d) grandfathering ✔, (e) „AI bez kreditov“ — nezodpovedané výslovne, vyplýva z kreditového návrhu.
+**Zostáva rozhodnúť:** onboarding 99 € vs. 0 € pre nových zákazníkov; mesačné balíky vs. jednorazový top-up; politika pri minutí kreditov (6b); GO na implementáciu pásiem (Stripe produkty zakladá founder).
 
 ## 10. Referenčný klient
 

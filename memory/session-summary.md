@@ -2,11 +2,15 @@
 RAU route: GO_REQUIRED (ručne; router zamietnutý) roadmap Revolis.AI
 ### Dokončené
 - Roadmap `docs/architecture/2026-10-05-mega-poplach-airamax-roadmap.md`: gap analýza AIRAmax (zo snímok webu) vs repo, ULTRATHINK, 4 steny + backlog.
+- Cenový ťah (§9): odsúhlasený cenník Start 25 / Team 60 / Kancelária 149 (7–25) / Sieť od 349 (26+), kredity 25/60/120/175 po 0,70 €, balíky o 1–4 c lacnejšie než AIRAmax (interpolované porovnanie).
+- `LISTING_DESCRIPTION` 2 → 1 kredit (`credit-rates.ts` + test; 40/40 testov OK; dopad nulový, `CREDITS_ENFORCEMENT=off`).
+- Oprava faktu: platí jediný klient (199 € + 99 € onboarding); „3 kancelárie / MRR 597 €“ z DEC-20260924-001 bolo podľa štítku plánu.
 ### Rozpracované / Pending
 - Čaká GO na Stenu 0 (Stripe live ceny — krok C robí founder, Vercel limit, trial 14 d bez karty, e2e). Nič nestavané.
 - Neoverené: produkt AIRAmax (vidíme len web), trial flow, WhatsApp, protokol, `revolis-ai` chat, export cez Realvia — treba plný P01.
 ### Kľúčové súbory zmenené
 - `docs/architecture/2026-10-05-mega-poplach-airamax-roadmap.md` (nový); `memory/decisions.md`, `memory/session-summary.md`.
+- `apps/crm/src/lib/credits/credit-rates.ts`, `apps/crm/src/lib/credits/__tests__/credit-rates.test.ts`: `LISTING_DESCRIPTION` 2 → 1.
 ### Ďalší krok
 GO Stena 0 „Môžem predať“.
 
