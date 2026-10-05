@@ -21,6 +21,24 @@ import {
   type AgencyCreditRow,
 } from "@/lib/credits/grant-engine";
 
+/**
+ * Náš koniec nie je pripravený predávať — chýbajúca Stripe cena, chýbajúci
+ * `agency_id`, profil bez e-mailu.
+ *
+ * CHECKOUT-FAILCLOSED-01 — prečo vlastný typ a nie `Error` s textom:
+ * `/api/billing/credits/checkout` chytal každú výnimku a vracal ju ako **400
+ * s `error.message`**. Zákazník v momente platby čítal našu internú poznámku
+ * („Owner Cockpit Stripe price nie je nakonfigurovaný.") a HTTP stav tvrdil,
+ * že chybu urobil on. Rozlišovať to podľa textu chyby by bol pin na
+ * formuláciu; `instanceof` je vlastnosť.
+ */
+export class CheckoutConfigError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "CheckoutConfigError";
+  }
+}
+
 function getStripe(): Stripe | null {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) return null;
@@ -46,7 +64,7 @@ export function requireCheckoutAgencyId(
   const agencyId =
     typeof profile?.agency_id === "string" ? profile.agency_id.trim() : "";
   if (!agencyId) {
-    throw new Error(
+    throw new CheckoutConfigError(
       "Chýba agency_id profilu — seat/top-up checkout nie je možné dokončiť.",
     );
   }
@@ -68,7 +86,7 @@ export function buildSeatCheckoutSessionParams(input: SeatCheckoutInput): {
   const tier = SEAT_TIER_CONFIG[input.seatTier];
   const qty = Math.max(tier.minSeats, input.quantity);
   const priceId = getSeatStripePriceId(input.seatTier);
-  if (!priceId) throw new Error("Seat Stripe price nie je nakonfigurovaný.");
+  if (!priceId) throw new CheckoutConfigError("Seat Stripe price nie je nakonfigurovaný.");
 
   const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
     { price: priceId, quantity: qty },
@@ -89,7 +107,7 @@ export function buildSeatCheckoutSessionParams(input: SeatCheckoutInput): {
   // checkbox, so the two could disagree with no config change at all — and the
   // placeholder would reach Stripe.
   if (cockpitRequested && !isOwnerCockpitPurchasable({ founderEligible })) {
-    throw new Error("Owner Cockpit Stripe price nie je nakonfigurovaný.");
+    throw new CheckoutConfigError("Owner Cockpit Stripe price nie je nakonfigurovaný.");
   }
   if (cockpitPrice) {
     lineItems.push({ price: cockpitPrice, quantity: 1 });
@@ -120,7 +138,7 @@ export async function createSeatCheckoutSession(input: SeatCheckoutInput) {
   const { getCurrentUser, getCurrentProfile } = await loadAuthHelpers();
   const user = await getCurrentUser();
   const profile = await getCurrentProfile();
-  if (!user?.email) throw new Error("Používateľ nemá email.");
+  if (!user?.email) throw new CheckoutConfigError("Používateľ nemá email.");
   const agencyId = requireCheckoutAgencyId(profile);
 
   const { lineItems, metadata, quantity } = buildSeatCheckoutSessionParams(input);
@@ -154,11 +172,11 @@ export async function createTopupCheckoutSession(packageKey: TopupPackageKey) {
   const { getCurrentUser, getCurrentProfile } = await loadAuthHelpers();
   const user = await getCurrentUser();
   const profile = await getCurrentProfile();
-  if (!user?.email) throw new Error("Používateľ nemá email.");
+  if (!user?.email) throw new CheckoutConfigError("Používateľ nemá email.");
   const agencyId = requireCheckoutAgencyId(profile);
 
   const priceId = getTopupStripePriceId(packageKey);
-  if (!priceId) throw new Error("Top-up Stripe price nie je nakonfigurovaný.");
+  if (!priceId) throw new CheckoutConfigError("Top-up Stripe price nie je nakonfigurovaný.");
 
   const appUrl = getAppUrl();
   const session = await stripe.checkout.sessions.create({

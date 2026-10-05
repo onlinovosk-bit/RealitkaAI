@@ -1,13 +1,13 @@
 # Revolis.AI — STAV NA JEDNEJ STRÁNKE
 
 > Aktualizuje sa **po každom uzavretom bloku** (jeden riadok zmeny hore + tabuľka). Čísla sú merané, kde je uvedený dôkaz;
-> **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-05, 07:00 UTC** (STRIPE-STEP-C-PROOF — meranie KYB vo VERIFY, sonda kroku D, oprava DPH tvrdenia v runbooku; % nezmenené, ceny stále 0 z 10).
+> **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-05, 07:00 UTC** (STRIPE-STEP-C-PROOF + CHECKOUT-FAILCLOSED-01 — meranie KYB vo VERIFY, sonda kroku D, oprava DPH tvrdenia v runbooku, čestné stavové kódy na platiacej route; % nezmenené, ceny stále 0 z 10).
 
 ## Celkom: ≈ 52 %  (odhad)
 
 | blok | váha | stav | skóre | čo blokuje |
 |---|---|---|---|---|
-| **Predaj / platby (Stripe)** | 30 | **0 z 10 cien** na live účte · cesta je ale meraná od konca po koniec: VERIFY hlási aj stav účtu (KYB), sonda `stripe-checkout-probe.sh` hlási, čo z toho vidí PROD | **0 %** | **founder: krok C v Stripe** |
+| **Predaj / platby (Stripe)** | 30 | **0 z 10 cien** na live účte · cesta je ale meraná od konca po koniec: VERIFY hlási aj stav účtu (KYB), sonda `stripe-checkout-probe.sh` hlási, čo z toho vidí PROD · platiaca route už nevracia 400 s internou hláškou (503 + text pre človeka) a `/upgrade` je fail-closed | **0 %** | **founder: krok C v Stripe** |
 | Príjem e-mailov → lead | 30 | parser ✅ · diagnostika (#743) ✅ · log schránok + trvalá stopa (#774) ✅ **nasadené a funguje** (23 riadkov od 1. 10. 19:41) · `unknown_source` → BACKLOG (dáta nepodporujú) | 80 % | nič — čaká na reálne portálové maily |
 | AI návrh + odoslanie | 15 | triage ✅ · návrh ✅ · odoslanie ❌ | 67 % | founder: Resend DNS + reply-to + súhlas Smolka |
 | **AI vrstva (BRI, skóre, briefy)** | *(v „Schéma + nasadenie")* | **crony BEŽIA** (meraná stopa v `cron_runs`) · zapisovateľ eventov zapojený a **nasadený** (#786 zmergovaný ako `f6886ed`, PROD deploy READY) · `events` je 0, kým človek neotvorí detail leadu — zámerne som testovací riadok nevložil | 40 % | reálna návšteva detailu leadu (potom `lead_scores` / `bri_history`) |

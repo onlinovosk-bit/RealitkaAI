@@ -1,5 +1,22 @@
 # Critical Decisions Log
 
+## 2026-10-05 — CHECKOUT-FAILCLOSED-01: platiaca route prestala klamať o príčine (BUILD)
+
+**GO foundera:** „GO CHECKOUT-FAILCLOSED-01". Prime Directive: krok C je na founderovi, toto je jediná časť Stripe cesty, ktorú viem uzavrieť bez live kľúča a bez PROD.
+
+**Merané defekty (všetky na `/api/billing/credits/checkout`, jedinej route, čo berie peniaze):**
+1. `catch` vracal `error.message` so stavom **400**. Chýbajúca cockpit cena teda zákazníkovi v momente platby ukázala „Owner Cockpit Stripe price nie je nakonfigurovaný." a HTTP stav tvrdil, že chybu urobil on. To isté pre chýbajúci `agency_id` a profil bez e-mailu.
+2. Nečitateľné telo požiadavky padalo do toho istého catchu.
+3. `upgrade/page.tsx:79` bolo fail-**OPEN**: `config?.cockpit.ownerPurchasable !== false` je pravdivé aj pre `undefined`, a `.catch` pri zlyhaní fetchu nastaví `config` na null — takže zlyhanie načítania konfigurácie add-on PONÚKLO.
+
+**Oprava vlastného predpokladu z plánu:** plán tvrdil, že „cockpit nemá pred-kontrolu". Nie je to pravda — `buildSeatCheckoutSessionParams` ho stráži `isOwnerCockpitPurchasable` s tým istým `founderEligible`, aký vidí UI, a má to tam aj odôvodnené. Chybný bol HTTP koniec, nie brána. Pred-kontrolu na route som najprv pridal a potom **odstránil**: počítala by `quantity` inak než knižnica (tá ju dvíha na `minSeats`), takže by sa obe brány časom rozišli, a pre stavový kód nebola nosná (mutácia ju nezabila).
+
+**Rozhodnutia:** (1) `CheckoutConfigError` ako typ, nie rozlišovanie podľa textu chyby — pin na formuláciu je presne to, čo tento týždeň zlyhalo trikrát. (2) Taxonómia: 400 iba za to, čo pokazil volajúci (nečitateľné telo, neznámy typ); 503 za náš nepripravený koniec; 500 za neočakávané. Zákazník v žiadnom prípade nečíta internú hlášku, tá ide do `console.error`. (3) UI fail-closed: cockpit len pri POTVRDENOM `ownerPurchasable` — nemerané nie je OK, rovnaké pravidlo ako vo VERIFY.
+
+**Dôkaz:** nový `src/app/api/billing/credits/checkout/__tests__/route.test.ts` (10 testov, skutočný `credits-billing` + `program-tier-pricing`, ceny cez env; mockuje sa len Stripe a prihlásenie) + `tests/verification/checkout-failclosed.verification.test.ts` (4 piny). Mutácie: návrat starého catchu (400 + `error.message`) zabil **4** testy; návrat UI na `!== false` zabil pin. Celá crm suita 422 súborov / 2758 testov zelených, 8 zlyhaní sú známe env-gated RLS suity. `npm run build` prešiel. `prepush-gate.sh` PASS.
+
+**NIE je dokázané:** že to zákazník v PROD uvidí inak — bez vytvorených cien sa checkout aj tak nespustí. Zmena je dokázaná na úrovni route a zdroja, nie živej platby.
+
 ## 2026-10-05 — STRIPE-STEP-C-PROOF: founderov ručný Stripe krok sa dá zmerať (BUILD)
 
 **GO foundera:** schválený plán `STRIPE-STEP-C-PROOF`. Prime Directive #1: krok C je jediná vec medzi nami a platiacim klientom; agent ceny nevytvára ani nedostáva live kľúč, takže jediné, čo môže urobiť, je spraviť ten ručný krok nepokaziteľným a merateľným.

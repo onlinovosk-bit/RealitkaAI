@@ -369,8 +369,13 @@ Krok E (`/porovnanie-programov` cleanup, `FUNNEL-PRICING-01`) sa sem **nemieša*
 ## 9. Čo tento kit nerieši
 
 - **Nevytvára ceny.** Ak chýbajú, je to krok C so samostatným GO.
-- **Neopravuje fail-closed správanie cockpitu.** `if (!cockpitPrice) throw` je
-  samostatný code fix, nie súčasť env patchu (`CHECKOUT-ENV-02`).
+- ~~**Neopravuje fail-closed správanie cockpitu.**~~ **Vyriešené 2026-10-05
+  (`CHECKOUT-FAILCLOSED-01`).** Brána v `buildSeatCheckoutSessionParams`
+  zostáva jediná (ten istý predikát, aký vidí UI), ale už nekončí ako **400
+  s internou hláškou v tvári zákazníka**: `CheckoutConfigError` sa na route
+  mapuje na **503** a text odpovede je vždy rovnaká veta pre človeka.
+  `/upgrade` je navyše fail-**closed** — cockpit sa ponúkne len pri
+  potvrdenom `ownerPurchasable`, nie keď sa konfigurácia nenačítala.
 - **Nerieši `metadata.founderCockpit`**, ktorá klame pri fallbacku (§3). Tiež
   samostatný fix.
 - **Nerieši `FUNNEL-PRICING-01`.**

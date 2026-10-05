@@ -1,3 +1,21 @@
+## Session 2026-10-05 (CHECKOUT-FAILCLOSED-01)
+### Dokončené
+- **Platiaca route prestala vracať 400 s internou hláškou.** `/api/billing/credits/checkout` posielal `error.message` zákazníkovi so stavom 400 — chýbajúca cockpit cena mu v momente platby ukázala „Owner Cockpit Stripe price nie je nakonfigurovaný." a stav tvrdil, že chybu urobil on. Nový typ `CheckoutConfigError` (rozlíšenie podľa typu, nie podľa textu) → **503** + jedna veta pre človeka; nečitateľné telo → **400** (vlastný try, nepadá do spoločného catchu); neočakávané → **500**. Interná hláška ide len do `console.error`.
+- **`/upgrade` je fail-CLOSED.** `ownerPurchasable !== false` je pravdivé aj pre `undefined`, takže pri zlyhanom načítaní konfigurácie sa cockpit ponúkol. Teraz `=== true`.
+- **Oprava vlastného predpokladu:** plán tvrdil, že cockpit nemá pred-kontrolu — má ju (`buildSeatCheckoutSessionParams`, ten istý predikát ako UI). Chybný bol HTTP koniec. Duplicitnú bránu na route som pridal a zase odstránil (počítala `quantity` inak než knižnica → drift; mutácia ju nezabila).
+- Dôkaz: 10 nových route testov (skutočný `credits-billing`, mock len Stripe + auth) + 4 piny; mutácia starého catchu zabila 4 testy, mutácia UI zabila pin; celá suita 422/2758 zelených (8 známych env-gated RLS), `npm run build` OK, prepush gate PASS.
+### Rozpracované / Pending
+- Obe steny dňa (STRIPE-STEP-C-PROOF + CHECKOUT-FAILCLOSED-01) sú v **jednom PR #815** — vetva `claude/zealous-albattani-2h32y5` je jediná, kam smiem pushovať, a #815 ešte nebol zmergovaný.
+- Stále na founderovi: krok C (vytvoriť 10 cien v Stripe LIVE) a posledný beh sondy zo svojho stroja.
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/credits-billing.ts`: `CheckoutConfigError` + prehodené throwy.
+- `apps/crm/src/app/api/billing/credits/checkout/route.ts`: taxonómia stavových kódov, žiadne interné hlášky.
+- `apps/crm/src/app/(dashboard)/upgrade/page.tsx`: fail-closed cockpit.
+- `apps/crm/src/app/api/billing/credits/checkout/__tests__/route.test.ts`, `apps/crm/tests/verification/checkout-failclosed.verification.test.ts` (NOVÉ).
+- `docs/ops/2026-09-21-stripe-verify-kit.md` §9, `docs/STATUS.md`.
+### Ďalší krok
+Founder: `bash scripts/ops/stripe-verify-prices.sh --spec` → vytvoriť 10 cien v Stripe LIVE.
+
 ## Session 2026-10-05 (STRIPE-STEP-C-PROOF)
 ### Dokončené
 - **VERIFY meria aj stav účtu (KYB).** `scripts/ops/stripe_verify_prices.py` robí `GET /v1/account` a vypisuje `charges_enabled/details_submitted/payouts_enabled` PRED kontrolou cien. 403 (kľúč bez `Account: Read`) degraduje na `UCET nemerane` a pokračuje — nemerané nie je OK, ale ani chyba. `charges_enabled=false` = exit 1 aj pri desiatich správnych cenách. Nový `--account-fixture` pre offline testy.

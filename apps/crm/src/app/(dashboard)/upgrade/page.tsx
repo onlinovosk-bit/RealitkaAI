@@ -76,7 +76,13 @@ export default function UpgradePage() {
   // `ownerPurchasable` is about whether the price the UI is about to display
   // actually exists in Stripe. Offering the add-on without the second one lets
   // the customer agree to a total that checkout cannot charge.
-  const cockpitPurchasable = config?.cockpit.ownerPurchasable !== false;
+  //
+  // CHECKOUT-FAILCLOSED-01 — `!== false` bolo fail-OPEN: keď sa
+  // `/api/billing/checkout-config` nenačítal, `config` je null (viď `.catch`
+  // vyššie), `undefined !== false` je true a checkbox sa ponúkol. Zlyhanie
+  // načítania konfigurácie teda ponúkalo add-on, ktorý sa nedá kúpiť.
+  // Nemerané nie je OK — pokiaľ to PROD nepotvrdí, cockpit sa neponúka.
+  const cockpitPurchasable = config?.cockpit.ownerPurchasable === true;
   const cockpitEligible =
     (tierMeta?.minSeats ?? 3) <= seatCount && seatCount >= 3 && cockpitPurchasable;
   const cockpitPrice = config?.founderCockpitEligible
