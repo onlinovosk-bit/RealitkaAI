@@ -1,5 +1,44 @@
 # Critical Decisions Log
 
+## [2026-10-05] FAIL-OPEN SWEEP: vzor nie je rozsypaný, je sústredený v jednom riadku
+
+**Prečo audit:** tá istá trieda chyby padla 2026-10-02 trikrát — `staleContacts48h` (#735),
+`pendingContact` (#804), súhlas agentúry (#811). Pri treťom výskyte to prestáva byť náhoda.
+Read-only, `apps/crm/src/**`, päť vzorov (A `!== false`, B `?? true`, C `let x = true`,
+D `catch` → povoliť, E nerozhodnutá tenant brána). Plný výstup:
+`docs/reports/2026-10-05-fail-open-sweep.md`.
+
+**P1 (hlavný nález):** `lib/saas-ops.ts:336` nesie `const canUseFullApp = true;` s komentárom
+„DEV OVERRIDE: Always allow full app access for development/testing". `feature-gating.ts:31` je
+jediná brána prístupu, takže `requireActiveAppAccess()` NEMÔŽE nikdy vyhodiť výnimku —
+`getTrialGraceState()` stav trialu aj grace počíta (vracia `state: "limited"`) a nikto ten
+výsledok na blokovanie nepoužije. Vrstva je LIVE: 8 API ciest cez `requireFeature`
+(team/assign-lead, outreach ×3, integrations ×3, scoring/recalculate) + 7 stránok cez
+`getFeatureGateState`. Plánové príznaky fungujú; **stav predplatného nie**.
+
+**Dopad dnes je 0 €** — `docs/STATUS.md` hlási 0 z 10 cien na live Stripe účte, takže nikoho
+nie je o čo pripraviť. Preto to NIE JE incident, ale **termín**: v deň spustenia kroku C táto
+jedna premenná mlčky zruší paywall. Nie je to úloha popri predaji, je to jeho podmienka.
+
+**P2:** `app/api/nav/permissions/route.ts` vracia `DEFAULT_TEAM_PERMISSIONS` na troch cestách
+(bez tímu, `perms ?? DEFAULT`, `catch`). Ten default má `can_export_contacts: true`, a tabuľka
+`team_member_permissions` v PROD neexistuje → dnes má export kontaktov každý člen tímu.
+Čiastočný fail-open (`can_delete_leads` aj `can_see_colleague_leads` default zamieta).
+Pri osobných údajoch „nevieme, či smie" = „nesmie".
+
+**P3 (latentné):** `lib/auth.ts:137` `is_active ?? true`. Nie je to dnes brána — jediné použitie
+je onboarding nápis v `lib/operator/gather.ts:49`.
+
+**Čo NIE JE na opravu (a je to tiež výsledok):** šesť `!== false` v `realvia-import`,
+`enrichment/engine`, `build-dossier`, `platform-heartbeat`, `leads-store`, `customer-health/scan`
+— default padá na bezpečnejšiu stranu a hodnota je od volajúceho, nie z DB. `credits-billing.ts`
+pri chybe `return false` / `skipped`. Tenant a admin brány `=== true`. `getCurrentAgencyId()` → `null`.
+Kredity sa vôbec neodpočítavajú (`program-tier-pricing.ts:121` to priznáva), takže kreditová brána
+nemôže zlyhať otvorene — neexistuje; to nie je čisté vysvedčenie, je to iná medzera.
+
+**Rozhodnutie, ktoré audit NErobí:** čo sa po vypršaní trialu má stať (úplné zamknutie vs.
+read-only režim) je founder rozhodnutie, nie technické. Preto P1 zostáva nahlásené, neopravené.
+
 ## [2026-10-02] Postup session v % vynútený Stop hookom + oprava rozbitého settings.json
 - **Founder:** „Prečo si zase zabudol uvádzať posun v percentách? … nájdi riešenie, na ktoré nebudeš zabúdať." Pravidlo nebolo nikde uložené. Existovalo len celkové % v `docs/STATUS.md` (#792), nie % session.
 - **Riešenie:** blok `SESSION` v `docs/STATUS.md` (cieľ + míľniky; % = hotové/všetky). `.claude/hooks/session-progress.sh` ho počíta. **Stop hook** zablokuje odpoveď na správu foundera bez riadku `Session …: NN %` a model ho musí doplniť. Webhook turny sa nevynucujú (pracovná dohoda: neodpisovať). Ochrana pred slučkou: `stop_hook_active`. Pravidlo je aj v CLAUDE.md (dir. 9) a WALL-RULES (9).

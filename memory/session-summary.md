@@ -1,3 +1,17 @@
+## Session 2026-10-05 (FAIL-OPEN SWEEP)
+### Dokončené
+- `docs/reports/2026-10-05-fail-open-sweep.md`: read-only audit piatich vzorov fail-open v `apps/crm/src/**`. Tri nálezy (P1 `canUseFullApp` natvrdo `true` s komentárom „DEV OVERRIDE"; P2 oprávnenia tímu default povoľujú export kontaktov; P3 `is_active ?? true` latentne) + šesť `!== false`, ktoré sú fail-SAFE a na opravu nie sú.
+- Zistené, že brána prístupu je LIVE (8 API ciest + 7 stránok), takže P1 nie je mŕtvy kód — len dnes nestojí nič, lebo Stripe nie je live (0 z 10 cien).
+### Rozpracované / Pending
+- P1 čaká na founder rozhodnutie: čo po vypršaní trialu — úplné zamknutie, alebo read-only režim? Bez toho sa `canUseFullApp` nedá správne opraviť.
+- P2 oprava (`can_export_contacts: false` v defaulte + odlíšiť „bez tímu" od „čítanie zlyhalo") je pripravená ako návrh, nie aplikovaná.
+- Stále otvorené z 2026-10-02: tri súbežné formáty hlásenia postupu + rozpor o kadencii pamäte (GOVERNANCE-DEDUP, bez GO).
+### Kľúčové súbory zmenené
+- `docs/reports/2026-10-05-fail-open-sweep.md`: nový, celý audit s dôkazmi po riadkoch.
+- `memory/decisions.md`: PREPEND — nálezy a dôvod, prečo P1 nie je incident ale termín.
+### Ďalší krok
+Rozhodnutie o P1 (zamknutie vs. read-only po vypršaní trialu) — až potom oprava `canUseFullApp`, lebo bez toho rozhodnutia sa nedá napísať správny test.
+
 ## Session 2026-10-02 (prázdna derivovaná vrstva: zápis, honest metriky, opt-in)
 ### Dokončené
 - `apps/crm/src/lib/leads/mark-contacted.ts` (#800, merge `a525faa2`): `leads.last_contact_at` konečne niekto zapisuje — monotonický guard, measured `stamped`, fail-soft. Desať povrchov čítalo stĺpec, ktorý bol NULL na 520 z 520 PROD riadkov.
