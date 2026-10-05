@@ -6316,3 +6316,65 @@ neoverím: či je endpoint registrovaný na `email.opened` a `email.clicked`,
 a či je pre odosielaciu doménu zapnuté Open/Click tracking (v Resende je
 vypnuté by default). `RESEND_WEBHOOK_SECRET` v produkcii **je** — typ
 `sensitive`, target production + preview, overené cez Vercel API.
+
+---
+
+## 2026-10-05 — „2260": príčina nájdená a reprodukovaná (chyba minifikátora SWC)
+
+GO na vyšetrenie. Štyri noci po sebe (2.–5. 10.) zapísal cron `recompute-bri`
+do `cron_runs` vetu, ktorej chýbal presne fragment `, prah pre horúci lead je `,
+takže v denníku stálo nezmyselné „strop bez eventov je 2260" — čísla 22 a 60
+zlepené. Zdroj pritom vracal celú vetu.
+
+### Príčina
+
+**Minifikátor SWC, ktorý Next používa na produkčný build** (`compress: true`).
+Keď skladá zreťazené template literály, v ktorých sú interpolované
+**konštanty známe v čase buildu**, zloží ich do jedného reťazca — a pri tom
+zahodí statický text medzi dvoma takto zloženými interpoláciami.
+
+Reprodukované cez `next/dist/build/swc` (Next 16.2.4), na čistom ASCII, takže
+diakritika ani kódovanie v tom nehrajú rolu:
+
+```
+vstup:   'a' + `b${X}T` + `${Y}c`      X = 22, Y = 60  (const)
+výstup:  "ab2260c"                     ← T zmizlo
+```
+
+### Presné pravidlo, kedy to nastane
+
+| vzor | výsledok |
+|---|---|
+| `` `b${KONST}T` + `${KONST}c` `` | **T zmizne** |
+| `` `b${KONST}T` + 'plain string' `` | v poriadku |
+| `` `b${runtime}T` + `${runtime}c` `` | v poriadku (nedá sa zložiť) |
+| `` `b${KONST}T` + `${runtime}c` `` | v poriadku |
+| tri literály s konštantami | zmiznú **oba** stredné texty |
+
+Podmienka je teda úzka: **obe** strany hranice musia byť konštanty známe
+v čase buildu a oba fragmenty musia byť template literály.
+
+### Rozsah v repe
+
+Prehľadané všetky `.ts`/`.tsx` v `apps/` a `packages/`. 15 miest má tvar
+„literál končiaci textom za `${…}` + ďalší literál". Z nich interpoluje
+konštantu jediné — `rescore-lead.ts:58` (`AI_ASSISTANT_NAME`) — a tam
+nasleduje **obyčajný reťazec**, nie template literál, čo je podľa tabuľky
+vyššie bezpečné. Ostatných 14 interpoluje runtime hodnoty
+(`lead.*`, `input.*`, `ctx.action`, `process.env`…).
+
+**Zasiahnuté miesto bolo teda v repe jediné** a #805 ho odstránilo tým, že
+vetu prepísalo na jeden template literál. Overené: po oprave minifikátor text
+zachová.
+
+### Prečo to štyri dni nikto nevidel
+
+Test kontroloval `toContain('22')` a `toContain('60')`. Reťazec „2260"
+obsahuje oboje. #805 to zmenil na rovnosť plus kontrolu samotnej kontroly.
+
+### Čo si z toho odniesť
+
+Lokálne spustenie funkcie nie je dôkaz o produkcii. `vitest` beží nad
+zdrojom, produkcia nad minifikovaným buildom — a toto je trieda chýb, ktorá
+existuje **iba** v tom druhom. Pri čomkoľvek, čoho výstup je text závislý na
+konštantách, je dôkazom až minifikovaný výstup alebo hodnota z PROD.
