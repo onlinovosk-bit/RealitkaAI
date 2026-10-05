@@ -1,3 +1,22 @@
+## Session 2026-10-05 (FAIL-OPEN-SWEEP → TRIAL-GATE-CLOSED)
+### Dokončené
+- `docs/reports/2026-10-05-fail-open-sweep.md` (#817): audit piatich vzorov fail-open. Tri nálezy, šesť `!== false` označených ako fail-SAFE.
+- `lib/saas-ops.ts`: zmazaný `const canUseFullApp = true;` („DEV OVERRIDE" v produkcii). Zápis len v `trial`/`active`/`grace`; `limited`/`blocked` → read-only (founder variant A).
+- Nový stav `unknown` + `lookupFailed`: výpadok Stripe sa odlíši od zrušeného predplatného, takže nezamkne platiacich. Jediné zámerné fail-open, s `billingUnverified` a `console.warn`.
+- `types/navigation.ts` + `api/nav/permissions` + `AppSidebar`: `UNKNOWN_TEAM_PERMISSIONS` (všetko false) pre „je v tíme, ale oprávnenia sa nedali prečítať". Solo default nedotknutý.
+- `docs/STATUS.md`: hlavička prepočítaná 53 % → 51 % (nesedela s vlastnou tabuľkou; to číslo som predtým sám publikoval).
+### Rozpracované / Pending
+- #817 nesie audit aj opravu — jedna vetva, jeden PR; je to tá istá téma (fail-open brány), nie mix ako #800.
+- Neoverené: či vzor existuje aj mimo `apps/crm/src` (skripty, edge funkcie). Audit šiel len po `apps/crm/src/**`.
+- Stále bez GO: GOVERNANCE-DEDUP (tri súbežné formáty hlásenia postupu + kadencia pamäte).
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/saas-ops.ts`: brána prístupu prestala byť natvrdo otvorená; stav `unknown`.
+- `apps/crm/src/lib/feature-gating.ts`: `accessLevel` v odpovedi brány + honest správa o read-only.
+- `apps/crm/src/types/navigation.ts`: `UNKNOWN_TEAM_PERMISSIONS`.
+- `apps/crm/src/app/api/nav/permissions/route.ts`, `components/layout/AppSidebar.tsx`: deny pri nečitateľných oprávneniach.
+### Ďalší krok
+Merge #817 (po zelenom CI), potom krok C v Stripe — brána už nie je prázdna, takže ceny budú mať čo vynucovať.
+
 ## Session 2026-10-05 (FAIL-OPEN SWEEP)
 ### Dokončené
 - `docs/reports/2026-10-05-fail-open-sweep.md`: read-only audit piatich vzorov fail-open v `apps/crm/src/**`. Tri nálezy (P1 `canUseFullApp` natvrdo `true` s komentárom „DEV OVERRIDE"; P2 oprávnenia tímu default povoľujú export kontaktov; P3 `is_active ?? true` latentne) + šesť `!== false`, ktoré sú fail-SAFE a na opravu nie sú.

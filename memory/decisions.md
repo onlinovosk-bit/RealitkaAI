@@ -1,5 +1,52 @@
 # Critical Decisions Log
 
+## [2026-10-05] TRIAL-GATE-CLOSED (variant A): po vypršaní je účet read-only; `unknown` je jediné zámerné fail-open
+
+**Founder rozhodnutie:** variant A — po vypršaní trialu alebo po zrušení platby klient
+NESTRÁCA prístup k vlastným dátam (číta a exportuje), ale nič nové nevytvorí a
+AI / outreach / integrácie sú zamknuté. Dôvod: odrezať maklérovi jeho vlastnú databázu
+leadov je dôvod odísť, nie zaplatiť.
+
+**Čo odišlo:** `lib/saas-ops.ts` nieslo do produkcie `const canUseFullApp = true;` s komentárom
+„DEV OVERRIDE: Always allow full app access for development/testing". `feature-gating.ts:31` je
+jediná brána prístupu, takže `requireActiveAppAccess()` nemohol nikdy vyhodiť výnimku —
+`getTrialGraceState()` stav trialu aj grace POČÍTAL a nikto ho nepoužil. Prechádza tou bránou
+8 API ciest a 7 stránok. Teraz: zápis len v stavoch `trial`, `active`, `grace`; `limited` a
+`blocked` sú read-only.
+
+**NOVÝ STAV `unknown` — a je to jediné fail-open v tejto bráne, zámerne.**
+`getSafeBillingStatus()` prehltne každú chybu Stripe a vráti `hasSubscription: false`, čo by
+`getTrialGraceState()` preložil na `limited`. Bez odlíšenia by výpadok Stripe alebo chýbajúci
+`STRIPE_SECRET_KEY` prepnul do read-only KAŽDÉHO platiaceho klienta. Preto `lookupFailed` →
+stav `unknown` → plný prístup, plus `billingUnverified` v snapshote a `console.warn`.
+Smer je opačný než pri súhlase agentúry (#811) a vedome: tam neznámy stav znamenal neposlať
+e-mail v mene klienta, tu by znamenal vypnúť nástroj klientovi, ktorý zaplatil. Z dvoch chýb
+je druhá horšia a naša vlastná.
+
+**Dnes je to no-op** — Stripe nie je live, lookup zlyháva, stav je `unknown`. Brána začne
+vynucovať presne v deň, keď Stripe začne odpovedať. To je najlepší možný tvar: nič sa teraz
+nerozbije a krok C nepôjde naživo do prázdnej brány.
+
+**P2:** nový `UNKNOWN_TEAM_PERMISSIONS` (všetko `false`) pre cestu, kde maklér tím MÁ, ale
+riadok oprávnení sa nedá prečítať (tabuľka `team_member_permissions` v PROD neexistuje, takže
+to je dnes vždy). Použité v `api/nav/permissions` aj v `AppSidebar` fallbacku; predtým mal každý
+člen tímu `can_export_contacts: true` nad zdieľanými kontaktmi.
+
+**Opravené vlastné odporúčanie z auditu #817:** navrhoval som dať `can_export_contacts: false`
+priamo do `DEFAULT_TEAM_PERMISSIONS`. To by vzalo SOLO maklérovi export jeho vlastných kontaktov.
+Solo default zostáva nezmenený; opravená je len cesta „je v tíme, ale nevieme, čo smie".
+
+**Dôkaz:** 14 nových testov (`src/lib/__tests__/trial-gate-closed.test.ts`); mutácie —
+DEV OVERRIDE späť 4 padli · `limited` medzi zápisové 2 · `unknown` von 1 · UNKNOWN povolí export 2 ·
+solo default stratí export 1 · baseline 14/14. `prepush-gate` VŠETKO PREŠLO (95 s).
+Širšia suita 1988/2000 prešlo; jediný padajúci test
+(`api/valuation/submit/route.integration.test.ts`) vyžaduje lokálnu ephemeral DB a **padá
+identicky na čistom `main`** — overené v samostatnom worktree, nie odhadnuté.
+
+**Opravené číslo v `docs/STATUS.md`:** hlavička hlásila ≈ 53 %, ale vážený súčet z jej vlastnej
+tabuľky dáva 51 % (0×30 + 80×30 + 67×15 + 70×15 + 70×10 = 5155/100). To číslo som predtým sám
+publikoval. Prepočítané na 51 %; váhy som nemenil — ich zmena je founder rozhodnutie.
+
 ## [2026-10-05] FAIL-OPEN SWEEP: vzor nie je rozsypaný, je sústredený v jednom riadku
 
 **Prečo audit:** tá istá trieda chyby padla 2026-10-02 trikrát — `staleContacts48h` (#735),

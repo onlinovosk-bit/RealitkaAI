@@ -1,16 +1,21 @@
 # Revolis.AI — STAV NA JEDNEJ STRÁNKE
 
 > Aktualizuje sa **po každom uzavretom bloku** (jeden riadok zmeny hore + tabuľka). Čísla sú merané, kde je uvedený dôkaz;
-> **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 20:45 UTC** (opt-in auto-odpoveď: migrácia na PROD + fail-closed #811; `last_contact_at` sa zapisuje #800; „Čakajú na kontakt" prestalo byť celá kniha #804).
+> **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-05, 07:55 UTC** (FAIL-OPEN-SWEEP + TRIAL-GATE-CLOSED variant A: po vypršaní trialu je účet read-only, nie otvorený; hlavička prepočítaná z tabuľky 53 % → 51 %).
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 08:30 UTC** (EVENTS-WIRE + CRON-ALIVE, zatiaľ nezmergované).
 
-## Celkom: ≈ 53 %  (odhad)
+## Celkom: ≈ 51 %  (odhad, prepočítané z tabuľky nižšie)
+
+> Hlavička predtým hlásila ≈ 53 %, ale vážený súčet z jej VLASTNEJ tabuľky dáva
+> 51 % (0×30 + 80×30 + 67×15 + 70×15 + 70×10 = 5155/100). Číslo, ktoré si nesedí
+> so svojím zdrojom, je presne tá chyba, ktorú tento týždeň opravujeme na troch
+> miestach — tak som ho prepočítal. Váhy sú odhad; ich zmena je founder rozhodnutie.
 
 **Session 2026-10-02: 11 z 12 plánovaných blokov = 92 %** (počet blokov, nie vážené hodnotou; zostáva 1: Stripe krok C — founder).
 
 | blok | váha | stav | skóre | čo blokuje |
 |---|---|---|---|---|
-| **Predaj / platby (Stripe)** | 30 | **0 z 10 cien** na live účte | **0 %** | **founder: krok C v Stripe** |
+| **Predaj / platby (Stripe)** | 30 | **0 z 10 cien** na live účte · **brána po vypršaní už vynucuje** (read-only režim, #817 + TRIAL-GATE-CLOSED; predtým `canUseFullApp = true` natvrdo) | **0 %** | **founder: krok C v Stripe** |
 | Príjem e-mailov → lead | 30 | parser ✅ · diagnostika (#743) ✅ · log schránok + trvalá stopa (#774) ✅ **nasadené a funguje** (23 riadkov od 1. 10. 19:41) · `unknown_source` → BACKLOG (dáta nepodporujú) | 80 % | nič — čaká na reálne portálové maily |
 | AI návrh + odoslanie | 15 | triage ✅ · návrh ✅ · odoslanie ❌ · **opt-in tesní**: migrácia `auto_response_enabled DEFAULT false` aplikovaná na PROD 2026-10-02 (overené `information_schema`, 7 agentúr nedotknutých, rollback v `supabase_migrations`) + fail-closed v kóde (#811, čaká na merge) | 67 % | founder: Resend DNS + reply-to + súhlas referenčného klienta |
 | **AI vrstva (BRI, skóre, briefy)** | *(v „Schéma + nasadenie")* | **crony BEŽIA** (meraná stopa v `cron_runs`) · zapisovateľ eventov zapojený (#786) · `events` stále 0 do nasadenia · **`leads.last_contact_at` konečne niekto zapisuje** (#800, bolo 0 z 520 riadkov) · ranný brief už nevydáva počet riadkov za meranie (#804: `pendingContact`/`hotPending` → `number \| null`) | 45 % | merge #786 + nasadenie; prvý reálny kontakt rozbehne stopu |
