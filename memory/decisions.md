@@ -1,5 +1,9 @@
 # Critical Decisions Log
 
+## [2026-10-05] Anthropic na verejnom zozname sub-procesorov (GO SUBPROCESSORS-PAGE)
+- `/legal/sub-processors`: nový riadok Anthropic (USA, AI spracovanie textu, SCC), dátum aktualizácie 5. 10. 2026. `/privacy`: Anthropic doplnený do vety o sprostredkovateľoch. `/legal/changelog` v2.5.
+- Zatvára nález z auditu volaní LLM (verejný zoznam uvádzal iba OpenAI pri ~20 živých volaniach Anthropicu). Oznámenie/dodatok k DPA (tlačivo #818) ostáva na founderovi; míľnik session sa odškrtne až po jeho odoslaní.
+
 ## [2026-10-05] TRIAL-GATE-CLOSED (variant A): po vypršaní je účet read-only; `unknown` je jediné zámerné fail-open
 
 **Founder rozhodnutie:** variant A — po vypršaní trialu alebo po zrušení platby klient
