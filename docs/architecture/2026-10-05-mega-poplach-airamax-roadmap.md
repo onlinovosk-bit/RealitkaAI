@@ -188,6 +188,41 @@ Pozn.: z ich tvrdenia „100 kancelárií / 400+ maklérov“ (neoverené) vych�
 
 Rozhodnutie o cenách je výlučne founderovo a zmeny cien/billingu sú na denylist auto-merge. Tento oddiel je návrh, nie zmena.
 
+### 9.5 Návrh foundera z 5. 10. (cenník + kredity) a prepočet
+
+**Stav:** návrh foundera, **nie schválená zmena**. Ak sa schváli, nahrádza `DEC-20260924-001` (199 € / kancelária, „AI bez kreditov“).
+
+| Pásmo | Ľudia | Cena s DPH | Bez DPH (23 %, overiť) | AIRAmax | Rozdiel (nominálne) | Kredity |
+|---|---|---|---|---|---|---|
+| Start | 1 | 25 € | 20,33 € | 29 € | −13,8 % | 25 |
+| Team | 2–6 | 60 € | 48,78 € | 69 € | −13,0 % | 60 |
+| Kancelária | 7–22 | 149 € | 121,14 € | 179 € | −16,8 % | 120 |
+| Sieť | 23+ | od 349 € | 283,74 € | od 399 € | −12,5 % | 175 |
+
+**Ak sú ich ceny bez DPH** (na snímkach neuvedené), ich ceny s DPH sú ≈ 35,67 / 84,87 / 220,17 / 490,77 € a my sme lacnejší o ≈ 29–32 %, nie o 13–17 %. Pred zverejnením cenníka to treba zistiť z ich VOP/pätičky.
+
+**Prepočet kreditov podľa ich logiky.** Ich logika (odvodená zo snímok): jedna pevná cena kreditu 0,80 € vo všetkých pásmach; „hodnota kreditov v pláne“ = kredity × 0,80 €; podiel hodnoty na cene plánu klesá 55 → 58 → 45 → 30 %. Navrhujem **pevnú cenu kreditu 0,70 €** (−12,5 % voči ich 0,80 €, v súlade s rozdielom cien plánov):
+
+| Pásmo | Kredity | Hodnota pri 0,70 € | Podiel na cene plánu | Ich podiel | Kreditov na 1 € plánu (my vs. oni) |
+|---|---|---|---|---|---|
+| Start | 25 | 17,50 € | 70 % | 55 % | 1,00 vs. 0,69 (+45 %) |
+| Team | 60 | 42,00 € | 70 % | 58 % | 1,00 vs. 0,73 (+38 %) |
+| Kancelária | 120 | 84,00 € | 56 % | 45 % | 0,81 vs. 0,56 (+44 %) |
+| Sieť | 175 | 122,50 € | 35 % | 30 % | 0,50 vs. 0,38 (+33 %) |
+
+Dôsledok: za nižšiu cenu dávame o 33–45 % viac kreditov na 1 € plánu. Je to silná ponuka, **ale pri neznámom nákladovom kredite je to nemeraná expozícia** (viď nižšie).
+
+**Čo kontrolor musí povedať nahlas:**
+1. **Okno 23–25 používateľov:** pri našom okraji „Sieť od 23“ platí kancelária s 23–25 ľuďmi 349 €, u nich 179 € (+95 %). U 26+ sme zasa lacnejší (349 vs. 399 €). Riešenie je rozhodnutie foundera (posun hranice Siete, napr. na 26+, alebo vedomé prijatie okna).
+2. **Rozdiel cien vs. dnešných 199 €:** pri pásme Team (60 €) je to −70 % príjmu na kanceláriu. Na vyrovnanie 1 kancelárie za 199 € treba ≈ 3,3 kancelárie za 60 €. Ak by dnešné 3 platiace kancelárie (MRR 597 €) mali ≤ 6 ľudí a prešli na Team, MRR by klesol na 180 €. Ich veľkosti sú **UNVERIFIED**; navrhujem **grandfathering** (ostávajú na dojednanej cene), nie automatickú migráciu.
+3. **Sadzba za akciu je dôležitejšia než cena kreditu.** V `credit-rates.ts`: `LISTING_DESCRIPTION` = **2 kredity**, `AI_ANALYSIS` = 1, `AI_EMAIL` = 1, `LEAD_UNLOCK` = 20. U nich je text inzerátu **1 kredit = 0,80 €**; u nás by popis stál 2 × 0,70 = **1,40 € (+75 %)**. Pri −12,5 % cieli treba sadzbu popisu znížiť na 1 kredit (0,70 €). Rozhodnutie foundera („founder decides which actions spend credits“ — komentár v kóde).
+4. **Čo kredity reálne míňajú:** spotreba kreditov je zapojená len v dvoch trasách (`api/ai/listing-content`, `api/ai/property-launch-pack`). `AI_ANALYSIS`, `AI_EMAIL` a `LEAD_UNLOCK` majú sadzbu, ale volajúceho som nenašiel (DEFINED). Naše kredity nekúpia fotky ani video (Studio nemáme), teda „25 kreditov“ pre nás znamená hlavne texty a analýzy.
+5. **Náklad na kredit je NEMERANÝ.** Cena kreditu 0,70 € je zmysluplná len ak náklad (LLM, prípadné API na obrázky) na najdrahšiu akciu, ktorú za kredit predáme, je pod ňou s maržou. Vzorec: marža na kredit = 1 − (náklad na kredit ÷ 0,70 €). Číslo dosadím po zmeraní z `callOpenAI()` telemetrie (DEC-20260924-002). Do tej doby je 0,70 € **predbežné**.
+6. **Doplnkové balíky (top-up) musia sedieť s „hodnotou“.** Dnešné balíky: 50 kr = 49 € (0,98), 150 = 129 € (0,86), 500 = 379 € (0,76), 1 500 = 999 € (0,67). Ak plán uvádza „hodnotu 0,70 €/kredit“, balík za 0,98 € vyzerá nepoctivo. Návrh (heuristika): 50 kr = 35 €, 150 kr = 99 €, 500 kr = 315 €, 1 500 kr = 900 € (0,70 → 0,60 €/kr). Balíky sú samostatné rozhodnutie a Stripe ceny nevytvára agent.
+7. **Implementácia nie je zmena konštanty.** Nový model je cena podľa pásma počtu ľudí, kým kód je seat model (cena × počet seatov). Potrebné: pásma v `program-tier-pricing.ts`, UI (`/billing`, `/upgrade`, `/porovnanie-programov`), testy, nové Stripe produkty (zakladá founder). Je to billing/ceny = **denylist auto-merge**, vždy founder. Prácu nemeriam (`NEMERANÉ`).
+
+**Rozhodnutia pre foundera (po jednom):** (a) hranica Siete (23+ vs. 26+), (b) sadzba `LISTING_DESCRIPTION` 2 → 1, (c) cena kreditu 0,70 € ako predbežná, (d) grandfathering dnešných kancelárií, (e) či zrušiť „AI bez kreditov“ z `DEC-20260924-001`.
+
 ## 10. Referenčný klient
 
 V tomto dokumente je referenčný klient zámerne nepomenovaný. Dokument nie je určený na zdieľanie navonok.
