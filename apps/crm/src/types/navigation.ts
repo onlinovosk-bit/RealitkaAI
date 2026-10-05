@@ -62,12 +62,37 @@ export type TeamMemberPermissions = {
   can_edit_colleagues_tasks:  boolean;
 };
 
+/**
+ * Default pre makléra BEZ tímu (solo). Export kontaktov je tu `true` zámerne —
+ * sú to jeho vlastné kontakty a nie je komu ich „preniesť" naprieč tímom.
+ */
 export const DEFAULT_TEAM_PERMISSIONS: TeamMemberPermissions = {
   can_see_team_pipeline:      true,
   can_see_colleague_leads:    false,
   can_see_team_forecast:      false,
   can_see_shared_contacts:    true,
   can_export_contacts:        true,
+  can_delete_leads:           false,
+  can_edit_colleagues_tasks:  false,
+};
+
+/**
+ * Použije sa, keď je maklér ČLENOM TÍMU, ale jeho riadok oprávnení sa nedá
+ * prečítať (chýbajúca tabuľka `team_member_permissions` v PROD, zlyhaný dotaz,
+ * výnimka). To nie je to isté ako „nemá tím": tu existujú kolegovia a zdieľané
+ * kontakty, a my nevieme, čo mu tím povolil.
+ *
+ * Pri osobných údajoch je „nevieme, či smie" totéž ako „nesmie" — preto všetko
+ * `false`. Pred 2026-10-05 sa aj na tejto ceste vracal solo default, takže
+ * každý člen tímu mal `can_export_contacts: true` nad zdieľanými kontaktmi
+ * (viď docs/reports/2026-10-05-fail-open-sweep.md, nález P2).
+ */
+export const UNKNOWN_TEAM_PERMISSIONS: TeamMemberPermissions = {
+  can_see_team_pipeline:      false,
+  can_see_colleague_leads:    false,
+  can_see_team_forecast:      false,
+  can_see_shared_contacts:    false,
+  can_export_contacts:        false,
   can_delete_leads:           false,
   can_edit_colleagues_tasks:  false,
 };

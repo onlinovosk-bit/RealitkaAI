@@ -1,5 +1,94 @@
 # Critical Decisions Log
 
+## [2026-10-05] Anthropic na verejnom zozname sub-procesorov (GO SUBPROCESSORS-PAGE)
+- `/legal/sub-processors`: nový riadok Anthropic (USA, AI spracovanie textu, SCC), dátum aktualizácie 5. 10. 2026. `/privacy`: Anthropic doplnený do vety o sprostredkovateľoch. `/legal/changelog` v2.5.
+- Zatvára nález z auditu volaní LLM (verejný zoznam uvádzal iba OpenAI pri ~20 živých volaniach Anthropicu). Oznámenie/dodatok k DPA (tlačivo #818) ostáva na founderovi; míľnik session sa odškrtne až po jeho odoslaní.
+
+## [2026-10-05] TRIAL-GATE-CLOSED (variant A): po vypršaní je účet read-only; `unknown` je jediné zámerné fail-open
+
+**Founder rozhodnutie:** variant A — po vypršaní trialu alebo po zrušení platby klient
+NESTRÁCA prístup k vlastným dátam (číta a exportuje), ale nič nové nevytvorí a
+AI / outreach / integrácie sú zamknuté. Dôvod: odrezať maklérovi jeho vlastnú databázu
+leadov je dôvod odísť, nie zaplatiť.
+
+**Čo odišlo:** `lib/saas-ops.ts` nieslo do produkcie `const canUseFullApp = true;` s komentárom
+„DEV OVERRIDE: Always allow full app access for development/testing". `feature-gating.ts:31` je
+jediná brána prístupu, takže `requireActiveAppAccess()` nemohol nikdy vyhodiť výnimku —
+`getTrialGraceState()` stav trialu aj grace POČÍTAL a nikto ho nepoužil. Prechádza tou bránou
+8 API ciest a 7 stránok. Teraz: zápis len v stavoch `trial`, `active`, `grace`; `limited` a
+`blocked` sú read-only.
+
+**NOVÝ STAV `unknown` — a je to jediné fail-open v tejto bráne, zámerne.**
+`getSafeBillingStatus()` prehltne každú chybu Stripe a vráti `hasSubscription: false`, čo by
+`getTrialGraceState()` preložil na `limited`. Bez odlíšenia by výpadok Stripe alebo chýbajúci
+`STRIPE_SECRET_KEY` prepnul do read-only KAŽDÉHO platiaceho klienta. Preto `lookupFailed` →
+stav `unknown` → plný prístup, plus `billingUnverified` v snapshote a `console.warn`.
+Smer je opačný než pri súhlase agentúry (#811) a vedome: tam neznámy stav znamenal neposlať
+e-mail v mene klienta, tu by znamenal vypnúť nástroj klientovi, ktorý zaplatil. Z dvoch chýb
+je druhá horšia a naša vlastná.
+
+**Dnes je to no-op** — Stripe nie je live, lookup zlyháva, stav je `unknown`. Brána začne
+vynucovať presne v deň, keď Stripe začne odpovedať. To je najlepší možný tvar: nič sa teraz
+nerozbije a krok C nepôjde naživo do prázdnej brány.
+
+**P2:** nový `UNKNOWN_TEAM_PERMISSIONS` (všetko `false`) pre cestu, kde maklér tím MÁ, ale
+riadok oprávnení sa nedá prečítať (tabuľka `team_member_permissions` v PROD neexistuje, takže
+to je dnes vždy). Použité v `api/nav/permissions` aj v `AppSidebar` fallbacku; predtým mal každý
+člen tímu `can_export_contacts: true` nad zdieľanými kontaktmi.
+
+**Opravené vlastné odporúčanie z auditu #817:** navrhoval som dať `can_export_contacts: false`
+priamo do `DEFAULT_TEAM_PERMISSIONS`. To by vzalo SOLO maklérovi export jeho vlastných kontaktov.
+Solo default zostáva nezmenený; opravená je len cesta „je v tíme, ale nevieme, čo smie".
+
+**Dôkaz:** 14 nových testov (`src/lib/__tests__/trial-gate-closed.test.ts`); mutácie —
+DEV OVERRIDE späť 4 padli · `limited` medzi zápisové 2 · `unknown` von 1 · UNKNOWN povolí export 2 ·
+solo default stratí export 1 · baseline 14/14. `prepush-gate` VŠETKO PREŠLO (95 s).
+Širšia suita 1988/2000 prešlo; jediný padajúci test
+(`api/valuation/submit/route.integration.test.ts`) vyžaduje lokálnu ephemeral DB a **padá
+identicky na čistom `main`** — overené v samostatnom worktree, nie odhadnuté.
+
+**Opravené číslo v `docs/STATUS.md`:** hlavička hlásila ≈ 53 %, ale vážený súčet z jej vlastnej
+tabuľky dáva 51 % (0×30 + 80×30 + 67×15 + 70×15 + 70×10 = 5155/100). To číslo som predtým sám
+publikoval. Prepočítané na 51 %; váhy som nemenil — ich zmena je founder rozhodnutie.
+
+## [2026-10-05] FAIL-OPEN SWEEP: vzor nie je rozsypaný, je sústredený v jednom riadku
+
+**Prečo audit:** tá istá trieda chyby padla 2026-10-02 trikrát — `staleContacts48h` (#735),
+`pendingContact` (#804), súhlas agentúry (#811). Pri treťom výskyte to prestáva byť náhoda.
+Read-only, `apps/crm/src/**`, päť vzorov (A `!== false`, B `?? true`, C `let x = true`,
+D `catch` → povoliť, E nerozhodnutá tenant brána). Plný výstup:
+`docs/reports/2026-10-05-fail-open-sweep.md`.
+
+**P1 (hlavný nález):** `lib/saas-ops.ts:336` nesie `const canUseFullApp = true;` s komentárom
+„DEV OVERRIDE: Always allow full app access for development/testing". `feature-gating.ts:31` je
+jediná brána prístupu, takže `requireActiveAppAccess()` NEMÔŽE nikdy vyhodiť výnimku —
+`getTrialGraceState()` stav trialu aj grace počíta (vracia `state: "limited"`) a nikto ten
+výsledok na blokovanie nepoužije. Vrstva je LIVE: 8 API ciest cez `requireFeature`
+(team/assign-lead, outreach ×3, integrations ×3, scoring/recalculate) + 7 stránok cez
+`getFeatureGateState`. Plánové príznaky fungujú; **stav predplatného nie**.
+
+**Dopad dnes je 0 €** — `docs/STATUS.md` hlási 0 z 10 cien na live Stripe účte, takže nikoho
+nie je o čo pripraviť. Preto to NIE JE incident, ale **termín**: v deň spustenia kroku C táto
+jedna premenná mlčky zruší paywall. Nie je to úloha popri predaji, je to jeho podmienka.
+
+**P2:** `app/api/nav/permissions/route.ts` vracia `DEFAULT_TEAM_PERMISSIONS` na troch cestách
+(bez tímu, `perms ?? DEFAULT`, `catch`). Ten default má `can_export_contacts: true`, a tabuľka
+`team_member_permissions` v PROD neexistuje → dnes má export kontaktov každý člen tímu.
+Čiastočný fail-open (`can_delete_leads` aj `can_see_colleague_leads` default zamieta).
+Pri osobných údajoch „nevieme, či smie" = „nesmie".
+
+**P3 (latentné):** `lib/auth.ts:137` `is_active ?? true`. Nie je to dnes brána — jediné použitie
+je onboarding nápis v `lib/operator/gather.ts:49`.
+
+**Čo NIE JE na opravu (a je to tiež výsledok):** šesť `!== false` v `realvia-import`,
+`enrichment/engine`, `build-dossier`, `platform-heartbeat`, `leads-store`, `customer-health/scan`
+— default padá na bezpečnejšiu stranu a hodnota je od volajúceho, nie z DB. `credits-billing.ts`
+pri chybe `return false` / `skipped`. Tenant a admin brány `=== true`. `getCurrentAgencyId()` → `null`.
+Kredity sa vôbec neodpočítavajú (`program-tier-pricing.ts:121` to priznáva), takže kreditová brána
+nemôže zlyhať otvorene — neexistuje; to nie je čisté vysvedčenie, je to iná medzera.
+
+**Rozhodnutie, ktoré audit NErobí:** čo sa po vypršaní trialu má stať (úplné zamknutie vs.
+read-only režim) je founder rozhodnutie, nie technické. Preto P1 zostáva nahlásené, neopravené.
 ## [2026-10-05] Tlačivo Anthropic → DPA (Reality Smolko) pripravené; backfill beh nespustený
 - **Čo:** `docs/legal/2026-10-05-anthropic-subprocesor-tlacivo.md`: Variant A (oznámenie pri všeobecnom súhlase) a Variant B (dodatok pri konkrétnom súhlase), výber podľa podpísanej rev.2 (PDF u foundera, v repo nie je). Polia na doplnenie sú označené, nič nie je domyslené. Údaje o Anthropicu sú z overenej tabuľky v `demand-contract-v1.md`, kategórie údajov z auditu volaní LLM.
 - **Nález pre advokáta:** ~20 živých funkcií už posiela údaje Anthropicu (vrátane mien), oznámenie teda pokrýva aj existujúce spracúvanie, nielen D1.
