@@ -38,6 +38,10 @@
 **Dôkaz:** `tests/verification/` 86 súborov / 648 testov zelených (z toho 9 nových pre sondu proti **skutočnej** route, 4 nové pre stav účtu, 3 nové pre daňovú zmluvu); `prepush-gate.sh` PASS (typecheck 49/54, lint, BUS, control contract, schema-gap); `--spec` vypisuje 10 cien v nezmenených sumách.
 
 **NIE je dokázané:** že sonda prejde proti živému PROD — `app.revolis.ai:443` je zablokovaný egress politikou tejto session (`connect_rejected`, 403 na CONNECT), takže posledný beh musí spustiť founder zo svojho stroja. Namiesto toho je sonda overená proti **skutočnému telu route** (volá sa `GET` z `checkout-config/route.ts`, nie ručne napísaná odpoveď), čo drží tvar odpovede na sonde. Stav účtu naživo tiež neoverený — live kľúč má iba founder.
+## [2026-10-05] Anthropic na verejnom zozname sub-procesorov (GO SUBPROCESSORS-PAGE)
+- `/legal/sub-processors`: nový riadok Anthropic (USA, AI spracovanie textu, SCC), dátum aktualizácie 5. 10. 2026. `/privacy`: Anthropic doplnený do vety o sprostredkovateľoch. `/legal/changelog` v2.5.
+- Zatvára nález z auditu volaní LLM (verejný zoznam uvádzal iba OpenAI pri ~20 živých volaniach Anthropicu). Oznámenie/dodatok k DPA (tlačivo #818) ostáva na founderovi; míľnik session sa odškrtne až po jeho odoslaní.
+
 ## [2026-10-05] TRIAL-GATE-CLOSED (variant A): po vypršaní je účet read-only; `unknown` je jediné zámerné fail-open
 
 **Founder rozhodnutie:** variant A — po vypršaní trialu alebo po zrušení platby klient
