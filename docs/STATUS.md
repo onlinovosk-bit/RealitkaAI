@@ -13,6 +13,8 @@
 |---|---|---|---|---|
 | **Predaj / platby (Stripe)** | 30 | **0 z 10 cien** na live účte | **0 %** | **founder: krok C v Stripe** |
 | Príjem e-mailov → lead | 30 | parser ✅ · diagnostika (#743) ✅ · log schránok + trvalá stopa (#774) ✅ **nasadené a funguje** (23 riadkov od 1. 10. 19:41) · `unknown_source` → BACKLOG (dáta nepodporujú) · **Gmail connect** (GMAIL-CONNECT): kód + šifrovaný token + karta Integrácie hotové, **neaktivované** — čaká na Google client, súhlas majiteľa a kľúče | 80 % | nič — čaká na reálne portálové maily |
+| **Predaj / platby (Stripe)** | 30 | **0 z 10 cien** na live účte · kód: zrušenie / zmena miest / zlyhaná platba sa premieta do `agencies` (**TESTED**, 15 testov + mutation proof 9/9, PLATBY-E2E; PROD neoverené) · chýbajúci `STRIPE_WEBHOOK_SECRET` sa hlási | **0 %** | **founder: krok C v Stripe + `STRIPE_WEBHOOK_SECRET` + endpoint v Stripe** |
+| Príjem e-mailov → lead | 30 | parser ✅ · diagnostika (#743) ✅ · log schránok + trvalá stopa (#774) ✅ **nasadené a funguje** (23 riadkov od 1. 10. 19:41) · `unknown_source` → BACKLOG (dáta nepodporujú) | 80 % | nič — čaká na reálne portálové maily |
 | AI návrh + odoslanie | 15 | triage ✅ · návrh ✅ · odoslanie ❌ · **opt-in tesní**: migrácia `auto_response_enabled DEFAULT false` aplikovaná na PROD 2026-10-02 (overené `information_schema`, 7 agentúr nedotknutých, rollback v `supabase_migrations`) + fail-closed v kóde (#811, čaká na merge) | 67 % | founder: Resend DNS + reply-to + súhlas referenčného klienta |
 | **AI vrstva (BRI, skóre, briefy)** | *(v „Schéma + nasadenie")* | **crony BEŽIA** (meraná stopa v `cron_runs`) · zapisovateľ eventov zapojený (#786) · `events` stále 0 do nasadenia · **`leads.last_contact_at` konečne niekto zapisuje** (#800, bolo 0 z 520 riadkov) · ranný brief už nevydáva počet riadkov za meranie (#804: `pendingContact`/`hotPending` → `number \| null`) | 45 % | merge #786 + nasadenie; prvý reálny kontakt rozbehne stopu |
 | Tenantová izolácia | 15 | 28 z 40 ciest zavretých | 70 % | nič naliehavé (zoznam nižšie) |
@@ -48,7 +50,7 @@ Cieľ: Demand OS — D1 + D4 v PROD, merané
 <!-- SESSION:END -->
 
 ## Čo potrebujem od teba (zoradené podľa dopadu)
-1. **Stripe krok C** — vytvoriť ceny: `bash scripts/ops/stripe-verify-prices.sh --spec` → potom pošli výstup `…verify-prices.sh`; overenie spravím ja. *(+30 bodov, jediný krok, ktorý odblokuje platiaceho klienta)*
+1. **Stripe krok C + webhook** — vytvoriť ceny (a vo Vercel nastaviť `STRIPE_WEBHOOK_SECRET`; v Stripe overiť endpoint `/api/billing/webhook` s udalosťami `checkout.session.completed`, `customer.subscription.created/updated/deleted`, `invoice.paid`, `invoice.payment_failed`): `bash scripts/ops/stripe-verify-prices.sh --spec` → potom pošli výstup `…verify-prices.sh`; overenie spravím ja. *(+30 bodov, jediný krok, ktorý odblokuje platiaceho klienta)*
 2. ~~Merge #774~~ ✅ hotovo (`3dc3119`) a **nasadené v produkcii** (overené: deployment READY, 23 riadkov v `inbound_mail_outcomes`, nové `to_agency_mailbox` v logoch, 0× `mail_outcome_write_failed`).
 3. **Vercel**: Pro **netreba kvôli cronom** — tie bežia, dokázané dvoma riadkami v `cron_runs`
    (`recompute-bri` 03:36:49, `morning-brief` 06:30:30, obe 2026-10-02, každý vo svojom okne s posunom 30–57 min).
