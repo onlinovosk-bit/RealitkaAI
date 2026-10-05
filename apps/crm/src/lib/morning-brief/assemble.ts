@@ -52,11 +52,19 @@ export async function generateAndDeliverBrief(
   if (!generated.aiText?.trim()) {
     generated = {
       ...generated,
-      aiText: buildDeliveryFallbackText(gathered, gathered.stats.hotPending),
-      subjectLine: `Ranný brief — ${gathered.stats.hotPending} HOT leadov`,
+      // These four read `stats.hotLeads`, not `stats.hotPending`. hotPending is
+      // now "hot leads with no recorded contact" and can be null; the subject
+      // line, the fallback body and the urgency all mean "how many hot leads
+      // are there", which is hotLeads. Before this they were the same number
+      // under two names, so the swap changes no delivered value today.
+      aiText: buildDeliveryFallbackText(gathered, gathered.stats.hotLeads),
+      subjectLine: `Ranný brief — ${gathered.stats.hotLeads} HOT leadov`,
       actionVerb: 'Kontaktujte',
-      actionText: `Máte ${gathered.stats.pendingContact} leadov čakajúcich na kontakt.`,
-      urgency: gathered.stats.hotPending > 0 ? 'high' as const : 'medium' as const,
+      // No fabricated count when the contact trail does not exist yet.
+      actionText: gathered.stats.pendingContact === null
+        ? `Máte ${gathered.stats.activeLeads} aktívnych leadov, ${gathered.stats.hotLeads} z nich HOT.`
+        : `Máte ${gathered.stats.pendingContact} leadov bez zaznamenaného kontaktu.`,
+      urgency: gathered.stats.hotLeads > 0 ? 'high' as const : 'medium' as const,
       contentSource: 'fallback',
       fallbackReason: 'delivery_fallback',
     }
@@ -75,7 +83,10 @@ export async function generateAndDeliverBrief(
     agencyId: ownerProfile?.agency_id ?? null,
     profileId,
     subjectPreview: generated.subjectLine?.slice(0, 200) ?? null,
-    meta: { variant, urgency: generated.urgency, hot_leads: gathered.stats.hotPending },
+    // `hot_leads` means the hot-lead count, so it reads stats.hotLeads. It used
+    // to read hotPending, which was the same value under a misleading name and
+    // is now a different, nullable metric.
+    meta: { variant, urgency: generated.urgency, hot_leads: gathered.stats.hotLeads },
   });
 
   const isOwner =

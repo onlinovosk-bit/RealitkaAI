@@ -1,5 +1,97 @@
 # Critical Decisions Log
 
+## 2026-10-05 — ONL-AGENTS-FIX: opravy nálezov P11 (BUILD, zúžený rozsah)
+
+**GO foundera:** „GO FIX" po P11 (nezávislé overenie #807: bez VERIFIED, 5 stredných nálezov F1–F5, F12 a 7 medzier v testoch). #807 bol medzitým zmergovaný, oprava je nový PR z `main`.
+**Constitution v2:** BUILD, čisto defenzívne (žiadny nový feature, žiadna zákaznícka akcia); dôvod: tvrdenie „INDICATIVE vzorka nikdy KEEP" a „agent nič neposiela" platilo len za priaznivých vstupov.
+**Rozhodnutia:** (1) `MIN_ADEQUATE_SAMPLE_PER_ARM = 100` je **politický prah, nie štatistika** — plán ho môže len zvýšiť; zmena čísla je rozhodnutie foundera. (2) Kill switch je fail-closed (zapnutý pri každej hodnote okrem explicitne vypnutej). (3) Pečať výsledku experimentu (`result_hash`) chráni pred úpravou, nie pred útočníkom s prístupom k celému objektu; reálna ochrana príde s perzistenciou (BLOCKED). (4) `resolveAuthority` s `NaN` confidence prejde ako AUTONOMOUS — **neopravené, navrhnuté** (jadro governance, vlastné GO).
+**Oprava záznamu:** „mutation proof na každý guard" (záznam z #807) bolo prehnané; platí po tomto PR (24 sabotáží, 23 červených, 1 ekvivalentná).
+**Stav:** IMPLEMENTED/TESTED, nie VERIFIED (P11 znova). mcp-onlinovo 198/198, control-contract 72/72, crm lib/agents 69/69, prepush-gate PASS.
+
+## 2026-10-02 — RAU Leverage track (L01–L05): REJECT podľa skóre, founder GO pred kontrolou → read-only prompty (BUILD zúžený)
+
+**Brána Ústavy v2 (12 otázok):** Q1 NIE → VETO; Q2, Q3 nie; Q4–Q6 len nepriamo; Q7 nižšie ROI ako krok C; Q8 interný track áno, externý predaj príliš skoro;
+Q9 áno; Q10 pasce Technology Bias a Feature Trap; Q11, Q12 nie. **Skóre (odhad) ≈ 2 z 12 → REJECT** (pod 6). Founder dal „GO!" skôr, než videl toto skóre.
+**Rozhodnutie: BUILD zúžený na read-only prompty a dokumentáciu**, ktoré sa zmažú jedným revertom; router, runtime, DB, UI a predaj navonok BACKLOG.
+**Potvrdenie prekročenia čaká na foundera.**
+
+**Pokus zabiť plán:** v repe 0 zásahov na „Knowledge DNA", „Leverage Stack/Engine", „Asset Converter/Compounder", „Naval" (tvrdenie „toto sme už riešili" nie je zapísané);
+„Execution Engine" = samotné RAU (duplicita → nestavané); „Asset Compounder" prekrýva P22/P23 a posúdenie Agent Factory (prah prekročený → Ústava) → L05 len navrhuje.
+Zdroj je marketingový príspevok s neoverenými atribúciami; v jeho druhom prompte je úloha skopírovaná z prvého.
+
+**Čo vzniklo (PR #803):** `docs/rau/leverage/` L01–L05 + README; backlog položka `leverage-external-productization` (veto Q1/Q8; odomkne ju platiaci zákazník Revolisu
+a L01–L04 spustené founderom s rozhodnutím zapísaným tu); odsek v `.claude/skills/rau/SKILL.md`; §13 v `docs/rau/RAU-v1.0.md`; test `rau-leverage.verification.test.ts`;
+správa `docs/reports/2026-10-02-rau-leverage-blind-run.md`. Router sa nemenil, len dáta backlogu.
+
+**Dôkaz:** Testy: `rau-leverage.verification.test.ts` 49 testov (štruktúra, ochranné pravidlá v správnych sekciách, backlog + tabuľka 29 fráz, pravdivosť README/skillu/§13/decisions); RAU suita 152 nezmenená (spolu 201 zelených); lint a typecheck ratchet PASS. Mutačný dôkaz: 76 mutácií v kópii stromu (prompty, backlog regexy, README, spec, skill, report, decisions) → 76/76 zabitých po jednej skutočnej oprave testu (L04 „Číslo odhadni" prežilo) a po oprave piatich mojich zastaraných mutačných vzorov; 45 mutácií reviewera sa na nový test nespúšťalo (ich vzory sú na starý text), pokryté sú ich triedy. Slepé behy modelu (LLM-sudca, 6 + 6 behov, nie nezaujaté): beh 1 (prvý, bez opráv) 5 vymyslených alebo zle prečítaných tvrdení,
+~14 neoznačených viet, 1 porušenie pravidla (L04: AUTORITA ako konverzia); beh 2 (po opravách, nové výňatky) 2 a ~2. Nezávislý adverzariálny review: SHIP WITH FIXES (0× P0, 8× P1, všetky P1 opravené).
+
+**NIE je dokázané:** že L01–L05 pomôžu founderovi rozhodnúť (NEMERANÉ — jediný test je jeho prvý beh L01 a zápis, či z neho vzniklo rozhodnutie); že posledná dávka opráv po behu 2
+nič nepokazila (nespustené); triáda „know-how + páka + zodpovednosť" je z pamäte modelu; poslednú snímku príspevku som nevidel.
+
+**Moje chyby, opravené:** (1) prvá verzia testov nechala prežiť 44 z 45 nezávislých mutácií a README tvrdilo „TESTED ochranné pravidlá" — test prepísaný na parsovanie sekcií;
+(2) §13 odkazoval na záznam v tomto súbore skôr, než existoval — je to tento záznam; (3) preklep v regexe (`speniaz` namiesto `spenaz`) odhalil až pridaný prípad „speňažiť";
+(4) „skóre sa nepočíta" v prvej verzii §13 odporovalo Ústave (skóre je povinné) — doplnené.
+## 2026-10-02 — EVENTS-WIRE: `public.events` mala 0 riadkov, pretože zapisovateľ nebol zapojený; crony pritom bežia
+
+**Vyvrátená diagnóza (moja, meraním).** Tvrdil som, že cron route nikto nedosiahol s platným `CRON_SECRET`, a z toho
+som vyvodil, že blokérom je plán Vercelu. Po okne 02:40 pribudol riadok: `recompute-bri`, `empty`,
+`2026-10-02 03:36:49+00`, 974 ms, `{"skipped":"no_engagement_signal","event_rows":0}`. Riadok vzniká až PO
+autorizácii, takže **crony bežia a `CRON_SECRET` sedí**. Hypotéza o pláne padá. Čo riadok nedokazuje: že volajúcim
+bol Vercel — identita volajúceho sa nikde nezaznamenáva, a to je presne to, čo pridáva #786.
+
+**Skutočná príčina prázdnej AI vrstvy.** `events` = 0 → BRI zámerne nepočíta (EVENTS-REVIVE-01, správne). A `events`
+bola prázdna preto, že:
+- `logEventClient()` nemal **ani jedného volajúceho** — mŕtvy kód štyri mesiace,
+- jediný prehliadačový POST na `/api/events` (`leads/[id]/page.tsx:939`, tlačidlo „⚡ Demo: live signály") posielal
+  `{ leadId, signals }`, zatiaľ čo route čítala `body.entityType` / `body.eventType` — `undefined` išlo do insertu,
+  route nemala validáciu (`as` pretypovanie), chyba skončila v `console.error` a odpoveď bola `ok: true`.
+
+Jedno tiché `catch` pod jedným `as` zastavilo celú vrstvu. 522 leadov reálnej práce, 0 eventov.
+
+**Rozhodnutia:**
+1. `ENTITY_TYPES` / `EVENT_TYPES` sú **runtime polia** a typy sa z nich derivujú (`(typeof X)[number]`). Dôvod:
+   `events` má CHECK len na `entity_type`; `event_type` je v DB voľný text, takže preklep sa zapíše a otrávi pipeline
+   natrvalo. Brána, ktorá existuje len ako TS typ, na hranici HTTP neplatí nič.
+2. `/api/events` validuje zod schémou nad tými poliami; neznámy/chýbajúci typ = **400 bez zápisu**, zlyhaný zápis
+   = **500**, nikdy `ok: true` nad neexistujúcim riadkom.
+3. Kontaktný pokus (`/api/leads/[id]/contact-attempt`) loguje event service-role klientom, ale **skromne**:
+   `call_initiated` / `message_initiated` — nikdy `call_completed` / `message_sent`. Route o doručení ani odpovedi
+   nevie nič a nesmie to tvrdiť. Pre `message_initiated` pribudol typ do slovníka.
+4. Demo tlačidlo prepojené na skutočný `/api/leads/bri-recompute`. Vymyslené signály (`email_open: 1`, …) sú mimo
+   zdroja.
+
+**Pracovný režim je odteraz vynútený hookom.** `.claude/hooks/pracovny-rezim.md` + `UserPromptSubmit` hook
+v `.claude/settings.json`. Dôvod: CLAUDE.md sa pri dlhej session dostane mimo kontext a práca sa rozsypala na
+skrutky — founder sa „uklikal k smrti". Hook beží pri každom prompte, takže pravidlo nemá ako zostarnúť.
+
+**Dôkaz:** 67/67 testov v `src/lib/events/__tests__/` + nové piny; mutácia (odstránenie `lead_viewed` zapojenia)
+→ verification zhasne (2 failed), unit testy zelené; prepush brána VŠETKO PREŠLO, typecheck 49/54; PROD probe
+vložil presne ten tvar, ktorý kód posiela (prešel CHECK `entity_type`), a bol **zmazaný** — `events` je znova 0,
+aby BRI nedostalo vymyslený signál.
+
+**Pozor na MCP:** `execute_sql` na `DELETE` timeoutuje (čaká na potvrdenie, ktoré v tomto kontexte nepríde).
+Obídené `DO $$ ... $$` blokom. CTE `delete ... where id in (select id from probe)` nefunguje — DELETE nevidí riadok
+vložený v tom istom príkaze (snapshot), hlási `deleted: 0` a riadok zostane.
+## 2026-10-02 — ONL-AGENTS (P08→P10): tri interné agentné roly pre onlinovo.sk — BUILD (read-only), všetko zákazníkovi viditeľné BACKLOG
+
+**GO foundera:** „AGENTIC REVENUE OS — P08 → P09 → P10, FOUNDER GO: APPROVED". **Constitution v2 (smernica 7):** BUILD len pre to, čo je interné, reverzibilné a read-only
+(detekcia príležitostí, jedna odporúčaná akcia na zákazníka, plán experimentu). Dôvod: otázka 1 — rozhodnutia o e-mailingu onlinovo.sk sa dnes robia ručne a bez
+deterministického dôkazu; žiadne VETO. **Neodhadované:** žiadny dopad na tržby nie je meraný — agenti bežia iba na fixture/unconnected zdroji, takže produkčnú hodnotu zatiaľ
+nemajú. Prime Directive: pre Revolis zostáva priorita č. 1 Stripe krok C; táto práca ju nenahrádza.
+
+**BACKLOG (nie je dovolené bez nového GO a overeného podkladu):** `campaign.send/schedule/update`, `journey.write` (LeadHub kontrakt UNVERIFIED), `record.persist`
+(žiadna overená cesta zápisu), zapojenie LLM (`LLM_WIRED=false`, rozpočet 0), živý zdroj dát, trvalé schvaľovania (CP-P0-2), CI job pre `mcp-onlinovo` (`.github/**` = denylist).
+**DENIED (rozhodnutie vlastníka):** `price.change`, `customer.permission.change`.
+
+**Architektonické rozhodnutia:** (1) EXTEND existujúceho registra `apps/crm/src/lib/agents/agent-specs.ts` (`kind`, `domain`), nie druhý register. (2) Nový `RevenueDataPort`
+oddelený od `ShopAdapter`; žiadny UniversalAdapter, `resolveAdapter()` nezmenený, `denyWrite()` a write-stub nezmenené. (3) Guard v `mcp-onlinovo` je lokálne zrkadlo registra
+(NodeNext neumožňuje import `control-contract`); drift stráži `guard-differential.test.ts` (guard = `resolveAuthority` pre všetky akcie × istoty × kill switch). (4) Deterministika
+najprv: počty, dátumy, RFM, marža, oprávnenosť, prahy a experimentová aritmetika sú funkcie/pravidlá, nikdy LLM. (5) Zákazníci sú pseudonymizovaní (HMAC, fail-closed bez soli);
+e-mail/telefón v `customer_ref` a vo výstupe sa odmieta. (6) Malá vzorka je INDICATIVE a nikdy nemôže skončiť KEEP.
+
+**Stav:** IMPLEMENTED/TESTED, nie VERIFIED (P11). Dôkaz: mcp-onlinovo 172/172, control-contract 72/72, crm agents + approve-draft 104/104, prepush-gate PASS (po merge `main`); mutation proof na každý guard.
+
 ## [2026-10-02] HOOKS-MERGE-FIX — dve nezávislé sady hookov sa zišli v `.claude/settings.json`
 
 **Fakt:** `main` medzitým dostal vlastnú sadu hookov z inej session (#792, #796: `working-agreement.sh`, `memory/working-agreement.md`, `WALL-RULES.md`; SessionStart / UserPromptSubmit / PostToolUse na ReadNotifications). Automatický merge `main` do tejto vetvy (5f54ac4, 08:12 UTC) zlúčil `.claude/settings.json` textovo bez konfliktu, ale vznikol **neplatný JSON** (chýbala čiarka) — CI „Lint, test, build" spadlo na `working-protocol-hooks.verification.test.ts` (SyntaxError, pozícia 1780). Bez opravy by sa po merge-i rozbilo načítanie nastavení Claude Code na `main`.
