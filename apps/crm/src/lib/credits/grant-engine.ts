@@ -7,6 +7,8 @@ import {
   applyMonthlyGrantCredits,
   expireGrantCreditsAtomic,
 } from "@/lib/credits/mutate-credits";
+import { monthlyOfficeGrantCredits, PRICING_V2_BAND_IDS, type PricingV2BandId } from "@/lib/pricing-v2";
+import { PRICING_V2_AGENCY_MODEL } from "@/lib/pricing-v2-contract";
 import {
   COCKPIT_PRODUCTS,
   CREDIT_GRANTS,
@@ -24,6 +26,14 @@ export type AgencyCreditRow = {
   purchased_credits_balance: number;
   owner_cockpit_active: boolean;
   credits_balance: number;
+  /**
+   * Cenník v2 (voliteľné: legacy riadky tieto polia nemajú). `pricing_model = 'v2'` prepne
+   * výpočet grantu na kredity pásma + pack_credits a podmieni ho `subscription_status = 'active'`.
+   */
+  pricing_model?: string | null;
+  pricing_band?: string | null;
+  pack_credits?: number | null;
+  subscription_status?: string | null;
 };
 
 function seatTierFromAccountTier(accountTier: string | null): SeatTier {
@@ -41,6 +51,32 @@ function seatTierFromAccountTier(accountTier: string | null): SeatTier {
   }
 }
 
+/**
+ * Mesačný grant agentúry v kreditoch (čistá funkcia, bez DB).
+ *
+ * v2: kredity pásma + pack_credits, a to LEN pri subscription_status = 'active'.
+ * Neznáme pásmo alebo iný pricing_model než v2 = 0 (fail-closed), nikdy nie legacy seat výpočet:
+ * v2 agentúra má seats = povolení používatelia a legacy výpočet by jej dal „team“ grant × seaty.
+ * Legacy (pricing_model NULL/chýba): výpočet nezmenený, subscription_status sa neskúma.
+ */
+export function monthlyGrantAmountForAgency(agency: AgencyCreditRow): number {
+  if (agency.pricing_model !== null && agency.pricing_model !== undefined) {
+    if (agency.pricing_model !== PRICING_V2_AGENCY_MODEL) return 0;
+    if (agency.subscription_status !== "active") return 0;
+    const band = agency.pricing_band;
+    if (!band || !(PRICING_V2_BAND_IDS as readonly string[]).includes(band)) return 0;
+    const pack = agency.pack_credits ?? 0;
+    if (!Number.isSafeInteger(pack) || pack < 0) return 0;
+    return monthlyOfficeGrantCredits(band as PricingV2BandId) + pack;
+  }
+
+  return monthlyAgencyGrantCredits({
+    seatTier: seatTierFromAccountTier(agency.account_tier),
+    seatCount: Math.max(0, agency.seats),
+    ownerCockpitActive: agency.owner_cockpit_active,
+  });
+}
+
 /** Idempotentný mesačný grant (1. deň mesiaca). */
 export async function grantMonthlyCreditsForAgency(
   agency: AgencyCreditRow,
@@ -49,13 +85,7 @@ export async function grantMonthlyCreditsForAgency(
   const supabase = createServiceRoleClient();
   if (!supabase) return { granted: 0, skipped: true };
 
-  const seatTier = seatTierFromAccountTier(agency.account_tier);
-  const seatCount = Math.max(0, agency.seats);
-  const amount = monthlyAgencyGrantCredits({
-    seatTier,
-    seatCount,
-    ownerCockpitActive: agency.owner_cockpit_active,
-  });
+  const amount = monthlyGrantAmountForAgency(agency);
 
   if (amount <= 0) return { granted: 0, skipped: true };
 
