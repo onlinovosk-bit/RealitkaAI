@@ -30,10 +30,18 @@ describe("pricing-v2: pásma", () => {
   });
 
   it("nulový, záporný, desatinný a nekonečný počet nevyberie žiadne pásmo", () => {
-    for (const bad of [0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY]) {
-      expect(resolvePricingV2Band(bad)).toEqual({ ok: false, reason: "invalid_user_count" });
+    const bad: unknown[] = [
+      0, -0, -1, 1.5, 6.0000001, Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY,
+      1e21, Number.MAX_SAFE_INTEGER + 2, "3", "", null, undefined, {}, [3], true,
+    ];
+    for (const value of bad) {
+      expect(resolvePricingV2Band(value as number)).toEqual({ ok: false, reason: "invalid_user_count" });
     }
-    expect(resolvePricingV2Band("3" as unknown as number)).toEqual({ ok: false, reason: "invalid_user_count" });
+  });
+
+  it("väčšie počty (27, 1000) patria do Siete", () => {
+    expect(bandIdFor(27)).toBe("network");
+    expect(bandIdFor(1000)).toBe("network");
   });
 
   it("pásma sa na seba bez medzery a bez prekryvu nadväzujú", () => {
@@ -60,28 +68,37 @@ describe("pricing-v2: ceny a DPH", () => {
     expect(grossCentsFromNet(3330)).toBe(4096); // 4095,9
   });
 
-  it("pri inej sadzbe DPH sa čistá cena nemení", () => {
+  it("pri inej sadzbe DPH sa čistá cena nemení a konečná sa prepočíta (0 % a 20 %)", () => {
+    const nets = PRICING_V2_BANDS.map((b) => b.netCents);
+    expect(nets.map((n) => priceFromNetCents(n, 0).grossCents)).toEqual([2500, 6000, 14900, 34900]);
+    expect(nets.map((n) => priceFromNetCents(n, 20).grossCents)).toEqual([3000, 7200, 17880, 41880]);
     for (const vat of [0, 20, 23]) {
-      const a = priceFromNetCents(14900, vat);
-      expect(a.netCents).toBe(14900);
-      expect(a.grossCents - a.vatCents).toBe(14900);
+      for (const n of nets) expect(priceFromNetCents(n, vat).netCents).toBe(n);
     }
-    expect(grossCentsFromNet(14900, 0)).toBe(14900);
   });
 
   it("neplatná sadzba DPH zlyhá nahlas, nie tichou zlou sumou", () => {
-    expect(() => grossCentsFromNet(2500, -1)).toThrow(RangeError);
-    expect(() => grossCentsFromNet(2500, Number.NaN)).toThrow(RangeError);
-    expect(() => buildPricingV2Catalog(Number.POSITIVE_INFINITY)).toThrow(RangeError);
+    for (const vat of [-1, Number.NaN, Number.POSITIVE_INFINITY, 101, 1e9, 1e308]) {
+      expect(() => grossCentsFromNet(2500, vat)).toThrow(RangeError);
+      expect(() => buildPricingV2Catalog(vat)).toThrow(RangeError);
+    }
+  });
+
+  it("neplatný základ ceny zlyhá nahlas (záporný, desatinný, NaN, nečíselný)", () => {
+    for (const net of [-100, 0.5, Number.NaN, Number.MAX_SAFE_INTEGER + 2, undefined, "100"]) {
+      expect(() => grossCentsFromNet(net as number)).toThrow(RangeError);
+    }
+    expect(grossCentsFromNet(0)).toBe(0);
   });
 
   it("dokúpený kredit stojí 0,70 € bez DPH; neplatný počet nič neúčtuje", () => {
     expect(PRICING_V2_CREDIT_NET_CENTS).toBe(70);
     expect(priceExtraCredits(10)?.netCents).toBe(700);
     expect(priceExtraCredits(10)?.grossCents).toBe(861);
-    for (const bad of [0, -5, 2.5, Number.NaN]) {
-      expect(priceExtraCredits(bad)).toBeNull();
+    for (const bad of [0, -5, 2.5, Number.NaN, 1e21, Number.MAX_SAFE_INTEGER, "5", null, undefined]) {
+      expect(priceExtraCredits(bad as number)).toBeNull();
     }
+    expect(priceExtraCredits(1_000_000)?.netCents).toBe(70_000_000);
   });
 });
 
@@ -98,6 +115,12 @@ describe("pricing-v2: mesačné balíky", () => {
   it("veľkosti 60/120/180/240/300 a ceny bez DPH 34/62/86/108/129 €", () => {
     expect(PRICING_V2_MONTHLY_PACKS.map((p) => p.credits)).toEqual([60, 120, 180, 240, 300]);
     expect(PRICING_V2_MONTHLY_PACKS.map((p) => p.netCents)).toEqual([3400, 6200, 8600, 10800, 12900]);
+  });
+
+  it("konečné ceny balíkov s 23 % DPH na cent: 41,82 / 76,26 / 105,78 / 132,84 / 158,67 €", () => {
+    expect(PRICING_V2_MONTHLY_PACKS.map((p) => priceFromNetCents(p.netCents).grossCents)).toEqual([
+      4182, 7626, 10578, 13284, 15867,
+    ]);
   });
 
   it("cena za kredit v balíku klesá s veľkosťou a je pod samostatným kreditom", () => {
@@ -145,10 +168,32 @@ describe("pricing-v2: katalóg (API kontrakt)", () => {
       ["network", 34900, 42927],
     ]);
     expect(c.bands.find((b) => b.id === "network")?.isFromPrice).toBe(true);
-    expect(c.packs).toHaveLength(5);
-    for (const p of c.packs) {
-      expect(p.grossCents).toBe(p.netCents + p.vatCents);
-    }
+    expect(c.packs.map((p) => [p.credits, p.netCents, p.grossCents])).toEqual([
+      [60, 3400, 4182],
+      [120, 6200, 7626],
+      [180, 8600, 10578],
+      [240, 10800, 13284],
+      [300, 12900, 15867],
+    ]);
+  });
+
+  it("katalóg pri 0 % a 20 % DPH má nezmenený základ a prepočítanú konečnú cenu", () => {
+    const zero = buildPricingV2Catalog(0);
+    const twenty = buildPricingV2Catalog(20);
+    expect(zero.bands.map((b) => b.grossCents)).toEqual([2500, 6000, 14900, 34900]);
+    expect(twenty.bands.map((b) => b.grossCents)).toEqual([3000, 7200, 17880, 41880]);
+    expect(twenty.bands.map((b) => b.netCents)).toEqual([2500, 6000, 14900, 34900]);
+    expect(twenty.creditUnit.grossCents).toBe(84);
+  });
+
+  it("cenník nejde za behu prepísať (zmrazené)", () => {
+    expect(Object.isFrozen(PRICING_V2_BANDS)).toBe(true);
+    expect(Object.isFrozen(PRICING_V2_MONTHLY_PACKS)).toBe(true);
+    for (const b of PRICING_V2_BANDS) expect(Object.isFrozen(b)).toBe(true);
+    for (const p of PRICING_V2_MONTHLY_PACKS) expect(Object.isFrozen(p)).toBe(true);
+    expect(() => {
+      (PRICING_V2_BANDS[0] as { netCents: number }).netCents = 1;
+    }).toThrow(TypeError);
   });
 });
 
@@ -160,11 +205,33 @@ describe("pricing-v2: prepínač a ochrana existujúceho klienta", () => {
     expect(isPricingV2Enabled({ PRICING_V2_ENABLED: "yes please" })).toBe(false);
     expect(isPricingV2Enabled({ PRICING_V2_ENABLED: "TRUE" })).toBe(true);
     expect(isPricingV2Enabled({ PRICING_V2_ENABLED: " 1 " })).toBe(true);
+    expect(isPricingV2Enabled({ PRICING_V2_ENABLED: " ON " })).toBe(true);
+    for (const raw of ["0", "off", "enabled", "2", "true;"]) {
+      expect(isPricingV2Enabled({ PRICING_V2_ENABLED: raw })).toBe(false);
+    }
   });
 
   it("kancelária s legacy predplatným ostáva na legacy aj pri zapnutom v2", () => {
     expect(resolvePricingModel({ v2Enabled: true, hasLegacySubscription: true })).toBe("legacy");
     expect(resolvePricingModel({ v2Enabled: false, hasLegacySubscription: true })).toBe("legacy");
+  });
+
+  it("chýbajúca alebo nečitateľná informácia o legacy predplatnom znamená legacy (fail-closed)", () => {
+    const missing = { v2Enabled: true } as unknown as { v2Enabled: boolean; hasLegacySubscription: boolean };
+    expect(resolvePricingModel(missing)).toBe("legacy");
+    for (const raw of [undefined, null, "false", 0, ""]) {
+      expect(
+        resolvePricingModel({ v2Enabled: true, hasLegacySubscription: raw as unknown as boolean }),
+      ).toBe("legacy");
+    }
+  });
+
+  it("v2 sa nezapne z reťazca ani z iného než presné true", () => {
+    for (const raw of ["true", "false", 1, "1", null, undefined]) {
+      expect(
+        resolvePricingModel({ v2Enabled: raw as unknown as boolean, hasLegacySubscription: false }),
+      ).toBe("legacy");
+    }
   });
 
   it("nová kancelária dostane v2 len keď je prepínač zapnutý", () => {

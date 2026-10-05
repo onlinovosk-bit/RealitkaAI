@@ -29,12 +29,17 @@ export type PricingV2Band = {
   monthlyCredits: number;
 };
 
-export const PRICING_V2_BANDS: readonly PricingV2Band[] = [
+/** Zmrazí zoznam aj jeho položky, aby cenník nešlo za behu potichu prepísať. */
+function freezeList<T extends object>(items: T[]): readonly T[] {
+  return Object.freeze(items.map((item) => Object.freeze({ ...item })));
+}
+
+export const PRICING_V2_BANDS: readonly PricingV2Band[] = freezeList<PricingV2Band>([
   { id: "start", label: "Start", minUsers: 1, maxUsers: 1, netCents: 2500, isFromPrice: false, monthlyCredits: 25 },
   { id: "team", label: "Team", minUsers: 2, maxUsers: 6, netCents: 6000, isFromPrice: false, monthlyCredits: 60 },
   { id: "office", label: "Kancelária", minUsers: 7, maxUsers: 25, netCents: 14900, isFromPrice: false, monthlyCredits: 120 },
   { id: "network", label: "Sieť", minUsers: 26, maxUsers: null, netCents: 34900, isFromPrice: true, monthlyCredits: 175 },
-];
+]);
 
 /** Samostatne dokúpený kredit (bez balíka), bez DPH. */
 export const PRICING_V2_CREDIT_NET_CENTS = 70;
@@ -46,13 +51,13 @@ export type PricingV2Pack = {
   netCents: number;
 };
 
-export const PRICING_V2_MONTHLY_PACKS: readonly PricingV2Pack[] = [
+export const PRICING_V2_MONTHLY_PACKS: readonly PricingV2Pack[] = freezeList<PricingV2Pack>([
   { credits: 60, netCents: 3400 },
   { credits: 120, netCents: 6200 },
   { credits: 180, netCents: 8600 },
   { credits: 240, netCents: 10800 },
   { credits: 300, netCents: 12900 },
-];
+]);
 
 export type PricingV2BandResult =
   | { ok: true; band: PricingV2Band }
@@ -60,7 +65,7 @@ export type PricingV2BandResult =
 
 /** Počet používateľov → pásmo. Nulový, záporný, desatinný alebo nekonečný počet nevyberie nič. */
 export function resolvePricingV2Band(users: number): PricingV2BandResult {
-  if (typeof users !== "number" || !Number.isInteger(users) || users < 1) {
+  if (typeof users !== "number" || !Number.isSafeInteger(users) || users < 1) {
     return { ok: false, reason: "invalid_user_count" };
   }
   const band = PRICING_V2_BANDS.find(
@@ -70,13 +75,21 @@ export function resolvePricingV2Band(users: number): PricingV2BandResult {
 }
 
 function assertVatPercent(vatPercent: number): void {
-  if (typeof vatPercent !== "number" || !Number.isFinite(vatPercent) || vatPercent < 0) {
+  // Horná hranica 100 % je len poistka proti zjavne chybnému vstupu (napr. 1e9), nie daňové pravidlo.
+  if (typeof vatPercent !== "number" || !Number.isFinite(vatPercent) || vatPercent < 0 || vatPercent > 100) {
     throw new RangeError(`Neplatná sadzba DPH: ${vatPercent}`);
+  }
+}
+
+function assertNetCents(netCents: number): void {
+  if (typeof netCents !== "number" || !Number.isSafeInteger(netCents) || netCents < 0) {
+    throw new RangeError(`Neplatný základ ceny v centoch: ${netCents}`);
   }
 }
 
 /** Konečná cena v centoch zo základu bez DPH (zaokrúhlené na cent). */
 export function grossCentsFromNet(netCents: number, vatPercent: number = PRICING_V2_VAT_PERCENT_DEFAULT): number {
+  assertNetCents(netCents);
   assertVatPercent(vatPercent);
   return Math.round((netCents * (100 + vatPercent)) / 100);
 }
@@ -97,7 +110,9 @@ export function priceExtraCredits(
   credits: number,
   vatPercent: number = PRICING_V2_VAT_PERCENT_DEFAULT,
 ): PricingV2Amount | null {
-  if (!Number.isInteger(credits) || credits < 1) return null;
+  if (typeof credits !== "number" || !Number.isSafeInteger(credits) || credits < 1) return null;
+  // Suma musí ostať presná na cent; inak by sa zaúčtovala zaokrúhlená hodnota.
+  if (!Number.isSafeInteger(credits * PRICING_V2_CREDIT_NET_CENTS)) return null;
   return priceFromNetCents(credits * PRICING_V2_CREDIT_NET_CENTS, vatPercent);
 }
 
@@ -121,10 +136,12 @@ export type PricingModel = "legacy" | "v2";
 /**
  * Ktorý model platí pre kanceláriu. Kancelária s existujúcim (legacy) predplatným sa NIKDY
  * automaticky nepresúva, ani keď je v2 zapnuté — dohodnuté práva a obdobie ostávajú.
+ * Fail-closed aj za behu (JSON, DB): v2 len pri presne `hasLegacySubscription === false`
+ * a `v2Enabled === true`; chýbajúca alebo nečitateľná hodnota znamená legacy.
  */
 export function resolvePricingModel(input: { v2Enabled: boolean; hasLegacySubscription: boolean }): PricingModel {
-  if (input.hasLegacySubscription) return "legacy";
-  return input.v2Enabled ? "v2" : "legacy";
+  if (input.hasLegacySubscription !== false) return "legacy";
+  return input.v2Enabled === true ? "v2" : "legacy";
 }
 
 export type PricingV2Catalog = {

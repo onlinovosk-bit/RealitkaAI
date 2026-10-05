@@ -7,8 +7,9 @@ RAU route: GO_REQUIRED (ručne; router zamietnutý) roadmap Revolis.AI
 - Oprava faktu: platí jediný klient (199 € + 99 € onboarding); „3 kancelárie / MRR 597 €“ z DEC-20260924-001 bolo podľa štítku plánu.
 - W0 inventúra cenníka v2: `docs/pricing/2026-10-05-pricing-v2-w0-inventory.md` (mapa povrch → checkout → webhook → grant; 8 rozporov plán vs. kód, napr. `billing-lifecycle.ts` neexistuje, DPH nie je v checkoute).
 - Rozhodnutia foundera: ceny BEZ DPH, balíky vlastné 60/120/180/240/300, GO na W1.
-- W1 hotová: `apps/crm/src/lib/pricing-v2.ts` + `apps/crm/src/lib/__tests__/pricing-v2.test.ts` (16 testov, mutation proof 8 mutantov: 7 zabitých + 1 ekvivalentný; lint čistý; typecheck 0 nových chýb). Nezapojené do checkoutu (W2), `PRICING_V2_ENABLED` vypnuté.
-- Otvorené: základ DPH u AIRAmax (pre tvrdenie „sme lacnejší“); nezávislé P11 pre W1 prebieha.
+- W1 hotová: `apps/crm/src/lib/pricing-v2.ts` + `apps/crm/src/lib/__tests__/pricing-v2.test.ts` (23 testov; mutation proof 9/9 mutantov zabitých po zapracovaní zistení nezávislého P11; lint čistý; 0 TS chýb v nových súboroch). Nezapojené do checkoutu (W2), `PRICING_V2_ENABLED` vypnuté.
+- Nezávislé P11 (iný agent): kontraktné sumy PASS; zistenia R1–R5 (fail-closed `resolvePricingModel`, `isSafeInteger`, validácia základu a DPH, zmrazený cenník) opravené a pokryté testami.
+- Otvorené: základ DPH u AIRAmax (pre tvrdenie „sme lacnejší“).
 ### Rozpracované / Pending
 - Čaká GO na Stenu 0 (Stripe live ceny — krok C robí founder, Vercel limit, trial 14 d bez karty, e2e). Nič nestavané.
 - Neoverené: produkt AIRAmax (vidíme len web), trial flow, WhatsApp, protokol, `revolis-ai` chat, export cez Realvia — treba plný P01.
