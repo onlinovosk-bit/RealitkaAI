@@ -1,5 +1,15 @@
 # Critical Decisions Log
 
+## [2026-10-02] Postup session v % vynútený Stop hookom + oprava rozbitého settings.json
+- **Founder:** „Prečo si zase zabudol uvádzať posun v percentách? … nájdi riešenie, na ktoré nebudeš zabúdať." Pravidlo nebolo nikde uložené. Existovalo len celkové % v `docs/STATUS.md` (#792), nie % session.
+- **Riešenie:** blok `SESSION` v `docs/STATUS.md` (cieľ + míľniky; % = hotové/všetky). `.claude/hooks/session-progress.sh` ho počíta. **Stop hook** zablokuje odpoveď na správu foundera bez riadku `Session …: NN %` a model ho musí doplniť. Webhook turny sa nevynucujú (pracovná dohoda: neodpisovať). Ochrana pred slučkou: `stop_hook_active`. Pravidlo je aj v CLAUDE.md (dir. 9) a WALL-RULES (9).
+- **Nález:** merge main do `claude/evidence-gate` (#798) zanechal `.claude/settings.json` ako **nevalidný JSON** (dva bloky `UserPromptSubmit`). Na tej vetve preto neplatil žiadny hook ani povolenie. Opravené: hooky z main (#792) + evidence-gate + Stop hook.
+- **Stav session pri zavedení:** 58 % (7/12). PROD migrácie D1+D4 overené (tabuľky existujú, 0 riadkov).
+
+## [2026-10-02] Dôkazová brána ako pravidlo projektu + hook (founder: „ulož si tento spôsob práce, nech ho o 20 správ nezabudneš")
+- **Spôsob práce:** verdikt/stav iba z primárneho zdroja overeného v tom istom turne. Chýbajúci vstup sa overí, nevymýšľa a raz sa povie, čo poslať. Gold labels robí človek. Pred bránou pre-flight na agregátoch. Opakované GO bez nového vstupu dostane krátku odpoveď. PROD/merge/flag iba na explicitné GO pri zelenom CI. Vzor: `GO D1-VERDICT` 2× bez score výstupu → žiadny vymyslený verdikt.
+- **Prečo nestačí memory/:** číta sa len na začiatku session; pri dlhej konverzácii sa kontext sumarizuje a pravidlo sa môže stratiť.
+- **Riešenie:** (1) CLAUDE.md direktíva 8, ktorú harness vkladá do kontextu každej session aj po sumarizácii. (2) `UserPromptSubmit` hook `.claude/hooks/evidence-gate.sh` (registrovaný v `.claude/settings.json`) pridá 3-riadkovú pripomienku ku každej správe s GO / verdikt / merge / PROD / flag / PASS. Je deterministický, nezávisí od toho, či si model pamätá. Ostatné správy sú bez šumu.
 ## [2026-10-02] Opt-in auto-odpoveď konečne tesní: migrácia na PROD + fail-closed (SCOREBOARD bod 9 ✅)
 
 **Čo sa aplikovalo na PROD** (founder GO, 2026-10-02 ~19:45 UTC): migrácia `20261001100000_auto_response_opt_in_default`
