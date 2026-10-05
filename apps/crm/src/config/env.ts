@@ -49,6 +49,20 @@ const envSchema = z.object({
   STRIPE_PRICE_CREDITS_MEGA: z.string().optional(),
   STRIPE_PRICE_STARTER_PACK: z.string().optional(),
 
+  // Cenník v2 (pricing-v2-contract.ts) — za prepínačom PRICING_V2_ENABLED.
+  PRICING_V2_ENABLED: z.string().optional(),
+  PRICING_V2_STRIPE_TAX: z.string().optional(),
+  STRIPE_PRICE_V2_START: z.string().optional(),
+  STRIPE_PRICE_V2_TEAM: z.string().optional(),
+  STRIPE_PRICE_V2_OFFICE: z.string().optional(),
+  STRIPE_PRICE_V2_NETWORK: z.string().optional(),
+  STRIPE_PRICE_V2_PACK_60: z.string().optional(),
+  STRIPE_PRICE_V2_PACK_120: z.string().optional(),
+  STRIPE_PRICE_V2_PACK_180: z.string().optional(),
+  STRIPE_PRICE_V2_PACK_240: z.string().optional(),
+  STRIPE_PRICE_V2_PACK_300: z.string().optional(),
+  STRIPE_PRICE_V2_CREDIT: z.string().optional(),
+
   // ── App URLs ─────────────────────────────────────────────────
   NEXT_PUBLIC_APP_URL: z.string().url().optional(),
   APP_URL: z.string().url().optional(),

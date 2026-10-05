@@ -1,4 +1,5 @@
 import { getCurrentBillingStatus } from "@/lib/billing-store";
+import { planPriceIdOf, saasPlanKeyFromPriceId } from "@/lib/pricing-v2-plan";
 import {
   fetchAgencyManualPlan,
   resolveBillingPlanFromManualPlan,
@@ -110,14 +111,9 @@ function getGraceDays() {
   return Number(process.env.APP_GRACE_DAYS || "7");
 }
 
+/** Legacy ceny (starter/pro/scale) a cenník v2 (pásma); všetko ostatné je free. */
 function getPlanFromPriceId(priceId: string | null | undefined): PlanKey {
-  if (!priceId) return "free";
-
-  if (priceId === process.env.STRIPE_PRICE_STARTER) return "starter";
-  if (priceId === process.env.STRIPE_PRICE_PRO) return "pro";
-  if (priceId === process.env.STRIPE_PRICE_SCALE) return "scale";
-
-  return "free";
+  return saasPlanKeyFromPriceId(priceId);
 }
 
 function mapManualPlanToPlanKey(manualPlan: string | null | undefined): PlanKey | null {
@@ -367,7 +363,8 @@ export async function getSaasOpsSnapshot() {
   ]);
 
   const billing = billingLookup.billing;
-  const priceId = billing.subscription?.items?.[0]?.priceId || null;
+  // V2 predplatné nesie pásmo aj voliteľný balík; plán určuje pásmo.
+  const priceId = planPriceIdOf(billing.subscription?.items) || null;
   let plan = getPlanFromPriceId(priceId);
 
   const user = await getCurrentUser();

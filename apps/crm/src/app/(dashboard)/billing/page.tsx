@@ -3,6 +3,9 @@ import React, { useState, useEffect } from 'react';
 import ModuleShell from '@/components/shared/module-shell';
 import CreditsTopupPanel from '@/components/billing/CreditsTopupPanel';
 import { SLATE_HORIZON, WORKDESK_CARD } from '@/lib/slate-horizon-theme';
+import { usePricingV2Catalog } from '@/components/marketing/pricing-v2-context';
+import { formatEurFromCents, grossPriceLine } from '@/components/marketing/pricing-v2-copy';
+import { useAgencyPricingV2 } from '@/components/billing/v2/agency-pricing-context';
 
 const PLAN_NAMES: Record<string, string> = {
   free:               'FREE',
@@ -26,6 +29,11 @@ export default function BillingPage() {
   const [planKey, setPlanKey]         = useState<string | null>(null);
   const [loading, setLoading]         = useState(true);
   const [portalLoading, setPortalLoading] = useState(false);
+  // Cenník v2: zákazník s v2 predplatným nesmie vidieť legacy cenu (79/71/63 €) podľa planKey.
+  const pricingV2Catalog = usePricingV2Catalog();
+  const agencyV2 = useAgencyPricingV2();
+  const v2Band = pricingV2Catalog && agencyV2 ? pricingV2Catalog.bands.find((b) => b.id === agencyV2.bandId) : undefined;
+  const isV2Customer = Boolean(pricingV2Catalog && agencyV2);
 
   useEffect(() => {
     fetch('/api/billing/plan')
@@ -48,8 +56,12 @@ export default function BillingPage() {
     }
   }
 
-  const planName  = loading ? '…' : (PLAN_NAMES[planKey!]  ?? planKey!.toUpperCase());
-  const planPrice = loading ? '…' : (PLAN_PRICES[planKey!] ?? '—');
+  const planName  = loading ? '…' : isV2Customer ? (v2Band ? v2Band.label : 'Plán') : (PLAN_NAMES[planKey!]  ?? planKey!.toUpperCase());
+  const planPrice = loading
+    ? '…'
+    : isV2Customer
+      ? (v2Band ? `${v2Band.isFromPrice ? 'od ' : ''}${formatEurFromCents(v2Band.netCents)}` : '—')
+      : (PLAN_PRICES[planKey!] ?? '—');
 
   return (
     <div style={{ background: SLATE_HORIZON.bg, minHeight: '100vh' }}>
@@ -81,7 +93,12 @@ export default function BillingPage() {
                 </div>
                 {!loading && (
                   <span className="text-2xl font-bold" style={{ color: SLATE_HORIZON.ink }}>
-                    {planPrice}<span className="text-sm font-normal" style={{ color: SLATE_HORIZON.muted }}>/mes</span>
+                    {planPrice}<span className="text-sm font-normal" style={{ color: SLATE_HORIZON.muted }}>{isV2Customer && v2Band ? '/mes bez DPH' : '/mes'}</span>
+                    {isV2Customer && v2Band && pricingV2Catalog && (
+                      <span className="block text-right text-xs font-normal" style={{ color: SLATE_HORIZON.muted }}>
+                        {grossPriceLine(v2Band, pricingV2Catalog.vatPercent)}
+                      </span>
+                    )}
                   </span>
                 )}
               </div>

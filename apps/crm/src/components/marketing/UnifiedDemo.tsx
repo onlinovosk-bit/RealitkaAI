@@ -9,18 +9,35 @@ import AcquisitionHub from "./AcquisitionHub";
 import { SLATE_HORIZON, WORKDESK_CARD } from "@/lib/slate-horizon-theme";
 import { DEMO } from "@/lib/demo-slate-styles";
 import { trackRevenueTelemetry } from "@/lib/analytics/revenue-telemetry";
+import { usePricingV2Catalog } from "@/components/marketing/pricing-v2-context";
 
 // ─── ROI Calculator ───────────────────────────────────────────────────────
-function RoiCalculator() {
+export function RoiCalculator() {
   const [mandats, setMandats] = useState(4);
   const [avgCommission, setAvgCommission] = useState(3200);
   const [plan, setPlan] = useState<"starter" | "pro" | "enterprise">("pro");
 
-  const planCosts: Record<typeof plan, number> = {
-    starter: 99,
-    pro: 199,
-    enterprise: 449,
-  };
+  // W2-D: pri zapnutom v2 sú náklady a názvy z katalógu (mesačne bez DPH); inak pôvodné hodnoty.
+  const pricingV2 = usePricingV2Catalog();
+  const v2Bands = pricingV2
+    ? (["start", "team", "office"] as const).map((id) => pricingV2.bands.find((b) => b.id === id))
+    : null;
+  const v2Ready = v2Bands !== null && v2Bands.every((b) => b !== undefined);
+  const planCosts: Record<typeof plan, number> = v2Ready
+    ? {
+        starter: v2Bands[0]!.netCents / 100,
+        pro: v2Bands[1]!.netCents / 100,
+        enterprise: v2Bands[2]!.netCents / 100,
+      }
+    : {
+        starter: 99,
+        pro: 199,
+        enterprise: 449,
+      };
+  const planLabel = (p: typeof plan): string =>
+    v2Ready
+      ? v2Bands[p === "starter" ? 0 : p === "pro" ? 1 : 2]!.label
+      : p === "starter" ? "Smart Start" : p === "pro" ? "Active Force" : "Market Vision";
   const planMultipliers: Record<typeof plan, number> = {
     starter: 1.3,
     pro: 1.7,
@@ -97,9 +114,9 @@ function RoiCalculator() {
                   color: plan === p ? SLATE_HORIZON.brandDeep : SLATE_HORIZON.muted,
                 }}
               >
-                {p === "starter" ? "Smart Start" : p === "pro" ? "Active Force" : "Market Vision"}
+                {planLabel(p)}
                 <br />
-                <span className="text-[9px]">{planCosts[p]}€/mes</span>
+                <span className="text-[9px]">{planCosts[p]}€/mes{v2Ready ? " bez DPH" : ""}</span>
               </button>
             ))}
           </div>
@@ -137,7 +154,7 @@ function RoiCalculator() {
           </div>
         </div>
         <p className="text-xs" style={{ color: SLATE_HORIZON.muted }}>
-          Náklady {fmt(monthlyCost)}/mes · Čistý zisk {fmt(extraRevenue - monthlyCost)}/mes
+          Náklady {fmt(monthlyCost)}/mes{v2Ready ? " bez DPH" : ""} · Čistý zisk {fmt(extraRevenue - monthlyCost)}/mes
         </p>
       </div>
 

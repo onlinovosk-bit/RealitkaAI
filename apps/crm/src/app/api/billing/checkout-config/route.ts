@@ -1,4 +1,9 @@
 import { okResponse } from "@/lib/api-response";
+import { isPricingV2Enabled, buildPricingV2Catalog } from "@/lib/pricing-v2";
+import {
+  missingPricingV2PriceEnvKeys,
+  type PricingV2ConfigPayload,
+} from "@/lib/pricing-v2-contract";
 import {
   SEAT_TIER_CONFIG,
   SEAT_TIERS,
@@ -15,6 +20,20 @@ import {
   ownerCockpitPriceEur,
   type SeatTier,
 } from "@/lib/program-tier-pricing";
+
+/** Cenník v2: pri vypnutí len `enabled: false` (žiadny katalóg, žiadne názvy env). */
+function buildPricingV2ConfigPayload(): PricingV2ConfigPayload {
+  if (!isPricingV2Enabled()) {
+    return { enabled: false, checkoutAvailable: false, missingPriceEnvKeys: [], catalog: null };
+  }
+  const missingPriceEnvKeys = missingPricingV2PriceEnvKeys();
+  return {
+    enabled: true,
+    checkoutAvailable: missingPriceEnvKeys.length === 0,
+    missingPriceEnvKeys,
+    catalog: buildPricingV2Catalog(),
+  };
+}
 
 export async function GET() {
   const seatCheckoutAvailable = areSeatCheckoutPricesConfigured();
@@ -53,5 +72,6 @@ export async function GET() {
       cockpitLiteEligible,
     },
     topupPackages: TOPUP_PACKAGE_KEYS.map((key) => TOPUP_PACKAGES[key]),
+    pricingV2: buildPricingV2ConfigPayload(),
   });
 }
