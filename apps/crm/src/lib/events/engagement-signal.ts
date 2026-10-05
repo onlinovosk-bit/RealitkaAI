@@ -61,11 +61,21 @@ export async function checkEngagementSignal(
   return { present: rows > 0, eventRows: rows, error: null }
 }
 
-/** Veta do denníka — musí sa dať prečítať o pol roka bez tohto kontextu. */
+/**
+ * Veta do denníka — musí sa dať prečítať o pol roka bez tohto kontextu.
+ *
+ * Jeden template literal, nie zreťazené fragmenty. Dôvod je konkrétny: beh
+ * 2026-10-02 03:36 zapísal do `cron_runs` verziu, ktorej chýbal presne stredný
+ * fragment `, prah pre horúci lead je `, takže v denníku ostalo nezmyselné
+ * „strop bez eventov je 2260" — dve čísla zlepené do jedného. Zdroj sa pritom
+ * od #761 nezmenil a tá istá funkcia dnes vracia celú vetu; príčinu toho
+ * jedného zápisu sa nepodarilo určiť. Nech už bola akákoľvek, zreťazenie
+ * troch kusov bolo jediné miesto, kde sa veta dala stratiť po častiach —
+ * a to tu už nie je.
+ *
+ * Presné znenie je zamknuté testom; akákoľvek úprava, ktorá z vety ukrojí,
+ * zhodí CI. Číslo v denníku, ktoré nikto nevie prečítať, je horšie než žiadne.
+ */
 export function engagementMissingReason(): string {
-  return (
-    'public.events má 0 riadkov, takže BRI by každému leadu priradilo rovnakých ' +
-    `12/100 (strop bez eventov je ${BRI_CEILING_WITHOUT_EVENTS}, prah pre horúci lead je ` +
-    `${BRI_HOT_THRESHOLD}). Skóre sa nezapísalo zámerne — EVENTS-REVIVE-01.`
-  )
+  return `public.events má 0 riadkov, takže BRI by každému leadu priradilo rovnakých 12/100 (strop bez eventov je ${BRI_CEILING_WITHOUT_EVENTS}, prah pre horúci lead je ${BRI_HOT_THRESHOLD}). Skóre sa nezapísalo zámerne — EVENTS-REVIVE-01.`
 }

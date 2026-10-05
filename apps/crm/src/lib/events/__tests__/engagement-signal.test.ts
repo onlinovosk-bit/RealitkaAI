@@ -66,11 +66,32 @@ describe('aritmetika, kvôli ktorej sa zápis vynecháva', () => {
     expect(BRI_CEILING_WITHOUT_EVENTS).toBeLessThan(BRI_HOT_THRESHOLD)
   })
 
-  it('dôvod v denníku nesie čísla, nie len „chýbajú dáta"', () => {
-    const r = engagementMissingReason()
-    expect(r).toContain('0 riadkov')
-    expect(r).toContain('12/100')
-    expect(r).toContain(String(BRI_CEILING_WITHOUT_EVENTS))
-    expect(r).toContain(String(BRI_HOT_THRESHOLD))
+  it('dôvod v denníku je zamknutý znak za znakom', () => {
+    // PINUJE OPRAVU. Pôvodný test kontroloval len `toContain('22')` a
+    // `toContain('60')` — lenže reťazec „2260" obsahuje oboje. Presne taká
+    // veta sa 2026-10-02 o 03:36 dostala do `cron_runs`: stredný fragment
+    // `, prah pre horúci lead je ` zmizol, čísla sa zlepili na nezmyselné
+    // „strop bez eventov je 2260", a test to prepustil.
+    //
+    // Preto rovnosť, nie obsahovanie. Dve čísla vedľa seba musia byť
+    // oddelené textom, inak nejde o informáciu, ale o číselnú kašu.
+    expect(engagementMissingReason()).toBe(
+      'public.events má 0 riadkov, takže BRI by každému leadu priradilo rovnakých ' +
+        '12/100 (strop bez eventov je 22, prah pre horúci lead je 60). ' +
+        'Skóre sa nezapísalo zámerne — EVENTS-REVIVE-01.',
+    )
+  })
+
+  it('zlepené čísla by test neprešli', () => {
+    // Kontrola samotnej kontroly: keby veta vyzerala ako tá chybná z PROD,
+    // musí padnúť. Bez tohto by sa dala oprava znova stratiť a nikto by to
+    // nezistil.
+    const chybna =
+      'public.events má 0 riadkov, takže BRI by každému leadu priradilo rovnakých ' +
+      '12/100 (strop bez eventov je 2260). Skóre sa nezapísalo zámerne — EVENTS-REVIVE-01.'
+    expect(engagementMissingReason()).not.toBe(chybna)
+    expect(engagementMissingReason()).toContain(
+      `${BRI_CEILING_WITHOUT_EVENTS}, prah pre horúci lead je ${BRI_HOT_THRESHOLD}`,
+    )
   })
 })

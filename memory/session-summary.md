@@ -10,6 +10,25 @@
 - apps/crm/src/lib/billing-lifecycle.ts, apps/crm/src/app/api/billing/webhook/route.ts, apps/crm/src/config/env.ts, apps/crm/src/app/api/billing/checkout-config/route.ts
 ### Ďalší krok
 Founder: Stripe krok C a `STRIPE_WEBHOOK_SECRET`; potom smoke nákup a zrušenie.
+## Session 2026-10-02 (prázdna derivovaná vrstva: zápis, honest metriky, opt-in)
+### Dokončené
+- `apps/crm/src/lib/leads/mark-contacted.ts` (#800, merge `a525faa2`): `leads.last_contact_at` konečne niekto zapisuje — monotonický guard, measured `stamped`, fail-soft. Desať povrchov čítalo stĺpec, ktorý bol NULL na 520 z 520 PROD riadkov.
+- `.claude/settings.json` + `CLAUDE.md` (#800): zrušený tretí `UserPromptSubmit` hook. Merge `main` zlúčil dva hooky do jedného JSON objektu s **dvoma kľúčmi `"command"`** — `JSON.parse` aj `jq` nechajú posledný, takže pridaný `wall-rule.sh` sa nespustil nikdy, a CLAUDE.md ho pritom menoval ako „jediné vynútenie, nemazať".
+- `apps/crm/src/lib/morning-brief/` (#804, merge `b4f4ab8c`): `pendingContact` bolo `activeLeads ?? 0` — počet riadkov pod menom merania; PROD: `active == pendingContact` presne u všetkých piatich najväčších maklérov (142, 72, 66, 47, 39). Teraz `number | null`, label „Bez zaznamenaného kontaktu", a `SYSTEM_A` prompt prestal modelu prikazovať uviesť nemerateľné číslo.
+- PROD: migrácia `20261001100000` (opt-in default) **aplikovaná a overená** — `column_default` `true` → `false`, 7 agentúr nedotknutých, rollback uložený v `supabase_migrations`. SCOREBOARD bod 9 ✅ → 70 % dokázané.
+- `apps/crm/src/lib/acquire/` (#811, čaká na merge): fail-closed. Init `false`, test `=== true`, nový dôvod `consent_unknown`. Tri cesty (chýbajúci stĺpec, chýbajúci riadok, NULL) predtým znamenali POSIELAJ a obchádzali opt-in default.
+### Rozpracované / Pending
+- #811 zelené 6/6 na `c93d7981`, čaká na „merguj 811".
+- ROZPOR: `working-agreement.sh` (pamäť raz za session) vs `.claude/working-protocol.md` (pamäť raz za stenu) — dva aktívne hooky, rozdielna kadencia. Držím novší; čaká na rozhodnutie foundera.
+- Neoverené: či vzor fail-open existuje aj na iných cestách. Audit som robil len na `loadAgencyAutoResponseContext`.
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/leads/mark-contacted.ts`: nový helper, jediný zapisovateľ `last_contact_at`.
+- `apps/crm/src/lib/morning-brief/gather.ts`: `pendingContact`/`hotPending` → `number | null` + jedna brána merateľnosti pre tri metriky.
+- `apps/crm/src/lib/acquire/inbound-lead-auto-response.ts`: fail-closed súhlas agentúry.
+- `apps/crm/src/lib/acquire/auto-response-outcome.ts`: dôvod `consent_unknown`.
+- `docs/STATUS.md`: ≈ 52 % → ≈ 53 %; AI vrstva 40 % → 45 %.
+### Ďalší krok
+Merge #811 (zelené, čaká na slovo), potom audit fail-open vzoru na ostatných cestách — nie je overený.
 ## Session 2026-10-05 (ONL-AGENTS-FIX: nálezy P11 po merge #807)
 ### Dokončené
 - **P11 (nezávislý overovací agent, 47 sabotáží) nedala VERIFIED**; #807 bol medzitým zmergovaný, preto oprava ide ako nový PR z `main`. Opravené (všetko v `packages/mcp-onlinovo`, nič mimo):
