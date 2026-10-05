@@ -38,6 +38,10 @@
 **Dôkaz:** `tests/verification/` 86 súborov / 648 testov zelených (z toho 9 nových pre sondu proti **skutočnej** route, 4 nové pre stav účtu, 3 nové pre daňovú zmluvu); `prepush-gate.sh` PASS (typecheck 49/54, lint, BUS, control contract, schema-gap); `--spec` vypisuje 10 cien v nezmenených sumách.
 
 **NIE je dokázané:** že sonda prejde proti živému PROD — `app.revolis.ai:443` je zablokovaný egress politikou tejto session (`connect_rejected`, 403 na CONNECT), takže posledný beh musí spustiť founder zo svojho stroja. Namiesto toho je sonda overená proti **skutočnému telu route** (volá sa `GET` z `checkout-config/route.ts`, nie ručne napísaná odpoveď), čo drží tvar odpovede na sonde. Stav účtu naživo tiež neoverený — live kľúč má iba founder.
+## [2026-10-05] Tlačivo Anthropic → DPA (Reality Smolko) pripravené; backfill beh nespustený
+- **Čo:** `docs/legal/2026-10-05-anthropic-subprocesor-tlacivo.md`: Variant A (oznámenie pri všeobecnom súhlase) a Variant B (dodatok pri konkrétnom súhlase), výber podľa podpísanej rev.2 (PDF u foundera, v repo nie je). Polia na doplnenie sú označené, nič nie je domyslené. Údaje o Anthropicu sú z overenej tabuľky v `demand-contract-v1.md`, kategórie údajov z auditu volaní LLM.
+- **Nález pre advokáta:** ~20 živých funkcií už posiela údaje Anthropicu (vrátane mien), oznámenie teda pokrýva aj existujúce spracúvanie, nielen D1.
+- **Beh `extract --input` + labels + score som nespustil:** session nemá e-maily ani kľúče aplikácie; gold labels musí robiť človek (dir. 8); posielať texty klientov Anthropicu pred oznámením/dodatkom by obišlo práve túto bránu.
 
 ## [2026-10-02] Postup session v % vynútený Stop hookom + oprava rozbitého settings.json
 - **Founder:** „Prečo si zase zabudol uvádzať posun v percentách? … nájdi riešenie, na ktoré nebudeš zabúdať." Pravidlo nebolo nikde uložené. Existovalo len celkové % v `docs/STATUS.md` (#792), nie % session.
