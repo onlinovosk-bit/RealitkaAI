@@ -48,7 +48,11 @@ export type UsageMetricName =
   | "lead_contact_attempt"
   // DEMAND-D4: a broker opened the verified-demand matches on a lead — the
   // "opened" step of the matching funnel (matching-input-contract-v1 §4).
-  | "demand_matches_view";
+  | "demand_matches_view"
+  // GMAIL-CONNECT: pripojenie / odpojenie schránky agentúry (príjem dopytov).
+  | "gmail_connect_started"
+  | "gmail_connect"
+  | "gmail_disconnect";
 
 /**
  * Inkrementuje denný počítadlo cez RPC (service role).

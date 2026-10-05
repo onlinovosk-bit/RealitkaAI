@@ -1,5 +1,25 @@
 # Critical Decisions Log
 
+## 2026-10-05 — GMAIL-CONNECT: pripojenie Gmailu cez Revolis (kód hotový, neaktivované)
+
+**GO foundera.** Dôvod: Playground (dovtedajšia cesta) vie autorizovať len ten, kto ho má otvorený s našimi údajmi — Smolko by zadával heslo v cudzom prehliadači alebo by dostal `client secret`.
+**Constitution v2:** BUILD — retencia (stratený dopyt = stratená provízia), škáluje na ďalších klientov, bez VETO. **gdpr-advisor:** skill nebol dostupný; posúdenie `docs/architecture/inbound-gmail-pull-gdpr.md` doplnené (token šifrovane v DB, súhlas ako doklad pokynu).
+
+**Čo je v kóde:** migrácia `agency_gmail_inbound_oauth` (šifrovaný token, DB sama odmietne povolenie nad čítanie, deny-all RLS); `/api/integrations/gmail-inbound/{connect,callback,disconnect}` (len aktívny
+owner/manager; agentúra z profilu nie z URL; state viazaný na profil aj agentúru, 15 min; fail-closed bez kľúčov, žiadny vývojársky záložný kľúč; rate limit + telemetria); karta v Integráciách (aj keď je zvyšok
+zamknutý plánom); pull číta pripojenia z DB, izolovane po agentúrach, štítok „Revolis" hľadá podľa názvu, `invalid_grant` vypne len to pripojenie.
+
+**Dôkaz:** 783 testov v `src/lib/inbound`, trasách a `tests/verification` zelených; `check-api-contract` 0 nových porušení; 13 mutácií (bez kontroly agentúry/profilu v state, plaintext do DB, bez kontroly role, agentúra z URL,
+povolený gmail.send, state bez expirácie, slabé tajomstvo, DB bez readonly constraintu, pull len prvej agentúry, status vracia ciphertext, invalid_grant nevypne, disconnect nezmaže) — všetky červené; jedna (M6, zlyhané zmazanie
+hlásené ako odpojené) najprv prežila → doplnený test.
+
+**Zistenia pri kontrole dual-runu (5. 10.):** (1) 1. 10. „strata dopytu" nebola: nepreposlaná správa bola ponuka spolupráce s 26,7 MB prílohou (Smolko poslal hlavičky 2. 10.). (2) Dual-run nezačal: 0 behov, 0 riadkov
+`agency_gmail_inbound_seen`, GitHub secrets `CRM_BASE_URL`/`CRON_SECRET` neexistujú (workflow sa preskakuje). (3) **GitHub `*/10` beží reálne každých 3 až 4,5 h** (13:44, 17:52, 20:56, 23:52, 04:27 UTC) — spúšťač treba
+zmeniť (Vercel Pro alebo Cloudflare cron; čaká na rozhodnutie foundera). (4) V DPA Prílohe č. 2 je „OpenAI (alebo Anthropic)" — moje tvrdenie, že Anthropic chýba, bolo nepresné; problém je nejasné „alebo".
+
+**Nemerané — vedomé:** žiadny živý súhlas v Google (nemám prístup); migrácia `20261005100000` **nie je v PROD**; neviem, kto je jediný `owner` profil agentúry Smolko (`ra***@gmail.com`) — ak to nie je Smolko, nemá sa ako prihlásiť a pripojiť
+(pozvánkový odkaz = ďalšia stena). Režim Google aplikácie (Testing = token 7 dní) je z dokumentácie. SCOREBOARD sa nehýbe: v PROD nič nebeží.
+
 ## [2026-10-02] Postup session v % vynútený Stop hookom + oprava rozbitého settings.json
 - **Founder:** „Prečo si zase zabudol uvádzať posun v percentách? … nájdi riešenie, na ktoré nebudeš zabúdať." Pravidlo nebolo nikde uložené. Existovalo len celkové % v `docs/STATUS.md` (#792), nie % session.
 - **Riešenie:** blok `SESSION` v `docs/STATUS.md` (cieľ + míľniky; % = hotové/všetky). `.claude/hooks/session-progress.sh` ho počíta. **Stop hook** zablokuje odpoveď na správu foundera bez riadku `Session …: NN %` a model ho musí doplniť. Webhook turny sa nevynucujú (pracovná dohoda: neodpisovať). Ochrana pred slučkou: `stop_hook_active`. Pravidlo je aj v CLAUDE.md (dir. 9) a WALL-RULES (9).
