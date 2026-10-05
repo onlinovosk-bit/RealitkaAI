@@ -18,6 +18,18 @@
 ### Ďalší krok
 Founder: `bash scripts/ops/stripe-verify-prices.sh --spec` → vytvoriť 10 cien v Stripe LIVE → poslať výstup VERIFY s kľúčom (Prices: Read + Account: Read).
 
+## Session 2026-10-02 (PLATBY-E2E implementácia)
+### Dokončené
+- `apps/crm/src/lib/billing-lifecycle.ts` + volanie v `api/billing/webhook/route.ts`: zrušenie, zmena miest a zlyhaná platba sa premietajú do `agencies` (stav zo `subscriptions.retrieve`, nie z udalosti). Chyba → 500, Stripe zopakuje.
+- `STRIPE_WEBHOOK_SECRET` v `DEGRADED_WITHOUT` (`config/env.ts`); `webhookSecretConfigured` v `/api/billing/checkout-config`.
+- Testy: `src/lib/__tests__/billing-lifecycle.test.ts` (15), `env-validate.test.ts` upravený; mutation proof 9/9; `prepush-gate` PASS.
+- `docs/STATUS.md` (riadok platieb), `docs/reports/2026-10-02-platby-e2e-implementacia.md`.
+### Rozpracované / Pending
+- PROD neoverené: webhook endpoint a udalosti v Stripe, `STRIPE_WEBHOOK_SECRET` vo Vercel, ceny (krok C). Stará cesta `planKey` (F3) nezmenená.
+### Kľúčové súbory zmenené
+- apps/crm/src/lib/billing-lifecycle.ts, apps/crm/src/app/api/billing/webhook/route.ts, apps/crm/src/config/env.ts, apps/crm/src/app/api/billing/checkout-config/route.ts
+### Ďalší krok
+Founder: Stripe krok C a `STRIPE_WEBHOOK_SECRET`; potom smoke nákup a zrušenie.
 ## Session 2026-10-02 (prázdna derivovaná vrstva: zápis, honest metriky, opt-in)
 ### Dokončené
 - `apps/crm/src/lib/leads/mark-contacted.ts` (#800, merge `a525faa2`): `leads.last_contact_at` konečne niekto zapisuje — monotonický guard, measured `stamped`, fail-soft. Desať povrchov čítalo stĺpec, ktorý bol NULL na 520 z 520 PROD riadkov.
