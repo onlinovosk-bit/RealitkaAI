@@ -52,6 +52,7 @@ const envSchema = z.object({
   // Cenník v2 (pricing-v2-contract.ts) — za prepínačom PRICING_V2_ENABLED.
   PRICING_V2_ENABLED: z.string().optional(),
   PRICING_V2_STRIPE_TAX: z.string().optional(),
+  PRICING_V2_PLANS_ONLY: z.string().optional(),
   STRIPE_PRICE_V2_START: z.string().optional(),
   STRIPE_PRICE_V2_TEAM: z.string().optional(),
   STRIPE_PRICE_V2_OFFICE: z.string().optional(),

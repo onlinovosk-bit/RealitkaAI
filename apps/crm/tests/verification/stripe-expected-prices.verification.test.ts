@@ -182,6 +182,8 @@ function price(amount: number, opts: Partial<{
   currency: string;
   livemode: boolean;
   product: string;
+  taxBehavior: string;
+  taxCode: string | null;
 }> = {}): StripePrice {
   const type = opts.type ?? "recurring";
   seq += 1;
@@ -193,11 +195,16 @@ function price(amount: number, opts: Partial<{
     livemode: opts.livemode ?? true,
     type,
     billing_scheme: "per_unit",
+    tax_behavior: opts.taxBehavior ?? "exclusive",
     recurring:
       type === "recurring"
         ? { interval: opts.interval ?? "month", interval_count: opts.intervalCount ?? 1, usage_type: "licensed" }
         : null,
-    product: { name: opts.product ?? `product ${amount}`, active: true },
+    product: {
+      name: opts.product ?? `product ${amount}`,
+      active: true,
+      tax_code: opts.taxCode === undefined ? "txcd_fixture0" : opts.taxCode,
+    },
   };
 }
 
@@ -292,6 +299,32 @@ describe("stripe_verify_prices.py (offline, --fixture)", () => {
     const { out } = run(prices);
     expect(out).toMatch(/MISSING {2}STRIPE_PRICE_OFFICE_SEAT[\s\S]*livemode=false/);
     expect(out).toMatch(/MISSING {2}STRIPE_PRICE_STARTER_PACK[\s\S]*currency=czk/);
+  });
+
+  it("v2 price with tax_behavior other than exclusive is MISSING and never reaches the env patch", () => {
+    const prices = allExpected().filter((p) => p.unit_amount !== 2500);
+    prices.push(price(2500, { product: "Revolis v2 Start", taxBehavior: "inclusive" }));
+    const { code, out } = run(prices);
+    expect(out).toMatch(/MISSING {2}STRIPE_PRICE_V2_START[\s\S]*tax_behavior=inclusive, treba exclusive/);
+    expect(out).not.toMatch(/^STRIPE_PRICE_V2_START=/m);
+    expect(code).toBe(1);
+  });
+
+  it("v2 price with unspecified tax_behavior is MISSING", () => {
+    const prices = allExpected().filter((p) => p.unit_amount !== 6000);
+    prices.push(price(6000, { product: "Revolis v2 Team", taxBehavior: "unspecified" }));
+    const { out } = run(prices);
+    expect(out).toMatch(/MISSING {2}STRIPE_PRICE_V2_TEAM[\s\S]*tax_behavior=unspecified/);
+  });
+
+  it("v2 price whose product has no tax_code is MISSING; legacy prices do not need one", () => {
+    const prices = allExpected().filter((p) => p.unit_amount !== 14900);
+    prices.push(price(14900, { product: "Revolis v2 Kancelária", taxCode: null }));
+    const { code, out } = run(prices);
+    expect(out).toMatch(/MISSING {2}STRIPE_PRICE_V2_OFFICE[\s\S]*product\.tax_code chyba/);
+    expect(code).toBe(1);
+    const legacy = run(allExpected().map((p) => (typeof p.product === "object" && !String((p.product as { name: string }).name).startsWith("Revolis v2") ? { ...p, tax_behavior: "unspecified", product: { ...(p.product as object), tax_code: null } } : p)));
+    expect(legacy.code).toBe(0);
   });
 
   it("v2 Siet 349 EUR and Owner Cockpit 349 EUR resolve by product name; a v2 price with a foreign name stays AMBIG", () => {

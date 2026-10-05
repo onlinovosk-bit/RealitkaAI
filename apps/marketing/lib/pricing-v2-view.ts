@@ -58,6 +58,8 @@ export type PricingV2View = {
   extraCredit: { netLabel: string; grossLabel: string }
   /** CTA pod blokom balíkov: balík sa pridáva až po registrácii v CRM */
   packsCtaHref: string
+  /** true = predávajú sa len plány: balíky a dokúpenie kreditov sa na webe neukazujú */
+  plansOnly: boolean
 }
 
 /** Cena z centov v sk formáte: 2500 -> „25 €“, 3075 -> „30,75 €“ (nezlomiteľná medzera pred €). */
@@ -97,7 +99,12 @@ function usersLabel(min: number, max: number | null): string {
   return `${min}–${max} používateľov`
 }
 
-export function buildPricingV2View(catalog: PricingV2Catalog, crmUrlRaw?: string | null): PricingV2View {
+export function buildPricingV2View(
+  catalog: PricingV2Catalog,
+  crmUrlRaw?: string | null,
+  options: { plansOnly?: boolean } = {},
+): PricingV2View {
+  const plansOnly = options.plansOnly === true
   const crmUrl = safeCrmUrl(crmUrlRaw)
   return {
     vatPercent: catalog.vatPercent,
@@ -117,7 +124,8 @@ export function buildPricingV2View(catalog: PricingV2Catalog, crmUrlRaw?: string
         ctaLabel: ctaIsDemo ? 'Dohodnúť cenu na deme →' : 'Založiť kanceláriu →',
       }
     }),
-    packs: catalog.packs.map((p) => ({
+    plansOnly,
+    packs: (plansOnly ? [] : catalog.packs).map((p) => ({
       credits: p.credits,
       creditsLabel: `${p.credits} kreditov`,
       netLabel: formatEurCents(p.netCents),

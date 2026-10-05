@@ -8,6 +8,7 @@
 import { isValidStripePriceId } from "@/lib/program-tier-pricing";
 import {
   PRICING_V2_BAND_IDS,
+  isPricingV2PlansOnly,
   PRICING_V2_MONTHLY_PACKS,
   resolvePricingV2Band,
   type PricingV2BandId,
@@ -44,6 +45,8 @@ export const PRICING_V2_ERROR_CODES = {
   pricesNotConfigured: "prices_not_configured",
   /** Neočakávaná výnimka pri tvorbe v2 checkoutu (napr. profil bez agentúry): 503, nie chyba vstupu. */
   checkoutFailed: "checkout_failed",
+  /** Režim „len plány“: balík kreditov a jednorazový kredit sa nepredávajú (403). */
+  creditsNotSold: "credits_not_sold",
 } as const;
 
 export type PricingV2CheckoutRequest =
@@ -167,6 +170,8 @@ export type PricingV2ConfigPayload = {
   missingPriceEnvKeys: string[];
   /** null, keď v2 nie je zapnuté */
   catalog: PricingV2Catalog | null;
+  /** true = predávajú sa len plány: `catalog.packs` je prázdne a dokúpenie kreditov sa neponúka */
+  plansOnly?: boolean;
 };
 
 /** Mapovanie pásma na `agencies.account_tier` (rovnaké hodnoty ako legacy seat tier → existujúce gating funguje). */
@@ -180,12 +185,14 @@ export const PRICING_V2_BAND_ACCOUNT_TIER: Record<PricingV2BandId, "starter" | "
 /** Hodnoty stĺpca `agencies.pricing_model` pre v2; NULL = legacy. */
 export const PRICING_V2_AGENCY_MODEL = "v2" as const;
 
-/** Názvy env premenných s chýbajúcim alebo neplatným Stripe price ID (placeholder `price_xxx` neprejde). */
+/**
+ * Názvy env premenných s chýbajúcim alebo neplatným Stripe price ID (placeholder `price_xxx` neprejde).
+ * V režime „len plány“ sa vyžadujú iba ceny plánov; balíky a kredit sa nepredávajú, takže ich chýbanie nič neblokuje.
+ */
 export function missingPricingV2PriceEnvKeys(env: Record<string, string | undefined> = process.env): string[] {
   const names = [
     ...PRICING_V2_BAND_IDS.map((id) => PRICING_V2_BAND_PRICE_ENV[id]),
-    ...PACK_SIZES.map((size) => PRICING_V2_PACK_PRICE_ENV[size]),
-    PRICING_V2_CREDIT_PRICE_ENV,
+    ...(isPricingV2PlansOnly(env) ? [] : [...PACK_SIZES.map((size) => PRICING_V2_PACK_PRICE_ENV[size]), PRICING_V2_CREDIT_PRICE_ENV]),
   ];
   return names.filter((name) => !isValidStripePriceId(env[name]));
 }

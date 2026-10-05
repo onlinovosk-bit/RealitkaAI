@@ -24,7 +24,7 @@ export default function PricingV2CreditsTopup({ config, navigate = defaultNaviga
   const [error, setError] = useState<string | null>(null);
 
   const catalog = config.catalog;
-  if (!catalog) return null;
+  if (!catalog || config.plansOnly) return null;
 
   const amount = priceExtraCredits(credits, catalog.vatPercent);
   const canBuy = config.checkoutAvailable && amount !== null && !busy;

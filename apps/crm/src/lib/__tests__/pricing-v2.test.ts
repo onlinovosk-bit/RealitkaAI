@@ -6,6 +6,7 @@ import {
   buildPricingV2Catalog,
   grossCentsFromNet,
   isPricingV2Enabled,
+  isPricingV2PlansOnly,
   monthlyOfficeGrantCredits,
   priceExtraCredits,
   priceFromNetCents,
@@ -237,5 +238,19 @@ describe("pricing-v2: prepínač a ochrana existujúceho klienta", () => {
   it("nová kancelária dostane v2 len keď je prepínač zapnutý", () => {
     expect(resolvePricingModel({ v2Enabled: false, hasLegacySubscription: false })).toBe("legacy");
     expect(resolvePricingModel({ v2Enabled: true, hasLegacySubscription: false })).toBe("v2");
+  });
+});
+
+describe("isPricingV2PlansOnly (fail-closed)", () => {
+  it("predvolene zapnuté", () => {
+    expect(isPricingV2PlansOnly({})).toBe(true);
+    expect(isPricingV2PlansOnly({ PRICING_V2_PLANS_ONLY: "" })).toBe(true);
+    expect(isPricingV2PlansOnly({ PRICING_V2_PLANS_ONLY: "true" })).toBe(true);
+    expect(isPricingV2PlansOnly({ PRICING_V2_PLANS_ONLY: "nonsense" })).toBe(true);
+  });
+  it("vypína len výslovné false / 0 / off", () => {
+    for (const v of ["false", "0", "off", " FALSE ", "Off"]) {
+      expect(isPricingV2PlansOnly({ PRICING_V2_PLANS_ONLY: v })).toBe(false);
+    }
   });
 });

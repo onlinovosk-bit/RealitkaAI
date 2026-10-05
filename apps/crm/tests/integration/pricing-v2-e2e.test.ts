@@ -292,6 +292,8 @@ beforeEach(() => {
   h.getCurrentProfile.mockResolvedValue({ id: "prof-1", agency_id: AG });
   vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_dummy");
   vi.stubEnv("PRICING_V2_ENABLED", "true");
+  // Režim „celý cenník“ (balíky + kredit sa predávajú); režim „len plány“ je v plans-only testoch.
+  vi.stubEnv("PRICING_V2_PLANS_ONLY", "false");
   for (const [k, v] of Object.entries(PRICE)) vi.stubEnv(k, v);
   vi.spyOn(console, "warn").mockImplementation(() => {});
   vi.spyOn(console, "error").mockImplementation(() => {});

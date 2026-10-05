@@ -131,6 +131,16 @@ export function isPricingV2Enabled(env: Record<string, string | undefined> = pro
   return normalized === "true" || normalized === "1" || normalized === "on";
 }
 
+/**
+ * Režim „len plány“ (predvolene ZAPNUTÝ, fail-closed): predávajú sa štyri plány, mesačné balíky kreditov
+ * a jednorazový kredit nie. Dôvod: `CREDITS_ENFORCEMENT` je vypnutý a náklad na kredit nie je meraný.
+ * Vypína sa len výslovne `PRICING_V2_PLANS_ONLY=false` / `0` / `off`.
+ */
+export function isPricingV2PlansOnly(env: Record<string, string | undefined> = process.env): boolean {
+  const raw = env.PRICING_V2_PLANS_ONLY?.trim().toLowerCase();
+  return !(raw === "false" || raw === "0" || raw === "off");
+}
+
 export type PricingModel = "legacy" | "v2";
 
 /**

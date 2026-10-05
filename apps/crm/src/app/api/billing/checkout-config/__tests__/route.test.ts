@@ -85,4 +85,30 @@ describe("GET /api/billing/checkout-config", () => {
     expect(v2.catalog.vatPercent).toBe(23);
     expect(v2.catalog.bands.find((b) => b.id === "team")).toMatchObject({ netCents: 6000, grossCents: 7380 });
   });
+
+  it("len plány (predvolené): v odpovedi nie sú balíky; stačí 4 ceny plánov; JSON nenesie ceny balíkov", async () => {
+    vi.stubEnv("PRICING_V2_ENABLED", "on");
+    for (const [k, v] of Object.entries(V2_ENV).filter(([k]) => !k.includes("PACK") && !k.endsWith("CREDIT"))) vi.stubEnv(k, v);
+    const v2 = (await get()).pricingV2 as {
+      plansOnly: boolean;
+      checkoutAvailable: boolean;
+      missingPriceEnvKeys: string[];
+      catalog: { bands: unknown[]; packs: unknown[] };
+    };
+    expect(v2.plansOnly).toBe(true);
+    expect(v2.checkoutAvailable).toBe(true);
+    expect(v2.missingPriceEnvKeys).toEqual([]);
+    expect(v2.catalog.bands).toHaveLength(4);
+    expect(v2.catalog.packs).toEqual([]);
+  });
+
+  it("PRICING_V2_PLANS_ONLY=false: balíky v katalógu a vyžaduje sa všetkých 10 cien", async () => {
+    vi.stubEnv("PRICING_V2_ENABLED", "on");
+    vi.stubEnv("PRICING_V2_PLANS_ONLY", "false");
+    for (const [k, v] of Object.entries(V2_ENV).filter(([k]) => !k.includes("PACK") && !k.endsWith("CREDIT"))) vi.stubEnv(k, v);
+    const v2 = (await get()).pricingV2 as { plansOnly: boolean; checkoutAvailable: boolean; catalog: { packs: unknown[] } };
+    expect(v2.plansOnly).toBe(false);
+    expect(v2.checkoutAvailable).toBe(false);
+    expect(v2.catalog.packs).toHaveLength(5);
+  });
 });

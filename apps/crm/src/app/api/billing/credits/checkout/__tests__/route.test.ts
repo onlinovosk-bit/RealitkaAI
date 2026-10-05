@@ -102,6 +102,7 @@ describe("POST /api/billing/credits/checkout — PRICING_V2_ENABLED vypnuté (kr
 describe("POST /api/billing/credits/checkout — PRICING_V2_ENABLED zapnuté", () => {
   beforeEach(() => {
     vi.stubEnv("PRICING_V2_ENABLED", "true");
+    vi.stubEnv("PRICING_V2_PLANS_ONLY", "false");
     for (const [k, v] of Object.entries(V2_ENV)) vi.stubEnv(k, v);
   });
 
@@ -195,5 +196,56 @@ describe("POST /api/billing/credits/checkout — PRICING_V2_ENABLED zapnuté", (
     h.createSeat.mockRejectedValueOnce(new Error("seat boom"));
     const res = await call({ checkoutType: "seat", seatTier: "solo", quantity: 1 });
     expect(res.status).toBe(400);
+  });
+});
+
+describe("POST /api/billing/credits/checkout — režim „len plány“ (predvolený pri zapnutom v2)", () => {
+  beforeEach(() => {
+    vi.stubEnv("PRICING_V2_ENABLED", "true");
+    // PRICING_V2_PLANS_ONLY zámerne nenastavené: predvolené správanie musí predaj balíkov blokovať.
+    for (const [k, v] of Object.entries(V2_ENV)) vi.stubEnv(k, v);
+  });
+
+  it("plan bez balíka prejde", async () => {
+    const res = await call({ checkoutType: "pricing_v2", users: 3 });
+    expect(res.status).toBe(200);
+    expect(h.createV2).toHaveBeenCalledWith({ checkoutType: "pricing_v2", users: 3, packCredits: null });
+  });
+
+  it.each([60, 120, 180, 240, 300])("plan s balíkom %i je 403 credits_not_sold a nedôjde k Stripe", async (pack) => {
+    const res = await call({ checkoutType: "pricing_v2", users: 3, packCredits: pack });
+    expect(res.status).toBe(403);
+    expect((await res.json()).code).toBe("credits_not_sold");
+    expect(h.createV2).not.toHaveBeenCalled();
+  });
+
+  it("jednorazový kredit je 403 credits_not_sold a nedôjde k Stripe", async () => {
+    const res = await call({ checkoutType: "pricing_v2_credits", credits: 25 });
+    expect(res.status).toBe(403);
+    expect((await res.json()).code).toBe("credits_not_sold");
+    expect(h.createV2).not.toHaveBeenCalled();
+  });
+
+  it("blokuje aj keď sú ceny balíkov a kreditu v env platné (nestačí „chýba cena“)", async () => {
+    const res = await call({ checkoutType: "pricing_v2", users: 3, packCredits: 60 });
+    expect(res.status).toBe(403);
+  });
+
+  it.each(["false", "0", "off", " OFF "])("PRICING_V2_PLANS_ONLY=%j výslovne zapne predaj balíkov", async (value) => {
+    vi.stubEnv("PRICING_V2_PLANS_ONLY", value);
+    const res = await call({ checkoutType: "pricing_v2", users: 3, packCredits: 60 });
+    expect(res.status).toBe(200);
+  });
+
+  it.each(["", "true", "1", "yes", "nonsense"])("PRICING_V2_PLANS_ONLY=%j ostáva v bezpečnom režime", async (value) => {
+    vi.stubEnv("PRICING_V2_PLANS_ONLY", value);
+    const res = await call({ checkoutType: "pricing_v2_credits", credits: 5 });
+    expect(res.status).toBe(403);
+  });
+
+  it("plan bez cien balíkov v env: nie je 503, chýbajúce ceny balíkov nič neblokujú", async () => {
+    for (const k of Object.keys(V2_ENV).filter((n) => n.includes("PACK") || n.endsWith("CREDIT"))) vi.stubEnv(k, "");
+    const res = await call({ checkoutType: "pricing_v2", users: 3 });
+    expect(res.status).toBe(200);
   });
 });
