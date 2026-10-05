@@ -42,6 +42,7 @@ V repe žijú **dva cenové modely naraz**: (A) seat 79/71/63 € v kóde (CRM a
 - Neoverené mimo repa: stav Stripe (test aj live), produkčné env, verejný web revolis.ai (overovať až pri W4).
 
 ## 5. Dôsledok pre plán
-- Kritická cesta W0 → W1 → W2A → W3 → W4 ostáva. Pre W1 treba pred prácou rozhodnúť **základ DPH** (s DPH podľa správy z 5. 10., bez DPH podľa exekučného plánu) a či balíky kopírujú veľkosti AIRAmax (50…300) alebo vlastné (60…300).
+- Kritická cesta W0 → W1 → W2A → W3 → W4 ostáva. **Rozhodnuté foundera (5. 10.):** ceny **bez DPH**, balíky **vlastné 60/120/180/240/300** (34/62/86/108/129 € bez DPH). Základ DPH u AIRAmax stále neoverený.
+- **W1 hotová v kóde** (`apps/crm/src/lib/pricing-v2.ts` + test): pásma, čistá/konečná cena, grant na kanceláriu, balíky, prepínač `PRICING_V2_ENABLED` (predvolene vypnutý), ochrana legacy predplatného. Nič z toho zatiaľ nepoužíva checkout ani webhook (to je W2).
 - Vetva A nesie najviac: nový grant na kanceláriu, plnenie mesačných balíkov z `invoice.paid`, zmena pásma, test duplicitného webhooku. Vetva C musí zjednotiť marketing checkout s CRM kontraktom (metadata), inak sa predaj z webu nenaplní.
 - Všetky ceny z kódu a webu treba zosúladiť až po W3; do vtedy ostáva v2 za vypnutým prepínačom.

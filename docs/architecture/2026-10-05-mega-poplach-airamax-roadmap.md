@@ -192,16 +192,20 @@ Rozhodnutie o cenách je výlučne founderovo a zmeny cien/billingu sú na denyl
 
 **Stav (aktualizované po odpovediach foundera 5. 10.):** cenník a kredity sú **odsúhlasené ako smer**, implementácia (pásma, Stripe, UI) čaká na samostatné GO. Jediná kódová zmena, ktorú founder výslovne nariadil: `LISTING_DESCRIPTION` 2 → 1 kredit (hotovo, viď nižšie). Odsúhlasený model nahrádza `DEC-20260924-001` (199 € / kancelária, „AI bez kreditov“) — nahradenie vyplýva z toho, že founder navrhol kredity; výslovne na otázku (e) neodpovedal.
 
-| Pásmo | Ľudia | Cena s DPH | Bez DPH (23 %, overiť) | AIRAmax | Rozdiel (nominálne) | Kredity |
-|---|---|---|---|---|---|---|
-| Start | 1 | 25 € | 20,33 € | 29 € | −13,8 % | 25 |
-| Team | 2–6 | 60 € | 48,78 € | 69 € | −13,0 % | 60 |
-| Kancelária | 7–25 | 149 € | 121,14 € | 179 € | −16,8 % | 120 |
-| Sieť | 26+ | od 349 € | 283,74 € | od 399 € | −12,5 % | 175 |
+**ZÁKLAD DPH — ROZHODNUTÉ foundera (5. 10., po exekučnom pláne): ceny sú BEZ DPH.** Tým sa prepisuje moja predchádzajúca verzia tabuľky (tam boli 25/60/149/349 € ako „s DPH“). Veľkosti balíkov: **vlastné 60/120/180/240/300** (nie kópia AIRAmax).
+
+| Pásmo | Ľudia | Bez DPH / mes. | S 23 % DPH | Kredity | AIRAmax (základ DPH **neoverený**) | Rozdiel, ak je ich cena BEZ DPH | Rozdiel, ak je ich cena S DPH |
+|---|---|---|---|---|---|---|---|
+| Start | 1 | 25 € | 30,75 € | 25 | 29 € | −13,8 % | +6,0 % (sme drahší) |
+| Team | 2–6 | 60 € | 73,80 € | 60 | 69 € | −13,0 % | +7,0 % |
+| Kancelária | 7–25 | 149 € | 183,27 € | 120 | 179 € | −16,8 % | +2,4 % |
+| Sieť | 26+ | od 349 € | od 429,27 € | 175 | od 399 € | −12,5 % | +7,6 % |
+
+**Dôsledok rozhodnutia „bez DPH“:** tvrdenie „sme lacnejší než AIRAmax“ platí **len ak sú aj ich ceny bez DPH**. Ak sú ich ceny s DPH (čo je v B2C/SMB cenníkoch na SK bežné), koncový zákazník platí u nás o 2–8 % viac. Základ DPH u AIRAmax som nevedel overiť (`airamax.com` je z tohto prostredia zablokované) a founder ho neoznámil — **stále otvorené**, treba pozrieť pätičku ich cenníka alebo VOP. Rovnaká závislosť platí pre balíky kreditov.
 
 Hranica Siete bola na pokyn foundera posunutá z 23+ na **26+** (Kancelária 7–25). Tým zaniklo okno, v ktorom sme boli +95 % drahší. Pozn.: hranice pásiem (2–6, 7–25, 26+) sú teraz zhodné s hranicami AIRAmax; je to vedomé, lebo zákazník porovnáva rovnaké veľkosti kancelárií.
 
-**Ak sú ich ceny bez DPH** (na snímkach neuvedené), ich ceny s DPH sú ≈ 35,67 / 84,87 / 220,17 / 490,77 € a my sme lacnejší o ≈ 29–32 %, nie o 13–17 %. Pred zverejnením cenníka to treba zistiť z ich VOP/pätičky.
+Ak sú ich ceny bez DPH, ich ceny s DPH sú ≈ 35,67 / 84,87 / 220,17 / 490,77 € a koncový zákazník by u nás platil (30,75 / 73,80 / 183,27 / 429,27 €) o 13–17 % menej. Pred zverejnením cenníka to treba zistiť z ich VOP/pätičky.
 
 **Prepočet kreditov podľa ich logiky.** Ich logika (odvodená zo snímok): jedna pevná cena kreditu 0,80 € vo všetkých pásmach; „hodnota kreditov v pláne“ = kredity × 0,80 €; podiel hodnoty na cene plánu klesá 55 → 58 → 45 → 30 %. Navrhujem **pevnú cenu kreditu 0,70 €** (−12,5 % voči ich 0,80 €, v súlade s rozdielom cien plánov):
 
@@ -222,7 +226,7 @@ Dôsledok: za nižšiu cenu dávame o 33–45 % viac kreditov na 1 € plánu. J
 5. **Náklad na kredit je NEMERANÝ.** Cena kreditu 0,70 € je zmysluplná len ak náklad (LLM, prípadné API na obrázky) na najdrahšiu akciu, ktorú za kredit predáme, je pod ňou s maržou. Vzorec: marža na kredit = 1 − (náklad na kredit ÷ 0,70 €). Číslo dosadím po zmeraní z `callOpenAI()` telemetrie (DEC-20260924-002). Do tej doby je 0,70 € **predbežné**.
 6. **Balíky kreditov — prepočet podľa pokynu foundera (v balíčkoch o 1–4 centy lacnejší na kredit než AIRAmax).** Ich balíky (nová snímka): **mesačné** balíky 50 kr = 30 € (0,60), 100 = 55 € (0,55), 150 = 78 € (0,52), 200 = 98 € (0,49), 250 = 118 € (0,472), 300 = 135 € (0,45), nad 300 na mieru; bez balíčka 0,80 €/kredit. Kredity zdieľa celá kancelária; 1 kredit = 1 úprava fotky / 1 pôdorys / 1 text inzerátu, AI Video Reel = 4 kredity; keď sa kredity minú, CRM funguje ďalej bez obmedzenia. Ich balíky majú iné veľkosti než naše plány, preto porovnávam s **lineárne interpolovanou cenou ich balíka pri našej veľkosti** (interpolácia je moja, nie ich cenník):
 
-| Náš balík (kr / mes) | Ich cena pri rovnakom počte (interpolácia) | Naša cena | €/kredit (my vs. oni) | Rozdiel na kredit | Zľava voči 0,70 € |
+| Náš balík (kr / mes) | Ich cena pri rovnakom počte (interpolácia; základ DPH neoverený) | Naša cena (bez DPH) | €/kredit (my vs. oni) | Rozdiel na kredit | Zľava voči 0,70 € |
 |---|---|---|---|---|---|
 | 60 | 35,00 € | **34 €** | 0,567 vs. 0,583 | −1,7 c | −19 % |
 | 120 | 64,20 € | **62 €** | 0,517 vs. 0,535 | −1,8 c | −26 % |
