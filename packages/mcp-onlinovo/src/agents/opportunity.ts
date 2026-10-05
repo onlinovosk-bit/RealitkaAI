@@ -153,7 +153,11 @@ function validate(snapshot: RevenueSnapshot): void {
   if (!snapshot || !Array.isArray(snapshot.orders) || !Array.isArray(snapshot.customers) || !Array.isArray(snapshot.products)) {
     throw new AgentError("INVALID_INPUT", "snapshot must contain customers, orders and products arrays");
   }
-  for (const order of snapshot.orders) assertCustomerRef(order.customer_ref);
+  for (const order of snapshot.orders) {
+    assertCustomerRef(order.customer_ref);
+    // An unparseable timestamp makes every age comparison false, so it would slip through every filter.
+    parseTime(order.placed_at, "order.placed_at");
+  }
   for (const customer of snapshot.customers) assertCustomerRef(customer.customer_ref);
 }
 

@@ -1,7 +1,7 @@
 import { hashOf } from "./canonical.js";
 import { RunBudget } from "./budget.js";
 import { validateAllocation, type Allocation } from "./allocation.js";
-import { classifySample, diffEstimate, getKpi, type ArmAggregate, type DiffEstimate, type SampleClass } from "./kpi.js";
+import { classifySample, diffEstimate, getKpi, MIN_ADEQUATE_SAMPLE_PER_ARM, type ArmAggregate, type DiffEstimate, type SampleClass } from "./kpi.js";
 import { AgentError } from "./types.js";
 
 /**
@@ -81,6 +81,8 @@ export interface ExperimentSpec {
   /** Hash of everything that must not change after approval. null while PROPOSED. */
   lock_hash: string | null;
   result: ExperimentResult | null;
+  /** Hash of `result` taken when it was recorded. A decision refuses a result that no longer matches it. */
+  result_hash: string | null;
   decision: ExperimentDecision | null;
 }
 
@@ -105,10 +107,11 @@ function nonEmpty(value: unknown, field: string): string {
 
 function lockOf(spec: ExperimentSpec): string {
   return hashOf({
+    experiment_id: spec.experiment_id,
+    audience: spec.audience,
     hypothesis: spec.hypothesis,
     control: spec.control,
     treatment: spec.treatment,
-    audience_size: spec.audience.size,
     primary_metric: spec.primary_metric,
     secondary_metrics: spec.secondary_metrics,
     success_threshold: spec.success_threshold,
@@ -159,9 +162,16 @@ export function proposeExperiment(input: ProposalInput, budget: RunBudget = new 
   if (!input.stop_conditions || input.stop_conditions.length === 0) {
     throw new AgentError("STOP_CONDITION_REQUIRED", "at least one stop condition is required");
   }
+  const observed = new Set([input.primary_metric, ...secondary]);
   for (const s of input.stop_conditions) {
     getKpi(s.metric);
-    if (!Number.isFinite(s.value)) throw new AgentError("INVALID_INPUT", "stop condition value must be a number");
+    if (s.direction !== "below" && s.direction !== "above") {
+      throw new AgentError("INVALID_INPUT", 'stop condition direction must be "below" or "above"');
+    }
+    if (typeof s.value !== "number" || !Number.isFinite(s.value)) throw new AgentError("INVALID_INPUT", "stop condition value must be a number");
+    if (!observed.has(s.metric)) {
+      throw new AgentError("INVALID_INPUT", `stop condition metric ${s.metric} is neither the primary nor a secondary metric, so it could never be evaluated`);
+    }
   }
   validateAllocation(input.allocation);
   if (!Number.isInteger(input.duration_days) || input.duration_days <= 0 || input.duration_days > 365) {
@@ -169,6 +179,12 @@ export function proposeExperiment(input: ProposalInput, budget: RunBudget = new 
   }
   if (!Number.isInteger(input.min_sample_per_arm) || (input.min_sample_per_arm as number) <= 0) {
     throw new AgentError("SAMPLE_PLAN_REQUIRED", "min_sample_per_arm must be planned as a positive integer");
+  }
+  if ((input.min_sample_per_arm as number) < MIN_ADEQUATE_SAMPLE_PER_ARM) {
+    throw new AgentError(
+      "SAMPLE_PLAN_TOO_SMALL",
+      `min_sample_per_arm must be at least ${MIN_ADEQUATE_SAMPLE_PER_ARM}: a smaller plan could never be classified adequate`,
+    );
   }
   const min = input.min_sample_per_arm as number;
 
@@ -196,6 +212,7 @@ export function proposeExperiment(input: ProposalInput, budget: RunBudget = new 
     approval: null,
     lock_hash: null,
     result: null,
+    result_hash: null,
     decision: null,
   };
 }
@@ -256,6 +273,7 @@ export function recordResult(spec: ExperimentSpec, input: ResultInput): Experime
     secondary,
     stop_breached: stop,
   };
+  next.result_hash = hashOf(next.result);
   return next;
 }
 
@@ -266,10 +284,18 @@ export function decideExperiment(spec: ExperimentSpec): ExperimentSpec {
     throw new AgentError("INVALID_TRANSITION", "a decision needs a COMPLETE experiment with a recorded result");
   }
   const r = spec.result;
+  if (spec.result_hash === null || hashOf(r) !== spec.result_hash) {
+    throw new AgentError("RESULT_IMMUTABLE", "the recorded result does not match the hash taken when it was recorded");
+  }
+  // The sample class is recomputed from the counts and the plan. A stored class is never trusted.
+  const sampleClass = classifySample(r.n_control, r.n_treatment, spec.min_sample_per_arm);
+  if (r.required_per_arm !== spec.min_sample_per_arm || r.sample_class !== sampleClass) {
+    throw new AgentError("RESULT_IMMUTABLE", "the recorded sample class does not follow from the sample counts and the pre-registered plan");
+  }
   let decision: ExperimentDecision;
   if (r.stop_breached) {
     decision = { decision: "REJECT", reason: "STOP_CONDITION", note: `Stop condition on ${r.stop_breached.metric} was breached: ${r.stop_breached.description}` };
-  } else if (r.sample_class === "INDICATIVE") {
+  } else if (sampleClass === "INDICATIVE") {
     decision = {
       decision: "ITERATE",
       reason: "INDICATIVE_SAMPLE",
@@ -310,6 +336,13 @@ export class ExperimentLedger {
     if (!stored) throw new AgentError("INVALID_INPUT", `experiment ${spec.experiment_id} is unknown`);
     if (stored.state !== spec.state && !TRANSITIONS[stored.state].includes(spec.state)) {
       throw new AgentError("INVALID_TRANSITION", `${stored.state} -> ${spec.state} is not allowed`);
+    }
+    if (stored.lock_hash !== null) {
+      // After approval the plan, the approval and the allocation salt are frozen for good.
+      if (spec.lock_hash !== stored.lock_hash || hashOf(spec.approval) !== hashOf(stored.approval)) {
+        throw new AgentError("KPI_LOCKED", "the approval or the lock of an approved experiment cannot be changed or removed");
+      }
+      verifyLock(spec);
     }
     if (stored.result && (!spec.result || hashOf(spec.result) !== hashOf(stored.result))) {
       throw new AgentError("RESULT_IMMUTABLE", "a recorded result cannot be removed or changed");
