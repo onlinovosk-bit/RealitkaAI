@@ -21,12 +21,14 @@ import {
 } from "@/lib/program-tier-pricing";
 
 export async function POST(request: Request) {
+  let isV2Request = false;
   try {
     const body = (await request.json()) as Record<string, unknown>;
 
     // Cenník v2 (pricing_v2 / pricing_v2_credits). Iné typy idú legacy cestou nižšie, nezmenené.
     const v2 = parsePricingV2CheckoutRequest(body);
     if (v2.ok || v2.reason !== "not_pricing_v2") {
+      isV2Request = true;
       if (!isPricingV2Enabled()) {
         return errorResponse("Cenník v2 nie je dostupný.", 404, { code: PRICING_V2_ERROR_CODES.disabled });
       }
@@ -101,8 +103,12 @@ export async function POST(request: Request) {
 
     return errorResponse("Neplatný checkout typ.", 400);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Checkout zlyhal.";
     console.error("[credits/checkout]", error);
+    if (isV2Request) {
+      // Vnútornú správu výnimky zákazníkovi neukazujeme; klient to zobrazí ako „nie je dostupné“.
+      return errorResponse("Checkout nie je dostupný.", 503, { code: PRICING_V2_ERROR_CODES.checkoutFailed });
+    }
+    const message = error instanceof Error ? error.message : "Checkout zlyhal.";
     return errorResponse(message, 400);
   }
 }

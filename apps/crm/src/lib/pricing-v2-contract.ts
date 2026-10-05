@@ -42,6 +42,8 @@ export const PRICING_V2_ERROR_CODES = {
   legacySubscription: "legacy_subscription",
   invalidRequest: "invalid_request",
   pricesNotConfigured: "prices_not_configured",
+  /** Neočakávaná výnimka pri tvorbe v2 checkoutu (napr. profil bez agentúry): 503, nie chyba vstupu. */
+  checkoutFailed: "checkout_failed",
 } as const;
 
 export type PricingV2CheckoutRequest =

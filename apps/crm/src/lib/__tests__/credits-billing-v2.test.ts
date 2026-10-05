@@ -10,11 +10,14 @@ const h = vi.hoisted(() => ({
   sessionsCreate: vi.fn(),
   getCurrentUser: vi.fn(),
   getCurrentProfile: vi.fn(),
+  /** Skutočný stav predplatného, ktorý vráti Stripe pri plnení checkoutu (predvolene živé). */
+  subRetrieve: vi.fn(async (id: string) => ({ id, status: "active", customer: "cus_test" })),
 }));
 
 vi.mock("stripe", () => ({
   default: vi.fn(function StripePlaceholder(this: Record<string, unknown>) {
     this.checkout = { sessions: { create: h.sessionsCreate } };
+    this.subscriptions = { retrieve: (id: string) => h.subRetrieve(id) };
     return undefined;
   }),
 }));
@@ -184,6 +187,8 @@ function creditsSession(over: Record<string, unknown> = {}, metaOver: Record<str
 beforeEach(() => {
   vi.unstubAllEnvs();
   vi.clearAllMocks();
+  vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_synthetic");
+  h.subRetrieve.mockImplementation(async (id: string) => ({ id, status: "active", customer: "cus_test" }));
   db.agencies = [];
   db.profileUpdates = [];
   db.agencyUpdates = [];
@@ -500,6 +505,38 @@ describe("fulfillPricingV2PlanCheckout (kritériá 2, 3)", () => {
     expect(await fulfillPricingV2PlanCheckout(planSession({ payment_status: "unpaid" }))).toBe(true);
     expect(db.agencyUpdates).toHaveLength(0);
     expect(rpc.grantCalls).toHaveLength(0);
+  });
+
+  it("stav berie zo Stripe: zrušené/unpaid/incomplete_expired predplatné sa neaktivuje, nič sa nezapíše ani nepridelí", async () => {
+    for (const status of ["canceled", "unpaid", "incomplete_expired"]) {
+      db.agencyUpdates = [];
+      rpc.grantCalls.length = 0;
+      h.subRetrieve.mockImplementation(async (id: string) => ({ id, status, customer: "cus_test" }));
+      expect(await fulfillPricingV2PlanCheckout(planSession())).toBe(true);
+      expect(db.agencyUpdates).toHaveLength(0);
+      expect(rpc.grantCalls).toHaveLength(0);
+    }
+  });
+
+  it("zapíše stav predplatného zo Stripe (nie natvrdo 'active'); past_due nedostane prvý grant", async () => {
+    h.subRetrieve.mockImplementation(async (id: string) => ({ id, status: "past_due", customer: "cus_test" }));
+    expect(await fulfillPricingV2PlanCheckout(planSession())).toBe(true);
+    expect(db.agencyUpdates[0]?.payload.subscription_status).toBe("past_due");
+    expect(rpc.grantCalls).toHaveLength(0);
+  });
+
+  it("Stripe nedostupný alebo chýba kľúč: fulfillment zlyhá (Stripe zopakuje), nič sa nezapíše", async () => {
+    h.subRetrieve.mockImplementation(async () => {
+      throw new Error("stripe down");
+    });
+    expect(await fulfillPricingV2PlanCheckout(planSession())).toBe(false);
+    expect(db.agencyUpdates).toHaveLength(0);
+    expect(rpc.grantCalls).toHaveLength(0);
+
+    vi.stubEnv("STRIPE_SECRET_KEY", "");
+    h.subRetrieve.mockImplementation(async (id: string) => ({ id, status: "active", customer: "cus_test" }));
+    expect(await fulfillPricingV2PlanCheckout(planSession())).toBe(false);
+    expect(db.agencyUpdates).toHaveLength(0);
   });
 
   it("agency that does not exist: update touches 0 rows -> fails, no grant", async () => {

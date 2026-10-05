@@ -179,4 +179,21 @@ describe("POST /api/billing/credits/checkout — PRICING_V2_ENABLED zapnuté", (
     h.createV2.mockResolvedValueOnce({ kind: "ok", result: { id: "cs", url: null } });
     expect((await call({ checkoutType: "pricing_v2", users: 3 })).status).toBe(503);
   });
+
+  it("výnimka pri tvorbe v2 checkoutu (napr. profil bez agentúry) -> 503 checkout_failed bez vnútornej správy", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    h.createV2.mockRejectedValueOnce(new Error("Chýba agency_id profilu — interný detail"));
+    const res = await call({ checkoutType: "pricing_v2", users: 3 });
+    expect(res.status).toBe(503);
+    const body = await res.json();
+    expect(body.code).toBe("checkout_failed");
+    expect(JSON.stringify(body)).not.toContain("agency_id");
+  });
+
+  it("výnimka v legacy ceste ostáva ako dnes (400 s textom výnimky)", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    h.createSeat.mockRejectedValueOnce(new Error("seat boom"));
+    const res = await call({ checkoutType: "seat", seatTier: "solo", quantity: 1 });
+    expect(res.status).toBe(400);
+  });
 });

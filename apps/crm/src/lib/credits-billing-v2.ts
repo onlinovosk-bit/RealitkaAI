@@ -1,6 +1,7 @@
 import Stripe from "stripe";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { requireCheckoutAgencyId } from "@/lib/credits-billing";
+import type { StripeSubscriptionReader } from "@/lib/billing-lifecycle";
 import {
   PRICING_V2_BANDS,
   PRICING_V2_BAND_IDS,
@@ -346,8 +347,40 @@ async function applyFirstPricingV2Grant(row: AgencyCreditRow): Promise<boolean> 
   return true;
 }
 
+/** Stavy, v ktorých kancelária o platený plán prišla; takéto predplatné sa nesmie znova aktivovať. */
+const REVOKED_SUBSCRIPTION_STATUSES = new Set(["canceled", "unpaid", "incomplete_expired"]);
+
+/**
+ * Skutočný stav predplatného zo Stripe. Udalosť `checkout.session.completed` môže prísť oneskorene,
+ * opakovane alebo až po `customer.subscription.deleted`; pravdu nesie Stripe, nie udalosť
+ * (rovnaký princíp ako `syncAgencyBillingLifecycle`). Bez overenia sa neaktivuje nič (fail-closed).
+ */
+async function loadLiveSubscriptionStatus(
+  subscriptionId: string,
+  reader?: StripeSubscriptionReader | null,
+): Promise<{ ok: true; status: string } | { ok: false }> {
+  const stripe = reader ?? getStripe();
+  if (!stripe) {
+    console.error("[pricing-v2] plan checkout: STRIPE_SECRET_KEY chýba, stav predplatného sa nedá overiť");
+    return { ok: false };
+  }
+  try {
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    return { ok: true, status: subscription.status };
+  } catch (err) {
+    console.error("[pricing-v2] plan checkout: stav predplatného sa nepodarilo načítať", {
+      subscriptionId,
+      code: (err as { code?: unknown } | null)?.code ?? null,
+    });
+    return { ok: false };
+  }
+}
+
 /** checkout.session (pricing_v2): nastaví pásmo/používateľov/balík a prvý grant práve raz. */
-export async function fulfillPricingV2PlanCheckout(session: Stripe.Checkout.Session): Promise<boolean> {
+export async function fulfillPricingV2PlanCheckout(
+  session: Stripe.Checkout.Session,
+  deps: { stripe?: StripeSubscriptionReader } = {},
+): Promise<boolean> {
   const meta = readPricingV2PlanMetadata(session.metadata);
   if (!meta) {
     console.warn("[pricing-v2] plan checkout: invalid metadata", { sessionId: session.id });
@@ -384,6 +417,16 @@ export async function fulfillPricingV2PlanCheckout(session: Stripe.Checkout.Sess
     return false;
   }
 
+  const live = await loadLiveSubscriptionStatus(subscriptionId, deps.stripe);
+  if (!live.ok) return false; // Stripe udalosť zopakuje
+  if (REVOKED_SUBSCRIPTION_STATUSES.has(live.status)) {
+    console.warn("[pricing-v2] plan checkout ignored: subscription is no longer live", {
+      sessionId: session.id,
+      status: live.status,
+    });
+    return true; // nič na plnenie, opakovanie by nič nezmenilo
+  }
+
   const customerId = sessionCustomerId(session);
   const update: Record<string, unknown> = {
     seats: meta.users,
@@ -392,7 +435,7 @@ export async function fulfillPricingV2PlanCheckout(session: Stripe.Checkout.Sess
     pricing_band: meta.bandId,
     licensed_users: meta.users,
     pack_credits: meta.packCredits,
-    subscription_status: "active",
+    subscription_status: live.status,
     billing_source: "stripe",
     billing_updated_at: new Date().toISOString(),
     stripe_subscription_id: subscriptionId,
@@ -423,6 +466,16 @@ export async function fulfillPricingV2PlanCheckout(session: Stripe.Checkout.Sess
     if (profileErr) console.warn("[pricing-v2] profile tier update:", profileErr.message);
   }
 
+  // Grant ide len pri aktívnom predplatnom. Pri inom stave (napr. past_due) je entitlement zapísaný
+  // a kredity pridelí cron, keď sa stav vráti na active; zlyhanie by len donekonečna opakovalo udalosť.
+  if (live.status !== "active") {
+    console.info("[pricing-v2] plan checkout: first grant skipped, subscription not active", {
+      sessionId: session.id,
+      status: live.status,
+    });
+    return true;
+  }
+
   return applyFirstPricingV2Grant({
     id: meta.agencyId,
     seats: meta.users,
@@ -434,7 +487,7 @@ export async function fulfillPricingV2PlanCheckout(session: Stripe.Checkout.Sess
     pricing_model: PRICING_V2_AGENCY_MODEL,
     pricing_band: meta.bandId,
     pack_credits: meta.packCredits,
-    subscription_status: "active",
+    subscription_status: live.status,
   });
 }
 

@@ -15,6 +15,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 type Row = Record<string, unknown> & { id: string };
 
 const h = vi.hoisted(() => ({
+  /** Skutočný stav predplatného zo Stripe pri plnení checkoutu (predvolene živé). */
+  subStatus: "active",
   created: [] as Array<Record<string, any>>,
   getCurrentUser: vi.fn(),
   getCurrentProfile: vi.fn(),
@@ -30,6 +32,9 @@ vi.mock("stripe", () => ({
           return { id: `cs_test_${h.created.length}`, url: `https://checkout.example/cs_${h.created.length}` };
         },
       },
+    };
+    this.subscriptions = {
+      retrieve: async (id: string) => ({ id, status: h.subStatus, customer: "cus_test" }),
     };
     // legacy syncAccountTier (neznáme price ID) by sa dostal sem cez customers.retrieve
     this.customers = {
@@ -274,6 +279,7 @@ const grants = () => db.ledger.filter((l) => l.kind === "grant");
 
 beforeEach(() => {
   evtSeq = 0;
+  h.subStatus = "active";
   h.created.length = 0;
   h.syncTierSpy.mockClear();
   db.agencies = [freshAgency()];
@@ -494,15 +500,26 @@ describe("(f) zrušenie", () => {
     expect(h.syncTierSpy).not.toHaveBeenCalled();
   });
 
-  // it.fails: NÁJDENÁ CHYBA (W3-QA P1). Test sa po oprave v produkčnom kóde sám prepne na červený
-  // (it.fails) -> vtedy ho zmeniť na obyčajný it().
-  it.fails("[ZRANITEĽNOSŤ] oneskorený/zopakovaný checkout.session.completed PO zrušení nesmie reaktivovať predplatné", async () => {
+  // W3-QA P1, opravené: stav predplatného sa pri plnení berie zo Stripe, nie z udalosti.
+  it("oneskorený/zopakovaný checkout.session.completed PO zrušení nesmie reaktivovať predplatné", async () => {
     const { params } = await doCheckout({ checkoutType: "pricing_v2", users: 3, packCredits: null });
     await handlePricingCheckoutWebhook(sessionEvent(params.metadata));
     await handleStripeWebhookEvent(subEvent("customer.subscription.deleted", { status: "canceled" }));
     expect(agency().subscription_status).toBe("canceled");
+    h.subStatus = "canceled"; // Stripe po zrušení hlási canceled
+    const grantsBefore = db.ledger.length;
     await handlePricingCheckoutWebhook(sessionEvent(params.metadata, {}, "evt_replay"));
     expect(agency().subscription_status).toBe("canceled");
+    expect(db.ledger.length).toBe(grantsBefore);
+  });
+
+  it("out-of-order: deleted pred completed -> opozdený completed predplatné neaktivuje a nepridelí grant", async () => {
+    const { params } = await doCheckout({ checkoutType: "pricing_v2", users: 3, packCredits: null });
+    h.subStatus = "canceled"; // predplatné bolo zrušené ešte pred doručením completed
+    const ok = await handlePricingCheckoutWebhook(sessionEvent(params.metadata));
+    expect(ok).toBe(true);
+    expect(agency().subscription_status).not.toBe("active");
+    expect(db.ledger.length).toBe(0);
   });
 });
 
@@ -769,10 +786,12 @@ describe("ŠVY A -> B: reálne handlery trás A -> reálny klientský parser B",
     expect(cfg?.catalog?.bands.map((b) => b.grossCents)).toEqual([3075, 7380, 18327, 42927]);
   });
 
-  it("[ŠEV] výnimka v checkout (profil bez agency_id) -> 400 bez code: klient ukáže 'invalid' (zdokumentované správanie)", async () => {
+  it("[ŠEV] výnimka v checkout (profil bez agency_id) -> 503 checkout_failed: klient ukáže 'nedostupné', nie 'skontrolujte počet'", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
     h.getCurrentProfile.mockResolvedValue({ id: "p", agency_id: "" });
     stubFetchToRoute();
     const out = await submitPricingV2Checkout({ checkoutType: "pricing_v2", users: 3, packCredits: null });
-    expect(out).toMatchObject({ kind: "error", code: "invalid_request" });
+    expect(out).toMatchObject({ kind: "error" });
+    expect((out as { code?: string }).code).not.toBe("invalid_request");
   });
 });
