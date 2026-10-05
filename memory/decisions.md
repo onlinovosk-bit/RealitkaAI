@@ -1,5 +1,10 @@
 # Critical Decisions Log
 
+## [2026-10-05] Tlačivo Anthropic → DPA (Reality Smolko) pripravené; backfill beh nespustený
+- **Čo:** `docs/legal/2026-10-05-anthropic-subprocesor-tlacivo.md`: Variant A (oznámenie pri všeobecnom súhlase) a Variant B (dodatok pri konkrétnom súhlase), výber podľa podpísanej rev.2 (PDF u foundera, v repo nie je). Polia na doplnenie sú označené, nič nie je domyslené. Údaje o Anthropicu sú z overenej tabuľky v `demand-contract-v1.md`, kategórie údajov z auditu volaní LLM.
+- **Nález pre advokáta:** ~20 živých funkcií už posiela údaje Anthropicu (vrátane mien), oznámenie teda pokrýva aj existujúce spracúvanie, nielen D1.
+- **Beh `extract --input` + labels + score som nespustil:** session nemá e-maily ani kľúče aplikácie; gold labels musí robiť človek (dir. 8); posielať texty klientov Anthropicu pred oznámením/dodatkom by obišlo práve túto bránu.
+
 ## [2026-10-02] Postup session v % vynútený Stop hookom + oprava rozbitého settings.json
 - **Founder:** „Prečo si zase zabudol uvádzať posun v percentách? … nájdi riešenie, na ktoré nebudeš zabúdať." Pravidlo nebolo nikde uložené. Existovalo len celkové % v `docs/STATUS.md` (#792), nie % session.
 - **Riešenie:** blok `SESSION` v `docs/STATUS.md` (cieľ + míľniky; % = hotové/všetky). `.claude/hooks/session-progress.sh` ho počíta. **Stop hook** zablokuje odpoveď na správu foundera bez riadku `Session …: NN %` a model ho musí doplniť. Webhook turny sa nevynucujú (pracovná dohoda: neodpisovať). Ochrana pred slučkou: `stop_hook_active`. Pravidlo je aj v CLAUDE.md (dir. 9) a WALL-RULES (9).
