@@ -144,9 +144,8 @@ function priceKeysDeclaredInSchema(): string[] {
 describe("src/config/env.ts ↔ program-tier-pricing.ts", () => {
   it("declares every price env key the code sells", () => {
     const declared = new Set(priceKeysDeclaredInSchema());
-    // v2 kluce (gate pricing_v2) sem nepatria: src/config/env.ts je mimo uzemia vetvy A (W2 kontrakt).
+    // Zahŕňa aj v2 kľúče (gate pricing_v2): schéma ich deklaruje od W3.
     const missing = rowsFromCode()
-      .filter((r) => r.gate !== "pricing_v2")
       .map((r) => r.env)
       .filter((env) => !declared.has(env))
       .sort();
