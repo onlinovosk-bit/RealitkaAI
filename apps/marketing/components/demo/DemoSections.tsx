@@ -1,4 +1,5 @@
 import DemoCTA from './DemoCTA'
+import { resolvePricingV2View } from '../../lib/pricing-v2-server'
 
 export function HeroSection() {
   return (
@@ -186,6 +187,18 @@ const FAQ_ITEMS = [
 ]
 
 export function FaqSection() {
+  // Cenník v2 za PRICING_V2_ENABLED: cena v prvej odpovedi z katalógu, ostatné položky nezmenené.
+  const pricingV2 = resolvePricingV2View()
+  const faqItems = pricingV2
+    ? FAQ_ITEMS.map((item, i) =>
+        i === 0
+          ? {
+              ...item,
+              a: `Plán Start od ${pricingV2.bands[0].netLabel} / mes bez DPH (${pricingV2.bands[0].grossLabel}) vs. priemerná provízia 2 000–4 000 €. Jeden reaktivovaný záujemca často pokryje ročné predplatné.`,
+            }
+          : item,
+      )
+    : FAQ_ITEMS
   return (
     <section className="demo-sec" id="faq">
       <p className="demo-tag">FAQ</p>
@@ -193,7 +206,7 @@ export function FaqSection() {
         Často kladené otázky
       </h2>
       <div className="demo-faq-list" style={{ margin: '28px auto 0' }}>
-        {FAQ_ITEMS.map((item) => (
+        {faqItems.map((item) => (
           <article key={item.q} className="demo-faq">
             <p className="demo-faq-q">{item.q}</p>
             <p className="demo-faq-a">{item.a}</p>

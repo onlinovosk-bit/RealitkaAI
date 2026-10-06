@@ -10,6 +10,22 @@ import {
 const AGENCY_CREDIT_COLUMNS =
   "id, seats, account_tier, grant_credits_balance, purchased_credits_balance, owner_cockpit_active, credits_balance";
 
+/**
+ * Grant fáza číta aj v2 polia (cenník v2): bez nich by v2 agentúra dostala legacy „team“ výpočet.
+ * Seats pre v2 = počet povolených používateľov, takže ju `.gt("seats", 0)` zachytí rovnako.
+ */
+const AGENCY_GRANT_COLUMNS = `${AGENCY_CREDIT_COLUMNS}, pricing_model, pricing_band, pack_credits, subscription_status`;
+
+/** PostgREST/Postgres: stĺpec neexistuje (migrácia v2 ešte nebola aplikovaná). */
+function isMissingColumnError(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false;
+  return (
+    error.code === "42703" ||
+    error.code === "PGRST204" ||
+    /column .* does not exist|could not find the .* column/i.test(error.message ?? "")
+  );
+}
+
 export type MonthlyCycleResult = {
   ok: boolean;
   error?: string;
@@ -75,10 +91,19 @@ export async function runMonthlyCreditCycle(): Promise<MonthlyCycleResult> {
   // Agentúry s hard expire error v tomto behu NEgrantujeme (inak retry expire
   // po úspešnom grante môže zmazať nový grant — pozri grant-engine guard).
   const grantPeriodKey = currentPeriodKey();
-  const { data: toGrant, error: grantErr } = await supabase
+  let { data: toGrant, error: grantErr } = (await supabase
     .from("agencies")
-    .select(AGENCY_CREDIT_COLUMNS)
-    .gt("seats", 0);
+    .select(AGENCY_GRANT_COLUMNS)
+    .gt("seats", 0)) as { data: unknown[] | null; error: { code?: string; message: string } | null };
+
+  // Pred aplikovaním migrácie v2 stĺpce nie sú; legacy cron nesmie kvôli tomu padnúť.
+  // (v2 agentúra bez stĺpcov nemôže existovať, takže návrat k legacy stĺpcom nič nezakrýva.)
+  if (isMissingColumnError(grantErr)) {
+    ({ data: toGrant, error: grantErr } = (await supabase
+      .from("agencies")
+      .select(AGENCY_CREDIT_COLUMNS)
+      .gt("seats", 0)) as { data: unknown[] | null; error: { code?: string; message: string } | null });
+  }
 
   if (grantErr) {
     return {

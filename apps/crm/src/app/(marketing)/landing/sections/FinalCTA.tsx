@@ -3,6 +3,8 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import CountdownTimer from './CountdownTimer';
+import FinalCTAV2 from './FinalCTAV2';
+import type { PricingV2Catalog } from '@/lib/pricing-v2';
 import SpotsCounter from './SpotsCounter';
 import { LANDING_AI_ASSISTANT_NAME } from '@/app/(marketing)/landing/landing-ai-label';
 import { RadiantSpriteIcon } from '@/components/shared/radiant-sprite-icon';
@@ -14,7 +16,9 @@ const cardStyle = {
   boxShadow: WORKDESK_CARD.boxShadow,
 };
 
-export default function FinalCTA() {
+/** `pricingV2` posiela server len pri zapnutom PRICING_V2_ENABLED; bez neho je výstup nezmenený. */
+export default function FinalCTA({ pricingV2 = null }: { pricingV2?: PricingV2Catalog | null } = {}) {
+  if (pricingV2) return <FinalCTAV2 catalog={pricingV2} />;
   return (
     <section className="relative overflow-hidden py-24 sm:py-32" style={{ background: SLATE_HORIZON.bg }}>
       <div

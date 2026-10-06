@@ -32,6 +32,7 @@ GATES = {
     "cockpit": "Owner Cockpit add-on - chybajuca = checkbox sa neukaze",
     "topup": "/billing#topup - samostatna brana, P0 neblokuje",
     "starter_pack": "marketing /balik - samostatna brana, P0 neblokuje",
+    "pricing_v2": "cennik v2 (PRICING_V2_ENABLED, sumy BEZ DPH, tax_behavior=exclusive) - samostatna brana, P0 neblokuje",
 }
 
 
@@ -134,6 +135,16 @@ def verify(manifest, prices):
     for e in manifest:
         same_amount = [p for p in prices if p.get("unit_amount") == e["amount"]]
         hits = [p for p in same_amount if reject_reason(p, e) is None]
+        if len(hits) > 1:
+            # Rovnaka suma a typ u dvoch poloziek manifestu (v2 Siet 349 EUR vs Owner Cockpit 349 EUR):
+            # cena, ktora podla nazvu produktu patri INEJ polozke manifestu, sa tejto neráta.
+            # Neznamy duplikat (ine meno) ostava AMBIG.
+            others = {
+                o["product"].strip().lower()
+                for o in manifest
+                if o is not e and o["amount"] == e["amount"] and o["type"] == e["type"]
+            }
+            hits = [p for p in hits if product_name(p).strip().lower() not in others] or hits
         if len(hits) == 1:
             line = f"{e['env']}={hits[0]['id']}"
             ok_lines.append(line)
