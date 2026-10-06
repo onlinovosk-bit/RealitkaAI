@@ -8,11 +8,13 @@
 import { isValidStripePriceId } from "@/lib/program-tier-pricing";
 import {
   PRICING_V2_BAND_IDS,
+  isPricingV2Interval,
   isPricingV2PlansOnly,
   PRICING_V2_MONTHLY_PACKS,
   resolvePricingV2Band,
   type PricingV2BandId,
   type PricingV2Catalog,
+  type PricingV2Interval,
 } from "@/lib/pricing-v2";
 
 export const PRICING_V2_CHECKOUT_TYPE_PLAN = "pricing_v2" as const;
@@ -24,6 +26,14 @@ export const PRICING_V2_BAND_PRICE_ENV: Record<PricingV2BandId, string> = {
   team: "STRIPE_PRICE_V2_TEAM",
   office: "STRIPE_PRICE_V2_OFFICE",
   network: "STRIPE_PRICE_V2_NETWORK",
+};
+
+/** Ročné ceny plánov (12 × mesačná, bez zľavy): druhá Price na rovnakom Stripe produkte, interval `year`. */
+export const PRICING_V2_BAND_YEARLY_PRICE_ENV: Record<PricingV2BandId, string> = {
+  start: "STRIPE_PRICE_V2_START_YEARLY",
+  team: "STRIPE_PRICE_V2_TEAM_YEARLY",
+  office: "STRIPE_PRICE_V2_OFFICE_YEARLY",
+  network: "STRIPE_PRICE_V2_NETWORK_YEARLY",
 };
 
 export const PRICING_V2_PACK_PRICE_ENV: Record<number, string> = {
@@ -50,12 +60,18 @@ export const PRICING_V2_ERROR_CODES = {
 } as const;
 
 export type PricingV2CheckoutRequest =
-  | { checkoutType: typeof PRICING_V2_CHECKOUT_TYPE_PLAN; users: number; packCredits: number | null }
+  | {
+      checkoutType: typeof PRICING_V2_CHECKOUT_TYPE_PLAN;
+      users: number;
+      packCredits: number | null;
+      /** `year` = ročná platba (bez balíka kreditov); chýbajúce = `month` (parser vždy doplní) */
+      interval?: PricingV2Interval;
+    }
   | { checkoutType: typeof PRICING_V2_CHECKOUT_TYPE_CREDITS; credits: number };
 
 export type PricingV2CheckoutParseResult =
   | { ok: true; value: PricingV2CheckoutRequest }
-  | { ok: false; reason: "not_pricing_v2" | "invalid_user_count" | "invalid_pack" | "invalid_credits" };
+  | { ok: false; reason: "not_pricing_v2" | "invalid_user_count" | "invalid_pack" | "invalid_credits" | "invalid_interval" };
 
 const PACK_SIZES = PRICING_V2_MONTHLY_PACKS.map((p) => p.credits);
 
@@ -68,12 +84,16 @@ export function parsePricingV2CheckoutRequest(body: unknown): PricingV2CheckoutP
   if (type === PRICING_V2_CHECKOUT_TYPE_PLAN) {
     const band = resolvePricingV2Band(b.users as number);
     if (!band.ok) return { ok: false, reason: "invalid_user_count" };
+    const rawInterval = b.interval ?? "month";
+    if (!isPricingV2Interval(rawInterval)) return { ok: false, reason: "invalid_interval" };
     const rawPack = b.packCredits;
     if (rawPack === undefined || rawPack === null || rawPack === 0) {
-      return { ok: true, value: { checkoutType: type, users: b.users as number, packCredits: null } };
+      return { ok: true, value: { checkoutType: type, users: b.users as number, packCredits: null, interval: rawInterval } };
     }
     if (typeof rawPack !== "number" || !PACK_SIZES.includes(rawPack)) return { ok: false, reason: "invalid_pack" };
-    return { ok: true, value: { checkoutType: type, users: b.users as number, packCredits: rawPack } };
+    // Mesačný balík a ročný plán sa v jednom predplatnom miešať nedajú (Stripe: všetky položky majú rovnaký interval).
+    if (rawInterval === "year") return { ok: false, reason: "invalid_pack" };
+    return { ok: true, value: { checkoutType: type, users: b.users as number, packCredits: rawPack, interval: rawInterval } };
   }
 
   if (type === PRICING_V2_CHECKOUT_TYPE_CREDITS) {
@@ -98,6 +118,7 @@ export type PricingV2PlanCheckoutMetadata = {
   users: string;
   /** "0" = bez balíka */
   packCredits: string;
+  interval: PricingV2Interval;
 };
 
 export type PricingV2CreditsCheckoutMetadata = {
@@ -114,6 +135,7 @@ export function buildPricingV2PlanMetadata(input: {
   profileId: string;
   users: number;
   packCredits: number | null;
+  interval?: PricingV2Interval;
 }): PricingV2PlanCheckoutMetadata {
   const band = resolvePricingV2Band(input.users);
   if (!band.ok) throw new RangeError(`Neplatný počet používateľov: ${input.users}`);
@@ -126,6 +148,7 @@ export function buildPricingV2PlanMetadata(input: {
     bandId: band.band.id,
     users: String(input.users),
     packCredits: String(input.packCredits ?? 0),
+    interval: input.interval ?? "month",
   };
 }
 
@@ -135,6 +158,7 @@ export type PricingV2PlanFulfillment = {
   bandId: PricingV2BandId;
   users: number;
   packCredits: number;
+  interval: PricingV2Interval;
 };
 
 /** Webhook: prečíta a OVERÍ metadáta (nič nedôveruje slepo). Neplatné → null (fulfillment sa nesmie tváriť, že prešiel). */
@@ -148,7 +172,11 @@ export function readPricingV2PlanMetadata(meta: Record<string, string | null | u
   if (meta.bandId !== band.band.id) return null;
   const packCredits = Number(meta.packCredits ?? "0");
   if (packCredits !== 0 && !PACK_SIZES.includes(packCredits)) return null;
-  return { agencyId, authUserId: (meta.authUserId ?? "").trim(), bandId: band.band.id, users, packCredits };
+  // Staršie relácie bez poľa `interval` sú mesačné; neznáma hodnota je chyba (nie potichu mesačná).
+  const rawInterval = meta.interval ?? "month";
+  if (!isPricingV2Interval(rawInterval)) return null;
+  if (rawInterval === "year" && packCredits !== 0) return null;
+  return { agencyId, authUserId: (meta.authUserId ?? "").trim(), bandId: band.band.id, users, packCredits, interval: rawInterval };
 }
 
 export function readPricingV2CreditsMetadata(
@@ -172,6 +200,8 @@ export type PricingV2ConfigPayload = {
   catalog: PricingV2Catalog | null;
   /** true = predávajú sa len plány: `catalog.packs` je prázdne a dokúpenie kreditov sa neponúka */
   plansOnly?: boolean;
+  /** true, ak sú nastavené všetky 4 ročné ceny plánov: až vtedy sa ponúka ročné platenie */
+  yearlyAvailable?: boolean;
 };
 
 /** Mapovanie pásma na `agencies.account_tier` (rovnaké hodnoty ako legacy seat tier → existujúce gating funguje). */
@@ -184,6 +214,13 @@ export const PRICING_V2_BAND_ACCOUNT_TIER: Record<PricingV2BandId, "starter" | "
 
 /** Hodnoty stĺpca `agencies.pricing_model` pre v2; NULL = legacy. */
 export const PRICING_V2_AGENCY_MODEL = "v2" as const;
+
+/** Chýbajúce ročné ceny plánov (ročné platenie sa ponúka len keď nechýba žiadna). */
+export function missingPricingV2YearlyPriceEnvKeys(env: Record<string, string | undefined> = process.env): string[] {
+  return PRICING_V2_BAND_IDS.map((id) => PRICING_V2_BAND_YEARLY_PRICE_ENV[id]).filter(
+    (name) => !isValidStripePriceId(env[name]),
+  );
+}
 
 /**
  * Názvy env premenných s chýbajúcim alebo neplatným Stripe price ID (placeholder `price_xxx` neprejde).

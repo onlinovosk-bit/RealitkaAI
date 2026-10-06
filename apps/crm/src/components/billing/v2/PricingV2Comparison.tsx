@@ -40,6 +40,10 @@ export default function PricingV2Comparison({ config }: { config: PricingV2Confi
               {band.isFromPrice ? "od " : ""}
               {formatEurCents(band.grossCents)} s {catalog.vatPercent} % DPH / mes.
             </div>
+            <div data-testid={`compare-${band.id}-annual`} className="text-xs mt-1" style={{ color: SLATE_HORIZON.muted }}>
+              Ročne {band.isFromPrice ? "od " : ""}
+              {formatEurCents(band.annual.netCents)} bez DPH ({formatEurCents(band.annual.grossCents)} s DPH), 12 × mesačná cena
+            </div>
             <p className="text-sm mt-3" style={{ color: SLATE_HORIZON.ink }}>
               {band.monthlyCredits} kreditov mesačne pre celú kanceláriu
             </p>

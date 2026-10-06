@@ -5,6 +5,7 @@
 - Stripe podklady v repe: `scripts/ops/stripe-v2/` (katalóg JSON + testovací skript, granty 20/50/100/150, `catalog_version` revolis_v2_2026_10_06), `docs/pricing/2026-10-05-stripe-v2-priprava.md`, drift-test `stripe-v2-catalog.verification.test.ts` (mutation proof 4/4).
 - WEB-V2 (GO foundera 6. 10.): `apps/marketing` ukazuje cenník v2 predvolene (staré seat ceny len pri výslovnom `PRICING_V2_ENABLED=false`), CTA vedú na demo, registrácia až `PRICING_V2_SIGNUP_ENABLED=true`; modal bez signupu; testy 41/41, mutation proof 4/4; `docs/pricing/2026-10-06-web-pricing-v2-default.md`. Nasadenie `revolis.ai` (Vercel `revolis-marketing`) NEOVERENÉ — v dostupnom Vercel účte je len projekt `realitka-ai` (CRM).
 - Stripe produkty bez „v2“ v názve (Revolis Start/Team/Kancelária/Sieť/Balík…/Kredit), popisy s počtom používateľov; manifest, katalóg, testy aj doc zosúladené. Interné kľúče (env `STRIPE_PRICE_V2_*`, lookup_key `revolis_v2_*`) ostávajú.
+- Ročné platenie plánov (12 × mesačná, bez zľavy): `pricing-v2.ts` (`annualNetCents`, `annual` v katalógu), kontrakt (`interval`, `STRIPE_PRICE_V2_*_YEARLY`, `yearlyAvailable`), checkout/rozpoznanie cien/webhook, UI `/upgrade` + porovnanie, web (ročný riadok), Stripe manifest + verifikátor + katalóg + skript; testy + mutation proof 5/6 (6. je neuskutočniteľný stav UI). Doc `docs/pricing/2026-10-06-annual-billing.md`.
 ### Rozpracované / Pending
 - Po merge treba nové nasadenie marketingu (statické stránky); (Stripe podklady opravené a v repe;) FUNNEL-V2 (B1) stále otvorený, verejný cenník zapínať až po ňom.
 ### Ďalší krok

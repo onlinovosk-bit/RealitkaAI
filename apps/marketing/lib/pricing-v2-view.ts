@@ -34,6 +34,8 @@ export type PricingV2BandView = {
   /** napr. „73,80 € s DPH“ */
   grossLabel: string
   creditsLabel: string
+  /** napr. „Ročne 300 € bez DPH (369 € s DPH)“; Sieť s predponou „od“ */
+  annualLabel: string
   isFromPrice: boolean
   /** adresa CTA: registrácia v CRM (alebo demo pri objemovom pásme Sieť) */
   ctaHref: string
@@ -122,6 +124,7 @@ export function buildPricingV2View(
         netLabel: `${b.isFromPrice ? 'od ' : ''}${formatEurCents(b.netCents)}`,
         grossLabel: `${b.isFromPrice ? 'od ' : ''}${formatEurCents(b.grossCents)} s DPH`,
         creditsLabel: `${b.monthlyCredits} kreditov mesačne pre celú kanceláriu`,
+        annualLabel: `Ročne ${b.isFromPrice ? 'od ' : ''}${formatEurCents(b.annual.netCents)} bez DPH (${b.isFromPrice ? 'od ' : ''}${formatEurCents(b.annual.grossCents)} s DPH)`,
         isFromPrice: b.isFromPrice,
         ctaIsDemo,
         ctaHref: ctaIsDemo ? `${CALENDLY_DEMO_URL}?utm_content=pricing_v2_${b.id}` : buildRegisterUrl(crmUrl, { plan: b.id }),

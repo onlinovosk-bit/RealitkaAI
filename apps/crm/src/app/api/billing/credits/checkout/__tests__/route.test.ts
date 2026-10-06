@@ -40,6 +40,10 @@ const V2_ENV: Record<string, string> = {
   STRIPE_PRICE_V2_PACK_240: "price_1Abcdefgh12348",
   STRIPE_PRICE_V2_PACK_300: "price_1Abcdefgh12349",
   STRIPE_PRICE_V2_CREDIT: "price_1Abcdefgh12350",
+  STRIPE_PRICE_V2_START_YEARLY: "price_1Abcdefgh12361",
+  STRIPE_PRICE_V2_TEAM_YEARLY: "price_1Abcdefgh12362",
+  STRIPE_PRICE_V2_OFFICE_YEARLY: "price_1Abcdefgh12363",
+  STRIPE_PRICE_V2_NETWORK_YEARLY: "price_1Abcdefgh12364",
 };
 
 async function call(body: unknown) {
@@ -117,7 +121,7 @@ describe("POST /api/billing/credits/checkout — PRICING_V2_ENABLED zapnuté", (
     const res = await call({ checkoutType: "pricing_v2", users: 3, packCredits: 120 });
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ ok: true, result: { id: "cs_v2", url: "https://stripe.test/v2" } });
-    expect(h.createV2).toHaveBeenCalledWith({ checkoutType: "pricing_v2", users: 3, packCredits: 120 });
+    expect(h.createV2).toHaveBeenCalledWith({ checkoutType: "pricing_v2", users: 3, packCredits: 120, interval: "month" });
   });
 
   it("credits checkout returns the Stripe session", async () => {
@@ -209,7 +213,7 @@ describe("POST /api/billing/credits/checkout — režim „len plány“ (predvo
   it("plan bez balíka prejde", async () => {
     const res = await call({ checkoutType: "pricing_v2", users: 3 });
     expect(res.status).toBe(200);
-    expect(h.createV2).toHaveBeenCalledWith({ checkoutType: "pricing_v2", users: 3, packCredits: null });
+    expect(h.createV2).toHaveBeenCalledWith({ checkoutType: "pricing_v2", users: 3, packCredits: null, interval: "month" });
   });
 
   it.each([60, 120, 180, 240, 300])("plan s balíkom %i je 403 credits_not_sold a nedôjde k Stripe", async (pack) => {
@@ -247,5 +251,44 @@ describe("POST /api/billing/credits/checkout — režim „len plány“ (predvo
     for (const k of Object.keys(V2_ENV).filter((n) => n.includes("PACK") || n.endsWith("CREDIT"))) vi.stubEnv(k, "");
     const res = await call({ checkoutType: "pricing_v2", users: 3 });
     expect(res.status).toBe(200);
+  });
+});
+
+describe("POST /api/billing/credits/checkout — ročné platenie", () => {
+  beforeEach(() => {
+    vi.stubEnv("PRICING_V2_ENABLED", "true");
+    for (const [k, v] of Object.entries(V2_ENV)) vi.stubEnv(k, v);
+  });
+
+  it("ročný plán prejde a požiadavka nesie interval year", async () => {
+    const res = await call({ checkoutType: "pricing_v2", users: 3, interval: "year" });
+    expect(res.status).toBe(200);
+    expect(h.createV2).toHaveBeenCalledWith({ checkoutType: "pricing_v2", users: 3, packCredits: null, interval: "year" });
+  });
+
+  it("neznámy interval je 400 invalid_request a nedôjde k Stripe", async () => {
+    const res = await call({ checkoutType: "pricing_v2", users: 3, interval: "weekly" });
+    expect(res.status).toBe(400);
+    expect((await res.json()).reason).toBe("invalid_interval");
+    expect(h.createV2).not.toHaveBeenCalled();
+  });
+
+  it("ročný plán s balíkom je zamietnutý (400) aj keď sú ceny balíkov nastavené a režim len plány je vypnutý", async () => {
+    vi.stubEnv("PRICING_V2_PLANS_ONLY", "false");
+    const res = await call({ checkoutType: "pricing_v2", users: 3, interval: "year", packCredits: 60 });
+    expect(res.status).toBe(400);
+    expect(h.createV2).not.toHaveBeenCalled();
+  });
+
+  it("chýbajúca ročná cena = 503 prices_not_configured s názvom premennej; mesačný nákup funguje", async () => {
+    vi.stubEnv("STRIPE_PRICE_V2_TEAM_YEARLY", "");
+    const bad = await call({ checkoutType: "pricing_v2", users: 3, interval: "year" });
+    expect(bad.status).toBe(503);
+    const body = await bad.json();
+    expect(body.code).toBe("prices_not_configured");
+    expect(body.missingPriceEnvKeys).toEqual(["STRIPE_PRICE_V2_TEAM_YEARLY"]);
+    expect(h.createV2).not.toHaveBeenCalled();
+    const ok = await call({ checkoutType: "pricing_v2", users: 3 });
+    expect(ok.status).toBe(200);
   });
 });

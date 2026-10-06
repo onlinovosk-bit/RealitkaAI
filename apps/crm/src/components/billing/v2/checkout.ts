@@ -1,3 +1,4 @@
+import type { PricingV2Interval } from "@/lib/pricing-v2";
 import {
   PRICING_V2_CHECKOUT_TYPE_CREDITS,
   PRICING_V2_CHECKOUT_TYPE_PLAN,
@@ -24,8 +25,18 @@ export const PRICING_V2_MESSAGES = {
  */
 export const SUBSCRIPTION_EXISTS_CODE = "subscription_exists";
 
-export function buildPlanRequest(users: number, packCredits: number | null): PricingV2CheckoutRequest {
-  return { checkoutType: PRICING_V2_CHECKOUT_TYPE_PLAN, users, packCredits };
+export function buildPlanRequest(
+  users: number,
+  packCredits: number | null,
+  interval: PricingV2Interval = "month",
+): PricingV2CheckoutRequest {
+  // Ročný plán sa s mesačným balíkom kreditov nekombinuje (iný interval fakturácie).
+  return {
+    checkoutType: PRICING_V2_CHECKOUT_TYPE_PLAN,
+    users,
+    packCredits: interval === "year" ? null : packCredits,
+    interval,
+  };
 }
 
 export function buildCreditsRequest(credits: number): PricingV2CheckoutRequest {

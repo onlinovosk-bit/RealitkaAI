@@ -8,7 +8,9 @@
 
 Predošlý podklad v tejto konverzácii mal 11 cien a balíky 50/100/150/200/250/300. **Nepoužiť ho.** Kód a Stripe manifest v PR #822 definujú **10 nových v2 cien**: štyri plány, päť mesačných balíkov 60/120/180/240/300 a jeden jednorazový kredit. Tento súbor, vedľajší JSON a testovací skript už používajú tieto čísla aj presné názvy env kľúčov. Staré Stripe produkty/ceny ostávajú zachované.
 
-## Vytvoriť 10 nových produktov a cien
+## Vytvoriť produkty a ceny (4 plány mesačne, 4 plány ročne, 5 balíkov, 1 kredit)
+
+**Ročné ceny plánov** (rozhodnutie 6. 10. 2026: 12 × mesačná, bez zľavy) sú **druhá cena na tom istom produkte** (Add another price, interval Yearly, Exclusive, rovnaký tax code), nie nový produkt. Stačí ich založiť pre 4 plány; kód ponúka ročné platenie až keď existujú všetky 4. Balíky kreditov sa s ročným plánom nekombinujú.
 
 Všetky sumy sú **bez DPH**, mena `eur`, Stripe `unit_amount` v eurocentoch, `billing_scheme=per_unit`, `tax_behavior=exclusive`. Pri mesačných položkách `recurring.interval=month`, `interval_count=1`, licencované používanie a pri checkoute `quantity=1`. Kredit za 0,70 € je one-time a `quantity=počet kreditov`. Na jednom produkte jedna príslušná cena a `lookup_key` z [JSON katalógu](revolis-stripe-v2-catalog.json). Raz nastavený režim `exclusive` na Stripe Price nemožno zmeniť na `inclusive`; nová suma potrebuje nové Price ID. [Stripe Price API](https://docs.stripe.com/api/prices/create)
 
@@ -18,6 +20,10 @@ Všetky sumy sú **bez DPH**, mena `eur`, Stripe `unit_amount` v eurocentoch, `b
 | Revolis Team | `STRIPE_PRICE_V2_TEAM` | 60,00 € | 73,80 € | 6000 | 50/mesiac |
 | Revolis Kancelária | `STRIPE_PRICE_V2_OFFICE` | 149,00 € | 183,27 € | 14900 | 100/mesiac |
 | Revolis Sieť | `STRIPE_PRICE_V2_NETWORK` | **od** 349,00 € | **od** 429,27 € | 34900 | 150/mesiac v základe |
+| Revolis Start (ročná cena) | `STRIPE_PRICE_V2_START_YEARLY` | 300,00 € | 369,00 € | 30000 | 20/mesiac |
+| Revolis Team (ročná cena) | `STRIPE_PRICE_V2_TEAM_YEARLY` | 720,00 € | 885,60 € | 72000 | 50/mesiac |
+| Revolis Kancelária (ročná cena) | `STRIPE_PRICE_V2_OFFICE_YEARLY` | 1 788,00 € | 2 199,24 € | 178800 | 100/mesiac |
+| Revolis Sieť (ročná cena) | `STRIPE_PRICE_V2_NETWORK_YEARLY` | **od** 4 188,00 € | **od** 5 151,24 € | 418800 | 150/mesiac v základe |
 | Revolis Balík 60 kreditov | `STRIPE_PRICE_V2_PACK_60` | 34,00 € | 41,82 € | 3400 | 60/mesiac |
 | Revolis Balík 120 kreditov | `STRIPE_PRICE_V2_PACK_120` | 62,00 € | 76,26 € | 6200 | 120/mesiac |
 | Revolis Balík 180 kreditov | `STRIPE_PRICE_V2_PACK_180` | 86,00 € | 105,78 € | 8600 | 180/mesiac |

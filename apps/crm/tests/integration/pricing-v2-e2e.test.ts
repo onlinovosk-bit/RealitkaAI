@@ -191,6 +191,10 @@ const PRICE = {
   STRIPE_PRICE_V2_PACK_240: "price_v2Pack240AA",
   STRIPE_PRICE_V2_PACK_300: "price_v2Pack300AA",
   STRIPE_PRICE_V2_CREDIT: "price_v2CreditEEEE",
+  STRIPE_PRICE_V2_START_YEARLY: "price_v2StartYYYY",
+  STRIPE_PRICE_V2_TEAM_YEARLY: "price_v2TeamYYYYY",
+  STRIPE_PRICE_V2_OFFICE_YEARLY: "price_v2OfficeYYYY",
+  STRIPE_PRICE_V2_NETWORK_YEARLY: "price_v2NetworkYYY",
 };
 
 const AG = "ag-1";
@@ -421,6 +425,50 @@ describe("(c) obnova mesiaca (cron)", () => {
     const r = await runMonthlyCreditCycle();
     expect(r.ok).toBe(true);
     expect(grants()).toHaveLength(1);
+  });
+});
+
+describe("(c2) ročné platenie: kredity sa prideľujú mesačne, plán ostáva rovnaký", () => {
+  it("ročný Team: checkout s ročnou cenou -> prvý grant 50 -> cron v ďalších mesiacoch grantuje znova (1 predplatné, 1 platba ročne)", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-10T10:00:00Z"));
+    const { res, params } = await doCheckout({ checkoutType: "pricing_v2", users: 3, interval: "year" });
+    expect(res.status).toBe(200);
+    expect(params.mode).toBe("subscription");
+    expect(params.line_items).toEqual([{ price: PRICE.STRIPE_PRICE_V2_TEAM_YEARLY, quantity: 1 }]);
+    expect(params.metadata.interval).toBe("year");
+
+    expect(await handlePricingCheckoutWebhook(sessionEvent(params.metadata))).toBe(true);
+    expect(agency()).toMatchObject({ pricing_model: "v2", pricing_band: "team", account_tier: "pro", pack_credits: 0 });
+    expect(grants()).toHaveLength(1);
+    expect(agency().grant_credits_balance).toBe(50);
+
+    // 2. mesiac: faktúra za ročný plán neprišla znova, ale kredity áno (cron, rovnaký grant ako pri mesačnom pláne)
+    vi.setSystemTime(new Date("2026-11-01T05:00:00Z"));
+    expect((await runMonthlyCreditCycle()).ok).toBe(true);
+    expect(grants()).toHaveLength(2);
+    expect(agency().grant_credits_balance).toBe(50);
+    // opakovanie v tom istom mesiaci nepridelí nič navyše
+    expect((await runMonthlyCreditCycle()).ok).toBe(true);
+    expect(grants()).toHaveLength(2);
+  });
+
+  it("subscription.updated s ročnou cenou pásma nezmení plán na 'free' a nerozbije tier; neznáma cena stále nič nemení", async () => {
+    const { params } = await doCheckout({ checkoutType: "pricing_v2", users: 3, packCredits: null });
+    await handlePricingCheckoutWebhook(sessionEvent(params.metadata));
+    await handleStripeWebhookEvent(subEvent("customer.subscription.updated", {}, [PRICE.STRIPE_PRICE_V2_OFFICE_YEARLY]));
+    expect(agency()).toMatchObject({ pricing_band: "office", account_tier: "enterprise", subscription_status: "active" });
+    await handleStripeWebhookEvent(subEvent("customer.subscription.updated", {}, ["price_totallyUnknown1"]));
+    expect(agency()).toMatchObject({ pricing_band: "office", account_tier: "enterprise" });
+  });
+
+  it("ročný plán s balíkom a neznámy interval sa odmietnu skôr, než sa čokoľvek vytvorí v Stripe", async () => {
+    const before = h.created.length;
+    const withPack = await checkoutPOST(req({ checkoutType: "pricing_v2", users: 3, interval: "year", packCredits: 60 }));
+    expect(withPack.status).toBe(400);
+    const badInterval = await checkoutPOST(req({ checkoutType: "pricing_v2", users: 3, interval: "weekly" }));
+    expect(badInterval.status).toBe(400);
+    expect(h.created.length).toBe(before);
   });
 });
 

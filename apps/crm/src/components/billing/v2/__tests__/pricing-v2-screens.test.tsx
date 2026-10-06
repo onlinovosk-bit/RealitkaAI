@@ -6,6 +6,7 @@ import { buildPricingV2Catalog } from "@/lib/pricing-v2";
 import type { PricingV2ConfigPayload } from "@/lib/pricing-v2-contract";
 import PricingV2Plans from "../PricingV2Plans";
 import PricingV2CreditsTopup from "../PricingV2CreditsTopup";
+import PricingV2Comparison from "../PricingV2Comparison";
 import ProgramComparisonSwitch from "../ProgramComparisonSwitch";
 import ProgramComparison from "@/components/billing/ProgramComparison";
 import CreditsTopupPanel from "@/components/billing/CreditsTopupPanel";
@@ -143,7 +144,7 @@ describe("PricingV2Plans — CTA a chyby checkoutu", () => {
     await waitFor(() => expect(navigate).toHaveBeenCalledWith("https://stripe.test/pay"));
     const [call] = checkoutCalls();
     expect(call.init?.method).toBe("POST");
-    expect(JSON.parse(String(call.init?.body))).toEqual({ checkoutType: "pricing_v2", users: 7, packCredits: 120 });
+    expect(JSON.parse(String(call.init?.body))).toEqual({ checkoutType: "pricing_v2", users: 7, packCredits: 120, interval: "month" });
   });
 
   it("bez balíka pošle packCredits: null", async () => {
@@ -151,7 +152,7 @@ describe("PricingV2Plans — CTA a chyby checkoutu", () => {
     render(<PricingV2Plans config={v2Config()} navigate={vi.fn()} />);
     await userEvent.setup().click(screen.getByRole("button", { name: /Pokračovať k objednávke/ }));
     await waitFor(() => expect(checkoutCalls()).toHaveLength(1));
-    expect(JSON.parse(String(checkoutCalls()[0].init?.body))).toEqual({ checkoutType: "pricing_v2", users: 1, packCredits: null });
+    expect(JSON.parse(String(checkoutCalls()[0].init?.body))).toEqual({ checkoutType: "pricing_v2", users: 1, packCredits: null, interval: "month" });
   });
 
   const ERRORS: Array<[string, number, Json, RegExp]> = [
@@ -196,6 +197,56 @@ describe("PricingV2Plans — CTA a chyby checkoutu", () => {
     expect(fn).not.toHaveBeenCalled();
     // názvy env sa používateľovi neukazujú
     expect(document.body.textContent).not.toContain("STRIPE_PRICE");
+  });
+});
+
+describe("ročné platenie — UI", () => {
+  const yearlyConfig = () => v2Config({ yearlyAvailable: true });
+
+  it("bez ročných cien sa prepínač nezobrazí a nákup ostáva mesačný", () => {
+    render(<PricingV2Plans config={v2Config()} />);
+    expect(screen.queryByTestId("interval-year")).toBeNull();
+    expect(screen.getByTestId("band-team-net").textContent).toBe("60,00 €");
+  });
+
+  it("s ročnými cenami: prepínač Ročne ukáže ročnú čistú aj konečnú cenu (12 × mesačná, bez zľavy)", async () => {
+    render(<PricingV2Plans config={yearlyConfig()} />);
+    await userEvent.setup().click(screen.getByTestId("interval-year"));
+    expect(screen.getByTestId("band-start-net").textContent).toBe("300,00 €");
+    expect(screen.getByTestId("band-start-gross").textContent).toBe("369,00 €");
+    expect(screen.getByTestId("band-team-net").textContent).toBe("720,00 €");
+    expect(screen.getByTestId("band-office-net").textContent).toBe("1788,00 €");
+    expect(screen.getByTestId("band-network-net").textContent).toBe("od 4188,00 €");
+    expect(screen.getByTestId("yearly-note").textContent).toContain("bez zľavy");
+    expect(screen.getByTestId("selected-net").textContent).toBe("300,00 €");
+  });
+
+  it("ročný nákup pošle interval year bez balíka kreditov", async () => {
+    const { checkoutCalls } = mockFetch({});
+    render(<PricingV2Plans config={yearlyConfig()} navigate={vi.fn()} />);
+    const user = userEvent.setup();
+    await user.click(screen.getByTestId("interval-year"));
+    await user.click(screen.getByRole("button", { name: /Pokračovať k objednávke/ }));
+    await waitFor(() => expect(checkoutCalls()).toHaveLength(1));
+    expect(JSON.parse(String(checkoutCalls()[0].init?.body))).toEqual({
+      checkoutType: "pricing_v2",
+      users: 1,
+      packCredits: null,
+      interval: "year",
+    });
+  });
+
+  it("výber balíka sa pri ročnom platení skryje a nepošle sa", async () => {
+    render(<PricingV2Plans config={v2Config({ yearlyAvailable: true, plansOnly: false })} />);
+    expect(screen.getByLabelText("Mesačný balík kreditov")).toBeTruthy();
+    await userEvent.setup().click(screen.getByTestId("interval-year"));
+    expect(screen.queryByLabelText("Mesačný balík kreditov")).toBeNull();
+  });
+
+  it("porovnanie ukazuje ročnú cenu každého pásma", () => {
+    render(<PricingV2Comparison config={v2Config()} />);
+    expect(screen.getByTestId("compare-team-annual").textContent).toContain("720,00 €");
+    expect(screen.getByTestId("compare-team-annual").textContent).toContain("885,60 €");
   });
 });
 
@@ -355,7 +406,7 @@ describe("Zapnutý prepínač — obrazovky", () => {
     expect(screen.getByTestId("selected-gross").textContent).toBe("429,27 €");
     await userEvent.setup().click(screen.getByRole("button", { name: /Pokračovať k objednávke/ }));
     await waitFor(() => expect(checkoutCalls()).toHaveLength(1));
-    expect(JSON.parse(String(checkoutCalls()[0].init?.body))).toEqual({ checkoutType: "pricing_v2", users: 26, packCredits: null });
+    expect(JSON.parse(String(checkoutCalls()[0].init?.body))).toEqual({ checkoutType: "pricing_v2", users: 26, packCredits: null, interval: "month" });
   });
 
   it("Upgrade: zapnuté v2, ale ceny nenastavené -> „nie je dostupná“ (nie rozbitá stránka)", async () => {

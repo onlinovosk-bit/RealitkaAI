@@ -45,8 +45,15 @@ def eur(cents):
     return f"{cents / 100:.2f} EUR"
 
 
+def interval_of(entry):
+    """Interval fakturacie recurring ceny: 'month' (predvolene) alebo 'year' (rocne ceny planov v2)."""
+    return entry.get("interval", "month")
+
+
 def kind(entry):
-    return "mesacne (recurring month)" if entry["type"] == "recurring" else "jednorazovo (one-time)"
+    if entry["type"] != "recurring":
+        return "jednorazovo (one-time)"
+    return "rocne (recurring year)" if interval_of(entry) == "year" else "mesacne (recurring month)"
 
 
 def reject_reason(price, entry):
@@ -61,8 +68,9 @@ def reject_reason(price, entry):
         return f"type={price.get('type')}, treba {entry['type']}"
     if entry["type"] == "recurring":
         rec = price.get("recurring") or {}
-        if rec.get("interval") != "month" or rec.get("interval_count", 1) != 1:
-            return f"interval={rec.get('interval_count', 1)}x{rec.get('interval')}, treba 1x month"
+        want = interval_of(entry)
+        if rec.get("interval") != want or rec.get("interval_count", 1) != 1:
+            return f"interval={rec.get('interval_count', 1)}x{rec.get('interval')}, treba 1x {want}"
         # Checkout posiela quantity = pocet maklerov; tiered/metered by zmenilo sumu.
         if rec.get("usage_type", "licensed") != "licensed":
             return f"usage_type={rec.get('usage_type')}, treba licensed"
@@ -125,7 +133,7 @@ def fetch_fixture(path):
 
 def print_spec(manifest):
     print("Krok C - co vytvorit v Stripe Dashboard (LIVE mode). Vytvara founder, nie agent.\n")
-    print("Kazda cena: currency EUR, Standard pricing (per unit). Recurring = Monthly, interval 1.")
+    print("Kazda cena: currency EUR, Standard pricing (per unit). Recurring = Monthly (interval 1), rocne ceny planov v2 = Yearly.")
     print("Legacy ceny: amount = presne co zakaznik zaplati (checkout nema automatic_tax).")
     print("Cennik v2 (gate pricing_v2): amount je BEZ DPH, tax_behavior=exclusive a produkt musi mat")
     print("Stripe Tax kod (tax_code); verifikator ich kontroluje. DPH pricita Stripe Tax pri")

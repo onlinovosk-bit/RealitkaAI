@@ -41,6 +41,27 @@ export const PRICING_V2_BANDS: readonly PricingV2Band[] = freezeList<PricingV2Ba
   { id: "network", label: "Sieť", minUsers: 26, maxUsers: null, netCents: 34900, isFromPrice: true, monthlyCredits: 150 },
 ]);
 
+/** Fakturačné obdobie plánu. Ročné platenie je len plán (balíky kreditov sú mesačné a s ročným plánom sa nemiešajú). */
+export const PRICING_V2_INTERVALS = ["month", "year"] as const;
+export type PricingV2Interval = (typeof PRICING_V2_INTERVALS)[number];
+
+/**
+ * Ročná cena = 12 × mesačná (rozhodnutie foundera 6. 10. 2026: ročné platenie BEZ zľavy).
+ * Kredity sa pri ročnom pláne prideľujú naďalej MESAČNE (rovnaký grant ako pri mesačnom pláne).
+ */
+export const PRICING_V2_ANNUAL_MONTHS = 12;
+
+export function annualNetCents(monthlyNetCents: number): number {
+  assertNetCents(monthlyNetCents);
+  const annual = monthlyNetCents * PRICING_V2_ANNUAL_MONTHS;
+  if (!Number.isSafeInteger(annual)) throw new RangeError(`Ročný základ ceny nie je bezpečné celé číslo: ${annual}`);
+  return annual;
+}
+
+export function isPricingV2Interval(value: unknown): value is PricingV2Interval {
+  return value === "month" || value === "year";
+}
+
 /** Samostatne dokúpený kredit (bez balíka), bez DPH. */
 export const PRICING_V2_CREDIT_NET_CENTS = 70;
 
@@ -165,6 +186,8 @@ export type PricingV2Catalog = {
       maxUsers: number | null;
       isFromPrice: boolean;
       monthlyCredits: number;
+      /** ročná cena (12 × mesačná, bez zľavy): čistá, DPH aj konečná v centoch */
+      annual: PricingV2Amount;
     }
   >;
   packs: Array<PricingV2Amount & { credits: number; netCentsPerCredit: number }>;
@@ -183,6 +206,7 @@ export function buildPricingV2Catalog(vatPercent: number = PRICING_V2_VAT_PERCEN
       maxUsers: b.maxUsers,
       isFromPrice: b.isFromPrice,
       monthlyCredits: b.monthlyCredits,
+      annual: priceFromNetCents(annualNetCents(b.netCents), vatPercent),
       ...priceFromNetCents(b.netCents, vatPercent),
     })),
     packs: PRICING_V2_MONTHLY_PACKS.map((p) => ({
