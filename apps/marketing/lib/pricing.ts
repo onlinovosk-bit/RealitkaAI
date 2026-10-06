@@ -18,6 +18,19 @@ export {
 
 export type { SeatTier } from '../../crm/src/lib/program-tier-pricing'
 
+/**
+ * Cenník v2 (paušál na kanceláriu) — re-export z CRM, rovnaký vzor ako vyššie.
+ * Zapína ho `PRICING_V2_ENABLED` (rovnaký názov env ako v CRM, predvolene vypnuté).
+ * @see apps/crm/src/lib/pricing-v2.ts
+ */
+export {
+  buildPricingV2Catalog,
+  isPricingV2Enabled,
+  PRICING_V2_VAT_PERCENT_DEFAULT,
+} from '../../crm/src/lib/pricing-v2'
+
+export type { PricingV2Catalog, PricingV2BandId } from '../../crm/src/lib/pricing-v2'
+
 /** Legacy checkout source keys used by LeadCaptureModal / subscription API. */
 export const SEAT_TIER_CHECKOUT_SOURCE = {
   solo: 'pricing-smart-start',
