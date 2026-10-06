@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { register } from "./actions";
+import { isSelfServeSignupEnabled } from "@/lib/signup/self-serve";
 import { LANDING_FOCUS_RING, LANDING_INPUT_FOCUS } from "@/lib/landing-a11y";
 
 export default async function RegisterPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; email?: string }>;
+  searchParams: Promise<{ error?: string; email?: string; sent?: string; plan?: string }>;
 }) {
   const params = await searchParams;
+  const selfServe = isSelfServeSignupEnabled();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 via-teal-50/40 to-white px-4 py-10">
@@ -15,9 +17,17 @@ export default async function RegisterPage({
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-teal-950">Registrácia</h1>
           <p className="mt-2 text-sm text-teal-700/80">
-            Prvý účet sa nastaví ako owner, ďalšie ako agent.
+            {selfServe
+              ? "14 dní zadarmo, bez platobnej karty. Po skončení sa skúšobná verzia sama vypne — nič sa neúčtuje automaticky."
+              : "Prvý účet sa nastaví ako owner, ďalšie ako agent."}
           </p>
         </div>
+
+        {selfServe && params.sent === "1" && (
+          <div data-testid="signup-sent" className="mb-4 rounded-xl border border-teal-200 bg-teal-50 p-3 text-sm text-teal-900">
+            Poslali sme potvrdzovací e-mail{params.email ? ` na ${params.email}` : ""}. Kliknutím na odkaz v ňom dokončíte vytvorenie kancelárie.
+          </div>
+        )}
 
         {params.error && (
           <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
@@ -26,6 +36,25 @@ export default async function RegisterPage({
         )}
 
         <form action={register} className="space-y-4">
+          {selfServe && (
+            <>
+              <input type="hidden" name="plan" value={params.plan ?? ""} />
+              <div aria-hidden="true" style={{ position: "absolute", left: "-10000px" }}>
+                <label>
+                  Web
+                  <input name="website" tabIndex={-1} autoComplete="off" />
+                </label>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-teal-900">Názov kancelárie</label>
+                <input
+                  name="agencyName"
+                  maxLength={120}
+                  className={`w-full rounded-xl border border-teal-200 px-4 py-3 text-sm outline-none transition-colors focus:border-teal-500 ${LANDING_INPUT_FOCUS}`}
+                />
+              </div>
+            </>
+          )}
           <div>
             <label className="mb-1 block text-sm font-medium text-teal-900">Meno a priezvisko</label>
             <input
@@ -60,10 +89,20 @@ export default async function RegisterPage({
               name="password"
               type="password"
               required
-              minLength={6}
+              minLength={selfServe ? 8 : 6}
               className={`w-full rounded-xl border border-teal-200 px-4 py-3 text-sm outline-none transition-colors focus:border-teal-500 ${LANDING_INPUT_FOCUS}`}
             />
           </div>
+
+          {selfServe && (
+            <label className="flex items-start gap-2 text-sm text-teal-900">
+              <input type="checkbox" name="consent" required className="mt-1" />
+              <span>
+                Súhlasím s <Link href="/legal/zmluva-o-poskytovani-softverovych-sluzieb" className="underline">podmienkami služby</Link> a{" "}
+                <Link href="/legal" className="underline">spracovaním osobných údajov</Link>.
+              </span>
+            </label>
+          )}
 
           <button
             type="submit"

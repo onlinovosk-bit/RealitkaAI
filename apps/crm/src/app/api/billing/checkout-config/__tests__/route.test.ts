@@ -111,4 +111,23 @@ describe("GET /api/billing/checkout-config", () => {
     expect(v2.checkoutAvailable).toBe(false);
     expect(v2.catalog.packs).toHaveLength(5);
   });
+
+  it("ročné platenie: yearlyAvailable je true až keď existujú všetky 4 ročné ceny; katalóg nesie ročnú cenu", async () => {
+    vi.stubEnv("PRICING_V2_ENABLED", "on");
+    for (const [k, v] of Object.entries(V2_ENV).filter(([k]) => !k.includes("PACK") && !k.endsWith("CREDIT"))) vi.stubEnv(k, v);
+    const none = (await get()).pricingV2 as { yearlyAvailable: boolean; checkoutAvailable: boolean };
+    expect(none.yearlyAvailable).toBe(false);
+    expect(none.checkoutAvailable).toBe(true); // mesačný predaj nie je dotknutý
+    const yearly = ["START", "TEAM", "OFFICE", "NETWORK"].map((b) => `STRIPE_PRICE_V2_${b}_YEARLY`);
+    yearly.slice(0, 3).forEach((k, i) => vi.stubEnv(k, `price_1Abcdefgh2236${i}`));
+    expect(((await get()).pricingV2 as { yearlyAvailable: boolean }).yearlyAvailable).toBe(false);
+    vi.stubEnv(yearly[3], "price_1Abcdefgh22369");
+    const all = (await get()).pricingV2 as {
+      yearlyAvailable: boolean;
+      catalog: { bands: Array<{ id: string; annual: { netCents: number; grossCents: number } }> };
+    };
+    expect(all.yearlyAvailable).toBe(true);
+    expect(all.catalog.bands.find((b) => b.id === "start")?.annual).toMatchObject({ netCents: 30000, grossCents: 36900 });
+    expect(JSON.stringify(all)).not.toContain("price_1Abcdefgh2236");
+  });
 });

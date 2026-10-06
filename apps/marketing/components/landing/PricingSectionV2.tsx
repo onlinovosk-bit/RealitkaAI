@@ -26,6 +26,9 @@ export default function PricingSectionV2({ view }: { view: PricingV2View }) {
                 <small> / mes bez DPH</small>
               </div>
               <div className="price-gross">{band.grossLabel}</div>
+              <div className="price-gross" data-testid={`annual-${band.id}`}>
+                {band.annualLabel}
+              </div>
               <p className="note">{band.usersLabel}</p>
               <ul>
                 <li>{band.creditsLabel}</li>

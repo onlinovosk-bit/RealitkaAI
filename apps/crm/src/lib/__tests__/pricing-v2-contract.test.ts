@@ -6,6 +6,8 @@ import {
   PRICING_V2_PACK_PRICE_ENV,
   buildPricingV2PlanMetadata,
   missingPricingV2PriceEnvKeys,
+  missingPricingV2YearlyPriceEnvKeys,
+  PRICING_V2_BAND_YEARLY_PRICE_ENV,
   parsePricingV2CheckoutRequest,
   readPricingV2CreditsMetadata,
   readPricingV2PlanMetadata,
@@ -16,15 +18,15 @@ describe("pricing-v2-contract: požiadavka na checkout", () => {
   it("plán bez balíka a s balíkom", () => {
     expect(parsePricingV2CheckoutRequest({ checkoutType: "pricing_v2", users: 4 })).toEqual({
       ok: true,
-      value: { checkoutType: "pricing_v2", users: 4, packCredits: null },
+      value: { checkoutType: "pricing_v2", users: 4, packCredits: null, interval: "month" },
     });
     expect(parsePricingV2CheckoutRequest({ checkoutType: "pricing_v2", users: 26, packCredits: 180 })).toEqual({
       ok: true,
-      value: { checkoutType: "pricing_v2", users: 26, packCredits: 180 },
+      value: { checkoutType: "pricing_v2", users: 26, packCredits: 180, interval: "month" },
     });
     expect(parsePricingV2CheckoutRequest({ checkoutType: "pricing_v2", users: 2, packCredits: 0 })).toEqual({
       ok: true,
-      value: { checkoutType: "pricing_v2", users: 2, packCredits: null },
+      value: { checkoutType: "pricing_v2", users: 2, packCredits: null, interval: "month" },
     });
   });
 
@@ -75,6 +77,7 @@ describe("pricing-v2-contract: metadáta checkoutu", () => {
       bandId: "office",
       users: 7,
       packCredits: 120,
+      interval: "month",
     });
     const noPack = buildPricingV2PlanMetadata({ ...base, users: 1, packCredits: null });
     expect(noPack.packCredits).toBe("0");
@@ -152,5 +155,48 @@ describe("pricing-v2-contract: Stripe price kľúče a mapovanie", () => {
       office: "enterprise",
       network: "enterprise",
     });
+  });
+});
+
+describe("pricing-v2-contract: ročné platenie", () => {
+  it("interval year sa prijme pre plán bez balíka; neznámy interval a ročný plán s balíkom sa odmietnu", () => {
+    expect(parsePricingV2CheckoutRequest({ checkoutType: "pricing_v2", users: 3, interval: "year" })).toEqual({
+      ok: true,
+      value: { checkoutType: "pricing_v2", users: 3, packCredits: null, interval: "year" },
+    });
+    for (const interval of ["week", "YEAR", "", 12, true]) {
+      expect(parsePricingV2CheckoutRequest({ checkoutType: "pricing_v2", users: 3, interval })).toEqual({
+        ok: false,
+        reason: "invalid_interval",
+      });
+    }
+    expect(parsePricingV2CheckoutRequest({ checkoutType: "pricing_v2", users: 3, interval: "year", packCredits: 60 })).toEqual({
+      ok: false,
+      reason: "invalid_pack",
+    });
+  });
+
+  it("metadáta ročného plánu: round-trip; chýbajúci interval = mesačný; neznámy a ročný s balíkom = null", () => {
+    const base = { agencyId: "a-1", authUserId: "u-1", profileId: "p-1" };
+    const meta = buildPricingV2PlanMetadata({ ...base, users: 7, packCredits: null, interval: "year" });
+    expect(meta.interval).toBe("year");
+    expect(readPricingV2PlanMetadata(meta)?.interval).toBe("year");
+    const { interval: _omit, ...legacySession } = meta;
+    expect(readPricingV2PlanMetadata(legacySession)?.interval).toBe("month");
+    expect(readPricingV2PlanMetadata({ ...meta, interval: "quarter" })).toBeNull();
+    expect(readPricingV2PlanMetadata({ ...meta, interval: "year", packCredits: "60" })).toBeNull();
+  });
+
+  it("ročné ceny plánov: 4 env kľúče a chýbajúce sa hlásia samostatne od mesačných", () => {
+    expect(missingPricingV2YearlyPriceEnvKeys({})).toEqual([
+      "STRIPE_PRICE_V2_START_YEARLY",
+      "STRIPE_PRICE_V2_TEAM_YEARLY",
+      "STRIPE_PRICE_V2_OFFICE_YEARLY",
+      "STRIPE_PRICE_V2_NETWORK_YEARLY",
+    ]);
+    const env = Object.fromEntries(Object.values(PRICING_V2_BAND_YEARLY_PRICE_ENV).map((n) => [n, "price_1Abcdefgh12345"]));
+    expect(missingPricingV2YearlyPriceEnvKeys(env)).toEqual([]);
+    // mesačný predaj nie je dotknutý chýbajúcimi ročnými cenami
+    expect(missingPricingV2PriceEnvKeys({})).not.toContain("STRIPE_PRICE_V2_START_YEARLY");
   });
 });

@@ -147,6 +147,10 @@ const PRICE = {
   STRIPE_PRICE_V2_PACK_240: "price_1Abcdefgh12348",
   STRIPE_PRICE_V2_PACK_300: "price_1Abcdefgh12349",
   STRIPE_PRICE_V2_CREDIT: "price_1Abcdefgh12350",
+  STRIPE_PRICE_V2_START_YEARLY: "price_1Abcdefgh12361",
+  STRIPE_PRICE_V2_TEAM_YEARLY: "price_1Abcdefgh12362",
+  STRIPE_PRICE_V2_OFFICE_YEARLY: "price_1Abcdefgh12363",
+  STRIPE_PRICE_V2_NETWORK_YEARLY: "price_1Abcdefgh12364",
 } as const;
 
 function stubAllPrices() {
@@ -245,6 +249,31 @@ describe("v2 checkout builders", () => {
     expect(() => buildPricingV2PlanCheckoutParams({ ...actor, agencyId: " ", users: 1, packCredits: null })).toThrow(RangeError);
   });
 
+  it("ročný plán: ročná cena pásma (qty 1), metadata interval=year, bez balíka", () => {
+    stubAllPrices();
+    const priceFor = (users: number) =>
+      buildPricingV2PlanCheckoutParams({ ...actor, users, packCredits: null, interval: "year" }).lineItems;
+    expect(priceFor(1)).toEqual([{ price: PRICE.STRIPE_PRICE_V2_START_YEARLY, quantity: 1 }]);
+    expect(priceFor(6)).toEqual([{ price: PRICE.STRIPE_PRICE_V2_TEAM_YEARLY, quantity: 1 }]);
+    expect(priceFor(25)).toEqual([{ price: PRICE.STRIPE_PRICE_V2_OFFICE_YEARLY, quantity: 1 }]);
+    expect(priceFor(26)).toEqual([{ price: PRICE.STRIPE_PRICE_V2_NETWORK_YEARLY, quantity: 1 }]);
+    const p = buildPricingV2PlanCheckoutParams({ ...actor, users: 3, packCredits: null, interval: "year" });
+    expect(p.metadata.interval).toBe("year");
+    // bez zadaného intervalu ostáva mesačná cena
+    expect(buildPricingV2PlanCheckoutParams({ ...actor, users: 3, packCredits: null }).lineItems[0].price).toBe(
+      PRICE.STRIPE_PRICE_V2_TEAM,
+    );
+  });
+
+  it("ročný plán s balíkom kreditov sa nikdy nezostaví; chýbajúca ročná cena = výnimka (mesačná cena sa nepodstrčí)", () => {
+    stubAllPrices();
+    expect(() => buildPricingV2PlanCheckoutParams({ ...actor, users: 3, packCredits: 60, interval: "year" })).toThrow(RangeError);
+    vi.stubEnv("STRIPE_PRICE_V2_TEAM_YEARLY", "");
+    expect(() => buildPricingV2PlanCheckoutParams({ ...actor, users: 3, packCredits: null, interval: "year" })).toThrow(
+      /nie je nakonfigurovan/,
+    );
+  });
+
   it("automatic_tax only when PRICING_V2_STRIPE_TAX is 'on'", () => {
     stubAllPrices();
     const input = { ...actor, users: 1, packCredits: null };
@@ -287,10 +316,23 @@ describe("v2 checkout builders", () => {
 describe("v2 price recognition", () => {
   it("maps each configured price id to its role", () => {
     stubAllPrices();
-    expect(resolvePricingV2PriceRole(PRICE.STRIPE_PRICE_V2_OFFICE)).toEqual({ kind: "band", bandId: "office" });
+    expect(resolvePricingV2PriceRole(PRICE.STRIPE_PRICE_V2_OFFICE)).toEqual({ kind: "band", bandId: "office", interval: "month" });
     expect(resolvePricingV2PriceRole(PRICE.STRIPE_PRICE_V2_PACK_240)).toEqual({ kind: "pack", credits: 240 });
     expect(resolvePricingV2PriceRole(PRICE.STRIPE_PRICE_V2_CREDIT)).toEqual({ kind: "credit" });
     expect(resolvePricingV2PriceRole("price_1Unrelated00000")).toBeNull();
+  });
+
+  it("ročná cena je to isté pásmo s intervalom year (plán, tier a grant sa nelíšia od mesačného)", () => {
+    stubAllPrices();
+    expect(resolvePricingV2PriceRole(PRICE.STRIPE_PRICE_V2_TEAM_YEARLY)).toEqual({ kind: "band", bandId: "team", interval: "year" });
+    expect(resolvePricingV2PriceRole(PRICE.STRIPE_PRICE_V2_NETWORK_YEARLY)).toEqual({ kind: "band", bandId: "network", interval: "year" });
+    expect(missingPricingV2PriceEnvKeysForRequest({ checkoutType: "pricing_v2", users: 3, packCredits: null, interval: "year" })).toEqual([]);
+    vi.stubEnv("STRIPE_PRICE_V2_TEAM_YEARLY", "");
+    expect(missingPricingV2PriceEnvKeysForRequest({ checkoutType: "pricing_v2", users: 3, packCredits: null, interval: "year" })).toEqual([
+      "STRIPE_PRICE_V2_TEAM_YEARLY",
+    ]);
+    // mesačná požiadavka tým nie je dotknutá
+    expect(missingPricingV2PriceEnvKeysForRequest({ checkoutType: "pricing_v2", users: 3, packCredits: null })).toEqual([]);
   });
 
   it("unset env never matches an undefined / blank / placeholder id (undefined === undefined trap)", () => {

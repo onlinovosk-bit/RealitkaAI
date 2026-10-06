@@ -132,6 +132,22 @@ describe('režim „len plány“ na webe', () => {
   })
 })
 
+describe('ročné platenie na webe (12 × mesačná, bez zľavy)', () => {
+  it('karty ukážu ročnú cenu bez DPH aj s DPH; Sieť s predponou „od“', () => {
+    const view = buildPricingV2View(buildPricingV2Catalog())
+    expect(view.bands.map((b) => norm(b.annualLabel))).toEqual([
+      'Ročne 300 € bez DPH (369 € s DPH)',
+      'Ročne 720 € bez DPH (885,60 € s DPH)',
+      'Ročne 1788 € bez DPH (2199,24 € s DPH)',
+      'Ročne od 4188 € bez DPH (od 5151,24 € s DPH)',
+    ])
+    const html = norm(renderToStaticMarkup(<PricingSectionV2 view={view} />))
+    expect(html).toContain('Ročne 720 € bez DPH (885,60 € s DPH)')
+    expect(html).not.toContain('Ušetríte')
+    expect(html).not.toMatch(/zľav/i)
+  })
+})
+
 describe('zahrnuté kredity plánov (rozhodnutie 6. 10. 2026: 20 / 50 / 100 / 150)', () => {
   it('karty plánov ukážu kredity na celú kanceláriu, nie staré 25 / 60 / 120 / 175', () => {
     const view = buildPricingV2View(buildPricingV2Catalog())

@@ -27,6 +27,11 @@ EXPECTED = {
     "team_month": (6000, 50, 2, 6),
     "office_month": (14900, 100, 7, 25),
     "network_month": (34900, 150, 26, None),
+    # Rocne ceny planov: 12 x mesacna, druha Price na tom istom produkte (interval year).
+    "start_year": (30000, 20, 1, 1),
+    "team_year": (72000, 50, 2, 6),
+    "office_year": (178800, 100, 7, 25),
+    "network_year": (418800, 150, 26, None),
     "credits_60_month": (3400, 60),
     "credits_120_month": (6200, 120),
     "credits_180_month": (8600, 180),
@@ -62,6 +67,14 @@ def validate():
         if x["kind"] == "base_plan":
             assert x["recurring_interval"] == "month", sku
             assert (x["seat_min"], x["seat_max"]) == EXPECTED[sku][2:], sku
+        elif x["kind"] == "base_plan_yearly":
+            assert x["recurring_interval"] == "year", sku
+            base = next(i for i in items if i["sku"] == x["product_sku"])
+            assert base["kind"] == "base_plan", sku
+            # 12 x mesacna cena, bez zlavy; rovnake pasmo a kredity ako mesacny plan
+            assert x["unit_amount_cents"] == base["unit_amount_cents"] * 12, sku
+            assert (x["seat_min"], x["seat_max"]) == EXPECTED[sku][2:], sku
+            assert x["credits_per_cycle"] == base["credits_per_cycle"], sku
         elif x["kind"] == "monthly_credit_addon":
             assert x["recurring_interval"] == "month", sku
         else:
@@ -77,12 +90,17 @@ def show(catalog):
     print("SKU | bez DPH EUR | vzor s 23 % DPH EUR | kredity | EUR/kredit")
     for x in catalog["items"]:
         credits = x.get("credits_per_cycle", x.get("credits_per_unit"))
+        # Ročná cena pokrýva 12 mesačných grantov, takže cena za kredit sa počíta zo všetkých 12 mesiacov.
+        if x.get("recurring_interval") == "year":
+            credits = credits * 12
         per_credit = Decimal(x["unit_amount_cents"]) / 100 / credits
         print(f"{x['sku']} | {eur(x['unit_amount_cents'])} | "
               f"{eur(x['gross_example_cents'])} | {credits} | {per_credit:.3f}")
     print("\nPríklad interného cieľa 70 % príspevkovej marže pri plnom využití:")
     for x in catalog["items"]:
         credits = x.get("credits_per_cycle", x.get("credits_per_unit"))
+        if x.get("recurring_interval") == "year":
+            credits = credits * 12
         budget = Decimal(x["unit_amount_cents"]) / 100 * Decimal("0.30")
         print(f"  {x['sku']}: celkové priame náklady najviac {budget:.3f} EUR; "
               f"pri plnom využití najviac {budget / credits:.4f} EUR/kredit "
@@ -169,16 +187,17 @@ def price_params(item, product_id, version):
         "metadata[kind]": item["kind"],
     }
     if item["recurring_interval"]:
-        params["recurring[interval]"] = "month"
+        params["recurring[interval]"] = item["recurring_interval"]
     credits = item.get("credits_per_cycle", item.get("credits_per_unit"))
     params["metadata[credits]"] = str(credits)
     return params
 
 
-def check_existing(item, product, price, tax_code):
-    if (product.get("metadata", {}).get("revolis_sku") != item["sku"] or
+def check_existing(item, product, price, tax_code, product_sku=None):
+    product_sku = product_sku or item["sku"]
+    if (product.get("metadata", {}).get("revolis_sku") != product_sku or
             product.get("name") != item["name"] or product.get("tax_code") != tax_code):
-        raise ValueError(f"Produkt {item['sku']} sa nezhoduje s katalógom alebo daňovým kódom.")
+        raise ValueError(f"Produkt {product_sku} sa nezhoduje s katalógom alebo daňovým kódom.")
     if price is None:
         return
     interval = (price.get("recurring") or {}).get("interval")
@@ -211,13 +230,17 @@ def create_test_catalog(catalog, args):
     for item in catalog["items"]:
         sku = item["sku"]
         code = args.plan_tax_code if item["tax_code_group"] == "plan" else args.credit_tax_code
-        product = known.get(sku)
+        # Rocna cena je druha Price na produkte mesacneho planu (nezaklada sa druhy produkt).
+        product_sku = item.get("product_sku", sku)
+        product = known.get(product_sku)
         prices = stripe.prices_for(item["lookup_key"])
         if len(prices) > 1:
             raise ValueError(f"Nejednoznačný lookup_key: {item['lookup_key']}")
         price = prices[0] if prices else None
         if price and not product:
             raise ValueError(f"Price pre {sku} existuje bez očakávaného v2 produktu.")
+        if not product and product_sku != sku:
+            raise ValueError(f"Produkt {product_sku} pre rocnu cenu {sku} este neexistuje (poradie polozok v katalogu).")
         if not product:
             product = stripe.request(
                 "POST", "/products", product_params(item, code, catalog["catalog_version"]),
@@ -226,7 +249,7 @@ def create_test_catalog(catalog, args):
             if product.get("livemode") is True:
                 raise ValueError("Stripe vytvoril produkt v live režime; zastavené.")
             known[sku] = product
-        check_existing(item, product, price, code)
+        check_existing(item, product, price, code, product_sku)
         if not price:
             price = stripe.request(
                 "POST", "/prices", price_params(item, product["id"], catalog["catalog_version"]),
@@ -234,7 +257,7 @@ def create_test_catalog(catalog, args):
             )
             if price.get("livemode") is True:
                 raise ValueError("Stripe vytvoril cenu v live režime; zastavené.")
-            check_existing(item, product, price, code)
+            check_existing(item, product, price, code, product_sku)
         ids[item["env_key"]] = price["id"]
         print(f"{sku}: {product['id']} / {price['id']}")
     if args.output:

@@ -21,6 +21,7 @@ export function readPricingV2Config(raw: unknown): PricingV2ConfigPayload | null
     missingPriceEnvKeys: Array.isArray(c.missingPriceEnvKeys) ? c.missingPriceEnvKeys : [],
     catalog: c.catalog,
     plansOnly: c.plansOnly === true,
+    yearlyAvailable: c.yearlyAvailable === true,
   };
 }
 

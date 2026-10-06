@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { SLATE_HORIZON, WORKDESK_CARD } from "@/lib/slate-horizon-theme";
-import { resolvePricingV2Band } from "@/lib/pricing-v2";
+import { resolvePricingV2Band, type PricingV2Interval } from "@/lib/pricing-v2";
 import type { PricingV2ConfigPayload } from "@/lib/pricing-v2-contract";
 import { buildPlanRequest, PRICING_V2_MESSAGES, submitPricingV2Checkout } from "./checkout";
 import { formatEurCents, formatUserRange } from "./format";
@@ -25,6 +25,7 @@ const defaultNavigate = (url: string) => {
 export default function PricingV2Plans({ config, initialUsers = 1, navigate = defaultNavigate }: Props) {
   const [users, setUsers] = useState<number>(initialUsers);
   const [packCredits, setPackCredits] = useState<number | null>(null);
+  const [interval, setInterval] = useState<PricingV2Interval>("month");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,6 +35,11 @@ export default function PricingV2Plans({ config, initialUsers = 1, navigate = de
   const resolved = resolvePricingV2Band(users);
   const selectedBand = resolved.ok ? catalog.bands.find((b) => b.id === resolved.band.id) ?? null : null;
   const selectedPack = packCredits === null ? null : catalog.packs.find((p) => p.credits === packCredits) ?? null;
+  // Ročné platenie sa ponúka až keď existujú všetky ročné ceny (inak ostáva mesačné).
+  const yearlyOffered = config.yearlyAvailable === true;
+  const yearly = yearlyOffered && interval === "year";
+  const per = yearly ? "rok" : "mes.";
+  const amountOf = (band: (typeof catalog.bands)[number]) => (yearly ? band.annual : band);
   const canBuy = config.checkoutAvailable && selectedBand !== null && !busy;
   const vat = catalog.vatPercent;
 
@@ -41,7 +47,7 @@ export default function PricingV2Plans({ config, initialUsers = 1, navigate = de
     if (!canBuy) return;
     setBusy(true);
     setError(null);
-    const outcome = await submitPricingV2Checkout(buildPlanRequest(users, packCredits));
+    const outcome = await submitPricingV2Checkout(buildPlanRequest(users, yearly ? null : packCredits, yearly ? "year" : "month"));
     if (outcome.kind === "redirect") {
       navigate(outcome.url);
       return;
@@ -67,8 +73,34 @@ export default function PricingV2Plans({ config, initialUsers = 1, navigate = de
         Zadajte, koľko ľudí v kancelárii pracuje, a pásmo sa nastaví samo. Kredity na AI akcie patria celej kancelárii.
       </p>
       <p data-testid="vat-note" className="text-sm font-medium mb-4" style={{ color: SLATE_HORIZON.ink }}>
-        Ceny sú mesačné a uvedené bez DPH. Konečná suma s {vat} % DPH je uvedená pri každej cene.
+        Ceny sú {yearly ? "ročné" : "mesačné"} a uvedené bez DPH. Konečná suma s {vat} % DPH je uvedená pri každej cene.
       </p>
+      {yearlyOffered && (
+        <div role="radiogroup" aria-label="Fakturačné obdobie" className="mb-4 inline-flex rounded-lg border p-1" style={{ borderColor: SLATE_HORIZON.line }}>
+          {(["month", "year"] as const).map((value) => (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={interval === value}
+              data-testid={`interval-${value}`}
+              onClick={() => setInterval(value)}
+              className="rounded-md px-4 py-1.5 text-sm font-medium"
+              style={{
+                background: interval === value ? SLATE_HORIZON.brand : "transparent",
+                color: interval === value ? "#fff" : SLATE_HORIZON.ink,
+              }}
+            >
+              {value === "month" ? "Mesačne" : "Ročne"}
+            </button>
+          ))}
+        </div>
+      )}
+      {yearly && (
+        <p data-testid="yearly-note" className="mb-4 text-xs" style={{ color: SLATE_HORIZON.muted }}>
+          Ročná cena je 12 × mesačná, bez zľavy. Platíte raz ročne, kredity sa prideľujú mesačne.
+        </p>
+      )}
 
       {!config.checkoutAvailable && (
         <p role="status" className="mb-4 rounded-lg border p-3 text-sm" style={{ background: "#FEF3C7", borderColor: "#FCD34D", color: "#92400E" }}>
@@ -99,19 +131,19 @@ export default function PricingV2Plans({ config, initialUsers = 1, navigate = de
               <div className="mt-2 text-2xl font-bold" style={{ color: SLATE_HORIZON.brandDeep }}>
                 <span data-testid={`band-${band.id}-net`}>
                   {band.isFromPrice ? "od " : ""}
-                  {formatEurCents(band.netCents)}
+                  {formatEurCents(amountOf(band).netCents)}
                 </span>
                 <span className="text-sm font-normal" style={{ color: SLATE_HORIZON.muted }}>
                   {" "}
-                  bez DPH / mes.
+                  bez DPH / {per}
                 </span>
               </div>
               <div className="text-sm" style={{ color: SLATE_HORIZON.ink }}>
                 <span data-testid={`band-${band.id}-gross`}>
                   {band.isFromPrice ? "od " : ""}
-                  {formatEurCents(band.grossCents)}
+                  {formatEurCents(amountOf(band).grossCents)}
                 </span>{" "}
-                s {vat} % DPH / mes.
+                s {vat} % DPH / {per}
               </div>
               <p className="text-xs mt-2" style={{ color: SLATE_HORIZON.muted }}>
                 {band.monthlyCredits} kreditov mesačne pre kanceláriu
@@ -143,7 +175,7 @@ export default function PricingV2Plans({ config, initialUsers = 1, navigate = de
           />
         </label>
 
-        {!config.plansOnly && (
+        {!config.plansOnly && !yearly && (
           <label className="block">
             <span className="text-sm font-medium" style={{ color: SLATE_HORIZON.ink }}>
               Mesačný balík kreditov navyše
@@ -171,8 +203,8 @@ export default function PricingV2Plans({ config, initialUsers = 1, navigate = de
           <>
             <p>
               Pásmo <strong data-testid="selected-band-label">{selectedBand.label}</strong>:{" "}
-              <strong data-testid="selected-net">{formatEurCents(selectedBand.netCents)}</strong> bez DPH ·{" "}
-              <strong data-testid="selected-gross">{formatEurCents(selectedBand.grossCents)}</strong> s DPH mesačne
+              <strong data-testid="selected-net">{formatEurCents(amountOf(selectedBand).netCents)}</strong> bez DPH ·{" "}
+              <strong data-testid="selected-gross">{formatEurCents(amountOf(selectedBand).grossCents)}</strong> s DPH {yearly ? "ročne" : "mesačne"}
             </p>
             {selectedPack && (
               <p data-testid="selected-pack">
@@ -181,7 +213,9 @@ export default function PricingV2Plans({ config, initialUsers = 1, navigate = de
               </p>
             )}
             <p className="text-xs mt-1" style={{ color: SLATE_HORIZON.muted }}>
-              Plán a balík sú dve mesačné položky; konečný súčet s DPH uvedie Stripe pri objednávke.
+              {yearly
+                ? "Konečný súčet s DPH uvedie Stripe pri objednávke."
+                : "Plán a balík sú dve mesačné položky; konečný súčet s DPH uvedie Stripe pri objednávke."}
             </p>
           </>
         ) : (

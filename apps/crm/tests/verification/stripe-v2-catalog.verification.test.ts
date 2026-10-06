@@ -9,12 +9,14 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   PRICING_V2_BANDS,
+  annualNetCents,
   PRICING_V2_CREDIT_NET_CENTS,
   PRICING_V2_MONTHLY_PACKS,
   priceFromNetCents,
 } from "@/lib/pricing-v2";
 import {
   PRICING_V2_BAND_PRICE_ENV,
+  PRICING_V2_BAND_YEARLY_PRICE_ENV,
   PRICING_V2_CREDIT_PRICE_ENV,
   PRICING_V2_PACK_PRICE_ENV,
 } from "@/lib/pricing-v2-contract";
@@ -45,6 +47,19 @@ describe("scripts/ops/stripe-v2 katalóg vs kód", () => {
     }
   });
 
+  it("ročné ceny plánov: 12 × mesačná (bez zľavy), druhá Price na tom istom produkte, rovnaké kredity", () => {
+    for (const b of PRICING_V2_BANDS) {
+      const item = bySku(`${b.id}_year`);
+      expect(item.unit_amount_cents, b.id).toBe(annualNetCents(b.netCents));
+      expect(item.unit_amount_cents, b.id).toBe(b.netCents * 12);
+      expect(item.recurring_interval, b.id).toBe("year");
+      expect(item.product_sku, b.id).toBe(`${b.id}_month`);
+      expect(item.credits_per_cycle, b.id).toBe(b.monthlyCredits);
+      expect(item.env_key, b.id).toBe(PRICING_V2_BAND_YEARLY_PRICE_ENV[b.id]);
+      expect(item.name, b.id).toBe(bySku(`${b.id}_month`).name);
+    }
+  });
+
   it("zahrnuté kredity plánov sú 20 / 50 / 100 / 150", () => {
     expect(["start", "team", "office", "network"].map((id) => bySku(`${id}_month`).credits_per_cycle)).toEqual([20, 50, 100, 150]);
   });
@@ -60,7 +75,7 @@ describe("scripts/ops/stripe-v2 katalóg vs kód", () => {
     expect(unit.unit_amount_cents).toBe(PRICING_V2_CREDIT_NET_CENTS);
     expect(unit.env_key).toBe(PRICING_V2_CREDIT_PRICE_ENV);
     expect(unit.recurring_interval).toBeNull();
-    expect(catalog.items).toHaveLength(10);
+    expect(catalog.items).toHaveLength(14);
   });
 
   it("mena EUR a tax_behavior exclusive", () => {

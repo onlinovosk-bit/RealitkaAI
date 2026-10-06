@@ -5,7 +5,9 @@ import {
   PRICING_V2_MONTHLY_PACKS,
   buildPricingV2Catalog,
   grossCentsFromNet,
+  annualNetCents,
   isPricingV2Enabled,
+  isPricingV2Interval,
   isPricingV2PlansOnly,
   monthlyOfficeGrantCredits,
   priceExtraCredits,
@@ -252,5 +254,31 @@ describe("isPricingV2PlansOnly (fail-closed)", () => {
     for (const v of ["false", "0", "off", " FALSE ", "Off"]) {
       expect(isPricingV2PlansOnly({ PRICING_V2_PLANS_ONLY: v })).toBe(false);
     }
+  });
+});
+
+describe("pricing-v2: ročné platenie (12 × mesačná, bez zľavy)", () => {
+  it("ročný základ je presne 12 × mesačný pre všetky pásma", () => {
+    expect(PRICING_V2_BANDS.map((b) => annualNetCents(b.netCents))).toEqual([30000, 72000, 178800, 418800]);
+  });
+
+  it("katalóg nesie ročnú čistú aj konečnú cenu (23 % DPH na cent)", () => {
+    const bands = buildPricingV2Catalog().bands;
+    expect(bands.map((b) => b.annual.netCents)).toEqual([30000, 72000, 178800, 418800]);
+    expect(bands.map((b) => b.annual.grossCents)).toEqual([36900, 88560, 219924, 515124]);
+    expect(bands.map((b) => b.annual.vatCents)).toEqual([6900, 16560, 41124, 96324]);
+    // mesačné polia ostali nezmenené
+    expect(bands.map((b) => b.netCents)).toEqual([2500, 6000, 14900, 34900]);
+  });
+
+  it("neplatný základ a nebezpečne veľké číslo sa odmietnu", () => {
+    expect(() => annualNetCents(-1)).toThrow(RangeError);
+    expect(() => annualNetCents(1.5)).toThrow(RangeError);
+    expect(() => annualNetCents(Number.MAX_SAFE_INTEGER)).toThrow(RangeError);
+  });
+
+  it("isPricingV2Interval prijme len month a year", () => {
+    for (const ok of ["month", "year"]) expect(isPricingV2Interval(ok)).toBe(true);
+    for (const bad of ["YEAR", "weekly", "", null, undefined, 12]) expect(isPricingV2Interval(bad)).toBe(false);
   });
 });

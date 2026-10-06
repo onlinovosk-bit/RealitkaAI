@@ -25,9 +25,15 @@ import {
   STARTER_PACK,
   TOPUP_PACKAGES,
 } from "@/lib/program-tier-pricing";
-import { PRICING_V2_BANDS, PRICING_V2_CREDIT_NET_CENTS, PRICING_V2_MONTHLY_PACKS } from "@/lib/pricing-v2";
+import {
+  PRICING_V2_BANDS,
+  PRICING_V2_CREDIT_NET_CENTS,
+  PRICING_V2_MONTHLY_PACKS,
+  annualNetCents,
+} from "@/lib/pricing-v2";
 import {
   PRICING_V2_BAND_PRICE_ENV,
+  PRICING_V2_BAND_YEARLY_PRICE_ENV,
   PRICING_V2_CREDIT_PRICE_ENV,
   PRICING_V2_PACK_PRICE_ENV,
 } from "@/lib/pricing-v2-contract";
@@ -37,7 +43,7 @@ const MANIFEST = join(OPS, "stripe-expected-prices.json");
 const SCRIPT = join(OPS, "stripe_verify_prices.py");
 const WRAPPER = join(OPS, "stripe-verify-prices.sh");
 
-type Row = { env: string; amount: number; type: "recurring" | "one_time"; gate: string };
+type Row = { env: string; amount: number; type: "recurring" | "one_time"; gate: string; interval?: "year" };
 
 function rowsFromCode(): Row[] {
   const rows: Row[] = [];
@@ -76,6 +82,16 @@ function rowsFromCode(): Row[] {
   for (const b of PRICING_V2_BANDS) {
     rows.push({ env: PRICING_V2_BAND_PRICE_ENV[b.id], amount: b.netCents, type: "recurring", gate: "pricing_v2" });
   }
+  // Rocne ceny planov: 12 x mesacna, interval year (bez zlavy); balikov sa to netyka.
+  for (const b of PRICING_V2_BANDS) {
+    rows.push({
+      env: PRICING_V2_BAND_YEARLY_PRICE_ENV[b.id],
+      amount: annualNetCents(b.netCents),
+      type: "recurring",
+      gate: "pricing_v2",
+      interval: "year",
+    });
+  }
   for (const p of PRICING_V2_MONTHLY_PACKS) {
     rows.push({ env: PRICING_V2_PACK_PRICE_ENV[p.credits], amount: p.netCents, type: "recurring", gate: "pricing_v2" });
   }
@@ -90,7 +106,13 @@ function rowsFromCode(): Row[] {
 
 function rowsFromManifest(): Row[] {
   const raw = JSON.parse(readFileSync(MANIFEST, "utf8")) as { prices: Row[] };
-  return raw.prices.map(({ env, amount, type, gate }) => ({ env, amount, type, gate }));
+  return raw.prices.map(({ env, amount, type, gate, interval }) => ({
+    env,
+    amount,
+    type,
+    gate,
+    ...(interval ? { interval } : {}),
+  }));
 }
 
 const byEnv = (a: Row, b: Row) => a.env.localeCompare(b.env);
@@ -100,9 +122,9 @@ describe("stripe-expected-prices.json ↔ program-tier-pricing.ts", () => {
     expect(rowsFromManifest().sort(byEnv)).toEqual(rowsFromCode().sort(byEnv));
   });
 
-  it("pricing v2 rows: net amounts from pricing-v2.ts, env NAMES from the frozen contract, 4 bands + 5 packs + 1 credit", () => {
+  it("pricing v2 rows: net amounts from pricing-v2.ts, env NAMES from the frozen contract, 4 bands + 4 yearly bands + 5 packs + 1 credit", () => {
     const v2 = rowsFromManifest().filter((r) => r.gate === "pricing_v2");
-    expect(v2).toHaveLength(PRICING_V2_BANDS.length + PRICING_V2_MONTHLY_PACKS.length + 1);
+    expect(v2).toHaveLength(PRICING_V2_BANDS.length * 2 + PRICING_V2_MONTHLY_PACKS.length + 1);
     expect(v2.sort(byEnv)).toEqual(rowsFromCode().filter((r) => r.gate === "pricing_v2").sort(byEnv));
     // Manifest nesmie niest hodnoty tajomstiev: len NAZVY env a nazvy produktov.
     for (const r of v2) expect(r.env).toMatch(/^STRIPE_PRICE_V2_[A-Z0-9_]+$/);
@@ -215,7 +237,9 @@ function allExpected(): StripePrice[] {
       (r) => [r.env, r.product],
     ),
   );
-  return rowsFromManifest().map((r) => price(r.amount, { type: r.type, product: productByEnv.get(r.env) }));
+  return rowsFromManifest().map((r) =>
+    price(r.amount, { type: r.type, product: productByEnv.get(r.env), interval: r.interval ?? "month" }),
+  );
 }
 
 /** Parent env minus any real Stripe key, so a test run can never reach live. */
@@ -331,6 +355,33 @@ describe("stripe_verify_prices.py (offline, --fixture)", () => {
     expect(code).toBe(1);
     const legacy = run(allExpected().map((p) => (typeof p.product === "object" && !V2_PRODUCT_NAMES.has(String((p.product as { name: string }).name)) ? { ...p, tax_behavior: "unspecified", product: { ...(p.product as object), tax_code: null } } : p)));
     expect(legacy.code).toBe(0);
+  });
+
+  it("annual v2 plan prices: each band resolves a yearly price distinct from the monthly one", () => {
+    const { code, out } = run(allExpected());
+    expect(code).toBe(0);
+    for (const k of ["START", "TEAM", "OFFICE", "NETWORK"]) {
+      expect(out).toMatch(new RegExp(`^STRIPE_PRICE_V2_${k}_YEARLY=price_`, "m"));
+      expect(out).toMatch(new RegExp(`^STRIPE_PRICE_V2_${k}=price_`, "m"));
+    }
+    expect(out).toContain("rocne (recurring year)");
+  });
+
+  it("a monthly price at the yearly amount is MISSING for the yearly env and never reaches the env patch", () => {
+    const prices = allExpected().filter((p) => p.unit_amount !== 72000);
+    prices.push(price(72000, { product: "Revolis Team", interval: "month" }));
+    const { code, out } = run(prices);
+    expect(out).toMatch(/MISSING {2}STRIPE_PRICE_V2_TEAM_YEARLY[\s\S]*interval=1xmonth, treba 1x year/);
+    expect(out).not.toMatch(/^STRIPE_PRICE_V2_TEAM_YEARLY=/m);
+    expect(code).toBe(1);
+  });
+
+  it("a yearly price at the monthly amount does not satisfy the monthly env", () => {
+    const prices = allExpected().filter((p) => p.unit_amount !== 6000);
+    prices.push(price(6000, { product: "Revolis Team", interval: "year" }));
+    const { out } = run(prices);
+    expect(out).toMatch(/MISSING {2}STRIPE_PRICE_V2_TEAM {3}[\s\S]*interval=1xyear, treba 1x month/);
+    expect(out).not.toMatch(/^STRIPE_PRICE_V2_TEAM=/m);
   });
 
   it("v2 Siet 349 EUR and Owner Cockpit 349 EUR resolve by product name; a v2 price with a foreign name stays AMBIG", () => {

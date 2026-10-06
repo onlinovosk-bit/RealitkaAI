@@ -8,11 +8,13 @@ import {
   PRICING_V2_MONTHLY_PACKS,
   resolvePricingV2Band,
   type PricingV2BandId,
+  type PricingV2Interval,
 } from "@/lib/pricing-v2";
 import {
   PRICING_V2_AGENCY_MODEL,
   PRICING_V2_BAND_ACCOUNT_TIER,
   PRICING_V2_BAND_PRICE_ENV,
+  PRICING_V2_BAND_YEARLY_PRICE_ENV,
   PRICING_V2_CHECKOUT_TYPE_CREDITS,
   PRICING_V2_CHECKOUT_TYPE_PLAN,
   PRICING_V2_CREDIT_PRICE_ENV,
@@ -54,7 +56,7 @@ function getAppUrl(): string {
 // ---------------------------------------------------------------------------
 
 export type PricingV2PriceRole =
-  | { kind: "band"; bandId: PricingV2BandId }
+  | { kind: "band"; bandId: PricingV2BandId; interval: PricingV2Interval }
   | { kind: "pack"; credits: number }
   | { kind: "credit" };
 
@@ -73,7 +75,9 @@ export function resolvePricingV2PriceRole(
     return isValidStripePriceId(configured) && configured!.trim() === id;
   };
   for (const bandId of PRICING_V2_BAND_IDS) {
-    if (is(PRICING_V2_BAND_PRICE_ENV[bandId])) return { kind: "band", bandId };
+    if (is(PRICING_V2_BAND_PRICE_ENV[bandId])) return { kind: "band", bandId, interval: "month" };
+    // Ročná cena je to isté pásmo (rovnaký plán a grant), len iný interval fakturácie.
+    if (is(PRICING_V2_BAND_YEARLY_PRICE_ENV[bandId])) return { kind: "band", bandId, interval: "year" };
   }
   for (const pack of PRICING_V2_MONTHLY_PACKS) {
     if (is(PRICING_V2_PACK_PRICE_ENV[pack.credits])) return { kind: "pack", credits: pack.credits };
@@ -103,8 +107,9 @@ export function missingPricingV2PriceEnvKeysForRequest(
   const needed: string[] = [];
   if (request.checkoutType === PRICING_V2_CHECKOUT_TYPE_PLAN) {
     const band = resolvePricingV2Band(request.users);
-    if (band.ok) needed.push(PRICING_V2_BAND_PRICE_ENV[band.band.id]);
-    else needed.push(...PRICING_V2_BAND_IDS.map((id) => PRICING_V2_BAND_PRICE_ENV[id]));
+    const bandEnv = request.interval === "year" ? PRICING_V2_BAND_YEARLY_PRICE_ENV : PRICING_V2_BAND_PRICE_ENV;
+    if (band.ok) needed.push(bandEnv[band.band.id]);
+    else needed.push(...PRICING_V2_BAND_IDS.map((id) => bandEnv[id]));
     if (request.packCredits) needed.push(PRICING_V2_PACK_PRICE_ENV[request.packCredits] ?? `pack:${request.packCredits}`);
   } else {
     needed.push(PRICING_V2_CREDIT_PRICE_ENV);
@@ -132,12 +137,16 @@ export function isPricingV2StripeTaxOn(env: Env = process.env): boolean {
 
 /** Riadok pásma (qty 1) + voliteľný riadok balíka (qty 1) + metadáta. Chýbajúca cena = výnimka (fail-closed). */
 export function buildPricingV2PlanCheckoutParams(
-  input: PricingV2CheckoutActor & { users: number; packCredits: number | null },
+  input: PricingV2CheckoutActor & { users: number; packCredits: number | null; interval?: PricingV2Interval },
   env: Env = process.env,
 ): PricingV2PlanCheckoutParams {
   // Hádže RangeError pri neplatnom počte používateľov alebo prázdnom agencyId.
   const metadata = buildPricingV2PlanMetadata(input);
-  const bandPriceId = env[PRICING_V2_BAND_PRICE_ENV[metadata.bandId]]?.trim();
+  if (metadata.interval === "year" && input.packCredits) {
+    throw new RangeError("Mesačný balík kreditov sa s ročným plánom nedá kombinovať.");
+  }
+  const bandEnv = metadata.interval === "year" ? PRICING_V2_BAND_YEARLY_PRICE_ENV : PRICING_V2_BAND_PRICE_ENV;
+  const bandPriceId = env[bandEnv[metadata.bandId]]?.trim();
   if (!isValidStripePriceId(bandPriceId)) throw new Error("Stripe cena pásma v2 nie je nakonfigurovaná.");
 
   const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [{ price: bandPriceId, quantity: 1 }];
@@ -272,7 +281,12 @@ export async function createPricingV2CheckoutSession(
   const appUrl = getAppUrl();
 
   if (request.checkoutType === PRICING_V2_CHECKOUT_TYPE_PLAN) {
-    const params = buildPricingV2PlanCheckoutParams({ ...actor, users: request.users, packCredits: request.packCredits });
+    const params = buildPricingV2PlanCheckoutParams({
+      ...actor,
+      users: request.users,
+      packCredits: request.packCredits,
+      interval: request.interval,
+    });
     const session = await stripe.checkout.sessions.create({
       mode: params.mode,
       line_items: params.lineItems,

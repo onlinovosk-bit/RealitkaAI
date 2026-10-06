@@ -71,6 +71,74 @@
       "checkout_policy": "sales_quote_only"
     },
     {
+      "sku": "start_year",
+      "name": "Revolis Start",
+      "description": "Plán pre 1 používateľa. 20 kreditov mesačne.",
+      "kind": "base_plan_yearly",
+      "tax_code_group": "plan",
+      "unit_amount_cents": 30000,
+      "gross_example_cents": 36900,
+      "recurring_interval": "year",
+      "credits_per_cycle": 20,
+      "seat_min": 1,
+      "seat_max": 1,
+      "lookup_key": "revolis_v2_start_year",
+      "env_key": "STRIPE_PRICE_V2_START_YEARLY",
+      "checkout_policy": "self_serve_after_v2_release",
+      "product_sku": "start_month"
+    },
+    {
+      "sku": "team_year",
+      "name": "Revolis Team",
+      "description": "Plán pre 2 až 6 používateľov. 50 kreditov mesačne pre celú kanceláriu.",
+      "kind": "base_plan_yearly",
+      "tax_code_group": "plan",
+      "unit_amount_cents": 72000,
+      "gross_example_cents": 88560,
+      "recurring_interval": "year",
+      "credits_per_cycle": 50,
+      "seat_min": 2,
+      "seat_max": 6,
+      "lookup_key": "revolis_v2_team_year",
+      "env_key": "STRIPE_PRICE_V2_TEAM_YEARLY",
+      "checkout_policy": "self_serve_after_v2_release",
+      "product_sku": "team_month"
+    },
+    {
+      "sku": "office_year",
+      "name": "Revolis Kancelária",
+      "description": "Plán pre 7 až 25 používateľov. 100 kreditov mesačne pre celú kanceláriu.",
+      "kind": "base_plan_yearly",
+      "tax_code_group": "plan",
+      "unit_amount_cents": 178800,
+      "gross_example_cents": 219924,
+      "recurring_interval": "year",
+      "credits_per_cycle": 100,
+      "seat_min": 7,
+      "seat_max": 25,
+      "lookup_key": "revolis_v2_office_year",
+      "env_key": "STRIPE_PRICE_V2_OFFICE_YEARLY",
+      "checkout_policy": "self_serve_after_v2_release",
+      "product_sku": "office_month"
+    },
+    {
+      "sku": "network_year",
+      "name": "Revolis Sieť",
+      "description": "Plán pre 26 a viac používateľov, od 349 € mesačne bez DPH. 150 kreditov mesačne pre celú kanceláriu v základe.",
+      "kind": "base_plan_yearly",
+      "tax_code_group": "plan",
+      "unit_amount_cents": 418800,
+      "gross_example_cents": 515124,
+      "recurring_interval": "year",
+      "credits_per_cycle": 150,
+      "seat_min": 26,
+      "seat_max": null,
+      "lookup_key": "revolis_v2_network_year",
+      "env_key": "STRIPE_PRICE_V2_NETWORK_YEARLY",
+      "checkout_policy": "sales_quote_only",
+      "product_sku": "network_month"
+    },
+    {
       "sku": "credits_60_month",
       "name": "Revolis Balík 60 kreditov",
       "description": "60 kreditov pre kanceláriu za mesiac.",
@@ -154,5 +222,6 @@
       "env_key": "STRIPE_PRICE_V2_CREDIT",
       "checkout_policy": "hidden_until_enforcement"
     }
-  ]
+  ],
+  "annual_billing_note": "Rocne ceny planov = 12 x mesacna (bez zlavy, rozhodnutie foundera 6. 10. 2026). Druha Price na rovnakom produkte (interval year). Kredity sa prideluju mesacne. Balik kreditov sa s rocnym planom nekombinuje."
 }
