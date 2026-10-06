@@ -53,6 +53,8 @@ const envSchema = z.object({
   PRICING_V2_ENABLED: z.string().optional(),
   PRICING_V2_STRIPE_TAX: z.string().optional(),
   PRICING_V2_PLANS_ONLY: z.string().optional(),
+  SELF_SERVE_SIGNUP_ENABLED: z.string().optional(),
+  SELF_SERVE_TRIAL_CREDITS: z.string().optional(),
   STRIPE_PRICE_V2_START: z.string().optional(),
   STRIPE_PRICE_V2_TEAM: z.string().optional(),
   STRIPE_PRICE_V2_OFFICE: z.string().optional(),
