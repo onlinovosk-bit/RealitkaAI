@@ -2,8 +2,9 @@
 ### Dokončené
 - Rozhodnutie foundera: zahrnuté mesačné kredity plánov 25/60/120/175 → **20/50/100/150**; ceny, balíky (60–300), kredit 0,70 € a pásma nezmenené. Zdroj `monthlyCredits` v `apps/crm/src/lib/pricing-v2.ts`; testy grant-engine, credits-billing-v2, e2e, texty CRM + web aktualizované, nový test kariet na webe. Mutation proof 4/4. CRM sada: len 22 pádov pred úpravou testov (staré čísla), potom 235/235 dotknutých; `valuation/submit` integračný test vyžaduje TEST_SUPABASE_* (pred zmenou rovnako).
 - `docs/pricing/2026-10-06-pricing-v2-credits-20-50-100-150.md`: rozhodnutie, Stripe metadata (krok foundera), neoverené.
+- Stripe podklady v repe: `scripts/ops/stripe-v2/` (katalóg JSON + testovací skript, granty 20/50/100/150, `catalog_version` revolis_v2_2026_10_06), `docs/pricing/2026-10-05-stripe-v2-priprava.md`, drift-test `stripe-v2-catalog.verification.test.ts` (mutation proof 4/4).
 ### Rozpracované / Pending
-- Podklad Stripe katalóg JSON/skript z 5. 10. má `credits_per_cycle` 25/60/120/175 — opraviť pred použitím; FUNNEL-V2 (B1) stále otvorený, verejný cenník zapínať až po ňom.
+- (Stripe podklady opravené a v repe;) FUNNEL-V2 (B1) stále otvorený, verejný cenník zapínať až po ňom.
 ### Ďalší krok
 Merge PR so zmenou grantov na GO, potom FUNNEL-V2.
 
