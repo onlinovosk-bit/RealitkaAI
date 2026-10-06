@@ -123,13 +123,26 @@ describe("pricing-v2-contract: Stripe price kľúče a mapovanie", () => {
   });
 
   it("chýbajúce a placeholder ceny sa nahlásia názvom; platné nie", () => {
-    const all = missingPricingV2PriceEnvKeys({});
+    const full = { PRICING_V2_PLANS_ONLY: "false" };
+    const all = missingPricingV2PriceEnvKeys(full);
     expect(all).toHaveLength(10);
-    const env: Record<string, string> = {};
+    const env: Record<string, string> = { ...full };
     for (const n of all) env[n] = "price_1Abcdefgh12345";
     expect(missingPricingV2PriceEnvKeys(env)).toEqual([]);
     expect(missingPricingV2PriceEnvKeys({ ...env, STRIPE_PRICE_V2_TEAM: "price_xxx" })).toEqual(["STRIPE_PRICE_V2_TEAM"]);
     expect(missingPricingV2PriceEnvKeys({ ...env, STRIPE_PRICE_V2_PACK_60: "" })).toEqual(["STRIPE_PRICE_V2_PACK_60"]);
+  });
+
+  it("režim „len plány“ (predvolený): vyžadujú sa iba 4 ceny plánov, balíky a kredit nie", () => {
+    const planOnly = missingPricingV2PriceEnvKeys({});
+    expect(planOnly).toEqual([
+      "STRIPE_PRICE_V2_START",
+      "STRIPE_PRICE_V2_TEAM",
+      "STRIPE_PRICE_V2_OFFICE",
+      "STRIPE_PRICE_V2_NETWORK",
+    ]);
+    const env = Object.fromEntries(planOnly.map((n) => [n, "price_1Abcdefgh12345"]));
+    expect(missingPricingV2PriceEnvKeys(env)).toEqual([]);
   });
 
   it("pásmo → account_tier zhodné s legacy seat tiermi", () => {

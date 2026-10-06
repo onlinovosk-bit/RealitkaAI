@@ -199,6 +199,29 @@ describe("PricingV2Plans — CTA a chyby checkoutu", () => {
   });
 });
 
+describe("režim „len plány“ — UI", () => {
+  const plansOnly = () => v2Config({ plansOnly: true, catalog: { ...buildPricingV2Catalog(), packs: [] } });
+
+  it("PricingV2Plans nezobrazí výber balíka", () => {
+    render(<PricingV2Plans config={plansOnly()} />);
+    expect(screen.queryByLabelText("Mesačný balík kreditov")).toBeNull();
+    expect(screen.getByLabelText("Počet používateľov")).toBeTruthy();
+  });
+
+  it("PricingV2CreditsTopup sa nevykreslí vôbec", () => {
+    render(<PricingV2CreditsTopup config={plansOnly()} />);
+    expect(screen.queryByTestId("pricing-v2-credits")).toBeNull();
+  });
+
+  it("plán sa kúpi bez balíka (packCredits null)", async () => {
+    const { checkoutCalls } = mockFetch({});
+    render(<PricingV2Plans config={plansOnly()} navigate={vi.fn()} />);
+    await userEvent.setup().click(screen.getByRole("button", { name: /Pokračovať|Kúpiť|Objednať|Založiť/ }));
+    await waitFor(() => expect(checkoutCalls()).toHaveLength(1));
+    expect(JSON.parse(String(checkoutCalls()[0].init?.body)).packCredits).toBeNull();
+  });
+});
+
 describe("PricingV2CreditsTopup — jednorazové kredity", () => {
   it("cena z priceExtraCredits (čistá aj konečná) a telo pricing_v2_credits", async () => {
     const { checkoutCalls } = mockFetch({});

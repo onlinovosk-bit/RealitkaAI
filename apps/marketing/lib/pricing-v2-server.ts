@@ -1,7 +1,7 @@
 /**
  * Server-side vstup cenníka v2 (číta env). Nepoužívať v klientských komponentoch.
  */
-import { buildPricingV2Catalog, isPricingV2Enabled } from './pricing'
+import { buildPricingV2Catalog, isPricingV2Enabled, isPricingV2PlansOnly } from './pricing'
 import { buildPricingV2View, type PricingV2View } from './pricing-v2-view'
 
 /**
@@ -10,5 +10,5 @@ import { buildPricingV2View, type PricingV2View } from './pricing-v2-view'
  */
 export function resolvePricingV2View(env: Record<string, string | undefined> = process.env): PricingV2View | null {
   if (!isPricingV2Enabled(env)) return null
-  return buildPricingV2View(buildPricingV2Catalog(), env.NEXT_PUBLIC_CRM_URL)
+  return buildPricingV2View(buildPricingV2Catalog(), env.NEXT_PUBLIC_CRM_URL, { plansOnly: isPricingV2PlansOnly(env) })
 }

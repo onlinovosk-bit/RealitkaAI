@@ -71,6 +71,14 @@ def reject_reason(price, entry):
     product = price.get("product")
     if isinstance(product, dict) and not product.get("active", True):
         return "product.active=false"
+    if entry["gate"] == "pricing_v2":
+        # Sumy v2 su BEZ DPH: DPH sa pocita navrch len ak je cena exclusive a produkt ma tax_code.
+        if price.get("tax_behavior") != "exclusive":
+            return f"tax_behavior={price.get('tax_behavior')}, treba exclusive"
+        if not isinstance(product, dict):
+            return "product nie je expandovany - tax_code sa neda overit"
+        if not product.get("tax_code"):
+            return "product.tax_code chyba (nastav Stripe Tax kod produktu)"
     return None
 
 
@@ -117,8 +125,11 @@ def fetch_fixture(path):
 
 def print_spec(manifest):
     print("Krok C - co vytvorit v Stripe Dashboard (LIVE mode). Vytvara founder, nie agent.\n")
-    print("Kazda cena: currency EUR, Standard pricing (per unit), amount = presne co zakaznik")
-    print("zaplati (checkout nema automatic_tax). Recurring = Monthly, interval 1.\n")
+    print("Kazda cena: currency EUR, Standard pricing (per unit). Recurring = Monthly, interval 1.")
+    print("Legacy ceny: amount = presne co zakaznik zaplati (checkout nema automatic_tax).")
+    print("Cennik v2 (gate pricing_v2): amount je BEZ DPH, tax_behavior=exclusive a produkt musi mat")
+    print("Stripe Tax kod (tax_code); verifikator ich kontroluje. DPH pricita Stripe Tax pri")
+    print("PRICING_V2_STRIPE_TAX=on - registracie a kody potvrd s uctovnicou.\n")
     for gate, label in GATES.items():
         rows = [e for e in manifest if e["gate"] == gate]
         if not rows:

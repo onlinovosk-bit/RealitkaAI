@@ -1,3 +1,15 @@
+## Session 2026-10-05 (STRIPE-C-READY)
+### Dokončené
+- Verifikátor `scripts/ops/stripe_verify_prices.py`: pre v2 ceny kontroluje `tax_behavior=exclusive` a `product.tax_code`; opravený text `--spec` (checkout bez automatic_tax platí len pre legacy). Testy v `stripe-expected-prices.verification.test.ts` (19/19).
+- Režim „len plány“ `PRICING_V2_PLANS_ONLY` (predvolene zapnutý, fail-closed): `pricing-v2.ts`, `pricing-v2-contract.ts` (kľúče len plány, kód `credits_not_sold`), `checkout-config`, `credits/checkout` (403 pred Stripe), `PricingV2Plans`/`PricingV2CreditsTopup`/`usePricingV2Config`, web `PricingSectionV2`/`pricing-v2-view`. Mutation proof 5/5 mutantov zabitých.
+- Podklady foundera (10 cien, katalóg, testovací skript) porovnané s manifestom na `3bb4233`: sedia.
+### Rozpracované / Pending
+- Stripe krok C (founder, `txcd_` kódy s účtovníčkou), FUNNEL-V2, VOP, migrácia na PROD, merge PR #822 (draft) — všetko čaká na GO.
+### Kľúčové súbory zmenené
+- `scripts/ops/stripe_verify_prices.py`, `apps/crm/src/lib/pricing-v2*.ts`, `apps/crm/src/app/api/billing/{checkout-config,credits/checkout}/route.ts`, `apps/crm/src/components/billing/v2/*`, `apps/marketing/{lib,components}/*pricing-v2*`, `docs/pricing/2026-10-05-pricing-v2-w4-production-gate.md` (B7a).
+### Ďalší krok
+Founder: Stripe krok C podľa podkladov (10 cien, `exclusive`, `txcd_`), potom `bash scripts/ops/stripe-verify-prices.sh` a poslať výstup; agent: FUNNEL-V2 na GO.
+
 ## Session 2026-10-05 (MEGA-POPLACH-AIRAMAX)
 RAU route: GO_REQUIRED (ručne; router zamietnutý) roadmap Revolis.AI
 ### Dokončené

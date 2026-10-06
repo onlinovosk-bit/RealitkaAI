@@ -8,6 +8,7 @@ import { resolve } from 'path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import PricingSection from '../components/landing/PricingSection'
+import PricingSectionV2 from '../components/landing/PricingSectionV2'
 import LeadCaptureModal from '../components/LeadCaptureModal'
 import { FaqSection } from '../components/demo/DemoSections'
 import ZakulisiePage from '../app/zakulisie/[token]/page'
@@ -105,6 +106,26 @@ describe('resolvePricingV2View (prepínač)', () => {
   })
 })
 
+describe('režim „len plány“ na webe', () => {
+  const env = { PRICING_V2_ENABLED: 'true' }
+  it('predvolene bez balíkov a bez bloku „Mesačné balíky kreditov“', () => {
+    const view = resolvePricingV2View(env)!
+    expect(view.plansOnly).toBe(true)
+    expect(view.packs).toEqual([])
+    const html = renderToStaticMarkup(<PricingSectionV2 view={view} />)
+    expect(html).not.toContain('baliky-kreditov')
+    expect(html).not.toContain('Mesačné balíky kreditov')
+    expect(html).not.toContain('Samostatne dokúpené')
+    expect(html).toContain('Jedna cena za celú kanceláriu')
+  })
+  it('PRICING_V2_PLANS_ONLY=false vráti balíky', () => {
+    const view = resolvePricingV2View({ ...env, PRICING_V2_PLANS_ONLY: 'false' })!
+    expect(view.plansOnly).toBe(false)
+    expect(view.packs).toHaveLength(5)
+    expect(renderToStaticMarkup(<PricingSectionV2 view={view} />)).toContain('baliky-kreditov')
+  })
+})
+
 describe('ceny pochádzajú z katalógu', () => {
   it('view zodpovedá nezávislým očakávaniam', () => {
     const view = buildPricingV2View(buildPricingV2Catalog())
@@ -125,7 +146,7 @@ describe('ceny pochádzajú z katalógu', () => {
 
 describe('PricingSection pri zapnutom prepínači', () => {
   const render = () =>
-    withEnv({ PRICING_V2_ENABLED: 'true', NEXT_PUBLIC_CRM_URL: undefined }, () => norm(renderToStaticMarkup(<PricingSection />)))
+    withEnv({ PRICING_V2_ENABLED: 'true', PRICING_V2_PLANS_ONLY: 'false', NEXT_PUBLIC_CRM_URL: undefined }, () => norm(renderToStaticMarkup(<PricingSection />)))
 
   it('ukáže 4 pásma s čistou aj konečnou cenou', () => {
     const html = render() as unknown as string

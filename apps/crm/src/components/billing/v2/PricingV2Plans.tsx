@@ -143,25 +143,27 @@ export default function PricingV2Plans({ config, initialUsers = 1, navigate = de
           />
         </label>
 
-        <label className="block">
-          <span className="text-sm font-medium" style={{ color: SLATE_HORIZON.ink }}>
-            Mesačný balík kreditov navyše
-          </span>
-          <select
-            value={packCredits === null ? "" : String(packCredits)}
-            onChange={(e) => setPackCredits(e.target.value === "" ? null : Number(e.target.value))}
-            className="mt-1 block rounded-md border px-3 py-2"
-            style={{ borderColor: SLATE_HORIZON.line }}
-            aria-label="Mesačný balík kreditov"
-          >
-            <option value="">Bez balíka</option>
-            {catalog.packs.map((p) => (
-              <option key={p.credits} value={String(p.credits)}>
-                {p.credits} kreditov · {formatEurCents(p.netCents)} bez DPH ({formatEurCents(p.grossCents)} s DPH) / mes.
-              </option>
-            ))}
-          </select>
-        </label>
+        {!config.plansOnly && (
+          <label className="block">
+            <span className="text-sm font-medium" style={{ color: SLATE_HORIZON.ink }}>
+              Mesačný balík kreditov navyše
+            </span>
+            <select
+              value={packCredits === null ? "" : String(packCredits)}
+              onChange={(e) => setPackCredits(e.target.value === "" ? null : Number(e.target.value))}
+              className="mt-1 block rounded-md border px-3 py-2"
+              style={{ borderColor: SLATE_HORIZON.line }}
+              aria-label="Mesačný balík kreditov"
+            >
+              <option value="">Bez balíka</option>
+              {catalog.packs.map((p) => (
+                <option key={p.credits} value={String(p.credits)}>
+                  {p.credits} kreditov · {formatEurCents(p.netCents)} bez DPH ({formatEurCents(p.grossCents)} s DPH) / mes.
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
       </div>
 
       <div data-testid="selection-summary" className="mb-4 text-sm" style={{ color: SLATE_HORIZON.ink }}>
