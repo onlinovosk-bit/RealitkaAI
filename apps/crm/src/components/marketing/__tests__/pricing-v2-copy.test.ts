@@ -35,10 +35,10 @@ describe("W2-D pricing-v2-copy", () => {
   it("riadky pásiem presne podľa schváleného cenníka (nezávislý oracle z roadmapy §9.5)", () => {
     const c = buildPricingV2Catalog();
     const expected = [
-      ["1 používateľ", "25 € mesačne bez DPH", "30,75 € s DPH 23 %", "25 kreditov mesačne pre celú kanceláriu"],
-      ["2–6 používateľov", "60 € mesačne bez DPH", "73,80 € s DPH 23 %", "60 kreditov mesačne pre celú kanceláriu"],
-      ["7–25 používateľov", "149 € mesačne bez DPH", "183,27 € s DPH 23 %", "120 kreditov mesačne pre celú kanceláriu"],
-      ["26 a viac používateľov", "od 349 € mesačne bez DPH", "od 429,27 € s DPH 23 %", "175 kreditov mesačne pre celú kanceláriu"],
+      ["1 používateľ", "25 € mesačne bez DPH", "30,75 € s DPH 23 %", "20 kreditov mesačne pre celú kanceláriu"],
+      ["2–6 používateľov", "60 € mesačne bez DPH", "73,80 € s DPH 23 %", "50 kreditov mesačne pre celú kanceláriu"],
+      ["7–25 používateľov", "149 € mesačne bez DPH", "183,27 € s DPH 23 %", "100 kreditov mesačne pre celú kanceláriu"],
+      ["26 a viac používateľov", "od 349 € mesačne bez DPH", "od 429,27 € s DPH 23 %", "150 kreditov mesačne pre celú kanceláriu"],
     ];
     c.bands.forEach((b, i) => {
       expect(n(usersRangeLabel(b))).toBe(expected[i][0]);

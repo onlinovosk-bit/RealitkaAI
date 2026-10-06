@@ -104,8 +104,8 @@ describe("pricing-v2: ceny a DPH", () => {
 });
 
 describe("pricing-v2: grant kreditov", () => {
-  it("grant patrí kancelárii 25 / 60 / 120 / 175 a nezávisí od počtu používateľov", () => {
-    expect(PRICING_V2_BANDS.map((b) => monthlyOfficeGrantCredits(b.id))).toEqual([25, 60, 120, 175]);
+  it("grant patrí kancelárii 20 / 50 / 100 / 150 a nezávisí od počtu používateľov", () => {
+    expect(PRICING_V2_BANDS.map((b) => monthlyOfficeGrantCredits(b.id))).toEqual([20, 50, 100, 150]);
     const six = resolvePricingV2Band(6);
     const two = resolvePricingV2Band(2);
     expect(six.ok && two.ok && six.band.monthlyCredits === two.band.monthlyCredits).toBe(true);

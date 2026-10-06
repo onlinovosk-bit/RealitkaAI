@@ -60,6 +60,8 @@ export type PricingV2View = {
   packsCtaHref: string
   /** true = predávajú sa len plány: balíky a dokúpenie kreditov sa na webe neukazujú */
   plansOnly: boolean
+  /** true = CTA vedú do registrácie v CRM; false = všetky na demo */
+  signupEnabled: boolean
 }
 
 /** Cena z centov v sk formáte: 2500 -> „25 €“, 3075 -> „30,75 €“ (nezlomiteľná medzera pred €). */
@@ -102,15 +104,17 @@ function usersLabel(min: number, max: number | null): string {
 export function buildPricingV2View(
   catalog: PricingV2Catalog,
   crmUrlRaw?: string | null,
-  options: { plansOnly?: boolean } = {},
+  options: { plansOnly?: boolean; signupEnabled?: boolean } = {},
 ): PricingV2View {
   const plansOnly = options.plansOnly === true
+  const signupEnabled = options.signupEnabled === true
   const crmUrl = safeCrmUrl(crmUrlRaw)
   return {
     vatPercent: catalog.vatPercent,
     crmUrl,
     bands: catalog.bands.map((b) => {
-      const ctaIsDemo = b.isFromPrice
+      // Bez zapnutého signupu vedie každé pásmo na demo; registrácia v CRM až po zapnutí (Stripe + funnel pripravené).
+      const ctaIsDemo = b.isFromPrice || !signupEnabled
       return {
         id: b.id,
         label: b.label,
@@ -121,10 +125,11 @@ export function buildPricingV2View(
         isFromPrice: b.isFromPrice,
         ctaIsDemo,
         ctaHref: ctaIsDemo ? `${CALENDLY_DEMO_URL}?utm_content=pricing_v2_${b.id}` : buildRegisterUrl(crmUrl, { plan: b.id }),
-        ctaLabel: ctaIsDemo ? 'Dohodnúť cenu na deme →' : 'Založiť kanceláriu →',
+        ctaLabel: b.isFromPrice ? 'Dohodnúť cenu na deme →' : ctaIsDemo ? 'Rezervovať demo →' : 'Založiť kanceláriu →',
       }
     }),
     plansOnly,
+    signupEnabled,
     packs: (plansOnly ? [] : catalog.packs).map((p) => ({
       credits: p.credits,
       creditsLabel: `${p.credits} kreditov`,

@@ -94,10 +94,16 @@ describe('formatEurCents', () => {
 })
 
 describe('resolvePricingV2View (prepínač)', () => {
-  it('vypnuté / neznáme hodnoty -> null', () => {
-    for (const v of [undefined, '', 'false', '0', 'off', 'no', 'yes']) {
+  it('výslovne vypnuté (false / 0 / off / no) -> legacy (null)', () => {
+    for (const v of ['false', '0', 'off', 'no', ' FALSE ']) {
       expect(resolvePricingV2View({ PRICING_V2_ENABLED: v })).toBeNull()
     }
+  })
+  it('predvolene (nenastavené / prázdne) web ukazuje cenník v2', () => {
+    for (const v of [undefined, '']) {
+      expect(resolvePricingV2View({ PRICING_V2_ENABLED: v })).not.toBeNull()
+    }
+    expect(resolvePricingV2View({})!.bands.map((b) => b.id)).toEqual(['start', 'team', 'office', 'network'])
   })
   it('zapnuté (true/1/on) -> katalóg', () => {
     for (const v of ['true', '1', 'on', ' TRUE ']) {
@@ -126,6 +132,21 @@ describe('režim „len plány“ na webe', () => {
   })
 })
 
+describe('zahrnuté kredity plánov (rozhodnutie 6. 10. 2026: 20 / 50 / 100 / 150)', () => {
+  it('karty plánov ukážu kredity na celú kanceláriu, nie staré 25 / 60 / 120 / 175', () => {
+    const view = buildPricingV2View(buildPricingV2Catalog())
+    expect(view.bands.map((b) => b.creditsLabel)).toEqual([
+      '20 kreditov mesačne pre celú kanceláriu',
+      '50 kreditov mesačne pre celú kanceláriu',
+      '100 kreditov mesačne pre celú kanceláriu',
+      '150 kreditov mesačne pre celú kanceláriu',
+    ])
+    const html = renderToStaticMarkup(<PricingSectionV2 view={view} />)
+    for (const old of ['25 kreditov', '175 kreditov']) expect(html).not.toContain(old)
+    expect(html).not.toContain('120 kreditov mesačne pre celú')
+  })
+})
+
 describe('ceny pochádzajú z katalógu', () => {
   it('view zodpovedá nezávislým očakávaniam', () => {
     const view = buildPricingV2View(buildPricingV2Catalog())
@@ -146,7 +167,7 @@ describe('ceny pochádzajú z katalógu', () => {
 
 describe('PricingSection pri zapnutom prepínači', () => {
   const render = () =>
-    withEnv({ PRICING_V2_ENABLED: 'true', PRICING_V2_PLANS_ONLY: 'false', NEXT_PUBLIC_CRM_URL: undefined }, () => norm(renderToStaticMarkup(<PricingSection />)))
+    withEnv({ PRICING_V2_ENABLED: 'true', PRICING_V2_PLANS_ONLY: 'false', PRICING_V2_SIGNUP_ENABLED: 'true', NEXT_PUBLIC_CRM_URL: undefined }, () => norm(renderToStaticMarkup(<PricingSection />)))
 
   it('ukáže 4 pásma s čistou aj konečnou cenou', () => {
     const html = render() as unknown as string
@@ -214,8 +235,43 @@ describe('PricingSection pri zapnutom prepínači', () => {
   })
 })
 
+describe('CTA na webe: demo, kým nie je zapnutý signup', () => {
+  const noSignup = { PRICING_V2_ENABLED: 'true' }
+  it('predvolene vedú všetky pásma na demo, nie do registrácie v CRM', () => {
+    const view = resolvePricingV2View(noSignup)!
+    expect(view.signupEnabled).toBe(false)
+    expect(view.bands.every((b) => b.ctaIsDemo)).toBe(true)
+    expect(view.bands.map((b) => b.ctaLabel)).toEqual([
+      'Rezervovať demo →',
+      'Rezervovať demo →',
+      'Rezervovať demo →',
+      'Dohodnúť cenu na deme →',
+    ])
+    const html = renderToStaticMarkup(<PricingSectionV2 view={view} />)
+    expect(html).not.toContain('/register')
+    expect(html).not.toContain('app.revolis.ai')
+    expect((html.match(/calendly\.com/g) ?? []).length).toBeGreaterThanOrEqual(4)
+  })
+  it('PRICING_V2_SIGNUP_ENABLED=true|1|on zapne registráciu pre pásma Start/Team/Kancelária (Sieť ostáva demo)', () => {
+    for (const v of ['true', '1', 'on', ' ON ']) {
+      const view = resolvePricingV2View({ ...noSignup, PRICING_V2_SIGNUP_ENABLED: v })!
+      expect(view.bands.map((b) => b.ctaIsDemo)).toEqual([false, false, false, true])
+    }
+  })
+  it.each(['', 'false', '0', 'yes', 'nonsense'])('PRICING_V2_SIGNUP_ENABLED=%j ostáva v bezpečnom režime (demo)', (v) => {
+    expect(resolvePricingV2View({ ...noSignup, PRICING_V2_SIGNUP_ENABLED: v })!.signupEnabled).toBe(false)
+  })
+  it('modal bez signupu neláka do aplikácie', () => {
+    const view = resolvePricingV2View(noSignup)!
+    const out = norm(renderToStaticMarkup(<LeadCaptureModal source="pricing-v2-team" onClose={() => {}} pricingV2={view} />))
+    expect(out).toContain('na krátkom deme')
+    expect(out).not.toContain('Kanceláriu založíte v aplikácii')
+    expect(out).not.toContain('/register')
+  })
+})
+
 describe('LeadCaptureModal vo v2', () => {
-  const view = buildPricingV2View(buildPricingV2Catalog())
+  const view = buildPricingV2View(buildPricingV2Catalog(), undefined, { signupEnabled: true })
   const html = (source: string) =>
     norm(renderToStaticMarkup(<LeadCaptureModal source={source} onClose={() => {}} pricingV2={view} />))
 

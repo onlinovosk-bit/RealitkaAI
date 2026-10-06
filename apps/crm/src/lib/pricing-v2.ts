@@ -35,10 +35,10 @@ function freezeList<T extends object>(items: T[]): readonly T[] {
 }
 
 export const PRICING_V2_BANDS: readonly PricingV2Band[] = freezeList<PricingV2Band>([
-  { id: "start", label: "Start", minUsers: 1, maxUsers: 1, netCents: 2500, isFromPrice: false, monthlyCredits: 25 },
-  { id: "team", label: "Team", minUsers: 2, maxUsers: 6, netCents: 6000, isFromPrice: false, monthlyCredits: 60 },
-  { id: "office", label: "Kancelária", minUsers: 7, maxUsers: 25, netCents: 14900, isFromPrice: false, monthlyCredits: 120 },
-  { id: "network", label: "Sieť", minUsers: 26, maxUsers: null, netCents: 34900, isFromPrice: true, monthlyCredits: 175 },
+  { id: "start", label: "Start", minUsers: 1, maxUsers: 1, netCents: 2500, isFromPrice: false, monthlyCredits: 20 },
+  { id: "team", label: "Team", minUsers: 2, maxUsers: 6, netCents: 6000, isFromPrice: false, monthlyCredits: 50 },
+  { id: "office", label: "Kancelária", minUsers: 7, maxUsers: 25, netCents: 14900, isFromPrice: false, monthlyCredits: 100 },
+  { id: "network", label: "Sieť", minUsers: 26, maxUsers: null, netCents: 34900, isFromPrice: true, monthlyCredits: 150 },
 ]);
 
 /** Samostatne dokúpený kredit (bez balíka), bez DPH. */
