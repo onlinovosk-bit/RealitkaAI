@@ -247,6 +247,12 @@ function run(prices: StripePrice[]) {
 }
 
 const TOTAL = () => rowsFromManifest().length;
+/** Názvy produktov cenníka v2 podľa manifestu (gate pricing_v2), nie podľa predpony v názve. */
+const V2_PRODUCT_NAMES = new Set(
+  (JSON.parse(readFileSync(MANIFEST, "utf8")) as { prices: Array<{ product: string; gate: string }> }).prices
+    .filter((r) => r.gate === "pricing_v2")
+    .map((r) => r.product),
+);
 
 describe("stripe_verify_prices.py (offline, --fixture)", () => {
   it("resolves every price and prints a complete env patch", () => {
@@ -303,7 +309,7 @@ describe("stripe_verify_prices.py (offline, --fixture)", () => {
 
   it("v2 price with tax_behavior other than exclusive is MISSING and never reaches the env patch", () => {
     const prices = allExpected().filter((p) => p.unit_amount !== 2500);
-    prices.push(price(2500, { product: "Revolis v2 Start", taxBehavior: "inclusive" }));
+    prices.push(price(2500, { product: "Revolis Start", taxBehavior: "inclusive" }));
     const { code, out } = run(prices);
     expect(out).toMatch(/MISSING {2}STRIPE_PRICE_V2_START[\s\S]*tax_behavior=inclusive, treba exclusive/);
     expect(out).not.toMatch(/^STRIPE_PRICE_V2_START=/m);
@@ -312,18 +318,18 @@ describe("stripe_verify_prices.py (offline, --fixture)", () => {
 
   it("v2 price with unspecified tax_behavior is MISSING", () => {
     const prices = allExpected().filter((p) => p.unit_amount !== 6000);
-    prices.push(price(6000, { product: "Revolis v2 Team", taxBehavior: "unspecified" }));
+    prices.push(price(6000, { product: "Revolis Team", taxBehavior: "unspecified" }));
     const { out } = run(prices);
     expect(out).toMatch(/MISSING {2}STRIPE_PRICE_V2_TEAM[\s\S]*tax_behavior=unspecified/);
   });
 
   it("v2 price whose product has no tax_code is MISSING; legacy prices do not need one", () => {
     const prices = allExpected().filter((p) => p.unit_amount !== 14900);
-    prices.push(price(14900, { product: "Revolis v2 Kancelária", taxCode: null }));
+    prices.push(price(14900, { product: "Revolis Kancelária", taxCode: null }));
     const { code, out } = run(prices);
     expect(out).toMatch(/MISSING {2}STRIPE_PRICE_V2_OFFICE[\s\S]*product\.tax_code chyba/);
     expect(code).toBe(1);
-    const legacy = run(allExpected().map((p) => (typeof p.product === "object" && !String((p.product as { name: string }).name).startsWith("Revolis v2") ? { ...p, tax_behavior: "unspecified", product: { ...(p.product as object), tax_code: null } } : p)));
+    const legacy = run(allExpected().map((p) => (typeof p.product === "object" && !V2_PRODUCT_NAMES.has(String((p.product as { name: string }).name)) ? { ...p, tax_behavior: "unspecified", product: { ...(p.product as object), tax_code: null } } : p)));
     expect(legacy.code).toBe(0);
   });
 
@@ -332,7 +338,7 @@ describe("stripe_verify_prices.py (offline, --fixture)", () => {
     expect(ok.out).toMatch(/^STRIPE_PRICE_V2_NETWORK=price_/m);
     expect(ok.out).toMatch(/^STRIPE_PRICE_OWNER_COCKPIT=price_/m);
     const renamed = allExpected().map((p) =>
-      (p.product as { name: string }).name === "Revolis v2 Sieť" ? { ...p, product: { name: "Iny produkt", active: true } } : p,
+      (p.product as { name: string }).name === "Revolis Sieť" ? { ...p, product: { name: "Iny produkt", active: true } } : p,
     );
     const { code, out } = run(renamed);
     expect(out).toMatch(/AMBIG {4}STRIPE_PRICE_(V2_NETWORK|OWNER_COCKPIT)/);

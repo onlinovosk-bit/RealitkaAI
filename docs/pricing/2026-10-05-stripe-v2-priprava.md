@@ -14,16 +14,16 @@ Všetky sumy sú **bez DPH**, mena `eur`, Stripe `unit_amount` v eurocentoch, `b
 
 | Produkt presne podľa manifestu | Env kľúč presne podľa kódu | Bez DPH | Príklad s 23 % | Centy | Kredity |
 |---|---|---:|---:|---:|---:|
-| Revolis v2 Start | `STRIPE_PRICE_V2_START` | 25,00 € | 30,75 € | 2500 | 20/mesiac |
-| Revolis v2 Team | `STRIPE_PRICE_V2_TEAM` | 60,00 € | 73,80 € | 6000 | 50/mesiac |
-| Revolis v2 Kancelária | `STRIPE_PRICE_V2_OFFICE` | 149,00 € | 183,27 € | 14900 | 100/mesiac |
-| Revolis v2 Sieť | `STRIPE_PRICE_V2_NETWORK` | **od** 349,00 € | **od** 429,27 € | 34900 | 150/mesiac v základe |
-| Revolis v2 Balík 60 kreditov | `STRIPE_PRICE_V2_PACK_60` | 34,00 € | 41,82 € | 3400 | 60/mesiac |
-| Revolis v2 Balík 120 kreditov | `STRIPE_PRICE_V2_PACK_120` | 62,00 € | 76,26 € | 6200 | 120/mesiac |
-| Revolis v2 Balík 180 kreditov | `STRIPE_PRICE_V2_PACK_180` | 86,00 € | 105,78 € | 8600 | 180/mesiac |
-| Revolis v2 Balík 240 kreditov | `STRIPE_PRICE_V2_PACK_240` | 108,00 € | 132,84 € | 10800 | 240/mesiac |
-| Revolis v2 Balík 300 kreditov | `STRIPE_PRICE_V2_PACK_300` | 129,00 € | 158,67 € | 12900 | 300/mesiac |
-| Revolis v2 Kredit (1 ks) | `STRIPE_PRICE_V2_CREDIT` | 0,70 €/ks | 0,86 €/ks* | 70 | 1/kus |
+| Revolis Start | `STRIPE_PRICE_V2_START` | 25,00 € | 30,75 € | 2500 | 20/mesiac |
+| Revolis Team | `STRIPE_PRICE_V2_TEAM` | 60,00 € | 73,80 € | 6000 | 50/mesiac |
+| Revolis Kancelária | `STRIPE_PRICE_V2_OFFICE` | 149,00 € | 183,27 € | 14900 | 100/mesiac |
+| Revolis Sieť | `STRIPE_PRICE_V2_NETWORK` | **od** 349,00 € | **od** 429,27 € | 34900 | 150/mesiac v základe |
+| Revolis Balík 60 kreditov | `STRIPE_PRICE_V2_PACK_60` | 34,00 € | 41,82 € | 3400 | 60/mesiac |
+| Revolis Balík 120 kreditov | `STRIPE_PRICE_V2_PACK_120` | 62,00 € | 76,26 € | 6200 | 120/mesiac |
+| Revolis Balík 180 kreditov | `STRIPE_PRICE_V2_PACK_180` | 86,00 € | 105,78 € | 8600 | 180/mesiac |
+| Revolis Balík 240 kreditov | `STRIPE_PRICE_V2_PACK_240` | 108,00 € | 132,84 € | 10800 | 240/mesiac |
+| Revolis Balík 300 kreditov | `STRIPE_PRICE_V2_PACK_300` | 129,00 € | 158,67 € | 12900 | 300/mesiac |
+| Revolis Kredit (1 ks) | `STRIPE_PRICE_V2_CREDIT` | 0,70 €/ks | 0,86 €/ks* | 70 | 1/kus |
 
 *Pri `quantity > 1` Stripe vypočíta daň z príslušného celku a zaokrúhli faktúru. Uvedená hrubá cena je príklad pre jeden kus. Start je pre 1, Team pre 2–6, Kancelária pre 7–25 a Sieť pre 26+ používateľov. Sieť je individuálna ponuka **od** 349 €, nie neobmedzený samoobslužný nákup. Grant patrí kancelárii, nie každému používateľovi.
 

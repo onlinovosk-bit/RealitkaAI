@@ -8,8 +8,8 @@
   "items": [
     {
       "sku": "start_month",
-      "name": "Revolis v2 Start",
-      "description": "20 kreditov pre kanceláriu za mesiac.",
+      "name": "Revolis Start",
+      "description": "Plán pre 1 používateľa. 20 kreditov mesačne.",
       "kind": "base_plan",
       "tax_code_group": "plan",
       "unit_amount_cents": 2500,
@@ -24,8 +24,8 @@
     },
     {
       "sku": "team_month",
-      "name": "Revolis v2 Team",
-      "description": "50 kreditov pre kanceláriu za mesiac.",
+      "name": "Revolis Team",
+      "description": "Plán pre 2 až 6 používateľov. 50 kreditov mesačne pre celú kanceláriu.",
       "kind": "base_plan",
       "tax_code_group": "plan",
       "unit_amount_cents": 6000,
@@ -40,8 +40,8 @@
     },
     {
       "sku": "office_month",
-      "name": "Revolis v2 Kancelária",
-      "description": "100 kreditov pre kanceláriu za mesiac.",
+      "name": "Revolis Kancelária",
+      "description": "Plán pre 7 až 25 používateľov. 100 kreditov mesačne pre celú kanceláriu.",
       "kind": "base_plan",
       "tax_code_group": "plan",
       "unit_amount_cents": 14900,
@@ -56,8 +56,8 @@
     },
     {
       "sku": "network_month",
-      "name": "Revolis v2 Sieť",
-      "description": "Základný mesačný plán kancelárie. Individuálna ponuka od 349 EUR bez DPH.",
+      "name": "Revolis Sieť",
+      "description": "Plán pre 26 a viac používateľov, od 349 € mesačne bez DPH. 150 kreditov mesačne pre celú kanceláriu v základe.",
       "kind": "base_plan",
       "tax_code_group": "plan",
       "unit_amount_cents": 34900,
@@ -72,7 +72,7 @@
     },
     {
       "sku": "credits_60_month",
-      "name": "Revolis v2 Balík 60 kreditov",
+      "name": "Revolis Balík 60 kreditov",
       "description": "60 kreditov pre kanceláriu za mesiac.",
       "kind": "monthly_credit_addon",
       "tax_code_group": "credit",
@@ -86,7 +86,7 @@
     },
     {
       "sku": "credits_120_month",
-      "name": "Revolis v2 Balík 120 kreditov",
+      "name": "Revolis Balík 120 kreditov",
       "description": "120 kreditov pre kanceláriu za mesiac.",
       "kind": "monthly_credit_addon",
       "tax_code_group": "credit",
@@ -100,7 +100,7 @@
     },
     {
       "sku": "credits_180_month",
-      "name": "Revolis v2 Balík 180 kreditov",
+      "name": "Revolis Balík 180 kreditov",
       "description": "180 kreditov pre kanceláriu za mesiac.",
       "kind": "monthly_credit_addon",
       "tax_code_group": "credit",
@@ -114,7 +114,7 @@
     },
     {
       "sku": "credits_240_month",
-      "name": "Revolis v2 Balík 240 kreditov",
+      "name": "Revolis Balík 240 kreditov",
       "description": "240 kreditov pre kanceláriu za mesiac.",
       "kind": "monthly_credit_addon",
       "tax_code_group": "credit",
@@ -128,7 +128,7 @@
     },
     {
       "sku": "credits_300_month",
-      "name": "Revolis v2 Balík 300 kreditov",
+      "name": "Revolis Balík 300 kreditov",
       "description": "300 kreditov pre kanceláriu za mesiac.",
       "kind": "monthly_credit_addon",
       "tax_code_group": "credit",
@@ -142,7 +142,7 @@
     },
     {
       "sku": "credit_unit_one_time",
-      "name": "Revolis v2 Kredit (1 ks)",
+      "name": "Revolis Kredit (1 ks)",
       "description": "Jednorazové dokúpenie jedného kreditu; quantity určuje počet kreditov.",
       "kind": "one_time_credit",
       "tax_code_group": "credit",
