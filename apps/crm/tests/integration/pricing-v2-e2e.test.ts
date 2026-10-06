@@ -307,7 +307,7 @@ afterEach(() => {
 });
 
 describe("(a) požiadavka -> checkout -> webhook -> entitlements -> prvý grant", () => {
-  it("Team 3 používatelia + balík 120: pásmo, seats, tier, grant 60+120 práve raz; sumy sedia s katalógom", async () => {
+  it("Team 3 používatelia + balík 120: pásmo, seats, tier, grant 50+120 práve raz; sumy sedia s katalógom", async () => {
     const parsed = parsePricingV2CheckoutRequest({ checkoutType: "pricing_v2", users: 3, packCredits: 120 });
     expect(parsed.ok).toBe(true);
     const { res, json, params } = await doCheckout({ checkoutType: "pricing_v2", users: 3, packCredits: 120 });
@@ -334,8 +334,8 @@ describe("(a) požiadavka -> checkout -> webhook -> entitlements -> prvý grant"
       stripe_subscription_id: "sub_1",
     });
     expect(grants()).toHaveLength(1);
-    expect(grants()[0].amount).toBe(60 + 120);
-    expect(a.grant_credits_balance).toBe(180);
+    expect(grants()[0].amount).toBe(50 + 120);
+    expect(a.grant_credits_balance).toBe(170);
 
     const cat = buildPricingV2Catalog();
     const team = cat.bands.find((b) => b.id === "team")!;
@@ -363,7 +363,7 @@ describe("(b) duplicitný a súbežný event", () => {
     const rs = await Promise.all([1, 2, 3].map(() => handlePricingCheckoutWebhook(ev)));
     expect(rs).toEqual([true, true, true]);
     expect(grants()).toHaveLength(1);
-    expect(agency().grant_credits_balance).toBe(25);
+    expect(agency().grant_credits_balance).toBe(20);
   });
 
   it("súbežne od nuly (Promise.all pred akýmkoľvek zápisom) -> jeden grant", async () => {
@@ -371,7 +371,7 @@ describe("(b) duplicitný a súbežný event", () => {
     const ev = sessionEvent(params.metadata);
     await Promise.all([handlePricingCheckoutWebhook(ev), handlePricingCheckoutWebhook(ev)]);
     expect(grants()).toHaveLength(1);
-    expect(agency().grant_credits_balance).toBe(120);
+    expect(agency().grant_credits_balance).toBe(100);
   });
 
   it("iné event.id, tá istá session -> žiadny druhý grant", async () => {
@@ -399,7 +399,7 @@ describe("(c) obnova mesiaca (cron)", () => {
     vi.setSystemTime(new Date("2026-10-10T10:00:00Z"));
     const { params } = await doCheckout({ checkoutType: "pricing_v2", users: 3, packCredits: 60 });
     await handlePricingCheckoutWebhook(sessionEvent(params.metadata));
-    expect(agency().grant_credits_balance).toBe(120);
+    expect(agency().grant_credits_balance).toBe(110);
 
     const same = await runMonthlyCreditCycle();
     expect(same.ok).toBe(true);
@@ -409,7 +409,7 @@ describe("(c) obnova mesiaca (cron)", () => {
     const r1 = await runMonthlyCreditCycle();
     expect(r1.ok).toBe(true);
     expect(grants()).toHaveLength(2);
-    expect(agency().grant_credits_balance).toBe(120); // nie 240: starý grant exspiroval
+    expect(agency().grant_credits_balance).toBe(110); // nie 220: starý grant exspiroval
     const r2 = await runMonthlyCreditCycle();
     expect(r2.ok).toBe(true);
     expect(grants()).toHaveLength(2);
@@ -601,12 +601,12 @@ describe("(h) vypnutý prepínač = legacy", () => {
 
 describe("(i) hraničné počty používateľov celým reťazcom", () => {
   const cases: Array<[number, string, number]> = [
-    [1, "start", 25],
-    [2, "team", 60],
-    [6, "team", 60],
-    [7, "office", 120],
-    [25, "office", 120],
-    [26, "network", 175],
+    [1, "start", 20],
+    [2, "team", 50],
+    [6, "team", 50],
+    [7, "office", 100],
+    [25, "office", 100],
+    [26, "network", 150],
   ];
   it.each(cases)("%i používateľov -> %s, grant %i, tier podľa mapovania", async (users, band, credits) => {
     const { res, params } = await doCheckout({ checkoutType: "pricing_v2", users, packCredits: null });

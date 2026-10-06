@@ -126,6 +126,21 @@ describe('režim „len plány“ na webe', () => {
   })
 })
 
+describe('zahrnuté kredity plánov (rozhodnutie 6. 10. 2026: 20 / 50 / 100 / 150)', () => {
+  it('karty plánov ukážu kredity na celú kanceláriu, nie staré 25 / 60 / 120 / 175', () => {
+    const view = buildPricingV2View(buildPricingV2Catalog())
+    expect(view.bands.map((b) => b.creditsLabel)).toEqual([
+      '20 kreditov mesačne pre celú kanceláriu',
+      '50 kreditov mesačne pre celú kanceláriu',
+      '100 kreditov mesačne pre celú kanceláriu',
+      '150 kreditov mesačne pre celú kanceláriu',
+    ])
+    const html = renderToStaticMarkup(<PricingSectionV2 view={view} />)
+    for (const old of ['25 kreditov', '175 kreditov']) expect(html).not.toContain(old)
+    expect(html).not.toContain('120 kreditov mesačne pre celú')
+  })
+})
+
 describe('ceny pochádzajú z katalógu', () => {
   it('view zodpovedá nezávislým očakávaniam', () => {
     const view = buildPricingV2View(buildPricingV2Catalog())
