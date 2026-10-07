@@ -1,3 +1,14 @@
+## Session 2026-10-07 (ONL-AGENTS: limity prijaté)
+### Dokončené
+- Founder zvolil variant A po P11 #6: limity sú prijaté, P11 #7 sa nespúšťa. Zápis v `memory/decisions.md`. Žiadna zmena kódu.
+### Rozpracované / Pending
+- N8 (UNPAID_RECOVERY a `opted_out`) čaká na rozhodnutie foundera. PR #814 je draft a nemerguje ho model.
+- Dupe-research brief pre onlinovo.sk (nezačatý, čaká na GO). Repozitár `onlinovo` nie je pre session dostupný (GitHub App nemá prístup).
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md`.
+### Ďalší krok
+Rozhodnutie N8 a GO na prepnutie #814 z draft na ready for review.
+
 ## Session 2026-10-07 (ONL-AGENTS-FIX-6: nálezy P11 #6 na #814)
 ### Dokončené
 - **P11 #6 (nový nezávislý agent, 148 sabotáží) nedala VERIFIED**, hoci žiadny hlavný nárok nezlyhal (J7 len v doslovnom znení). Opravy v jednom pushi:

@@ -1,5 +1,11 @@
 # Critical Decisions Log
 
+## 2026-10-07 — ONL-AGENTS: limity prijaté, P11 končí (BUILD uzavretý, rozhodnutie foundera)
+**GO foundera:** „A, prijať limity" (varianty po P11 #6: A = prijať limity, B = P11 #7). P11 #7 sa nespúšťa.
+**Stav:** IMPLEMENTED/TESTED, nie VERIFIED. VERIFIED neudeľuje model ani P11; rozhoduje founder. Posledná hlava #814 je 55bbc20 (mcp-onlinovo 271/271, control-contract 72/72, tsc 0, prepush-gate PASS, migrácie NEOVERENÉ).
+**Prijaté limity (nie sú FAIL, nie sú skryté):** pečať výsledku experimentu nie je podpis; `n_*` neviazané na publikum; `stop_breached` mimo plánu; ledger je v pamäti a žiadny nástroj ho nevolá; identita schvaľovateľa sa neoveruje; `approved_at` v budúcnosti prejde; `now = NaN` hodí raw RangeError (injektujú len testy); `resolveAuthority` s NaN istotou čaká na vlastné GO; LeadHub kontrakt, živý zdroj dát, perzistencia, trvalé schvaľovania a náklady LLM sú UNKNOWN; CI job pre `mcp-onlinovo` je denylist.
+**Otvorené (founder):** N8, UNPAID_RECOVERY započíta aj `opted_out` (GDPR gate); PR #814 zostáva draft a nemerguje ho model.
+
 ## 2026-10-07 — ONL-AGENTS-FIX-6: opravy nálezov P11 #5 a #6 (BUILD, zúžený rozsah)
 **GO foundera:** „GO P11 #6", potom „GO FIX 6" (variant A: jeden push, bez P11 #7). P11 #5 dala FAIL pre J2; P11 #6 (148 sabotáží, hlava 0f50a61) nedala VERIFIED, ale žiadny hlavný nárok nezlyhal.
 **Opravené:** J2 (vlastné vlastnosti polí), záporné dni, isBlank cez Unicode vlastnosti, stropy polí (FIX-6 časť 1, bc2a3c6); N1 requested_action sa nelogguje ani neopakuje, N2 ďalšie prázdne znaky, N3 guard bez raw chýb pri nepoctivých typoch, N4 plánové objekty len z pomenovaných polí, N5 test orezania dní, N7 deduplikácia objednávok per zákazník.
