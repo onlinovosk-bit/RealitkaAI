@@ -14,14 +14,55 @@ describe('collectRequestHeaders', () => {
   it('redacts secret headers', () => {
     const headers = collectRequestHeaders(
       makeRequest({
-        identifikator: 'id1',
         'x-revolis-secret': 'top-secret',
+        authorization: 'Bearer abc',
         'content-type': 'application/json',
       }),
     );
-    expect(headers.identifikator).toBe('id1');
     expect(headers['x-revolis-secret']).toBe('[REDACTED]');
+    expect(headers.authorization).toBe('[REDACTED]');
     expect(headers['content-type']).toBe('application/json');
+  });
+
+  it('PINUJE OPRAVU: identifikator headers sú prihlasovacie údaje, nie metadáta', () => {
+    // Pôvodná verzia tohto testu tvrdila `expect(headers.identifikator).toBe('id1')`
+    // — teda PRIKAZOVALA, aby sa credential vypísal. Tým bola diera zamknutá
+    // testom: `logInfo('[realvia-webhook] Incoming headers')` aj `headers_json`
+    // v `realvia_webhook_logs` dostávali `identifikator`/`identifikator2`
+    // v čitateľnej podobe pri každom doručení, a CI to považovalo za správne.
+    //
+    // `identifikator` + `identifikator2` sú Mode 1 vo `validateSecret` —
+    // PRIMÁRNA produkčná autentifikácia. Kto ich prečíta z logu, môže sa
+    // vydávať za Realviu.
+    const headers = collectRequestHeaders(
+      makeRequest({
+        identifikator: 'id1',
+        identifikator2: 'id2',
+        identifikator3: 'buduci-format',
+        'x-api-key': 'k',
+        'x-auth-token': 't',
+      }),
+    );
+    expect(headers.identifikator).toBe('[REDACTED]');
+    expect(headers.identifikator2).toBe('[REDACTED]');
+    // Prefix, nie zoznam presných mien — inak by nový formát ticho unikal.
+    expect(headers.identifikator3).toBe('[REDACTED]');
+    expect(headers['x-api-key']).toBe('[REDACTED]');
+    expect(headers['x-auth-token']).toBe('[REDACTED]');
+  });
+
+  it('nezatají hlavičky, ktoré credentials nie sú', () => {
+    // Opačná strana: redakcia nesmie zožrať diagnostickú hodnotu hlavičiek.
+    const headers = collectRequestHeaders(
+      makeRequest({
+        'user-agent': 'Realvia/2.0',
+        'x-forwarded-for': '185.59.208.101',
+        'x-vercel-id': 'fra1::abc',
+      }),
+    );
+    expect(headers['user-agent']).toBe('Realvia/2.0');
+    expect(headers['x-forwarded-for']).toBe('185.59.208.101');
+    expect(headers['x-vercel-id']).toBe('fra1::abc');
   });
 });
 

@@ -38,21 +38,33 @@ export function extractClientIP(request: NextRequest): string {
   return 'unknown';
 }
 
-/** Collect incoming request headers for audit/debug (secrets redacted). */
+/**
+ * Je hlavička prihlasovací údaj, ktorý sa nesmie dostať do logu ani do DB?
+ *
+ * `identifikator`/`identifikator2` sú PRIMÁRNE produkčné prihlasovacie údaje
+ * (Mode 1 vo `validateSecret` nižšie) — nie ozdoba. Do 2026-10-07 ich redakcia
+ * nepokrývala, takže `logInfo('[realvia-webhook] Incoming headers')` aj
+ * `headers_json` v `realvia_webhook_logs` ich ukladali v čitateľnej podobe pri
+ * KAŽDOM doručení. Prefixová kontrola, nie zoznam presných mien: keby Realvia
+ * pridala `identifikator3`, zoznam by ticho prestal stačiť.
+ */
+function isSensitiveHeaderName(lower: string): boolean {
+  return (
+    lower === 'authorization' ||
+    lower.startsWith('identifikator') ||
+    lower.includes('password') ||
+    lower.includes('secret') ||
+    lower.includes('token') ||
+    lower.includes('api-key') ||
+    lower.includes('apikey')
+  );
+}
+
+/** Collect incoming request headers for audit/debug (credentials redacted). */
 export function collectRequestHeaders(request: NextRequest): Record<string, string> {
   const headersMap: Record<string, string> = {};
   request.headers.forEach((value, key) => {
-    const lower = key.toLowerCase();
-    if (
-      lower === 'x-revolis-secret' ||
-      lower === 'authorization' ||
-      lower.includes('password') ||
-      lower.includes('secret')
-    ) {
-      headersMap[key] = '[REDACTED]';
-    } else {
-      headersMap[key] = value;
-    }
+    headersMap[key] = isSensitiveHeaderName(key.toLowerCase()) ? '[REDACTED]' : value;
   });
   return headersMap;
 }
