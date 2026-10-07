@@ -25,13 +25,25 @@ import {
   STARTER_PACK,
   TOPUP_PACKAGES,
 } from "@/lib/program-tier-pricing";
+import {
+  PRICING_V2_BANDS,
+  PRICING_V2_CREDIT_NET_CENTS,
+  PRICING_V2_MONTHLY_PACKS,
+  annualNetCents,
+} from "@/lib/pricing-v2";
+import {
+  PRICING_V2_BAND_PRICE_ENV,
+  PRICING_V2_BAND_YEARLY_PRICE_ENV,
+  PRICING_V2_CREDIT_PRICE_ENV,
+  PRICING_V2_PACK_PRICE_ENV,
+} from "@/lib/pricing-v2-contract";
 
 const OPS = resolve(__dirname, "../../../../scripts/ops");
 const MANIFEST = join(OPS, "stripe-expected-prices.json");
 const SCRIPT = join(OPS, "stripe_verify_prices.py");
 const WRAPPER = join(OPS, "stripe-verify-prices.sh");
 
-type Row = { env: string; amount: number; type: "recurring" | "one_time"; gate: string };
+type Row = { env: string; amount: number; type: "recurring" | "one_time"; gate: string; interval?: "year" };
 
 function rowsFromCode(): Row[] {
   const rows: Row[] = [];
@@ -66,12 +78,41 @@ function rowsFromCode(): Row[] {
     type: "one_time",
     gate: "starter_pack",
   });
+  // Cennik v2: sumy BEZ DPH v centoch, pasma a baliky mesacne, kredit jednorazovo (qty = pocet kreditov).
+  for (const b of PRICING_V2_BANDS) {
+    rows.push({ env: PRICING_V2_BAND_PRICE_ENV[b.id], amount: b.netCents, type: "recurring", gate: "pricing_v2" });
+  }
+  // Rocne ceny planov: 12 x mesacna, interval year (bez zlavy); balikov sa to netyka.
+  for (const b of PRICING_V2_BANDS) {
+    rows.push({
+      env: PRICING_V2_BAND_YEARLY_PRICE_ENV[b.id],
+      amount: annualNetCents(b.netCents),
+      type: "recurring",
+      gate: "pricing_v2",
+      interval: "year",
+    });
+  }
+  for (const p of PRICING_V2_MONTHLY_PACKS) {
+    rows.push({ env: PRICING_V2_PACK_PRICE_ENV[p.credits], amount: p.netCents, type: "recurring", gate: "pricing_v2" });
+  }
+  rows.push({
+    env: PRICING_V2_CREDIT_PRICE_ENV,
+    amount: PRICING_V2_CREDIT_NET_CENTS,
+    type: "one_time",
+    gate: "pricing_v2",
+  });
   return rows;
 }
 
 function rowsFromManifest(): Row[] {
   const raw = JSON.parse(readFileSync(MANIFEST, "utf8")) as { prices: Row[] };
-  return raw.prices.map(({ env, amount, type, gate }) => ({ env, amount, type, gate }));
+  return raw.prices.map(({ env, amount, type, gate, interval }) => ({
+    env,
+    amount,
+    type,
+    gate,
+    ...(interval ? { interval } : {}),
+  }));
 }
 
 const byEnv = (a: Row, b: Row) => a.env.localeCompare(b.env);
@@ -79,6 +120,14 @@ const byEnv = (a: Row, b: Row) => a.env.localeCompare(b.env);
 describe("stripe-expected-prices.json ↔ program-tier-pricing.ts", () => {
   it("lists exactly the sellable prices, at the amounts and billing types the code charges", () => {
     expect(rowsFromManifest().sort(byEnv)).toEqual(rowsFromCode().sort(byEnv));
+  });
+
+  it("pricing v2 rows: net amounts from pricing-v2.ts, env NAMES from the frozen contract, 4 bands + 4 yearly bands + 5 packs + 1 credit", () => {
+    const v2 = rowsFromManifest().filter((r) => r.gate === "pricing_v2");
+    expect(v2).toHaveLength(PRICING_V2_BANDS.length * 2 + PRICING_V2_MONTHLY_PACKS.length + 1);
+    expect(v2.sort(byEnv)).toEqual(rowsFromCode().filter((r) => r.gate === "pricing_v2").sort(byEnv));
+    // Manifest nesmie niest hodnoty tajomstiev: len NAZVY env a nazvy produktov.
+    for (const r of v2) expect(r.env).toMatch(/^STRIPE_PRICE_V2_[A-Z0-9_]+$/);
   });
 
   it("does not ask for the disabled Owner Cockpit Pro", () => {
@@ -117,6 +166,7 @@ function priceKeysDeclaredInSchema(): string[] {
 describe("src/config/env.ts ↔ program-tier-pricing.ts", () => {
   it("declares every price env key the code sells", () => {
     const declared = new Set(priceKeysDeclaredInSchema());
+    // Zahŕňa aj v2 kľúče (gate pricing_v2): schéma ich deklaruje od W3.
     const missing = rowsFromCode()
       .map((r) => r.env)
       .filter((env) => !declared.has(env))
@@ -154,6 +204,8 @@ function price(amount: number, opts: Partial<{
   currency: string;
   livemode: boolean;
   product: string;
+  taxBehavior: string;
+  taxCode: string | null;
 }> = {}): StripePrice {
   const type = opts.type ?? "recurring";
   seq += 1;
@@ -165,16 +217,29 @@ function price(amount: number, opts: Partial<{
     livemode: opts.livemode ?? true,
     type,
     billing_scheme: "per_unit",
+    tax_behavior: opts.taxBehavior ?? "exclusive",
     recurring:
       type === "recurring"
         ? { interval: opts.interval ?? "month", interval_count: opts.intervalCount ?? 1, usage_type: "licensed" }
         : null,
-    product: { name: opts.product ?? `product ${amount}`, active: true },
+    product: {
+      name: opts.product ?? `product ${amount}`,
+      active: true,
+      tax_code: opts.taxCode === undefined ? "txcd_fixture0" : opts.taxCode,
+    },
   };
 }
 
 function allExpected(): StripePrice[] {
-  return rowsFromManifest().map((r) => price(r.amount, { type: r.type, product: r.env }));
+  // Nazov produktu = nazov z manifestu: rozlisuje rovnake sumy (v2 Siet 349 EUR vs Owner Cockpit 349 EUR).
+  const productByEnv = new Map(
+    (JSON.parse(readFileSync(MANIFEST, "utf8")) as { prices: Array<{ env: string; product: string }> }).prices.map(
+      (r) => [r.env, r.product],
+    ),
+  );
+  return rowsFromManifest().map((r) =>
+    price(r.amount, { type: r.type, product: productByEnv.get(r.env), interval: r.interval ?? "month" }),
+  );
 }
 
 /** Parent env minus any real Stripe key, so a test run can never reach live. */
@@ -206,6 +271,12 @@ function run(prices: StripePrice[]) {
 }
 
 const TOTAL = () => rowsFromManifest().length;
+/** Názvy produktov cenníka v2 podľa manifestu (gate pricing_v2), nie podľa predpony v názve. */
+const V2_PRODUCT_NAMES = new Set(
+  (JSON.parse(readFileSync(MANIFEST, "utf8")) as { prices: Array<{ product: string; gate: string }> }).prices
+    .filter((r) => r.gate === "pricing_v2")
+    .map((r) => r.product),
+);
 
 describe("stripe_verify_prices.py (offline, --fixture)", () => {
   it("resolves every price and prints a complete env patch", () => {
@@ -258,6 +329,79 @@ describe("stripe_verify_prices.py (offline, --fixture)", () => {
     const { out } = run(prices);
     expect(out).toMatch(/MISSING {2}STRIPE_PRICE_OFFICE_SEAT[\s\S]*livemode=false/);
     expect(out).toMatch(/MISSING {2}STRIPE_PRICE_STARTER_PACK[\s\S]*currency=czk/);
+  });
+
+  it("v2 price with tax_behavior other than exclusive is MISSING and never reaches the env patch", () => {
+    const prices = allExpected().filter((p) => p.unit_amount !== 2500);
+    prices.push(price(2500, { product: "Revolis Start", taxBehavior: "inclusive" }));
+    const { code, out } = run(prices);
+    expect(out).toMatch(/MISSING {2}STRIPE_PRICE_V2_START[\s\S]*tax_behavior=inclusive, treba exclusive/);
+    expect(out).not.toMatch(/^STRIPE_PRICE_V2_START=/m);
+    expect(code).toBe(1);
+  });
+
+  it("v2 price with unspecified tax_behavior is MISSING", () => {
+    const prices = allExpected().filter((p) => p.unit_amount !== 6000);
+    prices.push(price(6000, { product: "Revolis Team", taxBehavior: "unspecified" }));
+    const { out } = run(prices);
+    expect(out).toMatch(/MISSING {2}STRIPE_PRICE_V2_TEAM[\s\S]*tax_behavior=unspecified/);
+  });
+
+  it("v2 price whose product has no tax_code is MISSING; legacy prices do not need one", () => {
+    const prices = allExpected().filter((p) => p.unit_amount !== 14900);
+    prices.push(price(14900, { product: "Revolis Kancelária", taxCode: null }));
+    const { code, out } = run(prices);
+    expect(out).toMatch(/MISSING {2}STRIPE_PRICE_V2_OFFICE[\s\S]*product\.tax_code chyba/);
+    expect(code).toBe(1);
+    const legacy = run(allExpected().map((p) => (typeof p.product === "object" && !V2_PRODUCT_NAMES.has(String((p.product as { name: string }).name)) ? { ...p, tax_behavior: "unspecified", product: { ...(p.product as object), tax_code: null } } : p)));
+    expect(legacy.code).toBe(0);
+  });
+
+  it("annual v2 plan prices: each band resolves a yearly price distinct from the monthly one", () => {
+    const { code, out } = run(allExpected());
+    expect(code).toBe(0);
+    for (const k of ["START", "TEAM", "OFFICE", "NETWORK"]) {
+      expect(out).toMatch(new RegExp(`^STRIPE_PRICE_V2_${k}_YEARLY=price_`, "m"));
+      expect(out).toMatch(new RegExp(`^STRIPE_PRICE_V2_${k}=price_`, "m"));
+    }
+    expect(out).toContain("rocne (recurring year)");
+  });
+
+  it("a monthly price at the yearly amount is MISSING for the yearly env and never reaches the env patch", () => {
+    const prices = allExpected().filter((p) => p.unit_amount !== 72000);
+    prices.push(price(72000, { product: "Revolis Team", interval: "month" }));
+    const { code, out } = run(prices);
+    expect(out).toMatch(/MISSING {2}STRIPE_PRICE_V2_TEAM_YEARLY[\s\S]*interval=1xmonth, treba 1x year/);
+    expect(out).not.toMatch(/^STRIPE_PRICE_V2_TEAM_YEARLY=/m);
+    expect(code).toBe(1);
+  });
+
+  it("a yearly price at the monthly amount does not satisfy the monthly env", () => {
+    const prices = allExpected().filter((p) => p.unit_amount !== 6000);
+    prices.push(price(6000, { product: "Revolis Team", interval: "year" }));
+    const { out } = run(prices);
+    expect(out).toMatch(/MISSING {2}STRIPE_PRICE_V2_TEAM {3}[\s\S]*interval=1xyear, treba 1x month/);
+    expect(out).not.toMatch(/^STRIPE_PRICE_V2_TEAM=/m);
+  });
+
+  it("v2 Siet 349 EUR and Owner Cockpit 349 EUR resolve by product name; a v2 price with a foreign name stays AMBIG", () => {
+    const ok = run(allExpected());
+    expect(ok.out).toMatch(/^STRIPE_PRICE_V2_NETWORK=price_/m);
+    expect(ok.out).toMatch(/^STRIPE_PRICE_OWNER_COCKPIT=price_/m);
+    const renamed = allExpected().map((p) =>
+      (p.product as { name: string }).name === "Revolis Sieť" ? { ...p, product: { name: "Iny produkt", active: true } } : p,
+    );
+    const { code, out } = run(renamed);
+    expect(out).toMatch(/AMBIG {4}STRIPE_PRICE_(V2_NETWORK|OWNER_COCKPIT)/);
+    expect(code).toBe(1);
+  });
+
+  it("v2 gate is reported separately and never blocks the seat gate", () => {
+    const prices = allExpected().filter((p) => p.unit_amount !== 70);
+    const { code, out } = run(prices);
+    expect(out).toMatch(/NIE {2}pricing_v2/);
+    expect(out).toContain("Seat brana kompletna -> krok B");
+    expect(code).toBe(1);
   });
 
   it("seat gate complete with top-up missing: step B may proceed for what resolved", () => {

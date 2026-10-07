@@ -1,4 +1,5 @@
 import { getCurrentBillingStatus } from "@/lib/billing-store";
+import { planPriceIdOf, saasPlanKeyFromPriceId } from "@/lib/pricing-v2-plan";
 import {
   fetchAgencyManualPlan,
   resolveBillingPlanFromManualPlan,
@@ -48,13 +49,59 @@ export type UsageCounters = {
 };
 
 export type TrialGraceState = {
-  state: "trial" | "active" | "grace" | "limited" | "blocked";
+  /**
+   * `unknown` nie je stav predplatného — je to priznanie, že sme sa naň nedokázali
+   * spýtať (Stripe nedostupný, chýbajúci `STRIPE_SECRET_KEY`). Bez neho by sa
+   * výpadok Stripe nedal odlíšiť od zrušeného predplatného; viď `accessLevelFrom`.
+   */
+  state: "trial" | "active" | "grace" | "limited" | "blocked" | "unknown";
   trialDaysLeft: number;
   graceDaysLeft: number;
   message: string;
 };
 
+/**
+ * Plný (zápisový) prístup, alebo read-only.
+ *
+ * Founder rozhodnutie 2026-10-05, variant A: po vypršaní trialu alebo po zrušení
+ * platby klient NESTRÁCA prístup k vlastným dátam — číta a exportuje ich ďalej,
+ * ale nič nové nevytvorí a AI / outreach / integrácie sú zamknuté. Odrezať
+ * maklérovi jeho vlastnú databázu leadov je dôvod odísť, nie zaplatiť.
+ */
+export type AppAccessLevel = "full" | "read_only";
+
+/** Stavy, ktoré dávajú zápisový prístup. Čokoľvek iné je read-only. */
+const WRITE_ACCESS_STATES: ReadonlySet<TrialGraceState["state"]> = new Set([
+  "trial",
+  "active",
+  "grace",
+  // `unknown` je tu ZÁMERNE, a je to jediné fail-open v tejto bráne.
+  //
+  // `getSafeBillingStatus()` prehltne každú chybu Stripe a vráti
+  // `hasSubscription: false`, čo by `getTrialGraceState()` preložil na
+  // `limited`. Bez tohto odlíšenia by výpadok Stripe — alebo chýbajúci
+  // `STRIPE_SECRET_KEY` — prepnul do read-only KAŽDÉHO platiaceho klienta.
+  //
+  // Smer tu je opačný než pri súhlase agentúry s auto-odpoveďou (#811), a
+  // zámerne: tam neznámy stav znamenal neposlať e-mail v mene klienta, tu by
+  // neznámy stav znamenal vypnúť nástroj klientovi, ktorý zaplatil. Z dvoch
+  // chýb je druhá horšia a naša vlastná. Nie je to ticho: snapshot nesie
+  // `billingUnverified` a stav sa loguje.
+  "unknown",
+]);
+
+export function accessLevelFrom(state: TrialGraceState["state"]): AppAccessLevel {
+  return WRITE_ACCESS_STATES.has(state) ? "full" : "read_only";
+}
+
 type BillingStatus = Awaited<ReturnType<typeof getCurrentBillingStatus>>;
+
+/**
+ * Pravda o tom, či sa na Stripe vôbec podarilo spýtať. `getSafeBillingStatus()`
+ * vracia pri chybe ten istý tvar ako „žiadne predplatné", takže bez tejto
+ * značky sa tie dve veci nedajú rozlíšiť.
+ */
+type BillingLookup = { billing: BillingStatus; lookupFailed: boolean };
 
 function getTrialDays() {
   return Number(process.env.APP_TRIAL_DAYS || "14");
@@ -64,14 +111,9 @@ function getGraceDays() {
   return Number(process.env.APP_GRACE_DAYS || "7");
 }
 
+/** Legacy ceny (starter/pro/scale) a cenník v2 (pásma); všetko ostatné je free. */
 function getPlanFromPriceId(priceId: string | null | undefined): PlanKey {
-  if (!priceId) return "free";
-
-  if (priceId === process.env.STRIPE_PRICE_STARTER) return "starter";
-  if (priceId === process.env.STRIPE_PRICE_PRO) return "pro";
-  if (priceId === process.env.STRIPE_PRICE_SCALE) return "scale";
-
-  return "free";
+  return saasPlanKeyFromPriceId(priceId);
 }
 
 function mapManualPlanToPlanKey(manualPlan: string | null | undefined): PlanKey | null {
@@ -179,6 +221,42 @@ export function getUsageHealth(usage: UsageCounters, limits: PlanLimits) {
   };
 }
 
+/**
+ * Koniec trialu: ak má agentúra `trial_ends_at` (samoobslužný signup), platí ten — je ukotvený
+ * na agentúre, nie na dátume vzniku auth účtu (druhý člen tímu by inak dostal už vypršaný trial).
+ * Inak historické odvodenie z `auth.users.created_at` + APP_TRIAL_DAYS (nezmenené správanie).
+ */
+export function resolveTrialEndMs(input: {
+  agencyTrialEndsAt: string | null | undefined;
+  userCreatedAt: string | null | undefined;
+  trialDays: number;
+  nowMs: number;
+}): number {
+  if (input.agencyTrialEndsAt) {
+    const t = new Date(input.agencyTrialEndsAt).getTime();
+    if (Number.isFinite(t)) return t;
+  }
+  const createdAt = input.userCreatedAt ? new Date(input.userCreatedAt).getTime() : input.nowMs;
+  return createdAt + input.trialDays * 86400000;
+}
+
+async function loadAgencyTrialEndsAt(): Promise<string | null> {
+  try {
+    const profile = await getCurrentProfile();
+    if (!profile?.agency_id) return null;
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("agencies")
+      .select("trial_ends_at")
+      .eq("id", profile.agency_id)
+      .maybeSingle();
+    if (error) return null; // stĺpec ešte nie je nasadený → historické správanie
+    return (data as { trial_ends_at?: string | null } | null)?.trial_ends_at ?? null;
+  } catch {
+    return null;
+  }
+}
+
 function diffInDays(futureMs: number, nowMs: number) {
   return Math.max(0, Math.ceil((futureMs - nowMs) / 86400000));
 }
@@ -193,33 +271,51 @@ function getFallbackBillingStatus(): BillingStatus {
   };
 }
 
-async function getSafeBillingStatus(): Promise<BillingStatus> {
+async function getSafeBillingStatus(): Promise<BillingLookup> {
   try {
-    return await getCurrentBillingStatus();
+    return { billing: await getCurrentBillingStatus(), lookupFailed: false };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown billing error";
 
+    // Oba prípady vracajú ten istý prázdny tvar, ale `lookupFailed: true` hovorí,
+    // že je to naša nevedomosť, nie zistenie o klientovi.
     if (message.includes("STRIPE_SECRET_KEY")) {
-      return getFallbackBillingStatus();
+      return { billing: getFallbackBillingStatus(), lookupFailed: true };
     }
 
     console.error("Billing snapshot fallback:", message);
-    return getFallbackBillingStatus();
+    return { billing: getFallbackBillingStatus(), lookupFailed: true };
   }
 }
 
 export async function getTrialGraceState(input: {
   billing: Awaited<ReturnType<typeof getCurrentBillingStatus>>;
+  /** True, keď sa na Stripe nepodarilo spýtať. Nie je to to isté ako „bez predplatného". */
+  lookupFailed?: boolean;
 }): Promise<TrialGraceState> {
   const billing = input.billing;
+
+  if (input.lookupFailed) {
+    return {
+      state: "unknown",
+      trialDaysLeft: 0,
+      graceDaysLeft: 0,
+      message: "Stav predplatného sa teraz nedá overiť. Prístup zostáva zachovaný.",
+    };
+  }
+
   const user = await getCurrentUser();
 
   const now = Date.now();
   const trialDays = getTrialDays();
   const graceDays = getGraceDays();
 
-  const createdAt = user?.created_at ? new Date(user.created_at).getTime() : now;
-  const trialEnd = createdAt + trialDays * 86400000;
+  const trialEnd = resolveTrialEndMs({
+    agencyTrialEndsAt: await loadAgencyTrialEndsAt(),
+    userCreatedAt: user?.created_at,
+    trialDays,
+    nowMs: now,
+  });
   const trialDaysLeft = diffInDays(trialEnd, now);
 
   if (!billing.hasSubscription) {
@@ -297,7 +393,7 @@ export async function getTrialGraceState(input: {
 }
 
 export async function getSaasOpsSnapshot() {
-  const [billing, profile, profiles, teams, leads, properties] = await Promise.all([
+  const [billingLookup, profile, profiles, teams, leads, properties] = await Promise.all([
     getSafeBillingStatus(),
     getCurrentProfile(),
     listProfiles(),
@@ -306,7 +402,9 @@ export async function getSaasOpsSnapshot() {
     listProperties(),
   ]);
 
-  const priceId = billing.subscription?.items?.[0]?.priceId || null;
+  const billing = billingLookup.billing;
+  // V2 predplatné nesie pásmo aj voliteľný balík; plán určuje pásmo.
+  const priceId = planPriceIdOf(billing.subscription?.items) || null;
   let plan = getPlanFromPriceId(priceId);
 
   const user = await getCurrentUser();
@@ -331,10 +429,28 @@ export async function getSaasOpsSnapshot() {
   };
 
   const usageHealth = getUsageHealth(usage, limits);
-  const trialGrace = await getTrialGraceState({ billing });
+  const trialGrace = await getTrialGraceState({
+    billing,
+    lookupFailed: billingLookup.lookupFailed,
+  });
 
-  // DEV OVERRIDE: Always allow full app access for development/testing
-  const canUseFullApp = true;
+  // Tu bolo `const canUseFullApp = true;` s komentárom
+  // „DEV OVERRIDE: Always allow full app access for development/testing".
+  // Odišlo to do produkcie, takže `requireActiveAppAccess()` nemohol nikdy
+  // vyhodiť výnimku: stav trialu sa počítal a nikto ho nepoužil. 8 API ciest
+  // a 7 stránok tou bránou prechádza (viď docs/reports/2026-10-05-fail-open-sweep.md).
+  // Dopad bol 0 €, lebo Stripe ešte nie je live — a práve preto to bol termín,
+  // nie incident: v deň spustenia by ten jeden riadok zrušil paywall.
+  const accessLevel = accessLevelFrom(trialGrace.state);
+  const canUseFullApp = accessLevel === "full";
+
+  if (billingLookup.lookupFailed) {
+    // Fail-open musí byť vidieť. Bez tohto riadku by sa trvalý výpadok Stripe
+    // javil ako normálny prevádzkový stav.
+    console.warn(
+      "[saas-ops] stav predplatného neoverený (Stripe nedostupný alebo bez kľúča) — prístup ponechaný plný",
+    );
+  }
 
   return {
     profile,
@@ -346,5 +462,8 @@ export async function getSaasOpsSnapshot() {
     usageHealth,
     trialGrace,
     canUseFullApp,
+    accessLevel,
+    /** True = o stave predplatného nevieme; `canUseFullApp` je potom ústupok, nie zistenie. */
+    billingUnverified: billingLookup.lookupFailed,
   };
 }

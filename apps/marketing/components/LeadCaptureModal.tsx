@@ -1,9 +1,12 @@
 'use client'
 import { useState } from 'react'
+import { resolveModalBandV2, type PricingV2View } from '../lib/pricing-v2-view'
 
 interface Props {
   source: string
   onClose: () => void
+  /** Katalóg cenníka v2 (z servera, len pri zapnutom PRICING_V2_ENABLED). Chýba = legacy správanie. */
+  pricingV2?: PricingV2View | null
 }
 
 declare global { interface Window { gtag?: (...args: unknown[]) => void } }
@@ -463,6 +466,48 @@ function PricingModal({ source, onClose }: Props) {
   )
 }
 
+// ── Pricing v2: ceny z katalógu, bez priameho Stripe checkoutu ─────────────
+
+function PricingModalV2({ source, view }: { source: string; view: PricingV2View }) {
+  const band = resolveModalBandV2(source, view)
+
+  if (!band) {
+    return (
+      <p style={{ color: 'rgba(255,255,255,.7)', fontSize: 15, lineHeight: 1.65 }}>
+        Tento plán už nie je v ponuke. Cenník nájdete na hlavnej stránke.
+      </p>
+    )
+  }
+
+  return (
+    <div>
+      <div style={{ fontSize: 24, fontWeight: 900, color: '#fff', lineHeight: 1.2, marginBottom: 4 }}>
+        {band.label.toUpperCase()} · {band.usersLabel}
+      </div>
+      <div style={{ fontSize: 28, fontWeight: 900, color: '#0EA5E9', marginBottom: 4 }}>
+        {band.netLabel} <span style={{ fontSize: 13, color: 'rgba(255,255,255,.35)', fontWeight: 400 }}>/ mes bez DPH</span>
+      </div>
+      <div style={{ fontSize: 15, color: 'rgba(255,255,255,.55)', marginBottom: 4 }}>{band.grossLabel}</div>
+      <div style={{ fontSize: 13, color: 'rgba(255,255,255,.45)', marginBottom: 16 }}>{band.annualLabel}</div>
+      <p style={{ color: 'rgba(255,255,255,.55)', fontSize: 14, lineHeight: 1.6, marginBottom: 16 }}>
+        {band.creditsLabel}. {band.ctaIsDemo ? 'Aktiváciu a presný postup dohodneme na krátkom deme.' : 'Kanceláriu založíte v aplikácii, platba prebehne tam.'}
+      </p>
+      <a
+        href={band.ctaHref}
+        {...(band.ctaIsDemo ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+        style={{
+          display: 'block', width: '100%', padding: '16px', boxSizing: 'border-box',
+          borderRadius: 12, textAlign: 'center', textDecoration: 'none',
+          background: 'linear-gradient(135deg,#0EA5E9,#0284C7)',
+          color: '#fff', fontSize: 16, fontWeight: 800,
+        }}
+      >
+        {band.ctaLabel}
+      </a>
+    </div>
+  )
+}
+
 // ── Root component ─────────────────────────────────────────────────────────
 
 const PRICING_SOURCES = new Set([
@@ -473,9 +518,11 @@ const PRICING_SOURCES = new Set([
 
 const WAITLIST_SOURCES = new Set(['waitlist', 'pricing-protocol-authority'])
 
-export default function LeadCaptureModal({ source, onClose }: Props) {
+export default function LeadCaptureModal({ source, onClose, pricingV2 = null }: Props) {
   const isAudit    = source === 'revenue-scan'
-  const isPricing  = PRICING_SOURCES.has(source)
+  // V2 má prednosť pred legacy modalom: ten by volal /api/checkout/subscription (bez agencyId).
+  const isPricingV2 = pricingV2 !== null && (PRICING_SOURCES.has(source) || source.startsWith('pricing-v2-'))
+  const isPricing  = !isPricingV2 && PRICING_SOURCES.has(source)
   const isWaitlist = WAITLIST_SOURCES.has(source)
 
   return (
@@ -490,7 +537,7 @@ export default function LeadCaptureModal({ source, onClose }: Props) {
     >
       <div style={{
         background: '#0A0F1E',
-        border: `1px solid ${isAudit ? 'rgba(61,107,165,.35)' : isPricing ? 'rgba(14,165,233,.3)' : 'rgba(14,165,233,.25)'}`,
+        border: `1px solid ${isAudit ? 'rgba(61,107,165,.35)' : (isPricing || isPricingV2) ? 'rgba(14,165,233,.3)' : 'rgba(14,165,233,.25)'}`,
         borderRadius: 20,
         padding: '40px 36px',
         maxWidth: 460, width: '100%',
@@ -510,6 +557,7 @@ export default function LeadCaptureModal({ source, onClose }: Props) {
         >×</button>
 
         {isAudit    ? <AuditModal onClose={onClose} /> :
+         isPricingV2 ? <PricingModalV2 source={source} view={pricingV2!} /> :
          isPricing  ? <PricingModal source={source} onClose={onClose} /> :
          isWaitlist ? <StandardModal source="waitlist-roadmap" onClose={onClose} /> :
                       <StandardModal source={source} onClose={onClose} />}

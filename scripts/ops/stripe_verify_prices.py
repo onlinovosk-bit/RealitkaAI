@@ -32,6 +32,7 @@ GATES = {
     "cockpit": "Owner Cockpit add-on - chybajuca = checkbox sa neukaze",
     "topup": "/billing#topup - samostatna brana, P0 neblokuje",
     "starter_pack": "marketing /balik - samostatna brana, P0 neblokuje",
+    "pricing_v2": "cennik v2 (PRICING_V2_ENABLED, sumy BEZ DPH, tax_behavior=exclusive) - samostatna brana, P0 neblokuje",
 }
 
 
@@ -44,8 +45,15 @@ def eur(cents):
     return f"{cents / 100:.2f} EUR"
 
 
+def interval_of(entry):
+    """Interval fakturacie recurring ceny: 'month' (predvolene) alebo 'year' (rocne ceny planov v2)."""
+    return entry.get("interval", "month")
+
+
 def kind(entry):
-    return "mesacne (recurring month)" if entry["type"] == "recurring" else "jednorazovo (one-time)"
+    if entry["type"] != "recurring":
+        return "jednorazovo (one-time)"
+    return "rocne (recurring year)" if interval_of(entry) == "year" else "mesacne (recurring month)"
 
 
 def reject_reason(price, entry):
@@ -60,8 +68,9 @@ def reject_reason(price, entry):
         return f"type={price.get('type')}, treba {entry['type']}"
     if entry["type"] == "recurring":
         rec = price.get("recurring") or {}
-        if rec.get("interval") != "month" or rec.get("interval_count", 1) != 1:
-            return f"interval={rec.get('interval_count', 1)}x{rec.get('interval')}, treba 1x month"
+        want = interval_of(entry)
+        if rec.get("interval") != want or rec.get("interval_count", 1) != 1:
+            return f"interval={rec.get('interval_count', 1)}x{rec.get('interval')}, treba 1x {want}"
         # Checkout posiela quantity = pocet maklerov; tiered/metered by zmenilo sumu.
         if rec.get("usage_type", "licensed") != "licensed":
             return f"usage_type={rec.get('usage_type')}, treba licensed"
@@ -70,6 +79,14 @@ def reject_reason(price, entry):
     product = price.get("product")
     if isinstance(product, dict) and not product.get("active", True):
         return "product.active=false"
+    if entry["gate"] == "pricing_v2":
+        # Sumy v2 su BEZ DPH: DPH sa pocita navrch len ak je cena exclusive a produkt ma tax_code.
+        if price.get("tax_behavior") != "exclusive":
+            return f"tax_behavior={price.get('tax_behavior')}, treba exclusive"
+        if not isinstance(product, dict):
+            return "product nie je expandovany - tax_code sa neda overit"
+        if not product.get("tax_code"):
+            return "product.tax_code chyba (nastav Stripe Tax kod produktu)"
     return None
 
 
@@ -116,8 +133,11 @@ def fetch_fixture(path):
 
 def print_spec(manifest):
     print("Krok C - co vytvorit v Stripe Dashboard (LIVE mode). Vytvara founder, nie agent.\n")
-    print("Kazda cena: currency EUR, Standard pricing (per unit), amount = presne co zakaznik")
-    print("zaplati (checkout nema automatic_tax). Recurring = Monthly, interval 1.\n")
+    print("Kazda cena: currency EUR, Standard pricing (per unit). Recurring = Monthly (interval 1), rocne ceny planov v2 = Yearly.")
+    print("Legacy ceny: amount = presne co zakaznik zaplati (checkout nema automatic_tax).")
+    print("Cennik v2 (gate pricing_v2): amount je BEZ DPH, tax_behavior=exclusive a produkt musi mat")
+    print("Stripe Tax kod (tax_code); verifikator ich kontroluje. DPH pricita Stripe Tax pri")
+    print("PRICING_V2_STRIPE_TAX=on - registracie a kody potvrd s uctovnicou.\n")
     for gate, label in GATES.items():
         rows = [e for e in manifest if e["gate"] == gate]
         if not rows:
@@ -134,6 +154,16 @@ def verify(manifest, prices):
     for e in manifest:
         same_amount = [p for p in prices if p.get("unit_amount") == e["amount"]]
         hits = [p for p in same_amount if reject_reason(p, e) is None]
+        if len(hits) > 1:
+            # Rovnaka suma a typ u dvoch poloziek manifestu (v2 Siet 349 EUR vs Owner Cockpit 349 EUR):
+            # cena, ktora podla nazvu produktu patri INEJ polozke manifestu, sa tejto neráta.
+            # Neznamy duplikat (ine meno) ostava AMBIG.
+            others = {
+                o["product"].strip().lower()
+                for o in manifest
+                if o is not e and o["amount"] == e["amount"] and o["type"] == e["type"]
+            }
+            hits = [p for p in hits if product_name(p).strip().lower() not in others] or hits
         if len(hits) == 1:
             line = f"{e['env']}={hits[0]['id']}"
             ok_lines.append(line)

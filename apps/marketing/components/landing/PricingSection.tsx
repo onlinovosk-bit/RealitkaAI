@@ -10,6 +10,8 @@ import {
   SEAT_TIER_CHECKOUT_SOURCE,
 } from '../../lib/pricing'
 import PricingCta from './PricingCta'
+import PricingSectionV2 from './PricingSectionV2'
+import { resolvePricingV2View } from '../../lib/pricing-v2-server'
 
 const TIER_COPY: Record<
   (typeof SEAT_TIERS)[number],
@@ -46,6 +48,10 @@ const TIER_COPY: Record<
 }
 
 export default function PricingSection() {
+  // Cenník v2 za PRICING_V2_ENABLED (čítané na serveri, view ide ako prop). Vypnuté = nižšie nezmenený legacy výstup.
+  const v2 = resolvePricingV2View()
+  if (v2) return <PricingSectionV2 view={v2} />
+
   const checkoutAvailable = areSeatCheckoutPricesConfigured()
   const founderEligible = isFounderKancelariaEligible()
   const ownerPrice = ownerCockpitPriceEur({ founderEligible })

@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { type EmailOtpType } from "@supabase/supabase-js";
+import { resolvePostConfirmUrl } from "@/lib/signup/self-serve";
 import { type NextRequest, NextResponse } from "next/server";
 
 function getKey() {
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(errorUrl);
   }
 
-  let redirectResponse = NextResponse.redirect(successUrl);
+  const pendingCookies: Array<{ name: string; value: string; options?: Parameters<NextResponse["cookies"]["set"]>[2] }> = [];
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -52,19 +53,19 @@ export async function GET(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) => {
             request.cookies.set(name, value);
           });
-          redirectResponse = NextResponse.redirect(successUrl);
-          cookiesToSet.forEach(({ name, value, options }) => {
-            redirectResponse.cookies.set(name, value, options);
-          });
+          pendingCookies.push(...cookiesToSet);
         },
       },
     },
   );
 
-  const { error } = await supabase.auth.verifyOtp({ type, token_hash });
+  const { data, error } = await supabase.auth.verifyOtp({ type, token_hash });
   if (error) {
     return NextResponse.redirect(errorUrl);
   }
 
+  const target = await resolvePostConfirmUrl(request.nextUrl, data?.user, successUrl);
+  const redirectResponse = NextResponse.redirect(target);
+  pendingCookies.forEach(({ name, value, options }) => redirectResponse.cookies.set(name, value, options));
   return redirectResponse;
 }

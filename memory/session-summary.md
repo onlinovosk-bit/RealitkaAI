@@ -75,6 +75,116 @@ P11 #4 na pushnutej hlave #814 s novým nezávislým agentom (GO od foundera už
 - `packages/mcp-onlinovo/src/agents/{snapshot-validation,experiment,opportunity,next-action,guard}.ts` a `src/tools/{agent-support,revenue-opportunities,customer-next-action,experiment-plan}.ts`: opravy N1–N9 + testy.
 ### Ďalší krok
 P11 #3 na novej hlave tohto PR s novým nezávislým agentom; potom rozhodnutie o `authority.ts` (NaN) a o LeadHub kontrakte.
+## Session 2026-10-06 (GRANTY-20-50-100-150)
+### Dokončené
+- Rozhodnutie foundera: zahrnuté mesačné kredity plánov 25/60/120/175 → **20/50/100/150**; ceny, balíky (60–300), kredit 0,70 € a pásma nezmenené. Zdroj `monthlyCredits` v `apps/crm/src/lib/pricing-v2.ts`; testy grant-engine, credits-billing-v2, e2e, texty CRM + web aktualizované, nový test kariet na webe. Mutation proof 4/4. CRM sada: len 22 pádov pred úpravou testov (staré čísla), potom 235/235 dotknutých; `valuation/submit` integračný test vyžaduje TEST_SUPABASE_* (pred zmenou rovnako).
+- `docs/pricing/2026-10-06-pricing-v2-credits-20-50-100-150.md`: rozhodnutie, Stripe metadata (krok foundera), neoverené.
+- Stripe podklady v repe: `scripts/ops/stripe-v2/` (katalóg JSON + testovací skript, granty 20/50/100/150, `catalog_version` revolis_v2_2026_10_06), `docs/pricing/2026-10-05-stripe-v2-priprava.md`, drift-test `stripe-v2-catalog.verification.test.ts` (mutation proof 4/4).
+- WEB-V2 (GO foundera 6. 10.): `apps/marketing` ukazuje cenník v2 predvolene (staré seat ceny len pri výslovnom `PRICING_V2_ENABLED=false`), CTA vedú na demo, registrácia až `PRICING_V2_SIGNUP_ENABLED=true`; modal bez signupu; testy 41/41, mutation proof 4/4; `docs/pricing/2026-10-06-web-pricing-v2-default.md`. Nasadenie `revolis.ai` (Vercel `revolis-marketing`) NEOVERENÉ — v dostupnom Vercel účte je len projekt `realitka-ai` (CRM).
+- Stripe produkty bez „v2“ v názve (Revolis Start/Team/Kancelária/Sieť/Balík…/Kredit), popisy s počtom používateľov; manifest, katalóg, testy aj doc zosúladené. Interné kľúče (env `STRIPE_PRICE_V2_*`, lookup_key `revolis_v2_*`) ostávajú.
+- Ročné platenie plánov (12 × mesačná, bez zľavy): `pricing-v2.ts` (`annualNetCents`, `annual` v katalógu), kontrakt (`interval`, `STRIPE_PRICE_V2_*_YEARLY`, `yearlyAvailable`), checkout/rozpoznanie cien/webhook, UI `/upgrade` + porovnanie, web (ročný riadok), Stripe manifest + verifikátor + katalóg + skript; testy + mutation proof 5/6 (6. je neuskutočniteľný stav UI). Doc `docs/pricing/2026-10-06-annual-billing.md`.
+- SIGNUP-ARCH (GO foundera): bezpečné samoobslužné založenie agentúry — `docs/architecture/2026-10-06-self-serve-signup.md`, migrácia `20261006120000_self_serve_signup_foundation.sql` (bootstrap len service_role, `account_signups`, guard billing/trial stĺpcov agentúry, `profile_agencies_for_auth` len pre overený e-mail), overovací skript `supabase/verify/self_serve_signup_foundation.verify.sql` (TEST, rollback; PASS T2–T11, T13, T14), kód `src/lib/signup/self-serve.ts` + register/callback/confirm za vlajkou `SELF_SERVE_SIGNUP_ENABLED` (default off), trial z `agencies.trial_ends_at`; 27 testov, mutácie 6/6. NIČ na PROD.
+### Rozpracované / Pending
+- SIGNUP-ARCH: aplikácia migrácie na PROD + zapnutie vlajky čaká na GO; výška skúšobných kreditov (C) — founder; PROD „Confirm email" musí byť zapnuté.
+- Po merge treba nové nasadenie marketingu (statické stránky); (Stripe podklady opravené a v repe;) FUNNEL-V2 (B1) stále otvorený, verejný cenník zapínať až po ňom.
+### Ďalší krok
+Merge PR so zmenou grantov na GO, potom FUNNEL-V2.
+
+## Session 2026-10-05 (STRIPE-C-READY)
+### Dokončené
+- Verifikátor `scripts/ops/stripe_verify_prices.py`: pre v2 ceny kontroluje `tax_behavior=exclusive` a `product.tax_code`; opravený text `--spec` (checkout bez automatic_tax platí len pre legacy). Testy v `stripe-expected-prices.verification.test.ts` (19/19).
+- Režim „len plány“ `PRICING_V2_PLANS_ONLY` (predvolene zapnutý, fail-closed): `pricing-v2.ts`, `pricing-v2-contract.ts` (kľúče len plány, kód `credits_not_sold`), `checkout-config`, `credits/checkout` (403 pred Stripe), `PricingV2Plans`/`PricingV2CreditsTopup`/`usePricingV2Config`, web `PricingSectionV2`/`pricing-v2-view`. Mutation proof 5/5 mutantov zabitých.
+- Podklady foundera (10 cien, katalóg, testovací skript) porovnané s manifestom na `3bb4233`: sedia.
+### Rozpracované / Pending
+- Stripe krok C (founder, `txcd_` kódy s účtovníčkou), FUNNEL-V2, VOP, migrácia na PROD, merge PR #822 (draft) — všetko čaká na GO.
+### Kľúčové súbory zmenené
+- `scripts/ops/stripe_verify_prices.py`, `apps/crm/src/lib/pricing-v2*.ts`, `apps/crm/src/app/api/billing/{checkout-config,credits/checkout}/route.ts`, `apps/crm/src/components/billing/v2/*`, `apps/marketing/{lib,components}/*pricing-v2*`, `docs/pricing/2026-10-05-pricing-v2-w4-production-gate.md` (B7a).
+### Ďalší krok
+Founder: Stripe krok C podľa podkladov (10 cien, `exclusive`, `txcd_`), potom `bash scripts/ops/stripe-verify-prices.sh` a poslať výstup; agent: FUNNEL-V2 na GO.
+
+## Session 2026-10-05 (MEGA-POPLACH-AIRAMAX)
+RAU route: GO_REQUIRED (ručne; router zamietnutý) roadmap Revolis.AI
+### Dokončené
+- Roadmap `docs/architecture/2026-10-05-mega-poplach-airamax-roadmap.md`: gap analýza AIRAmax (zo snímok webu) vs repo, ULTRATHINK, 4 steny + backlog.
+- Cenový ťah (§9): odsúhlasený cenník Start 25 / Team 60 / Kancelária 149 (7–25) / Sieť od 349 (26+), kredity 25/60/120/175 po 0,70 €, balíky o 1–4 c lacnejšie než AIRAmax (interpolované porovnanie).
+- `LISTING_DESCRIPTION` 2 → 1 kredit (`credit-rates.ts` + test; 40/40 testov OK; dopad nulový, `CREDITS_ENFORCEMENT=off`).
+- Oprava faktu: platí jediný klient (199 € + 99 € onboarding); „3 kancelárie / MRR 597 €“ z DEC-20260924-001 bolo podľa štítku plánu.
+- W0 inventúra cenníka v2: `docs/pricing/2026-10-05-pricing-v2-w0-inventory.md` (mapa povrch → checkout → webhook → grant; 8 rozporov plán vs. kód, napr. `billing-lifecycle.ts` neexistuje, DPH nie je v checkoute).
+- Rozhodnutia foundera: ceny BEZ DPH, balíky vlastné 60/120/180/240/300, GO na W1.
+- W1 hotová: `apps/crm/src/lib/pricing-v2.ts` + `apps/crm/src/lib/__tests__/pricing-v2.test.ts` (23 testov; mutation proof 9/9 mutantov zabitých po zapracovaní zistení nezávislého P11; lint čistý; 0 TS chýb v nových súboroch). Nezapojené do checkoutu (W2), `PRICING_V2_ENABLED` vypnuté.
+- Nezávislé P11 (iný agent): kontraktné sumy PASS; zistenia R1–R5 (fail-closed `resolvePricingModel`, `isSafeInteger`, validácia základu a DPH, zmrazený cenník) opravené a pokryté testami.
+- **W2** (kontrakt `docs/pricing/2026-10-05-pricing-v2-w2-contract.md` + `pricing-v2-contract.ts`; 4 paralelné vetvy A–D v izolovaných worktrees, územia disjunktné, zlúčené do vetvy PR #822): A billing/webhook/granty/migrácia (39/39 mutantov), B CRM obrazovky (15/15), C marketing (21/21), D texty + VOP návrh (27/27). Všetko za `PRICING_V2_ENABLED` (predvolene vypnuté), pri vypnutom výstup zhodný (golden).
+- **W3** nezávislé QA (iný agent, offline e2e 54 testov): jadro PASS; nálezy opravené: replay `checkout.session.completed` po zrušení (stav sa berie zo Stripe), 409 `subscription_exists` vs. legacy, výnimka v checkoute → 503 `checkout_failed`, zvyšky cien (billing stránka, FAQ, Rozpis, paywally), `tests/integration` v CI. Koordinátor navyše našiel: **v2 platiteľ by mal plán „free“** (`getCurrentPlanKey` a `saas-ops` nepoznali v2 price ID) → opravené (`pricing-v2-plan.ts`).
+- Merge `origin/main` do vetvy (51 commitov; konflikt webhook route + memory vyriešený, memory append-only overené); nový `billing-lifecycle.ts` z `main` je so v2 kompatibilný (test `billing-lifecycle-pricing-v2`).
+- **W4** brána P15–P17: `docs/pricing/2026-10-05-pricing-v2-w4-production-gate.md` — verdikt **NOT READY** (bloker P1 funnel web → CRM, Stripe krok C a webhook, DPH, VOP, migrácia na PROD, kredity bez vynucovania).
+- Dôkaz: CRM celá sada 3105 testov OK (8 súborov vyžaduje `TEST_SUPABASE_*`, na báze neoverené), marketing 29/29, typecheck 49 ≤ strop 54, lint čistý; repo CI: Memory append-only, Zmluva kódu, Control Contract, BUS, Memory Engine zelené, „Lint, test, build“ pri písaní bežalo.
+- Otvorené: základ DPH u AIRAmax (pre tvrdenie „sme lacnejší“).
+### Rozpracované / Pending
+- **Funnel** (`/register` nečíta `pricing=v2&plan=…`) — vyžaduje návrh a GO (autentifikácia/onboarding).
+- Stripe krok C (founder), `STRIPE_WEBHOOK_SECRET` + endpoint s udalosťou `checkout.session.async_payment_succeeded`, migrácia `20261005120000` na PROD (GO), VOP v2 (právnik), základ DPH, politika kreditov (`CREDITS_ENFORCEMENT` off → predávať len plány).
+- Neoverené: reálna DB a Stripe, prehliadač, náklad AI na kredit (NEMERANÉ), produkt AIRAmax (len web).
+### Kľúčové súbory zmenené
+- Kód: `apps/crm/src/lib/pricing-v2*.ts`, `credits-billing-v2.ts`, `credits-billing-webhook.ts`, `billing-store.ts`, `saas-ops.ts`, `credits/{grant-engine,monthly-cycle,credit-rates}.ts`, `app/api/billing/**`, migrácia `20261005120000_pricing_v2_agency_columns.sql`, `components/billing/v2/**`, `apps/marketing/**`, texty (`terms`, `landing`, `AiInsightsPanel`…), `config/env.ts`, `vitest.config.js`.
+- Dokumenty: `docs/architecture/2026-10-05-mega-poplach-airamax-roadmap.md`, `docs/pricing/2026-10-05-pricing-v2-*.md` (W0 inventúra, W2 kontrakt, W4 brána), `w2c-notes.md`, `w2d-copy-and-legal-review.md`; `memory/decisions.md`, `memory/session-summary.md`.
+### Ďalší krok
+Jedna stena s GO: **FUNNEL-V2** — zachovať zvolený plán z webu cez registráciu a onboarding do `/upgrade` (bloker B1). Paralelne founder: Stripe krok C.
+## Session 2026-10-05 (HERO-CAPTURE-SOURCE)
+### Dokončené
+- **HERO-CAPTURE-SOURCE** (GO foundera, jedna stena): hero formulár na landing (`Hero.tsx:197` → `HeroEmailCapture`) posiela `source: "hero_email_capture"`;
+  `capture-lead` ho prijme, ale PROD constraint `leads_demo_source_check` povoľuje len `ai_odhadca`/`neighborhood_watch`/`digital_twin` (overené `pg_get_constraintdef`)
+  → INSERT 23514 → 500 → UI zobrazí „Nepodarilo sa uložiť kontakt." a nepresmeruje na `/register`. PROD `leads_demo` = 0 riadkov (konzistentné, nie dôkaz).
+- Oprava: migrácia `20261005100000_leads_demo_source_hero_email_capture.sql` (jeden `ALTER TABLE` DROP IF EXISTS + ADD = atómový a idempotentný) + verification test
+  `leads-demo-source-check.verification.test.ts` (reťaz klient → route → DB po prehraní migrácií). Test 10/10, mutation proof 4/4 (odstránená migrácia, migrácia bez hodnoty,
+  nový source v route bez migrácie, klient mimo zoznamu). Reálny Postgres (PGlite = PG 18.3): pred = hero 23514, po = OK, `bogus` stále 23514, 3× aplikácia bez zmeny, 4 riadky pred = 4 po.
+- `prepush-gate` PASS (typecheck 49, lint čistý). Celý vitest: 2778 passed, 8 súborov padá na chýbajúce `TEST_SUPABASE_*` (RLS + valuation integration; rovnako na čistom `main`, CI-only).
+- B1 (Meta lookalike) overený read-only: `meta/lookalike/route.ts:65,72` posiela e-mail v čistom texte, v route žiadna kontrola súhlasu; ale UI volá bez Bearer → 401 a PROD `leads_demo` = 0
+  riadkov → route vráti 400 pred volaním Metu. **Latentná chyba, dnes bez expozície** (audit ju hodnotil VYSOKÁ podľa kódu). Nič sa nezmenilo.
+### Rozpracované / Pending
+- **Migrácia NIE je na PROD** — aplikácia po merge = samostatné GO. Dovtedy hero formulár stále padá. Po aplikácii overiť (SELECT count alebo jedno odoslanie s označeným testovacím e-mailom).
+- **Právny podklad hero formulára:** `HeroEmailCapture` posiela `gdprConsent: true` natvrdo (súhlas = „Odoslaním súhlasíte" + odkaz na `/privacy`). Oprava spôsobí, že sa tento záznam začne reálne ukladať
+  → posúdiť (gdpr-advisor) explicitný súhlas/znenie. Neriešené v tejto stene.
+- **B1 rozhodnutie:** variant A = vypnúť `meta/lookalike` (410 + test), variant B = SHA-256 `EMAIL_SHA256` + filter `gdpr_consent` + účelový súhlas (pseudonymizácia ≠ anonymizácia).
+- `.claude/settings.json`: `mcp__Supabase__execute_sql` a `mcp__github__*` (vrátane `merge_pull_request`) povolené bez opýtania; deny blokuje `apply_migration`, nie `execute_sql`.
+- Neoverené: živá landing stránka (egress blokuje `revolis.ai`), migrácia na PG 15 (CI replay; PGlite je PG 18.3), od kedy hero formulár padá (oba kusy v repe od #735, 2026-09-28).
+### Kľúčové súbory zmenené
+- `apps/crm/supabase/migrations/20261005100000_leads_demo_source_hero_email_capture.sql` (nový)
+- `apps/crm/tests/verification/leads-demo-source-check.verification.test.ts` (nový)
+- `memory/decisions.md`, `memory/session-summary.md`
+### Ďalší krok
+„merguj N" po zelenom CI → GO na aplikáciu migrácie na PROD → overenie jedným odoslaním.
+
+## Session 2026-10-05 (FAIL-OPEN-SWEEP → TRIAL-GATE-CLOSED)
+### Dokončené
+- `docs/reports/2026-10-05-fail-open-sweep.md` (#817): audit piatich vzorov fail-open. Tri nálezy, šesť `!== false` označených ako fail-SAFE.
+- `lib/saas-ops.ts`: zmazaný `const canUseFullApp = true;` („DEV OVERRIDE" v produkcii). Zápis len v `trial`/`active`/`grace`; `limited`/`blocked` → read-only (founder variant A).
+- Nový stav `unknown` + `lookupFailed`: výpadok Stripe sa odlíši od zrušeného predplatného, takže nezamkne platiacich. Jediné zámerné fail-open, s `billingUnverified` a `console.warn`.
+- `types/navigation.ts` + `api/nav/permissions` + `AppSidebar`: `UNKNOWN_TEAM_PERMISSIONS` (všetko false) pre „je v tíme, ale oprávnenia sa nedali prečítať". Solo default nedotknutý.
+- `docs/STATUS.md`: hlavička prepočítaná 53 % → 51 % (nesedela s vlastnou tabuľkou; to číslo som predtým sám publikoval).
+### Rozpracované / Pending
+- #817 nesie audit aj opravu — jedna vetva, jeden PR; je to tá istá téma (fail-open brány), nie mix ako #800.
+- Neoverené: či vzor existuje aj mimo `apps/crm/src` (skripty, edge funkcie). Audit šiel len po `apps/crm/src/**`.
+- Stále bez GO: GOVERNANCE-DEDUP (tri súbežné formáty hlásenia postupu + kadencia pamäte).
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/saas-ops.ts`: brána prístupu prestala byť natvrdo otvorená; stav `unknown`.
+- `apps/crm/src/lib/feature-gating.ts`: `accessLevel` v odpovedi brány + honest správa o read-only.
+- `apps/crm/src/types/navigation.ts`: `UNKNOWN_TEAM_PERMISSIONS`.
+- `apps/crm/src/app/api/nav/permissions/route.ts`, `components/layout/AppSidebar.tsx`: deny pri nečitateľných oprávneniach.
+### Ďalší krok
+Merge #817 (po zelenom CI), potom krok C v Stripe — brána už nie je prázdna, takže ceny budú mať čo vynucovať.
+
+## Session 2026-10-05 (FAIL-OPEN SWEEP)
+### Dokončené
+- `docs/reports/2026-10-05-fail-open-sweep.md`: read-only audit piatich vzorov fail-open v `apps/crm/src/**`. Tri nálezy (P1 `canUseFullApp` natvrdo `true` s komentárom „DEV OVERRIDE"; P2 oprávnenia tímu default povoľujú export kontaktov; P3 `is_active ?? true` latentne) + šesť `!== false`, ktoré sú fail-SAFE a na opravu nie sú.
+- Zistené, že brána prístupu je LIVE (8 API ciest + 7 stránok), takže P1 nie je mŕtvy kód — len dnes nestojí nič, lebo Stripe nie je live (0 z 10 cien).
+### Rozpracované / Pending
+- P1 čaká na founder rozhodnutie: čo po vypršaní trialu — úplné zamknutie, alebo read-only režim? Bez toho sa `canUseFullApp` nedá správne opraviť.
+- P2 oprava (`can_export_contacts: false` v defaulte + odlíšiť „bez tímu" od „čítanie zlyhalo") je pripravená ako návrh, nie aplikovaná.
+- Stále otvorené z 2026-10-02: tri súbežné formáty hlásenia postupu + rozpor o kadencii pamäte (GOVERNANCE-DEDUP, bez GO).
+### Kľúčové súbory zmenené
+- `docs/reports/2026-10-05-fail-open-sweep.md`: nový, celý audit s dôkazmi po riadkoch.
+- `memory/decisions.md`: PREPEND — nálezy a dôvod, prečo P1 nie je incident ale termín.
+### Ďalší krok
+Rozhodnutie o P1 (zamknutie vs. read-only po vypršaní trialu) — až potom oprava `canUseFullApp`, lebo bez toho rozhodnutia sa nedá napísať správny test.
 
 ## Session 2026-10-02 (PLATBY-E2E implementácia)
 ### Dokončené

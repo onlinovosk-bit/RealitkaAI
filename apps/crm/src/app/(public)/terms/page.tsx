@@ -1,5 +1,14 @@
 import LegalPageShell from "@/components/legal/legal-page-shell";
 import Link from "next/link";
+import { getPricingV2CatalogIfEnabled } from "@/components/marketing/pricing-v2-copy";
+import {
+  buildTermsPaymentsClausesV2,
+  buildTermsProgramsV2,
+  TERMS_V2_DRAFT_BANNER,
+  TERMS_V2_PROGRAMS_INTRO,
+  TERMS_V2_PROGRAMS_TITLE,
+  TERMS_V2_SUBTITLE,
+} from "./terms-v2";
 
 const legalSuiteChapters = [
   {
@@ -100,12 +109,24 @@ export const metadata = {
 };
 
 export default function TermsPage() {
+  // W2-D: v2 variant (NÁVRH, čaká na odobrenie) len pri zapnutom PRICING_V2_ENABLED; vypnutý = pôvodný text.
+  const catalog = getPricingV2CatalogIfEnabled();
+  const programs = catalog ? buildTermsProgramsV2(catalog) : programOverview;
   return (
     <LegalPageShell
       title="VOP / Terms"
-      subtitle="Všeobecné obchodné podmienky pre používanie Revolis.AI. Posledná aktualizácia: 2. júna 2026."
+      subtitle={
+        catalog
+          ? TERMS_V2_SUBTITLE
+          : "Všeobecné obchodné podmienky pre používanie Revolis.AI. Posledná aktualizácia: 2. júna 2026."
+      }
     >
       <div className="space-y-6 text-sm text-slate-200">
+        {catalog && (
+          <section className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 font-semibold text-amber-200">
+            {TERMS_V2_DRAFT_BANNER}
+          </section>
+        )}
         <section className="rounded-xl border border-cyan-500/25 bg-cyan-500/5 p-4">
           <h2 className="text-lg font-semibold text-white">Mapovanie kapitol Legal Suite</h2>
           <p className="mt-2 text-slate-300">
@@ -129,13 +150,16 @@ export default function TermsPage() {
         </section>
 
         <section id="programy" className="rounded-xl border border-violet-500/25 bg-violet-500/5 p-4">
-          <h2 className="text-lg font-semibold text-white">Kapitola: Podrobný prehľad 4 programov</h2>
+          <h2 className="text-lg font-semibold text-white">
+            {catalog ? TERMS_V2_PROGRAMS_TITLE : "Kapitola: Podrobný prehľad 4 programov"}
+          </h2>
           <p className="mt-2 text-slate-300">
-            Nižšie je orientačný prehľad seatov a modulov podľa L99 stratégie. Záväzný rozsah služieb, limity a SLA vždy určuje
-            aktuálny objednávkový formulár, VOP a prípadné enterprise annexy.
+            {catalog
+              ? TERMS_V2_PROGRAMS_INTRO
+              : "Nižšie je orientačný prehľad seatov a modulov podľa L99 stratégie. Záväzný rozsah služieb, limity a SLA vždy určuje aktuálny objednávkový formulár, VOP a prípadné enterprise annexy."}
           </p>
           <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
-            {programOverview.map((program) => (
+            {programs.map((program) => (
               <article key={program.name} className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
                 <h3 className="text-sm font-semibold text-violet-200">{program.name}</h3>
                 <p className="mt-1 text-xs text-slate-400">{program.note}</p>
@@ -179,6 +203,19 @@ export default function TermsPage() {
             bezpečne vymažú podľa retention pravidiel.
           </p>
         </section>
+
+        {catalog && (
+          <section>
+            <h2 className="text-lg font-semibold text-white">5. Platby, kredity a zrušenie (návrh)</h2>
+            <ul className="mt-2 space-y-2 text-slate-300">
+              {buildTermsPaymentsClausesV2(catalog).map((clause) => (
+                <li key={clause.title}>
+                  <strong>{clause.title}:</strong> {clause.text}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <section className="rounded-lg border border-slate-700 bg-slate-950/60 p-4 text-xs text-slate-300">
           Tento prehľad je skrátená verzia. Zmluvne záväzné je úplné znenie VOP v kontraktačnej dokumentácii.

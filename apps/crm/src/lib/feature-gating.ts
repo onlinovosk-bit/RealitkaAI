@@ -25,11 +25,23 @@ export async function getGateSnapshot() {
   return getSaasOpsSnapshot();
 }
 
+/**
+ * Brána pre akciu, ktorá NIEČO MENÍ. Čítanie vlastných dát ňou neprechádza a
+ * prechádzať nemá — to je celý zmysel read-only režimu (founder, variant A,
+ * 2026-10-05): po vypršaní trialu alebo po zrušení platby klient svoje leady
+ * ďalej vidí a vyexportuje, ale nič nové nevytvorí.
+ *
+ * Do 2026-10-05 táto funkcia nemohla vyhodiť výnimku nikdy, pretože
+ * `canUseFullApp` bolo v `saas-ops.ts` natvrdo `true`.
+ */
 export async function requireActiveAppAccess() {
   const snapshot = await getGateSnapshot();
 
   if (!snapshot.canUseFullApp) {
-    throw new Error(snapshot.trialGrace.message || "Prístup k aplikácii je obmedzený.");
+    throw new Error(
+      snapshot.trialGrace.message ||
+        "Účet je v režime len na čítanie. Vaše dáta zostávajú dostupné; na vytváranie a odosielanie je potrebný aktívny plán.",
+    );
   }
 
   return snapshot;
@@ -82,6 +94,9 @@ export async function getFeatureGateState(feature: GateFeatureKey) {
     enabled: Boolean(snapshot.canUseFullApp && snapshot.flags[feature]),
     plan: snapshot.plan,
     trialGrace: snapshot.trialGrace,
+    // UI musí vedieť rozlíšiť „tvoj plán to nemá" od „plán vypršal" — sú to dve
+    // rôzne správy a dve rôzne akcie pre klienta.
+    accessLevel: snapshot.accessLevel,
     reason: snapshot.canUseFullApp
       ? snapshot.flags[feature]
         ? null

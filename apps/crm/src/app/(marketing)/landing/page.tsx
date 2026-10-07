@@ -28,6 +28,7 @@ import { FounderDiscountSpotsProvider } from '@/components/shared/founder-discou
 import LegalFooter from '@/components/marketing/LegalFooter';
 import RoiGuaranteeSection from '@/components/marketing/RoiGuaranteeSection';
 import { SLATE_HORIZON } from '@/lib/slate-horizon-theme';
+import { getPricingV2CatalogIfEnabled } from '@/components/marketing/pricing-v2-copy';
 
 // Self-hosted so the build does not depend on reaching Google Fonts. next/font/google
 // fetches the CSS at build time and then does `/\.(woff|woff2|eot|ttf|otf)$/.exec(url)[1]`
@@ -54,6 +55,8 @@ export const metadata = {
 };
 
 export default function LandingPage() {
+  // W2-D: prepínač PRICING_V2_ENABLED sa číta na serveri; vypnutý = pôvodný FinalCTA (null).
+  const pricingV2 = getPricingV2CatalogIfEnabled();
   return (
     <main
       className={`${inter.variable} min-h-screen overflow-x-hidden`}
@@ -99,13 +102,13 @@ export default function LandingPage() {
         <PreviewSection />
         <Testimonials />
         <ProofNumbers />
-        <ObjectionFaq />
+        <ObjectionFaq pricingV2={pricingV2} />
 
         <div className="mx-auto max-w-4xl px-4">
           <RoiGuaranteeSection />
         </div>
 
-        <FinalCTA />
+        <FinalCTA pricingV2={pricingV2} />
       </FounderDiscountSpotsProvider>
 
       <LegalFooter />
