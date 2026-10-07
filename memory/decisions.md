@@ -1,5 +1,9 @@
 # Critical Decisions Log
 
+## 2026-10-07 — DUPE-BRIEF: research brief pre onlinovo.sk (VALIDATE, nie BUILD)
+**GO foundera:** „GO dupe-research brief". **Brána Ústavy v2:** Q1 (zaplatil by dnešný klient Revolisu) = NIE → VETO, strop VALIDATE; Q8 nehodnotené (Stripe krok C má prednosť).
+**Výstup:** `docs/onlinovo/2026-10-07-dupe-research-brief.md` (len dokument, žiadny kód). Zdroje **nestiahnuté** (EUR-Lex vrátil prázdnu stranu, Google Ads Help blokovaný); tvrdenia najviac MEDIUM, čísla predajcov LOW. Právne stanovisko SK/CZ, CZ/SK dopyt a naše marže chýbajú (UNKNOWN).
+
 ## 2026-10-07 — ONL-AGENTS: limity prijaté, P11 končí (BUILD uzavretý, rozhodnutie foundera)
 **GO foundera:** „A, prijať limity" (varianty po P11 #6: A = prijať limity, B = P11 #7). P11 #7 sa nespúšťa.
 **Stav:** IMPLEMENTED/TESTED, nie VERIFIED. VERIFIED neudeľuje model ani P11; rozhoduje founder. Posledná hlava #814 je 55bbc20 (mcp-onlinovo 271/271, control-contract 72/72, tsc 0, prepush-gate PASS, migrácie NEOVERENÉ).

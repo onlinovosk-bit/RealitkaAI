@@ -1,3 +1,14 @@
+## Session 2026-10-07 (DUPE-BRIEF)
+### Dokončené
+- `docs/onlinovo/2026-10-07-dupe-research-brief.md`: research brief (stratégie so stupňom istoty, právne červené čiary, 8 testov, CZ/SK konkurenti neoverení, otázky pre právnika). Verdikt VALIDATE.
+### Rozpracované / Pending
+- Overenie primárnych zdrojov v nezablokovanom prostredí; CZ/SK Keyword Planner; naše marže; právnik.
+- Stripe krok C čaká na foundera (výstup `stripe-verify-prices.sh`).
+### Kľúčové súbory zmenené
+- `docs/onlinovo/2026-10-07-dupe-research-brief.md`, `memory/decisions.md`.
+### Ďalší krok
+Výstup `bash scripts/ops/stripe-verify-prices.sh` od foundera (Stripe krok C).
+
 ## Session 2026-10-07 (ONL-AGENTS: limity prijaté)
 ### Dokončené
 - Founder zvolil variant A po P11 #6: limity sú prijaté, P11 #7 sa nespúšťa. Zápis v `memory/decisions.md`. Žiadna zmena kódu.
