@@ -373,3 +373,24 @@ describe('starý marketingový checkout', () => {
     }
   })
 })
+
+describe('funkcie plánov v kartách cenníka', () => {
+  const view = buildPricingV2View(buildPricingV2Catalog())
+  const byId = Object.fromEntries(view.bands.map((b) => [b.id, b.features]))
+
+  it('každé pásmo má funkcie a vyššie pásma nadväzujú na nižšie', () => {
+    for (const b of view.bands) expect(b.features.length).toBeGreaterThan(0)
+    expect(byId.team[0]).toBe('Všetko zo Start')
+    expect(byId.office[0]).toBe('Všetko z Team')
+    expect(byId.network[0]).toBe('Všetko z Kancelárie')
+  })
+
+  it('karta ukáže funkcie, prioritná podpora je až od Kancelárie', () => {
+    const html = renderToStaticMarkup(<PricingSectionV2 view={view} />)
+    expect(html).toContain('Denný briefing priorít')
+    expect(html).toContain('Tímový prehľad pre majiteľa')
+    expect(byId.start).not.toContain('Prioritná podpora')
+    expect(byId.team).not.toContain('Prioritná podpora')
+    expect(byId.office).toContain('Prioritná podpora')
+  })
+})
