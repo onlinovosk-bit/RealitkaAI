@@ -106,3 +106,17 @@ test("no agent may take a customer-facing action: the registry forbids every one
     }
   }
 });
+
+test("N9: for a confidence that is not a plain number the local guard is never MORE permissive than the registry", () => {
+  const rank = { AUTONOMOUS: 0, APPROVAL_REQUIRED: 1, FORBIDDEN: 2 } as const;
+  for (const a of ONL_ACTIONS) {
+    for (const odd of [Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, 1.5, -1]) {
+      const local = actionVerdict(a.action, odd, NO_ENV).verdict;
+      const truth = authority(a.action, odd, false).authority;
+      assert.ok(rank[local] >= rank[truth], `${a.action} @${String(odd)}: local ${local} is more permissive than the registry ${truth}`);
+    }
+  }
+  // Known, documented difference: the registry's own floor test `confidence < min` lets NaN through as AUTONOMOUS.
+  assert.equal(authority("onlinovo.opportunity.recommend", Number.NaN, false).authority, "AUTONOMOUS", "registry gap, proposed for a separate change");
+  assert.equal(actionVerdict("onlinovo.opportunity.recommend", Number.NaN, NO_ENV).allowed, false);
+});

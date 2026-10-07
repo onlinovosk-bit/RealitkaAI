@@ -74,6 +74,9 @@ export function lookupOnlAction(action: string): OnlAction | null {
   return BY_ACTION.get(action) ?? null;
 }
 
+/** Never stringify an arbitrary value: an object can throw from its own toString. */
+const describe = (value: unknown): string => (typeof value === "number" ? String(value) : typeof value);
+
 const KILL_SWITCH_OFF = new Set(["", "0", "false", "off", "no", "disabled"]);
 
 /**
@@ -81,7 +84,8 @@ const KILL_SWITCH_OFF = new Set(["", "0", "false", "off", "no", "disabled"]);
  * a spelling like "yes" or "enabled" stops the agents; it can never leave them running by accident.
  */
 export function killSwitchOn(env: NodeJS.ProcessEnv = process.env): boolean {
-  const raw = (env.ONLINOVO_AGENTS_KILL_SWITCH ?? "").trim().toLowerCase();
+  const value: unknown = env?.ONLINOVO_AGENTS_KILL_SWITCH;
+  const raw = (typeof value === "string" ? value : value === undefined || value === null ? "" : "on").trim().toLowerCase();
   return !KILL_SWITCH_OFF.has(raw);
 }
 
@@ -104,7 +108,7 @@ export function actionVerdict(
       "CAPABILITY_UNSUPPORTED",
       "unregistered_action",
       null,
-      `Action "${action}" is not registered. An unregistered action cannot be authorized (fail-closed).`,
+      "The requested action is not registered. An unregistered action cannot be authorized (fail-closed).",
     );
   }
   if (meta.status === "DENIED") {
@@ -134,14 +138,14 @@ export function actionVerdict(
   }
   // `!(x >= floor)` rather than `x < floor`, and a typeof check because "0.9" >= 0.6 is true in JavaScript:
   // NaN, undefined, null and strings are "not enough confidence", never a pass.
-  if (typeof confidence !== "number" || !(confidence >= MIN_CONFIDENCE)) {
+  if (typeof confidence !== "number" || !(confidence >= MIN_CONFIDENCE) || confidence > 1) {
     return {
       allowed: false,
       verdict: "APPROVAL_REQUIRED",
       code: "APPROVAL_REQUIRED",
       rule: "low_confidence_floor",
       tier: meta.tier,
-      message: `Confidence ${confidence} is below ${MIN_CONFIDENCE}. A human must decide; no approval path exists in this build.`,
+      message: `Confidence ${describe(confidence)} is not a number of at least ${MIN_CONFIDENCE}. A human must decide; no approval path exists in this build.`,
     };
   }
   return {
@@ -159,10 +163,13 @@ export function authorizeAgentAction(
   input: { agentId: string; action: string; confidence?: number },
   env: NodeJS.ProcessEnv = process.env,
 ): GuardDecision {
-  const confidence = input.confidence ?? 1;
-  const allowed = (AGENT_ALLOWED as Record<string, readonly string[] | undefined>)[input.agentId];
+  // Only an absent confidence means "full"; null, NaN and strings are kept and fail closed in `actionVerdict`.
+  const confidence = input.confidence === undefined ? 1 : input.confidence;
+  const allowed = typeof input.agentId === "string" && Object.hasOwn(AGENT_ALLOWED, input.agentId)
+    ? (AGENT_ALLOWED as Record<string, readonly string[]>)[input.agentId]
+    : undefined;
   if (!allowed) {
-    return forbid("AGENT_UNKNOWN", "unknown_agent", null, `Agent "${input.agentId}" is not registered.`);
+    return forbid("AGENT_UNKNOWN", "unknown_agent", null, "The agent is not registered.");
   }
   const base = actionVerdict(input.action, confidence, env);
   if (base.verdict === "FORBIDDEN") return base;

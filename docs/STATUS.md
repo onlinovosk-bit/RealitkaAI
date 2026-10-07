@@ -29,11 +29,11 @@
 | časť | stav | dôkaz | čo blokuje ďalší krok |
 |---|---|---|---|
 | Špecifikácia (P08) + plán (P09) | ✅ | `docs/onlinovo/ONL-AGENTS-P08-*.md`, `P09-*.md` | — |
-| 3 agenti (príležitosti, ďalšia akcia, experiment) | ✅ IMPLEMENTED/TESTED, read-only, **iba fixture/unconnected** | mcp-onlinovo 198/198, control-contract 72/72, crm lib/agents 69/69 (po oprave nálezov P11) | živý zdroj dát = UNKNOWN |
+| 3 agenti (príležitosti, ďalšia akcia, experiment) | ✅ IMPLEMENTED/TESTED, read-only, **iba fixture/unconnected** | mcp-onlinovo 271/271, control-contract 72/72, crm lib/agents 69/69 (po oprave nálezov P11 #1–#6) | živý zdroj dát = UNKNOWN |
 | Odoslanie/plánovanie kampane, zápis journey | ⛔ BLOCKED v registri | `onlinovo.campaign.*`, `onlinovo.journey.write` FORBIDDEN, schválenie ich neodomkne | LeadHub API kontrakt = UNKNOWN (čaká odpoveď podpory) |
-| Nezávislé overenie | 🟡 P11 #1 našla 5 stredných nálezov (opravené v novom PR, F1–F13) · P11 #2 ⏳ | `memory/decisions.md` 2026-10-05 | nový overovací agent; **stav nie je VERIFIED** |
+| Nezávislé overenie | 🟡 P11 #1–#6 našli nálezy (opravené v #812 a #814; #6 bez FAIL nároku, N1–N7 opravené; limity prijaté founderom 2026-10-07, P11 #7 sa nespúšťa) · N8 (UNPAID_RECOVERY a opted_out) čaká na rozhodnutie foundera | `memory/decisions.md` 2026-10-05 | nový overovací agent; **stav nie je VERIFIED** |
 
-*Stav: #807 zmergovaný (nie mnou); opravy nálezov P11 sú v novom draft PR. Nič nenasadené. `packages/mcp-onlinovo` nemá CI job (`.github/**` je denylist → rozhodne founder).*
+*Stav: #807 a #812 zmergované (nie mnou); opravy nálezov P11 #4 sú v #814 (draft). Nič nenasadené. `packages/mcp-onlinovo` nemá CI job (`.github/**` je denylist → rozhodne founder).*
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)

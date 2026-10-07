@@ -393,3 +393,87 @@ test("F7-F9 through the tool: string weights, a bad direction and a stray stop m
     assert.equal(parse(result).error?.code, code);
   }
 });
+
+// ── P11 #2 findings ───────────────────────────────────────────────────────────────────────────
+
+test("the input cap is exact: 100 000 characters of JSON pass the door, 100 001 do not", async () => {
+  const overhead = JSON.stringify({ requested_action: "" }).length;
+  const inputOf = (chars: number) => ({ requested_action: "x".repeat(chars - overhead) });
+  assert.equal(JSON.stringify(inputOf(100_000)).length, 100_000);
+  const atLimit = await handleRevenueOpportunities(inputOf(100_000), deps());
+  assert.notEqual(parse(atLimit).error?.code, "INPUT_TOO_LARGE", "refused by the guard for another reason, not by the cap");
+  const over = await handleRevenueOpportunities(inputOf(100_001), deps());
+  assert.equal(parse(over).error?.code, "INPUT_TOO_LARGE");
+});
+
+test("N5: what is measured against the cap is what is processed: a getter or toJSON cannot swap the value", async () => {
+  let reads = 0;
+  const sneaky = {
+    get customer_ref() {
+      reads += 1;
+      return reads === 1 ? "FIX-CUS-001" : "a".repeat(300_000);
+    },
+  };
+  const first = await handleCustomerNextAction(sneaky, deps());
+  assert.equal(parse(first).success, true, "the small first value is what is both measured and used");
+  assert.equal(reads, 1, "the input is read exactly once");
+
+  const withToJson = { customer_ref: "x", toJSON: () => ({ customer_ref: "FIX-CUS-001" }) };
+  assert.equal(parse(await handleCustomerNextAction(withToJson, deps())).success, true);
+
+  const circular: Record<string, unknown> = { customer_ref: "FIX-CUS-001" };
+  circular.self = circular;
+  const refused = await handleCustomerNextAction(circular, deps());
+  assert.equal(parse(refused).error?.code, "INVALID_INPUT", "not serialisable is not 'too large'");
+  const big = await handleCustomerNextAction({ customer_ref: 10n }, deps());
+  assert.equal(parse(big).error?.code, "INVALID_INPUT");
+});
+
+test("N5: the handler works on the serialised copy, so a later mutation of the caller's object changes nothing", async () => {
+  const args = { customer_ref: "FIX-CUS-001" };
+  const pending = handleCustomerNextAction(args, deps());
+  args.customer_ref = "FIX-CUS-002";
+  const body = parse(await pending);
+  assert.equal(body.data?.decision.customer_ref, "FIX-CUS-001");
+});
+
+test("N9: an absent input is an empty input (not an error), a symbol or function input is refused cleanly", async () => {
+  assert.equal(parse(await handleRevenueOpportunities(undefined, deps())).success, true);
+  assert.equal(parse(await handleRevenueOpportunities(null, deps())).success, true);
+  for (const bad of [Symbol("x"), () => 1]) {
+    const result = await handleRevenueOpportunities(bad, deps());
+    assert.equal(result.isError, true);
+    assert.equal(parse(result).error?.code, "INVALID_INPUT");
+  }
+});
+
+test("an oversized requested_action is audited without its content", async () => {
+  const marker = "SECRET-MARKER-" + "x".repeat(200);
+  const { value, lines } = await withAudit(() => handleRevenueOpportunities({ requested_action: marker }, deps()));
+  assert.equal(value.isError, true);
+  const text = lines.map((l) => JSON.stringify(l)).join("\n") + value.content[0].text;
+  assert.equal(text.includes("SECRET-MARKER"), false, "neither the audit trail nor the answer echoes the oversized value");
+});
+
+test("P11#6: a personal value in requested_action reaches neither the audit trail nor the answer", async () => {
+  for (const value of ["alice@example.com", "+421900123456", "onlinovo.alice@example.com"]) {
+    const { value: result, lines } = await withAudit(() => handleRevenueOpportunities({ requested_action: value }, deps()));
+    assert.equal(result.isError, true);
+    const text = lines.map((l) => JSON.stringify(l)).join("\n") + result.content[0].text;
+    assert.equal(text.includes("alice"), false, value);
+    assert.equal(text.includes("900123"), false, value);
+    assert.ok(lines.some((l) => l.msg === "agent_action" && l.action === "unregistered"));
+  }
+  const { lines } = await withAudit(() => handleRevenueOpportunities({ requested_action: "campaign.send" }, deps()));
+  assert.ok(lines.some((l) => l.msg === "agent_action" && l.action === "onlinovo.campaign.send"), "a registered name is still logged");
+});
+
+test("P11#6: a 2000 level deep extra field in a plan is ignored, never an internal error", async () => {
+  const deep = (() => { let o: unknown = 1; for (let i = 0; i < 2000; i += 1) o = { a: o }; return o; })();
+  const args = planArgs() as Record<string, any>;
+  args.success_threshold = { ...args.success_threshold, junk: deep };
+  args.stop_conditions = args.stop_conditions.map((c: object) => ({ ...c, junk: deep }));
+  args.allocation = { ...args.allocation, junk: deep };
+  const result = await handleExperimentPlan(args, deps());
+  assert.equal(result.isError, undefined);
+});

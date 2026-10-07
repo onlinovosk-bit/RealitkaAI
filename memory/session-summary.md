@@ -1,3 +1,111 @@
+## Session 2026-10-07 (ONL-AGENTS: limity prijaté)
+### Dokončené
+- Founder zvolil variant A po P11 #6: limity sú prijaté, P11 #7 sa nespúšťa. Zápis v `memory/decisions.md`. Žiadna zmena kódu.
+### Rozpracované / Pending
+- N8 (UNPAID_RECOVERY a `opted_out`) čaká na rozhodnutie foundera. PR #814 je draft a nemerguje ho model.
+- Dupe-research brief pre onlinovo.sk (nezačatý, čaká na GO). Repozitár `onlinovo` nie je pre session dostupný (GitHub App nemá prístup).
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md`.
+### Ďalší krok
+Rozhodnutie N8 a GO na prepnutie #814 z draft na ready for review.
+
+## Session 2026-10-07 (ONL-AGENTS-FIX-6: nálezy P11 #6 na #814)
+### Dokončené
+- **P11 #6 (nový nezávislý agent, 148 sabotáží) nedala VERIFIED**, hoci žiadny hlavný nárok nezlyhal (J7 len v doslovnom znení). Opravy v jednom pushi:
+  - **N1:** `requested_action` sa do auditu loguje len ako registrovaný názov, inak „unregistered"; správy guardu text neopakujú.
+  - **N2:** `isBlank` pridal Co, Cn, Cs a M.
+  - **N3:** guard nehodí raw chybu pri `agentId` `__proto__` a pod., pri nie-reťazcovej akcii ani pri nie-reťazcovom kill switch (číslo = zapnuté).
+  - **N4:** `success_threshold`, `stop_conditions[]` a `allocation` sa skladajú len z pomenovaných polí (pole navyše sa neuloží ani nezmení id plánu).
+  - **N5:** test orezania `days_since_last_order` (sabotáž červená).
+  - **N7:** deduplikácia objednávok v `opportunity.ts` je per zákazník (`customer_ref|order_ref`).
+  - Hĺbka 2000 úrovní v poli navyše (`success_threshold`, `stop_conditions[]`, `allocation`) sa ignoruje, nie `INTERNAL_ERROR` (probe cez `handleExperimentPlan` a test); hlboké hodnoty v pomenovaných poliach dajú `INVALID_INPUT` alebo `ALLOCATION_INVALID`.
+- Dôkaz: mcp-onlinovo **271/271**, `tsc` 0 chýb, sabotáže nových opráv červené; vo výsledku dve zelené: redundantné vetvy (typeof action pri `Map.get`, U+16FE4 je už v `\p{M}`), obe odstránené.
+### Rozpracované / Pending
+- **N8** (rozhodnutie foundera): UNPAID_RECOVERY započíta aj `opted_out`.
+- **Priznané limity (nezmenené po P11 #6):** pečať výsledku nie je podpis; `n_*` neviazané na publikum; `stop_breached` mimo plánu; ledger v pamäti a žiadny nástroj ho nevolá; identita schvaľovateľa sa neoveruje; `now = NaN` hodí raw RangeError; `resolveAuthority` s NaN čaká na vlastné GO.
+- Stále UNKNOWN: LeadHub kontrakt, živý zdroj dát, perzistencia, trvalé schvaľovania, náklady LLM, CI job pre `mcp-onlinovo` (denylist), migrácie (`--with-db`) nespustené.
+### Kľúčové súbory zmenené
+- `packages/mcp-onlinovo/src/{agents/{experiment,guard,opportunity}.ts,tools/agent-support.ts}` a testy; `docs/STATUS.md`; `memory/decisions.md`.
+### Ďalší krok
+Rozhodnutie foundera k N8; potom buď P11 #7, alebo prijatie limitov a VERIFIED na founderovi.
+
+## Session 2026-10-05 (ONL-AGENTS-FIX-6: nálezy P11 #5 na #814)
+### Dokončené
+- **P11 #5 (nový nezávislý agent, 210 sabotáží, 53 volaní nástrojov) nedala VERIFIED** pre hlavu 15735f7: J2 FAIL, ostatné nároky PASS. Opravy v jednom pushi do #814:
+  - **J2:** `assertPlainJson` odmietne pole s vlastnými vlastnosťami mimo indexov (Map/typed array na poli) aj riedke pole.
+  - **J4:** `days_since_last_order`, `days_since_last_intervention` a dni v `opportunity.ts` sa orežú na ≥ 0 (predtým −1 v 1-hodinovej tolerancii).
+  - **J3:** `isBlank` používa `\p{Default_Ignorable_Code_Point}`, `\p{Cc}`, `\p{Cf}`, `\p{Z}` a U+2800 namiesto ručného zoznamu; stropy 2000 znakov pre `approval_id`, `approved_by`, poznámku BLOCKED a `opportunity_id` (typ string alebo null).
+  - Opravená nepravdivá veta o zámku (vyššie, FIX-5).
+  - Testy s negatívom: 3 nové; sabotáže (zrušenie orezania, kontroly polí, `\p{Cf}`) sú červené.
+- Dôkaz: mcp-onlinovo **262/262**, `tsc` 0 chýb, control-contract **72/72**.
+### Rozpracované / Pending
+- **Priznané limity (po P11 #5):** pečať výsledku nie je podpis a kto zapíše celý objekt, prepočíta ju (sfalšovateľné: `n_*` voči publiku, `stop_breached` mimo plánu, odhady); priame `approveExperiment`/`verifyLock` mimo ledgera sú slepé na Map v `audience`; ledger je v pamäti a žiadny nástroj ho nevolá; identita schvaľovateľa sa neoveruje; `approved_at` v budúcnosti prejde; `now = new Date(NaN)` hodí raw RangeError (injektujú len testy); denormálny priemer dá `relative_lift = Infinity`, ktorý ledger bezpečne odmietne.
+- Medzery v testoch hraníc (5000 uzlov, hĺbka 32, tvar odhadu, hranice rozhodovania) z P11 #5 zostávajú, nie sú blokujúce.
+- **Neopravené, vlastné GO:** `resolveAuthority` pustí `NaN` istotu ako AUTONOMOUS. Stále UNKNOWN: LeadHub kontrakt, živý zdroj, perzistencia, schvaľovania, náklady LLM, CI job (denylist).
+### Kľúčové súbory zmenené
+- `packages/mcp-onlinovo/src/agents/{experiment,next-action,opportunity}.ts` a testy.
+### Ďalší krok
+P11 #6 na novej hlave #814 (nový agent), alebo prijať limity a nechať VERIFIED na founderovi.
+
+## Session 2026-10-05 (ONL-AGENTS-FIX-5: nálezy P11 #4 na #814)
+### Dokončené
+- **P11 #4 (nový nezávislý agent, 165 sabotáží) nedala VERIFIED** pre hlavu 5add344: kód držal všetky pôvodné zlyhania z P11 #3, ale našla raw chyby, medzeru v zámku ledgera a medzery v testoch. Opravy idú ako ďalšie commity do #814 (`packages/mcp-onlinovo`):
+  - **N1 raw chyby:** do ledgera vstupuje len JSON-tvarovaný záznam (`assertPlainJson` po jednom `structuredClone`): cyklus, BigInt, Map, Set, Date, typed array, `undefined`, NaN/Infinity, riedke pole, príliš hlboký (32) alebo veľký (5000 uzlov) záznam sa odmietnu ako `INVALID_INPUT`. Fuzz 8 840 volaní `add`/`update`: **0 raw chýb**, 23 prijatých = len `null` na miesto existujúceho `null`.
+  - **N2 zámok:** `canonicalJson` je slepý na obsah Map/Set/Date; tvrdenie „po novom sa tam nedostanú“ bolo NEPRAVDIVÉ pre vlastné vlastnosti polí (P11 #5, J2); opravené v FIX-6. Cyklus sa nedetekuje osobitne, zachytí ho limit hĺbky.
+  - **N3 neviditeľné znaky:** text, id, schvaľovateľ a poznámka z U+200B–U+200D, U+2060, U+00AD, U+180E sú prázdne (`trim()` ich nechával); texty majú strop 2000 znakov, stop podmienok max 20, každá s textovým popisom.
+  - **N4 snapshot:** objednávka datovaná o viac než hodinu do budúcnosti (`2099`) je `INVALID_INPUT` v oboch agentoch (predtým FACT `days_since_last_order = -26386`); `line.sku`, `line.family`, `product.family` musia byť neprázdne texty.
+  - **N5:** tvar zapečatenej výsledku (počty celé ≥ 0, odhady konečné čísla, `secondary`, `stop_breached`) sa overí pred výpočtom, takže `estimate: null` s platnou pečaťou je `RESULT_IMMUTABLE`, nie TypeError; Symbol, objekt s vlastným `toString` alebo Proxy ako istota už nehodí raw chybu v guarde.
+  - **N6:** `approveExperiment` číta schválenie raz (getter ho nevymení). **N7:** id plánu má 64 bitov (16 hex).
+  - Pripnuté testy: rozhodnutie s rovnakým štítkom ale zmenenou `reason`/`note`/poľom navyše, `approval_id` z medzier, `order.status = "other"`, tolerancia +1 h pre `intervention.at`, oversized `requested_action` sa nezapíše do auditu.
+- Dôkaz: mcp-onlinovo **259/259**, `tsc` 0 chýb, control-contract **72/72**, crm `lib/agents` **69/69**, `prepush-gate.sh` všetko PASS (migrácie NEOVERENÉ). Sabotáž tohto kroku: **46 mutácií v konečnej podobe červených**; päť mutácií najprv prežilo a doplnil som testy alebo odstránil redundantnú vrstvu (tvar `required_per_arm` kryje rovnosť s plánom, U+FEFF kryje `\s`, detekcia cyklu kryje limit hĺbky). Štyri „zelené" boli chybné vzory (tool prepísal `\u` escape na znaky), nie medzery v testoch.
+### Rozpracované / Pending
+- **Priznané limity (nezmenené):** pečať výsledku nie je podpis (kto zapíše celý objekt, prepočíta ju); ledger je v pamäti a žiadny nástroj ho nevolá; schválenie je objekt, nie overená identita; budúci `approved_at` sa neodmieta; polia navyše vnútri `stop_conditions`, `success_threshold`, `allocation` sa uložia (rovnako ako v `proposeExperiment`); id plánu v stave PROPOSED (bez zámku) drží 64 bitov, nie plný hash.
+- **Neopravené, vlastné GO:** `resolveAuthority` (`packages/control-contract/src/authority.ts:211`) pustí `NaN` istotu ako AUTONOMOUS.
+- Stále UNKNOWN: LeadHub kontrakt, živý zdroj dát, perzistencia, trvalé schvaľovania, náklady LLM, CI job pre `mcp-onlinovo` (denylist).
+### Kľúčové súbory zmenené
+- `packages/mcp-onlinovo/src/agents/{experiment,snapshot-validation,guard,opportunity,next-action}.ts` a testy: opravy N1–N7 z P11 #4.
+### Ďalší krok
+P11 #5 na pushnutej hlave #814 s novým nezávislým agentom (GO od foundera už je).
+
+## Session 2026-10-05 (ONL-AGENTS-FIX-4: nálezy P11 #3 na #814)
+### Dokončené
+- **P11 #3 (nový nezávislý agent, 102 sabotáží) nedala VERIFIED** pre #814 (hlava b2d6799). Opravy idú ako ďalšie commity do toho istého PR (#814 nebol zmergovaný). Všetko v `packages/mcp-onlinovo`:
+  - **Ledger, vysoká:** `ExperimentLedger.update` už viaže štítok stavu na rozhodnutie (KEEP s rozhodnutím REJECT/ITERATE sa odmietne, všetkých 12 kombinácií), a rozhodnutie je presne to, čo vyprodukuje `decideExperiment(stored)`.
+  - **TOCTOU, vysoká:** záznam sa skopíruje raz (`structuredClone`), kontroly aj uloženie používajú tú istú kópiu; getter, Proxy a funkcia v zázname už nezmenia, čo sa overilo a čo sa uložilo. Aliasing: `add`, `update`, `get`, `list` vracajú a ukladajú kópie.
+  - **`add()` a `update()` pustia záznam cez tie isté pravidlá ako `proposeExperiment`** (plán sa prestaví a porovná; nenormalizovaný plán, neznáme polia a ručne zložený záznam s vlastným id sa odmietnu); `add` prijme len čerstvý PROPOSED, každé podstrčené pole samostatne odmietnuté; BLOCKED rozhodnutie má presne tri polia a textovú poznámku.
+  - **Snapshot:** `null` a nie-objektové riadky, nesprávne enumy (`status`, `consent`, `source`, `kind`), `in_stock`, čísla produktov, `order_ref`, `sku`, `intervention.action` → `INVALID_INPUT`; peňažné hodnoty a jednotky nad 1e12 sa odmietnu (súčet 50 000 riadkov nepretečie na Infinity).
+  - **Schválenie:** `approved_at` striktný ISO 8601, `approval_id` a `approved_by` texty, presne tri polia.
+  - Nekódovateľný vstup (kruhová referencia, BigInt, symbol) = `INVALID_INPUT`, nie `INPUT_TOO_LARGE`; Symbol ako istota nehodí raw TypeError.
+- Dôkaz: mcp-onlinovo **243/243**, `tsc` 0 chýb, control-contract **72/72**, crm `lib/agents` **69/69**, `prepush-gate.sh` všetko PASS (migrácie NEOVERENÉ). Sabotáž: **53 mutácií, v konečnej podobe všetky červené**; 9 prvých prežilo (chýbajúce testy: stav pri `add`, každé podstrčené pole samostatne, `audience` a `planIdOf` v kontrole konzistencie, tvar BLOCKED rozhodnutia), pridal som testy a prebehli červené. Dve „zelené" v druhej dávke boli chybné vzory skriptu, nie medzera v testoch (overené samostatne).
+### Rozpracované / Pending
+- **Zostáva sfalšovateľné (priznaný limit):** kto vie zapísať celý objekt, môže zmeniť odhad, `stop_breached`, `secondary`, `primary_metric` a počty a pečať prepočítať; ledger je v pamäti a žiadny nástroj ho nevolá. Skutočná ochrana = perzistencia (`record.persist` BLOCKED).
+- **Neopravené, vlastné GO:** `resolveAuthority` (`packages/control-contract/src/authority.ts:211`) pustí `NaN` istotu ako AUTONOMOUS.
+- Nízke nálezy P11 #3, ktoré som nechal: PII heuristika (falošné pozitíva/negatíva), `approved_at` dátum v budúcnosti sa nekontroluje, polia navyše vo vnútri `stop_conditions` sa uložia. Kód `INPUT_TOO_LARGE` sa už nepoužíva pre nekódovateľný vstup.
+- Stále UNKNOWN: LeadHub kontrakt, živý zdroj dát, perzistencia, trvalé schvaľovania, náklady LLM, CI job pre `mcp-onlinovo` (denylist).
+### Kľúčové súbory zmenené
+- `packages/mcp-onlinovo/src/agents/{experiment,snapshot-validation,guard}.ts`, `src/tools/agent-support.ts` a testy: opravy N1–N5 z P11 #3.
+### Ďalší krok
+P11 #4 na pushnutej hlave #814 s novým nezávislým agentom (GO od foundera už je); potom rozhodnutie o `authority.ts` a LeadHub kontrakte.
+
+## Session 2026-10-05 (ONL-AGENTS-FIX-3: nálezy P11 #2 po merge #812)
+### Dokončené
+- **P11 #2 (nový nezávislý agent, 45 sabotáží) nedala VERIFIED** pre #812; opravy sú nový PR z `main`. Všetko v `packages/mcp-onlinovo`:
+  - **N3** sprísnený čas: `snapshot-validation.ts` (`parseIsoTimestamp`) prijme len skutočný ISO 8601 s pásmom; odmieta `"1"`, `"abc 1"`, `2026-02-30`, `T24:00`. Platí pre `as_of`, `placed_at` každej objednávky a `interventions[].at` každého zákazníka, v oboch agentoch cez jednu spoločnú `assertValidSnapshot`.
+  - **N4** riadky objednávky: `units` konečné číslo ≥ 0, `net_revenue` a `net_cost` konečné čísla (`net_cost = null` ostáva povolené = UNKNOWN), `lines` musí byť pole.
+  - **N1** `ExperimentLedger` už neprijme zmenu bez overenia: `add` len čerstvý PROPOSED; id, soľ alokácie a `planned_power` musia vyplývať z plánu; prechod z PROPOSED len s ľudským schválením a zámkom nad týmto plánom; výsledok len pri prechode na COMPLETE a zapečatený so správnou triedou vzorky; KEEP/REJECT/ITERATE len presne to, čo vyprodukuje `decideExperiment`; záznam sa nemení bez prechodu stavu.
+  - **N2** pečať výsledku je viazaná na `experiment_id` (id je hash plánu), takže výsledok nejde preniesť z iného experimentu.
+  - **N5** vstup sa serializuje raz a spracúva sa práve táto kópia (getter alebo `toJSON` ho po limite nevymení). **N7** `null`, `Infinity` a istota > 1 neprejdú guardom; len chýbajúca istota znamená plnú. **N8** horná hranica plánovanej vzorky 10 000 000. **N9** differential test pripína, že lokálny guard nie je pri nečíselnej istote voľnejší než registry.
+  - Pripnuté hranice: 48 h v `next-action`, presná hranica limitu vstupu 100 000 znakov.
+- Dôkaz: mcp-onlinovo **223/223**, `tsc` 0 chýb, control-contract **72/72**, crm `lib/agents` **69/69**, `prepush-gate.sh` všetko PASS (migrácie NEOVERENÉ). Sabotáž: 42 mutácií v konečnej podobe všetky červené. Pri práci vyšli 3 nedokázateľné vrstvy, preto **odstránené** a nie ponechané: kontrola minút a sekúnd (`Date.parse` ich odmieta sám, pripnuté testom), `lock_hash` v pečati (id plánu ho nahrádza).
+- **Opravy mojich tvrdení z #812:** (1) poznámka k pečati bola nepresná. Pečať chránila pred úpravou, ale výsledok sa dal preniesť z iného experimentu a `ExperimentLedger.update` vôbec nekontroloval obsah; teraz je to opravené a zostáva len: kto vie zapísať celý objekt a prepočítať pečať, ju sfalšuje (skutočná ochrana = perzistencia, BLOCKED). (2) „104/104" vs „69/69": išlo o **dva rôzne príkazy** (104 = `src/lib/agents` + `approve-draft.test.ts` po merge `main`, 69 = iba `src/lib/agents`); PR `apps/crm` nemenil. (3) Zoznam 24 sabotáží z #812 nie je v repe a nedá sa reprodukovať; od tohto PR sú sabotáže v texte tohto záznamu, nie ako skript.
+### Rozpracované / Pending
+- **Neopravené, vlastné GO:** `resolveAuthority` (`packages/control-contract/src/authority.ts:211`) pustí `NaN`/`undefined` istotu ako AUTONOMOUS (jednoriadková oprava `!(ctx.confidence >= min)`; jadro governance). P11 #2 to potvrdila a nepovažuje to za blokátor VERIFIED, ak je rozdiel zdokumentovaný (je, v `guard-differential.test.ts`).
+- **Priznané obmedzenia:** PII detekcia je heuristika (falošné pozitíva: čísla s 9–10 číslicami a nulovým paddingom; falošné negatíva: `0900/123/456`); kill switch je zapnutý pre nastavenú hodnotu, nenastavená premenná je vypnutá; riedke polia v procese (nie cez MCP) držia event loop ~1 s pred kontrolou limitu.
+- Stále UNKNOWN: LeadHub kontrakt, živý zdroj dát, perzistencia, trvalé schvaľovania, náklady LLM, CI job pre `mcp-onlinovo` (denylist).
+### Kľúčové súbory zmenené
+- `packages/mcp-onlinovo/src/agents/{snapshot-validation,experiment,opportunity,next-action,guard}.ts` a `src/tools/{agent-support,revenue-opportunities,customer-next-action,experiment-plan}.ts`: opravy N1–N9 + testy.
+### Ďalší krok
+P11 #3 na novej hlave tohto PR s novým nezávislým agentom; potom rozhodnutie o `authority.ts` (NaN) a o LeadHub kontrakte.
 ## Session 2026-10-06 (GRANTY-20-50-100-150)
 ### Dokončené
 - Rozhodnutie foundera: zahrnuté mesačné kredity plánov 25/60/120/175 → **20/50/100/150**; ceny, balíky (60–300), kredit 0,70 € a pásma nezmenené. Zdroj `monthlyCredits` v `apps/crm/src/lib/pricing-v2.ts`; testy grant-engine, credits-billing-v2, e2e, texty CRM + web aktualizované, nový test kariet na webe. Mutation proof 4/4. CRM sada: len 22 pádov pred úpravou testov (staré čísla), potom 235/235 dotknutých; `valuation/submit` integračný test vyžaduje TEST_SUPABASE_* (pred zmenou rovnako).
