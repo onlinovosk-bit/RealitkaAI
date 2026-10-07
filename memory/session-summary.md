@@ -1,3 +1,24 @@
+## Session 2026-10-07 (REALVIA-SEC-01)
+### Dokončené
+- `apps/crm/src/lib/realvia/validate.ts`: `identifikator*` sa už neukladá do logov ani do `realvia_webhook_logs.headers_json` — boli to PRIMÁRNE produkčné credentials Realvie, redakcia ich nepokrývala. Prefixová kontrola, nie zoznam mien.
+- `apps/crm/src/lib/realvia/validate.test.ts`: pôvodný test PRIKAZOVAL výpis credentialu (`toBe('id1')`) — diera bola zamknutá testom. Prepísané + test na opačnú stranu (diagnostické hlavičky sa nesmú zožrať).
+- `apps/crm/src/app/api/webhooks/realvia/route.ts`: `?dump=headers` za `CRON_SECRET` (bol verejný; vypisoval Vercel metadáta nasadenia). Verejný health check bez parametra zostáva.
+- `apps/crm/src/app/api/webhooks/realvia/__tests__/route.diag-auth.test.ts`: nový, 6 testov vrátane fail-closed bez `CRON_SECRET`.
+- `apps/crm/src/lib/infra/platform-heartbeat.ts`: +4 metriky (pending/failed front, posledný beh workera, properties za 24 h) a +2 signály (`realvia_queue_failed_jobs`, `realvia_worker_stale_2h`). Heartbeat dovtedy videl len PRÍTOK webhookov, nie ich SPRACOVANIE.
+- Audit Solovho (ChatGPT) plánu: 3 body platné, 1 nereprodukovateľný (lint/build blokery — lint exit 0, CI zelené), 1 nález, ktorý plán minul (credentials v logoch).
+### Rozpracované / Pending
+- PR #816 (záznam „2260") — zelené, `behind`, čaká na foundera: A „Update branch"+Merge, B `GO auto-merge`, C necháť ležať.
+- Autorizovaný Realvia E2E smoke — potrebuje produkčný `CRON_SECRET` ako env premennú session (nie v chate).
+- Či Realvia posiela na správnu URL (`app.revolis.ai`) — z repa neoveriteľné, živý probe zamietnutý.
+- `STRIPE-C` stále na 0 %, váha 30 — podľa Prime Directive ďalší v poradí.
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/realvia/validate.ts`: redakcia `identifikator*`, `token`, `api-key`.
+- `apps/crm/src/app/api/webhooks/realvia/route.ts`: diagnostika za operátorskou bránou.
+- `apps/crm/src/lib/infra/platform-heartbeat.ts`: Realvia worker + front rady v heartbeate.
+- `apps/crm/src/lib/guardian/__tests__/guardian.test.ts`: fixture doplnený o nové polia.
+### Ďalší krok
+`GO STRIPE-C` — jediný blok na 0 % s váhou 30.
+
 ## Session 2026-10-07 (DUPE-BRIEF)
 ### Dokončené
 - `docs/onlinovo/2026-10-07-dupe-research-brief.md`: research brief (stratégie so stupňom istoty, právne červené čiary, 8 testov, CZ/SK konkurenti neoverení, otázky pre právnika). Verdikt VALIDATE.

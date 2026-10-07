@@ -6576,3 +6576,70 @@ Lokálne spustenie funkcie nie je dôkaz o produkcii. `vitest` beží nad
 zdrojom, produkcia nad minifikovaným buildom — a toto je trieda chýb, ktorá
 existuje **iba** v tom druhom. Pri čomkoľvek, čoho výstup je text závislý na
 konštantách, je dôkazom až minifikovaný výstup alebo hodnota z PROD.
+
+---
+
+## REALVIA-SEC-01 — Realviine prihlasovacie údaje v logoch a DB (2026-10-07)
+
+**Ako sa to našlo.** Founder priniesol plán od ChatGPT (Sol) s piatimi bodmi.
+Audit proti kódu na `main` (`98eea03c`) dal tri body platné, jeden
+nereprodukovateľný a jeden nález, ktorý plán minul — a práve ten bol
+najzávažnejší.
+
+**Nález (opravené).** `collectRequestHeaders` (`lib/realvia/validate.ts`)
+redagovala `authorization`, `x-revolis-secret` a všetko s `secret`/`password`,
+ale **nie `identifikator`/`identifikator2`** — a tie sú PRIMÁRNA produkčná
+autentifikácia Realvie (Mode 1 vo `validateSecret`). Tá istá mapa hlavičiek
+ide do `logInfo('[realvia-webhook] Incoming headers')` **pri každom doručení**
+aj do `headers_json` v `realvia_webhook_logs`. Credentials boli teda čitateľné
+v logoch aj v DB. Opravené prefixovou kontrolou (`identifikator*`), nie
+zoznamom presných mien — `identifikator3` by zoznam ticho obišiel.
+
+**Diera bola zamknutá testom.** `validate.test.ts` tvrdil
+`expect(headers.identifikator).toBe('id1')` — teda PRIKAZOVAL, aby sa
+credential vypísal. CI to dva roky považovalo za správne chovanie. Druhý
+prípad po „2260" (#816), kde test nie že chybu nenašel, ale ju držal.
+**Poučenie: pri bezpečnostnej oprave si vždy prečítaj, čo existujúci test
+vlastne tvrdí — môže byť na strane chyby.**
+
+**Druhá zmena.** `?dump=headers` bol bez autentifikácie. Sám credentials
+neprezradí (vracia hlavičky VOLAJÚCEHO, nie Realviine — Sol túto severitu
+nadhodnotil), ale komukoľvek vypísal Vercel metadáta nášho nasadenia.
+Teraz za `CRON_SECRET`, rovnako ako `diag=config`. Verejný health check bez
+parametra zostáva — Realvia aj uptime monitor ním overujú, že endpoint žije.
+
+**Tretia zmena — heartbeat vidí aj spracovanie, nie len prítok.**
+Pôvodne som founderovi napísal, že `heartbeat-check` nemá „ani jednu zmienku
+o Realvii". **Bolo to nesprávne a opravené:** grepol som 25-riadkovú route,
+nie `lib/infra/platform-heartbeat.ts`, kam deleguje — tam už existovali
+`realviaLastWebhookAt`, `realviaWebhookTotal` a signály na 48 h/7 d ticho.
+Chýbalo štvoro a to je doplnené: `realviaQueuePending`, `realviaQueueFailed`,
+`realviaLastWorkerRunAt`, `realviaPropertiesUpdated24h`, plus dva signály —
+`realvia_queue_failed_jobs` (critical pri ≥1, lebo `max_retries` je 3 a čo
+spadlo do `failed`, sa samo nepohne) a `realvia_worker_stale_2h` (critical len
+keď front NIEČO čaká; prázdna rada bez behu nie je porucha). Oboje za rovnakou
+bránou ako existujúce realvia signály (`realviaWebhookTotal > 0`), aby tenant
+bez Realvie nedostal falošný alarm.
+
+`realvia_processing_queue` **nemá `agency_id`** → tieto tri metriky sú
+platformové, nescopujú sa. Properties sa scopovať dajú a počítajú sa cez
+`realvia_updated_at`, ktorý píše výlučne realvianá cesta.
+
+**Čo z plánu vypadlo a prečo.** Sol navrhoval „vyčistiť build/lint blokery
+(`useRealtimeLeadScore.ts`, stale `.next` typy)". **Nereprodukovateľné:**
+`npm run lint` v `apps/crm` skončil exit 0 bez výstupu, typecheck 49 chýb
+proti baseline 54, CI „Lint, test, build" zelené na každom heade dva dni.
+Bod škrtnutý — oprava toho, čo nie je rozbité, je nesprávna investícia.
+
+**Dôkaz.** 28 testov v troch dotknutých suitách; celý balík 3205 prešlo,
+8 zlyhaní je nemenná množina integračných/RLS testov vyžadujúcich lokálnu
+Supabase (`TEST_SUPABASE_*`), ktoré CI nespúšťa. Typecheck 49 (nepridal som
+ani jednu chybu — prvý beh mal 50, nový `HeartbeatMetrics` fixture
+v `guardian.test.ts` doplnený). Lint exit 0.
+
+**Neoverené, zámerne.** Či Realvia naozaj posiela na `www.revolis.ai` namiesto
+`app.revolis.ai` (Solov bod 3). Mechanizmus drží — `apps/marketing` nemá ani
+jednu API route, takže `/api/webhooks/realvia` tam je 404 — ale čo je nastavené
+na strane Realvie, z repa vidieť nedá a živý probe produkcie bol zamietnutý.
+Autorizovaný E2E smoke (Solov bod 2) je ďalšia brána a potrebuje produkčný
+`CRON_SECRET` ako env premennú session, nie v chate.
