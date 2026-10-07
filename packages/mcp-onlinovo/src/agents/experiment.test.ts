@@ -889,3 +889,25 @@ test("P11#5: look-alike blanks and oversized approval or note fields are refused
   assert.equal(codeOf(() => proposed({ audience: { description: "d", size: 10, opportunity_id: 5 as never } })), "INVALID_INPUT");
   assert.equal(codeOf(() => approveExperiment(p, { ...APPROVAL, approved_by: "founder" })), null);
 });
+
+test("P11#6: look-alike blanks outside the first list are refused too", () => {
+  const p = proposed();
+  for (const blank of ["\u{E000}", "\u0378", "\uD800", "\u0300"]) {
+    assert.equal(codeOf(() => approveExperiment(p, { ...APPROVAL, approved_by: blank })), "APPROVAL_REQUIRED", JSON.stringify(blank));
+  }
+});
+
+test("P11#6: a field the plan schema does not know is never stored", () => {
+  const withExtra = proposed({
+    success_threshold: { metric: "second_purchase_rate_90d", min_difference: 0.03, junk: { deep: 1 } } as never,
+    allocation: { control: 0.5, treatment: 0.5, junk: "x" } as never,
+    stop_conditions: [{ metric: "second_purchase_rate_90d", direction: "below", value: -0.05, description: "d", junk: [1] } as never],
+  });
+  assert.deepEqual(Object.keys(withExtra.success_threshold).sort(), ["metric", "min_difference"]);
+  assert.deepEqual(Object.keys(withExtra.allocation).sort(), ["control", "treatment"]);
+  assert.deepEqual(Object.keys(withExtra.stop_conditions[0]).sort(), ["description", "direction", "metric", "value"]);
+  const clean = proposed({
+    stop_conditions: [{ metric: "second_purchase_rate_90d", direction: "below", value: -0.05, description: "d" }],
+  });
+  assert.equal(withExtra.experiment_id, clean.experiment_id, "an unknown field does not change the plan id");
+});

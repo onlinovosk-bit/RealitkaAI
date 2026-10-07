@@ -1,6 +1,6 @@
 import type { ToolResponse } from "@revolis/mcp-shared";
 import { beginAgentAudit } from "../agents/agent-audit.js";
-import { authorizeAgentAction, type GuardDecision } from "../agents/guard.js";
+import { authorizeAgentAction, lookupOnlAction, type GuardDecision } from "../agents/guard.js";
 import { assertNoPii } from "../agents/pseudonym.js";
 import { AgentError, type AgentId } from "../agents/types.js";
 
@@ -85,7 +85,8 @@ export async function runAgentTool<T extends object>(opts: {
     const decision = authorizeAgentAction({ agentId: opts.agentId, action: action === "invalid" ? "onlinovo.invalid" : action }, env);
     last = decision;
     if (!decision.allowed) {
-      const audit = beginAgentAudit(opts.tool, opts.agentId, action, decision);
+      // Only a registered action name is logged: the asked-for text is caller data and may carry personal data.
+      const audit = beginAgentAudit(opts.tool, opts.agentId, lookupOnlAction(action) ? action : "unregistered", decision);
       audit.finish({ denied: true });
       return asResult(
         {

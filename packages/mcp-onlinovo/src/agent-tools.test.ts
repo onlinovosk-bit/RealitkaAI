@@ -454,3 +454,26 @@ test("an oversized requested_action is audited without its content", async () =>
   const text = lines.map((l) => JSON.stringify(l)).join("\n") + value.content[0].text;
   assert.equal(text.includes("SECRET-MARKER"), false, "neither the audit trail nor the answer echoes the oversized value");
 });
+
+test("P11#6: a personal value in requested_action reaches neither the audit trail nor the answer", async () => {
+  for (const value of ["alice@example.com", "+421900123456", "onlinovo.alice@example.com"]) {
+    const { value: result, lines } = await withAudit(() => handleRevenueOpportunities({ requested_action: value }, deps()));
+    assert.equal(result.isError, true);
+    const text = lines.map((l) => JSON.stringify(l)).join("\n") + result.content[0].text;
+    assert.equal(text.includes("alice"), false, value);
+    assert.equal(text.includes("900123"), false, value);
+    assert.ok(lines.some((l) => l.msg === "agent_action" && l.action === "unregistered"));
+  }
+  const { lines } = await withAudit(() => handleRevenueOpportunities({ requested_action: "campaign.send" }, deps()));
+  assert.ok(lines.some((l) => l.msg === "agent_action" && l.action === "onlinovo.campaign.send"), "a registered name is still logged");
+});
+
+test("P11#6: a 2000 level deep extra field in a plan is ignored, never an internal error", async () => {
+  const deep = (() => { let o: unknown = 1; for (let i = 0; i < 2000; i += 1) o = { a: o }; return o; })();
+  const args = planArgs() as Record<string, any>;
+  args.success_threshold = { ...args.success_threshold, junk: deep };
+  args.stop_conditions = args.stop_conditions.map((c: object) => ({ ...c, junk: deep }));
+  args.allocation = { ...args.allocation, junk: deep };
+  const result = await handleExperimentPlan(args, deps());
+  assert.equal(result.isError, undefined);
+});

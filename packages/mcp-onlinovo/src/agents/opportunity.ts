@@ -174,11 +174,12 @@ export function detectOpportunities(
   const orders: OrderRecord[] = [];
   let duplicates = 0;
   for (const order of snapshot.orders) {
-    if (seen.has(order.order_ref)) {
+    const key = `${order.customer_ref}|${order.order_ref}`;
+    if (seen.has(key)) {
       duplicates += 1;
       continue;
     }
-    seen.add(order.order_ref);
+    seen.add(key);
     orders.push(order);
   }
 

@@ -84,7 +84,8 @@ const KILL_SWITCH_OFF = new Set(["", "0", "false", "off", "no", "disabled"]);
  * a spelling like "yes" or "enabled" stops the agents; it can never leave them running by accident.
  */
 export function killSwitchOn(env: NodeJS.ProcessEnv = process.env): boolean {
-  const raw = (env.ONLINOVO_AGENTS_KILL_SWITCH ?? "").trim().toLowerCase();
+  const value: unknown = env?.ONLINOVO_AGENTS_KILL_SWITCH;
+  const raw = (typeof value === "string" ? value : value === undefined || value === null ? "" : "on").trim().toLowerCase();
   return !KILL_SWITCH_OFF.has(raw);
 }
 
@@ -107,7 +108,7 @@ export function actionVerdict(
       "CAPABILITY_UNSUPPORTED",
       "unregistered_action",
       null,
-      `Action "${action}" is not registered. An unregistered action cannot be authorized (fail-closed).`,
+      "The requested action is not registered. An unregistered action cannot be authorized (fail-closed).",
     );
   }
   if (meta.status === "DENIED") {
@@ -164,9 +165,11 @@ export function authorizeAgentAction(
 ): GuardDecision {
   // Only an absent confidence means "full"; null, NaN and strings are kept and fail closed in `actionVerdict`.
   const confidence = input.confidence === undefined ? 1 : input.confidence;
-  const allowed = (AGENT_ALLOWED as Record<string, readonly string[] | undefined>)[input.agentId];
+  const allowed = typeof input.agentId === "string" && Object.hasOwn(AGENT_ALLOWED, input.agentId)
+    ? (AGENT_ALLOWED as Record<string, readonly string[]>)[input.agentId]
+    : undefined;
   if (!allowed) {
-    return forbid("AGENT_UNKNOWN", "unknown_agent", null, `Agent "${input.agentId}" is not registered.`);
+    return forbid("AGENT_UNKNOWN", "unknown_agent", null, "The agent is not registered.");
   }
   const base = actionVerdict(input.action, confidence, env);
   if (base.verdict === "FORBIDDEN") return base;

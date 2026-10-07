@@ -1,3 +1,23 @@
+## Session 2026-10-07 (ONL-AGENTS-FIX-6: nálezy P11 #6 na #814)
+### Dokončené
+- **P11 #6 (nový nezávislý agent, 148 sabotáží) nedala VERIFIED**, hoci žiadny hlavný nárok nezlyhal (J7 len v doslovnom znení). Opravy v jednom pushi:
+  - **N1:** `requested_action` sa do auditu loguje len ako registrovaný názov, inak „unregistered"; správy guardu text neopakujú.
+  - **N2:** `isBlank` pridal Co, Cn, Cs a M.
+  - **N3:** guard nehodí raw chybu pri `agentId` `__proto__` a pod., pri nie-reťazcovej akcii ani pri nie-reťazcovom kill switch (číslo = zapnuté).
+  - **N4:** `success_threshold`, `stop_conditions[]` a `allocation` sa skladajú len z pomenovaných polí (pole navyše sa neuloží ani nezmení id plánu).
+  - **N5:** test orezania `days_since_last_order` (sabotáž červená).
+  - **N7:** deduplikácia objednávok v `opportunity.ts` je per zákazník (`customer_ref|order_ref`).
+  - Hĺbka 2000 úrovní v poli navyše (`success_threshold`, `stop_conditions[]`, `allocation`) sa ignoruje, nie `INTERNAL_ERROR` (probe cez `handleExperimentPlan` a test); hlboké hodnoty v pomenovaných poliach dajú `INVALID_INPUT` alebo `ALLOCATION_INVALID`.
+- Dôkaz: mcp-onlinovo **271/271**, `tsc` 0 chýb, sabotáže nových opráv červené; vo výsledku dve zelené: redundantné vetvy (typeof action pri `Map.get`, U+16FE4 je už v `\p{M}`), obe odstránené.
+### Rozpracované / Pending
+- **N8** (rozhodnutie foundera): UNPAID_RECOVERY započíta aj `opted_out`.
+- **Priznané limity (nezmenené po P11 #6):** pečať výsledku nie je podpis; `n_*` neviazané na publikum; `stop_breached` mimo plánu; ledger v pamäti a žiadny nástroj ho nevolá; identita schvaľovateľa sa neoveruje; `now = NaN` hodí raw RangeError; `resolveAuthority` s NaN čaká na vlastné GO.
+- Stále UNKNOWN: LeadHub kontrakt, živý zdroj dát, perzistencia, trvalé schvaľovania, náklady LLM, CI job pre `mcp-onlinovo` (denylist), migrácie (`--with-db`) nespustené.
+### Kľúčové súbory zmenené
+- `packages/mcp-onlinovo/src/{agents/{experiment,guard,opportunity}.ts,tools/agent-support.ts}` a testy; `docs/STATUS.md`; `memory/decisions.md`.
+### Ďalší krok
+Rozhodnutie foundera k N8; potom buď P11 #7, alebo prijatie limitov a VERIFIED na founderovi.
+
 ## Session 2026-10-05 (ONL-AGENTS-FIX-6: nálezy P11 #5 na #814)
 ### Dokončené
 - **P11 #5 (nový nezávislý agent, 210 sabotáží, 53 volaní nástrojov) nedala VERIFIED** pre hlavu 15735f7: J2 FAIL, ostatné nároky PASS. Opravy v jednom pushi do #814:

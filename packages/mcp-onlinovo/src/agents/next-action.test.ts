@@ -305,3 +305,11 @@ test("P11#5: a timestamp inside the one hour skew never yields a negative day co
   assert.ok(typeof ev?.value === "number" && ev.value >= 0, String(ev?.value));
   for (const e of d.evidence) if (e.key.startsWith("days_since")) assert.ok(typeof e.value !== "number" || e.value >= 0, e.key);
 });
+
+test("P11#6: an order inside the one hour skew never yields a negative age", () => {
+  const s = oneCustomer(120);
+  s.orders.push({ ...single100("FIX-ORDER-SKEW", "FIX-CUS-900", 0), placed_at: new Date(NOW.getTime() + 1_800_000).toISOString() });
+  const d = decide("900", s);
+  const ev = d.evidence.find((e) => e.key === "days_since_last_order");
+  assert.ok(ev === undefined || (typeof ev.value === "number" && ev.value >= 0), String(ev?.value));
+});

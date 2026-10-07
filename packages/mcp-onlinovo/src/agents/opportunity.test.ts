@@ -376,3 +376,17 @@ test("N4 through the agent: an order dated far in the future is INVALID_INPUT, n
   o.placed_at = "2099-01-01T00:00:00.000Z";
   assert.equal(codeOf(() => detectOpportunities(custom([o]), NOW)), "INVALID_INPUT");
 });
+
+test("P11#6: the same order_ref on two customers is two orders, not one", () => {
+  const dupe = detectOpportunities(custom([order("SAME", "cus_000000000000000a", 120), order("SAME", "cus_000000000000000b", 120)]), NOW);
+  const apart = detectOpportunities(custom([order("ONE", "cus_000000000000000a", 120), order("TWO", "cus_000000000000000b", 120)]), NOW);
+  const consented = (run: ReturnType<typeof detectOpportunities>) =>
+    run.opportunities.map((o) => o.evidence.find((e) => e.key === "audience_consented")?.value);
+  assert.ok(consented(apart).length > 0 && consented(apart).every((v) => v === 2));
+  assert.deepEqual(consented(dupe), consented(apart));
+});
+
+test("P11#6: a repeated order_ref for one customer is still counted once", () => {
+  const run = detectOpportunities(custom([order("SAME", "cus_000000000000000a", 120), order("SAME", "cus_000000000000000a", 120)]), NOW);
+  assert.ok(run.opportunities.every((o) => o.evidence.find((e) => e.key === "audience_consented")?.value === 1));
+});

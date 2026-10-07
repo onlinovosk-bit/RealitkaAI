@@ -105,7 +105,7 @@ export interface ProposalInput {
 }
 
 /** `trim()` alone leaves U+00AD, U+180E, U+200B-U+200D and U+2060 (`\s` already covers U+FEFF): text made only of those is blank too. */
-const INVISIBLE = /[\s\p{Default_Ignorable_Code_Point}\p{Cc}\p{Cf}\p{Z}\u2800]/gu;
+const INVISIBLE = /[\s\p{Default_Ignorable_Code_Point}\p{Cc}\p{Cf}\p{Co}\p{Cn}\p{Cs}\p{M}\p{Z}\u2800]/gu;
 const isBlank = (text: string): boolean => text.replace(INVISIBLE, "") === "";
 
 /** Free text in a plan or a note. Long enough for any real sentence, short enough to bound the cost of hashing it. */
@@ -296,9 +296,10 @@ export function proposeExperiment(input: ProposalInput, budget: RunBudget = new 
     audience: { description: input.audience.description.trim(), size: input.audience.size, opportunity_id: input.audience.opportunity_id ?? null },
     primary_metric: input.primary_metric,
     secondary_metrics: secondary,
-    success_threshold: { ...input.success_threshold },
-    stop_conditions: input.stop_conditions.map((s) => ({ ...s })),
-    allocation: { ...input.allocation },
+    // Named fields only: a field the schema does not know is never stored, hashed or echoed.
+    success_threshold: { metric: input.success_threshold.metric, min_difference: input.success_threshold.min_difference },
+    stop_conditions: input.stop_conditions.map((s) => ({ metric: s.metric, direction: s.direction, value: s.value, description: s.description })),
+    allocation: { control: input.allocation.control, treatment: input.allocation.treatment },
     duration_days: input.duration_days,
     min_sample_per_arm: min,
   };

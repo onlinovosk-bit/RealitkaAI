@@ -182,3 +182,29 @@ test("a confidence whose own toString throws, a null-prototype object and a thro
     assert.equal((d as unknown as { allowed: boolean }).allowed, false);
   }
 });
+
+test("P11#6: dishonest types are refused or answered closed, never a raw error", () => {
+  for (const agentId of ["__proto__", "constructor", "toString", "hasOwnProperty", 5, null, Symbol("x"), {}] as unknown[]) {
+    const d = authorizeAgentAction({ agentId: agentId as string, action: "onlinovo.data.observe" }, {});
+    assert.equal(d.allowed, false);
+    assert.equal(d.code, "AGENT_UNKNOWN");
+  }
+  const sym = Symbol("a");
+  for (const action of [sym, 5, null, undefined, { toString() { throw new Error("x"); } }] as unknown[]) {
+    const d = actionVerdict(action as string, 1, {});
+    assert.equal(d.allowed, false);
+    assert.equal(d.code, "CAPABILITY_UNSUPPORTED");
+  }
+  for (const env of [null, undefined, {}, { ONLINOVO_AGENTS_KILL_SWITCH: 0 }, { ONLINOVO_AGENTS_KILL_SWITCH: null }] as unknown[]) {
+    assert.doesNotThrow(() => killSwitchOn(env as NodeJS.ProcessEnv));
+  }
+  assert.equal(killSwitchOn({ ONLINOVO_AGENTS_KILL_SWITCH: 0 } as unknown as NodeJS.ProcessEnv), true, "a number is not an explicit off spelling");
+  assert.equal(killSwitchOn({ ONLINOVO_AGENTS_KILL_SWITCH: "off" }), false);
+});
+
+test("P11#6: a denial never repeats the asked-for text", () => {
+  const d = actionVerdict("alice@example.com", 1, {});
+  assert.equal(d.allowed, false);
+  assert.equal(JSON.stringify(d).includes("alice"), false);
+  assert.equal(JSON.stringify(authorizeAgentAction({ agentId: "alice@example.com", action: "x" }, {})).includes("alice"), false);
+});
