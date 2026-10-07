@@ -1,5 +1,6 @@
 import { RunBudget } from "./budget.js";
 import { assertCustomerRef } from "./pseudonym.js";
+import { assertOrdersNotFromTheFuture, assertValidSnapshot, parseIsoTimestamp } from "./snapshot-validation.js";
 import { AgentError, type Confidence, type Evidence, type OrderRecord, type RevenueSnapshot } from "./types.js";
 
 /**
@@ -73,12 +74,6 @@ export interface NextActionDecision {
 const fact = (key: string, value: Evidence["value"]): Evidence => ({ kind: "FACT", key, value, source: SOURCE });
 const assumed = (key: string, value: Evidence["value"]): Evidence => ({ kind: "ASSUMPTION", key, value, source: "rules" });
 
-function parseTime(iso: string, field: string): number {
-  const ms = Date.parse(iso);
-  if (!Number.isFinite(ms)) throw new AgentError("INVALID_INPUT", `${field} is not a valid timestamp`);
-  return ms;
-}
-
 const inWindow = (days: number, w: readonly [number, number]) => days >= w[0] && days <= w[1];
 
 function blocked(
@@ -113,19 +108,13 @@ export function decideNextAction(input: {
   assertCustomerRef(input.customer_ref);
   const ref = input.customer_ref;
 
-  if (!snapshot || !Array.isArray(snapshot.orders) || !Array.isArray(snapshot.customers) || !Array.isArray(snapshot.products)) {
-    throw new AgentError("INVALID_INPUT", "snapshot must contain customers, orders and products arrays");
-  }
-  for (const o of snapshot.orders) {
-    assertCustomerRef(o.customer_ref);
-    parseTime(o.placed_at, "order.placed_at");
-  }
-  for (const c of snapshot.customers) assertCustomerRef(c.customer_ref);
+  assertValidSnapshot(snapshot);
   budget.spendRows(snapshot.orders.length + snapshot.customers.length + snapshot.products.length);
 
   const nowMs = now.getTime();
-  const ageHours = (nowMs - parseTime(snapshot.as_of, "snapshot.as_of")) / HOUR;
+  const ageHours = (nowMs - parseIsoTimestamp(snapshot.as_of, "snapshot.as_of")) / HOUR;
   if (ageHours < -1) throw new AgentError("INVALID_INPUT", "snapshot.as_of is in the future");
+  assertOrdersNotFromTheFuture(snapshot, nowMs);
   if (ageHours > rules.max_snapshot_age_hours) {
     return blocked(ref, "BLOCKED_STALE", now, rules, [fact("snapshot_age_hours", Math.floor(ageHours))]);
   }
@@ -154,7 +143,7 @@ export function decideNextAction(input: {
   // A fresh unpaid order has priority: the payment flow owns this customer right now.
   const openPayment = orders.some((o) => {
     if (o.status !== "unpaid") return false;
-    const placed = parseTime(o.placed_at, "order.placed_at");
+    const placed = parseIsoTimestamp(o.placed_at, "order.placed_at");
     if ((nowMs - placed) / HOUR > rules.open_payment_hours) return false;
     return !fulfilled.some((f) => Date.parse(f.placed_at) > placed);
   });
@@ -165,12 +154,12 @@ export function decideNextAction(input: {
   // Frequency cap. A timestamp from the future is invalid state, not "no recent contact".
   let lastInterventionMs: number | null = null;
   for (const i of customer.interventions) {
-    const at = parseTime(i.at, "intervention.at");
+    const at = parseIsoTimestamp(i.at, "intervention.at");
     if (at > nowMs + HOUR) return blocked(ref, "BLOCKED_INVALID_STATE", now, rules, [...base, fact("intervention_in_future", true)]);
     if (lastInterventionMs === null || at > lastInterventionMs) lastInterventionMs = at;
   }
   base.push(
-    fact("days_since_last_intervention", lastInterventionMs === null ? null : Math.floor((nowMs - lastInterventionMs) / DAY)),
+    fact("days_since_last_intervention", lastInterventionMs === null ? null : Math.max(0, Math.floor((nowMs - lastInterventionMs) / DAY))),
   );
   if (lastInterventionMs !== null && nowMs - lastInterventionMs < rules.frequency_cap_days * DAY) {
     return blocked(ref, "BLOCKED_FREQUENCY_CAP", now, rules, [...base, assumed("frequency_cap_days", rules.frequency_cap_days)]);
@@ -180,7 +169,7 @@ export function decideNextAction(input: {
     return blocked(ref, "NO_ELIGIBLE_CANDIDATE", now, rules, [...base, fact("fulfilled_orders", 0)]);
   }
   const last = fulfilled[0];
-  const days = Math.floor((nowMs - Date.parse(last.placed_at)) / DAY);
+  const days = Math.max(0, Math.floor((nowMs - Date.parse(last.placed_at)) / DAY));
   base.push(fact("fulfilled_orders", fulfilled.length), fact("days_since_last_order", days));
 
   // ── Candidate generation (RULE) ──

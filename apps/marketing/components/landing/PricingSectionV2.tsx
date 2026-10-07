@@ -26,6 +26,9 @@ export default function PricingSectionV2({ view }: { view: PricingV2View }) {
                 <small> / mes bez DPH</small>
               </div>
               <div className="price-gross">{band.grossLabel}</div>
+              <div className="price-gross" data-testid={`annual-${band.id}`}>
+                {band.annualLabel}
+              </div>
               <p className="note">{band.usersLabel}</p>
               <ul>
                 <li>{band.creditsLabel}</li>
@@ -42,6 +45,7 @@ export default function PricingSectionV2({ view }: { view: PricingV2View }) {
           ))}
         </div>
 
+        {!view.plansOnly && (
         <div className="cockpit-card" id="baliky-kreditov">
           <p className="eyebrow" style={{ marginBottom: 10 }}>
             Mesačné balíky kreditov
@@ -69,6 +73,7 @@ export default function PricingSectionV2({ view }: { view: PricingV2View }) {
           </div>
           <PricingV2Cta href={view.packsCtaHref} label="Založiť kanceláriu a pridať balík →" planId="packs" />
         </div>
+        )}
 
         <p className="guarantee">
           <b>30 dní</b> záruka vrátenia peňazí · zrušenie kedykoľvek · bez dlhodobej zmluvy

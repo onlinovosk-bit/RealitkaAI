@@ -1,8 +1,69 @@
-﻿"use server";
+"use server";
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { headers } from "next/headers";
 import { sendOnboardingEmail } from "@/lib/send-onboarding-email";
+import { rateLimit } from "@/lib/rate-limit";
+import {
+  isSelfServeSignupEnabled,
+  SELF_SERVE_CONSENT_VERSION,
+  SELF_SERVE_ERROR_MESSAGES,
+  SELF_SERVE_METADATA_FLAG,
+  validateSelfServeForm,
+} from "@/lib/signup/self-serve";
+
+const SIGNUP_RATE_PER_HOUR_IP = 10;
+const SIGNUP_RATE_PER_HOUR_EMAIL = 3;
+
+function fail(code: string, email = ""): never {
+  const msg = SELF_SERVE_ERROR_MESSAGES[code] ?? SELF_SERVE_ERROR_MESSAGES.unavailable;
+  redirect(`/register?error=${encodeURIComponent(msg)}${email ? `&email=${encodeURIComponent(email)}` : ""}`);
+}
+
+/**
+ * Samoobslužná registrácia (vlajka SELF_SERVE_SIGNUP_ENABLED). Formulár iba vytvorí auth účet
+ * a pošle potvrdzovací e-mail; agentúru založí až callback po OVERENÍ e-mailu cez
+ * `bootstrap_self_serve_agency` (service_role). Z formulára sa nikdy nezapisuje do agencies/profiles.
+ */
+async function registerSelfServe(formData: FormData) {
+  const parsed = validateSelfServeForm(formData);
+  if (!parsed.ok) {
+    // honeypot: tvárime sa ako úspech, bot nedostane signál
+    if (parsed.code === "bot") redirect("/register?sent=1");
+    fail(parsed.code, String(formData.get("email") ?? ""));
+  }
+  const v = parsed.value;
+
+  const h = await headers();
+  const ip = (h.get("x-forwarded-for") ?? "").split(",")[0]?.trim() || "unknown";
+  const [byIp, byEmail] = await Promise.all([
+    rateLimit(`signup:ip:${ip}`, SIGNUP_RATE_PER_HOUR_IP, 3_600_000),
+    rateLimit(`signup:email:${v.email}`, SIGNUP_RATE_PER_HOUR_EMAIL, 3_600_000),
+  ]);
+  if (!byIp.allowed || !byEmail.allowed) fail("rate_limited", v.email);
+
+  const supabase = await createClient();
+  const base = (process.env.NEXT_PUBLIC_APP_URL ?? "https://app.revolis.ai").replace(/\/$/, "");
+  const { error } = await supabase.auth.signUp({
+    email: v.email,
+    password: v.password,
+    options: {
+      emailRedirectTo: `${base}/auth/callback?next=${encodeURIComponent("/onboarding/step-1-vitaj")}`,
+      data: {
+        [SELF_SERVE_METADATA_FLAG]: true,
+        full_name: v.fullName,
+        phone: v.phone,
+        agency_name: v.agencyName,
+        plan_intent: v.planIntent,
+        consent_version: SELF_SERVE_CONSENT_VERSION,
+      },
+    },
+  });
+  // Rovnaká odpoveď pre nový aj existujúci e-mail (žiadne vyzváranie, kto má účet).
+  if (error && !/already|registered/i.test(error.message)) fail("unavailable", v.email);
+  redirect(`/register?sent=1&email=${encodeURIComponent(v.email)}`);
+}
 
 /**
  * Public registration must not attach users to a shared/default agency.
@@ -12,6 +73,7 @@ import { sendOnboardingEmail } from "@/lib/send-onboarding-email";
  * (11111111-1111-1111-1111-111111111111).
  */
 export async function register(formData: FormData) {
+  if (isSelfServeSignupEnabled()) return registerSelfServe(formData);
   const supabase = await createClient();
 
   const fullName = String(formData.get("fullName") ?? "");

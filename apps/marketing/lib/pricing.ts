@@ -26,6 +26,7 @@ export type { SeatTier } from '../../crm/src/lib/program-tier-pricing'
 export {
   buildPricingV2Catalog,
   isPricingV2Enabled,
+  isPricingV2PlansOnly,
   PRICING_V2_VAT_PERCENT_DEFAULT,
 } from '../../crm/src/lib/pricing-v2'
 

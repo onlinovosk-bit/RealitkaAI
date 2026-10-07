@@ -147,6 +147,10 @@ const PRICE = {
   STRIPE_PRICE_V2_PACK_240: "price_1Abcdefgh12348",
   STRIPE_PRICE_V2_PACK_300: "price_1Abcdefgh12349",
   STRIPE_PRICE_V2_CREDIT: "price_1Abcdefgh12350",
+  STRIPE_PRICE_V2_START_YEARLY: "price_1Abcdefgh12361",
+  STRIPE_PRICE_V2_TEAM_YEARLY: "price_1Abcdefgh12362",
+  STRIPE_PRICE_V2_OFFICE_YEARLY: "price_1Abcdefgh12363",
+  STRIPE_PRICE_V2_NETWORK_YEARLY: "price_1Abcdefgh12364",
 } as const;
 
 function stubAllPrices() {
@@ -245,6 +249,31 @@ describe("v2 checkout builders", () => {
     expect(() => buildPricingV2PlanCheckoutParams({ ...actor, agencyId: " ", users: 1, packCredits: null })).toThrow(RangeError);
   });
 
+  it("ročný plán: ročná cena pásma (qty 1), metadata interval=year, bez balíka", () => {
+    stubAllPrices();
+    const priceFor = (users: number) =>
+      buildPricingV2PlanCheckoutParams({ ...actor, users, packCredits: null, interval: "year" }).lineItems;
+    expect(priceFor(1)).toEqual([{ price: PRICE.STRIPE_PRICE_V2_START_YEARLY, quantity: 1 }]);
+    expect(priceFor(6)).toEqual([{ price: PRICE.STRIPE_PRICE_V2_TEAM_YEARLY, quantity: 1 }]);
+    expect(priceFor(25)).toEqual([{ price: PRICE.STRIPE_PRICE_V2_OFFICE_YEARLY, quantity: 1 }]);
+    expect(priceFor(26)).toEqual([{ price: PRICE.STRIPE_PRICE_V2_NETWORK_YEARLY, quantity: 1 }]);
+    const p = buildPricingV2PlanCheckoutParams({ ...actor, users: 3, packCredits: null, interval: "year" });
+    expect(p.metadata.interval).toBe("year");
+    // bez zadaného intervalu ostáva mesačná cena
+    expect(buildPricingV2PlanCheckoutParams({ ...actor, users: 3, packCredits: null }).lineItems[0].price).toBe(
+      PRICE.STRIPE_PRICE_V2_TEAM,
+    );
+  });
+
+  it("ročný plán s balíkom kreditov sa nikdy nezostaví; chýbajúca ročná cena = výnimka (mesačná cena sa nepodstrčí)", () => {
+    stubAllPrices();
+    expect(() => buildPricingV2PlanCheckoutParams({ ...actor, users: 3, packCredits: 60, interval: "year" })).toThrow(RangeError);
+    vi.stubEnv("STRIPE_PRICE_V2_TEAM_YEARLY", "");
+    expect(() => buildPricingV2PlanCheckoutParams({ ...actor, users: 3, packCredits: null, interval: "year" })).toThrow(
+      /nie je nakonfigurovan/,
+    );
+  });
+
   it("automatic_tax only when PRICING_V2_STRIPE_TAX is 'on'", () => {
     stubAllPrices();
     const input = { ...actor, users: 1, packCredits: null };
@@ -287,10 +316,23 @@ describe("v2 checkout builders", () => {
 describe("v2 price recognition", () => {
   it("maps each configured price id to its role", () => {
     stubAllPrices();
-    expect(resolvePricingV2PriceRole(PRICE.STRIPE_PRICE_V2_OFFICE)).toEqual({ kind: "band", bandId: "office" });
+    expect(resolvePricingV2PriceRole(PRICE.STRIPE_PRICE_V2_OFFICE)).toEqual({ kind: "band", bandId: "office", interval: "month" });
     expect(resolvePricingV2PriceRole(PRICE.STRIPE_PRICE_V2_PACK_240)).toEqual({ kind: "pack", credits: 240 });
     expect(resolvePricingV2PriceRole(PRICE.STRIPE_PRICE_V2_CREDIT)).toEqual({ kind: "credit" });
     expect(resolvePricingV2PriceRole("price_1Unrelated00000")).toBeNull();
+  });
+
+  it("ročná cena je to isté pásmo s intervalom year (plán, tier a grant sa nelíšia od mesačného)", () => {
+    stubAllPrices();
+    expect(resolvePricingV2PriceRole(PRICE.STRIPE_PRICE_V2_TEAM_YEARLY)).toEqual({ kind: "band", bandId: "team", interval: "year" });
+    expect(resolvePricingV2PriceRole(PRICE.STRIPE_PRICE_V2_NETWORK_YEARLY)).toEqual({ kind: "band", bandId: "network", interval: "year" });
+    expect(missingPricingV2PriceEnvKeysForRequest({ checkoutType: "pricing_v2", users: 3, packCredits: null, interval: "year" })).toEqual([]);
+    vi.stubEnv("STRIPE_PRICE_V2_TEAM_YEARLY", "");
+    expect(missingPricingV2PriceEnvKeysForRequest({ checkoutType: "pricing_v2", users: 3, packCredits: null, interval: "year" })).toEqual([
+      "STRIPE_PRICE_V2_TEAM_YEARLY",
+    ]);
+    // mesačná požiadavka tým nie je dotknutá
+    expect(missingPricingV2PriceEnvKeysForRequest({ checkoutType: "pricing_v2", users: 3, packCredits: null })).toEqual([]);
   });
 
   it("unset env never matches an undefined / blank / placeholder id (undefined === undefined trap)", () => {
@@ -436,8 +478,8 @@ describe("fulfillPricingV2PlanCheckout (kritériá 2, 3)", () => {
       stripe_customer_id: "cus_1",
     });
     expect(rpc.grantCalls).toHaveLength(1);
-    // team 60 + balík 120 — nie seaty × sadzba (3 × 25 = 75).
-    expect(rpc.grantCalls[0]).toMatchObject({ agencyId: AGENCY, amount: 180, periodKey: currentPeriodKey() });
+    // team 50 + balík 120 — nie seaty × sadzba (3 × 25 = 75).
+    expect(rpc.grantCalls[0]).toMatchObject({ agencyId: AGENCY, amount: 170, periodKey: currentPeriodKey() });
     expect(rpc.grantCalls[0].idempotencyKey).toBe(`grant:${AGENCY}:${currentPeriodKey()}`);
     expect(db.profileUpdates[0]).toMatchObject({ col: "auth_user_id", val: "user-1", payload: { account_tier: "pro", ui_role: "agent" } });
   });
@@ -445,7 +487,7 @@ describe("fulfillPricingV2PlanCheckout (kritériá 2, 3)", () => {
   it("network/office bands map to enterprise tier and owner_vision role", async () => {
     await fulfillPricingV2PlanCheckout(planSession({}, { bandId: "office", users: "10", packCredits: "0" }));
     expect(db.agencies[0]).toMatchObject({ account_tier: "enterprise", pricing_band: "office", pack_credits: 0 });
-    expect(rpc.grantCalls[0].amount).toBe(120);
+    expect(rpc.grantCalls[0].amount).toBe(100);
     expect(db.profileUpdates[0].payload).toMatchObject({ ui_role: "owner_vision" });
   });
 
@@ -454,7 +496,7 @@ describe("fulfillPricingV2PlanCheckout (kritériá 2, 3)", () => {
     expect(await fulfillPricingV2PlanCheckout(planSession())).toBe(true);
     expect(rpc.grantCalls).toHaveLength(2);
     expect(new Set(rpc.grantCalls.map((c) => c.idempotencyKey)).size).toBe(1);
-    expect([...ledger.entries()]).toEqual([[`grant:${AGENCY}:${currentPeriodKey()}`, 180]]);
+    expect([...ledger.entries()]).toEqual([[`grant:${AGENCY}:${currentPeriodKey()}`, 170]]);
   });
 
   it("concurrent webhooks produce exactly one ledger grant", async () => {
@@ -465,7 +507,7 @@ describe("fulfillPricingV2PlanCheckout (kritériá 2, 3)", () => {
     ]);
     expect(results).toEqual([true, true, true]);
     expect(ledger.size).toBe(1);
-    expect([...ledger.values()]).toEqual([180]);
+    expect([...ledger.values()]).toEqual([170]);
   });
 
   it("shares the idempotency key with the monthly cron, so cron + webhook in one period cannot double-grant", async () => {
@@ -562,7 +604,7 @@ describe("fulfillPricingV2PlanCheckout (kritériá 2, 3)", () => {
     expect(await fulfillPricingV2PlanCheckout(planSession())).toBe(false);
     rpc.failGrant = false;
     expect(await fulfillPricingV2PlanCheckout(planSession())).toBe(true);
-    expect([...ledger.values()]).toEqual([180]);
+    expect([...ledger.values()]).toEqual([170]);
   });
 
   it("manual_plan agency is not migrated by a webhook either", async () => {
@@ -712,7 +754,7 @@ describe("subscription lifecycle for v2 prices (kritériá 4, 5)", () => {
   it("updated: past_due / unpaid / canceled stop further grants (grant amount becomes 0)", async () => {
     for (const status of ["past_due", "unpaid", "canceled", "incomplete_expired"]) {
       db.agencies = [V2_AGENCY()];
-      expect(monthlyGrantAmountForAgency(db.agencies[0] as never)).toBe(240);
+      expect(monthlyGrantAmountForAgency(db.agencies[0] as never)).toBe(220);
       await applyPricingV2SubscriptionEvent(subEvent("customer.subscription.updated", { status, ...items(PRICE.STRIPE_PRICE_V2_OFFICE) }));
       expect(db.agencies[0].subscription_status).toBe(status);
       expect(monthlyGrantAmountForAgency(db.agencies[0] as never)).toBe(0);
@@ -722,7 +764,7 @@ describe("subscription lifecycle for v2 prices (kritériá 4, 5)", () => {
   it("recovery: active again restores the grant", async () => {
     db.agencies = [V2_AGENCY({ subscription_status: "past_due" })];
     await applyPricingV2SubscriptionEvent(subEvent("customer.subscription.updated", { status: "active", ...items(PRICE.STRIPE_PRICE_V2_OFFICE, PRICE.STRIPE_PRICE_V2_PACK_120) }));
-    expect(monthlyGrantAmountForAgency(db.agencies[0] as never)).toBe(240);
+    expect(monthlyGrantAmountForAgency(db.agencies[0] as never)).toBe(220);
   });
 
   it("deleted: status canceled, back to free, pack cleared, agency profiles downgraded, no grants", async () => {

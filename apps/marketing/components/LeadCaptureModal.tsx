@@ -487,12 +487,14 @@ function PricingModalV2({ source, view }: { source: string; view: PricingV2View 
       <div style={{ fontSize: 28, fontWeight: 900, color: '#0EA5E9', marginBottom: 4 }}>
         {band.netLabel} <span style={{ fontSize: 13, color: 'rgba(255,255,255,.35)', fontWeight: 400 }}>/ mes bez DPH</span>
       </div>
-      <div style={{ fontSize: 15, color: 'rgba(255,255,255,.55)', marginBottom: 16 }}>{band.grossLabel}</div>
+      <div style={{ fontSize: 15, color: 'rgba(255,255,255,.55)', marginBottom: 4 }}>{band.grossLabel}</div>
+      <div style={{ fontSize: 13, color: 'rgba(255,255,255,.45)', marginBottom: 16 }}>{band.annualLabel}</div>
       <p style={{ color: 'rgba(255,255,255,.55)', fontSize: 14, lineHeight: 1.6, marginBottom: 16 }}>
-        {band.creditsLabel}. Kanceláriu založíte v aplikácii, platba prebehne tam.
+        {band.creditsLabel}. {band.ctaIsDemo ? 'Aktiváciu a presný postup dohodneme na krátkom deme.' : 'Kanceláriu založíte v aplikácii, platba prebehne tam.'}
       </p>
       <a
         href={band.ctaHref}
+        {...(band.ctaIsDemo ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
         style={{
           display: 'block', width: '100%', padding: '16px', boxSizing: 'border-box',
           borderRadius: 12, textAlign: 'center', textDecoration: 'none',

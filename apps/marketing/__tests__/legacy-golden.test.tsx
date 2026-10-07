@@ -13,7 +13,8 @@ import ZakulisiePage from '../app/zakulisie/[token]/page'
 import ZakulisieLayout from '../app/zakulisie/[token]/layout'
 
 const SEAT_ENV = ['STRIPE_PRICE_SOLO_SEAT', 'STRIPE_PRICE_TEAM_SEAT', 'STRIPE_PRICE_OFFICE_SEAT']
-const OFF_VALUES: Array<string | undefined> = [undefined, '', 'false', '0', 'off', 'no']
+// Verejný web ukazuje v2 predvolene (6. 10. 2026); legacy výstup vráti len výslovné vypnutie.
+const OFF_VALUES: Array<string | undefined> = ['false', '0', 'off', 'no', ' FALSE ']
 
 function setEnv(flag: string | undefined, configured: boolean) {
   if (flag === undefined) delete process.env.PRICING_V2_ENABLED
@@ -26,6 +27,7 @@ function setEnv(flag: string | undefined, configured: boolean) {
 
 afterEach(() => {
   delete process.env.PRICING_V2_ENABLED
+  delete process.env.PRICING_V2_SIGNUP_ENABLED
   for (const k of SEAT_ENV) delete process.env[k]
 })
 

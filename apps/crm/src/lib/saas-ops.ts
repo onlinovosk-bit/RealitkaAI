@@ -221,6 +221,42 @@ export function getUsageHealth(usage: UsageCounters, limits: PlanLimits) {
   };
 }
 
+/**
+ * Koniec trialu: ak má agentúra `trial_ends_at` (samoobslužný signup), platí ten — je ukotvený
+ * na agentúre, nie na dátume vzniku auth účtu (druhý člen tímu by inak dostal už vypršaný trial).
+ * Inak historické odvodenie z `auth.users.created_at` + APP_TRIAL_DAYS (nezmenené správanie).
+ */
+export function resolveTrialEndMs(input: {
+  agencyTrialEndsAt: string | null | undefined;
+  userCreatedAt: string | null | undefined;
+  trialDays: number;
+  nowMs: number;
+}): number {
+  if (input.agencyTrialEndsAt) {
+    const t = new Date(input.agencyTrialEndsAt).getTime();
+    if (Number.isFinite(t)) return t;
+  }
+  const createdAt = input.userCreatedAt ? new Date(input.userCreatedAt).getTime() : input.nowMs;
+  return createdAt + input.trialDays * 86400000;
+}
+
+async function loadAgencyTrialEndsAt(): Promise<string | null> {
+  try {
+    const profile = await getCurrentProfile();
+    if (!profile?.agency_id) return null;
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("agencies")
+      .select("trial_ends_at")
+      .eq("id", profile.agency_id)
+      .maybeSingle();
+    if (error) return null; // stĺpec ešte nie je nasadený → historické správanie
+    return (data as { trial_ends_at?: string | null } | null)?.trial_ends_at ?? null;
+  } catch {
+    return null;
+  }
+}
+
 function diffInDays(futureMs: number, nowMs: number) {
   return Math.max(0, Math.ceil((futureMs - nowMs) / 86400000));
 }
@@ -274,8 +310,12 @@ export async function getTrialGraceState(input: {
   const trialDays = getTrialDays();
   const graceDays = getGraceDays();
 
-  const createdAt = user?.created_at ? new Date(user.created_at).getTime() : now;
-  const trialEnd = createdAt + trialDays * 86400000;
+  const trialEnd = resolveTrialEndMs({
+    agencyTrialEndsAt: await loadAgencyTrialEndsAt(),
+    userCreatedAt: user?.created_at,
+    trialDays,
+    nowMs: now,
+  });
   const trialDaysLeft = diffInDays(trialEnd, now);
 
   if (!billing.hasSubscription) {

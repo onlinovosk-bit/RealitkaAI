@@ -343,3 +343,50 @@ test("REORDER_WINDOW needs exactly one fulfilled order, whichever row comes firs
   assert.equal(typesOf(detectOpportunities(custom([older, inWindow]), NOW)).includes("REORDER_WINDOW"), false, "older row first");
   assert.equal(typesOf(detectOpportunities(custom([inWindow]), NOW)).includes("REORDER_WINDOW"), true);
 });
+
+test("N3/N4 through the agent: a sloppy date or a NaN on a line is refused, never read as something else", () => {
+  for (const placed_at of ["abc 1", "1", "2026-02-30T08:00:00Z", "2026-10-01T24:00:00Z"]) {
+    const o = order("FIX-ORDER-BADT", "FIX-CUS-810", 5, "unpaid");
+    o.placed_at = placed_at;
+    assert.equal(codeOf(() => detectOpportunities(custom([o]), NOW)), "INVALID_INPUT", placed_at);
+  }
+  for (const units of [Number.NaN, "5", -3]) {
+    const o = order("FIX-ORDER-BADL", "FIX-CUS-811", 20);
+    o.lines[0].units = units as never;
+    assert.equal(codeOf(() => detectOpportunities(custom([o]), NOW)), "INVALID_INPUT", String(units));
+  }
+  const bad = fixture();
+  bad.as_of = "12";
+  assert.equal(codeOf(() => detectOpportunities(bad, NOW)), "INVALID_INPUT");
+});
+
+test("a snapshot dated up to one hour ahead of now is tolerated (clock skew), further ahead is invalid state", () => {
+  const at = (minutes: number) => {
+    const s = fixture();
+    s.as_of = new Date(NOW.getTime() + minutes * 60_000).toISOString();
+    return codeOf(() => detectOpportunities(s, NOW));
+  };
+  assert.equal(at(59), null);
+  assert.equal(at(60), null);
+  assert.equal(at(61), "INVALID_INPUT");
+});
+
+test("N4 through the agent: an order dated far in the future is INVALID_INPUT, not a negative age", () => {
+  const o = order("FIX-ORDER-FUT", "FIX-CUS-820", 0);
+  o.placed_at = "2099-01-01T00:00:00.000Z";
+  assert.equal(codeOf(() => detectOpportunities(custom([o]), NOW)), "INVALID_INPUT");
+});
+
+test("P11#6: the same order_ref on two customers is two orders, not one", () => {
+  const dupe = detectOpportunities(custom([order("SAME", "cus_000000000000000a", 120), order("SAME", "cus_000000000000000b", 120)]), NOW);
+  const apart = detectOpportunities(custom([order("ONE", "cus_000000000000000a", 120), order("TWO", "cus_000000000000000b", 120)]), NOW);
+  const consented = (run: ReturnType<typeof detectOpportunities>) =>
+    run.opportunities.map((o) => o.evidence.find((e) => e.key === "audience_consented")?.value);
+  assert.ok(consented(apart).length > 0 && consented(apart).every((v) => v === 2));
+  assert.deepEqual(consented(dupe), consented(apart));
+});
+
+test("P11#6: a repeated order_ref for one customer is still counted once", () => {
+  const run = detectOpportunities(custom([order("SAME", "cus_000000000000000a", 120), order("SAME", "cus_000000000000000a", 120)]), NOW);
+  assert.ok(run.opportunities.every((o) => o.evidence.find((e) => e.key === "audience_consented")?.value === 1));
+});

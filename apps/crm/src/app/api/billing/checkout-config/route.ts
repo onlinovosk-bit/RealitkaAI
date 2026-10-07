@@ -1,7 +1,8 @@
 import { okResponse } from "@/lib/api-response";
-import { isPricingV2Enabled, buildPricingV2Catalog } from "@/lib/pricing-v2";
+import { isPricingV2Enabled, isPricingV2PlansOnly, buildPricingV2Catalog } from "@/lib/pricing-v2";
 import {
   missingPricingV2PriceEnvKeys,
+  missingPricingV2YearlyPriceEnvKeys,
   type PricingV2ConfigPayload,
 } from "@/lib/pricing-v2-contract";
 import {
@@ -27,11 +28,17 @@ function buildPricingV2ConfigPayload(): PricingV2ConfigPayload {
     return { enabled: false, checkoutAvailable: false, missingPriceEnvKeys: [], catalog: null };
   }
   const missingPriceEnvKeys = missingPricingV2PriceEnvKeys();
+  const plansOnly = isPricingV2PlansOnly();
+  const catalog = buildPricingV2Catalog();
   return {
     enabled: true,
     checkoutAvailable: missingPriceEnvKeys.length === 0,
     missingPriceEnvKeys,
-    catalog: buildPricingV2Catalog(),
+    // Režim „len plány“: balíky sa do odpovede nedostanú vôbec (nielen skryté kartou).
+    catalog: plansOnly ? { ...catalog, packs: [] } : catalog,
+    plansOnly,
+    // Ročné platenie sa ponúka až keď existujú všetky 4 ročné ceny plánov (mesačný predaj tým nie je dotknutý).
+    yearlyAvailable: missingPricingV2YearlyPriceEnvKeys().length === 0,
   };
 }
 

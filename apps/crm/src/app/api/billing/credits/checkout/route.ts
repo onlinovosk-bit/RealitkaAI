@@ -9,7 +9,7 @@ import {
   createPricingV2CheckoutSession,
   missingPricingV2PriceEnvKeysForRequest,
 } from "@/lib/credits-billing-v2";
-import { isPricingV2Enabled } from "@/lib/pricing-v2";
+import { isPricingV2Enabled, isPricingV2PlansOnly } from "@/lib/pricing-v2";
 import {
   PRICING_V2_CHECKOUT_TYPE_CREDITS,
   PRICING_V2_ERROR_CODES,
@@ -36,6 +36,14 @@ export async function POST(request: Request) {
         return errorResponse("Neplatná požiadavka na checkout.", 400, {
           code: PRICING_V2_ERROR_CODES.invalidRequest,
           reason: v2.reason,
+        });
+      }
+      // Režim „len plány“: balík ani jednorazový kredit sa nepredáva — kontrola ide PRED akýmkoľvek Stripe volaním.
+      const sellsCredits =
+        v2.value.checkoutType === PRICING_V2_CHECKOUT_TYPE_CREDITS || v2.value.packCredits !== null;
+      if (sellsCredits && isPricingV2PlansOnly()) {
+        return errorResponse("Balíky a kredity sa zatiaľ nepredávajú.", 403, {
+          code: PRICING_V2_ERROR_CODES.creditsNotSold,
         });
       }
       if (

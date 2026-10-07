@@ -42,7 +42,7 @@ describe("W2-D FinalCTA: zapnutý prepínač", () => {
       "26 a viac používateľov",
       "od 349 € mesačne bez DPH",
       "od 429,27 € s DPH 23 %",
-      "175 kreditov mesačne pre celú kanceláriu",
+      "150 kreditov mesačne pre celú kanceláriu",
       "mesačné balíky od 34 € mesačne bez DPH",
       "0,70 € za kredit bez DPH (0,86 € s DPH 23 %)",
     ]) {
