@@ -4,6 +4,8 @@
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-05, 07:55 UTC** (FAIL-OPEN-SWEEP + TRIAL-GATE-CLOSED variant A: po vypršaní trialu je účet read-only, nie otvorený; hlavička prepočítaná z tabuľky 53 % → 51 %).
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 08:30 UTC** (EVENTS-WIRE + CRON-ALIVE, zatiaľ nezmergované).
 
+> **2026-10-08 SIGNUP-PROD:** migrácie SIGNUP-ARCH a pricing v2 stĺpce sú **aplikované na PROD** (dôkaz v `docs/architecture/2026-10-06-self-serve-signup.md`). Zavreté 2 nové cesty (zápis billing/trial stĺpcov agentúry z prehliadača; zhoda neoverený e-mail → tenant). Tabuľka nižšie sa NEPREPOČÍTAVA, kým nie je aj živý nákup (váha Predaj/platby 30).
+>
 > **2026-10-06 SIGNUP-ARCH:** kód + migrácia + TEST dôkaz (guard, bootstrap, hardening) pripravené, **na PROD neaplikované → tabuľka nižšie sa NEMENÍ** (percentá rastú až s PROD dôkazom: živé ceny + webhook → „Predaj/platby"; aplikovaná migrácia → „Tenantová izolácia" a „Schéma + nasadenie"). Pozri `docs/architecture/2026-10-06-self-serve-signup.md`.
 
 ## Celkom: ≈ 51 %  (odhad, prepočítané z tabuľky nižšie)
