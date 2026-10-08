@@ -7,6 +7,19 @@ import type { PricingV2ConfigPayload } from "@/lib/pricing-v2-contract";
 import { buildPlanRequest, PRICING_V2_MESSAGES, submitPricingV2Checkout } from "./checkout";
 import { formatEurCents, formatUserRange } from "./format";
 
+/** Funkcie plánov (rovnaký zoznam ako na marketingovom webe). Kľúč = id pásma. */
+export const PLAN_FEATURES: Record<string, string[]> = {
+  start: [
+    "Denný briefing priorít",
+    "Skóre pripravenosti kúpy (BRI)",
+    "AI návrhy odpovedí na schválenie",
+    "Dopyty z portálov na jednom mieste",
+  ],
+  team: ["Všetko zo Start", "Tímový prehľad pre majiteľa", "Ranný report pre celý tím"],
+  office: ["Všetko z Team", "Prioritná podpora"],
+  network: ["Všetko z Kancelárie"],
+};
+
 type Props = {
   config: PricingV2ConfigPayload;
   initialUsers?: number;
@@ -152,6 +165,16 @@ export default function PricingV2Plans({ config, initialUsers = 1, navigate = de
                 <p className="text-xs mt-1" style={{ color: SLATE_HORIZON.muted }}>
                   Cenu siete dojednáme podľa objemu.
                 </p>
+              )}
+              {(PLAN_FEATURES[band.id] ?? []).length > 0 && (
+                <ul data-testid={`band-${band.id}-features`} className="mt-3 space-y-1 text-sm" style={{ color: SLATE_HORIZON.ink }}>
+                  {(PLAN_FEATURES[band.id] ?? []).map((f) => (
+                    <li key={f} className="flex gap-2">
+                      <span aria-hidden="true" style={{ color: SLATE_HORIZON.brand }}>✓</span>
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
               )}
             </div>
           );

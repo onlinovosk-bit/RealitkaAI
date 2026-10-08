@@ -108,6 +108,14 @@ describe("PricingV2Plans — pásmo a ceny z katalógu", () => {
     expect(screen.getByTestId("vat-note").textContent).toMatch(/mesačné.*bez DPH.*23 % DPH/);
   });
 
+  it("každá karta pásma ukáže zoznam funkcií plánu", () => {
+    render(<PricingV2Plans config={v2Config()} />);
+    expect(screen.getByTestId("band-start-features").textContent).toContain("Denný briefing priorít");
+    expect(screen.getByTestId("band-team-features").textContent).toContain("Všetko zo Start");
+    expect(screen.getByTestId("band-office-features").textContent).toContain("Prioritná podpora");
+    expect(screen.getByTestId("band-network-features").textContent).toContain("Všetko z Kancelárie");
+  });
+
   it("neplatný počet (0, prázdny, desatinný) nevyberie pásmo a CTA je zablokované", async () => {
     const { fn } = mockFetch({});
     render(<PricingV2Plans config={v2Config()} />);
