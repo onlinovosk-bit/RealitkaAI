@@ -6,6 +6,8 @@ import Link from "next/link";
 import type { Lead } from "@/lib/leads-store";
 import type { PlanTier } from "@/lib/ai-engine";
 import PaywallLock from "@/components/shared/PaywallLock";
+import { usePricingV2Catalog } from "@/components/marketing/pricing-v2-context";
+import { unlockCtaLabelV2 } from "@/components/marketing/pricing-v2-copy";
 import { Phone, MessageSquare, Home } from "lucide-react";
 import { SLATE_HORIZON, WORKDESK_INNER_ROW, WORKDESK_PANEL } from "@/lib/slate-horizon-theme";
 
@@ -126,6 +128,7 @@ const FREE_LIMIT = 3;
 
 export default function DailyActionPanel({ leads, plan = "free" }: { leads: Lead[]; plan?: PlanTier }) {
   const actions = useMemo(() => buildActions(leads), [leads]);
+  const pricingV2 = usePricingV2Catalog();
 
   if (actions.length === 0) return null;
 
@@ -231,7 +234,7 @@ export default function DailyActionPanel({ leads, plan = "free" }: { leads: Lead
             lockedCount={lockedCount}
             feature="príležitostí"
             titleOverride="+8 ďalších príležitostí"
-            ctaLabel="Odomknúť Protocol Authority od 449 € mesačne"
+            ctaLabel={pricingV2 ? unlockCtaLabelV2(pricingV2) : "Odomknúť Protocol Authority od 449 € mesačne"}
           />
         </div>
       )}

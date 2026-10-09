@@ -3,6 +3,8 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { SLATE_HORIZON, WORKDESK_LOCKED } from "@/lib/slate-horizon-theme";
 import { trackRevenueTelemetry } from "@/lib/analytics/revenue-telemetry";
+import { usePricingV2Catalog } from "@/components/marketing/pricing-v2-context";
+import { unlockCtaLabelV2 } from "@/components/marketing/pricing-v2-copy";
 
 interface PaywallLockProps {
   lockedCount: number;
@@ -17,6 +19,8 @@ export default function PaywallLock({
   titleOverride,
   ctaLabel,
 }: PaywallLockProps) {
+  // Cenník v2: predvolený text bez legacy ceny „od €49/mes“; bez providera (vypnutý prepínač) pôvodný text.
+  const pricingV2 = usePricingV2Catalog();
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -62,7 +66,7 @@ export default function PaywallLock({
             boxShadow: "0 4px 14px rgba(249,115,22,0.25)",
           }}
         >
-          {ctaLabel ?? "✦ Odomknúť Smart Start – od €49/mes"}
+          {ctaLabel ?? (pricingV2 ? unlockCtaLabelV2(pricingV2) : "✦ Odomknúť Smart Start – od €49/mes")}
         </Link>
       </div>
     </motion.div>

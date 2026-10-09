@@ -26,8 +26,8 @@ export async function handleCustomerNextAction(args: unknown, deps?: AgentToolDe
     actions: ["onlinovo.data.observe", "onlinovo.nextaction.recommend"],
     args,
     deps,
-    run: async ({ env, now }) => {
-      const ref = isRecord(args) ? args.customer_ref : undefined;
+    run: async ({ env, now, args: clean }) => {
+      const ref = isRecord(clean) ? clean.customer_ref : undefined;
       if (typeof ref !== "string") throw new AgentError("INVALID_INPUT", "customer_ref must be a string");
       const { port, error_code } = resolveDataPort(env);
       const snapshot = await port.snapshot(now);

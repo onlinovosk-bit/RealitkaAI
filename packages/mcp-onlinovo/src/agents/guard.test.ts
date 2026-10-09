@@ -152,3 +152,59 @@ test("F12: a confidence that is not a number never passes a recommendation, a pa
   assert.equal(actionVerdict("onlinovo.data.observe", Number.NaN, NO_ENV).allowed, true);
   assert.equal(actionVerdict("onlinovo.opportunity.recommend", 0.6, NO_ENV).allowed, true);
 });
+
+test("N7: null, Infinity and a confidence above 1 never pass; only an absent confidence means full confidence", () => {
+  for (const bad of [null, Number.POSITIVE_INFINITY, 1.0001, 7, Number.NEGATIVE_INFINITY, "0.9", Number.NaN]) {
+    const d = authorizeAgentAction({ agentId: OPP, action: "onlinovo.opportunity.recommend", confidence: bad as never }, NO_ENV);
+    assert.equal(d.allowed, false, String(bad));
+    assert.equal(d.verdict, "APPROVAL_REQUIRED", String(bad));
+  }
+  assert.equal(authorizeAgentAction({ agentId: OPP, action: "onlinovo.opportunity.recommend" }, NO_ENV).allowed, true);
+  assert.equal(authorizeAgentAction({ agentId: OPP, action: "onlinovo.opportunity.recommend", confidence: 1 }, NO_ENV).allowed, true);
+  assert.equal(authorizeAgentAction({ agentId: OPP, action: "onlinovo.opportunity.recommend", confidence: 0.6 }, NO_ENV).allowed, true);
+});
+
+test("a Symbol or an object as confidence is refused cleanly, never a raw TypeError", () => {
+  for (const odd of [Symbol("x"), {}, [0.9], () => 1]) {
+    let d;
+    assert.doesNotThrow(() => { d = actionVerdict("onlinovo.opportunity.recommend", odd as never, NO_ENV); }, String(typeof odd));
+    assert.equal((d as unknown as { allowed: boolean }).allowed, false);
+  }
+});
+
+test("a confidence whose own toString throws, a null-prototype object and a throwing Proxy are refused cleanly", () => {
+  const throwing = { toString() { throw new Error("boom"); } };
+  const nullProto = Object.create(null);
+  const proxy = new Proxy({}, { get() { throw new Error("proxy"); } });
+  for (const odd of [throwing, nullProto, proxy]) {
+    let d;
+    assert.doesNotThrow(() => { d = actionVerdict("onlinovo.opportunity.recommend", odd as never, NO_ENV); });
+    assert.equal((d as unknown as { allowed: boolean }).allowed, false);
+  }
+});
+
+test("P11#6: dishonest types are refused or answered closed, never a raw error", () => {
+  for (const agentId of ["__proto__", "constructor", "toString", "hasOwnProperty", 5, null, Symbol("x"), {}] as unknown[]) {
+    const d = authorizeAgentAction({ agentId: agentId as string, action: "onlinovo.data.observe" }, {});
+    assert.equal(d.allowed, false);
+    assert.equal(d.code, "AGENT_UNKNOWN");
+  }
+  const sym = Symbol("a");
+  for (const action of [sym, 5, null, undefined, { toString() { throw new Error("x"); } }] as unknown[]) {
+    const d = actionVerdict(action as string, 1, {});
+    assert.equal(d.allowed, false);
+    assert.equal(d.code, "CAPABILITY_UNSUPPORTED");
+  }
+  for (const env of [null, undefined, {}, { ONLINOVO_AGENTS_KILL_SWITCH: 0 }, { ONLINOVO_AGENTS_KILL_SWITCH: null }] as unknown[]) {
+    assert.doesNotThrow(() => killSwitchOn(env as NodeJS.ProcessEnv));
+  }
+  assert.equal(killSwitchOn({ ONLINOVO_AGENTS_KILL_SWITCH: 0 } as unknown as NodeJS.ProcessEnv), true, "a number is not an explicit off spelling");
+  assert.equal(killSwitchOn({ ONLINOVO_AGENTS_KILL_SWITCH: "off" }), false);
+});
+
+test("P11#6: a denial never repeats the asked-for text", () => {
+  const d = actionVerdict("alice@example.com", 1, {});
+  assert.equal(d.allowed, false);
+  assert.equal(JSON.stringify(d).includes("alice"), false);
+  assert.equal(JSON.stringify(authorizeAgentAction({ agentId: "alice@example.com", action: "x" }, {})).includes("alice"), false);
+});

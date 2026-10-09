@@ -7,6 +7,13 @@ export const metadata = {
 
 const releases = [
   {
+    version: "v2.5",
+    date: "5. októbra 2026",
+    items: [
+      "Do zoznamu sub-procesorov a zásad ochrany súkromia doplnený Anthropic (AI spracovanie textu, USA, SCC).",
+    ],
+  },
+  {
     version: "v2.4",
     date: "20. apríla 2026",
     items: [

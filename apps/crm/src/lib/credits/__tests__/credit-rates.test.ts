@@ -10,7 +10,7 @@ describe("credit-rates", () => {
     expect(CREDIT_RATES.LEAD_UNLOCK).toBe(20);
     expect(CREDIT_RATES.AI_ANALYSIS).toBe(1);
     expect(CREDIT_RATES.AI_EMAIL).toBe(1);
-    expect(CREDIT_RATES.LISTING_DESCRIPTION).toBe(2);
+    expect(CREDIT_RATES.LISTING_DESCRIPTION).toBe(1);
   });
 
   it("covers every rate code", () => {

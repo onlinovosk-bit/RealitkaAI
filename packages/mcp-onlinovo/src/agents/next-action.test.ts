@@ -242,3 +242,74 @@ test("the open-payment hold lasts exactly 24 hours: at 24 h it still blocks, a m
   assert.equal(withUnpaid(24 * HOUR), "BLOCKED_OPEN_PAYMENT");
   assert.notEqual(withUnpaid(24 * HOUR + 60_000), "BLOCKED_OPEN_PAYMENT");
 });
+
+test("N3/N4 through the agent: a sloppy date, a NaN line or a bad intervention on ANY customer refuses the snapshot", () => {
+  const s = oneCustomer(120);
+  s.orders.push({ ...single100("FIX-ORDER-X1", "FIX-CUS-902", 5), placed_at: "abc 1" });
+  assert.equal(codeOf(() => decide("900", s)), "INVALID_INPUT");
+
+  const t = oneCustomer(120);
+  t.orders[0].lines[0].units = Number.NaN;
+  assert.equal(codeOf(() => decide("900", t)), "INVALID_INPUT");
+
+  const u = oneCustomer(120);
+  u.customers.push({ customer_ref: "FIX-CUS-903", consent: "marketing_ok", interventions: [{ action: "REPLENISHMENT", at: "12" }] });
+  assert.equal(codeOf(() => decide("900", u)), "INVALID_INPUT");
+
+  const v = oneCustomer(120);
+  v.as_of = "abc 1";
+  assert.equal(codeOf(() => decide("900", v)), "INVALID_INPUT");
+});
+
+test("the snapshot age limit is exact here too: 48 h is fresh, 48 h and one millisecond is stale", () => {
+  const at = (extraMs: number) => {
+    const s = oneCustomer(120);
+    s.as_of = new Date(NOW.getTime() - 48 * HOUR - extraMs).toISOString();
+    return decide("900", s).policy_status;
+  };
+  assert.notEqual(at(0), "BLOCKED_STALE");
+  assert.equal(at(1), "BLOCKED_STALE");
+});
+
+test("a snapshot dated up to one hour ahead of now is tolerated (clock skew), further ahead is invalid state", () => {
+  const at = (minutes: number) => {
+    const s = oneCustomer(120);
+    s.as_of = new Date(NOW.getTime() + minutes * 60_000).toISOString();
+    return codeOf(() => decide("900", s));
+  };
+  assert.equal(at(59), null);
+  assert.equal(at(60), null);
+  assert.equal(at(61), "INVALID_INPUT");
+});
+
+test("N4 through the agent: an order dated far in the future is INVALID_INPUT, not a negative age", () => {
+  const s = oneCustomer(120);
+  s.orders.push({ ...single100("FIX-ORDER-FUT", "FIX-CUS-904", 0), placed_at: "2099-01-01T00:00:00.000Z" });
+  assert.equal(codeOf(() => decide("900", s)), "INVALID_INPUT");
+});
+
+test("an intervention up to one hour ahead is tolerated, further ahead is BLOCKED_INVALID_STATE", () => {
+  const at = (ms: number) =>
+    d900(120, (s) => {
+      s.customers[0].interventions = [{ action: "REPLENISHMENT", at: new Date(NOW.getTime() + ms).toISOString() }];
+    }).policy_status;
+  assert.notEqual(at(3_600_000), "BLOCKED_INVALID_STATE");
+  assert.equal(at(3_600_001), "BLOCKED_INVALID_STATE");
+});
+
+test("P11#5: a timestamp inside the one hour skew never yields a negative day count", () => {
+  const d = d900(120, (s) => {
+    s.customers[0].interventions = [{ action: "REPLENISHMENT", at: new Date(NOW.getTime() + 1_800_000).toISOString() }];
+  });
+  const ev = d.evidence.find((e) => e.key === "days_since_last_intervention");
+  assert.ok(typeof ev?.value === "number" && ev.value >= 0, String(ev?.value));
+  for (const e of d.evidence) if (e.key.startsWith("days_since")) assert.ok(typeof e.value !== "number" || e.value >= 0, e.key);
+});
+
+test("P11#6: an order inside the one hour skew never yields a negative age", () => {
+  const s = oneCustomer(120);
+  s.orders.push({ ...single100("FIX-ORDER-SKEW", "FIX-CUS-900", 0), placed_at: new Date(NOW.getTime() + 1_800_000).toISOString() });
+  const d = decide("900", s);
+  const ev = d.evidence.find((e) => e.key === "days_since_last_order");
+  assert.ok(ev === undefined || (typeof ev.value === "number" && ev.value >= 0), String(ev?.value));
+});

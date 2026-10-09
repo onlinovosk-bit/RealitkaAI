@@ -2,6 +2,7 @@ import { hashOf } from "./canonical.js";
 import { RunBudget } from "./budget.js";
 import { validateAllocation, type Allocation } from "./allocation.js";
 import { classifySample, diffEstimate, getKpi, MIN_ADEQUATE_SAMPLE_PER_ARM, type ArmAggregate, type DiffEstimate, type SampleClass } from "./kpi.js";
+import { parseIsoTimestamp } from "./snapshot-validation.js";
 import { AgentError } from "./types.js";
 
 /**
@@ -9,6 +10,9 @@ import { AgentError } from "./types.js";
  * Every function returns a new object. There is no persistence and nothing is started against
  * customers: PROPOSED is the only state an agent can create. APPROVED needs a human approval object.
  */
+/** A plan larger than this is a typo or an attack, not a plan. */
+const MAX_PLANNED_SAMPLE_PER_ARM = 10_000_000;
+
 export type ExperimentState = "PROPOSED" | "APPROVED" | "RUNNING" | "COMPLETE" | "KEEP" | "REJECT" | "ITERATE" | "BLOCKED";
 
 const TRANSITIONS: Readonly<Record<ExperimentState, readonly ExperimentState[]>> = {
@@ -100,9 +104,92 @@ export interface ProposalInput {
   min_sample_per_arm?: number;
 }
 
+/** `trim()` alone leaves U+00AD, U+180E, U+200B-U+200D and U+2060 (`\s` already covers U+FEFF): text made only of those is blank too. */
+const INVISIBLE = /[\s\p{Default_Ignorable_Code_Point}\p{Cc}\p{Cf}\p{Co}\p{Cn}\p{Cs}\p{M}\p{Z}\u2800]/gu;
+const isBlank = (text: string): boolean => text.replace(INVISIBLE, "") === "";
+
+/** Free text in a plan or a note. Long enough for any real sentence, short enough to bound the cost of hashing it. */
+const MAX_TEXT_LENGTH = 2000;
+const MAX_STOP_CONDITIONS = 20;
+
 function nonEmpty(value: unknown, field: string): string {
-  if (typeof value !== "string" || value.trim() === "") throw new AgentError("INVALID_INPUT", `${field} is required`);
+  if (typeof value !== "string" || isBlank(value)) throw new AgentError("INVALID_INPUT", `${field} is required`);
+  if (value.length > MAX_TEXT_LENGTH) throw new AgentError("INVALID_INPUT", `${field} is longer than ${MAX_TEXT_LENGTH} characters`);
   return value.trim();
+}
+
+type PlanFields = Pick<
+  ExperimentSpec,
+  | "hypothesis" | "control" | "treatment" | "audience" | "primary_metric" | "secondary_metrics"
+  | "success_threshold" | "stop_conditions" | "allocation" | "duration_days" | "min_sample_per_arm"
+>;
+
+/** The experiment id is the hash of its plan, so a plan cannot be swapped under an existing id. */
+function planIdOf(plan: PlanFields): string {
+  const { hypothesis, control, treatment, audience, primary_metric, secondary_metrics, success_threshold, stop_conditions, allocation, duration_days, min_sample_per_arm } = plan;
+  return hashOf({
+    hypothesis, control, treatment,
+    audience: { description: audience.description, size: audience.size, opportunity_id: audience.opportunity_id },
+    primary_metric, secondary_metrics, success_threshold, stop_conditions, allocation, duration_days, min_sample_per_arm,
+  }).slice(0, 16);
+}
+
+const saltOf = (id: string): string => `salt_${hashOf({ id, kind: "allocation" }).slice(0, 16)}`;
+
+function plannedPowerOf(plan: PlanFields): ExperimentSpec["planned_power"] {
+  const smallestArm = Math.floor(plan.audience.size * Math.min(plan.allocation.control, plan.allocation.treatment));
+  return smallestArm >= plan.min_sample_per_arm ? "ADEQUATE_POSSIBLE" : "INDICATIVE_ONLY";
+}
+
+/**
+ * Seal of a recorded result. It binds the result to this experiment; the id is the hash of the plan, so a
+ * result cannot be lifted from another experiment or another plan. Anyone who can write the whole object can
+ * still recompute it: the seal catches edits and transplants, it is not a signature. Real protection needs
+ * persistence with its own write path, which is BLOCKED (`onlinovo.record.persist`).
+ */
+export function resultSeal(spec: Pick<ExperimentSpec, "experiment_id" | "result">): string {
+  return hashOf({ experiment_id: spec.experiment_id, result: spec.result });
+}
+
+const isRecord = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === "object" && !Array.isArray(v);
+const isFiniteNumber = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
+
+function estimateHasShape(e: unknown): boolean {
+  return (
+    isRecord(e) &&
+    ["control_value", "treatment_value", "difference", "standard_error", "ci95_low", "ci95_high"].every((k) => isFiniteNumber(e[k])) &&
+    (e.relative_lift === null || isFiniteNumber(e.relative_lift))
+  );
+}
+
+/** A sealed result is still data: its counts and estimates must be numbers before anything is computed from them. */
+function resultHasShape(r: unknown): r is ExperimentResult {
+  if (!isRecord(r)) return false;
+  const stop = r.stop_breached;
+  return (
+    typeof r.primary_metric === "string" &&
+    estimateHasShape(r.estimate) &&
+    Number.isInteger(r.n_control) && (r.n_control as number) >= 0 &&
+    Number.isInteger(r.n_treatment) && (r.n_treatment as number) >= 0 &&
+    Array.isArray(r.secondary) && r.secondary.every((x) => isRecord(x) && typeof x.metric === "string" && estimateHasShape(x.estimate)) &&
+    (stop === null || (isRecord(stop) && typeof stop.metric === "string" && (stop.direction === "below" || stop.direction === "above") && isFiniteNumber(stop.value)))
+  );
+}
+
+/** Seal intact and sample class derived from the counts and the plan. Returns the derived class. */
+function verifyResult(spec: ExperimentSpec): SampleClass {
+  const r = spec.result;
+  if (!r || spec.result_hash === null || resultSeal(spec) !== spec.result_hash) {
+    throw new AgentError("RESULT_IMMUTABLE", "the recorded result does not match the seal taken when it was recorded");
+  }
+  if (!resultHasShape(r)) {
+    throw new AgentError("RESULT_IMMUTABLE", "the recorded result is malformed: counts and estimates must be finite numbers");
+  }
+  const sampleClass = classifySample(r.n_control, r.n_treatment, spec.min_sample_per_arm);
+  if (r.required_per_arm !== spec.min_sample_per_arm || r.sample_class !== sampleClass) {
+    throw new AgentError("RESULT_IMMUTABLE", "the recorded sample class does not follow from the sample counts and the pre-registered plan");
+  }
+  return sampleClass;
 }
 
 function lockOf(spec: ExperimentSpec): string {
@@ -144,6 +231,10 @@ export function proposeExperiment(input: ProposalInput, budget: RunBudget = new 
   const control = nonEmpty(input.control, "control");
   const treatment = nonEmpty(input.treatment, "treatment");
   nonEmpty(input.audience?.description, "audience.description");
+  const oppId = input.audience.opportunity_id;
+  if (oppId !== undefined && oppId !== null && (typeof oppId !== "string" || oppId.length > MAX_TEXT_LENGTH)) {
+    throw new AgentError("INVALID_INPUT", "audience.opportunity_id must be a short string or null");
+  }
   if (!Number.isInteger(input.audience.size) || input.audience.size <= 0) {
     throw new AgentError("INVALID_INPUT", "audience.size must be a positive integer");
   }
@@ -162,8 +253,15 @@ export function proposeExperiment(input: ProposalInput, budget: RunBudget = new 
   if (!input.stop_conditions || input.stop_conditions.length === 0) {
     throw new AgentError("STOP_CONDITION_REQUIRED", "at least one stop condition is required");
   }
+  if (input.stop_conditions.length > MAX_STOP_CONDITIONS) {
+    throw new AgentError("INVALID_INPUT", `at most ${MAX_STOP_CONDITIONS} stop conditions are allowed`);
+  }
   const observed = new Set([input.primary_metric, ...secondary]);
   for (const s of input.stop_conditions) {
+    if (s === null || typeof s !== "object") throw new AgentError("INVALID_INPUT", "a stop condition must be an object");
+    if (typeof s.description !== "string" || s.description.length > MAX_TEXT_LENGTH) {
+      throw new AgentError("INVALID_INPUT", `a stop condition needs a description of at most ${MAX_TEXT_LENGTH} characters`);
+    }
     getKpi(s.metric);
     if (s.direction !== "below" && s.direction !== "above") {
       throw new AgentError("INVALID_INPUT", 'stop condition direction must be "below" or "above"');
@@ -180,6 +278,9 @@ export function proposeExperiment(input: ProposalInput, budget: RunBudget = new 
   if (!Number.isInteger(input.min_sample_per_arm) || (input.min_sample_per_arm as number) <= 0) {
     throw new AgentError("SAMPLE_PLAN_REQUIRED", "min_sample_per_arm must be planned as a positive integer");
   }
+  if ((input.min_sample_per_arm as number) > MAX_PLANNED_SAMPLE_PER_ARM) {
+    throw new AgentError("SAMPLE_PLAN_REQUIRED", `min_sample_per_arm cannot exceed ${MAX_PLANNED_SAMPLE_PER_ARM}`);
+  }
   if ((input.min_sample_per_arm as number) < MIN_ADEQUATE_SAMPLE_PER_ARM) {
     throw new AgentError(
       "SAMPLE_PLAN_TOO_SMALL",
@@ -195,19 +296,19 @@ export function proposeExperiment(input: ProposalInput, budget: RunBudget = new 
     audience: { description: input.audience.description.trim(), size: input.audience.size, opportunity_id: input.audience.opportunity_id ?? null },
     primary_metric: input.primary_metric,
     secondary_metrics: secondary,
-    success_threshold: { ...input.success_threshold },
-    stop_conditions: input.stop_conditions.map((s) => ({ ...s })),
-    allocation: { ...input.allocation },
+    // Named fields only: a field the schema does not know is never stored, hashed or echoed.
+    success_threshold: { metric: input.success_threshold.metric, min_difference: input.success_threshold.min_difference },
+    stop_conditions: input.stop_conditions.map((s) => ({ metric: s.metric, direction: s.direction, value: s.value, description: s.description })),
+    allocation: { control: input.allocation.control, treatment: input.allocation.treatment },
     duration_days: input.duration_days,
     min_sample_per_arm: min,
   };
-  const id = hashOf(core).slice(0, 12);
-  const smallestArm = Math.floor(core.audience.size * Math.min(input.allocation.control, input.allocation.treatment));
+  const id = planIdOf(core);
   return {
     experiment_id: `exp_${id}`,
     ...core,
-    allocation_salt: `salt_${hashOf({ id, kind: "allocation" }).slice(0, 16)}`,
-    planned_power: smallestArm >= min ? "ADEQUATE_POSSIBLE" : "INDICATIVE_ONLY",
+    allocation_salt: saltOf(id),
+    planned_power: plannedPowerOf(core),
     state: "PROPOSED",
     approval: null,
     lock_hash: null,
@@ -218,12 +319,37 @@ export function proposeExperiment(input: ProposalInput, budget: RunBudget = new 
 }
 
 /** Only a human approval object moves PROPOSED to APPROVED. No agent action exposes this function. */
-export function approveExperiment(spec: ExperimentSpec, approval: Approval | undefined): ExperimentSpec {
-  if (!approval || !approval.approval_id?.trim() || !approval.approved_by?.trim() || !Number.isFinite(Date.parse(approval.approved_at))) {
-    throw new AgentError("APPROVAL_REQUIRED", "a human approval (id, approver, timestamp) is required");
+function assertApproval(approval: Approval | null | undefined): asserts approval is Approval {
+  const shaped =
+    approval !== null && typeof approval === "object" &&
+    Object.keys(approval).sort().join(",") === "approval_id,approved_at,approved_by" &&
+    typeof approval.approval_id === "string" && !isBlank(approval.approval_id) && approval.approval_id.length <= MAX_TEXT_LENGTH &&
+    typeof approval.approved_by === "string" && !isBlank(approval.approved_by) && approval.approved_by.length <= MAX_TEXT_LENGTH;
+  let timestamped = false;
+  if (shaped) {
+    try {
+      parseIsoTimestamp(approval.approved_at, "approval.approved_at");
+      timestamped = true;
+    } catch {
+      timestamped = false;
+    }
   }
+  if (!shaped || !timestamped) {
+    throw new AgentError("APPROVAL_REQUIRED", "a human approval (id, approver, ISO 8601 timestamp) is required");
+  }
+}
+
+export function approveExperiment(spec: ExperimentSpec, approval: Approval | undefined): ExperimentSpec {
+  // Read once. A getter that answers differently on the second read cannot pass the check and be stored another way.
+  let once: unknown = null;
+  try {
+    once = JSON.parse(JSON.stringify(approval ?? null));
+  } catch {
+    once = null;
+  }
+  assertApproval(once as Approval | null);
   const next = move(spec, "APPROVED");
-  next.approval = { ...approval };
+  next.approval = { ...(once as Approval) };
   next.lock_hash = lockOf(next);
   return next;
 }
@@ -273,7 +399,7 @@ export function recordResult(spec: ExperimentSpec, input: ResultInput): Experime
     secondary,
     stop_breached: stop,
   };
-  next.result_hash = hashOf(next.result);
+  next.result_hash = resultSeal(next);
   return next;
 }
 
@@ -284,14 +410,7 @@ export function decideExperiment(spec: ExperimentSpec): ExperimentSpec {
     throw new AgentError("INVALID_TRANSITION", "a decision needs a COMPLETE experiment with a recorded result");
   }
   const r = spec.result;
-  if (spec.result_hash === null || hashOf(r) !== spec.result_hash) {
-    throw new AgentError("RESULT_IMMUTABLE", "the recorded result does not match the hash taken when it was recorded");
-  }
-  // The sample class is recomputed from the counts and the plan. A stored class is never trusted.
-  const sampleClass = classifySample(r.n_control, r.n_treatment, spec.min_sample_per_arm);
-  if (r.required_per_arm !== spec.min_sample_per_arm || r.sample_class !== sampleClass) {
-    throw new AgentError("RESULT_IMMUTABLE", "the recorded sample class does not follow from the sample counts and the pre-registered plan");
-  }
+  const sampleClass = verifyResult(spec);
   let decision: ExperimentDecision;
   if (r.stop_breached) {
     decision = { decision: "REJECT", reason: "STOP_CONDITION", note: `Stop condition on ${r.stop_breached.metric} was breached: ${r.stop_breached.description}` };
@@ -321,33 +440,175 @@ export function blockExperiment(spec: ExperimentSpec, note: string): ExperimentS
 }
 
 /** In-memory ledger. There is no delete and a recorded result can never be removed. */
+/** A decision record has exactly these fields. */
+const DECISION_KEYS = "decision,note,reason";
+
+// A cycle is not detected on its own: it runs into the depth limit (or the node limit) after at most a few thousand steps.
+const MAX_RECORD_NODES = 5000;
+const MAX_RECORD_DEPTH = 32;
+
+function assertPlainJson(value: unknown, state: { nodes: number }, depth: number): void {
+  state.nodes += 1;
+  if (state.nodes > MAX_RECORD_NODES) throw new AgentError("INVALID_INPUT", "the experiment record is too large");
+  if (depth > MAX_RECORD_DEPTH) throw new AgentError("INVALID_INPUT", "the experiment record is nested too deeply");
+  if (value === null || typeof value === "string" || typeof value === "boolean") return;
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) throw new AgentError("INVALID_INPUT", "a number in the experiment record is not finite");
+    return;
+  }
+  if (typeof value !== "object") throw new AgentError("INVALID_INPUT", "the experiment record holds a value that is not JSON data");
+  const proto = Object.getPrototypeOf(value);
+  if (!Array.isArray(value) && proto !== Object.prototype && proto !== null) {
+    throw new AgentError("INVALID_INPUT", "the experiment record holds an object that is not plain JSON data");
+  }
+  if (Array.isArray(value)) {
+    // Own properties other than the indexes (a Map or a typed array hung on an array) are hidden storage.
+    if (Object.keys(value).length !== value.length) {
+      throw new AgentError("INVALID_INPUT", "the experiment record holds an array with extra or missing entries");
+    }
+    for (let i = 0; i < value.length; i += 1) assertPlainJson(value[i], state, depth + 1);
+  } else {
+    for (const key of Object.keys(value)) assertPlainJson((value as Record<string, unknown>)[key], state, depth + 1);
+  }
+}
+
 export class ExperimentLedger {
   private readonly items = new Map<string, ExperimentSpec>();
 
-  add(spec: ExperimentSpec): void {
-    if (this.items.has(spec.experiment_id)) {
-      throw new AgentError("DUPLICATE_EXPERIMENT", `experiment ${spec.experiment_id} already exists`);
+  /**
+   * The caller's object is copied exactly once, and every check and the stored record use that copy. A getter or
+   * a Proxy can therefore not answer one way to the checks and another way to the store.
+   */
+  private static copyOf(spec: unknown): ExperimentSpec {
+    if (spec === null || typeof spec !== "object") throw new AgentError("INVALID_INPUT", "an experiment record must be an object");
+    let copy: ExperimentSpec;
+    try {
+      copy = structuredClone(spec) as ExperimentSpec;
+    } catch {
+      throw new AgentError("INVALID_INPUT", "an experiment record must be plain data");
     }
-    this.items.set(spec.experiment_id, structuredClone(spec));
+    // `structuredClone` also keeps cycles, BigInt, Map, Set, Date and typed arrays. The hash that locks a plan is
+    // blind to the content of some of them, so only JSON-shaped data is accepted into the ledger.
+    assertPlainJson(copy, { nodes: 0 }, 0);
+    return copy;
+  }
+
+  /** What `proposeExperiment` builds from this record's plan. The plan is validated by the very same rules. */
+  private static rebuilt(spec: ExperimentSpec): ExperimentSpec {
+    try {
+      return proposeExperiment({
+        hypothesis: spec.hypothesis,
+        control: spec.control,
+        treatment: spec.treatment,
+        audience: { description: spec.audience.description, size: spec.audience.size, opportunity_id: spec.audience.opportunity_id },
+        primary_metric: spec.primary_metric,
+        secondary_metrics: spec.secondary_metrics,
+        success_threshold: spec.success_threshold,
+        stop_conditions: spec.stop_conditions,
+        allocation: spec.allocation,
+        duration_days: spec.duration_days,
+        min_sample_per_arm: spec.min_sample_per_arm,
+      });
+    } catch (err) {
+      if (err instanceof AgentError) throw err;
+      throw new AgentError("INVALID_INPUT", "the experiment record is malformed");
+    }
+  }
+
+  /** The plan passes every proposal rule, and the id, the allocation salt and the planned power follow from it. */
+  private static assertConsistent(spec: ExperimentSpec): void {
+    const rebuilt = ExperimentLedger.rebuilt(spec);
+    if (Object.keys(spec).sort().join(",") !== Object.keys(rebuilt).sort().join(",")) {
+      throw new AgentError("INVALID_INPUT", "the experiment record has missing or unknown fields");
+    }
+    const planPart = (x: ExperimentSpec) =>
+      hashOf({ id: x.experiment_id, salt: x.allocation_salt, power: x.planned_power, plan: planIdOf(x), audience: x.audience });
+    if (planPart(rebuilt) !== planPart(spec)) {
+      throw new AgentError("KPI_LOCKED", "the experiment id, allocation salt or planned power does not follow from its plan");
+    }
+  }
+
+  /** A new experiment enters the ledger only as a fresh PROPOSAL. Every later state comes through `update`. */
+  add(spec: ExperimentSpec): void {
+    const next = ExperimentLedger.copyOf(spec);
+    if (this.items.has(next.experiment_id)) {
+      throw new AgentError("DUPLICATE_EXPERIMENT", `experiment ${String(next.experiment_id)} already exists`);
+    }
+    if (
+      next.state !== "PROPOSED" || next.approval !== null || next.lock_hash !== null ||
+      next.result !== null || next.result_hash !== null || next.decision !== null
+    ) {
+      throw new AgentError("INVALID_TRANSITION", "an experiment enters the ledger as PROPOSED, without approval, lock, result or decision");
+    }
+    ExperimentLedger.assertConsistent(next);
+    this.items.set(next.experiment_id, next);
   }
 
   update(spec: ExperimentSpec): void {
-    const stored = this.items.get(spec.experiment_id);
-    if (!stored) throw new AgentError("INVALID_INPUT", `experiment ${spec.experiment_id} is unknown`);
-    if (stored.state !== spec.state && !TRANSITIONS[stored.state].includes(spec.state)) {
-      throw new AgentError("INVALID_TRANSITION", `${stored.state} -> ${spec.state} is not allowed`);
+    const next = ExperimentLedger.copyOf(spec);
+    const stored = this.items.get(next.experiment_id);
+    if (!stored) throw new AgentError("INVALID_INPUT", `experiment ${String(next.experiment_id)} is unknown`);
+    ExperimentLedger.assertConsistent(next);
+    if (stored.state !== next.state && !TRANSITIONS[stored.state].includes(next.state)) {
+      throw new AgentError("INVALID_TRANSITION", `${stored.state} -> ${next.state} is not allowed`);
     }
+
+    // Approval and lock. After approval the plan, the approval and the salt are frozen for good.
     if (stored.lock_hash !== null) {
-      // After approval the plan, the approval and the allocation salt are frozen for good.
-      if (spec.lock_hash !== stored.lock_hash || hashOf(spec.approval) !== hashOf(stored.approval)) {
+      if (next.lock_hash !== stored.lock_hash || hashOf(next.approval) !== hashOf(stored.approval)) {
         throw new AgentError("KPI_LOCKED", "the approval or the lock of an approved experiment cannot be changed or removed");
       }
-      verifyLock(spec);
+      verifyLock(next);
+    } else if (next.state === "BLOCKED") {
+      if (next.approval !== null || next.lock_hash !== null) {
+        throw new AgentError("KPI_LOCKED", "an experiment blocked before approval cannot carry an approval or a lock");
+      }
+    } else if (next.state !== "PROPOSED") {
+      // The only way out of PROPOSED is a human approval with a lock computed over this very plan.
+      assertApproval(next.approval);
+      if (next.lock_hash === null) throw new AgentError("KPI_LOCKED", "an approved experiment needs a lock");
+      verifyLock(next);
     }
-    if (stored.result && (!spec.result || hashOf(spec.result) !== hashOf(stored.result))) {
-      throw new AgentError("RESULT_IMMUTABLE", "a recorded result cannot be removed or changed");
+
+    // Result. Recorded once, sealed, and only on the move to COMPLETE.
+    if (stored.result !== null) {
+      if (!next.result || hashOf(next.result) !== hashOf(stored.result) || next.result_hash !== stored.result_hash) {
+        throw new AgentError("RESULT_IMMUTABLE", "a recorded result cannot be removed or changed");
+      }
+    } else if (next.state === "COMPLETE") {
+      verifyResult(next);
+    } else if (next.result !== null || next.result_hash !== null) {
+      throw new AgentError("RESULT_IMMUTABLE", "a result can only be recorded when the experiment moves to COMPLETE");
     }
-    this.items.set(spec.experiment_id, structuredClone(spec));
+
+    // Decision. KEEP, REJECT and ITERATE are exactly what the pre-registered plan and the sealed result decide,
+    // and the state label must be the decision's own label.
+    if (stored.decision !== null) {
+      if (hashOf(next.decision) !== hashOf(stored.decision)) {
+        throw new AgentError("RESULT_IMMUTABLE", "a recorded decision cannot be removed or changed");
+      }
+    } else if (next.state === "KEEP" || next.state === "REJECT" || next.state === "ITERATE") {
+      const expected = decideExperiment(stored);
+      if (next.state !== expected.state || hashOf(next.decision) !== hashOf(expected.decision)) {
+        throw new AgentError("RESULT_IMMUTABLE", "the state and decision are not the ones the pre-registered plan and the sealed result produce");
+      }
+    } else if (next.state === "BLOCKED") {
+      const d = next.decision;
+      if (
+        d === null || typeof d !== "object" || Object.keys(d).sort().join(",") !== DECISION_KEYS ||
+        d.decision !== "BLOCKED" || d.reason !== "MISSING_DATA" || typeof d.note !== "string" || isBlank(d.note) || d.note.length > MAX_TEXT_LENGTH
+      ) {
+        throw new AgentError("INVALID_TRANSITION", "a blocked experiment needs a BLOCKED decision with a note");
+      }
+    } else if (next.decision !== null) {
+      throw new AgentError("INVALID_TRANSITION", `a decision cannot exist in state ${next.state}`);
+    }
+
+    // No silent edits: without a transition the record must be identical.
+    if (stored.state === next.state && hashOf(next) !== hashOf(stored)) {
+      throw new AgentError("INVALID_TRANSITION", "an experiment changes only through a state transition");
+    }
+    this.items.set(next.experiment_id, next);
   }
 
   get(id: string): ExperimentSpec | null {

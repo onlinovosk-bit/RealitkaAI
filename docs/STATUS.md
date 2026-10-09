@@ -3,9 +3,19 @@
 > Aktualizuje sa **po každom uzavretom bloku** (jeden riadok zmeny hore + tabuľka). Čísla sú merané, kde je uvedený dôkaz;
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-05** (GMAIL-CONNECT: pripojenie Gmailu s šifrovaným tokenom a karta v Integráciách sú v kóde, **neaktivované** — % nezmenené).
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 20:45 UTC** (opt-in auto-odpoveď: migrácia na PROD + fail-closed #811; `last_contact_at` sa zapisuje #800; „Čakajú na kontakt" prestalo byť celá kniha #804).
+> **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-05, 07:55 UTC** (FAIL-OPEN-SWEEP + TRIAL-GATE-CLOSED variant A: po vypršaní trialu je účet read-only, nie otvorený; hlavička prepočítaná z tabuľky 53 % → 51 %).
 > **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 08:30 UTC** (EVENTS-WIRE + CRON-ALIVE, zatiaľ nezmergované).
 
-## Celkom: ≈ 53 %  (odhad)
+> **2026-10-08 SIGNUP-PROD:** migrácie SIGNUP-ARCH a pricing v2 stĺpce sú **aplikované na PROD** (dôkaz v `docs/architecture/2026-10-06-self-serve-signup.md`). Zavreté 2 nové cesty (zápis billing/trial stĺpcov agentúry z prehliadača; zhoda neoverený e-mail → tenant). Tabuľka nižšie sa NEPREPOČÍTAVA, kým nie je aj živý nákup (váha Predaj/platby 30).
+>
+> **2026-10-06 SIGNUP-ARCH:** kód + migrácia + TEST dôkaz (guard, bootstrap, hardening) pripravené, **na PROD neaplikované → tabuľka nižšie sa NEMENÍ** (percentá rastú až s PROD dôkazom: živé ceny + webhook → „Predaj/platby"; aplikovaná migrácia → „Tenantová izolácia" a „Schéma + nasadenie"). Pozri `docs/architecture/2026-10-06-self-serve-signup.md`.
+
+## Celkom: ≈ 51 %  (odhad, prepočítané z tabuľky nižšie)
+
+> Hlavička predtým hlásila ≈ 53 %, ale vážený súčet z jej VLASTNEJ tabuľky dáva
+> 51 % (0×30 + 80×30 + 67×15 + 70×15 + 70×10 = 5155/100). Číslo, ktoré si nesedí
+> so svojím zdrojom, je presne tá chyba, ktorú tento týždeň opravujeme na troch
+> miestach — tak som ho prepočítal. Váhy sú odhad; ich zmena je founder rozhodnutie.
 
 **Session 2026-10-02: 11 z 12 plánovaných blokov = 92 %** (počet blokov, nie vážené hodnotou; zostáva 1: Stripe krok C — founder).
 
@@ -14,6 +24,7 @@
 | **Predaj / platby (Stripe)** | 30 | **0 z 10 cien** na live účte | **0 %** | **founder: krok C v Stripe** |
 | Príjem e-mailov → lead | 30 | parser ✅ · diagnostika (#743) ✅ · log schránok + trvalá stopa (#774) ✅ **nasadené a funguje** (23 riadkov od 1. 10. 19:41) · `unknown_source` → BACKLOG (dáta nepodporujú) · **Gmail connect** (GMAIL-CONNECT): kód + šifrovaný token + karta Integrácie hotové, **neaktivované** — čaká na Google client, súhlas majiteľa a kľúče | 80 % | nič — čaká na reálne portálové maily |
 | **Predaj / platby (Stripe)** | 30 | **0 z 10 cien** na live účte · kód: zrušenie / zmena miest / zlyhaná platba sa premieta do `agencies` (**TESTED**, 15 testov + mutation proof 9/9, PLATBY-E2E; PROD neoverené) · chýbajúci `STRIPE_WEBHOOK_SECRET` sa hlási | **0 %** | **founder: krok C v Stripe + `STRIPE_WEBHOOK_SECRET` + endpoint v Stripe** |
+| **Predaj / platby (Stripe)** | 30 | **0 z 10 cien** na live účte · kód: zrušenie / zmena miest / zlyhaná platba sa premieta do `agencies` (**TESTED**, 15 testov + mutation proof 9/9, PLATBY-E2E; PROD neoverené) · chýbajúci `STRIPE_WEBHOOK_SECRET` sa hlási · **brána po vypršaní už vynucuje** (read-only režim, #817; predtým `canUseFullApp = true` natvrdo) | **0 %** | **founder: krok C v Stripe + `STRIPE_WEBHOOK_SECRET` + endpoint v Stripe** |
 | Príjem e-mailov → lead | 30 | parser ✅ · diagnostika (#743) ✅ · log schránok + trvalá stopa (#774) ✅ **nasadené a funguje** (23 riadkov od 1. 10. 19:41) · `unknown_source` → BACKLOG (dáta nepodporujú) | 80 % | nič — čaká na reálne portálové maily |
 | AI návrh + odoslanie | 15 | triage ✅ · návrh ✅ · odoslanie ❌ · **opt-in tesní**: migrácia `auto_response_enabled DEFAULT false` aplikovaná na PROD 2026-10-02 (overené `information_schema`, 7 agentúr nedotknutých, rollback v `supabase_migrations`) + fail-closed v kóde (#811, čaká na merge) | 67 % | founder: Resend DNS + reply-to + súhlas referenčného klienta |
 | **AI vrstva (BRI, skóre, briefy)** | *(v „Schéma + nasadenie")* | **crony BEŽIA** (meraná stopa v `cron_runs`) · zapisovateľ eventov zapojený (#786) · `events` stále 0 do nasadenia · **`leads.last_contact_at` konečne niekto zapisuje** (#800, bolo 0 z 520 riadkov) · ranný brief už nevydáva počet riadkov za meranie (#804: `pendingContact`/`hotPending` → `number \| null`) | 45 % | merge #786 + nasadenie; prvý reálny kontakt rozbehne stopu |
@@ -25,11 +36,11 @@
 | časť | stav | dôkaz | čo blokuje ďalší krok |
 |---|---|---|---|
 | Špecifikácia (P08) + plán (P09) | ✅ | `docs/onlinovo/ONL-AGENTS-P08-*.md`, `P09-*.md` | — |
-| 3 agenti (príležitosti, ďalšia akcia, experiment) | ✅ IMPLEMENTED/TESTED, read-only, **iba fixture/unconnected** | mcp-onlinovo 198/198, control-contract 72/72, crm lib/agents 69/69 (po oprave nálezov P11) | živý zdroj dát = UNKNOWN |
+| 3 agenti (príležitosti, ďalšia akcia, experiment) | ✅ IMPLEMENTED/TESTED, read-only, **iba fixture/unconnected** | mcp-onlinovo 271/271, control-contract 72/72, crm lib/agents 69/69 (po oprave nálezov P11 #1–#6) | živý zdroj dát = UNKNOWN |
 | Odoslanie/plánovanie kampane, zápis journey | ⛔ BLOCKED v registri | `onlinovo.campaign.*`, `onlinovo.journey.write` FORBIDDEN, schválenie ich neodomkne | LeadHub API kontrakt = UNKNOWN (čaká odpoveď podpory) |
-| Nezávislé overenie | 🟡 P11 #1 našla 5 stredných nálezov (opravené v novom PR, F1–F13) · P11 #2 ⏳ | `memory/decisions.md` 2026-10-05 | nový overovací agent; **stav nie je VERIFIED** |
+| Nezávislé overenie | 🟡 P11 #1–#6 našli nálezy (opravené v #812 a #814; #6 bez FAIL nároku, N1–N7 opravené; limity prijaté founderom 2026-10-07, P11 #7 sa nespúšťa) · N8 (UNPAID_RECOVERY a opted_out) čaká na rozhodnutie foundera | `memory/decisions.md` 2026-10-05 | nový overovací agent; **stav nie je VERIFIED** |
 
-*Stav: #807 zmergovaný (nie mnou); opravy nálezov P11 sú v novom draft PR. Nič nenasadené. `packages/mcp-onlinovo` nemá CI job (`.github/**` je denylist → rozhodne founder).*
+*Stav: #807 a #812 zmergované (nie mnou); opravy nálezov P11 #4 sú v #814 (draft). Nič nenasadené. `packages/mcp-onlinovo` nemá CI job (`.github/**` je denylist → rozhodne founder).*
 
 <!-- SESSION:START -->
 ## Session: postup v % (zdroj pre `.claude/hooks/session-progress.sh`)

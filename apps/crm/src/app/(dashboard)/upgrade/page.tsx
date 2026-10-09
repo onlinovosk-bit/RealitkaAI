@@ -5,6 +5,11 @@ import Link from 'next/link';
 import { SLATE_HORIZON, WORKDESK_CARD } from '@/lib/slate-horizon-theme';
 import { BILLING_TOPUP_HREF } from '@/lib/program-tier-pricing';
 import { RedeemStarterPackCode } from '@/components/billing/RedeemStarterPackCode';
+import PricingV2Plans from '@/components/billing/v2/PricingV2Plans';
+import PricingV2CreditsTopup from '@/components/billing/v2/PricingV2CreditsTopup';
+import { readPricingV2Config } from '@/components/billing/v2/usePricingV2Config';
+import { usersForPlanParam } from '@/components/billing/v2/preselect';
+import type { PricingV2ConfigPayload } from '@/lib/pricing-v2-contract';
 
 type SeatTierKey = 'solo' | 'team' | 'office';
 type TopupKey = 'start' | 'rast' | 'pro' | 'mega';
@@ -42,7 +47,11 @@ type CheckoutConfig = {
 
 export default function UpgradePage() {
   const [config, setConfig] = useState<CheckoutConfig | null>(null);
+  // Cenník v2 len pri pricingV2.enabled === true; inak null a stránka ostáva legacy.
+  const [pricingV2, setPricingV2] = useState<PricingV2ConfigPayload | null>(null);
   const [loading, setLoading] = useState(true);
+  // undefined = query ešte nečítaný; null = bez predvýberu; číslo = počet používateľov z ?plan=
+  const [preselectUsers, setPreselectUsers] = useState<number | null | undefined>(undefined);
   const [seatTier, setSeatTier] = useState<SeatTierKey>('team');
   const [seatCount, setSeatCount] = useState(3);
   const [includeCockpit, setIncludeCockpit] = useState(false);
@@ -50,9 +59,14 @@ export default function UpgradePage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    setPreselectUsers(usersForPlanParam(new URLSearchParams(window.location.search).get('plan')));
+  }, []);
+
+  useEffect(() => {
     fetch('/api/billing/checkout-config')
       .then((r) => r.json())
       .then((d) => {
+        setPricingV2(readPricingV2Config(d));
         // okResponse spreads payload at the top level ({ ok, seatCheckoutAvailable, ... }),
         // not under `.data` — same contract as CreditsTopupPanel.
         if (d.ok && typeof d.seatCheckoutAvailable === 'boolean') {
@@ -116,7 +130,7 @@ export default function UpgradePage() {
     [],
   );
 
-  const unavailable = !loading && !config?.checkoutAvailable;
+  const unavailable = !loading && !config?.checkoutAvailable && !pricingV2;
 
   return (
     <div
@@ -128,7 +142,9 @@ export default function UpgradePage() {
           Upgrade programu
         </h1>
         <p style={{ color: SLATE_HORIZON.muted }}>
-          Seat-based predplatné, Owner Cockpit a doplnkové kredity.
+          {pricingV2
+            ? 'Jedna mesačná cena za kanceláriu, kredity na AI akcie a doplnkové kredity.'
+            : 'Seat-based predplatné, Owner Cockpit a doplnkové kredity.'}
         </p>
       </header>
 
@@ -169,7 +185,11 @@ export default function UpgradePage() {
         </div>
       )}
 
-      {config?.seatCheckoutAvailable && (
+      {pricingV2 && preselectUsers !== undefined && (
+        <PricingV2Plans config={pricingV2} initialUsers={preselectUsers ?? 1} />
+      )}
+
+      {!pricingV2 && config?.seatCheckoutAvailable && (
         <section
           className="mb-8 rounded-xl border p-6"
           style={{
@@ -284,24 +304,28 @@ export default function UpgradePage() {
         </section>
       )}
 
+      {!pricingV2 && (
       <section
-        className="mb-8 rounded-xl border p-6"
-        style={{
-          background: WORKDESK_CARD.background,
-          borderColor: WORKDESK_CARD.borderColor,
-          boxShadow: WORKDESK_CARD.boxShadow,
-        }}
-      >
-        <h2 className="text-xl font-semibold mb-2" style={{ color: SLATE_HORIZON.ink }}>
-          Kód zo štartovacieho balíka
-        </h2>
-        <p className="text-sm mb-4" style={{ color: SLATE_HORIZON.muted }}>
-          Kúpil si maklérsky balík za 47 €? Zadaj kód z emailu — pripíšeme 47 € kreditov na účet.
-        </p>
-        <RedeemStarterPackCode />
-      </section>
+          className="mb-8 rounded-xl border p-6"
+          style={{
+            background: WORKDESK_CARD.background,
+            borderColor: WORKDESK_CARD.borderColor,
+            boxShadow: WORKDESK_CARD.boxShadow,
+          }}
+        >
+          <h2 className="text-xl font-semibold mb-2" style={{ color: SLATE_HORIZON.ink }}>
+            Kód zo štartovacieho balíka
+          </h2>
+          <p className="text-sm mb-4" style={{ color: SLATE_HORIZON.muted }}>
+            Kúpil si maklérsky balík za 47 €? Zadaj kód z emailu — pripíšeme 47 € kreditov na účet.
+          </p>
+          <RedeemStarterPackCode />
+        </section>
+      )}
 
-      {config?.topupCheckoutAvailable && (
+      {pricingV2 && <PricingV2CreditsTopup config={pricingV2} />}
+
+      {!pricingV2 && config?.topupCheckoutAvailable && (
         <section
           className="rounded-xl border p-6"
           style={{

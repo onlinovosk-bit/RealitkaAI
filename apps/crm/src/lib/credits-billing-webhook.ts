@@ -4,6 +4,14 @@ import {
   applyTopupPurchase,
   triggerInitialGrantAfterSeatCheckout,
 } from "@/lib/credits-billing";
+import {
+  fulfillPricingV2CreditsCheckout,
+  fulfillPricingV2PlanCheckout,
+} from "@/lib/credits-billing-v2";
+import {
+  PRICING_V2_CHECKOUT_TYPE_CREDITS,
+  PRICING_V2_CHECKOUT_TYPE_PLAN,
+} from "@/lib/pricing-v2-contract";
 import { parseSeatTier, parseTopupPackageKey } from "@/lib/program-tier-pricing";
 import { fulfillStarterPackPurchase } from "@/lib/starter-pack/fulfillment";
 
@@ -14,11 +22,20 @@ import { fulfillStarterPackPurchase } from "@/lib/starter-pack/fulfillment";
 export async function handlePricingCheckoutWebhook(
   event: Stripe.Event,
 ): Promise<boolean> {
-  if (event.type !== "checkout.session.completed") return false;
+  const isCompleted = event.type === "checkout.session.completed";
+  // Asynchrónna platba (napr. SEPA) dorazí až neskôr; plní sa len v2 (legacy správanie ostáva).
+  const isAsyncPaid = event.type === "checkout.session.async_payment_succeeded";
+  if (!isCompleted && !isAsyncPaid) return false;
 
   const session = event.data.object as Stripe.Checkout.Session;
   const meta = session.metadata ?? {};
   const checkoutType = meta.checkoutType;
+
+  // Cenník v2: plní sa vždy, keď peniaze prišli (prepínač riadi vznik checkoutu, nie plnenie
+  // už zaplatenej session). Neplatné metadáta = false → trasa vráti 500, nikdy tiché true.
+  if (checkoutType === PRICING_V2_CHECKOUT_TYPE_PLAN) return fulfillPricingV2PlanCheckout(session);
+  if (checkoutType === PRICING_V2_CHECKOUT_TYPE_CREDITS) return fulfillPricingV2CreditsCheckout(session);
+  if (isAsyncPaid) return false;
 
   if (checkoutType === "seat") {
     const agencyId = meta.agencyId;

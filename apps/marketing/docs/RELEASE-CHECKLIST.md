@@ -5,7 +5,8 @@
 ## Pred merge
 
 - [ ] `npm run build` v `apps/marketing` — zelený
-- [ ] Cenník na `/` zobrazuje rovnaké sumy ako `apps/crm/src/lib/program-tier-pricing.ts` (Solo 79 / Team 71 / Office 63 €)
+- [ ] Cenník na `/` zobrazuje cenník v2 bez DPH s viditeľnou cenou s DPH (Start 25 / Team 60 / Kancelária 149 / Sieť od 349 €) a kredity 20 / 50 / 100 / 150; zdroj `apps/crm/src/lib/pricing-v2.ts`. Staré seat ceny (Solo 79 / Team 71 / Office 63 €) sa vrátia len pri výslovnom `PRICING_V2_ENABLED=false`.
+- [ ] CTA na cenníku vedú na demo; do registrácie v CRM až po `PRICING_V2_SIGNUP_ENABLED=true` (Stripe ceny + funnel).
 - [ ] Žiadny fake social proof (340+ kancelárií, vymyslené štatistiky, Smolko mená)
 - [ ] Case study: anonymná RK z Prešova (nie konkrétna značka)
 - [ ] Primárny CTA: Calendly demo (`calendly.com/revoliscrm/30min`)
