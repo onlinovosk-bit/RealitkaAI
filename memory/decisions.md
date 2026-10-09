@@ -1,5 +1,12 @@
 # Critical Decisions Log
 
+## 2026-10-09 — P23 strana Ads: Google Ads cez Supermetrics, read-only (VALIDATE)
+**GO foundera:** „Ads pripojené“ (po „GO na pripoj Supermetrics“; autorizácia Google Ads účtu `1696633454` cez účet majiteľa). **Brána Ústavy v2:** Q1 = NIE → strop VALIDATE; BACKLOG pre produkt Revolis.
+**Výstup:** `docs/onlinovo/2026-10-09-p23-ads-audit.md`. Len čítanie (zápisové nástroje Supermetrics, napr. `manage_campaign`, nepoužité); v Ads, Shoptete ani LeadHube sa nič nezmenilo.
+**Zistenia:** náklady Ads = P&L Marketing Costs na cent (mar–aug 2026, mar–sep 2025); „Nákup“ (primárna akcia) = 92 % objednávok bez storna a 105 % vybavených v apr–sep 2026 (Q4 2025: 75 % a 88 %), hodnota 104 % vybavených ⇒ Ads pripisuje takmer všetko a ROAS 6,13 (PMax) nie je prírastkový; základ hodnoty = produkty bez DPH po kupóne (rozdiel proti Shoptetu zvyčajne do ±3 %); PMax cieľ ROAS 600 %, denný rozpočet 100 € vs reálne ≈ 29 €/deň ⇒ obmedzuje cieľ ROAS, nie rozpočet.
+**Limity:** v Ads nie je ID transakcie, test jednej objednávky (≤ 1 %) vyžaduje GA4 alebo ručný výpis; história zmien len 30 dní; Meta a GA4 nepripojené; konektor beží cez hlavný účet majiteľa (odporúčané: samostatný používateľ Read only). Stav VALIDATE, nie VERIFIED.
+**Návrh (vyžaduje GO a zmenu v Ads, nerobím):** opravy konverzií pre nezaplatené/neprevzaté/zrušené; test s kontrolnou skupinou pred škálovaním.
+
 ## 2026-10-09 — Q4-GROWTH: rastová stratégia onlinovo.sk Q4 2026 (VALIDATE, nie BUILD)
 **GO foundera:** „vykonaj deep research a analýzu pre rastovú stratégiu Q4 eshopu onlinovo.sk" (príloha: `ONLINOVO_Q4_2026_Strategia.md`, RAU prompty P00–P23). **Brána Ústavy v2:** Q1 (zaplatil by dnešný klient Revolisu) = NIE → VETO, strop VALIDATE; rozhodnutie: **BACKLOG pre produkt Revolis, VALIDATE pre onlinovo.sk** (dôvod: práca tvorí podklad pre klienta/vlastný eshop, nie funkciu produktu; Stripe krok C má prednosť).
 **Výstup:** `docs/onlinovo/2026-10-09-q4-growth-strategy.md` + `docs/onlinovo/2026-10-09-q4-leadhub-datapack.md`. Len dokumenty, nič sa nezmenilo v Ads/Shoptete/LeadHube (LeadHub len čítanie agregátov, bez osobných údajov).
