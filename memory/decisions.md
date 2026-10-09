@@ -1,5 +1,12 @@
 # Critical Decisions Log
 
+## 2026-10-09 — P23 strana GA4: audit 10 objednávok prešiel, atribúcia (VALIDATE)
+**GO foundera:** „GA4 pripojené“ (vlastnosť `293665616`). **Brána Ústavy v2:** Q1 = NIE → strop VALIDATE.
+**Výstup:** `docs/onlinovo/2026-10-09-p23-ga4-audit.md`. Len čítanie.
+**Zistenia:** audit 10 objednávok 10/10, `purchaseRevenue` v GA4 = produkty bez DPH po kupóne (báza C) na cent; Ads „Nákup“ = 124 % GA4 nákupov z `google / cpc` v apr–sep 2026, Ads „(web) purchase“ 104 % ⇒ tag „Nákup“ pridáva ≈ 24 % navyše; GA4 zachytáva 82–96 % objednávok; podiel `google / cpc` 66 % (Q4 2025) → 84 % (apr–sep 2026); Meta v Q4 2025: 190 nákupov, GA4 ROAS 2,84 (2,2–3,2 mesačne), G0 by nesplnila; Meta bez nákupov od marca 2026.
+**Rozhodnutie (potvrdené):** tROAS 600 % ponechať, test s kontrolnou skupinou pred škálovaním; zmena optimalizačnej akcie PMax vyžaduje GO a zmenu v Ads (nerobím). Meta nereštartovať bez testu.
+**Limity:** test značky Ads „Nákup“ po objednávke nie je možný (Ads bez ID transakcie); GA4 vynecháva 4–18 % objednávok; dôvod zastavenia Meta neznámy. Stav VALIDATE, nie VERIFIED.
+
 ## 2026-10-09 — P23 strana Ads: Google Ads cez Supermetrics, read-only (VALIDATE)
 **GO foundera:** „Ads pripojené“ (po „GO na pripoj Supermetrics“; autorizácia Google Ads účtu `1696633454` cez účet majiteľa). **Brána Ústavy v2:** Q1 = NIE → strop VALIDATE; BACKLOG pre produkt Revolis.
 **Výstup:** `docs/onlinovo/2026-10-09-p23-ads-audit.md`. Len čítanie (zápisové nástroje Supermetrics, napr. `manage_campaign`, nepoužité); v Ads, Shoptete ani LeadHube sa nič nezmenilo.

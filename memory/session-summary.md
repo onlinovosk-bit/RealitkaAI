@@ -1,3 +1,15 @@
+## Session 2026-10-09 (P23 strana GA4)
+### Dokončené
+- `docs/onlinovo/2026-10-09-p23-ga4-audit.md`: audit 10 objednávok 10/10 (GA4 = báza C na cent), mesačná atribúcia Shoptet / GA4 / Ads, Meta ROAS z GA4, dôsledky.
+- PR #833 (strana Ads) zmergovaný na výslovné „merguj 833“ (squash `cd7f326`), CI zelené na hlave.
+### Rozpracované / Pending
+- Test značky Ads „Nákup“ po objednávke (Ads bez ID transakcie); rozhodnutie o zmene optimalizačnej akcie PMax a o teste s kontrolnou skupinou.
+- Dôvod zastavenia Meta; Stripe krok C; ručný P&L na jednu množinu (Vybavená).
+### Kľúčové súbory zmenené
+- `docs/onlinovo/2026-10-09-p23-ga4-audit.md`, `docs/onlinovo/2026-10-09-p23-ads-audit.md`, `memory/decisions.md`, `memory/session-summary.md`.
+### Ďalší krok
+Rozhodnutie foundera: test s kontrolnou skupinou (INI-5) a zmena optimalizačnej akcie PMax (vyžaduje GO a zmenu v Ads).
+
 ## Session 2026-10-09 (P23 strana Ads)
 ### Dokončené
 - `docs/onlinovo/2026-10-09-p23-ads-audit.md`: Google Ads cez Supermetrics (read-only) proti Shoptetu a P&L: náklady zhodné s P&L, „Nákup“ si pripisuje 92 % objednávok (105 % vybavených) v apr–sep 2026, kampane a ID, konverzné akcie, základ hodnoty.
