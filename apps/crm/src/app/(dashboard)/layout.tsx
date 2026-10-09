@@ -11,6 +11,10 @@ import { WorkdeskTopbar } from "@/components/layout/WorkdeskTopbar";
 import { SLATE_HORIZON } from "@/lib/slate-horizon-theme";
 import SessionRecovery from "@/components/auth/session-recovery";
 import { isInvalidRefreshTokenError } from "@/lib/supabase/auth-session";
+import { PricingV2Provider } from "@/components/marketing/pricing-v2-context";
+import { getPricingV2CatalogIfEnabled } from "@/components/marketing/pricing-v2-copy";
+import { AgencyPricingV2Provider } from "@/components/billing/v2/agency-pricing-context";
+import { fetchAgencyPricingV2 } from "@/lib/pricing-v2-agency";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -48,7 +52,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const accountTier = resolveAccountTier(profile, agencyManualPlan);
 
+  // Cenník v2 (W3-fix): katalóg a stav kancelárie sa načítajú LEN pri zapnutom prepínači; vypnutý = žiadny
+  // ďalší dotaz a providery s null (nerenderujú žiadne DOM) = výstup ako doteraz.
+  const pricingV2Catalog = getPricingV2CatalogIfEnabled();
+  const agencyPricingV2 =
+    pricingV2Catalog && profile?.agency_id ? await fetchAgencyPricingV2(supabase, profile.agency_id) : null;
+
   return (
+    <PricingV2Provider catalog={pricingV2Catalog}>
+    <AgencyPricingV2Provider value={agencyPricingV2}>
     <div
       data-theme="slate-horizon"
       style={{ display: "flex", flex: 1, minHeight: 0, width: "100%", overflow: "hidden" }}
@@ -78,5 +90,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </main>
       </div>
     </div>
+    </AgencyPricingV2Provider>
+    </PricingV2Provider>
   );
 }

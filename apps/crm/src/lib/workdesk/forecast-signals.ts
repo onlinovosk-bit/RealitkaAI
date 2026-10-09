@@ -3,7 +3,10 @@ import type { DealHealthIssue } from "@/lib/forecasting-store";
 export type ForecastRiskSignal = {
   leadId: string;
   leadName: string;
+  /** 0 keď riskKnown=false — nikdy nezobrazuj ako sumu. */
   riskEur: number;
+  /** false = rozpočet leadu chýba, riziko v EUR je nevypočítané. */
+  riskKnown: boolean;
   probabilityPercent: number;
   note: string;
   kind: DealHealthIssue["kind"];
@@ -13,6 +16,8 @@ export type ForecastRiskSummary = {
   gapEur: number;
   atRiskCount: number;
   atRiskValueEur: number;
+  /** Počet signálov, ktorým chýba rozpočet (riziko v EUR nevypočítané). */
+  unknownValueCount: number;
   headline: string;
   subline: string;
   signals: ForecastRiskSignal[];
@@ -38,6 +43,7 @@ export function buildForecastRiskSummary(input: {
       gapEur: 0,
       atRiskCount: 0,
       atRiskValueEur: 0,
+      unknownValueCount: 0,
       headline: "Zatiaľ nie sú dáta na predikciu rizika",
       subline:
         "Forecast a riziká mesiaca sa počítajú z príležitostí v CRM — po importe alebo pridaní leadov sa zobrazia reálne signály.",
@@ -50,16 +56,22 @@ export function buildForecastRiskSummary(input: {
   const gapEur = Math.max(0, targetPipeline - input.expectedPipelineValue);
   const closedGap = Math.max(0, targetClosed - input.expectedClosedDeals);
 
-  const signals: ForecastRiskSignal[] = input.dealHealth.slice(0, 3).map((issue) => ({
-    leadId: issue.leadId,
-    leadName: issue.leadName,
-    riskEur: Math.round((issue.probabilityPercent / 100) * 180_000),
-    probabilityPercent: issue.probabilityPercent,
-    note: issue.note,
-    kind: issue.kind,
-  }));
+  const signals: ForecastRiskSignal[] = input.dealHealth.slice(0, 3).map((issue) => {
+    const value = issue.expectedDealValueEur;
+    const riskKnown = typeof value === "number" && Number.isFinite(value) && value > 0;
+    return {
+      leadId: issue.leadId,
+      leadName: issue.leadName,
+      riskEur: riskKnown ? Math.round((issue.probabilityPercent / 100) * value) : 0,
+      riskKnown,
+      probabilityPercent: issue.probabilityPercent,
+      note: riskKnown ? issue.note : `${issue.note} · riziko v EUR nevypočítané — chýba rozpočet`,
+      kind: issue.kind,
+    };
+  });
 
-  const atRiskValueEur = signals.reduce((sum, s) => sum + s.riskEur, 0);
+  const atRiskValueEur = signals.reduce((sum, s) => sum + (s.riskKnown ? s.riskEur : 0), 0);
+  const unknownValueCount = signals.filter((s) => !s.riskKnown).length;
   const atRiskCount = input.dealHealth.length;
 
   let headline: string;
@@ -83,6 +95,7 @@ export function buildForecastRiskSummary(input: {
     gapEur,
     atRiskCount,
     atRiskValueEur,
+    unknownValueCount,
     headline,
     subline,
     signals,

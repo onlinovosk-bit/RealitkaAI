@@ -1,19 +1,477 @@
-## Session 2026-10-09 (AGENTIC-WAVES plán + Vlna 0)
+## Session 2026-10-09 (AGENTIC-WAVES plán, Vlna 0 + Vlna 1 zmergovaná)
 ### Dokončené
-- `docs/plans/2026-10-09-agentic-waves.md`: plán vĺn WP-1…WP-10 (disjunktné write-sety, dôkaz, RAU prompt stacky) + výsledky Vlny 0 (štyri read-only audity P01 a výskum top 7 realitných AI softvérov cez WebSearch).
-- Rozhodnutia foundera: platí **1 kancelária** (nie 3), cenník = draft #822 ako vstup, ceny/Stripe/billing mimo vĺn, rozsah noci = plán + Vlna 0, všetky 4 oblasti.
-- Nič sa nezmergovalo, nenasadilo, neodoslalo ani nezapísalo do Stripe/PROD.
+- `docs/plans/2026-10-09-agentic-waves.md`: plán vĺn WP-1…WP-10 + výsledky Vlny 0 (4 audity P01, výskum trhu cez WebSearch).
+- Rozhodnutia foundera: platí **1 kancelária** (nie 3), cenník draft #822 len ako vstup, ceny/Stripe/billing mimo vĺn, všetky 4 oblasti.
+- **Vlna 1 zmergovaná do `main` (founder: „merguj blok 1"), každý PR squash, zelené CI, obsah overený na `origin/main`:** #836 WP-1 pravdivé čísla (bez 180 000 € a DEMO_SIGNALS), #837 WP-3 čítač `inbound_mail_outcomes`, #839 WP-4 inventár trás (`scripts/ops/route-gates.mjs`, `docs/audit/route-gates.md`), #838 WP-2 ghostwriter + confirm-viewing cez `authorizeSend`, #840 WP-5 návrh Strážcu follow-upu (verdikt BACKLOG), #841 WP-6 PROD balíky (`docs/ops/prod-packages/**`, neaplikované).
+- CI nachytalo dve moje chyby, obe opravené pred mergom: nový endpoint bez povinného `incrementUsageMetric` (zmluva API trás), a existujúci test confirm-viewing bez mocku `getCurrentProfile`.
+- Nič sa nenasadilo cez P18, PROD sa nemenil, nič sa neodoslalo, Stripe nedotknutý. (Merge do `main` spúšťa produkčný build Vercelu.)
 ### Rozpracované / Pending
-- Vlna 1 (WP-1…WP-6) čaká na GO foundera. Vlna 2 až po merge príslušných PR Vlny 1.
-- Nesedí: MRR 597 € z 3 kancelárií (`DEC-20260925-001`) vs. 1 platiaca kancelária; STATUS 28/40 vs. decisions 27/40; PR #822 sa medzi otvorenými PR nenašiel.
-- MCP lokálne (PowerShell): Firecrawl a Composio pripojené, Playwright pridaný; Perplexity čaká na API kľúč. Starý Firecrawl API kľúč (`fc-7b89…1398`) sa objavil v screenshote v chate, treba ho zrušiť a vygenerovať nový.
-- Cloud kontajner blokuje `realvia.sk`, `mcp.firecrawl.dev`, `api.perplexity.ai` (sieťová politika prostredia).
+- **WP-1b:** UI `ForecastRiskStrip.tsx` a `pipeline-forecast-panel.tsx` stále ukáže „0 EUR" / „~€0 v riziku" pri leade bez rozpočtu (mimo write-setu WP-1); `DEFAULT_TARGET_PIPELINE = 500_000` je tiež predvolená konštanta.
+- **WP-2:** ghostwriter a viewing používajú požičané action ID (`outreach.email.send`, `followup.*.send`); čisté riešenie = nové ID v `packages/control-contract/actions.ts`. Dvojklik nemá claim; vlastníctvo `letterHtml` neoverené.
+- **WP-4:** po merge #837 pribudla trasa (233), `docs/audit/route-gates.md` treba prepočítať; 6 trás UNGATED/UNKNOWN + 8 „len cez proxy" na manuálne P14.
+- **WP-5:** korekcia auditu: „prvá reakcia" existuje ako `lead_events.contact_attempted` (len tlačidlá Volať/E-mail, stav v PROD neznámy); `agent-specs.ts` má 7 agentov, nie 4. `lib/agents/followup/engine.ts` má natvrdo meno referenčného klienta (porušuje pravidlo 2 CLAUDE.md).
+- **WP-6:** `verify-before.sql` čaká na PROD (`GO VERIFY-PROD`); rozpor, či `lead_demands` už je v PROD (STATUS vs. zadanie).
+- Nesedí: MRR 597 € z 3 kancelárií (`DEC-20260925-001`) vs. 1 platiaca kancelária; 27 vs. 28 z 40 ciest; PR #822 sa medzi otvorenými PR nenašiel.
+- Starý Firecrawl API kľúč (`fc-7b89…1398`) sa objavil v screenshote v chate, treba ho zrušiť; Perplexity čaká na API kľúč; cloud blokuje `realvia.sk`, `mcp.firecrawl.dev`, `api.perplexity.ai`.
 ### Kľúčové súbory zmenené
-- `docs/plans/2026-10-09-agentic-waves.md`: nový plán vĺn.
-- `memory/session-summary.md`, `memory/decisions.md`: záznam session.
+- `docs/plans/2026-10-09-agentic-waves.md`, `memory/session-summary.md`, `memory/decisions.md`, `docs/STATUS.md` (len riadok hlavičky).
+- Vlna 1 (už v `main`): viď PR #836–#841.
 ### Ďalší krok
-Stripe krok C zostáva blokátor č. 1. Z vĺn GO na WP-1 (pravdivé čísla, 180 000 € fallback).
+Stripe krok C zostáva blokátor č. 1. Z vĺn: rozhodnutie o WP5-FG-0 (merať, nestavať) a o `GO VERIFY-PROD` pre balíky WP-6.
 
+## Session 2026-10-09 (P23 strana GA4)
+### Dokončené
+- `docs/onlinovo/2026-10-09-p23-ga4-audit.md`: audit 10 objednávok 10/10 (GA4 = báza C na cent), mesačná atribúcia Shoptet / GA4 / Ads, Meta ROAS z GA4, dôsledky.
+- PR #833 (strana Ads) zmergovaný na výslovné „merguj 833“ (squash `cd7f326`), CI zelené na hlave.
+### Rozpracované / Pending
+- Test značky Ads „Nákup“ po objednávke (Ads bez ID transakcie); rozhodnutie o zmene optimalizačnej akcie PMax a o teste s kontrolnou skupinou.
+- Dôvod zastavenia Meta; Stripe krok C; ručný P&L na jednu množinu (Vybavená).
+### Kľúčové súbory zmenené
+- `docs/onlinovo/2026-10-09-p23-ga4-audit.md`, `docs/onlinovo/2026-10-09-p23-ads-audit.md`, `memory/decisions.md`, `memory/session-summary.md`.
+### Ďalší krok
+Rozhodnutie foundera: test s kontrolnou skupinou (INI-5) a zmena optimalizačnej akcie PMax (vyžaduje GO a zmenu v Ads).
+
+## Session 2026-10-09 (P23 strana Ads)
+### Dokončené
+- `docs/onlinovo/2026-10-09-p23-ads-audit.md`: Google Ads cez Supermetrics (read-only) proti Shoptetu a P&L: náklady zhodné s P&L, „Nákup“ si pripisuje 92 % objednávok (105 % vybavených) v apr–sep 2026, kampane a ID, konverzné akcie, základ hodnoty.
+- Zápis v `memory/decisions.md`.
+### Rozpracované / Pending
+- Audit 10 objednávok na úrovni objednávky: Ads nemá ID transakcie; potrebná autorizácia GA4 v Supermetrics alebo ručný výpis z Ads UI.
+- Meta (Facebook Ads) a GA4 v Supermetrics neautorizované; konektor beží cez účet majiteľa (odporúčané Read only).
+- Stripe krok C čaká na foundera; ručný P&L treba prepojiť na jednu množinu (Vybavená).
+### Kľúčové súbory zmenené
+- `docs/onlinovo/2026-10-09-p23-ads-audit.md`, `memory/decisions.md`, `memory/session-summary.md`.
+### Ďalší krok
+Autorizovať GA4 (a Meta) v Supermetrics alebo vyplniť tabuľku 10 objednávok z Ads UI; rozhodnutie o teste s kontrolnou skupinou a o oprave konverzií.
+
+## Session 2026-10-09 (Q4-GROWTH: rastová stratégia onlinovo.sk)
+### Dokončené
+- `docs/onlinovo/2026-10-09-q4-growth-strategy.md`: panel 14 expertov, plán OPT-A / OPT-B / OPT-C, kalendár 8.10.–31.12., jednotková ekonomika, meranie, riziká a právny zoznam, overenie 14 tvrdení (13 oslabených, 1 podložené, 0 vyvrátených), 15 otázok pre foundera, ďalšia vlna P23.
+- `docs/onlinovo/2026-10-09-q4-leadhub-datapack.md`: agregáty z LeadHubu (objednávky, retencia, kanály, kampane, produkty, RFM), bez osobných údajov.
+- Verdikt VALIDATE (brána Ústavy v2: Q1 = NIE); zápis v `memory/decisions.md`.
+- `docs/onlinovo/2026-10-09-p23-bridge-v1.md`: P23 most Shoptet–P&L–LeadHub s exportom objednávok a P&L (LeadHub = Shoptet bez storna zákazníkom, 13/13 mesiacov; P&L počty ručné; menovateľ Vybavená; vzorka 10 objednávok). `…-p23-bridge-v0.md` je nahradené.
+### Rozpracované / Pending
+- Rozhodnutie foundera „GO A“ do 11.10. (inak platí MIN); hodiny a role do 12.10.; ďalšie otázky 14.–16.10.
+- ROZPOR P&L vs LeadHub pre Q4 2025 (príčina neznáma) rieši vlna P23 (potrebuje exporty zo Shoptetu a P&L).
+- Repozitár `onlinovo` nie je pre session dostupný (GitHub App), preto sú dokumenty tu v `docs/onlinovo/`.
+- Stále: Stripe krok C čaká na foundera; `resolveAuthority` s NaN čaká na vlastné GO.
+### Kľúčové súbory zmenené
+- `docs/onlinovo/2026-10-09-q4-growth-strategy.md`, `docs/onlinovo/2026-10-09-q4-leadhub-datapack.md`, `memory/decisions.md`, `memory/session-summary.md`.
+### Ďalší krok
+Autorizovať Google Ads v Supermetrics (alebo dodať Ads hodnoty pre 10 kódov z `…-p23-bridge-v1.md` §7), potom doplniť audit; súbežne opraviť ručný P&L (jediná množina Vybavená).
+
+## Session 2026-10-07 (DUPE-BRIEF)
+### Dokončené
+- `docs/onlinovo/2026-10-07-dupe-research-brief.md`: research brief (stratégie so stupňom istoty, právne červené čiary, 8 testov, CZ/SK konkurenti neoverení, otázky pre právnika). Verdikt VALIDATE.
+### Rozpracované / Pending
+- Overenie primárnych zdrojov v nezablokovanom prostredí; CZ/SK Keyword Planner; naše marže; právnik.
+- Stripe krok C čaká na foundera (výstup `stripe-verify-prices.sh`).
+### Kľúčové súbory zmenené
+- `docs/onlinovo/2026-10-07-dupe-research-brief.md`, `memory/decisions.md`.
+### Ďalší krok
+Výstup `bash scripts/ops/stripe-verify-prices.sh` od foundera (Stripe krok C).
+
+## Session 2026-10-07 (ONL-AGENTS: limity prijaté)
+### Dokončené
+- Founder zvolil variant A po P11 #6: limity sú prijaté, P11 #7 sa nespúšťa. Zápis v `memory/decisions.md`. Žiadna zmena kódu.
+### Rozpracované / Pending
+- N8 (UNPAID_RECOVERY a `opted_out`) čaká na rozhodnutie foundera. PR #814 je draft a nemerguje ho model.
+- Dupe-research brief pre onlinovo.sk (nezačatý, čaká na GO). Repozitár `onlinovo` nie je pre session dostupný (GitHub App nemá prístup).
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md`.
+### Ďalší krok
+Rozhodnutie N8 a GO na prepnutie #814 z draft na ready for review.
+
+## Session 2026-10-07 (ONL-AGENTS-FIX-6: nálezy P11 #6 na #814)
+### Dokončené
+- **P11 #6 (nový nezávislý agent, 148 sabotáží) nedala VERIFIED**, hoci žiadny hlavný nárok nezlyhal (J7 len v doslovnom znení). Opravy v jednom pushi:
+  - **N1:** `requested_action` sa do auditu loguje len ako registrovaný názov, inak „unregistered"; správy guardu text neopakujú.
+  - **N2:** `isBlank` pridal Co, Cn, Cs a M.
+  - **N3:** guard nehodí raw chybu pri `agentId` `__proto__` a pod., pri nie-reťazcovej akcii ani pri nie-reťazcovom kill switch (číslo = zapnuté).
+  - **N4:** `success_threshold`, `stop_conditions[]` a `allocation` sa skladajú len z pomenovaných polí (pole navyše sa neuloží ani nezmení id plánu).
+  - **N5:** test orezania `days_since_last_order` (sabotáž červená).
+  - **N7:** deduplikácia objednávok v `opportunity.ts` je per zákazník (`customer_ref|order_ref`).
+  - Hĺbka 2000 úrovní v poli navyše (`success_threshold`, `stop_conditions[]`, `allocation`) sa ignoruje, nie `INTERNAL_ERROR` (probe cez `handleExperimentPlan` a test); hlboké hodnoty v pomenovaných poliach dajú `INVALID_INPUT` alebo `ALLOCATION_INVALID`.
+- Dôkaz: mcp-onlinovo **271/271**, `tsc` 0 chýb, sabotáže nových opráv červené; vo výsledku dve zelené: redundantné vetvy (typeof action pri `Map.get`, U+16FE4 je už v `\p{M}`), obe odstránené.
+### Rozpracované / Pending
+- **N8** (rozhodnutie foundera): UNPAID_RECOVERY započíta aj `opted_out`.
+- **Priznané limity (nezmenené po P11 #6):** pečať výsledku nie je podpis; `n_*` neviazané na publikum; `stop_breached` mimo plánu; ledger v pamäti a žiadny nástroj ho nevolá; identita schvaľovateľa sa neoveruje; `now = NaN` hodí raw RangeError; `resolveAuthority` s NaN čaká na vlastné GO.
+- Stále UNKNOWN: LeadHub kontrakt, živý zdroj dát, perzistencia, trvalé schvaľovania, náklady LLM, CI job pre `mcp-onlinovo` (denylist), migrácie (`--with-db`) nespustené.
+### Kľúčové súbory zmenené
+- `packages/mcp-onlinovo/src/{agents/{experiment,guard,opportunity}.ts,tools/agent-support.ts}` a testy; `docs/STATUS.md`; `memory/decisions.md`.
+### Ďalší krok
+Rozhodnutie foundera k N8; potom buď P11 #7, alebo prijatie limitov a VERIFIED na founderovi.
+
+## Session 2026-10-05 (ONL-AGENTS-FIX-6: nálezy P11 #5 na #814)
+### Dokončené
+- **P11 #5 (nový nezávislý agent, 210 sabotáží, 53 volaní nástrojov) nedala VERIFIED** pre hlavu 15735f7: J2 FAIL, ostatné nároky PASS. Opravy v jednom pushi do #814:
+  - **J2:** `assertPlainJson` odmietne pole s vlastnými vlastnosťami mimo indexov (Map/typed array na poli) aj riedke pole.
+  - **J4:** `days_since_last_order`, `days_since_last_intervention` a dni v `opportunity.ts` sa orežú na ≥ 0 (predtým −1 v 1-hodinovej tolerancii).
+  - **J3:** `isBlank` používa `\p{Default_Ignorable_Code_Point}`, `\p{Cc}`, `\p{Cf}`, `\p{Z}` a U+2800 namiesto ručného zoznamu; stropy 2000 znakov pre `approval_id`, `approved_by`, poznámku BLOCKED a `opportunity_id` (typ string alebo null).
+  - Opravená nepravdivá veta o zámku (vyššie, FIX-5).
+  - Testy s negatívom: 3 nové; sabotáže (zrušenie orezania, kontroly polí, `\p{Cf}`) sú červené.
+- Dôkaz: mcp-onlinovo **262/262**, `tsc` 0 chýb, control-contract **72/72**.
+### Rozpracované / Pending
+- **Priznané limity (po P11 #5):** pečať výsledku nie je podpis a kto zapíše celý objekt, prepočíta ju (sfalšovateľné: `n_*` voči publiku, `stop_breached` mimo plánu, odhady); priame `approveExperiment`/`verifyLock` mimo ledgera sú slepé na Map v `audience`; ledger je v pamäti a žiadny nástroj ho nevolá; identita schvaľovateľa sa neoveruje; `approved_at` v budúcnosti prejde; `now = new Date(NaN)` hodí raw RangeError (injektujú len testy); denormálny priemer dá `relative_lift = Infinity`, ktorý ledger bezpečne odmietne.
+- Medzery v testoch hraníc (5000 uzlov, hĺbka 32, tvar odhadu, hranice rozhodovania) z P11 #5 zostávajú, nie sú blokujúce.
+- **Neopravené, vlastné GO:** `resolveAuthority` pustí `NaN` istotu ako AUTONOMOUS. Stále UNKNOWN: LeadHub kontrakt, živý zdroj, perzistencia, schvaľovania, náklady LLM, CI job (denylist).
+### Kľúčové súbory zmenené
+- `packages/mcp-onlinovo/src/agents/{experiment,next-action,opportunity}.ts` a testy.
+### Ďalší krok
+P11 #6 na novej hlave #814 (nový agent), alebo prijať limity a nechať VERIFIED na founderovi.
+
+## Session 2026-10-05 (ONL-AGENTS-FIX-5: nálezy P11 #4 na #814)
+### Dokončené
+- **P11 #4 (nový nezávislý agent, 165 sabotáží) nedala VERIFIED** pre hlavu 5add344: kód držal všetky pôvodné zlyhania z P11 #3, ale našla raw chyby, medzeru v zámku ledgera a medzery v testoch. Opravy idú ako ďalšie commity do #814 (`packages/mcp-onlinovo`):
+  - **N1 raw chyby:** do ledgera vstupuje len JSON-tvarovaný záznam (`assertPlainJson` po jednom `structuredClone`): cyklus, BigInt, Map, Set, Date, typed array, `undefined`, NaN/Infinity, riedke pole, príliš hlboký (32) alebo veľký (5000 uzlov) záznam sa odmietnu ako `INVALID_INPUT`. Fuzz 8 840 volaní `add`/`update`: **0 raw chýb**, 23 prijatých = len `null` na miesto existujúceho `null`.
+  - **N2 zámok:** `canonicalJson` je slepý na obsah Map/Set/Date; tvrdenie „po novom sa tam nedostanú“ bolo NEPRAVDIVÉ pre vlastné vlastnosti polí (P11 #5, J2); opravené v FIX-6. Cyklus sa nedetekuje osobitne, zachytí ho limit hĺbky.
+  - **N3 neviditeľné znaky:** text, id, schvaľovateľ a poznámka z U+200B–U+200D, U+2060, U+00AD, U+180E sú prázdne (`trim()` ich nechával); texty majú strop 2000 znakov, stop podmienok max 20, každá s textovým popisom.
+  - **N4 snapshot:** objednávka datovaná o viac než hodinu do budúcnosti (`2099`) je `INVALID_INPUT` v oboch agentoch (predtým FACT `days_since_last_order = -26386`); `line.sku`, `line.family`, `product.family` musia byť neprázdne texty.
+  - **N5:** tvar zapečatenej výsledku (počty celé ≥ 0, odhady konečné čísla, `secondary`, `stop_breached`) sa overí pred výpočtom, takže `estimate: null` s platnou pečaťou je `RESULT_IMMUTABLE`, nie TypeError; Symbol, objekt s vlastným `toString` alebo Proxy ako istota už nehodí raw chybu v guarde.
+  - **N6:** `approveExperiment` číta schválenie raz (getter ho nevymení). **N7:** id plánu má 64 bitov (16 hex).
+  - Pripnuté testy: rozhodnutie s rovnakým štítkom ale zmenenou `reason`/`note`/poľom navyše, `approval_id` z medzier, `order.status = "other"`, tolerancia +1 h pre `intervention.at`, oversized `requested_action` sa nezapíše do auditu.
+- Dôkaz: mcp-onlinovo **259/259**, `tsc` 0 chýb, control-contract **72/72**, crm `lib/agents` **69/69**, `prepush-gate.sh` všetko PASS (migrácie NEOVERENÉ). Sabotáž tohto kroku: **46 mutácií v konečnej podobe červených**; päť mutácií najprv prežilo a doplnil som testy alebo odstránil redundantnú vrstvu (tvar `required_per_arm` kryje rovnosť s plánom, U+FEFF kryje `\s`, detekcia cyklu kryje limit hĺbky). Štyri „zelené" boli chybné vzory (tool prepísal `\u` escape na znaky), nie medzery v testoch.
+### Rozpracované / Pending
+- **Priznané limity (nezmenené):** pečať výsledku nie je podpis (kto zapíše celý objekt, prepočíta ju); ledger je v pamäti a žiadny nástroj ho nevolá; schválenie je objekt, nie overená identita; budúci `approved_at` sa neodmieta; polia navyše vnútri `stop_conditions`, `success_threshold`, `allocation` sa uložia (rovnako ako v `proposeExperiment`); id plánu v stave PROPOSED (bez zámku) drží 64 bitov, nie plný hash.
+- **Neopravené, vlastné GO:** `resolveAuthority` (`packages/control-contract/src/authority.ts:211`) pustí `NaN` istotu ako AUTONOMOUS.
+- Stále UNKNOWN: LeadHub kontrakt, živý zdroj dát, perzistencia, trvalé schvaľovania, náklady LLM, CI job pre `mcp-onlinovo` (denylist).
+### Kľúčové súbory zmenené
+- `packages/mcp-onlinovo/src/agents/{experiment,snapshot-validation,guard,opportunity,next-action}.ts` a testy: opravy N1–N7 z P11 #4.
+### Ďalší krok
+P11 #5 na pushnutej hlave #814 s novým nezávislým agentom (GO od foundera už je).
+
+## Session 2026-10-05 (ONL-AGENTS-FIX-4: nálezy P11 #3 na #814)
+### Dokončené
+- **P11 #3 (nový nezávislý agent, 102 sabotáží) nedala VERIFIED** pre #814 (hlava b2d6799). Opravy idú ako ďalšie commity do toho istého PR (#814 nebol zmergovaný). Všetko v `packages/mcp-onlinovo`:
+  - **Ledger, vysoká:** `ExperimentLedger.update` už viaže štítok stavu na rozhodnutie (KEEP s rozhodnutím REJECT/ITERATE sa odmietne, všetkých 12 kombinácií), a rozhodnutie je presne to, čo vyprodukuje `decideExperiment(stored)`.
+  - **TOCTOU, vysoká:** záznam sa skopíruje raz (`structuredClone`), kontroly aj uloženie používajú tú istú kópiu; getter, Proxy a funkcia v zázname už nezmenia, čo sa overilo a čo sa uložilo. Aliasing: `add`, `update`, `get`, `list` vracajú a ukladajú kópie.
+  - **`add()` a `update()` pustia záznam cez tie isté pravidlá ako `proposeExperiment`** (plán sa prestaví a porovná; nenormalizovaný plán, neznáme polia a ručne zložený záznam s vlastným id sa odmietnu); `add` prijme len čerstvý PROPOSED, každé podstrčené pole samostatne odmietnuté; BLOCKED rozhodnutie má presne tri polia a textovú poznámku.
+  - **Snapshot:** `null` a nie-objektové riadky, nesprávne enumy (`status`, `consent`, `source`, `kind`), `in_stock`, čísla produktov, `order_ref`, `sku`, `intervention.action` → `INVALID_INPUT`; peňažné hodnoty a jednotky nad 1e12 sa odmietnu (súčet 50 000 riadkov nepretečie na Infinity).
+  - **Schválenie:** `approved_at` striktný ISO 8601, `approval_id` a `approved_by` texty, presne tri polia.
+  - Nekódovateľný vstup (kruhová referencia, BigInt, symbol) = `INVALID_INPUT`, nie `INPUT_TOO_LARGE`; Symbol ako istota nehodí raw TypeError.
+- Dôkaz: mcp-onlinovo **243/243**, `tsc` 0 chýb, control-contract **72/72**, crm `lib/agents` **69/69**, `prepush-gate.sh` všetko PASS (migrácie NEOVERENÉ). Sabotáž: **53 mutácií, v konečnej podobe všetky červené**; 9 prvých prežilo (chýbajúce testy: stav pri `add`, každé podstrčené pole samostatne, `audience` a `planIdOf` v kontrole konzistencie, tvar BLOCKED rozhodnutia), pridal som testy a prebehli červené. Dve „zelené" v druhej dávke boli chybné vzory skriptu, nie medzera v testoch (overené samostatne).
+### Rozpracované / Pending
+- **Zostáva sfalšovateľné (priznaný limit):** kto vie zapísať celý objekt, môže zmeniť odhad, `stop_breached`, `secondary`, `primary_metric` a počty a pečať prepočítať; ledger je v pamäti a žiadny nástroj ho nevolá. Skutočná ochrana = perzistencia (`record.persist` BLOCKED).
+- **Neopravené, vlastné GO:** `resolveAuthority` (`packages/control-contract/src/authority.ts:211`) pustí `NaN` istotu ako AUTONOMOUS.
+- Nízke nálezy P11 #3, ktoré som nechal: PII heuristika (falošné pozitíva/negatíva), `approved_at` dátum v budúcnosti sa nekontroluje, polia navyše vo vnútri `stop_conditions` sa uložia. Kód `INPUT_TOO_LARGE` sa už nepoužíva pre nekódovateľný vstup.
+- Stále UNKNOWN: LeadHub kontrakt, živý zdroj dát, perzistencia, trvalé schvaľovania, náklady LLM, CI job pre `mcp-onlinovo` (denylist).
+### Kľúčové súbory zmenené
+- `packages/mcp-onlinovo/src/agents/{experiment,snapshot-validation,guard}.ts`, `src/tools/agent-support.ts` a testy: opravy N1–N5 z P11 #3.
+### Ďalší krok
+P11 #4 na pushnutej hlave #814 s novým nezávislým agentom (GO od foundera už je); potom rozhodnutie o `authority.ts` a LeadHub kontrakte.
+
+## Session 2026-10-05 (ONL-AGENTS-FIX-3: nálezy P11 #2 po merge #812)
+### Dokončené
+- **P11 #2 (nový nezávislý agent, 45 sabotáží) nedala VERIFIED** pre #812; opravy sú nový PR z `main`. Všetko v `packages/mcp-onlinovo`:
+  - **N3** sprísnený čas: `snapshot-validation.ts` (`parseIsoTimestamp`) prijme len skutočný ISO 8601 s pásmom; odmieta `"1"`, `"abc 1"`, `2026-02-30`, `T24:00`. Platí pre `as_of`, `placed_at` každej objednávky a `interventions[].at` každého zákazníka, v oboch agentoch cez jednu spoločnú `assertValidSnapshot`.
+  - **N4** riadky objednávky: `units` konečné číslo ≥ 0, `net_revenue` a `net_cost` konečné čísla (`net_cost = null` ostáva povolené = UNKNOWN), `lines` musí byť pole.
+  - **N1** `ExperimentLedger` už neprijme zmenu bez overenia: `add` len čerstvý PROPOSED; id, soľ alokácie a `planned_power` musia vyplývať z plánu; prechod z PROPOSED len s ľudským schválením a zámkom nad týmto plánom; výsledok len pri prechode na COMPLETE a zapečatený so správnou triedou vzorky; KEEP/REJECT/ITERATE len presne to, čo vyprodukuje `decideExperiment`; záznam sa nemení bez prechodu stavu.
+  - **N2** pečať výsledku je viazaná na `experiment_id` (id je hash plánu), takže výsledok nejde preniesť z iného experimentu.
+  - **N5** vstup sa serializuje raz a spracúva sa práve táto kópia (getter alebo `toJSON` ho po limite nevymení). **N7** `null`, `Infinity` a istota > 1 neprejdú guardom; len chýbajúca istota znamená plnú. **N8** horná hranica plánovanej vzorky 10 000 000. **N9** differential test pripína, že lokálny guard nie je pri nečíselnej istote voľnejší než registry.
+  - Pripnuté hranice: 48 h v `next-action`, presná hranica limitu vstupu 100 000 znakov.
+- Dôkaz: mcp-onlinovo **223/223**, `tsc` 0 chýb, control-contract **72/72**, crm `lib/agents` **69/69**, `prepush-gate.sh` všetko PASS (migrácie NEOVERENÉ). Sabotáž: 42 mutácií v konečnej podobe všetky červené. Pri práci vyšli 3 nedokázateľné vrstvy, preto **odstránené** a nie ponechané: kontrola minút a sekúnd (`Date.parse` ich odmieta sám, pripnuté testom), `lock_hash` v pečati (id plánu ho nahrádza).
+- **Opravy mojich tvrdení z #812:** (1) poznámka k pečati bola nepresná. Pečať chránila pred úpravou, ale výsledok sa dal preniesť z iného experimentu a `ExperimentLedger.update` vôbec nekontroloval obsah; teraz je to opravené a zostáva len: kto vie zapísať celý objekt a prepočítať pečať, ju sfalšuje (skutočná ochrana = perzistencia, BLOCKED). (2) „104/104" vs „69/69": išlo o **dva rôzne príkazy** (104 = `src/lib/agents` + `approve-draft.test.ts` po merge `main`, 69 = iba `src/lib/agents`); PR `apps/crm` nemenil. (3) Zoznam 24 sabotáží z #812 nie je v repe a nedá sa reprodukovať; od tohto PR sú sabotáže v texte tohto záznamu, nie ako skript.
+### Rozpracované / Pending
+- **Neopravené, vlastné GO:** `resolveAuthority` (`packages/control-contract/src/authority.ts:211`) pustí `NaN`/`undefined` istotu ako AUTONOMOUS (jednoriadková oprava `!(ctx.confidence >= min)`; jadro governance). P11 #2 to potvrdila a nepovažuje to za blokátor VERIFIED, ak je rozdiel zdokumentovaný (je, v `guard-differential.test.ts`).
+- **Priznané obmedzenia:** PII detekcia je heuristika (falošné pozitíva: čísla s 9–10 číslicami a nulovým paddingom; falošné negatíva: `0900/123/456`); kill switch je zapnutý pre nastavenú hodnotu, nenastavená premenná je vypnutá; riedke polia v procese (nie cez MCP) držia event loop ~1 s pred kontrolou limitu.
+- Stále UNKNOWN: LeadHub kontrakt, živý zdroj dát, perzistencia, trvalé schvaľovania, náklady LLM, CI job pre `mcp-onlinovo` (denylist).
+### Kľúčové súbory zmenené
+- `packages/mcp-onlinovo/src/agents/{snapshot-validation,experiment,opportunity,next-action,guard}.ts` a `src/tools/{agent-support,revenue-opportunities,customer-next-action,experiment-plan}.ts`: opravy N1–N9 + testy.
+### Ďalší krok
+P11 #3 na novej hlave tohto PR s novým nezávislým agentom; potom rozhodnutie o `authority.ts` (NaN) a o LeadHub kontrakte.
+## Session 2026-10-06 (GRANTY-20-50-100-150)
+### Dokončené
+- Rozhodnutie foundera: zahrnuté mesačné kredity plánov 25/60/120/175 → **20/50/100/150**; ceny, balíky (60–300), kredit 0,70 € a pásma nezmenené. Zdroj `monthlyCredits` v `apps/crm/src/lib/pricing-v2.ts`; testy grant-engine, credits-billing-v2, e2e, texty CRM + web aktualizované, nový test kariet na webe. Mutation proof 4/4. CRM sada: len 22 pádov pred úpravou testov (staré čísla), potom 235/235 dotknutých; `valuation/submit` integračný test vyžaduje TEST_SUPABASE_* (pred zmenou rovnako).
+- `docs/pricing/2026-10-06-pricing-v2-credits-20-50-100-150.md`: rozhodnutie, Stripe metadata (krok foundera), neoverené.
+- Stripe podklady v repe: `scripts/ops/stripe-v2/` (katalóg JSON + testovací skript, granty 20/50/100/150, `catalog_version` revolis_v2_2026_10_06), `docs/pricing/2026-10-05-stripe-v2-priprava.md`, drift-test `stripe-v2-catalog.verification.test.ts` (mutation proof 4/4).
+- WEB-V2 (GO foundera 6. 10.): `apps/marketing` ukazuje cenník v2 predvolene (staré seat ceny len pri výslovnom `PRICING_V2_ENABLED=false`), CTA vedú na demo, registrácia až `PRICING_V2_SIGNUP_ENABLED=true`; modal bez signupu; testy 41/41, mutation proof 4/4; `docs/pricing/2026-10-06-web-pricing-v2-default.md`. Nasadenie `revolis.ai` (Vercel `revolis-marketing`) NEOVERENÉ — v dostupnom Vercel účte je len projekt `realitka-ai` (CRM).
+- Stripe produkty bez „v2“ v názve (Revolis Start/Team/Kancelária/Sieť/Balík…/Kredit), popisy s počtom používateľov; manifest, katalóg, testy aj doc zosúladené. Interné kľúče (env `STRIPE_PRICE_V2_*`, lookup_key `revolis_v2_*`) ostávajú.
+- Ročné platenie plánov (12 × mesačná, bez zľavy): `pricing-v2.ts` (`annualNetCents`, `annual` v katalógu), kontrakt (`interval`, `STRIPE_PRICE_V2_*_YEARLY`, `yearlyAvailable`), checkout/rozpoznanie cien/webhook, UI `/upgrade` + porovnanie, web (ročný riadok), Stripe manifest + verifikátor + katalóg + skript; testy + mutation proof 5/6 (6. je neuskutočniteľný stav UI). Doc `docs/pricing/2026-10-06-annual-billing.md`.
+- SIGNUP-ARCH (GO foundera): bezpečné samoobslužné založenie agentúry — `docs/architecture/2026-10-06-self-serve-signup.md`, migrácia `20261006120000_self_serve_signup_foundation.sql` (bootstrap len service_role, `account_signups`, guard billing/trial stĺpcov agentúry, `profile_agencies_for_auth` len pre overený e-mail), overovací skript `supabase/verify/self_serve_signup_foundation.verify.sql` (TEST, rollback; PASS T2–T11, T13, T14), kód `src/lib/signup/self-serve.ts` + register/callback/confirm za vlajkou `SELF_SERVE_SIGNUP_ENABLED` (default off), trial z `agencies.trial_ends_at`; 27 testov, mutácie 6/6. NIČ na PROD.
+- WEB-BUILD-FIX (2026-10-07): produkčné nasadenia `revolis-marketing` padali od #822 (`next build`: `vitest.config.ts` + `__tests__` v tsconfig, na Vercel nie je `vitest`) → web ostal na starom cenníku (posledný Ready d03cc47). Oprava: `apps/marketing/tsconfig.json` exclude; lokálny build s Next 15.5.15 prešiel a `index.html` obsahuje nový cenník. CI projektu marketing build nekontroluje (`.github/**` je denylist → rozhodne founder).
+- WEB-POLISH (2026-10-07): karty cenníka majú funkcie (kumulatívne, z už verejných tvrdení), písmo bez monospace (Inter, tabulárne číslice), `/upgrade?plan=<pásmo>` predvyberie počet používateľov (`preselect.ts`). CTA na webe ostávajú na demo, kým sa nezapne `PRICING_V2_SIGNUP_ENABLED` (reťaz: web → /register?plan → overený e-mail → /upgrade?plan → Stripe).
+- SIGNUP-PROD (2026-10-08, GO foundera „spusti reťaz"): na PROD aplikované `20261005120000` (pricing v2 stĺpce) a `20261006120000` (signup, guard, hardening). Dôkaz: hash 7 agentúr/23 profilov pred = po, testy T2–T11/T14 + guard PASS v rollbacku, po testoch 0 stôp. Vlajky (`SELF_SERVE_SIGNUP_ENABLED`, `PRICING_V2_ENABLED`, `PRICING_V2_SIGNUP_ENABLED`) stále vypnuté. Poznámka: SQL nástroj čaká na potvrdenie pri `DROP` → `CREATE OR REPLACE TRIGGER`.
+### Rozpracované / Pending
+- SIGNUP-ARCH: aplikácia migrácie na PROD + zapnutie vlajky čaká na GO; výška skúšobných kreditov (C) — founder; PROD „Confirm email" musí byť zapnuté.
+- Po merge treba nové nasadenie marketingu (statické stránky); (Stripe podklady opravené a v repe;) FUNNEL-V2 (B1) stále otvorený, verejný cenník zapínať až po ňom.
+### Ďalší krok
+Merge PR so zmenou grantov na GO, potom FUNNEL-V2.
+
+## Session 2026-10-05 (STRIPE-C-READY)
+### Dokončené
+- Verifikátor `scripts/ops/stripe_verify_prices.py`: pre v2 ceny kontroluje `tax_behavior=exclusive` a `product.tax_code`; opravený text `--spec` (checkout bez automatic_tax platí len pre legacy). Testy v `stripe-expected-prices.verification.test.ts` (19/19).
+- Režim „len plány“ `PRICING_V2_PLANS_ONLY` (predvolene zapnutý, fail-closed): `pricing-v2.ts`, `pricing-v2-contract.ts` (kľúče len plány, kód `credits_not_sold`), `checkout-config`, `credits/checkout` (403 pred Stripe), `PricingV2Plans`/`PricingV2CreditsTopup`/`usePricingV2Config`, web `PricingSectionV2`/`pricing-v2-view`. Mutation proof 5/5 mutantov zabitých.
+- Podklady foundera (10 cien, katalóg, testovací skript) porovnané s manifestom na `3bb4233`: sedia.
+### Rozpracované / Pending
+- Stripe krok C (founder, `txcd_` kódy s účtovníčkou), FUNNEL-V2, VOP, migrácia na PROD, merge PR #822 (draft) — všetko čaká na GO.
+### Kľúčové súbory zmenené
+- `scripts/ops/stripe_verify_prices.py`, `apps/crm/src/lib/pricing-v2*.ts`, `apps/crm/src/app/api/billing/{checkout-config,credits/checkout}/route.ts`, `apps/crm/src/components/billing/v2/*`, `apps/marketing/{lib,components}/*pricing-v2*`, `docs/pricing/2026-10-05-pricing-v2-w4-production-gate.md` (B7a).
+### Ďalší krok
+Founder: Stripe krok C podľa podkladov (10 cien, `exclusive`, `txcd_`), potom `bash scripts/ops/stripe-verify-prices.sh` a poslať výstup; agent: FUNNEL-V2 na GO.
+
+## Session 2026-10-05 (MEGA-POPLACH-AIRAMAX)
+RAU route: GO_REQUIRED (ručne; router zamietnutý) roadmap Revolis.AI
+### Dokončené
+- Roadmap `docs/architecture/2026-10-05-mega-poplach-airamax-roadmap.md`: gap analýza AIRAmax (zo snímok webu) vs repo, ULTRATHINK, 4 steny + backlog.
+- Cenový ťah (§9): odsúhlasený cenník Start 25 / Team 60 / Kancelária 149 (7–25) / Sieť od 349 (26+), kredity 25/60/120/175 po 0,70 €, balíky o 1–4 c lacnejšie než AIRAmax (interpolované porovnanie).
+- `LISTING_DESCRIPTION` 2 → 1 kredit (`credit-rates.ts` + test; 40/40 testov OK; dopad nulový, `CREDITS_ENFORCEMENT=off`).
+- Oprava faktu: platí jediný klient (199 € + 99 € onboarding); „3 kancelárie / MRR 597 €“ z DEC-20260924-001 bolo podľa štítku plánu.
+- W0 inventúra cenníka v2: `docs/pricing/2026-10-05-pricing-v2-w0-inventory.md` (mapa povrch → checkout → webhook → grant; 8 rozporov plán vs. kód, napr. `billing-lifecycle.ts` neexistuje, DPH nie je v checkoute).
+- Rozhodnutia foundera: ceny BEZ DPH, balíky vlastné 60/120/180/240/300, GO na W1.
+- W1 hotová: `apps/crm/src/lib/pricing-v2.ts` + `apps/crm/src/lib/__tests__/pricing-v2.test.ts` (23 testov; mutation proof 9/9 mutantov zabitých po zapracovaní zistení nezávislého P11; lint čistý; 0 TS chýb v nových súboroch). Nezapojené do checkoutu (W2), `PRICING_V2_ENABLED` vypnuté.
+- Nezávislé P11 (iný agent): kontraktné sumy PASS; zistenia R1–R5 (fail-closed `resolvePricingModel`, `isSafeInteger`, validácia základu a DPH, zmrazený cenník) opravené a pokryté testami.
+- **W2** (kontrakt `docs/pricing/2026-10-05-pricing-v2-w2-contract.md` + `pricing-v2-contract.ts`; 4 paralelné vetvy A–D v izolovaných worktrees, územia disjunktné, zlúčené do vetvy PR #822): A billing/webhook/granty/migrácia (39/39 mutantov), B CRM obrazovky (15/15), C marketing (21/21), D texty + VOP návrh (27/27). Všetko za `PRICING_V2_ENABLED` (predvolene vypnuté), pri vypnutom výstup zhodný (golden).
+- **W3** nezávislé QA (iný agent, offline e2e 54 testov): jadro PASS; nálezy opravené: replay `checkout.session.completed` po zrušení (stav sa berie zo Stripe), 409 `subscription_exists` vs. legacy, výnimka v checkoute → 503 `checkout_failed`, zvyšky cien (billing stránka, FAQ, Rozpis, paywally), `tests/integration` v CI. Koordinátor navyše našiel: **v2 platiteľ by mal plán „free“** (`getCurrentPlanKey` a `saas-ops` nepoznali v2 price ID) → opravené (`pricing-v2-plan.ts`).
+- Merge `origin/main` do vetvy (51 commitov; konflikt webhook route + memory vyriešený, memory append-only overené); nový `billing-lifecycle.ts` z `main` je so v2 kompatibilný (test `billing-lifecycle-pricing-v2`).
+- **W4** brána P15–P17: `docs/pricing/2026-10-05-pricing-v2-w4-production-gate.md` — verdikt **NOT READY** (bloker P1 funnel web → CRM, Stripe krok C a webhook, DPH, VOP, migrácia na PROD, kredity bez vynucovania).
+- Dôkaz: CRM celá sada 3105 testov OK (8 súborov vyžaduje `TEST_SUPABASE_*`, na báze neoverené), marketing 29/29, typecheck 49 ≤ strop 54, lint čistý; repo CI: Memory append-only, Zmluva kódu, Control Contract, BUS, Memory Engine zelené, „Lint, test, build“ pri písaní bežalo.
+- Otvorené: základ DPH u AIRAmax (pre tvrdenie „sme lacnejší“).
+### Rozpracované / Pending
+- **Funnel** (`/register` nečíta `pricing=v2&plan=…`) — vyžaduje návrh a GO (autentifikácia/onboarding).
+- Stripe krok C (founder), `STRIPE_WEBHOOK_SECRET` + endpoint s udalosťou `checkout.session.async_payment_succeeded`, migrácia `20261005120000` na PROD (GO), VOP v2 (právnik), základ DPH, politika kreditov (`CREDITS_ENFORCEMENT` off → predávať len plány).
+- Neoverené: reálna DB a Stripe, prehliadač, náklad AI na kredit (NEMERANÉ), produkt AIRAmax (len web).
+### Kľúčové súbory zmenené
+- Kód: `apps/crm/src/lib/pricing-v2*.ts`, `credits-billing-v2.ts`, `credits-billing-webhook.ts`, `billing-store.ts`, `saas-ops.ts`, `credits/{grant-engine,monthly-cycle,credit-rates}.ts`, `app/api/billing/**`, migrácia `20261005120000_pricing_v2_agency_columns.sql`, `components/billing/v2/**`, `apps/marketing/**`, texty (`terms`, `landing`, `AiInsightsPanel`…), `config/env.ts`, `vitest.config.js`.
+- Dokumenty: `docs/architecture/2026-10-05-mega-poplach-airamax-roadmap.md`, `docs/pricing/2026-10-05-pricing-v2-*.md` (W0 inventúra, W2 kontrakt, W4 brána), `w2c-notes.md`, `w2d-copy-and-legal-review.md`; `memory/decisions.md`, `memory/session-summary.md`.
+### Ďalší krok
+Jedna stena s GO: **FUNNEL-V2** — zachovať zvolený plán z webu cez registráciu a onboarding do `/upgrade` (bloker B1). Paralelne founder: Stripe krok C.
+## Session 2026-10-05 (HERO-CAPTURE-SOURCE)
+### Dokončené
+- **HERO-CAPTURE-SOURCE** (GO foundera, jedna stena): hero formulár na landing (`Hero.tsx:197` → `HeroEmailCapture`) posiela `source: "hero_email_capture"`;
+  `capture-lead` ho prijme, ale PROD constraint `leads_demo_source_check` povoľuje len `ai_odhadca`/`neighborhood_watch`/`digital_twin` (overené `pg_get_constraintdef`)
+  → INSERT 23514 → 500 → UI zobrazí „Nepodarilo sa uložiť kontakt." a nepresmeruje na `/register`. PROD `leads_demo` = 0 riadkov (konzistentné, nie dôkaz).
+- Oprava: migrácia `20261005100000_leads_demo_source_hero_email_capture.sql` (jeden `ALTER TABLE` DROP IF EXISTS + ADD = atómový a idempotentný) + verification test
+  `leads-demo-source-check.verification.test.ts` (reťaz klient → route → DB po prehraní migrácií). Test 10/10, mutation proof 4/4 (odstránená migrácia, migrácia bez hodnoty,
+  nový source v route bez migrácie, klient mimo zoznamu). Reálny Postgres (PGlite = PG 18.3): pred = hero 23514, po = OK, `bogus` stále 23514, 3× aplikácia bez zmeny, 4 riadky pred = 4 po.
+- `prepush-gate` PASS (typecheck 49, lint čistý). Celý vitest: 2778 passed, 8 súborov padá na chýbajúce `TEST_SUPABASE_*` (RLS + valuation integration; rovnako na čistom `main`, CI-only).
+- B1 (Meta lookalike) overený read-only: `meta/lookalike/route.ts:65,72` posiela e-mail v čistom texte, v route žiadna kontrola súhlasu; ale UI volá bez Bearer → 401 a PROD `leads_demo` = 0
+  riadkov → route vráti 400 pred volaním Metu. **Latentná chyba, dnes bez expozície** (audit ju hodnotil VYSOKÁ podľa kódu). Nič sa nezmenilo.
+### Rozpracované / Pending
+- **Migrácia NIE je na PROD** — aplikácia po merge = samostatné GO. Dovtedy hero formulár stále padá. Po aplikácii overiť (SELECT count alebo jedno odoslanie s označeným testovacím e-mailom).
+- **Právny podklad hero formulára:** `HeroEmailCapture` posiela `gdprConsent: true` natvrdo (súhlas = „Odoslaním súhlasíte" + odkaz na `/privacy`). Oprava spôsobí, že sa tento záznam začne reálne ukladať
+  → posúdiť (gdpr-advisor) explicitný súhlas/znenie. Neriešené v tejto stene.
+- **B1 rozhodnutie:** variant A = vypnúť `meta/lookalike` (410 + test), variant B = SHA-256 `EMAIL_SHA256` + filter `gdpr_consent` + účelový súhlas (pseudonymizácia ≠ anonymizácia).
+- `.claude/settings.json`: `mcp__Supabase__execute_sql` a `mcp__github__*` (vrátane `merge_pull_request`) povolené bez opýtania; deny blokuje `apply_migration`, nie `execute_sql`.
+- Neoverené: živá landing stránka (egress blokuje `revolis.ai`), migrácia na PG 15 (CI replay; PGlite je PG 18.3), od kedy hero formulár padá (oba kusy v repe od #735, 2026-09-28).
+### Kľúčové súbory zmenené
+- `apps/crm/supabase/migrations/20261005100000_leads_demo_source_hero_email_capture.sql` (nový)
+- `apps/crm/tests/verification/leads-demo-source-check.verification.test.ts` (nový)
+- `memory/decisions.md`, `memory/session-summary.md`
+### Ďalší krok
+„merguj N" po zelenom CI → GO na aplikáciu migrácie na PROD → overenie jedným odoslaním.
+
+## Session 2026-10-05 (FAIL-OPEN-SWEEP → TRIAL-GATE-CLOSED)
+### Dokončené
+- `docs/reports/2026-10-05-fail-open-sweep.md` (#817): audit piatich vzorov fail-open. Tri nálezy, šesť `!== false` označených ako fail-SAFE.
+- `lib/saas-ops.ts`: zmazaný `const canUseFullApp = true;` („DEV OVERRIDE" v produkcii). Zápis len v `trial`/`active`/`grace`; `limited`/`blocked` → read-only (founder variant A).
+- Nový stav `unknown` + `lookupFailed`: výpadok Stripe sa odlíši od zrušeného predplatného, takže nezamkne platiacich. Jediné zámerné fail-open, s `billingUnverified` a `console.warn`.
+- `types/navigation.ts` + `api/nav/permissions` + `AppSidebar`: `UNKNOWN_TEAM_PERMISSIONS` (všetko false) pre „je v tíme, ale oprávnenia sa nedali prečítať". Solo default nedotknutý.
+- `docs/STATUS.md`: hlavička prepočítaná 53 % → 51 % (nesedela s vlastnou tabuľkou; to číslo som predtým sám publikoval).
+### Rozpracované / Pending
+- #817 nesie audit aj opravu — jedna vetva, jeden PR; je to tá istá téma (fail-open brány), nie mix ako #800.
+- Neoverené: či vzor existuje aj mimo `apps/crm/src` (skripty, edge funkcie). Audit šiel len po `apps/crm/src/**`.
+- Stále bez GO: GOVERNANCE-DEDUP (tri súbežné formáty hlásenia postupu + kadencia pamäte).
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/saas-ops.ts`: brána prístupu prestala byť natvrdo otvorená; stav `unknown`.
+- `apps/crm/src/lib/feature-gating.ts`: `accessLevel` v odpovedi brány + honest správa o read-only.
+- `apps/crm/src/types/navigation.ts`: `UNKNOWN_TEAM_PERMISSIONS`.
+- `apps/crm/src/app/api/nav/permissions/route.ts`, `components/layout/AppSidebar.tsx`: deny pri nečitateľných oprávneniach.
+### Ďalší krok
+Merge #817 (po zelenom CI), potom krok C v Stripe — brána už nie je prázdna, takže ceny budú mať čo vynucovať.
+
+## Session 2026-10-05 (FAIL-OPEN SWEEP)
+### Dokončené
+- `docs/reports/2026-10-05-fail-open-sweep.md`: read-only audit piatich vzorov fail-open v `apps/crm/src/**`. Tri nálezy (P1 `canUseFullApp` natvrdo `true` s komentárom „DEV OVERRIDE"; P2 oprávnenia tímu default povoľujú export kontaktov; P3 `is_active ?? true` latentne) + šesť `!== false`, ktoré sú fail-SAFE a na opravu nie sú.
+- Zistené, že brána prístupu je LIVE (8 API ciest + 7 stránok), takže P1 nie je mŕtvy kód — len dnes nestojí nič, lebo Stripe nie je live (0 z 10 cien).
+### Rozpracované / Pending
+- P1 čaká na founder rozhodnutie: čo po vypršaní trialu — úplné zamknutie, alebo read-only režim? Bez toho sa `canUseFullApp` nedá správne opraviť.
+- P2 oprava (`can_export_contacts: false` v defaulte + odlíšiť „bez tímu" od „čítanie zlyhalo") je pripravená ako návrh, nie aplikovaná.
+- Stále otvorené z 2026-10-02: tri súbežné formáty hlásenia postupu + rozpor o kadencii pamäte (GOVERNANCE-DEDUP, bez GO).
+### Kľúčové súbory zmenené
+- `docs/reports/2026-10-05-fail-open-sweep.md`: nový, celý audit s dôkazmi po riadkoch.
+- `memory/decisions.md`: PREPEND — nálezy a dôvod, prečo P1 nie je incident ale termín.
+### Ďalší krok
+Rozhodnutie o P1 (zamknutie vs. read-only po vypršaní trialu) — až potom oprava `canUseFullApp`, lebo bez toho rozhodnutia sa nedá napísať správny test.
+
+## Session 2026-10-02 (PLATBY-E2E implementácia)
+### Dokončené
+- `apps/crm/src/lib/billing-lifecycle.ts` + volanie v `api/billing/webhook/route.ts`: zrušenie, zmena miest a zlyhaná platba sa premietajú do `agencies` (stav zo `subscriptions.retrieve`, nie z udalosti). Chyba → 500, Stripe zopakuje.
+- `STRIPE_WEBHOOK_SECRET` v `DEGRADED_WITHOUT` (`config/env.ts`); `webhookSecretConfigured` v `/api/billing/checkout-config`.
+- Testy: `src/lib/__tests__/billing-lifecycle.test.ts` (15), `env-validate.test.ts` upravený; mutation proof 9/9; `prepush-gate` PASS.
+- `docs/STATUS.md` (riadok platieb), `docs/reports/2026-10-02-platby-e2e-implementacia.md`.
+### Rozpracované / Pending
+- PROD neoverené: webhook endpoint a udalosti v Stripe, `STRIPE_WEBHOOK_SECRET` vo Vercel, ceny (krok C). Stará cesta `planKey` (F3) nezmenená.
+### Kľúčové súbory zmenené
+- apps/crm/src/lib/billing-lifecycle.ts, apps/crm/src/app/api/billing/webhook/route.ts, apps/crm/src/config/env.ts, apps/crm/src/app/api/billing/checkout-config/route.ts
+### Ďalší krok
+Founder: Stripe krok C a `STRIPE_WEBHOOK_SECRET`; potom smoke nákup a zrušenie.
+## Session 2026-10-02 (prázdna derivovaná vrstva: zápis, honest metriky, opt-in)
+### Dokončené
+- `apps/crm/src/lib/leads/mark-contacted.ts` (#800, merge `a525faa2`): `leads.last_contact_at` konečne niekto zapisuje — monotonický guard, measured `stamped`, fail-soft. Desať povrchov čítalo stĺpec, ktorý bol NULL na 520 z 520 PROD riadkov.
+- `.claude/settings.json` + `CLAUDE.md` (#800): zrušený tretí `UserPromptSubmit` hook. Merge `main` zlúčil dva hooky do jedného JSON objektu s **dvoma kľúčmi `"command"`** — `JSON.parse` aj `jq` nechajú posledný, takže pridaný `wall-rule.sh` sa nespustil nikdy, a CLAUDE.md ho pritom menoval ako „jediné vynútenie, nemazať".
+- `apps/crm/src/lib/morning-brief/` (#804, merge `b4f4ab8c`): `pendingContact` bolo `activeLeads ?? 0` — počet riadkov pod menom merania; PROD: `active == pendingContact` presne u všetkých piatich najväčších maklérov (142, 72, 66, 47, 39). Teraz `number | null`, label „Bez zaznamenaného kontaktu", a `SYSTEM_A` prompt prestal modelu prikazovať uviesť nemerateľné číslo.
+- PROD: migrácia `20261001100000` (opt-in default) **aplikovaná a overená** — `column_default` `true` → `false`, 7 agentúr nedotknutých, rollback uložený v `supabase_migrations`. SCOREBOARD bod 9 ✅ → 70 % dokázané.
+- `apps/crm/src/lib/acquire/` (#811, čaká na merge): fail-closed. Init `false`, test `=== true`, nový dôvod `consent_unknown`. Tri cesty (chýbajúci stĺpec, chýbajúci riadok, NULL) predtým znamenali POSIELAJ a obchádzali opt-in default.
+### Rozpracované / Pending
+- #811 zelené 6/6 na `c93d7981`, čaká na „merguj 811".
+- ROZPOR: `working-agreement.sh` (pamäť raz za session) vs `.claude/working-protocol.md` (pamäť raz za stenu) — dva aktívne hooky, rozdielna kadencia. Držím novší; čaká na rozhodnutie foundera.
+- Neoverené: či vzor fail-open existuje aj na iných cestách. Audit som robil len na `loadAgencyAutoResponseContext`.
+### Kľúčové súbory zmenené
+- `apps/crm/src/lib/leads/mark-contacted.ts`: nový helper, jediný zapisovateľ `last_contact_at`.
+- `apps/crm/src/lib/morning-brief/gather.ts`: `pendingContact`/`hotPending` → `number | null` + jedna brána merateľnosti pre tri metriky.
+- `apps/crm/src/lib/acquire/inbound-lead-auto-response.ts`: fail-closed súhlas agentúry.
+- `apps/crm/src/lib/acquire/auto-response-outcome.ts`: dôvod `consent_unknown`.
+- `docs/STATUS.md`: ≈ 52 % → ≈ 53 %; AI vrstva 40 % → 45 %.
+### Ďalší krok
+Merge #811 (zelené, čaká na slovo), potom audit fail-open vzoru na ostatných cestách — nie je overený.
+## Session 2026-10-05 (ONL-AGENTS-FIX: nálezy P11 po merge #807)
+### Dokončené
+- **P11 (nezávislý overovací agent, 47 sabotáží) nedala VERIFIED**; #807 bol medzitým zmergovaný, preto oprava ide ako nový PR z `main`. Opravené (všetko v `packages/mcp-onlinovo`, nič mimo):
+  - **F1** ReDoS v kontrole PII: e-mail sa hľadá lineárnym skenom okolo každého `@` (200 000 znakov držalo server ~50 s, teraz ms); nástroje odmietnu vstup > 100 000 znakov (`INPUT_TOO_LARGE`) skôr, než sa niečo parsuje. Pribudla detekcia `(at)`, `[dot]`, plnošírkové `@`, `421…` bez plus (stále heuristika, nie dôkaz).
+  - **F2** neplatné `placed_at` nikdy neprejde filtrami: `INVALID_INPUT` v oboch agentoch.
+  - **F3** plán s `min_sample_per_arm` < 100 sa odmietne (`SAMPLE_PLAN_TOO_SMALL`) a `classifySample` nikdy nedá ADEQUATE pod 100 na rameno. **100 je politický prah, nie štatistické odvodenie** (označené v kóde).
+  - **F4/F13** `decideExperiment` overí pečať výsledku (`result_hash`) a triedu vzorky vždy prepočíta z počtov a plánu; zámok pokrýva aj `experiment_id`, opis publika a `opportunity_id`. Obmedzenie: pečať chráni pred úpravou, nie pred útočníkom, ktorý prepočíta aj odhad; surové dáta tu nie sú.
+  - **F5** `ExperimentLedger.update` po schválení nepustí zmenu plánu, zrušenie schválenia ani výmenu zámku.
+  - **F6** nemožný agregát (`sum_sq` < `sum²/n`) sa odmietne. **F7–F9** alokácia len čísla, smer stop condition len `below|above`, stop condition len na primárnu alebo sekundárnu metriku.
+  - **F11** kill switch je fail-closed: zapnutý pri akejkoľvek hodnote okrem explicitne vypnutej. **F12** istota, ktorá nie je číslo (NaN, reťazec, null), nikdy neprejde odporúčaním.
+  - Sedem hraníc bez testu pripnutých: presne 48 h, 5 jednotiek, deň 45, 24 h, „práve jedna objednávka", odhad s neúplnými predpokladmi, lokálne číslo `0900…`.
+- Dôkaz: mcp-onlinovo **198/198**, `tsc` 0 chýb, control-contract **72/72**, crm `lib/agents` **69/69**, `prepush-gate.sh` všetko PASS (migrácie NEOVERENÉ). Sabotáž: 24 mutácií, 23 červených → po obnove zelených; 1 ekvivalentná (`sampleClass` vs `r.sample_class` po overení rovnosti), nie je to medzera.
+- **Oprava môjho tvrdenia:** veta „mutation proof na každý guard" z #807 bola prehnaná (P11 našla 7 medzier); správne je „na guardy po tomto PR".
+### Rozpracované / Pending
+- **Nález mimo môjho územia, neopravený:** `resolveAuthority` v `packages/control-contract/src/authority.ts` používa `ctx.confidence < minConfidence`, takže `NaN` confidence prejde ako AUTONOMOUS (rovnaká diera, aká bola v lokálnom guarde). Fix je jednoriadkový (`!(ctx.confidence >= min)`), ale je to jadro governance, takže ho navrhujem, nerobím bez GO.
+- Stále UNKNOWN: LeadHub kontrakt, živý zdroj dát, perzistencia, trvalé schvaľovania, náklady LLM, CI job pre `mcp-onlinovo` (denylist).
+### Kľúčové súbory zmenené
+- `packages/mcp-onlinovo/src/agents/{pseudonym,opportunity,next-action,kpi,allocation,experiment,guard}.ts` a `src/tools/agent-support.ts`: opravy F1–F13 + testy.
+- `docs/onlinovo/ONL-AGENTS-P08-AGENT-SPECS.md`: sémantika kill switchu.
+### Ďalší krok
+P11 znova na novej hlave tohto PR (nezávislý agent), potom rozhodnutie o `authority.ts` (NaN) a o LeadHub kontrakte.
+
+## Session 2026-10-02 (RAU Leverage track L01–L05)
+### Dokončené
+- `docs/rau/leverage/` (L01–L05 + README): päť read-only promptov z nápadu zo screenshotov, vlastné formulácie; „Execution Engine" sa nestavia (je to existujúce RAU). Ústava v2: Q1 veto, skóre ≈ 2/12 → REJECT; GO prišlo pred kontrolou, potvrdenie čaká na foundera.
+- `docs/rau/registry.json`: backlog položka `leverage-external-productization`; 5 regexov overených tabuľkou 29 fráz (preklep `speniaz` → `spenaz` odhalil až test).
+- `.claude/skills/rau/SKILL.md`: holá žiadosť o modul → ASK ostáva pri akomkoľvek rizikovom poli; inak sa zapíše `RAU route: ASK UNKNOWN <projekt> (→L0X, …)`.
+- `docs/rau/RAU-v1.0.md` §13, `docs/reports/2026-10-02-rau-leverage-blind-run.md`, `apps/crm/tests/verification/rau-leverage.verification.test.ts` (49 testov; RAU suita 152 nezmenená).
+- Dôkaz: dva slepé behy (6 + 6, LLM-sudca; vymyslené/zle prečítané 5 → 2, neoznačené ~14 → ~2), nezávislý review SHIP WITH FIXES (0× P0, 8× P1 opravených), mutácie 76/76 po oprave jednej medzery v teste.
+- Krok C: `--spec` spustené, drift test 10/10. V session nie je Stripe kľúč, CLI ani nástroj → ceny vytvára founder; 3 seat ceny odblokujú `/upgrade`.
+### Rozpracované / Pending
+- Founder: potvrdiť alebo zrušiť Leverage track (PR #803; zrušenie = zmazať `docs/rau/leverage/` + backlog položku).
+- Posledná dávka opráv promptov po behu 2 sa nespustila (NEMERANÉ); užitočnosť L01–L05 NEMERANÁ — jediný test je prvý beh L01 foundera.
+- Krok C (Stripe) ostáva #1; Vercel limit nasadení („more than 100 per day") sa objavil znova na PR #803.
+- Moje chyby: mutačný skript mohol cez symlinky zmazať skutočné súbory (report, decisions) — zachytené pred dosiahnutím, opravené materializáciou a overené hashom; test aj README najprv tvrdili viac, než dokazovali (viď decisions.md).
+### Kľúčové súbory zmenené
+- docs/rau/leverage/*: päť promptov + README
+- docs/rau/registry.json: backlog položka; docs/rau/RAU-v1.0.md: §13; .claude/skills/rau/SKILL.md: odsek Leverage track
+- apps/crm/tests/verification/rau-leverage.verification.test.ts: 49 testov; docs/reports/2026-10-02-rau-leverage-blind-run.md: dôkaz
+- memory/decisions.md, memory/open-tasks.md, docs/STATUS.md
+### Ďalší krok
+Founder: krok C v Stripe (minimum 3 seat ceny), potom výstup `stripe-verify-prices.sh` (nie kľúč) → krok B.
+RAU route: AUTO-SAFE CONTENT rau
+## Session 2026-10-02 (CRON-ALIVE hardening + EVENTS-WIRE)
+### Dokončené
+- #786 hardening: strop `cron_runs` 401 zápisu na **(job, rozvrh)** namiesto `job` (falošná hlavička už nepreempuje riadok Vercelu), `user_agent` do `detail`, tvar cronu overený PRED dotazom do DB. Commit `b8eb2ac`, CI 7/7, oba review nálezy odpovedané.
+- **Vyvrátil som vlastnú diagnózu #786 meraním:** crony BEŽIA (`cron_runs` riadok 03:36:49, status `empty`). Hypotéza „plán Vercelu je blokér" padá. Telo PR aj komentár opravené, vyvrátený záver nechaný označený v zázname.
+- EVENTS-WIRE: `ENTITY_TYPES`/`EVENT_TYPES` ako runtime slovník s derivovanými typmi; zod validácia na `/api/events` (400 bez zápisu, 500 pri zlyhaní, koniec `as` pretypovania); `lead_viewed` zapojené na detaile leadu; demo tlačidlo z vymyslených signálov prepojené na `/api/leads/bri-recompute`; kontaktný pokus loguje `call_initiated`/`message_initiated` service-role klientom. 67/67 testov, mutačný test drží zapojenie.
+- EVENTS-WIRE-02: `logEventClient` oddelený do `log-event-client.ts` — klientský komponent cezeň ťahal `next/headers` a zhodil Vercel build. Dynamický `await import()` nie je pre webpack únik z grafu. Pin drží, že do klientského modulu nepribudne iný než typový import (pin si odstrihne komentáre — tri verzie zhasínali na vlastnom vysvetlení).
+- CI chytilo skutočnú chybu vo fail-soft: v `contact-attempt` som ošetril len chybu VRÁTENÚ z `logEventDetailed`, nie výnimku z `createAdminClient()`. Chýbajúci service-role kľúč by zmenil zaznamenaný pokus na 500 a preskočil počítadlo. Celý blok je teraz v try/catch + 3 nové testy na tú vlastnosť (17/17).
+- VERCEL-IGNORE-BUILD: `apps/crm/scripts/vercel-ignore-build.sh` + `ignoreCommand` — agentné `claude/*` preview buildy sa preskakujú, produkcia a `main` NIKDY (poradie podmienok je bezpečnostné, mutačný test to drží). Dôvod: meranie 100 nasadení = 88 preview / 12 produkčných, ~88 % stropu míňal šum. Opravená aj diera v pôvodnom inline príkaze: bez `VERCEL_ENV` padal rovno na git diff a vedel preskočiť produkciu — neistota teraz znamená buildovať. 10 testov.
+- Percentá vynútené rovnako ako steny: `memory/working-agreement.md` pravidlo 6 + riadok v DIGEST → každá správa o hotovom bloku začína „session X % · produkt Y %". `docs/STATUS.md` 49 % → 52 %.
+- Pracovný režim („steny, nie skrutky") vynútený `UserPromptSubmit` hookom — `.claude/hooks/pracovny-rezim.md`, aby sa nedal vytratiť z kontextu.
+### Rozpracované / Pending
+- #786 čaká na merge (zelený, `clean`).
+- `GO SCHEMA-GAP-PROD` stále polovičný: migrácie na PROD sú, CI brána proti reálnej PROD schéme nie.
+- Vercel je **stále free** — founder NEPREŠEL na Pro (opravil moju chybnú poznámku). Nekupovať kvôli cronom, dôkaz pre to neexistuje.
+### Kľúčové súbory zmenené
+- `apps/crm/src/types/events.ts`: runtime slovníky + derivované typy + `message_initiated`
+- `apps/crm/src/app/api/events/route.ts`: zod validácia, `logEventDetailed`, 500 pri zlyhaní zápisu
+- `apps/crm/src/lib/events/log-event.ts`: `logEventClient` cez `fetch` s prečítaným stavom (koniec tichého beaconu)
+- `apps/crm/src/app/(dashboard)/leads/[id]/page.tsx`: `lead_viewed` na mount, demo tlačidlo na reálny prepočet
+- `apps/crm/src/app/api/leads/[id]/contact-attempt/route.ts`: skromný event + `eventLogError` v odpovedi
+- `apps/crm` testy: `src/lib/events/__tests__/events-wire.test.ts`, `tests/verification/events-wire.verification.test.ts`
+- `.claude/hooks/pracovny-rezim.md`, `.claude/hooks/inject-pracovny-rezim.sh`, `.claude/settings.json`, `CLAUDE.md`
+### Ďalší krok
+Merge #786, potom nasadiť EVENTS-WIRE a overiť na PROD prvý skutočný riadok v `events` z ľudskej práce → neprázdne `lead_scores` po ďalšom okne cronu.
+## Session 2026-10-02 (ONL-AGENTS: P08 → P09 → P10, tri agentné roly pre onlinovo.sk)
+### Dokončené
+- **P08** `docs/onlinovo/ONL-AGENTS-P08-AGENT-SPECS.md` (A–L: architektúra, existujúci register, 3 Agent Specs, matice akcií/schvaľovania/pamäte/zlyhaní/eval, UNKNOWN) a **P09** `docs/onlinovo/ONL-AGENTS-P09-IMPLEMENTATION-PLAN.md` (DAG T00–T10, územia zápisu, rollback, STOP podmienky).
+- **T01** `packages/control-contract/src/actions.ts`: 13 ONL akcií v existujúcom registri. 6 povolených (OBSERVE/ANALYZE/RECOMMEND, reverzibilné, interné), 5 BLOCKED (`campaign.send/schedule/update`, `journey.write` = LeadHub kontrakt neoverený; `record.persist` = žiadna overená cesta zápisu), 2 DENIED (`price.change`, `customer.permission.change`). Schválenie nemôže odomknúť FORBIDDEN (I-007), test to pinuje.
+- **T03–T07** `packages/mcp-onlinovo/src/agents/*`: typy, klasifikácia operácií (`LLM_WIRED=false`), rozpočet behu, pseudonymizácia (HMAC, fail-closed bez soli), guard (kill switch `ONLINOVO_AGENTS_KILL_SWITCH`, allow list na agenta, žiadny approval parameter), audit; úzky `RevenueDataPort` (fixture | unconnected) mimo ShopAdapter; `ONL-REVENUE-OPPORTUNITY` (4 typy príležitostí), `ONL-CUSTOMER-NEXT-ACTION` (jedna akcia z uzavretej množiny, pravidlá majú prednosť), `ONL-EXPERIMENT` (predregistrované KPI, zámok po schválení, INDICATIVE vzorka nikdy KEEP, ledger bez mazania).
+- **T08** tri read-only MCP nástroje `onlinovo_revenue_opportunities`, `onlinovo_customer_next_action`, `onlinovo_experiment_plan` (spolu 7 nástrojov, `onlinovo_write_product` stále `WRITE_DISABLED_IN_MVP`). Testy odhalili skutočnú chybu: súhrn nástroja mohol prepísať auditované `action`/`agent_id`/`verdict` → guard fakty teraz vyhrávajú (`agent-audit.ts`).
+- **T02** `apps/crm/src/lib/agents/agent-specs.ts`: EXTEND existujúceho registra (`kind`, `domain`), nie druhý register. Drift test rozšírený (14 → 33 testov): interní agenti musia mať registrované, nezakázané, reverzibilné, zákazníkovi neviditeľné akcie, zhodu s runtime guardom a nesmú byť v schvaľovacej ceste odoslania.
+- **T09** `leadhub-boundary.test.ts` (žiadny transport, URL, LeadHub klient/poverenie, subprocess, zápis do FS; jediný URL literál v balíku je existujúca nepoužitá konštanta Shoptet hostu) a `guard-differential.test.ts` (lokálny guard = `resolveAuthority` pre každú akciu × 9 hodnôt istoty × kill switch).
+- Dôkaz: mcp-onlinovo **172/172**, control-contract **72/72**, crm agents + approve-draft **104/104** (po merge `main`), `tsc` mcp-onlinovo a control-contract 0 chýb, `scripts/ci/prepush-gate.sh` všetko PASS (migrácie NEOVERENÉ — treba Docker). Mutation proof: T08 14, T02 8, T09 14 zmysluplných sabotáží (jedna ekvivalentná mutácia vyradená), vždy červená → po obnove zelená; T03–T07 v commitoch. Dve prežívajúce mutácie v T08 (prepis auditu, zúžený zoznam akcií) boli medzery v testoch, nie v kóde → testy doplnené.
+### Rozpracované / Pending
+- **Nič z toho nie je mergnuté ani nasadené.** Draft PR na `claude/leaddhub-connector-capabilities-mgbuhe`; STATUS je IMPLEMENTED/TESTED, nie VERIFIED (nezávislé overenie = P11).
+- **UNKNOWN:** (1) repo `onlinovosk-bit/onlinovo` nie je dostupné, práca je v `RealitkaAI/packages/mcp-onlinovo`; (2) LeadHub API kontrakt na zápis (kampane, journey, idempotencia) — žiadny provider, žiadny HTTP; (3) živý zdroj dát pre agentov (dnes iba fixture/unconnected, žiadne reálne čísla); (4) náklady/limity LLM (nie je zapojený); (5) trvalé schvaľovania (CP-P0-2 neexistujú); (6) perzistencia experimentov (`record.persist` BLOCKED); (7) `packages/mcp-onlinovo` nemá CI job (`.github/**` = denylist, rozhodne founder); (8) `tsc` v `apps/crm` má predexistujúcich 48 chýb mimo `lib/agents` (nezmenené mojimi súbormi).
+### Kľúčové súbory zmenené
+- `packages/control-contract/src/actions.ts`: 13 ONL akcií (6 povolených, 5 BLOCKED, 2 DENIED) + `tests/onlinovo-actions.test.ts`.
+- `packages/mcp-onlinovo/src/agents/*`: guard, audit, pseudonym, budget, classification, data-port, fixture-data, opportunity, next-action, kpi, allocation, experiment + testy.
+- `packages/mcp-onlinovo/src/tools/{agent-support,revenue-opportunities,customer-next-action,experiment-plan}.ts`, `server.ts`, `agent-tools.test.ts`.
+- `apps/crm/src/lib/agents/agent-specs.ts` + `__tests__/agent-specs.test.ts`: tri ONL špecifikácie v existujúcom registri.
+- `docs/onlinovo/ONL-AGENTS-P08-AGENT-SPECS.md`, `ONL-AGENTS-P09-IMPLEMENTATION-PLAN.md`.
+### Ďalší krok
+P11 nezávislé overenie tohto PR (iná session, bez môjho kontextu), potom founderovo rozhodnutie o jedinej odblokujúcej veci: overený LeadHub kontrakt (odpoveď podpory) alebo CSV export ako živý zdroj dát. Stripe krok C pri Revolis zostáva blokátor č. 1.
+
+## Session 2026-10-02 (WORKING-PROTOCOL-HOOKS)
+### Dokončené
+- Pravidlo „steny, nie skrutky" je teraz **vynucované hookmi**, nie len zapísané: protokol sa vkladá do kontextu pri štarte a pri každej správe foundera; druhý `git push` do 20 min blokuje `push-throttle` (výnimka `WALL_PUSH_OK=1` + dôvod). 23 testov, mutation proof 15/15, v živej session overené.
+### Rozpracované / Pending
+- Smolko: súhlas + kontaktná adresa → „GO SMOLKO-LIVE". Memory/hooky sú v PR #787 (jeden merge).
+- Ak sa pri správe foundera neobjaví riadok `[PROTOKOL…]`, hook nebeží → `/hooks`.
+### Kľúčové súbory zmenené
+- `.claude/working-protocol.md`, `.claude/hooks/working-protocol.mjs`, `.claude/hooks/push-throttle.mjs`, `.claude/settings.json`, `apps/crm/.claude/settings.json`, `apps/crm/tests/verification/working-protocol-hooks.verification.test.ts`, `memory/*`.
+### Ďalší krok
+„merguj 787" (memory + hooky v jednej PR), potom Smolkova odpoveď.
+
+## Session 2026-10-02 (SMOLKO-LIVE — príprava)
+### Dokončené
+- SMOLKO-LIVE pripravené bez zásahu do PROD pre Smolka: stav zmeraný, aktivačný SQL (1 transakcia), overenie, kill-switch a ukážka textu sú v `memory/decisions.md`.
+### Rozpracované / Pending
+- **Čaká na 2 vstupy od Smolka (cez foundera):** súhlas + kontaktná adresa (cesta A vlastná schránka — odporúčam; B `reality-smolko@revolis.ai` len ak je overené, kam idú odpovede — Cloudflare mimo repa).
+- Potom jedno „GO SMOLKO-LIVE" → ja spravím všetko (migrácia opt-in default + reply-to + zapnutie + overenie o 24 h).
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md` (len pamäť).
+### Ďalší krok
+Smolkova odpoveď → „GO SMOLKO-LIVE".
+
+## Session 2026-10-02 (E2E DÔKAZ)
+### Dokončené
+- **E2E dôkaz prešiel v PROD:** triáž +2,4 s, auto-odpoveď +4,1 s po vytvorení leadu, `inbound.auto_response` = `sent`, `from_domain=revolis.ai` → `after()` funguje a `OUTREACH_FROM_EMAIL` je na overenej doméne. Nasadenie sa odblokovalo samo.
+- Testovací vstup zavretý. SCOREBOARD: 30 % → **60 %** dokázané (75 % vážené).
+### Rozpracované / Pending
+- Bod 5: reálne znenie textu z Resend Logs (1 screenshot). Bod 9: migrácia opt-in default na PROD (moje SQL, GO). Bod 4: kvalita AI návrhu. Bod 7: Smolko reply-to + súhlas.
+- **Nález:** `Revolis Demo` má auto-odpoveď zapnutú + agentúrny e-mail (zmena 1. 10. 11:40 UTC, nie moja) — ponechané, 0 leadov odvtedy.
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md` (len pamäť; PROD: tenant otvorený a zavretý).
+### Ďalší krok
+Jedna stena SMOLKO-LIVE: migrácia opt-in default + reply-to + zapnutie + overenie na prvom reálnom leade (potrebuje od foundera schválený reply-to a súhlas Smolka).
+
+## Session 2026-10-01 (ZÁVER: nasadenie zablokované + pracovný protokol)
+### Dokončené
+- Zmergované a živé v PROD: #771, #772, #773. Zmergované v `main`, NEnasadené: #780 (`04563ef`: `after()` vo verejných trasách, stráž, migrácia opt-in default) a #782 (TENANT-GATE-2, iná session).
+- PROD opt-in: auto-odpoveď vypnutá pre 6 z 7 agentúr (`count(*) from agencies where auto_response_enabled` = 0 po zavretí testovacej).
+### Rozpracované / Pending
+- **Nasadenie blokuje Vercel Hobby limit (100/deň):** API 402, `remaining: 0`, reset **2026-10-02 12:16:54 UTC**. Oprava môjho skoršieho tvrdenia: limit sa NEuvoľňuje po jednom (uvoľnený slot 11:42 hneď zabrala preview cudzej vetvy `claude/brave-bohr-arikv2`). Preview `04563ef` existuje, nepromovať (preview env ≠ produkčné premenné, napr. `OUTREACH_FROM_EMAIL`).
+- **Rozhodnutie foundera (jedno):** Pro plán (okamžite) / čakať do 2026-10-02 12:17 UTC (+ preview nasadenia vetiev `claude/*` vypnúť; `git.deploymentEnabled` podľa dokumentácie berie konkrétne názvy vetiev, maska neoverená; nejasné, či „ignorované" buildy počítajú do limitu).
+- Po nasadení: e2e dôkaz (postup v zázname LEAD-PIPELINE-AFTER) → body 3, 5, 6, 10 na ✅ = 70 % dokázané.
+- Migrácia opt-in default NIE je na PROD (samostatné GO). Smolko reply-to + súhlas. Širšia trieda `void`/`.catch` (14 v 10 súboroch).
+### Kľúčové súbory zmenené
+- `memory/decisions.md`, `memory/session-summary.md` (len pamäť, tento záver).
+### Ďalší krok
+Odpoveď „Pro" alebo „čakám" → potom jedna stena: nasadenie + e2e dôkaz.
+## Session 2026-10-01 (HOT-LEAD-PUSH-AFTER)
+### Dokončené
+- `apps/crm/src/app/api/leads/[id]/route.ts`: `notifyHotLead` ide cez `runAfterResponse` (predtým `.catch` bez `await`, na serverless sa po odpovedi zmrazil).
+- `apps/crm/tests/verification/lead-pipeline-after.verification.test.ts`: stráž rozšírená o `notifyHotLead`.
+- `apps/crm/src/app/api/leads/[id]/__tests__/route-hot-push.test.ts`: 5 behaviorálnych testov (poradie voči odpovedi cez zachytené `after()`).
+- Zúžený rozsah dôkazom: `globalEventBus` nemá odberateľov (emit = no-op), HubSpot webhook len loguje, `leads_demo` má 0 riadkov. PROD len SELECT: 8 push odberov / 2 používatelia / 6 Horúcich leadov.
+### Rozpracované / Pending
+- Nasadenie blokuje Vercel Hobby limit 100/deň (SCOREBOARD bod 10); `after()` v PROD stále nedokázané.
+- PR #785 (STARTER-PACK-GUARD) čaká na merge; krok C (Stripe ceny) na founderovi.
+### Kľúčové súbory zmenené
+- apps/crm/src/app/api/leads/[id]/route.ts, apps/crm/tests/verification/lead-pipeline-after.verification.test.ts, apps/crm/src/app/api/leads/[id]/__tests__/route-hot-push.test.ts, memory/decisions.md
+### Ďalší krok
+Počkať na merge a uvoľnenie Vercel limitu, potom e2e beh podľa SCOREBOARDu (bod 3, 5, 6, 10).
 ## Session 2026-10-01 (LOG-PII-CLEANUP-2)
 ### Dokončené
 - `support/request` a `legal/dpa-request`: oba logy (e-mail aj webhook) idú cez `describeError`; `describeError` navyše maskuje e-maily a dlhé číselné rady v samotnej správe (SMTP chyby píšu „Recipient rejected: <a@b.sk>", webhook môže vrátiť poslané späť). Žiadateľ support/DPA je zákazník, jeho adresa je aj v `replyTo`.

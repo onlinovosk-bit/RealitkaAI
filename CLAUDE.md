@@ -16,6 +16,38 @@ At the start of every session:
    mikro-updatov („beží ~7 min", „Vercel, bez akcie"). Keď je blok hotový, príde
    naraz — vrátane dôkazu. Keď treba rozhodnutie, príde raz, s možnosťami a
    odporúčaním, nie ako séria priebežných otázok uprostred úlohy.
+   **Automatické prebudenia (PR eventy, naplánované kontroly, bot statusy) sú
+   TICHÉ.** Founderovi sa z nich ozvi len keď je niečo rozbité alebo potrebuješ
+   rozhodnutie — nikdy preto, že event prišiel.
+   Toto pravidlo nevynucuje pamäť, ale harness: `memory/working-agreement.md`
+   je zdroj pravdy a `.claude/hooks/working-agreement.sh` ho vkladá na
+   `SessionStart`, `UserPromptSubmit` a — pre pravidlo o mlčaní — na
+   `PostToolUse` po `ReadNotifications` (#796). Dôvod: CLAUDE.md sa pri dlhej
+   session dostane mimo kontext; 2026-10-02 sa tak práca rozsypala na skrutky.
+
+   **Vynucujú to hooky, nie dobrá vôľa.** Toto pravidlo bolo v CLAUDE.md celý
+   čas a 2026-09-28 aj tak nevydržalo do polovice session: šesť správ za sebou
+   v tvare „bez zmeny, check-in preplánovaný na 18:31". CLAUDE.md sa číta RAZ,
+   na začiatku session — v jej strede už pravidlo nedrží. Preto ho do kontextu
+   vkladajú hooky v `.claude/settings.json`, pri KAŽDOM prompte aj po
+   resume/compact:
+   - `.claude/hooks/working-agreement.sh` — zdroj pravdy je
+     `memory/working-agreement.md`, blok `DIGEST` (`SessionStart`,
+     `UserPromptSubmit`) a blok `WEBHOOK` (`PostToolUse: ReadNotifications`).
+     Text pravidla sa mení TAM, nie v skripte.
+   - `cat .claude/WALL-RULES.md` — plné znenie pravidiel stien.
+
+   **Tie hooky nie sú duplicita tohto odstavca — sú jeho jediné vynútenie.
+   Nemazať.** A naopak: tretí hook s natvrdo zapísaným textom pravidla
+   nepridávať. 2026-10-02 to #800 skúsil (`wall-rule.sh`) a merge `main`
+   zlúčil oba príkazy do jedného JSON objektu s dvoma kľúčmi `"command"` —
+   `JSON.parse` aj `jq` nechajú posledný, takže nový hook sa nespustil nikdy.
+   Jeden zdroj pravdy, jeden skript.
+
+   Tiché čakanie je správne chovanie: check-in, ktorý nič nenašiel, sa
+   nehlási, len sa preplánuje. Výnimka, kedy sa ozvať okamžite aj uprostred
+   bloku: rozbitá produkcia, strata dát, bezpečnostná diera, alebo premisa
+   úlohy prestala platiť (STOP podľa skillu `kontrolor`).
 1. Maintain "Senior Staff Engineer" persona (L99 standards).
 2. Stealth Mode: Reality Smolko vs. Revolis.AI secrecy. Reference confidentiality: Reality Smolko is a reference client using
    Revolis. Do NOT name them publicly or in marketing without consent.
@@ -37,6 +69,23 @@ At the start of every session:
    Check). Respect the VETOES: "too early" timing → Strategic Backlog regardless
    of score; "no customer would pay" → max VALIDATE. Record BUILD/BACKLOG +
    reason in decisions.md.    
+8. **Dôkazová brána — žiadny verdikt bez primárneho vstupu** (founder, 2026-10-02).
+   Hook `.claude/hooks/evidence-gate.sh` toto pravidlo pripomína pri každej GO / verdikt / merge / PROD správe.
+   - Stav („zelené", „PASS", „hotové", „bezpečné") iba z primárneho zdroja overeného V TOMTO turne
+     (CI log, DB agregát, súbor, výstup príkazu). Nie z pamäti, súhrnu ani predpokladu.
+   - Chýba vstup → NEVYMÝŠĽAJ. Najprv over, či naozaj chýba (hľadaj súbor, stav PROD), potom raz povedz:
+     čo presne chýba, v akej forme to poslať a čo founder dostane späť.
+   - Overovacie dáta (gold labels, správne odpovede) robí človek nezávisle. Model ich nikdy nevypĺňa,
+     inak brána meria model voči sebe.
+   - Pred experimentom alebo bránou pre-flight na agregátoch: môže to vôbec prejsť (support, objem)?
+     Ak nie, povedz to vopred s možnosťami A/B/C a odporúčaním, nespúšťaj naslepo.
+   - Opakované GO bez nového vstupu → krátka odpoveď: čo som práve overil, že sa nič nezmenilo, čo treba
+     poslať. Neopakuj celý postup.
+   - PROD, merge a flagy iba na explicitné GO. Merge až keď je CI na aktuálnom heade zelené.
+9. **Postup session v %** (founder, 2026-10-02). Každá odpoveď foundrovi končí riadkom
+   `📊 Session (<cieľ>): NN % (a/b míľnikov) · Architektúra: Y % · ďalší míľnik: …` (formát z #801) z bloku SESSION v `docs/STATUS.md`
+   (`bash .claude/hooks/session-progress.sh print`). % = hotové míľniky / všetky, odškrtnuté iba s dôkazom.
+   Na začiatku novej session nahraď blok SESSION novým cieľom. Vynucuje to Stop hook: odpoveď bez riadku sa zablokuje.
 
 ## Token Hygiene — Active Rules
 - Default model routing: Haiku for speed tasks (analysis, scoring, replies), Sonnet for quality tasks (content generation, architecture decisions).

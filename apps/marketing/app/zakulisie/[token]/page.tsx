@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import LeadCaptureModal from '../../../components/LeadCaptureModal'
 import { zakulisiePath } from '../../../lib/zakulisie'
+import { usePricingV2 } from '../../../components/PricingV2Context'
 
 declare global { interface Window { gtag?: (...args: unknown[]) => void } }
 
@@ -10,6 +11,7 @@ export default function ZakulisiePage() {
   const [exitVisible, setExitVisible] = useState(false)
   const [leadModal, setLeadModal] = useState<string | null>(null)
   const openModal = (source: string) => setLeadModal(source)
+  const pricingV2 = usePricingV2() // null = legacy ceny (79/71/63), inak katalóg v2
 
   useEffect(() => {
     // ── PARTICLES ──
@@ -265,10 +267,21 @@ export default function ZakulisiePage() {
         display: 'flex', flexWrap: 'wrap', gap: '12px 28px', alignItems: 'center', justifyContent: 'center',
       }}>
         <span style={{ color: 'var(--cyan)', fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase', fontSize: 11 }}>Zákulisie · L99</span>
+        {pricingV2 ? (
+          <>
+            {pricingV2.bands.map((band) => (
+              <span key={band.id}><strong style={{ color: 'var(--text)' }}>{band.label}</strong> {band.netLabel} bez DPH ({band.grossLabel})</span>
+            ))}
+            <span style={{ opacity: .85 }}>Roadmap moduly (Leads Engine, MI, Protocol AI) — čoskoro; dnes predaj plánov pre kancelárie.</span>
+          </>
+        ) : (
+          <>
         <span><strong style={{ color: 'var(--text)' }}>Solo seat</strong> 79 €/seat</span>
         <span><strong style={{ color: 'var(--text)' }}>Team seat</strong> 71 € (3–9)</span>
         <span><strong style={{ color: 'var(--text)' }}>Office seat</strong> 63 € (10+)</span>
         <span style={{ opacity: .85 }}>Roadmap moduly (Leads Engine, MI, Protocol AI) — čoskoro; dnes predaj seatov.</span>
+          </>
+        )}
       </div>
 
       {/* HERO */}
@@ -606,7 +619,7 @@ export default function ZakulisiePage() {
       <div className="footer-cta">
         <div className="usp-tag">★ World&rsquo;s First · Kombinácia neexistuje nikde inde</div>
         <h2>Každý deň bez Revolis.AI<br />Vás stojí konkrétnu sumu.</h2>
-        <p>Aktivujte seat od 79 €/mes. Trial bez záväzkov. Prvý AI follow-up odchádza za 4 minúty.</p>
+        <p>{pricingV2 ? `Aktivujte plán od ${pricingV2.bands[0].netLabel} / mes bez DPH (${pricingV2.bands[0].grossLabel}). Trial bez záväzkov. Prvý AI follow-up odchádza za 4 minúty.` : 'Aktivujte seat od 79 €/mes. Trial bez záväzkov. Prvý AI follow-up odchádza za 4 minúty.'}</p>
         <button className="btn-primary" style={{ fontSize: '16px', padding: '20px 48px' }} onClick={() => { window.gtag?.('event', 'final_cta_click', { position: 'footer_cta' }); openModal('zakulisie-footer') }}>Rezervovať seat — výsledky do 48 hodín →</button>
         <div style={{ marginTop: '16px', fontSize: '12px', color: 'var(--muted)' }}>
           <a href={zakulisiePath()} style={{ color: 'var(--cyan)', textDecoration: 'none' }}>Zákulisie L99</a>
@@ -615,7 +628,7 @@ export default function ZakulisiePage() {
       </div>
 
       {leadModal !== null && (
-        <LeadCaptureModal source={leadModal} onClose={() => setLeadModal(null)} />
+        <LeadCaptureModal source={leadModal} onClose={() => setLeadModal(null)} pricingV2={pricingV2} />
       )}
 
       {/* EXIT-INTENT OVERLAY */}

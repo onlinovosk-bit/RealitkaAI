@@ -1,10 +1,32 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run build)",
-      "Bash(npm run lint)",
-      "Bash(npm run test:*)",
+      "Bash(npm run:*)",
       "Bash(npm ci)",
+      "Bash(bash:*)",
+      "Bash(jq:*)",
+      "Bash(echo:*)",
+      "Bash(printf:*)",
+      "Bash(diff:*)",
+      "Bash(chmod:*)",
+      "Bash(touch:*)",
+      "Bash(sort:*)",
+      "Bash(uniq:*)",
+      "Bash(cut:*)",
+      "Bash(awk:*)",
+      "Bash(tr:*)",
+      "Bash(basename:*)",
+      "Bash(dirname:*)",
+      "Bash(realpath:*)",
+      "Bash(git merge-base:*)",
+      "Bash(git merge-tree:*)",
+      "Bash(git rm:*)",
+      "Bash(git restore:*)",
+      "Bash(git reset:*)",
+      "Bash(git apply:*)",
+      "Bash(git blame:*)",
+      "Bash(git remote:*)",
+      "Bash(git worktree:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
@@ -73,6 +95,19 @@
             "type": "command",
             "command": "cat \"${CLAUDE_PROJECT_DIR:-.}/.claude/WALL-RULES.md\" 2>/dev/null || true",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/progress.sh\" 2>/dev/null || true",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.claude/hooks/working-protocol.mjs\" start"
           }
         ]
       }
@@ -89,6 +124,24 @@
             "type": "command",
             "command": "cat \"${CLAUDE_PROJECT_DIR:-.}/.claude/WALL-RULES.md\" 2>/dev/null || true",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/progress.sh\" 2>/dev/null || true",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/evidence-gate.sh",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.claude/hooks/working-protocol.mjs\" turn"
           }
         ]
       }
@@ -100,6 +153,37 @@
           {
             "type": "command",
             "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/working-agreement.sh\" webhook 2>/dev/null || true",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.claude/hooks/push-throttle.mjs\" post"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.claude/hooks/push-throttle.mjs\" pre"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/session-progress.sh\" stop 2>/dev/null || true",
             "timeout": 10
           }
         ]

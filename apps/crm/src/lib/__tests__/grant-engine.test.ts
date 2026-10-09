@@ -24,6 +24,7 @@ import {
   seatGrantPerSeat,
   grantMonthlyCreditsForAgency,
   expireGrantCreditsForAgency,
+  monthlyGrantAmountForAgency,
   type AgencyCreditRow,
 } from "@/lib/credits/grant-engine";
 import {
@@ -272,5 +273,100 @@ describe("grant-engine", () => {
 
     expect(result).toEqual({ expired: 0, skipped: true, error: "lookup down" });
     expect(expireGrantCreditsAtomicMock).not.toHaveBeenCalled();
+  });
+
+  describe("pricing v2 (kritériá 6, 7)", () => {
+    const v2 = (overrides: Partial<AgencyCreditRow> = {}): AgencyCreditRow =>
+      agency({
+        seats: 10,
+        account_tier: "enterprise",
+        pricing_model: "v2",
+        pricing_band: "office",
+        pack_credits: 60,
+        subscription_status: "active",
+        ...overrides,
+      });
+
+    it("v2 grant = band credits + pack_credits, NOT seats x rate", () => {
+      // office 100 + 60 balík; legacy výpočet by dal 10 seatov x sadzba.
+      expect(monthlyGrantAmountForAgency(v2())).toBe(160);
+      expect(monthlyGrantAmountForAgency(v2({ seats: 500 }))).toBe(160);
+      expect(monthlyGrantAmountForAgency(v2({ pricing_band: "start", pack_credits: 0 }))).toBe(20);
+      expect(monthlyGrantAmountForAgency(v2({ pricing_band: "team", pack_credits: null }))).toBe(50);
+      expect(monthlyGrantAmountForAgency(v2({ pricing_band: "network", pack_credits: 300 }))).toBe(450);
+      expect(monthlyGrantAmountForAgency(v2())).not.toBe(
+        previewMonthlyGrant("office", 10, false),
+      );
+    });
+
+    it("v2 grants only while subscription_status is 'active'", () => {
+      for (const status of ["past_due", "unpaid", "canceled", "trialing", "incomplete", null, undefined, ""]) {
+        expect(monthlyGrantAmountForAgency(v2({ subscription_status: status as never }))).toBe(0);
+      }
+    });
+
+    it("v2 fails closed on an unknown band, bad pack or unknown pricing model (never falls back to legacy)", () => {
+      expect(monthlyGrantAmountForAgency(v2({ pricing_band: "mega" }))).toBe(0);
+      expect(monthlyGrantAmountForAgency(v2({ pricing_band: null }))).toBe(0);
+      expect(monthlyGrantAmountForAgency(v2({ pack_credits: -5 }))).toBe(0);
+      expect(monthlyGrantAmountForAgency(v2({ pack_credits: 1.5 }))).toBe(0);
+      expect(monthlyGrantAmountForAgency(v2({ pricing_model: "v3" }))).toBe(0);
+    });
+
+    it("legacy agency gets exactly the grant it got before (v2 fields absent or NULL)", () => {
+      const cases: AgencyCreditRow[] = [
+        agency(),
+        agency({ seats: 1, account_tier: "starter" }),
+        agency({ seats: 12, account_tier: "enterprise", owner_cockpit_active: true }),
+        agency({ seats: 3, account_tier: "weird_unknown_tier" }),
+        agency({ seats: 0 }),
+      ];
+      const legacyExpected = [
+        previewMonthlyGrant("team", 4, false),
+        previewMonthlyGrant("solo", 1, false),
+        previewMonthlyGrant("office", 12, true),
+        previewMonthlyGrant("team", 3, false),
+        0,
+      ];
+      cases.forEach((row, i) => {
+        expect(monthlyGrantAmountForAgency(row)).toBe(legacyExpected[i]);
+        // explicitné NULL polia z DB (po migrácii) sa správajú rovnako
+        expect(
+          monthlyGrantAmountForAgency({ ...row, pricing_model: null, pricing_band: null, pack_credits: 0, subscription_status: null }),
+        ).toBe(legacyExpected[i]);
+      });
+    });
+
+    it("legacy agency keeps being granted whatever its subscription_status (unchanged behaviour)", () => {
+      expect(monthlyGrantAmountForAgency(agency({ subscription_status: "canceled" }))).toBe(previewMonthlyGrant("team", 4, false));
+    });
+
+    it("grantMonthlyCreditsForAgency sends the v2 amount to the idempotent RPC", async () => {
+      applyMonthlyGrantCreditsMock.mockResolvedValue({ ok: true, granted: 160, skipped: false });
+      const result = await grantMonthlyCreditsForAgency(v2(), "202610");
+      expect(result).toEqual({ granted: 160, skipped: false });
+      expect(applyMonthlyGrantCreditsMock).toHaveBeenCalledWith({
+        agencyId: "agency-1",
+        amount: 160,
+        periodKey: "202610",
+        idempotencyKey: monthlyGrantIdempotencyKey("agency-1", "202610"),
+      });
+    });
+
+    it("a v2 agency that is not active is skipped without calling the RPC", async () => {
+      const result = await grantMonthlyCreditsForAgency(v2({ subscription_status: "past_due" }), "202610");
+      expect(result).toEqual({ granted: 0, skipped: true });
+      expect(applyMonthlyGrantCreditsMock).not.toHaveBeenCalled();
+    });
+
+    it("expiry of the grant pool is the same as for legacy (distinct from purchased credits)", async () => {
+      const result = await expireGrantCreditsForAgency(v2({ grant_credits_balance: 40 }), "202609", new Date("2026-10-01T12:00:00Z"));
+      expect(result).toEqual({ expired: 40, skipped: false });
+      expect(expireGrantCreditsAtomicMock).toHaveBeenCalledWith({
+        agencyId: "agency-1",
+        periodKey: "202609",
+        idempotencyKey: grantExpiryIdempotencyKey("agency-1", "202609"),
+      });
+    });
   });
 });

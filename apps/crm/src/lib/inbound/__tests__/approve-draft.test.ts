@@ -40,12 +40,18 @@ function fakeAdmin(opts: {
   activity?: { id: string; lead_id: string; meta: Record<string, unknown> } | null;
   lead?: { id: string; agency_id: string | null } | null;
   claimWins?: boolean;
+  stampFails?: boolean;
 }) {
   const activity =
     opts.activity === undefined ? { id: ACT, lead_id: LEAD, meta: draftMeta() } : opts.activity;
   const lead = opts.lead === undefined ? { id: LEAD, agency_id: AGENCY } : opts.lead;
   const metaWrites: Record<string, unknown>[] = [];
   const claimFilters: string[] = [];
+  // Updates to `leads` are kept apart from updates to `activities`: the
+  // contact stamp (last_contact_at) is a different write with a different
+  // guard, and folding both into one list hid it.
+  const leadWrites: Record<string, unknown>[] = [];
+  const leadFilters: string[] = [];
 
   const admin = {
     from(table: string) {
@@ -58,8 +64,27 @@ function fakeAdmin(opts: {
             }),
           }),
         }),
-        update: (row: { meta: Record<string, unknown> }) => {
-          metaWrites.push(row.meta);
+        update: (row: Record<string, unknown>) => {
+          if (table === "leads") {
+            leadWrites.push(row);
+            const leadFinal = Promise.resolve({ error: null });
+            return {
+              eq: () =>
+                Object.assign(leadFinal, {
+                  or: (filter: string) => {
+                    leadFilters.push(filter);
+                    return {
+                      select: async () =>
+                        opts.stampFails === true
+                          ? { data: null, error: { message: "permission denied" } }
+                          : { data: [{ id: LEAD }], error: null },
+                    };
+                  },
+                }),
+            };
+          }
+
+          metaWrites.push(row.meta as Record<string, unknown>);
           const final = Promise.resolve({ error: null });
           return {
             eq: () =>
@@ -79,10 +104,82 @@ function fakeAdmin(opts: {
       };
     },
   };
-  return { admin: admin as never, metaWrites, claimFilters };
+  return { admin: admin as never, metaWrites, claimFilters, leadWrites, leadFilters };
 }
 
 const approver = { profileId: "p-1", agencyId: AGENCY, label: "makler@rk.sk" };
+
+describe("approveAndSendInboundDraft — contact stamp", () => {
+  const send = vi.fn();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockLogAiAction.mockResolvedValue(undefined);
+  });
+
+  it("stamps leads.last_contact_at when the send confirmed", async () => {
+    // Ten surfaces read this column and nothing wrote it: 0 of 520 production
+    // rows carried a value on 2026-10-02. A human-approved reply that the
+    // transport confirmed is contact, and this is where it gets recorded.
+    send.mockResolvedValue({ ok: true, channel: "email", to: "jan@example.com", messageId: "m-1" });
+    const { admin, leadWrites, leadFilters } = fakeAdmin({});
+
+    const res = await approveAndSendInboundDraft({ admin, leadId: LEAD, activityId: ACT, approver, send });
+
+    expect(res).toEqual({ ok: true, messageId: "m-1" });
+    expect(leadWrites).toHaveLength(1);
+    expect(Object.keys(leadWrites[0])).toEqual(["last_contact_at"]);
+    expect(typeof leadWrites[0].last_contact_at).toBe("string");
+    // Monotonic guard must be present, or a retry could rewind the stamp.
+    expect(leadFilters.join("|")).toContain("last_contact_at.is.null");
+    expect(leadFilters.join("|")).toContain("last_contact_at.lt.");
+  });
+
+  it("does not stamp when the send failed", async () => {
+    // A draft that never left is not contact. Stamping here would report
+    // outreach that did not happen.
+    send.mockResolvedValue({ ok: false, channel: "email", to: "jan@example.com", error: "smtp down" });
+    const { admin, leadWrites } = fakeAdmin({});
+
+    const res = await approveAndSendInboundDraft({ admin, leadId: LEAD, activityId: ACT, approver, send });
+
+    expect(res.ok).toBe(false);
+    expect(leadWrites).toHaveLength(0);
+  });
+
+  it("does not stamp when another approver already claimed the draft", async () => {
+    send.mockResolvedValue({ ok: true, channel: "email", to: "jan@example.com", messageId: "m-1" });
+    const { admin, leadWrites } = fakeAdmin({ claimWins: false });
+
+    await approveAndSendInboundDraft({ admin, leadId: LEAD, activityId: ACT, approver, send });
+
+    expect(leadWrites).toHaveLength(0);
+  });
+
+  it("a failed stamp does not turn a delivered message into a failure", async () => {
+    // The e-mail has already left. Fail-soft is the whole point.
+    send.mockResolvedValue({ ok: true, channel: "email", to: "jan@example.com", messageId: "m-1" });
+    const { admin, leadWrites } = fakeAdmin({ stampFails: true });
+
+    const res = await approveAndSendInboundDraft({ admin, leadId: LEAD, activityId: ACT, approver, send });
+
+    expect(res).toEqual({ ok: true, messageId: "m-1" });
+    expect(leadWrites).toHaveLength(1);
+  });
+
+  it("the stamp and the recorded sent_at describe the same moment", async () => {
+    send.mockResolvedValue({ ok: true, channel: "email", to: "jan@example.com", messageId: "m-1" });
+    const fixed = new Date("2026-10-02T08:00:00.000Z");
+    const { admin, leadWrites, metaWrites } = fakeAdmin({});
+
+    await approveAndSendInboundDraft({
+      admin, leadId: LEAD, activityId: ACT, approver, send, now: () => fixed,
+    });
+
+    expect(leadWrites[0].last_contact_at).toBe(fixed.toISOString());
+    expect(metaWrites[1]).toMatchObject({ sent_at: fixed.toISOString() });
+  });
+});
 
 describe("approveAndSendInboundDraft", () => {
   const send = vi.fn();

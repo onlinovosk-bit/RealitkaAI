@@ -74,17 +74,94 @@ describe("send-inbound-auto-response template", () => {
   });
 });
 
-describe("loadAgencyAutoResponseContext", () => {
-  it("defaults auto_response_enabled when column missing on prod", async () => {
+// ================================================================
+// FAIL-CLOSED: bez výslovného `true` sa auto-odpoveď neposiela
+//
+// Predtým sa `autoResponseEnabled` inicializovalo na `true` a test znel
+// `!== false`. POSIELAŤ bolo teda predvolené chovanie troch zlyhaní: chýbajúci
+// stĺpec, chýbajúci riadok agentúry, hodnota NULL. Migrácia 20261001100000
+// nastavila default pre nové riadky na `false` (na PROD 2026-10-02), ale týmito
+// cestami sa dal obísť — e-mail klientovi agentúry mohol odísť bez jej súhlasu.
+//
+// Pôvodný test „defaults auto_response_enabled when column missing on prod" je
+// nižšie preklopený, nie zmazaný: to chovanie bolo zámerné, kým stĺpec na PROD
+// chýbal, a dnes už nemá čo chrániť.
+// ================================================================
+describe("loadAgencyAutoResponseContext — fail-closed", () => {
+  it("does NOT send when the column is missing (bývalé 'defaults to enabled')", async () => {
     const supa = agenciesMock({
-      name: { data: { name: "Reality Smolko" }, error: null },
+      name: { data: { name: "Agentúra" }, error: null },
       auto_response_enabled: { data: null, error: { code: "42703", message: "column missing" } },
       "email, phone": { data: null, error: { code: "42703", message: "column missing" } },
     });
 
     const ctx = await loadAgencyAutoResponseContext(supa, "agency-1");
-    expect(ctx.agency?.name).toBe("Reality Smolko");
+    expect(ctx.agency?.name).toBe("Agentúra");
+    expect(ctx.autoResponseEnabled).toBe(false);
+    expect(ctx.consentUnknown).toBe(true);
+  });
+
+  it("sends only on an explicit true", async () => {
+    const supa = agenciesMock({
+      name: { data: { name: "Agentúra" }, error: null },
+      auto_response_enabled: { data: { auto_response_enabled: true }, error: null },
+      "email, phone": { data: { email: "office@example.sk", phone: null }, error: null },
+    });
+
+    const ctx = await loadAgencyAutoResponseContext(supa, "agency-1");
     expect(ctx.autoResponseEnabled).toBe(true);
+    expect(ctx.consentUnknown).toBe(false);
+  });
+
+  it("treats an explicit false as a known refusal, not as unknown", async () => {
+    const supa = agenciesMock({
+      name: { data: { name: "Agentúra" }, error: null },
+      auto_response_enabled: { data: { auto_response_enabled: false }, error: null },
+      "email, phone": { data: { email: "office@example.sk", phone: null }, error: null },
+    });
+
+    const ctx = await loadAgencyAutoResponseContext(supa, "agency-1");
+    expect(ctx.autoResponseEnabled).toBe(false);
+    expect(ctx.consentUnknown).toBe(false);
+  });
+
+  it("does NOT treat NULL as consent", async () => {
+    // Na PROD je stĺpec NOT NULL, ale typ je `boolean | null` a `null !== false`
+    // bolo pravdivé — takže NULL znamenalo POSIELAJ.
+    const supa = agenciesMock({
+      name: { data: { name: "Agentúra" }, error: null },
+      auto_response_enabled: { data: { auto_response_enabled: null }, error: null },
+      "email, phone": { data: { email: "office@example.sk", phone: null }, error: null },
+    });
+
+    const ctx = await loadAgencyAutoResponseContext(supa, "agency-1");
+    expect(ctx.autoResponseEnabled).toBe(false);
+    expect(ctx.consentUnknown).toBe(true);
+  });
+
+  it("does NOT send when the agency row does not exist", async () => {
+    const supa = agenciesMock({
+      name: { data: null, error: null },
+      auto_response_enabled: { data: null, error: null },
+      "email, phone": { data: null, error: null },
+    });
+
+    const ctx = await loadAgencyAutoResponseContext(supa, "agency-ktora-neexistuje");
+    expect(ctx.autoResponseEnabled).toBe(false);
+    expect(ctx.consentUnknown).toBe(true);
+  });
+
+  it("still throws on a real read error, instead of silently skipping", async () => {
+    // Neznáma chyba čítania nie je „vypnuté" — volajúci ju zapíše ako failed_error.
+    const supa = agenciesMock({
+      name: { data: { name: "Agentúra" }, error: null },
+      auto_response_enabled: { data: null, error: { code: "08006", message: "connection failure" } },
+      "email, phone": { data: null, error: null },
+    });
+
+    await expect(loadAgencyAutoResponseContext(supa, "agency-1")).rejects.toThrow(
+      /agency flags lookup failed/,
+    );
   });
 });
 
@@ -130,6 +207,54 @@ describe("runInboundLeadAutoResponse", () => {
                   if (cols === "name") return { data: { name: "Smolko" }, error: null };
                   if (cols === "auto_response_enabled") {
                     return { data: { auto_response_enabled: false }, error: null };
+                  }
+                  return { data: { email: "office@test.sk", phone: null }, error: null };
+                },
+              }),
+            }),
+          };
+        }
+        throw new Error(`unexpected table ${table}`);
+      },
+    } as unknown as SupabaseClient;
+
+    await runInboundLeadAutoResponse(
+      supa,
+      { id: "lead-1", agency_id: "agency-1" },
+      { agencyId: "agency-1", name: "Lead", email: "lead@test.sk" },
+    );
+
+    expect(sendSpy).not.toHaveBeenCalled();
+  });
+
+  it("does not send when the flag cannot be read (predtým POSIELALO)", async () => {
+    // Zápis dôvodu `consent_unknown` do auditu overuje
+    // inbound-auto-response-outcome.test.ts, kde je odchytený emitter.
+    const sendSpy = vi.spyOn(sendModule, "sendInboundAutoResponse");
+
+    const supa = {
+      from: (table: string) => {
+        if (table === "leads") {
+          return {
+            select: () => ({
+              eq: () => ({
+                maybeSingle: async () => ({
+                  data: { auto_response_sent_at: null, name: "Lead", source: "portal:X" },
+                  error: null,
+                }),
+              }),
+            }),
+            update: () => ({ eq: () => ({ is: async () => ({ error: null }) }) }),
+          };
+        }
+        if (table === "agencies") {
+          return {
+            select: (cols: string) => ({
+              eq: () => ({
+                maybeSingle: async () => {
+                  if (cols === "name") return { data: { name: "Agentúra" }, error: null };
+                  if (cols === "auto_response_enabled") {
+                    return { data: null, error: { code: "42703", message: "column missing" } };
                   }
                   return { data: { email: "office@test.sk", phone: null }, error: null };
                 },
@@ -230,5 +355,77 @@ describe("runInboundLeadAutoResponse", () => {
     );
     // interné zdôvodnenie triedenia sa do e-mailu vôbec nepredáva
     expect(sendSpy.mock.calls[0][0]).not.toHaveProperty("aiReason");
+  });
+
+  it("stamps last_contact_at in the same update as auto_response_sent_at", async () => {
+    // Ten surfaces read leads.last_contact_at and nothing wrote it: 0 of 520
+    // production rows carried a value on 2026-10-02. The auto-response is one
+    // of exactly two paths that demonstrably reach the lead, and it already
+    // writes a dedup column after a confirmed send — so the contact stamp
+    // rides that statement instead of a second round trip that could
+    // half-succeed.
+    vi.spyOn(sendModule, "sendInboundAutoResponse").mockResolvedValue({ ok: true });
+    const updates: Record<string, unknown>[] = [];
+
+    const supa = {
+      from: (table: string) => {
+        if (table === "leads") {
+          return {
+            select: () => ({
+              eq: () => ({
+                maybeSingle: async () => ({
+                  data: {
+                    auto_response_sent_at: null,
+                    name: "Lead",
+                    assigned_agent: "Demo Makler 1",
+                    ai_priority: "Vysoká",
+                    source: "portal:Nehnuteľnosti.sk",
+                  },
+                  error: null,
+                }),
+              }),
+            }),
+            update: (row: Record<string, unknown>) => {
+              updates.push(row);
+              return { eq: () => ({ is: async () => ({ error: null }) }) };
+            },
+          };
+        }
+        if (table === "agencies") {
+          return {
+            select: (cols: string) => ({
+              eq: () => ({
+                maybeSingle: async () => {
+                  if (cols === "name") return { data: { name: "Smolko" }, error: null };
+                  if (cols === "auto_response_enabled") {
+                    return { data: { auto_response_enabled: true }, error: null };
+                  }
+                  return { data: { email: "office@test.sk", phone: null }, error: null };
+                },
+              }),
+            }),
+          };
+        }
+        return {
+          select: () => ({
+            eq: () => ({
+              maybeSingle: async () => ({ data: null, error: null }),
+              limit: () => ({ maybeSingle: async () => ({ data: null, error: null }) }),
+            }),
+          }),
+        };
+      },
+    } as unknown as SupabaseClient;
+
+    await runInboundLeadAutoResponse(
+      supa,
+      { id: "lead-1", agency_id: "agency-1" },
+      { agencyId: "agency-1", name: "Lead", email: "lead@test.sk" },
+    );
+
+    expect(updates).toHaveLength(1);
+    expect(updates[0]).toHaveProperty("last_contact_at");
+    // One statement, one timestamp: both columns describe the same send.
+    expect(updates[0].last_contact_at).toBe(updates[0].auto_response_sent_at);
   });
 });

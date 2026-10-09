@@ -18,7 +18,7 @@ export const CREDIT_RATES = {
   LEAD_UNLOCK: 20,
   AI_ANALYSIS: 1,
   AI_EMAIL: 1,
-  LISTING_DESCRIPTION: 2,
+  LISTING_DESCRIPTION: 1,
 } as const satisfies Record<CreditRateCode, number>;
 
 export function getCreditRate(code: CreditRateCode): number {

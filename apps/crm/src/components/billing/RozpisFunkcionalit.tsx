@@ -254,7 +254,11 @@ function Cell({ value, color, featured }: { value: CellValue; color: string; fea
   );
 }
 
-export default function RozpisFunkcionalit() {
+/**
+ * `hidePrices` (cenník v2 zapnutý): stĺpce ukazujú len názvy legacy programov, BEZ cien 49/99/199/449 €
+ * (v2 má iné pásma; cenu zobrazí katalóg v sekcii Predplatné). Bez propu = pôvodný výstup bajt po bajte.
+ */
+export default function RozpisFunkcionalit({ hidePrices = false }: { hidePrices?: boolean } = {}) {
   const [selected, setSelected] = useState<Row | null>(null);
 
   return (
@@ -269,6 +273,15 @@ export default function RozpisFunkcionalit() {
           <p className="text-sm uppercase tracking-wider" style={{ color: SLATE_HORIZON.muted }}>
             Klikni na ľubovoľnú funkcionalitu pre detailný popis
           </p>
+          {hidePrices && (
+            <p className="mt-2 text-sm" style={{ color: SLATE_HORIZON.muted }}>
+              Aktuálne ceny a pásma nájdete v sekcii{" "}
+              <Link href="/billing" className="underline" style={{ color: SLATE_HORIZON.brandDeep }}>
+                Predplatné a licencie
+              </Link>
+              .
+            </p>
+          )}
         </div>
 
         <div
@@ -307,6 +320,7 @@ export default function RozpisFunkcionalit() {
                       <div className="mb-1 text-[10px] font-black uppercase tracking-wider" style={{ color: plan.accentColor }}>
                         {plan.name}
                       </div>
+                      {!hidePrices && (
                       <div className="text-xl font-black" style={{ color: SLATE_HORIZON.ink }}>
                         {plan.price}
                         <span className="text-[10px] font-normal" style={{ color: SLATE_HORIZON.muted }}>
@@ -314,6 +328,7 @@ export default function RozpisFunkcionalit() {
                           / mes
                         </span>
                       </div>
+                      )}
                     </div>
                   </th>
                 ))}

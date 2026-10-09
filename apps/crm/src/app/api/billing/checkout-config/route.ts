@@ -1,4 +1,10 @@
 import { okResponse } from "@/lib/api-response";
+import { isPricingV2Enabled, isPricingV2PlansOnly, buildPricingV2Catalog } from "@/lib/pricing-v2";
+import {
+  missingPricingV2PriceEnvKeys,
+  missingPricingV2YearlyPriceEnvKeys,
+  type PricingV2ConfigPayload,
+} from "@/lib/pricing-v2-contract";
 import {
   SEAT_TIER_CONFIG,
   SEAT_TIERS,
@@ -16,6 +22,26 @@ import {
   type SeatTier,
 } from "@/lib/program-tier-pricing";
 
+/** Cenník v2: pri vypnutí len `enabled: false` (žiadny katalóg, žiadne názvy env). */
+function buildPricingV2ConfigPayload(): PricingV2ConfigPayload {
+  if (!isPricingV2Enabled()) {
+    return { enabled: false, checkoutAvailable: false, missingPriceEnvKeys: [], catalog: null };
+  }
+  const missingPriceEnvKeys = missingPricingV2PriceEnvKeys();
+  const plansOnly = isPricingV2PlansOnly();
+  const catalog = buildPricingV2Catalog();
+  return {
+    enabled: true,
+    checkoutAvailable: missingPriceEnvKeys.length === 0,
+    missingPriceEnvKeys,
+    // Režim „len plány“: balíky sa do odpovede nedostanú vôbec (nielen skryté kartou).
+    catalog: plansOnly ? { ...catalog, packs: [] } : catalog,
+    plansOnly,
+    // Ročné platenie sa ponúka až keď existujú všetky 4 ročné ceny plánov (mesačný predaj tým nie je dotknutý).
+    yearlyAvailable: missingPricingV2YearlyPriceEnvKeys().length === 0,
+  };
+}
+
 export async function GET() {
   const seatCheckoutAvailable = areSeatCheckoutPricesConfigured();
   const topupCheckoutAvailable = areTopupCheckoutPricesConfigured();
@@ -25,6 +51,8 @@ export async function GET() {
     seatCheckoutAvailable,
     topupCheckoutAvailable,
     checkoutAvailable: seatCheckoutAvailable || topupCheckoutAvailable,
+    // Len boolean (nikdy hodnota): bez webhook secretu platba prejde, ale plán sa neodomkne.
+    webhookSecretConfigured: Boolean(process.env.STRIPE_WEBHOOK_SECRET?.trim()),
     // Env var NAMES only (never values) that are unset or not a valid price_*.
     missingPriceEnvKeys: {
       seat: missingSeatPriceEnvKeys(),
@@ -51,5 +79,6 @@ export async function GET() {
       cockpitLiteEligible,
     },
     topupPackages: TOPUP_PACKAGE_KEYS.map((key) => TOPUP_PACKAGES[key]),
+    pricingV2: buildPricingV2ConfigPayload(),
   });
 }

@@ -102,3 +102,17 @@ P12 evals, P13 red team a P14 pre WP-8, bránky P15–P17, **P18 DEPLOY len s tv
 2. SLA pre „dopyt bez reakcie“ (4 h?).
 3. Auto-odpoveď: opt-in alebo opt-out?
 4. Ktoré PROD údaje (počet leadov, aktívne agentúry, existencia tabuliek) smie WP-6 čítať read-only?
+
+## 7. Výsledky Vlny 1 (2026-10-09, všetko zmergované do `main` na „merguj blok 1")
+
+| WP | PR | Stav | Čo ostáva |
+|---|---|---|---|
+| WP-1 | #836 | TESTED, v `main` | WP-1b: UI `ForecastRiskStrip`/`pipeline-forecast-panel` ukáže „0 EUR"; `DEFAULT_TARGET_PIPELINE` |
+| WP-2 | #838 | TESTED, v `main` | Nové action ID v registri; dvojklik bez claimu |
+| WP-3 | #837 | TESTED, v `main` | UI + retencia (Vlna 2); neoverené na živej DB |
+| WP-4 | #839 | TESTED, v `main` | Prepočítať po #837 (233 trás); manuálne P14 na 6 + 8 trás |
+| WP-5 | #840 | dokumenty, v `main` | Verdikt BACKLOG; rozhodnutie o WP5-FG-0 (merať) |
+| WP-6 | #841 | dokumenty, v `main` | `GO VERIFY-PROD` a rozhodnutie o poradí A→B |
+
+Korekcie auditu Vlny 0: prvá reakcia existuje ako `lead_events.contact_attempted`; `agent-specs.ts` má 7 agentov; `engine.ts` follow-upu má natvrdo meno referenčného klienta (porušuje pravidlo 2).
+CI nachytalo dve chyby orchestrácie (chýbajúci `incrementUsageMetric`, rozbitý mock v existujúcom teste), obe opravené pred mergom.
