@@ -1,5 +1,6 @@
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { errorResponse } from "@/lib/api-response";
+import { incrementUsageMetric } from "@/lib/usage-metrics";
 import { parseOutcomeParams, readMailOutcomes } from "@/lib/inbound/mail-outcome-reader";
 
 /**
@@ -34,6 +35,10 @@ export async function GET(request: Request) {
       return errorResponse("Chyba agency_id v profile — tenant scope nie je nastavený.", 403);
     }
     const agencyId = profile.agency_id as string;
+
+    // Povinný import zmluvy API trás (revolis-api.mdc); delta 0, aby sa
+    // nenafukovali počítadlá (rovnaký vzor ako ai/listing-content/generations).
+    await incrementUsageMetric({ agencyId, metric: "ai_openai_tokens", delta: 0 });
 
     const params = parseOutcomeParams(new URL(request.url).searchParams);
     if (!params.ok) return errorResponse(params.error, 400);
