@@ -8,6 +8,34 @@ Tok: Gmail štítok → OAuth refresh → `inbound_mailboxes.email` ako `email.t
 existujúci `POST /api/acquire/email`. Alias ostáva fallback. Forward vypni
 až po 24–48 h dual-run.
 
+## 0. Odporúčaná cesta: pripojenie cez Revolis (GMAIL-CONNECT)
+
+Zákazník (vlastník alebo manažér agentúry) sa prihlási do Revolisu, otvorí **Integrácie → Dopyty z Gmailu do Revolisu**
+a klikne **Pripojiť Gmail**. Povolenie dá na vlastnom zariadení, heslo zadáva len on. Token sa uloží šifrovane
+(AES-256-GCM) do `agency_gmail_inbound_oauth`; nikto ho nekopíruje a nie je v env. Odpojenie: tlačidlo **Odpojiť Gmail**
+(zmaže uložený token a odvolá ho u Googlu) alebo Google účet → Zabezpečenie → Aplikácie s prístupom.
+
+**Jednorazové nastavenie na našej strane (Vy):**
+1. Google Cloud (projekt „revolis-inbound") → Credentials → OAuth client typu *Web application*. Pridajte **Authorized redirect URI**:
+   `https://<production URL>/api/integrations/gmail-inbound/callback` (bez lomítka na konci; Playground už nepotrebujete).
+2. Vercel → Production env: `GOOGLE_GMAIL_INBOUND_CLIENT_ID`, `GOOGLE_GMAIL_INBOUND_CLIENT_SECRET`,
+   `GMAIL_INBOUND_STATE_SECRET` (`openssl rand -hex 32`), `GMAIL_INBOUND_TOKEN_KEY` (`openssl rand -base64 32`),
+   `ACQUIRE_SHARED_SECRET`, `CRON_SECRET`, `NEXT_PUBLIC_APP_URL`. `GMAIL_INBOUND_PULL_ENABLED=true` nastavte **posledné**.
+   `GOOGLE_GMAIL_INBOUND_REFRESH_TOKEN`, `..._LABEL_ID` a `..._AGENCY_ID` už NEpotrebujete (pilotný záznam z env beží len ak
+   tá agentúra nemá vlastné pripojenie).
+3. Migrácie `20261002090000_gmail_inbound_seen` (už v PROD) a `20261005100100_agency_gmail_inbound_oauth` musia byť aplikované.
+4. Zálohujte `GMAIL_INBOUND_TOKEN_KEY` do password managera. **Strata kľúča = všetky pripojenia treba zopakovať** (tokeny sa nedajú dešifrovať).
+   Zmena kľúča robí rovnako neplatné uložené tokeny: pull ich označí `token_undecryptable` a pripojenie sa vypne.
+
+**Štítok:** pull hľadá štítok s názvom **Revolis** (bez ohľadu na veľkosť písmen). Kým neexistuje, nečíta nič (`label_not_found` = čisté preskočenie).
+
+**Poruchy:** `oauth_refresh_failed:invalid_grant` = token vypršal alebo bol odvolaný → pripojenie sa vypne (`status=error`),
+karta v Integráciách ukáže „Pripojte Gmail znova". `missing_token_key` = chýba kľúč, pull nečíta nič.
+
+---
+
+### Pilotná cesta cez Playground (staršia, bez prihlásenia zákazníka)
+
 ## 1. Google Cloud (oddelený OAuth client)
 
 1. [Google Cloud Console](https://console.cloud.google.com/) → projekt, ktorý **nie je** Calendar/Ads.
