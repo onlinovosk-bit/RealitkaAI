@@ -6,6 +6,7 @@
 > **Nie je to právne ani finančné poradenstvo.** Čísla označené [ODHAD] sú odhady, [VÝPOČET] sú aritmetika z uvedených vstupov, [LEADHUB] sú agregáty z LeadHubu.
 > **Brána Ústavy v2:** Q1 (zaplatil by dnešný klient Revolisu) = NIE, preto strop VALIDATE. Rozhodnutie BUILD/BACKLOG je zapísané v `memory/decisions.md`.
 > **Návrh dátového podkladu:** `docs/onlinovo/2026-10-09-q4-leadhub-datapack.md`.
+> **Aktualizácia po P23 (`2026-10-09-p23-bridge-v1.md`):** rozpor P&L vs LeadHub (1 290 vs 1 403 objednávok) je vysvetlený: LeadHub = Shoptet bez „Stornovaná zákazníkom“ (13/13 mesiacov presne), vybavených je 1 202; P&L počty sú ručné čísla s meniacim sa pravidlom. Metriky na objednávku používať s menovateľom „Vybavená“; CAC a návratnosť z LeadHubu zahŕňajú aj nevybavené objednávky (≈ 12–14 %).
 
 ---
 

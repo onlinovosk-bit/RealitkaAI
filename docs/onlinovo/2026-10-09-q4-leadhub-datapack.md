@@ -1,3 +1,4 @@
+> **Aktualizácia po P23:** ROZPOR s P&L je vysvetlený v `2026-10-09-p23-bridge-v1.md` (LeadHub = Shoptet bez storna zákazníkom, s DPH a dopravou; P&L počty sú ručné čísla).
 > Podklad k `2026-10-09-q4-growth-strategy.md`. Agregáty z LeadHub MCP (read-only), bez osobných údajov. Definícia tržieb NIE JE overená (ROZPOR s P&L, viď sekciu A). Stav: VALIDATE.
 
 # LEADHUB DATA PACK — onlinovo.sk (business_id e5a433ab1fc64fd7a7947fca2251a07d)

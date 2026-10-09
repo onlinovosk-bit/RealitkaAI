@@ -3,7 +3,7 @@
 - `docs/onlinovo/2026-10-09-q4-growth-strategy.md`: panel 14 expertov, plán OPT-A / OPT-B / OPT-C, kalendár 8.10.–31.12., jednotková ekonomika, meranie, riziká a právny zoznam, overenie 14 tvrdení (13 oslabených, 1 podložené, 0 vyvrátených), 15 otázok pre foundera, ďalšia vlna P23.
 - `docs/onlinovo/2026-10-09-q4-leadhub-datapack.md`: agregáty z LeadHubu (objednávky, retencia, kanály, kampane, produkty, RFM), bez osobných údajov.
 - Verdikt VALIDATE (brána Ústavy v2: Q1 = NIE); zápis v `memory/decisions.md`.
-- `docs/onlinovo/2026-10-09-p23-bridge-v0.md`: P23 fáza 0 (most v0 z LeadHubu a čísel majiteľa, hypotézy H1–H4, špecifikácia exportov, protokol auditu 10 objednávok). Plný P23 čaká na exporty.
+- `docs/onlinovo/2026-10-09-p23-bridge-v1.md`: P23 most Shoptet–P&L–LeadHub s exportom objednávok a P&L (LeadHub = Shoptet bez storna zákazníkom, 13/13 mesiacov; P&L počty ručné; menovateľ Vybavená; vzorka 10 objednávok). `…-p23-bridge-v0.md` je nahradené.
 ### Rozpracované / Pending
 - Rozhodnutie foundera „GO A“ do 11.10. (inak platí MIN); hodiny a role do 12.10.; ďalšie otázky 14.–16.10.
 - ROZPOR P&L vs LeadHub pre Q4 2025 (príčina neznáma) rieši vlna P23 (potrebuje exporty zo Shoptetu a P&L).
@@ -12,7 +12,7 @@
 ### Kľúčové súbory zmenené
 - `docs/onlinovo/2026-10-09-q4-growth-strategy.md`, `docs/onlinovo/2026-10-09-q4-leadhub-datapack.md`, `memory/decisions.md`, `memory/session-summary.md`.
 ### Ďalší krok
-Exporty pre P23 (Shoptet objednávky 1.9.2025–8.10.2026, P&L + Data xlsx + veta o definícii objednávky; spec v `…-p23-bridge-v0.md` §5), alebo odpoveď na 15 otázok.
+Autorizovať Google Ads v Supermetrics (alebo dodať Ads hodnoty pre 10 kódov z `…-p23-bridge-v1.md` §7), potom doplniť audit; súbežne opraviť ručný P&L (jediná množina Vybavená).
 
 ## Session 2026-10-07 (DUPE-BRIEF)
 ### Dokončené
