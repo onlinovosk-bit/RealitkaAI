@@ -6538,3 +6538,17 @@ neoverím: či je endpoint registrovaný na `email.opened` a `email.clicked`,
 a či je pre odosielaciu doménu zapnuté Open/Click tracking (v Resende je
 vypnuté by default). `RESEND_WEBHOOK_SECRET` v produkcii **je** — typ
 `sensitive`, target production + preview, overené cez Vercel API.
+
+
+## [2026-10-09] DEC-20261009-001 — Agentné vlny: plán a rozsah
+**Rozhodnutie foundera:** platí **1 platiaca kancelária** (nie 3). Žiadne rozhovory s tromi kanceláriami.
+Cenník draft #822 (Start 25 / Team 60 / Kancelária 149 / Sieť 349+, kredity) je vstup; ceny, Stripe a billing sú mimo nočných vĺn.
+**Rozsah:** plán + Vlna 0 read-only; oblasti: vstup, akcia, demand, dôvera. Plán: `docs/plans/2026-10-09-agentic-waves.md`.
+**Stav zaradenia:** WP-1…WP-6 = PREDBEŽNE BUILD (podľa P02 pred každým štartom); persistencia `/api/realvia/import`, generátor popisov/staging, routing a hromadný outbound = BACKLOG; „Revenue Control Tower“ = max VALIDATE. Formálne skóre Ústavy v2 (12 otázok) sa ešte nespravilo.
+**Neuzavreté:** `DEC-20260925-001` (MRR 597 € z 3 kancelárií) nesedí s 1 platiacou kanceláriou — treba opraviť po overení.
+
+
+## [2026-10-09] DEC-20261009-002 — Vlna 1 zmergovaná; Strážca follow-upu = BACKLOG/merať
+**Merge:** na „merguj blok 1" boli zmergované #836–#841 (zelené CI, squash). PROD sa nemenil, P18 nebežal.
+**WP-5 verdikt (Ústava v2, z dokumentov agenta):** stavba Strážcu follow-upu = BACKLOG (veto „príliš skoro", chýbajú dáta o reálnych dopytoch); najprv merať čas do prvej reakcie a opýtať sa kancelárie. Fáza stavby zamknutá.
+**Opravy auditu:** pole prvej reakcie existuje (`lead_events.contact_attempted`), `agent-specs.ts` má 7 agentov. Formálne skóre Ústavy pre WP-1…WP-4 a WP-6 sa nespravilo (opravy/audity/balíky bez nového scope).

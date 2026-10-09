@@ -1,3 +1,24 @@
+## Session 2026-10-09 (AGENTIC-WAVES plán, Vlna 0 + Vlna 1 zmergovaná)
+### Dokončené
+- `docs/plans/2026-10-09-agentic-waves.md`: plán vĺn WP-1…WP-10 + výsledky Vlny 0 (4 audity P01, výskum trhu cez WebSearch).
+- Rozhodnutia foundera: platí **1 kancelária** (nie 3), cenník draft #822 len ako vstup, ceny/Stripe/billing mimo vĺn, všetky 4 oblasti.
+- **Vlna 1 zmergovaná do `main` (founder: „merguj blok 1"), každý PR squash, zelené CI, obsah overený na `origin/main`:** #836 WP-1 pravdivé čísla (bez 180 000 € a DEMO_SIGNALS), #837 WP-3 čítač `inbound_mail_outcomes`, #839 WP-4 inventár trás (`scripts/ops/route-gates.mjs`, `docs/audit/route-gates.md`), #838 WP-2 ghostwriter + confirm-viewing cez `authorizeSend`, #840 WP-5 návrh Strážcu follow-upu (verdikt BACKLOG), #841 WP-6 PROD balíky (`docs/ops/prod-packages/**`, neaplikované).
+- CI nachytalo dve moje chyby, obe opravené pred mergom: nový endpoint bez povinného `incrementUsageMetric` (zmluva API trás), a existujúci test confirm-viewing bez mocku `getCurrentProfile`.
+- Nič sa nenasadilo cez P18, PROD sa nemenil, nič sa neodoslalo, Stripe nedotknutý. (Merge do `main` spúšťa produkčný build Vercelu.)
+### Rozpracované / Pending
+- **WP-1b:** UI `ForecastRiskStrip.tsx` a `pipeline-forecast-panel.tsx` stále ukáže „0 EUR" / „~€0 v riziku" pri leade bez rozpočtu (mimo write-setu WP-1); `DEFAULT_TARGET_PIPELINE = 500_000` je tiež predvolená konštanta.
+- **WP-2:** ghostwriter a viewing používajú požičané action ID (`outreach.email.send`, `followup.*.send`); čisté riešenie = nové ID v `packages/control-contract/actions.ts`. Dvojklik nemá claim; vlastníctvo `letterHtml` neoverené.
+- **WP-4:** po merge #837 pribudla trasa (233), `docs/audit/route-gates.md` treba prepočítať; 6 trás UNGATED/UNKNOWN + 8 „len cez proxy" na manuálne P14.
+- **WP-5:** korekcia auditu: „prvá reakcia" existuje ako `lead_events.contact_attempted` (len tlačidlá Volať/E-mail, stav v PROD neznámy); `agent-specs.ts` má 7 agentov, nie 4. `lib/agents/followup/engine.ts` má natvrdo meno referenčného klienta (porušuje pravidlo 2 CLAUDE.md).
+- **WP-6:** `verify-before.sql` čaká na PROD (`GO VERIFY-PROD`); rozpor, či `lead_demands` už je v PROD (STATUS vs. zadanie).
+- Nesedí: MRR 597 € z 3 kancelárií (`DEC-20260925-001`) vs. 1 platiaca kancelária; 27 vs. 28 z 40 ciest; PR #822 sa medzi otvorenými PR nenašiel.
+- Starý Firecrawl API kľúč (`fc-7b89…1398`) sa objavil v screenshote v chate, treba ho zrušiť; Perplexity čaká na API kľúč; cloud blokuje `realvia.sk`, `mcp.firecrawl.dev`, `api.perplexity.ai`.
+### Kľúčové súbory zmenené
+- `docs/plans/2026-10-09-agentic-waves.md`, `memory/session-summary.md`, `memory/decisions.md`, `docs/STATUS.md` (len riadok hlavičky).
+- Vlna 1 (už v `main`): viď PR #836–#841.
+### Ďalší krok
+Stripe krok C zostáva blokátor č. 1. Z vĺn: rozhodnutie o WP5-FG-0 (merať, nestavať) a o `GO VERIFY-PROD` pre balíky WP-6.
+
 ## Session 2026-10-09 (P23 strana GA4)
 ### Dokončené
 - `docs/onlinovo/2026-10-09-p23-ga4-audit.md`: audit 10 objednávok 10/10 (GA4 = báza C na cent), mesačná atribúcia Shoptet / GA4 / Ads, Meta ROAS z GA4, dôsledky.
