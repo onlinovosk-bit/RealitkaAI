@@ -1,3 +1,19 @@
+## Session 2026-10-09 (AGENTIC-WAVES plán + Vlna 0)
+### Dokončené
+- `docs/plans/2026-10-09-agentic-waves.md`: plán vĺn WP-1…WP-10 (disjunktné write-sety, dôkaz, RAU prompt stacky) + výsledky Vlny 0 (štyri read-only audity P01 a výskum top 7 realitných AI softvérov cez WebSearch).
+- Rozhodnutia foundera: platí **1 kancelária** (nie 3), cenník = draft #822 ako vstup, ceny/Stripe/billing mimo vĺn, rozsah noci = plán + Vlna 0, všetky 4 oblasti.
+- Nič sa nezmergovalo, nenasadilo, neodoslalo ani nezapísalo do Stripe/PROD.
+### Rozpracované / Pending
+- Vlna 1 (WP-1…WP-6) čaká na GO foundera. Vlna 2 až po merge príslušných PR Vlny 1.
+- Nesedí: MRR 597 € z 3 kancelárií (`DEC-20260925-001`) vs. 1 platiaca kancelária; STATUS 28/40 vs. decisions 27/40; PR #822 sa medzi otvorenými PR nenašiel.
+- MCP lokálne (PowerShell): Firecrawl a Composio pripojené, Playwright pridaný; Perplexity čaká na API kľúč. Starý Firecrawl API kľúč (`fc-7b89…1398`) sa objavil v screenshote v chate, treba ho zrušiť a vygenerovať nový.
+- Cloud kontajner blokuje `realvia.sk`, `mcp.firecrawl.dev`, `api.perplexity.ai` (sieťová politika prostredia).
+### Kľúčové súbory zmenené
+- `docs/plans/2026-10-09-agentic-waves.md`: nový plán vĺn.
+- `memory/session-summary.md`, `memory/decisions.md`: záznam session.
+### Ďalší krok
+Stripe krok C zostáva blokátor č. 1. Z vĺn GO na WP-1 (pravdivé čísla, 180 000 € fallback).
+
 ## Session 2026-10-01 (LOG-PII-CLEANUP-2)
 ### Dokončené
 - `support/request` a `legal/dpa-request`: oba logy (e-mail aj webhook) idú cez `describeError`; `describeError` navyše maskuje e-maily a dlhé číselné rady v samotnej správe (SMTP chyby píšu „Recipient rejected: <a@b.sk>", webhook môže vrátiť poslané späť). Žiadateľ support/DPA je zákazník, jeho adresa je aj v `replyTo`.

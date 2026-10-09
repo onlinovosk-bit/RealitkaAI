@@ -1,7 +1,7 @@
 # Revolis.AI — STAV NA JEDNEJ STRÁNKE
 
 > Aktualizuje sa **po každom uzavretom bloku** (jeden riadok zmeny hore + tabuľka). Čísla sú merané, kde je uvedený dôkaz;
-> **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 07:40 UTC** (nasadenie #774 overené).
+> **celkové % je môj odhad** s uvedenými váhami (môžeš ich zmeniť). Posledná aktualizácia: **2026-10-02, 07:40 UTC** (nasadenie #774 overené). **2026-10-09:** plán vĺn `docs/plans/2026-10-09-agentic-waves.md` + audit Vlny 0 (čísla v tabuľke nižšie sa nezmenili).
 
 ## Celkom: ≈ 49 %  (odhad)
 
