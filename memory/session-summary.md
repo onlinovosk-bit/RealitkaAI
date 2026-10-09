@@ -1,3 +1,16 @@
+## Session 2026-10-09 (P23 strana Ads)
+### Dokončené
+- `docs/onlinovo/2026-10-09-p23-ads-audit.md`: Google Ads cez Supermetrics (read-only) proti Shoptetu a P&L: náklady zhodné s P&L, „Nákup“ si pripisuje 92 % objednávok (105 % vybavených) v apr–sep 2026, kampane a ID, konverzné akcie, základ hodnoty.
+- Zápis v `memory/decisions.md`.
+### Rozpracované / Pending
+- Audit 10 objednávok na úrovni objednávky: Ads nemá ID transakcie; potrebná autorizácia GA4 v Supermetrics alebo ručný výpis z Ads UI.
+- Meta (Facebook Ads) a GA4 v Supermetrics neautorizované; konektor beží cez účet majiteľa (odporúčané Read only).
+- Stripe krok C čaká na foundera; ručný P&L treba prepojiť na jednu množinu (Vybavená).
+### Kľúčové súbory zmenené
+- `docs/onlinovo/2026-10-09-p23-ads-audit.md`, `memory/decisions.md`, `memory/session-summary.md`.
+### Ďalší krok
+Autorizovať GA4 (a Meta) v Supermetrics alebo vyplniť tabuľku 10 objednávok z Ads UI; rozhodnutie o teste s kontrolnou skupinou a o oprave konverzií.
+
 ## Session 2026-10-09 (Q4-GROWTH: rastová stratégia onlinovo.sk)
 ### Dokončené
 - `docs/onlinovo/2026-10-09-q4-growth-strategy.md`: panel 14 expertov, plán OPT-A / OPT-B / OPT-C, kalendár 8.10.–31.12., jednotková ekonomika, meranie, riziká a právny zoznam, overenie 14 tvrdení (13 oslabených, 1 podložené, 0 vyvrátených), 15 otázok pre foundera, ďalšia vlna P23.
