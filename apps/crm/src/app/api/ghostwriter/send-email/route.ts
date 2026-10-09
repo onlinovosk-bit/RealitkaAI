@@ -2,8 +2,20 @@ import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { checkAiRateLimit } from "@/lib/ai/rate-guard";
 import { Resend } from "resend";
+import { logAiAction } from "@/lib/ai-action-audit";
+import { authorizeSend, authorityMeta } from "@/lib/control-plane/authorize-send";
+import { resolveProfileForAuthUser } from "@/lib/profiles/resolve-profile-for-auth";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * Registry action (packages/control-contract/src/actions.ts): an AI-drafted
+ * e-mail to a third party via Resend, irreversible + externally visible.
+ * The registry has no ghostwriter-specific id; this one has the same risk
+ * profile. A dedicated id would need a control-contract change (out of WP-2).
+ */
+const GHOSTWRITER_SEND_ACTION = "outreach.email.send";
+const GHOSTWRITER_AGENT_ID = "REVOLIS-GHOSTWRITER";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -30,10 +42,68 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Obsah listu chýba." }, { status: 400 });
     }
 
+    // Control Contract gate: the click of a logged-in broker of an agency is the
+    // human approval; the kill switch (AGENT_KILL_SWITCH) refuses it regardless.
+    const { profile } = await resolveProfileForAuthUser(
+      supabase,
+      user.id,
+      "id, agency_id, full_name, email",
+      user.email,
+    );
+    if (!profile?.agency_id) {
+      return NextResponse.json({ error: "Profil nemá priradenú kanceláriu." }, { status: 403 });
+    }
+    const agencyId = profile.agency_id;
+    const approver = profile.email ?? user.email ?? user.id;
+    const subject = `Informácia k Vašej nehnuteľnosti: ${body.ownerAddress ?? "zmena na LV"}`;
+    const auditBase = {
+      action: "ghostwriter_send",
+      agencyId,
+      leadId: null,
+      profileId: profile.id,
+      channel: "email" as const,
+      subjectPreview: subject,
+      bodyText: body.letterHtml,
+    };
+
+    const authz = authorizeSend({
+      action: GHOSTWRITER_SEND_ACTION,
+      agentId: GHOSTWRITER_AGENT_ID,
+      tenantId: agencyId,
+      approval: {
+        approvalId: body.letterId ?? `ghostwriter:${user.id}`,
+        approvedBy: approver,
+        approvedAt: new Date().toISOString(),
+      },
+    });
+    if (!authz.ok) {
+      await logAiAction({
+        ...auditBase,
+        actionKind: "send_failed",
+        meta: {
+          agent_id: GHOSTWRITER_AGENT_ID,
+          action: GHOSTWRITER_SEND_ACTION,
+          blocked: true,
+          ...authorityMeta(authz.verdict),
+        },
+      }).catch((e) => console.error("[ghostwriter/send-email] audit blocked:", e));
+      return NextResponse.json({ error: authz.reason }, { status: authz.status });
+    }
+    const auditMeta = {
+      agent_id: GHOSTWRITER_AGENT_ID,
+      action: GHOSTWRITER_SEND_ACTION,
+      approved_by: approver,
+      letter_id: body.letterId ?? null,
+      ...authorityMeta(authz.verdict),
+    };
+
     const resendKey = process.env.RESEND_API_KEY;
     if (!resendKey?.startsWith("re_")) {
       return NextResponse.json({ error: "Email service nie je nakonfigurovaný." }, { status: 503 });
     }
+
+    await logAiAction({ ...auditBase, actionKind: "human_approved", meta: auditMeta })
+      .catch((e) => console.error("[ghostwriter/send-email] audit human_approved:", e));
 
     const resend   = new Resend(resendKey);
     const fromEmail = process.env.OUTREACH_FROM_EMAIL?.includes("revolis.ai")
@@ -44,7 +114,7 @@ export async function POST(request: Request) {
       from:    fromEmail,
       to:      body.recipientEmail,
       replyTo: body.agentEmail ?? undefined,
-      subject: `Informácia k Vašej nehnuteľnosti: ${body.ownerAddress ?? "zmena na LV"}`,
+      subject,
       html: `
         <div style="font-family:Georgia,serif;max-width:620px;margin:0 auto;background:#ffffff;padding:0;">
           <div style="background:#050914;padding:24px 32px;border-radius:12px 12px 0 0;">
@@ -66,36 +136,39 @@ export async function POST(request: Request) {
 
     if (error) {
       console.error("[ghostwriter/send-email] Resend error:", error);
-      throw new Error((error as { message?: string }).message ?? "Email sa nepodarilo odoslať.");
+      const message = (error as { message?: string }).message ?? "Email sa nepodarilo odoslať.";
+      await logAiAction({
+        ...auditBase,
+        actionKind: "send_failed",
+        meta: { ...auditMeta, error: message },
+      }).catch((e) => console.error("[ghostwriter/send-email] audit send_failed:", e));
+      throw new Error(message);
     }
+
+    await logAiAction({
+      ...auditBase,
+      actionKind: "sent",
+      meta: { ...auditMeta, message_id: (data as { id?: string } | null)?.id ?? null },
+    }).catch((e) => console.error("[ghostwriter/send-email] audit sent:", e));
 
     if (body.letterId && !body.letterId.startsWith("tmp_")) {
       const admin = createAdminClient();
 
-      // Resolve caller's profile_id once
-      const { data: callerProfile } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("auth_user_id", user.id)
+      // Verify ownership before updating — only update if the letter belongs to this profile
+      const { data: letter } = await admin
+        .from("ghostwriter_letters")
+        .select("profile_id")
+        .eq("id", body.letterId)
         .maybeSingle();
 
-      if (callerProfile) {
-        // Verify ownership before updating — only update if the letter belongs to this profile
-        const { data: letter } = await admin
+      if (!letter || letter.profile_id === profile.id) {
+        // letter.profile_id is null (no ownership column yet) OR matches caller — safe to update
+        await admin
           .from("ghostwriter_letters")
-          .select("profile_id")
-          .eq("id", body.letterId)
-          .maybeSingle();
-
-        if (!letter || letter.profile_id === callerProfile.id) {
-          // letter.profile_id is null (no ownership column yet) OR matches caller — safe to update
-          await admin
-            .from("ghostwriter_letters")
-            .update({ email_sent_to: body.recipientEmail, sent_at: new Date().toISOString() })
-            .eq("id", body.letterId);
-        }
-        // else: letter belongs to a different profile — skip silently
+          .update({ email_sent_to: body.recipientEmail, sent_at: new Date().toISOString() })
+          .eq("id", body.letterId);
       }
+      // else: letter belongs to a different profile — skip silently
     }
 
     return NextResponse.json({ ok: true, emailId: (data as { id?: string } | null)?.id });
