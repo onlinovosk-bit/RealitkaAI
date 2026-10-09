@@ -1,3 +1,18 @@
+## Session 2026-10-09 (Q4-GROWTH: rastová stratégia onlinovo.sk)
+### Dokončené
+- `docs/onlinovo/2026-10-09-q4-growth-strategy.md`: panel 14 expertov, plán OPT-A / OPT-B / OPT-C, kalendár 8.10.–31.12., jednotková ekonomika, meranie, riziká a právny zoznam, overenie 14 tvrdení (13 oslabených, 1 podložené, 0 vyvrátených), 15 otázok pre foundera, ďalšia vlna P23.
+- `docs/onlinovo/2026-10-09-q4-leadhub-datapack.md`: agregáty z LeadHubu (objednávky, retencia, kanály, kampane, produkty, RFM), bez osobných údajov.
+- Verdikt VALIDATE (brána Ústavy v2: Q1 = NIE); zápis v `memory/decisions.md`.
+### Rozpracované / Pending
+- Rozhodnutie foundera „GO A“ do 11.10. (inak platí MIN); hodiny a role do 12.10.; ďalšie otázky 14.–16.10.
+- ROZPOR P&L vs LeadHub pre Q4 2025 (príčina neznáma) rieši vlna P23 (potrebuje exporty zo Shoptetu a P&L).
+- Repozitár `onlinovo` nie je pre session dostupný (GitHub App), preto sú dokumenty tu v `docs/onlinovo/`.
+- Stále: Stripe krok C čaká na foundera; `resolveAuthority` s NaN čaká na vlastné GO.
+### Kľúčové súbory zmenené
+- `docs/onlinovo/2026-10-09-q4-growth-strategy.md`, `docs/onlinovo/2026-10-09-q4-leadhub-datapack.md`, `memory/decisions.md`, `memory/session-summary.md`.
+### Ďalší krok
+„GO P23“ + exporty (Shoptet objednávky, P&L + Data xlsx), alebo odpoveď na 15 otázok.
+
 ## Session 2026-10-07 (DUPE-BRIEF)
 ### Dokončené
 - `docs/onlinovo/2026-10-07-dupe-research-brief.md`: research brief (stratégie so stupňom istoty, právne červené čiary, 8 testov, CZ/SK konkurenti neoverení, otázky pre právnika). Verdikt VALIDATE.

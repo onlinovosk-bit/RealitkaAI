@@ -1,5 +1,14 @@
 # Critical Decisions Log
 
+## 2026-10-09 — Q4-GROWTH: rastová stratégia onlinovo.sk Q4 2026 (VALIDATE, nie BUILD)
+**GO foundera:** „vykonaj deep research a analýzu pre rastovú stratégiu Q4 eshopu onlinovo.sk" (príloha: `ONLINOVO_Q4_2026_Strategia.md`, RAU prompty P00–P23). **Brána Ústavy v2:** Q1 (zaplatil by dnešný klient Revolisu) = NIE → VETO, strop VALIDATE; rozhodnutie: **BACKLOG pre produkt Revolis, VALIDATE pre onlinovo.sk** (dôvod: práca tvorí podklad pre klienta/vlastný eshop, nie funkciu produktu; Stripe krok C má prednosť).
+**Výstup:** `docs/onlinovo/2026-10-09-q4-growth-strategy.md` + `docs/onlinovo/2026-10-09-q4-leadhub-datapack.md`. Len dokumenty, nič sa nezmenilo v Ads/Shoptete/LeadHube (LeadHub len čítanie agregátov, bez osobných údajov).
+**Postup:** 14 expertov + 3 syntézy + overenie 14 nosných tvrdení + kritik (workflow `wf_785cc77d-d91`, 63/63 krokov). Overenie: 13 × OSLABENE, 1 × PODLOZENE, 0 × VYVRATENE (nič nie je „potvrdené“).
+**Odporúčanie:** OPT-A (obranný, profit-first, 6 iniciatív v 3 pilieroch, bez nových kanálov a škálovania); OPT-B nie je odporúčaný; OPT-C (MIN) platí automaticky, ak majiteľ nezapíše hodiny do 12.10. Rozhodnutie foundera: „GO A" do 11.10.
+**Dáta, ktoré menia stratégiu majiteľa:** Apr–Sep 2026 vs 2025: objednávky −29,9 %, tržby −29,3 %, noví zákazníci −39,1 % [LEADHUB]; Meta nebeží od marca 2026 a stratégia ju nespomína; Google search ≈ 69 % last-click tržieb; Yodeyma ≈ 94–96 % odhadovaných tržieb; texty produktov obsahujú „verná imitácia“, mená originálov a „99.9% podobnosť“; ROZPOR P&L vs LeadHub pre Q4 2025 (1290 obj./46 858 € vs 1403 obj./64 583 €, príčina neznáma).
+**Limity (nie sú skryté):** bez prístupu do Ads, Merchant Center, Shoptetu, GA4 a na živý web; externé právne zdroje nestiahnuté (proxy); model EBITDA neprešiel spätným testom (1 753 vs 947 €) → ilustračne; definícia tržieb v LeadHube neoverená. Stav nie je VERIFIED.
+**Otvorené (founder):** 15 otázok v sekcii „Otázky pre foundera“ (termíny 12.–16.10., každá s predvolenou hodnotou); ďalšia vlna P23 „Dátový most Shoptet–P&L–LeadHub a audit 10 objednávok“ čaká na „GO P23“ a exporty.
+
 ## 2026-10-07 — DUPE-BRIEF: research brief pre onlinovo.sk (VALIDATE, nie BUILD)
 **GO foundera:** „GO dupe-research brief". **Brána Ústavy v2:** Q1 (zaplatil by dnešný klient Revolisu) = NIE → VETO, strop VALIDATE; Q8 nehodnotené (Stripe krok C má prednosť).
 **Výstup:** `docs/onlinovo/2026-10-07-dupe-research-brief.md` (len dokument, žiadny kód). Zdroje **nestiahnuté** (EUR-Lex vrátil prázdnu stranu, Google Ads Help blokovaný); tvrdenia najviac MEDIUM, čísla predajcov LOW. Právne stanovisko SK/CZ, CZ/SK dopyt a naše marže chýbajú (UNKNOWN).
