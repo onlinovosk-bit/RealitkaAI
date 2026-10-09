@@ -4,11 +4,11 @@
 - GMAIL-CONNECT: `gmail-connect.ts`, `gmail-connect-store.ts`, trasy `integrations/gmail-inbound/*`, karta v Integráciách, pull z DB po agentúrach, migrácia `20261005100000`, 2 strážcovia, 13 mutácií.
 - PR #813 (draft): Dodatok č. 1 k DPA (návrh). Gmail koncept pre Smolka prepracovaný (body 1 a 2 pre neprogramátora), neodoslaný.
 ### Rozpracované / Pending
-- Aplikovať migráciu `20261005100000` v PROD (GO). Google redirect URI + env (`GMAIL_INBOUND_STATE_SECRET`, `GMAIL_INBOUND_TOKEN_KEY`) + GitHub secrets.
+- Aplikovať migráciu `20261005100100` v PROD (GO). Google redirect URI + env (`GMAIL_INBOUND_STATE_SECRET`, `GMAIL_INBOUND_TOKEN_KEY`) + GitHub secrets.
 - Rozhodnúť spúšťač (GitHub beží každé 3–4,5 h): Vercel Pro alebo Cloudflare cron.
 - Overiť, kto je `owner` profil agentúry Smolko; ak nie Smolko, treba pozvánkový odkaz.
 ### Kľúčové súbory zmenené
-- `apps/crm/src/lib/inbound/gmail-connect*.ts`, `apps/crm/src/app/api/integrations/gmail-inbound/*`, `apps/crm/src/lib/inbound/gmail-pull.ts`, `apps/crm/supabase/migrations/20261005100000_agency_gmail_inbound_oauth.sql`.
+- `apps/crm/src/lib/inbound/gmail-connect*.ts`, `apps/crm/src/app/api/integrations/gmail-inbound/*`, `apps/crm/src/lib/inbound/gmail-pull.ts`, `apps/crm/supabase/migrations/20261005100100_agency_gmail_inbound_oauth.sql`.
 ### Ďalší krok
 GO na migráciu v PROD a rozhodnutie o spúšťači.
 ## Session 2026-10-07 (DUPE-BRIEF)

@@ -17,7 +17,7 @@ hlásené ako odpojené) najprv prežila → doplnený test.
 `agency_gmail_inbound_seen`, GitHub secrets `CRM_BASE_URL`/`CRON_SECRET` neexistujú (workflow sa preskakuje). (3) **GitHub `*/10` beží reálne každých 3 až 4,5 h** (13:44, 17:52, 20:56, 23:52, 04:27 UTC) — spúšťač treba
 zmeniť (Vercel Pro alebo Cloudflare cron; čaká na rozhodnutie foundera). (4) V DPA Prílohe č. 2 je „OpenAI (alebo Anthropic)" — moje tvrdenie, že Anthropic chýba, bolo nepresné; problém je nejasné „alebo".
 
-**Nemerané — vedomé:** žiadny živý súhlas v Google (nemám prístup); migrácia `20261005100000` **nie je v PROD**; neviem, kto je jediný `owner` profil agentúry Smolko (`ra***@gmail.com`) — ak to nie je Smolko, nemá sa ako prihlásiť a pripojiť
+**Nemerané — vedomé:** žiadny živý súhlas v Google (nemám prístup); migrácia `20261005100100` **nie je v PROD** (premenovaná z `20261005100000`, ktorú obsadila iná migrácia, CI padlo na duplicitnej verzii); neviem, kto je jediný `owner` profil agentúry Smolko (`ra***@gmail.com`) — ak to nie je Smolko, nemá sa ako prihlásiť a pripojiť
 (pozvánkový odkaz = ďalšia stena). Režim Google aplikácie (Testing = token 7 dní) je z dokumentácie. SCOREBOARD sa nehýbe: v PROD nič nebeží.
 ## 2026-10-07 — DUPE-BRIEF: research brief pre onlinovo.sk (VALIDATE, nie BUILD)
 **GO foundera:** „GO dupe-research brief". **Brána Ústavy v2:** Q1 (zaplatil by dnešný klient Revolisu) = NIE → VETO, strop VALIDATE; Q8 nehodnotené (Stripe krok C má prednosť).

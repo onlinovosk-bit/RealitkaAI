@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
  */
 const CRM = process.cwd();
 const read = (rel: string) => readFileSync(join(CRM, rel), "utf8");
-const MIG = "supabase/migrations/20261005100000_agency_gmail_inbound_oauth.sql";
+const MIG = "supabase/migrations/20261005100100_agency_gmail_inbound_oauth.sql";
 
 describe("[verification] Gmail connect — token a súhlas", () => {
   it("v databáze nie je žiadny stĺpec s nezašifrovaným tokenom", () => {

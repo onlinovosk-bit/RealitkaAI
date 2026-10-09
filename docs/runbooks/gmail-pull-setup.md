@@ -23,7 +23,7 @@ a klikne **Pripojiť Gmail**. Povolenie dá na vlastnom zariadení, heslo zadáv
    `ACQUIRE_SHARED_SECRET`, `CRON_SECRET`, `NEXT_PUBLIC_APP_URL`. `GMAIL_INBOUND_PULL_ENABLED=true` nastavte **posledné**.
    `GOOGLE_GMAIL_INBOUND_REFRESH_TOKEN`, `..._LABEL_ID` a `..._AGENCY_ID` už NEpotrebujete (pilotný záznam z env beží len ak
    tá agentúra nemá vlastné pripojenie).
-3. Migrácie `20261002090000_gmail_inbound_seen` (už v PROD) a `20261005100000_agency_gmail_inbound_oauth` musia byť aplikované.
+3. Migrácie `20261002090000_gmail_inbound_seen` (už v PROD) a `20261005100100_agency_gmail_inbound_oauth` musia byť aplikované.
 4. Zálohujte `GMAIL_INBOUND_TOKEN_KEY` do password managera. **Strata kľúča = všetky pripojenia treba zopakovať** (tokeny sa nedajú dešifrovať).
    Zmena kľúča robí rovnako neplatné uložené tokeny: pull ich označí `token_undecryptable` a pripojenie sa vypne.
 
