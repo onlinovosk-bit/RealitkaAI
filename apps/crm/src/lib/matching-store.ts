@@ -82,6 +82,188 @@ function payloadWithoutOptionalColumns(row: {
   return { lead_id: row.lead_id, property_id: row.property_id, score: row.score };
 }
 
+type MatchWriteRow = {
+  lead_id: string;
+  property_id: string;
+  score: number;
+  reasons: string[];
+  model_version: string;
+};
+
+type MatchPersistScope =
+  | { kind: "lead"; leadId: string }
+  | { kind: "property"; propertyId: string }
+  | { kind: "all" };
+
+/**
+ * Persist recalculated matches without a wipe window.
+ *
+ * Old path was DELETE then INSERT: an insert/network timeout after a successful
+ * delete returned `{inserted:0}` and left the lead/property/agency with no
+ * matches (HTTP 200). Unique (lead_id, property_id) lets us upsert first, then
+ * delete orphans — upsert failure keeps prior rows.
+ */
+async function upsertMatchRows(
+  supabase: import("@supabase/supabase-js").SupabaseClient,
+  label: string,
+  rows: MatchWriteRow[],
+): Promise<void> {
+  let { error } = await withMatchingTimeout(
+    `${label}:upsert`,
+    Promise.resolve(
+      supabase.from("lead_property_matches").upsert(rows, { onConflict: "lead_id,property_id" }),
+    ),
+  );
+
+  if (error && isMissingMatchingColumnError(error.message)) {
+    const fallback = rows.map(payloadWithoutOptionalColumns);
+    ({ error } = await withMatchingTimeout(
+      `${label}:upsert:fallback`,
+      Promise.resolve(
+        supabase.from("lead_property_matches").upsert(fallback, { onConflict: "lead_id,property_id" }),
+      ),
+    ));
+  }
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
+async function deleteOrphanMatchRows(
+  supabase: import("@supabase/supabase-js").SupabaseClient,
+  label: string,
+  scope: MatchPersistScope,
+  keep: MatchWriteRow[],
+): Promise<void> {
+  const table = () => supabase.from("lead_property_matches");
+
+  if (scope.kind === "lead") {
+    if (keep.length === 0) {
+      const { error } = await withMatchingTimeout(
+        `${label}:delete-scope`,
+        Promise.resolve(table().delete().eq("lead_id", scope.leadId)),
+      );
+      if (error) throw new Error(error.message);
+      return;
+    }
+
+    const keepProps = new Set(keep.map((row) => row.property_id));
+    const { data, error: selectError } = await withMatchingTimeout(
+      `${label}:list-orphans`,
+      Promise.resolve(table().select("id, property_id").eq("lead_id", scope.leadId)),
+    );
+    if (selectError) throw new Error(selectError.message);
+    const orphanIds = (data ?? [])
+      .filter((row: { id: string; property_id: string }) => !keepProps.has(row.property_id))
+      .map((row: { id: string }) => row.id);
+    if (orphanIds.length === 0) return;
+    const { error } = await withMatchingTimeout(
+      `${label}:delete-orphans`,
+      Promise.resolve(table().delete().in("id", orphanIds)),
+    );
+    if (error) throw new Error(error.message);
+    return;
+  }
+
+  if (scope.kind === "property") {
+    if (keep.length === 0) {
+      const { error } = await withMatchingTimeout(
+        `${label}:delete-scope`,
+        Promise.resolve(table().delete().eq("property_id", scope.propertyId)),
+      );
+      if (error) throw new Error(error.message);
+      return;
+    }
+
+    const keepLeads = new Set(keep.map((row) => row.lead_id));
+    const { data, error: selectError } = await withMatchingTimeout(
+      `${label}:list-orphans`,
+      Promise.resolve(table().select("id, lead_id").eq("property_id", scope.propertyId)),
+    );
+    if (selectError) throw new Error(selectError.message);
+    const orphanIds = (data ?? [])
+      .filter((row: { id: string; lead_id: string }) => !keepLeads.has(row.lead_id))
+      .map((row: { id: string }) => row.id);
+    if (orphanIds.length === 0) return;
+    const { error } = await withMatchingTimeout(
+      `${label}:delete-orphans`,
+      Promise.resolve(table().delete().in("id", orphanIds)),
+    );
+    if (error) throw new Error(error.message);
+    return;
+  }
+
+  // kind === "all"
+  if (keep.length === 0) {
+    const { error } = await withMatchingTimeout(
+      `${label}:delete-scope`,
+      Promise.resolve(table().delete().not("id", "is", null)),
+    );
+    if (error) throw new Error(error.message);
+    return;
+  }
+
+  const keepKeys = new Set(keep.map((row) => `${row.lead_id}:${row.property_id}`));
+  const { data, error: selectError } = await withMatchingTimeout(
+    `${label}:list-orphans`,
+    Promise.resolve(table().select("id, lead_id, property_id")),
+  );
+  if (selectError) throw new Error(selectError.message);
+  const orphanIds = (data ?? [])
+    .filter(
+      (row: { id: string; lead_id: string; property_id: string }) =>
+        !keepKeys.has(`${row.lead_id}:${row.property_id}`),
+    )
+    .map((row: { id: string }) => row.id);
+  if (orphanIds.length === 0) return;
+  const { error } = await withMatchingTimeout(
+    `${label}:delete-orphans`,
+    Promise.resolve(table().delete().in("id", orphanIds)),
+  );
+  if (error) throw new Error(error.message);
+}
+
+/**
+ * Upsert new rows, then remove orphans. Never deletes before a successful write
+ * when there is something to write — so a timeout cannot empty the table.
+ */
+async function persistRecalculatedMatches(
+  supabase: import("@supabase/supabase-js").SupabaseClient,
+  label: string,
+  scope: MatchPersistScope,
+  rows: MatchWriteRow[],
+): Promise<{ written: number; preservedExisting: boolean }> {
+  if (rows.length > 0) {
+    try {
+      await upsertMatchRows(supabase, label, rows);
+    } catch (err) {
+      if (isRecoverableMatchingError(err)) {
+        console.warn(
+          "[matching-store] DB write timeout on recalculate upsert — keeping existing matches",
+        );
+        return { written: 0, preservedExisting: true };
+      }
+      throw err;
+    }
+  }
+
+  try {
+    await deleteOrphanMatchRows(supabase, label, scope, rows);
+  } catch (err) {
+    if (isRecoverableMatchingError(err)) {
+      // New rows (if any) are already stored; orphan cleanup can retry later.
+      console.warn(
+        "[matching-store] DB timeout on orphan cleanup after upsert — stale extras may remain",
+      );
+      return { written: rows.length, preservedExisting: false };
+    }
+    throw err;
+  }
+
+  return { written: rows.length, preservedExisting: false };
+}
+
 export async function listPersistedMatches(
   scopedSupabase?: import("@supabase/supabase-js").SupabaseClient | null,
 ): Promise<PersistedLeadPropertyMatch[]> {
@@ -332,32 +514,6 @@ export async function recalculateMatchesForLead(
   }
 
   const matches = getMatchingPropertiesForLead(lead, properties, 35);
-
-  try {
-    const { error: deleteError } = await withMatchingTimeout(
-      "recalculateLead:delete",
-      Promise.resolve(supabase.from("lead_property_matches").delete().eq("lead_id", leadId))
-    );
-
-    if (deleteError) {
-      throw new Error(deleteError.message);
-    }
-  } catch (err) {
-    if (isRecoverableMatchingError(err)) {
-      console.warn("[matching-store] DB write timeout on recalculate — skipping persist");
-      return { mode: "lead" as const, leadId, inserted: 0 };
-    }
-    throw err;
-  }
-
-  if (matches.length === 0) {
-    return {
-      mode: "lead" as const,
-      leadId,
-      inserted: 0,
-    };
-  }
-
   const payload = matches.map((match) => ({
     lead_id: lead.id,
     property_id: match.propertyId,
@@ -366,35 +522,17 @@ export async function recalculateMatchesForLead(
     model_version: "v2",
   }));
 
-  try {
-    let { error: insertError } = await withMatchingTimeout(
-      "recalculateLead:insert",
-      Promise.resolve(supabase.from("lead_property_matches").insert(payload))
-    );
-
-    if (insertError && isMissingMatchingColumnError(insertError.message)) {
-      const fallback = payload.map(payloadWithoutOptionalColumns);
-      ({ error: insertError } = await withMatchingTimeout(
-        "recalculateLead:insert:fallback",
-        Promise.resolve(supabase.from("lead_property_matches").insert(fallback))
-      ));
-    }
-
-    if (insertError) {
-      throw new Error(insertError.message);
-    }
-  } catch (err) {
-    if (isRecoverableMatchingError(err)) {
-      console.warn("[matching-store] DB write timeout on recalculate — skipping persist");
-      return { mode: "lead" as const, leadId, inserted: 0 };
-    }
-    throw err;
-  }
+  const persist = await persistRecalculatedMatches(
+    supabase,
+    "recalculateLead",
+    { kind: "lead", leadId },
+    payload,
+  );
 
   return {
     mode: "lead" as const,
     leadId,
-    inserted: payload.length,
+    inserted: persist.written,
   };
 }
 
@@ -424,32 +562,6 @@ export async function recalculateMatchesForProperty(
   }
 
   const leadMatches = getMatchingLeadsForProperty(property, leads, 35);
-
-  try {
-    const { error: deleteError } = await withMatchingTimeout(
-      "recalculateProperty:delete",
-      Promise.resolve(supabase.from("lead_property_matches").delete().eq("property_id", propertyId))
-    );
-
-    if (deleteError) {
-      throw new Error(deleteError.message);
-    }
-  } catch (err) {
-    if (isRecoverableMatchingError(err)) {
-      console.warn("[matching-store] DB write timeout on recalculate — skipping persist");
-      return { mode: "property" as const, propertyId, inserted: 0 };
-    }
-    throw err;
-  }
-
-  if (leadMatches.length === 0) {
-    return {
-      mode: "property" as const,
-      propertyId,
-      inserted: 0,
-    };
-  }
-
   const payload = leadMatches.map((match) => ({
     lead_id: match.leadId,
     property_id: property.id,
@@ -458,35 +570,17 @@ export async function recalculateMatchesForProperty(
     model_version: "v2",
   }));
 
-  try {
-    let { error: insertError } = await withMatchingTimeout(
-      "recalculateProperty:insert",
-      Promise.resolve(supabase.from("lead_property_matches").insert(payload))
-    );
-
-    if (insertError && isMissingMatchingColumnError(insertError.message)) {
-      const fallback = payload.map(payloadWithoutOptionalColumns);
-      ({ error: insertError } = await withMatchingTimeout(
-        "recalculateProperty:insert:fallback",
-        Promise.resolve(supabase.from("lead_property_matches").insert(fallback))
-      ));
-    }
-
-    if (insertError) {
-      throw new Error(insertError.message);
-    }
-  } catch (err) {
-    if (isRecoverableMatchingError(err)) {
-      console.warn("[matching-store] DB write timeout on recalculate — skipping persist");
-      return { mode: "property" as const, propertyId, inserted: 0 };
-    }
-    throw err;
-  }
+  const persist = await persistRecalculatedMatches(
+    supabase,
+    "recalculateProperty",
+    { kind: "property", propertyId },
+    payload,
+  );
 
   return {
     mode: "property" as const,
     propertyId,
-    inserted: payload.length,
+    inserted: persist.written,
   };
 }
 
@@ -511,23 +605,6 @@ export async function recalculateAllMatches(
     return { mode: "all" as const, totalRows: 0, totalLeads: leads.length, totalProperties: properties.length };
   }
 
-  try {
-    const { error: deleteError } = await withMatchingTimeout(
-      "recalculateAll:delete",
-      Promise.resolve(supabase.from("lead_property_matches").delete().not("id", "is", null))
-    );
-
-    if (deleteError) {
-      throw new Error(deleteError.message);
-    }
-  } catch (err) {
-    if (isRecoverableMatchingError(err)) {
-      console.warn("[matching-store] DB write timeout on recalculate — skipping persist");
-      return { mode: "all" as const, totalRows: 0, totalLeads: leads.length, totalProperties: properties.length };
-    }
-    throw err;
-  }
-
   const rows = leads.flatMap((lead) => {
     const matches = getMatchingPropertiesForLead(lead, properties, 35);
 
@@ -540,43 +617,16 @@ export async function recalculateAllMatches(
     }));
   });
 
-  if (rows.length === 0) {
-    return {
-      mode: "all",
-      totalRows: 0,
-      totalLeads: leads.length,
-      totalProperties: properties.length,
-    };
-  }
-
-  try {
-    let { error: insertError } = await withMatchingTimeout(
-      "recalculateAll:insert",
-      Promise.resolve(supabase.from("lead_property_matches").insert(rows))
-    );
-
-    if (insertError && isMissingMatchingColumnError(insertError.message)) {
-      const fallback = rows.map(payloadWithoutOptionalColumns);
-      ({ error: insertError } = await withMatchingTimeout(
-        "recalculateAll:insert:fallback",
-        Promise.resolve(supabase.from("lead_property_matches").insert(fallback))
-      ));
-    }
-
-    if (insertError) {
-      throw new Error(insertError.message);
-    }
-  } catch (err) {
-    if (isRecoverableMatchingError(err)) {
-      console.warn("[matching-store] DB write timeout on recalculate — skipping persist");
-      return { mode: "all" as const, totalRows: 0, totalLeads: leads.length, totalProperties: properties.length };
-    }
-    throw err;
-  }
+  const persist = await persistRecalculatedMatches(
+    supabase,
+    "recalculateAll",
+    { kind: "all" },
+    rows,
+  );
 
   return {
     mode: "all" as const,
-    totalRows: rows.length,
+    totalRows: persist.written,
     totalLeads: leads.length,
     totalProperties: properties.length,
   };
