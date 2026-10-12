@@ -2,6 +2,15 @@
 
 > Posledná aktualizácia: 2026-09-29 | CHECKOUT-ENV-01: A hotové (0/9), blokér je C
 
+## P0 — Critical bug hunt 2026-10-12 (WP/billing)
+
+Report: `docs/reports/2026-10-12-critical-bug-hunt-wp-billing.md`.
+
+- [ ] CRITICAL-1: `requireFeature("outreach")` na ghostwriter/send-email + playbook/confirm-viewing
+- [ ] CRITICAL-2: nahradiť `getFeatureFlagsForPlan` DEV OVERRIDE reálnou maticou (founder GO na Free/trial množinu)
+- [ ] CRITICAL-3: expire repair bez absolútneho `credits_balance` zo snapshotu
+- [ ] (ops) AGENT_KILL_SWITCH akceptovať `on` alebo fail-closed na neznámu hodnotu
+
 ## P0 — GMAIL-PULL aktivácia (Smolko, 2026-10-02)
 
 Kód hotový (PR vetva `claude/gmail-pull-finish`), v PROD nič nebeží. Čaká na foundera: migrácia `20261002090000` do PROD; Google Cloud client + režim

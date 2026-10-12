@@ -1,3 +1,16 @@
+## Session 2026-10-12 (critical bug hunt WP/billing)
+### Dokončené
+- `docs/reports/2026-10-12-critical-bug-hunt-wp-billing.md`: deep hunt WP-2/3, admin key, self-serve, fail-open, credits webhook — 3 CRITICAL, rest cleared.
+- Push: vetva `cursor/critical-bug-hunt-wp-billing` (`a80fa8e3`).
+### Rozpracované / Pending
+- CRITICAL-1: gate ghostwriter + confirm-viewing (`requireFeature("outreach")`) — GO na fix PR.
+- CRITICAL-2: odstrániť `getFeatureFlagsForPlan` DEV OVERRIDE — potrebuje plan matrix / founder GO.
+- CRITICAL-3: atomický expire repair v `grant-engine.ts`.
+### Kľúčové súbory zmenené
+- `docs/reports/2026-10-12-critical-bug-hunt-wp-billing.md`: audit report.
+### Ďalší krok
+GO: jeden PR — `requireFeature("outreach")` na WP-2 send routes + testy (CRITICAL-1).
+
 ## Session 2026-10-09 (P23 strana GA4)
 ### Dokončené
 - `docs/onlinovo/2026-10-09-p23-ga4-audit.md`: audit 10 objednávok 10/10 (GA4 = báza C na cent), mesačná atribúcia Shoptet / GA4 / Ads, Meta ROAS z GA4, dôsledky.
