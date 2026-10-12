@@ -1,3 +1,16 @@
+## Session 2026-10-12 (INI-5 plán testu s kontrolnou skupinou)
+### Dokončené
+- „merguj 834“: PR #834 (GA4 audit 10/10) zmergovaný, squash `e9ece0f`, CI 6/6 zelené na hlave `0c4f039` (overené v tom istom turne).
+- `docs/onlinovo/2026-10-09-inc5-pmax-holdout-plan.md`: plán geo-holdout testu pre PMax (rozhodnutie „A“): prah rentability, návrh pokusu, A/A šum a sila z exportu, pravidlá TRIM/HOLD/KEEP, cena, Q4 variant ako výnimka, kroky, otvorené neznáme, Príloha A (priradenie 12 párov).
+- Zápis v `memory/decisions.md`.
+### Rozpracované / Pending
+- Rozhodnutie foundera: „GO Q1“ / „GO Q4“ / „NIE“ (predvolené: návrh, v Ads sa nič nemení). Čítacia kontrola v Ads (PSČ/okresy, Brand polohy, Experiments) pre PPC správcu do 18. 12.
+- Stripe krok C čaká na výstup `bash scripts/ops/stripe-verify-prices.sh`; ručný P&L na jednu množinu (Vybavená); dôvod zastavenia Meta; `resolveAuthority` s NaN čaká na vlastné GO.
+### Kľúčové súbory zmenené
+- `docs/onlinovo/2026-10-09-inc5-pmax-holdout-plan.md`, `memory/decisions.md`, `memory/session-summary.md`.
+### Ďalší krok
+Stripe krok C (Prime Directive): founder pošle výstup `scripts/ops/stripe-verify-prices.sh`; overenie spravím ja.
+
 ## Session 2026-10-09 (P23 strana GA4)
 ### Dokončené
 - `docs/onlinovo/2026-10-09-p23-ga4-audit.md`: audit 10 objednávok 10/10 (GA4 = báza C na cent), mesačná atribúcia Shoptet / GA4 / Ads, Meta ROAS z GA4, dôsledky.
