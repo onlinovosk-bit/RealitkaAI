@@ -1,3 +1,14 @@
+## Session 2026-10-12 (critical bug recheck closed PRs #443–#495)
+### Dokončené
+- `docs/reports/2026-10-12-critical-bug-recheck-closed-prs.md`: 7 closed-without-merge bugs re-verified on `main` @ `cf0ddd7c`.
+- 6 FIXED elsewhere (#776/#719/#734/#767/#752/#722); **1 STILL PRESENT**: matching recalculate delete+insert-timeout silent wipe (#444 finding 2).
+### Rozpracované / Pending
+- GO: fix PR — matching-store: do not ACK after delete if insert times out (transaction / fail 5xx / restore).
+### Kľúčové súbory zmenené
+- `docs/reports/2026-10-12-critical-bug-recheck-closed-prs.md`: audit report.
+### Ďalší krok
+GO: jeden PR — matching recalculate delete-then-insert timeout (data loss).
+
 ## Session 2026-10-09 (P23 strana GA4)
 ### Dokončené
 - `docs/onlinovo/2026-10-09-p23-ga4-audit.md`: audit 10 objednávok 10/10 (GA4 = báza C na cent), mesačná atribúcia Shoptet / GA4 / Ads, Meta ROAS z GA4, dôsledky.
