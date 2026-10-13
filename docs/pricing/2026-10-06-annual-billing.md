@@ -5,7 +5,7 @@
 ## Ako to funguje
 - **Stripe:** štyri ročné ceny sú druhá Price (interval `year`) na rovnakých štyroch produktoch ako mesačné. Env: `STRIPE_PRICE_V2_START_YEARLY`, `_TEAM_YEARLY`, `_OFFICE_YEARLY`, `_NETWORK_YEARLY`. Sumy, názvy a `exclusive` kontroluje `stripe_verify_prices.py` (nová pole `interval`) a drift-test katalógu.
 - **Checkout:** požiadavka má `interval` (`month` predvolene, `year`). Ročný plán sa **nikdy nekombinuje s mesačným balíkom kreditov** (Stripe: všetky položky predplatného majú rovnaký interval), API vráti 400. Chýbajúca ročná cena = 503 `prices_not_configured` s názvom premennej, mesačná cena sa nikdy nepodstrčí.
-- **Plán a grant:** ročná cena je to isté pásmo (rovnaký tier, rovnaké kredity 20 / 50 / 100 / 150). **Kredity sa prideľujú mesačne** (prvý grant po zaplatení, ďalšie cez mesačný cyklus), lebo faktúra príde raz ročne.
+- **Plán a grant:** ročná cena je to isté pásmo (rovnaký tier, rovnaké kredity 25 / 60 / 120 / 175). **Kredity sa prideľujú mesačne** (prvý grant po zaplatení, ďalšie cez mesačný cyklus), lebo faktúra príde raz ročne.
 - **Ponuka:** `GET /api/billing/checkout-config` vracia `yearlyAvailable`. Kým nie sú nastavené všetky 4 ročné ceny, UI prepínač Mesačne/Ročne nie je vidieť a predaj ostáva mesačný.
 - **Zobrazenie:** CRM `/upgrade` (prepínač), porovnanie pásiem a web revolis.ai (riadok „Ročne X € bez DPH (Y € s DPH)“). Slovo „zľava“ sa nepoužíva, zľava neexistuje.
 

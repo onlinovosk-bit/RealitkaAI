@@ -148,18 +148,22 @@ describe('ročné platenie na webe (12 × mesačná, bez zľavy)', () => {
   })
 })
 
-describe('zahrnuté kredity plánov (rozhodnutie 6. 10. 2026: 20 / 50 / 100 / 150)', () => {
-  it('karty plánov ukážu kredity na celú kanceláriu, nie staré 25 / 60 / 120 / 175', () => {
+describe('zahrnuté kredity plánov (rozhodnutie 13. 10. 2026: 25 / 60 / 120 / 175)', () => {
+  it('karty plánov ukážu kredity na celú kanceláriu, nie staré 20 / 50 / 100 / 150', () => {
     const view = buildPricingV2View(buildPricingV2Catalog())
     expect(view.bands.map((b) => b.creditsLabel)).toEqual([
-      '20 kreditov mesačne pre celú kanceláriu',
-      '50 kreditov mesačne pre celú kanceláriu',
-      '100 kreditov mesačne pre celú kanceláriu',
-      '150 kreditov mesačne pre celú kanceláriu',
+      '25 kreditov mesačne pre celú kanceláriu',
+      '60 kreditov mesačne pre celú kanceláriu',
+      '120 kreditov mesačne pre celú kanceláriu',
+      '175 kreditov mesačne pre celú kanceláriu',
     ])
     const html = renderToStaticMarkup(<PricingSectionV2 view={view} />)
-    for (const old of ['25 kreditov', '175 kreditov']) expect(html).not.toContain(old)
-    expect(html).not.toContain('120 kreditov mesačne pre celú')
+    for (const label of view.bands.map((b) => b.creditsLabel)) expect(html).toContain(label)
+    // „120 kreditov…“ obsahuje podreťazec „20 kreditov…“, preto staré čísla pinujeme celým labelom, nie substringom.
+    expect(html).not.toMatch(/(?<!\d)20 kreditov mesačne pre celú kanceláriu/)
+    expect(html).not.toMatch(/(?<!\d)50 kreditov mesačne pre celú kanceláriu/)
+    expect(html).not.toMatch(/(?<!\d)100 kreditov mesačne pre celú kanceláriu/)
+    expect(html).not.toMatch(/(?<!\d)150 kreditov mesačne pre celú kanceláriu/)
   })
 })
 
@@ -370,7 +374,18 @@ describe('starý marketingový checkout', () => {
       // komentáre smú Stripe spomínať; kontrolujeme kód bez komentárov
       const code = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
       expect(code, f).not.toMatch(/checkout\/subscription|api\/checkout|checkout\.stripe|js\.stripe|STRIPE_|fetch\(/i)
+      expect(code, f).not.toMatch(/lemon|lemonsqueezy/i)
     }
+  })
+
+  it('CTA cenníka v2 nikdy nevedie na Lemon Squeezy', () => {
+    const view = buildPricingV2View(buildPricingV2Catalog(), undefined, { signupEnabled: true })
+    for (const band of view.bands) {
+      expect(band.ctaHref).not.toMatch(/lemon|lemonsqueezy/i)
+    }
+    expect(view.packsCtaHref).not.toMatch(/lemon|lemonsqueezy/i)
+    const html = renderToStaticMarkup(<PricingSectionV2 view={view} />)
+    expect(html).not.toMatch(/lemon|lemonsqueezy/i)
   })
 })
 
