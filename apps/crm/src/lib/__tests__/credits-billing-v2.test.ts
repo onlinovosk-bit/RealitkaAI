@@ -724,12 +724,24 @@ describe("subscription lifecycle for v2 prices (kritériá 4, 5)", () => {
     ({ id: "evt_s", type, data: { object: { id: "sub_1", status: "active", ...sub } } }) as never;
   const items = (...ids: string[]) => ({ items: { data: ids.map((id) => ({ price: { id } })) } });
 
+  /** Live Stripe state drives writes; event payload alone must not. */
+  function liveSub(status: string, priceIds: string[] = [PRICE.STRIPE_PRICE_V2_OFFICE]) {
+    h.subRetrieve.mockImplementation(async (id: string) => ({
+      id,
+      status,
+      customer: "cus_test",
+      ...items(...priceIds),
+    }));
+  }
+
   beforeEach(() => {
     stubAllPrices();
     db.agencies = [V2_AGENCY()];
+    liveSub("active", [PRICE.STRIPE_PRICE_V2_OFFICE, PRICE.STRIPE_PRICE_V2_PACK_120]);
   });
 
   it("updated: band downgrade office -> team re-maps band, tier, users (clamped into band) and drops the pack", async () => {
+    liveSub("active", [PRICE.STRIPE_PRICE_V2_TEAM]);
     const ok = await applyPricingV2SubscriptionEvent(
       subEvent("customer.subscription.updated", items(PRICE.STRIPE_PRICE_V2_TEAM)),
     );
@@ -745,32 +757,98 @@ describe("subscription lifecycle for v2 prices (kritériá 4, 5)", () => {
   });
 
   it("updated: pack change is read from items in any order", async () => {
+    liveSub("active", [PRICE.STRIPE_PRICE_V2_PACK_300, PRICE.STRIPE_PRICE_V2_OFFICE]);
     await applyPricingV2SubscriptionEvent(
       subEvent("customer.subscription.updated", items(PRICE.STRIPE_PRICE_V2_PACK_300, PRICE.STRIPE_PRICE_V2_OFFICE)),
     );
     expect(db.agencies[0]).toMatchObject({ pricing_band: "office", pack_credits: 300 });
   });
 
-  it("updated: past_due / unpaid / canceled stop further grants (grant amount becomes 0)", async () => {
-    for (const status of ["past_due", "unpaid", "canceled", "incomplete_expired"]) {
+  it("updated: past_due stops grants; unpaid / canceled / incomplete_expired revoke to free", async () => {
+    liveSub("past_due", [PRICE.STRIPE_PRICE_V2_OFFICE]);
+    db.agencies = [V2_AGENCY()];
+    expect(monthlyGrantAmountForAgency(db.agencies[0] as never)).toBe(240);
+    await applyPricingV2SubscriptionEvent(
+      subEvent("customer.subscription.updated", { status: "past_due", ...items(PRICE.STRIPE_PRICE_V2_OFFICE) }),
+    );
+    expect(db.agencies[0].subscription_status).toBe("past_due");
+    expect(db.agencies[0].account_tier).toBe("enterprise");
+    expect(monthlyGrantAmountForAgency(db.agencies[0] as never)).toBe(0);
+
+    for (const status of ["unpaid", "canceled", "incomplete_expired"]) {
       db.agencies = [V2_AGENCY()];
-      expect(monthlyGrantAmountForAgency(db.agencies[0] as never)).toBe(240);
-      await applyPricingV2SubscriptionEvent(subEvent("customer.subscription.updated", { status, ...items(PRICE.STRIPE_PRICE_V2_OFFICE) }));
-      expect(db.agencies[0].subscription_status).toBe(status);
+      db.agencyUpdates = [];
+      db.profileUpdates = [];
+      liveSub(status, [PRICE.STRIPE_PRICE_V2_OFFICE]);
+      await applyPricingV2SubscriptionEvent(
+        subEvent("customer.subscription.updated", { status, ...items(PRICE.STRIPE_PRICE_V2_OFFICE) }),
+      );
+      expect(db.agencies[0]).toMatchObject({
+        subscription_status: "canceled",
+        account_tier: "free",
+        pack_credits: 0,
+      });
       expect(monthlyGrantAmountForAgency(db.agencies[0] as never)).toBe(0);
     }
   });
 
   it("recovery: active again restores the grant", async () => {
     db.agencies = [V2_AGENCY({ subscription_status: "past_due" })];
-    await applyPricingV2SubscriptionEvent(subEvent("customer.subscription.updated", { status: "active", ...items(PRICE.STRIPE_PRICE_V2_OFFICE, PRICE.STRIPE_PRICE_V2_PACK_120) }));
+    liveSub("active", [PRICE.STRIPE_PRICE_V2_OFFICE, PRICE.STRIPE_PRICE_V2_PACK_120]);
+    await applyPricingV2SubscriptionEvent(
+      subEvent("customer.subscription.updated", {
+        status: "active",
+        ...items(PRICE.STRIPE_PRICE_V2_OFFICE, PRICE.STRIPE_PRICE_V2_PACK_120),
+      }),
+    );
     expect(monthlyGrantAmountForAgency(db.agencies[0] as never)).toBe(240);
   });
 
+  it("stale past_due event does not overwrite live active (grants stay)", async () => {
+    liveSub("active", [PRICE.STRIPE_PRICE_V2_OFFICE, PRICE.STRIPE_PRICE_V2_PACK_120]);
+    await applyPricingV2SubscriptionEvent(
+      subEvent("customer.subscription.updated", {
+        status: "past_due",
+        ...items(PRICE.STRIPE_PRICE_V2_OFFICE),
+      }),
+    );
+    expect(db.agencies[0].subscription_status).toBe("active");
+    expect(monthlyGrantAmountForAgency(db.agencies[0] as never)).toBe(240);
+  });
+
+  it("stale active event cannot reactivate a canceled live subscription", async () => {
+    liveSub("canceled", [PRICE.STRIPE_PRICE_V2_OFFICE]);
+    await applyPricingV2SubscriptionEvent(
+      subEvent("customer.subscription.updated", {
+        status: "active",
+        ...items(PRICE.STRIPE_PRICE_V2_OFFICE, PRICE.STRIPE_PRICE_V2_PACK_120),
+      }),
+    );
+    expect(db.agencies[0]).toMatchObject({
+      subscription_status: "canceled",
+      account_tier: "free",
+      pack_credits: 0,
+    });
+    expect(monthlyGrantAmountForAgency(db.agencies[0] as never)).toBe(0);
+  });
+
   it("deleted: status canceled, back to free, pack cleared, agency profiles downgraded, no grants", async () => {
-    expect(await applyPricingV2SubscriptionEvent(subEvent("customer.subscription.deleted", { status: "canceled", ...items(PRICE.STRIPE_PRICE_V2_OFFICE) }))).toBe(true);
-    expect(db.agencies[0]).toMatchObject({ subscription_status: "canceled", account_tier: "free", pack_credits: 0, pricing_model: "v2" });
-    expect(db.profileUpdates[0]).toMatchObject({ col: "agency_id", val: AGENCY, payload: { account_tier: "free", ui_role: "agent" } });
+    expect(
+      await applyPricingV2SubscriptionEvent(
+        subEvent("customer.subscription.deleted", { status: "canceled", ...items(PRICE.STRIPE_PRICE_V2_OFFICE) }),
+      ),
+    ).toBe(true);
+    expect(db.agencies[0]).toMatchObject({
+      subscription_status: "canceled",
+      account_tier: "free",
+      pack_credits: 0,
+      pricing_model: "v2",
+    });
+    expect(db.profileUpdates[0]).toMatchObject({
+      col: "agency_id",
+      val: AGENCY,
+      payload: { account_tier: "free", ui_role: "agent" },
+    });
     expect(monthlyGrantAmountForAgency(db.agencies[0] as never)).toBe(0);
   });
 
@@ -796,7 +874,8 @@ describe("subscription lifecycle for v2 prices (kritériá 4, 5)", () => {
     expect(db.agencyUpdates).toHaveLength(0);
   });
 
-  it("DB failure is reported as failure so Stripe retries; missing status is a failure too", async () => {
+  it("DB failure / retrieve failure / missing live status → false so Stripe retries", async () => {
+    liveSub("active", [PRICE.STRIPE_PRICE_V2_TEAM]);
     db.updateError = { message: "boom" };
     expect(await applyPricingV2SubscriptionEvent(subEvent("customer.subscription.updated", items(PRICE.STRIPE_PRICE_V2_TEAM)))).toBe(false);
     expect(await applyPricingV2SubscriptionEvent(subEvent("customer.subscription.deleted", items(PRICE.STRIPE_PRICE_V2_TEAM)))).toBe(false);
@@ -804,14 +883,27 @@ describe("subscription lifecycle for v2 prices (kritériá 4, 5)", () => {
     db.readError = { message: "db down" };
     expect(await applyPricingV2SubscriptionEvent(subEvent("customer.subscription.updated", items(PRICE.STRIPE_PRICE_V2_TEAM)))).toBe(false);
     db.readError = null;
-    expect(await applyPricingV2SubscriptionEvent(subEvent("customer.subscription.updated", { status: undefined, ...items(PRICE.STRIPE_PRICE_V2_TEAM) }))).toBe(false);
+
+    h.subRetrieve.mockRejectedValueOnce(Object.assign(new Error("stripe down"), { code: "api_error" }));
+    expect(await applyPricingV2SubscriptionEvent(subEvent("customer.subscription.updated", items(PRICE.STRIPE_PRICE_V2_TEAM)))).toBe(false);
+
+    h.subRetrieve.mockImplementation(async (id: string) => ({ id, status: "", customer: "cus_test", ...items(PRICE.STRIPE_PRICE_V2_TEAM) }));
+    expect(await applyPricingV2SubscriptionEvent(subEvent("customer.subscription.updated", items(PRICE.STRIPE_PRICE_V2_TEAM)))).toBe(false);
   });
 
   it("updated without a single unambiguous band item syncs status only", async () => {
+    liveSub("past_due", [PRICE.STRIPE_PRICE_V2_START, PRICE.STRIPE_PRICE_V2_TEAM]);
     await applyPricingV2SubscriptionEvent(
-      subEvent("customer.subscription.updated", { status: "past_due", ...items(PRICE.STRIPE_PRICE_V2_START, PRICE.STRIPE_PRICE_V2_TEAM) }),
+      subEvent("customer.subscription.updated", {
+        status: "past_due",
+        ...items(PRICE.STRIPE_PRICE_V2_START, PRICE.STRIPE_PRICE_V2_TEAM),
+      }),
     );
-    expect(db.agencies[0]).toMatchObject({ subscription_status: "past_due", pricing_band: "office", pack_credits: 120 });
+    expect(db.agencies[0]).toMatchObject({
+      subscription_status: "past_due",
+      pricing_band: "office",
+      pack_credits: 120,
+    });
   });
 
   it("clampLicensedUsers keeps a value inside the band and clamps outside values", () => {
