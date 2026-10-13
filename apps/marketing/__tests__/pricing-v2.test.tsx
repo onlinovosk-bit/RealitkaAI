@@ -9,6 +9,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import PricingSection from '../components/landing/PricingSection'
 import PricingSectionV2 from '../components/landing/PricingSectionV2'
+import LandingPage from '../components/landing/LandingPage'
 import LeadCaptureModal from '../components/LeadCaptureModal'
 import { FaqSection } from '../components/demo/DemoSections'
 import ZakulisiePage from '../app/zakulisie/[token]/page'
@@ -63,6 +64,7 @@ async function withEnvAsync(env: Record<string, string | undefined>, fn: () => P
 
 afterEach(() => {
   delete process.env.PRICING_V2_ENABLED
+  delete process.env.PRICING_V2_SIGNUP_ENABLED
   delete process.env.NEXT_PUBLIC_CRM_URL
 })
 
@@ -238,8 +240,10 @@ describe('PricingSection pri zapnutom prepínači', () => {
     expect(register).toContain(`${DEFAULT_CRM_URL}/register?pricing=v2&amp;plan=office`)
     // balíky: registrácia bez konkrétneho pásma
     expect(register).toContain(`${DEFAULT_CRM_URL}/register?pricing=v2`)
-    // Sieť sa dojednáva: demo, nie checkout
+    expect(register).toContain(`${DEFAULT_CRM_URL}/register?pricing=v2&amp;plan=network`)
+    // Calendly ostáva ako vedľajší odkaz (aj Sieť)
     expect(hrefs.some((h) => h.includes('calendly.com') && h.includes('pricing_v2_network'))).toBe(true)
+    expect(html).toContain('Dohodnite si ukážku')
     // žiadne tlačidlo otvárajúce legacy modal
     expect(html).not.toContain('<button')
   })
@@ -255,34 +259,54 @@ describe('PricingSection pri zapnutom prepínači', () => {
   })
 })
 
-describe('CTA na webe: demo, kým nie je zapnutý signup', () => {
-  const noSignup = { PRICING_V2_ENABLED: 'true' }
-  it('predvolene vedú všetky pásma na demo, nie do registrácie v CRM', () => {
-    const view = resolvePricingV2View(noSignup)!
-    expect(view.signupEnabled).toBe(false)
-    expect(view.bands.every((b) => b.ctaIsDemo)).toBe(true)
-    expect(view.bands.map((b) => b.ctaLabel)).toEqual([
-      'Rezervovať demo →',
-      'Rezervovať demo →',
-      'Rezervovať demo →',
-      'Dohodnúť cenu na deme →',
-    ])
-    const html = renderToStaticMarkup(<PricingSectionV2 view={view} />)
-    expect(html).not.toContain('/register')
-    expect(html).not.toContain('app.revolis.ai')
+describe('CTA na webe: predvolene 14-dňová skúška, Calendly vedľajší', () => {
+  const v2 = { PRICING_V2_ENABLED: 'true' }
+  it('predvolene (nenastavené / prázdne / true) vedú všetky pásma vrátane Siete na /register', () => {
+    for (const v of [undefined, '', 'true', '1', 'on', 'yes', 'nonsense']) {
+      const view = resolvePricingV2View({ ...v2, PRICING_V2_SIGNUP_ENABLED: v })!
+      expect(view.signupEnabled).toBe(true)
+      expect(view.bands.every((b) => b.ctaIsDemo)).toBe(false)
+      expect(view.bands.map((b) => b.ctaLabel)).toEqual([
+        'Začať 14 dní zadarmo →',
+        'Začať 14 dní zadarmo →',
+        'Začať 14 dní zadarmo →',
+        'Začať 14 dní zadarmo →',
+      ])
+      expect(view.bands.map((b) => b.ctaHref)).toEqual([
+        `${DEFAULT_CRM_URL}/register?pricing=v2&plan=start`,
+        `${DEFAULT_CRM_URL}/register?pricing=v2&plan=team`,
+        `${DEFAULT_CRM_URL}/register?pricing=v2&plan=office`,
+        `${DEFAULT_CRM_URL}/register?pricing=v2&plan=network`,
+      ])
+    }
+    const html = renderToStaticMarkup(<PricingSectionV2 view={resolvePricingV2View(v2)!} />)
+    expect(html).toContain('/register?pricing=v2&amp;plan=start')
+    expect(html).toContain('/register?pricing=v2&amp;plan=network')
+    expect(html).toContain('Dohodnite si ukážku')
     expect((html.match(/calendly\.com/g) ?? []).length).toBeGreaterThanOrEqual(4)
   })
-  it('PRICING_V2_SIGNUP_ENABLED=true|1|on zapne registráciu pre pásma Start/Team/Kancelária (Sieť ostáva demo)', () => {
-    for (const v of ['true', '1', 'on', ' ON ']) {
-      const view = resolvePricingV2View({ ...noSignup, PRICING_V2_SIGNUP_ENABLED: v })!
-      expect(view.bands.map((b) => b.ctaIsDemo)).toEqual([false, false, false, true])
-    }
+  it.each(['false', '0', 'off', 'no', ' FALSE '])(
+    'PRICING_V2_SIGNUP_ENABLED=%j je núdzový vypínač: primárne CTA na demo, bez /register',
+    (v) => {
+      const view = resolvePricingV2View({ ...v2, PRICING_V2_SIGNUP_ENABLED: v })!
+      expect(view.signupEnabled).toBe(false)
+      expect(view.bands.every((b) => b.ctaIsDemo)).toBe(true)
+      const html = renderToStaticMarkup(<PricingSectionV2 view={view} />)
+      expect(html).not.toContain('/register')
+      expect(html).not.toContain('app.revolis.ai')
+      expect((html.match(/calendly\.com/g) ?? []).length).toBeGreaterThanOrEqual(4)
+    },
+  )
+  it('modal pri zapnutom signupe láka do 14-dňovej skúšky, Calendly je vedľajší', () => {
+    const view = resolvePricingV2View(v2)!
+    const out = norm(renderToStaticMarkup(<LeadCaptureModal source="pricing-v2-team" onClose={() => {}} pricingV2={view} />))
+    expect(out).toContain('14 dní zadarmo, bez platobnej karty')
+    expect(out).toContain('/register')
+    expect(out).toContain('Dohodnite si ukážku')
+    expect(out).not.toContain('platba prebehne tam')
   })
-  it.each(['', 'false', '0', 'yes', 'nonsense'])('PRICING_V2_SIGNUP_ENABLED=%j ostáva v bezpečnom režime (demo)', (v) => {
-    expect(resolvePricingV2View({ ...noSignup, PRICING_V2_SIGNUP_ENABLED: v })!.signupEnabled).toBe(false)
-  })
-  it('modal bez signupu neláka do aplikácie', () => {
-    const view = resolvePricingV2View(noSignup)!
+  it('modal pri núdzovom vypnutí neláka do aplikácie', () => {
+    const view = resolvePricingV2View({ ...v2, PRICING_V2_SIGNUP_ENABLED: 'false' })!
     const out = norm(renderToStaticMarkup(<LeadCaptureModal source="pricing-v2-team" onClose={() => {}} pricingV2={view} />))
     expect(out).toContain('na krátkom deme')
     expect(out).not.toContain('Kanceláriu založíte v aplikácii')
@@ -386,6 +410,25 @@ describe('starý marketingový checkout', () => {
     expect(view.packsCtaHref).not.toMatch(/lemon|lemonsqueezy/i)
     const html = renderToStaticMarkup(<PricingSectionV2 view={view} />)
     expect(html).not.toMatch(/lemon|lemonsqueezy/i)
+  })
+})
+
+describe('primárne CTA na landingu (hero, nav, sticky, kalkulačka)', () => {
+  it('predvolene vedú na /register?plan=start, Calendly je vedľajší', () => {
+    const html = withEnv({ PRICING_V2_SIGNUP_ENABLED: undefined, NEXT_PUBLIC_CRM_URL: undefined }, () =>
+      renderToStaticMarkup(<LandingPage />),
+    )
+    expect(html).toContain(`${DEFAULT_CRM_URL}/register?pricing=v2&amp;plan=start`)
+    expect(html).toContain('Začať 14 dní zadarmo')
+    expect(html).toContain('Dohodnite si ukážku')
+    expect(html).toContain('calendly.com/revoliscrm/30min')
+    expect(html).not.toContain('Rezervovať demo zdarma')
+  })
+  it('núdzový vypínač vráti primárne CTA na Calendly bez /register', () => {
+    const html = withEnv({ PRICING_V2_SIGNUP_ENABLED: 'false' }, () => renderToStaticMarkup(<LandingPage />))
+    expect(html).not.toContain('/register')
+    expect(html).toContain('Rezervovať demo')
+    expect(html).toContain('calendly.com/revoliscrm/30min')
   })
 })
 

@@ -1,6 +1,8 @@
 import PricingSection from './PricingSection'
 import { ProductMock, LossCalculator, GoalsPicker, StickyCta } from './LandingInteractive'
 import { CALENDLY_DEMO_URL } from '../../lib/calendly'
+import { isWebSignupEnabled } from '../../lib/pricing-v2-server'
+import { buildRegisterUrl, DEMO_SECONDARY_LABEL, TRIAL_CTA_LABEL } from '../../lib/pricing-v2-view'
 
 const FAQ = [
   {
@@ -9,7 +11,7 @@ const FAQ = [
   },
   {
     q: 'Funguje to s portálmi, ktoré používame?',
-    a: 'Dopyty z hlavných slovenských portálov a e-mailu sa zbiehajú do jedného prehľadu. Na deme Vám ukážeme presne tie, ktoré používa Vaša kancelária.',
+    a: 'Dopyty z hlavných slovenských portálov a e-mailu sa zbiehajú do jedného prehľadu. Na ukážke Vám ukážeme presne tie, ktoré používa Vaša kancelária.',
   },
   {
     q: 'Čo ak systém pošle klientovi nezmysel?',
@@ -29,11 +31,30 @@ const FAQ = [
   },
   {
     q: 'Koľko to stojí a čo ak to nebude fungovať?',
-    a: 'Presný balík podľa veľkosti kancelárie preberieme na deme — bez skrytých položiek. A prvých 30 dní platí záruka vrátenia peňazí bez otázok.',
+    a: 'Cenník je na tejto stránke. 14 dní si to vyskúšate zadarmo, bez platobnej karty. Po skončení sa skúška sama vypne — nič sa neúčtuje automaticky. Ak chcete prejsť cenník spolu, dohodnite si ukážku.',
   },
 ]
 
+function DemoSecondary({ utm }: { utm: string }) {
+  return (
+    <a
+      className="cta-secondary"
+      href={`${CALENDLY_DEMO_URL}?utm_content=${utm}`}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      {DEMO_SECONDARY_LABEL}
+    </a>
+  )
+}
+
 export default function LandingPage() {
+  const signupEnabled = isWebSignupEnabled()
+  const trialHref = buildRegisterUrl(process.env.NEXT_PUBLIC_CRM_URL, { plan: 'start' })
+  const primaryHref = signupEnabled ? trialHref : CALENDLY_DEMO_URL
+  const primaryLabel = signupEnabled ? 'Začať 14 dní zadarmo' : 'Rezervovať demo'
+  const primaryExternal = !signupEnabled
+
   return (
     <>
       <header>
@@ -41,9 +62,16 @@ export default function LandingPage() {
           <a className="logo" href="#">
             REVOLIS<b>›_</b>
           </a>
-          <a className="btn" href={CALENDLY_DEMO_URL} target="_blank" rel="noopener noreferrer">
-            Rezervovať demo
-          </a>
+          <div className="nav-cta">
+            <a
+              className="btn"
+              href={primaryHref}
+              {...(primaryExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+            >
+              {primaryLabel}
+            </a>
+            {signupEnabled && <DemoSecondary utm="nav_demo" />}
+          </div>
         </div>
       </header>
 
@@ -58,14 +86,23 @@ export default function LandingPage() {
             <strong>komu volať ako prvému</strong> — ešte pred prvou kávou.
           </p>
           <div className="hero-cta">
-            <a className="btn btn-lg" href={CALENDLY_DEMO_URL} target="_blank" rel="noopener noreferrer">
-              Rezervovať demo zdarma
+            <a
+              className="btn btn-lg"
+              href={primaryHref}
+              {...(primaryExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+            >
+              {signupEnabled ? 'Začať 14 dní zadarmo' : 'Rezervovať demo zdarma'}
             </a>
             <a className="btn btn-lg btn-ghost" href="#kalkulacka">
               Koľko ma stojí pomalá odpoveď? ↓
             </a>
           </div>
-          <p className="micro">15–20 minút · žiadne záväzky · bez kreditnej karty</p>
+          {signupEnabled && <DemoSecondary utm="hero_demo" />}
+          <p className="micro">
+            {signupEnabled
+              ? '14 dní zadarmo · bez platobnej karty · zrušenie kedykoľvek'
+              : '15–20 minút · žiadne záväzky · bez kreditnej karty'}
+          </p>
           <p className="micro" style={{ marginTop: 6 }}>
             // prvý klient: ~10 h týždenne späť už v prvom mesiaci
           </p>
@@ -118,7 +155,7 @@ export default function LandingPage() {
           <p className="eyebrow">Spočítajte si to</p>
           <h2>Koľko Vás mesačne stojí pomalá odpoveď?</h2>
           <p className="sub">Posuňte hodnoty podľa svojej kancelárie. Čísla sa prepočítajú okamžite.</p>
-          <LossCalculator />
+          <LossCalculator trialHref={trialHref} signupEnabled={signupEnabled} />
         </div>
       </section>
 
@@ -175,8 +212,8 @@ export default function LandingPage() {
         <div className="wrap">
           <p className="eyebrow">Personalizácia</p>
           <h2>Čo chcete dosiahnuť?</h2>
-          <p className="sub">Vyberte jeden alebo viac cieľov — demo Vám pripravíme presne na ne.</p>
-          <GoalsPicker />
+          <p className="sub">Vyberte jeden alebo viac cieľov — podľa nich Vám pripravíme skúšku aj ukážku.</p>
+          <GoalsPicker trialHref={trialHref} signupEnabled={signupEnabled} />
         </div>
       </section>
 
@@ -201,19 +238,30 @@ export default function LandingPage() {
             <p className="eyebrow" style={{ justifyContent: 'center' }}>
               Ďalší krok
             </p>
-            <h2>15–20 minút, ktoré Vám môžu vrátiť hodiny každý týždeň.</h2>
+            <h2>
+              {signupEnabled
+                ? '14 dní zadarmo. Bez karty. Bez záväzku.'
+                : '15–20 minút, ktoré Vám môžu vrátiť hodiny každý týždeň.'}
+            </h2>
             <p className="sub">
-              Demo vedie zakladateľ — uvidíte systém na príkladoch z Vašej praxe a odídete s konkrétnymi krokmi. S nami alebo aj bez nás.
+              {signupEnabled
+                ? 'Založíte kanceláriu na pláne Start. Po skončení skúšky sa nič neúčtuje. Ak chcete najprv vidieť systém na príkladoch z Vašej praxe, dohodnite si ukážku.'
+                : 'Ukážku vedie zakladateľ — uvidíte systém na príkladoch z Vašej praxe a odídete s konkrétnymi krokmi. S nami alebo aj bez nás.'}
             </p>
             <div className="cta-row-split">
-              <a className="btn btn-lg" href={CALENDLY_DEMO_URL} target="_blank" rel="noopener noreferrer">
-                Rezervovať demo zdarma
+              <a
+                className="btn btn-lg"
+                href={primaryHref}
+                {...(primaryExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+              >
+                {signupEnabled ? TRIAL_CTA_LABEL.replace(' →', '') : 'Rezervovať demo zdarma'}
               </a>
               <a className="btn btn-lg btn-ghost" href="#cennik">
                 Pozrieť cenník
               </a>
             </div>
-            <p className="micro">Žiadna zmluva. Žiadny predajný tlak.</p>
+            {signupEnabled && <DemoSecondary utm="final_demo" />}
+            <p className="micro">{signupEnabled ? 'Žiadna zmluva. Žiadna platobná karta.' : 'Žiadna zmluva. Žiadny predajný tlak.'}</p>
           </div>
         </div>
       </section>
@@ -228,7 +276,7 @@ export default function LandingPage() {
         </div>
       </footer>
 
-      <StickyCta />
+      <StickyCta trialHref={trialHref} signupEnabled={signupEnabled} />
     </>
   )
 }

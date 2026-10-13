@@ -17,13 +17,15 @@ export function isWebPricingV2Enabled(env: Env = process.env): boolean {
 }
 
 /**
- * CTA vedú do registrácie v CRM LEN pri výslovnom `PRICING_V2_SIGNUP_ENABLED=true|1|on`
- * (až keď existujú Stripe ceny, CRM checkout a funnel zachováva plán). Do tej doby všetky CTA vedú na demo,
- * takže zákazník nikdy nepríde z webu do CRM s inou cenou, než videl.
+ * Primárne nákupné CTA vedú do 14-dňovej skúšky v CRM (`/register`, plán Start, bez karty) PREDVOLENE.
+ * Calendly ostáva len ako vedľajší odkaz. Núdzový vypínač: výslovné `PRICING_V2_SIGNUP_ENABLED=false`
+ * (alebo `0` / `off` / `no`) — vtedy všetky primárne CTA idú na demo, aby web neposielal ľudí
+ * na rozbitú registráciu. Samotné založenie kancelárie v CRM ostáva za `SELF_SERVE_SIGNUP_ENABLED`
+ * (fail-closed); `/register` pri vypnutej vlajke ukáže zatvorenú stránku, nie fiktívny trial.
  */
 export function isWebSignupEnabled(env: Env = process.env): boolean {
   const raw = env.PRICING_V2_SIGNUP_ENABLED?.trim().toLowerCase()
-  return raw === 'true' || raw === '1' || raw === 'on'
+  return !(raw === 'false' || raw === '0' || raw === 'off' || raw === 'no')
 }
 
 /** `null` = legacy výstup (len pri výslovnom vypnutí). */

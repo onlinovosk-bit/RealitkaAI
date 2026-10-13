@@ -490,7 +490,7 @@ function PricingModalV2({ source, view }: { source: string; view: PricingV2View 
       <div style={{ fontSize: 15, color: 'rgba(255,255,255,.55)', marginBottom: 4 }}>{band.grossLabel}</div>
       <div style={{ fontSize: 13, color: 'rgba(255,255,255,.45)', marginBottom: 16 }}>{band.annualLabel}</div>
       <p style={{ color: 'rgba(255,255,255,.55)', fontSize: 14, lineHeight: 1.6, marginBottom: 16 }}>
-        {band.creditsLabel}. {band.ctaIsDemo ? 'Aktiváciu a presný postup dohodneme na krátkom deme.' : 'Kanceláriu založíte v aplikácii, platba prebehne tam.'}
+        {band.creditsLabel}. {band.ctaIsDemo ? 'Aktiváciu a presný postup dohodneme na krátkom deme.' : '14 dní zadarmo, bez platobnej karty. Kanceláriu založíte v aplikácii.'}
       </p>
       <a
         href={band.ctaHref}
@@ -504,6 +504,19 @@ function PricingModalV2({ source, view }: { source: string; view: PricingV2View 
       >
         {band.ctaLabel}
       </a>
+      {!band.ctaIsDemo && (
+        <a
+          href={band.demoHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: 'block', marginTop: 12, textAlign: 'center',
+            color: 'rgba(255,255,255,.65)', fontSize: 14, textDecoration: 'underline',
+          }}
+        >
+          {band.demoLabel}
+        </a>
+      )}
     </div>
   )
 }

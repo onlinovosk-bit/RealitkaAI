@@ -1,4 +1,4 @@
-import type { PricingV2View } from '../../lib/pricing-v2-view'
+import { DEMO_SECONDARY_LABEL, type PricingV2View } from '../../lib/pricing-v2-view'
 import PricingV2Cta from './PricingV2Cta'
 
 /**
@@ -44,6 +44,16 @@ export default function PricingSectionV2({ view }: { view: PricingV2View }) {
                 primary
                 isDemo={band.ctaIsDemo}
               />
+              {!band.ctaIsDemo && (
+                <a
+                  className="cta-secondary"
+                  href={band.demoHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {band.demoLabel}
+                </a>
+              )}
             </article>
           ))}
         </div>
@@ -74,7 +84,22 @@ export default function PricingSectionV2({ view }: { view: PricingV2View }) {
               </div>
             ))}
           </div>
-          <PricingV2Cta href={view.packsCtaHref} label="Založiť kanceláriu a pridať balík →" planId="packs" />
+          <PricingV2Cta
+            href={view.packsCtaHref}
+            label={view.packsCtaLabel}
+            planId="packs"
+            isDemo={view.packsCtaIsDemo}
+          />
+          {!view.packsCtaIsDemo && (
+            <a
+              className="cta-secondary"
+              href={view.packsDemoHref}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {DEMO_SECONDARY_LABEL}
+            </a>
+          )}
         </div>
         )}
 

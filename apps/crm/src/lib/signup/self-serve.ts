@@ -17,6 +17,9 @@ export type SelfServePlanIntent = (typeof SELF_SERVE_PLAN_INTENTS)[number];
 
 export const SELF_SERVE_METADATA_FLAG = "self_serve_signup";
 
+/** Vedľajší odkaz na ukážku, keď samoobslužná skúška nie je otvorená. */
+export const SELF_SERVE_DEMO_CALENDLY_URL = "https://calendly.com/revoliscrm/30min";
+
 type Env = Record<string, string | undefined>;
 
 /** Zapína len výslovné `true` / `1` / `on`. */

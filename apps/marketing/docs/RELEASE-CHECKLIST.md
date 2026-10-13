@@ -6,10 +6,10 @@
 
 - [ ] `npm run build` v `apps/marketing` — zelený
 - [ ] Cenník na `/` zobrazuje cenník v2 bez DPH s viditeľnou cenou s DPH (Start 25 / Team 60 / Kancelária 149 / Sieť od 349 €) a kredity 25 / 60 / 120 / 175; zdroj `apps/crm/src/lib/pricing-v2.ts`. Staré seat ceny (Solo 79 / Team 71 / Office 63 €) sa vrátia len pri výslovnom `PRICING_V2_ENABLED=false`. Žiadny odkaz na Lemon Squeezy.
-- [ ] CTA na cenníku vedú na demo; do registrácie v CRM až po `PRICING_V2_SIGNUP_ENABLED=true` (Stripe ceny + funnel).
+- [ ] Primárne CTA (hero, nav, sticky, cenník vrátane Siete) vedú na `{CRM}/register?pricing=v2&plan=…` (hero/nav/sticky = Start). Calendly len ako „Dohodnite si ukážku“. Núdzový vypínač: `PRICING_V2_SIGNUP_ENABLED=false`.
 - [ ] Žiadny fake social proof (340+ kancelárií, vymyslené štatistiky, Smolko mená)
 - [ ] Case study: anonymná RK z Prešova (nie konkrétna značka)
-- [ ] Primárny CTA: Calendly demo (`calendly.com/revoliscrm/30min`)
+- [ ] Primárny CTA: 14 dní zadarmo → `/register` (Start, bez karty); Calendly len vedľajší odkaz
 - [ ] Checkout CTA sa zobrazí **iba** ak sú nastavené `STRIPE_PRICE_*_SEAT` env v marketing projekte
 - [ ] `vercel.json` nebol menený v tomto PR
 - [ ] CI zelené na PR

@@ -41,6 +41,12 @@
 .landing-v2 .btn-lg{padding:15px 28px;font-size:18px}
 .landing-v2 .btn-ghost{background:transparent;border:1px solid var(--line);color:var(--text)}
 .landing-v2 .btn-ghost:hover{background:var(--surface-2)}
+.landing-v2 .cta-secondary{display:inline-block;margin-top:10px;font-size:15px;color:var(--muted);text-decoration:underline;text-underline-offset:3px;background:none;border:none;font-weight:500}
+.landing-v2 .cta-secondary:hover{color:var(--text)}
+.landing-v2 .nav-cta{display:flex;align-items:center;gap:14px}
+.landing-v2 header .cta-secondary{margin-top:0;font-size:14px}
+.landing-v2 .plan .cta-secondary,.landing-v2 .cockpit-card .cta-secondary{display:block;text-align:center;width:100%}
+.landing-v2 .sticky-cta .cta-secondary{display:block;text-align:center;width:100%;margin-top:8px}
 
 .landing-v2 .hero{padding:70px 0 30px;position:relative;overflow:hidden}
 .landing-v2 .hero::after{content:"";position:absolute;inset:auto -20% -60% -20%;height:380px;background:radial-gradient(50% 100% at 50% 100%,rgba(27,79,138,.16),transparent 70%);pointer-events:none}
@@ -169,7 +175,7 @@ input[type=range]:focus-visible{outline:2px solid var(--violet);outline-offset:4
 .landing-v2 .final{text-align:center;border:1px solid var(--line);border-radius:20px;background:radial-gradient(60% 120% at 50% 0%,var(--violet-dim),var(--surface) 70%);padding:60px 24px;margin-bottom:30px}
 .landing-v2 .final h2{max-width:24ch;margin:14px auto 10px}
 .landing-v2 .final .sub{margin:0 auto 26px}
-.landing-v2 footer{border-top:1px solid var(--line);padding:26px 0 110px;font-family:var(--mono);font-size:15.5px;color:var(--muted)}
+.landing-v2 footer{border-top:1px solid var(--line);padding:26px 0 130px;font-family:var(--mono);font-size:15.5px;color:var(--muted)}
 .landing-v2 footer .wrap{display:flex;flex-wrap:wrap;gap:8px 22px;justify-content:space-between}
 .landing-v2 footer a{color:var(--muted)}
 .landing-v2 .sticky-cta{position:fixed;left:0;right:0;bottom:0;z-index:60;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:rgba(11,10,18,.92);backdrop-filter:blur(10px);border-top:1px solid var(--line);transform:translateY(100%);transition:transform .25s ease}
@@ -201,6 +207,8 @@ input[type=range]:focus-visible{outline:2px solid var(--violet);outline-offset:4
      (pri zvacsenom fonte presahovali viewport o 5px). Uzsi padding staci. */
   .landing-v2 header .btn{padding:10px 14px;font-size:17px}
   .landing-v2 .nav{gap:10px}
+  .landing-v2 .nav-cta{gap:8px}
+  .landing-v2 header .cta-secondary{display:none}
 }
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none !important;transition:none !important}

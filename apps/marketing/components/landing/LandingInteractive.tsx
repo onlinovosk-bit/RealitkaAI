@@ -2,6 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import { CALENDLY_DEMO_URL, calendlyHref } from '../../lib/calendly'
+import { DEMO_SECONDARY_LABEL, TRIAL_CTA_LABEL } from '../../lib/pricing-v2-view'
+
+export type LandingCtaProps = {
+  trialHref: string
+  signupEnabled: boolean
+}
 
 declare global {
   interface Window {
@@ -117,7 +123,7 @@ export function ProductMock() {
   )
 }
 
-export function LossCalculator() {
+export function LossCalculator({ trialHref, signupEnabled }: LandingCtaProps) {
   const [dop, setDop] = useState(60)
   const [cas, setCas] = useState(120)
   const [kon, setKon] = useState(8)
@@ -166,13 +172,22 @@ export function LossCalculator() {
             </p>
             <a
               className="btn"
-              href={calendlyHref('calc_fast')}
-              target="_blank"
-              rel="noopener noreferrer"
+              href={signupEnabled ? trialHref : calendlyHref('calc_fast')}
+              {...(!signupEnabled ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
               onClick={() => window.gtag?.('event', 'landing_cta_click', { position: 'calc_fast' })}
             >
-              Rezervovať demo →
+              {signupEnabled ? TRIAL_CTA_LABEL : 'Rezervovať demo →'}
             </a>
+            {signupEnabled && (
+              <a
+                className="cta-secondary"
+                href={calendlyHref('calc_fast_demo')}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {DEMO_SECONDARY_LABEL}
+              </a>
+            )}
           </div>
         ) : (
           <div>
@@ -194,13 +209,22 @@ export function LossCalculator() {
             </div>
             <a
               className="btn"
-              href={calendlyHref(`calc_loss_${loss}`)}
-              target="_blank"
-              rel="noopener noreferrer"
+              href={signupEnabled ? trialHref : calendlyHref(`calc_loss_${loss}`)}
+              {...(!signupEnabled ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
               onClick={() => window.gtag?.('event', 'landing_cta_click', { position: 'calc_loss' })}
             >
-              Chcem tie peniaze späť → demo
+              {signupEnabled ? TRIAL_CTA_LABEL : 'Chcem tie peniaze späť → demo'}
             </a>
+            {signupEnabled && (
+              <a
+                className="cta-secondary"
+                href={calendlyHref(`calc_loss_demo_${loss}`)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {DEMO_SECONDARY_LABEL}
+              </a>
+            )}
           </div>
         )}
       </div>
@@ -211,17 +235,18 @@ export function LossCalculator() {
   )
 }
 
-export function GoalsPicker() {
+export function GoalsPicker({ trialHref, signupEnabled }: LandingCtaProps) {
   const [picked, setPicked] = useState<string[]>([])
 
   function toggle(key: string) {
     setPicked((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]))
   }
 
-  const goalHref =
+  const goalDemoHref =
     picked.length > 0
       ? calendlyHref(`goals_${picked.map((g) => g.toLowerCase().replace(/[^a-z0-9]+/g, '-')).join('_')}`)
       : CALENDLY_DEMO_URL
+  const goalPrimaryHref = signupEnabled ? trialHref : goalDemoHref
 
   return (
     <>
@@ -248,25 +273,34 @@ export function GoalsPicker() {
       {picked.length > 0 && (
         <>
           <div className="goal-result show">
-            Vybrané: <b>{picked.join(' · ')}</b>. Spomeň to pri rezervácii — demo postavíme presne na tieto ciele.
+            Vybrané: <b>{picked.join(' · ')}</b>. Podľa týchto cieľov Vám pripravíme skúšku aj ukážku.
           </div>
           <a
             className="btn"
-            href={goalHref}
-            target="_blank"
-            rel="noopener noreferrer"
+            href={goalPrimaryHref}
+            {...(!signupEnabled ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
             style={{ marginTop: 14 }}
             onClick={() => window.gtag?.('event', 'landing_cta_click', { position: 'goals' })}
           >
-            Rezervovať demo na tieto ciele
+            {signupEnabled ? TRIAL_CTA_LABEL : 'Rezervovať demo na tieto ciele'}
           </a>
+          {signupEnabled && (
+            <a
+              className="cta-secondary"
+              href={goalDemoHref}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {DEMO_SECONDARY_LABEL}
+            </a>
+          )}
         </>
       )}
     </>
   )
 }
 
-export function StickyCta() {
+export function StickyCta({ trialHref, signupEnabled }: LandingCtaProps) {
   const [show, setShow] = useState(false)
 
   useEffect(() => {
@@ -293,13 +327,22 @@ export function StickyCta() {
     <div className={`sticky-cta${show ? ' show' : ''}`}>
       <a
         className="btn"
-        href={calendlyHref('sticky')}
-        target="_blank"
-        rel="noopener noreferrer"
+        href={signupEnabled ? trialHref : calendlyHref('sticky')}
+        {...(!signupEnabled ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
         onClick={() => window.gtag?.('event', 'landing_cta_click', { position: 'sticky' })}
       >
-        Rezervovať demo zdarma →
+        {signupEnabled ? TRIAL_CTA_LABEL : 'Rezervovať demo zdarma →'}
       </a>
+      {signupEnabled && (
+        <a
+          className="cta-secondary"
+          href={calendlyHref('sticky_demo')}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {DEMO_SECONDARY_LABEL}
+        </a>
+      )}
     </div>
   )
 }

@@ -7,7 +7,7 @@ Stav (2026-10-08): **migrácie aplikované na PROD (po výslovnom GO foundera), 
 - C: malý skúšobný grant kreditov — **výška nerozhodnutá** → `SELF_SERVE_TRIAL_CREDITS` (predvolene 0).
 
 ## Tok
-1. `/register` (len pri `SELF_SERVE_SIGNUP_ENABLED=true`): honeypot, súhlas, rate limit (IP 10/h, e-mail 3/h), `auth.signUp` s metadátami. **Žiadny zápis do `agencies`/`profiles`.**
+1. `/register` (len pri `SELF_SERVE_SIGNUP_ENABLED=true`): honeypot, súhlas, rate limit (IP 10/h, e-mail 3/h), `auth.signUp` s metadátami. **Žiadny zápis do `agencies`/`profiles`.** Pri vypnutej vlajke stránka **neukáže** trial formulár — zatvorený stav + Calendly „Dohodnite si ukážku“ + prihlásenie + pozvánka v `<details>` (aby marketingové CTA neskončilo na rozbitom „chýba bezpečné založenie agentúry“).
 2. Potvrdzovací e-mail → `/auth/callback` alebo `/auth/confirm`.
 3. Po OVERENÍ e-mailu `provisionAfterEmailConfirmed` volá `bootstrap_self_serve_agency` (service_role).
 4. SQL funkcia znova overuje `auth.users.email_confirmed_at`, súhlas, nikdy neprepíše existujúci profil, je idempotentná (advisory lock na používateľa), pozvaný e-mail (`invite_exists`) agentúru nezakladá.
