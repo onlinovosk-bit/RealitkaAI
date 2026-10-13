@@ -23,15 +23,15 @@ from urllib.request import Request, urlopen
 CATALOG_PATH = Path(__file__).with_name("revolis-stripe-v2-catalog.json")
 API = "https://api.stripe.com/v1"
 EXPECTED = {
-    "start_month": (2500, 20, 1, 1),
-    "team_month": (6000, 50, 2, 6),
-    "office_month": (14900, 100, 7, 25),
-    "network_month": (34900, 150, 26, None),
+    "start_month": (2500, 25, 1, 1),
+    "team_month": (6000, 60, 2, 6),
+    "office_month": (14900, 120, 7, 25),
+    "network_month": (34900, 175, 26, None),
     # Rocne ceny planov: 12 x mesacna, druha Price na tom istom produkte (interval year).
-    "start_year": (30000, 20, 1, 1),
-    "team_year": (72000, 50, 2, 6),
-    "office_year": (178800, 100, 7, 25),
-    "network_year": (418800, 150, 26, None),
+    "start_year": (30000, 25, 1, 1),
+    "team_year": (72000, 60, 2, 6),
+    "office_year": (178800, 120, 7, 25),
+    "network_year": (418800, 175, 26, None),
     "credits_60_month": (3400, 60),
     "credits_120_month": (6200, 120),
     "credits_180_month": (8600, 180),
