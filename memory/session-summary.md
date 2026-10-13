@@ -1,3 +1,13 @@
+## Session 2026-10-13 (GO VERIFY-PROD)
+### Dokončené
+- `docs/ops/prod-packages/VERIFY-PROD-2026-10-13.md`: PROD (iba SELECT) — balík A už aplikovaný, `verify-after.sql` 27/27 ok; cieľ balíka B (agency_id IS NULL politiky) už zatvorený.
+### Rozpracované / Pending
+- Zostávajúce B nálezy (rls_audit_snapshot, secdef search_path, match_* anon, activities NULL agency_id) — každý vlastné GO.
+### Kľúčové súbory zmenené
+- docs/ops/prod-packages/VERIFY-PROD-2026-10-13.md: dôkaz.
+### Ďalší krok
+GO na read-only mapu + balík pre zostávajúce B nálezy.
+
 ## Session 2026-10-09 (AGENTIC-WAVES plán, Vlna 0 + Vlna 1 zmergovaná)
 ### Dokončené
 - `docs/plans/2026-10-09-agentic-waves.md`: plán vĺn WP-1…WP-10 + výsledky Vlny 0 (4 audity P01, výskum trhu cez WebSearch).
