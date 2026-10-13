@@ -4,12 +4,12 @@
 - Nález: 33 SECURITY DEFINER funkcií; `match_leads/match_properties/rls_audit_snapshot` + 4 trigger funkcie bez volajúceho → REVOKE v C. `add_price_point`, `compute_bri_score(_v2)`, `record_brief_*`, cron RPC volá session/anon klient → balík D (kód + SQL spolu).
 - `activities`: 194 riadkov bez agency_id, 7 priraditeľných, 187 sirotských (nemažú sa).
 ### Rozpracované / Pending
-- GO REST-CLOSE (aplikácia C). Skripty nespustené ani lokálne (lokálny Postgres test zamietnutý) — overené čítaním + PROD metadátami.
+- Balík C APLIKOVANÝ v PROD na `GO REST-CLOSE`, verify-after 19/19 ok (viď `DOKAZ-APPLY-2026-10-13.md`). Lokálny test skriptov nebol (zamietnutý); overené až PROD behom.
 - Balík D (kód+SQL), rozhodnutie o verejnosti `portal_listings` (`profile_id IS NULL`), osud 187 sirotských activities.
 ### Kľúčové súbory zmenené
 - docs/ops/prod-packages/rls-rest-close/*: balík C.
 ### Ďalší krok
-GO REST-CLOSE.
+Balík D (kód + SQL: add_price_point, compute_bri_*, record_brief_*, cron RPC, search_path).
 
 ## Session 2026-10-13 (GO VERIFY-PROD)
 ### Dokončené
