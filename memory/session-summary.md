@@ -1,3 +1,16 @@
+## Session 2026-10-13 (GO MAP-B-REST)
+### Dokončené
+- `docs/ops/prod-packages/rls-rest-close/`: mapa ciest + balík C (verify-before/apply/verify-after/rollback), NEAPLIKOVANÝ; PROD čítaný iba SELECT-mi.
+- Nález: 33 SECURITY DEFINER funkcií; `match_leads/match_properties/rls_audit_snapshot` + 4 trigger funkcie bez volajúceho → REVOKE v C. `add_price_point`, `compute_bri_score(_v2)`, `record_brief_*`, cron RPC volá session/anon klient → balík D (kód + SQL spolu).
+- `activities`: 194 riadkov bez agency_id, 7 priraditeľných, 187 sirotských (nemažú sa).
+### Rozpracované / Pending
+- GO REST-CLOSE (aplikácia C). Skripty nespustené ani lokálne (lokálny Postgres test zamietnutý) — overené čítaním + PROD metadátami.
+- Balík D (kód+SQL), rozhodnutie o verejnosti `portal_listings` (`profile_id IS NULL`), osud 187 sirotských activities.
+### Kľúčové súbory zmenené
+- docs/ops/prod-packages/rls-rest-close/*: balík C.
+### Ďalší krok
+GO REST-CLOSE.
+
 ## Session 2026-10-13 (GO VERIFY-PROD)
 ### Dokončené
 - `docs/ops/prod-packages/VERIFY-PROD-2026-10-13.md`: PROD (iba SELECT) — balík A už aplikovaný, `verify-after.sql` 27/27 ok; cieľ balíka B (agency_id IS NULL politiky) už zatvorený.
