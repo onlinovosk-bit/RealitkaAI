@@ -1,3 +1,15 @@
+## Session 2026-10-14 (GO BALIK-D)
+### Dokončené
+- PR #846 (draft): 7 SECURITY DEFINER RPC volané cez service role (price-trail, BRI v1/v2, brief tracking, 2 cron-y) + balík D `docs/ops/prod-packages/secdef-callers-close/` (SQL NEAPLIKOVANÝ). tsc 52→52 (žiadna v zmenených súboroch), vitest 200/200, ratchet 0 nových.
+- PROD (SELECT): stav pred = EXECUTE anon+authenticated na všetkých 7, bez search_path, bez DB-interných volajúcich; Vercel Production má SUPABASE_SERVICE_ROLE_KEY.
+### Rozpracované / Pending
+- Poradie: merge #846 (zelené CI) → Vercel Ready → GO D-APPLY.
+- search_path na už zatvorených funkciách (treba prejsť telá); arbitrage-scan číta arbitrage_config anon klientom (0 riadkov, existujúci stav).
+### Kľúčové súbory zmenené
+- apps/crm/src/lib/{price-trail,bri,events}/…, 4 route: rpc cez createAdminClient.
+### Ďalší krok
+Merge #846 po zelenom CI, potom GO D-APPLY.
+
 ## Session 2026-10-13 (GO MAP-B-REST)
 ### Dokončené
 - `docs/ops/prod-packages/rls-rest-close/`: mapa ciest + balík C (verify-before/apply/verify-after/rollback), NEAPLIKOVANÝ; PROD čítaný iba SELECT-mi.
