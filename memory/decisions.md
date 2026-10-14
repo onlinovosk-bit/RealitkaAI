@@ -1,5 +1,13 @@
 # Critical Decisions Log
 
+## 2026-10-12 — INI-5: plán testu s kontrolnou skupinou pre PMax (VALIDATE, nespustené)
+**GO foundera:** „A (odporúčam): nechať tROAS 600 % a pripraviť test s kontrolnou skupinou (INI-5). Nič sa nemení v Ads.“ (po „merguj 834“; #834 zmergovaný ako `e9ece0f`). **Brána Ústavy v2:** Q1 = NIE → strop VALIDATE; Q4 variant: Q8 „príliš skoro“ (stratégia: „v Q4 nie“) → BACKLOG; okno 2027: timing nie je veto. Záver: **BACKLOG pre Revolis, VALIDATE pre onlinovo.sk**; VALIDATE nedáva povolenie meniť Ads. Stripe krok C má prednosť.
+**Výstup:** `docs/onlinovo/2026-10-09-inc5-pmax-holdout-plan.md` (len dokument). Nič sa nezmenilo v Ads, Shoptete, LeadHube ani GA4.
+**Odporúčanie:** pravidlá zapísať teraz, geo-holdout (PSČ po dvoch číslicach, 12 párov, T = PMax vypnutý) spustiť najskôr 1. 2. 2027 (6 týždňov), pravdepodobnejšie apr–máj 2027 podľa brány sily (MDE ≤ 40 %); Q4 variant 19. 10. – 8. 11. neodporúčam (rozpor so stratégiou „v Q4 nie“, pravidlo 10; zasahuje brány INI-3 23. 11., INI-1 stop „tržby Google −15 %“, INI-5 stop a KPI).
+**Zistenia (merané z exportu 9. 10., nie z Ads):** 3 815 objednávok, všetky na Slovensko; 24 jednotiek PSČ2, fakturačné a dodacie PSČ2 sa zhodujú v 99,6 %; A/A šum ≈ 1,1 × Poissonov (mimo vzorky 1,06–1,15); MDE pri 6 týždňoch a 4,4 obj./deň ≈ 36 %, pri 21 dňoch a 5,5 obj./deň ≈ 44 %; prah rentability d\* ≈ 40–69 % vybavených objednávok (CM2 7,7 / 9,97 / 11,96 €, c = 4,73 / 5,32 €). Test spoľahlivo odhalí len zjavne nerentabilný PMax (TRIM pri d = 10 % v 73–96 %, pri 25 % v 38–69 %); pri d ≈ 45–60 % skončí HOLD ≥ 90 %; KEEP až pri d ≈ 75 % a viac. Cena 6 týždňov ≈ +288 € (d = 25 %) až −675 € (d = 100 %) [základ sep 2026]. Očakávaná hodnota malá a neistá.
+**Postup:** 3 prieskumní agenti + kontrola (web, stránky Google sa cez proxy nepodarilo otvoriť → len súhrny vyhľadávania, MEDIUM/LOW), 2 kolá nezávislej kontroly (čísla, štatistika, súlad so stratégiou, formulácie); nálezy zapracované (hlavný: pôvodný Q4 návrh protirečil riadku stratégie „v Q4 nie“; opravené bázy ceny, pravidlá TRIM/HOLD/KEEP, kontroly úniku a zdravia K). Tretí posudok druhého kola (konzistencia) sa nedokončil.
+**Čaká na foundera:** „GO Q1“ / „GO Q4“ / „NIE“ (predvolené: plán ostáva návrhom, v Ads sa nič nemení). **Otvorené:** či Ads ponúka PSČ/okresy pre Slovensko a či vylúčenie spustí učenie (PPC správca, iba čítanie, do 18. 12.); objem 2027; CM2 2026; hodnota opakovaných nákupov. Stav VALIDATE, nie VERIFIED.
+
 ## 2026-10-09 — P23 strana GA4: audit 10 objednávok prešiel, atribúcia (VALIDATE)
 **GO foundera:** „GA4 pripojené“ (vlastnosť `293665616`). **Brána Ústavy v2:** Q1 = NIE → strop VALIDATE.
 **Výstup:** `docs/onlinovo/2026-10-09-p23-ga4-audit.md`. Len čítanie.
