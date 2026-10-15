@@ -30,7 +30,7 @@ Jedna voľba. Ďalší kód bez nej len rozmnoží cenníky.
 | B. Zapnúť v2 katalóg | Človek vytvorí ceny podľa `docs/pricing/2026-10-05-stripe-v2-priprava.md` a potom read-only overí účet | agent nespúšťa `--test-create` na live kľúč a nezapisuje env |
 | C. Najprv znova odmerať | Restricted live kľúč len na Prices: Read, `bash scripts/ops/stripe-verify-prices.sh`, výstup do nového reportu | kľúč nepatri do chatu, do argumentu ani do gitu |
 
-**Odporúčanie: C, potom až A alebo B.** Septemberový 0/9 a októbrový v2 manifest sa nesmú miešať do jedného „vytvor seat ceny“. Starý seat trojica a v2 desiatka sú iné kľúče. Ktorý model sa predáva, vie povedať len founder.
+**Odporúčanie (2026-10-15, agent):** najprv **C**. Ak nový read-only výpis stále neukáže seat ani v2 Price ID, zvoliť **A** a samoobslužný checkout nechať zatvorený. **B** až keď founder pomenuje v2 ako predávaný cenník a je tu konkrétny klient, ktorý dnes zaplatí kartou. Septemberový 0/9 a októbrový v2 manifest sú dva rôzne kľúče. Seat trojicu podľa starého kitu nezakladať.
 
 ## Checklist, keď padne voľba B
 

@@ -1,3 +1,13 @@
+## Session 2026-10-15 (odporúčanie checkout A/B/C)
+### Dokončené
+- Odporúčanie zapísané do `docs/reports/2026-10-15-checkout-env-01-founder-checklist.md`: najprv C (read-only Stripe verify). Ak výpis stále nemá seat ani v2 Price ID, zvoliť A. B až s pomenovaným v2 cenníkom a klientom, ktorý dnes platí kartou.
+### Rozpracované / Pending
+- Founder ešte nevybral A/B/C. Live Stripe a Vercel env ostávajú nečítané.
+### Kľúčové súbory zmenené
+- `docs/reports/2026-10-15-checkout-env-01-founder-checklist.md`: spresnené odporúčanie.
+### Ďalší krok
+Founder spustí `bash scripts/ops/stripe-verify-prices.sh` s restricted kľúčom na čítanie a výstup uloží do nového reportu. Kľúč nepatri do chatu.
+
 ## Session 2026-10-15 (API Cost Governor v1 + checkout checklist)
 ### Dokončené
 - `packages/bus-core/src/cost-governor.ts`: ALLOW/WARN/DOWNGRADE/ESCALATE/BLOCK, prázdny default katalóg, odhad oddelený od actual.
