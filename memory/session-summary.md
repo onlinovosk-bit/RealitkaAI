@@ -1,3 +1,22 @@
+## Session 2026-10-15 (API Cost Governor v1 + checkout checklist)
+### Dokončené
+- `packages/bus-core/src/cost-governor.ts`: ALLOW/WARN/DOWNGRADE/ESCALATE/BLOCK, prázdny default katalóg, odhad oddelený od actual.
+- `scripts/bus/consume.ts`: CLI brána pred plateným spawnom. Knižničný `runConsumer` bez `costGate` sa nemení.
+- Testy: 53/53 a plný bus beh 227/227 pod `NODE_OPTIONS=--experimental-strip-types` (Node v22.14.0). `npm run bus:test` na tomto Node bez flagu padá na `.ts` extension (exit 1). `tsc -p packages/bus-core/tsconfig.json --noEmit` exit 0.
+- `docs/reports/2026-10-15-api-cost-governor-v1.md`
+- `docs/reports/2026-10-15-checkout-env-01-founder-checklist.md` — read-only, žiadne Price ID.
+### Rozpracované / Pending
+- CRM LLM cesty Governorom nepokryté.
+- File ledger nie je bezpečný pre dva OS procesy.
+- CHECKOUT-ENV-01 čaká na foundera (voľba A/B/C). Live Stripe a Vercel env dnes nečítané.
+- Merge a deploy nerobené.
+### Kľúčové súbory zmenené
+- `packages/bus-core/src/cost-governor.ts`: nová USD politika.
+- `scripts/bus/consume.ts`: costGate pred executorom.
+- `memory/decisions.md`: engineering justification.
+### Ďalší krok
+Founder zvolí A (checkout zostane zatvorený), B (človek založí v2 ceny) alebo C (najprv read-only Stripe verify). Odporúčanie je C. Samostatné GO. Agent ceny nevytvára.
+
 ## Session 2026-10-09 (P23 strana GA4)
 ### Dokončené
 - `docs/onlinovo/2026-10-09-p23-ga4-audit.md`: audit 10 objednávok 10/10 (GA4 = báza C na cent), mesačná atribúcia Shoptet / GA4 / Ads, Meta ROAS z GA4, dôsledky.
