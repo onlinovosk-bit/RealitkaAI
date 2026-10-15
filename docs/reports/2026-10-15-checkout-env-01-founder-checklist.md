@@ -20,6 +20,8 @@
 
 Kým toto nie sú čerstvé výpisy, checkout **nie je** PRODUCTION-VERIFIED a CHECKOUT-ENV-01 **nie je** zatvorený.
 
+**Pokus C, 2026-10-15:** `bash scripts/ops/stripe-verify-prices.sh` skončil exit **2**. Restricted live kľúč v tomto prostredí nie je. HTTP na Stripe nešlo. Počty cien sú neznáme. Detail: `docs/reports/2026-10-15-stripe-verify-prices-readonly.md`. B sa neaktivuje. Kým nie je live výpis, odporúčanie ostáva A (checkout zatvorený).
+
 ## Rozhodnutie, ktoré treba od foundera
 
 Jedna voľba. Ďalší kód bez nej len rozmnoží cenníky.

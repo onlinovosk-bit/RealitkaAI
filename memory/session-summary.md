@@ -1,3 +1,13 @@
+## Session 2026-10-15 (Stripe verify C — STOP, kľúč chýba)
+### Dokončené
+- `docs/reports/2026-10-15-stripe-verify-prices-readonly.md`: `env -u STRIPE_SECRET_KEY bash scripts/ops/stripe-verify-prices.sh` exit 2. Žiadny GET na Stripe. Restricted `rk_live_` kľúč nie je v procese ani v env súboroch. `apps/crm/.env.local` má len triedu `sk_test` a nespúšťal sa. Stripe MCP needsAuth, nepoužitý.
+### Rozpracované / Pending
+- Live počty seat a v2 cien neznáme. Vercel env nečítaný. B neaktivované. Odporúčanie kým nie je výpis: A.
+### Kľúčové súbory zmenené
+- `docs/reports/2026-10-15-stripe-verify-prices-readonly.md`: STOP bez tajomstva.
+### Ďalší krok
+Restricted kľúč (Prices: Read) musí byť v prostredí inak než vložením do chatu. Potom znova ten istý skript.
+
 ## Session 2026-10-15 (odporúčanie checkout A/B/C)
 ### Dokončené
 - Odporúčanie zapísané do `docs/reports/2026-10-15-checkout-env-01-founder-checklist.md`: najprv C (read-only Stripe verify). Ak výpis stále nemá seat ani v2 Price ID, zvoliť A. B až s pomenovaným v2 cenníkom a klientom, ktorý dnes platí kartou.
