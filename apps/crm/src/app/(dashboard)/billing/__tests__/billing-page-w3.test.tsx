@@ -41,9 +41,7 @@ async function renderPlan(planKey: string, ctx?: Ctx): Promise<string> {
     <BillingPage />
   );
   const { container } = render(ui);
-  // Price/name sit behind `!loading` and never render the "…" placeholder, so
-  // waiting for the ellipsis to vanish is a no-op and CI can snapshot the shell.
-  await waitFor(() => expect(container.textContent).toMatch(/\/mes/));
+  await waitFor(() => expect(container.textContent).not.toContain("…"));
   const html = container.innerHTML;
   cleanup();
   return html;

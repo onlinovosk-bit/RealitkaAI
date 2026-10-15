@@ -1,6 +1,6 @@
 # Realvia `dump=headers` — cron auth + redakcia proxy hlavičiek
 
-**Stav:** IMPLEMENTED + TESTED (lokálne). CI — prvý beh padol na nesúvisiacom billing golden flake; retrigger. PRODUCTION — nie.
+**Stav:** IMPLEMENTED + TESTED (lokálne). CI — retrigger po revertovaní billing testu z tejto vetvy. PRODUCTION — nie.
 **Vetva:** `cursor/realvia-dump-headers-auth-479b`
 **Zdroj:** lokálny commit `7c2ee070d` (nikdy nepushnutý) portovaný na aktuálny `main`.
 **RAU route:** `GO_REQUIRED BUILD revolis` — founder zadal port + testy + jeden PR; merge/PROD sa nevykonáva.
@@ -30,7 +30,7 @@ Lokálny dôkaz 2026-10-15 (cwd `apps/crm`):
 - `npm run typecheck` — 54 chýb, baseline 54 (exit 0).
 - `npm run lint` — exit 0.
 
-CI `38744496009` a `38745886421`: Realvia PASS. Padol `billing-page-w3.test.tsx` (najprv golden dĺžka, potom `— /mes`) — `waitFor` na `…` je no-op, lebo placeholder pri `loading` nie je v DOM. Test-only: čakať na `/mes`. Žiadna zmena billing UI.
+CI `38744496009` a `38745886421`: Realvia PASS. Padol nesúvisiaci `billing-page-w3.test.tsx` (mimo scope). Billing test vrátený na `main`; ďalší fail sa tu neopravuje.
 
 ## RISKS
 
