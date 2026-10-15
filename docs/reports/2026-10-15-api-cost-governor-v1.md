@@ -172,5 +172,7 @@ Vybraná úloha je read-only rozhodovací balík: `docs/reports/2026-10-15-check
 ## 10. Status
 
 **CODE-IMPLEMENTED.** **TEST-PASS** na príkazoch v §4 s exit 0.  
-**Nie** DOCS-ONLY. **Nie** MERGED. **Nie** DEPLOYED. **Nie** PRODUCTION-VERIFIED.  
-PR stav doplní git až po pushi; do tohto odseku ho nedopisujem vopred.
+**Nie** DOCS-ONLY. **Nie** MERGED. **Nie** DEPLOYED. **Nie** PRODUCTION-VERIFIED.
+
+Commity na vetve: `12621ae1` (governor) a `4c54cced` (checklist).  
+PR: https://github.com/onlinovosk-bit/RealitkaAI/pull/847 — draft, base `main`, stav OPEN v čase zápisu (`gh pr view 847`). CI na tomto PR som nespúšťal a zelený stav netvrdím.

@@ -13,7 +13,7 @@ Founder GO: implementovať fail-closed USD bránu pred plateným AI volaním a p
 - **Expected outcome:** `bus:consume` bez platného kontraktu a snapshotu Claude nespustí. Existujúce testy `runConsumer` bez `costGate` ostávajú zelené. CRM cesty ostávajú nepokryté a sú tak označené.
 - **Related paths:** `packages/bus-core/src/cost-governor.ts`, `packages/bus-core/src/execution-cap.ts`, `scripts/bus/consume.ts`, `docs/reports/2026-10-15-api-cost-governor-v1.md`, `docs/architecture/l99-parked-concepts.md` P-MR
 - **Contradiction check:** none — P-MR (plný model router a produkčná cost telemetry) ostáva zaparkovaný. Toto GO povoľuje len BUS spawn. CRM sa neodomkýna.
-- **PR / vetva:** `cursor/api-cost-governor-v1-0b41`
+- **PR / vetva:** #847 · `cursor/api-cost-governor-v1-0b41` (draft, nemergované)
 
 **Ďalšia úloha v tom istom GO:** CHECKOUT-ENV-01 ostáva neuzavretý (kód seat + v2 stále čaká na Price ID; live Stripe dnes nečítaný). Výstup je read-only checklist `docs/reports/2026-10-15-checkout-env-01-founder-checklist.md`. Odporúčanie: najprv nový read-only verify (voľba C), nie hádanie seat cien.
 
