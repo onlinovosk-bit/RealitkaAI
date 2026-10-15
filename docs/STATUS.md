@@ -45,8 +45,8 @@ Cieľ: 10 bodov zadania 2026-10-15 — body 1, 2, 6 a 10 do pondelka 19. 10.
 - [x] 2 — UI nastavení ranného briefu, PR #852 (doručovanie blokuje `RESEND_API_KEY`)
 - [x] 6 — follow-up sweep zapisuje do `cron_runs` na každej ceste von, PR #853
 - [x] 10 — trial bez karty overený, ceny pripravené pre live (skript spúšťa founder)
-- [ ] 3 — plánovač Gmail pull v repozitári
-- [ ] 4 — plánovač Realvia fronty + opakovaný test exportu
+- [x] 3 — plánovač Gmail pull v repozitári (hodinovo + stopa pri vypnutí), PR #855
+- [x] 4 — plánovač Realvia fronty (hodinovo + denník), PR #856; export čaká na dodávateľa
 - [ ] 5 — rozsah importu
 - [ ] 7 — D1 extrakcia dopytu na PROD
 - [ ] 8 — D4 `DEMAND_MATCHING_ENABLED`
