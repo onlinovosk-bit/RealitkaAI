@@ -1,6 +1,6 @@
 # Realvia `dump=headers` — cron auth + redakcia proxy hlavičiek
 
-**Stav:** IMPLEMENTED + TESTED (lokálne). CI — po pushe. PRODUCTION — nie.
+**Stav:** IMPLEMENTED + TESTED (lokálne). CI — prvý beh padol na nesúvisiacom billing golden flake; retrigger. PRODUCTION — nie.
 **Vetva:** `cursor/realvia-dump-headers-auth-479b`
 **Zdroj:** lokálny commit `7c2ee070d` (nikdy nepushnutý) portovaný na aktuálny `main`.
 **RAU route:** `GO_REQUIRED BUILD revolis` — founder zadal port + testy + jeden PR; merge/PROD sa nevykonáva.
@@ -29,6 +29,8 @@ Lokálny dôkaz 2026-10-15 (cwd `apps/crm`):
 - Vitest 6 files / 29 tests passed (`validate`, `inboundDiagnostics`, route GET, 3 verification).
 - `npm run typecheck` — 54 chýb, baseline 54 (exit 0).
 - `npm run lint` — exit 0.
+
+CI run `38744496009` (head `376c658e`): Realvia testy PASS vrátane `realvia-dump-headers-auth.verification.test.ts`. Jediný fail: `billing-page-w3.test.tsx` golden (`11318` vs `11623` B) — súbor mimo tohto PR, na `main` po #849 zelený, lokálne 8/8 PASS. Retrigger bez zmeny billing kódu.
 
 ## RISKS
 
