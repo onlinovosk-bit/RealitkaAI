@@ -33,6 +33,7 @@ stav neposúva, ani keď „by to malo fungovať".
 | Forecast / pipeline € | ✅ | ❌ | ❌ | dosádza 180 000 € pri chýbajúcom rozpočte → nesmie sa zobrazovať ako fakt |
 | Gmail pull | ✅ | ✅ | ❓ | chýba plánovač v repozitári; externý cron neoverený |
 | Realvia fronta (worker) | ✅ | ✅ | ❓ | chýba plánovač v repozitári; externý cron neoverený |
+| **Import od zákazníka (CSV)** | ✅ | ✅ | ⚠️ | **Bod 5 (2026-10-15).** Rozsah zmapovaný v `master-data-sourcing-map.md` (Zhluk 1b): iba CSV, 2000 riadkov, 10 MB, deduplikácia podľa e-mailu. Na PROD cez sprievodcu **1 skúšobný job (3 riadky)**, cez portálový import **0 leadov za celý čas** — nevkladal `agency_id`, takže ho RLS zakaždým odmietol a chyba vyzerala ako zlý súbor. Opravené: `agency_id`, skutočný parser namiesto `line.split(",")`, chyby per riadok, strop na veľkosť súboru. `xlsx` a `vcf` boli štítky bez parsera — vypnuté s vysvetlením. Otvorené: XLSX parser, deduplikácia podľa telefónu. |
 | MCP server | kód (mock) | ❌ | ❌ | falošné dáta v pamäti |
 | Observability (healthz, alerty) | čiastočne | ❌ | ❌ | `healthz` vždy „ok“, bez Sentry |
 
