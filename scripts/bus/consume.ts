@@ -26,7 +26,7 @@
 
 import { execFile as execFileCallback, spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { mkdir, mkdtemp, readFile, rename, rm, writeFile, unlink } from "node:fs/promises";
 import { hostname, tmpdir } from "node:os";
 import path from "node:path";
@@ -52,6 +52,11 @@ import {
   reportedRefusals,
   validateOutgoing,
   withinWindow,
+  contractFromBusTask,
+  CostGovernor,
+  defaultGovernorConfig,
+  FileCostLedger,
+  parseGovernorConfig,
   type BusBox,
   type BusCapability,
   type BusEnvelope,
@@ -60,6 +65,7 @@ import {
   type BusValidationError,
   type ClaudeRunReport,
   type ConsumerRefusalCode,
+  type GovernorDecision,
   type ExecutionRecord,
 } from "../../packages/bus-core/src/index.ts";
 
@@ -421,6 +427,18 @@ export interface ConsumeOptions {
   repoCommit?: string;
   now?: () => Date;
   log?: (line: string) => void;
+  /** Model the executor will actually spawn. The governor never swaps it. */
+  model?: string;
+  /** Timeout the executor will actually use. */
+  timeoutMs?: number;
+  /**
+   * Paid-call authorization. The CLI always sets this. Library callers that
+   * substitute the executor (tests) do not, so a stub is not forced through
+   * a price snapshot.
+   */
+  costGate?: (input: { task: BusEnvelope; model: string; capabilityId: string; now: Date }) => Promise<GovernorDecision>;
+  /** Records provider usage after a call that was allowed. Must not invent a number. */
+  costSettle?: (input: { taskId: string; reservationId: string; actualCostUsd: number | null }) => Promise<void>;
 }
 
 export async function runConsumer(options: ConsumeOptions): Promise<ConsumeOutcome[]> {
@@ -613,6 +631,31 @@ async function processTask(task: BusEnvelope, ctx: ProcessContext): Promise<Cons
     }
   }
 
+  let reservationId: string | null = null;
+  if (ctx.costGate) {
+    let gate: GovernorDecision;
+    try {
+      gate = await ctx.costGate({
+        task,
+        model: ctx.model ?? "unspecified",
+        capabilityId: decision.capability.id,
+        now: ctx.now(),
+      });
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      return needsFounder(task, ctx, owner, "cost_governor", `ledger_or_policy_failure: ${reason}`);
+    }
+    if (gate.decision !== "ALLOW" && gate.decision !== "WARN") {
+      const suggestion = gate.suggested_model ? `; suggested ${gate.suggested_model.provider}/${gate.suggested_model.model}` : "";
+      return needsFounder(task, ctx, owner, "cost_governor", `${gate.decision} ${gate.code}: ${gate.reason}${suggestion}`);
+    }
+    if (!gate.reservation_id) {
+      return needsFounder(task, ctx, owner, "cost_governor", "ALLOW/WARN did not reserve a budget hold");
+    }
+    reservationId = gate.reservation_id;
+    if (gate.decision === "WARN") ctx.log(`WARN  ${task.id}: cost governor — ${gate.reason}`);
+  }
+
   const startedAt = ctx.now();
   const claimed: ExecutionRecord = {
     task_id: task.id,
@@ -649,6 +692,11 @@ async function processTask(task: BusEnvelope, ctx: ProcessContext): Promise<Cons
     await heartbeat.stop();
     const reason = error instanceof Error ? error.message : String(error);
 
+    if (reservationId) {
+      await settleActual(ctx, task.id, reservationId, null);
+      return needsFounder(task, ctx, owner, "cost_governor", `paid call ended without a confirmed retry (${reason})`);
+    }
+
     if (error instanceof ClaudeTimeoutError && !decision.capability.idempotent) {
       return needsFounder(task, ctx, owner, "execution_unknown", reason);
     }
@@ -670,8 +718,24 @@ async function processTask(task: BusEnvelope, ctx: ProcessContext): Promise<Cons
     updated_at: ctx.now().toISOString(),
   };
   await ctx.ledger.write(executed);
+  if (reservationId) await settleActual(ctx, task.id, reservationId, run.costUsd ?? null);
 
   return persistResult(task, ctx, decision.capability, executed, owner, run);
+}
+
+/**
+ * Actual cost comes only from the executor report. `null` stays null — it is
+ * not rewritten to the estimate and not rewritten to zero. A settle failure
+ * does not start another paid call.
+ */
+async function settleActual(ctx: ProcessContext, taskId: string, reservationId: string, actualCostUsd: number | null): Promise<void> {
+  if (!ctx.costSettle) return;
+  try {
+    await ctx.costSettle({ taskId, reservationId, actualCostUsd });
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    ctx.log(`WARN  cost settle failed for ${reservationId}: ${reason}`);
+  }
 }
 
 /** Park a task for the founder: recorded locally and reported on the bus. */
@@ -929,6 +993,76 @@ async function currentCommit(): Promise<string | undefined> {
   }
 }
 
+export function buildConsumerCostGate(options: {
+  model: string;
+  timeoutMs: number;
+  ledgerFile: string;
+  env?: NodeJS.ProcessEnv;
+  readText?: (file: string) => string;
+}): { costGate: NonNullable<ConsumeOptions["costGate"]>; costSettle: NonNullable<ConsumeOptions["costSettle"]> } {
+  const env = options.env ?? process.env;
+  const governor = governorFromEnv(env, options.ledgerFile, options.readText ?? ((file) => readFileSync(file, "utf8")));
+  return {
+    costGate: async ({ task, model, capabilityId, now }) => {
+      if (env.REVOLIS_COST_GOVERNOR_KILL === "1" || env.REVOLIS_COST_GOVERNOR_KILL === "true") {
+        return {
+          decision: "BLOCK",
+          code: "kill_switch",
+          reason: "REVOLIS_COST_GOVERNOR_KILL is set",
+          reservation_id: null,
+          estimated_cost_usd: null,
+          actual_cost_usd: null,
+          hold_usd: 0,
+        };
+      }
+      return governor.authorize(contractFromBusTask(task, { model, timeoutMs: options.timeoutMs, capabilityId }), now);
+    },
+    costSettle: async ({ reservationId, actualCostUsd }) => {
+      const usable = typeof actualCostUsd === "number" && Number.isFinite(actualCostUsd) && actualCostUsd >= 0;
+      const settled = await governor.settle(
+        reservationId,
+        usable
+          ? { actual_cost_usd: actualCostUsd, cost_source: "provider_usage" }
+          : { actual_cost_usd: null, cost_source: "unavailable" },
+      );
+      if (!usable && actualCostUsd !== null) throw new Error("actual cost is not a finite non-negative number or null");
+      if (!settled.ok) throw new Error(`${settled.code}: ${settled.reason}`);
+    },
+  };
+}
+
+function governorFromEnv(env: NodeJS.ProcessEnv, ledgerFile: string, readText: (file: string) => string): CostGovernor {
+  const ledger = new FileCostLedger(ledgerFile, {
+    read: async (file) => {
+      try {
+        return await readFile(file, "utf8");
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined;
+        throw error;
+      }
+    },
+    write: async (file, contents) => {
+      await mkdir(path.dirname(file), { recursive: true });
+      const temporary = `${file}.${randomUUID()}.tmp`;
+      await writeFile(temporary, contents);
+      await rename(temporary, file);
+    },
+  });
+  const file = env.REVOLIS_COST_GOVERNOR_CONFIG;
+  if (!file) return new CostGovernor(defaultGovernorConfig(), ledger);
+  try {
+    const parsed = parseGovernorConfig(JSON.parse(readText(file)) as unknown);
+    if (!parsed.ok) return new CostGovernor({ ...defaultGovernorConfig(), version: "", load_error: parsed.reason }, ledger);
+    const config = parsed.config.capability_allowlist
+      ? parsed.config
+      : { ...parsed.config, capability_allowlist: ["bus-alive", "repo-head"] as const };
+    return new CostGovernor(config, ledger);
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    return new CostGovernor({ ...defaultGovernorConfig(), version: "", load_error: reason }, ledger);
+  }
+}
+
 const HELP = `Revolis Bus consumer
 
   --once              process the current queue and exit (default)
@@ -966,18 +1100,22 @@ async function main(): Promise<void> {
 
   const baseUrl = flagString(args, "url") ?? process.env.REVOLIS_BUS_URL ?? DEFAULT_URL;
   const timeout = Number.parseInt(flagString(args, "timeout") ?? String(DEFAULT_TIMEOUT_MS), 10);
+  const model = flagString(args, "model") ?? process.env.REVOLIS_BUS_CONSUMER_MODEL ?? DEFAULT_MODEL;
+  const timeoutMs = Number.isFinite(timeout) ? timeout : DEFAULT_TIMEOUT_MS;
 
   const stateDir = defaultStateDir();
   const capRaw = Number.parseInt(flagString(args, "daily-cap") ?? String(DAILY_EXECUTION_CAP), 10);
+  const cost = buildConsumerCostGate({ model, timeoutMs, ledgerFile: path.join(stateDir, "cost-ledger.json") });
   const options: ConsumeOptions = {
     client: new BusHttpClient({ baseUrl, token }),
-    executor: realClaudeExecutor({
-      model: flagString(args, "model") ?? process.env.REVOLIS_BUS_CONSUMER_MODEL ?? DEFAULT_MODEL,
-      timeoutMs: Number.isFinite(timeout) ? timeout : DEFAULT_TIMEOUT_MS,
-    }),
+    executor: realClaudeExecutor({ model, timeoutMs }),
     ledger: new FileExecutionLedger(stateDir),
     counter: new FileExecutionCounter(stateDir),
     dailyCap: Number.isFinite(capRaw) ? capRaw : DAILY_EXECUTION_CAP,
+    model,
+    timeoutMs,
+    costGate: cost.costGate,
+    costSettle: cost.costSettle,
     taskId: flagString(args, "task"),
     inboxBox: boxRaw,
     ackBox: ackRaw,
