@@ -5,9 +5,16 @@
 // v `vercel.json` nebola — plánovač teda žil mimo repozitára (externý cron,
 // neoverený). Matica schopností to viedla ako "Gmail pull ✅ ✅ ❓".
 //
-// Tento pin drží, že rozvrh je v repozitári, že je hodinový (nie denný, lebo
-// dopyt z portálu, ktorý príde ráno, nemôže čakať na zajtra) a že route,
-// na ktorú ukazuje, naozaj existuje.
+// Tento pin drží, že rozvrh je v repozitári a že route, na ktorú ukazuje,
+// existuje a nechá po sebe stopu.
+//
+// PREČO DENNE, A NIE ČASTEJŠIE: prvá verzia mala `20 * * * *`. Vercel build
+// ju odmietol doslova takto:
+//   „Hobby accounts are limited to daily cron jobs. This cron expression
+//    (20 * * * *) would run more than once per day."
+// Je to teda zmeraná hranica účtu, nie voľba. Častejší pull potrebuje buď plán
+// Pro, alebo externý plánovač; rozhodnutie je na founderovi
+// (docs/runbooks/2026-10-15-gmail-pull-zapnutie.md).
 // ================================================================
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -27,16 +34,26 @@ describe("Gmail pull má plánovač v repozitári", () => {
     expect(entries).toHaveLength(1);
   });
 
-  it("beží každú hodinu, nie raz denne", () => {
-    // Tvar `M * * * *`: pevná minúta, každá hodina. Denný rozvrh by znamenal,
-    // že dopyt doručený o 09:05 sa stane leadom až nasledujúci deň.
-    expect(entries[0]?.schedule).toMatch(/^\d{1,2} \* \* \* \*$/);
+  it("je denný — viac Hobby plán nedovolí", () => {
+    // Tvar `M H * * *`: raz za deň. Hodinový rozvrh Vercel na tomto účte
+    // odmietne a padne celý deployment, nielen cron.
+    expect(entries[0]?.schedule).toMatch(/^\d{1,2} \d{1,2} \* \* \*$/);
   });
 
-  it("nebeží na celú hodinu, aby sa nestretol s ostatnými", () => {
-    const minute = Number(entries[0]?.schedule.split(" ")[0]);
-    expect(minute).toBeGreaterThan(0);
-    expect(minute).toBeLessThan(60);
+  it("nebeží na celú hodinu ani v tú istú hodinu ako iný cron", () => {
+    const [minute, hour] = (entries[0]?.schedule ?? "").split(" ");
+    expect(Number(minute)).toBeGreaterThan(0);
+    const ine = vercel.crons.filter((c) => c.path !== GMAIL_PATH).map((c) => c.schedule.split(" ")[1]);
+    expect(ine).not.toContain(hour);
+  });
+
+  it("žiadny rozvrh vo vercel.json nebeží viac než raz denne", () => {
+    // Jediný sub-denný výraz zhodí deployment celého projektu, nie iba ten cron.
+    for (const cron of vercel.crons) {
+      expect(cron.schedule, `${cron.path}: ${cron.schedule}`).toMatch(/^[\d,\-/]+ [\d,\-/]+ /);
+      const [, hour] = cron.schedule.split(" ");
+      expect(hour, `${cron.path}: hodina musí byť konkrétna`).not.toContain("*");
+    }
   });
 
   it("route, na ktorú rozvrh ukazuje, existuje a zapisuje stopu", () => {

@@ -68,11 +68,11 @@
     },
     {
       "path": "/api/inbound/gmail-pull",
-      "schedule": "20 * * * *"
+      "schedule": "20 8 * * *"
     },
     {
       "path": "/api/cron/realvia-process",
-      "schedule": "50 * * * *"
+      "schedule": "50 11 * * *"
     },
     {
       "path": "/api/cron/credits-cycle",

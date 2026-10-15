@@ -28,14 +28,14 @@ async function handle(req: NextRequest) {
   const startedAt = new Date();
   const result = await runGmailInboundPull({ fetch });
 
-  // Trvalá stopa iba keď sa niečo stalo. Hodinový beh bez nových správ by
-  // zaplavil cron_runs; "nič nové" je pri tichom štítku normálny stav.
+  // Trvalá stopa iba keď sa niečo stalo. Beh bez nových správ by zbytočne
+  // plnil cron_runs; "nič nové" je pri tichom štítku normálny stav.
   // Zlyhanie (napr. oauth_refresh_failed:invalid_grant) sa loguje vždy — je to jediný signál,
   // že token vypršal a dopyty prestali chodiť.
   //
   // Preskočený beh (chýbajúca konfigurácia) sa od 2026-10-15 zapisuje tiež, ale
-  // najviac raz za 12 hodín: odkedy je pull v rozvrhu, je rozdiel medzi
-  // "Vercel to nespúšťa" a "spúšťa a chýba mu refresh token" jediná vec,
+  // najviac raz za 12 hodín: odkedy je pull v rozvrhu (`20 8 * * *`), je rozdiel
+  // medzi "Vercel to nespúšťa" a "spúšťa a chýba mu refresh token" jediná vec,
   // ktorú z prázdnej tabuľky nešlo prečítať.
   const touched = !result.ok || result.pulled > 0 || result.errors.length > 0;
   const skippedReason = result.ok ? result.skipped ?? null : null;

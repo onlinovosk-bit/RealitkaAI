@@ -2,17 +2,20 @@
 // Revolis.AI — Realvia Queue Worker Cron Endpoint
 // Drains realvia_processing_queue (webhook enqueues, worker processes).
 //
-// ROZVRH (bod 4, 2026-10-15): `50 * * * *` vo `vercel.json`, teda každú hodinu.
+// ROZVRH (bod 4, 2026-10-15): `50 11 * * *` vo `vercel.json`, teda raz denne.
 // Predtým tu stálo „každých 5 minút cez EXTERNÝ cron" — taký cron ale
 // nebežal. Zmerané na PROD 2026-10-15 z `realvia_metrics`: za posledných
 // 21 dní beh prebehol iba v 7 dňoch (spolu 24 behov), a úloha vo fronte
-// čakala na spracovanie v priemere ~2 dni, najdlhšie 28 dní. Hodinový rozvrh
-// v repozitári je horná hranica toho, čo tento účet dovolí (sub-hodinové
-// rozvrhy sú blokované), a oproti stavu „7 z 21 dní" je to rádový rozdiel.
+// čakala na spracovanie v priemere ~2 dni, najdlhšie 28 dní.
+//
+// Prečo denne a nie častejšie: Vercel build odmietol hodinový výraz slovami
+// „Hobby accounts are limited to daily cron jobs" a zhodil celý deployment,
+// nielen ten cron. Je to hranica účtu, nie voľba. Oproti „7 z 21 dní" je aj
+// denný rozvrh rádový rozdiel; častejšie chce plán Pro alebo vlastný plánovač.
 //
 // Beh po sebe od 2026-10-15 nechá riadok v `cron_runs` (job `realvia-process`),
 // vrátane odmietnutia na autorizácii, keď prišiel Vercel cron. Prázdna fronta
-// sa zapisuje zastropovane, aby 24 behov denne z denníka neurobilo skládku.
+// sa zapisuje zastropovane, aby z denníka nebola skládka.
 //
 // Trigger: GET https://app.revolis.ai/api/cron/realvia-process
 // Auth: Authorization: Bearer $CRON_SECRET

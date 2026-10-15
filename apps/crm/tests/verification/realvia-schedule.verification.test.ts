@@ -20,16 +20,18 @@ const entries = vercel.crons.filter((c) => c.path === PATH);
 const src = readFileSync(join(CRM_ROOT, `src/app${PATH}/route.ts`), "utf8");
 
 describe("Realvia worker má plánovač v repozitári", () => {
-  it("je vo vercel.json práve raz a beží hodinovo", () => {
+  it("je vo vercel.json práve raz a beží denne", () => {
+    // Hodinový výraz Vercel na tomto účte odmietne: „Hobby accounts are
+    // limited to daily cron jobs" — a padne celý deployment, nielen cron.
     expect(entries).toHaveLength(1);
-    expect(entries[0]?.schedule).toMatch(/^\d{1,2} \* \* \* \*$/);
+    expect(entries[0]?.schedule).toMatch(/^\d{1,2} \d{1,2} \* \* \*$/);
   });
 
-  it("nebeží v tú istú minútu ako Gmail pull", () => {
-    // Dve ťažké úlohy v tej istej minúte si zbytočne konkurujú.
+  it("nebeží v tú istú hodinu ako Gmail pull", () => {
+    // Dve ťažké úlohy v tej istej hodine si zbytočne konkurujú.
     const gmail = vercel.crons.find((c) => c.path === "/api/inbound/gmail-pull");
     expect(gmail?.schedule).toBeDefined();
-    expect(entries[0]?.schedule).not.toBe(gmail?.schedule);
+    expect(entries[0]?.schedule.split(" ")[1]).not.toBe(gmail?.schedule.split(" ")[1]);
   });
 
   it("route existuje", () => {
@@ -44,8 +46,8 @@ describe("beh worker-a je dohľadateľný", () => {
   });
 
   it("prázdna fronta sa zapisuje zastropovane", () => {
-    // Hodinový rozvrh = 24 behov denne; bez stropu by prázdna fronta z denníka
-    // urobila skládku, a bez zápisu úplne by „nebeží" splynulo s „nič nečakalo".
+    // Bez stropu by prázdna fronta z denníka urobila skládku, a bez zápisu
+    // úplne by „nebeží" splynulo s „nič nečakalo".
     expect(src).toContain("recordSkippedCronRun(");
     expect(src).toContain("empty_queue");
   });
