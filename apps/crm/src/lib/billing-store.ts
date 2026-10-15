@@ -414,13 +414,20 @@ export function __resetBillingStatusMemoForTests() {
   billingStatusMemo.clear();
 }
 
-function emptyBillingStatus() {
+/**
+ * Prazdny stav. `lookupFailed` rozlisuje "Stripe povedal, ze nic nema" od
+ * "na Stripe sme sa nedokazali spytat". Bez toho rozlisenia vracia vypadok
+ * Stripe presne ten isty tvar ako zruseny ucet — a brana v `saas-ops.ts` by
+ * z vypadku urobila zistenie o klientovi (viz TrialGraceState.state="unknown").
+ */
+function emptyBillingStatus(lookupFailed = false) {
   return {
     hasCustomer: false,
     hasSubscription: false,
     customer: null,
     subscription: null,
     invoices: [],
+    lookupFailed,
   };
 }
 
@@ -431,7 +438,8 @@ type CurrentBillingStatus =
 export async function getCurrentBillingStatus(): Promise<CurrentBillingStatus> {
   const stripe = getStripe();
   if (!stripe) {
-    return emptyBillingStatus();
+    // Bez kluca sa nedalo spytat. Nie je to zistenie "klient nema predplatne".
+    return emptyBillingStatus(true);
   }
 
   const { getCurrentUser } = await loadAuthHelpers();
@@ -459,7 +467,7 @@ export async function getCurrentBillingStatus(): Promise<CurrentBillingStatus> {
       "[billing] getCurrentBillingStatus zlyhal — fail-open na default plan:",
       error
     );
-    return emptyBillingStatus();
+    return emptyBillingStatus(true);
   });
   billingStatusMemo.set(memoKey, { at: Date.now(), promise });
   return promise;
@@ -522,6 +530,8 @@ async function fetchCurrentBillingStatusUncached(stripe: Stripe) {
       hostedInvoiceUrl: invoice.hosted_invoice_url ?? null,
       created: invoice.created,
     })),
+    // Stripe odpovedal. Nevedomost je iba tam, kde sa volanie nepodarilo.
+    lookupFailed: false,
   };
 }
 
